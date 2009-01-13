@@ -672,6 +672,8 @@ HAVE_PYTRILINOS_AMESOS_TRUE
 HAVE_PYTRILINOS_AMESOS_FALSE
 HAVE_PYTRILINOS_IFPACK_TRUE
 HAVE_PYTRILINOS_IFPACK_FALSE
+HAVE_PYTRILINOS_KOMPLEX_TRUE
+HAVE_PYTRILINOS_KOMPLEX_FALSE
 HAVE_PYTRILINOS_ANASAZI_TRUE
 HAVE_PYTRILINOS_ANASAZI_FALSE
 HAVE_PYTRILINOS_ML_TRUE
@@ -692,8 +694,6 @@ HAVE_PYTRILINOS_THYRA_TRUE
 HAVE_PYTRILINOS_THYRA_FALSE
 HAVE_PYTRILINOS_ISORROPIA_TRUE
 HAVE_PYTRILINOS_ISORROPIA_FALSE
-HAVE_PYTRILINOS_KOMPLEX_TRUE
-HAVE_PYTRILINOS_KOMPLEX_FALSE
 HAVE_PYTRILINOS_CLAPS_TRUE
 HAVE_PYTRILINOS_CLAPS_FALSE
 HAVE_PYTRILINOS_BELOS_TRUE
@@ -1451,6 +1451,12 @@ Optional Features:
   --enable-pytrilinos-ifpack
                           Build python interface and shared library for
                           ifpack.
+  --enable-komplex        Build python interface and shared library for
+                          komplex. Can be overridden with
+                          --disable-pytrilinos-komplex.
+  --enable-pytrilinos-komplex
+                          Build python interface and shared library for
+                          komplex.
   --enable-anasazi        Build python interface and shared library for
                           anasazi. Can be overridden with
                           --disable-pytrilinos-anasazi.
@@ -1489,10 +1495,6 @@ Optional Features:
                           overridden with --disable-pytrilinos-isorropia.
   --enable-pytrilinos-isorropia
                           Build shared library for isorropia.
-  --enable-komplex        Build shared library for komplex. Can be overridden
-                          with --disable-pytrilinos-komplex.
-  --enable-pytrilinos-komplex
-                          Build shared library for komplex.
   --enable-claps          Build shared library for claps. Can be overridden
                           with --disable-pytrilinos-claps.
   --enable-pytrilinos-claps
@@ -2566,6 +2568,57 @@ fi
 
 
 
+# Check whether --enable-komplex was given.
+if test "${enable_komplex+set}" = set; then
+  enableval=$enable_komplex; ac_cv_implicit_use_komplex=$enableval
+else
+  ac_cv_implicit_use_komplex=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_pytrilinos_using_komplex_default=$ac_cv_implicit_use_komplex
+else
+  ac_cv_pytrilinos_using_komplex_default=no
+fi
+
+# Check whether --enable-pytrilinos-komplex was given.
+if test "${enable_pytrilinos_komplex+set}" = set; then
+  enableval=$enable_pytrilinos_komplex; ac_cv_use_komplex=$enableval
+else
+  ac_cv_use_komplex=$ac_cv_pytrilinos_using_komplex_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional komplex dependent code in pytrilinos" >&5
+echo $ECHO_N "checking whether to build optional komplex dependent code in pytrilinos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_komplex" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PYTRILINOS_KOMPLEX 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_komplex" = "Xyes"; then
+  HAVE_PYTRILINOS_KOMPLEX_TRUE=
+  HAVE_PYTRILINOS_KOMPLEX_FALSE='#'
+else
+  HAVE_PYTRILINOS_KOMPLEX_TRUE='#'
+  HAVE_PYTRILINOS_KOMPLEX_FALSE=
+fi
+
+
+
+
+
+
 # Check whether --enable-anasazi was given.
 if test "${enable_anasazi+set}" = set; then
   enableval=$enable_anasazi; ac_cv_implicit_use_anasazi=$enableval
@@ -3056,57 +3109,6 @@ fi
 else
   HAVE_PYTRILINOS_ISORROPIA_TRUE='#'
   HAVE_PYTRILINOS_ISORROPIA_FALSE=
-fi
-
-
-
-
-
-
-# Check whether --enable-komplex was given.
-if test "${enable_komplex+set}" = set; then
-  enableval=$enable_komplex; ac_cv_implicit_use_komplex=$enableval
-else
-  ac_cv_implicit_use_komplex=no
-fi
-
-
-if test "Xyes" != "Xno"; then
-  ac_cv_pytrilinos_using_komplex_default=$ac_cv_implicit_use_komplex
-else
-  ac_cv_pytrilinos_using_komplex_default=no
-fi
-
-# Check whether --enable-pytrilinos-komplex was given.
-if test "${enable_pytrilinos_komplex+set}" = set; then
-  enableval=$enable_pytrilinos_komplex; ac_cv_use_komplex=$enableval
-else
-  ac_cv_use_komplex=$ac_cv_pytrilinos_using_komplex_default
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to build optional komplex dependent code in pytrilinos" >&5
-echo $ECHO_N "checking whether to build optional komplex dependent code in pytrilinos... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_komplex" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_PYTRILINOS_KOMPLEX 1
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_komplex" = "Xyes"; then
-  HAVE_PYTRILINOS_KOMPLEX_TRUE=
-  HAVE_PYTRILINOS_KOMPLEX_FALSE='#'
-else
-  HAVE_PYTRILINOS_KOMPLEX_TRUE='#'
-  HAVE_PYTRILINOS_KOMPLEX_FALSE=
 fi
 
 
@@ -7533,6 +7535,13 @@ echo "$as_me: error: conditional \"HAVE_PYTRILINOS_IFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_PYTRILINOS_KOMPLEX_TRUE}" && test -z "${HAVE_PYTRILINOS_KOMPLEX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_PYTRILINOS_KOMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_PYTRILINOS_KOMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_PYTRILINOS_ANASAZI_TRUE}" && test -z "${HAVE_PYTRILINOS_ANASAZI_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_PYTRILINOS_ANASAZI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -7600,13 +7609,6 @@ if test -z "${HAVE_PYTRILINOS_ISORROPIA_TRUE}" && test -z "${HAVE_PYTRILINOS_ISO
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_PYTRILINOS_ISORROPIA\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_PYTRILINOS_ISORROPIA\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_PYTRILINOS_KOMPLEX_TRUE}" && test -z "${HAVE_PYTRILINOS_KOMPLEX_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_PYTRILINOS_KOMPLEX\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_PYTRILINOS_KOMPLEX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -8404,6 +8406,8 @@ HAVE_PYTRILINOS_AMESOS_TRUE!$HAVE_PYTRILINOS_AMESOS_TRUE$ac_delim
 HAVE_PYTRILINOS_AMESOS_FALSE!$HAVE_PYTRILINOS_AMESOS_FALSE$ac_delim
 HAVE_PYTRILINOS_IFPACK_TRUE!$HAVE_PYTRILINOS_IFPACK_TRUE$ac_delim
 HAVE_PYTRILINOS_IFPACK_FALSE!$HAVE_PYTRILINOS_IFPACK_FALSE$ac_delim
+HAVE_PYTRILINOS_KOMPLEX_TRUE!$HAVE_PYTRILINOS_KOMPLEX_TRUE$ac_delim
+HAVE_PYTRILINOS_KOMPLEX_FALSE!$HAVE_PYTRILINOS_KOMPLEX_FALSE$ac_delim
 HAVE_PYTRILINOS_ANASAZI_TRUE!$HAVE_PYTRILINOS_ANASAZI_TRUE$ac_delim
 HAVE_PYTRILINOS_ANASAZI_FALSE!$HAVE_PYTRILINOS_ANASAZI_FALSE$ac_delim
 HAVE_PYTRILINOS_ML_TRUE!$HAVE_PYTRILINOS_ML_TRUE$ac_delim
@@ -8424,8 +8428,6 @@ HAVE_PYTRILINOS_THYRA_TRUE!$HAVE_PYTRILINOS_THYRA_TRUE$ac_delim
 HAVE_PYTRILINOS_THYRA_FALSE!$HAVE_PYTRILINOS_THYRA_FALSE$ac_delim
 HAVE_PYTRILINOS_ISORROPIA_TRUE!$HAVE_PYTRILINOS_ISORROPIA_TRUE$ac_delim
 HAVE_PYTRILINOS_ISORROPIA_FALSE!$HAVE_PYTRILINOS_ISORROPIA_FALSE$ac_delim
-HAVE_PYTRILINOS_KOMPLEX_TRUE!$HAVE_PYTRILINOS_KOMPLEX_TRUE$ac_delim
-HAVE_PYTRILINOS_KOMPLEX_FALSE!$HAVE_PYTRILINOS_KOMPLEX_FALSE$ac_delim
 HAVE_PYTRILINOS_CLAPS_TRUE!$HAVE_PYTRILINOS_CLAPS_TRUE$ac_delim
 HAVE_PYTRILINOS_CLAPS_FALSE!$HAVE_PYTRILINOS_CLAPS_FALSE$ac_delim
 HAVE_PYTRILINOS_BELOS_TRUE!$HAVE_PYTRILINOS_BELOS_TRUE$ac_delim
@@ -8976,22 +8978,21 @@ echo "$as_me: $ac_file is unchanged" >&6;}
   fi
   rm -f "$tmp/out12"
 # Compute $ac_file's index in $config_headers.
-_am_arg=$ac_file
 _am_stamp_count=1
 for _am_header in $config_headers :; do
   case $_am_header in
-    $_am_arg | $_am_arg:* )
+    $ac_file | $ac_file:* )
       break ;;
     * )
       _am_stamp_count=`expr $_am_stamp_count + 1` ;;
   esac
 done
-echo "timestamp for $_am_arg" >`$as_dirname -- "$_am_arg" ||
-$as_expr X"$_am_arg" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X"$_am_arg" : 'X\(//\)[^/]' \| \
-	 X"$_am_arg" : 'X\(//\)$' \| \
-	 X"$_am_arg" : 'X\(/\)' \| . 2>/dev/null ||
-echo X"$_am_arg" |
+echo "timestamp for $ac_file" >`$as_dirname -- $ac_file ||
+$as_expr X$ac_file : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X$ac_file : 'X\(//\)[^/]' \| \
+	 X$ac_file : 'X\(//\)$' \| \
+	 X$ac_file : 'X\(/\)' \| . 2>/dev/null ||
+echo X$ac_file |
     sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
 	    s//\1/
 	    q
@@ -9028,7 +9029,7 @@ echo "$as_me: executing $ac_file commands" >&6;}
   # each Makefile.in and add a new line on top of each file to say so.
   # Grep'ing the whole file is not good either: AIX grep has a line
   # limit of 2048, but all sed's we know have understand at least 4000.
-  if sed -n 's,^#.*generated by automake.*,X,p' "$mf" | grep X >/dev/null 2>&1; then
+  if sed 10q "$mf" | grep '^#.*generated by automake' > /dev/null 2>&1; then
     dirpart=`$as_dirname -- "$mf" ||
 $as_expr X"$mf" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
 	 X"$mf" : 'X\(//\)[^/]' \| \

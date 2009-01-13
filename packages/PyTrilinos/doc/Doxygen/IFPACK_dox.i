@@ -168,7 +168,7 @@ C++ includes: Ifpack_AdditiveSchwarz.h ";
 
 %feature("docstring")  Ifpack_AdditiveSchwarz::Ifpack_AdditiveSchwarz
 "Ifpack_AdditiveSchwarz< T >::Ifpack_AdditiveSchwarz(Epetra_RowMatrix
-*Matrix, int OverlapLevel=0)
+*Matrix_in, int OverlapLevel_in=0)
 
 Ifpack_AdditiveSchwarz constructor with given Epetra_RowMatrix.
 
@@ -189,7 +189,7 @@ desired level of overlap. ";
 Destructor. ";
 
 %feature("docstring")  Ifpack_AdditiveSchwarz::SetUseTranspose "int
-Ifpack_AdditiveSchwarz< T >::SetUseTranspose(bool UseTranspose)
+Ifpack_AdditiveSchwarz< T >::SetUseTranspose(bool UseTranspose_in)
 
 If set true, transpose of this operator will be applied (not
 implemented).
@@ -200,8 +200,8 @@ implicitly.
 Parameters:
 -----------
 
-UseTranspose:  - (In) If true, multiply by the transpose of operator,
-otherwise just use operator.
+UseTranspose_in:  - (In) If true, multiply by the transpose of
+operator, otherwise just use operator.
 
 Integer error code, set to 0 if successful. Set to -1 if this
 implementation does not support transpose. ";
@@ -295,7 +295,7 @@ Computes the preconditioner. ";
 %feature("docstring")  Ifpack_AdditiveSchwarz::Condest "double
 Ifpack_AdditiveSchwarz< T >::Condest(const Ifpack_CondestType
 CT=Ifpack_Cheap, const int MaxIters=1550, const double Tol=1e-9,
-Epetra_RowMatrix *Matrix=0)
+Epetra_RowMatrix *Matrix_in=0)
 
 Computes the estimated condition number and returns its value. ";
 
@@ -542,7 +542,7 @@ Ifpack_Amesos::~Ifpack_Amesos()
 Destructor. ";
 
 %feature("docstring")  Ifpack_Amesos::SetUseTranspose "int
-Ifpack_Amesos::SetUseTranspose(bool UseTranspose)
+Ifpack_Amesos::SetUseTranspose(bool UseTranspose_in)
 
 If set true, transpose of this operator will be applied (not
 implemented).
@@ -553,8 +553,8 @@ implicitly.
 Parameters:
 -----------
 
-UseTranspose:  - (In) If true, multiply by the transpose of operator,
-otherwise just use operator.
+UseTranspose_in:  - (In) If true, multiply by the transpose of
+operator, otherwise just use operator.
 
 Integer error code, set to 0 if successful. Set to -1 if this
 implementation does not support transpose. ";
@@ -678,7 +678,8 @@ Returns a const reference to the internally stored matrix. ";
 
 %feature("docstring")  Ifpack_Amesos::Condest "double
 Ifpack_Amesos::Condest(const Ifpack_CondestType CT=Ifpack_Cheap, const
-int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0)
+int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix
+*Matrix_in=0)
 
 Returns the estimated condition number, computes it if necessary. ";
 
@@ -848,7 +849,7 @@ double Ifpack_BlockRelaxation< T >::NormInf() const
 Returns the infinity norm of the global matrix (not implemented). ";
 
 %feature("docstring")  Ifpack_BlockRelaxation::SetUseTranspose "virtual int Ifpack_BlockRelaxation< T >::SetUseTranspose(bool
-UseTranspose) ";
+UseTranspose_in) ";
 
 %feature("docstring")  Ifpack_BlockRelaxation::Label "const char *
 Ifpack_BlockRelaxation< T >::Label() const ";
@@ -921,7 +922,7 @@ Returns a pointer to the matrix to be preconditioned. ";
 %feature("docstring")  Ifpack_BlockRelaxation::Condest "virtual
 double Ifpack_BlockRelaxation< T >::Condest(const Ifpack_CondestType
 CT=Ifpack_Cheap, const int MaxIters=1550, const double Tol=1e-9,
-Epetra_RowMatrix *Matrix=0)
+Epetra_RowMatrix *Matrix_in=0)
 
 Computes the condition number estimate, returns its value. ";
 
@@ -1158,7 +1159,7 @@ Returns a pointer to the matrix to be preconditioned. ";
 %feature("docstring")  Ifpack_Chebyshev::Condest "double
 Ifpack_Chebyshev::Condest(const Ifpack_CondestType CT=Ifpack_Cheap,
 const int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix
-*Matrix=0)
+*Matrix_in=0)
 
 Computes the condition number estimates and returns the value. ";
 
@@ -1238,7 +1239,7 @@ Epetra_Vector &InvPointDiagonal, const int MaximumIterations, double
 Uses AztecOO's CG to estimate lambda_min and lambda_max. ";
 
 %feature("docstring")  Ifpack_Chebyshev::SetUseTranspose "virtual int
-Ifpack_Chebyshev::SetUseTranspose(bool UseTranspose)
+Ifpack_Chebyshev::SetUseTranspose(bool UseTranspose_in)
 
 This flag can be used to apply the preconditioner to the transpose of
 the input operator.
@@ -1555,7 +1556,7 @@ Ifpack_CrsIct::Label() const
 Returns a character string describing the operator. ";
 
 %feature("docstring")  Ifpack_CrsIct::SetUseTranspose "int
-Ifpack_CrsIct::SetUseTranspose(bool UseTranspose)
+Ifpack_CrsIct::SetUseTranspose(bool UseTranspose_in)
 
 If set true, transpose of this operator will be applied.
 
@@ -1567,7 +1568,7 @@ not support transpose use, this method should return a value of -1.
 Parameters:
 -----------
 
-In:  UseTranspose -If true, multiply by the transpose of operator,
+In:  UseTranspose_in -If true, multiply by the transpose of operator,
 otherwise just use operator.
 
 Always returns 0. ";
@@ -2592,7 +2593,7 @@ Ifpack_CrsRiluk::Label() const
 Returns a character string describing the operator. ";
 
 %feature("docstring")  Ifpack_CrsRiluk::SetUseTranspose "int
-Ifpack_CrsRiluk::SetUseTranspose(bool UseTranspose)
+Ifpack_CrsRiluk::SetUseTranspose(bool UseTranspose_in)
 
 If set true, transpose of this operator will be applied.
 
@@ -2604,7 +2605,7 @@ not support transpose use, this method should return a value of -1.
 Parameters:
 -----------
 
-In:  UseTranspose -If true, multiply by the transpose of operator,
+In:  UseTranspose_in -If true, multiply by the transpose of operator,
 otherwise just use operator.
 
 Always returns 0. ";
@@ -2690,7 +2691,7 @@ Ifpack_CrsRiluk::Comm() const
 Returns the Epetra_BlockMap object associated with the range of this
 matrix operator. ";
 
-%feature("docstring")  Ifpack_CrsRiluk::Ifpack_CrsRiluk "Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph &Graph)
+%feature("docstring")  Ifpack_CrsRiluk::Ifpack_CrsRiluk "Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_IlukGraph &Graph_in)
 
 Ifpack_CrsRiluk constuctor with variable number of indices per row.
 
@@ -2699,7 +2700,7 @@ Creates a Ifpack_CrsRiluk object and allocates storage.
 Parameters:
 -----------
 
-In:  Graph - Graph generated by Ifpack_IlukGraph. ";
+In:  Graph_in - Graph generated by Ifpack_IlukGraph. ";
 
 %feature("docstring")  Ifpack_CrsRiluk::Ifpack_CrsRiluk "Ifpack_CrsRiluk::Ifpack_CrsRiluk(const Ifpack_CrsRiluk &Matrix)
 
@@ -2976,8 +2977,8 @@ Marzio Sala, SNL 9214.
 
 C++ includes: Ifpack_DenseContainer.h ";
 
-%feature("docstring")  Ifpack_DenseContainer::Ifpack_DenseContainer "Ifpack_DenseContainer::Ifpack_DenseContainer(const int NumRows, const
-int NumVectors=1)
+%feature("docstring")  Ifpack_DenseContainer::Ifpack_DenseContainer "Ifpack_DenseContainer::Ifpack_DenseContainer(const int NumRows_in,
+const int NumVectors_in=1)
 
 Default constructor. ";
 
@@ -3001,7 +3002,7 @@ Ifpack_DenseContainer::NumVectors() const
 Returns the number of vectors in LHS/RHS. ";
 
 %feature("docstring")  Ifpack_DenseContainer::SetNumVectors "virtual
-int Ifpack_DenseContainer::SetNumVectors(const int NumVectors)
+int Ifpack_DenseContainer::SetNumVectors(const int NumVectors_in)
 
 Sets the number of vectors for LHS/RHS. ";
 
@@ -3094,7 +3095,7 @@ Ifpack_DenseContainer::Initialize()
 Initialize the container. ";
 
 %feature("docstring")  Ifpack_DenseContainer::Compute "int
-Ifpack_DenseContainer::Compute(const Epetra_RowMatrix &Matrix)
+Ifpack_DenseContainer::Compute(const Epetra_RowMatrix &Matrix_in)
 
 Finalizes the linear system matrix and prepares for the application of
 the inverse. ";
@@ -3253,7 +3254,7 @@ const ";
 Ifpack_DiagonalFilter::RowMatrixImporter() const ";
 
 %feature("docstring")  Ifpack_DiagonalFilter::SetUseTranspose "int
-Ifpack_DiagonalFilter::SetUseTranspose(bool UseTranspose) ";
+Ifpack_DiagonalFilter::SetUseTranspose(bool UseTranspose_in) ";
 
 %feature("docstring")  Ifpack_DiagonalFilter::UseTranspose "bool
 Ifpack_DiagonalFilter::UseTranspose() const ";
@@ -3296,7 +3297,8 @@ Ifpack_DiagPreconditioner::~Ifpack_DiagPreconditioner "Ifpack_DiagPreconditioner
 
 dtor ";
 
-%feature("docstring")  Ifpack_DiagPreconditioner::SetUseTranspose "int Ifpack_DiagPreconditioner::SetUseTranspose(bool UseTranspose) ";
+%feature("docstring")  Ifpack_DiagPreconditioner::SetUseTranspose "int Ifpack_DiagPreconditioner::SetUseTranspose(bool UseTranspose_in)
+";
 
 %feature("docstring")  Ifpack_DiagPreconditioner::Apply "int
 Ifpack_DiagPreconditioner::Apply(const Epetra_MultiVector &X,
@@ -3920,7 +3922,7 @@ in ifp_diag_pert.
 C++ includes: Ifpack_IC.h ";
 
 %feature("docstring")  Ifpack_IC::SetUseTranspose "int
-Ifpack_IC::SetUseTranspose(bool UseTranspose)
+Ifpack_IC::SetUseTranspose(bool UseTranspose_in)
 
 If set true, transpose of this operator will be applied.
 
@@ -3932,7 +3934,7 @@ not support transpose use, this method should return a value of -1.
 Parameters:
 -----------
 
-In:  UseTranspose -If true, multiply by the transpose of operator,
+In:  UseTranspose_in -If true, multiply by the transpose of operator,
 otherwise just use operator.
 
 Always returns 0. ";
@@ -4084,7 +4086,7 @@ Epetra_MultiVector &X, Epetra_MultiVector &Y) const ";
 
 %feature("docstring")  Ifpack_IC::Condest "double
 Ifpack_IC::Condest(const Ifpack_CondestType CT=Ifpack_Cheap, const int
-MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0)
+MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix_in=0)
 
 Returns the maximum over all the condition number estimate for each
 local ILU set of factors.
@@ -4143,7 +4145,7 @@ matrix. ";
 Ifpack_IC::Label() const ";
 
 %feature("docstring")  Ifpack_IC::SetLabel "int
-Ifpack_IC::SetLabel(const char *Label) ";
+Ifpack_IC::SetLabel(const char *Label_in) ";
 
 %feature("docstring")  Ifpack_IC::Print "std::ostream &
 Ifpack_IC::Print(std::ostream &os) const
@@ -4223,7 +4225,7 @@ in ifp_diag_pert.
 C++ includes: Ifpack_ICT.h ";
 
 %feature("docstring")  Ifpack_ICT::SetUseTranspose "int
-Ifpack_ICT::SetUseTranspose(bool UseTranspose)
+Ifpack_ICT::SetUseTranspose(bool UseTranspose_in)
 
 If set true, transpose of this operator will be applied.
 
@@ -4235,7 +4237,7 @@ not support transpose use, this method should return a value of -1.
 Parameters:
 -----------
 
-In:  UseTranspose -If true, multiply by the transpose of operator,
+In:  UseTranspose_in -If true, multiply by the transpose of operator,
 otherwise just use operator.
 
 Always returns 0. ";
@@ -4365,7 +4367,8 @@ Epetra_MultiVector &X, Epetra_MultiVector &Y) const ";
 
 %feature("docstring")  Ifpack_ICT::Condest "double
 Ifpack_ICT::Condest(const Ifpack_CondestType CT=Ifpack_Cheap, const
-int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0)
+int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix
+*Matrix_in=0)
 
 Returns the maximum over all the condition number estimate for each
 local ILU set of factors.
@@ -4408,7 +4411,7 @@ matrix. ";
 Ifpack_ICT::Label() const ";
 
 %feature("docstring")  Ifpack_ICT::SetLabel "int
-Ifpack_ICT::SetLabel(const char *Label) ";
+Ifpack_ICT::SetLabel(const char *Label_in) ";
 
 %feature("docstring")  Ifpack_ICT::Print "std::ostream &
 Ifpack_ICT::Print(std::ostream &os) const
@@ -4587,7 +4590,8 @@ const ";
 
 %feature("docstring")  Ifpack_IKLU::Condest "double
 Ifpack_IKLU::Condest(const Ifpack_CondestType CT=Ifpack_Cheap, const
-int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0)
+int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix
+*Matrix_in=0)
 
 Computed the estimated condition number and returns the value. ";
 
@@ -4598,7 +4602,7 @@ Returns the computed estimated condition number, or -1.0 if no
 computed. ";
 
 %feature("docstring")  Ifpack_IKLU::SetUseTranspose "int
-Ifpack_IKLU::SetUseTranspose(bool UseTranspose)
+Ifpack_IKLU::SetUseTranspose(bool UseTranspose_in)
 
 If set true, transpose of this operator will be applied.
 
@@ -4610,8 +4614,8 @@ not support transpose use, this method should return a value of -1.
 Parameters:
 -----------
 
-UseTranspose:  - (In) If true, multiply by the transpose of operator,
-otherwise just use operator.
+UseTranspose_in:  - (In) If true, multiply by the transpose of
+operator, otherwise just use operator.
 
 Always returns 0. ";
 
@@ -4669,7 +4673,7 @@ Ifpack_IKLU::Label() const
 Returns the label of this object. ";
 
 %feature("docstring")  Ifpack_IKLU::SetLabel "int
-Ifpack_IKLU::SetLabel(const char *Label)
+Ifpack_IKLU::SetLabel(const char *Label_in)
 
 Sets the label for this object. ";
 
@@ -4822,7 +4826,7 @@ Ifpack_ILU::SetParameters(Teuchos::ParameterList &parameterlist)
 Set parameters using a Teuchos::ParameterList object. ";
 
 %feature("docstring")  Ifpack_ILU::SetUseTranspose "int
-Ifpack_ILU::SetUseTranspose(bool UseTranspose)
+Ifpack_ILU::SetUseTranspose(bool UseTranspose_in)
 
 If set true, transpose of this operator will be applied.
 
@@ -4834,8 +4838,8 @@ not support transpose use, this method should return a value of -1.
 Parameters:
 -----------
 
-UseTranspose:  - (In) If true, multiply by the transpose of operator,
-otherwise just use operator.
+UseTranspose_in:  - (In) If true, multiply by the transpose of
+operator, otherwise just use operator.
 
 Always returns 0. ";
 
@@ -4873,7 +4877,8 @@ Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Ifpack_ILU::Condest "double
 Ifpack_ILU::Condest(const Ifpack_CondestType CT=Ifpack_Cheap, const
-int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0)
+int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix
+*Matrix_in=0)
 
 Computes the estimated condition number and returns the value. ";
 
@@ -4907,7 +4912,7 @@ Ifpack_ILU::Label() const
 Returns a character string describing the operator. ";
 
 %feature("docstring")  Ifpack_ILU::SetLabel "int
-Ifpack_ILU::SetLabel(const char *Label)
+Ifpack_ILU::SetLabel(const char *Label_in)
 
 Sets label for this object. ";
 
@@ -5031,8 +5036,8 @@ subsequent operations.
 
 C++ includes: Ifpack_IlukGraph.h ";
 
-%feature("docstring")  Ifpack_IlukGraph::Ifpack_IlukGraph "Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph &Graph, int
-LevelFill, int LevelOverlap)
+%feature("docstring")  Ifpack_IlukGraph::Ifpack_IlukGraph "Ifpack_IlukGraph::Ifpack_IlukGraph(const Epetra_CrsGraph &Graph_in,
+int LevelFill_in, int LevelOverlap_in)
 
 Ifpack_IlukGraph constuctor.
 
@@ -5042,18 +5047,18 @@ level of fill.
 Parameters:
 -----------
 
-In:  Graph - An existing Ifpack_CrsGraph. This object must implement
-the Ifpack_CrsGraph functions that provide graph dimension and pattern
-information.
+In:  Graph_in - An existing Ifpack_CrsGraph. This object must
+implement the Ifpack_CrsGraph functions that provide graph dimension
+and pattern information.
 
-In:  LevelFill - The level of fill to compute via ILU(k) algorithm.
+In:  LevelFill_in - The level of fill to compute via ILU(k) algorithm.
 
-In:  LevelOverlap - The level of between subdomains.
+In:  LevelOverlap_in - The level of between subdomains.
 
 WARNING:  Actual construction occurs in ConstructFilledGraph. This
 allows error codes to be passed back to the user. ";
 
-%feature("docstring")  Ifpack_IlukGraph::Ifpack_IlukGraph "Ifpack_IlukGraph::Ifpack_IlukGraph(const Ifpack_IlukGraph &Graph)
+%feature("docstring")  Ifpack_IlukGraph::Ifpack_IlukGraph "Ifpack_IlukGraph::Ifpack_IlukGraph(const Ifpack_IlukGraph &Graph_in)
 
 Copy constructor. ";
 
@@ -5303,7 +5308,8 @@ const ";
 
 %feature("docstring")  Ifpack_ILUT::Condest "double
 Ifpack_ILUT::Condest(const Ifpack_CondestType CT=Ifpack_Cheap, const
-int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0)
+int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix
+*Matrix_in=0)
 
 Computed the estimated condition number and returns the value. ";
 
@@ -5314,7 +5320,7 @@ Returns the computed estimated condition number, or -1.0 if no
 computed. ";
 
 %feature("docstring")  Ifpack_ILUT::SetUseTranspose "int
-Ifpack_ILUT::SetUseTranspose(bool UseTranspose)
+Ifpack_ILUT::SetUseTranspose(bool UseTranspose_in)
 
 If set true, transpose of this operator will be applied.
 
@@ -5326,8 +5332,8 @@ not support transpose use, this method should return a value of -1.
 Parameters:
 -----------
 
-UseTranspose:  - (In) If true, multiply by the transpose of operator,
-otherwise just use operator.
+UseTranspose_in:  - (In) If true, multiply by the transpose of
+operator, otherwise just use operator.
 
 Always returns 0. ";
 
@@ -5385,7 +5391,7 @@ Ifpack_ILUT::Label() const
 Returns the label of this object. ";
 
 %feature("docstring")  Ifpack_ILUT::SetLabel "int
-Ifpack_ILUT::SetLabel(const char *Label)
+Ifpack_ILUT::SetLabel(const char *Label_in)
 
 Sets the label for this object. ";
 
@@ -5758,7 +5764,7 @@ Ifpack_LocalFilter::SetOwnership(bool ownership)
 Sets ownership. ";
 
 %feature("docstring")  Ifpack_LocalFilter::SetUseTranspose "int
-Ifpack_LocalFilter::SetUseTranspose(bool UseTranspose)
+Ifpack_LocalFilter::SetUseTranspose(bool UseTranspose_in)
 
 Sets use transpose (not implemented). ";
 
@@ -6018,7 +6024,7 @@ preconditioners.
 C++ includes: Ifpack_OverlapGraph.h ";
 
 %feature("docstring")  Ifpack_OverlapGraph::Ifpack_OverlapGraph "Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Teuchos::RefCountPtr<
-const Epetra_CrsGraph > &UserMatrixGraph, int OverlapLevel)
+const Epetra_CrsGraph > &UserMatrixGraph_in, int OverlapLevel_in)
 
 Constructor using Epetra_CrsGraph.
 
@@ -6027,10 +6033,10 @@ Creates an Ifpack_OverlapGraph object from the user graph.
 Parameters:
 -----------
 
-In:  UserMatrixGraph - Graph from user matrix. ";
+In:  UserMatrixGraph_in - Graph from user matrix. ";
 
 %feature("docstring")  Ifpack_OverlapGraph::Ifpack_OverlapGraph "Ifpack_OverlapGraph::Ifpack_OverlapGraph(const Teuchos::RefCountPtr<
-const Epetra_RowMatrix > &UserMatrix, int OverlapLevel)
+const Epetra_RowMatrix > &UserMatrix_in, int OverlapLevel_in)
 
 Constructor using Epetra_RowMatrix.
 
@@ -6180,8 +6186,8 @@ operator<<. ";
 
 %feature("docstring")
 Ifpack_OverlappingRowMatrix::Ifpack_OverlappingRowMatrix "Ifpack_OverlappingRowMatrix::Ifpack_OverlappingRowMatrix(const
-Teuchos::RefCountPtr< const Epetra_RowMatrix > &Matrix, int
-OverlapLevel) ";
+Teuchos::RefCountPtr< const Epetra_RowMatrix > &Matrix_in, int
+OverlapLevel_in) ";
 
 %feature("docstring")
 Ifpack_OverlappingRowMatrix::~Ifpack_OverlappingRowMatrix "Ifpack_OverlappingRowMatrix::~Ifpack_OverlappingRowMatrix() ";
@@ -6389,7 +6395,7 @@ Ifpack_OverlappingRowMatrix::SetOwnership(bool ownership)
 
 Sets ownership. ";
 
-%feature("docstring")  Ifpack_OverlappingRowMatrix::SetUseTranspose "int Ifpack_OverlappingRowMatrix::SetUseTranspose(bool UseTranspose)
+%feature("docstring")  Ifpack_OverlappingRowMatrix::SetUseTranspose "int Ifpack_OverlappingRowMatrix::SetUseTranspose(bool UseTranspose_in)
 
 Sets use transpose (not implemented). ";
 
@@ -7028,7 +7034,8 @@ Returns the number of flops in the computation phase. ";
 Returns the number of flops for the application of the preconditioner.
 ";
 
-%feature("docstring")  Ifpack_PointRelaxation::SetUseTranspose "virtual int Ifpack_PointRelaxation::SetUseTranspose(bool UseTranspose)
+%feature("docstring")  Ifpack_PointRelaxation::SetUseTranspose "virtual int Ifpack_PointRelaxation::SetUseTranspose(bool
+UseTranspose_in)
 
 This flag can be used to apply the preconditioner to the transpose of
 the input operator.
@@ -7344,8 +7351,8 @@ Marzio Sala, SNL 9214.
 C++ includes: Ifpack_ReorderFilter.h ";
 
 %feature("docstring")  Ifpack_ReorderFilter::Ifpack_ReorderFilter "Ifpack_ReorderFilter::Ifpack_ReorderFilter(const Teuchos::RefCountPtr<
-Epetra_RowMatrix > &Matrix, const Teuchos::RefCountPtr<
-Ifpack_Reordering > &Reordering) ";
+Epetra_RowMatrix > &Matrix_in, const Teuchos::RefCountPtr<
+Ifpack_Reordering > &Reordering_in) ";
 
 %feature("docstring")  Ifpack_ReorderFilter::Ifpack_ReorderFilter "Ifpack_ReorderFilter::Ifpack_ReorderFilter(const Ifpack_ReorderFilter
 &RHS)
@@ -7502,7 +7509,7 @@ const
 Returns the importer of the non-reordered matrix. ";
 
 %feature("docstring")  Ifpack_ReorderFilter::SetUseTranspose "int
-Ifpack_ReorderFilter::SetUseTranspose(bool UseTranspose)
+Ifpack_ReorderFilter::SetUseTranspose(bool UseTranspose_in)
 
 Sets the use of the transpose. ";
 
@@ -7764,7 +7771,7 @@ const ";
 Ifpack_SingletonFilter::RowMatrixImporter() const ";
 
 %feature("docstring")  Ifpack_SingletonFilter::SetUseTranspose "int
-Ifpack_SingletonFilter::SetUseTranspose(bool UseTranspose) ";
+Ifpack_SingletonFilter::SetUseTranspose(bool UseTranspose_in) ";
 
 %feature("docstring")  Ifpack_SingletonFilter::UseTranspose "bool
 Ifpack_SingletonFilter::UseTranspose() const ";
@@ -7855,7 +7862,8 @@ int Ifpack_SparseContainer< T >::NumVectors() const
 Returns the number of vectors in LHS/RHS. ";
 
 %feature("docstring")  Ifpack_SparseContainer::SetNumVectors "virtual
-int Ifpack_SparseContainer< T >::SetNumVectors(const int NumVectors)
+int Ifpack_SparseContainer< T >::SetNumVectors(const int
+NumVectors_in)
 
 Sets the number of vectors for LHS/RHS. ";
 
@@ -7947,7 +7955,8 @@ matrix structure.
 After a call to Initialize(), no new matrix entries can be added. ";
 
 %feature("docstring")  Ifpack_SparseContainer::Compute "int
-Ifpack_SparseContainer< T >::Compute(const Epetra_RowMatrix &Matrix)
+Ifpack_SparseContainer< T >::Compute(const Epetra_RowMatrix
+&Matrix_in)
 
 Finalizes the linear system matrix and prepares for the application of
 the inverse. ";
@@ -8889,8 +8898,8 @@ IFPACK. ";
 %feature("docstring")  Ifpack_Version "string Ifpack_Version() ";
 
 
-// File: dir_08b75bc0b62b5fcbc98212ee8aec2da5.xml
+// File: dir_8854a7b0da65cc6c1ac55447f65a4567.xml
 
 
-// File: dir_df55efd314c0326343c9d0df7f2b99d3.xml
+// File: dir_e880793e0fae3f15b5813f32a1a6bd45.xml
 

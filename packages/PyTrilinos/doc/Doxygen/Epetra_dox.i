@@ -3149,6 +3149,25 @@ Returns a pointer to the CrsGraphData instance this CrsGraph uses.
 
 (Intended for developer use only for testing purposes.) ";
 
+%feature("docstring")
+Epetra_CrsGraph::SortGhostsAssociatedWithEachProcessor "void
+Epetra_CrsGraph::SortGhostsAssociatedWithEachProcessor(bool Flag)
+
+Forces FillComplete() to locally order ghostnodes associated with each
+remote processor in ascending order.
+
+To be compliant with AztecOO, FillComplete() already locally orders
+ghostnodes such that information received from processor k has a lower
+local numbering than information received from processor j if k is
+less than j. SortGhostsAssociatedWithEachProcessor(True) further
+forces FillComplete() to locally number all ghostnodes received from
+processor k in ascending order. That is, the local numbering of b is
+less than c if the global numbering of b is less than c and if both b
+and c are owned by the same processor. This is done to be compliant
+with some limited block features within ML. In particular, some ML
+features require that a block structure of the matrix be maintained
+even within the ghost variables. ";
+
 
 // File: classEpetra__CrsGraphData.xml
 %feature("docstring") Epetra_CrsGraphData "
@@ -4727,6 +4746,25 @@ has not been performed or Storage has not been Optimized.
 
 WARNING:  This method is intended for expert only, its use may require
 user code modifications in future versions of Epetra. ";
+
+%feature("docstring")
+Epetra_CrsMatrix::SortGhostsAssociatedWithEachProcessor "int
+Epetra_CrsMatrix::SortGhostsAssociatedWithEachProcessor(bool Flag)
+
+Forces FillComplete() to locally order ghostnodes associated with each
+remote processor in ascending order.
+
+To be compliant with AztecOO, FillComplete() already locally orders
+ghostnodes such that information received from processor k has a lower
+local numbering than information received from processor j if k is
+less than j. SortGhostsAssociatedWithEachProcessor(True) further
+forces FillComplete() to locally number all ghostnodes received from
+processor k in ascending order. That is, the local numbering of b is
+less than c if the global numbering of b is less than c and if both b
+and c are owned by the same processor. This is done to be compliant
+with some limited block features within ML. In particular, some ML
+features require that a block structure of the matrix be maintained
+even within the ghost variables. Always returns 0. ";
 
 /*  Deprecated methods:  These methods still work, but will be removed
 in a future version  */
@@ -20621,8 +20659,8 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 %feature("docstring")  Epetra_Version "string Epetra_Version() ";
 
 
-// File: dir_91e6c31313780713b81835c6933c2ef9.xml
+// File: dir_18b2d64510239fed06b88e74196cfd3f.xml
 
 
-// File: dir_7d63aa646d01478fb8f0f19fecc8ace4.xml
+// File: dir_4368af47e412e90c65d06ecb9459c00d.xml
 

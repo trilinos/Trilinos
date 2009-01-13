@@ -104,6 +104,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, ifpack, PYTRILINOS_IFPACK,
        [Build python interface and shared library for ifpack.],
        [Build python interface and shared library for ifpack.  Can be overridden with --disable-pytrilinos-ifpack.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, komplex, PYTRILINOS_KOMPLEX,
+       HAVE_PYTRILINOS_KOMPLEX, yes,
+       [Build python interface and shared library for komplex.],
+       [Build python interface and shared library for komplex.  Can be overridden with --disable-pytrilinos-komplex.])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, anasazi, PYTRILINOS_ANASAZI,
        HAVE_PYTRILINOS_ANASAZI, yes,
        [Build python interface and shared library for anasazi.],
@@ -157,11 +162,6 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, isorropia, PYTRILINOS_ISORROPIA,
        HAVE_PYTRILINOS_ISORROPIA, yes,
        [Build shared library for isorropia.],
        [Build shared library for isorropia.  Can be overridden with --disable-pytrilinos-isorropia.])
-
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, komplex, PYTRILINOS_KOMPLEX,
-       HAVE_PYTRILINOS_KOMPLEX, yes,
-       [Build shared library for komplex.],
-       [Build shared library for komplex.  Can be overridden with --disable-pytrilinos-komplex.])
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, claps, PYTRILINOS_CLAPS,
        HAVE_PYTRILINOS_CLAPS, yes,

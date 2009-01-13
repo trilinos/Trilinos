@@ -93,7 +93,32 @@ here are the necessary steps.
    package ``_PROXIES`` variables.  Add you package to this and other
    related lists.
 
+#. Alter ``src/setup.py`` to include the new module.  In this file,
+   the first non-commented line of code is to define the list of
+   strings in a variable called ``modules``.  Add the name of your
+   package to this list.  Note that the order of the list should be
+   the Trilinos build order.  This order can be obtained from the
+   top-level Trilinos ``Makefile.am`` file.
+
+#. Create a swig interface file, using an existing swig interface file
+   as a template.  Start with the ``%module`` directive and limit your
+   first cut to including the package configuration definitions::
+
+      %include "Komplex_config.h"
+
 #. This should be sufficient for getting started.  From the
    ``PyTrilinos`` main directory, run the ``bootstrap`` command to
    generate the ``configure`` and ``Makefile.in`` files that will be
-   used by the top-level ``configure`` script.
+   used by the top-level ``configure`` script.  From your top-level
+   build directory, run your ``configure`` script and ``make`` to
+   build your first cut.  To test it, do the following::
+
+      $ cd packages/PyTrilinos/test
+      $ make
+      $ python
+      >>> import setpath
+      >>> setpath.setpath()
+      >>> import Package    # where Package is your package name
+      >>> dir(Package)
+
+   You should have some simple items defined within your Package.

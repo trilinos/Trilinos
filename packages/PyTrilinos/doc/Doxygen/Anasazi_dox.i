@@ -464,7 +464,7 @@ C++ includes: AnasaziBasicOutputManager.hpp ";
 %feature("docstring")  Anasazi::BasicOutputManager::BasicOutputManager
 "Anasazi::BasicOutputManager< ScalarType >::BasicOutputManager(int
 vb=Anasazi::Errors, Teuchos::RCP< ostream >
-os=Teuchos::rcp(&std::cout, false), int printingRank=0)
+os=Teuchos::rcpFromRef(std::cout), int printingRank=0)
 
 Default constructor. ";
 
@@ -2951,6 +2951,19 @@ Return parameter for re-orthogonalization threshold. ";
 // File: classAnasazi_1_1IRTR.xml
 %feature("docstring") Anasazi::IRTR "
 
+IRTR is a caching implementation of the Implicit Riemannian Trust-
+Region (IRTR) eigensolver.
+
+The solver uses between 10 and 13 blocks of vectors, compared to the
+requirements by SIRTR of 6 to 8 blocks of vectors. The base
+requirement is 10 blocks of vectors, where a block of vectors contains
+a number of vectors equal to the block size specified for the solver
+(see RTRBase::getBlockSize()). Additional blocks are required when
+solving a generalized eigenvalue problem or when using a
+preconditioiner.
+
+For more information, see RTRBase.
+
 Chris Baker
 
 C++ includes: AnasaziIRTR.hpp ";
@@ -2960,21 +2973,33 @@ C++ includes: AnasaziIRTR.hpp ";
 %feature("docstring")  Anasazi::IRTR::IRTR "Anasazi::IRTR<
 ScalarType, MV, OP >::IRTR(const Teuchos::RCP< Eigenproblem<
 ScalarType, MV, OP > > &problem, const Teuchos::RCP< SortManager<
-ScalarType > > &sorter, const Teuchos::RCP< OutputManager< ScalarType
-> > &printer, const Teuchos::RCP< StatusTest< ScalarType, MV, OP > >
-&tester, const Teuchos::RCP< GenOrthoManager< ScalarType, MV, OP > >
-&ortho, Teuchos::ParameterList &params)
+typename Teuchos::ScalarTraits< ScalarType >::magnitudeType > >
+&sorter, const Teuchos::RCP< OutputManager< ScalarType > > &printer,
+const Teuchos::RCP< StatusTest< ScalarType, MV, OP > > &tester, const
+Teuchos::RCP< GenOrthoManager< ScalarType, MV, OP > > &ortho,
+Teuchos::ParameterList &params)
 
 IRTR constructor with eigenproblem, solver utilities, and parameter
 list of solver options.
 
 This constructor takes pointers required by the eigensolver, in
 addition to a parameter list of options for the eigensolver. These
-options include the following: \"Block Size\" - an int specifying the
-block size used by the algorithm. This can also be specified using the
-setBlockSize() method.
+options include the following: \"Rho Prime\" - an MagnitudeType
+specifying the size of the implicit trust-region radius.
 
-\"Inner Solver\" - ";
+\"Block Size\" - an int specifying the block size used by the
+algorithm. This can also be specified using the setBlockSize() method.
+
+\"Leftmost\" - a bool specifying whether the solver is computing the
+leftmost (\"SR\") or rightmost (\"LR\") eigenvalues. Default: true.
+This must be in accord with the SortManager pass to the constructor.
+
+\"Kappa Convergence\" - a MagnitudeType specifing the rate of
+convergence for the linear convergence regime. Default: 0.1
+
+\"Theta Convergence\" - a MagnitudeType specifing the order of
+convergence for the linear convergence regime. theta implies a
+convergence order of theta+1. Default: 1.0 ";
 
 %feature("docstring")  Anasazi::IRTR::~IRTR "virtual Anasazi::IRTR<
 ScalarType, MV, OP >::~IRTR()
@@ -2986,30 +3011,16 @@ IRTR destructor ";
 %feature("docstring")  Anasazi::IRTR::iterate "void Anasazi::IRTR<
 ScalarType, MV, OP >::iterate()
 
-This method performs IRTR iterations until the status test indicates
-the need to stop or an error occurs (in which case, an exception is
-thrown).
-
-iterate() will first determine whether the solver is initialized; if
-not, it will call initialize() using default arguments. After
-initialization, the solver performs IRTR iterations until the status
-test evaluates as Passed, at which point the method returns to the
-caller.
-
-The IRTR iteration proceeds as follows:
-
-The status test is queried at the beginning of the iteration.
-
-Possible exceptions thrown include std::logic_error,
-std::invalid_argument or one of the IRTR-specific exceptions. ";
+Impemements Eigensolver. The outer IRTR iteration. See
+RTRBase::iterate(). ";
 
 /*  Output methods  */
 
 %feature("docstring")  Anasazi::IRTR::currentStatus "void
-Anasazi::IRTR< ScalarType, MV, OP >::currentStatus(ostream &os)
+Anasazi::IRTR< ScalarType, MV, OP >::currentStatus(std::ostream &os)
 
-This method requests that the solver print out its current status to
-screen. ";
+Impemements Eigensolver. This method requests that the solver print
+out its current status to screen. ";
 
 
 // File: classAnasazi_1_1LOBPCG.xml
@@ -4865,8 +4876,70 @@ C++ includes: AnasaziStatusTestResNorm.hpp ";
 // File: classAnasazi_1_1RTRBase.xml
 %feature("docstring") Anasazi::RTRBase "
 
-This class is an abstract base class for Riemannian Trust-Region based
-eigensolvers without subspace acceleration.
+This class is an abstract base class for Implicit Riemannian Trust-
+Region based eigensolvers. The class provides the interfaces shared by
+the IRTR solvers (e.g., getState() and initialize()) as well as the
+shared implementations (e.g., inner products).
+
+IRTR eigensolvers are capable of solving symmetric/Hermitian
+eigenvalue problems. These solvers may be used to compute either the
+leftmost (smallest real, \"SR\") or rightmost (largest real, \"LR\")
+eigenvalues. For more information, see the publications at theRTR
+eigensolvers page.
+
+This class is abstract and objects cannot be instantiated. Instead,
+instantiate one of the concrete derived classes: IRTR and SIRTR, the
+caching and non-caching implementations of this solver. The main
+difference between these solver is the memory allocated by the solvers
+in support of the IRTR iteration.
+
+The reduction in memory usage is effected by eliminating the caching
+of operator applications. This also results in a reduction in vector
+arithmetic required to maintain these caches. The cost is an increase
+in the number of operator applications. For inexpensive operator
+applications, SIRTR should provide better performance over IRTR. As
+the operator applications becomes more expensive, the performance
+scale tips towards the IRTR solver. Note, the trajectory of both
+solvers is identical in exact arithmetic. However, the effects of
+round-off error in the cached results mean that some difference
+between the solvers may exist. This effect is seen when a large number
+of iterations are required to solve the trust-region subproblem in
+solveTRSubproblem(). Also note, the inclusion of auxiliary vectors
+increases the memory requirements of these solvers linearly with the
+number of auxiliary vectors. The required storage is listed in the
+following table:
+
+Number of vectors (bS == blockSize())
+
+Solver
+
+Base requirement
+
+Generalized/B != null
+
+Preconditioned
+
+Generalized and Preconditioned
+
+IRTR
+
+10*bS
+
+11*bS
+
+12*bS
+
+13*bS
+
+SIRTR
+
+6*bS
+
+7*bS
+
+7*bS
+
+8*bS
 
 Chris Baker
 
@@ -4877,20 +4950,18 @@ C++ includes: AnasaziRTRBase.hpp ";
 %feature("docstring")  Anasazi::RTRBase::RTRBase "Anasazi::RTRBase<
 ScalarType, MV, OP >::RTRBase(const Teuchos::RCP< Eigenproblem<
 ScalarType, MV, OP > > &problem, const Teuchos::RCP< SortManager<
-ScalarType > > &sorter, const Teuchos::RCP< OutputManager< ScalarType
-> > &printer, const Teuchos::RCP< StatusTest< ScalarType, MV, OP > >
-&tester, const Teuchos::RCP< GenOrthoManager< ScalarType, MV, OP > >
-&ortho, Teuchos::ParameterList &params, const std::string
-&solverLabel, bool skinnySolver)
+typename Teuchos::ScalarTraits< ScalarType >::magnitudeType > >
+&sorter, const Teuchos::RCP< OutputManager< ScalarType > > &printer,
+const Teuchos::RCP< StatusTest< ScalarType, MV, OP > > &tester, const
+Teuchos::RCP< GenOrthoManager< ScalarType, MV, OP > > &ortho,
+Teuchos::ParameterList &params, const std::string &solverLabel, bool
+skinnySolver)
 
 RTRBase constructor with eigenproblem, solver utilities, and parameter
 list of solver options.
 
-This constructor takes pointers required by the eigensolver, in
-addition to a parameter list of options for the eigensolver. These
-options include the following: \"Block Size\" - an int specifying the
-block size used by the algorithm. This can also be specified using the
-setBlockSize() method. ";
+The RTRBase class is abstract and cannot be instantiated; this
+constructor is called by derived classes IRTR and RTR. ";
 
 %feature("docstring")  Anasazi::RTRBase::~RTRBase "virtual
 Anasazi::RTRBase< ScalarType, MV, OP >::~RTRBase()
@@ -4912,7 +4983,12 @@ initialization, the solver performs RTR iterations until the status
 test evaluates as Passed, at which point the method returns to the
 caller.
 
-The RTR iteration proceeds as follows:
+The RTR iteration proceeds as follows: the trust-region subproblem at
+X is solved for update Eta via a call to solveTRSubproblem()
+
+the new iterate is the Ritz vectors with respect to X+Eta
+
+the eigenproblem residuals are formed with respect to the new iterate
 
 The status test is queried at the beginning of the iteration.
 
@@ -4943,7 +5019,7 @@ conditions specified under isInitialized(). Any component of the state
 
 If the Ritz values relative to newstate.X are passed in newstate.T,
 then newstate.X is assume to contain Ritz vectors, i.e., newstate.T
-must be B-orthonormal and it must diagonal A. ";
+must be B-orthonormal and it must partially diagonalize A. ";
 
 %feature("docstring")  Anasazi::RTRBase::initialize "void
 Anasazi::RTRBase< ScalarType, MV, OP >::initialize()
@@ -4969,8 +5045,9 @@ getRitzValues() returns the sorted Ritz values with respect to X
 
 getResidualVecs() returns the residual vectors with respect to X ";
 
-%feature("docstring")  Anasazi::RTRBase::getState "RTRState<ScalarType,MV> Anasazi::RTRBase< ScalarType, MV, OP
->::getState() const
+%feature("docstring")  Anasazi::RTRBase::getState "RTRState<
+ScalarType, MV > Anasazi::RTRBase< ScalarType, MV, OP >::getState()
+const
 
 Get the current state of the eigensolver.
 
@@ -4991,7 +5068,7 @@ Anasazi::RTRBase< ScalarType, MV, OP >::resetNumIters()
 
 Reset the iteration count. ";
 
-%feature("docstring")  Anasazi::RTRBase::getRitzVectors "Teuchos::RCP<const MV> Anasazi::RTRBase< ScalarType, MV, OP
+%feature("docstring")  Anasazi::RTRBase::getRitzVectors "Teuchos::RCP< const MV > Anasazi::RTRBase< ScalarType, MV, OP
 >::getRitzVectors()
 
 Get the Ritz vectors from the previous iteration.
@@ -5001,7 +5078,8 @@ vectors corresponding to the most significant Ritz values. The i-th
 vector of the return corresponds to the i-th Ritz vector; there is no
 need to use getRitzIndex(). ";
 
-%feature("docstring")  Anasazi::RTRBase::getRitzValues "std::vector<Value<ScalarType> > Anasazi::RTRBase< ScalarType, MV, OP
+%feature("docstring")  Anasazi::RTRBase::getRitzValues "std::vector<
+Value< ScalarType > > Anasazi::RTRBase< ScalarType, MV, OP
 >::getRitzValues()
 
 Get the Ritz values from the previous iteration.
@@ -5009,8 +5087,8 @@ Get the Ritz values from the previous iteration.
 A vector of length getCurSubspaceDim() containing the Ritz values from
 the previous projected eigensolve. ";
 
-%feature("docstring")  Anasazi::RTRBase::getRitzIndex "std::vector<int> Anasazi::RTRBase< ScalarType, MV, OP
->::getRitzIndex()
+%feature("docstring")  Anasazi::RTRBase::getRitzIndex "std::vector<
+int > Anasazi::RTRBase< ScalarType, MV, OP >::getRitzIndex()
 
 Get the index used for extracting Ritz vectors from getRitzVectors().
 
@@ -5040,8 +5118,9 @@ Get the current residual 2-norms.
 A vector of length getCurSubspaceDim() containing the 2-norms of the
 residuals. ";
 
-%feature("docstring")  Anasazi::RTRBase::getRitzRes2Norms "std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType>
-Anasazi::RTRBase< ScalarType, MV, OP >::getRitzRes2Norms()
+%feature("docstring")  Anasazi::RTRBase::getRitzRes2Norms "std::vector< typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType > Anasazi::RTRBase< ScalarType, MV, OP
+>::getRitzRes2Norms()
 
 Get the 2-norms of the Ritz residuals.
 
@@ -5083,8 +5162,8 @@ OP >::getStatusTest() const
 Get the current StatusTest used by the solver. ";
 
 %feature("docstring")  Anasazi::RTRBase::getProblem "const
-Eigenproblem<ScalarType,MV,OP>& Anasazi::RTRBase< ScalarType, MV, OP
->::getProblem() const
+Eigenproblem< ScalarType, MV, OP > & Anasazi::RTRBase< ScalarType, MV,
+OP >::getProblem() const
 
 Get a constant reference to the eigenvalue problem. ";
 
@@ -5118,17 +5197,30 @@ will reset the solver to the uninitialized state.
 In order to preserve the current state, the user will need to extract
 it from the solver using getState(), orthogonalize it against the new
 auxiliary vectors, and manually reinitialize the solver using
-initialize(). ";
+initialize().
 
-%feature("docstring")  Anasazi::RTRBase::getAuxVecs "Teuchos::Array<Teuchos::RCP<const MV> > Anasazi::RTRBase< ScalarType,
-MV, OP >::getAuxVecs() const
+NOTE: The requirements of the IRTR solvers is such that the auxiliary
+vectors must be moved into contiguous storage with the current
+iterate. As a result, the multivector data in auxvecs will be copied,
+and the multivectors in auxvecs will no longer be referenced. The
+(unchanged) internal copies of the auxilliary vectors will be made
+available to the caller by the getAuxVecs() routine. This allows the
+caller to delete the caller's copies and instead use the copies owned
+by the solver, avoiding the duplication of data. This is not
+necessary, however. The partitioning of the auxiliary vectors passed
+to setAuxVecs() will be preserved. ";
+
+%feature("docstring")  Anasazi::RTRBase::getAuxVecs "Teuchos::Array<
+Teuchos::RCP< const MV > > Anasazi::RTRBase< ScalarType, MV, OP
+>::getAuxVecs() const
 
 Get the current auxiliary vectors. ";
 
 /*  Output methods  */
 
 %feature("docstring")  Anasazi::RTRBase::currentStatus "void
-Anasazi::RTRBase< ScalarType, MV, OP >::currentStatus(ostream &os)
+Anasazi::RTRBase< ScalarType, MV, OP >::currentStatus(std::ostream
+&os)
 
 This method requests that the solver print out its current status to
 screen. ";
@@ -5184,12 +5276,12 @@ C++ includes: AnasaziRTRBase.hpp ";
 RTRRitzFailure is thrown when the RTR solver is unable to continue a
 call to RTRBase::iterate() due to a failure of the algorithm.
 
-This signals that the Rayleigh-Ritz analysis over the subspace
-colsp([X H P]) detected ill-conditioning of the projected mass matrix
-and the inability to generate a set of orthogonal eigenvectors for the
-projected problem.
+This signals that the Rayleigh-Ritz analysis of X + Eta detected ill-
+conditioning of the projected mass matrix and the inability to
+generate a set of orthogonal eigenvectors for the projected problem
+(if thrown from iterate()) or that the analysis of the initial iterate
+failed in RTRBase::initialize().
 
-This exception is only thrown from the RTRBase::iterate() routine.
 After catching this exception, the user can recover the subspace via
 RTRBase::getState(). This information can be used to restart the
 solver.
@@ -5204,7 +5296,7 @@ C++ includes: AnasaziRTRBase.hpp ";
 %feature("docstring") Anasazi::RTRSolMgr "
 
 The Anasazi::RTRSolMgr provides a simple solver manager over the RTR
-eigensolver.
+eigensolver. For more information, see the discussion for RTRBase.
 
 Chris Baker
 
@@ -5220,9 +5312,12 @@ Basic constructor for RTRSolMgr.
 
 This constructor accepts the Eigenproblem to be solved in addition to
 a parameter list of options for the solver manager. These options
-include the following: Solver parameters  \"Which\" - a string
-specifying the desired eigenvalues: SM, LM, SR or LR. NOTE: Currently
-only \"SR\" supported.
+include the following: Solver parameters  \"Skinny Solver\" - a bool
+specifying whether a non-caching (\"skinny\") solver implementation is
+used. Determines whether the underlying solver is IRTR or SIRTR.
+
+\"Which\" - a string specifying the desired eigenvalues: SR or LR,
+i.e., smallest or largest algebraic eigenvalues.
 
 \"Block Size\" - a int specifying the block size to be used by the
 underlying RTR solver. Default: problem->getNEV()
@@ -5263,9 +5358,7 @@ ScalarType, MV, OP >::getTimers() const
 
 Return the timers for this object.
 
-The timers are ordered as follows: time spent in solve() routine
-
-time spent locking converged eigenvectors ";
+The timers are ordered as follows: time spent in solve() routine ";
 
 %feature("docstring")  Anasazi::RTRSolMgr::getNumIters "int
 Anasazi::RTRSolMgr< ScalarType, MV, OP >::getNumIters() const
@@ -5392,6 +5485,19 @@ desired by the solver manager ";
 // File: classAnasazi_1_1SIRTR.xml
 %feature("docstring") Anasazi::SIRTR "
 
+SIRTR (\"skinny IRTR\") is a non-caching, lower-memory implementation
+of the Implicit Riemannian Trust-Region (IRTR) eigensolver.
+
+The solver uses between 6 and 8 blocks of vectors, compared to the
+requirements by IRTR of 10 to 13 blocks of vectors. The base
+requirement is 6 blocks of vectors, where a block of vectors contains
+a number of vectors equal to the block size specified for the solver
+(see RTRBase::getBlockSize()). Additional blocks are required when
+solving a generalized eigenvalue problem or when using a
+preconditioiner.
+
+For more information, see RTRBase.
+
 Chris Baker
 
 C++ includes: AnasaziSIRTR.hpp ";
@@ -5401,21 +5507,33 @@ C++ includes: AnasaziSIRTR.hpp ";
 %feature("docstring")  Anasazi::SIRTR::SIRTR "Anasazi::SIRTR<
 ScalarType, MV, OP >::SIRTR(const Teuchos::RCP< Eigenproblem<
 ScalarType, MV, OP > > &problem, const Teuchos::RCP< SortManager<
-ScalarType > > &sorter, const Teuchos::RCP< OutputManager< ScalarType
-> > &printer, const Teuchos::RCP< StatusTest< ScalarType, MV, OP > >
-&tester, const Teuchos::RCP< GenOrthoManager< ScalarType, MV, OP > >
-&ortho, Teuchos::ParameterList &params)
+typename Teuchos::ScalarTraits< ScalarType >::magnitudeType > >
+&sorter, const Teuchos::RCP< OutputManager< ScalarType > > &printer,
+const Teuchos::RCP< StatusTest< ScalarType, MV, OP > > &tester, const
+Teuchos::RCP< GenOrthoManager< ScalarType, MV, OP > > &ortho,
+Teuchos::ParameterList &params)
 
 SIRTR constructor with eigenproblem, solver utilities, and parameter
 list of solver options.
 
 This constructor takes pointers required by the eigensolver, in
 addition to a parameter list of options for the eigensolver. These
-options include the following: \"Block Size\" - an int specifying the
-block size used by the algorithm. This can also be specified using the
-setBlockSize() method.
+options include the following: \"Rho Prime\" - an MagnitudeType
+specifying the size of the implicit trust-region radius.
 
-\"Inner Solver\" - ";
+\"Block Size\" - an int specifying the block size used by the
+algorithm. This can also be specified using the setBlockSize() method.
+
+\"Leftmost\" - a bool specifying whether the solver is computing the
+leftmost (\"SR\") or rightmost (\"LR\") eigenvalues. Default: true.
+This must be in accord with the SortManager pass to the constructor.
+
+\"Kappa Convergence\" - a MagnitudeType specifing the rate of
+convergence for the linear convergence regime. Default: 0.1
+
+\"Theta Convergence\" - a MagnitudeType specifing the order of
+convergence for the linear convergence regime. theta implies a
+convergence order of theta+1. Default: 1.0 ";
 
 %feature("docstring")  Anasazi::SIRTR::~SIRTR "virtual
 Anasazi::SIRTR< ScalarType, MV, OP >::~SIRTR()
@@ -5427,30 +5545,16 @@ SIRTR destructor ";
 %feature("docstring")  Anasazi::SIRTR::iterate "void Anasazi::SIRTR<
 ScalarType, MV, OP >::iterate()
 
-This method performs SIRTR iterations until the status test indicates
-the need to stop or an error occurs (in which case, an exception is
-thrown).
-
-iterate() will first determine whether the solver is initialized; if
-not, it will call initialize() using default arguments. After
-initialization, the solver performs SIRTR iterations until the status
-test evaluates as Passed, at which point the method returns to the
-caller.
-
-The SIRTR iteration proceeds as follows:
-
-The status test is queried at the beginning of the iteration.
-
-Possible exceptions thrown include std::logic_error,
-std::invalid_argument or one of the SIRTR-specific exceptions. ";
+Impemements Eigensolver. The outer IRTR iteration. See
+RTRBase::iterate(). ";
 
 /*  Output methods  */
 
 %feature("docstring")  Anasazi::SIRTR::currentStatus "void
-Anasazi::SIRTR< ScalarType, MV, OP >::currentStatus(ostream &os)
+Anasazi::SIRTR< ScalarType, MV, OP >::currentStatus(std::ostream &os)
 
-This method requests that the solver print out its current status to
-screen. ";
+Impemements Eigensolver. This method requests that the solver print
+out its current status to screen. ";
 
 
 // File: classAnasazi_1_1SolverManager.xml
@@ -6974,10 +7078,10 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziVersion_8cpp.xml
 
 
-// File: dir_28109f1125ab7eec57c6b7e146da4a27.xml
+// File: dir_dc5a21cdf9ae5c2aac185b6aad0b5f42.xml
 
 
-// File: dir_0ad8d75e05d1974e05a41e82af392ef0.xml
+// File: dir_7c2139b3455d9e99d84c8cdfb950729b.xml
 
 
 // File: BlockDavidson_2BlockDavidsonEpetraEx_8cpp-example.xml
