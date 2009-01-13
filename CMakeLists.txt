@@ -107,15 +107,19 @@ ADVANCED_OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
   "Shortcircut after dependency handling is complete"
   OFF )
 
-IF (Trilinos_PACKAGES_UNITTEST_OVERRIDE OR Trilinos_PACKAGES_HACK_OVERRIDE)
-  SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
-    "${TRILINOS_BUILD_DIR}/cmake/TrilinosPackageDependencies.xml" )
+IF(WIN32 AND NOT CYGWIN)
+  SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
 ELSE()
-  SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
-    "${TRILINOS_HOME_DIR}/cmake/python/data/TrilinosPackageDependencies.xml" )
+  IF (Trilinos_PACKAGES_UNITTEST_OVERRIDE OR Trilinos_PACKAGES_HACK_OVERRIDE)
+    SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
+      "${TRILINOS_BUILD_DIR}/cmake/TrilinosPackageDependencies.xml" )
+  ELSE()
+    SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
+      "${TRILINOS_HOME_DIR}/cmake/python/data/TrilinosPackageDependencies.xml" )
+  ENDIF()
 ENDIF()
 ADVANCED_SET(Trilinos_DEPS_XML_OUTPUT_FILE
-  ${Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT}
+  "${Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT}"
   CACHE STRING
   "XML file that Trilinos dependenices used by tools are written to (if not empty)." )
 
@@ -126,7 +130,7 @@ ELSE()
     "${TRILINOS_BUILD_DIR}/TrilinosPackageDependenciesTable.html" )
 ENDIF()
 ADVANCED_SET(Trilinos_DEPS_HTML_OUTPUT_FILE
-  ${Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT}
+  "${Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT}"
   CACHE STRING
   "HTML Trilinos dependenices file that will be written to (if not empty)." )
 

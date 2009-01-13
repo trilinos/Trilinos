@@ -4,7 +4,7 @@ INCLUDE(CMakeBuildTypesList)
 
 # Set to release build by default
 
-IF (CMAKE_BUILD_TYPE STREQUAL "")
+IF (NOT CMAKE_BUILD_TYPE)
   MESSAGE(STATUS "Setting CMAKE_BUILD_TYPE=RELEASE since none was set")
   SET(CMAKE_BUILD_TYPE RELEASE)
 ELSE()
