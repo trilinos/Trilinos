@@ -48,8 +48,8 @@ EXTRA_DIST = definition setpath.src \
 	     testEpetra_MultiVector.src testEpetra_Object.src \
 	     testEpetra_SerialDense.src testEpetra_Util.src \
 	     testEpetra_Vector.src testGaleri_CrsMatrices.src \
-	     testGaleri_Maps.src testIFPACK.src testML_Space.src \
-	     testML_CompObject.src testML_TimeObject.src \
+	     testGaleri_Maps.src testIFPACK.src testKomplex_LinearProblem.src \
+	     testML_Space.src testML_CompObject.src testML_TimeObject.src \
 	     testML_MultiVector.src testML_PyMatrix.src \
 	     testML_Preconditioner.src testNOX_StatusTest.src testTeuchos.src \
 	     testTeuchos_Comm.src testTeuchos_ParameterList.src \
@@ -105,6 +105,10 @@ if HAVE_PYTRILINOS_IFPACK
 IFPACK_TESTS = testIFPACK.py
 endif
 
+if HAVE_PYTRILINOS_KOMPLEX
+KOMPLEX_TESTS = testKomplex_LinearProblem.py
+endif
+
 if HAVE_PYTRILINOS_ANASAZI
 ANASAZI_TESTS = testAnasazi.py
 endif
@@ -118,9 +122,10 @@ if HAVE_PYTRILINOS_NOX
 NOX_TESTS = testNOX_StatusTest.py
 endif
 
-TEST_SUITE = $(TEUCHOS_TESTS)   $(THYRA_TESTS)   $(EPETRA_TESTS) $(TRIUTILS_TESTS) \
-	     $(EPETRAEXT_TESTS) $(AZTECOO_TESTS) $(GALERI_TESTS) $(AMESOS_TESTS)   \
-	     $(IFPACK_TESTS)    $(ANASAZI_TESTS) $(ML_TESTS)     $(NOX_TESTS)
+TEST_SUITE = $(TEUCHOS_TESTS)   $(THYRA_TESTS)   $(EPETRA_TESTS)  $(TRIUTILS_TESTS) \
+	     $(EPETRAEXT_TESTS) $(AZTECOO_TESTS) $(GALERI_TESTS)  $(AMESOS_TESTS) \
+	     $(IFPACK_TESTS)    $(KOMPLEX_TESTS) $(ANASAZI_TESTS) $(ML_TESTS) \
+	     $(NOX_TESTS)
 
 SETPATH     = setpath.py
 
