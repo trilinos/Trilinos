@@ -822,7 +822,7 @@ namespace Anasazi {
         ret = Utils::directSolver(this->blockSize_,AA,Teuchos::rcpFromRef(BB),S,this->theta_,rank,1);
       }
       this->om_->stream(Debug) << "S: " << std::endl << S << std::endl;;
-      TEST_FOR_EXCEPTION(ret != 0,std::logic_error,"Anasazi::SIRTR::iterate(): failure solving projected eigenproblem after retraction. ret == " << ret);
+      TEST_FOR_EXCEPTION(ret != 0,std::logic_error,"Anasazi::SIRTR::iterate(): failure solving projected eigenproblem after retraction. ret == " << ret << "AA: " << AA << std::endl << "BB: " << BB << std::endl);
       TEST_FOR_EXCEPTION(rank != this->blockSize_,RTRRitzFailure,"Anasazi::SIRTR::iterate(): retracted iterate failed in Ritz analysis. rank == " << rank);
 
       //
