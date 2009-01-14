@@ -81,8 +81,8 @@ def main(comm):
     Ar  = Epetra.CrsMatrix(Epetra.Copy, map, 1)
     Ai  = Epetra.CrsMatrix(Epetra.Copy, map, 1)
     for gid in map.MyGlobalElements():
-        Ar.InsertGlobalValues(gid, gid, 10 * (1 + float(gid)/n))
-        Ai.InsertGlobalValues(gid, gid, 10 * (1 - float(gid)/n))
+        Ar.InsertGlobalValues(gid, [10 * (1 + float(gid)/n),], [gid,])
+        Ai.InsertGlobalValues(gid, [10 * (1 - float(gid)/n),], [gid,])
     Ar.FillComplete()
     Ai.FillComplete()
 
