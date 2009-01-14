@@ -44,10 +44,10 @@ EXTRA_DIST = setpath.src gre__115.mx \
 	     exEpetra_CrsMatrix_Efficient.src exEpetra_FECrsMatrix_Easy.src \
 	     exEpetra_ImportExport.src exEpetraExt_IO_MatrixMarket.src \
 	     exEpetraExt_IO_XML.src exEpetraExt_MatrixMatrix.src exGaleri.src \
-	     exGaleri_ReadHB.src exIFPACK.src exMLAPI.src exMLAPI_Simple.src \
-	     exMLAPI_AztecOO.src exMLAPI_Iterate.src exMLAPI_PyMatrix.src \
-	     exMLAPI_Smoother.src exNOX_1Dfem.src exTeuchos.src exThyra.src \
-	     exLOCA_Chan.src
+	     exGaleri_ReadHB.src exIFPACK.src exKomplex_Simple.src exMLAPI.src \
+	     exMLAPI_Simple.src exMLAPI_AztecOO.src exMLAPI_Iterate.src \
+	     exMLAPI_PyMatrix.src exMLAPI_Smoother.src exNOX_1Dfem.src \
+	     exTeuchos.src exThyra.src exLOCA_Chan.src
 
 MAINTAINERCLEANFILES = Makefile.in
 
@@ -126,6 +126,15 @@ endif
 endif
 endif
 
+# Komplex examples
+if HAVE_PYTRILINOS_KOMPLEX
+if HAVE_PYTRILINOS_AZTECOO
+if HAVE_PYTRILINOS_EPETRA
+KOMPLEX_EXAMPLES = exKomplex_Simple.py
+endif
+endif
+endif
+
 # Anasazi examples
 if HAVE_PYTRILINOS_ANASAZI
 if HAVE_PYTRILINOS_GALERI
@@ -179,8 +188,8 @@ endif
 EXAMPLE_SUITE = $(TEUCHOS_EXAMPLES)  $(THYRA_EXAMPLES)     $(EPETRA_EXAMPLES) \
 	        $(TRIUTILS_EXAMPLES) $(EPETRAEXT_EXAMPLES) $(AZTECOO_EXAMPLES) \
 	        $(GALERI_EXAMPLES)   $(AMESOS_EXAMPLES)    $(IFPACK_EXAMPLES) \
-	        $(ANASAZI_EXAMPLES)  $(ML_EXAMPLES)        $(NOX_EXAMPLES) \
-		$(LOCA_EXAMPLES)
+	        $(KOMPLEX_EXAMPLES)  $(ANASAZI_EXAMPLES)   $(ML_EXAMPLES) \
+	        $(NOX_EXAMPLES)      $(LOCA_EXAMPLES)
 
 SETPATH  = setpath.py
 GRE__115 = gre__115.rua
