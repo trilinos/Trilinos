@@ -55,6 +55,8 @@ The Anasazi::OperatorTraits interface provides a single mechanism: the ability t
         - Epetra_MultiVector and Epetra_Operator (with scalar type \c double)
         - Thyra::MultiVectorBase and Thyra::LinearOpBase (with arbitrary scalar type)\n
           This allows %Anasazi to be used with any classes that implement the abstract interfaces provided by the Thyra package.
+        - Tpetra::MultiVector and Tpetra::Operator (with arbitrary scalar type)\n
+          Tpetra is a templated implementation of Epetra. Tpetra is currently available only in the limited release of Trilinos.
         - Anasazi::MultiVec and Anasazi::Operator (with arbitrary scalar type)\n
           This allows %Anasazi to be used with any classes that implement the abstract base classes Anasazi::MultiVec and Anasazi::Operator.
  

@@ -12,8 +12,8 @@ objects are accessed only via elementary operations. Hence the user has the
 flexibility to specify the data representation for operators and vectors and
 may so leverage any existing software investment. This mechanism is
 accomplished via the \ref anasazi_opvec_interfaces "Anasazi Operator/Vector abstract interface". 
-Current interfaces available include Thyra and Epetra. As a result, any
-existing code employing Thyra or Epetra operators and vectors (such as other
+Current interfaces available include Thyra, Epetra and Tpetra. As a result, any
+existing code employing Thyra, Epetra or Tpetra operators and vectors (such as other
 packages in Trilinos) may also be used in conjunction with %Anasazi.
 
 The \ref anasazi_solver_framework "Anasazi eigensolver framework" describes
