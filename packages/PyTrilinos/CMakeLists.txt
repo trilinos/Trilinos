@@ -1,0 +1,46 @@
+
+FIND_PACKAGE(SWIG REQUIRED)
+INCLUDE(${SWIG_USE_FILE})
+
+FIND_PACKAGE(PythonLibs)
+INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+MESSAGE(${SWIG_USE_FILE})
+MESSAGE(${PYTHON_INCLUDE_PATH})
+MESSAGE(${CMAKE_CURRENT_SOURCE_DIR})
+
+INCLUDE(PackageMacros)
+INCLUDE(AddOptionAndDefine)
+
+#
+# A) Define the package
+#
+
+PACKAGE(PyTrilinos)
+
+#
+# B) Set up package-specific options
+#
+
+#ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Experimental
+#  HAVE_KOKKOS_EXPERIMENTAL
+#  "Enable experimental."
+#  OFF )
+
+#
+# C) Add the libraries, tests, and examples
+#
+
+ADD_SUBDIRECTORY(src)
+#ADD_SUBDIRECTORY(shared)
+
+#PACKAGE_ADD_TEST_DIRECTORIES(test)
+
+#PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+
+#
+# D) Do standard postprocessing
+#
+
+PACKAGE_POSTPROCESS()
