@@ -74,17 +74,21 @@ class KomplexLinearProblemTestCase(unittest.TestCase):
     "TestCase for Komplex_LinearProblems"
 
     def setUp(self):
-        self.comm = Epetra.PyComm()
-        self.size = self.comm.NumProc() * 9
-        self.map  = Epetra.Map(self.size,0,self.comm)
-        self.Ar   = Epetra.CrsMatrix(Epetra.Copy,self.map,3)
-        self.Ai   = Epetra.CrsMatrix(Epetra.Copy,self.map,3)
+        self.comm  = Epetra.PyComm()
+        self.size  = self.comm.NumProc() * 9
+        self.map   = Epetra.Map(self.size,0,self.comm)
+        self.Ar    = Epetra.CrsMatrix(Epetra.Copy,self.map,3)
+        self.Ai    = Epetra.CrsMatrix(Epetra.Copy,self.map,3)
         self.fill(self.Ar)
         self.fill(self.Ai)
-        self.xr   = Epetra.Vector(self.map)
-        self.xi   = Epetra.Vector(self.map)
-        self.br   = Epetra.Vector(self.map)
-        self.bi   = Epetra.Vector(self.map)
+        self.xr    = Epetra.Vector(self.map)
+        self.xi    = Epetra.Vector(self.map)
+        self.br    = Epetra.Vector(self.map)
+        self.bi    = Epetra.Vector(self.map)
+        self.xr[:] =  1.2
+        self.xi[:] = -2.3
+        self.br[:] =  3.4
+        self.bi[:] = -4.5
         self.comm.Barrier()
 
     def fill(self, A):
@@ -104,8 +108,43 @@ class KomplexLinearProblemTestCase(unittest.TestCase):
                                     1, 0, self.Ai,
                                     self.xr, self.xi,
                                     self.br, self.bi)
-        self.failUnless(isinstance(klp,Komplex.LinearProblem))
+        self.failUnless(isinstance(klp, Komplex.LinearProblem))
 
+    def testExtractSolution(self):
+        "Test Komplex.LinearProblem ExtractSolution method"
+        map = self.xr.Map()
+        klp = Komplex.LinearProblem(1, 0, self.Ar,
+                                    1, 0, self.Ai,
+                                    self.xr, self.xi,
+                                    self.br, self.bi)
+        ur = Epetra.Vector(map)
+        ui = Epetra.Vector(map)
+        ur[:] = -1
+        ui[:] = -1
+        klp.ExtractSolution(ur, ui)
+        self.failUnless((ur[:] == self.xr[:]).all())
+        self.failUnless((ui[:] == self.xi[:]).all())
+
+    def testKomplexProblem(self):
+        "Test Komplex.LinearProblem KomplexProblem method"
+        klp = Komplex.LinearProblem(1, 0, self.Ar,
+                                    1, 0, self.Ai,
+                                    self.xr, self.xi,
+                                    self.br, self.bi)
+        elp = klp.KomplexProblem()
+        self.failUnless(isinstance(elp, Epetra.LinearProblem))
+
+    def testUpdateValues(self):
+        "Test Komplex.LinearProblem UpdateValues method"
+        klp = Komplex.LinearProblem(1, 0, self.Ar,
+                                    1, 0, self.Ai,
+                                    self.xr, self.xi,
+                                    self.br, self.bi)
+        result = klp.UpdateValues(1.2, -3.4, self.Ar,
+                                  5.6, -7.8, self.Ai,
+                                  self.xr, self.xi,
+                                  self.br, self.bi)
+        self.assertEqual(result, 0)
 
 ##########################################################################
 
