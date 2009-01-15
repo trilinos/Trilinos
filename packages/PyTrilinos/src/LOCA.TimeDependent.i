@@ -48,7 +48,7 @@
 %ignore *::operator=;
 
 // Import base class declarations
-%import "LOCA.Continuation.i"
+//%import "LOCA.Continuation.i"
 %import "LOCA.MultiContinuation.i"
 
 // LOCA interface includes

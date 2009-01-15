@@ -56,7 +56,7 @@
 %rename(Print) *::print(ostream& stream, int indent = 0) const;
 
 // Import base class declarations
-%import "NOX_Abstract_Group.H"
+%import "NOX.Abstract.i"
 %import "NOX_StatusTest_Generic.H"
 
 // LOCA interface includes

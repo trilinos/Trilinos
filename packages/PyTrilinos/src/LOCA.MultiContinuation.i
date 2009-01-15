@@ -48,14 +48,24 @@ using Teuchos::RCP;
 // Ignore/renames
 %ignore *::operator=;
 
+%pythoncode
+{
+import os.path, sys
+currentDir,dummy = os.path.split(__file__)
+sys.path.append(os.path.normpath(os.path.join(currentDir,"../..")))
+import PyTrilinos.NOX
+}
+
 %import "Teuchos.i"
 
+%teuchos_rcp_typemaps(LOCA::MultiContinuation::AbstractGroup)
+%teuchos_rcp_typemaps(LOCA::MultiContinuation::FiniteDifferenceGroup)
+
 // Import base class declarations
-%import "LOCA.Continuation.i"
+%import "NOX.Abstract.i"
 
 // LOCA interface includes
 %include "LOCA_MultiContinuation_AbstractGroup.H"
-%teuchos_rcp_typemaps(LOCA::MultiContinuation::AbstractGroup)
 
 %include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 

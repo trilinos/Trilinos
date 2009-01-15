@@ -64,6 +64,7 @@ of the Trilinos package LOCA:
 #include "NOX_Solver_TensorBased.H"
 
 // LOCA includes
+#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_Abstract_Group.H"
 #include "LOCA_Abstract_Iterator.H"
 #include "LOCA_Abstract_TransposeSolveGroup.H"
@@ -97,8 +98,9 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 //%teuchos_rcp_typemaps(LOCA::GlobalData)
 //%teuchos_rcp_typemaps(LOCA::DerivUtils)
 
-//%include "LOCA_Abstract_Iterator.H"
+%include "LOCA_Abstract_Iterator.H"
 
+%import "NOX.Abstract.i"
 %import "LOCA.Homotopy.i"
 %import "LOCA.__init__.i"
 

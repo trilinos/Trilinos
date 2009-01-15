@@ -116,6 +116,8 @@ currentDir,dummy = os.path.split(__file__)
 sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 }
 
+%teuchos_rcp_typemaps(LOCA::Epetra::Group)
+
 //%import "NOX.Abstract.i"
 %import "NOX.Epetra.__init__.i"
 %import "LOCA.__init__.i"
@@ -138,4 +140,3 @@ from NOX.Epetra import Group
 %ignore LOCA::Epetra::Group::Group(Teuchos::RCP< LOCA::GlobalData > const &,Teuchos::ParameterList &,Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree > const &,NOX::Epetra::Vector &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,LOCA::ParameterVector const &);
 %include "LOCA_Epetra.H"
 %include "LOCA_Epetra_Group.H"
-%teuchos_rcp_typemaps(LOCA::Epetra::Group)

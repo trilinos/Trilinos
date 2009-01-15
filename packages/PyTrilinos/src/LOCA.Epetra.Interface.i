@@ -73,6 +73,12 @@ the Trilinos package LOCA:
 // Trilinos module imports
 %import "Teuchos.i"
 
+// Teuchos::RCPs typemaps
+%teuchos_rcp_typemaps(LOCA::Epetra::Interface::Required)
+%teuchos_rcp_typemaps(LOCA::Epetra::Interface::MassMatrix)
+%teuchos_rcp_typemaps(LOCA::Epetra::Interface::TimeDependent)
+%teuchos_rcp_typemaps(LOCA::Epetra::Interface::TimeDependentMatrixFree)
+
 // Epetra_Vector directorin typemap
 %typemap(directorin) Epetra_Vector &
 %{
@@ -129,10 +135,4 @@ LOCA::Epetra::Interface::Required::computeF;
 // arguments that conflict with a SWIG director method argument
 #define result nox_result
 %include "LOCA_Epetra_Interface_TimeDependentMatrixFree.H"
-
-// Teuchos::RCPs typemaps
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::Required)
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::MassMatrix)
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::TimeDependent)
-%teuchos_rcp_typemaps(LOCA::Epetra::Interface::TimeDependentMatrixFree)
 

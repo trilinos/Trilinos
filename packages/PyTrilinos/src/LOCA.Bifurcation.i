@@ -45,9 +45,9 @@
 
 // Extra includes due to importing LOCA.Continuation.i below
 //#include "LOCA_Continuation_FiniteDifferenceGroup.H"
-#include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
-#include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
-#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+//#include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
+//#include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+//#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
 
 #include "LOCA_TimeDependent_AbstractGroup.H"
 
@@ -84,7 +84,8 @@
 %rename(PitchforkBordSlackUpdateNorm) LOCA::Bifurcation::PitchforkBord::StatusTest::SlackUpdateNorm;
 
 // Import base class declarations
-%import "LOCA.Continuation.i"
+%import "NOX.Abstract.i"
+%import "NOX.StatusTest.i"
 %import "LOCA.MultiContinuation.i"
 %import "LOCA.TimeDependent.i"
 

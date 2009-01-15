@@ -65,6 +65,7 @@ to reactivate it soon.
 // LOCA includes
 #include "LOCA.H"
 #include "LOCA_GlobalData.H"
+#include "LOCA_Abstract_Iterator.H"
 #include "LOCA_Stepper.H"
 #include "LOCA_Parameter_Vector.H"
 
@@ -120,6 +121,10 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 // Note: Teuchos.i turns off warnings for nested classes, so we do not
 // have to do it again.
 
+%teuchos_rcp_typemaps(LOCA::GlobalData)
+%teuchos_rcp_typemaps(LOCA::DerivUtils)
+
+%import "NOX.Abstract.i"
 %import "LOCA.MultiContinuation.i"
 // %import "LOCA.Continuation.i"
 
@@ -169,13 +174,12 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..","NOX")))
 //%include "LOCA_Abstract_Group.H"
 //%rename(Abstract_TransposeSolveGroup) LOCA::Abstract::TransposeSolveGroup;
 //%include "LOCA_Abstract_TransposeSolveGroup.H"
-//%include "LOCA_Abstract_Iterator.H"
+%rename(Abstract_Iterator) LOCA::Abstract::Iterator;
+%include "LOCA_Abstract_Iterator.H"
 
 // LOCA interface includes
 %include "LOCA.H"
 %include "LOCA_GlobalData.H"
-%teuchos_rcp_typemaps(LOCA::GlobalData)
-%teuchos_rcp_typemaps(LOCA::DerivUtils)
 
 %import "LOCA_Abstract_Iterator.H"
 %import "NOX.StatusTest.i"
