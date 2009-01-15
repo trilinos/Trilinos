@@ -49,7 +49,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Pamgen                pamgen                         OFF
   Phdmesh               phdmesh                        OFF
   NOX                   nox                            ""
-  Moertel               moertel                        OFF
+  Moertel               moertel                        ""
   TrilinosCouplings     trilinoscouplings              OFF
   Rythmos               rythmos                        ""
   MOOCHO                moocho                         OFF
