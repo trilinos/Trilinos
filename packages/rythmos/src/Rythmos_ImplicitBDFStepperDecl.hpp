@@ -298,16 +298,6 @@ private:
 
 };
 
-
-// Nonmember constructor
-template<class Scalar>
-RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper(
-    const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
-    const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
-    RCP<Teuchos::ParameterList> &parameterList
-    );
-
-
 } // namespace Rythmos 
 
 #endif // Rythmos_IMPLICITBDF_STEPPER_DECL_H
