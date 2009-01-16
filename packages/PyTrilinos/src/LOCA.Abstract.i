@@ -100,9 +100,11 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 
 %include "LOCA_Abstract_Iterator.H"
 
-%import "NOX.Abstract.i"
-%import "LOCA.Homotopy.i"
-%import "LOCA.__init__.i"
-
-%include "LOCA_Abstract_Group.H"
-%include "LOCA_Abstract_TransposeSolveGroup.H"
+//%import "NOX.Abstract.i"
+//%import "LOCA.Homotopy.i"
+//%import "LOCA.Hopf.i"
+//%import "LOCA.TurningPoint.i"
+//%import "LOCA.Pitchfork.i"
+//
+//%include "LOCA_Abstract_Group.H"
+//%include "LOCA_Abstract_TransposeSolveGroup.H"

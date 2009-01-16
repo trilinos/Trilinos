@@ -42,7 +42,7 @@ if options.testharness:
     import EpetraExt
     import NOX
     import LOCA
-#    import LOCA.Epetra    # TODO: figure out why we need this line
+    import LOCA.Epetra
 else:
     try:
         import setpath
@@ -53,12 +53,14 @@ else:
         import EpetraExt
         import NOX
 	import LOCA
+        import LOCA.Epetra
     except ImportError:
         from PyTrilinos import Teuchos
         from PyTrilinos import Epetra
         from PyTrilinos import EpetraExt
         from PyTrilinos import NOX
         from PyTrilinos import LOCA
+        from PyTrilinos.LOCA import Epetra
         print >>sys.stderr, "Using system-installed Teuchos, Epetra, EpetraExt, NOX, LOCA"
 
 # ######################################################################

@@ -118,8 +118,12 @@ the Trilinos package LOCA:
 ")
 LOCA::Epetra::Interface::Required::computeF;
 
-//%import "NOX.Epetra.Interface.i"
-%import "NOX_Epetra_Interface_Required.H"
+%import "NOX.Epetra.Interface.i"
+//%import "NOX_Epetra_Interface_Required.H"
+%pythoncode
+%{
+from NOX.Epetra.Interface import Required
+%}
 
 %feature("director") LOCA::Epetra::Interface::Required;
 %include "LOCA_Epetra_Interface_Required.H"

@@ -78,18 +78,18 @@ LOCA and Epetra.
 //#include "NOX_Epetra_MatrixFree.H"
 //#include "LOCA_MultiContinuation_AbstractGroup.H"
 //#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
-//#include "LOCA_Homotopy_AbstractGroup.H"
-//#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-//#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-//#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-//#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-//#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
-//#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
-//#include "LOCA_TimeDependent_AbstractGroup.H"
-//#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-//#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-//#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-//#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+#include "LOCA_Homotopy_AbstractGroup.H"
+#include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_TimeDependent_AbstractGroup.H"
+#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
 //#include "LOCA_Abstract_Group.H"
 //#include "LOCA_Abstract_TransposeSolveGroup.H"
 #include "LOCA_Epetra.H"
@@ -114,14 +114,36 @@ using Teuchos::rcp;
 import os.path, sys
 currentDir,dummy = os.path.split(__file__)
 sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
+import PyTrilinos
+import PyTrilinos.LOCA
 }
 
 %teuchos_rcp_typemaps(LOCA::Epetra::Group)
 
-//%import "NOX.Abstract.i"
+%import "NOX.Abstract.i"
 %import "NOX.Epetra.__init__.i"
+
 %import "LOCA.__init__.i"
+%import "LOCA.MultiContinuation.i"
+
+//%import "LOCA_TimeDependent_AbstractGroup.H"
+//%import "LOCA_Homotopy_AbstractGroup.H"
+//%import "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
+//%import "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+//%import "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+//%import "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+//%import "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+//%import "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
+//%import "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+//%import "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+//%import "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+//%import "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
+
 //%import "LOCA.Abstract.i"
+%import "LOCA.Hopf.i"
+%import "LOCA.Pitchfork.i"
+%import "LOCA.Homotopy.i"
+%import "LOCA.TurningPoint.i"
 %import "LOCA_Abstract_Group.H"
 %import "LOCA_Abstract_TransposeSolveGroup.H"
 
@@ -129,7 +151,6 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 %{
 from NOX.Epetra import Group
 %}
-//%import "LOCA.MultiContinuation.i"
 %import "LOCA.Epetra.Interface.i"
 
 //////////////////////////////

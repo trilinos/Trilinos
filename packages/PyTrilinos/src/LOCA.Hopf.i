@@ -28,39 +28,45 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Continuation
+%module(package="PyTrilinos.LOCA") Hopf
 
 %{
-// LOCA includes
-//#include "LOCA_Continuation_AbstractGroup.H"
-//#include "LOCA_Continuation_FiniteDifferenceGroup.H"
-#include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
-#include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+// Teuchos include
+#include "Teuchos_PythonParameter.h"
 
-// NOX includes
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_FiniteValue.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
+
+#include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+#include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+#include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
 
 // Local includes
 #include "NumPyImporter.h"
+
+// Namespace flattening
+using Teuchos::RCP;
 %}
+
+// Standard exception handling
+%include "exception.i"
 
 // Ignore/renames
 %ignore *::operator=;
-%rename(Print) *::print(ostream& stream, int indent = 0) const;
 
-// Import base class declarations
-%import "NOX.Abstract.i"
-%import "NOX.StatusTest.i"
+// Trilinos module imports
+%import "Teuchos.i"
 
-// LOCA interface includes
-//%include "LOCA_Continuation_AbstractGroup.H"
-//%include "LOCA_Continuation_FiniteDifferenceGroup.H"
-//%include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
-//%include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+%import "LOCA.TimeDependent.i"
+%import "LOCA.TurningPoint.i"
+
+%rename(MooreSpence_AbstractGroup) LOCA::Hopf::MooreSpence::AbstractGroup;
+%rename(MinimallyAugmented_AbstractGroup) LOCA::Hopf::MinimallyAugmented::AbstractGroup;
+%rename(MooreSpence_FiniteDifferenceGroup) LOCA::Hopf::MooreSpence::FiniteDifferenceGroup;
+%rename(MinimallyAugmented_FiniteDifferenceGroup) LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup;
+
+%include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
+%include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
+%include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
+%include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"

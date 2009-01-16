@@ -46,8 +46,8 @@
 //%import "LOCA.Abstract.i"
 
 // Import NOX_Epetra headers
-%import "NOX_Epetra_Interface_Required.H"
-%import "NOX_Epetra_Group.H"
+%import "NOX.Epetra.__init__.i"
+%import "NOX.Epetra.Interface.i"
 
 // LOCA interface includes
 %include "LOCA_Epetra_Interface_Required.H"

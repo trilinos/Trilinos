@@ -28,39 +28,36 @@
 // ***********************************************************************
 // @HEADER
 
-%module(package="PyTrilinos.LOCA") Continuation
+%module(package="PyTrilinos.LOCA") Pitchfork
 
 %{
-// LOCA includes
-//#include "LOCA_Continuation_AbstractGroup.H"
-//#include "LOCA_Continuation_FiniteDifferenceGroup.H"
-#include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
-#include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+#include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
+#include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
 
-// NOX includes
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_FiniteValue.H"
+#include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+#include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
 
 // Local includes
 #include "NumPyImporter.h"
+
+// Namespace flattening
+using Teuchos::RCP;
 %}
+
+// Standard exception handling
+%include "exception.i"
 
 // Ignore/renames
 %ignore *::operator=;
-%rename(Print) *::print(ostream& stream, int indent = 0) const;
 
-// Import base class declarations
-%import "NOX.Abstract.i"
-%import "NOX.StatusTest.i"
+// Trilinos module imports
+%import "Teuchos.i"
 
-// LOCA interface includes
-//%include "LOCA_Continuation_AbstractGroup.H"
-//%include "LOCA_Continuation_FiniteDifferenceGroup.H"
-//%include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
-//%include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
+%import "LOCA.TurningPoint.i"
+
+%rename(MooreSpence_AbstractGroup) LOCA::Pitchfork::MooreSpence::AbstractGroup;
+%rename(MinimallyAugmented_AbstractGroup) LOCA::Pitchfork::MinimallyAugmented::AbstractGroup;
+
+%include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
+%include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"

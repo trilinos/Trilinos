@@ -66,6 +66,5 @@ import PyTrilinos.NOX
 
 // LOCA interface includes
 %include "LOCA_MultiContinuation_AbstractGroup.H"
-
 %include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 

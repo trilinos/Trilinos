@@ -124,14 +124,6 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 %teuchos_rcp_typemaps(LOCA::GlobalData)
 %teuchos_rcp_typemaps(LOCA::DerivUtils)
 
-%import "NOX.Abstract.i"
-%import "LOCA.MultiContinuation.i"
-// %import "LOCA.Continuation.i"
-
-//%import "NOX.StatusTest.i"
-//%include "LOCA_Continuation_StatusTest_ParameterResidualNorm.H"
-//%include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
-
 // NOX interface file imports.
 %pythoncode
 {
@@ -141,48 +133,21 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..","NOX")))
 }
 //%import "NOX.__init__.i"
 
-//%include "LOCA_MultiContinuation_AbstractGroup.H"
-//%include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+%import "NOX.Abstract.i"
+%import "NOX.StatusTest.i"
 
-%rename(TimeDependent_AbstractGroup) LOCA::TimeDependent::AbstractGroup;
-%include "LOCA_TimeDependent_AbstractGroup.H"
-%rename(Homotopy_AbstractGroup) LOCA::Homotopy::AbstractGroup;
-%include "LOCA_Homotopy_AbstractGroup.H"
-%rename(TurningPoint_MooreSpence_AbstractGroup) LOCA::TurningPoint::MooreSpence::AbstractGroup;
-%include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
-%rename(TurningPoint_MinimallyAugmented_AbstractGroup) LOCA::TurningPoint::MinimallyAugmented::AbstractGroup;
-%include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
-%rename(TurningPoint_MooreSpence_FiniteDifferenceGroup) LOCA::TurningPoint::MooreSpence::FiniteDifferenceGroup;
-%include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"
-%rename(TurningPoint_MinimallyAugmented_FiniteDifferenceGroup) LOCA::TurningPoint::MinimallyAugmented::FiniteDifferenceGroup;
-%include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
-%rename(Pitchfork_MooreSpence_AbstractGroup) LOCA::Pitchfork::MooreSpence::AbstractGroup;
-%include "LOCA_Pitchfork_MooreSpence_AbstractGroup.H"
-%rename(Pitchfork_MinimallyAugmented_AbstractGroup) LOCA::Pitchfork::MinimallyAugmented::AbstractGroup;
-%include "LOCA_Pitchfork_MinimallyAugmented_AbstractGroup.H"
-%rename(Hopf_MooreSpence_AbstractGroup) LOCA::Hopf::MooreSpence::AbstractGroup;
-%include "LOCA_Hopf_MooreSpence_AbstractGroup.H"
-%rename(Hopf_MinimallyAugmented_AbstractGroup) LOCA::Hopf::MinimallyAugmented::AbstractGroup;
-%include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
-%rename(Hopf_MooreSpence_FiniteDifferenceGroup) LOCA::Hopf::MooreSpence::FiniteDifferenceGroup;
-%include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
-%rename(Hopf_MinimallyAugmented_FiniteDifferenceGroup) LOCA::Hopf::MinimallyAugmented::FiniteDifferenceGroup;
-%include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
-
-
-//%rename(Abstract_Group) LOCA::Abstract::Group;
-//%include "LOCA_Abstract_Group.H"
-//%rename(Abstract_TransposeSolveGroup) LOCA::Abstract::TransposeSolveGroup;
-//%include "LOCA_Abstract_TransposeSolveGroup.H"
-%rename(Abstract_Iterator) LOCA::Abstract::Iterator;
-%include "LOCA_Abstract_Iterator.H"
+%import "LOCA.MultiContinuation.i"
+%import "LOCA.Abstract.i"
+//%import "LOCA.Hopf.i"
+//%import "LOCA.Pitchfork.i"
+//%import "LOCA.Homotopy.i"
+//%import "LOCA.TurningPoint.i"
+//%import "LOCA_Abstract_Iterator.H"
 
 // LOCA interface includes
 %include "LOCA.H"
 %include "LOCA_GlobalData.H"
 
-%import "LOCA_Abstract_Iterator.H"
-%import "NOX.StatusTest.i"
 
 %include "LOCA_Stepper.H"
 %include "LOCA_Parameter_Vector.H"
@@ -190,5 +155,5 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..","NOX")))
 
 %pythoncode
 %{
-import Epetra
+#import Epetra
 %}
