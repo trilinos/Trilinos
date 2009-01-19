@@ -250,8 +250,8 @@
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="FEI" dir="fei">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Epetra,Amesos,AztecOO,Ifpack,ML"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="AztecOO"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Epetra,Amesos,Ifpack,ML"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
@@ -330,7 +330,7 @@
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="Moertel" dir="moertel">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Amesos,ML"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Amesos,AztecOO,ML"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
