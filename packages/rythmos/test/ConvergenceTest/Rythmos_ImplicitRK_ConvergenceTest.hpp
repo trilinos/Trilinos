@@ -123,7 +123,7 @@ class ImplicitRKStepperFactory : public virtual StepperFactoryBase<Scalar>
 template<class Scalar>
 RCP<ImplicitRKStepperFactory<Scalar> > implicitRKStepperFactory(RCP<ModelFactoryBase<Scalar> > modelFactory) 
 {
-  RCP<ImplicitRKStepperFactory<Scalar> > irkFactory = rcp(
+  RCP<ImplicitRKStepperFactory<Scalar> > irkFactory = Teuchos::rcp(
       new ImplicitRKStepperFactory<Scalar>(modelFactory)
       );
   return irkFactory;
@@ -171,7 +171,7 @@ RCP<DiagonalImplicitRKStepperFactory<Scalar> > diagonalImplicitRKStepperFactory(
     RCP<ModelFactoryBase<Scalar> > modelFactory
     )
 {
-  RCP<DiagonalImplicitRKStepperFactory<Scalar> > dirkStepper = rcp(
+  RCP<DiagonalImplicitRKStepperFactory<Scalar> > dirkStepper = Teuchos::rcp(
       new DiagonalImplicitRKStepperFactory<Scalar>(modelFactory)
       );
   return dirkStepper;

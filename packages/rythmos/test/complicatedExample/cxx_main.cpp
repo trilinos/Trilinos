@@ -161,10 +161,6 @@ int main(int argc, char *argv[])
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-    // RAB: 2007/05/14: ToDo: In all of the below code that is called change
-    // from the "outputLevel" interger parameter to the "Verbose Object"
-    // sublist with its "Verbosity Level" string parameter.
-
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
     lowsfCreator.readParameters(out.get());
     *out << "\nThe parameter list after being read in:\n";
@@ -238,7 +234,10 @@ int main(int argc, char *argv[])
     if ( method_val == METHOD_ERK ) {
       stepper_ptr = Rythmos::explicitRKStepper<double>(model);
       RCP<Teuchos::ParameterList> ERKparams = Teuchos::parameterList();
-      ERKparams->set( "outputLevel", as<int>(verbLevel) );
+      ERKparams->sublist("VerboseObject").set(
+        "Verbosity Level",
+        Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+        );
       stepper_ptr->setParameterList(ERKparams);
       method = "Explicit Runge-Kutta of order 4";
       step_method_val = STEP_TYPE_FIXED;
@@ -246,7 +245,10 @@ int main(int argc, char *argv[])
     else if (method_val == METHOD_FE) {
       stepper_ptr = rcp(new Rythmos::ForwardEulerStepper<double>(model));
       RCP<Teuchos::ParameterList> FEparams = Teuchos::parameterList();
-      FEparams->set( "outputLevel", as<int>(verbLevel));
+      FEparams->sublist("VerboseObject").set(
+        "Verbosity Level",
+        Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+        );
       stepper_ptr->setParameterList(FEparams);
       method = "Forward Euler";
       step_method_val = STEP_TYPE_FIXED;

@@ -30,6 +30,9 @@
 
 namespace Rythmos {
 
+
+using Teuchos::rcp;
+
 // non-member constructor for SinCosModelFactory
 RCP<SinCosModelFactory> sinCosModelFactory(bool implicit)
 {

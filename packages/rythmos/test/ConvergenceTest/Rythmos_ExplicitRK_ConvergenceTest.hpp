@@ -97,7 +97,7 @@ template<class Scalar>
 RCP<ExplicitRKStepperFactory<Scalar> > explicitRKStepperFactory( 
     RCP<ModelFactoryBase<Scalar> > modelFactory)
 {
-  RCP<ExplicitRKStepperFactory<Scalar> > erkFactory = rcp(
+  RCP<ExplicitRKStepperFactory<Scalar> > erkFactory = Teuchos::rcp(
       new ExplicitRKStepperFactory<Scalar>(modelFactory)
       );
   return erkFactory;

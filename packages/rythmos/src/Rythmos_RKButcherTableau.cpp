@@ -34,8 +34,8 @@ namespace Rythmos {
   Teuchos::Array<std::string> getS_RKButcherTableauMethodNames()
   {
     Teuchos::Array<std::string> a;
-    a.push_back(ForwardEuler_name);
-    a.push_back(BackwardEuler_name);
+    a.push_back(RKBT_ForwardEuler_name);
+    a.push_back(RKBT_BackwardEuler_name);
     a.push_back(Explicit4Stage_name);
     a.push_back(Explicit3_8Rule_name);
     a.push_back(Explicit2Stage2ndOrderRunge_name);

@@ -46,7 +46,7 @@ class ForwardEulerStepperFactory : public virtual StepperFactoryBase<Scalar>
     RCP<StepperBase<Scalar> > getStepper() const 
     { 
       RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
-      RCP<ForwardEulerStepper<Scalar> > stepper = rcp(new ForwardEulerStepper<Scalar>(model));
+      RCP<ForwardEulerStepper<Scalar> > stepper = Teuchos::rcp(new ForwardEulerStepper<Scalar>(model));
       return stepper;
     }
   private:
@@ -57,7 +57,7 @@ template<class Scalar>
 RCP<ForwardEulerStepperFactory<Scalar> > forwardEulerStepperFactory(
     RCP<ModelFactoryBase<Scalar> > modelFactory)
 {
-  RCP<ForwardEulerStepperFactory<Scalar> > feFactory = rcp(
+  RCP<ForwardEulerStepperFactory<Scalar> > feFactory = Teuchos::rcp(
       new ForwardEulerStepperFactory<Scalar>(modelFactory)
       );
   return feFactory;

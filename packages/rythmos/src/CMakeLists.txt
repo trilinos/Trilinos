@@ -80,6 +80,7 @@ APPEND_SET(HEADERS
   Rythmos_StepControlStrategyBase.hpp
   Rythmos_StepperAsModelEvaluator.hpp
   Rythmos_StepperBase.hpp
+  Rythmos_StepperBuilder.hpp
   Rythmos_StepperHelpers.hpp
   Rythmos_StepperSupportTypes.hpp
   Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp

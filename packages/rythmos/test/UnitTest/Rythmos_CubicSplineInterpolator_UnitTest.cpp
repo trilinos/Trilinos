@@ -28,6 +28,7 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
+#include "Rythmos_Types.hpp"
 #include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Rythmos_CubicSplineInterpolator.hpp"
 #include "Rythmos_UnitTestHelpers.hpp"
@@ -38,8 +39,8 @@
 namespace Rythmos {
 
 using Teuchos::Polynomial;
-using Teuchos::RCP;
 using Teuchos::outArg;
+using Teuchos::rcp;
 
 TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, nonMemberConstructor ) {
   RCP<CubicSplineInterpolator<double> > csi = cubicSplineInterpolator<double>();

@@ -95,6 +95,7 @@ CORE_H = \
   $(srcdir)/Rythmos_StepControlStrategyBase.hpp\
   $(srcdir)/Rythmos_StepperAsModelEvaluator.hpp\
   $(srcdir)/Rythmos_StepperBase.hpp\
+  $(srcdir)/Rythmos_StepperBuilder.hpp\
   $(srcdir)/Rythmos_StepperHelpers.hpp\
   $(srcdir)/Rythmos_StepperSupportTypes.hpp\
   $(srcdir)/Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp\

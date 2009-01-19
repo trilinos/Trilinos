@@ -34,6 +34,8 @@
 
 namespace Rythmos {
 
+using Teuchos::rcp;
+
 TEUCHOS_UNIT_TEST( Rythmos_Quadrature, createGauss ){
   GaussLegendreQuadrature1D<double> gq(2);
   TEST_EQUALITY_CONST( gq.getOrder(), 4 );

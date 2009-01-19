@@ -56,15 +56,12 @@ namespace Rythmos {
 
 // Using declarations from Teuchos
 
+// 1/15/09 tscoffe:  Don't put using declarations for functions here!  Types are okay.
 
 /** \brief . */
 using Teuchos::Ptr;
 /** \brief . */
-using Teuchos::outArg;
-/** \brief . */
 using Teuchos::RCP;
-/** \brief . */
-using Teuchos::rcp;
 /** \brief . */
 using Teuchos::FancyOStream;
 /** \brief . */
@@ -77,8 +74,6 @@ using Teuchos::ArrayRCP;
 using Teuchos::ParameterList;
 /** \brief . */
 using Teuchos::ScalarTraits;
-/** \brief . */
-using Teuchos::typeName;
 /** \brief . */
 using Teuchos::TypeNameTraits;
 

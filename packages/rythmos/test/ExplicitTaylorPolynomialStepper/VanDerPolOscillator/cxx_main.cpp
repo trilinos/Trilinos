@@ -60,6 +60,8 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_as.hpp"
+#include "Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp"
 
 enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF, METHOD_ETI };
 enum EStepMethod { STEP_TYPE_FIXED, STEP_TYPE_VARIABLE };
@@ -95,7 +97,7 @@ int main(int argc, char *argv[])
     const EMethod method_values[] = { METHOD_ERK, METHOD_ETI };
     const char * method_names[] = { "ERK", "ETI" };
     EMethod method_val = METHOD_ETI;
-    int outputLevel = -1; // outputLevel determines the level of output / verbosity
+    Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_NONE;
 
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
@@ -116,7 +118,7 @@ int main(int argc, char *argv[])
     clp.setOption( "verbose", "quiet", &verbose, 
 		   "Set if output is printed or not" );
     clp.setOption( "output", &outfile_name, "Output file name." );
-    clp.setOption( "outputlevel", &outputLevel, "Verbosity level for Rythmos" );
+    setVerbosityLevelOption( "verb-level", &verbLevel, "Overall verbosity level.", &clp );
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = 
       clp.parse(argc,argv);
@@ -138,17 +140,20 @@ int main(int argc, char *argv[])
     
     // Set up the parameter list for the application:
     Teuchos::ParameterList params;
-    params.set( "implicit", false );
-    params.set( "Initial Time", initialTime );
-    params.set( "Final Time", finalTime );
-    params.set( "Local Error Tolerance", tol );
-    params.set( "Minimum Step Size", minStep );
-    params.set( "Maximum Step Size", maxStep );
-    params.set( "Taylor Polynomial Degree", degree );
-    params.set( "x0_1", x0_1 );
-    params.set( "x0_2", x0_2 );
-    params.set( "omega", omega );
-    params.set( "Output File Name", outfile_name );
+    Teuchos::ParameterList& vdpoParams = params.sublist("Van Der Pol Oscillator Settings");
+      vdpoParams.set( "implicit", false );
+      vdpoParams.set( "x0_1", x0_1 );
+      vdpoParams.set( "x0_2", x0_2 );
+      vdpoParams.set( "omega", omega );
+      vdpoParams.set( "Output File Name", outfile_name );
+
+    Teuchos::ParameterList& etpParams = params.sublist("Explicit Taylor Polynomial Settings");
+      etpParams.set( "Initial Time", initialTime );
+      etpParams.set( "Final Time", finalTime );
+      etpParams.set( "Local Error Tolerance", tol );
+      etpParams.set( "Minimum Step Size", minStep );
+      etpParams.set( "Maximum Step Size", maxStep );
+      etpParams.set( "Taylor Polynomial Degree", Teuchos::as<unsigned int>(degree) );
 #ifdef HAVE_MPI
     Teuchos::RCP<Epetra_Comm> epetra_comm_ptr_ = Teuchos::rcp( new Epetra_MpiComm(mpiComm) );
 #else
@@ -162,7 +167,7 @@ int main(int argc, char *argv[])
     // create interface to problem
     Teuchos::RCP<VanDerPolOscillator>
       epetraModel = Teuchos::rcp(new VanDerPolOscillator(epetra_comm_ptr_,
-							 params));
+							 vdpoParams));
     Teuchos::RCP<Thyra::ModelEvaluator<double> >
       model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel,
 							   W_factory));
@@ -173,7 +178,10 @@ int main(int argc, char *argv[])
     if ( method_val == METHOD_ERK ) {
       stepper_ptr = Rythmos::explicitRKStepper<double>(model);
       Teuchos::RCP<Teuchos::ParameterList> ERKparams = Teuchos::rcp(new Teuchos::ParameterList);
-      ERKparams->set( "outputLevel", outputLevel);
+      ERKparams->sublist("VerboseObject").set(
+        "Verbosity Level",
+        Teuchos::getVerbosityLevelParameterValueName(verbLevel)
+        );
       stepper_ptr->setParameterList(ERKparams);
       method = "Explicit Runge-Kutta of order 4";
     } 
@@ -181,7 +189,7 @@ int main(int argc, char *argv[])
       method = "Explicit Taylor";
       stepper_ptr = Teuchos::rcp(new Rythmos::ExplicitTaylorPolynomialStepper<double>);
       stepper_ptr->setModel(model);
-      stepper_ptr->setParameterList(Teuchos::rcp(&params,false));
+      stepper_ptr->setParameterList(Teuchos::rcp(&etpParams,false));
     }
     else {
       TEST_FOR_EXCEPT(true);

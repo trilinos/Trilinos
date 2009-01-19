@@ -36,6 +36,7 @@ namespace Rythmos {
 
 using Teuchos::SerialDenseMatrix;
 using Teuchos::SerialDenseVector;
+using Teuchos::outArg;
 using Thyra::VectorBase;
 using Thyra::ProductVectorBase;
 

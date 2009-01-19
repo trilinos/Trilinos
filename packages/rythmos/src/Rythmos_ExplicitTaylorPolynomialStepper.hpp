@@ -32,6 +32,7 @@
 #include "Rythmos_StepperBase.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
@@ -197,6 +198,9 @@ namespace Rythmos {
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
 
     /** \brief . */
+    RCP<const Teuchos::ParameterList> getValidParameters() const;
+
+    /** \brief . */
     std::string description() const;
 
     /** \brief . */
@@ -314,6 +318,14 @@ namespace Rythmos {
 			   log_norm_inf_targ.get());
     
     return log_norm_inf_op(*log_norm_inf_targ);
+  }
+
+  // Non-member constructor
+  template<class Scalar>
+  RCP<ExplicitTaylorPolynomialStepper<Scalar> > explicitTaylorPolynomialStepper()
+  {
+    RCP<ExplicitTaylorPolynomialStepper<Scalar> > stepper = rcp(new ExplicitTaylorPolynomialStepper<Scalar>());
+    return stepper;
   }
 
   template<class Scalar>
@@ -477,7 +489,10 @@ namespace Rythmos {
   {
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
+    TEST_FOR_EXCEPT(is_null(paramList));
+    paramList->validateParameters(*this->getValidParameters(),0);
     parameterList_ = paramList;
+    Teuchos::readVerboseObjectSublist(&*parameterList_,this);
 
     // Get initial time
     t_initial_ = parameterList_->get("Initial Time", ST::zero());
@@ -496,7 +511,7 @@ namespace Rythmos {
     max_step_size_ = parameterList_->get("Maximum Step Size", Scalar(1.0));
 
     // Get degree_ of Taylor polynomial expansion
-    degree_ = parameterList_->get("Taylor Polynomial Degree", 40);
+    degree_ = parameterList_->get("Taylor Polynomial Degree", Teuchos::as<unsigned int>(40));
 
     linc_ = Scalar(-16.0*std::log(10.0)/degree_);
     t_ = t_initial_;
@@ -516,6 +531,28 @@ namespace Rythmos {
     Teuchos::RCP<Teuchos::ParameterList> temp_param_list = parameterList_;
     parameterList_ = Teuchos::null;
     return temp_param_list;
+  }
+
+  template<class Scalar>
+  RCP<const Teuchos::ParameterList>
+  ExplicitTaylorPolynomialStepper<Scalar>::getValidParameters() const
+  {
+    typedef ScalarTraits<Scalar> ST;
+    static RCP<const ParameterList> validPL;
+    if (is_null(validPL)) {
+      RCP<ParameterList> pl = Teuchos::parameterList();
+
+      pl->set<Scalar>("Initial Time", ST::zero());
+      pl->set<Scalar>("Final Time", ST::one());
+      pl->set<ScalarMag>("Local Error Tolerance", ScalarMag(1.0e-10));
+      pl->set<Scalar>("Minimum Step Size", Scalar(1.0e-10));
+      pl->set<Scalar>("Maximum Step Size", Scalar(1.0));
+      pl->set<unsigned int>("Taylor Polynomial Degree", 40);
+
+      Teuchos::setupVerboseObjectSublist(&*pl);
+      validPL = pl;
+    }
+    return validPL;
   }
 
   template<class Scalar>

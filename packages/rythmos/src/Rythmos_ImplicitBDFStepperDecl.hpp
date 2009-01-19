@@ -298,6 +298,9 @@ private:
 
 };
 
+template<class Scalar>
+RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper();
+
 } // namespace Rythmos 
 
 #endif // Rythmos_IMPLICITBDF_STEPPER_DECL_H

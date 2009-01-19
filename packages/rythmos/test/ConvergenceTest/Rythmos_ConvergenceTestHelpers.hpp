@@ -40,8 +40,6 @@
 
 namespace Rythmos {
 
-using Teuchos::as;
-using Teuchos::rcp_dynamic_cast;
 using Thyra::ModelEvaluator;
 using Thyra::LinearOpWithSolveFactoryBase;
 
@@ -89,7 +87,7 @@ void LinearRegression<Scalar>::validateXYData_(Array<Scalar>& x, Array<Scalar>& 
 {
   TEST_FOR_EXCEPT(x.size() != y.size());
   TEST_FOR_EXCEPT(x.size() < 2);
-  int N = as<int>(x.size());
+  int N = Teuchos::as<int>(x.size());
   // There must be at least two unique x values
   Scalar alpha = x[0];
   int numUnique = 1;
@@ -164,7 +162,7 @@ Scalar computeLinearRegressionSlope(Array<Scalar>& x, Array<Scalar>& y)
 template<class Scalar>
 RCP<LinearRegression<Scalar> > linearRegression()
 {
-  RCP<LinearRegression<Scalar> > lr = rcp(new LinearRegression<Scalar>());
+  RCP<LinearRegression<Scalar> > lr = Teuchos::rcp(new LinearRegression<Scalar>());
   return lr;
 }
 
@@ -217,7 +215,7 @@ class SinCosModelExactSolutionObject : public virtual ExactSolutionObjectBase<do
     RCP<const VectorBase<double> > getExactSolution(double time) const
     {
       RCP<ModelEvaluator<double> > model = modelFactory_->getModel();
-      RCP<SinCosModel> sinCosModel = rcp_dynamic_cast<SinCosModel>(model,true);
+      RCP<SinCosModel> sinCosModel = Teuchos::rcp_dynamic_cast<SinCosModel>(model,true);
       return(sinCosModel->getExactSolution(time).get_x());
     }
   private:
@@ -322,7 +320,7 @@ RCP<StepperFactoryAndExactSolutionObject<Scalar> > stepperFactoryAndExactSolutio
     RCP<const ExactSolutionObjectBase<Scalar> > exactSolutionObject
     )
 {
-  RCP<StepperFactoryAndExactSolutionObject<Scalar> > sfaeso = rcp(
+  RCP<StepperFactoryAndExactSolutionObject<Scalar> > sfaeso = Teuchos::rcp(
       new StepperFactoryAndExactSolutionObject<Scalar>(
         stepperFactory,
         exactSolutionObject

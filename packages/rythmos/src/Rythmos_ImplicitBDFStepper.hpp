@@ -41,6 +41,12 @@ namespace Rythmos {
 // ////////////////////////////
 // Defintions
 
+// Nonmember constructor
+template<class Scalar>
+RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper() {
+  RCP<ImplicitBDFStepper<Scalar> > stepper = rcp(new ImplicitBDFStepper<Scalar>() );
+  return stepper;
+}
 
 // Constructors, intializers, Misc.
 

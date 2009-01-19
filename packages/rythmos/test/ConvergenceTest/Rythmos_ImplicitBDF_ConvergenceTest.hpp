@@ -55,7 +55,7 @@ class ImplicitBDFStepperFactory : public virtual StepperFactoryBase<Scalar>
       RCP<ParameterList> nonlinearSolverPL = Teuchos::parameterList();
       nonlinearSolverPL->get("Default Tol",1.0e-9); // Set default if not set
       nonlinearSolver->setParameterList(nonlinearSolverPL);
-      RCP<ImplicitBDFStepper<Scalar> > stepper = rcp(new ImplicitBDFStepper<Scalar>(model,nonlinearSolver));
+      RCP<ImplicitBDFStepper<Scalar> > stepper = Teuchos::rcp(new ImplicitBDFStepper<Scalar>(model,nonlinearSolver));
       RCP<ParameterList> bdfPL = Teuchos::parameterList();
       Teuchos::ParameterList& stepControlPL = bdfPL->sublist("Step Control Settings");
       stepControlPL.set("minOrder",order_);
@@ -74,7 +74,7 @@ template<class Scalar>
 RCP<ImplicitBDFStepperFactory<Scalar> > implicitBDFStepperFactory(
     RCP<ModelFactoryBase<Scalar> > modelFactory)
 {
-  RCP<ImplicitBDFStepperFactory<Scalar> > ibdfFactory = rcp(
+  RCP<ImplicitBDFStepperFactory<Scalar> > ibdfFactory = Teuchos::rcp(
       new ImplicitBDFStepperFactory<Scalar>(modelFactory)
       );
   return ibdfFactory;

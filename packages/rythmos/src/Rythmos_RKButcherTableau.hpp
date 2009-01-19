@@ -43,8 +43,8 @@
 
 namespace Rythmos {
 
-  const std::string ForwardEuler_name = "Forward Euler";
-  const std::string BackwardEuler_name = "Backward Euler";
+  const std::string RKBT_ForwardEuler_name = "Forward Euler";
+  const std::string RKBT_BackwardEuler_name = "Backward Euler";
   const std::string Explicit4Stage_name = "Explicit 4 Stage";
   const std::string Explicit3_8Rule_name = "Explicit 3/8 Rule";
 
@@ -99,7 +99,7 @@ namespace {
   using Teuchos::rcp;
 
   const std::string SelectionTypeByName_name = "Method by name";
-  const std::string SelectionTypeByName_default = Rythmos::BackwardEuler_name;
+  const std::string SelectionTypeByName_default = Rythmos::RKBT_BackwardEuler_name;
   const std::string SelectionTypeExplicitByOrder_name = "Explicit method by order";
   const int SelectionTypeExplicitByOrder_default = 1;
   const std::string SelectionTypeImplicitByOrder_name = "Implicit method by order";
@@ -637,7 +637,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createBackwardEuler_RKBT() 
 {
   std::ostringstream description;
-  description << BackwardEuler_name << "\n"
+  description << RKBT_BackwardEuler_name << "\n"
               << "c = [ 1 ]'\n"
               << "A = [ 1 ]\n"
               << "b = [ 1 ]'" << std::endl;
@@ -657,7 +657,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createForwardEuler_RKBT() 
 {
   std::ostringstream description;
-  description << ForwardEuler_name << "\n"
+  description << RKBT_ForwardEuler_name << "\n"
               << "c = [ 0 ]'\n"
               << "A = [ 0 ]\n"
               << "b = [ 1 ]'" << std::endl;

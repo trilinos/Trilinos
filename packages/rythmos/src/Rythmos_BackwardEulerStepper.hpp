@@ -256,6 +256,13 @@ backwardEulerStepper(
   return Teuchos::rcp(new BackwardEulerStepper<Scalar>(model, solver));
 }
 
+template<class Scalar>
+RCP<BackwardEulerStepper<Scalar> >
+backwardEulerStepper()
+{
+  return Teuchos::rcp(new BackwardEulerStepper<Scalar>());
+}
+
 
 // ////////////////////////////
 // Defintions
@@ -326,7 +333,9 @@ void BackwardEulerStepper<Scalar>::setSolver(
 {
   using Teuchos::as;
 
-  TEST_FOR_EXCEPT(solver == Teuchos::null)
+  TEST_FOR_EXCEPTION(solver == Teuchos::null, std::logic_error,
+      "Error!  Thyra::NonlinearSolverBase RCP passed in through BackwardEulerStepper::setSolver is null!"
+      );
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();

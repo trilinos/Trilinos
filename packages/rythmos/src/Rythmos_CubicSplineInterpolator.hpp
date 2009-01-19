@@ -121,7 +121,7 @@ private:
 template<class Scalar>
 RCP<CubicSplineInterpolator<Scalar> > cubicSplineInterpolator()
 {
-  RCP<CubicSplineInterpolator<Scalar> > csi = rcp(new CubicSplineInterpolator<Scalar>() );
+  RCP<CubicSplineInterpolator<Scalar> > csi = Teuchos::rcp(new CubicSplineInterpolator<Scalar>() );
   return csi;
 }
 
@@ -327,7 +327,7 @@ void CubicSplineInterpolator<Scalar>::setNodes(
 #ifdef TEUCHOS_DEBUG
   const typename DataStore<Scalar>::DataStoreVector_t & nodes = *nodesPtr;
   // Copy nodes to internal data structure for verification upon calls to interpolate
-  nodes_copy_ = rcp(new typename DataStore<Scalar>::DataStoreVector_t);
+  nodes_copy_ = Teuchos::rcp(new typename DataStore<Scalar>::DataStoreVector_t);
   nodes_copy_->reserve(nodes.size());
   for (int i=0 ; i<Teuchos::as<int>(nodes.size()) ; ++i) {
     nodes_copy_->push_back(*nodes[i].clone());

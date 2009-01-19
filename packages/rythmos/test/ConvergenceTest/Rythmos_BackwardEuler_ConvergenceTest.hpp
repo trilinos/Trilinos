@@ -53,7 +53,7 @@ class BackwardEulerStepperFactory : public virtual StepperFactoryBase<Scalar>
       RCP<ParameterList> nonlinearSolverPL = Teuchos::parameterList();
       nonlinearSolverPL->get("Default Tol",1.0e-9); // Set default if not set
       nonlinearSolver->setParameterList(nonlinearSolverPL);
-      RCP<BackwardEulerStepper<Scalar> > stepper = rcp(new BackwardEulerStepper<Scalar>(model,nonlinearSolver));
+      RCP<BackwardEulerStepper<Scalar> > stepper = Teuchos::rcp(new BackwardEulerStepper<Scalar>(model,nonlinearSolver));
       return stepper;
     }
   private:
@@ -64,7 +64,7 @@ template<class Scalar>
 RCP<BackwardEulerStepperFactory<Scalar> > backwardEulerStepperFactory(
     RCP<ModelFactoryBase<Scalar> > modelFactory)
 {
-  RCP<BackwardEulerStepperFactory<Scalar> > beFactory = rcp(
+  RCP<BackwardEulerStepperFactory<Scalar> > beFactory = Teuchos::rcp(
       new BackwardEulerStepperFactory<Scalar>(modelFactory)
       );
   return beFactory;

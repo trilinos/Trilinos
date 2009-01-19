@@ -254,6 +254,14 @@ private:
  */
 template<class Scalar>
 RCP<ImplicitRKStepper<Scalar> >
+implicitRKStepper()
+{
+  RCP<ImplicitRKStepper<Scalar> > stepper(new ImplicitRKStepper<Scalar>());
+  return stepper;
+}
+
+template<class Scalar>
+RCP<ImplicitRKStepper<Scalar> >
 implicitRKStepper(
   const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
@@ -294,8 +302,8 @@ void ImplicitRKStepper<Scalar>::initialize(
 
   // ToDo: Validate input
 
-  model_ = model;
-  solver_ = solver;
+  this->setModel(model);
+  this->setSolver(solver);
   irk_W_factory_ = irk_W_factory;
   irkButcherTableau_ = irkButcherTableau;
   E_RKButcherTableauTypes rkType = determineRKBTType<Scalar>(irkButcherTableau);
@@ -337,7 +345,8 @@ void ImplicitRKStepper<Scalar>::setSolver(
   const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
 {
-  TEST_FOR_EXCEPT(true);
+  TEST_FOR_EXCEPT(is_null(solver));
+  solver_ = solver;
 }
 
 
@@ -378,10 +387,11 @@ ImplicitRKStepper<Scalar>::cloneStepperAlgorithm() const
 
 template<class Scalar>
 void ImplicitRKStepper<Scalar>::setModel(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &//model
+  const RCP<const Thyra::ModelEvaluator<Scalar> > & model
   )
 {
-  TEST_FOR_EXCEPT(true);
+  TEST_FOR_EXCEPT(is_null(model));
+  model_ = model;
 }
 
 
@@ -712,9 +722,9 @@ void ImplicitRKStepper<Scalar>::initialize_()
   typedef ScalarTraits<Scalar> ST;
   using Teuchos::rcp_dynamic_cast;
 
-  TEST_FOR_EXCEPT(model_ == Teuchos::null);
-  TEST_FOR_EXCEPT(solver_ == Teuchos::null);
-  TEST_FOR_EXCEPT(irk_W_factory_ == Teuchos::null);
+  TEST_FOR_EXCEPT(is_null(model_));
+  TEST_FOR_EXCEPT(is_null(solver_));
+  TEST_FOR_EXCEPT(is_null(irk_W_factory_));
 
   if (is_null(x_)) {
     // If x has not been set then setInitialCondition(...) was not

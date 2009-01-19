@@ -58,6 +58,7 @@ Rythmos_UnitTest_SOURCES =\
   $(srcdir)/../SinCos/SinCosModel.cpp\
   $(srcdir)/../PolynomialModel/PolynomialModel.cpp\
   $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp\
+  $(srcdir)/Rythmos_StepperBuilder_UnitTest.cpp\
   $(srcdir)/Rythmos_StepperHelpers_UnitTest.cpp\
   $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTest.cpp\

@@ -42,7 +42,7 @@ class SinCosModelETPStepperFactory : public virtual StepperFactoryBase<double>
     RCP<StepperBase<double> > create() const 
     { 
       RCP<SinCosModel> model = sinCosModel(false);
-      RCP<ExplicitTaylorPolynomialStepper<double> > stepper = rcp(new ExplicitTaylorPolynomialStepper<double>);
+      RCP<ExplicitTaylorPolynomialStepper<double> > stepper = Teuchos::rcp(new ExplicitTaylorPolynomialStepper<double>);
       stepper->setModel(model);
       RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
       stepper->setParameterList(pl);

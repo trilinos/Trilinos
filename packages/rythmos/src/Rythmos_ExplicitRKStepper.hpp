@@ -35,6 +35,7 @@
 #include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
@@ -131,6 +132,8 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     /** \brief . */
     Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
     
+    /** \brief. */
+    RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   private:
 
@@ -160,7 +163,14 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
 
 };
 
-// Non-member constructor
+// Non-member constructors
+template<class Scalar>
+RCP<ExplicitRKStepper<Scalar> > explicitRKStepper()
+{
+  RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>());
+  return stepper;
+}
+
 template<class Scalar>
 RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model 
@@ -439,10 +449,10 @@ int ExplicitRKStepper<Scalar>::getOrder() const
 template <class Scalar>
 void ExplicitRKStepper<Scalar>::setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList)
 {
+  TEST_FOR_EXCEPT(is_null(paramList));
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   parameterList_ = paramList;
-  int outputLevel = parameterList_->get( "outputLevel", int(-1) );
-  outputLevel = std::min(std::max(outputLevel,-1),4);
-  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
+  Teuchos::readVerboseObjectSublist(&*parameterList_,this);
 }
 
 template <class Scalar>
@@ -457,6 +467,20 @@ Teuchos::RCP<Teuchos::ParameterList> ExplicitRKStepper<Scalar>::unsetParameterLi
   Teuchos::RCP<Teuchos::ParameterList> temp_param_list = parameterList_;
   parameterList_ = Teuchos::null;
   return(temp_param_list);
+}
+
+template<class Scalar>
+RCP<const Teuchos::ParameterList>
+ExplicitRKStepper<Scalar>::getValidParameters() const
+{
+  using Teuchos::ParameterList;
+  static RCP<const ParameterList> validPL;
+  if (is_null(validPL)) {
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    Teuchos::setupVerboseObjectSublist(&*pl);
+    validPL = pl;
+  }
+  return validPL;
 }
 
 template<class Scalar>
