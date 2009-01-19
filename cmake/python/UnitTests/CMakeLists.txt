@@ -19,6 +19,7 @@ FUNCTION(CREATE_DEPENCENCY_OUTPUT_TEST_CASE TEST_NAME TEST_PASS_COMMAND)
     "  -D Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON"
     "  -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON"
     "  -D Trilinos_DEPS_XML_OUTPUT_FILE:STRING=$PWD/TrilinosPackageDependencies.xml"
+    "  -D Trilinos_CDASH_DEPS_XML_OUTPUT_FILE:STRING=$PWD/CDashSubprojectDependencies.xml"
     "  -D Trilinos_ENABLE_C:BOOL=OFF"
     "  -D Trilinos_ENABLE_CXX:BOOL=OFF"
     "  -D Trilinos_ENABLE_Fortran:BOOL=OFF"
@@ -46,3 +47,7 @@ CREATE_DEPENCENCY_OUTPUT_TEST_CASE(TrilinosOutputDep_XmlOutputTest
 
 CREATE_DEPENCENCY_OUTPUT_TEST_CASE(TrilinosOutputDep_HtmlOutputTest
   "diff -s ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependenciesTable.gold.html TrilinosPackageDependenciesTable.html" )
+
+
+CREATE_DEPENCENCY_OUTPUT_TEST_CASE(TrilinosOutputDep_CDashXmlOutputTest
+  "diff -s ${CMAKE_CURRENT_SOURCE_DIR}/CDashSubprojectDependencies.gold.xml CDashSubprojectDependencies.xml" )

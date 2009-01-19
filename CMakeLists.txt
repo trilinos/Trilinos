@@ -108,20 +108,15 @@ ADVANCED_OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
   OFF )
 
 IF(WIN32 AND NOT CYGWIN)
-  SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
+  SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT "")
 ELSE()
-  IF (Trilinos_PACKAGES_UNITTEST_OVERRIDE OR Trilinos_PACKAGES_HACK_OVERRIDE)
-    SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
-      "${TRILINOS_BUILD_DIR}/cmake/TrilinosPackageDependencies.xml" )
-  ELSE()
-    SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
-      "${TRILINOS_HOME_DIR}/cmake/python/data/TrilinosPackageDependencies.xml" )
-  ENDIF()
+  SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
+    "${TRILINOS_HOME_DIR}/cmake/python/data/TrilinosPackageDependencies.xml" )
 ENDIF()
 ADVANCED_SET(Trilinos_DEPS_XML_OUTPUT_FILE
   "${Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT}"
   CACHE STRING
-  "XML file that Trilinos dependenices used by tools are written to (if not empty)." )
+  "Output XML file containing Trilinos dependenices used by tools (if not empty)." )
 
 IF(WIN32 AND NOT CYGWIN)
   SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
@@ -134,7 +129,21 @@ ADVANCED_SET(Trilinos_DEPS_HTML_OUTPUT_FILE
   CACHE STRING
   "HTML Trilinos dependenices file that will be written to (if not empty)." )
 
-#SET(TRILINOS_INSTALL_LIB_INCLUDE_DIR "include")
+
+PRINT_VAR(Trilinos_DEPS_XML_OUTPUT_FILE)
+
+IF(NOT Trilinos_DEPS_XML_OUTPUT_FILE)
+  SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
+ELSE()
+  SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
+    "${TRILINOS_HOME_DIR}/cmake/python/data/CDashSubprojectDependencies.xml" )
+ENDIF()
+PRINT_VAR(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT)
+ADVANCED_SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE
+  "${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT}"
+  CACHE STRING
+  "Output XML file used by CDash in Trilinos-independent format (if not empty)." )
+PRINT_VAR(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE)
 
 
 #
@@ -176,6 +185,16 @@ IF (Trilinos_DEPS_HTML_OUTPUT_FILE)
     COMMAND ${TRILINOS_HOME_DIR}/cmake/python/dump-package-dep-table.py
       --input-xml-deps-file=${Trilinos_DEPS_XML_OUTPUT_FILE}
       --output-html-deps-file=${Trilinos_DEPS_HTML_OUTPUT_FILE} )
+ENDIF()
+
+IF (Trilinos_CDASH_DEPS_XML_OUTPUT_FILE)
+  MESSAGE("" )
+  MESSAGE("Dumping the CDash XML dependencies file ${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE} ..." )
+  MESSAGE("" )
+  EXECUTE_PROCESS(
+    COMMAND ${TRILINOS_HOME_DIR}/cmake/python/dump-cdash-deps-xml-file.py
+      --input-xml-deps-file=${Trilinos_DEPS_XML_OUTPUT_FILE}
+      --output-cdash-deps-xml-file=${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE} )
 ENDIF()
 
 IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)

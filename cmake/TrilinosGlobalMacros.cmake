@@ -66,11 +66,9 @@ MACRO(TRILINOS_SETUP_TESTING_SUPPORT)
     "Enable dependency unit tests."
     ${Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT}
     )
-  
-  IF (Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS)
-    ADD_SUBDIRECTORY(cmake/DependencyUnitTests)
-    ADD_SUBDIRECTORY(cmake/python/UnitTests)
-  ENDIF()
+
+  # Add the directory for the unit tests
+  ADD_SUBDIRECTORY(cmake)
 
   CONFIGURE_FILE(
     ${Trilinos_SOURCE_DIR}/cmake/ctest/CTestCustom.ctest.in

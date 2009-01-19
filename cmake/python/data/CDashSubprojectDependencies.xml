@@ -1,0 +1,323 @@
+<Project name="Trilinos">
+  <SubProject name="Teuchos">
+  </SubProject>
+  <SubProject name="RTOp">
+    <Dependency name="Teuchos" type="LR"/>
+  </SubProject>
+  <SubProject name="Kokkos">
+  </SubProject>
+  <SubProject name="Epetra">
+  </SubProject>
+  <SubProject name="Stokhos">
+    <Dependency name="Teuchos" type="LR"/>
+  </SubProject>
+  <SubProject name="Sacado">
+    <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="Stokhos" type="LO"/>
+  </SubProject>
+  <SubProject name="Zoltan">
+  </SubProject>
+  <SubProject name="Shards">
+  </SubProject>
+  <SubProject name="Intrepid">
+    <Dependency name="Teuchos" type="LR"/>
+  </SubProject>
+  <SubProject name="Triutils">
+    <Dependency name="Epetra" type="LR"/>
+  </SubProject>
+  <SubProject name="Tpetra">
+    <Dependency name="Teuchos" type="LR"/>
+  </SubProject>
+  <SubProject name="EpetraExt">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Triutils" type="LO"/>
+  </SubProject>
+  <SubProject name="Thyra">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="RTOp" type="LR"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+  </SubProject>
+  <SubProject name="Isorropia">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="LR"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+  </SubProject>
+  <SubProject name="Pliris">
+    <Dependency name="Epetra" type="LR"/>
+  </SubProject>
+  <SubProject name="Claps">
+    <Dependency name="Epetra" type="LR"/>
+  </SubProject>
+  <SubProject name="AztecOO">
+    <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Triutils" type="LR"/>
+  </SubProject>
+  <SubProject name="Galeri">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+  </SubProject>
+  <SubProject name="Amesos">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+  </SubProject>
+  <SubProject name="Ifpack">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="AztecOO" type="LO"/>
+    <Dependency name="Amesos" type="LO"/>
+  </SubProject>
+  <SubProject name="Komplex">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Triutils" type="ILR"/>
+    <Dependency name="AztecOO" type="LR"/>
+  </SubProject>
+  <SubProject name="ML">
+    <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="LO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Isorropia" type="LO"/>
+    <Dependency name="AztecOO" type="LO"/>
+    <Dependency name="Galeri" type="LO"/>
+    <Dependency name="Amesos" type="LO"/>
+    <Dependency name="Ifpack" type="LO"/>
+  </SubProject>
+  <SubProject name="Belos">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+  </SubProject>
+  <SubProject name="Stratimikos">
+    <Dependency name="Teuchos" type="ILR"/>
+    <Dependency name="RTOp" type="ILR"/>
+    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Thyra" type="LR"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="LO"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="LO"/>
+    <Dependency name="Ifpack" type="LO"/>
+    <Dependency name="ML" type="LO"/>
+    <Dependency name="Belos" type="LO"/>
+  </SubProject>
+  <SubProject name="Meros">
+    <Dependency name="Teuchos" type="ILR"/>
+    <Dependency name="RTOp" type="ILR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Thyra" type="LR"/>
+  </SubProject>
+  <SubProject name="FEI">
+    <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="Epetra" type="ILR"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILR"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="LR"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="LO"/>
+    <Dependency name="Ifpack" type="LO"/>
+    <Dependency name="ML" type="LO"/>
+  </SubProject>
+  <SubProject name="RBGen">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LO"/>
+  </SubProject>
+  <SubProject name="Anasazi">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="LO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Thyra" type="LO"/>
+  </SubProject>
+  <SubProject name="ThreadPool">
+  </SubProject>
+  <SubProject name="Phalanx">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="LR"/>
+  </SubProject>
+  <SubProject name="Pamgen">
+  </SubProject>
+  <SubProject name="Phdmesh">
+    <Dependency name="ThreadPool" type="LR"/>
+  </SubProject>
+  <SubProject name="NOX">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Thyra" type="LO"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="LO"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="LO"/>
+    <Dependency name="Ifpack" type="LO"/>
+    <Dependency name="ML" type="LO"/>
+    <Dependency name="Belos" type="LO"/>
+    <Dependency name="Anasazi" type="LO"/>
+  </SubProject>
+  <SubProject name="Moertel">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILR"/>
+    <Dependency name="EpetraExt" type="LR"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="LR"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="LR"/>
+    <Dependency name="Ifpack" type="ILO"/>
+    <Dependency name="ML" type="LR"/>
+  </SubProject>
+  <SubProject name="TrilinosCouplings">
+    <Dependency name="Teuchos" type="ILO"/>
+    <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Thyra" type="ILO"/>
+    <Dependency name="Isorropia" type="LO"/>
+    <Dependency name="AztecOO" type="LO"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="LO"/>
+    <Dependency name="Ifpack" type="LO"/>
+    <Dependency name="ML" type="LO"/>
+    <Dependency name="Belos" type="LO"/>
+    <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="NOX" type="LO"/>
+  </SubProject>
+  <SubProject name="Rythmos">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="RTOp" type="ILR"/>
+    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Thyra" type="LR"/>
+  </SubProject>
+  <SubProject name="MOOCHO">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="RTOp" type="LR"/>
+    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Thyra" type="LO"/>
+  </SubProject>
+  <SubProject name="Aristos">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="LO"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="LO"/>
+    <Dependency name="Ifpack" type="LO"/>
+    <Dependency name="ML" type="LO"/>
+  </SubProject>
+  <SubProject name="Sundance">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="RTOp" type="ILR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILR"/>
+    <Dependency name="Tpetra" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Thyra" type="LR"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="LR"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="LR"/>
+    <Dependency name="Ifpack" type="LR"/>
+    <Dependency name="ML" type="LR"/>
+    <Dependency name="Belos" type="ILO"/>
+    <Dependency name="Stratimikos" type="LR"/>
+    <Dependency name="Anasazi" type="LR"/>
+    <Dependency name="NOX" type="LR"/>
+    <Dependency name="MOOCHO" type="LO"/>
+  </SubProject>
+  <SubProject name="TriKota">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LR"/>
+  </SubProject>
+  <SubProject name="CTrilinos">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+  </SubProject>
+  <SubProject name="ForTrilinos">
+    <Dependency name="Teuchos" type="ILR"/>
+    <Dependency name="Epetra" type="ILR"/>
+    <Dependency name="CTrilinos" type="LR"/>
+  </SubProject>
+  <SubProject name="PyTrilinos">
+    <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="RTOp" type="LO"/>
+    <Dependency name="Kokkos" type="LO"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="LO"/>
+    <Dependency name="Tpetra" type="LO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Thyra" type="LO"/>
+    <Dependency name="Isorropia" type="LO"/>
+    <Dependency name="Claps" type="LO"/>
+    <Dependency name="AztecOO" type="LO"/>
+    <Dependency name="Galeri" type="LO"/>
+    <Dependency name="Amesos" type="LO"/>
+    <Dependency name="Ifpack" type="LO"/>
+    <Dependency name="Komplex" type="LO"/>
+    <Dependency name="ML" type="LO"/>
+    <Dependency name="Belos" type="LO"/>
+    <Dependency name="Stratimikos" type="LO"/>
+    <Dependency name="Meros" type="LO"/>
+    <Dependency name="Anasazi" type="LO"/>
+    <Dependency name="NOX" type="LO"/>
+    <Dependency name="Moertel" type="LO"/>
+    <Dependency name="Rythmos" type="LO"/>
+    <Dependency name="MOOCHO" type="LO"/>
+  </SubProject>
+  <SubProject name="WebTrilinos">
+  </SubProject>
+  <SubProject name="Didasko">
+  </SubProject>
+  <SubProject name="NewPackage">
+    <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="Epetra" type="LR"/>
+  </SubProject>
+</Project>

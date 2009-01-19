@@ -7,17 +7,18 @@
 
 usageHelp = r"""dump-package-deps-table.py [OPTIONS]
 
-Tool that creates an HTML page showing the Trilinos dependencies which are
-specified in an input XML file.
+Tool that dumps an XML file that can be read by CTest/CDash to specify the
+Trilinos pacakge dependenices in a way that is independent of Trilinos.  In
+CTest/CDash terminology, a Trilinos package is a"Subproject".
 
 By default, if you just run:
 
-   $ SOME_DIR/dump-package-deps-table.py
+   $ SOME_DIR/dump-cdash-deps-xml-file.py
 
-then the table will get written into the main Trilinos source directory where
-it can be checked in on the next checkin.
+then the XML file will get written into the main Trilinos source directory
+where it can be checked in on the next checkin.
 
-You can also change what XML input file is used and what HTML file is written.
+You can also change what XML input file is used and wha XML file is written.
 This is maining to facilitate unit testing of this code.
 
 Have fun looking through all of the Trilinos dependencies!
@@ -26,7 +27,7 @@ Have fun looking through all of the Trilinos dependencies!
 
 
 from TrilinosDependencies import defaultTrilinosDepsXmlInFile, \
-  defaultTrilinosDepsHtmlOutFile
+  defaultTrilinosDepsHtmlOutFile, defaultCDashDepsXmlFile
 
 from optparse import OptionParser
 
@@ -39,10 +40,10 @@ clp.add_option(
     "(default = "+defaultTrilinosDepsXmlInFile+")." )
 
 clp.add_option(
-  "--output-html-deps-file", dest="outputHtmlDepsFile", type="string",
-  default="TrilinosPackageDependenciesTable.html",
-  help="Output HTML file showing the Trilinos dependencies"+\
-    "(default = TrilinosPackageDependenciesTable.html)." )
+  "--output-cdash-deps-xml-file", dest="outputCDashDepsXmlFile", type="string",
+  default=defaultCDashDepsXmlFile,
+  help="Output XML file giving the Trilinos dependices CDash language"+\
+    "(default = "+defaultCDashDepsXmlFile+")." )
 
 (options, args) = clp.parse_args()
 
@@ -57,5 +58,5 @@ from TrilinosDependencies import getTrilinosDependenciesFromXmlFile
 trilinosDependencies = getTrilinosDependenciesFromXmlFile(
   options.inputXmlDepsFile)
 
-trilinosDependencies.writeFullHtmlPage(
-  options.outputHtmlDepsFile)
+trilinosDependencies.writeCDashXmlDepsFile(
+  options.outputCDashDepsXmlFile)

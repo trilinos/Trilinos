@@ -20,14 +20,6 @@ Kitware is going to actively work on this.
 Backlog:
 --------
 
-(*) [???] Refactor the CMake code to write all XML to a string variable first
-and then write the whole file in one shot.  This should massively speedup the
-creation of this file on Windows systems.
-
-(*) [???] Write out simplified dependencies XML file that can then be used
-with the CDash code to define the SubProject dependency structure (see emails
-with Kitware).
-
 (*) [???] Rewrite the MPI find module from sctatch.  The built-in one in CMake
 is just not very good.  Also, make this automatically set up the C++ and C
 compilers based on the MPI compilers that are found.  We are going to have to
@@ -60,6 +52,13 @@ new build directory against this.  It would be good to install a
 PACKAGEConfig.cmake file for each package that could then be used to specify
 what to build against.  We could also consider makefile fragments instead and
 just kill two birds with one stone.
+
+(*) [???] Add installation testing for the autotools installed libraries.
+This will be done in the same way as with the CMake built and installed
+libraries and headers instead we will use the autotools system to build and
+install the libraries and headers instead.  The CMake build system would be
+used to configure and build the tests and examples against the installed
+libraries and headers.
 
 (*) [???] Add unit testing infrastructure and documentation for
 PACKAGE_ADD_EXECUTABLE(...) and PACKAGE_ADD_TEST(...).  These unit tests will
@@ -111,10 +110,8 @@ be done from within the CMake code when generating the XML file to only add
 entries for enabled packages.  It would be good to have configure time option
 to control this.  By default, only show packages that are enabled.
 
-(*) [???] dump-package-dep-table.py to show tables for TPL dependencies.
-
 (*) [???] Update dump-package-dep-table.py to print a table of TPLs that
-packages depend on .
+packages depend on.
 
 (*) [???] Revive system in CMake for generating sample output.  I would like
 to have a top-level target called something like

@@ -15,6 +15,8 @@ defaultTrilinosDepsXmlInFile = getScriptsDir()+"/data/TrilinosPackageDependencie
 
 defaultTrilinosDepsHtmlOutFile = getScriptsDir()+"/data/TrilinosPackageDependenciesTable.html"
 
+defaultCDashDepsXmlFile = getScriptsDir()+"/data/CDashSubprojectDependencies.xml"
+
 
 #
 # Store and manipulate the dependencies
@@ -402,9 +404,57 @@ class TrilinosDependencies:
 
 
   def writeFullHtmlPage(self, htmlFileName=defaultTrilinosDepsHtmlOutFile):
+    htmlString = self.createFullHtmlPage()
     htmlFile = open(htmlFileName, 'w')
-    htmlFile.write(self.createFullHtmlPage())
+    htmlFile.write(htmlString)
     htmlFile.close()
+
+
+  #
+  # CDash stuff
+  #
+
+
+  def createCDashDepsXMLFromRawDepsTable(self, rawTable):
+    
+    xmlText = ""
+
+    xmlText += "<Project name=\"Trilinos\">\n"
+
+    numPackages = self.numPackages()
+
+    for package_i in range(numPackages):
+
+      packageDeps = self.__packagesList[package_i]
+
+      packageName = packageDeps.packageName
+      xmlText += ("  <SubProject name=\""+packageName+"\">\n")
+
+      row = rawTable[package_i+1]
+
+      for dep_j in range(numPackages):
+        entry = row[dep_j+1]
+        if entry and entry != "X":
+          depPackageName = self.__packagesList[dep_j].packageName
+          xmlText += ("    <Dependency name=\""+depPackageName+"\"" + \
+            " type=\""+entry+"\"/>\n" )
+
+      xmlText += ("  </SubProject>\n")
+
+    xmlText += "</Project>\n"
+
+    return xmlText
+  
+
+  def createCDashDepsXML(self):
+    return self.createCDashDepsXMLFromRawDepsTable(self.createRawTable(True))
+
+
+  def writeCDashXmlDepsFile(self, xmlDepsFile=defaultCDashDepsXmlFile):
+    xmlString = self.createCDashDepsXML()
+    xmlFile = open(xmlDepsFile, 'w')
+    xmlFile.write(xmlString)
+    xmlFile.close()
 
 
 #

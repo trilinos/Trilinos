@@ -1,0 +1,4 @@
+IF (Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS)
+  ADD_SUBDIRECTORY(DependencyUnitTests)
+  ADD_SUBDIRECTORY(python/UnitTests)
+ENDIF()
