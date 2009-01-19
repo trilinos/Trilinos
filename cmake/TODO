@@ -8,10 +8,6 @@ Last updated: 2008/11/18
 Active items:
 -------------
 
-(*) [Ross, Brent, Roger] (Ongoing): Add basic CMake support for every Trilinos
-package being used by SIERRA and needed to create a new NonlinearStrategies
-package.
-
 (*) [Everyone] (Ongoing): Add to the HOWTO.CMAKEIFY_PACKAGE file a list of all
 common scenarios that we need to cmakify a package so that users that want to
 do something can just go down the list to learn how to implement that
@@ -24,9 +20,30 @@ package.  Kitware is going to actively work on this.
 Backlog:
 --------
 
-(*) [???} Revise TPL support so that PACKAGE1_ENABLE_TPL1 will enable
+(*) [???] Refactor the CMake code to write all XML to a string
+variable first and then write the whole file in one shot.  This should
+massively speedup the creation of this file on Windows systems.
+
+(*) [???] Write out simplified dependencies XML file that can then be
+used with the CDash code to define the SubProject dependency structure
+(see emails with Kitware).
+
+(*) [???] Rewrite the MPI find module from sctatch.  The built-in one
+in CMake is just not very good.  Also, make this automatically set up
+the C++ and C compilers based on the MPI compilers that are found.  We
+are going to have to take control over this and do it right.  You
+should be able to just set MPI_BASE_DIR and everything else should be
+figured out automatically.  See the email thread to cmake@cmake.org
+for a discussion of this and the trilinos-framework email list.
+
+(*) [???] Revise TPL support so that PACKAGE1_ENABLE_TPL1 will enable
 the TPL only for PACKAGE1 and not for any of the other packages (see
 bug 4298).
+
+(*) [???] Revise package enabling logic so that
+PACKAGE1_ENABLE_PACKAGE will actually automatically set
+Trilinos_ENABLE_PACAKGE2 in case it is not already.  This will be
+consistent with the above mentioned TPL behavior.
 
 (*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG
 and MPI_OPT build directory and enable only "Primary Stable" code.
@@ -37,23 +54,18 @@ and nothing else.
 (*) [???] Experiment with using cmake -P <script_file> as a
 platform-independent scripting language.  We can use this for creating
 platform-independent scripts that will allow us to run on any
-platform.
+platform.  This will also allow us to append more types of tests on to
+an existing test like running the compareOutput program.
 
-(*) [???] Rewrite the MPI find module from sctatch.  The built-in one
-in CMake is just not very good.  Also, make this automatically set up
-the C++ and C compilers based on the MPI compilers that are found.  We
-are going to have to take control over this and do it right.  You
-should be able to just set MPI_BASE_DIR and everything else should be
-figured out automatically.
-
-(*) [???] Add installation testing for CMake build system.  Here, we
-will build and install libraries, and then configure a new project
-against this.  It would be good to install a PACKAGEConfig.cmake file
-for each package that could then be used to specify what to build
-against.
+(*) [???] Add installation testing for the CMake build system.  Here,
+we will build and install libraries, and then configure the tests and
+examples in a new build directory against this.  It would be good to
+install a PACKAGEConfig.cmake file for each package that could then be
+used to specify what to build against.  We could also consider
+makefile fragments instead and just kill two birds with one stone.
 
 (*) [???] Add unit testing infrastructure and documentation for
-PACKAGE_ADD_EXECUTABLE(...), PACKAGE_ADD_TEST(...).  These unit
+PACKAGE_ADD_EXECUTABLE(...) and PACKAGE_ADD_TEST(...).  These unit
 tests will serve both as tests and as extra documentation.  I need to
 see if you can redefine ADD_EXECUTABLE(...), ADD_TEST(...), and other
 commands so that I can unit test that these things are being set
