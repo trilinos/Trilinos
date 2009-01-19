@@ -13,75 +13,71 @@ common scenarios that we need to cmakify a package so that users that want to
 do something can just go down the list to learn how to implement that
 funcitonality.
 
-(*) [Ross and Kitware] Create separate dashboards for each Trilinos
-package.  Kitware is going to actively work on this.
+(*) [Ross and Kitware] Create separate dashboards for each Trilinos package.
+Kitware is going to actively work on this.
 
 
 Backlog:
 --------
 
-(*) [???] Refactor the CMake code to write all XML to a string
-variable first and then write the whole file in one shot.  This should
-massively speedup the creation of this file on Windows systems.
+(*) [???] Refactor the CMake code to write all XML to a string variable first
+and then write the whole file in one shot.  This should massively speedup the
+creation of this file on Windows systems.
 
-(*) [???] Write out simplified dependencies XML file that can then be
-used with the CDash code to define the SubProject dependency structure
-(see emails with Kitware).
+(*) [???] Write out simplified dependencies XML file that can then be used
+with the CDash code to define the SubProject dependency structure (see emails
+with Kitware).
 
-(*) [???] Rewrite the MPI find module from sctatch.  The built-in one
-in CMake is just not very good.  Also, make this automatically set up
-the C++ and C compilers based on the MPI compilers that are found.  We
-are going to have to take control over this and do it right.  You
-should be able to just set MPI_BASE_DIR and everything else should be
-figured out automatically.  See the email thread to cmake@cmake.org
-for a discussion of this and the trilinos-framework email list.
+(*) [???] Rewrite the MPI find module from sctatch.  The built-in one in CMake
+is just not very good.  Also, make this automatically set up the C++ and C
+compilers based on the MPI compilers that are found.  We are going to have to
+take control over this and do it right.  You should be able to just set
+MPI_BASE_DIR and everything else should be figured out automatically.  See the
+email thread to cmake@cmake.org for a discussion of this and the
+trilinos-framework email list.
 
-(*) [???] Revise TPL support so that PACKAGE1_ENABLE_TPL1 will enable
-the TPL only for PACKAGE1 and not for any of the other packages (see
-bug 4298).
+(*) [???] Revise TPL support so that PACKAGE1_ENABLE_TPL1 will enable the TPL
+only for PACKAGE1 and not for any of the other packages (see bug 4298).
 
-(*) [???] Revise package enabling logic so that
-PACKAGE1_ENABLE_PACKAGE will actually automatically set
-Trilinos_ENABLE_PACAKGE2 in case it is not already.  This will be
-consistent with the above mentioned TPL behavior.
+(*) [???] Revise package enabling logic so that PACKAGE1_ENABLE_PACKAGE2 will
+automatically set Trilinos_ENABLE_PACAKGE2=ON in case it is not already.  This
+will be consistent with the above mentioned TPL behavior.
 
-(*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG
-and MPI_OPT build directory and enable only "Primary Stable" code.
-This will need a minimal configuration script to pull in only the
-basic info needed in order to find compilers, MPI, BLAS, and LAPACK
-and nothing else.
+(*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG and
+MPI_OPT build directory and enable only "Primary Stable" code.  This will need
+a minimal configuration script to pull in only the basic info needed in order
+to find compilers, MPI, BLAS, and LAPACK and nothing else.
 
 (*) [???] Experiment with using cmake -P <script_file> as a
 platform-independent scripting language.  We can use this for creating
-platform-independent scripts that will allow us to run on any
-platform.  This will also allow us to append more types of tests on to
-an existing test like running the compareOutput program.
+platform-independent scripts that will allow us to run on any platform.  This
+will also allow us to append more types of tests on to an existing test like
+running the compareOutput program.
 
-(*) [???] Add installation testing for the CMake build system.  Here,
-we will build and install libraries, and then configure the tests and
-examples in a new build directory against this.  It would be good to
-install a PACKAGEConfig.cmake file for each package that could then be
-used to specify what to build against.  We could also consider
-makefile fragments instead and just kill two birds with one stone.
+(*) [???] Add installation testing for the CMake build system.  Here, we will
+build and install libraries, and then configure the tests and examples in a
+new build directory against this.  It would be good to install a
+PACKAGEConfig.cmake file for each package that could then be used to specify
+what to build against.  We could also consider makefile fragments instead and
+just kill two birds with one stone.
 
 (*) [???] Add unit testing infrastructure and documentation for
-PACKAGE_ADD_EXECUTABLE(...) and PACKAGE_ADD_TEST(...).  These unit
-tests will serve both as tests and as extra documentation.  I need to
-see if you can redefine ADD_EXECUTABLE(...), ADD_TEST(...), and other
-commands so that I can unit test that these things are being set
-correctly.  If not, then I can always wrap these with my own and then
-redefine them when unit testing.
+PACKAGE_ADD_EXECUTABLE(...) and PACKAGE_ADD_TEST(...).  These unit tests will
+serve both as tests and as extra documentation.  I need to see if you can
+redefine ADD_EXECUTABLE(...), ADD_TEST(...), and other commands so that I can
+unit test that these things are being set correctly.  If not, then I can
+always wrap these with my own and then redefine them when unit testing.
 
-(*) [???] Add option SKIPMEMCHECK to PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...) 
-to add test to CMAKE_CUSTOM_MEMCHECK_IGNORE that gets written to
+(*) [???] Add option SKIPMEMCHECK to PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...) to
+add test to CMAKE_CUSTOM_MEMCHECK_IGNORE that gets written to
 CTestCustomer.ctest.
 
-(*) [???] Change the macro TPL_DELCARE_LIBRARIES(...) to validate that
-all pased in header files are found (This was requested by Roger P.).
+(*) [???] Change the macro TPL_DELCARE_LIBRARIES(...) to validate that all
+pased in header files are found (This was requested by Roger P.).
 
-(*) [???] Add new TPL_DEFAULT_[INCLUDE_DIRS,LIBRARY_DIRS] user
-variables that will be the default for all
-TPL_${TPL_NAME}_[INCLUDE_DIRS,LIBRARY_DIRS] user cache variables.
+(*) [???] Add new TPL_DEFAULT_[INCLUDE_DIRS,LIBRARY_DIRS] user variables that
+will be the default for all TPL_${TPL_NAME}_[INCLUDE_DIRS,LIBRARY_DIRS] user
+cache variables.
 
 (*) [???] Fix PACKAGE_ADD_EXECUTABLE(...) to not add ./ to absolute paths
 
@@ -94,39 +90,37 @@ an internal cache variables and then reset them at the package level.
 control what gets built.  This will make it easier to maintain the BJAM build
 system.
 
-(*) [???] Add a global 'libs' target to rebuild only libraries so that
-we can skip unecessary relinking when shared libraries are used.  This
-target can be built by simply looping over all enabled packages and
-adding dependencies on ${PACKAGE}_libs.
+(*) [???] Add a global 'libs' target to rebuild only libraries so that we can
+skip unecessary relinking when shared libraries are used.  This target can be
+built by simply looping over all enabled packages and adding dependencies on
+${PACKAGE}_libs.
 
-(*) [???] Add a POSTFIXES argument to
-PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...)  to replace the silly numeric
-numbering.  This will be important for keeping track of test results
-for different enables/disables.
+(*) [???] Add POSTFIX and POSTFIXES arguments to
+PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...)  to avoid duplicating the exec name in
+NAME and to replace the silly numeric numbering.  This will be important for
+keeping track of test results for different enables/disables.
 
-(*) [???] Change how XXX_config.h.in files get created so that they
-get created automatically.  We can do this by changing the scripts
-PACKAGE_ADD_OPTION(...) and PACKAGE_CONFIGURE_FILE(...) and adding a
-few new scripts.
+(*) [???] Change how XXX_config.h.in files get created so that they get
+created automatically.  We can do this by changing the scripts
+PACKAGE_ADD_OPTION(...) and PACKAGE_CONFIGURE_FILE(...) and adding a few new
+scripts.
 
-(*) [???] Upgrade Trilinos/CMakeLists.txt and
-dump-package-dep-table.py add an option to only show dependencies for
-enabled packages.  Actually, this could be done from within the CMake
-code when generating the XML file to only add entries for enabled
-packages.  It would be good to have configure time option to control
-this.  By default, only show packages that are enabled.
+(*) [???] Upgrade Trilinos/CMakeLists.txt and dump-package-dep-table.py add an
+option to only show dependencies for enabled packages.  Actually, this could
+be done from within the CMake code when generating the XML file to only add
+entries for enabled packages.  It would be good to have configure time option
+to control this.  By default, only show packages that are enabled.
 
-(*) [???] dump-package-dep-table.py to show tables for TPL
-dependencies.
+(*) [???] dump-package-dep-table.py to show tables for TPL dependencies.
 
-(*) [???] Update dump-package-dep-table.py to print a table of TPLs
-that packages depend on .
+(*) [???] Update dump-package-dep-table.py to print a table of TPLs that
+packages depend on .
 
-(*) [???] Revive system in CMake for generating sample output.  I
-would like to have a top-level target called something like
+(*) [???] Revive system in CMake for generating sample output.  I would like
+to have a top-level target called something like
 Trilinos_generate_sample_output and this target should dependend on
-package-level targets ${PACKAGE_NAME}_generate_sample_output.  Some
-type of macro should be created to automate this process.
+package-level targets ${PACKAGE_NAME}_generate_sample_output.  Some type of
+macro should be created to automate this process.
 
 (*) [???] Clean up tests and examples:
 

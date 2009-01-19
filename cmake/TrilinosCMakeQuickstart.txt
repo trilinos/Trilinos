@@ -11,16 +11,17 @@ A) Getting set up to use CMake
 
 (*) Installing CMake
 
-  $ $TRILINOS_HOME/cmake/python/install-cmake.phy --install-dir=INSTALL_BASE_DIR
+    $ $TRILINOS_HOME/cmake/python/install-cmake.phy --install-dir=INSTALL_BASE_DIR
 
   This will result in cmake and related CMake tools being installed in
   INSTALL_BASE_DIR/bin.
 
   Getting help:
 
-  $ $TRILINOS_HOME/cmake/python/install-cmake.phy --help
+    $ $TRILINOS_HOME/cmake/python/install-cmake.phy --help
 
-  NOTE:  
+  NOTE: you will want to read the help message about how to use sudo to
+  install in a privileged location.
 
 
 B) Getting Help
@@ -46,13 +47,11 @@ C) Configuring
   $ cd $BUILD_DIR
   $ rm CMakeCache.txt
   $ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
-      -D Trilinos_ENABLE_C:BOOL=OFF \
-      -D Trilinos_ENABLE_CXX:BOOL=OFF \
-      -D Trilinos_ENABLE_Fortran:BOOL=OFF \
-       $TRILINOS_BASE_DIR
+    $TRILINOS_BASE_DIR
 
   NOTE: You can also just look at the text file CMakeCache.txt after any
-  configure which has all of the cache variables and documentation.
+  configure which gets created in the build directory which has all of the
+  cache variables and documentation.
 
 (*) Viewing available configure-time options without documentation
 
@@ -86,47 +85,61 @@ C) Configuring
 
       See Trilinos/sampleScripts/*cmake for real examples.
 
+(*) Configuring to build debug and release (optimized) versions:
+
+  To build a debug version, pass into 'cmake':
+
+    -D CMAKE_BUILD_TYPE:STRING=DEBUG
+
+  NOTE: The above will automatically set Trilinos_ENBLE_DEBUG=ON which will
+  turn on all debug checks in all packages by default.
+
+  To build a release (optimized) version, pass into 'cmake':
+
+    -D CMAKE_BUILD_TYPE:STRING=RELEASE
+
 (*) Configuring Trilinos to build all packages with all tests and examples:
 
-  $ ./do-configure \
-     -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
-     -D Trilinos_ENABLE_TESTS:BOOL=ON
+    $ ./do-configure \
+       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+       -D Trilinos_ENABLE_TESTS:BOOL=ON
 
   NOTE: Specific packages can be disabled with
   Trilinos_ENABLE_PACKAGE:BOOL=OFF.
 
-  NOTE: All examples are enabled by default by setting
+  NOTE: All examples are enabled by default when setting
   Trilinos_ENABLE_TESTS:BOOL=ON.
 
 (*) Configuring a package(s) along with all of the packages it can use:
 
-  $ ./do-configure \
-     -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
-     -D Trilinos_ENABLE_NOX:BOOL=ON \
-     -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
-     -D Trilinos_ENABLE_TESTS:BOOL=ON
+    $ ./do-configure \
+       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+       -D Trilinos_ENABLE_<PACKAGE>:BOOL=ON \
+       -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+       -D Trilinos_ENABLE_TESTS:BOOL=ON
 
-  NOTE: This set of arguments allows a user to turn on NOX as well as all
-  packages that NOX can use.  However, tests and examples will only be turned
-  on for NOX (or any other packages specifically enabled).
+  NOTE: This set of arguments allows a user to turn on <PACKAGE> as well as all
+  packages that <PACKAGE> can use.  However, tests and examples will only be turned
+  on for <PACKAGE> (or any other packages specifically enabled).
 
 (*) Configuring Trilinos to test all effects of changing a given package(s):
 
   $ ./do-configure \
      -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
-     -D Trilinos_ENABLE_Epetra:BOOL=ON \
+     -D Trilinos_ENABLE_<PACAKGE>:BOOL=ON \
      -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES:BOOL=ON \
      -D Trilinos_ENABLE_TESTS:BOOL=ON
 
-  NOTE: The above set of arguments will result in Epetra and all
-  packages that depend on Epetra to be enabled and have all of their
-  tests turned on.  Tests will not be enabled in packages that do not
-  depend on Epetra in this case.  This speeds up and robustifies
-  pre-checkin testing.
+  NOTE: The above set of arguments will result in package <PACAKGE> and all
+  packages that depend on <PACAKGE> to be enabled and have all of their tests
+  turned on.  Tests will not be enabled in packages that do not depend on
+  <PACAKGE> in this case.  This speeds up and robustifies pre-checkin testing.
 
-(*) Adding support for optional Third-Party Libraries (TPLs)
+(*) Enabling support for optional Third-Party Libraries (TPLs):
 
-  -D TPL_ENABLE_<TPLNAME>:BOOL=ON
+  Pass into 'cmake':
+
+    -D TPL_ENABLE_<TPLNAME>:BOOL=ON
 
   where TPLNAME = Boost, MPI, etc.
 
@@ -142,14 +155,16 @@ C) Configuring
     can be found.
 
   NOTE: The variables TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES
-  are directly used by the CMake build infrastructure.  These variables are
-  normally set by the varaibles <TPLNAME>_INCLUDE_DIRS,
-  <TPLNAME>_LIBRARY_NAMES, and <TPLNAME>_LIBRARY_DIRS through a set of find
-  commands but you can always override these and just directly set
-  TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES.  This gives you
-  directly control to set exactly what is used in the build process.
+  are what are directly used by the CMake build infrastructure.  These
+  variables are normally set by the varaibles <TPLNAME>_INCLUDE_DIRS,
+  <TPLNAME>_LIBRARY_NAMES, and <TPLNAME>_LIBRARY_DIRS using find commands but
+  you can always override these and directly set the (FILEPATH) cache varibles
+  TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES.  This gives the user
+  complete and directl control in specifying set exactly what is used in the
+  build process.
 
-  Optional package-specific support for TPLs can be turned off by setting:
+  Optional package-specific support for a TPL can be turned off by passing
+  into 'cmake':
 
     -D <PACKAGE>_ENABLE_<TPLNAME>:BOOL=OFF
 
@@ -158,21 +173,26 @@ C) Configuring
 
 (*) Getting verbose output from configure
 
-  $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON
+    $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON
+
+  NOTE: This produces a *lot* of output but can be very useful when debugging
+  configuration problems
 
 (*) Getting very verbose output from configure
 
-  $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
+    $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
+
+  NOTE: This will print a complete stack trace to see exactly where you are
 
 (*) Viewing current values of cache variables
 
-  $ cmake -LA $TRILINOS_BASE_DIR
+    $ cmake -LA $TRILINOS_BASE_DIR
 
   or just examine and grep the file CMakeCache.txt.
 
 (*) Reconfiguring from scratch
 
-  $ rm CMakeCache ; ./do-configure
+    $ rm CMakeCache ; ./do-configure
 
   NOTE: Removing the CMakeCache.txt file is often needed when removing
   variables from the configure line.
@@ -189,30 +209,40 @@ D) Building
 
 (*) Discovering what targets are available to build after configuration:
 
-  $ make help
+      $ make help
 
 (*) See all of the targets to build for a package:
 
-  $ make help | grep <PACKAGE>_
+    $ make help | grep <PACKAGE>_
 
   (where PACKAGE = Teuchos, Epetra, NOX, etc.)
+
+  or:
+
+    $ cd packages/<PACKAGE>
+    $ make help
 
 (*) Building all of the targets for a package:
 
-  $ make <PACKAGE>_all
+    $ make <PACKAGE>_all
 
   (where PACKAGE = Teuchos, Epetra, NOX, etc.)
+
+  or:
+
+    $ cd packages/<PACKAGE>
+    $ make
 
 (*) Building all of the libraries for a package:
 
-  $ make <PACKAGE>_libs
+    $ make <PACKAGE>_libs
 
   (where PACKAGE = Teuchos, Epetra, NOX, etc.)
 
-(*) Figuring out how to build a single object file:
+(*) Building a single object file:
 
-  Look for the name of the object file to build source file
-  SomeSourceFile.cpp:
+  First, look for the name of the object file to build based on the source
+  file SomeSourceFile.cpp:
 
     $ make help | grep SomeSourceFile.o
 
@@ -221,83 +251,72 @@ D) Building
     $ make WHATEVER_WAS_RETURNED_ABOVE
 
 
-E) Testing
----------------
+E) Testing with CTest
+---------------------
 
-(*) Running the CTest tests:
-
-  a) Using 'make test'
+(*) Using 'make test'
 
     $ make test
 
-  b) Using 'ctest'
+  NOTE: This is equivalent to just running 'ctest'.
 
-    $ ctest
+(*) Using 'ctest'
 
-    (see output in Testing/Temporary/LastTest.log)
+    $ ctest -W 100
 
-    with verbose output to the console:
+  (see output in Testing/Temporary/LastTest.log)
+
+  See detailed test otuput with :
 
     $ ctest -VV
 
-  c) Only running tests for a single package
+(*) Only running tests for a single package
 
-    Running a single package test:
+  Running a single package test:
 
     $ ctest -W 100 -R '^<PACKAGE>_'
 
-    (e.g. PACKAGE = Teuchos, Epetra, etc.)
-    (see output in Testing/Temporary/LastTest.log)
+  (e.g. PACKAGE = Teuchos, Epetra, etc.)
+  (see output in Testing/Temporary/LastTest.log)
 
-  d) Running a single test with full output to the console:
+  or:
+
+    $ cd packages/<PACAKGE>
+    $ ctest -W 100
+
+(*) Running a single test with full output to the console:
 
     $ ctest -R FULL_TEST_NAME -VV
 
-    (i.e. FULL_TEST_NAME = Teuchos_Comm_test, Epetra_MultiVector_test, etc. )
+  (i.e. FULL_TEST_NAME = Teuchos_Comm_test, Epetra_MultiVector_test, etc. )
 
-  e) Runing memory checking:
+(*) Runing memory checking:
 
-    Running memory tets for just a single package:
+  Running memory tets for just a single package:
 
     $ ctest -R '^Epetra_' -T memcheck
 
-    (see the detailed output in
-    ./Testing/Temporary/LastDynamicAnalysis_DATE_TIME.log)
-  
-(*) Running the perl-based runtests tests from all of Trilinos:
-
-  a) Serial tests:
-
-    $ make runtests-serial
-
-  b) MPI tests:
-
-    $ make runtests-mpi
-
-    (NOTE: No need to specify MPIGO or anything else!)
-  
-(*) Running the perl-based runtests tests for a single package:
-
-  a) Serial tests:
-
-    $ make <PACKAGE>-runtests-seial
-
-    Where PACKAGE = Epetra, Thyra, NOX, etc.
-
-  b) MPI tests:
-
-    $ make <PACKAGE>-runtests-mpi
-
-    (NOTE: No need to specify MPIGO or anything else!)
-
+  (see the detailed output in
+  ./Testing/Temporary/LastDynamicAnalysis_DATE_TIME.log)
 
 
 F) Installing
 ---------------
 
-(*) Setting the install prefix and installing
+(*) Setting the install prefix at configure time
 
-  -D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/mpi/opt
+    $ ./do-configure \
+      -D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/mpi/opt
+
+(*) Installing after configuration
+
+    $ make install
+
+    (will build all of the targets needed before the install)
+
+(*) Uninstall
+
+    $ make uninstall
 
 
 G) Packaging
@@ -307,8 +326,8 @@ G) Packaging
 
    $ make package_source
 
-   NOTE: TThe above command will tar up *everything* in the source tree
-   (except for files explicitly exluded in the CMakeLists.txt files) so make
-   sure that you start with a totally clean source tree before you do this.
-   Or, you could build doxygen documentation first and then tar up Trilinos
-   and that would give you the source with doxygen documentation.
+   NOTE: The above command will tar up *everything* in the source tree (except
+   for files explicitly excluded in the CMakeLists.txt files) so make sure
+   that you start with a totally clean source tree before you do this.  Or,
+   you could build doxygen documentation first and then tar up Trilinos and
+   that would give you the source with doxygen documentation.
