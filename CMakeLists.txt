@@ -30,7 +30,10 @@ INCLUDE(TrilinosGlobalMacros)
 INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
 
-OPTION(Trilinos_VERBOSE_CONFIGURE "Make the Trilinos configure process verbose." OFF)
+OPTION(Trilinos_VERBOSE_CONFIGURE
+  "Make the Trilinos configure process verbose." OFF)
+
+FIND_PACKAGE(PythonInterp)
 
 
 #
@@ -107,7 +110,7 @@ ADVANCED_OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
   "Shortcircut after dependency handling is complete"
   OFF )
 
-IF(WIN32 AND NOT CYGWIN)
+IF (WIN32 AND NOT CYGWIN)
   SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT "")
 ELSE()
   SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
@@ -117,33 +120,35 @@ ADVANCED_SET(Trilinos_DEPS_XML_OUTPUT_FILE
   "${Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT}"
   CACHE STRING
   "Output XML file containing Trilinos dependenices used by tools (if not empty)." )
+# 2009/01/19: rabartl: Above: This file outputs just fine on MS
+# Windows using MS Visual Studio but it causes the entire file to
+# diff.  There must be something wrong with a newlines or something
+# that is causing this.  If people are going to be doing real
+# development work on MS Windows with MS Visual Studio, then we need
+# to fix this so that the dependency files will get created and
+# checked in correctly.  I will look into this later.
 
-IF(WIN32 AND NOT CYGWIN)
-  SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
+IF(Trilinos_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
+  SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
+    "${TRILINOS_HOME_DIR}/cmake/python/data/CDashSubprojectDependencies.xml" )
 ELSE()
+  SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
+ENDIF()
+ADVANCED_SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE
+  "${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT}"
+  CACHE STRING
+  "Output XML file used by CDash in Trilinos-independent format (if not empty)." )
+
+IF(Trilinos_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
   SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT
     "${TRILINOS_BUILD_DIR}/TrilinosPackageDependenciesTable.html" )
+ELSE()
+  SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
 ENDIF()
 ADVANCED_SET(Trilinos_DEPS_HTML_OUTPUT_FILE
   "${Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT}"
   CACHE STRING
   "HTML Trilinos dependenices file that will be written to (if not empty)." )
-
-
-PRINT_VAR(Trilinos_DEPS_XML_OUTPUT_FILE)
-
-IF(NOT Trilinos_DEPS_XML_OUTPUT_FILE)
-  SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
-ELSE()
-  SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
-    "${TRILINOS_HOME_DIR}/cmake/python/data/CDashSubprojectDependencies.xml" )
-ENDIF()
-PRINT_VAR(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT)
-ADVANCED_SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE
-  "${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT}"
-  CACHE STRING
-  "Output XML file used by CDash in Trilinos-independent format (if not empty)." )
-PRINT_VAR(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE)
 
 
 #
@@ -182,7 +187,8 @@ IF (Trilinos_DEPS_HTML_OUTPUT_FILE)
   MESSAGE("Dumping the HTML dependencies webpage file ${Trilinos_DEPS_HTML_OUTPUT_FILE} ..." )
   MESSAGE("" )
   EXECUTE_PROCESS(
-    COMMAND ${TRILINOS_HOME_DIR}/cmake/python/dump-package-dep-table.py
+    COMMAND ${PYTHON_EXECUTABLE}
+      ${TRILINOS_HOME_DIR}/cmake/python/dump-package-dep-table.py
       --input-xml-deps-file=${Trilinos_DEPS_XML_OUTPUT_FILE}
       --output-html-deps-file=${Trilinos_DEPS_HTML_OUTPUT_FILE} )
 ENDIF()
@@ -192,7 +198,8 @@ IF (Trilinos_CDASH_DEPS_XML_OUTPUT_FILE)
   MESSAGE("Dumping the CDash XML dependencies file ${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE} ..." )
   MESSAGE("" )
   EXECUTE_PROCESS(
-    COMMAND ${TRILINOS_HOME_DIR}/cmake/python/dump-cdash-deps-xml-file.py
+    COMMAND ${PYTHON_EXECUTABLE}
+      ${TRILINOS_HOME_DIR}/cmake/python/dump-cdash-deps-xml-file.py
       --input-xml-deps-file=${Trilinos_DEPS_XML_OUTPUT_FILE}
       --output-cdash-deps-xml-file=${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE} )
 ENDIF()
