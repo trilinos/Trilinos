@@ -43,9 +43,10 @@
 namespace Rythmos {
 
 // non-member Constructor
-RCP<SinCosModel> sinCosModel(bool implicit) 
+RCP<SinCosModel> sinCosModel(bool implicit, bool haveIC) 
 {
   RCP<SinCosModel> model = rcp(new SinCosModel);
+  model->setHaveIC(haveIC);
   model->setImplicitFlag(implicit);
   return(model);
 }
@@ -71,6 +72,10 @@ void SinCosModel::setImplicitFlag(bool implicit)
   initialize_();
 }
 
+void SinCosModel::setHaveIC(bool haveIC)
+{
+  haveIC_ = haveIC;
+}
 
 ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSolution(double t) const
 {
@@ -130,6 +135,29 @@ SinCosModel::create_W() const
 {
   RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = this->get_W_factory();
   RCP<Thyra::LinearOpBase<double> > matrix = this->create_W_op();
+  {
+    // 01/20/09 tscoffe:  This is a total hack to provide a full rank matrix to
+    // linearOpWithSolve because it ends up factoring the matrix during
+    // initialization, which it really shouldn't do, or I'm doing something
+    // wrong here.   The net effect is that I get exceptions thrown in
+    // optimized mode due to the matrix being rank deficient unless I do this.
+    RCP<Thyra::MultiVectorBase<double> > multivec = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(matrix,true);
+    {
+      RCP<Thyra::VectorBase<double> > vec = Thyra::createMember(x_space_);
+      {
+        Thyra::DetachedVectorView<double> vec_view( *vec );
+        vec_view[0] = 0.0;
+        vec_view[1] = 1.0;
+      }
+      V_V(&*(multivec->col(0)),*vec);
+      {
+        Thyra::DetachedVectorView<double> vec_view( *vec );
+        vec_view[0] = 1.0;
+        vec_view[1] = 0.0;
+      }
+      V_V(&*(multivec->col(1)),*vec);
+    }
+  }
   RCP<Thyra::LinearOpWithSolveBase<double> > W = 
     Thyra::linearOpWithSolve<double>(
       *W_factory,
@@ -289,23 +317,26 @@ void SinCosModel::initialize_()
 
     // Set up nominal values 
     nominalValues_ = inArgs_;
-    const RCP<VectorBase<double> > x_ic = createMember(x_space_);
-    { // scope to delete DetachedVectorView
-      Thyra::DetachedVectorView<double> x_ic_view( *x_ic );
-      x_ic_view[0] = 0.0;
-      x_ic_view[1] = 1.0;
-    }
-    nominalValues_.set_x(x_ic);
-    double t_ic = 0.0;
-    nominalValues_.set_t(t_ic);
-    if (isImplicit_) {
-      const RCP<VectorBase<double> > x_dot_ic = createMember(x_space_);
+    if (haveIC_) 
+    {
+      const RCP<VectorBase<double> > x_ic = createMember(x_space_);
       { // scope to delete DetachedVectorView
-        Thyra::DetachedVectorView<double> x_dot_ic_view( *x_dot_ic );
-        x_dot_ic_view[0] = 1.0;
-        x_dot_ic_view[1] = 0.0;
+        Thyra::DetachedVectorView<double> x_ic_view( *x_ic );
+        x_ic_view[0] = 0.0;
+        x_ic_view[1] = 1.0;
       }
-      nominalValues_.set_x_dot(x_dot_ic);
+      nominalValues_.set_x(x_ic);
+      double t_ic = 0.0;
+      nominalValues_.set_t(t_ic);
+      if (isImplicit_) {
+        const RCP<VectorBase<double> > x_dot_ic = createMember(x_space_);
+        { // scope to delete DetachedVectorView
+          Thyra::DetachedVectorView<double> x_dot_ic_view( *x_dot_ic );
+          x_dot_ic_view[0] = 1.0;
+          x_dot_ic_view[1] = 0.0;
+        }
+        nominalValues_.set_x_dot(x_dot_ic);
+      }
     }
     isInitialized_ = true;
 

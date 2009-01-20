@@ -9,6 +9,7 @@ integrator with general responses and sensitivities:
 Rythmos::StepperBase. Depends only on Rythmos and Thyra.  Belongs in
 Rythmos.
 + Need to create Rythmos::StepperBuilder
++ Done 1/19/09
 
 - [Ross] Given a PL, return a Thyra::NonlinearSolver for f(x)=0.  Depends
 NOX, MOOCHO, Rythmos (or Thyra).

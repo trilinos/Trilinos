@@ -55,6 +55,9 @@ class SinCosModel : public Thyra::StateFuncModelEvaluatorBase<double>
   // Set explicit/implicit flag
   void setImplicitFlag(bool implicit);
 
+  // Set have/not-have initial condition
+  void setHaveIC(bool haveIC);
+
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
 
@@ -97,6 +100,7 @@ private:
   int dim_;         // 2
   bool isImplicit_; // false => \dot{x} = f(x,t)    W = beta*df/dx
                     // true =>  F(\dot{x},x,t) = 0  W = alpha*dF/dxdot + beta*dF/dx
+  bool haveIC_;     // false => no nominal values are provided (default=true)
   bool isInitialized_;
   ModelEvaluatorBase::InArgs<double> inArgs_;
   ModelEvaluatorBase::OutArgs<double> outArgs_;
@@ -107,7 +111,7 @@ private:
 };
 
 // Non-member constructor
-RCP<SinCosModel> sinCosModel(bool implicit);
+RCP<SinCosModel> sinCosModel(bool implicit, bool haveIC=true);
 
 
 } // namespace Rythmos 
