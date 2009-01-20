@@ -5,35 +5,33 @@ Last updated: 2009/01/14
 (*) Builders that are needed to create a forward sensitivity
 integrator with general responses and sensitivities:
 
-- Given a EpetraExt::ModelEvalator object and an PL, return a "basic"
-Thrya ModelEvaluator.  Depends on Stratimikos and EpetraExt.  Could
-live in Stratimikos.
-
-- Given a "basic" Thyra::ModelEvaluator and a PL, return a (multiply)
-decorated Thyra::ModelEvalutor.  Depends only on Thyra.  Belongs in
-Thyra.
-
-- Given a Thyra::ModelEvalutor and a PL, return an aggregate
-Rythmos::TransientObservedModel.  Belongs in Rythmos.
-
-- Given a PL, return a Thyra::NonlinearSolver for f(x)=0.  Depends
-NOX, MOOCHO, Rythmos (or Thyra).
-+ Need to create Thyra::NonlinearSolverFactoryBase interface
-+ Need to create Thyra::NonlinearSolverBuilderBase interface
-+ Need to create Thyra::DefaultNonlinearSolverBuilder subclass (empty
-except for ...)
-+ Need to create Thyra::NOXNonlinearSolverFactory
-+ Need to create Thyra::TimestepNonlinearSolverFactory (in Rythmos)
-+ (later) create a Thyra::MOOCHONonlinearSolverFactory
-
-- Given a PL and and optional Thyra::NonlinearSolver, return a
+- [Todd] Given a PL and and optional Thyra::NonlinearSolver, return a
 Rythmos::StepperBase. Depends only on Rythmos and Thyra.  Belongs in
 Rythmos.
 + Need to create Rythmos::StepperBuilder
 
-- Given a Rythmos::TransientObservedModel and a PL, return:
+- [Ross] Given a PL, return a Thyra::NonlinearSolver for f(x)=0.  Depends
+NOX, MOOCHO, Rythmos (or Thyra).
++ Need to create Thyra::NonlinearSolverBuilderBase interface
++ Need to create Thyra::DefaultNonlinearSolverBuilder subclass (empty
+except for ...)
 
-a) Rythmos::IntegratorBase for the forward problem, or
+- [Ross] Given a "basic" Thyra::ModelEvaluator and a PL, return a
+(multiply) decorated Thyra::ModelEvalutor.  Depends only on Thyra.
+Belongs in Thyra.
 
-b) Thyra::ModelEvaluator for the reduced response/observation problem
-g_hat(p) with or without sensitivities.
+- [Ross & Todd] Given a Thyra::ModelEvalutor and a PL, return an
+aggregate Rythmos::TransientObservedModel.  Belongs in Rythmos.
+
+- Given a Rythmos::TransientObservedModel and a PL, and:
+
+a) Return a new Rythmos::IntegratorBase for the forward problem, or
+
+b) Return a Thyra::ModelEvaluator for the reduced response/observation
+problem g_hat(p) with or without sensitivities.
+
+c) ??
+
+- Given a EpetraExt::ModelEvalator object and an PL (and an embedded
+Thyra::LinearSolverBuilderBase object), return a "basic" Thrya
+ModelEvaluator ... May not be needed ...
