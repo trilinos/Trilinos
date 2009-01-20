@@ -1,0 +1,17 @@
+/* src/Pamgen_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if want to build examples */
+#cmakedefine HAVE_EXAMPLES
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI
+
+/* Define if want to build pamgen-examples */
+#cmakedefine HAVE_PAMGEN_EXAMPLES
+
+/* Define if want to build pamgen-tests */
+#cmakedefine HAVE_PAMGEN_TESTS
+
+/* Define if want to build tests */
+#cmakedefine HAVE_TESTS
+
