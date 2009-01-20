@@ -93,8 +93,10 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_test_gaasp_adapters_OBJECTS = test_gaasp_adapters.$(OBJEXT) \
-	Rythmos_GAASPErrorEstimator_UnitTest.$(OBJEXT)
+	Rythmos_GAASPErrorEstimator_UnitTest.$(OBJEXT) \
+	LorenzModel.$(OBJEXT)
 test_gaasp_adapters_OBJECTS = $(am_test_gaasp_adapters_OBJECTS)
+test_gaasp_adapters_DEPENDENCIES =
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -229,9 +231,10 @@ top_srcdir = @top_srcdir@
 #test_gaasp_adapters_INCLUDES =
 test_gaasp_adapters_SOURCES = \
 	$(srcdir)/test_gaasp_adapters.cpp\
-	$(srcdir)/Rythmos_GAASPErrorEstimator_UnitTest.cpp
-
+	$(srcdir)/Rythmos_GAASPErrorEstimator_UnitTest.cpp\
+	$(srcdir)/../example/LorenzModel.cpp\
 test_gaasp_adapters_DEPENDENCIES = $(top_builddir)/src/librythmos.a 
+
 test_gaasp_adapters_LDADD = $(RYTHMOS_GAASP_LIBS) $(GAASP_LIBS) $(RYTHMOS_LIBS) 
 AM_CPPFLAGS = $(RYTHMOS_GAASP_INCLUDES) $(GAASP_INCLUDES) $(RYTHMOS_INCLUDES) 
 all: all-am
@@ -300,6 +303,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LorenzModel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_GAASPErrorEstimator_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_gaasp_adapters.Po@am__quote@
 
@@ -344,6 +348,20 @@ Rythmos_GAASPErrorEstimator_UnitTest.obj: $(srcdir)/Rythmos_GAASPErrorEstimator_
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_GAASPErrorEstimator_UnitTest.cpp' object='Rythmos_GAASPErrorEstimator_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_GAASPErrorEstimator_UnitTest.obj `if test -f '$(srcdir)/Rythmos_GAASPErrorEstimator_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_GAASPErrorEstimator_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_GAASPErrorEstimator_UnitTest.cpp'; fi`
+
+LorenzModel.o: $(srcdir)/../example/LorenzModel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LorenzModel.o -MD -MP -MF $(DEPDIR)/LorenzModel.Tpo -c -o LorenzModel.o `test -f '$(srcdir)/../example/LorenzModel.cpp' || echo '$(srcdir)/'`$(srcdir)/../example/LorenzModel.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LorenzModel.Tpo $(DEPDIR)/LorenzModel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../example/LorenzModel.cpp' object='LorenzModel.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LorenzModel.o `test -f '$(srcdir)/../example/LorenzModel.cpp' || echo '$(srcdir)/'`$(srcdir)/../example/LorenzModel.cpp
+
+LorenzModel.obj: $(srcdir)/../example/LorenzModel.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LorenzModel.obj -MD -MP -MF $(DEPDIR)/LorenzModel.Tpo -c -o LorenzModel.obj `if test -f '$(srcdir)/../example/LorenzModel.cpp'; then $(CYGPATH_W) '$(srcdir)/../example/LorenzModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../example/LorenzModel.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LorenzModel.Tpo $(DEPDIR)/LorenzModel.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../example/LorenzModel.cpp' object='LorenzModel.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LorenzModel.obj `if test -f '$(srcdir)/../example/LorenzModel.cpp'; then $(CYGPATH_W) '$(srcdir)/../example/LorenzModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../example/LorenzModel.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

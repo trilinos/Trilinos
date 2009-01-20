@@ -94,7 +94,10 @@ void GAASPInterface::forwardSolve() {
 	fDer_ = forwardSolver_->getDerivatives();
   forwardSolveCompleted_ = true;
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  *out << "GAASPInterface::forwardSolve nSteps_ = " << nSteps_+1 << std::endl;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  if (Teuchos::as<int>(verbLevel) != Teuchos::VERB_NONE) {
+    *out << "GAASPInterface::forwardSolve nSteps_ = " << nSteps_+1 << std::endl;
+  }
 }
 
 void GAASPInterface::adjointSolve() {
@@ -183,7 +186,10 @@ void GAASPInterface::refineMesh() {
   nNodes_ = meshRefiner_->getNumberofNodes();
   refineMeshCompleted_ = true;
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  *out << "GAASPInterface::refineMesh nNodes_ = " << nNodes_ << std::endl;
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
+  if (Teuchos::as<int>(verbLevel) != Teuchos::VERB_NONE) {
+    *out << "GAASPInterface::refineMesh nNodes_ = " << nNodes_ << std::endl;
+  }
 }
 
 void GAASPInterface::setThyraModelEvaluator(Teuchos::RCP<Thyra::ModelEvaluator<double> > tModel) {

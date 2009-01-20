@@ -39,7 +39,8 @@ bin_PROGRAMS = test_gaasp_adapters
 #test_gaasp_adapters_INCLUDES =
 test_gaasp_adapters_SOURCES =\
 	$(srcdir)/test_gaasp_adapters.cpp\
-	$(srcdir)/Rythmos_GAASPErrorEstimator_UnitTest.cpp
+	$(srcdir)/Rythmos_GAASPErrorEstimator_UnitTest.cpp\
+	$(srcdir)/../example/LorenzModel.cpp\
 test_gaasp_adapters_DEPENDENCIES = $(top_builddir)/src/librythmos.a 
 test_gaasp_adapters_LDADD = $(RYTHMOS_GAASP_LIBS) $(GAASP_LIBS) $(RYTHMOS_LIBS) 
 

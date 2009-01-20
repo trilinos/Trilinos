@@ -75,15 +75,24 @@ Teuchos::RCP<const ErrorEstimateBase<double> > GAASPErrorEstimator::getErrorEsti
   if (!isInitialized_) {
     initialize_();
   }
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"GAASPErrorEstimator::");
-  *out << "getErrorEstimate:  Calling GAASPInterface::forwardSolve()..." << std::endl;
+  if (Teuchos::as<int>(verbLevel) != Teuchos::VERB_NONE) {
+    *out << "getErrorEstimate:  Calling GAASPInterface::forwardSolve()..." << std::endl;
+  }
   gaaspInterfacePtr_->forwardSolve();
-  *out << "getErrorEstimate:  Calling GAASPInterface::adjointSolve()..." << std::endl;
+  if (Teuchos::as<int>(verbLevel) != Teuchos::VERB_NONE) {
+    *out << "getErrorEstimate:  Calling GAASPInterface::adjointSolve()..." << std::endl;
+  }
   gaaspInterfacePtr_->adjointSolve();
-  *out << "getErrorEstimate:  Calling GAASPInterface::computeErrorEstimate()..." << std::endl;
+  if (Teuchos::as<int>(verbLevel) != Teuchos::VERB_NONE) {
+    *out << "getErrorEstimate:  Calling GAASPInterface::computeErrorEstimate()..." << std::endl;
+  }
   Teuchos::RCP<const GAASPErrorEstimate> gaaspEE = gaaspInterfacePtr_->computeErrorEstimate();
-  *out << "getErrorEstimate:  Global Error Estimate = " << fabs(gaaspEE->getTotalError()) << std::endl;
+  if (Teuchos::as<int>(verbLevel) != Teuchos::VERB_NONE) {
+    *out << "getErrorEstimate:  Global Error Estimate = " << fabs(gaaspEE->getTotalError()) << std::endl;
+  }
   return(gaaspEE);
 }
 
@@ -91,18 +100,23 @@ Teuchos::RCP<const ErrorEstimateBase<double> > GAASPErrorEstimator::controlGloba
   if (!isInitialized_) {
     initialize_();
   }
+  Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"GAASPErrorEstimator::");
 
   paramList_->sublist(GAASPInterface_name_).set("uTOL",uTOL);
   gaaspInterfacePtr_->setParameterList(sublist(paramList_,GAASPInterface_name_));
-  *out << "controlGlobalError:  Global error tolerance = " << uTOL << std::endl;
+  if (Teuchos::as<int>(verbLevel) != Teuchos::VERB_NONE) {
+    *out << "controlGlobalError:  Global error tolerance = " << uTOL << std::endl;
+  }
 
   Teuchos::RCP<const ErrorEstimateBase<double> > gaaspEE;
 
   gaaspEE = getErrorEstimate();
   while (fabs(gaaspEE->getTotalError()) > uTOL) {
-    *out << "controlGlobalError:  Calling GAASPInterface::refineMesh()..." << std::endl;
+    if (Teuchos::as<int>(verbLevel) != Teuchos::VERB_NONE) {
+      *out << "controlGlobalError:  Calling GAASPInterface::refineMesh()..." << std::endl;
+    }
     gaaspInterfacePtr_->refineMesh();
     gaaspEE = getErrorEstimate();
   }
