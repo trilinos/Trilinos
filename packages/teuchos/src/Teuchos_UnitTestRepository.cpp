@@ -157,6 +157,7 @@ public:
   bool noOp;
   std::string groupName;
   std::string testName;
+  std::string notUnitTestName;
 
   InstanceData()
     :clp(false),
@@ -205,16 +206,24 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
       const UnitTestData &utd = (*iter);
 
+      const std::string unitTestName = getUnitTestName(utd.groupName, utd.testName);
+
       if (
-        strMatch(data.groupName, utd.groupName)
+        (
+          strMatch(data.groupName, utd.groupName)
+          &&
+          strMatch(data.testName, utd.testName)
+          )
         &&
-        strMatch(data.testName, utd.testName)
+        (
+          data.notUnitTestName.length() == 0
+          ||
+          !strMatch(data.notUnitTestName, unitTestName)
+          )
         )
       {
 
         ++numTestsRun;
-
-        const std::string unitTestName = getUnitTestName(utd.groupName, utd.testName);
 
         std::ostringstream testHeaderOSS;
         testHeaderOSS <<testCounter<<". "<<unitTestName<<" ... ";
@@ -393,6 +402,10 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
   clp->setOption(
     "test-name", &getData().testName,
     "If specified, selects only tests that match the test name glob." );
+
+  clp->setOption(
+    "not-unit-test", &getData().notUnitTestName,
+    "If specified, full unit tests with glob matches will *not* be run." );
 
   clp->setOption(
     "no-op", "do-op", &getData().noOp,

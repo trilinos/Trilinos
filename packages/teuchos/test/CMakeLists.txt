@@ -3,6 +3,7 @@
 INCLUDE(PackageAddExecutableAndTest)
 
 ADD_SUBDIRECTORY(TabularOutputter)
+ADD_SUBDIRECTORY(UnitTest)
 
 # Test definitions
 
@@ -60,73 +61,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES cxx_main.cpp
   COMM serial mpi  
   NUM_MPI_PROCS 1
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  UnitTest_UnitTests
-  DIRECTORY UnitTest
-  COMM serial mpi  
-  SOURCES
-    Int_UnitTests.cpp
-    TemplateFunc_UnitTests.cpp
-    vector_UnitTests.cpp
-    Teuchos_StandardUnitTestMain.cpp
-  )
-PACKAGE_ADD_TEST(
-  UnitTest_UnitTests
-  DIRECTORY UnitTest
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  UnitTest_BadUnitTest
-  DIRECTORY UnitTest
-  COMM serial mpi  
-  SOURCES
-    Int_UnitTests.cpp
-    TemplateFunc_UnitTests.cpp
-    Failing_UnitTest.cpp
-    Teuchos_StandardUnitTestMain.cpp
-  )
-PACKAGE_ADD_TEST(
-  UnitTest_BadUnitTest
-  NAME UnitTest_BadUnitTest_final_results
-  DIRECTORY UnitTest
-  ARGS "--show-test-details=FINAL_RESULTS"
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "Int_BadAssignment_UnitTest"
-  )
-PACKAGE_ADD_TEST(
-  UnitTest_BadUnitTest
-  NAME UnitTest_BadUnitTest_end_result_failed
-  DIRECTORY UnitTest
-  ARGS "--teuchos-suppress-startup-banner"
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "End Result: TEST FAILED"
-  )
-PACKAGE_ADD_TEST(
-  UnitTest_BadUnitTest
-  NAME UnitTest_BadUnitTest_end_result_totals
-  DIRECTORY UnitTest
-  ARGS "--teuchos-suppress-startup-banner"
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "Summary: total = 8, run = 8, passed = 6, failed = 2"
-  )
-PACKAGE_ADD_TEST(
-  UnitTest_BadUnitTest
-  NAME UnitTest_BadUnitTest_Int_BadAssignment_failed
-  DIRECTORY UnitTest
-  ARGS
-    "--show-test-details=FINAL_RESULTS --group-name=Int --test-name=BadAssignment"
-    "--show-test-details=TEST_NAMES --group-name=Int --test-name=BadAssignment"
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "[FAILED]"
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
