@@ -16,4 +16,13 @@ PACKAGE_NAME=Tpetra
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --filedir="$ABS_TOP_SRCDIR/packages/tpetra/test/CrsMatrix/";
     COMM = SERIAL, MPI;
+    X-HOST = gabriel.sandia.gov;
+}
+
+(FRAMEWORK, INSTALL, TpetraTests) {
+    DIRS = CrsMatrix;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --filedir="$ABS_TOP_SRCDIR/packages/tpetra/test/CrsMatrix/" --not-unit-test=CrsMatrix_int_ComplexFloat_FullMatrixComplex_UnitTest;
+    COMM = SERIAL, MPI;
+    HOST = gabriel.sandia.gov;
 }
