@@ -56,7 +56,7 @@ ${CTEST_INITIAL_CACHE}
 CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++
 CMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc
 CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran
-CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage -lm
+CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage
 "
   )
 

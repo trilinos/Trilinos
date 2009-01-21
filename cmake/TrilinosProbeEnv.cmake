@@ -80,6 +80,9 @@ ELSE()
   SET(HAVE_MPI FALSE)
 ENDIF()
 
+# Check if we need the math library or not and find the right one
+INCLUDE(MathLibraryNeeded)
+
 # Check for isnan and isinf support
 INCLUDE(FiniteValue)
 
