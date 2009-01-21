@@ -102,6 +102,11 @@ ADVANCED_OPTION(Trilinos_ENABLE_EXPLICIT_INSTANTIATION
   "Enable explicit template instantiation in all package where it is supported."
   OFF )
 
+ADVANCED_SET(Trilinos_DATA_DIR
+  "NOTFOUND"
+  CACHE PATH
+  "Path TrilinosData directory to find more tests and other stuff" )
+
 ADVANCED_OPTION(Trilinos_ENABLE_PERFORMANCE_TESTS
   "Enable performance tests in all packages that support them"
   OFF )
