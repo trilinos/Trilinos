@@ -180,7 +180,7 @@ int Zoltan_PHG_LoadBalStat(ZZ *zz, HGraph *hg)
         }
 #endif
         printf("Min:   (%7d, %7d, %9d)    Max: (%7d, %7d, %9d)\n", minv, minn, minp, maxv, maxn, maxp);
-        printf("Imbal: (%7.2lf, %7.2lf, %9.2lf)         (%7.2lf, %7.2lf, %9.2lf)\n", 100.0*(av-minv)/av, 100.0*(an-minn)/an, 100.0*(ap-minp)/ap, 100.0*(maxv-av)/av, 100.0*(maxn-an)/an, 100.0*(maxp-ap)/ap);        
+        printf("Imbal: (%7.2f, %7.2f, %9.2f)         (%7.2f, %7.2f, %9.2f)\n", 100.0*(av-minv)/av, 100.0*(an-minn)/an, 100.0*(ap-minp)/ap, 100.0*(maxv-av)/av, 100.0*(maxn-an)/an, 100.0*(maxp-ap)/ap);        
     }
  End:
     Zoltan_Multifree(__FILE__, __LINE__, 1, &v);

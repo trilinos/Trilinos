@@ -334,12 +334,12 @@ int Zoltan_Get_Coordinates(
         if ((zz->Debug_Level > 0) && (zz->Proc == 0)){
           if (d == 2){
             sprintf(msg,
-             "Geometry (~%lf x %lf), exceeds %lf to 1.0 ratio",
+             "Geometry (~%f x %f), exceeds %f to 1.0 ratio",
               dist[order[0]], dist[order[1]], deg_ratio);
           }
           else{
             sprintf(msg,
-             "Geometry (~%lf x %lf x %lf), exceeds %lf to 1.0 ratio",
+             "Geometry (~%f x %f x %f), exceeds %f to 1.0 ratio",
               dist[order[0]], dist[order[1]], dist[order[2]], deg_ratio);
           }
 
@@ -407,18 +407,18 @@ void Zoltan_Print_Transformation(ZZ_Transform *tr)
   printf("Degenerate geometry:\n");
   printf("  Transformation:\n");
   for (i=0; i<3; i++){
-    printf("    %lf %lf %lf\n", tr->Transformation[i][0],
+    printf("    %f %f %f\n", tr->Transformation[i][0],
            tr->Transformation[i][1], tr->Transformation[i][2]);
   }
   printf("  Eigenvectors of inertial matrix:\n");
   for (i=0; i<3; i++){
-    printf("    %lf %lf %lf\n", tr->Evecs[i][0], 
+    printf("    %f %f %f\n", tr->Evecs[i][0], 
       tr->Evecs[i][1], tr->Evecs[i][2]);
   }
   printf("  Simple coordinate permutation (if axis-aligned):\n");
   printf("    %d %d %d\n",
     tr->Permutation[0], tr->Permutation[1], tr->Permutation[2]);
-  printf("  Center of mass, axis order: (%lf %lf %lf), %d %d %d\n",
+  printf("  Center of mass, axis order: (%f %f %f), %d %d %d\n",
     tr->CM[0], tr->CM[1], tr->CM[2],
     tr->Axis_Order[0], tr->Axis_Order[1], tr->Axis_Order[2]);
 }

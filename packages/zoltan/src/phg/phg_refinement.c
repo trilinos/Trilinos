@@ -796,7 +796,7 @@ static int refine_fm2 (ZZ *zz,
 
         if (hgp->output_level >= PHG_DEBUG_ALL) {
             imbal = (targetw0==0.0) ? 0.0 : fabs(weights[0]-targetw0)/targetw0;
-            printf("%s FM Pass %d (%d->%d) Cut=%.2lf W[%5.0lf, %5.0lf] I= %.2lf LW[%5.0lf, %5.0lf] LI= %.2lf\n", uMe(hgc), passcnt, from, to, cutsize, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal);
+            printf("%s FM Pass %d (%d->%d) Cut=%.2f W[%5.0f, %5.0f] I= %.2f LW[%5.0f, %5.0f] LI= %.2f\n", uMe(hgc), passcnt, from, to, cutsize, weights[0], weights[1], imbal, lweights[0], lweights[1], limbal);
         }
 
         if (hgc->myProc_y==rootRank) {

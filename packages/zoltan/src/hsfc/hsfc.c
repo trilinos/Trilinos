@@ -734,7 +734,7 @@ Partition *p;
   if (data->final_partition){
     p = data->final_partition;
     for (i=0; i< nparts; i++){
-      printf("interval %d: [%6.4lf, %6.4lf), owner %d\n",
+      printf("interval %d: [%6.4f, %6.4f), owner %d\n",
        i, p->l, p->r, p->index);
       p++;
     }
@@ -743,13 +743,13 @@ Partition *p;
     printf("Final partition: NULL\n");
   }
 
-  printf("bbox low: %6.4lf %6.4lf %6.4lf, bbox hi: %6.4lf %6.4lf %6.4lf\n",
+  printf("bbox low: %6.4f %6.4f %6.4f, bbox hi: %6.4f %6.4f %6.4f\n",
      data->bbox_lo[0], data->bbox_lo[1], data->bbox_lo[2],
      data->bbox_hi[0], data->bbox_hi[1], data->bbox_hi[2]);
 
-  printf("extent: %6.4lf %6.4lf %6.4lf, dim: %d, func: %p\n",
+  printf("extent: %6.4f %6.4f %6.4f, dim: %d\n",
       data->bbox_extent[0], data->bbox_extent[1], data->bbox_extent[2],
-      data->ndimension, (void *) (data->fhsfc));
+      data->ndimension);
 
   Zoltan_Print_Transformation(&(data->tran));
 }
