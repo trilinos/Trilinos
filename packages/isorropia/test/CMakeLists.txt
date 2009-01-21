@@ -2,8 +2,8 @@ INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(
   geometric
-  utest
-  rebalance_1d_default
+  #utest
+  #rebalance_1d_default
   )
 
 IF (TPL_ENABLE_MPI)
