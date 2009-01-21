@@ -46,7 +46,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Anasazi               anasazi                        ""
   ThreadPool            ThreadPool                     ""
   Phalanx               phalanx                        ""
-  Pamgen                pamgen                         OFF
+  Pamgen                pamgen                         ""
   Phdmesh               phdmesh                        OFF
   NOX                   nox                            ""
   Moertel               moertel                        ""
