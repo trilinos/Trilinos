@@ -1,0 +1,8 @@
+EXTRA_ARGS=$@
+
+cmake \
+-D Trilinos_ENABLE_Stratimikos:BOOL=ON \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+$EXTRA_ARGS \
+../../../Trilinos
