@@ -11,7 +11,7 @@ void write_mesh_to_stdout();
 void read_mesh_to_memory();
 void free_memory();
 
-//#define HAVE_EXODUS
+/*#define HAVE_EXODUS*/
 #ifdef HAVE_EXODUS
 void write_to_exodus(int proc_id,int num_procs,char * out_file_name);
 #endif /*HAVE_EXODUS*/
@@ -47,7 +47,7 @@ struct mesh_storage_struct{
   int * global_element_numbers ;
   int * global_node_numbers ;
 
-  //block info
+  /*block info*/
   int * block_id ;
   char ** element_types ;
   int *   elements ;
@@ -55,26 +55,26 @@ struct mesh_storage_struct{
   int *   element_attributes ;
   int ** elmt_node_linkage ;
 
-  //side sets
+  /*side sets*/
   int * side_set_id ;
   int * num_elements_in_side_set ;
   int * num_df_in_side_set ;
   int **side_set_elements ;
   int **side_set_faces ;
 
-  //node sets
+  /*node sets*/
   int * node_set_id ;
   int * num_nodes_in_node_set ;
   int * num_df_in_node_set ;
   int **node_set_nodes  ;
       
-  //qa
+  /*qa*/
   int num_qa_records;
   int num_info_records;
   char* qaRecord[100][4];
   char** info_records ;
       
-  //nemesis data
+  /*nemesis data*/
   int num_nodes_global;
   int num_elems_global;
   int num_elm_blks_global;
@@ -84,8 +84,8 @@ struct mesh_storage_struct{
   int num_proc_in_file;
   char type[2];
 
-  //nemesis data
-  // global info
+  /*nemesis data
+    global info*/
 
   int * elem_blk_ids_global ;
   int * elem_blk_cnts_global  ;
@@ -97,7 +97,7 @@ struct mesh_storage_struct{
   int * ss_cnts_global ;
   int * ss_df_cnts_global ;
 
-  //parallel info
+  /*parallel info*/
   int num_internal_nodes;
   int num_border_nodes; 
   int num_external_nodes;
@@ -167,7 +167,7 @@ int main(int argc, char** argv)
         {
 	  /* Special Case: Recognize options that we didn't set above. */
 	case -2:
-	  printf("Unknown Option: \n");// <<  args << std::endl;
+	  printf("Unknown Option: \n");/* <<  args << std::endl;*/
 	  getopts_usage(argv[0],opts);
 	  return 1;
 	  break;
@@ -215,7 +215,7 @@ int main(int argc, char** argv)
   }
 
 
-  //deal with all switch
+  /*deal with all switch*/
   end_rank = num_procs;
   if(!all){
     start_rank = rank;
@@ -235,7 +235,7 @@ int main(int argc, char** argv)
   fread(file_char_array, sizeof(char), size, infile);
   fclose(infile);
 
-  //create the out_file_name
+  /*create the out_file_name*/
   out_file_name = (char*)malloc(MAX_STR_LENGTH+1);
 
   for( rank = start_rank; rank != end_rank; rank ++){
@@ -307,7 +307,7 @@ int main(int argc, char** argv)
     
     Delete_Pamgen_Mesh();
     free_memory();
-  }// end loop over all output ranks
+  }/* end loop over all output ranks*/
 
   if(file_char_array)free(file_char_array);
   if(out_file_name)free(out_file_name);
@@ -343,7 +343,7 @@ void free_memory()
     }
     
     
-    //block info
+    /*block info*/
     
     free(mss.block_id);
     free(mss.nodes_per_element);
@@ -355,7 +355,7 @@ void free_memory()
       free(mss.element_types[i]);
     }
     
-    //connectivity
+    /*connectivity*/
     for(b = 0; b < mss.num_elem_blk; b++){
       free(mss.elmt_node_linkage[b]);
     }
@@ -377,7 +377,7 @@ void free_memory()
       
     }
     
-    //side sets
+    /*side sets*/
     if(mss.num_side_sets){
       
       for(i = 0; i < mss.num_side_sets; i ++){
@@ -402,8 +402,8 @@ void free_memory()
     }
     
     
-    //nemesis data
-    // global info
+    /*nemesis data
+      global info */
     
     free(mss.elem_blk_ids_global);
     free(mss.elem_blk_cnts_global);
@@ -438,7 +438,7 @@ void free_memory()
 	
 	
 	
-      }//loop over num_elem_co
+      }/*loop over num_elem_co*/
     }
     
     
@@ -499,7 +499,7 @@ void read_mesh_to_memory()
   error += im_ex_inquire(id, IM_EX_INQ_SS_DF_LEN,   (int*)&mss.num_side_set_dfs, 
 			 &fdum, cdum);
     
-  // // get version number
+  /* get version number */
     
   error += im_ex_inquire(id, IM_EX_INQ_API_VERS, &idum, &fdum, cdum);
     
@@ -507,7 +507,7 @@ void read_mesh_to_memory()
     
   mss.version = (int) mss.version_number;
     
-  // // get genesis-II parameters
+  /* get genesis-II parameters */
     
   error += im_ex_inquire(id, IM_EX_INQ_EB_PROP, (int*)&mss.num_block_properties, &fdum, cdum);
     
@@ -539,7 +539,7 @@ void read_mesh_to_memory()
     }
       
      
-    //block info
+    /*block info*/
 
     mss.block_id           = (int *)malloc(mss.num_elem_blk*sizeof(int));
     mss.nodes_per_element  = (int *)malloc(mss.num_elem_blk*sizeof(int));
@@ -560,7 +560,7 @@ void read_mesh_to_memory()
 				    (int*)&(mss.element_attributes[i]));
     }
     
-    //connectivity
+    /*connectivity*/
     for(b = 0; b < mss.num_elem_blk; b++){
       mss.elmt_node_linkage[b] = (int*)malloc(mss.nodes_per_element[b]*mss.elements[b]*sizeof(int));
       error += im_ex_get_elem_conn(id,mss.block_id[b],mss.elmt_node_linkage[b]);
@@ -590,7 +590,7 @@ void read_mesh_to_memory()
       }
     }
 
-    //side sets
+    /*side sets*/
     if(mss.num_side_sets){
       mss.side_set_id = (int*)malloc(mss.num_side_sets*sizeof(int));
       mss.num_elements_in_side_set = (int*)malloc(mss.num_side_sets*sizeof(int));
@@ -624,7 +624,7 @@ void read_mesh_to_memory()
 
     error += im_ex_inquire(id, IM_EX_INQ_INFO, (int*)&mss.num_info_records, &fdum, cdum);
     if(mss.num_info_records) { 
-      mss.info_records = (char **)malloc(mss.num_info_records*sizeof(char *));//new std::string[num_info_records];
+      mss.info_records = (char **)malloc(mss.num_info_records*sizeof(char *));/*new std::string[num_info_records];*/
       for(i = 0; i < mss.num_info_records; i ++){
 	mss.info_records[i] = (char *)malloc(MAX_STR_LENGTH+1);
       }
@@ -632,8 +632,8 @@ void read_mesh_to_memory()
     }
 
 
-    //nemesis data
-    // global info
+    /*nemesis data
+      global info*/
     if ( im_ne_get_init_global(id, &mss.num_nodes_global, &mss.num_elems_global,
 			       &mss.num_elm_blks_global, &mss.num_node_sets_global,
 			       &mss.num_side_sets_global) < 0 )
@@ -668,7 +668,7 @@ void read_mesh_to_memory()
 				     mss.ss_df_cnts_global) < 0 )  ++error;      
     }
     
-    //parallel info
+    /*parallel info*/
     if ( im_ne_get_loadbal_param( id, 
 				  &mss.num_internal_nodes,
 				  &mss.num_border_nodes, 
@@ -742,7 +742,7 @@ void read_mesh_to_memory()
 				  0 /*not used proc_id*/ ) < 0 )++error;
 	
 
-      }//loop over num_elem_co
+      }/*loop over num_elem_co*/
     }
   }
 }
@@ -776,7 +776,7 @@ int nct;
   printf("num side set nodes %i\n",mss.num_side_set_nodes);
   printf("num side set dfs %i\n",mss.num_side_set_dfs);
     
-  // // get version number
+  /*get version number*/
   printf("num block properties %i\n",mss.num_block_properties);
   printf("num node set properties %i\n",mss.num_node_set_properties);
   printf("num side set properties %i\n",mss.num_side_set_properties);
@@ -805,7 +805,7 @@ int nct;
     }
       
      
-    //block info
+    /*block info*/
 
     for(i = 0; i < mss.num_elem_blk; i ++){
       printf("block i = %i has id %i \n",i,mss.block_id[i]);
@@ -817,7 +817,7 @@ int nct;
       printf("element attributes %i\n",mss.element_attributes[i]);
     }
     
-    //connectivity
+    /*connectivity*/
     for(b = 0; b < mss.num_elem_blk; b++){
       for(ict = 0; ict < mss.elements[b] && ict < 10;ict++){
 	printf("block %i element %i connectivty ",mss.block_id[b],ict);
@@ -838,7 +838,7 @@ int nct;
       }
     }
 
-    //side sets
+    /*side sets*/
     if(mss.num_side_sets){
       for(i = 0; i < mss.num_side_sets; i ++){
         int ne = 0;
@@ -870,8 +870,8 @@ int nct;
     }
 
 
-    //nemesis data
-    // global info
+    /*nemesis data
+      global info*/
 
     printf("Nemesis data\n");
     printf("Num nodes global %i\n",mss.num_nodes_global);
@@ -899,7 +899,7 @@ int nct;
       
     }
     
-    //parallel info
+    /*parallel info*/
 
     printf("Loadbal params:\nnum_internal_nodes %i\nnum_border_nodes%i\nnum_external_nodes%i\nnum_internal_elems%i\nnum_border_elems%i\nnum_node_comm_maps%i\nnum_elem_comm_maps%i\n",
 	   mss.num_internal_nodes,
@@ -945,7 +945,7 @@ int nct;
 		 mss.comm_elem_proc_ids[j][i]);
 	}
 
-      }//loop over num_elem_co
+      }/*loop over num_elem_co*/
     }
   }
 }
@@ -1007,7 +1007,7 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
     ++error;
   PERROR;
  
-// now write parallel global information
+/*now write parallel global information*/
 
   if ( ne_put_init_global( out_id, 
 			   mss.num_nodes_global, 
@@ -1045,7 +1045,7 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
   }
   PERROR;
 
-  //writingparallel info
+  /*writingparallel info*/
   if ( ne_put_loadbal_param( out_id, 
                              mss.num_internal_nodes,
                              mss.num_border_nodes, 
@@ -1106,12 +1106,12 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
   
   PERROR;
 
-  //coords
+  /*coords*/
   error += ex_put_coord(out_id, mss.coord, (mss.coord)+mss.num_nodes, (mss.coord)+2*mss.num_nodes);
   PERROR;
   error += ex_put_coord_names(out_id, mss.bptr);
   PERROR;
-  //map
+  /*map*/
   error += ex_put_map(out_id, mss.element_order_map);
   PERROR;
   error += ex_put_elem_num_map(out_id, mss.global_element_numbers);
@@ -1121,7 +1121,7 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
 
 
 
-  //block info
+  /*block info*/
   for(b = 0; b < mss.num_elem_blk; b++)
   {
     int gpe = 0;
@@ -1133,11 +1133,11 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
                            mss.elements[b],
                            mss.nodes_per_element[b],
                            gpe, fpe,
-                           mss.element_attributes[b] );  // num attr
+                           mss.element_attributes[b] );  /* num attr */
     PERROR;
   }
 
-// write element connectivity information
+/* write element connectivity information */
   
   for (b = 0; b < mss.num_elem_blk; b++) {
     if ( mss.elements[b] > 0 ){
@@ -1147,7 +1147,7 @@ void write_to_exodus(int rank, int num_procs, char * out_file_name)
   }
 
 
-// write in nodal boundary sets for the body.
+/* write in nodal boundary sets for the body. */
 
   for(i = 0; i < mss.num_node_sets; i++) {  
     error += ex_put_node_set_param(out_id, mss.node_set_id[i],
