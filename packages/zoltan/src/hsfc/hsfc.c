@@ -502,10 +502,10 @@ int Zoltan_HSFC(
 
    total_stat_time = 0.0;
    if (final_output){
+     int *objSizes = NULL;
      if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
         start_stat_time = Zoltan_Time(zz->Timer);
         }
-     int *objSizes = NULL;
      if ((ndots > 0) && ((zz->Get_Obj_Size_Multi) || (zz->Get_Obj_Size))){
        
        objSizes = (int *) ZOLTAN_MALLOC(ndots * sizeof(int));
@@ -749,7 +749,7 @@ Partition *p;
 
   printf("extent: %6.4lf %6.4lf %6.4lf, dim: %d, func: %p\n",
       data->bbox_extent[0], data->bbox_extent[1], data->bbox_extent[2],
-      data->ndimension, data->fhsfc);
+      data->ndimension, (void *) (data->fhsfc));
 
   Zoltan_Print_Transformation(&(data->tran));
 }
@@ -825,6 +825,7 @@ double *gpartWgt = NULL;
     static int nRuns=0;
     static double balsum, balmax, balmin;
     static double movesum, movemax, movemin;
+    char *countType;
 
     max_imbal = 0.0;
 
@@ -853,7 +854,7 @@ double *gpartWgt = NULL;
       balmax = balmin = balsum = bal;
     }
 
-    char *countType = "moveCnt";
+    countType = "moveCnt";
     if (obj_sizes){
       countType = "moveVol";
     }

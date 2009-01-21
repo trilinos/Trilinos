@@ -1276,6 +1276,7 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
       static int nRuns=0;
       static double balsum, balmax, balmin;
       static double movesum, movemax, movemin;
+      char *countType;
 
       max_imbal = 0.0;
    
@@ -1304,7 +1305,7 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
         balmax = balmin = balsum = bal;
       }
   
-      char *countType = "moveCnt";
+      countType = "moveCnt";
       if (zz->Get_Obj_Size_Multi || zz->Get_Obj_Size) {
         countType = "moveVol";
       }
