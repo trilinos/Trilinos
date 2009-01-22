@@ -1,4 +1,4 @@
-/* include/ThreadPool_config.h.in.  Generated from configure.ac by autoheader.  */
+/* src/ThreadPool_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES

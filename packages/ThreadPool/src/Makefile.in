@@ -66,7 +66,7 @@ host_triplet = @host@
 target_triplet = @target@
 subdir = src
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+	$(srcdir)/Makefile.in $(srcdir)/ThreadPool_config.h.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/acx_pthread.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
@@ -84,7 +84,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/acx_pthread.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/include/ThreadPool_config.h
+CONFIG_HEADER = ThreadPool_config.h
 CONFIG_CLEAN_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -99,11 +99,11 @@ LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
 libtpi_a_DEPENDENCIES =
-am__objects_1 = TPI_pthreads.$(OBJEXT) TPI_Concurrency.$(OBJEXT)
+am__objects_1 = TPI.$(OBJEXT)
 am__objects_2 = TPI_Walltime.$(OBJEXT)
 am_libtpi_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libtpi_a_OBJECTS = $(am_libtpi_a_OBJECTS)
-DEFAULT_INCLUDES = -I. -I$(top_builddir)/include@am__isrc@
+DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -241,13 +241,10 @@ top_srcdir = @top_srcdir@
 # ------------------------------------------------------------------------
 
 #np# Make sure to list all source files in one of the following categories.
-CORE = \
-	$(srcdir)/TPI_pthreads.c \
-	$(srcdir)/TPI_Concurrency.c
-
+CORE = $(srcdir)/TPI.c
 CORE_H = \
-	$(srcdir)/../include/TPI.h \
-	$(srcdir)/../include/TPI.hpp
+	$(srcdir)/TPI.h \
+	$(srcdir)/TPI.hpp
 
 UTIL = \
 	$(srcdir)/TPI_Walltime.c
@@ -309,13 +306,14 @@ include_HEADERS = $(THREADPOOL_H)
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(includedir)
 #np# replace new_package with the name of the package being autotool'ed here
-nodist_execinclude_HEADERS = ../include/ThreadPool_config.h
+nodist_execinclude_HEADERS = ThreadPool_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
 # ------------------------------------------------------------------------
 MAINTAINERCLEANFILES = Makefile.in 
-all: all-am
+all: ThreadPool_config.h
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .o .obj
@@ -348,6 +346,23 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+
+ThreadPool_config.h: stamp-h1
+	@if test ! -f $@; then \
+	  rm -f stamp-h1; \
+	  $(MAKE) $(AM_MAKEFLAGS) stamp-h1; \
+	else :; fi
+
+stamp-h1: $(srcdir)/ThreadPool_config.h.in $(top_builddir)/config.status
+	@rm -f stamp-h1
+	cd $(top_builddir) && $(SHELL) ./config.status src/ThreadPool_config.h
+$(srcdir)/ThreadPool_config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
+	cd $(top_srcdir) && $(AUTOHEADER)
+	rm -f stamp-h1
+	touch $@
+
+distclean-hdr:
+	-rm -f ThreadPool_config.h stamp-h1
 install-libLIBRARIES: $(lib_LIBRARIES)
 	@$(NORMAL_INSTALL)
 	test -z "$(libdir)" || $(MKDIR_P) "$(DESTDIR)$(libdir)"
@@ -388,9 +403,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TPI_Concurrency.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TPI.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TPI_Walltime.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TPI_pthreads.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -406,33 +420,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-TPI_pthreads.o: $(srcdir)/TPI_pthreads.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT TPI_pthreads.o -MD -MP -MF $(DEPDIR)/TPI_pthreads.Tpo -c -o TPI_pthreads.o `test -f '$(srcdir)/TPI_pthreads.c' || echo '$(srcdir)/'`$(srcdir)/TPI_pthreads.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/TPI_pthreads.Tpo $(DEPDIR)/TPI_pthreads.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/TPI_pthreads.c' object='TPI_pthreads.o' libtool=no @AMDEPBACKSLASH@
+TPI.o: $(srcdir)/TPI.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT TPI.o -MD -MP -MF $(DEPDIR)/TPI.Tpo -c -o TPI.o `test -f '$(srcdir)/TPI.c' || echo '$(srcdir)/'`$(srcdir)/TPI.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/TPI.Tpo $(DEPDIR)/TPI.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/TPI.c' object='TPI.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o TPI_pthreads.o `test -f '$(srcdir)/TPI_pthreads.c' || echo '$(srcdir)/'`$(srcdir)/TPI_pthreads.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o TPI.o `test -f '$(srcdir)/TPI.c' || echo '$(srcdir)/'`$(srcdir)/TPI.c
 
-TPI_pthreads.obj: $(srcdir)/TPI_pthreads.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT TPI_pthreads.obj -MD -MP -MF $(DEPDIR)/TPI_pthreads.Tpo -c -o TPI_pthreads.obj `if test -f '$(srcdir)/TPI_pthreads.c'; then $(CYGPATH_W) '$(srcdir)/TPI_pthreads.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TPI_pthreads.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/TPI_pthreads.Tpo $(DEPDIR)/TPI_pthreads.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/TPI_pthreads.c' object='TPI_pthreads.obj' libtool=no @AMDEPBACKSLASH@
+TPI.obj: $(srcdir)/TPI.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT TPI.obj -MD -MP -MF $(DEPDIR)/TPI.Tpo -c -o TPI.obj `if test -f '$(srcdir)/TPI.c'; then $(CYGPATH_W) '$(srcdir)/TPI.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TPI.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/TPI.Tpo $(DEPDIR)/TPI.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/TPI.c' object='TPI.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o TPI_pthreads.obj `if test -f '$(srcdir)/TPI_pthreads.c'; then $(CYGPATH_W) '$(srcdir)/TPI_pthreads.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TPI_pthreads.c'; fi`
-
-TPI_Concurrency.o: $(srcdir)/TPI_Concurrency.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT TPI_Concurrency.o -MD -MP -MF $(DEPDIR)/TPI_Concurrency.Tpo -c -o TPI_Concurrency.o `test -f '$(srcdir)/TPI_Concurrency.c' || echo '$(srcdir)/'`$(srcdir)/TPI_Concurrency.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/TPI_Concurrency.Tpo $(DEPDIR)/TPI_Concurrency.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/TPI_Concurrency.c' object='TPI_Concurrency.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o TPI_Concurrency.o `test -f '$(srcdir)/TPI_Concurrency.c' || echo '$(srcdir)/'`$(srcdir)/TPI_Concurrency.c
-
-TPI_Concurrency.obj: $(srcdir)/TPI_Concurrency.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT TPI_Concurrency.obj -MD -MP -MF $(DEPDIR)/TPI_Concurrency.Tpo -c -o TPI_Concurrency.obj `if test -f '$(srcdir)/TPI_Concurrency.c'; then $(CYGPATH_W) '$(srcdir)/TPI_Concurrency.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TPI_Concurrency.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/TPI_Concurrency.Tpo $(DEPDIR)/TPI_Concurrency.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/TPI_Concurrency.c' object='TPI_Concurrency.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o TPI_Concurrency.obj `if test -f '$(srcdir)/TPI_Concurrency.c'; then $(CYGPATH_W) '$(srcdir)/TPI_Concurrency.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TPI_Concurrency.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o TPI.obj `if test -f '$(srcdir)/TPI.c'; then $(CYGPATH_W) '$(srcdir)/TPI.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TPI.c'; fi`
 
 TPI_Walltime.o: $(srcdir)/TPI_Walltime.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT TPI_Walltime.o -MD -MP -MF $(DEPDIR)/TPI_Walltime.Tpo -c -o TPI_Walltime.o `test -f '$(srcdir)/TPI_Walltime.c' || echo '$(srcdir)/'`$(srcdir)/TPI_Walltime.c
@@ -492,11 +492,11 @@ ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	mkid -fID $$unique
 tags: TAGS
 
-TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+TAGS:  $(HEADERS) $(SOURCES) ThreadPool_config.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	list='$(SOURCES) $(HEADERS) ThreadPool_config.h.in $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
@@ -508,11 +508,11 @@ TAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
 	    $$tags $$unique; \
 	fi
 ctags: CTAGS
-CTAGS:  $(HEADERS) $(SOURCES)  $(TAGS_DEPENDENCIES) \
+CTAGS:  $(HEADERS) $(SOURCES) ThreadPool_config.h.in $(TAGS_DEPENDENCIES) \
 		$(TAGS_FILES) $(LISP)
 	tags=; \
 	here=`pwd`; \
-	list='$(SOURCES) $(HEADERS)  $(LISP) $(TAGS_FILES)'; \
+	list='$(SOURCES) $(HEADERS) ThreadPool_config.h.in $(LISP) $(TAGS_FILES)'; \
 	unique=`for i in $$list; do \
 	    if test -f "$$i"; then echo $$i; else echo $(srcdir)/$$i; fi; \
 	  done | \
@@ -558,7 +558,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES) $(HEADERS) all-local
+all-am: Makefile $(LIBRARIES) $(HEADERS) ThreadPool_config.h all-local
 installdirs:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(execincludedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
@@ -596,7 +596,7 @@ distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+	distclean-hdr distclean-tags
 
 dvi: dvi-am
 
@@ -651,12 +651,12 @@ uninstall-am: uninstall-includeHEADERS uninstall-libLIBRARIES \
 
 .PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
 	clean-generic clean-libLIBRARIES ctags distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-includeHEADERS install-info install-info-am \
-	install-libLIBRARIES install-man \
+	distclean-compile distclean-generic distclean-hdr \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-includeHEADERS install-info \
+	install-info-am install-libLIBRARIES install-man \
 	install-nodist_execincludeHEADERS install-pdf install-pdf-am \
 	install-ps install-ps-am install-strip installcheck \
 	installcheck-am installdirs maintainer-clean \

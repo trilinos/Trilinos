@@ -49,13 +49,6 @@ static int comm_rank( COMM );
 static void comm_reduce_dsum( COMM , double * );
 static void comm_reduce_d4_sum( COMM , double * );
 
-static unsigned thread_size( int nthreads )
-{
-  int size = TPI_Concurrency();
-  if ( ! size ) { size = nthreads ; }
-  return size ;
-}
-
 /*--------------------------------------------------------------------*/
 
 #define LESS_ABS( X , Y )	( ( X < 0 ? -X : X ) < ( Y < 0 ? -Y : Y ) )
@@ -100,103 +93,88 @@ double ddot( unsigned n , const double * x , const double * y )
 
 struct TaskXY {
   unsigned n ;
+  unsigned nb ;
   const double * x ;
   const double * y ;
         double * v ;
 };
 
 static
-void task_d4_dot_tp( void * arg , TPI_ThreadPool pool )
+void task_d4_dot_tp( TPI_Work * work )
 {
-  struct TaskXY * const data = (struct TaskXY *) arg ;
-  int rank , size , begin , length ;
-  TPI_Rank( pool , & rank , & size );
-  TPI_Partition( rank , size , data->n , & begin , & length );
-  d4_dot( data->v + 4 * rank , length , data->x + begin , data->y + begin );
+  struct TaskXY * const data = (struct TaskXY *) work->shared ;
+
+  const int begin  = data->nb * work->work_rank ;
+  const int length = data->n - begin < data->nb ?
+                     data->n - begin : data->nb ;
+
+  d4_dot( data->v + 4 * work->work_rank ,
+          length , data->x + begin , data->y + begin );
 }
 
-double d4_dot_tp( COMM comm, unsigned n, const double * x, const double * y )
+double d4_dot_tp( COMM comm, unsigned n, unsigned nblock ,
+                  const double * x, const double * y )
 {
-  double val[4] = { 0 , 0 , 0 , 0 };
-  int size = 0 ;
-  const int result = TPI_Size( & size );
+  const int nwork = ( n + nblock - 1 ) / nblock ;
+  const int ntmp = 4 * nwork ;
+  double tmp[ ntmp ];
 
-  if ( ! result && 1 < size ) {
-    const int n_tmp = 4 * size ;
-    double tmp[ n_tmp ];
+  struct TaskXY data = { n , nblock , x , y , tmp };
 
-    struct TaskXY data = { n , x , y , tmp };
+  int i ;
 
-    int i ;
+  for ( i = 0 ; i < ntmp ; ++i ) { tmp[i] = 0 ; }
 
-    for ( i = 0 ; i < n_tmp ; ++i ) { tmp[i] = 0 ; }
+  TPI_Run( task_d4_dot_tp , & data , nwork , 0 );
 
-    TPI_Run( task_d4_dot_tp , & data , 0 );
-
-    val[0] = tmp[0] ;
-    val[1] = tmp[1] ;
-    val[2] = tmp[2] ;
-    val[3] = tmp[3] ;
-
-    for ( i = 1 ; i < size ; ++i ) {
-      d2_add_d( val ,   tmp[  i*4] ); 
-      d2_add_d( val ,   tmp[1+i*4] ); 
-      d2_add_d( val+2 , tmp[2+i*4] ); 
-      d2_add_d( val+2 , tmp[3+i*4] ); 
-    }
-  }
-  else {
-    d4_dot( val , n , x , y );
+  for ( i = 1 ; i < nwork ; ++i ) {
+    d2_add_d( tmp ,   tmp[  i*4] ); 
+    d2_add_d( tmp ,   tmp[1+i*4] ); 
+    d2_add_d( tmp+2 , tmp[2+i*4] ); 
+    d2_add_d( tmp+2 , tmp[3+i*4] ); 
   }
 
-  comm_reduce_d4_sum( comm , val );
+  comm_reduce_d4_sum( comm , tmp );
 
-  d2_add_d( val , val[2] );
-  d2_add_d( val , val[3] );
+  d2_add_d( tmp , tmp[2] );
+  d2_add_d( tmp , tmp[3] );
 
-  return val[0] ;
+  return tmp[0] ;
 }
 
 static
-void task_ddot_tp( void * arg , TPI_ThreadPool pool )
+void task_ddot_tp( TPI_Work * work )
 {
-  struct TaskXY * const data = (struct TaskXY *) arg ;
-  int rank , size , begin , length ;
-  TPI_Rank( pool , & rank , & size );
-  TPI_Partition( rank , size , data->n , & begin , & length );
-  data->v[ rank ] = ddot( length , data->x + begin , data->y + begin );
+  struct TaskXY * const data = (struct TaskXY *) work->shared ;
+
+  const int begin  = data->nb * work->work_rank ;
+  const int length = data->n - begin < data->nb ?
+                     data->n - begin : data->nb ;
+
+  data->v[ work->work_rank ] =
+    ddot( length , data->x + begin , data->y + begin );
   return ;
 }
 
-double ddot_tp( COMM comm, unsigned n, const double * x, const double * y )
+double ddot_tp( COMM comm, unsigned n, unsigned nblock,
+                const double * x, const double * y )
 {
-  int size ;
-  const int result = TPI_Size( & size );
-  double val = 0 ;
+  const int nwork = ( n + nblock - 1 ) / nblock ;
+  double tmp[ nwork ];
 
-  if ( ! result && 1 < size ) {
-    const int n_tmp = size ;
-    double tmp[ n_tmp ];
+  struct TaskXY data = { n , nblock , x , y , tmp };
 
-    struct TaskXY data = { n , x , y , tmp };
+  int i ;
 
-    int i ;
+  for ( i = 0 ; i < nwork ; ++i ) { tmp[i] = 0 ; }
 
-    for ( i = 0 ; i < n_tmp ; ++i ) { tmp[i] = 0 ; }
+  TPI_Run( task_ddot_tp , & data , nwork , 0 );
 
-    TPI_Run( task_ddot_tp , & data , 0 );
+  for ( i = 1 ; i < nwork ; ++i ) { tmp[0] += tmp[i] ; }
 
-    for ( i = 1 ; i < size ; ++i ) { tmp[0] += tmp[i] ; }
+  comm_reduce_dsum( comm , tmp );
 
-    val = tmp[0] ;
-  }
-  else {
-    val = ddot( n , x , y );
-  }
-
-  comm_reduce_dsum( comm , & val );
-
-  return val ;
+  return tmp[0] ;
 }
 
 /*--------------------------------------------------------------------*/
@@ -215,25 +193,27 @@ struct FillWork {
   double   mag ;
   double * beg ;
   unsigned length ;
+  unsigned nblock ;
   unsigned seed ;
 };
 
-static void task_dfill_rand( void * arg , TPI_ThreadPool pool )
+static void task_dfill_rand( TPI_Work * work )
 {
-  struct FillWork * const w = (struct FillWork *) arg ;
+  struct FillWork * const w = (struct FillWork *) work->shared ;
 
-  int rank , size , begin , length ;
-
-  TPI_Rank( pool , & rank , & size );
-  TPI_Partition( rank , size , w->length , & begin , & length );
+  const int begin  = w->nblock * work->work_rank ;
+  const int length = w->length - begin < w->nblock ?
+                     w->length - begin : w->nblock ;
 
   dfill_rand( w->seed + begin , length , w->beg + begin , w->mag );
 }
 
-void dfill_rand_tp( unsigned seed , unsigned n , double * x , double mag )
+void dfill_rand_tp( unsigned seed , unsigned n , unsigned nblock ,
+                    double * x , double mag )
 {
-  struct FillWork data = { mag , x , n , seed };
-  TPI_Run( & task_dfill_rand , & data , 0 );
+  const int nwork = ( n + nblock - 1 ) / nblock ;
+  struct FillWork data = { mag , x , n , nblock , seed };
+  TPI_Run( & task_dfill_rand , & data , nwork , 0 );
 }
 
 /*--------------------------------------------------------------------*/
@@ -242,6 +222,7 @@ static
 void test_tpi_ddot_driver(
   COMM comm ,
   const int nthreads ,
+  const int nblock ,
   const unsigned Mflop_target  /* Per concurrent thread */ ,
   const unsigned num_trials ,
   const unsigned num_tests ,
@@ -259,16 +240,15 @@ void test_tpi_ddot_driver(
 
   const unsigned p_rank = comm_rank( comm );
   const unsigned p_size = comm_size( comm );
-  const unsigned t_size = thread_size( nthreads );
-  const unsigned np = p_size * t_size ;
+  const unsigned np = p_size * nthreads ;
 
   const unsigned max_array = length_array[ num_tests - 1 ];
 
-  int local_max_begin , local_max_size ;
-  int local_begin , local_size ;
+  const unsigned local_max_begin = ( max_array * p_rank ) / p_size ;
+  const unsigned local_max_end   = ( max_array * ( p_rank + 1 ) ) / p_size ;
+  const unsigned local_max_size  = local_max_end - local_max_begin ;
 
-  TPI_Partition( p_rank, p_size,
-                 max_array, & local_max_begin, & local_max_size );
+  TPI_Init( nthreads );
 
   {
     double * const x = (double*) malloc(local_max_size * 2 * sizeof(double));
@@ -287,7 +267,9 @@ void test_tpi_ddot_driver(
       const unsigned d4_dot_ncycle =
         1 + (unsigned)( ( Mflop_target * np * 1e6 ) / ( d4_dot_flop * length));
 
-      TPI_Partition( p_rank, p_size, length, & local_begin, & local_size );
+      const unsigned local_begin = ( length * p_rank ) / p_size ;
+      const unsigned local_end   = ( length * ( p_rank + 1 ) ) / p_size ;
+      const unsigned local_size  = local_end - local_begin ;
 
       /*--------------------------------------------------------------*/
 
@@ -297,8 +279,8 @@ void test_tpi_ddot_driver(
 
         for ( i = 0 ; i < num_array ; ++i ) {
           const int n = i * local_size ;
-          dfill_rand_tp(          local_begin, len, x + n, mag );
-          dfill_rand_tp( length + local_begin, len, y + n, mag );
+          dfill_rand_tp(          local_begin, len, nblock, x + n, mag );
+          dfill_rand_tp( length + local_begin, len, nblock, y + n, mag );
         }
       }
 
@@ -310,46 +292,46 @@ void test_tpi_ddot_driver(
 
         for ( i = 0 ; i < num_array ; ++i ) {
           const int n = i * local_size + off ;
-          dfill_rand_tp(          beg - length_half, len, x + n, mag );
-          dfill_rand_tp( length + beg - length_half, len, y + n, - mag );
+          dfill_rand_tp(          beg - length_half, len, nblock, x + n, mag );
+          dfill_rand_tp( length + beg - length_half, len, nblock, y + n, - mag );
         }
       }
 
       /*--------------------------------------------------------------*/
 
       for ( i = 0 ; i < num_trials ; ++i ) {
-        TPI_Init( nthreads );
         {
           const unsigned n = i * d4_dot_ncycle ;
           const double   t = TPI_Walltime();
           for ( j = 0 ; j < d4_dot_ncycle ; ++j ) {
             const unsigned k = ( ( j + n ) % num_array ) * local_size ;
-            val_d4_dot[i_test] = d4_dot_tp( comm , local_size , x + k , y + k );
+            val_d4_dot[i_test] =
+              d4_dot_tp( comm, local_size, nblock, x + k, y + k);
           }
           dt_d4_dot[ i + i_test * num_trials ] = TPI_Walltime() - t ;
         }
-        TPI_Finalize();
       }
 
       /*--------------------------------------------------------------*/
 
       for ( i = 0 ; i < num_trials ; ++i ) {
-        TPI_Init( nthreads );
         {
           const unsigned n = i * ddot_ncycle ;
           const double   t = TPI_Walltime();
           for ( j = 0 ; j < ddot_ncycle ; ++j ) {
             const unsigned k = ( ( j + n ) % num_array ) * local_size ;
-            val_ddot[i_test] = ddot_tp( comm , local_size , x + k , y + k );
+            val_ddot[i_test] = ddot_tp( comm, local_size, nblock, x + k, y + k);
           }
           dt_ddot[ i + i_test * num_trials ] = TPI_Walltime() - t ;
         }
-        TPI_Finalize();
       }
     }
 
     free( x );
   }
+
+  TPI_Finalize();
+
   /*------------------------------------------------------------------*/
 
   if ( 0 == p_rank ) {
@@ -432,12 +414,13 @@ static void test_main( COMM comm , int nthreads )
                                1e5 , 2e5 , 5e5 ,
                                1e6 , 2e6 , 5e6 , 1e7 };
 
+  const unsigned nblock = 1000 ;
   const unsigned num_tests = sizeof(lengths) / sizeof(unsigned);
   const unsigned num_trials = 5 ;
   const unsigned mflop_target = 100 ;
   const double mag = 1e4 ;
 
-  test_tpi_ddot_driver( comm , nthreads ,
+  test_tpi_ddot_driver( comm , nthreads , nblock,
                         mflop_target , num_trials ,
                         num_tests , lengths , mag );
 }

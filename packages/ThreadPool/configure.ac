@@ -38,7 +38,7 @@
 # Optional 3rd argument is email address for bugs.
 
 #  #np# - package name, version number, and e-mail address below
-AC_INIT(ThreadPool, 1.0d, hcedwar@sandia.gov)
+AC_INIT(ThreadPool, 1.1d, hcedwar@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -56,9 +56,9 @@ AC_CONFIG_SRCDIR([src/TPI_pthreads.c])
 
 AC_CONFIG_AUX_DIR(config)
 #  #auto np# - Change file names in next line 
-# Configure should create include/ThreadPool_config.h from include/ThreadPool_config.h.in
+# Configure should create src/ThreadPool_config.h from src/ThreadPool_config.h.in
 
-AM_CONFIG_HEADER(include/ThreadPool_config.h:include/ThreadPool_config.h.in)
+AM_CONFIG_HEADER(src/ThreadPool_config.h:src/ThreadPool_config.h.in)
 
 # Allow users to specify their own "install" command.  If none is specified,
 # the default is install-sh found in the config subdirectory.

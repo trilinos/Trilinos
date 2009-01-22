@@ -31,10 +31,11 @@
 /*------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
 
-static void test_tpi_noop( void * , TPI_ThreadPool );
+static void test_tpi_noop( TPI_Work * );
 
 int test_c_tpi_noop( int num_test , int * num_thread )
 {
+  void * const p = NULL ;
   const unsigned n = 1e5 ;
   const unsigned n_trial = 7 ;
   int itest ;
@@ -59,7 +60,9 @@ int test_c_tpi_noop( int num_test , int * num_thread )
       TPI_Init( num );
 
       dt = TPI_Walltime();
-      for ( i = 0 ; i < n_loop ; ++i ) { TPI_Run( & test_tpi_noop, NULL, 0 ); }
+      for ( i = 0 ; i < n_loop ; ++i ) {
+        TPI_Run( & test_tpi_noop, p, 0, 0 );
+      }
       dt = TPI_Walltime() - dt ;
 
       dt_mean += dt ;
@@ -86,8 +89,11 @@ int test_c_tpi_noop( int num_test , int * num_thread )
   return 0 ;
 }
 
-static void test_tpi_noop( void * arg , TPI_ThreadPool pool )
-{ while ( arg && pool ) { arg = *((void**)arg) ; } return ; }
+static void test_tpi_noop( TPI_Work * work )
+{
+  void * p = work->shared ;
+  while ( p ) { p = *((void**)p) ; } return ;
+}
 
 /*------------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
@@ -97,67 +103,39 @@ struct TestTPI {
   int count ;
 };
 
-static void test_tpi_loop( void * arg , TPI_ThreadPool pool )
+static void test_tpi_loop( TPI_Work * work )
 {
   static const char name[] = "test_tpi_loop" ;
 
-  struct TestTPI * const data = (struct TestTPI *) arg ;
+  struct TestTPI * const data = (struct TestTPI *) work->shared ;
 
-  int size  = -1 ;
-  int rank  = -1 ;
-  int result = 0 ;
-  int begin  = 0 ;
-  int number = 0 ;
-
-  if ( ( result = TPI_Rank( pool , & rank , & size ) ) ) {
-    fprintf(stderr,"\n%s: TPI_Pool_rank = %d\n",name,result);
-  }
-
-  if ( ( result = TPI_Partition(rank,size,data->total, & begin, & number) ) ) {
-    fprintf(stderr,"\n%s: TPI_Partition = %d\n",name,result);
-  }
-  else {
-    int count = 0 ;
-    int i , j ;
-    for ( j = 0 ; j < 101 ; ++j ) {
-      if ( j % 2 ) {
-        for ( i = 0 ; i < number ; ++i ) { --count ; }
-      }
-      else {
-        for ( i = 0 ; i < number ; ++i ) { ++count ; }
-      }
-    }
-
-    TPI_Lock( pool , 0 );
-    data->count += count ;
-    TPI_Unlock( pool , 0 );
-  }
+  TPI_Lock( 0 );
+  data->count += 1 ;
+  TPI_Unlock( 0 );
 
   return ;
 }
 
-int test_c_tpi_single( int size )
+int test_c_tpi_single( int nthread )
 {
   static const char name[] = "test_c_tpi_single" ;
   int result = 0 ;
 
   struct TestTPI data = { 10000 /* 1000000 */ , 0 };
 
-  TPI_Init( size );
+  TPI_Init( nthread );
 
-  fprintf(stdout,"\"%s[%d] starting...",name,size);
+  fprintf(stdout,"\"%s[%d] starting...",name,nthread);
   fflush(stdout);
 
   /*--------------------------------*/
 
   {
     int n ;
-    for ( n = 1 ; n < 64 ; ++n ) {
+    for ( n = 1 ; 0 <= result && n < 64 ; ++n ) {
       data.count = 0 ;
-      if ( ( result = TPI_Set_lock_size( 1 ) ) ) {
-        fprintf(stderr,"\n%s: TPI_Set_lock_size = %d\n",name,result);
-      }
-      if ( ( result = TPI_Run( & test_tpi_loop , & data , 0 ) ) ) {
+      result = TPI_Run( & test_tpi_loop , & data , data.total , 1 );
+      if ( result < 0 ) {
         fprintf(stderr,"\n%s: TPI_Run = %d\n",name,result);
       }
       else {

@@ -82,7 +82,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/acx_pthread.m4 \
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/include/ThreadPool_config.h
+CONFIG_HEADER = $(top_builddir)/src/ThreadPool_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_test_sum_OBJECTS = test_sum-test_mpi_sum.$(OBJEXT)
@@ -90,6 +90,7 @@ test_sum_OBJECTS = $(am_test_sum_OBJECTS)
 test_sum_LINK = $(CCLD) $(test_sum_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_test_tpi_OBJECTS = test_tpi-test_main.$(OBJEXT) \
+	test_tpi-test_tpi_unit.$(OBJEXT) \
 	test_tpi-test_c_dnax.$(OBJEXT) test_tpi-test_c_tpi.$(OBJEXT) \
 	test_tpi-test_pthreads.$(OBJEXT)
 test_tpi_OBJECTS = $(am_test_tpi_OBJECTS)
@@ -99,7 +100,7 @@ am_test_tpi_cpp_OBJECTS = test_tpi_cpp-test_tpi.$(OBJEXT)
 test_tpi_cpp_OBJECTS = $(am_test_tpi_cpp_OBJECTS)
 test_tpi_cpp_LINK = $(CXXLD) $(test_tpi_cpp_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-DEFAULT_INCLUDES = -I. -I$(top_builddir)/include@am__isrc@
+DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -243,7 +244,7 @@ target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = 
-test_tpi_SOURCES = test_main.c test_c_dnax.c test_c_tpi.c test_pthreads.c
+test_tpi_SOURCES = test_main.c test_tpi_unit.c test_c_dnax.c test_c_tpi.c test_pthreads.c
 test_tpi_DEPENDENCIES = $(top_builddir)/src/libtpi.a
 test_tpi_CFLAGS = $(THREADPOOL_INCLUDES)
 test_tpi_LDADD = $(THREADPOOL_LIBS)
@@ -312,6 +313,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_tpi-test_c_tpi.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_tpi-test_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_tpi-test_pthreads.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_tpi-test_tpi_unit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_tpi_cpp-test_tpi.Po@am__quote@
 
 .c.o:
@@ -355,6 +357,20 @@ test_tpi-test_main.obj: test_main.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_main.c' object='test_tpi-test_main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_tpi_CFLAGS) $(CFLAGS) -c -o test_tpi-test_main.obj `if test -f 'test_main.c'; then $(CYGPATH_W) 'test_main.c'; else $(CYGPATH_W) '$(srcdir)/test_main.c'; fi`
+
+test_tpi-test_tpi_unit.o: test_tpi_unit.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_tpi_CFLAGS) $(CFLAGS) -MT test_tpi-test_tpi_unit.o -MD -MP -MF $(DEPDIR)/test_tpi-test_tpi_unit.Tpo -c -o test_tpi-test_tpi_unit.o `test -f 'test_tpi_unit.c' || echo '$(srcdir)/'`test_tpi_unit.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/test_tpi-test_tpi_unit.Tpo $(DEPDIR)/test_tpi-test_tpi_unit.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_tpi_unit.c' object='test_tpi-test_tpi_unit.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_tpi_CFLAGS) $(CFLAGS) -c -o test_tpi-test_tpi_unit.o `test -f 'test_tpi_unit.c' || echo '$(srcdir)/'`test_tpi_unit.c
+
+test_tpi-test_tpi_unit.obj: test_tpi_unit.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_tpi_CFLAGS) $(CFLAGS) -MT test_tpi-test_tpi_unit.obj -MD -MP -MF $(DEPDIR)/test_tpi-test_tpi_unit.Tpo -c -o test_tpi-test_tpi_unit.obj `if test -f 'test_tpi_unit.c'; then $(CYGPATH_W) 'test_tpi_unit.c'; else $(CYGPATH_W) '$(srcdir)/test_tpi_unit.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/test_tpi-test_tpi_unit.Tpo $(DEPDIR)/test_tpi-test_tpi_unit.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='test_tpi_unit.c' object='test_tpi-test_tpi_unit.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_tpi_CFLAGS) $(CFLAGS) -c -o test_tpi-test_tpi_unit.obj `if test -f 'test_tpi_unit.c'; then $(CYGPATH_W) 'test_tpi_unit.c'; else $(CYGPATH_W) '$(srcdir)/test_tpi_unit.c'; fi`
 
 test_tpi-test_c_dnax.o: test_c_dnax.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(test_tpi_CFLAGS) $(CFLAGS) -MT test_tpi-test_c_dnax.o -MD -MP -MF $(DEPDIR)/test_tpi-test_c_dnax.Tpo -c -o test_tpi-test_c_dnax.o `test -f 'test_c_dnax.c' || echo '$(srcdir)/'`test_c_dnax.c

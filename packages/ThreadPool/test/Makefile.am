@@ -38,7 +38,7 @@ EXEEXT = .exe
 
 noinst_PROGRAMS = test_tpi test_tpi_cpp test_sum 
 
-test_tpi_SOURCES      = test_main.c test_c_dnax.c test_c_tpi.c test_pthreads.c
+test_tpi_SOURCES      = test_main.c test_tpi_unit.c test_c_dnax.c test_c_tpi.c test_pthreads.c
 test_tpi_DEPENDENCIES = $(top_builddir)/src/libtpi.a
 test_tpi_CFLAGS     = $(THREADPOOL_INCLUDES)
 test_tpi_LDADD        = $(THREADPOOL_LIBS)

@@ -36,26 +36,20 @@ typedef TPI_ThreadPool ThreadPool ;
 //----------------------------------------------------------------------
 /** Run  (*func)(arg,pool)  on all threads.
  */
-int Run( void (*func)(void*,ThreadPool), void * arg , int = 0 );
+int Run( void (*func)( TPI_Work * ), void * arg ,
+         int work_count , int lock_count = 0 );
 
 /** Run  worker.*method(pool)  on all threads.
  */
 template<class Worker>
-int Run( Worker & worker , void (Worker::*method)(ThreadPool) , int = 0 );
+int Run( Worker & worker , void (Worker::*method)(ThreadPool) ,
+         int work_count , int lock_count = 0 );
 
 //----------------------------------------------------------------------
 
-inline
-int Set_lock_size( int n ) { return TPI_Set_lock_size( n ); }
-
-inline
-int Lock( ThreadPool pool , int n ) { return TPI_Lock( pool , n ); }
-
-inline
-int Trylock( ThreadPool pool , int n ) { return TPI_Trylock( pool , n ); }
-
-inline
-int Unlock( ThreadPool pool , int n ) { return TPI_Unlock( pool , n ); }
+inline int Lock( int n )    { return TPI_Lock( n ); }
+inline int Trylock( int n ) { return TPI_Trylock( n ); }
+inline int Unlock( int n )  { return TPI_Unlock( n ); }
 
 /** Lock guard to insure that a lock is released
  *  when control exists a block.
@@ -68,27 +62,16 @@ private:
   LockGuard();
   LockGuard( const LockGuard & );
   LockGuard & operator = ( const LockGuard & );
-  const ThreadPool m_pool ;
-  const int        m_value ;
-  const int        m_result ;
+  const int m_value ;
+  const int m_result ;
 public:
   operator int() const { return m_result ; }
 
-  explicit LockGuard( ThreadPool pool , unsigned i_lock )
-    : m_pool( pool ), m_value( i_lock ), m_result( TPI_Lock(pool,i_lock) ) {}
+  explicit LockGuard( unsigned i_lock )
+    : m_value( i_lock ), m_result( TPI_Lock(i_lock) ) {}
 
-  ~LockGuard() { TPI_Unlock( m_pool , m_value ); }
+  ~LockGuard() { TPI_Unlock( m_value ); }
 };
-
-//----------------------------------------------------------------------
-
-inline
-int Rank( ThreadPool pool , int & rank , int & size )
-  { return TPI_Rank( pool , & rank , & size ); }
-
-inline
-int Partition( int Rank , int Size , int N , int & I_local , int & N_local )
-  { return TPI_Partition( Rank , Size , N , & I_local , & N_local ); }
 
 //----------------------------------------------------------------------
 
@@ -100,9 +83,6 @@ int Finalize() { return TPI_Finalize(); }
 
 inline
 int Size( int & number_allocated ) { return TPI_Size( & number_allocated ); }
-
-inline
-int Concurrency() { return TPI_Concurrency(); }
 
 inline
 double Walltime() { return TPI_Walltime(); }
@@ -128,11 +108,12 @@ public:
 
   WorkerMethodHelper( Worker & w , Method m ) : worker(w), method(m) {}
 
-  static void run( void * arg , ThreadPool pool )
+  static void run( TPI_Work * work )
     {
       try {
-        WorkerMethodHelper & wm = * reinterpret_cast<WorkerMethodHelper*>(arg);
-        (wm.worker.*wm.method)(pool);
+        WorkerMethodHelper & wm =
+          * reinterpret_cast<WorkerMethodHelper*>(work->shared);
+        (wm.worker.*wm.method)(work);
       } catch(...){}
     }
 };
@@ -143,20 +124,20 @@ public:
 //----------------------------------------------------------------------
 
 inline
-int Run( void (*func)( void * , ThreadPool ) , void * arg , int n )
+int Run( void (*func)( TPI_Work * ) , void * arg , int work_count , int lock_count )
 {
-  return TPI_Run( reinterpret_cast< TPI_parallel_subprogram >(func), arg , n );
+  return TPI_Run( reinterpret_cast< TPI_work_subprogram >(func), arg , work_cunt , lock_count );
 }
 
 template<class Worker>
 inline
-int Run( Worker & worker, void (Worker::*method)(ThreadPool) , int n )
+int Run( Worker & worker, void (Worker::*method)(ThreadPool) , int work_count , int lock_count )
 {
   typedef WorkerMethodHelper<Worker> WM ;
 
   WM tmp( worker , method );
 
-  return TPI_Run( reinterpret_cast<TPI_parallel_subprogram>(& WM::run),&tmp,n);
+  return TPI_Run( reinterpret_cast<TPI_work_subprogram>(& WM::run),&tmp,work_count,lock_count);
 }
 
 //----------------------------------------------------------------------

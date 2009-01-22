@@ -63,10 +63,8 @@ target_triplet = @target@
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.export.threadpool.in $(srcdir)/Makefile.in \
-	$(top_srcdir)/configure \
-	$(top_srcdir)/include/ThreadPool_config.h.in \
-	config/config.guess config/config.sub config/depcomp \
-	config/install-sh config/missing
+	$(top_srcdir)/configure config/config.guess config/config.sub \
+	config/depcomp config/install-sh config/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/acx_pthread.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
@@ -86,7 +84,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/include/ThreadPool_config.h
+CONFIG_HEADER = $(top_builddir)/src/ThreadPool_config.h
 CONFIG_CLEAN_FILES = Makefile.export.threadpool
 SOURCES =
 DIST_SOURCES =
@@ -302,23 +300,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
-
-include/ThreadPool_config.h: include/stamp-h1
-	@if test ! -f $@; then \
-	  rm -f include/stamp-h1; \
-	  $(MAKE) $(AM_MAKEFLAGS) include/stamp-h1; \
-	else :; fi
-
-include/stamp-h1: $(top_srcdir)/include/ThreadPool_config.h.in $(top_builddir)/config.status
-	@rm -f include/stamp-h1
-	cd $(top_builddir) && $(SHELL) ./config.status include/ThreadPool_config.h
-$(top_srcdir)/include/ThreadPool_config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
-	cd $(top_srcdir) && $(AUTOHEADER)
-	rm -f include/stamp-h1
-	touch $@
-
-distclean-hdr:
-	-rm -f include/ThreadPool_config.h include/stamp-h1
 Makefile.export.threadpool: $(top_builddir)/config.status $(srcdir)/Makefile.export.threadpool.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 
@@ -632,7 +613,7 @@ clean-am: clean-generic mostlyclean-am
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-hdr distclean-tags
+distclean-am: clean-am distclean-generic distclean-tags
 
 dvi: dvi-recursive
 
@@ -693,14 +674,14 @@ uninstall-am:
 	all all-am all-local am--refresh check check-am clean \
 	clean-generic ctags ctags-recursive dist dist-all dist-bzip2 \
 	dist-gzip dist-shar dist-tarZ dist-zip distcheck distclean \
-	distclean-generic distclean-hdr distclean-tags distcleancheck \
-	distdir distuninstallcheck dvi dvi-am html html-am info \
-	info-am install install-am install-data install-data-am \
-	install-dvi install-dvi-am install-exec install-exec-am \
-	install-exec-hook install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
+	distclean-generic distclean-tags distcleancheck distdir \
+	distuninstallcheck dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-exec-hook \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs installdirs-am maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
 	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am \
 	uninstall-hook

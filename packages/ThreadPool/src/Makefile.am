@@ -42,13 +42,11 @@ all-local:
 
 #np# Make sure to list all source files in one of the following categories.
 
-CORE = \
-	$(srcdir)/TPI_pthreads.c \
-	$(srcdir)/TPI_Concurrency.c
+CORE = $(srcdir)/TPI.c
 
 CORE_H = \
-	$(srcdir)/../include/TPI.h \
-	$(srcdir)/../include/TPI.hpp
+	$(srcdir)/TPI.h \
+	$(srcdir)/TPI.hpp
 
 UTIL = \
 	$(srcdir)/TPI_Walltime.c
@@ -127,7 +125,7 @@ include_HEADERS = $(THREADPOOL_H)
 # All Trilinos headers are now installed in the same directory
 execincludedir = $(includedir)
 #np# replace new_package with the name of the package being autotool'ed here
-nodist_execinclude_HEADERS = ../include/ThreadPool_config.h
+nodist_execinclude_HEADERS = ThreadPool_config.h
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

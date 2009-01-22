@@ -40,10 +40,8 @@ struct TestTPI_DNAX {
   SCALAR * array ;
   unsigned number ;
   unsigned length ;
-  unsigned offset ;
-  unsigned len_chunk ;
-  unsigned wid_chunk ;
-  unsigned num_chunk ;
+  unsigned stride ;
+  unsigned chunk_length ;
 };
 
 /*------------------------------------------------------------------------*/
@@ -83,103 +81,75 @@ void test_dnax_row( const unsigned num_array ,
 }
 
 /*------------------------------------------------------------------------*/
-
+/*  The multi-array storage is flat: every array is fully contiguous.
+ *  Work corresponds to a span of the array.
+ */
 static
-void test_dnax_flat_work( void * arg , TPI_ThreadPool pool )
+void test_dnax_flat_work( TPI_Work * work )
 {
-  const struct TestTPI_DNAX * const data = (struct TestTPI_DNAX *) arg ;
+  const struct TestTPI_DNAX * const data =
+    (struct TestTPI_DNAX *) work->shared ;
 
-  int rank , size ;
-  int beg_local = 0 ;
-  int num_local = 0 ;
+  const unsigned which_chunk = work->work_rank ;
+  const unsigned beg_local   = data->chunk_length * which_chunk ;
+  const unsigned max_local   = data->length - beg_local ;
+  const unsigned len_local   = data->chunk_length < max_local ?
+                               data->chunk_length : max_local ;
 
-  if ( ! TPI_Rank( pool , & rank , & size ) &&
-       ! TPI_Partition( rank, size, data->length, & beg_local, & num_local ) ) {
-    test_dnax_column( data->number ,
-                      data->len_chunk ,
-                      num_local ,
-                      data->coef ,
-                      data->array + data->length * data->offset + beg_local );
-                  
-  }
+  test_dnax_column( data->number ,
+                    data->stride ,
+                    len_local ,
+                    data->coef ,
+                    data->array + beg_local );
+
+  return ;
+}
+
+/*  The multi-array storage is chunked: each array has a contiguous chunk;
+ *  but chunk-subarrays are contiguously grouped.
+ */
+static
+void test_dnax_column_work( TPI_Work * work )
+{
+  const struct TestTPI_DNAX * const data =
+    (struct TestTPI_DNAX *) work->shared ;
+
+  const unsigned which_chunk = work->work_rank ;
+  const unsigned beg_local   = data->chunk_length * which_chunk ;
+  const unsigned max_local   = data->length - beg_local ;
+  const unsigned len_local   = data->chunk_length < max_local ?
+                               data->chunk_length : max_local ;
+
+  const unsigned chunk_size = data->chunk_length * data->number ;
+
+  test_dnax_column( data->number ,
+                    data->chunk_length ,
+                    len_local ,
+                    data->coef ,
+                    data->array + which_chunk * chunk_size );
 
   return ;
 }
 
 static
-void test_dnax_column_work( void * arg , TPI_ThreadPool pool )
+void test_dnax_row_work( TPI_Work * work )
 {
-  const struct TestTPI_DNAX * const data = (struct TestTPI_DNAX *) arg ;
+  const struct TestTPI_DNAX * const data =
+    (struct TestTPI_DNAX *) work->shared ;
 
-  const unsigned num_chunk = data->num_chunk ;
+  const unsigned which_chunk = work->work_rank ;
+  const unsigned beg_local   = data->chunk_length * which_chunk ;
+  const unsigned max_local   = data->length - beg_local ;
+  const unsigned len_local   = data->chunk_length < max_local ?
+                               data->chunk_length : max_local ;
 
-  int rank , size ;
-  int beg_local = 0 ;
-  int num_local = 0 ;
+  const unsigned chunk_size = data->chunk_length * data->number ;
 
-  if ( ! TPI_Rank( pool , & rank , & size ) &&
-       ! TPI_Partition( rank, size, num_chunk, & beg_local, & num_local ) ) {
-
-    const unsigned len_array  = data->length ;
-    const unsigned len_chunk  = data->len_chunk ;
-    const unsigned wid_chunk  = data->wid_chunk ;
-    const unsigned size_chunk = len_chunk * wid_chunk ;
-    const unsigned offset     = len_chunk * data->offset ;
-    const unsigned end_local  = beg_local + num_local ;
-
-    unsigned i = beg_local ;
-
-    for ( ; i < end_local ; ++i ) {
-      const unsigned beg_array = i * len_chunk ;
-      const unsigned len = len_chunk < len_array - beg_array ?
-                           len_chunk : len_array - beg_array ;
-
-      test_dnax_column( data->number ,
-                        len_chunk ,
-                        len ,
-                        data->coef ,
-                        data->array + i * size_chunk + offset );
-    } 
-  }
-
-  return ;
-}
-
-static
-void test_dnax_row_work( void * arg , TPI_ThreadPool pool )
-{
-  const struct TestTPI_DNAX * const data = (struct TestTPI_DNAX *) arg ;
-
-  const unsigned num_chunk = data->num_chunk ;
-
-  int rank , size ;
-  int beg_local = 0 ;
-  int num_local = 0 ;
-
-  if ( ! TPI_Rank( pool , & rank , & size ) &&
-       ! TPI_Partition( rank, size, num_chunk, & beg_local, & num_local ) ) {
-
-    const unsigned len_array  = data->length ;
-    const unsigned offset     = data->offset ;
-    const unsigned len_chunk  = data->len_chunk ;
-    const unsigned wid_chunk  = data->wid_chunk ;
-    const unsigned size_chunk = len_chunk * wid_chunk ;
-    const unsigned end_local  = beg_local + num_local ;
-
-    unsigned i = beg_local ;
-
-    for ( ; i < end_local ; ++i ) {
-      const unsigned beg_array = i * len_chunk ;
-      const unsigned len = len_chunk < len_array - beg_array ?
-                           len_chunk : len_array - beg_array ;
-
-      test_dnax_row( data->number ,
-                     wid_chunk ,
-                     len ,
-                     data->coef ,
-                     data->array + i * size_chunk + offset );
-    }
-  }
+  test_dnax_row( data->number ,
+                 data->number ,
+                 len_local ,
+                 data->coef ,
+                 data->array + which_chunk * chunk_size );
 
   return ;
 }
@@ -194,27 +164,23 @@ void test_tpi_dnax_driver( const int nthread ,
                            const unsigned Mflop_target ,
                            const unsigned num_trials ,
                            const unsigned num_test ,
-                           const unsigned num_array[] ,
+                           const unsigned num_test_array[] ,
                            const unsigned length_array ,
-                           const unsigned stride_array ,
                            const unsigned length_chunk )
 {
-  const unsigned max_array = num_array[ num_test - 1 ];
+  const unsigned max_array = num_test_array[ num_test - 1 ];
 
-  const unsigned num_chunk = length_array / length_chunk +
-                           ( length_array % length_chunk ? 1 : 0 );
+  const unsigned num_chunk =
+    ( length_array + length_chunk - 1 ) / length_chunk ;
 
-  const unsigned size_chunk = max_array * length_chunk ;
-
-  const unsigned size_alloc =
-      ( num_chunk * size_chunk ) > ( max_array * stride_array )
-    ? ( num_chunk * size_chunk ) : ( max_array * stride_array );
+  const unsigned stride_array = num_chunk * length_chunk ;
+  const unsigned size_alloc   = max_array * stride_array ;
 
   SCALAR coef[ max_array ];
 
   SCALAR * const array = (SCALAR *) malloc( size_alloc * sizeof(SCALAR) );
 
-  struct TestTPI_DNAX data = { coef , NULL , 0 , 0 , 0 , 0 , 0 , 0 };
+  struct TestTPI_DNAX data = { coef , NULL , 0 , 0 , 0 , 0 };
 
   if ( NULL == array ) {
     fprintf(stderr,"allocation failure for %u\n",size_alloc);
@@ -229,13 +195,14 @@ void test_tpi_dnax_driver( const int nthread ,
   printf("\n\"test_tpi_dnax[%d]( length_array = %u , stride_array = %u )\"\n",
          nthread , length_array , stride_array );
   printf("\"NUMBER OF THREADS\" , %d\n" , nthread );
+  printf("\"NUMBER OF CHUNKS\" , %d\n" , num_chunk );
   printf("\"NUMBER OF TRIALS\" , %u \n", num_trials );
 
   printf("\"NUMBER OF ARRAYS\"");
   {
     unsigned i_test = 0 ;
     for ( ; i_test < num_test ; ++i_test ) {
-      printf(" , %u", num_array[ i_test ] );
+      printf(" , %u", num_test_array[ i_test ] );
     }
   }
   printf("\n");
@@ -252,19 +219,18 @@ void test_tpi_dnax_driver( const int nthread ,
     unsigned i_test = 0 ;
 
     for ( ; i_test < num_test ; ++i_test ) {
-      const unsigned num      = num_array[ i_test ];
-      const unsigned num_sets = max_array / num ;
+      const unsigned num_array = num_test_array[ i_test ];
+      const unsigned num_sets  = max_array / num_array ;
 
-      const double mflop_cycle = ((double)( 2 * num * length_array )) / 1.0e6 ;
+      const double mflop_cycle =
+        ((double)( 2 * num_array * length_array )) / 1.0e6 ;
 
       const unsigned ncycle = 1 + (unsigned)( Mflop_target / mflop_cycle );
 
-      data.array     = array ;
-      data.length    = length_array ;
-      data.number    = num ;
-      data.len_chunk = stride_array ;
-      data.wid_chunk = 0 ;
-      data.num_chunk = 0 ;
+      data.length       = length_array ;
+      data.number       = num_array ;
+      data.stride       = stride_array ;
+      data.chunk_length = length_chunk ;
 
       { unsigned i = 0 ; for ( ; i < size_alloc ; ++i ) { array[i] = 0 ; } }
 
@@ -278,8 +244,8 @@ void test_tpi_dnax_driver( const int nthread ,
 
           dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
-            data.offset = num * ( i % num_sets );
-            TPI_Run( & test_dnax_flat_work , & data , 0 );
+            data.array = array + stride_array * num_array * ( i % num_sets );
+            TPI_Run( & test_dnax_flat_work , & data , num_chunk , 0 );
           }
           dt_tmp = TPI_Walltime() - dt_tmp ;
 
@@ -352,19 +318,18 @@ void test_tpi_dnax_driver( const int nthread ,
     unsigned i_test = 0 ;
 
     for ( ; i_test < num_test ; ++i_test ) {
-      const unsigned num      = num_array[ i_test ];
-      const unsigned num_sets = max_array / num ;
+      const unsigned num_array = num_test_array[ i_test ];
+      const unsigned num_sets  = max_array / num_array ;
 
-      const double mflop_cycle = ((double)( 2 * num * length_array )) / 1.0e6 ;
+      const double mflop_cycle =
+        ((double)( 2 * num_array * length_array )) / 1.0e6 ;
 
       const unsigned ncycle = 1 + (unsigned)( Mflop_target / mflop_cycle );
 
-      data.array     = array ;
-      data.length    = length_array ;
-      data.number    = num ;
-      data.len_chunk = length_chunk ;
-      data.wid_chunk = max_array ;
-      data.num_chunk = num_chunk ;
+      data.length       = length_array ;
+      data.number       = num_array ;
+      data.stride       = stride_array ;
+      data.chunk_length = length_chunk ;
 
       { unsigned i = 0 ; for ( ; i < size_alloc ; ++i ) { array[i] = 0 ; } }
 
@@ -378,8 +343,8 @@ void test_tpi_dnax_driver( const int nthread ,
 
           dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
-            data.offset = num * ( i % num_sets );
-            TPI_Run( & test_dnax_column_work , & data , 0 );
+            data.array = array + stride_array * num_array * ( i % num_sets );
+            TPI_Run( & test_dnax_column_work , & data , num_chunk , 0 );
           }
           dt_tmp = TPI_Walltime() - dt_tmp ;
 
@@ -452,19 +417,18 @@ void test_tpi_dnax_driver( const int nthread ,
     unsigned i_test = 0 ;
 
     for ( ; i_test < num_test ; ++i_test ) {
-      const unsigned num      = num_array[ i_test ];
-      const unsigned num_sets = max_array / num ;
+      const unsigned num_array = num_test_array[ i_test ];
+      const unsigned num_sets  = max_array / num_array ;
 
-      const double mflop_cycle = ((double)( 2 * num * length_array )) / 1.0e6 ;
+      const double mflop_cycle =
+        ((double)( 2 * num_array * length_array )) / 1.0e6 ;
 
       const unsigned ncycle = 1 + (unsigned)( Mflop_target / mflop_cycle );
 
-      data.array     = array ;
-      data.length    = length_array ;
-      data.number    = num ;
-      data.len_chunk = length_chunk ;
-      data.wid_chunk = max_array ;
-      data.num_chunk = num_chunk ;
+      data.length       = length_array ;
+      data.number       = num_array ;
+      data.stride       = stride_array ;
+      data.chunk_length = length_chunk ;
 
       { unsigned i = 0 ; for ( ; i < size_alloc ; ++i ) { array[i] = 0 ; } }
 
@@ -478,8 +442,8 @@ void test_tpi_dnax_driver( const int nthread ,
 
           dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
-            data.offset = num * ( i % num_sets );
-            TPI_Run( & test_dnax_row_work , & data , 0 );
+            data.array = array + stride_array * num_array * ( i % num_sets );
+            TPI_Run( & test_dnax_row_work , & data , num_chunk , 0 );
           }
           dt_tmp = TPI_Walltime() - dt_tmp ;
 
@@ -551,17 +515,14 @@ int test_c_tpi_dnax( int nthread )
 {
   const unsigned Mflop_target = 10 ;
   const unsigned num_array[6] = { 2 , 5 , 10 , 20 , 50 , 100 };
-  const int concurrent = TPI_Concurrency();
-  const int size = concurrent && concurrent < nthread ? concurrent : nthread ;
 
   test_tpi_dnax_driver( nthread ,
-                        Mflop_target * size ,
-                        7         /* number trials */ ,
+                        Mflop_target * nthread ,
+                        5         /* number trials */ ,
                         6         /* number of tests */ ,
                         num_array /* number of arrays for each test */ ,
                         1e6       /* array computation length */ ,
-                        1e6       /* array allocation length */ ,
-                        1000      /* chunk allocation length */ );
+                        1000      /* chunk length */ );
 
   return 0 ;
 }

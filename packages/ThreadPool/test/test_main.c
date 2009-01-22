@@ -31,21 +31,19 @@ int test_c_tpi_noop( int , int * );
 int test_c_tpi_single( int );
 int test_c_tpi_dnax( int );
 int test_pthreads_performance( int , int * );
+int test_c_tpi_unit( int nthread , int nwork );
 
 int main( int argc , char ** argv )
 {
-  const int concurrent = TPI_Concurrency();
-  int num_thread[] = { 2 , 4 , 8 /* , 12 , 16 */ };
+  int num_thread[] = { 1 , 2 , 4 , 8 , 12 , 16 };
   int num_test = sizeof(num_thread) / sizeof(int);
-
-  if ( argc ) {
-    fprintf(stdout,"\"%s with concurrency %d\"\n",argv[0],concurrent);
-  }
 
   test_pthreads_performance( num_test , num_thread );
 
   {
+    const int nwork = 1000 ;
     int i ;
+    for ( i = 0 ; i < num_test ; ++i ) { test_c_tpi_unit( num_thread[i] , nwork ); }
     for ( i = 0 ; i < num_test ; ++i ) { test_c_tpi_single( num_thread[i] ); }
 
     test_c_tpi_noop( num_test , num_thread );
