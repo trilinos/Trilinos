@@ -2,13 +2,13 @@
 Directory layout for the Trilinos/cmake subdiretory
 ----------------------------------------------------
 
-Last updated: 2008/12/23
+Last updated: 2009/01/20
 
 The directories are layed out as follows:
 
 cmake
   |
-  |-- utils: Generic CMake utilties
+  |-- utils: Generic CMake utilties like simple macros and functions
   |
   |-- doc: Generic documentation stuff for CMake 
   |
@@ -41,11 +41,3 @@ cmake
   |-- refactoring: Mostly trilinos-specific auto text-replacement
   |       refactoring scripts that can be used to refactor non-refactored
   |       CMake code.  
-
-
-
-
-
-
-
-

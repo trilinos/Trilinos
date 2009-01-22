@@ -2,6 +2,12 @@ INCLUDE(CheckIncludeFileCXX)
 
 INCLUDE(CMakeBuildTypesList)
 
+IF (WIN32 AND NOT CYGWIN)
+  SET(NATIVE_MS_WINDOWS TRUE)
+ELSE()
+  SET(NATIVE_MS_WINDOWS FALSE)
+ENDIF()
+
 # Set to release build by default
 
 IF (NOT CMAKE_BUILD_TYPE)
@@ -81,7 +87,9 @@ ELSE()
 ENDIF()
 
 # Check if we need the math library or not and find the right one
-INCLUDE(MathLibraryNeeded)
+IF (NOT NATIVE_MS_WINDOWS)
+  INCLUDE(MathLibraryNeeded)
+ENDIF()
 
 # Check for isnan and isinf support
 INCLUDE(FiniteValue)

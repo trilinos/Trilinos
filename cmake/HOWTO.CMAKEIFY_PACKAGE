@@ -2,7 +2,7 @@
 How to CMakeify an Existing Trilinos Package
 --------------------------------------------
 
-Last updated: 2008/11/15
+Last updated: 2000/01/20
 ------------------------
 
 Here, we describe how to add full CMake/CTest support to an existing
@@ -42,9 +42,10 @@ dependencies.  Don't worry, if you get the order wrong, you will find
 this out at configure time automatically with a nice error message.
 
 
-2) Create the package's base-level PACKAGE_DIR/CMakeLists.txt file
+2) Create the package's base-level packages/PACKAGE_DIR/CMakeLists.txt
+file
 
-Copy the top-level CMakeLists.txt for:
+Copy the top-level CMakeLists.txt from:
 
   Trilinos/packages/epetraext/CMakeLists.txt
 
@@ -53,13 +54,12 @@ Copy the top-level CMakeLists.txt for:
   Trilinos/packages/PACKAGE_DIR/CMakeLists.txt
 
 In the new PACKAGE_DIR/CMakeLists.txt file, change the name of the
-package in the TRILINOS_PACKAGE(...) macro to the name of the Trilinos
-package PACKAGE_NAME.
+package in the PACKAGE(...) macro to the name of the Trilinos package
+PACKAGE_NAME.
 
-NOTE: If the name you pass into TRILINOS_PACKAGE(...) is not the same
-as you specified in the Trilinos_PACKAGES variable in the base-level
-CMakeLists.txt file, then you will get an error message telling you
-this.
+NOTE: If the name you pass into PACKAGE(...) is not the same as you
+specified in the Trilinos_PACKAGES_AND_DIRS_AND_ENABLES variable
+mentioned above, then you will get an error message telling you this.
 
 Modify this CMakeLists.txt file to pull in ADD_SUBDIRECTORY(...) calls
 to include other CMakeLists.txt files for the libraries and the
@@ -110,18 +110,19 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(...) used in:
 
   Trilinos/packages/PACKAGE_DIR/configure.ac
 
-You should be able to find all of the optional dependencies in the above two
-files.  However, you may not find all of the required test dependencies.  The
-last of those will have to be discovered in the Makefile.am files in the
-various test directories.
+You should be able to find all of the optional dependencies in the
+above two files.  However, you may not find all of the required test
+dependencies.  The last of those will have to be discovered in the
+Makefile.am files in the various test directories.
 
-NOTE: Don't worry if you don't find all of the package dependencies right
-away.  If you leave any out, the compile/link cycle will tell you which ones
-you need to add.  It is better to initially understate the package
-dependencies than to overstate them because you can catch the former mistake
-but not the later.  The danger in overstating package dependencies is that it
-will take longer to test code before you check in because you will have to
-build more libraries and test executables than you really need to.
+NOTE: Don't worry if you don't find all of the package dependencies
+right away.  If you leave any out, the compile/link cycle will tell
+you which ones you need to add.  It is better to initially understate
+the package dependencies than to overstate them because you can catch
+the former mistake but not the later.  The danger in overstating
+package dependencies is that it will take longer to test code before
+you check in because you will have to build more libraries and test
+executables than you really need to.
 
 NOTE: If a package is included in a 'REQUIRED' list, then it does not
 need to be included in the corresponding 'OPTIONAL' list.
@@ -150,7 +151,7 @@ Copy the package's autotools-generated PACKAGE_config.h.in file from:
 
   Trilinos/packages/PACKAGE_DIR/src/PACKAGE_config.h.in
 
-to
+to:
 
   Trilinos/packages/PACKAGE_DIR/cmake/PACKAGE_config.h.in
 
@@ -162,7 +163,7 @@ files:
 
   Trilinos/packages/epetraext/cmake/EpetraExt_config.h.in
 
-with 
+with :
 
   Trilinos/packages/epetraext/src/EpetraExt_config.h.in
 
@@ -197,7 +198,7 @@ Copy the list of headers and sources from:
 
   Trilinos/packages/PACKAGE_DIR/src/Makefile.am
 
-to
+to:
 
   Trilinos/packages/PACKAGE_DIR/src/CMakeLists.txt
 
@@ -221,7 +222,7 @@ an example of how to do that.
 6.b) Specify the name of the library(s) being created
 
 Set the name of the library being created in the macro call
-TRILINOS_PACKAGE_ADD_LIBRARY(...).
+PACKAGE_ADD_LIBRARY(...).
 
 NOTE: The name of this library will never be manually listed again in
 any other build-system file.  The macros take care of everything
@@ -238,10 +239,14 @@ thyra/adapters/epetraext/src/CMakeLists.txt for an example.
 
 6.d) Test-only libraries
 
-If you package has test-only libraries, then look at how this is
-handled in isorropia/utils/CMakeLists.txt.  These test-only libraries
-are not added to the list of offical package libraries but are added
-to the link line when linking tests and examples for this package.
+If your package has test-only libraries, then look at how this is
+handled in nox/test/utils/CMakeLists.txt with the library
+'noxtestutils'.  These test-only libraries are designated by passing
+TESTONLY into PACKAGE_ADD_LIBRARY(...).  These libraries are not added
+to the list of offical package libraries.  Instead, you need
+specifically list the name of the library in your tests/examples
+PACKAGE_ADD_EXECUTABLE(...) function call such as in
+nox/test/epetra/NOX_Operators/CMakeLists.txt
 
 
 7) Add the CMakeLists.txt files for the tests and examples
@@ -258,39 +263,26 @@ of how to write the CMakeLists.txt files for tests and examples.
 
 In general, most test/example executables and the accompanying test
 harness test can be added in one shot with the
-TRILINOS_ADD_EXECUTABLE_AND_TEST(...) macro.  For cases where you need
+PACKAGE_ADD_EXECUTABLE_AND_TEST(...) macro.  For cases where you need
 finer control, you can use the separate macros
-TRILINOS_ADD_EXECUTABLE(...) and TRILINOS_ADD_TEST(...).
+PACKAGE_ADD_EXECUTABLE(...) and PACKAGE_ADD_TEST(...).
 
 To see lots of examples of how to use the macros
-TRILINOS_ADD_EXECUTABLE(...) TRILINOS_ADD_TEST(...), and
-TRILINOS_ADD_EXECUTABLE_AND_TEST(...) look at examples in the packages
+PACKAGE_ADD_EXECUTABLE(...) PACKAGE_ADD_TEST(...), and
+PACKAGE_ADD_EXECUTABLE_AND_TEST(...) look at examples in the packages
 teuchos, epetra, epetraext, and thyra.  Don't be lazy, look at working
 examples in other packages!  Look for usage examples, for instance,
 with:
 
-  $ find . -name CMakeLists.txt -exec grep -nH 'TRILINOS_ADD_EXECUTABLE' {} \;
+  $ find . -name CMakeLists.txt -exec grep -nH 'PACKAGE_ADD_EXECUTABLE' {} \;
 
-Above, replace TRILINOS_ADD_EXECUTABLE with
-TRILINOS_ADD_EXECUTABLE_AND_TEST and TRILINOS_ADD_TEST for all of the
-examples.
+Above, replace PACKAGE_ADD_EXECUTABLE with
+PACKAGE_ADD_EXECUTABLE_AND_TEST and PACKAGE_ADD_TEST for all of the
+examples of usage.
 
 A few points are worth mentioning:
 
-7.a) You must name the CMake-build executables exactly the same as in
-the autotools system
-
-To see what the name is of the autotools-generated executables, look
-in the Makefile.am file in the same directory and in
-PACKAGE_DIR/test/definition.
-
-NOTE: The CMake build system automaticlaly appends the name of the
-package to every test and example exectuable.  This is because CMake
-needs the target names to be globaly unique across all of Trilinos and
-it helps to have all of the targets for a package sorted together in
-MS Visual Studio projects.
-
-7.b) You must add tests for every test case that is listed in
+7.a) You must add tests for every test case that is listed in
 PACKAGE_DIR/test/defintion
 
 The package thyra has some of the more varied examples of how to
@@ -316,24 +308,11 @@ the helper function PRINT_VAR(...) is very useful.
 As you add test/example executables and CTest tests, you can run them
 for your package as:
 
-  $ ctest -R '^PACKAGE_NAME_' -W 100
+  $ ctest -W 100 -R '^PACKAGE_NAME_'
 
 (where PACKAGE_NAME = Epetra, EpetraExt, etc.)
 
-8.b) Run the perl-based test harness
-
-You can also run the tests/examples through the perl-based system by
-using:
-
-  $ make PACKAGE_NAME-runtests-serial
-
-or 
-
-  $ make PACKAGE_NAME-runtests-mpi
-
-(where PACKAGE_NAME = Epetra, EpetraExt, etc.)
-
-8.c) Verify that the CTest tests are the same as the perl-based tests
+8.b) Verify that the CTest tests are the same as the perl-based tests
 
 One of the final steps in completing the CMakeification of a Trilinos
 package is to check to make sure that all of the same tests/examples
@@ -345,7 +324,7 @@ system (you will just have to figure out how to do that).
 
 Once you have your package and dependent packages configured with
 Autotools and CMake in the same way, you must run the autotools-built
-tests as:
+tests using the perl runtests tool as:
 
   $ cd AUTOTOOLS_BUILD_DIR/packages/PACKAGE_DIR
   $ make runtests-serial
@@ -358,29 +337,6 @@ running MPI) is in the file:
 
 (note, you will have to go to the most recent date directory)
 
-The above output must be the same that you get by building with the
-CMake system and running the tests with:
-
-  $ CMAKE_BUILD_DIR
-  $ make PACKAGE_NAME-runtests-serial
-
-The detailed output from 'make PACKAGE_NAME-runtests-serial' (or 'make
-PACKAGE_NAME-runtests-mpi') is in the output file:
-
-  CMAKE_BUILD_DIR/runtests-results/
-
-(note, you will have to go to the most recent date directory)
-
-The output in:
-
-  AUTOTOOLS_BUILD_DIR/packages/PACKAGE_DIR/test/runtests-results/
-
-must match the output in:
-
-  CMAKE_BUILD_DIR/runtests-results/
-
-for equivalent test runs.
-
 As the final verification step, you need to run the tests through
 CTest with:
 
@@ -391,11 +347,10 @@ and verify that the output in:
 
   CMAKE_BUILD_DIR/Testing/Temporary/LastTest.log
 
-is equivalent to the output run by 'make PACKAGE_NAME-runtests-serial'
-(or 'make PACKAGE_NAME-runtests-mpi' for an MPI build) that is given
-in:
+is equivalent to the output run through the autotools-build system and
+run with the perl-based test harness in::
 
-  CMAKE_BUILD_DIR/runtests-results/
+  AUTOTOOLS_BUILD_DIR/packages/PACKAGE_DIR/test/runtests-results/
 
 I don't think you can easily automate these types of comparisons and I
 think the package developers themselves must be the ones to ultimately

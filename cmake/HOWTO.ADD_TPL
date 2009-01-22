@@ -3,18 +3,19 @@ How to Add a New TPL Library at the Trilinos Framework Level
 -------------------------------------------------------------
 
 
-Last updated: 2008/12/09
+Last updated: 2009/01/20
 ------------------------
 
 
-Adding a new TPL that will be used by one or more Trilinos packages is a fairly
-simple process with the CMake build system.  Let TPLNAME be the official name
-of the TPL that will be used throughout.  Examples of TPLNAME include 'Boost',
-'BLAS', ParMETIS', etc.  Set PACKAGE and PACKAGE_DIR be the name of a package
-and its directory name, respectively, that the new TPL support will be added
-to.  Examples of (PACKAGE, PACKAGE_DIR) include (Epetra, epetra), (Teuchos,
-teuchos) etc.  See the file Trilinos/TrilinosPackages.cmake for a listing of
-all of the currently defined (PACKAGE, PACKAGE_DIR) pairs.
+Adding a new TPL that will be used by one or more Trilinos packages is
+a fairly simple process with the CMake build system.  Let TPLNAME be
+the official name of the TPL that will be used throughout.  Examples
+of TPLNAME include 'Boost', 'BLAS', and 'ParMETIS'.  Let PACKAGE and
+PACKAGE_DIR be the name of a package and its directory name,
+respectively, that the new TPL support will be added to.  Examples of
+(PACKAGE, PACKAGE_DIR) include (Epetra, epetra), and (Teuchos,
+teuchos).  See the file Trilinos/TrilinosPackages.cmake for a listing
+of all of the currently defined (PACKAGE, PACKAGE_DIR) pairs.
 
 
 1) Add TPLNAME to Trilinos/cmake/TrilinosTPLs.cmake:
@@ -74,7 +75,8 @@ a last resort of they want to be exactly sure what paths and library files are
 used.
 
 
-3) Add the TPL dependency to PACKAGE_DIR/cmake/Dependencies.cmake:
+3) Add the TPL dependency to
+packages/PACKAGE_DIR/cmake/Dependencies.cmake:
 
 The name TPLNAME needs to be added in the package's
 PACKAGE_DIR/cmake/Dependencies.cmake file to one of the *_DEP_TPLS lists
@@ -128,12 +130,15 @@ For example, see:
 
     Trilinos/packages/sacado/cmake/Dependencies.cmake
 
+NOTE: Optional package enables are created for this list also the same
+as for the list LIB_OPTIONAL_DEP_TPLS as described above.
+
 
 4) For optional TPLs, add the appropriate TPL define macro to
-PACKAGE_DIR/cmake/PACKAGE_config.h.in:
+packages/PACKAGE_DIR/cmake/PACKAGE_config.h.in:
 
-In order to have the source code in PACKAGE respond to a conditional TPL
-enable, you have to add a #cmakedefine macro to the package's:
+In order to have the source code in PACKAGE respond to a conditional
+TPL enable, you have to add a #cmakedefine macro to the package's:
 
     PACKAGE_DIR/cmake/PACAKGE_config.h.in
 
@@ -148,9 +153,10 @@ Since this is the standard name for the define macro, the framework-level
 CMake code automatically creates the CMake variable HAVE_TEUCHOS_BOOST when
 Teuchos_ENABLE_Boost=ON.
 
-Therefore, if you name you optional TPL enable macro as
+Therefore, if you name your optional TPL enable macro as
 HAVE_<UCPACKAGE>_<UCTPLNAME> as described above, you do not have do do
-anything extra in order for your package to optionally support the new TPL.
+anything extra in order for your package to optionally support the new
+TPL.
 
 
 5) For optional TPLs, if necessary, add a SET(...) command for the header
