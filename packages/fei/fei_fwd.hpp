@@ -1,3 +1,6 @@
+#ifndef _fei_fwd_hpp_
+#define _fei_fwd_hpp_
+
 /*--------------------------------------------------------------------*/
 /*    Copyright 2006 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
@@ -6,11 +9,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef _fei_fwd_hpp_
-#define _fei_fwd_hpp_
-
-#include "fei_macros.hpp"
-#include "fei_defs.h"
+#include <fei_macros.hpp>
+#include <fei_defs.h>
 
 //
 //Forward declarations for fei classes.
@@ -65,9 +65,14 @@ namespace fei {
   };
 
   class Factory;
+  class FillableMat;
+  class Graph;
+  class CSRMat;
+  class CSVec;
   class LogFile;
   class Logger;
   class LogManager;
+  class Reducer;
   class VectorSpace;
   class MatrixGraph;
   class Param;

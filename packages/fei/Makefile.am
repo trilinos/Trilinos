@@ -48,8 +48,10 @@ if SUB_TEST
 TESTS=test utest_cases utest \
 	test/elemDOF_Aztec \
 	test/remEssBCs \
+	test/remEssBCs_Trilinos \
 	test/cr_lagrange_20quad \
 	test/cr_slave_20quad \
+	test/cr_slave_20quad_old \
 	test/cr_lagrange_20quad_AZLSC \
 	test/cr_lagrange_20quad_old \
 	test/cr_multifield_slave
@@ -90,8 +92,10 @@ tests:
 	cd $(top_builddir)/utest && $(MAKE)
 	cd $(top_builddir)/test/elemDOF_Aztec && $(MAKE)
 	cd $(top_builddir)/test/remEssBCs && $(MAKE)
+	cd $(top_builddir)/test/remEssBCs_Trilinos && $(MAKE)
 	cd $(top_builddir)/test/cr_lagrange_20quad && $(MAKE)
 	cd $(top_builddir)/test/cr_slave_20quad && $(MAKE)
+	cd $(top_builddir)/test/cr_slave_20quad_old && $(MAKE)
 	cd $(top_builddir)/test/cr_lagrange_20quad_AZLSC && $(MAKE)
 	cd $(top_builddir)/test/cr_lagrange_20quad_old && $(MAKE)
 	cd $(top_builddir)/test/cr_multifield_slave && $(MAKE)
@@ -129,8 +133,10 @@ clean-tests:
 	cd $(top_builddir)/utest && $(MAKE) clean
 	cd $(top_builddir)/test/elemDOF_Aztec && $(MAKE) clean
 	cd $(top_builddir)/test/remEssBCs && $(MAKE) clean
+	cd $(top_builddir)/test/remEssBCs_Trilinos && $(MAKE) clean
 	cd $(top_builddir)/test/cr_lagrange_20quad && $(MAKE) clean
 	cd $(top_builddir)/test/cr_slave_20quad && $(MAKE) clean
+	cd $(top_builddir)/test/cr_slave_20quad_old && $(MAKE) clean
 	cd $(top_builddir)/test/cr_lagrange_20quad_AZLSC && $(MAKE) clean
 	cd $(top_builddir)/test/cr_lagrange_20quad_old && $(MAKE) clean
 	cd $(top_builddir)/test/cr_multifield_slave && $(MAKE) clean

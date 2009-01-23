@@ -51,7 +51,7 @@ fei::Graph_Impl::~Graph_Impl()
 }
 
 //----------------------------------------------------------------------------
-int fei::Graph_Impl::addIndices(int row, int len, int* indices)
+int fei::Graph_Impl::addIndices(int row, int len, const int* indices)
 {
   if (row < 0) {
     return(-1);

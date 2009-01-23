@@ -75,9 +75,10 @@ am__objects_2 = fei_unit_testcase.$(OBJEXT) \
 	fei_unit_testcontainer.$(OBJEXT) \
 	fei_unit_register_tests.$(OBJEXT) \
 	fei_unit_test_runner.$(OBJEXT) fei_unit_CSRMat_CSVec.$(OBJEXT) \
-	fei_unit_utils.$(OBJEXT) fei_unit_CommUtils.$(OBJEXT) \
-	fei_unit_DirBC.$(OBJEXT) fei_unit_Params.$(OBJEXT) \
-	fei_unit_Reducer.$(OBJEXT)
+	fei_unit_MatrixTraits.$(OBJEXT) fei_unit_utils.$(OBJEXT) \
+	fei_unit_CommUtils.$(OBJEXT) fei_unit_DirBC.$(OBJEXT) \
+	fei_unit_Params.$(OBJEXT) fei_unit_Reducer.$(OBJEXT) \
+	fei_unit_impl_utils.$(OBJEXT)
 am_libfei_utest_cases_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libfei_utest_cases_a_OBJECTS = $(am_libfei_utest_cases_a_OBJECTS)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -223,9 +224,11 @@ DEFAULT_INCLUDES = -I$(top_srcdir)/utest_cases $(FEI_INCLUDES) $(HYPRE_CPPFLAGS)
 CORE_H = \
 	$(top_srcdir)/utest_cases/fei_unit_CommUtils.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_CSRMat_CSVec.hpp \
+	$(top_srcdir)/utest_cases/fei_unit_MatrixTraits.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_DirBC.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_Params.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_Reducer.hpp \
+	$(top_srcdir)/utest_cases/fei_unit_impl_utils.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_testcase.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_testcontainer.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_register_tests.hpp \
@@ -238,11 +241,13 @@ CORE = \
 	$(srcdir)/fei_unit_register_tests.cpp \
 	$(srcdir)/fei_unit_test_runner.cpp \
 	$(srcdir)/fei_unit_CSRMat_CSVec.cpp \
+	$(srcdir)/fei_unit_MatrixTraits.cpp \
 	$(srcdir)/fei_unit_utils.cpp \
 	$(srcdir)/fei_unit_CommUtils.cpp \
 	$(srcdir)/fei_unit_DirBC.cpp \
 	$(srcdir)/fei_unit_Params.cpp \
-	$(srcdir)/fei_unit_Reducer.cpp
+	$(srcdir)/fei_unit_Reducer.cpp \
+	$(srcdir)/fei_unit_impl_utils.cpp
 
 
 # ------------------------------------------------------------------------
@@ -326,8 +331,10 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_unit_CSRMat_CSVec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_unit_CommUtils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_unit_DirBC.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_unit_MatrixTraits.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_unit_Params.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_unit_Reducer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_unit_impl_utils.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_unit_register_tests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_unit_test_runner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_unit_testcase.Po@am__quote@
@@ -418,6 +425,20 @@ fei_unit_CSRMat_CSVec.obj: $(srcdir)/fei_unit_CSRMat_CSVec.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_unit_CSRMat_CSVec.obj `if test -f '$(srcdir)/fei_unit_CSRMat_CSVec.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_unit_CSRMat_CSVec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_unit_CSRMat_CSVec.cpp'; fi`
 
+fei_unit_MatrixTraits.o: $(srcdir)/fei_unit_MatrixTraits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_unit_MatrixTraits.o -MD -MP -MF $(DEPDIR)/fei_unit_MatrixTraits.Tpo -c -o fei_unit_MatrixTraits.o `test -f '$(srcdir)/fei_unit_MatrixTraits.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_unit_MatrixTraits.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_unit_MatrixTraits.Tpo $(DEPDIR)/fei_unit_MatrixTraits.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_unit_MatrixTraits.cpp' object='fei_unit_MatrixTraits.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_unit_MatrixTraits.o `test -f '$(srcdir)/fei_unit_MatrixTraits.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_unit_MatrixTraits.cpp
+
+fei_unit_MatrixTraits.obj: $(srcdir)/fei_unit_MatrixTraits.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_unit_MatrixTraits.obj -MD -MP -MF $(DEPDIR)/fei_unit_MatrixTraits.Tpo -c -o fei_unit_MatrixTraits.obj `if test -f '$(srcdir)/fei_unit_MatrixTraits.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_unit_MatrixTraits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_unit_MatrixTraits.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_unit_MatrixTraits.Tpo $(DEPDIR)/fei_unit_MatrixTraits.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_unit_MatrixTraits.cpp' object='fei_unit_MatrixTraits.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_unit_MatrixTraits.obj `if test -f '$(srcdir)/fei_unit_MatrixTraits.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_unit_MatrixTraits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_unit_MatrixTraits.cpp'; fi`
+
 fei_unit_utils.o: $(srcdir)/fei_unit_utils.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_unit_utils.o -MD -MP -MF $(DEPDIR)/fei_unit_utils.Tpo -c -o fei_unit_utils.o `test -f '$(srcdir)/fei_unit_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_unit_utils.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_unit_utils.Tpo $(DEPDIR)/fei_unit_utils.Po
@@ -487,6 +508,20 @@ fei_unit_Reducer.obj: $(srcdir)/fei_unit_Reducer.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_unit_Reducer.cpp' object='fei_unit_Reducer.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_unit_Reducer.obj `if test -f '$(srcdir)/fei_unit_Reducer.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_unit_Reducer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_unit_Reducer.cpp'; fi`
+
+fei_unit_impl_utils.o: $(srcdir)/fei_unit_impl_utils.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_unit_impl_utils.o -MD -MP -MF $(DEPDIR)/fei_unit_impl_utils.Tpo -c -o fei_unit_impl_utils.o `test -f '$(srcdir)/fei_unit_impl_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_unit_impl_utils.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_unit_impl_utils.Tpo $(DEPDIR)/fei_unit_impl_utils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_unit_impl_utils.cpp' object='fei_unit_impl_utils.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_unit_impl_utils.o `test -f '$(srcdir)/fei_unit_impl_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_unit_impl_utils.cpp
+
+fei_unit_impl_utils.obj: $(srcdir)/fei_unit_impl_utils.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_unit_impl_utils.obj -MD -MP -MF $(DEPDIR)/fei_unit_impl_utils.Tpo -c -o fei_unit_impl_utils.obj `if test -f '$(srcdir)/fei_unit_impl_utils.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_unit_impl_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_unit_impl_utils.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_unit_impl_utils.Tpo $(DEPDIR)/fei_unit_impl_utils.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_unit_impl_utils.cpp' object='fei_unit_impl_utils.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_unit_impl_utils.obj `if test -f '$(srcdir)/fei_unit_impl_utils.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_unit_impl_utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_unit_impl_utils.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

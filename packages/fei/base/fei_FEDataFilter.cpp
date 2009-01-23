@@ -30,7 +30,6 @@ typedef snl_fei::Constraint<GlobalID> ConstraintType;
 #include <fei_NodeCommMgr.hpp>
 #include <fei_ProcEqns.hpp>
 #include <fei_SSVec.hpp>
-#include <fei_SSMat.hpp>
 #include <fei_BlockDescriptor.hpp>
 #include <fei_ConnectivityTable.hpp>
 #include <snl_fei_Utils.hpp>
@@ -74,7 +73,6 @@ FEDataFilter::FEDataFilter(FEI_Implementation* owner,
    rowIndices_(),
    rowColOffsets_(0, 256),
    colIndices_(0, 256),
-   putRHSVec_(NULL),
    eqnCommMgr_(NULL),
    eqnCommMgr_put_(NULL),
    maxElemRows_(0),
@@ -155,7 +153,6 @@ FEDataFilter::FEDataFilter(const FEDataFilter& src)
    rowIndices_(),
    rowColOffsets_(0, 256),
    colIndices_(0, 256),
-   putRHSVec_(NULL),
    eqnCommMgr_(NULL),
    eqnCommMgr_put_(NULL),
    maxElemRows_(0),
@@ -182,8 +179,6 @@ FEDataFilter::~FEDataFilter() {
   delete [] eStiff_;
   delete [] eStiff1D_;
   delete [] eLoad_;
-
-  delete putRHSVec_;
 }
 
 //------------------------------------------------------------------------------
@@ -328,14 +323,14 @@ int FEDataFilter::initLinSysCore()
   while(cr_iter != cr_end) {
     penCRIDsPtr[counter++] = (*cr_iter).first;
     ConstraintType& cr = *((*cr_iter).second);
-    int numNodes = cr.getMasters()->size();
+    int nNodes = cr.getMasters()->size();
 
     int insertPoint = -1;
-    int offset = snl_fei::binarySearch(numNodes, constraintBlocks_, insertPoint);
+    int offset = snl_fei::binarySearch(nNodes, constraintBlocks_, insertPoint);
 
     int nodeOffset = 0;
     if (offset < 0) {
-      constraintBlocks_.insert(numNodes, insertPoint);
+      constraintBlocks_.insert(nNodes, insertPoint);
       numConstraintsPerBlock.insert(1, insertPoint);
       numDofPerConstraint.insert(0, insertPoint);
 
@@ -354,7 +349,7 @@ int FEDataFilter::initLinSysCore()
 
     std::vector<int>* fieldIDsvec = cr.getMasterFieldIDs();
     int* fieldIDs = &(*fieldIDsvec)[0];
-    for(int k=0; k<numNodes; ++k) {
+    for(int k=0; k<nNodes; ++k) {
       int fieldSize = problemStructure_->getFieldSize(fieldIDs[k]);
       packedFieldSizes_.insert(fieldSize, nodeOffset+k);
       numDofPerConstraint[offset] += fieldSize;
@@ -434,24 +429,24 @@ int FEDataFilter::initLinSysCore()
     ConstraintType& cr = *((*cr_iter).second);
     std::vector<GlobalID>* nodeIDsvec = cr.getMasters();
     GlobalID* nodeIDs = &(*nodeIDsvec)[0];
-    int numNodes = cr.getMasters()->size();
-    int index = snl_fei::binarySearch(numNodes, constraintBlocks_);
+    int nNodes = cr.getMasters()->size();
+    int index = snl_fei::binarySearch(nNodes, constraintBlocks_);
     if (index < 0) {
       ERReturn(-1);
     }
 
     int blockNum = numElemBlocks + index;
 
-    nodeNumbers.resize(numNodes);
+    nodeNumbers.resize(nNodes);
 
-    for(int k=0; k<numNodes; ++k) {
+    for(int k=0; k<nNodes; ++k) {
       NodeDescriptor& node = Filter::findNodeDescriptor(nodeIDs[k]);
       nodeNumbers[k] = node.getNodeNumber();
     }
 
     int offset = constraintNodeOffsets_[index];
     CHK_ERR( feData_->setConnectivity(blockNum, numRegularElems_+i++,
-				      numNodes, &nodeNumbers[0],
+				      nNodes, &nodeNumbers[0],
 				      &(packedFieldSizes_.dataPtr()[offset])) );
     ++cr_iter;
   }
@@ -1016,18 +1011,9 @@ int FEDataFilter::putIntoRHS(int IDType,
     ERReturn(-1);
   }
 
-  if (putRHSVec_ == NULL) {
-    putRHSVec_ = new SSVec(rowIndices_.size(),
-			   &rowIndices_[0], rhsEntries);
-  }
-  else {
-    putRHSVec_->setInternalData(rowIndices_.size(),
-				&rowIndices_[0], rhsEntries);
-  }
-
   CHK_ERR( exchangeRemoteEquations() );
 
-  CHK_ERR( assembleRHS(*putRHSVec_, ASSEMBLE_PUT) );
+  CHK_ERR(assembleRHS(rowIndices_.size(), &rowIndices_[0], rhsEntries, ASSEMBLE_PUT));
 
   return(0);
 }
@@ -1051,16 +1037,7 @@ int FEDataFilter::sumIntoRHS(int IDType,
     ERReturn(-1);
   }
 
-  if (putRHSVec_ == NULL) {
-    putRHSVec_ = new SSVec(rowIndices_.size(),
-			   &rowIndices_[0], rhsEntries);
-  }
-  else {
-    putRHSVec_->setInternalData(rowIndices_.size(),
-				&rowIndices_[0], rhsEntries);
-  }
-
-  CHK_ERR( assembleRHS(*putRHSVec_, ASSEMBLE_SUM) );
+  CHK_ERR(assembleRHS(rowIndices_.size(), &rowIndices_[0], rhsEntries, ASSEMBLE_SUM));
 
   return(0);
 }
@@ -1169,25 +1146,12 @@ int FEDataFilter::generalCoefInput(int patternID,
    if (assemblyMode == ASSEMBLE_PUT) CHK_ERR( exchangeRemoteEquations() );
 
    if (coefs != NULL) {
-     //wrap a super-sparse-matrix object around the coefs data
-     SSMat mat(numRows, &rowIndices_[0],
-	       numColsPerRow, rowColOffsets_.dataPtr(),
-	       colIndices_.dataPtr(), coefs);
-
-     CHK_ERR( assembleEqns(mat, assemblyMode) );
+     CHK_ERR( assembleEqns(numRows, numColsPerRow, &rowIndices_[0],
+                           colIndices_.dataPtr(), coefs, false, assemblyMode) );
    }
 
    if (rhsCoefs != NULL) {
-     if (putRHSVec_ == NULL) {
-       putRHSVec_ = new SSVec(rowIndices_.size(),
-			      &rowIndices_[0], rhsCoefs);
-     }
-     else {
-       putRHSVec_->setInternalData(rowIndices_.size(),
-				   &rowIndices_[0], rhsCoefs);
-     }
-
-     CHK_ERR( assembleRHS(*putRHSVec_, assemblyMode) );
+     CHK_ERR(assembleRHS(rowIndices_.size(), &rowIndices_[0], rhsCoefs, assemblyMode));
    }
 
    return(FEI_SUCCESS);
@@ -1838,27 +1802,6 @@ int FEDataFilter::giveToLocalReducedMatrix(int numPtRows, const int* ptRows,
 }
 
 //------------------------------------------------------------------------------
-int FEDataFilter::sumIntoMatrix(SSMat& mat)
-{
-  int numRows = mat.getRowNumbers().length();
-  int* rowNumbers = mat.getRowNumbers().dataPtr();
-  if (numRows == 0) return(FEI_SUCCESS);
-
-  feiArray<SSVec*>& rows = mat.getRows();
-
-  for(int i=0; i<numRows; i++) {
-    SSVec& row = *(rows[i]);
-    double* coefPtr = row.coefs().dataPtr();
-
-    CHK_ERR( giveToMatrix(1, &(rowNumbers[i]),
-			  row.indices().length(), row.indices().dataPtr(),
-			  &coefPtr, ASSEMBLE_SUM) );
-  }
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
 int FEDataFilter::getFromMatrix(int numPtRows, const int* ptRows,
 			    const int* rowColOffsets, const int* ptCols,
 			    int numColsPerRow, double** values)
@@ -1956,30 +1899,6 @@ int FEDataFilter::giveToLocalReducedRHS(int num, const double* values,
 				       rowDofOffsets.dataPtr(),
 				       values) );
   }
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int FEDataFilter::sumIntoRHS(SSVec& vec)
-{
-  feiArray<int>& indices = vec.indices();
-  feiArray<double>& coefs = vec.coefs();
-
-  CHK_ERR( giveToRHS(indices.length(), coefs.dataPtr(), indices.dataPtr(),
-		     ASSEMBLE_SUM) );
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int FEDataFilter::putIntoRHS(SSVec& vec)
-{
-  feiArray<int>& indices = vec.indices();
-  feiArray<double>& coefs = vec.coefs();
-
-  CHK_ERR( giveToRHS(indices.length(), coefs.dataPtr(), indices.dataPtr(),
-		     ASSEMBLE_PUT) );
 
   return(FEI_SUCCESS);
 }
@@ -2428,7 +2347,7 @@ int FEDataFilter::getNodalFieldSolution(int fieldID,
 	continue;
       }
 
-      int err = feData_->getSolnEntry(nodeNumber, dofOffset+j, results[offset+j]);
+      err = feData_->getSolnEntry(nodeNumber, dofOffset+j, results[offset+j]);
       if (err != 0) {
 	FEI_CERR << "FEDataFilter::getReducedSolnEntry: nodeNumber " << nodeNumber
 	     << " (nodeID " << nodeID << "), dofOffset "<<dofOffset
@@ -2787,44 +2706,45 @@ int FEDataFilter::putNodalFieldSolution(int fieldID,
 }
 
 //------------------------------------------------------------------------------
-int FEDataFilter::assembleEqns(SSMat& mat, int mode)
+int FEDataFilter::assembleEqns(int numRows, 
+                               int numCols,
+                               const int* rowNumbers,
+                               const int* colIndices,
+                               const double* const* coefs,
+                               bool structurallySymmetric,
+                               int mode)
 {
-  int numRows = mat.getRows().length();
-  int* rowNumbers = mat.getRowNumbers().dataPtr();
-
   if (numRows == 0) return(FEI_SUCCESS);
 
-  feiArray<SSVec*>& rows = mat.getRows();
-
+  const int* indPtr = colIndices;
   for(int i=0; i<numRows; i++) {
     int row = rowNumbers[i];
 
-    int numCols = rows[i]->length();
-    const int* indPtr = rows[i]->indices().dataPtr();
-    const double* coefPtr = rows[i]->coefs().dataPtr();
+    const double* coefPtr = coefs[i];
 
-    CHK_ERR(giveToMatrix(1, &row,numCols, indPtr, &coefPtr, mode));
+    CHK_ERR(giveToMatrix(1, &row, numCols, indPtr, &coefPtr, mode));
+
+    if (!structurallySymmetric) indPtr += numCols;
   }
 
   return(FEI_SUCCESS);
 }
 
 //------------------------------------------------------------------------------
-int FEDataFilter::assembleRHS(SSVec& vec, int mode) {
+int FEDataFilter::assembleRHS(int numValues,
+                              const int* indices,
+                              const double* coefs,
+                              int mode) {
 //
 //This function hands the data off to the routine that finally
 //sticks it into the RHS vector.
 //
-  int len = vec.length();
-  feiArray<int>& indices = vec.indices();
-  feiArray<double>& coefs = vec.coefs();
-
   if (problemStructure_->numSlaveEquations() == 0) {
-    CHK_ERR( giveToRHS(len, coefs.dataPtr(), indices.dataPtr(), mode) );
+    CHK_ERR( giveToRHS(numValues, coefs, indices, mode) );
     return(FEI_SUCCESS);
   }
 
-  for(int i = 0; i < len; i++) {
+  for(int i = 0; i < numValues; i++) {
     int eqn = indices[i];
 
     CHK_ERR( giveToRHS(1, &(coefs[i]), &eqn, mode ) );

@@ -29,7 +29,7 @@ namespace fei {
     /** Add indices to a specified row of the table */
     int addIndices(int row,
 		   int len,
-		   int* indices);
+		   const int* indices);
 
     /** Add a symmetric block of indices. The array of indices will serve as
 	both row-numbers, and as column-numbers in those rows.

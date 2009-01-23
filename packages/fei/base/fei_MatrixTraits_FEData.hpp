@@ -6,15 +6,15 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef _snl_fei_MatrixTraits_FEData_hpp_
-#define _snl_fei_MatrixTraits_FEData_hpp_
+#ifndef _fei_MatrixTraits_FEData_hpp_
+#define _fei_MatrixTraits_FEData_hpp_
 
 //This file defines matrix traits for FiniteElementData matrices
 //
 
 #include <fei_FiniteElementData.hpp>
 
-namespace snl_fei {
+namespace fei {
 
   /** specialization for FiniteElementData */
   template<>
@@ -94,7 +94,7 @@ namespace snl_fei {
     }
 
   };//struct MatrixTraits
-}//namespace snl_fei
+}//namespace fei
 
 
-#endif // _snl_fei_MatrixTraits_FEData_hpp_
+#endif // _fei_MatrixTraits_FEData_hpp_

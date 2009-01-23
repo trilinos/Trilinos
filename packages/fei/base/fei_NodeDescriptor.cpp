@@ -64,7 +64,7 @@ void NodeDescriptor::addField(int fieldID) {
       //this fieldID using setFieldEqnNumber(...).
       //
 
-      int allocLen = numFields_ - 1;
+      allocLen = numFields_ - 1;
       snl_fei::listInsert(-99, index, fieldEqnNumbers_, tmp, allocLen);
    }
 }

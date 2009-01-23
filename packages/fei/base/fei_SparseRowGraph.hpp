@@ -10,13 +10,15 @@
 #ifndef _fei_SparseRowGraph_hpp_
 #define _fei_SparseRowGraph_hpp_
 
-#include "fei_macros.hpp"
+#include <fei_macros.hpp>
 #include <vector>
+#include <algorithm>
 
 namespace fei {
-  /** Extremely simple data container (basically a struct) that represents
-      the local portion of a sparse row-oriented matrix-graph (may or may not
-      include rows that are shared but not owned locally).
+  /** Extremely simple data container that represents a sparse row-oriented
+      matrix-graph. Purely serial. If it is used to store the local portion of
+      a distributed matrix-graph, the calling code is responsible for all
+      knowledge related to parallelism.
   */
   class SparseRowGraph {
   public:
@@ -35,10 +37,10 @@ namespace fei {
     virtual ~SparseRowGraph() {}
 
     /** comparison operator */
-    bool operator==(const fei::SparseRowGraph& othergraph);
+    bool operator==(const fei::SparseRowGraph& othergraph) const;
 
     /** not-equal operator */
-    bool operator!=(const fei::SparseRowGraph& othergraph);
+    bool operator!=(const fei::SparseRowGraph& othergraph) const;
 
     /** Local row-numbers. */
     std::vector<int> rowNumbers;
@@ -60,7 +62,7 @@ namespace fei {
     bool blockEntries;
   };//class SparseRowGraph
 
-inline bool SparseRowGraph::operator==(const fei::SparseRowGraph& othergraph)
+inline bool SparseRowGraph::operator==(const fei::SparseRowGraph& othergraph) const
 {
   if (rowNumbers != othergraph.rowNumbers) return(false);
   if (rowOffsets != othergraph.rowOffsets) return(false);
@@ -68,11 +70,32 @@ inline bool SparseRowGraph::operator==(const fei::SparseRowGraph& othergraph)
   return(true);
 }
 
-inline bool SparseRowGraph::operator!=(const fei::SparseRowGraph& othergraph)
+inline bool SparseRowGraph::operator!=(const fei::SparseRowGraph& othergraph) const
 {
   return( !(*this == othergraph) );
+}
+
+/** Given a row-number and a SparseRowGraph object, return the offset at which
+    that row's column-indices start in the SparseRowGraph object's
+    packedColumnIndices vector.
+
+    If the given row-number is not found in the SparseRowGraph object's vector
+    of row-numbers, return -1.
+*/
+inline
+int find_row_start(int row, const SparseRowGraph& srg)
+{
+  std::vector<int>::const_iterator rowNumbers_iter =
+    std::lower_bound(srg.rowNumbers.begin(), srg.rowNumbers.end(), row);
+  if (rowNumbers_iter == srg.rowNumbers.end() || *rowNumbers_iter != row) {
+    return -1;
+  }
+
+  size_t offset = rowNumbers_iter - srg.rowNumbers.begin();
+  return srg.rowOffsets[offset];
 }
 
 }//namespace fei
 
 #endif
+

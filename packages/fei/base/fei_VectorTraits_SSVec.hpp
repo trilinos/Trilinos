@@ -6,14 +6,14 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef _snl_fei_VectorTraits_SSVec_hpp_
-#define _snl_fei_VectorTraits_SSVec_hpp_
+#ifndef _fei_VectorTraits_SSVec_hpp_
+#define _fei_VectorTraits_SSVec_hpp_
 
-#include <snl_fei_VectorTraits.hpp>
+#include <fei_VectorTraits.hpp>
 
 #include <fei_SSVec.hpp>
 
-namespace snl_fei {
+namespace fei {
   template<>
   struct VectorTraits<SSVec> {
     static const char* typeName()
@@ -73,6 +73,6 @@ namespace snl_fei {
     { return(-1); }
 
   };
-}//namespace snl_fei
+}//namespace fei
 
-#endif // _snl_fei_VectorTraits_SSVec_hpp_
+#endif // _fei_VectorTraits_SSVec_hpp_

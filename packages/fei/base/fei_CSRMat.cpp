@@ -69,6 +69,67 @@ CSRMat::operator=(const fei::FillableMat& src)
   return *this;
 }
 
+CSRMat&
+CSRMat::operator=(const SSMat& src)
+{
+  const feiArray<int>& rowNumbers = src.getRowNumbers();
+  int nrows = rowNumbers.size();
+  srg_.rowNumbers.resize(nrows);
+  srg_.rowOffsets.resize(nrows+1);
+
+  const feiArray<SSVec*>& rows = src.getRows();
+  
+  unsigned nnz = 0;
+  for(int i=0; i<rows.size(); ++i) {
+    srg_.rowNumbers[i] = rowNumbers[i];
+    srg_.rowOffsets[i] = nnz;
+    nnz += rows[i]->indices().size();
+  }
+
+  srg_.rowOffsets[nrows] = nnz;
+
+  srg_.packedColumnIndices.resize(nnz);
+  packedcoefs_.resize(nnz);
+
+  unsigned offset = 0;
+  for(int i=0; i<rows.size(); ++i) {
+    SSVec* v = rows[i];
+    const feiArray<int>& indices = v->indices();
+    const feiArray<double>& coefs = v->coefs();
+    int rowlen = indices.size();
+
+    for(int j=0; j<rowlen; ++j) {
+      srg_.packedColumnIndices[offset] = indices[j];
+      packedcoefs_[offset++] = coefs[j];
+    }
+  }
+
+  return *this;
+}
+
+CSRMat&
+CSRMat::operator+=(const CSRMat& src)
+{
+  FillableMat tmp;
+  add_CSRMat_to_FillableMat(*this, tmp);
+  add_CSRMat_to_FillableMat(src, tmp);
+  *this = tmp;
+  return *this;
+}
+
+bool
+CSRMat::operator==(const CSRMat& rhs) const
+{
+  if (getGraph() != rhs.getGraph()) return false;
+  return getPackedCoefs() == rhs.getPackedCoefs();
+}
+
+bool
+CSRMat::operator!=(const CSRMat& rhs) const
+{
+  return !(*this == rhs);
+}
+
 void multiply_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
 {
   const std::vector<int>& rows = A.getGraph().rowNumbers;
@@ -100,11 +161,12 @@ void multiply_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
 
     double sum = 0.0;
     while(jbeg<jend) {
-      int xoff = snl_fei::binarySearch(colinds[jbeg++], xind_ptr, xlen);
+      int xoff = snl_fei::binarySearch(colinds[jbeg], xind_ptr, xlen);
 
       if (xoff > -1) {
-        sum += *Acoef++*xcoef_ptr[xoff];
+        sum += Acoef[jbeg]*xcoef_ptr[xoff];
       }
+      ++jbeg;
     }
 
     yind_ptr[i] = rows[i];
@@ -116,7 +178,7 @@ void multiply_trans_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
 {
   const std::vector<int>& rows = A.getGraph().rowNumbers;
   const int* rowoffs = &(A.getGraph().rowOffsets[0]);
-  const std::vector<int>& colinds = A.getGraph().packedColumnIndices;
+  const int* colinds = &(A.getGraph().packedColumnIndices[0]);
   const double* Acoef = &(A.getPackedCoefs()[0]);
 
   const std::vector<int>& xind = x.indices();
@@ -128,8 +190,8 @@ void multiply_trans_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
 
   unsigned nrows = A.getNumRows();
 
-  static fei::FillableVec fy;
-  fy.zero();
+  fei::FillableVec fy;
+  fy.setValues(0.0);
 
   int jbeg = *rowoffs++;
   for(unsigned i=0; i<nrows; ++i) {
@@ -137,13 +199,15 @@ void multiply_trans_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
 
     int xoff = snl_fei::binarySearch(rows[i], xind_ptr, xlen);
     if (xoff < 0) {
+      jbeg = jend;
       continue;
     }
 
     double xcoeff = xcoef_ptr[xoff];
 
     while(jbeg<jend) {
-       fy.addEntry(colinds[jbeg++],*Acoef++*xcoeff);
+      fy.addEntry(colinds[jbeg],Acoef[jbeg]*xcoeff);
+      ++jbeg;
     }
   }
 
@@ -164,7 +228,7 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
   const double* Bcoefs = &(B.getPackedCoefs()[0]);
 
   fei::FillableMat fc;
-  fc.zero();
+  fc.setValues(0.0);
 
   static double fei_eps = std::numeric_limits<double>::epsilon();
 
@@ -176,8 +240,8 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
     fei::FillableVec* fc_row = fc.hasRow(row) ? fc.getRow(row) : NULL;
 
     while(jbeg<jend) {
-      int Acol = Acols[jbeg++];
-      double Acoef = *Acoefs++;
+      int Acol = Acols[jbeg];
+      double Acoef = Acoefs[jbeg++];
 
       int Brow_offset =
         snl_fei::binarySearch(Acol, &Brows[0], Brows.size());
@@ -234,6 +298,7 @@ void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
       snl_fei::binarySearch(row, &Brows[0], Brows.size());
 
     if (Brow_offset < 0) {
+      jbeg = jend;
       continue;
     }
 
@@ -245,8 +310,8 @@ void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
     double* row_coefs_ptr = &row_coefs[0];
 
     while(jbeg<jend) {
-      int Acol = Acols[jbeg++];
-      double Acoef = *Acoefs++;
+      int Acol = Acols[jbeg];
+      double Acoef = Acoefs[jbeg++];
 
       for(int k=0; k<Brow_len; ++k) {
         row_coefs_ptr[k] = Acoef*Brow_coefs[k];
@@ -257,6 +322,22 @@ void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
   }
 
   C = fc;
+}
+
+void add_CSRMat_to_FillableMat(const CSRMat& csrm, FillableMat& fm)
+{
+  const std::vector<int>& rows = csrm.getGraph().rowNumbers;
+  const int* rowoffs = &(csrm.getGraph().rowOffsets[0]);
+  const std::vector<int>& cols = csrm.getGraph().packedColumnIndices;
+  const double* coefs = &(csrm.getPackedCoefs()[0]);
+
+  for(size_t i=0; i<rows.size(); ++i) {
+    int row = rows[i];
+
+    for(int j=rowoffs[i]; j<rowoffs[i+1]; ++j) {
+      fm.sumInCoef(row, cols[j], coefs[j]);
+    }
+  }
 }
 
 }//namespace fei

@@ -6,51 +6,65 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef _snl_fei_MatrixTraits_LinSysCore_hpp_
-#define _snl_fei_MatrixTraits_LinSysCore_hpp_
+#ifndef _fei_MatrixTraits_SSMat_hpp_
+#define _fei_MatrixTraits_SSMat_hpp_
 
-//This file defines matrix traits for LinearSystemCore matrices
+//This file defines matrix traits for SSMat matrices
 //(well, "matrix-views" to be more precise).
 //
 
-#include <fei_LinearSystemCore.hpp>
+#include "fei_SSVec.hpp"
+#include "fei_SSMat.hpp"
+#include "fei_Vector_Impl.hpp"
 
-namespace snl_fei {
+namespace fei {
 
-  /** Specialization for LinearSystemCore. */
+  /** Specialization for SSMat. */
   template<>
-  struct MatrixTraits<LinearSystemCore> {
+  struct MatrixTraits<SSMat> {
 
     /** Return a string type-name for the underlying matrix */
     static const char* typeName()
-      { return("LinearSystemCore"); }
+      { return("SSMat"); }
 
     /** Set a specified scalar value throughout the matrix.
      */
-    static int setValues(LinearSystemCore* lsc, double scalar)
+    static int setValues(SSMat* mat, double scalar)
       {
-	return( lsc->resetMatrix(scalar) );
+	feiArray<SSVec*>& rows = mat->getRows();
+	for(int i=0; i<rows.length(); ++i) {
+	  if (rows[i] != NULL) {
+	    rows[i]->coefs() = scalar;
+	  }
+	}
+	return(0);
       }
 
     /** Query the number of rows. This is expected to be the number of rows
         on the local processor.
     */
-    static int getNumLocalRows(LinearSystemCore* lsc, int& numRows)
+    static int getNumLocalRows(SSMat* mat, int& numRows)
     {
-      numRows = -1;
-      return(-1);
+      numRows = mat->getRowNumbers().length();
+      return(0);
     }
 
     /** Given a global (zero-based) row number, query the length of that row.
      */
-    static int getRowLength(LinearSystemCore* lsc, int row, int& length)
+    static int getRowLength(SSMat* mat, int row, int& length)
       {
-	return( lsc->getMatrixRowLength(row, length) );
+	SSVec* ssrow = mat->getRow(row);
+	if (ssrow == NULL) {
+	  length = 0; return(0);
+	}
+
+	length = ssrow->length();
+	return( 0 );
       }
 
     /** Given a global (zero-based) row number, pass out a copy of the contents
         of that row.
-        @param lsc
+        @param mat
         @param row
         @param len Length of the user-allocated arrays coefs and indices.
         @param coefs User-allocated array which will hold matrix coefficients
@@ -60,48 +74,80 @@ namespace snl_fei {
         @return error-code 0 if successful. Non-zero return-value may indicate
         that the specified row is not locally owned.
     */
-    static int copyOutRow(LinearSystemCore* lsc,
+    static int copyOutRow(SSMat* mat,
 		      int row, int len, double* coefs, int* indices)
       {
-        int dummy;
-	return( lsc->getMatrixRow(row, coefs, indices, len, dummy) );
+	SSVec* ssrow = mat->getRow(row);
+	if (ssrow == NULL) {
+	  return(-1);
+	}
+
+	double* rcoefs = ssrow->coefs().dataPtr();
+	int* rindices  = ssrow->indices().dataPtr();
+
+	for(int i=0; i<len; ++i) {
+	  coefs[i] = rcoefs[i];
+	  indices[i] = rindices[i];
+	}
+
+	return( 0 );
       }
 
     /** Sum a C-style table of coefficient data into the underlying matrix.
      */
-    static int putValuesIn(LinearSystemCore* lsc,
+    static int putValuesIn(SSMat* mat,
                            int numRows, const int* rows,
                            int numCols, const int* cols,
                            const double* const* values,
                            bool sum_into)
       {
+	if (numCols < 1 || numRows < 1) return(0);
+	int err = 0;
         if (sum_into) {
-          return( lsc->sumIntoSystemMatrix(numRows, rows,
-                                           numCols, cols, values) );
+          for(int i=0; i<numRows; ++i) {
+            err += mat->sumInRow(rows[i], cols, values[i], numCols);
+          }
         }
         else {
-	  return( lsc->putIntoSystemMatrix(numRows, rows,
-                                           numCols, cols, values) );
+          for(int i=0; i<numRows; ++i) {
+            err += mat->putRow(rows[i], cols, values[i], numCols);
+          }
         }
+
+	return( err );
       }
 
     /** Perform any necessary internal communications/synchronizations or other
         operations appropriate at end of data input. For some implementations this
         will be a no-op, so this "default implementation" will return 0.
     */
-    static int globalAssemble(LinearSystemCore* lsc)
+    static int globalAssemble(SSMat* mat)
     {
-      return( lsc->matrixLoadComplete() );
+      return(0);
     }
 
     /** Compute the matrix-vector product y = A*x */
-    static int matvec(LinearSystemCore* lsc,
+    static int matvec(SSMat* mat,
 		      fei::Vector* x,
 		      fei::Vector* y)
     {
-      return( -1 );
-    }
-  };//struct MatrixTraits
-}//namespace snl_fei
+      fei::Vector_Impl<SSVec>* ssx =
+	dynamic_cast<fei::Vector_Impl<SSVec>* >(x);
+      fei::Vector_Impl<SSVec>* ssy =
+	dynamic_cast<fei::Vector_Impl<SSVec>* >(y);
 
-#endif // _snl_fei_MatrixTraits_LinSysCore_hpp_
+      if (ssx == NULL || ssy == NULL) {
+	return(-1);
+      }
+
+      SSVec* sx = ssx->getUnderlyingVector();
+      SSVec* sy = ssy->getUnderlyingVector();
+
+      return( mat->matVec(*sx, *sy) );
+    }
+
+  };//struct MatrixTraits
+}//namespace fei
+
+#endif // _fei_MatrixTraits_SSMat_hpp_
+

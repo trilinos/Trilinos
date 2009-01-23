@@ -88,6 +88,7 @@ CORE_H = \
 	$(top_srcdir)/base/fei_SparseRowGraph.hpp \
 	$(top_srcdir)/base/fei_fstream.hpp \
 	$(top_srcdir)/base/fei_sstream.hpp \
+	$(top_srcdir)/base/fei_impl_utils.hpp \
 	$(top_srcdir)/base/fei_utils.hpp \
 	$(top_srcdir)/base/fei_Vector.hpp \
 	$(top_srcdir)/base/fei_Vector_core.hpp \
@@ -129,11 +130,12 @@ CORE_H = \
 	$(top_srcdir)/base/snl_fei_MapContig.hpp \
 	$(top_srcdir)/base/snl_fei_MapTraits.hpp \
 	$(top_srcdir)/base/snl_fei_MapTraits_specialize.hpp \
-	$(top_srcdir)/base/snl_fei_MatrixTraits_FEData.hpp \
-	$(top_srcdir)/base/snl_fei_MatrixTraits.hpp \
-	$(top_srcdir)/base/snl_fei_MatrixTraits_LinProbMgr.hpp \
-	$(top_srcdir)/base/snl_fei_MatrixTraits_LinSysCore.hpp \
-	$(top_srcdir)/base/snl_fei_MatrixTraits_SSMat.hpp \
+	$(top_srcdir)/base/fei_MatrixTraits_FEData.hpp \
+	$(top_srcdir)/base/fei_MatrixTraits.hpp \
+	$(top_srcdir)/base/fei_MatrixTraits_LinProbMgr.hpp \
+	$(top_srcdir)/base/fei_MatrixTraits_LinSysCore.hpp \
+	$(top_srcdir)/base/fei_MatrixTraits_SSMat.hpp \
+	$(top_srcdir)/base/fei_MatrixTraits_FillableMat.hpp \
 	$(top_srcdir)/base/fei_mpiTraits.hpp \
 	$(top_srcdir)/base/fei_Pattern.hpp \
 	$(top_srcdir)/base/snl_fei_PointBlockMap.hpp \
@@ -150,11 +152,12 @@ CORE_H = \
 	$(top_srcdir)/base/fei_FEI_Impl.hpp \
 	$(top_srcdir)/base/fei_TemplateUtils.hpp \
 	$(top_srcdir)/base/snl_fei_Utils.hpp \
-	$(top_srcdir)/base/snl_fei_VectorTraits_FEData.hpp \
-	$(top_srcdir)/base/snl_fei_VectorTraits.hpp \
-	$(top_srcdir)/base/snl_fei_VectorTraits_LinProbMgr.hpp \
-	$(top_srcdir)/base/snl_fei_VectorTraits_LinSysCore.hpp \
-	$(top_srcdir)/base/snl_fei_VectorTraits_SSVec.hpp \
+	$(top_srcdir)/base/fei_VectorTraits_FEData.hpp \
+	$(top_srcdir)/base/fei_VectorTraits.hpp \
+	$(top_srcdir)/base/fei_VectorTraits_LinProbMgr.hpp \
+	$(top_srcdir)/base/fei_VectorTraits_LinSysCore.hpp \
+	$(top_srcdir)/base/fei_VectorTraits_FillableVec.hpp \
+	$(top_srcdir)/base/fei_VectorTraits_SSVec.hpp \
 	$(top_srcdir)/base/fei_SSGraph.hpp \
 	$(top_srcdir)/base/fei_SSMat.hpp \
 	$(top_srcdir)/base/fei_SSVec.hpp
@@ -188,6 +191,7 @@ CORE = \
 	$(srcdir)/fei_Pool.cpp \
 	$(srcdir)/fei_Pool_alloc.cpp \
 	$(srcdir)/fei_Reducer.cpp \
+	$(srcdir)/fei_impl_utils.cpp \
 	$(srcdir)/fei_utils.cpp \
 	$(srcdir)/fei_VectorSpace.cpp \
 	$(srcdir)/fei_Vector_core.cpp \

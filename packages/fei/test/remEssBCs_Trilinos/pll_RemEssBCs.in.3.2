@@ -1,0 +1,91 @@
+# 1 block, 1 field (size 1), 4 nodes-per-elem, 3 elems, 2 ess BCs
+#
+# This "mesh" looks like this (node numbers at low left of each node *):
+# element numbers denoted by 'E<n>'
+#
+#  *-----*-----*-----*
+# 3|    2|    5|    7|
+#  |     |     |     |
+#  |E1   |E2   |E3   |
+#  *-----*-----*-----*
+# 0     1     4     6
+#
+# and we'll apply essential boundary conditions
+# 5.0 at node 5 and 7.0 at node 7
+#
+
+solveType
+0
+
+numFields
+1
+fieldIDs
+0
+fieldSizes
+1
+numElemBlocks
+1
+blockID
+0
+numElements
+1
+numNodesPerElement
+4
+
+numFieldsPerNode
+# numFieldsPerNode is a list of length 'numNodesPerElement'
+1 1 1 1
+
+nodalFieldIDs
+# nodalFieldIDs is a table with 'numNodesPerElement' rows, and the
+# i-th row is of length 'numFieldsPerNode[i]'
+0
+0
+0
+0
+
+elemID
+3
+# connectivity -- 4 node IDs
+4 6 7 5
+# stiffness, 4 rows, 4 entries each
+2.0  -1.0  0.2  0.2
+-1.0  2.0  -1.0  0.2
+0.2  -1.0  2.0  -1.0
+0.2  0.2  -1.0  2.0
+# load, 4 entries
+1.0  1.0  1.0  1.0
+
+numSharedNodeSets
+1
+# now, for this shared node set, the number of nodes:
+2
+# the nodeIDs:
+4 5
+# number-of-processors per node:
+2 2
+# the procs for the first node:
+1 2
+# the procs for the second node:
+1 2
+
+numBCNodeSets
+2
+# number of nodes
+1
+# fieldID
+0
+# offset into field
+0
+# node ID, prescribed value
+5 5.0
+
+# number of nodes
+1
+# fieldID
+0
+# offset into field
+0
+# node ID, prescribed value
+7 7.0
+

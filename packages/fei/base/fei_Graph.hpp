@@ -37,7 +37,7 @@ namespace fei {
     /** Add indices to a specified row of the table */
     virtual int addIndices(int row,
 		   int len,
-		   int* indices) = 0;
+		   const int* indices) = 0;
 
     /** Add a symmetric block of indices. The array of indices will serve as
 	both row-numbers, and as column-numbers in those rows.

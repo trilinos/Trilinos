@@ -30,7 +30,7 @@ fei::GraphReducer::~GraphReducer()
 }
 
 //----------------------------------------------------------------------------
-int fei::GraphReducer::addIndices(int row, int len, int* indices)
+int fei::GraphReducer::addIndices(int row, int len, const int* indices)
 {
   reducer_->addGraphIndices(1, &row, len, indices, *target_);
   return(0);

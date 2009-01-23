@@ -859,7 +859,6 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
                                         int& numIndices)
 {
   numIndices = 0;
-  int eqnOffset, numInstances = 0;
   int* eqnPtr = &eqnNumbers_[0];
 
   int len = numRecords;
@@ -879,6 +878,7 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
     for(int i=0; i<len; ++i) {
       const fei::Record* record = records[i];
 
+      int eqnOffset = 0, numInstances = 0;
       int* eqnNumbers = eqnPtr+record->getOffsetIntoEqnNumbers();
 
       const fei::FieldMask* fieldMask = record->getFieldMask();
@@ -892,7 +892,7 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
 
       int* eqnNumbers = eqnPtr+record->getOffsetIntoEqnNumbers();
 
-      int eqnOffset = 0;
+      int eqnOffset = 0, numInstances = 0;
       if (!simpleProblem_) {
         const fei::FieldMask* fieldMask = record->getFieldMask();
         fieldMask->getFieldEqnOffset(fieldID, eqnOffset, numInstances);
@@ -917,7 +917,6 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
 {
   numIndices = 0;
   int fld_offset = 0;
-  int numInstances = 0;
   int* eqnPtr = &eqnNumbers_[0];
 
   for(int i=0; i<numRecords; ++i) {
@@ -927,7 +926,7 @@ void fei::VectorSpace::getGlobalIndices(int numRecords,
     int* eqnNumbers = eqnPtr + record->getOffsetIntoEqnNumbers();
 
     for(int nf=0; nf<numFieldsPerID[i]; ++nf) {
-      int eqnOffset = 0;
+      int eqnOffset = 0, numInstances = 0;
       if (!simpleProblem_) {
         fieldMask->getFieldEqnOffset(fieldIDs[fld_offset], eqnOffset, numInstances);
       }

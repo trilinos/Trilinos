@@ -33,8 +33,6 @@ test_SSMat::~test_SSMat()
 
 int test_SSMat::runtests()
 {
-  CHK_ERR( test1() );
-  CHK_ERR( test2() );
   CHK_ERR( test3() );
   CHK_ERR( test4() );
   return(0);
@@ -42,111 +40,11 @@ int test_SSMat::runtests()
 
 int test_SSMat::test1()
 {
-  FEI_COUT <<"testing SSMat(EqnBuffer) constructor...";
-
-  int i, n = 6, m = 4;
-  feiArray<int> rows(n,n);
-  feiArray<int> cols(m,m);
-  double** coefs = new double*[n];
-  EqnBuffer eqbf;
-
-  SSMat C;
-
-  for(i=0; i<n; i++) rows[i] = i+1;
-  for(i=0; i<m; i++) cols[i] = i+1;
-
-  for(i=0; i<n; i++) {
-    coefs[i] = new double[m];
-
-    for(int j=0; j<m; j++) {
-      coefs[i][j] = 1.0*rows[i];
-      CHK_ERR( C.sumInCoef(rows[i], cols[j], coefs[i][j]) );
-    }
-
-    CHK_ERR( eqbf.addEqn(rows[i], coefs[i], cols.dataPtr(), m, false) );
-  }
-
-  SSMat A(eqbf);
-  SSMat B(n, rows.dataPtr(),  m, rows.dataPtr(),  coefs);
-
-  if (A != B) {
-    throw std::runtime_error("SSMat(EqnBuffer) test failed");
-  }
-
-  SSVec x(n, rows.dataPtr(), coefs[0]);
-
-  CHK_ERR( x.setInternalData(m, cols.dataPtr(), coefs[0]) );
-
-  SSVec y;
-
-  CHK_ERR( A.matVec(x, y) );
-
-  CHK_ERR( A.matTransVec(x, y) );
-
-  CHK_ERR( A.matMat(B, C) );
-
-  CHK_ERR( A.matTransMat(B, C) );
-
-  //  FEI_COUT << "A:"<<FEI_ENDL << A << FEI_ENDL;
-  //  FEI_COUT << "y:"<<FEI_ENDL << y << FEI_ENDL;
-
-  for(i=0; i<n; i++) delete [] coefs[i];
-  delete [] coefs;
-
-  FEI_COUT << "ok"<<FEI_ENDL;
   return(0);
 }
 
 int test_SSMat::test2()
 {
-  int i, n = 6, m = 6;
-  feiArray<int> rows(n,n);
-  feiArray<int> cols(m,m);
-  double** coefs = new double*[n];
-  EqnBuffer eqbf;
-
-  SSMat C;
-
-  for(i=0; i<n; i++) rows[i] = i+1;
-  for(i=0; i<m; i++) cols[i] = i+1;
-
-  for(i=0; i<n; i++) {
-    coefs[i] = new double[m];
-
-    for(int j=0; j<m; j++) {
-      coefs[i][j] = 1.0*rows[i];
-      CHK_ERR( C.sumInCoef(rows[i], cols[j], coefs[i][j]) );
-    }
-
-    CHK_ERR( eqbf.addEqn(rows[i], coefs[i], cols.dataPtr(), m, false) );
-  }
-
-  SSMat A(eqbf);
-  SSMat B(n, rows.dataPtr(), coefs);
-
-  if (A != B) {
-    throw std::runtime_error("SSMat(EqnBuffer) test 2 failed");
-  }
-
-  B.setInternalData(n-2, rows.dataPtr(), coefs);
-  B.setInternalData(n, rows.dataPtr(), coefs);
-
-  SSVec x(m, cols.dataPtr(), coefs[0]);
-  SSVec y;
-
-  CHK_ERR( x.setInternalData(m, cols.dataPtr(), coefs[0]) );
-
-  CHK_ERR( A.matVec(x, y) );
-
-  CHK_ERR( A.matTransVec(x, y) );
-
-  CHK_ERR( A.matMat(B, C) );
-
-  CHK_ERR( A.matTransMat(B, C) );
-
-  for(i=0; i<n; i++) delete [] coefs[i];
-  delete [] coefs;
-
   return(0);
 }
 

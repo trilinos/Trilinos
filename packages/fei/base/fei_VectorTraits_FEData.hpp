@@ -6,17 +6,17 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef _snl_fei_VectorTraits_FEData_hpp_
-#define _snl_fei_VectorTraits_FEData_hpp_
+#ifndef _fei_VectorTraits_FEData_hpp_
+#define _fei_VectorTraits_FEData_hpp_
 
 //This file defines vector traits for FiniteElementData vectors
 //(well, "vector-views" to be more precise).
 //
 
-#include <snl_fei_VectorTraits.hpp>
+#include <fei_VectorTraits.hpp>
 #include <fei_FiniteElementData.hpp>
 
-namespace snl_fei {
+namespace fei {
 
   /** specialization for FiniteElementData */
   template<>
@@ -62,6 +62,6 @@ namespace snl_fei {
     { return(-1); }
 
   };//struct VectorTraits
-}//namespace snl_fei
+}//namespace fei
 
-#endif // _snl_fei_VectorTraits_FEData_hpp_
+#endif // _fei_VectorTraits_FEData_hpp_

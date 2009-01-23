@@ -85,12 +85,9 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
    masterRank_(masterRank),
    problemStructure_(probStruct),
    matrixAllocated_(false),
-   workStiff_(NULL),
-   workLoad_(NULL),
    rowIndices_(),
    rowColOffsets_(0, 256),
    colIndices_(0, 256),
-   putRHSVec_(NULL),
    nodeIDType_(0),
    eqnCommMgr_(NULL),
    eqnCommMgr_put_(NULL),
@@ -157,10 +154,6 @@ LinSysCoreFilter::~LinSysCoreFilter() {
   delete [] eStiff_;
   delete [] eStiff1D_;
   delete [] eLoad_;
-
-  delete workStiff_;
-  delete workLoad_;
-  delete putRHSVec_;
 
   delete Kid_;
   delete Kdi_;
@@ -663,18 +656,11 @@ int LinSysCoreFilter::storeNodalRowCoefs(NodeDescriptor& node,
     dworkSpace2_.resize(numParams);
   }
 
-  double** values = dworkSpace2_.dataPtr();
-
-  if (dworkSpace_.length() < numParams) {
-    dworkSpace_.resize(numParams);
-  }
-
-  double* val = dworkSpace_.dataPtr();
+  const double* * values = dworkSpace2_.dataPtr();
 
   for(int j=0; j<numParams; j++) {
     ptRows[j] = eqnNumber + j;
-    values[j] = &(val[j]);
-    values[j][0] = coefs[j];
+    values[j] = &(coefs[j]);
   }
 
   CHK_ERR( giveToMatrix(numParams, ptRows, 1, &eqn, values, ASSEMBLE_SUM) );
@@ -776,7 +762,6 @@ int LinSysCoreFilter::storePenNodeData(NodeDescriptor& iNode,
 //equations associated with jNode at jField.
 //Also, add the penalty contribution to the RHS vector.
 //
-   int i;
    int iEqn = -1, jEqn = -1;
    if (!iNode.getFieldEqnNumber(iField, iEqn)) ERReturn(FEI_ID_NOT_FOUND);
    if (!jNode.getFieldEqnNumber(jField, jEqn)) ERReturn(FEI_ID_NOT_FOUND);
@@ -794,7 +779,7 @@ int LinSysCoreFilter::storePenNodeData(NodeDescriptor& iNode,
      dworkSpace2_.resize(iNumParams);
    }
 
-   double** coefs = dworkSpace2_.dataPtr();
+   const double* * coefs = dworkSpace2_.dataPtr();
 
    if (dworkSpace_.length() < iNumParams * jNumParams) {
      dworkSpace_.resize(iNumParams * jNumParams);
@@ -810,14 +795,15 @@ int LinSysCoreFilter::storePenNodeData(NodeDescriptor& iNode,
    int* rows = iworkSpace2_.dataPtr() + jNumParams;
 
 
-   for(i=0; i<iNumParams; i++) {
-      coefs[i] = coefList + i*jNumParams;
+   for(int i=0; i<iNumParams; i++) {
+      double* coefPtr = coefList + i*jNumParams;
+      coefs[i] = coefPtr;
 
       rows[i] = iEqn + i;
 
       for(int j=0; j<jNumParams; j++) {
          if (i==0) cols[j] = jEqn + j;
-         coefs[i][j] = penValue*iCoefs[i]*jCoefs[j];
+         coefPtr[j] = penValue*iCoefs[i]*jCoefs[j];
       }
 
       double rhsValue = penValue*iCoefs[i]*CRValue;
@@ -1253,20 +1239,15 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
 				 &indPtr);
     }
 
-    //wrap the stiffness data in a super-sparse-matrix object
-    if (workStiff_ == NULL) {
-      workStiff_ = new SSMat(scatterIndices_.length(), indPtr, stiff);
-    }
-    else {
-      workStiff_->setInternalData(scatterIndices_.length(), indPtr, stiff);
-    }
-
+    int len = scatterIndices_.length();
     if (interleave == 0) {
-      CHK_ERR( assembleEqns( *workStiff_, numBlkElemRows, blkIndPtr,
+      CHK_ERR( assembleEqns( len, len, indPtr, indPtr, stiff, true,
+                             numBlkElemRows, blkIndPtr,
 			     blkSizesPtr, useBlkEqns, ASSEMBLE_SUM ) );
     }
     else {
-      CHK_ERR( assembleEqns( *workStiff_, numBlkElemRows, blkIndPtr,
+      CHK_ERR( assembleEqns( len, len, indPtr, indPtr, stiff, true,
+                             numBlkElemRows, blkIndPtr,
 			     blkSizesPtr, false, ASSEMBLE_SUM ) );
     }
   }
@@ -1281,15 +1262,7 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
 			   &indPtr);
     }
 
-    //wrap the load data in a super-sparse-vector object
-    if (workLoad_ == NULL) {
-      workLoad_ = new SSVec(scatterIndices_.length(), indPtr, load);
-    }
-    else {
-      workLoad_->setInternalData(scatterIndices_.length(), indPtr, load);
-    }
-
-    CHK_ERR( assembleRHS(*workLoad_, ASSEMBLE_SUM) );
+    CHK_ERR( assembleRHS(scatterIndices_.length(), indPtr, load, ASSEMBLE_SUM) );
   }
 
   return(FEI_SUCCESS);
@@ -1419,18 +1392,9 @@ int LinSysCoreFilter::putIntoRHS(int IDType,
     ERReturn(-1);
   }
 
-  if (putRHSVec_ == NULL) {
-    putRHSVec_ = new SSVec(rowIndices_.size(),
-			   &rowIndices_[0], rhsEntries);
-  }
-  else {
-    putRHSVec_->setInternalData(rowIndices_.size(),
-				&rowIndices_[0], rhsEntries);
-  }
-
   CHK_ERR( exchangeRemoteEquations() );
 
-  CHK_ERR( assembleRHS(*putRHSVec_, ASSEMBLE_PUT) );
+  CHK_ERR(assembleRHS(rowIndices_.size(), &rowIndices_[0], rhsEntries, ASSEMBLE_PUT));
 
   return(0);
 }
@@ -1454,16 +1418,7 @@ int LinSysCoreFilter::sumIntoRHS(int IDType,
     ERReturn(-1);
   }
 
-  if (putRHSVec_ == NULL) {
-    putRHSVec_ = new SSVec(rowIndices_.size(),
-			   &rowIndices_[0], rhsEntries);
-  }
-  else {
-    putRHSVec_->setInternalData(rowIndices_.size(),
-				&rowIndices_[0], rhsEntries);
-  }
-
-  CHK_ERR( assembleRHS(*putRHSVec_, ASSEMBLE_SUM) );
+  CHK_ERR(assembleRHS(rowIndices_.size(), &rowIndices_[0], rhsEntries, ASSEMBLE_SUM));
 
   return(0);
 }
@@ -1575,25 +1530,11 @@ int LinSysCoreFilter::generalCoefInput(int patternID,
    if (assemblyMode == ASSEMBLE_PUT) CHK_ERR( exchangeRemoteEquations() );
 
    if (coefs != NULL) {
-     //wrap a super-sparse-matrix object around the coefs data
-     SSMat mat(numRows, &rowIndices_[0],
-	       numColsPerRow, rowColOffsets_.dataPtr(),
-	       colIndices_.dataPtr(), coefs);
-
-     CHK_ERR( assembleEqns(mat, 0, NULL, NULL, false, assemblyMode) );
+     CHK_ERR( assembleEqns(numRows, numColsPerRow, &rowIndices_[0], colIndices_.dataPtr(), coefs, false, 0, NULL, NULL, false, assemblyMode) );
    }
       
    if (rhsCoefs != NULL) {
-     if (putRHSVec_ == NULL) {
-       putRHSVec_ = new SSVec(rowIndices_.size(),
-			      &rowIndices_[0], rhsCoefs);
-     }
-     else {
-       putRHSVec_->setInternalData(rowIndices_.size(),
-				   &rowIndices_[0], rhsCoefs);
-     }
-
-     CHK_ERR( assembleRHS(*putRHSVec_, assemblyMode) );
+     CHK_ERR(assembleRHS(rowIndices_.size(), &rowIndices_[0], rhsCoefs, assemblyMode));
    }
 
    if (assemblyMode == ASSEMBLE_PUT) {
@@ -2433,12 +2374,12 @@ int LinSysCoreFilter::setCurrentRHS(int rhsID)
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::giveToMatrix_symm_noSlaves(int numPtRows,
 						 const int* ptRowNumbers,
-						 feiArray<SSVec*>& ptRows,
+                                                 const double* const* coefs,
 						 int mode)
 {
   for(int i=0; i<numPtRows; i++) {
     int row = ptRowNumbers[i];
-    double* valptr = ptRows[i]->coefs().dataPtr();
+    const double* valptr = coefs[i];
     if (row < localStartRow_ || row > localEndRow_) {
       eqnCommMgr_->addRemoteEqn(row, valptr, ptRowNumbers, numPtRows);
       continue;
@@ -2473,17 +2414,17 @@ int LinSysCoreFilter::giveToBlkMatrix_symm_noSlaves(int numPtRows,
 						    int numBlkRows,
 						    const int* blkRowNumbers,
 						    const int* blkRowSizes,
-						    feiArray<SSVec*>& ptRows,
+						    const double* const* coefs,
 						    int mode)
 {
   int i;
   if (dworkSpace2_.length() < numPtRows) {
     dworkSpace2_.resize(numPtRows);
   }
-  double** valptr = dworkSpace2_.dataPtr();
+  const double* * valptr = dworkSpace2_.dataPtr();
   for(i=0; i<numPtRows; i++) {
     int row = ptRowNumbers[i];
-    valptr[i] = ptRows[i]->coefs().dataPtr();
+    valptr[i] = coefs[i];
     if (row < localStartRow_ || row > localEndRow_) {
       eqnCommMgr_->addRemoteEqn(row, valptr[i], ptRowNumbers, numPtRows);
       continue;
@@ -2730,7 +2671,7 @@ int LinSysCoreFilter::sumIntoMatrix_symmetric_structure(SSMat& mat)
   if (dworkSpace2_.length() < numRows) {
     dworkSpace2_.resize(numRows);
   }
-  double** coefPtr = dworkSpace2_.dataPtr();
+  const double* * coefPtr = dworkSpace2_.dataPtr();
 
   for(int i=0; i<numRows; i++) {
     SSVec& row = *(rows[i]);
@@ -3932,88 +3873,89 @@ int LinSysCoreFilter::putNodalFieldSolution(int fieldID,
 }
 
 //------------------------------------------------------------------------------
-int LinSysCoreFilter::assembleEqns(SSMat& mat, 
+int LinSysCoreFilter::assembleEqns(int numPtRows, 
+                                   int numPtCols,
+                                   const int* rowNumbers,
+                                   const int* colIndices,
+                                   const double* const* coefs,
+                                   bool structurallySymmetric,
 				   int numBlkEqns, int* blkEqns,
 				   int* blkSizes, bool useBlkEqns,
 				   int mode)
 {
-  int numRows = mat.getRowNumbers().length();
-
-  if (numRows == 0) return(FEI_SUCCESS);
-
-  int* rowNumbers = mat.getRowNumbers().dataPtr();
-  feiArray<SSVec*>& rows = mat.getRows();
+  if (numPtRows == 0) return(FEI_SUCCESS);
 
   bool anySlaves = false;
   int numSlaveEqns = problemStructure_->numSlaveEquations();
   if (numSlaveEqns > 0) {
-    rSlave_.resize(numRows);
+    rSlave_.resize(numPtRows);
     cSlave_.resize(0);
-    for(int r=0; r<numRows; r++) {
+    const int* indPtr = colIndices;
+    for(int r=0; r<numPtRows; r++) {
       rSlave_[r] = problemStructure_->isSlaveEqn(rowNumbers[r]);
-      const int* indPtr = rows[r]->indices().dataPtr();
       if (rSlave_[r]) anySlaves = true;
 
-      for(int j=0; j<rows[r]->length(); j++) {
+      for(int j=0; j<numPtCols; j++) {
 	bool isSlave = problemStructure_->isSlaveEqn(indPtr[j]);
 	cSlave_.append(isSlave);
 	if (isSlave) anySlaves = true;
       }
+
+      if (!structurallySymmetric) indPtr += numPtCols;
     }
   }
 
   if (numSlaveEqns == 0 || !anySlaves) {
-    if (numSlaveEqns == 0 && mat.structurallySymmetric) {
+    if (numSlaveEqns == 0 && structurallySymmetric) {
       if (useBlkEqns) {
-	CHK_ERR( giveToBlkMatrix_symm_noSlaves(numRows, rowNumbers,
+	CHK_ERR( giveToBlkMatrix_symm_noSlaves(numPtRows, rowNumbers,
 					       numBlkEqns, blkEqns, blkSizes,
-					       rows, mode) );
+					       coefs, mode) );
       }
       else {
-	CHK_ERR( giveToMatrix_symm_noSlaves(numRows, rowNumbers, rows, mode) );
+	CHK_ERR( giveToMatrix_symm_noSlaves(numPtRows, rowNumbers, coefs, mode) );
       }
     }
     else {
-      if (dworkSpace2_.length() < numRows) {
-	dworkSpace2_.resize(numRows);
+      if (dworkSpace2_.length() < numPtRows) {
+	dworkSpace2_.resize(numPtRows);
       }
-      double** coefPtr = dworkSpace2_.dataPtr();
-      for(int i=0; i<numRows; i++) {
-	coefPtr[i] = rows[i]->coefs().dataPtr();
+      const double* * coefPtr = dworkSpace2_.dataPtr();
+      for(int i=0; i<numPtRows; i++) {
+	coefPtr[i] = coefs[i];
       }
 
-      if (mat.structurallySymmetric) {
-	CHK_ERR( giveToMatrix(numRows, rowNumbers, numRows, rowNumbers,
+      if (structurallySymmetric) {
+	CHK_ERR( giveToMatrix(numPtRows, rowNumbers, numPtRows, rowNumbers,
 			      coefPtr, mode) );
       }
       else {
-	for(int i=0; i<numRows; i++) {
+        const int* indPtr = colIndices;
+	for(int i=0; i<numPtRows; i++) {
 	  int row = rowNumbers[i];
 
-	  int numCols = rows[i]->length();
-	  const int* indPtr = rows[i]->indices().dataPtr();
-	  const double* coefPtr1 = rows[i]->coefs().dataPtr();
+	  const double* coefPtr1 = coefs[i];
 
-	  CHK_ERR(giveToMatrix(1, &row,numCols, indPtr, &coefPtr1, mode));
+	  CHK_ERR(giveToMatrix(1, &row, numPtCols, indPtr, &coefPtr1, mode));
+          indPtr += numPtCols;
 	}
       }
     }
   }
   else {
     int offset = 0;
-    for(int i=0; i<numRows; i++) {
+    const int* indicesPtr = colIndices;
+    for(int i=0; i<numPtRows; i++) {
       int row = rowNumbers[i];
 
-      int numCols = rows[i]->length();
-      const int* indicesPtr = rows[i]->indices().dataPtr();
-      const double* coefPtr = rows[i]->coefs().dataPtr();
+      const double* coefPtr = coefs[i];
       bool* colSlave = cSlave_.dataPtr() + offset;
-      offset += numCols;
+      offset += numPtCols;
 
       if (rSlave_[i]) {
 	//Since this is a slave equation, the non-slave columns of this row go
 	//into 'Kdi_', and the slave columns go into 'Kdd_'.
-	for(int jj=0; jj<numCols; jj++) {
+	for(int jj=0; jj<numPtCols; jj++) {
 	  int col = indicesPtr[jj];
 	  if (colSlave[jj]) {
 	    CHK_ERR( Kdd_->sumInCoef(row, col, coefPtr[jj]) );
@@ -4024,16 +3966,19 @@ int LinSysCoreFilter::assembleEqns(SSMat& mat,
 	}
 
 	//We also need to put the non-slave rows of column 'row' into 'K_id'.
-	for(int ii=0; ii<numRows; ii++) {
+        const int* ii_indicesPtr = colIndices;
+	for(int ii=0; ii<numPtRows; ii++) {
 	  int rowi = rowNumbers[ii];
 	  if (rSlave_[ii]) continue;
 
-	  int index = rows[ii]->indices().find(row);
+	  int index = snl_fei::binarySearch(row, ii_indicesPtr, numPtCols);
 	  if (index < 0) continue;
 
-	  const double* coefs_ii = rows[ii]->coefs().dataPtr();
+	  const double* coefs_ii = coefs[ii];
 
 	  CHK_ERR( Kid_->sumInCoef(rowi, row, coefs_ii[index]) );
+
+          if (!structurallySymmetric) ii_indicesPtr += numPtCols;
 	}
 
 	reducedEqnCounter_++;
@@ -4044,8 +3989,10 @@ int LinSysCoreFilter::assembleEqns(SSMat& mat,
 
 	//put all non-slave columns from this row into the assembled matrix.
 
-	CHK_ERR( giveToMatrix(1, &row, numCols, indicesPtr, &coefPtr, mode) );
+	CHK_ERR( giveToMatrix(1, &row, numPtCols, indicesPtr, &coefPtr, mode) );
       }
+
+      if (!structurallySymmetric) indicesPtr += numPtCols;
     }
 
     if (reducedEqnCounter_ > 300) CHK_ERR( assembleReducedEqns() );
@@ -4098,21 +4045,21 @@ int LinSysCoreFilter::assembleReducedEqns()
 }
 
 //------------------------------------------------------------------------------
-int LinSysCoreFilter::assembleRHS(SSVec& vec, int mode) {
+int LinSysCoreFilter::assembleRHS(int numValues,
+                                  const int* indices,
+                                  const double* coefs,
+                                  int mode) {
 //
 //This function hands the data off to the routine that finally
 //sticks it into the RHS vector.
 //
-  int len = vec.length();
-  feiArray<int>& indices = vec.indices();
-  feiArray<double>& coefs = vec.coefs();
 
   if (problemStructure_->numSlaveEquations() == 0) {
-    CHK_ERR( giveToRHS(len, coefs.dataPtr(), indices.dataPtr(), mode) );
+    CHK_ERR( giveToRHS(numValues, coefs, indices, mode) );
     return(FEI_SUCCESS);
   }
 
-  for(int i = 0; i < len; i++) {
+  for(int i = 0; i < numValues; i++) {
     int eqn = indices[i];
 
     if (problemStructure_->isSlaveEqn(eqn)) {

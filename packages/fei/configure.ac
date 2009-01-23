@@ -440,11 +440,13 @@ AC_CONFIG_FILES([
                 test/Makefile
                 test/cr_lagrange_20quad/Makefile
                 test/cr_slave_20quad/Makefile
+                test/cr_slave_20quad_old/Makefile
                 test/cr_lagrange_20quad_AZLSC/Makefile
                 test/cr_lagrange_20quad_old/Makefile
                 test/cr_multifield_slave/Makefile
                 test/elemDOF_Aztec/Makefile
                 test/remEssBCs/Makefile
+                test/remEssBCs_Trilinos/Makefile
 		utest/Makefile
 		utest_cases/Makefile
                 example/Makefile

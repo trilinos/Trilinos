@@ -1,3 +1,5 @@
+#ifndef _fei_utils_hpp_
+#define _fei_utils_hpp_
 
 /*--------------------------------------------------------------------*/
 /*    Copyright 2006 Sandia Corporation.                              */
@@ -7,17 +9,16 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef _fei_utils_hpp_
-#define _fei_utils_hpp_
-
-#include "fei_macros.hpp"
-#include "fei_fwd.hpp"
-#include "fei_version.h"
+#include <fei_macros.hpp>
+#include <fei_fwd.hpp>
+#include <fei_version.h>
 
 #include <Teuchos_ParameterList.hpp>
 
 #include <string>
 #include <vector>
+
+
 
 namespace fei_VERSION {
 //  Mangled 'version' function. The name of this namespace, 'fei_VERSION'
@@ -35,10 +36,11 @@ const char* version();
 
 }//namespace fei_VERSION
 
-/** The fei namespace contains public classes and interfaces.
+
+
+/** The fei namespace contains public functions, classes and interfaces.
 */
 namespace fei {
-  class ParameterSet;
 
 /** The utils namespace contains general utility functions.
 */
@@ -60,6 +62,7 @@ double cpu_time();
 /** Convert a string to an fei::OutputLevel enum value.
    Valid string values are strings that match one of the enum names 
    in fei_fwd.hpp.
+   If an invalid string is given, then fei::NONE will be returned.
 */
 fei::OutputLevel string_to_output_level(const std::string& str);
 

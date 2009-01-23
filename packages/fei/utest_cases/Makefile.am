@@ -59,9 +59,11 @@ DEFAULT_INCLUDES = -I$(top_srcdir)/utest_cases $(FEI_INCLUDES) $(HYPRE_CPPFLAGS)
 CORE_H = \
 	$(top_srcdir)/utest_cases/fei_unit_CommUtils.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_CSRMat_CSVec.hpp \
+	$(top_srcdir)/utest_cases/fei_unit_MatrixTraits.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_DirBC.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_Params.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_Reducer.hpp \
+	$(top_srcdir)/utest_cases/fei_unit_impl_utils.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_testcase.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_testcontainer.hpp \
 	$(top_srcdir)/utest_cases/fei_unit_register_tests.hpp \
@@ -74,11 +76,13 @@ CORE = \
 	$(srcdir)/fei_unit_register_tests.cpp \
 	$(srcdir)/fei_unit_test_runner.cpp \
 	$(srcdir)/fei_unit_CSRMat_CSVec.cpp \
+	$(srcdir)/fei_unit_MatrixTraits.cpp \
 	$(srcdir)/fei_unit_utils.cpp \
 	$(srcdir)/fei_unit_CommUtils.cpp \
 	$(srcdir)/fei_unit_DirBC.cpp \
 	$(srcdir)/fei_unit_Params.cpp \
-	$(srcdir)/fei_unit_Reducer.cpp
+	$(srcdir)/fei_unit_Reducer.cpp \
+	$(srcdir)/fei_unit_impl_utils.cpp
 
 # ------------------------------------------------------------------------
 # FEI library specifications

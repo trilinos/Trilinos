@@ -322,8 +322,6 @@ class FEDataFilter : public Filter {
                      const int* rowColOffsets, const int* ptCols,
                      int numColsPerRow, double** values);
 
-   int sumIntoMatrix(SSMat& mat);
-
    int getEqnsFromMatrix(ProcEqns& procEqns, EqnBuffer& eqnData);
 
    int getEqnsFromRHS(ProcEqns& procEqns, EqnBuffer& eqnData);
@@ -334,11 +332,7 @@ class FEDataFilter : public Filter {
    int giveToLocalReducedRHS(int num, const double* values,
 			     const int* indices, int mode);
 
-   int putIntoRHS(SSVec& vec);
-
    int getFromRHS(int num, double* values, const int* indices);
-
-   int sumIntoRHS(SSVec& vec);
 
    int getEqnSolnEntry(int eqnNumber, double& solnValue);
 
@@ -357,9 +351,15 @@ class FEDataFilter : public Filter {
    int resetTheMatrix(double s);
    int resetTheRHSVector(double s);
 
-   int assembleEqns(SSMat& mat, int mode);
+   int assembleEqns(int numPtRows, 
+                    int numPtCols,
+                    const int* rowNumbers,
+                    const int* colIndices,
+                    const double* const* coefs,
+                    bool structurallySymmetric,
+                    int mode);
 
-   int assembleRHS(SSVec& vec, int mode);
+   int assembleRHS(int numValues, const int* indices, const double* coefs, int mode);
 
    void debugOutput(const char* mesg);
 
@@ -397,7 +397,6 @@ class FEDataFilter : public Filter {
 
     feiArray<int> rowIndices_;
     feiArray<int> rowColOffsets_, colIndices_;
-    SSVec *putRHSVec_;
 
     EqnCommMgr* eqnCommMgr_; //equation communication manager
     EqnCommMgr* eqnCommMgr_put_; //only created if users call

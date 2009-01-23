@@ -25,14 +25,6 @@ SSVec::SSVec(int alloc_increment)
 }
 
 //----------------------------------------------------------------------------
-SSVec::SSVec(int numEntries, const int* indices, const double* coefs)
-  : whichConstructor_(SS_Constr_RawArrays2),
-    indices_(new feiArray<int>(numEntries, numEntries, (int*)indices)),
-    coefs_(new feiArray<double>(numEntries, numEntries, (double*)coefs))
-{
-}
-
-//----------------------------------------------------------------------------
 SSVec::SSVec(const SSVec& src)
   : whichConstructor_(SS_Constr_Default),
     indices_(new feiArray<int>(0, src.length())),
@@ -79,24 +71,6 @@ int SSVec::size() const
 }
 
 //----------------------------------------------------------------------------
-int SSVec::setInternalData(int numEntries, const int* indices,
-			   const double* coefs)
-{
-  if (numEntries != indices_->length() ) {
-    delete indices_;
-    delete coefs_;
-    indices_ = new feiArray<int>(numEntries, numEntries, (int*)indices);
-    coefs_ = new feiArray<double>(numEntries, numEntries, (double*)coefs);
-  }
-  else {
-    indices_->setInternalData(numEntries, numEntries, (int*)indices);
-    coefs_->setInternalData(numEntries, numEntries, (double*)coefs);
-  }
-
-  return(0);
-}
-
-//----------------------------------------------------------------------------
 int SSVec::addEntry(int eqn, double coef)
 {
   int insertPoint = -1;
@@ -115,7 +89,7 @@ int SSVec::addEntry(int eqn, double coef)
 
 //----------------------------------------------------------------------------
 int SSVec::addEntries(int numEntries,
-		      const double* coefs,
+		      const double* coef,
 		      const int* eqns)
 {
   double* coefsPtr = coefs_->dataPtr();
@@ -123,11 +97,11 @@ int SSVec::addEntries(int numEntries,
     int insertPoint = -1;
     int index = snl_fei::binarySearch(eqns[i], *indices_, insertPoint);
     if (index >= 0) {
-      coefsPtr[index] += coefs[i];
+      coefsPtr[index] += coef[i];
     }
     else {
       indices_->insert(eqns[i], insertPoint);
-      coefs_->insert(coefs[i], insertPoint);
+      coefs_->insert(coef[i], insertPoint);
       coefsPtr = coefs_->dataPtr();
     }
   }
@@ -136,7 +110,7 @@ int SSVec::addEntries(int numEntries,
 
 //----------------------------------------------------------------------------
 int SSVec::addEntries_sortedInput(int numEntries,
-				  const double* coefs,
+				  const double* coef,
 				  const int* eqns,
 				  bool storeZeros)
 {
@@ -153,9 +127,9 @@ int SSVec::addEntries_sortedInput(int numEntries,
     indices_->reAllocate(numEntries);
     for(int i=0; i<numEntries; ++i) {
       if (!storeZeros) {
-	if (std::abs(coefs[i]) < fei_eps) continue;
+	if (std::abs(coef[i]) < fei_eps) continue;
       }
-      coefs_->append(coefs[i]);
+      coefs_->append(coef[i]);
       indices_->append(eqns[i]);
     }
     coefsPtr = coefs_->dataPtr();
@@ -166,18 +140,18 @@ int SSVec::addEntries_sortedInput(int numEntries,
 
   for(int i=0; i<numEntries; ++i) {
     if (!storeZeros) {
-      if (std::abs(coefs[i]) < fei_eps) continue;
+      if (std::abs(coef[i]) < fei_eps) continue;
     }
     int insertPoint = -1;
     int index = snl_fei::binarySearch(eqns[i], indicesPtr, indicesLen,
 				      start, end, insertPoint);
     if (index >= 0) {
-      coefsPtr[index] += coefs[i];
+      coefsPtr[index] += coef[i];
       start = index+1;
     }
     else {
       indices_->insert(eqns[i], insertPoint);
-      coefs_->insert(coefs[i], insertPoint);
+      coefs_->insert(coef[i], insertPoint);
       coefsPtr = coefs_->dataPtr();
       start = insertPoint+1;
       indicesLen = indices_->length();
@@ -205,7 +179,7 @@ int SSVec::putEntry(int eqn, double coef)
 
 //----------------------------------------------------------------------------
 int SSVec::putEntries(int numEntries,
-		      const double* coefs,
+		      const double* coef,
 		      const int* eqns)
 {
   double* coefsPtr = coefs_->dataPtr();
@@ -213,11 +187,11 @@ int SSVec::putEntries(int numEntries,
     int insertPoint = -1;
     int index = snl_fei::binarySearch(eqns[i], *indices_, insertPoint);
     if (index >= 0) {
-      coefsPtr[index] = coefs[i];
+      coefsPtr[index] = coef[i];
     }
     else {
       indices_->insert(eqns[i], insertPoint);
-      coefs_->insert(coefs[i], insertPoint);
+      coefs_->insert(coef[i], insertPoint);
       coefsPtr = coefs_->dataPtr();
     }
   }

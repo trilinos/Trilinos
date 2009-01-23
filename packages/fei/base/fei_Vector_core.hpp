@@ -10,6 +10,7 @@
 #define _fei_Vector_core_hpp_
 
 #include <fei_iosfwd.hpp>
+#include <fei_CSVec.hpp>
 #include <fei_VectorSpace.hpp>
 #include <fei_Reducer.hpp>
 #include <fei_Logger.hpp>
@@ -135,8 +136,8 @@ class Vector_core : protected fei::Logger {
   void setFEVector(bool flag) {haveFEVector_ = flag; }
 
   /** remotelyOwned */
-  std::vector<SSVec*>& remotelyOwned() { return( remotelyOwned_ ); }
-  const std::vector<SSVec*>& remotelyOwned() const { return( remotelyOwned_ ); }
+  std::vector<CSVec*>& remotelyOwned() { return( remotelyOwned_ ); }
+  const std::vector<CSVec*>& remotelyOwned() const { return( remotelyOwned_ ); }
 
  protected:
   fei::SharedPtr<fei::EqnComm> eqnComm_;
@@ -153,7 +154,7 @@ class Vector_core : protected fei::Logger {
 
   bool haveFEVector_;
 
-  std::vector<SSVec*> remotelyOwned_;
+  std::vector<CSVec*> remotelyOwned_;
 
   bool overlapAlreadySet_;
   std::string dbgprefix_;

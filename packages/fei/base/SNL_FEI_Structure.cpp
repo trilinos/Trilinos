@@ -2512,7 +2512,7 @@ int SNL_FEI_Structure::translateMatToReducedEqns(SSMat& mat)
 
     feiArray<int>& colInds = rows[i]->indices();
     for(int j=0; j<colInds.length(); j++) {
-      bool isSlave = translateToReducedEqn(colInds[j], reducedEqn);
+      isSlave = translateToReducedEqn(colInds[j], reducedEqn);
       if (isSlave) foundSlave = 1;
       else colInds[j] = reducedEqn;
     }
@@ -3760,7 +3760,7 @@ int SNL_FEI_Structure::getEqnNumbers(int numIDs,
 
 	if ( nodeDatabase_->getNodeWithID(IDs[i], node) != 0 ) {
 	    // FEI_CERR << "SNL_FEI_Structure::getEqnNumbers: ERROR getting node " << IDs[i] << FEI_ENDL;
-	    for(int i=0; i<fieldSize; i++) {
+	    for(int ii=0; ii<fieldSize; ii++) {
 		eqnNumbers[offset++] = -1;
 	    }
 	    continue;
@@ -3773,8 +3773,8 @@ int SNL_FEI_Structure::getEqnNumbers(int numIDs,
 	    ERReturn(-1);
 	}
 
-	for(int i=0; i<fieldSize; i++) {
-	    eqnNumbers[offset++] = nodeFieldEqnNumber + i;
+	for(int ii=0; ii<fieldSize; ii++) {
+	    eqnNumbers[offset++] = nodeFieldEqnNumber + ii;
 	}
     }
 
@@ -3895,7 +3895,6 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
     CHK_ERR( removeCouplings(*slaveEqns_, levelsOfCoupling) );
 
     if (debugOutput_) {
-      FEI_OSTREAM& os = dbgOut();
       os << "#     SNL_FEI_Structure: " << levelsOfCoupling
 	 << " level(s) of coupling removed: " << FEI_ENDL;
     }

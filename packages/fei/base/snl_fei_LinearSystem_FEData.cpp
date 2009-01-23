@@ -18,6 +18,7 @@
 #include <fei_Matrix_Impl.hpp>
 #include <snl_fei_Constraint.hpp>
 #include <snl_fei_Utils.hpp>
+#include <fei_impl_utils.hpp>
 
 #include <fei_DirichletBCRecord.hpp>
 #include <fei_DirichletBCManager.hpp>
@@ -164,21 +165,21 @@ int snl_fei::LinearSystem_FEData::implementBCs(bool applyBCs)
   std::vector<int> essEqns;
   std::vector<double> essGamma;
 
-  fei::SharedPtr<SSMat> localBCeqns(new SSMat);
+  fei::SharedPtr<fei::FillableMat> localBCeqns(new fei::FillableMat);
   fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph_->getRowSpace();
   int localsize = vecSpace->getNumIndices_Owned();
-  fei::Matrix_Impl<SSMat> bcEqns(localBCeqns, matrixGraph_, localsize);
+  fei::Matrix_Impl<fei::FillableMat> bcEqns(localBCeqns, matrixGraph_, localsize);
 
   CHK_ERR( dbcManager_->finalizeBCEqns(bcEqns) );
 
-  std::vector<SSMat*>& remote = bcEqns.getRemotelyOwnedMatrix();
+  std::vector<fei::FillableMat*>& remote = bcEqns.getRemotelyOwnedMatrix();
   for(unsigned p=0; p<remote.size(); ++p) {
-    CHK_ERR( snl_fei::separateBCEqns( *(remote[p]), essEqns, essGamma) );
+    fei::impl_utils::separate_BC_eqns( *(remote[p]), essEqns, essGamma);
   }
 
   CHK_ERR( bcEqns.gatherFromOverlap() );
 
-  CHK_ERR( snl_fei::separateBCEqns( *(bcEqns.getMatrix()), essEqns, essGamma) );
+  fei::impl_utils::separate_BC_eqns( *(bcEqns.getMatrix()), essEqns, essGamma);
 
   int len = essEqns.size();
   essEqns.resize(len*3);

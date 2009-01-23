@@ -46,7 +46,8 @@ VectorReducer::VectorReducer(fei::SharedPtr<fei::Reducer> reducer,
       overlap.push_back(reducer->translateToReducedEqn(eqns[i]));
     }
     else {
-      std::vector<int> masters = reducer->getSlaveMasterEqns(eqns[i]);
+      std::vector<int> masters;
+      reducer->getSlaveMasterEqns(eqns[i], masters);
       for(unsigned j=0; j<masters.size(); ++j) {
         overlap.push_back(reducer->translateToReducedEqn(masters[j]));
       }

@@ -124,67 +124,6 @@ SSMat::SSMat(EqnBuffer& eqnBuf)
 }
 
 //==============================================================================
-SSMat::SSMat(int numRows, const int* rowNumbers,
-	     int numCols, const int* colIndices,
-	     const double* const* coefs)
-  : structurallySymmetric(false),
-    whichConstructor_(SS_Constr_RawArrays),
-    rowNumbers_(NULL),
-    rows_(NULL),
-    highWaterMark_(0),
-    row_alloc_incr_(0)
-{
-  rowNumbers_ = new feiArray<int>(numRows, numRows, (int*)rowNumbers);
-
-  rows_ = new feiArray<SSVec*>(numRows, numRows);
-
-  for(int i=0; i<numRows; i++) {
-    (*rows_)[i] = new SSVec(numCols, colIndices, coefs[i]);
-  }
-}
-
-//==============================================================================
-SSMat::SSMat(int numIndices, const int* indices,
-	     const double* const* coefs)
-  : structurallySymmetric(true),
-    whichConstructor_(SS_Constr_RawArraysSymm),
-    rowNumbers_(NULL),
-    rows_(NULL),
-    highWaterMark_(0),
-    row_alloc_incr_(0)
-{
-  rowNumbers_ = new feiArray<int>(numIndices, numIndices, (int*)indices);
-
-  rows_ = new feiArray<SSVec*>(numIndices, numIndices);
-
-  for(int i=0; i<numIndices; i++) {
-    (*rows_)[i] = new SSVec(numIndices, indices, coefs[i]);
-  }
-}
-
-//==============================================================================
-SSMat::SSMat(int numRows, const int* rowNumbers,
-	     int numColsPerRow, const int* rowColOffsets,
-	     const int* colIndices, const double* const* coefs)
-  : structurallySymmetric(false),
-    whichConstructor_(SS_Constr_RawArrays2),
-    rowNumbers_(NULL),
-    rows_(NULL),
-    highWaterMark_(0),
-    row_alloc_incr_(0)
-{
-  rowNumbers_ = new feiArray<int>(numRows, numRows, (int*)rowNumbers);
-  rows_ = new feiArray<SSVec*>(numRows, numRows);
-
-  for(int i=0; i<numRows; i++) {
-    int offset = rowColOffsets[i];
-
-    (*rows_)[i] = new SSVec(numColsPerRow, (int*)(&(colIndices[offset])),
-			 (double*)coefs[i]);
-  }
-}
-
-//==============================================================================
 SSMat::~SSMat()
 {
   if (whichConstructor_ == SS_Constr_EqnBuf) return;
@@ -206,40 +145,6 @@ SSMat::~SSMat()
   delete rowNumbers_; rowNumbers_ = NULL;
 }
 
-
-//==============================================================================
-void SSMat::setInternalData(int numIndices, const int* indices,
-			   const double* const* coefs)
-{
-  if (whichConstructor_ != SS_Constr_RawArraysSymm) {
-    throw std::runtime_error("fei SSMat::setInternalData, not constructed with SS_Constr_RawArraysSymm.");
-  }
-
-  int i;
-  if (rowNumbers_->length() != numIndices) {
-    delete rowNumbers_;
-    rowNumbers_ = new feiArray<int>(numIndices, numIndices, (int*)indices);
-
-    for(int r=0; r<rows_->length(); ++r) {
-      delete (*rows_)[r];
-    }
-    delete rows_;
-    rows_ = new feiArray<SSVec*>(numIndices, numIndices);
-    SSVec** rowsPtr = rows_->dataPtr();
-
-    for(i=0; i<numIndices; ++i) {
-      rowsPtr[i] = new SSVec(numIndices, indices, (double*)coefs[i]);
-    }
-  }
-  else {
-    rowNumbers_->setInternalData(numIndices, numIndices, (int*)indices);
-    SSVec** rowsPtr = rows_->dataPtr();
-
-    for(i=0; i<numIndices; ++i) {
-      rowsPtr[i]->setInternalData(numIndices, indices, (double*)coefs[i]);
-    }
-  }
-}
 
 //==============================================================================
 void SSMat::logicalClear()
@@ -806,8 +711,12 @@ bool SSMat::operator==(const SSMat& lhs)
   SSVec** lhs_rows = lhs.rows_->dataPtr();
 
   for(int i=0; i<rows_->length(); ++i) {
-    if (rows[i]->indices() != lhs_rows[i]->indices() ||
-        rows[i]->coefs() != lhs_rows[i]->coefs()) {
+    feiArray<int>& indices = rows[i]->indices();
+    const feiArray<int>& lhsindices = lhs_rows[i]->indices();
+    feiArray<double>& coefs = rows[i]->coefs();
+    const feiArray<double>& lhscoefs = lhs_rows[i]->coefs();
+
+    if (indices != lhsindices || coefs != lhscoefs) {
       return(false);
     }
   }

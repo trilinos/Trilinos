@@ -23,13 +23,13 @@ namespace snl_fei {
   class Constraint {
   public:
     /** constructor */
-    Constraint(int id=0, bool isPenalty=false);
+    Constraint(int id=0, bool isPenaltyConstr=false);
 
     /** constructor */
     Constraint(int id,
 	       int constraintIDType,
 	       bool isSlave,
-	       bool isPenalty,
+	       bool isPenaltyConstr,
 	       int numIDs,
 	       const int* idTypes,
 	       const int* IDs,
@@ -61,7 +61,7 @@ namespace snl_fei {
 
     /** set whether constraint is a penalty constraint. Another dangerous
      function for power-users. */
-    void setIsPenalty(bool isPenalty) { isPenalty_ = isPenalty; }
+    void setIsPenalty(bool isPenaltyConstr) { isPenalty_ = isPenaltyConstr; }
 
     /** get equation-number of constraint. (only valid if lagrange-multiplier)
     */
@@ -162,10 +162,10 @@ namespace snl_fei {
 
 //----------------------------------------------------------------------------
 template<class RecordType>
-inline snl_fei::Constraint<RecordType>::Constraint(int id, bool isPenalty)
+inline snl_fei::Constraint<RecordType>::Constraint(int id, bool isPenaltyConstr)
   : constraintID_(id),
     idType_(0),
-    isPenalty_(isPenalty),
+    isPenalty_(isPenaltyConstr),
     slaveField_(0),
     offsetIntoSlaveField_(0),
     masters_(NULL),
@@ -181,7 +181,7 @@ template<class RecordType>
 inline snl_fei::Constraint<RecordType>::Constraint(int id,
 					    int constraintIDType,
 					    bool isSlave,
-					    bool isPenalty,
+					    bool isPenaltyConstr,
 					    int numIDs,
 					    const int* idTypes,
 					    const int* IDs,
@@ -193,7 +193,7 @@ inline snl_fei::Constraint<RecordType>::Constraint(int id,
 					    fei::VectorSpace* vspace)
   : constraintID_(id),
     idType_(constraintIDType),
-    isPenalty_(isPenalty),
+    isPenalty_(isPenaltyConstr),
     eqnNumber_(-1),
     blkEqnNumber_(-1), 
     slaveField_(0),
@@ -212,7 +212,7 @@ template<>
 inline snl_fei::Constraint<fei::Record*>::Constraint(int id,
 					    int constraintIDType,
 					    bool isSlave,
-					    bool isPenalty,
+					    bool isPenaltyConstr,
 					    int numIDs,
 					    const int* idTypes,
 					    const int* IDs,
@@ -224,7 +224,7 @@ inline snl_fei::Constraint<fei::Record*>::Constraint(int id,
 					    fei::VectorSpace* vspace)
   : constraintID_(id),
     idType_(constraintIDType),
-    isPenalty_(isPenalty),
+    isPenalty_(isPenaltyConstr),
     eqnNumber_(-1),
     blkEqnNumber_(-1), 
     slaveField_(0),

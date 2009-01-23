@@ -17,11 +17,12 @@
 #include "fei_fstream.hpp"
 #include "fei_sstream.hpp"
 #include <snl_fei_ArrayUtils.hpp>
-#include <snl_fei_MatrixTraits.hpp>
-#include <snl_fei_MatrixTraits_LinProbMgr.hpp>
-#include <snl_fei_MatrixTraits_LinSysCore.hpp>
-#include <snl_fei_MatrixTraits_FEData.hpp>
-#include <snl_fei_MatrixTraits_SSMat.hpp>
+#include <fei_MatrixTraits.hpp>
+#include <fei_MatrixTraits_LinProbMgr.hpp>
+#include <fei_MatrixTraits_LinSysCore.hpp>
+#include <fei_MatrixTraits_FEData.hpp>
+#include <fei_MatrixTraits_FillableMat.hpp>
+#include <fei_MatrixTraits_SSMat.hpp>
 
 #include <snl_fei_FEMatrixTraits.hpp>
 #include <snl_fei_FEMatrixTraits_FED.hpp>
@@ -54,26 +55,26 @@ namespace fei {
   public:
     /** Constructor */
     Matrix_Impl(fei::SharedPtr<T> matrix,
-    	   fei::SharedPtr<fei::MatrixGraph> matrixGraph,
+               fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                 int numLocalEqns);
 
     /** Destructor */
     virtual ~Matrix_Impl();
 
     /** Return a name describing the run-time type
-	of this object.
+        of this object.
     */
     const char* typeName()
       {
-	if (haveBlockMatrix()) {
-	  return(snl_fei::BlockMatrixTraits<T>::typeName());
-	}
-	else if (haveFEMatrix()) {
-	  return(snl_fei::FEMatrixTraits<T>::typeName());
-	}
-	else {
-	  return(snl_fei::MatrixTraits<T>::typeName());
-	}
+        if (haveBlockMatrix()) {
+          return(snl_fei::BlockMatrixTraits<T>::typeName());
+        }
+        else if (haveFEMatrix()) {
+          return(snl_fei::FEMatrixTraits<T>::typeName());
+        }
+        else {
+          return(fei::MatrixTraits<T>::typeName());
+        }
       }
 
     /** Parameters method
@@ -95,15 +96,15 @@ namespace fei {
      */
     int getGlobalNumRows() const
       {
-	if ((int)(globalOffsets().size()) < numProcs()+1) return(-1);
-	return(globalOffsets()[numProcs()]);
+        if ((int)(globalOffsets().size()) < numProcs()+1) return(-1);
+        return(globalOffsets()[numProcs()]);
       }
 
     /** Get the local number of rows in the matrix.
      */
     int getLocalNumRows() const
       {
-	return(lastLocalOffset() - firstLocalOffset() + 1);
+        return(lastLocalOffset() - firstLocalOffset() + 1);
       }
 
     /** Set a specified scalar throughout the matrix. */
@@ -128,144 +129,144 @@ namespace fei {
     int copyOutRow(int row, int len, double* coefs, int* indices) const;
 
     /** Sum coefficients into the matrix, adding them to any coefficients that
-	may already exist at the specified row/column locations.
+        may already exist at the specified row/column locations.
 
-	@param numRows
-	@param rows
-	@param numCols
-	@param cols
-	@param values
-	@param format For compatibility with old FEI elemFormat...
-	0 means row-wise or row-major, 3 means column-major. Others not recognized
+        @param numRows
+        @param rows
+        @param numCols
+        @param cols
+        @param values
+        @param format For compatibility with old FEI elemFormat...
+        0 means row-wise or row-major, 3 means column-major. Others not recognized
      */
     int sumIn(int numRows, const int* rows,
-	      int numCols, const int* cols,
-	      const double* const* values,
-	      int format=0);
+              int numCols, const int* cols,
+              const double* const* values,
+              int format=0);
 
     /** Copy coefficients into the matrix, overwriting any coefficients that
-	may already exist at the specified row/column locations.
+        may already exist at the specified row/column locations.
 
-	@param numRows
-	@param rows
-	@param numCols
-	@param cols
-	@param values
-	@param format For compatibility with old FEI elemFormat...
-	0 means row-wise or row-major, 3 means column-major. Others not recognized
+        @param numRows
+        @param rows
+        @param numCols
+        @param cols
+        @param values
+        @param format For compatibility with old FEI elemFormat...
+        0 means row-wise or row-major, 3 means column-major. Others not recognized
     */
     int copyIn(int numRows, const int* rows,
-	       int numCols, const int* cols,
-	       const double* const* values,
-	       int format=0);
+               int numCols, const int* cols,
+               const double* const* values,
+               int format=0);
 
     /** Sum coefficients into the matrix, specifying row/column locations by
-	identifier/fieldID pairs.
-	@param fieldID Input. field-identifier for which data is being input.
-	@param idType Input. The identifier-type of the identifiers.
-	@param rowID Input. Identifier in row-space, for which data is being
-	input.
-	@param colID Input. Identifier in column-space, for which data is being
-	input.
-	@param data Input. C-style table of data. num-rows is the field-size
-	(i.e., number of scalar components that make up the field) of 'fieldID',
-	as is num-columns.
-	@param format For compatibility with old FEI elemFormat...
-	0 means row-wise or row-major, 3 means column-major. Others not recognized
-	@return error-code 0 if successful
+        identifier/fieldID pairs.
+        @param fieldID Input. field-identifier for which data is being input.
+        @param idType Input. The identifier-type of the identifiers.
+        @param rowID Input. Identifier in row-space, for which data is being
+        input.
+        @param colID Input. Identifier in column-space, for which data is being
+        input.
+        @param data Input. C-style table of data. num-rows is the field-size
+        (i.e., number of scalar components that make up the field) of 'fieldID',
+        as is num-columns.
+        @param format For compatibility with old FEI elemFormat...
+        0 means row-wise or row-major, 3 means column-major. Others not recognized
+        @return error-code 0 if successful
     */
     int sumInFieldData(int fieldID,
-		       int idType,
-		       int rowID,
-		       int colID,
-		       const double* const* data,
-		       int format=0);
+                       int idType,
+                       int rowID,
+                       int colID,
+                       const double* const* data,
+                       int format=0);
 
     /** Sum coefficients into the matrix, specifying row/column locations by
-	identifier/fieldID pairs.
-	@param fieldID Input. field-identifier for which data is being input.
-	@param idType Input. The identifier-type of the identifiers.
-	@param rowID Input. Identifier in row-space, for which data is being
-	input.
-	@param colID Input. Identifier in column-space, for which data is being
-	input.
-	@param data Input. 1-D list representing a packed table of data. Data may
-	be backed in row-major or column-major order and this may be specified with
-	the 'format' argument. The "table" of data is of size num-rows X num-columns
-	and num-rows is the field-size (i.e., number of scalar components that
-	make up the field) of 'fieldID', as is num-columns.
-	@param format For compatibility with old FEI elemFormat...
-	0 means row-wise or row-major, 3 means column-major. Others not recognized
-	@return error-code 0 if successful
+        identifier/fieldID pairs.
+        @param fieldID Input. field-identifier for which data is being input.
+        @param idType Input. The identifier-type of the identifiers.
+        @param rowID Input. Identifier in row-space, for which data is being
+        input.
+        @param colID Input. Identifier in column-space, for which data is being
+        input.
+        @param data Input. 1-D list representing a packed table of data. Data may
+        be backed in row-major or column-major order and this may be specified with
+        the 'format' argument. The "table" of data is of size num-rows X num-columns
+        and num-rows is the field-size (i.e., number of scalar components that
+        make up the field) of 'fieldID', as is num-columns.
+        @param format For compatibility with old FEI elemFormat...
+        0 means row-wise or row-major, 3 means column-major. Others not recognized
+        @return error-code 0 if successful
     */
     int sumInFieldData(int fieldID,
-		       int idType,
-		       int rowID,
-		       int colID,
-		       const double* data,
-		       int format=0);
+                       int idType,
+                       int rowID,
+                       int colID,
+                       const double* data,
+                       int format=0);
 
     /** Sum coefficients, associated with a connectivity-block that was
-	initialized on the MatrixGraph object, into this matrix.
+        initialized on the MatrixGraph object, into this matrix.
 
-	@param blockID
-	@param connectivityID
-	@param values
-	@param format For compatibility with old FEI elemFormat...
-	0 means row-wise or row-major, 3 means column-major. Others not recognized
+        @param blockID
+        @param connectivityID
+        @param values
+        @param format For compatibility with old FEI elemFormat...
+        0 means row-wise or row-major, 3 means column-major. Others not recognized
      */
     int sumIn(int blockID, int connectivityID,
-	      const double* const* values,
-	      int format=0);
+              const double* const* values,
+              int format=0);
 
     /** Perform any necessary internal communications/synchronizations or other
-	operations appropriate at end of data input. For some implementations this
-	will be a no-op.
+        operations appropriate at end of data input. For some implementations this
+        will be a no-op.
     */
     int globalAssemble();
 
     /** Form a matrix-vector product y = 'this' * x
      */
     int multiply(fei::Vector* x,
-		 fei::Vector* y);
+                 fei::Vector* y);
 
     /** After local overlapping data has been input, (e.g., element-data for a
-	finite-element application) call this method to have data that 
-	corresponds to shared identifiers be communicated from sharing-but-not-
-	owning processors, to owning processors.
+        finite-element application) call this method to have data that 
+        corresponds to shared identifiers be communicated from sharing-but-not-
+        owning processors, to owning processors.
     */
     int gatherFromOverlap(bool accumulate = true);
 
     /** Implementation of fei::Matrix::writeToFile */
     int writeToFile(const char* filename,
-		    bool matrixMarketFormat=true);
+                    bool matrixMarketFormat=true);
 
     /** Implementation of fei::Matrix::writeToStream */
 
     int writeToStream(FEI_OSTREAM& ostrm,
-		      bool matrixMarketFormat=true);
+                      bool matrixMarketFormat=true);
 
     bool usingBlockEntryStorage()
       {
-	return(haveBlockMatrix());
+        return(haveBlockMatrix());
       }
 
     /** for experts only */
     int giveToUnderlyingMatrix(int numRows, const int* rows,
-			       int numCols, const int* cols,
-			       const double* const* values,
-			       bool sumInto,
-			       int format);
+                               int numCols, const int* cols,
+                               const double* const* values,
+                               bool sumInto,
+                               int format);
 
     /** for experts only */
     int giveToUnderlyingBlockMatrix(int row,
-				    int rowDim,
-				    int numCols,
-				    const int* cols,
-				    const int* LDAs,
-				    const int* colDims,
-				    const double* const* values,
-				    bool sumInto);
+                                    int rowDim,
+                                    int numCols,
+                                    const int* cols,
+                                    const int* LDAs,
+                                    const int* colDims,
+                                    const double* const* values,
+                                    bool sumInto);
 
     void markState();
 
@@ -273,15 +274,15 @@ namespace fei {
 
   private:
     int giveToMatrix(int numRows, const int* rows,
-		     int numCols, const int* cols,
-		     const double* const* values,
-		     bool sumInto,
-		     int format);
+                     int numCols, const int* cols,
+                     const double* const* values,
+                     bool sumInto,
+                     int format);
  
     int giveToBlockMatrix(int numRows, const int* rows,
-			  int numCols, const int* cols,
-			  const double* const* values,
-			  bool sumInto);
+                          int numCols, const int* cols,
+                          const double* const* values,
+                          bool sumInto);
 
     int sumIntoMatrix(SSMat& mat);
 
@@ -302,7 +303,7 @@ inline int fei::Matrix_Impl<T>::globalAssemble()
   }
 
   globalAssembleCalled_ = true;
-  return( snl_fei::MatrixTraits<T>::globalAssemble(matrix_.get()) );
+  return( fei::MatrixTraits<T>::globalAssemble(matrix_.get()) );
 }
 
 //----------------------------------------------------------------------------
@@ -329,10 +330,10 @@ inline bool fei::Matrix_Impl<T>::changedSinceMark()
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::giveToUnderlyingMatrix(int numRows, const int* rows,
-					       int numCols, const int* cols,
-					       const double* const* values,
-					       bool sumInto,
-					       int format)
+                                               int numCols, const int* cols,
+                                               const double* const* values,
+                                               bool sumInto,
+                                               int format)
 {
   if (format != FEI_DENSE_ROW) {
     ERReturn(-1);
@@ -349,7 +350,7 @@ int fei::Matrix_Impl<T>::giveToUnderlyingMatrix(int numRows, const int* rows,
     }
   }
 
-  int err = snl_fei::MatrixTraits<T>::putValuesIn(matrix_.get(), numRows, rows,
+  int err = fei::MatrixTraits<T>::putValuesIn(matrix_.get(), numRows, rows,
                                         numCols, cols, values, sumInto);
   if (err != 0) {
     return(err);
@@ -362,25 +363,25 @@ int fei::Matrix_Impl<T>::giveToUnderlyingMatrix(int numRows, const int* rows,
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::giveToUnderlyingBlockMatrix(int row,
-						    int rowDim,
-						    int numCols,
-						    const int* cols,
-						    const int* LDAs,
-						    const int* colDims,
-						    const double* const* values,
-						    bool sumInto)
+                                                    int rowDim,
+                                                    int numCols,
+                                                    const int* cols,
+                                                    const int* LDAs,
+                                                    const int* colDims,
+                                                    const double* const* values,
+                                                    bool sumInto)
 {
   if (sumInto) {
     CHK_ERR( snl_fei::BlockMatrixTraits<T>::sumIn(matrix_.get(),
-					 row, rowDim,
-					 numCols, cols,
-					 LDAs, colDims, values) );
+                                         row, rowDim,
+                                         numCols, cols,
+                                         LDAs, colDims, values) );
   }
   else {
     CHK_ERR( snl_fei::BlockMatrixTraits<T>::copyIn(matrix_.get(),
-					  row, rowDim,
-					  numCols, cols,
-					  LDAs, colDims, values) );
+                                          row, rowDim,
+                                          numCols, cols,
+                                          LDAs, colDims, values) );
   }
 
   changedSinceMark_ = true;
@@ -409,7 +410,7 @@ int fei::Matrix_Impl<T>::giveToUnderlyingBlockMatrix(int row,
 //----------------------------------------------------------------------------
 template<typename T>
 fei::Matrix_Impl<T>::Matrix_Impl(fei::SharedPtr<T> matrix,
-			   fei::SharedPtr<fei::MatrixGraph> matrixGraph,
+                           fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                                 int numLocalEqns)
   : Matrix_core(matrixGraph, numLocalEqns),
     matrix_(matrix),
@@ -454,7 +455,7 @@ int fei::Matrix_Impl<T>::getRowLength(int row, int& length) const
     return( snl_fei::BlockMatrixTraits<T>::getPointRowLength(matrix_.get(), row, length) );
   }
   else {
-    return( snl_fei::MatrixTraits<T>::getRowLength(matrix_.get(), row, length) );
+    return( fei::MatrixTraits<T>::getRowLength(matrix_.get(), row, length) );
   }
 }
 
@@ -477,11 +478,11 @@ int fei::Matrix_Impl<T>::putScalar(double scalar)
     }
   }
   else {
-    CHK_ERR( snl_fei::MatrixTraits<T>::setValues(matrix_.get(), scalar) );
+    CHK_ERR( fei::MatrixTraits<T>::setValues(matrix_.get(), scalar) );
   }
-  std::vector<SSMat*>& remote = getRemotelyOwnedMatrix();
+  std::vector<FillableMat*>& remote = getRemotelyOwnedMatrix();
   for(unsigned p=0; p<remote.size(); ++p) {
-    CHK_ERR( snl_fei::MatrixTraits<SSMat>::setValues(remote[p], scalar) );
+    CHK_ERR( fei::MatrixTraits<FillableMat>::setValues(remote[p], scalar) );
   }
 
   changedSinceMark_ = true;
@@ -492,26 +493,26 @@ int fei::Matrix_Impl<T>::putScalar(double scalar)
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::copyOutRow(int row, int len,
-				   double* coefs, int* indices) const
+                                   double* coefs, int* indices) const
 {
   if (haveBlockMatrix()) {
     int dummy;
     return( snl_fei::BlockMatrixTraits<T>::copyOutPointRow(matrix_.get(), firstLocalOffset(),
-						  row, len,
-						  coefs, indices, dummy));
+                                                  row, len,
+                                                  coefs, indices, dummy));
   }
   else {
-    return( snl_fei::MatrixTraits<T>::copyOutRow(matrix_.get(), row, len,
-					coefs, indices) );
+    return( fei::MatrixTraits<T>::copyOutRow(matrix_.get(), row, len,
+                                        coefs, indices) );
   }
 }
 
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::sumIn(int numRows, const int* rows,
-			      int numCols, const int* cols,
-			      const double* const* values,
-			      int format)
+                              int numCols, const int* cols,
+                              const double* const* values,
+                              int format)
 {
   if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
@@ -524,9 +525,9 @@ int fei::Matrix_Impl<T>::sumIn(int numRows, const int* rows,
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::copyIn(int numRows, const int* rows,
-			       int numCols, const int* cols,
-			       const double* const* values,
-			       int format)
+                               int numCols, const int* cols,
+                               const double* const* values,
+                               int format)
 {
   if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
@@ -546,11 +547,11 @@ int fei::Matrix_Impl<T>::copyIn(int numRows, const int* rows,
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::sumInFieldData(int fieldID,
-				       int idType,
-				       int rowID,
-				       int colID,
-				       const double* const* data,
-				       int format)
+                                       int idType,
+                                       int rowID,
+                                       int colID,
+                                       const double* const* data,
+                                       int format)
 {
   fei::SharedPtr<fei::VectorSpace> vspace = vecSpace();
 
@@ -568,13 +569,13 @@ int fei::Matrix_Impl<T>::sumInFieldData(int fieldID,
   }
 
   CHK_ERR( vspace->getGlobalIndices(1, &colID, idType, fieldID,
-					&(indicesPtr[fieldSize])) );
+                                        &(indicesPtr[fieldSize])) );
   for(i=fieldSize+1; i<2*fieldSize; ++i) {
     indicesPtr[i] = indicesPtr[i-1]+1;
   }
 
   CHK_ERR( sumIn(fieldSize, indicesPtr, fieldSize, &(indicesPtr[fieldSize]),
-		 data, format) );
+                 data, format) );
 
   return(0);
 }
@@ -582,11 +583,11 @@ int fei::Matrix_Impl<T>::sumInFieldData(int fieldID,
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::sumInFieldData(int fieldID,
-				       int idType,
-				       int rowID,
-				       int colID,
-				       const double* data,
-				       int format)
+                                       int idType,
+                                       int rowID,
+                                       int colID,
+                                       const double* data,
+                                       int format)
 {
   fei::SharedPtr<fei::VectorSpace> vspace = vecSpace();
 
@@ -609,7 +610,7 @@ int fei::Matrix_Impl<T>::sumInFieldData(int fieldID,
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
-			      const double* const* values, int format)
+                              const double* const* values, int format)
 {
   if (output_level_ > fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
@@ -621,13 +622,13 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
 
   if (mgraph.get() == NULL) ERReturn(-1);
 
-  std::vector<SSMat*>& remote = getRemotelyOwnedMatrix();
+  std::vector<FillableMat*>& remote = getRemotelyOwnedMatrix();
 
   const fei::ConnectivityBlock* cblock = mgraph->getConnectivityBlock(blockID);
   if (cblock==NULL) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "fei::Matrix_Impl::sumIn ERROR, unable to "
-	  << "look up connectivity-block with ID "<<blockID;
+          << "look up connectivity-block with ID "<<blockID;
     throw std::runtime_error(osstr.str());
   }
 
@@ -659,17 +660,17 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
 
     if (haveFEMatrix()) {
       CHK_ERR( snl_fei::FEMatrixTraits<T>::sumInElemMatrix(matrix_.get(), blockID, connOffset,
-						  numIDs, nodeNumbers,
-						  numIndicesPerID, values) );
+                                                  numIDs, nodeNumbers,
+                                                  numIndicesPerID, values) );
       changedSinceMark_ = true;
     }
 
     if (haveBlockMatrix()) {
       if (format != FEI_DENSE_ROW && format != FEI_DENSE_COL &&
-	  format != FEI_BLOCK_DIAGONAL_ROW) {
-	FEI_CERR << "fei::Matrix_Impl::sumIn ERROR, for block-matrix, format must"
-		 << " be FEI_DENSE_ROW or FEI_DENSE_COL."<<FEI_ENDL;
-	ERReturn(-1);
+          format != FEI_BLOCK_DIAGONAL_ROW) {
+        FEI_CERR << "fei::Matrix_Impl::sumIn ERROR, for block-matrix, format must"
+                 << " be FEI_DENSE_ROW or FEI_DENSE_COL."<<FEI_ENDL;
+        ERReturn(-1);
       }
 
       int numPtIndices = pattern->getNumIndices();
@@ -680,70 +681,70 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
       int len = numPtIndices*numPtColIndices;
 
       if (format == FEI_BLOCK_DIAGONAL_ROW) {
-	len = 0;
-	for(i=0; i<numIDs; ++i) {
-	  len += numIndicesPerID[i]*numIndicesPerID[i];
-	}
+        len = 0;
+        for(i=0; i<numIDs; ++i) {
+          len += numIndicesPerID[i]*numIndicesPerID[i];
+        }
       }
 
       double* ccvalues = new double[len];
       //Ouch! Data copy! Remember to optimize this later...
       if (format == FEI_BLOCK_DIAGONAL_ROW) {
-	snl_fei::copy2DBlockDiagToColumnContig(numIDs, numIndicesPerID,
-					       values, format, ccvalues);
+        snl_fei::copy2DBlockDiagToColumnContig(numIDs, numIndicesPerID,
+                                               values, format, ccvalues);
       }
       else {
-	snl_fei::copy2DToColumnContig(numPtIndices, numPtColIndices, values, format,
-				      ccvalues);
+        snl_fei::copy2DToColumnContig(numPtIndices, numPtColIndices, values, format,
+                                      ccvalues);
       }
 
       int ptRowOffset = 0;
       for(i=0; i<numIDs; ++i) {
 
-	if (rowConn[i]->getOwnerProc() == localProc()) {
+        if (rowConn[i]->getOwnerProc() == localProc()) {
 
-	  int numColIDs = numIDs;
-	  int* colNodeNums = nodeNumbers;
-	  const int* colDims = numIndicesPerID;
-	  int LDA = numPtColIndices;
-	  if (format == FEI_BLOCK_DIAGONAL_ROW) {
-	    numColIDs = 1;
-	    colNodeNums = &(nodeNumbers[i]);
-	    colDims = &(numIndicesPerID[i]);
-	    LDA = numIndicesPerID[i];
-	  }
+          int numColIDs = numIDs;
+          int* colNodeNums = nodeNumbers;
+          const int* colDims = numIndicesPerID;
+          int LDA = numPtColIndices;
+          if (format == FEI_BLOCK_DIAGONAL_ROW) {
+            numColIDs = 1;
+            colNodeNums = &(nodeNumbers[i]);
+            colDims = &(numIndicesPerID[i]);
+            LDA = numIndicesPerID[i];
+          }
 
-	  CHK_ERR( snl_fei::BlockMatrixTraits<T>::sumIn(matrix_.get(),
-					       nodeNumbers[i],
-					       numIndicesPerID[i],
-					       numColIDs, colNodeNums,
-					       colDims, LDA,
-					       &(ccvalues[ptRowOffset])) );
-	  changedSinceMark_ = true;
-	}
-	else {
-	  if (output_level_ >= fei::FULL_LOGS && output_stream_ != NULL) {
-	    FEI_OSTREAM& os = *output_stream_;
-	    for(int ii=0; ii<numIndicesPerID[i]; ++ii) {
-	      os << "#   remote pt-row " << ptIndices[ptRowOffset]+ii <<" ";
-	      for(int jj=0; jj<numPtIndices; ++jj) {
-		os << "("<<ptIndices[jj]<<","<<values[ptRowOffset+ii][jj]<<") ";
-	      }
-	      os << FEI_ENDL;
-	    }
-	  }
+          CHK_ERR( snl_fei::BlockMatrixTraits<T>::sumIn(matrix_.get(),
+                                               nodeNumbers[i],
+                                               numIndicesPerID[i],
+                                               numColIDs, colNodeNums,
+                                               colDims, LDA,
+                                               &(ccvalues[ptRowOffset])) );
+          changedSinceMark_ = true;
+        }
+        else {
+          if (output_level_ >= fei::FULL_LOGS && output_stream_ != NULL) {
+            FEI_OSTREAM& os = *output_stream_;
+            for(int ii=0; ii<numIndicesPerID[i]; ++ii) {
+              os << "#   remote pt-row " << ptIndices[ptRowOffset]+ii <<" ";
+              for(int jj=0; jj<numPtIndices; ++jj) {
+                os << "("<<ptIndices[jj]<<","<<values[ptRowOffset+ii][jj]<<") ";
+              }
+              os << FEI_ENDL;
+            }
+          }
 
-	  for(int ii=0; ii<numIndicesPerID[i]; ++ii) {
+          for(int ii=0; ii<numIndicesPerID[i]; ++ii) {
             int p=eqnComm_->getOwnerProc(ptIndices[ptRowOffset]+ii);
-	    CHK_ERR( remote[p]->sumInRow(ptIndices[ptRowOffset]+ii,
-				      ptIndices,
-				      values[ptRowOffset+ii],
-				      numPtIndices) );
-	    changedSinceMark_ = true;
-	  }
-	}
+            remote[p]->sumInRow(ptIndices[ptRowOffset]+ii,
+                                      ptIndices,
+                                      values[ptRowOffset+ii],
+                                      numPtIndices);
+            changedSinceMark_ = true;
+          }
+        }
 
-	ptRowOffset += numIndicesPerID[i];
+        ptRowOffset += numIndicesPerID[i];
       }
 
       delete [] ccvalues;
@@ -766,7 +767,7 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
   if (symmetric) {
     if (format == FEI_DENSE_ROW || format == FEI_DENSE_COL) {
       CHK_ERR( sumIn(numRowIndices, rowIndices, numRowIndices, rowIndices,
-		     values, format) );
+                     values, format) );
     }
     else if (format == FEI_BLOCK_DIAGONAL_ROW) {
       int totalnumfields = pattern->getTotalNumFields();
@@ -775,24 +776,24 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
       fei::VectorSpace* rowspaceptr = rowspace.get();
       int ioffset = 0;
       for(int i=0; i<totalnumfields; ++i) {
-	int fieldsize = rowspaceptr->getFieldSize(fieldIDs[i]);
-	if (ioffset+fieldsize > numRowIndices) {
-	  FEI_OSTRINGSTREAM osstr;
-	  osstr<<"snl_fei::sumIn, format=FEI_BLOCK_DIAGONAL_ROW, block-sizes"
-	       << " not consistent with total num-indices."<<FEI_ENDL;
-	  throw std::runtime_error(osstr.str());
-	}
+        int fieldsize = rowspaceptr->getFieldSize(fieldIDs[i]);
+        if (ioffset+fieldsize > numRowIndices) {
+          FEI_OSTRINGSTREAM osstr;
+          osstr<<"snl_fei::sumIn, format=FEI_BLOCK_DIAGONAL_ROW, block-sizes"
+               << " not consistent with total num-indices."<<FEI_ENDL;
+          throw std::runtime_error(osstr.str());
+        }
 
-	CHK_ERR( sumIn(fieldsize, &(rowIndices[ioffset]),
-		       fieldsize, &(rowIndices[ioffset]),
-		       &(values[ioffset]), FEI_DENSE_ROW) );
-	ioffset += fieldsize;
+        CHK_ERR( sumIn(fieldsize, &(rowIndices[ioffset]),
+                       fieldsize, &(rowIndices[ioffset]),
+                       &(values[ioffset]), FEI_DENSE_ROW) );
+        ioffset += fieldsize;
       }
     }
     else {
       FEI_OSTRINGSTREAM osstr;
       osstr << "fei::Matrix_Impl::sumIn, format="<<format<<" not supported."
-	    << FEI_ENDL;
+            << FEI_ENDL;
       throw std::runtime_error(osstr.str());
     }
   }
@@ -800,12 +801,12 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
     if (format != FEI_DENSE_ROW && format != FEI_DENSE_COL) {
       FEI_OSTRINGSTREAM osstr;
       osstr << "fei::Matrix_Impl::sumIn, format="<<format<<" not valid with"
-	    << " un-symmetric matrix contributions."<<FEI_ENDL;
+            << " un-symmetric matrix contributions."<<FEI_ENDL;
       throw std::runtime_error(osstr.str());
     }
 
     CHK_ERR( sumIn(numRowIndices, rowIndices, numColIndices, colIndices,
-		   values, format) );
+                   values, format) );
   }
 
   return(0);
@@ -814,9 +815,9 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::multiply(fei::Vector* x,
-				 fei::Vector* y)
+                                 fei::Vector* y)
 {
-  return( snl_fei::MatrixTraits<T>::matvec(matrix_.get(), x, y) );
+  return( fei::MatrixTraits<T>::matvec(matrix_.get(), x, y) );
 }
 
 //----------------------------------------------------------------------------
@@ -835,10 +836,10 @@ int fei::Matrix_Impl<T>::gatherFromOverlap(bool accumulate)
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
-				     int numCols, const int* cols,
-				     const double* const* values,
-				     bool sumInto,
-				     int format)
+                                     int numCols, const int* cols,
+                                     const double* const* values,
+                                     bool sumInto,
+                                     int format)
 {
   if (numRows == 0 || numCols == 0) {
     return(0);
@@ -848,12 +849,10 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
     return(-1);
   }
 
-  std::vector<SSMat*>& remote = getRemotelyOwnedMatrix();
-
   const double** myvalues = const_cast<const double**>(values);
   if (format != FEI_DENSE_ROW) {
     copyTransposeToWorkArrays(numRows, numCols, values,
-			      work_data1D_, work_data2D_);
+                              work_data1D_, work_data2D_);
     myvalues = &work_data2D_[0];
   }
 
@@ -861,7 +860,7 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
 
   if (haveBlockMatrix()) {
     return( giveToBlockMatrix(numRows, rows, numCols, cols,
-			      myvalues, sumInto) );
+                              myvalues, sumInto) );
   }
 
   int i; 
@@ -890,6 +889,8 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
     return(0);
   }
 
+  std::vector<FillableMat*>& remote = getRemotelyOwnedMatrix();
+
   for(i=0; i<numRows; ++i) {
     int row = rows[i];
     const double*const rowvalues = myvalues[i];
@@ -898,21 +899,21 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
       int proc = eqnComm_->getOwnerProc(row);
 
       if (output_level_ >= fei::FULL_LOGS && output_stream_ != NULL) {
-	FEI_OSTREAM& os = *output_stream_;
-	os << dbgprefix_<<" remote[" << proc<<"]: ";
-	for(int jj=0; jj<numCols; ++jj) {
-	  os << "("<<row<<","<<cols[jj]<<","<<rowvalues[jj]<<") ";
-	}
-	os << FEI_ENDL;
+        FEI_OSTREAM& os = *output_stream_;
+        os << dbgprefix_<<" remote[" << proc<<"]: ";
+        for(int jj=0; jj<numCols; ++jj) {
+          os << "("<<row<<","<<cols[jj]<<","<<rowvalues[jj]<<") ";
+        }
+        os << FEI_ENDL;
       }
 
       if (sumInto) {
-	CHK_ERR( remote[proc]->sumInRow(row, cols, rowvalues, numCols) );
-	changedSinceMark_ = true;
+        remote[proc]->sumInRow(row, cols, rowvalues, numCols);
+        changedSinceMark_ = true;
       }
       else {
-	CHK_ERR( remote[proc]->putRow(row, cols, rowvalues, numCols) );
-	changedSinceMark_ = true;
+        remote[proc]->putRow(row, cols, rowvalues, numCols);
+        changedSinceMark_ = true;
       }
 
     }
@@ -928,9 +929,9 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
-					  int numCols, const int* cols,
-					  const double* const* values,
-					  bool sumInto)
+                                          int numCols, const int* cols,
+                                          const double* const* values,
+                                          bool sumInto)
 {
   if (output_level_ >= fei::FULL_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
@@ -953,8 +954,8 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
     int* blkColOffsets = blkCols+numCols;
 
     CHK_ERR( convertPtToBlk(numRows, rows, numCols, cols,
-			    blkRows, blkRowOffsets,
-			    blkCols, blkColOffsets) );
+                            blkRows, blkRowOffsets,
+                            blkCols, blkColOffsets) );
 
     std::vector<int> blockRows, blockRowSizes;
     std::vector<int> blockCols, blockColSizes;
@@ -983,8 +984,8 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
     int offset = 0;
     for(size_t i=0; i<blockRows.size(); ++i) {
       for(size_t j=0; j<blockCols.size(); ++j) {
-	coefs2dPtr[blkCounter++] = &(coefs1dPtr[offset]);
-	offset += blockRowSizes[i]*blockColSizes[j];
+        coefs2dPtr[blkCounter++] = &(coefs1dPtr[offset]);
+        offset += blockRowSizes[i]*blockColSizes[j];
       }
     }
 
@@ -993,28 +994,28 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
       int rowsize = blockRowSizes[rowind];
 
       for(int j=0; j<numCols; ++j) {
-	int colind = snl_fei::binarySearch(blkCols[j], blockCols);
-	int pos = blkColOffsets[j]*rowsize + blkRowOffsets[i];
+        int colind = snl_fei::binarySearch(blkCols[j], blockCols);
+        int pos = blkColOffsets[j]*rowsize + blkRowOffsets[i];
 
-	coefs2dPtr[rowind*blockCols.size()+colind][pos] += values[i][j];
+        coefs2dPtr[rowind*blockCols.size()+colind][pos] += values[i][j];
       }
     }
 
     for(size_t i=0; i<blockRows.size(); ++i) {
       CHK_ERR( giveToUnderlyingBlockMatrix(blockRows[i],
-					   blockRowSizes[i],
-					   blockCols.size(),
-					   &blockCols[0],
-					   &blockColSizes[0],
-					   &blockColSizes[0],
-					   coefs2dPtr,
-					   true) );
+                                           blockRowSizes[i],
+                                           blockCols.size(),
+                                           &blockCols[0],
+                                           &blockColSizes[0],
+                                           &blockColSizes[0],
+                                           coefs2dPtr,
+                                           true) );
     }
 
     return(0);
   }
 
-  std::vector<SSMat*>& remote = getRemotelyOwnedMatrix();
+  std::vector<FillableMat*>& remote = getRemotelyOwnedMatrix();
 
   int maxBlkEqnSize = pointBlockMap->getMaxBlkEqnSize();
   int coefBlkLen = maxBlkEqnSize*maxBlkEqnSize*2;
@@ -1025,12 +1026,12 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
     if (row < firstLocalOffset() || row > lastLocalOffset()) {
       int proc = eqnComm_->getOwnerProc(row);
       if (sumInto) {
-	CHK_ERR( remote[proc]->sumInRow(row, cols, values[i], numCols) );
-	changedSinceMark_ = true;
+        remote[proc]->sumInRow(row, cols, values[i], numCols);
+        changedSinceMark_ = true;
       }
       else {
-	CHK_ERR( remote[proc]->putRow(row, cols, values[i], numCols) );
-	changedSinceMark_ = true;
+        remote[proc]->putRow(row, cols, values[i], numCols);
+        changedSinceMark_ = true;
       }
       continue;
     }
@@ -1041,7 +1042,7 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
 
     int blockRowLength = 0;
     CHK_ERR( snl_fei::BlockMatrixTraits<T>::getRowLength(matrix_.get(), blockRow,
-						blockRowLength) );
+                                                blockRowLength) );
 
     std::vector<int> blkCols(blockRowLength);
     int* blkCols_ptr = &blkCols[0];
@@ -1059,13 +1060,13 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
 
     int checkRowLen = 0;
     CHK_ERR( snl_fei::BlockMatrixTraits<T>::copyOutRow(matrix_.get(),
-					      blockRow, blockRowLength,
-					      blockRowSize,
-					      blkCols_ptr,
-					      blkColDims_ptr,
-					      coefs_1D_ptr,
-					      coefsLen,
-					      checkRowLen) );
+                                              blockRow, blockRowLength,
+                                              blockRowSize,
+                                              blkCols_ptr,
+                                              blkColDims_ptr,
+                                              coefs_1D_ptr,
+                                              coefsLen,
+                                              checkRowLen) );
     int coefs_1D_offset = 0;
     for(int j=0; j<checkRowLen; ++j) {
       coefs_2D_ptr[j] = &(coefs_1D_ptr[coefs_1D_offset]);
@@ -1078,26 +1079,26 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
 
       for(int jj=0; jj<blockRowLength; ++jj) {
 
-	if (blockCol == blkCols_ptr[jj]) {
-	  if (sumInto) {
-	    coefs_2D_ptr[jj][blkOffset*blockRowSize+blockRowOffset] += values[i][j];
-	  }
-	  else {
-	    coefs_2D_ptr[jj][blkOffset*blockRowSize+blockRowOffset] = values[i][j];
-	  }
+        if (blockCol == blkCols_ptr[jj]) {
+          if (sumInto) {
+            coefs_2D_ptr[jj][blkOffset*blockRowSize+blockRowOffset] += values[i][j];
+          }
+          else {
+            coefs_2D_ptr[jj][blkOffset*blockRowSize+blockRowOffset] = values[i][j];
+          }
 
-	  break;
-	}
+          break;
+        }
       }
     }
 
     //Now put the block-row back into the matrix
     CHK_ERR( giveToUnderlyingBlockMatrix(blockRow, blockRowSize,
-					 blockRowLength, blkCols_ptr,
-					 &LDAs[0],
-					 blkColDims_ptr,
-					 coefs_2D_ptr,
-					 false) );
+                                         blockRowLength, blkCols_ptr,
+                                         &LDAs[0],
+                                         blkColDims_ptr,
+                                         coefs_2D_ptr,
+                                         false) );
   }
 
   return(0);
@@ -1118,7 +1119,7 @@ int fei::Matrix_Impl<T>::sumIntoMatrix(SSMat& mat)
     double* coefs = row_i_.coefs().dataPtr();
 
     CHK_ERR( sumIn(1, &(rowNumPtr[i]),
-		   row_i_.length(), cols, &coefs) );
+                   row_i_.length(), cols, &coefs) );
   }
 
   return(0);
@@ -1127,7 +1128,7 @@ int fei::Matrix_Impl<T>::sumIntoMatrix(SSMat& mat)
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::writeToFile(const char* filename,
-				    bool matrixMarketFormat)
+                                    bool matrixMarketFormat)
 {
   fei::SharedPtr<fei::MatrixGraph> mgraph = getMatrixGraph();
   if (mgraph.get() == NULL) {
@@ -1225,7 +1226,7 @@ int fei::Matrix_Impl<T>::writeToFile(const char* filename,
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Matrix_Impl<T>::writeToStream(FEI_OSTREAM& ostrm,
-				      bool matrixMarketFormat)
+                                      bool matrixMarketFormat)
 {
   fei::SharedPtr<fei::MatrixGraph> mgraph = getMatrixGraph();
   if (mgraph.get() == NULL) {
@@ -1267,11 +1268,11 @@ int fei::Matrix_Impl<T>::writeToStream(FEI_OSTREAM& ostrm,
     if (p==0) {
       int globalSize = globalOffsets()[numProcs()]-1;
       if (matrixMarketFormat) {
-	ostrm << mmbanner << FEI_ENDL;
-	ostrm << globalSize << " " << globalSize << " " << globalNNZ << FEI_ENDL;
+        ostrm << mmbanner << FEI_ENDL;
+        ostrm << globalSize << " " << globalSize << " " << globalNNZ << FEI_ENDL;
       }
       else {
-	ostrm << globalSize << " " << globalSize << FEI_ENDL;
+        ostrm << globalSize << " " << globalSize << FEI_ENDL;
       }
     }
 
@@ -1289,7 +1290,7 @@ int fei::Matrix_Impl<T>::writeToStream(FEI_OSTREAM& ostrm,
       CHK_ERR( copyOutRow(i, rowLength, coefPtr, indPtr) );
 
       for(int j=0; j<rowLength; ++j) {
-	ostrm << i << " " << indPtr[j] << " " << coefPtr[j] << FEI_ENDL;
+        ostrm << i << " " << indPtr[j] << " " << coefPtr[j] << FEI_ENDL;
       }
     }
   }

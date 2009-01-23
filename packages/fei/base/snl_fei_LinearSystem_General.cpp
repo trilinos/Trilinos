@@ -20,6 +20,7 @@
 #include <snl_fei_Constraint.hpp>
 #include <fei_Record.hpp>
 #include <fei_utils.hpp>
+#include <fei_impl_utils.hpp>
 #include <fei_LogManager.hpp>
 
 #include <fei_DirichletBCRecord.hpp>
@@ -397,7 +398,7 @@ void snl_fei::LinearSystem_General::getConstrainedEqns(std::vector<int>& crEqns)
 }
 
 //----------------------------------------------------------------------------
-int extractDBCs(fei::DirichletBCManager* bcManager,
+int extractDirichletBCs(fei::DirichletBCManager* bcManager,
                 fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                 fei::CSVec* essBCvalues,
                 bool resolveConflictRequested,
@@ -411,8 +412,8 @@ int extractDBCs(fei::DirichletBCManager* bcManager,
     return(0);
   }
 
-  fei::SharedPtr<SSMat> localBCeqns(new SSMat);
-  fei::SharedPtr<fei::Matrix_Impl<SSMat> > bcEqns;
+  fei::SharedPtr<fei::FillableMat> localBCeqns(new fei::FillableMat);
+  fei::SharedPtr<fei::Matrix_Impl<fei::FillableMat> > bcEqns;
   matrixGraph->getRowSpace()->initComplete();
   int numSlaves = matrixGraph->getGlobalNumSlaveConstraints();
   fei::SharedPtr<fei::Reducer> reducer = matrixGraph->getReducer();
@@ -421,7 +422,7 @@ int extractDBCs(fei::DirichletBCManager* bcManager,
     reducer->getLocalReducedEqns().size() :
     matrixGraph->getRowSpace()->getNumIndices_Owned();
 
-  bcEqns.reset(new fei::Matrix_Impl<SSMat>(localBCeqns, matrixGraph, numIndices));
+  bcEqns.reset(new fei::Matrix_Impl<fei::FillableMat>(localBCeqns, matrixGraph, numIndices));
   fei::SharedPtr<fei::Matrix> bcEqns_reducer;
   if (numSlaves > 0) {
     bcEqns_reducer.reset(new fei::MatrixReducer(reducer, bcEqns));
@@ -433,8 +434,9 @@ int extractDBCs(fei::DirichletBCManager* bcManager,
   CHK_ERR( bcManager->finalizeBCEqns(bcEqns_mat, bcs_trump_slaves) );
 
   if (resolveConflictRequested) {
-    fei::SharedPtr<SSMat> ssmat = bcEqns->getMatrix();
-    feiArray<int>& bcEqnNumbers = ssmat->getRowNumbers();
+    fei::SharedPtr<fei::FillableMat> mat = bcEqns->getMatrix();
+    std::vector<int> bcEqnNumbers;
+    fei::get_row_numbers(*mat, bcEqnNumbers);
     CHK_ERR( snl_fei::resolveConflictingCRs(*matrixGraph, bcEqns_mat,
                                             bcEqnNumbers) );
   }
@@ -442,15 +444,14 @@ int extractDBCs(fei::DirichletBCManager* bcManager,
   std::vector<int> essEqns;
   std::vector<double> values;
 
-  std::vector<SSMat*>& remote = bcEqns->getRemotelyOwnedMatrix();
+  std::vector<fei::FillableMat*>& remote = bcEqns->getRemotelyOwnedMatrix();
   for(unsigned p=0; p<remote.size(); ++p) {
-    CHK_ERR( snl_fei::separateBCEqns( *(remote[p]), essEqns, values) );
+    fei::impl_utils::separate_BC_eqns( *(remote[p]), essEqns, values);
   }
 
   CHK_ERR( bcEqns->gatherFromOverlap(false) );
 
-  CHK_ERR( snl_fei::separateBCEqns( *(bcEqns->getMatrix()),
-                              essEqns, values) );
+  fei::impl_utils::separate_BC_eqns( *(bcEqns->getMatrix()), essEqns, values);
 
   if (essEqns.size() > 0) {
     int* essEqnsPtr = &essEqns[0];
@@ -475,7 +476,7 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
 
   essBCvalues_ = new fei::CSVec;
 
-  CHK_ERR( extractDBCs(dbcManager_, matrixGraph_,
+  CHK_ERR( extractDirichletBCs(dbcManager_, matrixGraph_,
                        essBCvalues_,  resolveConflictRequested_,
                       bcs_trump_slaves_) );
 
@@ -499,7 +500,7 @@ int snl_fei::LinearSystem_General::implementBCs(bool applyBCs)
 
   fei::CSVec allEssBCs;
   if (!BCenforcement_no_column_mod_) {
-    snl_fei::globalUnion(comm_, *essBCvalues_, allEssBCs);
+    fei::impl_utils::global_union(comm_, *essBCvalues_, allEssBCs);
 
     if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
       FEI_OSTREAM& os = *output_stream_;
@@ -540,54 +541,53 @@ int snl_fei::LinearSystem_General::enforceEssentialBC_LinSysCore()
     localsize = reducer->getLocalReducedEqns().size();
   }
 
-  fei::SharedPtr<SSMat> inner(new SSMat);
-  fei::SharedPtr<fei::Matrix_Impl<SSMat> > matrix;
-  matrix.reset(new fei::Matrix_Impl<SSMat>(inner, matrixGraph_, localsize));
+  fei::SharedPtr<fei::FillableMat> inner(new fei::FillableMat);
+  fei::SharedPtr<fei::Matrix_Impl<fei::FillableMat> > matrix;
+  matrix.reset(new fei::Matrix_Impl<fei::FillableMat>(inner, matrixGraph_, localsize));
 
   fei::SharedPtr<fei::SparseRowGraph> remoteGraph =
     matrixGraph_->getRemotelyOwnedGraphRows();
 
   CHK_ERR( snl_fei::gatherRemoteEssBCs(*essBCvalues_, remoteGraph.get(), *matrix) );
 
-  feiArray<int>& rowNumbers = inner->getRowNumbers();
-  if (output_stream_ != NULL) {
-    if (output_level_ >= fei::BRIEF_LOGS) {
-      FEI_OSTREAM& os = *output_stream_;
-      os << "#enforceEssentialBC_LinSysCore RemEssBCs to enforce: "
-         << rowNumbers.length() << FEI_ENDL;
-    }
+  unsigned numBCRows = inner->getNumRows();
+
+  if (output_stream_ != NULL && output_level_ >= fei::BRIEF_LOGS) {
+    FEI_OSTREAM& os = *output_stream_;
+    os << "#enforceEssentialBC_LinSysCore RemEssBCs to enforce: "
+       << numBCRows << FEI_ENDL;
   }
 
-  if (rowNumbers.length() > 0) {
-    feiArray<SSVec*>& rows    = inner->getRows();
+  if (numBCRows > 0) {
+    std::vector<int*> colIndices(numBCRows);
+    std::vector<double*> coefs(numBCRows);
+    std::vector<int> colIndLengths(numBCRows);
 
-    std::vector<int*> colIndices(rows.size());
-    std::vector<double*> coefs(rows.size());
-    std::vector<int> colIndLengths(rows.size());
+    fei::CSRMat csrmat(*inner);
+    fei::SparseRowGraph& srg = csrmat.getGraph();
 
-    for(int i=0; i<rows.size(); ++i) {
-      SSVec* row = rows[i];
-      colIndices[i] = &(row->indices())[0];
-      coefs[i] = &(row->coefs())[0];
-      colIndLengths[i] = row->indices().size();
+    int numEqns = csrmat.getNumRows();
+    int* eqns = &(srg.rowNumbers[0]);
+    int* rowOffsets = &(srg.rowOffsets[0]);
+
+    for(int i=0; i<numEqns; ++i) {
+      colIndices[i] = &(srg.packedColumnIndices[rowOffsets[i]]);
+      coefs[i] = &(csrmat.getPackedCoefs()[rowOffsets[i]]);
+      colIndLengths[i] = rowOffsets[i+1] - rowOffsets[i];
     }
 
-    int numEqns = rows.size();
-    int* eqns = &rowNumbers[0];
     int** colInds = &colIndices[0];
     int* colIndLens = &colIndLengths[0];
     double** BCcoefs = &coefs[0];
 
-    if (output_stream_ != NULL) {
-      if (output_level_ > fei::BRIEF_LOGS) {
-        FEI_OSTREAM& os = *output_stream_;
-        for(int i=0; i<numEqns; ++i) {
-          os << "remBCeqn: " << eqns[i] << ", inds/coefs: ";
-          for(int j=0; j<colIndLens[i]; ++j) {
-            os << "("<<colInds[i][j]<<","<<BCcoefs[i][j]<<") ";
-          }
-          os << FEI_ENDL;
+    if (output_stream_ != NULL && output_level_ > fei::BRIEF_LOGS) {
+      FEI_OSTREAM& os = *output_stream_;
+      for(int i=0; i<numEqns; ++i) {
+        os << "remBCeqn: " << eqns[i] << ", inds/coefs: ";
+        for(int j=0; j<colIndLens[i]; ++j) {
+          os << "("<<colInds[i][j]<<","<<BCcoefs[i][j]<<") ";
         }
+        os << FEI_ENDL;
       }
     }
 

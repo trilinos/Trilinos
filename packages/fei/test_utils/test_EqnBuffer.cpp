@@ -111,7 +111,7 @@ int test_EqnBuffer::test1()
 
       while(rowIndex >= 0) {
 	foundCoupling = true;
-	double coef = 0.0;
+	coef = 0.0;
 	CHK_ERR( eqns.getCoefAndRemoveIndex( eqnNumbers[rowIndex], eqnNumbers[i],
 					     coef) );
 

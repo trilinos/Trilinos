@@ -89,18 +89,11 @@ DirichletBCManager::finalizeBCEqns(fei::Matrix& matrix,
 
   //copy the boundary-condition prescribed values into the matrix, in
   //an equation-number obtained by using the matrix' VectorSpace to map
-  //from the BC's idtype,id,fieldID,component to an equation-number,
-  //and putting our coefficient in an arbitrary column-index.
-  //(col-index will be 0, unless 0 happens to be a slave equation.)
+  //from the BC's idtype,id,fieldID,component to an equation-number. The
+  //bc values will go on the diagonal of the matrix, i.e., column-index
+  //will be the same equation-number.
 
-  int col = 0;
-  if (haveSlaves) {
-    while(reducer->isSlaveEqn(col)) {
-      ++col;
-    }
-  }
-
-  for(unsigned i=0; i<bcs_.size(); ++i) {
+  for(size_t i=0; i<bcs_.size(); ++i) {
     DirichletBCRecord& dbc = bcs_[i];
     int eqn = -1;
     try {
@@ -130,7 +123,7 @@ DirichletBCManager::finalizeBCEqns(fei::Matrix& matrix,
 
     double* ptr = &dbc.prescribedValue;
 
-    CHK_ERR( matrix.copyIn(1, &eqn, 1, &col, &ptr) );
+    CHK_ERR( matrix.copyIn(1, &eqn, 1, &eqn, &ptr) );
   }
 
   bcs_.clear();

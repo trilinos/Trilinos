@@ -40,14 +40,20 @@ FillableVec::putEntries(unsigned numEntries,
 }
 
 void
-FillableVec::zero()
+FillableVec::setValues(double value)
 {
   if (size() > 0) {
     feipoolmap::iterator iter = vecdata_.begin(), iter_end = vecdata_.end();
     for(; iter != iter_end; ++iter) {
-      iter->second = 0.0;
+      iter->second = value;
     }
   }
+}
+
+void
+FillableVec::clear()
+{
+  vecdata_.clear();
 }
 
 unsigned
@@ -72,6 +78,15 @@ FillableVec::getEntry(int index) const
   }
 
   return iter->second;
+}
+
+void
+FillableVec::removeEntry(int index)
+{
+  feipoolmap::iterator iter = vecdata_.find(index);
+  if (iter != vecdata_.end()) {
+    vecdata_.erase(iter);
+  }
 }
 
 }//namespace fei

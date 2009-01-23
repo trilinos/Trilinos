@@ -885,10 +885,10 @@ int NodeCommMgr::createProcLists()
     else {
       std::vector<int>& shProcs = *(sharingProcs_[i]);
       for(unsigned j=0; j<shProcs.size(); j++) {
-	int proc = shProcs[j];
+	int sproc = shProcs[j];
 
-	if (proc != localProc_) {
-	  localNodesPerProc[proc]++;
+	if (sproc != localProc_) {
+	  localNodesPerProc[sproc]++;
 	}
       }
     }

@@ -282,7 +282,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     }
   }
   else {
-    fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph->getRowSpace();
+    vecSpace = matrixGraph->getRowSpace();
 
     lpm_epetrabasic_->setRowDistribution(indices);
     tmpvec.reset(new fei::Vector_Impl<fei::LinearProblemManager>(vecSpace,

@@ -494,6 +494,13 @@ July 7 2005: version 2.14.00
     projection reduction for solution-vector operations. It should only
     use the projection for right-hand-side and matrix assembly ops.
 
+ Jan 13 2008 minor version 2.23.03
+  - Fix a bug in AztecDMSR_Matrix where maxRowLen_ was not calculated
+    correctly. This was causing an error in the sumIntoRow method that
+    was discovered by a Sierra application. maxRowLen_ is no longer a
+    class member. A non-member temporary maxRowLen is now computed and
+    used in sumIntoRow.
+
  ??? ?? ???? version 2.24.00
   - Removed classes fei::CommCore, fei::CommUtilsBase, snl_fei::CommUtils. These
     are replaced by functions in fei_CommUtils.hpp. This is a simplification
@@ -508,4 +515,6 @@ July 7 2005: version 2.14.00
   - Removed more occurences of feiArray, using std::vector instead. This
     effects the API in places where an array is a return value. Specifically
     in the snl_fei::Constraint class, methods like getMasterWeights(), etc.
+  - Continued development of fei::FillableMat, fei::CSRMat and fei::CSVec,
+    which will replace the SSMat and SSVec classes.
 

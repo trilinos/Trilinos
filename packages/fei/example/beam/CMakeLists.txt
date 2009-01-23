@@ -13,6 +13,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES beam.cpp
   ARGS "-i beam_crs_aztecoo.i"
   COMM serial mpi
+  NUM_MPI_PROCS 1
   )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(copyexamplebeamfeifiles

@@ -476,15 +476,15 @@ int snl_fei::separateBCEqns(SSMat& bcEqnBuf,
 //----------------------------------------------------------------------------
 int snl_fei::resolveConflictingCRs(fei::MatrixGraph& matrixGraph,
 				   fei::Matrix& bcEqns,
-                                   feiArray<int>& bcEqnNumbers)
+                                   const std::vector<int>& bcEqnNumbers)
 {
   int numLagrangeConstraints = matrixGraph.getLocalNumLagrangeConstraints();
   if (numLagrangeConstraints < 1) {
     return(0);
   }
 
-  std::vector<double> coefs(3);
-  std::vector<int> indices(3);
+  double coefs[3];
+  int indices[3];
   indices[0] = 0;
   indices[1] = 1;
   indices[2] = 2;
@@ -626,58 +626,6 @@ void snl_fei::globalUnion(MPI_Comm comm, SSVec& localVec, SSVec& globalUnionVec)
   }
 }
 
-void snl_fei::globalUnion(MPI_Comm comm, fei::CSVec& localVec, fei::CSVec& globalUnionVec)
-{
-  globalUnionVec.indices().clear();
-  globalUnionVec.coefs().clear();
-
-  std::vector<int>& feilocalintdata = localVec.indices();
-  std::vector<double>& feilocaldoubledata = localVec.coefs();
-
-  std::vector<int> localintdata;
-  if (feilocalintdata.size() > 0) {
-    localintdata.assign(&feilocalintdata[0], &feilocalintdata[0]+feilocalintdata.size());
-  }
-
-  std::vector<double> localdoubledata;
-  if (feilocaldoubledata.size() > 0) {
-    localdoubledata.assign(&feilocaldoubledata[0], &feilocaldoubledata[0]+feilocaldoubledata.size());
-  }
-
-  //use Allgatherv to place every processor's arrays onto every
-  //other processor.
-
-  std::vector<int> recvintdatalengths;
-  std::vector<int> recvintdata;
-  int err = fei::Allgatherv(comm, localintdata, recvintdatalengths, recvintdata);
-  if (err != 0) {
-    throw std::runtime_error("snl_fei::globalUnion csvec: Allgatherv-int failed.");
-  }
-
-  std::vector<int> recvdoubledatalengths;
-  std::vector<double> recvdoubledata;
-  err = fei::Allgatherv(comm, localdoubledata, recvdoubledatalengths, recvdoubledata);
-  if (err != 0) {
-    throw std::runtime_error("snl_fei::globalUnion csvec: Allgatherv-double failed.");
-  }
-
-  if (recvintdatalengths.size() != recvdoubledatalengths.size()) {
-    throw std::runtime_error("snl_fei::globalUnion csvec: inconsistent lengths from Allgatherv");
-  }
-
-  //now unpack the received arrays into the globalUnionVec object.
-
-  unsigned len = recvintdata.size();
-  if (len > 0) {
-    int* recvintPtr = &recvintdata[0];
-    double* recvdoublePtr = &recvdoubledata[0];
-
-    for(unsigned i=0; i<len; ++i) {
-      fei::put_entry(globalUnionVec, recvintPtr[i], recvdoublePtr[i]);
-    }
-  }
-}
-
 void snl_fei::globalUnion(MPI_Comm comm, SSMat& localMatrix, SSMat& globalUnionMatrix)
 {
   globalUnionMatrix = localMatrix;
@@ -692,7 +640,7 @@ void snl_fei::globalUnion(MPI_Comm comm, SSMat& localMatrix, SSMat& globalUnionM
     return;
   }
 
-  //first pack the local matrix into a pair of feiArray objects
+  //first pack the local matrix into a pair of std::vector objects
 
   packSSMat(localMatrix, localintdata, localdoubledata);
 

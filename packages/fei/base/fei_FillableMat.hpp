@@ -9,7 +9,9 @@
 #ifndef _fei_FillableMat_hpp_
 #define _fei_FillableMat_hpp_
 
-#include "fei_FillableVec.hpp"
+#include <vector>
+#include <fei_FillableVec.hpp>
+#include <fei_SSMat.hpp>
 
 namespace fei {
 
@@ -18,7 +20,13 @@ class FillableMat {
   FillableMat();
   virtual ~FillableMat();
 
-  void zero();
+  FillableMat& operator=(const FillableMat& src);
+
+  FillableMat& operator=(const SSMat& src);
+
+  void setValues(double value);
+
+  void createPosition(int row, int col);
 
   void sumInCoef(int row, int col, double coef);
   void putCoef(int row, int col, double coef);
@@ -30,8 +38,9 @@ class FillableMat {
 
   bool hasRow(int row) const;
 
-  /** If row is not present, throw std::runtime_error. */
-  FillableVec* getRow(int row);
+  /** If row is not present and if 'create_if_not_already_present' is false,
+      then throw std::runtime_error. */
+  FillableVec* getRow(int row, bool create_if_not_already_present=false);
 
   typedef std::map<int, FillableVec*, std::less<int>,
                 fei_Pool_alloc<std::pair<const int,FillableVec*> > > feipoolmat;
@@ -47,10 +56,21 @@ class FillableMat {
 
   void clear();
 
+  bool operator==(const FillableMat& rhs) const;
+
+  bool operator!=(const FillableMat& rhs) const;
+
  private:
   feipoolmat matdata_;
   fei_Pool_alloc<FillableVec> vecpool_;
 }; //class FillableMat
+
+/** Return the number of nonzeros in mat. */
+int count_nnz(const FillableMat& mat);
+
+/** Fill a std::vector with the row-numbers from the given matrix. */
+void get_row_numbers(const FillableMat& mat, std::vector<int>& rows);
+
 }//namespace fei
 
 #endif

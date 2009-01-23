@@ -9,6 +9,10 @@
 /*--------------------------------------------------------------------*/
 
 #include "fei_iosfwd.hpp"
+namespace fei {
+  class FillableMat;
+  class FillableVec;
+}//namespace fei
 
 /*
  * This header is ONLY to be included from within other FEI headers or sources.
@@ -23,5 +27,9 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Matrix& mat);
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, SSVec& vec);
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, SSMat& mat);
+
+FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableVec& vec);
+
+FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableMat& mat);
 
 #endif // _fei_ostream_ops_hpp_

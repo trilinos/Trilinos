@@ -8,7 +8,6 @@
 
 #include "fei_sstream.hpp"
 
-#include "feiArray.hpp"
 #include "fei_CommUtils.hpp"
 #include "fei_TemplateUtils.hpp"
 
@@ -18,11 +17,10 @@
 #include "fei_BlockDescriptor.hpp"
 #include "SNL_FEI_Structure.hpp"
 #include "snl_fei_Utils.hpp"
-#include "fei_SSVec.hpp"
-#include "fei_SSMat.hpp"
 #include "fei_Filter.hpp"
 
 #include <cmath>
+#include <algorithm>
 
 #undef fei_file
 #define fei_file "fei_Filter.cpp"
@@ -155,14 +153,9 @@ int Filter::calculateResidualNorms(int whichNorm, int numFields,
 				   int* fieldIDs, double* norms,
 				   std::vector<double>& residValues)
 {
-  //wrap feiArray objects around the raw user-allocated memory. (This is a
-  //very light-weight operation.)
-
-  feiArray<int> fieldIDsArray(numFields, numFields, fieldIDs);
   std::vector<double> normsArray(numFields, 0.0);
 
-  //now we can use feiArray::operator= for array initialization
-  fieldIDsArray = -999;
+  std::fill(fieldIDs, fieldIDs+numFields, -999);
 
   std::vector<double> tmpNorms(numFields);
   double* tmpNormsPtr = &tmpNorms[0];
@@ -185,7 +178,7 @@ int Filter::calculateResidualNorms(int whichNorm, int numFields,
 
     if (dbpair.first > -1) {
       if (offset < numFields) {
-	fieldIDsArray[offset] = dbpair.first;
+	fieldIDs[offset] = dbpair.first;
 	tmpNormsPtr[offset++] = 0.0;
       }
     }
@@ -214,7 +207,7 @@ int Filter::calculateResidualNorms(int whichNorm, int numFields,
       int fSize = DBFieldSize;
 
       if (numDBFields > 1) {
-	fIndex = snl_fei::binarySearch(fieldIDList[j], fieldIDsArray);
+	fIndex = snl_fei::binarySearch(fieldIDList[j], fieldIDs, numFields);
 	if (fIndex < 0) return(-1);
 	fSize = problemStructure_->getFieldSize(fieldIDList[j]);
 	if (fSize < 0) return(-1);

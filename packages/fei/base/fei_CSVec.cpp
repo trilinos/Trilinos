@@ -6,7 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include "fei_CSVec.hpp"
+#include <fei_CSVec.hpp>
 #include <algorithm>
 
 namespace fei {
@@ -40,6 +40,20 @@ CSVec::operator=(const FillableVec& invec)
   for(; iter != iter_end; ++iter, ++i) {
     indices_[i] = iter->first;
     coefs_[i] = iter->second;
+  }
+
+  return *this;
+}
+
+CSVec&
+CSVec::operator=(const SSVec& invec)
+{
+  indices_.resize(invec.indices().size());
+  coefs_.resize(invec.indices().size());
+
+  for(int i=0; i<invec.indices().size(); ++i) {
+    indices_[i] = invec.indices()[i];
+    coefs_[i] = invec.coefs()[i];
   }
 
   return *this;
@@ -80,6 +94,38 @@ void put_entry(CSVec& vec, int eqn, double coef)
   }
   else {
     v_coef[offset] = coef;
+  }
+}
+
+void remove_entry(CSVec& vec, int eqn)
+{
+  std::vector<int>& v_ind = vec.indices();
+  std::vector<double>& v_coef = vec.coefs();
+
+  std::vector<int>::iterator
+    iter = std::lower_bound(v_ind.begin(), v_ind.end(), eqn);
+
+  if (iter != v_ind.end() && *iter == eqn) {
+    v_ind.erase(iter);
+
+    size_t offset = iter - v_ind.begin();
+    std::vector<double>::iterator coef_iter = v_coef.begin()+offset;
+    v_coef.erase(coef_iter);
+  }
+}
+
+void set_values(CSVec& vec, double scalar)
+{
+  std::fill(vec.coefs().begin(), vec.coefs().end(), scalar);
+}
+
+void add_CSVec_CSVec(const CSVec& u, CSVec& v)
+{
+  const std::vector<int>& indices = u.indices();
+  const std::vector<double>& coefs = u.coefs();
+
+  for(size_t i=0; i<indices.size(); ++i) {
+    add_entry(v, indices[i], coefs[i]);
   }
 }
 

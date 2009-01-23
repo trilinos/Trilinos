@@ -11,11 +11,14 @@
 
 #include "fei_macros.hpp"
 #include "fei_FillableMat.hpp"
+#include <fei_SSMat.hpp>
 #include "fei_SparseRowGraph.hpp"
 #include "fei_CSVec.hpp"
 
 namespace fei {
 
+/** Compressed Sparse Row Matrix object.
+*/
 class CSRMat {
  public:
   CSRMat();
@@ -31,6 +34,14 @@ class CSRMat {
   unsigned getNumRows() const {return srg_.rowNumbers.size();}
 
   CSRMat& operator=(const FillableMat& src);
+
+  CSRMat& operator=(const SSMat& src);
+
+  CSRMat& operator+=(const CSRMat& src);
+
+  bool operator==(const CSRMat& rhs) const;
+
+  bool operator!=(const CSRMat& rhs) const;
 
  private:
   SparseRowGraph srg_;
@@ -50,6 +61,8 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
 /** form C = A^T*B */
 void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
                                   bool storeResultZeros=true);
+
+void add_CSRMat_to_FillableMat(const CSRMat& csrm, FillableMat& fm);
 
 }//namespace fei
 

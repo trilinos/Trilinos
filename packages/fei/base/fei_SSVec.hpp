@@ -19,12 +19,6 @@ enum { SS_Constr_Default, SS_Constr_EqnBuf,
 /** SSVec stands for Super-Sparse Vector. It can hold sparse vector data
 (e.g., with non-contiguous indices, etc.) and can be used in operations
 with the SSMat class.
-
-A constructor is provided for wrapping an SSVec around existing
-data in the form of raw arrays. These constructors are intended to be as
-light-weight as possible, so they simply keep pointers to the data being wrapped.
-There is an inherent danger here, that the data may be destroyed before the SSVec
-is destroyed, leaving the SSVec holding bad pointers. USER BEWARE.
  */
 
 class SSVec {
@@ -32,12 +26,6 @@ class SSVec {
 
   /** Default constructor. */
   SSVec(int alloc_increment=32);
-
-  /** Constructor to wrap an SSVec around existing raw array data. SSVec keeps
-      pointers to this array data! In other words, don't delete the raw data
-      and then try to use this SSVec.
-  */
-  SSVec(int numEntries, const int* indices, const double* coefs);
 
   /** Copy constructor. */
   SSVec(const SSVec& src);
@@ -53,9 +41,6 @@ class SSVec {
   int length() const;
   int size() const;
 
-  /** Function to set the internal data. */
-  int setInternalData(int numEntries, const int* indices, const double* coefs);
-
   int addEntry(int eqn, double coef);
 
   int addEntries(int numEntries, const double* coefs, const int* eqns);
@@ -70,7 +55,11 @@ class SSVec {
 
   feiArray<int>& indices() { return( *indices_ ); }
 
+  const feiArray<int>& indices() const { return( *indices_ ); }
+
   feiArray<double>& coefs() { return( *coefs_ ); }
+
+  const feiArray<double>& coefs() const { return( *coefs_ ); }
 
   int whichConstructor_;
 

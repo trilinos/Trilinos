@@ -184,11 +184,6 @@ void read_input_and_execute_fullsystem_tests(const std::string& filename,
          << FEI_ENDL << FEI_ENDL;
       }
 
-      std::string path = fei_test_utils::get_arg_value("-d", argc, argv);
-
-      //make sure every processor has the path string.
-      fei_test_utils::broadcast_string(comm, 0, path);
-
       MPI_Comm newcomm1, newcomm2;
       MPI_Group newgroup1, newgroup2;
 

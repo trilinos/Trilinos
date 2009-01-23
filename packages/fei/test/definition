@@ -21,6 +21,12 @@ PACKAGE_NAME=FEI
 
 (FRAMEWORK, FeiTests) {
   TESTS = fei_test.exe;
+  ARGS = -d ./remEssBCs_Trilinos -i pll_RemEssBCs.i;
+  COMM = SERIAL, MPI(1);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
   ARGS = -d ./elemDOF_Aztec -i elemDOF.i;
   COMM = SERIAL, MPI(1-2);
 }
@@ -34,6 +40,12 @@ PACKAGE_NAME=FEI
 (FRAMEWORK, FeiTests) {
   TESTS = fei_test.exe;
   ARGS = -d ./cr_slave_20quad -i slave.i;
+  COMM = SERIAL, MPI(1,2,4);
+}
+
+(FRAMEWORK, FeiTests) {
+  TESTS = fei_test.exe;
+  ARGS = -d ./cr_slave_20quad_old -i slave.i;
   COMM = SERIAL, MPI(1,2,4);
 }
 

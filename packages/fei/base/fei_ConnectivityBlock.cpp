@@ -114,7 +114,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int numRowIDs,
 }
 
 //----------------------------------------------------------------------------
-fei::ConnectivityBlock::ConnectivityBlock(int fieldID,
+fei::ConnectivityBlock::ConnectivityBlock(int fldID,
 				      int numRowIDs,
 				      const int* rowIDs,
 				      const int* rowOffsets,
@@ -130,7 +130,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int fieldID,
     connectivities_(),
     numRecordsPerColConnectivity_(0),
     colConnectivities_(),
-    fieldID_(fieldID),
+    fieldID_(fldID),
     haveFieldID_(true)
 {
   connectivities_.resize(numRowIDs);

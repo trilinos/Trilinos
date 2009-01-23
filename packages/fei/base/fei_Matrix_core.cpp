@@ -11,10 +11,10 @@
 
 #include <fei_ParameterSet.hpp>
 #include <fei_Matrix_core.hpp>
-#include <feiArray.hpp>
-#include <fei_SSVec.hpp>
+#include <fei_CSRMat.hpp>
 #include <fei_TemplateUtils.hpp>
 #include <fei_CommUtils.hpp>
+#include <fei_impl_utils.hpp>
 
 #include <fei_VectorSpace.hpp>
 #include <snl_fei_PointBlockMap.hpp>
@@ -60,7 +60,7 @@ fei::Matrix_core::Matrix_core(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
 
   remotelyOwned_.resize(numProcs_);
   for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
-    remotelyOwned_[i] = new SSMat;
+    remotelyOwned_[i] = new FillableMat;
   }
 
   setName("dbg");
@@ -138,10 +138,10 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   //that we will be sending data to. (processors which own matrix rows
   //that we share.)
   std::vector<int> sendProcs;
-  for(unsigned i=0; i<remotelyOwned_.size(); ++i) {
+  for(size_t i=0; i<remotelyOwned_.size(); ++i) {
     if ((int)i == localProc_) continue;
     if (remotelyOwned_[i] != NULL) {
-      if (remotelyOwned_[i]->numNonzeros() == 0) {
+      if (remotelyOwned_[i]->getNumRows() == 0) {
         continue;
       }
 
@@ -183,8 +183,8 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   for(unsigned i=0; i<sendProcs.size(); ++i) {
     int proc = sendProcs[i];
 
-    snl_fei::packSSMat(*(remotelyOwned_[proc]), send_ints[i],
-                        send_doubles[i]);
+    fei::impl_utils::pack_FillableMat(*(remotelyOwned_[proc]),
+                                      send_ints[i], send_doubles[i]);
 
     int isize = send_ints[i].size();
     int dsize = send_doubles[i].size();
@@ -192,7 +192,7 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
     MPI_Send(&isize, 1, MPI_INT, proc, tag1, comm_);
     MPI_Send(&dsize, 1, MPI_INT, proc, tag2, comm_);
 
-    remotelyOwned_[proc]->logicalClear();
+    remotelyOwned_[proc]->clear();
   }
 
   MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
@@ -201,7 +201,7 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   //now resize our recv buffers, and post the recvs.
   offset = 0;
   unsigned offset2 = 0;
-  for(unsigned i=0; i<recvProcs.size(); ++i) {
+  for(size_t i=0; i<recvProcs.size(); ++i) {
     int intsize = recv_sizes[offset++];
     int doublesize = recv_sizes[offset++];
 
@@ -215,7 +215,7 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   }
 
   //now send our packed buffers.
-  for(unsigned i=0; i<sendProcs.size(); ++i) {
+  for(size_t i=0; i<sendProcs.size(); ++i) {
     int proc = sendProcs[i];
 
     MPI_Send(&(send_ints[i][0]), send_ints[i].size(), MPI_INT, proc, tag1, comm_);
@@ -227,17 +227,21 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
 
 
   //and finally, unpack and store the received buffers.
-  SSMat recvMat;
-  for(unsigned i=0; i<recvProcs.size(); ++i) {
-    snl_fei::unpackIntoSSMat(recv_ints[i], recv_doubles[i], recvMat);
+  FillableMat recvMat;
+  for(size_t ir=0; ir<recvProcs.size(); ++ir) {
+    fei::impl_utils::unpack_FillableMat(recv_ints[ir], recv_doubles[ir], recvMat);
 
-    feiArray<int>& rowNumbers = recvMat.getRowNumbers();
-    feiArray<SSVec*>& rows = recvMat.getRows();
-    for(int r=0; r<rows.length(); ++r) {
-      int row = rowNumbers[r];
-      int rowLen = rows[r]->length();
-      int* indices = rows[r]->indices().dataPtr();
-      double* vals = rows[r]->coefs().dataPtr();
+    fei::CSRMat M(recvMat);
+
+    int nrows = M.getNumRows();
+
+    for(int i=0; i<nrows; ++i) {
+      int row = M.getGraph().rowNumbers[i];
+      int rowOffset = M.getGraph().rowOffsets[i];
+      int rowLen = M.getGraph().rowOffsets[i+1] - rowOffset;
+
+      int* indices = &(M.getGraph().packedColumnIndices[rowOffset]);
+      double* vals = &(M.getPackedCoefs()[rowOffset]);
       int err = giveToUnderlyingMatrix(1, &row, rowLen, indices,
                                        &vals, accumulate, FEI_DENSE_ROW);
       if (err != 0) {

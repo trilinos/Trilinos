@@ -11,17 +11,17 @@
 
 //
 //IMPORTANT NOTE: Make sure that wherever this file is included from, it
-//appears BEFORE any include of fei_base.hpp or snl_fei_Vector.hpp !!!
+//appears BEFORE any include of fei_base.hpp or fei_Vector.hpp !!!
 //
-#include <snl_fei_VectorTraits.hpp>
+#include <fei_VectorTraits.hpp>
 #include <fei_Include_Trilinos.hpp>
 
-namespace snl_fei {
+namespace fei {
   /** Declare an Epetra_MultiVector specialization of the
-      snl_fei::VectorTraits struct.
+      fei::VectorTraits struct.
 
       This allows Epetra_MultiVector to be used as the template parameter of the
-      snl_fei::Vector class.
+      fei::Vector class.
   */
   template<>
   struct VectorTraits<Epetra_MultiVector> {
@@ -91,6 +91,6 @@ namespace snl_fei {
     }
 
   };//struct VectorTraits<Epetra_MultiVector>
-}//namespace snl_fei
+}//namespace fei
 
-#endif // _VectorTraits_Epetra_h_
+#endif // _fei_VectorTraits_Epetra_hpp_

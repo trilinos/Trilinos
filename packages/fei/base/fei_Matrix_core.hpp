@@ -16,6 +16,7 @@
 #include <fei_Vector.hpp>
 #include <fei_CommUtils.hpp>
 #include <fei_SSMat.hpp>
+#include <fei_FillableMat.hpp>
 #include <fei_MatrixGraph.hpp>
 #include <fei_Logger.hpp>
 
@@ -80,7 +81,7 @@ class Matrix_core : protected fei::Logger {
 
   fei::SharedPtr<fei::MatrixGraph> getMatrixGraph() { return( matrixGraph_ ); }
 
-  std::vector<SSMat*>& getRemotelyOwnedMatrix() { return( remotelyOwned_ ); }
+  std::vector<FillableMat*>& getRemotelyOwnedMatrix() { return( remotelyOwned_ ); }
 
   void setEqnComm(fei::SharedPtr<fei::EqnComm> eqnComm);
 
@@ -179,7 +180,7 @@ class Matrix_core : protected fei::Logger {
   fei::SharedPtr<fei::VectorSpace> vecSpace_;
   fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
 
-  std::vector<SSMat*> remotelyOwned_;
+  std::vector<FillableMat*> remotelyOwned_;
 
   bool haveBlockMatrix_;
   bool haveFEMatrix_;
@@ -187,7 +188,7 @@ class Matrix_core : protected fei::Logger {
   std::vector<int> globalOffsets_;
   int firstLocalOffset_, lastLocalOffset_;
 };//class Matrix_core
-}//namespace snl_fei
+}//namespace fei
 
 #endif
 

@@ -351,13 +351,13 @@ class LinSysCoreFilter : public Filter {
 
    int giveToMatrix_symm_noSlaves(int numPtRows,
 				  const int* ptRowNumbers,
-				  feiArray<SSVec*>& values,
+				  const double* const* coefs,
 				  int mode);
 
    int giveToBlkMatrix_symm_noSlaves(int numPtRows, const int* ptRows,
 				     int numBlkRows, const int* blkRowNumbers,
 				     const int* blkRowSizes,
-				     feiArray<SSVec*>& values,
+				     const double* const* coefs,
 				     int mode);
 
    int giveToMatrix(int numPtRows, const int* ptRows,
@@ -411,13 +411,18 @@ class LinSysCoreFilter : public Filter {
    int resetTheMatrix(double s);
    int resetTheRHSVector(double s);
 
-   int assembleEqns(SSMat& mat,
+   int assembleEqns(int numPtRows, 
+                    int numPtCols,
+                    const int* rowNumbers,
+                    const int* colIndices,
+                    const double* const* coefs,
+                    bool structurallySymmetric,
 		    int numBlkEqns, int* blkEqns, int* blkSizes,
 		    bool useBlkEqns, int mode);
 
    int assembleReducedEqns();
 
-   int assembleRHS(SSVec& vec, int mode);
+   int assembleRHS(int numValues, const int* indices, const double* coefs, int mode);
 
    int assembleReducedRHS();
  
@@ -470,8 +475,6 @@ class LinSysCoreFilter : public Filter {
     SNL_FEI_Structure* problemStructure_;
     bool matrixAllocated_;
 
-    SSMat *workStiff_;
-    SSVec *workLoad_;
     feiArray<int> rowIndices_;
     feiArray<int> rowColOffsets_, colIndices_;
     SSVec *putRHSVec_;
@@ -493,7 +496,7 @@ class LinSysCoreFilter : public Filter {
     feiArray<int> blkScatterIndices_;
     feiArray<int> iworkSpace_, iworkSpace2_;
     feiArray<double> dworkSpace_;
-    feiArray<double*> dworkSpace2_;
+    feiArray<const double*> dworkSpace2_;
 
     double** eStiff_;
     double* eStiff1D_;

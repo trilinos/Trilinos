@@ -10,12 +10,13 @@
 #define _fei_Vector_Impl_hpp_
 
 #include <fei_macros.hpp>
-#include <snl_fei_VectorTraits.hpp>
+#include <fei_VectorTraits.hpp>
 
-#include <snl_fei_VectorTraits_SSVec.hpp>
-#include <snl_fei_VectorTraits_LinSysCore.hpp>
-#include <snl_fei_VectorTraits_LinProbMgr.hpp>
-#include <snl_fei_VectorTraits_FEData.hpp>
+#include <fei_VectorTraits_SSVec.hpp>
+#include <fei_VectorTraits_FillableVec.hpp>
+#include <fei_VectorTraits_LinSysCore.hpp>
+#include <fei_VectorTraits_LinProbMgr.hpp>
+#include <fei_VectorTraits_FEData.hpp>
 #include <snl_fei_FEVectorTraits.hpp>
 #include <snl_fei_FEVectorTraits_FED.hpp>
 #include <fei_VectorSpace.hpp>
@@ -68,7 +69,7 @@ namespace fei {
     /** Return a name describing the run-time type
 	of this object.
     */
-    const char* typeName() const { return(snl_fei::VectorTraits<T>::typeName()); }
+    const char* typeName() const { return(fei::VectorTraits<T>::typeName()); }
 
     /** Update 'this' = b*'this' + a*x
      */
@@ -268,12 +269,10 @@ int fei::Vector_Impl<T>::putScalar(double scalar)
     CHK_ERR( snl_fei::FEVectorTraits<T>::reset(vector_) );
   }
   else {
-    CHK_ERR( snl_fei::VectorTraits<T>::setValues(vector_, firstLocalOffset(), scalar) );
+    CHK_ERR( fei::VectorTraits<T>::setValues(vector_, firstLocalOffset(), scalar) );
   }
   for(unsigned p=0; p<remotelyOwned().size(); ++p) {
-    CHK_ERR( snl_fei::VectorTraits<SSVec>::setValues(remotelyOwned()[p],
-                                                     firstLocalOffset(),
-                                                     scalar) );
+    fei::set_values(*(remotelyOwned()[p]), scalar);
   }
   return(0);
 }
@@ -287,7 +286,7 @@ int fei::Vector_Impl<T>::update(double a,
   fei::Vector_Impl<T>* sx = dynamic_cast<fei::Vector_Impl<T>* >(x);
   if (sx != 0) {
     T* tx = sx->getUnderlyingVector();
-    return( snl_fei::VectorTraits<T>::update(vector_, a, tx, b) );
+    return( fei::VectorTraits<T>::update(vector_, a, tx, b) );
   }
   else {
     return( -1 );
@@ -363,7 +362,7 @@ int fei::Vector_Impl<T>::giveToUnderlyingVector(int numValues,
     os<<")"<<FEI_ENDL;
   }
 
-  int err = snl_fei::VectorTraits<T>::putValuesIn(vector_, firstLocalOffset(),
+  int err = fei::VectorTraits<T>::putValuesIn(vector_, firstLocalOffset(),
 					     numValues, indices, values,
 					     sumInto, isSolution_, vectorIndex);
   if (err < 0) {
@@ -384,7 +383,7 @@ int fei::Vector_Impl<T>::copyOutOfUnderlyingVector(int numValues,
     os << dbgprefix_<<"copyOutOfUnderlying(n="<<numValues<<")"<<FEI_ENDL;
   }
 
-  return( snl_fei::VectorTraits<T>::copyOut(vector_, firstLocalOffset(),
+  return( fei::VectorTraits<T>::copyOut(vector_, firstLocalOffset(),
 					     numValues, indices, values,
 					     isSolution_, vectorIndex) );
 }

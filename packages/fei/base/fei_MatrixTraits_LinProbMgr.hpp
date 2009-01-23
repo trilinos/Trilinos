@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef _snl_fei_MatrixTraits_LinProbMgr_hpp_
-#define _snl_fei_MatrixTraits_LinProbMgr_hpp_
+#ifndef _fei_MatrixTraits_LinProbMgr_hpp_
+#define _fei_MatrixTraits_LinProbMgr_hpp_
 
 //This file defines matrix traits for LinearProblemManager matrix
 //representations.
@@ -15,7 +15,7 @@
 
 #include <fei_LinearProblemManager.hpp>
 
-namespace snl_fei {
+namespace fei {
 
   /** Specialization for LinearProblemManager. */
   template<>
@@ -98,7 +98,7 @@ namespace snl_fei {
       return( -1 );
     }
   };//struct MatrixTraits
-}//namespace snl_fei
+}//namespace fei
 
-#endif // _snl_fei_MatrixTraits_LinProbMgr_hpp_
+#endif // _fei_MatrixTraits_LinProbMgr_hpp_
 

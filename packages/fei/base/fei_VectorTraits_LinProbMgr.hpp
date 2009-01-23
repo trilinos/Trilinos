@@ -6,14 +6,14 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef _snl_fei_VectorTraits_LinProbMgr_hpp_
-#define _snl_fei_VectorTraits_LinProbMgr_hpp_
+#ifndef _fei_VectorTraits_LinProbMgr_hpp_
+#define _fei_VectorTraits_LinProbMgr_hpp_
 
 
-#include <snl_fei_VectorTraits.hpp>
+#include <fei_VectorTraits.hpp>
 #include <fei_LinearProblemManager.hpp>
 
-namespace snl_fei {
+namespace fei {
 
 /** This struct specialization defines vector traits for LinearProblemManager
   vector representations.
@@ -76,6 +76,6 @@ namespace snl_fei {
     { return(-1); }
 
   };//struct VectorTraits
-}//namespace snl_fei
+}//namespace fei
 
-#endif // _snl_fei_VectorTraits_LinProbMgr_hpp_
+#endif // _fei_VectorTraits_LinProbMgr_hpp_

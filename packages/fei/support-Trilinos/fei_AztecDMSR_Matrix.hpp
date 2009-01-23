@@ -154,8 +154,6 @@ class AztecDMSR_Matrix {
     int *rowLengths_;
     int nnzeros_; //val and bindx are of length nnzeros_+1
 
-    int maxRowLen_;
-
     int N_update_;
     int* update_;
 

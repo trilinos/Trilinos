@@ -121,7 +121,7 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
       factory = fei::create_fei_Factory(comm, "Trilinos");
       factory_created = true;
     }
-    catch(std::runtime_error& exc) {}
+    catch(std::runtime_error& ex) {}
   }
 
   if (!factory_created) {

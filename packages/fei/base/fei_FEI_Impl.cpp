@@ -1112,6 +1112,10 @@ int fei::FEI_Impl::loadComplete(bool applyBCs,
 
 int fei::FEI_Impl::aggregateSystem()
 {
+  if (wrapper_[0].get() == NULL) {
+    ERReturn(-1);
+  }
+
   if (wrapper_[0].get() != NULL) {
     CHK_ERR( aggregateSystem_LinSysCore() );
   }

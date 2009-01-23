@@ -32,7 +32,7 @@ class FillableVec {
                   const double* coefs,
                   const int* indices);
 
-  void zero();
+  void setValues(double value);
 
   unsigned size() const;
 
@@ -41,6 +41,10 @@ class FillableVec {
   /** Return coef for index if index is present, otherwise throw.
   */
   double getEntry(int index) const;
+
+  void removeEntry(int index);
+
+  void clear();
 
   typedef
     std::map<int,double,std::less<int>,
@@ -54,6 +58,10 @@ class FillableVec {
 
   const_iterator begin() const {return vecdata_.begin();}
   const_iterator end() const {return vecdata_.end();}
+
+  bool operator==(const FillableVec& rhs) const;
+
+  bool operator!=(const FillableVec& rhs) const;
 
  private:
   feipoolmap vecdata_;
@@ -81,6 +89,20 @@ FillableVec::putEntry(int index, double coef)
   else {
     iter->second = coef;
   }
+}
+
+inline
+bool
+FillableVec::operator==(const FillableVec& rhs) const
+{
+  return vecdata_ == rhs.vecdata_;
+}
+
+inline
+bool
+FillableVec::operator!=(const FillableVec& rhs) const
+{
+  return vecdata_ != rhs.vecdata_;
 }
 
 }//namespace fei

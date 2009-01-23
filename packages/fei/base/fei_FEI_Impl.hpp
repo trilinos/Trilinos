@@ -35,14 +35,14 @@ namespace fei {
     /** Constructor
      */
     FEI_Impl(fei::SharedPtr<LibraryWrapper> wrapper,
-	  MPI_Comm comm,
-	  int masterRank=0);
+          MPI_Comm comm,
+          int masterRank=0);
 
     /** Constructor
      */
     FEI_Impl(const fei::Factory* factory,
-	  MPI_Comm comm,
-	  int masterRank=0);
+          MPI_Comm comm,
+          int masterRank=0);
 
     /** Destructor
      */
@@ -55,7 +55,7 @@ namespace fei {
    fei::SharedPtr<fei::LinearSystem> getLinearSystem();
 
     int parameters(int numParams, 
-		   const char *const* paramStrings);
+                   const char *const* paramStrings);
 
    int setIDLists(int numMatrices,
                   const int* matrixIDs,
@@ -82,13 +82,13 @@ namespace fei {
                 const GlobalID* elemConn);
 
    int initSlaveVariable(GlobalID slaveNodeID, 
-			 int slaveFieldID,
-			 int offsetIntoSlaveField,
-			 int numMasterNodes,
-			 const GlobalID* masterNodeIDs,
-			 const int* masterFieldIDs,
-			 const double* weights,
-			 double rhsValue);
+                         int slaveFieldID,
+                         int offsetIntoSlaveField,
+                         int numMasterNodes,
+                         const GlobalID* masterNodeIDs,
+                         const int* masterFieldIDs,
+                         const double* weights,
+                         double rhsValue);
 
    int deleteMultCRs();
 
@@ -117,9 +117,9 @@ namespace fei {
                              int interleaveStrategy);
 
    int initCoefAccess(int patternID,
-		      const int* rowIDTypes,
+                      const int* rowIDTypes,
                       const GlobalID* rowIDs,
-		      const int* colIDTypes,
+                      const int* colIDTypes,
                       const GlobalID* colIDs);
 
    /** indicate that overall initialization sequence is complete */
@@ -192,60 +192,60 @@ namespace fei {
                  double penValue);
 
    int sumIntoMatrix(int patternID,
-		     const int* rowIDTypes,
+                     const int* rowIDTypes,
                      const GlobalID* rowIDs,
-		     const int* colIDTypes,
+                     const int* colIDTypes,
                      const GlobalID* colIDs,
                      const double* const* matrixEntries);
 
    /**
    */
    int sumIntoRHS(int patternID,
-		  const int* IDTypes,
+                  const int* IDTypes,
                   const GlobalID* IDs,
                   const double* coefficients);
 
    /**
    */
    int putIntoMatrix(int patternID,
-		     const int* rowIDTypes,
+                     const int* rowIDTypes,
                      const GlobalID* rowIDs,
-		     const int* colIDTypes,
+                     const int* colIDTypes,
                      const GlobalID* colIDs,
                      const double* const* matrixEntries);
 
    /**
    */
    int putIntoRHS(int patternID,
-		  const int* IDTypes,
+                  const int* IDTypes,
                   const GlobalID* IDs,
                   const double* coefficients);
 
    /**
    */
    int putIntoRHS(int IDType,
-		  int fieldID,
-		  int numIDs,
-		  const GlobalID* IDs,
-		  const double* coefficients);
+                  int fieldID,
+                  int numIDs,
+                  const GlobalID* IDs,
+                  const double* coefficients);
 
    /**
    */
    int sumIntoRHS(int IDType,
-		  int fieldID,
-		  int numIDs,
-		  const GlobalID* IDs,
-		  const double* coefficients);
+                  int fieldID,
+                  int numIDs,
+                  const GlobalID* IDs,
+                  const double* coefficients);
 
    int getFromMatrix(int patternID,
-		     const int* rowIDTypes,
+                     const int* rowIDTypes,
                      const GlobalID* rowIDs,
-		     const int* colIDTypes,
+                     const int* colIDTypes,
                      const GlobalID* colIDs,
                      double** matrixEntries);
 
    int getFromRHS(int patternID,
-		  const int* IDTypes,
+                  const int* IDTypes,
                   const GlobalID* IDs,
                   double* coefficients);
 
@@ -278,9 +278,9 @@ namespace fei {
 
    /** query for some accumulated timing information. Collective function. */
    int cumulative_cpu_times(double& initTime,
-			    double& loadTime,
-			    double& solveTime,
-			    double& solnReturnTime);
+                            double& loadTime,
+                            double& solveTime,
+                            double& solnReturnTime);
 
    /** return all nodal solution params on a block-by-block basis */
     int getBlockNodeSolution(GlobalID elemBlockID,  
@@ -291,9 +291,9 @@ namespace fei {
 
     /** return all nodal solution params for an arbitrary list of nodes */
     int getNodalSolution(int numNodes,
-			 const GlobalID* nodeIDs,
-			 int* offsets,
-			 double* results);
+                         const GlobalID* nodeIDs,
+                         int* offsets,
+                         double* results);
 
     /** return nodal solution for one field on a block-by-block basis */
     int getBlockFieldNodeSolution(GlobalID elemBlockID,
@@ -386,11 +386,11 @@ namespace fei {
     int getNumBlockActEqns(GlobalID blockID, int& numEqns) const;
 
     /**  return the number of nodes associated with elements of a
-	 given block ID */
+         given block ID */
     int getNumNodesPerElement(GlobalID blockID, int& nodesPerElem) const;
     
     /**  return the number of equations (including element eqns)
-	 associated with elements of a given block ID */
+         associated with elements of a given block ID */
     int getNumEqnsPerElement(GlobalID blockID, int& numEqns) const;
 
     /**  return the number of elements associated with this blockID */
@@ -410,8 +410,8 @@ namespace fei {
     //argue to have these included in the FEI 2.1 specification update.
 
     /** Query the size of a field. This info is supplied to the FEI (initFields)
-	by the application, but may not be easily obtainable on the app side at
-	all times. Thus, it would be nice if the FEI could answer this query.
+        by the application, but may not be easily obtainable on the app side at
+        all times. Thus, it would be nice if the FEI could answer this query.
     */
     int getFieldSize(int fieldID, int& numScalars);
 
@@ -428,10 +428,10 @@ namespace fei {
      above-described equation-numbers. They are global 0-based numbers.
     */
     int getEqnNumbers(GlobalID ID,
-		      int idType, 
-		      int fieldID,
-		      int& numEqns,
-		      int* eqnNumbers);
+                      int idType, 
+                      int fieldID,
+                      int& numEqns,
+                      int* eqnNumbers);
 
     /**Get the solution data for a particular field, on an arbitrary set of
        nodes.
@@ -447,9 +447,9 @@ namespace fei {
        @return error-code 0 if successful
     */
     int getNodalFieldSolution(int fieldID,
-			      int numNodes,
-			      const GlobalID* nodeIDs,
-			      double* results);
+                              int numNodes,
+                              const GlobalID* nodeIDs,
+                              double* results);
 
    /**Get the number of nodes that are local to this processor (includes nodes
       that are shared by other processors).
@@ -470,8 +470,8 @@ namespace fei {
       @return error-code 0 if successful
    */
     int getLocalNodeIDList(int& numNodes,
-			   GlobalID* nodeIDs,
-			   int lenNodeIDs);
+                           GlobalID* nodeIDs,
+                           int lenNodeIDs);
 
     /** Pass nodal data for a specified field through to the solver. Example
       is geometric coordinates, etc.
@@ -490,19 +490,19 @@ namespace fei {
       data for nodeIDs[i] begins in position i*fieldSize of this array.
     */
     int putNodalFieldData(int fieldID,
-			  int numNodes,
-			  const GlobalID* nodeIDs,
-			  const double* nodeData);
+                          int numNodes,
+                          const GlobalID* nodeIDs,
+                          const double* nodeData);
 
   private: //methods
     void basic_initializations();
 
     int inputRHS(int IDType,
-		 int fieldID,
-		 int numIDs,
-		 const GlobalID* IDs,
-		 const double* rhsEntries,
-		 bool sumInto);
+                 int fieldID,
+                 int numIDs,
+                 const GlobalID* IDs,
+                 const double* rhsEntries,
+                 bool sumInto);
 
     int fillNodeset(int blockID) const;
 

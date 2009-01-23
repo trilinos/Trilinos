@@ -6,16 +6,14 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef _snl_fei_MatrixTraits_hpp_
-#define _snl_fei_MatrixTraits_hpp_
+#ifndef _fei_MatrixTraits_hpp_
+#define _fei_MatrixTraits_hpp_
 
 #include <fei_macros.hpp>
 
 namespace fei {
   class Vector;
-}
 
-namespace snl_fei {
   /** Define a struct of matrix access traits. The fei matrix implementation
       class fei::Matrix_Impl is essentially a filter which passes data to
       library-specific matrix objects (such as Trilinos/Epetra's
@@ -113,6 +111,7 @@ namespace snl_fei {
     { return(-1); }
   };//struct MatrixTraits
 
-}//namespace snl_fei
+}//namespace fei
 
-#endif // _snl_fei_MatrixTraits_hpp_
+#endif // _fei_MatrixTraits_hpp_
+

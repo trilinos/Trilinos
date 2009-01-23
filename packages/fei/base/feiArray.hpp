@@ -85,18 +85,13 @@ class feiArray {
       @param allocLength Amount of memory allocated in 'data'.
       @param data Pointer to user-allocated array.
   */
-  feiArray(int length, int allocLength, T* data);
+  feiArray(int len, int allocLength, T* data);
 
   /** Copy constructor. */
   feiArray(const feiArray<T,COMPARE>& src);
 
   /** Destructor */
   virtual ~feiArray();
-
-  /** Function to reset internal data. This array object keeps internal
-      pointers to these input arguments.
-  */
-  int setInternalData(int length, int allocLength, T* data);
 
   /** Assignment operator. */
   feiArray<T,COMPARE>& operator=(const feiArray<T,COMPARE>& src);
@@ -383,7 +378,7 @@ void feiArray<T,COMPARE>::append(const T& item)
 
 //------------------------------------------------------------------------------
 template<typename T, class COMPARE>
-feiArray<T,COMPARE>::feiArray(int length, int incr)
+feiArray<T,COMPARE>::feiArray(int len, int incr)
  : cmp_(),
    data_(NULL),
    length_(0),
@@ -391,15 +386,15 @@ feiArray<T,COMPARE>::feiArray(int length, int incr)
    allocIncrement_(incr),
    userMemory_(false)
 {
-   resize(length);
+   resize(len);
 }
 
 //------------------------------------------------------------------------------
 template<typename T, class COMPARE>
-feiArray<T,COMPARE>::feiArray(int length, int allocLength, T* data)
+feiArray<T,COMPARE>::feiArray(int len, int allocLength, T* data)
   : cmp_(),
     data_(data),
-    length_(length),
+    length_(len),
     allocatedLength_(allocLength),
     allocIncrement_(0),
     userMemory_(true)
@@ -428,19 +423,6 @@ feiArray<T,COMPARE>::feiArray(const feiArray<T,COMPARE>& src)
 template<typename T, class COMPARE>
 feiArray<T,COMPARE>::~feiArray() {
    deleteMemory();
-}
-
-//------------------------------------------------------------------------------
-template<typename T, class COMPARE>
-int feiArray<T,COMPARE>::setInternalData(int length, int allocLength, T* data)
-{
-  if (!userMemory_) deleteMemory();
-  length_ = length;
-  allocatedLength_ = allocLength;
-  allocIncrement_ = 0;
-  userMemory_ = true;
-  data_ = data;
-  return(0);
 }
 
 //------------------------------------------------------------------------------

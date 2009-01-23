@@ -278,17 +278,17 @@ int EqnBuffer::getCoefAndRemoveIndex(int eqnNumber, int colIndex, double& coef)
 int EqnBuffer::addEqns(EqnBuffer& inputEqns, bool accumulate)
 {
   int* eqnNums = inputEqns.eqnNumbersPtr().dataPtr();
-  SSVec** eqns = inputEqns.eqns().dataPtr();
+  SSVec** eqs = inputEqns.eqns().dataPtr();
 
   int numRHSs = inputEqns.getNumRHSs();
   feiArray<double>** rhsCoefs = inputEqns.rhsCoefsPtr()->dataPtr();
 
   for(int i=0; i<inputEqns.getNumEqns(); i++) {
-    feiArray<int>& indices_i  = eqns[i]->indices();
-    feiArray<double>& coefs_i = eqns[i]->coefs();
+    feiArray<int>& indices_i  = eqs[i]->indices();
+    feiArray<double>& coefs_i = eqs[i]->coefs();
 
     int err = addEqn(eqnNums[i], coefs_i.dataPtr(), indices_i.dataPtr(),
-		    eqns[i]->length(), accumulate);
+		    eqs[i]->length(), accumulate);
     if (err) return(err);
 
     if (numRHSs > 0) {

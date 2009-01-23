@@ -1549,9 +1549,7 @@ void FEI_Implementation::buildLinearSystem()
     }
   }
 
-  //for(int i=0; i<numInternalFEIs_; ++i) {
-    filter_[index_soln_filter_]->loadComplete();
-  //}
+  filter_[index_soln_filter_]->loadComplete();
 
   debugOut("#   leaving buildLinearSystem");
 }

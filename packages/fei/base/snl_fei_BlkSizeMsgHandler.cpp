@@ -24,7 +24,6 @@
 #include <fei_SSVec.hpp>
 #include <fei_EqnBuffer.hpp>
 #include <fei_EqnCommMgr.hpp>
-#include <fei_SSMat.hpp>
 #include <SNL_FEI_Structure.hpp>
 
 #undef fei_file

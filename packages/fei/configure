@@ -5527,7 +5527,7 @@ fi
 
 
 
-ac_config_files="$ac_config_files Makefile Makefile.export.fei base/Makefile test_utils/Makefile support-Trilinos/Makefile support-PETSc/Makefile test/Makefile test/cr_lagrange_20quad/Makefile test/cr_slave_20quad/Makefile test/cr_lagrange_20quad_AZLSC/Makefile test/cr_lagrange_20quad_old/Makefile test/cr_multifield_slave/Makefile test/elemDOF_Aztec/Makefile test/remEssBCs/Makefile utest/Makefile utest_cases/Makefile example/Makefile example/beam/Makefile example/poisson/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.fei base/Makefile test_utils/Makefile support-Trilinos/Makefile support-PETSc/Makefile test/Makefile test/cr_lagrange_20quad/Makefile test/cr_slave_20quad/Makefile test/cr_slave_20quad_old/Makefile test/cr_lagrange_20quad_AZLSC/Makefile test/cr_lagrange_20quad_old/Makefile test/cr_multifield_slave/Makefile test/elemDOF_Aztec/Makefile test/remEssBCs/Makefile test/remEssBCs_Trilinos/Makefile utest/Makefile utest_cases/Makefile example/Makefile example/beam/Makefile example/poisson/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -6265,11 +6265,13 @@ do
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/cr_lagrange_20quad/Makefile") CONFIG_FILES="$CONFIG_FILES test/cr_lagrange_20quad/Makefile" ;;
     "test/cr_slave_20quad/Makefile") CONFIG_FILES="$CONFIG_FILES test/cr_slave_20quad/Makefile" ;;
+    "test/cr_slave_20quad_old/Makefile") CONFIG_FILES="$CONFIG_FILES test/cr_slave_20quad_old/Makefile" ;;
     "test/cr_lagrange_20quad_AZLSC/Makefile") CONFIG_FILES="$CONFIG_FILES test/cr_lagrange_20quad_AZLSC/Makefile" ;;
     "test/cr_lagrange_20quad_old/Makefile") CONFIG_FILES="$CONFIG_FILES test/cr_lagrange_20quad_old/Makefile" ;;
     "test/cr_multifield_slave/Makefile") CONFIG_FILES="$CONFIG_FILES test/cr_multifield_slave/Makefile" ;;
     "test/elemDOF_Aztec/Makefile") CONFIG_FILES="$CONFIG_FILES test/elemDOF_Aztec/Makefile" ;;
     "test/remEssBCs/Makefile") CONFIG_FILES="$CONFIG_FILES test/remEssBCs/Makefile" ;;
+    "test/remEssBCs_Trilinos/Makefile") CONFIG_FILES="$CONFIG_FILES test/remEssBCs_Trilinos/Makefile" ;;
     "utest/Makefile") CONFIG_FILES="$CONFIG_FILES utest/Makefile" ;;
     "utest_cases/Makefile") CONFIG_FILES="$CONFIG_FILES utest_cases/Makefile" ;;
     "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;

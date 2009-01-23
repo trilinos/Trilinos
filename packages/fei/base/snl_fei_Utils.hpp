@@ -11,7 +11,6 @@
 
 #include <fei_fwd.hpp>
 #include <fei_mpi.h>
-#include <feiArray.hpp>
 #include <fei_SharedPtr.hpp>
 
 namespace fei {
@@ -242,7 +241,7 @@ namespace snl_fei {
   */
   int resolveConflictingCRs(fei::MatrixGraph& matrixGraph,
 			    fei::Matrix& bcEqns,
-                            feiArray<int>& bcEqnNumbers);
+                            const std::vector<int>& bcEqnNumbers);
 
   /** Do appropriate communications to gather column-portions of remotely-held
       essential BCs onto local processor.
@@ -256,12 +255,6 @@ namespace snl_fei {
       processor.
   */
   void globalUnion(MPI_Comm comm, SSVec& localVec, SSVec& globalUnionVec);
-
-  /** Input CSVec object may be different on each processor. Output CSVec object
-      is the global union of all input CSVec objects and is the same on each
-      processor.
-  */
-  void globalUnion(MPI_Comm comm, fei::CSVec& localVec, fei::CSVec& globalUnionVec);
 
   /** Input SSMat object may be different on each processor. Output SSMat object
       is the global union of all input SSMat objects and is the same on each

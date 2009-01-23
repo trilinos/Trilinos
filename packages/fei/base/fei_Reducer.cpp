@@ -17,26 +17,27 @@
 #include <fei_TemplateUtils.hpp>
 #include <fei_SparseRowGraph.hpp>
 #include <fei_Vector.hpp>
+#include <fei_impl_utils.hpp>
 
 namespace fei {
 Reducer::Reducer(fei::SharedPtr<SSMat> globalSlaveDependencyMatrix,
                  fei::SharedPtr<SSVec> g_vector,
                  MPI_Comm comm)
- : D_(globalSlaveDependencyMatrix),
+ : csrD_(),
    slavesPtr_(NULL),
    Kii_(),
    Kid_(),
    Kdi_(),
    Kdd_(),
-   tmpMat1_(),
-   tmpMat2_(),
    fi_(),
    fd_(),
    xi_(),
    xd_(),
+   tmpMat1_(),
+   tmpMat2_(),
    tmpVec1_(),
    tmpVec2_(),
-   g_(g_vector),
+   csg_(),
    g_nonzero_(false),
    localUnreducedEqns_(),
    localReducedEqns_(),
@@ -63,25 +64,80 @@ Reducer::Reducer(fei::SharedPtr<SSMat> globalSlaveDependencyMatrix,
    work_1D_(),
    work_2D_()
 {
+  csrD_ = *globalSlaveDependencyMatrix;
+  if (g_vector.get() != NULL) {
+    csg_ = *g_vector;
+  }
+
+  initialize();
+}
+
+Reducer::Reducer(fei::SharedPtr<FillableMat> globalSlaveDependencyMatrix,
+                 fei::SharedPtr<FillableVec> g_vector,
+                 MPI_Comm comm)
+ : csrD_(),
+   slavesPtr_(NULL),
+   Kii_(),
+   Kid_(),
+   Kdi_(),
+   Kdd_(),
+   fi_(),
+   fd_(),
+   xi_(),
+   xd_(),
+   tmpMat1_(),
+   tmpMat2_(),
+   tmpVec1_(),
+   tmpVec2_(),
+   csg_(),
+   g_nonzero_(false),
+   localUnreducedEqns_(),
+   localReducedEqns_(),
+   nonslaves_(),
+   reverse_(),
+   isSlaveEqn_(NULL),
+   numGlobalSlaves_(0),
+   numLocalSlaves_(0),
+   firstLocalReducedEqn_(0),
+   lastLocalReducedEqn_(0),
+   lowestGlobalSlaveEqn_(0),
+   highestGlobalSlaveEqn_(0),
+   localProc_(0),
+   numProcs_(1),
+   comm_(comm),
+   dbgprefix_("Reducer: "),
+   mat_counter_(0),
+   soln_vec_counter_(0),
+   rhs_vec_counter_(0),
+   bool_array_(0),
+   int_array_(0),
+   double_array_(0),
+   array_len_(0),
+   work_1D_(),
+   work_2D_()
+{
+  csrD_ = *globalSlaveDependencyMatrix;
+  if (g_vector.get() != NULL) {
+    csg_ = *g_vector;
+  }
+
   initialize();
 }
 
 void
 Reducer::initialize()
 {
-  numGlobalSlaves_ = D_->getRowNumbers().length();
-  slavesPtr_ = D_->getRowNumbers().dataPtr();
+  numGlobalSlaves_ = csrD_.getNumRows();
+  slavesPtr_ = &((csrD_.getGraph().rowNumbers)[0]);
   lowestGlobalSlaveEqn_ = slavesPtr_[0];
   highestGlobalSlaveEqn_ = slavesPtr_[numGlobalSlaves_-1];
 
-  if (g_.get() != NULL) {
-    if (g_->length() > 0) {
-      double* gptr = g_->coefs().dataPtr();
-      for(int i=0; i<g_->length(); ++i) {
-        if (gptr[i] != 0.0) {
-          g_nonzero_ = true;
-          break;
-        }
+  if (csg_.size() > 0) {
+    double* gptr = &(csg_.coefs()[0]);
+    for(size_t i=0; i<csg_.size(); ++i) {
+      if (gptr[i] != 0.0) {
+        g_nonzero_ = true;
+        break;
       }
     }
   }
@@ -138,21 +194,21 @@ Reducer::initialize()
 }
 
 Reducer::Reducer(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
- : D_(matrixGraph->getSlaveDependencyMatrix()),
+ : csrD_(),
    slavesPtr_(NULL),
    Kii_(),
    Kid_(),
    Kdi_(),
    Kdd_(),
-   tmpMat1_(),
-   tmpMat2_(),
    fi_(),
    fd_(),
    xi_(),
    xd_(),
+   tmpMat1_(),
+   tmpMat2_(),
    tmpVec1_(),
    tmpVec2_(),
-   g_(),
+   csg_(),
    g_nonzero_(false),
    localUnreducedEqns_(),
    localReducedEqns_(),
@@ -230,8 +286,10 @@ Reducer::setLocalUnreducedEqns(const std::vector<int>& localUnreducedEqns)
       if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
         FEI_OSTREAM& os = *output_stream_;
         os << dbgprefix_<<" slave " << localUnreducedEqns_[i] << " depends on ";
-        feiArray<int>& indices = D_->getRows()[idx]->indices();
-        for(int j=0; j<indices.length(); ++j) {
+        int offset = csrD_.getGraph().rowOffsets[idx];
+        int rowlen = csrD_.getGraph().rowOffsets[idx+1]-offset;
+        int* indices = &(csrD_.getGraph().packedColumnIndices[offset]);
+        for(int j=0; j<rowlen; ++j) {
           os << indices[j] << " ";
         }
         os << FEI_ENDL;
@@ -319,8 +377,8 @@ Reducer::addGraphEntries(fei::SharedPtr<fei::SparseRowGraph> matrixGraph)
     int* cols = &packedCols[rowOffsets[i]];
 
     if (slave_row) {
-      SSVec* Kdd_row = Kdd_.getRow(row, create_if_necessary);
-      SSVec* Kdi_row = Kdi_.getRow(row, create_if_necessary);
+      fei::FillableVec* Kdd_row = Kdd_.getRow(row, create_if_necessary);
+      fei::FillableVec* Kdi_row = Kdi_.getRow(row, create_if_necessary);
 
       for(int j=0; j<rowLength; ++j) {
         int col = cols[j];
@@ -337,8 +395,8 @@ Reducer::addGraphEntries(fei::SharedPtr<fei::SparseRowGraph> matrixGraph)
     else {
       //not a slave row, so add slave columns to Kid, and non-slave
       //columns to graph.
-      SSVec* Kid_row = Kid_.getRow(row, create_if_necessary);
-      SSVec* Kii_row = Kii_.getRow(row, create_if_necessary);
+      fei::FillableVec* Kid_row = Kid_.getRow(row, create_if_necessary);
+      fei::FillableVec* Kii_row = Kii_.getRow(row, create_if_necessary);
 
       for(int j=0; j<rowLength; ++j) {
         int col = cols[j];
@@ -388,8 +446,8 @@ Reducer::addGraphIndices(int numRows, const int* rows,
     bool slave_row = isSlaveEqn(rows[i]);
 
     if (slave_row) {
-      SSVec* Kdd_row = Kdd_.getRow(rows[i], create_if_necessary);
-      SSVec* Kdi_row = Kdi_.getRow(rows[i], create_if_necessary);
+      fei::FillableVec* Kdd_row = Kdd_.getRow(rows[i], create_if_necessary);
+      fei::FillableVec* Kdi_row = Kdi_.getRow(rows[i], create_if_necessary);
 
       for(int j=0; j<numCols; ++j) {
         if (bool_array_[j]) {
@@ -404,7 +462,7 @@ Reducer::addGraphIndices(int numRows, const int* rows,
     else {
       //not a slave row, so add slave columns to Kid, and non-slave
       //columns to graph.
-      SSVec* Kid_row = no_slave_cols ?
+      fei::FillableVec* Kid_row = no_slave_cols ?
         NULL : Kid_.getRow(rows[i], create_if_necessary);
   
       unsigned num_non_slave_cols = 0;
@@ -464,43 +522,38 @@ Reducer::assembleReducedGraph(fei::Graph* graph,
   //
 
   //form tmpMat1_ = Kid*D
-  if ( Kid_.matMat(*D_, tmpMat1_) != 0) {
-    throw std::runtime_error("fei::Reducer::assembleReducedGraph ERROR 1.");
-  }
+  fei::CSRMat csrKid(Kid_);
+  fei::multiply_CSRMat_CSRMat(csrKid, csrD_, tmpMat1_);
 
-  //form tmpMat2_ = D^T*Kdi
-  if ( D_->matTransMat(Kdi_, tmpMat2_) != 0) {
-    throw std::runtime_error("fei::Reducer::assembleReducedGraph ERROR 2.");
-  }
+  fei::CSRMat csrKdi(Kdi_);
+  fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdi, tmpMat2_);
 
-  translateSSMatToReducedEqns(tmpMat1_);
-  translateSSMatToReducedEqns(tmpMat2_);
+  fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat1_);
+  fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat2_);
 
-  addSSMatToGraph(tmpMat1_, graph);
-  addSSMatToGraph(tmpMat2_, graph);
+  fei::impl_utils::add_to_graph(tmpMat1_, *graph);
+  fei::impl_utils::add_to_graph(tmpMat2_, *graph);
 
   //form tmpMat1_ = D^T*Kdd
-  if ( D_->matTransMat(Kdd_, tmpMat1_) != 0) {
-    throw std::runtime_error("fei::Reducer::assembleReducedGraph ERROR 3.");
-  }
+  fei::CSRMat csrKdd(Kdd_);
+  fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdd, tmpMat1_);
 
-  //form tmpMat2_ = tpmMat1_*D = D^T*Kdd*D
-  if ( tmpMat1_.matMat(*D_, tmpMat2_) != 0) {
-    throw std::runtime_error("fei::Reducer::assembleReducedGraph ERROR 4.");
-  }
+  //form tmpMat2_ = tmpMat1_*D = D^T*Kdd*D
+  fei::multiply_CSRMat_CSRMat(tmpMat1_, csrD_, tmpMat2_);
 
-  translateSSMatToReducedEqns(tmpMat2_);
+  fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat2_);
 
-  addSSMatToGraph(tmpMat2_, graph);
+  fei::impl_utils::add_to_graph(tmpMat2_, *graph);
 
   //lastly, translate Kii and add it to the graph.
-  translateSSMatToReducedEqns(Kii_);
-  addSSMatToGraph(Kii_, graph);
+  fei::CSRMat csrKii(Kii_);
+  fei::impl_utils::translate_to_reduced_eqns(*this, csrKii);
+  fei::impl_utils::add_to_graph(csrKii, *graph);
 
-  Kii_.logicalClear();
-  Kdi_.logicalClear();
-  Kid_.logicalClear();
-  Kdd_.logicalClear();
+  Kii_.clear();
+  Kdi_.clear();
+  Kid_.clear();
+  Kdd_.clear();
 
   mat_counter_ = 0;
 
@@ -535,71 +588,63 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
   }
 
   //form tmpMat1_ = Kid_*D
-  if ( Kid_.matMat(*D_, tmpMat1_, false) != 0) {
-    throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 1.");
-  }
+  fei::CSRMat csrKid(Kid_);
+  fei::multiply_CSRMat_CSRMat(csrKid, csrD_, tmpMat1_);
 
   //form tmpMat2_ = D^T*Kdi_
-  if ( D_->matTransMat(Kdi_, tmpMat2_, false) != 0) {
-    throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 2.");
-  }
+  fei::CSRMat csrKdi(Kdi_);
+  fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdi, tmpMat2_);
 
   //accumulate the above two results into the global system matrix.
-  translateSSMatToReducedEqns(tmpMat1_);
-  addSSMatToMatrix(tmpMat1_, true, matrix);
-  translateSSMatToReducedEqns(tmpMat2_);
-  addSSMatToMatrix(tmpMat2_, true, matrix);
+  fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat1_);
+  fei::impl_utils::add_to_matrix(tmpMat1_, true, matrix);
+
+  fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat2_);
+  fei::impl_utils::add_to_matrix(tmpMat2_, true, matrix);
 
   //form tmpMat1_ = D^T*Kdd_
-  if ( D_->matTransMat(Kdd_, tmpMat1_, false) != 0) {
-    throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 3.");
-  }
+  fei::CSRMat csrKdd(Kdd_);
+  fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdd, tmpMat1_);
 
   //form tmpMat2_ = tmpMat1_*D = D^T*Kdd_*D
-  if ( tmpMat1_.matMat(*D_, tmpMat2_, false) != 0) {
-    throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 4.");
-  }
+  fei::multiply_CSRMat_CSRMat(tmpMat1_, csrD_, tmpMat2_);
 
   if (g_nonzero_) {
     //form tmpVec1_ = Kid_*g_
-    if (Kid_.matVec(*g_, tmpVec1_) != 0) {
-      throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 4g1.");
-    }
+    fei::multiply_CSRMat_CSVec(csrKid, csg_, tmpVec1_);
 
     //add tmpVec1_ to fi_
-    fi_.addEntries(tmpVec1_.length(), tmpVec1_.coefs().dataPtr(),
-                   tmpVec1_.indices().dataPtr());
+    fei::CSVec csfi_(fi_);
+    fei::add_CSVec_CSVec(tmpVec1_, csfi_);
 
     //we already have tmpMat1_ = D^T*Kdd which was computed above, and we need
     //to form tmpVec1_ = D^T*Kdd*g_.
     //So we can simply form tmpVec1_ = tmpMat1_*g_.
-    if (tmpMat1_.matVec(*g_, tmpVec1_) != 0) {
-      throw std::runtime_error("fei::Reducer::assembleReducedMatrix ERROR 4g2.");
-    }
+    fei::multiply_CSRMat_CSVec(tmpMat1_, csg_, tmpVec1_);
 
     //now add tmpVec1_ to the right-hand-side fi_
-    fi_.addEntries(tmpVec1_.length(), tmpVec1_.coefs().dataPtr(),
-                   tmpVec1_.indices().dataPtr());
+    fei::add_CSVec_CSVec(tmpVec1_, csfi_);
   }
 
   //accumulate tmpMat2_ = D^T*Kdd_*D into the global system matrix.
-  translateSSMatToReducedEqns(tmpMat2_);
-  addSSMatToMatrix(tmpMat2_, true, matrix);
+  fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat2_);
+  fei::impl_utils::add_to_matrix(tmpMat2_, true, matrix);
 
   //lastly, translate Kii and add it to the graph.
-  translateSSMatToReducedEqns(Kii_);
-  addSSMatToMatrix(Kii_, true, matrix);
+  fei::CSRMat csrKii(Kii_);
+  fei::impl_utils::translate_to_reduced_eqns(*this, csrKii);
+  fei::impl_utils::add_to_matrix(csrKii, true, matrix);
 
-  Kii_.logicalClear();
-  Kdi_.logicalClear();
-  Kid_.logicalClear();
-  Kdd_.logicalClear();
+  Kii_.clear();
+  Kdi_.clear();
+  Kid_.clear();
+  Kdd_.clear();
 
   mat_counter_ = 0;
 }
 
 bool
-Reducer::isSlaveEqn(int unreducedEqn)
+Reducer::isSlaveEqn(int unreducedEqn) const
 {
   int num = localUnreducedEqns_.size();
 
@@ -611,26 +656,33 @@ Reducer::isSlaveEqn(int unreducedEqn)
   return(isSlaveEqn_[offset]);
 }
 
-std::vector<int>
-Reducer::getSlaveMasterEqns(int slaveEqn)
+void
+Reducer::getSlaveMasterEqns(int slaveEqn, std::vector<int>& masterEqns)
 {
-  std::vector<int> masters;
-  int idx = snl_fei::binarySearch(slaveEqn, slavesPtr_, numGlobalSlaves_);
-  if (idx<0) {
-    return(masters);
+  masterEqns.clear();
+
+  std::vector<int>& rows = csrD_.getGraph().rowNumbers;
+
+  std::vector<int>::iterator iter =
+    std::lower_bound(rows.begin(), rows.end(), slaveEqn);
+
+  if (iter == rows.end() || *iter != slaveEqn) {
+    return;
   }
 
-  SSVec* row = D_->getRows()[idx];
-  feiArray<int>& indices = row->indices();
-  for(int i=0; i<indices.length(); ++i) {
-    masters.push_back(indices[i]);
-  }
+  size_t offset = iter - rows.begin();
 
-  return(masters);
+  int rowBegin = csrD_.getGraph().rowOffsets[offset];
+  int rowEnd = csrD_.getGraph().rowOffsets[offset+1];
+  std::vector<int>& cols = csrD_.getGraph().packedColumnIndices;
+
+  for(int j=rowBegin; j<rowEnd; ++j) {
+    masterEqns.push_back(cols[j]);
+  }
 }
 
 bool
-Reducer::isSlaveCol(int unreducedEqn)
+Reducer::isSlaveCol(int unreducedEqn) const
 {
   int idx = snl_fei::binarySearch(unreducedEqn,
                                   slavesPtr_, numGlobalSlaves_);
@@ -639,7 +691,7 @@ Reducer::isSlaveCol(int unreducedEqn)
 }
 
 int
-Reducer::translateToReducedEqn(int eqn)
+Reducer::translateToReducedEqn(int eqn) const
 {
   if (eqn < lowestGlobalSlaveEqn_) {
     return(eqn);
@@ -661,7 +713,7 @@ Reducer::translateToReducedEqn(int eqn)
 }
 
 int
-Reducer::translateFromReducedEqn(int reduced_eqn)
+Reducer::translateFromReducedEqn(int reduced_eqn) const
 {
   int index = -1;
   int offset = snl_fei::binarySearch(reduced_eqn, &reverse_[0],
@@ -677,96 +729,6 @@ Reducer::translateFromReducedEqn(int reduced_eqn)
   int adjustment = reduced_eqn - reverse_[index-1];
 
   return(nonslaves_[index-1] + adjustment);
-}
-
-void
-Reducer::translateSSMatToReducedEqns(SSMat& mat)
-{
-  //Given a matrix in global numbering, convert all of its contents to the
-  //"reduced" equation space. If any of the row-numbers or column-indices in
-  //this matrix object are slave equations, an exception will be thrown.
-
-  feiArray<int>& rowNumbers = mat.getRowNumbers();
-  SSVec** rows = mat.getRows().dataPtr();
-
-  for(int i=0; i<rowNumbers.length(); i++) {
-    rowNumbers[i] = translateToReducedEqn(rowNumbers[i]);
-
-    feiArray<int>& row_indices = rows[i]->indices();
-    int* inds = row_indices.dataPtr();
-    int numInds = row_indices.length();
-    for(int j=0; j<numInds; j++) {
-      inds[j] = translateToReducedEqn(inds[j]);
-    }
-  }
-}
-
-void
-Reducer::translateSSVecToReducedEqns(SSVec& vec)
-{
-  feiArray<int>& indices = vec.indices();
-  int* indPtr = indices.dataPtr();
-  for(int i=0; i<indices.length(); ++i) {
-    indPtr[i] = translateToReducedEqn(indPtr[i]);
-  }
-}
-
-void
-Reducer::addSSMatToGraph(SSMat& mat, fei::Graph* graph)
-{
-   //This function must be called with a SSMat object that already has its
-  //contents numbered in "reduced" equation-numbers.
-  //
-  //This function has one simple task -- for each row,col pair stored in 'mat',
-  //add the index pair to the graph_ object.
-  //
-
-  int numRows = mat.getRowNumbers().length();
-  if (numRows == 0) return;
-
-  int* rowNumbers = mat.getRowNumbers().dataPtr();
-  SSVec** rows = mat.getRows().dataPtr();
-
-  for(int i=0; i<numRows; i++) {
-    int rowLen = rows[i]->length();
-    int* indicesRow = rows[i]->indices().dataPtr();
-
-    if ( graph->addIndices(rowNumbers[i], rowLen, indicesRow) != 0) {
-      throw std::runtime_error("fei::Reducer::addSSMatToGraph ERROR in graph->addIndices.");
-    }
-  }
-}
-
-void
-Reducer::addSSMatToMatrix(SSMat& mat, bool sum_into,
-                             fei::Matrix& matrix)
-{
-  int numRows = mat.getRowNumbers().length();
-  if (numRows == 0) return;
-
-  int* rowNumbers = mat.getRowNumbers().dataPtr();
-  SSVec** rows = mat.getRows().dataPtr();
-
-  for(int i=0; i<numRows; i++) {
-    int rowLen = rows[i]->length();
-    int* indicesRow = rows[i]->indices().dataPtr();
-
-    double* coefPtr = rows[i]->coefs().dataPtr();
-    if (sum_into) {
-      if ( matrix.sumIn(1, &rowNumbers[i],
-                         rowLen, indicesRow,
-                         &coefPtr, FEI_DENSE_ROW) != 0) {
-        throw std::runtime_error("fei::Reducer::addSSMatToMatrix ERROR in matrix->sumIn.");
-      }
-    }
-    else {
-      if ( matrix.copyIn(1, &rowNumbers[i],
-                          rowLen, indicesRow,
-                          &coefPtr, FEI_DENSE_ROW) != 0) {
-        throw std::runtime_error("fei::Reducer::addSSMatToMatrix ERROR in matrix->copyIn.");
-      }
-    }
-  }
 }
 
 int
@@ -790,8 +752,8 @@ Reducer::addMatrixValues(int numRows, const int* rows,
     if (isSlaveEqn(rows[i])) {
       //slave row: slave columns go into Kdd, non-slave columns go
       //into Kdi.
-      SSVec* Kdd_row = Kdd_.getRow(rows[i], true);
-      SSVec* Kdi_row = Kdi_.getRow(rows[i], true);
+      fei::FillableVec* Kdd_row = Kdd_.getRow(rows[i], true);
+      fei::FillableVec* Kdi_row = Kdi_.getRow(rows[i], true);
 
       for(int j=0; j<numCols; ++j) {
         if (bool_array_[j]) {
@@ -805,8 +767,8 @@ Reducer::addMatrixValues(int numRows, const int* rows,
     else {//not slave row
       //put non-slave columns into Kii,
       //and slave columns into Kid.
-      SSVec* Kid_row = Kid_.getRow(rows[i], true);
-      SSVec* Kii_row = Kii_.getRow(rows[i], true);
+      fei::FillableVec* Kid_row = Kid_.getRow(rows[i], true);
+      fei::FillableVec* Kii_row = Kii_.getRow(rows[i], true);
 
       for(int j=0; j<numCols; ++j) {
         if (bool_array_[j]) {
@@ -880,8 +842,8 @@ Reducer::addMatrixValues(int numRows, const int* rows,
     if (bool_array_[numCols+i]) {
       //slave row: slave columns go into Kdd, non-slave columns go
       //into Kdi.
-      SSVec* Kdd_row = Kdd_.getRow(rows[i], true);
-      SSVec* Kdi_row = Kdi_.getRow(rows[i], true);
+      fei::FillableVec* Kdd_row = Kdd_.getRow(rows[i], true);
+      fei::FillableVec* Kdi_row = Kdi_.getRow(rows[i], true);
 
       for(int j=0; j<numCols; ++j) {
         if (bool_array_[j]) {
@@ -910,7 +872,7 @@ Reducer::addMatrixValues(int numRows, const int* rows,
 
       //put non-slave columns into Kii,
       //and slave columns into Kid.
-      SSVec* Kid_row = Kid_.getRow(rows[i], true);
+      fei::FillableVec* Kid_row = Kid_.getRow(rows[i], true);
 
       unsigned offset = 0;
       for(int j=0; j<numCols; ++j) {
@@ -1044,43 +1006,45 @@ Reducer::assembleReducedVector(bool soln_vector,
     os << dbgprefix_<<"assembleReducedVector(fei::Vector)"<<FEI_ENDL;
   }
 
-  SSVec& vec = soln_vector ? xd_ : fd_;
+  fei::FillableVec& vec = soln_vector ? xd_ : fd_;
 
-  if (vec.length() > 0) {
+  if (vec.size() > 0) {
     //form tmpVec1 = D^T*vec.
-    if ( D_->matTransVec(vec, tmpVec1_) != 0) {
-      throw std::runtime_error("fei::Reducer::assembleReducedVec ERROR.");
-    }
+    fei::CSVec csvec(vec);
+    fei::multiply_trans_CSRMat_CSVec(csrD_, csvec, tmpVec1_);
 
-    vec.logicalClear();
+    vec.clear();
 
-    translateSSVecToReducedEqns(tmpVec1_);
+    fei::impl_utils::translate_to_reduced_eqns(*this, tmpVec1_);
 
+    int which_vector = 0;
     if (sum_into) {
-      feivec.sumIn(tmpVec1_.length(), tmpVec1_.indices().dataPtr(),
-                   tmpVec1_.coefs().dataPtr(), 0);
+      feivec.sumIn(tmpVec1_.size(), &(tmpVec1_.indices()[0]),
+                   &(tmpVec1_.coefs()[0]), which_vector);
     }
     else {
-      feivec.copyIn(tmpVec1_.length(), tmpVec1_.indices().dataPtr(),
-                   tmpVec1_.coefs().dataPtr(), 0);
+      feivec.copyIn(tmpVec1_.size(), &(tmpVec1_.indices()[0]),
+                    &(tmpVec1_.coefs()[0]), which_vector);
     }
   }
 
-  SSVec& vec_i = soln_vector ? xi_ : fi_;
+  fei::FillableVec& vec_i = soln_vector ? xi_ : fi_;
 
-  if (vec_i.length() > 0) {
-    translateSSVecToReducedEqns(vec_i);
+  if (vec_i.size() > 0) {
+    fei::CSVec csvec_i(vec_i);
+    fei::impl_utils::translate_to_reduced_eqns(*this, csvec_i);
 
+    int which_vector = 0;
     if (sum_into) {
-      feivec.sumIn(vec_i.length(), vec_i.indices().dataPtr(),
-                   vec_i.coefs().dataPtr(), 0);
+      feivec.sumIn(csvec_i.size(), &(csvec_i.indices()[0]),
+                   &(csvec_i.coefs()[0]), which_vector);
     }
     else {
-      feivec.copyIn(vec_i.length(), vec_i.indices().dataPtr(),
-                    vec_i.coefs().dataPtr(), 0);
+      feivec.copyIn(csvec_i.size(), &(csvec_i.indices()[0]),
+                    &(csvec_i.coefs()[0]), which_vector);
     }
 
-    vec_i.logicalClear();
+    vec_i.clear();
   }
 
   if (soln_vector) {
@@ -1104,13 +1068,14 @@ Reducer::copyOutVectorValues(int numValues,
     os << dbgprefix_<<"copyOutVectorValues"<<FEI_ENDL;
   }
 
-  tmpVec1_.logicalClear();
+  tmpVec1_.clear();
+  tmpVec2_.clear();
   std::vector<int> reduced_indices;
   std::vector<int> offsets;
 
   for(int i=0; i<numValues; ++i) {
     if (isSlaveEqn(globalIndices[i])) {
-      tmpVec1_.putEntry(globalIndices[i], 0.0);
+      fei::put_entry(tmpVec1_, globalIndices[i], 0.0);
       offsets.push_back(i);
     }
     else {
@@ -1119,29 +1084,29 @@ Reducer::copyOutVectorValues(int numValues,
     }
   }
 
-  if (tmpVec1_.length() > 0) {
-    D_->matTransVec(tmpVec1_, tmpVec2_);
-    int* tmpVec2Indices = tmpVec2_.indices().dataPtr();
-    for(int i=0; i<tmpVec2_.length(); ++i) {
+  if (tmpVec1_.size() > 0) {
+    fei::multiply_trans_CSRMat_CSVec(csrD_, tmpVec1_, tmpVec2_);
+    int* tmpVec2Indices = &(tmpVec2_.indices()[0]);
+    for(size_t i=0; i<tmpVec2_.size(); ++i) {
       reduced_indices.push_back(translateToReducedEqn(tmpVec2Indices[i]));
     }
 
-    feivec.copyOut(tmpVec2_.length(), &reduced_indices[0],
-                   tmpVec2_.coefs().dataPtr(), vectorIndex);
+    feivec.copyOut(tmpVec2_.size(), &reduced_indices[0],
+                   &(tmpVec2_.coefs()[0]), vectorIndex);
 
-    D_->matVec(tmpVec2_, tmpVec1_);
+    fei::multiply_CSRMat_CSVec(csrD_, tmpVec2_, tmpVec1_);
 
     if (g_nonzero_) {
-      int* ginds = g_->indices().dataPtr();
-      double* gcoefs = g_->coefs().dataPtr();
-      for(int ii=0; ii<g_->length(); ++ii) {
-        tmpVec1_.addEntry(ginds[ii], -gcoefs[ii]);
+      int* ginds = &(csg_.indices()[0]);
+      double* gcoefs = &(csg_.coefs()[0]);
+      for(size_t ii=0; ii<csg_.size(); ++ii) {
+        fei::add_entry(tmpVec1_, ginds[ii], -gcoefs[ii]);
       }
     }
 
-    int len = tmpVec1_.length();
-    int* indices = tmpVec1_.indices().dataPtr();
-    double* coefs = tmpVec1_.coefs().dataPtr();
+    int len = tmpVec1_.size();
+    int* indices = &(tmpVec1_.indices()[0]);
+    double* coefs = &(tmpVec1_.coefs()[0]);
 
     for(unsigned ii=0; ii<offsets.size(); ++ii) {
       int index = globalIndices[offsets[ii]];

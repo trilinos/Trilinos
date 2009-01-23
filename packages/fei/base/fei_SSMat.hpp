@@ -57,35 +57,6 @@ class SSMat {
   */
   SSMat(EqnBuffer& eqnBuf);
 
-  /** Constructor to create an SSMat from raw arrays of coefficients and
-      structurally symmetric indices.
-  */
-  SSMat(int numIndices, const int* indices, const double* const* coefs);
-
-  /** Constructor to create an SSMat from raw arrays of coefficients and 
-      indices.
-  */
-  SSMat(int numRows, const int* rowNumbers,
-	int numCols, const int* colIndices,
-	const double* const* coefs);
-
-  /** Constructor to create an SSMat from raw arrays in a slightly different
-      format...
-      @param numRows
-      @param rowNumbers
-      @param numColsPerRow Number of column-indices for each row.
-      @param rowColOffsets i-th entry provides the offset into the colIndices
-      list at which the column-indices for the i-th row may be found. This is
-      redundant, strictly speaking, since each row must be of length 
-      numColsPerRow.
-      @param colIndices Packed list of column-indices, length is 
-      numRows*numColsPerRow
-      @param coefs
-  */
-  SSMat(int numRows, const int* rowNumbers,
-	int numColsPerRow, const int* rowColOffsets,
-	const int* colIndices, const double* const* coefs);
-
   /** Copy constructor */
   SSMat(const SSMat& src);
 
@@ -98,12 +69,6 @@ class SSMat {
       using one of the non-default constructors.
   */
   void logicalClear();
-
-  /** Function to reset the user-allocated arrays that are used for the matrix
-      data. This matrix object keeps pointers to the input arrays.
-  */
-  void setInternalData(int numIndices, const int* indices,
-		      const double* const* coefs);
 
   /** Matrix-matrix product between 'this' and 'inMat' with result stored
       in 'result'.
@@ -170,8 +135,14 @@ class SSMat {
   /** Return the row-numbers contained in this SSMat. */
   feiArray<int>& getRowNumbers() { return( *rowNumbers_ ); }
 
+  /** Return the row-numbers contained in this SSMat. */
+  const feiArray<int>& getRowNumbers() const { return( *rowNumbers_ ); }
+
   /** Return the rows for this SSMat. */
   feiArray<SSVec*>& getRows() { return( *rows_ ); }
+
+  /** Return the rows for this SSMat. */
+  const feiArray<SSVec*>& getRows() const { return( *rows_ ); }
 
   /** Return a specified row, or NULL if the specified row doesn't exist. If
       the default argument create_if_necessary is true, return a newly created

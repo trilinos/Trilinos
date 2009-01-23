@@ -316,7 +316,7 @@ int snl_fei::RecordMsgHandler::packEqnNumbersMsg(int destProc,
     int ID = *id_iter;
     fei::Record* rec = recordCollection_->getRecordWithID(ID);
 
-    int len = rec->getFieldMask()->getNumIndices();
+    len = rec->getFieldMask()->getNumIndices();
 
     msg[offset++] = ID;
     msg[offset++] = rec->getNumber();

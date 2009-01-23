@@ -6,19 +6,19 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef _snl_fei_VectorTraits_hpp_
-#define _snl_fei_VectorTraits_hpp_
+#ifndef _fei_VectorTraits_hpp_
+#define _fei_VectorTraits_hpp_
 
 #include <fei_macros.hpp>
 
-namespace snl_fei {
+namespace fei {
 
   /** Define a struct of vector access traits. The fei vector implementation
-      class snl_fei::Vector is essentially a filter which passes data to
+      class fei::Vector is essentially a filter which passes data to
       library-specific vector objects (such as Trilinos/Epetra's
       Epetra_MultiVector).
-      snl_fei::Vector is a template, and the template parameter is the vector
-      object. In order to use an arbitrary vector object with snl_fei::Vector,
+      fei::Vector is a template, and the template parameter is the vector
+      object. In order to use an arbitrary vector object with fei::Vector,
       it is necessary to define a specialization of this VectorTraits
       struct for the vector object.
 
@@ -108,6 +108,6 @@ namespace snl_fei {
       static int globalAssemble(T* vec);
 
     };//struct VectorTraits
-}//namespace snl_fei
+}//namespace fei
 
-#endif // _snl_fei_VectorTraits_hpp_
+#endif // _fei_VectorTraits_hpp_

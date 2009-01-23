@@ -15,6 +15,10 @@
 #include <fei_Logger.hpp>
 #include <fei_SSVec.hpp>
 #include <fei_SSMat.hpp>
+#include <fei_FillableVec.hpp>
+#include <fei_FillableMat.hpp>
+#include <fei_CSVec.hpp>
+#include <fei_CSRMat.hpp>
 
 namespace fei {
   class MatrixGraph;
@@ -27,6 +31,10 @@ namespace fei {
     //@{ \name Constructors
     Reducer(fei::SharedPtr<SSMat> globalSlaveDependencyMatrix,
             fei::SharedPtr<SSVec> g_vector,
+            MPI_Comm comm);
+
+    Reducer(fei::SharedPtr<FillableMat> globalSlaveDependencyMatrix,
+            fei::SharedPtr<FillableVec> g_vector,
             MPI_Comm comm);
 
     Reducer(fei::SharedPtr<fei::MatrixGraph> matrixGraph);
@@ -152,18 +160,16 @@ namespace fei {
                              int vectorIndex,
                              fei::Vector& feivec);
 
-    std::vector<int> getSlaveMasterEqns(int slaveEqn);
-    bool isSlaveEqn(int unreducedEqn);
-    bool isSlaveCol(int unreducedEqn);
+    void getSlaveMasterEqns(int slaveEqn, std::vector<int>& masterEqns);
+    bool isSlaveEqn(int unreducedEqn) const;
+    bool isSlaveCol(int unreducedEqn) const;
 
     /** Given an equation-number in the caller's unreduced index-space,
       return the corresponding equation in the reduced space.
       If unreducedEqn is a slave, an exception will be thrown.
     */
-    int translateToReducedEqn(int unreducedEqn);
-    int translateFromReducedEqn(int reduced_eqn);
-    void translateSSMatToReducedEqns(SSMat& mat);
-    void translateSSVecToReducedEqns(SSVec& vec);
+    int translateToReducedEqn(int unreducedEqn) const;
+    int translateFromReducedEqn(int reduced_eqn) const;
     void assembleReducedGraph(fei::Graph* graph,
                               bool global_gather=true);
     void assembleReducedGraph(fei::SparseRowGraph* srgraph);
@@ -171,21 +177,21 @@ namespace fei {
     void assembleReducedVector(bool soln_vector,
                                fei::Vector& feivec,
                                bool sum_into=true);
-    void addSSMatToGraph(SSMat& mat, fei::Graph* graph);
-    void addSSMatToMatrix(SSMat& mat, bool sum_into,
-                          fei::Matrix& matrix);
+
     std::vector<int>& getLocalReducedEqns();
 
     void initialize();
    private:
     void expand_work_arrays(int size);
 
-    fei::SharedPtr<SSMat> D_;
+    fei::CSRMat csrD_;
     int* slavesPtr_;
-    SSMat Kii_, Kid_, Kdi_, Kdd_, tmpMat1_, tmpMat2_;
-    SSVec fi_, fd_, xi_, xd_, tmpVec1_, tmpVec2_;
+    fei::FillableMat Kii_, Kid_, Kdi_, Kdd_;
+    fei::FillableVec fi_, fd_, xi_, xd_;
+    fei::CSRMat tmpMat1_, tmpMat2_;
+    fei::CSVec tmpVec1_, tmpVec2_;
 
-    fei::SharedPtr<SSVec> g_;
+    fei::CSVec csg_;
     bool g_nonzero_;
 
     std::vector<int> localUnreducedEqns_;

@@ -53,7 +53,6 @@ AztecDMSR_Matrix::AztecDMSR_Matrix(Aztec_Map& map, int* update,
     bindx(NULL),
     rowLengths_(NULL),
     nnzeros_(0),
-    maxRowLen_(0),
     N_update_(map.localSize()),
     update_(NULL),
     update_index_(NULL),
@@ -102,7 +101,6 @@ AztecDMSR_Matrix::AztecDMSR_Matrix(const AztecDMSR_Matrix& src)
     bindx(NULL),
     rowLengths_(NULL),
     nnzeros_(src.nnzeros_),
-    maxRowLen_(src.maxRowLen_),
     N_update_(src.N_update_),
     update_(NULL),
     update_index_(NULL),
@@ -549,11 +547,27 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
 
   //Now for the harder (but more important) case where isFilled_ == true.
 
-  if (maxRowLen_+2*numCols > tmp_array_len_) {
-    expand_array(tmp_array_, tmp_array_len_, maxRowLen_+2*numCols);
+  //first compute max-row-length:
+  int maxRowLen = 0;
+  for(int i=0; i<numRows; ++i) {
+    int row = rows[i];
+    int localRow;
+    if (!inUpdate(row, localRow)) {
+      FEI_CERR << "AztecDMSR_Matrix::sumIntoRow: ERROR row " << row
+         << " not in local update set [" << update_[0] << " ... "
+         << update_[N_update_-1] << "]." << FEI_ENDL;
+      return(-1);
+    }
+
+    int rowlen = bindx[localRow+1]-bindx[localRow];
+    if (maxRowLen < rowlen) maxRowLen = rowlen;
   }
 
-  int* incols = &tmp_array_[maxRowLen_];
+  if (maxRowLen+2*numCols > tmp_array_len_) {
+    expand_array(tmp_array_, tmp_array_len_, maxRowLen+2*numCols);
+  }
+
+  int* incols = &tmp_array_[maxRowLen];
   int* indirect = incols+numCols;
 
   for(int jj=0; jj<numCols; ++jj) {
@@ -577,9 +591,9 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
     int jStart = bindx[localRow];
     double* rowCoefs = val+jStart;
     int* rowColInds = bindx+jStart;
-    int rowLength = bindx[localRow+1]-jStart;
+    int rowLen= bindx[localRow+1]-jStart;
 
-    for(int jj=0; jj<rowLength; ++jj) {
+    for(int jj=0; jj<rowLen; ++jj) {
       ADMSR_GET_GLOBAL_COL(tmp_array_[jj], rowColInds[jj]);
     }
 
@@ -597,7 +611,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
 
     //rowOffset is the offset into the row at which incol appears.
 
-    int rowOffset = snl_fei::binarySearch<int>(incol, tmp_array_, rowLength);
+    int rowOffset = snl_fei::binarySearch<int>(incol, tmp_array_, rowLen);
     if (rowOffset < 0) {
        FEI_CERR << "AztecDMSR_Matrix::sumIntoRow, ERROR: "
              << "row " << row << ", col not found: "
@@ -620,7 +634,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
 
       while(tmp_array_[rowOffset] != incol) {
         ++rowOffset;
-        if (rowOffset >= rowLength) {
+        if (rowOffset >= rowLen) {
           FEI_CERR << "AztecDMSR_Matrix::sumIntoRow, ERROR, col "
              << incol << " not found in row " << row << FEI_ENDL;
           return(-1); 
@@ -983,7 +997,6 @@ void AztecDMSR_Matrix::fillComplete() {
     orderingUpdate_ = new int[N_update_];
     for(int ii=0; ii<N_update_; ii++) {
       orderingUpdate_[update_index_[ii]] = ii;
-      if (rowLengths_[ii] > maxRowLen_) maxRowLen_ = rowLengths_[ii];
     }
 
     azTransformed_ = true;

@@ -13,18 +13,18 @@
 //IMPORTANT NOTE: Make sure that wherever this file is included from, it
 //appears BEFORE any include of fei_Vector_Impl.hpp or fei_Matrix_Impl.hpp !!!
 //
-#include <snl_fei_MatrixTraits.hpp>
+#include <fei_MatrixTraits.hpp>
 #include <snl_fei_BlockMatrixTraits.hpp>
 #include <fei_VectorTraits_Epetra.hpp>
 #include <fei_Include_Trilinos.hpp>
 #include <fei_Vector_Impl.hpp>
 
-namespace snl_fei {
+namespace fei {
   /** Declare an Epetra_CrsMatrix specialization of the
-      snl_fei::MatrixTraits struct.
+      fei::MatrixTraits struct.
 
       This allows Epetra_CrsMatrix to be used as the template parameter
-      of the snl_fei::Matrix class.
+      of the fei::Matrix class.
   */
   template<>
   struct MatrixTraits<Epetra_CrsMatrix> {
@@ -123,12 +123,14 @@ namespace snl_fei {
     }
 
   };//struct MatrixTraits<Epetra_CrsMatrix>
+}//namespace fei
 
+namespace snl_fei {
   /** Declare an Epetra_VbrMatrix specialization of the
       snl_fei::BlockMatrixTraits struct.
 
       This allows Epetra_VbrMatrix to be used as the template parameter
-      for the snl_fei::Matrix class.
+      for the fei::Matrix class.
   */
   template<>
   struct BlockMatrixTraits<Epetra_VbrMatrix> {
@@ -324,4 +326,4 @@ namespace snl_fei {
     }
   };//struct BlockMatrixTraits<Epetra_VbrMatrix>
 }//namespace snl_fei
-#endif // _MatrixTraits_Epetra_h_
+#endif // _fei_MatrixTraits_Epetra_hpp_

@@ -266,13 +266,6 @@ void test_Utils_feiArray()
     throw std::runtime_error("feiArray::insert test 3 failed.");
   }
 
-  feiArray<int> arrayView;
-  arrayView.setInternalData(array.length(), array.length(),
-                                     array.dataPtr());
-  if (arrayView != array) {
-    throw std::runtime_error("feiArray::setInternalData test failed.");
-  }
-
   int find_index = array.find(-999);
   if (find_index >= 0) {
     throw std::runtime_error("feiArray::find test failed.");
