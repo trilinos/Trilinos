@@ -208,7 +208,7 @@ C) Configuring
         The command-line option just before the number of processes to use
         <NP>.  This is given defaults based on the name of ${MPI_EXEC}.
 
-      MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING=
+      -D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING="arg1 arg2 ... argn"
 
         Other command-line arguments that must come *before* the num-proces
         argument.  The default is empty "".
