@@ -1,15 +1,8 @@
 EXTRA_ARGS=$@
 
-export MPI_BASE_DIR=/usr/lib64/openmpi/1.2.5-gcc
-
-# Have to set this to get TRY_RUN(...) commands to work
-export LD_LIBRARY_PATH=$MPI_BASE_DIR/lib:$LD_LIBRARY_PATH
-
 cmake \
--D CMAKE_BUILD_TYPE:STRING=RELEASE \
--D CMAKE_CXX_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpiCC \
--D CMAKE_C_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpicc \
--D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran \
+-D TPL_ENABLE_MPI:BOOL=ON \
+  -D MPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.5-gcc \
 -D CMAKE_Fortran_FLAGS:STRING="-O5" \
 -D MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind \
 -D DART_TESTING_TIMEOUT:STRING=600 \
@@ -17,25 +10,13 @@ cmake \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
+-D EpetraExt_BUILD_BDF:BOOL=ON \
 -D TPL_ENABLE_Boost:BOOL=ON \
--D TPL_ENABLE_MPI:BOOL=ON \
-  -D MPI_BASE_DIR:PATH="$MPI_BASE_DIR" \
-  -D MPIEXEC_MAX_NUMPROCS:STRING=4 \
 -D TPL_ENABLE_ParMETIS:BOOL=ON \
   -D ParMETIS_LIBRARY_DIRS:PATH=/home/kddevin/code/ParMETIS3_1 \
 -D TPL_ENABLE_Scotch:BOOL=ON \
   -D Scotch_INCLUDE_DIRS:PATH=/home/kddevin/code/scotch_5.1/include \
   -D Scotch_LIBRARY_DIRS:PATH=/home/kddevin/code/scotch_5.1/lib \
--D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
--D EpetraExt_BUILD_BDF:BOOL=ON \
 $EXTRA_ARGS \
 ../../../../Trilinos
-
-# 2008/12/17: rabartl: Above, I have to manually set the C++ and C
-# compilers because the default found by the built-in CMake module
-# FindMPI.cmake does not seem to work.  I also have to set the
-# LD_LIBRARY_PATH because the compiler will not work without these in
-# the compiler checks.  I added the option MPI_BASE_DIR that seems to
-# be able to successfully find the MPI libraries, include files, and
-# MPI executable.  The whole MPI handling needs to be gutted and
-# rewritten from scratch because it is not working well at all.

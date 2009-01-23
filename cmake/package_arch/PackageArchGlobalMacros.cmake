@@ -10,15 +10,18 @@ INCLUDE(AdvancedOption)
 INCLUDE(CMakeBuildTypesList)
 INCLUDE(PackageArchSetupMPI)
 
+
 #
 # Below, we change the value of user cache values like
-# ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}, ${PACKAGE_NAME}_ENABLE_TESTS, and
-# ${PACKAGE_NAME}_ENABLE_EXAMPLES by just setting them to regular variables
-# instead of putting them back on the cache.  That means that they are used as
-# global variables but we don't want to disturb the cache since that would
-# change the behavior for future invocations of cmake.  Because of this, these
-# macros must all be called from the top-level ${PROJECT_NAME} CMakeLists.txt file
-# and macros must call macros as not to change the variable scope.
+# ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME},
+# ${PACKAGE_NAME}_ENABLE_TESTS, and ${PACKAGE_NAME}_ENABLE_EXAMPLES by
+# just setting them to regular variables that live in the top scope
+# instead of putting them back in the cache.  That means that they are
+# used as global variables but we don't want to disturb the cache
+# since that would change the behavior for future invocations of cmake
+# (which is very confusing).  Because of this, these macros must all
+# be called from the top-level ${PROJECT_NAME} CMakeLists.txt file and
+# macros must call macros as not to change the variable scope.
 #
 # I had to do it this way in order to be able to get the right behavior which
 # is:
@@ -212,20 +215,7 @@ MACRO(PACKAGE_ARCH_PROCESS_TPLS_LISTS)
     LIST(APPEND ${PROJECT_NAME}_TPLS ${TPL})
     MULTILINE_SET(DOCSTR
       "Enable support for the TPL ${TPL} in all supported ${PROJECT_NAME} packages."
-      "  This can be set to 'ON', 'OFF', or left empty ''.  If Set to 'ON',"
-      " then support for the TPL ${TPL} will be turned on by default in all packages"
-      " that have optional support for this TPL.  However, the TPL will really"
-      " only be enabled if there is at least one package having a dependency on the"
-      " TPL.  If set to 'OFF', then all packages that have a required dependency on"
-      " the TPL ${TPL} will be disabled and optional support for the TPL in all"
-      " enabled packages will be turned off.  If left empty '', then other logic will"
-      " be used to determine if the TPL ${TPL} should be enabled or not.  For example,"
-      " if a package is enabled that has a required dependency on the TPL, then the"
-      " TPL will be enabled and will be searched for.  If the TPL is enabled after"
-      " all of this, then the user may need to set the location of the TPL in the"
-      " variables TPL_${TPL}_INCLUDE_DIRS, TPL_${TPL}_LIBRARY_DIRS, and/or"
-      " TPL_${TPL}_LIBRARIES.  For many of the TPLs, this information can be found"
-      " out automatically by looking in standard locations."
+      "  This can be set to 'ON', 'OFF', or left empty ''."
       )
     SET(TPL_ENABLE_${TPL} ${TPL_ENABLED} CACHE STRING ${DOCSTR})
     # 2008/11/25: rabartl: Above, we use the prefix TPL_ instead of ${PROJECT_NAME}__ in order to
@@ -417,28 +407,19 @@ MACRO(PACKAGE_ARCH_INSERT_STANDARD_PACKAGE_OPTIONS PACKAGE_NAME PACKAGE_ENABLE)
 
   MULTILINE_SET(DOCSTR
     "Enable the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave"
-    " empty to allow for other logic to decide.  If explicitly set to 'OFF'"
-    " then all packages that have a required dependency on this package will"
-    " be disabled and will override other explicit enables.   Look at the output"
-    " from configure to see what packages are disabled in this case.  If set to 'ON',"
-    " then the package ${PACKAGE_NAME} will be enabled if at all possible (i.e."
-    " unless some other required package was explicitly disabled).  If left empty ''"
-    " then other logic will be used to determine if the package will be enabled or"
-    " disabled."
+    " empty to allow for other logic to decide."
     )
   SET( ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME} "${PACKAGE_ENABLE}" CACHE STRING ${DOCSTR})
 
   MULTILINE_SET(DOCSTR
     "Build tests for the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty ''"
-     " to allow for other logic to decide.  This option only takes effect if the package"
-     " is enabled after all of the enable/disable package logic has been applied."
+     " to allow for other logic to decide."
      )
   SET( ${PACKAGE_NAME}_ENABLE_TESTS "" CACHE STRING ${DOCSTR})
 
   MULTILINE_SET(DOCSTR
     "Build examples for the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty ''"
-     " to allow for other logic to decide.  This option only takes effect if the package"
-     " is enabled after all of the enable/disable package logic has been applied."
+     " to allow for other logic to decide."
      )
   SET( ${PACKAGE_NAME}_ENABLE_EXAMPLES "" CACHE STRING ${DOCSTR})
 
@@ -760,7 +741,9 @@ MACRO(PACKAGE_ARCH_PRIVATE_POSTPROCESS_OPTIONAL_PACKAGE_ENABLE PACKAGE_NAME OPTI
 
   IF("${${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE}}" STREQUAL "")
     IF(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME} AND ${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE})
-      MESSAGE(STATUS "Setting ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE}=ON since ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON AND ${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE}=ON")
+      MESSAGE(STATUS "Setting ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE}=ON"
+       " since ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON AND"
+       " ${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE}=ON")
       SET(${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE} ON)
     ENDIF()
   ENDIF()
@@ -784,7 +767,8 @@ MACRO(PACKAGE_ARCH_PRIVATE_POSTPROCESS_OPTIONAL_TPL_ENABLE PACKAGE_NAME OPTIONAL
 
   IF("${${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL}}" STREQUAL "")
     IF(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME} AND TPL_ENABLE_${OPTIONAL_DEP_TPL})
-      MESSAGE(STATUS "Setting ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL}=ON since TPL_ENABLE_${OPTIONAL_DEP_TPL}=ON")
+      MESSAGE(STATUS "Setting ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL}=ON"
+        " since TPL_ENABLE_${OPTIONAL_DEP_TPL}=ON")
       SET(${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL} ON)
     ENDIF()
   ENDIF()
@@ -923,7 +907,8 @@ MACRO(PACKAGE_ARCH_PRIVATE_ENABLE_FORWARD_PACKAGE FORWARD_DEP_PACKAGE_NAME PACKA
   # Enable the forward package if it is not already set to ON or OFF
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME})
   IF(${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME} STREQUAL "")
-    MESSAGE(STATUS "Setting ${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME}=ON because ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON")
+    MESSAGE(STATUS "Setting ${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME}=ON"
+      " because ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON")
     ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME})
     SET(${PROJECT_NAME}_ENABLE_${FORWARD_DEP_PACKAGE_NAME} ON)
   ENDIF()
@@ -964,7 +949,8 @@ ENDMACRO()
 MACRO(PACKAGE_ARCH_PRIVATE_ENABLE_DEP_PACKAGE PACKAGE_NAME DEP_PACKAGE_NAME)
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
   IF(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME} STREQUAL "")
-    MESSAGE(STATUS "Setting ${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON because ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON")
+    MESSAGE(STATUS "Setting ${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON"
+      " because ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON")
     ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
     SET(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME} ON)
   ENDIF()
@@ -973,7 +959,8 @@ ENDMACRO()
 MACRO(PACKAGE_ARCH_PRIVATE_ENABLE_DEP_TPL PACKAGE_NAME DEP_TPL_NAME)
   ASSERT_DEFINED(TPL_ENABLE_${DEP_TPL_NAME})
   IF(TPL_ENABLE_${DEP_TPL_NAME} STREQUAL "")
-    MESSAGE(STATUS "Setting TPL_ENABLE_${DEP_TPL_NAME}=ON because it is required by the enabled package ${PACKAGE_NAME}")
+    MESSAGE(STATUS "Setting TPL_ENABLE_${DEP_TPL_NAME}=ON because"
+      " it is required by the enabled package ${PACKAGE_NAME}")
     ASSERT_DEFINED(TPL_ENABLE_${DEP_TPL_NAME})
     SET(TPL_ENABLE_${DEP_TPL_NAME} ON)
   ENDIF()
@@ -1174,7 +1161,8 @@ MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
   ENDFOREACH()
 
   MESSAGE("")
-  MESSAGE("Disabling forward required packages and optional intra-package support that have a dependancy on explicitly disabled packages ...")
+  MESSAGE("Disabling forward required packages and optional intra-package"
+    " support that have a dependancy on explicitly disabled packages ...")
   MESSAGE("")
   FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
     PACKAGE_ARCH_DISABLE_FORWARD_REQUIRED_DEP_PACKAGES(${PACKAGE})
@@ -1232,7 +1220,8 @@ MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
   ENDFOREACH()
   
   MESSAGE("")
-  MESSAGE("Enabling all optional intra-package enables that are not explicitly disabled if both sets of packages are enabled ...")
+  MESSAGE("Enabling all optional intra-package enables that are not explicitly"
+    " disabled if both sets of packages are enabled ...")
   MESSAGE("")
   FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
     PACKAGE_ARCH_POSTPROCESS_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})

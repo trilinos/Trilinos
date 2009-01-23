@@ -20,7 +20,7 @@ MACRO(PACKAGE_ARCH_FIND_MPI_COMPILER LANG)
   IF (${PROJECT_NAME}_ENABLE_${LANG})
     IF (CMAKE_${LANG}_COMPILER)
       MESSAGE(STATUS "Leaving current CMAKE_${LANG}_COMPILER="
-        "${CMAKE_${LANG}_COMPILER} alone since it was alredy set!")
+        "${CMAKE_${LANG}_COMPILER} since it is already set!")
     ELSE()
       FIND_PROGRAM_PLUS(
         MPI_${LANG}_COMPILER
@@ -33,7 +33,7 @@ MACRO(PACKAGE_ARCH_FIND_MPI_COMPILER LANG)
       SET(CMAKE_${LANG}_COMPILER "${MPI_${LANG}_COMPILER}"
         CACHE FILEPATH
         "${LANG} compiler overridden by MPI_${LANG}_COMPILER")
-      PRINT_VAR(MPI_${LANG}_COMPILER)
+      PRINT_VAR(CMAKE_${LANG}_COMPILER)
     ENDIF()
   ENDIF()
 ENDMACRO()

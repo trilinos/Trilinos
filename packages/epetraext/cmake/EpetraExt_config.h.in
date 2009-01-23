@@ -3,35 +3,20 @@
 /* Define if want to build epetraext-block */
 #cmakedefine HAVE_BLOCK
 
-/* define if bool is a built-in type */
-#cmakedefine HAVE_BOOL
-
 /* Define if want to build epetraext-btf */
 #cmakedefine HAVE_BTF
 
 /* Define if want to build epetraext-coloring */
 #cmakedefine HAVE_COLORING
 
-/* Define if want to build epetraext-examples */
-#cmakedefine HAVE_EPETRAEXT_EXAMPLES
-
 /* Define if want to build epetraext-hdf5 */
 #cmakedefine HAVE_EPETRAEXT_HDF5
-
-/* Define if want to build epetraext-tests */
-#cmakedefine HAVE_EPETRAEXT_TESTS
 
 /* Define if want to build with epetraext enabled */
 #cmakedefine HAVE_EPETRAEXT_TRIUTILS
 
-/* Define if want to build examples */
-#cmakedefine HAVE_EXAMPLES
-
 /* Define if want to build epetraext-experimental */
 #cmakedefine HAVE_EXPERIMENTAL
-
-/* Define if you want to build export makefiles. */
-#cmakedefine HAVE_EXPORT_MAKEFILES
 
 /* Define if want to build with fatal_messages enabled */
 #cmakedefine HAVE_FATAL_MESSAGES
@@ -39,17 +24,11 @@
 /* Define if want to build with format_io enabled */
 #cmakedefine HAVE_FORMAT_IO
 
-/* Define if you are using gnumake - this will shorten your link lines. */
-#cmakedefine HAVE_GNUMAKE
-
 /* Define if want to build epetraext-graphreorderings */
 #cmakedefine HAVE_GRAPH_REORDERINGS
 
 /* Define if want to build epetraext-inout */
 #cmakedefine HAVE_INOUT
-
-/* Define if want to build libcheck */
-#cmakedefine HAVE_LIBCHECK
 
 /* Define to 1 if you have the `eng' library (-leng). */
 #cmakedefine HAVE_LIBENG
@@ -78,9 +57,6 @@
 /* Define if want to build epetraext-restrict */
 #cmakedefine HAVE_RESTRICT
 
-/* Define if want to build tests */
-#cmakedefine HAVE_TESTS
-
 /* Define if want to build with threads enabled */
 #cmakedefine HAVE_THREADS
 
@@ -95,18 +71,3 @@
 
 /* define if STL map key is required to be const */
 #cmakedefine MUST_CONST_STL_MAP_KEY
-
-/* Define to the address where bug reports for this package should be sent. */
-#cmakedefine PACKAGE_BUGREPORT
-
-/* Define to the full name of this package. */
-#cmakedefine PACKAGE_NAME
-
-/* Define to the full name and version of this package. */
-#cmakedefine PACKAGE_STRING
-
-/* Define to the one symbol short name of this package. */
-#cmakedefine PACKAGE_TARNAME
-
-/* Define to the version of this package. */
-#cmakedefine PACKAGE_VERSION

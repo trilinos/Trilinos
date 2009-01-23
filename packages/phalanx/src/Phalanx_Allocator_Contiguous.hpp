@@ -85,8 +85,13 @@ namespace PHX {
     //! Called after all byte requirements are registered.  Allocates the contiguous array.
     void setup()
     {
-	chunk_ = Teuchos::arcp<char>(total_bytes_);
-	setup_called_ = true;
+      if (total_bytes_ != 0) {
+        chunk_ = Teuchos::arcp<char>(total_bytes_);
+      }
+      else {
+        chunk_ = Teuchos::null;
+      }
+      setup_called_ = true;
     }
 
     template<class DataT> 
