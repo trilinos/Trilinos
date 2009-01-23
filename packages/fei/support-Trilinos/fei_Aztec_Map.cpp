@@ -28,11 +28,11 @@
 
 
 //==============================================================================
-Aztec_Map::Aztec_Map(int globalSize, int localSize,
-                     int localOffset, MPI_Comm comm)
-  : globalSize_(globalSize),
-    localSize_(localSize),
-    localOffset_(localOffset),
+Aztec_Map::Aztec_Map(int globalSz, int localSz,
+                     int localOffs, MPI_Comm comm)
+  : globalSize_(globalSz),
+    localSize_(localSz),
+    localOffset_(localOffs),
     comm_(comm)
 {
     checkInput();

@@ -29,12 +29,12 @@
 
 
 //==============================================================================
-Aztec_BlockMap::Aztec_BlockMap(int globalSize, int localSize, int localOffset,
+Aztec_BlockMap::Aztec_BlockMap(int globalSz, int localSz, int localOffs,
                           MPI_Comm comm,
                           int numGlobalBlocks, int numLocalBlocks,
                           int localBlockOffset, int* blockSizes)
 
-  : Aztec_Map(globalSize, localSize, localOffset, comm),
+  : Aztec_Map(globalSz, localSz, localOffs, comm),
     numGlobalBlocks_(numGlobalBlocks),
     numLocalBlocks_(numLocalBlocks),
     localBlockOffset_(localBlockOffset)

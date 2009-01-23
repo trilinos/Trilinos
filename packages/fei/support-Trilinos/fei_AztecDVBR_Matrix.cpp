@@ -833,7 +833,7 @@ bool AztecDVBR_Matrix::writeToFile(const char *fileName) const {
 
                int offset = Amat_->indx[ind];
                for(int i=0; i<nnzPts; i++) {
-                  fprintf(file, "%20.13le ", Amat_->val[offset+i]);
+                  fprintf(file, "%20.13e ", Amat_->val[offset+i]);
                }
                fprintf(file, "\n");
             }
