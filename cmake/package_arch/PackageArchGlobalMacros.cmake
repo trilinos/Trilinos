@@ -8,6 +8,7 @@ INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
 INCLUDE(CMakeBuildTypesList)
+INCLUDE(PackageArchSetupMPI)
 
 #
 # Below, we change the value of user cache values like
@@ -158,6 +159,10 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     "Enable the Fortran compiler and related code"
     ${${PROJECT_NAME}_ENABLE_Fortran_DEFAULT} )
   
+  ADVANCED_OPTION(TPL_ENABLE_MPI
+    "Enable support for MPI (see MPI_XXX options)"
+    OFF )
+  
   ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
   
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
@@ -174,7 +179,6 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     CACHE PATH
     "Location where the runtime DLLs will be installed.  If given as an absolute path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
     )
-  
   
   MARK_AS_ADVANCED(BUILD_TESTING)
   MARK_AS_ADVANCED(CMAKE_BACKWARDS_COMPATIBILITY)
@@ -1257,6 +1261,7 @@ ENDMACRO()
 
 MACRO(PACKAGE_ARCH_SETUP_ENV)
 
+
   # Set to release build by default
   
   IF (NOT CMAKE_BUILD_TYPE)
@@ -1271,16 +1276,26 @@ MACRO(PACKAGE_ARCH_SETUP_ENV)
   ENDIF()
   PRINT_VAR(CMAKE_BUILD_TYPE)
 
+  # Set up MPI if MPI is being used
+
+  ASSERT_DEFINED(TPL_ENABLE_MPI)
+  IF (TPL_ENABLE_MPI)
+    PACKAGE_ARCH_SETUP_MPI()
+  ENDIF()
+
   # Enable compilers
   
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_C)
   IF (${PROJECT_NAME}_ENABLE_C)
     ENABLE_LANGUAGE(C)
   ENDIF()
   
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX)
   IF (${PROJECT_NAME}_ENABLE_CXX)
     ENABLE_LANGUAGE(CXX)
   ENDIF()
   
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Fortran)
   IF (${PROJECT_NAME}_ENABLE_Fortran)
     ENABLE_LANGUAGE(Fortran)
   ENDIF()

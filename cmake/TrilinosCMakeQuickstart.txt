@@ -120,6 +120,105 @@ C) Configuring
     -D CMAKE_C_FLAGS:STRING="-04 --funrool-loops" \
     -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
 
+(*) Configuring Trilinos for MPI support:
+
+  To enable MPI support you must minimally:
+
+    -D TPL_ENABLE_MPI:BOOL=ON
+
+  There is built-in logic to try to find the various MPI components on your
+  system but you can override (or make suggestions) with:
+
+    -D MPI_BASE_DIR:PATH="path"
+
+      Base path where a standard MPI install in found which will have
+      the subdirs 'bin', 'libs', 'include' etc.
+
+    -D MPI_BIN_DIR:PATH="path1;path2;...;pathn"
+
+      Paths where the MPI executables (e.g. mpiCC, mpicc, mpirun, mpiexec)
+      can be found.  By default this is set to ${MPI_BASE_DIR}/bin if
+      MPI_BASE_DIR is set.
+
+  The value of LD_LIBRARY_PATH will also automatically be set to
+  ${MPI_BASE_DIR}/lib if it exists.  This is needed for the basic compiler
+  tests for some MPI implementations that are installed in non-standard
+  locations.
+
+  a) Configuring build using MPI compiler wrappers:
+
+    The MPI compiler wrappers are turned on by default.  There is built-in
+    logic that will try to find the right compiler wrappers.  However, you can
+    specifically select them by setting:
+
+      -D MPI_[C,CXX_Fortran] COMPILER:FILEPATH="exec_name"
+
+        The name of the MPI C/C++/Fortran compiler wrapper executable.
+        If this is just the name of the program it will be looked for
+        in ${MPI_BIN_DIR} and in other standard locations with that name.
+        If this is an absolute path, then this will be used as
+        CMAKE_[C,CXX,Fortran]_COMPILER to compile and link code.
+
+  b) Confiugring build using raw compilers and flags/libraries:
+
+    While using the MPI compiler wrappers as described above is the preferred
+    way to enable support for MPI, you can also just use the raw compilers and
+    then pass in all of the other information that will be used to compile and
+    link your code.
+
+    To turn off the MPI compiler wrappers, set:
+
+      -D MPI_USE_COMPILER_WRAPPERS:BOOL=ON
+
+    ToDo: Finish documentation on how to set this up after it is fully
+    implemented and tested :-)
+
+  c) Setting up to run MPI programs
+
+    In order to use the ctest program to run MPI tests, you must set the mpi
+    run command and the options it takes.  The built-in logic will try to find
+    the right program and options but you will have to override them in many
+    cases.
+
+    MPI test and example executables are run as:
+
+      ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS} ${MPI_EXEC_NUMPROCS_FLAG} <NP> \
+        ${MPI_EXEC_POST_NUMPROCS_FLAGS} <TEST_EXECUTABLE_PATH> <TEST_ARGS>
+
+    where TEST_EXECUTABLE_PATH, TEST_ARGS, and NP are specific to the test
+    being run.
+
+    The test-independent MPI arguments are:
+
+      -D MPI_EXEC:FILEPATH="exec_name"
+
+        The name of the MPI run command (e.g. mpirun, mpiexec) that is used to
+        run the MPI program.  The can be just the name of the program in which
+        case the full path will be looked for in ${MPI_BIN_DIR} as described
+        above.  If it is an absolute path, it will be used without question.
+
+      -D MPI_EXEC_MAX_NUMPROCS:STRING=4
+
+        The maximum number of processes to allow when setting up and running
+        MPI test and example executables.  The default is set to '4' and only
+        needs to be changed when needed or desired.
+
+      -D MPI_EXEC_NUMPROCS_FLAG:STRING=-np
+
+        The command-line option just before the number of processes to use
+        <NP>.  This is given defaults based on the name of ${MPI_EXEC}.
+
+      MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING=
+
+        Other command-line arguments that must come *before* the num-proces
+        argument.  The default is empty "".
+
+      -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="arg1 arg2 ... argn"
+
+        Other command-line arguments that must come *after* the num-proces
+        argument.  The default is empty "".
+
+
 (*) Configuring Trilinos to build all packages with all tests and examples:
 
     $ ./do-configure \
@@ -163,7 +262,7 @@ C) Configuring
 
     -D TPL_ENABLE_<TPLNAME>:BOOL=ON
 
-  where TPLNAME = Boost, MPI, etc.
+  where TPLNAME = Boost, ParMETIS, etc.
 
   The headers, libraries, and library directories can then be specified with:
 

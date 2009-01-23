@@ -133,7 +133,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
-  TrilinosDep_EnableAllPackages_EnableBoostMPI
-  "-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON -D TPL_ENABLE_Boost:BOOL=ON  -D TPL_ENABLE_MPI:BOOL=ON"
-  "Final set of enabled TPLs:  BLAS LAPACK MPI Boost 4"
+  TrilinosDep_EnableAllPackages_EnableBoostParMETIS
+  "-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON -D TPL_ENABLE_Boost:BOOL=ON  -D TPL_ENABLE_ParMETIS:BOOL=ON"
+  "Final set of enabled TPLs:  BLAS LAPACK Boost ParMETIS 4"
   )

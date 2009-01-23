@@ -11,8 +11,8 @@ INCLUDE(ParseVariableArguments)
 # Function that sets up cache variables for users to specify where to
 # find a TPL's headers and libraries.
 #
-# This function must be called from the top-level scope so that it can
-# set non-global variables that will affect all of the packages.
+# This function only sets global varibles as a way to return state
+# so it can be called from anywhere in the call stack.
 #
 # This function can set up a with header files and/or libraries.
 #

@@ -1,13 +1,9 @@
 EXTRA_ARGS=$@
 
 cmake \
--D CMAKE_CXX_COMPILER:FILEPATH=/usr/local/mpi/bin/mpiCC \
--D CMAKE_C_COMPILER:FILEPATH=/usr/local/mpi/bin/mpicc \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
 -D DART_TESTING_TIMEOUT:STRING=100 \
--D TPL_ENABLE_Boost:BOOL=ON \
 -D TPL_ENABLE_MPI:BOOL=ON \
-  -D MPIEXEC_MAX_NUMPROCS:STRING=4 \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_FORTRAN:BOOL=OFF \
@@ -16,3 +12,10 @@ cmake \
 -D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/mpi/opt \
 $EXTRA_ARGS \
 ../../../Trilinos
+
+
+#-D TPL_ENABLE_Boost:BOOL=ON \
+
+
+#-D CMAKE_CXX_COMPILER:FILEPATH=/usr/local/mpi/bin/mpiCC \
+#-D CMAKE_C_COMPILER:FILEPATH=/usr/local/mpi/bin/mpicc \

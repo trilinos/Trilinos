@@ -5,6 +5,7 @@ INCLUDE(PackageAddExecutableAndTest)
 ADD_SUBDIRECTORY(UnitTest)
 ADD_SUBDIRECTORY(TabularOutputter)
 ADD_SUBDIRECTORY(MemoryManagement)
+ADD_SUBDIRECTORY(Comm)
 
 # Test definitions
 
@@ -14,44 +15,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES cxx_main.cpp
   ARGS -v
   NUM_MPI_PROCS 1
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  DefaultMpiComm_UnitTests  
-  DIRECTORY Comm
-  COMM serial mpi  
-  SOURCES
-    DefaultMpiComm_UnitTests.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
-  )
-PACKAGE_ADD_TEST(
-  DefaultMpiComm_UnitTests
-  DIRECTORY Comm
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  ReduceAllAndScatter_test  
-  DIRECTORY Comm
-  COMM serial mpi  
-  SOURCES ReduceAllAndScatter_test.cpp
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  Comm_test  
-  DIRECTORY Comm
-  COMM serial mpi  
-  SOURCES Comm_test.cpp
-  )
-PACKAGE_ADD_TEST(
-  Comm_test
-  DIRECTORY Comm
-  NAME Comm_test
-  NUM_MPI_PROCS 1-10
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
