@@ -5,9 +5,6 @@ cmake \
 -D CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++ \
 -D CMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc \
 -D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77 \
--D CMAKE_CXX_FLAGS_DEBUG:STRING="-g -O0" \
--D CMAKE_C_FLAGS_DEBUG:STRING="-g -O0" \
--D CMAKE_Fortran_FLAGS_DEBUG:STRING="-g -O0" \
 -D MEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind \
 -D DART_TESTING_TIMEOUT:STRING=600 \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
@@ -20,10 +17,3 @@ cmake \
 -D CMAKE_INSTALL_PREFIX:PATH=/home/rabartl/PROJECTS/install-dir/gcc-4.1.2/trilinos/dev/debug \
 $EXTRA_ARGS \
 ../../../../Trilinos
-
-
-# -D EpetraExt_BUILD_EXPERIMENTAL:BOOL=ON \
-# -D F77_FUNC_:STRING="(name,NAME) name ## __" \
-
-# -D Trilinos_ENABLE_Zoltan:BOOL=OFF \
-

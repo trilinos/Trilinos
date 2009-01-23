@@ -16,14 +16,12 @@ cmake \
 -D CMAKE_CXX_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpiCC \
 -D CMAKE_C_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpicc \
 -D CMAKE_Fortran_COMPILER:FILEPATH=$FORTRAN_COMPILER \
--D CMAKE_CXX_FLAGS_DEBUG:STRING="-g -O0 -ansi -pedantic -Wall" \
 -D MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind \
 -D DART_TESTING_TIMEOUT:STRING=600 \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
--D Trilinos_ENABLE_MPI:BOOL=ON \
 -D TPL_ENABLE_Boost:BOOL=ON \
 -D TPL_ENABLE_MPI:BOOL=ON \
   -D MPI_COMPILER:FILEPATH=$MPI_BASE_DIR/bin/mpiCC \
@@ -34,17 +32,6 @@ cmake \
 -D EpetraExt_BUILD_BDF:BOOL=ON \
 $EXTRA_ARGS \
 ../
-
-
-#-D CMAKE_CXX_FLAGS_RELEASE:STRING="-O3" \
-#-D CMAKE_C_FLAGS_RELEASE:STRING="-O3" \
-#-D CMAKE_Fortran_FLAGS_RELEASE:STRING="-O5" \
-
-#-D TPL_ENABLE_ParMETIS:BOOL=ON \
-#  -D ParMETIS_LIBRARY_DIRS:PATH=/home/kddevin/code/ParMETIS3_1 \
-#-D TPL_ENABLE_Scotch:BOOL=ON \
-#  -D Scotch_INCLUDE_DIRS:PATH=/home/kddevin/code/scotch_5.1/include \
-#  -D Scotch_LIBRARY_DIRS:PATH=/home/kddevin/code/scotch_5.1/lib \
 
 # 2008/12/17: bmpersc: This is a modification of the godel file to
 # work on the scico lan. The mpi executable and compiler path have
