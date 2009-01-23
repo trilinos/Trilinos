@@ -2,8 +2,9 @@
 # Required modules
 INCLUDE(PackageAddExecutableAndTest)
 
-ADD_SUBDIRECTORY(TabularOutputter)
 ADD_SUBDIRECTORY(UnitTest)
+ADD_SUBDIRECTORY(TabularOutputter)
+ADD_SUBDIRECTORY(MemoryManagement)
 
 # Test definitions
 
@@ -63,24 +64,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  MemoryManagement_UnitTests
-  DIRECTORY MemoryManagement
-  SOURCES
-    RCPNodeHandle_UnitTests.cpp
-    RCP_UnitTests.cpp
-    Array_UnitTest_helpers.cpp
-    Array_UnitTests.cpp
-    ArrayView_UnitTests.cpp
-    ArrayRCP_UnitTests.cpp
-    ArrayConversions_UnitTests.cpp
-    TestClasses.cpp
-    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
-  COMM serial mpi  
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
 PACKAGE_ADD_EXECUTABLE(
   DenseMatrix_test  
   COMM serial mpi  
@@ -132,95 +115,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   ARGS -v
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  ArrayRCP_test  
-  COMM serial mpi  
-  SOURCES ArrayRCP_test.cpp
-  DIRECTORY MemoryManagement
-  )
-PACKAGE_ADD_TEST(
-  ArrayRCP_test
-  DIRECTORY MemoryManagement
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  ArrayView_test  
-  COMM serial mpi  
-  SOURCES ArrayView_test.cpp
-  DIRECTORY MemoryManagement
-  )
-PACKAGE_ADD_TEST(
-  ArrayView_test
-  DIRECTORY MemoryManagement
-  NAME ArrayView-test
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  Array_test  
-  COMM serial mpi  
-  SOURCES Array_test.cpp
-  DIRECTORY MemoryManagement
-  )
-PACKAGE_ADD_TEST(
-  Array_test
-  DIRECTORY MemoryManagement
-  NAME Array_test
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  Ptr_test  
-  COMM serial mpi  
-  SOURCES Ptr_test.cpp TestClasses.cpp
-  DIRECTORY MemoryManagement
-  )
-PACKAGE_ADD_TEST(
-  Ptr_test
-  DIRECTORY MemoryManagement
-  NAME Ptr_test
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  RCP_test  
-  COMM serial mpi  
-  SOURCES RCP_test.cpp TestClasses.cpp
-  DIRECTORY MemoryManagement
-  )
-PACKAGE_ADD_TEST(
-  RCP_test
-  DIRECTORY MemoryManagement
-  NAME RCP_test
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  Tuple_test  
-  COMM serial mpi  
-  SOURCES Tuple_test.cpp 
-  DIRECTORY MemoryManagement
-  )
-PACKAGE_ADD_TEST(
-  Tuple_test
-  DIRECTORY MemoryManagement
-  NAME Tuple_test
-  NUM_MPI_PROCS 1
-  COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
   

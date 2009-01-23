@@ -28,6 +28,16 @@ MPI_BASE_DIR and everything else should be figured out automatically.  See the
 email thread to cmake@cmake.org for a discussion of this and the
 trilinos-framework email list.
 
+(*) [???] Experiment with using cmake -P <script_file> as a
+platform-independent scripting language.  We can use this for creating
+platform-independent scripts that will allow us to run on any platform.  This
+will also allow us to append more types of tests on to an existing test like
+running the compareOutput program.
+
+(*) [???] Create new PACKAGE_ADD_ADVANCED_TEST(...) function that will group
+together a set of commands (with various pass/fail critieria) and then run as
+a CMake -P script.
+
 (*) [???] Revise TPL support so that PACKAGE1_ENABLE_TPL1 will enable the TPL
 only for PACKAGE1 and not for any of the other packages (see bug 4298).
 
@@ -39,12 +49,6 @@ will be consistent with the above mentioned TPL behavior.
 MPI_OPT build directory and enable only "Primary Stable" code.  This will need
 a minimal configuration script to pull in only the basic info needed in order
 to find compilers, MPI, BLAS, and LAPACK and nothing else.
-
-(*) [???] Experiment with using cmake -P <script_file> as a
-platform-independent scripting language.  We can use this for creating
-platform-independent scripts that will allow us to run on any platform.  This
-will also allow us to append more types of tests on to an existing test like
-running the compareOutput program.
 
 (*) [???] Add installation testing for the CMake build system.  Here, we will
 build and install libraries, and then configure the tests and examples in a

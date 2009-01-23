@@ -7,6 +7,7 @@ INCLUDE(GlobalNullSet)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
+INCLUDE(CMakeBuildTypesList)
 
 #
 # Below, we change the value of user cache values like
@@ -1255,6 +1256,20 @@ ENDMACRO()
 #
 
 MACRO(PACKAGE_ARCH_SETUP_ENV)
+
+  # Set to release build by default
+  
+  IF (NOT CMAKE_BUILD_TYPE)
+    MESSAGE(STATUS "Setting CMAKE_BUILD_TYPE=RELEASE since it was not set ...")
+    SET(CMAKE_BUILD_TYPE RELEASE)
+  ELSE()
+    LIST(FIND CMAKE_BUILD_TYPES_LIST ${CMAKE_BUILD_TYPE} BUILD_TYPE_IDX)
+    IF (BUILD_TYPE_IDX EQUAL -1)
+      MESSAGE(SEND_ERROR "Error, the given CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+        " is not in the list of valid values \"${CMAKE_BUILD_TYPES_LIST}\"!")
+    ENDIF()
+  ENDIF()
+  PRINT_VAR(CMAKE_BUILD_TYPE)
 
   # Enable compilers
   

@@ -709,6 +709,9 @@ inline
 Teuchos::ArrayRCP<T>
 Teuchos::arcp( typename ArrayRCP<T>::Ordinal size )
 {
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_INEQUALITY( size, >, 0 );
+#endif
   return ArrayRCP<T>(new T[size],0,size-1,true);
 }
 
@@ -911,9 +914,10 @@ Teuchos::ArrayRCP<T2>
 Teuchos::arcp_reinterpret_cast(const ArrayRCP<T1>& p1)
 {
   typedef typename ArrayRCP<T1>::Ordinal Ordinal;
-  const int sizeOfT2ToT1 = sizeof(T2)/sizeof(T1);
-  Ordinal lowerOffset2 = p1.lowerOffset() / sizeOfT2ToT1;
-  Ordinal upperOffset2 = (p1.upperOffset()+1) / sizeOfT2ToT1 -1;
+  const int sizeOfT1 = sizeof(T1);
+  const int sizeOfT2 = sizeof(T2);
+  Ordinal lowerOffset2 = (p1.lowerOffset()*sizeOfT1) / sizeOfT2;
+  Ordinal upperOffset2 = ((p1.upperOffset()+1)*sizeOfT1) / sizeOfT2 - 1;
   T2 *ptr2 = reinterpret_cast<T2*>(p1.get());
   return ArrayRCP<T2>(
     ptr2, lowerOffset2, upperOffset2,

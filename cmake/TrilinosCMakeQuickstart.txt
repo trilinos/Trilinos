@@ -98,6 +98,28 @@ C) Configuring
 
     -D CMAKE_BUILD_TYPE:STRING=RELEASE
 
+(*) Overriding debug/release compiler options:
+
+  To pass in compiler options that override the default debug or release
+  options use:
+
+    -D CMAKE_BUILD_TYPE:STRING=NONE \
+    -D CMAKE_C_FLAGS:STRING="-04 --funrool-loops" \
+    -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
+
+  where LANGUAGE = C, CXX, Fortran etc.
+
+(*) Overridding all compiler options:
+
+  To override all compiler options, including both strong warning options and
+  debug/release options use:
+
+    -D CMAKE_BUILD_TYPE:STRING=NONE \
+    -D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS:BOOL=OFF \
+    -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=OFF \
+    -D CMAKE_C_FLAGS:STRING="-04 --funrool-loops" \
+    -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
+
 (*) Configuring Trilinos to build all packages with all tests and examples:
 
     $ ./do-configure \

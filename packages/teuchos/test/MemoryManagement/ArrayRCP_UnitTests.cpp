@@ -1,6 +1,8 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Array_UnitTest_helpers.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_implicit_cast.hpp"
+#include "Teuchos_as.hpp"
 
 
 namespace {
@@ -8,9 +10,11 @@ namespace {
 using ArrayUnitTestHelpers::n;
 using ArrayUnitTestHelpers::generateArray;
 
+using Teuchos::as;
 using Teuchos::null;
 using Teuchos::ArrayRCP;
 using Teuchos::arcp;
+using Teuchos::arcp_reinterpret_cast;
 using Teuchos::ArrayView;
 using Teuchos::getConst;
 using Teuchos::NullReferenceError;
@@ -19,6 +23,12 @@ using Teuchos::RangeError;
 using Teuchos::RCP_STRONG;
 using Teuchos::RCP_WEAK;
 using Teuchos::RCP_STRENGTH_INVALID;
+using Teuchos::implicit_ptr_cast;
+
+
+//
+// Templated unit tests
+//
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, weakDelete, T )
@@ -186,7 +196,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, danglingArrayView, T )
 }
 
 
-#ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+#ifdef TEUCHOS_DEBUG
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, arcp_zero, T )
+{
+  TEST_THROW(ArrayRCP<T> arcp_strong = arcp<T>(0),
+    std::out_of_range);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, arcp_neg, T )
+{
+  TEST_THROW(ArrayRCP<T> arcp_strong = arcp<T>(-1),
+    std::out_of_range);
+}
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
@@ -204,7 +228,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
 }
 
 
-#endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
+#endif // TEUCHOS_DEBUG
 
 //
 // Template Instantiations
@@ -214,6 +238,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
 #ifdef TEUCHOS_DEBUG
 
 #  define DEBUG_UNIT_TEST_GROUP( T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, arcp_zero, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, arcp_neg, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, outOfBounds, T ) \
 
 #else
@@ -232,6 +258,79 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
 UNIT_TEST_GROUP(int)
 UNIT_TEST_GROUP(double)
 UNIT_TEST_GROUP(float)
+
+
+//
+// Non templated unit tests
+//
+
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_null )
+{
+  ECHO(ArrayRCP<char> arcp_char = null);
+  ECHO(ArrayRCP<int> arcp_int = arcp_reinterpret_cast<int>(arcp_char));
+  TEST_EQUALITY_CONST(arcp_int, null);
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_char_to_int )
+{
+
+  const int num_ints = n;
+  const int num_chars = (num_ints*sizeof(int))/sizeof(char);
+  out << "num_ints = " << num_ints << "\n";
+  out << "num_chars = " << num_chars << "\n";
+
+  ECHO(ArrayRCP<char> arcp_char = arcp<char>(num_chars));
+  ECHO(ArrayRCP<int> arcp_int = arcp_reinterpret_cast<int>(arcp_char));
+  TEST_EQUALITY(arcp_int.size(), num_ints);
+  TEST_EQUALITY(implicit_ptr_cast<void>(&arcp_int[0]),
+    implicit_ptr_cast<void>(&arcp_char[0]));
+  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1])+1));
+
+  ECHO(arcp_char+=sizeof(int));
+  ECHO(arcp_int = arcp_reinterpret_cast<int>(arcp_char));
+  TEST_EQUALITY(arcp_int.size(), num_ints);
+  TEST_EQUALITY_CONST( arcp_int.lowerOffset(), -1);
+  TEST_EQUALITY( arcp_int.upperOffset(), num_ints-2);
+  TEST_EQUALITY( implicit_ptr_cast<void>(&arcp_int[-1]),
+    implicit_ptr_cast<void>(&arcp_char[-sizeof(int)]));
+  TEST_EQUALITY( implicit_ptr_cast<void>((&arcp_int[num_ints-2])+1),
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1-sizeof(int)])+1));
+
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_int_to_char )
+{
+
+  const int num_ints = n;
+  const int num_chars = (num_ints*sizeof(int))/sizeof(char);
+  out << "num_ints = " << num_ints << "\n";
+  out << "num_chars = " << num_chars << "\n";
+
+  ECHO(ArrayRCP<int> arcp_int = arcp<int>(num_ints));
+  ECHO(ArrayRCP<char> arcp_char = arcp_reinterpret_cast<char>(arcp_int));
+  TEST_EQUALITY(arcp_char.size(), num_chars);
+  TEST_EQUALITY(implicit_ptr_cast<void>(&arcp_int[0]),
+    implicit_ptr_cast<void>(&arcp_char[0]));
+  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1])+1));
+  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1])+1));
+
+  ECHO(++arcp_int);
+  ECHO(arcp_char = arcp_reinterpret_cast<char>(arcp_int));
+  TEST_EQUALITY(as<int>(arcp_char.lowerOffset()), as<int>(-sizeof(int)));
+  TEST_EQUALITY(as<int>(arcp_char.upperOffset()), as<int>(num_chars-1-sizeof(int)));
+  TEST_EQUALITY(implicit_ptr_cast<void>(&arcp_int[-1]),
+    implicit_ptr_cast<void>(&arcp_char[-sizeof(int)]));
+  TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-2])+1),
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1-sizeof(int)])+1));
+
+}
 
 
 } // namespace

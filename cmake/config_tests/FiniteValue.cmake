@@ -8,6 +8,7 @@
 # platforms's compliance with IEEE standards.
 
 INCLUDE(CheckCXXSourceRuns)
+INCLUDE(CheckCXXSourceCompiles)
 
 #############################################################
 # isnan 

@@ -45,7 +45,7 @@
 /** \brief This macro asserts that an integral number fallis in the range
  * <tt>[lower_inclusive,upper_exclusive)</tt>
  *
- * \note <tt>The std::exception</tt> thrown is <tt>std::logic_error</tt>.
+ * \note <tt>The std::exception</tt> thrown is <tt>std::out_of_range</tt>.
  *
  * \ingroup TestForException_grp
  */
@@ -62,7 +62,7 @@
 /** \brief This macro is checks that to numbers are equal and if not then
  * throws an exception with a good error message.
  *
- * \note The <tt>std::exception</tt> thrown is <tt>std::logic_error</tt>.
+ * \note The <tt>std::exception</tt> thrown is <tt>std::out_of_range</tt>.
  *
  * \ingroup TestForException_grp
  */
@@ -77,7 +77,7 @@
 /** \brief This macro is checks that an inequality between two numbers is
  * satisified and if not then throws a good exception message.
  *
- * \note The <tt>std::exception</tt> thrown is <tt>std::logic_error</tt>.
+ * \note The <tt>std::exception</tt> thrown is <tt>std::out_of_range</tt>.
  *
  * \ingroup TestForException_grp
  */
