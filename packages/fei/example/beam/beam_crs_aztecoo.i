@@ -1,7 +1,7 @@
 SOLVER_LIBRARY Trilinos_AztecOO
 DATA_SOURCE HexBeam
-W 40
-D 40
+W 30
+D 30
 DofPerNode 3
 outputLevel 1
 AZ_max_iter 100
