@@ -49,7 +49,7 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
-AC_CONFIG_SRCDIR([src/TPI_pthreads.c])
+AC_CONFIG_SRCDIR([src/TPI.c])
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.

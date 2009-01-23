@@ -578,7 +578,7 @@ PACKAGE_VERSION='1.1d'
 PACKAGE_STRING='ThreadPool 1.1d'
 PACKAGE_BUGREPORT='hcedwar@sandia.gov'
 
-ac_unique_file="src/TPI_pthreads.c"
+ac_unique_file="src/TPI.c"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
