@@ -1,13 +1,8 @@
 EXTRA_ARGS=$@
 
-export MPI_BASE_DIR=/Users/kddevin/code/lib-m64/lam-7.1.4
-
-# Have to set this to get TRY_RUN(...) commands to work
-export LD_LIBRARY_PATH=$MPI_BASE_DIR/lib:$LD_LIBRARY_PATH
-
 cmake \
 -D TPL_ENABLE_MPI:BOOL=ON \
-  -D MPI_BASE_DIR:PATH="$MPI_BASE_DIR" \
+  -D MPI_BASE_DIR:PATH=/Users/kddevin/code/lib-m64/lam-7.1.4 \
 -D Trilinos_ENABLE_Fortran:BOOL=OFF \
 -D CMAKE_CXX_FLAGS:STRING="-O3 -m64" \
 -D CMAKE_C_FLAGS:STRING="-O3 -m64" \
@@ -29,6 +24,3 @@ cmake \
   -D PaToH_LIBRARY_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/PaToH/dist" \
 $EXTRA_ARGS \
 ../../../Trilinos
-
-
-#-D Trilinos_ENABLE_Fortran:BOOL=OFF \
