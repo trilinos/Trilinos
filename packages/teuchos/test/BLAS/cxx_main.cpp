@@ -41,6 +41,7 @@ The test routine for TRSM is still being developed; all of the others are more o
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_Version.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 using Teuchos::BLAS;
 using Teuchos::ScalarTraits;
@@ -134,6 +135,7 @@ Teuchos::EDiag RandomDIAG();
 
 int main(int argc, char *argv[])
 {
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   bool verbose = 0;
   bool debug = 0;
   bool matlab = 0;

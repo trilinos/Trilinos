@@ -65,7 +65,7 @@ int main(int argc, char* argv[])
   bool success = true;
   bool verbose = true;
 
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();

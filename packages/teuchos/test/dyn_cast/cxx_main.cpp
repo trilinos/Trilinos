@@ -28,6 +28,7 @@
 
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Version.hpp"
 
 class A { public: virtual ~A(){} };
@@ -40,6 +41,8 @@ int main( int argc, char* argv[] )
   using Teuchos::CommandLineProcessor;
 
   bool verbose = true;
+  
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   try {
 

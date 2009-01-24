@@ -30,6 +30,7 @@
 
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_Version.hpp"
 
@@ -74,9 +75,12 @@ public:
 
 int main( int argc, char* argv[] )
 {
+
   using Teuchos::CommandLineProcessor;
 
   bool verbose = true;
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   try {
 

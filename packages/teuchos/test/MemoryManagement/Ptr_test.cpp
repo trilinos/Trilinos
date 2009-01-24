@@ -52,7 +52,7 @@ int main( int argc, char* argv[] ) {
 	
 	bool success = true;
  
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   //const int procRank = Teuchos::GlobalMPISession::getRank();
  
   Teuchos::RCP<Teuchos::FancyOStream>

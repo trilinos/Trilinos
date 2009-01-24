@@ -28,8 +28,8 @@
 
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_Array.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Version.hpp"
@@ -342,7 +342,10 @@ bool test_ArrayRCP(
 //
 
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char* argv[] )
+{
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   using Teuchos::CommandLineProcessor;
   using Teuchos::null;
@@ -353,9 +356,6 @@ int main( int argc, char* argv[] ) {
   using Teuchos::arcp_reinterpret_cast;
 	
 	bool success = true, result;
- 
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  //const int procRank = Teuchos::GlobalMPISession::getRank();
  
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();

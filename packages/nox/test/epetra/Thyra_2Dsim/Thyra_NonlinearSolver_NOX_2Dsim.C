@@ -68,6 +68,8 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
  
   int status = 0;
   
@@ -89,10 +91,6 @@ int main(int argc, char *argv[])
     cout << "Verbosity Activated" << endl;
   else
     cout << "Verbosity Disabled" << endl;
-
-
-  // Start up MPI
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI

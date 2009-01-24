@@ -277,8 +277,10 @@ TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_null )
 TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_char_to_int )
 {
 
+  const int sizeOfInt = sizeof(int);
+  const int sizeOfChar = sizeof(char);
   const int num_ints = n;
-  const int num_chars = (num_ints*sizeof(int))/sizeof(char);
+  const int num_chars = (num_ints*sizeOfInt)/sizeOfChar;
   out << "num_ints = " << num_ints << "\n";
   out << "num_chars = " << num_chars << "\n";
 
@@ -290,15 +292,16 @@ TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_char_to_int )
   TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-1])+1),
     implicit_ptr_cast<void>((&arcp_char[num_chars-1])+1));
 
-  ECHO(arcp_char+=sizeof(int));
+  ECHO(arcp_char+=sizeOfInt);
   ECHO(arcp_int = arcp_reinterpret_cast<int>(arcp_char));
   TEST_EQUALITY(arcp_int.size(), num_ints);
   TEST_EQUALITY_CONST( arcp_int.lowerOffset(), -1);
   TEST_EQUALITY( arcp_int.upperOffset(), num_ints-2);
   TEST_EQUALITY( implicit_ptr_cast<void>(&arcp_int[-1]),
-    implicit_ptr_cast<void>(&arcp_char[-sizeof(int)]));
+    implicit_ptr_cast<void>(&arcp_char[-sizeOfInt])
+    );
   TEST_EQUALITY( implicit_ptr_cast<void>((&arcp_int[num_ints-2])+1),
-    implicit_ptr_cast<void>((&arcp_char[num_chars-1-sizeof(int)])+1));
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1-sizeOfInt])+1));
 
 }
 
@@ -306,8 +309,10 @@ TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_char_to_int )
 TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_int_to_char )
 {
 
+  const int sizeOfInt = sizeof(int);
+  const int sizeOfChar = sizeof(char);
   const int num_ints = n;
-  const int num_chars = (num_ints*sizeof(int))/sizeof(char);
+  const int num_chars = (num_ints*sizeOfInt)/sizeOfChar;
   out << "num_ints = " << num_ints << "\n";
   out << "num_chars = " << num_chars << "\n";
 
@@ -323,12 +328,12 @@ TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_int_to_char )
 
   ECHO(++arcp_int);
   ECHO(arcp_char = arcp_reinterpret_cast<char>(arcp_int));
-  TEST_EQUALITY(as<int>(arcp_char.lowerOffset()), as<int>(-sizeof(int)));
-  TEST_EQUALITY(as<int>(arcp_char.upperOffset()), as<int>(num_chars-1-sizeof(int)));
+  TEST_EQUALITY(as<int>(arcp_char.lowerOffset()), as<int>(-sizeOfInt));
+  TEST_EQUALITY(as<int>(arcp_char.upperOffset()), as<int>(num_chars-1-sizeOfInt));
   TEST_EQUALITY(implicit_ptr_cast<void>(&arcp_int[-1]),
-    implicit_ptr_cast<void>(&arcp_char[-sizeof(int)]));
+    implicit_ptr_cast<void>(&arcp_char[-sizeOfInt]));
   TEST_EQUALITY(implicit_ptr_cast<void>((&arcp_int[num_ints-2])+1),
-    implicit_ptr_cast<void>((&arcp_char[num_chars-1-sizeof(int)])+1));
+    implicit_ptr_cast<void>((&arcp_char[num_chars-1-sizeOfInt])+1));
 
 }
 

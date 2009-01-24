@@ -363,8 +363,7 @@ int main( int argc, char* argv[] ) {
 	bool success = true;
   bool result;
  
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  //const int procRank = Teuchos::GlobalMPISession::getRank();
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
  
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();

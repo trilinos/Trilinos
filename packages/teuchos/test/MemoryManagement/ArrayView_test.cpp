@@ -27,8 +27,8 @@
 // @HEADER
 
 #include "Teuchos_ArrayView.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_Version.hpp"
@@ -353,15 +353,15 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
 // Main testing program
 //
 
-int main( int argc, char* argv[] ) {
+int main( int argc, char* argv[] )
+{
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   using Teuchos::CommandLineProcessor;
 	
 	bool success = true;
   bool result;
- 
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  //const int procRank = Teuchos::GlobalMPISession::getRank();
  
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
