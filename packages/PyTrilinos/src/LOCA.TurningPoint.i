@@ -31,6 +31,12 @@
 %module(package="PyTrilinos.LOCA") TurningPoint
 
 %{
+#include "LOCA_Extended_MultiAbstractGroup.H"
+#include "LOCA_BorderedSystem_AbstractGroup.H"
+#include "LOCA_MultiContinuation_ExtendedGroup.H"
+#include "LOCA_MultiContinuation_NaturalGroup.H"
+#include "LOCA_MultiContinuation_AbstractStrategy.H"
+
 #include "LOCA_TurningPoint_MooreSpence_AbstractGroup.H"
 #include "LOCA_TurningPoint_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_TurningPoint_MooreSpence_FiniteDifferenceGroup.H"

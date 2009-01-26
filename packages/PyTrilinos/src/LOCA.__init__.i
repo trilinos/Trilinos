@@ -73,6 +73,8 @@ to reactivate it soon.
 //#include "LOCA_Continuation_StatusTest_ParameterUpdateNorm.H"
 //#include "LOCA_MultiContinuation_AbstractGroup.H"
 //#include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+#include "LOCA_MultiContinuation_ExtendedGroup.H"
+#include "LOCA_MultiContinuation_NaturalGroup.H"
 
 #include "LOCA_TimeDependent_AbstractGroup.H"
 #include "LOCA_Homotopy_AbstractGroup.H"

@@ -90,8 +90,14 @@ LOCA and Epetra.
 #include "LOCA_Hopf_MooreSpence_FiniteDifferenceGroup.H"
 #include "LOCA_Hopf_MinimallyAugmented_AbstractGroup.H"
 #include "LOCA_Hopf_MinimallyAugmented_FiniteDifferenceGroup.H"
-//#include "LOCA_Abstract_Group.H"
-//#include "LOCA_Abstract_TransposeSolveGroup.H"
+#include "LOCA_Abstract_Group.H"
+#include "LOCA_Abstract_TransposeSolveGroup.H"
+#include "LOCA_Extended_MultiAbstractGroup.H"
+#include "LOCA_BorderedSystem_AbstractGroup.H"
+#include "LOCA_MultiContinuation_ExtendedGroup.H"
+#include "LOCA_MultiContinuation_NaturalGroup.H"
+#include "LOCA_MultiContinuation_AbstractStrategy.H"
+
 #include "LOCA_Epetra.H"
 #include "LOCA_Epetra_Group.H"
 
@@ -118,8 +124,6 @@ import PyTrilinos
 import PyTrilinos.LOCA
 }
 
-%teuchos_rcp_typemaps(LOCA::Epetra::Group)
-
 %import "NOX.Abstract.i"
 %import "NOX.Epetra.__init__.i"
 
@@ -144,14 +148,30 @@ import PyTrilinos.LOCA
 %import "LOCA.Pitchfork.i"
 %import "LOCA.Homotopy.i"
 %import "LOCA.TurningPoint.i"
-%import "LOCA_Abstract_Group.H"
-%import "LOCA_Abstract_TransposeSolveGroup.H"
+%pythoncode
+%{
+import PyTrilinos.LOCA.Homotopy
+import PyTrilinos.LOCA.TurningPoint
+import PyTrilinos.LOCA.Pitchfork
+import PyTrilinos.LOCA.Hopf
+%}
+
+%import "NOX.Epetra.Interface.i"
+%import "LOCA.Epetra.Interface.i"
+
+%rename(Abstract_Group) LOCA::Abstract::Group;
+%rename(Abstact_TransposeSolveGroup) LOCA::Abstract::TransposeSolveGroup;
+%teuchos_rcp_typemaps(Abstract_Group)
+%teuchos_rcp_typemaps(Abstract_TransposeSolveGroup)
+%include "LOCA_Abstract_Group.H"
+%include  "LOCA_Abstract_TransposeSolveGroup.H"
+
+%include "LOCA_Epetra.H"
 
 %pythoncode
 %{
 from NOX.Epetra import Group
 %}
-%import "LOCA.Epetra.Interface.i"
 
 //////////////////////////////
 // LOCA.Epetra.Group support //
@@ -159,5 +179,7 @@ from NOX.Epetra import Group
 
 // temporarily ignore conflict-causing constructor.  TODO: fix this issue
 %ignore LOCA::Epetra::Group::Group(Teuchos::RCP< LOCA::GlobalData > const &,Teuchos::ParameterList &,Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree > const &,NOX::Epetra::Vector &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,LOCA::ParameterVector const &);
-%include "LOCA_Epetra.H"
+
+%teuchos_rcp_typemaps(LOCA::Epetra::Group)
 %include "LOCA_Epetra_Group.H"
+

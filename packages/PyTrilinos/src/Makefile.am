@@ -72,6 +72,8 @@ EXTRA_DIST = Amesos.i                             \
 	     LOCA.TurningPoint.i             \
 	     LOCA.Pitchfork.i             \
 	     LOCA.TimeDependent.i                 \
+	     LOCA.Extended.i     \
+	     LOCA.BorderedSystem.i   \
 	     LOCA.__init__.i                      \
 	     ML.i                                 \
 	     MLAPI_PyMatrix.h                     \
@@ -283,11 +285,11 @@ if HAVE_PYTRILINOS_NOX
 if HAVE_PYTRILINOS_LOCA
 LOCA_BASE_INTERFACES =  LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i  LOCA.TurningPoint.i \
 	                LOCA.Continuation.i LOCA.Homotopy.i LOCA.MultiContinuation.i LOCA.Pitchfork.i \
-	                LOCA.TimeDependent.i LOCA.Hopf.i
+	                LOCA.TimeDependent.i LOCA.Hopf.i LOCA.Extended.i LOCA.BorderedSystem.i 
 LOCA_BASE_PROXIES =  PyTrilinos/LOCA/__init__.py PyTrilinos/LOCA/Abstract.py PyTrilinos/LOCA/TurningPoint.i \
 	             PyTrilinos/LOCA/Bifurcation.py PyTrilinos/LOCA/Continuation.py PyTrilinos/LOCA/Pitchfork.i \
 	             PyTrilinos/LOCA/Homotopy.py PyTrilinos/LOCA/MultiContinuation.py PyTrilinos/LOCA/Hopf.i \
-	             PyTrilinos/LOCA/TimeDependent.py 
+	             PyTrilinos/LOCA/TimeDependent.py PyTrilinos/LOCA/Extended.py PyTrilinos/LOCA/BorderedSystem.py
 if HAVE_PYTRILINOS_NOX_EPETRA
 LOCA_EPETRA_INTERFACES = LOCA.Epetra.__init__.i LOCA.Epetra.Interface.i
 LOCA_EPETRA_PROXIES = PyTrilinos/LOCA/Epetra/__init__.py PyTrilinos/LOCA/Epetra/Interface.py

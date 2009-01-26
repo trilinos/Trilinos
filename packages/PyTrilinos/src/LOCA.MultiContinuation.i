@@ -31,12 +31,15 @@
 %module(package="PyTrilinos.LOCA") MultiContinuation
 
 %{
+// Teuchos includes
+#include "Teuchos_PythonParameter.h"
+
 // LOCA includes
 #include "LOCA_MultiContinuation_AbstractGroup.H"
 #include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
-
-// Extra includes due to importing LOCA.Continuation.i below
-//#include "LOCA_Continuation_FiniteDifferenceGroup.H"
+#include "LOCA_MultiContinuation_AbstractStrategy.H"
+#include "LOCA_MultiContinuation_ExtendedGroup.H"
+#include "LOCA_MultiContinuation_NaturalGroup.H"
 
 // Local includes
 #include "NumPyImporter.h"
@@ -60,11 +63,17 @@ import PyTrilinos.NOX
 
 %teuchos_rcp_typemaps(LOCA::MultiContinuation::AbstractGroup)
 %teuchos_rcp_typemaps(LOCA::MultiContinuation::FiniteDifferenceGroup)
+%teuchos_rcp_typemaps(LOCA::MultiContinuation::NaturalGroup)
 
 // Import base class declarations
 %import "NOX.Abstract.i"
+%import "LOCA.Extended.i"
+%import "LOCA.BorderedSystem.i"
 
 // LOCA interface includes
 %include "LOCA_MultiContinuation_AbstractGroup.H"
 %include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
+%include "LOCA_MultiContinuation_AbstractStrategy.H"
+%include "LOCA_MultiContinuation_ExtendedGroup.H"
+%include "LOCA_MultiContinuation_NaturalGroup.H"
 

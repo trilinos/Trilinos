@@ -32,6 +32,7 @@
 
 %{
 // LOCA includes
+#include "LOCA_Extended_MultiAbstractGroup.H"
 //#include "LOCA_Bifurcation_TPBord_AbstractGroup.H"
 //#include "LOCA_Bifurcation_TPBord_FiniteDifferenceGroup.H"
 //#include "LOCA_Bifurcation_TPBord_SingularSolveGroup.H"
@@ -52,6 +53,9 @@
 #include "LOCA_TimeDependent_AbstractGroup.H"
 
 #include "LOCA_MultiContinuation_AbstractGroup.H"
+#include "LOCA_MultiContinuation_ExtendedGroup.H"
+#include "LOCA_MultiContinuation_NaturalGroup.H"
+#include "LOCA_MultiContinuation_AbstractStrategy.H"
 #include "LOCA_MultiContinuation_FiniteDifferenceGroup.H"
 
 #include "NOX_StatusTest_Generic.H"

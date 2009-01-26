@@ -32,6 +32,12 @@
 
 %{
 // LOCA includes
+#include "LOCA_Extended_MultiAbstractGroup.H"
+#include "LOCA_BorderedSystem_AbstractGroup.H"
+#include "LOCA_MultiContinuation_ExtendedGroup.H"
+#include "LOCA_MultiContinuation_NaturalGroup.H"
+#include "LOCA_MultiContinuation_AbstractStrategy.H"
+
 #include "LOCA_Homotopy_AbstractGroup.H"
 
 // Extra includes due to importing Continuation.i below
