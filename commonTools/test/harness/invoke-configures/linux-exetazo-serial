@@ -51,7 +51,7 @@ FFLAGS="-O3 -fPIC" \
 --enable-nox-thyra \
 --enable-pamgen \
 --enable-phalanx \
---enable-phdmesh \
+--disable-phdmesh \
 --enable-pytrilinos \
 --enable-rbgen \
 --enable-rythmos \
