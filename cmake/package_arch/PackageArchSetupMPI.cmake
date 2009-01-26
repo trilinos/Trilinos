@@ -96,12 +96,16 @@ FUNCTION(PACKAGE_ARCH_SETUP_MPI)
 
     # B.2) Set up to use raw configure options
 
-    MESSAGE(FATAL_ERROR "ToDo: Implement support for setting raw MPI options with raw compilers!")
- 
-    TPL_DECLARE_LIBRARIES( MPI
-      REQUIRED_HEADERS mpi.h
-      REQUIRED_LIBS_NAMES "mpi"
-      )
+    ADVANCED_SET( MPI_COMPILE_FLAGS ""
+      CACHE STRING
+      "List of general compiler flags (excluding include directories)." )
+
+    ADVANCED_SET( MPI_LINK_FLAGS ""
+      CACHE STRING
+      "Link Flags for MPI executables." )
+
+    # NOTE: Test rest of the flags will be set up by the
+    # FindTPLMPI.cmake module!
 
   ENDIF()
 

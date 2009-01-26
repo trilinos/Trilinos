@@ -14,6 +14,7 @@
 #
 
 SET(Trilinos_TPLS_ENABLED
+  MPI            ""
   BLAS           ""
   LAPACK         ""
   Boost          OFF

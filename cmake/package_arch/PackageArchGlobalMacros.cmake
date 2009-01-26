@@ -162,10 +162,6 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     "Enable the Fortran compiler and related code"
     ${${PROJECT_NAME}_ENABLE_Fortran_DEFAULT} )
   
-  ADVANCED_OPTION(TPL_ENABLE_MPI
-    "Enable support for MPI (see MPI_XXX options)"
-    OFF )
-  
   ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
   
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
@@ -1270,6 +1266,16 @@ MACRO(PACKAGE_ARCH_SETUP_ENV)
   ASSERT_DEFINED(TPL_ENABLE_MPI)
   IF (TPL_ENABLE_MPI)
     PACKAGE_ARCH_SETUP_MPI()
+    IF (MPI_COMPILE_FLAGS)
+      ADD_DEFINITIONS(${MPI_COMPILE_FLAGS})
+    ENDIF()
+    IF (MPI_LINK_FLAGS)
+      SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_LINK_FLAGS}")
+      # 2009/01/25: rabartl: Above, I only modify CMAKE_EXE_LINKER_FLAGS in main memory
+      # and not in the cache.  In this way, if you run configure again, it
+      # will not cause it to change and cause all code to be rebuilt.
+      PRINT_VAR(CMAKE_EXE_LINKER_FLAGS)
+    ENDIF()
   ENDIF()
 
   # Enable compilers
