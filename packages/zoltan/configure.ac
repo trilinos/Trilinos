@@ -72,11 +72,11 @@ AC_CANONICAL_TARGET
 # Use automake
 
 #  - Required version of automake.
-AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
+AM_INIT_AUTOMAKE(1.9.6 no-define tar-ustar)
 
 # Specify required version of autoconf.
 
-AC_PREREQ(2.61)
+AC_PREREQ(2.59)
 
 TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, no)
 #This option is not currently available
