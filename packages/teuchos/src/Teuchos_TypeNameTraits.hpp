@@ -124,7 +124,7 @@ class TypeNameTraits<T*> {
 public:
   typedef T* T_ptr;
   static std::string name() { return TypeNameTraits<T>::name() + "*"; }
-  static std::string concreteName(const T_ptr&) { return name(); }
+  static std::string concreteName(T_ptr) { return name(); }
 };
 
 
