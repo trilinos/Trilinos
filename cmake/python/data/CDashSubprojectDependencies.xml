@@ -40,6 +40,14 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
   </SubProject>
+  <SubProject name="OptiPack">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="RTOp" type="ILR"/>
+    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Thyra" type="LR"/>
+  </SubProject>
   <SubProject name="Isorropia">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>

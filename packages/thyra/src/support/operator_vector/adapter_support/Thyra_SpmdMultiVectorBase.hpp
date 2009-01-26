@@ -624,11 +624,11 @@ template<class Scalar>
 void SpmdMultiVectorBase<Scalar>::updateSpmdSpace()
 {
   if(globalDim_ == 0) {
-    const SpmdVectorSpaceBase<Scalar> *spmdSpace = this->spmdSpace().get();
-    if(spmdSpace) {
-      globalDim_ = spmdSpace->dim();
-      localOffset_ = spmdSpace->localOffset();
-      localSubDim_ = spmdSpace->localSubDim();
+    const SpmdVectorSpaceBase<Scalar> *l_spmdSpace = this->spmdSpace().get();
+    if(l_spmdSpace) {
+      globalDim_ = l_spmdSpace->dim();
+      localOffset_ = l_spmdSpace->localOffset();
+      localSubDim_ = l_spmdSpace->localSubDim();
       numCols_ = this->domain()->dim();
     }
     else {

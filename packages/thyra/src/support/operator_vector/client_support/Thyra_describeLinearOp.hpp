@@ -68,7 +68,7 @@ void Thyra::describeLinearOp(
       cs = 1,         // stride for columns or rows 
       rs = dimRange;  // stride for rows or columns
     Index i, j;
-    OSTab tab(out);
+    OSTab tab2(out);
     for( j = 0; j < dimDomain; ++j ) {
       Thyra::assign( e_j.get(), DST::zero() );
       Thyra::set_ele( j, DST::one(), e_j.get() );

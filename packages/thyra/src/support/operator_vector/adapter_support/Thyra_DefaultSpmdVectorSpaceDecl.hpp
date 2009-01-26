@@ -74,8 +74,8 @@ public:
 
   /** \brief Calls <tt>initialize()</tt> to construct an SPMD space. */
   DefaultSpmdVectorSpace(
-    const RCP<const Teuchos::Comm<Index> > &comm
-    ,const Index localSubDim, const Index globalDim
+    const RCP<const Teuchos::Comm<Index> > &comm,
+    const Index localSubDim, const Index globalDim
     );
 
   /** \brief Initialize a serial space.
@@ -94,9 +94,11 @@ public:
    * \param comm
    * [in] The communicator. This object must be maintained
    * by the client the entire time that <tt>this</tt> is in use.
+   *
    * \param localSubDim
    * [in] The number of elements in the local process. This number
    * can be different in every process.
+   *
    * \param globalDim
    * [in] Gives the number of global elements in the vector
    * if <tt>globalDim > 0</tt>. If <tt>globalDim < 0</tt>
@@ -119,20 +121,26 @@ public:
    * </ul>
    *
    * This function supports three different types of use-cases:
+   *
    * <ul>
+   *
    * <li><tt>comm.get()==NULL</tt> : Serial (i.e. single process) vectors
    * where <tt>this->dim() == localSubDim</tt>.
+   *
    * <li><tt>comm.get()!=NULL && globalDim < 0</tt> : Distributed-memory vectors
    * where <tt>this->dim()</tt> is equal to the sum of the <tt>localSubDim</tt>
    * arguments in each process. This will result in a call to <tt>Spmd_Allreduce()</tt>
    * inside of this function.
+   *
    * <li><tt>comm.get()!=NULL && globalDim > 0</tt> : Distributed-memory vectors
    * where <tt>this->dim()</tt> returns <tt>globalDim</tt>. This will not result
    * in a call to <tt>Teuchos::reduceAll()</tt> inside this function and therefore the client had better
    * be sure that <tt>globalDim</tt> is consistent with <tt>localSubDim</tt>
    * in each process.
+   *
    * <li><tt>comm.get()!=NULL && globalDim == localSubDim</tt> : Locally-replicated
    * distributed-memory vectors where <tt>this->dim() == globalDim == localSubDim</tt>.
+   *
    * </ul>
    */
   void initialize(
@@ -226,6 +234,25 @@ defaultSpmdVectorSpace( const Index dim )
   RCP<DefaultSpmdVectorSpace<Scalar> >
     vs(new DefaultSpmdVectorSpace<Scalar>(dim));
   return vs;
+}
+
+
+/** \brief Nonmember consturctor function.
+ *
+ * \relates DefaultSpmdVectorSpace
+ */
+template<class Scalar>
+RCP<DefaultSpmdVectorSpace<Scalar> >
+defaultSpmdVectorSpace(
+  const RCP<const Teuchos::Comm<Index> > &comm,
+  const Index localSubDim, const Index globalDim
+  )
+{
+  return Teuchos::rcp(
+    new DefaultSpmdVectorSpace<Scalar>(
+      comm, localSubDim, globalDim
+      )
+    );
 }
 
 } // end namespace Thyra

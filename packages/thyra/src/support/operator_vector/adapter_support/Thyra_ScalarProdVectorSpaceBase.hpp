@@ -44,17 +44,18 @@ ScalarProdVectorSpaceBase<Scalar>::ScalarProdVectorSpaceBase()
 {}
   
 template<class Scalar>
-ScalarProdVectorSpaceBase<Scalar>::ScalarProdVectorSpaceBase( const Teuchos::RCP<const ScalarProdBase<Scalar> > &scalarProd )
-  :scalarProd_(scalarProd)
-{
-  TEST_FOR_EXCEPT( scalarProd.get()==NULL );
-}
+ScalarProdVectorSpaceBase<Scalar>::ScalarProdVectorSpaceBase(
+  const Teuchos::RCP<const ScalarProdBase<Scalar> > &scalarProd_in
+  )
+  :scalarProd_(scalarProd_in.assert_not_null())
+{}
 
 template<class Scalar>
-void ScalarProdVectorSpaceBase<Scalar>::setScalarProd( const Teuchos::RCP<const ScalarProdBase<Scalar> > &scalarProd )
+void ScalarProdVectorSpaceBase<Scalar>::setScalarProd(
+  const Teuchos::RCP<const ScalarProdBase<Scalar> > &scalarProd_in
+  )
 {
-  TEST_FOR_EXCEPT( scalarProd.get()==NULL );
-  scalarProd_ = scalarProd;
+  scalarProd_ = scalarProd_in.assert_not_null();
 }
 
 template<class Scalar>

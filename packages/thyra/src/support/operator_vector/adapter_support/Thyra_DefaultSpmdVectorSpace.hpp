@@ -39,7 +39,7 @@ namespace Thyra {
 
 template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace()
-  :localSubDim_(0),numProc_(0),procRank_(0)
+  :localSubDim_(0), numProc_(0), procRank_(0)
 {
   this->updateState();
 }
@@ -48,19 +48,19 @@ template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
   const Index dim
   )
-  :localSubDim_(0),numProc_(0),procRank_(0)
+  :localSubDim_(0), numProc_(0), procRank_(0)
 {
   initialize(dim);
 }
 
 template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
-  const RCP<const Teuchos::Comm<Index> > &comm
-  ,const Index localSubDim, const Index globalDim
+  const RCP<const Teuchos::Comm<Index> > &comm_in
+  ,const Index localSubDim_in, const Index globalDim_in
   )
-  :localSubDim_(0),numProc_(0),procRank_(0)
+  :localSubDim_(0), numProc_(0), procRank_(0)
 {
-  initialize(comm,localSubDim,globalDim);
+  initialize(comm_in, localSubDim_in, globalDim_in);
 }
 
 template<class Scalar>
@@ -68,21 +68,21 @@ void DefaultSpmdVectorSpace<Scalar>::initialize(
   const Index dim
   )
 {
-  this->initialize(Teuchos::null,dim,dim);
+  this->initialize(Teuchos::null, dim, dim);
 }
 
 template<class Scalar>
 void DefaultSpmdVectorSpace<Scalar>::initialize(
   const RCP<const Teuchos::Comm<Index> > &comm
-  ,const Index localSubDim, const Index globalDim
+  ,const Index localSubDim_in, const Index globalDim
   )
 {
 #ifdef TEUCHOS_DEBUG
-  //TEST_FOR_EXCEPT( !( localSubDim > 0 ) );
-  TEST_FOR_EXCEPT( !( localSubDim >= 0 ) );
+  //TEST_FOR_EXCEPT( !( localSubDim_in > 0 ) );
+  TEST_FOR_EXCEPT( !( localSubDim_in >= 0 ) );
 #endif
   comm_        = comm;
-  localSubDim_ = localSubDim;
+  localSubDim_ = localSubDim_in;
   if( comm.get() ) {
     numProc_  = size(*comm);
     procRank_ = rank(*comm);

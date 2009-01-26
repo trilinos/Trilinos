@@ -1,8 +1,9 @@
+/*
 // @HEADER
 // ***********************************************************************
 // 
-//    Thyra: Interfaces and Support for Abstract Numerical Algorithms
-//                 Copyright (2004) Sandia Corporation
+//    OptiPack: Collection of simple Thyra-based Optimization ANAs
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -21,14 +22,22 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Roscoe A. Bartlett (rabartl@sandia.gov) 
 // 
 // ***********************************************************************
 // @HEADER
+*/
 
-#include "Thyra_Version.hpp"
+#ifndef OPTIPACK_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_HPP
+#define OPTIPACK_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_HPP
 
-std::string Thyra::Thyra_Version()
-{ 
-  return("Thyra Dev in Trilinos Dev"); 
-}
+
+#include "OptiPack_DiagonalQuadraticResponseOnlyModelEvaluator_decl.hpp"
+
+
+#ifndef HAVE_OPTIPACK_EXPLICIT_INSTANTIATION
+#  include "OptiPack_DiagonalQuadraticResponseOnlyModelEvaluator_def.hpp"
+#endif
+
+
+#endif // OPTIPACK_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_HPP

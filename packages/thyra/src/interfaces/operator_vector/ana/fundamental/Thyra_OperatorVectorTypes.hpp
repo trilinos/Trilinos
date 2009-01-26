@@ -78,7 +78,11 @@ using Teuchos::TypeNameTraits;
 
 
 /// Type for the dimension of a vector space
-typedef Teuchos::Range1D::Index  Index;
+typedef Teuchos::Range1D::Index  Ordinal;
+
+
+/// Deprecated: Use Ordinal instead!
+typedef Ordinal Index;
 
 
 /// Type for a range of indices

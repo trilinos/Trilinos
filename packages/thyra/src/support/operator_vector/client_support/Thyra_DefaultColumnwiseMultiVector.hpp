@@ -61,12 +61,12 @@ DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
 
 template<class Scalar>
 DefaultColumnwiseMultiVector<Scalar>::DefaultColumnwiseMultiVector(
-  const RCP<const VectorSpaceBase<Scalar> > &range,
-  const RCP<const VectorSpaceBase<Scalar> > &domain,
-  const ArrayView<const RCP<VectorBase<Scalar> > > &col_vecs
+  const RCP<const VectorSpaceBase<Scalar> > &range_in,
+  const RCP<const VectorSpaceBase<Scalar> > &domain_in,
+  const ArrayView<const RCP<VectorBase<Scalar> > > &col_vecs_in
   )
 {
-  this->initialize(range,domain,col_vecs);
+  this->initialize(range_in, domain_in, col_vecs_in);
 }
 
 
@@ -90,23 +90,23 @@ void DefaultColumnwiseMultiVector<Scalar>::initialize(
   
 template<class Scalar>
 void DefaultColumnwiseMultiVector<Scalar>::initialize(
-  const RCP<const VectorSpaceBase<Scalar> > &range,
-  const RCP<const VectorSpaceBase<Scalar> > &domain,
+  const RCP<const VectorSpaceBase<Scalar> > &range_in,
+  const RCP<const VectorSpaceBase<Scalar> > &domain_in,
   const ArrayView<const RCP<VectorBase<Scalar> > > &col_vecs
   )
 {
 #ifdef TEUCHOS_DEBUG
   const std::string err_msg =
     "DefaultColumnwiseMultiVector<Scalar>::initialize(...): Error!";
-  TEST_FOR_EXCEPT_MSG( is_null(range), err_msg ); 
-  TEST_FOR_EXCEPT_MSG( is_null(domain), err_msg ); 
-  TEST_FOR_EXCEPT_MSG( range->dim()  == 0, err_msg ); 
-  TEST_FOR_EXCEPT_MSG( domain->dim() == 0, err_msg );
+  TEST_FOR_EXCEPT_MSG( is_null(range_in), err_msg ); 
+  TEST_FOR_EXCEPT_MSG( is_null(domain_in), err_msg ); 
+  TEST_FOR_EXCEPT_MSG( range_in->dim()  == 0, err_msg ); 
+  TEST_FOR_EXCEPT_MSG( domain_in->dim() == 0, err_msg );
   // ToDo: Check the compatibility of the vectors in col_vecs!
 #endif
-  const int domainDim = domain->dim();
-  range_ = range;
-  domain_ = domain;
+  const int domainDim = domain_in->dim();
+  range_ = range_in;
+  domain_ = domain_in;
   col_vecs_.clear();
   col_vecs_.reserve(domainDim);
   if (col_vecs.size()) {

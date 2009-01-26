@@ -29,6 +29,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Tpetra                tpetra                         ""
   EpetraExt             epetraext                      ""
   Thyra                 thyra                          ""
+  OptiPack              optipack                       OFF
   Isorropia             isorropia                      ""
   Pliris                pliris                         ""
   Claps                 claps                          ""
