@@ -15,17 +15,13 @@ include $(top_builddir)/Makefile.export.zoltan
 
 EXEEXT = .exe
 
-if BUILD_PARMETIS
-GRAPH_EXAMPLE = simpleGRAPH
-endif
-
 ZOLTAN_EX_LIBS = -L$(top_builddir)/example/lib -lexzoltan $(ZOLTAN_LIBS)
 
 ZOLTAN_EX_DEPS = $(top_builddir)/src/libzoltan.a $(top_builddir)/example/lib/libexzoltan.a
 
 ZOLTAN_EX_INCLUDES = -I$(top_srcdir)/example/lib $(ZOLTAN_INCLUDES)
 
-noinst_PROGRAMS = simpleBLOCK simpleRCB $(GRAPH_EXAMPLE) simpleHG zoltanSimple zoltanExample1 phgExample
+noinst_PROGRAMS = simpleBLOCK simpleRCB simpleGRAPH simpleHG zoltanSimple zoltanExample1 phgExample
 
 simpleBLOCK_SOURCES      = simpleBLOCK.c simpleGraph.h simpleQueries.h
 simpleBLOCK_DEPENDENCIES = $(ZOLTAN_EX_DEPS)

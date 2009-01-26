@@ -57,8 +57,6 @@ int main(int argc, char *argv[])
 
   /* Graph parameters */
 
-  Zoltan_Set_Param(zz, "PARMETIS_METHOD", "PARTKWAY"); 
-  Zoltan_Set_Param(zz, "PARMETIS_COARSE_ALG", "2");
   Zoltan_Set_Param(zz, "CHECK_GRAPH", "2"); 
 
   /* Query functions - defined in simpleQueries.h */

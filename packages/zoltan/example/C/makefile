@@ -43,11 +43,7 @@
 # Run these however you run MPI applications:  mpirun -np 4 simpleRCB
 #
 
-ifdef PARMETIS_LIBPATH
-GRAPH_EXAMPLE=simpleGRAPH
-endif
-
-CEXAMPLES = simpleBLOCK simpleRCB $(GRAPH_EXAMPLE) simpleHG zoltanSimple zoltanExample1 subDirs phgExample
+CEXAMPLES = simpleBLOCK simpleRCB simpleGRAPH simpleHG zoltanSimple zoltanExample1 subDirs phgExample
 
 
 LIBZOLTAN = ../lib/libexzoltan.a $(ZOLTAN_LIB_DIR)/libzoltan.a
