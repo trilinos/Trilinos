@@ -61,7 +61,7 @@ FFLAGS="-g -O3 -fPIC" \
 --enable-nox-thyra \
 --enable-pamgen \
 --enable-phalanx \
---enable-phdmesh \
+--disable-phdmesh \
 --enable-pliris \
 --disable-pytrilinos \
 --enable-rbgen \
