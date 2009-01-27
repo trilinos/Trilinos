@@ -205,8 +205,18 @@ void reduceAll(
 template<typename Ordinal, typename Packet>
 void reduceAll(
   const Comm<Ordinal>& comm, const EReductionType reductType,
-  const Packet &send, Packet *globalReduct
+  const Packet &send, const Ptr<Packet> &globalReduct
   );
+
+/** \brief Deprecated . */
+template<typename Ordinal, typename Packet>
+void reduceAll(
+  const Comm<Ordinal>& comm, const EReductionType reductType,
+  const Packet &send, Packet *globalReduct
+  )
+{
+  reduceAll<Ordinal,Packet>(comm, reductType, send, ptr(globalReduct));
+}
 
 /** \brief Collective reduce all for array of objects using reference
  * semantics.
@@ -960,10 +970,10 @@ void Teuchos::reduceAll(
 template<typename Ordinal, typename Packet>
 void Teuchos::reduceAll(
   const Comm<Ordinal>& comm, const EReductionType reductType
-  ,const Packet &send, Packet *globalReduct
+  ,const Packet &send, const Ptr<Packet> &globalReduct
   )
 {
-  reduceAll<Ordinal,Packet>(comm,reductType,1,&send,globalReduct);
+  reduceAll<Ordinal,Packet>(comm,reductType, 1, &send, &*globalReduct);
 }
 
 

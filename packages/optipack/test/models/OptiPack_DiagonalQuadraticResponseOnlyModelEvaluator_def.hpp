@@ -37,6 +37,7 @@
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedSpmdVectorView.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 
 namespace OptiPack {
@@ -57,14 +58,15 @@ DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::DiagonalQuadraticResponseOn
   :Np_(1), Ng_(1)
 {
 
-  const RCP<const Teuchos::Comm<Thyra::Ordinal> > comm =
-    Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
+  // Get the comm
+  comm_ = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
 
   // Parallel space for p
-  p_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(comm, localDim, -1);
+  p_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(comm_, localDim, -1);
 
   // Locally replicated space for g
-  g_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(comm, 1, 1);
+  g_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(comm_, 1, 1);
+
 }
 
 // Public functions overridden from ModelEvaulator
@@ -143,10 +145,12 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::evalModelImpl(
 {
 
   using Teuchos::as;
+  using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  using Thyra::get_dmv;
+  using Thyra::get_mv;
   using Thyra::ConstDetachedSpmdVectorView;
   using Thyra::DetachedSpmdVectorView;
+  typedef Thyra::Ordinal Ordinal;
   typedef Thyra::ModelEvaluatorBase MEB;
   typedef MEB::DerivativeMultiVector<Scalar> DMV;
 
@@ -154,23 +158,25 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::evalModelImpl(
 
   if (!is_null(outArgs.get_g(0))) {
     Scalar g_val = ST::zero();
-    for (Thyra::Ordinal i = 0; i < p.subDim(); ++i) {
+    for (Ordinal i = 0; i < p.subDim(); ++i) {
       g_val += p[i] * p[i];
     }
+    Scalar global_g_val;
+    Teuchos::reduceAll<Ordinal, Scalar>(*comm_, Teuchos::REDUCE_SUM, g_val,
+      outArg(global_g_val));
     DetachedSpmdVectorView<Scalar>(outArgs.get_g(0))[0] =
-      as<Scalar>(0.5) * g_val;
+      as<Scalar>(0.5) * global_g_val;
   }
 
   if (!outArgs.get_DgDp(0,0).isEmpty()) {
-    const DMV DgDp_dmv =
-      get_dmv<Scalar>(outArgs.get_DgDp(0,0), "DgDp");
-    TEUCHOS_ASSERT_EQUALITY(DgDp_dmv.getOrientation(), MEB::DERIV_TRANS_MV_BY_ROW);
-    const DetachedSpmdVectorView<Scalar> DgDp_grad(DgDp_dmv.getMultiVector()->col(0));
+    const RCP<Thyra::MultiVectorBase<Scalar> > DgDp_trans_mv =
+      get_mv<Scalar>(outArgs.get_DgDp(0,0), "DgDp^T", MEB::DERIV_TRANS_MV_BY_ROW);
+    const DetachedSpmdVectorView<Scalar> DgDp_grad(DgDp_trans_mv->col(0));
     for (Thyra::Ordinal i = 0; i < p.subDim(); ++i) {
       DgDp_grad[i] = p[i];
     }
   }
-
+  
 }
 
 

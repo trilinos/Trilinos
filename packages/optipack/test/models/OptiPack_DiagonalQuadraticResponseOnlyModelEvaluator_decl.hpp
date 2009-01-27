@@ -31,6 +31,7 @@
 
 #include "OptiPack_Types.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
+#include "Teuchos_Comm.hpp"
 
 
 #ifndef OPTIPACK_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_DECL_HPP
@@ -100,6 +101,7 @@ private:
 
   int Np_;
   int Ng_;
+  RCP<const Teuchos::Comm<Thyra::Ordinal> > comm_;
   RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
   RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
 

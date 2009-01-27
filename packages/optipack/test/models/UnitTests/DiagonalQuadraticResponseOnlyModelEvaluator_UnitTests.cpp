@@ -50,6 +50,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator, 
   typedef Thyra::ModelEvaluatorBase MEB;
   using Thyra::create_DgDp_mv;
   using Thyra::eval_g_DgDp;
+  using Thyra::get_mv;
   using Thyra::get_ele;
   using Thyra::norm_2;
 
@@ -84,8 +85,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator, 
     as<Scalar>(0.5*globalDim)*val*val, as<ScalarMag>(g_tol/globalDim));
   
   TEST_FLOATING_EQUALITY(
-    norm_2<Scalar>(*DgDp.getDerivativeMultiVector().getMultiVector()->col(0)),
-    ST::squareroot(as<Scalar>(globalDim)*val*val), as<ScalarMag>(g_tol/globalDim));
+    norm_2<Scalar>(*get_mv<Scalar>(DgDp, "DgDp_trans", MEB::DERIV_TRANS_MV_BY_ROW)->col(0)),
+    ST::magnitude(ST::squareroot(as<Scalar>(globalDim)*val*val)),
+    as<ScalarMag>(g_tol/globalDim));
     
 }
 
