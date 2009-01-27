@@ -608,7 +608,6 @@ int main( int argc, char* argv[] ) {
   using Teuchos::CommandLineProcessor;
 	
 	bool success = true;
-  bool result;
  
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
   //const int procRank = Teuchos::GlobalMPISession::getRank();
@@ -650,13 +649,16 @@ int main( int argc, char* argv[] ) {
 
     *out << std::endl << Teuchos::Teuchos_Version() << std::endl;
 
+#ifdef HAVE_TEUCHOS_FLOAT
     {
+      bool result;
       typedef float Scalar;
-      result = testSubVectorView<Scalar>(subDim,stride,*out);
+      result = testSubVectorView<Scalar>(subDim, stride, *out);
       if (!result) success = false;
-      result = testSubMultiVectorView<Scalar>(subDim,numCols,leadingDim,*out);
+      result = testSubMultiVectorView<Scalar>(subDim, numCols, leadingDim, *out);
       if (!result) success = false;
     }
+#endif
  
 	}
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);

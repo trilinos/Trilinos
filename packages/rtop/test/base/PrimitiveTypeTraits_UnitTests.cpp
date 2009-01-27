@@ -43,18 +43,19 @@ typedef RTOpPack::index_type index_type;
   UNIT_TEST_INSTANT_SCALAR_CONCRETEOBJ( SCALAR, SCALAR ) \
   UNIT_TEST_INSTANT_SCALAR_CONCRETEOBJ( SCALAR, index_type )
 
+#ifdef HAVE_TEUCHOS_FLOAT
+  UNIT_TEST_INSTANT_SCALAR(float)
+#endif
 
-//TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( PrimitiveTypeTraits, basic, float, float )
-//UNIT_TEST_INSTANT_SCALAR_CONCRETEOBJ( float, float )
-//UNIT_TEST_INSTANT_SCALAR(float)
-
-UNIT_TEST_INSTANT_SCALAR(float)
 UNIT_TEST_INSTANT_SCALAR(double)
 
-#if defined(HAVE_TEUCHOS_COMPLEX)
+#if defined(HAVE_TEUCHOS_COMPLEX) && defined(HAVE_TEUCHOS_FLOAT)
   typedef std::complex<float> ComplexFloat;
   UNIT_TEST_INSTANT_SCALAR( ComplexFloat )
   UNIT_TEST_INSTANT_SCALAR_CONCRETEOBJ( ComplexFloat, float )
+#endif
+
+#if defined(HAVE_TEUCHOS_COMPLEX)
   typedef std::complex<double> ComplexDouble;
   UNIT_TEST_INSTANT_SCALAR( ComplexDouble )
   UNIT_TEST_INSTANT_SCALAR_CONCRETEOBJ( ComplexDouble, double )

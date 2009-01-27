@@ -6,6 +6,7 @@ ADD_SUBDIRECTORY(UnitTest)
 ADD_SUBDIRECTORY(TabularOutputter)
 ADD_SUBDIRECTORY(MemoryManagement)
 ADD_SUBDIRECTORY(Comm)
+ADD_SUBDIRECTORY(DenseMatrix)
 
 # Test definitions
 
@@ -25,21 +26,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES cxx_main.cpp
   COMM serial mpi  
   NUM_MPI_PROCS 1
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  DenseMatrix_test  
-  COMM serial mpi  
-  SOURCES cxx_main.cpp
-  DIRECTORY DenseMatrix
-  )
-PACKAGE_ADD_TEST(
-  DenseMatrix_test
-  DIRECTORY DenseMatrix
-  NAME DenseMatrix_test
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
   )
 
 PACKAGE_ADD_EXECUTABLE(

@@ -61,6 +61,8 @@
 /* Define if want to build teuchos-comm_timers */
 #cmakedefine HAVE_TEUCHOS_COMM_TIMERS
 
+#cmakedefine HAVE_TEUCHOS_FLOAT
+
 /* Define if want to build teuchos-complex */
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 

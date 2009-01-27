@@ -255,7 +255,7 @@ int main(int argc, char* argv[])
     RCP<FancyOStream>
       out = VerboseObjectBase::getDefaultOStream();
 
-#ifdef HAVE_THYRA_TEUCHOS_BLASFLOAT
+#if defined(HAVE_TEUCHOS_BLASFLOAT) && defined(HAVE_TEUCHOS_FLOAT)
     result = testLapackWrappers<float>(n, epsScale*ScalarTraits<float>::eps(), *out);
     if(!result) success = false;
 #endif

@@ -106,6 +106,75 @@ private:
 };
 
 
+/** \brief Create an explicit detached mutable (non-const) view of all of the
+ * local elements on this process of an <tt>VectorBase</tt> object.
+ *
+ * The default constructor, copy constructor and assignment operators
+ * are not allowed.
+ *
+ * \ingroup Thyra_Op_Vec_spmd_adapters_grp
+ */
+template<class Scalar>
+class DetachedSpmdVectorView {
+public:
+  /** \brief . */
+  DetachedSpmdVectorView(const Teuchos::RCP<VectorBase<Scalar> > &v)
+    {
+      using Teuchos::rcp_dynamic_cast;
+      if (!is_null(v)) {
+        const RCP<SpmdVectorBase<Scalar> > spmd_v =
+          rcp_dynamic_cast<SpmdVectorBase<Scalar> >(v, true);
+        const RCP<const SpmdVectorSpaceBase<Scalar> > spmd_vs =
+          spmd_v->spmdSpace();
+        Scalar *localValues = 0;
+        Index l_stride = 0;
+        spmd_v->getLocalData(&localValues, &l_stride);
+        TEUCHOS_ASSERT_EQUALITY(l_stride, 1);
+        const Index localSubDim = spmd_vs->localSubDim();
+        sv_.initialize(
+          spmd_vs->localOffset(), // globalOffset?
+          localSubDim,
+          Teuchos::arcp(localValues, 0, localSubDim, false),
+          1 // stride
+          );
+      }
+      else {
+        v_ = Teuchos::null;
+        sv_ = RTOpPack::SubVectorView<Scalar>();
+      }
+    }
+  /** \brief . */
+  ~DetachedSpmdVectorView()
+    {
+      if (!is_null(v_)) {
+        v_->commitLocalData(sv_.values().get());
+      }
+    }
+  /** \brief . */
+  const RTOpPack::SubVectorView<Scalar>& sv() const { return sv_; }
+  /** \brief . */
+  Teuchos_Index globalOffset() const { return sv_.globalOffset(); }
+  /** \brief . */
+  Teuchos_Index subDim() const { return sv_.subDim(); }
+  /** \brief . */
+  const ArrayRCP<const Scalar> values() const { return sv_.values(); }
+  /** \brief . */
+  ptrdiff_t stride() const { return sv_.stride(); }
+  /** \brief . */
+  Scalar& operator[](Teuchos_Index i) const { return sv_[i]; }
+  /** \brief . */
+  Scalar& operator()(Teuchos_Index i) const { return sv_(i); }
+private:
+  Teuchos::RCP<SpmdVectorBase<Scalar> > v_;
+  RTOpPack::SubVectorView<Scalar>  sv_;
+  // Not defined and not to be called
+  DetachedSpmdVectorView();
+  DetachedSpmdVectorView(const DetachedSpmdVectorView<Scalar>&);
+  DetachedSpmdVectorView<Scalar>& operator==(
+    const DetachedSpmdVectorView<Scalar>&);
+};
+
+
 } // namespace Thyra
 
 

@@ -29,6 +29,7 @@
 */
 
 
+#include "OptiPack_Types.hpp"
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
 
 
@@ -39,10 +40,9 @@
 namespace OptiPack {
 
 
-using Teuchos::RCP;
-
-
 /** \brief Simple parallel response-only ModelEvaluator.
+ *
+ * g(p) = 0.5*inner(p,p)
  *
  * ToDo: Finish Documentation!
  */

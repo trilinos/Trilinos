@@ -196,8 +196,22 @@ void eval_g(
   const int l,
   const VectorBase<Scalar> &p_l,
   const int j,
-  VectorBase<Scalar> *g_j
+  const Ptr<VectorBase<Scalar> > &g_j
   );
+
+
+/** \brief Deprecated . */
+template<class Scalar>
+void eval_g(
+  const ModelEvaluator<Scalar> &model,
+  const int l,
+  const VectorBase<Scalar> &p_l,
+  const int j,
+  VectorBase<Scalar> *g_j
+  )
+{
+  eval_g(model, l, p_l, j, Teuchos::ptr(g_j));
+}
 
 
 /** \brief Evaluate <tt>g(j)(p,t))</tt>. */
@@ -209,6 +223,18 @@ void eval_g(
   const Scalar &t,
   const int j,
   VectorBase<Scalar> *g_j
+  );
+
+
+/** \brief Evaluate <tt>g(j)(p))</tt> and/or D(g)/D(p). */
+template<class Scalar>
+void eval_g_DgDp(
+  const ModelEvaluator<Scalar> &model,
+  const int l,
+  const VectorBase<Scalar> &p_l,
+  const int j,
+  const Ptr<VectorBase<Scalar> > &g_j,
+  const ModelEvaluatorBase::Derivative<Scalar> &DgDp_j_l
   );
 
 
@@ -808,14 +834,14 @@ void Thyra::eval_g(
   const int l,
   const VectorBase<Scalar> &p_l,
   const int j,
-  VectorBase<Scalar> *g_j
+  const Ptr<VectorBase<Scalar> > &g_j
   )
 {
   typedef ModelEvaluatorBase MEB;
   MEB::InArgs<Scalar> inArgs = model.createInArgs();
   MEB::OutArgs<Scalar> outArgs= model.createOutArgs();
-  inArgs.set_p(l,Teuchos::rcp(&p_l,false));
-  outArgs.set_g(j,Teuchos::rcp(g_j,false));
+  inArgs.set_p(l, Teuchos::rcpFromRef(p_l));
+  outArgs.set_g(j, Teuchos::rcpFromRef(*g_j));
   model.evalModel(inArgs,outArgs);
 }
 
@@ -836,6 +862,26 @@ void Thyra::eval_g(
   inArgs.set_p(l,Teuchos::rcp(&p_l,false));
   inArgs.set_t(t);
   outArgs.set_g(j,Teuchos::rcp(g_j,false));
+  model.evalModel(inArgs,outArgs);
+}
+
+
+template<class Scalar>
+void Thyra::eval_g_DgDp(
+  const ModelEvaluator<Scalar> &model,
+  const int l,
+  const VectorBase<Scalar> &p_l,
+  const int j,
+  const Ptr<VectorBase<Scalar> > &g_j,
+  const ModelEvaluatorBase::Derivative<Scalar> &DgDp_j_l
+  )
+{
+  typedef ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs= model.createOutArgs();
+  inArgs.set_p(l, Teuchos::rcpFromRef(p_l));
+  outArgs.set_g(j, Teuchos::rcpFromRef(*g_j));
+  outArgs.set_DgDp(j, l, DgDp_j_l);
   model.evalModel(inArgs,outArgs);
 }
 

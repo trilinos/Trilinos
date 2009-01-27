@@ -29,13 +29,14 @@
 */
 
 
-#include "OptiPack_DiagonalQuadraticResponseOnlyModelEvaluator_decl.hpp"
-#include "Thyra_DefaultSpmdVectorSpace.hpp"
-#include "Teuchos_DefaultComm.hpp"
-
-
 #ifndef OPTIPACK_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_DEF_HPP
 #define OPTIPACK_DIAGONAL_QUADRATIC_RESPONSE_ONLY_MODEL_EVALUATOR_DEF_HPP
+
+
+#include "OptiPack_DiagonalQuadraticResponseOnlyModelEvaluator_decl.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_DetachedSpmdVectorView.hpp"
+#include "Teuchos_DefaultComm.hpp"
 
 
 namespace OptiPack {
@@ -129,7 +130,7 @@ DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::createOutArgsImpl() const
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
   outArgs.set_Np_Ng(Np_,Ng_);
-  outArgs.setSupports(MEB::OUT_ARG_DgDp, 0 ,0, MEB::DERIV_MV_BY_COL);
+  outArgs.setSupports(MEB::OUT_ARG_DgDp, 0 ,0, MEB::DERIV_TRANS_MV_BY_ROW);
   return outArgs;
 }
 
@@ -140,7 +141,36 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs
   ) const
 {
-  TEST_FOR_EXCEPT(true);
+
+  using Teuchos::as;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  using Thyra::get_dmv;
+  using Thyra::ConstDetachedSpmdVectorView;
+  using Thyra::DetachedSpmdVectorView;
+  typedef Thyra::ModelEvaluatorBase MEB;
+  typedef MEB::DerivativeMultiVector<Scalar> DMV;
+
+  ConstDetachedSpmdVectorView<Scalar> p(inArgs.get_p(0));
+
+  if (!is_null(outArgs.get_g(0))) {
+    Scalar g_val = ST::zero();
+    for (Thyra::Ordinal i = 0; i < p.subDim(); ++i) {
+      g_val += p[i] * p[i];
+    }
+    DetachedSpmdVectorView<Scalar>(outArgs.get_g(0))[0] =
+      as<Scalar>(0.5) * g_val;
+  }
+
+  if (!outArgs.get_DgDp(0,0).isEmpty()) {
+    const DMV DgDp_dmv =
+      get_dmv<Scalar>(outArgs.get_DgDp(0,0), "DgDp");
+    TEUCHOS_ASSERT_EQUALITY(DgDp_dmv.getOrientation(), MEB::DERIV_TRANS_MV_BY_ROW);
+    const DetachedSpmdVectorView<Scalar> DgDp_grad(DgDp_dmv.getMultiVector()->col(0));
+    for (Thyra::Ordinal i = 0; i < p.subDim(); ++i) {
+      DgDp_grad[i] = p[i];
+    }
+  }
+
 }
 
 

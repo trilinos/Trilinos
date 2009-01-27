@@ -1,5 +1,6 @@
 
 #include "RTOpPack_ROpMaxIndex.hpp"
+#include "Teuchos_ExplicitInstantiationHelpers.hpp"
 #include "Teuchos_implicit_cast.hpp"
 
 // Must come last!
@@ -157,8 +158,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMaxIndex, reductTie_2, Scalar )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(ROpMaxIndex, reductTie_2, SCALAR)
 
 
-INSTANT_UNIT_TESTS(float)
-INSTANT_UNIT_TESTS(double)
+TEUCHOS_MACRO_TEMPLATE_INSTANT_REAL_SCALAR_TYPES(INSTANT_UNIT_TESTS)
 
 
 } // namespace

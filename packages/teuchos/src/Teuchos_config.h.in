@@ -224,6 +224,9 @@
 /* Define if want to build teuchos-extended */
 #undef HAVE_TEUCHOS_EXTENDED
 
+/* Define if want to build teuchos-float */
+#undef HAVE_TEUCHOS_FLOAT
+
 /* Define if want to build teuchos-gmp */
 #undef HAVE_TEUCHOS_GNU_MP
 

@@ -326,6 +326,13 @@ AM_CONDITIONAL(HAVE_TEUCHOS_EXPLICIT_INSTANTIATION,
   [test "X$ac_cv_use_teuchos_explicit_instantiation" != "Xno"])
 
 #
+#  --enable-teuchos-float
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( teuchos, float, [Enable Teuchos float code], TEUCHOS_FLOAT, yes)
+AM_CONDITIONAL(HAVE_TEUCHOS_FLOAT, [test "X$ac_cv_use_teuchos_float" != "Xno"])
+
+#
 #  --enable-teuchos-complex
 #
 

@@ -1,5 +1,6 @@
 
 #include "RTOpPack_ROpMin.hpp"
+#include "Teuchos_ExplicitInstantiationHelpers.hpp"
 #include "supportUnitTestsHelpers.hpp"
 
 
@@ -101,8 +102,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpMin, reduct, Scalar )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(ROpMin, reduct, SCALAR)
 
 
-INSTANT_UNIT_TESTS(float)
-INSTANT_UNIT_TESTS(double)
+TEUCHOS_MACRO_TEMPLATE_INSTANT_REAL_SCALAR_TYPES(INSTANT_UNIT_TESTS)
 
 
 } // namespace
