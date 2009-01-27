@@ -79,7 +79,7 @@ FFLAGS="-g -O3 -fPIC" \
 --enable-sacado-alltests \
 --enable-stratimikos \
 --enable-sundance \
---enable-threadpool \
+--disable-threadpool \
 --enable-tpetra \
 --disable-webtrilinos \
 --enable-zoltan \
