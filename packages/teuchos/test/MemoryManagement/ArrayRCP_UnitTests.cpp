@@ -338,4 +338,20 @@ TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_int_to_char )
 }
 
 
+TEUCHOS_UNIT_TEST( ArrayRCP, evil_reinterpret_cast )
+{
+  ECHO(ArrayRCP<ArrayRCP<int> > arcp1 = arcp<ArrayRCP<int> >(n));
+  ECHO(ArrayRCP<ArrayRCP<const int> > arcp2 =
+    arcp_reinterpret_cast<ArrayRCP<const int> >(arcp1));
+  TEST_EQUALITY(arcp2.size(), arcp1.size());
+  TEST_EQUALITY(implicit_ptr_cast<const void>(&arcp1[0]),
+    implicit_ptr_cast<const void>(&arcp2[0]));
+  ECHO(ArrayRCP<const ArrayRCP<const int> > arcp3 = arcp2);
+  TEST_EQUALITY(arcp3.size(), arcp1.size());
+  TEST_EQUALITY(implicit_ptr_cast<const void>(&arcp1[0]),
+    implicit_ptr_cast<const void>(&arcp3[0]));
+  out << "arcp3 = " << arcp3 << "\n";
+}
+
+
 } // namespace
