@@ -13,8 +13,8 @@ common scenarios that we need to cmakify a package so that users that want to
 do something can just go down the list to learn how to implement that
 funcitonality.
 
-(*) [Ross and Kitware] Create separate dashboards for each Trilinos package.
-Kitware is going to actively work on this.
+(*) [Ross and Kitware] (Ongoing) Create separate dashboards for each
+Trilinos package.  Kitware is going to actively work on this.
 
 
 Backlog:
@@ -103,11 +103,6 @@ PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...)  to avoid duplicating the exec name in
 NAME and to replace the silly numeric numbering.  This will be important for
 keeping track of test results for different enables/disables.
 
-(*) [???] Change how XXX_config.h.in files get created so that they get
-created automatically.  We can do this by changing the scripts
-PACKAGE_ADD_OPTION(...) and PACKAGE_CONFIGURE_FILE(...) and adding a few new
-scripts.
-
 (*) [???] Upgrade Trilinos/CMakeLists.txt and dump-package-dep-table.py add an
 option to only show dependencies for enabled packages.  Actually, this could
 be done from within the CMake code when generating the XML file to only add
@@ -125,8 +120,8 @@ macro should be created to automate this process.
 
 (*) [???] Clean up tests and examples:
 
-- Move (almost) all tests into subdirectories since that is the right thing to
-do.
+- Move (almost) all tests into subdirectories since that is the right
+thing to do.
 
 (*) [???] Set up our own CDash results for Trilinos serial and mpi
 
@@ -135,10 +130,6 @@ do.
   + Get CVS update working
 
 - Set up a MAC test machine feeding into Trilinos dashboard ...
-
-(*) [???] Put out binary Windows and Mac installers for an interm
-release of Trilinos up on website and send an email to
-Trilinos-Announce allowing others to use this.
 
 (*) [???] Add an auto-documentation print system so that each package
 has detailed documentation on what options that it supports.  In this
@@ -159,5 +150,10 @@ automatically to exclude all such files.
 (*) [???] Add the Trilinos LGPL license to the NSIS installer
 
 
-Completed:
+Tentative:
 ----------
+
+(*) [???] Change how XXX_config.h.in files get created so that they get
+created automatically.  We can do this by changing the scripts
+PACKAGE_ADD_OPTION(...) and PACKAGE_CONFIGURE_FILE(...) and adding a few new
+scripts.

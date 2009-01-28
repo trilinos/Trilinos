@@ -42,48 +42,55 @@ B) Getting Help
 C) Configuring
 ---------------
 
-(*) Viewing available configure-time options with documentation
-
-  $ cd $BUILD_DIR
-  $ rm CMakeCache.txt
-  $ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
-    $TRILINOS_BASE_DIR
-
-  NOTE: You can also just look at the text file CMakeCache.txt after any
-  configure which gets created in the build directory which has all of the
-  cache variables and documentation.
-
-(*) Viewing available configure-time options without documentation
-
-  $ cd $BUILD_DIR
-  $ rm CMakeCache.txt
-  $ cmake -LA SAME_AS_ABOVE $TRILINOS_BASE_DIR
-
 (*) Configuring Trilinos to build
 
-  a) Using ccmake:
-
-    $ ccmake $TRILINOS_BASE_DIR
-
-  b) [Recommended] Create a 'do-configure' scripts like:
+  a) [Recommended] Create a 'do-configure' scripts like:
 
         EXTRA_ARGS=$@
         
         cmake \
           -D CMAKE_BUILD_TYPE:STRING=DEBUG \
-          -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+          -D Trilinos_ENABLE_<PACKAGE>:BOOL=ON \
           -D Trilinos_ENABLE_TESTS:BOOL=ON \
-          -D Trilinos_ENABLE_DEBUG:BOOL=ON \
           -D DART_TESTING_TIMEOUT:STRING=600 \
-          -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
           $EXTRA_ARGS \
-          ../../../Trilinos
+          ${TRILINOS_HOME}
+
+      where PACKAGE is Epetra, AztecOO, etc. and TRILINOS_HOME is set
+      to the Trilinos source base directory.
 
       and then run it as:
 
         $ ./do-configure [OTHER_OPTIONS]
 
       See Trilinos/sampleScripts/*cmake for real examples.
+
+  b) Using ccmake to configure:
+
+    $ ccmake $TRILINOS_HOME
+
+(*) Configuring a package(s) along with all of the packages it can use:
+
+    $ ./do-configure \
+       -D Trilinos_ENABLE_<PACKAGE>:BOOL=ON \
+       -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+       -D Trilinos_ENABLE_TESTS:BOOL=ON
+
+  NOTE: This set of arguments allows a user to turn on <PACKAGE> as well as all
+  packages that <PACKAGE> can use.  However, tests and examples will only be turned
+  on for <PACKAGE> (or any other packages specifically enabled).
+
+(*) Configuring Trilinos to test all effects of changing a given package(s):
+
+  $ ./do-configure \
+     -D Trilinos_ENABLE_<PACAKGE>:BOOL=ON \
+     -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES:BOOL=ON \
+     -D Trilinos_ENABLE_TESTS:BOOL=ON
+
+  NOTE: The above set of arguments will result in package <PACAKGE> and all
+  packages that depend on <PACAKGE> to be enabled and have all of their tests
+  turned on.  Tests will not be enabled in packages that do not depend on
+  <PACAKGE> in this case.  This speeds up and robustifies pre-checkin testing.
 
 (*) Configuring to build debug and release (optimized) versions:
 
@@ -151,7 +158,7 @@ C) Configuring
     logic that will try to find the right compiler wrappers.  However, you can
     specifically select them by setting:
 
-      -D MPI_[C,CXX_Fortran] COMPILER:FILEPATH="exec_name"
+      -D MPI_[C,CXX_Fortran]_COMPILER:FILEPATH="exec_name"
 
         The name of the MPI C/C++/Fortran compiler wrapper executable.
         If this is just the name of the program it will be looked for
@@ -231,31 +238,6 @@ C) Configuring
   NOTE: All examples are enabled by default when setting
   Trilinos_ENABLE_TESTS:BOOL=ON.
 
-(*) Configuring a package(s) along with all of the packages it can use:
-
-    $ ./do-configure \
-       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
-       -D Trilinos_ENABLE_<PACKAGE>:BOOL=ON \
-       -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
-       -D Trilinos_ENABLE_TESTS:BOOL=ON
-
-  NOTE: This set of arguments allows a user to turn on <PACKAGE> as well as all
-  packages that <PACKAGE> can use.  However, tests and examples will only be turned
-  on for <PACKAGE> (or any other packages specifically enabled).
-
-(*) Configuring Trilinos to test all effects of changing a given package(s):
-
-  $ ./do-configure \
-     -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
-     -D Trilinos_ENABLE_<PACAKGE>:BOOL=ON \
-     -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES:BOOL=ON \
-     -D Trilinos_ENABLE_TESTS:BOOL=ON
-
-  NOTE: The above set of arguments will result in package <PACAKGE> and all
-  packages that depend on <PACAKGE> to be enabled and have all of their tests
-  turned on.  Tests will not be enabled in packages that do not depend on
-  <PACAKGE> in this case.  This speeds up and robustifies pre-checkin testing.
-
 (*) Enabling support for optional Third-Party Libraries (TPLs):
 
   Pass into 'cmake':
@@ -299,15 +281,36 @@ C) Configuring
   NOTE: This produces a *lot* of output but can be very useful when debugging
   configuration problems
 
+(*) Getting verbose output from the makefile
+
+    $ ./do_configure -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
+
 (*) Getting very verbose output from configure
 
     $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
 
   NOTE: This will print a complete stack trace to see exactly where you are
 
+(*) Viewing available configure-time options with documentation
+
+  $ cd $BUILD_DIR
+  $ rm CMakeCache.txt
+  $ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+    $TRILINOS_HOME
+
+  NOTE: You can also just look at the text file CMakeCache.txt after any
+  configure which gets created in the build directory which has all of the
+  cache variables and documentation.
+
+(*) Viewing available configure-time options without documentation
+
+  $ cd $BUILD_DIR
+  $ rm CMakeCache.txt
+  $ cmake -LA SAME_AS_ABOVE $TRILINOS_HOME
+
 (*) Viewing current values of cache variables
 
-    $ cmake -LA $TRILINOS_BASE_DIR
+    $ cmake -LA $TRILINOS_HOME
 
   or just examine and grep the file CMakeCache.txt.
 
@@ -318,7 +321,7 @@ C) Configuring
   NOTE: Removing the CMakeCache.txt file is often needed when removing
   variables from the configure line.
 
-(*) Seeing configure errors
+(*) Viewing configure errors
 
   Configure time errors are shown in the file:
 
@@ -326,11 +329,15 @@ C) Configuring
 
 
 D) Building
----------------
+-----------
+
+(*) Building all targets:
+
+    $ make
 
 (*) Discovering what targets are available to build after configuration:
 
-      $ make help
+    $ make help
 
 (*) See all of the targets to build for a package:
 
@@ -375,19 +382,16 @@ D) Building
 E) Testing with CTest
 ---------------------
 
-(*) Using 'make test'
-
-    $ make test
-
-  NOTE: This is equivalent to just running 'ctest'.
-
-(*) Using 'ctest'
+(*) [Recommended] Testing using 'ctest'
 
     $ ctest -W 100
 
   (see output in Testing/Temporary/LastTest.log)
 
-  See detailed test otuput with :
+  NOTE: The -W argument is only supported in the CVS version of CMake
+  obtained as explained above.
+
+  See detailed test otuput with:
 
     $ ctest -VV
 
@@ -419,6 +423,12 @@ E) Testing with CTest
 
   (see the detailed output in
   ./Testing/Temporary/LastDynamicAnalysis_DATE_TIME.log)
+
+(*) Testing using 'make test'
+
+    $ make test
+
+  NOTE: This is equivalent to just running 'ctest'.
 
 
 F) Installing
