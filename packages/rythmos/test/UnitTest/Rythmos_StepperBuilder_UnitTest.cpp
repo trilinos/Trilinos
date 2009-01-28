@@ -58,7 +58,7 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, getValidParameters ) {
 TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, unsetParameterList ) {
   StepperBuilder<double> builder;
   RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->set(StepperType_name, ForwardEuler_name);
+  pl->set(StepperType_name(), ForwardEuler_name());
   builder.setParameterList(pl);
   RCP<ParameterList> oldPL = builder.unsetParameterList();
   // Did I get my parameter list back?
@@ -73,9 +73,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createBEStepper ) {
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name, BackwardEuler_name);
+    pl->set(StepperType_name(), BackwardEuler_name());
     // Specify a BackwardEuler setting
-    RCP<ParameterList> beSettings = Teuchos::sublist(pl,BackwardEulerSettings_name);
+    RCP<ParameterList> beSettings = Teuchos::sublist(pl,BackwardEulerSettings_name());
     RCP<ParameterList> vopl = Teuchos::sublist(beSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);
@@ -108,9 +108,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createIBDFStepper ) {
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name, ImplicitBDF_name);
+    pl->set(StepperType_name(), ImplicitBDF_name());
     // Specify a IBDF setting
-    RCP<ParameterList> ibdfSettings = Teuchos::sublist(pl,ImplicitBDFSettings_name);
+    RCP<ParameterList> ibdfSettings = Teuchos::sublist(pl,ImplicitBDFSettings_name());
     RCP<ParameterList> vopl = Teuchos::sublist(ibdfSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);
@@ -143,9 +143,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createFEStepper ) {
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name, ForwardEuler_name);
+    pl->set(StepperType_name(), ForwardEuler_name());
     // Specify a FE setting
-    RCP<ParameterList> feSettings = Teuchos::sublist(pl,ForwardEulerSettings_name);
+    RCP<ParameterList> feSettings = Teuchos::sublist(pl,ForwardEulerSettings_name());
     RCP<ParameterList> vopl = Teuchos::sublist(feSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);
@@ -167,9 +167,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createERKStepper ) {
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name, ExplicitRK_name);
+    pl->set(StepperType_name(), ExplicitRK_name());
     // Specify a ERK setting
-    RCP<ParameterList> erkSettings = Teuchos::sublist(pl,ExplicitRKSettings_name);
+    RCP<ParameterList> erkSettings = Teuchos::sublist(pl,ExplicitRKSettings_name());
     RCP<ParameterList> vopl = Teuchos::sublist(erkSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);
@@ -191,9 +191,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createIRKStepper ) {
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name, ImplicitRK_name);
+    pl->set(StepperType_name(), ImplicitRK_name());
     // Specify a IRK setting
-    RCP<ParameterList> irkSettings = Teuchos::sublist(pl,ImplicitRKSettings_name);
+    RCP<ParameterList> irkSettings = Teuchos::sublist(pl,ImplicitRKSettings_name());
     RCP<ParameterList> vopl = Teuchos::sublist(irkSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);
@@ -226,9 +226,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createETPStepper ) {
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name, ExplicitTP_name);
+    pl->set(StepperType_name(), ExplicitTP_name());
     // Specify a ETP setting
-    RCP<ParameterList> etpSettings = Teuchos::sublist(pl,ExplicitTPSettings_name);
+    RCP<ParameterList> etpSettings = Teuchos::sublist(pl,ExplicitTPSettings_name());
     RCP<ParameterList> vopl = Teuchos::sublist(etpSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);

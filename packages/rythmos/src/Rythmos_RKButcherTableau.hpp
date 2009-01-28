@@ -43,50 +43,50 @@
 
 namespace Rythmos {
 
-  const std::string RKBT_ForwardEuler_name = "Forward Euler";
-  const std::string RKBT_BackwardEuler_name = "Backward Euler";
-  const std::string Explicit4Stage_name = "Explicit 4 Stage";
-  const std::string Explicit3_8Rule_name = "Explicit 3/8 Rule";
+  inline const std::string RKBT_ForwardEuler_name() { return  "Forward Euler"; }
+  inline const std::string RKBT_BackwardEuler_name() { return  "Backward Euler"; }
+  inline const std::string Explicit4Stage_name() { return  "Explicit 4 Stage"; }
+  inline const std::string Explicit3_8Rule_name() { return  "Explicit 3/8 Rule"; }
 
-  const std::string Explicit2Stage2ndOrderRunge_name = "Explicit 2 Stage 2nd order by Runge";
-  const std::string Explicit3Stage3rdOrderHeun_name = "Explicit 3 Stage 3rd order by Heun";
-  const std::string Explicit3Stage3rdOrder_name = "Explicit 3 Stage 3rd order";
-  const std::string Explicit4Stage3rdOrderRunge_name = "Explicit 4 Stage 3rd order by Runge";
+  inline const std::string Explicit2Stage2ndOrderRunge_name() { return  "Explicit 2 Stage 2nd order by Runge"; }
+  inline const std::string Explicit3Stage3rdOrderHeun_name() { return  "Explicit 3 Stage 3rd order by Heun"; }
+  inline const std::string Explicit3Stage3rdOrder_name() { return  "Explicit 3 Stage 3rd order"; }
+  inline const std::string Explicit4Stage3rdOrderRunge_name() { return  "Explicit 4 Stage 3rd order by Runge"; }
 
-  const std::string Implicit1Stage2ndOrderGauss_name = "Implicit 1 Stage 2nd order Gauss";
-  const std::string Implicit2Stage4thOrderGauss_name = "Implicit 2 Stage 4th order Gauss";
-  const std::string Implicit3Stage6thOrderGauss_name = "Implicit 3 Stage 6th order Gauss";
+  inline const std::string Implicit1Stage2ndOrderGauss_name() { return  "Implicit 1 Stage 2nd order Gauss"; }
+  inline const std::string Implicit2Stage4thOrderGauss_name() { return  "Implicit 2 Stage 4th order Gauss"; }
+  inline const std::string Implicit3Stage6thOrderGauss_name() { return  "Implicit 3 Stage 6th order Gauss"; }
 
-  const std::string Implicit1Stage1stOrderRadauA_name = "Implicit 1 Stage 1st order Radau left";
-  const std::string Implicit2Stage3rdOrderRadauA_name = "Implicit 2 Stage 3rd order Radau left";
-  const std::string Implicit3Stage5thOrderRadauA_name = "Implicit 3 Stage 5th order Radau left";
+  inline const std::string Implicit1Stage1stOrderRadauA_name() { return  "Implicit 1 Stage 1st order Radau left"; }
+  inline const std::string Implicit2Stage3rdOrderRadauA_name() { return  "Implicit 2 Stage 3rd order Radau left"; }
+  inline const std::string Implicit3Stage5thOrderRadauA_name() { return  "Implicit 3 Stage 5th order Radau left"; }
 
-  const std::string Implicit1Stage1stOrderRadauB_name = "Implicit 1 Stage 1st order Radau right";
-  const std::string Implicit2Stage3rdOrderRadauB_name = "Implicit 2 Stage 3rd order Radau right";
-  const std::string Implicit3Stage5thOrderRadauB_name = "Implicit 3 Stage 5th order Radau right";
+  inline const std::string Implicit1Stage1stOrderRadauB_name() { return  "Implicit 1 Stage 1st order Radau right"; }
+  inline const std::string Implicit2Stage3rdOrderRadauB_name() { return  "Implicit 2 Stage 3rd order Radau right"; }
+  inline const std::string Implicit3Stage5thOrderRadauB_name() { return  "Implicit 3 Stage 5th order Radau right"; }
 
-  const std::string Implicit2Stage2ndOrderLobattoA_name = "Implicit 2 Stage 2nd order Lobatto A";
-  const std::string Implicit3Stage4thOrderLobattoA_name = "Implicit 3 Stage 4th order Lobatto A";
-  const std::string Implicit4Stage6thOrderLobattoA_name = "Implicit 4 Stage 6th order Lobatto A";
+  inline const std::string Implicit2Stage2ndOrderLobattoA_name() { return  "Implicit 2 Stage 2nd order Lobatto A"; }
+  inline const std::string Implicit3Stage4thOrderLobattoA_name() { return  "Implicit 3 Stage 4th order Lobatto A"; }
+  inline const std::string Implicit4Stage6thOrderLobattoA_name() { return  "Implicit 4 Stage 6th order Lobatto A"; }
 
-  const std::string Implicit2Stage2ndOrderLobattoB_name = "Implicit 2 Stage 2nd order Lobatto B";
-  const std::string Implicit3Stage4thOrderLobattoB_name = "Implicit 3 Stage 4th order Lobatto B";
-  const std::string Implicit4Stage6thOrderLobattoB_name = "Implicit 4 Stage 6th order Lobatto B";
+  inline const std::string Implicit2Stage2ndOrderLobattoB_name() { return  "Implicit 2 Stage 2nd order Lobatto B"; }
+  inline const std::string Implicit3Stage4thOrderLobattoB_name() { return  "Implicit 3 Stage 4th order Lobatto B"; }
+  inline const std::string Implicit4Stage6thOrderLobattoB_name() { return  "Implicit 4 Stage 6th order Lobatto B"; }
 
-  const std::string Implicit2Stage2ndOrderLobattoC_name = "Implicit 2 Stage 2nd order Lobatto C";
-  const std::string Implicit3Stage4thOrderLobattoC_name = "Implicit 3 Stage 4th order Lobatto C";
-  const std::string Implicit4Stage6thOrderLobattoC_name = "Implicit 4 Stage 6th order Lobatto C";
+  inline const std::string Implicit2Stage2ndOrderLobattoC_name() { return  "Implicit 2 Stage 2nd order Lobatto C"; }
+  inline const std::string Implicit3Stage4thOrderLobattoC_name() { return  "Implicit 3 Stage 4th order Lobatto C"; }
+  inline const std::string Implicit4Stage6thOrderLobattoC_name() { return  "Implicit 4 Stage 6th order Lobatto C"; }
 
-  const std::string Implicit2Stage4thOrderHammerHollingsworth_name = "Implicit 2 Stage 4th Order Hammer & Hollingsworth";
-  const std::string Implicit3Stage6thOrderKuntzmannButcher_name = "Implicit 3 Stage 6th Order Kuntzmann & Butcher";
-  const std::string Implicit4Stage8thOrderKuntzmannButcher_name = "Implicit 4 Stage 8th Order Kuntzmann & Butcher";
+  inline const std::string Implicit2Stage4thOrderHammerHollingsworth_name() { return  "Implicit 2 Stage 4th Order Hammer & Hollingsworth"; }
+  inline const std::string Implicit3Stage6thOrderKuntzmannButcher_name() { return  "Implicit 3 Stage 6th Order Kuntzmann & Butcher"; }
+  inline const std::string Implicit4Stage8thOrderKuntzmannButcher_name() { return  "Implicit 4 Stage 8th Order Kuntzmann & Butcher"; }
 
-  const std::string DIRK2Stage3rdOrder_name = "Diagonal IRK 2 Stage 3rd order";
+  inline const std::string DIRK2Stage3rdOrder_name() { return  "Diagonal IRK 2 Stage 3rd order"; }
 
-  const std::string SDIRK2Stage3rdOrder_name = "Singly Diagonal IRK 2 Stage 3rd order";
-  const std::string SDIRK5Stage5thOrder_name = "Singly Diagonal IRK 5 Stage 5th order";
-  const std::string SDIRK5Stage4thOrder_name = "Singly Diagonal IRK 5 Stage 4th order";
-  const std::string SDIRK3Stage4thOrder_name = "Singly Diagonal IRK 3 Stage 4th order";
+  inline const std::string SDIRK2Stage3rdOrder_name() { return  "Singly Diagonal IRK 2 Stage 3rd order"; }
+  inline const std::string SDIRK5Stage5thOrder_name() { return  "Singly Diagonal IRK 5 Stage 5th order"; }
+  inline const std::string SDIRK5Stage4thOrder_name() { return  "Singly Diagonal IRK 5 Stage 4th order"; }
+  inline const std::string SDIRK3Stage4thOrder_name() { return  "Singly Diagonal IRK 3 Stage 4th order"; }
 
   // Add all of the above strings to the following function in the cpp file.
   Teuchos::Array<std::string> getS_RKButcherTableauMethodNames();
@@ -95,11 +95,11 @@ namespace Rythmos {
 
 // 08/13/08 tscoffe:  These are namespaced so they are only available in this file.
 namespace {
+
   using Teuchos::RCP;
-  using Teuchos::rcp;
 
   const std::string SelectionTypeByName_name = "Method by name";
-  const std::string SelectionTypeByName_default = Rythmos::RKBT_BackwardEuler_name;
+  const std::string SelectionTypeByName_default = Rythmos::RKBT_BackwardEuler_name();
   const std::string SelectionTypeExplicitByOrder_name = "Explicit method by order";
   const int SelectionTypeExplicitByOrder_default = 1;
   const std::string SelectionTypeImplicitByOrder_name = "Implicit method by order";
@@ -129,7 +129,7 @@ namespace {
         SelectionTypeSDIRKByOrder_name
         );
   const RCP<Teuchos::StringToIntegralParameterEntryValidator<E_RKButcherTableauSelectionTypes> >
-    rkButcherTableauSelectionTypeValidator = rcp(
+    rkButcherTableauSelectionTypeValidator = Teuchos::rcp(
         new Teuchos::StringToIntegralParameterEntryValidator<E_RKButcherTableauSelectionTypes>(
           S_RKButcherTableauSelectionTypes,
           Teuchos::tuple<E_RKButcherTableauSelectionTypes>(
@@ -223,7 +223,7 @@ namespace {
   }
 
   const RCP<Teuchos::StringToIntegralParameterEntryValidator<E_RKButcherTableauSelectionMethodNames> >
-    rkButcherTableauMethodNameValidator = rcp(
+    rkButcherTableauMethodNameValidator = Teuchos::rcp(
         new Teuchos::StringToIntegralParameterEntryValidator<E_RKButcherTableauSelectionMethodNames>(
           Rythmos::getS_RKButcherTableauMethodNames(),
           getE_RKButcherTableauMethodNames(),
@@ -637,7 +637,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createBackwardEuler_RKBT() 
 {
   std::ostringstream description;
-  description << RKBT_BackwardEuler_name << "\n"
+  description << RKBT_BackwardEuler_name() << "\n"
               << "c = [ 1 ]'\n"
               << "A = [ 1 ]\n"
               << "b = [ 1 ]'" << std::endl;
@@ -657,7 +657,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createForwardEuler_RKBT() 
 {
   std::ostringstream description;
-  description << RKBT_ForwardEuler_name << "\n"
+  description << RKBT_ForwardEuler_name() << "\n"
               << "c = [ 0 ]'\n"
               << "A = [ 0 ]\n"
               << "b = [ 1 ]'" << std::endl;
@@ -675,7 +675,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createExplicit4Stage4thOrder_RKBT()
 {
   std::ostringstream description;
-  description << Explicit4Stage_name << "\n"
+  description << Explicit4Stage_name() << "\n"
               << "\"The\" Runge-Kutta Method (explicit):\n"
               << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
               << "E. Hairer, S.P. Norsett, G. Wanner\n"
@@ -740,7 +740,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createExplicit3_8Rule_RKBT()
 {
   std::ostringstream description;
-  description << Explicit3_8Rule_name << "\n"
+  description << Explicit3_8Rule_name() << "\n"
               << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
               << "E. Hairer, S.P. Norsett, G. Wanner\n"
               << "Table 1.2, pg 138\n"
@@ -805,7 +805,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createExplicit4Stage3rdOrderRunge_RKBT()
 {
   std::ostringstream description;
-  description << Explicit4Stage3rdOrderRunge_name << "\n"
+  description << Explicit4Stage3rdOrderRunge_name() << "\n"
               << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
               << "E. Hairer, S.P. Norsett, G. Wanner\n"
               << "Table 1.1, pg 135\n"
@@ -869,7 +869,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createExplicit3Stage3rdOrder_RKBT()
 {
   std::ostringstream description;
-  description << Explicit3Stage3rdOrder_name << "\n" 
+  description << Explicit3Stage3rdOrder_name() << "\n" 
               << "c = [  0  1/2  1  ]'\n"
               << "A = [  0          ]\n"
               << "    [ 1/2  0      ]\n"
@@ -920,7 +920,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createExplicit3Stage3rdOrderHeun_RKBT()
 {
   std::ostringstream description;
-  description << Explicit3Stage3rdOrderHeun_name << "\n"
+  description << Explicit3Stage3rdOrderHeun_name() << "\n"
               << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
               << "E. Hairer, S.P. Norsett, G. Wanner\n"
               << "Table 1.1, pg 135\n"
@@ -974,7 +974,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createExplicit2Stage2ndOrderRunge_RKBT()
 {
   std::ostringstream description;
-  description << Explicit2Stage2ndOrderRunge_name << "\n"
+  description << Explicit2Stage2ndOrderRunge_name() << "\n"
               << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Edition\n"
               << "E. Hairer, S.P. Norsett, G. Wanner\n"
               << "Table 1.1, pg 135\n"
@@ -1016,7 +1016,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createSDIRK2Stage3rdOrder_RKBT()
 {
   std::ostringstream description;
-  description << SDIRK2Stage3rdOrder_name << "\n"
+  description << SDIRK2Stage3rdOrder_name() << "\n"
               << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
               << "E. Hairer, S. P. Norsett, and G. Wanner\n"
               << "Table 7.2, pg 207\n"
@@ -1051,7 +1051,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createDIRK2Stage3rdOrder_RKBT()
 {
   std::ostringstream description;
-  description << DIRK2Stage3rdOrder_name << "\n"
+  description << DIRK2Stage3rdOrder_name() << "\n"
               << "Hammer & Hollingsworth method\n"
               << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
               << "E. Hairer, S. P. Norsett, and G. Wanner\n"
@@ -1084,7 +1084,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit3Stage6thOrderKuntzmannButcher_RKBT()
 {
   std::ostringstream description;
-  description << Implicit3Stage6thOrderKuntzmannButcher_name << "\n"
+  description << Implicit3Stage6thOrderKuntzmannButcher_name() << "\n"
               << "Kuntzmann & Butcher method\n"
               << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
               << "E. Hairer, S. P. Norsett, and G. Wanner\n"
@@ -1124,7 +1124,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit4Stage8thOrderKuntzmannButcher_RKBT()
 {
   std::ostringstream description;
-  description << Implicit4Stage8thOrderKuntzmannButcher_name << "\n"
+  description << Implicit4Stage8thOrderKuntzmannButcher_name() << "\n"
               << "Kuntzmann & Butcher method\n"
               << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
               << "E. Hairer, S. P. Norsett, and G. Wanner\n"
@@ -1195,7 +1195,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit2Stage4thOrderHammerHollingsworth_RKBT()
 {
   std::ostringstream description;
-  description << Implicit2Stage4thOrderHammerHollingsworth_name << "\n"
+  description << Implicit2Stage4thOrderHammerHollingsworth_name() << "\n"
               << "Hammer & Hollingsworth method\n"
               << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
               << "E. Hairer, S. P. Norsett, and G. Wanner\n"
@@ -1229,7 +1229,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit1Stage2ndOrderGauss_RKBT()
 {
   std::ostringstream description;
-  description << Implicit1Stage2ndOrderGauss_name << "\n"
+  description << Implicit1Stage2ndOrderGauss_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1260,7 +1260,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit2Stage4thOrderGauss_RKBT()
 {
   std::ostringstream description;
-  description << Implicit2Stage4thOrderGauss_name << "\n"
+  description << Implicit2Stage4thOrderGauss_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1298,7 +1298,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit3Stage6thOrderGauss_RKBT()
 {
   std::ostringstream description;
-  description << Implicit3Stage6thOrderGauss_name << "\n"
+  description << Implicit3Stage6thOrderGauss_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1347,7 +1347,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit1Stage1stOrderRadauA_RKBT()
 {
   std::ostringstream description;
-  description << Implicit1Stage1stOrderRadauA_name << "\n"
+  description << Implicit1Stage1stOrderRadauA_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1374,7 +1374,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit2Stage3rdOrderRadauA_RKBT()
 {
   std::ostringstream description;
-  description << Implicit2Stage3rdOrderRadauA_name << "\n"
+  description << Implicit2Stage3rdOrderRadauA_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1407,7 +1407,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit3Stage5thOrderRadauA_RKBT()
 {
   std::ostringstream description;
-  description << Implicit3Stage5thOrderRadauA_name << "\n"
+  description << Implicit3Stage5thOrderRadauA_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1448,7 +1448,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit1Stage1stOrderRadauB_RKBT()
 {
   std::ostringstream description;
-  description << Implicit1Stage1stOrderRadauB_name << "\n"
+  description << Implicit1Stage1stOrderRadauB_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1474,7 +1474,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit2Stage3rdOrderRadauB_RKBT()
 {
   std::ostringstream description;
-  description << Implicit2Stage3rdOrderRadauB_name << "\n"
+  description << Implicit2Stage3rdOrderRadauB_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1506,7 +1506,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit3Stage5thOrderRadauB_RKBT()
 {
   std::ostringstream description;
-  description << Implicit3Stage5thOrderRadauB_name << "\n"
+  description << Implicit3Stage5thOrderRadauB_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1546,7 +1546,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit2Stage2ndOrderLobattoA_RKBT()
 {
   std::ostringstream description;
-  description << Implicit2Stage2ndOrderLobattoA_name << "\n"
+  description << Implicit2Stage2ndOrderLobattoA_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1579,7 +1579,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit3Stage4thOrderLobattoA_RKBT()
 {
   std::ostringstream description;
-  description << Implicit3Stage4thOrderLobattoA_name << "\n"
+  description << Implicit3Stage4thOrderLobattoA_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1620,7 +1620,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit4Stage6thOrderLobattoA_RKBT()
 {
   std::ostringstream description;
-  description << Implicit4Stage6thOrderLobattoA_name << "\n"
+  description << Implicit4Stage6thOrderLobattoA_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1671,7 +1671,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit2Stage2ndOrderLobattoB_RKBT()
 {
   std::ostringstream description;
-  description << Implicit2Stage2ndOrderLobattoB_name << "\n"
+  description << Implicit2Stage2ndOrderLobattoB_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1704,7 +1704,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit3Stage4thOrderLobattoB_RKBT()
 {
   std::ostringstream description;
-  description << Implicit3Stage4thOrderLobattoB_name << "\n"
+  description << Implicit3Stage4thOrderLobattoB_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1745,7 +1745,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit4Stage6thOrderLobattoB_RKBT()
 {
   std::ostringstream description;
-  description << Implicit4Stage6thOrderLobattoB_name << "\n"
+  description << Implicit4Stage6thOrderLobattoB_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1796,7 +1796,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit2Stage2ndOrderLobattoC_RKBT()
 {
   std::ostringstream description;
-  description << Implicit2Stage2ndOrderLobattoC_name << "\n"
+  description << Implicit2Stage2ndOrderLobattoC_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1829,7 +1829,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit3Stage4thOrderLobattoC_RKBT()
 {
   std::ostringstream description;
-  description << Implicit3Stage4thOrderLobattoC_name << "\n"
+  description << Implicit3Stage4thOrderLobattoC_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1870,7 +1870,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createImplicit4Stage6thOrderLobattoC_RKBT()
 {
   std::ostringstream description;
-  description << Implicit4Stage6thOrderLobattoC_name << "\n"
+  description << Implicit4Stage6thOrderLobattoC_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"
@@ -1922,7 +1922,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createSDIRK5Stage5thOrder_RKBT()
 {
   std::ostringstream description;
-  description << SDIRK5Stage5thOrder_name << "\n"
+  description << SDIRK5Stage5thOrder_name() << "\n"
     << "A-stable\n"
     << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
     << "E. Hairer and G. Wanner\n"
@@ -1994,7 +1994,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createSDIRK5Stage4thOrder_RKBT()
 {
   std::ostringstream description;
-  description << SDIRK5Stage4thOrder_name << "\n"
+  description << SDIRK5Stage4thOrder_name() << "\n"
     << "L-stable\n"
     << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
     << "E. Hairer and G. Wanner\n"
@@ -2074,7 +2074,7 @@ template<class Scalar>
 RKButcherTableau<Scalar> createSDIRK3Stage4thOrder_RKBT()
 {
   std::ostringstream description;
-  description << SDIRK3Stage4thOrder_name << "\n"
+  description << SDIRK3Stage4thOrder_name() << "\n"
               << "A-stable\n"
               << "Solving Ordinary Differential Equations II:  Stiff and Differential-Algebraic Problems, 2nd Revised Edition\n"
               << "E. Hairer and G. Wanner\n"

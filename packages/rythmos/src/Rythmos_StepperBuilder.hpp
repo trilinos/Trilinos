@@ -43,26 +43,30 @@
 
 namespace Rythmos {
 
-const std::string BackwardEuler_name = "Backward Euler";
-const std::string BackwardEulerSettings_name = "Backward Euler Settings";
+inline const std::string BackwardEuler_name() { return  "Backward Euler"; }
+inline const std::string BackwardEulerSettings_name() { return  "Backward Euler Settings"; }
 
-const std::string ImplicitBDF_name = "Implictit BDF";
-const std::string ImplicitBDFSettings_name = "Implicit BDF Settings";
+inline const std::string ImplicitBDF_name() { return  "Implictit BDF"; }
+inline const std::string ImplicitBDFSettings_name() { return  "Implicit BDF Settings"; }
 
-const std::string ForwardEuler_name = "Forward Euler";
-const std::string ForwardEulerSettings_name = "Forward Euler Settings";
+inline const std::string ForwardEuler_name() { return  "Forward Euler"; }
+inline const std::string ForwardEulerSettings_name() { return  "Forward Euler Settings"; }
 
-const std::string ExplicitRK_name = "Explicit RK";
-const std::string ExplicitRKSettings_name = "Explicit RK Settings";
+inline const std::string ExplicitRK_name() { return  "Explicit RK"; }
+inline const std::string ExplicitRKSettings_name() { return  "Explicit RK Settings"; }
 
-const std::string ImplicitRK_name = "Implicit RK";
-const std::string ImplicitRKSettings_name = "Implicit RK Settings";
+inline const std::string ImplicitRK_name() { return  "Implicit RK"; }
+inline const std::string ImplicitRKSettings_name() { return  "Implicit RK Settings"; }
 
-const std::string ExplicitTP_name = "Explicit Taylor Polynomial";
-const std::string ExplicitTPSettings_name = "Explicit Taylor Polynomial Settings";
+inline const std::string ExplicitTP_name() { return  "Explicit Taylor Polynomial"; }
+inline const std::string ExplicitTPSettings_name() { return  "Explicit Taylor Polynomial Settings"; }
 
-const std::string StepperType_name = "Stepper Type";
-const std::string StepperType_default = BackwardEuler_name;
+} // namespace Rythmos
+
+namespace {
+
+inline const std::string StepperType_name() { return  "Stepper Type"; }
+inline const std::string StepperType_default() { return  Rythmos::BackwardEuler_name(); }
 
 enum E_StepperBuilderSelectionTypes {
   RYTHMOS_STEPPERBUILDER_SELECTION_TYPE_BACKWARDEULER,
@@ -75,26 +79,26 @@ enum E_StepperBuilderSelectionTypes {
 
 Teuchos::Array<std::string>
   S_StepperBuilderSelectionTypes = Teuchos::tuple<std::string>(
-      BackwardEuler_name,
-      ImplicitBDF_name,
-      ForwardEuler_name,
-      ExplicitRK_name,
-      ImplicitRK_name,
-      ExplicitTP_name
+      Rythmos::BackwardEuler_name(),
+      Rythmos::ImplicitBDF_name(),
+      Rythmos::ForwardEuler_name(),
+      Rythmos::ExplicitRK_name(),
+      Rythmos::ImplicitRK_name(),
+      Rythmos::ExplicitTP_name()
       );
 
   Teuchos::Array<std::string>
   S_StepperBuilderSettingsTypes = Teuchos::tuple<std::string>(
-      BackwardEulerSettings_name,
-      ImplicitBDFSettings_name,
-      ForwardEulerSettings_name,
-      ExplicitRKSettings_name,
-      ImplicitRKSettings_name,
-      ExplicitTPSettings_name
+      Rythmos::BackwardEulerSettings_name(),
+      Rythmos::ImplicitBDFSettings_name(),
+      Rythmos::ForwardEulerSettings_name(),
+      Rythmos::ExplicitRKSettings_name(),
+      Rythmos::ImplicitRKSettings_name(),
+      Rythmos::ExplicitTPSettings_name()
       );
 
 const RCP<Teuchos::StringToIntegralParameterEntryValidator<E_StepperBuilderSelectionTypes> >
-  stepperBuilderSelectionTypeValidator = rcp(
+  stepperBuilderSelectionTypeValidator = Teuchos::rcp(
       new Teuchos::StringToIntegralParameterEntryValidator<E_StepperBuilderSelectionTypes>(
         S_StepperBuilderSelectionTypes,
         Teuchos::tuple<E_StepperBuilderSelectionTypes>(
@@ -105,9 +109,13 @@ const RCP<Teuchos::StringToIntegralParameterEntryValidator<E_StepperBuilderSelec
           RYTHMOS_STEPPERBUILDER_SELECTION_TYPE_IMPLICITRK,
           RYTHMOS_STEPPERBUILDER_SELECTION_TYPE_EXPLICITTP
           ),
-        StepperType_name
+        StepperType_name()
         )
       );
+
+} // namespace
+
+namespace Rythmos {
 
 template<class Scalar>
   class StepperBuilder : virtual public Teuchos::ParameterListAcceptor
@@ -148,7 +156,7 @@ private:
 // nonmember constructor
 template<class Scalar>
 RCP<StepperBuilder<Scalar> > stepperBuilder() {
-  return rcp(new StepperBuilder<Scalar>() );
+  return Teuchos::rcp(new StepperBuilder<Scalar>() );
 }
 
 
@@ -174,46 +182,46 @@ RCP<const Teuchos::ParameterList> StepperBuilder<Scalar>::getValidParameters() c
   static RCP<ParameterList> validPL;
   if (is_null(validPL)) {
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set( StepperType_name, StepperType_default,
+    pl->set( StepperType_name(), StepperType_default(),
         "", stepperBuilderSelectionTypeValidator 
         );
     // Set up Backward Euler settings sublist
-    ParameterList& beSettings = pl->sublist(BackwardEulerSettings_name);
+    ParameterList& beSettings = pl->sublist(BackwardEulerSettings_name());
     {
       Rythmos::BackwardEulerStepper<double> stepper;
       beSettings.setParameters(
         *stepper.getValidParameters()).disableRecursiveValidation();
     }
     // Set up Implicit BDF settings sublist
-    ParameterList& ibdfSettings = pl->sublist(ImplicitBDFSettings_name);
+    ParameterList& ibdfSettings = pl->sublist(ImplicitBDFSettings_name());
     {
       Rythmos::ImplicitBDFStepper<double> stepper;
       ibdfSettings.setParameters(
         *stepper.getValidParameters()).disableRecursiveValidation();
     }
     // Set up Forward Euler settings sublist
-    ParameterList& feSettings = pl->sublist(ForwardEulerSettings_name);
+    ParameterList& feSettings = pl->sublist(ForwardEulerSettings_name());
     {
       Rythmos::ForwardEulerStepper<double> stepper;
       feSettings.setParameters(
         *stepper.getValidParameters()).disableRecursiveValidation();
     }
     // Set up Explicit RK settings sublist
-    ParameterList& erkSettings = pl->sublist(ExplicitRKSettings_name);
+    ParameterList& erkSettings = pl->sublist(ExplicitRKSettings_name());
     {
       Rythmos::ExplicitRKStepper<double> stepper;
       erkSettings.setParameters(
         *stepper.getValidParameters()).disableRecursiveValidation();
     }
     // Set up Implicit RK settings sublist
-    ParameterList& irkSettings = pl->sublist(ImplicitRKSettings_name);
+    ParameterList& irkSettings = pl->sublist(ImplicitRKSettings_name());
     {
       Rythmos::ImplicitRKStepper<double> stepper;
       irkSettings.setParameters(
         *stepper.getValidParameters()).disableRecursiveValidation();
     }
     // Set up Explicit TP settings sublist
-    ParameterList& etpSettings = pl->sublist(ExplicitTPSettings_name);
+    ParameterList& etpSettings = pl->sublist(ExplicitTPSettings_name());
     {
       Rythmos::ExplicitTaylorPolynomialStepper<double> stepper;
       etpSettings.setParameters(
@@ -239,7 +247,7 @@ RCP<StepperBase<Scalar> > StepperBuilder<Scalar>::create()
 {
   RCP<StepperBase<Scalar> > stepper;
   E_StepperBuilderSelectionTypes stepperTypeEnum = stepperBuilderSelectionTypeValidator->getIntegralValue(
-      *paramList_, StepperType_name, StepperType_default
+      *paramList_, StepperType_name(), StepperType_default()
       );
   if (stepperTypeEnum == RYTHMOS_STEPPERBUILDER_SELECTION_TYPE_BACKWARDEULER) {
     stepper = backwardEulerStepper<Scalar>();
