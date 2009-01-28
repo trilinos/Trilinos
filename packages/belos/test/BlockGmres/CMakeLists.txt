@@ -86,6 +86,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       bl_gmres_complex_hb
       SOURCES test_bl_gmres_complex_hb.cpp createEpetraProblem.cpp
+      COMM serial mpi
       ARGS
         "--verbose --filename=mhd1280b.cua"
         "--verbose --filename=mhd1280b.cua --pseudo"

@@ -97,11 +97,11 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("num-restarts",&maxrestarts,"Maximum number of restarts allowed for the GMRES solver.");
-  cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
-  cmdp.setOption("subspace-length",&length,"Maximum dimension of block-subspace used by GMRES solver.");
+  cmdp.setOption("num-restarts",&maxrestarts,"Maximum number of restarts allowed for the CG solver.");
+  cmdp.setOption("blocksize",&blocksize,"Block size used by CG .");
+  cmdp.setOption("subspace-length",&length,"Maximum dimension of block-subspace used by CG solver.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }

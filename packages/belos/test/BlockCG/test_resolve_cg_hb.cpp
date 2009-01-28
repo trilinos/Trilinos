@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   bool verbose = false, proc_verbose = false;
-  bool pseudo = false;   // use pseudo block GMRES to solve this linear system.
+  bool pseudo = false;   // use pseudo block CG to solve this linear system.
   int frequency = -1;
   int blocksize = 1;
   int numrhs = 1;
@@ -73,12 +73,12 @@ int main(int argc, char *argv[]) {
 
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block GMRES to solve the linear systems.");
+  cmdp.setOption("pseudo","regular",&pseudo,"Use pseudo-block CG to solve the linear systems.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
-  cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for GMRES solver.");
-  cmdp.setOption("blocksize",&blocksize,"Block size used by GMRES.");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
+  cmdp.setOption("max-restarts",&maxrestarts,"Maximum number of restarts allowed for CG solver.");
+  cmdp.setOption("blocksize",&blocksize,"Block size used by CG.");
   cmdp.setOption("maxiters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
