@@ -179,13 +179,16 @@ getEntry() const {
 template <typename EntryBase, typename EntryType>
 void
 Sacado::ParameterFamilyBase<EntryBase,EntryType>::
-printFamily(std::ostream& os) const
+print(std::ostream& os, bool print_values) const
 {
-  os << "Parameter family map:  " << name << std::endl;
-
-  // Loop over all entries
-  for (const_iterator it = family.begin(); it != family.end(); it++) {
-    os << "\t" << (*it).first << std::endl;
+  os << "\t" << name << ":  Supports AD = " << supports_ad
+     << ", Supports_Analytic = " << supports_analytic << std::endl;
+  if (print_values) {
+    for (const_iterator it = family.begin(); it != family.end(); it++) {
+      os << "\t\t" << (*it).first << " = ";
+      (*it).second->print(os);
+      os << std::endl;
+    }
   }
 
 }

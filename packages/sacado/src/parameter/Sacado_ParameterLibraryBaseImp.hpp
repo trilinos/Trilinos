@@ -172,3 +172,15 @@ fillVector(const Teuchos::Array<std::string>& names,
     pv.addParam((*it).second, values[i]);
   }
 }
+
+template <typename FamilyType, typename EntryType>
+void
+Sacado::ParameterLibraryBase<FamilyType,EntryType>::
+print(std::ostream& os, bool print_values) const
+{
+  os << "Library of all registered parameters:" << std::endl;
+  typename FamilyMap::const_iterator it = this->library.begin();
+  for (; it != this->library.end(); ++it) {
+    (*it).second->print(os, print_values);
+  }
+}

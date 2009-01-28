@@ -505,13 +505,13 @@ namespace Sacado {
 
     template <typename ExprT>
     std::ostream& operator << (std::ostream& os, const Expr<ExprT>& x) {
-      os << x.val() << "  [";
+      os << x.val() << " [";
       
       for (int i=0; i< x.size(); i++) {
-	os << " " << x.dx(i);
+        os << " " << x.dx(i);
       }
 
-      os << " ]\n";
+      os << " ]";
       return os;
     }
 

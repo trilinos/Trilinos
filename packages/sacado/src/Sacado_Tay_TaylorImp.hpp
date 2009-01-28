@@ -1350,7 +1350,7 @@ operator << (std::ostream& os, const Taylor<T>& a)
     os << a.coeff(i) << " ";
   }
 
-  os << "]\n";
+  os << "]";
   return os;
 }
 

@@ -34,6 +34,7 @@
 
 #include <map>
 #include <string>
+#include <iostream>
 
 #include "Teuchos_RCP.hpp"
 #include "Sacado_mpl_apply.hpp"
@@ -90,7 +91,11 @@ namespace Sacado {
     getEntry() const;
 
     //! Print the family
-    void printFamily(std::ostream& os) const;
+    /*!
+     * Set print_values = true to print each parameter value for
+     * each evaluation type.
+     */
+    void print(std::ostream& os, bool print_values = false) const;
 
   protected: 
 

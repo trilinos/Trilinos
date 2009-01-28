@@ -111,8 +111,9 @@ namespace Sacado {
     ScalarParameterLibrary& operator = (const ScalarParameterLibrary&);
 
   };
-  
+
 }
+
 
 template <typename EvalTypeTraits>
 void

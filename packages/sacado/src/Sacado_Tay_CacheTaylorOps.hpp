@@ -1818,11 +1818,11 @@ namespace Sacado {
       os << "[";
       
       for (unsigned int i=0; i<=x.degree(); i++) {
-	os.width(12);
-	os << x.coeff(i);
+        os.width(12);
+        os << x.coeff(i);
       }
 
-      os << "]\n";
+      os << "]";
       return os;
     }
 

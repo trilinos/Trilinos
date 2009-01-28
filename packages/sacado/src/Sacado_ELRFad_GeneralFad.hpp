@@ -269,14 +269,14 @@ namespace Sacado {
     
     template <typename T, typename Storage>
     std::ostream& operator << (std::ostream& os, 
-			       const GeneralFad<T,Storage>& x) {
-      os << x.val() << "  [";
+                               const GeneralFad<T,Storage>& x) {
+      os << x.val() << " [";
       
       for (int i=0; i< x.size(); i++) {
-	os << " " << x.dx(i);
+        os << " " << x.dx(i);
       }
 
-      os << " ]\n";
+      os << " ]";
       return os;
     }
 

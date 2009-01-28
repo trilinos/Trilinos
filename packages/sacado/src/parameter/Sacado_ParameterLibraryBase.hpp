@@ -32,6 +32,8 @@
 #ifndef SACADO_PARAMETERLIBRARYBASE_HPP
 #define SACADO_PARAMETERLIBRARYBASE_HPP
 
+#include <iostream>
+
 #include "Teuchos_Array.hpp"
 
 #include "Sacado_ParameterFamilyBase.hpp"
@@ -125,6 +127,13 @@ namespace Sacado {
                const Teuchos::Array<BaseValueType>& values,
                ParameterVectorBase<FamilyType,BaseValueType>& pv);
 
+    //! Print parameter library
+    /*!
+     * Set print_values = true to print each parameter value for
+     * each evaluation type.
+     */
+    void print(std::ostream& os, bool print_values = false) const;
+
   private:
 
     //! Private to prohibit copying
@@ -138,6 +147,15 @@ namespace Sacado {
     //! Scalar parameter library
     FamilyMap library;
   };
+
+  template <typename FamilyType, typename EntryType>
+  std::ostream& 
+  operator << (std::ostream& os, 
+               const ParameterLibraryBase<FamilyType, EntryType>& pl)
+  {
+    pl.print(os);
+    return os;
+  }
 }
 
 // Include template definitions

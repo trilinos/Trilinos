@@ -494,14 +494,14 @@ namespace Sacado {
 
     template <typename T, int Num>
     std::ostream& operator << (std::ostream& os, 
-			       const Expr< SFadExprTag<T,Num> >& x) {
-      os << x.val() << "  [";
+                               const Expr< SFadExprTag<T,Num> >& x) {
+      os << x.val() << " [";
       
       for (int i=0; i< x.size(); i++) {
-	os << " " << x.dx(i);
+        os << " " << x.dx(i);
       }
 
-      os << " ]\n";
+      os << " ]";
       return os;
     }
 

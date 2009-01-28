@@ -77,6 +77,9 @@ namespace Sacado {
 
     //! Get real parameter value
     virtual double getRealValue() const = 0;
+
+    //! Print entry
+    virtual void print(std::ostream& os) const = 0;
   };
 
   /*! 
@@ -111,6 +114,14 @@ namespace Sacado {
      */
     virtual double getRealValue() const {
       return Sacado::Value<ScalarT>::eval(this->getValue()); 
+    }
+
+    //! Print entry
+    /*!
+     * Default implementation should work in most cases.
+     */
+    virtual void print(std::ostream& os) const {
+      os << getValue();
     }
 
   };
