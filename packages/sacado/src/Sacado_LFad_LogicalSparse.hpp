@@ -339,8 +339,8 @@ namespace Sacado {
       ~LogicalSparse() {}
 
       //! Assignment operator with constant right-hand-side
-      LogicalSparse& operator=(const ValT& val) {
-	LogicalSparseImp< ValT,LogT >::operator=(val);
+      LogicalSparse& operator=(const ValT& v) {
+	LogicalSparseImp< ValT,LogT >::operator=(v);
 	return *this;
       }
 

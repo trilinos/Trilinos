@@ -141,9 +141,9 @@ template <class T> inline  void Fad<T>::diff(const int ith, const int n)
 
 }
 
-template <class T> inline  Fad<T> & Fad<T>::operator=(const T& val) 
+template <class T> inline  Fad<T> & Fad<T>::operator=(const T& v) 
 {
-  val_ = val;
+  val_ = v;
 
   if ( dx_.size() ) dx_.resize(0);
 
@@ -191,43 +191,43 @@ Fad<T>::operator- () const
 }
 
 
-template <class T> inline  Fad<T> & Fad<T>::operator+= (const T& val)
+template <class T> inline  Fad<T> & Fad<T>::operator+= (const T& v)
 {
-  val_ += val;
+  val_ += v;
 
   return *this;
 }
 
-template <class T> inline  Fad<T> & Fad<T>::operator-= (const T& val)
+template <class T> inline  Fad<T> & Fad<T>::operator-= (const T& v)
 {
-  val_ -= val;
+  val_ -= v;
 
   return *this;
 }
 
-template <class T> inline  Fad<T> & Fad<T>::operator*= (const T& val)
+template <class T> inline  Fad<T> & Fad<T>::operator*= (const T& v)
 {
-  val_ *= val;
+  val_ *= v;
 
   int sz = dx_.size();
   if ( sz ) {
     T* RESTRICT dxp = dx_.begin();
     for (int i=0; i<sz;++i)
-      dxp[i] *= val;
+      dxp[i] *= v;
   }
 
   return *this;
 }
 
-template <class T> inline  Fad<T> & Fad<T>::operator/= (const T& val)
+template <class T> inline  Fad<T> & Fad<T>::operator/= (const T& v)
 {
-  val_ /= val;
+  val_ /= v;
 
   int sz = dx_.size();
   if ( sz ) {
     T* RESTRICT dxp = dx_.begin();
     for (int i=0; i<sz;++i)
-      dxp[i] /= val;
+      dxp[i] /= v;
   }
 
   return *this;

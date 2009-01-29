@@ -126,14 +126,14 @@ namespace Sacado {
       ~SLFad() {}
 
       //! Assignment operator with constant right-hand-side
-      SLFad& operator=(const ValueT& val) {
-	GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(val);
+      SLFad& operator=(const ValueT& v) {
+	GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(v);
 	return *this;
       }
 
       //! Assignment operator with constant right-hand-side
-      SLFad& operator=(const ScalarT& val) {
-	GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(ValueT(val));
+      SLFad& operator=(const ScalarT& v) {
+	GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(ValueT(v));
 	return *this;
       }
 
@@ -212,8 +212,8 @@ namespace Sacado {
       ~SLFad() {}
 
       //! Assignment operator with constant right-hand-side
-      SLFad& operator=(const ValueT& val) {
-	GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(val);
+      SLFad& operator=(const ValueT& v) {
+	GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(v);
 	return *this;
       }
 

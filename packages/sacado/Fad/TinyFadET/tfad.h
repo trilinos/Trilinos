@@ -141,9 +141,9 @@ template <int Num,class T> inline  void TFad<Num,T>::diff(const int ith, const i
 
 }
 
-template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator=(const T& val) 
+template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator=(const T& v) 
 {
-  val_ = val;
+  val_ = v;
 
   for(int i=0; i<Num; ++i) 
     dx_[i] = T(0);
@@ -181,36 +181,36 @@ TFad<Num,T>::operator- () const
 }
 
 
-template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator+= (const T& val)
+template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator+= (const T& v)
 {
-  val_ += val;
+  val_ += v;
 
   return *this;
 }
 
-template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator-= (const T& val)
+template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator-= (const T& v)
 {
-  val_ -= val;
+  val_ -= v;
 
   return *this;
 }
 
-template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator*= (const T& val)
+template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator*= (const T& v)
 {
-  val_ *= val;
+  val_ *= v;
 
   for (int i=0; i<Num;++i)
-      dx_[i] *= val;
+      dx_[i] *= v;
 
   return *this;
 }
 
-template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator/= (const T& val)
+template <int Num,class T> inline  TFad<Num,T> & TFad<Num,T>::operator/= (const T& v)
 {
-  val_ /= val;
+  val_ /= v;
 
   for (int i=0; i<Num;++i)
-      dx_[i] /= val;
+      dx_[i] /= v;
 
   return *this;
 }

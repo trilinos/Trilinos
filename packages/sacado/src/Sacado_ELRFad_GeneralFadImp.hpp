@@ -146,9 +146,9 @@ Sacado::ELRFad::GeneralFad<T,Storage>::diff(const int ith, const int n)
 
 template <typename T, typename Storage> 
 inline Sacado::ELRFad::GeneralFad<T,Storage>& 
-Sacado::ELRFad::GeneralFad<T,Storage>::operator=(const T& val) 
+Sacado::ELRFad::GeneralFad<T,Storage>::operator=(const T& v) 
 {
-  s_.val_ = val;
+  s_.val_ = v;
 
   if (s_.size()) {
     s_.zero();    // We need to zero out the array for future resizes
@@ -210,44 +210,44 @@ Sacado::ELRFad::GeneralFad<T,Storage>::operator=(const Expr<S>& x)
 
 template <typename T, typename Storage> 
 inline  Sacado::ELRFad::GeneralFad<T,Storage>& 
-Sacado::ELRFad::GeneralFad<T,Storage>::operator += (const T& val)
+Sacado::ELRFad::GeneralFad<T,Storage>::operator += (const T& v)
 {
-  s_.val_ += val;
+  s_.val_ += v;
 
   return *this;
 }
 
 template <typename T, typename Storage> 
 inline Sacado::ELRFad::GeneralFad<T,Storage>& 
-Sacado::ELRFad::GeneralFad<T,Storage>::operator -= (const T& val)
+Sacado::ELRFad::GeneralFad<T,Storage>::operator -= (const T& v)
 {
-  s_.val_ -= val;
+  s_.val_ -= v;
 
   return *this;
 }
 
 template <typename T, typename Storage> 
 inline Sacado::ELRFad::GeneralFad<T,Storage>& 
-Sacado::ELRFad::GeneralFad<T,Storage>::operator *= (const T& val)
+Sacado::ELRFad::GeneralFad<T,Storage>::operator *= (const T& v)
 {
   int sz = s_.size();
 
-  s_.val_ *= val;
+  s_.val_ *= v;
   for (int i=0; i<sz; ++i)
-    s_.dx_[i] *= val;
+    s_.dx_[i] *= v;
 
   return *this;
 }
 
 template <typename T, typename Storage> 
 inline Sacado::ELRFad::GeneralFad<T,Storage>& 
-Sacado::ELRFad::GeneralFad<T,Storage>::operator /= (const T& val)
+Sacado::ELRFad::GeneralFad<T,Storage>::operator /= (const T& v)
 {
   int sz = s_.size();
 
-  s_.val_ /= val;
+  s_.val_ /= v;
   for (int i=0; i<sz; ++i)
-    s_.dx_[i] /= val;
+    s_.dx_[i] /= v;
 
   return *this;
 }

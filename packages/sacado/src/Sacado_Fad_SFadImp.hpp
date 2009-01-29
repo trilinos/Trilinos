@@ -131,9 +131,9 @@ resize(int sz)
 template <typename T, int Num> 
 inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >& 
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
-operator=(const T& val) 
+operator=(const T& v) 
 {
-  val_ = val;
+  val_ = v;
   ss_array<T>::zero(dx_, Num);
 
   return *this;
@@ -176,9 +176,9 @@ operator=(const Expr<S>& x)
 template <typename T, int Num> 
 inline  Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >& 
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
-operator += (const T& val)
+operator += (const T& v)
 {
-  val_ += val;
+  val_ += v;
 
   return *this;
 }
@@ -186,9 +186,9 @@ operator += (const T& val)
 template <typename T, int Num> 
 inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >& 
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
-operator -= (const T& val)
+operator -= (const T& v)
 {
-  val_ -= val;
+  val_ -= v;
 
   return *this;
 }
@@ -196,12 +196,12 @@ operator -= (const T& val)
 template <typename T, int Num> 
 inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >& 
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
-operator *= (const T& val)
+operator *= (const T& v)
 {
-  val_ *= val;
+  val_ *= v;
 
   for (int i=0; i<Num; ++i)
-    dx_[i] *= val;
+    dx_[i] *= v;
 
   return *this;
 }
@@ -209,12 +209,12 @@ operator *= (const T& val)
 template <typename T, int Num> 
 inline Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >& 
 Sacado::Fad::Expr< Sacado::Fad::SFadExprTag<T,Num> >::
-operator /= (const T& val)
+operator /= (const T& v)
 {
-  val_ /= val;
+  val_ /= v;
 
   for (int i=0; i<Num; ++i)
-    dx_[i] /= val;
+    dx_[i] /= v;
 
   return *this;
 }

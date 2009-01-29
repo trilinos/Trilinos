@@ -122,14 +122,14 @@ namespace Sacado {
       ~DMFad() {}
 
       //! Assignment operator with constant right-hand-side
-      DMFad& operator=(const ValueT& val) {
-	GeneralFad< ValueT,MemPoolStorage<ValueT> >::operator=(val);
+      DMFad& operator=(const ValueT& v) {
+	GeneralFad< ValueT,MemPoolStorage<ValueT> >::operator=(v);
 	return *this;
       }
 
       //! Assignment operator with constant right-hand-side
-      DMFad& operator=(const ScalarT& val) {
-	GeneralFad< ValueT,MemPoolStorage<ValueT> >::operator=(ValueT(val));
+      DMFad& operator=(const ScalarT& v) {
+	GeneralFad< ValueT,MemPoolStorage<ValueT> >::operator=(ValueT(v));
 	return *this;
       }
 
@@ -217,8 +217,8 @@ namespace Sacado {
       ~DMFad() {}
 
       //! Assignment operator with constant right-hand-side
-      DMFad& operator=(const ValueT& val) {
-	GeneralFad< ValueT,MemPoolStorage<ValueT> >::operator=(val);
+      DMFad& operator=(const ValueT& v) {
+	GeneralFad< ValueT,MemPoolStorage<ValueT> >::operator=(v);
 	return *this;
       }
 

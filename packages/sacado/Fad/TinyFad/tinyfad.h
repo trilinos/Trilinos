@@ -157,7 +157,7 @@ TinyFad<Num,T>::~TinyFad()
 }
 
 template <int Num, class T> inline 
-void TinyFad<Num,T>::diff(const int ith, const int n) 
+void TinyFad<Num,T>::diff(const int ith, const int n_) 
 { 
 
   df_ = T(0.);

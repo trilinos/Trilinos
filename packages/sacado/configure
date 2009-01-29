@@ -6644,7 +6644,7 @@ if test "${with_adolc_incdir+set}" = set; then
 else
 
               if test "X${ADOLC_PATH}" != "X"; then
-                ADOLC_INCDIR="${ADOLC_PATH}/include/adolc"
+                ADOLC_INCDIR="${ADOLC_PATH}/include"
               else
                 ADOLC_INCDIR=
               fi

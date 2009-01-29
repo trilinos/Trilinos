@@ -75,6 +75,6 @@ void HermiteUnitTest::comparePCEs(const pce_type& xc, double x) {
   compareDoubles(xc.coeff(0), x);
 }
 
-void HermiteUnitTest::compareDoubles(double a, double b) {
-  CPPUNIT_ASSERT( fabs(a-b) < tol_a + tol_r*fabs(a) );
+void HermiteUnitTest::compareDoubles(double x, double y) {
+  CPPUNIT_ASSERT( fabs(x-y) < tol_a + tol_r*fabs(x) );
 }

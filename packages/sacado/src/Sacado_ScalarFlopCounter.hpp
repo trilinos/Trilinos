@@ -225,7 +225,7 @@ namespace Sacado {
       ScalarFlopCounter() {}
 
       /// Construct to scalar value
-      ScalarFlopCounter(const T &val) : val_(val) {}
+      ScalarFlopCounter(const T &v) : val_(v) {}
 
       /// Return the current value
       const T& val() const { return val_; }

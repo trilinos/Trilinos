@@ -308,7 +308,7 @@ AC_ARG_WITH(adolc-incdir,
             [ADOLC_INCDIR=${withval}],
             [
               if test "X${ADOLC_PATH}" != "X"; then
-                ADOLC_INCDIR="${ADOLC_PATH}/include/adolc"
+                ADOLC_INCDIR="${ADOLC_PATH}/include"
               else
                 ADOLC_INCDIR=
               fi

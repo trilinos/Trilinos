@@ -218,15 +218,15 @@ public:
   UNARY_ASSIGNOP_TEST(testDivideEquals, /=);
 
   template <typename ScalarT>
-  ScalarT composite1(const ScalarT& a, const ScalarT& b) {
-    ScalarT t1 = 3. * a + sin(b) / log(fabs(a - b * 7.));
+  ScalarT composite1(const ScalarT& x, const ScalarT& y) {
+    ScalarT t1 = 3. * x + sin(y) / log(fabs(x - y * 7.));
     ScalarT t2 = 1.0e3;
     ScalarT t3 = 5.7e4;
     ScalarT t4 = 3.2e5;
-    t1 *= cos(a + exp(t1)) / 6. - tan(t1*sqrt(fabs(a * log10(fabs(b)))));
-    t1 -= acos((6.+asin(pow(fabs(a),b)/t2))/t3) * asin(pow(fabs(b),2.)*1.0/t4) * atan((b*pow(2.,log(fabs(a))))/(t3*t4));
-    t1 /= cosh(b - 0.7) + 7.*sinh(t1 + 0.8)*tanh(9./a) - 9.;
-    t1 += pow(fabs(a*4.),b-8.)/cos(a*b*a);
+    t1 *= cos(x + exp(t1)) / 6. - tan(t1*sqrt(fabs(x * log10(fabs(y)))));
+    t1 -= acos((6.+asin(pow(fabs(x),y)/t2))/t3) * asin(pow(fabs(y),2.)*1.0/t4) * atan((y*pow(2.,log(fabs(x))))/(t3*t4));
+    t1 /= cosh(y - 0.7) + 7.*sinh(t1 + 0.8)*tanh(9./x) - 9.;
+    t1 += pow(fabs(x*4.),y-8.)/cos(x*y*x);
     
   return t1;
 }

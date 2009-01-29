@@ -374,14 +374,14 @@ namespace Sacado {
       ~SFad() {}
 
       //! Assignment operator with constant right-hand-side
-      SFad& operator=(const ValueT& val) {
-	Expr< SFadExprTag< ValueT,Num > >::operator=(val);
+      SFad& operator=(const ValueT& v) {
+	Expr< SFadExprTag< ValueT,Num > >::operator=(v);
 	return *this;
       }
 
       //! Assignment operator with constant right-hand-side
-      SFad& operator=(const ScalarT& val) {
-	Expr< SFadExprTag< ValueT,Num > >::operator=(ValueT(val));
+      SFad& operator=(const ScalarT& v) {
+	Expr< SFadExprTag< ValueT,Num > >::operator=(ValueT(v));
 	return *this;
       }
 
@@ -460,8 +460,8 @@ namespace Sacado {
       ~SFad() {}
 
       //! Assignment operator with constant right-hand-side
-      SFad& operator=(const ValueT& val) {
-	Expr< SFadExprTag< ValueT,Num > >::operator=(val);
+      SFad& operator=(const ValueT& v) {
+	Expr< SFadExprTag< ValueT,Num > >::operator=(v);
 	return *this;
       }
 

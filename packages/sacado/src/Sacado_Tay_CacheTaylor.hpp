@@ -228,7 +228,7 @@ namespace Sacado {
       //@{
 
       //! Assignment operator with constant right-hand-side
-      CacheTaylor<T>& operator=(const T& val);
+      CacheTaylor<T>& operator=(const T& v);
 
       //! Assignment with CacheTaylor right-hand-side
       CacheTaylor<T>& operator=(const CacheTaylor<T>& x);

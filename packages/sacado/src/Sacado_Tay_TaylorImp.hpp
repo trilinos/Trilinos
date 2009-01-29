@@ -187,7 +187,7 @@ reserve(unsigned int d)
 template <typename T> 
 Taylor<T>& 
 Taylor<T>::
-operator=(const T& val) 
+operator=(const T& v) 
 {
   th.makeOwnCopy();
 
@@ -197,7 +197,7 @@ operator=(const T& val)
     th->coeff_ = Sacado::ds_array<T>::get_and_fill(th->len_);
   }
 
-  th->coeff_[0] = val;
+  th->coeff_[0] = v;
   Sacado::ds_array<T>::zero(th->coeff_+1, th->deg_);
 
   return *this;
@@ -238,11 +238,11 @@ operator-() const
 template <typename T> 
  Taylor<T>& 
 Taylor<T>::
-operator+=(const T& val)
+operator+=(const T& v)
 {
   th.makeOwnCopy();
 
-  th->coeff_[0] += val;
+  th->coeff_[0] += v;
 
   return *this;
 }
@@ -250,11 +250,11 @@ operator+=(const T& val)
 template <typename T> 
 Taylor<T>& 
 Taylor<T>::
-operator-=(const T& val)
+operator-=(const T& v)
 {
   th.makeOwnCopy();
 
-  th->coeff_[0] -= val;
+  th->coeff_[0] -= v;
 
   return *this;
 }
@@ -262,12 +262,12 @@ operator-=(const T& val)
 template <typename T> 
 Taylor<T>& 
 Taylor<T>::
-operator*=(const T& val)
+operator*=(const T& v)
 {
   th.makeOwnCopy();
 
   for (unsigned int i=0; i<=th->deg_; i++)
-    th->coeff_[i] *= val;
+    th->coeff_[i] *= v;
 
   return *this;
 }
@@ -275,12 +275,12 @@ operator*=(const T& val)
 template <typename T> 
 Taylor<T>& 
 Taylor<T>::
-operator/=(const T& val)
+operator/=(const T& v)
 {
   th.makeOwnCopy();
 
   for (unsigned int i=0; i<=th->deg_; i++)
-    th->coeff_[i] /= val;
+    th->coeff_[i] /= v;
 
   return *this;
 }

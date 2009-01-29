@@ -211,7 +211,7 @@ toStandardBasis() const
 template <typename T> 
 Hermite<T>& 
 Hermite<T>::
-operator=(const T& val) 
+operator=(const T& v) 
 {
   th.makeOwnCopy();
 
@@ -221,7 +221,7 @@ operator=(const T& val)
     th->coeff_ = Sacado::ds_array<T>::get_and_fill(th->len_);
   }
 
-  th->coeff_[0] = val;
+  th->coeff_[0] = v;
   Sacado::ds_array<T>::zero(th->coeff_+1, th->deg_);
 
   return *this;
@@ -262,11 +262,11 @@ operator-() const
 template <typename T> 
  Hermite<T>& 
 Hermite<T>::
-operator+=(const T& val)
+operator+=(const T& v)
 {
   th.makeOwnCopy();
 
-  th->coeff_[0] += val;
+  th->coeff_[0] += v;
 
   return *this;
 }
@@ -274,11 +274,11 @@ operator+=(const T& val)
 template <typename T> 
 Hermite<T>& 
 Hermite<T>::
-operator-=(const T& val)
+operator-=(const T& v)
 {
   th.makeOwnCopy();
 
-  th->coeff_[0] -= val;
+  th->coeff_[0] -= v;
 
   return *this;
 }
@@ -286,12 +286,12 @@ operator-=(const T& val)
 template <typename T> 
 Hermite<T>& 
 Hermite<T>::
-operator*=(const T& val)
+operator*=(const T& v)
 {
   th.makeOwnCopy();
 
   for (unsigned int i=0; i<=th->deg_; i++)
-    th->coeff_[i] *= val;
+    th->coeff_[i] *= v;
 
   return *this;
 }
@@ -299,12 +299,12 @@ operator*=(const T& val)
 template <typename T> 
 Hermite<T>& 
 Hermite<T>::
-operator/=(const T& val)
+operator/=(const T& v)
 {
   th.makeOwnCopy();
 
   for (unsigned int i=0; i<=th->deg_; i++)
-    th->coeff_[i] /= val;
+    th->coeff_[i] /= v;
 
   return *this;
 }
@@ -815,7 +815,7 @@ operator/(const Hermite<T>& a,
 
     typename Hermite<T>::ws_type::matrix_type& A = 
       Hermite<T>::workspace.getMatrix();
-    typename Hermite<T>::ws_type::matrix_type& b = 
+    typename Hermite<T>::ws_type::matrix_type& B = 
       Hermite<T>::workspace.getRHS();
     const typename Hermite<T>::ws_type::tp_type& Cijk = 
       Hermite<T>::workspace.getTripleProduct();
@@ -833,9 +833,9 @@ operator/(const Hermite<T>& a,
     
     // Fill b
     for (unsigned int i=0; i<=da; i++)
-      b(i,0) = ca[i];
+      B(i,0) = ca[i];
     for (unsigned int i=da+1; i<=dc; i++)
-      b(i,0) = T(0.0);
+      B(i,0) = T(0.0);
 
     // Solve system
     int info = Hermite<T>::workspace.solve(dc+1, 1);
@@ -851,7 +851,7 @@ operator/(const Hermite<T>& a,
 
     // Get coefficients
     for (unsigned int i=0; i<=dc; i++)
-      cc[i] = b(i,0);
+      cc[i] = B(i,0);
   }
   else {
     for (unsigned int i=0; i<=da; i++)
@@ -883,7 +883,7 @@ operator/(const T& a, const Hermite<T>& b)
 
     typename Hermite<T>::ws_type::matrix_type& A = 
       Hermite<T>::workspace.getMatrix();
-    typename Hermite<T>::ws_type::matrix_type& b = 
+    typename Hermite<T>::ws_type::matrix_type& B = 
       Hermite<T>::workspace.getRHS();
     const typename Hermite<T>::ws_type::tp_type& Cijk = 
       Hermite<T>::workspace.getTripleProduct();
@@ -900,9 +900,9 @@ operator/(const T& a, const Hermite<T>& b)
     }
 
     // Fill b
-    b(0,0) = a;
+    B(0,0) = a;
     for (unsigned int i=1; i<=dc; i++)
-      b(i,0) = T(0.0);
+      B(i,0) = T(0.0);
 
     // Solve system
     int info = Hermite<T>::workspace.solve(dc+1, 1);
@@ -918,7 +918,7 @@ operator/(const T& a, const Hermite<T>& b)
 
     // Get coefficients
     for (unsigned int i=0; i<=dc; i++)
-      cc[i] = b(i,0);
+      cc[i] = B(i,0);
   }
   else 
     cc[0] = a / cb[0];

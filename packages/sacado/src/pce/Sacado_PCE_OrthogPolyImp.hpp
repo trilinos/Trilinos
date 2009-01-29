@@ -123,7 +123,7 @@ evaluate(const std::vector<typename OrthogPoly<T>::value_type>& point) const
 template <typename T> 
 OrthogPoly<T>& 
 OrthogPoly<T>::
-operator=(const typename OrthogPoly<T>::value_type& val) 
+operator=(const typename OrthogPoly<T>::value_type& v) 
 {
   th.makeOwnCopy();
 
@@ -131,7 +131,7 @@ operator=(const typename OrthogPoly<T>::value_type& val)
     th->resize(1);
   }
 
-  (*th)[0] = val;
+  (*th)[0] = v;
   Sacado::ds_array<value_type>::zero(th->coeff()+1, th->size()-1);
 
   return *this;
@@ -167,40 +167,40 @@ operator-() const
 template <typename T> 
 OrthogPoly<T>& 
 OrthogPoly<T>::
-operator+=(const typename OrthogPoly<T>::value_type& val)
+operator+=(const typename OrthogPoly<T>::value_type& v)
 {
   th.makeOwnCopy();
-  expansion->plusEqual(*th, val);
+  expansion->plusEqual(*th, v);
   return *this;
 }
 
 template <typename T> 
 OrthogPoly<T>& 
 OrthogPoly<T>::
-operator-=(const typename OrthogPoly<T>::value_type& val)
+operator-=(const typename OrthogPoly<T>::value_type& v)
 {
   th.makeOwnCopy();
-  expansion->minusEqual(*th, val);
+  expansion->minusEqual(*th, v);
   return *this;
 }
 
 template <typename T> 
 OrthogPoly<T>& 
 OrthogPoly<T>::
-operator*=(const typename OrthogPoly<T>::value_type& val)
+operator*=(const typename OrthogPoly<T>::value_type& v)
 {
   th.makeOwnCopy();
-  expansion->timesEqual(*th, val);
+  expansion->timesEqual(*th, v);
   return *this;
 }
 
 template <typename T> 
 OrthogPoly<T>& 
 OrthogPoly<T>::
-operator/=(const typename OrthogPoly<T>::value_type& val)
+operator/=(const typename OrthogPoly<T>::value_type& v)
 {
   th.makeOwnCopy();
-  expansion->divideEqual(*th, val);
+  expansion->divideEqual(*th, v);
   return *this;
 }
 

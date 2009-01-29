@@ -52,9 +52,9 @@ inline Sacado::Tay::CacheTaylor<T>::CacheTaylor(const Expr<S>& x) :
 
 template <typename T> 
 inline Sacado::Tay::CacheTaylor<T>& 
-Sacado::Tay::CacheTaylor<T>::operator=(const T& val) 
+Sacado::Tay::CacheTaylor<T>::operator=(const T& v) 
 {
-  this->coeff_[0] = val;
+  this->coeff_[0] = v;
 
   for (unsigned int i=1; i<this->coeff_.size(); i++)
     this->coeff_[i] = T(0.);
@@ -107,36 +107,36 @@ Sacado::Tay::CacheTaylor<T>::operator=(const Expr<S>& x)
 
 template <typename T> 
 inline  Sacado::Tay::CacheTaylor<T>& 
-Sacado::Tay::CacheTaylor<T>::operator += (const T& val)
+Sacado::Tay::CacheTaylor<T>::operator += (const T& v)
 {
-  this->coeff_[0] += val;
+  this->coeff_[0] += v;
 
   return *this;
 }
 
 template <typename T> 
 inline Sacado::Tay::CacheTaylor<T>& 
-Sacado::Tay::CacheTaylor<T>::operator -= (const T& val)
+Sacado::Tay::CacheTaylor<T>::operator -= (const T& v)
 {
-  this->coeff_[0] -= val;
+  this->coeff_[0] -= v;
 
   return *this;
 }
 
 template <typename T> 
 inline Sacado::Tay::CacheTaylor<T>& 
-Sacado::Tay::CacheTaylor<T>::operator *= (const T& val)
+Sacado::Tay::CacheTaylor<T>::operator *= (const T& v)
 {
-  this->coeff_ *= val;
+  this->coeff_ *= v;
 
   return *this;
 }
 
 template <typename T> 
 inline Sacado::Tay::CacheTaylor<T>& 
-Sacado::Tay::CacheTaylor<T>::operator /= (const T& val)
+Sacado::Tay::CacheTaylor<T>::operator /= (const T& v)
 {
-  this->coeff_ /= val;
+  this->coeff_ /= v;
 
   return *this;
 }

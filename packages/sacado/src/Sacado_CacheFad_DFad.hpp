@@ -128,14 +128,14 @@ namespace Sacado {
       ~DFad() {}
 
       //! Assignment operator with constant right-hand-side
-      DFad& operator=(const ValueT& val) {
-	GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(val);
+      DFad& operator=(const ValueT& v) {
+	GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(v);
 	return *this;
       }
 
       //! Assignment operator with constant right-hand-side
-      DFad& operator=(const ScalarT& val) {
-	GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(ValueT(val));
+      DFad& operator=(const ScalarT& v) {
+	GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(ValueT(v));
 	return *this;
       }
 
@@ -218,8 +218,8 @@ namespace Sacado {
       ~DFad() {}
 
       //! Assignment operator with constant right-hand-side
-      DFad& operator=(const ValueT& val) {
-	GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(val);
+      DFad& operator=(const ValueT& v) {
+	GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(v);
 	return *this;
       }
 

@@ -93,9 +93,9 @@ diff(const int ith, const int n)
 template <typename ValT, typename LogT> 
 inline Sacado::LFad::LogicalSparseImp<ValT,LogT>& 
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator=(const ValT& val) 
+operator=(const ValT& v) 
 {
-  s_.val_ = val;
+  s_.val_ = v;
 
   if (s_.size()) {
     s_.zero();    // We need to zero out the array for future resizes
@@ -144,9 +144,9 @@ operator=(const Expr<S>& x)
 template <typename ValT, typename LogT> 
 inline  Sacado::LFad::LogicalSparseImp<ValT,LogT>& 
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator += (const ValT& val)
+operator += (const ValT& v)
 {
-  s_.val_ += val;
+  s_.val_ += v;
 
   return *this;
 }
@@ -154,9 +154,9 @@ operator += (const ValT& val)
 template <typename ValT, typename LogT> 
 inline Sacado::LFad::LogicalSparseImp<ValT,LogT>& 
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator -= (const ValT& val)
+operator -= (const ValT& v)
 {
-  s_.val_ -= val;
+  s_.val_ -= v;
 
   return *this;
 }
@@ -164,9 +164,9 @@ operator -= (const ValT& val)
 template <typename ValT, typename LogT> 
 inline Sacado::LFad::LogicalSparseImp<ValT,LogT>& 
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator *= (const ValT& val)
+operator *= (const ValT& v)
 {
-  s_.val_ *= val;
+  s_.val_ *= v;
 
   return *this;
 }
@@ -174,9 +174,9 @@ operator *= (const ValT& val)
 template <typename ValT, typename LogT> 
 inline Sacado::LFad::LogicalSparseImp<ValT,LogT>& 
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
-operator /= (const ValT& val)
+operator /= (const ValT& v)
 {
-  s_.val_ /= val;
+  s_.val_ /= v;
   
   return *this;
 }
