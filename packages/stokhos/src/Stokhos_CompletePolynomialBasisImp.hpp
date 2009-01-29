@@ -276,13 +276,13 @@ getName() const
 template <typename T>
 unsigned int
 Stokhos::CompletePolynomialBasis<T>::
-compute_num_terms(unsigned int dim, unsigned int order) const
+compute_num_terms(unsigned int dim, unsigned int ord) const
 {
   unsigned int num = 1;
   
   // Use the formula (p+d)!/(p!d!) = (d+p)...(d+1)/p!
-  if (dim >= order) {
-    for (unsigned int i=1; i<=order; i++) {
+  if (dim >= ord) {
+    for (unsigned int i=1; i<=ord; i++) {
       num *= dim+i;
       num /= i;
     }
@@ -291,7 +291,7 @@ compute_num_terms(unsigned int dim, unsigned int order) const
   // Use the formula (p+d)!/(p!d!) = (p+d)...(p+1)/d!
   else {
     for (unsigned int i=1; i<=dim; i++) {
-      num *= order+i;
+      num *= ord+i;
       num /= i;
     }
   }
@@ -420,15 +420,15 @@ compute_index(const std::vector<unsigned int>& term) const
 
   unsigned int index = 0;
   int dim = term.size();
-  unsigned int order = 0;
+  unsigned int ord = 0;
   for (int i=dim-1; i>=0; i--) {
 
     // compute order
-    order += term[i];
+    ord += term[i];
 
     // compute number of terms for order-1
-    if (order > 0)
-      index += compute_num_terms(dim-i, order-1);
+    if (ord > 0)
+      index += compute_num_terms(dim-i, ord-1);
   }
 
   return index;

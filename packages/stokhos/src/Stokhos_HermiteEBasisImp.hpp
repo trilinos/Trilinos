@@ -30,8 +30,8 @@
 
 template <typename T>
 Stokhos::HermiteEBasis<T>::
-HermiteEBasis(unsigned int p) :
-  OrthogPolyBasisBase<T>("HermiteE",p)
+HermiteEBasis(unsigned int p_) :
+  OrthogPolyBasisBase<T>("HermiteE",p_)
 {
   // Fill in basis coefficients
   this->basis[0].coeff(0) = T(1.0);

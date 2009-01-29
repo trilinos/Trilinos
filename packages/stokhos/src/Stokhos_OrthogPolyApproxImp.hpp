@@ -115,30 +115,30 @@ term(const BasisT& basis,
      int i0, int i1, int i2, int i3, int i4,
      int i5, int i6, int i7, int i8, int i9)
 {
-  std::vector<unsigned int> term;
+  std::vector<unsigned int> trm;
   unsigned int d = basis.dimension();
   if (i0 >= 0 && d >= 1)
-    term.push_back(i0);
+    trm.push_back(i0);
   if (i1 >= 0 && d >= 2)
-    term.push_back(i1);
+    trm.push_back(i1);
   if (i2 >= 0 && d >= 3)
-    term.push_back(i2);
+    trm.push_back(i2);
   if (i3 >= 0 && d >= 4)
-    term.push_back(i3);
+    trm.push_back(i3);
   if (i4 >= 0 && d >= 5)
-    term.push_back(i4);
+    trm.push_back(i4);
   if (i5 >= 0 && d >= 6)
-    term.push_back(i5);
+    trm.push_back(i5);
   if (i6 >= 0 && d >= 7)
-    term.push_back(i6);
+    trm.push_back(i6);
   if (i7 >= 0 && d >= 8)
-    term.push_back(i7);
+    trm.push_back(i7);
   if (i8 >= 0 && d >= 9)
-    term.push_back(i8);
+    trm.push_back(i8);
   if (i9 >= 0 && d >= 10)
-    term.push_back(i9);
+    trm.push_back(i9);
 
-  unsigned int index = basis.getIndex(term);
+  unsigned int index = basis.getIndex(trm);
   return coeff_[index];
 }
 
@@ -150,30 +150,30 @@ term(const BasisT& basis,
      int i0, int i1, int i2, int i3, int i4,
      int i5, int i6, int i7, int i8, int i9) const
 {
-  std::vector<unsigned int> term;
+  std::vector<unsigned int> trm;
   unsigned int d = basis.dimension();
   if (i0 >= 0 && d >= 1)
-    term.push_back(i0);
+    trm.push_back(i0);
   if (i1 >= 0 && d >= 2)
-    term.push_back(i1);
+    trm.push_back(i1);
   if (i2 >= 0 && d >= 3)
-    term.push_back(i2);
+    trm.push_back(i2);
   if (i3 >= 0 && d >= 4)
-    term.push_back(i3);
+    trm.push_back(i3);
   if (i4 >= 0 && d >= 5)
-    term.push_back(i4);
+    trm.push_back(i4);
   if (i5 >= 0 && d >= 6)
-    term.push_back(i5);
+    trm.push_back(i5);
   if (i6 >= 0 && d >= 7)
-    term.push_back(i6);
+    trm.push_back(i6);
   if (i7 >= 0 && d >= 8)
-    term.push_back(i7);
+    trm.push_back(i7);
   if (i8 >= 0 && d >= 9)
-    term.push_back(i8);
+    trm.push_back(i8);
   if (i9 >= 0 && d >= 10)
-    term.push_back(i9);
+    trm.push_back(i9);
 
-  unsigned int index = basis.getIndex(term);
+  unsigned int index = basis.getIndex(trm);
   return coeff_[index];
 }
 
@@ -207,15 +207,15 @@ std::ostream&
 Stokhos::OrthogPolyApprox<T>::
 print(const BasisT& basis, std::ostream& os) const
 {
-  std::vector<unsigned int> term;
+  std::vector<unsigned int> trm;
   os << "Stokhos::OrthogPolyApprox of size " << coeff_.size() << " in basis "
      << "\n\t" << basis.getName() << ":" << std::endl;
   for (unsigned int i=0; i<coeff_.size(); i++) {
-    term = basis.getTerm(i);
+    trm = basis.getTerm(i);
     os << "\t\t(";
-    for (unsigned int j=0; j<term.size()-1; j++)
-      os << term[j] << ", ";
-    os << term[term.size()-1] << ") = " << coeff_[i] << std::endl;
+    for (unsigned int j=0; j<trm.size()-1; j++)
+      os << trm[j] << ", ";
+    os << trm[trm.size()-1] << ") = " << coeff_[i] << std::endl;
   }
 
   return os;

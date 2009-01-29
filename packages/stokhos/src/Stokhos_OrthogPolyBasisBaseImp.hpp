@@ -30,8 +30,8 @@
 
 template <typename T>
 Stokhos::OrthogPolyBasisBase<T>::
-OrthogPolyBasisBase(const std::string& name, unsigned int p_) :
-  name(name),
+OrthogPolyBasisBase(const std::string& name_, unsigned int p_) :
+  name(name_),
   p(p_),
   basis(p+1, Polynomial<T>(p)),
   double_basis(2*p+1, Polynomial<T>(2*p)),
