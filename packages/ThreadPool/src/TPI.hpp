@@ -31,18 +31,13 @@
 
 namespace TPI {
 
-typedef TPI_ThreadPool ThreadPool ;
+typedef TPI_Work Work ;
 
 //----------------------------------------------------------------------
-/** Run  (*func)(arg,pool)  on all threads.
- */
-int Run( void (*func)( TPI_Work * ), void * arg ,
-         int work_count , int lock_count = 0 );
-
-/** Run  worker.*method(pool)  on all threads.
+/** Run  worker.*method(work)  on all threads.
  */
 template<class Worker>
-int Run( Worker & worker , void (Worker::*method)(ThreadPool) ,
+int Run( Worker & worker , void (Worker::*method)(Work &) ,
          int work_count , int lock_count = 0 );
 
 //----------------------------------------------------------------------
@@ -82,9 +77,6 @@ inline
 int Finalize() { return TPI_Finalize(); }
 
 inline
-int Size( int & number_allocated ) { return TPI_Size( & number_allocated ); }
-
-inline
 double Walltime() { return TPI_Walltime(); }
 
 //----------------------------------------------------------------------
@@ -101,7 +93,7 @@ private:
 
 public:
 
-  typedef void (Worker::*Method)( ThreadPool );
+  typedef void (Worker::*Method)( Work & );
 
   Worker & worker ;
   Method   method ;
@@ -113,7 +105,7 @@ public:
       try {
         WorkerMethodHelper & wm =
           * reinterpret_cast<WorkerMethodHelper*>(work->shared);
-        (wm.worker.*wm.method)(work);
+        (wm.worker.*wm.method)(*work);
       } catch(...){}
     }
 };
@@ -123,15 +115,10 @@ public:
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-inline
-int Run( void (*func)( TPI_Work * ) , void * arg , int work_count , int lock_count )
-{
-  return TPI_Run( reinterpret_cast< TPI_work_subprogram >(func), arg , work_cunt , lock_count );
-}
-
 template<class Worker>
 inline
-int Run( Worker & worker, void (Worker::*method)(ThreadPool) , int work_count , int lock_count )
+int Run( Worker & worker, void (Worker::*method)(Work &) ,
+         int work_count , int lock_count )
 {
   typedef WorkerMethodHelper<Worker> WM ;
 

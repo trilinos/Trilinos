@@ -39,7 +39,7 @@ public:
   int m_flag[N] ;
   ~TEST() {}
   TEST();
-  void flag( TPI::ThreadPool pool );
+  void flag( TPI::Work & );
   void verify();
 private:
   TEST( const TEST & );
@@ -53,23 +53,16 @@ TEST<N>::TEST()
 }
 
 template<unsigned N>
-void TEST<N>::flag( TPI::ThreadPool pool )
+void TEST<N>::flag( TPI::Work & work )
 {
   static const char method[] = "TEST::flag" ;
-  int rank , size ;
-  if ( TPI::Rank( pool , rank , size ) ) {
+  if ( work.work_count != (int) N ) {
     std::cerr << method
-              << "<" << N << "> TPI::Rank failed"
+              << "<" << N << "> work_count(" << work.work_count << ") failed"
               << std::endl ;
     throw std::exception();
   }
-  else if ( size != (int) N ) {
-    std::cerr << method
-              << "<" << N << "> size(" << size << ") failed"
-              << std::endl ;
-    throw std::exception();
-  }
-  m_flag[rank] = 1 ;
+  m_flag[ work.work_rank ] = 1 ;
 }
 
 template<unsigned N>
