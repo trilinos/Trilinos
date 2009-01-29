@@ -48,6 +48,7 @@ APPEND_SET(HEADERS
   Teuchos_CompileTimeAssert.hpp
   Teuchos_ConfigDefs.hpp
   Teuchos_ConstNonconstObjectContainer.hpp
+  Teuchos_ConstTypeTraits.hpp
   Teuchos_DataAccess.hpp
   Teuchos_DefaultComm.hpp
   Teuchos_DefaultSerialComm.hpp
@@ -118,6 +119,7 @@ APPEND_SET(HEADERS
   Teuchos_TestingHelpers.hpp
   Teuchos_Time.hpp
   Teuchos_TimeMonitor.hpp
+  Teuchos_Tuple.hpp
   Teuchos_TypeNameTraits.hpp
   Teuchos_UnitTestBase.hpp
   Teuchos_UnitTestHarness.hpp
