@@ -244,7 +244,7 @@ ENDIF()
 #
 
 PACKAGE_ADD_LIBRARY(
-  fei
+  fei_base
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

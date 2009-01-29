@@ -34,10 +34,18 @@ IF(FEI_ENABLE_Teuchos)
 
   PACKAGE_ADD_TEST(
     fei_test FEITestRemEssBCsCopyFiles
-    NAME fei_remEssBCs
+    NAME remEssBCs
     ARGS "-d ./remEssBCs -i pll_RemEssBCs.i"
     COMM serial mpi
     NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestRemEssBCsCopyFiles
+    NAME remEssBCs
+    ARGS "-d ./remEssBCs -i pll_RemEssBCs.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 3
     )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR(FEITestRemEssBCsTrilinosCopyFiles
@@ -52,10 +60,18 @@ IF(FEI_ENABLE_Teuchos)
 
   PACKAGE_ADD_TEST(
     fei_test FEITestRemEssBCsTrilinosCopyFiles
-    NAME fei_remEssBCs_Trilinos
+    NAME remEssBCs_Trilinos
     ARGS "-d ./remEssBCs_Trilinos -i pll_RemEssBCs.i"
     COMM serial mpi
     NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestRemEssBCsTrilinosCopyFiles
+    NAME remEssBCs_Trilinos
+    ARGS "-d ./remEssBCs_Trilinos -i pll_RemEssBCs.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 3
     )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR(FEITestElemDOFAztecCopyFiles
@@ -70,10 +86,18 @@ IF(FEI_ENABLE_Teuchos)
 
   PACKAGE_ADD_TEST(
     fei_test FEITestElemDOFAztecCopyFiles
-    NAME fei_elemDOF_Aztec
+    NAME elemDOF_Aztec
     ARGS "-d ./elemDOF_Aztec -i elemDOF.i"
     COMM serial mpi
     NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestElemDOFAztecCopyFiles
+    NAME elemDOF_Aztec
+    ARGS "-d ./elemDOF_Aztec -i elemDOF.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
     )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR(FEITestCRLagrange20QuadCopyFiles
@@ -88,10 +112,26 @@ IF(FEI_ENABLE_Teuchos)
 
   PACKAGE_ADD_TEST(
     fei_test FEITestCRLagrange20QuadCopyFiles
-    NAME fei_lagrange_20quad
+    NAME lagrange_20quad
     ARGS "-d ./cr_lagrange_20quad -i lagrange.i"
     COMM serial mpi
     NUM_MPI_PROCS 1
+    )
+ 
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRLagrange20QuadCopyFiles
+    NAME lagrange_20quad
+    ARGS "-d ./cr_lagrange_20quad -i lagrange.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+ 
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRLagrange20QuadCopyFiles
+    NAME lagrange_20quad
+    ARGS "-d ./cr_lagrange_20quad -i lagrange.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
     )
  
   PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRLagrange20QuadAZLSCCopyFiles
@@ -106,10 +146,26 @@ IF(FEI_ENABLE_Teuchos)
 
   PACKAGE_ADD_TEST(
     fei_test FEITestCRLagrange20QuadAZLSCCopyFiles
-    NAME fei_cr_lagrange_20quad_AZLSC
+    NAME lagrange_20quad_AZ
     ARGS "-d ./cr_lagrange_20quad_AZLSC -i lagrange.i"
     COMM serial mpi
     NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRLagrange20QuadAZLSCCopyFiles
+    NAME lagrange_20quad_AZ
+    ARGS "-d ./cr_lagrange_20quad_AZLSC -i lagrange.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRLagrange20QuadAZLSCCopyFiles
+    NAME lagrange_20quad_AZ
+    ARGS "-d ./cr_lagrange_20quad_AZLSC -i lagrange.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
     )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRLagrage20QuadOldCopyFiles
@@ -124,10 +180,26 @@ IF(FEI_ENABLE_Teuchos)
 
   PACKAGE_ADD_TEST(
     fei_test FEITestCRLagrage20QuadOldCopyFiles
-    NAME fei_cr_lagrange_20quad_old
+    NAME lagrange_20quad_old
     ARGS "-d ./cr_lagrange_20quad_old -i lagrange.i"
     COMM serial mpi
     NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRLagrage20QuadOldCopyFiles
+    NAME lagrange_20quad_old
+    ARGS "-d ./cr_lagrange_20quad_old -i lagrange.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRLagrage20QuadOldCopyFiles
+    NAME lagrange_20quad_old
+    ARGS "-d ./cr_lagrange_20quad_old -i lagrange.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
     )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRMultifieldSlaveCopyFiles
@@ -141,10 +213,26 @@ IF(FEI_ENABLE_Teuchos)
 
   PACKAGE_ADD_TEST(
     fei_test FEITestCRMultifieldSlaveCopyFiles
-    NAME fei_cr_multifield_slave
+    NAME multifield_slave
     ARGS "-d ./cr_multifield_slave -i mf.i"
     COMM serial mpi
     NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRMultifieldSlaveCopyFiles
+    NAME multifield_slave
+    ARGS "-d ./cr_multifield_slave -i mf.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRMultifieldSlaveCopyFiles
+    NAME multifield_slave
+    ARGS "-d ./cr_multifield_slave -i mf.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 3
     )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRSlave20QuadCopyFiles
@@ -159,10 +247,26 @@ IF(FEI_ENABLE_Teuchos)
 
   PACKAGE_ADD_TEST(
     fei_test FEITestCRSlave20QuadCopyFiles
-    NAME fei_cr_slave_20quad
+    NAME slave_20quad
     ARGS "-d ./cr_slave_20quad -i slave.i"
     COMM serial mpi
     NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRSlave20QuadCopyFiles
+    NAME slave_20quad
+    ARGS "-d ./cr_slave_20quad -i slave.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRSlave20QuadCopyFiles
+    NAME slave_20quad
+    ARGS "-d ./cr_slave_20quad -i slave.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
     )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRSlave20QuadOldCopyFiles
@@ -177,10 +281,26 @@ IF(FEI_ENABLE_Teuchos)
 
   PACKAGE_ADD_TEST(
     fei_test FEITestCRSlave20QuadOldCopyFiles
-    NAME fei_cr_slave_20quad_old
+    NAME slave_20quad_old
     ARGS "-d ./cr_slave_20quad -i slave.i"
     COMM serial mpi
     NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRSlave20QuadOldCopyFiles
+    NAME slave_20quad_old
+    ARGS "-d ./cr_slave_20quad -i slave.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestCRSlave20QuadOldCopyFiles
+    NAME slave_20quad_old
+    ARGS "-d ./cr_slave_20quad -i slave.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 4
     )
 
 
