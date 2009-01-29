@@ -1127,7 +1127,7 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 				UninitType<Double>::utype,
 			 	(sizeof(First->memblk) - Mleft)
 				/sizeof(typename Sacado::ValueType<Double>::type));
-		if (mb = Busy->next) {
+		if ((mb = Busy->next)) {
 			if (!(mb0 = rad_Oldcurmb))
 				mb0 = (ADMemblock*)First0;
 			for(;; mb = mb->next) {
@@ -1193,7 +1193,7 @@ ADcontext<Double>::new_ADvari_block()
 	ADVari_block *ob, *nb;
 	ob = Aibusy;
 	ob->limit = Ailimit;	// should be unnecessary, but harmless
-	if (nb = Aifree)
+	if ((nb = Aifree))
 		Aifree = nb->next;
 	else
 		nb = new ADVari_block;
@@ -1248,7 +1248,7 @@ ADcontext<Double>::Gradcomp()
 				d->c->aval += *d->a * d->b->aval;
 				fprintf(ADVari::debug_file, " = %g\n", d->c->aval);
 				fflush(ADVari::debug_file);
-				} while(d = d->next);
+				} while((d = d->next));
 		else
 #endif
 		do d->c->aval += *d->a * d->b->aval;
@@ -1324,7 +1324,7 @@ ADcontext<Double>::Weighted_Gradcomp(int n, ADVar **V, Double *w)
 		ADVari::zap_gcgen1 = -1;
 		}
 #endif
-	if (d = DErp::LastDerp) {
+	if ((d = DErp::LastDerp)) {
 		for(i = 0; i < n; i++)
 			V[i]->cv->aval = w[i];
 #ifdef RAD_DEBUG
@@ -1335,11 +1335,11 @@ ADcontext<Double>::Weighted_Gradcomp(int n, ADVar **V, Double *w)
 				d->c->aval += *d->a * d->b->aval;
 				fprintf(ADVari::debug_file, " = %g\n", d->c->aval);
 				fflush(ADVari::debug_file);
-				} while(d = d->next);
+				} while((d = d->next));
 		else
 #endif
 		do d->c->aval += *d->a * d->b->aval;
-		while(d = d->next);
+		while((d = d->next));
 		}
 #ifdef RAD_DEBUG
 	if (ADVari::debug_file) {
@@ -1352,9 +1352,9 @@ ADcontext<Double>::Weighted_Gradcomp(int n, ADVar **V, Double *w)
 	ADVari::Last_ADvari = &ADVari::First_ADvari;
 	if ((anext = ADVari::First_ADvari) && !(ADVari::adc.rad_need_reinit & 2)) {
 		ADVari::adc.rad_need_reinit = 3;
-		while(a = anext) {
+		while((a = anext)) {
 			anext = a->Next;
-			if (v = (IndepADvar<Double> *)a->padv) {
+			if ((v = (IndepADvar<Double> *)a->padv)) {
 #ifdef RAD_Const_WARN
 				if ((i = a->opno) > 0)
 					i = -i;

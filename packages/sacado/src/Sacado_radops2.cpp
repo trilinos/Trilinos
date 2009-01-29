@@ -107,7 +107,7 @@ ADcontext::new_ADmemblock(size_t len)
 		if (Mleft < sizeof(First.memblk))
 			_uninit_f2c(Mbase + Mleft, TYDREAL,
 			 (sizeof(First.memblk) - Mleft)/sizeof(double));
-		if (mb = Busy->next) {
+		if ((mb = Busy->next)) {
 			if (!(mb0 = rad_Oldcurmb))
 				mb0 = &First;
 			for(;; mb = mb->next) {
@@ -150,10 +150,10 @@ ADcontext::new_ADmemblock(size_t len)
 #ifdef RAD_AUTO_AD_Const
 		*ADvari::Last_ADvari = 0;
 		ADvari::Last_ADvari = &ADvari::First_ADvari;
-		if (anext = ADvari::First_ADvari) {
-			while(a = anext) {
+		if ((anext = ADvari::First_ADvari)) {
+			while((a = anext)) {
 				anext = a->Next;
-				if (v = a->padv)
+				if ((v = a->padv))
 					v->cv = new ADvari(v, a->Val);
 				}
 			}
@@ -163,7 +163,7 @@ ADcontext::new_ADmemblock(size_t len)
 			return Mbase + (Mleft -= len);
 		}
 
-	if (x = Free)
+	if ((x = Free))
 		Free = x->next;
 	else
 		x = new ADmemblock;
@@ -182,7 +182,7 @@ ADcontext::new_ADvari_block()
 	ADvari_block *ob, *nb;
 	ob = Aibusy;
 	ob->limit = Ailimit;	// should be unnecessary, but harmless
-	if (nb = Aifree)
+	if ((nb = Aifree))
 		Aifree = nb->next;
 	else
 		nb = new ADvari_block;
@@ -210,10 +210,10 @@ ADcontext::Gradcomp()
 		ADvari::adc.Mleft = 0;
 		}
 
-	if (d = Derp::LastDerp) {
+	if ((d = Derp::LastDerp)) {
 		d->b->aval = 1;
 		do d->c->aval += *d->a * d->b->aval;
-		while(d = d->next);
+		while((d = d->next));
 		}
 	}
 
@@ -234,11 +234,11 @@ ADcontext::Weighted_Gradcomp(int n, ADvar **v, double *w)
 #endif
 		ADvari::adc.Mleft = 0;
 		}
-	if (d = Derp::LastDerp) {
+	if ((d = Derp::LastDerp)) {
 		for(i = 0; i < n; i++)
 			v[i]->cv->aval = w[i];
 		do d->c->aval += *d->a * d->b->aval;
-		while(d = d->next);
+		while((d = d->next));
 		}
 	}
 

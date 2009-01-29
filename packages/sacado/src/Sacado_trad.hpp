@@ -1672,7 +1672,7 @@ ADcontext<Double>::Weighted_Gradcomp(size_t n, ADVar **V, Double *w)
 			}
 		}
 #else //}{ RAD_REINIT == 0
-	if (d = DErp::LastDerp) {
+	if ((d = DErp::LastDerp)) {
 		for(i = 0; i < n; i++)
 			V[i]->cv->aval = w[i];
 #ifdef RAD_DEBUG

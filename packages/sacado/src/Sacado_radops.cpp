@@ -89,7 +89,7 @@ ADcontext::new_ADmemblock(size_t len)
 		if (Mleft < sizeof(First.memblk))
 			_uninit_f2c(Mbase + Mleft, TYDREAL,
 			 (sizeof(First.memblk) - Mleft)/sizeof(double));
-		if (mb = Busy->next) {
+		if ((mb = Busy->next)) {
 			if (!(mb0 = rad_Oldcurmb))
 				mb0 = &First;
 			for(;; mb = mb->next) {
@@ -132,10 +132,10 @@ ADcontext::new_ADmemblock(size_t len)
 #ifdef RAD_AUTO_AD_Const
 		*ADvari::Last_ADvari = 0;
 		ADvari::Last_ADvari = &ADvari::First_ADvari;
-		if (anext = ADvari::First_ADvari) {
-			while(a = anext) {
+		if ((anext = ADvari::First_ADvari)) {
+			while((a = anext)) {
 				anext = a->Next;
-				if (v = a->padv)
+				if ((v = a->padv))
 					v->cv = new ADvari(v, a->Val);
 				}
 			}
