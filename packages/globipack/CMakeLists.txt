@@ -1,7 +1,7 @@
 
 INCLUDE(PackageMacros)
 
-PACKAGE(OptiPack)
+PACKAGE(GlobiPack CLEANED)
 
 ADD_SUBDIRECTORY(src)
 

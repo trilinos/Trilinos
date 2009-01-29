@@ -25,6 +25,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Zoltan                zoltan                         ""
   Shards                shards                         ""
   Intrepid              intrepid                       OFF
+  GlobiPack             globipack                      ""
   Triutils              triutils                       ""
   Tpetra                tpetra                         ""
   EpetraExt             epetraext                      ""

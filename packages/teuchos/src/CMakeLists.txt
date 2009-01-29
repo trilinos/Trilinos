@@ -14,11 +14,21 @@ PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(HEADERS "")
 SET(SOURCES "")
 
+# Set the base Trilinos directory in order to find Trilinos_version.h
+
+ASSERT_DEFINED(PROJECT_SOURCE_DIR)
+
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
+
+APPEND_SET(HEADERS
+  ${PROJECT_SOURCE_DIR}/Trilinos_version.h
+  )
+
 # Set headers (for IDEs and installing)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
   )
 

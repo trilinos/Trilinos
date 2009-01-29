@@ -53,6 +53,8 @@ public:
   /** @name Overridden from Constructors/Initializers/Accessors */
   //@{
 
+  //@}
+
   /** @name Overridden from ParameterListAcceptor (simple forwarding functions) */
   //@{
 

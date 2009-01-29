@@ -22,6 +22,9 @@
   <SubProject name="Intrepid">
     <Dependency name="Teuchos" type="LR"/>
   </SubProject>
+  <SubProject name="GlobiPack">
+    <Dependency name="Teuchos" type="LR"/>
+  </SubProject>
   <SubProject name="Triutils">
     <Dependency name="Epetra" type="LR"/>
   </SubProject>

@@ -27,8 +27,9 @@
 // @HEADER
 
 #include "Thyra_Version.hpp"
+#include "Trilinos_version.h"
 
 std::string Thyra::Thyra_Version()
 { 
-  return("Thyra Dev in Trilinos Dev"); 
+  return("Thyra in Trilinos " TRILINOS_VERSION_STRING); 
 }

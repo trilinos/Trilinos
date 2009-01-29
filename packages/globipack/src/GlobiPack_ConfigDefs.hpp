@@ -2,7 +2,7 @@
 // @HEADER
 // ***********************************************************************
 // 
-//    OptiPack: Collection of simple Thyra-based Optimization ANAs
+//    GlobiPack: Collection of Scalar 1D globalizaton utilities
 //                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -28,10 +28,17 @@
 // @HEADER
 */
 
-#include "OptiPack_Version.hpp"
-#include "Trilinos_version.h"
+#ifndef GLOBIPACK_CONFIGDEFS_HPP
+#define GLOBIPACK_CONFIGDEFS_HPP
 
-std::string OptiPack::OptiPack_Version()
-{ 
-  return("OptiPack in Trilinos " TRILINOS_VERSION_STRING); 
-}
+// Let Teuchos' configure process do all of the work!
+#include <Teuchos_ConfigDefs.hpp>
+
+#include <GlobiPack_Config.h>
+
+#if !defined(HAVE_GLOBIPACK_EXPLICIT_INSTANTIATION) && defined(HAVE_TEUCHOS_EXPLICIT_INSTANTIATION)
+#  define HAVE_GLOBIPACK_EXPLICIT_INSTANTIATION
+#endif
+
+#endif // GLOBIPACK_CONFIGDEFS_HPP
+

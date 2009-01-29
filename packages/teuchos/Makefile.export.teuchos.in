@@ -1,5 +1,5 @@
 
-TEUCHOS_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src
+TEUCHOS_INCLUDES = -I@abs_top_builddir@/src -I@abs_top_srcdir@/src -I@abs_top_srcdir@/../..
 
 TEUCHOS_LIBS =  @LDFLAGS@ -L@abs_top_builddir@/src -lteuchos @LIBS@ @LAPACK_LIBS@ @BLAS_LIBS@ @FLIBS@
 

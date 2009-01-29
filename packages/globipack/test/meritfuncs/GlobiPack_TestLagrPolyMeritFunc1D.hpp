@@ -2,7 +2,7 @@
 // @HEADER
 // ***********************************************************************
 // 
-//    OptiPack: Collection of simple Thyra-based Optimization ANAs
+//    GlobiPack: Collection of Scalar 1D globalizaton utilities
 //                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -28,10 +28,16 @@
 // @HEADER
 */
 
-#include "OptiPack_Version.hpp"
-#include "Trilinos_version.h"
+#ifndef GLOBIPACK_TEST_LAGR_POLY_MERIT_FUNC_1D_HPP
+#define GLOBIPACK_TEST_LAGR_POLY_MERIT_FUNC_1D_HPP
 
-std::string OptiPack::OptiPack_Version()
-{ 
-  return("OptiPack in Trilinos " TRILINOS_VERSION_STRING); 
-}
+
+#include "GlobiPack_TestLagrPolyMeritFunc1D_decl.hpp"
+
+
+#ifndef HAVE_GLOBIPACK_EXPLICIT_INSTANTIATION
+#  include "GlobiPack_TestLagrPolyMeritFunc1D_def.hpp"
+#endif
+
+
+#endif // GLOBIPACK_TEST_LAGR_POLY_MERIT_FUNC_1D_HPP

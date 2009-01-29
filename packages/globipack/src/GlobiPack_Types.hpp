@@ -2,7 +2,7 @@
 // @HEADER
 // ***********************************************************************
 // 
-//    OptiPack: Collection of simple Thyra-based Optimization ANAs
+//    GlobiPack: Collection of Scalar 1D globalizaton utilities
 //                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -28,10 +28,57 @@
 // @HEADER
 */
 
-#include "OptiPack_Version.hpp"
-#include "Trilinos_version.h"
+#ifndef GLOBIPACK_TYPES_HPP
+#define GLOBIPACK_TYPES_HPP
 
-std::string OptiPack::OptiPack_Version()
-{ 
-  return("OptiPack in Trilinos " TRILINOS_VERSION_STRING); 
-}
+
+#include "GlobiPack_ConfigDefs.hpp"
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_Ptr.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_ArrayView.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+
+
+namespace Teuchos {
+
+/** \brief . */
+class ParameterList;
+
+} // namespace Teuchos
+
+
+namespace GlobiPack {
+
+
+/** \brief . */
+using Teuchos::RCP;
+/** \brief . */
+using Teuchos::Ptr;
+/** \brief . */
+using Teuchos::Array;
+/** \brief . */
+using Teuchos::ArrayView;
+/** \brief . */
+using Teuchos::ScalarTraits;
+/** \brief . */
+using Teuchos::ParameterList;
+
+
+namespace Exceptions {
+
+
+/** \brief Thrown if search direction not a descent direction for the merit
+ * function.
+ */
+class NotDescentDirection : public std::logic_error
+{public: NotDescentDirection(const std::string& what_arg) : std::logic_error(what_arg) {}};
+
+
+} // namespace Exceptions
+
+
+} // namespace GlobiPack
+
+
+#endif // GLOBIPACK_TYPES_HPP

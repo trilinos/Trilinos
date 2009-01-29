@@ -58,4 +58,10 @@
  * compilation error.
  */
 
+/* \brief Version string for Trilinos.
+ *
+ * NOTE: This string is to be used for outputting, not for comparison logic.
+ */
+#define TRILINOS_VERSION_STRING "Dev"
+
 #endif /* TRILINOS_VERSION_H */

@@ -30,8 +30,9 @@
 */
 
 #include "RTOpPack_version.hpp"
+#include "Trilinos_version.h"
 
 std::string RTOpPack::version()
 { 
-  return("RTOp Development Version"); 
+  return("RTOp in Trilinos " TRILINOS_VERSION_STRING); 
 }
