@@ -41,12 +41,12 @@
 
 
 //==============================================================================
-Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Comm & Comm) 
-  : Comm_(Comm.Clone()),
-    OperatorDomainMap_(Epetra_Map(0,0,Comm)),
-    OperatorRangeMap_(Epetra_Map(0,0,Comm)),
-    RowMatrixRowMap_(Epetra_Map(0,0,Comm)),
-    RowMatrixColMap_(Epetra_Map(0,0,Comm)),
+Epetra_BasicRowMatrix::Epetra_BasicRowMatrix(const Epetra_Comm & comm) 
+  : Comm_(comm.Clone()),
+    OperatorDomainMap_(Epetra_Map(0,0,comm)),
+    OperatorRangeMap_(Epetra_Map(0,0,comm)),
+    RowMatrixRowMap_(Epetra_Map(0,0,comm)),
+    RowMatrixColMap_(Epetra_Map(0,0,comm)),
     NumMyNonzeros_(0),
     NumGlobalNonzeros_(0),
     MaxNumEntries_(0),

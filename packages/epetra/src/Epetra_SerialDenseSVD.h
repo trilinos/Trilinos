@@ -371,11 +371,11 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
 	does not support transpose use, this method should return a value of -1.
       
     \param In
-	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+	   use_transpose -If true, multiply by the transpose of operator, otherwise just use operator.
 
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
   */
-    virtual int SetUseTranspose(bool UseTranspose) { UseTranspose_ = UseTranspose; return (0); }
+    virtual int SetUseTranspose(bool use_transpose) { UseTranspose_ = use_transpose; return (0); }
 
     //! Returns the result of a Epetra_SerialDenseOperator applied to a Epetra_SerialDenseMatrix X in Y.
     /*! 
@@ -386,8 +386,8 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
 
     \return Integer error code, set to 0 if successful.
   */
-    virtual int Apply(const Epetra_SerialDenseMatrix& X, Epetra_SerialDenseMatrix& Y)
-    { return Y.Multiply( UseTranspose_, false, 1.0, *Matrix(), X, 0.0 ); }
+    virtual int Apply(const Epetra_SerialDenseMatrix& Xmat, Epetra_SerialDenseMatrix& Ymat)
+    { return Ymat.Multiply( UseTranspose_, false, 1.0, *Matrix(), Xmat, 0.0 ); }
 
     //! Returns the result of a Epetra_SerialDenseOperator inverse applied to an Epetra_SerialDenseMatrix X in Y.
     /*! 
@@ -399,8 +399,8 @@ class Epetra_SerialDenseSVD : public virtual Epetra_SerialDenseOperator, public 
     \return Integer error code, set to 0 if successful.
 
   */
-    virtual int ApplyInverse(const Epetra_SerialDenseMatrix & X, Epetra_SerialDenseMatrix & Y)
-    { SetVectors(const_cast<Epetra_SerialDenseMatrix&>(X),Y);
+    virtual int ApplyInverse(const Epetra_SerialDenseMatrix & Xmat, Epetra_SerialDenseMatrix & Ymat)
+    { SetVectors(const_cast<Epetra_SerialDenseMatrix&>(Xmat),Ymat);
       SolveWithTranspose(UseTranspose_);
       return Solve(); }
 

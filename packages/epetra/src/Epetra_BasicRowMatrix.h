@@ -383,11 +383,11 @@ class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, pub
         affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 
 	does not support transpose use, this method should return a value of -1.
       
-    \param UseTranspose (In) - If true, multiply by the transpose of operator, otherwise just use operator.
+    \param use_transpose (In) - If true, multiply by the transpose of operator, otherwise just use operator.
 
     \return Always returns 0.
   */
-  virtual int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);}
+  virtual int SetUseTranspose(bool use_transpose) {UseTranspose_ = use_transpose; return(0);}
 
   //! Returns a character string describing the operator
   virtual const char* Label() const {return(Epetra_Object::Label());}
