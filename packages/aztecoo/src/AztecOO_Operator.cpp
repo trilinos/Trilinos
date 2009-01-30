@@ -32,10 +32,10 @@
 #include "Epetra_Map.h"
 
 //==============================================================================
-AztecOO_Operator::AztecOO_Operator(AztecOO * solver, int NumIters, double Tol) 
+AztecOO_Operator::AztecOO_Operator(AztecOO * solver, int numIters, double tol) 
   : solver_(solver),
-    NumIters_(NumIters),
-    Tol_(Tol),
+    NumIters_(numIters),
+    Tol_(tol),
     Label_(0) {
 
   Label_ = "AztecOO Operator";

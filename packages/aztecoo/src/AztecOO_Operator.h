@@ -68,12 +68,15 @@ class AztecOO_Operator: public virtual Epetra_Operator {
 	does not support transpose use, this method should return a value of -1.
       
     \param In
-	   UseTranspose - If true, multiply by the transpose of operator, otherwise just use operator.
+	   use_transpose - If true, multiply by the transpose of operator, otherwise just use operator.
 
-    \warning - This method has no effect and returns -1 as error code.
+    \warning - This returns -1 if use_transpose is true, because tranpse is not supported.
   */
-  int SetUseTranspose(bool UseTranspose)
-    {(void)UseTranspose; return(-1);}
+  int SetUseTranspose(bool use_transpose)
+    {
+      if (use_transpose == true) return(-1);
+      return(0);
+    }
   //@}
   
   //@{ \name Mathematical functions.

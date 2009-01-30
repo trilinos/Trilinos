@@ -34,9 +34,9 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_MsrMatrix.h"
 //==============================================================================
-Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
+Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * a_mat)
   : Epetra_Object("Epetra::MsrMatrix"),
-    Amat_(Amat),
+    Amat_(a_mat),
     proc_config_(proc_config),
     Values_(0),
     Indices_(0),
@@ -51,16 +51,16 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
 #else
   Comm_ = new Epetra_SerialComm();
 #endif  
-  if (Amat->data_org[AZ_matrix_type]!=AZ_MSR_MATRIX)
+  if (a_mat->data_org[AZ_matrix_type]!=AZ_MSR_MATRIX)
     throw Comm_->ReportError("AZ_matrix_type must be AZ_MSR_MATRIX", -1);
-  int * bindx = Amat->bindx;
-  NumMyRows_ = Amat->data_org[AZ_N_internal] + Amat->data_org[AZ_N_border];
-  int NumExternal = Amat->data_org[AZ_N_external];
+  int * bindx = a_mat->bindx;
+  NumMyRows_ = a_mat->data_org[AZ_N_internal] + a_mat->data_org[AZ_N_border];
+  int NumExternal = a_mat->data_org[AZ_N_external];
   NumMyCols_ = NumMyRows_ + NumExternal;
   NumMyNonzeros_ = bindx[NumMyRows_] - bindx[0] + NumMyRows_;
   Comm_->SumAll(&NumMyNonzeros_, &NumGlobalNonzeros_, 1);
 
-  int * MyGlobalElements = Amat->update;
+  int * MyGlobalElements = a_mat->update;
   if (MyGlobalElements==0) 
     throw Comm_->ReportError("Aztec matrix has no update list: Check if AZ_Transform was called.", -2);
 
@@ -69,7 +69,7 @@ Epetra_MsrMatrix::Epetra_MsrMatrix(int * proc_config, AZ_MATRIX * Amat)
   double * dbleColGIDs = new double[NumMyCols_];
   int * ColGIDs = new int[NumMyCols_];
   for (int i=0; i<NumMyRows_; i++) dbleColGIDs[i] = (double) MyGlobalElements[i];
-  AZ_exchange_bdry(dbleColGIDs, Amat->data_org, proc_config);
+  AZ_exchange_bdry(dbleColGIDs, a_mat->data_org, proc_config);
   {for (int i=0; i<NumMyCols_; i++) ColGIDs[i] = (int) dbleColGIDs[i];}
 
   ColMap_ = new Epetra_Map(-1, NumMyCols_, ColGIDs, 0, *Comm_);
@@ -179,13 +179,13 @@ int Epetra_MsrMatrix::MaxNumEntries() const {
 int Epetra_MsrMatrix::GetRow(int Row) const {
 
   int NumEntries;
-  int MaxNumEntries = Epetra_MsrMatrix::MaxNumEntries();
+  int maxNumEntries = Epetra_MsrMatrix::MaxNumEntries();
 
-  if (MaxNumEntries>0) {
-    if (Values_==0) Values_ = new double[MaxNumEntries];
-    if (Indices_==0) Indices_ = new int[MaxNumEntries];
+  if (maxNumEntries>0) {
+    if (Values_==0) Values_ = new double[maxNumEntries];
+    if (Indices_==0) Indices_ = new int[maxNumEntries];
   }
-  Epetra_MsrMatrix::ExtractMyRowCopy(Row, MaxNumEntries, NumEntries, Values_, Indices_);
+  Epetra_MsrMatrix::ExtractMyRowCopy(Row, maxNumEntries, NumEntries, Values_, Indices_);
   
   return(NumEntries);
 }
