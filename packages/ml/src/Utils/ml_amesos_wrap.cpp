@@ -247,14 +247,14 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 
     Epetra_Time Time(Amesos_Matrix->Comm());
 
-    // Changed on 27-Nov-05, MS
-    // It is faster to just call NumericFactorization(), otherwise the
-    // code might have to ship the matrix twice, first to gather the
-    // structure, then to gather the numerical values.
-    //A_Base->SymbolicFactorization();
-    //double Time1 = Time.ElapsedTime();
     Time.ResetStartTime();
-    int rv=A_Base->NumericFactorization();
+    int rv;
+    try{rv=A_Base->NumericFactorization();}
+    catch(...) {
+      if (Amesos_Matrix->Comm().MyPID() == 0) 
+        printf("\n*** * ML_Amesos_Gen: exception thrown from Amesos_BaseSolver->NumericFactorization(). * ***\n\n");
+      exit( EXIT_FAILURE );
+    }
     double Time2 = Time.ElapsedTime();
     
     if(rv){
