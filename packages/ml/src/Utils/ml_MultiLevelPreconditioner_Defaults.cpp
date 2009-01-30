@@ -36,11 +36,11 @@ int ML_Epetra::SetDefaults(string ProblemType, ParameterList & List,
   if (ioptions == NULL)
     options = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
   else
-    options = rcp(new std::vector<int>(ioptions,ioptions+AZ_OPTIONS_SIZE+1));
+    options = rcp(new std::vector<int>(ioptions,ioptions+AZ_OPTIONS_SIZE));
   if (iparams  == NULL)
     params  = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
   else
-    params = rcp(new std::vector<double>(iparams,iparams+AZ_PARAMS_SIZE+1));
+    params = rcp(new std::vector<double>(iparams,iparams+AZ_PARAMS_SIZE));
   if (SetDefaults)
     AZ_defaults(&(*options)[0],&(*params)[0]);
 #endif
