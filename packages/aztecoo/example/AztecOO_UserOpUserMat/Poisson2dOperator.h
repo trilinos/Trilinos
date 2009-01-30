@@ -67,11 +67,11 @@ class Poisson2dOperator: public virtual Epetra_Operator {
 	does not support transpose use, this method should return a value of -1.
       
     \param In
-	   UseTranspose -If true, multiply by the transpose of operator, otherwise just use operator.
+	   use_transpose -If true, multiply by the transpose of operator, otherwise just use operator.
 
     \return Integer error code, set to 0 if successful.  Set to -1 if this implementation does not support transpose.
   */
-  int SetUseTranspose(bool UseTranspose){useTranspose_ = UseTranspose; return(0);};
+  int SetUseTranspose(bool use_transpose){useTranspose_ = use_transpose; return(0);};
   //@}
   
   //@{ \name Mathematical functions.
@@ -147,7 +147,7 @@ class Poisson2dOperator: public virtual Epetra_Operator {
   Epetra_Map * importMap_;
   Epetra_Import * importer_;
   mutable Epetra_MultiVector * importX_;
-  char * Label_;
+  const char * Label_;
 };
 
 #endif /* _POISSON2DOPERATOR_H_ */

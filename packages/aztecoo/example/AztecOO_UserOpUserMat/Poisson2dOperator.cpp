@@ -48,9 +48,8 @@ Poisson2dOperator::Poisson2dOperator(int nx, int ny, const Epetra_Comm & comm)
     importMap_(0),
     importer_(0),
     importX_(0),
-    Label_(0) {
+    Label_("2D Poisson Operator") {
 
-  Label_ = "2D Poisson Operator";
   int numProc = comm.NumProc(); // Get number of processors
   int myPID = comm.MyPID(); // My rank
   if (2*numProc > ny) { // ny must be >= 2*numProc (to avoid degenerate cases)

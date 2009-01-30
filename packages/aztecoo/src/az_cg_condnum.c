@@ -132,12 +132,12 @@ void AZ_pcg_f_condnum(double b[], double x[], double weight[], int options[],
   double *block;
 
   /* condition number estimate from Lanczos matrix */
-  double beta_old, p_ap_dot_old;
+  double beta_old = 0, p_ap_dot_old = 0;
   int N_lanczos_max = options[AZ_max_iter];
   double * diag_T = NULL;
   double * offdiag_T = NULL;
   int N_lanczos=0;
-  double r_z_dot_old2;
+  double r_z_dot_old2 = 0;
   double lambda_min, lambda_max;
   double ConditionNumber;
 
