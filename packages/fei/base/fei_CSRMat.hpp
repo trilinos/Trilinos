@@ -56,11 +56,11 @@ void multiply_trans_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y);
 
 /** form C = A*B */
 void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
-                            bool storeResultZeros=true);
+                            bool storeResultZeros=false);
 
 /** form C = A^T*B */
 void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
-                                  bool storeResultZeros=true);
+                                  bool storeResultZeros=false);
 
 void add_CSRMat_to_FillableMat(const CSRMat& csrm, FillableMat& fm);
 

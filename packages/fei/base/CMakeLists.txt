@@ -32,6 +32,8 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+../fei_fwd.hpp
+../fei_base.hpp
 cfei.h
 feiArray.hpp
 fei_BlockDescriptor.hpp

@@ -15,7 +15,7 @@
 #include <test_utils/ElemBlock.hpp>
 #include <test_utils/AccessPattern.hpp>
 #include <test_utils/CoefAccess.hpp>
-#include "fei_iostream.hpp"
+#include <fei_iostream.hpp>
 #include <string>
 
 class DataReader {

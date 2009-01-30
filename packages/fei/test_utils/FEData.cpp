@@ -6,6 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <cstring>
 
 #include <fei_sstream.hpp>
 
@@ -42,11 +43,11 @@ int FEData::setDebugLog(int debugOutputLevel, const char* path)
 
   if (path != NULL) {
     dbgPath_ = new char[strlen(path)+1];
-    strcpy(dbgPath_, path);
+    std::strcpy(dbgPath_, path);
   }
   else {
     dbgPath_ = new char[2];
-    strcpy(dbgPath_, ".");
+    std::strcpy(dbgPath_, ".");
   }
 
   debugOutputLevel_ = debugOutputLevel;

@@ -9,7 +9,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <string.h> //include string.h so we can use memcpy
+#include <cstring> //include cstring so we can use memcpy
 #include "fei_fwd.hpp"
 #include "fei_iostream.hpp"
 
@@ -271,7 +271,7 @@ void feiArray<T,COMPARE>::resize(int newLength)
   if (length_>0) {
     snl_fei::Type_enum t_type = snl_fei::TypeTraits<T>::get_type();
     if (t_type != snl_fei::OTHER) {
-      memcpy(newData, data_, length_*sizeof(T));
+      std::memcpy(newData, data_, length_*sizeof(T));
     }
     else {
       T* ptr_src = data_;
@@ -330,7 +330,7 @@ void feiArray<T,COMPARE>::insert(const T& item, int offset)
 
   if (alloc_new_memory && len1 > 0) {
     if (t_type != snl_fei::OTHER) {
-      memcpy(dest, src, len1*sizeof_T);
+      std::memcpy(dest, src, len1*sizeof_T);
     }
     else {
       for(int i=0; i<len1; ++i) {
@@ -342,7 +342,7 @@ void feiArray<T,COMPARE>::insert(const T& item, int offset)
   if (len2 > 0) {
     if (t_type != snl_fei::OTHER) {
       if (alloc_new_memory) {
-	memcpy(dest+offset+1, src+offset, len2*sizeof_T);
+	std::memcpy(dest+offset+1, src+offset, len2*sizeof_T);
       }
       else {
 	memmove(dest+offset+1, src+offset, len2*sizeof_T);

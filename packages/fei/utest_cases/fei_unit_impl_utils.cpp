@@ -11,6 +11,73 @@
 #include <cmath>
 #include <limits>
 
+bool verify_offsets(const std::vector<int>& src, const std::vector<int>& tgt,
+                    const std::vector<int>& offsets)
+{
+  if (offsets.size() != src.size()) return false;
+
+  for(size_t i=0; i<src.size(); ++i) {
+    if (offsets[i] < 0) continue;
+
+    if (src[i] != tgt[offsets[i]]) return false;
+  }
+
+  return true;
+}
+
+void test_find_offsets()
+{
+  FEI_COUT << "testing fei::impl_utils::find_offsets...";
+
+  std::vector<int> s1(5), t1(5), offs1;
+
+  for(size_t i=0; i<5; ++i) {
+    s1[i] = i;
+    t1[i] = i;
+  }
+
+  fei::impl_utils::find_offsets(s1, t1, offs1);
+
+  if (!verify_offsets(s1, t1, offs1)) {
+    throw std::runtime_error("failed test 1.");
+  }
+
+  for(size_t i=0; i<5; ++i) {
+    s1[i] = i;
+    t1[i] = i + 2;
+  }
+
+  fei::impl_utils::find_offsets(s1, t1, offs1);
+
+  if (!verify_offsets(s1, t1, offs1)) {
+    throw std::runtime_error("failed test 2.");
+  }
+
+  for(size_t i=0; i<5; ++i) {
+    s1[i] = i;
+    t1[i] = i - 2;
+  }
+
+  fei::impl_utils::find_offsets(s1, t1, offs1);
+
+  if (!verify_offsets(s1, t1, offs1)) {
+    throw std::runtime_error("failed test 3.");
+  }
+
+  t1 = s1;
+  t1.resize(t1.size()*2);
+  int val = s1[s1.size()-1];
+  for(size_t i=s1.size(); i<t1.size(); ++i) t1[i] = val+i;
+
+  fei::impl_utils::find_offsets(s1, t1, offs1);
+
+  if (!verify_offsets(s1, t1, offs1)) {
+    throw std::runtime_error("failed test 4.");
+  }
+
+  FEI_COUT << "ok" << FEI_ENDL;
+}
+
 void test_pack_unpack_FillableMat()
 {
   FEI_COUT << "testing fei::impl_utils::pack_FillableMat, unpack_FillableMat...";
@@ -204,6 +271,8 @@ void test_global_union_mat(MPI_Comm comm)
 
 bool test_impl_utils::run(MPI_Comm comm)
 {
+  test_find_offsets();
+
   test_pack_unpack_FillableMat();
 
   test_separateBCEqns();

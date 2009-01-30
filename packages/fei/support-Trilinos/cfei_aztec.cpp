@@ -6,8 +6,6 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <stdlib.h>
-#include <string.h>
 #include <fei_macros.hpp>
 #include <fei_SharedPtr.hpp>
 #include <fei_Data.hpp>

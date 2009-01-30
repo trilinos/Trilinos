@@ -9,9 +9,6 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <stdlib.h>
-#include <string.h>
-
 //
 // This class provides a vector that can be used with the AztecDMSR_matrix
 // and the AztecDVBR_Matrix.

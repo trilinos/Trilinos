@@ -11,7 +11,6 @@
 #include <unistd.h>
 #include <fei_iostream.hpp>
 #include <stdio.h>
-#include <string.h>
 
 #include <fei_mpi.h>
 

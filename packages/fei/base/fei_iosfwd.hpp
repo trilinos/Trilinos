@@ -16,7 +16,7 @@
 #ifdef FEI_HAVE_IOSFWD
 #include <iosfwd>
 #define FEI_OSTREAM std::ostream
-#elif FEI_HAVE_IOSTREAM
+#elif defined FEI_HAVE_IOSTREAM
 #include <iostream>
 #define FEI_OSTREAM std::ostream
 #else

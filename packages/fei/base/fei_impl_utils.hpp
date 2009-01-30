@@ -29,6 +29,17 @@ namespace fei {
 */
 namespace impl_utils {
 
+/** Given a vector of sources and a vector of targets, fill the offsets vector
+   such that if offsets[i] >= 0, then sources[i] == targets[offsets[i]].
+   For any i such that sources[i] is not found in targets, then offsets[i] == -1.
+   The offsets vector will have length equal to the length of sources.
+
+   For efficiency, it is assumed that both sources and targets are sorted.
+*/
+void find_offsets(const std::vector<int>& sources,
+                  const std::vector<int>& targets,
+                  std::vector<int>& offsets);
+
 /** pack an fei::FillableMat object into a pair of std::vector objects.
 */
 void pack_FillableMat(const fei::FillableMat& mat,

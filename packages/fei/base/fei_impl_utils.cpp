@@ -21,6 +21,32 @@ namespace fei {
 namespace impl_utils {
 
 //----------------------------------------------------------------------------
+void find_offsets(const std::vector<int>& sources,
+                  const std::vector<int>& targets,
+                  std::vector<int>& offsets)
+{
+  offsets.assign(sources.size(), -1);
+
+  size_t ssize = sources.size(), tsize = targets.size();
+  size_t si = 0, ti = 0;
+
+  while(si<ssize && ti<tsize) {
+    if (sources[si] == targets[ti]) {
+      offsets[si++] = ti++;
+      continue;
+    }
+
+    while(sources[si] < targets[ti] && si<ssize) {
+      ++si;
+    }
+
+    while(sources[si] > targets[ti] && ti<tsize) {
+      ++ti;
+    }
+  }
+}
+
+//----------------------------------------------------------------------------
 void pack_FillableMat(const fei::FillableMat& mat,
                       std::vector<int>& intdata,
                       std::vector<double>& doubledata)

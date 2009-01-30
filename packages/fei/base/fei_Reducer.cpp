@@ -523,10 +523,10 @@ Reducer::assembleReducedGraph(fei::Graph* graph,
 
   //form tmpMat1_ = Kid*D
   fei::CSRMat csrKid(Kid_);
-  fei::multiply_CSRMat_CSRMat(csrKid, csrD_, tmpMat1_);
+  fei::multiply_CSRMat_CSRMat(csrKid, csrD_, tmpMat1_, true);
 
   fei::CSRMat csrKdi(Kdi_);
-  fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdi, tmpMat2_);
+  fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdi, tmpMat2_, true);
 
   fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat1_);
   fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat2_);
@@ -536,10 +536,10 @@ Reducer::assembleReducedGraph(fei::Graph* graph,
 
   //form tmpMat1_ = D^T*Kdd
   fei::CSRMat csrKdd(Kdd_);
-  fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdd, tmpMat1_);
+  fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdd, tmpMat1_, true);
 
   //form tmpMat2_ = tmpMat1_*D = D^T*Kdd*D
-  fei::multiply_CSRMat_CSRMat(tmpMat1_, csrD_, tmpMat2_);
+  fei::multiply_CSRMat_CSRMat(tmpMat1_, csrD_, tmpMat2_, true);
 
   fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat2_);
 

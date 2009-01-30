@@ -1,8 +1,7 @@
 #ifndef _fei_Data_hpp_
 #define _fei_Data_hpp_
 
-#include <string.h>
-#include <stdlib.h>
+#include <string>
 
 /**
   This is a very simple class for passing stuff around
@@ -19,31 +18,27 @@
 class Data {
  public:
   /** Default constructor. */
-   Data() {typeName_ = NULL; dataPtr_ = NULL;};
+   Data() : typeName_(), dataPtr_(NULL) {}
 
    /** Default destructor. */
-   virtual ~Data() {if (typeName_) delete [] typeName_;};
+   virtual ~Data() {}
 
    /** Set a string representing the type of the object stored in
        'getDataPtr()'. */
-   void setTypeName(const char* name) {if (typeName_) delete [] typeName_;
-                                 size_t len = strlen(name);
-                                 typeName_ = new char[len+1];
-                                 strcpy(typeName_, name);
-                                 typeName_[len] = '\0';};
+   void setTypeName(const char* name) { typeName_ = name;}
 
    /** Query the string representing the type of the object stored in
        'getDataPtr()'. */
-   char* getTypeName() const {return(typeName_);};
+   const char* getTypeName() const {return(typeName_.c_str());}
 
    /** Set the contents of the data pointer. */
-   void setDataPtr(void* ptr) {dataPtr_ = ptr;};
+   void setDataPtr(void* ptr) {dataPtr_ = ptr;}
 
   /** Retrieve the contents of the data pointer. */
-   void* getDataPtr() const {return(dataPtr_);};
+   void* getDataPtr() const {return(dataPtr_);}
 
  private:
-   char* typeName_;
+   std::string typeName_;
    void* dataPtr_;
 };
 

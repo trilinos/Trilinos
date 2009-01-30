@@ -7,11 +7,10 @@
 /*--------------------------------------------------------------------*/
 
 #include <assert.h>
-#include "fei_iostream.hpp"
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
+#include <fei_iostream.hpp>
 
-#include "fei_mpi.h"
+#include <fei_mpi.h>
 
 #ifndef FEI_SER
 
@@ -24,10 +23,10 @@
 #endif
 
 #include <az_aztec.h>
-#include "fei_Aztec_Map.hpp"
-#include "fei_Aztec_BlockMap.hpp"
-#include "fei_Aztec_Vector.hpp"
-#include "fei_AztecDVBR_Matrix.hpp"
+#include <fei_Aztec_Map.hpp>
+#include <fei_Aztec_BlockMap.hpp>
+#include <fei_Aztec_Vector.hpp>
+#include <fei_AztecDVBR_Matrix.hpp>
 
 //==============================================================================
 AztecDVBR_Matrix::AztecDVBR_Matrix(Aztec_BlockMap& map, int* update)
@@ -725,7 +724,7 @@ void AztecDVBR_Matrix::readMatrixData(FILE* infile) {
          //plug this block into our matrix data structure.
 
          blockValues = new double[nnz];
-         getValuesFromString(line, strlen(line)+1, blockValues, nnz);
+         getValuesFromString(line, std::strlen(line)+1, blockValues, nnz);
 
          putBlockRow(br, blockValues, &bc, 1);
 

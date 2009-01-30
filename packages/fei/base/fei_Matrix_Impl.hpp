@@ -856,7 +856,9 @@ int fei::Matrix_Impl<T>::giveToMatrix(int numRows, const int* rows,
     myvalues = &work_data2D_[0];
   }
 
-  work_ints_.resize(numRows);
+  if ((int)work_ints_.size() < numRows) {
+    work_ints_.resize(numRows);
+  }
 
   if (haveBlockMatrix()) {
     return( giveToBlockMatrix(numRows, rows, numCols, cols,

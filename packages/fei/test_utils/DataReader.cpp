@@ -6,6 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <cstring>
+
 #include <fei_fstream.hpp>
 #include <fei_iostream.hpp>
 #include <fei_defs.h>
@@ -15,8 +17,6 @@
 #include <test_utils/ElemBlock.hpp>
 #include <test_utils/AccessPattern.hpp>
 #include <test_utils/DataReader.hpp>
-
-#include <string.h>
 
 //==============================================================================
 DataReader::DataReader()
@@ -137,10 +137,10 @@ int DataReader::getKeyword(FEI_ISTREAM* instr, char*& keyword) {
 
    do {
       (*instr) >> temp;
-   } while ((strlen(temp) == 0) && (!instr->eof()));
+   } while ((std::strlen(temp) == 0) && (!instr->eof()));
 
-   keyword = new char[strlen(temp)+1];
-   strcpy(keyword, temp);
+   keyword = new char[std::strlen(temp)+1];
+   std::strcpy(keyword, temp);
 
    delete [] temp;
 
@@ -189,12 +189,12 @@ int DataReader::skipWhite(FEI_ISTREAM* instr) {
 //==============================================================================
 void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
 
-   if (!strcmp("solveType", keyword)) {
+   if (!std::strcmp("solveType", keyword)) {
       readData(instr, solveType_);
       return;
    }
 
-   if (!strcmp("parameters", keyword)) {
+   if (!std::strcmp("parameters", keyword)) {
       int tmp = 0;
       readData(instr, tmp);
 
@@ -208,8 +208,8 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
          skipWhite(instr);
          instr->getline(buf, 128);
 
-         newParams[i] = new char[strlen(buf)+2];
-         strcpy(newParams[i], buf);
+         newParams[i] = new char[std::strlen(buf)+2];
+         std::strcpy(newParams[i], buf);
 
          delete [] buf;
       }
@@ -221,7 +221,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("numFields", keyword)) {
+   if (!std::strcmp("numFields", keyword)) {
       readData(instr, numFields_);
 
       fieldSizes_ = new int[numFields_];
@@ -231,17 +231,17 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("fieldIDs", keyword)) {
+   if (!std::strcmp("fieldIDs", keyword)) {
       for(int i=0; i<numFields_; i++) readData(instr, fieldIDs_[i]);
       return;
    }
 
-   if (!strcmp("fieldSizes", keyword)) {
+   if (!std::strcmp("fieldSizes", keyword)) {
       for(int i=0; i<numFields_; i++) readData(instr, fieldSizes_[i]);
       return;
    }
 
-   if (!strcmp("numElemBlocks", keyword)) {
+   if (!std::strcmp("numElemBlocks", keyword)) {
       if (numElemBlocks_ > 0) {
          FEI_COUT << "DataReader: Caution, re-setting numElemBlocks." << FEI_ENDL;
          delete [] elemBlocks_;
@@ -257,7 +257,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("blockID", keyword)) {
+   if (!std::strcmp("blockID", keyword)) {
       currentElemBlockIndex_++;
       currentElemIndex_ = 0;
 
@@ -276,7 +276,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("interleaveStrategy", keyword)) {
+   if (!std::strcmp("interleaveStrategy", keyword)) {
       ElemBlock& eb2 = elemBlocks_[currentElemBlockIndex_];
       int interleave;
 
@@ -287,7 +287,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("numElements", keyword)) {
+   if (!std::strcmp("numElements", keyword)) {
       ElemBlock& eb3 = elemBlocks_[currentElemBlockIndex_];
       int numElems;
 
@@ -302,7 +302,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("numNodesPerElement", keyword)) {
+   if (!std::strcmp("numNodesPerElement", keyword)) {
       ElemBlock& eb4 = elemBlocks_[currentElemBlockIndex_];
       int numNodes;
 
@@ -319,7 +319,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("numElemDOF", keyword)) {
+   if (!std::strcmp("numElemDOF", keyword)) {
       ElemBlock& eb5 = elemBlocks_[currentElemBlockIndex_];
       int edof;
       readData(instr, edof);
@@ -332,7 +332,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("elemDOFFieldIDs", keyword)) {
+   if (!std::strcmp("elemDOFFieldIDs", keyword)) {
       ElemBlock& eb6 = elemBlocks_[currentElemBlockIndex_];
       int edof = eb6.numElemDOF_;
 
@@ -344,7 +344,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("elemFormat", keyword)) {
+   if (!std::strcmp("elemFormat", keyword)) {
       ElemBlock& eb7 = elemBlocks_[currentElemBlockIndex_];
       int ef;
       readData(instr, ef);
@@ -353,7 +353,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("numFieldsPerNode", keyword)) {
+   if (!std::strcmp("numFieldsPerNode", keyword)) {
       ElemBlock& eb8 = elemBlocks_[currentElemBlockIndex_];
 
       int i;
@@ -367,7 +367,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("nodalFieldIDs", keyword)) {
+   if (!std::strcmp("nodalFieldIDs", keyword)) {
       ElemBlock& eb9 = elemBlocks_[currentElemBlockIndex_];
 
       int i, numStiffRows = 0;
@@ -396,7 +396,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("elemID", keyword)) {
+   if (!std::strcmp("elemID", keyword)) {
       ElemBlock& eb10 = elemBlocks_[currentElemBlockIndex_];
 
       int i, tmp;
@@ -428,7 +428,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("numSharedNodeSets", keyword)) {
+   if (!std::strcmp("numSharedNodeSets", keyword)) {
       readData(instr, numSharedNodeSets_);
 
       if (numSharedNodeSets_ == 0) return;
@@ -473,7 +473,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("numBCNodeSets", keyword)) {
+   if (!std::strcmp("numBCNodeSets", keyword)) {
       readData(instr, numBCNodeSets_);
 
       if (numBCNodeSets_ == 0) return;
@@ -509,7 +509,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("numCRMultSets", keyword)) {
+   if (!std::strcmp("numCRMultSets", keyword)) {
       readData(instr, numCRMultSets_);
 
       if (numCRMultSets_ == 0) return;
@@ -563,7 +563,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("numCoefAccessPatterns", keyword)) {
+   if (!std::strcmp("numCoefAccessPatterns", keyword)) {
      readData(instr, numCoefAccessPatterns_);
 
      if (numCoefAccessPatterns_ == 0) return;
@@ -624,7 +624,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
      return;
    }
 
-   if (!strcmp("coefAccess", keyword)) {
+   if (!std::strcmp("coefAccess", keyword)) {
      int i, patternID = -1;
      readData(instr, patternID);
 
@@ -699,7 +699,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
      return;
    }
 
-   if (!strcmp("numSlaveVariables", keyword)) {
+   if (!std::strcmp("numSlaveVariables", keyword)) {
       readData(instr, numSlaveVars_);
 
       if (numSlaveVars_ == 0) return;
@@ -749,7 +749,7 @@ void DataReader::readData(FEI_ISTREAM* instr, char* keyword) {
       return;
    }
 
-   if (!strcmp("numCRPenSets", keyword)) {
+   if (!std::strcmp("numCRPenSets", keyword)) {
       readData(instr, numCRPenSets_);
 
       if (numCRPenSets_ == 0) return;
