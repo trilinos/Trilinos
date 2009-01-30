@@ -36,13 +36,34 @@
 #include "Thyra_ModelEvaluator.hpp" // Interface
 #include "Thyra_StateFuncModelEvaluatorBase.hpp" // Implementation
 
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_ParameterList.hpp"
 
 using Thyra::ModelEvaluatorBase;
 
 namespace Rythmos {
 
-class SinCosModel : public Thyra::StateFuncModelEvaluatorBase<double> 
+  /*
+   * This is the canonical Sine Cosine differential equation \ddot{x} = -x with a few enhancements.
+   * We start with the exact solution to the differential equation as:
+   * x0(t) = a + b*sin(f*t+phi)
+   * x1(t) =   b*f*cos(f*t+phi)
+   * Then the form of the model is:
+   * d/dt x0(t) = x1(t)
+   * d/dt x1(t) = f*f*(a-x0(t)) [a=0,f=1]
+   * With Initial conditions:
+   * x0(t0) = gamma0 [0.0]
+   * x1(t0) = gamma1 [1.0]
+   * We can use gamma0 and gamma1 to solve for phi and b:
+   * phi = atan((f/gamma1)*(gamma0-a))-f*t0 [0.0]
+   * b = gamma1/(f*cos(f*t0+phi)) [1.0]
+   * Therefore this model has two model parameters and two initial conditions
+   * which effect the exact solution as above.
+   */
+
+class SinCosModel 
+  : public Thyra::StateFuncModelEvaluatorBase<double>,
+    public Teuchos::ParameterListAcceptorDefaultBase
 {
   public:
 
@@ -52,11 +73,11 @@ class SinCosModel : public Thyra::StateFuncModelEvaluatorBase<double>
   // Exact solution
   ModelEvaluatorBase::InArgs<double> getExactSolution(double t) const;
 
+  // Exact sensitivity solution
+  ModelEvaluatorBase::InArgs<double> getExactSensSolution(int j, double t) const;
+
   // Set explicit/implicit flag
   void setImplicitFlag(bool implicit);
-
-  // Set have/not-have initial condition
-  void setHaveIC(bool haveIC);
 
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
@@ -76,12 +97,30 @@ class SinCosModel : public Thyra::StateFuncModelEvaluatorBase<double>
   /** \brief . */
   ModelEvaluatorBase::InArgs<double> createInArgs() const;
 
+  /** \brief . */
+  RCP<const Thyra::VectorSpaceBase<double> > get_p_space(int l) const;
+  /** \brief . */
+  RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  /** \brief . */
+  RCP<const Thyra::VectorSpaceBase<double> > get_g_space(int j) const;
+
+  //@}
+  
+  /** \name Public functions overridden from ParameterListAcceptor. */
+  //@{
+  
+  /** \brief . */
+  void setParameterList(RCP<ParameterList> const& paramList);
+
+  /** \brief . */
+  RCP<const ParameterList> getValidParameters() const;
+
   //@}
 
 private:
 
   /** \brief. */
-  void initialize_();
+  void setupInOutArgs_();
 
   /** \name Private functions overridden from ModelEvaulatorDefaultBase. */
   //@{
@@ -96,22 +135,41 @@ private:
 
   //@}
 
+  void calculateCoeffFromIC_();
+
 private:
-  int dim_;         // 2
+  int dim_;         // Number of state unknowns (2)
+  int Np_;          // Number of parameter vectors (1)
+  int np_;          // Number of parameters in this vector (2)
+  int Ng_;          // Number of observation functions (1)
+  int ng_;          // Number of elements in this observation function (1)
   bool isImplicit_; // false => \dot{x} = f(x,t)    W = beta*df/dx
                     // true =>  F(\dot{x},x,t) = 0  W = alpha*dF/dxdot + beta*dF/dx
   bool haveIC_;     // false => no nominal values are provided (default=true)
+  bool acceptModelParams_; // Changes inArgs to require parameters
   bool isInitialized_;
   ModelEvaluatorBase::InArgs<double> inArgs_;
   ModelEvaluatorBase::OutArgs<double> outArgs_;
   ModelEvaluatorBase::InArgs<double> nominalValues_;
   RCP<const Thyra::VectorSpaceBase<double> > x_space_;
   RCP<const Thyra::VectorSpaceBase<double> > f_space_;
+  RCP<const Thyra::VectorSpaceBase<double> > p_space_;
+  RCP<const Thyra::VectorSpaceBase<double> > g_space_;
 
+  // Parameters for the model:  x_0(t) = a + b*sin(f*t+phi)
+  //                            x_1(t) = b*f*cos(f*t+phi)
+  double a_; // This is a model parameter 
+  double f_; // This is a model parameter
+  double phi_; // This is a parameter determined from the IC
+  double b_; // This is a parameter determined from the IC
+  double t0_ic_; // This is the time value where the initial condition is specified
+  double x0_ic_; // initial condition for x0
+  double x1_ic_; // initial condition for x1
 };
 
 // Non-member constructor
-RCP<SinCosModel> sinCosModel(bool implicit, bool haveIC=true);
+RCP<SinCosModel> sinCosModel(bool implicit);
+RCP<SinCosModel> sinCosModel();
 
 
 } // namespace Rythmos 

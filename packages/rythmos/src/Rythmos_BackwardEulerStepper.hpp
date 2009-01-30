@@ -654,7 +654,7 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeTy
   // 2007/07/25: rabartl: ToDo: Move the above test into a helper function so
   // that it can be used from lots of different places!
 
-#endif
+#endif // TEUCHOS_DEBUG
 
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
     *out

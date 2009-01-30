@@ -43,6 +43,11 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, setParameterList ) {
   TEST_THROW(builder->setParameterList(pl), std::logic_error);
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, invalidCreate ) {
+  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  TEST_THROW(builder->create(), std::logic_error);
+}
+
 TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, getNonconstParameterList ) {
   StepperBuilder<double> builder;
   RCP<ParameterList> pl = builder.getNonconstParameterList();

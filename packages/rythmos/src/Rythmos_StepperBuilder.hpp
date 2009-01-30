@@ -129,13 +129,13 @@ public:
   RCP<StepperBase<Scalar> > create();
   
   /** \brief . */
-  void setNonlinearSolver(RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver);
+  void setNonlinearSolver(const RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver);
 
   /** \name Overridden from Teuchos::ParameterListAcceptor */
   //@{
 
   /** \brief . */
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
+  void setParameterList(const RCP<Teuchos::ParameterList> & paramList);
   
   /** \brief . */
   RCP<Teuchos::ParameterList> getNonconstParameterList();
@@ -161,7 +161,7 @@ RCP<StepperBuilder<Scalar> > stepperBuilder() {
 
 
 template<class Scalar>
-void StepperBuilder<Scalar>::setParameterList(RCP<Teuchos::ParameterList> const& paramList)
+void StepperBuilder<Scalar>::setParameterList(const RCP<Teuchos::ParameterList> & paramList)
 {
   if (!is_null(paramList)) {
     paramList->validateParameters(*this->getValidParameters());
@@ -245,6 +245,7 @@ RCP<Teuchos::ParameterList> StepperBuilder<Scalar>::unsetParameterList()
 template<class Scalar>
 RCP<StepperBase<Scalar> > StepperBuilder<Scalar>::create()
 {
+  TEST_FOR_EXCEPTION( is_null(paramList_), std::logic_error, "Error!, you must first set a parameter list on the builder!" );
   RCP<StepperBase<Scalar> > stepper;
   E_StepperBuilderSelectionTypes stepperTypeEnum = stepperBuilderSelectionTypeValidator->getIntegralValue(
       *paramList_, StepperType_name(), StepperType_default()
@@ -283,7 +284,7 @@ RCP<StepperBase<Scalar> > StepperBuilder<Scalar>::create()
 }
 
 template<class Scalar>
-void StepperBuilder<Scalar>::setNonlinearSolver(RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver)
+void StepperBuilder<Scalar>::setNonlinearSolver(const RCP<Thyra::NonlinearSolverBase<Scalar> >& nlSolver)
 {
   TEST_FOR_EXCEPTION(is_null(nlSolver), std::logic_error,
       "Error!  Attempting to call setNonlinearSolver with null RCP"

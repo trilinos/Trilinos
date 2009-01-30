@@ -48,6 +48,7 @@ Rythmos_UnitTest_SOURCES =\
   $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
   $(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp\
   $(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp\
+  $(srcdir)/Rythmos_ForwardSensitivity_UnitTest.cpp\
 	$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitBDF_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
