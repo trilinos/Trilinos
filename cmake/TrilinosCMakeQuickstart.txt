@@ -114,7 +114,7 @@ C) Configuring
     -D CMAKE_C_FLAGS:STRING="-04 --funrool-loops" \
     -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
 
-  where LANGUAGE = C, CXX, Fortran etc.
+  where LANGUAGE = C, CXX, Fortran, etc.
 
 (*) Overridding all compiler options:
 
