@@ -47,8 +47,9 @@ ADD_SUBDIRECTORY(src)
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 
+# This adds directories for non-performance tests as well
 PACKAGE_ADD_PERFORMANCE_TEST_DIRECTORIES(
-  test/performance)
+  test/utils test/performance)
 
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
