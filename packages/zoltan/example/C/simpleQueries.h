@@ -18,7 +18,7 @@ static int numProcs;
  **************************************************************
  * Zoltan partitions a collection of objects distributed
  * across processes. In this example objects are vertices, and 
- * they are dealt out like cards based on process rank.
+ * they are dealt out like cards (cyclic) based on process rank.
  */
 static int get_number_of_objects(void *data, int *ierr)
 {
@@ -65,7 +65,8 @@ int i, next;
     if (i % numProcs == myRank){
       globalID[next] = i+1;   /* application wide global ID */
       localID[next] = next;   /* process specific local ID  */
-      obj_wgts[next] = (float)simpleNumEdges[i];  /* weight */
+      if (wgt_dim>0)
+        obj_wgts[next] = (float)simpleNumEdges[i];  /* weight */
       next++;
     }
   }
