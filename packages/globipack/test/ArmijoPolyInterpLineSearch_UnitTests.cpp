@@ -14,6 +14,11 @@ namespace {
 //
 
 
+using GlobiPack::TestLagrPolyMeritFunc1D;
+using GlobiPack::testLagrPolyMeritFunc1D;
+using GlobiPack::ArmijoPolyInterpLineSearch;
+using GlobiPack::armijoQuadraticLineSearch;
+using GlobiPack::computeValue;
 using Teuchos::as;
 using Teuchos::outArg;
 using Teuchos::null;
@@ -21,11 +26,8 @@ using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 using Teuchos::Array;
 using Teuchos::tuple;
-using GlobiPack::TestLagrPolyMeritFunc1D;
-using GlobiPack::testLagrPolyMeritFunc1D;
-using GlobiPack::ArmijoPolyInterpLineSearch;
-using GlobiPack::armijoQuadraticLineSearch;
-using GlobiPack::computeValue;
+using Teuchos::ParameterList;
+using Teuchos::parameterList;
 
 
 template<class Scalar>
@@ -86,26 +88,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( ArmijoPolyInterpLineSear
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArmijoPolyInterpLineSearch, parseParams, Scalar )
 {
-  using Teuchos::ParameterList;
-  using Teuchos::parameterList;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   namespace AQLSU = GlobiPack::ArmijoPolyInterpLineSearchUtils;
   ECHO(RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
     armijoQuadraticLineSearch<Scalar>());
-  const double eta = 3.0;
+  const double eta = 0.99999;
   const double minFrac = 4.0;
   const double maxFrac = 5.0;
+  const int minIters = 5;
   const int maxIters = 100;
   const bool doMaxIters = true;
   ECHO(const RCP<ParameterList> pl = parameterList());
   ECHO(pl->set("Armijo Slope Fraction", eta));
   ECHO(pl->set("Min Backtrack Fraction", minFrac));
   ECHO(pl->set("Max Backtrack Fraction", maxFrac));
+  ECHO(pl->set("Min Number of Iterations", minIters));
   ECHO(pl->set("Max Number of Iterations", maxIters));
   ECHO(pl->set("Do Max Iterations", doMaxIters));
   ECHO(linesearch->setParameterList(pl));
-  TEST_EQUALITY(linesearch->eta(), eta);
-  TEST_EQUALITY(linesearch->minFrac(), minFrac);
-  TEST_EQUALITY(linesearch->maxFrac(), maxFrac);
+  const Scalar tol = ST::eps();
+  TEST_FLOATING_EQUALITY(linesearch->eta(), as<Scalar>(eta), tol);
+  TEST_FLOATING_EQUALITY(linesearch->minFrac(), as<Scalar>(minFrac), tol);
+  TEST_FLOATING_EQUALITY(linesearch->maxFrac(), as<Scalar>(maxFrac), tol);
+  TEST_EQUALITY(linesearch->minIters(), minIters);
   TEST_EQUALITY(linesearch->maxIters(), maxIters);
   TEST_EQUALITY(linesearch->doMaxIters(), doMaxIters);
 }
@@ -115,7 +120,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( ArmijoPolyInterpLineSear
 
 //
 // Check that the ArmijoPolyInterpLineSearch object validates its parameters
-// correctly.
+// and their values correctly.
 //
 
 /*
@@ -184,7 +189,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArmijoPolyInterpLineSearch, noEval, Scalar )
   ECHO(linesearch->setOStream(rcpFromRef(out)));
 
   ECHO(const Scalar phi_k = computeValue<Scalar>(*phi, ST::zero()));
-  ECHO(const Scalar alpha_k_init = as<Scalar>(1.9));
+  ECHO(const Scalar alpha_k_init = as<Scalar>(2.1));
   ECHO(Scalar alpha_k = alpha_k_init); // Initial point should be accepted!
   ECHO(Scalar phi_kp1 = computeValue<Scalar>(*phi, alpha_k));
 
@@ -199,6 +204,46 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArmijoPolyInterpLineSearch, noEval, Scalar )
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( ArmijoPolyInterpLineSearch, noEval )
+
+
+//
+// Check that object will force a minimum number of iterations if asked.
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArmijoPolyInterpLineSearch, minIters, Scalar )
+{
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+
+  ECHO(const RCP<TestLagrPolyMeritFunc1D<Scalar> > phi = quadPhi<Scalar>());
+  
+  ECHO(RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
+    armijoQuadraticLineSearch<Scalar>());
+
+  ECHO(const RCP<ParameterList> pl = parameterList());
+  ECHO(pl->set("Max Backtrack Fraction", 1.0));
+  ECHO(pl->set("Min Number of Iterations", 1));
+  ECHO(linesearch->setParameterList(pl));
+
+  ECHO(linesearch->setOStream(rcpFromRef(out)));
+
+  ECHO(const Scalar phi_k = computeValue<Scalar>(*phi, ST::zero()));
+  ECHO(const Scalar alpha_k_init = as<Scalar>(2.1));
+  ECHO(Scalar alpha_k = alpha_k_init); // Initial point should be accepted!
+  ECHO(Scalar phi_kp1 = computeValue<Scalar>(*phi, alpha_k));
+
+  ECHO(const bool linesearchResult =
+    linesearch->doLineSearch(*phi, phi_k, outArg(alpha_k), outArg(phi_kp1), null));
+
+  TEST_ASSERT(linesearchResult);
+  TEST_FLOATING_EQUALITY(alpha_k, as<Scalar>(2.0), g_tol);
+  TEST_FLOATING_EQUALITY(phi_kp1, as<ScalarMag>(3.0), g_tol);
+  TEST_EQUALITY(linesearch->numIterations(), 1);
+
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( ArmijoPolyInterpLineSearch, minIters )
 
 
 //

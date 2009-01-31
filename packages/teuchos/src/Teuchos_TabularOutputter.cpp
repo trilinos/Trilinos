@@ -167,16 +167,24 @@ void TabularOutputter::outputHeader()
 }
 
 
-void TabularOutputter::nextRow()
+void TabularOutputter::nextRow(const bool allowRemainingFields)
 {
+  const int numFields = fieldSpecs_.size();
+  if (allowRemainingFields) {
+    while (currFieldIdx_ < numFields) {
+      outputField("-");
+    }
+  }
+  else {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
-    !(currFieldIdx_ == as<int>(fieldSpecs_.size())),
-    InvalidFieldOutputError,
-    "Error, you must call outputField(...) for every field in the row before you call\n"
-    "nextRow()!"
-    );
+    TEST_FOR_EXCEPTION(
+      !(currFieldIdx_ == numFields),
+      InvalidFieldOutputError,
+      "Error, you must call outputField(...) for every field in the row\n"
+      "before you call nextRow()!"
+      );
 #endif
+  }
   *out_ << "\n";
   currFieldIdx_ = 0;
 }

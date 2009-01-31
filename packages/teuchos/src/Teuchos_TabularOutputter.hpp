@@ -112,7 +112,7 @@ public:
   void outputField( const T& t );
 
   /** \brief Finalize the row of output. */
-  void nextRow();
+  void nextRow(const bool allowRemainingFields = false);
 
 private:
 

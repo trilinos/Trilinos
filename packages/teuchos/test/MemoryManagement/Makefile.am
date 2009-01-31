@@ -63,8 +63,9 @@ Tuple_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 Tuple_test_LDADD = $(TEUCHOS_LIBS)
 
 MemoryManagement_UnitTests_SOURCES = \
-  $(srcdir)/RCP_UnitTests.cpp \
   $(srcdir)/RCPNodeHandle_UnitTests.cpp \
+  $(srcdir)/RCP_UnitTests.cpp \
+  $(srcdir)/Ptr_UnitTests.cpp \
   $(srcdir)/Array_UnitTest_helpers.cpp \
   $(srcdir)/Array_UnitTests.cpp \
   $(srcdir)/ArrayView_UnitTests.cpp \

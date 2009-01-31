@@ -244,7 +244,7 @@ TEUCHOS_UNIT_TEST( TabularOutputter, missingHeaderError )
 }
 
 
-TEUCHOS_UNIT_TEST( TabularOutputter, missingNexRowError )
+TEUCHOS_UNIT_TEST( TabularOutputter, missingNextRowError )
 {
 
   typedef Teuchos::TabularOutputter TO;
@@ -293,6 +293,31 @@ TEUCHOS_UNIT_TEST( TabularOutputter, missingFieldOutputError )
   out << "\n\n";
 
   TEST_THROW(outputter.nextRow(), TO::InvalidFieldOutputError);
+
+}
+
+
+TEUCHOS_UNIT_TEST( TabularOutputter, missingFieldOutputOkay )
+{
+
+  typedef Teuchos::TabularOutputter TO;
+
+  TabularOutputter outputter(out);
+
+  outputter.pushFieldSpec("col a", TO::INT);
+  outputter.pushFieldSpec("col b", TO::DOUBLE);
+  outputter.pushFieldSpec("col c", TO::STRING);
+  outputter.pushFieldSpec("col d", TO::DOUBLE);
+
+  outputter.outputHeader();
+
+  outputter.outputField(1);
+  outputter.outputField(1.2);
+  outputter.outputField("s13");
+
+  // Missing a call to outputField(...);
+
+  outputter.nextRow(true); // Just fine!
 
 }
 

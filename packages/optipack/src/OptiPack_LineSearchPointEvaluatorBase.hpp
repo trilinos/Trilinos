@@ -28,54 +28,42 @@
 // @HEADER
 */
 
-#ifndef OPTIPACK_TYPES_HPP
-#define OPTIPACK_TYPES_HPP
+#ifndef OPTIPACK_LINE_SEARCH_POINT_EVALUATOR_BASE_HPP
+#define OPTIPACK_LINE_SEARCH_POINT_EVALUATOR_BASE_HPP
 
 
-#include "OptiPack_ConfigDefs.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Ptr.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_ArrayView.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-
-
-namespace Teuchos {
-
-/** \brief . */
-class ParameterList;
-
-} // namespace Teuchos
+#include "OptiPack_Types.hpp"
+#include "Thyra_OperatorVectorTypes.hpp"
+#include "Teuchos_Describable.hpp"
 
 
 namespace OptiPack {
 
 
-/** \brief . */
-using Teuchos::RCP;
-/** \brief . */
-using Teuchos::Ptr;
-/** \brief . */
-using Teuchos::Array;
-/** \brief . */
-using Teuchos::ArrayView;
-/** \brief . */
-using Teuchos::ScalarTraits;
-/** \brief . */
-using Teuchos::ParameterList;
+/** \brief Base class interface for line search point updates.
+ *
+ * ToDo: Finish Documentation!
+ */
+template<typename Scalar>
+class LineSearchPointEvaluatorBase
+  : public Teuchos::Describable
+{
+public:
+
+  /** \brief . */
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+
+  /** \brief Compute the updated point <tt>p</tt> at <tt>alpha</tt> for a
+   * linear search algorithm.
+   */
+  virtual void computePoint( const ScalarMag &alpha,
+    const Ptr<Thyra::VectorBase<Scalar> > &p
+    ) const = 0;
+
+};
 
 
 } // namespace OptiPack
 
 
-namespace Thyra {
-
-/** \brief . */
-template<class Scalar> class ModelEvaluator;
-
-
-
-} // namespace Thyra
-
-
-#endif // OPTIPACK_TYPES_HPP
+#endif // OPTIPACK_LINE_SEARCH_POINT_EVALUATOR_BASE_HPP

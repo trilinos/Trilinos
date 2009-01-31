@@ -50,6 +50,14 @@ clone( const ModelEvaluatorBase::InArgs<Scalar> &inArgs );
 
 /** \relates ModelEvaluatorDefaultBase */
 template<class Scalar>
+ModelEvaluatorBase::Derivative<Scalar>
+derivativeGradient(
+  const RCP<MultiVectorBase<Scalar> > &grad
+  );
+
+
+/** \relates ModelEvaluatorDefaultBase */
+template<class Scalar>
 ModelEvaluatorBase::DerivativeMultiVector<Scalar>
 create_DfDp_mv(
   const ModelEvaluator<Scalar>& model,
@@ -305,6 +313,19 @@ Thyra::clone( const ModelEvaluatorBase::InArgs<Scalar> &inArgs )
     newInArgs = Teuchos::rcp(new ModelEvaluatorBase::InArgs<Scalar>);
   *newInArgs = inArgs;
   return newInArgs;
+}
+
+
+template<class Scalar>
+Thyra::ModelEvaluatorBase::Derivative<Scalar>
+Thyra::derivativeGradient(
+  const RCP<MultiVectorBase<Scalar> > &grad
+  )
+{
+  return ModelEvaluatorBase::Derivative<Scalar>(
+    grad,
+    ModelEvaluatorBase::DERIV_MV_GRADIENT_FORM
+    );
 }
 
 
@@ -880,8 +901,12 @@ void Thyra::eval_g_DgDp(
   MEB::InArgs<Scalar> inArgs = model.createInArgs();
   MEB::OutArgs<Scalar> outArgs= model.createOutArgs();
   inArgs.set_p(l, Teuchos::rcpFromRef(p_l));
-  outArgs.set_g(j, Teuchos::rcpFromRef(*g_j));
-  outArgs.set_DgDp(j, l, DgDp_j_l);
+  if (!is_null(g_j)) {
+    outArgs.set_g(j, Teuchos::rcpFromPtr(g_j));
+  }
+  if (!DgDp_j_l.isEmpty()) {
+    outArgs.set_DgDp(j, l, DgDp_j_l);
+  }
   model.evalModel(inArgs,outArgs);
 }
 

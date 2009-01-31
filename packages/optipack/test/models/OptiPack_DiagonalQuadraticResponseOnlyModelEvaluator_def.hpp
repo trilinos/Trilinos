@@ -34,6 +34,7 @@
 
 
 #include "OptiPack_DiagonalQuadraticResponseOnlyModelEvaluator_decl.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DetachedSpmdVectorView.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -58,6 +59,8 @@ DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::DiagonalQuadraticResponseOn
   :Np_(1), Ng_(1)
 {
 
+  typedef ScalarTraits<Scalar> ST;
+
   // Get the comm
   comm_ = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
 
@@ -67,7 +70,32 @@ DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::DiagonalQuadraticResponseOn
   // Locally replicated space for g
   g_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(comm_, 1, 1);
 
+  // Default solution
+  const RCP<Thyra::VectorBase<Scalar> > ps = createMember(p_space_);
+  V_S(ps.ptr(), ST::zero());
+  ps_ = ps;
+
+  // Default offset
+  g_offset_ = ST::zero();
+
 }
+
+
+template<class Scalar>
+void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::setSolutionVector(
+  const RCP<const Thyra::VectorBase<Scalar> > &ps)
+{
+  ps_ = ps.assert_not_null();
+}
+
+
+template<class Scalar>
+void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::setScalarOffset(
+  const Scalar &s)
+{
+  g_offset_ = s;
+}
+
 
 // Public functions overridden from ModelEvaulator
 
@@ -154,18 +182,20 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::evalModelImpl(
   typedef Thyra::ModelEvaluatorBase MEB;
   typedef MEB::DerivativeMultiVector<Scalar> DMV;
 
-  ConstDetachedSpmdVectorView<Scalar> p(inArgs.get_p(0));
+  const ConstDetachedSpmdVectorView<Scalar> p(inArgs.get_p(0));
+  const ConstDetachedSpmdVectorView<Scalar> ps(ps_);
 
   if (!is_null(outArgs.get_g(0))) {
     Scalar g_val = ST::zero();
     for (Ordinal i = 0; i < p.subDim(); ++i) {
-      g_val += p[i] * p[i];
+      const Scalar p_ps = p[i] - ps[i];
+      g_val += p_ps*p_ps;
     }
     Scalar global_g_val;
     Teuchos::reduceAll<Ordinal, Scalar>(*comm_, Teuchos::REDUCE_SUM, g_val,
       outArg(global_g_val));
     DetachedSpmdVectorView<Scalar>(outArgs.get_g(0))[0] =
-      as<Scalar>(0.5) * global_g_val;
+      as<Scalar>(0.5) * global_g_val + g_offset_;
   }
 
   if (!outArgs.get_DgDp(0,0).isEmpty()) {
@@ -173,7 +203,7 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::evalModelImpl(
       get_mv<Scalar>(outArgs.get_DgDp(0,0), "DgDp^T", MEB::DERIV_TRANS_MV_BY_ROW);
     const DetachedSpmdVectorView<Scalar> DgDp_grad(DgDp_trans_mv->col(0));
     for (Thyra::Ordinal i = 0; i < p.subDim(); ++i) {
-      DgDp_grad[i] = p[i];
+      DgDp_grad[i] = p[i] - ps[i];
     }
   }
   

@@ -67,9 +67,11 @@ public:
   /** \brief . */
   Scalar maxFrac() const;
   /** \brief . */
-  bool doMaxIters() const;
+  int	minIters() const;
   /** \brief . */
   int	maxIters() const;
+  /** \brief . */
+  bool doMaxIters() const;
 
   //@}
 
@@ -111,8 +113,9 @@ private:
   Scalar eta_;
   Scalar minFrac_;
   Scalar maxFrac_;
-  bool doMaxIters_;
+  int	minIters_;
   int	maxIters_;
+  bool doMaxIters_;
 
   mutable int numIters_;
 
@@ -144,6 +147,9 @@ const double minFrac_default = 0.1;
 
 const std::string maxFrac_name = "Max Backtrack Fraction";
 const double maxFrac_default = 0.5;
+
+const std::string minIters_name = "Min Number of Iterations";
+const int minIters_default = 0;
 
 const std::string maxIters_name = "Max Number of Iterations";
 const int maxIters_default = 20;

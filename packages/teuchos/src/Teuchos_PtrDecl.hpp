@@ -191,6 +191,8 @@ public: // Bad bad bad
   Ptr( const RCP<T> &p );
   T* access_private_ptr() const
     { return ptr_; }
+  const RCP<T> access_rcp() const
+    { return rcp_; }
 #endif
 
 
@@ -265,6 +267,23 @@ template<typename T> inline
 Ptr<T> ptrFromRef( T& arg )
 {
   return Ptr<T>(&arg);
+}
+
+
+/** \brief Create an RCP<T> from a Ptr<T> object.
+ *
+ * \relates RCP
+ */
+template<typename T> inline
+RCP<T> rcpFromPtr( const Ptr<T>& ptr )
+{
+#ifdef TEUCHOS_DEBUG
+  // In a debug build, just grab out the WEAK RCP and return it.  That way we
+  // can get dangling reference checking without having to turn on more
+  // expensive RCPNode tracing.
+  return ptr.access_rcp();
+#endif
+  return rcpFromRef(*ptr);
 }
 
 

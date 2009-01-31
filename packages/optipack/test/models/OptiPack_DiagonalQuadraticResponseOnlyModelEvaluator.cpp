@@ -41,7 +41,7 @@
 namespace OptiPack {
 
 
-TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(DiagonalQuadraticResponseOnlyModelEvaluator)
+TEUCHOS_CLASS_TEMPLATE_INSTANT_REAL_SCALAR_TYPES(DiagonalQuadraticResponseOnlyModelEvaluator)
 
 
 } // namespace OptiPack

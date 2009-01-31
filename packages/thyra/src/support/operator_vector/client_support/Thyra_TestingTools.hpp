@@ -251,13 +251,13 @@ bool Thyra::testMaxErrors(
 template<class Scalar>
 std::ostream& Thyra::operator<<( std::ostream& o, const VectorBase<Scalar>& v )
 {
-  return o << Teuchos::describe(v,Teuchos::VERB_EXTREME);
+  return o << Teuchos::describe(v, Teuchos::VERB_EXTREME);
 }
 
 template<class Scalar>
 std::ostream& Thyra::operator<<( std::ostream& o, const LinearOpBase<Scalar>& M )
 {
-  return o << Teuchos::describe(M,Teuchos::VERB_EXTREME);
+  return o << Teuchos::describe(M, Teuchos::VERB_EXTREME);
 }
 
 #endif // THYRA_TESTING_TOOLS_HPP

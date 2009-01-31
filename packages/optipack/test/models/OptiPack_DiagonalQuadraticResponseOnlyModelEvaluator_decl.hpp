@@ -43,7 +43,7 @@ namespace OptiPack {
 
 /** \brief Simple parallel response-only ModelEvaluator.
  *
- * g(p) = 0.5*inner(p,p)
+ * g(p) = 0.5*inner(p-ps, p-ps) + s
  *
  * ToDo: Finish Documentation!
  */
@@ -55,11 +55,17 @@ public:
 
   //@}
 
-  /** \name Constructors, Initialization, Misc. */
+  /** \name Constructors/Initializers/Accessors. */
   //@{
 
   /** \brief . */
   DiagonalQuadraticResponseOnlyModelEvaluator(const int localDim);
+
+  /** \brief Set the solution vector ps . */
+  void setSolutionVector(const RCP<const Thyra::VectorBase<Scalar> > &ps);
+
+  /** \brief Set offset scalar s . */
+  void setScalarOffset(const Scalar &s);
 
   //@}
 
@@ -104,6 +110,9 @@ private:
   RCP<const Teuchos::Comm<Thyra::Ordinal> > comm_;
   RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
   RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
+
+  RCP<const Thyra::VectorBase<Scalar> > ps_;
+  Scalar g_offset_;
 
 };
 

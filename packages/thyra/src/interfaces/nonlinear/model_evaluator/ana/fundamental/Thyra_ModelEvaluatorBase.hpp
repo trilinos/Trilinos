@@ -183,8 +183,10 @@ public:
 
   /** \brief . */
   enum EDerivativeMultiVectorOrientation {
-    DERIV_MV_BY_COL           ///< .
-    ,DERIV_TRANS_MV_BY_ROW    ///< .
+    DERIV_MV_JACOBIAN_FORM, ///< Jacobian form DhDz (nz columns of h_space vectors)
+    DERIV_MV_GRADIENT_FORM, ///< Gradient form DhDz^T (nh columns of z_space vectors)
+    DERIV_MV_BY_COL = DERIV_MV_JACOBIAN_FORM, ///< Deprecated!
+    DERIV_TRANS_MV_BY_ROW = DERIV_MV_GRADIENT_FORM ///< Deprecated!
   };
 
   /** \brief . */

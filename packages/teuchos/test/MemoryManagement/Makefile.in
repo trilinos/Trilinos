@@ -124,10 +124,10 @@ am__objects_1 = TestClasses.$(OBJEXT)
 GCC_CheckedSTL_UnitTests_OBJECTS =  \
 	$(am_GCC_CheckedSTL_UnitTests_OBJECTS)
 am__objects_2 = Teuchos_StandardUnitTestMain.$(OBJEXT)
-am_MemoryManagement_UnitTests_OBJECTS = RCP_UnitTests.$(OBJEXT) \
-	RCPNodeHandle_UnitTests.$(OBJEXT) \
-	Array_UnitTest_helpers.$(OBJEXT) Array_UnitTests.$(OBJEXT) \
-	ArrayView_UnitTests.$(OBJEXT) \
+am_MemoryManagement_UnitTests_OBJECTS =  \
+	RCPNodeHandle_UnitTests.$(OBJEXT) RCP_UnitTests.$(OBJEXT) \
+	Ptr_UnitTests.$(OBJEXT) Array_UnitTest_helpers.$(OBJEXT) \
+	Array_UnitTests.$(OBJEXT) ArrayView_UnitTests.$(OBJEXT) \
 	ArrayConversions_UnitTests.$(OBJEXT) $(am__objects_2) \
 	$(am__objects_1)
 MemoryManagement_UnitTests_OBJECTS =  \
@@ -304,8 +304,9 @@ Tuple_test_SOURCES = $(srcdir)/Tuple_test.cpp
 Tuple_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 Tuple_test_LDADD = $(TEUCHOS_LIBS)
 MemoryManagement_UnitTests_SOURCES = \
-  $(srcdir)/RCP_UnitTests.cpp \
   $(srcdir)/RCPNodeHandle_UnitTests.cpp \
+  $(srcdir)/RCP_UnitTests.cpp \
+  $(srcdir)/Ptr_UnitTests.cpp \
   $(srcdir)/Array_UnitTest_helpers.cpp \
   $(srcdir)/Array_UnitTests.cpp \
   $(srcdir)/ArrayView_UnitTests.cpp \
@@ -423,6 +424,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Array_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Array_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/GCC_CheckedSTL_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ptr_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ptr_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RCPNodeHandle_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RCP_UnitTests.Po@am__quote@
@@ -515,6 +517,20 @@ TestClasses.obj: $(srcdir)/TestClasses.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o TestClasses.obj `if test -f '$(srcdir)/TestClasses.cpp'; then $(CYGPATH_W) '$(srcdir)/TestClasses.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/TestClasses.cpp'; fi`
 
+RCPNodeHandle_UnitTests.o: $(srcdir)/RCPNodeHandle_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RCPNodeHandle_UnitTests.o -MD -MP -MF $(DEPDIR)/RCPNodeHandle_UnitTests.Tpo -c -o RCPNodeHandle_UnitTests.o `test -f '$(srcdir)/RCPNodeHandle_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/RCPNodeHandle_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RCPNodeHandle_UnitTests.Tpo $(DEPDIR)/RCPNodeHandle_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RCPNodeHandle_UnitTests.cpp' object='RCPNodeHandle_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RCPNodeHandle_UnitTests.o `test -f '$(srcdir)/RCPNodeHandle_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/RCPNodeHandle_UnitTests.cpp
+
+RCPNodeHandle_UnitTests.obj: $(srcdir)/RCPNodeHandle_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RCPNodeHandle_UnitTests.obj -MD -MP -MF $(DEPDIR)/RCPNodeHandle_UnitTests.Tpo -c -o RCPNodeHandle_UnitTests.obj `if test -f '$(srcdir)/RCPNodeHandle_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/RCPNodeHandle_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RCPNodeHandle_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RCPNodeHandle_UnitTests.Tpo $(DEPDIR)/RCPNodeHandle_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RCPNodeHandle_UnitTests.cpp' object='RCPNodeHandle_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RCPNodeHandle_UnitTests.obj `if test -f '$(srcdir)/RCPNodeHandle_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/RCPNodeHandle_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RCPNodeHandle_UnitTests.cpp'; fi`
+
 RCP_UnitTests.o: $(srcdir)/RCP_UnitTests.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RCP_UnitTests.o -MD -MP -MF $(DEPDIR)/RCP_UnitTests.Tpo -c -o RCP_UnitTests.o `test -f '$(srcdir)/RCP_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/RCP_UnitTests.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RCP_UnitTests.Tpo $(DEPDIR)/RCP_UnitTests.Po
@@ -529,19 +545,19 @@ RCP_UnitTests.obj: $(srcdir)/RCP_UnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RCP_UnitTests.obj `if test -f '$(srcdir)/RCP_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/RCP_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RCP_UnitTests.cpp'; fi`
 
-RCPNodeHandle_UnitTests.o: $(srcdir)/RCPNodeHandle_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RCPNodeHandle_UnitTests.o -MD -MP -MF $(DEPDIR)/RCPNodeHandle_UnitTests.Tpo -c -o RCPNodeHandle_UnitTests.o `test -f '$(srcdir)/RCPNodeHandle_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/RCPNodeHandle_UnitTests.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RCPNodeHandle_UnitTests.Tpo $(DEPDIR)/RCPNodeHandle_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RCPNodeHandle_UnitTests.cpp' object='RCPNodeHandle_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+Ptr_UnitTests.o: $(srcdir)/Ptr_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ptr_UnitTests.o -MD -MP -MF $(DEPDIR)/Ptr_UnitTests.Tpo -c -o Ptr_UnitTests.o `test -f '$(srcdir)/Ptr_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/Ptr_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ptr_UnitTests.Tpo $(DEPDIR)/Ptr_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ptr_UnitTests.cpp' object='Ptr_UnitTests.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RCPNodeHandle_UnitTests.o `test -f '$(srcdir)/RCPNodeHandle_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/RCPNodeHandle_UnitTests.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ptr_UnitTests.o `test -f '$(srcdir)/Ptr_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/Ptr_UnitTests.cpp
 
-RCPNodeHandle_UnitTests.obj: $(srcdir)/RCPNodeHandle_UnitTests.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT RCPNodeHandle_UnitTests.obj -MD -MP -MF $(DEPDIR)/RCPNodeHandle_UnitTests.Tpo -c -o RCPNodeHandle_UnitTests.obj `if test -f '$(srcdir)/RCPNodeHandle_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/RCPNodeHandle_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RCPNodeHandle_UnitTests.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/RCPNodeHandle_UnitTests.Tpo $(DEPDIR)/RCPNodeHandle_UnitTests.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RCPNodeHandle_UnitTests.cpp' object='RCPNodeHandle_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+Ptr_UnitTests.obj: $(srcdir)/Ptr_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ptr_UnitTests.obj -MD -MP -MF $(DEPDIR)/Ptr_UnitTests.Tpo -c -o Ptr_UnitTests.obj `if test -f '$(srcdir)/Ptr_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/Ptr_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ptr_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ptr_UnitTests.Tpo $(DEPDIR)/Ptr_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ptr_UnitTests.cpp' object='Ptr_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RCPNodeHandle_UnitTests.obj `if test -f '$(srcdir)/RCPNodeHandle_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/RCPNodeHandle_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RCPNodeHandle_UnitTests.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ptr_UnitTests.obj `if test -f '$(srcdir)/Ptr_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/Ptr_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ptr_UnitTests.cpp'; fi`
 
 Array_UnitTest_helpers.o: $(srcdir)/Array_UnitTest_helpers.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Array_UnitTest_helpers.o -MD -MP -MF $(DEPDIR)/Array_UnitTest_helpers.Tpo -c -o Array_UnitTest_helpers.o `test -f '$(srcdir)/Array_UnitTest_helpers.cpp' || echo '$(srcdir)/'`$(srcdir)/Array_UnitTest_helpers.cpp

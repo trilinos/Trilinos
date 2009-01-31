@@ -2,7 +2,7 @@
 // @HEADER
 // ***********************************************************************
 // 
-//    OptiPack: Collection of simple Thyra-based Optimization ANAs
+//    GlobiPack: Collection of Scalar 1D globalizaton utilities
 //                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -28,54 +28,24 @@
 // @HEADER
 */
 
-#ifndef OPTIPACK_TYPES_HPP
-#define OPTIPACK_TYPES_HPP
+#include "OptiPack_NonlinearCG_decl.hpp"
 
 
-#include "OptiPack_ConfigDefs.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Ptr.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_ArrayView.hpp"
-#include "Teuchos_ScalarTraits.hpp"
+#ifdef HAVE_OPTIPACK_EXPLICIT_INSTANTIATION
 
 
-namespace Teuchos {
-
-/** \brief . */
-class ParameterList;
-
-} // namespace Teuchos
+#include "OptiPack_NonlinearCG_def.hpp"
+#include "Teuchos_ExplicitInstantiationHelpers.hpp"
 
 
 namespace OptiPack {
 
 
-/** \brief . */
-using Teuchos::RCP;
-/** \brief . */
-using Teuchos::Ptr;
-/** \brief . */
-using Teuchos::Array;
-/** \brief . */
-using Teuchos::ArrayView;
-/** \brief . */
-using Teuchos::ScalarTraits;
-/** \brief . */
-using Teuchos::ParameterList;
+TEUCHOS_CLASS_TEMPLATE_INSTANT_REAL_SCALAR_TYPES(NonlinearCG)
 
 
 } // namespace OptiPack
 
 
-namespace Thyra {
+#endif // HAVE_OPTIPACK_EXCPLICIT_INSTANTIATION
 
-/** \brief . */
-template<class Scalar> class ModelEvaluator;
-
-
-
-} // namespace Thyra
-
-
-#endif // OPTIPACK_TYPES_HPP

@@ -47,8 +47,9 @@ ArmijoPolyInterpLineSearch<Scalar>::ArmijoPolyInterpLineSearch()
   : eta_(ArmijoPolyInterpLineSearchUtils::eta_default),
     minFrac_(ArmijoPolyInterpLineSearchUtils::minFrac_default),
     maxFrac_(ArmijoPolyInterpLineSearchUtils::maxFrac_default),
-    doMaxIters_(ArmijoPolyInterpLineSearchUtils::doMaxIters_default),
+    minIters_(ArmijoPolyInterpLineSearchUtils::minIters_default),
     maxIters_(ArmijoPolyInterpLineSearchUtils::maxIters_default),
+    doMaxIters_(ArmijoPolyInterpLineSearchUtils::doMaxIters_default),
     numIters_(0)
 {}
 
@@ -82,9 +83,9 @@ Scalar ArmijoPolyInterpLineSearch<Scalar>::maxFrac() const
 
 
 template<typename Scalar>
-bool ArmijoPolyInterpLineSearch<Scalar>::doMaxIters() const
+int	ArmijoPolyInterpLineSearch<Scalar>::minIters() const
 {
-  return doMaxIters_;
+  return minIters_;
 }
 
 
@@ -92,6 +93,13 @@ template<typename Scalar>
 int	ArmijoPolyInterpLineSearch<Scalar>::maxIters() const
 {
   return maxIters_;
+}
+
+
+template<typename Scalar>
+bool ArmijoPolyInterpLineSearch<Scalar>::doMaxIters() const
+{
+  return doMaxIters_;
 }
 
 
@@ -103,14 +111,19 @@ void ArmijoPolyInterpLineSearch<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
 {
+  typedef ScalarTraits<Scalar> ST;
   namespace AQLSU = ArmijoPolyInterpLineSearchUtils;
   using Teuchos::getParameter;
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   eta_ = getParameter<double>(*paramList, AQLSU::eta_name);
   minFrac_ = getParameter<double>(*paramList, AQLSU::minFrac_name);
   maxFrac_ = getParameter<double>(*paramList, AQLSU::maxFrac_name);
+  minIters_ = getParameter<int>(*paramList, AQLSU::minIters_name);
   maxIters_ = getParameter<int>(*paramList, AQLSU::maxIters_name);
   doMaxIters_ = getParameter<bool>(*paramList, AQLSU::doMaxIters_name);
+  TEUCHOS_ASSERT_INEQUALITY( eta_, <, ST::one() );
+  TEUCHOS_ASSERT_INEQUALITY( minFrac_, <, maxFrac_ );
+  TEUCHOS_ASSERT_INEQUALITY( minIters_, <=, maxIters_ );
   setMyParamList(paramList);
 }
 
@@ -127,6 +140,7 @@ ArmijoPolyInterpLineSearch<Scalar>::getValidParameters() const
     pl->set( AQLSU::eta_name, AQLSU::eta_default );
     pl->set( AQLSU::minFrac_name, AQLSU::minFrac_default );
     pl->set( AQLSU::maxFrac_name, AQLSU::maxFrac_default );
+    pl->set( AQLSU::minIters_name, AQLSU::minIters_default );
     pl->set( AQLSU::maxIters_name, AQLSU::maxIters_default );
     pl->set( AQLSU::doMaxIters_name, AQLSU::doMaxIters_default );
     validPL = pl;
@@ -186,18 +200,26 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
 
   // output header
 
+  *out
+    << "\nDphi_k = " << Dphi_k
+    << "\nphi_k = " << phi_k
+    << "\n";
+  if (minIters_ > 0)
+    *out << "\nminIters == " << minIters_ << "\n";
   if (doMaxIters_)
-    *out << "\ndoMaxIters == true, maxing out the number of iterations!"; 
-  *out	<< "\nDphi_k = "	<< Dphi_k
-        << "\nphi_k = "		<< phi_k << "\n\n";
-
+    *out << "\ndoMaxIters == true, maxing out maxIters = "
+         <<maxIters_<<" iterations!\n"; 
+  *out << "\n";
   
   TabularOutputter tblout(out);
   
   tblout.pushFieldSpec("itr", TO::INT);
   tblout.pushFieldSpec("alpha_k", TO::DOUBLE);
   tblout.pushFieldSpec("phi_kp1", TO::DOUBLE);
-  tblout.pushFieldSpec("phi_kp1-frac_phi\n", TO::DOUBLE);
+  tblout.pushFieldSpec("phi_kp1-frac_phi", TO::DOUBLE);
+  tblout.pushFieldSpec("alpha_interp", TO::DOUBLE);
+  tblout.pushFieldSpec("alpha_min", TO::DOUBLE);
+  tblout.pushFieldSpec("alpha_max", TO::DOUBLE);
 
   tblout.outputHeader();
 
@@ -222,7 +244,6 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
     tblout.outputField(*alpha_k);
     tblout.outputField(*phi_kp1);
     tblout.outputField(((*phi_kp1)-frac_phi));
-    tblout.nextRow();
     
     if (ST::isnaninf(*phi_kp1)) {
 
@@ -230,7 +251,6 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
       *alpha_k = minFrac_ * (*alpha_k);
       best_alpha = ST::zero();
       best_phi = phi_k;
-
     }
     else {		
 
@@ -238,8 +258,13 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
       if (*phi_kp1 < frac_phi) {
         // We have found an acceptable point
         success = true;
-        if( !doMaxIters_ || ( doMaxIters_ && numIters_ == maxIters_ - 1 ) )
-          break;	// get out of the loop
+        if (numIters_ < minIters_) {
+          // Keep going!
+        }
+        else if ( !doMaxIters_ || ( doMaxIters_ && numIters_ == maxIters_ - 1 ) ) {
+          tblout.nextRow(true);
+          break;	// get out of the loop, we are done!
+        }
       }
 
       // Select a new alpha to try:
@@ -255,16 +280,27 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
         /
         ( (*phi_kp1) - phi_k - (*alpha_k) * Dphi_k );
 
+      tblout.outputField(alpha_quad);
+
       // 2009/01/29: rabartl: ToDo: Call the interpolation and then add
       // support for other types of interpolations based on various points.
 
+      const Scalar alpha_min = minFrac_ * (*alpha_k);
+      const Scalar alpha_max = maxFrac_ * (*alpha_k);
+
+      tblout.outputField(alpha_min);
+      tblout.outputField(alpha_max);
+
       *alpha_k =
         min(
-          max(minFrac_ * (*alpha_k), alpha_quad),
-          maxFrac_ * (*alpha_k)
+          max(alpha_min, alpha_quad),
+          alpha_max
           );
 
     }
+
+    tblout.nextRow(true);
+
     
     // Evaluate the point
 

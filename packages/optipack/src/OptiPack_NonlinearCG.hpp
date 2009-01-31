@@ -28,54 +28,16 @@
 // @HEADER
 */
 
-#ifndef OPTIPACK_TYPES_HPP
-#define OPTIPACK_TYPES_HPP
+#ifndef OPTIPACK_NONLINEAR_CG_HPP
+#define OPTIPACK_NONLINEAR_CG_HPP
 
 
-#include "OptiPack_ConfigDefs.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Ptr.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_ArrayView.hpp"
-#include "Teuchos_ScalarTraits.hpp"
+#include "OptiPack_NonlinearCG_decl.hpp"
 
 
-namespace Teuchos {
-
-/** \brief . */
-class ParameterList;
-
-} // namespace Teuchos
+#ifndef HAVE_OPTIPACK_EXPLICIT_INSTANTIATION
+#  include "OptiPack_NonlinearCG_def.hpp"
+#endif
 
 
-namespace OptiPack {
-
-
-/** \brief . */
-using Teuchos::RCP;
-/** \brief . */
-using Teuchos::Ptr;
-/** \brief . */
-using Teuchos::Array;
-/** \brief . */
-using Teuchos::ArrayView;
-/** \brief . */
-using Teuchos::ScalarTraits;
-/** \brief . */
-using Teuchos::ParameterList;
-
-
-} // namespace OptiPack
-
-
-namespace Thyra {
-
-/** \brief . */
-template<class Scalar> class ModelEvaluator;
-
-
-
-} // namespace Thyra
-
-
-#endif // OPTIPACK_TYPES_HPP
+#endif // OPTIPACK_NONLINEAR_CG_HPP

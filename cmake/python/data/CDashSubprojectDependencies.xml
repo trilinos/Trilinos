@@ -47,6 +47,7 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="GlobiPack" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="Thyra" type="LR"/>

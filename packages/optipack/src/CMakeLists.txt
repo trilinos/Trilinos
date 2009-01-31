@@ -23,11 +23,19 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(HEADERS ${HEADERS}
-  ${PACKAGE_NAME}_ConfigDefs.hpp 
+  ${PACKAGE_NAME}_ConfigDefs.hpp
+  ${PACKAGE_NAME}_NonlinearCG.hpp 
+  ${PACKAGE_NAME}_NonlinearCG_decl.hpp 
+  ${PACKAGE_NAME}_NonlinearCG_def.hpp 
+  ${PACKAGE_NAME}_UnconstrainedOptMeritFunc1D.hpp 
+  ${PACKAGE_NAME}_UnconstrainedOptMeritFunc1D_decl.hpp 
+  ${PACKAGE_NAME}_UnconstrainedOptMeritFunc1D_def.hpp 
   ${PACKAGE_NAME}_Version.hpp
   )
 
 SET(SOURCES ${SOURCES}
+  ${PACKAGE_NAME}_NonlinearCG.cpp 
+  ${PACKAGE_NAME}_UnconstrainedOptMeritFunc1D.cpp 
   ${PACKAGE_NAME}_Version.cpp
   )
 
