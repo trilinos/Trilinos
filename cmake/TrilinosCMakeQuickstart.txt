@@ -127,6 +127,13 @@ C) Configuring
     -D CMAKE_C_FLAGS:STRING="-04 --funrool-loops" \
     -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
 
+(*) Removing warnings as errors for CLEANED packages:
+
+  To remove the -Werror (or some other flag that is set) from being applied
+  to compile CLEANED packages like Teuchos, set the following:
+
+    -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=""
+
 (*) Configuring Trilinos for MPI support:
 
   To enable MPI support you must minimally:

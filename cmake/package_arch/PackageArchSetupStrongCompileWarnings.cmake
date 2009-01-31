@@ -76,15 +76,15 @@ FUNCTION(PACKAGE_ARCH_SETUP_STRONG_COMPILE_WARNINGS)
   MULTILINE_SET(C_STRONG_COMPILE_WARNING_FLAGS
     " -ansi" # Check for C89 or C++98 standard code
     " -pedantic" # Adds more strick checking to remove non-ANSI GNU extensions
-    " -Wall " # Do a bunch of default warnings (turns on a lot of the warnings above)
+    " -Wall " # Enable a bunch of default warnings
     " -fexceptions" # Make sure that exceptions can be propogated through C code
-    " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG etc
+    " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG, etc.
     )
   
   MULTILINE_SET(CXX_STRONG_COMPILE_WARNING_FLAGS
     ${C_STRONG_COMPILE_WARNING_FLAGS}
     " -Wwrite-strings" # Checks for non-const char * copy of string constants
-    " -Wshadow" # Warn about general shadowing
+    " -Wshadow" # Warn about general shadowing issues
     " -Woverloaded-virtual" # Warn about hiding virtual functions
     )
 
