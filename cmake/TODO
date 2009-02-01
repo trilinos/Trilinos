@@ -20,13 +20,17 @@ Trilinos package.  Kitware is going to actively work on this.
 Backlog:
 --------
 
-(*) [???] Rewrite the MPI find module from sctatch.  The built-in one in CMake
-is just not very good.  Also, make this automatically set up the C++ and C
-compilers based on the MPI compilers that are found.  We are going to have to
-take control over this and do it right.  You should be able to just set
-MPI_BASE_DIR and everything else should be figured out automatically.  See the
-email thread to cmake@cmake.org for a discussion of this and the
-trilinos-framework email list.
+(*) [???] Add support for adding arbitrary link flags through a
+variable like Trilinos_EXTRA_LINK_FLAGS that will go on the very end.
+This is needed to support raw MPI libraries and lots of other things.
+See emails on Fri 1/30/2009 11:25 AM and Fri 1/30/2009 12:43 PM from
+the cmake@cmake.org mail list for ideas.  For example, you can call
+SET(CMAKE_CXX_LINK_EXECUTABLE "${CMAKE_CXX_LINK_EXECUTABLE}
+${{PROJECT_NAME}_EXTRA_LINK_FLAGS}") inside of the
+PACKAGE_ADD_EXECUTABLE(...) function.
+
+(*) [???] Get MPI to work with raw compilers.  Use raw compile and
+link flags.
 
 (*) [???] Experiment with using cmake -P <script_file> as a
 platform-independent scripting language.  We can use this for creating
