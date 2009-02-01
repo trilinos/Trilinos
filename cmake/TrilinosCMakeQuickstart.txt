@@ -129,8 +129,9 @@ C) Configuring
 
 (*) Removing warnings as errors for CLEANED packages:
 
-  To remove the -Werror (or some other flag that is set) from being applied
-  to compile CLEANED packages like Teuchos, set the following:
+  To remove the -Werror flag (or some other flag that is set) from
+  being applied to compile CLEANED packages like Teuchos, set the
+  following:
 
     -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=""
 
