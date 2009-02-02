@@ -135,6 +135,19 @@ C) Configuring
 
     -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=""
 
+(*) Appending arbitrary link flags to every executable:
+
+  In order to append any set of arbitrary link flags to your executables use:
+
+    -D Trilinos_EXTRA_LINK_FLAGS:STRING="$EXTRA_LINK_FLAGS"
+
+  Above, you can pass any type of library or other linker flags in and they
+  will always be the last libraries listed, even after all of the TPL.
+
+  NOTE: This is how you must set extra libraries like fortran libraries and
+  MPI libraries (when using raw compilers).  Please only use this variable as
+  a last resort.
+
 (*) Configuring Trilinos for MPI support:
 
   To enable MPI support you must minimally:
@@ -185,8 +198,27 @@ C) Configuring
 
       -D MPI_USE_COMPILER_WRAPPERS:BOOL=ON
 
-    ToDo: Finish documentation on how to set this up after it is fully
-    implemented and tested :-)
+    You will then need to manually pass in the compile and link lines needed
+    in order to compile and link MP programs.  The compile flags can be set
+    through:
+
+      -D CMAKE_[C,CXX,Fortran]_FLAGS:STRING="$EXTRA_COMPILE_FLAGS"
+
+    The link and library flags must be set through:
+
+      -D Trilinos_EXTRA_LINK_FLAGS:STRING="$EXTRA_LINK_FLAGS"
+
+    Above, you can pass any type of library or other linker flags in and they
+    will always be the last libraries listed, even after all of the TPL.
+
+    NOTE: A good way to get the extra compile and link flags for MPI is to
+    use:
+
+      export EXTRA_COMPILE_FLAGS="`$MPI_BIN_DIR/mpiCC --showme:compile`"
+      
+      export EXTRA_LINK_FLAGS="`$MPI_BIN_DIR/mpiCC --showme:link`"
+      
+    where MPI_BIN_DIR is set to your MPI installations binary directory.
 
   c) Setting up to run MPI programs
 

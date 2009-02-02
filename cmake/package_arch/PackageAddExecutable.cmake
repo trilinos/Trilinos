@@ -55,6 +55,15 @@ FUNCTION(PACKAGE_ADD_EXECUTABLE EXE_NAME)
     ENDIF()
 
   ENDIF()
+
+  #
+  # B) Update the compile and link options
+  #
+
+
+  #
+  # C) Add the executable
+  #
   
   IF(ADD_THE_EXE)  
 
@@ -120,6 +129,11 @@ FUNCTION(PACKAGE_ADD_EXECUTABLE EXE_NAME)
     PACKAGE_GATHER_ENABLED_ITEMS(${PACKAGE_NAME} TEST TPLS ALL_TPLS)
     PACKAGE_SORT_AND_APPEND_PATHS_LIBS("${${PROJECT_NAME}_REVERSE_TPLS}" "${ALL_TPLS}"
       TPL_ LINK_LIBS)
+
+    # Last, add last_lib to get extra link options on the link line
+    IF (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
+      APPEND_SET(LINK_LIBS last_lib)
+    ENDIF()
 
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       PRINT_VAR(LINK_LIBS)
