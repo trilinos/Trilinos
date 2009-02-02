@@ -381,6 +381,11 @@ public:
                 const CellTopologyData                        * base = NULL );
   
   
+  /** \brief Assignment operator <var>*this = right</var>.
+    */
+  CellTopology& operator = (const CellTopology& right) { 
+    m_cell = right.m_cell; m_owned = right.m_owned; return *this;}
+  
   /** \brief Destructor */
   ~CellTopology() { if ( m_owned ) { deleteOwned(); } }
   
