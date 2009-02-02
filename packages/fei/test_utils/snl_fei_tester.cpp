@@ -535,7 +535,9 @@ int snl_fei_tester::save_block_node_soln(DataReader& data, fei::Vector* vec,
     return(-1);
   }
 
-  feiArray<double> solnData;
+  outfile.setf(IOS_SCIENTIFIC, IOS_FLOATFIELD);
+
+  std::vector<double> solnData;
   std::vector<int> fieldList;
 
   for(int i=0; i<numLocalNodes; i++) {
@@ -552,7 +554,7 @@ int snl_fei_tester::save_block_node_soln(DataReader& data, fei::Vector* vec,
       int fieldSize = vecSpace_->getFieldSize(fieldList[j]);
 
       CHK_ERR( vec->copyOutFieldData(fieldList[j], idType,
-				     1, &ID, solnData.dataPtr()) );
+				     1, &ID, &solnData[0]) );
 
       for(int k=0; k<fieldSize; ++k) {
 	outfile << solnData[k] << " ";

@@ -9,17 +9,17 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include "fei_SSMat.hpp"
+#include "fei_FillableMat.hpp"
 
 namespace SolnCheck {
-  int readSoln(const char* baseName, int np, SSMat& solution);
+  int readSoln(const char* baseName, int np, fei::FillableMat& solution);
 
-  int compareSoln(SSMat& solution1, SSMat& solution2,
+  int compareSoln(fei::FillableMat& solution1, fei::FillableMat& solution2,
 			 double tol=1.e-5);
 
-  int readMatrix(const char* baseName, int np, SSMat& matrix);
+  int readMatrix(const char* baseName, int np, fei::FillableMat& matrix);
 
-  int compareMatrices(SSMat& mat1, SSMat& mat2);
+  int compareMatrices(fei::FillableMat& mat1, fei::FillableMat& mat2);
 
   int checkSolution(int localProc, int numProcs,
 		    const char* solnFileName, const char* checkFileName,

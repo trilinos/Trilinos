@@ -15,7 +15,7 @@
 
 #include <fei_fwd.hpp>
 
-#include <fei_SSMat.hpp>
+#include <fei_FillableMat.hpp>
 
 #include <vector>
 #include <string>
@@ -132,15 +132,15 @@ namespace fei_test_utils {
 
   void print_args(int argc, char** argv);
 
-  int compareMatrices(SSMat& mat1, SSMat& mat2, double tol=1.e-15);
+  int compareMatrices(fei::FillableMat& mat1, fei::FillableMat& mat2, double tol=1.e-15);
 
-  int readMatrix(const char* baseName, int np, SSMat& matrix);
+  int readMatrix(const char* baseName, int np, fei::FillableMat& matrix);
 
-  int readMatrix(const char* fileName, SSMat& matrix);
+  int readMatrix(const char* fileName, fei::FillableMat& matrix);
 
-  int writeMatrix(const char* fileName, SSMat& matrix);
+  int writeMatrix(const char* fileName, fei::FillableMat& matrix);
 
-  int copy_feiMatrix_to_SSMat(fei::Matrix& feimat, SSMat& ssmat);
+  int copy_feiMatrix_to_FillableMat(fei::Matrix& feimat, fei::FillableMat& ssmat);
 
 }//namespace fei_test_utils
 

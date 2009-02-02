@@ -14,8 +14,6 @@
 
 #include <test_utils/test_Factory_helper.hpp>
 
-#include <test_utils/LinSysCore.hpp>
-
 #include <fei_FieldMask.hpp>
 #include <snl_fei_RecordCollection.hpp>
 
@@ -240,7 +238,6 @@ int test_misc::runtests()
     test_misc_FieldMask();
     test_misc_RecordCollection();
 
-    CHK_ERR( serialtest0() );
     CHK_ERR( serialtest1() );
     CHK_ERR( serialtest2() );
     CHK_ERR( serialtest3() );
@@ -250,24 +247,6 @@ int test_misc::runtests()
   CHK_ERR( test2() );
   CHK_ERR( test3() );
   CHK_ERR( test4() );
-  return(0);
-}
-
-int test_misc::serialtest0()
-{
-  FEI_COUT << "testing dynamic_cast for fei::Vector...";
-
-  fei::SharedPtr<LinearSystemCore> tst_lsc(new TEST_LinSysCore(comm_));
-
-  fei::SharedPtr<fei::VectorSpace> vecspace(new fei::VectorSpace(comm_));
-  fei::SharedPtr<fei::Vector>
-    vec_lsc(new fei::Vector_Impl<LinearSystemCore>(vecspace, tst_lsc.get(), 0));
-
-  test_Factory_helper helper;
-
-  CHK_ERR( helper.dyncastVector(vec_lsc.get(), "TEST_LSC") );
-
-  FEI_COUT << "ok"<<FEI_ENDL;
   return(0);
 }
 

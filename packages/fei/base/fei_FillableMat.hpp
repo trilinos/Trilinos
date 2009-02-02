@@ -11,18 +11,17 @@
 
 #include <vector>
 #include <fei_FillableVec.hpp>
-#include <fei_SSMat.hpp>
+#include <fei_EqnBuffer.hpp>
 
 namespace fei {
 
 class FillableMat {
  public:
   FillableMat();
+  FillableMat(EqnBuffer& eqnbuf);
   virtual ~FillableMat();
 
   FillableMat& operator=(const FillableMat& src);
-
-  FillableMat& operator=(const SSMat& src);
 
   void setValues(double value);
 

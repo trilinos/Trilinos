@@ -29,6 +29,15 @@ CSVec::~CSVec()
 }
 
 CSVec&
+CSVec::operator=(const CSVec& invec)
+{
+  indices_ = invec.indices_;
+  coefs_ = invec.coefs_;
+
+  return *this;
+}
+
+CSVec&
 CSVec::operator=(const FillableVec& invec)
 {
   indices_.resize(invec.size());

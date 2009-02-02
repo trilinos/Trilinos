@@ -539,7 +539,7 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
    void setIndicesMode(int mode);
 
    /** Utility method. */
-   fei::SharedPtr<SSMat> getSlaveDependencyMatrix();
+   fei::SharedPtr<FillableMat> getSlaveDependencyMatrix();
 
    /** Retrieve pointer to specified Pattern object.
        If specified pattern is not found, return NULL.
@@ -624,8 +624,6 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
 
    int exchangeBlkEqnSizes(fei::Graph* graph);
 
-   int addSSMatToGraph(SSMat& mat, fei::Graph* graph);
-
    int addLagrangeConstraintsToGraph(fei::Graph* graph);
 
    int addPenaltyConstraintsToGraph(fei::Graph* graph);
@@ -665,8 +663,8 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
    int localNumSlaves_;
    int globalNumSlaves_;
 
-   fei::SharedPtr<SSMat> D_;
-   fei::SharedPtr<SSVec> g_;
+   fei::SharedPtr<FillableMat> D_;
+   fei::SharedPtr<CSVec> g_;
    bool g_nonzero_;
 
    fei::SharedPtr<fei::Reducer> reducer_;

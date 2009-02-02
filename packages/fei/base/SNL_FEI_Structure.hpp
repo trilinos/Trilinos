@@ -14,6 +14,8 @@
 #include "fei_TemplateUtils.hpp"
 #include <snl_fei_PointBlockMap.hpp>
 #include <fei_EqnBuffer.hpp>
+#include <fei_CSRMat.hpp>
+#include <fei_CSVec.hpp>
 
 #include <fei_NodeCommMgr.hpp>
 #include <fei_NodeDatabase.hpp>
@@ -446,7 +448,7 @@ class SNL_FEI_Structure : public Lookup {
 
    int calculateSlaveEqns(MPI_Comm comm);
 
-   SSMat* getSlaveDependencies() {return(slaveMatrix_);}
+   fei::FillableMat* getSlaveDependencies() {return(slaveMatrix_);}
 
    EqnBuffer* getSlaveEqns() { return(slaveEqns_); }
 
@@ -484,11 +486,11 @@ class SNL_FEI_Structure : public Lookup {
    */
    int translateToReducedEqns(ProcEqns& procEqns);
 
-   /** Given a SSMat object with global equation numbers, translate all of its
+   /** Given a CSRMat object with global equation numbers, translate all of its
        indices (row-numbers and column-indices) to the "reduced" equation
        space.
    */
-   int translateMatToReducedEqns(SSMat& mat);
+   int translateMatToReducedEqns(fei::CSRMat& mat);
 
    /** Given an "Reduced" equation number, translate it to the "global"
        numbering, which is the numbering that includes slave equations. This
@@ -635,7 +637,7 @@ class SNL_FEI_Structure : public Lookup {
    int createMatrixPosition(int row, int col, const char* callingFunction);
    int createMatrixPositions(int row, int numCols, int* cols,
 			     const char* callingFunction);
-   int createMatrixPositions(SSMat& mat);
+   int createMatrixPositions(fei::CSRMat& mat);
 
    int createSymmEqnStructure(feiArray<int>& scatterIndices);
    int createBlkSymmEqnStructure(feiArray<int>& scatterIndices);
@@ -711,7 +713,7 @@ class SNL_FEI_Structure : public Lookup {
    EqnBuffer* slaveEqns_;
    feiArray<int>* slvEqnNumbers_;
    int numSlvs_, lowestSlv_, highestSlv_;
-   SSMat* slaveMatrix_;
+   fei::FillableMat* slaveMatrix_;
    std::vector<int> globalNumNodesVanished_;
    feiArray<int> localVanishedNodeNumbers_;
 
@@ -729,7 +731,8 @@ class SNL_FEI_Structure : public Lookup {
    int numLocalMultCRs_;
 
    int reducedStartRow_, reducedEndRow_, numLocalReducedRows_;
-   SSMat *Kid_, *Kdi_, *Kdd_, *tmpMat1_, *tmpMat2_;
+   fei::FillableMat *Kid_, *Kdi_, *Kdd_;
+   fei::CSRMat csrD, csrKid, csrKdi, csrKdd, tmpMat1_, tmpMat2_;
    int reducedEqnCounter_, reducedRHSCounter_;
    feiArray<bool> rSlave_, cSlave_;
    feiArray<NodeDescriptor*> work_nodePtrs_;

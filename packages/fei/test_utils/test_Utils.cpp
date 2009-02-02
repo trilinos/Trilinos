@@ -19,7 +19,6 @@
 #include <fei_ParameterSet.hpp>
 #include <fei_SharedPtr.hpp>
 #include <fei_SSVec.hpp>
-#include <fei_SSMat.hpp>
 #include <cmath>
 
 #undef fei_file
@@ -33,62 +32,6 @@ test_Utils::test_Utils(MPI_Comm comm)
 
 test_Utils::~test_Utils()
 {
-}
-
-void test_Utils_packSSMat()
-{
-  FEI_COUT << "testing snl_fei::packSSMat/unpackSSMat...";
-  SSMat mat0;
-  SSMat mat01;
-
-  unsigned nnz = 0;
-  feiArray<int> indices;
-  feiArray<double> coefs;
-  for(unsigned i=0; i<5; ++i) {
-    unsigned row = i;
-    unsigned rowlen = i+1;
-    nnz += rowlen;
-    for(unsigned j=0; j<rowlen; ++j) {
-      unsigned col = j;
-      double coef = 1.0*(i+j+1);
-      mat0.putCoef(row, col, coef);
-      indices.append(col);
-      coefs.append(coef);
-    }
-    mat01.putRow(row, indices.dataPtr(), coefs.dataPtr(), indices.length());
-    indices.resize(0);
-    coefs.resize(0);
-  }
-
-  if (mat0 != mat01) {
-    throw std::runtime_error("snl_fei::packSSMat test failed assembling mat...");
-  }
-
-  std::vector<int> intdata0;
-  std::vector<double> doubledata0;
-
-  snl_fei::packSSMat(mat0, intdata0, doubledata0);
-
-  if (nnz != doubledata0.size()) {
-    throw std::runtime_error("snl_fei::packSSMat test failed");
-  }
-
-  SSMat mat1;
-  snl_fei::unpackIntoSSMat(intdata0, doubledata0, mat1);
-
-  if (mat1.getRowNumbers() != mat0.getRowNumbers()) {
-    throw std::runtime_error("snl_fei::packSSMat test failed");
-  }
-
-  std::vector<int> intdata1;
-  std::vector<double> doubledata1;
-  snl_fei::packSSMat(mat1, intdata1, doubledata1);
-
-  if (intdata1 != intdata0 || doubledata1 != doubledata0) {
-    throw std::runtime_error("snl_fei::packSSMat test failed");
-  }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
 }
 
 void test_Utils_globalUnionVec()
@@ -126,112 +69,6 @@ void test_Utils_globalUnionVec()
   }
 
   FEI_COUT << "ok"<<FEI_ENDL;
-}
-
-void test_Utils_globalUnionMat()
-{
-  FEI_COUT << "testing snl_fei::globalUnion(SSMat)...";
-
-  int numProcs = fei::numProcs(MPI_COMM_WORLD);
-  int localProc = fei::localProc(MPI_COMM_WORLD);
-
-  int numlocalrows = 5;
-  int rowlen = 5;
-
-  SSMat globalmat0;
-  SSMat localmat;
-  int row=0;
-  for(int p=0; p<numProcs; ++p) {
-    for(int i=0; i<numlocalrows; ++i) {
-      for(int j=0; j<rowlen; ++j) {
-	globalmat0.putCoef(row, j, 1.0);
-	if (p == localProc) {
-	  localmat.putCoef(row, j, 1.0);
-	}
-      }
-      ++row;
-    }
-  }
-
-  SSMat globalmat;
-
-  snl_fei::globalUnion(MPI_COMM_WORLD, localmat, globalmat);
-
-  std::vector<int> intdata;
-  std::vector<double> doubledata;
-
-  snl_fei::packSSMat(globalmat, intdata, doubledata);
-
-  std::vector<int> intdata0;
-  std::vector<double> doubledata0;
-
-  snl_fei::packSSMat(globalmat0, intdata0, doubledata0);
-
-  if (intdata0 != intdata) {
-    throw std::runtime_error("globalUnion test (int) failed");
-  }
-
-  if (doubledata0 != doubledata) {
-    throw std::runtime_error("globalUnion test (double) failed");
-  }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
-}
-
-void test_Utils_removeCouplings()
-{
-  FEI_COUT << "testing snl_fei::removeCouplings...";
-
-  SSMat mat;
-
-  mat.putCoef(2, 0, 0.5);
-  mat.putCoef(2, 10, 0.5);
-  mat.putCoef(8, 2, 0.5);
-  mat.putCoef(8, 10, 0.5);
-
-  int levels = snl_fei::removeCouplings(mat);
-  if (levels < 1) {
-    throw std::runtime_error("removeCouplings test failed");
-  }
-
-  //after remove-couplings, the matrix-row for 8 should have
-  //2 column-indices, and they should be 0 and 10. Also, the
-  //coefficients should be 0.25 and 0.75.
-  SSVec* matrow = mat.getRow(8);
-  if (matrow==NULL) {
-    throw std::runtime_error("error getting matrix row 8");
-  }
-
-  if (matrow->length() != 2) {
-    throw std::runtime_error("matrow 8 has wrong length");
-  }
-
-  feiArray<int>& indices = matrow->indices();
-  feiArray<double>& coefs = matrow->coefs();
-  if (indices[0] != 0 || indices[1] != 10 ||
-      std::abs(coefs[0] -0.25) > 1.e-49 || std::abs(coefs[1] -0.75) > 1.e-49) {
-    throw std::runtime_error("matrow 8 has wrong contents after removeCouplings");
-  }
-
-  levels = snl_fei::removeCouplings(mat);
-  if (levels > 0) {
-    throw std::runtime_error("removeCouplings test2 failed");
-  }
-
-  SSMat D;
-
-  D.putCoef(2, 0, 0.5); D.putCoef(2, 1, 0.5);
-  D.putCoef(3, 2, 0.25); D.putCoef(3, 4, 0.25);
-  D.putCoef(3, 1, 0.25); D.putCoef(3, 6, 0.25);
-  D.putCoef(5, 0, 0.5); D.putCoef(5, 1, 0.5);
-
-  FEI_COUT << "D: " << FEI_ENDL << D << FEI_ENDL;
-
-  levels = snl_fei::removeCouplings(D);
-
-  FEI_COUT << "D after removeCouplings: "<<FEI_ENDL << D << FEI_ENDL;
-
-  FEI_COUT <<"ok"<<FEI_ENDL;
 }
 
 void test_Utils_feiArray()
@@ -337,8 +174,6 @@ int test_Utils::runtests()
   if (numProcs_ < 2) {
     test_Utils_feiArray();
     test_Utils_binarySearch();
-    test_Utils_packSSMat();
-    test_Utils_removeCouplings();
 
     CHK_ERR( serialtest1() );
     CHK_ERR( serialtest2() );
@@ -346,7 +181,6 @@ int test_Utils::runtests()
   }
 
   test_Utils_globalUnionVec();
-  test_Utils_globalUnionMat();
 
   CHK_ERR( test1() );
   CHK_ERR( test2() );

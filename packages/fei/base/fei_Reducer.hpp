@@ -14,7 +14,6 @@
 #include <fei_mpi.h>
 #include <fei_Logger.hpp>
 #include <fei_SSVec.hpp>
-#include <fei_SSMat.hpp>
 #include <fei_FillableVec.hpp>
 #include <fei_FillableMat.hpp>
 #include <fei_CSVec.hpp>
@@ -29,12 +28,8 @@ namespace fei {
   class Reducer : private fei::Logger {
    public:
     //@{ \name Constructors
-    Reducer(fei::SharedPtr<SSMat> globalSlaveDependencyMatrix,
-            fei::SharedPtr<SSVec> g_vector,
-            MPI_Comm comm);
-
     Reducer(fei::SharedPtr<FillableMat> globalSlaveDependencyMatrix,
-            fei::SharedPtr<FillableVec> g_vector,
+            fei::SharedPtr<CSVec> g_vector,
             MPI_Comm comm);
 
     Reducer(fei::SharedPtr<fei::MatrixGraph> matrixGraph);
@@ -187,7 +182,9 @@ namespace fei {
     fei::CSRMat csrD_;
     int* slavesPtr_;
     fei::FillableMat Kii_, Kid_, Kdi_, Kdd_;
+    fei::CSRMat csrKii, csrKid, csrKdi, csrKdd;
     fei::FillableVec fi_, fd_, xi_, xd_;
+    fei::CSVec csfi, csvec, csvec_i;
     fei::CSRMat tmpMat1_, tmpMat2_;
     fei::CSVec tmpVec1_, tmpVec2_;
 

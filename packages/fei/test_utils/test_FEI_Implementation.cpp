@@ -8,12 +8,13 @@
 
 
 #include <fei_macros.hpp>
+#include <fei_sstream.hpp>
 
 #include <test_utils/test_FEI_Implementation.hpp>
 
 #include <feiArray.hpp>
 #include <FEI_Implementation.hpp>
-#include <test_utils/LinSysCore.hpp>
+#include <fei_Aztec_LinSysCore.hpp>
 #include <test_utils/FEData.hpp>
 #include <fei_LibraryWrapper.hpp>
 
@@ -121,7 +122,7 @@ int test_FEI_Implementation::test1()
 {
   fei::SharedPtr<testData> testdata(new testData(localProc_, numProcs_));
 
-  fei::SharedPtr<LinearSystemCore> linSys(new TEST_LinSysCore(comm_));
+  fei::SharedPtr<LinearSystemCore> linSys(new Aztec_LinSysCore(comm_));
   fei::SharedPtr<LibraryWrapper> wrapper(new LibraryWrapper(linSys));
 
   fei::SharedPtr<FEI_Implementation>

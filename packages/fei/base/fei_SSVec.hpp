@@ -17,8 +17,7 @@ enum { SS_Constr_Default, SS_Constr_EqnBuf,
        SS_Constr_RawArrays, SS_Constr_RawArrays2, SS_Constr_RawArraysSymm };
 
 /** SSVec stands for Super-Sparse Vector. It can hold sparse vector data
-(e.g., with non-contiguous indices, etc.) and can be used in operations
-with the SSMat class.
+(e.g., with non-contiguous indices, etc.).
  */
 
 class SSVec {

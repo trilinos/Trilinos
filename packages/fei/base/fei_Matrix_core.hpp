@@ -15,7 +15,6 @@
 #include <fei_fwd.hpp>
 #include <fei_Vector.hpp>
 #include <fei_CommUtils.hpp>
-#include <fei_SSMat.hpp>
 #include <fei_FillableMat.hpp>
 #include <fei_MatrixGraph.hpp>
 #include <fei_Logger.hpp>
@@ -133,8 +132,6 @@ class Matrix_core : protected fei::Logger {
 		       int* blkRowOffsets,
 		       int* blkCols,
 		       int* blkColOffsets);
-
-  virtual int sumIntoMatrix(SSMat& mat) = 0;
 
   MPI_Comm getCommunicator() const { return( comm_ ); }
 

@@ -20,7 +20,6 @@
 #include <test_utils/test_Database.hpp>
 #include <test_utils/test_EqnBuffer.hpp>
 #include <test_utils/test_EqnCommMgr.hpp>
-#include <test_utils/test_SSMat.hpp>
 #include <test_utils/test_Algebraic.hpp>
 #include <test_utils/test_AztecWrappers.hpp>
 #include <test_utils/test_misc.hpp>
@@ -369,7 +368,6 @@ void execute_unit_tests(const std::string& path,
   testers.push_back(fei::SharedPtr<tester>(new test_Database(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_EqnBuffer(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_EqnCommMgr(comm)));
-  testers.push_back(fei::SharedPtr<tester>(new test_SSMat(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_PointBlockMap(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_Algebraic(comm)));
   testers.push_back(fei::SharedPtr<tester>(new test_AztecWrappers(comm)));

@@ -20,60 +20,9 @@
 #include <fei_impl_utils.hpp>
 
 namespace fei {
-Reducer::Reducer(fei::SharedPtr<SSMat> globalSlaveDependencyMatrix,
-                 fei::SharedPtr<SSVec> g_vector,
-                 MPI_Comm comm)
- : csrD_(),
-   slavesPtr_(NULL),
-   Kii_(),
-   Kid_(),
-   Kdi_(),
-   Kdd_(),
-   fi_(),
-   fd_(),
-   xi_(),
-   xd_(),
-   tmpMat1_(),
-   tmpMat2_(),
-   tmpVec1_(),
-   tmpVec2_(),
-   csg_(),
-   g_nonzero_(false),
-   localUnreducedEqns_(),
-   localReducedEqns_(),
-   nonslaves_(),
-   reverse_(),
-   isSlaveEqn_(NULL),
-   numGlobalSlaves_(0),
-   numLocalSlaves_(0),
-   firstLocalReducedEqn_(0),
-   lastLocalReducedEqn_(0),
-   lowestGlobalSlaveEqn_(0),
-   highestGlobalSlaveEqn_(0),
-   localProc_(0),
-   numProcs_(1),
-   comm_(comm),
-   dbgprefix_("Reducer: "),
-   mat_counter_(0),
-   soln_vec_counter_(0),
-   rhs_vec_counter_(0),
-   bool_array_(0),
-   int_array_(0),
-   double_array_(0),
-   array_len_(0),
-   work_1D_(),
-   work_2D_()
-{
-  csrD_ = *globalSlaveDependencyMatrix;
-  if (g_vector.get() != NULL) {
-    csg_ = *g_vector;
-  }
-
-  initialize();
-}
 
 Reducer::Reducer(fei::SharedPtr<FillableMat> globalSlaveDependencyMatrix,
-                 fei::SharedPtr<FillableVec> g_vector,
+                 fei::SharedPtr<CSVec> g_vector,
                  MPI_Comm comm)
  : csrD_(),
    slavesPtr_(NULL),
@@ -81,10 +30,17 @@ Reducer::Reducer(fei::SharedPtr<FillableMat> globalSlaveDependencyMatrix,
    Kid_(),
    Kdi_(),
    Kdd_(),
+   csrKii(),
+   csrKid(),
+   csrKdi(),
+   csrKdd(),
    fi_(),
    fd_(),
    xi_(),
    xd_(),
+   csfi(),
+   csvec(),
+   csvec_i(),
    tmpMat1_(),
    tmpMat2_(),
    tmpVec1_(),
@@ -269,11 +225,13 @@ Reducer::setLocalUnreducedEqns(const std::vector<int>& localUnreducedEqns)
 
   int num = localUnreducedEqns_.size();
 
+  if (isSlaveEqn_ != NULL) delete [] isSlaveEqn_;
+
   isSlaveEqn_ = num > 0 ? new bool[localUnreducedEqns_.size()] : NULL;
 
   numLocalSlaves_ = 0;
 
-  for(unsigned i=0; i<localUnreducedEqns_.size(); ++i) {
+  for(size_t i=0; i<localUnreducedEqns_.size(); ++i) {
     int idx = snl_fei::binarySearch(localUnreducedEqns_[i],
                                     slavesPtr_, numGlobalSlaves_);
     if (idx < 0) {
@@ -522,10 +480,10 @@ Reducer::assembleReducedGraph(fei::Graph* graph,
   //
 
   //form tmpMat1_ = Kid*D
-  fei::CSRMat csrKid(Kid_);
+  csrKid = Kid_;
   fei::multiply_CSRMat_CSRMat(csrKid, csrD_, tmpMat1_, true);
 
-  fei::CSRMat csrKdi(Kdi_);
+  csrKdi = Kdi_;
   fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdi, tmpMat2_, true);
 
   fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat1_);
@@ -535,7 +493,7 @@ Reducer::assembleReducedGraph(fei::Graph* graph,
   fei::impl_utils::add_to_graph(tmpMat2_, *graph);
 
   //form tmpMat1_ = D^T*Kdd
-  fei::CSRMat csrKdd(Kdd_);
+  csrKdd = Kdd_;
   fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdd, tmpMat1_, true);
 
   //form tmpMat2_ = tmpMat1_*D = D^T*Kdd*D
@@ -546,7 +504,7 @@ Reducer::assembleReducedGraph(fei::Graph* graph,
   fei::impl_utils::add_to_graph(tmpMat2_, *graph);
 
   //lastly, translate Kii and add it to the graph.
-  fei::CSRMat csrKii(Kii_);
+  csrKii = Kii_;
   fei::impl_utils::translate_to_reduced_eqns(*this, csrKii);
   fei::impl_utils::add_to_graph(csrKii, *graph);
 
@@ -588,11 +546,11 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
   }
 
   //form tmpMat1_ = Kid_*D
-  fei::CSRMat csrKid(Kid_);
+  csrKid = Kid_;
   fei::multiply_CSRMat_CSRMat(csrKid, csrD_, tmpMat1_);
 
   //form tmpMat2_ = D^T*Kdi_
-  fei::CSRMat csrKdi(Kdi_);
+  csrKdi = Kdi_;
   fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdi, tmpMat2_);
 
   //accumulate the above two results into the global system matrix.
@@ -603,7 +561,7 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
   fei::impl_utils::add_to_matrix(tmpMat2_, true, matrix);
 
   //form tmpMat1_ = D^T*Kdd_
-  fei::CSRMat csrKdd(Kdd_);
+  csrKdd = Kdd_;
   fei::multiply_trans_CSRMat_CSRMat(csrD_, csrKdd, tmpMat1_);
 
   //form tmpMat2_ = tmpMat1_*D = D^T*Kdd_*D
@@ -614,8 +572,8 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
     fei::multiply_CSRMat_CSVec(csrKid, csg_, tmpVec1_);
 
     //add tmpVec1_ to fi_
-    fei::CSVec csfi_(fi_);
-    fei::add_CSVec_CSVec(tmpVec1_, csfi_);
+    csfi = fi_;
+    fei::add_CSVec_CSVec(tmpVec1_, csfi);
 
     //we already have tmpMat1_ = D^T*Kdd which was computed above, and we need
     //to form tmpVec1_ = D^T*Kdd*g_.
@@ -623,7 +581,7 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
     fei::multiply_CSRMat_CSVec(tmpMat1_, csg_, tmpVec1_);
 
     //now add tmpVec1_ to the right-hand-side fi_
-    fei::add_CSVec_CSVec(tmpVec1_, csfi_);
+    fei::add_CSVec_CSVec(tmpVec1_, csfi);
   }
 
   //accumulate tmpMat2_ = D^T*Kdd_*D into the global system matrix.
@@ -631,7 +589,7 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
   fei::impl_utils::add_to_matrix(tmpMat2_, true, matrix);
 
   //lastly, translate Kii and add it to the graph.
-  fei::CSRMat csrKii(Kii_);
+  csrKii = Kii_;
   fei::impl_utils::translate_to_reduced_eqns(*this, csrKii);
   fei::impl_utils::add_to_matrix(csrKii, true, matrix);
 
@@ -1010,7 +968,7 @@ Reducer::assembleReducedVector(bool soln_vector,
 
   if (vec.size() > 0) {
     //form tmpVec1 = D^T*vec.
-    fei::CSVec csvec(vec);
+    csvec = vec;
     fei::multiply_trans_CSRMat_CSVec(csrD_, csvec, tmpVec1_);
 
     vec.clear();
@@ -1031,7 +989,7 @@ Reducer::assembleReducedVector(bool soln_vector,
   fei::FillableVec& vec_i = soln_vector ? xi_ : fi_;
 
   if (vec_i.size() > 0) {
-    fei::CSVec csvec_i(vec_i);
+    csvec_i = vec_i;
     fei::impl_utils::translate_to_reduced_eqns(*this, csvec_i);
 
     int which_vector = 0;

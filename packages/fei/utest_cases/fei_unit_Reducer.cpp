@@ -47,7 +47,7 @@ int test_reducer_unit1()
   D->putCoef(1, 2, 0.5);
   D->putCoef(1, 3, 0.5);
 
-  fei::SharedPtr<fei::FillableVec> g;
+  fei::SharedPtr<fei::CSVec> g;
   fei::Reducer reducer(D, g, MPI_COMM_WORLD);
 
   reducer.setLocalUnreducedEqns(eqns);
@@ -152,7 +152,7 @@ int test_Reducer_test1(MPI_Comm comm)
   D->putCoef(4, 2, 0.5);
   D->putCoef(4, 3, 0.5);
 
-  fei::SharedPtr<fei::FillableVec> g;
+  fei::SharedPtr<fei::CSVec> g;
   fei::Reducer reducer(D, g, comm);
 
   //define equation-space to be 0 .. 4
@@ -217,8 +217,8 @@ int test_Reducer_test1(MPI_Comm comm)
 
   mgraph->initComplete();
 
-  fei::SharedPtr<SSMat> target(new SSMat);
-  fei::Matrix_Impl<SSMat> feimat(target, mgraph, Kr.getNumRows());
+  fei::SharedPtr<fei::FillableMat> target(new fei::FillableMat);
+  fei::Matrix_Impl<fei::FillableMat> feimat(target, mgraph, Kr.getNumRows());
 
   reducer.assembleReducedMatrix(feimat);
 
@@ -248,7 +248,7 @@ int test_Reducer_test2(MPI_Comm comm)
   D->putCoef(0, 1, 0.5); D->putCoef(0, 2, 0.5);
   D->putCoef(3, 1, 0.5); D->putCoef(3, 2, 0.5);
 
-  fei::SharedPtr<fei::FillableVec> g;
+  fei::SharedPtr<fei::CSVec> g;
   fei::Reducer reducer(D, g, comm);
 
   int num = 4;
@@ -295,7 +295,7 @@ int test_Reducer_test3(MPI_Comm comm)
   D->putCoef(3, 4, 0.5); D->putCoef(3, 2, 0.5);
   D->putCoef(5, 6, 0.5); D->putCoef(5, 4, 0.5);
 
-  fei::SharedPtr<fei::FillableVec> g;
+  fei::SharedPtr<fei::CSVec> g;
   fei::Reducer reducer(D, g, comm);
 
   int num = 7;
@@ -342,7 +342,7 @@ int test_Reducer_test4(MPI_Comm comm)
   D->putCoef(4, 1, 0.5); D->putCoef(4, 2, 0.5);
   D->putCoef(5, 6, 0.5); D->putCoef(5, 7, 0.5);
 
-  fei::SharedPtr<fei::FillableVec> g;
+  fei::SharedPtr<fei::CSVec> g;
   fei::Reducer reducer(D, g, comm);
 
   int num = 9;
@@ -406,7 +406,7 @@ int test_Reducer_test5(MPI_Comm comm)
   D->putCoef(4, 5, 1.0);
   D->putCoef(6, 7, 1.0);
 
-  fei::SharedPtr<fei::FillableVec> g;
+  fei::SharedPtr<fei::CSVec> g;
   fei::Reducer reducer(D, g, comm);
 
   int num = 8;

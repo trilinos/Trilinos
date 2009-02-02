@@ -22,8 +22,6 @@
 
 #include <fei_Matrix_Impl.hpp>
 
-#include <test_utils/LinSysCore.hpp>
-
 #undef fei_file
 #define fei_file "test_Factory_helper.cpp"
 #include <fei_ErrMacros.hpp>

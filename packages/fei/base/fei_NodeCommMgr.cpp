@@ -477,11 +477,10 @@ int NodeCommMgr::createProcList(std::vector<int>& itemsPerProc,
 //items are to be sent to or recvd from each proc. When itemsPerProc is
 //greater than 0, that proc is put in the sharingProcs list.
 //
-   int i;
    int numProcs = 0;
    int len = itemsPerProc.size();
 
-   for(i=0; i<len; i++) {
+   for(int i=0; i<len; i++) {
       if (itemsPerProc[i] > 0) numProcs++;
    }
 
@@ -489,7 +488,7 @@ int NodeCommMgr::createProcList(std::vector<int>& itemsPerProc,
 
    int offset = 0;
 
-   for(i=0; i<len; i++) {
+   for(int i=0; i<len; i++) {
       if (itemsPerProc[i] > 0) procs[offset++] = i;
    }
    return(0);
@@ -515,12 +514,12 @@ int NodeCommMgr::addSharedNodes( const GlobalID* nodeIDs,
   //Store the incoming nodeIDs and proc-numbers in the sharedNodeIDs array and
   //sharingProcs_ table.
   //
-  int err, index, insertPoint;
 
   try {
 
   for(int i=0; i<numNodes; i++) {
-    index = snl_fei::binarySearch(nodeIDs[i], &sharedNodeIDs[0], sharedNodeIDs.size(), insertPoint);
+    int insertPoint = -1;
+    int index = snl_fei::binarySearch(nodeIDs[i], &sharedNodeIDs[0], sharedNodeIDs.size(), insertPoint);
     if (index < 0) {
       sharingProcs_.insert(sharingProcs_.begin()+insertPoint, new std::vector<int>);
 
@@ -529,7 +528,7 @@ int NodeCommMgr::addSharedNodes( const GlobalID* nodeIDs,
       index = insertPoint;
     }
     
-    err = storeNodeProcs(index, sharingProcs_, procs[i], numProcs[i]);
+    int err = storeNodeProcs(index, sharingProcs_, procs[i], numProcs[i]);
     if (err != 0) return(err);
   }
 

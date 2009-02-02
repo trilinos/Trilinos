@@ -33,8 +33,6 @@
 #include <Prometheus_LinSysCore.h>
 #endif
 
-#include <test_utils/LinSysCore.hpp>
-
 #ifdef FEI_HAVE_HYPRE
 #include <HYPRE.hpp>
 #include <HYPRE_config.hpp>
@@ -98,10 +96,6 @@ fei::create_LibraryWrapper(MPI_Comm comm,
     std::string msg("This factory doesn't provide Hypre instantiations.");
     throw std::runtime_error(msg);
 #endif
-  }
-
-  if (libname == "TEST_LSC") {
-    lsc.reset(new TEST_LinSysCore(comm));
   }
 
   if (lsc.get() == NULL && fedata.get() == NULL) {

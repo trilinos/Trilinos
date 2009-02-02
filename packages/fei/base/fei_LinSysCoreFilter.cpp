@@ -13,6 +13,7 @@
 #include <assert.h>
 
 #include "fei_utils.hpp"
+#include <fei_impl_utils.hpp>
 
 #include "fei_defs.h"
 
@@ -23,8 +24,8 @@
 typedef snl_fei::Constraint<GlobalID> ConstraintType;
 
 #include "fei_DirichletBCManager.hpp"
-#include "fei_SSMat.hpp"
-#include "fei_SSVec.hpp"
+#include "fei_FillableMat.hpp"
+#include "fei_CSVec.hpp"
 #include "FEI_Implementation.hpp"
 #include "fei_EqnCommMgr.hpp"
 #include "fei_ConnectivityTable.hpp"
@@ -127,14 +128,10 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
      MPI_Abort(comm_, -1);
    }
 
-   Kid_ = new SSMat;
-   Kdi_ = new SSMat;
-   Kdd_ = new SSMat;
-   tmpMat1_ = new SSMat;
-   tmpMat2_ = new SSMat;
+   Kid_ = new fei::FillableMat;
+   Kdi_ = new fei::FillableMat;
+   Kdd_ = new fei::FillableMat;
    reducedEqnCounter_ = 0;
-   fd_ = new SSVec;
-   tmpVec1_ = new SSVec;
    reducedRHSCounter_ = 0;
 
    return;
@@ -158,10 +155,6 @@ LinSysCoreFilter::~LinSysCoreFilter() {
   delete Kid_;
   delete Kdi_;
   delete Kdd_;
-  delete tmpMat1_;
-  delete tmpMat2_;
-  delete fd_;
-  delete tmpVec1_;
 }
 
 //------------------------------------------------------------------------------
@@ -1571,8 +1564,8 @@ int LinSysCoreFilter::implementAllBCs() {
    CHK_ERR( eqnCommMgr_->gatherSharedBCs(bcEqns) );
 
    //now separate the boundary-condition equations into arrays
-   SSMat bcEqns_mat(bcEqns);
-   CHK_ERR( snl_fei::separateBCEqns(bcEqns_mat, essEqns, essGamma) );
+   fei::FillableMat bcEqns_mat(bcEqns);
+   fei::impl_utils::separate_BC_eqns(bcEqns_mat, essEqns, essGamma);
 
    std::vector<double> essAlpha(essEqns.size(), 1);
 
@@ -2639,47 +2632,24 @@ int LinSysCoreFilter::giveToLocalReducedMatrix(int numPtRows, const int* ptRows,
 }
 
 //------------------------------------------------------------------------------
-int LinSysCoreFilter::sumIntoMatrix(SSMat& mat)
+int LinSysCoreFilter::sumIntoMatrix(fei::CSRMat& mat)
 {
-  int numRows = mat.getRowNumbers().length();
-  int* rowNumbers = mat.getRowNumbers().dataPtr();
-  if (numRows == 0) return(FEI_SUCCESS);
+  const std::vector<int>& rowNumbers = mat.getGraph().rowNumbers;
+  const std::vector<int>& rowOffsets = mat.getGraph().rowOffsets;
+  const std::vector<int>& pckColInds = mat.getGraph().packedColumnIndices;
+  const std::vector<double>& pckCoefs = mat.getPackedCoefs();
 
-  feiArray<SSVec*>& rows = mat.getRows();
+  for(size_t i=0; i<rowNumbers.size(); ++i) {
+    int row = rowNumbers[i];
+    int offset = rowOffsets[i];
+    int rowlen = rowOffsets[i+1]-offset;
+    const int* indices = &pckColInds[offset];
+    const double* coefs = &pckCoefs[offset];
 
-  for(int i=0; i<numRows; i++) {
-    SSVec& row = *(rows[i]);
-    double* coefPtr = row.coefs().dataPtr();
-
-    CHK_ERR( giveToMatrix(1, &(rowNumbers[i]),
-			  row.indices().length(), row.indices().dataPtr(),
-			  &coefPtr, ASSEMBLE_SUM) );
+    if (giveToMatrix(1, &row, rowlen, indices, &coefs, ASSEMBLE_SUM) != 0) {
+      throw std::runtime_error("fei::impl_utils::add_to_matrix ERROR in matrix.sumIn.");
+    }
   }
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int LinSysCoreFilter::sumIntoMatrix_symmetric_structure(SSMat& mat)
-{
-  int numRows = mat.getRowNumbers().length();
-  int* rowNumbers = mat.getRowNumbers().dataPtr();
-  if (numRows == 0) return(FEI_SUCCESS);
-
-  feiArray<SSVec*>& rows = mat.getRows();
-
-  if (dworkSpace2_.length() < numRows) {
-    dworkSpace2_.resize(numRows);
-  }
-  const double* * coefPtr = dworkSpace2_.dataPtr();
-
-  for(int i=0; i<numRows; i++) {
-    SSVec& row = *(rows[i]);
-    coefPtr[i] = row.coefs().dataPtr();
-  }
-
-  CHK_ERR( giveToMatrix(numRows, rowNumbers, numRows, rowNumbers,
-			coefPtr, ASSEMBLE_SUM) );
 
   return(FEI_SUCCESS);
 }
@@ -2966,25 +2936,12 @@ int LinSysCoreFilter::giveToLocalReducedRHS(int num, const double* values,
 }
 
 //------------------------------------------------------------------------------
-int LinSysCoreFilter::sumIntoRHS(SSVec& vec)
+int LinSysCoreFilter::sumIntoRHS(fei::CSVec& vec)
 {
-  feiArray<int>& indices = vec.indices();
-  feiArray<double>& coefs = vec.coefs();
+  std::vector<int>& indices = vec.indices();
+  std::vector<double>& coefs = vec.coefs();
 
-  CHK_ERR( giveToRHS(indices.length(), coefs.dataPtr(), indices.dataPtr(),
-		     ASSEMBLE_SUM) );
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int LinSysCoreFilter::putIntoRHS(SSVec& vec)
-{
-  feiArray<int>& indices = vec.indices();
-  feiArray<double>& coefs = vec.coefs();
-
-  CHK_ERR( giveToRHS(indices.length(), coefs.dataPtr(), indices.dataPtr(),
-		     ASSEMBLE_PUT) );
+  CHK_ERR( giveToRHS(indices.size(), &coefs[0], &indices[0], ASSEMBLE_SUM) );
 
   return(FEI_SUCCESS);
 }
@@ -3958,10 +3915,10 @@ int LinSysCoreFilter::assembleEqns(int numPtRows,
 	for(int jj=0; jj<numPtCols; jj++) {
 	  int col = indicesPtr[jj];
 	  if (colSlave[jj]) {
-	    CHK_ERR( Kdd_->sumInCoef(row, col, coefPtr[jj]) );
+	    Kdd_->sumInCoef(row, col, coefPtr[jj]);
 	  }
 	  else {
-	    CHK_ERR( Kdi_->sumInCoef(row, col, coefPtr[jj]) );
+	    Kdi_->sumInCoef(row, col, coefPtr[jj]);
 	  }
 	}
 
@@ -3976,7 +3933,7 @@ int LinSysCoreFilter::assembleEqns(int numPtRows,
 
 	  const double* coefs_ii = coefs[ii];
 
-	  CHK_ERR( Kid_->sumInCoef(rowi, row, coefs_ii[index]) );
+	  Kid_->sumInCoef(rowi, row, coefs_ii[index]);
 
           if (!structurallySymmetric) ii_indicesPtr += numPtCols;
 	}
@@ -4004,41 +3961,46 @@ int LinSysCoreFilter::assembleEqns(int numPtRows,
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::assembleReducedEqns()
 {
-  SSMat* D = problemStructure_->getSlaveDependencies();
+  fei::FillableMat* D = problemStructure_->getSlaveDependencies();
+
+  csrD = *D;
+  csrKid = *Kid_;
+  csrKdi = *Kdi_;
+  csrKdd = *Kdd_;
 
   //form tmpMat1_ = Kid_*D
-  CHK_ERR( Kid_->matMat(*D, *tmpMat1_) );
+  fei::multiply_CSRMat_CSRMat(csrKid, csrD, tmpMat1_);
 
   //form tmpMat2_ = D^T*Kdi_
-  CHK_ERR( D->matTransMat(*Kdi_, *tmpMat2_) );
+  fei::multiply_trans_CSRMat_CSRMat(csrD, csrKdi, tmpMat2_);
 
   if (Filter::logStream() != NULL) {
     FEI_OSTREAM& os = *Filter::logStream();
-    os << "#  tmpMat1_"<<FEI_ENDL << *tmpMat1_ << FEI_ENDL;
-    os << "#  tmpMat2_"<<FEI_ENDL << *tmpMat2_ << FEI_ENDL;
+    os << "#  tmpMat1_"<<FEI_ENDL << tmpMat1_ << FEI_ENDL;
+    os << "#  tmpMat2_"<<FEI_ENDL << tmpMat2_ << FEI_ENDL;
   }
 
   //accumulate the above two results into the global system matrix.
-  CHK_ERR( sumIntoMatrix(*tmpMat1_) );
-  CHK_ERR( sumIntoMatrix(*tmpMat2_) );
+  CHK_ERR( sumIntoMatrix(tmpMat1_) );
+  CHK_ERR( sumIntoMatrix(tmpMat2_) );
 
   //form tmpMat1_ = D^T*Kdd_
-  CHK_ERR( D->matTransMat(*Kdd_, *tmpMat1_) );
+  fei::multiply_trans_CSRMat_CSRMat(csrD, csrKdd, tmpMat1_);
 
   //form tmpMat2_ = tmpMat1_*D = D^T*Kdd_*D
-  CHK_ERR( tmpMat1_->matMat(*D, *tmpMat2_) );
+  fei::multiply_CSRMat_CSRMat(tmpMat1_, csrD, tmpMat2_);
 
   if (Filter::logStream() != NULL) {
     FEI_OSTREAM& os = *Filter::logStream();
-    os << "#  tmpMat2_"<<FEI_ENDL << *tmpMat2_ << FEI_ENDL;
+    os << "#  tmpMat2_"<<FEI_ENDL << tmpMat2_ << FEI_ENDL;
   }
 
   //finally, accumulate tmpMat2_ = D^T*Kdd_*D into the global system matrix.
-  CHK_ERR( sumIntoMatrix(*tmpMat2_) );
+  CHK_ERR( sumIntoMatrix(tmpMat2_) );
 
-  Kdi_->logicalClear();
-  Kid_->logicalClear();
-  Kdd_->logicalClear();
+  Kdi_->clear();
+  Kid_->clear();
+  Kdd_->clear();
   reducedEqnCounter_ = 0;
 
   return(0);
@@ -4063,7 +4025,7 @@ int LinSysCoreFilter::assembleRHS(int numValues,
     int eqn = indices[i];
 
     if (problemStructure_->isSlaveEqn(eqn)) {
-      CHK_ERR( fd_->addEntry(eqn, coefs[i]) );
+      fei::add_entry( fd_, eqn, coefs[i]);
       reducedRHSCounter_++;
       continue;
     }
@@ -4079,14 +4041,16 @@ int LinSysCoreFilter::assembleRHS(int numValues,
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::assembleReducedRHS()
 {
-  SSMat* D = problemStructure_->getSlaveDependencies();
+  fei::FillableMat* D = problemStructure_->getSlaveDependencies();
+
+  csrD = *D;
 
   //now form tmpVec1_ = D^T*fd_.
-  CHK_ERR( D->matTransVec(*fd_, *tmpVec1_) );
+  fei::multiply_trans_CSRMat_CSVec(csrD, fd_, tmpVec1_);
 
-  CHK_ERR( sumIntoRHS(*tmpVec1_) );
+  CHK_ERR( sumIntoRHS(tmpVec1_) );
 
-  fd_->logicalClear();
+  fd_.clear();
   reducedRHSCounter_ = 0;
 
   return(0);

@@ -17,7 +17,6 @@
 #include <fei_ProcEqns.hpp>
 #include <fei_EqnBuffer.hpp>
 #include <fei_SSVec.hpp>
-#include <fei_SSMat.hpp>
 #include <feiArray.hpp>
 #include <fei_TemplateUtils.hpp>
 
@@ -1246,24 +1245,28 @@ int EqnCommMgr::exchangePtToBlkInfo(snl_fei::PointBlockMap& blkEqnMapper)
 }
 
 //------------------------------------------------------------------------------
-int EqnCommMgr::addRemoteEqns(SSMat& mat, bool onlyIndices)
+int EqnCommMgr::addRemoteEqns(fei::CSRMat& mat, bool onlyIndices)
 {
-  int numRows = mat.getRowNumbers().length();
-  int* rowNumbers = mat.getRowNumbers().dataPtr();
-  feiArray<SSVec*>& rows = mat.getRows();
+  std::vector<int>& rowNumbers = mat.getGraph().rowNumbers;
+  std::vector<int>& rowOffsets = mat.getGraph().rowOffsets;
+  std::vector<int>& pckColInds = mat.getGraph().packedColumnIndices;
+  std::vector<double>& pckCoefs = mat.getPackedCoefs();
 
-  for(int i=0; i<numRows; i++) {
-    int proc = getSendProcNumber(rowNumbers[i]);
+  for(size_t i=0; i<rowNumbers.size(); ++i) {
+    int row = rowNumbers[i];
+    int offset = rowOffsets[i];
+    int rowlen = rowOffsets[i+1]-offset;
+    int* indices = &pckColInds[offset];
+    double* coefs = &pckCoefs[offset];
+
+    int proc = getSendProcNumber(row);
     if (proc == localProc_ || proc < 0) continue;
 
     if (onlyIndices) {
-      addRemoteIndices(rowNumbers[i], proc,
-		       rows[i]->indices().dataPtr(),rows[i]->indices().length());
+      addRemoteIndices(row, proc, indices, rowlen);
     }
     else {
-      CHK_ERR( addRemoteEqn(rowNumbers[i], proc, rows[i]->coefs().dataPtr(),
-			    rows[i]->indices().dataPtr(),
-			    rows[i]->indices().length()) );
+      CHK_ERR( addRemoteEqn(row, proc, coefs, indices, rowlen) );
     }
   }
 
@@ -1277,6 +1280,23 @@ int EqnCommMgr::addRemoteRHS(SSVec& vec, int rhsIndex)
   feiArray<double>& coefs = vec.coefs();
 
   for(int i=0; i<indices.length(); i++) {
+    int proc = getSendProcNumber(indices[i]);
+
+    if (proc == localProc_ || proc < 0) continue;
+
+    CHK_ERR( addRemoteRHS(indices[i], proc, rhsIndex, coefs[i]) );
+  }
+
+  return(0);
+}
+
+//------------------------------------------------------------------------------
+int EqnCommMgr::addRemoteRHS(fei::CSVec& vec, int rhsIndex)
+{
+  std::vector<int>& indices = vec.indices();
+  std::vector<double>& coefs = vec.coefs();
+
+  for(size_t i=0; i<indices.size(); i++) {
     int proc = getSendProcNumber(indices[i]);
 
     if (proc == localProc_ || proc < 0) continue;

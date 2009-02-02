@@ -135,7 +135,6 @@ DirichletBCManager::finalizeBCEqns(NodeDatabase& nodeDB,
                                    EqnBuffer& bcEqns)
 {
   //copy the boundary-condition prescribed values into bcEqns.
-  int col = 0;
   double coef = 0.0;
 
   for(unsigned i=0; i<bcs_.size(); ++i) {
@@ -152,7 +151,7 @@ DirichletBCManager::finalizeBCEqns(NodeDatabase& nodeDB,
     eqn += dbc.whichComponent;
     coef = dbc.prescribedValue;
 
-    CHK_ERR( bcEqns.addEqn(eqn, &coef, &col, 1, false) );
+    CHK_ERR( bcEqns.addEqn(eqn, &coef, &eqn, 1, false) );
   }
 
   bcs_.clear();

@@ -235,8 +235,6 @@ namespace fei {
 			  const double* const* values,
 			  bool sumInto);
 
-    int sumIntoMatrix(SSMat& mat);
-
     fei::SharedPtr<fei::Reducer> reducer_;
     fei::SharedPtr<fei::Matrix> target_;
     bool globalAssembleCalled_;

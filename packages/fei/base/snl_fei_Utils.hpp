@@ -214,28 +214,6 @@ namespace snl_fei {
   int mergeStringLists(char**& strings, int& numStrings,
 		       const char*const* stringsToMerge, int numStringsToMerge);
 
-  /** pack an SSMat object into a pair of std::vector objects.
-   */
-  void packSSMat(SSMat& mat,
-		 std::vector<int>& intdata,
-		 std::vector<double>& doubledata);
-
-  /** unpack a pair of std::vector objects into an SSMat object. The std::vector
-     objects are assumed to have been produced by the function
-     snl_fei::packSSMat.
-  */
-  void unpackIntoSSMat(std::vector<int>& intdata,
-		       std::vector<double>& doubledata,
-		       SSMat& mat,
-		       bool clearMatOnEntry=true,
-		       bool overwriteInsteadOfSumInto=true);
-
-  /** Get boundary-conditions from an SSMat
-  */
-  int separateBCEqns(SSMat& bcEqnBuf,
-                     std::vector<int>& essEqns,
-                     std::vector<double>& values);
-
   /** Resolve conflicts between constraint-relations and essential (dirichlet)
       boundary conditions.
   */
@@ -255,19 +233,6 @@ namespace snl_fei {
       processor.
   */
   void globalUnion(MPI_Comm comm, SSVec& localVec, SSVec& globalUnionVec);
-
-  /** Input SSMat object may be different on each processor. Output SSMat object
-      is the global union of all input SSMat objects and is the same on each
-      processor.
-  */
-  void globalUnion(MPI_Comm comm, SSMat& localMatrix, SSMat& globalUnionMatrix);
-
-  void create_col_to_row_map(SSMat& D, std::multimap<int,int>& crmap);
-
-  /** Remove master-slave couplings from input SSMat object which is assumed
-      to be the 'D' matrix. See FEI reference manual.
-  */
-  int removeCouplings(SSMat& D);
 
   fei::SharedPtr<fei::SparseRowGraph>
     mergeSparseRowGraphs(const fei::SparseRowGraph* srg1,

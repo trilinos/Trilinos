@@ -21,8 +21,6 @@
 
 #include <test_utils/test_Factory_helper.hpp>
 
-#include <test_utils/LinSysCore.hpp>
-
 #ifdef FEI_HAVE_TRILINOS
 #include <support-Trilinos/Factory_Trilinos.hpp>
 #include <support-Trilinos/fei-aztec.hpp>

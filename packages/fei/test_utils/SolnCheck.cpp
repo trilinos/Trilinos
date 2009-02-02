@@ -11,12 +11,10 @@
 
 #include <test_utils/fei_test_utils.hpp>
 
-#include <feiArray.hpp>
-
 #include <test_utils/SolnCheck.hpp>
 
 //==============================================================================
-int SolnCheck::readSoln(const char* baseName, int np, SSMat& solution)
+int SolnCheck::readSoln(const char* baseName, int np, fei::FillableMat& solution)
 {
   for(int i=0; i<np; i++) {
     FEI_OSTRINGSTREAM osstr;
@@ -32,10 +30,7 @@ int SolnCheck::readSoln(const char* baseName, int np, SSMat& solution)
 
       for(int j=0; j<numDOF; j++) {
 	infile >> tmpValue;
-	int err = solution.putCoef(node,j,tmpValue);
-	if (err != 0) {
-	  return(err);
-	}
+	solution.putCoef(node,j,tmpValue);
       }
       infile >> node;
     }
@@ -45,20 +40,20 @@ int SolnCheck::readSoln(const char* baseName, int np, SSMat& solution)
 }
 
 //==============================================================================
-int SolnCheck::compareSoln(SSMat& solution1, SSMat& solution2,
+int SolnCheck::compareSoln(fei::FillableMat& solution1, fei::FillableMat& solution2,
 			   double tol)
 {
   return(fei_test_utils::compareMatrices(solution1, solution2, tol) );
 }
 
 //==============================================================================
-int SolnCheck::readMatrix(const char* baseName, int np, SSMat& matrix)
+int SolnCheck::readMatrix(const char* baseName, int np, fei::FillableMat& matrix)
 {
   return( fei_test_utils::readMatrix(baseName, np, matrix) );
 }
 
 //==============================================================================
-int SolnCheck::compareMatrices(SSMat& mat1, SSMat& mat2)
+int SolnCheck::compareMatrices(fei::FillableMat& mat1, fei::FillableMat& mat2)
 {
   return( fei_test_utils::compareMatrices(mat1, mat2) );
 }
@@ -71,7 +66,7 @@ int SolnCheck::checkSolution(int localProc, int numProcs,
 			     int solveCounter)
 {
   if (localProc == 0) {
-    SSMat soln, correctSoln;
+    fei::FillableMat soln, correctSoln;
     FEI_OSTRINGSTREAM fullSolnFileName;
     FEI_OSTRINGSTREAM fullCheckFileName;
 

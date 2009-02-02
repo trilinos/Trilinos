@@ -28,6 +28,8 @@ class CSVec {
   CSVec(unsigned sz=0);
   virtual ~CSVec();
 
+  CSVec& operator=(const CSVec& invec);
+
   CSVec& operator=(const FillableVec& invec);
 
   CSVec& operator=(const SSVec& invec);

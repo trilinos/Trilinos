@@ -788,7 +788,7 @@ int FEI_tester::lsc_matrix_check()
 
      FEI_OSTRINGSTREAM solnMtxName;
      solnMtxName<< current_dir<<"/A_TLSC.mtx";
-     SSMat solnMtx, checkMtx;
+     fei::FillableMat solnMtx, checkMtx;
      CHK_ERR( SolnCheck::readMatrix(solnMtxName.str().c_str(), numProcs_, solnMtx) );
      CHK_ERR( SolnCheck::readMatrix(data_->checkFileName_.c_str(), numProcs_, checkMtx) );
      int err = SolnCheck::compareMatrices(solnMtx, checkMtx);

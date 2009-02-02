@@ -19,6 +19,7 @@
 #include <fei_Pattern.hpp>
 #include <fei_LogManager.hpp>
 #include <fei_TemplateUtils.hpp>
+#include <fei_impl_utils.hpp>
 #include <snl_fei_Utils.hpp>
 #include <fei_FieldMask.hpp>
 #include <fei_Record.hpp>
@@ -32,10 +33,8 @@
 #include <fei_Graph_Impl.hpp>
 #include <snl_fei_Constraint.hpp>
 
-#include <fei_SSVec.hpp>
 #include <fei_EqnBuffer.hpp>
 #include <fei_EqnCommMgr.hpp>
-#include <fei_SSMat.hpp>
 #include <SNL_FEI_Structure.hpp>
 
 #undef fei_file
@@ -1299,7 +1298,7 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
   //slave-equations onto each processor (so that each processor holds ALL
   //slave-equations).
   //Then we remove any couplings that may exist among the slave-equations and
-  //finally create a SSMat object to hold the final dependency matrix D_.
+  //finally create a FillableMat object to hold the final dependency matrix D_.
   //
 
   if (!newSlaveData()) {
@@ -1309,9 +1308,8 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
   std::vector<int>& eqnNums = rowSpace_->getEqnNumbers();
   vspcEqnPtr_ = eqnNums.size() > 0 ? &eqnNums[0] : NULL;
 
-  int alloc_incr = slaveConstraints_.size() > 64 ? slaveConstraints_.size():64;
-  fei::SharedPtr<SSMat> local_D(new SSMat(alloc_incr, 128));
-  fei::SharedPtr<SSVec> local_g(new SSVec);
+  fei::SharedPtr<fei::FillableMat> local_D(new fei::FillableMat);
+  fei::SharedPtr<fei::CSVec> local_g(new fei::CSVec);
 
   std::vector<int> masterEqns;
   std::vector<double> masterCoefs;
@@ -1394,25 +1392,25 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
       }
     }
 
-    CHK_ERR( local_D->putRow(slaveEqn, masterEqnsPtr, masterCoefsPtr, offset) );
+    local_D->putRow(slaveEqn, masterEqnsPtr, masterCoefsPtr, offset);
 
     if (std::abs(cr->getRHSValue()) > fei_eps) {
-      CHK_ERR( local_g->putEntry(slaveEqn, cr->getRHSValue()) );
+      fei::put_entry(*local_g, slaveEqn, cr->getRHSValue());
     }
   }
 
   if (D_.get() == NULL) {
-    D_.reset(new SSMat(alloc_incr));
+    D_.reset(new fei::FillableMat);
   }
 
   if (g_.get() == NULL) {
-    g_.reset(new SSVec(alloc_incr));
+    g_.reset(new fei::CSVec);
   }
 
 #ifndef FEI_SER
   if (numProcs_ > 1) {
-    snl_fei::globalUnion(comm_, *local_D, *D_);
-    snl_fei::globalUnion(comm_, *local_g, *g_);
+    fei::impl_utils::global_union(comm_, *local_D, *D_);
+    fei::impl_utils::global_union(comm_, *local_g, *g_);
   }
   else {
     *D_ = *local_D;
@@ -1428,7 +1426,7 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
     (*output_stream_) << *D_;
   }
 
-  int levelsOfCoupling = snl_fei::removeCouplings(*D_);
+  int levelsOfCoupling = fei::impl_utils::remove_couplings(*D_);
   (void)levelsOfCoupling;
 
   if (reducer_.get() == NULL) {
@@ -1452,7 +1450,7 @@ int fei::MatrixGraph_Impl2::createSlaveMatrices()
   double fei_eps = 1.e-49;
 
   g_nonzero_ = false;
-  for(int j=0; j<g_->length(); ++j) {
+  for(size_t j=0; j<g_->size(); ++j) {
     double coef = g_->coefs()[j];
     if (std::abs(coef) > fei_eps) {
       g_nonzero_ = true;
@@ -2184,35 +2182,6 @@ int fei::MatrixGraph_Impl2::getConnectivityIndices_multiField(fei::Record** reco
   return(0);
 }
 
-
-//----------------------------------------------------------------------------
-int fei::MatrixGraph_Impl2::addSSMatToGraph(SSMat& mat, fei::Graph* graph)
-{
-  //This function has one simple task -- for each row,col pair stored in 'mat',
-  //add the index pair to the graph_ object.
-  //
-  //PointBlockMap* ptBlkMap = rowSpace_->getPointBlockMap();
-
-  int numRows = mat.getRowNumbers().size();
-  int* rowNumbers = mat.getRowNumbers().dataPtr();
-  SSVec** rows = mat.getRows().dataPtr();
-
-  for(int i=0; i<numRows; i++) {
-    int rowLen = rows[i]->size();
-    int* indicesRow = rows[i]->indices().dataPtr();
-
-    for(int j=0; j<rowLen; ++j) {
-      if (indicesRow[j] < 0) {
-        ERReturn(-1);
-      }
-    }
-
-    CHK_ERR( graph->addIndices(rowNumbers[i], rowLen, indicesRow) );
-  }
-
-  return(0);
-}
-
 //----------------------------------------------------------------------------
 fei::Pattern* fei::MatrixGraph_Impl2::getPattern(int patternID)
 {
@@ -2592,7 +2561,8 @@ void fei::MatrixGraph_Impl2::setIndicesMode(int mode)
 }
 
 //----------------------------------------------------------------------------
-fei::SharedPtr<SSMat> fei::MatrixGraph_Impl2::getSlaveDependencyMatrix()
+fei::SharedPtr<fei::FillableMat>
+fei::MatrixGraph_Impl2::getSlaveDependencyMatrix()
 {
   return( D_ );
 }

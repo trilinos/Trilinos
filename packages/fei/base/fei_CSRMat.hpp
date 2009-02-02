@@ -11,7 +11,6 @@
 
 #include "fei_macros.hpp"
 #include "fei_FillableMat.hpp"
-#include <fei_SSMat.hpp>
 #include "fei_SparseRowGraph.hpp"
 #include "fei_CSVec.hpp"
 
@@ -34,8 +33,6 @@ class CSRMat {
   unsigned getNumRows() const {return srg_.rowNumbers.size();}
 
   CSRMat& operator=(const FillableMat& src);
-
-  CSRMat& operator=(const SSMat& src);
 
   CSRMat& operator+=(const CSRMat& src);
 

@@ -13,6 +13,8 @@
 #include "fei_defs.h"
 #include "fei_fwd.hpp"
 #include "fei_Filter.hpp"
+#include <fei_CSRMat.hpp>
+#include <fei_CSVec.hpp>
 
 namespace fei {
   class DirichletBCManager;
@@ -374,9 +376,7 @@ class LinSysCoreFilter : public Filter {
                      const int* rowColOffsets, const int* ptCols,
                      int numColsPerRow, double** values);
 
-   int sumIntoMatrix(SSMat& mat);
-
-   int sumIntoMatrix_symmetric_structure(SSMat& mat);
+   int sumIntoMatrix(fei::CSRMat& mat);
 
    int getEqnsFromMatrix(ProcEqns& procEqns, EqnBuffer& eqnData);
 
@@ -388,11 +388,9 @@ class LinSysCoreFilter : public Filter {
    int giveToLocalReducedRHS(int num, const double* values,
 			     const int* indices, int mode);
 
-   int putIntoRHS(SSVec& vec);
-
    int getFromRHS(int num, double* values, const int* indices);
 
-   int sumIntoRHS(SSVec& vec);
+   int sumIntoRHS(fei::CSVec& vec);
 
    int getEqnSolnEntry(int eqnNumber, double& solnValue);
 
@@ -479,8 +477,9 @@ class LinSysCoreFilter : public Filter {
     feiArray<int> rowColOffsets_, colIndices_;
     SSVec *putRHSVec_;
 
-    SSMat *Kid_, *Kdi_, *Kdd_, *tmpMat1_, *tmpMat2_;
-    SSVec *fd_, *tmpVec1_;
+    fei::FillableMat *Kid_, *Kdi_, *Kdd_;
+    fei::CSRMat csrD, csrKid, csrKdi, csrKdd, tmpMat1_, tmpMat2_;
+    fei::CSVec fd_, tmpVec1_;
     int reducedEqnCounter_, reducedRHSCounter_;
     feiArray<bool> rSlave_, cSlave_;
 

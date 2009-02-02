@@ -98,7 +98,6 @@ fei_MatrixTraits_FillableMat.hpp
 fei_MatrixTraits.hpp
 fei_MatrixTraits_LinProbMgr.hpp
 fei_MatrixTraits_LinSysCore.hpp
-fei_MatrixTraits_SSMat.hpp
 fei_mpi.h
 fei_mpiTraits.hpp
 fei_NodeCommMgr.hpp
@@ -121,7 +120,6 @@ fei_SlaveVariable.hpp
 fei_Solver.hpp
 fei_SparseRowGraph.hpp
 fei_SSGraph.hpp
-fei_SSMat.hpp
 fei_sstream.hpp
 fei_SSVec.hpp
 fei_TemplateUtils.hpp
@@ -216,7 +214,6 @@ fei_Record.cpp
 fei_Reducer.cpp
 fei_Solver.cpp
 fei_SSGraph.cpp
-fei_SSMat.cpp
 fei_SSVec.cpp
 fei_utils.cpp
 fei_Vector_core.cpp

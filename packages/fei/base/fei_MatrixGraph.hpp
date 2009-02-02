@@ -24,8 +24,7 @@ namespace fei {
   class Pattern;
   class SparseRowGraph;
   /** alias for constraint type */
-  typedef snl_fei::Constraint<fei::Record*>
-    ConstraintType;
+  typedef snl_fei::Constraint<fei::Record*> ConstraintType;
 
 /** A container for the data that defines connectivity, and which will
     ultimately be used to generate a matrix graph.
@@ -535,7 +534,7 @@ class MatrixGraph {
    virtual void setIndicesMode(int mode) = 0;
 
    /** Utility method. */
-   virtual fei::SharedPtr<SSMat> getSlaveDependencyMatrix() = 0;
+   virtual fei::SharedPtr<fei::FillableMat> getSlaveDependencyMatrix() = 0;
 
    /** Retrieve pointer to specified Pattern object.
        If specified pattern is not found, return NULL.

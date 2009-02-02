@@ -11,10 +11,11 @@
 
 #include <fei_Vector.hpp>
 #include <fei_Matrix.hpp>
-#include <fei_SSMat.hpp>
 #include <fei_SSVec.hpp>
 #include <fei_FillableMat.hpp>
 #include <fei_FillableVec.hpp>
+#include <fei_CSRMat.hpp>
+#include <fei_CSVec.hpp>
 
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Vector& vec)
@@ -32,12 +33,6 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Matrix& mat)
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, SSVec& vec)
 {
   vec.writeToStream(os);
-  return(os);
-}
-
-FEI_OSTREAM& operator<<(FEI_OSTREAM& os, SSMat& mat)
-{
-  mat.writeToStream(os);
   return(os);
 }
 
@@ -69,6 +64,41 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableMat& mat)
     os << row << ": ";
     for(; viter!=viter_end; ++viter) {
       os << "("<<viter->first<<","<<viter->second<<") ";
+    }
+    os << FEI_ENDL;
+  }
+
+  return(os);
+}
+
+FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::CSVec& vec)
+{
+  size_t len = vec.size();
+
+  os << "   numEntries: " << len << FEI_ENDL;
+
+  for(size_t i=0; i<len; ++i) {
+    os << "     " << vec.indices()[i]<< ": "<<vec.coefs()[i] << FEI_ENDL;
+  }
+
+  return(os);
+}
+
+FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::CSRMat& mat)
+{
+  os << "FillableMat numRows: " << mat.getNumRows() << FEI_ENDL;
+
+  const std::vector<int>& rows = mat.getGraph().rowNumbers;
+  const int* rowoffs = &(mat.getGraph().rowOffsets[0]);
+  const std::vector<int>& cols = mat.getGraph().packedColumnIndices;
+  const double* coefs = &(mat.getPackedCoefs()[0]);
+
+  for(size_t i=0; i<rows.size(); ++i) {
+    int row = rows[i];
+
+    os << row << ": ";
+    for(int j=rowoffs[i]; j<rowoffs[i+1]; ++j) {
+      os << "("<<cols[j]<<","<<coefs[j]<<") ";
     }
     os << FEI_ENDL;
   }

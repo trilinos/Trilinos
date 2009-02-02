@@ -21,8 +21,8 @@
 #include <test_utils/LibraryFactory.hpp>
 
 #ifdef FEI_HAVE_TRILINOS
-#include <Factory_Trilinos.hpp>
-#include <Aztec_LinSysCore.hpp>
+#include <fei_Factory_Trilinos.hpp>
+#include <fei_Aztec_LinSysCore.hpp>
 #endif
 
 #undef fei_file

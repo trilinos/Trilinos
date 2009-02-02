@@ -33,8 +33,11 @@ typedef snl_fei::Constraint<GlobalID> ConstraintType;
 #include "snl_fei_PointBlockMap.hpp"
 #include "fei_ProcEqns.hpp"
 #include "fei_EqnBuffer.hpp"
+#include <fei_FillableMat.hpp>
+#include <fei_FillableVec.hpp>
+#include <fei_CSRMat.hpp>
+#include <fei_CSVec.hpp>
 #include "fei_SSVec.hpp"
-#include "fei_SSMat.hpp"
 #include "fei_SSGraph.hpp"
 #include "fei_EqnCommMgr.hpp"
 
@@ -91,8 +94,8 @@ SNL_FEI_Structure::SNL_FEI_Structure(MPI_Comm comm)
    Kid_(NULL),
    Kdi_(NULL),
    Kdd_(NULL),
-   tmpMat1_(NULL),
-   tmpMat2_(NULL),
+   tmpMat1_(),
+   tmpMat2_(),
    reducedEqnCounter_(0),
    reducedRHSCounter_(0),
    rSlave_(),
@@ -141,11 +144,9 @@ SNL_FEI_Structure::SNL_FEI_Structure(MPI_Comm comm)
 
   nodeDatabase_ = new NodeDatabase(fieldDatabase_, nodeCommMgr_);
 
-  Kid_ = new SSMat;
-  Kdi_ = new SSMat;
-  Kdd_ = new SSMat;
-  tmpMat1_ = new SSMat;
-  tmpMat2_ = new SSMat;
+  Kid_ = new fei::FillableMat;
+  Kdi_ = new fei::FillableMat;
+  Kdd_ = new fei::FillableMat;
 }
 
 //-----------------------------------------------------------------------------
@@ -231,8 +232,6 @@ SNL_FEI_Structure::~SNL_FEI_Structure()
   delete Kid_;
   delete Kdi_;
   delete Kdd_;
-  delete tmpMat1_;
-  delete tmpMat2_;
 }
 
 //------------------------------------------------------------------------------
@@ -2400,39 +2399,45 @@ int SNL_FEI_Structure::assembleReducedStructure()
   //resulting contributions to off-processor portions of the matrix structure to
   //the EqnCommMgr.
   //
-  SSMat* D = getSlaveDependencies();
+  fei::FillableMat* D = getSlaveDependencies();
 
-  //form tmpMat1_ = Kid*D
-  CHK_ERR( Kid_->matMat(*D, *tmpMat1_) );
+  csrD = *D;
+  csrKid = *Kid_;
+  csrKdi = *Kdi_;
+  csrKdd = *Kdd_;
 
-  //form tmpMat2_ = D^T*Kdi
-  CHK_ERR( D->matTransMat(*Kdi_, *tmpMat2_) );
+  //form tmpMat1_ = Kid_*D
+  fei::multiply_CSRMat_CSRMat(csrKid, csrD, tmpMat1_);
 
-  CHK_ERR( translateMatToReducedEqns(*tmpMat1_) );
-  CHK_ERR( translateMatToReducedEqns(*tmpMat2_) );
+  //form tmpMat2_ = D^T*Kdi_
+  fei::multiply_trans_CSRMat_CSRMat(csrD, csrKdi, tmpMat2_);
+
+  CHK_ERR( translateMatToReducedEqns(tmpMat1_) );
+  CHK_ERR( translateMatToReducedEqns(tmpMat2_) );
   if (numProcs_ > 1) {
-    CHK_ERR( eqnCommMgr_->addRemoteEqns(*tmpMat1_, true) );
-    CHK_ERR( eqnCommMgr_->addRemoteEqns(*tmpMat2_, true) );
+    CHK_ERR( eqnCommMgr_->addRemoteEqns(tmpMat1_, true) );
+    CHK_ERR( eqnCommMgr_->addRemoteEqns(tmpMat2_, true) );
   }
 
-  CHK_ERR( createMatrixPositions(*tmpMat1_) );
-  CHK_ERR( createMatrixPositions(*tmpMat2_) );
+  CHK_ERR( createMatrixPositions(tmpMat1_) );
+  CHK_ERR( createMatrixPositions(tmpMat2_) );
 
-  //form tmpMat1_ = D^T*Kdd
-  CHK_ERR( D->matTransMat(*Kdd_, *tmpMat1_) );
+  //form tmpMat1_ = D^T*Kdd_
+  fei::multiply_trans_CSRMat_CSRMat(csrD, csrKdd, tmpMat1_);
 
-  //form tmpMat2_ = tpmMat1_*D = D^T*Kdd*D
-  CHK_ERR( tmpMat1_->matMat(*D, *tmpMat2_) );
+  //form tmpMat2_ = tmpMat1_*D = D^T*Kdd_*D
+  fei::multiply_CSRMat_CSRMat(tmpMat1_, csrD, tmpMat2_);
 
-  CHK_ERR( translateMatToReducedEqns(*tmpMat2_) );
+
+  CHK_ERR( translateMatToReducedEqns(tmpMat2_) );
   if (numProcs_ > 1) {
-    CHK_ERR( eqnCommMgr_->addRemoteEqns(*tmpMat2_, true) );
+    CHK_ERR( eqnCommMgr_->addRemoteEqns(tmpMat2_, true) );
   }
-  CHK_ERR( createMatrixPositions(*tmpMat2_) );
+  CHK_ERR( createMatrixPositions(tmpMat2_) );
 
-  Kdi_->logicalClear();
-  Kid_->logicalClear();
-  Kdd_->logicalClear();
+  Kdi_->clear();
+  Kid_->clear();
+  Kdd_->clear();
   reducedEqnCounter_ = 0;
 
   return(FEI_SUCCESS);
@@ -2492,59 +2497,61 @@ int SNL_FEI_Structure::translateToReducedEqns(ProcEqns& procEqns)
 }
 
 //------------------------------------------------------------------------------
-int SNL_FEI_Structure::translateMatToReducedEqns(SSMat& mat)
+int SNL_FEI_Structure::translateMatToReducedEqns(fei::CSRMat& mat)
 {
-  //Given a matrix in global numbering, convert all of its contents to the
+  //Given a matrix in unreduced numbering, convert all of its contents to the
   //"reduced" equation space. If any of the row-numbers or column-indices in
   //this matrix object are slave equations, they will not be referenced. In
   //this case, a positive warning-code will be returned.
 
-  feiArray<int>& rowNumbers = mat.getRowNumbers();
-  feiArray<SSVec*>& rows = mat.getRows();
-
   int reducedEqn = -1;
   int foundSlave = 0;
 
-  for(int i=0; i<rowNumbers.length(); i++) {
+  fei::SparseRowGraph& srg = mat.getGraph();
+
+  std::vector<int>& rowNumbers = srg.rowNumbers;
+  for(size_t i=0; i<rowNumbers.size(); ++i) {
     bool isSlave = translateToReducedEqn(rowNumbers[i], reducedEqn);
     if (isSlave) foundSlave = 1;
     else rowNumbers[i] = reducedEqn;
+  }
 
-    feiArray<int>& colInds = rows[i]->indices();
-    for(int j=0; j<colInds.length(); j++) {
-      isSlave = translateToReducedEqn(colInds[j], reducedEqn);
-      if (isSlave) foundSlave = 1;
-      else colInds[j] = reducedEqn;
-    }
+  std::vector<int>& colIndices = srg.packedColumnIndices;
+  for(size_t i=0; i<colIndices.size(); ++i) {
+    bool isSlave = translateToReducedEqn(colIndices[i], reducedEqn);
+    if (isSlave) foundSlave = 1;
+    else colIndices[i] = reducedEqn;
   }
 
   return(foundSlave);
 }
 
 //------------------------------------------------------------------------------
-int SNL_FEI_Structure::createMatrixPositions(SSMat& mat)
+int SNL_FEI_Structure::createMatrixPositions(fei::CSRMat& mat)
 {
   if (!generateGraph_) {
     return(0);
   }
 
-  //This function must be called with a SSMat object that already has its
+  //This function must be called with a CSRMat object that already has its
   //contents numbered in "reduced" equation-numbers.
   //
   //This function has one simple task -- for each row,col pair stored in 'mat',
   //call 'createMatrixPosition' to make an entry in the global matrix structure
   //if it doesn't already exist.
   //
-  int numRows = mat.getRowNumbers().length();
-  int* rowNumbers = mat.getRowNumbers().dataPtr();
-  feiArray<SSVec*>& rows = mat.getRows();
+  const std::vector<int>& rowNumbers = mat.getGraph().rowNumbers;
+  const std::vector<int>& rowOffsets = mat.getGraph().rowOffsets;
+  const std::vector<int>& pckColInds = mat.getGraph().packedColumnIndices;
 
-  for(int i=0; i<numRows; i++) {
-    int* indicesRow = rows[i]->indices().dataPtr();
+  for(size_t i=0; i<rowNumbers.size(); ++i) {
+    int row = rowNumbers[i];
+    int offset = rowOffsets[i];
+    int rowlen = rowOffsets[i+1]-offset;
+    const int* indices = &pckColInds[offset];
 
-    for(int j=0; j<rows[i]->size(); j++) {
-      CHK_ERR( createMatrixPosition(rowNumbers[i], indicesRow[j],
-				    "crtMatPos(SSMat)") );
+    for(int j=0; j<rowlen; j++) {
+      CHK_ERR( createMatrixPosition(row, indices[j], "crtMatPos(CSRMat)") );
     }
   }
 
@@ -4013,7 +4020,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
   }
 
   if (slaveMatrix_ != NULL) delete slaveMatrix_;
-  slaveMatrix_ = new SSMat(*slaveEqns_);
+  slaveMatrix_ = new fei::FillableMat(*slaveEqns_);
 
   if (debugOutput_) {
     os << "#  slave-equations:" << FEI_ENDL;

@@ -50,7 +50,6 @@ APPEND_SET(HEADERS
   InputData.hpp
   InputFileReader.hpp
   LibraryFactory.hpp
-  LinSysCore.hpp
   PoissonData.hpp
   Poisson_Elem.hpp
   poisson_beam_mains.hpp
@@ -74,7 +73,6 @@ APPEND_SET(HEADERS
   test_PointBlockMap.hpp
   test_Set.hpp
   test_SNL_FEI_Structure.hpp
-  test_SSMat.hpp
   test_FEI_Impl.hpp
   test_Tables.hpp
   test_Utils.hpp
@@ -124,7 +122,6 @@ APPEND_SET(SOURCES
   test_PointBlockMap.cpp
   test_Set.cpp
   test_SNL_FEI_Structure.cpp
-  test_SSMat.cpp
   test_FEI_Impl.cpp
   test_Tables.cpp
   test_Utils.cpp

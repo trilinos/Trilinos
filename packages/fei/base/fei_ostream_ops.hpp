@@ -12,6 +12,8 @@
 namespace fei {
   class FillableMat;
   class FillableVec;
+  class CSRMat;
+  class CSVec;
 }//namespace fei
 
 /*
@@ -26,10 +28,12 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Matrix& mat);
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, SSVec& vec);
 
-FEI_OSTREAM& operator<<(FEI_OSTREAM& os, SSMat& mat);
-
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableVec& vec);
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableMat& mat);
+
+FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::CSRMat& mat);
+
+FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::CSVec& vec);
 
 #endif // _fei_ostream_ops_hpp_

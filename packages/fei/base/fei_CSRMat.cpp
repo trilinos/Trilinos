@@ -55,6 +55,9 @@ CSRMat::operator=(const fei::FillableMat& src)
   srg_.packedColumnIndices.resize(nnz);
   packedcoefs_.resize(nnz);
 
+  int* colind_ptr = &(srg_.packedColumnIndices[0]);
+  double* coef_ptr = &(packedcoefs_[0]);
+
   iter = src.begin();
 
   unsigned offset = 0;
@@ -62,46 +65,8 @@ CSRMat::operator=(const fei::FillableMat& src)
     const FillableVec* v = iter->second;
     FillableVec::const_iterator viter = v->begin(), vend = v->end();
     for(; viter != vend; ++viter) {
-      srg_.packedColumnIndices[offset] = viter->first;
-      packedcoefs_[offset++] = viter->second;
-    }
-  }
-
-  return *this;
-}
-
-CSRMat&
-CSRMat::operator=(const SSMat& src)
-{
-  const feiArray<int>& rowNumbers = src.getRowNumbers();
-  int nrows = rowNumbers.size();
-  srg_.rowNumbers.resize(nrows);
-  srg_.rowOffsets.resize(nrows+1);
-
-  const feiArray<SSVec*>& rows = src.getRows();
-  
-  unsigned nnz = 0;
-  for(int i=0; i<rows.size(); ++i) {
-    srg_.rowNumbers[i] = rowNumbers[i];
-    srg_.rowOffsets[i] = nnz;
-    nnz += rows[i]->indices().size();
-  }
-
-  srg_.rowOffsets[nrows] = nnz;
-
-  srg_.packedColumnIndices.resize(nnz);
-  packedcoefs_.resize(nnz);
-
-  unsigned offset = 0;
-  for(int i=0; i<rows.size(); ++i) {
-    SSVec* v = rows[i];
-    const feiArray<int>& indices = v->indices();
-    const feiArray<double>& coefs = v->coefs();
-    int rowlen = indices.size();
-
-    for(int j=0; j<rowlen; ++j) {
-      srg_.packedColumnIndices[offset] = indices[j];
-      packedcoefs_[offset++] = coefs[j];
+      colind_ptr[offset] = viter->first;
+      coef_ptr[offset++] = viter->second;
     }
   }
 
@@ -133,6 +98,8 @@ CSRMat::operator!=(const CSRMat& rhs) const
 
 void multiply_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
 {
+  //This function is unit-tested in fei/utest_cases/fei_unit_CSRMat_CSVec.cpp
+
   const std::vector<int>& rows = A.getGraph().rowNumbers;
   const int* rowoffs = &(A.getGraph().rowOffsets[0]);
   const std::vector<int>& colinds = A.getGraph().packedColumnIndices;
@@ -191,6 +158,7 @@ void multiply_trans_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
 
   std::vector<int> offsets;
   fei::impl_utils::find_offsets(rows, xind, offsets);
+  const int* offsetsptr = &offsets[0];
 
   fei::FillableVec fy;
 
@@ -198,7 +166,7 @@ void multiply_trans_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
   for(unsigned i=0; i<nrows; ++i) {
     int jend = *rowoffs++;
 
-    int xoff = offsets[i];
+    int xoff = offsetsptr[i];
     if (xoff < 0) {
       jbeg = jend;
       continue;
@@ -218,9 +186,11 @@ void multiply_trans_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
 void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
                             bool storeResultZeros)
 {
+  //This function is unit-tested in fei/utest_cases/fei_unit_CSRMat_CSVec.cpp
+
   const std::vector<int>& Arows = A.getGraph().rowNumbers;
   const int* Arowoffs = &(A.getGraph().rowOffsets[0]);
-  const std::vector<int>& Acols = A.getGraph().packedColumnIndices;
+  const int* Acols = &(A.getGraph().packedColumnIndices[0]);
   const double* Acoefs = &(A.getPackedCoefs()[0]);
 
   const std::vector<int>& Brows = B.getGraph().rowNumbers;
@@ -233,25 +203,33 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
   static double fei_eps = std::numeric_limits<double>::epsilon();
 
   int jbeg = *Arowoffs++;
-  for(unsigned i=0; i<Arows.size(); ++i) {
+  for(size_t i=0; i<Arows.size(); ++i) {
     int row = Arows[i];
     int jend = *Arowoffs++;
 
-    fei::FillableVec* fc_row = fc.hasRow(row) ? fc.getRow(row) : NULL;
+    fei::FillableVec* fc_row = NULL;
+    if (storeResultZeros) {
+      fc_row = fc.getRow(row, true);
+    }
+    else {
+      fc_row = fc.hasRow(row) ? fc.getRow(row) : NULL;
+    }
 
     while(jbeg<jend) {
-      int Acol = Acols[jbeg];
-      double Acoef = Acoefs[jbeg++];
+      ++jbeg;
+      int Acol = *Acols++;
+      double Acoef = *Acoefs++;
 
-      if (std::abs(Acoef) < fei_eps && !storeResultZeros) {
-        continue;
-      }
-
-      int Brow_offset =
-        snl_fei::binarySearch(Acol, &Brows[0], Brows.size());
+      int Brow_offset = snl_fei::binarySearch(Acol, &Brows[0], Brows.size());
 
       if (Brow_offset < 0) {
         continue;
+      }
+
+      if (!storeResultZeros) {
+        if (std::abs(Acoef) < fei_eps) {
+          continue;
+        }
       }
 
       const int* Brow_cols = &(Bcols[Browoffs[Brow_offset]]);
@@ -262,13 +240,17 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
         double resultCoef = Acoef*Brow_coefs[k];
         int resultCol = Brow_cols[k];
 
-        if (std::abs(resultCoef) > fei_eps || storeResultZeros) {
-          if (fc_row == NULL) {
-            fc.sumInCoef(row, resultCol, resultCoef);
-            fc_row = fc.getRow(row);
+        if (!storeResultZeros) {
+          if (std::abs(resultCoef) < fei_eps) {
+            continue;
           }
-          else fc_row->addEntry(resultCol, resultCoef);
         }
+
+        if (fc_row == NULL) {
+          fc_row = fc.getRow(row, true);
+        }
+
+        fc_row->addEntry(resultCol, resultCoef);
       }
     }
   }
@@ -279,15 +261,15 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
 void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
                                   bool storeResultZeros)
 {
+  //This function is unit-tested in fei/utest_cases/fei_unit_CSRMat_CSVec.cpp
+
   const std::vector<int>& Arows = A.getGraph().rowNumbers;
   const size_t numArows = Arows.size();
   const int* Arowoffs = &(A.getGraph().rowOffsets[0]);
-  const std::vector<int>& Acols = A.getGraph().packedColumnIndices;
+  const int* Acols = &(A.getGraph().packedColumnIndices[0]);
   const double* Acoefs = &(A.getPackedCoefs()[0]);
 
   const std::vector<int>& Brows = B.getGraph().rowNumbers;
-//  const size_t numBrows = Brows.size();
-//  const int* BrowsPtr = &Brows[0];
   const int* Browoffs = &(B.getGraph().rowOffsets[0]);
   const std::vector<int>& Bcols = B.getGraph().packedColumnIndices;
   const double* Bcoefs = &(B.getPackedCoefs()[0]);
@@ -303,7 +285,6 @@ void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
 
   int jbeg = *Arowoffs++;
   for(size_t i=0; i<numArows; ++i) {
-//    int row = Arows[i];
     int jend = *Arowoffs++;
 
     int Brow_offset = offsets[i];

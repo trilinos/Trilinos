@@ -393,62 +393,13 @@ void print_args(int argc, char** argv){
     FEI_COUT << FEI_ENDL;
 }
 
-int compareMatrices(SSMat& mat1, SSMat& mat2, double tol)
+int compareMatrices(fei::FillableMat& mat1, fei::FillableMat& mat2, double tol)
 {
-  double maxDiff = 0.0;
-  int returnValue = 0;
-
-  feiArray<SSVec*>& rows1 = mat1.getRows();
-  feiArray<SSVec*>& rows2 = mat2.getRows();
-  feiArray<int>& rowNumbers = mat1.getRowNumbers();
-
-  int numRows = rows1.length();
-
-  if (numRows != rows2.length()) {
-    FEI_COUT << "The two matrices have differing numbers of rows." << FEI_ENDL;
-    return(1);
-  }
-
-  for(int i=0; i<numRows; i++) {
-    feiArray<double>& coefs1 = rows1[i]->coefs();
-    feiArray<double>& coefs2 = rows2[i]->coefs();
-    feiArray<int>& indices1 = rows1[i]->indices();
-    feiArray<int>& indices2 = rows2[i]->indices();
-
-    if (coefs1.length() != coefs2.length()) {
-      FEI_COUT << "The two matrices have different lengths for row "
-	   << rowNumbers[i] << FEI_ENDL;
-      returnValue = 1;
-      continue;
-    }
-
-    for(int j=0; j<coefs1.length(); j++) {
-
-      if (indices1[j] != indices2[j]) {
-	FEI_COUT << "The two matrices have different col. indices in row "
-	     << rowNumbers[i] << FEI_ENDL;
-	returnValue = 1;
-	continue;
-      }
-
-      double diff = std::abs(coefs1[j] - coefs2[j]);
-
-      if (diff > maxDiff) maxDiff = diff;
-
-      if (diff > tol) {
-	FEI_COUT << "The two matrices have different values in row "
-	     << rowNumbers[i] << ", column " << indices1[j] << FEI_ENDL;
-	returnValue = 1;
-      }
-    }
-  }
-
-  if (maxDiff > tol) FEI_COUT << "max. difference: " << maxDiff << FEI_ENDL;
-
-  return(returnValue);
+  if (mat1 == mat2) return 0;
+  return 1;
 }
 
-int readMatrix(const char* baseName, int np, SSMat& matrix)
+int readMatrix(const char* baseName, int np, fei::FillableMat& matrix)
 {
   for(int i=0; i<np; i++) {
     FEI_OSTRINGSTREAM fileName;
@@ -468,10 +419,7 @@ int readMatrix(const char* baseName, int np, SSMat& matrix)
       infile >> col;
       infile >> value;
 
-      int err = matrix.putCoef(row, col, value);
-      if (err != 0) {
-	return(err);
-      }
+      matrix.putCoef(row, col, value);
 
       infile >> row;
     }
@@ -480,9 +428,9 @@ int readMatrix(const char* baseName, int np, SSMat& matrix)
   return(0);
 }
 
-int readMatrix(const char* fileName, SSMat& matrix)
+int readMatrix(const char* fileName, fei::FillableMat& matrix)
 {
-  matrix.logicalClear();
+  matrix.clear();
 
   FEI_IFSTREAM infile(fileName);
   if (!infile) {
@@ -503,10 +451,7 @@ int readMatrix(const char* fileName, SSMat& matrix)
     infile >> col;
     infile >> value;
 
-    int err = matrix.putCoef(row, col, value);
-    if (err != 0) {
-      return(err);
-    }
+    matrix.putCoef(row, col, value);
 
     infile >> row;
   }
@@ -514,7 +459,7 @@ int readMatrix(const char* fileName, SSMat& matrix)
   return(0);
 }
 
-int writeMatrix(const char* fileName, SSMat& matrix)
+int writeMatrix(const char* fileName, fei::FillableMat& matrix)
 {
   FEI_OFSTREAM outfile(fileName);
   if (!outfile) {
@@ -524,14 +469,14 @@ int writeMatrix(const char* fileName, SSMat& matrix)
 
   outfile.setf(IOS_SCIENTIFIC, IOS_FLOATFIELD);
 
-  matrix.writeToStream(outfile);
+  outfile << matrix;
 
   return(0);
 }
 
-int copy_feiMatrix_to_SSMat(fei::Matrix& feimat, SSMat& ssmat)
+int copy_feiMatrix_to_FillableMat(fei::Matrix& feimat, fei::FillableMat& fmat)
 {
-  ssmat.logicalClear();
+  fmat.clear();
 
   fei::SharedPtr<fei::VectorSpace> rowspace =
     feimat.getMatrixGraph()->getRowSpace();
@@ -554,7 +499,7 @@ int copy_feiMatrix_to_SSMat(fei::Matrix& feimat, SSMat& ssmat)
 
     feimat.copyOutRow(row, rowLen, &coefs[0], &colindices[0]);
 
-    ssmat.putRow(row, &colindices[0], &coefs[0], rowLen);
+    fmat.putRow(row, &colindices[0], &coefs[0], rowLen);
   }
 
   return(0);

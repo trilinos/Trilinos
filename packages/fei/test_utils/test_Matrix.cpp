@@ -161,11 +161,11 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
     throw std::runtime_error(osstr.str());
   }
 
-  SSMat feimat_ss;
-  err = fei_test_utils::copy_feiMatrix_to_SSMat(*feimat, feimat_ss);
+  fei::FillableMat feimat_ss;
+  err = fei_test_utils::copy_feiMatrix_to_FillableMat(*feimat, feimat_ss);
   if (err) {
     FEI_OSTRINGSTREAM osstr;
-    osstr << "test_Matrix_unit2, copy_feiMatrix_to_SSMat returned err="<<err;
+    osstr << "test_Matrix_unit2, copy_feiMatrix_to_FillableMat returned err="<<err;
     throw std::runtime_error(osstr.str());
   }
 
@@ -271,11 +271,11 @@ void test_Matrix_unit3(MPI_Comm comm, int numProcs, int localProc)
 
   feimat->writeToFile("feimat_fm3.mtx");
 
-  SSMat feimat_ss;
-  err = fei_test_utils::copy_feiMatrix_to_SSMat(*feimat, feimat_ss);
+  fei::FillableMat feimat_ss;
+  err = fei_test_utils::copy_feiMatrix_to_FillableMat(*feimat, feimat_ss);
   if (err) {
     FEI_OSTRINGSTREAM osstr;
-    osstr << "test_Matrix_unit3, copy_feiMatrix_to_SSMat returned err="<<err;
+    osstr << "test_Matrix_unit3, copy_feiMatrix_to_FillableMat returned err="<<err;
     throw std::runtime_error(osstr.str());
   }
 
@@ -565,11 +565,11 @@ int test_Matrix::serialtest1()
 
   CHK_ERR( matgraph->initComplete() );
 
-  fei::SharedPtr<SSMat> ssmat(new SSMat), ssmatT(new SSMat);
+  fei::SharedPtr<fei::FillableMat> ssmat(new fei::FillableMat), ssmatT(new fei::FillableMat);
   int localsize = matgraph->getRowSpace()->getNumIndices_Owned();
-  fei::SharedPtr<fei::Matrix> matrix(new fei::Matrix_Impl<SSMat>(ssmat, matgraph, localsize));
+  fei::SharedPtr<fei::Matrix> matrix(new fei::Matrix_Impl<fei::FillableMat>(ssmat, matgraph, localsize));
 
-  fei::SharedPtr<fei::Matrix> matrixT(new fei::Matrix_Impl<SSMat>(ssmatT, matgraph, localsize));
+  fei::SharedPtr<fei::Matrix> matrixT(new fei::Matrix_Impl<fei::FillableMat>(ssmatT, matgraph, localsize));
 
   feiArray<int> indices(numIDs);
   CHK_ERR( matgraph->getConnectivityIndices(0, 0, numIDs,
@@ -601,15 +601,8 @@ int test_Matrix::serialtest1()
 
   CHK_ERR( matrixT->sumIn(0, 0, data2d.dataPtr(), 3) );
 
-  feiArray<SSVec*>& rows = ssmat->getRows();
-  feiArray<SSVec*>& rowsT= ssmatT->getRows();
-
-  for(i=0; i<rows.length(); ++i) {
-    for(int j=0; j<rows.length(); ++j) {
-      if (std::abs(rows[i]->coefs()[j] - rowsT[j]->coefs()[i]) > 1.e-49) {
-	ERReturn(-1);
-      }
-    }
+  if (*ssmat != *ssmatT) {
+    ERReturn(-1);
   }
 
   return(0);
@@ -639,11 +632,11 @@ int test_Matrix::serialtest2()
 
   CHK_ERR( matgraph->initComplete() );
 
-  fei::SharedPtr<SSMat> ssmat(new SSMat), ssmatT(new SSMat);
+  fei::SharedPtr<fei::FillableMat> ssmat(new fei::FillableMat), ssmatT(new fei::FillableMat);
   int localsize = matgraph->getRowSpace()->getNumIndices_Owned();
-  fei::Matrix* matrix = new fei::Matrix_Impl<SSMat>(ssmat, matgraph, localsize);
+  fei::Matrix* matrix = new fei::Matrix_Impl<fei::FillableMat>(ssmat, matgraph, localsize);
 
-  fei::Matrix* matrixT = new fei::Matrix_Impl<SSMat>(ssmatT, matgraph, localsize);
+  fei::Matrix* matrixT = new fei::Matrix_Impl<fei::FillableMat>(ssmatT, matgraph, localsize);
 
   feiArray<int> indices(numIDs);
   CHK_ERR( matgraph->getConnectivityIndices(0, 0, numIDs,
@@ -671,15 +664,8 @@ int test_Matrix::serialtest2()
 			 data2d.dataPtr(),
 			 3) );
 
-  feiArray<SSVec*>& rows = ssmat->getRows();
-  feiArray<SSVec*>& rowsT= ssmatT->getRows();
-
-  for(i=0; i<rows.length(); ++i) {
-    for(int j=0; j<rows.length(); ++j) {
-      if (std::abs(rows[i]->coefs()[j] - rowsT[j]->coefs()[i]) > 1.e-49) {
-	ERReturn(-1);
-      }
-    }
+  if (*ssmat != *ssmatT) {
+    ERReturn(-1);
   }
 
   delete matrix;
@@ -741,10 +727,10 @@ int test_Matrix::serialtest3()
 
   CHK_ERR( matgraph->initComplete() );
 
-  fei::SharedPtr<SSMat> ssmat(new SSMat);
+  fei::SharedPtr<fei::FillableMat> ssmat(new fei::FillableMat);
   int localsize = matgraph->getRowSpace()->getNumIndices_Owned();
   localsize -= 1;//subtract the slave
-  fei::Matrix* matrix = new fei::Matrix_Impl<SSMat>(ssmat, matgraph, localsize);
+  fei::Matrix* matrix = new fei::Matrix_Impl<fei::FillableMat>(ssmat, matgraph, localsize);
 
   if (matrix == NULL) {
     ERReturn(-1);

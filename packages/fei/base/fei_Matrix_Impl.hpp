@@ -22,7 +22,6 @@
 #include <fei_MatrixTraits_LinSysCore.hpp>
 #include <fei_MatrixTraits_FEData.hpp>
 #include <fei_MatrixTraits_FillableMat.hpp>
-#include <fei_MatrixTraits_SSMat.hpp>
 
 #include <snl_fei_FEMatrixTraits.hpp>
 #include <snl_fei_FEMatrixTraits_FED.hpp>
@@ -284,8 +283,6 @@ namespace fei {
                           const double* const* values,
                           bool sumInto);
 
-    int sumIntoMatrix(SSMat& mat);
-
     fei::SharedPtr<T> matrix_;
     bool globalAssembleCalled_;
     bool changedSinceMark_;
@@ -404,8 +401,6 @@ int fei::Matrix_Impl<T>::giveToUnderlyingBlockMatrix(int row,
 #include <fei_Record.hpp>
 
 #include <snl_fei_Utils.hpp>
-
-#include <fei_SSMat.hpp>
 
 //----------------------------------------------------------------------------
 template<typename T>
@@ -1101,27 +1096,6 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
                                          blkColDims_ptr,
                                          coefs_2D_ptr,
                                          false) );
-  }
-
-  return(0);
-}
-
-//----------------------------------------------------------------------------
-template<typename T>
-int fei::Matrix_Impl<T>::sumIntoMatrix(SSMat& mat)
-{
-  feiArray<int>& rowNumbers = mat.getRowNumbers();
-  feiArray<SSVec*>& rows = mat.getRows();
-
-  int* rowNumPtr = rowNumbers.dataPtr();
-
-  for(int i=0; i<rowNumbers.length(); ++i) {
-    SSVec& row_i_ = *(rows[i]);
-    int* cols = row_i_.indices().dataPtr();
-    double* coefs = row_i_.coefs().dataPtr();
-
-    CHK_ERR( sumIn(1, &(rowNumPtr[i]),
-                   row_i_.length(), cols, &coefs) );
   }
 
   return(0);

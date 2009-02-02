@@ -7,6 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 #include <fei_FillableMat.hpp>
+#include <fei_EqnBuffer.hpp>
+#include <fei_SSVec.hpp>
 
 namespace fei {
 
@@ -15,6 +17,27 @@ FillableMat::FillableMat()
  : matdata_(),
    vecpool_()
 {
+}
+
+//-----------------------------------------------------------------
+FillableMat::FillableMat(EqnBuffer& eqnbuf)
+ : matdata_(),
+   vecpool_()
+{
+  feiArray<int>& eqnNums = eqnbuf.eqnNumbersPtr();
+  int numEqns = eqnNums.size();
+  feiArray<SSVec*>& eqns = eqnbuf.eqns();
+
+  for(int i=0; i<numEqns; ++i) {
+    int row = eqnNums[i];
+    SSVec* row_vec = eqns[i];
+    int rowlen = row_vec->length();
+    int* indices = row_vec->indices().dataPtr();
+
+    for(int j=0; j<rowlen; ++j) {
+      putCoef(row, indices[j], 0.0);
+    }
+  }
 }
 
 //-----------------------------------------------------------------
@@ -49,33 +72,6 @@ FillableMat::operator=(const FillableMat& src)
     for(; r_iter != r_end; ++r_iter) {
       int col = r_iter->first;
       double coef = r_iter->second;
-
-      putCoef(row, col, coef);
-    }
-  }
-
-  return *this;
-}
-
-//-----------------------------------------------------------------
-FillableMat&
-FillableMat::operator=(const SSMat& src)
-{
-  clear();
-
-  const feiArray<int>& rowNumbers = src.getRowNumbers();
-  const feiArray<SSVec*>& inrows = src.getRows();
-
-  for(int i=0; i<inrows.size(); ++i) {
-    int row = rowNumbers[i];
-    feiArray<int>& indices = inrows[i]->indices();
-    feiArray<double>& coefs = inrows[i]->coefs();
-
-    int rowlen = indices.size();
-
-    for(int j=0; j<rowlen; ++j) {
-      int col = indices[j];
-      double coef = coefs[j];
 
       putCoef(row, col, coef);
     }

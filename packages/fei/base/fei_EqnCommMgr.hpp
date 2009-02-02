@@ -15,6 +15,8 @@
 #include "feiArray.hpp"
 #include "snl_fei_PointBlockMap.hpp"
 
+#include <fei_CSRMat.hpp>
+#include <fei_CSVec.hpp>
 #include <fei_CommUtils.hpp>
 #include "fei_ProcEqns.hpp"
 #include "fei_EqnBuffer.hpp"
@@ -204,8 +206,10 @@ class EqnCommMgr {
    int addRemoteEqn(int eqnNumber, const double* coefs,
 		    const int* indices, int num);
 
-   int addRemoteEqns(SSMat& mat, bool onlyIndices);
    int addRemoteRHS(SSVec& vec, int rhsIndex);
+
+   int addRemoteEqns(fei::CSRMat& mat, bool onlyIndices);
+   int addRemoteRHS(fei::CSVec& vec, int rhsIndex);
 
    void setNumRHSs(int numRHSs);
 

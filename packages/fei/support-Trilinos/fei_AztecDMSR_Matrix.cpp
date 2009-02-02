@@ -384,14 +384,12 @@ void AztecDMSR_Matrix::getRow(int row,
   if(!inUpdate(thisRow,localRow)){
     FEI_CERR << "AztecDMSR_Matrix::getRow: ERROR - row " << row 
 	 << " not in local update set." << FEI_ENDL;
+    length = 0;
     return;
   }
 
   int start = bindx[localRow];
   int end = bindx[localRow+1]-1;
-
-  if (isFilled_) length = ADMSR_LOCAL_ROW_ALLOC_LEN(localRow);
-  else length = ADMSR_LOCAL_ROW_LEN(localRow);
 
   j = 0;
   for(int i=start; i<=end; i++){
@@ -422,6 +420,7 @@ void AztecDMSR_Matrix::getRow(int row,
     colInd[j] = row;
   }
 
+  length = j+1;
   return;
 }
 

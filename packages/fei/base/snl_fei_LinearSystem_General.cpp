@@ -849,8 +849,12 @@ int snl_fei::LinearSystem_General::getMatrixRow(fei::Matrix* matrix, int row,
     return(err);
   }
 
-  coefs.resize(len);
-  indices.resize(len);
+  if ((int)coefs.size() != len) {
+    coefs.resize(len);
+  }
+  if ((int)indices.size() != len) {
+    indices.resize(len);
+  }
 
   CHK_ERR( matrix->copyOutRow(row, len, &coefs[0], &indices[0]));
 

@@ -30,17 +30,20 @@ void find_offsets(const std::vector<int>& sources,
   size_t ssize = sources.size(), tsize = targets.size();
   size_t si = 0, ti = 0;
 
+  const int* sourcesptr = &sources[0];
+  const int* targetsptr = &targets[0];
+
   while(si<ssize && ti<tsize) {
-    if (sources[si] == targets[ti]) {
+    if (sourcesptr[si] == targetsptr[ti]) {
       offsets[si++] = ti++;
       continue;
     }
 
-    while(sources[si] < targets[ti] && si<ssize) {
+    while(sourcesptr[si] < targetsptr[ti] && si<ssize) {
       ++si;
     }
 
-    while(sources[si] > targets[ti] && ti<tsize) {
+    while(sourcesptr[si] > targetsptr[ti] && ti<tsize) {
       ++ti;
     }
   }
