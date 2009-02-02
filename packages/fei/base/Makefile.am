@@ -134,7 +134,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_MatrixTraits.hpp \
 	$(top_srcdir)/base/fei_MatrixTraits_LinProbMgr.hpp \
 	$(top_srcdir)/base/fei_MatrixTraits_LinSysCore.hpp \
-	$(top_srcdir)/base/fei_MatrixTraits_SSMat.hpp \
 	$(top_srcdir)/base/fei_MatrixTraits_FillableMat.hpp \
 	$(top_srcdir)/base/fei_mpiTraits.hpp \
 	$(top_srcdir)/base/fei_Pattern.hpp \
@@ -159,7 +158,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_VectorTraits_FillableVec.hpp \
 	$(top_srcdir)/base/fei_VectorTraits_SSVec.hpp \
 	$(top_srcdir)/base/fei_SSGraph.hpp \
-	$(top_srcdir)/base/fei_SSMat.hpp \
 	$(top_srcdir)/base/fei_SSVec.hpp
 
 CORE = \
@@ -228,7 +226,6 @@ CORE = \
 	$(srcdir)/fei_FEI_Impl.cpp \
 	$(srcdir)/snl_fei_Utils.cpp \
 	$(srcdir)/fei_SSGraph.cpp \
-	$(srcdir)/fei_SSMat.cpp \
 	$(srcdir)/fei_SSVec.cpp
 
 # ------------------------------------------------------------------------

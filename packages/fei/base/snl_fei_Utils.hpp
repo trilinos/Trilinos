@@ -228,12 +228,6 @@ namespace snl_fei {
 			 fei::SparseRowGraph* remoteGraph,
 			 fei::Matrix& matrix);
 
-  /** Input SSVec object may be different on each processor. Output SSVec object
-      is the global union of all input SSVec objects and is the same on each
-      processor.
-  */
-  void globalUnion(MPI_Comm comm, SSVec& localVec, SSVec& globalUnionVec);
-
   fei::SharedPtr<fei::SparseRowGraph>
     mergeSparseRowGraphs(const fei::SparseRowGraph* srg1,
                          const fei::SparseRowGraph* srg2);

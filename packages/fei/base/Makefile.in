@@ -129,7 +129,7 @@ am__objects_1 = fei_BlockDescriptor.$(OBJEXT) fei_CSRMat.$(OBJEXT) \
 	snl_fei_RecordMsgHandler.$(OBJEXT) SNL_FEI_Structure.$(OBJEXT) \
 	snl_fei_SubdMsgHandler.$(OBJEXT) fei_FEI_Impl.$(OBJEXT) \
 	snl_fei_Utils.$(OBJEXT) fei_SSGraph.$(OBJEXT) \
-	fei_SSMat.$(OBJEXT) fei_SSVec.$(OBJEXT)
+	fei_SSVec.$(OBJEXT)
 am_libfei_base_a_OBJECTS = $(am__objects_1)
 libfei_base_a_OBJECTS = $(am_libfei_base_a_OBJECTS)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -350,7 +350,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_MatrixTraits.hpp \
 	$(top_srcdir)/base/fei_MatrixTraits_LinProbMgr.hpp \
 	$(top_srcdir)/base/fei_MatrixTraits_LinSysCore.hpp \
-	$(top_srcdir)/base/fei_MatrixTraits_SSMat.hpp \
 	$(top_srcdir)/base/fei_MatrixTraits_FillableMat.hpp \
 	$(top_srcdir)/base/fei_mpiTraits.hpp \
 	$(top_srcdir)/base/fei_Pattern.hpp \
@@ -375,7 +374,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_VectorTraits_FillableVec.hpp \
 	$(top_srcdir)/base/fei_VectorTraits_SSVec.hpp \
 	$(top_srcdir)/base/fei_SSGraph.hpp \
-	$(top_srcdir)/base/fei_SSMat.hpp \
 	$(top_srcdir)/base/fei_SSVec.hpp
 
 CORE = \
@@ -444,7 +442,6 @@ CORE = \
 	$(srcdir)/fei_FEI_Impl.cpp \
 	$(srcdir)/snl_fei_Utils.cpp \
 	$(srcdir)/fei_SSGraph.cpp \
-	$(srcdir)/fei_SSMat.cpp \
 	$(srcdir)/fei_SSVec.cpp
 
 
@@ -609,7 +606,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Record.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Reducer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_SSGraph.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_SSMat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_SSVec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Solver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_VectorReducer.Po@am__quote@
@@ -1555,20 +1551,6 @@ fei_SSGraph.obj: $(srcdir)/fei_SSGraph.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_SSGraph.cpp' object='fei_SSGraph.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_SSGraph.obj `if test -f '$(srcdir)/fei_SSGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_SSGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_SSGraph.cpp'; fi`
-
-fei_SSMat.o: $(srcdir)/fei_SSMat.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_SSMat.o -MD -MP -MF $(DEPDIR)/fei_SSMat.Tpo -c -o fei_SSMat.o `test -f '$(srcdir)/fei_SSMat.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_SSMat.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_SSMat.Tpo $(DEPDIR)/fei_SSMat.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_SSMat.cpp' object='fei_SSMat.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_SSMat.o `test -f '$(srcdir)/fei_SSMat.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_SSMat.cpp
-
-fei_SSMat.obj: $(srcdir)/fei_SSMat.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_SSMat.obj -MD -MP -MF $(DEPDIR)/fei_SSMat.Tpo -c -o fei_SSMat.obj `if test -f '$(srcdir)/fei_SSMat.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_SSMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_SSMat.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_SSMat.Tpo $(DEPDIR)/fei_SSMat.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_SSMat.cpp' object='fei_SSMat.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_SSMat.obj `if test -f '$(srcdir)/fei_SSMat.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_SSMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_SSMat.cpp'; fi`
 
 fei_SSVec.o: $(srcdir)/fei_SSVec.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_SSVec.o -MD -MP -MF $(DEPDIR)/fei_SSVec.Tpo -c -o fei_SSVec.o `test -f '$(srcdir)/fei_SSVec.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_SSVec.cpp

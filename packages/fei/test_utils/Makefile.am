@@ -98,7 +98,6 @@ CORE_H = \
 	$(top_srcdir)/test_utils/test_PointBlockMap.hpp \
 	$(top_srcdir)/test_utils/test_Set.hpp \
 	$(top_srcdir)/test_utils/test_SNL_FEI_Structure.hpp \
-	$(top_srcdir)/test_utils/test_SSMat.hpp \
 	$(top_srcdir)/test_utils/test_FEI_Impl.hpp \
 	$(top_srcdir)/test_utils/test_Tables.hpp \
 	$(top_srcdir)/test_utils/test_Utils.hpp \
@@ -147,7 +146,6 @@ CORE = \
 	$(srcdir)/test_PointBlockMap.cpp \
 	$(srcdir)/test_Set.cpp \
 	$(srcdir)/test_SNL_FEI_Structure.cpp \
-	$(srcdir)/test_SSMat.cpp \
 	$(srcdir)/test_FEI_Impl.cpp \
 	$(srcdir)/test_Tables.cpp \
 	$(srcdir)/test_Utils.cpp \

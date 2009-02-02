@@ -34,43 +34,6 @@ test_Utils::~test_Utils()
 {
 }
 
-void test_Utils_globalUnionVec()
-{
-  FEI_COUT << "testing snl_fei::globalUnion(SSVec)...";
-
-  int numProcs = fei::numProcs(MPI_COMM_WORLD);
-  int localProc = fei::localProc(MPI_COMM_WORLD);
-
-  int numlocalrows = 5;
-
-  SSVec globalvec0;
-  SSVec localvec;
-  int row=0;
-  for(int p=0; p<numProcs; ++p) {
-    for(int i=0; i<numlocalrows; ++i) {
-      globalvec0.putEntry(row, 1.0);
-      if (p == localProc) {
-	localvec.putEntry(row, 1.0);
-      }
-    }
-    ++row;
-  }
-
-  SSVec globalvec;
-
-  snl_fei::globalUnion(MPI_COMM_WORLD, localvec, globalvec);
-
-  if (globalvec.indices() != globalvec0.indices()) {
-    throw std::runtime_error("globalUnion vec int test failed");
-  }
-
-  if (globalvec.coefs() != globalvec0.coefs()) {
-    throw std::runtime_error("globalUnion vec double test failed");
-  }
-
-  FEI_COUT << "ok"<<FEI_ENDL;
-}
-
 void test_Utils_feiArray()
 {
   FEI_COUT << "testing feiArray basic functionality...";
@@ -179,8 +142,6 @@ int test_Utils::runtests()
     CHK_ERR( serialtest2() );
     CHK_ERR( serialtest3() );
   }
-
-  test_Utils_globalUnionVec();
 
   CHK_ERR( test1() );
   CHK_ERR( test2() );

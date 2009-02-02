@@ -89,10 +89,10 @@ am__objects_2 = BCNodeSet.$(OBJEXT) CommNodeSet.$(OBJEXT) \
 	test_LinearSystem.$(OBJEXT) test_Matrix.$(OBJEXT) \
 	test_MatrixGraph.$(OBJEXT) test_misc.$(OBJEXT) \
 	test_PointBlockMap.$(OBJEXT) test_Set.$(OBJEXT) \
-	test_SNL_FEI_Structure.$(OBJEXT) test_SSMat.$(OBJEXT) \
-	test_FEI_Impl.$(OBJEXT) test_Tables.$(OBJEXT) \
-	test_Utils.$(OBJEXT) test_Vector.$(OBJEXT) \
-	test_VectorSpace.$(OBJEXT) test_benchmarks.$(OBJEXT)
+	test_SNL_FEI_Structure.$(OBJEXT) test_FEI_Impl.$(OBJEXT) \
+	test_Tables.$(OBJEXT) test_Utils.$(OBJEXT) \
+	test_Vector.$(OBJEXT) test_VectorSpace.$(OBJEXT) \
+	test_benchmarks.$(OBJEXT)
 am_libfei_test_utils_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libfei_test_utils_a_OBJECTS = $(am_libfei_test_utils_a_OBJECTS)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -277,7 +277,6 @@ CORE_H = \
 	$(top_srcdir)/test_utils/test_PointBlockMap.hpp \
 	$(top_srcdir)/test_utils/test_Set.hpp \
 	$(top_srcdir)/test_utils/test_SNL_FEI_Structure.hpp \
-	$(top_srcdir)/test_utils/test_SSMat.hpp \
 	$(top_srcdir)/test_utils/test_FEI_Impl.hpp \
 	$(top_srcdir)/test_utils/test_Tables.hpp \
 	$(top_srcdir)/test_utils/test_Utils.hpp \
@@ -326,7 +325,6 @@ CORE = \
 	$(srcdir)/test_PointBlockMap.cpp \
 	$(srcdir)/test_Set.cpp \
 	$(srcdir)/test_SNL_FEI_Structure.cpp \
-	$(srcdir)/test_SSMat.cpp \
 	$(srcdir)/test_FEI_Impl.cpp \
 	$(srcdir)/test_Tables.cpp \
 	$(srcdir)/test_Utils.cpp \
@@ -451,7 +449,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_MatrixGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_PointBlockMap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_SNL_FEI_Structure.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_SSMat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Set.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Tables.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test_Utils.Po@am__quote@
@@ -1034,20 +1031,6 @@ test_SNL_FEI_Structure.obj: $(srcdir)/test_SNL_FEI_Structure.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_SNL_FEI_Structure.cpp' object='test_SNL_FEI_Structure.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_SNL_FEI_Structure.obj `if test -f '$(srcdir)/test_SNL_FEI_Structure.cpp'; then $(CYGPATH_W) '$(srcdir)/test_SNL_FEI_Structure.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_SNL_FEI_Structure.cpp'; fi`
-
-test_SSMat.o: $(srcdir)/test_SSMat.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_SSMat.o -MD -MP -MF $(DEPDIR)/test_SSMat.Tpo -c -o test_SSMat.o `test -f '$(srcdir)/test_SSMat.cpp' || echo '$(srcdir)/'`$(srcdir)/test_SSMat.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_SSMat.Tpo $(DEPDIR)/test_SSMat.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_SSMat.cpp' object='test_SSMat.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_SSMat.o `test -f '$(srcdir)/test_SSMat.cpp' || echo '$(srcdir)/'`$(srcdir)/test_SSMat.cpp
-
-test_SSMat.obj: $(srcdir)/test_SSMat.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_SSMat.obj -MD -MP -MF $(DEPDIR)/test_SSMat.Tpo -c -o test_SSMat.obj `if test -f '$(srcdir)/test_SSMat.cpp'; then $(CYGPATH_W) '$(srcdir)/test_SSMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_SSMat.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/test_SSMat.Tpo $(DEPDIR)/test_SSMat.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_SSMat.cpp' object='test_SSMat.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o test_SSMat.obj `if test -f '$(srcdir)/test_SSMat.cpp'; then $(CYGPATH_W) '$(srcdir)/test_SSMat.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_SSMat.cpp'; fi`
 
 test_FEI_Impl.o: $(srcdir)/test_FEI_Impl.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT test_FEI_Impl.o -MD -MP -MF $(DEPDIR)/test_FEI_Impl.Tpo -c -o test_FEI_Impl.o `test -f '$(srcdir)/test_FEI_Impl.cpp' || echo '$(srcdir)/'`$(srcdir)/test_FEI_Impl.cpp
