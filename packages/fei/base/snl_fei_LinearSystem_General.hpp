@@ -112,8 +112,6 @@ namespace snl_fei {
 
     MPI_Comm comm_;
 
-    fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
-    fei::DirichletBCManager* dbcManager_;
     fei::CSVec* essBCvalues_;
     fei::CSVec* allEssBCs_;
 

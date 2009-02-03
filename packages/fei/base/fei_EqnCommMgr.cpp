@@ -16,7 +16,6 @@
 
 #include <fei_ProcEqns.hpp>
 #include <fei_EqnBuffer.hpp>
-#include <fei_SSVec.hpp>
 #include <feiArray.hpp>
 #include <fei_TemplateUtils.hpp>
 
@@ -179,11 +178,11 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
 #ifndef FEI_SER
 
   int numSendEqns = sendEqns_->getNumEqns();
-  SSVec** sendEqnsPtr = sendEqns_->eqns().dataPtr();
+  fei::CSVec** sendEqnsPtr = &(sendEqns_->eqns()[0]);
   feiArray<int>& sendEqnNumbers = sendEqns_->eqnNumbersPtr();
   feiArray<int> sendEqnLengths(numSendEqns);
   for(int i=0; i<numSendEqns; ++i) {
-    sendEqnLengths[i] = sendEqnsPtr[i]->length();
+    sendEqnLengths[i] = sendEqnsPtr[i]->size();
   }
 
   sendProcEqns_->setProcEqnLengths(sendEqnNumbers.dataPtr(),
@@ -301,8 +300,8 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
 
     for(j=0; j<eqnsPerSendProc[i]; j++) {
       int eqnLoc = sendEqns_->getEqnIndex((*(sendProcEqnNumbersPtr[i]))[j]);
-      feiArray<int>& sendIndices = sendEqns_->eqns()[eqnLoc]->indices();
-      int* sendIndicesPtr = sendIndices.dataPtr();
+      std::vector<int>& sendIndices = sendEqns_->eqns()[eqnLoc]->indices();
+      int* sendIndicesPtr = &sendIndices[0];
 
       for(int k=0; k<(*(sendProcLengthsPtr[i]))[j]; k++) {
         indicesPtr[offset++] = sendIndicesPtr[k];
@@ -1002,12 +1001,10 @@ int EqnCommMgr::gatherSharedBCs(EqnBuffer& bcEqns)
     int index = snl_fei::binarySearch(eqn, sendEqnNumbers);
     if (index<0) continue;
 
-    feiArray<double>& coefs = bcEqns.eqns()[i]->coefs();
-    feiArray<int>& indices = bcEqns.eqns()[i]->indices();
-    CHK_ERR( sendBCs.addEqn(eqn,
-			    coefs.dataPtr(),
-			    indices.dataPtr(),
-			    indices.length(), false) );
+    std::vector<double>& coefs = bcEqns.eqns()[i]->coefs();
+    std::vector<int>& indices = bcEqns.eqns()[i]->indices();
+    CHK_ERR( sendBCs.addEqn(eqn, &coefs[0], &indices[0],
+			    indices.size(), false) );
 
     for(unsigned p=0; p<numSendProcs; p++) {
       if (std::binary_search(sendProcEqnNumbers[p]->begin(),
@@ -1041,8 +1038,8 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
   EqnBuffer* sendEssEqns = new EqnBuffer();
   ProcEqns* essSendProcEqns = new ProcEqns();
 
-  feiArray<SSVec*>& _sendEqns = sendEqns_->eqns();
-  SSVec** _sendEqnsPtr = _sendEqns.dataPtr();
+  std::vector<fei::CSVec*>& _sendEqns = sendEqns_->eqns();
+  fei::CSVec** _sendEqnsPtr = &_sendEqns[0];
   feiArray<int>& _sendEqnNumbers = sendEqns_->eqnNumbersPtr();
   int* _sendEqnNumbersPtr = _sendEqnNumbers.dataPtr();
   int _numSendEqns = sendEqns_->getNumEqns();
@@ -1069,21 +1066,21 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
 
   for(int j=0; j<_numSendEqns; j++) {
 
-    feiArray<int>& indices = _sendEqnsPtr[j]->indices();
+    std::vector<int>& indices = _sendEqnsPtr[j]->indices();
 
     snl_fei::binarySearch(numEssEqns, essEqns, offsetsPtr,
-			  indices.dataPtr(), indices.length());
+			  &indices[0], indices.size());
 
     int sendEqn_j = _sendEqnNumbersPtr[j];
 
     int proc = getSendProcNumber(sendEqn_j);
 
-    const int* sendEqnsPtr_j = indices.dataPtr();
+    const int* sendEqnsPtr_j = &indices[0];
 
     if (dbgOut != NULL) {
       FEI_OSTREAM& os = *dbgOut;
       os << "#ereb sendeqns["<<j<<"].length: "
-         <<_sendEqnsPtr[j]->length()<<", numEssEqns: " << numEssEqns<<FEI_ENDL;
+         <<_sendEqnsPtr[j]->size()<<", numEssEqns: " << numEssEqns<<FEI_ENDL;
     }
 
     for(i=0; i<numEssEqns; i++) {
@@ -1102,7 +1099,7 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
       sendEssEqns->addEqn(sendEqn_j, &coef,
 			  essEqns_i_ptr, 1, accumulate);
 
-      for(int k=0; k<_sendEqnsPtr[j]->length(); k++) {
+      for(size_t k=0; k<_sendEqnsPtr[j]->size(); k++) {
 
 	int row = sendEqnsPtr_j[k];
 
@@ -1122,10 +1119,10 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
   CHK_ERR( mirrorProcEqns(*essSendProcEqns, *essRecvProcEqns) );
 
   feiArray<int>& eqnNumbers = sendEssEqns->eqnNumbersPtr();
-  SSVec** sendEssEqnsPtr = sendEssEqns->eqns().dataPtr();
+  fei::CSVec** sendEssEqnsPtr = &(sendEssEqns->eqns()[0]);
   feiArray<int> eqnLengths(eqnNumbers.length());
   for(i=0; i<eqnNumbers.length(); ++i) {
-    eqnLengths[i] = sendEssEqnsPtr[i]->length();
+    eqnLengths[i] = sendEssEqnsPtr[i]->size();
   }
 
   essSendProcEqns->setProcEqnLengths(eqnNumbers.dataPtr(),
@@ -1155,24 +1152,24 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
 int EqnCommMgr::exchangePtToBlkInfo(snl_fei::PointBlockMap& blkEqnMapper)
 {
   std::set<int> sendIndices;
-  feiArray<SSVec*>& sendeqns = sendEqns_->eqns();
-  for(int i=0; i<sendeqns.length(); ++i) {
-    feiArray<int>& indices = sendeqns[i]->indices();
-    int len = indices.length();
+  std::vector<fei::CSVec*>& sendeqns = sendEqns_->eqns();
+  for(size_t i=0; i<sendeqns.size(); ++i) {
+    std::vector<int>& indices = sendeqns[i]->indices();
+    int len = indices.size();
     if (len < 1) continue;
-    int* indicesPtr = indices.dataPtr();
+    int* indicesPtr = &indices[0];
     for(int j=0; j<len; ++j) {
       sendIndices.insert(indicesPtr[j]);
     }
   }
 
   std::set<int> recvIndices;
-  feiArray<SSVec*>& recveqns = recvEqns_->eqns();
-  for(int i=0; i<recveqns.length(); ++i) {
-    feiArray<int>& indices = recveqns[i]->indices();
-    int len = indices.length();
+  std::vector<fei::CSVec*>& recveqns = recvEqns_->eqns();
+  for(size_t i=0; i<recveqns.size(); ++i) {
+    std::vector<int>& indices = recveqns[i]->indices();
+    int len = indices.size();
     if (len < 1) continue;
-    int* indicesPtr = indices.dataPtr();
+    int* indicesPtr = &indices[0];
     for(int j=0; j<len; ++j) {
       recvIndices.insert(indicesPtr[j]);
     }
@@ -1268,23 +1265,6 @@ int EqnCommMgr::addRemoteEqns(fei::CSRMat& mat, bool onlyIndices)
     else {
       CHK_ERR( addRemoteEqn(row, proc, coefs, indices, rowlen) );
     }
-  }
-
-  return(0);
-}
-
-//------------------------------------------------------------------------------
-int EqnCommMgr::addRemoteRHS(SSVec& vec, int rhsIndex)
-{
-  feiArray<int>& indices = vec.indices();
-  feiArray<double>& coefs = vec.coefs();
-
-  for(int i=0; i<indices.length(); i++) {
-    int proc = getSendProcNumber(indices[i]);
-
-    if (proc == localProc_ || proc < 0) continue;
-
-    CHK_ERR( addRemoteRHS(indices[i], proc, rhsIndex, coefs[i]) );
   }
 
   return(0);

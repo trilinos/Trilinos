@@ -34,9 +34,8 @@
 
 //----------------------------------------------------------------------------
 snl_fei::LinearSystem_General::LinearSystem_General(fei::SharedPtr<fei::MatrixGraph>& matrixGraph)
-  : comm_(matrixGraph->getRowSpace()->getCommunicator()),
-    matrixGraph_(matrixGraph),
-    dbcManager_(NULL),
+  : fei::LinearSystem(matrixGraph),
+    comm_(matrixGraph->getRowSpace()->getCommunicator()),
     essBCvalues_(NULL),
     resolveConflictRequested_(false),
     bcs_trump_slaves_(false),
@@ -67,13 +66,7 @@ snl_fei::LinearSystem_General::LinearSystem_General(fei::SharedPtr<fei::MatrixGr
 //----------------------------------------------------------------------------
 snl_fei::LinearSystem_General::~LinearSystem_General()
 {
-  delete dbcManager_;
-
   delete essBCvalues_;
-
-  for(unsigned i=0; i<attributeNames_.size(); ++i) {
-    delete [] attributeNames_[i];
-  }
 }
 
 //----------------------------------------------------------------------------
@@ -177,19 +170,8 @@ int snl_fei::LinearSystem_General::loadEssentialBCs(int numIDs,
     <<", fieldID: "<<fieldID<<", offsetIntoField: "<<offsetIntoField<<FEI_ENDL;
   }
 
-  if (dbcManager_ == NULL) {
-    dbcManager_ = new fei::DirichletBCManager;
-  }
-
-  try {
-    dbcManager_->addBCRecords(numIDs, idType, fieldID, offsetIntoField,
-                              IDs, prescribedValues);
-  }
-  catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what()<<FEI_ENDL;
-    return(-1);
-  }
-  return(0);
+  return fei::LinearSystem::loadEssentialBCs(numIDs, IDs, idType, fieldID,
+                                           offsetIntoField, prescribedValues);
 }
 
 //----------------------------------------------------------------------------
@@ -208,19 +190,8 @@ int snl_fei::LinearSystem_General::loadEssentialBCs(int numIDs,
     }
   }
 
-  if (dbcManager_ == NULL) {
-    dbcManager_ = new fei::DirichletBCManager;
-  }
-
-  try {
-    dbcManager_->addBCRecords(numIDs, idType, fieldID, IDs, offsetsIntoField,
-                              prescribedValues);
-  }
-  catch(std::runtime_error& exc) {
-    FEI_CERR << exc.what()<<FEI_ENDL;
-    return(-1);
-  }
-  return(0);
+  return fei::LinearSystem::loadEssentialBCs(numIDs, IDs, idType, fieldID,
+                                           offsetsIntoField, prescribedValues);
 }
 
 //----------------------------------------------------------------------------
@@ -233,7 +204,7 @@ int snl_fei::LinearSystem_General::loadComplete(bool applyBCs,
   }
 
   if (dbcManager_ == NULL) {
-    dbcManager_ = new fei::DirichletBCManager;
+    dbcManager_ = new fei::DirichletBCManager(matrixGraph_->getRowSpace());
   }
 
   if (globalAssemble) {

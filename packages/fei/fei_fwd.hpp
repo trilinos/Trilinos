@@ -40,7 +40,6 @@ class PatternDescriptor;
 class ProcEqns;
 class SNL_FEI_Structure;
 class SSGraph;
-class SSVec;
 class SlaveVariable;
 
 //

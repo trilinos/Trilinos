@@ -16,7 +16,6 @@
 
 #include <fei_ProcEqns.hpp>
 #include <fei_EqnBuffer.hpp>
-#include <fei_SSVec.hpp>
 #include <fei_EqnCommMgr.hpp>
 
 #undef fei_file

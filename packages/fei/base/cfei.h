@@ -208,15 +208,6 @@ int FEI_sumInElemRHS(CFEI* cfei,
                      GlobalID* elemConn,
                      double *elemLoad);
 
-int FEI_loadElemTransfer(CFEI* cfei,
-                         GlobalID elemBlockID,
-                         GlobalID elemID,
-                         GlobalID* coarseNodeList,
-                         int fineNodesPerCoarseElem,
-                         GlobalID* fineNodeList,
-                         double** elemProlong,
-                         double** elemRestrict);
-
 int FEI_loadCRMult(CFEI* cfei, 
                    int CRID, 
                    int numCRNodes,

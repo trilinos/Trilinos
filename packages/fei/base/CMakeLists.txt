@@ -121,7 +121,6 @@ fei_Solver.hpp
 fei_SparseRowGraph.hpp
 fei_SSGraph.hpp
 fei_sstream.hpp
-fei_SSVec.hpp
 fei_TemplateUtils.hpp
 fei_utils.hpp
 fei_Vector_core.hpp
@@ -135,7 +134,6 @@ fei_VectorTraits_FillableVec.hpp
 fei_VectorTraits.hpp
 fei_VectorTraits_LinProbMgr.hpp
 fei_VectorTraits_LinSysCore.hpp
-fei_VectorTraits_SSVec.hpp
 fei_version.h
 snl_fei_ArrayUtils.hpp
 snl_fei_BlkSizeMsgHandler.hpp
@@ -214,7 +212,6 @@ fei_Record.cpp
 fei_Reducer.cpp
 fei_Solver.cpp
 fei_SSGraph.cpp
-fei_SSVec.cpp
 fei_utils.cpp
 fei_Vector_core.cpp
 fei_Vector_Local.cpp

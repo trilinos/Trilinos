@@ -17,6 +17,7 @@
 
 #include "fei_defs.h"
 
+#include <fei_ostream_ops.hpp>
 #include "feiArray.hpp"
 #include "fei_CommUtils.hpp"
 #include "fei_TemplateUtils.hpp"
@@ -112,7 +113,7 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
     rhsIDs_.resize(numRHSs_);
     rhsIDs_[0] = 0;
 
-    bcManager_ = new fei::DirichletBCManager();
+    bcManager_ = new fei::DirichletBCManager(probStruct);
     eqnCommMgr_ = problemStructure_->getEqnCommMgr().deepCopy();
     int err = createEqnCommMgr_put();
 
@@ -1554,8 +1555,7 @@ int LinSysCoreFilter::implementAllBCs() {
 
    EqnBuffer bcEqns;
 
-   CHK_ERR( bcManager_->finalizeBCEqns(problemStructure_->getNodeDatabase(),
-				       bcEqns) );
+   CHK_ERR( bcManager_->finalizeBCEqns(bcEqns) );
 
    if (resolveConflictRequested_) {
      CHK_ERR( resolveConflictingCRs(bcEqns) );
@@ -1755,7 +1755,7 @@ int LinSysCoreFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
 {
   int numRecvEqns = eqnCommMgr.getNumLocalEqns();
   feiArray<int>& recvEqnNumbers = eqnCommMgr.localEqnNumbersPtr();
-  feiArray<SSVec*>& recvEqns = eqnCommMgr.localEqns();
+  std::vector<fei::CSVec*>& recvEqns = eqnCommMgr.localEqns();
   feiArray<feiArray<double>*>& recvRHSs = *(eqnCommMgr.localRHSsPtr());
 
   bool newCoefs = eqnCommMgr.newCoefData();
@@ -1765,7 +1765,7 @@ int LinSysCoreFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
   double** coefs = new double*[numRecvEqns];
 
   for(i=0; i<numRecvEqns; i++) {
-    coefs[i] = recvEqns[i]->coefs().dataPtr();
+    coefs[i] = &(recvEqns[i]->coefs()[0]);
   }
 
   for(i=0; i<numRecvEqns; i++) {
@@ -1779,7 +1779,7 @@ int LinSysCoreFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
       MPI_Abort(comm_, -1);
     }
 
-    for(int ii=0; ii<recvEqns[i]->length(); ii++) {
+    for(size_t ii=0; ii<recvEqns[i]->size(); ii++) {
       if (coefs[i][ii] > 1.e+200) {
 	FEI_CERR << localRank_ << ": LinSysCoreFilter::unpackRemoteContributions: "
 	     << "WARNING, coefs["<<i<<"]["<<ii<<"]: " << coefs[i][ii]
@@ -1788,11 +1788,11 @@ int LinSysCoreFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
       }
     }
 
-    if (recvEqns[i]->length() > 0 && newCoefs) {
+    if (recvEqns[i]->size() > 0 && newCoefs) {
       //contribute this equation to the matrix,
       CHK_ERR( giveToLocalReducedMatrix(1, &(recvEqnNumbers[i]),
-					recvEqns[i]->length(),
-					recvEqns[i]->indices().dataPtr(),
+					recvEqns[i]->size(),
+					&(recvEqns[i]->indices()[0]),
 					&(coefs[i]), assemblyMode ) );
     }
 
@@ -1849,16 +1849,16 @@ int LinSysCoreFilter::exchangeRemoteBCs(std::vector<int>& essEqns,
   int numRemoteEssBCEqns = eqnCommMgr_->getNumRemEssBCEqns();
   if (numRemoteEssBCEqns > 0) {
     feiArray<int>& remEssBCEqnNumbers = eqnCommMgr_->remEssBCEqnNumbersPtr();
-    SSVec** remEssBCEqns = eqnCommMgr_->remEssBCEqns().dataPtr();
+    fei::CSVec** remEssBCEqns = &(eqnCommMgr_->remEssBCEqns()[0]);
     feiArray<int> remEssBCEqnLengths(remEssBCEqnNumbers.length());
 
     int** indices = new int*[numRemoteEssBCEqns];
     double** coefs = new double*[numRemoteEssBCEqns];
 
     for(int i=0; i<numRemoteEssBCEqns; i++) {
-      coefs[i] = remEssBCEqns[i]->coefs().dataPtr();
-      indices[i] = remEssBCEqns[i]->indices().dataPtr();
-      remEssBCEqnLengths[i] = remEssBCEqns[i]->length();
+      coefs[i] = &(remEssBCEqns[i]->coefs()[0]);
+      indices[i] = &(remEssBCEqns[i]->indices()[0]);
+      remEssBCEqnLengths[i] = remEssBCEqns[i]->size();
     }
 
     CHK_ERR( enforceRemoteEssBCs(numRemoteEssBCEqns,
@@ -2692,10 +2692,10 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
 
   //now we can set the lengths in localProcEqns.
   feiArray<int>& eqnNumbers = localEqns.eqnNumbersPtr();
-  SSVec** localEqnsPtr = localEqns.eqns().dataPtr();
+  fei::CSVec** localEqnsPtr = &(localEqns.eqns()[0]);
   feiArray<int> eqnLengths(eqnNumbers.length());
   for(i=0; i<eqnNumbers.length(); ++i) {
-    eqnLengths[i] = localEqnsPtr[i]->length();
+    eqnLengths[i] = localEqnsPtr[i]->size();
   }
 
   localProcEqns.setProcEqnLengths(eqnNumbers.dataPtr(), eqnLengths.dataPtr(),
@@ -2711,8 +2711,8 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
 					  &remoteProcEqns, &remoteEqns, false));
 
   feiArray<int>& remEqnNumbers = remoteEqns.eqnNumbersPtr();
-  SSVec** remEqnsPtr = remoteEqns.eqns().dataPtr();
-  feiArray<SSVec*>& remEqns   = remoteEqns.eqns();
+  fei::CSVec** remEqnsPtr = &(remoteEqns.eqns()[0]);
+  std::vector<fei::CSVec*>& remEqns   = remoteEqns.eqns();
 
   //now we're ready to fill the values array with the remote coefficients.
   for(i=0; i<numPtRows; i++) {
@@ -2727,7 +2727,7 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
     //if ptCols is NULL, then we're going to copy all coefficients (the whole
     //row) into 'values'.
     if (ptCols == NULL) {
-      for(int j=0; j<remEqnsPtr[eqnIndex]->length(); j++) {
+      for(size_t j=0; j<remEqnsPtr[eqnIndex]->size(); j++) {
 	values[i][j] = remEqns[eqnIndex]->coefs()[j];
       }
       continue;
@@ -2978,11 +2978,11 @@ int LinSysCoreFilter::getFromRHS(int num, double* values, const int* indices)
 
   //now we can set the lengths in localProcEqns.
   feiArray<int>& eqnNumbers = localEqns.eqnNumbersPtr();
-  SSVec** localEqnsPtr = localEqns.eqns().dataPtr();
+  fei::CSVec** localEqnsPtr = &(localEqns.eqns()[0]);
   feiArray<int> eqnLengths(eqnNumbers.length());
   int i;
   for(i=0; i<eqnNumbers.length(); ++i) {
-    eqnLengths[i] = localEqnsPtr[i]->length();
+    eqnLengths[i] = localEqnsPtr[i]->size();
   }
 
   localProcEqns.setProcEqnLengths(eqnNumbers.dataPtr(), eqnLengths.dataPtr(),
@@ -3057,12 +3057,12 @@ int LinSysCoreFilter::getEqnSolnEntry(int eqnNumber, double& solnValue)
     //This is a slave-equation, so construct its solution-value as the linear-
     //combination of the master-equations it is defined in terms of.
 
-    feiArray<int>* masterEqns = NULL;
-    feiArray<double>* masterCoefs = NULL;
+    std::vector<int>* masterEqns = NULL;
+    std::vector<double>* masterCoefs = NULL;
     CHK_ERR( problemStructure_->getMasterEqnNumbers(eqnNumber, masterEqns) );
     CHK_ERR( problemStructure_->getMasterEqnCoefs(eqnNumber, masterCoefs) );
 
-    int len = masterEqns->length();
+    int len = masterEqns->size();
     solnValue = 0.0;
     CHK_ERR( problemStructure_->getMasterEqnRHS(eqnNumber, solnValue) );
 

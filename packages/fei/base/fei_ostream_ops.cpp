@@ -11,7 +11,6 @@
 
 #include <fei_Vector.hpp>
 #include <fei_Matrix.hpp>
-#include <fei_SSVec.hpp>
 #include <fei_FillableMat.hpp>
 #include <fei_FillableVec.hpp>
 #include <fei_CSRMat.hpp>
@@ -27,12 +26,6 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Vector& vec)
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Matrix& mat)
 {
   mat.writeToStream(os);
-  return(os);
-}
-
-FEI_OSTREAM& operator<<(FEI_OSTREAM& os, SSVec& vec)
-{
-  vec.writeToStream(os);
   return(os);
 }
 

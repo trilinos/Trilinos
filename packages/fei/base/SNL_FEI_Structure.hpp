@@ -505,7 +505,7 @@ class SNL_FEI_Structure : public Lookup {
        @param masterEqns Output. NULL if slaveEqn is not a slave equation.
        @return error-code
    */
-   int getMasterEqnNumbers(int slaveEqn, feiArray<int>*& masterEqns);
+   int getMasterEqnNumbers(int slaveEqn, std::vector<int>*& masterEqns);
 
    /** Given a slave equation, provide an feiArray pointer containing the
        coefficients of the equations upon which the slave depends.
@@ -513,7 +513,7 @@ class SNL_FEI_Structure : public Lookup {
        @param masterCoefs Output. NULL if slaveEqn is not a slave equation.
        @return error-code
    */
-   int getMasterEqnCoefs(int slaveEqn, feiArray<double>*& masterCoefs);
+   int getMasterEqnCoefs(int slaveEqn, std::vector<double>*& masterCoefs);
 
    /** Given a slave equation, provide the rhs-value associated with the master
        equation that the slave is defined by.

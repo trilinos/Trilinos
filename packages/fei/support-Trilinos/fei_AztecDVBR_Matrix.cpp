@@ -7,6 +7,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <fei_iostream.hpp>
 #include <cstring>

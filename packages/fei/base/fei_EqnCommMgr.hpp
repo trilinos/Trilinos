@@ -196,7 +196,7 @@ class EqnCommMgr {
    int getNumLocalEqns() {return(recvEqns_->getNumEqns());};
 
    feiArray<int>& localEqnNumbersPtr() {return(recvEqns_->eqnNumbersPtr());};
-   feiArray<SSVec*>& localEqns(){return(recvEqns_->eqns());};
+   std::vector<fei::CSVec*>& localEqns(){return(recvEqns_->eqns());};
    feiArray<feiArray<double>*>* localRHSsPtr()
      {return(recvEqns_->rhsCoefsPtr());};
 
@@ -205,8 +205,6 @@ class EqnCommMgr {
 
    int addRemoteEqn(int eqnNumber, const double* coefs,
 		    const int* indices, int num);
-
-   int addRemoteRHS(SSVec& vec, int rhsIndex);
 
    int addRemoteEqns(fei::CSRMat& mat, bool onlyIndices);
    int addRemoteRHS(fei::CSVec& vec, int rhsIndex);
@@ -241,7 +239,7 @@ class EqnCommMgr {
 
    int getNumRemEssBCEqns() {return(essBCEqns_->getNumEqns());};
    feiArray<int>& remEssBCEqnNumbersPtr() {return(essBCEqns_->eqnNumbersPtr());};
-   feiArray<SSVec*>& remEssBCEqns() {return(essBCEqns_->eqns());};
+   std::vector<fei::CSVec*>& remEssBCEqns() {return(essBCEqns_->eqns());};
 
    int exchangePtToBlkInfo(snl_fei::PointBlockMap& blkEqnMapper);
 

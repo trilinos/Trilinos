@@ -11,7 +11,6 @@
 
 #include <fei_macros.hpp>
 #include <fei_FillableVec.hpp>
-#include <fei_SSVec.hpp>
 #include <vector>
 
 namespace fei {
@@ -31,8 +30,6 @@ class CSVec {
   CSVec& operator=(const CSVec& invec);
 
   CSVec& operator=(const FillableVec& invec);
-
-  CSVec& operator=(const SSVec& invec);
 
   std::vector<int>& indices() {return indices_;}
   const std::vector<int>& indices() const {return indices_;}

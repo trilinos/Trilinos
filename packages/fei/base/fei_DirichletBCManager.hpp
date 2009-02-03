@@ -10,8 +10,11 @@
 /*--------------------------------------------------------------------*/
 
 #include <fei_DirichletBCRecord.hpp>
+#include <SNL_FEI_Structure.hpp>
+#include <fei_VectorSpace.hpp>
 
-#include <vector>
+#include <fei_Pool_alloc.hpp>
+#include <map>
 
 class NodeDatabase;
 class EqnBuffer;
@@ -21,7 +24,12 @@ class Matrix;
 
 class DirichletBCManager {
  public:
-  DirichletBCManager(){}
+  DirichletBCManager(SNL_FEI_Structure* structure)
+   : structure_(structure), vecSpace_() {}
+
+  DirichletBCManager(fei::SharedPtr<fei::VectorSpace> vecspace)
+   : structure_(NULL), vecSpace_(vecspace) {}
+
   ~DirichletBCManager(){}
 
   void addBCRecords(int numBCs,
@@ -41,14 +49,21 @@ class DirichletBCManager {
   int finalizeBCEqns(fei::Matrix& matrix,
                      bool throw_if_bc_slave_conflict=false);
 
-  int finalizeBCEqns(NodeDatabase& nodeDB, EqnBuffer& bcEqns);
+  int finalizeBCEqns(EqnBuffer& bcEqns);
 
   size_t getNumBCRecords() const;
 
   void clearAllBCs();
 
  private:
-  std::vector<DirichletBCRecord> bcs_;
+  int getEqnNumber(int IDType, int ID, int fieldID, int offsetIntoField);
+
+  SNL_FEI_Structure* structure_;
+  fei::SharedPtr<fei::VectorSpace> vecSpace_;
+
+  typedef std::map<int,double,std::less<int>,
+            fei_Pool_alloc<std::pair<const int, double> > > bc_map;
+  bc_map bcs_;
 };//class DirichletBCManager
 }//namespace fei
 #endif

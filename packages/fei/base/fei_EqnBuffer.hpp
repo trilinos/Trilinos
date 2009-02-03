@@ -10,9 +10,9 @@
 /*--------------------------------------------------------------------*/
 
 #include "fei_fwd.hpp"
-#include "feiArray.hpp"
 
-class SSVec;
+#include <feiArray.hpp>
+#include <vector>
 
 /**
 A class for holding equation data, along with optional RHS coefficients for the
@@ -43,10 +43,10 @@ class EqnBuffer {
    /** Return a list of the equation-numbers held in this object. */
    feiArray<int>& eqnNumbersPtr() {return(eqnNumbers_);};
 
-   /** Return a table (actually an array of pointers to SSVecs) of the
+   /** Return a table (actually an array of pointers to fei::CSVecs) of the
        equations. Number-of-arrays is 'getNumEqns', length of i-th array
        is 'lengthsPtr()[i]'. */
-   feiArray<SSVec*>& eqns() {return(eqns_);};
+   std::vector<fei::CSVec*>& eqns() {return(eqns_);};
 
    /** Return the number of right-hand-side coefficientss stored for each
        equation.*/
@@ -158,7 +158,7 @@ class EqnBuffer {
 
    feiArray<int> eqnNumbers_; //list of equation-numbers
 
-   feiArray<SSVec*> eqns_;
+   std::vector<fei::CSVec*> eqns_;
 
    feiArray<int> indices_union_; //union of all equation-indices
 

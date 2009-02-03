@@ -22,6 +22,7 @@
 #include <fei_Data.hpp>
 #include <fei_defs.h>
 
+#include <stdexcept>
 #include <cmath>
 
 #undef fei_file
@@ -387,13 +388,13 @@ int fei::FEI_Impl::initSlaveVariable(GlobalID slaveNodeID,
 				      const double* weights,
 				      double rhsValue)
 {
-  abort();
+  throw std::runtime_error("FEI_Impl::initSlaveVariable not implemented.");
   return(0);
 }
 
 int fei::FEI_Impl::deleteMultCRs()
 {
-  abort();
+  throw std::runtime_error("FEI_Impl::deleteMultCRs not implemented.");
   return(0);
 }
 
@@ -705,7 +706,7 @@ int fei::FEI_Impl::loadElemBCs(int numElems,
                     const double *const *beta,  
                     const double *const *gamma)
 {
-  abort();
+  throw std::runtime_error("FEI_Impl::loadElemBCs not implemented.");
   return(0);
 }
 
@@ -755,18 +756,6 @@ int fei::FEI_Impl::sumInElemRHS(GlobalID elemBlockID,
 
   newData_ = true;
 
-  return(0);
-}
-
-int fei::FEI_Impl::loadElemTransfer(GlobalID elemBlockID,
-				     GlobalID elemID,
-				     const GlobalID* coarseNodeList,
-				     int fineNodesPerCoarseElem,
-				     const GlobalID* fineNodeList,
-				     const double* const* elemProlong,
-				     const double* const* elemRestrict)
-{
-  abort();
   return(0);
 }
 
@@ -1404,7 +1393,7 @@ int fei::FEI_Impl::getBlockFieldNodeSolution(GlobalID elemBlockID,
                                   const GlobalID *nodeIDs, 
                                   double *results)
 {
-  abort();
+  throw std::runtime_error("FEI_Impl::getBlockFieldNodeSolution not implemented.");
   return(0);
 }
 
@@ -1503,7 +1492,7 @@ int fei::FEI_Impl::putBlockNodeSolution(GlobalID elemBlockID,
                              const int *offsets,
                              const double *estimates)
 {
-  abort();
+  throw std::runtime_error("FEI_Impl::putBlockNodeSolution not implemented.");
   return(0);
 }
 
@@ -1513,7 +1502,7 @@ int fei::FEI_Impl::putBlockFieldNodeSolution(GlobalID elemBlockID,
                                   const GlobalID *nodeIDs, 
                                   const double *estimates)
 {
-  abort();
+  throw std::runtime_error("FEI_Impl::putBlockFieldNodeSolution not implemented.");
   return(0);
 }
 
@@ -1523,7 +1512,7 @@ int fei::FEI_Impl::putBlockElemSolution(GlobalID elemBlockID,
                              int dofPerElem,
                              const double *estimates)
 {
-  abort();
+  throw std::runtime_error("FEI_Impl::putBlockElemSolution not implemented.");
   return(0);
 }
 
@@ -1531,7 +1520,7 @@ int fei::FEI_Impl::putCRMultipliers(int numMultCRs,
                          const int* CRIDs,
                          const double* multEstimates)
 {
-  abort();
+  throw std::runtime_error("FEI_Impl::putCRMultipliers not implemented.");
   return(0);
 }
 
@@ -1619,8 +1608,7 @@ int fei::FEI_Impl::getNumBlockActNodes(GlobalID blockID, int& numNodes) const
 
 int fei::FEI_Impl::getNumBlockActEqns(GlobalID blockID, int& numEqns) const
 {
-  FEI_CERR << "fei::FEI_Impl::getNumBlockActEqns not implemented."<<FEI_ENDL;
-  abort();
+  throw std::runtime_error("fei::FEI_Impl::getNumBlockActEqns not implemented.");
   return(0);
 }
 

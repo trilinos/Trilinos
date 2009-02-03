@@ -7,7 +7,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <assert.h>
-#include <math.h>         // needed for declaration of sqrt
+#include <cmath>         // needed for declaration of sqrt, abs
 #include <unistd.h>
 #include <fei_iostream.hpp>
 #include <stdio.h>
@@ -159,63 +159,6 @@ double Aztec_Vector::norm1 (void) const  {
    int N_update = amap_.localSize();
 
    return(AZ_gvector_norm(N_update, 1,localCoeffs_, amap_.getProcConfig()));
-}
- 
-/**=========================================================================**/
-void Aztec_Vector::random(int seed){
-/*
-C     Purpose:
-C     Fills the vector X  with random numbers  between 0 and 1.  If the
-C     SEED is given, it should be odd and positive.  The generator is a
-C     fairly unsophisticated one, from Pearson's  "Numerical methods in
-C     engineering and science" book.
-C
-C     Parameters:
-C     N    = the dimension of the vector (input).
-C     X    = the vector to fill with random numbers (output).
-C     SEED = the seed for the generator (input).
-C
-C     Noel M. Nachtigal
-C     April 23, 1993
-
-This function is just a translation into C from Noel's fortran function drandn.f
-except this one isn't designed to be multiple entry; i.e., the test on
-'im == 0' is left out.
-*/
-    int i, j, im, is;
-    int imax;
-    double dmax;
-
-/*
-C     Initialize the generator data.
-*/
-    im = 1;
-    j = 0;
-    for(i=1; i<=31; i++){
-        j++;
-        if ((im*2) <= im) break;
-        im *= 2;
-    }
-    imax = (im-1) * 2 + 1;
-    dmax = 1.0*imax;
-
-    for(i=1; i<(j%3); i++){
-        j--;
-        im /= 2;
-    }
-
-    im += 5;
-/*    is = abs((im*30107)%imax); */
-    is = (seed/2)*2 + 1;
-
-    int N_update = amap_.localSize();
-
-    for(i=0; i<N_update; i++){
-        localCoeffs_[i] = (1.0*is)/dmax;
-        is = abs((im*is)%imax);
-    }
-
-    return;
 }
  
 /**=========================================================================**/

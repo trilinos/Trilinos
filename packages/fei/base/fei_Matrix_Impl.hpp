@@ -11,7 +11,6 @@
 
 #include <fei_fwd.hpp>
 #include <fei_mpi.h>
-#include <feiArray.hpp>
 #include <fei_defs.h>
 #include "fei_iostream.hpp"
 #include "fei_fstream.hpp"

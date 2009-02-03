@@ -33,26 +33,6 @@ namespace snl_fei {
     /** destructor */
     virtual ~LinearSystem_FEData();
 
-    /** Essential (dirichlet) boundary-condition function that accepts a table
-        of prescribed values.
-    */
-    int loadEssentialBCs(int numIDs,
-                         const int* IDs,
-                         int idType,
-                         int fieldID,
-                         int offsetIntoField,
-                         const double* prescribedValues);
-
-    /** Essential (dirichlet) boundary-condition function that accepts a table
-        of prescribed values.
-    */
-    int loadEssentialBCs(int numIDs,
-                         const int* IDs,
-                         int idType,
-                         int fieldID,
-                         const int* offsetsIntoField,
-                         const double* prescribedValues);
-
     /** implementation of loadLagrangeConstraint */
     int loadLagrangeConstraint(int constraintID,
 			       const double *weights,
@@ -126,8 +106,6 @@ namespace snl_fei {
     fei::SharedPtr<fei::Vector> soln_;
     fei::SharedPtr<fei::Vector> rhs_;
     fei::SharedPtr<FiniteElementData> feData_;
-    fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
-    fei::DirichletBCManager* dbcManager_;
     Lookup* lookup_;
 
     std::vector<char*> attributeNames_;

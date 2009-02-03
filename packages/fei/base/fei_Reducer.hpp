@@ -13,7 +13,6 @@
 #include <fei_SharedPtr.hpp>
 #include <fei_mpi.h>
 #include <fei_Logger.hpp>
-#include <fei_SSVec.hpp>
 #include <fei_FillableVec.hpp>
 #include <fei_FillableMat.hpp>
 #include <fei_CSVec.hpp>

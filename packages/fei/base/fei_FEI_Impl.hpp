@@ -168,14 +168,6 @@ namespace fei {
                     const GlobalID* elemConn,
                     const double* elemLoad);
 
-   int loadElemTransfer(GlobalID elemBlockID,
-                        GlobalID elemID,
-                        const GlobalID* coarseNodeList,
-                        int fineNodesPerCoarseElem,
-                        const GlobalID* fineNodeList,
-                        const double* const* elemProlong,
-                        const double* const* elemRestrict);
-
    int loadCRMult(int CRMultID,
                   int numCRNodes,
                   const GlobalID* CRNodeIDs,

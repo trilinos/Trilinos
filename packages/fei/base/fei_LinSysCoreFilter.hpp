@@ -475,7 +475,6 @@ class LinSysCoreFilter : public Filter {
 
     feiArray<int> rowIndices_;
     feiArray<int> rowColOffsets_, colIndices_;
-    SSVec *putRHSVec_;
 
     fei::FillableMat *Kid_, *Kdi_, *Kdd_;
     fei::CSRMat csrD, csrKid, csrKdi, csrKdd, tmpMat1_, tmpMat2_;

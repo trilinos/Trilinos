@@ -156,9 +156,7 @@ CORE_H = \
 	$(top_srcdir)/base/fei_VectorTraits_LinProbMgr.hpp \
 	$(top_srcdir)/base/fei_VectorTraits_LinSysCore.hpp \
 	$(top_srcdir)/base/fei_VectorTraits_FillableVec.hpp \
-	$(top_srcdir)/base/fei_VectorTraits_SSVec.hpp \
-	$(top_srcdir)/base/fei_SSGraph.hpp \
-	$(top_srcdir)/base/fei_SSVec.hpp
+	$(top_srcdir)/base/fei_SSGraph.hpp
 
 CORE = \
 	$(srcdir)/fei_BlockDescriptor.cpp \
@@ -225,8 +223,7 @@ CORE = \
 	$(srcdir)/snl_fei_SubdMsgHandler.cpp \
 	$(srcdir)/fei_FEI_Impl.cpp \
 	$(srcdir)/snl_fei_Utils.cpp \
-	$(srcdir)/fei_SSGraph.cpp \
-	$(srcdir)/fei_SSVec.cpp
+	$(srcdir)/fei_SSGraph.cpp
 
 # ------------------------------------------------------------------------
 # FEI library specifications

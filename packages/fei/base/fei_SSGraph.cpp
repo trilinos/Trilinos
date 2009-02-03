@@ -11,7 +11,6 @@
 #include <feiArray.hpp>
 #include <fei_TemplateUtils.hpp>
 #include <fei_EqnBuffer.hpp>
-#include <fei_SSVec.hpp>
 #include <fei_SSGraph.hpp>
 
 #undef fei_file

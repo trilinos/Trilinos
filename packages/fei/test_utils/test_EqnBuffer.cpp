@@ -11,7 +11,7 @@
 #include <test_utils/test_EqnBuffer.hpp>
 #include <cmath>
 #include <feiArray.hpp>
-#include <fei_SSVec.hpp>
+#include <fei_CSVec.hpp>
 #include <fei_EqnBuffer.hpp>
 
 #undef fei_file
@@ -86,7 +86,7 @@ int test_EqnBuffer::test1()
 
 
   feiArray<int>& eqnNumbers = eqns.eqnNumbersPtr();
-  feiArray<SSVec*>& rows = eqns.eqns();
+  std::vector<fei::CSVec*>& rows = eqns.eqns();
 
   EqnBuffer* eqnsCopy = eqns.deepCopy();
 
@@ -115,17 +115,17 @@ int test_EqnBuffer::test1()
 	CHK_ERR( eqns.getCoefAndRemoveIndex( eqnNumbers[rowIndex], eqnNumbers[i],
 					     coef) );
 
-	feiArray<int>& indicesRef = rows[i]->indices();
-	feiArray<double>& coefsRef = rows[i]->coefs();
+	std::vector<int>& indicesRef = rows[i]->indices();
+	std::vector<double>& coefsRef = rows[i]->coefs();
 
-	int len = indicesRef.length();
+	int len = indicesRef.size();
 	tempCoefs.resize(len);
 	tempIndices.resize(len);
 
 	double* tempCoefsPtr = tempCoefs.dataPtr();
 	int* tempIndicesPtr = tempIndices.dataPtr();
-	double* coefsPtr = coefsRef.dataPtr();
-	int* indicesPtr = indicesRef.dataPtr();
+	double* coefsPtr = &coefsRef[0];
+	int* indicesPtr = &indicesRef[0];
 
 	for(int j=0; j<len; ++j) {
 	  tempIndicesPtr[j] = indicesPtr[j];

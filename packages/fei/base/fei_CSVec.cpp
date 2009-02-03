@@ -54,20 +54,6 @@ CSVec::operator=(const FillableVec& invec)
   return *this;
 }
 
-CSVec&
-CSVec::operator=(const SSVec& invec)
-{
-  indices_.resize(invec.indices().size());
-  coefs_.resize(invec.indices().size());
-
-  for(int i=0; i<invec.indices().size(); ++i) {
-    indices_[i] = invec.indices()[i];
-    coefs_[i] = invec.coefs()[i];
-  }
-
-  return *this;
-}
-
 void add_entry(CSVec& vec, int eqn, double coef)
 {
   std::vector<int>& v_ind = vec.indices();

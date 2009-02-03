@@ -26,6 +26,34 @@ typedef std::vector<fei::DirichletBCRecord> DBCvec;
 #include <fei_ErrMacros.hpp>
 
 namespace fei {
+
+int
+DirichletBCManager::getEqnNumber(int IDType, int ID, int fieldID, int offsetIntoField)
+{
+  int eqn = -1;
+  try {
+    if (vecSpace_.get() != NULL) {
+      vecSpace_->getGlobalIndex(IDType, ID, fieldID, eqn);
+    }
+    else {
+      if (structure_ == NULL) {
+        throw std::runtime_error("fei::DirichletBCManager has NULL SNL_FEI_Structure.");
+      }
+      eqn = structure_->getEqnNumber(ID, fieldID);
+    }
+  }
+  catch(std::runtime_error& exc) {
+    FEI_OSTRINGSTREAM osstr;
+    osstr << "fei::DirichletBCManager::finalizeBCEqns caught exception: "
+       << exc.what() << " BC IDType="<<IDType<<", ID="<<ID
+       << ", fieldID="<<fieldID;
+    FEI_CERR << osstr.str() << FEI_ENDL;
+    ERReturn(-1);
+  }
+
+  return eqn + offsetIntoField;
+}
+
 void
 DirichletBCManager::addBCRecords(int numBCs,
                                  int IDType,
@@ -35,21 +63,15 @@ DirichletBCManager::addBCRecords(int numBCs,
                                  const double* prescribedValues)
 {
   for(int i=0; i<numBCs; ++i) {
-    DirichletBCRecord dbc;
-    dbc.IDType = IDType;
-    dbc.ID = IDs[i];
-    dbc.fieldID = fieldID;
-    dbc.whichComponent = offsetIntoField;
-    dbc.prescribedValue = prescribedValues[i];
+    int eqn = getEqnNumber(IDType, IDs[i], fieldID, offsetIntoField);
 
-    DBCvec::iterator iter = std::lower_bound(bcs_.begin(), bcs_.end(),
-                                             dbc,less_DirichletBCRecord());
+    bc_map::iterator iter = bcs_.lower_bound(eqn);
 
-    if (iter == bcs_.end() || *iter != dbc) {
-      bcs_.insert(iter, dbc);
+    if (iter == bcs_.end() || iter->first != eqn) {
+      bcs_.insert(iter, std::make_pair(eqn, prescribedValues[i]));
       continue;
     }
-    else iter->prescribedValue = dbc.prescribedValue;
+    else iter->second = prescribedValues[i];
   }
 }
 
@@ -62,20 +84,15 @@ DirichletBCManager::addBCRecords(int numBCs,
                                  const double* prescribedValues)
 {
   for(int i=0; i<numBCs; ++i) {
-    DirichletBCRecord dbc;
-    dbc.IDType = IDType;
-    dbc.ID = IDs[i];
-    dbc.fieldID = fieldID;
-    dbc.whichComponent = offsetsIntoField[i];
-    dbc.prescribedValue = prescribedValues[i];
+    int eqn = getEqnNumber(IDType, IDs[i], fieldID, offsetsIntoField[i]);
 
-    DBCvec::iterator iter = std::lower_bound(bcs_.begin(), bcs_.end(),
-                                             dbc,less_DirichletBCRecord());
-    if (iter == bcs_.end() || *iter != dbc) {
-      bcs_.insert(iter, dbc);
+    bc_map::iterator iter = bcs_.lower_bound(eqn);
+
+    if (iter == bcs_.end() || iter->first != eqn) {
+      bcs_.insert(iter, std::make_pair(eqn, prescribedValues[i]));
       continue;
     }
-    else iter->prescribedValue = dbc.prescribedValue;
+    else iter->second = prescribedValues[i];
   }
 }
 
@@ -83,7 +100,6 @@ int
 DirichletBCManager::finalizeBCEqns(fei::Matrix& matrix,
                                    bool throw_if_bc_slave_conflict)
 {
-  fei::VectorSpace& vecSpace = *(matrix.getMatrixGraph()->getRowSpace());
   fei::SharedPtr<fei::Reducer> reducer = matrix.getMatrixGraph()->getReducer();
   bool haveSlaves = reducer.get()!=NULL;
 
@@ -93,21 +109,11 @@ DirichletBCManager::finalizeBCEqns(fei::Matrix& matrix,
   //bc values will go on the diagonal of the matrix, i.e., column-index
   //will be the same equation-number.
 
-  for(size_t i=0; i<bcs_.size(); ++i) {
-    DirichletBCRecord& dbc = bcs_[i];
-    int eqn = -1;
-    try {
-      CHK_ERR(vecSpace.getGlobalIndex(dbc.IDType, dbc.ID, dbc.fieldID, eqn));
-    }
-    catch(std::runtime_error& exc) {
-      FEI_OSTRINGSTREAM osstr;
-      osstr << "fei::DirichletBCManager::finalizeBCEqns caught exception: "
-        << exc.what() << " BC IDType="<<dbc.IDType<<", ID="<<dbc.ID
-       << ", fieldID="<<dbc.fieldID;
-      FEI_CERR << osstr.str() << FEI_ENDL;
-      ERReturn(-1);
-    }
-    eqn += dbc.whichComponent;
+  bc_map::iterator iter = bcs_.begin(), iter_end = bcs_.end();
+
+  for(; iter!=iter_end; ++iter) {
+
+    int eqn = iter->first;
 
     if (haveSlaves) {
       if (reducer->isSlaveEqn(eqn)) {
@@ -121,7 +127,7 @@ DirichletBCManager::finalizeBCEqns(fei::Matrix& matrix,
       }
     }
 
-    double* ptr = &dbc.prescribedValue;
+    double* ptr = &iter->second;
 
     CHK_ERR( matrix.copyIn(1, &eqn, 1, &eqn, &ptr) );
   }
@@ -131,25 +137,15 @@ DirichletBCManager::finalizeBCEqns(fei::Matrix& matrix,
 }
 
 int
-DirichletBCManager::finalizeBCEqns(NodeDatabase& nodeDB,
-                                   EqnBuffer& bcEqns)
+DirichletBCManager::finalizeBCEqns(EqnBuffer& bcEqns)
 {
   //copy the boundary-condition prescribed values into bcEqns.
-  double coef = 0.0;
 
-  for(unsigned i=0; i<bcs_.size(); ++i) {
-    DirichletBCRecord& dbc = bcs_[i];
-    NodeDescriptor* node = NULL;
-    nodeDB.getNodeWithID(dbc.ID, node);
-    int fieldID = dbc.fieldID;
+  bc_map::iterator iter = bcs_.begin(), iter_end = bcs_.end();
 
-    int eqn = 0;
-    if (!node->getFieldEqnNumber(fieldID, eqn)) {
-      ERReturn(-1);
-    }
-
-    eqn += dbc.whichComponent;
-    coef = dbc.prescribedValue;
+  for(; iter!=iter_end; ++iter) {
+    int eqn = iter->first;
+    double coef = iter->second;
 
     CHK_ERR( bcEqns.addEqn(eqn, &coef, &eqn, 1, false) );
   }

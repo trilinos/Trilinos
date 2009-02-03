@@ -449,23 +449,6 @@ extern "C" int FEI_sumInElemRHS(CFEI* cfei,
 }
 
 /*============================================================================*/
-extern "C" int FEI_loadElemTransfer(CFEI* cfei,
-                         GlobalID elemBlockID,
-                         GlobalID elemID,
-                         GlobalID* coarseNodeList,
-                         int fineNodesPerCoarseElem,
-                         GlobalID* fineNodeList,
-                         double** elemProlong,
-                         double** elemRestrict)
-{
-  CHK_CFEI_NULL(cfei);
-
-  return(((FEI_Implementation*)(cfei->cfei_))->loadElemTransfer(elemBlockID,
-                         elemID, coarseNodeList, fineNodesPerCoarseElem,
-                         fineNodeList, elemProlong, elemRestrict));
-}
-
-/*============================================================================*/
 extern "C" int FEI_loadCRMult(CFEI* cfei, 
                               int CRID, 
                               int numCRNodes,

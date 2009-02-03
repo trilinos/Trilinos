@@ -65,7 +65,6 @@
 //      sumInElem
 //      sumInElemMatrix
 //      sumInElemRHS
-//      loadElemTransfer
 //
 //      loadCRMult
 //      loadCRPen
@@ -592,24 +591,6 @@ class FEI {
                             const GlobalID* elemConn,
                             const double* elemLoad) = 0;
      
-    /** Load a transfer operator between a particular element two different 
-       grids (not currently implemented).
-       @param elemBlockID Which element-block this element is associated with.
-       @param elemID User-supplied identifier for this element.
-       @param coarseNodeList Nodal connectivity in the 'coarse' mesh.
-       @param fineNodesPerCoarseElem Length of fineNodeList.
-       @param fineNodeList Nodal connectivity in the 'fine' mesh.
-       @param elemProlong The prolongation operator.
-       @param elemRestrict The restriction operator.
-   */
-   virtual int loadElemTransfer(GlobalID elemBlockID,
-                                GlobalID elemID,
-                                const GlobalID* coarseNodeList,
-                                int fineNodesPerCoarseElem,
-                                const GlobalID* fineNodeList,
-                                const double* const* elemProlong,
-                                const double* const* elemRestrict) = 0;
-
     /** Load weight/value data for a Lagrange Multiplier constraint relation.
        @param CRMultID Identifier returned from an earlier call to 'initCRMult'.
        @param numCRNodes Length of CRNodeIDs and CRFieldIDs lists.

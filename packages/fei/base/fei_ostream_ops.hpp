@@ -26,8 +26,6 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Vector& vec);
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::Matrix& mat);
 
-FEI_OSTREAM& operator<<(FEI_OSTREAM& os, SSVec& vec);
-
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableVec& vec);
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableMat& mat);

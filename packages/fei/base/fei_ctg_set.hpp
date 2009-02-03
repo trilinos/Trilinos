@@ -12,6 +12,7 @@
 
 #include <fei_macros.hpp>
 
+#include <cstring>
 #include <vector>
 #include <snl_fei_ArrayUtils.hpp>
 
@@ -267,7 +268,7 @@ class ctg_set {
 	    if (nmove > 0) {
 	      T* dest = dataptr_+insertPoint+1;
 	      T* src =  dest+2;
-	      memmove(dest, src, nmove*sizeof(T));
+	      std::memmove(dest, src, nmove*sizeof(T));
 	    }
 	  }
 	}
@@ -293,7 +294,7 @@ class ctg_set {
 	    if (nmove > 0) {
 	      T* dest = dataptr_+insertPoint+2;
 	      T* src = dest - 2;
-	      memmove(dest, src, nmove*sizeof(T));
+	      std::memmove(dest, src, nmove*sizeof(T));
 	    }
 	    dataptr_[insertPoint] = item;
 	    dataptr_[insertPoint+1] = item+1;
@@ -379,7 +380,7 @@ class ctg_set {
 
             T* dest = dataptr_+insertPoint+2;
             T* src = dest - 2;
-            memmove(dest, src, nmove*sizeof(T));
+            std::memmove(dest, src, nmove*sizeof(T));
 
             dataptr_[insertPoint] = item;
             dataptr_[insertPoint+1] = item+1;
@@ -400,7 +401,7 @@ class ctg_set {
             if (nmove > 0) {
               T* dest = dataptr_+insertPoint+1;
               T* src =  dest+2;
-              memmove(dest, src, nmove*sizeof(T));
+              std::memmove(dest, src, nmove*sizeof(T));
             }
           }
         }//end if (dataptr_[insertPoint]==item)...

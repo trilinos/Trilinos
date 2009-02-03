@@ -13,6 +13,10 @@
 #include <fei_fwd.hpp>
 #include <feiArray.hpp>
 
+enum { SS_Constr_Default, SS_Constr_EqnBuf,
+       SS_Constr_RawArrays, SS_Constr_RawArrays2, SS_Constr_RawArraysSymm };
+
+
 /** SSGraph stands for Super-Sparse Graph. It is a data structure that can
 hold the graph or structure of matrices that are arbitrarily sparse, i.e.,
 whose rows/columns don't necessarily form a contiguous set, don't necessarily

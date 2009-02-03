@@ -12,6 +12,7 @@
 
 #include <fei_macros.hpp>
 #include <fei_defs.h>
+#include <fei_CSVec.hpp>
 
 #include <test_utils/Poisson_Elem.hpp>
 
@@ -873,7 +874,7 @@ int load_elem_data_putrhs(FEI* fei, PoissonData& poissonData)
 
   int* fieldID = poissonData.getFieldIDs();
 
-  SSVec rhs;
+  fei::CSVec rhs;
 
   for(int elem=0; elem<numLocalElements; elem++) {
     GlobalID* elemConnectivity =
@@ -886,13 +887,15 @@ int load_elem_data_putrhs(FEI* fei, PoissonData& poissonData)
 
     double* elemLoad = poissonData.getElemLoad(elemIDs[elem]);
 
-    rhs.addEntries(numIDs, elemLoad, elemConnectivity);
+    for(int i=0; i<numIDs; ++i) {
+      fei::add_entry(rhs, elemConnectivity[i], elemLoad[i]);
+    }
   }
 
   fei->loadComplete();
 
-  fei->putIntoRHS(0, *fieldID, rhs.length(),
-                  rhs.indices().dataPtr(), rhs.coefs().dataPtr());
+  fei->putIntoRHS(0, *fieldID, rhs.size(),
+                  &(rhs.indices()[0]), &(rhs.coefs()[0]));
 
   return(0);
 }

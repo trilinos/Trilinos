@@ -21,7 +21,6 @@
 #include <snl_fei_Constraint.hpp>
 #include <fei_TemplateUtils.hpp>
 
-#include <fei_SSVec.hpp>
 #include <fei_EqnBuffer.hpp>
 #include <fei_EqnCommMgr.hpp>
 #include <SNL_FEI_Structure.hpp>

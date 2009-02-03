@@ -515,6 +515,6 @@ July 7 2005: version 2.14.00
   - Removed more occurences of feiArray, using std::vector instead. This
     effects the API in places where an array is a return value. Specifically
     in the snl_fei::Constraint class, methods like getMasterWeights(), etc.
-  - Continued development of fei::FillableMat, fei::CSRMat and fei::CSVec,
-    which will replace the SSMat and SSVec classes.
-
+  - Continued development of fei::FillableMat, fei::CSRMat and fei::CSVec.
+  - Removed fei_SSVec.{hpp,cpp} and fei_SSMat.{hpp,cpp}, which have now been
+    replaced by fei::Fillable{Mat,Vec} and CSRMat,CSVec.

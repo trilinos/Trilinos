@@ -37,7 +37,6 @@ typedef snl_fei::Constraint<GlobalID> ConstraintType;
 #include <fei_FillableVec.hpp>
 #include <fei_CSRMat.hpp>
 #include <fei_CSVec.hpp>
-#include "fei_SSVec.hpp"
 #include "fei_SSGraph.hpp"
 #include "fei_EqnCommMgr.hpp"
 
@@ -1211,7 +1210,7 @@ int SNL_FEI_Structure::formMatrixStructure()
 
   int numRecvEqns = eqnCommMgr_->getNumLocalEqns();
   feiArray<int>& recvEqnNumbers = eqnCommMgr_->localEqnNumbersPtr();
-  feiArray<SSVec*>& recvEqns = eqnCommMgr_->localEqns();
+  std::vector<fei::CSVec*>& recvEqns = eqnCommMgr_->localEqns();
   int i;
   if (debugOutput_) {
     os << "#     after eqnCommMgr_->exchangeIndices, numRecvEqns: "
@@ -1228,7 +1227,7 @@ int SNL_FEI_Structure::formMatrixStructure()
       return(-1);
     }
 
-    for(int j=0; j<recvEqns[i]->size(); j++) {
+    for(size_t j=0; j<recvEqns[i]->size(); j++) {
       CHK_ERR( createMatrixPosition(eqn, recvEqns[i]->indices()[j],
 				    "frmMatStr") );
     }
@@ -2461,13 +2460,13 @@ int SNL_FEI_Structure::translateToReducedEqns(EqnBuffer& eqnBuf)
 {
   int numEqns = eqnBuf.getNumEqns();
   int* eqnNumbers = eqnBuf.eqnNumbersPtr().dataPtr();
-  feiArray<SSVec*>& eqnArray = eqnBuf.eqns();
+  std::vector<fei::CSVec*>& eqnArray = eqnBuf.eqns();
   for(int i=0; i<numEqns; ++i) {
     int reducedEqn;
     translateToReducedEqn(eqnNumbers[i], reducedEqn);
     eqnNumbers[i] = reducedEqn;
 
-    int* indicesPtr = eqnArray[i]->indices().dataPtr();
+    int* indicesPtr = &(eqnArray[i]->indices()[0]);
     int numIndices = eqnArray[i]->size();
     for(int j=0; j<numIndices; ++j) {
       translateToReducedEqn(indicesPtr[j], reducedEqn);
@@ -3923,7 +3922,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
     // shares the slave node.
 
     feiArray<int>& slvEqns = *slvEqnNumbers_;
-    feiArray<SSVec*>& mstrEqns = slaveEqns_->eqns();
+    std::vector<fei::CSVec*>& mstrEqns = slaveEqns_->eqns();
 
     //keep track of the number of locally owned nodes that vanish due to the
     //fact that all equations at that node are slave equations.
@@ -4035,7 +4034,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
 int SNL_FEI_Structure::removeCouplings(EqnBuffer& eqnbuf, int& levelsOfCoupling)
 {
   feiArray<int>& eqnNumbers = eqnbuf.eqnNumbersPtr();
-  feiArray<SSVec*>& eqns = eqnbuf.eqns();
+  std::vector<fei::CSVec*>& eqns = eqnbuf.eqns();
 
   feiArray<double> tempCoefs;
   feiArray<int> tempIndices;
@@ -4060,17 +4059,17 @@ int SNL_FEI_Structure::removeCouplings(EqnBuffer& eqnbuf, int& levelsOfCoupling)
 	CHK_ERR( eqnbuf.getCoefAndRemoveIndex( eqnNumbers[rowIndex],
 					       eqnNumbers[i], coef) );
 
-	feiArray<int>& indicesRef = eqns[i]->indices();
-	feiArray<double>& coefsRef = eqns[i]->coefs();
+	std::vector<int>& indicesRef = eqns[i]->indices();
+	std::vector<double>& coefsRef = eqns[i]->coefs();
 
-	int len = indicesRef.length();
+	int len = indicesRef.size();
 	tempCoefs.resize(len);
 	tempIndices.resize(len);
 
 	double* tempCoefsPtr = tempCoefs.dataPtr();
 	int* tempIndicesPtr = tempIndices.dataPtr();
-	double* coefsPtr = coefsRef.dataPtr();
-	int* indicesPtr = indicesRef.dataPtr();
+	double* coefsPtr = &coefsRef[0];
+	int* indicesPtr = &indicesRef[0];
 
 	for(int j=0; j<len; ++j) {
 	  tempIndicesPtr[j] = indicesPtr[j];
@@ -4118,7 +4117,7 @@ int SNL_FEI_Structure::gatherSlaveEqns(MPI_Comm comm,
   //code.)
   ProcEqns localProcEqns, remoteProcEqns;
   feiArray<int>& slvEqnNums = slaveEqns->eqnNumbersPtr();
-  SSVec** slvEqnsPtr = slaveEqns->eqns().dataPtr();
+  fei::CSVec** slvEqnsPtr = &(slaveEqns->eqns()[0]);
 
   for(int i=0; i<slvEqnNums.length(); i++) {
     for(int p=0; p<numProcs; p++) {
@@ -4207,7 +4206,7 @@ int SNL_FEI_Structure::translateFromReducedEqn(int reducedEqn)
 
 //------------------------------------------------------------------------------
 int SNL_FEI_Structure::getMasterEqnNumbers(int slaveEqn,
-					  feiArray<int>*& masterEqns)
+					  std::vector<int>*& masterEqns)
 {
   if (slaveEqns_->getNumEqns() == 0) {
     masterEqns = NULL;
@@ -4231,7 +4230,7 @@ int SNL_FEI_Structure::getMasterEqnNumbers(int slaveEqn,
 
 //------------------------------------------------------------------------------
 int SNL_FEI_Structure::getMasterEqnCoefs(int slaveEqn,
-					feiArray<double>*& masterCoefs)
+					std::vector<double>*& masterCoefs)
 {
   if (slaveEqns_->getNumEqns() == 0) {
     masterCoefs = NULL;

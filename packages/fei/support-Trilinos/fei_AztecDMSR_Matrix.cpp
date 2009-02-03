@@ -7,6 +7,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <stdlib.h>
 #include <fei_macros.hpp>
 #include <math.h>
 

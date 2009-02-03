@@ -18,7 +18,6 @@
 #include <fei_Param.hpp>
 #include <fei_ParameterSet.hpp>
 #include <fei_SharedPtr.hpp>
-#include <fei_SSVec.hpp>
 #include <cmath>
 
 #undef fei_file

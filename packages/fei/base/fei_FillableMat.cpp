@@ -8,7 +8,7 @@
 
 #include <fei_FillableMat.hpp>
 #include <fei_EqnBuffer.hpp>
-#include <fei_SSVec.hpp>
+#include <fei_CSVec.hpp>
 
 namespace fei {
 
@@ -26,13 +26,13 @@ FillableMat::FillableMat(EqnBuffer& eqnbuf)
 {
   feiArray<int>& eqnNums = eqnbuf.eqnNumbersPtr();
   int numEqns = eqnNums.size();
-  feiArray<SSVec*>& eqns = eqnbuf.eqns();
+  std::vector<fei::CSVec*>& eqns = eqnbuf.eqns();
 
   for(int i=0; i<numEqns; ++i) {
     int row = eqnNums[i];
-    SSVec* row_vec = eqns[i];
-    int rowlen = row_vec->length();
-    int* indices = row_vec->indices().dataPtr();
+    fei::CSVec* row_vec = eqns[i];
+    int rowlen = row_vec->size();
+    int* indices = &(row_vec->indices()[0]);
 
     for(int j=0; j<rowlen; ++j) {
       putCoef(row, indices[j], 0.0);

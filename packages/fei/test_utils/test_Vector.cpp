@@ -12,11 +12,9 @@
 #include <test_utils/test_VectorSpace.hpp>
 #include <test_utils/test_MatrixGraph.hpp>
 
-#include <feiArray.hpp>
 #include <fei_Factory.hpp>
 #include <snl_fei_Factory.hpp>
 #include <fei_Vector_Impl.hpp>
-#include <fei_SSVec.hpp>
 
 #include <test_utils/LibraryFactory.hpp>
 
@@ -54,21 +52,6 @@ int test_Vector::runtests()
   vector_test1(fei_vec);
 
 #endif
-
-
-  //Now perform an fei unit-test: test fei::Vector_Impl<SSVec>
-
-  if (localProc_==0)
-  FEI_COUT << FEI_ENDL << "Testing fei::Vector_Impl<SSVec>. (fei unit-test)"
-	   <<FEI_ENDL;
-
-  fei::SharedPtr<fei::VectorSpace> vspace =
-    test_VectorSpace::create_VectorSpace(comm_);
-  fei::SharedPtr<SSVec> ssvec(new SSVec);
-  int localsize = vspace->getNumIndices_Owned();
-  fei::SharedPtr<fei::Vector> vec_ss(new fei::Vector_Impl<SSVec>(vspace, ssvec.get(), localsize));
-
-  vector_test1(vec_ss);
 
   if (localProc_==0) FEI_COUT << FEI_ENDL;
 

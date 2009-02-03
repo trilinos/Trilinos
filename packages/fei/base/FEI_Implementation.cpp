@@ -697,29 +697,6 @@ int FEI_Implementation::sumInElemRHS(GlobalID elemBlockID,
 }
 
 //------------------------------------------------------------------------------
-// element-wise transfer operator loading.
-int FEI_Implementation::loadElemTransfer(GlobalID elemBlockID,
-                                         GlobalID elemID,
-                                         const GlobalID* coarseNodeList,
-                                         int fineNodesPerCoarseElem,
-                                         const GlobalID* fineNodeList,
-                                         const double* const* elemProlong,
-                                         const double* const* elemRestrict)
-{
-    //these void casts prevent compiler warnings about
-    //"declared but never referenced" variables.
-    (void)elemBlockID;
-    (void)elemID;
-    (void)coarseNodeList;
-    (void)fineNodesPerCoarseElem;
-    (void)fineNodeList;
-    (void)elemProlong;
-    (void)elemRestrict;
-
-    return(-1);
-}
-
-//------------------------------------------------------------------------------
 int FEI_Implementation::loadCRMult(int CRID,
                                    int numCRNodes,
                                    const GlobalID* CRNodes,

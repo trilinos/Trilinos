@@ -459,15 +459,6 @@ class FEI_Implementation : public FEI {
                     const GlobalID* elemConn,
                     const double* elemLoad);
 
-   /** element-wise transfer operator */
-   int loadElemTransfer(GlobalID elemBlockID,
-                        GlobalID elemID,
-                        const GlobalID* coarseNodeList,
-                        int fineNodesPerCoarseElem,
-                        const GlobalID* fineNodeList,
-                        const double* const* elemProlong,
-                        const double* const* elemRestrict);
-
     /** Load weight/value data for a Lagrange Multiplier constraint relation.
        @param CRID Identifier returned from an earlier call to 'initCRMult'.
        @param numCRNodes Length of CRNodeIDs and CRFieldIDs lists.

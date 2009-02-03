@@ -14,16 +14,23 @@
 #include <snl_fei_Utils.hpp>
 
 //----------------------------------------------------------------------------
-fei::LinearSystem::LinearSystem()
+fei::LinearSystem::LinearSystem(fei::SharedPtr<fei::MatrixGraph>& matrixGraph)
  : matrix_(),
    soln_(),
-   rhs_()
+   rhs_(),
+   matrixGraph_(matrixGraph),
+   dbcManager_(NULL)
 {
 }
 
 //----------------------------------------------------------------------------
 fei::LinearSystem::~LinearSystem()
 {
+  delete dbcManager_;
+
+  for(unsigned i=0; i<attributeNames_.size(); ++i) {
+    delete [] attributeNames_[i];
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -57,5 +64,53 @@ int fei::LinearSystem::getAttribute(const char* name,
 {
   attribute = snl_fei::retrieveNamedAttribute(name, attributeNames_, attributes_);
   return(attribute==NULL ? -1 : 0);
+}
+
+//----------------------------------------------------------------------------
+int fei::LinearSystem::loadEssentialBCs(int numIDs,
+                                 const int* IDs,
+                                 int idType,
+                                 int fieldID,
+                                 int offsetIntoField,
+                                 const double* prescribedValues)
+{
+  if (dbcManager_ == NULL) {
+    dbcManager_ = new fei::DirichletBCManager(matrixGraph_->getRowSpace());
+  }
+
+  try {
+    dbcManager_->addBCRecords(numIDs, idType, fieldID, offsetIntoField,
+                              IDs, prescribedValues);
+  }
+  catch(std::runtime_error& exc) {
+    FEI_CERR << exc.what()<<FEI_ENDL;
+    return(-1);
+  }
+
+  return(0);
+}
+
+//----------------------------------------------------------------------------
+int fei::LinearSystem::loadEssentialBCs(int numIDs,
+                                 const int* IDs,
+                                 int idType,
+                                 int fieldID,
+                                 const int* offsetsIntoField,
+                                 const double* prescribedValues)
+{
+  if (dbcManager_ == NULL) {
+    dbcManager_ = new fei::DirichletBCManager(matrixGraph_->getRowSpace());
+  }
+
+  try {
+    dbcManager_->addBCRecords(numIDs, idType, fieldID, IDs, offsetsIntoField,
+                              prescribedValues);
+  }
+  catch(std::runtime_error& exc) {
+    FEI_CERR << exc.what()<<FEI_ENDL;
+    return(-1);
+  }
+
+  return(0);
 }
 

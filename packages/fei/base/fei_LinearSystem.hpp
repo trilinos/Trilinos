@@ -14,6 +14,7 @@
 #include <fei_MatrixGraph.hpp>
 #include <fei_Matrix.hpp>
 #include <fei_Vector.hpp>
+#include <fei_DirichletBCManager.hpp>
 
 namespace fei {
   class Factory;
@@ -36,7 +37,7 @@ namespace fei {
     };
 
     /** Constructor */
-    LinearSystem();
+    LinearSystem(fei::SharedPtr<fei::MatrixGraph>& matrixGraph);
 
     /** Destructor */
     virtual ~LinearSystem();
@@ -121,7 +122,7 @@ namespace fei {
                                  int idType,
                                  int fieldID,
                                  int offsetIntoField,
-                                 const double* prescribedValues) = 0;
+                                 const double* prescribedValues);
 
     /** Essential boundary-condition function that simply accepts a list
         of prescribed values, rather than the 'old' FEI's confusing approach
@@ -144,7 +145,7 @@ namespace fei {
                                  int idType,
                                  int fieldID,
                                  const int* offsetsIntoField,
-                                 const double* prescribedValues) = 0;
+                                 const double* prescribedValues);
 
     /** Lagrange constraint coefficient loading function.
 	@param constraintID Input. Must be an identifier of a lagrange 
@@ -204,6 +205,9 @@ namespace fei {
     fei::SharedPtr<fei::Matrix> matrix_;
     fei::SharedPtr<fei::Vector> soln_;
     fei::SharedPtr<fei::Vector> rhs_;
+
+    fei::SharedPtr<fei::MatrixGraph> matrixGraph_;
+    fei::DirichletBCManager* dbcManager_;
 
     std::vector<char*> attributeNames_;
     std::vector<void*> attributes_;

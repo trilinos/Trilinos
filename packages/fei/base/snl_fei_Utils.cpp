@@ -19,7 +19,6 @@
 #include <fei_Matrix_Impl.hpp>
 #include <fei_ParameterSet.hpp>
 
-#include <feiArray.hpp>
 #include <fei_CommUtils.hpp>
 #include <fei_TemplateUtils.hpp>
 #include <fei_CSVec.hpp>

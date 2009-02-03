@@ -53,8 +53,7 @@ class Aztec_Vector {
     void addVec (double s, const Aztec_Vector& c);
     double norm () const;
     double norm1 () const;
-    void random(int seed=1);
-    
+ 
     // operator=
     Aztec_Vector& operator = (const Aztec_Vector& rhs);
     

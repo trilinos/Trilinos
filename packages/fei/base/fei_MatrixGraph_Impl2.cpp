@@ -26,6 +26,7 @@
 #include <snl_fei_RecordCollection.hpp>
 #include <fei_VectorSpace.hpp>
 #include <fei_ParameterSet.hpp>
+#include <fei_ostream_ops.hpp>
 #include <fei_Reducer.hpp>
 #include <fei_GraphReducer.hpp>
 #include <fei_ConnectivityBlock.hpp>
