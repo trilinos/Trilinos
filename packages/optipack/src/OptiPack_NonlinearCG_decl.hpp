@@ -57,6 +57,7 @@ enum ESolveReturn {
 } // namespace NonlinearCGUtils
 
 
+
 /** \brief Concrete class implementing several nonlinear CG algorithms.
  *
  * ToDo: Finish Documentation!
@@ -65,7 +66,7 @@ template<typename Scalar>
 class NonlinearCG
   : public Teuchos::Describable,
     public Teuchos::VerboseObject<NonlinearCG<Scalar> >,
-    protected Teuchos::ParameterListAcceptorDefaultBase
+    public Teuchos::ParameterListAcceptorDefaultBase
 {
 public:
 
@@ -85,6 +86,19 @@ public:
     const int responseIndex,
     const RCP<GlobiPack::LineSearchBase<Scalar> > &linesearch
     );
+
+  /** \brief . */
+  const ScalarMag get_alpha_init() const;
+  /** \brief . */
+  const bool get_alpha_reinit() const;
+  /** \brief . */
+  const bool get_and_conv_tests() const;
+  /** \brief . */
+  const int get_minIters() const;
+  /** \brief . */
+  const int get_maxIters() const;
+  /** \brief . */
+  const ScalarMag get_g_mag() const;
 
   //@}
 
@@ -128,8 +142,10 @@ public:
   doSolve(
     const Ptr<Thyra::VectorBase<Scalar> > &p,
     const Ptr<ScalarMag> &g_opt,
-    const Ptr<const ScalarMag> &tol = Teuchos::null,
-    const Ptr<const ScalarMag> &alpha_init = Teuchos::null
+    const Ptr<const ScalarMag> &g_reduct_tol = Teuchos::null,
+    const Ptr<const ScalarMag> &g_grad_tol = Teuchos::null,
+    const Ptr<const ScalarMag> &alpha_init = Teuchos::null,
+    const Ptr<int> &numIters = Teuchos::null
     );
 
   //@}
@@ -143,6 +159,13 @@ private:
   int paramIndex_;
   int responseIndex_;
   RCP<GlobiPack::LineSearchBase<Scalar> > linesearch_;
+
+  ScalarMag alpha_init_;
+  bool alpha_reinit_;
+  bool and_conv_tests_;
+  int minIters_;
+  int maxIters_;
+  ScalarMag g_mag_;
 
   mutable int numIters_;
 
@@ -175,8 +198,23 @@ nonlinearCG(
 namespace NonlinearCGUtils {
 
 
-const std::string eta_name = "Armijo Slope Fraction";
-const double eta_default = 1.0e-4;
+const std::string alpha_init_name = "Initial Linesearch Step Length";
+const double alpha_init_default = 1.0;
+
+const std::string alpha_reinit_name = "Reinitlaize Linesearch Step Length";
+const bool alpha_reinit_default = false;
+
+const std::string and_conv_tests_name = "AND Convergence Tests";
+const bool and_conv_tests_default = false;
+
+const std::string minIters_name = "Min Num Iterations";
+const int minIters_default = 0;
+
+const std::string maxIters_name = "Max Num Iterations";
+const int maxIters_default = 20;
+
+const std::string g_mag_name = "Objective Magnitude";
+const double g_mag_default = 1.0;
 
 
 } // namespace NonlinearCGUtils
@@ -184,6 +222,41 @@ const double eta_default = 1.0e-4;
 
 
 } // namespace OptiPack
+
+
+/* Todos:
+
+1) Change notation to blob_k and blob_km1
+
+2) Add OR termination criteria:
+
+  | (g_k - g_km1) / (g_k + g_mag) | <= g_rel_decrease_tol
+
+3) Change termination for gradient to :
+
+  | ||g_grad_k|| / g_mag | <= g_grad_tol
+
+4) Add PL parameters for:
+
+  - Initial linear search length
+
+  - Use last line search length
+
+  - Max iterations
+
+  - g_mag
+
+  - verbose object sublist
+
+  - echo valid parameters sublist
+
+5) Implement PR+ method
+
+6) Implement FR-PR method
+
+7) Implement tabular output option
+
+*/
 
 
 #endif // OPTIPACK_NONLINEAR_CG_DECL_HPP

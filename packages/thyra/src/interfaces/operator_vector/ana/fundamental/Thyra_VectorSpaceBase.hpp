@@ -34,9 +34,11 @@
 #include "Thyra_MultiVectorBase.hpp"
 #include "Teuchos_Tuple.hpp"
 
+
 #ifdef TEUCHOS_DEBUG
 #  define THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
 #endif
+
 
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
 #include "RTOpPack_TOpAssignScalar.hpp"
@@ -46,9 +48,18 @@
 // this point.
 #endif // THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
 
+
 namespace Thyra {
 
+
+//
+// VectorSpaceBase
+//
+
+
+
 // Virtual functions with default implementations
+
 
 template<class Scalar>
 bool VectorSpaceBase<Scalar>::isEuclidean() const
@@ -56,11 +67,14 @@ bool VectorSpaceBase<Scalar>::isEuclidean() const
   return false;
 }
 
+
 template<class Scalar>
-bool VectorSpaceBase<Scalar>::hasInCoreView(const Range1D& rng, const EViewType viewType, const EStrideType strideType) const
+bool VectorSpaceBase<Scalar>::hasInCoreView(const Range1D& rng,
+  const EViewType viewType, const EStrideType strideType) const
 {
   return false;
 }
+
 
 template<class Scalar>
 RCP< const VectorSpaceBase<Scalar> >
@@ -69,23 +83,30 @@ VectorSpaceBase<Scalar>::clone() const
   return Teuchos::null;
 }
 
+
 } // end namespace Thyra
 
+
+//
 // Nonmember functions
+//
+
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-Thyra::makeHaveOwnership( const RCP<const VectorSpaceBase<Scalar> > &vs )
+Thyra::makeHaveOwnership( const RCP<const VectorSpaceBase<Scalar> > &vs_in )
 {
-  if( vs.has_ownership() ) return vs;
-  RCP<const Thyra::VectorSpaceBase<Scalar> > _vs = vs->clone();
+  if (vs_in.has_ownership())
+    return vs_in;
+  const RCP<const VectorSpaceBase<Scalar> > vs = vs_in->clone();
   TEST_FOR_EXCEPTION(
-    _vs.get() == NULL, std::logic_error
+    is_null(vs), std::logic_error
     ,"Thyra::makeHaveOwnership(vs): Error, the concrete VectorSpaceBase object identified as \'"
     << vs->description() << "\' does not support the clone() function!"
     );
-  return _vs;
+  return vs;
 }
+
 
 template<class Scalar>
 Teuchos::RCP< Thyra::VectorBase<Scalar> >
@@ -97,7 +118,7 @@ Thyra::createMember(
   RCP<VectorBase<Scalar> > v = vs->createMember();
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
   applyOp<Scalar>(
-    RTOpPack::TOpAssignScalar<Scalar>(Teuchos::ScalarTraits<Scalar>::nan()),
+    RTOpPack::TOpAssignScalar<Scalar>(ScalarTraits<Scalar>::nan()),
     0, (const VectorBase<Scalar>**)NULL,
     1, &Teuchos::tuple<VectorBase<Scalar>*>(&*v)[0],
     (RTOpPack::ReductTarget*)NULL
@@ -109,6 +130,7 @@ Thyra::createMember(
   return v;
 }
   
+
 template<class Scalar>
 Teuchos::RCP< Thyra::VectorBase<Scalar> >
 Thyra::createMember(
@@ -117,6 +139,7 @@ Thyra::createMember(
 {
   return createMember(Teuchos::rcp(&vs,false),label);
 }
+
 
 template<class Scalar>
 Teuchos::RCP< Thyra::MultiVectorBase<Scalar> >
@@ -129,7 +152,7 @@ Thyra::createMembers(
     mv = vs->createMembers(numMembers);
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
   applyOp<Scalar>(
-    RTOpPack::TOpAssignScalar<Scalar>(Teuchos::ScalarTraits<Scalar>::nan()),
+    RTOpPack::TOpAssignScalar<Scalar>(ScalarTraits<Scalar>::nan()),
     Teuchos::null, Teuchos::tuple(mv.ptr()),
     Teuchos::null
     );
@@ -140,6 +163,7 @@ Thyra::createMembers(
   return mv;
 }
 
+
 template<class Scalar>
 Teuchos::RCP< Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembers(
@@ -149,6 +173,7 @@ Thyra::createMembers(
 {
   return createMembers(Teuchos::rcp(&vs,false),numMembers,label);
 }
+
 
 template<class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar> >
@@ -166,6 +191,7 @@ Thyra::createMemberView(
   return v;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar> >
 Thyra::createMemberView(
@@ -176,6 +202,7 @@ Thyra::createMemberView(
 {
   return createMemberView(Teuchos::rcp(&vs,false),raw_v,label);
 }
+
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
@@ -194,6 +221,7 @@ Thyra::createMemberView(
   return v;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 Thyra::createMemberView(
@@ -204,6 +232,7 @@ Thyra::createMemberView(
 {
   return createMemberView(Teuchos::rcp(&vs,false),raw_v,label);
 }
+
 
 template<class Scalar>
 Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
@@ -221,6 +250,7 @@ Thyra::createMembersView(
   return mv;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembersView(
@@ -231,6 +261,7 @@ Thyra::createMembersView(
 {
   return createMembersView(Teuchos::rcp(&vs,false),raw_mv,label);
 }
+
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
@@ -249,6 +280,7 @@ Thyra::createMembersView(
   return mv;
 }
 
+
 template<class Scalar>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembersView( const VectorSpaceBase<Scalar> &vs,
@@ -258,5 +290,6 @@ Thyra::createMembersView( const VectorSpaceBase<Scalar> &vs,
 {
   return createMembersView(Teuchos::rcp(&vs,false),raw_mv,label);
 }
+
 
 #endif // THYRA_VECTOR_SPACE_BASE_HPP

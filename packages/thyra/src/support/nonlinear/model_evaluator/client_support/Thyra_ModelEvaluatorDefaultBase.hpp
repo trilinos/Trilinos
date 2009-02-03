@@ -57,10 +57,10 @@ public:
      mvImplOrientation_(ModelEvaluatorBase::DERIV_MV_BY_COL)
     {}
   DefaultDerivLinearOpSupport(
-    const ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvImplOrientation
+    const ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvImplOrientation_in
     )
     :provideDefaultLinearOp_(true),
-     mvImplOrientation_(mvImplOrientation)
+     mvImplOrientation_(mvImplOrientation_in)
     {}
   bool provideDefaultLinearOp() const
     { return provideDefaultLinearOp_; }
@@ -82,10 +82,10 @@ public:
      mvAdjointCopyOrientation_(ModelEvaluatorBase::DERIV_MV_BY_COL)
     {}
   DefaultDerivMvAdjointSupport(
-    const ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvAdjointCopyOrientation
+    const ModelEvaluatorBase::EDerivativeMultiVectorOrientation mvAdjointCopyOrientation_in
     )
     :provideDefaultAdjoint_(true),
-     mvAdjointCopyOrientation_(mvAdjointCopyOrientation)
+     mvAdjointCopyOrientation_(mvAdjointCopyOrientation_in)
     {}
   bool provideDefaultAdjoint() const
     { return provideDefaultAdjoint_; }
@@ -471,8 +471,8 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
 
   lazyInitializeDefaultBase();
 
-  const int Np = outArgs.Np();
-  const int Ng = outArgs.Ng();
+  const int l_Np = outArgs.Np();
+  const int l_Ng = outArgs.Ng();
 
   //
   // A) Assert that the inArgs and outArgs object match this class!
@@ -497,7 +497,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
 
     // DfDp(l)
     if (outArgsImpl.supports(MEB::OUT_ARG_f)) {
-      for ( int l = 0; l < Np; ++l ) {
+      for ( int l = 0; l < l_Np; ++l ) {
         const DefaultDerivLinearOpSupport defaultLinearOpSupport =
           DfDp_default_op_support_[l];
         if (defaultLinearOpSupport.provideDefaultLinearOp()) {
@@ -514,7 +514,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
     }
 
     // DgDx_dot(j)
-    for ( int j = 0; j < Ng; ++j ) {
+    for ( int j = 0; j < l_Ng; ++j ) {
       const DefaultDerivLinearOpSupport defaultLinearOpSupport =
         DgDx_dot_default_op_support_[j];
       if (defaultLinearOpSupport.provideDefaultLinearOp()) {
@@ -530,7 +530,7 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
     }
 
     // DgDx(j)
-    for ( int j = 0; j < Ng; ++j ) {
+    for ( int j = 0; j < l_Ng; ++j ) {
       const DefaultDerivLinearOpSupport defaultLinearOpSupport =
         DgDx_default_op_support_[j];
       if (defaultLinearOpSupport.provideDefaultLinearOp()) {
@@ -546,12 +546,12 @@ void ModelEvaluatorDefaultBase<Scalar>::evalModel(
     }
 
     // DgDp(j,l)
-    for ( int j = 0; j < Ng; ++j ) {
+    for ( int j = 0; j < l_Ng; ++j ) {
       const Array<DefaultDerivLinearOpSupport> &DgDp_default_op_support_j =
         DgDp_default_op_support_[j];
       const Array<DefaultDerivMvAdjointSupport> &DgDp_default_mv_support_j =
         DgDp_default_mv_support_[j];
-      for ( int l = 0; l < Np; ++l ) {
+      for ( int l = 0; l < l_Np; ++l ) {
         const DefaultDerivLinearOpSupport defaultLinearOpSupport =
           DgDp_default_op_support_j[l];
         const DefaultDerivMvAdjointSupport defaultMvAdjointSupport =
@@ -708,19 +708,19 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
   // C) Set up support for default derivative objects and prototype OutArgs
   //
 
-  const int Ng = outArgsImpl.Ng();
-  const int Np = outArgsImpl.Np();
+  const int l_Ng = outArgsImpl.Ng();
+  const int l_Np = outArgsImpl.Np();
 
   // Set support for all outputs supported in the underly implementation
   MEB::OutArgsSetup<Scalar> outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(Np,Ng);
+  outArgs.set_Np_Ng(l_Np,l_Ng);
   outArgs.setSupports(outArgsImpl);
 
   // DfDp
   DfDp_default_op_support_.clear();
   if (outArgs.supports(MEB::OUT_ARG_f)) {
-    for ( int l = 0; l < Np; ++l ) {
+    for ( int l = 0; l < l_Np; ++l ) {
       const MEB::DerivativeSupport DfDp_l_impl_support =
         outArgsImpl.supports(MEB::OUT_ARG_DfDp,l);
       const DefaultDerivLinearOpSupport DfDp_l_op_support =
@@ -737,7 +737,7 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
 
   // DgDx_dot
   DgDx_dot_default_op_support_.clear();
-  for ( int j = 0; j < Ng; ++j ) {
+  for ( int j = 0; j < l_Ng; ++j ) {
     const MEB::DerivativeSupport DgDx_dot_j_impl_support =
       outArgsImpl.supports(MEB::OUT_ARG_DgDx_dot,j);
     const DefaultDerivLinearOpSupport DgDx_dot_j_op_support =
@@ -753,7 +753,7 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
 
   // DgDx
   DgDx_default_op_support_.clear();
-  for ( int j = 0; j < Ng; ++j ) {
+  for ( int j = 0; j < l_Ng; ++j ) {
     const MEB::DerivativeSupport DgDx_j_impl_support =
       outArgsImpl.supports(MEB::OUT_ARG_DgDx,j);
     const DefaultDerivLinearOpSupport DgDx_j_op_support =
@@ -770,10 +770,10 @@ void ModelEvaluatorDefaultBase<Scalar>::initializeDefaultBase()
   // DgDp
   DgDp_default_op_support_.clear();
   DgDp_default_mv_support_.clear();
-  for ( int j = 0; j < Ng; ++j ) {
+  for ( int j = 0; j < l_Ng; ++j ) {
     DgDp_default_op_support_.push_back(Array<DefaultDerivLinearOpSupport>());
     DgDp_default_mv_support_.push_back(Array<DefaultDerivMvAdjointSupport>());
-    for ( int l = 0; l < Np; ++l ) {
+    for ( int l = 0; l < l_Np; ++l ) {
       const MEB::DerivativeSupport DgDp_j_l_impl_support =
         outArgsImpl.supports(MEB::OUT_ARG_DgDp,j,l);
       // LinearOpBase support

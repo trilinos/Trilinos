@@ -116,7 +116,9 @@ int main( int argc, char *argv[] )
     
     success = runVectorTests<double>(n, out) ;
 
+#if defined(HAVE_TEUCHOS_FLOAT)
     success = runVectorTests<float>(n, out) && success;
+#endif
 
 #if defined(HAVE_TEUCHOS_COMPLEX)
     success = runVectorTests<std::complex<double> >(n, out) && success;

@@ -95,7 +95,9 @@ int main( int argc, char *argv[] )
     
     success = runTests<double>(n, out) ;
 
+#if defined(HAVE_TEUCHOS_FLOAT)
     success = runTests<float>(n, out) && success;
+#endif
 
 #if defined(HAVE_TEUCHOS_COMPLEX)
     success = runTests<std::complex<double> >(n, out) && success;

@@ -50,6 +50,12 @@ template<typename Scalar>
 NonlinearCG<Scalar>::NonlinearCG()
   : paramIndex_(-1),
     responseIndex_(-1),
+    alpha_init_(NonlinearCGUtils::alpha_init_default),
+    alpha_reinit_(NonlinearCGUtils::alpha_reinit_default),
+    and_conv_tests_(NonlinearCGUtils::and_conv_tests_default),
+    minIters_(NonlinearCGUtils::minIters_default),
+    maxIters_(NonlinearCGUtils::maxIters_default),
+    g_mag_(NonlinearCGUtils::g_mag_default),
     numIters_(0)
 {}
 
@@ -70,13 +76,72 @@ void NonlinearCG<Scalar>::initialize(
 }
 
 
+template<typename Scalar>
+const typename NonlinearCG<Scalar>::ScalarMag
+NonlinearCG<Scalar>::get_alpha_init() const
+{
+  return alpha_init_;
+}
+
+
+template<typename Scalar>
+const bool NonlinearCG<Scalar>::get_alpha_reinit() const
+{
+  return alpha_reinit_;
+}
+
+
+template<typename Scalar>
+const bool NonlinearCG<Scalar>::get_and_conv_tests() const
+{
+  return and_conv_tests_;
+}
+
+
+template<typename Scalar>
+const int NonlinearCG<Scalar>::get_minIters() const
+{
+  return minIters_;
+}
+
+
+template<typename Scalar>
+const int NonlinearCG<Scalar>::get_maxIters() const
+{
+  return maxIters_;
+}
+
+
+template<typename Scalar>
+const typename NonlinearCG<Scalar>::ScalarMag
+NonlinearCG<Scalar>::get_g_mag() const
+{
+  return g_mag_;
+}
+
+
 // Overridden from ParameterListAcceptor (simple forwarding functions)
 
 
 template<typename Scalar>
 void NonlinearCG<Scalar>::setParameterList(RCP<ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT(true);
+  typedef ScalarTraits<Scalar> ST;
+  typedef ScalarTraits<ScalarMag> SMT;
+  namespace NCGU = NonlinearCGUtils;
+  using Teuchos::getParameter;
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters());
+  alpha_init_ = getParameter<double>(*paramList, NCGU::alpha_init_name);
+  alpha_reinit_ = getParameter<bool>(*paramList, NCGU::alpha_reinit_name);
+  and_conv_tests_ = getParameter<bool>(*paramList, NCGU::and_conv_tests_name);
+  minIters_ = getParameter<int>(*paramList, NCGU::minIters_name);
+  maxIters_ = getParameter<int>(*paramList, NCGU::maxIters_name);
+  g_mag_ = getParameter<double>(*paramList, NCGU::g_mag_name);
+  TEUCHOS_ASSERT_INEQUALITY( alpha_init_, >, SMT::zero() );
+  TEUCHOS_ASSERT_INEQUALITY( minIters_, >=, 0 );
+  TEUCHOS_ASSERT_INEQUALITY( minIters_, <, maxIters_ );
+  TEUCHOS_ASSERT_INEQUALITY( g_mag_, >, SMT::zero() );
+  setMyParamList(paramList);
 }
 
 
@@ -84,7 +149,20 @@ template<typename Scalar>
 RCP<const ParameterList>
 NonlinearCG<Scalar>::getValidParameters() const
 {
-  return Teuchos::null;
+  namespace NCGU = NonlinearCGUtils;
+  static RCP<const ParameterList> validPL;
+  if (is_null(validPL)) {
+    RCP<Teuchos::ParameterList>
+      pl = Teuchos::rcp(new Teuchos::ParameterList());
+    pl->set( NCGU::alpha_init_name, NCGU::alpha_init_default );
+    pl->set( NCGU::alpha_reinit_name, NCGU::alpha_reinit_default );
+    pl->set( NCGU::and_conv_tests_name, NCGU::and_conv_tests_default );
+    pl->set( NCGU::minIters_name, NCGU::minIters_default );
+    pl->set( NCGU::maxIters_name, NCGU::maxIters_default );
+    pl->set( NCGU::g_mag_name, NCGU::g_mag_default );
+    validPL = pl;
+  }
+  return validPL;
 }
 
 
@@ -96,13 +174,14 @@ NonlinearCGUtils::ESolveReturn
 NonlinearCG<Scalar>::doSolve(
   const Ptr<Thyra::VectorBase<Scalar> > &p_inout,
   const Ptr<ScalarMag> &g_opt_out,
-  const Ptr<const ScalarMag> &tol_in,
-  const Ptr<const ScalarMag> &alpha_init
+  const Ptr<const ScalarMag> &g_reduct_tol_in,
+  const Ptr<const ScalarMag> &g_grad_tol_in,
+  const Ptr<const ScalarMag> &alpha_init,
+  const Ptr<int> &numIters_out
   )
 {
 
   typedef ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
   typedef ScalarTraits<ScalarMag> SMT;
   
   using Teuchos::null;
@@ -173,17 +252,26 @@ NonlinearCG<Scalar>::doSolve(
 
   *out << "\nStarting nonlinear CG iterations ...\n";
 
+  if (and_conv_tests_) {
+    *out << "\nNOTE: Using an AND of convergence tests!\n";
+  }
+  else {
+    *out << "\nNOT: Using an OR of convergence tests!\n";
+  }
+
   bool foundSolution = false;
   bool linesearchFailure = false;
-  const Scalar terminationTol =
-    ( !is_null(tol_in) ? *tol_in : as<Scalar>(1e-5)); // ToDo: Get from PL
-  const int maxIters = 100; // ToDo: Get from PL
+  bool linsearchFailureLastIter = false;
+  const Scalar g_reduct_tol =
+    ( !is_null(g_reduct_tol_in) ? *g_reduct_tol_in : as<Scalar>(1e-5)); // ToDo: Get from PL
+  const Scalar g_grad_tol =
+    ( !is_null(g_grad_tol_in) ? *g_grad_tol_in : as<Scalar>(1e-5)); // ToDo: Get from PL
 
-  for (numIters_ = 0; numIters_ < maxIters; ++numIters_) {
+  for (numIters_ = 0; numIters_ < maxIters_; ++numIters_) {
 
     Teuchos::OSTab tab(out);
 
-    *out << "\nNonlinear CG Iteration = " << numIters_ << "\n";
+    *out << "\nNonlinear CG Iteration k = " << numIters_ << "\n";
 
     Teuchos::OSTab tab2(out);
 
@@ -203,20 +291,62 @@ NonlinearCG<Scalar>::doSolve(
     // B.2) Check for convergence
     //
 
+    // B.2.a) ||g - g_last|| |g + g_mag| <= g_reduct_tol
+
+    const ScalarMag g_reduct = g - g_last;
+
+    *out << "\ng_k - g_km1 = "<<g_reduct<<"\n";
+
+    const ScalarMag g_reduct_err =
+      SMT::magnitude(g_reduct / SMT::magnitude(g + g_mag_));
+
+    const bool g_reduct_converged = (g_reduct_err <= g_reduct_tol);
+
+    *out << "\nCheck convergence: |g_k - g_km1| / |g_k + g_mag| = "<<g_reduct_err
+         << (g_reduct_converged ? " <= " : " > ")
+         << "g_reduct_tol = "<<g_reduct_tol<<"\n";
+
+    // B.2.b) ||g_grad|| g_mag <= g_grad_tol
+
     const Scalar g_grad_inner_g_grad = scalarProd<Scalar>(*g_grad, *g_grad);
     const ScalarMag norm_g_grad = ST::magnitude(ST::squareroot(g_grad_inner_g_grad));
 
-    const bool isConverged = (norm_g_grad <= terminationTol);
-    *out << "\nCheck convergence: ||g_grad|| = "<<norm_g_grad
-         << (isConverged ? " <= " : " > ")
-         << "terminationTol = "<<terminationTol << "\n";
-    if (isConverged) {
-      *out << "\nFind solution, existing algorithm!\n";
-      foundSolution = true;
-      break;
+    *out << "\n||g_grad_k|| = "<<norm_g_grad << "\n";
+
+    const ScalarMag g_grad_err = norm_g_grad / g_mag_;
+
+    const bool g_grad_converged = (g_grad_err <= g_grad_tol);
+
+    *out << "\nCheck convergence: ||g_grad_k|| / g_mag = "<<g_grad_err
+         << (g_grad_converged ? " <= " : " > ")
+         << "g_grad_tol = "<<g_grad_tol<<"\n";
+
+    // B.2.c) Convergence status
+    
+    bool isConverged = false;
+    if (and_conv_tests_) {
+      isConverged = g_reduct_converged && g_grad_converged;
     }
     else {
-      *out << "\nNot converged, continuing algorithm!\n";
+      isConverged = g_reduct_converged || g_grad_converged;
+    }
+
+    if (isConverged) {
+      if (numIters_ < minIters_) {
+        *out << "\nnumIters="<<numIters_<<" < minIters="<<minIters_
+             << ", continuing on!\n";
+      }
+      else {
+        *out << "\nFound solution, existing algorithm!\n";
+        foundSolution = true;
+      }
+    }
+    else {
+      *out << "\nNot converged!\n";
+    }
+    
+    if (foundSolution) {
+      break;
     }
 
     //
@@ -283,8 +413,17 @@ NonlinearCG<Scalar>::doSolve(
       *meritFunc, g, inOutArg(alpha), inOutArg(g_new), null );
 
     if (!linesearchResult) {
-      *out << "\nLine search failure, terminating nonlinear CG algorithm!";
-      linesearchFailure = true;
+      if (!linsearchFailureLastIter) {
+        *out << "\nLine search failure, but doing another iteration anyway!\n";
+        linsearchFailureLastIter = true;
+      }
+      else {
+        *out << "\nLine search failure, terminating nonlinear CG algorithm!\n";
+        linesearchFailure = true;
+      }
+    }
+
+    if (linesearchFailure) {
       break;
     }
 
@@ -310,11 +449,14 @@ NonlinearCG<Scalar>::doSolve(
   // Make sure that the final value for p has been copied in!
   V_V( p_inout, *p );
 
-
-  if (!foundSolution && !linesearchFailure) {
-    *out << "\nMax nonlinear CG iterations exceeded!\n";
+  if (!is_null(numIters_out)) {
+    *numIters_out = numIters_;
   }
 
+  if (numIters_ == maxIters_) {
+    *out << "\nMax nonlinear CG iterations exceeded!\n";
+  }
+  
   if (foundSolution) {
     return NonlinearCGUtils::SOLVE_SOLUTION_FOUND;
   }

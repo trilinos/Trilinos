@@ -127,17 +127,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
   const RCP<const VectorSpaceBase<Scalar> > g_space = model->get_g_space(0);
 
   const Scalar p_soln_val = as<Scalar>(3.0);
-  const RCP<VectorBase<Scalar> > p_soln = createMember(p_space);
-  V_S(p_soln.ptr(), p_soln_val);
-  model->setSolutionVector(p_soln);
+  {
+    const RCP<VectorBase<Scalar> > p_soln = createMember(p_space);
+    V_S(p_soln.ptr(), p_soln_val);
+    model->setSolutionVector(p_soln);
+  }
+
+  const Scalar diag_val = as<Scalar>(4.0);
+  {
+    const RCP<VectorBase<Scalar> > diag = createMember(p_space);
+    V_S(diag.ptr(), diag_val);
+    model->setDiagonalVector(diag);
+  }
 
   const Scalar g_offset = as<Scalar>(5.0);
-  model->setScalarOffset(g_offset);
+  {
+    model->setScalarOffset(g_offset);
+  }
 
   const Scalar p_val = as<Scalar>(2.0);
   const RCP<VectorBase<Scalar> > p_init = createMember(p_space);
   V_S(p_init.ptr(), p_val);
-
+  
   RCP<VectorBase<Scalar> >
     g = createMember(g_space),
     g_grad = createMember(p_space);
@@ -153,13 +164,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
   
   TEST_FLOATING_EQUALITY(
     get_ele<Scalar>(*g, 0),
-    as<Scalar>(0.5 * sqr(p_val - p_soln_val) * globalDim + g_offset),
+    as<Scalar>(0.5 * diag_val * sqr(p_val - p_soln_val) * globalDim + g_offset),
     as<ScalarMag>(g_tol/globalDim)
     );
   
   TEST_FLOATING_EQUALITY(
     sum(*g_grad),
-    as<Scalar>( (p_val - p_soln_val) * globalDim ),
+    as<Scalar>( diag_val * (p_val - p_soln_val) * globalDim ),
     as<ScalarMag>(g_tol/globalDim)
     );
   

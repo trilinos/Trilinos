@@ -161,9 +161,11 @@ int main(int argc, char *argv[])
 
     int    maxNumIters  = 10*dim;
     
+#if defined(HAVE_TEUCHOS_FLOAT)
     // Run using float
     result = runPowerMethodExample<float>(dim,maxNumIters,verbose,dumpAll);
     if(!result) success = false;
+#endif
 
     // Run using double
     result = runPowerMethodExample<double>(dim,maxNumIters,verbose,dumpAll);
@@ -171,9 +173,11 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_TEUCHOS_COMPLEX
     
+#if defined(HAVE_TEUCHOS_FLOAT)
     // Run using std::complex<float>
     result = runPowerMethodExample<std::complex<float> >(dim,maxNumIters,verbose,dumpAll);
     if(!result) success = false;
+#endif
     
     // Run using std::complex<double>
     result = runPowerMethodExample<std::complex<double> >(dim,maxNumIters,verbose,dumpAll);

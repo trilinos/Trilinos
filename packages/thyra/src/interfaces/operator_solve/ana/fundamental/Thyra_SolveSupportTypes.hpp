@@ -253,13 +253,14 @@ std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solv
     << "achievedTol = " << SolveStatus<Scalar>::achievedTolToString(solveStatus.achievedTol) << std::endl;
   *out << "message:";
   if (solveStatus.message.length()) {
-    Teuchos::OSTab tab(out);
+    Teuchos::OSTab tab2(out);
     *out << "\n" << solveStatus.message << "\n";
   }
   *out << "extraParameters:";
   if(solveStatus.extraParameters.get()) {
     *out << "\n";
-    solveStatus.extraParameters->print(Teuchos::OSTab(out).o(),1000,true);
+    Teuchos::OSTab tab3(out);
+    solveStatus.extraParameters->print(*out, 1000, true);
   }
   else {
     *out << " NONE\n";

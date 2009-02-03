@@ -16,18 +16,18 @@ SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_Config.h
   )
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   ${PACKAGE_NAME}_ConfigDefs.hpp 
   ${PACKAGE_NAME}_Version.hpp
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   ${PACKAGE_NAME}_Version.cpp
   )
 
@@ -37,7 +37,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_vector/ana/fundamental)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   interfaces/operator_vector/ana/fundamental/Thyra_LinearOpBaseDecl.hpp
   interfaces/operator_vector/ana/fundamental/Thyra_LinearOpBase.hpp
   interfaces/operator_vector/ana/fundamental/Thyra_MultiVectorBaseDecl.hpp
@@ -57,7 +57,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_vector/ana/extended)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   interfaces/operator_vector/ana/extended/Thyra_AddedLinearOpBase.hpp
   interfaces/operator_vector/ana/extended/Thyra_BlockedLinearOpBase.hpp
   interfaces/operator_vector/ana/extended/Thyra_DiagonalLinearOpBase.hpp
@@ -84,7 +84,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/support/operator_vector/client_support)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   support/operator_vector/client_support/Thyra_AssertOp.hpp
   support/operator_vector/client_support/Thyra_DefaultAddedLinearOp.hpp
   support/operator_vector/client_support/Thyra_DefaultAddedLinearOpDecl.hpp
@@ -168,7 +168,7 @@ SET(HEADERS ${HEADERS}
   support/operator_vector/client_support/Thyra_describeLinearOpDecl.hpp
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   support/operator_vector/client_support/Thyra_TestingTools.cpp
   )
 
@@ -178,7 +178,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/support/operator_vector/adapter_support)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   support/operator_vector/adapter_support/Thyra_DefaultClusteredSpmdProductVector.hpp
   support/operator_vector/adapter_support/Thyra_DefaultClusteredSpmdProductVectorDecl.hpp
   support/operator_vector/adapter_support/Thyra_DefaultClusteredSpmdProductVectorSpace.hpp
@@ -222,7 +222,7 @@ SET(HEADERS ${HEADERS}
   support/operator_vector/adapter_support/Thyra_apply_op_helper_decl.hpp
   )
 
-SET(SOURCES ${SOURCES}
+APPEND_SET(SOURCES
   support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp
   )
 
@@ -232,7 +232,7 @@ SET(SOURCES ${SOURCES}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/support/operator_vector/adapter_support/serial)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   support/operator_vector/adapter_support/serial/Thyra_DefaultSerialVectorSpaceConverterDecl.hpp
   support/operator_vector/adapter_support/serial/Thyra_DefaultSerialVectorSpaceConverter.hpp
   support/operator_vector/adapter_support/serial/Thyra_SerialLinearOpBaseDecl.hpp
@@ -247,7 +247,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_solve/ana/fundamental)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   interfaces/operator_solve/ana/fundamental/Thyra_LinearOpSourceBase.hpp
   interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBase.hpp
   interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBaseDecl.hpp
@@ -263,7 +263,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_solve/ana/extended)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   interfaces/operator_solve/ana/extended/Thyra_BlockedLinearOpWithSolveBase.hpp
   interfaces/operator_solve/ana/extended/Thyra_InverseLinearOpBase.hpp
   interfaces/operator_solve/ana/extended/Thyra_LinearSolverBuilderBase.hpp
@@ -276,7 +276,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/support/operator_solve/client_support)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   support/operator_solve/client_support/Thyra_DefaultAdjointLinearOpWithSolve.hpp
   support/operator_solve/client_support/Thyra_DefaultAdjointLinearOpWithSolveDecl.hpp
   support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp
@@ -319,9 +319,15 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/interfaces/nonlinear/model_evaluator/ana/fundamental)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluator.hpp
   interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase.hpp
+  interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase_decl.hpp
+  interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase_def.hpp
+  )
+
+APPEND_SET(SOURCES
+  interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase.cpp
   )
 
 #
@@ -330,7 +336,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/support/nonlinear/model_evaluator/client_support)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   support/nonlinear/model_evaluator/client_support/Thyra_DefaultLumpedParameterModelEvaluator.hpp
   support/nonlinear/model_evaluator/client_support/Thyra_DefaultEvaluationLoggerModelEvaluator.hpp
   support/nonlinear/model_evaluator/client_support/Thyra_DefaultFinalPointCaptureModelEvaluator.hpp
@@ -354,7 +360,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/interfaces/nonlinear/solvers/ana/fundamental)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   interfaces/nonlinear/solvers/ana/fundamental/Thyra_NonlinearSolverBase.hpp
   )
 
@@ -364,7 +370,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/support/nonlinear/solvers/client_support)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   support/nonlinear/solvers/client_support/Thyra_DampenedNewtonNonlinearSolver.hpp
   support/nonlinear/solvers/client_support/Thyra_DefaultStateEliminationModelEvaluator.hpp
   support/nonlinear/solvers/client_support/Thyra_LinearNonlinearSolver.hpp
@@ -376,7 +382,7 @@ SET(HEADERS ${HEADERS}
 
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/example/operator_vector)
 
-SET(HEADERS ${HEADERS}
+APPEND_SET(HEADERS
   ${PACKAGE_SOURCE_DIR}/example/operator_vector/sillyModifiedGramSchmidt.hpp
   )
 

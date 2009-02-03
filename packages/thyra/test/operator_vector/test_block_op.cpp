@@ -27,7 +27,6 @@
 //@HEADER
 
 
-
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Thyra_VectorImpl.hpp"
@@ -89,7 +88,9 @@ int main(int argc, char *argv[])
 
       success = runTest<double>(out);
 
+#if defined(HAVE_TEUCHOS_FLOAT)
       success = runTest<float>(out) && success;
+#endif
 
 #if defined(HAVE_TEUCHOS_COMPLEX)
       success = runTest<std::complex<double> >(out) && success;

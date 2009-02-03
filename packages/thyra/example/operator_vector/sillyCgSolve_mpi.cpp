@@ -202,9 +202,11 @@ int main(int argc, char *argv[])
 
     TEST_FOR_EXCEPTION( localDim < 2, std::logic_error, "Error, localDim=" << localDim << " < 2 is not allowed!" );
 
+#if defined(HAVE_TEUCHOS_FLOAT)
     // Run using float
     result = runCgSolveExample<float>(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
+#endif
 
     // Run using double
     result = runCgSolveExample<double>(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
@@ -212,9 +214,11 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
+#if defined(HAVE_TEUCHOS_FLOAT)
     // Run using std::complex<float>
     result = runCgSolveExample<std::complex<float> >(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
     if(!result) success = false;
+#endif
 
     // Run using std::complex<double>
     result = runCgSolveExample<std::complex<double> >(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);

@@ -133,14 +133,14 @@ void DefaultScaledAdjointLinearOp<Scalar>::describe(
         << Teuchos::Describable::description() << "{"
         << "rangeDim=" << this->range()->dim()
         << ",domainDim=" << this->domain()->dim() << "}\n";
-      OSTab tab(out);
+      OSTab tab2(out);
       *out
         << "overallScalar="<< overallScalar() << std::endl
         << "overallTransp="<<toString(overallTransp()) << std::endl
         << "Constituent transformations:\n";
       for( int i = 0; i <= my_index_; ++i ) {
         const ScalarETransp<Scalar> &scalar_transp = (*allScalarETransp_)[my_index_-i];
-        OSTab tab(out,i+1);
+        OSTab tab3(out,i+1);
         if(scalar_transp.scalar != ST::one() && scalar_transp.transp != NOTRANS)
           *out << "scalar="<<scalar_transp.scalar<<",transp="<<toString(scalar_transp.transp)<<std::endl;
         else if(scalar_transp.scalar != ST::one())

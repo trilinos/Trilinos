@@ -43,7 +43,7 @@ namespace OptiPack {
 
 /** \brief Simple parallel response-only ModelEvaluator.
  *
- * g(p) = 0.5*inner(p-ps, p-ps) + s
+ * g(p) = 0.5 * sum( diag[i] * (p[i] - ps[i])^2, i=0...n-1) + g_offset
  *
  * ToDo: Finish Documentation!
  */
@@ -64,8 +64,15 @@ public:
   /** \brief Set the solution vector ps . */
   void setSolutionVector(const RCP<const Thyra::VectorBase<Scalar> > &ps);
 
+  /** \brief Set the solution vector ps . */
+  const RCP<const Thyra::VectorBase<Scalar> >
+  getSolutionVector() const;
+  
+  /** \brief Set the diagonal vector diag. */
+  void setDiagonalVector(const RCP<const Thyra::VectorBase<Scalar> > &diag);
+
   /** \brief Set offset scalar s . */
-  void setScalarOffset(const Scalar &s);
+  void setScalarOffset(const Scalar &g_offset);
 
   //@}
 
@@ -112,6 +119,7 @@ private:
   RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
 
   RCP<const Thyra::VectorBase<Scalar> > ps_;
+  RCP<const Thyra::VectorBase<Scalar> > diag_;
   Scalar g_offset_;
 
 };

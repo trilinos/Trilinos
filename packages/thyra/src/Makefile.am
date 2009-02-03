@@ -276,7 +276,12 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
 
 INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluator.hpp\
-  $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase.hpp
+  $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase.hpp\
+  $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase_decl.hpp\
+  $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase_def.hpp
+
+INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL = \
+  $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase.cpp
 
 SUPPORT_NONLINEAR_MODEL_EVALUATOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/nonlinear/model_evaluator/client_support/Thyra_DefaultLumpedParameterModelEvaluator.hpp\
@@ -341,6 +346,7 @@ THYRA_H = \
   $(OPERATOR_VECTOR_EXAMPLE_H)
 
 libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp \
+  $(INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL) \
   $(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT) \
   $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT)
 

@@ -279,7 +279,7 @@ void DefaultPreconditioner<RangeScalar,DomainScalar>::describe(
     {
       out
         << Teuchos::typeName(*this) << "\n";
-      OSTab tab(out);
+      OSTab tab2(out);
       if(!is_null(leftPrecOp_.getConstObj()))
         out << "leftPrecOp=" << describe(*leftPrecOp_.getConstObj(),verbLevel);
       if(!is_null(rightPrecOp_.getConstObj()))

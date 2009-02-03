@@ -216,7 +216,7 @@ void DefaultInverseLinearOp<Scalar>::describe(
         << Teuchos::Describable::description() << "{"
         << "rangeDim=" << this->range()->dim()
         << ",domainDim=" << this->domain()->dim() << "}:\n";
-      OSTab tab(out);
+      OSTab tab2(out);
       out <<  "lows = ";
       if(!lows_.getConstObj().get()) {
         out << " NULL\n";

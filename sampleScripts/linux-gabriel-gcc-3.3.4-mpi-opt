@@ -18,7 +18,7 @@ FLIBS="-lg2c" \
 --with-gnumake \
 --disable-default-packages \
 --enable-teuchos --enable-teuchos-extended --disable-teuchos-blasfloat \
- --enable-teuchos-long_long \
+ --enable-teuchos-dotcheck --enable-teuchos-long_long \
 --enable-sacado \
 --enable-thyra \
 --enable-tpetra \

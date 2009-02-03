@@ -29,6 +29,7 @@
 #ifndef THYRA_OPERATOR_VECTOR_TYPES_HPP
 #define THYRA_OPERATOR_VECTOR_TYPES_HPP
 
+#include "Thyra_ConfigDefs.hpp"
 #include "RTOpPack_Types.hpp"
 #include "Teuchos_Range1D.hpp"
 #include "Teuchos_RCP.hpp"

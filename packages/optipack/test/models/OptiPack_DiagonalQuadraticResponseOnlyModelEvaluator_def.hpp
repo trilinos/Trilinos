@@ -75,7 +75,12 @@ DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::DiagonalQuadraticResponseOn
   V_S(ps.ptr(), ST::zero());
   ps_ = ps;
 
-  // Default offset
+  // Default diagonal
+  const RCP<Thyra::VectorBase<Scalar> > diag = createMember(p_space_);
+  V_S(diag.ptr(), ST::one());
+  diag_ = diag;
+
+  // Default response offset
   g_offset_ = ST::zero();
 
 }
@@ -90,10 +95,26 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::setSolutionVector(
 
 
 template<class Scalar>
-void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::setScalarOffset(
-  const Scalar &s)
+const RCP<const Thyra::VectorBase<Scalar> >
+DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::getSolutionVector() const
 {
-  g_offset_ = s;
+  return ps_;
+}
+
+
+template<class Scalar>
+void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::setDiagonalVector(
+  const RCP<const Thyra::VectorBase<Scalar> > &diag)
+{
+  diag_ = diag;
+}
+
+
+template<class Scalar>
+void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::setScalarOffset(
+  const Scalar &g_offset)
+{
+  g_offset_ = g_offset;
 }
 
 
@@ -184,12 +205,14 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::evalModelImpl(
 
   const ConstDetachedSpmdVectorView<Scalar> p(inArgs.get_p(0));
   const ConstDetachedSpmdVectorView<Scalar> ps(ps_);
+  const ConstDetachedSpmdVectorView<Scalar> diag(diag_);
 
+  // g(p) = 0.5 * sum( diag[i] * (p[i] - ps[i])^2, i=0...n-1) + g_offset
   if (!is_null(outArgs.get_g(0))) {
     Scalar g_val = ST::zero();
     for (Ordinal i = 0; i < p.subDim(); ++i) {
       const Scalar p_ps = p[i] - ps[i];
-      g_val += p_ps*p_ps;
+      g_val += diag[i] * p_ps*p_ps;
     }
     Scalar global_g_val;
     Teuchos::reduceAll<Ordinal, Scalar>(*comm_, Teuchos::REDUCE_SUM, g_val,
@@ -198,12 +221,13 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::evalModelImpl(
       as<Scalar>(0.5) * global_g_val + g_offset_;
   }
 
+  // DgDp[i] = diag[i] * (p[i] - ps[i])
   if (!outArgs.get_DgDp(0,0).isEmpty()) {
     const RCP<Thyra::MultiVectorBase<Scalar> > DgDp_trans_mv =
       get_mv<Scalar>(outArgs.get_DgDp(0,0), "DgDp^T", MEB::DERIV_TRANS_MV_BY_ROW);
     const DetachedSpmdVectorView<Scalar> DgDp_grad(DgDp_trans_mv->col(0));
     for (Thyra::Ordinal i = 0; i < p.subDim(); ++i) {
-      DgDp_grad[i] = p[i] - ps[i];
+      DgDp_grad[i] = diag[i] * (p[i] - ps[i]);
     }
   }
   
