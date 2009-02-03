@@ -22,13 +22,9 @@ using Teuchos::RCP;
 using Thyra::createMember;
 
 
-template<class Scalar>
-inline Scalar sqr(const Scalar &x) { return x*x; }
-
-
 Teuchos_Ordinal g_localDim = 4;
 
-double g_tol = Teuchos::ScalarTraits<double>::eps();
+double g_tol_scale = 10.0;
 
 
 TEUCHOS_STATIC_SETUP()
@@ -36,8 +32,16 @@ TEUCHOS_STATIC_SETUP()
   Teuchos::UnitTestRepository::getCLP().setOption(
     "local-dim", &g_localDim, "Number of local vector elements on each process" );
   Teuchos::UnitTestRepository::getCLP().setOption(
-    "tol", &g_tol, "Floating point tolerance" );
+    "tol-scale", &g_tol_scale, "Floating point tolerance scaling" );
 }
+
+
+template<class Scalar>
+inline Scalar sqr(const Scalar &x) { return x*x; }
+
+
+template<class Scalar>
+inline Scalar cube(const Scalar &x) { return x*x*x; }
 
 
 //
@@ -89,12 +93,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
   out << "\nglobalDim = " << globalDim << "\n";
   
   TEST_FLOATING_EQUALITY( get_ele<Scalar>(*g, 0),
-    as<Scalar>(0.5*globalDim)*val*val, as<ScalarMag>(g_tol/globalDim));
+    as<Scalar>(0.5*globalDim)*val*val, as<ScalarMag>(g_tol_scale*ST::eps()/globalDim));
   
   TEST_FLOATING_EQUALITY(
     norm_2<Scalar>(*g_grad),
     ST::magnitude(ST::squareroot(as<Scalar>(globalDim)*val*val)),
-    as<ScalarMag>(g_tol/globalDim));
+    as<ScalarMag>(g_tol_scale*ST::eps()/globalDim));
   
 }
 
@@ -145,6 +149,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
     model->setScalarOffset(g_offset);
   }
 
+  const Scalar nonlinearTermFactor = 1e-3;
+  {
+    model->setNonlinearTermFactor(nonlinearTermFactor);
+  }
+
   const Scalar p_val = as<Scalar>(2.0);
   const RCP<VectorBase<Scalar> > p_init = createMember(p_space);
   V_S(p_init.ptr(), p_val);
@@ -164,14 +173,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DiagonalQuadraticResponseOnlyModelEvaluator,
   
   TEST_FLOATING_EQUALITY(
     get_ele<Scalar>(*g, 0),
-    as<Scalar>(0.5 * diag_val * sqr(p_val - p_soln_val) * globalDim + g_offset),
-    as<ScalarMag>(g_tol/globalDim)
+    as<Scalar>(
+      0.5 * globalDim
+      * (diag_val * sqr(p_val - p_soln_val)
+        + nonlinearTermFactor * cube(p_val - p_soln_val)
+        )
+      + g_offset
+      ),
+    as<ScalarMag>(g_tol_scale*ST::eps()/globalDim)
     );
   
   TEST_FLOATING_EQUALITY(
     sum(*g_grad),
-    as<Scalar>( diag_val * (p_val - p_soln_val) * globalDim ),
-    as<ScalarMag>(g_tol/globalDim)
+    as<Scalar>(
+      globalDim
+      * ( diag_val * (p_val - p_soln_val)
+        + 1.5 * nonlinearTermFactor * sqr(p_val - p_soln_val) )
+      ),
+    as<ScalarMag>(g_tol_scale*ST::eps()/globalDim)
     );
   
 }

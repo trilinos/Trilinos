@@ -43,8 +43,16 @@ namespace OptiPack {
 
 /** \brief Simple parallel response-only ModelEvaluator.
  *
- * g(p) = 0.5 * sum( diag[i] * (p[i] - ps[i])^2, i=0...n-1) + g_offset
- *
+ * The Model is:
+
+ \verbatim
+
+   g(p) = 0.5 * sum( diag[i] * (p[i] - ps[i])^2, i=0...n-1 )
+          + 0.5 * nonlinearTermFactor * sum( (p[i] - ps[i])^3, i=0...n-1 )
+          + g_offset
+
+ \endverbatim
+
  * ToDo: Finish Documentation!
  */
 template<class Scalar>
@@ -59,7 +67,10 @@ public:
   //@{
 
   /** \brief . */
-  DiagonalQuadraticResponseOnlyModelEvaluator(const int localDim);
+  DiagonalQuadraticResponseOnlyModelEvaluator(
+    const int localDim,
+    const RCP<const Teuchos::Comm<Thyra::Ordinal> > &comm = Teuchos::null
+    );
 
   /** \brief Set the solution vector ps . */
   void setSolutionVector(const RCP<const Thyra::VectorBase<Scalar> > &ps);
@@ -71,7 +82,10 @@ public:
   /** \brief Set the diagonal vector diag. */
   void setDiagonalVector(const RCP<const Thyra::VectorBase<Scalar> > &diag);
 
-  /** \brief Set offset scalar s . */
+  /** \brief Set nonlinear term factory. */
+  void setNonlinearTermFactor(const Scalar &nonlinearTermFactor);
+
+  /** \brief Set offset scalar g_offset . */
   void setScalarOffset(const Scalar &g_offset);
 
   //@}
@@ -120,6 +134,7 @@ private:
 
   RCP<const Thyra::VectorBase<Scalar> > ps_;
   RCP<const Thyra::VectorBase<Scalar> > diag_;
+  Scalar nonlinearTermFactor_;
   Scalar g_offset_;
 
 };

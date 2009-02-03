@@ -256,7 +256,7 @@ NonlinearCG<Scalar>::doSolve(
     *out << "\nNOTE: Using an AND of convergence tests!\n";
   }
   else {
-    *out << "\nNOT: Using an OR of convergence tests!\n";
+    *out << "\nNOTE: Using an OR of convergence tests!\n";
   }
 
   bool foundSolution = false;
@@ -388,10 +388,12 @@ NonlinearCG<Scalar>::doSolve(
       }
     }
     else {
-      alpha = alpha_last;
-      // ToDo: Add an option to the PL to always set this to the initial alpha
-      // given by the user (either through the PL or through the function
-      // argument alpha_init).
+      if (alpha_reinit_) {
+        alpha = *alpha_init;
+      }
+      else {
+        alpha = alpha_last;
+      }
     }
 
 

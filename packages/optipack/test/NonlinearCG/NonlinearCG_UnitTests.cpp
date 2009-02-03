@@ -51,38 +51,66 @@ using OptiPack::diagonalQuadraticResponseOnlyModelEvaluator;
 namespace NCGU = OptiPack::NonlinearCGUtils;
 
 
-Teuchos_Ordinal g_localDim = 4;
+Teuchos_Ordinal g_globalDim = 16;
 
 double g_solve_tol_scale = 10.0;
 
 double g_error_tol_scale = 1000.0;
 
-double g_p_init = 1.0;
+double g_nonlin_term_factor = 1e-2;
+
+double g_nonlin_solve_tol = 1e-4;
+
+double g_nonlin_error_tol = 1e-3;
 
 
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::UnitTestRepository::getCLP().setOption(
-    "local-dim", &g_localDim, "Number of local vector elements on each process" );
+    "global-dim", &g_globalDim,
+    "Number of global vector elements over all processes" );
   Teuchos::UnitTestRepository::getCLP().setOption(
-    "solve-tol-scale", &g_solve_tol_scale, "Floating point tolerance for nonlinear CG solve" );
+    "solve-tol-scale", &g_solve_tol_scale,
+    "Floating point tolerance for nonlinear CG solve for linear CG tests" );
   Teuchos::UnitTestRepository::getCLP().setOption(
-    "error-tol-scale", &g_error_tol_scale, "Floating point tolerance for error checks" );
+    "error-tol-scale", &g_error_tol_scale,
+    "Floating point tolerance for error checks for linear CG tests" );
   Teuchos::UnitTestRepository::getCLP().setOption(
-    "p-init", &g_p_init, "Initial guess for unknowns p" );
+    "nonlin-term-factor", &g_nonlin_term_factor,
+    "Scale factor for cubic term in objective" );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "nonlin-solve-tol", &g_nonlin_solve_tol,
+    "Floating point tolerance for general nonlinear CG solve" );
+  Teuchos::UnitTestRepository::getCLP().setOption(
+    "nonlin-error-tol", &g_nonlin_error_tol,
+    "Floating point tolerance for error checks for general nonlinear CG solve" );
+
 }
 
 
 template<class Scalar>
 const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> >
 createModel(
-  const int localDim,
+  const int globalDim,
   const typename ScalarTraits<Scalar>::magnitudeType & g_offset
   )
 {
 
+  const RCP<const Teuchos::Comm<Thyra::Ordinal> > comm =
+    Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
+
+  const int numProcs = comm->getSize();
+  TEST_FOR_EXCEPT_MSG( numProcs > globalDim,
+    "Error, the number of processors can not be greater than the global"
+    " dimension of the vectors!." );
+  const int localDim = globalDim / numProcs;
+  const int localDimRemainder = globalDim % numProcs;
+  TEST_FOR_EXCEPT_MSG( localDimRemainder != 0,
+    "Error, the number of processors must divide into the global number"
+    " of elements exactly for now!." );
+
   const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
-    diagonalQuadraticResponseOnlyModelEvaluator<Scalar>(g_localDim);
+    diagonalQuadraticResponseOnlyModelEvaluator<Scalar>(localDim);
   const RCP<const VectorSpaceBase<Scalar> > p_space = model->get_p_space(0);
   const RCP<VectorBase<Scalar> > ps = createMember(p_space);
   const Scalar ps_val = 2.0;
@@ -179,7 +207,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, defaultParams, Scalar )
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   namespace NCGU = OptiPack::NonlinearCGUtils;
   const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
-    createModel<Scalar>(g_localDim, as<Scalar>(0.0));
+    createModel<Scalar>(g_globalDim, as<Scalar>(0.0));
   const RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
     armijoQuadraticLineSearch<Scalar>();
   const RCP<NonlinearCG<Scalar> > cgSolver =
@@ -206,7 +234,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, parseParamsDefaultParams, Scalar
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   namespace NCGU = OptiPack::NonlinearCGUtils;
   const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
-    createModel<Scalar>(g_localDim, as<Scalar>(0.0));
+    createModel<Scalar>(g_globalDim, as<Scalar>(0.0));
   const RCP<NonlinearCG<Scalar> > cgSolver =
     createNonlinearCGSolver<Scalar>(model, rcpFromRef(out));
   const RCP<ParameterList> pl = cgSolver->getNonconstParameterList();
@@ -232,7 +260,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, parseParams, Scalar )
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   namespace NCGU = OptiPack::NonlinearCGUtils;
   const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
-    createModel<Scalar>(g_localDim, as<Scalar>(0.0));
+    createModel<Scalar>(g_globalDim, as<Scalar>(0.0));
   const RCP<NonlinearCG<Scalar> > cgSolver =
     createNonlinearCGSolver<Scalar>(model, rcpFromRef(out));
   const double alpha_init = 0.9;
@@ -273,7 +301,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_oneEigenVal, Scalar )
 
   const ScalarMag g_offset = as<ScalarMag>(5.0);
   const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
-    createModel<Scalar>(g_localDim, g_offset);
+    createModel<Scalar>(g_globalDim, g_offset);
   const RCP<const VectorSpaceBase<Scalar> > p_space = model->get_p_space(0);
   const int dim = p_space->dim();
 
@@ -326,7 +354,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_partialEigenVal, Scalar )
 
   const ScalarMag g_offset = as<ScalarMag>(5.0);
   const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
-    createModel<Scalar>(g_localDim, g_offset);
+    createModel<Scalar>(g_globalDim, g_offset);
   const RCP<const VectorSpaceBase<Scalar> > p_space = model->get_p_space(0);
   const int dim = p_space->dim();
   const int numUniqueEigenVals = 3;
@@ -394,7 +422,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_fullEigenVal, Scalar )
 
   const ScalarMag g_offset = as<ScalarMag>(5.0);
   const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
-    createModel<Scalar>(g_localDim, g_offset);
+    createModel<Scalar>(g_globalDim, g_offset);
   const RCP<const VectorSpaceBase<Scalar> > p_space = model->get_p_space(0);
   const int dim = p_space->dim();
   {
@@ -444,6 +472,81 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_fullEigenVal, Scalar )
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, FR_fullEigenVal )
+
+
+//
+// Test general convergence for a general nonlinear objective
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_generalNonlinearProblem, Scalar )
+{
+
+  using Teuchos::optInArg;
+  typedef ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+
+  const ScalarMag g_offset = as<ScalarMag>(5.0);
+  const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
+    createModel<Scalar>(g_globalDim, g_offset);
+
+  const RCP<const VectorSpaceBase<Scalar> > p_space = model->get_p_space(0);
+
+  {
+    const RCP<VectorBase<Scalar> > diag = createMember(p_space);
+    applyOp<Scalar>( TOpAssignValToGlobalIndex<Scalar>(),
+      null, tuple(diag.ptr())(), null );
+    out << "diag =\n" << *diag;
+    model->setDiagonalVector(diag);
+  }
+
+  const ScalarMag nonlinearTermFactor = as<ScalarMag>(g_nonlin_term_factor);
+  model->setNonlinearTermFactor(nonlinearTermFactor);
+
+  const RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
+    armijoQuadraticLineSearch<Scalar>();
+  const RCP<ParameterList> lsPL = parameterList();
+  lsPL->set("Min Number of Iterations", 1); // Force at least one line search iteration!
+  linesearch->setParameterList(lsPL);
+
+  const RCP<NonlinearCG<Scalar> > cgSolver =
+    nonlinearCG<Scalar>(model, 0, 0, linesearch);
+
+  cgSolver->setOStream(rcpFromRef(out));
+
+  const RCP<ParameterList> pl = parameterList();
+  pl->set("Reinitlaize Linesearch Step Length", true);
+  cgSolver->setParameterList(pl);
+
+  const RCP<VectorBase<Scalar> > p = createMember(p_space);
+  V_S( p.ptr(), ST::zero() );
+  
+  ScalarMag g_opt = -1.0;
+  const ScalarMag tol = as<ScalarMag>(g_nonlin_solve_tol);
+  const ScalarMag alpha_init = 5.0;
+  int numIters = -1;
+  const NCGU::ESolveReturn solveResult =
+    cgSolver->doSolve( p.ptr(), outArg(g_opt),
+      optInArg(tol), optInArg(tol), optInArg(alpha_init), outArg(numIters) );
+
+  out << "\n";
+ 
+  const ScalarMag err_tol = as<ScalarMag>(g_nonlin_error_tol);
+  TEST_EQUALITY(solveResult, NCGU::SOLVE_SOLUTION_FOUND);
+  TEST_FLOATING_EQUALITY(g_opt, g_offset, err_tol);
+  const bool result = Thyra::testRelNormDiffErr<Scalar>(
+    "p", *p,
+    "ps", *model->getSolutionVector(),
+    "err_tol", err_tol,
+    "2*err_tol", as<ScalarMag>(2.0)*err_tol,
+    &out
+    );
+  if (!result) success = false;
+  
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG,
+  FR_generalNonlinearProblem )
 
 
 } // namespace

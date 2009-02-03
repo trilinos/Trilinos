@@ -54,15 +54,18 @@ namespace OptiPack {
 
 template<class Scalar>
 DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::DiagonalQuadraticResponseOnlyModelEvaluator(
-  const int localDim
+  const int localDim,
+  const RCP<const Teuchos::Comm<Thyra::Ordinal> > &comm
   )
-  :Np_(1), Ng_(1)
+  :Np_(1), Ng_(1), comm_(comm), nonlinearTermFactor_(0.0)
 {
 
   typedef ScalarTraits<Scalar> ST;
 
   // Get the comm
-  comm_ = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
+  if (is_null(comm_)) {
+    comm_ = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
+  }
 
   // Parallel space for p
   p_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(comm_, localDim, -1);
@@ -107,6 +110,15 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::setDiagonalVector(
   const RCP<const Thyra::VectorBase<Scalar> > &diag)
 {
   diag_ = diag;
+}
+
+
+
+template<class Scalar>
+void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::setNonlinearTermFactor(
+  const Scalar &nonlinearTermFactor)
+{
+  nonlinearTermFactor_ = nonlinearTermFactor;
 }
 
 
@@ -207,12 +219,15 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::evalModelImpl(
   const ConstDetachedSpmdVectorView<Scalar> ps(ps_);
   const ConstDetachedSpmdVectorView<Scalar> diag(diag_);
 
-  // g(p) = 0.5 * sum( diag[i] * (p[i] - ps[i])^2, i=0...n-1) + g_offset
+  // g(p)
   if (!is_null(outArgs.get_g(0))) {
     Scalar g_val = ST::zero();
     for (Ordinal i = 0; i < p.subDim(); ++i) {
       const Scalar p_ps = p[i] - ps[i];
       g_val += diag[i] * p_ps*p_ps;
+      if (nonlinearTermFactor_ != ST::zero()) {
+        g_val += nonlinearTermFactor_*p_ps*p_ps*p_ps;
+      }
     }
     Scalar global_g_val;
     Teuchos::reduceAll<Ordinal, Scalar>(*comm_, Teuchos::REDUCE_SUM, g_val,
@@ -221,13 +236,17 @@ void DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>::evalModelImpl(
       as<Scalar>(0.5) * global_g_val + g_offset_;
   }
 
-  // DgDp[i] = diag[i] * (p[i] - ps[i])
+  // DgDp[i]
   if (!outArgs.get_DgDp(0,0).isEmpty()) {
     const RCP<Thyra::MultiVectorBase<Scalar> > DgDp_trans_mv =
       get_mv<Scalar>(outArgs.get_DgDp(0,0), "DgDp^T", MEB::DERIV_TRANS_MV_BY_ROW);
     const DetachedSpmdVectorView<Scalar> DgDp_grad(DgDp_trans_mv->col(0));
     for (Thyra::Ordinal i = 0; i < p.subDim(); ++i) {
-      DgDp_grad[i] = diag[i] * (p[i] - ps[i]);
+      const Scalar p_ps = p[i] - ps[i];
+      DgDp_grad[i] = diag[i] * p_ps;
+      if (nonlinearTermFactor_ != ST::zero()) {
+        DgDp_grad[i] += as<Scalar>(1.5) * nonlinearTermFactor_ * p_ps * p_ps;
+      }
     }
   }
   
