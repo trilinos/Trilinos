@@ -1,6 +1,7 @@
 INCLUDE(ParseVariableArguments)
 INCLUDE(GlobalSet)
 INCLUDE(AppendSet)
+INCLUDE(AppendGlob)
 INCLUDE(AppendGlobalSet)
 INCLUDE(PrependGlobalSet)
 INCLUDE(RemoveGlobalDuplicates)
