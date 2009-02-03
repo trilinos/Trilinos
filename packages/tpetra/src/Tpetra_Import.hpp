@@ -38,6 +38,7 @@
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_ImportExportData.hpp"
+#include <iterator>
 
 namespace Tpetra {
 

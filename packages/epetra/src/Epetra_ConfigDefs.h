@@ -114,6 +114,7 @@ using std::sprintf;
 #endif
 
 #ifdef HAVE_STRING
+#include <cstring>
 #include <string>
 #endif
 #ifdef HAVE_STRING_H

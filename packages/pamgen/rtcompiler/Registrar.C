@@ -390,7 +390,7 @@ double DRand::execute(Value** args)
 double Gamma::execute(Value** args) 
 /*****************************************************************************/
 {
-  return gamma(args[0]->getValue());
+  return tgamma(args[0]->getValue());
 }
 
 /*****************************************************************************/

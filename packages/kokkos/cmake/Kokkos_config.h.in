@@ -41,6 +41,15 @@
 /* Define to 1 if you have the <time.h> header file. */
 #cmakedefine HAVE_TIME_H
 
+/* Define to 1 if you have the <iostream> header file. */
+#cmakedefine HAVE_IOSTREAM
+
+/* Define to 1 if you have the <iostream> header file. */
+#cmakedefine HAVE_CASSERT
+
+/* Define to 1 if you have the <iostream> header file. */
+#cmakedefine HAVE_STRING
+
 /* Define if want to build tests */
 #cmakedefine HAVE_TESTS
 

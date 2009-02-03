@@ -9,6 +9,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <fei_iostream.hpp>
+#include <cstring>
 
 #include <fei_mpi.h>
 
