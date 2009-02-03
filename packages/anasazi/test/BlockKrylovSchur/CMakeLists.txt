@@ -7,7 +7,7 @@ INCLUDE_DIRECTORIES(../MVOPTester)
 
 IF(Teuchos_ENABLE_COMPLEX)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    BlockDavidson_complex_lap_test
+    BlockKrylovSchur_complex_lap_test
     SOURCES cxx_main_complex_lap.cpp
     ARGS --verbose
     COMM serial mpi
@@ -18,21 +18,21 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
 IF (${PACKAGE_NAME}_ENABLE_Triutils)
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    BlockDavidson_complex_test
+    BlockKrylovSchur_complex_test
     SOURCES cxx_main_complex.cpp
     COMM serial mpi
     ARGS
-      "--verbose --filename=mhd1280b.cua --insitu --longrun --locking"
-      "--verbose --filename=mhd1280b.cua --insitu --longrun --nolocking"
-      "--verbose --filename=mhd1280b.cua --exsitu --longrun --locking"
-      "--verbose --filename=mhd1280b.cua --exsitu --longrun --nolocking"
+      "--filename=mhd1280b.cua --insitu --herm"
+      "--filename=mhd1280a.cua --insitu --nonherm"
+      "--filename=mhd1280b.cua --exsitu --herm"
+      "--filename=mhd1280a.cua --exsitu --nonherm"
     STANDARD_PASS_OUTPUT
     )
 
-    PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestBlockDavidsonComplexFiles
+    PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestBlockKrylovSchurComplexFiles
     SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/test/MVOPTester
-    SOURCE_FILES mhd1280b.cua
-    EXEDEPS BlockDavidson_complex_test
+    SOURCE_FILES mhd1280b.cua mhd1280a.cua
+    EXEDEPS BlockKrylovSchur_complex_test
     )
 
 ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)

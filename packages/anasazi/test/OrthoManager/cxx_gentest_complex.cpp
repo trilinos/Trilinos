@@ -99,7 +99,6 @@ int main(int argc, char *argv[])
   bool verbose = false;
   int numFailed = 0;
   bool debug = false;
-  bool useMass = true;
   std::string filename;
   int dim = 100;
   int sizeS  = 5;
@@ -112,7 +111,6 @@ int main(int argc, char *argv[])
     CommandLineProcessor cmdp(false,true);
     cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
     cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
-    cmdp.setOption("numElements",&numElements,"Controls the size of multivectors.");
     cmdp.setOption("dim",&dim,"Controls the size of multivectors.");
     cmdp.setOption("sizeS",&sizeS,"Controls the width of the input multivector.");
     cmdp.setOption("sizeX1",&sizeX1,"Controls the width of the first basis.");
@@ -195,6 +193,7 @@ int main(int argc, char *argv[])
       TEST_FOR_EXCEPTION(sizeX1 < sizeX2,std::logic_error,"Internal logic error: sizeX1 < sizeX2.");
       Array<ST> LUwork(sizeX1);
       std::vector<MT> norms1(sizeX1), norms2(sizeX2);
+      std::vector<ST> scale1(sizeX1), scale2(sizeX2);
       // use a BasicOrthoManager for testing
       RCP<MatOrthoManager<ST,MV,OP> > OM_basic = rcp( new BasicOrthoManager<ST,MV,OP>(M) );
 
@@ -228,8 +227,8 @@ int main(int argc, char *argv[])
           "project(X1,Y2) did not meet tolerance: orthog(X1,Y2) == " << err);
       MyOM->stream(Warnings) << "   || <X1,Y2> ||     : " << err << endl;
       MVT::MvNorm(*X1,norms1);
-      for (unsigned int i=0; i<norms1.size(); i++) norms1[i] = ONE/norms1[i];
-      MVT::MvScale(*X1,norms1);
+      for (unsigned int i=0; i<norms1.size(); i++) scale1[i] = ONE/norms1[i];
+      MVT::MvScale(*X1,scale1);
 
       // Compute X1b so that <X1b,Y1> = I
       // Compute LU factorization of <Y1,X1> and use it to compute explicit inverse of <Y1,X1>
@@ -283,16 +282,16 @@ int main(int argc, char *argv[])
       // X2 ortho to Y1
       MVT::MvRandom(*X2);
       MVT::MvNorm(*X2,norms2);
-      for (unsigned int i=0; i<norms2.size(); i++) norms2[i] = ONE/norms2[i];
-      MVT::MvScale(*X2,norms2);
+      for (unsigned int i=0; i<norms2.size(); i++) scale2[i] = ONE/norms2[i];
+      MVT::MvScale(*X2,scale2);
       OM_basic->project(*X2,tuple<RCP<const MV> >(Y1));
       err = OM_basic->orthogError(*X2,*Y1);
       TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
           "project(X2,Y1) did not meet tolerance: orthog(X2,Y1) == " << err);
       MyOM->stream(Warnings) << "   || <X2,Y1> ||     : " << err << endl;
       MVT::MvNorm(*X2,norms2);
-      for (unsigned int i=0; i<norms2.size(); i++) norms2[i] = ONE/norms2[i];
-      MVT::MvScale(*X2,norms2);
+      for (unsigned int i=0; i<norms2.size(); i++) scale2[i] = ONE/norms2[i];
+      MVT::MvScale(*X2,scale2);
 
       // Compute X2b so that <X2b,Y2> = I
       // Compute LU factorization of <Y2,X2> and use it to compute explicit inverse of <Y2,X2>

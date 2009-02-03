@@ -60,9 +60,9 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 #np# files needed to compile the exe.
 OrthoManagerComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp 
 
-OrthoManagerComplex_mattest_SOURCES = $(srcdir)/cxx_main_complex.cpp 
+OrthoManagerComplex_mattest_SOURCES = $(srcdir)/cxx_mattest_complex.cpp 
 
-OrthoManagerComplex_gentest_SOURCES = $(srcdir)/cxx_main_complex.cpp 
+OrthoManagerComplex_gentest_SOURCES = $(srcdir)/cxx_gentest_complex.cpp 
 
 Dummy_SOURCES = Dummy
 

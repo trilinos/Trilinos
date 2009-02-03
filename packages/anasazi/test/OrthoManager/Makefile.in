@@ -103,7 +103,7 @@ am_Dummy_OBJECTS =
 Dummy_OBJECTS = $(am_Dummy_OBJECTS)
 Dummy_LDADD = $(LDADD)
 am_OrthoManagerComplex_gentest_OBJECTS =  \
-	OrthoManagerComplex_gentest-cxx_main_complex.$(OBJEXT)
+	OrthoManagerComplex_gentest-cxx_gentest_complex.$(OBJEXT)
 OrthoManagerComplex_gentest_OBJECTS =  \
 	$(am_OrthoManagerComplex_gentest_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -114,7 +114,7 @@ OrthoManagerComplex_gentest_LINK = $(CXXLD) \
 	$(OrthoManagerComplex_gentest_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_OrthoManagerComplex_mattest_OBJECTS =  \
-	OrthoManagerComplex_mattest-cxx_main_complex.$(OBJEXT)
+	OrthoManagerComplex_mattest-cxx_mattest_complex.$(OBJEXT)
 OrthoManagerComplex_mattest_OBJECTS =  \
 	$(am_OrthoManagerComplex_mattest_OBJECTS)
 OrthoManagerComplex_mattest_LINK = $(CXXLD) \
@@ -273,8 +273,8 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
 OrthoManagerComplex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp 
-OrthoManagerComplex_mattest_SOURCES = $(srcdir)/cxx_main_complex.cpp 
-OrthoManagerComplex_gentest_SOURCES = $(srcdir)/cxx_main_complex.cpp 
+OrthoManagerComplex_mattest_SOURCES = $(srcdir)/cxx_mattest_complex.cpp 
+OrthoManagerComplex_gentest_SOURCES = $(srcdir)/cxx_gentest_complex.cpp 
 Dummy_SOURCES = Dummy
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
@@ -364,8 +364,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OrthoManagerComplex_gentest-cxx_main_complex.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OrthoManagerComplex_mattest-cxx_main_complex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OrthoManagerComplex_gentest-cxx_gentest_complex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OrthoManagerComplex_mattest-cxx_mattest_complex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/OrthoManagerComplex_test-cxx_main_complex.Po@am__quote@
 
 .cpp.o:
@@ -382,33 +382,33 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-OrthoManagerComplex_gentest-cxx_main_complex.o: $(srcdir)/cxx_main_complex.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_gentest_CXXFLAGS) $(CXXFLAGS) -MT OrthoManagerComplex_gentest-cxx_main_complex.o -MD -MP -MF $(DEPDIR)/OrthoManagerComplex_gentest-cxx_main_complex.Tpo -c -o OrthoManagerComplex_gentest-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/OrthoManagerComplex_gentest-cxx_main_complex.Tpo $(DEPDIR)/OrthoManagerComplex_gentest-cxx_main_complex.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='OrthoManagerComplex_gentest-cxx_main_complex.o' libtool=no @AMDEPBACKSLASH@
+OrthoManagerComplex_gentest-cxx_gentest_complex.o: $(srcdir)/cxx_gentest_complex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_gentest_CXXFLAGS) $(CXXFLAGS) -MT OrthoManagerComplex_gentest-cxx_gentest_complex.o -MD -MP -MF $(DEPDIR)/OrthoManagerComplex_gentest-cxx_gentest_complex.Tpo -c -o OrthoManagerComplex_gentest-cxx_gentest_complex.o `test -f '$(srcdir)/cxx_gentest_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_gentest_complex.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/OrthoManagerComplex_gentest-cxx_gentest_complex.Tpo $(DEPDIR)/OrthoManagerComplex_gentest-cxx_gentest_complex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_gentest_complex.cpp' object='OrthoManagerComplex_gentest-cxx_gentest_complex.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_gentest_CXXFLAGS) $(CXXFLAGS) -c -o OrthoManagerComplex_gentest-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_gentest_CXXFLAGS) $(CXXFLAGS) -c -o OrthoManagerComplex_gentest-cxx_gentest_complex.o `test -f '$(srcdir)/cxx_gentest_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_gentest_complex.cpp
 
-OrthoManagerComplex_gentest-cxx_main_complex.obj: $(srcdir)/cxx_main_complex.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_gentest_CXXFLAGS) $(CXXFLAGS) -MT OrthoManagerComplex_gentest-cxx_main_complex.obj -MD -MP -MF $(DEPDIR)/OrthoManagerComplex_gentest-cxx_main_complex.Tpo -c -o OrthoManagerComplex_gentest-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/OrthoManagerComplex_gentest-cxx_main_complex.Tpo $(DEPDIR)/OrthoManagerComplex_gentest-cxx_main_complex.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='OrthoManagerComplex_gentest-cxx_main_complex.obj' libtool=no @AMDEPBACKSLASH@
+OrthoManagerComplex_gentest-cxx_gentest_complex.obj: $(srcdir)/cxx_gentest_complex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_gentest_CXXFLAGS) $(CXXFLAGS) -MT OrthoManagerComplex_gentest-cxx_gentest_complex.obj -MD -MP -MF $(DEPDIR)/OrthoManagerComplex_gentest-cxx_gentest_complex.Tpo -c -o OrthoManagerComplex_gentest-cxx_gentest_complex.obj `if test -f '$(srcdir)/cxx_gentest_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_gentest_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_gentest_complex.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/OrthoManagerComplex_gentest-cxx_gentest_complex.Tpo $(DEPDIR)/OrthoManagerComplex_gentest-cxx_gentest_complex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_gentest_complex.cpp' object='OrthoManagerComplex_gentest-cxx_gentest_complex.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_gentest_CXXFLAGS) $(CXXFLAGS) -c -o OrthoManagerComplex_gentest-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_gentest_CXXFLAGS) $(CXXFLAGS) -c -o OrthoManagerComplex_gentest-cxx_gentest_complex.obj `if test -f '$(srcdir)/cxx_gentest_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_gentest_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_gentest_complex.cpp'; fi`
 
-OrthoManagerComplex_mattest-cxx_main_complex.o: $(srcdir)/cxx_main_complex.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_mattest_CXXFLAGS) $(CXXFLAGS) -MT OrthoManagerComplex_mattest-cxx_main_complex.o -MD -MP -MF $(DEPDIR)/OrthoManagerComplex_mattest-cxx_main_complex.Tpo -c -o OrthoManagerComplex_mattest-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/OrthoManagerComplex_mattest-cxx_main_complex.Tpo $(DEPDIR)/OrthoManagerComplex_mattest-cxx_main_complex.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='OrthoManagerComplex_mattest-cxx_main_complex.o' libtool=no @AMDEPBACKSLASH@
+OrthoManagerComplex_mattest-cxx_mattest_complex.o: $(srcdir)/cxx_mattest_complex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_mattest_CXXFLAGS) $(CXXFLAGS) -MT OrthoManagerComplex_mattest-cxx_mattest_complex.o -MD -MP -MF $(DEPDIR)/OrthoManagerComplex_mattest-cxx_mattest_complex.Tpo -c -o OrthoManagerComplex_mattest-cxx_mattest_complex.o `test -f '$(srcdir)/cxx_mattest_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_mattest_complex.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/OrthoManagerComplex_mattest-cxx_mattest_complex.Tpo $(DEPDIR)/OrthoManagerComplex_mattest-cxx_mattest_complex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_mattest_complex.cpp' object='OrthoManagerComplex_mattest-cxx_mattest_complex.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_mattest_CXXFLAGS) $(CXXFLAGS) -c -o OrthoManagerComplex_mattest-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_mattest_CXXFLAGS) $(CXXFLAGS) -c -o OrthoManagerComplex_mattest-cxx_mattest_complex.o `test -f '$(srcdir)/cxx_mattest_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_mattest_complex.cpp
 
-OrthoManagerComplex_mattest-cxx_main_complex.obj: $(srcdir)/cxx_main_complex.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_mattest_CXXFLAGS) $(CXXFLAGS) -MT OrthoManagerComplex_mattest-cxx_main_complex.obj -MD -MP -MF $(DEPDIR)/OrthoManagerComplex_mattest-cxx_main_complex.Tpo -c -o OrthoManagerComplex_mattest-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/OrthoManagerComplex_mattest-cxx_main_complex.Tpo $(DEPDIR)/OrthoManagerComplex_mattest-cxx_main_complex.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='OrthoManagerComplex_mattest-cxx_main_complex.obj' libtool=no @AMDEPBACKSLASH@
+OrthoManagerComplex_mattest-cxx_mattest_complex.obj: $(srcdir)/cxx_mattest_complex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_mattest_CXXFLAGS) $(CXXFLAGS) -MT OrthoManagerComplex_mattest-cxx_mattest_complex.obj -MD -MP -MF $(DEPDIR)/OrthoManagerComplex_mattest-cxx_mattest_complex.Tpo -c -o OrthoManagerComplex_mattest-cxx_mattest_complex.obj `if test -f '$(srcdir)/cxx_mattest_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_mattest_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_mattest_complex.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/OrthoManagerComplex_mattest-cxx_mattest_complex.Tpo $(DEPDIR)/OrthoManagerComplex_mattest-cxx_mattest_complex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_mattest_complex.cpp' object='OrthoManagerComplex_mattest-cxx_mattest_complex.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_mattest_CXXFLAGS) $(CXXFLAGS) -c -o OrthoManagerComplex_mattest-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_mattest_CXXFLAGS) $(CXXFLAGS) -c -o OrthoManagerComplex_mattest-cxx_mattest_complex.obj `if test -f '$(srcdir)/cxx_mattest_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_mattest_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_mattest_complex.cpp'; fi`
 
 OrthoManagerComplex_test-cxx_main_complex.o: $(srcdir)/cxx_main_complex.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(OrthoManagerComplex_test_CXXFLAGS) $(CXXFLAGS) -MT OrthoManagerComplex_test-cxx_main_complex.o -MD -MP -MF $(DEPDIR)/OrthoManagerComplex_test-cxx_main_complex.Tpo -c -o OrthoManagerComplex_test-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
