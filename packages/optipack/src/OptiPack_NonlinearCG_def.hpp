@@ -37,6 +37,7 @@
 #include "OptiPack_UnconstrainedOptMeritFunc1D.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_Tuple.hpp"
 
 
@@ -55,6 +56,8 @@ NonlinearCG<Scalar>::NonlinearCG()
     and_conv_tests_(NonlinearCGUtils::and_conv_tests_default),
     minIters_(NonlinearCGUtils::minIters_default),
     maxIters_(NonlinearCGUtils::maxIters_default),
+    g_reduct_tol_(NonlinearCGUtils::g_reduct_tol_default),
+    g_grad_tol_(NonlinearCGUtils::g_grad_tol_default),
     g_mag_(NonlinearCGUtils::g_mag_default),
     numIters_(0)
 {}
@@ -114,6 +117,22 @@ const int NonlinearCG<Scalar>::get_maxIters() const
 
 template<typename Scalar>
 const typename NonlinearCG<Scalar>::ScalarMag
+NonlinearCG<Scalar>::get_g_reduct_tol() const
+{
+  return g_reduct_tol_;
+}
+
+
+template<typename Scalar>
+const typename NonlinearCG<Scalar>::ScalarMag
+NonlinearCG<Scalar>::get_g_grad_tol() const
+{
+  return g_grad_tol_;
+}
+
+
+template<typename Scalar>
+const typename NonlinearCG<Scalar>::ScalarMag
 NonlinearCG<Scalar>::get_g_mag() const
 {
   return g_mag_;
@@ -136,11 +155,16 @@ void NonlinearCG<Scalar>::setParameterList(RCP<ParameterList> const& paramList)
   and_conv_tests_ = getParameter<bool>(*paramList, NCGU::and_conv_tests_name);
   minIters_ = getParameter<int>(*paramList, NCGU::minIters_name);
   maxIters_ = getParameter<int>(*paramList, NCGU::maxIters_name);
+  g_reduct_tol_ = getParameter<double>(*paramList, NCGU::g_reduct_tol_name);
+  g_grad_tol_ = getParameter<double>(*paramList, NCGU::g_grad_tol_name);
   g_mag_ = getParameter<double>(*paramList, NCGU::g_mag_name);
   TEUCHOS_ASSERT_INEQUALITY( alpha_init_, >, SMT::zero() );
   TEUCHOS_ASSERT_INEQUALITY( minIters_, >=, 0 );
   TEUCHOS_ASSERT_INEQUALITY( minIters_, <, maxIters_ );
+  TEUCHOS_ASSERT_INEQUALITY( g_reduct_tol_, >=, SMT::zero() );
+  TEUCHOS_ASSERT_INEQUALITY( g_grad_tol_, >=, SMT::zero() );
   TEUCHOS_ASSERT_INEQUALITY( g_mag_, >, SMT::zero() );
+  Teuchos::readVerboseObjectSublist(&*paramList, this);
   setMyParamList(paramList);
 }
 
@@ -159,8 +183,12 @@ NonlinearCG<Scalar>::getValidParameters() const
     pl->set( NCGU::and_conv_tests_name, NCGU::and_conv_tests_default );
     pl->set( NCGU::minIters_name, NCGU::minIters_default );
     pl->set( NCGU::maxIters_name, NCGU::maxIters_default );
+    pl->set( NCGU::g_reduct_tol_name, NCGU::g_reduct_tol_default );
+    pl->set( NCGU::g_grad_tol_name, NCGU::g_grad_tol_default );
     pl->set( NCGU::g_mag_name, NCGU::g_mag_default );
+    Teuchos::setupVerboseObjectSublist(&*pl);
     validPL = pl;
+    // ToDo: Add documentation for these parameters
   }
   return validPL;
 }
@@ -176,7 +204,7 @@ NonlinearCG<Scalar>::doSolve(
   const Ptr<ScalarMag> &g_opt_out,
   const Ptr<const ScalarMag> &g_reduct_tol_in,
   const Ptr<const ScalarMag> &g_grad_tol_in,
-  const Ptr<const ScalarMag> &alpha_init,
+  const Ptr<const ScalarMag> &alpha_init_in,
   const Ptr<int> &numIters_out
   )
 {
@@ -230,20 +258,20 @@ NonlinearCG<Scalar>::doSolve(
 
   // Stoarge for current iteration
   RCP<VectorBase<Scalar> >
-    p = rcpFromPtr(p_inout),        // Current solution for p
-    p_new = createMember(p_space),  // Trial point for p (in line search)
-    g_v = createMember(g_space),    // Vector (size 1) form of objective g(p) 
-    g_grad = createMember(p_space), // Gradient of g DgDp^T
-    d = createMember(p_space);      // Search direction
+    p_k = rcpFromPtr(p_inout),        // Current solution for p
+    p_kp1 = createMember(p_space),  // Trial point for p (in line search)
+    g_vec = createMember(g_space),    // Vector (size 1) form of objective g(p) 
+    g_grad_k = createMember(p_space), // Gradient of g DgDp^T
+    d_k = createMember(p_space);      // Search direction
 
   // Storage for previous iteration
   RCP<VectorBase<Scalar> >
-    g_grad_last = createMember(p_space);
+    g_grad_km1 = createMember(p_space);
   ScalarMag
-    alpha_last = SMT::zero(),
-    g_last = SMT::zero(),
-    g_grad_inner_g_grad_last = SMT::zero(),
-    g_grad_inner_d_last = SMT::zero();
+    alpha_km1 = SMT::zero(),
+    g_km1 = SMT::zero(),
+    g_grad_km1_inner_g_grad_km1 = SMT::zero(),
+    g_grad_km1_inner_d_km1 = SMT::zero();
   
 
   //
@@ -262,10 +290,12 @@ NonlinearCG<Scalar>::doSolve(
   bool foundSolution = false;
   bool linesearchFailure = false;
   bool linsearchFailureLastIter = false;
+  const Scalar alpha_init =
+    ( !is_null(alpha_init_in) ? *alpha_init_in : alpha_init_ );
   const Scalar g_reduct_tol =
-    ( !is_null(g_reduct_tol_in) ? *g_reduct_tol_in : as<Scalar>(1e-5)); // ToDo: Get from PL
+    ( !is_null(g_reduct_tol_in) ? *g_reduct_tol_in : g_reduct_tol_ );
   const Scalar g_grad_tol =
-    ( !is_null(g_grad_tol_in) ? *g_grad_tol_in : as<Scalar>(1e-5)); // ToDo: Get from PL
+    ( !is_null(g_grad_tol_in) ? *g_grad_tol_in : g_grad_tol_ );
 
   for (numIters_ = 0; numIters_ < maxIters_; ++numIters_) {
 
@@ -280,25 +310,25 @@ NonlinearCG<Scalar>::doSolve(
     //
     
     eval_g_DgDp(
-      *model_, paramIndex_, *p, responseIndex_,
-      numIters_ == 0 ? g_v.ptr() : null, // Only on first iteration
-      MEB::Derivative<Scalar>(g_grad, MEB::DERIV_MV_GRADIENT_FORM) );
+      *model_, paramIndex_, *p_k, responseIndex_,
+      numIters_ == 0 ? g_vec.ptr() : null, // Only on first iteration
+      MEB::Derivative<Scalar>(g_grad_k, MEB::DERIV_MV_GRADIENT_FORM) );
 
-    const ScalarMag g = get_ele(*g_v, 0);
-    // Above: If numIters_ > 0, then g_v was updated in meritFunc->eval(...).
+    const ScalarMag g_k = get_ele(*g_vec, 0);
+    // Above: If numIters_ > 0, then g_vec was updated in meritFunc->eval(...).
 
     //
     // B.2) Check for convergence
     //
 
-    // B.2.a) ||g - g_last|| |g + g_mag| <= g_reduct_tol
+    // B.2.a) ||g_k - g_km1|| |g_k + g_mag| <= g_reduct_tol
 
-    const ScalarMag g_reduct = g - g_last;
+    const ScalarMag g_reduct = g_k - g_km1;
 
     *out << "\ng_k - g_km1 = "<<g_reduct<<"\n";
 
     const ScalarMag g_reduct_err =
-      SMT::magnitude(g_reduct / SMT::magnitude(g + g_mag_));
+      SMT::magnitude(g_reduct / SMT::magnitude(g_k + g_mag_));
 
     const bool g_reduct_converged = (g_reduct_err <= g_reduct_tol);
 
@@ -306,14 +336,14 @@ NonlinearCG<Scalar>::doSolve(
          << (g_reduct_converged ? " <= " : " > ")
          << "g_reduct_tol = "<<g_reduct_tol<<"\n";
 
-    // B.2.b) ||g_grad|| g_mag <= g_grad_tol
+    // B.2.b) ||g_grad_k|| g_mag <= g_grad_tol
 
-    const Scalar g_grad_inner_g_grad = scalarProd<Scalar>(*g_grad, *g_grad);
-    const ScalarMag norm_g_grad = ST::magnitude(ST::squareroot(g_grad_inner_g_grad));
+    const Scalar g_grad_k_inner_g_grad_k = scalarProd<Scalar>(*g_grad_k, *g_grad_k);
+    const ScalarMag norm_g_grad_k = ST::magnitude(ST::squareroot(g_grad_k_inner_g_grad_k));
 
-    *out << "\n||g_grad_k|| = "<<norm_g_grad << "\n";
+    *out << "\n||g_grad_k|| = "<<norm_g_grad_k << "\n";
 
-    const ScalarMag g_grad_err = norm_g_grad / g_mag_;
+    const ScalarMag g_grad_err = norm_g_grad_k / g_mag_;
 
     const bool g_grad_converged = (g_grad_err <= g_grad_tol);
 
@@ -355,19 +385,19 @@ NonlinearCG<Scalar>::doSolve(
 
     if (numIters_ == 0) {
 
-      // p = -g_grad
-      V_StV( d.ptr(), as<Scalar>(-1.0), *g_grad );
+      // d_k = -g_grad_k
+      V_StV( d_k.ptr(), as<Scalar>(-1.0), *g_grad_k );
 
     }
     else {
 
-      // beta_FR = inner(g_grad, g_grad) / inner(g_grad_last, g_grad_last)
-      const Scalar beta =
-        g_grad_inner_g_grad / g_grad_inner_g_grad_last;
+      // beta_FR = inner(g_grad_k, g_grad_k) / inner(g_grad_km1, g_grad_km1)
+      const Scalar beta_k =
+        g_grad_k_inner_g_grad_k / g_grad_km1_inner_g_grad_km1;
 
-      // d = beta * d_last + -g_grad
-      Vt_S( d.ptr(), beta );
-      Vp_StV( d.ptr(), as<Scalar>(-1.0), *g_grad );
+      // d_k = beta_k * d_last + -g_grad_k
+      Vt_S( d_k.ptr(), beta_k );
+      Vp_StV( d_k.ptr(), as<Scalar>(-1.0), *g_grad_k );
 
     }
     
@@ -377,42 +407,38 @@ NonlinearCG<Scalar>::doSolve(
 
     // B.4.a) Compute the initial step length
 
-    Scalar alpha = as<Scalar>(-1.0);
+    Scalar alpha_k = as<Scalar>(-1.0);
 
     if (numIters_ == 0) {
-      if (!is_null(alpha_init)) {
-        alpha = *alpha_init;
-      }
-      else {
-        TEST_FOR_EXCEPT(true); // ToDo: Grab from the PL!
-      }
+      alpha_k = alpha_init;
     }
     else {
       if (alpha_reinit_) {
-        alpha = *alpha_init;
+        alpha_k = alpha_init;
       }
       else {
-        alpha = alpha_last;
+        alpha_k = alpha_km1;
+        // ToDo: Implement better logic from Nocedal and Wright for selecting
+        // this step length after first iteration.
       }
     }
-
 
     // B.4.b) Perform the linesearch (computing updated quantities in process)
 
     pointEvaluator->initialize(
-      tuple<RCP<const VectorBase<Scalar> > >(p, d)() );
+      tuple<RCP<const VectorBase<Scalar> > >(p_k, d_k)() );
 
-    const ScalarMag g_grad_inner_d = scalarProd(*g_grad, *d);
+    const ScalarMag g_grad_k_inner_d_k = scalarProd(*g_grad_k, *d_k);
 
     // Set up the merit function to only compute the value but give it its
     // initial descent derivative.
     meritFunc->setEvaluationQuantities(
-      pointEvaluator, p_new, g_v, null, optInArg(g_grad_inner_d) );
+      pointEvaluator, p_kp1, g_vec, null, optInArg(g_grad_k_inner_d_k) );
 
-    ScalarMag g_new = computeValue(*meritFunc, alpha); // Updates p_new and g_v as well!
+    ScalarMag g_kp1 = computeValue(*meritFunc, alpha_k); // Updates p_kp1 and g_vec as well!
 
     const bool linesearchResult = linesearch_->doLineSearch(
-      *meritFunc, g, inOutArg(alpha), inOutArg(g_new), null );
+      *meritFunc, g_k, inOutArg(alpha_k), inOutArg(g_kp1), null );
 
     if (!linesearchResult) {
       if (!linsearchFailureLastIter) {
@@ -433,23 +459,29 @@ NonlinearCG<Scalar>::doSolve(
     // B.5) Transition to the next iteration
     //
     
-    alpha_last = alpha;
-    g_last = g;
-    g_grad_inner_g_grad_last = g_grad_inner_g_grad;
-    g_grad_inner_d_last = g_grad_inner_d;
-    std::swap(g_grad, g_grad_last);
-    std::swap(p_new, p);
-    
+    alpha_km1 = alpha_k;
+    g_km1 = g_k;
+    g_grad_km1_inner_g_grad_km1 = g_grad_k_inner_g_grad_k;
+    g_grad_km1_inner_d_km1 = g_grad_k_inner_d_k;
+
+    std::swap(g_grad_km1, g_grad_k);
+    std::swap(p_k, p_kp1);
+#ifdef TEUCHOS_DEBUG
+    V_S(g_grad_k.ptr(), ST::nan());
+    V_S(p_kp1.ptr(), ST::nan());
+#endif
+
   }
 
   //
   // C) Final clean up
   //
-
-  *g_opt_out = get_ele(*g_v, 0);
+  
+  // Get the most current value of g(p)
+  *g_opt_out = get_ele(*g_vec, 0);
 
   // Make sure that the final value for p has been copied in!
-  V_V( p_inout, *p );
+  V_V( p_inout, *p_k );
 
   if (!is_null(numIters_out)) {
     *numIters_out = numIters_;

@@ -138,8 +138,8 @@ createNonlinearCGSolver(
   const RCP<ParameterList> lsPL = parameterList();
   lsPL->set("Min Backtrack Fraction", 0.0);
   lsPL->set("Max Backtrack Fraction", 1e+50);
-  lsPL->set("Min Number of Iterations", 1);
-  lsPL->set("Max Number of Iterations", 2);
+  lsPL->set("Min Num Iterations", 1);
+  lsPL->set("Max Num Iterations", 2);
   linesearch->setParameterList(lsPL);
 
   const RCP<NonlinearCG<Scalar> > cgSolver =
@@ -206,16 +206,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, defaultParams, Scalar )
   typedef typename ST::magnitudeType ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   namespace NCGU = OptiPack::NonlinearCGUtils;
-  const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
-    createModel<Scalar>(g_globalDim, as<Scalar>(0.0));
-  const RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
-    armijoQuadraticLineSearch<Scalar>();
-  const RCP<NonlinearCG<Scalar> > cgSolver =
-    nonlinearCG<Scalar>(model, 0, 0, linesearch);
+  const RCP<NonlinearCG<Scalar> > cgSolver = nonlinearCG<Scalar>();
   TEST_EQUALITY(cgSolver->get_alpha_init(), as<ScalarMag>(NCGU::alpha_init_default));
   TEST_EQUALITY(cgSolver->get_alpha_reinit(), NCGU::alpha_reinit_default);
   TEST_EQUALITY(cgSolver->get_minIters(), NCGU::minIters_default);
   TEST_EQUALITY(cgSolver->get_maxIters(), NCGU::maxIters_default);
+  TEST_EQUALITY(cgSolver->get_g_reduct_tol(), as<ScalarMag>(NCGU::g_reduct_tol_default));
+  TEST_EQUALITY(cgSolver->get_g_grad_tol(), as<ScalarMag>(NCGU::g_grad_tol_default));
   TEST_EQUALITY(cgSolver->get_g_mag(), as<ScalarMag>(NCGU::g_mag_default));
 }
 
@@ -233,16 +230,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, parseParamsDefaultParams, Scalar
   typedef typename ST::magnitudeType ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   namespace NCGU = OptiPack::NonlinearCGUtils;
-  const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
-    createModel<Scalar>(g_globalDim, as<Scalar>(0.0));
-  const RCP<NonlinearCG<Scalar> > cgSolver =
-    createNonlinearCGSolver<Scalar>(model, rcpFromRef(out));
-  const RCP<ParameterList> pl = cgSolver->getNonconstParameterList();
+  const RCP<NonlinearCG<Scalar> > cgSolver = nonlinearCG<Scalar>();
+  const RCP<ParameterList> pl = parameterList();
   cgSolver->setParameterList(pl);
   TEST_EQUALITY(cgSolver->get_alpha_init(), as<ScalarMag>(NCGU::alpha_init_default));
   TEST_EQUALITY(cgSolver->get_alpha_reinit(), NCGU::alpha_reinit_default);
   TEST_EQUALITY(cgSolver->get_minIters(), NCGU::minIters_default);
   TEST_EQUALITY(cgSolver->get_maxIters(), NCGU::maxIters_default);
+  TEST_EQUALITY(cgSolver->get_g_reduct_tol(), as<ScalarMag>(NCGU::g_reduct_tol_default));
+  TEST_EQUALITY(cgSolver->get_g_grad_tol(), as<ScalarMag>(NCGU::g_grad_tol_default));
   TEST_EQUALITY(cgSolver->get_g_mag(), as<ScalarMag>(NCGU::g_mag_default));
 }
 
@@ -259,21 +255,22 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, parseParams, Scalar )
   typedef typename ST::magnitudeType ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   namespace NCGU = OptiPack::NonlinearCGUtils;
-  const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
-    createModel<Scalar>(g_globalDim, as<Scalar>(0.0));
-  const RCP<NonlinearCG<Scalar> > cgSolver =
-    createNonlinearCGSolver<Scalar>(model, rcpFromRef(out));
+  const RCP<NonlinearCG<Scalar> > cgSolver = nonlinearCG<Scalar>();
   const double alpha_init = 0.9;
   const bool alpha_reinit = true;
   const int minIters = 92;
   const int maxIters = 99;
+  const double g_reduct_tol = 2.5;
+  const double g_grad_tol = 2.8;
   const double g_mag = 3.1;
   TEST_INEQUALITY( alpha_reinit, NCGU::alpha_reinit_default ); // Make sure different
-  const RCP<ParameterList> pl = cgSolver->getNonconstParameterList();
+  const RCP<ParameterList> pl = parameterList();
   pl->set("Initial Linesearch Step Length", alpha_init);
   pl->set("Reinitlaize Linesearch Step Length", alpha_reinit);
   pl->set("Min Num Iterations", minIters);
   pl->set("Max Num Iterations", maxIters);
+  pl->set("Objective Reduction Tol", g_reduct_tol);
+  pl->set("Objective Gradient Tol", g_grad_tol);
   pl->set("Objective Magnitude", g_mag);
   cgSolver->setParameterList(pl);
   const ScalarMag tol = SMT::eps();
@@ -281,10 +278,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, parseParams, Scalar )
   TEST_EQUALITY(cgSolver->get_alpha_reinit(), alpha_reinit);
   TEST_EQUALITY(cgSolver->get_minIters(), minIters);
   TEST_EQUALITY(cgSolver->get_maxIters(), maxIters);
+  TEST_FLOATING_EQUALITY(cgSolver->get_g_reduct_tol(), as<ScalarMag>(g_reduct_tol), tol);
+  TEST_FLOATING_EQUALITY(cgSolver->get_g_grad_tol(), as<ScalarMag>(g_grad_tol), tol);
   TEST_FLOATING_EQUALITY(cgSolver->get_g_mag(), as<ScalarMag>(g_mag), tol);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, parseParams )
+
+
+//
+// Print valid parameters
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, printValidParams, Scalar )
+{
+  const RCP<NonlinearCG<Scalar> > cgSolver = nonlinearCG<Scalar>();
+  const RCP<const ParameterList> validPL = cgSolver->getValidParameters();
+  typedef Teuchos::ParameterList::PrintOptions PO;
+  out << "\nvalidPL:\n";
+  validPL->print(out, PO().indent(2).showTypes(true).showFlags(2).showDoc(2));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, printValidParams )
 
 
 //
@@ -506,7 +521,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_generalNonlinearProblem, Scal
   const RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
     armijoQuadraticLineSearch<Scalar>();
   const RCP<ParameterList> lsPL = parameterList();
-  lsPL->set("Min Number of Iterations", 1); // Force at least one line search iteration!
+  lsPL->set("Min Num Iterations", 1); // Force at least one line search iteration!
   linesearch->setParameterList(lsPL);
 
   const RCP<NonlinearCG<Scalar> > cgSolver =
@@ -547,6 +562,85 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_generalNonlinearProblem, Scal
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG,
   FR_generalNonlinearProblem )
+
+
+//
+// Test general convergence for a general nonlinear objective passing all
+// control options through the PL
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_generalNonlinearProblem_PL, Scalar )
+{
+
+  using Teuchos::optInArg;
+  typedef ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+
+  const ScalarMag g_offset = as<ScalarMag>(5.0);
+  const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
+    createModel<Scalar>(g_globalDim, g_offset);
+
+  const RCP<const VectorSpaceBase<Scalar> > p_space = model->get_p_space(0);
+
+  {
+    const RCP<VectorBase<Scalar> > diag = createMember(p_space);
+    applyOp<Scalar>( TOpAssignValToGlobalIndex<Scalar>(),
+      null, tuple(diag.ptr())(), null );
+    out << "diag =\n" << *diag;
+    model->setDiagonalVector(diag);
+  }
+
+  const ScalarMag nonlinearTermFactor = as<ScalarMag>(g_nonlin_term_factor);
+  model->setNonlinearTermFactor(nonlinearTermFactor);
+
+  const RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
+    armijoQuadraticLineSearch<Scalar>();
+  const RCP<ParameterList> lsPL = parameterList();
+  lsPL->set("Min Num Iterations", 1); // Force at least one line search iteration!
+  linesearch->setParameterList(lsPL);
+
+  const RCP<NonlinearCG<Scalar> > cgSolver =
+    nonlinearCG<Scalar>(model, 0, 0, linesearch);
+
+  cgSolver->setOStream(rcpFromRef(out));
+
+  const RCP<VectorBase<Scalar> > p = createMember(p_space);
+  V_S( p.ptr(), ST::zero() );
+  
+  const double tol = as<double>(g_nonlin_solve_tol);
+  const double alpha_init = as<double>(5.0);
+  const RCP<ParameterList> pl = parameterList();
+  pl->set("Initial Linesearch Step Length", alpha_init);
+  pl->set("Reinitlaize Linesearch Step Length", true);
+  pl->set("Objective Reduction Tol", tol);
+  pl->set("Objective Gradient Tol", tol);
+  cgSolver->setParameterList(pl);
+
+  ScalarMag g_opt = -1.0;
+  int numIters = -1;
+  const NCGU::ESolveReturn solveResult =
+    cgSolver->doSolve( p.ptr(), outArg(g_opt),
+      null, null, null, outArg(numIters) );
+  
+  out << "\n";
+ 
+  const ScalarMag err_tol = as<ScalarMag>(g_nonlin_error_tol);
+  TEST_EQUALITY(solveResult, NCGU::SOLVE_SOLUTION_FOUND);
+  TEST_FLOATING_EQUALITY(g_opt, g_offset, err_tol);
+  const bool result = Thyra::testRelNormDiffErr<Scalar>(
+    "p", *p,
+    "ps", *model->getSolutionVector(),
+    "err_tol", err_tol,
+    "2*err_tol", as<ScalarMag>(2.0)*err_tol,
+    &out
+    );
+  if (!result) success = false;
+  
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG,
+  FR_generalNonlinearProblem_PL )
 
 
 } // namespace

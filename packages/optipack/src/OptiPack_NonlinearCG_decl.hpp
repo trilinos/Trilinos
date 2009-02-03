@@ -98,6 +98,10 @@ public:
   /** \brief . */
   const int get_maxIters() const;
   /** \brief . */
+  const ScalarMag get_g_reduct_tol() const;
+  /** \brief . */
+  const ScalarMag get_g_grad_tol() const;
+  /** \brief . */
   const ScalarMag get_g_mag() const;
 
   //@}
@@ -165,11 +169,25 @@ private:
   bool and_conv_tests_;
   int minIters_;
   int maxIters_;
+  ScalarMag g_reduct_tol_;
+  ScalarMag g_grad_tol_;
   ScalarMag g_mag_;
 
   mutable int numIters_;
 
 };
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates NonlinearCG
+ */
+template<typename Scalar>
+const RCP<NonlinearCG<Scalar> >
+nonlinearCG()
+{
+  return Teuchos::rcp(new NonlinearCG<Scalar>);
+}
 
 
 /** \brief Nonmember constructor.
@@ -213,6 +231,12 @@ const int minIters_default = 0;
 const std::string maxIters_name = "Max Num Iterations";
 const int maxIters_default = 20;
 
+const std::string g_reduct_tol_name = "Objective Reduction Tol";
+const double g_reduct_tol_default = 1e-5;
+
+const std::string g_grad_tol_name = "Objective Gradient Tol";
+const double g_grad_tol_default = 1e-5;
+
 const std::string g_mag_name = "Objective Magnitude";
 const double g_mag_default = 1.0;
 
@@ -225,16 +249,6 @@ const double g_mag_default = 1.0;
 
 
 /* Todos:
-
-1) Change notation to blob_k and blob_km1
-
-2) Add OR termination criteria:
-
-  | (g_k - g_km1) / (g_k + g_mag) | <= g_rel_decrease_tol
-
-3) Change termination for gradient to :
-
-  | ||g_grad_k|| / g_mag | <= g_grad_tol
 
 4) Add PL parameters for:
 

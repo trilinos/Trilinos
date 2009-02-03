@@ -102,8 +102,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArmijoPolyInterpLineSearch, parseParams, Scal
   ECHO(pl->set("Armijo Slope Fraction", eta));
   ECHO(pl->set("Min Backtrack Fraction", minFrac));
   ECHO(pl->set("Max Backtrack Fraction", maxFrac));
-  ECHO(pl->set("Min Number of Iterations", minIters));
-  ECHO(pl->set("Max Number of Iterations", maxIters));
+  ECHO(pl->set("Min Num Iterations", minIters));
+  ECHO(pl->set("Max Num Iterations", maxIters));
   ECHO(pl->set("Do Max Iterations", doMaxIters));
   ECHO(linesearch->setParameterList(pl));
   const Scalar tol = ST::eps();
@@ -223,7 +223,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArmijoPolyInterpLineSearch, minIters, Scalar 
 
   ECHO(const RCP<ParameterList> pl = parameterList());
   ECHO(pl->set("Max Backtrack Fraction", 1.0));
-  ECHO(pl->set("Min Number of Iterations", 1));
+  ECHO(pl->set("Min Num Iterations", 1));
   ECHO(linesearch->setParameterList(pl));
 
   ECHO(linesearch->setOStream(rcpFromRef(out)));

@@ -148,10 +148,10 @@ const double minFrac_default = 0.1;
 const std::string maxFrac_name = "Max Backtrack Fraction";
 const double maxFrac_default = 0.5;
 
-const std::string minIters_name = "Min Number of Iterations";
+const std::string minIters_name = "Min Num Iterations";
 const int minIters_default = 0;
 
-const std::string maxIters_name = "Max Number of Iterations";
+const std::string maxIters_name = "Max Num Iterations";
 const int maxIters_default = 20;
 
 const std::string doMaxIters_name = "Do Max Iterations";
