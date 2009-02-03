@@ -13,6 +13,7 @@ FLIBS="-lg2c" \
 --enable-teuchos \
  --enable-teuchos-extended \
  --disable-teuchos-blasfloat \
+ --enable-teuchos-dotcheck \
  --enable-teuchos-boost \
  --enable-teuchos-debug \
 --enable-thyra \
