@@ -79,21 +79,6 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
   providerRequirements.push_back(p->dependentFields());
   providerNames.push_back(p->getName());
 
-#ifdef CHARONDEBUG
-  char const* const methodID =
-    "charon:EvaluatorManager::registerEvaluator";
-  if (DO_DEBUG_OUTPUT(methodID,10)) {
-    std::cout << "Registered provider: " << p->getName()
-              << std::endl
-              << "Element block: " << blockID << std::endl
-              << "Index in vector: " << varProviders.size() - 1
-              << std::endl << "Evaluates:" << std::endl;
-    for (uint i=0; i < p->evaluatedFields().size(); ++i) {
-      std::cout << "   " << p->evaluatedFields()[i].name() << std::endl;
-    }
-  }
-#endif
-
   /*!
     \todo RPP: need to add a check to make sure multiple providers
     can't supply the same variable.
