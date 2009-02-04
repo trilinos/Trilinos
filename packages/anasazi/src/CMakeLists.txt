@@ -112,11 +112,12 @@ APPEND_SET(HEADERS
   )
 
 IF (Anasazi_ENABLE_Thyra)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../thrya/src)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../thyra/src)
   APPEND_SET(HEADERS
     ../thyra/src/AnasaziThyraAdapter.hpp
     )
 ENDIF()
+
 
 IF (Anasazi_ENABLE_Tpetra)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../tpetra/src)
