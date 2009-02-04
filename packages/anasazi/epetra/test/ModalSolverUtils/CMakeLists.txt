@@ -1,7 +1,4 @@
-
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
-INCLUDE(PackageCopyFilesToBinaryDir)
+INCLUDE(PackageAddExecutableAndTest)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Epetra_ModalSolversTester

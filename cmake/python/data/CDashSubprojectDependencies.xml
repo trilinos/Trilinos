@@ -275,7 +275,6 @@
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="ML" type="LR"/>
     <Dependency name="Belos" type="ILO"/>
-    <Dependency name="Stratimikos" type="LR"/>
     <Dependency name="Anasazi" type="LR"/>
     <Dependency name="NOX" type="LR"/>
     <Dependency name="MOOCHO" type="LO"/>

@@ -1,5 +1,4 @@
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
+INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -33,9 +32,14 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE(
   Epetra_BKS_QEVP_test
   SOURCES cxx_qevp.cpp
+  COMM serial mpi
+  )
+
+PACKAGE_ADD_TEST(
+  Epetra_BKS_QEVP_test
   ARGS 
     "--A-filename=linearized_qevp_A.hb --B-filename=linearized_qevp_B.hb"
   COMM serial
@@ -46,4 +50,3 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestBlockKrylovSchurQEVPFiles
   SOURCE_FILES linearized_qevp_A.hb linearized_qevp_B.hb
   EXEDEPS Epetra_BKS_QEVP_test
   )
-

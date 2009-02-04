@@ -1,6 +1,4 @@
-
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
+INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
@@ -39,9 +37,14 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT
       )
 
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    PACKAGE_ADD_EXECUTABLE(
       OrthoManagerComplexGenTester
       SOURCES cxx_gentest_complex.cpp 
+      COMM serial mpi
+      )
+
+    PACKAGE_ADD_TEST(
+      OrthoManagerComplexGenTester
       COMM serial
       ARGS
         "--verbose"
@@ -52,7 +55,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestOrthoManagerTesterComplexFiles
       SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/test/MVOPTester
       SOURCE_FILES mhd1280b.cua 
-      EXEDEPS OrthoManagerComplexTester
+      EXEDEPS OrthoManagerComplexGenTester
       )
 
   ENDIF(Teuchos_ENABLE_COMPLEX)

@@ -1,6 +1,4 @@
-
-INCLUDE(PackageAddExecutable)
-INCLUDE(PackageAddTest)
+INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
@@ -9,9 +7,14 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
   ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
   IF(Teuchos_ENABLE_COMPLEX)
 
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    PACKAGE_ADD_EXECUTABLE(
       MVOPComplexTester
       SOURCES cxx_main_complex.cpp MyMultiVec.hpp MyOperator.hpp MyBetterOperator.hpp
+      COMM serial mpi
+      )
+
+    PACKAGE_ADD_TEST(
+      MVOPComplexTester
       COMM serial
       ARGS
         "--verbose --filename=mhd1280b.cua"
