@@ -1,5 +1,6 @@
-
-INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageAddExecutable)
+INCLUDE(PackageAddTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
 
