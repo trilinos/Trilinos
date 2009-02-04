@@ -84,47 +84,37 @@ typedef void (*TPI_work_subprogram)( TPI_Work * );
  *
  *  The thread pool must be in the 'paused' state when this
  *  function is called.  Thus a recursive call to TPI_Run is illegal.
- *
- *  If successfull return the amount of parallelism in the call.
- *  Parallelism is the work_count divided by the maximum number
- *  of call to the work subprogram made by a single thread.
  */
-int TPI_Run( TPI_work_subprogram /* subprogram  */ ,
-             void *              /* shared_data */ ,
-             int                 /* work_count  */ ,
-             int                 /* lock_count  */ );
+int TPI_Run( TPI_work_subprogram subprogram  ,
+             void *              shared ,
+             int                 work_count  ,
+             int                 lock_count  );
 
 /*--------------------------------------------------------------------*/
-/** \brief  Blocks until lock # is obtained.
+/** \brief  Blocks until lock lock_rank is obtained.
  *          The thread pool must be in the 'active' state.
  */
-int TPI_Lock( int );
+int TPI_Lock( int lock_rank );
 
-/** \brief  Tries to lock #, returns 0 if successful. 
+/** \brief  Tries to lock lock_rank, returns 0 if successful. 
  *          The thread pool must be in the 'active' state.
  */
-int TPI_Trylock( int );
+int TPI_Trylock( int lock_rank );
 
-/** \brief  Unlocks lock #.
+/** \brief  Unlocks lock lock_rank.
  *          The thread pool must be in the 'active' state.
  */
-int TPI_Unlock( int );
+int TPI_Unlock( int lock_rank );
 
 /*--------------------------------------------------------------------*/
 /** Start up the requested number of threads, less the calling thread.
  *  Return the actual number of threads, including the calling thread,
  *  otherwise return an error.
  */
-int TPI_Init( int /* thread count */ );
+int TPI_Init( int thread_count );
 
 /** Shut down all started threads. */
 int TPI_Finalize();
-
-/*--------------------------------------------------------------------*/
-/** Query the number of threads known to be concurrently schedulable.
- *  If the concurrency is not detectable then return 0.
- */
-int TPI_DetectConcurrency();
 
 /*--------------------------------------------------------------------*/
 

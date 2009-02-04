@@ -36,20 +36,20 @@ static void test_tpi_noop( TPI_Work * );
 int test_c_tpi_noop( int num_test , int * num_thread )
 {
   void * const p = NULL ;
-  const unsigned n = 1e5 ;
-  const unsigned n_trial = 7 ;
+  const unsigned n_work = 10000 ;
+  const unsigned n_trial = 100 ;
   int itest ;
 
   fprintf(stdout,"\n\"TPI_Run(noop) test\"\n");
   fprintf(stdout,"\"NUMBER OF TRIALS\" , %u\n", n_trial );
+  fprintf(stdout,"\"WORK COUNT\" , %u\n", n_work );
   fprintf(stdout,
           "\"# Thread\" , \"Min microsec\" , \"Mean microsec\" , \"Max microsec\"\n");
 
   for ( itest = 0 ; itest < num_test ; ++itest ) {
     const unsigned num = num_thread[ itest ];
-    const unsigned n_loop = n / num ;
 
-    unsigned i , j ;
+    unsigned j ;
     double dt_min = 0 , dt_max = 0 , dt_mean = 0 ;
     double dt ;
 
@@ -60,9 +60,7 @@ int test_c_tpi_noop( int num_test , int * num_thread )
       TPI_Init( num );
 
       dt = TPI_Walltime();
-      for ( i = 0 ; i < n_loop ; ++i ) {
-        TPI_Run( & test_tpi_noop, p, 0, 0 );
-      }
+      TPI_Run( & test_tpi_noop, p, n_work, 0 );
       dt = TPI_Walltime() - dt ;
 
       dt_mean += dt ;
@@ -77,9 +75,9 @@ int test_c_tpi_noop( int num_test , int * num_thread )
       TPI_Finalize();
     }
 
-    dt_min  *= 1.0e6 / n_loop ;
-    dt_mean *= 1.0e6 / ( n_loop * n_trial );
-    dt_max  *= 1.0e6 / n_loop ;
+    dt_min  *= 1.0e6 ;
+    dt_mean *= 1.0e6 / n_trial ;
+    dt_max  *= 1.0e6 ;
 
     fprintf(stdout, "%u , %g , %g , %g\n", num, dt_min, dt_mean, dt_max );
 
@@ -105,8 +103,6 @@ struct TestTPI {
 
 static void test_tpi_loop( TPI_Work * work )
 {
-  static const char name[] = "test_tpi_loop" ;
-
   struct TestTPI * const data = (struct TestTPI *) work->shared ;
 
   TPI_Lock( 0 );

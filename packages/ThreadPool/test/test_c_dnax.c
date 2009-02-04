@@ -195,7 +195,7 @@ void test_tpi_dnax_driver( const int nthread ,
   printf("\n\"test_tpi_dnax[%d]( length_array = %u , stride_array = %u )\"\n",
          nthread , length_array , stride_array );
   printf("\"NUMBER OF THREADS\" , %d\n" , nthread );
-  printf("\"NUMBER OF CHUNKS\" , %d\n" , num_chunk );
+  printf("\"NUMBER OF CHUNKS\" , %u\n" , num_chunk );
   printf("\"NUMBER OF TRIALS\" , %u \n", num_trials );
 
   printf("\"NUMBER OF ARRAYS\"");
@@ -240,16 +240,12 @@ void test_tpi_dnax_driver( const int nthread ,
         unsigned i ;
         for ( ; repeat < num_trials ; ++repeat ) {
 
-          TPI_Init( nthread );
-
           dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
             data.array = array + stride_array * num_array * ( i % num_sets );
             TPI_Run( & test_dnax_flat_work , & data , num_chunk , 0 );
           }
           dt_tmp = TPI_Walltime() - dt_tmp ;
-
-          TPI_Finalize();
 
           if ( 0 == repeat ) {
             dt_min[ i_test ] = dt_tmp ;
@@ -339,16 +335,12 @@ void test_tpi_dnax_driver( const int nthread ,
         unsigned repeat = 0 ;
         for ( ; repeat < num_trials ; ++repeat ) {
 
-          TPI_Init( nthread );
-
           dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
             data.array = array + stride_array * num_array * ( i % num_sets );
             TPI_Run( & test_dnax_column_work , & data , num_chunk , 0 );
           }
           dt_tmp = TPI_Walltime() - dt_tmp ;
-
-          TPI_Finalize();
 
           if ( 0 == repeat ) {
             dt_min[ i_test ] = dt_tmp ;
@@ -438,16 +430,12 @@ void test_tpi_dnax_driver( const int nthread ,
         unsigned repeat = 0 ;
         for ( ; repeat < num_trials ; ++repeat ) {
 
-          TPI_Init( nthread );
-
           dt_tmp = TPI_Walltime();
           for ( i = 0 ; i < ncycle ; ++i ) {
             data.array = array + stride_array * num_array * ( i % num_sets );
             TPI_Run( & test_dnax_row_work , & data , num_chunk , 0 );
           }
           dt_tmp = TPI_Walltime() - dt_tmp ;
-
-          TPI_Finalize();
 
           if ( 0 == repeat ) {
             dt_min[ i_test ] = dt_tmp ;
@@ -516,6 +504,8 @@ int test_c_tpi_dnax( int nthread )
   const unsigned Mflop_target = 10 ;
   const unsigned num_array[6] = { 2 , 5 , 10 , 20 , 50 , 100 };
 
+  TPI_Init( nthread );
+
   test_tpi_dnax_driver( nthread ,
                         Mflop_target * nthread ,
                         5         /* number trials */ ,
@@ -523,6 +513,8 @@ int test_c_tpi_dnax( int nthread )
                         num_array /* number of arrays for each test */ ,
                         1e6       /* array computation length */ ,
                         1000      /* chunk length */ );
+
+  TPI_Finalize();
 
   return 0 ;
 }

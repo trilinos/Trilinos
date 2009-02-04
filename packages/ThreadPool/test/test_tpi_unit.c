@@ -9,7 +9,7 @@ static void test_task_lock( TPI_Work * );
 
 int test_c_tpi_unit( const int nthread , const int nwork )
 {
-  const int ntrial  = 100 ;
+  const int ntrial = 10 ;
   int result ;
 
   result = TPI_Init( nthread );
@@ -20,37 +20,44 @@ int test_c_tpi_unit( const int nthread , const int nwork )
   {
     int flags[ nwork ];
     int i , k ;
-    int np = 0 ;
+    double dt = 0 ;
     for ( i = 0 ; i < ntrial ; ++i ) {
       for ( k = 0 ; k < nwork ; ++k ) { flags[k] = 0 ; }
-      np += TPI_Run( test_task_unit , flags , nwork , 0 );
+      {
+        const double t = TPI_Walltime();
+        TPI_Run( test_task_unit , flags , nwork , 0 );
+        dt += TPI_Walltime() - t ;
+      }
       for ( k = 0 ; k < nwork ; ++k ) {
         if ( flags[k] != 1 ) {
-          printf("  test_task_unit failed at trial = %d\n",i);
+          printf("  test_task_unit[flag] failed at trial = %d\n",i);
           abort();
         }
       }
     }
-    np /= ntrial ;
-    printf("  test_task_unit passed, mean parallelism = %d\n",np);
+    dt /= ntrial ;
+    printf("  test_task_unit[flag] passed, work = %d , mean time = %f\n",nwork,dt);
   }
 
   /* Test locking */
-/*
   {
     const int nlock = 2 ;
-    int i , j , k ;
+    int i ;
+    double dt = 0 ;
 
     for ( i = 0 ; i < ntrial ; ++i ) {
-      for ( j = 1 ; j <= nwork ; ++j ) {
-        for ( k = 1 ; k <= nlock ; ++k ) {
-          int ncount = 0 ;
-          TPI_Run( test_task_lock , & ncount , nwork , nlock );
-        }
+      int ncount = 0 ;
+      const double t = TPI_Walltime();
+      TPI_Run( test_task_lock , & ncount , nwork , nlock );
+      dt += TPI_Walltime() - t ;
+      if ( ncount != nwork * nlock ) {
+        printf("  test_task_unit[lock] failed at trial = %d\n",i);
+        abort();
       }
     }
+    dt /= ntrial ;
+    printf("  test_task_unit[lock] passed, work = %d , mean time = %f\n",nwork,dt);
   }
-*/
 
   TPI_Finalize();
 
@@ -59,7 +66,7 @@ int test_c_tpi_unit( const int nthread , const int nwork )
 
 static void test_task_unit( TPI_Work * task )
 {
-  const int nloop = 1000 ;
+  const int nloop = 10000 ;
   int * const flag = (int *)( task->shared );
   int i ;
   for ( i = 0 ; i < nloop ; ++i ) {
@@ -70,5 +77,14 @@ static void test_task_unit( TPI_Work * task )
 }
 
 static void test_task_lock( TPI_Work * work )
-{}
+{
+  int * const ncount = (int*)( work->shared );
+  int i ;
+  for ( i = 0 ; i < work->lock_count ; ++i ) {
+    TPI_Lock( 0 );
+    ++*ncount ;
+    TPI_Unlock( 0 );
+  }
+  return ;
+}
 

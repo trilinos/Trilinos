@@ -38,7 +38,7 @@ int main( int argc , char ** argv )
   int num_thread[] = { 1 , 2 , 4 , 8 , 12 , 16 };
   int num_test = sizeof(num_thread) / sizeof(int);
 
-  test_pthreads_performance( num_test , num_thread );
+/*  test_pthreads_performance( num_test , num_thread ); */
 
   {
     const int nwork = 1000 ;
