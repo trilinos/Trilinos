@@ -52,9 +52,7 @@ PACKAGE_NAME=Anasazi
             ../epetra/test/LOBPCG/LOBPCG_simple.exe,
             ../epetra/test/BlockDavidson/BlockDavidson_solvertest.exe,
             ../epetra/test/BlockDavidson/BlockDavidson_auxtest.exe,
-            ../epetra/test/BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
-            ../epetra/test/SortManager/SortManager_test.exe,
-            ../epetra/test/StatusTest/StatusTest_test.exe;
+            ../epetra/test/BlockKrylovSchur/BlockKrylovSchur_solvertest.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
     COMM = SERIAL, MPI;
@@ -90,7 +88,7 @@ PACKAGE_NAME=Anasazi
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
-    TESTS = ../epetra/src/BlockDavidson/BlockDavidson_test.exe;
+    TESTS = ../epetra/test/BlockDavidson/BlockDavidson_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose --exsitu --locking,
            --verbose --exsitu --nolocking;
@@ -144,10 +142,7 @@ PACKAGE_NAME=Anasazi
             ../epetra/test/BlockKrylovSchur/BlockKrylovSchur_solvertest.exe,
             ../epetra/test/OrthoManager/OrthoManager_test.exe,
             ../epetra/test/OrthoManager/OrthoManager_mattest.exe,
-            ../epetra/test/OrthoManager/OrthoManager_gentest.exe,
-            ../epetra/test/OrthoManager/OrthoManagerFloat_test.exe,
-            ../epetra/test/SortManager/SortManager_test.exe,
-            ../epetra/test/StatusTest/StatusTest_test.exe;
+            ../epetra/test/OrthoManager/OrthoManager_gentest.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --debug;
     COMM = SERIAL, MPI;
@@ -220,7 +215,9 @@ PACKAGE_NAME=Anasazi
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
     TESTS = BlockKrylovSchur/BlockKrylovSchur_complex_lap_test.exe,
             BlockDavidson/BlockDavidson_complex_lap_test.exe,
-            LOBPCG/LOBPCG_complex_lap_test.exe;
+            LOBPCG/LOBPCG_complex_lap_test.exe,
+            SortManager/SortManager_test.exe,
+            StatusTest/StatusTest_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose;
     COMM = SERIAL;
@@ -239,6 +236,14 @@ PACKAGE_NAME=Anasazi
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --sort=LR --verbose --hefty --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua, --sort=LR --verbose --skinny --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
            
+    COMM = SERIAL, MPI;
+}
+
+(COVERAGE) {
+    TESTS = SortManager/SortManager_test.exe,
+            StatusTest/StatusTest_test.exe;
+    EXIT-STATUS = STRING-COMPARISON;
+    ARGS = --debug;
     COMM = SERIAL, MPI;
 }
 
