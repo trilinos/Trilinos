@@ -211,20 +211,25 @@ int main(int argc, char* argv[])
     // the command line.  This was setup by the command-line options
     // set by the setupCLP(...) function above.
     linearSolverBuilder.readParameters(out.get());
+
     // Create a linear solver factory given information read from the
     // parameter list.
     RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
+
     // Setup output stream and the verbosity level
     lowsFactory->setOStream(out);
     lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
+
     // Create a linear solver based on the forward operator A
     RCP<Thyra::LinearOpWithSolveBase<double> >
-      lows = Thyra::linearOpWithSolve(*lowsFactory,A);
+      lows = Thyra::linearOpWithSolve(*lowsFactory, A);
+
     // Solve the linear system (note: the initial guess in 'x' is critical)
     Thyra::SolveStatus<double>
-      status = Thyra::solve(*lows,Thyra::NOTRANS,*b,&*x);
+      status = Thyra::solve(*lows, Thyra::NOTRANS, *b, &*x);
     *out << "\nSolve status:\n" << status;
+
     // Write the linear solver parameters after they were read
     linearSolverBuilder.writeParamsFile(*lowsFactory);
 
@@ -279,4 +284,5 @@ int main(int argc, char* argv[])
   }
 
   return ( success ? 0 : 1 );
+
 }
