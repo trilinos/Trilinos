@@ -32,6 +32,7 @@
 
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Epetra_MultiVector.h"
 #include "Teuchos_TimeMonitor.hpp"
 
@@ -317,7 +318,7 @@ void AmesosLinearOpWithSolve::solve(
   // Scale X if needed
   //
   if(amesosSolverScalar_!=1.0)
-    Thyra::scale(1.0/amesosSolverScalar_,X);
+    Thyra::scale(1.0/amesosSolverScalar_, X);
   //
   // Set the solve status if requested
   //

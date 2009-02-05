@@ -262,7 +262,8 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.hpp\
-  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOpDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp_decl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp_def.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultLinearOpSource.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultLinearOpSourceDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultMultiVectorLinearOpWithSolve.hpp\
@@ -287,6 +288,11 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleRhsLinearOpWithSolveBaseDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleScalarLinearOpWithSolveBase.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleScalarLinearOpWithSolveBaseDecl.hpp
+
+SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT = \
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp
+
+
 
 INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluator.hpp\
@@ -362,7 +368,8 @@ THYRA_H = \
 libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp \
   $(INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL) \
   $(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT) \
-  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT)
+  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT) \
+  $(SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT)
 
 #We need the following to support separate build directories
 

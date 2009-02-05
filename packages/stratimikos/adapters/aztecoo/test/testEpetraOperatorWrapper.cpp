@@ -44,10 +44,8 @@
 
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
-#include "Thyra_DefaultInverseLinearOpDecl.hpp"
 #include "Thyra_DefaultInverseLinearOp.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
-#include "Thyra_DefaultPreconditionerDecl.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
 
 #include "AztecOO.h"

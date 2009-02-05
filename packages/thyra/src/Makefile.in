@@ -111,8 +111,9 @@ am__objects_3 = Thyra_DefaultSpmdVectorSpace.$(OBJEXT) \
 	Thyra_ScalarProdBase.$(OBJEXT) \
 	Thyra_ScalarProdVectorSpaceBase.$(OBJEXT) \
 	Thyra_SpmdVectorSpaceUtilities.$(OBJEXT)
+am__objects_4 = Thyra_DefaultInverseLinearOp.$(OBJEXT)
 am_libthyra_a_OBJECTS = Thyra_Version.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2) $(am__objects_3)
+	$(am__objects_2) $(am__objects_3) $(am__objects_4)
 libthyra_a_OBJECTS = $(am_libthyra_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -467,7 +468,8 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.hpp\
-  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOpDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp_decl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp_def.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultLinearOpSource.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultLinearOpSourceDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultMultiVectorLinearOpWithSolve.hpp\
@@ -492,6 +494,9 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleRhsLinearOpWithSolveBaseDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleScalarLinearOpWithSolveBase.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleScalarLinearOpWithSolveBaseDecl.hpp
+
+SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT = \
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp
 
 INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluator.hpp\
@@ -557,7 +562,8 @@ THYRA_H = \
 libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp \
   $(INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL) \
   $(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT) \
-  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT)
+  $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT) \
+  $(SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT)
 
 @USE_ALTERNATE_AR_FALSE@libthyra_a_AR = $(AR) cru
 
@@ -697,6 +703,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DefaultInverseLinearOp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DefaultSpmdVectorSpace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_EuclideanScalarProd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_LinearOpScalarProd.Po@am__quote@
@@ -846,6 +853,20 @@ Thyra_SpmdVectorSpaceUtilities.obj: $(srcdir)/support/operator_vector/adapter_su
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp' object='Thyra_SpmdVectorSpaceUtilities.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_SpmdVectorSpaceUtilities.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; fi`
+
+Thyra_DefaultInverseLinearOp.o: $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_DefaultInverseLinearOp.o -MD -MP -MF $(DEPDIR)/Thyra_DefaultInverseLinearOp.Tpo -c -o Thyra_DefaultInverseLinearOp.o `test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_DefaultInverseLinearOp.Tpo $(DEPDIR)/Thyra_DefaultInverseLinearOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp' object='Thyra_DefaultInverseLinearOp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_DefaultInverseLinearOp.o `test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp
+
+Thyra_DefaultInverseLinearOp.obj: $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_DefaultInverseLinearOp.obj -MD -MP -MF $(DEPDIR)/Thyra_DefaultInverseLinearOp.Tpo -c -o Thyra_DefaultInverseLinearOp.obj `if test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_DefaultInverseLinearOp.Tpo $(DEPDIR)/Thyra_DefaultInverseLinearOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp' object='Thyra_DefaultInverseLinearOp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_DefaultInverseLinearOp.obj `if test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

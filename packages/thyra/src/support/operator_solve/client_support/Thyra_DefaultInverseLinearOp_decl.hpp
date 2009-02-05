@@ -48,7 +48,7 @@ enum EThrowOnSolveFailure {
  * <tt>LinearOpBase</tt> object using the inverse action of a
  * <tt>LinearOpWithSolveBase</tt> object.
  *
- * This class represents an implicitly inverse linear operator:
+ * This class represents an implicit inverse linear operator:
 
  \verbatim
  

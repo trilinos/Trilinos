@@ -82,6 +82,7 @@ APPEND_GLOB(HEADERS interfaces/operator_solve/ana/extended/*.hpp)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/support/operator_solve/client_support)
 APPEND_GLOB(HEADERS support/operator_solve/client_support/*.hpp)
+APPEND_GLOB(SOURCES support/operator_solve/client_support/*.cpp)
 
 #
 # src/interfaces/nonlinear/model_evaluator/ana/fundamental

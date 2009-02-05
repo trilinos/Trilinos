@@ -33,6 +33,7 @@
 #include "Thyra_LinearOpWithSolveHelpers.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraOperatorWrapper.hpp"
+#include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_Time.hpp"
 #include "Teuchos_implicit_cast.hpp"
