@@ -136,6 +136,7 @@ createNonlinearCGSolver(
   const RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
     armijoQuadraticLineSearch<Scalar>();
   const RCP<ParameterList> lsPL = parameterList();
+  lsPL->set("Armijo Slope Fraction", 0.0);
   lsPL->set("Min Backtrack Fraction", 0.0);
   lsPL->set("Max Backtrack Fraction", 1e+50);
   lsPL->set("Min Num Iterations", 1);
@@ -370,8 +371,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_partialEigenVal, Scalar )
   const ScalarMag g_offset = as<ScalarMag>(5.0);
   const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
     createModel<Scalar>(g_globalDim, g_offset);
+
   const RCP<const VectorSpaceBase<Scalar> > p_space = model->get_p_space(0);
   const int dim = p_space->dim();
+
   const int numUniqueEigenVals = 3;
   {
     const RCP<VectorBase<Scalar> > diag = createMember(p_space);
@@ -487,6 +490,87 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_fullEigenVal, Scalar )
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, FR_fullEigenVal )
+
+
+//
+// Test convergence for all unique eigen values but using a scalar product
+// that has the effect of clustering the eignvalues seen by the nonlinear CG
+// ANA.
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_fullEigenValScalarProd, Scalar )
+{
+
+  using Teuchos::optInArg;
+  typedef ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+
+  const ScalarMag g_offset = as<ScalarMag>(5.0);
+  const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> > model =
+    createModel<Scalar>(g_globalDim, g_offset);
+
+  const RCP<const VectorSpaceBase<Scalar> > p_space = model->get_p_space(0);
+  const int dim = p_space->dim();
+
+  {
+    const RCP<VectorBase<Scalar> > diag = createMember(p_space);
+    applyOp<Scalar>( TOpAssignValToGlobalIndex<Scalar>(),
+      null, tuple(diag.ptr())(), null );
+    out << "diag =\n" << *diag;
+    model->setDiagonalVector(diag);
+  }
+
+  const int numUniqueEigenVals = 3;
+  {
+    const RCP<VectorBase<Scalar> > diag_bar = createMember(p_space);
+    V_S(diag_bar.ptr(), ST::one());
+    applyOp<Scalar>( TOpAssignValToGlobalIndex<Scalar>(),
+      null, tuple(diag_bar.ptr())(), null, 0, numUniqueEigenVals, 0 );
+    //applyOp<Scalar>( TOpAssignValToGlobalIndex<Scalar>(),
+    //  null, tuple(diag_bar.ptr())(), null );
+    out << "diag_bar =\n" << *diag_bar;
+    model->setDiagonalBarVector(diag_bar);
+  }
+
+  const RCP<NonlinearCG<Scalar> > cgSolver =
+    createNonlinearCGSolver<Scalar>(model, rcpFromRef(out));
+
+  const RCP<ParameterList> pl = cgSolver->getNonconstParameterList();
+  const int minIters = numUniqueEigenVals;
+  const int maxIters = minIters + 2;
+  pl->set("Max Num Iterations", maxIters);
+  cgSolver->setParameterList(pl);
+
+  const RCP<VectorBase<Scalar> > p = createMember(p_space);
+  V_S( p.ptr(), ST::zero() );
+  
+  ScalarMag g_opt = -1.0;
+  const ScalarMag tol = as<Scalar>(g_solve_tol_scale * dim) * ST::eps();
+  const ScalarMag alpha_init = 10.0;
+  int numIters = -1;
+  const NCGU::ESolveReturn solveResult =
+    cgSolver->doSolve( p.ptr(), outArg(g_opt),
+      optInArg(tol), optInArg(tol), optInArg(alpha_init), outArg(numIters) );
+
+  out << "\n";
+ 
+  const ScalarMag err_tol = as<Scalar>(g_error_tol_scale * dim) * ST::eps();
+  TEST_EQUALITY(solveResult, NCGU::SOLVE_SOLUTION_FOUND);
+  TEST_COMPARE( numIters, <=, maxIters );
+  TEST_FLOATING_EQUALITY(g_opt, g_offset, err_tol);
+  const bool result = Thyra::testRelNormDiffErr<Scalar>(
+    "p", *p,
+    "ps", *model->getSolutionVector(),
+    "err_tol", err_tol,
+    "2*err_tol", as<ScalarMag>(2.0)*err_tol,
+    &out
+    );
+  if (!result) success = false;
+  
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, FR_fullEigenValScalarProd )
 
 
 //

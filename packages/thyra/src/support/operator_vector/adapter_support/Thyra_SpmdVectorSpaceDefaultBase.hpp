@@ -36,18 +36,22 @@
 
 namespace Thyra {
 
+
 template<class Scalar>
 SpmdVectorSpaceDefaultBase<Scalar>::SpmdVectorSpaceDefaultBase()
-  :mapCode_(-1),defaultLocalOffset_(-1),defaultGlobalDim_(-1),localSubDim_(-1)
+  :mapCode_(-1), defaultLocalOffset_(-1), defaultGlobalDim_(-1), localSubDim_(-1)
 {}
 
+
 // Virtual methods with default implementations
+
 
 template<class Scalar>
 Index SpmdVectorSpaceDefaultBase<Scalar>::localOffset() const
 {
   return defaultLocalOffset_;
 }
+
 
 template<class Scalar>
 Index SpmdVectorSpaceDefaultBase<Scalar>::mapCode() const

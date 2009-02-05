@@ -266,9 +266,12 @@ public:
   /// Returns a <tt>DefaultProductVector</tt> object
   Teuchos::RCP< VectorBase<Scalar> > createMember() const;
   /// Returns the sum of the scalar products of the constituent vectors
-  Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
+  Scalar scalarProd(
+    const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
   /// Returns the sum of the scalar products of each of the columns of the constituent multi-vectors
-  void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const;
+  void scalarProdsImpl(
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+    const ArrayView<Scalar> &scalarProds ) const;
   /// Returns true if all of the constituent vector spaces return true
   bool hasInCoreView(const Range1D& rng, const EViewType viewType, const EStrideType strideType) const;
   /// Returns <tt>getBlock(0)->smallVecSpcFcty()</tt>

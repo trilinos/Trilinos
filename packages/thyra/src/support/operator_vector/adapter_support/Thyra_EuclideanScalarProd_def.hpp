@@ -26,51 +26,53 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_LINEAR_OP_DEFAULT_BASE_HPP
-#define THYRA_LINEAR_OP_DEFAULT_BASE_HPP
+#ifndef THYRA_EUCLIDEAN_SCALAR_PROD_DEF_HPP
+#define THYRA_EUCLIDEAN_SCALAR_PROD_DEF_HPP
 
-#include "Thyra_LinearOpDefaultBaseDecl.hpp"
-#include "Thyra_LinearOpBase.hpp"
-#include "Thyra_describeLinearOp.hpp"
+#include "Thyra_EuclideanScalarProd_decl.hpp"
+#include "Thyra_ScalarProdBase.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_EuclideanLinearOpBase.hpp"
+
 
 namespace Thyra {
 
 
-// Overridden from Teuchos::Describable
-
-
-template<class RangeScalar, class DomainScalar>
-std::string LinearOpDefaultBase<RangeScalar,DomainScalar>::description() const
+template<class Scalar>
+bool EuclideanScalarProd<Scalar>::isEuclideanImpl() const
 {
-  std::ostringstream oss;
-  const Teuchos::RCP<const VectorSpaceBase<RangeScalar> >
-    l_range = this->range();
-  const Teuchos::RCP<const VectorSpaceBase<DomainScalar> >
-    l_domain = this->domain();
-  oss << Teuchos::Describable::description();
-  if(!l_range.get()) {
-    oss << "{range=NULL,domain=NULL}"; 
-  }
-  else {
-    const Index dimDomain = l_domain->dim(), dimRange = l_range->dim();
-    oss
-      << "{rangeDim=" << dimRange
-      << ",domainDim=" << dimDomain << "}";
-  }
-  return oss.str();
+  return true;
 }
 
 
-template<class RangeScalar, class DomainScalar>
-void LinearOpDefaultBase<RangeScalar,DomainScalar>::describe(
-  Teuchos::FancyOStream                &out
-  ,const Teuchos::EVerbosityLevel      verbLevel
+template<class Scalar>
+void EuclideanScalarProd<Scalar>::scalarProdsImpl(
+  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+  const ArrayView<Scalar> &scalarProds_out
   ) const
 {
-  describeLinearOp(*this,out,verbLevel);
+  dots(X, Y, scalarProds_out);
 }
 
 
-}	// end namespace Thyra
+template<class Scalar>
+void EuclideanScalarProd<Scalar>::euclideanApplyImpl(
+  const EuclideanLinearOpBase<Scalar> &M,
+  const EOpTransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  const Ptr<MultiVectorBase<Scalar> > &Y,
+  const Scalar alpha,
+  const Scalar beta
+  ) const
+{
+  if (real_trans(M_trans)==NOTRANS)
+    M.euclideanApply(transToConj(M_trans), X, &*Y, alpha, beta);
+  else
+    M.euclideanApplyTranspose(transToConj(M_trans), X, &*Y, alpha, beta);
+}
 
-#endif // THYRA_LINEAR_OP_DEFAULT_BASE_HPP
+
+} // end namespace Thyra
+
+
+#endif  // THYRA_EUCLIDEAN_SCALAR_PROD_DEF_HPP

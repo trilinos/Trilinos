@@ -26,47 +26,32 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_EUCLIDEAN_SCALAR_PROD_DECL_HPP
-#define THYRA_EUCLIDEAN_SCALAR_PROD_DECL_HPP
+#ifndef THYRA_SCALAR_PROD_BASE_DEF_HPP
+#define THYRA_SCALAR_PROD_BASE_DEF_HPP
 
-#include "Thyra_ScalarProdBaseDecl.hpp"
+#include "Thyra_ScalarProdBase_decl.hpp"
+#include "Thyra_EuclideanLinearOpBase.hpp"
+#include "Thyra_AssertOp.hpp"
+
 
 namespace Thyra {
 
-/** \brief Concrete implementation of a scalar product for a Euclidean vector
- * space (i.e. using the dot product).
- *
- * Because this subclass is implemented using an RTOp, it will work with any
- * <tt>VectorBase</tt> or <tt>MultiVectorBase</tt> implementation no matter
- * what.
- *
- * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
- */
+
+// Protected virtual functions
+
+
 template<class Scalar>
-class EuclideanScalarProd : public ScalarProdBase<Scalar> {
-public:
-  
-  /** @name Overridden from ScalarProdBase */
-  //@{
+Scalar ScalarProdBase<Scalar>::scalarProdImpl(
+  const VectorBase<Scalar>& x, const VectorBase<Scalar>& y
+  ) const
+{
+  Tuple<Scalar,1> scalarProds_out;
+  this->scalarProds(x, y, scalarProds_out());
+  return scalarProds_out[0];
+}
 
-  /// Returns <tt>true</tt>
-  bool isEuclidean() const;
-  /// Simply calls <tt>dots(X,Y,scalar_prods)</tt>
-  void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const;
-  /// Simply calls <tt>M.euclideanApply(M_trans,X,Y,alpha,beta)</tt>
-  void apply(
-    const EuclideanLinearOpBase<Scalar>   &M
-    ,const EOpTransp                        M_trans
-    ,const MultiVectorBase<Scalar>        &X
-    ,MultiVectorBase<Scalar>              *Y
-    ,const Scalar                         alpha
-    ,const Scalar                         beta
-    ) const;
-
-  //@}
-
-}; // end class EuclideanScalarProd
 
 } // end namespace Thyra
 
-#endif  // THYRA_EUCLIDEAN_SCALAR_PROD_DECL_HPP
+
+#endif  // THYRA_SCALAR_PROD_BASE_DEF_HPP

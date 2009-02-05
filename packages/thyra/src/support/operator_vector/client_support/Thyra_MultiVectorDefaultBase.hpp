@@ -54,10 +54,10 @@ RCP<MultiVectorBase<Scalar> >
 MultiVectorDefaultBase<Scalar>::clone_mv() const
 {
   const VectorSpaceBase<Scalar>
-    &domain = *this->domain(),
-    &range = *this->range();
+    &l_domain = *this->domain(),
+    &l_range = *this->range();
   RCP<MultiVectorBase<Scalar> >
-    copy = createMembers(range,domain.dim());
+    copy = createMembers(l_range,l_domain.dim());
   assign( copy.ptr(), *this );
   return copy;
 }
@@ -76,9 +76,9 @@ MultiVectorDefaultBase<Scalar>::contigSubViewImpl( const Range1D& colRng_in ) co
   using Teuchos::Workspace;
   using Teuchos::as;
   Teuchos::WorkspaceStore *wss = Teuchos::get_default_workspace_store().get();
-  const VectorSpaceBase<Scalar> &domain = *this->domain();
-  const VectorSpaceBase<Scalar> &range = *this->range();
-  const Index dimDomain = domain.dim();
+  const VectorSpaceBase<Scalar> &l_domain = *this->domain();
+  const VectorSpaceBase<Scalar> &l_range = *this->range();
+  const Index dimDomain = l_domain.dim();
   const Range1D colRng = Teuchos::full_range(colRng_in,0,dimDomain-1);
   if( colRng.lbound() == 0 && as<Index>(colRng.ubound()) == dimDomain-1 )
     return Teuchos::rcp(this,false); // Takes all of the columns!
@@ -89,7 +89,7 @@ MultiVectorDefaultBase<Scalar>::contigSubViewImpl( const Range1D& colRng_in ) co
       col_vecs[j-colRng.lbound()] = Teuchos::rcp_const_cast<VectorBase<Scalar> >(this->col(j));
     return Teuchos::rcp(
       new DefaultColumnwiseMultiVector<Scalar>(
-        this->range(),range.smallVecSpcFcty()->createVecSpc(colRng.size()),col_vecs
+        this->range(),l_range.smallVecSpcFcty()->createVecSpc(colRng.size()),col_vecs
         )
       );
   }
@@ -104,9 +104,9 @@ MultiVectorDefaultBase<Scalar>::nonconstContigSubViewImpl( const Range1D& colRng
   using Teuchos::Workspace;
   using Teuchos::as;
   Teuchos::WorkspaceStore *wss = Teuchos::get_default_workspace_store().get();
-  const VectorSpaceBase<Scalar> &domain = *this->domain();
-  const VectorSpaceBase<Scalar> &range = *this->range();
-  const Index dimDomain = domain.dim();
+  const VectorSpaceBase<Scalar> &l_domain = *this->domain();
+  const VectorSpaceBase<Scalar> &l_range = *this->range();
+  const Index dimDomain = l_domain.dim();
   const Range1D colRng = Teuchos::full_range(colRng_in,0,dimDomain-1);
   if( colRng.lbound() == 0 && as<Index>(colRng.ubound()) == dimDomain-1 )
     return Teuchos::rcp(this,false); // Takes all of the columns!
@@ -117,7 +117,7 @@ MultiVectorDefaultBase<Scalar>::nonconstContigSubViewImpl( const Range1D& colRng
       col_vecs[j-colRng.lbound()] = this->col(j);
     return Teuchos::rcp(
       new DefaultColumnwiseMultiVector<Scalar>(
-        this->range(),range.smallVecSpcFcty()->createVecSpc(colRng.size()),col_vecs
+        this->range(),l_range.smallVecSpcFcty()->createVecSpc(colRng.size()),col_vecs
         )
       );
   }
@@ -133,11 +133,11 @@ MultiVectorDefaultBase<Scalar>::nonContigSubViewImpl(
 {
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore *wss = Teuchos::get_default_workspace_store().get();
-  const VectorSpaceBase<Scalar> &range = *this->range();
+  const VectorSpaceBase<Scalar> &l_range = *this->range();
   const int numCols = cols.size();
 #ifdef TEUCHOS_DEBUG
-  const VectorSpaceBase<Scalar> &domain = *this->domain();
-  const Index dimDomain = domain.dim();
+  const VectorSpaceBase<Scalar> &l_domain = *this->domain();
+  const Index dimDomain = l_domain.dim();
   const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
   TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
 #endif
@@ -155,7 +155,7 @@ MultiVectorDefaultBase<Scalar>::nonContigSubViewImpl(
   }
   return Teuchos::rcp(
     new DefaultColumnwiseMultiVector<Scalar>(
-      this->range(), range.smallVecSpcFcty()->createVecSpc(numCols), col_vecs
+      this->range(), l_range.smallVecSpcFcty()->createVecSpc(numCols), col_vecs
       )
     );
 }
@@ -169,11 +169,11 @@ MultiVectorDefaultBase<Scalar>::nonconstNonContigSubViewImpl(
 {
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore *wss = Teuchos::get_default_workspace_store().get();
-  const VectorSpaceBase<Scalar> &range = *this->range();
+  const VectorSpaceBase<Scalar> &l_range = *this->range();
   const int numCols = cols.size();
 #ifdef TEUCHOS_DEBUG
-  const VectorSpaceBase<Scalar> &domain = *this->domain();
-  const Index dimDomain = domain.dim();
+  const VectorSpaceBase<Scalar> &l_domain = *this->domain();
+  const Index dimDomain = l_domain.dim();
   const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
   TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
 #endif
@@ -191,7 +191,7 @@ MultiVectorDefaultBase<Scalar>::nonconstNonContigSubViewImpl(
   }
   return Teuchos::rcp(
     new DefaultColumnwiseMultiVector<Scalar>(
-      this->range(), range.smallVecSpcFcty()->createVecSpc(numCols), col_vecs
+      this->range(), l_range.smallVecSpcFcty()->createVecSpc(numCols), col_vecs
       )
     );
 }
@@ -220,15 +220,15 @@ void MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
 
   // ToDo: Validate the input!
 
-  const VectorSpaceBase<Scalar> &domain = *this->domain();
+  const VectorSpaceBase<Scalar> &l_domain = *this->domain();
 
   // Get the primary and secondary dimensions.
 
-  const Index sec_dim = domain.dim();
+  const Index sec_dim = l_domain.dim();
   const Index sec_sub_dim = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in );
 #ifdef TEUCHOS_DEBUG
-  const VectorSpaceBase<Scalar> &range = *this->range();
-  const Index	prim_dim = range.dim();
+  const VectorSpaceBase<Scalar> &l_range = *this->range();
+  const Index	prim_dim = l_range.dim();
   const Index prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
   const char err_msg[] = "MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(...): Error!";
   TEST_FOR_EXCEPTION( !(0 < prim_sub_dim && prim_sub_dim <= prim_dim), std::invalid_argument, err_msg );
@@ -289,14 +289,14 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
 
   // ToDo: Validate the input!
 
-  const VectorSpaceBase<Scalar> &domain = *this->domain();
+  const VectorSpaceBase<Scalar> &l_domain = *this->domain();
 
   // Get the primary and secondary dimensions.
-  const Index sec_dim = domain.dim();
+  const Index sec_dim = l_domain.dim();
   const Index sec_sub_dim = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in );
 #ifdef TEUCHOS_DEBUG
-  const VectorSpaceBase<Scalar> &range = *this->range();
-  const Index prim_dim = range.dim();
+  const VectorSpaceBase<Scalar> &l_range = *this->range();
+  const Index prim_dim = l_range.dim();
   const Index prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
   const char err_msg[] = "MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(...): Error!";
   TEST_FOR_EXCEPTION( !(0 < prim_sub_dim && prim_sub_dim <= prim_dim), std::invalid_argument, err_msg );

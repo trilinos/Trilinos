@@ -32,6 +32,7 @@
 #include "Thyra_LinearOpBaseDecl.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_PromotionTraits.hpp"
 
 namespace Thyra {
 

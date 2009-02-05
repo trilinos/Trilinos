@@ -27,8 +27,8 @@
 // @HEADER
 
 
-#ifndef THYRA_SPMD_VECTOR_SPACE_STD_DECL_HPP
-#define THYRA_SPMD_VECTOR_SPACE_STD_DECL_HPP
+#ifndef THYRA_DEFAULT_SPMD_VECTOR_SPACE_DECL_HPP
+#define THYRA_DEFAULT_SPMD_VECTOR_SPACE_DECL_HPP
 
 
 #include "Teuchos_Handleable.hpp"
@@ -223,7 +223,7 @@ private:
 }; // end class DefaultSpmdVectorSpace
 
 
-/** \brief Nonmember consturctor function.
+/** \brief Nonmember consturctor that creats a serial vector space.
  *
  * \relates DefaultSpmdVectorSpace
  */
@@ -237,7 +237,8 @@ defaultSpmdVectorSpace( const Index dim )
 }
 
 
-/** \brief Nonmember consturctor function.
+/** \brief Nonmember consturctor function that creates a distributed or
+ * locally-replicated parallel vector space.
  *
  * \relates DefaultSpmdVectorSpace
  */
@@ -258,4 +259,4 @@ defaultSpmdVectorSpace(
 } // end namespace Thyra
 
 
-#endif // THYRA_SPMD_VECTOR_SPACE_STD_DECL_HPP
+#endif // THYRA_DEFAULT_SPMD_VECTOR_SPACE_DECL_HPP

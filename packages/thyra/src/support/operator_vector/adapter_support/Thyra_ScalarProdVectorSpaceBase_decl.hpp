@@ -32,7 +32,9 @@
 #include "Thyra_OperatorVectorAdapterSupportTypes.hpp"
 #include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Base subclass for <tt>VectorSpaceBase</tt> that allows the
  * definition of an application-specific scalar product to be swapped
@@ -76,7 +78,10 @@ public:
   /** \brief Construct to use dot product as the default.
    *
    * <b>Postconditions:</b><ul>
-   * <li><tt>dynamic_cast<const EuclideanScalarProd<Scalar>*>(&*this->getScalarProd()) != NULL</tt>
+   *
+   * <li><tt>dynamic_cast<const
+   * EuclideanScalarProd<Scalar>*>(&*this->getScalarProd()) != NULL</tt>
+   *
    * </ul>
    */
   ScalarProdVectorSpaceBase();
@@ -84,14 +89,20 @@ public:
   /** \brief Construct with a different scalar product.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>scalarProd.get()!=NULL</tt> (throw <tt>std::invalid_argument</tt>)
+   *
+   * <li><tt>scalarProd.get()!=NULL</tt> (throw
+   * <tt>std::invalid_argument</tt>)
+   *
    * </ul>
    *
    * <b>Postconditions:</b><ul>
+   *
    * <li><tt>this->getScalarProd().get() == scalarProd.get()</tt>
+   *
    * </ul>
    */
-  ScalarProdVectorSpaceBase( const Teuchos::RCP<const ScalarProdBase<Scalar> > &scalarProd );
+  ScalarProdVectorSpaceBase(
+    const RCP<const ScalarProdBase<Scalar> > &scalarProd );
 
   /** \brief Set a different scalar product.
    *
@@ -101,18 +112,24 @@ public:
    * product object.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>scalarProd.get()!=NULL</tt> (throw <tt>std::invalid_argument</tt>)
+   *
+   * <li><tt>scalarProd.get()!=NULL</tt> (throw
+   * <tt>std::invalid_argument</tt>)
+   *
    * </ul>
    *
    * <b>Postconditions:</b><ul>
+   *
    * <li><tt>this->getScalarProd().get() == scalarProd.get()</tt>
+   *
    * </ul>
    */
-  virtual void setScalarProd( const Teuchos::RCP<const ScalarProdBase<Scalar> > &scalarProd );
+  virtual void setScalarProd(
+    const RCP<const ScalarProdBase<Scalar> > &scalarProd );
 
   /** \brief Return the current scalar product.
    */
-  Teuchos::RCP<const ScalarProdBase<Scalar> > getScalarProd() const;
+  RCP<const ScalarProdBase<Scalar> > getScalarProd() const;
 
   //@}
 
@@ -122,18 +139,23 @@ public:
   /// Returns <tt>getScalarProd()->isEuclidean()</tt>
   bool isEuclidean() const;
   /// Returns <tt>getScalarProd()->scalarProd(x,y)</tt>
-  Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
+  Scalar scalarProd(
+    const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
   /// Calls <tt>getScalarProd()->scalarProds(X,Y,scalar_prods)</tt>
-  void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const;
+  void scalarProdsImpl(
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+    const ArrayView<Scalar> &scalarProds_out ) const;
   
   //@}
 
 private:
 
-  Teuchos::RCP<const ScalarProdBase<Scalar> > scalarProd_;
+  RCP<const ScalarProdBase<Scalar> > scalarProd_;
 
-}; // end class ScalarProdVectorSpaceBase
+};
+
 
 } // end namespace Thyra
+
 
 #endif  // THYRA_SCALAR_PROD_VECTOR_SPACE_BASE_DECL_HPP

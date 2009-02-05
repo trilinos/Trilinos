@@ -29,7 +29,9 @@
 #ifndef THYRA_LINEAR_OP_SCALAR_PROD_DECL_HPP
 #define THYRA_LINEAR_OP_SCALAR_PROD_DECL_HPP
 
-#include "Thyra_ScalarProdBaseDecl.hpp"
+
+#include "Thyra_ScalarProdBase_decl.hpp"
+
 
 namespace Thyra {
 
@@ -53,53 +55,66 @@ public:
   LinearOpScalarProd();
 
   /** \brief . */
-  LinearOpScalarProd( const Teuchos::RCP<const LinearOpBase<Scalar> > &op );
+  LinearOpScalarProd( const RCP<const LinearOpBase<Scalar> > &op );
 
   /** \brief . */
-  void initialize( const Teuchos::RCP<const LinearOpBase<Scalar> > &op );
+  void initialize( const RCP<const LinearOpBase<Scalar> > &op );
 
   /** \brief . */
-  const Teuchos::RCP<const LinearOpBase<Scalar> >& op() const;
+  const RCP<const LinearOpBase<Scalar> >& op() const;
 
   /** \brief . */
-  void uninitialize( Teuchos::RCP<const LinearOpBase<Scalar> > *op = NULL );
+  void uninitialize(
+    const Ptr<RCP<const LinearOpBase<Scalar> > > &op = Teuchos::null );
 
   //@}
+
+protected:
   
   /** @name Overridden from ScalarProdBase */
   //@{
 
-  /** \brief . */
-  void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const;
+  /** \brief Returns <tt>false</tt>. */
+  virtual bool isEuclideanImpl() const;
 
   /** \brief . */
-  void apply(
-    const EuclideanLinearOpBase<Scalar>   &M
-    ,const EOpTransp                        M_trans
-    ,const MultiVectorBase<Scalar>        &X
-    ,MultiVectorBase<Scalar>              *Y
-    ,const Scalar                         alpha
-    ,const Scalar                         beta
+  void scalarProdsImpl(
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+    const ArrayView<Scalar> &scalarProds_out
+    ) const;
+  
+  /** \brief . */
+  virtual void euclideanApplyImpl(
+    const EuclideanLinearOpBase<Scalar> &M,
+    const EOpTransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
+    const Scalar alpha,
+    const Scalar beta
     ) const;
 
   //@}
 
 private:
 
-  Teuchos::RCP<const LinearOpBase<Scalar> >  op_;
+  RCP<const LinearOpBase<Scalar> >  op_;
 
-}; // end class LinearOpScalarProd
+};
+
 
 // //////////////////////////////////
 // Inline members
 
+
 template<class Scalar>
 inline
-const Teuchos::RCP<const LinearOpBase<Scalar> >& LinearOpScalarProd<Scalar>::op() const
+const RCP<const LinearOpBase<Scalar> >& LinearOpScalarProd<Scalar>::op() const
 {
   return op_;
 }
 
+
 } // end namespace Thyra
+
 
 #endif  // THYRA_LINEAR_OP_SCALAR_PROD_DECL_HPP

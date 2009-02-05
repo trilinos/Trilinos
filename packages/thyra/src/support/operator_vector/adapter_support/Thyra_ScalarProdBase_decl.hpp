@@ -26,13 +26,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_SCALAR_PROD_DECL_HPP
-#define THYRA_SCALAR_PROD_DECL_HPP
+#ifndef THYRA_SCALAR_PROD_BASE_DECL_HPP
+#define THYRA_SCALAR_PROD_BASE_DECL_HPP
 
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_EuclideanLinearOpBaseDecl.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Abstract interface for scalar products.
  * 
@@ -56,13 +58,14 @@ namespace Thyra {
  * be vague is that we can not expose a method to return a
  * <tt>VectorSpaceBase</tt> object that could be checked for compatibility
  * since <tt>%ScalarProdBase</tt> is used to define a <tt>VectorSpaceBase</tt>
- * object (through the <tt>VectorSpaceStdBase</tt> node subclass).  Also, some
- * definitions of <tt>%ScalarProdBase</tt> (i.e. <tt>EuclideanScalarProd</tt>)
- * will work for any vector space implementation since they only rely on
- * <tt>RTOp</tt> operators.  In other cases, however, an application-specific
- * scalar product may a have dependency on the data-structure of vector and
- * multi-vector objects in which case one can not just use this with any
- * vector or multi-vector implementation.
+ * object (through the <tt>ScalarProdVectorSpaceBase</tt> node subclass).
+ * Also, some definitions of <tt>%ScalarProdBase</tt>
+ * (i.e. <tt>EuclideanScalarProd</tt>) will work for any vector space
+ * implementation since they only rely on <tt>RTOp</tt> operators.  In other
+ * cases, however, an application-specific scalar product may a have
+ * dependency on the data-structure of vector and multi-vector objects in
+ * which case one can not just use this with any vector or multi-vector
+ * implementation.
  *
  * This interface class also defines functions to modify the application of a
  * Euclidean linear operator to insert the definition of the application
@@ -82,29 +85,82 @@ public:
 
   //@}
   
-  /** @name Public pure virtual functions that must be overridden */
+  /** @name Non-virtual public interface */
   //@{
 
-  /** \brief Return the scalar product of each column in two multi-vectors in the vector space.
+  /** \brief Return if this is a Euclidean (identity) scalar product is the
+   * same as the dot product.
    *
-   * @param  X            [in] Multi-vector.
-   * @param  Y            [in] Multi-vector.
-   * @param  scalar_prod  [out] Array (length <tt>X.domain()->dim()</tt>) containing the
-   *                      scalar products <tt>scalar_prod[j] = this->scalarProd(*X.col(j),*Y.col(j))</tt>,
-   *                      for <tt>j = 0 ... X.domain()->dim()-1</tt>.
+   * The default implementation returns <tt>false</tt> (evenn though on average
+   * the truth is most likely <tt>true</tt>).
+   */
+  bool isEuclidean() const
+    { return isEuclideanImpl(); }
+
+  /** \brief Return the scalar product of two vectors in the vector space.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>X.domain()->isCompatible(*Y.domain())</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li><tt>X.range()->isCompatible(*Y.range())</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li>The MultiVectorBase objects <tt>X</tt> and <tt>Y</tt> are <em>compatible</em> with this implementation or
-   *     an exception will be thrown.
+   *
+   * <li>The vectors <tt>x</tt> and <tt>y</tt> are <em>compatible</em> with
+   * <tt>*this</tt> implementation or an exception will be thrown.
+   *
+   * <li><tt>x.space()->isCompatible(*y.space())</tt> (throw
+   * <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   *
    * </ul>
    *
    * <b>Postconditions:</b><ul>
-   * <li><tt>scalar_prod[j] = this->scalarProd(*X.col(j),*Y.col(j))</tt>, for <tt>j = 0 ... X.domain()->dim()-1</tt>
+   *
+   * <li>The scalar product is returned.
+   *
+   * </ul>
+   *
+   * The default implementation calls on the multi-vector version
+   * <tt>scalarProds()</tt>.
+   */
+  Scalar scalarProd(
+    const VectorBase<Scalar>& x, const VectorBase<Scalar>& y
+    ) const
+    { return scalarProdImpl(x, y); }
+
+  /** \brief Return the scalar product of each column in two multi-vectors in
+   * the vector space.
+   *
+   * \param X [in] Multi-vector.
+   *
+   * \param Y [in] Multi-vector.
+   *
+   * \param scalar_prod [out] Array (length <tt>X.domain()->dim()</tt>)
+   * containing the scalar products <tt>scalar_prod[j] =
+   * this->scalarProd(*X.col(j),*Y.col(j))</tt>, for <tt>j = 0
+   * ... X.domain()->dim()-1</tt>.
+   *
+   * <b>Preconditions:</b><ul>
+   *
+   * <li><tt>X.domain()->isCompatible(*Y.domain())</tt> (throw
+   * <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   *
+   * <li><tt>X.range()->isCompatible(*Y.range())</tt> (throw
+   * <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   *
+   * <li>The MultiVectorBase objects <tt>X</tt> and <tt>Y</tt> are
+   * <em>compatible</em> with this implementation or an exception will be
+   * thrown.
+   *
+   * </ul>
+   *
+   * <b>Postconditions:</b><ul>
+   *
+   * <li><tt>scalar_prod[j] = this->scalarProd(*X.col(j),*Y.col(j))</tt>, for
+   * <tt>j = 0 ... X.domain()->dim()-1</tt>
+   *
    * </ul>
    */
-  virtual void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const = 0;
+  void scalarProds(
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+    const ArrayView<Scalar> &scalarProds_out
+    ) const
+    { scalarProdsImpl(X, Y, scalarProds_out); }
 
   /** \brief Modify the application of a Euclidean linear operator by
    * inserting the vector space's scalar product.
@@ -130,49 +186,52 @@ public:
    *
    * ToDo: Finish documentation!
    */
-  virtual void apply(
-    const EuclideanLinearOpBase<Scalar>   &M
-    ,const EOpTransp                        M_trans
-    ,const MultiVectorBase<Scalar>        &X
-    ,MultiVectorBase<Scalar>              *Y
-    ,const Scalar                         alpha
-    ,const Scalar                         beta
+  void euclideanApply(
+    const EuclideanLinearOpBase<Scalar> &M,
+    const EOpTransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
+    const Scalar alpha,
+    const Scalar beta
+    ) const
+    { euclideanApplyImpl(M, M_trans, X, Y, alpha, beta); }
+
+  //@}
+
+protected:
+
+  /** \brief Protected virtual functions. */
+  //@{
+
+  /** \brief . */
+  virtual bool isEuclideanImpl() const = 0;
+  
+  /** \brief Default implementation calls scalarProdsImpl(). */
+  virtual Scalar scalarProdImpl(
+    const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
+
+  /** \brief . */
+  virtual void scalarProdsImpl(
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+    const ArrayView<Scalar> &scalarProds_out
+    ) const = 0;
+
+  /** \brief . */
+  virtual void euclideanApplyImpl(
+    const EuclideanLinearOpBase<Scalar> &M,
+    const EOpTransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
+    const Scalar alpha,
+    const Scalar beta
     ) const = 0;
 
   //@}
 
-  /** @name Public virtual functions with default implementations */
-  //@{
+};
 
-  /** \brief Return if this is a Euclidean (identity) scalar product is the
-   * same as the dot product.
-   *
-   * The default implementation returns <tt>false</tt> (evenn though on average
-   * the truth is most likely <tt>true</tt>).
-   */
-  virtual bool isEuclidean() const;
-
-  /** \brief Return the scalar product of two vectors in the vector space.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li>The vectors <tt>x</tt> and <tt>y</tt> are <em>compatible</em> with <tt>*this</tt>
-   *     implementation or an exception will be thrown.
-   * <li><tt>x.space()->isCompatible(*y.space())</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * </ul>
-   *
-   * <b>Postconditions:</b><ul>
-   * <li>The scalar product is returned.
-   * </ul>
-   *
-   * The default implementation calls on the multi-vector version
-   * <tt>scalarProds()</tt>.
-   */
-  virtual Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
-
-  //@}
-
-}; // end class ScalarProdBase
 
 } // end namespace Thyra
 
-#endif  // THYRA_SCALAR_PROD_DECL_HPP
+
+#endif  // THYRA_SCALAR_PROD_BASE_DECL_HPP

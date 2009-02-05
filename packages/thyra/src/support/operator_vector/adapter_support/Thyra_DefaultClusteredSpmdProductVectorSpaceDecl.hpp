@@ -29,7 +29,7 @@
 #ifndef THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_DECL_HPP
 #define THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_DECL_HPP
 
-#include "Thyra_VectorSpaceBaseDecl.hpp"
+#include "Thyra_VectorSpaceBase_decl.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
 
@@ -153,9 +153,9 @@ public:
   /** \brief . */
   Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y ) const;
   /** \brief . */
-  void scalarProds(
-    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[]
-    ) const;
+  void scalarProdsImpl(
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+    const ArrayView<Scalar> &scalarProds ) const;
   /** \brief . */
   bool isEuclidean() const;
   /** \brief . */

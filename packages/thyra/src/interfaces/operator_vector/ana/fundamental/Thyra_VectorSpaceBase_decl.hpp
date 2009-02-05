@@ -219,9 +219,11 @@ createMembersView(
  * creating <tt>VectorBase</tt> objects using the non-member function
  * <tt>Thyra::createMember()</tt>.  A <tt>%VectorSpaceBase</tt> can also
  * create <tt> MultiVectorBase</tt> objects which represent a compact
- * collection of vectors.  A secondary role for <tt>%VectorSpaceBase</tt>
- * objects is to test for compatibility of vector space objects using the
- * <tt>isCompatible()</tt> method.
+ * collection of vectors using the non-member function
+ * <tt>Thyra::createMembers()</tt>.  A secondary role for
+ * <tt>%VectorSpaceBase</tt> objects is to test for compatibility of vector
+ * space objects using the <tt>isCompatible()</tt> method and to apply the
+ * space's scalar (inner) product.
  *
  * Clients can not directly create <tt>%VectorBase</tt> and
  * <tt>%MultiVectorBase</tt> objects using the member functions
@@ -289,11 +291,16 @@ public:
    * </ul>
    *
    * <b>Postconditions:</b><ul>
+   *
    * <li> [<tt>this->dim() != vecSpc.dim()</tt>] <tt>returnVal == false</tt>
+   *
    * </ul>
    *
    * <b>Invariants:</b><ul>
-   * <li> [<tt>this->isCompatible(vecSpc) == true</tt>] <tt>vecSpc.isCompatible(*this) == true</tt>
+   *
+   * <li> [<tt>this->isCompatible(vecSpc) == true</tt>]
+   * <tt>vecSpc.isCompatible(*this) == true</tt>
+   *
    * </ul>
    */
   virtual bool isCompatible( const VectorSpaceBase<Scalar>& vecSpc ) const = 0;
@@ -310,32 +317,51 @@ public:
   /** \brief Return the scalar product of two vectors in the vector space.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>x.space()->isCompatible(*this)</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li><tt>y.space()->isCompatible(*this)</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   *
+   * <li><tt>x.space()->isCompatible(*this)</tt> (throw
+   * <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   *
+   * <li><tt>y.space()->isCompatible(*this)</tt> (throw
+   * <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   *
    * </ul>
    */
   virtual Scalar scalarProd(
     const VectorBase<Scalar>& x, const VectorBase<Scalar>& y
     ) const = 0;
 
-  /** \brief Return the scalar product of each column in two multi-vectors in the vector space.
+  /** \brief Return the scalar product of each column in two multi-vectors in
+   * the vector space.
    *
-   * @param  X            [in] Multi-vector.
-   * @param  Y            [in] Multi-vector.
-   * @param  scalar_prod  [out] Array (length <tt>X.domain()->dim()</tt>) containing the
-   *                      scalar products <tt>scalar_prod[j] = this->scalarProd(*X.col(j),*Y.col(j))</tt>,
-   *                      for <tt>j = 0 ... X.domain()->dim()-1</tt>.
+   * @param X [in] Multi-vector.
+   *
+   * @param Y [in] Multi-vector.
+   *
+   * @param scalarProds_out [out] Array (length <tt>X.domain()->dim()</tt>)
+   * containing the scalar products <tt>scalarProds_out[j] =
+   * this->scalarProds_out(*X.col(j),*Y.col(j))</tt>, for <tt>j = 0
+   * ... X.domain()->dim()-1</tt>.
    *
    * <b>Preconditions:</b><ul>
-   * <li><tt>X.range()->isCompatible(*this)</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li><tt>Y.range()->isCompatible(*this)</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
-   * <li><tt>X.domain()->isCompatible(*Y.domain())</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   *
+   * <li><tt>X.range()->isCompatible(*this)</tt> (throw
+   * <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   *
+   * <li><tt>Y.range()->isCompatible(*this)</tt> (throw
+   * <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   *
+   * <li><tt>X.domain()->isCompatible(*Y.domain())</tt> (throw
+   * <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+   *
    * </ul>
    */
-  virtual void scalarProds(
-    const MultiVectorBase<Scalar>& X,
-    const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[]
-    ) const = 0;
+  void scalarProds(
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+    const ArrayView<Scalar> &scalarProds_out
+    ) const
+    {
+      scalarProdsImpl(X, Y, scalarProds_out);
+    }
 
   //@}
 
@@ -353,31 +379,41 @@ public:
   /** \brief Returns <tt>true</tt> if <tt>this->acquireDetachedView(rng,...)</tt> returns
    * a direct view of the range of data requested.
    *
-   * \param  rng  [in] The range of elements for the view (see <tt>acquireDetachedView()</tt>).
-   *              The default value is <tt>Range1D()</tt> (i.e. All of the elements in the vector).
-   * \param  viewType
-   *              [in] The type of view allowed.
-   * \param  strideType
-   *              [in] The type of stride the view is allowed to be.
+   * \param rng [in] The range of elements for the view (see
+   * <tt>acquireDetachedView()</tt>).  The default value is <tt>Range1D()</tt>
+   * (i.e. All of the elements in the vector).
+   *
+   * \param viewType [in] The type of view allowed.
+   *
+   * \param strideType [in] The type of stride the view is allowed to be.
    *
    * <b>Preconditions:</b><ul>
+   *
    * <li><tt>this->dim() > 0</tt>
+   *
    * <li><tt>full_range(rng,0,this->dim()-1).ubound < this->dim()</tt>
+   *
    * </ul>
    *
    * There are three different questions about the behavior of the <tt>acquireDetachedView()</tt>
    * that this query function can answer:
    *
    * <ul>
-   * <li>The elements in <tt>rng</tt> are fairly cheaply accessble
-   *     in local (i.e. in-core) memory if <tt>this->hasInCoreView(rng)==true</tt>.
-   *     Note that this also allows for detached temporary copies of data. 
-   * <li>A direct view of the elements in <tt>rng</tt> is available
-   *     in local (i.e. in-core) memory if <tt>this->hasInCoreView(rng,VIEW_TYPE_DIRECT)==true</tt>.
-   *     No copy of data is allowed here.
-   * <li>A direct view of the elements in <tt>rng</tt> with unit stride is available in
-   *     local (i.e. in-core) memory if <tt>this->hasInCoreView(rng,VIEW_TYPE_DIRECT,STRIDE_TYPE_UNIT)==true</tt>
-   *     No copy of data is allowed here.
+   *
+   * <li>The elements in <tt>rng</tt> are fairly cheaply accessble in local
+   * (i.e. in-core) memory if <tt>this->hasInCoreView(rng)==true</tt>.  Note
+   * that this also allows for detached temporary copies of data.
+   *
+   * <li>A direct view of the elements in <tt>rng</tt> is available in local
+   * (i.e. in-core) memory if
+   * <tt>this->hasInCoreView(rng,VIEW_TYPE_DIRECT)==true</tt>.  No copy of
+   * data is allowed here.
+   *
+   * <li>A direct view of the elements in <tt>rng</tt> with unit stride is
+   * available in local (i.e. in-core) memory if
+   * <tt>this->hasInCoreView(rng,VIEW_TYPE_DIRECT,STRIDE_TYPE_UNIT)==true</tt>
+   * No copy of data is allowed here.
+   *
    * </ul>
    *
    * The default implementation returns <tt>false</tt> (i.e. by default we do
@@ -468,12 +504,17 @@ protected:
   /** \brief Create a vector member from the vector space.
    *
    * <b>Preconditions:</b><ul>
+   *
    * <li><tt>this->dim() > 0</tt>
+   *
    * </ul>
    *
    * <b>Postconditions:</b><ul>
+   *
    * <li> <tt>returnVal.get() != NULL</tt>
+   *
    * <li> <tt>returnVal->space()->isCompatible(*this) == true</tt>
+   *
    * </ul>
    *
    * <b>Note:</b> This function is not to be called directly since it is
@@ -481,22 +522,29 @@ protected:
    *
    * \returns A smart reference counted pointer to a dynamically allocated
    * vector object.  After construction the values in the vector
-   * <tt>*returnVal</tt> are unspecified (uninitialized).  This allows for faster
-   * execution times.  Note that <tt>returnVal->space().get() == this</tt> need
-   * not be true.
+   * <tt>*returnVal</tt> are unspecified (uninitialized).  This allows for
+   * faster execution times.  Note that <tt>returnVal->space().get() ==
+   * this</tt> need not be true.
    */
   virtual RCP< VectorBase<Scalar> > createMember() const = 0;
 
-  /** \brief Create a set of vector members (a <tt>MultiVectorBase</tt>) from the vector space.
+  /** \brief Create a set of vector members (a <tt>MultiVectorBase</tt>) from
+   * the vector space.
    *
    * <b>Preconditions:</b><ul>
+   *
    * <li><tt>this->dim() > 0</tt>
+   *
    * <li> <tt>num_vecs >= 1</tt>
+   *
    * </ul>
    *
    * <b>Postconditions:</b><ul>
+   *
    * <li> <tt>returnVal->range()->isCompatible(*this) == true</tt>
+   *
    * <li> <tt>returnVal->domain()->dim() == numMembers</tt>
+   *
    * </ul>
    *
    * \returns A smart reference-counted pointer to a dynamically allocated
@@ -511,21 +559,27 @@ protected:
 
   /** \brief Create a vector member that is a non-<tt>const</tt> view of raw vector data.
    *
-   * @param  raw_v  [in] On input contains pointer (i.e. <tt>raw_v.values()</tt>)
-   *                to array that the returned <tt>VectorBase</tt> will be a view of.
-   *                The data pointed to by <tt>raw_v.values()</tt> must remain
-   *                valid until the returned <tt>VectorBase</tt> object is destroyed.
+   * @param raw_v [in] On input contains pointer
+   * (i.e. <tt>raw_v.values()</tt>) to array that the returned
+   * <tt>VectorBase</tt> will be a view of.  The data pointed to by
+   * <tt>raw_v.values()</tt> must remain valid until the returned
+   * <tt>VectorBase</tt> object is destroyed.
    *
    * <b>Preconditions:</b><ul>
+   *
    * <li><tt>raw_v</tt> has been initialized to memory (i.e.
-   *     <tt>raw_v.subDim()!=0 && raw_v.values()!=NULL</tt>).
-   * <li><tt>raw_v</tt> is <em>consistent</em> with the local storage
-   *     of this vector spaces vector data.  This precondition is purposefully vague since
-   *     this function can be used an variety of specialized use-cases.
+   * <tt>raw_v.subDim()!=0 && raw_v.values()!=NULL</tt>).
+   *
+   * <li><tt>raw_v</tt> is <em>consistent</em> with the local storage of this
+   * vector spaces vector data.  This precondition is purposefully vague since
+   * this function can be used an variety of specialized use-cases.
+   *
    * </ul>
    *
    * <b>Postconditions:</b><ul>
+   *
    * <li>See <tt>this->createMember()</tt>
+   *
    * </ul>
    *
    * It is stated here that the client can not expect that the values pointed
@@ -539,10 +593,11 @@ protected:
 
   /** \brief Create a vector member that is a <tt>const</tt> view of raw vector data.
    *
-   * @param  raw_v  [in] On input contains pointer (i.e. <tt>raw_v.values()</tt>)
-   *                to array that the returned <tt>VectorBase</tt> will be a view of.
-   *                The data pointed to by <tt>raw_v.values()</tt> must remain
-   *                valid until the returned <tt>VectorBase</tt> object is destroyed.
+   * @param raw_v [in] On input contains pointer
+   * (i.e. <tt>raw_v.values()</tt>) to array that the returned
+   * <tt>VectorBase</tt> will be a view of.  The data pointed to by
+   * <tt>raw_v.values()</tt> must remain valid until the returned
+   * <tt>VectorBase</tt> object is destroyed.
    *
    * This function works exactly the same as the previous version that takes a
    * <tt>RTOpPack::SubVectorView</tt> object except that this version
@@ -560,21 +615,29 @@ protected:
   virtual RCP<const VectorBase<Scalar> >
   createMemberView( const RTOpPack::ConstSubVectorView<Scalar> &raw_v ) const = 0;
 
-  /** \brief Create a multi-vector member that is a non-<tt>const</tt> view of raw multi-vector data.
+  /** \brief Create a multi-vector member that is a non-<tt>const</tt> view of
+   * raw multi-vector data.
    *
-   * @param  raw_mv  [in] On input contains pointer (i.e. <tt>raw_mv.values()</tt>)
-   *                 to array that the returned <tt>MultiVectorBase</tt> will be a view of.
+   * @param raw_mv [in] On input contains pointer
+   * (i.e. <tt>raw_mv.values()</tt>) to array that the returned
+   * <tt>MultiVectorBase</tt> will be a view of.
    *
    * <b>Preconditions:</b><ul>
+   *
    * <li><tt>raw_mv</tt> has been initialized to memory (i.e.
-   *     <tt>raw_mv.subDim()!=0 && raw_mv.values()!=NULL</tt>).
-   * <li><tt>raw_mv</tt> is <em>consistent</em> with the local storage
-   *     of this spaces vector data.  This precondition is purposefully vague since
-   *     this function can be used an variety of specialized use-cases.
+   * <tt>raw_mv.subDim()!=0 && raw_mv.values()!=NULL</tt>).
+   *
+   * <li><tt>raw_mv</tt> is <em>consistent</em> with the local storage of this
+   * spaces vector data.  This precondition is purposefully vague since this
+   * function can be used an variety of specialized use-cases.
+   *
    * </ul>
    *
    * <b>Postconditions:</b><ul>
-   * <li>See <tt>this->createMembers()</tt> where <tt>numMembers==raw_mv.numSubCols()</tt>
+   *
+   * <li>See <tt>this->createMembers()</tt> where
+   * <tt>numMembers==raw_mv.numSubCols()</tt>
+   *
    * </ul>
    *
    * It is stated here that the client can not expect that the values pointed
@@ -586,12 +649,14 @@ protected:
   virtual RCP<MultiVectorBase<Scalar> >
   createMembersView( const RTOpPack::SubMultiVectorView<Scalar> &raw_mv ) const = 0;
 
-  /** \brief Create a multi-vector member that is a <tt>const</tt> view of raw multi-vector data.
+  /** \brief Create a multi-vector member that is a <tt>const</tt> view of raw
+   * multi-vector data.
    *
-   * @param  raw_mv  [in] On input contains pointer (i.e. <tt>raw_mv.values()</tt>)
-   *                 to array that the returned <tt>MultiVectorBase</tt> will be a view of.
-   *                 The data pointed to by <tt>raw_mv.values()</tt> must remain
-   *                 valid until the returned <tt>MultiVectorBase</tt> object is destroyed.
+   * @param raw_mv [in] On input contains pointer
+   * (i.e. <tt>raw_mv.values()</tt>) to array that the returned
+   * <tt>MultiVectorBase</tt> will be a view of.  The data pointed to by
+   * <tt>raw_mv.values()</tt> must remain valid until the returned
+   * <tt>MultiVectorBase</tt> object is destroyed.
    *
    * This function works exactly the same as the previous version that takes a
    * <tt>RTOpPack::SubMultiVectorView</tt> object except that this version
@@ -599,20 +664,51 @@ protected:
    * pointer to a <tt>const</tt> <tt>MultiVectorBase</tt> object.
    *
    * <b>Preconditions:</b><ul>
-   * <li>See the previous <tt>RTOpPack::SubMultiVectorView</tt> version of this function.
+   *
+   * <li>See the previous <tt>RTOpPack::SubMultiVectorView</tt> version of
+   * this function.
+   *
    * </ul>
    *
    * <b>Postconditions:</b><ul>
+   *
    * <li>See <tt>this->createMember()</tt>
+   *
    * </ul>
    */
   virtual RCP<const MultiVectorBase<Scalar> >
-  createMembersView( const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const = 0;
+  createMembersView(
+    const RTOpPack::ConstSubMultiVectorView<Scalar> &raw_mv ) const = 0;
 
   //@}
 
-}; // end class VectorSpaceBase
+protected:
+
+  /** \name Protected virtual funtions. */
+
+  /** \brief . */
+  virtual void scalarProdsImpl(
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+    const ArrayView<Scalar> &scalarProds
+    ) const = 0;
+
+public:
+
+  /** \name Deprecated . */
+  //@{
+
+  /** \brief Deprecated . */
+  void scalarProds(
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+    Scalar scalarProds[]
+    ) const;
+
+  //@}
+
+};
+
 
 } // end namespace Thyra
+
 
 #endif  // THYRA_VECTOR_SPACE_BASE_DECL_HPP

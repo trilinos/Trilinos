@@ -323,18 +323,24 @@ NonlinearCG<Scalar>::doSolve(
 
     // B.2.a) ||g_k - g_km1|| |g_k + g_mag| <= g_reduct_tol
 
-    const ScalarMag g_reduct = g_k - g_km1;
+    bool g_reduct_converged = false;
 
-    *out << "\ng_k - g_km1 = "<<g_reduct<<"\n";
+    if (numIters_ > 0) {
 
-    const ScalarMag g_reduct_err =
-      SMT::magnitude(g_reduct / SMT::magnitude(g_k + g_mag_));
-
-    const bool g_reduct_converged = (g_reduct_err <= g_reduct_tol);
-
-    *out << "\nCheck convergence: |g_k - g_km1| / |g_k + g_mag| = "<<g_reduct_err
-         << (g_reduct_converged ? " <= " : " > ")
-         << "g_reduct_tol = "<<g_reduct_tol<<"\n";
+      const ScalarMag g_reduct = g_k - g_km1;
+      
+      *out << "\ng_k - g_km1 = "<<g_reduct<<"\n";
+      
+      const ScalarMag g_reduct_err =
+        SMT::magnitude(g_reduct / SMT::magnitude(g_k + g_mag_));
+      
+      g_reduct_converged = (g_reduct_err <= g_reduct_tol);
+      
+      *out << "\nCheck convergence: |g_k - g_km1| / |g_k + g_mag| = "<<g_reduct_err
+           << (g_reduct_converged ? " <= " : " > ")
+           << "g_reduct_tol = "<<g_reduct_tol<<"\n";
+      
+    }
 
     // B.2.b) ||g_grad_k|| g_mag <= g_grad_tol
 

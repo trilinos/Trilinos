@@ -63,6 +63,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ConstDetachedSpmdVectorView, basic, Scalar )
   ECHO(RCP<VectorBase<Scalar> > v = createMember(vs));
   ECHO(V_S(v.ptr(), as<Scalar>(2.0)));
   ECHO(ConstDetachedSpmdVectorView<Scalar> dvv(v));
+  TEST_INEQUALITY(dvv.spmdSpace(), null);
+  TEST_ASSERT(vs->isCompatible(*dvv.spmdSpace()));
   TEST_EQUALITY_CONST(dvv.globalOffset(), 0);
   TEST_EQUALITY(dvv.subDim(), g_localDim);
   TEST_ASSERT(!is_null(dvv.values()));
@@ -110,6 +112,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DetachedSpmdVectorView, basic, Scalar )
   ECHO(RCP<VectorBase<Scalar> > v = createMember(vs));
   {
     ECHO(DetachedSpmdVectorView<Scalar> dvv(v));
+    TEST_INEQUALITY(dvv.spmdSpace(), null);
+    TEST_ASSERT(vs->isCompatible(*dvv.spmdSpace()));
     TEST_EQUALITY_CONST(dvv.globalOffset(), 0);
     TEST_EQUALITY(dvv.subDim(), g_localDim);
     TEST_ASSERT(!is_null(dvv.values()));

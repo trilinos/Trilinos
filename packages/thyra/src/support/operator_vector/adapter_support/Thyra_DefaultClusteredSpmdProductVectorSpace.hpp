@@ -162,16 +162,15 @@ Scalar DefaultClusteredSpmdProductVectorSpace<Scalar>::scalarProd(
 }
 
 template<class Scalar>
-void DefaultClusteredSpmdProductVectorSpace<Scalar>::scalarProds(
-  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y
-  ,Scalar scalar_prods[]
-  ) const
+void DefaultClusteredSpmdProductVectorSpace<Scalar>::scalarProdsImpl(
+  const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+  const ArrayView<Scalar> &scalarProds_out ) const
 {
   TEST_FOR_EXCEPTION(
     !isEuclidean_, std::logic_error
     ,"Error, have not implemented support for none Euclidean scalar products yet!"
     );
-  return dots(X,Y,scalar_prods);
+  return dots(X, Y, scalarProds_out);
   // ToDo:
   // * Create DefaultClusteredSpmdProductMultiVector subclass
   // * Cast X and Y this type

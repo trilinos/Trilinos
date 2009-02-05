@@ -105,7 +105,12 @@ am__DEPENDENCIES_1 =
 libthyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = Thyra_ModelEvaluatorBase.$(OBJEXT)
 am__objects_2 = Thyra_TestingTools.$(OBJEXT)
-am__objects_3 = Thyra_SpmdVectorSpaceUtilities.$(OBJEXT)
+am__objects_3 = Thyra_DefaultSpmdVectorSpace.$(OBJEXT) \
+	Thyra_EuclideanScalarProd.$(OBJEXT) \
+	Thyra_LinearOpScalarProd.$(OBJEXT) \
+	Thyra_ScalarProdBase.$(OBJEXT) \
+	Thyra_ScalarProdVectorSpaceBase.$(OBJEXT) \
+	Thyra_SpmdVectorSpaceUtilities.$(OBJEXT)
 am_libthyra_a_OBJECTS = Thyra_Version.$(OBJEXT) $(am__objects_1) \
 	$(am__objects_2) $(am__objects_3)
 libthyra_a_OBJECTS = $(am_libthyra_a_OBJECTS)
@@ -251,17 +256,21 @@ top_srcdir = @top_srcdir@
 # --with-xyz or --without-xyz)
 #
 INTERFACES_OPERATOR_VECTOR_ANA_FUNDAMENTAL_H = \
-  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_LinearOpBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_LinearOpBase.hpp\
-  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_MultiVectorBaseDecl.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_LinearOpBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_MultiVectorBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_MultiVectorBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_OperatorVectorTypes.hpp\
-  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorBase.hpp\
-  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBaseDecl.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.hpp\
-  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceFactoryBaseDecl.hpp\
-  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceFactoryBase.hpp
+  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase_decl.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase_def.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceFactoryBase.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceFactoryBaseDecl.hpp
+
+INTERFACES_OPERATOR_VECTOR_ANA_FUNDAMENTAL = \
+  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp
 
 INTERFACES_OPERATOR_VECTOR_ANA_EXTENDED_H = \
   $(srcdir)/interfaces/operator_vector/ana/extended/Thyra_AddedLinearOpBase.hpp\
@@ -380,20 +389,25 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVector.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpaceDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace_decl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace_def.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpaceFactory.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpaceFactoryDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanLinearOpBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanLinearOpBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProdDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd_decl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd_def.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProdDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd_decl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd_def.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_OperatorVectorAdapterSupportTypes.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase_decl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase_def.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase_decl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase_def.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleRhsEuclideanLinearOpBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleRhsEuclideanLinearOpBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SingleScalarEuclideanLinearOpBase.hpp\
@@ -413,6 +427,11 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_apply_op_helper_decl.hpp
 
 SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT = \
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp
 
 SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_SERIAL_H = \
@@ -678,7 +697,12 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DefaultSpmdVectorSpace.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_EuclideanScalarProd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_LinearOpScalarProd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_ModelEvaluatorBase.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_ScalarProdBase.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_ScalarProdVectorSpaceBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_TestingTools.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_Version.Po@am__quote@
@@ -738,6 +762,76 @@ Thyra_TestingTools.obj: $(srcdir)/support/operator_vector/client_support/Thyra_T
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp' object='Thyra_TestingTools.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_TestingTools.obj `if test -f '$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp'; fi`
+
+Thyra_DefaultSpmdVectorSpace.o: $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_DefaultSpmdVectorSpace.o -MD -MP -MF $(DEPDIR)/Thyra_DefaultSpmdVectorSpace.Tpo -c -o Thyra_DefaultSpmdVectorSpace.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_DefaultSpmdVectorSpace.Tpo $(DEPDIR)/Thyra_DefaultSpmdVectorSpace.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp' object='Thyra_DefaultSpmdVectorSpace.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_DefaultSpmdVectorSpace.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp
+
+Thyra_DefaultSpmdVectorSpace.obj: $(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_DefaultSpmdVectorSpace.obj -MD -MP -MF $(DEPDIR)/Thyra_DefaultSpmdVectorSpace.Tpo -c -o Thyra_DefaultSpmdVectorSpace.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_DefaultSpmdVectorSpace.Tpo $(DEPDIR)/Thyra_DefaultSpmdVectorSpace.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp' object='Thyra_DefaultSpmdVectorSpace.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_DefaultSpmdVectorSpace.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_DefaultSpmdVectorSpace.cpp'; fi`
+
+Thyra_EuclideanScalarProd.o: $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_EuclideanScalarProd.o -MD -MP -MF $(DEPDIR)/Thyra_EuclideanScalarProd.Tpo -c -o Thyra_EuclideanScalarProd.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_EuclideanScalarProd.Tpo $(DEPDIR)/Thyra_EuclideanScalarProd.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp' object='Thyra_EuclideanScalarProd.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_EuclideanScalarProd.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp
+
+Thyra_EuclideanScalarProd.obj: $(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_EuclideanScalarProd.obj -MD -MP -MF $(DEPDIR)/Thyra_EuclideanScalarProd.Tpo -c -o Thyra_EuclideanScalarProd.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_EuclideanScalarProd.Tpo $(DEPDIR)/Thyra_EuclideanScalarProd.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp' object='Thyra_EuclideanScalarProd.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_EuclideanScalarProd.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_EuclideanScalarProd.cpp'; fi`
+
+Thyra_LinearOpScalarProd.o: $(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_LinearOpScalarProd.o -MD -MP -MF $(DEPDIR)/Thyra_LinearOpScalarProd.Tpo -c -o Thyra_LinearOpScalarProd.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_LinearOpScalarProd.Tpo $(DEPDIR)/Thyra_LinearOpScalarProd.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp' object='Thyra_LinearOpScalarProd.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_LinearOpScalarProd.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp
+
+Thyra_LinearOpScalarProd.obj: $(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_LinearOpScalarProd.obj -MD -MP -MF $(DEPDIR)/Thyra_LinearOpScalarProd.Tpo -c -o Thyra_LinearOpScalarProd.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_LinearOpScalarProd.Tpo $(DEPDIR)/Thyra_LinearOpScalarProd.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp' object='Thyra_LinearOpScalarProd.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_LinearOpScalarProd.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_LinearOpScalarProd.cpp'; fi`
+
+Thyra_ScalarProdBase.o: $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_ScalarProdBase.o -MD -MP -MF $(DEPDIR)/Thyra_ScalarProdBase.Tpo -c -o Thyra_ScalarProdBase.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_ScalarProdBase.Tpo $(DEPDIR)/Thyra_ScalarProdBase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp' object='Thyra_ScalarProdBase.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_ScalarProdBase.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp
+
+Thyra_ScalarProdBase.obj: $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_ScalarProdBase.obj -MD -MP -MF $(DEPDIR)/Thyra_ScalarProdBase.Tpo -c -o Thyra_ScalarProdBase.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_ScalarProdBase.Tpo $(DEPDIR)/Thyra_ScalarProdBase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp' object='Thyra_ScalarProdBase.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_ScalarProdBase.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdBase.cpp'; fi`
+
+Thyra_ScalarProdVectorSpaceBase.o: $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_ScalarProdVectorSpaceBase.o -MD -MP -MF $(DEPDIR)/Thyra_ScalarProdVectorSpaceBase.Tpo -c -o Thyra_ScalarProdVectorSpaceBase.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_ScalarProdVectorSpaceBase.Tpo $(DEPDIR)/Thyra_ScalarProdVectorSpaceBase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp' object='Thyra_ScalarProdVectorSpaceBase.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_ScalarProdVectorSpaceBase.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp
+
+Thyra_ScalarProdVectorSpaceBase.obj: $(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_ScalarProdVectorSpaceBase.obj -MD -MP -MF $(DEPDIR)/Thyra_ScalarProdVectorSpaceBase.Tpo -c -o Thyra_ScalarProdVectorSpaceBase.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_ScalarProdVectorSpaceBase.Tpo $(DEPDIR)/Thyra_ScalarProdVectorSpaceBase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp' object='Thyra_ScalarProdVectorSpaceBase.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_ScalarProdVectorSpaceBase.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_ScalarProdVectorSpaceBase.cpp'; fi`
 
 Thyra_SpmdVectorSpaceUtilities.o: $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_SpmdVectorSpaceUtilities.o -MD -MP -MF $(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Tpo -c -o Thyra_SpmdVectorSpaceUtilities.o `test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp

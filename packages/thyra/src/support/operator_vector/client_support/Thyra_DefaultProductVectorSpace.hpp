@@ -201,21 +201,24 @@ Scalar DefaultProductVectorSpace<Scalar>::scalarProd(
 }
 
 template<class Scalar>
-void DefaultProductVectorSpace<Scalar>::scalarProds(
-  const MultiVectorBase<Scalar>    &X_in
-  ,const MultiVectorBase<Scalar>   &Y_in
-  ,Scalar                          scalar_prods[]
+void DefaultProductVectorSpace<Scalar>::scalarProdsImpl(
+  const MultiVectorBase<Scalar> &X_in,
+ const MultiVectorBase<Scalar> &Y_in,
+  const ArrayView<Scalar> &scalarProds_out
   ) const
 {
+  using Teuchos::as;
   using Teuchos::Workspace;
   const VectorSpaceBase<Scalar> &domain = *X_in.domain();
   const Index m = domain.dim();
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(scalar_prods==NULL);
+  TEST_FOR_EXCEPT(is_null(scalarProds_out));
   TEST_FOR_EXCEPT( !domain.isCompatible(*Y_in.domain()) );
+  TEUCHOS_ASSERT_EQUALITY( as<Ordinal>(scalarProds_out.size()),
+    as<Ordinal>(m) )
 #endif
   if(m==1) {
-    scalar_prods[0] = this->scalarProd(*X_in.col(0),*Y_in.col(0));
+    scalarProds_out[0] = this->scalarProd(*X_in.col(0),*Y_in.col(0));
     return;
     // ToDo: Remove this if(...) block once we have a DefaultProductMultiVector implementation!
   }
@@ -227,11 +230,14 @@ void DefaultProductVectorSpace<Scalar>::scalarProds(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( numBlocks!=X.productSpace()->numBlocks() || numBlocks!=Y.productSpace()->numBlocks() );
 #endif
-  Workspace<Scalar> _scalar_prods(wss,m,false);
-  std::fill_n( scalar_prods, m, Teuchos::ScalarTraits<Scalar>::zero() );
+  Workspace<Scalar> _scalarProds_out(wss, m, false);
+  std::fill( scalarProds_out.begin(), scalarProds_out.end(),
+    ScalarTraits<Scalar>::zero() );
   for( int k = 0; k < numBlocks; ++k ) {
-    (*vecSpaces_)[k]->scalarProds(*X.getMultiVectorBlock(k),*Y.getMultiVectorBlock(k),&_scalar_prods[0]);
-    for( int j = 0; j < m; ++j ) scalar_prods[j] += _scalar_prods[j];
+    (*vecSpaces_)[k]->scalarProds(
+      *X.getMultiVectorBlock(k), *Y.getMultiVectorBlock(k), _scalarProds_out());
+    for( int j = 0; j < m; ++j )
+      scalarProds_out[j] += _scalarProds_out[j];
   }
 }
 

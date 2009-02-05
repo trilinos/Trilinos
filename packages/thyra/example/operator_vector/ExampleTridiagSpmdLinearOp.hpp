@@ -31,6 +31,7 @@
 
 #include "Thyra_SpmdLinearOpBase.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 /** \brief Simple example subclass for Spmd tridiagonal matrices.
  *

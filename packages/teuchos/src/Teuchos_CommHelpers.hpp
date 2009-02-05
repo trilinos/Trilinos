@@ -973,7 +973,7 @@ void Teuchos::reduceAll(
   ,const Packet &send, const Ptr<Packet> &globalReduct
   )
 {
-  reduceAll<Ordinal,Packet>(comm,reductType, 1, &send, &*globalReduct);
+  reduceAll<Ordinal,Packet>(comm, reductType, 1, &send, &*globalReduct);
 }
 
 

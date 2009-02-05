@@ -266,6 +266,9 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
           break;	// get out of the loop, we are done!
         }
       }
+      else {
+        success = false;
+      }
 
       // Select a new alpha to try:
       //   alpha_k = ( minFrac*alpha_k <= quadratic interpolation <= maxFrac*alpha_k )

@@ -110,7 +110,8 @@ void EuclideanLinearOpBase<RangeScalar,DomainScalar>::euclidean_apply_impl(
   ,const RangeScalar                     beta
   ) const
 {
-  this->domainScalarProdVecSpc()->getScalarProd()->apply(*this,applyConjToTrans(conj),X,Y,alpha,beta);
+  this->domainScalarProdVecSpc()->getScalarProd()->euclideanApply(
+    *this, applyConjToTrans(conj), X, Teuchos::ptr(Y), alpha, beta);
 }
 
 template<class RangeScalar, class DomainScalar>
@@ -122,7 +123,8 @@ void EuclideanLinearOpBase<RangeScalar,DomainScalar>::euclidean_applyTranspose_i
   ,const DomainScalar                    beta
   ) const
 {
-  this->rangeScalarProdVecSpc()->getScalarProd()->apply(*this,applyTransposeConjToTrans(conj),X,Y,alpha,beta);
+  this->rangeScalarProdVecSpc()->getScalarProd()->euclideanApply(
+    *this, applyTransposeConjToTrans(conj), X, Teuchos::ptr(Y), alpha, beta);
 }
 
 } // namespace Thyra

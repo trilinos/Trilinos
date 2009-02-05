@@ -152,9 +152,9 @@ const Thyra::VectorSpaceBase<Scalar>& linear_op_op(
  */
 #define THYRA_ASSERT_VEC_SPACES_NAMES(FUNC_NAME,VS1,VS1_NAME,VS2,VS2_NAME) \
 { \
-  const bool isCompatible = (VS1).isCompatible(VS2); \
+  const bool l_isCompatible = (VS1).isCompatible(VS2); \
   TEST_FOR_EXCEPTION( \
-    !isCompatible, ::Thyra::Exceptions::IncompatibleVectorSpaces, \
+    !l_isCompatible, ::Thyra::Exceptions::IncompatibleVectorSpaces, \
     FUNC_NAME << "\n\n" \
     << ::Thyra::dump_vec_spaces(VS1,VS1_NAME,VS2,VS2_NAME) \
     ) \

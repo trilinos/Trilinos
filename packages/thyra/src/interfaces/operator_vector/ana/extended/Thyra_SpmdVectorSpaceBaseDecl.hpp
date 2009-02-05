@@ -29,7 +29,7 @@
 #ifndef THYRA_SPMD_VECTOR_SPACE_BASE_BASE_DECL_HPP
 #define THYRA_SPMD_VECTOR_SPACE_BASE_BASE_DECL_HPP
 
-#include "Thyra_VectorSpaceBaseDecl.hpp"
+#include "Thyra_VectorSpaceBase_decl.hpp"
 #include "Teuchos_Comm.hpp"
 
 namespace Thyra {

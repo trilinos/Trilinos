@@ -140,11 +140,14 @@ public:
   /** \brief Returns the sum of the scalar products of each of the columns of
    * the constituent multi-vectors.
    */
-  void scalarProds( const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y, Scalar scalar_prods[] ) const;
+  void scalarProdsImpl(
+    const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
+    const ArrayView<Scalar> &scalarProds ) const;
   /** \brief Returns true if all of the constituent vector spaces return
    * true.
    */
-  bool hasInCoreView(const Range1D& rng, const EViewType viewType, const EStrideType strideType) const;
+  bool hasInCoreView( const Range1D& rng, const EViewType viewType,
+    const EStrideType strideType ) const;
   /** \brief Returns <tt>getBlock(0)->smallVecSpcFcty()</tt>. */
   RCP< const VectorSpaceFactoryBase<Scalar> > smallVecSpcFcty() const;
   /** \brief Returns a <tt>DefaultColumnwiseMultiVector</tt> object.

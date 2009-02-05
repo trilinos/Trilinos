@@ -37,6 +37,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_ArrayView.hpp"
+#include "Teuchos_Tuple.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
@@ -57,6 +58,8 @@ using Teuchos::Array;
 using Teuchos::ArrayView;
 /** \brief . */
 using Teuchos::ArrayRCP;
+/** \brief . */
+using Teuchos::Tuple;
 /** \brief . */
 using Teuchos::FancyOStream;
 /** \brief . */

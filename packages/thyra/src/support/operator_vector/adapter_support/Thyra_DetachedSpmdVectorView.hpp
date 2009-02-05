@@ -55,6 +55,7 @@ public:
       if (!is_null(v)) {
         const RCP<const SpmdVectorBase<Scalar> > spmd_v =
           rcp_dynamic_cast<const SpmdVectorBase<Scalar> >(v, true);
+        v_ = spmd_v;
         const RCP<const SpmdVectorSpaceBase<Scalar> > spmd_vs =
           spmd_v->spmdSpace();
         const Scalar *localValues = 0;
@@ -81,6 +82,9 @@ public:
         v_->freeLocalData(sv_.values().get());
       }
     }
+  /** \brief . */
+  const RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const
+    { if (!is_null(v_)) return v_->spmdSpace(); return Teuchos::null; }
   /** \brief . */
   const RTOpPack::ConstSubVectorView<Scalar>& sv() const { return sv_; }
   /** \brief . */
@@ -124,6 +128,7 @@ public:
       if (!is_null(v)) {
         const RCP<SpmdVectorBase<Scalar> > spmd_v =
           rcp_dynamic_cast<SpmdVectorBase<Scalar> >(v, true);
+        v_ = spmd_v;
         const RCP<const SpmdVectorSpaceBase<Scalar> > spmd_vs =
           spmd_v->spmdSpace();
         Scalar *localValues = 0;
@@ -150,6 +155,9 @@ public:
         v_->commitLocalData(sv_.values().get());
       }
     }
+  /** \brief . */
+  const RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const
+    { if (!is_null(v_)) return v_->spmdSpace(); return Teuchos::null; }
   /** \brief . */
   const RTOpPack::SubVectorView<Scalar>& sv() const { return sv_; }
   /** \brief . */

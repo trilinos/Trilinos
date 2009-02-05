@@ -141,13 +141,13 @@ Scalar DefaultMultiVectorProductVectorSpace<Scalar>::scalarProd(
 }
 
 template<class Scalar>
-void DefaultMultiVectorProductVectorSpace<Scalar>::scalarProds(
+void DefaultMultiVectorProductVectorSpace<Scalar>::scalarProdsImpl(
   const MultiVectorBase<Scalar> &X_in,
   const MultiVectorBase<Scalar> &Y_in,
-  Scalar scalar_prods[]
+  const ArrayView<Scalar> &scalarProds_out
   ) const
 {
-  defaultProdVecSpc_->scalarProds(X_in,Y_in,scalar_prods);
+  defaultProdVecSpc_->scalarProds(X_in, Y_in, scalarProds_out);
   // 2007/05/23: rabartl: ToDo: Implement this in a more efficient way once
   // you have a specialized multi-vector implementation.
 }
