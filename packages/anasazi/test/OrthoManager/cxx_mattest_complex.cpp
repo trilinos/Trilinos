@@ -80,9 +80,6 @@ typedef OperatorTraits<ST,MV,OP> OPT;
 typedef ScalarTraits<ST>         SCT;
 typedef SCT::magnitudeType           MT;
 
-const ST ONE = SCT::one();
-const MT ZERO = SCT::magnitude(SCT::zero());
-
 // this is the tolerance that all tests are performed against
 const MT TOL = 1.0e-12;
 const MT ATOL = 10;
@@ -99,7 +96,9 @@ MT MVDiff(const MV &X, const MV &Y);
 
 int main(int argc, char *argv[]) 
 {
-  
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
+
   bool verbose = false;
   int numFailed = 0;
   bool debug = false;
@@ -356,6 +355,9 @@ int main(int argc, char *argv[])
 int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, 
                                RCP<const MV> S, 
                                RCP<const MV> X1, RCP<const MV> X2) {
+
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
 
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
@@ -631,6 +633,21 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
             numerr++;
           }
           sout << "  " << t << "|| S_in - X1*C1 - X2*C2 - S_out*B || : " << err << endl;
+#ifdef TEUCHOS_DEBUG
+          if (err > ATOL*TOL) {
+            sout << "S\n" << *(Teuchos::rcp_dynamic_cast<const MyMultiVec<ST> >(S)) << endl;
+            sout << "S_out\n" << *(Teuchos::rcp_dynamic_cast<const MyMultiVec<ST> >(S_outs[o])) << endl;
+            sout << "B_out\n" << *(Teuchos::rcp_dynamic_cast<const MyMultiVec<ST> >(B_outs[o])) << endl;
+            if (C_outs[o].size() > 0) {
+              sout << "X1\n" << *(Teuchos::rcp_dynamic_cast<const MyMultiVec<ST> >(X1)) << endl;
+              sout << "C_out[1]\n" << *C_outs[o][0] << endl;
+              if (C_outs[o].size() > 1) {
+                sout << "X22n" << *(Teuchos::rcp_dynamic_cast<const MyMultiVec<ST> >(X2)) << endl;
+                sout << "C_out[2]\n" << *C_outs[o][1] << endl;
+              }
+            }
+          }
+#endif
         }
         // <X1,S> == 0
         if (theX.size() > 0 && theX[0] != null) {
@@ -673,6 +690,9 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
 ////////////////////////////////////////////////////////////////////////////
 int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
 {
+
+  const ST ONE = SCT::one();
+  const MT ZERO = SCT::magnitude(SCT::zero());
 
   const int sizeS = MVT::GetNumberVecs(*S);
   int numerr = 0;
@@ -813,6 +833,8 @@ int testNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM, RCP<const MV> S)
 int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM, 
                    RCP<const MV> S, 
                    RCP<const MV> X1, RCP<const MV> X2) {
+
+  const ST ONE = SCT::one();
 
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
@@ -1075,6 +1097,9 @@ int testProjectMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
 
 
 MT MVDiff(const MV &X, const MV &Y) {
+
+  const ST ONE = SCT::one();
+
   const int sizeX = MVT::GetNumberVecs(X);
   SerialDenseMatrix<int,ST> xTmx(sizeX,sizeX);
 

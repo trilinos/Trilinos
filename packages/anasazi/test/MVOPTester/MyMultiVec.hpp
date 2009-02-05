@@ -458,5 +458,14 @@ private:
 
 };
 
+/*! \relates MyMultiVec
+    Output stream operator for handling the printing of MyMultiVec.
+*/
+template <typename ScalarType>
+std::ostream& operator<<(std::ostream& os, const MyMultiVec<ScalarType>& Obj)
+{
+  Obj.MvPrint(os);
+  return os;
+}
 
 #endif // MY_MULTIVECTOR_HPP
