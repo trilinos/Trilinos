@@ -631,21 +631,6 @@ int testProjectAndNormalizeMat(RCP<MatOrthoManager<ST,MV,OP> > OM,
             numerr++;
           }
           sout << "  " << t << "|| S_in - X1*C1 - X2*C2 - S_out*B || : " << err << endl;
-#ifdef TEUCHOS_DEBUG
-          if (err > ATOL*TOL) {
-            sout << "S\n" << *S << endl;
-            sout << "S_out\n" << *S_outs[o] << endl;
-            sout << "B_out\n" << *B_outs[o] << endl;
-            if (C_outs[o].size() > 0) {
-              sout << "X1\n" << *X1 << endl;
-              sout << "C_out[1]\n" << *C_outs[o][0] << endl;
-              if (C_outs[o].size() > 1) {
-                sout << "X22n" << *X2 << endl;
-                sout << "C_out[2]\n" << *C_outs[o][1] << endl;
-              }
-            }
-          }
-#endif
         }
         // <X1,S> == 0
         if (theX.size() > 0 && theX[0] != null) {
