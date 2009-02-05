@@ -135,37 +135,33 @@ static int local_run_work( ThreadPool * const thread_pool )
 
   while ( working || 0 < ( work_claim = *work_count_claim ) ) {
 
-    if ( ! pthread_mutex_trylock( & thread_pool->m_work_lock ) ) {
+    pthread_mutex_lock( & thread_pool->m_work_lock );
 
-      if ( working ) { /* I just completed a work item */
-        if ( ! --( thread_pool->m_work_count_pending ) ) {
-          /* Signal master thread I completed last work item */
-          pthread_cond_signal( & thread_pool->m_work_cond );
-        }
-      }
+    /* Record previous iteration's work, if any */
+    if ( working && ! --( thread_pool->m_work_count_pending ) ) {
+      /* Signal master thread I completed last work item */
+      pthread_cond_signal( & thread_pool->m_work_cond );
+    }
 
-      working = *work_count_claim ; /* This is guaranteed correct */
+    /* Claim work for this iteration, if any */
+    if ( 0 < ( working = *work_count_claim ) ) {
+      *work_count_claim = working - 1 ;
+    }
 
-      if ( 0 < working ) { /* I am claiming a new work item */
-        *work_count_claim = working - 1 ;
-      }
+    pthread_mutex_unlock( & thread_pool->m_work_lock );
 
-      pthread_mutex_unlock( & thread_pool->m_work_lock );
+    /*  Have claimed some work, release the work lock while doing the work */
 
-      /*  Have claimed some work, release the work lock while doing the work */
+    if ( working ) {
+      const struct TPI_Work_Struct work =
+        { thread_pool->m_work_argument ,
+          thread_pool->m_lock_count ,
+          thread_pool->m_work_count_total ,
+          thread_pool->m_work_count_total - working };
 
-      if ( working ) {
-        const struct TPI_Work_Struct work =
-          { thread_pool->m_work_argument ,
-            thread_pool->m_lock_count ,
-            thread_pool->m_work_count_total ,
-            thread_pool->m_work_count_total - working };
-
-        (* thread_pool->m_work_routine)( & work );
-      }
+      (* thread_pool->m_work_routine)( & work );
     }
   }
-
 
   return 0 <= work_claim ;
 }
@@ -266,6 +262,9 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
       thread_pool->m_lock_count = lock_count ;
 
       if ( NULL != worker ) {
+
+        pthread_mutex_lock( & thread_pool->m_work_lock );
+
         thread_pool->m_work_argument      = shared_data ;
         thread_pool->m_work_routine       = subprogram ;
         thread_pool->m_work_count_total   = work_count ;
@@ -296,6 +295,8 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
         thread_pool->m_work_count_total   = 0 ;
         thread_pool->m_work_routine       = NULL ;
         thread_pool->m_work_argument      = NULL ;
+
+        pthread_mutex_unlock( & thread_pool->m_work_lock );
       }
       else {
         struct TPI_Work_Struct work =
@@ -335,7 +336,6 @@ int TPI_Init( int n )
       pthread_attr_setscope(       & thread_attr, PTHREAD_SCOPE_SYSTEM );
       pthread_attr_setdetachstate( & thread_attr, PTHREAD_CREATE_DETACHED );
 
-      pthread_mutex_lock( & thread_pool->m_work_lock );
       pthread_mutex_lock( & thread_pool->m_master_lock );
 
       for ( p = 1 ; p < n && ! result ; ++p ) {
@@ -401,7 +401,6 @@ int TPI_Finalize()
     }
 
     pthread_mutex_unlock( & thread_pool->m_master_lock );
-    pthread_mutex_unlock( & thread_pool->m_work_lock );
   }
 
   return result ;
