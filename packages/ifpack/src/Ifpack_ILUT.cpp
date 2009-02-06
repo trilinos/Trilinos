@@ -360,7 +360,10 @@ int Ifpack_ILUT::Compute()
 
     AbsRow.resize(sizeL);
 
-    SingleRowL.arrayify(&keys[0], &values[0]);
+    SingleRowL.arrayify(
+      keys.size() ? &keys[0] : 0,
+      values.size() ? &values[0] : 0
+      );
     for (int i = 0; i < sizeL; ++i)
       if (IFPACK_ABS(values[i]) > DropTolerance()) {
         AbsRow[count++] = IFPACK_ABS(values[i]);
