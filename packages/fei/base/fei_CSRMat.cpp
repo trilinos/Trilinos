@@ -55,8 +55,10 @@ CSRMat::operator=(const fei::FillableMat& src)
   srg_.packedColumnIndices.resize(nnz);
   packedcoefs_.resize(nnz);
 
-  int* colind_ptr = &(srg_.packedColumnIndices[0]);
-  double* coef_ptr = &(packedcoefs_[0]);
+  int* colind_ptr = (srg_.packedColumnIndices.size()
+    ? &(srg_.packedColumnIndices[0]) : 0);
+  double* coef_ptr = (packedcoefs_.size()
+    ? &(packedcoefs_[0]) : 0);
 
   iter = src.begin();
 

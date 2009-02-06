@@ -277,11 +277,14 @@ Ptr<T> ptrFromRef( T& arg )
 template<typename T> inline
 RCP<T> rcpFromPtr( const Ptr<T>& ptr )
 {
+  if (is_null(ptr))
+    return null;
 #ifdef TEUCHOS_DEBUG
   // In a debug build, just grab out the WEAK RCP and return it.  That way we
   // can get dangling reference checking without having to turn on more
   // expensive RCPNode tracing.
-  return ptr.access_rcp();
+  if (!is_null(ptr.access_rcp()))
+    return ptr.access_rcp();
 #endif
   return rcpFromRef(*ptr);
 }

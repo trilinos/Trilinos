@@ -5,8 +5,12 @@ PACKAGE_NAME=Thyra
 #
 
 (FRAMEWORK, INSTALL) {
-    TESTS = ../example/operator_vector/sillyCgSolve_mpi.exe,
-            operator_vector/test_std_ops.exe;
+    TESTS = ../example/operator_vector/sillyCgSolve_mpi.exe;
+    COMM = MPI,SERIAL;
+}
+
+(FRAMEWORK, INSTALL) {
+    TESTS = operator_vector/test_std_ops.exe;
     ARGS = --verbose;
     COMM = MPI,SERIAL;
 }
@@ -19,7 +23,7 @@ PACKAGE_NAME=Thyra
 
 (FRAMEWORK, INSTALL) {
     TESTS = ../example/operator_vector/sillyCgSolve_serial.exe;
-    ARGS = --verbose --use-silly-cg, --verbose --use-sillier-cg;
+    ARGS =  --use-silly-cg,  --use-sillier-cg;
     COMM = SERIAL;
 }
 
@@ -79,7 +83,7 @@ PACKAGE_NAME=Thyra
 
 (FRAMEWORK, INSTALL) {
     TESTS = ../example/operator_vector/sillyCgSolve_serial.exe;
-    ARGS = --unsym-op --diag-scale=1.05 --verbose;
+    ARGS = --unsym-op --diag-scale=1.05;
     COMM = SERIAL;
 }
 

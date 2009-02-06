@@ -38,6 +38,7 @@
 #include "Teuchos_Time.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
+
 //
 // This example program is meant to show how easy it is to create MPI Thyra
 // objects and use them with an ANA (CG in this case).
@@ -47,32 +48,34 @@
 //
 template<class Scalar>
 bool runCgSolveExample(
-  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> > &comm
-  ,const int                                                     procRank
-  ,const int                                                     numProc
-  ,const int                                                     localDim
-  ,const Scalar                                                  diagScale
-  ,const bool                                                    showAllTests
-  ,const bool                                                    verbose
-  ,const bool                                                    dumpAll
-  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType   tolerance
-  ,const int                                                     maxNumIters
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> > &comm,
+  const int procRank,
+  const int numProc,
+  const int localDim,
+  const Scalar diagScale,
+  const bool showAllTests,
+  const bool dumpAll,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance,
+  const int maxNumIters
   )
 {
+
+  using Teuchos::as;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType    ScalarMag;
+  typedef typename ST::magnitudeType ScalarMag;
   bool success = true;
   bool result;
+
   // ToDo: Get VerboseObjectBase to automatically setup for parallel
-  Teuchos::RCP<Teuchos::FancyOStream>
-    out = (verbose ? Teuchos::VerboseObjectBase::getDefaultOStream() : Teuchos::null);
-  if(verbose)
-    *out << "\n***\n*** Running silly CG solver using scalar type = \'" << ST::name() << "\' ...\n***\n";
+  Teuchos::RCP<Teuchos::FancyOStream> out =
+    Teuchos::VerboseObjectBase::getDefaultOStream();
+  *out << "\n***\n*** Running silly CG solver using scalar type = \'" << ST::name() << "\' ...\n***\n";
   Teuchos::Time timer("");
   timer.start(true);
+
   //
   // (A) Setup a simple linear system with tridiagonal operator:
   //
@@ -82,73 +85,86 @@ bool runCgSolveExample(
   //       [            -1  a*2    -1 ]
   //       [                 -1   a*2 ]
   //
+
   // (A.1) Create the tridiagonal matrix operator
-  if(verbose)
-    *out << "\nConstructing tridiagonal matrix A of local dimension = " << localDim
-         << " and diagonal multiplier = " << diagScale << " ...\n";
+  *out << "\nConstructing tridiagonal matrix A of local dimension = " << localDim
+       << " and diagonal multiplier = " << diagScale << " ...\n";
   const Thyra::Index
     lowerDim = ( procRank == 0         ? localDim - 1 : localDim ),
     upperDim = ( procRank == numProc-1 ? localDim - 1 : localDim );
   std::vector<Scalar> lower(lowerDim), diag(localDim), upper(upperDim);
-  const Scalar one = ST::one(), diagTerm = Scalar(2)*diagScale*ST::one();
+  const Scalar one = ST::one(), diagTerm = as<Scalar>(2.0)* diagScale * ST::one();
   int k = 0, kl = 0;
-  if(procRank > 0) { lower[kl] = -one; ++kl; };  diag[k] = diagTerm; upper[k] = -one; // First local row
+  // First local row
+  if(procRank > 0) { lower[kl] = -one; ++kl; };  diag[k] = diagTerm; upper[k] = -one; 
+  // Middle local rows
   for( k = 1; k < localDim - 1; ++k, ++kl ) {
-    lower[kl] = -one; diag[k] = diagTerm; upper[k] = -one;                            // Middle local rows
+    lower[kl] = -one; diag[k] = diagTerm; upper[k] = -one;
   }
-  lower[kl] = -one; diag[k] = diagTerm; if(procRank < numProc-1) upper[k] = -one;     // Last local row
-  RCP<const Thyra::LinearOpBase<Scalar> >
-    A = rcp(new ExampleTridiagSpmdLinearOp<Scalar>(comm,localDim,&lower[0],&diag[0],&upper[0]));
-  if(verbose) *out << "\nGlobal dimension of A = " << A->domain()->dim() << std::endl;
+  // Last local row
+  lower[kl] = -one; diag[k] = diagTerm; if(procRank < numProc-1) upper[k] = -one;
+  RCP<const Thyra::LinearOpBase<Scalar> > A =
+    rcp(new ExampleTridiagSpmdLinearOp<Scalar>(comm,localDim, &lower[0], &diag[0], &upper[0]));
+  *out << "\nGlobal dimension of A = " << A->domain()->dim() << std::endl;
+
   // (A.2) Testing the linear operator constructed linear operator
-  if(verbose) *out << "\nTesting the constructed linear operator A ...\n";
+  *out << "\nTesting the constructed linear operator A ...\n";
   Thyra::LinearOpTester<Scalar> linearOpTester;
   linearOpTester.dump_all(dumpAll);
   linearOpTester.set_all_error_tol(tolerance);
-  linearOpTester.set_all_warning_tol(ScalarMag(ScalarMag(1e-2)*tolerance));
+  linearOpTester.set_all_warning_tol(1e-2*tolerance);
   linearOpTester.show_all_tests(true);
   linearOpTester.check_adjoint(false);
   linearOpTester.check_for_symmetry(true);
   linearOpTester.show_all_tests(showAllTests);
-  result = linearOpTester.check(*A,out.get());
+  result = linearOpTester.check(*A, out.ptr());
   if(!result) success = false;
+
   // (A.3) Create RHS vector b and set to a random value
   RCP<Thyra::VectorBase<Scalar> > b = createMember(A->range());
   Thyra::seed_randomize<Scalar>(0);
-  Thyra::randomize( Scalar(-ST::one()), Scalar(+ST::one()), &*b );
+  Thyra::randomize( -ST::one(), +ST::one(), b.ptr() );
+
   // (A.4) Create LHS vector x and set to zero
   RCP<Thyra::VectorBase<Scalar> > x = createMember(A->domain());
-  Thyra::assign( &*x, ST::zero() );
+  Thyra::V_S( x.ptr(), ST::zero() );
+
   //
   // (B) Solve the linear system with the silly CG solver
   //
-  if(verbose) *out << "\nSolving the linear system with sillyCgSolve(...) ...\n";
-  result = sillyCgSolve(*A,*b,maxNumIters,tolerance,&*x,OSTab(out).get());
-  if(!result) success = false;
+  *out << "\nSolving the linear system with sillyCgSolve(...) ...\n";
+  {
+    OSTab tab(out);
+    result = sillyCgSolve(*A, *b, maxNumIters, tolerance, x.ptr(), *out);
+    if(!result) success = false;
+  }
+
   //
   // (C) Check that the linear system was solved to the specified tolerance
   //
   RCP<Thyra::VectorBase<Scalar> > r = createMember(A->range());                     
-  Thyra::assign(&*r,*b);                                               // r = b
-  Thyra::apply(*A,Thyra::NOTRANS,*x,&*r,Scalar(-ST::one()),ST::one()); // r = -A*x + r
+  // r = b
+  Thyra::V_V(r.ptr(), *b);
+  // r = -A*x + r
+  Thyra::apply<Scalar>(*A, Thyra::NOTRANS, *x, r.ptr(), -ST::one(), ST::one());
   const ScalarMag r_nrm = Thyra::norm(*r), b_nrm = Thyra::norm(*b);
-  const ScalarMag rel_err = r_nrm/b_nrm, relaxTol = ScalarMag(10.0)*tolerance;
+  const ScalarMag rel_err = r_nrm/b_nrm, relaxTol = 10.0*tolerance;
   result = rel_err <= relaxTol;
   if(!result) success = false;
-  if(verbose) {
-    *out << "\nChecking the residual ourselves ...\n";
-    {
-      OSTab tab(out);
-      *out
-        << "\n||b-A*x||/||b|| = "<<r_nrm<<"/"<<b_nrm<<" = "<<rel_err<<(result?" <= ":" > ")
-        <<"10.0*tolerance = "<<relaxTol<<": "<<(result?"passed":"failed")<<std::endl;
-    }
+  *out << "\nChecking the residual ourselves ...\n";
+  {
+    OSTab tab(out);
+    *out
+      << "\n||b-A*x||/||b|| = "<<r_nrm<<"/"<<b_nrm<<" = "<<rel_err<<(result?" <= ":" > ")
+      <<"10.0*tolerance = "<<relaxTol<<": "<<(result?"passed":"failed")<<std::endl;
   }
   timer.stop();
-  if(verbose) *out << "\nTotal time = " << timer.totalElapsedTime() << " sec\n";
+  *out << "\nTotal time = " << timer.totalElapsedTime() << " sec\n";
 
   return success;
+
 } // end runCgSolveExample()
+
 
 //
 // Actual main driver program
@@ -159,7 +175,6 @@ int main(int argc, char *argv[])
   using Teuchos::CommandLineProcessor;
 
   bool success = true;
-  bool verbose = true;
   bool result;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
@@ -178,60 +193,72 @@ int main(int argc, char *argv[])
     // Read in command-line options
     //
 
-    int    localDim    = 500;
-    double diagScale   = 1.001;
-    double tolerance   = 1e-4;
-    bool   showAllTests = false;
-    int    maxNumIters = 300;
-    bool   dumpAll     = false;
-
     CommandLineProcessor  clp;
     clp.throwExceptions(false);
     clp.addOutputSetupOptions(true);
 
-    clp.setOption( "verbose", "quiet", &verbose, "Determines if any output is printed or not." );
-    clp.setOption( "local-dim", &localDim, "Local dimension of the linear system." );
-    clp.setOption( "diag-scale", &diagScale, "Scaling of the diagonal to improve conditioning." );
-    clp.setOption( "show-all-tests", "show-summary-only", &showAllTests, "Show all LinearOpTester tests or not" );
-    clp.setOption( "tol", &tolerance, "Relative tolerance for linear system solve." );
-    clp.setOption( "max-num-iters", &maxNumIters, "Maximum of CG iterations." );
-    clp.setOption( "dump-all", "no-dump-all", &dumpAll, "Determines if vectors are printed or not." );
+    int localDim = 500;
+    clp.setOption( "local-dim", &localDim,
+      "Local dimension of the linear system." );
 
-    CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
+    double diagScale = 1.001;
+    clp.setOption( "diag-scale", &diagScale,
+      "Scaling of the diagonal to improve conditioning." );
+
+    bool showAllTests = false;
+    clp.setOption( "show-all-tests", "show-summary-only", &showAllTests,
+      "Show all LinearOpTester tests or not" );
+
+    double tolerance = 1e-4;
+    clp.setOption( "tol", &tolerance,
+      "Relative tolerance for linear system solve." );
+
+    int maxNumIters = 300;
+    clp.setOption( "max-num-iters", &maxNumIters,
+      "Maximum of CG iterations." );
+
+    bool dumpAll = false;
+    clp.setOption( "dump-all", "no-dump-all", &dumpAll,
+      "Determines if vectors are printed or not." );
+
+    CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc, argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
-    TEST_FOR_EXCEPTION( localDim < 2, std::logic_error, "Error, localDim=" << localDim << " < 2 is not allowed!" );
+    TEST_FOR_EXCEPTION( localDim < 2, std::logic_error,
+      "Error, localDim=" << localDim << " < 2 is not allowed!" );
 
 #if defined(HAVE_TEUCHOS_FLOAT)
-    // Run using float
-    result = runCgSolveExample<float>(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<float>(comm, procRank, numProc, localDim, diagScale,
+      showAllTests, dumpAll, tolerance, maxNumIters);
     if(!result) success = false;
 #endif
 
-    // Run using double
-    result = runCgSolveExample<double>(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<double>(comm, procRank, numProc, localDim, diagScale,
+      showAllTests, dumpAll, tolerance, maxNumIters);
     if(!result) success = false;
 
 #ifdef HAVE_TEUCHOS_COMPLEX
 
 #if defined(HAVE_TEUCHOS_FLOAT)
-    // Run using std::complex<float>
-    result = runCgSolveExample<std::complex<float> >(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<float> >(comm, procRank, numProc, localDim,
+      diagScale, showAllTests, dumpAll, tolerance, maxNumIters);
     if(!result) success = false;
 #endif
 
-    // Run using std::complex<double>
-    result = runCgSolveExample<std::complex<double> >(comm,procRank,numProc,localDim,diagScale,showAllTests,verbose,dumpAll,tolerance,maxNumIters);
+    result = runCgSolveExample<std::complex<double> >(comm, procRank, numProc, localDim,
+      diagScale, showAllTests, dumpAll, tolerance, maxNumIters);
     if(!result) success = false;
 
 #endif // HAVE_TEUCHOS_COMPLEX
 
   }
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, *out, success)
 
-  if( verbose && procRank==0 ) {
-    if(success) *out << "\nAll of the tests seem to have run successfully!\n";
-    else        *out << "\nOh no! at least one of the tests failed!\n";	
+  if (procRank==0) {
+    if (success)
+      *out << "\nAll of the tests seem to have run successfully!\n";
+    else
+      *out << "\nOh no! at least one of the tests failed!\n";	
   }
   
   return success ? 0 : 1;

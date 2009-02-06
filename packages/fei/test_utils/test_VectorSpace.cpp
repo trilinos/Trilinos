@@ -465,10 +465,11 @@ test_VectorSpace::create_VectorSpace(MPI_Comm comm,
   }
 
   vectorSpace.initSharedIDs(sharedIDs.size(),
-			    idTypes[0],
-			    &sharedIDs[0],
-			    &numSharingProcsPerID[0],
-			    &sharingProcs[0]);
+    idTypes[0],
+    sharedIDs.size() ? &sharedIDs[0] : 0,
+    numSharingProcsPerID.size() ? &numSharingProcsPerID[0] : 0,
+    sharingProcs.size() ? &sharingProcs[0] : 0
+    );
 
   return(vsptr);
 }

@@ -56,7 +56,12 @@ fei::FieldMask::~FieldMask()
 
 bool fei::FieldMask::hasFieldID(int fieldID) const
 {
-  return( snl_fei::binarySearch(fieldID, &fieldIDs_[0], fieldIDs_.size())>=0 );
+  return(
+    snl_fei::binarySearch(fieldID,
+      fieldIDs_.size() ? &fieldIDs_[0] : 0,
+      fieldIDs_.size())
+    >= 0
+    );
 }
 
 void fei::FieldMask::getFieldEqnOffset(int fieldID,
@@ -92,7 +97,9 @@ void fei::FieldMask::addField(int fieldID, int fieldSize, int numInstances)
   }
 
   int insertPoint = -1;
-  int idindex = snl_fei::binarySearch(fieldID, &fieldIDs_[0], fieldIDs_.size(), insertPoint);
+  int idindex = snl_fei::binarySearch(fieldID,
+    fieldIDs_.size() ? &fieldIDs_[0] : 0,
+    fieldIDs_.size(), insertPoint);
   if (idindex >= 0) {
     fieldInstances_[idindex] += numInstances;
     for(unsigned i=idindex+1; i<fieldEqnOffsets_.size(); ++i) {

@@ -254,15 +254,15 @@ public:
    */
   bool check(
     const LinearOpBase<RangeScalar,DomainScalar> &op,
-    MultiVectorRandomizerBase<RangeScalar> *rangeRandomizer,
-    MultiVectorRandomizerBase<DomainScalar> *domainRandomizer,
-    Teuchos::FancyOStream *out
+    const Ptr<MultiVectorRandomizerBase<RangeScalar> > &rangeRandomizer,
+    const Ptr<MultiVectorRandomizerBase<DomainScalar> > &domainRandomizer,
+    const Ptr<Teuchos::FancyOStream> &out
     ) const;
 
   /** \brief Calls <tt>this->check(op,NULL,NULL,out,leadingIndent,indentSpacer)</tt> */
   bool check(
     const LinearOpBase<RangeScalar,DomainScalar> &op,
-    Teuchos::FancyOStream *out
+    const Ptr<Teuchos::FancyOStream> &out
     ) const;
 
   /** \brief Check if two linear operators are the same or not.
@@ -318,6 +318,32 @@ public:
     const LinearOpBase<RangeScalar,DomainScalar> &op2,
     Teuchos::FancyOStream *out
     ) const;
+
+  /** \brief Deprecated. */
+  //@{
+
+  /** \brief Deprecated. */
+  bool check(
+    const LinearOpBase<RangeScalar,DomainScalar> &op,
+    MultiVectorRandomizerBase<RangeScalar> *rangeRandomizer,
+    MultiVectorRandomizerBase<DomainScalar> *domainRandomizer,
+    Teuchos::FancyOStream *out
+    ) const
+    {
+      using Teuchos::ptr;
+      return check(op, ptr(rangeRandomizer), ptr(domainRandomizer), ptr(out));
+    }
+
+  /** \brief Deprecated. */
+  bool check(
+    const LinearOpBase<RangeScalar,DomainScalar> &op,
+    Teuchos::FancyOStream *out
+    ) const
+    {
+      return check(op, Teuchos::ptr(out));
+    }
+
+  //@}
 
 }; // class LinearOpTester
 

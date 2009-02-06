@@ -79,10 +79,6 @@
 
 #ifdef __cplusplus
 
-#if defined(HAVE_GCC_CHECKEDSTL) && !defined(_GLIBCXX_DEBUG)
-#  define _GLIBCXX_DEBUG
-#endif
-
 #ifdef _MSC_VER 
 #  define TEUCHOS_NO_ZERO_ITERATOR_CONVERSION
 #endif

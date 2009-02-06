@@ -70,6 +70,14 @@ template<class Scalar>
 Scalar scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
 
 
+/** \brief Inner/Scalar product <tt>result = <x,y></tt>.
+ *
+ * Returns <tt>x.space()->scalarProd(x,y)</tt>.
+ */
+template<class Scalar>
+Scalar inner( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
+
+
 /** \brief Natural norm: <tt>result = sqrt(<v,v>)</tt>.
  *
  * Returns
@@ -773,6 +781,14 @@ void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
 template<class Scalar>
 inline
 Scalar Thyra::scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
+{
+  return x.space()->scalarProd(x,y);
+}
+
+
+template<class Scalar>
+inline
+Scalar Thyra::inner( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
 {
   return x.space()->scalarProd(x,y);
 }

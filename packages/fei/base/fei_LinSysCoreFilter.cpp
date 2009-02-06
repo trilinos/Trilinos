@@ -2692,7 +2692,7 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
 
   //now we can set the lengths in localProcEqns.
   feiArray<int>& eqnNumbers = localEqns.eqnNumbersPtr();
-  fei::CSVec** localEqnsPtr = &(localEqns.eqns()[0]);
+  fei::CSVec** localEqnsPtr = (localEqns.eqns().size() ? &(localEqns.eqns()[0]) : 0);
   feiArray<int> eqnLengths(eqnNumbers.length());
   for(i=0; i<eqnNumbers.length(); ++i) {
     eqnLengths[i] = localEqnsPtr[i]->size();
@@ -2711,7 +2711,7 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
 					  &remoteProcEqns, &remoteEqns, false));
 
   feiArray<int>& remEqnNumbers = remoteEqns.eqnNumbersPtr();
-  fei::CSVec** remEqnsPtr = &(remoteEqns.eqns()[0]);
+  fei::CSVec** remEqnsPtr = (remoteEqns.eqns().size() ? &(remoteEqns.eqns()[0]) : 0);
   std::vector<fei::CSVec*>& remEqns   = remoteEqns.eqns();
 
   //now we're ready to fill the values array with the remote coefficients.

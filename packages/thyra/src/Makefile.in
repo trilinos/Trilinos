@@ -103,17 +103,19 @@ AR = ar
 ARFLAGS = cru
 am__DEPENDENCIES_1 =
 libthyra_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am__objects_1 = Thyra_ModelEvaluatorBase.$(OBJEXT)
-am__objects_2 = Thyra_TestingTools.$(OBJEXT)
-am__objects_3 = Thyra_DefaultSpmdVectorSpace.$(OBJEXT) \
+am__objects_1 = Thyra_VectorSpaceBase.$(OBJEXT)
+am__objects_2 = Thyra_ModelEvaluatorBase.$(OBJEXT)
+am__objects_3 = Thyra_TestingTools.$(OBJEXT)
+am__objects_4 = Thyra_DefaultSpmdVectorSpace.$(OBJEXT) \
 	Thyra_EuclideanScalarProd.$(OBJEXT) \
 	Thyra_LinearOpScalarProd.$(OBJEXT) \
 	Thyra_ScalarProdBase.$(OBJEXT) \
 	Thyra_ScalarProdVectorSpaceBase.$(OBJEXT) \
 	Thyra_SpmdVectorSpaceUtilities.$(OBJEXT)
-am__objects_4 = Thyra_DefaultInverseLinearOp.$(OBJEXT)
+am__objects_5 = Thyra_DefaultInverseLinearOp.$(OBJEXT)
 am_libthyra_a_OBJECTS = Thyra_Version.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2) $(am__objects_3) $(am__objects_4)
+	$(am__objects_2) $(am__objects_3) $(am__objects_4) \
+	$(am__objects_5)
 libthyra_a_OBJECTS = $(am_libthyra_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -560,6 +562,7 @@ THYRA_H = \
   $(OPERATOR_VECTOR_EXAMPLE_H)
 
 libthyra_a_SOURCES = $(srcdir)/Thyra_Version.cpp \
+  $(INTERFACES_OPERATOR_VECTOR_ANA_FUNDAMENTAL) \
   $(INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL) \
   $(SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT) \
   $(SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT) \
@@ -712,6 +715,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_ScalarProdVectorSpaceBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_SpmdVectorSpaceUtilities.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_TestingTools.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_VectorSpaceBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_Version.Po@am__quote@
 
 .cpp.o:
@@ -741,6 +745,20 @@ Thyra_Version.obj: $(srcdir)/Thyra_Version.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Thyra_Version.cpp' object='Thyra_Version.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_Version.obj `if test -f '$(srcdir)/Thyra_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Thyra_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Thyra_Version.cpp'; fi`
+
+Thyra_VectorSpaceBase.o: $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_VectorSpaceBase.o -MD -MP -MF $(DEPDIR)/Thyra_VectorSpaceBase.Tpo -c -o Thyra_VectorSpaceBase.o `test -f '$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp' || echo '$(srcdir)/'`$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_VectorSpaceBase.Tpo $(DEPDIR)/Thyra_VectorSpaceBase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp' object='Thyra_VectorSpaceBase.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_VectorSpaceBase.o `test -f '$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp' || echo '$(srcdir)/'`$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp
+
+Thyra_VectorSpaceBase.obj: $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_VectorSpaceBase.obj -MD -MP -MF $(DEPDIR)/Thyra_VectorSpaceBase.Tpo -c -o Thyra_VectorSpaceBase.obj `if test -f '$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp'; then $(CYGPATH_W) '$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_VectorSpaceBase.Tpo $(DEPDIR)/Thyra_VectorSpaceBase.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp' object='Thyra_VectorSpaceBase.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_VectorSpaceBase.obj `if test -f '$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp'; then $(CYGPATH_W) '$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp'; fi`
 
 Thyra_ModelEvaluatorBase.o: $(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_ModelEvaluatorBase.o -MD -MP -MF $(DEPDIR)/Thyra_ModelEvaluatorBase.Tpo -c -o Thyra_ModelEvaluatorBase.o `test -f '$(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase.cpp' || echo '$(srcdir)/'`$(srcdir)/interfaces/nonlinear/model_evaluator/ana/fundamental/Thyra_ModelEvaluatorBase.cpp

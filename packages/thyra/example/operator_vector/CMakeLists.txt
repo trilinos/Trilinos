@@ -5,10 +5,11 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   sillyCgSolve_serial
   SOURCES sillyCgSolve_serial.cpp
   ARGS
-    "--verbose --use-silly-cg"
-    "--verbose --use-sillier-cg"
-    "--unsym-op --diag-scale=1.05 --verbose"
-  COMM serial
+    "--use-silly-cg"
+    "--use-sillier-cg"
+    "--unsym-op --diag-scale=1.05"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
   )
 
 

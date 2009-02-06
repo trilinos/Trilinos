@@ -46,53 +46,64 @@
  */
 template<class Scalar>
 bool sillyCgSolve(
-  const Thyra::LinearOpBase<Scalar>                              &A
-  ,const Thyra::VectorBase<Scalar>                               &b
-  ,const int                                                     maxNumIters
-  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType   tolerance
-  ,Thyra::VectorBase<Scalar>                                     *x
-  ,std::ostream                                                  *out          = NULL
+  const Thyra::LinearOpBase<Scalar> &A,
+  const Thyra::VectorBase<Scalar> &b,
+  const int maxNumIters,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance,
+  const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &x,
+  std::ostream &out
   )
 {
+
   // Create some typedefs and some other stuff to make the code cleaner
   typedef Teuchos::ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
-  const Scalar one = ST::one(), zero = ST::zero(); using Thyra::NOTRANS;
-  typedef Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
-  typedef Teuchos::RCP<Thyra::VectorBase<Scalar> > VectorPtr;
+  const Scalar one = ST::one(), zero = ST::zero();  using Teuchos::as;
+  using Teuchos::RCP; using Thyra::VectorSpaceBase; using Thyra::VectorBase;
+  using Thyra::NOTRANS; using Thyra::V_V; using Thyra::apply;
+  
+
   // Validate input
-  TEST_FOR_EXCEPT(x==NULL);
-  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("sillyCgSolve()",A,Thyra::NOTRANS,*x,&b); // Does A*x - b agree?
+  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("sillyCgSolve()", A, Thyra::NOTRANS, *x, &b);
   Teuchos::EVerbosityLevel vl = Teuchos::VERB_MEDIUM;
-  if(out) *out << "\nStarting CG solver ...\n" << std::scientific << "\ndescribe A:\n"<<describe(A,vl)
-               << "\ndescribe b:\n"<<describe(b,vl)<<"\ndescribe x:\n"<<describe(*x,vl)<<"\n";
+
+  out << "\nStarting CG solver ...\n" << std::scientific << "\ndescribe A:\n"<<describe(A, vl)
+      << "\ndescribe b:\n"<<describe(b, vl)<<"\ndescribe x:\n"<<describe(*x, vl)<<"\n";
+
   // Initialization
-  VectorSpacePtr space = A.domain();
-  VectorPtr r = createMember(space);
-  V_V(&*r,b); apply(A,NOTRANS,*x,&*r,Scalar(-one),one); // r = -A*x + b
+  const RCP<const VectorSpaceBase<Scalar> > space = A.domain();
+  const RCP<VectorBase<Scalar> > r = createMember(space);
+  // r = -A*x + b
+  V_V(r.ptr(), b); apply<Scalar>(A, NOTRANS, *x, r.ptr(), -one, one);
   const ScalarMag r0_nrm = norm(*r);
-  if(r0_nrm==zero) return true;
-  VectorPtr p = createMember(space), q = createMember(space);
+  if (r0_nrm==zero) return true;
+  const RCP<VectorBase<Scalar> > p = createMember(space), q = createMember(space);
   Scalar rho_old = -one;
+
   // Perform the iterations
   for( int iter = 0; iter <= maxNumIters; ++iter ) {
+
     // Check convergence and output iteration
     const ScalarMag r_nrm = norm(*r);
     const bool isConverged = r_nrm/r0_nrm <= tolerance;
     if( iter%(maxNumIters/10+1) == 0 || iter == maxNumIters || isConverged ) {
-      if(out) *out << "Iter = " << iter << ", ||b-A*x||/||b-A*x0|| = " << (r_nrm/r0_nrm) << std::endl;
+      out << "Iter = " << iter << ", ||b-A*x||/||b-A*x0|| = " << (r_nrm/r0_nrm) << std::endl;
       if( r_nrm/r0_nrm < tolerance ) return true; // Success!
     }
+
     // Compute iteration
-    const Scalar rho = scalarProd(*r,*r);         // <r,r>              -> rho
-    if(iter==0) V_V(&*p,*r);                      // r                  -> p   (iter == 0)
-    else Vp_V( &*p, *r, Scalar(rho/rho_old) );    // r+(rho/rho_old)*p  -> p   (iter  > 0)
-    apply(A,NOTRANS,*p,&*q);                      // A*p                -> q
-    const Scalar alpha = rho/scalarProd(*p,*q);   // rho/<p,q>          -> alpha
-    Vp_StV( x,   Scalar(+alpha), *p );            // +alpha*p + x       -> x
-    Vp_StV( &*r, Scalar(-alpha), *q );            // -alpha*q + r       -> r
-    rho_old = rho;                                // rho                -> rho_old (remember for next iter)
+    const Scalar rho = inner(*r, *r);        // <r,r>              -> rho
+    if (iter==0) V_V(p.ptr(), *r);           // r                  -> p   (iter == 0)
+    else Vp_V( p.ptr(), *r, rho/rho_old );   // r+(rho/rho_old)*p  -> p   (iter  > 0)
+    apply<Scalar>(A, NOTRANS, *p, q.ptr());  // A*p                -> q
+    const Scalar alpha = rho/inner(*p, *q);  // rho/<p,q>          -> alpha
+    Vp_StV( x, +alpha, *p );                 // +alpha*p + x       -> x
+    Vp_StV( r.ptr(), -alpha, *q );           // -alpha*q + r       -> r
+    rho_old = rho;                           // rho                -> rho_old (for next iter)
+
   }
+
   return false; // Failure
+
 } // end sillyCgSolve
 
 #endif // THYRA_SILLY_CG_SOLVE_HPP

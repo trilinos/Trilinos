@@ -106,7 +106,7 @@ print(std::ostream& os) const
     os << " None!" << std::endl;
   else {
     os << std::endl;
-    typename std::map< Teuchos::RCP<const PHX::FieldTag>, Teuchos::ArrayRCP<DataT> >::const_iterator it = m_data.begin();
+    typename m_data_t::const_iterator it = m_data.begin();
     for (; it != m_data.end(); ++it)
       os << "    " << *(it->first) << std::endl;
   }

@@ -76,9 +76,9 @@ int test_SNL_FEI_Structure::test1()
   }
 
   CHK_ERR( structure.initSharedNodes(testdata->sharedIDs.size(),
-				     &(testdata->sharedIDs[0]),
-				     &(testdata->numSharingProcsPerID[0]),
-				     sharingProcs2D.dataPtr()) );
+      testdata->sharedIDs.size() ? &(testdata->sharedIDs[0]) : 0,
+      testdata->numSharingProcsPerID.size() ? &(testdata->numSharingProcsPerID[0]) : 0,
+      sharingProcs2D.dataPtr()) );
 
   CHK_ERR( structure.initComplete() );
 
@@ -165,9 +165,9 @@ int test_SNL_FEI_Structure::test2()
   }
 
   CHK_ERR( structure.initSharedNodes(testdata->sharedIDs.size(),
-				     &(testdata->sharedIDs[0]),
-				     &(testdata->numSharingProcsPerID[0]),
-				     sharingProcs2D.dataPtr()) );
+      testdata->sharedIDs.size() ? &(testdata->sharedIDs[0]) : 0,
+      testdata->numSharingProcsPerID.size() ? &(testdata->numSharingProcsPerID[0]) : 0,
+      sharingProcs2D.dataPtr()) );
 
   CHK_ERR( structure.initComplete() );
 

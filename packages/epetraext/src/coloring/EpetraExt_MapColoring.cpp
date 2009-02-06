@@ -376,7 +376,9 @@ operator()( OriginalTypeRef orig  )
 
     int LocalBoundarySize = boundaryGIDs.size();
 
-    Epetra_Map BoundaryMap( -1, boundaryGIDs.size(), &boundaryGIDs[0], 0, RowMap.Comm() );
+    Epetra_Map BoundaryMap( -1, boundaryGIDs.size(),
+      LocalBoundarySize ? &boundaryGIDs[0]: 0,
+      0, RowMap.Comm() );
     if( verbosity_ > 1 ) std::cout << "BoundaryMap:\n" << BoundaryMap;
     
     int BoundarySize = BoundaryMap.NumGlobalElements();
@@ -433,7 +435,9 @@ operator()( OriginalTypeRef orig  )
         OverlapBoundaryGIDs.push_back( Adj2->ColMap().GID(i) );
 
       int OverlapBoundarySize = OverlapBoundaryGIDs.size();
-      Epetra_Map BoundaryColMap( -1, OverlapBoundarySize, &OverlapBoundaryGIDs[0], 0, RowMap.Comm() );
+      Epetra_Map BoundaryColMap( -1, OverlapBoundarySize,
+        OverlapBoundarySize ? &OverlapBoundaryGIDs[0] : 0,
+        0, RowMap.Comm() );
 
       Epetra_CrsGraph BoundaryGraph( Copy, BoundaryMap, BoundaryColMap, 0 );
       Epetra_Import BoundaryImport( BoundaryMap, Adj2->RowMap() );

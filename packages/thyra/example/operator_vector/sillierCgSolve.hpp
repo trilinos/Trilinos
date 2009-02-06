@@ -35,6 +35,7 @@
 #include "Thyra_AssertOp.hpp"
 #include "silliestCgSolve.hpp"
 
+
 /** \brief Silly little example unpreconditioned CG solver (calls templated code).
  *
  * This little function is just a silly little ANA that implements the
@@ -48,26 +49,32 @@
  */
 template<class Scalar>
 bool sillierCgSolve(
-  const Thyra::LinearOpBase<Scalar>                              &A_in
-  ,const Thyra::VectorBase<Scalar>                               &b_in
-  ,const int                                                     maxNumIters
-  ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType   tolerance
-  ,Thyra::VectorBase<Scalar>                                     *x_inout
-  ,std::ostream                                                  *out          = NULL
+  const Thyra::LinearOpBase<Scalar> &A_in,
+  const Thyra::VectorBase<Scalar> &b_in,
+  const int maxNumIters,
+  const typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance,
+  const Teuchos::Ptr<Thyra::VectorBase<Scalar> > &x_inout,
+  std::ostream &out
   )
 {
+
   // Validate the input
-  TEST_FOR_EXCEPT(x_inout==NULL);
-  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("sillyCgSolve()",A_in,Thyra::NOTRANS,*x_inout,&b_in);
+  THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES("sillyCgSolve()", A_in,
+    Thyra::NOTRANS, *x_inout, &b_in);
+
   // Create handle wrappers to facilitate the use of operator overloading
-  const Thyra::ConstLinearOperator<Scalar>  A(Teuchos::rcp(&A_in,false));
-  const Thyra::ConstVector<Scalar>          b(Teuchos::rcp(&b_in,false));
-  Thyra::Vector<Scalar>                     x(Teuchos::rcp(x_inout,false));
+  const Thyra::ConstLinearOperator<Scalar> A(Teuchos::rcpFromRef(A_in));
+  const Thyra::ConstVector<Scalar> b(Teuchos::rcpFromRef(b_in));
+  Thyra::Vector<Scalar> x(Teuchos::rcpFromPtr(x_inout));
+
   // Describe the arguments
   Teuchos::EVerbosityLevel vl = Teuchos::VERB_MEDIUM;
-  if(out) *out << "\nStarting CG solver ...\n" << std::scientific << "\ndescribe A:\n"<<describe(A,vl)
-               << "\ndescribe b:\n"<<describe(b,vl)<<"\ndescribe x:\n"<<describe(x,vl)<<"\n";
-  return silliestCgSolve(A,b,maxNumIters,tolerance,x,out);
+  out << "\nStarting CG solver ...\n" << std::scientific << "\ndescribe A:\n"<<describe(A,vl)
+      << "\ndescribe b:\n"<<describe(b,vl)<<"\ndescribe x:\n"<<describe(x,vl)<<"\n";
+  
+  return silliestCgSolve(A, b, maxNumIters, tolerance, x, out);
+
 } // end sillierCgSolve
+
 
 #endif // THYRA_SILLIER_CG_SOLVE_HPP

@@ -333,7 +333,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_computeCubicSplineCoeff)
   }
 #endif // TEUCHOS_DEBUG
 
-  data_in->erase(data_in->end());
+  data_in->pop_back();
 
   coeff = rcp(new CubicSplineCoeff<double>);
   // back to normal
@@ -514,7 +514,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, changedData ) {
 
   // Now we have computed the cubic spline coefficients.
   // Delete the last node:
-  data_in->erase(data_in->end());
+  data_in->pop_back();
   //ECHO( "data_in = [(0,0), (1,1)]" );
   //ECHO( "Calling interpolate at t=0.5 after deleting last node, should throw" );
 #ifdef TEUCHOS_DEBUG
@@ -546,7 +546,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, changedData ) {
 
 
   // Change the time-point of the third point
-  data_in->erase(data_in->end());
+  data_in->pop_back();
   //ECHO( "data_in = [(0,0), (1,1)]" );
   t2 = 2.5;
   data_in->push_back(DataStore<double>(t2,x2,xdot2,accuracy2));

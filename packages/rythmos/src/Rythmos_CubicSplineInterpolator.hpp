@@ -228,8 +228,8 @@ void computeCubicSplineCoeff(
     V_StVpStV(outArg(*(coeff.d[j])),one/(three*h[j]),*coeff.c[j+1],-one/(three*h[j]),*coeff.c[j]);
   }
   // Pop the last entry off of a and c to make them the right size.
-  coeff.a.erase(coeff.a.end());
-  coeff.c.erase(coeff.c.end());
+  coeff.a.erase(coeff.a.end()-1);
+  coeff.c.erase(coeff.c.end()-1);
 }
 
 template<class Scalar>

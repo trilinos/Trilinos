@@ -74,10 +74,11 @@ namespace PHX {
     
   private:
     
-    std::map< Teuchos::RCP<const PHX::FieldTag>, 
-	      Teuchos::ArrayRCP<DataT>, 
-	      FTComp > 
-    m_data;
+    typedef std::map< Teuchos::RCP<const PHX::FieldTag>, 
+                      Teuchos::ArrayRCP<DataT>, 
+                      FTComp > m_data_t;
+
+    m_data_t m_data;
     
   };
   
