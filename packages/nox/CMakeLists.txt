@@ -11,6 +11,11 @@ PACKAGE(NOX)
 # B) Set up package-specific options
 #
 
+# LOCA support
+OPTION(${PACKAGE_NAME}_ENABLE_LOCA
+  "Enable parameter LOCA support"
+  ON )
+
 # Ignoring these flags - should be fixed in more recent compilers
 # AC_CXX_STL_MAP_KEY_CONST
 # AC_CXX_INVALID_TEMPLATE_QUALIFIER
@@ -103,12 +108,12 @@ SET(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA ${NOX_ENABLE_Thyra} CACHE BOOL "Ena
 #
 
 ADD_SUBDIRECTORY(src)
-#ADD_SUBDIRECTORY(src-loca)
 ADD_SUBDIRECTORY(src-lapack)
 ADD_SUBDIRECTORY(src-epetra)
 #ADD_SUBDIRECTORY(src-belos)
 ADD_SUBDIRECTORY(src-thyra)
 #ADD_SUBDIRECTORY(src-petsc)
+ADD_SUBDIRECTORY(src-loca)
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 
