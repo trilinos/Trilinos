@@ -13,7 +13,7 @@ FUNCTION(CREATE_DEPENCENCY_HANDLING_TEST_CASE TEST_NAME TEST_ARGUMENTS TEST_PASS
     "if [ -e CMakeCache.txt ]\n"
     "  then rm CMakeCache.txt\n"
     "fi\n"
-    "${CMAKE_COMMAND}"
+    "\"${CMAKE_COMMAND}\""
     "  -D Trilinos_PACKAGES_FILE:STRING=DependencyUnitTests/TrilinosPackagesForUnitTests"
     "  -D Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON"
     "  -D Trilinos_DEPS_XML_OUTPUT_FILE:STRING="
