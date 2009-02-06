@@ -43,7 +43,8 @@ createSpmdVectorSpace(const Teuchos_Ordinal localDim)
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ConstDetachedSpmdVectorView, construct_null, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ConstDetachedSpmdVectorView, construct_null,
+  Scalar )
 {
   ECHO(ConstDetachedSpmdVectorView<Scalar> dvv(null));
   TEST_EQUALITY_CONST(dvv.globalOffset(), 0);
@@ -52,8 +53,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ConstDetachedSpmdVectorView, construct_null, 
   TEST_EQUALITY_CONST(dvv.stride(), 0);
 }
 
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ConstDetachedSpmdVectorView, construct_null )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ConstDetachedSpmdVectorView, construct_null, double )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ConstDetachedSpmdVectorView,
+  construct_null )
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ConstDetachedSpmdVectorView, basic, Scalar )
@@ -83,8 +84,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ConstDetachedSpmdVectorView, basic, Scalar )
   // of confidence.
 }
 
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ConstDetachedSpmdVectorView, construct_null )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ConstDetachedSpmdVectorView, basic, double )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ConstDetachedSpmdVectorView,
+  basic )
 
 
 //
@@ -92,7 +93,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ConstDetachedSpmdVectorView, basic, double
 //
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DetachedSpmdVectorView, construct_null, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DetachedSpmdVectorView, construct_null,
+  Scalar )
 {
   ECHO(DetachedSpmdVectorView<Scalar> dvv(null));
   TEST_EQUALITY_CONST(dvv.globalOffset(), 0);
@@ -101,11 +103,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DetachedSpmdVectorView, construct_null, Scala
   TEST_EQUALITY_CONST(dvv.stride(), 0);
 }
 
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DetachedSpmdVectorView, construct_null )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DetachedSpmdVectorView, construct_null, double )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DetachedSpmdVectorView, construct_null )
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DetachedSpmdVectorView, basic, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DetachedSpmdVectorView, basic,
+  Scalar )
 {
   ECHO(const RCP<const VectorSpaceBase<Scalar> >
     vs = createSpmdVectorSpace<Scalar>(g_localDim));
@@ -137,12 +139,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DetachedSpmdVectorView, basic, Scalar )
   // of confidence.
 }
 
-//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DetachedSpmdVectorView, construct_null )
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DetachedSpmdVectorView, basic, double )
-
-
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DetachedSpmdVectorView,
+  basic )
 
 
 } // namespace
-
-

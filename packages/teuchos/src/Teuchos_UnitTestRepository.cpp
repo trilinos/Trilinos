@@ -372,6 +372,8 @@ UnitTestRepository::UnitTestRepository()
 void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
 {
 
+  clp->addOutputSetupOptions(true);
+
   const int numShowTestDetails = 3;
   const EShowTestDetails showTestDetailsValues[numShowTestDetails] =
     { SHOW_TEST_DETAILS_ALL,
@@ -388,6 +390,11 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
     numShowTestDetails, showTestDetailsValues, showTestDetailsNames,
     "Level of detail to show in the tests"
     );
+  clp->setOption(
+    "details", &getData().showTestDetails,
+    numShowTestDetails, showTestDetailsValues, showTestDetailsNames,
+    "Short for --details"
+    );
 
   clp->setOption(
     "show-src-location", "no-show-src-location", &getData().showSrcLocation,
@@ -398,10 +405,16 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
   clp->setOption(
     "group-name", &getData().groupName,
     "If specified, selects only tests that match the group name glob." );
+  clp->setOption(
+    "group", &getData().groupName,
+    "Short for --group-name." );
 
   clp->setOption(
     "test-name", &getData().testName,
     "If specified, selects only tests that match the test name glob." );
+  clp->setOption(
+    "test", &getData().testName,
+    "Short for --test-name." );
 
   clp->setOption(
     "not-unit-test", &getData().notUnitTestName,

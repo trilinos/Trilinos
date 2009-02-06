@@ -41,7 +41,7 @@ namespace Thyra {
 
 template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace()
-  :localSubDim_(0), numProc_(0), procRank_(0)
+  :localSubDim_(-1), numProc_(-1), procRank_(-1)
 {
   // The base classes should automatically default initialize to a safe
   // uninitialized state.
@@ -52,7 +52,7 @@ template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
   const Index dim
   )
-  :localSubDim_(0), numProc_(0), procRank_(0)
+  :localSubDim_(-1), numProc_(-1), procRank_(-1)
 {
   initialize(dim);
 }
@@ -85,17 +85,16 @@ void DefaultSpmdVectorSpace<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  //TEST_FOR_EXCEPT( !( localSubDim_in > 0 ) );
   TEST_FOR_EXCEPT( !( localSubDim_in >= 0 ) );
 #endif
-  comm_        = comm;
+  comm_ = comm;
   localSubDim_ = localSubDim_in;
-  if( comm.get() ) {
-    numProc_  = size(*comm);
+  if (!is_null(comm)) {
+    numProc_ = size(*comm);
     procRank_ = rank(*comm);
   }
   else {
-    numProc_  = 1;
+    numProc_ = 1;
     procRank_ = 0;
   }
   this->updateState(globalDim);

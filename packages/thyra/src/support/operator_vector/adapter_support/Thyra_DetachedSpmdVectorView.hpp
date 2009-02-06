@@ -56,19 +56,7 @@ public:
         const RCP<const SpmdVectorBase<Scalar> > spmd_v =
           rcp_dynamic_cast<const SpmdVectorBase<Scalar> >(v, true);
         v_ = spmd_v;
-        const RCP<const SpmdVectorSpaceBase<Scalar> > spmd_vs =
-          spmd_v->spmdSpace();
-        const Scalar *localValues = 0;
-        Index l_stride = 0;
-        spmd_v->getLocalData(&localValues, &l_stride);
-        TEUCHOS_ASSERT_EQUALITY(l_stride, 1);
-        const Index localSubDim = spmd_vs->localSubDim();
-        sv_.initialize(
-          spmd_vs->localOffset(), // globalOffset?
-          localSubDim,
-          Teuchos::arcp(localValues, 0, localSubDim, false),
-          1 // stride
-          );
+        sv_ = spmd_v->getLocalSubVector();
       }
       else {
         v_ = Teuchos::null;
@@ -77,11 +65,7 @@ public:
     }
   /** \brief . */
   ~ConstDetachedSpmdVectorView()
-    {
-      if (!is_null(v_)) {
-        v_->freeLocalData(sv_.values().get());
-      }
-    }
+    {}
   /** \brief . */
   const RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const
     { if (!is_null(v_)) return v_->spmdSpace(); return Teuchos::null; }
@@ -129,19 +113,7 @@ public:
         const RCP<SpmdVectorBase<Scalar> > spmd_v =
           rcp_dynamic_cast<SpmdVectorBase<Scalar> >(v, true);
         v_ = spmd_v;
-        const RCP<const SpmdVectorSpaceBase<Scalar> > spmd_vs =
-          spmd_v->spmdSpace();
-        Scalar *localValues = 0;
-        Index l_stride = 0;
-        spmd_v->getLocalData(&localValues, &l_stride);
-        TEUCHOS_ASSERT_EQUALITY(l_stride, 1);
-        const Index localSubDim = spmd_vs->localSubDim();
-        sv_.initialize(
-          spmd_vs->localOffset(), // globalOffset?
-          localSubDim,
-          Teuchos::arcp(localValues, 0, localSubDim, false),
-          1 // stride
-          );
+        sv_ = spmd_v->getNonconstLocalSubVector();
       }
       else {
         v_ = Teuchos::null;
@@ -150,11 +122,7 @@ public:
     }
   /** \brief . */
   ~DetachedSpmdVectorView()
-    {
-      if (!is_null(v_)) {
-        v_->commitLocalData(sv_.values().get());
-      }
-    }
+    {}
   /** \brief . */
   const RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const
     { if (!is_null(v_)) return v_->spmdSpace(); return Teuchos::null; }

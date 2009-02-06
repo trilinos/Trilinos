@@ -62,6 +62,46 @@ SpmdVectorBase<Scalar>::SpmdVectorBase()
 
 
 template<class Scalar>
+RTOpPack::SubVectorView<Scalar>
+SpmdVectorBase<Scalar>::getNonconstLocalSubVector()
+{
+  Scalar *localValues = 0;
+  Index stride = 0;
+  this->getLocalData(&localValues, &stride);
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(stride, 1);
+#endif
+  return RTOpPack::SubVectorView<Scalar>(
+    localOffset_,
+    localSubDim_,
+    Teuchos::arcp(localValues, 0, localSubDim_, false),
+    1 // stride
+    );
+  // ToDo: Refactor to call this function directly!
+}
+
+
+template<class Scalar>
+RTOpPack::ConstSubVectorView<Scalar>
+SpmdVectorBase<Scalar>::getLocalSubVector() const
+{
+  const Scalar *localValues = 0;
+  Index stride = 0;
+  this->getLocalData(&localValues, &stride);
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(stride, 1);
+#endif
+  return RTOpPack::ConstSubVectorView<Scalar>(
+    localOffset_, // globalOffset?
+    localSubDim_,
+    Teuchos::arcp(localValues, 0, localSubDim_, false),
+    1 // stride
+    );
+  // ToDo: Refactor to call this function directly!
+}
+
+
+template<class Scalar>
 void SpmdVectorBase<Scalar>::getLocalData( const Scalar** values, Index* stride ) const
 {
   const_cast<SpmdVectorBase<Scalar>*>(this)->getLocalData(const_cast<Scalar**>(values),stride);

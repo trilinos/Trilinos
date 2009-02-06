@@ -29,46 +29,51 @@
 #include "Thyra_SpmdVectorSpaceUtilities.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
+
 namespace Thyra {
+
 
 Index SpmdVectorSpaceUtilities::computeMapCode(
   const Teuchos::Comm<Index> &comm, const Index localSubDim
   )
 {
   //
-  // Here we will make a map code out of just the local
-  // sub-dimension on each processor.  If each processor
-  // has the same number of local elements, then the maps
-  // will be the same and this is all you need for
-  // RTOp compatibility unless the operations are not
-  // coordinate invariant.  I will work on this issue
-  // if it becomes a problem.
+  // Here we will make a map code out of just the local sub-dimension on each
+  // processor.  If each processor has the same number of local elements, then
+  // the map codes will be the same and this is all you need for RTOp
+  // compatibility.
   //
   const int procRank = size(comm);
   Index mapCode = -1;
   Index localCode = localSubDim % (procRank+1) + localSubDim;
-  reduceAll(comm,Teuchos::REDUCE_SUM,localCode,&mapCode);
+  reduceAll(comm, Teuchos::REDUCE_SUM, localCode,
+    Teuchos::outArg(mapCode));
   return mapCode;
 }
+
 
 Index SpmdVectorSpaceUtilities::computeLocalOffset(
   const Teuchos::Comm<Index> &comm, const Index localSubDim
   )
 {
   Index localOffset;
-  Index _localOffset = localSubDim;
-  scan(comm,Teuchos::REDUCE_SUM,_localOffset,&localOffset);
+  const Index _localOffset = localSubDim;
+  scan(comm, Teuchos::REDUCE_SUM, _localOffset, 
+    Teuchos::outArg(localOffset));
   localOffset -= localSubDim;
   return localOffset;
 }
+
 
 Index SpmdVectorSpaceUtilities::computeGlobalDim(
   const Teuchos::Comm<Index> &comm, const Index localSubDim
   )
 {
   Index globalDim = -1;
-  reduceAll(comm,Teuchos::REDUCE_SUM,localSubDim,&globalDim);
+  reduceAll(comm, Teuchos::REDUCE_SUM, localSubDim,
+    Teuchos::outArg(globalDim));
   return globalDim;
 }
+
 
 } // namespace Thyra

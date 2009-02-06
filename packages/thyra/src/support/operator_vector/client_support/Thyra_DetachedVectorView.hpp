@@ -35,98 +35,21 @@ namespace Thyra {
 
 /** \brief Create an explicit non-mutable (const) view of a <tt>VectorBase</tt> object.
  *
- * This utility class makes it easy to explicitly access a contiguous
- * subset of elements in any <tt>const VectorBase</tt> object.
+ * This utility class makes it easy to explicitly access a contiguous subset
+ * of elements in any <tt>const VectorBase</tt> object.
  *
  * <b>Warning!</b> Creating an explicit view of an arbitrary
- * <tt>%VectorBase</tt> object may be a very expensive operation (such as
- * with distributed-memory vectors) and should only be done in special
- * cases (such as when the vector is an in-core vector).  There
- * several specialized use cases where creating these types of
- * explicit views are necessary but in most cases this should not be
- * done.
+ * <tt>%VectorBase</tt> object may be a very expensive operation (such as with
+ * distributed-memory vectors) and should only be done in special cases (such
+ * as when the vector is an in-core vector).  There several specialized use
+ * cases where creating these types of explicit views are necessary but in
+ * most cases this should not be done.
  *
- * The following functions show four different ways to extract a range
- * of elements from in any <tt>const VectorBase</tt> object and copy
- * then into a raw C++ array:
+ * If one wants to modify the elements in a <tt>VectorBase</tt> object then
+ * one should use the utility class <tt>DetachedVectorView</tt>.
  *
- \code
-
- //
- // Copy using unit-strided pointer access
- //
- template<class Scalar>
- void copyToArrayPointerUnit(
-   const Thyra::VectorBase<Scalar>   &v
-   ,const Thyra::Range1D             &rng
-   ,Scalar                           x[]   // Size == rng.size()
-   )
- {
-    Thyra::ConstDetachedVectorView<Scalar> v_ev(v,rng,true);  // Force unit stride
-    const Scalar *v_ptr = v_ev.values();                 // Get pointer to unit-stride data
-    for( int k = 0; k < n; ++k )                         // For each element in view:
-      x[k] = v_ptr[k];                                   //   Copy elements
-    // When this function returns then v_ev will be destroyed and the view will be freed
- }
-
- //
- // Copy using non-unit-strided pointer access
- //
- template<class Scalar>
- void copyToArrayPointerNonunit(
-   const Thyra::VectorBase<Scalar>   &v
-   ,const Thyra::Range1D             &rng
-   ,Scalar                           x[]   // Size == rng.size()
-   )
- {
-    Thyra::ConstDetachedVectorView<Scalar> v_ev(v,rng);           // Allow non-unit stride
-    const Scalar        *v_ptr    = v_ev.values();           // Get pointer to non-unit-stride data
-    const Thyra::Index  *v_stride = v_ev.stride();           // Get stride between vector data
-    for( int k = 0; k < rng.size(); ++k, v_ptr += v_stride ) // For each element in view:
-      x[k] = *v_ptr;                                         //   Copy elements
-    // When this function returns then v_ev will be destroyed and the view will be freed
- }
-
- //
- // Copy using possibly non-unit stride with zero-based overloaded function operator[]()
- //
- template<class Scalar>
- void copyToArrayZeroBasedOperator(
-   const Thyra::VectorBase<Scalar>   &v
-   ,const Thyra::Range1D             &rng
-   ,Scalar                           x[]   // Size == rng.size()
-   )
- {
-    Thyra::ConstDetachedVectorView<Scalar> v_ev(v,rng);       // Allow non-unit stride 
-    for( int k = 0; k < rng.size(); ++k )                // For each element in view:
-      x[k] = v_ev[k];                                    //   Copy elements using operator[]()
-    // When this function returns then v_ev will be destroyed and the view will be freed
- }
-
- //
- // Copy using possibly non-unit stride with zero-based overloaded function operator()()
- //
- template<class Scalar>
- void copyToArrayOneBasedOperator(
-   const Thyra::VectorBase<Scalar>   &v
-   ,const Thyra::Range1D             &rng
-   ,Scalar                           x[]   // Size == rng.size()
-   )
- {
-    Thyra::ConstDetachedVectorView<Scalar> v_ev(v,rng);       // Allow non-unit stride 
-    for( int k = 0; k < rng.size(); ++k )                // For each element in view:
-      x[k] = v_ev(k);                                    //   Copy elements using operator()()
-    // When this function returns then v_ev will be destroyed and the view will be freed
- }
-
- \endcode
- *
- * If one wants to modify the elements in a <tt>VectorBase</tt> object
- * then one should use the utility class
- * <tt>DetachedVectorView</tt>.
- *
- * The default constructor, copy constructor and assignment operators
- * are not allowed.
+ * The default constructor, copy constructor and assignment operators are not
+ * allowed.
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
@@ -214,18 +137,19 @@ private:
   RTOpPack::ConstSubVectorView<Scalar>  sv_;
   //
   void initialize(
-    const Teuchos::RCP<const VectorBase<Scalar> > &v
-    ,const Range1D &rng, const bool forceUnitStride
+    const Teuchos::RCP<const VectorBase<Scalar> > &v,
+    const Range1D &rng, const bool forceUnitStride
     )
     {
       v_ = v;
       v_->acquireDetachedView(rng,&sv_s_);
       if( forceUnitStride && sv_s_.stride() != 1 ) {
-        Scalar *values = new Scalar[sv_s_.subDim()];
-        Teuchos_Index i; const Scalar *sv_v;
-        for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
-          values[i] = *sv_v;
-        sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
+        TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
+        //const ArrayRCP<Scalar> values = Teuchos::arcp(sv_s_.subDim());
+        //Teuchos_Index i; const Scalar *sv_v;
+        //for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
+        //  values[i] = *sv_v;
+        //sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
       }
       else {
         sv_ = sv_s_;
@@ -239,98 +163,22 @@ private:
  
 /** \brief Create an explicit mutable (non-const) view of a <tt>VectorBase</tt> object.
  *
- * This utility class makes it easy to explicitly access a contiguous
- * subset of elements in any <tt>VectorBase</tt> object and change the
- * <tt>VectorBase object</tt>.
+ * This utility class makes it easy to explicitly access a contiguous subset
+ * of elements in any <tt>VectorBase</tt> object and change the <tt>VectorBase
+ * object</tt>.
  *
  * <b>Warning!</b> Creating an explicit view of an arbitrary
- * <tt>%VectorBase</tt> object may be a very expensive operation (such as
- * with distributed-memory vectors) and should only be done in special
- * cases (such as when the vector is an in-core vector).  There
- * several specialized use cases where creating these types of
- * explicit views are necessary but in most cases this should not be
- * done.
+ * <tt>%VectorBase</tt> object may be a very expensive operation (such as with
+ * distributed-memory vectors) and should only be done in special cases (such
+ * as when the vector is an in-core vector).  There several specialized use
+ * cases where creating these types of explicit views are necessary but in
+ * most cases this should not be done.
  *
- * The following functions show four different ways to access a range
- * of elements from in any <tt>VectorBase</tt> object and then add to them
- * the values form a raw C++ array.
+ * If one wants to only read the elements in a <tt>VectorBase</tt> object then
+ * one should use the utility class <tt>ConstDetachedVectorView</tt>.
  *
- \code
-
- //
- // Add-to using unit-strided pointer access
- //
- template<class Scalar>
- void addToArrayPointerUnit(
-   const Thyra::Range1D            &rng
-   ,const Scalar                   x[]   // Size == rng.size()
-   ,Thyra::VectorBase<Scalar>      *v
-   )
- {
-    Thyra::DetachedVectorView<Scalar> v_ev(rng,*v,true);  // Force unit stride
-    const Scalar *v_ptr = v_ev.values();                         // Get pointer to unit-stride data
-    for( int k = 0; k < n; ++k )                                 // For each element in view:
-      v_ptr[k] += x[k];                                          //   Add-to elements
-    // When this function returns then v_ev will be destroyed and the view will be committed back and *v modified
- }
-
- //
- // Add-to using non-unit-strided pointer access
- //
- template<class Scalar>
- void addToArrayPointerNonunit(
-   const Thyra::Range1D          &rng
-   ,const Scalar                 x[]   // Size == rng.size()
-   ,Thyra::VectorBase<Scalar>    *v
-   )
- {
-    Thyra::DetachedVectorView<Scalar> v_ev(rng,*v);   // Allow non-unit stride
-    const Scalar          *v_ptr    = v_ev.values();         // Get pointer to non-unit-stride data
-    const Thyra::Index  *v_stride = v_ev.stride();           // Get stride between vector data
-    for( int k = 0; k < rng.size(); ++k, v_ptr += v_stride ) // For each element in view:
-      *v_ptr + x[k];                                         //   Add-to elements
-    // When this function returns then v_ev will be destroyed and the view will be committed back and *v modified
- }
-
- //
- // Add-to using possibly non-unit stride with zero-based overloaded function operator[]()
- //
- template<class Scalar>
- void addToArrayZeroBasedOperator(
-   const Thyra::Range1D          &rng
-   ,const Scalar                 x[]   // Size == rng.size()
-   ,Thyra::VectorBase<Scalar>    *v
-   )
- {
-    Thyra::DetachedVectorView<Scalar> v_ev(rng,*v);   // Allow non-unit stride 
-    for( int k = 0; k < rng.size(); ++k )                    // For each element in view:
-      v_ev[k] += x[k];                                       //   Add-to elements using operator[]()
-    // When this function returns then v_ev will be destroyed and the view will be committed back and *v modified
- }
-
- //
- // Add-to using possibly non-unit stride with zero-based overloaded function operator()()
- //
- template<class Scalar>
- void addToArrayOneBasedOperator(
-   const Thyra::Range1D          &rng
-   ,const Scalar                 x[]   // Size == rng.size()
-   ,Thyra::VectorBase<Scalar>    *v
-   )
- {
-    Thyra::DetachedVectorView<Scalar> v_ev(rng,*v); // Allow non-unit stride 
-    for( int k = 0; k < rng.size(); ++k )                  // For each element in view:
-      v_ev(k) += x[k];                                     //   Add-to elements using operator()()
-    // When this function returns then v_ev will be destroyed and the view will be committed back and *v modified
- }
-
- \endcode
- *
- * If one wants to only read the elements in a <tt>VectorBase</tt> object
- * then one should use the utility class <tt>ConstDetachedVectorView</tt>.
- *
- * The default constructor, copy constructor and assignment operators
- * are not allowed.
+ * The default constructor, copy constructor and assignment operators are not
+ * allowed.
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
@@ -396,16 +244,17 @@ public:
   ~DetachedVectorView()
     {
       if( sv_s_.stride() != sv_.stride() ) {
-        Teuchos_Index i; Scalar *sv_v; const Scalar *values;
-        for (
-          sv_v = sv_s_.values().get(), values = sv_.values().get(), i=0;
-          i < sv_s_.subDim();
-          ++i, sv_v += sv_s_.stride()
-          )
-        {
-          *sv_v = *values++;
-        }
-        delete [] sv_.values().get();
+        TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
+        //Teuchos_Index i; Scalar *sv_v; const Scalar *values;
+        //for (
+        //  sv_v = sv_s_.values().get(), values = sv_.values().get(), i=0;
+        //  i < sv_s_.subDim();
+        //  ++i, sv_v += sv_s_.stride()
+        //  )
+        //{
+        //  *sv_v = *values++;
+        //}
+        //delete [] sv_.values().get();
       }
       v_->commitDetachedView(&sv_s_);
     }
@@ -437,11 +286,12 @@ private:
       v_ = v;
       v_->acquireDetachedView(rng,&sv_s_);
       if( forceUnitStride && sv_s_.stride() != 1 ) {
-        Scalar *values = new Scalar[sv_s_.subDim()];
-        Teuchos_Index i; const Scalar *sv_v;
-        for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
-          values[i] = *sv_v;
-        sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
+        TEST_FOR_EXCEPT_MSG(true, "I don't think non-unit stride has ever been tested!");
+        //Scalar *values = new Scalar[sv_s_.subDim()];
+        //Teuchos_Index i; const Scalar *sv_v;
+        //for( sv_v = sv_s_.values().get(), i=0; i < sv_s_.subDim(); ++i, sv_v += sv_s_.stride() )
+        //  values[i] = *sv_v;
+        //sv_.initialize(sv_s_.globalOffset(),sv_s_.subDim(),values,1);
       }
       else {
         sv_ = sv_s_;

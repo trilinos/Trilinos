@@ -42,6 +42,7 @@
 #include "Thyra_AssertOp.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_DetachedVectorView.hpp"
 #include "RTOpPack_ROpGetSubVector.hpp"
 #include "RTOpPack_TOpSetSubVector.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -81,9 +82,9 @@ std::string VectorDefaultBase<Scalar>::description() const
 
 template<class Scalar>
 void VectorDefaultBase<Scalar>::describe(
-    Teuchos::FancyOStream                &out_arg
-    ,const Teuchos::EVerbosityLevel      verbLevel
-    ) const
+  Teuchos::FancyOStream &out_arg,
+  const Teuchos::EVerbosityLevel verbLevel
+  ) const
 {
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
@@ -92,11 +93,9 @@ void VectorDefaultBase<Scalar>::describe(
   *out << this->description() << "\n";
   tab.incrTab();
   if (verbLevel >= Teuchos::VERB_HIGH) {
-    RTOpPack::ConstSubVectorView<Scalar> sv;
-    this->acquireDetachedView(Range1D(),&sv);
-    for( Index i = 0; i < sv.subDim(); ++i )
-      *out << i << ":" << sv(i) << std::endl;
-    this->releaseDetachedView(&sv);
+    const ConstDetachedVectorView<Scalar> dvv(*this);
+    for( Index i = 0; i < dvv.subDim(); ++i )
+      *out << i << ":" << dvv[i] << std::endl;
   }
 }
 

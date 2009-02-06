@@ -297,8 +297,18 @@ void scan(
 template<typename Ordinal, typename Packet>
 void scan(
   const Comm<Ordinal>& comm, const EReductionType reductType,
-  const Packet &send, Packet *scanReduct
+  const Packet &send, const Ptr<Packet> &scanReduct
   );
+
+/** \brief Deprecated. */
+template<typename Ordinal, typename Packet>
+void scan(
+  const Comm<Ordinal>& comm, const EReductionType reductType,
+  const Packet &send, Packet *scanReduct
+  )
+{
+  scan(comm, reductType, send, ptr(scanReduct));
+}
 
 /** \brief Scan/Reduce array of objects that use reference semantics using a
  * user-defined reduction operator.
@@ -1126,10 +1136,10 @@ void Teuchos::scan(
 template<typename Ordinal, typename Packet>
 void Teuchos::scan(
   const Comm<Ordinal>& comm, const EReductionType reductType,
-  const Packet &send, Packet *globalReduct
+  const Packet &send, const Ptr<Packet> &scanReduct
   )
 {
-  scan<Ordinal,Packet>(comm,reductType,1,&send,globalReduct);
+  scan<Ordinal,Packet>(comm, reductType, 1, &send, &*scanReduct);
 }
 
 

@@ -87,8 +87,10 @@ Teuchos::RCP<ReductTarget>
 ROpGetSubVector<Scalar>::reduct_obj_create_impl() const
 {
   const index_type subDim = u_ - l_ + 1;
+  const ArrayRCP<Scalar> values = Teuchos::arcp<Scalar>(subDim);
+  std::fill(values.begin(), values.end(), ScalarTraits<Scalar>::zero());
   return defaultReductTarget(
-    SubVectorView<Scalar>( l_, subDim, Teuchos::arcp<Scalar>(subDim), 1 )
+    SubVectorView<Scalar>( l_, subDim, values, 1 )
     );
 }
 

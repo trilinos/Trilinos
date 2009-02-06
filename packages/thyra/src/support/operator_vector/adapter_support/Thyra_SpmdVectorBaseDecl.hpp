@@ -115,6 +115,18 @@ public:
    */
   virtual Teuchos::RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const = 0;
 
+  /** \brief Get a nonconst view of the local data.
+   *
+   * ToDo: Refactor this interface to use iterator access.
+   */
+  RTOpPack::SubVectorView<Scalar> getNonconstLocalSubVector();
+
+  /** \brief Get a const view of the local data.
+   *
+   * ToDo: Refactor this interface to use iterator access.
+   */
+  RTOpPack::ConstSubVectorView<Scalar> getLocalSubVector() const;
+
   /** \brief Returns a non-<tt>const</tt> pointer to the beginning of the
    * local vector data (and its stride).
    *
