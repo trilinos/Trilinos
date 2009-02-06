@@ -25,6 +25,7 @@ SET(Trilinos_TPLS_ENABLED
   CppUnit        OFF
   ADOLC          OFF
   TVMET          OFF
+  MF             OFF
   )
 
 # NOTES:
