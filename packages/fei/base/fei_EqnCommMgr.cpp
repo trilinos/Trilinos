@@ -178,7 +178,7 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
 #ifndef FEI_SER
 
   int numSendEqns = sendEqns_->getNumEqns();
-  fei::CSVec** sendEqnsPtr = &(sendEqns_->eqns()[0]);
+  fei::CSVec** sendEqnsPtr = numSendEqns>0 ?&(sendEqns_->eqns()[0]) : NULL;
   feiArray<int>& sendEqnNumbers = sendEqns_->eqnNumbersPtr();
   feiArray<int> sendEqnLengths(numSendEqns);
   for(int i=0; i<numSendEqns; ++i) {
@@ -216,15 +216,12 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
   std::vector<std::vector<int>*>& recvProcEqnNumbers = 
     recvProcEqns_->procEqnNumbersPtr();
 
-  std::vector<int>** recvProcEqnLengthsPtr = &recvProcEqnLengths[0];
-  std::vector<int>** recvProcEqnNumbersPtr = &recvProcEqnNumbers[0];
-
   for(unsigned i=0; i<numRecvProcs; i++) {
 
     //first we need the total of eqn-lengths for this recv-proc
     int totalLength = 0;
     for(int j=0; j<eqnsPerRecvProc[i]; j++) {
-      totalLength += (*(recvProcEqnLengthsPtr[i]))[j];
+      totalLength += (*(recvProcEqnLengths[i]))[j];
     }
     recvProcTotalLengths[i] = totalLength;
   }
@@ -235,13 +232,10 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
   std::vector<std::vector<int>*>& sendProcLengths =
     sendProcEqns_->procEqnLengthsPtr();
 
-  std::vector<int>** sendProcEqnNumbersPtr = &sendProcEqnNumbers[0];
-  std::vector<int>** sendProcLengthsPtr = &sendProcLengths[0];
-
   for(unsigned i=0; i<numSendProcs; i++) {
     int totalLength = 0;
     for(int j=0; j<eqnsPerSendProc[i]; j++) {
-      totalLength += (*(sendProcLengthsPtr[i]))[j];
+      totalLength += (*(sendProcLengths[i]))[j];
     }
     sendProcTotalLengths[i] = totalLength;
   }
@@ -299,11 +293,11 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
     int offset = 0;
 
     for(j=0; j<eqnsPerSendProc[i]; j++) {
-      int eqnLoc = sendEqns_->getEqnIndex((*(sendProcEqnNumbersPtr[i]))[j]);
+      int eqnLoc = sendEqns_->getEqnIndex((*(sendProcEqnNumbers[i]))[j]);
       std::vector<int>& sendIndices = sendEqns_->eqns()[eqnLoc]->indices();
       int* sendIndicesPtr = &sendIndices[0];
 
-      for(int k=0; k<(*(sendProcLengthsPtr[i]))[j]; k++) {
+      for(int k=0; k<(*(sendProcLengths[i]))[j]; k++) {
         indicesPtr[offset++] = sendIndicesPtr[k];
       }
     }
@@ -323,9 +317,9 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
 
     int offset = 0;
     for(int j=0; j<eqnsPerRecvProc[index]; j++) {
-      int eqn = (*(recvProcEqnNumbersPtr[index]))[j];
+      int eqn = (*(recvProcEqnNumbers[index]))[j];
       int* indxs = &(recvProcEqnIndices[index][offset]);
-      int len = (*(recvProcEqnLengthsPtr[index]))[j];
+      int len = (*(recvProcEqnLengths[index]))[j];
 
       recvEqns_->addIndices(eqn, indxs, len);
 
@@ -794,16 +788,14 @@ int EqnCommMgr::mirrorProcEqns(ProcEqns& inProcEqns, ProcEqns& outProcEqns)
   MPI_Status* statuses = new MPI_Status[numOutProcs];
   int firsttag = 20051014;
   int offset = 0;
-  int* outProcsPtr = &outProcs[0];
-  for(unsigned i=0; i<numOutProcs; ++i) {
-    if (MPI_Irecv(&(recvbuf[i]), 1, MPI_INT, outProcsPtr[i], firsttag,
+  for(size_t i=0; i<numOutProcs; ++i) {
+    if (MPI_Irecv(&(recvbuf[i]), 1, MPI_INT, outProcs[i], firsttag,
 		  comm_, &requests[offset++]) != MPI_SUCCESS) ERReturn(-1);
   }
 
-  int* inProcsPtr = &inProcs[0];
   size_t numInProcs = inProcs.size();
-  for(unsigned i=0; i<numInProcs; ++i) {
-    if (MPI_Send(&(eqnsPerInProc[i]), 1, MPI_INT, inProcsPtr[i], firsttag,
+  for(size_t i=0; i<numInProcs; ++i) {
+    if (MPI_Send(&(eqnsPerInProc[i]), 1, MPI_INT, inProcs[i], firsttag,
 		 comm_) != MPI_SUCCESS) ERReturn(-1);
   }
 
@@ -835,10 +827,8 @@ int EqnCommMgr::mirrorProcEqns(ProcEqns& inProcEqns, ProcEqns& outProcEqns)
   //finally we're ready to exchange lists of equations.
 
   CHK_ERR( fei::exchangeData(comm_, inProcs,
-				  inProcEqns.procEqnNumbersPtr(),
-				  outProcs,
-				  true,
-				  *outEqns) );
+                             inProcEqns.procEqnNumbersPtr(),
+                             outProcs, true, *outEqns) );
 
   //now we've completed all the communication, so we're ready to put the data
   //we received into the outProcEqns object.
@@ -1039,7 +1029,6 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
   ProcEqns* essSendProcEqns = new ProcEqns();
 
   std::vector<fei::CSVec*>& _sendEqns = sendEqns_->eqns();
-  fei::CSVec** _sendEqnsPtr = &_sendEqns[0];
   feiArray<int>& _sendEqnNumbers = sendEqns_->eqnNumbersPtr();
   int* _sendEqnNumbersPtr = _sendEqnNumbers.dataPtr();
   int _numSendEqns = sendEqns_->getNumEqns();
@@ -1066,7 +1055,7 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
 
   for(int j=0; j<_numSendEqns; j++) {
 
-    std::vector<int>& indices = _sendEqnsPtr[j]->indices();
+    std::vector<int>& indices = _sendEqns[j]->indices();
 
     snl_fei::binarySearch(numEssEqns, essEqns, offsetsPtr,
 			  &indices[0], indices.size());
@@ -1080,7 +1069,7 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
     if (dbgOut != NULL) {
       FEI_OSTREAM& os = *dbgOut;
       os << "#ereb sendeqns["<<j<<"].length: "
-         <<_sendEqnsPtr[j]->size()<<", numEssEqns: " << numEssEqns<<FEI_ENDL;
+         <<_sendEqns[j]->size()<<", numEssEqns: " << numEssEqns<<FEI_ENDL;
     }
 
     for(i=0; i<numEssEqns; i++) {
@@ -1099,7 +1088,7 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
       sendEssEqns->addEqn(sendEqn_j, &coef,
 			  essEqns_i_ptr, 1, accumulate);
 
-      for(size_t k=0; k<_sendEqnsPtr[j]->size(); k++) {
+      for(size_t k=0; k<_sendEqns[j]->size(); k++) {
 
 	int row = sendEqnsPtr_j[k];
 
@@ -1119,10 +1108,10 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
   CHK_ERR( mirrorProcEqns(*essSendProcEqns, *essRecvProcEqns) );
 
   feiArray<int>& eqnNumbers = sendEssEqns->eqnNumbersPtr();
-  fei::CSVec** sendEssEqnsPtr = &(sendEssEqns->eqns()[0]);
+  std::vector<fei::CSVec*>& sendEssEqnsVec = sendEssEqns->eqns();
   feiArray<int> eqnLengths(eqnNumbers.length());
   for(i=0; i<eqnNumbers.length(); ++i) {
-    eqnLengths[i] = sendEssEqnsPtr[i]->size();
+    eqnLengths[i] = sendEssEqnsVec[i]->size();
   }
 
   essSendProcEqns->setProcEqnLengths(eqnNumbers.dataPtr(),

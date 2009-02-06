@@ -190,17 +190,21 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
 {
   //This function is unit-tested in fei/utest_cases/fei_unit_CSRMat_CSVec.cpp
 
+  fei::FillableMat fc;
+
   const std::vector<int>& Arows = A.getGraph().rowNumbers;
+  const std::vector<int>& Brows = B.getGraph().rowNumbers;
+  if (Arows.size() < 1 || Brows.size() < 1) {
+    C = fc;
+    return;
+  }
   const int* Arowoffs = &(A.getGraph().rowOffsets[0]);
   const int* Acols = &(A.getGraph().packedColumnIndices[0]);
   const double* Acoefs = &(A.getPackedCoefs()[0]);
 
-  const std::vector<int>& Brows = B.getGraph().rowNumbers;
   const int* Browoffs = &(B.getGraph().rowOffsets[0]);
   const std::vector<int>& Bcols = B.getGraph().packedColumnIndices;
   const double* Bcoefs = &(B.getPackedCoefs()[0]);
-
-  fei::FillableMat fc;
 
   static double fei_eps = std::numeric_limits<double>::epsilon();
 
@@ -265,18 +269,23 @@ void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
 {
   //This function is unit-tested in fei/utest_cases/fei_unit_CSRMat_CSVec.cpp
 
+  fei::FillableMat fc;
+
   const std::vector<int>& Arows = A.getGraph().rowNumbers;
+  const std::vector<int>& Brows = B.getGraph().rowNumbers;
+  if (Arows.size() < 1 || Brows.size() < 1) {
+    C = fc;
+    return;
+  }
+
   const size_t numArows = Arows.size();
   const int* Arowoffs = &(A.getGraph().rowOffsets[0]);
   const int* Acols = &(A.getGraph().packedColumnIndices[0]);
   const double* Acoefs = &(A.getPackedCoefs()[0]);
 
-  const std::vector<int>& Brows = B.getGraph().rowNumbers;
   const int* Browoffs = &(B.getGraph().rowOffsets[0]);
   const std::vector<int>& Bcols = B.getGraph().packedColumnIndices;
   const double* Bcoefs = &(B.getPackedCoefs()[0]);
-
-  fei::FillableMat fc;
 
   std::vector<double> row_coefs;
 

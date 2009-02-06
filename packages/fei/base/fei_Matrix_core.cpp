@@ -166,7 +166,7 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   int tag2 = 20070460;
 
   unsigned offset = 0;
-  for(unsigned i=0; i<recvProcs.size(); ++i) {
+  for(size_t i=0; i<recvProcs.size(); ++i) {
     MPI_Irecv(&recv_sizes[offset], 1, MPI_INT, recvProcs[i],
               tag1, comm_, &mpiReqs[offset]);
     ++offset;
@@ -180,7 +180,7 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
   std::vector<std::vector<int> > send_ints(sendProcs.size());
   std::vector<std::vector<double> > send_doubles(sendProcs.size());
 
-  for(unsigned i=0; i<sendProcs.size(); ++i) {
+  for(size_t i=0; i<sendProcs.size(); ++i) {
     int proc = sendProcs[i];
 
     fei::impl_utils::pack_FillableMat(*(remotelyOwned_[proc]),
@@ -195,7 +195,9 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
     remotelyOwned_[proc]->clear();
   }
 
-  MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
+  if (mpiReqs.size() > 0) {
+    MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
+  }
 
 
   //now resize our recv buffers, and post the recvs.
@@ -223,7 +225,9 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
              proc, tag2, comm_);
   }
 
-  MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
+  if (mpiReqs.size() > 0) {
+    MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
+  }
 
 
   //and finally, unpack and store the received buffers.

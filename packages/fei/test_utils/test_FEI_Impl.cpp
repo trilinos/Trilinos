@@ -127,16 +127,18 @@ int test_FEI_Impl::test1()
 			      &(testdata->ids[0])) );
 
   feiArray<int*> sharingProcs2D(testdata->sharedIDs.size());
-  int i, offset = 0;
-  for(i=0; i<(int)testdata->numSharingProcsPerID.size(); ++i) {
+  int offset = 0;
+  for(int i=0; i<(int)testdata->numSharingProcsPerID.size(); ++i) {
     sharingProcs2D[i] = &(testdata->sharingProcs[offset]);
     offset += testdata->numSharingProcsPerID[i];
   }
 
-  CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
+  if (testdata->sharedIDs.size() > 0) {
+    CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
 				     &(testdata->sharedIDs[0]),
 				     &(testdata->numSharingProcsPerID[0]),
 				     sharingProcs2D.dataPtr()) );
+  }
 
   int patternID = 0;
   int numRowIDs = 1;
@@ -178,9 +180,8 @@ int test_FEI_Impl::test1()
 
   double* matrixEntries = new double[16];
   double** matrixEntriesPtr = new double*[4];
-  int ii,jj;
-  for(ii=0; ii<4; ++ii) matrixEntriesPtr[ii] = matrixEntries+ii*4;
-  for(jj=0; jj<16; ++jj) matrixEntries[jj] = 1.0;
+  for(int ii=0; ii<4; ++ii) matrixEntriesPtr[ii] = matrixEntries+ii*4;
+  for(int jj=0; jj<16; ++jj) matrixEntries[jj] = 1.0;
 
   
   CHK_ERR( fei->putIntoMatrix(patternID, &rowIDType, &(testdata->ids[0]),
@@ -209,7 +210,7 @@ int test_FEI_Impl::test1()
   int BCFieldID = testdata->fieldIDs[0];
   double* values = new double[numBCNodes];
   int* offsetsIntoField = new int[numBCNodes];
-  for(ii=0; ii<numBCNodes; ++ii) {
+  for(int ii=0; ii<numBCNodes; ++ii) {
     values[ii] = 1.0;
     offsetsIntoField[ii] = 0;
   }
@@ -232,7 +233,7 @@ int test_FEI_Impl::test1()
   CHK_ERR( fei->getLocalNodeIDList(numActiveNodes, localNodes, numActiveNodes) );
 
   int totalFieldSize = 0;
-  for(ii=0; ii<(int)testdata->fieldSizes.size(); ++ii) {
+  for(int ii=0; ii<(int)testdata->fieldSizes.size(); ++ii) {
     totalFieldSize += testdata->fieldSizes[ii];
   }
 
@@ -319,10 +320,12 @@ int test_FEI_Impl::test2()
     offset += testdata->numSharingProcsPerID[i];
   }
 
-  CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
+  if (testdata->sharedIDs.size() > 0) {
+    CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
 				     &(testdata->sharedIDs[0]),
 				     &(testdata->numSharingProcsPerID[0]),
 				     sharingProcs2D.dataPtr()) );
+  }
 
   int patternID = 0;
   int numRowIDs = 1;

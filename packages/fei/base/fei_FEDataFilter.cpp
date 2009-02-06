@@ -1973,7 +1973,7 @@ int FEDataFilter::getReducedSolnEntry(int eqnNumber, double& solnValue)
   GlobalID nodeID = node->getGlobalNodeID();
   NodeCommMgr& nodeCommMgr = problemStructure_->getNodeCommMgr();
   std::vector<GlobalID>& shNodeIDs = nodeCommMgr.getSharedNodeIDs();
-  int shIndex = snl_fei::binarySearch(nodeID, &shNodeIDs[0], shNodeIDs.size());
+  int shIndex = snl_fei::binarySearch(nodeID, shNodeIDs);
   if (shIndex >= 0) {
     if (!(problemStructure_->isInLocalElement(nodeNumber)) ) fetiHasNode = false;
   }

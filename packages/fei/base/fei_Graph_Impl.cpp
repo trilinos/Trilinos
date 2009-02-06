@@ -245,10 +245,12 @@ int fei::Graph_Impl::gatherFromOverlap()
     MPI_Send(&isize, 1, MPI_INT, proc, tag1, comm_);
   }
 
-  MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
+  if (mpiReqs.size() > 0) {
+    MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
+  }
 
   //now resize our recv buffers, and post the recvs.
-  for(unsigned i=0; i<recvProcs.size(); ++i) {
+  for(size_t i=0; i<recvProcs.size(); ++i) {
     int intsize = recv_sizes[i];
 
     recv_ints[i].resize(intsize);
@@ -258,14 +260,16 @@ int fei::Graph_Impl::gatherFromOverlap()
   }
 
   //now send our packed buffers.
-  for(unsigned i=0; i<sendProcs.size(); ++i) {
+  for(size_t i=0; i<sendProcs.size(); ++i) {
     int proc = sendProcs[i];
 
     MPI_Send(&(send_ints[i][0]), send_ints[i].size(), MPI_INT,
              proc, tag1, comm_);
   }
 
-  MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
+  if (mpiReqs.size() > 0) {
+    MPI_Waitall(mpiReqs.size(), &mpiReqs[0], &mpiStatuses[0]);
+  }
 
   for(unsigned i=0; i<recvProcs.size(); ++i) {
     std::vector<int> recvdata = recv_ints[i];

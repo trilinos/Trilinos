@@ -8,7 +8,7 @@
 #include <fei_sstream.hpp>
 #include <fei_fstream.hpp>
 
-#include <test_utils/fei_test_utils.hpp>
+#include <fei_test_utils.hpp>
 
 #include <snl_fei_Utils.hpp>
 #include <fei_VectorSpace.hpp>

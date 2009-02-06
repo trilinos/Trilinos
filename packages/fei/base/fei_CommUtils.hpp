@@ -186,7 +186,7 @@ int Allgatherv(MPI_Comm comm,
 
   std::vector<int> tmpInt(numProcs, 0);
 
-  int len = (int)sendbuf.size();
+  int len = sendbuf.size();
   int* tmpBuf = &tmpInt[0];
 
   recvLengths.resize(numProcs);
@@ -207,7 +207,9 @@ int Allgatherv(MPI_Comm comm,
 
   recvbuf.resize(displ);
 
-  CHK_MPI( MPI_Allgatherv(&sendbuf[0], len, mpi_dtype,
+  T* sendbufPtr = sendbuf.size()>0 ? &sendbuf[0] : NULL;
+  
+  CHK_MPI( MPI_Allgatherv(sendbufPtr, len, mpi_dtype,
 			&recvbuf[0], &recvLengths[0], tmpBuf,
 			mpi_dtype, comm) );
 
@@ -478,10 +480,9 @@ int exchange(MPI_Comm comm, MessageHandler<T>* msgHandler)
                         recvProcs, recvMsgLengths, false, recvMsgs) );
 
   int offset = 0;
-  T* msgDataPtr = &recvMsgs[0];
   for(i=0; i<numRecvProcs; ++i) {
     int msgLen = recvMsgLengths[i];
-    T* mdPtr = &(msgDataPtr[offset]);
+    T* mdPtr = &(recvMsgs[offset]);
     std::vector<T> recvMsg(mdPtr, mdPtr+msgLen);
     CHK_ERR( msgHandler->processRecvMessage(recvProcs[i], recvMsg ) );
     offset += msgLen;

@@ -69,6 +69,7 @@ namespace fei {
                           std::vector<int>& keyvector)
     {
       keyvector.resize(map_obj.size());
+      if (map_obj.empty()) return;
       copyKeysToArray<MAP_TYPE>(map_obj, map_obj.size(), &keyvector[0]);
     }
 

@@ -343,7 +343,7 @@ int fei::Vector_core::gatherFromOverlap(bool accumulate)
   int tag2 = 20070460;
 
   //post the recvs for the sizes.
-  for(unsigned i=0; i<recvProcs.size(); ++i) {
+  for(size_t i=0; i<recvProcs.size(); ++i) {
     int proc = recvProcs[i];
     MPI_Irecv(&recv_sizes[i], 1, MPI_INT, proc,
               tag1, comm_, &mpiReqs[i]);
@@ -356,11 +356,13 @@ int fei::Vector_core::gatherFromOverlap(bool accumulate)
     MPI_Send(&size, 1, MPI_INT, proc, tag1, comm_);
   }
 
-  MPI_Waitall(recvProcs.size(), &mpiReqs[0], &mpiStatuses[0]);
+  if (recvProcs.size() > 0) {
+    MPI_Waitall(recvProcs.size(), &mpiReqs[0], &mpiStatuses[0]);
+  }
 
   //now post the recvs for the data.
   unsigned offset = 0;
-  for(unsigned i=0; i<recvProcs.size(); ++i) {
+  for(size_t i=0; i<recvProcs.size(); ++i) {
     int proc = recvProcs[i];
     int size = recv_sizes[i];
     std::vector<int>& recv_ints_i = recv_ints[i];
@@ -374,7 +376,7 @@ int fei::Vector_core::gatherFromOverlap(bool accumulate)
   }
 
   //now send the outgoing data.
-  for(unsigned i=0; i<sendProcs.size(); ++i) {
+  for(size_t i=0; i<sendProcs.size(); ++i) {
     int proc = sendProcs[i];
     int size = remotelyOwned_[proc]->size();
     int* indices = &(remotelyOwned_[proc]->indices())[0];
@@ -385,10 +387,12 @@ int fei::Vector_core::gatherFromOverlap(bool accumulate)
     fei::set_values(*remotelyOwned_[proc], 0.0);
   }
 
-  MPI_Waitall(recvProcs.size()*2, &mpiReqs[0], &mpiStatuses[0]);
+  if (recvProcs.size() > 0) {
+    MPI_Waitall(recvProcs.size()*2, &mpiReqs[0], &mpiStatuses[0]);
+  }
 
   //now store the data we've received.
-  for(unsigned i=0; i<recvProcs.size(); ++i) {
+  for(size_t i=0; i<recvProcs.size(); ++i) {
     int num = recv_sizes[i];
     std::vector<int>& recv_ints_i = recv_ints[i];
     std::vector<double>& recv_doubles_i = recv_doubles[i];

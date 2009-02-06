@@ -519,7 +519,7 @@ int NodeCommMgr::addSharedNodes( const GlobalID* nodeIDs,
 
   for(int i=0; i<numNodes; i++) {
     int insertPoint = -1;
-    int index = snl_fei::binarySearch(nodeIDs[i], &sharedNodeIDs[0], sharedNodeIDs.size(), insertPoint);
+    int index = snl_fei::binarySearch(nodeIDs[i], sharedNodeIDs, insertPoint);
     if (index < 0) {
       sharingProcs_.insert(sharingProcs_.begin()+insertPoint, new std::vector<int>);
 
