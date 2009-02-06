@@ -39,4 +39,4 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
 
   ENDIF(Trilinos_ENABLE_Ifpack)
 
-ENDIF(${PACKAGE_NAME}_ENABLE_Triutils)
+ENDIF()
