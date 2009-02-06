@@ -16,6 +16,12 @@ OPTION(${PACKAGE_NAME}_ENABLE_LOCA
   "Enable parameter LOCA support"
   ON )
 
+# MF support
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MF
+  HAVE_LOCA_MF
+  "Enable Multifario (MF) support in LOCA"
+  OFF )
+
 # Ignoring these flags - should be fixed in more recent compilers
 # AC_CXX_STL_MAP_KEY_CONST
 # AC_CXX_INVALID_TEMPLATE_QUALIFIER

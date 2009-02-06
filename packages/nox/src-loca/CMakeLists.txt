@@ -9,6 +9,7 @@
 #
 
 ADD_SUBDIRECTORY(src)
+ADD_SUBDIRECTORY(src-mf)
 ADD_SUBDIRECTORY(src-lapack)
 ADD_SUBDIRECTORY(src-epetra)
 ADD_SUBDIRECTORY(src-thyra)
