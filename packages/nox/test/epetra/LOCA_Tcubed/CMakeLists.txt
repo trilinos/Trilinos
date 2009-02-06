@@ -10,7 +10,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     SOURCES 
     Tcubed.C
     COMM serial mpi
-    DEPLIBS noxtestutils locatestproblems
+    DEPLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
@@ -20,7 +20,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     SOURCES 
     Tcubed_constraint.C
     COMM serial mpi
-    DEPLIBS noxtestutils locatestproblems
+    DEPLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
@@ -30,7 +30,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     SOURCES 
     TcubedTP.C
     COMM serial mpi
-    DEPLIBS noxtestutils locatestproblems
+    DEPLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )

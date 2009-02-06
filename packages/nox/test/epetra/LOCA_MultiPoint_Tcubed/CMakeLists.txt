@@ -12,7 +12,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt AND NOX_EN
     Problem_Interface_MP.C
     multipointTcubed.C
     COMM serial mpi
-    DEPLIBS noxtestutils locatestproblems
+    DEPLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )

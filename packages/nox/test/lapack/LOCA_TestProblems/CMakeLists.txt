@@ -7,28 +7,21 @@ SET(SOURCES "")
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  Basis.H
-  FiniteElementProblem.H
-  Problem_Interface.H
-  Tcubed_FiniteElementProblem.H
-  Pitchfork_FiniteElementProblem.H
+  ChanProblemInterface.H
   NormConstraint.H
   LinearConstraint.H
   ) 
 
 APPEND_SET(SOURCES
-  Basis.C
-  Problem_Interface.C
-  Tcubed_FiniteElementProblem.C
-  Pitchfork_FiniteElementProblem.C
+  ChanProblemInterface.C
   NormConstraint.C
   LinearConstraint.C
   )
 
-IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
+IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)
 
   PACKAGE_ADD_LIBRARY(
-    locaepetratestproblems
+    localapacktestproblems
     HEADERS ${HEADERS}
     SOURCES ${SOURCES}
     TESTONLY
