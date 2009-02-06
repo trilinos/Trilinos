@@ -26,7 +26,7 @@
 // ***********************************************************************
 // @HEADER
 //
-// This test is for BlockKrylovSchur solving a standard (Ax=xl) complex Hermitian
+// This test is for the LOBPCG solver manager on a standard (Ax=xl) complex Hermitian
 // eigenvalue problem.
 //
 // The matrix used is from MatrixMarket:
