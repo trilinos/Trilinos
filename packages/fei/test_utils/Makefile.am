@@ -54,7 +54,7 @@ endif
 # ------------------------------------------------------------------------
 
 DEFS =
-DEFAULT_INCLUDES = $(FEI_INCLUDES) $(HYPRE_CPPFLAGS) $(PETSC_CPPFLAGS) $(PROMETHEUS_CPPFLAGS) $(FETIDP_CPPFLAGS)
+DEFAULT_INCLUDES = $(FEI_INCLUDES) -I@abs_top_srcdir@/test_utils $(HYPRE_CPPFLAGS) $(PETSC_CPPFLAGS) $(PROMETHEUS_CPPFLAGS) $(FETIDP_CPPFLAGS)
 
 CORE_H = \
 	$(top_srcdir)/test_utils/AccessPattern.hpp \
