@@ -2,9 +2,14 @@
 INCLUDE(PackageAddExecutableAndTest)
 
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  Test_KLU
-  SOURCES cxx_main.cpp
-  ARGS 
-  COMM serial
-  )
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Galeri)
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Test_KLU
+    SOURCES cxx_main.cpp
+    ARGS 
+    COMM serial
+    )
+
+ENDIF()
