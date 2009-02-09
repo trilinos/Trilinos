@@ -217,6 +217,8 @@ LOCA::ParameterVector::getIndex(string label) const
 double* 
 LOCA::ParameterVector::getDoubleArrayPointer()
 {
+  if (x.size() == 0)
+    return NULL;
   return &x[0];
 }
 
