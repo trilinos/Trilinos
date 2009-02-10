@@ -35,6 +35,7 @@
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"

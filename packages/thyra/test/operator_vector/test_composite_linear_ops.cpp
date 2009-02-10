@@ -34,6 +34,7 @@
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
+#include "Thyra_ScaledAdjointLinearOpBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"

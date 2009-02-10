@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_PRODUCT_VECTOR_DECL_HPP
-#define THYRA_PRODUCT_VECTOR_DECL_HPP
+#ifndef THYRA_DEFAULT_PRODUCT_VECTOR_DECL_HPP
+#define THYRA_DEFAULT_PRODUCT_VECTOR_DECL_HPP
 
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_VectorDefaultBase.hpp"
@@ -65,21 +65,12 @@ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
-  /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
-  DefaultProductVector(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
-    );
+  /** \brief Construct to uninitialized. */
+  DefaultProductVector();
 
-  /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
+  /** \brief Constructs to initialized (calls <tt>initialize()</tt>). */
   DefaultProductVector(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace
-    ,const Teuchos::RCP<VectorBase<Scalar> > vecs[]
-    );
-
-  /** \brief. Constructs to initialized (calls <tt>initialize()</tt>). */
-  DefaultProductVector(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace
-    ,const Teuchos::RCP<const VectorBase<Scalar> > vecs[]
+    const RCP<const DefaultProductVectorSpace<Scalar> >  &productSpace
     );
 
   /** \brief Initialize.
@@ -87,7 +78,7 @@ public:
    * ToDo: Finish documentation.
    */
   void initialize(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace
     );
 
   /** \brief Initialize.
@@ -95,8 +86,8 @@ public:
    * ToDo: Finish documentation.
    */
   void initialize(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace
-    ,const Teuchos::RCP<VectorBase<Scalar> > vecs[]
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+    const ArrayView<const RCP<VectorBase<Scalar> > > &vecs
     );
 
   /** \brief Initialize.
@@ -104,8 +95,8 @@ public:
    * ToDo: Finish documentation.
    */
   void initialize(
-    const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace
-    ,const Teuchos::RCP<const VectorBase<Scalar> > vecs[]
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+    const ArrayView<const RCP<const VectorBase<Scalar> > > &vecs
     );
 
   /** \brief Uninitialize.
@@ -134,18 +125,18 @@ public:
   //@{
 
   /** \brief . */
-  void setBlock(int i, const Teuchos::RCP<const VectorBase<Scalar> >& b); 
+  void setBlock(int i, const RCP<const VectorBase<Scalar> >& b); 
   /** \brief . */
-  void setNonconstBlock(int i, const Teuchos::RCP<VectorBase<Scalar> >& b); 
+  void setNonconstBlock(int i, const RCP<VectorBase<Scalar> >& b); 
   //@}
 
   /** @name Overridden from ProductVectorBase */
   //@{
 
   /** \brief . */
-  Teuchos::RCP<VectorBase<Scalar> > getNonconstVectorBlock(const int k); 
+  RCP<VectorBase<Scalar> > getNonconstVectorBlock(const int k); 
   /** \brief . */
-  Teuchos::RCP<const VectorBase<Scalar> > getVectorBlock(const int k) const;
+  RCP<const VectorBase<Scalar> > getVectorBlock(const int k) const;
 
   //@}
 
@@ -153,14 +144,14 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > productSpace() const;
+  RCP<const ProductVectorSpaceBase<Scalar> > productSpace() const;
   /** \brief . */
   bool blockIsConst(const int k) const; 
   /** \brief . */
-  Teuchos::RCP<MultiVectorBase<Scalar> >
+  RCP<MultiVectorBase<Scalar> >
   getNonconstMultiVectorBlock(const int k);
   /** \brief . */
-  Teuchos::RCP<const MultiVectorBase<Scalar> >
+  RCP<const MultiVectorBase<Scalar> >
   getMultiVectorBlock(const int k) const;
 
   //@}
@@ -169,7 +160,7 @@ public:
   //@{
 
   /** \brief . */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > space() const;
+  RCP< const VectorSpaceBase<Scalar> > space() const;
 
   //@}
 
@@ -211,6 +202,35 @@ protected:
 
   //@}
 
+public:
+
+  /** \name Deprecated */
+  //@{
+
+  /** \brief Deprecated. */
+  DefaultProductVector(
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
+    const RCP<VectorBase<Scalar> > vecs[]
+    )
+    :numBlocks_(0)
+    { initialize(productSpace_in, vecs); }
+
+  /** \brief Deprecated. */
+  void initialize(
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
+    const RCP<VectorBase<Scalar> > vecs[]
+    )
+    { initialize(productSpace_in, Teuchos::arrayView(vecs, productSpace_in->numBlocks())); }
+
+  /** \brief Deprecated. */
+  void initialize(
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
+    const RCP<const VectorBase<Scalar> > vecs[]
+    )
+    { initialize(productSpace_in, Teuchos::arrayView(vecs, productSpace_in->numBlocks())); }
+
+  //@}
+
 private:
 
   // //////////////////////////////
@@ -221,18 +241,10 @@ private:
   // //////////////////////////////
   // Private data members
 
-  Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > productSpace_;
-  Teuchos::Array<CNVC> vecs_;
+  RCP<const DefaultProductVectorSpace<Scalar> > productSpace_;
+  Array<CNVC> vecs_;
   // cache
   int numBlocks_;
-
-protected:
-
-  // //////////////////////////////
-  // Protected member functions
-
-  // Added to allow TSFExtended DefaultProductVector to derive from this.
-  DefaultProductVector();
 
 };
 
@@ -243,9 +255,22 @@ protected:
  */
 template<class Scalar>
 inline
-Teuchos::RCP<DefaultProductVector<Scalar> >
+RCP<DefaultProductVector<Scalar> >
+defaultProductVector()
+{
+  return Teuchos::rcp(new DefaultProductVector<Scalar>);
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates DefaultProductVector
+ */
+template<class Scalar>
+inline
+RCP<DefaultProductVector<Scalar> >
 defaultProductVector(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace
   )
 {
   return Teuchos::rcp(
@@ -259,15 +284,15 @@ defaultProductVector(
  * \relates DefaultProductVector
  */
 template<class Scalar>
-Teuchos::RCP<DefaultProductVector<Scalar> >
+RCP<DefaultProductVector<Scalar> >
 defaultProductVector(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RCP<VectorBase<Scalar> > vecs[]
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const ArrayView<const RCP<VectorBase<Scalar> > > &vecs
   )
 {
-  return Teuchos::rcp(
-    new DefaultProductVector<Scalar>(productSpace,vecs)
-    );
+  RCP<DefaultProductVector<Scalar> > pv = defaultProductVector<Scalar>();
+  pv->initialize(productSpace, vecs);
+  return pv;
 }
 
 
@@ -276,10 +301,24 @@ defaultProductVector(
  * \relates DefaultProductVector
  */
 template<class Scalar>
-Teuchos::RCP<DefaultProductVector<Scalar> >
+RCP<DefaultProductVector<Scalar> >
 defaultProductVector(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::RCP<const VectorBase<Scalar> > vecs[]
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const ArrayView<const RCP<const VectorBase<Scalar> > > &vecs
+  )
+{
+  RCP<DefaultProductVector<Scalar> > pv = defaultProductVector<Scalar>();
+  pv->initialize(productSpace, vecs);
+  return pv;
+}
+
+
+/** \brief Deprecated. */
+template<class Scalar>
+RCP<DefaultProductVector<Scalar> >
+defaultProductVector(
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const RCP<VectorBase<Scalar> > vecs[]
   )
 {
   return Teuchos::rcp(
@@ -288,25 +327,20 @@ defaultProductVector(
 }
 
 
-/** \brief Nonmember constructor.
- *
- * \relates DefaultProductVector
- */
+/** \brief Deprecated. */
 template<class Scalar>
-Teuchos::RCP<DefaultProductVector<Scalar> >
+RCP<DefaultProductVector<Scalar> >
 defaultProductVector(
-  const Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-  const Teuchos::Array<Teuchos::RCP<const VectorBase<Scalar> > > &vecs
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const RCP<const VectorBase<Scalar> > vecs[]
   )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( Teuchos::as<int>(vecs.size()) != productSpace->numBlocks() );
-#endif
-  return defaultProductVector(productSpace,&vecs[0]);
+  return defaultProductVector<Scalar>(productSpace,
+    Teuchos::arrayView(vecs, productSpace->numBlocks()));
 }
 
 
 } // namespace Thyra
 
 
-#endif // THYRA_PRODUCT_VECTOR_DECL_HPP
+#endif // THYRA_DEFAULT_PRODUCT_VECTOR_DECL_HPP

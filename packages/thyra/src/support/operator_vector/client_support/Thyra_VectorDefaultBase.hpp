@@ -66,14 +66,13 @@ template<class Scalar>
 std::string VectorDefaultBase<Scalar>::description() const
 {
   std::ostringstream oss;
-  const RCP<const VectorSpaceBase<Scalar> >
-    space = this->space();
+  const RCP<const VectorSpaceBase<Scalar> > vs = this->space();
   oss << Teuchos::Describable::description();
-  if(is_null(space)) {
+  if(is_null(vs)) {
     oss << "{space=NULL}"; 
   }
   else {
-    const Index dim = space->dim();
+    const Index dim = vs->dim();
     oss << "{dim=" << dim << "}";
   }
   return oss.str();

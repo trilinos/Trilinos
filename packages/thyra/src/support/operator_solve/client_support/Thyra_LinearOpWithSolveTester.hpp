@@ -36,6 +36,7 @@
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_describeLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_Time.hpp"
 

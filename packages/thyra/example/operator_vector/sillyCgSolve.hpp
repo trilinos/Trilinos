@@ -33,6 +33,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
 
+
 /** \brief Silly little example unpreconditioned CG solver.
  *
  * This little function is just a silly little ANA that implements the
@@ -94,7 +95,7 @@ bool sillyCgSolve(
     const Scalar rho = inner(*r, *r);        // <r,r>              -> rho
     if (iter==0) V_V(p.ptr(), *r);           // r                  -> p   (iter == 0)
     else Vp_V( p.ptr(), *r, rho/rho_old );   // r+(rho/rho_old)*p  -> p   (iter  > 0)
-    apply<Scalar>(A, NOTRANS, *p, q.ptr());  // A*p                -> q
+    apply(A, NOTRANS, *p, q.ptr());          // A*p                -> q
     const Scalar alpha = rho/inner(*p, *q);  // rho/<p,q>          -> alpha
     Vp_StV( x, +alpha, *p );                 // +alpha*p + x       -> x
     Vp_StV( r.ptr(), -alpha, *q );           // -alpha*q + r       -> r

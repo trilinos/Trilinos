@@ -71,23 +71,8 @@ public:
   /** @name Constructors/initializers/accessors */
   //@{
 
-  /** \brief Constructs to initialized (calls <tt>initialize()</tt>). */
-  DefaultProductMultiVector(
-    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-    const int numMembers
-    );
-
-  /** \brief Constructs to initialized (calls <tt>initialize()</tt>). */
-  DefaultProductMultiVector(
-    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-    const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
-    );
-
-  /** \brief Constructs to initialized (calls <tt>initialize()</tt>). */
-  DefaultProductMultiVector(
-    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
-    const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs
-    );
+  /** \brief Construct to uninitialized. */
+  DefaultProductMultiVector();
 
   /** \brief . */
   void initialize(
@@ -237,6 +222,37 @@ protected:
 
   //@}
 
+public:
+
+  /** \name Deprecated. */
+  //@{
+
+  /** \brief Deprecated. */
+  DefaultProductMultiVector(
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
+    const int numMembers
+    )
+    :numBlocks_(0)
+    { initialize(productSpace_in, numMembers); }
+
+  /** \brief Deprecated. */
+  DefaultProductMultiVector(
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
+    const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
+    )
+    :numBlocks_(0)
+    { initialize(productSpace_in, multiVecs); }
+
+  /** \brief Deprecated. */
+  DefaultProductMultiVector(
+    const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace_in,
+    const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs
+    )
+    :numBlocks_(0)
+    { initialize(productSpace_in, multiVecs); }
+
+  //@}
+
 private:
 
   // //////////////////////////////
@@ -265,10 +281,20 @@ private:
 
   void validateColIndex(const int j) const;
 
-  //  Not defined and not to be called!
-  DefaultProductMultiVector();
-
 };
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates DefaultProductMultiVector
+ */
+template<class Scalar>
+inline
+RCP<DefaultProductMultiVector<Scalar> >
+defaultProductMultiVector()
+{
+  return Teuchos::rcp(new DefaultProductMultiVector<Scalar>);
+}
 
 
 /** \brief Nonmember constructor.
@@ -283,9 +309,9 @@ defaultProductMultiVector(
   const int numMembers
   )
 {
-  return Teuchos::rcp(
-    new DefaultProductMultiVector<Scalar>(productSpace,numMembers)
-    );
+  RCP<DefaultProductMultiVector<Scalar> > pmv = defaultProductMultiVector<Scalar>();
+  pmv->initialize(productSpace, numMembers);
+  return pmv;
 }
 
 
@@ -300,9 +326,9 @@ defaultProductMultiVector(
   const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
   )
 {
-  return Teuchos::rcp(
-    new DefaultProductMultiVector<Scalar>(productSpace,multiVecs)
-    );
+  RCP<DefaultProductMultiVector<Scalar> > pmv = defaultProductMultiVector<Scalar>();
+  pmv->initialize(productSpace, multiVecs);
+  return pmv;
 }
 
 
@@ -317,14 +343,15 @@ defaultProductMultiVector(
   const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs
   )
 {
-  return Teuchos::rcp(
-    new DefaultProductMultiVector<Scalar>(productSpace,multiVecs)
-    );
+  RCP<DefaultProductMultiVector<Scalar> > pmv = defaultProductMultiVector<Scalar>();
+  pmv->initialize(productSpace, multiVecs);
+  return pmv;
 }
 
 
 // /////////////////////////
 // Inline members
+
 
 #ifndef TEUCHOS_DEBUG
 
@@ -341,9 +368,7 @@ void DefaultProductMultiVector<Scalar>::validateColIndex(const int j) const
 {}
 
 
-
 #endif // TEUCHOS_DEBUG
-
 
 
 } // namespace Thyra

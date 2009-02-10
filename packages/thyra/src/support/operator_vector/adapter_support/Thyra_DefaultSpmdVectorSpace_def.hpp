@@ -50,11 +50,11 @@ DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace()
 
 template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
-  const Index dim
+  const Index dim_in
   )
   :localSubDim_(-1), numProc_(-1), procRank_(-1)
 {
-  initialize(dim);
+  initialize(dim_in);
 }
 
 
@@ -71,10 +71,10 @@ DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
 
 template<class Scalar>
 void DefaultSpmdVectorSpace<Scalar>::initialize(
-  const Index dim
+  const Index dim_in
   )
 {
-  this->initialize(Teuchos::null, dim, dim);
+  this->initialize(Teuchos::null, dim_in, dim_in);
 }
 
 
@@ -232,8 +232,8 @@ bool DefaultSpmdVectorSpace<Scalar>::hasInCoreView(
   ) const
 {
   const Range1D rng = full_range(rng_in,0,this->dim()-1);
-  const Index localOffset = this->localOffset();
-  return ( localOffset<=rng.lbound() && rng.ubound()<localOffset+localSubDim_ );
+  const Index l_localOffset = this->localOffset();
+  return ( l_localOffset<=rng.lbound() && rng.ubound()<l_localOffset+localSubDim_ );
 }
 
 

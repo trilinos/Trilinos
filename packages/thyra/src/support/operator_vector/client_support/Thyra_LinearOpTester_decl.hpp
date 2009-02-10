@@ -34,6 +34,7 @@
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_MultiVectorRandomizerBase.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_PromotionTraits.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_FancyOStream.hpp"
 

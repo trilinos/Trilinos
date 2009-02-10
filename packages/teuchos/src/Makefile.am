@@ -79,6 +79,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_ENull.hpp \
 	$(srcdir)/Teuchos_ErrorPolling.hpp \
 	$(srcdir)/Teuchos_Exceptions.hpp \
+	$(srcdir)/Teuchos_ExpandScalarTypeMacros.hpp \
 	$(srcdir)/Teuchos_ExplicitInstantiationHelpers.hpp \
 	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp \

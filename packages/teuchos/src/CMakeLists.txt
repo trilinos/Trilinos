@@ -66,6 +66,7 @@ APPEND_SET(HEADERS
   Teuchos_ENull.hpp
   Teuchos_ErrorPolling.hpp
   Teuchos_Exceptions.hpp
+  Teuchos_ExpandScalarTypeMacros.hpp
   Teuchos_F77_wrappers.h
   Teuchos_FancyOStream.hpp
   Teuchos_Flops.hpp

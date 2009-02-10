@@ -32,7 +32,6 @@
 #include "Thyra_MultipliedLinearOpBase.hpp"
 #include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
-#include "Teuchos_arrayArg.hpp"
 #include "Teuchos_Handleable.hpp"
 
 
@@ -85,13 +84,13 @@ namespace Thyra {
 
  template<class Scalar>
  void constructD(
-    const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >   &A
-    ,const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >  &B
-    ,const Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >  &C
-    ,Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >        *D
+    const RCP<const Thyra::LinearOpBase<Scalar> >   &A
+    ,const RCP<const Thyra::LinearOpBase<Scalar> >  &B
+    ,const RCP<const Thyra::LinearOpBase<Scalar> >  &C
+    ,RCP<const Thyra::LinearOpBase<Scalar> >        *D
     )
  {
-   typedef Teuchos::RCP<const Thyra::LinearOpBase<Scalar> > LOB;
+   typedef RCP<const Thyra::LinearOpBase<Scalar> > LOB;
    *D = Teuchos::rcp(
      new Thyra::DefaultMultipliedLinearOp<Scalar>(
        3, Teuchos::arrayArg<LOB>(A,adjoin(B),C)()
@@ -132,26 +131,6 @@ public:
    */
   DefaultMultipliedLinearOp();
 
-  /** Calls <tt>initialize()</tt>.
-   *
-   * Rather than calling this constructor directly, consider using the non-member helper
-   * functions described \ref Thyra_Op_Vec_MultipliedLinearOp_helpers_grp "here".
-   */
-  DefaultMultipliedLinearOp(
-    const int numOps,
-    const Teuchos::RCP<LinearOpBase<Scalar> > Ops[]
-    );
-
-  /** Calls <tt>initialize()</tt>.
-   *
-   * Rather than calling this constructor directly, consider using the non-member helper
-   * functions described \ref Thyra_Op_Vec_MultipliedLinearOp_helpers_grp "here".
-   */
-  DefaultMultipliedLinearOp(
-    const int numOps,
-    const Teuchos::RCP<const LinearOpBase<Scalar> > Ops[]
-    );
-
   /** \brief Initialize given a list of non-const linear operators.
    *
    * @param  numOps  [in] Number of constituent operators.
@@ -172,9 +151,7 @@ public:
    * </ul>
    */
   void initialize(
-    const int numOps,
-    const Teuchos::RCP<LinearOpBase<Scalar> > Ops[]
-    );
+    const ArrayView<const RCP<LinearOpBase<Scalar> > > &Ops );
 
   /** \brief Initialize given a list of const linear operators.
    *
@@ -196,9 +173,7 @@ public:
    * </ul>
    */
   void initialize(
-    const int numOps,
-    const Teuchos::RCP<const LinearOpBase<Scalar> > Ops[]
-    );
+    const ArrayView<const RCP<const LinearOpBase<Scalar> > > &Ops );
 
   /** \brief Set to uninitialized.
    *
@@ -218,9 +193,9 @@ public:
   /** \brief . */
   bool opIsConst(const int k) const;
   /** \brief . */
-  Teuchos::RCP<LinearOpBase<Scalar> > getNonconstOp(const int k);
+  RCP<LinearOpBase<Scalar> > getNonconstOp(const int k);
   /** \brief . */
-  Teuchos::RCP<const LinearOpBase<Scalar> > getOp(const int k) const;
+  RCP<const LinearOpBase<Scalar> > getOp(const int k) const;
 
   //@}
 
@@ -230,15 +205,15 @@ public:
   /** \brief Returns <tt>this->getOp(0).range() if <t>this->numOps() > 0</tt>
    * and returns <tt>Teuchos::null</tt> otherwise.
    */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > range() const;
+  RCP< const VectorSpaceBase<Scalar> > range() const;
 
   /** \brief Returns <tt>this->getOp(this->numOps()-1).domain()</tt> if
    * <t>this->numOps() > 0</tt> and returns <tt>Teuchos::null</tt> otherwise.
    */
-  Teuchos::RCP< const VectorSpaceBase<Scalar> > domain() const;
+  RCP< const VectorSpaceBase<Scalar> > domain() const;
 
   /** \brief . */
-  Teuchos::RCP<const LinearOpBase<Scalar> > clone() const;
+  RCP<const LinearOpBase<Scalar> > clone() const;
 
   //@}
 
@@ -285,9 +260,53 @@ protected:
 
   //@}
 
+public:
+
+  /** \name Deprecated. */
+  //@{
+
+
+  /** \brief Deprecated. */
+  DefaultMultipliedLinearOp(
+    const int numOps_in,
+    const RCP<LinearOpBase<Scalar> > Ops[]
+    )
+    {
+      initialize(numOps_in, Ops);
+    }
+
+  /** \brief Deprecated. */
+  DefaultMultipliedLinearOp(
+    const int numOps_in,
+    const RCP<const LinearOpBase<Scalar> > Ops[]
+    )
+    {
+      initialize(numOps_in, Ops);
+    }
+
+  /** \brief Deprecated. */
+  void initialize(
+    const int numOps_in,
+    const RCP<LinearOpBase<Scalar> > Ops[]
+    )
+    {
+      initialize(Teuchos::arrayView(Ops, numOps_in));
+    }
+
+  /** \brief Deprecated. */
+  void initialize(
+    const int numOps_in,
+    const RCP<const LinearOpBase<Scalar> > Ops[]
+    )
+    {
+      initialize(Teuchos::arrayView(Ops, numOps_in));
+    }
+
+  //@}
+
 private:
 
-  Teuchos::Array<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > > Ops_;
+  Array<Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > > Ops_;
 
   void assertInitialized() const;
   void validateOps();
@@ -300,48 +319,64 @@ private:
 };
 
 
-/** \brief Form an implicit multiplication of two linear operators: <tt>M = A * B</tt>.
+/** \brief Nonmember constructor.
  *
  * \relates DefaultMultipliedLinearOp
  */
 template<class Scalar>
-Teuchos::RCP<LinearOpBase<Scalar> >
+RCP<DefaultMultipliedLinearOp<Scalar> >
+defaultMultipliedLinearOp()
+{
+  return Teuchos::rcp(new DefaultMultipliedLinearOp<Scalar>);
+}
+
+
+/** \brief Form an implicit multiplication of two linear operators: <tt>M = A
+ * * B</tt>.
+ *
+ * \relates DefaultMultipliedLinearOp
+ */
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
 nonconstMultiply(
-  const Teuchos::RCP<LinearOpBase<Scalar> > &A,
-  const Teuchos::RCP<LinearOpBase<Scalar> > &B,
+  const RCP<LinearOpBase<Scalar> > &A,
+  const RCP<LinearOpBase<Scalar> > &B,
   const std::string &M_label = ""
   );
 
 
-/** \brief Form an implicit multiplication of two linear operators: <tt>M = A * B</tt>.
+/** \brief Form an implicit multiplication of two linear operators: <tt>M = A
+ * * B</tt>.
  *
  * \relates DefaultMultipliedLinearOp
  */
 template<class Scalar>
-Teuchos::RCP<const LinearOpBase<Scalar> >
+RCP<const LinearOpBase<Scalar> >
 multiply(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &B,
+  const RCP<const LinearOpBase<Scalar> > &A,
+  const RCP<const LinearOpBase<Scalar> > &B,
   const std::string &M_label = ""
   );
 
 
-/** \brief Form an implicit multiplication of three linear operators: <tt>M = A * B * C</tt>.
+/** \brief Form an implicit multiplication of three linear operators: <tt>M =
+ * A * B * C</tt>.
  *
  * \relates DefaultMultipliedLinearOp
  */
 template<class Scalar>
-Teuchos::RCP<const LinearOpBase<Scalar> >
+RCP<const LinearOpBase<Scalar> >
 multiply(
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &A,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &B,
-  const Teuchos::RCP<const LinearOpBase<Scalar> > &C,
+  const RCP<const LinearOpBase<Scalar> > &A,
+  const RCP<const LinearOpBase<Scalar> > &B,
+  const RCP<const LinearOpBase<Scalar> > &C,
   const std::string &M_label = ""
   );
 
 
 // /////////////////////////////////
 // Inline members
+
 
 template<class Scalar>
 inline
@@ -352,6 +387,8 @@ void DefaultMultipliedLinearOp<Scalar>::assertInitialized() const
 #endif
 }
 
+
 }	// end namespace Thyra
+
 
 #endif	// THYRA_DEFAULT_MULTIPLIED_LINEAR_OP_DECL_HPP

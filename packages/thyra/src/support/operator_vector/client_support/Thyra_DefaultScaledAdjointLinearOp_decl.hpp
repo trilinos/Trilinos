@@ -26,11 +26,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_SCALED_ADJOINT_LINEAR_OP_DECL_HPP
-#define THYRA_SCALED_ADJOINT_LINEAR_OP_DECL_HPP
+#ifndef THYRA_DEFAULT_SCALED_ADJOINT_LINEAR_OP_DECL_HPP
+#define THYRA_DEFAULT_SCALED_ADJOINT_LINEAR_OP_DECL_HPP
 
 
-#include "Thyra_ScaledAdjointLinearOpBaseDecl.hpp"
+#include "Thyra_ScaledAdjointLinearOpBase.hpp"
 #include "Thyra_SingleScalarLinearOpBaseDecl.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Teuchos_Handleable.hpp"
@@ -113,9 +113,9 @@ changes that are made.
 */
 template<class Scalar>
 class DefaultScaledAdjointLinearOp
-  : virtual public ScaledAdjointLinearOpBase<Scalar>     // Interface
-  , virtual protected SingleScalarLinearOpBase<Scalar>   // Implementation
-  , virtual public Teuchos::Handleable<LinearOpBase<Scalar> >
+  : virtual public ScaledAdjointLinearOpBase<Scalar>,     // Interface
+    virtual protected SingleScalarLinearOpBase<Scalar>,   // Implementation
+    virtual public Teuchos::Handleable<LinearOpBase<Scalar> >  // ToDo: Remove!
 {
 public:
 
@@ -781,4 +781,4 @@ Thyra::scaleAndAdjoint(
 }
 
 
-#endif	// THYRA_SCALED_ADJOINT_LINEAR_OP_DECL_HPP
+#endif	// THYRA_DEFAULT_SCALED_ADJOINT_LINEAR_OP_DECL_HPP

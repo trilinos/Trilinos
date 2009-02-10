@@ -31,6 +31,7 @@
 
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Teuchos_Describable.hpp"
+#include "Teuchos_ExpandScalarTypeMacros.hpp"
 #include "Teuchos_PromotionTraits.hpp"
 
 
@@ -527,11 +528,12 @@ void apply(
 
 
 //
-// Implementations
+// Inline and other Template Implementations
 //
 
 
 template<class Scalar>
+inline
 bool Thyra::isFullyUninitialized( const LinearOpBase<Scalar> &M )
 {
   return ( is_null(M.range()) || is_null(M.domain()) );
@@ -609,6 +611,7 @@ void Thyra::applyTranspose(
 
 
 template<class Scalar>
+inline
 void Thyra::apply(
   const LinearOpBase<Scalar> &M,
   const EOpTransp M_trans,
@@ -628,6 +631,7 @@ void Thyra::apply(
 
 
 template<class Scalar>
+inline
 void Thyra::apply(
   const LinearOpBase<Scalar> &M,
   const EOpTransp M_trans,
@@ -639,6 +643,31 @@ void Thyra::apply(
 {
   apply(M, M_trans, X, Teuchos::ptr(Y), alpha, beta);
 }
+
+
+//
+// Non-template non-member inline functions
+//
+
+#define THYRA_LINEAR_OP_BASE_NONMEMBER_INLINE_FUNCS(SCALAR) \
+   \
+  inline \
+  void apply( \
+    const LinearOpBase<SCALAR > &M, \
+    const EOpTransp M_trans, \
+    const MultiVectorBase<SCALAR > &X, \
+    const Ptr<MultiVectorBase<SCALAR > > &Y, \
+    const SCALAR alpha = static_cast<SCALAR >(1.0), \
+    const SCALAR beta = static_cast<SCALAR >(0.0) \
+    ) \
+  { \
+    apply<SCALAR >(M, M_trans, X, Y, alpha, beta); \
+  }
+
+
+namespace Thyra {
+TEUCHOS_MACRO_EXPAND_SCALAR_TYPES(THYRA_LINEAR_OP_BASE_NONMEMBER_INLINE_FUNCS)
+} // namespace Thyra
 
 
 

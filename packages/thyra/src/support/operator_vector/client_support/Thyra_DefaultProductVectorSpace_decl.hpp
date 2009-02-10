@@ -344,21 +344,21 @@ public:
 
   /** \brief Deprecated . */
   DefaultProductVectorSpace(
-    const int numBlocks,
-    const RCP<const VectorSpaceBase<Scalar> > vecSpaces[]
+    const int numBlocks_in,
+    const RCP<const VectorSpaceBase<Scalar> > vecSpaces_in[]
     )
     : numBlocks_(-1), dim_(-1)
     {
-      initialize(numBlocks, vecSpaces);
+      initialize(numBlocks_in, vecSpaces_in);
     }
 
   /** \brief Deprecated . */
   void initialize(
-    const int numBlocks,
-    const RCP<const VectorSpaceBase<Scalar> > vecSpaces[]
+    const int numBlocks_in,
+    const RCP<const VectorSpaceBase<Scalar> > vecSpaces_in[]
     )
     {
-      initialize(Teuchos::arrayView(vecSpaces, numBlocks));
+      initialize(Teuchos::arrayView(vecSpaces_in, numBlocks_in));
     }
 
   //@}

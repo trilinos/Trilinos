@@ -51,63 +51,63 @@ DefaultProductVectorSpace<Scalar>::DefaultProductVectorSpace()
 
 template<class Scalar>
 DefaultProductVectorSpace<Scalar>::DefaultProductVectorSpace(
-  const ArrayView<const RCP<const VectorSpaceBase<Scalar> > > &vecSpaces
+  const ArrayView<const RCP<const VectorSpaceBase<Scalar> > > &vecSpaces_in
   )
   : numBlocks_(-1), dim_(-1)
 {
-  initialize(vecSpaces);
+  initialize(vecSpaces_in);
 }
 
 
 template<class Scalar>
 void DefaultProductVectorSpace<Scalar>::initialize(
-  const ArrayView<const RCP<const VectorSpaceBase<Scalar> > > &vecSpaces
+  const ArrayView<const RCP<const VectorSpaceBase<Scalar> > > &vecSpaces_in
   )
 {
 
   //
   // Check preconditions and compute cached quantities
   //
-  const int numBlocks = vecSpaces.size();
+  const int nBlocks = vecSpaces_in.size();
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( numBlocks == 0 );
+  TEST_FOR_EXCEPT( nBlocks == 0 );
 #endif
-  bool hasInCoreView = true;
-  for (int k = 0; k < numBlocks; ++k) {
+  bool overallHasInCoreView = true;
+  for (int k = 0; k < nBlocks; ++k) {
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
-      vecSpaces[k].get() == NULL, std::invalid_argument
+      vecSpaces_in[k].get() == NULL, std::invalid_argument
       ,"Error, the smart pointer vecSpaces["<<k<<"] can not be NULL!"
       );
 #endif
-    if (!vecSpaces[k]->hasInCoreView()) hasInCoreView = false;
+    if (!vecSpaces_in[k]->hasInCoreView()) overallHasInCoreView = false;
   }
 
   //
   // Setup private data members (should not throw an exception from here)
   //
-  numBlocks_ = numBlocks;
+  numBlocks_ = nBlocks;
   vecSpaces_ = Teuchos::rcp(new vecSpaces_t);
-  *vecSpaces_ = vecSpaces;
-  vecSpacesOffsets_ = Teuchos::rcp(new vecSpacesOffsets_t(numBlocks+1));
+  *vecSpaces_ = vecSpaces_in;
+  vecSpacesOffsets_ = Teuchos::rcp(new vecSpacesOffsets_t(nBlocks+1));
   (*vecSpacesOffsets_)[0] = 0;
   dim_ = 0;
-  for( int k = 1; k <= numBlocks; ++k ) {
-    const Index dim_km1 = vecSpaces[k-1]->dim();
+  for( int k = 1; k <= nBlocks; ++k ) {
+    const Index dim_km1 = vecSpaces_in[k-1]->dim();
     (*vecSpacesOffsets_)[k] = (*vecSpacesOffsets_)[k-1] + dim_km1;
     dim_ += dim_km1;
   }
-  isInCore_ = hasInCoreView;
+  isInCore_ = overallHasInCoreView;
 
 }
 
 
 template<class Scalar>
 void DefaultProductVectorSpace<Scalar>::uninitialize(
-  const ArrayView<RCP<const VectorSpaceBase<Scalar> > > &vecSpaces
+  const ArrayView<RCP<const VectorSpaceBase<Scalar> > > &vecSpaces_in
   )
 {
-  TEST_FOR_EXCEPT(!is_null(vecSpaces)); // ToDo: Implement!
+  TEST_FOR_EXCEPT(!is_null(vecSpaces_in)); // ToDo: Implement!
   vecSpaces_ = Teuchos::null;
   vecSpacesOffsets_ = Teuchos::null;
   numBlocks_ = -1;
@@ -188,10 +188,10 @@ bool DefaultProductVectorSpace<Scalar>::isCompatible(
   if( !pvsb )
     return false;
   // Validate that constituent vector spaces are compatible
-  const int numBlocks = this->numBlocks(); 
-  if( numBlocks != pvsb->numBlocks() )
+  const int nBlocks = this->numBlocks(); 
+  if( nBlocks != pvsb->numBlocks() )
     return false;
-  for( int i = 0; i < numBlocks; ++i ) {
+  for( int i = 0; i < nBlocks; ++i ) {
     if( !this->getBlock(i)->isCompatible(*pvsb->getBlock(i)) )
       return false;
   }
@@ -203,34 +203,32 @@ template<class Scalar>
 Teuchos::RCP< VectorBase<Scalar> >
 DefaultProductVectorSpace<Scalar>::createMember() const
 {
-  return Teuchos::rcp(
-    new DefaultProductVector<Scalar>(Teuchos::rcp(this,false))
-    );
+  return defaultProductVector<Scalar>(Teuchos::rcpFromRef(*this));
 }
 
 
 template<class Scalar>
 Scalar DefaultProductVectorSpace<Scalar>::scalarProd(
-  const VectorBase<Scalar>   &x_in
-  ,const VectorBase<Scalar>  &y_in
+  const VectorBase<Scalar> &x_in,
+  const VectorBase<Scalar> &y_in
   ) const
 {
-  const int numBlocks = this->numBlocks(); 
+  const int nBlocks = this->numBlocks(); 
   const ProductVectorBase<Scalar>
     &x = Teuchos::dyn_cast<const ProductVectorBase<Scalar> >(x_in),
     &y = Teuchos::dyn_cast<const ProductVectorBase<Scalar> >(y_in);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(
-    numBlocks!=x.productSpace()->numBlocks()
-    || numBlocks!=y.productSpace()->numBlocks()
+    nBlocks!=x.productSpace()->numBlocks()
+    || nBlocks!=y.productSpace()->numBlocks()
     );
 #endif
-  Scalar scalarProd = Teuchos::ScalarTraits<Scalar>::zero();
-  for( int k = 0; k < numBlocks; ++k )
-    scalarProd += (*vecSpaces_)[k]->scalarProd(
+  Scalar scalarProd_rtn = Teuchos::ScalarTraits<Scalar>::zero();
+  for( int k = 0; k < nBlocks; ++k )
+    scalarProd_rtn += (*vecSpaces_)[k]->scalarProd(
       *x.getVectorBlock(k),*y.getVectorBlock(k)
       );
-  return scalarProd;
+  return scalarProd_rtn;
 }
 
 
@@ -257,17 +255,17 @@ void DefaultProductVectorSpace<Scalar>::scalarProdsImpl(
     // ToDo: Remove this if(...) block once we have a DefaultProductMultiVector implementation!
   }
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
-  const int numBlocks = this->numBlocks(); 
+  const int nBlocks = this->numBlocks(); 
   const ProductMultiVectorBase<Scalar>
     &X = Teuchos::dyn_cast<const ProductMultiVectorBase<Scalar> >(X_in),
     &Y = Teuchos::dyn_cast<const ProductMultiVectorBase<Scalar> >(Y_in);
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( numBlocks!=X.productSpace()->numBlocks() || numBlocks!=Y.productSpace()->numBlocks() );
+  TEST_FOR_EXCEPT( nBlocks!=X.productSpace()->numBlocks() || nBlocks!=Y.productSpace()->numBlocks() );
 #endif
   Workspace<Scalar> _scalarProds_out(wss, m, false);
   std::fill( scalarProds_out.begin(), scalarProds_out.end(),
     ScalarTraits<Scalar>::zero() );
-  for( int k = 0; k < numBlocks; ++k ) {
+  for( int k = 0; k < nBlocks; ++k ) {
     (*vecSpaces_)[k]->scalarProds(
       *X.getMultiVectorBlock(k), *Y.getMultiVectorBlock(k), _scalarProds_out());
     for( int j = 0; j < m; ++j )
@@ -339,7 +337,7 @@ DefaultProductVectorSpace<Scalar>::clone() const
   // constituent vector spaces then we are in trouble!  The client is warned
   // in documentation!
   Teuchos::RCP<DefaultProductVectorSpace<Scalar> >
-    pvs = Teuchos::rcp(new DefaultProductVectorSpace<Scalar>());
+    pvs = productVectorSpace<Scalar>();
   pvs->numBlocks_          = numBlocks_;
   pvs->vecSpaces_          = vecSpaces_;
   pvs->vecSpacesOffsets_   = vecSpacesOffsets_;
@@ -391,10 +389,10 @@ void DefaultProductVectorSpace<Scalar>::describe(
       *out << this->description() << std::endl;
       if (numBlocks_ <= 0)
         break;
-      OSTab tab(out);
+      OSTab tab2(out);
       *out
         <<  "Constituent vector spaces V[0], V[1], ... V[numBlocks-1]:\n";
-      tab.incrTab();
+      OSTab tab3(out);
       for( int k = 0; k < numBlocks_; ++k ) {
         *out << "V["<<k<<"] = " << Teuchos::describe(*(*vecSpaces_)[k],verbLevel);
       }
