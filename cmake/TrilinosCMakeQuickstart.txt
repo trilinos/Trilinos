@@ -112,11 +112,26 @@ C) Configuring
 
     -D CMAKE_BUILD_TYPE:STRING=NONE \
     -D CMAKE_C_FLAGS:STRING="-04 --funrool-loops" \
-    -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
+    -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions"
 
   where LANGUAGE = C, CXX, Fortran, etc.
 
-(*) Overridding all compiler options:
+(*) Enabling checked STL implementation:
+
+  To turn on the checked STL implementation set:
+
+    -D Trilinos_ENABLE_CHECKED_STL:BOOL=ON
+
+  NOTE: By default, this will set -D_GLIBCXX_DEBUG as a compile option for all
+  C++ code.
+
+(*) Disabling shadowing warnings:
+
+  To disable shadowing warnings add the following option to cmake configure:
+
+    -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF
+
+(*) Overriding all compiler options
 
   To override all compiler options, including both strong warning options and
   debug/release options use:

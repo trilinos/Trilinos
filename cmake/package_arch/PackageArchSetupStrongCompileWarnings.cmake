@@ -69,8 +69,15 @@ FUNCTION(PACKAGE_ARCH_SETUP_STRONG_COMPILE_WARNINGS)
   # Setup and general flags
   #
 
-  SET(GENERAL_DEBUG_FLAGS "-g -O0 -D_GLIBCXX_DEBUG")
+  SET(GENERAL_DEBUG_FLAGS "-g -O0")
 
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_CHECKED_STL OFF
+    CACHE BOOL "Turn on checked STL checking (e.g. -D_GLIBCXX_DEBUG) or not." )
+ 
+  IF (${PROJECT_NAME}_ENABLE_CHECKED_STL)
+    SET(GENERAL_DEBUG_FLAGS "${GENERAL_DEBUG_FLAGS} -D_GLIBCXX_DEBUG")
+  ENDIF()
+ 
   SET(GENERAL_RELEASE_FLAGS "-O3")
 
   MULTILINE_SET(C_STRONG_COMPILE_WARNING_FLAGS
@@ -84,9 +91,20 @@ FUNCTION(PACKAGE_ARCH_SETUP_STRONG_COMPILE_WARNINGS)
   MULTILINE_SET(CXX_STRONG_COMPILE_WARNING_FLAGS
     ${C_STRONG_COMPILE_WARNING_FLAGS}
     " -Wwrite-strings" # Checks for non-const char * copy of string constants
-    " -Wshadow" # Warn about general shadowing issues
-    " -Woverloaded-virtual" # Warn about hiding virtual functions
     )
+
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS ON
+    CACHE BOOL "Turn on shadowing warnings or not" )
+  
+  IF (${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS)
+
+    MULTILINE_SET(CXX_STRONG_COMPILE_WARNING_FLAGS
+      ${CXX_STRONG_COMPILE_WARNING_FLAGS}
+      " -Wshadow" # Warn about general shadowing issues
+      " -Woverloaded-virtual" # Warn about hiding virtual functions
+      )
+
+  ENDIF()
 
   ADVANCED_SET( ${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS "-Werror"
     CACHE STRING "Flags for treating warnings as errors.  To turn off set to ''")
