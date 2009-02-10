@@ -15,9 +15,8 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
+PACKAGE_ADD_EXECUTABLE(
   dakota_pce
   SOURCES dakota_pce.cpp
-  ARGS -v
   COMM serial mpi
   )
