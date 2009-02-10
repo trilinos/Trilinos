@@ -88,14 +88,16 @@ void VectorDefaultBase<Scalar>::describe(
 {
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
-  RCP<FancyOStream> out = rcp(&out_arg,false);
+  RCP<FancyOStream> out = Teuchos::rcpFromRef(out_arg);
   OSTab tab(out);
   *out << this->description() << "\n";
-  tab.incrTab();
-  if (verbLevel >= Teuchos::VERB_HIGH) {
-    const ConstDetachedVectorView<Scalar> dvv(*this);
-    for( Index i = 0; i < dvv.subDim(); ++i )
-      *out << i << ":" << dvv[i] << std::endl;
+  if (this->space()->dim()) {
+    tab.incrTab();
+    if (verbLevel >= Teuchos::VERB_HIGH) {
+      const ConstDetachedVectorView<Scalar> dvv(*this);
+      for( Index i = 0; i < dvv.subDim(); ++i )
+        *out << i << ":" << dvv[i] << std::endl;
+    }
   }
 }
 

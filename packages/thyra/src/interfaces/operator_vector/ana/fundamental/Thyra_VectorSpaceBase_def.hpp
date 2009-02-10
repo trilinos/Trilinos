@@ -131,12 +131,11 @@ Thyra::createMember(
 {
   RCP<VectorBase<Scalar> > v = vs->createMember();
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
-  applyOp<Scalar>(
-    RTOpPack::TOpAssignScalar<Scalar>(ScalarTraits<Scalar>::nan()),
-    0, (const VectorBase<Scalar>**)NULL,
-    1, &Teuchos::tuple<VectorBase<Scalar>*>(&*v)[0],
-    (RTOpPack::ReductTarget*)NULL
-    );
+  if (vs->dim()) {
+    applyOp<Scalar>(
+      RTOpPack::TOpAssignScalar<Scalar>(ScalarTraits<Scalar>::nan()),
+      Teuchos::null, Teuchos::tuple(v.ptr()), Teuchos::null );
+  }
 #endif  
   Teuchos::set_extra_data( makeHaveOwnership(vs), "VectorSpaceBase",
     Teuchos::outArg(v) );
@@ -151,7 +150,7 @@ Thyra::createMember(
   const VectorSpaceBase<Scalar> &vs, const std::string &label
   )
 {
-  return createMember(Teuchos::rcp(&vs,false),label);
+  return createMember(Teuchos::rcpFromRef(vs), label);
 }
 
 
@@ -165,11 +164,11 @@ Thyra::createMembers(
   RCP<MultiVectorBase<Scalar> >
     mv = vs->createMembers(numMembers);
 #ifdef THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
-  applyOp<Scalar>(
-    RTOpPack::TOpAssignScalar<Scalar>(ScalarTraits<Scalar>::nan()),
-    Teuchos::null, Teuchos::tuple(mv.ptr()),
-    Teuchos::null
-    );
+  if (vs->dim()) {
+    applyOp<Scalar>(
+      RTOpPack::TOpAssignScalar<Scalar>(ScalarTraits<Scalar>::nan()),
+      Teuchos::null, Teuchos::tuple(mv.ptr()), Teuchos::null );
+  }
 #endif  
   Teuchos::set_extra_data(makeHaveOwnership(vs), "VectorSpaceBase",
     Teuchos::outArg(mv));

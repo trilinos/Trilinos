@@ -104,9 +104,9 @@ Thyra::create_VectorSpace(
   RCP<DefaultSpmdVectorSpace<double> >
     vs = Teuchos::rcp(
       new DefaultSpmdVectorSpace<double>(
-        comm
-        ,localSubDim
-        ,epetra_map->NumGlobalElements()
+        comm,
+        localSubDim,
+        epetra_map->NumGlobalElements()
         )
       );
 #ifndef TEUCHOS_DEBUG

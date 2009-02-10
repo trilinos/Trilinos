@@ -110,7 +110,8 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductVector.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductVectorDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductVectorSpace.hpp\
-  $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductVectorSpaceDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductVectorSpace_decl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductVectorSpace_def.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultScaledAdjointLinearOp.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultScaledAdjointLinearOpDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultZeroLinearOp.hpp\
@@ -171,6 +172,7 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_describeLinearOpDecl.hpp
 
 SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT = \
+  $(srcdir)/support/operator_vector/client_support/Thyra_DefaultProductVectorSpace.cpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_TestingTools.cpp
 
 SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \

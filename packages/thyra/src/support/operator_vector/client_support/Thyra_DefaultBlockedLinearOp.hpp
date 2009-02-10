@@ -33,6 +33,8 @@
 
 #include "Thyra_DefaultBlockedLinearOpDecl.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
+#include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_ProductMultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_Utils.hpp"
@@ -153,18 +155,8 @@ void DefaultBlockedLinearOp<Scalar>::endBlockFill()
         );
     }
 #endif
-    productRange_
-      = rcp(
-        new DefaultProductVectorSpace<Scalar>(
-          numRowBlocks_,&rangeBlocks_[0]
-          )
-        );
-    productDomain_
-      = rcp(
-        new DefaultProductVectorSpace<Scalar>(
-          numColBlocks_,&domainBlocks_[0]
-          )
-        );
+    productRange_ = productVectorSpace<Scalar>(rangeBlocks_());
+    productDomain_ = productVectorSpace<Scalar>(domainBlocks_());
   }
   numRowBlocks_ = productRange_->numBlocks();
   numColBlocks_ = productDomain_->numBlocks();

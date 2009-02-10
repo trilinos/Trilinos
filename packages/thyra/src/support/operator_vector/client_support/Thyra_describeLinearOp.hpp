@@ -58,7 +58,7 @@ void Thyra::describeLinearOp(
     return;
   }
   const Index dimDomain = domain->dim(), dimRange = range->dim();
-  if(verbLevel >= Teuchos::VERB_EXTREME) {
+  if ( dimDomain > 0 && dimRange > 0 && verbLevel >= Teuchos::VERB_EXTREME ) {
     // Copy into dense matrix by column
     Teuchos::RCP<VectorBase<DomainScalar> > e_j = createMember(domain);
     Teuchos::RCP<VectorBase<RangeScalar> >  t   = createMember(range); // temp column

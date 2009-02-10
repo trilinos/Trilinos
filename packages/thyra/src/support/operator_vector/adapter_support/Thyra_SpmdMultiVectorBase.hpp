@@ -422,15 +422,15 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
  
   DetachedMultiVectorView<Scalar>
     Y_local(
-      *Y
-      ,real_trans(M_trans)==NOTRANS ? Range1D(localOffset_,localOffset_+localSubDim_-1) : Range1D()
-      ,Range1D()
+      *Y,
+      real_trans(M_trans)==NOTRANS ? Range1D(localOffset_,localOffset_+localSubDim_-1) : Range1D(),
+      Range1D()
       );
   ConstDetachedMultiVectorView<Scalar>
     M_local(
-      *this
-      ,Range1D(localOffset_,localOffset_+localSubDim_-1)
-      ,Range1D()
+      *this,
+      Range1D(localOffset_,localOffset_+localSubDim_-1),
+      Range1D()
       );
   ConstDetachedMultiVectorView<Scalar>
     X_local(
@@ -484,7 +484,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   timer.start();
 #endif
  
-  Workspace<Scalar> Y_local_tmp_store(wss,Y_local.subDim()*Y_local.numSubCols(),false);
+  Workspace<Scalar> Y_local_tmp_store(wss, Y_local.subDim()*Y_local.numSubCols(), false);
   RTOpPack::SubMultiVectorView<Scalar> Y_local_tmp;
   Scalar localBeta;
   if( real_trans(M_trans) == TRANS && globalDim_ > localSubDim_ ) {
@@ -547,21 +547,27 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
       default: TEST_FOR_EXCEPT(true);
     }
   }
-  blas_.GEMM(
-    t_transp // TRANSA
-    ,Teuchos::NO_TRANS // TRANSB
-    ,Y_local.subDim() // M
-    ,Y_local.numSubCols() // N
-    ,real_trans(M_trans)==NOTRANS ? M_local.numSubCols() : M_local.subDim() // K
-    ,alpha // ALPHA
-    ,const_cast<Scalar*>(M_local.values()) // A
-    ,M_local.leadingDim() // LDA
-    ,const_cast<Scalar*>(X_local.values()) // B
-    ,X_local.leadingDim() // LDB
-    ,localBeta // BETA
-    ,Y_local_tmp.values().get() // C
-    ,Y_local_tmp.leadingDim() // LDC
-    );
+  if (M_local.numSubCols() > 0) {
+    blas_.GEMM(
+      t_transp // TRANSA
+      ,Teuchos::NO_TRANS // TRANSB
+      ,Y_local.subDim() // M
+      ,Y_local.numSubCols() // N
+      ,real_trans(M_trans)==NOTRANS ? M_local.numSubCols() : M_local.subDim() // K
+      ,alpha // ALPHA
+      ,const_cast<Scalar*>(M_local.values()) // A
+      ,M_local.leadingDim() // LDA
+      ,const_cast<Scalar*>(X_local.values()) // B
+      ,X_local.leadingDim() // LDB
+      ,localBeta // BETA
+      ,Y_local_tmp.values().get() // C
+      ,Y_local_tmp.leadingDim() // LDC
+      );
+  }
+  else {
+    std::fill( Y_local_tmp.values().begin(), Y_local_tmp.values().end(),
+      ST::zero() );
+  }
 #ifdef THYRA_SPMD_MULTI_VECTOR_BASE_PRINT_TIMES
   timer.stop();
   std::cout

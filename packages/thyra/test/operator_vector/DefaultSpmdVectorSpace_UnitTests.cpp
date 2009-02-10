@@ -18,9 +18,11 @@ namespace {
 using Teuchos::as;
 using Teuchos::null;
 using Teuchos::RCP;
-using Thyra::VectorBase;
 using Thyra::VectorSpaceBase;
+using Thyra::VectorBase;
+using Thyra::MultiVectorBase;
 using Thyra::createMember;
+using Thyra::createMembers;
 using Thyra::DefaultSpmdVectorSpace;
 using Thyra::defaultSpmdVectorSpace;
 using Thyra::ConstDetachedVectorView;
@@ -59,6 +61,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, defaultConstruct,
   TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(-1));
   TEST_EQUALITY(vs->mapCode(), as<Ordinal>(-1));
   TEST_EQUALITY(vs->dim(), as<Ordinal>(-1));
+  
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
@@ -80,6 +83,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, serialConstruct,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
   serialConstruct )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, serialConstructZeroSize,
+  Scalar )
+{
+
+  ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    defaultSpmdVectorSpace<Scalar>(0));
+  TEST_EQUALITY(vs->getComm(), null);
+  TEST_EQUALITY(vs->localOffset(), as<Ordinal>(0));
+  TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(0));
+  TEST_EQUALITY(vs->mapCode(), as<Ordinal>(0));
+  TEST_EQUALITY(vs->dim(), as<Ordinal>(0));
+
+  ECHO(const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs));
+  out << "v = " << *v;
+
+  ECHO(const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, 0));
+  out << "mv = " << *mv;
+
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
+  serialConstructZeroSize )
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, parallelConstruct,
@@ -131,6 +158,44 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, locallyReplicatedPara
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
   locallyReplicatedParallelConstruct )
+
+
+//TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, parallelConstructEmptyProc,
+//  Scalar )
+//{
+//
+//  ECHO(const RCP<const Teuchos::Comm<Ordinal> > comm =
+//    Teuchos::DefaultComm<Teuchos_Ordinal>::getComm());
+//  const int procRank = comm->getRank();
+//  ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+//    defaultSpmdVectorSpace<Scalar>(comm, procRank == 0 ? 0 : g_localDim, -1));
+//  TEST_EQUALITY(vs->getComm(), comm);
+//
+//  if (procRank == 0) {
+//    TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(0));
+//  }
+//  else {
+//    TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));
+//  }
+//  TEST_EQUALITY(vs->dim(), as<Ordinal>((comm->getSize()-1)*g_localDim));
+//
+//  if (vs->dim()) {
+//
+//    ECHO(const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs));
+//    ECHO(V_S(v.ptr(), as<Scalar>(1.0)));
+//    out << "v = " << *v;
+//    
+//    // ToDo: Fix MultiVector to work with empty processors
+//    //ECHO(const RCP<MultiVectorBase<Scalar> > mv = createMembers<Scalar>(vs, 1));
+//    //ECHO(assign(mv.ptr(), as<Scalar>(1.0)));
+//    //out << "mv = " << *mv;
+//
+//  }
+//
+//}
+//
+//TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
+//  parallelConstructEmptyProc )
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, parallelFullExtract,

@@ -121,12 +121,10 @@ void DefaultSpmdMultiVector<Scalar>::initialize(
   )
 {
   const Index localSubDim = spmdRangeSpace->localSubDim();
-  initialize(
-    spmdRangeSpace,
-    domainSpace,
-    Teuchos::arcp<Scalar>( localSubDim ? localSubDim*domainSpace->dim() : 0 ),
-    localSubDim
-    );
+  ArrayRCP<Scalar> values;
+  if (localSubDim)
+    values = Teuchos::arcp<Scalar>(localSubDim * domainSpace->dim());
+  initialize(spmdRangeSpace, domainSpace, values, localSubDim);
 }
 
 template<class Scalar>
@@ -140,7 +138,7 @@ void DefaultSpmdMultiVector<Scalar>::initialize(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(spmdRangeSpace.get()==NULL);
   TEST_FOR_EXCEPT(domainSpace.get()==NULL);
-  TEST_FOR_EXCEPT(localValues.get()==NULL);
+  TEST_FOR_EXCEPT(spmdRangeSpace->dim() && localValues.get()==NULL);
   TEST_FOR_EXCEPT(leadingDim < spmdRangeSpace->localSubDim());
 #endif
   spmdRangeSpace_ = spmdRangeSpace;

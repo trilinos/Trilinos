@@ -116,11 +116,14 @@ template<class Scalar>
 RCP<VectorBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::createMember() const
 {
+  ArrayRCP<Scalar> values;
+  if (localSubDim_)
+    values = Teuchos::arcp<Scalar>(localSubDim_);
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
       Teuchos::rcp(this,false),
-      Teuchos::arcp<Scalar>(localSubDim_),
-      1
+      values,
+      1 // stride
       )
     );
 }
