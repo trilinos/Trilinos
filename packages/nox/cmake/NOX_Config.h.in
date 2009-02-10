@@ -31,3 +31,6 @@
 
 /* If optional MF TPL library is available */
 #cmakedefine HAVE_LOCA_MF
+
+/* Hard-coding this until we get a check in Teuchos */
+#define HAVE_LAPACK_GGEV
