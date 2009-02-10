@@ -473,8 +473,8 @@ class LinSysCoreFilter : public Filter {
     SNL_FEI_Structure* problemStructure_;
     bool matrixAllocated_;
 
-    feiArray<int> rowIndices_;
-    feiArray<int> rowColOffsets_, colIndices_;
+    std::vector<int> rowIndices_;
+    std::vector<int> rowColOffsets_, colIndices_;
 
     fei::FillableMat *Kid_, *Kdi_, *Kdd_;
     fei::CSRMat csrD, csrKid, csrKdi, csrKdd, tmpMat1_, tmpMat2_;

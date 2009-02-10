@@ -88,8 +88,8 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
    problemStructure_(probStruct),
    matrixAllocated_(false),
    rowIndices_(),
-   rowColOffsets_(0, 256),
-   colIndices_(0, 256),
+   rowColOffsets_(0),
+   colIndices_(0),
    nodeIDType_(0),
    eqnCommMgr_(NULL),
    eqnCommMgr_put_(NULL),
@@ -1313,8 +1313,8 @@ int LinSysCoreFilter::getFromMatrix(int patternID,
 			    const GlobalID* colIDs,
 			    double** matrixEntries)
 {
-   feiArray<int> rowIndices;
-   feiArray<int> rowColOffsets, colIndices;
+   std::vector<int> rowIndices;
+   std::vector<int> rowColOffsets, colIndices;
    int numColsPerRow;
 
    //We're going to supply a little non-standard behavior here that is
@@ -1346,7 +1346,7 @@ int LinSysCoreFilter::getFromMatrix(int patternID,
    }
    else {
      CHK_ERR( getFromMatrix(rowIndices.size(), &rowIndices[0],
-			  rowColOffsets.dataPtr(), colIndices.dataPtr(),
+			  &rowColOffsets[0], &colIndices[0],
 			  numColsPerRow, matrixEntries) );
    }
 
@@ -1423,7 +1423,7 @@ int LinSysCoreFilter::getFromRHS(int patternID,
                          const GlobalID* rowIDs,
                          double* vectorEntries)
 {
-  feiArray<int> rowIndices;
+  std::vector<int> rowIndices;
 
   CHK_ERR( problemStructure_->getPatternScatterIndices(patternID, 
 						       rowIDs, rowIndices) );
@@ -1498,7 +1498,7 @@ int LinSysCoreFilter::generalCoefInput(int patternID,
    //a list of column-entities for each row-entities. Thus, we now have a list
    //of column-indices for each row index...
    int numRows = rowIndices_.size();
-   int numCols = colIndices_.length();
+   int numCols = colIndices_.size();
 
    if (Filter::logStream() != NULL) {
      if (coefs != NULL) {
@@ -1524,7 +1524,7 @@ int LinSysCoreFilter::generalCoefInput(int patternID,
    if (assemblyMode == ASSEMBLE_PUT) CHK_ERR( exchangeRemoteEquations() );
 
    if (coefs != NULL) {
-     CHK_ERR( assembleEqns(numRows, numColsPerRow, &rowIndices_[0], colIndices_.dataPtr(), coefs, false, 0, NULL, NULL, false, assemblyMode) );
+     CHK_ERR( assembleEqns(numRows, numColsPerRow, &rowIndices_[0], &colIndices_[0], coefs, false, 0, NULL, NULL, false, assemblyMode) );
    }
       
    if (rhsCoefs != NULL) {

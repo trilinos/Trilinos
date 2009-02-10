@@ -395,8 +395,8 @@ class FEDataFilter : public Filter {
 
     feiArray<GlobalID> penCRIDs_;
 
-    feiArray<int> rowIndices_;
-    feiArray<int> rowColOffsets_, colIndices_;
+    std::vector<int> rowIndices_;
+    std::vector<int> rowColOffsets_, colIndices_;
 
     EqnCommMgr* eqnCommMgr_; //equation communication manager
     EqnCommMgr* eqnCommMgr_put_; //only created if users call

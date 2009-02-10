@@ -281,14 +281,14 @@ class SNL_FEI_Structure : public Lookup {
    int getPatternScatterIndices(int patternID,
                                 const GlobalID* rowNodes,
                                 const GlobalID* colNodes,
-                                feiArray<int>& rowIndices,
-				feiArray<int>& rowColOffsets,
+                                std::vector<int>& rowIndices,
+				std::vector<int>& rowColOffsets,
 				int& colIndicesPerRow,
-                                feiArray<int>& colIndices);
+                                std::vector<int>& colIndices);
 
    int getPatternScatterIndices(int patternID,
                                 const GlobalID* rowNodes,
-                                feiArray<int>& rowIndices);
+                                std::vector<int>& rowIndices);
 
 
    /////////////////////////////////////////////////////////////////////////////
@@ -581,7 +581,7 @@ class SNL_FEI_Structure : public Lookup {
 
    int setPatternRowColOffsets(PatternDescriptor& pattern,
 			       int numColIndices,
-			       feiArray<int>& rowColOffsets);
+			       std::vector<int>& rowColOffsets);
 
    int getNodeIndices_simple(NodeDescriptor** nodes, int numNodes,
 			     int fieldID,
@@ -607,18 +607,18 @@ class SNL_FEI_Structure : public Lookup {
 			   int* blkSizes, int& blkOffset);
 
    int getNodeMajorIndices(NodeDescriptor** nodes, int numNodes,
-                           feiArray<int>* fieldIDs,
-                           feiArray<int>& fieldsPerNode,
-                           feiArray<int>& scatterIndices);
+                           std::vector<int>* fieldIDs,
+                           std::vector<int>& fieldsPerNode,
+                           std::vector<int>& scatterIndices);
 
    int getFieldMajorIndices(NodeDescriptor** nodes, int numNodes,
                             int** fieldIDs, int* fieldsPerNode,
                             int* scatterIndices, int& offset);
 
    int getFieldMajorIndices(NodeDescriptor** nodes, int numNodes,
-                                          feiArray<int>* fieldIDs,
-                                          feiArray<int>& fieldsPerNode,
-                                          feiArray<int>& scatterIndices);
+                                          std::vector<int>* fieldIDs,
+                                          std::vector<int>& fieldsPerNode,
+                                          std::vector<int>& scatterIndices);
 
    void calcGlobalEqnInfo(int numLocallyOwnedNodes, 
 			  int numLocalEqns,

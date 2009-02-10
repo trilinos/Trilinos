@@ -11,8 +11,7 @@
 #include <fei_utils.hpp>
 
 #include <fei_FEI_Impl.hpp>
-#include "fei_Record.hpp"
-#include <feiArray.hpp>
+#include <fei_Record.hpp>
 #include <fei_TemplateUtils.hpp>
 #include <fei_ParameterSet.hpp>
 #include <fei_base.hpp>
@@ -1422,27 +1421,27 @@ int fei::FEI_Impl::getBlockElemSolution(GlobalID elemBlockID,
   const int* fIDs= pattern->getFieldIDs();
   const int* numFieldsPerID = pattern->getNumFieldsPerID();
 
-  feiArray<int> fieldIDs;
+  std::vector<int> fieldIDs;
   int foffset = 0;
   int i;
   for(i=0; i<numIDs; ++i) {
     if (idTypes[i] == elemIDType_) {
       for(int j=0; j<numFieldsPerID[i]; ++j) {
-	fieldIDs.append(fIDs[foffset++]);
+	fieldIDs.push_back(fIDs[foffset++]);
       }
       break;
     }
     foffset += numFieldsPerID[i];
   }
 
-  if (fieldIDs.length() < 1) {
+  if (fieldIDs.size() < 1) {
     ERReturn(-1);
   }
 
   int offset = 0;
   for(i=0; i<numElems; ++i) {
     foffset = offset;
-    for(int j=0; j<fieldIDs.length(); ++j) {
+    for(size_t j=0; j<fieldIDs.size(); ++j) {
       int fieldSize;
       getFieldSize(fieldIDs[j], fieldSize);
 
@@ -1703,7 +1702,7 @@ int fei::FEI_Impl::putNodalFieldData(int fieldID,
   if (fieldID < 0) {
     bool data_passed = false;
     if (wrapper_[0].get() != NULL) {
-      feiArray<int> numbers(numNodes);
+      std::vector<int> numbers(numNodes);
       for(int i=0; i<numNodes; ++i) {
 	err = rowSpace_->getGlobalBlkIndex(nodeIDType_, nodeIDs[i], numbers[i]);
 	if (err != 0) {

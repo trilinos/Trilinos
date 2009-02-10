@@ -10,7 +10,6 @@
 
 #include <fei_defs.h>
 
-#include <feiArray.hpp>
 #include <fei_Record.hpp>
 #include <fei_Pattern.hpp>
 

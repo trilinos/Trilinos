@@ -10,7 +10,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <fei_macros.hpp>
-#include <feiArray.hpp>
+#include <vector>
 
 /** PatternDescriptor holds the information that the FEI implementation
   needs to know about an 'access pattern'. An
@@ -32,13 +32,13 @@
      interleaveStrategy
   
   Note: the tables of fieldIDs (for rows and cols) consist of lists
-  of feiArray<int> objects. The length of the ith feiArray<int> in this list is
+  of std::vector<int> objects. The length of the ith std::vector<int> in this list is
   the number-of-fields that correspond to the ith row of the pattern. The 
-  number of feiArray<int>s in the list is the number of rows in the pattern.
-  The list of feiArray<int>s is allocated when the function 'setNumRowIDs' is
+  number of std::vector<int>s in the list is the number of rows in the pattern.
+  The list of std::vector<int>s is allocated when the function 'setNumRowIDs' is
   called (and similarly for setNumColIDsPerRow).
   
-  Important Note!!! Don't change the size of the feiArray<int>s returned by the
+  Important Note!!! Don't change the size of the std::vector<int>s returned by the
   functions 'getNumFieldsPerRow' and 'getNumFieldsPerCol'. The lengths
   of these arrays must be the value set via 'setNumRowIDs' and
   'setNumColIDs', in order for the fieldIDs tables to be sized consistently.
@@ -52,17 +52,17 @@ class PatternDescriptor {
    int getPatternID() {return(patternID_);}
    void setPatternID(int ptrnID) {patternID_ = ptrnID;}
 
-   int getNumRowIDs() {return(fieldsPerRow_.length());}
+   int getNumRowIDs() {return(fieldsPerRow_.size());}
    int setNumRowIDs(int num);
 
-   int getNumColIDsPerRow() {return(fieldsPerCol_.length());}
+   int getNumColIDsPerRow() {return(fieldsPerCol_.size());}
    int setNumColIDsPerRow(int num);
 
-   feiArray<int>& getNumFieldsPerRow() {return(fieldsPerRow_);}
-   feiArray<int>* getRowFieldIDs() {return(rowFieldIDs_);}
+   std::vector<int>& getNumFieldsPerRow() {return(fieldsPerRow_);}
+   std::vector<int>* getRowFieldIDs() {return(rowFieldIDs_);}
 
-   feiArray<int>& getNumFieldsPerCol() {return(fieldsPerCol_);}
-   feiArray<int>* getColFieldIDs() {return(colFieldIDs_);}
+   std::vector<int>& getNumFieldsPerCol() {return(fieldsPerCol_);}
+   std::vector<int>* getColFieldIDs() {return(colFieldIDs_);}
 
    int getInterleaveStrategy() const {return(interleaveStrategy_);}
    void setInterleaveStrategy(int strat) {interleaveStrategy_ = strat;}
@@ -79,11 +79,11 @@ class PatternDescriptor {
 
    int patternID_;
 
-   feiArray<int> fieldsPerRow_;
-   feiArray<int>* rowFieldIDs_;
+   std::vector<int> fieldsPerRow_;
+   std::vector<int>* rowFieldIDs_;
 
-   feiArray<int> fieldsPerCol_;
-   feiArray<int>* colFieldIDs_;
+   std::vector<int> fieldsPerCol_;
+   std::vector<int>* colFieldIDs_;
 
    int interleaveStrategy_;
 };

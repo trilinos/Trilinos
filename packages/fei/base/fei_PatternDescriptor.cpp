@@ -8,16 +8,14 @@
 
 #include <fei_macros.hpp>
 
-#include <feiArray.hpp>
-
 #include <fei_PatternDescriptor.hpp>
 
 //------------------------------------------------------------------------------
 PatternDescriptor::PatternDescriptor()
  : patternID_(-1),
-   fieldsPerRow_(0, 4),
+   fieldsPerRow_(),
    rowFieldIDs_(NULL),
-   fieldsPerCol_(0, 4),
+   fieldsPerCol_(),
    colFieldIDs_(NULL),
    interleaveStrategy_(-1)
 {
@@ -26,8 +24,8 @@ PatternDescriptor::PatternDescriptor()
 //------------------------------------------------------------------------------
 PatternDescriptor::~PatternDescriptor()
 {
-   if (fieldsPerRow_.length() > 0) delete [] rowFieldIDs_;
-   if (fieldsPerCol_.length() > 0) delete [] colFieldIDs_;
+   if (fieldsPerRow_.size() > 0) delete [] rowFieldIDs_;
+   if (fieldsPerCol_.size() > 0) delete [] colFieldIDs_;
 }
 
 //------------------------------------------------------------------------------
@@ -37,7 +35,7 @@ int PatternDescriptor::setNumRowIDs(int num)
 //data structures. If a resize or an allocation fails, return -1. Otherwise,
 //return 0.
 //
-   if (fieldsPerRow_.length() > 0) {
+   if (fieldsPerRow_.size() > 0) {
       delete [] rowFieldIDs_;
    }
 
@@ -45,7 +43,7 @@ int PatternDescriptor::setNumRowIDs(int num)
 
    if (num == 0) return(0);
 
-   rowFieldIDs_ = new feiArray<int>[num];
+   rowFieldIDs_ = new std::vector<int>[num];
 
    return(0);
 }
@@ -57,7 +55,7 @@ int PatternDescriptor::setNumColIDsPerRow(int num)
 //data structures. If a resize or an allocation fails, return -1. Otherwise,
 //return 0.
 //
-   if (fieldsPerCol_.length() > 0) {
+   if (fieldsPerCol_.size() > 0) {
       delete [] colFieldIDs_;
    }
 
@@ -65,7 +63,7 @@ int PatternDescriptor::setNumColIDsPerRow(int num)
 
    if (num == 0) return(0);
 
-   colFieldIDs_ = new feiArray<int>[num];
+   colFieldIDs_ = new std::vector<int>[num];
 
    return(0);
 }

@@ -70,8 +70,8 @@ FEDataFilter::FEDataFilter(FEI_Implementation* owner,
    problemStructure_(probStruct),
    penCRIDs_(0, 1000),
    rowIndices_(),
-   rowColOffsets_(0, 256),
-   colIndices_(0, 256),
+   rowColOffsets_(0),
+   colIndices_(0),
    eqnCommMgr_(NULL),
    eqnCommMgr_put_(NULL),
    maxElemRows_(0),
@@ -150,8 +150,8 @@ FEDataFilter::FEDataFilter(const FEDataFilter& src)
    problemStructure_(NULL),
    penCRIDs_(0, 1000),
    rowIndices_(),
-   rowColOffsets_(0, 256),
-   colIndices_(0, 256),
+   rowColOffsets_(0),
+   colIndices_(0),
    eqnCommMgr_(NULL),
    eqnCommMgr_put_(NULL),
    maxElemRows_(0),
@@ -936,8 +936,8 @@ int FEDataFilter::getFromMatrix(int patternID,
 			    const GlobalID* colIDs,
 			    double** matrixEntries)
 {
-   feiArray<int> rowIndices;
-   feiArray<int> rowColOffsets, colIndices;
+   std::vector<int> rowIndices;
+   std::vector<int> rowColOffsets, colIndices;
    int numColsPerRow;
 
    //We're going to supply a little non-standard behavior here that is
@@ -970,7 +970,7 @@ int FEDataFilter::getFromMatrix(int patternID,
    }
    else {
      err = getFromMatrix(rowIndices.size(), &rowIndices[0],
-			 rowColOffsets.dataPtr(), colIndices.dataPtr(),
+			 &rowColOffsets[0], &colIndices[0],
 			 numColsPerRow, matrixEntries);
    }
 
@@ -1047,7 +1047,7 @@ int FEDataFilter::getFromRHS(int patternID,
                          const GlobalID* rowIDs,
                          double* vectorEntries)
 {
-  feiArray<int> rowIndices;
+  std::vector<int> rowIndices;
 
   CHK_ERR( problemStructure_->getPatternScatterIndices(patternID, 
 						       rowIDs, rowIndices) );
@@ -1119,7 +1119,7 @@ int FEDataFilter::generalCoefInput(int patternID,
    //a list of column-entities for each row-entities. Thus, we now have a list
    //of column-indices for each row index...
    int numRows = rowIndices_.size();
-   int numCols = colIndices_.length();
+   int numCols = colIndices_.size();
 
    if (Filter::logStream() != NULL) {
      if (coefs != NULL) {
@@ -1146,7 +1146,7 @@ int FEDataFilter::generalCoefInput(int patternID,
 
    if (coefs != NULL) {
      CHK_ERR( assembleEqns(numRows, numColsPerRow, &rowIndices_[0],
-                           colIndices_.dataPtr(), coefs, false, assemblyMode) );
+                           &colIndices_[0], coefs, false, assemblyMode) );
    }
 
    if (rhsCoefs != NULL) {
