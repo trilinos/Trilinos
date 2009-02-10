@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
   double gamma = 2.0;
   double scale = 1.0;
   int ierr = 0;
-  double reltol = 1.0e-9;
+  double reltol = 1.0e-8;
   double abstol = 1.0e-9;
 
   alpha = alpha / scale;
