@@ -33,9 +33,12 @@
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 
+
 namespace Thyra {
 
+
 // Virtual functions with default implementations
+
 
 template<class RangeScalar, class DomainScalar>
 bool LinearOpBase<RangeScalar,DomainScalar>::applySupports(
@@ -47,6 +50,7 @@ bool LinearOpBase<RangeScalar,DomainScalar>::applySupports(
     );
 }
 
+
 template<class RangeScalar, class DomainScalar>
 bool LinearOpBase<RangeScalar,DomainScalar>::applyTransposeSupports(
   const EConj conj
@@ -54,6 +58,7 @@ bool LinearOpBase<RangeScalar,DomainScalar>::applyTransposeSupports(
 {
   return false;
 }
+
 
 template<class RangeScalar, class DomainScalar>
 void LinearOpBase<RangeScalar,DomainScalar>::applyTranspose(
@@ -75,6 +80,7 @@ void LinearOpBase<RangeScalar,DomainScalar>::applyTranspose(
     );
 }
 
+
 template<class RangeScalar, class DomainScalar>
 RCP<const LinearOpBase<RangeScalar,DomainScalar> > 
 LinearOpBase<RangeScalar,DomainScalar>::clone() const
@@ -82,6 +88,33 @@ LinearOpBase<RangeScalar,DomainScalar>::clone() const
   return Teuchos::null;
 }
 
+
 }	// end namespace Thyra
+
+
+// ToDo: You can move this back to the decl file after you have refactored
+// apply(...) to not use raw pointers.  Otherwise the &*Y call needs to have
+// the definition of MultiVectorBase.
+
+
+template<class Scalar>
+void Thyra::apply(
+  const LinearOpBase<Scalar> &M,
+  const EOpTransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  const Ptr<MultiVectorBase<Scalar> > &Y,
+  const Scalar alpha,
+  const Scalar beta
+  )
+{
+  if(real_trans(M_trans)==NOTRANS) {
+    M.apply(transToConj(M_trans), X, &*Y, alpha, beta);
+  }
+  else {
+    M.applyTranspose(transToConj(M_trans), X, &*Y, alpha, beta);
+  }
+}
+
+
 
 #endif // THYRA_LINEAR_OP_BASE_HPP

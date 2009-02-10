@@ -595,6 +595,18 @@ void Thyra::apply(
 }
 
 
+template<class Scalar>
+void Thyra::apply(
+  const LinearOpBase<Scalar> &M,
+  const EOpTransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  const Ptr<MultiVectorBase<Scalar> > &Y,
+  const Scalar alpha,
+  const Scalar beta
+  );
+// See the *.hpp and *.cpp file for details on above!
+
+
 template<class RangeScalar, class DomainScalar>
 inline
 void Thyra::applyTranspose(
@@ -607,26 +619,6 @@ void Thyra::applyTranspose(
   )
 {
   M.applyTranspose(conj,X,Y,alpha,beta);
-}
-
-
-template<class Scalar>
-inline
-void Thyra::apply(
-  const LinearOpBase<Scalar> &M,
-  const EOpTransp M_trans,
-  const MultiVectorBase<Scalar> &X,
-  const Ptr<MultiVectorBase<Scalar> > &Y,
-  const Scalar alpha,
-  const Scalar beta
-  )
-{
-  if(real_trans(M_trans)==NOTRANS) {
-    M.apply(transToConj(M_trans),X,&*Y,alpha,beta);
-  }
-  else {
-    M.applyTranspose(transToConj(M_trans),X,&*Y,alpha,beta);
-  }
 }
 
 
