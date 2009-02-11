@@ -1,0 +1,610 @@
+--------------------------------------------------------------------------------
+                       Trilinos CMake Transition Log
+--------------------------------------------------------------------------------
+
+The purpose of this document is to track the progress made in the transition
+of Trilinos to the CMake build system.
+
+For each package, the following bits of information should be filled out:
+
+     Package: The name of the package
+    
+     Package Transition Lead: This is the name of a person who has the primary
+     responsibility to transition the package to the CMake build system and to
+     certify that the transition is complete.
+ 
+     Status: The status of the Trilinos transition effort for that package.
+     Are the basic libraries at least there?  Are most of the tests and
+     examples supported?  Are all of the important configure-time options
+     supported?  Is the transition of the package complete?
+ 
+     Final Certification Date:  When the package certification is complete
+
+     Final Certification Evidence: What evidence can you provide that the
+     package has all of the needed support in the CMake system?  If you are
+     package lead you can determine this any way you would like.
+
+
+-------------------------------------------------------------------------------
+
+Package: Teuchos
+
+Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
+
+Status: Mostly finished but a few tests and examples need to be added.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: RTOp
+
+Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
+
+Status: Should be completely finished but a careful final certification should
+be done.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Kokkos
+
+Package Transition Lead: [???]
+
+Status: Has basic CMake support for libraries and a few tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Epetra
+
+Package Transition Lead: [???]
+
+Status: Has basic CMake support for libraries and a few tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Stokhos
+
+Package Transition Lead: [???]
+
+Status: Has basic CMake support for libraries and a few tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Sacado
+
+Package Transition Lead: [???]
+
+Status: Has mostly complete CMake support but there are some problem-some
+tests that still need to be converted.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Zoltan
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Shards
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Intrepid
+
+Package Transition Lead: [???]
+
+Status: Not started yet
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: GlobiPack
+
+Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
+
+Status: New package supporting the CMake system only so is is finished.  It
+has good unit tests so it is releasable right now.
+
+Final Certification Date: 2009/02/11
+
+Final Certification Evidence: See Trilinos/packages/globipack and nightly
+tests
+
+-------------------------------------------------------------------------------
+
+Package: Triutils
+
+Package Transition Lead: [???]
+
+Status: Basic support for libraries but only a few tests and examples.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Tpetra
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: EpetraExt
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Thyra
+
+Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
+
+Status: Should be completely finished but a careful final certification should
+be done.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: OptiPack
+
+Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
+
+Status: New package supporting the CMake system only so is is finished.  It
+has good unit tests so it is releasable right now.
+
+Final Certification Date: 2009/02/11
+
+Final Certification Evidence: See Trilinos/packages/optipack and nightly tests
+
+-------------------------------------------------------------------------------
+
+Package: Isorropia
+
+Package Transition Lead: [???]
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Pliris
+
+Package Transition Lead: [???]
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Claps
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: AztecOO
+
+Package Transition Lead: [???]
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Galeri
+
+Package Transition Lead: [???]
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Amesos
+
+Package Transition Lead: [???]
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Ifpack
+
+Package Transition Lead: [???]
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Komplex
+
+Package Transition Lead: [???]
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: ML
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Belos
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Stratimikos
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Meros
+
+Package Transition Lead: [???]
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: FEI
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: RBGen
+
+Package Transition Lead: [???]
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Anasazi
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: ThreadPool
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Phalanx
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Pamgen
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Phdmesh
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: NOX
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Moertel
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: TrilinosCouplings
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Rythmos
+
+Package Transition Lead: [???]
+
+Status: Basic libraries and several tests and examples
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: MOOCHO
+
+Package Transition Lead: [???]
+
+Status: Not started yet
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Aristos
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Sundance
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: TriKota
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: CTrilinos
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: ForTrilinos
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: PyTrilinos
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: WebTrilinos
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Didasko
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: NewPackage
+
+Package Transition Lead: [???]
+
+Status: [???]
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
