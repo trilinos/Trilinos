@@ -11,7 +11,7 @@ echo "Starting nightly Trilinos testing on godel: `date`"
 echo
 
 echo
-echo "A) Checking out just the drivers: `date`"
+echo "Checking out just the drivers: `date`"
 echo
 
 BASEDIR=/home/rabartl/PROJECTS/dashboards/Trilinos

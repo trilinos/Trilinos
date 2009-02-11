@@ -19,7 +19,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestSupport.cmake")
 #
 
 
-SET(MPI_BASE_DIR "/usr/lib64/openmpi/1.2.5-gcc")
+SET(MPI_BASE_DIR "/usr/lib64/openmpi/1.2.7-gcc")
 
 # Need to set up the library path for executables created to run currectly
 SET(ENV{LD_LIBRARY_PATH} "${MPI_BASE_DIR}/lib:$ENV{LD_LIBRARY_PATH}")
@@ -55,7 +55,7 @@ ELSE()
 ${CTEST_INITIAL_CACHE}
 CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++
 CMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc
-CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/gfortran
+CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77
 CMAKE_EXE_LINKER_FLAGS:STRING=-fprofile-arcs -ftest-coverage
 "
   )

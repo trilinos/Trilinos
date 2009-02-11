@@ -38,6 +38,9 @@ EpetraExt_BUILD_BDF:BOOL=ON
 # 2008/12/19: rabartl: AztecOO is disabled above because does not
 # currently work in shared library mode (see bug 4288).
 
+# 2009/01/09: rabartl: FEI is disabled because AztecOO is disabled and
+# FEI does not compile when AztecOO is disabled.  Brent said that he
+# would look into this.
 
 #
 # Read in the platform-independent and platform-dependent options
