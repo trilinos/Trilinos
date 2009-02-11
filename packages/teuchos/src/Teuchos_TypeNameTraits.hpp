@@ -63,7 +63,12 @@ public:
       return demangleName(typeid(T).name());
     }
   /** \brief . */
+#ifndef _AIX
   static std::string concreteName( const T& t )
+#else
+  // the IBM compilers on AIX have a problem with const
+  static std::string concreteName( T& t )
+#endif
     {
       return demangleName(typeid(t).name());
     }
