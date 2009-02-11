@@ -165,9 +165,9 @@ Final Certification Evidence: [???]
 
 Package: Tpetra
 
-Package Transition Lead: [???]
+Package Transition Lead: Chris Baker (cgbaker@sandia.gov)
 
-Status: [???]
+Status: Basic support for library, but only a few tests.
 
 Final Certification Date: [???]
 
