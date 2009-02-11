@@ -22,6 +22,8 @@ IF(FEI_ENABLE_Teuchos)
     NUM_MPI_PROCS 1
     )
 
+IF(FEI_ENABLE_AztecOO)
+
   PACKAGE_COPY_FILES_TO_BINARY_DIR(FEITestRemEssBCsCopyFiles
     DEST_FILES
     pll_RemEssBCs.Aztec.parameters pll_RemEssBCs.i pll_RemEssBCs.in.1.0
@@ -303,5 +305,6 @@ IF(FEI_ENABLE_Teuchos)
     NUM_MPI_PROCS 4
     )
 
+ENDIF()
 
 ENDIF()

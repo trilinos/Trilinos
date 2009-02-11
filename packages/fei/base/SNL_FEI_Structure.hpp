@@ -85,21 +85,6 @@ class SNL_FEI_Structure : public Lookup {
 		GlobalID elemID,
 		const GlobalID* elemConn);
 
-   int initCoefAccessPattern(int patternID,
-                             int numRowIDs,
-                             const int* numFieldsPerRow,
-                             const int* const* rowFieldIDs,
-                             int numColIDsPerRow,
-                             const int* numFieldsPerCol,
-                             const int* const* colFieldIDs,
-                             int interleaveStrategy);
-
-   int initCoefAccess(int patternID,
-		      const int* rowIDTypes,
-		      const GlobalID* rowIDs,
-		      const int* colIDTypes,
-		      const GlobalID* colIDs);
-
    int initSlaveVariable(GlobalID slaveNodeID, 
 			 int slaveFieldID,
 			 int offsetIntoSlaveField,
@@ -192,15 +177,13 @@ class SNL_FEI_Structure : public Lookup {
      //////////////////////////////////////////////////////////////////////////
    //now the element-block functions
 
-   int getNumElemBlocks() {return(blockIDs_.length());};
-   const GlobalID* getElemBlockIDs() {return(blockIDs_.dataPtr());};
+   int getNumElemBlocks() {return(blockIDs_.size());};
+   const GlobalID* getElemBlockIDs() {return(&blockIDs_[0]);};
 
    void getElemBlockInfo(GlobalID blockID,
                          int& interleaveStrategy, int& lumpingStrategy,
                          int& numElemDOF, int& numElements,
                          int& numNodesPerElem, int& numEqnsPerElem);
-
-   void allocBlockSkeletons(int blks);
 
    int addBlock(GlobalID blockID);
 
@@ -242,53 +225,6 @@ class SNL_FEI_Structure : public Lookup {
                              int* scatterIndices,
 			     int* blkScatterIndices,
 				int* blkSizes);
-
-
-   //////////////////////////////////////////////////////////////////////////
-   //now the access-pattern functions
-
-   int addPattern(int patternID);
-
-   int getPatternDescriptor(int patternID, PatternDescriptor*& pattern);
-
-   int getNumPatterns() { return(patternIDs_.length()); };
-
-   int getPatternDescriptor_index(int index, PatternDescriptor*& pattern);
-
-   int appendPatternConnectivity(int patternID,
-                                 int numRowIDs,
-				 const int* rowIDTypes,
-                                 const GlobalID* rowIDs,
-                                 int numColIDsPerRow,
-				 const int* colIDTypes,
-                                 const GlobalID* colIDs);
-
-   ConnectivityTable& getPatternConnectivity(int patternID);
-
-   /** Get the scatter indices (global 0-based equation numbers) for a given
-       pattern and a given set of row and column nodes.
-       @param patternID the coefficient access pattern
-       @param rowNodes 
-       @param colNodes packed list of column nodes. Length num-row-nodes * 
-       num-col-nodes-per-row
-       @param rowIndices Output. Equation numbers.
-       @param rowColOffsets Output. Length num-row-indices+1. rowColOffsets[i]
-       gives the offset into the colIndices array, of the start of the column
-       indices corresponding to the i-th row index.
-       @param colIndices
-       @return error-code 0 if successful
-   */
-   int getPatternScatterIndices(int patternID,
-                                const GlobalID* rowNodes,
-                                const GlobalID* colNodes,
-                                std::vector<int>& rowIndices,
-				std::vector<int>& rowColOffsets,
-				int& colIndicesPerRow,
-                                std::vector<int>& colIndices);
-
-   int getPatternScatterIndices(int patternID,
-                                const GlobalID* rowNodes,
-                                std::vector<int>& rowIndices);
 
 
    /////////////////////////////////////////////////////////////////////////////
@@ -573,16 +509,6 @@ class SNL_FEI_Structure : public Lookup {
    int getElemNodeDescriptors(int blockIndex, int elemIndex,
                               NodeDescriptor** nodes);
 
-   int getPatternNodeDescriptors(PatternDescriptor& pattern,
-                              const GlobalID* rowNodes,
-                              const GlobalID* colNodes,
-                              NodeDescriptor**& rNodeDesc,
-                              NodeDescriptor**& cNodeDesc);
-
-   int setPatternRowColOffsets(PatternDescriptor& pattern,
-			       int numColIndices,
-			       std::vector<int>& rowColOffsets);
-
    int getNodeIndices_simple(NodeDescriptor** nodes, int numNodes,
 			     int fieldID,
 			     int* scatterIndices, int& offset);
@@ -631,7 +557,6 @@ class SNL_FEI_Structure : public Lookup {
    int formMatrixStructure();
 
    int initElemBlockStructure();
-   int initAccessPatternStructure();
    int initMultCRStructure();
    int initPenCRStructure();
    int createMatrixPosition(int row, int col, const char* callingFunction);
@@ -639,16 +564,12 @@ class SNL_FEI_Structure : public Lookup {
 			     const char* callingFunction);
    int createMatrixPositions(fei::CSRMat& mat);
 
-   int createSymmEqnStructure(feiArray<int>& scatterIndices);
-   int createBlkSymmEqnStructure(feiArray<int>& scatterIndices);
-   int createEqnStructure(SSGraph& mat);
+   int createSymmEqnStructure(std::vector<int>& scatterIndices);
+   int createBlkSymmEqnStructure(std::vector<int>& scatterIndices);
 
-   int storeElementScatterIndices(feiArray<int>& scatterIndices);
-   int storeElementScatterIndices_noSlaves(feiArray<int>& scatterIndices);
-   int storeElementScatterBlkIndices_noSlaves(feiArray<int>& scatterIndices);
-
-   int storePatternScatterIndices(SSGraph& mat);
-   int storePatternScatterIndices_noSlaves(SSGraph& mat);
+   int storeElementScatterIndices(std::vector<int>& scatterIndices);
+   int storeElementScatterIndices_noSlaves(std::vector<int>& scatterIndices);
+   int storeElementScatterBlkIndices_noSlaves(std::vector<int>& scatterIndices);
 
    void storeLocalNodeIndices(NodeDescriptor& iNode, int iField,
                                      NodeDescriptor& jNode, int jField);
@@ -661,7 +582,7 @@ class SNL_FEI_Structure : public Lookup {
 
    int assembleReducedStructure();
 
-   bool nodalEqnsAllSlaves(NodeDescriptor* node, feiArray<int>& slaveEqns);
+   bool nodalEqnsAllSlaves(NodeDescriptor* node, std::vector<int>& slaveEqns);
 
    int initializeBlkEqnMapper();
 
@@ -693,13 +614,9 @@ class SNL_FEI_Structure : public Lookup {
    std::map<int,int>* fieldDatabase_;
    feiArray<int> workarray_;
 
-   feiArray<GlobalID> blockIDs_;
+   std::vector<GlobalID> blockIDs_;
    feiArray<BlockDescriptor*> blocks_;
    feiArray<ConnectivityTable*> connTables_;
-
-   feiArray<GlobalID> patternIDs_;
-   PatternDescriptor** patterns_;
-   ConnectivityTable** patternConn_;
 
    NodeDatabase* nodeDatabase_;
 
@@ -711,11 +628,11 @@ class SNL_FEI_Structure : public Lookup {
 
    feiArray<SlaveVariable*>* slaveVars_;
    EqnBuffer* slaveEqns_;
-   feiArray<int>* slvEqnNumbers_;
+   std::vector<int>* slvEqnNumbers_;
    int numSlvs_, lowestSlv_, highestSlv_;
    fei::FillableMat* slaveMatrix_;
    std::vector<int> globalNumNodesVanished_;
-   feiArray<int> localVanishedNodeNumbers_;
+   std::vector<int> localVanishedNodeNumbers_;
 
    NodeCommMgr* nodeCommMgr_;
    EqnCommMgr* eqnCommMgr_;
@@ -735,7 +652,7 @@ class SNL_FEI_Structure : public Lookup {
    fei::CSRMat csrD, csrKid, csrKdi, csrKdd, tmpMat1_, tmpMat2_;
    int reducedEqnCounter_, reducedRHSCounter_;
    feiArray<bool> rSlave_, cSlave_;
-   feiArray<NodeDescriptor*> work_nodePtrs_;
+   std::vector<NodeDescriptor*> work_nodePtrs_;
 
    bool structureFinalized_;
    bool generateGraph_;

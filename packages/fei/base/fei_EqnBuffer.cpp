@@ -18,9 +18,9 @@
 EqnBuffer::EqnBuffer()
  : newCoefData_(0),
    newRHSData_(0),
-   eqnNumbers_(0, 8000),
+   eqnNumbers_(0),
    eqns_(),
-   indices_union_(0, 2000),
+   indices_union_(0),
    numRHSs_(1),
    rhsCoefs_(0,8000),
    setNumRHSsCalled_(false),
@@ -34,9 +34,9 @@ EqnBuffer::EqnBuffer()
 EqnBuffer::EqnBuffer(const EqnBuffer& src)
  : newCoefData_(0),
    newRHSData_(0),
-   eqnNumbers_(0, 8000),
+   eqnNumbers_(0),
    eqns_(),
-   indices_union_(0, 2000),
+   indices_union_(0),
    numRHSs_(1),
    rhsCoefs_(0,8000),
    setNumRHSsCalled_(false),
@@ -157,9 +157,8 @@ int EqnBuffer::isInIndices(int eqn)
   //If it is, the appropriate row index into the table is returned.
   //-1 is return otherwise.
   //
-  if (indices_union_.length() > 0) {
-    int index = snl_fei::binarySearch(eqn, indices_union_.dataPtr(),
-                                      indices_union_.length());
+  if (indices_union_.size() > 0) {
+    int index = snl_fei::binarySearch(eqn, &indices_union_[0], indices_union_.size());
     if (index < 0) return(-1);
   }
 
@@ -276,7 +275,7 @@ int EqnBuffer::getCoefAndRemoveIndex(int eqnNumber, int colIndex, double& coef)
 //==============================================================================
 int EqnBuffer::addEqns(EqnBuffer& inputEqns, bool accumulate)
 {
-  int* eqnNums = inputEqns.eqnNumbersPtr().dataPtr();
+  int* eqnNums = &(inputEqns.eqnNumbers()[0]);
   fei::CSVec** eqs = &(inputEqns.eqns()[0]);
 
   int numRHSs = inputEqns.getNumRHSs();
@@ -306,7 +305,7 @@ int EqnBuffer::insertNewEqn(int eqn, int insertPoint)
   //private function. We can safely assume that insertPoint is the correct
   //offset at which to insert the new equation.
   try {
-    eqnNumbers_.insert(eqn, insertPoint);
+    eqnNumbers_.insert(eqnNumbers_.begin()+insertPoint, eqn);
 
     fei::CSVec* newEqn = new fei::CSVec;
     eqns_.insert(eqns_.begin()+insertPoint, newEqn);
@@ -387,11 +386,11 @@ int EqnBuffer::addIndices(int eqnNumber, const int* indices, int len)
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, EqnBuffer& eq)
 {
-  feiArray<int>& eqnNums = eq.eqnNumbersPtr();
+  std::vector<int>& eqnNums = eq.eqnNumbers();
   feiArray<feiArray<double>*>& rhsCoefs = *(eq.rhsCoefsPtr());
 
-  os << "#ereb num-eqns: " << eqnNums.length() << FEI_ENDL;
-  for(int i=0; i<eqnNums.length(); i++) {
+  os << "#ereb num-eqns: " << eqnNums.size() << FEI_ENDL;
+  for(size_t i=0; i<eqnNums.size(); i++) {
     os << "#ereb eqn " << eqnNums[i] << ": ";
 
     std::vector<int>& inds = eq.eqns()[i]->indices();

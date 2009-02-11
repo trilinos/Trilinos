@@ -6,8 +6,11 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include <assert.h>
 #include <fei_iostream.hpp>
+
+#ifdef HAVE_FEI_AZTECOO
+
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -90,3 +93,5 @@ void Aztec_BlockMap::checkInput() {
     }
 }
 
+#endif
+//HAVE_FEI_AZTECOO

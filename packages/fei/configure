@@ -681,20 +681,12 @@ BUILD_ML_TRUE
 BUILD_ML_FALSE
 BUILD_IFPACK_TRUE
 BUILD_IFPACK_FALSE
-FEI_HAVE_PETSC_TRUE
-FEI_HAVE_PETSC_FALSE
+HAVE_FEI_PETSC_TRUE
+HAVE_FEI_PETSC_FALSE
 PETSC_INCLUDE
 PETSC_LIB_DIR
-FEI_HAVE_PROMETHEUS_TRUE
-FEI_HAVE_PROMETHEUS_FALSE
-PROMETHEUS_INCLUDE
-PROMETHEUS_LIB_DIR
-FEI_HAVE_HYPRE_TRUE
-FEI_HAVE_HYPRE_FALSE
-HYPRE_INCLUDE
-HYPRE_LIB_DIR
-FEI_HAVE_FETI_TRUE
-FEI_HAVE_FETI_FALSE
+HAVE_FEI_FETI_TRUE
+HAVE_FEI_FETI_FALSE
 FETIDP_INCLUDE
 FETIDP_LIB_DIR
 FEI_INSTRUMENT_TRUE
@@ -1356,14 +1348,6 @@ Optional Packages:
                           Specify PETSc include
   --with-petsc-libdir=LIBDIR
                           Specify PETSc library directory
-  --with-prometheus-include=-IDIR
-                          Specify Prometheus include
-  --with-prometheus-libdir=LIBDIR
-                          Specify Prometheus library directory
-  --with-hypre-include=-IDIR
-                          Specify HYPRE include
-  --with-hypre-libdir=LIBDIR
-                          Specify HYPRE library directory
   --with-fetidp-include=-IDIR
                           Specify FETI-DP include
   --with-fetidp-libdir=LIBDIR
@@ -4650,7 +4634,7 @@ if test "X$ac_cv_use_teuchos" != "Xno"; then
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_TEUCHOS 1
+#define HAVE_FEI_TEUCHOS 1
 _ACEOF
 
 else
@@ -4658,7 +4642,7 @@ else
 echo "${ECHO_T}no" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_NO_TEUCHOS 1
+#define HAVE_NO_FEI_TEUCHOS 1
 _ACEOF
 
 fi
@@ -4706,7 +4690,7 @@ if test "X$ac_cv_use_epetra" != "Xno"; then
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_EPETRA 1
+#define HAVE_FEI_EPETRA 1
 _ACEOF
 
 else
@@ -4714,7 +4698,7 @@ else
 echo "${ECHO_T}no" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_NO_EPETRA 1
+#define HAVE_NO_FEI_EPETRA 1
 _ACEOF
 
 fi
@@ -4762,7 +4746,7 @@ if test "X$ac_cv_use_aztecoo" != "Xno"; then
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_AZTECOO 1
+#define HAVE_FEI_AZTECOO 1
 _ACEOF
 
 else
@@ -4770,7 +4754,7 @@ else
 echo "${ECHO_T}no" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_NO_AZTECOO 1
+#define HAVE_NO_FEI_AZTECOO 1
 _ACEOF
 
 fi
@@ -4818,7 +4802,7 @@ if test "X$ac_cv_use_amesos" != "Xno"; then
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_AMESOS 1
+#define HAVE_FEI_AMESOS 1
 _ACEOF
 
 else
@@ -4826,7 +4810,7 @@ else
 echo "${ECHO_T}no" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_NO_AMESOS 1
+#define HAVE_NO_FEI_AMESOS 1
 _ACEOF
 
 fi
@@ -4874,7 +4858,7 @@ if test "X$ac_cv_use_ml" != "Xno"; then
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML 1
+#define HAVE_FEI_ML 1
 _ACEOF
 
 else
@@ -4882,7 +4866,7 @@ else
 echo "${ECHO_T}no" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_NO_ML 1
+#define HAVE_NO_FEI_ML 1
 _ACEOF
 
 fi
@@ -4930,7 +4914,7 @@ if test "X$ac_cv_use_ifpack" != "Xno"; then
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_IFPACK 1
+#define HAVE_FEI_IFPACK 1
 _ACEOF
 
 else
@@ -4938,7 +4922,7 @@ else
 echo "${ECHO_T}no" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_NO_IFPACK 1
+#define HAVE_NO_FEI_IFPACK 1
 _ACEOF
 
 fi
@@ -4976,11 +4960,11 @@ fi
 
 
  if test "X${SPECIFIED_PETSC_INCLUDE}" != "Xno"; then
-  FEI_HAVE_PETSC_TRUE=
-  FEI_HAVE_PETSC_FALSE='#'
+  HAVE_FEI_PETSC_TRUE=
+  HAVE_FEI_PETSC_FALSE='#'
 else
-  FEI_HAVE_PETSC_TRUE='#'
-  FEI_HAVE_PETSC_FALSE=
+  HAVE_FEI_PETSC_TRUE='#'
+  HAVE_FEI_PETSC_FALSE=
 fi
 
 
@@ -5039,190 +5023,11 @@ PETSC_LIB_DIR=${PETSCLIBDIR}
 
 
 cat >>confdefs.h <<\_ACEOF
-#define FEI_HAVE_PETSC
+#define HAVE_FEI_PETSC
 _ACEOF
 
 fi
 
-# ------------------------------------------------------------------------
-# Check for Prometheus include directives
-# ------------------------------------------------------------------------
-
-SPECIFIED_PROMETHEUS_INCLUDE=no
-
-
-# Check whether --with-prometheus-include was given.
-if test "${with_prometheus_include+set}" = set; then
-  withval=$with_prometheus_include;
-  { echo "$as_me:$LINENO: checking whether prometheus-include specified" >&5
-echo $ECHO_N "checking whether prometheus-include specified... $ECHO_C" >&6; }
-  { echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6; }
-  SPECIFIED_PROMETHEUS_INCLUDE=yes
-  PROMETHEUSINC="${withval}"
-
-
-fi
-
-
- if test "X${SPECIFIED_PROMETHEUS_INCLUDE}" != "Xno"; then
-  FEI_HAVE_PROMETHEUS_TRUE=
-  FEI_HAVE_PROMETHEUS_FALSE='#'
-else
-  FEI_HAVE_PROMETHEUS_TRUE='#'
-  FEI_HAVE_PROMETHEUS_FALSE=
-fi
-
-
-if test "X${SPECIFIED_PROMETHEUS_INCLUDE}" != "Xno"; then
-PROMETHEUS_INCLUDE=${PROMETHEUSINC}
-
-fi
-
-# ------------------------------------------------------------------------
-# Check for Prometheus library directory
-# ------------------------------------------------------------------------
-
-SPECIFIED_PROMETHEUS_LIB=no
-
-
-# Check whether --with-prometheus-libdir was given.
-if test "${with_prometheus_libdir+set}" = set; then
-  withval=$with_prometheus_libdir;
-  { echo "$as_me:$LINENO: checking whether prometheus-libdir specified" >&5
-echo $ECHO_N "checking whether prometheus-libdir specified... $ECHO_C" >&6; }
-  { echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6; }
-  SPECIFIED_PROMETHEUS_LIB=yes
-  PROMETHEUSLIBDIR="${withval}"
-
-
-fi
-
-
-if test "X${SPECIFIED_PROMETHEUS_LIB}" != "Xno"; then
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${PROMETHEUSLIBDIR}/libprometheus.a" | $as_tr_sh`
-{ echo "$as_me:$LINENO: checking for ${PROMETHEUSLIBDIR}/libprometheus.a" >&5
-echo $ECHO_N "checking for ${PROMETHEUSLIBDIR}/libprometheus.a... $ECHO_C" >&6; }
-if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${PROMETHEUSLIBDIR}/libprometheus.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-ac_res=`eval echo '${'$as_ac_File'}'`
-	       { echo "$as_me:$LINENO: result: $ac_res" >&5
-echo "${ECHO_T}$ac_res" >&6; }
- }
-  fi
-
-PROMETHEUS_LIB_DIR=${PROMETHEUSLIBDIR}
-
-
-cat >>confdefs.h <<\_ACEOF
-#define FEI_HAVE_PROMETHEUS
-_ACEOF
-
-fi
-
-# ------------------------------------------------------------------------
-# Check for HYPRE include directives
-# ------------------------------------------------------------------------
-
-SPECIFIED_HYPRE_INCLUDE=no
-
-
-# Check whether --with-hypre-include was given.
-if test "${with_hypre_include+set}" = set; then
-  withval=$with_hypre_include;
-  { echo "$as_me:$LINENO: checking whether hypre-include specified" >&5
-echo $ECHO_N "checking whether hypre-include specified... $ECHO_C" >&6; }
-  { echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6; }
-  SPECIFIED_HYPRE_INCLUDE=yes
-  HYPREINC="${withval}"
-
-
-fi
-
-
- if test "X${SPECIFIED_HYPRE_INCLUDE}" != "Xno"; then
-  FEI_HAVE_HYPRE_TRUE=
-  FEI_HAVE_HYPRE_FALSE='#'
-else
-  FEI_HAVE_HYPRE_TRUE='#'
-  FEI_HAVE_HYPRE_FALSE=
-fi
-
-
-if test "X${SPECIFIED_HYPRE_INCLUDE}" != "Xno"; then
-HYPRE_INCLUDE=${HYPREINC}
-
-fi
-
-# ------------------------------------------------------------------------
-# Check for HYPRE library directory
-# ------------------------------------------------------------------------
-
-SPECIFIED_HYPRE_LIB=no
-
-
-# Check whether --with-hypre-libdir was given.
-if test "${with_hypre_libdir+set}" = set; then
-  withval=$with_hypre_libdir;
-  { echo "$as_me:$LINENO: checking whether hypre-libdir specified" >&5
-echo $ECHO_N "checking whether hypre-libdir specified... $ECHO_C" >&6; }
-  { echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6; }
-  SPECIFIED_HYPRE_LIB=yes
-  HYPRELIBDIR="${withval}"
-
-
-fi
-
-
-if test "X${SPECIFIED_HYPRE_LIB}" != "Xno"; then
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${HYPRELIBDIR}/libHYPRE_FEI.a" | $as_tr_sh`
-{ echo "$as_me:$LINENO: checking for ${HYPRELIBDIR}/libHYPRE_FEI.a" >&5
-echo $ECHO_N "checking for ${HYPRELIBDIR}/libHYPRE_FEI.a... $ECHO_C" >&6; }
-if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${HYPRELIBDIR}/libHYPRE_FEI.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-ac_res=`eval echo '${'$as_ac_File'}'`
-	       { echo "$as_me:$LINENO: result: $ac_res" >&5
-echo "${ECHO_T}$ac_res" >&6; }
- }
-  fi
-
-HYPRE_LIB_DIR=${HYPRELIBDIR}
-
-
-cat >>confdefs.h <<\_ACEOF
-#define FEI_HAVE_HYPRE
-_ACEOF
-
-fi
 
 # ------------------------------------------------------------------------
 # Check for FETI-DP include directives
@@ -5246,11 +5051,11 @@ fi
 
 
  if test "X${SPECIFIED_FETIDP_INCLUDE}" != "Xno"; then
-  FEI_HAVE_FETI_TRUE=
-  FEI_HAVE_FETI_FALSE='#'
+  HAVE_FEI_FETI_TRUE=
+  HAVE_FEI_FETI_FALSE='#'
 else
-  FEI_HAVE_FETI_TRUE='#'
-  FEI_HAVE_FETI_FALSE=
+  HAVE_FEI_FETI_TRUE='#'
+  HAVE_FEI_FETI_FALSE=
 fi
 
 
@@ -5309,7 +5114,7 @@ FETIDP_LIB_DIR=${FETIDPLIBDIR}
 
 
 cat >>confdefs.h <<\_ACEOF
-#define FEI_HAVE_FETI
+#define HAVE_FEI_FETI
 _ACEOF
 
 fi
@@ -5717,31 +5522,17 @@ echo "$as_me: error: conditional \"BUILD_IFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${FEI_HAVE_PETSC_TRUE}" && test -z "${FEI_HAVE_PETSC_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"FEI_HAVE_PETSC\" was never defined.
+if test -z "${HAVE_FEI_PETSC_TRUE}" && test -z "${HAVE_FEI_PETSC_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_FEI_PETSC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"FEI_HAVE_PETSC\" was never defined.
+echo "$as_me: error: conditional \"HAVE_FEI_PETSC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${FEI_HAVE_PROMETHEUS_TRUE}" && test -z "${FEI_HAVE_PROMETHEUS_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"FEI_HAVE_PROMETHEUS\" was never defined.
+if test -z "${HAVE_FEI_FETI_TRUE}" && test -z "${HAVE_FEI_FETI_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_FEI_FETI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"FEI_HAVE_PROMETHEUS\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${FEI_HAVE_HYPRE_TRUE}" && test -z "${FEI_HAVE_HYPRE_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"FEI_HAVE_HYPRE\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"FEI_HAVE_HYPRE\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${FEI_HAVE_FETI_TRUE}" && test -z "${FEI_HAVE_FETI_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"FEI_HAVE_FETI\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"FEI_HAVE_FETI\" was never defined.
+echo "$as_me: error: conditional \"HAVE_FEI_FETI\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -6483,20 +6274,12 @@ BUILD_ML_TRUE!$BUILD_ML_TRUE$ac_delim
 BUILD_ML_FALSE!$BUILD_ML_FALSE$ac_delim
 BUILD_IFPACK_TRUE!$BUILD_IFPACK_TRUE$ac_delim
 BUILD_IFPACK_FALSE!$BUILD_IFPACK_FALSE$ac_delim
-FEI_HAVE_PETSC_TRUE!$FEI_HAVE_PETSC_TRUE$ac_delim
-FEI_HAVE_PETSC_FALSE!$FEI_HAVE_PETSC_FALSE$ac_delim
+HAVE_FEI_PETSC_TRUE!$HAVE_FEI_PETSC_TRUE$ac_delim
+HAVE_FEI_PETSC_FALSE!$HAVE_FEI_PETSC_FALSE$ac_delim
 PETSC_INCLUDE!$PETSC_INCLUDE$ac_delim
 PETSC_LIB_DIR!$PETSC_LIB_DIR$ac_delim
-FEI_HAVE_PROMETHEUS_TRUE!$FEI_HAVE_PROMETHEUS_TRUE$ac_delim
-FEI_HAVE_PROMETHEUS_FALSE!$FEI_HAVE_PROMETHEUS_FALSE$ac_delim
-PROMETHEUS_INCLUDE!$PROMETHEUS_INCLUDE$ac_delim
-PROMETHEUS_LIB_DIR!$PROMETHEUS_LIB_DIR$ac_delim
-FEI_HAVE_HYPRE_TRUE!$FEI_HAVE_HYPRE_TRUE$ac_delim
-FEI_HAVE_HYPRE_FALSE!$FEI_HAVE_HYPRE_FALSE$ac_delim
-HYPRE_INCLUDE!$HYPRE_INCLUDE$ac_delim
-HYPRE_LIB_DIR!$HYPRE_LIB_DIR$ac_delim
-FEI_HAVE_FETI_TRUE!$FEI_HAVE_FETI_TRUE$ac_delim
-FEI_HAVE_FETI_FALSE!$FEI_HAVE_FETI_FALSE$ac_delim
+HAVE_FEI_FETI_TRUE!$HAVE_FEI_FETI_TRUE$ac_delim
+HAVE_FEI_FETI_FALSE!$HAVE_FEI_FETI_FALSE$ac_delim
 FETIDP_INCLUDE!$FETIDP_INCLUDE$ac_delim
 FETIDP_LIB_DIR!$FETIDP_LIB_DIR$ac_delim
 FEI_INSTRUMENT_TRUE!$FEI_INSTRUMENT_TRUE$ac_delim
@@ -6518,7 +6301,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 39; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 31; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -1,75 +1,40 @@
-/* FEI_config.h.in.  Generated from configure.ac by autoheader.  */
-
 
 #ifndef _FEI_config_h_
 #define _FEI_config_h_
 
 
 /* Enable use of FETI library */
-#cmakedefine FEI_HAVE_FETI
-
-/* Enable use of HYPRE library */
-#cmakedefine FEI_HAVE_HYPRE
+#cmakedefine HAVE_FEI_FETI
 
 /* Enable use of PETSC library */
-#cmakedefine FEI_HAVE_PETSC
-
-/* Enable use of PROMETHEUS library */
-#cmakedefine FEI_HAVE_PROMETHEUS
+#cmakedefine HAVE_FEI_PETSC
 
 /* Define to build with fei-amesos support enabled */
-#cmakedefine HAVE_AMESOS
+#cmakedefine HAVE_FEI_AMESOS
 
 /* Define to build with fei-aztecoo support enabled */
-#cmakedefine HAVE_AZTECOO
+#cmakedefine HAVE_FEI_AZTECOO
+
+/* Define to build with fei-ml support enabled */
+#cmakedefine HAVE_FEI_ML
+
+/* Define to build with fei-ifpack support enabled */
+#cmakedefine HAVE_FEI_IFPACK
 
 /* Define to build with fei-epetra support enabled */
-#cmakedefine HAVE_EPETRA
+#cmakedefine HAVE_FEI_EPETRA
+
+/* Define to build with fei-teuchos support enabled */
+#cmakedefine HAVE_FEI_TEUCHOS
 
 /* Define if want to build examples */
 #cmakedefine HAVE_EXAMPLES
 
-/* Define to build with fei-ifpack support enabled */
-#cmakedefine HAVE_IFPACK
-
-/* Define to build with fei-ml support enabled */
-#cmakedefine HAVE_ML
-
-/* define if we want to use MPI */
-#cmakedefine HAVE_MPI
-
-/* Define to not build with fei-amesos support enabled */
-#cmakedefine HAVE_NO_AMESOS
-
-/* Define to not build with fei-aztecoo support enabled */
-#cmakedefine HAVE_NO_AZTECOO
-
-/* Define to not build with fei-epetra support enabled */
-#cmakedefine HAVE_NO_EPETRA
-
-/* <fstream> not available */
-#cmakedefine HAVE_NO_FSTREAM
-
-/* Define to not build with fei-ifpack support enabled */
-#cmakedefine HAVE_NO_IFPACK
-
-/* Define to not build with fei-ml support enabled */
-#cmakedefine HAVE_NO_ML
-
-/* <sstream> not available */
-#cmakedefine HAVE_NO_SSTREAM
-
-/* Define to not build with fei-teuchos support enabled */
-#cmakedefine HAVE_NO_TEUCHOS
-
 /* Define if want to build tests */
 #cmakedefine HAVE_TESTS
 
-/* Define to build with fei-teuchos support enabled */
-#cmakedefine HAVE_TEUCHOS
-
-/* define if the compiler provides unordered associative containers */
-#cmakedefine HAVE_UNORDERED
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI
 
 #endif
 

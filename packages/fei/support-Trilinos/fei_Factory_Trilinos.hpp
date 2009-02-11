@@ -13,9 +13,12 @@
 
 #include <fei_Include_Trilinos.hpp>
 
+#ifdef HAVE_FEI_EPETRA
 #include <fei_VectorTraits_Epetra.hpp>
 #include <fei_MatrixTraits_Epetra.hpp>
 #include <fei_Trilinos_Helpers.hpp>
+#include <fei_LinProbMgr_EpetraBasic.hpp>
+#endif
 
 #include <fei_Factory.hpp>
 #include <fei_ParameterSet.hpp>
@@ -24,7 +27,6 @@
 #include <fei_Matrix_Impl.hpp>
 #include <fei_MatrixGraph_Impl2.hpp>
 #include <fei_SparseRowGraph.hpp>
-#include <fei_LinProbMgr_EpetraBasic.hpp>
 #include <fei_utils.hpp>
 
 #undef fei_file

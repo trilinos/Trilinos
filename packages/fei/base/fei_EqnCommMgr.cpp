@@ -153,7 +153,7 @@ void EqnCommMgr::addSolnValues(int* eqnNumbers, double* values, int num)
     std::abort();
   }
 
-  feiArray<int>& recvEqnNumbers = recvEqns_->eqnNumbersPtr();
+  std::vector<int>& recvEqnNumbers = recvEqns_->eqnNumbers();
 
   double* solnValuesPtr = solnValues_.dataPtr();
   for(int i=0; i<num; i++) {
@@ -179,15 +179,17 @@ int EqnCommMgr::exchangeIndices(FEI_OSTREAM* dbgOut) {
 
   int numSendEqns = sendEqns_->getNumEqns();
   fei::CSVec** sendEqnsPtr = numSendEqns>0 ?&(sendEqns_->eqns()[0]) : NULL;
-  feiArray<int>& sendEqnNumbers = sendEqns_->eqnNumbersPtr();
-  feiArray<int> sendEqnLengths(numSendEqns);
+  std::vector<int>& sendEqnNumbers = sendEqns_->eqnNumbers();
+  std::vector<int> sendEqnLengths(numSendEqns);
   for(int i=0; i<numSendEqns; ++i) {
     sendEqnLengths[i] = sendEqnsPtr[i]->size();
   }
 
-  sendProcEqns_->setProcEqnLengths(sendEqnNumbers.dataPtr(),
-                                   sendEqnLengths.dataPtr(),
-                                   numSendEqns);
+  if (sendEqnNumbers.size() > 0) {
+    sendProcEqns_->setProcEqnLengths(&sendEqnNumbers[0],
+                                     &sendEqnLengths[0],
+                                     numSendEqns);
+  }
 
   CHK_ERR( mirrorProcEqns(*sendProcEqns_, *recvProcEqns_) );
   CHK_ERR( mirrorProcEqnLengths(*sendProcEqns_, *recvProcEqns_) );
@@ -976,10 +978,10 @@ int EqnCommMgr::gatherSharedBCs(EqnBuffer& bcEqns)
 
   //now loop through the equations in bcEqns, checking whether they're in
   //our sendEqns_ object.
-  feiArray<int>& bcEqnNumbers = bcEqns.eqnNumbersPtr();
-  int numBCeqns = bcEqnNumbers.length();
+  std::vector<int>& bcEqnNumbers = bcEqns.eqnNumbers();
+  int numBCeqns = bcEqnNumbers.size();
 
-  feiArray<int>& sendEqnNumbers = sendEqns_->eqnNumbersPtr();
+  std::vector<int>& sendEqnNumbers = sendEqns_->eqnNumbers();
   std::vector<int>& sendProcs = sendProcEqns_->procsPtr();
   std::vector<std::vector<int>*>& sendProcEqnNumbers = 
     sendProcEqns_->procEqnNumbersPtr();
@@ -1029,8 +1031,7 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
   ProcEqns* essSendProcEqns = new ProcEqns();
 
   std::vector<fei::CSVec*>& _sendEqns = sendEqns_->eqns();
-  feiArray<int>& _sendEqnNumbers = sendEqns_->eqnNumbersPtr();
-  int* _sendEqnNumbersPtr = _sendEqnNumbers.dataPtr();
+  std::vector<int>& _sendEqnNumbers = sendEqns_->eqnNumbers();
   int _numSendEqns = sendEqns_->getNumEqns();
 
   //check to see if any of the essEqns are in the _sendEqns indices.
@@ -1047,7 +1048,6 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
     os << *sendEqns_<<FEI_ENDL;
   }
 
-  int i;
   bool accumulate = false;
 
   feiArray<int> offsets(numEssEqns);
@@ -1060,7 +1060,7 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
     snl_fei::binarySearch(numEssEqns, essEqns, offsetsPtr,
 			  &indices[0], indices.size());
 
-    int sendEqn_j = _sendEqnNumbersPtr[j];
+    int sendEqn_j = _sendEqnNumbers[j];
 
     int proc = getSendProcNumber(sendEqn_j);
 
@@ -1072,7 +1072,7 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
          <<_sendEqns[j]->size()<<", numEssEqns: " << numEssEqns<<FEI_ENDL;
     }
 
-    for(i=0; i<numEssEqns; i++) {
+    for(int i=0; i<numEssEqns; i++) {
 
       int index = offsetsPtr[i];
 
@@ -1107,16 +1107,17 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
 
   CHK_ERR( mirrorProcEqns(*essSendProcEqns, *essRecvProcEqns) );
 
-  feiArray<int>& eqnNumbers = sendEssEqns->eqnNumbersPtr();
+  std::vector<int>& eqnNumbers = sendEssEqns->eqnNumbers();
   std::vector<fei::CSVec*>& sendEssEqnsVec = sendEssEqns->eqns();
-  feiArray<int> eqnLengths(eqnNumbers.length());
-  for(i=0; i<eqnNumbers.length(); ++i) {
+  std::vector<int> eqnLengths(eqnNumbers.size());
+  for(size_t i=0; i<eqnNumbers.size(); ++i) {
     eqnLengths[i] = sendEssEqnsVec[i]->size();
   }
 
-  essSendProcEqns->setProcEqnLengths(eqnNumbers.dataPtr(),
-				     eqnLengths.dataPtr(),
-				     eqnNumbers.length());
+  if (eqnNumbers.size() > 0) {
+    essSendProcEqns->setProcEqnLengths(&eqnNumbers[0], &eqnLengths[0],
+                                       eqnNumbers.size());
+  }
 
   CHK_ERR( mirrorProcEqnLengths(*essSendProcEqns, *essRecvProcEqns) );
 

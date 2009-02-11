@@ -269,40 +269,6 @@ extern "C" int FEI_initSlaveVariable(CFEI* cfei,
 }
 
 /*============================================================================*/
-extern "C" int FEI_initCoefAccessPattern(CFEI* cfei,
-                               int patternID,
-                               int numRowIDs,
-                               int* numFieldsPerRow,
-                               int** rowFieldIDs,
-                               int numColIDsPerRow,
-                               int* numFieldsPerCol,
-                               int** colFieldIDs,
-                               int interleaveStrategy )
-{
-  CHK_CFEI_NULL(cfei);
-
-  return(((FEI_Implementation*)(cfei->cfei_))->
-            initCoefAccessPattern(patternID, numRowIDs, 
-                                  numFieldsPerRow, rowFieldIDs,
-                                  numColIDsPerRow,
-                                  numFieldsPerCol, colFieldIDs,
-                                  interleaveStrategy));
-}
-
-/*============================================================================*/
-extern "C" int FEI_initCoefAccess( CFEI* cfei,
-				   int patternID, int* rowIDTypes,
-				   GlobalID* rowIDs,
-				   int* colIDTypes,
-				   GlobalID* colIDs )
-{
-  CHK_CFEI_NULL(cfei);
-
-  return(((FEI_Implementation*)(cfei->cfei_))->
-             initCoefAccess(patternID, rowIDTypes, rowIDs, colIDTypes, colIDs));
-}
-
-/*============================================================================*/
 extern "C" int FEI_initComplete(CFEI* cfei)
 {
   CHK_CFEI_NULL(cfei);
@@ -486,86 +452,6 @@ extern "C" int FEI_loadCRPen(CFEI* cfei,
                                          CRWeights, 
                                          CRValue, 
                                          penValue));
-}
-
-/*============================================================================*/
-extern "C" int FEI_sumIntoMatrix(CFEI* cfei,
-				 int patternID,
-				 int* rowIDTypes,
-				 GlobalID* rowIDs,
-				 int* colIDTypes,
-				 GlobalID* colIDs,
-				 double** matrixEntries)
-{
-  CHK_CFEI_NULL(cfei);
-
-  return(((FEI_Implementation*)(cfei->cfei_))->sumIntoMatrix(patternID,
-                   rowIDTypes, rowIDs, colIDTypes, colIDs, matrixEntries));
-}
-
-/*============================================================================*/
-extern "C" int FEI_getFromMatrix(CFEI* cfei,
-				 int patternID,
-				 int* rowIDTypes,
-				 GlobalID* rowIDs,
-				 int* colIDTypes,
-				 GlobalID* colIDs,
-				 double** matrixEntries)
-{
-  CHK_CFEI_NULL(cfei);
-
-  return(((FEI_Implementation*)(cfei->cfei_))->getFromMatrix(patternID,
-           rowIDTypes, rowIDs, colIDTypes, colIDs, matrixEntries));
-}
-
-/*============================================================================*/
-extern "C" int FEI_putIntoMatrix(CFEI* cfei, int patternID,
-				 int* rowIDTypes,
-				 GlobalID* rowIDs,
-				 int* colIDTypes,
-				 GlobalID* colIDs,
-				 double* * matrixEntries)
-{
-  CHK_CFEI_NULL(cfei);
-
-  return(((FEI_Implementation*)(cfei->cfei_))->putIntoMatrix(patternID,
-                   rowIDTypes, rowIDs, colIDTypes, colIDs, matrixEntries));
-}
-
-/*============================================================================*/
-extern "C" int FEI_sumIntoRHS(CFEI* cfei, int patternID,
-			      int* IDTypes,
-                               GlobalID* IDs,
-                               double* vectorEntries)
-{
-  CHK_CFEI_NULL(cfei);
-
-  return(((FEI_Implementation*)(cfei->cfei_))->sumIntoRHS(patternID,
-                IDTypes, IDs, vectorEntries));
-}
-
-/*============================================================================*/
-extern "C" int FEI_getFromRHS(CFEI* cfei, int patternID,
-			      int* IDTypes,
-                               GlobalID* IDs,
-                              double* vectorEntries)
-{
-  CHK_CFEI_NULL(cfei);
-
-  return(((FEI_Implementation*)(cfei->cfei_))->getFromRHS(patternID,
-                 IDTypes, IDs, vectorEntries));
-}
-
-/*============================================================================*/
-extern "C" int FEI_putIntoRHS(CFEI* cfei, int patternID,
-			      int* IDTypes,
-                           GlobalID* IDs,
-                           double* vectorEntries)
-{
-  CHK_CFEI_NULL(cfei);
-
-  return(((FEI_Implementation*)(cfei->cfei_))->putIntoRHS(patternID,
-					       IDTypes, IDs, vectorEntries));
 }
 
 /*============================================================================*/

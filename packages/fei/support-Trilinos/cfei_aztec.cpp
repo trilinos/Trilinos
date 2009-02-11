@@ -7,6 +7,9 @@
 /*--------------------------------------------------------------------*/
 
 #include <fei_macros.hpp>
+
+#ifdef HAVE_FEI_AZTECOO
+
 #include <fei_SharedPtr.hpp>
 #include <fei_Data.hpp>
 #include <fei_LinearSystemCore.hpp>
@@ -75,3 +78,5 @@ extern "C" int Aztec_LinSysCore_destroy(LinSysCore** lsc)
    return(0);
 }
 
+#endif
+//HAVE_FEI_AZTECOO

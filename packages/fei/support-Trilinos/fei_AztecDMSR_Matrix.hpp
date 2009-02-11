@@ -1,6 +1,8 @@
 #ifndef _AztecDMSR_Matrix_h_
 #define _AztecDMSR_Matrix_h_
 
+#ifdef HAVE_FEI_AZTECOO
+
 /*--------------------------------------------------------------------*/
 /*    Copyright 2005 Sandia Corporation.                              */
 /*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
@@ -29,6 +31,9 @@
 //   coefficient on the diagonal.
 //
 class Aztec_Map;
+class Aztec_Vector;
+
+#include <az_aztec.h>
 
 class AztecDMSR_Matrix {
     
@@ -170,5 +175,7 @@ class AztecDMSR_Matrix {
 
     bool azTransformed_;
 };
+
+#endif //HAVE_FEI_AZTECOO
 
 #endif

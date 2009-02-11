@@ -11,6 +11,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <fei_macros.hpp>
+#include <fei_iostream.hpp>
 
 #include <cstring>
 #include <vector>

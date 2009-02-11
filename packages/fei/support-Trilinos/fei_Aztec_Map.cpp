@@ -5,9 +5,11 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
+#include <fei_iostream.hpp>
+
+#ifdef HAVE_FEI_AZTECOO
 
 #include <assert.h>
-#include <fei_iostream.hpp>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -81,4 +83,7 @@ void Aztec_Map::checkInput() {
         abort();
     }
 }
+
+#endif
+//HAVE_FEI_AZTECOO
 

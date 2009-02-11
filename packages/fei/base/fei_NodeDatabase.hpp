@@ -12,7 +12,6 @@
 #include "fei_macros.hpp"
 #include "fei_fwd.hpp"
 #include "fei_defs.h"
-#include "feiArray.hpp"
 #include "fei_NodeDescriptor.hpp"
 #include "fei_Pool_alloc.hpp"
 #include "fei_mpi.h"
@@ -210,11 +209,11 @@ class NodeDatabase {
   NodeDescriptor** nodePtrs_;
   int numNodePtrs_;
 
-  feiArray<int> eqnNumbers_;  //eqnNumbers_ will be a sorted list of the
+  std::vector<int> eqnNumbers_;  //eqnNumbers_ will be a sorted list of the
                                   //first global equation number at each node
                                   //in nodePtrs_.
                                   //the relationship between eqnNumbers_ and
-  feiArray<int> eqnNodeIndices_;  //eqnNodeIndices_ is like this:
+  std::vector<int> eqnNodeIndices_;  //eqnNodeIndices_ is like this:
                                   //if eqn == eqnNumbers_[i], then
                                   //  nodePtrs_[eqnNodeIndices_[i]] points to
                                   //  the node with 'eqn'
@@ -230,7 +229,6 @@ class NodeDatabase {
 
   int numLocalNodes_;
   int firstLocalNodeNumber_, lastLocalNodeNumber_;
-  feiArray<GlobalID> temp_;
 
   fei_Pool_alloc<NodeDescriptor> nodePool_;
 };

@@ -10,7 +10,6 @@
 #define _fei_Lookup_Impl_hpp_
 
 #include <fei_macros.hpp>
-#include <feiArray.hpp>
 #include <fei_MatrixGraph.hpp>
 #include <fei_Pattern.hpp>
 #include <fei_ConnectivityBlock.hpp>
@@ -64,7 +63,7 @@ namespace fei {
 
 	unsigned numFields = fieldIDs_.size();
 	fieldSizes_.resize(numFields);
-	int* fsPtr = fieldSizes_.dataPtr();
+	int* fsPtr = &fieldSizes_[0];
 	for(unsigned i=0; i<numFields; ++i) {
 	  fsPtr[i] = vspace_->getFieldSize(fieldIDs[i]);
 	}
@@ -114,7 +113,7 @@ namespace fei {
 	const int* numFieldsPerNode = cblock->getRowPattern()->getNumFieldsPerID();
 	const int* fieldIDs = cblock->getRowPattern()->getFieldIDs();
 	fieldIDs_2D_.resize(numNodes);
-	const int** f2dPtr = fieldIDs_2D_.dataPtr();
+	const int** f2dPtr = &fieldIDs_2D_[0];
 	int offset = 0;
 	for(int i=0; i<numNodes; ++i) {
 	  f2dPtr[i] = fieldIDs + offset;
@@ -141,22 +140,22 @@ namespace fei {
     /** Implementation of Lookup:: method */
     int getNumSubdomains(int nodeNumber)
       {
-	feiArray<int>* subdomains = NULL;
-	std::map<int,feiArray<int>* >::iterator
+	std::vector<int>* subdomains = NULL;
+	std::map<int,std::vector<int>* >::iterator
 	  nns_iter = nodenumSubdomainDB_.find(nodeNumber);
 	if (nns_iter != nodenumSubdomainDB_.end()) subdomains = (*nns_iter).second;
-	return( subdomains==0 ? 0 : subdomains->length() );
+	return( subdomains==0 ? 0 : subdomains->size() );
       }
 
     /** Implementation of Lookup:: method */
     int* getSubdomainList(int nodeNumber)
       {
-	feiArray<int>* subdomains = NULL;
-	std::map<int,feiArray<int>* >::iterator
+	std::vector<int>* subdomains = NULL;
+	std::map<int,std::vector<int>* >::iterator
 	  nns_iter = nodenumSubdomainDB_.find(nodeNumber);
 	if (nns_iter != nodenumSubdomainDB_.end()) subdomains = (*nns_iter).second;
 
-	return( subdomains==0 ? NULL : subdomains->dataPtr() );
+	return( subdomains==0 ? NULL : &(*subdomains)[0] );
       }
 
     /** Implementation of Lookup:: method */
@@ -176,7 +175,7 @@ namespace fei {
 
 	int numShared = sharedIDs->getSharedIDs().getMap().size();
 	workspace_.resize(numShared*2);
-	int* wkPtr = workspace_.dataPtr();
+	int* wkPtr = &workspace_[0];
 	fei::copyKeysToArray(sharedIDs->getSharedIDs().getMap(), numShared, wkPtr);
 
 	snl_fei::RecordCollection* collection = NULL;
@@ -216,8 +215,8 @@ namespace fei {
 	if (list == NULL) return(NULL);
 
         workspace_.resize(list->size());
-	list->copy_to_array(workspace_.length(), workspace_.dataPtr());
-	return(workspace_.dataPtr());
+	list->copy_to_array(workspace_.size(), &workspace_[0]);
+	return(&workspace_[0]);
       }
 
     /** Implementation of Lookup:: method */
@@ -268,15 +267,15 @@ namespace fei {
     std::map<int, fei::Record*> nodenumPairs_;
     std::map<int,fei::Record*> eqnnumPairs_;
 
-    std::map<int,feiArray<int>*> nodenumSubdomainDB_;
+    std::map<int,std::vector<int>*> nodenumSubdomainDB_;
 
     bool databasesBuilt_;
 
     std::vector<int> fieldIDs_;
-    feiArray<int> fieldSizes_;
+    std::vector<int> fieldSizes_;
     std::vector<GlobalID> elemBlockIDs_;
-    feiArray<const int*> fieldIDs_2D_;
-    feiArray<int> workspace_;
+    std::vector<const int*> fieldIDs_2D_;
+    std::vector<int> workspace_;
   };//class Lookup_Impl
 }//namespace fei
 

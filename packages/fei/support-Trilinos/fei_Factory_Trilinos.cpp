@@ -7,6 +7,7 @@
 /*--------------------------------------------------------------------*/
 
 #include "fei_trilinos_macros.hpp"
+
 #include <fei_Factory_Trilinos.hpp>
 
 #include <fei_VectorReducer.hpp>
@@ -14,8 +15,12 @@
 #include <fei_Matrix_Local.hpp>
 #include <fei_Vector_Local.hpp>
 
+#ifdef HAVE_FEI_AZTECOO
 #include <fei_Solver_AztecOO.hpp>
+#endif
+#ifdef HAVE_FEI_AMESOS
 #include <fei_Solver_Amesos.hpp>
+#endif
 
 Factory_Trilinos::Factory_Trilinos(MPI_Comm comm)
   : fei::Factory(comm),
@@ -264,6 +269,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
   }
 
   if (!use_lpm_epetrabasic_) {
+#ifdef HAVE_FEI_EPETRA
     try {
       Epetra_BlockMap emap = blockEntryMatrix_ ?
         Trilinos_Helpers::create_Epetra_BlockMap(vecSpace) :
@@ -280,14 +286,20 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                << exc.what() << "', re-throwing..." << FEI_ENDL;
       throw exc;
     }
+#else
+    FEI_CERR << "fei_Factory_Trilinos::createVector ERROR, HAVE_FEI_EPETRA not defined."
+      << FEI_ENDL;
+#endif
   }
   else {
+#ifdef HAVE_FEI_EPETRA
     vecSpace = matrixGraph->getRowSpace();
 
     lpm_epetrabasic_->setRowDistribution(indices);
     tmpvec.reset(new fei::Vector_Impl<fei::LinearProblemManager>(vecSpace,
                                    lpm_epetrabasic_.get(),
                                    localSize, isSolutionVector));
+#endif
   }
 
   if (reducer_.get() != NULL) {
@@ -303,6 +315,8 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
 fei::SharedPtr<fei::Matrix>
 Factory_Trilinos::createMatrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
 {
+  fei::SharedPtr<fei::Matrix> feimat;
+#ifdef HAVE_FEI_EPETRA
   int globalNumSlaves = matrixGraph->getGlobalNumSlaveConstraints();
 
   if (globalNumSlaves > 0 && reducer_.get()==NULL) {
@@ -328,6 +342,11 @@ Factory_Trilinos::createMatrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
                                                   reducer_,
                                                   orderRowsWithLocalColsFirst_)
   );
+#else
+  FEI_CERR << "fei_Factory_Trilinos::createMatrix ERROR, HAVE_FEI_EPETRA "
+     << "not defined."<<FEI_ENDL;
+  return feimat;
+#endif
 }
 
 fei::SharedPtr<fei::Solver>
@@ -340,21 +359,29 @@ Factory_Trilinos::createSolver(const char* name)
       std::string sname(name);
       std::string::size_type ii = sname.find("Amesos");
       if (ii == std::string::npos) {
+#ifdef HAVE_FEI_AZTECOO
         solver.reset(new Solver_AztecOO);
         return(solver);
+#else
+        FEI_CERR << "fei_Factory_Trilinos::createSolver: ERROR, AztecOO not "
+           << "available." << FEI_ENDL; 
+        return(solver);
+#endif
       }
     }
-#ifdef HAVE_AMESOS
+#ifdef HAVE_FEI_AMESOS
     solver.reset(new Solver_Amesos);
 #else
-    FEI_CERR << "Factory_Trilinos::createSolver: ERROR, Amesos requested,"
-      << " but HAVE_AMESOS is not defined so Amesos is not available."
+    FEI_CERR << "fei_Factory_Trilinos::createSolver: ERROR, Amesos requested,"
+      << " but HAVE_FEI_AMESOS is not defined so Amesos is not available."
       <<FEI_ENDL;
     return(solver);
 #endif
   }
   else {
+#ifdef HAVE_FEI_AZTECOO
     solver.reset(new Solver_AztecOO);
+#endif
   }
 
   return(solver);
@@ -377,10 +404,15 @@ void Factory_Trilinos::create_LinProbMgr(bool replace_if_already_created)
   }
 
   if (need_to_create_lpm) {
+#ifdef HAVE_FEI_EPETRA
     fei::SharedPtr<fei::LinearProblemManager>
       newlpm(new LinProbMgr_EpetraBasic(comm_));
 
     lpm_epetrabasic_ = newlpm;
+#else
+    FEI_CERR << "fei_Factory_Trilinos::create_LinProbMgr ERROR, HAVE_FEI_EPETRA"
+       <<" not defined."<<FEI_ENDL;
+#endif
   }
 }
 

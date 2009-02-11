@@ -5,13 +5,15 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
-
 #include <fei_macros.hpp>
 
 #include <fei_Include_Trilinos.hpp>
 
+#ifdef HAVE_FEI_EPETRA
 #include <fei_VectorTraits_Epetra.hpp>
 #include <fei_MatrixTraits_Epetra.hpp>
+#include <fei_LinProbMgr_EpetraBasic.hpp>
+#endif
 
 #include <fei_Trilinos_Helpers.hpp>
 #include <fei_ParameterSet.hpp>
@@ -19,10 +21,12 @@
 #include <fei_VectorReducer.hpp>
 #include <fei_Matrix_Impl.hpp>
 #include <fei_MatrixReducer.hpp>
-#include <fei_LinProbMgr_EpetraBasic.hpp>
 //#include <EpetraExt_BlockMapOut.h>
 
 namespace Trilinos_Helpers {
+
+#ifdef HAVE_FEI_EPETRA
+
 Epetra_Map
 create_Epetra_Map(MPI_Comm comm,
                   const std::vector<int>& local_eqns)
@@ -291,6 +295,7 @@ create_from_LPM_EpetraBasic(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
 
   return(feimat);
 }
+#endif //HAVE_FEI_EPETRA
 
 void copy_parameterset(const fei::ParameterSet& paramset,
                        Teuchos::ParameterList& paramlist)
@@ -344,6 +349,8 @@ void copy_parameterlist(const Teuchos::ParameterList& paramlist,
     }
   }
 }
+
+#ifdef HAVE_FEI_EPETRA
 
 Epetra_MultiVector*
 get_Epetra_MultiVector(fei::Vector* feivec, bool soln_vec)
@@ -454,6 +461,7 @@ void get_Epetra_pointers(fei::SharedPtr<fei::Matrix> feiA,
     opA = crsA;
   }
 }
+#endif //HAVE_FEI_EPETRA
 
 }//namespace Trilinos_Helpers
 

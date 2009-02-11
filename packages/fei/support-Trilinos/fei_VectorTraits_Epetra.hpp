@@ -9,6 +9,8 @@
 #ifndef _fei_VectorTraits_Epetra_h_
 #define _fei_VectorTraits_Epetra_h_
 
+#ifdef HAVE_FEI_EPETRA
+
 //
 //IMPORTANT NOTE: Make sure that wherever this file is included from, it
 //appears BEFORE any include of fei_base.hpp or fei_Vector.hpp !!!
@@ -92,5 +94,7 @@ namespace fei {
 
   };//struct VectorTraits<Epetra_MultiVector>
 }//namespace fei
+
+#endif //HAVE_FEI_EPETRA
 
 #endif // _fei_VectorTraits_Epetra_hpp_

@@ -33,45 +33,6 @@ test_Utils::~test_Utils()
 {
 }
 
-void test_Utils_feiArray()
-{
-  FEI_COUT << "testing feiArray basic functionality...";
-
-  feiArray<int> array;
-  array.reAllocate(1000);
-  if (array.allocatedLength() != 1000) {
-    throw std::runtime_error("feiArray::reAllocate test failed.");
-  }
-  array.reAllocate(0);
-  feiArray<int> array2;
-
-  int i, len = 4;
-  for(i=0; i<len; ++i) {
-    snl_fei::sortedListInsert(i, array);
-    snl_fei::sortedListInsert(i+len, array);
-
-    if (i>0) snl_fei::sortedListInsert(-i, array);
-  }
-
-  if (array.length() != 3*len-1) {
-    throw std::runtime_error("feiArray::insert test failed.");
-  }
-
-  if (array[0] != -(len-1)) {
-    throw std::runtime_error("feiArray::insert test 2 failed.");
-  }
-
-  if (array[array.length()-1] != 2*len-1) {
-    throw std::runtime_error("feiArray::insert test 3 failed.");
-  }
-
-  int find_index = array.find(-999);
-  if (find_index >= 0) {
-    throw std::runtime_error("feiArray::find test failed.");
-  }
-  FEI_COUT << "ok"<<FEI_ENDL;
-}
-
 void test_Utils_binarySearch()
 {
   feiArray<int> intarray;
@@ -134,7 +95,6 @@ void test_Utils_binarySearch()
 int test_Utils::runtests()
 {
   if (numProcs_ < 2) {
-    test_Utils_feiArray();
     test_Utils_binarySearch();
 
     CHK_ERR( serialtest1() );

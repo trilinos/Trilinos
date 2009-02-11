@@ -143,23 +143,6 @@ int FEI_initSlaveVariable(CFEI* cfei,
 			  const double* weights,
 			  double rhsValue);
 
-int FEI_initCoefAccessPattern( CFEI* cfei,
-                               int patternID,
-                               int numRowIDs,
-                               int* numFieldsPerRow,
-                               int** rowFieldIDs,
-                               int numColIDsPerRow,
-                               int* numFieldsPerCol,
-                               int** colFieldIDs,
-                               int interleaveStrategy );
-
-int FEI_initCoefAccess( CFEI* cfei,
-                        int patternID,
-			int* rowIDTypes,
-                        GlobalID* rowIDs,
-			int* colIDTypes,
-                        GlobalID* colIDs );
-
 int FEI_initComplete(CFEI* cfei);
 
 int FEI_resetSystem(CFEI* cfei, double s);
@@ -224,44 +207,6 @@ int FEI_loadCRPen(CFEI* cfei,
                   double *CRWeights,  
                   double CRValue,
                   double penValue);
-
-int FEI_sumIntoMatrix(CFEI* cfei,
-		      int patternID,
-		      int* rowIDTypes,
-		      GlobalID* rowIDs,
-		      int* colIDTypes,
-		      GlobalID* colIDs,
-		      double** matrixEntries);
-
-int FEI_getFromMatrix(CFEI* cfei,
-		      int patternID,
-		      int* rowIDTypes,
-		      GlobalID* rowIDs,
-		      int* colIDTypes,
-		      GlobalID* colIDs,
-		      double** matrixEntries);
-
-int FEI_putIntoMatrix(CFEI* cfei, int patternID,
-		      int* rowIDTypes,
-		      GlobalID* rowIDs,
-		      int* colIDTypes,
-		      GlobalID* colIDs,
-		      double* * matrixEntries);
-
-int FEI_sumIntoRHS(CFEI* cfei, int patternID,
-		   int* IDTypes,
-		   GlobalID* IDs,
-		   double* vectorEntries);
-
-int FEI_getFromRHS(CFEI* cfei, int patternID,
-		   int* IDTypes,
-		   GlobalID* IDs,
-		   double* vectorEntries);
-
-int FEI_putIntoRHS(CFEI* cfei, int patternID,
-		   int* IDTypes,
-		   GlobalID* IDs,
-		   double* vectorEntries);
 
 int FEI_setMatScalars(CFEI* cfei,
                       int numScalars,

@@ -6,10 +6,13 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <fei_iostream.hpp>
+
+#ifdef HAVE_FEI_AZTECOO
+
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <fei_iostream.hpp>
 #include <cstring>
 
 #include <fei_mpi.h>
@@ -1172,4 +1175,7 @@ void AztecDVBR_Matrix::insertList(int item, int*& list, int& len) {
    //update the length.
    len++;
 }
+
+#endif
+//HAVE_FEI_AZTECOO
 

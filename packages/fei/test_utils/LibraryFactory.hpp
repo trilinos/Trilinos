@@ -26,13 +26,7 @@ namespace fei {
       <li>Aztec
       <li>FETI
       <li>PETSc
-      <li>Prometheus
       </ul>
-
-      Note that beginning with FEI version 2.16, ISIS and SPOOLES are no
-      longer supported. Support for LLNL's HYPRE library is maintained in
-      the HYPRE library itself, and HYPRE instantiation is not provided by
-      this factory.
 
       @return shared-pointer holding newly-created LibraryWrapper instance.
    */

@@ -107,21 +107,6 @@ namespace fei {
                  const int *CRFieldIDs,
                  int& CRID); 
 
-   int initCoefAccessPattern(int patternID,
-                             int numRowIDs,
-                             const int* numFieldsPerRow,
-                             const int* const* rowFieldIDs,
-                             int numColIDsPerRow,
-                             const int* numFieldsPerCol,
-                             const int* const* colFieldIDs,
-                             int interleaveStrategy);
-
-   int initCoefAccess(int patternID,
-                      const int* rowIDTypes,
-                      const GlobalID* rowIDs,
-                      const int* colIDTypes,
-                      const GlobalID* colIDs);
-
    /** indicate that overall initialization sequence is complete */
    int initComplete();
 
@@ -183,36 +168,6 @@ namespace fei {
                  double CRValue,
                  double penValue);
 
-   int sumIntoMatrix(int patternID,
-                     const int* rowIDTypes,
-                     const GlobalID* rowIDs,
-                     const int* colIDTypes,
-                     const GlobalID* colIDs,
-                     const double* const* matrixEntries);
-
-   /**
-   */
-   int sumIntoRHS(int patternID,
-                  const int* IDTypes,
-                  const GlobalID* IDs,
-                  const double* coefficients);
-
-   /**
-   */
-   int putIntoMatrix(int patternID,
-                     const int* rowIDTypes,
-                     const GlobalID* rowIDs,
-                     const int* colIDTypes,
-                     const GlobalID* colIDs,
-                     const double* const* matrixEntries);
-
-   /**
-   */
-   int putIntoRHS(int patternID,
-                  const int* IDTypes,
-                  const GlobalID* IDs,
-                  const double* coefficients);
-
    /**
    */
    int putIntoRHS(int IDType,
@@ -228,18 +183,6 @@ namespace fei {
                   int numIDs,
                   const GlobalID* IDs,
                   const double* coefficients);
-
-   int getFromMatrix(int patternID,
-                     const int* rowIDTypes,
-                     const GlobalID* rowIDs,
-                     const int* colIDTypes,
-                     const GlobalID* colIDs,
-                     double** matrixEntries);
-
-   int getFromRHS(int patternID,
-                  const int* IDTypes,
-                  const GlobalID* IDs,
-                  double* coefficients);
 
    int setMatScalars(int numScalars,
                      const int* IDs, 

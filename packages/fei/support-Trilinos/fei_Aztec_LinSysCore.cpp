@@ -6,9 +6,12 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include "fei_sstream.hpp"
+
+#ifdef HAVE_FEI_AZTECOO
+
 #include <stdlib.h>
 #include <string.h>
-#include "fei_sstream.hpp"
 #include <stdio.h>
 #include <stdexcept>
 
@@ -207,7 +210,7 @@ LinearSystemCore* Aztec_LinSysCore::clone() {
 }
 
 //==============================================================================
-int Aztec_LinSysCore::parameters(int numParams, char** params) {
+int Aztec_LinSysCore::parameters(int numParams, const char*const * params) {
 //
 // this function takes parameters for setting internal things like solver
 // and preconditioner choice, etc.
@@ -3089,3 +3092,5 @@ int Aztec_LinSysCore::messageAbort(const char* msg) const {
    return(-1);
 }
 
+#endif
+//HAVE_FEI_AZTECOO

@@ -68,7 +68,7 @@ FEDataFilter::FEDataFilter(FEI_Implementation* owner,
    comm_(comm),
    masterRank_(masterRank),
    problemStructure_(probStruct),
-   penCRIDs_(0, 1000),
+   penCRIDs_(),
    rowIndices_(),
    rowColOffsets_(0),
    colIndices_(0),
@@ -148,7 +148,7 @@ FEDataFilter::FEDataFilter(const FEDataFilter& src)
    comm_(0),
    masterRank_(0),
    problemStructure_(NULL),
-   penCRIDs_(0, 1000),
+   penCRIDs_(),
    rowIndices_(),
    rowColOffsets_(0),
    colIndices_(0),
@@ -307,8 +307,6 @@ int FEDataFilter::initLinSysCore()
     cr_iter = problemStructure_->getPenConstRecords().begin(),
     cr_end  = problemStructure_->getPenConstRecords().end();
 
-  int i;
-
   //constraintBlocks will be a sorted list with each "block-id" being the
   //num-nodes-per-constraint for constraints in that block.
 
@@ -316,11 +314,10 @@ int FEDataFilter::initLinSysCore()
   feiArray<int> numConstraintsPerBlock;
   feiArray<int> numDofPerConstraint;
   penCRIDs_.resize(problemStructure_->getNumPenConstRecords());
-  GlobalID* penCRIDsPtr = penCRIDs_.dataPtr();
 
   int counter = 0;
   while(cr_iter != cr_end) {
-    penCRIDsPtr[counter++] = (*cr_iter).first;
+    penCRIDs_[counter++] = (*cr_iter).first;
     ConstraintType& cr = *((*cr_iter).second);
     int nNodes = cr.getMasters()->size();
 
@@ -329,7 +326,7 @@ int FEDataFilter::initLinSysCore()
 
     int nodeOffset = 0;
     if (offset < 0) {
-      constraintBlocks_.insert(nNodes, insertPoint);
+      constraintBlocks_.insert(constraintBlocks_.begin()+insertPoint, nNodes);
       numConstraintsPerBlock.insert(1, insertPoint);
       numDofPerConstraint.insert(0, insertPoint);
 
@@ -357,8 +354,8 @@ int FEDataFilter::initLinSysCore()
   }
 
   //now combine the elem-block info with the penalty-constraint info.
-  int numBlocksTotal = numElemBlocks + constraintBlocks_.length();
-  for(i=0; i<constraintBlocks_.length(); ++i) {
+  int numBlocksTotal = numElemBlocks + constraintBlocks_.size();
+  for(size_t i=0; i<constraintBlocks_.size(); ++i) {
     numElemsPerBlock.push_back(numConstraintsPerBlock[i]);
     numNodesPerElem.push_back(constraintBlocks_[i]);
     elemMatrixSizePerBlock.push_back(numDofPerConstraint[i]);
@@ -377,7 +374,7 @@ int FEDataFilter::initLinSysCore()
   numRegularElems_ = 0;
   feiArray<int> numDofPerNode(0, 32);
 
-  for(i=0; i<numElemBlocks; i++) {
+  for(int i=0; i<numElemBlocks; i++) {
     BlockDescriptor* block = NULL;
     CHK_ERR( problemStructure_->getBlockDescriptor_index(i, block) );
 
@@ -423,7 +420,7 @@ int FEDataFilter::initLinSysCore()
 
   std::vector<int> nodeNumbers;
   cr_iter = problemStructure_->getPenConstRecords().begin();
-  i = 0;
+  int i = 0;
   while(cr_iter != cr_end) {
     ConstraintType& cr = *((*cr_iter).second);
     std::vector<GlobalID>* nodeIDsvec = cr.getMasters();
@@ -886,112 +883,6 @@ int FEDataFilter::generalElemInput(GlobalID elemBlockID,
 }
 
 //------------------------------------------------------------------------------
-int FEDataFilter::sumIntoMatrix(int patternID,
-			    const int* rowIDTypes,
-                         const GlobalID* rowIDs,
-			    const int* colIDTypes,
-                         const GlobalID* colIDs,
-                         const double* const* matrixEntries)
-{
-  if (Filter::logStream() != NULL) {
-    (*logStream()) << "FEI: sumIntoMatrix" << FEI_ENDL;
-  }
-  return(generalCoefInput(patternID, rowIDTypes, rowIDs, colIDTypes, colIDs,
-			  matrixEntries, NULL, ASSEMBLE_SUM));
-}
-
-//------------------------------------------------------------------------------
-int FEDataFilter::sumIntoRHS(int patternID,
-			 const int* rowIDTypes,
-                         const GlobalID* rowIDs,
-                         const double* vectorEntries)
-{
-  if (Filter::logStream() != NULL) {
-    (*logStream()) << "FEI: sumIntoRHS" << FEI_ENDL;
-  }
-  return(generalCoefInput(patternID, rowIDTypes, rowIDs, NULL, NULL,
-			  NULL, vectorEntries, ASSEMBLE_SUM));
-}
-
-//------------------------------------------------------------------------------
-int FEDataFilter::putIntoMatrix(int patternID,
-			    const int* rowIDTypes,
-			    const GlobalID* rowIDs,
-			    const int* colIDTypes,
-			    const GlobalID* colIDs,
-			    const double* const* matrixEntries)
-{
-  if (Filter::logStream() != NULL) {
-    (*logStream()) << "FEI: putIntoMatrix" << FEI_ENDL;
-  }
-  return(generalCoefInput(patternID, rowIDTypes, rowIDs, colIDTypes, colIDs,
-			  matrixEntries, NULL, ASSEMBLE_PUT));
-}
-
-//------------------------------------------------------------------------------
-int FEDataFilter::getFromMatrix(int patternID,
-			    const int* rowIDTypes,
-			    const GlobalID* rowIDs,
-			    const int* colIDTypes,
-			    const GlobalID* colIDs,
-			    double** matrixEntries)
-{
-   std::vector<int> rowIndices;
-   std::vector<int> rowColOffsets, colIndices;
-   int numColsPerRow;
-
-   //We're going to supply a little non-standard behavior here that is
-   //"extra for experts". If the colIDs argument is supplied as NULL, then
-   //this implementation will provide matrix entries for the whole row, for
-   //each of the matrix rows referenced by rowIDs and the associated fields
-   //stored in 'patternID'.
-   //Important note: this assumes that the caller has allocated enough memory
-   //in 'matrixEntries'. The caller can find out how much memory is required
-   //in a round-about way, by using the 'getFieldSize' and 'getEqnNumbers'
-   //functions, and then querying the LinearSystemCore object for row-lengths.
-   //This is very unpleasant, but will get us by until the next FEI update
-   //addresses this (hopefully).
-
-   if (colIDs == NULL) {
-     CHK_ERR( problemStructure_->getPatternScatterIndices(patternID, 
-							  rowIDs, rowIndices) );
-   }
-   else {
-     CHK_ERR( problemStructure_->getPatternScatterIndices(patternID,
-					     	  rowIDs, colIDs,
-					           rowIndices, rowColOffsets,
-						   numColsPerRow, colIndices) );
-   }
-
-   int err = 0;
-   if (colIDs == NULL) {
-     err = getFromMatrix(rowIndices.size(), &rowIndices[0],
-			 NULL, NULL, 0, matrixEntries);
-   }
-   else {
-     err = getFromMatrix(rowIndices.size(), &rowIndices[0],
-			 &rowColOffsets[0], &colIndices[0],
-			 numColsPerRow, matrixEntries);
-   }
-
-   return(err);
-}
-
-//------------------------------------------------------------------------------
-int FEDataFilter::putIntoRHS(int patternID,
-			 const int* rowIDTypes,
-                         const GlobalID* rowIDs,
-                         const double* vectorEntries)
-{
-  if (Filter::logStream() != NULL) {
-    (*logStream()) << "FEI: putIntoRHS" << FEI_ENDL;
-  }
-
-  return(generalCoefInput(patternID, rowIDTypes, rowIDs, NULL, NULL,
-			  NULL, vectorEntries, ASSEMBLE_PUT));
-}
-
-//------------------------------------------------------------------------------
 int FEDataFilter::putIntoRHS(int IDType,
 			  int fieldID,
 			  int numIDs,
@@ -1039,121 +930,6 @@ int FEDataFilter::sumIntoRHS(int IDType,
   CHK_ERR(assembleRHS(rowIndices_.size(), &rowIndices_[0], rhsEntries, ASSEMBLE_SUM));
 
   return(0);
-}
-
-//------------------------------------------------------------------------------
-int FEDataFilter::getFromRHS(int patternID,
-			 const int* rowIDTypes,
-                         const GlobalID* rowIDs,
-                         double* vectorEntries)
-{
-  std::vector<int> rowIndices;
-
-  CHK_ERR( problemStructure_->getPatternScatterIndices(patternID, 
-						       rowIDs, rowIndices) );
-
-  CHK_ERR( getFromRHS(rowIndices.size(), vectorEntries, &rowIndices[0]))
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int FEDataFilter::generalCoefInput(int patternID,
-			       const int* rowIDTypes,
-			       const GlobalID* rowIDs,
-			       const int* colIDTypes,
-			       const GlobalID* colIDs,
-			       const double* const* matrixEntries,
-			       const double* vectorEntries,
-			       int assemblyMode)
-{
-//
-//We will give these rowIDs and colIDs to the problemStructure_ object,
-//and it will return the scatter indices in the feiArray<int> objects rowIndices
-//and colIndices. We will then use those indices to put the contents of
-//matrixEntries and/or vectorEntries into the linear system core object.
-//
-//Those equations (corresponding to rowIDs) that are remotely owned, will
-//be packed up so they can be sent to the owning processor.
-//
-  rowIndices_.resize(0);
-  rowColOffsets_.resize(0);
-  colIndices_.resize(0);
-
-   int numColsPerRow;
-
-   int error = 0;
-   if (matrixEntries != NULL && vectorEntries == NULL) {
-      error = problemStructure_->getPatternScatterIndices(patternID,
-                                           rowIDs, colIDs,
-                                           rowIndices_, rowColOffsets_,
-					     numColsPerRow, colIndices_);
-   }
-   else if (matrixEntries == NULL && vectorEntries != NULL) {
-      error = problemStructure_->getPatternScatterIndices(patternID,
-                                           rowIDs, rowIndices_);
-   }
-   else {
-      FEI_CERR << "FEDataFilter::generalCoefInput: ERROR, both matrixEntries "
-	   << "and vectorEntries are NULL." << FEI_ENDL;
-      ERReturn(-1);
-   }
-
-   if (assemblyMode == ASSEMBLE_PUT) {
-     int globalError = 0;
-     CHK_ERR( fei::GlobalSum(comm_, error, globalError) );
-     if (globalError != 0) {
-       return(-1);
-     }
-   }
-
-   const double* const* coefs = NULL;
-   if (matrixEntries != NULL) coefs = matrixEntries;
-
-   const double* rhsCoefs = NULL;
-   if (vectorEntries != NULL) rhsCoefs = vectorEntries;
-
-   if (coefs != NULL || rhsCoefs != NULL) newData_ = true;
-
-   //Recall that for a pattern, the list of column-entities is packed, we have
-   //a list of column-entities for each row-entities. Thus, we now have a list
-   //of column-indices for each row index...
-   int numRows = rowIndices_.size();
-   int numCols = colIndices_.size();
-
-   if (Filter::logStream() != NULL) {
-     if (coefs != NULL) {
-       (*logStream()) << "#num-rows num-cols"<<FEI_ENDL
-			  <<numRows<<" "<<numCols << FEI_ENDL;
-       for(int i=0; i<numRows; i++) {
-	 const double* coefs_i = coefs[i];
-	 for(int j=0; j<numCols; j++) {
-	   (*logStream()) << coefs_i[j] << " ";
-	 }
-	 (*logStream()) << FEI_ENDL;
-       }
-     }
-
-     if (rhsCoefs != NULL) {
-       (*logStream()) << "#num-rows"<<FEI_ENDL<<numRows << FEI_ENDL;
-       for(int i=0; i<numRows; i++) {
-	 (*logStream()) << rhsCoefs[i] << FEI_ENDL;
-       }
-     }
-   }
-
-   if (assemblyMode == ASSEMBLE_PUT) CHK_ERR( exchangeRemoteEquations() );
-
-   if (coefs != NULL) {
-     CHK_ERR( assembleEqns(numRows, numColsPerRow, &rowIndices_[0],
-                           &colIndices_[0], coefs, false, assemblyMode) );
-   }
-
-   if (rhsCoefs != NULL) {
-     CHK_ERR(assembleRHS(rowIndices_.size(), &rowIndices_[0], rhsCoefs, assemblyMode));
-   }
-
-   return(FEI_SUCCESS);
 }
 
 //------------------------------------------------------------------------------
@@ -1235,7 +1011,7 @@ int FEDataFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
 
    int numRecvEqns = eqnCommMgr.getNumLocalEqns();
 
-   feiArray<int>& recvEqnNumbers = eqnCommMgr.localEqnNumbersPtr();
+   std::vector<int>& recvEqnNumbers = eqnCommMgr.localEqnNumbersPtr();
    std::vector<fei::CSVec*>& recvEqns = eqnCommMgr.localEqns();
    feiArray<feiArray<double>*>& recvRHSs = *(eqnCommMgr.localRHSsPtr());
 
@@ -1933,7 +1709,7 @@ int FEDataFilter::getEqnSolnEntry(int eqnNumber, double& solnValue)
 //------------------------------------------------------------------------------
 int FEDataFilter::getSharedRemoteSolnEntry(int eqnNumber, double& solnValue)
 {
-  feiArray<int>& remoteEqnNumbers = eqnCommMgr_->sendEqnNumbersPtr();
+  std::vector<int>& remoteEqnNumbers = eqnCommMgr_->sendEqnNumbersPtr();
   double* remoteSoln = eqnCommMgr_->sendEqnSolnPtr();
 
   int index = snl_fei::binarySearch(eqnNumber, remoteEqnNumbers);
@@ -2012,7 +1788,7 @@ int FEDataFilter::unpackSolution()
   //to be made available to those remote contributing processors.
 
    int numRecvEqns = eqnCommMgr_->getNumLocalEqns();
-   feiArray<int>& recvEqnNumbers = eqnCommMgr_->localEqnNumbersPtr();
+   std::vector<int>& recvEqnNumbers = eqnCommMgr_->localEqnNumbersPtr();
 
    for(int i=0; i<numRecvEqns; i++) {
      int eqn = recvEqnNumbers[i];

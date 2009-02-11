@@ -32,7 +32,7 @@ include_HEADERS = $(CORE_H)
 
 TRILINOS_DIR=support-Trilinos
 
-if FEI_HAVE_PETSC
+if HAVE_FEI_PETSC
 PETSC_DIR=support-PETSc
 else
 PETSC_DIR=

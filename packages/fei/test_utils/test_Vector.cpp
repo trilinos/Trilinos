@@ -18,10 +18,10 @@
 
 #include <test_utils/LibraryFactory.hpp>
 
-#ifdef FEI_HAVE_TRILINOS
-#include <fei_Factory_Trilinos.hpp>
+#ifdef HAVE_FEI_AZTECOO
 #include <fei_Aztec_LinSysCore.hpp>
 #endif
+#include <fei_Factory_Trilinos.hpp>
 
 #undef fei_file
 #define fei_file "test_Vector.cpp"
@@ -39,8 +39,6 @@ test_Vector::~test_Vector()
 
 int test_Vector::runtests()
 {
-#ifdef FEI_HAVE_TRILINOS
-
   //-------------------------------
   // We'll test the vector produced by Factory_Trilinos 
   fei::SharedPtr<fei::Factory> factory_trilinos(new Factory_Trilinos(comm_));
@@ -50,8 +48,6 @@ int test_Vector::runtests()
   fei::SharedPtr<fei::Vector> fei_vec = create_vector(factory_trilinos);
 
   vector_test1(fei_vec);
-
-#endif
 
   if (localProc_==0) FEI_COUT << FEI_ENDL;
 

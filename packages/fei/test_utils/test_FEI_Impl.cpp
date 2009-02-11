@@ -14,7 +14,9 @@
 
 #include <feiArray.hpp>
 #include <fei_FEI_Impl.hpp>
+#ifdef HAVE_FEI_AZTECOO
 #include <fei_Aztec_LinSysCore.hpp>
+#endif
 #include <test_utils/FEData.hpp>
 #include <fei_LibraryWrapper.hpp>
 
@@ -72,7 +74,7 @@ int test_FEI_Impl::test1()
   if (numProcs_ > 1) {
     return(0);
   }
-
+#ifdef HAVE_FEI_AZTECOO
   testData* testdata = new testData(localProc_, numProcs_);
 
   fei::SharedPtr<LinearSystemCore> linSys(new Aztec_LinSysCore(comm_));
@@ -140,27 +142,6 @@ int test_FEI_Impl::test1()
 				     sharingProcs2D.dataPtr()) );
   }
 
-  int patternID = 0;
-  int numRowIDs = 1;
-  int* numFieldsPerRow = new int[1];
-  numFieldsPerRow[0] = 1;
-  int* rowFieldIDs = new int[1];
-  rowFieldIDs[0] = testdata->fieldIDs[0];
-
-  int rowIDType = FEI_NODE;
-
-  CHK_ERR( fei->initCoefAccessPattern(patternID, numRowIDs, numFieldsPerRow,
-				      &rowFieldIDs, numRowIDs, numFieldsPerRow,
-				      &rowFieldIDs,
-				      0) );//interleaveStrategy
-
-  delete [] numFieldsPerRow;
-  delete [] rowFieldIDs;
-
-  CHK_ERR( fei->initCoefAccess(patternID,
-			       &rowIDType, &(testdata->ids[0]),
-			       &rowIDType, &(testdata->ids[0])) );
-
   CHK_ERR( fei->initComplete() );
 
   feiArray<double> rhsData(testdata->ids.size());
@@ -177,33 +158,6 @@ int test_FEI_Impl::test1()
 			   testdata->ids.size(),
 			   &(testdata->ids[0]),
 			   rhsData.dataPtr()) );
-
-  double* matrixEntries = new double[16];
-  double** matrixEntriesPtr = new double*[4];
-  for(int ii=0; ii<4; ++ii) matrixEntriesPtr[ii] = matrixEntries+ii*4;
-  for(int jj=0; jj<16; ++jj) matrixEntries[jj] = 1.0;
-
-  
-  CHK_ERR( fei->putIntoMatrix(patternID, &rowIDType, &(testdata->ids[0]),
-			      &rowIDType, &(testdata->ids[0]),
-			      matrixEntriesPtr) );
-
-  CHK_ERR( fei->putIntoRHS(patternID, &rowIDType, &(testdata->ids[0]),
-			   matrixEntries) );
-
-  CHK_ERR( fei->sumIntoRHS(patternID, &rowIDType, &(testdata->ids[0]),
-			   matrixEntries) );
-
-  CHK_ERR( fei->sumIntoMatrix(patternID, &rowIDType, &(testdata->ids[0]),
-			      &rowIDType, &(testdata->ids[0]),
-			      matrixEntriesPtr) );
-
-  CHK_ERR( fei->getFromMatrix(patternID, &rowIDType, &(testdata->ids[0]),
-			      &rowIDType, &(testdata->ids[0]),
-			      matrixEntriesPtr) );
-
-  delete [] matrixEntries;
-  delete [] matrixEntriesPtr;
 
   int numBCNodes = 2;
   GlobalID* BCNodeIDs = &(testdata->ids[0]);
@@ -256,7 +210,7 @@ int test_FEI_Impl::test1()
 				      solnReturnTime) );
 
   delete testdata;
-
+#endif
   return(0);
 }
 
@@ -326,27 +280,6 @@ int test_FEI_Impl::test2()
 				     &(testdata->numSharingProcsPerID[0]),
 				     sharingProcs2D.dataPtr()) );
   }
-
-  int patternID = 0;
-  int numRowIDs = 1;
-  int* numFieldsPerRow = new int[1];
-  numFieldsPerRow[0] = 1;
-  int* rowFieldIDs = new int[1];
-  rowFieldIDs[0] = testdata->fieldIDs[0];
-
-  int rowIDType = FEI_NODE;
-
-  CHK_ERR( fei->initCoefAccessPattern(patternID, numRowIDs, numFieldsPerRow,
-				      &rowFieldIDs, numRowIDs, numFieldsPerRow,
-				      &rowFieldIDs,
-				      0) );//interleaveStrategy
-
-  delete [] numFieldsPerRow;
-  delete [] rowFieldIDs;
-
-  CHK_ERR( fei->initCoefAccess(patternID,
-			       &rowIDType, &(testdata->ids[0]),
-			       &rowIDType, &(testdata->ids[0])) );
 
   CHK_ERR( fei->initComplete() );
 

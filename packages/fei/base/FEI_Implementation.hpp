@@ -267,69 +267,6 @@ class FEI_Implementation : public FEI {
                  const int *CRFields,
                  int& CRID); 
 
-   /** Initialization of a pattern by which assembled coefficients will be
-       accessed. This is analogous to the 'initElemBlock' function, whereby the
-       mask or description of elements in an element-block is provided.
-       Locations in the matrix or vector are specified using pairs of either
-       nodeIDs and fieldIDs or elementIDs and fieldIDs. For elementIDs, the
-       coefficient-access refers to element-centered coefs, or elem-dof.
-       An access pattern can be used to specify access to a rectangular region
-       of coefficients, with the following limitation. The mask of fields-per-
-       column-entity must be the same for each row in the pattern. The number of coefficients in each row of the accessed region will
-       be the same.
-       @param patternID User-supplied identifier, to be referred to later when
-              calling 'initCoefAccess', 'getCoefMatrix', etc.
-       @param numRowIDs Number of node IDs or element IDs for which
-       corresponding rows will be accessed. (Length of the numFieldsPerRow
-       list, and number of rows in the rowFieldIDs table.)
-       @param numFieldsPerRow
-       @param rowFieldIDs For each row-'entity' (nodeID or elemID), a list of 
-       fieldIDs for which rows of coeficients will be accessed.
-       @param numColIDsPerRow Number of IDs for which corresponding columns will
-              be accessed in each row. (Length of the numFieldsPerCol list, and
-	      number of rows in the colFieldIDs table.)
-	      @param numFieldsPerCol
-       @param colFieldIDs For each column-'entity', a list of fieldIDs for which
-              columns of the matrix will be accessed.
-       @param interleaveStrategy Same valid values here as for the parameter of
-              the same name in the function 'initElemBlock'.
-   */
-   int initCoefAccessPattern(int patternID,
-                             int numRowIDs,
-                             const int* numFieldsPerRow,
-                             const int* const* rowFieldIDs,
-                             int numColIDsPerRow,
-                             const int* numFieldsPerCol,
-                             const int* const* colFieldIDs,
-                             int interleaveStrategy);
-
-   /** Initialization of coefficient access for specific rows/columns, using a
-       user-defined pattern. This will
-       cause positions to be inserted into the underlying sparse matrix 
-       structure if they don't already exist.
-       @param patternID Access pattern which must already have been defined by
-              a call to the function 'initCoefAccessPattern'.
-       @param rowIDTypes List whose entries can take the value FEI_NODE or
-              FEI_ELEMENT. Entries indicate whether the corresponding entry in
-              'rowIDs' is a nodeID or an elementID.
-       @param rowIDs List of node or element identifiers for which
-       corresponding rows are to be accessed. Length was defined when
-       'initCoefAccessPattern' was  called.
-       @param colIDTypes List whose entries can take the value FEI_NODE or
-              FEI_ELEMENT. Entries indicate whether the corresponding entry in
-              'colIDs' is a nodeID or an elementID. The length of this list is
-	      assumed to be 'numRowIDs' X 'numColIDsPerRow' (these parameters
-	      were supplied when the pattern was initialized via
-	      'initCoefAccessPattern').
-       @param colIDs List of identifiers for which corresponding columns are to
-       be accessed. Length is the same as 'colIDTypes'.
-   */ 
-   int initCoefAccess(int patternID,
-		      const int* rowIDTypes,
-                      const GlobalID* rowIDs,
-		      const int* colIDTypes,
-                      const GlobalID* colIDs);
-
    /** indicate that overall initialization sequence is complete */
    int initComplete();
 
@@ -493,70 +430,6 @@ class FEI_Implementation : public FEI {
                  double CRValue,
                  double penValue);
 
-   /** Accumulate coefficients into the matrix. 
-      @param patternID User-defined identifier used in an earlier call to the
-            function 'initCoefAccessPattern'.
-      @param rowIDTypes List whose entries can take the value FEI_NODE or
-             FEI_ELEMENT. Entries indicate whether the corresponding entry in
-             'rowIDs' is a nodeID or an elementID.
-      @param rowIDs List of nodes or elements for which the corresponding
-      rows in the matrix will be accessed.
-       @param colIDTypes List whose entries can take the value FEI_NODE or
-              FEI_ELEMENT. Entries indicate whether the corresponding entry in
-              'rowIDs' is a nodeID or an elementID.
-      @param colIDs List of nodes or elements for which the corresponding
-      columns in the matrix will be accessed. This list is assumed to be of
-      length 'numRowIDs' X 'numColIDsPerRow' (parameters passed when the
-      access-pattern was initialized).
-      @param matrixEntries Table of coefficient values. Number of rows given by
-           the sum of the sizes of the fields accessed for rowIDs (data
-           provided in the earlier call to 'initCoefAccessPattern'). Number of
-           columns given by the sum of the sizes of the fields accessed for
-           colIDs.
-   */
-   int sumIntoMatrix(int patternID,
-		     const int* rowIDTypes,
-                     const GlobalID* rowIDs,
-		     const int* colIDTypes,
-                     const GlobalID* colIDs,
-                     const double* const* matrixEntries);
-
-   /** Sum a copy of coefficient data into the rhs vector. */
-   int sumIntoRHS(int patternID,
-		  const int* IDTypes,
-                  const GlobalID* IDs,
-                  const double* rhsEntries);
-
-   /** Put a copy of coefficients into the matrix.
-      @param patternID User-defined identifier used in an earlier call to the
-            function 'initCoefAccessPattern'.
-      @param rowIDTypes Same meaning as 'sumIntoMatrix' argument of same name
-      @param rowIDs List of nodes for which the corresponding rows in the
-            matrix will be accessed.
-      @param colIDTypes Same meaning as 'sumIntoMatrix' argument of same name
-      @param colIDs List of nodes for which the corresponding columns in the
-            matrix will be accessed. This list is assumed to be of
-      length 'numRowIDs' X 'numColIDsPerRow' (parameters passed when the
-      access-pattern was initialized).
-      @param matrixEntries Table of coefficient values. Number of rows given by
-           the sum of the sizes of the fields accessed for rowIDs (data
-           provided in the earlier call to 'initCoefAccessPattern'). Number of
-           columns given by the sum of the sizes of the fields accessed for
-           colIDs.
-   */
-   int putIntoMatrix(int patternID,
-		     const int* rowIDTypes,
-                     const GlobalID* rowIDs,
-		     const int* colIDTypes,
-                     const GlobalID* colIDs,
-                     const double* const* matrixEntries);
-
-   /** Put a copy of coefficient data into the rhs vector. */
-   int putIntoRHS(int patternID,
-		  const int* IDTypes,
-                  const GlobalID* IDs,
-                  const double* rhsEntries);
-
    /** Put a copy of coefficient data into the rhs vector. */
    int putIntoRHS(int IDType,
 		  int fieldID,
@@ -570,64 +443,6 @@ class FEI_Implementation : public FEI {
 		  int numIDs,
 		  const GlobalID* IDs,
 		  const double* rhsEntries);
-
-   /** Get a copy of coefficients from the matrix. A special semantic applies
-       to the getFromMatrix (and getFromRHS) function if any of the IDs in
-       the argument 'rowIDs' correspond to shared nodes that are not locally
-       owned. Equations for shared nodes reside on only 1 'owning' processor,
-       with the owning processor being chosen by the FEI implementation. The
-       calling code has no way to know which processor 'owns' a shared node.
-       Thus if this call is made only on this processor, then the coefficients
-       for equations (matrix rows) that correspond to remotely-owned shared 
-       nodes will not be returned. Those positions in the 'matrixEntries'
-       argument will not be referenced. If this function call is made on all
-       sharing processors, then an attempt will be made to perform the
-       communication to get those remotely owned coefficients from the owning
-       processor. (This will probably be done using MPI_Iprobe calls to see if
-       the owning/sharing processor is in this function and able to be
-       communicated with. So not all processors need to make this call, only 
-       all processors that share the node(s) for which matrix row entries are
-       being requested.)
-      @param patternID User-defined identifier used in an earlier call to the
-            function 'initCoefAccessPattern'.
-       @param rowIDTypes List whose entries can take the value FEI_NODE or
-              FEI_ELEMENT. Entries indicate whether the corresponding entry in
-              'rowIDs' is a nodeID or an elementID.
-      @param rowIDs List of nodes or elements for which the corresponding rows
-      in the matrix will be accessed.
-       @param colIDTypes List whose entries can take the value FEI_NODE or
-              FEI_ELEMENT. Entries indicate whether the corresponding entry in
-              'rowIDs' is a nodeID or an elementID.
-      @param colIDs List of nodes for which the corresponding columns in the
-            matrix will be accessed. This list is assumed to be of
-      length 'numRowIDs' X 'numColIDsPerRow' (parameters passed when the
-      access-pattern was initialized).
-      @param matrixEntries Table of coefficient values. Number of rows given by
-           the sum of the sizes of the fields accessed for rowIDs (data
-           provided in the earlier call to 'initCoefAccessPattern'). Number of
-           columns given by the sum of the sizes of the fields accessed for
-           colIDs.
-   */
-   int getFromMatrix(int patternID,
-		     const int* rowIDTypes,
-                     const GlobalID* rowIDs,
-		     const int* colIDTypes,
-                     const GlobalID* colIDs,
-                     double** matrixEntries);
-
-   /** Get a copy of coefficient data from the rhs vector.
-      @param patternID User-defined identifier used in an earlier call to the
-            function 'initCoefAccessPattern'.
-      @param IDTypes
-      @param IDs
-      @param rhsEntries List of coefficient values, length is the same as the
-            number of rows in the 'matrixEntries' argument of the functions that
-           access elem-dof matrix coefficients.
-   */
-   int getFromRHS(int patternID,
-		  const int* IDTypes,
-                  const GlobalID* IDs,
-                  double* rhsEntries);
 
 // Equation solution services.....................................
 

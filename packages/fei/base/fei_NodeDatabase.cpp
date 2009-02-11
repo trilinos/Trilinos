@@ -23,7 +23,7 @@
 NodeDatabase::NodeDatabase(std::map<int,int>* fieldDatabase,
 			   NodeCommMgr* nodeCommMgr)
   : nodePtrs_(NULL), numNodePtrs_(0),
-    eqnNumbers_(0, 0), eqnNodeIndices_(0, 0),
+    eqnNumbers_(0), eqnNodeIndices_(),
     nodeIDs_(),
     allocated_(false), synchronized_(false),
     need_to_alloc_and_sync_(true),
@@ -31,7 +31,6 @@ NodeDatabase::NodeDatabase(std::map<int,int>* fieldDatabase,
     nodeCommMgr_(nodeCommMgr),
     numLocalNodes_(0),
     firstLocalNodeNumber_(-1), lastLocalNodeNumber_(-1),
-    temp_(0, 32),
     nodePool_()
 {
 }
@@ -305,9 +304,8 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
 {
   if (!allocated_) ERReturn(-1);
 
-  int err = eqnNumbers_.reAllocate(numNodePtrs_);
-  err += eqnNodeIndices_.reAllocate(numNodePtrs_);
-  if (err) ERReturn(-2);
+  eqnNumbers_.reserve(numNodePtrs_);
+  eqnNodeIndices_.reserve(numNodePtrs_);
 
   eqnNumbers_.resize(0);
   eqnNodeIndices_.resize(0);
@@ -348,7 +346,7 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
 
       int insertPoint = snl_fei::sortedListInsert(firstEqnNumber, eqnNumbers_);
       if (insertPoint == -2) ERReturn(-2);
-      if (insertPoint >= 0) eqnNodeIndices_.insert(i, insertPoint);
+      if (insertPoint >= 0) eqnNodeIndices_.insert(eqnNodeIndices_.begin()+insertPoint, i);
     }
 
     node->setNumNodalDOF(numNodalDOF);
@@ -380,7 +378,7 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
     int firstEqn = node.getFieldEqnNumbers()[0];
     int insertPoint = snl_fei::sortedListInsert(firstEqn, eqnNumbers_);
     if (insertPoint == -2) ERReturn(-2);
-    if (insertPoint >= 0) eqnNodeIndices_.insert(index, insertPoint);
+    if (insertPoint >= 0) eqnNodeIndices_.insert(eqnNodeIndices_.begin()+insertPoint, index);
   }
 
   synchronized_ = true;

@@ -9,16 +9,21 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#ifdef HAVE_FEI_AZTECOO
+
 #include <fei_macros.hpp>
 #include <fei_Solver.hpp>
 #include <fei_Logger.hpp>
 
+#ifdef HAVE_FEI_TEUCHOS
 namespace Teuchos {
   class ParameterList;
 }
+#endif
+
 class AztecOO;
 
-#ifdef HAVE_ML
+#ifdef HAVE_FEI_ML
 #include <ml_include.h>
 #include <ml_epetra_preconditioner.h>
 #endif
@@ -100,7 +105,7 @@ class Solver_AztecOO : public fei::Solver, private fei::Logger {
   Teuchos::ParameterList* paramlist_;
 
   bool useML_;
-#ifdef HAVE_ML
+#ifdef HAVE_FEI_ML
   ML_Epetra::MultiLevelPreconditioner* ml_prec_;
   bool ml_defaults_set_;
   int *ml_aztec_options_;
@@ -110,5 +115,7 @@ class Solver_AztecOO : public fei::Solver, private fei::Logger {
   std::string name_;
   std::string dbgprefix_;
 }; //class Solver_AztecOO
+
+#endif // HAVE_FEI_AZTECOO
 
 #endif

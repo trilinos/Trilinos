@@ -4,34 +4,36 @@
 //fei_macros.hpp includes FEI_config.h
 #include "fei_macros.hpp"
 
-#undef HAVE_TEUCHOS
-#ifndef HAVE_NO_TEUCHOS
-#define HAVE_TEUCHOS
+#ifdef FEI_BYPASS_CONFIG_H
+
+#undef HAVE_FEI_TEUCHOS
+#ifndef HAVE_FEI_NO_TEUCHOS
+#define HAVE_FEI_TEUCHOS
 #endif
 
-#undef HAVE_EPETRA
-#ifndef HAVE_NO_EPETRA
-#define HAVE_EPETRA
+#undef HAVE_FEI_EPETRA
+#ifndef HAVE_FEI_NO_EPETRA
+#define HAVE_FEI_EPETRA
 #endif
 
-#undef HAVE_AZTECOO
-#ifndef HAVE_NO_AZTECOO
-#define HAVE_AZTECOO
+#undef HAVE_FEI_AZTECOO
+#ifndef HAVE_FEI_NO_AZTECOO
+#define HAVE_FEI_AZTECOO
 #endif
 
-#undef HAVE_AMESOS
-#ifndef HAVE_NO_AMESOS
-#define HAVE_AMESOS
+#undef HAVE_FEI_AMESOS
+#ifndef HAVE_FEI_NO_AMESOS
+#define HAVE_FEI_AMESOS
 #endif
 
-#undef HAVE_ML
-#ifndef HAVE_NO_ML
-#define HAVE_ML
+#undef HAVE_FEI_ML
+#ifndef HAVE_FEI_NO_ML
+#define HAVE_FEI_ML
 #endif
 
-#undef HAVE_IFPACK
-#ifndef HAVE_NO_IFPACK
-#define HAVE_IFPACK
+#undef HAVE_FEI_IFPACK
+#ifndef HAVE_FEI_NO_IFPACK
+#define HAVE_FEI_IFPACK
 #endif
 
 #ifndef HAVE_CONFIG_H
@@ -45,4 +47,8 @@
 #undef F77_FUNC_
 
 #endif
+//FEI_BYPASS_CONFIG_H
+
+#endif
+//_fei_trilinos_macros_hpp_
 

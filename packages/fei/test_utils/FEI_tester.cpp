@@ -23,7 +23,7 @@
 
 #include <test_utils/LibraryFactory.hpp>
 
-#ifdef FEI_HAVE_FETI
+#ifdef HAVE_FEI_FETI
 #include <FETI_DP_FiniteElementData.h>
 #endif
 
@@ -287,39 +287,6 @@ int FEI_tester::initializationPhase()
     }
   }
 
-  //initialize any coefficient-access patterns
-  for(i=0; i<data_->numCoefAccessPatterns_; i++) {
-    AccessPattern& pattern = data_->accessPatterns_[i];
-
-    CHK_ERR( fei_->initCoefAccessPattern(pattern.ID_,
-					pattern.numRowIDs_,
-					pattern.numFieldsPerRow_,
-					pattern.rowFieldIDs_,
-					pattern.numColIDsPerRow_,
-					pattern.numFieldsPerCol_,
-					pattern.colFieldIDs_,
-					pattern.interleaveStrategy_) );
-  }
-
-  //initialize any coefficient-accesses
-  for(i=0; i<data_->numCoefAccesses_; i++) {
-    CoefAccess& access = data_->coefAccesses_[i];
-
-    int len = access.numRowCoefs_;
-    if (access.numColCoefs_ > len) len = access.numColCoefs_;
-
-    int* idTypes = new int[len];
-    for(int ii=0; ii<len; ii++) idTypes[ii] = FEI_NODE;
-
-    CHK_ERR( fei_->initCoefAccess(access.patternID_,
-				 idTypes,
-				 access.rowIDs_,
-				 idTypes,
-				 access.colIDs_) );
-
-    delete [] idTypes;
-  }
-
   for(i=0; i<data_->numSharedNodeSets_; i++) {
     CommNodeSet& shNodeSet = data_->sharedNodeSets_[i];
 
@@ -410,35 +377,6 @@ int FEI_tester::normalLoadPhase()
                                 block.elemConn_[el],
                                 block.elemLoad_[el]));
       }
-   }
-
-   //load any coefficient-accesses (we only support 'sumIntoMatrix' accesses
-   //at the current time.
-
-   for(i=0; i<data_->numCoefAccesses_; i++) {
-     CoefAccess& access = data_->coefAccesses_[i];
-
-     int ii, len = access.numRowCoefs_;
-     if (access.numColCoefs_ > len) len = access.numColCoefs_;
-
-     int* idTypes = new int[len];
-     for(ii=0; ii<len; ii++) idTypes[ii] = FEI_NODE;
-
-     int numCols = access.numColCoefs_;
-     double** matrixEntries = new double*[access.numRowCoefs_];
-     for(ii=0; ii<access.numRowCoefs_; ii++) {
-       matrixEntries[ii] = access.coefs_ + ii*numCols;
-     }
-
-     CHK_ERR( fei_->sumIntoMatrix(access.patternID_,
-				 idTypes,
-				 access.rowIDs_,
-				 idTypes,
-				 access.colIDs_,
-				 matrixEntries) );
-
-     delete [] idTypes;
-     delete [] matrixEntries;
    }
 
    //******** Load Constraint Relation Equations ***********************

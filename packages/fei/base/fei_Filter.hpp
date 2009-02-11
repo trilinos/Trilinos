@@ -93,32 +93,6 @@ class Filter {
                   double CRValue,
                   double penValue) = 0;
 
-   virtual int sumIntoMatrix(int /*patternID*/,
-			     const int* /*rowIDTypes*/,
-			     const GlobalID* /*rowIDs*/,
-			     const int* /*colIDTypes*/,
-			     const GlobalID* /*colIDs*/,
-			     const double* const* /*matrixEntries*/) { return(0); }
-
-   virtual int sumIntoRHS(int /*patternID*/,
-		  const int* /*rowIDTypes*/,
-		  const GlobalID* /*rowIDs*/,
-		  const double* /*vectorEntries*/) { return(0); }
-
-   virtual int putIntoMatrix(int /*patternID*/,
-		     const int* /*rowIDTypes*/,
-		     const GlobalID* /*rowIDs*/,
-		     const int* /*colIDTypes*/,
-		     const GlobalID* /*colIDs*/,
-		     const double* const* /*matrixEntries*/) { return(0); }
-
-   virtual int getFromMatrix(int patternID,
-		     const int* rowIDTypes,
-		     const GlobalID* rowIDs,
-		     const int* colIDTypes,
-		     const GlobalID* colIDs,
-		     double** matrixEntries) = 0;
-
    virtual int putIntoRHS(int IDType,
 		  int fieldID,
 			  int numIDs,
@@ -130,16 +104,6 @@ class Filter {
 			  int numIDs,
 		  const GlobalID* IDs,
 		  const double* rhsEntries) = 0;
-
-   virtual int putIntoRHS(int /*patternID*/,
-		  const int* /*rowIDTypes*/,
-                  const GlobalID* /*rowIDs*/,
-                  const double* /*vectorEntries*/) { return(0); }
-
-   virtual int getFromRHS(int patternID,
-		  const int* rowIDTypes,
-                  const GlobalID* rowIDs,
-                  double* vectorEntries) = 0;
 
    virtual int loadComplete() = 0;
 
@@ -259,13 +223,8 @@ class Filter {
    static void copyStiffness(const double* const* elemStiff, int numRows,
 			     int elemFormat, double** copy);
 
-#ifdef FEI_HAVE_IOSFWD
    void setLogStream(std::ostream* logstrm);
    std::ostream* logStream();
-#else
-   void setLogStream(ostream* logstrm);
-   ostream* logStream();
-#endif
 
  protected:
    virtual int generalElemInput(GlobalID /*elemBlockID*/,
@@ -293,11 +252,7 @@ class Filter {
    SNL_FEI_Structure* problemStructure_;
 
    bool logInput_;
-#ifdef FEI_HAVE_IOSFWD
    std::ostream* logInputStream_;
-#else
-   ostream* logInputStream_;
-#endif
 
    int outputLevel_;
 

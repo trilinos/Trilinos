@@ -38,10 +38,10 @@ class EqnBuffer {
    EqnBuffer& operator=(const EqnBuffer& src);
 
    /** Return the number of equations held in this object.*/
-   int getNumEqns() {return(eqnNumbers_.length());};
+   int getNumEqns() {return(eqnNumbers_.size());};
 
    /** Return a list of the equation-numbers held in this object. */
-   feiArray<int>& eqnNumbersPtr() {return(eqnNumbers_);};
+   std::vector<int>& eqnNumbers() {return(eqnNumbers_);};
 
    /** Return a table (actually an array of pointers to fei::CSVecs) of the
        equations. Number-of-arrays is 'getNumEqns', length of i-th array
@@ -64,7 +64,7 @@ class EqnBuffer {
 
    /** Set a right-hand-side coefficient. 
        @param eqnNumber Must correspond to one of the equation-numbers in the
-       list 'eqnNumbersPtr()'.
+       list 'eqnNumbers()'.
        @param rhsIndex Must be in the range [0 .. getNumRHSs()-1].
        @param value The coefficient.
    */
@@ -76,7 +76,7 @@ class EqnBuffer {
    */
    feiArray<feiArray<double>*>* rhsCoefsPtr() {return(&rhsCoefs_);};
 
-   /** Return an offset into the 'eqnNumbersPtr()' list, being the position at
+   /** Return an offset into the 'eqnNumbers()' list, being the position at
        which equation-number 'eqn' is located.
        @param eqn
        @return offset 'eqn's location, or -1 if 'eqn' is not found.
@@ -156,11 +156,11 @@ class EqnBuffer {
    int internalAddEqn(int index, const double* coefs,
                        const int* indices, int len, bool accumulate);
 
-   feiArray<int> eqnNumbers_; //list of equation-numbers
+   std::vector<int> eqnNumbers_; //list of equation-numbers
 
    std::vector<fei::CSVec*> eqns_;
 
-   feiArray<int> indices_union_; //union of all equation-indices
+   std::vector<int> indices_union_; //union of all equation-indices
 
    int numRHSs_;     //number of right-hand-side coefficients per equation
    feiArray<feiArray<double>*> rhsCoefs_; //list of feiArray-pointers, each 
@@ -172,11 +172,7 @@ class EqnBuffer {
    int dummyCoefsLen_;
 };
 
-#ifdef FEI_HAVE_IOSFWD
 std::ostream& operator<<(std::ostream& os, EqnBuffer& eq);
-#else
-ostream& operator<<(ostream& os, EqnBuffer& eq);
-#endif
 
 #endif
 

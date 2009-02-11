@@ -36,10 +36,8 @@ class LinearSystemCore;
 class NodeCommMgr;
 class NodeDatabase;
 class NodeDescriptor;
-class PatternDescriptor;
 class ProcEqns;
 class SNL_FEI_Structure;
-class SSGraph;
 class SlaveVariable;
 
 //

@@ -258,7 +258,7 @@ void fei::MatrixGraph_Impl2::definePattern(int patternID,
 
   if (p_iter != patterns_.end()) {
     FEI_OSTRINGSTREAM osstr;
-    osstr << "fei::Matrix::definePattern ERROR, patternID="<<patternID
+    osstr << "fei::MatrixGraph_Impl2::definePattern ERROR, patternID="<<patternID
         << " already used.";
     throw std::runtime_error(osstr.str());
   }

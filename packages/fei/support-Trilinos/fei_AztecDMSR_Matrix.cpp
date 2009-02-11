@@ -6,9 +6,13 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <fei_macros.hpp>
+#include <fei_iostream.hpp>
+
+#ifdef HAVE_FEI_AZTECOO
+
 #include <assert.h>
 #include <stdlib.h>
-#include <fei_macros.hpp>
 #include <math.h>
 
 #include <fei_mpi.h>
@@ -1244,4 +1248,7 @@ void AztecDMSR_Matrix::messageAbort(const char* mesg) {
     FEI_CERR << "AztecDMSR_Matrix: ERROR: " << mesg << " Aborting." << FEI_ENDL;
     abort();
 }
+
+#endif
+//HAVE_FEI_AZTECOO
 

@@ -150,17 +150,17 @@ AC_CXX_UNORDERED
 # Check for other Trilinos packages
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, teuchos, TEUCHOS, BUILD_TEUCHOS, yes, [Enable Teuchos support.], [Enable Teuchos support. Can be overridden with --disable-fei-teuchos.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, teuchos, FEI_TEUCHOS, BUILD_TEUCHOS, yes, [Enable Teuchos support.], [Enable Teuchos support. Can be overridden with --disable-fei-teuchos.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, epetra, EPETRA, BUILD_EPETRA, yes, [Enable Epetra support.], [Enable Epetra support. Can be overridden with --disable-fei-epetra.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, epetra, FEI_EPETRA, BUILD_EPETRA, yes, [Enable Epetra support.], [Enable Epetra support. Can be overridden with --disable-fei-epetra.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, aztecoo, AZTECOO, BUILD_AZTECOO, yes, [Enable AztecOO support.], [Enable AztecOO support. Can be overridden with --disable-fei-aztecoo.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, aztecoo, FEI_AZTECOO, BUILD_AZTECOO, yes, [Enable AztecOO support.], [Enable AztecOO support. Can be overridden with --disable-fei-aztecoo.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, amesos, AMESOS, BUILD_AMESOS, yes, [Enable Amesos support.], [Enable Amesos support. Can be overridden with --disable-fei-amesos.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, amesos, FEI_AMESOS, BUILD_AMESOS, yes, [Enable Amesos support.], [Enable Amesos support. Can be overridden with --disable-fei-amesos.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, ml, ML, BUILD_ML, yes, [Enable ML support.], [Enable ML support. Can be overridden with --disable-fei-ml.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, ml, FEI_ML, BUILD_ML, yes, [Enable ML support.], [Enable ML support. Can be overridden with --disable-fei-ml.])
 
-TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, ifpack, IFPACK, BUILD_IFPACK, yes, [Enable Ifpack support.], [Enable Ifpack support. Can be overridden with --disable-fei-ifpack.])
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, ifpack, FEI_IFPACK, BUILD_IFPACK, yes, [Enable Ifpack support.], [Enable Ifpack support. Can be overridden with --disable-fei-ifpack.])
 
 # ------------------------------------------------------------------------
 # Check for PETSc include directives
@@ -178,7 +178,7 @@ AC_ARG_WITH(petsc-include,
   ]
 )
 
-AM_CONDITIONAL(FEI_HAVE_PETSC, [test "X${SPECIFIED_PETSC_INCLUDE}" != "Xno"])
+AM_CONDITIONAL(HAVE_FEI_PETSC, [test "X${SPECIFIED_PETSC_INCLUDE}" != "Xno"])
 
 if test "X${SPECIFIED_PETSC_INCLUDE}" != "Xno"; then
 PETSC_INCLUDE=${PETSCINC}
@@ -205,103 +205,10 @@ if test "X${SPECIFIED_PETSC_LIB}" != "Xno"; then
 TAC_CHECK_FILE(${PETSCLIBDIR}/libpetsc.a)
 PETSC_LIB_DIR=${PETSCLIBDIR}
 AC_SUBST( PETSC_LIB_DIR )
-AC_DEFINE([FEI_HAVE_PETSC],,
+AC_DEFINE([HAVE_FEI_PETSC],,
           [Enable use of PETSC library])
 fi
 
-# ------------------------------------------------------------------------
-# Check for Prometheus include directives
-# ------------------------------------------------------------------------
-
-SPECIFIED_PROMETHEUS_INCLUDE=no
-
-AC_ARG_WITH(prometheus-include,
-  AC_HELP_STRING([--with-prometheus-include=-IDIR], [Specify Prometheus include]),
-  [
-  AC_MSG_CHECKING(whether prometheus-include specified)
-  AC_MSG_RESULT([${withval}])
-  SPECIFIED_PROMETHEUS_INCLUDE=yes
-  PROMETHEUSINC="${withval}"
-  ]
-)
-
-AM_CONDITIONAL(FEI_HAVE_PROMETHEUS, [test "X${SPECIFIED_PROMETHEUS_INCLUDE}" != "Xno"])
-
-if test "X${SPECIFIED_PROMETHEUS_INCLUDE}" != "Xno"; then
-PROMETHEUS_INCLUDE=${PROMETHEUSINC}
-AC_SUBST( PROMETHEUS_INCLUDE )
-fi
-
-# ------------------------------------------------------------------------
-# Check for Prometheus library directory
-# ------------------------------------------------------------------------
-
-SPECIFIED_PROMETHEUS_LIB=no
-
-AC_ARG_WITH(prometheus-libdir,
-  AC_HELP_STRING([--with-prometheus-libdir=LIBDIR], [Specify Prometheus library directory]),
-  [
-  AC_MSG_CHECKING(whether prometheus-libdir specified)
-  AC_MSG_RESULT([${withval}])
-  SPECIFIED_PROMETHEUS_LIB=yes
-  PROMETHEUSLIBDIR="${withval}"
-  ]
-)
-
-if test "X${SPECIFIED_PROMETHEUS_LIB}" != "Xno"; then
-TAC_CHECK_FILE(${PROMETHEUSLIBDIR}/libprometheus.a)
-PROMETHEUS_LIB_DIR=${PROMETHEUSLIBDIR}
-AC_SUBST( PROMETHEUS_LIB_DIR )
-AC_DEFINE([FEI_HAVE_PROMETHEUS],,
-          [Enable use of PROMETHEUS library])
-fi
-
-# ------------------------------------------------------------------------
-# Check for HYPRE include directives
-# ------------------------------------------------------------------------
-
-SPECIFIED_HYPRE_INCLUDE=no
-
-AC_ARG_WITH(hypre-include,
-  AC_HELP_STRING([--with-hypre-include=-IDIR], [Specify HYPRE include]),
-  [
-  AC_MSG_CHECKING(whether hypre-include specified)
-  AC_MSG_RESULT([${withval}])
-  SPECIFIED_HYPRE_INCLUDE=yes
-  HYPREINC="${withval}"
-  ]
-)
-
-AM_CONDITIONAL(FEI_HAVE_HYPRE, [test "X${SPECIFIED_HYPRE_INCLUDE}" != "Xno"])
-
-if test "X${SPECIFIED_HYPRE_INCLUDE}" != "Xno"; then
-HYPRE_INCLUDE=${HYPREINC}
-AC_SUBST( HYPRE_INCLUDE )
-fi
-
-# ------------------------------------------------------------------------
-# Check for HYPRE library directory
-# ------------------------------------------------------------------------
-
-SPECIFIED_HYPRE_LIB=no
-
-AC_ARG_WITH(hypre-libdir,
-  AC_HELP_STRING([--with-hypre-libdir=LIBDIR], [Specify HYPRE library directory]),
-  [
-  AC_MSG_CHECKING(whether hypre-libdir specified)
-  AC_MSG_RESULT([${withval}])
-  SPECIFIED_HYPRE_LIB=yes
-  HYPRELIBDIR="${withval}"
-  ]
-)
-
-if test "X${SPECIFIED_HYPRE_LIB}" != "Xno"; then
-TAC_CHECK_FILE(${HYPRELIBDIR}/libHYPRE_FEI.a)
-HYPRE_LIB_DIR=${HYPRELIBDIR}
-AC_SUBST( HYPRE_LIB_DIR )
-AC_DEFINE([FEI_HAVE_HYPRE],,
-          [Enable use of HYPRE library])
-fi
 
 # ------------------------------------------------------------------------
 # Check for FETI-DP include directives
@@ -319,7 +226,7 @@ AC_ARG_WITH(fetidp-include,
   ]
 )
 
-AM_CONDITIONAL(FEI_HAVE_FETI, [test "X${SPECIFIED_FETIDP_INCLUDE}" != "Xno"])
+AM_CONDITIONAL(HAVE_FEI_FETI, [test "X${SPECIFIED_FETIDP_INCLUDE}" != "Xno"])
 
 if test "X${SPECIFIED_FETIDP_INCLUDE}" != "Xno"; then
 FETIDP_INCLUDE=${FETIDPINC}
@@ -346,7 +253,7 @@ if test "X${SPECIFIED_FETIDP_LIB}" != "Xno"; then
 TAC_CHECK_FILE(${FETIDPLIBDIR}/libfeti-mpi.a)
 FETIDP_LIB_DIR=${FETIDPLIBDIR}
 AC_SUBST( FETIDP_LIB_DIR )
-AC_DEFINE([FEI_HAVE_FETI],,
+AC_DEFINE([HAVE_FEI_FETI],,
           [Enable use of FETI library])
 fi
 

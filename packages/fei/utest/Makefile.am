@@ -28,32 +28,19 @@
 
 include $(top_builddir)/Makefile.export.fei
 
-HYPRE_INCLUDE=@HYPRE_INCLUDE@
-HYPRE_LIB_DIR=@HYPRE_LIB_DIR@
-
 PETSC_INCLUDE=@PETSC_INCLUDE@
 PETSC_LIB_DIR=@PETSC_LIB_DIR@
-
-PROMETHEUS_INCLUDE=@PROMETHEUS_INCLUDE@
-PROMETHEUS_LIB_DIR=@PROMETHEUS_LIB_DIR@
 
 FETIDP_INCLUDE=@FETIDP_INCLUDE@
 FETIDP_LIB_DIR=@FETIDP_LIB_DIR@
 
 DEFAULT_INCLUDES = $(FEI_INCLUDES) \
 	-I$(top_srcdir)/test_utils -I$(top_srcdir)/utest_cases \
-	$(HYPRE_INCLUDE) $(PETSC_INCLUDE) $(FETIDP_INCLUDE)
+	$(PETSC_INCLUDE) $(FETIDP_INCLUDE)
 
 INSTRUMENT_CMD=@INSTRUMENT_CMD@
 
-if FEI_HAVE_HYPRE
-FEI_HYPRE_LIB=
-FEI_HYPRE_LIBS=$(FEI_HYPRE_LIB) -L$(HYPRE_LIB_DIR) -lHYPRE_FEI -lHYPRE_LSI
-else
-FEI_HYPRE_LIB=
-endif
-
-if FEI_HAVE_PETSC
+if HAVE_FEI_PETSC
 FEI_PETSC_LIB=$(top_builddir)/support-PETSc/libfei_petsc.a
 FEI_PETSC_LDADD=-L$(top_builddir)/support-PETSc -lfei_petsc
 FEI_PETSC_LIBS=$(FEI_PETSC_LDADD) -L$(PETSC_LIB_DIR) -lpetscksp -lpetscmat -lpetscvec -lpetsc
@@ -63,13 +50,7 @@ FEI_PETSC_LDADD=
 FEI_PETSC_LIBS=
 endif
 
-if FEI_HAVE_PROMETHEUS
-FEI_PROMETHEUS_LIBS=-L$(PROMETHEUS_LIB_DIR) -lprometheus
-else
-FEI_PROMETHEUS_LIBS=
-endif
-
-if FEI_HAVE_FETI
+if HAVE_FEI_FETI
 FEI_FETIDP_LIBS=-L$(FETIDP_LIB_DIR) -lfeti-mpi
 else
 FEI_FETIDP_LIBS=
@@ -121,6 +102,6 @@ fei_unit_tests_LDADD = \
 	-L$(top_builddir)/utest_cases -lfei_utest_cases \
 	-L$(top_builddir)/test_utils -lfei_test_utils \
 	$(FEI_LIBS) $(FEI_PETSC_LIBS) \
-	$(FEI_HYPRE_LIBS) $(FEI_PROMETHEUS_LIBS) $(FEI_FETIDP_LIBS) \
+	$(FEI_FETIDP_LIBS) \
 	$(LIBS) $(FLIBS)
 

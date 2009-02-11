@@ -17,7 +17,7 @@
 
 #include <fei_base.hpp>
 
-#ifdef FEI_HAVE_FETI
+#ifdef HAVE_FEI_FETI
 #include <FETI_DP_FiniteElementData.h>
 #endif
 
@@ -456,18 +456,18 @@ void snl_fei_tester::definePattern(ElemBlock& eb, int& patternID)
   numIDTypes += eb.numElemDOF_>0 ? 1 : 0;
 
   //find out how many nodal fields there are, total.
-  feiArray<int> nodalFieldIDs;
-  feiArray<int> flatFieldIDsArray;
+  std::vector<int> nodalFieldIDs;
+  std::vector<int> flatFieldIDsArray;
   for(i=0; i<eb.numNodesPerElement_; ++i) {
     for(j=0; j<eb.numFieldsPerNode_[i]; ++j) {
       snl_fei::sortedListInsert(eb.nodalFieldIDs_[i][j], nodalFieldIDs);
-      flatFieldIDsArray.append(eb.nodalFieldIDs_[i][j]);
+      flatFieldIDsArray.push_back(eb.nodalFieldIDs_[i][j]);
     }
   }
 
   patternID = numPatterns_++;
 
-  if (numIDTypes == 1 && nodalFieldIDs.length() == 1) {
+  if (numIDTypes == 1 && nodalFieldIDs.size() == 1) {
     //This is a very simple pattern
     matrixGraph_->definePattern(patternID,
 				eb.numNodesPerElement_,
@@ -481,7 +481,7 @@ void snl_fei_tester::definePattern(ElemBlock& eb, int& patternID)
 				eb.numNodesPerElement_,
 				idTypes_[nodeTypeOffset_],
 				eb.numFieldsPerNode_,
-				flatFieldIDsArray.dataPtr());
+				&flatFieldIDsArray[0]);
   }
   else {
     feiArray<int> idTypes(eb.numNodesPerElement_+1);

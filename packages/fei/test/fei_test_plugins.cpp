@@ -15,9 +15,7 @@
 #include <test_utils/test_Vector.hpp>
 #include <test_utils/test_Matrix.hpp>
 
-#ifdef FEI_HAVE_TRILINOS
 #include <fei_Factory_Trilinos.hpp>
-#endif
 
 #undef fei_file
 #define fei_file "fei_test_plugins.cpp"
@@ -36,7 +34,6 @@ int main(int argc, char** argv) {
     FEI_COUT << "FEI version: " << fei::utils::version() << FEI_ENDL;
   }
 
-#ifdef FEI_HAVE_TRILINOS
   fei::SharedPtr<fei::Factory> factory(new Factory_Trilinos(MPI_COMM_WORLD));
 
   fei::ParameterSet pset;
@@ -58,7 +55,6 @@ int main(int argc, char** argv) {
   fei::SharedPtr<fei::Matrix> fei_mat = mtester.create_matrix(factory);
 
   mtester.matrix_test1(fei_mat);
-#endif
 
 #ifndef FEI_SER
   if (MPI_Finalize() != MPI_SUCCESS) ERReturn(-1);

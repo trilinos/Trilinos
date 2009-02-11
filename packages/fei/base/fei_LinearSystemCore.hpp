@@ -147,7 +147,7 @@ class LinearSystemCore {
         key-value pairs. Example: "debugOutput /usr/users/me/work_dir"
   */
 
-   virtual int parameters(int numParams, char** params) = 0;
+   virtual int parameters(int numParams, const char*const * params) = 0;
 
 
   /** Supply the LinearSystemCore implementation with an object (created and

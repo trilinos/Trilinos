@@ -518,3 +518,8 @@ July 7 2005: version 2.14.00
   - Continued development of fei::FillableMat, fei::CSRMat and fei::CSVec.
   - Removed fei_SSVec.{hpp,cpp} and fei_SSMat.{hpp,cpp}, which have now been
     replaced by fei::Fillable{Mat,Vec} and CSRMat,CSVec.
+  - Removed fei_SSGraph.{hpp,cpp}
+  - Removed the *CoefAccessPattern* functions from the 'old' FEI interface.
+    These methods were ill-conceived and overly cumbersome, and not used by
+    any known customers.
+

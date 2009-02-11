@@ -6,10 +6,13 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <fei_iostream.hpp>
+
+#ifdef HAVE_FEI_AZTECOO
+
 #include <assert.h>
 #include <cmath>         // needed for declaration of sqrt, abs
 #include <unistd.h>
-#include <fei_iostream.hpp>
 #include <stdio.h>
 
 #include <fei_mpi.h>
@@ -342,3 +345,5 @@ bool Aztec_Vector::writeToFile(const char *fileName) const {
    return(true);
 }
 
+#endif
+//HAVE_FEI_AZTECOO

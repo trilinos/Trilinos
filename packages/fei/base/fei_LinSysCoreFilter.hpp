@@ -97,37 +97,6 @@ class LinSysCoreFilter : public Filter {
                   double CRValue,
                   double penValue);
 
-   virtual int sumIntoMatrix(int patternID,
-		     const int* rowIDTypes,
-		     const GlobalID* rowIDs,
-		     const int* colIDTypes,
-		     const GlobalID* colIDs,
-		     const double* const* matrixEntries);
-
-   virtual int sumIntoRHS(int patternID,
-		  const int* rowIDTypes,
-		  const GlobalID* rowIDs,
-		  const double* vectorEntries);
-
-   virtual int putIntoMatrix(int patternID,
-		     const int* rowIDTypes,
-		     const GlobalID* rowIDs,
-		     const int* colIDTypes,
-		     const GlobalID* colIDs,
-		     const double* const* matrixEntries);
-
-   virtual int getFromMatrix(int patternID,
-		     const int* rowIDTypes,
-		     const GlobalID* rowIDs,
-		     const int* colIDTypes,
-		     const GlobalID* colIDs,
-		     double** matrixEntries);
-
-   virtual int putIntoRHS(int patternID,
-		  const int* rowIDTypes,
-                  const GlobalID* rowIDs,
-                  const double* vectorEntries);
-
    virtual int putIntoRHS(int IDType,
 		  int fieldID,
 			  int numIDs,
@@ -139,11 +108,6 @@ class LinSysCoreFilter : public Filter {
 			  int numIDs,
 		  const GlobalID* IDs,
 		  const double* rhsEntries);
-
-   virtual int getFromRHS(int patternID,
-		  const int* rowIDTypes,
-                  const GlobalID* rowIDs,
-                  double* vectorEntries);
 
    virtual int loadComplete();
 
@@ -315,15 +279,6 @@ class LinSysCoreFilter : public Filter {
                         const double* const* elemStiffness,
                         const double* elemLoad,
                         int elemFormat);
-
-   int generalCoefInput(int patternID,
-			const int* rowIDTypes,
-                        const GlobalID* rowIDs,
-			const int* colIDTypes,
-                        const GlobalID* colIDs,
-                        const double* const* matrixEntries,
-                        const double* vectorEntries,
-                        int assemblyMode);
 
    void storeNodalSendIndex(NodeDescriptor& node, int fieldID, int col);
    void storeNodalSendEqn(NodeDescriptor& node, int fieldID, int col,

@@ -103,7 +103,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_NodeCommMgr.hpp \
 	$(top_srcdir)/base/fei_NodeDatabase.hpp \
 	$(top_srcdir)/base/fei_NodeDescriptor.hpp \
-	$(top_srcdir)/base/fei_PatternDescriptor.hpp \
 	$(top_srcdir)/base/fei_ProcEqns.hpp \
 	$(top_srcdir)/base/fei_SlaveVariable.hpp \
 	$(top_srcdir)/base/snl_fei_ArrayUtils.hpp \
@@ -155,8 +154,7 @@ CORE_H = \
 	$(top_srcdir)/base/fei_VectorTraits.hpp \
 	$(top_srcdir)/base/fei_VectorTraits_LinProbMgr.hpp \
 	$(top_srcdir)/base/fei_VectorTraits_LinSysCore.hpp \
-	$(top_srcdir)/base/fei_VectorTraits_FillableVec.hpp \
-	$(top_srcdir)/base/fei_SSGraph.hpp
+	$(top_srcdir)/base/fei_VectorTraits_FillableVec.hpp
 
 CORE = \
 	$(srcdir)/fei_BlockDescriptor.cpp \
@@ -198,7 +196,6 @@ CORE = \
 	$(srcdir)/fei_NodeCommMgr.cpp \
 	$(srcdir)/fei_NodeDatabase.cpp \
 	$(srcdir)/fei_NodeDescriptor.cpp \
-	$(srcdir)/fei_PatternDescriptor.cpp \
 	$(srcdir)/fei_ProcEqns.cpp \
 	$(srcdir)/fei_Solver.cpp \
 	$(srcdir)/snl_fei_BlkSizeMsgHandler.cpp \
@@ -222,8 +219,7 @@ CORE = \
 	$(srcdir)/SNL_FEI_Structure.cpp \
 	$(srcdir)/snl_fei_SubdMsgHandler.cpp \
 	$(srcdir)/fei_FEI_Impl.cpp \
-	$(srcdir)/snl_fei_Utils.cpp \
-	$(srcdir)/fei_SSGraph.cpp
+	$(srcdir)/snl_fei_Utils.cpp
 
 # ------------------------------------------------------------------------
 # FEI library specifications

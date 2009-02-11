@@ -12,9 +12,7 @@
 
 #include <test_utils/LibraryFactory.hpp>
 
-#ifdef FEI_HAVE_TRILINOS
-#include <support-Trilinos/Factory_Trilinos.hpp>
-#endif
+#include <fei_Factory_Trilinos.hpp>
 
 #include <snl_fei_Factory.hpp>
 
@@ -42,7 +40,7 @@ int test_Factory_helper::dyncastMatrix(fei::Matrix* matrix,
   }
 
   if (sname == "Aztec") {
-#ifdef FEI_HAVE_TRILINOS
+#ifdef HAVE_FEI_AZTECOO
     fei::Matrix_Impl<LinearSystemCore>* smatrix =
       dynamic_cast<fei::Matrix_Impl<LinearSystemCore>*>(matrix);
     if (smatrix == NULL) {
@@ -50,13 +48,13 @@ int test_Factory_helper::dyncastMatrix(fei::Matrix* matrix,
       ERReturn(-1);
     }
 #else
-    FEI_CERR << "libname==Aztec but FEI_HAVE_TRILINOS not defined."<<FEI_ENDL;
+    FEI_CERR << "libname==Aztec but HAVE_FEI_AZTECOO not defined."<<FEI_ENDL;
     ERReturn(-1);
 #endif
   }
 
   if (sname == "Trilinos") {
-#ifdef FEI_HAVE_TRILINOS
+#ifdef HAVE_FEI_EPETRA
     fei::Matrix_Impl<Epetra_CrsMatrix>* smatrix =
       dynamic_cast<fei::Matrix_Impl<Epetra_CrsMatrix>*>(matrix);
     if (smatrix == NULL) {
@@ -64,7 +62,7 @@ int test_Factory_helper::dyncastMatrix(fei::Matrix* matrix,
       ERReturn(-1);
     }
 #else
-    FEI_CERR << "libname==Trilinos but FEI_HAVE_TRILINOS not defined."<<FEI_ENDL;
+    FEI_CERR << "libname==Trilinos but HAVE_FEI_EPETRA not defined."<<FEI_ENDL;
     ERReturn(-1);
 #endif
   }
@@ -86,7 +84,7 @@ int test_Factory_helper::dyncastVector(fei::Vector* vector,
   }
 
   if (sname == "Aztec") {
-#ifdef FEI_HAVE_TRILINOS
+#ifdef HAVE_FEI_AZTECOO
     fei::Vector_Impl<LinearSystemCore>* svector =
       dynamic_cast<fei::Vector_Impl<LinearSystemCore>*>(vector);
     if (svector == NULL) {
@@ -94,13 +92,13 @@ int test_Factory_helper::dyncastVector(fei::Vector* vector,
       ERReturn(-1);
     }
 #else
-    FEI_CERR << "libname==Aztec but FEI_HAVE_TRILINOS not defined."<<FEI_ENDL;
+    FEI_CERR << "libname==Aztec but HAVE_FEI_AZTECOO not defined."<<FEI_ENDL;
     ERReturn(-1);
 #endif
   }
 
   if (sname == "Trilinos") {
-#ifdef FEI_HAVE_TRILINOS
+#ifdef HAVE_FEI_EPETRA
     fei::Vector_Impl<Epetra_MultiVector>* svector =
       dynamic_cast<fei::Vector_Impl<Epetra_MultiVector>*>(vector);
     if (svector == NULL) {
@@ -108,7 +106,7 @@ int test_Factory_helper::dyncastVector(fei::Vector* vector,
       ERReturn(-1);
     }
 #else
-    FEI_CERR << "libname==Trilinos but FEI_HAVE_TRILINOS not defined."<<FEI_ENDL;
+    FEI_CERR << "libname==Trilinos but HAVE_FEI_EPETRA not defined."<<FEI_ENDL;
     ERReturn(-1);
 #endif
   }

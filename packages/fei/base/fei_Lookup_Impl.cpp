@@ -13,7 +13,6 @@
 #include <fei_VectorSpace.hpp>
 
 #include <snl_fei_Utils.hpp>
-#include <feiArray.hpp>
 #include <fei_TemplateUtils.hpp>
 #include <fei_CommUtils.hpp>
 
@@ -37,10 +36,10 @@ fei::Lookup_Impl::Lookup_Impl(fei::SharedPtr<fei::MatrixGraph> matGraph,
     nodenumSubdomainDB_(),
     databasesBuilt_(false),
     fieldIDs_(),
-    fieldSizes_(0, 4),
+    fieldSizes_(),
     elemBlockIDs_(0, 4),
-    fieldIDs_2D_(0, 16),
-    workspace_(0, 500)
+    fieldIDs_2D_(),
+    workspace_()
 {
   vspace_ = matGraph_->getRowSpace();
   ptBlkMap_ = vspace_->getPointBlockMap();
@@ -105,7 +104,7 @@ int fei::Lookup_Impl::getAssociatedNodeID(int eqnNumber)
 
 bool fei::Lookup_Impl::isInLocalElement(int nodeNumber)
 {
-  std::map<int,feiArray<int>* >::iterator
+  std::map<int,std::vector<int>* >::iterator
     nns_iter = nodenumSubdomainDB_.find(nodeNumber);
   if (nns_iter != nodenumSubdomainDB_.end()) {
     return( true );
@@ -223,20 +222,20 @@ int fei::Lookup_Impl::buildDatabases()
 
     fei::Record* node = collection->getRecordWithID(id);
 
-    feiArray<int>* newarray = new feiArray<int>(0, procList->size());
+    std::vector<int>* newarray = new std::vector<int>;
     fei::SharedIDs::table_type::row_type::const_iterator
       p_iter = procList->begin(),
       p_end = procList->end();
     for(; p_iter != p_end; ++p_iter) {
       int proc = *p_iter;
-      newarray->append(proc);
+      newarray->push_back(proc);
     }
 
     if (node->isInLocalSubdomain_) {
       snl_fei::sortedListInsert(local_proc, *newarray);
     }
 
-    nodenumSubdomainDB_.insert(std::pair<int,feiArray<int>*>(node->getNumber(), newarray));
+    nodenumSubdomainDB_.insert(std::pair<int,std::vector<int>*>(node->getNumber(), newarray));
   }
 
   if (!noconstraints) {

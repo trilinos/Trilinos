@@ -27,7 +27,6 @@ typedef snl_fei::Constraint<GlobalID> ConstraintType;
 
 #include "fei_SlaveVariable.hpp"
 
-#include "fei_PatternDescriptor.hpp"
 #include "fei_BlockDescriptor.hpp"
 
 #include "snl_fei_PointBlockMap.hpp"
@@ -37,7 +36,6 @@ typedef snl_fei::Constraint<GlobalID> ConstraintType;
 #include <fei_FillableVec.hpp>
 #include <fei_CSRMat.hpp>
 #include <fei_CSVec.hpp>
-#include "fei_SSGraph.hpp"
 #include "fei_EqnCommMgr.hpp"
 
 #include "fei_Lookup.hpp"
@@ -57,12 +55,9 @@ SNL_FEI_Structure::SNL_FEI_Structure(MPI_Comm comm)
    numProcs_(1),
    fieldDatabase_(new std::map<int,int>),
    workarray_(),
-   blockIDs_(0, 8),
+   blockIDs_(),
    blocks_(0, 8),
    connTables_(0, 8),
-   patternIDs_(0, 4),
-   patterns_(NULL),
-   patternConn_(NULL),
    nodeDatabase_(NULL),
    activeNodesInitialized_(false),
    globalNodeOffsets_(),
@@ -76,7 +71,7 @@ SNL_FEI_Structure::SNL_FEI_Structure(MPI_Comm comm)
    highestSlv_(0),
    slaveMatrix_(NULL),
    globalNumNodesVanished_(),
-   localVanishedNodeNumbers_(0, 32),
+   localVanishedNodeNumbers_(),
    nodeCommMgr_(NULL),
    eqnCommMgr_(NULL),
    slvCommMgr_(NULL),
@@ -99,7 +94,7 @@ SNL_FEI_Structure::SNL_FEI_Structure(MPI_Comm comm)
    reducedRHSCounter_(0),
    rSlave_(),
    cSlave_(),
-   work_nodePtrs_(0),
+   work_nodePtrs_(),
    structureFinalized_(false),
    generateGraph_(true),
    sysMatIndices_(NULL),
@@ -218,13 +213,6 @@ SNL_FEI_Structure::~SNL_FEI_Structure()
     penCRs_.clear();
   }
 
-  for(int i=0; i<patternIDs_.length(); i++) {
-    delete patterns_[i];
-    delete patternConn_[i];
-  }
-  delete [] patterns_;
-  delete [] patternConn_;
-
   delete nodeDatabase_;
   delete fieldDatabase_;
 
@@ -256,14 +244,14 @@ int SNL_FEI_Structure::setDbgOut(FEI_OSTREAM& ostr,
 //------------------------------------------------------------------------------
 void SNL_FEI_Structure::destroyBlockRoster()
 {
-  for(int i=0; i<blockIDs_.length(); i++) delete blocks_[i];
+  for(size_t i=0; i<blockIDs_.size(); i++) delete blocks_[i];
   blocks_.resize(0);
 }
 
 //------------------------------------------------------------------------------
 void SNL_FEI_Structure::destroyConnectivityTables()
 {
-  for(int i=0; i<blockIDs_.length(); i++) {
+  for(size_t i=0; i<blockIDs_.size(); i++) {
     delete connTables_[i];
   }
   connTables_.resize(0);
@@ -578,97 +566,6 @@ int SNL_FEI_Structure::initElem(GlobalID elemBlockID,
 }
 
 //------------------------------------------------------------------------------
-int SNL_FEI_Structure::initCoefAccessPattern(int patternID,
-					    int numRowIDs,
-					    const int* numFieldsPerRow,
-					    const int* const* rowFieldIDs,
-					    int numColIDsPerRow,
-					    const int* numFieldsPerCol,
-					    const int* const* colFieldIDs,
-					    int interleaveStrategy)
-{
-//
-//This is a simple function -- just stores this incoming data in a new
-//PatternDescriptor, if this patternID hasn't already been used. If it
-//has already been used, return an error (nonzero).
-//
-   CHK_ERR( addPattern(patternID) )
-   PatternDescriptor* pattern = NULL;
-   CHK_ERR( getPatternDescriptor(patternID, pattern) )
-
-   if (numRowIDs <= 0 || numColIDsPerRow <= 0) {
-      FEI_CERR << "SNL_FEI_Structure::initCoefAccessPattern: numRowIDs: " << numRowIDs
-          << ", numColIDsPerRow: " << numColIDsPerRow
-          << ". These values must both be" << " > 0." << FEI_ENDL;
-      ERReturn(-1);
-   }
-
-   int i;
-
-   CHK_ERR( pattern->setNumRowIDs(numRowIDs) )
-   std::vector<int>& fieldsPerRow = pattern->getNumFieldsPerRow();
-   std::vector<int>* rFieldIDs = pattern->getRowFieldIDs();
-
-   for(i=0; i<numRowIDs; i++) {
-      fieldsPerRow[i] = numFieldsPerRow[i];
-
-      for(int j=0; j<fieldsPerRow[i]; j++) {
-	rFieldIDs[i].push_back(rowFieldIDs[i][j]);
-      }
-   }
-
-
-   CHK_ERR( pattern->setNumColIDsPerRow(numColIDsPerRow) )
-   std::vector<int>& fieldsPerCol = pattern->getNumFieldsPerCol();
-   std::vector<int>* cFieldIDs = pattern->getColFieldIDs();
-
-   for(i=0; i<numColIDsPerRow; i++) {
-      fieldsPerCol[i] = numFieldsPerCol[i];
-
-      for(int j=0; j<numFieldsPerCol[i]; j++) {
-	cFieldIDs[i].push_back(colFieldIDs[i][j]);
-      }
-   }
-
-   pattern->setInterleaveStrategy(interleaveStrategy);
-
-   return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int SNL_FEI_Structure::initCoefAccess(int patternID,
-				     const int* rowIDTypes,
-				     const GlobalID* rowIDs,
-				     const int* colIDTypes,
-				     const GlobalID* colIDs)
-{
-  PatternDescriptor* pattern = NULL;
-  CHK_ERR( getPatternDescriptor(patternID, pattern) );
-
-  int numRowIDs = pattern->getNumRowIDs();
-  int numColIDsPerRow = pattern->getNumColIDsPerRow();
-
-  CHK_ERR( appendPatternConnectivity(patternID,
-				     numRowIDs, rowIDTypes, rowIDs,
-				     numColIDsPerRow,
-				     colIDTypes, colIDs) );
-
-  for(int i=0; i<numRowIDs; i++){
-    if (rowIDTypes[i] == FEI_NODE) {
-      CHK_ERR( nodeDatabase_->initNodeID(rowIDs[i]) );
-    }
-  }
-
-   for(int j=0; j<numRowIDs*numColIDsPerRow; j++) {
-      if (colIDTypes[j] == FEI_NODE) {
-	CHK_ERR( nodeDatabase_->initNodeID(colIDs[j]) );
-      }
-   }
-
-   return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
 int SNL_FEI_Structure::initSlaveVariable(GlobalID slaveNodeID, 
 					 int slaveFieldID,
 					 int offsetIntoSlaveField,
@@ -947,9 +844,6 @@ int SNL_FEI_Structure::initComplete(bool generateGraph)
   //  - As the connectivity tables are being run, the NodeCommMgr is given the
   //    nodeID of each node that is connected to a local element, and the node's
   //    owner is set to the initial value of localProc_.
-  //  - Any Patterns are also run, and nodal field and ownership information is
-  //    initialized similarly to what's done for the element connectivity
-  //    tables.
   //1a. finalizeNodeCommMgr()
   //  - NodeCommMgr::initComplete is called, at which time the ownership of all
   //    shared nodes is determined.
@@ -997,9 +891,8 @@ int SNL_FEI_Structure::initComplete(bool generateGraph)
   //    calculations associated with reducing out slave equations, and with
   //    putting off-processor contributions (element contributions with shared
   //    nodes) into the EqnCommMgr object.
-  //  - initAccessPatternStructure(), initMultCRStructure() and
-  //    initPenCRStructure() follow the same general routine as for the
-  //    initElemBlockStructure() function.
+  //  - initMultCRStructure() and initPenCRStructure() follow the same general
+  //    routine as for the initElemBlockStructure() function.
   //  - EqnCommMgr::exchangeIndices() is called, which sends all shared
   //    contributions to the processors that own the corresponding equations,
   //    after which the receiving processors insert those contributions into
@@ -1179,10 +1072,6 @@ int SNL_FEI_Structure::formMatrixStructure()
 
   CHK_ERR( initElemBlockStructure() );
 
-  // now we'll add the connectivities for any 'access patterns' that were
-  // initialized...
-  CHK_ERR( initAccessPatternStructure() );
-
   // next, handle the matrix structure imposed by the constraint relations...
   //
 
@@ -1209,7 +1098,7 @@ int SNL_FEI_Structure::formMatrixStructure()
   //of the eqn comm mgr and put them into our local matrix structure.
 
   int numRecvEqns = eqnCommMgr_->getNumLocalEqns();
-  feiArray<int>& recvEqnNumbers = eqnCommMgr_->localEqnNumbersPtr();
+  std::vector<int>& recvEqnNumbers = eqnCommMgr_->localEqnNumbersPtr();
   std::vector<fei::CSVec*>& recvEqns = eqnCommMgr_->localEqns();
   int i;
   if (debugOutput_) {
@@ -1257,7 +1146,7 @@ int SNL_FEI_Structure::initElemBlockStructure()
 
     int numEqns = block->getNumEqnsPerElement();
     int interleave = block->getInterleaveStrategy();
-    feiArray<int> scatterIndices(numEqns);
+    std::vector<int> scatterIndices(numEqns);
 
     GlobalID elemBlockID = block->getGlobalBlockID();
     ConnectivityTable& connTable = getBlockConnectivity(elemBlockID);
@@ -1274,7 +1163,7 @@ int SNL_FEI_Structure::initElemBlockStructure()
     for(int elemIndex = 0; elemIndex < numBlockElems; elemIndex++) {
 
       getScatterIndices_index(bIndex, elemIndex, interleave,
-                              scatterIndices.dataPtr());
+                              &scatterIndices[0]);
 
       //now, store the structure that will arise from this contribution,
       //after first performing any manipulations associated with slave
@@ -1424,7 +1313,7 @@ int SNL_FEI_Structure::getMatrixStructure(int** ptColIndices,
 
 //------------------------------------------------------------------------------
 bool SNL_FEI_Structure::nodalEqnsAllSlaves(NodeDescriptor* node,
-					   feiArray<int>& slaveEqns)
+					   std::vector<int>& slaveEqns)
 {
   int numFields = node->getNumFields();
   const int* fieldIDs = node->getFieldIDList();
@@ -1442,61 +1331,6 @@ bool SNL_FEI_Structure::nodalEqnsAllSlaves(NodeDescriptor* node,
   }
 
   return(true);
-}
-
-//------------------------------------------------------------------------------
-int SNL_FEI_Structure::initAccessPatternStructure()
-{
-  FEI_OSTREAM& os = dbgOut();
-  if (debugOutput_) os << "#   initAccessPatternStructure" << FEI_ENDL;
-
-   int numPatterns = getNumPatterns();
-
-   for(int i=0; i<numPatterns; i++) {
-     PatternDescriptor* pattern = NULL;
-     CHK_ERR( getPatternDescriptor_index(i, pattern));
-
-      int patternID = pattern->getPatternID();
-      ConnectivityTable& conn = getPatternConnectivity(patternID);
-
-      //The ConnectivityTable struct is meant to hold element-connectivities,
-      //but I'm also using it to hold pattern connectivities.
-
-      std::vector<int> rowIndices, colIndices;
-
-      //The rows of the 'connectivities' table alternate, holding rowNodes and
-      //then colNodes.  ... confusing, yes. But...
-
-      int offset = 0, loopCount = conn.numRows/2;
-      for(int row=0; row<loopCount; row++) {
-
-         feiArray<GlobalID>& rownodes = *(conn.connectivities[offset++]);
-         feiArray<GlobalID>& colnodes = *(conn.connectivities[offset++]);
-
-	 std::vector<int> rowColOffsets(rownodes.length());
-
-	 int numColsPerRow;
-
-         CHK_ERR( getPatternScatterIndices(patternID, rownodes.dataPtr(),
-					   colnodes.dataPtr(), rowIndices,
-                                           rowColOffsets,numColsPerRow,
-					   colIndices));
-
-	 if (rownodes.length() == 0 || colnodes.length() == 0) ERReturn(-1)
-
-	 int colIndicesPerRow = colIndices.size()/rownodes.length();
-
-	 SSGraph ssgraph(rowIndices.size(),
-			 &rowIndices[0],
-			 colIndicesPerRow,
-			 &rowColOffsets[0],
-			 &colIndices[0]);
-
-	 CHK_ERR( createEqnStructure(ssgraph) );
-      }
-   }
-
-   return(FEI_SUCCESS);
 }
 
 //------------------------------------------------------------------------------
@@ -1834,92 +1668,7 @@ void SNL_FEI_Structure::storeNodalRowIndices(NodeDescriptor& node,
 }
 
 //------------------------------------------------------------------------------
-int SNL_FEI_Structure::storePatternScatterIndices(SSGraph& mat)
-{
-  //
-  //This function takes a "small" matrix-graph structure, and puts the indices
-  //either into the global sparse matrix structure, or into the EqnCommMgr if
-  //they represent an off-processor matrix location.
-  //
-
-  int numRows = mat.getRows().length();
-  int* rows = mat.getRows().dataPtr();
-
-  if (numRows == 0) return(FEI_SUCCESS);
-
-  feiArray<feiArray<int>*>& indices = mat.getIndices();
-
-  for(int i=0; i<numRows; i++) {
-    int row = rows[i];
-    int reducedRow = -1;
-    bool isSlave = translateToReducedEqn(row, reducedRow);
-    if (isSlave) ERReturn(-1);
-
-    feiArray<int>& colIndices = *(indices[i]);
-
-    workSpace_.resize(colIndices.length());
-    for(int jj=0; jj<colIndices.length(); jj++) {
-      isSlave = translateToReducedEqn(colIndices[jj], workSpace_[jj]);
-      if (isSlave) ERReturn(-1);
-    }
-
-    if ((localStartRow_ > row) || (row > localEndRow_)) {
-      int owner = getOwnerProcForEqn(row);
-      eqnCommMgr_->addRemoteIndices(reducedRow, owner,
-				    workSpace_.dataPtr(),
-				    workSpace_.length());
-      continue;
-    }
-
-    for(int j=0; j<workSpace_.length(); j++) {
-      CHK_ERR( createMatrixPosition(reducedRow, workSpace_[j],
-				    "storePatScttrInd") );
-    }
-  }
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int SNL_FEI_Structure::storePatternScatterIndices_noSlaves(SSGraph& mat)
-{
-  //
-  //This function takes a "small" matrix-graph structure, and puts the indices
-  //either into the global sparse matrix structure, or into the EqnCommMgr if
-  //they represent an off-processor matrix location.
-  //
-
-  int numRows = mat.getRows().length();
-  int* rows = mat.getRows().dataPtr();
-
-  if (numRows == 0) return(FEI_SUCCESS);
-
-  feiArray<feiArray<int>*>& indices = mat.getIndices();
-
-  for(int i=0; i<numRows; i++) {
-    int row = rows[i];
-
-    feiArray<int>& colIndices = *(indices[i]);
-
-    if ((localStartRow_ > row) || (row > localEndRow_)) {
-      int owner = getOwnerProcForEqn(row);
-      eqnCommMgr_->addRemoteIndices(row, owner,
-				    colIndices.dataPtr(),
-				    colIndices.length());
-      continue;
-    }
-
-    int* colIndPtr = colIndices.dataPtr();
-    for(int j=0; j<colIndices.length(); j++) {
-      CHK_ERR( createMatrixPosition(row, colIndPtr[j],
-				    "storePatScttrInd_noSlvs") );
-    }
-  }
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int SNL_FEI_Structure::createSymmEqnStructure(feiArray<int>& scatterIndices)
+int SNL_FEI_Structure::createSymmEqnStructure(std::vector<int>& scatterIndices)
 {
   //scatterIndices are both the rows and the columns for a structurally
   //symmetric 2-dimensional contribution to the matrix.
@@ -1934,7 +1683,7 @@ int SNL_FEI_Structure::createSymmEqnStructure(feiArray<int>& scatterIndices)
 
   try {
 
-  int len = scatterIndices.length();
+  int len = scatterIndices.size();
   bool anySlaves = false;
   rSlave_.resize(len);
   for(int is=0; is<len; is++) { 
@@ -1949,7 +1698,7 @@ int SNL_FEI_Structure::createSymmEqnStructure(feiArray<int>& scatterIndices)
     return(FEI_SUCCESS);
   }
 
-  int* scatterPtr = scatterIndices.dataPtr();
+  int* scatterPtr = &scatterIndices[0];
 
   workSpace_.resize(len);
   for(int j=0; j<len; j++) {
@@ -2034,7 +1783,7 @@ int SNL_FEI_Structure::createSymmEqnStructure(feiArray<int>& scatterIndices)
 }
 
 //------------------------------------------------------------------------------
-int SNL_FEI_Structure::createBlkSymmEqnStructure(feiArray<int>& scatterIndices)
+int SNL_FEI_Structure::createBlkSymmEqnStructure(std::vector<int>& scatterIndices)
 {
   //scatterIndices are both the rows and the columns for a structurally
   //symmetric 2-dimensional contribution to the matrix.
@@ -2048,7 +1797,7 @@ int SNL_FEI_Structure::createBlkSymmEqnStructure(feiArray<int>& scatterIndices)
 
   try {
 
-  int len = scatterIndices.length();
+  int len = scatterIndices.size();
   bool anySlaves = false;
   rSlave_.resize(len);
   for(int is=0; is<len; is++) { 
@@ -2063,7 +1812,7 @@ int SNL_FEI_Structure::createBlkSymmEqnStructure(feiArray<int>& scatterIndices)
     return(FEI_SUCCESS);
   }
 
-  int* scatterPtr = scatterIndices.dataPtr();
+  int* scatterPtr = &scatterIndices[0];
 
   workSpace_.resize(len);
   for(int j=0; j<len; j++) {
@@ -2148,7 +1897,7 @@ int SNL_FEI_Structure::createBlkSymmEqnStructure(feiArray<int>& scatterIndices)
 }
 
 //------------------------------------------------------------------------------
-int SNL_FEI_Structure::storeElementScatterIndices(feiArray<int>& indices)
+int SNL_FEI_Structure::storeElementScatterIndices(std::vector<int>& indices)
 {
 //This function takes a list of equation numbers, as input, and for each
 //one, if it is a local equation number, goes to that row of the sysMatIndices
@@ -2156,13 +1905,13 @@ int SNL_FEI_Structure::storeElementScatterIndices(feiArray<int>& indices)
 //in that row of the matrix structure. If the equation number is not local,
 //then it is given to the EqnCommMgr.
 //
-   int numIndices = indices.length();
-   int* indPtr = indices.dataPtr();
+   int numIndices = indices.size();
+   int* indPtr = &indices[0];
 
    workSpace_.resize(numIndices);
    int* workPtr = workSpace_.dataPtr();
    int reducedEqn = -1;
-   for(int j=0; j<indices.length(); j++) {
+   for(size_t j=0; j<indices.size(); j++) {
      bool isSlave = translateToReducedEqn(indPtr[j], reducedEqn);
      if (isSlave) ERReturn(-1);
      workPtr[j] = reducedEqn;
@@ -2187,7 +1936,7 @@ int SNL_FEI_Structure::storeElementScatterIndices(feiArray<int>& indices)
 }
 
 //------------------------------------------------------------------------------
-int SNL_FEI_Structure::storeElementScatterIndices_noSlaves(feiArray<int>& indices)
+int SNL_FEI_Structure::storeElementScatterIndices_noSlaves(std::vector<int>& indices)
 {
   //This function takes a list of equation numbers as input and for each one,
   //if it is a local equation number, goes to that row of the sysMatIndices
@@ -2195,8 +1944,8 @@ int SNL_FEI_Structure::storeElementScatterIndices_noSlaves(feiArray<int>& indice
   //in that row of the matrix structure. If the equation number is not local,
   //then it is given to the EqnCommMgr.
   //
-  int i, numIndices = indices.length();
-  int* indPtr = indices.dataPtr();
+  int i, numIndices = indices.size();
+  int* indPtr = &indices[0];
 
   for(i=0; i<numIndices; i++) {
     int row = indPtr[i];
@@ -2225,7 +1974,7 @@ int SNL_FEI_Structure::storeElementScatterIndices_noSlaves(feiArray<int>& indice
 }
 
 //------------------------------------------------------------------------------
-int SNL_FEI_Structure::storeElementScatterBlkIndices_noSlaves(feiArray<int>& indices)
+int SNL_FEI_Structure::storeElementScatterBlkIndices_noSlaves(std::vector<int>& indices)
 {
   //This function takes a list of equation numbers as input and for each one,
   //if it is a local equation number, goes to that row of the sysMatIndices
@@ -2233,8 +1982,8 @@ int SNL_FEI_Structure::storeElementScatterBlkIndices_noSlaves(feiArray<int>& ind
   //in that row of the matrix structure. If the equation number is not local,
   //then it is given to the EqnCommMgr.
   //
-  int i, numIndices = indices.length();
-  int* indPtr = indices.dataPtr();
+  int i, numIndices = indices.size();
+  int* indPtr = &indices[0];
 
   for(i=0; i<numIndices; i++) {
     int row = indPtr[i];
@@ -2258,132 +2007,6 @@ int SNL_FEI_Structure::storeElementScatterBlkIndices_noSlaves(feiArray<int>& ind
       }
     }
   }
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int SNL_FEI_Structure::createEqnStructure(SSGraph& mat)
-{
-  //This function creates the global matrix structure positions associated with
-  //the "small" matrix-structure in 'mat'.
-  //If there are no slave equations in either the whole problem or in 'mat',
-  //then mat is simply handed to 'storePatternScatterIndices' which either
-  //creates local matrix positions or makes insertions to EqnCommMgr, based on
-  //whether the locations represented in 'mat' are local or not.
-  //
-  //If there are slave equations present in 'mat', then its contents are
-  //distributed into the locally-held submatrices Kdi, Kid, Kdd which will
-  //later be assembled into the global matrix structure by the function
-  //'assembleReducedStructure'.
-  //
-  int numRows = mat.getRows().length();
-  int* rows = mat.getRows().dataPtr();
-
-  if (numRows == 0) return(FEI_SUCCESS);
-
-  if (numSlaveEquations() == 0) {
-    CHK_ERR( storePatternScatterIndices_noSlaves(mat) );
-    return(FEI_SUCCESS);
-  }
-
-  feiArray<feiArray<int>*>& indices = mat.getIndices();
-
-  rSlave_.resize(numRows);
-  cSlave_.resize(0);
-  bool anySlaves = false;
-  for(int r=0; r<numRows; r++) {
-    rSlave_[r] = isSlaveEqn(rows[r]);
-    const int* indPtr = indices[r]->dataPtr();
-    if (rSlave_[r]) anySlaves = true;
-
-    for(int j=0; j<indices[r]->size(); j++) {
-      cSlave_.append(isSlaveEqn(indPtr[j]));
-      if (cSlave_[cSlave_.length()-1]) anySlaves = true;
-    }
-  }
-
-  if (!anySlaves) {
-    CHK_ERR( storePatternScatterIndices(mat) );
-    return(FEI_SUCCESS);
-  }
-
-  int offset = 0;
-  for(int i=0; i<numRows; i++) {
-    int row = rows[i];
-
-    int numCols = indices[i]->size();
-    const int* indicesPtr = indices[i]->dataPtr();
-    bool* colSlave = cSlave_.dataPtr() + offset;
-    offset += numCols;
-
-    if (rSlave_[i]) {
-      //Since this is a slave equation, the non-slave columns of this row go
-      //into 'Kdi_', and the slave columns go into 'Kdd_'.
-      for(int jj=0; jj<numCols; jj++) {
-	int col = indicesPtr[jj];
-	if (colSlave[jj]) {
-	  Kdd_->createPosition(row, col);
-	}
-	else {
-	  Kdi_->createPosition(row, col);
-	}
-      }
-
-      //We also need to put the non-slave rows of column 'row' into 'K_id'.
-      for(int ii=0; ii<numRows; ii++) {
-	int rowi = rows[ii];
-	if (rSlave_[ii]) continue;
-
-	int index = indices[ii]->find(row);
-	if (index < 0) continue;
-
-	Kid_->createPosition(rowi, row);
-      }
-
-      reducedEqnCounter_++;
-
-      continue;
-    }
-    else {//row is not a slave eqn...
-      int reducedRow = -1;
-      bool isSlave = translateToReducedEqn(row, reducedRow);
-      if (isSlave) ERReturn(-1);
-
-      bool rowIsLocal = true;
-      if (localStartRow_ > row || row > localEndRow_) {
-	rowIsLocal = false;
-      }
-
-      //put all non-slave columns from this row into the assembled matrix.
-      for(int j=0; j<numCols; j++) {
-	int col = indicesPtr[j];
-
-	if (colSlave[j]) continue;
-
-	int reducedCol = -1;
-	isSlave = translateToReducedEqn(col, reducedCol);
-	if (isSlave) ERReturn(-1);
-
-	if (rowIsLocal) {
-	  CHK_ERR( createMatrixPosition(reducedRow, reducedCol,
-					"crtEqnStr") );
-	}
-	else {
-	  int owner = getOwnerProcForEqn(row);
-	  if (owner < 0) {
-	    FEI_CERR << "SNL_FEI_Structure ERROR, owner-proc not found for row "
-		 << row << FEI_ENDL;
-	    ERReturn(-1);
-	  }
-
-	  eqnCommMgr_->addRemoteIndices(reducedRow, owner, &reducedCol, 1);
-	}
-      }
-    }
-  }
-
-  if (reducedEqnCounter_ > 300) CHK_ERR( assembleReducedStructure() );
 
   return(FEI_SUCCESS);
 }
@@ -2458,7 +2081,7 @@ int SNL_FEI_Structure::translateToReducedEqns(EqnCommMgr& eqnCommMgr)
 int SNL_FEI_Structure::translateToReducedEqns(EqnBuffer& eqnBuf)
 {
   int numEqns = eqnBuf.getNumEqns();
-  int* eqnNumbers = eqnBuf.eqnNumbersPtr().dataPtr();
+  int* eqnNumbers = &(eqnBuf.eqnNumbers()[0]);
   std::vector<fei::CSVec*>& eqnArray = eqnBuf.eqns();
   for(int i=0; i<numEqns; ++i) {
     int reducedEqn;
@@ -3145,7 +2768,7 @@ int SNL_FEI_Structure::addBlock(GlobalID blockID) {
   int found = snl_fei::binarySearch(blockID, blockIDs_, insertPoint);
 
    if (found<0) {
-      blockIDs_.insert(blockID, insertPoint);
+      blockIDs_.insert(blockIDs_.begin()+insertPoint, blockID);
 
       BlockDescriptor* block = new BlockDescriptor;
       block->setGlobalBlockID(blockID);
@@ -3154,41 +2777,6 @@ int SNL_FEI_Structure::addBlock(GlobalID blockID) {
 
       ConnectivityTable* newConnTable = new ConnectivityTable;
       connTables_.insert(newConnTable, insertPoint);
-   }
-
-   return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int SNL_FEI_Structure::addPattern(int patternID) {
-//
-//Append a patternID to our (unsorted) list of patternIDs if it isn't
-//already present. Also, add a pattern-descriptor if patternID wasn't
-//already present.
-//
-   int found = patternIDs_.find(patternID);
-
-   if (found<0) {
-      patternIDs_.append(patternID);
-      int len = patternIDs_.length();
-
-      PatternDescriptor** newPttrns = new PatternDescriptor*[len];
-      ConnectivityTable** newConn = new ConnectivityTable*[len];
-
-      for(int i=0; i<len-1; i++) {
-         newPttrns[i] = patterns_[i];
-         newConn[i] = patternConn_[i];
-      }
-      newPttrns[len-1] = new PatternDescriptor;
-      newConn[len-1] = new ConnectivityTable;
-
-      newPttrns[len-1]->setPatternID(patternID);
-
-      delete [] patterns_;
-      patterns_ = newPttrns;
-
-      delete [] patternConn_;
-      patternConn_ = newConn;
    }
 
    return(FEI_SUCCESS);
@@ -3222,37 +2810,9 @@ int SNL_FEI_Structure::getIndexOfBlock(GlobalID blockID)
 int SNL_FEI_Structure::getBlockDescriptor_index(int index,
 					       BlockDescriptor*& block)
 {
-  if (index < 0 || index >= blockIDs_.length()) ERReturn(FEI_FATAL_ERROR);
+  if (index < 0 || index >= (int)blockIDs_.size()) ERReturn(FEI_FATAL_ERROR);
 
   block = blocks_[index];
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int SNL_FEI_Structure::getPatternDescriptor(int patternID,
-                                         PatternDescriptor*& pattern)
-{
-   int index = patternIDs_.find(patternID);
-
-   if (index < 0) {
-      FEI_CERR << "SNL_FEI_Structure::getPatternDescriptor: ERROR, patternID "
-           << (int)patternID << " not found." << FEI_ENDL;
-      return(-1);
-   }
-
-   pattern = &(*(patterns_[index]));
-
-   return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int SNL_FEI_Structure::getPatternDescriptor_index(int index,
-                                         PatternDescriptor*& pattern)
-{
-  if (index < 0 || index >= patternIDs_.length()) return(FEI_FATAL_ERROR);
-
-  pattern = patterns_[index];
 
   return(FEI_SUCCESS);
 }
@@ -3290,51 +2850,6 @@ int SNL_FEI_Structure::allocateBlockConnectivity(GlobalID blockID) {
 }
 
 //------------------------------------------------------------------------------
-int SNL_FEI_Structure::appendPatternConnectivity(int patternID,
-                                                int numRowIDs,
-						const int* rowIDTypes,
-                                                const GlobalID* rowIDs,
-                                                int numColIDsPerRow,
-						const int* colIDTypes,
-                                                const GlobalID* colIDs)
-{
-   int index = patternIDs_.find(patternID);
-
-   if (index < 0) {
-      FEI_CERR << "SNL_FEI_Structure::appendPatternConnectivity: ERROR, patternID "
-           << (int)patternID << " not found. Aborting." << FEI_ENDL;
-      MPI_Abort(comm_, -1);
-   }
-
-   if (numColIDsPerRow <= 0) return(FEI_SUCCESS);
-
-   int& numRows = patternConn_[index]->numRows;
-   feiArray<GlobalID>**& conn = patternConn_[index]->connectivities;
-
-   numRows += 2;
-
-   int len = numRows;
-
-   feiArray<GlobalID>** newConn = new feiArray<GlobalID>*[len];
-
-   for(int i=0; i<len-2; i++) newConn[i] = conn[i];
-
-   newConn[len-2] = new feiArray<GlobalID>(numRowIDs, numRowIDs);
-   newConn[len-1] = new feiArray<GlobalID>(numRowIDs*numColIDsPerRow,numRowIDs);
-
-   feiArray<GlobalID>& rowConn = *(newConn[len-2]);
-   for(int j=0; j<numRowIDs; j++) rowConn[j] = rowIDs[j];
-
-   feiArray<GlobalID>& colConn = *(newConn[len-1]);
-   for(int k=0; k<numRowIDs*numColIDsPerRow; k++) colConn[k] = colIDs[k];
-
-   delete [] conn;
-   conn = newConn;
-
-   return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
 ConnectivityTable& SNL_FEI_Structure::getBlockConnectivity(GlobalID blockID) {
 
    int index = snl_fei::binarySearch(blockID, blockIDs_);
@@ -3346,20 +2861,6 @@ ConnectivityTable& SNL_FEI_Structure::getBlockConnectivity(GlobalID blockID) {
    }  
 
    return(*(connTables_[index]));
-}
-
-//------------------------------------------------------------------------------
-ConnectivityTable& SNL_FEI_Structure::getPatternConnectivity(int patternID) {
-
-   int index = patternIDs_.find(patternID);
-
-   if (index < 0) {
-      FEI_CERR << "SNL_FEI_Structure::getPatternConnectivity: ERROR, patternID "
-           << (int)patternID << " not found. Aborting." << FEI_ENDL;
-      MPI_Abort(comm_, -1);
-   }
-
-   return(*(patternConn_[index]));
 }
 
 //------------------------------------------------------------------------------
@@ -3393,7 +2894,7 @@ int SNL_FEI_Structure::finalizeActiveNodes()
   //globally unique).
   //
   int elemNumber = 0;
-  int numBlocks = blockIDs_.length();
+  int numBlocks = blockIDs_.size();
   for(int bIndex=0; bIndex<numBlocks; bIndex++) {
 
     GlobalID blockID = blocks_[bIndex]->getGlobalBlockID();
@@ -3492,54 +2993,6 @@ int SNL_FEI_Structure::finalizeActiveNodes()
     }
   }
 
-  //
-  //we also need to run through the patterns and their connectivities, and
-  //add the fields for each pattern to the nodes that are accessed using that
-  //pattern.
-  //
-
-  int numPatterns = patternIDs_.length();
-  for(int i=0; i<numPatterns; i++) {
-    PatternDescriptor& pattern = *(patterns_[i]);
-
-    std::vector<int>& fieldsPerRow = pattern.getNumFieldsPerRow();
-    std::vector<int>* rowFields = pattern.getRowFieldIDs();
-    std::vector<int>& fieldsPerCol = pattern.getNumFieldsPerCol();
-    std::vector<int>* colFields = pattern.getColFieldIDs();
-    int numColIDsPerRow = pattern.getNumColIDsPerRow();
-
-    int n,numConnRows = patternConn_[i]->numRows;
-    int offset = 0, loopCount = numConnRows/2;
-    for(int r=0; r<loopCount; r++) {
-      feiArray<GlobalID>& rowIDs = *(patternConn_[i]->connectivities[offset++]);
-      feiArray<GlobalID>& colIDs = *(patternConn_[i]->connectivities[offset++]);
-
-      for(n=0; n<rowIDs.length(); n++) {
-	NodeDescriptor* node = NULL;
-	CHK_ERR( nodeDatabase_->getNodeWithID(rowIDs[n], node) );
-
-	for(int f=0; f<fieldsPerRow[n]; f++) {
-	  node->addField((rowFields[n])[f]);
-	}
-
-	node->setOwnerProc(localProc_);
-	nodeCommMgr_->informLocal(*node);
-
-	for(size_t c=0; c<fieldsPerCol.size(); c++) {
-	  CHK_ERR(nodeDatabase_->getNodeWithID(colIDs[n*numColIDsPerRow + c],
-					       node) );
-
-	  for(int f=0; f<fieldsPerCol[c]; f++) {
-	    node->addField((colFields[c])[f]);
-	  }
-
-	  node->setOwnerProc(localProc_);
-	  //	  nodeCommMgr_->informLocal(*node);	  
-	}
-      }
-    }
-  }
-
   activeNodesInitialized_ = true;
 
   if (debugOutput_) os << "#  leaving finalizeActiveNodes" << FEI_ENDL;
@@ -3586,10 +3039,10 @@ int SNL_FEI_Structure::setNumNodesAndEqnsPerBlock()
   //This function will count how 
   //many active nodes there are for each block.
 
-   int numBlocks = blockIDs_.length();
+   int numBlocks = blockIDs_.size();
    std::vector<int> nodesPerBlock(numBlocks);
    std::vector<int> eqnsPerBlock(numBlocks);
-   GlobalID* blockIDsPtr = blockIDs_.dataPtr();
+   GlobalID* blockIDsPtr = &blockIDs_[0];
 
    int j;
    for(j=0; j<numBlocks; j++) {
@@ -3881,7 +3334,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
 
   globalNumNodesVanished_.resize(numProcs_+1, 0);
 
-  slvEqnNumbers_ = &(slaveEqns_->eqnNumbersPtr());
+  slvEqnNumbers_ = &(slaveEqns_->eqnNumbers());
   numSlvs_ = slvEqnNumbers_->size();
   if (numSlvs_ > 0) {
     //first, let's remove any 'couplings' among the slave equations. A coupling
@@ -3918,7 +3371,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
     // to the eqnCommMgr_ object using addLocalEqn for each processor that
     // shares the slave node.
 
-    feiArray<int>& slvEqns = *slvEqnNumbers_;
+    std::vector<int>& slvEqns = *slvEqnNumbers_;
     std::vector<fei::CSVec*>& mstrEqns = slaveEqns_->eqns();
 
     //keep track of the number of locally owned nodes that vanish due to the
@@ -4030,20 +3483,20 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
 //------------------------------------------------------------------------------
 int SNL_FEI_Structure::removeCouplings(EqnBuffer& eqnbuf, int& levelsOfCoupling)
 {
-  feiArray<int>& eqnNumbers = eqnbuf.eqnNumbersPtr();
+  std::vector<int>& eqnNumbers = eqnbuf.eqnNumbers();
   std::vector<fei::CSVec*>& eqns = eqnbuf.eqns();
 
-  feiArray<double> tempCoefs;
-  feiArray<int> tempIndices;
+  std::vector<double> tempCoefs;
+  std::vector<int> tempIndices;
 
   levelsOfCoupling = 0;
   bool finished = false;
   while(!finished) {
     bool foundCoupling = false;
-    for(int i=0; i<eqnNumbers.length(); i++) {
+    for(size_t i=0; i<eqnNumbers.size(); i++) {
       int rowIndex = eqnbuf.isInIndices(eqnNumbers[i]);
 
-      if (rowIndex == i) {
+      if (rowIndex == (int)i) {
 	FEI_CERR <<" SNL_FEI_Structure::removeCouplings ERROR,"
 	     << " illegal master-slave constraint coupling. Eqn "
 	     << eqnNumbers[i] << " is both master and slave. " << FEI_ENDL;
@@ -4063,8 +3516,8 @@ int SNL_FEI_Structure::removeCouplings(EqnBuffer& eqnbuf, int& levelsOfCoupling)
 	tempCoefs.resize(len);
 	tempIndices.resize(len);
 
-	double* tempCoefsPtr = tempCoefs.dataPtr();
-	int* tempIndicesPtr = tempIndices.dataPtr();
+	double* tempCoefsPtr = &tempCoefs[0];
+	int* tempIndicesPtr = &tempIndices[0];
 	double* coefsPtr = &coefsRef[0];
 	int* indicesPtr = &indicesRef[0];
 
@@ -4113,10 +3566,10 @@ int SNL_FEI_Structure::gatherSlaveEqns(MPI_Comm comm,
   //the most efficient way to do it, but it involves the least amount of new
   //code.)
   ProcEqns localProcEqns, remoteProcEqns;
-  feiArray<int>& slvEqnNums = slaveEqns->eqnNumbersPtr();
+  std::vector<int>& slvEqnNums = slaveEqns->eqnNumbers();
   fei::CSVec** slvEqnsPtr = &(slaveEqns->eqns()[0]);
 
-  for(int i=0; i<slvEqnNums.length(); i++) {
+  for(size_t i=0; i<slvEqnNums.size(); i++) {
     for(int p=0; p<numProcs; p++) {
       if (p == localProc) continue;
 
@@ -4147,10 +3600,9 @@ bool SNL_FEI_Structure::isSlaveEqn(int eqn)
 {
   if (numSlvs_ == 0) return(false);
 
-  feiArray<int>& slvEqns = slaveEqns_->eqnNumbersPtr();
+  std::vector<int>& slvEqns = slaveEqns_->eqnNumbers();
   int insertPoint = -1;
-  int foundOffset = snl_fei::binarySearch(eqn, slvEqns.dataPtr(),
-						 slvEqns.length(), insertPoint);
+  int foundOffset = snl_fei::binarySearch(eqn, slvEqns, insertPoint);
 
   if (foundOffset >= 0) return(true);
   else return(false);
@@ -4165,8 +3617,7 @@ bool SNL_FEI_Structure::translateToReducedEqn(int eqn, int& reducedEqn)
   if (eqn > highestSlv_) {reducedEqn = eqn - numSlvs_; return(false); }
 
   int index = 0;
-  int foundOffset = snl_fei::binarySearch(eqn, slvEqnNumbers_->dataPtr(),
-					slvEqnNumbers_->size(), index);
+  int foundOffset = snl_fei::binarySearch(eqn, *slvEqnNumbers_, index);
 
   bool isSlave = false;
 
@@ -4187,7 +3638,7 @@ int SNL_FEI_Structure::translateFromReducedEqn(int reducedEqn)
 
   if (numSlvs == 0) return(reducedEqn);
 
-  const int* slvEqns = slaveEqns_->eqnNumbersPtr().dataPtr();
+  const int* slvEqns = &(slaveEqns_->eqnNumbers()[0]);
 
   if (reducedEqn < slvEqns[0]) return(reducedEqn);
 
@@ -4210,10 +3661,9 @@ int SNL_FEI_Structure::getMasterEqnNumbers(int slaveEqn,
     return(0);
   }
 
-  feiArray<int>& slvEqns = slaveEqns_->eqnNumbersPtr();
+  std::vector<int>& slvEqns = slaveEqns_->eqnNumbers();
   int index = 0;
-  int foundOffset = snl_fei::binarySearch(slaveEqn, slvEqns.dataPtr(),
-					slvEqns.length(), index);
+  int foundOffset = snl_fei::binarySearch(slaveEqn, slvEqns, index);
 
   if (foundOffset >= 0) {
     masterEqns = &(slaveEqns_->eqns()[foundOffset]->indices());
@@ -4234,10 +3684,9 @@ int SNL_FEI_Structure::getMasterEqnCoefs(int slaveEqn,
     return(0);
   }
 
-  feiArray<int>& slvEqns = slaveEqns_->eqnNumbersPtr();
+  std::vector<int>& slvEqns = slaveEqns_->eqnNumbers();
   int index = 0;
-  int foundOffset = snl_fei::binarySearch(slaveEqn, slvEqns.dataPtr(),
-					slvEqns.length(), index);
+  int foundOffset = snl_fei::binarySearch(slaveEqn, slvEqns, index);
 
   if (foundOffset >= 0) {
     masterCoefs = &(slaveEqns_->eqns()[foundOffset]->coefs());
@@ -4257,10 +3706,9 @@ int SNL_FEI_Structure::getMasterEqnRHS(int slaveEqn,
     return(0);
   }
 
-  feiArray<int>& slvEqns = slaveEqns_->eqnNumbersPtr();
+  std::vector<int>& slvEqns = slaveEqns_->eqnNumbers();
   int index = 0;
-  int foundOffset = snl_fei::binarySearch(slaveEqn, slvEqns.dataPtr(),
-					slvEqns.length(), index);
+  int foundOffset = snl_fei::binarySearch(slaveEqn, slvEqns, index);
 
   if (foundOffset >= 0) {
     feiArray<double>* rhsCoefsPtr = (*(slaveEqns_->rhsCoefsPtr()))[foundOffset];
@@ -4343,7 +3791,7 @@ int SNL_FEI_Structure::getBlkScatterIndices_index(int blockIndex,
   BlockDescriptor& block = *(blocks_[blockIndex]);
   int numNodes = block.numNodesPerElement;
   work_nodePtrs_.resize(numNodes);
-  NodeDescriptor** nodes = work_nodePtrs_.dataPtr();
+  NodeDescriptor** nodes = &work_nodePtrs_[0];
   int err = getElemNodeDescriptors(blockIndex, elemIndex, nodes);
   if (err) {
     FEI_CERR << "SNL_FEI_Structure::getBlkScatterIndices_index: ERROR getting"
@@ -4369,7 +3817,7 @@ void SNL_FEI_Structure::getScatterIndices_index(int blockIndex, int elemIndex,
    int** fieldIDs = block.fieldIDsTablePtr();
 
    work_nodePtrs_.resize(numNodes);
-   NodeDescriptor** nodes = work_nodePtrs_.dataPtr();
+   NodeDescriptor** nodes = &work_nodePtrs_[0];
 
    int err = getElemNodeDescriptors(blockIndex, elemIndex, nodes);
    if (err) {
@@ -4429,7 +3877,7 @@ void SNL_FEI_Structure::getScatterIndices_index(int blockIndex, int elemIndex,
    int** fieldIDs = block.fieldIDsTablePtr();
 
    work_nodePtrs_.resize(numNodes);
-   NodeDescriptor** nodes = work_nodePtrs_.dataPtr();
+   NodeDescriptor** nodes = &work_nodePtrs_[0];
 
    int err = getElemNodeDescriptors(blockIndex, elemIndex, nodes);
    if (err) {
@@ -4480,206 +3928,6 @@ void SNL_FEI_Structure::getScatterIndices_index(int blockIndex, int elemIndex,
 }
 
 //------------------------------------------------------------------------------
-int SNL_FEI_Structure::getPatternScatterIndices(int patternID,
-                                               const GlobalID* rowNodes,
-                                               const GlobalID* colNodes,
-                                               std::vector<int>& rowIndices,
-					       std::vector<int>& rowColOffsets,
-					       int& colIndicesPerRow,
-                                               std::vector<int>& colIndices)
-{
-   int index = patternIDs_.find(patternID);
-
-   if (index < 0) {
-      FEI_CERR << "SNL_FEI_Structure::getPatternScatterIndices: ERROR, patternID "
-           << (int)patternID << " not found." << FEI_ENDL;
-      return(-1);
-   }
-
-   PatternDescriptor& pattern = *(patterns_[index]);
-
-   NodeDescriptor** rNodeDesc = NULL;
-   NodeDescriptor** cNodeDesc = NULL;
-
-   CHK_ERR( getPatternNodeDescriptors(pattern, rowNodes, colNodes,
-                                      rNodeDesc, cNodeDesc) );
-
-   int numRows = pattern.getNumRowIDs();
-   int numColsPerRow = pattern.getNumColIDsPerRow();
-   int interleave = pattern.getInterleaveStrategy();
-
-   std::vector<int>& fieldsPerRow = pattern.getNumFieldsPerRow();
-   std::vector<int>* rowFieldIDs = pattern.getRowFieldIDs();
-
-   std::vector<int>& fieldsPerCol = pattern.getNumFieldsPerCol();
-   std::vector<int>* colFieldIDs = pattern.getColFieldIDs();
-   int** cFieldIDs = new int*[fieldsPerCol.size()];
-   for(size_t c=0; c<fieldsPerCol.size(); c++)
-     cFieldIDs[c] = &(colFieldIDs[c][0]);
-
-   colIndicesPerRow = 0;
-
-   for(size_t i=0; i<fieldsPerCol.size(); i++) {
-     for(int j=0; j<fieldsPerCol[i]; j++) 
-       colIndicesPerRow += getFieldSize(colFieldIDs[i][j]);
-   }
-
-   colIndices.resize(numRows*colIndicesPerRow);
-
-   CHK_ERR( setPatternRowColOffsets( pattern, colIndicesPerRow, rowColOffsets) );
-
-   for(int i=0; i<numRows; i++) {
-     int dummy2 = 0;
-
-     if (interleave == FEI_NODE_MAJOR) {
-       CHK_ERR( getNodeMajorIndices(&(cNodeDesc[i*numColsPerRow]),
-				    numColsPerRow,
-				    cFieldIDs, &fieldsPerCol[0],
-				    &(colIndices[i*colIndicesPerRow]), dummy2) )
-     }
-     else {
-       CHK_ERR(getFieldMajorIndices(&(cNodeDesc[i*numColsPerRow]),
-				    numColsPerRow,
-				    cFieldIDs, &fieldsPerCol[0],
-				    &(colIndices[i*colIndicesPerRow]), dummy2) )
-     }
-   }
-
-   delete [] cFieldIDs;
-
-   if (interleave == FEI_NODE_MAJOR) {
-     CHK_ERR( getNodeMajorIndices(rNodeDesc, numRows, 
-				  rowFieldIDs, fieldsPerRow, rowIndices ) );
-   }
-   else {
-     CHK_ERR( getFieldMajorIndices(rNodeDesc, numRows, 
-				  rowFieldIDs, fieldsPerRow, rowIndices) );
-   }
-
-   return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int SNL_FEI_Structure::setPatternRowColOffsets(PatternDescriptor& pattern,
-					      int numColIndices,
-					      std::vector<int>& rowColOffsets)
-{
-  //This function sets the rowColOffsets array. The length of this array will
-  //be the number of row-indices associated with the pattern. The contents of
-  //this array will be offsets into an array of column-indices, which is of
-  //length num-row-IDs * numColIndices. The tricky thing here is that the
-  //order of those offsets varies depending on whether the pattern's interleave
-  //strategy is FEI_NODE_MAJOR or FEI_FIELD_MAJOR.
-
-  rowColOffsets.resize(0);
-
-  //First, get the row-field info and num-row-ids info.
-  int numRowIDs = pattern.getNumRowIDs();
-  std::vector<int>& numFieldsPerRow = pattern.getNumFieldsPerRow();
-  std::vector<int>* rowFieldIDs = pattern.getRowFieldIDs();
-
-  //numFieldsPerRow is a list of length numRowIDs.
-  //rowFieldIDs is a list of feiArrays. There are 'numRowIDs' feiArrays, and
-  //the i-th feiArray is of length numFieldsPerRow[i].
-
-  int interleave = pattern.getInterleaveStrategy();
-
-
-  //if interleave == FEI_NODE_MAJOR then we simply loop over the rowFieldIDs
-  //and increment the col-offset by numColIndices once each row-ID.
-  //
-  //if interleave == FEI_FIELD_MAJOR then we need to first create a flat list
-  //of the fieldIDs (each appearing only once) and then loop over the
-  //rowFieldIDs table once for each unique fieldID, and whenever that fieldID is
-  //encountered, append an offset to the list. The offset to be appended will be
-  //'current-row-id'*numColIndices.
-
-  if (interleave == FEI_NODE_MAJOR) {
-    int colOffset = 0;
-    for(int rowID=0; rowID<numRowIDs; rowID++) {
-      for(int field=0; field<numFieldsPerRow[rowID]; field++) {
-	int numEqns = getFieldSize(rowFieldIDs[rowID][field]);
-	if (numEqns < 0) ERReturn(-1);
-
-	for(int eqn=0; eqn<numEqns; eqn++) {
-	  rowColOffsets.push_back(colOffset);
-	}
-      }
-      colOffset += numColIndices;
-    }
-  }
-  else if (interleave == FEI_FIELD_MAJOR) {
-    int i;
-    feiArray<int> fields;
-    for(i=0; i<numRowIDs; i++) {
-      for(int j=0; j<numFieldsPerRow[i]; j++) {
-	if (fields.find(rowFieldIDs[i][j]) < 0)
-	  fields.append(rowFieldIDs[i][j]);
-      }
-    }
-
-    for(i=0; i<fields.length(); i++) {
-      for(int rowID=0; rowID<numRowIDs; rowID++) {
-	for(int field=0; field<numFieldsPerRow[rowID]; field++) {
-	  if (fields[i] == rowFieldIDs[rowID][field]) {
-	    int numEqns = getFieldSize(fields[i]);
-	    if (numEqns < 0) ERReturn(-1);
-
-	    for(int eqn=0; eqn<numEqns; eqn++) {
-	      rowColOffsets.push_back(rowID*numColIndices);
-	    }
-	  }
-	}
-      }
-    }
-  }
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int SNL_FEI_Structure::getPatternScatterIndices(int patternID,
-                                               const GlobalID* rowNodes,
-                                               std::vector<int>& rowIndices)
-{
-   int index = patternIDs_.find(patternID);
-
-   if (index < 0) {
-      FEI_CERR << "SNL_FEI_Structure::getPatternScatterIndices: ERROR, patternID "
-           << (int)patternID << " not found." << FEI_ENDL;
-      return(-1);
-   }
-
-   PatternDescriptor& pattern = *(patterns_[index]);
-
-   int interleave = pattern.getInterleaveStrategy();
-
-   int numRows = pattern.getNumRowIDs();
-   std::vector<int>& fieldsPerRow = pattern.getNumFieldsPerRow();
-   std::vector<int>* rowFieldIDs = pattern.getRowFieldIDs();
-
-   NodeDescriptor** rNodeDesc = NULL;
-   NodeDescriptor** cNodeDesc = NULL;
-
-   int err = getPatternNodeDescriptors(pattern, rowNodes, NULL,
-                                      rNodeDesc, cNodeDesc);
-   if (err) return(err);
-
-   if (interleave == FEI_NODE_MAJOR) {
-     err = getNodeMajorIndices(rNodeDesc, numRows, 
-				  rowFieldIDs, fieldsPerRow, rowIndices);
-     if (err) return(err);
-   }
-   else {
-     err = getFieldMajorIndices(rNodeDesc, numRows, 
-				  rowFieldIDs, fieldsPerRow, rowIndices);
-     if (err) return(err);
-   }
-
-   return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
 int SNL_FEI_Structure::getElemNodeDescriptors(int blockIndex, int elemIndex,
                                              NodeDescriptor** nodes)
 {
@@ -4705,45 +3953,6 @@ int SNL_FEI_Structure::getElemNodeDescriptors(int blockIndex, int elemIndex,
   }
 
   return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int SNL_FEI_Structure::getPatternNodeDescriptors(PatternDescriptor& pattern,
-						 const GlobalID* rowNodes,
-						 const GlobalID* colNodes,
-						 NodeDescriptor**& rNodeDesc,
-						 NodeDescriptor**& cNodeDesc)
-{
-  //This function's task is to obtain, from the nodeDatabase, the 
-  //NodeDescriptor objects for the specified "row-nodes" and "column-nodes".
-  //
-  //The PatternDescriptor is queried for the lengths of the 
-  //incoming array arguments.
-  //
-   int numRowNodes = pattern.getNumRowIDs();
-   int numColNodes = numRowNodes * pattern.getNumColIDsPerRow();
-   if (colNodes == NULL) numColNodes = 0;
-   int i, err;
-
-   work_nodePtrs_.resize(numRowNodes+numColNodes);
-   work_nodePtrs_ = NULL;//feiArray::operator=
-   rNodeDesc = work_nodePtrs_.dataPtr();
-
-   if (colNodes != NULL) {
-      cNodeDesc = rNodeDesc + numRowNodes;
-   }
-
-   for(i=0; i<numRowNodes; i++) {
-     err = nodeDatabase_->getNodeWithID(rowNodes[i], rNodeDesc[i]);
-     if (err) return(err);
-   }
-
-   for(i=0; i<numColNodes; i++) {
-     err = nodeDatabase_->getNodeWithID(colNodes[i], cNodeDesc[i]);
-     if (err) return(err);
-   }
-
-   return(FEI_SUCCESS);
 }
 
 //------------------------------------------------------------------------------

@@ -106,7 +106,6 @@ fei_NodeDescriptor.hpp
 fei_ostream_ops.hpp
 fei_ParameterSet.hpp
 fei_Param.hpp
-fei_PatternDescriptor.hpp
 fei_Pattern.hpp
 fei_Pool_alloc.hpp
 fei_Pool.hpp
@@ -119,7 +118,6 @@ fei_SharedPtr.hpp
 fei_SlaveVariable.hpp
 fei_Solver.hpp
 fei_SparseRowGraph.hpp
-fei_SSGraph.hpp
 fei_sstream.hpp
 fei_TemplateUtils.hpp
 fei_utils.hpp
@@ -204,14 +202,12 @@ fei_ostream_ops.cpp
 fei_Param.cpp
 fei_ParameterSet.cpp
 fei_Pattern.cpp
-fei_PatternDescriptor.cpp
 fei_Pool_alloc.cpp
 fei_Pool.cpp
 fei_ProcEqns.cpp
 fei_Record.cpp
 fei_Reducer.cpp
 fei_Solver.cpp
-fei_SSGraph.cpp
 fei_utils.cpp
 fei_Vector_core.cpp
 fei_Vector_Local.cpp

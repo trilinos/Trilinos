@@ -496,42 +496,6 @@ int FEI_Implementation::initCRPen(int numCRNodes,
 }
 
 //------------------------------------------------------------------------------
-int FEI_Implementation::initCoefAccessPattern(int patternID,
-                                              int numRowIDs,
-                             const int* numFieldsPerRow,
-                             const int* const* rowFieldIDs,
-                             int numColIDsPerRow,
-                             const int* numFieldsPerCol,
-                             const int* const* colFieldIDs,
-                             int interleaveStrategy)
-{
-   CHK_ERR( problemStructure_->initCoefAccessPattern(patternID,
-						     numRowIDs,
-						     numFieldsPerRow,
-						     rowFieldIDs,
-						     numColIDsPerRow,
-						     numFieldsPerCol,
-						     colFieldIDs,
-						     interleaveStrategy));
-   return(0);
-}
-
-//------------------------------------------------------------------------------
-int FEI_Implementation::initCoefAccess(int patternID,
-				       const int* rowIDTypes,
-				       const GlobalID* rowNodes,
-				       const int* colIDTypes,
-				       const GlobalID* colNodes)
-{
-   CHK_ERR( problemStructure_->initCoefAccess(patternID,
-					      rowIDTypes,
-					      rowNodes,
-					      colIDTypes,
-					      colNodes));
-   return(0);
-}
-
-//------------------------------------------------------------------------------
 int FEI_Implementation::initComplete()
 {
     bool generateGraph = !haveFEData_;
@@ -739,41 +703,6 @@ int FEI_Implementation::loadCRPen(int CRID,
 }
 
 //------------------------------------------------------------------------------
-int FEI_Implementation::sumIntoMatrix(int patternID,
-				      const int* rowIDTypes,
-				      const GlobalID* rowIDs,
-				      const int* colIDTypes,
-				      const GlobalID* colIDs,
-				      const double* const* matrixEntries)
-{
-   if (!internalFEIsAllocated_)
-      notAllocatedAbort("FEI_Implementation::sumIntoMatrix");
-
-   CHK_ERR( filter_[index_current_filter_]->sumIntoMatrix(patternID,
-                                           rowIDTypes, rowIDs, colIDTypes, 
-						  colIDs, matrixEntries))
-   newMatrixDataLoaded_ = 1;
-
-   return(0);
-}
-
-//------------------------------------------------------------------------------
-int FEI_Implementation::sumIntoRHS(int patternID,
-				   const int* IDTypes,
-				   const GlobalID* IDs,
-				   const double* vectorEntries)
-{
-  if (!internalFEIsAllocated_)
-    notAllocatedAbort("FEI_Implementation::sumIntoRHS");
-
-  CHK_ERR( filter_[index_current_rhs_row_]->sumIntoRHS(patternID, IDTypes,
-						       IDs, vectorEntries));
-  newMatrixDataLoaded_ = 1;
-
-  return(0);
-}
-
-//------------------------------------------------------------------------------
 int FEI_Implementation::sumIntoRHS(int IDType,
 				   int fieldID,
 				   int numIDs,
@@ -805,79 +734,6 @@ int FEI_Implementation::putIntoRHS(int IDType,
   newMatrixDataLoaded_ = 1;
 
   return(0);
-}
-
-//------------------------------------------------------------------------------
-int FEI_Implementation::putIntoMatrix(int patternID,
-				      const int* rowIDTypes,
-				      const GlobalID* rowIDs,
-				      const int* colIDTypes,
-				      const GlobalID* colIDs,
-				      const double* const* matrixEntries)
-{
-   if (!internalFEIsAllocated_)
-      notAllocatedAbort("FEI_Implementation::putIntoMatrix");
-
-   int error = filter_[index_current_filter_]->putIntoMatrix(patternID,
-							     rowIDTypes,
-							     rowIDs,
-							     colIDTypes,
-							     colIDs,
-							     matrixEntries);
-   newMatrixDataLoaded_ = 1;
-
-   return(error);
-}
-
-//------------------------------------------------------------------------------
-int FEI_Implementation::getFromMatrix(int patternID,
-				      const int* rowIDTypes,
-				      const GlobalID* rowIDs,
-				      const int* colIDTypes,
-				      const GlobalID* colIDs,
-				      double** matrixEntries)
-{
-   if (!internalFEIsAllocated_)
-      notAllocatedAbort("FEI_Implementation::getFromMatrix");
-
-   int error = filter_[index_current_filter_]->getFromMatrix(patternID,
-						    rowIDTypes, rowIDs,
-						    colIDTypes, colIDs,
-						    matrixEntries);
-
-   return(error);
-}
-
-//------------------------------------------------------------------------------
-int FEI_Implementation::putIntoRHS(int patternID,
-				   const int* IDTypes,
-				   const GlobalID* IDs,
-				   const double* vectorEntries)
-{
-   if (!internalFEIsAllocated_)
-      notAllocatedAbort("FEI_Implementation::putIntoRHS");
-
-   int error = filter_[index_current_filter_]->putIntoRHS(patternID,
-                                           IDTypes, IDs, vectorEntries);
-
-   newMatrixDataLoaded_ = 1;
-
-   return(error);
-}
-
-//------------------------------------------------------------------------------
-int FEI_Implementation::getFromRHS(int patternID,
-				   const int* IDTypes,
-				   const GlobalID* IDs,
-				   double* vectorEntries)
-{
-   if (!internalFEIsAllocated_)
-      notAllocatedAbort("FEI_Implementation::getFromRHS");
-
-   CHK_ERR( filter_[index_current_filter_]->getFromRHS(patternID,
-                                            IDTypes, IDs, vectorEntries));
-
-   return(0);
 }
 
 //------------------------------------------------------------------------------

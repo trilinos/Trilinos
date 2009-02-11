@@ -15,35 +15,26 @@
 
 //A user can enable all solver-support with the macro FEI_ALL_SOLVERS.
 //Otherwise, to enable support for any particular solver, build with
-//-DFEI_HAVE_<solver> where <solver> is one of the libraries listed below.
+//-DHAVE_FEI_<solver> where <solver> is one of the libraries listed below.
 
 #if defined(FEI_ALL_SOLVERS)
-#define FEI_HAVE_FETI
+#define HAVE_FEI_FETI
 
-//Beginning with FEI version 2.16, this test program no longer
-//exercises Hypre.
-//#define FEI_HAVE_HYPRE
+#define HAVE_FEI_PETSC
 
-#define FEI_HAVE_PETSC
-#define FEI_HAVE_PROMETHEUS
-
-#define FEI_HAVE_TRILINOS
+#define HAVE_FEI_AZTECOO
 #endif
 
 //ok, so we need to include a solver-support header. We need the prototype
 //for the <solver>_LinSysCore_create(...) function.
 //
 
-#if defined(FEI_HAVE_TRILINOS)
-#include <support-Trilinos/cfei-aztec.h>
+#if defined(HAVE_FEI_AZTECOO)
+#include <cfei_aztec.h>
 #endif
 
-#if defined(FEI_HAVE_PETSC)
-#include <support-PETSc/cfei-petsc.h>
-#endif
-
-#if defined(FEI_HAVE_PROMETHEUS)
-#include <cfei_prometheus.h>
+#if defined(HAVE_FEI_PETSC)
+#include <cfei_petsc.h>
 #endif
 
 //And we also need the FEI prototypes. e.g., FEI_create(...), etc.
@@ -54,14 +45,14 @@
 //The following headers are only used in this driver program -- a C
 //application would not use/need these.
 
-#include <test_utils/BCNodeSet.hpp>
-#include <test_utils/CRSet.hpp>
-#include <test_utils/CommNodeSet.hpp>
-#include <test_utils/ElemBlock.hpp>
-#include <test_utils/DataReader.hpp>
-#include <test_utils/fei_test_utils.hpp>
+#include <BCNodeSet.hpp>
+#include <CRSet.hpp>
+#include <CommNodeSet.hpp>
+#include <ElemBlock.hpp>
+#include <DataReader.hpp>
+#include <fei_test_utils.hpp>
 #include <snl_fei_Utils.hpp>
-#include <test_utils/SolnCheck.hpp>
+#include <SolnCheck.hpp>
 
 #define fei_file "cFeiTester_main"
 #include <fei_ErrMacros.hpp>
@@ -176,18 +167,13 @@ int cFeiTester_main(int argc, char** argv,
 
 
    if (cfei_namesMatch(solverName, "Aztec")) {
-#ifdef FEI_HAVE_TRILINOS
+#ifdef HAVE_FEI_AZTECOO
      CHK_ERR( Aztec_LinSysCore_create(&linSys, MPI_COMM_WORLD));
 #endif
    }
    if (cfei_namesMatch(solverName, "PETSc")) {
-#ifdef FEI_HAVE_PETSC
+#ifdef HAVE_FEI_PETSC
      CHK_ERR( PETSc_LinSysCore_create(&linSys, MPI_COMM_WORLD));
-#endif
-   }
-   if (cfei_namesMatch(solverName, "Prometheus")) {
-#ifdef FEI_HAVE_PROMETHEUS
-     CHK_ERR( Prometheus_LinSysCore_create(&linSys, MPI_COMM_WORLD));
 #endif
    }
 
@@ -997,11 +983,10 @@ int cfei_save_block_node_soln(DataReader& data, CFEI* cfei, char* solnFileName,
   (void)solveCounter;
    int returnValue = 0;
 
-   feiArray<GlobalID> allNodes;
+   std::vector<GlobalID> allNodes;
    feiArray<feiArray<double> > allSolns;
-   int i;
 
-   for(i=0; i<data.numElemBlocks_; i++) {
+   for(int i=0; i<data.numElemBlocks_; i++) {
       if (returnValue != 0) break;
 
       ElemBlock& eb = data.elemBlocks_[i];
@@ -1022,9 +1007,9 @@ int cfei_save_block_node_soln(DataReader& data, CFEI* cfei, char* solnFileName,
       delete [] nodeList;
    }
 
-   allSolns.resize(allNodes.length());
+   allSolns.resize(allNodes.size());
 
-   for(i=0; i<data.numElemBlocks_; i++) {
+   for(int i=0; i<data.numElemBlocks_; i++) {
       if (returnValue != 0) break;
 
       ElemBlock& eb = data.elemBlocks_[i];
@@ -1076,7 +1061,7 @@ int cfei_save_block_node_soln(DataReader& data, CFEI* cfei, char* solnFileName,
 
    delete [] fileName;
 
-   for(i=0; i<allNodes.length(); i++) {
+   for(size_t i=0; i<allNodes.size(); i++) {
      outfile << allNodes[i] << " " << allSolns[i].length() << FEI_ENDL;
      for(int j=0; j<allSolns[i].length(); j++) {
        outfile << allSolns[i][j] << " ";

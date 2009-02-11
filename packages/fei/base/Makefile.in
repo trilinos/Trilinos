@@ -113,9 +113,8 @@ am__objects_1 = fei_BlockDescriptor.$(OBJEXT) fei_CSRMat.$(OBJEXT) \
 	fei_VectorReducer.$(OBJEXT) fei_Filter.$(OBJEXT) \
 	fei_LibraryWrapper.$(OBJEXT) fei_LinSysCoreFilter.$(OBJEXT) \
 	fei_NodeCommMgr.$(OBJEXT) fei_NodeDatabase.$(OBJEXT) \
-	fei_NodeDescriptor.$(OBJEXT) fei_PatternDescriptor.$(OBJEXT) \
-	fei_ProcEqns.$(OBJEXT) fei_Solver.$(OBJEXT) \
-	snl_fei_BlkSizeMsgHandler.$(OBJEXT) \
+	fei_NodeDescriptor.$(OBJEXT) fei_ProcEqns.$(OBJEXT) \
+	fei_Solver.$(OBJEXT) snl_fei_BlkSizeMsgHandler.$(OBJEXT) \
 	snl_fei_Broker_FEData.$(OBJEXT) \
 	snl_fei_Broker_LinSysCore.$(OBJEXT) fei_CommUtils.$(OBJEXT) \
 	fei_ConnectivityBlock.$(OBJEXT) snl_fei_Factory.$(OBJEXT) \
@@ -128,7 +127,7 @@ am__objects_1 = fei_BlockDescriptor.$(OBJEXT) fei_CSRMat.$(OBJEXT) \
 	snl_fei_RecordCollection.$(OBJEXT) \
 	snl_fei_RecordMsgHandler.$(OBJEXT) SNL_FEI_Structure.$(OBJEXT) \
 	snl_fei_SubdMsgHandler.$(OBJEXT) fei_FEI_Impl.$(OBJEXT) \
-	snl_fei_Utils.$(OBJEXT) fei_SSGraph.$(OBJEXT)
+	snl_fei_Utils.$(OBJEXT)
 am_libfei_base_a_OBJECTS = $(am__objects_1)
 libfei_base_a_OBJECTS = $(am_libfei_base_a_OBJECTS)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -166,8 +165,6 @@ ECHO_T = @ECHO_T@
 EXEEXT = @EXEEXT@
 FETIDP_INCLUDE = @FETIDP_INCLUDE@
 FETIDP_LIB_DIR = @FETIDP_LIB_DIR@
-HYPRE_INCLUDE = @HYPRE_INCLUDE@
-HYPRE_LIB_DIR = @HYPRE_LIB_DIR@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -195,8 +192,6 @@ PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PETSC_INCLUDE = @PETSC_INCLUDE@
 PETSC_LIB_DIR = @PETSC_LIB_DIR@
-PROMETHEUS_INCLUDE = @PROMETHEUS_INCLUDE@
-PROMETHEUS_LIB_DIR = @PROMETHEUS_LIB_DIR@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -318,7 +313,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_NodeCommMgr.hpp \
 	$(top_srcdir)/base/fei_NodeDatabase.hpp \
 	$(top_srcdir)/base/fei_NodeDescriptor.hpp \
-	$(top_srcdir)/base/fei_PatternDescriptor.hpp \
 	$(top_srcdir)/base/fei_ProcEqns.hpp \
 	$(top_srcdir)/base/fei_SlaveVariable.hpp \
 	$(top_srcdir)/base/snl_fei_ArrayUtils.hpp \
@@ -370,8 +364,7 @@ CORE_H = \
 	$(top_srcdir)/base/fei_VectorTraits.hpp \
 	$(top_srcdir)/base/fei_VectorTraits_LinProbMgr.hpp \
 	$(top_srcdir)/base/fei_VectorTraits_LinSysCore.hpp \
-	$(top_srcdir)/base/fei_VectorTraits_FillableVec.hpp \
-	$(top_srcdir)/base/fei_SSGraph.hpp
+	$(top_srcdir)/base/fei_VectorTraits_FillableVec.hpp
 
 CORE = \
 	$(srcdir)/fei_BlockDescriptor.cpp \
@@ -413,7 +406,6 @@ CORE = \
 	$(srcdir)/fei_NodeCommMgr.cpp \
 	$(srcdir)/fei_NodeDatabase.cpp \
 	$(srcdir)/fei_NodeDescriptor.cpp \
-	$(srcdir)/fei_PatternDescriptor.cpp \
 	$(srcdir)/fei_ProcEqns.cpp \
 	$(srcdir)/fei_Solver.cpp \
 	$(srcdir)/snl_fei_BlkSizeMsgHandler.cpp \
@@ -437,8 +429,7 @@ CORE = \
 	$(srcdir)/SNL_FEI_Structure.cpp \
 	$(srcdir)/snl_fei_SubdMsgHandler.cpp \
 	$(srcdir)/fei_FEI_Impl.cpp \
-	$(srcdir)/snl_fei_Utils.cpp \
-	$(srcdir)/fei_SSGraph.cpp
+	$(srcdir)/snl_fei_Utils.cpp
 
 
 # ------------------------------------------------------------------------
@@ -595,13 +586,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Param.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_ParameterSet.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Pattern.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_PatternDescriptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Pool.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Pool_alloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_ProcEqns.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Record.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Reducer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_SSGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Solver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_VectorReducer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_VectorSpace.Po@am__quote@
@@ -1183,20 +1172,6 @@ fei_NodeDescriptor.obj: $(srcdir)/fei_NodeDescriptor.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_NodeDescriptor.obj `if test -f '$(srcdir)/fei_NodeDescriptor.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_NodeDescriptor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_NodeDescriptor.cpp'; fi`
 
-fei_PatternDescriptor.o: $(srcdir)/fei_PatternDescriptor.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_PatternDescriptor.o -MD -MP -MF $(DEPDIR)/fei_PatternDescriptor.Tpo -c -o fei_PatternDescriptor.o `test -f '$(srcdir)/fei_PatternDescriptor.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_PatternDescriptor.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_PatternDescriptor.Tpo $(DEPDIR)/fei_PatternDescriptor.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_PatternDescriptor.cpp' object='fei_PatternDescriptor.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_PatternDescriptor.o `test -f '$(srcdir)/fei_PatternDescriptor.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_PatternDescriptor.cpp
-
-fei_PatternDescriptor.obj: $(srcdir)/fei_PatternDescriptor.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_PatternDescriptor.obj -MD -MP -MF $(DEPDIR)/fei_PatternDescriptor.Tpo -c -o fei_PatternDescriptor.obj `if test -f '$(srcdir)/fei_PatternDescriptor.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_PatternDescriptor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_PatternDescriptor.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_PatternDescriptor.Tpo $(DEPDIR)/fei_PatternDescriptor.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_PatternDescriptor.cpp' object='fei_PatternDescriptor.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_PatternDescriptor.obj `if test -f '$(srcdir)/fei_PatternDescriptor.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_PatternDescriptor.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_PatternDescriptor.cpp'; fi`
-
 fei_ProcEqns.o: $(srcdir)/fei_ProcEqns.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_ProcEqns.o -MD -MP -MF $(DEPDIR)/fei_ProcEqns.Tpo -c -o fei_ProcEqns.o `test -f '$(srcdir)/fei_ProcEqns.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_ProcEqns.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_ProcEqns.Tpo $(DEPDIR)/fei_ProcEqns.Po
@@ -1532,20 +1507,6 @@ snl_fei_Utils.obj: $(srcdir)/snl_fei_Utils.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/snl_fei_Utils.cpp' object='snl_fei_Utils.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o snl_fei_Utils.obj `if test -f '$(srcdir)/snl_fei_Utils.cpp'; then $(CYGPATH_W) '$(srcdir)/snl_fei_Utils.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/snl_fei_Utils.cpp'; fi`
-
-fei_SSGraph.o: $(srcdir)/fei_SSGraph.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_SSGraph.o -MD -MP -MF $(DEPDIR)/fei_SSGraph.Tpo -c -o fei_SSGraph.o `test -f '$(srcdir)/fei_SSGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_SSGraph.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_SSGraph.Tpo $(DEPDIR)/fei_SSGraph.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_SSGraph.cpp' object='fei_SSGraph.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_SSGraph.o `test -f '$(srcdir)/fei_SSGraph.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_SSGraph.cpp
-
-fei_SSGraph.obj: $(srcdir)/fei_SSGraph.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_SSGraph.obj -MD -MP -MF $(DEPDIR)/fei_SSGraph.Tpo -c -o fei_SSGraph.obj `if test -f '$(srcdir)/fei_SSGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_SSGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_SSGraph.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_SSGraph.Tpo $(DEPDIR)/fei_SSGraph.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_SSGraph.cpp' object='fei_SSGraph.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_SSGraph.obj `if test -f '$(srcdir)/fei_SSGraph.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_SSGraph.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_SSGraph.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

@@ -13,12 +13,13 @@
 
 #include <test_utils/test_AztecWrappers.hpp>
 
-#include <feiArray.hpp>
 #include <snl_fei_ArrayUtils.hpp>
 #include <test_utils/LibraryFactory.hpp>
 
-#ifdef FEI_HAVE_TRILINOS
-#include <support-Trilinos/fei-aztec.hpp>
+#ifdef HAVE_FEI_AZTECOO
+#include <fei_Aztec_Map.hpp>
+#include <fei_Aztec_Vector.hpp>
+#include <fei_AztecDMSR_Matrix.hpp>
 #endif
 
 #undef fei_file
@@ -26,14 +27,14 @@
 
 #include <fei_ErrMacros.hpp>
 
-#ifdef FEI_HAVE_TRILINOS
+#ifdef HAVE_FEI_AZTECOO
 int compare_DMSR_contents(AztecDMSR_Matrix& matrix, int localOffset,
-			  feiArray<feiArray<int> >& colIndices,
-			  feiArray<feiArray<double> >& values);
+			  std::vector<std::vector<int> >& colIndices,
+			  std::vector<std::vector<double> >& values);
 
 int fill_DMSR(AztecDMSR_Matrix& matrix, int localOffset,
-	      feiArray<feiArray<int> >& colIndices,
-	      feiArray<feiArray<double> >& values, bool sumInto);
+	      std::vector<std::vector<int> >& colIndices,
+	      std::vector<std::vector<double> >& values, bool sumInto);
 #endif
 
 test_AztecWrappers::test_AztecWrappers(MPI_Comm comm)
@@ -65,7 +66,7 @@ int test_AztecWrappers::serialtest1()
 
 int test_AztecWrappers::test1()
 {
-#ifdef FEI_HAVE_TRILINOS
+#ifdef HAVE_FEI_AZTECOO
   int localSize = 3, globalSize = localSize*numProcs_;
   int localOffset = localSize*localProc_;
   int i;
@@ -73,14 +74,13 @@ int test_AztecWrappers::test1()
   Aztec_Map* map =
     new Aztec_Map(globalSize, localSize, localOffset, comm_);
 
-  feiArray<int> update(localSize);
+  std::vector<int> update(localSize);
   for(i=0; i<localSize; i++) update[i] = localOffset+i;
 
-  AztecDMSR_Matrix* matrix = new AztecDMSR_Matrix(*map, update.dataPtr(),
-						 true);
+  AztecDMSR_Matrix* matrix = new AztecDMSR_Matrix(*map, &update[0], true);
 
-  feiArray<int> elemrows(localSize);
-  feiArray<int> elemcols(globalSize);
+  std::vector<int> elemrows(localSize);
+  std::vector<int> elemcols(globalSize);
   double** elemcoefs = new double*[localSize];
   for(int j=0; j<globalSize; ++j) elemcols[j] = j;
   for(i=0; i<localSize; ++i) {
@@ -91,10 +91,10 @@ int test_AztecWrappers::test1()
     }
   }
   
-  feiArray<feiArray<int> > colIndices(localSize);
-  feiArray<feiArray<double> > values(localSize);
-  feiArray<int> rowLengths(localSize);
-  feiArray<int*> colPtrs(localSize);
+  std::vector<std::vector<int> > colIndices(localSize);
+  std::vector<std::vector<double> > values(localSize);
+  std::vector<int> rowLengths(localSize);
+  std::vector<int*> colPtrs(localSize);
   int nnzeros = 0;
 
   for(i=0; i<localSize; i++) {
@@ -103,15 +103,15 @@ int test_AztecWrappers::test1()
     for(int j=0; j<globalSize; j++) {
       int col = j;
       if (col == row) diagEntry = 1;
-      colIndices[i].append(col);
-      values[i].append((double)(row+col));
+      colIndices[i].push_back(col);
+      values[i].push_back((double)(row+col));
     }
-    rowLengths[i] = colIndices[i].length() - diagEntry;
+    rowLengths[i] = colIndices[i].size() - diagEntry;
     nnzeros += rowLengths[i] + 1;
-    colPtrs[i] = colIndices[i].dataPtr();
+    colPtrs[i] = &(colIndices[i][0]);
   }
 
-  matrix->allocate( rowLengths.dataPtr() );
+  matrix->allocate( &rowLengths[0] );
 
   if (!(matrix->isAllocated())) {
     ERReturn(-1);
@@ -123,8 +123,8 @@ int test_AztecWrappers::test1()
 
   CHK_ERR( fill_DMSR(*matrix, localOffset, colIndices, values, true) );
 
-  int* rowinds = elemrows.dataPtr();
-  int* colinds = elemcols.dataPtr();
+  int* rowinds = &elemrows[0];
+  int* colinds = &elemcols[0];
 
   CHK_ERR( matrix->sumIntoRow(localSize, rowinds, globalSize, colinds, elemcoefs) );
 
@@ -211,13 +211,13 @@ int test_AztecWrappers::test4()
   return(0);
 }
 
-#ifdef FEI_HAVE_TRILINOS
+#ifdef HAVE_FEI_AZTECOO
 //==============================================================================
 int compare_DMSR_contents(AztecDMSR_Matrix& matrix, int localOffset,
-			  feiArray<feiArray<int> >& colIndices,
-			  feiArray<feiArray<double> >& values)
+			  std::vector<std::vector<int> >& colIndices,
+			  std::vector<std::vector<double> >& values)
 {
-  int localSize = colIndices.length();
+  int localSize = colIndices.size();
 
   for(int i=0; i<localSize; i++) {
     int row = i+localOffset;
@@ -225,8 +225,8 @@ int compare_DMSR_contents(AztecDMSR_Matrix& matrix, int localOffset,
     if (rowLen == 0) ERReturn(-1);
     int* tempInd = new int[rowLen];
     double* tempVal = new double[rowLen];
-    feiArray<int> sortedInd;
-    feiArray<double> sortedVal;
+    std::vector<int> sortedInd;
+    std::vector<double> sortedVal;
 
     int tmpLen = rowLen;
     matrix.getRow(row, tmpLen, tempVal, tempInd);
@@ -235,17 +235,17 @@ int compare_DMSR_contents(AztecDMSR_Matrix& matrix, int localOffset,
     for(int j=0; j<tmpLen; j++) {
       int offset = snl_fei::sortedListInsert(tempInd[j], sortedInd);
       if (offset < 0) ERReturn(-1);
-      sortedVal.insert(tempVal[j], offset);
+      sortedVal.insert(sortedVal.begin()+offset, tempVal[j]);
     }
 
     delete [] tempInd;
     delete [] tempVal;
 
-    feiArray<int>& colInds = colIndices[i];
+    std::vector<int>& colInds = colIndices[i];
     if (sortedInd != colInds) {
       ERReturn(-1);
     }
-    feiArray<double>& vals = values[i];
+    std::vector<double>& vals = values[i];
     if (sortedVal != vals) {
       ERReturn(-1);
     }
@@ -256,22 +256,22 @@ int compare_DMSR_contents(AztecDMSR_Matrix& matrix, int localOffset,
 
 //==============================================================================
 int fill_DMSR(AztecDMSR_Matrix& matrix, int localOffset,
-	      feiArray<feiArray<int> >& colIndices,
-	      feiArray<feiArray<double> >& values, bool sumInto)
+	      std::vector<std::vector<int> >& colIndices,
+	      std::vector<std::vector<double> >& values, bool sumInto)
 {
-  int localSize = colIndices.length();
+  int localSize = colIndices.size();
 
   for(int i=0; i<localSize; i++) {
     int row = localOffset + i;
-    int rowLen = values[i].length();
+    int rowLen = values[i].size();
 
     if (sumInto) {
       CHK_ERR( matrix.sumIntoRow(row, rowLen,
-				 values[i].dataPtr(), colIndices[i].dataPtr()) );
+				 &(values[i][0]), &(colIndices[i][0])) );
     }
     else {
       CHK_ERR( matrix.putRow(row, rowLen,
-			     values[i].dataPtr(), colIndices[i].dataPtr()) );
+			     &(values[i][0]), &(colIndices[i][0])) );
     }
   }
 

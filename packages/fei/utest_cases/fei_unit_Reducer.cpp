@@ -12,12 +12,12 @@
 #include <fei_defs.h>
 #include <snl_fei_Factory.hpp>
 
-#ifdef FEI_HAVE_TRILINOS
-#include <support-Trilinos/fei-aztec.hpp>
-#include <support-Trilinos/Factory_Trilinos.hpp>
+#ifdef HAVE_FEI_AZTECOO
+#include <fei_Aztec_LinSysCore.hpp>
 #endif
+#include <fei_Factory_Trilinos.hpp>
 
-#ifdef FEI_HAVE_FETI
+#ifdef HAVE_FEI_FETI
 #include <FETI_DP_FiniteElementData.h>
 #endif
 

@@ -438,7 +438,7 @@ int LinSysCoreFilter::initLinSysCore()
     ConnectivityTable& ctbl =
       problemStructure_->getBlockConnectivity(block->getGlobalBlockID());
 
-    feiArray<int> cNodeList(block->numNodesPerElement);
+    std::vector<int> cNodeList(block->numNodesPerElement);
 
     int* fieldsPerNode = block->fieldsPerNodePtr();
     int** fieldIDsTable = block->fieldIDsTablePtr();
@@ -465,7 +465,7 @@ int LinSysCoreFilter::initLinSysCore()
       }
 
       int elemID = ctbl.elemNumbers[j];
-      int* nodeNumbers = cNodeList.dataPtr();
+      int* nodeNumbers = &cNodeList[0];
       debugOutput("#LinSysCoreFilter calling lsc->setConnectivities");
       CHK_ERR( lsc_->setConnectivities(i, 1, nodesPerElement,
 				       &elemID, &nodeNumbers) );
@@ -1263,111 +1263,6 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
 }
 
 //------------------------------------------------------------------------------
-int LinSysCoreFilter::sumIntoMatrix(int patternID,
-			    const int* rowIDTypes,
-                         const GlobalID* rowIDs,
-			    const int* colIDTypes,
-                         const GlobalID* colIDs,
-                         const double* const* matrixEntries)
-{
-  if (Filter::logStream() != NULL) {
-    (*logStream()) << "FEI: sumIntoMatrix" << FEI_ENDL;
-  }
-  return(generalCoefInput(patternID, rowIDTypes, rowIDs, colIDTypes, colIDs,
-			  matrixEntries, NULL, ASSEMBLE_SUM));
-}
-
-//------------------------------------------------------------------------------
-int LinSysCoreFilter::sumIntoRHS(int patternID,
-			 const int* rowIDTypes,
-                         const GlobalID* rowIDs,
-                         const double* vectorEntries)
-{
-  if (Filter::logStream() != NULL) {
-    (*logStream()) << "FEI: sumIntoRHS" << FEI_ENDL;
-  }
-  return(generalCoefInput(patternID, rowIDTypes, rowIDs, NULL, NULL,
-			  NULL, vectorEntries, ASSEMBLE_SUM));
-}
-
-//------------------------------------------------------------------------------
-int LinSysCoreFilter::putIntoMatrix(int patternID,
-			    const int* rowIDTypes,
-			    const GlobalID* rowIDs,
-			    const int* colIDTypes,
-			    const GlobalID* colIDs,
-			    const double* const* matrixEntries)
-{
-  if (Filter::logStream() != NULL) {
-    (*logStream()) << "FEI: putIntoMatrix" << FEI_ENDL;
-  }
-  return(generalCoefInput(patternID, rowIDTypes, rowIDs, colIDTypes, colIDs,
-			  matrixEntries, NULL, ASSEMBLE_PUT));
-}
-
-//------------------------------------------------------------------------------
-int LinSysCoreFilter::getFromMatrix(int patternID,
-			    const int* rowIDTypes,
-			    const GlobalID* rowIDs,
-			    const int* colIDTypes,
-			    const GlobalID* colIDs,
-			    double** matrixEntries)
-{
-   std::vector<int> rowIndices;
-   std::vector<int> rowColOffsets, colIndices;
-   int numColsPerRow;
-
-   //We're going to supply a little non-standard behavior here that is
-   //"extra for experts". If the colIDs argument is supplied as NULL, then
-   //this implementation will provide matrix entries for the whole row, for
-   //each of the matrix rows referenced by rowIDs and the associated fields
-   //stored in 'patternID'.
-   //Important note: this assumes that the caller has allocated enough memory
-   //in 'matrixEntries'. The caller can find out how much memory is required
-   //in a round-about way, by using the 'getFieldSize' and 'getEqnNumbers'
-   //functions, and then querying the LinearSystemCore object for row-lengths.
-   //This is very unpleasant, but will get us by until the next FEI update
-   //addresses this (hopefully).
-
-   if (colIDs == NULL) {
-     CHK_ERR( problemStructure_->getPatternScatterIndices(patternID, 
-							  rowIDs, rowIndices) );
-   }
-   else {
-     CHK_ERR( problemStructure_->getPatternScatterIndices(patternID,
-					     	  rowIDs, colIDs,
-					           rowIndices, rowColOffsets,
-						   numColsPerRow, colIndices) );
-   }
-
-   if (colIDs == NULL) {
-     CHK_ERR( getFromMatrix(rowIndices.size(), &rowIndices[0],
-			    NULL, NULL, 0, matrixEntries) );
-   }
-   else {
-     CHK_ERR( getFromMatrix(rowIndices.size(), &rowIndices[0],
-			  &rowColOffsets[0], &colIndices[0],
-			  numColsPerRow, matrixEntries) );
-   }
-
-   return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int LinSysCoreFilter::putIntoRHS(int patternID,
-			 const int* rowIDTypes,
-                         const GlobalID* rowIDs,
-                         const double* vectorEntries)
-{
-  if (Filter::logStream() != NULL) {
-    (*logStream()) << "putIntoRHS" << FEI_ENDL;
-  }
-
-  return(generalCoefInput(patternID, rowIDTypes, rowIDs, NULL, NULL,
-			  NULL, vectorEntries, ASSEMBLE_PUT));
-}
-
-//------------------------------------------------------------------------------
 int LinSysCoreFilter::putIntoRHS(int IDType,
 			  int fieldID,
 			  int numIDs,
@@ -1415,131 +1310,6 @@ int LinSysCoreFilter::sumIntoRHS(int IDType,
   CHK_ERR(assembleRHS(rowIndices_.size(), &rowIndices_[0], rhsEntries, ASSEMBLE_SUM));
 
   return(0);
-}
-
-//------------------------------------------------------------------------------
-int LinSysCoreFilter::getFromRHS(int patternID,
-			 const int* rowIDTypes,
-                         const GlobalID* rowIDs,
-                         double* vectorEntries)
-{
-  std::vector<int> rowIndices;
-
-  CHK_ERR( problemStructure_->getPatternScatterIndices(patternID, 
-						       rowIDs, rowIndices) );
-
-  CHK_ERR( getFromRHS(rowIndices.size(), vectorEntries, &rowIndices[0]))
-
-  return(FEI_SUCCESS);
-}
-
-//------------------------------------------------------------------------------
-int LinSysCoreFilter::generalCoefInput(int patternID,
-			       const int* rowIDTypes,
-			       const GlobalID* rowIDs,
-			       const int* colIDTypes,
-			       const GlobalID* colIDs,
-			       const double* const* matrixEntries,
-			       const double* vectorEntries,
-			       int assemblyMode)
-{
-//
-//We will give these rowIDs and colIDs to the problemStructure_ object,
-//and it will return the scatter indices in the feiArray<int> objects rowIndices
-//and colIndices. We will then use those indices to put the contents of
-//matrixEntries and/or vectorEntries into the linear system core object.
-//
-//Those equations (corresponding to rowIDs) that are remotely owned, will
-//be packed up so they can be sent to the owning processor.
-//
-  rowIndices_.resize(0);
-  rowColOffsets_.resize(0);
-  colIndices_.resize(0);
-
-  int numColsPerRow;
-
-  int error = 0;
-  if (matrixEntries != NULL && vectorEntries == NULL) {
-    error = problemStructure_->getPatternScatterIndices(patternID,
-							rowIDs, colIDs,
-							rowIndices_,
-							rowColOffsets_,
-							numColsPerRow,
-							colIndices_);
-  }
-  else if (matrixEntries == NULL && vectorEntries != NULL) {
-    error = problemStructure_->getPatternScatterIndices(patternID,
-							rowIDs, rowIndices_);
-  }
-  else {
-    FEI_CERR << "LinSysCoreFilter::generalCoefInput: ERROR, both matrixEntries "
-	 << "and vectorEntries are NULL." << FEI_ENDL;
-    ERReturn(-1);
-  }
-
-  if (assemblyMode == ASSEMBLE_PUT) {
-    int globalError = 0;
-    CHK_ERR( fei::GlobalSum(comm_, error, globalError) );
-    if (globalError != 0) {
-      return(-1);
-    }
-  }
-
-   const double* const* coefs = NULL;
-   if (matrixEntries != NULL) coefs = matrixEntries;
-
-   const double* rhsCoefs = NULL;
-   if (vectorEntries != NULL) rhsCoefs = vectorEntries;
-
-   if (coefs != NULL) newMatrixData_ = true;
-   if (rhsCoefs != NULL) newVectorData_ = true;
-
-   //Recall that for a pattern, the list of column-entities is packed, we have
-   //a list of column-entities for each row-entities. Thus, we now have a list
-   //of column-indices for each row index...
-   int numRows = rowIndices_.size();
-   int numCols = colIndices_.size();
-
-   if (Filter::logStream() != NULL) {
-     if (coefs != NULL) {
-       (*logStream()) << "#num-rows num-cols"<<FEI_ENDL
-			  <<numRows<<" "<<numCols << FEI_ENDL;
-       for(int i=0; i<numRows; i++) {
-	 const double* coefs_i = coefs[i];
-	 for(int j=0; j<numCols; j++) {
-	   (*logStream()) << coefs_i[j] << " ";
-	 }
-	 (*logStream()) << FEI_ENDL;
-       }
-     }
-
-     if (rhsCoefs != NULL) {
-       (*logStream()) << "#num-rows"<<FEI_ENDL<<numRows << FEI_ENDL;
-       for(int i=0; i<numRows; i++) {
-	 (*logStream()) << rhsCoefs[i] << FEI_ENDL;
-       }
-     }
-   }
-
-   if (assemblyMode == ASSEMBLE_PUT) CHK_ERR( exchangeRemoteEquations() );
-
-   if (coefs != NULL) {
-     CHK_ERR( assembleEqns(numRows, numColsPerRow, &rowIndices_[0], &colIndices_[0], coefs, false, 0, NULL, NULL, false, assemblyMode) );
-   }
-      
-   if (rhsCoefs != NULL) {
-     CHK_ERR(assembleRHS(rowIndices_.size(), &rowIndices_[0], rhsCoefs, assemblyMode));
-   }
-
-   if (assemblyMode == ASSEMBLE_PUT) {
-     //if (eqnCommMgr_put_ != NULL) {
-     //  eqnCommMgr_put_->exchangeEqns();
-     //  CHK_ERR( unpackRemoteContributions(*eqnCommMgr_put_, ASSEMBLE_PUT) );
-     //  eqnCommMgr_put_->resetCoefs();
-     //}     
-   }
-
-   return(FEI_SUCCESS);
 }
 
 //------------------------------------------------------------------------------
@@ -1597,14 +1367,12 @@ int LinSysCoreFilter::enforceEssentialBCs(const int* eqns,
 				      numEqns) );
   }
   else {
-    feiArray<int> reducedEqns(numEqns, numEqns);
+    std::vector<int> reducedEqns(numEqns);
     for(int i=0; i<numEqns; i++) {
       problemStructure_->translateToReducedEqn(eqns[i], reducedEqns[i]);
     }
 
-    CHK_ERR( lsc_->enforceEssentialBC(reducedEqns.dataPtr(),
-				      cc_alpha, cc_gamma, 
-				      numEqns) );
+    CHK_ERR( lsc_->enforceEssentialBC(&reducedEqns[0], cc_alpha, cc_gamma, numEqns) );
   }
 
   return(FEI_SUCCESS);
@@ -1645,7 +1413,7 @@ int LinSysCoreFilter::resolveConflictingCRs(EqnBuffer& bcEqns)
 
   NodeDatabase& nodeDB = problemStructure_->getNodeDatabase();
 
-  feiArray<int>& bcEqnNumbers = bcEqns.eqnNumbersPtr();
+  std::vector<int>& bcEqnNumbers = bcEqns.eqnNumbers();
 
   double coefs[3];
   int indices[3];
@@ -1754,7 +1522,7 @@ int LinSysCoreFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
 						int assemblyMode)
 {
   int numRecvEqns = eqnCommMgr.getNumLocalEqns();
-  feiArray<int>& recvEqnNumbers = eqnCommMgr.localEqnNumbersPtr();
+  std::vector<int>& recvEqnNumbers = eqnCommMgr.localEqnNumbersPtr();
   std::vector<fei::CSVec*>& recvEqns = eqnCommMgr.localEqns();
   feiArray<feiArray<double>*>& recvRHSs = *(eqnCommMgr.localRHSsPtr());
 
@@ -1848,9 +1616,9 @@ int LinSysCoreFilter::exchangeRemoteBCs(std::vector<int>& essEqns,
 
   int numRemoteEssBCEqns = eqnCommMgr_->getNumRemEssBCEqns();
   if (numRemoteEssBCEqns > 0) {
-    feiArray<int>& remEssBCEqnNumbers = eqnCommMgr_->remEssBCEqnNumbersPtr();
+    std::vector<int>& remEssBCEqnNumbers = eqnCommMgr_->remEssBCEqnNumbersPtr();
     fei::CSVec** remEssBCEqns = &(eqnCommMgr_->remEssBCEqns()[0]);
-    feiArray<int> remEssBCEqnLengths(remEssBCEqnNumbers.length());
+    std::vector<int> remEssBCEqnLengths(remEssBCEqnNumbers.size());
 
     int** indices = new int*[numRemoteEssBCEqns];
     double** coefs = new double*[numRemoteEssBCEqns];
@@ -1862,8 +1630,8 @@ int LinSysCoreFilter::exchangeRemoteBCs(std::vector<int>& essEqns,
     }
 
     CHK_ERR( enforceRemoteEssBCs(numRemoteEssBCEqns,
-				 remEssBCEqnNumbers.dataPtr(), indices,
-				 remEssBCEqnLengths.dataPtr(), coefs));
+				 &remEssBCEqnNumbers[0], indices,
+				 &remEssBCEqnLengths[0], coefs));
 
     delete [] indices;
     delete [] coefs;
@@ -2686,20 +2454,19 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
 
   //ok, now we know which local equations we'll need to send, so let's extract
   //those from the matrix
-  int i;
   EqnBuffer localEqns;
   CHK_ERR( getEqnsFromMatrix(localProcEqns, localEqns) )
 
   //now we can set the lengths in localProcEqns.
-  feiArray<int>& eqnNumbers = localEqns.eqnNumbersPtr();
+  std::vector<int>& eqnNumbers = localEqns.eqnNumbers();
   fei::CSVec** localEqnsPtr = (localEqns.eqns().size() ? &(localEqns.eqns()[0]) : 0);
-  feiArray<int> eqnLengths(eqnNumbers.length());
-  for(i=0; i<eqnNumbers.length(); ++i) {
+  std::vector<int> eqnLengths(eqnNumbers.size());
+  for(size_t i=0; i<eqnNumbers.size(); ++i) {
     eqnLengths[i] = localEqnsPtr[i]->size();
   }
 
-  localProcEqns.setProcEqnLengths(eqnNumbers.dataPtr(), eqnLengths.dataPtr(),
-				  eqnNumbers.length());
+  localProcEqns.setProcEqnLengths(&eqnNumbers[0], &eqnLengths[0],
+				  eqnNumbers.size());
 
   //now mirror those lengths in the remoteProcEqns objects to get ready for the
   //all-to-all exchange of equation data.
@@ -2710,12 +2477,12 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
   CHK_ERR( EqnCommMgr::exchangeEqnBuffers(comm_, &localProcEqns, &localEqns,
 					  &remoteProcEqns, &remoteEqns, false));
 
-  feiArray<int>& remEqnNumbers = remoteEqns.eqnNumbersPtr();
+  std::vector<int>& remEqnNumbers = remoteEqns.eqnNumbers();
   fei::CSVec** remEqnsPtr = (remoteEqns.eqns().size() ? &(remoteEqns.eqns()[0]) : 0);
   std::vector<fei::CSVec*>& remEqns   = remoteEqns.eqns();
 
   //now we're ready to fill the values array with the remote coefficients.
-  for(i=0; i<numPtRows; i++) {
+  for(int i=0; i<numPtRows; i++) {
     int row = ptRows[i];
 
     int eqnIndex = snl_fei::binarySearch(row, remEqnNumbers);
@@ -2743,7 +2510,7 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
   }
 
   //and now, get the local stuff out of the matrix.
-  for(i=0; i<numPtRows; i++) {
+  for(int i=0; i<numPtRows; i++) {
     int row = ptRows[i];
     if (row < localStartRow_ || localEndRow_ < row) continue;
 
@@ -2754,11 +2521,10 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
     //for each local row, establish some temp arrays and get the row from
     //the matrix.
 
-    feiArray<double> coefs(rowLen);
-    feiArray<int> indices(rowLen);
+    std::vector<double> coefs(rowLen);
+    std::vector<int> indices(rowLen);
 
-    CHK_ERR( lsc_->getMatrixRow(row, coefs.dataPtr(), indices.dataPtr(),
-				rowLen, checkRowLen) );
+    CHK_ERR( lsc_->getMatrixRow(row, &coefs[0], &indices[0], rowLen, checkRowLen) );
     if (rowLen != checkRowLen) ERReturn(-1);
 
     //now stride across the list of requested column-indices, and find the
@@ -2775,11 +2541,13 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
     }
 
     for(int j=0; j<numColsPerRow; j++) {
-      int index = indices.find(ptCols[rowColOffsets[i]+j]);
-      if (index < 0) {
-	ERReturn(-1);
+      std::vector<int>::iterator iter =
+          std::find(indices.begin(), indices.end(), ptCols[rowColOffsets[i]+j]);
+      if (iter == indices.end()) {
+        ERReturn(-1);
       }
 
+      int index = iter - indices.begin();
       values[i][j] = coefs[index];
     }
   }
@@ -2803,7 +2571,7 @@ int LinSysCoreFilter::getEqnsFromMatrix(ProcEqns& procEqns, EqnBuffer& eqnData)
       if (localStartRow_ > eqn || localEndRow_ < eqn) continue;
 
       //if this equation is already in eqnData, then don't put it in again...
-      feiArray<int>& eqnDataEqns = eqnData.eqnNumbersPtr();
+      std::vector<int>& eqnDataEqns = eqnData.eqnNumbers();
       if (snl_fei::binarySearch(eqn, eqnDataEqns) >= 0) continue;
 
       int len = 0;
@@ -2848,7 +2616,7 @@ int LinSysCoreFilter::getEqnsFromRHS(ProcEqns& procEqns, EqnBuffer& eqnData)
       if (reducedStartRow_ > reducedEqn || reducedEndRow_ < reducedEqn) continue;
 
       //if this equation is already in eqnData, then don't put it in again...
-      feiArray<int>& eqnDataEqns = eqnData.eqnNumbersPtr();
+      std::vector<int>& eqnDataEqns = eqnData.eqnNumbers();
       if (snl_fei::binarySearch(reducedEqn, eqnDataEqns) >= 0) continue;
 
       double rhsValue;
@@ -2977,16 +2745,15 @@ int LinSysCoreFilter::getFromRHS(int num, double* values, const int* indices)
   CHK_ERR( getEqnsFromRHS(localProcEqns, localEqns) );
 
   //now we can set the lengths in localProcEqns.
-  feiArray<int>& eqnNumbers = localEqns.eqnNumbersPtr();
+  std::vector<int>& eqnNumbers = localEqns.eqnNumbers();
   fei::CSVec** localEqnsPtr = &(localEqns.eqns()[0]);
-  feiArray<int> eqnLengths(eqnNumbers.length());
-  int i;
-  for(i=0; i<eqnNumbers.length(); ++i) {
+  std::vector<int> eqnLengths(eqnNumbers.size());
+  for(size_t i=0; i<eqnNumbers.size(); ++i) {
     eqnLengths[i] = localEqnsPtr[i]->size();
   }
 
-  localProcEqns.setProcEqnLengths(eqnNumbers.dataPtr(), eqnLengths.dataPtr(),
-				  eqnNumbers.length());
+  localProcEqns.setProcEqnLengths(&eqnNumbers[0], &eqnLengths[0],
+				  eqnNumbers.size());
 
   //now mirror those lengths in the remoteProcEqns objects to get ready for the
   //all-to-all exchange of equation data.
@@ -2998,10 +2765,10 @@ int LinSysCoreFilter::getFromRHS(int num, double* values, const int* indices)
 					   &remoteProcEqns, &remoteEqns, false))
 
   //now we're ready to get the rhs data we've received from other processors.
-  feiArray<int>& remEqnNumbers = remoteEqns.eqnNumbersPtr();
+  std::vector<int>& remEqnNumbers = remoteEqns.eqnNumbers();
   feiArray<feiArray<double>*>& remRhsCoefs = *(remoteEqns.rhsCoefsPtr());
 
-  for(i=0; i<num; i++) {
+  for(int i=0; i<num; i++) {
     int row = indices[i];
 
     int eqnIndex = snl_fei::binarySearch(row, remEqnNumbers);
@@ -3011,7 +2778,7 @@ int LinSysCoreFilter::getFromRHS(int num, double* values, const int* indices)
   }
 
   //and now get the local stuff.
-  for(i=0; i<num; i++) {
+  for(int i=0; i<num; i++) {
     if (indices[i] < localStartRow_ || indices[i] > localEndRow_) continue;
 
     CHK_ERR( lsc_->getFromRHSVector(num, values, indices) );
@@ -3099,7 +2866,7 @@ int LinSysCoreFilter::getEqnSolnEntry(int eqnNumber, double& solnValue)
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::getSharedRemoteSolnEntry(int eqnNumber, double& solnValue)
 {
-  feiArray<int>& remoteEqnNumbers = eqnCommMgr_->sendEqnNumbersPtr();
+  std::vector<int>& remoteEqnNumbers = eqnCommMgr_->sendEqnNumbersPtr();
   double* remoteSoln = eqnCommMgr_->sendEqnSolnPtr();
 
   int index = snl_fei::binarySearch(eqnNumber, remoteEqnNumbers);
@@ -3145,7 +2912,7 @@ int LinSysCoreFilter::unpackSolution()
   //to be made available to those remote contributing processors.
 
   int numRecvEqns = eqnCommMgr_->getNumLocalEqns();
-  feiArray<int>& recvEqnNumbers = eqnCommMgr_->localEqnNumbersPtr();
+  std::vector<int>& recvEqnNumbers = eqnCommMgr_->localEqnNumbersPtr();
 
   for(int i=0; i<numRecvEqns; i++) {
     int eqn = recvEqnNumbers[i];
@@ -3557,12 +3324,12 @@ int LinSysCoreFilter::putBlockFieldNodeSolution(GlobalID elemBlockID,
    //if we have a negative fieldID, we'll need a list of length numNodes,
    //in which to put nodeNumbers for passing to the solver... 
 
-   feiArray<int> numbers(numNodes);
+   std::vector<int> numbers(numNodes);
 
    //if we have a fieldID >= 0, then our numbers list will hold equation numbers
    //and we'll need fieldSize*numNodes of them.
 
-   feiArray<double> data;
+   std::vector<double> data;
 
    if (fieldID >= 0) {
       assert(fieldSize >= 0);
@@ -3592,10 +3359,10 @@ int LinSysCoreFilter::putBlockFieldNodeSolution(GlobalID elemBlockID,
 
    if (fieldID < 0) {
      CHK_ERR( lsc_->putNodalFieldData(fieldID, fieldSize, 
-				      numbers.dataPtr(), numNodes, estimates));
+				      &numbers[0], numNodes, estimates));
    }
    else {
-     CHK_ERR(lsc_->putInitialGuess(numbers.dataPtr(),data.dataPtr(),count));
+     CHK_ERR(lsc_->putInitialGuess(&numbers[0], &data[0], count));
    }
 
    return(FEI_SUCCESS);

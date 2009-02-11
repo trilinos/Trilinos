@@ -90,8 +90,8 @@ int test_EqnCommMgr::test1()
 
   EqnCommMgr* eCopy = eqnCommMgr->deepCopy();
 
-  feiArray<int>& localEqns = eqnCommMgr->localEqnNumbersPtr();
-  feiArray<int>& localEqnsCopy = eCopy->localEqnNumbersPtr();
+  std::vector<int>& localEqns = eqnCommMgr->localEqnNumbersPtr();
+  std::vector<int>& localEqnsCopy = eCopy->localEqnNumbersPtr();
 
   if (localEqns != localEqnsCopy) {
     ERReturn(-1);

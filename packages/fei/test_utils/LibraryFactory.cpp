@@ -17,32 +17,16 @@
 #include <snl_fei_Factory.hpp>
 
 #include <fei_Factory_Trilinos.hpp>
-#ifdef HAVE_AZTECOO
+#ifdef HAVE_FEI_AZTECOO
 #include <fei_Aztec_LinSysCore.hpp>
 #endif
 
-#ifdef FEI_HAVE_FETI
+#ifdef HAVE_FEI_FETI
 #include <FETI_DP_FiniteElementData.h>
 #endif
 
-#ifdef FEI_HAVE_PETSC
+#ifdef HAVE_FEI_PETSC
 #include <fei_PETSc_LinSysCore.hpp>
-#endif
-
-#ifdef FEI_HAVE_PROMETHEUS
-#include <Prometheus_LinSysCore.h>
-#endif
-
-#ifdef FEI_HAVE_HYPRE
-#include <HYPRE.hpp>
-#include <HYPRE_config.hpp>
-#include <IJ_mv/HYPRE_IJ_mv.hpp>
-#include <parcsr_mv/HYPRE_parcsr_mv.hpp>
-#include <parcsr_ls/HYPRE_parcsr_ls.hpp>
-#include <HYPRE_parcsr_bicgstabl.hpp>
-#include <HYPRE_parcsr_TFQmr.hpp>
-#include <HYPRE_parcsr_bicgs.hpp>
-#include <HYPRE_LinSysCore.hpp>
 #endif
 
 //----------------------------------------------------------------------------
@@ -57,7 +41,7 @@ fei::create_LibraryWrapper(MPI_Comm comm,
   fei::SharedPtr<LibraryWrapper> wrapper;
 
   if (libname == "Aztec") {
-#ifdef HAVE_AZTECOO
+#ifdef HAVE_FEI_AZTECOO
     lsc.reset(new Aztec_LinSysCore(comm));
 #else
     std::string msg("Aztec not available.");
@@ -66,34 +50,16 @@ fei::create_LibraryWrapper(MPI_Comm comm,
   }
 
   if (libname == "FETI") {
-#ifdef FEI_HAVE_FETI
+#ifdef HAVE_FEI_FETI
     fedata.reset(new FETI_DP_FiniteElementData(comm));
 #endif
   }
 
   if (libname == "PETSc") {
-#ifdef FEI_HAVE_PETSC
+#ifdef HAVE_FEI_PETSC
     lsc.reset(new PETSc_LinSysCore(comm));
 #else
     std::string msg("PETSc not available.");
-    throw std::runtime_error(msg);
-#endif
-  }
-
-  if (libname == "Prometheus") {
-#ifdef FEI_HAVE_PROMETHEUS
-    lsc.reset(new Prometheus_LinSysCore(comm));
-#else
-    std::string msg("Prometheus not available.");
-    throw std::runtime_error(msg);
-#endif
-  }
-
-  if (libname == "HYPRE") {
-#ifdef FEI_HAVE_HYPRE
-    lsc.reset(new HYPRE_LinSysCore(comm));
-#else
-    std::string msg("This factory doesn't provide Hypre instantiations.");
     throw std::runtime_error(msg);
 #endif
   }

@@ -14,7 +14,9 @@
 
 #include <feiArray.hpp>
 #include <FEI_Implementation.hpp>
+#ifdef HAVE_FEI_AZTECOO
 #include <fei_Aztec_LinSysCore.hpp>
+#endif
 #include <test_utils/FEData.hpp>
 #include <fei_LibraryWrapper.hpp>
 
@@ -120,6 +122,7 @@ int test_FEI_Implementation::compareCoefs(int n,
 
 int test_FEI_Implementation::test1()
 {
+#ifdef HAVE_FEI_AZTECOO
   fei::SharedPtr<testData> testdata(new testData(localProc_, numProcs_));
 
   fei::SharedPtr<LinearSystemCore> linSys(new Aztec_LinSysCore(comm_));
@@ -191,27 +194,6 @@ int test_FEI_Implementation::test1()
       testdata->numSharingProcsPerID.size() ? &(testdata->numSharingProcsPerID[0]) : 0,
       sharingProcs2D.dataPtr()) );
 
-  int patternID = 0;
-  int numRowIDs = 1;
-  int* numFieldsPerRow = new int[1];
-  numFieldsPerRow[0] = 1;
-  int* rowFieldIDs = new int[1];
-  rowFieldIDs[0] = testdata->fieldIDs[0];
-
-  int rowIDType = FEI_NODE;
-
-  CHK_ERR( fei->initCoefAccessPattern(patternID, numRowIDs, numFieldsPerRow,
-				      &rowFieldIDs, numRowIDs, numFieldsPerRow,
-				      &rowFieldIDs,
-				      0) );//interleaveStrategy
-
-  delete [] numFieldsPerRow;
-  delete [] rowFieldIDs;
-
-  CHK_ERR( fei->initCoefAccess(patternID,
-			       &rowIDType, &(testdata->ids[0]),
-			       &rowIDType, &(testdata->ids[0])) );
-
   CHK_ERR( fei->initComplete() );
 
   std::vector<double> rhsData(testdata->ids.size(), 1.0);
@@ -228,40 +210,12 @@ int test_FEI_Implementation::test1()
 			   &(testdata->ids[0]),
 			   &(rhsData[0])) );
 
-  double* matrixEntries = new double[16];
-  double** matrixEntriesPtr = new double*[4];
-  int ii,jj;
-  for(ii=0; ii<4; ++ii) matrixEntriesPtr[ii] = matrixEntries+ii*4;
-  for(jj=0; jj<16; ++jj) matrixEntries[jj] = 1.0;
-
-  
-  CHK_ERR( fei->putIntoMatrix(patternID, &rowIDType, &(testdata->ids[0]),
-			      &rowIDType, &(testdata->ids[0]),
-			      matrixEntriesPtr) );
-
-  CHK_ERR( fei->putIntoRHS(patternID, &rowIDType, &(testdata->ids[0]),
-			   matrixEntries) );
-
-  CHK_ERR( fei->sumIntoRHS(patternID, &rowIDType, &(testdata->ids[0]),
-			   matrixEntries) );
-
-  CHK_ERR( fei->sumIntoMatrix(patternID, &rowIDType, &(testdata->ids[0]),
-			      &rowIDType, &(testdata->ids[0]),
-			      matrixEntriesPtr) );
-
-  CHK_ERR( fei->getFromMatrix(patternID, &rowIDType, &(testdata->ids[0]),
-			      &rowIDType, &(testdata->ids[0]),
-			      matrixEntriesPtr) );
-
-  delete [] matrixEntries;
-  delete [] matrixEntriesPtr;
-
   int numBCNodes = 2;
   GlobalID* BCNodeIDs = &(testdata->ids[0]);
   int BCFieldID = testdata->fieldIDs[0];
   double* values = new double[numBCNodes];
   int* offsetsIntoField = new int[numBCNodes];
-  for(ii=0; ii<numBCNodes; ++ii) {
+  for(int ii=0; ii<numBCNodes; ++ii) {
     values[ii] = 1.0;
     offsetsIntoField[ii] = 0;
   }
@@ -284,7 +238,7 @@ int test_FEI_Implementation::test1()
   CHK_ERR( fei->getLocalNodeIDList(numActiveNodes, localNodes, numActiveNodes) );
 
   int totalFieldSize = 0;
-  for(ii=0; ii<(int)testdata->fieldSizes.size(); ++ii) {
+  for(int ii=0; ii<(int)testdata->fieldSizes.size(); ++ii) {
     totalFieldSize += testdata->fieldSizes[ii];
   }
 
@@ -305,7 +259,7 @@ int test_FEI_Implementation::test1()
   double initTime, loadTime, solveTime, solnReturnTime;
   CHK_ERR( fei->cumulative_cpu_times(initTime, loadTime, solveTime,
 				      solnReturnTime) );
-
+#endif
   return(0);
 }
 
@@ -384,27 +338,6 @@ int test_FEI_Implementation::test2()
       testdata->numSharingProcsPerID.size() ? &(testdata->numSharingProcsPerID[0]) : 0,
       sharingProcs2D.dataPtr()) );
 
-  int patternID = 0;
-  int numRowIDs = 1;
-  int* numFieldsPerRow = new int[1];
-  numFieldsPerRow[0] = 1;
-  int* rowFieldIDs = new int[1];
-  rowFieldIDs[0] = testdata->fieldIDs[0];
-
-  int rowIDType = FEI_NODE;
-
-  CHK_ERR( fei->initCoefAccessPattern(patternID, numRowIDs, numFieldsPerRow,
-				      &rowFieldIDs, numRowIDs, numFieldsPerRow,
-				      &rowFieldIDs,
-				      0) );//interleaveStrategy
-
-  delete [] numFieldsPerRow;
-  delete [] rowFieldIDs;
-
-  CHK_ERR( fei->initCoefAccess(patternID,
-			       &rowIDType, &(testdata->ids[0]),
-			       &rowIDType, &(testdata->ids[0])) );
-
   CHK_ERR( fei->initComplete() );
 
   int numBlkActNodes = 0;
@@ -424,59 +357,12 @@ int test_FEI_Implementation::test2()
 			   &(testdata->ids[0]),
 			   &(rhsData[0])) );
 
-  double* matrixEntries = new double[16];
-  double** matrixEntriesPtr = new double*[4];
-  int ii, jj;
-  for(ii=0; ii<4; ++ii) matrixEntriesPtr[ii] = matrixEntries+ii*4;
-  for(jj=0; jj<16; ++jj) matrixEntries[jj] = 1.0;
-
-  int errorcode = fei->putIntoMatrix(patternID,
-				 &rowIDType, &(testdata->ids[0]),
-				 &rowIDType, &(testdata->ids[0]),
-				 matrixEntriesPtr);
-  if (errorcode != 0) {
-    return(-1);
-  }
-
-  errorcode = fei->sumIntoMatrix(patternID,
-				 &rowIDType, &(testdata->ids[0]),
-				 &rowIDType, &(testdata->ids[0]),
-				 matrixEntriesPtr);
-  if (errorcode != 0) {
-    return(-2);
-  }
-
-#if 0
-  errorcode = fei->getFromMatrix(patternID,
-				     &rowIDType, &(testdata->ids[0]),
-				     &rowIDType, &(testdata->ids[0]),
-				     matrixEntriesPtr);
-  FEI_COUT << "test_FEI_Implementation: with fedata, errorcode for 'getFromMatrix' is:"
-       << errorcode << FEI_ENDL;
-#endif
-
-  errorcode = fei->putIntoRHS(patternID, &rowIDType, &(testdata->ids[0]),
-			   matrixEntries);
-  if (errorcode != 0) {
-    return(-3);
-  }
-
-  errorcode = fei->sumIntoRHS(patternID, &rowIDType, &(testdata->ids[0]),
-			   matrixEntries);
-
-  if (errorcode != 0) {
-    return(-4);
-  }
-
-  delete [] matrixEntries;
-  delete [] matrixEntriesPtr;
-
   int numBCNodes = 2;
   GlobalID* BCNodeIDs = &(testdata->ids[0]);
   int BCFieldID = testdata->fieldIDs[0];
   double* values = new double[numBCNodes];
   int* offsetsIntoField = new int[numBCNodes];
-  for(ii=0; ii<numBCNodes; ++ii) {
+  for(int ii=0; ii<numBCNodes; ++ii) {
     values[ii] = 1.0;
     offsetsIntoField[ii] = 0;
   }
@@ -499,7 +385,7 @@ int test_FEI_Implementation::test2()
   CHK_ERR( fei->getLocalNodeIDList(numActiveNodes, localNodes, numActiveNodes) );
 
   int totalFieldSize = 0;
-  for(ii=0; ii<(int)testdata->fieldSizes.size(); ++ii) {
+  for(int ii=0; ii<(int)testdata->fieldSizes.size(); ++ii) {
     totalFieldSize += testdata->fieldSizes[ii];
   }
 

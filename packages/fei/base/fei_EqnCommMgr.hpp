@@ -195,7 +195,7 @@ class EqnCommMgr {
 
    int getNumLocalEqns() {return(recvEqns_->getNumEqns());};
 
-   feiArray<int>& localEqnNumbersPtr() {return(recvEqns_->eqnNumbersPtr());};
+   std::vector<int>& localEqnNumbersPtr() {return(recvEqns_->eqnNumbers());};
    std::vector<fei::CSVec*>& localEqns(){return(recvEqns_->eqns());};
    feiArray<feiArray<double>*>* localRHSsPtr()
      {return(recvEqns_->rhsCoefsPtr());};
@@ -219,7 +219,7 @@ class EqnCommMgr {
 
    int getNumRemoteEqns() {return(sendEqns_->getNumEqns());};
 
-   feiArray<int>& sendEqnNumbersPtr() {return(sendEqns_->eqnNumbersPtr());};
+   std::vector<int>& sendEqnNumbersPtr() {return(sendEqns_->eqnNumbers());};
 
    double* sendEqnSolnPtr() {return(sendEqnSoln_.dataPtr());};
 
@@ -227,18 +227,12 @@ class EqnCommMgr {
 
    int gatherSharedBCs(EqnBuffer& bcEqns);
 
-#ifdef FEI_HAVE_IOSFWD
    int exchangeRemEssBCs(int* essEqns, int numEssEqns, double* essAlpha,
 			 double* essGamma, MPI_Comm comm,
 			 std::ostream* dbgOut = NULL);
-#else
-   int exchangeRemEssBCs(int* essEqns, int numEssEqns, double* essAlpha,
-			 double* essGamma, MPI_Comm comm,
-			 ostream* dbgOut = NULL);
-#endif
 
    int getNumRemEssBCEqns() {return(essBCEqns_->getNumEqns());};
-   feiArray<int>& remEssBCEqnNumbersPtr() {return(essBCEqns_->eqnNumbersPtr());};
+   std::vector<int>& remEssBCEqnNumbersPtr() {return(essBCEqns_->eqnNumbers());};
    std::vector<fei::CSVec*>& remEssBCEqns() {return(essBCEqns_->eqns());};
 
    int exchangePtToBlkInfo(snl_fei::PointBlockMap& blkEqnMapper);

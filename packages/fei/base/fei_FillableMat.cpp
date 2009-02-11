@@ -24,7 +24,7 @@ FillableMat::FillableMat(EqnBuffer& eqnbuf)
  : matdata_(),
    vecpool_()
 {
-  feiArray<int>& eqnNums = eqnbuf.eqnNumbersPtr();
+  std::vector<int>& eqnNums = eqnbuf.eqnNumbers();
   int numEqns = eqnNums.size();
   std::vector<fei::CSVec*>& eqns = eqnbuf.eqns();
 

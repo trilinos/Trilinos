@@ -11,7 +11,7 @@
 
 #include <fei_macros.hpp>
 
-#ifdef HAVE_AMESOS
+#ifdef HAVE_FEI_AMESOS
 
 #include <fei_Solver.hpp>
 

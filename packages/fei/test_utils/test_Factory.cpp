@@ -21,10 +21,11 @@
 
 #include <test_utils/test_Factory_helper.hpp>
 
-#ifdef FEI_HAVE_TRILINOS
-#include <support-Trilinos/Factory_Trilinos.hpp>
-#include <support-Trilinos/fei-aztec.hpp>
+#ifdef HAVE_FEI_AZTECOO
+#include <fei_Aztec_LinSysCore.hpp>
 #endif
+
+#include <fei_Factory_Trilinos.hpp>
 
 #undef fei_file
 #define fei_file "test_Factory.cpp"
@@ -41,7 +42,6 @@ test_Factory::~test_Factory()
 
 int test_Factory::runtests()
 {
-#ifdef FEI_HAVE_TRILINOS
 //////////// Factory_Trilinos test ///////////////////////////////
   {
   if (localProc_==0) FEI_COUT << "constructing Factory_Trilinos...";
@@ -61,6 +61,7 @@ int test_Factory::runtests()
   FEI_COUT << FEI_ENDL;
   }
 
+#ifdef HAVE_FEI_AZTECOO
 //////////////// snl_fei::Factory(Aztec) test //////////////////////
   {
   if (localProc_==0) FEI_COUT << "constructing snl_fei::Factory(Aztec)...";

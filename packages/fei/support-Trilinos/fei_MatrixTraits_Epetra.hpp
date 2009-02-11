@@ -9,6 +9,8 @@
 #ifndef _fei_MatrixTraits_Epetra_h_
 #define _fei_MatrixTraits_Epetra_h_
 
+#ifdef HAVE_FEI_EPETRA
+
 //
 //IMPORTANT NOTE: Make sure that wherever this file is included from, it
 //appears BEFORE any include of fei_Vector_Impl.hpp or fei_Matrix_Impl.hpp !!!
@@ -326,4 +328,5 @@ namespace snl_fei {
     }
   };//struct BlockMatrixTraits<Epetra_VbrMatrix>
 }//namespace snl_fei
+#endif //HAVE_FEI_EPETRA
 #endif // _fei_MatrixTraits_Epetra_hpp_

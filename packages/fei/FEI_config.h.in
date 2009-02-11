@@ -5,35 +5,35 @@
 #define _FEI_config_h_
 
 
-/* Enable use of FETI library */
-#undef FEI_HAVE_FETI
-
-/* Enable use of HYPRE library */
-#undef FEI_HAVE_HYPRE
-
-/* Enable use of PETSC library */
-#undef FEI_HAVE_PETSC
-
-/* Enable use of PROMETHEUS library */
-#undef FEI_HAVE_PROMETHEUS
-
-/* Define to build with fei-amesos support enabled */
-#undef HAVE_AMESOS
-
-/* Define to build with fei-aztecoo support enabled */
-#undef HAVE_AZTECOO
-
-/* Define to build with fei-epetra support enabled */
-#undef HAVE_EPETRA
-
 /* Define if want to build examples */
 #undef HAVE_EXAMPLES
 
-/* Define to 1 if you have the <fstream> header file. */
-#undef HAVE_FSTREAM
+/* Define to build with fei-amesos support enabled */
+#undef HAVE_FEI_AMESOS
+
+/* Define to build with fei-aztecoo support enabled */
+#undef HAVE_FEI_AZTECOO
+
+/* Define to build with fei-epetra support enabled */
+#undef HAVE_FEI_EPETRA
+
+/* Enable use of FETI library */
+#undef HAVE_FEI_FETI
 
 /* Define to build with fei-ifpack support enabled */
-#undef HAVE_IFPACK
+#undef HAVE_FEI_IFPACK
+
+/* Define to build with fei-ml support enabled */
+#undef HAVE_FEI_ML
+
+/* Enable use of PETSC library */
+#undef HAVE_FEI_PETSC
+
+/* Define to build with fei-teuchos support enabled */
+#undef HAVE_FEI_TEUCHOS
+
+/* Define to 1 if you have the <fstream> header file. */
+#undef HAVE_FSTREAM
 
 /* Define to 1 if you have the <iomanip> header file. */
 #undef HAVE_IOMANIP
@@ -44,26 +44,29 @@
 /* Define to 1 if you have the <iostream> header file. */
 #undef HAVE_IOSTREAM
 
-/* Define to build with fei-ml support enabled */
-#undef HAVE_ML
-
 /* define if we want to use MPI */
 #undef HAVE_MPI
 
 /* Define to not build with fei-amesos support enabled */
-#undef HAVE_NO_AMESOS
+#undef HAVE_NO_FEI_AMESOS
 
 /* Define to not build with fei-aztecoo support enabled */
-#undef HAVE_NO_AZTECOO
+#undef HAVE_NO_FEI_AZTECOO
 
 /* Define to not build with fei-epetra support enabled */
-#undef HAVE_NO_EPETRA
+#undef HAVE_NO_FEI_EPETRA
+
+/* Define to not build with fei-ifpack support enabled */
+#undef HAVE_NO_FEI_IFPACK
+
+/* Define to not build with fei-ml support enabled */
+#undef HAVE_NO_FEI_ML
+
+/* Define to not build with fei-teuchos support enabled */
+#undef HAVE_NO_FEI_TEUCHOS
 
 /* <fstream> not available */
 #undef HAVE_NO_FSTREAM
-
-/* Define to not build with fei-ifpack support enabled */
-#undef HAVE_NO_IFPACK
 
 /* <iomanip> not available */
 #undef HAVE_NO_IOMANIP
@@ -74,14 +77,8 @@
 /* <iostream> not available */
 #undef HAVE_NO_IOSTREAM
 
-/* Define to not build with fei-ml support enabled */
-#undef HAVE_NO_ML
-
 /* <sstream> not available */
 #undef HAVE_NO_SSTREAM
-
-/* Define to not build with fei-teuchos support enabled */
-#undef HAVE_NO_TEUCHOS
 
 /* <time.h> not available */
 #undef HAVE_NO_TIME_H
@@ -94,9 +91,6 @@
 
 /* Define if want to build tests */
 #undef HAVE_TESTS
-
-/* Define to build with fei-teuchos support enabled */
-#undef HAVE_TEUCHOS
 
 /* Define to 1 if you have the <time.h> header file. */
 #undef HAVE_TIME_H

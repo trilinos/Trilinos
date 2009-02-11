@@ -14,6 +14,7 @@
    creates the LinSysCore struct pointer, which is used by FEI_create.
 */
 
+#include <fei_mpi.h>
 #include <fei_LinSysCore_struct.h>
 
 

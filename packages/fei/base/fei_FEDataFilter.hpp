@@ -90,37 +90,6 @@ class FEDataFilter : public Filter {
                   double CRValue,
                   double penValue);
 
-   int sumIntoMatrix(int patternID,
-		     const int* rowIDTypes,
-		     const GlobalID* rowIDs,
-		     const int* colIDTypes,
-		     const GlobalID* colIDs,
-		     const double* const* matrixEntries);
-
-   int sumIntoRHS(int patternID,
-		  const int* rowIDTypes,
-		  const GlobalID* rowIDs,
-		  const double* vectorEntries);
-
-   int putIntoMatrix(int patternID,
-		     const int* rowIDTypes,
-		     const GlobalID* rowIDs,
-		     const int* colIDTypes,
-		     const GlobalID* colIDs,
-		     const double* const* matrixEntries);
-
-   int getFromMatrix(int patternID,
-		     const int* rowIDTypes,
-		     const GlobalID* rowIDs,
-		     const int* colIDTypes,
-		     const GlobalID* colIDs,
-		     double** matrixEntries);
-
-   int putIntoRHS(int patternID,
-		  const int* rowIDTypes,
-                  const GlobalID* rowIDs,
-                  const double* vectorEntries);
-
    int putIntoRHS(int IDType,
 		  int fieldID,
 			  int numIDs,
@@ -132,11 +101,6 @@ class FEDataFilter : public Filter {
 			  int numIDs,
 		  const GlobalID* IDs,
 		  const double* rhsEntries);
-
-   int getFromRHS(int patternID,
-		  const int* rowIDTypes,
-                  const GlobalID* rowIDs,
-                  double* vectorEntries);
 
    int loadComplete();
 
@@ -297,15 +261,6 @@ class FEDataFilter : public Filter {
                         const double* elemLoad,
                         int elemFormat);
 
-   int generalCoefInput(int patternID,
-			const int* rowIDTypes,
-                        const GlobalID* rowIDs,
-			const int* colIDTypes,
-                        const GlobalID* colIDs,
-                        const double* const* matrixEntries,
-                        const double* vectorEntries,
-                        int assemblyMode);
-
    void allocElemStuff();
 
    int giveToMatrix(int numPtRows, const int* ptRows,
@@ -393,7 +348,7 @@ class FEDataFilter : public Filter {
 
     SNL_FEI_Structure* problemStructure_;
 
-    feiArray<GlobalID> penCRIDs_;
+    std::vector<GlobalID> penCRIDs_;
 
     std::vector<int> rowIndices_;
     std::vector<int> rowColOffsets_, colIndices_;
@@ -409,7 +364,7 @@ class FEDataFilter : public Filter {
     double* eLoad_;
 
     int numRegularElems_;
-    feiArray<int> constraintBlocks_;
+    std::vector<int> constraintBlocks_;
     feiArray<int> constraintNodeOffsets_;
     feiArray<int> packedFieldSizes_;
 };

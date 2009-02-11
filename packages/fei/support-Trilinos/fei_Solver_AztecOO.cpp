@@ -8,6 +8,8 @@
 
 #include "fei_trilinos_macros.hpp"
 
+#ifdef HAVE_FEI_AZTECOO
+
 //fei_Include_Trilinos.h includes the actual Trilinos headers (epetra, aztecoo, ...)
 #include <fei_Include_Trilinos.hpp>
 #include <fei_Trilinos_Helpers.hpp>
@@ -26,7 +28,7 @@
 Solver_AztecOO::Solver_AztecOO()
   : tolerance_(1.e-6), maxIters_(500), useTranspose_(false), paramlist_(NULL),
     useML_(false),
-#ifdef HAVE_ML
+#ifdef HAVE_FEI_ML
    ml_prec_(NULL), ml_defaults_set_(false),
    ml_aztec_options_(NULL), ml_aztec_params_(NULL),
 #endif
@@ -36,7 +38,7 @@ Solver_AztecOO::Solver_AztecOO()
   azoo_ = new AztecOO;
   paramlist_ = new Teuchos::ParameterList;
 
-#ifdef HAVE_ML
+#ifdef HAVE_FEI_ML
   ml_aztec_options_ = new int[AZ_OPTIONS_SIZE];
   ml_aztec_params_ = new double[AZ_PARAMS_SIZE];
 #endif
@@ -47,7 +49,7 @@ Solver_AztecOO::~Solver_AztecOO()
 {
   delete azoo_;
   delete paramlist_;
-#ifdef HAVE_ML
+#ifdef HAVE_FEI_ML
   delete [] ml_aztec_options_;
   delete [] ml_aztec_params_;
   delete ml_prec_;
@@ -93,7 +95,7 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
 
   Teuchos::ParameterList& paramlist = get_ParameterList();
 
-#ifdef HAVE_ML
+#ifdef HAVE_FEI_ML
   if (ml_aztec_options_ == NULL)
     ml_aztec_options_ = new int[AZ_OPTIONS_SIZE];
   if (ml_aztec_params_ == NULL)
@@ -188,10 +190,10 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
 
   if (needNewPreconditioner) {
     if (useML_) {
-#ifdef HAVE_ML
+#ifdef HAVE_FEI_ML
       setup_ml_operator(*azoo_, crsA);
 #else
-      FEI_CERR <<"Solver_AztecOO::solve ERROR, ML requested but HAVE_ML not defined."
+      FEI_CERR <<"Solver_AztecOO::solve ERROR, ML requested but HAVE_FEI_ML not defined."
 	       << FEI_ENDL;
       return(-1);
 #endif
@@ -261,7 +263,7 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
 //---------------------------------------------------------------------------
 int Solver_AztecOO::setup_ml_operator(AztecOO& azoo, Epetra_CrsMatrix* A)
 {
-#ifdef HAVE_ML
+#ifdef HAVE_FEI_ML
   if (ml_aztec_options_ == NULL) {
     ml_aztec_options_ = new int[AZ_OPTIONS_SIZE];
   }
@@ -288,3 +290,7 @@ int Solver_AztecOO::setup_ml_operator(AztecOO& azoo, Epetra_CrsMatrix* A)
 
   return(0);
 }
+
+#endif
+//HAVE_FEI_AZTECOO
+

@@ -11,7 +11,7 @@
 
 #include "fei_trilinos_macros.hpp"
 
-#ifdef HAVE_EPETRA
+#ifdef HAVE_FEI_EPETRA
 
 #ifndef FEI_SER
 #include <Epetra_MpiComm.h>
@@ -26,11 +26,9 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_VbrMatrix.h>
 #include <Epetra_LinearProblem.h>
-#else
-#error "HAVE_EPETRA not defined"
 #endif
 
-#ifdef HAVE_TEUCHOS
+#ifdef HAVE_FEI_TEUCHOS
 #include <Teuchos_ParameterList.hpp>
 #endif
 
@@ -42,7 +40,7 @@
 #undef F77_FUNC
 #undef F77_FUNC_
 
-#ifdef HAVE_AZTECOO
+#ifdef HAVE_FEI_AZTECOO
 #include <AztecOO.h>
 #endif
 
@@ -56,7 +54,7 @@
 #undef F77_FUNC
 #undef F77_FUNC_
 
-#ifdef HAVE_AMESOS
+#ifdef HAVE_FEI_AMESOS
 
 #include <Amesos_config.h>
 #include <Amesos.h>
@@ -73,7 +71,7 @@
 #undef F77_FUNC
 #undef F77_FUNC_
 
-#ifdef HAVE_IFPACK
+#ifdef HAVE_FEI_IFPACK
 
 #include <Ifpack.h>
 

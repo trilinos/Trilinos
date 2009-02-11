@@ -8,7 +8,8 @@
 
 #include "fei_trilinos_macros.hpp"
 
-#ifdef HAVE_AMESOS
+#ifdef HAVE_FEI_AMESOS
+#ifdef HAVE_FEI_EPETRA
 
 #include <fei_Solver_Amesos.hpp>
 #include <fei_ParameterSet.hpp>
@@ -18,10 +19,10 @@
 //fei_Include_Trilinos.hpp includes the actual Trilinos headers (epetra, aztecoo, ml ...)
 #include <fei_Include_Trilinos.hpp>
 #include <fei_Trilinos_Helpers.hpp>
-
 #include <fei_VectorTraits_Epetra.hpp>
-#include <fei_Vector.hpp>
 #include <fei_MatrixTraits_Epetra.hpp>
+
+#include <fei_Vector.hpp>
 #include <fei_Matrix.hpp>
 #include <fei_LinearSystem.hpp>
 
@@ -161,4 +162,5 @@ int Solver_Amesos::parseParameters(int numParams,
   return(0);
 }
 
-#endif //HAVE_AMESOS
+#endif //HAVE_FEI_EPETRA
+#endif //HAVE_FEI_AMESOS

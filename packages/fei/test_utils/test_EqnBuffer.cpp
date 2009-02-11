@@ -85,12 +85,12 @@ int test_EqnBuffer::test1()
   if (err != -1) ERReturn(-1);
 
 
-  feiArray<int>& eqnNumbers = eqns.eqnNumbersPtr();
+  std::vector<int>& eqnNumbers = eqns.eqnNumbers();
   std::vector<fei::CSVec*>& rows = eqns.eqns();
 
   EqnBuffer* eqnsCopy = eqns.deepCopy();
 
-  feiArray<int>& eqnNumbersCopy = eqnsCopy->eqnNumbersPtr();
+  std::vector<int>& eqnNumbersCopy = eqnsCopy->eqnNumbers();
 
   if (eqnNumbersCopy != eqnNumbers) {
     ERReturn(-1);
@@ -106,7 +106,7 @@ int test_EqnBuffer::test1()
   bool finished = false;
   while(!finished) {
     bool foundCoupling = false;
-    for(int i=0; i<eqnNumbers.length(); i++) {
+    for(size_t i=0; i<eqnNumbers.size(); i++) {
       int rowIndex = eqns.isInIndices(eqnNumbers[i]);
 
       while(rowIndex >= 0) {

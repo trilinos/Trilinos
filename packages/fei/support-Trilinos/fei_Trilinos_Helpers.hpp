@@ -23,6 +23,9 @@
 #include <fei_MatrixGraph.hpp>
 
 namespace Trilinos_Helpers {
+
+#ifdef HAVE_FEI_EPETRA
+
   /** Epetra_Map objects are light-weight wrt copying, since they employ a
       memory-model that uses a reference-counted pointer to an internal data
       object. Thus, it is reasonable for this function to return a pass-by-value
@@ -57,6 +60,7 @@ namespace Trilinos_Helpers {
                                  fei::SharedPtr<fei::Reducer> reducer,
                                  fei::SharedPtr<fei::LinearProblemManager>
                                    lpm_epetrabasic);
+#endif
 
   /** Copies parameters from fei::ParameterSet to Teuchos::ParameterList.
     Does not clear any pre-existing contents from the Teuchos:ParameterList.
@@ -70,6 +74,7 @@ namespace Trilinos_Helpers {
   void copy_parameterlist(const Teuchos::ParameterList& paramlist,
                           fei::ParameterSet& paramset);
 
+#ifdef HAVE_FEI_EPETRA
   /** Extracts a pointer to a Epetra_MultiVector from a fei::Vector. Throws
     an exception if unsuccessful.
   */
@@ -97,6 +102,7 @@ namespace Trilinos_Helpers {
                            Epetra_Operator*& opA,
                            Epetra_MultiVector*& x,
                            Epetra_MultiVector*& b);
+#endif // HAVE_FEI_EPETRA
 
 }//namespace Trilinos_Helpers
 

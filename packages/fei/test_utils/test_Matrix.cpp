@@ -21,12 +21,12 @@
 #include <fei_Vector_Impl.hpp>
 #include <fei_Matrix_Impl.hpp>
 
-#ifdef FEI_HAVE_TRILINOS
-#include <support-Trilinos/fei-aztec.hpp>
-#include <support-Trilinos/Factory_Trilinos.hpp>
+#ifdef HAVE_FEI_AZTECOO
+#include <fei_Aztec_LinSysCore.hpp>
 #endif
+#include <fei_Factory_Trilinos.hpp>
 
-#ifdef FEI_HAVE_FETI
+#ifdef HAVE_FEI_FETI
 #include <FETI_DP_FiniteElementData.h>
 #endif
 
@@ -113,19 +113,13 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
   bool factory_created = false;
   fei::SharedPtr<fei::Factory> factory;
   try {
-    factory = fei::create_fei_Factory(comm, "HYPRE");
+    factory = fei::create_fei_Factory(comm, "Trilinos");
     factory_created = true;
   }
-  catch (std::runtime_error& exc) {
-    try {
-      factory = fei::create_fei_Factory(comm, "Trilinos");
-      factory_created = true;
-    }
-    catch(std::runtime_error& ex) {}
-  }
+  catch(std::runtime_error& ex) {}
 
   if (!factory_created) {
-    FEI_COUT << "neither HYPRE nor Trilinos available."<<FEI_ENDL;
+    FEI_COUT << "failed to create Trilinos factory."<<FEI_ENDL;
     return;
   }
 
@@ -170,116 +164,6 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
   }
 
   fei_test_utils::writeMatrix("feimat_ss2.mtx", feimat_ss);
-
-  FEI_COUT << "ok"<<FEI_ENDL;
-}
-
-void test_Matrix_unit3(MPI_Comm comm, int numProcs, int localProc)
-{
-  if (numProcs > 1) {
-    return;
-  }
-
-  FEI_COUT << "testing rectangular fei::Matrix_Impl...";
-
-  fei::SharedPtr<fei::VectorSpace> rowspace(new fei::VectorSpace(comm));
-  fei::SharedPtr<fei::VectorSpace> colspace(new fei::VectorSpace(comm));
-
-  int rowfield = 0, rowfieldsize = 1;
-  int colfield = 1, colfieldsize = 3;
-  int idType = 0;
-  rowspace->defineFields(1, &rowfield, &rowfieldsize);
-  rowspace->defineIDTypes(1, &idType);
-  colspace->defineIDTypes(1, &idType);
-  colspace->defineFields(1, &colfield, &colfieldsize);
-
-  fei::SharedPtr<fei::MatrixGraph> mgraph(new fei::MatrixGraph_Impl2(rowspace, colspace));
-
-  int patternID1 = 1, patternID2 = 2;
-
-  mgraph->definePattern(patternID1, 2, idType, rowfield);
-  mgraph->definePattern(patternID2, 2, idType, colfield);
-
-  fei::Pattern* rowpattern = mgraph->getPattern(patternID1);
-  fei::Pattern* colpattern = mgraph->getPattern(patternID2);
-
-  mgraph->initConnectivityBlock(0, 1, patternID1, patternID2);
-
-  feiArray<int> ids(2);
-  ids[0] = 0; ids[1] = 1;
-
-  int err = mgraph->initConnectivity(0, 0, ids.dataPtr(), ids.dataPtr());
-  if (err) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "test_Matrix_unit3, initConnectivity returned err="<<err;
-    throw std::runtime_error(osstr.str());
-  }
-
-  err = mgraph->initComplete();
-  if (err) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "test_Matrix_unit3, initComplete returned err="<<err;
-    throw std::runtime_error(osstr.str());
-  }
-
-  bool factory_created = false;
-  fei::SharedPtr<fei::Factory> factory;
-  try {
-    factory = fei::create_fei_Factory(comm, "HYPRE");
-    factory_created = true;
-  }
-  catch (std::runtime_error& exc) {
-//    try {
-//      factory = fei::create_fei_Factory(comm, "Trilinos");
-//      factory_created = true;
-//    }
-//    catch(std::runtime_error& exc) {}
-    FEI_COUT << "HYPRE not available."<<FEI_ENDL;
-    return;
-  }
-
-  if (!factory_created) {
-    FEI_COUT << "neither HYPRE nor Trilinos available."<<FEI_ENDL;
-    return;
-  }
-
-  fei::SharedPtr<fei::Matrix> feimat = factory->createMatrix(mgraph);
-
-  int numrowindices = rowpattern->getNumIndices();
-  int numcolindices = colpattern->getNumIndices();
-
-  feiArray<double> coefs(numrowindices*numcolindices);
-  coefs = 1.0;
-  feiArray<double*> coefs_2D(numrowindices);
-  for(int i=0; i<numrowindices; ++i) {
-    coefs_2D[i] = &(coefs[i*numcolindices]);
-  }
-
-  err = feimat->sumIn(0, 0, coefs_2D.dataPtr());
-  if (err) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "test_Matrix_unit3, feimat->sumIn returned err="<<err;
-    throw std::runtime_error(osstr.str());
-  }
-
-  err = feimat->globalAssemble();
-  if (err) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "test_Matrix_unit3, feimat->globalAssemble returned err="<<err;
-    throw std::runtime_error(osstr.str());
-  }
-
-  feimat->writeToFile("feimat_fm3.mtx");
-
-  fei::FillableMat feimat_ss;
-  err = fei_test_utils::copy_feiMatrix_to_FillableMat(*feimat, feimat_ss);
-  if (err) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "test_Matrix_unit3, copy_feiMatrix_to_FillableMat returned err="<<err;
-    throw std::runtime_error(osstr.str());
-  }
-
-  fei_test_utils::writeMatrix("feimat_ss3.mtx", feimat_ss);
 
   FEI_COUT << "ok"<<FEI_ENDL;
 }
@@ -408,7 +292,6 @@ test_Matrix::~test_Matrix()
 int test_Matrix::runtests()
 {
 
-#ifdef FEI_HAVE_TRILINOS
   //-------------------------------
   // Test a Factory_Trilinos matrix.
   if (localProc_==0) FEI_COUT << "Testing Factory_Trilinos fei::Matrix..." << FEI_ENDL;
@@ -420,6 +303,7 @@ int test_Matrix::runtests()
 
   if (localProc_==0) FEI_COUT << FEI_ENDL;
 
+#ifdef HAVE_FEI_AZTECOO
   //-------------------------------
   // Test a matrix from a "snl_fei::Factory", which was created by the
   // test-util function create_fei_Factory for library "Aztec", which causes
@@ -433,24 +317,8 @@ int test_Matrix::runtests()
   fei::SharedPtr<fei::Matrix> mat1 = create_matrix(factory_aztec);
 
   matrix_test1(mat1);
-
 #endif
 
-//   CHK_ERR( test1() );
-
-//   if (numProcs_ < 2) {
-//     CHK_ERR( test_matrix_unit1() );
-//     test_Matrix_unit2(data_->comm, numProcs_, localProc_);
-//     test_Matrix_unit3(data_->comm, numProcs_, localProc_);
-//     test_Matrix_unit4(data_->comm, numProcs_, localProc_);
-//     CHK_ERR( serialtest1() );
-//     CHK_ERR( serialtest2() );
-//     CHK_ERR( serialtest3() );
-//   }
-
-//   CHK_ERR( test2() );
-//   CHK_ERR( test3() );
-//   CHK_ERR( test4() );
   return(0);
 }
 
@@ -767,206 +635,17 @@ int test_Matrix::serialtest3()
 
 int test_Matrix::test1()
 {
-#ifdef FEI_HAVE_TRILINOS
-  testData* testdata = new testData(localProc_, numProcs_);
-  std::vector<int>& fieldIDs = testdata->fieldIDs;
-  std::vector<int>& idTypes = testdata->idTypes;
-  std::vector<int>& ids = testdata->ids;
-
-  fei::SharedPtr<LinearSystemCore> az_lsc(new Aztec_LinSysCore(comm_));
-
-  std::string paramstr("debugOutput .");
-  char* param = const_cast<char*>(paramstr.c_str());
-
-  CHK_ERR( az_lsc->parameters(1, &param) );
-
-  fei::SharedPtr<fei::Factory> factory(new snl_fei::Factory(comm_, az_lsc));
-
-  fei::SharedPtr<fei::VectorSpace> vectorSpacePtr =
-    test_VectorSpace::create_VectorSpace(comm_,
-					 testdata, localProc_, numProcs_,
-					 false, false, "U_Mat", factory);
-
-  fei::SharedPtr<fei::MatrixGraph> matrixGraphPtr =
-    test_MatrixGraph::create_MatrixGraph(testdata, localProc_, numProcs_,
-					 false, false, "U_Mat", vectorSpacePtr,
-					 factory);
-
-  CHK_ERR( matrixGraphPtr->initComplete() );
-
-  fei::SharedPtr<fei::Vector> vec_lsc = factory->createVector(vectorSpacePtr);
-
-  fei::SharedPtr<fei::Matrix> mat_lsc = factory->createMatrix(matrixGraphPtr);
-
-  fei::Matrix_Impl<LinearSystemCore>* smat2 = 
-    dynamic_cast<fei::Matrix_Impl<LinearSystemCore>*>(mat_lsc.get());
-  if (smat2 == NULL) {
-    FEI_COUT << "dynamic_cast<fei::Matrix_Impl<LinearSystemCore>*> failed"<<FEI_ENDL;
-    ERReturn(-1);
-  }
-
-  int blockID=0;
-  int numIndices = matrixGraphPtr->getConnectivityNumIndices(blockID);
-
-  feiArray<int> indicesArray(numIndices);
-  int* indicesPtr = indicesArray.dataPtr();
-
-  int checkNumIndices = 0;
-  CHK_ERR( matrixGraphPtr->getConnectivityIndices(blockID, 0,
-					     numIndices, indicesPtr,
-					     checkNumIndices) );
-
-  feiArray<double> data(ids.size());
-  data = 1.0;
-  double* dptr = data.dataPtr();
-  feiArray<double*> coefPtrs(ids.size());
-  for(unsigned ii=0; ii<ids.size(); ++ii) coefPtrs[ii] = dptr;
-
-  CHK_ERR( mat_lsc->sumIn(numIndices, indicesPtr, numIndices, indicesPtr,
-			  coefPtrs.dataPtr()) );
-
-  CHK_ERR( vec_lsc->sumInFieldData(fieldIDs[0], idTypes[0],
-				    ids.size(), &ids[0],
-				    data.dataPtr()) );
-
-  CHK_ERR( mat_lsc->gatherFromOverlap() );
-
-  CHK_ERR( mat_lsc->writeToFile("U_Mat") );
-
-  CHK_ERR( az_lsc->matrixLoadComplete() );
-
-  CHK_ERR( az_lsc->writeSystem("U_Mat") );
-
-  delete testdata;
-
-  MPI_Barrier(comm_);
-#endif  //FEI_HAVE_TRILINOS
   return(0);
 }
 
 int test_Matrix::test2()
 {
-#ifdef FEI_HAVE_TRILINOS
-  testData* testdata = new testData(localProc_, numProcs_);
-  std::vector<int>& fieldIDs = testdata->fieldIDs;
-  std::vector<int>& idTypes = testdata->idTypes;
-  std::vector<int>& ids = testdata->ids;
-
-  fei::SharedPtr<LinearSystemCore> az_lsc(new Aztec_LinSysCore(comm_));
-
-  std::string paramstr("debugOutput .");
-  char* param = const_cast<char*>(paramstr.c_str());
-
-  CHK_ERR( az_lsc->parameters(1, &param) );
-
-  fei::SharedPtr<fei::Factory> factory(new snl_fei::Factory(comm_, az_lsc));
-
-  fei::SharedPtr<fei::VectorSpace> vectorSpacePtr =
-    test_VectorSpace::create_VectorSpace(comm_,
-					 testdata, localProc_, numProcs_,
-					 true, true, "U_Mat2", factory);
-
-  bool nonsymmetric = true;
-  fei::SharedPtr<fei::MatrixGraph> matrixGraphPtr =
-    test_MatrixGraph::create_MatrixGraph(testdata, localProc_, numProcs_,
-					 true, nonsymmetric,
-					 "U_Mat2", vectorSpacePtr, factory);
-
-  CHK_ERR( matrixGraphPtr->initComplete() );
-
-  fei::SharedPtr<fei::Vector> vec_lsc = factory->createVector(vectorSpacePtr);
-
-  fei::SharedPtr<fei::Matrix> mat_lsc = factory->createMatrix(matrixGraphPtr);
-
-  fei::Matrix_Impl<LinearSystemCore>* smat2 = 
-    dynamic_cast<fei::Matrix_Impl<LinearSystemCore>*>(mat_lsc.get());
-  if (smat2 == NULL) {
-    ERReturn(-1);
-  }
-
-  int numColIndices=1;
-  int blockID=0;
-  int numRowIndices = matrixGraphPtr->getConnectivityNumIndices(blockID);
-
-  feiArray<int> indicesArray(numRowIndices);
-  int* indicesPtr = indicesArray.dataPtr();
-
-  int checkNumIndices = 0, checkNumColIndices = 0;
-  CHK_ERR( matrixGraphPtr->getConnectivityIndices(blockID, 0,
-						  numRowIndices, indicesPtr,
-						  checkNumIndices) );
-
-  feiArray<double> data(numRowIndices);
-  data = 1.0;
-  double* dptr = data.dataPtr();
-  feiArray<double*> coefPtrs(numRowIndices);
-  for(int ii=0; ii<numRowIndices; ++ii) coefPtrs[ii] = dptr;
-
-  CHK_ERR( mat_lsc->sumIn(blockID, 0,
-			  coefPtrs.dataPtr(), 3) );
-  if (nonsymmetric) {
-    blockID=1;
-    CHK_ERR( matrixGraphPtr->getConnectivityNumIndices(blockID,
-						       numRowIndices,
-						       numColIndices));
-
-    indicesArray.resize(numRowIndices);
-    feiArray<int> colIndicesArray(numColIndices);
-    indicesPtr = indicesArray.dataPtr();
-    int* colIndicesPtr = colIndicesArray.dataPtr();
-
-    CHK_ERR( matrixGraphPtr->getConnectivityIndices(blockID, 0,
-						    numRowIndices, indicesPtr,
-						    checkNumIndices,
-						    numColIndices, colIndicesPtr,
-						    checkNumColIndices) );
-
-    data.resize(numColIndices);
-    data = 1.0;
-    dptr = data.dataPtr();
-    coefPtrs.resize(numRowIndices);
-    for(int ii=0; ii<numRowIndices; ++ii) coefPtrs[ii] = dptr;
-
-    CHK_ERR( mat_lsc->sumIn(blockID, 0,
-			    coefPtrs.dataPtr()) );
-  }
-
-  CHK_ERR( mat_lsc->sumInFieldData(fieldIDs[0], idTypes[0], ids[0], ids[0],
-				   coefPtrs.dataPtr(), 0) );
-
-  int rowLength = 0;
-  int err = mat_lsc->getRowLength(indicesPtr[1], rowLength);
-  if (err == 0) {
-    feiArray<int> rowIndices(rowLength);
-    feiArray<double> rowCoefs(rowLength);
-
-    CHK_ERR( mat_lsc->copyOutRow(indicesPtr[1], rowIndices.length(),
-                                 rowCoefs.dataPtr(), rowIndices.dataPtr()));
-  }
-
-  CHK_ERR( vec_lsc->sumIn(blockID, 0,
-			  data.dataPtr()) );
-
-  CHK_ERR( mat_lsc->gatherFromOverlap() );
-
-  CHK_ERR( az_lsc->matrixLoadComplete() );
-
-  CHK_ERR( az_lsc->writeSystem("U_Mat") );
-
-  CHK_ERR( mat_lsc->putScalar(0.0) );
-
-  delete testdata;
-
-  MPI_Barrier(comm_);
-
-#endif  //FEI_HAVE_TRILINOS
-
  return(0);
 }
 
 int test_Matrix::test3()
 {
-#ifdef FEI_HAVE_FETI
+#ifdef HAVE_FEI_FETI
   testData* testdata = new testData(localProc_, numProcs_);
   std::vector<int>& idTypes = testdata->idTypes;
   std::vector<int>& ids = testdata->ids;
@@ -1032,90 +711,13 @@ int test_Matrix::test3()
 
   MPI_Barrier(comm_);
 
-#endif  //FEI_HAVE_FETI
+#endif  //HAVE_FEI_FETI
 
   return(0);
 }
 
 int test_Matrix::test4()
 {
-  fei::SharedPtr<fei::Factory> factory;
-  try {
-    factory = fei::create_fei_Factory(MPI_COMM_WORLD, "HYPRE");
-  }
-  catch (std::runtime_error& exc) {
-    //probably means fei was built without HYPRE support. So we'll simply
-    //skip this test and move on...
-    return(0);
-  }
-
-  FEI_COUT << "testing a simple edge-based problem using HYPRE...";
-
-  int edgeIDType = 1;
-  int edgeFieldID = 1;
-  int edgeFieldSize = 3;
-
-  fei::SharedPtr<fei::VectorSpace> espace =
-    factory->createVectorSpace(MPI_COMM_WORLD, NULL);
-
-  espace->defineFields(1, &edgeFieldID, &edgeFieldSize);
-  espace->defineIDTypes(1, &edgeIDType);
-
-  int numEdges = 4;
-  int* edges = new int[numEdges];
-  int localProc = 0;
-#ifndef FEI_SER
-  MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
-#endif
-  int firstLocalEdge = localProc*numEdges;
-  int i;
-  for(i=0; i<numEdges; ++i) {
-    edges[i] = firstLocalEdge+i;
-  }
-
-  CHK_ERR( espace->addDOFs(edgeFieldID, 1, edgeIDType,
-                                       numEdges, edges));
-
-  fei::SharedPtr<fei::VectorSpace> dummy;
-  fei::SharedPtr<fei::MatrixGraph> egraph =
-    factory->createMatrixGraph(espace, dummy, NULL);
-
-  int patternID = 1;
-  int numEdgesPerElem = 4;
-  int numElems = 1;
-
-  egraph->definePattern(patternID, numEdgesPerElem,
-			edgeIDType, edgeFieldID);
-
-  int blockID = 1;
-  CHK_ERR( egraph->initConnectivityBlock(blockID, numElems, patternID));
-
-  CHK_ERR( egraph->initConnectivity(blockID, localProc, edges) );
-
-  CHK_ERR( egraph->initComplete() );
-
-  fei::SharedPtr<fei::Matrix> matrix = factory->createMatrix(egraph);
-
-  delete [] edges;
-
-  int dim = numEdgesPerElem*edgeFieldSize;
-  double* emat = new double[dim*dim];
-  double** emat_2d = new double*[dim];
-  for(i=0; i<dim*dim; ++i) {
-    emat[i] = 0.5;
-  }
-
-  for(i=0; i<dim; ++i) {
-    emat_2d[i] = &(emat[i*dim]);
-  }
-
-  CHK_ERR( matrix->sumIn(blockID, localProc, emat_2d) );
-
-  delete [] emat;
-  delete [] emat_2d;
-
-  FEI_COUT << "ok"<<FEI_ENDL;
-
   return(0);
 }
 

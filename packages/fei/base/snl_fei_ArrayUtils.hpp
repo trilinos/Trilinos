@@ -10,7 +10,6 @@
 /*--------------------------------------------------------------------*/
 
 #include "fei_fwd.hpp"
-#include "feiArray.hpp"
 
 #include <algorithm>
 
@@ -198,22 +197,6 @@ namespace snl_fei {
       return( binarySearch(item, &list[0], list.size(), insertPoint) );
     }
 
-  /** Binary search of an feiArray that's assumed to be sorted.
-   */
-  template<typename T>
-    int binarySearch(const T& item, const feiArray<T>& list, int& insertPoint)
-    {
-      return( binarySearch(item, list.dataPtr(), list.length(), insertPoint) );
-    }
-
-  /** Binary search of an feiArray that's assumed to be sorted.
-   */
-  template<typename T>
-    int binarySearch(const T& item, const feiArray<T>& list)
-    {
-      return( binarySearch(item, list.dataPtr(), list.length()) );
-    }
-
   /** Binary search of an std::vector that's assumed to be sorted.
    */
   template<typename T>
@@ -330,20 +313,6 @@ namespace snl_fei {
   /** Insert an item into a sorted list, maintaining sortedness.
    */
   template<class T>
-    int sortedListInsert(const T& item, feiArray<T>& list)
-    {
-      int insertPoint = -1, offset = -1;
-      offset = binarySearch(item, list, insertPoint);
-      if (offset < 0) {
-	list.insert(item, insertPoint);
-      }
-
-      return( insertPoint );
-    }
-
-  /** Insert an item into a sorted list, maintaining sortedness.
-   */
-  template<class T>
     int sortedListInsert(const T& item, std::vector<T>& list)
     {
       typename std::vector<T>::iterator iter =
@@ -438,27 +407,6 @@ namespace snl_fei {
 	}
       }
       return(-1);
-    }
-
-  /** remove value at specified index, slide other data down,
-    and resize array to the new smaller size */
-  template<class T>
-    T removeValueAtIndex(int index, feiArray<T>& list)
-    {
-      int len = list.length();
-      if (len <= index || index < 0) {
-        throw std::runtime_error("snl_fei::removeValueAtIndex: invalid index");
-      }
-
-      T* listptr = list.dataPtr();
-      T val = listptr[index];
-      for(int i=index; i<len-1; ++i) {
-        listptr[i] = listptr[i+1];
-      }
-
-      list.resize(len-1);
-
-      return(val);
     }
 
 } //namespace snl_fei
