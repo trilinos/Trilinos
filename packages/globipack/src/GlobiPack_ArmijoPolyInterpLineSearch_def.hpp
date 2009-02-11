@@ -181,7 +181,6 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
   typedef Teuchos::TabularOutputter TO;
   typedef ScalarTraits<Scalar> ST;
 
-  using std::setw;
   using std::endl;
   using std::min;
   using std::max;

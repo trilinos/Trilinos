@@ -65,6 +65,34 @@ using Teuchos::ScalarTraits;
 using Teuchos::ParameterList;
 
 
+/** \brief Represents the evaluation point of the merit function
+ * <tt>phi(alpha)</tt> and/or is derivative <tt>Dphi(alpha)</tt>.
+ *
+ * If a value has not been set it will be equal to <tt>valNotGiven()</tt>.
+ */
+template<class Scalar>
+struct PointEval1D {
+  /** \brief . */
+  static Scalar valNotGiven() { return std::numeric_limits<Scalar>::max(); }
+  /** \brief . */
+  PointEval1D()
+    : alpha(valNotGiven()), phi(valNotGiven()), Dphi(valNotGiven())
+    {}
+  /** \brief . */
+  PointEval1D( const Scalar &alpha_in, const Scalar &phi_in,
+    const Scalar &Dphi_in)
+    : alpha(alpha_in), phi(phi_in), Dphi(Dphi_in)
+    {}
+  /** \brief The value of the unknown <tt>alpha</tt>. */
+  Scalar alpha;
+  /** \brief The value of the merit function <tt>phi(alpha)</tt>. */
+  Scalar phi;
+  /** \brief The value of the derivative of the merit function
+   * <tt>Dphi(alpha)</tt>. */
+  Scalar Dphi;
+};
+
+
 namespace Exceptions {
 
 
