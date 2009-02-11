@@ -1,0 +1,4 @@
+ADD_SUBDIRECTORY(LOCA_Tcubed)
+ADD_SUBDIRECTORY(LOCA_Brusselator_xyzt)
+ADD_SUBDIRECTORY(LOCA_ContinuationManager)
+ADD_SUBDIRECTORY(LOCA_ContinuationManager_xyzt)
