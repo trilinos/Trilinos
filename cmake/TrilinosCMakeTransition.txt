@@ -359,9 +359,11 @@ Final Certification Evidence: [???]
 
 Package: FEI
 
-Package Transition Lead: [???]
+Package Transition Lead: Alan Williams (william@sandia.gov)
 
-Status: [???]
+Status: Builds and run tests with cmake/ctest. It is possible that some
+    minor changes still need to be made for optional dependencies and other
+    subtleties, but I think FEI is pretty much cmake-ified.
 
 Final Certification Date: [???]
 

@@ -138,12 +138,12 @@
   </SubProject>
   <SubProject name="FEI">
     <Dependency name="Teuchos" type="LO"/>
-    <Dependency name="Epetra" type="ILR"/>
+    <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="Triutils" type="ILR"/>
+    <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
-    <Dependency name="AztecOO" type="LR"/>
+    <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="LO"/>
     <Dependency name="Ifpack" type="LO"/>
