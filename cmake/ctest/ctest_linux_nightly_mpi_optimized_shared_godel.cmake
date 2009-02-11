@@ -42,6 +42,8 @@ EpetraExt_BUILD_BDF:BOOL=ON
 # FEI does not compile when AztecOO is disabled.  Brent said that he
 # would look into this.
 
+# 2009/02/11: william: FEI can now build when AztecOO is disabled.
+
 #
 # Read in the platform-independent and platform-dependent options
 #
