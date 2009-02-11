@@ -52,7 +52,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Phdmesh               phdmesh                        OFF
   NOX                   nox                            ""
   Moertel               moertel                        ""
-  TrilinosCouplings     trilinoscouplings              OFF
+  TrilinosCouplings     trilinoscouplings              ""
   Rythmos               rythmos                        ""
   MOOCHO                moocho                         OFF
   Aristos               aristos                        OFF

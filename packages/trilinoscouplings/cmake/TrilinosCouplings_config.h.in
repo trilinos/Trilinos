@@ -1,0 +1,65 @@
+/* src/TrilinosCouplings_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if want to build amesos */
+#cmakedefine HAVE_AMESOS
+
+/* Define if want to build epetraext */
+#cmakedefine HAVE_EPETRAEXT
+
+/* Define if you want to build export makefiles. */
+#cmakedefine HAVE_EXPORT_MAKEFILES
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#cmakedefine HAVE_GNUMAKE
+
+/* Define if want to build ifpack */
+#cmakedefine HAVE_IFPACK
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H
+
+/* Define if want to build isorropia */
+#cmakedefine HAVE_ISORROPIA
+
+/* Define if want to build libcheck */
+#cmakedefine HAVE_LIBCHECK
+
+/* Define if want to build ml */
+#cmakedefine HAVE_ML
+
+/* Define if have ML and Nox */
+#cmakedefine HAVE_ML_NOX
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI
+
+/* Define if want to build with newp_swahili enabled */
+#cmakedefine HAVE_NEWP_SWAHILI
+
+/* Define if want to build nox */
+#cmakedefine HAVE_NOX
+
+/* Define if want to build tests */
+#cmakedefine HAVE_TESTS
+
+/* Define if want to build trilinoscouplings-tests */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_TESTS
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H
+
+/* Define to the address where bug reports for this package should be sent. */
+#cmakedefine PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#cmakedefine PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#cmakedefine PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#cmakedefine PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#cmakedefine PACKAGE_VERSION
+
