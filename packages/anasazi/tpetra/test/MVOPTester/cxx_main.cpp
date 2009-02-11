@@ -67,10 +67,13 @@ namespace {
     return rcp(new Tpetra::SerialPlatform<Ordinal>());
   }
 
-  template<class Ordinal, class Scalar> 
-  RCP<CrsMatrix<Ordinal,Scalar> > constructTriDiagMatrix(const Map<Ordinal> &map) 
+  template<class Scalar, class Ordinal> 
+  RCP<CrsMatrix<Scalar,Ordinal> > constructTriDiagMatrix(const Map<Ordinal> &map) 
   {
-    RCP<CrsMatrix<Ordinal,Scalar> > op = rcp( new CrsMatrix<Ordinal,Scalar>(map) );
+    RCP<CrsMatrix<Scalar,Ordinal> > op = rcp( new CrsMatrix<Scalar,Ordinal>(map) );
+    for (Teuchos_Ordinal i=0; i<map.getNumMyEntries(); ++i) {
+      op->submitEntry(map.getGlobalIndex(i),map.getGlobalIndex(i), ScalarTraits<Scalar>::one());
+    }
     op->fillComplete();
     return op;
   }
@@ -82,7 +85,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, MVTestDist, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     const Ordinal dim = 500;
     const Ordinal numVecs = 5;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
@@ -91,9 +94,9 @@ namespace {
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = platform.getComm();
     // create a uniform contiguous map
-    Map<Ordinal> map(dim,ZERO,platform);
+    Map<Ordinal> map(dim,ZERO,comm);
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Anasazi::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
@@ -106,7 +109,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, MVTestLocal, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     const Ordinal dim = 500;
     const Ordinal numVecs = 5;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
@@ -115,9 +118,9 @@ namespace {
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = platform.getComm();
     // create a uniform contiguous map
-    Map<Ordinal> map(dim,ZERO,platform,true);
+    Map<Ordinal> map(dim,ZERO,comm,true);
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Anasazi::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
@@ -130,8 +133,8 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, OPTestLocal, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
-    typedef Tpetra::Operator<Ordinal,Scalar>    OP;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::Operator<Scalar,Ordinal>    OP;
     // const Ordinal dim = 500;
     const Ordinal dim = 10;
     const Ordinal numVecs = 5;
@@ -141,11 +144,11 @@ namespace {
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = platform.getComm();
     // create a uniform contiguous map (local)
-    Map<Ordinal> map(dim,ZERO,platform,true);
+    Map<Ordinal> map(dim,ZERO,comm,true);
     // create a CrsMatrix
-    RCP<OP> op = constructTriDiagMatrix<Ordinal,Scalar>(map);
+    RCP<OP> op = constructTriDiagMatrix<Scalar,Ordinal>(map);
     // create a multivector
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Anasazi::TestOperatorTraits<Scalar,MV,OP>(MyOM,mvec,op);
@@ -159,8 +162,8 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, OPTestDist, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
-    typedef Tpetra::Operator<Ordinal,Scalar>    OP;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::Operator<Scalar,Ordinal>    OP;
     // const Ordinal dim = 500;
     const Ordinal dim = 10;
     const Ordinal numVecs = 5;
@@ -170,11 +173,11 @@ namespace {
     // create a platform  
     const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = platform.getComm();
     // create a uniform contiguous map
-    Map<Ordinal> map(dim,ZERO,platform);
+    Map<Ordinal> map(dim,ZERO,comm);
     // create a CrsMatrix
-    RCP<OP> op = constructTriDiagMatrix<Ordinal,Scalar>(map);
+    RCP<OP> op = constructTriDiagMatrix<Scalar,Ordinal>(map);
     // create a multivector
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Anasazi::TestOperatorTraits<Scalar,MV,OP>(MyOM,mvec,op);
@@ -203,7 +206,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, MVTestDist, ORDINAL, SCALAR ) \
@@ -213,14 +216,12 @@ namespace {
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         /*UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)*/ \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double)
      UNIT_TEST_GROUP_ORDINAL(int)
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, char) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
          UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL) \

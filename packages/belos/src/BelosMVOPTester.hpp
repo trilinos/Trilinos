@@ -162,12 +162,12 @@ namespace Belos {
        However, to spice things up, grab the first std::vector,
        last std::vector, and choose the others randomly.
     */
+    TEST_FOR_EXCEPT(numvecs_2 != 5);
     ind[0] = 0;
-    ind[numvecs_2-1] = numvecs-1;
-    for (i=1; i<numvecs_2-1; i++) {
-      ind[i] = rand() % numvecs;
-    }
-
+    ind[1] = 5;
+    ind[2] = 2;
+    ind[3] = 2;
+    ind[4] = 9;
 
     /*********** GetNumberVecs() *****************************************
        Verify:
@@ -389,8 +389,10 @@ namespace Belos {
         if ( norms2[i] != norms[ind[i]] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << std::endl
-            << "Copied vectors do not agree:" 
+            << "Copied vectors do not agree: " 
             << norms2[i] << " != " << norms[ind[i]] << std::endl;
+          MVT::MvPrint(*B,std::cout);
+          MVT::MvPrint(*C,std::cout);
           return false;
         }
       }
@@ -405,7 +407,6 @@ namespace Belos {
         }
       }
     }    
-
 
     /*********** CloneCopy(MV) and MvNorm ********************************
        1) Check quantity
@@ -640,9 +641,9 @@ namespace Belos {
     {
       Teuchos::RCP<MV> B, C;
       // set these: we assume below that setSize*2=BSize
-      const int BSize   = 10, 
-                CSize   = 6,
-                setSize = 5;
+      const int CSize   = 6,
+                setSize = 5,
+                BSize   = 2*setSize;
       std::vector<MagType> normsB1(BSize), normsB2(BSize),
                            normsC1(CSize), normsC2(CSize);
 

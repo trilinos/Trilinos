@@ -55,27 +55,27 @@ using Tpetra::MultiVector;
 using Tpetra::Map;
 using std::endl;
 using std::cout;
+using std::vector;
 
 int main(int argc, char *argv[]) {
 
   typedef double                           ST;
   typedef ScalarTraits<ST>                SCT;
   typedef SCT::magnitudeType               MT;
-  typedef Tpetra::Operator<int,ST>         OP;
-  typedef Tpetra::MultiVector<int,ST>      MV;
+  typedef Tpetra::Operator<ST,int>         OP;
+  typedef Tpetra::MultiVector<ST,int>      MV;
   typedef Belos::OperatorTraits<ST,MV,OP> OPT;
   typedef Belos::MultiVecTraits<ST,MV>    MVT;
 
   GlobalMPISession mpisess(&argc,&argv,&cout);
 
   const ST one  = SCT::one();
-  const ST zero = SCT::zero();	
 
   int info = 0;
   int MyPID = 0;
 
   RCP<const Platform<int> > platform = DefaultPlatform<int>::getPlatform();
-  RCP<Comm<int> > comm = platform->createComm();
+  RCP<const Comm<int> > comm = platform->getComm();
 
   //
   // Get test parameters from command-line processor
@@ -118,11 +118,18 @@ int main(int argc, char *argv[]) {
   // Get the data from the HB file and build the Map,Matrix
   //
   int dim,dim2,nnz;
+  int rnnzmax;
   double *dvals;
   int *colptr,*rowind;
   nnz = -1;
   if (MyPID == 0) {
     info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+    // find maximum NNZ over all rows
+    vector<int> rnnz(dim,0);
+    for (int *ri=rowind; ri<rowind+nnz; ++ri) {
+      ++rnnz[*ri-1];
+    }
+    rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
   }
   else {
     // address uninitialized data warnings
@@ -133,6 +140,7 @@ int main(int argc, char *argv[]) {
   broadcast(*comm,0,&info);
   broadcast(*comm,0,&nnz);
   broadcast(*comm,0,&dim);
+  broadcast(*comm,0,&rnnzmax);
   if (info == 0 || nnz < 0) {
     if (MyPID == 0) {
       cout << "Error reading '" << filename << "'" << endl
@@ -141,8 +149,8 @@ int main(int argc, char *argv[]) {
     return -1;
   }
   // create map
-  Map<int> map(dim,0,*platform);
-  RCP<CrsMatrix<int,ST> > A = rcp(new CrsMatrix<int,ST>(map));
+  Map<int> map(dim,0,comm);
+  RCP<CrsMatrix<ST,int> > A = rcp(new CrsMatrix<ST,int>(map,rnnzmax));
   if (MyPID == 0) {
     // HB format is compressed column. CrsMatrix is compressed row.
     const double *dptr = dvals;
@@ -166,10 +174,10 @@ int main(int argc, char *argv[]) {
   A->fillComplete();
 
   // Create initial vectors
-  RCP<MultiVector<int,ST> > B, X;
-  X = rcp( new MultiVector<int,ST>(map,numrhs) );
+  RCP<MultiVector<ST,int> > B, X;
+  X = rcp( new MultiVector<ST,int>(map,numrhs) );
   MVT::MvRandom( *X );
-  B = rcp( new MultiVector<int,ST>(map,numrhs) );
+  B = rcp( new MultiVector<ST,int>(map,numrhs) );
   OPT::Apply( *A, *X, *B );
   MVT::MvInit( *X, 0.0 );
 
@@ -238,7 +246,7 @@ int main(int argc, char *argv[]) {
   bool badRes = false;
   std::vector<MT> actual_resids( numrhs );
   std::vector<MT> rhs_norm( numrhs );
-  MultiVector<int,ST> resid(map, numrhs);
+  MultiVector<ST,int> resid(map, numrhs);
   OPT::Apply( *A, *X, resid );
   MVT::MvAddMv( -one, resid, one, *B, resid );
   MVT::MvNorm( resid, actual_resids );
