@@ -29,41 +29,30 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_VP_CONSTANT_HPP
-#define PHX_EXAMPLE_VP_CONSTANT_HPP
+#ifndef PHX_EXAMPLE_EDGE_HPP
+#define PHX_EXAMPLE_EDGE_HPP
 
+#include <vector>
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_MDField.hpp"
+#include "AlgebraicTypes.hpp"
+#include "Cell.hpp"
 
-#include "Dimension.hpp"
-
-template<typename EvalT, typename Traits>
-class Constant : 
-  public PHX::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits> {
+//! A representation of a mesh edge composed of two adjacent cells.  
+class MyEdge {
   
 public:
+
+  MyEdge() {}
   
-  Constant(Teuchos::ParameterList& p);
+  ~MyEdge() {}
   
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
-  
-  void evaluateFields(typename Traits::EvalData ud);
+  const std::vector<MyCell>& getCells() const
+  {return cells_;}
   
 private:
   
-  typedef typename EvalT::ScalarT ScalarT;
+  std::vector<MyCell> cells_;
 
-  ScalarT value;
-
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> constant;
-
-  //! Not neede for problem, but included for some unit testing
-  std::size_t dummy_workset_size;
 };
-
-#include "Evaluator_Constant_Def.hpp"
 
 #endif

@@ -29,41 +29,29 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_VP_CONSTANT_HPP
-#define PHX_EXAMPLE_VP_CONSTANT_HPP
-
-#include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_MDField.hpp"
-
-#include "Dimension.hpp"
-
-template<typename EvalT, typename Traits>
-class Constant : 
-  public PHX::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits> {
+//**********************************************************************
+PHX_EVALUATOR_CTOR_NAMESPACE(MyApp,Constant,p) :
+  value( p.get<double>("Value") ),
+  constant( p.get<std::string>("Name"), 
+	    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
+{
+  this->addEvaluatedField(constant);
   
-public:
-  
-  Constant(Teuchos::ParameterList& p);
-  
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
-  
-  void evaluateFields(typename Traits::EvalData ud);
-  
-private:
-  
-  typedef typename EvalT::ScalarT ScalarT;
+  std::string n = "Constant Provider: " + constant.fieldTag().name();
+  this->setName(n);
+}
 
-  ScalarT value;
+//**********************************************************************
+PHX_POST_REGISTRATION_SETUP(MyApp::Constant,fm)
+{
+  this->utils.setFieldData(constant,fm);
 
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> constant;
+  for (std::size_t i = 0; i < static_cast<std::size_t>(constant.size()); ++i)
+    constant[i] = value;
+}
 
-  //! Not neede for problem, but included for some unit testing
-  std::size_t dummy_workset_size;
-};
+//**********************************************************************
+PHX_EVALUATE_FIELDS(MyApp::Constant,workset)
+{ }
 
-#include "Evaluator_Constant_Def.hpp"
-
-#endif
+//**********************************************************************

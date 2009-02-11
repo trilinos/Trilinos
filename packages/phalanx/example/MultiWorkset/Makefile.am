@@ -29,7 +29,44 @@
 # ************************************************************************
 #@HEADER
 
-#np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
-#np# List all subdirectories even if one or more are configured/built only
-#np# conditionally.
-SUBDIRS = EnergyFlux MultiDimensionalArray FEM_Nonlinear FEM_Nonlinear_VBR MultiWorkset
+include $(top_builddir)/Makefile.export.phalanx
+
+# The following line helps the test harness recover from build errors.
+
+all-local:
+
+if USING_GNUMAKE
+EXAMPLE_LIBS     = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(PHALANX_LIBS))
+EXAMPLE_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(PHALANX_INCLUDES))
+else
+EXAMPLE_LIBS     = $(PHALANX_LIBS)
+EXAMPLE_INCLUDES = $(PHALANX_INCLUDES)
+endif
+
+AM_CPPFLAGS = -I$(srcdir)/evaluators $(EXAMPLE_INCLUDES)
+
+EXEEXT = .exe
+
+if BUILD_EXAMPLES
+noinst_PROGRAMS = example_multiworkset
+endif
+
+example_multiworkset_SOURCES = \
+	$(srcdir)/Example_MultiWorkset.cpp \
+	$(srcdir)/Algebraic_Types.hpp \
+	$(srcdir)/Traits.hpp \
+	$(srcdir)/Traits.cpp \
+	$(srcdir)/MultiWorkset_FactoryTraits.hpp \
+	$(srcdir)/Cell.hpp \
+	$(srcdir)/Cell.cpp \
+	$(srcdir)/Edge.hpp \
+	$(srcdir)/MultiWorkset.hpp \
+	$(srcdir)/evaluators/Evaluator_Constant.hpp \
+	$(srcdir)/evaluators/Evaluator_Constant_Def.hpp \
+	$(srcdir)/evaluators/Evaluator_Density.hpp \
+	$(srcdir)/evaluators/Evaluator_Density_Def.hpp
+
+example_multiworkset_DEPENDENCIES = \
+	$(top_builddir)/src/libphalanx.a
+
+example_multiworkset_LDADD = $(EXAMPLE_LIBS)

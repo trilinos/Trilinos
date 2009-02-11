@@ -33,36 +33,17 @@
 #define PHX_EXAMPLE_VP_CONSTANT_HPP
 
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_MDField.hpp"
+#include "Phalanx_Evaluator_Macros.hpp"
+#include "Phalanx_Field.hpp"
 
-#include "Dimension.hpp"
+namespace MyApp {
 
-template<typename EvalT, typename Traits>
-class Constant : 
-  public PHX::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits> {
-  
-public:
-  
-  Constant(Teuchos::ParameterList& p);
-  
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
-  
-  void evaluateFields(typename Traits::EvalData ud);
-  
-private:
-  
-  typedef typename EvalT::ScalarT ScalarT;
-
+PHX_EVALUATOR_CLASS(Constant)
   ScalarT value;
+  PHX::Field<ScalarT> constant;
+PHX_EVALUATOR_CLASS_END
 
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> constant;
-
-  //! Not neede for problem, but included for some unit testing
-  std::size_t dummy_workset_size;
-};
+}
 
 #include "Evaluator_Constant_Def.hpp"
 

@@ -371,7 +371,34 @@ Note that you do not have to use the workset idea.  You could just
 pass in workset size equal to the number of local cells on the
 processor or you could use a workset size of one cell and wrap the
 evaluate call in a loop over the number of cells.  Be aware that this
-can result in a big performance hit.
+can result in a possibly large performance hit.
+
+<li><b>%Workset Type</b>
+
+In the definition of a workset above, the workset iterated over a set
+of cells.  Phalanx, in fact, does not restrict you to cell based
+iteration.  For example, you could iterate over a set of edges for the
+workset if using a finite volume method.  In addition, if you would
+like to be able to iterate over multiple workset types (i.e. both
+cells and edges) in the same evaluation, you now have to differetiate
+between the workset types for the iterations.  The "Workset Type" is a
+std::string value that is used to differentiate between multiple
+workset iterators during an evaluation.
+
+To set up Phalanx for multiple workset support, there are
+postRegistrationSetup calls that accept multiple workset sizes
+associated with their their "Workset Type".
+
+\code
+  std::map<std::string,std::size_t> workset_types_and_sizes;
+  workset_types_and_sizes["Cells"} = 20;
+  workset_types_and_sizes["Edges"} = 24;
+
+  field_manager.postRegistrationSetup(workset_types_and_sizes);
+\endcode
+
+A Field is associated with a workset type using information in the
+fields associated data layout.
 
 <li><b>Consistent Evaluation</b>
 
@@ -1264,6 +1291,8 @@ You do not need to use the Field objects to access field data.  You can get the 
 
 \ref faq7
 
+\ref faq8
+
 \section faq1 1. Why name it Phalanx?  
 The phalanx was one of the most dominant military formations of the Greek armies in the classical period.  It was a strictly ordered formation.  The Phalanx software library figures out ordered dependencies of field evaluators.   A second more obscure reference relates to the US Navy.  The Phalanx software package was designed to provide nonlinear functionality for the <a href="http://trilinos.sandia.gov/packages/intrepid">Intrepid</a> itegration library.  Intrepid was the name of an aircraft carrier during in WW II.  Modern US aircraft carriers are protected by a Close-In Weapons System (CIWS) named the Phalanx.  Finally, the PI of this project is an avid strategy warfare gamer and leans towards military references.
 
@@ -1284,6 +1313,8 @@ See the section on \ref performance in the Users Guide that gives recomendations
 
 \section faq7 7. Compilation take a long time when minor changes are made to an evaluator.  How can I speed this up?
 See the section on \ref performance in the Users Guide.  Explicit template instantiation can be used.
+\section faq8 8. Valgrind gives a memory leak error in all evaluators when using the PHX::ContiguousAllocator with Sacado::DFad based fields.  What is the problem?
+The contiguous allocator is allocating space for all variables in an evaluation type in a single contiguous chunk of memory.  We allow for multiple scalar types in an evaluation type so the array is allocated using the type char and then based on scalar type sizes (using sizeof method) along with proper alignment, pointers to blocks of memory are handed to the fields using a reinterpret_cast.  DFad uses new to allocate the derivative arrays, so this memory is not contiguous.  The problem is that the field array memory is deleted as a char instead of it's various data types, so all DFad derivative arrays are leaked during the destruction.  There are two ways to alleviate this: (1) write a special Allocator to call the destructor of the field type for each field.  (2) Have Sacado implement a version of DFad that allows the user to allocate the DFad array and pass in the pointer during construction.  This will also require a new allocator.  Choice (2) will be handed in Phalanx in a later release.  Our current suggestion is that one should use DFad only if using the PHX::NewAllocator and use SFad if using the PHX::ContiguousAllocator. 
 
 */
 

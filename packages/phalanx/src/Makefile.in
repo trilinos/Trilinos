@@ -259,6 +259,7 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_DataLayout_MDALayout_Def.hpp \
 	$(srcdir)/Phalanx_DataLayout_MDALayout.hpp \
 	$(srcdir)/Phalanx_DataLayout.hpp \
+	$(srcdir)/Phalanx_DefaultWorksetName.hpp \
 	$(srcdir)/Phalanx_DoxygenDocumentation.hpp \
 	$(srcdir)/Phalanx_EvaluationContainer_Base_Def.hpp \
 	$(srcdir)/Phalanx_EvaluationContainer_Base.hpp \

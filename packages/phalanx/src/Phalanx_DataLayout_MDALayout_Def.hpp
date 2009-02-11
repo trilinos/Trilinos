@@ -102,7 +102,9 @@ template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 MDALayout(size_type size1, size_type size2, size_type size3, 
 	  size_type size4, size_type size5, size_type size6,
-	  size_type size7, size_type size8)
+	  size_type size7, size_type size8, 
+	  const std::string& workset_type) :
+  m_workset_type(workset_type)
 { 
   PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,8>();
 
@@ -135,7 +137,9 @@ template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 MDALayout(size_type size1, size_type size2, size_type size3, 
 	  size_type size4, size_type size5, size_type size6,
-	  size_type size7)
+	  size_type size7, 
+	  const std::string& workset_type) :
+  m_workset_type(workset_type)
 { 
   PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,7>();
 
@@ -165,7 +169,9 @@ template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 MDALayout(size_type size1, size_type size2, size_type size3, 
-	  size_type size4, size_type size5, size_type size6)
+	  size_type size4, size_type size5, size_type size6, 
+	  const std::string& workset_type) :
+  m_workset_type(workset_type)
 { 
   PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,6>();
 
@@ -193,7 +199,9 @@ template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 MDALayout(size_type size1, size_type size2, size_type size3, 
-	  size_type size4, size_type size5)
+	  size_type size4, size_type size5, 
+	  const std::string& workset_type) :
+  m_workset_type(workset_type)
 { 
   PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,5>();
 
@@ -219,7 +227,9 @@ template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 MDALayout(size_type size1, size_type size2, size_type size3, 
-	  size_type size4)
+	  size_type size4, 
+	  const std::string& workset_type) :
+  m_workset_type(workset_type)
 { 
   PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,4>();
 
@@ -242,7 +252,9 @@ MDALayout(size_type size1, size_type size2, size_type size3,
 template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(size_type size1, size_type size2, size_type size3)
+MDALayout(size_type size1, size_type size2, size_type size3, 
+	  const std::string& workset_type) :
+  m_workset_type(workset_type)
 { 
   PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,3>();
 
@@ -263,7 +275,9 @@ MDALayout(size_type size1, size_type size2, size_type size3)
 template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(size_type size1, size_type size2)
+MDALayout(size_type size1, size_type size2, 
+	  const std::string& workset_type) :
+  m_workset_type(workset_type)
 { 
   PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,2>();
 
@@ -282,7 +296,8 @@ MDALayout(size_type size1, size_type size2)
 template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-MDALayout(size_type size1)
+MDALayout(size_type size1, const std::string& workset_type) :
+  m_workset_type(workset_type)
 { 
   PHX::Check_num_ctor_arguments_equal_to_num_template_arguments<Rank,1>();
 
@@ -343,6 +358,15 @@ size() const
 template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 std::string PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+worksetType() const
+{ 
+  return m_workset_type; 
+}
+
+//**********************************************************************
+template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+std::string PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 identifier() const
 { 
   return m_identifier; 
@@ -384,7 +408,7 @@ std::string PHX::MDALayout<Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 createIdentifier()
 {
   std::ostringstream os;
-  os << "MDA<";
+  os << "MDA(" << m_workset_type << ")<";
   for (std::size_t i=0; i < m_dim_name.size(); ++i) {
     if (i > 0)
       os << ",";

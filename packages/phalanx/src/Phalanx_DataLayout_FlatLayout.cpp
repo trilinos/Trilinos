@@ -35,9 +35,11 @@
 
 //**********************************************************************
 PHX::FlatLayout::FlatLayout(const std::string& unique_identifier, 
-			    std::size_t size) :
+			    std::size_t size,
+			    const std::string& workset_type) :
   m_name(unique_identifier),
-  m_size(size)
+  m_size(size),
+  m_workset_type(workset_type)
 { }
 
 //**********************************************************************
@@ -78,10 +80,14 @@ PHX::DataLayout::size_type PHX::FlatLayout::size() const
 { return m_size; }
 
 //**********************************************************************
+std::string PHX::FlatLayout::worksetType() const
+{ return m_workset_type; }
+
+//**********************************************************************
 std::string PHX::FlatLayout::identifier() const
 { 
   std::ostringstream ost;
-  ost << this->name() << this->size();
+  ost << this->worksetType() << "::" << this->name() << this->size();
   return ost.str(); 
 }
 

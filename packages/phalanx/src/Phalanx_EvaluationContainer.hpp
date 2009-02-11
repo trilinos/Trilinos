@@ -63,7 +63,8 @@ namespace PHX {
     template <typename DataT> 
     Teuchos::ArrayRCP<DataT> getFieldData(const PHX::FieldTag& f);
 
-    void postRegistrationSetup(std::size_t max_num_cells,
+    void postRegistrationSetup(const std::map<std::string,std::size_t>& 
+			       workset_sizes,
 			       PHX::FieldManager<Traits>& fm);
 
     void evaluateFields(typename Traits::EvalData d);

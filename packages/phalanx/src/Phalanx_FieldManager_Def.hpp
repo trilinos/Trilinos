@@ -36,6 +36,7 @@
 #include "Sacado_mpl_find.hpp"
 #include "boost/mpl/at.hpp"
 #include "Phalanx_EvaluationContainer_TemplateBuilder.hpp"
+#include <sstream>
 
 // **************************************************************
 template<typename Traits>
@@ -45,7 +46,7 @@ PHX::FieldManager<Traits>::FieldManager()
   m_num_evaluation_types = 
     Sacado::mpl::size<typename Traits::EvalTypes>::value;
   
-  m_max_num_cells.resize(m_num_evaluation_types);
+  m_workset_sizes.resize(m_num_evaluation_types);
 
   PHX::EvaluationContainer_TemplateBuilder<Traits> builder;
   m_eval_containers.buildObjects(builder);
@@ -156,7 +157,7 @@ template<typename Traits>
 template<typename EvalT>
 inline
 void PHX::FieldManager<Traits>::
-postRegistrationSetupForType(std::size_t max_num_cells)
+postRegistrationSetupForType(std::size_t workset_size)
 {
   std::size_t index = 
     Sacado::mpl::find<typename Traits::EvalTypes,EvalT>::value;
@@ -164,25 +165,60 @@ postRegistrationSetupForType(std::size_t max_num_cells)
   //unsigned index = 
   //  boost::mpl::find<typename Traits::EvalTypes,EvalT>::type::pos::value;
 
-  m_max_num_cells[index] = max_num_cells;
+  m_workset_sizes[index][PHX::default_workset_name] = workset_size;
 
   m_eval_containers.template getAsObject<EvalT>()->
-    postRegistrationSetup(m_max_num_cells[index], *this);
+    postRegistrationSetup(m_workset_sizes[index], *this);
 }
 
 // **************************************************************
 template<typename Traits>
 inline
 void PHX::FieldManager<Traits>::
-postRegistrationSetup(std::size_t max_num_cells)
+postRegistrationSetup(std::size_t workset_size)
 {
-  for (std::size_t i = 0; i < m_max_num_cells.size(); ++i)
-    m_max_num_cells[i] = max_num_cells;
+  for (std::size_t i = 0; i < m_workset_sizes.size(); ++i)
+    m_workset_sizes[i][PHX::default_workset_name] = workset_size;
 
   typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::iterator it = m_eval_containers.begin();
-  for (; it != m_eval_containers.end(); ++it)
-    it->postRegistrationSetup(max_num_cells, *this);
+  for (std::size_t i = 0; it != m_eval_containers.end(); ++it, ++i)
+    it->postRegistrationSetup(m_workset_sizes[i], *this);
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT>
+inline
+void PHX::FieldManager<Traits>::
+postRegistrationSetupForType(const std::map<std::string,std::size_t>&
+			     workset_size)
+{
+  std::size_t index = 
+    Sacado::mpl::find<typename Traits::EvalTypes,EvalT>::value;
+  // boost equivalent of above statement:
+  //unsigned index = 
+  //  boost::mpl::find<typename Traits::EvalTypes,EvalT>::type::pos::value;
+
+  m_workset_sizes[index] = workset_size;
+
+  m_eval_containers.template getAsObject<EvalT>()->
+    postRegistrationSetup(m_workset_sizes[index], *this);
+}
+
+// **************************************************************
+template<typename Traits>
+inline
+void PHX::FieldManager<Traits>::
+postRegistrationSetup(const std::map<std::string,std::size_t>& workset_size)
+{
+  for (std::size_t i = 0; i < m_workset_sizes.size(); ++i)
+    m_workset_sizes[i] = workset_size;
+
+  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
+  typename SCTM::iterator it = m_eval_containers.begin();
+  for (std::size_t i = 0; it != m_eval_containers.end(); ++it, ++i)
+    it->postRegistrationSetup(m_workset_sizes[i], *this);
 }
 
 // **************************************************************
@@ -219,11 +255,29 @@ postEvaluate(typename Traits::PostEvalData d)
 template<typename Traits>
 template<typename EvalT>
 inline
-std::size_t PHX::FieldManager<Traits>::getMaxNumCells() const
+std::size_t PHX::FieldManager<Traits>::
+getWorksetSize(const std::string& workset_type)
 {
   std::size_t index = 
     Sacado::mpl::find<typename Traits::EvalTypes,EvalT>::value;
-  return m_max_num_cells[index];
+
+  std::map<std::string,std::size_t>::iterator it;
+  it = m_workset_sizes[index].find(workset_type);
+
+  if (it == m_workset_sizes[index].end()) {
+    std::ostringstream msg;
+    msg << "Error - Workset type \"" << workset_type
+	<< "\" is was not found in FieldManager!  Valid types are:";
+    for (std::map<std::string,std::size_t>::const_iterator i = 
+	   m_workset_sizes[index].begin(); 
+	 i != m_workset_sizes[index].end(); ++i) {
+      msg << i->first << " = " << i->second << std::endl; 
+    }
+    TEST_FOR_EXCEPTION(it == m_workset_sizes[index].end(), std::logic_error,
+		       msg.str());
+  }
+  
+  return it->second;
 }
 
 // **************************************************************

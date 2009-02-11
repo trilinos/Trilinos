@@ -29,9 +29,12 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_SCALAR_CONTAINER_BASE_HPP
-#define PHX_SCALAR_CONTAINER_BASE_HPP
+#ifndef PHX_EVALUATION_CONTAINER_BASE_HPP
+#define PHX_EVALUATION_CONTAINER_BASE_HPP
 
+#include <cstddef>
+#include <string>
+#include <map>
 #include "Phalanx_Evaluator_Manager.hpp"
 
 namespace PHX {
@@ -52,7 +55,8 @@ namespace PHX {
     virtual void 
     registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
 
-    virtual void postRegistrationSetup(std::size_t max_num_cells,
+    virtual void postRegistrationSetup(const std::map<std::string,std::size_t>&
+				       workset_sizes,
 				       PHX::FieldManager<Traits>& vm) = 0;
 
     virtual void evaluateFields(typename Traits::EvalData d) = 0;

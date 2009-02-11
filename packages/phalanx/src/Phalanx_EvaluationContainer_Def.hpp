@@ -32,8 +32,10 @@
 #ifndef PHX_SCALAR_CONTAINER_DEF_HPP
 #define PHX_SCALAR_CONTAINER_DEF_HPP
 
+#include "Teuchos_TestForException.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_TypeStrings.hpp"
+#include <sstream>
 
 // *************************************************************************
 template <typename EvalT, typename Traits>
@@ -70,7 +72,8 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 // *************************************************************************
 template <typename EvalT, typename Traits> 
 void PHX::EvaluationContainer<EvalT, Traits>::
-postRegistrationSetup(std::size_t max_num_cells,
+postRegistrationSetup(const std::map<std::string,std::size_t>& 
+		      workset_sizes,
 		      PHX::FieldManager<Traits>& fm)
 {
   // Figure out all evaluator dependencies
@@ -91,8 +94,25 @@ postRegistrationSetup(std::size_t max_num_cells,
     for (; it != data_container_template_manager_.end(); ++it) {
       
       if ((*var)->dataTypeInfo() == it->dataTypeInfo()) {
+
 	std::size_t size_of_data_type = it->getSizeOfDataType();
-	int num_elements = max_num_cells * (*var)->dataLayout().size();
+
+	const PHX::DataLayout& dl = (*var)->dataLayout();
+
+	if (workset_sizes.find(dl.worksetType()) == workset_sizes.end()) {
+	  std::ostringstream msg;
+	  msg << "Error - the workset type: \"" << dl.worksetType()
+	      << "\" was NOT found in the list of worksets given in the postRegistrationSetupFunction:\n";
+	  for (std::map<std::string,std::size_t>::const_iterator i = 
+		 workset_sizes.begin(); i != workset_sizes.end(); ++i)
+	    msg << i->first << " = " << i->second << std::endl; 
+	  TEST_FOR_EXCEPTION(workset_sizes.find(dl.worksetType()) == 
+			     workset_sizes.end(), std::logic_error, msg.str());
+	}
+
+	int num_elements = 
+	  workset_sizes.find(dl.worksetType())->second * dl.size();
+
 	allocator_.addRequiredChunk(size_of_data_type, num_elements);
       }
     }
@@ -108,7 +128,9 @@ postRegistrationSetup(std::size_t max_num_cells,
     for (; it != data_container_template_manager_.end(); ++it) {
       
       if ((*var)->dataTypeInfo() == it->dataTypeInfo()) {
-	it->allocateField(*var, max_num_cells, allocator_);
+	const PHX::DataLayout& dl = (*var)->dataLayout();
+	it->allocateField(*var, workset_sizes.find(dl.worksetType())->second, 
+			  allocator_);
       }
     }
   }

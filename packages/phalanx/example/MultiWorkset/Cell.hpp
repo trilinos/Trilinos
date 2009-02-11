@@ -29,41 +29,41 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_VP_CONSTANT_HPP
-#define PHX_EXAMPLE_VP_CONSTANT_HPP
+#ifndef PHX_EXAMPLE_CELL_HPP
+#define PHX_EXAMPLE_CELL_HPP
 
+#include <vector>
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_MDField.hpp"
+#include "AlgebraicTypes.hpp"
 
-#include "Dimension.hpp"
-
-template<typename EvalT, typename Traits>
-class Constant : 
-  public PHX::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits> {
+//! A representation of a finite element cell.  This is not a realistic element, but is meant to represent what an element would act like (the actual basis functions values and node coordinates are fake).
+class MyCell {
   
 public:
+
+  MyCell();
   
-  Constant(Teuchos::ParameterList& p);
+  virtual ~MyCell() {}
   
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
+  std::vector< MyVector<double> >& getNodeCoordinates();
   
-  void evaluateFields(typename Traits::EvalData ud);
+  std::vector< std::vector<double> >& getBasisFunctions();
   
+  std::vector< std::vector< MyVector<double> > >& getBasisFunctionGradients();
+
+  std::size_t localIndex();
+
+  void setLocalIndex(std::size_t index);
+
 private:
   
-  typedef typename EvalT::ScalarT ScalarT;
+  std::size_t local_index_;
 
-  ScalarT value;
-
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> constant;
-
-  //! Not neede for problem, but included for some unit testing
-  std::size_t dummy_workset_size;
+  std::vector< MyVector<double> > coords_;
+  
+  std::vector< std::vector<double> > phi_;
+  
+  std::vector< std::vector< MyVector<double> > > grad_phi_;
 };
-
-#include "Evaluator_Constant_Def.hpp"
 
 #endif

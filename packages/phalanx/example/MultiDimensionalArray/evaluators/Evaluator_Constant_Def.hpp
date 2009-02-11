@@ -52,6 +52,11 @@ postRegistrationSetup(PHX::FieldManager<Traits>& vm)
 
   for (std::size_t i = 0; i < static_cast<std::size_t>(constant.size()); ++i)
     constant[i] = value;
+
+  // This line and the member dummy_workset_size are used for test
+  // converage of the function getWorksetSize().  It is not needed for
+  // this provider. Please ignore the following line!
+  dummy_workset_size = this->utils.getWorksetSize(constant,vm);
 }
 
 //**********************************************************************

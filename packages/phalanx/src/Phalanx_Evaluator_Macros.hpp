@@ -96,6 +96,13 @@
 
 
 // **********************************************************************
+//! Macro definition of an evaluator constructor for a namespaced object
+#define PHX_EVALUATOR_CTOR_NAMESPACE(NAMESPACE,NAME,PLIST)		\
+  template<typename EvalT, typename Traits>				\
+  NAMESPACE::NAME<EvalT, Traits>::NAME(const Teuchos::ParameterList& PLIST)
+
+
+// **********************************************************************
 //! Macro definition for the evaluator postRegistrationSetup method
 #define PHX_POST_REGISTRATION_SETUP(NAME,FIELD_MANAGER)			\
   template<typename EvalT, typename Traits>				\

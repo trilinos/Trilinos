@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
       // identifier()
       {
 	cout << "Testing identifier() accessor...";
-	TEST_FOR_EXCEPTION(node4->identifier() != std::string("Nodes4"), 
+	TEST_FOR_EXCEPTION(node4->identifier() != std::string("cell::Nodes4"), 
 			   std::logic_error,
 			   "name() accessor failed!");
 	cout << "passed!" << endl;
@@ -233,7 +233,7 @@ int main(int argc, char *argv[])
       {
 	cout << "Testing identifier() accessor...";
 	TEST_FOR_EXCEPTION(n_mat.identifier() != 
-			   std::string("MDA<Cell,Node,Spatial,Spatial>(100,4,2,2)"), 
+			   std::string("MDA(cell)<Cell,Node,Spatial,Spatial>(100,4,2,2)"), 
 			   std::logic_error,
 			   "name() accessor failed!");
 	cout << "passed!" << endl;

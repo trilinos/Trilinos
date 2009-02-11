@@ -42,18 +42,33 @@
 #include "Phalanx_Traits_Base.hpp"
 
 // Include User Data Types
-#include "Phalanx_ConfigDefs.hpp"
-#include "Sacado.hpp"
-#include "Dimension.hpp"
-#include "Element_Linear2D.hpp"
-#include "Workset.hpp"
-#include "Phalanx_Allocator_Contiguous.hpp"
+#include "Phalanx_ConfigDefs.hpp" // for std::vector
+#include "AlgebraicTypes.hpp"
+#include "MultiWorkset.hpp"
+#include "Phalanx_Allocator_New.hpp"
 
 // Debugging information
 #include "Phalanx_TypeStrings.hpp"
 
 namespace PHX {
 
+  /*! \brief Struct to define traits for the FieldManager.
+    
+      The user must define a number of objects in the traits class:
+      
+      \item EvalTypes - an mpl::vector of user defined evaluation types.  Each evaluation type must have a typedef member called ScalarT that provides the default scalar type.  This is used to automate the building of evaluators for each evaluation type using the EvaluatorFactory.
+      
+      \item EvalToDataMap - an mpl::map.  The key is an evaluation type and the value is an mpl::vector of valid data types for that particular evaluation type.
+      
+      \item Allocator type - type that defines the allocator class to use to allocate the memory for data storage.
+      
+      \item EvalData - A user defined type to be passed in to the evaluateFields() call.  Allows users to pass in arbitrary data on the cells.
+
+      \item PreEvalData - A user defined type to be passed in to the preEvaluate() call.  Allows users to pass in arbitrary data on the cells.
+
+      \item EvalData - A user defined type to be passed in to the postEvaluate() call.  Allows users to pass in arbitrary data on the cells.
+
+  */
   struct MyTraits : public PHX::TraitsBase {
     
     // ******************************************************************
@@ -62,7 +77,7 @@ namespace PHX {
     
     // Scalar types we plan to use
     typedef double RealType;
-    typedef Sacado::Fad::SFad<double,8> FadType;
+    typedef Sacado::Fad::DFad<double> FadType;
     
     // ******************************************************************
     // *** Evaluation Types
@@ -78,10 +93,16 @@ namespace PHX {
     // Create the data types for each evaluation type
     
     // Residual (default scalar type is RealType)
-    typedef Sacado::mpl::vector<RealType> ResidualDataTypes;
+    typedef Sacado::mpl::vector< RealType, 
+				 MyVector<RealType>,
+				 MyTensor<RealType> 
+    > ResidualDataTypes;
   
     // Jacobian (default scalar type is Fad<double, double>)
-    typedef Sacado::mpl::vector<FadType> JacobianDataTypes;
+    typedef Sacado::mpl::vector< FadType,
+				 MyVector<FadType>,
+				 MyTensor<FadType> 
+    > JacobianDataTypes;
 
     // Maps the key EvalType a vector of DataTypes
     typedef boost::mpl::map<
@@ -92,12 +113,12 @@ namespace PHX {
     // ******************************************************************
     // *** Allocator Type
     // ******************************************************************
-    typedef PHX::ContiguousAllocator<double> Allocator;
+    typedef PHX::NewAllocator Allocator;
 
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
-    typedef const MyWorkset& EvalData;
+    typedef const MyMultiWorkset& EvalData;
     typedef void* PreEvalData;
     typedef void* PostEvalData;
 
@@ -106,7 +127,7 @@ namespace PHX {
   // ******************************************************************
   // ******************************************************************
   // Debug strings.  Specialize the Evaluation and Data types for the
-  // TypeString object in phalanx/src/Phalanx_TypeString.hpp.
+  // TypeString object in the phalanx/src/Phalanx_TypeStrings.hpp file.
   // ******************************************************************
   // ******************************************************************
 
@@ -121,7 +142,19 @@ namespace PHX {
   template<> struct TypeString<double> 
   { static const std::string value; };
 
-  template<> struct TypeString< Sacado::Fad::SFad<double,8> > 
+  template<> struct TypeString< MyVector<double> > 
+  { static const std::string value; };
+
+  template<> struct TypeString< MyTensor<double> > 
+  { static const std::string value; };
+
+  template<> struct TypeString< Sacado::Fad::DFad<double> > 
+  { static const std::string value; };
+
+  template<> struct TypeString< MyVector<Sacado::Fad::DFad<double> > > 
+  { static const std::string value; };
+
+  template<> struct TypeString< MyTensor<Sacado::Fad::DFad<double> > > 
   { static const std::string value; };
 
 }

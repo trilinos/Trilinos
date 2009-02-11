@@ -29,41 +29,13 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_VP_CONSTANT_HPP
-#define PHX_EXAMPLE_VP_CONSTANT_HPP
+#ifndef PHX_DEFAULT_WORKSET_NAME_HPP
+#define PHX_DEFAULT_WORKSET_NAME_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_MDField.hpp"
+namespace PHX {
 
-#include "Dimension.hpp"
+  static const std::string default_workset_name = "cell";
 
-template<typename EvalT, typename Traits>
-class Constant : 
-  public PHX::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits> {
-  
-public:
-  
-  Constant(Teuchos::ParameterList& p);
-  
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
-  
-  void evaluateFields(typename Traits::EvalData ud);
-  
-private:
-  
-  typedef typename EvalT::ScalarT ScalarT;
-
-  ScalarT value;
-
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> constant;
-
-  //! Not neede for problem, but included for some unit testing
-  std::size_t dummy_workset_size;
-};
-
-#include "Evaluator_Constant_Def.hpp"
+}
 
 #endif

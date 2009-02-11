@@ -33,6 +33,8 @@
 #define PHX_FIELD_MANAGER_HPP
 
 #include <cstddef>
+#include <string>
+#include <map>
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -42,6 +44,7 @@
 #include "Phalanx_Field.hpp"
 #include "Phalanx_MDField.hpp"
 #include "Phalanx_EvaluationContainer_TemplateManager.hpp"
+#include "Phalanx_DefaultWorksetName.hpp"
 
 namespace PHX {
 
@@ -81,12 +84,21 @@ namespace PHX {
     template<typename DataT, typename EvalT> 
     void getFieldData(const PHX::FieldTag& t, Teuchos::ArrayRCP<DataT>& d);
     
-    //! Allows for different size worksets for each evaluation type
+    //! Sets the workset size for a single evaluation type, using the default workset type
     template<typename EvalT>
-    void postRegistrationSetupForType(std::size_t max_num_cells);
+    void postRegistrationSetupForType(std::size_t workset_size);
 
-    //! Forces the same size workset for all evaluation types
-    void postRegistrationSetup(std::size_t max_num_cells);
+    //! Forces the same size workset for all evaluation types, using the default workset type
+    void postRegistrationSetup(std::size_t workset_size);
+
+    //! Sets the workset size for a single evaluation type, using multiple user defined workset types
+    template<typename EvalT>
+    void postRegistrationSetupForType(const std::map<std::string,std::size_t>&
+				      workset_size);
+
+    //! Forces the same size workset for all evaluation types, using multiple user defined workset types
+    void postRegistrationSetup(const std::map<std::string,std::size_t>&
+			       workset_size);
 
     template<typename EvalT>
     void evaluateFields(typename Traits::EvalData d);
@@ -98,7 +110,8 @@ namespace PHX {
     void postEvaluate(typename Traits::PostEvalData d);
 
     template<typename EvalT>
-    std::size_t getMaxNumCells() const;
+    std::size_t getWorksetSize(const std::string& workset_type = 
+			       PHX::default_workset_name);
 
     //! Return iterator to first EvaluationContainer
     typename FieldManager::iterator begin();
@@ -116,7 +129,8 @@ namespace PHX {
 
     PHX::EvaluationContainer_TemplateManager<Traits> m_eval_containers;
 
-    std::vector<std::size_t> m_max_num_cells;
+    //! Vector size corresponds to number of evaluation types.
+    std::vector< std::map<std::string,std::size_t> > m_workset_sizes;
 
   };
 

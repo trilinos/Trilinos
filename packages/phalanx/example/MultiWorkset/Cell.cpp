@@ -29,41 +29,49 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_VP_CONSTANT_HPP
-#define PHX_EXAMPLE_VP_CONSTANT_HPP
+#include "Cell.hpp"
 
-#include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_MDField.hpp"
+//**********************************************************************
+MyCell::MyCell() :
+  phi_(4),
+  grad_phi_(4)
+{ 
+  for (std::size_t i=0; i < phi_.size(); ++i)
+    phi_[i].resize(4,0.25);
 
-#include "Dimension.hpp"
+  for (std::size_t i=0; i < grad_phi_.size(); ++i)
+    grad_phi_[i].resize(4,MyVector<double>(0.25,0.25,0.25));
+}
 
-template<typename EvalT, typename Traits>
-class Constant : 
-  public PHX::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits> {
-  
-public:
-  
-  Constant(Teuchos::ParameterList& p);
-  
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
-  
-  void evaluateFields(typename Traits::EvalData ud);
-  
-private:
-  
-  typedef typename EvalT::ScalarT ScalarT;
+//**********************************************************************
+std::vector< MyVector<double> >& MyCell::getNodeCoordinates()
+{
+  return coords_;
+}
 
-  ScalarT value;
+//**********************************************************************
+std::vector< std::vector<double> >& MyCell::getBasisFunctions()
+{
+  return phi_;
+}
 
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> constant;
+//**********************************************************************
+std::vector< std::vector< MyVector<double> > >& 
+MyCell::getBasisFunctionGradients()
+{
+  return grad_phi_;
+}
 
-  //! Not neede for problem, but included for some unit testing
-  std::size_t dummy_workset_size;
-};
+//**********************************************************************
+std::size_t MyCell::localIndex()
+{
+  return local_index_;
+}
 
-#include "Evaluator_Constant_Def.hpp"
+//**********************************************************************
+void MyCell::setLocalIndex(std::size_t index)
+{
+  local_index_ = index;
+}
 
-#endif
+//**********************************************************************

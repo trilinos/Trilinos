@@ -458,6 +458,7 @@ AC_CONFIG_FILES([
 		example/MultiDimensionalArray/Makefile
 		example/FEM_Nonlinear/Makefile
 		example/FEM_Nonlinear_VBR/Makefile
+		example/MultiWorkset/Makefile
 		test/Makefile
 		test/Utilities/Makefile
 		test/Allocators/Makefile

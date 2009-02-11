@@ -29,41 +29,30 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_VP_CONSTANT_HPP
-#define PHX_EXAMPLE_VP_CONSTANT_HPP
+#ifndef EXAMPLE_FACTORY_TRAITS_HPP
+#define EXAMPLE_FACTORY_TRAITS_HPP
 
-#include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_MDField.hpp"
+// mpl (Meta Programming Library) templates
+#include "boost/mpl/vector.hpp"
 
-#include "Dimension.hpp"
+// User Defined Evaluator Types
+#include "Evaluator_Constant.hpp"
+#include "Evaluator_Density.hpp"
 
-template<typename EvalT, typename Traits>
-class Constant : 
-  public PHX::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits> {
-  
-public:
-  
-  Constant(Teuchos::ParameterList& p);
-  
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
-  
-  void evaluateFields(typename Traits::EvalData ud);
-  
-private:
-  
-  typedef typename EvalT::ScalarT ScalarT;
 
-  ScalarT value;
+#include "boost/mpl/placeholders.hpp"
+using namespace boost::mpl::placeholders;
 
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> constant;
+template<typename Traits>
+struct MyFactoryTraits {
+  
+  static const int id_constant = 0;
+  static const int id_density = 1;
 
-  //! Not neede for problem, but included for some unit testing
-  std::size_t dummy_workset_size;
+  typedef boost::mpl::vector< MyApp::Constant<_,Traits>,             // 0
+			      MyApp::Density<_,Traits>               // 1
+  > EvaluatorTypes;
+
 };
-
-#include "Evaluator_Constant_Def.hpp"
 
 #endif

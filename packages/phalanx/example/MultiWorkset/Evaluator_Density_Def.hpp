@@ -29,41 +29,33 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_VP_CONSTANT_HPP
-#define PHX_EXAMPLE_VP_CONSTANT_HPP
+//**********************************************************************
+PHX_EVALUATOR_CTOR_NAMESPACE(MyApp,Density,p) :
+  density("Density", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") ),
+  temp("Temperature", p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout") )
+{ 
+  this->addEvaluatedField(density);
+  this->addDependentField(temp);
+  this->setName("Density");
+}
 
-#include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_MDField.hpp"
+//**********************************************************************
+PHX_POST_REGISTRATION_SETUP(MyApp::Density,fm)
+{
+  this->utils.setFieldData(density,fm);
+  this->utils.setFieldData(temp,fm);
 
-#include "Dimension.hpp"
+  // This line and the member workset_size are used for test converage
+  // of the function getWorksetSize().  It is not needed for this
+  // provider. Please ignore the following line!
+  workset_size = this->utils.getWorksetSize(density,fm);
+}
 
-template<typename EvalT, typename Traits>
-class Constant : 
-  public PHX::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits> {
-  
-public:
-  
-  Constant(Teuchos::ParameterList& p);
-  
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
-  
-  void evaluateFields(typename Traits::EvalData ud);
-  
-private:
-  
-  typedef typename EvalT::ScalarT ScalarT;
+//**********************************************************************
+PHX_EVALUATE_FIELDS(MyApp::Density,workset)
+{ 
+  for (int i = 0; i < density.size(); ++i)
+    density[i] =  temp[i] * temp[i];
+}
 
-  ScalarT value;
-
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> constant;
-
-  //! Not neede for problem, but included for some unit testing
-  std::size_t dummy_workset_size;
-};
-
-#include "Evaluator_Constant_Def.hpp"
-
-#endif
+//**********************************************************************

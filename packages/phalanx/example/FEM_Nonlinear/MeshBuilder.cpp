@@ -47,7 +47,7 @@ MeshBuilder::MeshBuilder(const Teuchos::RCP<Epetra_Comm>& comm,
   m_num_global_elements(m_num_elements_x * m_num_elements_y),
   m_debug_level(debug_level),
   m_print_process(m_comm->MyPID() == 0),
-  m_my_elements(new std::vector<Element_Linear2D>(0))
+  m_my_elements(Teuchos::rcp(new std::vector<Element_Linear2D>(0)))
 {
   
   int num_procs = m_comm->NumProc();

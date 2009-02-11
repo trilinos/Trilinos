@@ -33,6 +33,7 @@
 #define PHX_DATA_LAYOUT_FLAT_LAYOUT
 
 #include "Phalanx_DataLayout.hpp"
+#include "Phalanx_DefaultWorksetName.hpp"
 #include <string>
 
 namespace PHX{
@@ -41,7 +42,8 @@ namespace PHX{
 
   public:
 
-    FlatLayout(const std::string& unique_identifier, std::size_t i);
+    FlatLayout(const std::string& unique_identifier, std::size_t i,
+	       const std::string& workset_type = PHX::default_workset_name);
 
     virtual ~FlatLayout();
 
@@ -55,6 +57,8 @@ namespace PHX{
 
     virtual size_type size() const;
 
+    virtual std::string worksetType() const;
+
     virtual std::string identifier() const;
 
     virtual void print(std::ostream& os, int indent = 0) const;
@@ -64,6 +68,8 @@ namespace PHX{
     const std::string m_name;
 
     const size_type m_size;
+
+    const std::string m_workset_type;
 
   };
 

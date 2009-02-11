@@ -61,6 +61,25 @@ namespace PHX {
       fm.template getFieldData<DataT,EvalT>(f);
     }
 
+    template <typename DataT>
+    std::size_t getWorksetSize(PHX::Field<DataT>& f, 
+			       PHX::FieldManager<Traits>& fm) 
+    {
+      return fm.template 
+	getWorksetSize<EvalT>(f.fieldTag().dataLayout().worksetType());
+    }
+
+    template <typename DataT, PHX::ArrayOrder Order,
+	      typename Tag0, typename Tag1, typename Tag2, typename Tag3,
+	      typename Tag4, typename Tag5, typename Tag6, typename Tag7>
+    std::size_t getWorksetSize(PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,
+			       Tag4,Tag5,Tag6,Tag7>& f, 
+			       PHX::FieldManager<Traits>& fm) 
+    {
+      return fm.template
+	getWorksetSize<EvalT>(f.fieldTag().dataLayout().worksetType());
+    }
+
   };
 }
 

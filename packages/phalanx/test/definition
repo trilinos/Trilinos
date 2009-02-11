@@ -21,7 +21,8 @@ PACKAGE_NAME=Phalanx
     DIRS = ../example/EnergyFlux,
            ../example/MultiDimensionalArray,
            ../example/FEM_Nonlinear,
-           ../example/FEM_Nonlinear_VBR;
+           ../example/FEM_Nonlinear_VBR,
+           ../example/MultiWorkset;
     EXIT-STATUS = STRING-COMPARISON(Run has completed successfully!);
     ARGS = -v;
     COMM = SERIAL, MPI;

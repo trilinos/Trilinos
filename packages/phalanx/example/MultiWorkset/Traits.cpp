@@ -29,41 +29,33 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PHX_EXAMPLE_VP_CONSTANT_HPP
-#define PHX_EXAMPLE_VP_CONSTANT_HPP
+// ******************************************************************
+// ******************************************************************
+// Debug strings.  Specialize the Evaluation and Data types for the
+// TypeString object in the phalanx/src/Phalanx_TypeStrings.hpp file.
+// ******************************************************************
+// ******************************************************************
 
-#include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_Evaluator_WithBaseImpl.hpp"
-#include "Phalanx_Evaluator_Derived.hpp"
-#include "Phalanx_MDField.hpp"
+#include "Traits.hpp"
 
-#include "Dimension.hpp"
+const std::string PHX::TypeString<PHX::MyTraits::Residual>::value = "Residual";
 
-template<typename EvalT, typename Traits>
-class Constant : 
-  public PHX::EvaluatorWithBaseImpl<Traits>,
-  public PHX::EvaluatorDerived<EvalT, Traits> {
-  
-public:
-  
-  Constant(Teuchos::ParameterList& p);
-  
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
-  
-  void evaluateFields(typename Traits::EvalData ud);
-  
-private:
-  
-  typedef typename EvalT::ScalarT ScalarT;
+const std::string PHX::TypeString<PHX::MyTraits::Jacobian>::value = "Jacobian";
 
-  ScalarT value;
+const std::string PHX::TypeString<double>::value = "double";
 
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> constant;
+const std::string PHX::TypeString< MyVector<double> >::value = 
+  "MyVector<double>";
 
-  //! Not neede for problem, but included for some unit testing
-  std::size_t dummy_workset_size;
-};
+const std::string PHX::TypeString< MyTensor<double> >::value = 
+  "MyTensor<double>";
 
-#include "Evaluator_Constant_Def.hpp"
+const std::string PHX::TypeString< Sacado::Fad::DFad<double> >::value = 
+  "Sacado::Fad::DFad<double>";
 
-#endif
+const std::string PHX::TypeString< MyVector<Sacado::Fad::DFad<double> > >::value = 
+  "Sacado::Fad::DFad< MyVector<double> >";
+
+const std::string PHX::TypeString< MyTensor<Sacado::Fad::DFad<double> > >::value = 
+  "Sacado::Fad::DFad< MyTensor<double> >";
+

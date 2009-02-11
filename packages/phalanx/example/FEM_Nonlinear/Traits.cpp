@@ -44,5 +44,5 @@ const std::string PHX::TypeString<PHX::MyTraits::Jacobian>::value = "Jacobian";
 
 const std::string PHX::TypeString<double>::value = "double";
 
-const std::string PHX::TypeString< Sacado::Fad::DFad<double> >::value = 
-  "Sacado::Fad::DFad<double>";
+const std::string PHX::TypeString< Sacado::Fad::SFad<double,8> >::value = 
+  "Sacado::Fad::SFad<double,8>";
