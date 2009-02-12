@@ -28,8 +28,8 @@
 // @HEADER
 */
 
-#ifndef GLOBIPACK_GOLDEN_BRACKET_QUAD_INTERP_DECL_HPP
-#define GLOBIPACK_GOLDEN_BRACKET_QUAD_INTERP_DECL_HPP
+#ifndef GLOBIPACK_BRENTS_1D_MINIMIZATION_DECL_HPP
+#define GLOBIPACK_BRENTS_1D_MINIMIZATION_DECL_HPP
 
 
 #include "GlobiPack_MeritFunc1DBase.hpp"
@@ -41,15 +41,15 @@
 namespace GlobiPack {
 
 
-/** \brief Simple concrete class that implements a 1D algorithm to bracket the
- * minimum of a 1D merit function.
+/** \brief Simple concrete class that implements a 1D algorithm to mimimize a
+ * 1D function.
  *
  * ToDo: Finish Documentation!
  */
 template<typename Scalar>
-class GoldenQuadInterpBracket
+class Brents1DMinimization
   : public Teuchos::Describable,
-    public Teuchos::VerboseObject<GoldenQuadInterpBracket<Scalar> >,
+    public Teuchos::VerboseObject<Brents1DMinimization<Scalar> >,
     public Teuchos::ParameterListAcceptorDefaultBase
 {
 public:
@@ -58,7 +58,7 @@ public:
   //@{
 
   /** \brief Construct with default parameters. */
-  GoldenQuadInterpBracket();
+  Brents1DMinimization();
 
   //@}
 
@@ -75,53 +75,44 @@ public:
   /** \name Bracket. */
   //@{
 
-  /** \brief Bracket the minimum of a 1D function.
+  /** \brief Approximatly mimimize a 1D function.
    *
    * \param phi [in] The evaluator object for the merit function which
    * evaluates <tt>phi(alpha)</tt>).
    *
-   * \param pointLower [in/out] In input, <tt>*pointLower</tt> give the
-   * initial guess for the lower bound for the point.  This lower bound will
-   * be respected and will never be violated.  On output, <tt>*pointLower<tt>
-   * gives the lower bound for the bracket of the minimum.  The derivative
-   * field <tt>pointLower->Dphi</tt> is not accessed.
+   * \param pointLower [in] Gives the lower bound for the point.  This lower
+   * bound will be respected and will never be violated.  The derivative field
+   * <tt>pointLower->Dphi</tt> is not accessed.
    *
    * \param pointMiddle [in/out] In input, <tt>*pointMiddle</tt> give the
    * initial guess for the point.  On output, <tt>*pointMiddle<tt> gives the
-   * bracketed minimum.  The derivative field <tt>pointUpper->Dphi</tt> is not
-   * accessed.
-   *
-   * \param pointUpper [out] On output, <tt>*pointUpper<tt> gives the upper
-   * bound for the bracket of the minimum.  The derivative field
+   * approximate minumum solution.  The derivative field
    * <tt>pointUpper->Dphi</tt> is not accessed.
+   *
+   * \param pointUpper [in] Gives the upper bound for the point.  The
+   * derivative field <tt>pointUpper->Dphi</tt> is not accessed.
    *
    * \param numIters [out] If not null, on output, <tt>numIters<tt> gives the
    * number of iterations used.
    *
-   * \return Returns <tt>true</tt> if a bracket has been found, <tt>false</tt>
-   * otherwise.
+   * \return Returns <tt>true</tt> if an approximate local minimum has been
+   * found, <tt>false</tt> otherwise.
    *
    * <b>Preconditions:</b><ul>
    *
-   * <li><tt>pointLower->alpha < pointMiddle->alpha</tt>
+   * <li><tt>pointLower.alpha < pointMiddle->alpha && pointMiddle->alpha <
+   * pointUpper.alpha</tt>
    *
-   * </ul>
-   *
-   * <b>Postconditions:</b><ul>
-   *
-   * <li>[<tt>returnVal==true</tt>] <tt>pointLower->alpha < pointMiddle->alpha
-   * && pointMiddle->alpha < pointUpper->alpha</tt>
-   *
-   * <li>[<tt>returnVal==true</tt>] <tt>pointLower->phi > pointMiddle->phi
-   * && pointMiddle->phi < pointUpper->phi</tt>
+   * <li><tt>pointLower.phi > pointMiddle->phi && pointMiddle->phi <
+   * pointUpper.phi</tt>
    *
    * </ul>
    */
-  bool bracketMinimum(
+  bool approxMinimize(
     const MeritFunc1DBase<Scalar> &phi,
-    const Ptr<PointEval1D<Scalar> > &pointLower,
+    const PointEval1D<Scalar> &pointLower,
     const Ptr<PointEval1D<Scalar> > &pointMiddle,
-    const Ptr<PointEval1D<Scalar> > &pointUpper,
+    const PointEval1D<Scalar> &pointUpper,
     const Ptr<int> &numIters = Teuchos::null
     ) const;
 
@@ -132,36 +123,46 @@ private:
   // //////////////////////
   // Private data members
 
+  Scalar rel_tol_;
+  Scalar bracket_tol_;
+  int max_iters_;
+
 };
 
 
 /** \brief Nonmember constructor.
  *
- * \relates GoldenQuadInterpBracket
+ * \relates Brents1DMinimization
  */
 template<typename Scalar>
 inline
-const RCP<GoldenQuadInterpBracket<Scalar> > goldenQuadInterpBracket()
+const RCP<Brents1DMinimization<Scalar> > brents1DMinimization()
 {
-  return Teuchos::rcp(new GoldenQuadInterpBracket<Scalar>());
+  return Teuchos::rcp(new Brents1DMinimization<Scalar>());
 }
 
 
 // Default values are exposed here for unit testing purposes
 
 
-namespace GoldenQuadInterpBracketUtils {
+namespace Brents1DMinimizationUtils {
 
 
-const std::string eta_name = "Armijo Slope Fraction";
-const double eta_default = 1.0e-4;
+const std::string rel_tol_name = "Relative Tol";
+const double rel_tol_default = 1.0e-5;
+
+const std::string bracket_tol_name = "Bracket Tol";
+const double bracket_tol_default = 1.0e-5;
+
+const std::string max_iters_name = "Max Iterations";
+const int max_iters_default = 10;
 
 
-} // namespace GoldenQuadInterpBracketUtils
+} // namespace Brents1DMinimizationUtils
 
 
 
 } // namespace GlobiPack
 
 
-#endif // GLOBIPACK_GOLDEN_BRACKET_QUAD_INTERP_DECL_HPP
+#endif // GLOBIPACK_BRENTS_1D_MINIMIZATION_DECL_HPP

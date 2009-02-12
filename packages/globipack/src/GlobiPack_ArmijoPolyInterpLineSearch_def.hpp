@@ -121,8 +121,11 @@ void ArmijoPolyInterpLineSearch<Scalar>::setParameterList(
   minIters_ = getParameter<int>(*paramList, AQLSU::minIters_name);
   maxIters_ = getParameter<int>(*paramList, AQLSU::maxIters_name);
   doMaxIters_ = getParameter<bool>(*paramList, AQLSU::doMaxIters_name);
+  TEUCHOS_ASSERT_INEQUALITY( eta_, >=, ST::zero() );
   TEUCHOS_ASSERT_INEQUALITY( eta_, <, ST::one() );
+  TEUCHOS_ASSERT_INEQUALITY( minFrac_, >=, ST::zero() );
   TEUCHOS_ASSERT_INEQUALITY( minFrac_, <, maxFrac_ );
+  TEUCHOS_ASSERT_INEQUALITY( minIters_, >=, 0 );
   TEUCHOS_ASSERT_INEQUALITY( minIters_, <=, maxIters_ );
   setMyParamList(paramList);
 }

@@ -1,13 +1,13 @@
-#include "GlobiPack_ArmijoPolyInterpLineSearch_decl.hpp"
+#include "GlobiPack_Brents1DMinimization_decl.hpp"
 
 #ifdef HAVE_GLOBIPACK_EXPLICIT_INSTANTIATION
 
-#include "GlobiPack_ArmijoPolyInterpLineSearch_def.hpp"
+#include "GlobiPack_Brents1DMinimization_def.hpp"
 #include "Teuchos_ExplicitInstantiationHelpers.hpp"
 
 namespace GlobiPack {
 
-TEUCHOS_CLASS_TEMPLATE_INSTANT_REAL_SCALAR_TYPES(ArmijoPolyInterpLineSearch)
+TEUCHOS_CLASS_TEMPLATE_INSTANT_REAL_SCALAR_TYPES(Brents1DMinimization)
 
 } // namespace GlobiPack
 

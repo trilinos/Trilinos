@@ -100,7 +100,6 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
   const Scalar GOLDEN_RATIO = 1.618033988749895;
   const Scalar SMALL_DIV = 1e-20;
   const Scalar MAX_EXTRAP_FACTOR = 100.0;
-  const int MAX_BACKTRACK = 8;
   const int MAX_TOTAL_ITERS = 30;
 
   *out << "\nStarting golden quadratic interpolating bracketing of the minimum ...\n\n";
@@ -124,10 +123,10 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
   
   tblout.pushFieldSpec("itr", TO::INT);
   tblout.pushFieldSpec("alpha_l", TO::DOUBLE);
-  tblout.pushFieldSpec("phi_l", TO::DOUBLE);
   tblout.pushFieldSpec("alpha_m", TO::DOUBLE);
-  tblout.pushFieldSpec("phi_m", TO::DOUBLE);
   tblout.pushFieldSpec("alpha_u", TO::DOUBLE);
+  tblout.pushFieldSpec("phi_l", TO::DOUBLE);
+  tblout.pushFieldSpec("phi_m", TO::DOUBLE);
   tblout.pushFieldSpec("phi_u", TO::DOUBLE);
   tblout.pushFieldSpec("step type             ", TO::STRING);
 
@@ -138,15 +137,15 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
   std::string stepType = "";
 
   //
-  // A) ???
+  // A) Find phi_l > phi_m first
   //
 
   tblout.outputField("-");
   tblout.outputField(alpha_l);
-  tblout.outputField(phi_l);
   tblout.outputField(alpha_m);
-  tblout.outputField(phi_m);
   tblout.outputField("-");
+  tblout.outputField(phi_l);
+  tblout.outputField(phi_m);
   tblout.outputField("-");
   tblout.outputField("start");
   tblout.nextRow();
@@ -155,35 +154,22 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
 
     // ToDo: Put in a check for NAN and backtrack if you find it!
 
-    if (phi_m < phi_l) {
+    if (phi_l > phi_m) {
       break;
     }
-    
-    if (icount <= MAX_BACKTRACK) {
-      stepType = "golden";
-      alpha_u = alpha_m;
-      phi_u = phi_m;
-      alpha_m = goldinv * (alpha_u + GOLDEN_RATIO*alpha_l);
-      phi_m = computeValue<Scalar>(phi, alpha_m);
-    }
-    else {
-      stepType = "safe";
-        tmp = alpha_l;
-      alpha_l = alpha_m;
-      alpha_m = tmp;
-      tmp = phi_m;
-      phi_m = phi_l;
-      phi_l = tmp;
-      alpha_u = zero;
-      // 2009/02/11: rabartl: I don't think this makes sense?
-    }
+
+    stepType = "golden back";
+    alpha_u = alpha_m;
+    phi_u = phi_m;
+    alpha_m = goldinv * (alpha_u + GOLDEN_RATIO*alpha_l);
+    phi_m = computeValue<Scalar>(phi, alpha_m);
 
     tblout.outputField(icount);
     tblout.outputField(alpha_l);
-    tblout.outputField(phi_l);
     tblout.outputField(alpha_m);
-    tblout.outputField(phi_m);
     tblout.outputField(alpha_u);
+    tblout.outputField(phi_l);
+    tblout.outputField(phi_m);
     tblout.outputField(phi_u);
     tblout.outputField(stepType);
     tblout.nextRow();
@@ -227,7 +213,7 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
     const Scalar alpha_lim = alpha_m + MAX_EXTRAP_FACTOR * (alpha_u-alpha_m);
     
     // now detect which interval alpha_quad is in and act accordingly
-    bool nextIter = false;
+    bool skipToNextIter = false;
     Scalar phi_quad = ST::nan();
     if ( (alpha_m-alpha_quad)*(alpha_quad-alpha_u) > zero ) {  // [alpha_m, alpha_u]
       phi_quad = computeValue<Scalar>(phi, alpha_quad);
@@ -236,14 +222,14 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
         phi_l = phi_m;
         alpha_m = alpha_quad;
         phi_m = phi_quad;
-        nextIter = true;
-        stepType = "middle";
+        skipToNextIter = true;
+        stepType = "alpha_quad middle";
       }
       else if (phi_quad > phi_m) {                   // use points [a, b, alpha_quad]
         alpha_u = alpha_quad;
         phi_u = phi_quad;
-        nextIter = true;
-        stepType = "upper";
+        skipToNextIter = true;
+        stepType = "alpha_quad upper";
       }
       else {
         alpha_quad = alpha_u + GOLDEN_RATIO*(alpha_u-alpha_m);
@@ -251,7 +237,7 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
       }
     }
 
-    if (!nextIter) {
+    if (!skipToNextIter) {
       
       if ((alpha_u-alpha_quad)*(alpha_quad-alpha_lim) > zero) {  // [alpha_u, alpha_lim]
         phi_quad = computeValue<Scalar>(phi, alpha_quad);
@@ -289,10 +275,10 @@ bool GoldenQuadInterpBracket<Scalar>::bracketMinimum(
     
     tblout.outputField(icount);
     tblout.outputField(alpha_l);
-    tblout.outputField(phi_l);
     tblout.outputField(alpha_m);
-    tblout.outputField(phi_m);
     tblout.outputField(alpha_u);
+    tblout.outputField(phi_l);
+    tblout.outputField(phi_m);
     tblout.outputField(phi_u);
     tblout.outputField(stepType);
     tblout.nextRow();

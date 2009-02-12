@@ -102,6 +102,25 @@ computeValue(const MeritFunc1DBase<Scalar> &phi, const Scalar &alpha)
 }
 
 
+/** \brief Compute a point as an object.
+ *
+ * \relates MeritFunc1DBase
+ */
+template<typename Scalar>
+PointEval1D<Scalar>
+computePoint(const MeritFunc1DBase<Scalar> &phi, const Scalar &alpha,
+  const bool compute_phi = true, const bool compute_Dphi = false)
+{
+  using Teuchos::null;
+  using Teuchos::outArg;
+  PointEval1D<Scalar> p;
+  p.alpha = alpha;
+  phi.eval( alpha, compute_phi ? outArg(p.phi) : null ,
+    compute_Dphi ? outArg(p.Dphi) : null );
+  return p;
+}
+
+
 } // namespace GlobiPack
 
 

@@ -18,7 +18,7 @@ using GlobiPack::testLagrPolyMeritFunc1D;
 using GlobiPack::GoldenQuadInterpBracket;
 using GlobiPack::goldenQuadInterpBracket;
 using GlobiPack::PointEval1D;
-using GlobiPack::computeValue;
+using GlobiPack::computePoint;
 using Teuchos::as;
 using Teuchos::inOutArg;
 using Teuchos::outArg;
@@ -67,7 +67,7 @@ TEUCHOS_STATIC_SETUP()
 // very first iteration
 //
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( GoldenQuadInterpBracket, quadExact, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( GoldenQuadInterpBracket, bracket, Scalar )
 {
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -86,15 +86,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( GoldenQuadInterpBracket, quadExact, Scalar )
 
   for (int i = 0; i < as<int>(alpha.size()); ++i ) {
 
-    PointEval1D<Scalar> p_l;
-    //p_l.alpha = ( i > 0 ? min(as<Scalar>(1.9), alpha[i-1]) : ST::zero());
-    p_l.alpha = ST::zero();
-    p_l.phi = computeValue<Scalar>(*phi, p_l.alpha);
-    
-    PointEval1D<Scalar> p_m;
-    p_m.alpha = alpha[i];
-    p_m.phi = computeValue<Scalar>(*phi, p_m.alpha);
-    
+    PointEval1D<Scalar> p_l = computePoint(*phi, ST::zero());
+    PointEval1D<Scalar> p_m = computePoint(*phi, alpha[i]);
     PointEval1D<Scalar> p_u;
     int numIters = -1;
 
@@ -121,7 +114,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( GoldenQuadInterpBracket, quadExact, Scalar )
 
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( GoldenQuadInterpBracket, quadExact )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( GoldenQuadInterpBracket, bracket )
 
 
 } // namespace
