@@ -42,8 +42,6 @@ ComplexDummy_SOURCES = Dummy
 Tpetra_bl_cg_hb_SOURCES = $(srcdir)/test_bl_cg_hb.cpp 
 Tpetra_bl_cg_hb_multiprec_SOURCES = $(srcdir)/test_bl_cg_hb_multiprec.cpp 
 
-#resolve_cg_hb_SOURCES = $(srcdir)/test_resolve_cg_hb.cpp $(srcdir)/createTpetraProblem.cpp
-
 Tpetra_bl_cg_complex_hb_SOURCES = $(srcdir)/test_bl_cg_complex_hb.cpp 
 
 Tpetra_bl_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
@@ -53,10 +51,6 @@ Tpetra_bl_cg_hb_multiprec_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriu
 			$(top_builddir)/../tpetra/src/libtpetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-#resolve_cg_hb_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \
-#			$(top_builddir)/../tpetra/src/libtpetra.a \
-#			$(top_builddir)/../teuchos/src/libteuchos.a
-
 Tpetra_bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
 			$(top_builddir)/../triutils/src/libtriutils.a \
 			$(top_builddir)/../tpetra/src/libtpetra.a \
@@ -65,14 +59,10 @@ Tpetra_bl_cg_complex_hb_DEPENDENCIES = $(top_builddir)/src/libbelos.a \
 Tpetra_bl_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
 Tpetra_bl_cg_hb_multiprec_CXXFLAGS = -I$(top_srcdir)/src 
 
-#resolve_cg_hb_CXXFLAGS = -I$(top_srcdir)/src 
-
 Tpetra_bl_cg_complex_hb_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 Tpetra_bl_cg_hb_LDADD = $(EXPORT_LIBS)
 Tpetra_bl_cg_hb_multiprec_LDADD = $(EXPORT_LIBS)
-
-#resolve_cg_hb_LDADD = $(EXPORT_LIBS)
 
 Tpetra_bl_cg_complex_hb_LDADD = $(EXPORT_LIBS)
 

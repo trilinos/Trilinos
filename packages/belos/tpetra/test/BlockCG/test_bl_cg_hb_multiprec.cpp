@@ -271,6 +271,9 @@ int main(int argc, char *argv[])
     for (int *ri=rowind; ri<rowind+nnz; ++ri) {
       ++rnnz[*ri-1];
     }
+    for (int c=0; c<dim; ++c) {
+      rnnz[c] += colptr[c+1]-colptr[c];
+    }
     rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
   }
   else {
