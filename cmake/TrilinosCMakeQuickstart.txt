@@ -285,7 +285,8 @@ C) Configuring
     -D BUILD_SHARED_LIBS:BOOL=ON
 
   NOTE: The above option will result in all shared libraries to be build on
-  all systems (i.e. *.so and Unix/Linux systems, *.dll on Windows systems).
+  all systems (i.e. *.so on Unix/Linux systems, *.dylib on Mac OS X,
+  and *.dll on Windows systems).
 
 (*) Configuring Trilinos to build all packages with all tests and examples:
 
