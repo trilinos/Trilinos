@@ -565,9 +565,11 @@ Final Certification Evidence: [???]
 
 Package: PyTrilinos
 
-Package Transition Lead: [???]
+Package Transition Lead: Bill Spotz
 
-Status: [???]
+Status: Dependency checks for python, numpy and swig are completed.
+        Source files for pytrilinos library compile, but compile flags
+        for library are incomplete.
 
 Final Certification Date: [???]
 
