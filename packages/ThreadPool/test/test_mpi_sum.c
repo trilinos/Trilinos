@@ -59,8 +59,15 @@ static void my_span( const unsigned count , const unsigned rank ,
                      unsigned * begin , unsigned * length )
 {
   const unsigned int max = ( size + count - 1 ) / count ;
-  const unsigned int len = size - ( *begin = max * rank );
-  *length = max < len ? max : len ;
+  const unsigned int end = size - max * ( count - ( rank + 1 ) );
+  if ( rank ) {
+    *begin  = end - max ;
+    *length = max ;
+  }
+  else {
+    *begin  = 0 ;
+    *length = end ;
+  }
 }
 
 /*--------------------------------------------------------------------*/
@@ -365,7 +372,7 @@ void test_ddot_performance(
         const double mflop_mean = mflop / dt_mean ;
         const double mflop_sdev = mflop_mean * dt_sdev / ( dt_mean + dt_sdev );
 
-        fprintf(stdout,"\"DDOT\"  , %8u , %8u , %9.5g , %9.5g , %9.5g , %9.5g\n",
+        fprintf(stdout,"\"D4DOT\" , %8u , %8u , %9.5g , %9.5g , %9.5g , %9.5g\n",
                 length, ncycle, dt_mean, dt_sdev, mflop_mean, mflop_sdev );
         fflush(stdout);
       }
@@ -504,44 +511,75 @@ void test_ddot_accuracy(
 
 /*--------------------------------------------------------------------*/
 
-static void test_main( COMM comm , int nthreads )
+static void test_main(
+  COMM comm , const int test_thread_count , const int test_thread[] )
 {
-  const unsigned lengths[] = { 1e4 , 2e4 , 5e4 ,
-                               1e5 , 2e5 , 5e5 ,
-                               1e6 , 2e6 , 5e6 , 1e7 };
+  const unsigned test_lengths[] = 
+    { 1e4 , 2e4 , 5e4 ,
+      1e5 , 2e5 , 5e5 ,
+      1e6 , 2e6 , 5e6 , 1e7 };
+
+  const unsigned test_count = sizeof(test_lengths) / sizeof(unsigned);
+
+  const double test_mag = 1e4 ;
 
   const unsigned nblock = 1000 ;
-  const unsigned num_tests = sizeof(lengths) / sizeof(unsigned);
   const unsigned num_trials = 11 ;
-  const double mag = 1e4 ;
 
-  test_ddot_accuracy( comm , nthreads , nblock, num_tests, lengths, mag );
-  test_ddot_accuracy( comm , nthreads , 0, num_tests, lengths, mag );
+  int i ;
 
-  test_ddot_performance( comm , nthreads , nblock,
-                         num_trials , num_tests , lengths , mag );
+  for ( i = 0 ; i < test_thread_count ; ++i ) {
 
-  test_ddot_performance( comm , nthreads , 0,
-                         num_trials , num_tests , lengths , mag );
+    test_ddot_accuracy( comm, test_thread[i], nblock,
+                        test_count, test_lengths, test_mag );
+
+    test_ddot_accuracy( comm, test_thread[i], 0,
+                        test_count, test_lengths, test_mag );
+  }
+
+  for ( i = 0 ; i < test_thread_count ; ++i ) {
+
+    test_ddot_performance( comm , test_thread[i] , nblock,
+                           num_trials , test_count , test_lengths , test_mag );
+
+    test_ddot_performance( comm , test_thread[i] , 0,
+                           num_trials , test_count , test_lengths , test_mag );
+  }
 }
 
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
 
+#define TEST_THREAD_MAX 128
+
 #if defined(HAVE_MPI)
 
 int main( int argc , char **argv )
 {
+  int nthread[ TEST_THREAD_MAX ];
+  int i ;
+
   MPI_Init( & argc , & argv );
-  {
-    int i ;
-    for ( i = 1 ; i < argc ; ++i ) {
-      int nthreads = atoi( argv[i] );
-      MPI_Bcast( & nthreads , 1 , MPI_INT , 0 , MPI_COMM_WORLD );
-      test_main( MPI_COMM_WORLD , nthreads );
+
+  for ( i = 0 ; i < TEST_THREAD_MAX ; ++i ) { nthread[i] = 0 ; }
+
+  if ( 0 == comm_rank( MPI_COMM_WORLD ) ) {
+    if ( 1 < argc && argc < TEST_THREAD_MAX ) {
+      nthread[0] = argc - 1 ;
+      for ( i = 1 ; i < argc ; ++i ) { nthread[i] = atoi( argv[i] ); }
+    }
+    else {
+      nthread[0] = 1 ;
+      nthread[1] = 1 ;
     }
   }
+
+  MPI_Bcast( nthread , TEST_THREAD_MAX , MPI_INT , 0 , MPI_COMM_WORLD );
+
+  test_main( MPI_COMM_WORLD , nthread[0] , nthread + 1 );
+
   MPI_Finalize();
+
   return 0 ;
 }
 
@@ -621,19 +659,24 @@ static void comm_reduce_d4_sum( COMM comm , double * val )
 
 int main( int argc , char **argv )
 {
-  if ( 1 < argc ) {
-    int i ;
-    for ( i = 1 ; i < argc ; ++i ) {
-      int nthreads = atoi( argv[i] );
-      test_main( 0 , nthreads );
-    }
+  int nthread[ TEST_THREAD_MAX ];
+  int i ;
+
+  if ( 1 < argc && argc < TEST_THREAD_MAX ) {
+    nthread[0] = argc - 1 ;
+    for ( i = 1 ; i < argc ; ++i ) { nthread[i] = atoi( argv[i] ); }
+    for ( ; i < TEST_THREAD_MAX ; ++i ) { nthread[i] = 0 ; }
   }
   else {
-    int nthreads ;
-    for ( nthreads = 1 ; nthreads <= 16 ; nthreads *= 2 ) {
-      test_main( 0 , nthreads );
-    }
+    nthread[0] = 4 ;
+    nthread[1] = 1 ;
+    nthread[2] = 2 ;
+    nthread[3] = 4 ;
+    nthread[4] = 8 ;
   }
+
+  test_main( 0 , nthread[0] , nthread + 1 );
+
   return 0 ;
 }
 

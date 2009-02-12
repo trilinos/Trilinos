@@ -10,9 +10,9 @@ LIB_SRC="../src/TPI.c ../src/TPI_Walltime.c"
 
 LIB_OBJ="TPI.o TPI_Walltime.o"
 
-#CFLAGS="-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419"
-CFLAGS="-std=c89 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419"
-CCFLAGS="        -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419"
+#CFLAGS="-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd141 -wd1418 -wd1419"
+CFLAGS="-std=c89 -strict-ansi -Wall -Wcheck -Werror -wd141 -wd1418 -wd1419"
+CCFLAGS="        -strict-ansi -Wall -Wcheck -Werror -wd141 -wd1418 -wd1419"
 
 OPT="-O3"
 # OPT="-g"

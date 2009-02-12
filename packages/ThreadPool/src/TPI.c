@@ -102,32 +102,41 @@ static ThreadPool * local_thread_pool()
 int TPI_Lock( int i )
 {
   ThreadPool * const thread_pool = local_thread_pool();
-  const int result = 
-    ( NULL == thread_pool                           ? TPI_ERROR_NULL :
-    ( i < 0 || thread_pool->m_lock_count <= i       ? TPI_ERROR_SIZE :
-    ( pthread_mutex_lock( thread_pool->m_lock + i ) ? TPI_ERROR_LOCK : 0 ) ) );
+
+  int result = i < 0 || thread_pool->m_lock_count <= i ? TPI_ERROR_SIZE : 0 ;
+
+  if ( ! result && pthread_mutex_lock( thread_pool->m_lock + i ) ) {
+    result = TPI_ERROR_LOCK ;
+  }
+
   return result ;
 }
 
 int TPI_Trylock( int i )
 {
   ThreadPool * const thread_pool = local_thread_pool();
-  int p ;
-  const int result = 
-    ( NULL == thread_pool                     ? TPI_ERROR_NULL :
-    ( i < 0 || thread_pool->m_lock_count <= i ? TPI_ERROR_SIZE :
-    ( EBUSY == ( p = pthread_mutex_trylock(thread_pool->m_lock+i) )
-               ? TPI_LOCK_BUSY : ( p ? TPI_ERROR_LOCK : 0 ) ) ) );
+
+  int result = i < 0 || thread_pool->m_lock_count <= i ? TPI_ERROR_SIZE : 0 ;
+
+  if ( ! result ) {
+    result = pthread_mutex_trylock( thread_pool->m_lock + i );
+
+    if ( EBUSY == result ) { result = TPI_LOCK_BUSY ; }
+    else if ( result )     { result = TPI_ERROR_LOCK ; }
+  }
   return result ;
 }
 
 int TPI_Unlock( int i )
 {
   ThreadPool * const thread_pool = local_thread_pool();
-  const int result = 
-    ( NULL == thread_pool                           ? TPI_ERROR_NULL :
-    ( i < 0 || thread_pool->m_lock_count <= i       ? TPI_ERROR_SIZE :
-    ( pthread_mutex_unlock(thread_pool->m_lock + i) ? TPI_ERROR_LOCK : 0 ) ) );
+
+  int result = i < 0 || thread_pool->m_lock_count <= i ? TPI_ERROR_SIZE : 0 ;
+
+  if ( ! result && pthread_mutex_unlock( thread_pool->m_lock + i ) ) {
+    result = TPI_ERROR_LOCK ;
+  }
+
   return result ;
 }
 
@@ -234,8 +243,8 @@ static void * local_thread_pool_driver( void * arg )
 
   thread_pool->m_thread_next = & my_data ;
 
-  pthread_cond_signal(  & thread_pool->m_master_cond );
   pthread_mutex_unlock( & thread_pool->m_master_lock );
+  pthread_cond_signal(  & thread_pool->m_master_cond );
 
   /*------------------------------*/
   /*  While I'm active wait for run signal.
@@ -274,11 +283,8 @@ static void * local_thread_pool_driver( void * arg )
 static int set_lock_count( ThreadPool * const thread_pool ,
                            const int lock_count )
 {
-  int result = 0 ;
-
-  if ( lock_count < 0 || MAXIMUM_LOCK_COUNT < lock_count ) {
-    result = TPI_ERROR_SIZE ;
-  }
+  int result = lock_count < 0 || MAXIMUM_LOCK_COUNT < lock_count
+             ? TPI_ERROR_SIZE : 0 ;
 
   while ( ! result && thread_pool->m_lock_init < lock_count ) {
 
@@ -320,6 +326,8 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
       if ( ! result ) {
         struct TPI_Work_Struct work ;
 
+        thread_pool->m_lock_count = lock_count ;
+
         work.shared     = shared_data ;
         work.lock_count = lock_count ;
         work.work_count = work_count ;
@@ -328,6 +336,8 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
         for ( ; work.work_rank < work.work_count ; ++( work.work_rank ) ) {
           (* subprogram)( & work );
         }
+
+        thread_pool->m_lock_count = 0 ;
       }
     }
     else {
@@ -415,7 +425,7 @@ int TPI_Run_threads( TPI_work_subprogram subprogram  ,
       thread_pool->m_work_routine       = subprogram ;
       thread_pool->m_work_count_pending = thread_pool->m_thread_count ;
 
-      /* Unlock all threads */
+      /* Unlock all worker threads */
       for ( w = thread_pool->m_thread_next ; w ; w = w->m_next ) {
         pthread_mutex_unlock( & w->m_run_lock );
       }
@@ -439,7 +449,7 @@ int TPI_Run_threads( TPI_work_subprogram subprogram  ,
 
       pthread_mutex_unlock( & thread_pool->m_work_lock );
 
-      /* Lock all threads, they must complete to be locked. */
+      /* Lock all worker threads, they must complete to be locked. */
 
       for ( w = thread_pool->m_thread_next ; w ; w = w->m_next ) {
         pthread_mutex_lock( & w->m_run_lock );
@@ -563,15 +573,14 @@ int TPI_Finalize()
 #else
 
 typedef struct LocalWorkData {
-  int * m_lock ;
-  int   m_lock_count ;
-  int   m_active ;
+  int m_active ;
+  int m_lock_count ;
+  int m_lock[ MAXIMUM_LOCK_COUNT ];
 } LocalWork ;
 
 static LocalWork * local_work()
 {
-  static int locks[ MAXIMUM_LOCK_COUNT ];
-  static struct LocalWorkData data = { locks , 0 , 0 };
+  static struct LocalWorkData data = { 0 , 0 };
   return & data ;
 }
 
@@ -580,9 +589,8 @@ int TPI_Lock( int i )
   LocalWork * const work = local_work();
 
   const int result = 
-    ( NULL == work                     ? TPI_ERROR_NULL :
     ( i < 0 || work->m_lock_count <= i ? TPI_ERROR_SIZE :
-    ( work->m_lock[i] )                ? TPI_ERROR_LOCK : 0 ) );
+    ( work->m_lock[i] )                ? TPI_ERROR_LOCK : 0 );
   if ( ! result ) { work->m_lock[i] = 1 ; }
   return result ;
 }
@@ -592,9 +600,8 @@ int TPI_Trylock( int i )
   LocalWork * const work = local_work();
 
   const int result = 
-    ( NULL == work                     ? TPI_ERROR_NULL :
     ( i < 0 || work->m_lock_count <= i ? TPI_ERROR_SIZE :
-    ( work->m_lock[i] )                ? TPI_LOCK_BUSY : 0 ) );
+    ( work->m_lock[i] )                ? TPI_LOCK_BUSY : 0 );
   if ( ! result ) { work->m_lock[i] = 1 ; }
   return result ;
 }
@@ -604,12 +611,24 @@ int TPI_Unlock( int i )
   LocalWork * const work = local_work();
 
   const int result = 
-    ( NULL == work                     ? TPI_ERROR_NULL :
     ( i < 0 || work->m_lock_count <= i ? TPI_ERROR_SIZE :
-    ( ! work->m_lock[i] )              ? TPI_ERROR_LOCK : 0 ) );
+    ( ! work->m_lock[i] )              ? TPI_ERROR_LOCK : 0 );
   if ( ! result ) { work->m_lock[i] = 0 ; }
 
   return result ;
+}
+
+static int set_lock_count( LocalWork * const work , const int lock_count )
+{
+  const int result = lock_count < 0 || MAXIMUM_LOCK_COUNT < lock_count
+                   ? TPI_ERROR_SIZE : 0 ;
+
+  if ( ! result ) {
+    int i ;
+    for ( i = 0 ; i < lock_count ; ++i ) { work->m_lock[i] = 0 ; }
+  }
+
+  return result ; 
 }
 
 int TPI_Run( TPI_work_subprogram subprogram  ,
@@ -618,28 +637,31 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
              const int           lock_count  )
 {
   LocalWork * const work = local_work();
-  int i ;
-  int result = 0 ;
 
-  if ( ! work || work->m_active ) { result = TPI_ERROR_ACTIVE ; }
-
-  if ( ! result && MAXIMUM_LOCK_COUNT <= lock_count ) {
-    result = TPI_ERROR_SIZE ;
-  }
+  int result = work->m_active ? TPI_ERROR_ACTIVE : 0 ;
 
   if ( ! result ) {
-    work->m_active     = 1 ;
-    work->m_lock_count = lock_count ;
 
-    for ( i = 0 ; i < lock_count ; ++i ) { work->m_lock[i] = 0 ; }
+    result = set_lock_count( work , lock_count );
 
-    for ( i = 0 ; i < work_count ; ++i ) {
-      TPI_Work w = { shared_data , lock_count , work_count , i };
-      (*subprogram)( & w );
+    if ( ! result ) {
+      struct TPI_Work_Struct w ;
+
+      work->m_active     = 1 ;
+      work->m_lock_count = lock_count ;
+
+      w.shared     = shared_data ;
+      w.lock_count = lock_count ;
+      w.work_count = work_count ;
+      w.work_rank  = 0 ;
+
+      for ( w.work_rank = 0 ; w.work_rank < work_count ; ++(w.work_rank) ) {
+        (*subprogram)( & w );
+      }
+
+      work->m_active     = 0 ;
+      work->m_lock_count = 0 ;
     }
-
-    work->m_active     = 0 ;
-    work->m_lock_count = 0 ;
   }
 
   return result ;
@@ -649,45 +671,16 @@ int TPI_Run_threads( TPI_work_subprogram subprogram  ,
                      void * const        shared_data ,
                      const int           lock_count  )
 {
-  LocalWork * const work = local_work();
-  int i ;
-  int result = 0 ;
-
-  if ( ! work || work->m_active ) { result = TPI_ERROR_ACTIVE ; }
-
-  if ( ! result && MAXIMUM_LOCK_COUNT <= lock_count ) {
-    result = TPI_ERROR_SIZE ;
-  }
-
-  if ( ! result ) {
-
-    work->m_active     = 1 ;
-    work->m_lock_count = lock_count ;
-
-    for ( i = 0 ; i < lock_count ; ++i ) { work->m_lock[i] = 0 ; }
-
-    {
-      TPI_Work w = { shared_data , lock_count , 1 , 0 };
-      (*subprogram)( & w );
-    }
-
-    work->m_active     = 0 ;
-    work->m_lock_count = 0 ;
-  }
-
-  return result ;
+  return TPI_Run( subprogram , shared_data , 1 , lock_count );
 }
 
-int TPI_Init( int nthread )
+int TPI_Init( int )
 {
   LocalWork * const work = local_work();
-  int result = 0 ;
 
-  nthread = 1 ;
+  int result = work->m_active ? TPI_ERROR_ACTIVE : 0 ;
 
-  if ( ! work || work->m_active ) { result = TPI_ERROR_ACTIVE ; }
-
-  if ( ! result ) { result = nthread ; }
+  if ( ! result ) { result = 1 ; }
 
   return result ;
 }
@@ -695,10 +688,7 @@ int TPI_Init( int nthread )
 int TPI_Finalize()
 {
   LocalWork * const work = local_work();
-  int result = 0 ;
-
-  if ( ! work || work->m_active ) { result = TPI_ERROR_ACTIVE ; }
-
+  const int result = work->m_active ? TPI_ERROR_ACTIVE : 0 ;
   return result ;
 }
 

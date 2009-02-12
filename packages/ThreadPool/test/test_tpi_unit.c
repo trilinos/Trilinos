@@ -4,18 +4,20 @@
 #include <stdio.h>
 #include <TPI.h>
 
-static void test_task_unit( TPI_Work * );
-static void test_task_lock( TPI_Work * );
+static void test_flag( TPI_Work * );
+static void test_lock( TPI_Work * );
 
 int test_c_tpi_unit( const int nthread , const int nwork )
 {
   int * const flags = (int *) malloc( nwork * sizeof(int) );
   const int ntrial = 10 ;
-  int result ;
 
-  result = TPI_Init( nthread );
+  const int result = TPI_Init( nthread );
 
-  printf("  %d = TPI_Init( %d )\n",result,nthread);
+  if ( result != nthread ) {
+    printf("%d != TPI_Init(%d) : FAILED\n",result,nthread);
+    abort();
+  }
 
   /* Unit test */
   {
@@ -25,18 +27,18 @@ int test_c_tpi_unit( const int nthread , const int nwork )
       for ( k = 0 ; k < nthread ; ++k ) { flags[k] = 0 ; }
       {
         const double t = TPI_Walltime();
-        TPI_Run_threads( test_task_unit , flags , 0 );
+        TPI_Run_threads( test_flag , flags , 0 );
         dt += TPI_Walltime() - t ;
       }
       for ( k = 0 ; k < nthread ; ++k ) {
         if ( flags[k] != 1 ) {
-          printf("  test_threads_unit[flag] failed at trial = %d\n",i);
+          printf("  TPI_Run_threads(test_flag) failed at trial = %d\n",i);
           abort();
         }
       }
     }
     dt /= ntrial ;
-    printf("  test_threads_unit[flag] passed, mean time = %f\n",dt);
+    printf("\"  TPI_Run_threads(test_flag,*,0) passed: nthread = %d , mean time = %g\"\n",nthread,dt);
   }
 
   /* Unit test */
@@ -47,18 +49,18 @@ int test_c_tpi_unit( const int nthread , const int nwork )
       for ( k = 0 ; k < nwork ; ++k ) { flags[k] = 0 ; }
       {
         const double t = TPI_Walltime();
-        TPI_Run( test_task_unit , flags , nwork , 0 );
+        TPI_Run( test_flag , flags , nwork , 0 );
         dt += TPI_Walltime() - t ;
       }
       for ( k = 0 ; k < nwork ; ++k ) {
         if ( flags[k] != 1 ) {
-          printf("  test_work_unit[flag] failed at trial = %d\n",i);
+          printf("  TPI_Run(test_flag) failed at trial = %d\n",i);
           abort();
         }
       }
     }
     dt /= ntrial ;
-    printf("  test_work_unit[flag] passed, work = %d , mean time = %f\n",nwork,dt);
+    printf("\"  TPI_Run(test_flag,*,%d,0) passed: mean time = %g\"\n",nwork,dt);
   }
 
   /* Test locking */
@@ -70,15 +72,15 @@ int test_c_tpi_unit( const int nthread , const int nwork )
     for ( i = 0 ; i < ntrial ; ++i ) {
       int ncount = 0 ;
       const double t = TPI_Walltime();
-      TPI_Run( test_task_lock , & ncount , nwork , nlock );
+      TPI_Run( test_lock , & ncount , nwork , nlock );
       dt += TPI_Walltime() - t ;
       if ( ncount != nwork * nlock ) {
-        printf("  test_task_unit[lock] failed at trial = %d\n",i);
+        printf("  TPI_Run(test_lock) failed at trial = %d\n",i);
         abort();
       }
     }
     dt /= ntrial ;
-    printf("  test_task_unit[lock] passed, work = %d , mean time = %f\n",nwork,dt);
+    printf("\"  TPI_Run(test_lock,*,%d,%d) passed: mean time = %g\"\n",nwork,nlock,dt);
   }
 
   TPI_Finalize();
@@ -88,19 +90,13 @@ int test_c_tpi_unit( const int nthread , const int nwork )
   return 0 ;
 }
 
-static void test_task_unit( TPI_Work * task )
+static void test_flag( TPI_Work * task )
 {
-  const int nloop = 10000 ;
-  int * const flag = (int *)( task->shared );
-  int i ;
-  for ( i = 0 ; i < nloop ; ++i ) {
-    flag[ task->work_rank ] += 1 ;
-  }
-  flag[ task->work_rank ] /= nloop ;
-  
+  int * const ncount = (int *)( task->shared );
+  ncount[ task->work_rank ] += 1 ;
 }
 
-static void test_task_lock( TPI_Work * work )
+static void test_lock( TPI_Work * work )
 {
   int * const ncount = (int*)( work->shared );
   int i ;

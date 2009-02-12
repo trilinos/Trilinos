@@ -43,7 +43,7 @@ PACKAGE_ADD_TEST(
 PACKAGE_ADD_TEST(
   test_tpi_sum
   NAME test_tpi_sum_serial
-  ARGS "1 2 4 6 8"
+  ARGS "1 2 4"
   COMM serial
   DIRECTORY .
   )
