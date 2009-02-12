@@ -523,7 +523,7 @@ static void test_main(
 
   const double test_mag = 1e4 ;
 
-  const unsigned nblock = 1000 ;
+  const unsigned nblock = 2500 ;
   const unsigned num_trials = 11 ;
 
   int i ;
