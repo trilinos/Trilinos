@@ -5,8 +5,8 @@ ADD_SUBDIRECTORIES(
   Distributor
   Map
   Directory
-  ImportExport
+  #ImportExport
   MultiVector
-  CrsMatrix
+  #CrsMatrix
   #BasicPerfTest
   )

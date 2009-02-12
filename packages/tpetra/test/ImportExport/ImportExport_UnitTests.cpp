@@ -54,13 +54,16 @@ namespace {
         "Slack off of machine epsilon used to check test results" );
   }
 
-  template<class Ordinal>
-  RCP<const Platform<Ordinal> > getDefaultPlatform()
+  RCP<const Comm<int> > getDefaultComm()
   {
+    RCP<Platform<double> > plat;
     if (testMpi) {
-      return DefaultPlatform<Ordinal>::getPlatform();
+      plat = DefaultPlatform<double>::getPlatform();
     }
-    return rcp(new Tpetra::SerialPlatform<Ordinal>());
+    else {
+      plat = rcp(new Tpetra::SerialPlatform<double>());
+    }
+    return plat->getComm();
   }
 
   //
@@ -70,15 +73,13 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ImportExport, basic, Ordinal )
   {
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    // create a platform  
-    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
     // create a comm  
-    //RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     //const int numImages = comm->getSize();
     //const int myImageID = comm->getRank();
     // create Maps
-    Map<Ordinal> source(as<Ordinal>(-1),as<Ordinal>(10),ZERO,*platform),
-                 target(as<Ordinal>(-1),as<Ordinal>(5) ,ZERO,*platform);
+    Map<Ordinal> source(as<Ordinal>(-1),as<Ordinal>(10),ZERO,comm),
+                 target(as<Ordinal>(-1),as<Ordinal>(5) ,ZERO,comm);
     // create Import object
     Import<Ordinal> importer(source, target);
     
@@ -97,15 +98,13 @@ namespace {
     // import with the importer to duplicate
     // export with the exporter to add and reduce
     typedef ScalarTraits<Scalar> ST;
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
     const Ordinal ONE = OrdinalTraits<Ordinal>::one();
     const Ordinal NEGONE = ZERO - ONE;
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     if (numImages < 2) return;
@@ -119,8 +118,8 @@ namespace {
     neighbors.push_back(myImageID);
     if (myImageID != numImages-1) neighbors.push_back(myImageID+1);
     // two maps: one has one entries per node, the other is the 1-D neighbors
-    Map<Ordinal> smap(NEGONE,numLocal,indexBase,platform), 
-                 tmap(NEGONE,neighbors(),indexBase,platform);
+    Map<Ordinal> smap(NEGONE,numLocal,indexBase,comm), 
+                 tmap(NEGONE,neighbors(),indexBase,comm);
     // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
     MV mvMine(smap,numVectors); 
     for (int j=0; j<numVectors; ++j) {
@@ -197,15 +196,13 @@ namespace {
     // import with the exporter to duplicate
     // export with the importer to add and reduce
     typedef ScalarTraits<Scalar> ST;
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
     const Ordinal ONE = OrdinalTraits<Ordinal>::one();
     const Ordinal NEGONE = ZERO - ONE;
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     if (numImages < 2) return;
@@ -219,8 +216,8 @@ namespace {
     neighbors.push_back(myImageID);
     if (myImageID != numImages-1) neighbors.push_back(myImageID+1);
     // two maps: one has one entries per node, the other is the 1-D neighbors
-    Map<Ordinal> smap(NEGONE,numLocal,indexBase,platform), 
-                 tmap(NEGONE,neighbors(),indexBase,platform);
+    Map<Ordinal> smap(NEGONE,numLocal,indexBase,comm), 
+                 tmap(NEGONE,neighbors(),indexBase,comm);
     // mvMine = [myImageID  myImageID+numImages ... myImageID+4*numImages]
     MV mvMine(smap,numVectors); 
     for (int j=0; j<numVectors; ++j) {

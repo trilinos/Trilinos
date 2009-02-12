@@ -29,7 +29,7 @@
 #ifndef TPETRA_OPERATOR_HPP
 #define TPETRA_OPERATOR_HPP
 
-#include <Teuchos_Object.hpp>
+#include <Teuchos_Describable.hpp>
 #include "Tpetra_MapDecl.hpp"
 #include "Tpetra_MultiVector.hpp"
 
@@ -38,21 +38,21 @@ namespace Tpetra {
   /** \brief Abstract interface for linear operators that accept Tpetra
    * MultiVectors.
    */
-  template<typename Ordinal, typename Scalar>
-	class Operator : public Teuchos::Object {
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal>
+	class Operator : public Teuchos::Describable {
 	public:
 
 		/** \name Pure virtual functions to be overridden by subclasses. */
     //@{
 
 		//! Returns the Map associated with the domain of this operator.
-		virtual const Map<Ordinal> & getDomainMap() const = 0;
+		virtual const Map<LocalOrdinal,GlobalOrdinal> & getDomainMap() const = 0;
 
 		//! Returns the Map associated with the range of this operator.
-		virtual const Map<Ordinal> & getRangeMap() const = 0;
+		virtual const Map<LocalOrdinal,GlobalOrdinal> & getRangeMap() const = 0;
 
     //! Computes the matrix-vector multiplication y = Ax.
-		virtual void apply(const MultiVector<Ordinal,Scalar> &X, MultiVector<Ordinal,Scalar> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
+		virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> &X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
 
     //@}
 

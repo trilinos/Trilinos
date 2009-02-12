@@ -32,38 +32,33 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>
-#include <Teuchos_Object.hpp>
+#include <Teuchos_Describable.hpp>
 
 namespace Tpetra {
 
   //! Tpetra::Platform: The Tpetra Platform Abstract Base Class
-  /*! Platform is an abstract base class. 
-      Platform is used to generate Comm instances. It also manages platform-specific information, 
-      such as how inter-image communication is implemented.
-      An implementation of Platform (e.g., SerialPlatform) will create corresponding classes,
-      (e.g., SerialComm). These will then be cast to their base class, and passed back to 
-      other Tpetra modules. As a result, other Tpetra modules don't need to know anything about 
-      the platform they're running on, or any implementation-specific details.
-  */
 
-  template<typename Ordinal>
-  class Platform : public Teuchos::Object {
+  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
+  class Platform : public Teuchos::Describable {
   public:
   
     //! @name Constructor/Destructor Methods
     //@{ 
 
     //! Constructor
-    Platform(const std::string &str);
+    Platform();
+
+    //! Constructor with object label
+    Platform(const std::string &label);
 
     //! Destructor
     virtual ~Platform() {};
 
     //! Clone method
-    /*! Returns a copy of this Platform instance. It is allocated on the heap and
+    /*! Returns a copy of this Platform instance. It is dynamically allocated and 
         encapsulated in a Teuchos RCP.
     */
-    virtual Teuchos::RCP< Platform<Ordinal> > clone() const = 0;
+    virtual Teuchos::RCP< Platform<Scalar, LocalOrdinal, GlobalOrdinal> > clone() const = 0;
 
     //@}
   
@@ -71,15 +66,18 @@ namespace Tpetra {
     //@{ 
 
     //! Create a Comm instance for global communication between nodes.
-    virtual Teuchos::RCP< Teuchos::Comm<Ordinal> > createComm() const = 0;
+    virtual Teuchos::RCP< Teuchos::Comm<int> > getComm() const = 0;
 
     //@}
 
   }; // Platform class
 
-  template<typename Ordinal>
-  Platform<Ordinal>::Platform(const std::string &str)
-  : Teuchos::Object(str.c_str()) {}
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Platform<Scalar, LocalOrdinal, GlobalOrdinal>::Platform() {}
+  
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Platform<Scalar, LocalOrdinal, GlobalOrdinal>::Platform(const std::string &str)
+  : Teuchos::LabeledObject(str) {}
   
 } // namespace Tpetra
 

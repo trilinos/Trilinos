@@ -41,8 +41,8 @@ namespace Tpetra {
 // that all nodes test and throw the exception together
 #define SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
-    const Ordinal lcl_throw_exception = (throw_exception_test) ? Teuchos::rank(comm)+1 : 0; \
-    Ordinal gbl_throw; \
+    const int lcl_throw_exception = (throw_exception_test) ? Teuchos::rank(comm)+1 : 0; \
+    int gbl_throw; \
     Teuchos::reduceAll(comm,Teuchos::REDUCE_MAX,lcl_throw_exception,&gbl_throw); \
     TEST_FOR_EXCEPTION(gbl_throw,Exception,  \
                        msg << " Failure on node " << gbl_throw-1 << "." << std::endl); \

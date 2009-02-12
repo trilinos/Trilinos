@@ -39,59 +39,58 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration of Import,Export, needed to prevent circular inclusions
-  template<typename Ordinal> class Import;
-  template<typename Ordinal> class Export;
+  template<class LocalOrdinal, class GlobalOrdinal> class Import;
+  template<class LocalOrdinal, class GlobalOrdinal> class Export;
 #endif
 
-  template<typename Ordinal>
+  template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal>
   class ImportExportData : public Teuchos::Object {
-    friend class Import<Ordinal>;
-    friend class Export<Ordinal>;
+    friend class Import<LocalOrdinal,GlobalOrdinal>;
+    friend class Export<LocalOrdinal,GlobalOrdinal>;
   public:
-    ImportExportData(const Map<Ordinal> & source, const Map<Ordinal> & target);
+    ImportExportData(const Map<LocalOrdinal,GlobalOrdinal> & source, const Map<LocalOrdinal,GlobalOrdinal> & target);
     ~ImportExportData();
 
   protected:
     // OT vectors
-    Teuchos::Array<Ordinal> permuteToLIDs_;
-    Teuchos::Array<Ordinal> permuteFromLIDs_;
-    Teuchos::Array<Ordinal> remoteLIDs_;
-    Teuchos::Array<Ordinal> exportGIDs_;
+    Teuchos::Array<LocalOrdinal> permuteToLIDs_;
+    Teuchos::Array<LocalOrdinal> permuteFromLIDs_;
+    Teuchos::Array<LocalOrdinal> remoteLIDs_;
+    Teuchos::Array<GlobalOrdinal> exportGIDs_;
     // These are ArrayRCP because in the construction of an Import object, they are allocated and returned by a call to 
-    Teuchos::ArrayRCP<Ordinal> exportLIDs_;
-    Teuchos::ArrayRCP<Ordinal> exportImageIDs_;
+    Teuchos::ArrayRCP<LocalOrdinal> exportLIDs_;
+    Teuchos::ArrayRCP<int> exportImageIDs_;
 
     // OTs
     Teuchos_Ordinal numSameIDs_;
 
     // Maps
-    const Map<Ordinal> source_;
-    const Map<Ordinal> target_;
+    const Map<LocalOrdinal,GlobalOrdinal> source_;
+    const Map<LocalOrdinal,GlobalOrdinal> target_;
 
-    // Platform, Comm, Distributor, etc.
-    Teuchos::RCP<const Platform<Ordinal> > platform_;
-    Distributor<Ordinal> distributor_;
+    // Comm, Distributor
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+    Distributor distributor_;
 
   private:
     //! Copy constructor (declared but not defined, do not use)
-    ImportExportData(ImportExportData<Ordinal> const& rhs);
+    ImportExportData(const ImportExportData<LocalOrdinal,GlobalOrdinal> &rhs);
     //! Assignment operator (declared but not defined, do not use)
-    ImportExportData<Ordinal>& operator = (ImportExportData<Ordinal> const& rhs);
+    ImportExportData<LocalOrdinal,GlobalOrdinal> & operator = (ImportExportData<LocalOrdinal,GlobalOrdinal> const& rhs);
   }; // class ImportExportData
 
 
-  template <typename Ordinal>
-  ImportExportData<Ordinal>::ImportExportData(const Map<Ordinal> & source, const Map<Ordinal> & target)
-  : Teuchos::Object("Tpetra::ImportExportData")
-  , numSameIDs_(0)
+  template <class LocalOrdinal, class GlobalOrdinal>
+  ImportExportData<LocalOrdinal,GlobalOrdinal>::ImportExportData(const Map<LocalOrdinal,GlobalOrdinal> & source, const Map<LocalOrdinal,GlobalOrdinal> & target)
+  : numSameIDs_(0)
   , source_(source)
   , target_(target)
-  , platform_(source.getPlatform()->clone())
-  , distributor_(platform_->createComm())
+  , comm_(source.getComm())
+  , distributor_(comm_)
   {}
 
-  template <typename Ordinal>
-  ImportExportData<Ordinal>::~ImportExportData() 
+  template <class LocalOrdinal, class GlobalOrdinal>
+  ImportExportData<LocalOrdinal,GlobalOrdinal>::~ImportExportData() 
   {}
 
 } // namespace Tpetra

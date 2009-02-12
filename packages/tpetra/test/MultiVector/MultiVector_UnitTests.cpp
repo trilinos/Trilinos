@@ -3,12 +3,15 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_as.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
-#include "Teuchos_as.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+
+// FINISH: add test for MultiVector with a node containing zero local entries
+// FINISH: add tests for local MultiVectors 
 
 namespace Teuchos {
   template <>
@@ -59,13 +62,6 @@ namespace {
   bool testMpi = true;
   double errorTolSlack = 1e+1;
 
-#define PRINT_VECTOR(v) \
-   { \
-     out << #v << ": "; \
-     copy(v.begin(), v.end(), ostream_iterator<Ordinal>(out," ")); \
-     out << endl; \
-   }
-
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -79,13 +75,16 @@ namespace {
         "Slack off of machine epsilon used to check test results" );
   }
 
-  template<class Ordinal>
-  RCP<const Platform<Ordinal> > getDefaultPlatform()
+  RCP<const Comm<int> > getDefaultComm()
   {
+    RCP<Platform<double> > plat;
     if (testMpi) {
-      return DefaultPlatform<Ordinal>::getPlatform();
+      plat = DefaultPlatform<double>::getPlatform();
     }
-    return rcp(new Tpetra::SerialPlatform<Ordinal>());
+    else {
+      plat = rcp(new Tpetra::SerialPlatform<double>());
+    }
+    return plat->getComm();
   }
 
   //
@@ -95,20 +94,16 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, basic, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    const Ordinal indexBase = ZERO;
     const Ordinal numLocal = 10;
-    const Ordinal numVecs  = 5;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
+    const Teuchos_Ordinal numVecs  = 5;
+    Map<Ordinal> map(INVALID,numLocal,0,comm);
     MV mvec(map,numVecs,true);
     TEST_EQUALITY( mvec.numVectors(), numVecs );
     TEST_EQUALITY( mvec.myLength(), numLocal );
@@ -130,17 +125,15 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadConstNumVecs, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = ZERO;
     const Ordinal numLocal = 10;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
-    TEST_THROW(MV mvec(map,ZERO), std::invalid_argument);
-    TEST_THROW(MV mvec(map,INVALID), std::invalid_argument);
+    Map<Ordinal> map(INVALID,numLocal,0,comm);
+    TEST_THROW(MV mvec(map,0), std::invalid_argument);
+    TEST_THROW(MV mvec(map,-1), std::invalid_argument);
   }
 
 
@@ -150,102 +143,97 @@ namespace {
     // numlocal > LDA
     // ergo, the arrayview doesn't contain enough data to specify the entries
     // also, if bounds checking is enabled, check that bad bounds are caught
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
-    typedef Tpetra::Vector<Ordinal,Scalar> V;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::Vector<Scalar,Ordinal> V;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Ordinal TWO = ONE + ONE;
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = TWO;
-    const Ordinal numVecs = TWO;
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 2;
+    const Teuchos_Ordinal numVecs = 2;
     // multivector has two vectors, each proc having two values per vector
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
-#ifdef TEUCHOS_DEBUG
+#ifdef TPETRA_DEBUG
     // too small an ArrayView (less than 4 values) is met with an exception, if debugging is on
-    TEST_THROW(MV mvec(map,values(0,3),TWO,numVecs), std::runtime_error);
+    TEST_THROW(MV mvec(map,values(0,3),2,numVecs), std::runtime_error);
     // it could also be too small for the given LDA: 
-    TEST_THROW(MV mvec(map,values(),TWO+ONE,numVecs), std::runtime_error);
+    TEST_THROW(MV mvec(map,values(),2+1,numVecs), std::runtime_error);
     // too small for number of entries in a Vector
     TEST_THROW(V   vec(map,values(0,1)), std::runtime_error);
 #endif
     // LDA < numLocal throws an exception anytime
-    TEST_THROW(MV mvec(map,values(0,4),ONE,numVecs), std::invalid_argument);
+    TEST_THROW(MV mvec(map,values(0,4),1,numVecs), std::runtime_error);
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadMultiply, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
-    const Scalar SONE = ScalarTraits<Scalar>::one(),
-                SZERO = ScalarTraits<Scalar>::zero();
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const Scalar S1 = ScalarTraits<Scalar>::one(),
+                S0 = ScalarTraits<Scalar>::zero();
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     {
       // create local Maps
-      Map<Ordinal> map3l(3*ONE,ZERO,platform,true),
-                   map2l(2*ONE,ZERO,platform,true);
-      MV mvecA(map3l,2*ONE),
-         mvecB(map2l,3*ONE),
-         mvecD(map2l,2*ONE);
+      Map<Ordinal> map3l(3,0,comm,true),
+                   map2l(2,0,comm,true);
+      MV mvecA(map3l,2),
+         mvecB(map2l,3),
+         mvecD(map2l,2);
       // failures, 8 combinations:
       // [NTC],[NTC]: A,B don't match
       // [NTC],[NTC]: C doesn't match A,B
-      TEST_THROW( mvecD.multiply(NO_TRANS  ,NO_TRANS  ,SONE,mvecA,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-      TEST_THROW( mvecD.multiply(NO_TRANS  ,CONJ_TRANS,SONE,mvecA,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-      TEST_THROW( mvecD.multiply(CONJ_TRANS,NO_TRANS  ,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-      TEST_THROW( mvecD.multiply(CONJ_TRANS,CONJ_TRANS,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 3x2
-      TEST_THROW( mvecD.multiply(NO_TRANS  ,NO_TRANS  ,SONE,mvecA,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
-      TEST_THROW( mvecD.multiply(NO_TRANS  ,CONJ_TRANS,SONE,mvecA,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
-      TEST_THROW( mvecD.multiply(CONJ_TRANS,NO_TRANS  ,SONE,mvecB,mvecB,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
-      TEST_THROW( mvecD.multiply(CONJ_TRANS,CONJ_TRANS,SONE,mvecB,mvecA,SZERO), std::runtime_error);   // 2x2: 3x2 x 2x3
+      TEST_THROW( mvecD.multiply(NO_TRANS  ,NO_TRANS  ,S1,mvecA,mvecA,S0), std::runtime_error);   // 2x2: 3x2 x 3x2
+      TEST_THROW( mvecD.multiply(NO_TRANS  ,CONJ_TRANS,S1,mvecA,mvecB,S0), std::runtime_error);   // 2x2: 3x2 x 3x2
+      TEST_THROW( mvecD.multiply(CONJ_TRANS,NO_TRANS  ,S1,mvecB,mvecA,S0), std::runtime_error);   // 2x2: 3x2 x 3x2
+      TEST_THROW( mvecD.multiply(CONJ_TRANS,CONJ_TRANS,S1,mvecB,mvecB,S0), std::runtime_error);   // 2x2: 3x2 x 3x2
+      TEST_THROW( mvecD.multiply(NO_TRANS  ,NO_TRANS  ,S1,mvecA,mvecB,S0), std::runtime_error);   // 2x2: 3x2 x 2x3
+      TEST_THROW( mvecD.multiply(NO_TRANS  ,CONJ_TRANS,S1,mvecA,mvecA,S0), std::runtime_error);   // 2x2: 3x2 x 2x3
+      TEST_THROW( mvecD.multiply(CONJ_TRANS,NO_TRANS  ,S1,mvecB,mvecB,S0), std::runtime_error);   // 2x2: 3x2 x 2x3
+      TEST_THROW( mvecD.multiply(CONJ_TRANS,CONJ_TRANS,S1,mvecB,mvecA,S0), std::runtime_error);   // 2x2: 3x2 x 2x3
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
-      Map<Ordinal> map3n(INVALID,3*ONE,ZERO,platform),
-                   map2n(INVALID,2*ONE,ZERO,platform),
-                   map2l(2*ONE,ZERO,platform,true),
-                   map3l(3*ONE,ZERO,platform,true);
-      MV mv3nx2(map3n,2*ONE),
-         mv2nx2(map2n,2*ONE),
-         mv2lx2(map2l,2*ONE),
-         mv2lx3(map2l,3*ONE),
-         mv3lx2(map3l,2*ONE),
-         mv3lx3(map3l,3*ONE);
+      Map<Ordinal> map3n(INVALID,3,0,comm),
+                   map2n(INVALID,2,0,comm),
+                   map2l(2,0,comm,true),
+                   map3l(3,0,comm,true);
+      MV mv3nx2(map3n,2),
+         mv2nx2(map2n,2),
+         mv2lx2(map2l,2),
+         mv2lx3(map2l,3),
+         mv3lx2(map3l,2),
+         mv3lx3(map3l,3);
       // non-matching input lengths
-      TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv2nx2,SZERO), std::runtime_error);   // (2 x 3n) x (2n x 2) not compat
-      TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,SONE,mv2nx2,mv3nx2,SZERO), std::runtime_error);   // (2 x 2n) x (3n x 2) not compat
+      TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv2nx2,S0), std::runtime_error);   // (2 x 3n) x (2n x 2) not compat
+      TEST_THROW( mv2lx2.multiply(CONJ_TRANS,NO_TRANS,S1,mv2nx2,mv3nx2,S0), std::runtime_error);   // (2 x 2n) x (3n x 2) not compat
       // non-matching output size
-      TEST_THROW( mv3lx3.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv3nx2,SZERO), std::runtime_error);   // (2 x 3n) x (3n x 2) doesn't fit 3x3
-      TEST_THROW( mv3lx2.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv3nx2,SZERO), std::runtime_error);   // (2 x 3n) x (3n x 2) doesn't fit 3x2
-      TEST_THROW( mv2lx3.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv3nx2,SZERO), std::runtime_error);   // (2 x 3n) x (3n x 2) doesn't fit 2x3
+      TEST_THROW( mv3lx3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0), std::runtime_error);   // (2 x 3n) x (3n x 2) doesn't fit 3x3
+      TEST_THROW( mv3lx2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0), std::runtime_error);   // (2 x 3n) x (3n x 2) doesn't fit 3x2
+      TEST_THROW( mv2lx3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0), std::runtime_error);   // (2 x 3n) x (3n x 2) doesn't fit 2x3
     }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
-      Map<Ordinal> map3n(INVALID,3*ONE,ZERO,platform),
-                   map2n(INVALID,2*ONE,ZERO,platform),
-                   map2l(2*ONE,ZERO,platform,true),
-                   map3l(3*ONE,ZERO,platform,true);
-      MV mv3nx2(map3n,2*ONE),
-         mv2nx2(map2n,2*ONE),
-         mv2x3(map2l,3*ONE),
-         mv3x2(map3l,2*ONE);
+      Map<Ordinal> map3n(INVALID,3,0,comm),
+                   map2n(INVALID,2,0,comm),
+                   map2l(2,0,comm,true),
+                   map3l(3,0,comm,true);
+      MV mv3nx2(map3n,2),
+         mv2nx2(map2n,2),
+         mv2x3(map2l,3),
+         mv3x2(map3l,2);
       // non-matching input lengths
-      TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,SONE,mv3nx2,mv2x3,SZERO), std::runtime_error);   // (3n x 2) x (3 x 2) (trans) not compat
-      TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,SONE,mv3nx2,mv3x2,SZERO), std::runtime_error);   // (3n x 2) x (3 x 2) (nontrans) not compat
+      TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,S1,mv3nx2,mv2x3,S0), std::runtime_error);   // (3n x 2) x (3 x 2) (trans) not compat
+      TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,S1,mv3nx2,mv3x2,S0), std::runtime_error);   // (3n x 2) x (3 x 2) (nontrans) not compat
       // non-matching output sizes
-      TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,SONE,mv3nx2,mv3x2,SZERO), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
-      TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,SONE,mv3nx2,mv2x3,SZERO), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
+      TEST_THROW( mv3nx2.multiply(NO_TRANS,CONJ_TRANS,S1,mv3nx2,mv3x2,S0), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
+      TEST_THROW( mv3nx2.multiply(NO_TRANS,NO_TRANS  ,S1,mv3nx2,mv2x3,S0), std::runtime_error);   // (3n x 2) x (2 x 3) doesn't fit 3nx2
     }
   }
 
@@ -255,113 +243,109 @@ namespace {
   {
     using Teuchos::View;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    Map<Ordinal> map3n(INVALID,3*ONE,ZERO,platform),
-                 map2n(INVALID,2*ONE,ZERO,platform),
-                lmap3(3*ONE,ZERO,platform,true),
-                lmap2(2*ONE,ZERO,platform,true);
-    const Scalar SONE = ScalarTraits<Scalar>::one(),
-                SZERO = ScalarTraits<Scalar>::zero();
-    const Mag   MZERO = ScalarTraits<Mag>::zero();
+    Map<Ordinal> map3n(INVALID,3,0,comm),
+                 map2n(INVALID,2,0,comm),
+                lmap3(3,0,comm,true),
+                lmap2(2,0,comm,true);
+    const Scalar S1 = ScalarTraits<Scalar>::one(),
+                S0 = ScalarTraits<Scalar>::zero();
+    const Mag   M0 = ScalarTraits<Mag>::zero();
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     // deterministic input/output
     {
-      MV mv3x2l(lmap3,2*ONE),
-         mv2x3l(lmap2,3*ONE),
-         mv2x2l(lmap2,2*ONE),
-         mv3x3l(lmap3,3*ONE);
+      MV mv3x2l(lmap3,2),
+         mv2x3l(lmap2,3),
+         mv2x2l(lmap2,2),
+         mv3x3l(lmap3,3);
       // fill multivectors with ones
       mv3x2l.putScalar(ScalarTraits<Scalar>::one());
       mv2x3l.putScalar(ScalarTraits<Scalar>::one());
       // fill expected answers Array
-      ArrayView<const Scalar> tmpView(Teuchos::null); Ordinal dummy;
-      Teuchos::Array<Scalar> check2(4,3*ONE); // each entry (of four) is the product [1 1 1]*[1 1 1]' = 3
-      Teuchos::Array<Scalar> check3(9,2*ONE); // each entry (of nine) is the product [1 1]*[1 1]' = 2
+      ArrayView<const Scalar> tmpView(Teuchos::null); Teuchos_Ordinal dummy;
+      Teuchos::Array<Scalar> check2(4,3); // each entry (of four) is the product [1 1 1]*[1 1 1]' = 3
+      Teuchos::Array<Scalar> check3(9,2); // each entry (of nine) is the product [1 1]*[1 1]' = 2
       // test
-      mv3x3l.multiply(NO_TRANS  ,NO_TRANS  ,SONE,mv3x2l,mv2x3l,SZERO);
-      mv3x3l.extractConstView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,MZERO);
-      mv2x2l.multiply(NO_TRANS  ,CONJ_TRANS,SONE,mv2x3l,mv2x3l,SZERO);
-      mv2x2l.extractConstView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check2,MZERO);
-      mv2x2l.multiply(CONJ_TRANS,NO_TRANS  ,SONE,mv3x2l,mv3x2l,SZERO);
-      mv2x2l.extractConstView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check2,MZERO);
-      mv3x3l.multiply(CONJ_TRANS,CONJ_TRANS,SONE,mv2x3l,mv3x2l,SZERO);
-      mv3x3l.extractConstView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,MZERO);
+      mv3x3l.multiply(NO_TRANS  ,NO_TRANS  ,S1,mv3x2l,mv2x3l,S0);
+      mv3x3l.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,M0);
+      mv2x2l.multiply(NO_TRANS  ,CONJ_TRANS,S1,mv2x3l,mv2x3l,S0);
+      mv2x2l.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check2,M0);
+      mv2x2l.multiply(CONJ_TRANS,NO_TRANS  ,S1,mv3x2l,mv3x2l,S0);
+      mv2x2l.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check2,M0);
+      mv3x3l.multiply(CONJ_TRANS,CONJ_TRANS,S1,mv2x3l,mv3x2l,S0);
+      mv3x3l.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check3,M0);
     }
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     // random input/output
     {
       ArrayView<Scalar> tmvView(Teuchos::null), sdmView(Teuchos::null);
-      Ordinal stride;
-      MV tmv3x2(lmap3,2*ONE),
-         tmv2x3(lmap2,3*ONE),
-         tmv2x2(lmap2,2*ONE),
-         tmv3x3(lmap3,3*ONE);
+      Teuchos_Ordinal stride;
+      MV tmv3x2(lmap3,2),
+         tmv2x3(lmap2,3),
+         tmv2x2(lmap2,2),
+         tmv3x3(lmap3,3);
       // setup serial dense matrices 
-      tmv3x2.extractView(tmvView,stride); SerialDenseMatrix<int,Scalar> sdm3x2(View,tmvView.getRawPtr(),stride,3*ONE,2*ONE);
-      tmv2x3.extractView(tmvView,stride); SerialDenseMatrix<int,Scalar> sdm2x3(View,tmvView.getRawPtr(),stride,2*ONE,3*ONE);
-      SerialDenseMatrix<int,Scalar> sdm2x2(2*ONE,2*ONE), sdm3x3(3*ONE,3*ONE);
+      tmv3x2.extractView1D(tmvView,stride); SerialDenseMatrix<int,Scalar> sdm3x2(View,tmvView.getRawPtr(),stride,3,2);
+      tmv2x3.extractView1D(tmvView,stride); SerialDenseMatrix<int,Scalar> sdm2x3(View,tmvView.getRawPtr(),stride,2,3);
+      SerialDenseMatrix<int,Scalar> sdm2x2(2,2), sdm3x3(3,3);
       // fill multivectors with ones (fills sdm3x2 and sdm2x3 as well, because of view semantics)
       tmv3x2.random();
       tmv2x3.random();
       // test: perform MV multiply and SDM multiply, then check that answers are equivalent
       {
-        tmv3x3.multiply(NO_TRANS,NO_TRANS,SONE,tmv3x2,tmv2x3,SZERO);
-        sdm3x3.multiply(NO_TRANS,NO_TRANS,SONE,sdm3x2,sdm2x3,SZERO);
-        tmv3x3.extractView(tmvView,stride); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,MZERO);
+        tmv3x3.multiply(NO_TRANS,NO_TRANS,S1,tmv3x2,tmv2x3,S0);
+        sdm3x3.multiply(NO_TRANS,NO_TRANS,S1,sdm3x2,sdm2x3,S0);
+        tmv3x3.extractView1D(tmvView,stride); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,M0);
       }
       {
-        tmv2x2.multiply(NO_TRANS,CONJ_TRANS,SONE,tmv2x3,tmv2x3,SZERO);
-        sdm2x2.multiply(NO_TRANS,CONJ_TRANS,SONE,sdm2x3,sdm2x3,SZERO);
-        tmv2x2.extractView(tmvView,stride); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,MZERO);
+        tmv2x2.multiply(NO_TRANS,CONJ_TRANS,S1,tmv2x3,tmv2x3,S0);
+        sdm2x2.multiply(NO_TRANS,CONJ_TRANS,S1,sdm2x3,sdm2x3,S0);
+        tmv2x2.extractView1D(tmvView,stride); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,M0);
       }
       {
-        tmv2x2.multiply(CONJ_TRANS,NO_TRANS,SONE,tmv3x2,tmv3x2,SZERO);
-        sdm2x2.multiply(CONJ_TRANS,NO_TRANS,SONE,sdm3x2,sdm3x2,SZERO);
-        tmv2x2.extractView(tmvView,stride); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,MZERO);
+        tmv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,tmv3x2,tmv3x2,S0);
+        sdm2x2.multiply(CONJ_TRANS,NO_TRANS,S1,sdm3x2,sdm3x2,S0);
+        tmv2x2.extractView1D(tmvView,stride); sdmView = arrayView(sdm2x2.values(),sdm2x2.numRows()*sdm2x2.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,M0);
       }
       {
-        tmv3x3.multiply(CONJ_TRANS,CONJ_TRANS,SONE,tmv2x3,tmv3x2,SZERO);
-        sdm3x3.multiply(CONJ_TRANS,CONJ_TRANS,SONE,sdm2x3,sdm3x2,SZERO);
-        tmv3x3.extractView(tmvView,stride); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
-        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,MZERO);
+        tmv3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,tmv2x3,tmv3x2,S0);
+        sdm3x3.multiply(CONJ_TRANS,CONJ_TRANS,S1,sdm2x3,sdm3x2,S0);
+        tmv3x3.extractView1D(tmvView,stride); sdmView = arrayView(sdm3x3.values(),sdm3x3.numRows()*sdm3x3.numCols());
+        TEST_COMPARE_FLOATING_ARRAYS(tmvView,sdmView,M0);
       }
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
-      MV mv3nx2(map3n,2*ONE),
-         mv3nx3(map3n,3*ONE),
+      MV mv3nx2(map3n,2),
+         mv3nx3(map3n,3),
          // locals
-         mv2x2(lmap2,2*ONE),
-         mv2x3(lmap2,3*ONE),
-         mv3x2(lmap3,2*ONE),
-         mv3x3(lmap3,3*ONE);
+         mv2x2(lmap2,2),
+         mv2x3(lmap2,3),
+         mv3x2(lmap3,2),
+         mv3x3(lmap3,3);
       // fill multivectors with ones
       mv3nx3.putScalar(ScalarTraits<Scalar>::one());
       mv3nx2.putScalar(ScalarTraits<Scalar>::one());
       // fill expected answers Array
-      ArrayView<const Scalar> tmpView(Teuchos::null); Ordinal dummy;
-      Teuchos::Array<Scalar> check(9,3*ONE*numImages);
+      ArrayView<const Scalar> tmpView(Teuchos::null); Teuchos_Ordinal dummy;
+      Teuchos::Array<Scalar> check(9,3*numImages);
       // test
-      mv2x2.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv3nx2,SZERO); 
-      mv2x2.extractConstView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),MZERO);
-      mv2x3.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx2,mv3nx3,SZERO);
-      mv2x3.extractConstView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),MZERO);
-      mv3x2.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx3,mv3nx2,SZERO);
-      mv3x2.extractConstView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),MZERO);
-      mv3x3.multiply(CONJ_TRANS,NO_TRANS,SONE,mv3nx3,mv3nx3,SZERO);
-      mv3x3.extractConstView(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),MZERO);
+      mv2x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx2,S0); 
+      mv2x2.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+      mv2x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx2,mv3nx3,S0);
+      mv2x3.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+      mv3x2.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx3,mv3nx2,S0);
+      mv3x2.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
+      mv3x3.multiply(CONJ_TRANS,NO_TRANS,S1,mv3nx3,mv3nx3,S0);
+      mv3x3.extractConstView1D(tmpView,dummy); TEST_COMPARE_FLOATING_ARRAYS(tmpView,check(0,tmpView.size()),M0);
     }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
@@ -376,33 +360,27 @@ namespace {
     // constructor takes ArrayView<ArrayView<Scalar> A, NumVectors
     // A.size() == NumVectors
     // A[i].size() >= MyLength
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Ordinal TWO = ONE + ONE;
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = TWO;
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 2;
     // multivector has two vectors, each proc having two values per vector
-    Map<Ordinal> map2(INVALID,numLocal  ,indexBase,platform),
-                 map3(INVALID,numLocal+1,indexBase,platform);
+    Map<Ordinal> map2(INVALID,numLocal  ,indexBase,comm),
+                 map3(INVALID,numLocal+1,indexBase,comm);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
     Array<ArrayView<const Scalar> > arrOfarr(2,ArrayView<const Scalar>(Teuchos::null));
     Array<ArrayView<const Scalar> > emptyArr;
     arrOfarr[0] = values(0,2);
     arrOfarr[1] = values(2,2);
-#ifdef TEUCHOS_DEBUG
     // arrOfarr.size() == 0
-    TEST_THROW(MV mvec(map2,emptyArr()), std::runtime_error);
+    TEST_THROW(MV mvec(map2,emptyArr(),0), std::runtime_error);
+#ifdef TPETRA_DEBUG
     // individual ArrayViews could be too small
-    TEST_THROW(MV mvec(map3,arrOfarr()), std::runtime_error);
-#else
-    (void)success;
-    (void)out;
+    TEST_THROW(MV mvec(map3,arrOfarr(),2), std::runtime_error);
 #endif
   }
 
@@ -410,19 +388,19 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadDot, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
-    typedef Tpetra::Vector<Ordinal,Scalar> V;
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
+    typedef Tpetra::Vector<Scalar,Ordinal> V;
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = as<Ordinal>(0);
+    const Ordinal indexBase = 0;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    Map<Ordinal> map1(INVALID,as<Ordinal>(1),indexBase,platform),
-                 map2(INVALID,as<Ordinal>(2),indexBase,platform);
+    Map<Ordinal> map1(INVALID,1,indexBase,comm),
+                 map2(INVALID,2,indexBase,comm);
     {
-      MV mv12(map1,as<Ordinal>(1)),
-         mv21(map2,as<Ordinal>(1)),
-         mv22(map2,as<Ordinal>(2));
+      MV mv12(map1,1),
+         mv21(map2,1),
+         mv22(map2,2);
       Array<Scalar> dots(2);
       // incompatible maps
       TEST_THROW(mv12.dot(mv21,dots()),std::runtime_error);
@@ -453,20 +431,17 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, OrthoDot, Ordinal, Scalar )
   {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Ordinal TWO = ONE + ONE;
-    const Scalar SZERO = Teuchos::ScalarTraits<Scalar>::zero();
-    const Mag MZERO = Teuchos::ScalarTraits<Mag>::zero();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const Scalar S0 = Teuchos::ScalarTraits<Scalar>::zero();
+    const Mag M0 = Teuchos::ScalarTraits<Mag>::zero();
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = TWO;
-    const Ordinal numVectors = TWO;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 2;
+    const Teuchos_Ordinal numVectors = 2;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(5);
     // values = {0, 1, 0, 1, 0}
     // values(0,4) = {0, 1, 0, 1} = [0 0]
@@ -479,15 +454,15 @@ namespace {
     values[2] = as<Scalar>(1);
     values[3] = as<Scalar>(0);
     values[4] = as<Scalar>(1);
-    MV mvec1(map,values(0,4),TWO,numVectors),
-       mvec2(map,values(1,4),TWO,numVectors);
+    MV mvec1(map,values(0,4),2,numVectors),
+       mvec2(map,values(1,4),2,numVectors);
     Array<Scalar> dots1(numVectors), dots2(numVectors), zeros(numVectors);
     std::fill(zeros.begin(),zeros.end(),Teuchos::ScalarTraits<Scalar>::zero());
     mvec1.dot(mvec2,dots1());
     mvec2.dot(mvec1,dots2());
-    TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,MZERO);
-    TEST_COMPARE_FLOATING_ARRAYS(dots1,zeros,MZERO);
-    TEST_EQUALITY_CONST( mvec1(0)->dot(*mvec2(0)), SZERO);
+    TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,M0);
+    TEST_COMPARE_FLOATING_ARRAYS(dots1,zeros,M0);
+    TEST_EQUALITY_CONST( mvec1(0)->dot(*mvec2(0)), S0);
   }
 
 
@@ -495,20 +470,17 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, ZeroScaleUpdate, Ordinal, Scalar )
   {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Ordinal TWO = ONE + ONE;
-    const Mag MZERO = Teuchos::ScalarTraits<Mag>::zero();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const Mag M0 = Teuchos::ScalarTraits<Mag>::zero();
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = TWO;
-    const Ordinal numVectors = TWO;
-    const Ordinal LDA = TWO;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 2;
+    const Teuchos_Ordinal numVectors = 2;
+    const Teuchos_Ordinal LDA = 2;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2, 4, 4}
     // values(0,4) = {1, 1, 2, 2} = [1 2]
@@ -528,7 +500,7 @@ namespace {
     MV A(map,values(0,4),LDA,numVectors),
        B(map,values(2,4),LDA,numVectors);
     Array<Mag> norms(numVectors), zeros(numVectors);
-    std::fill(zeros.begin(),zeros.end(),MZERO);
+    std::fill(zeros.begin(),zeros.end(),M0);
     //
     //      [.... ....]
     // A == [ones ones] 
@@ -546,7 +518,7 @@ namespace {
       A2.scale(as<Scalar>(2));
       A2.update(as<Scalar>(-1),B,as<Scalar>(1));
       A2.norm2(norms);
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MZERO);
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
     //   set A2 = A
     //   check that it equals B: scale,subtraction in situ
@@ -554,7 +526,7 @@ namespace {
       MV A2(A);
       A2.update(as<Scalar>(-1),B,as<Scalar>(2));
       A2.norm2(norms);
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MZERO);
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
     //   set C random
     //   set it to zero by combination with A,B
@@ -563,7 +535,7 @@ namespace {
       C.random();
       C.update(as<Scalar>(-1),B,as<Scalar>(2),A,as<Scalar>(0));
       C.norm2(norms);
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MZERO);
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
     //   set C random
     //   scale it ex-situ
@@ -573,7 +545,7 @@ namespace {
       C.scale(as<Scalar>(2),A);
       C.update(as<Scalar>(1),B,as<Scalar>(-1));
       C.norm2(norms);
-      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MZERO);
+      TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
     }
   }
 
@@ -582,13 +554,13 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, ZeroScaleUpdate, Ordinal, Scalar )
   {
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
-    typedef Tpetra::Vector<Ordinal,Scalar> V;
+    typedef Tpetra::Vector<Scalar,Ordinal> V;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Mag MZERO = Teuchos::ScalarTraits<Mag>::zero();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const Mag M0 = Teuchos::ScalarTraits<Mag>::zero();
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    Map<Ordinal> map(INVALID,2,0,platform);
+    Map<Ordinal> map(INVALID,2,0,comm);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2}
     // values(0,2) = {1, 1} = [1]
@@ -624,7 +596,7 @@ namespace {
       A2.scale(as<Scalar>(2));
       A2.update(as<Scalar>(-1),B,as<Scalar>(1));
       norm = A2.norm2(); A2.norm2(norms());
-      TEST_EQUALITY(norm,MZERO);
+      TEST_EQUALITY(norm,M0);
       TEST_EQUALITY(norm,norms[0]);
     }
     //   set A2 = A
@@ -633,7 +605,7 @@ namespace {
       V A2(A);
       A2.update(as<Scalar>(-1),B,as<Scalar>(2));
       norm = A2.norm2(); A2.norm2(norms());
-      TEST_EQUALITY(norm,MZERO);
+      TEST_EQUALITY(norm,M0);
       TEST_EQUALITY(norm,norms[0]);
     }
     //   set C random
@@ -643,7 +615,7 @@ namespace {
       C.random();
       C.update(as<Scalar>(-1),B,as<Scalar>(2),A,as<Scalar>(0));
       norm = C.norm2(); C.norm2(norms());
-      TEST_EQUALITY(norm,MZERO);
+      TEST_EQUALITY(norm,M0);
       TEST_EQUALITY(norm,norms[0]);
     }
     //   set C random
@@ -655,7 +627,7 @@ namespace {
       C.scale(as<Scalar>(2),A);
       C.update(as<Scalar>(1),B,as<Scalar>(-1));
       norm = C.norm2(); C.norm2(norms());
-      TEST_EQUALITY(norm,MZERO);
+      TEST_EQUALITY(norm,M0);
       TEST_EQUALITY(norm,norms[0]);
     }
   }
@@ -664,20 +636,17 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CopyConst, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Ordinal TWO = ONE + ONE;
-    const Magnitude MZERO = ScalarTraits<Magnitude>::zero();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const Magnitude M0 = ScalarTraits<Magnitude>::zero();
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = TWO;
-    const Ordinal numVectors = TWO;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 2;
+    const Teuchos_Ordinal numVectors = 2;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     // create random MV
     MV morig(map,numVectors);
     morig.random();
@@ -688,9 +657,9 @@ namespace {
     morig.normInf(norig);
     mcopy1.normInf(ncopy1);
     mcopy2.normInf(ncopy2);
-    TEST_COMPARE_FLOATING_ARRAYS(norig,ncopy1,MZERO);
-    TEST_COMPARE_FLOATING_ARRAYS(norig,ncopy2,MZERO);
-    TEST_COMPARE_FLOATING_ARRAYS(ncopy1,ncopy2,MZERO);
+    TEST_COMPARE_FLOATING_ARRAYS(norig,ncopy1,M0);
+    TEST_COMPARE_FLOATING_ARRAYS(norig,ncopy2,M0);
+    TEST_COMPARE_FLOATING_ARRAYS(ncopy1,ncopy2,M0);
     // modify all three
     morig.putScalar(as<Scalar>(0));
     mcopy1.putScalar(as<Scalar>(1));
@@ -701,7 +670,7 @@ namespace {
     mcopy2.normInf(ncopy2);
     // check them
     bool local_success = true;
-    for (Ordinal i=ZERO; i<numVectors; ++i) {
+    for (Teuchos_Ordinal i=0; i<numVectors; ++i) {
       TEST_ARRAY_ELE_EQUALITY( norig,  i, as<Scalar>(0) );
       TEST_ARRAY_ELE_EQUALITY( ncopy1, i, as<Scalar>(1) );
       TEST_ARRAY_ELE_EQUALITY( ncopy2, i, as<Scalar>(2) );
@@ -713,13 +682,13 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, CopyConst, Ordinal, Scalar )
   {
-    typedef Tpetra::Vector<Ordinal,Scalar> V;
+    typedef Tpetra::Vector<Scalar,Ordinal> V;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    Map<Ordinal> map(INVALID,2,0,platform);
+    Map<Ordinal> map(INVALID,2,0,comm);
     // create random MV
     V morig(map);
     morig.random();
@@ -754,53 +723,52 @@ namespace {
     // this documents a usage case in Anasazi::SVQBOrthoManager, which was failing
     // error turned out to be a neglected return in both implementations of update(), 
     // after passing to buck to scale() in the case of alpha==0 or beta==0 or gamma=0
-    if (as<Scalar>(1.0) / as<Scalar>(3.0) == ScalarTraits<Scalar>::zero()) return;
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    if (ScalarTraits<Scalar>::isOrdinal) return;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Magnitude MONE  = ScalarTraits<Magnitude>::one();
-    const Magnitude MZERO = ScalarTraits<Magnitude>::zero();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const Magnitude M1  = ScalarTraits<Magnitude>::one();
+    const Magnitude M0 = ScalarTraits<Magnitude>::zero();
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = as<Ordinal>(10);
-    const Ordinal numVectors = as<Ordinal>(6);
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 10;
+    const Teuchos_Ordinal numVectors = 6;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     // create random MV
     MV mv(map,numVectors);
     mv.random();
     // compute the norms
     Array<Magnitude> norms(numVectors);
     mv.norm2(norms());
-    for (Ordinal j=ZERO; j<numVectors; ++j) {
+    for (Teuchos_Ordinal j=0; j<numVectors; ++j) {
       // get a view of column j, normalize it using update()
       Array<Teuchos_Ordinal> ind(1,j);
       RCP<MV> mvj = mv.subView(ind());
       switch (j){
       case 0:
-        mvj->scale( MONE/norms[j] );
+        mvj->scale( M1/norms[j] );
         break;
       case 1:
-        mvj->update( MONE/norms[j], *mvj, MZERO );
+        mvj->update( M1/norms[j], *mvj, M0 );
         break;
       case 2:
-        mvj->update( MZERO        , *mvj, MONE/norms[j] );
+        mvj->update( M0        , *mvj, M1/norms[j] );
         break;
       case 3:
-        mvj->update( MZERO        , *mvj, MONE/norms[j], *mvj, MZERO );
+        mvj->update( M0        , *mvj, M1/norms[j], *mvj, M0 );
         break;
       case 4:
-        mvj->update( MONE/norms[j], *mvj, MZERO        , *mvj, MZERO );
+        mvj->update( M1/norms[j], *mvj, M0        , *mvj, M0 );
         break;
       case 5:
-        mvj->update( MZERO        , *mvj, MZERO        , *mvj, MONE/norms[j] );
+        mvj->update( M0        , *mvj, M0        , *mvj, M1/norms[j] );
         break;
       }
     }
     mv.norm2(norms()); // should be all one now
-    Array<Magnitude> ones(numVectors,MONE);
+    Array<Magnitude> ones(numVectors,M1);
     TEST_COMPARE_FLOATING_ARRAYS(norms,ones,ScalarTraits<Magnitude>::eps()*as<Magnitude>(10.));
   }
 
@@ -808,27 +776,22 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CountDot, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
-    const Ordinal TWO = ONE+ONE;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Magnitude MZERO = ScalarTraits<Magnitude>::zero();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const Magnitude M0 = ScalarTraits<Magnitude>::zero();
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = ONE+ONE;
-    const Ordinal numVectors = ONE+ONE+ONE;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 2;
+    const Teuchos_Ordinal numVectors = 3;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
-    // dot(values,values) = [0*0+0*0 1*1+1*1 + 2*2+2*2] = [0 2 8]
+    // dot(values,values) = [0*0+0*0 1+1*1 + 2*2+2*2] = [0 2 8]
     // summed over all procs, this is [0 2*nprocs 8*nprocs]
     values[0] = as<Scalar>(0);
     values[1] = as<Scalar>(0);
@@ -836,8 +799,8 @@ namespace {
     values[3] = as<Scalar>(1);
     values[4] = as<Scalar>(2);
     values[5] = as<Scalar>(2);
-    MV mvec1(map,values(),TWO,numVectors),
-       mvec2(map,values(),TWO,numVectors);
+    MV mvec1(map,values(),2,numVectors),
+       mvec2(map,values(),2,numVectors);
     Array<Scalar> dots1(numVectors), dots2(numVectors), answer(numVectors);
     answer[0] = as<Scalar>(0);
     answer[1] = as<Scalar>(2*numImages);
@@ -846,8 +809,8 @@ namespace {
     mvec1.dot(mvec2,dots1());
     mvec2.dot(mvec1,dots2());
     // check the answers
-    TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,MZERO);
-    TEST_COMPARE_FLOATING_ARRAYS(dots1,answer,MZERO);
+    TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,M0);
+    TEST_COMPARE_FLOATING_ARRAYS(dots1,answer,M0);
   }
 
 
@@ -855,24 +818,19 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CountDotNonTrivLDA, Ordinal, Scalar )
   {
     // same as CountDot, but the A,LDA has a non-trivial LDA (i.e., LDA != myLen)
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
-    const Ordinal TWO = ONE+ONE;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Magnitude MZERO = ScalarTraits<Magnitude>::zero();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const Magnitude M0 = ScalarTraits<Magnitude>::zero();
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = ONE+ONE;
-    const Ordinal numVectors = ONE+ONE+ONE;
-    const Ordinal LDA = ONE+TWO;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 2;
+    const Teuchos_Ordinal numVectors = 3;
+    const Teuchos_Ordinal LDA = 3;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(9);
     // A = {0, 0, -1, 1, 1, -1, 2, 2, -1} = [0   1  2]
     //                                      [0   1  2]
@@ -880,7 +838,7 @@ namespace {
     // processed as a 2 x 3 with LDA==3, the result it
     //            values =       [0 1 2]
     //                           [0 1 2]
-    // dot(values,values) = [0*0+0*0 1*1+1*1 + 2*2+2*2] = [0 2 8]
+    // dot(values,values) = [0*0+0*0 1+1*1 + 2*2+2*2] = [0 2 8]
     // summed over all procs, this is [0 2*nprocs 8*nprocs]
     values[0] = as<Scalar>(0);
     values[1] = as<Scalar>(0);
@@ -901,31 +859,26 @@ namespace {
     mvec1.dot(mvec2,dots1());
     mvec2.dot(mvec1,dots2());
     // check the answers
-    TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,MZERO);
-    TEST_COMPARE_FLOATING_ARRAYS(dots1,answer,MZERO);
+    TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,M0);
+    TEST_COMPARE_FLOATING_ARRAYS(dots1,answer,M0);
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CountNorm1, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
-    const Ordinal TWO = ONE+ONE;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const MT MZERO = ScalarTraits<MT>::zero();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const MT M0 = ScalarTraits<MT>::zero();
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = ONE+ONE;
-    const Ordinal numVectors = ONE+ONE+ONE;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 2;
+    const Ordinal numVectors = 3;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -937,7 +890,7 @@ namespace {
     values[3] = as<Scalar>(1);
     values[4] = as<Scalar>(2);
     values[5] = as<Scalar>(2);
-    MV mvec(map,values(),TWO,numVectors);
+    MV mvec(map,values(),2,numVectors);
     Array<MT> norms(numVectors), answer(numVectors);
     answer[0] = as<MT>(0);
     answer[1] = as<MT>(2*numImages);
@@ -945,27 +898,24 @@ namespace {
     // do the dots
     mvec.norm1(norms());
     // check the answers
-    TEST_COMPARE_FLOATING_ARRAYS(norms,answer,MZERO);
+    TEST_COMPARE_FLOATING_ARRAYS(norms,answer,M0);
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CountNormInf, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
-    const Ordinal TWO = ONE+ONE;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const MT MZERO = ScalarTraits<MT>::zero();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const MT M0 = ScalarTraits<MT>::zero();
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = ONE+ONE;
-    const Ordinal numVectors = ONE+ONE+ONE;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 2;
+    const Ordinal numVectors = 3;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -977,7 +927,7 @@ namespace {
     values[3] = as<Scalar>(1);
     values[4] = as<Scalar>(2);
     values[5] = as<Scalar>(2);
-    MV mvec(map,values(),TWO,numVectors);
+    MV mvec(map,values(),2,numVectors);
     Array<MT> norms(numVectors), answer(numVectors);
     answer[0] = as<MT>(0);
     answer[1] = as<MT>(1);
@@ -985,28 +935,25 @@ namespace {
     // do the dots
     mvec.normInf(norms());
     // check the answers
-    TEST_COMPARE_FLOATING_ARRAYS(norms,answer,MZERO);
+    TEST_COMPARE_FLOATING_ARRAYS(norms,answer,M0);
   }
 
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, Norm2, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
-    const Ordinal TWO = ONE+ONE;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const MT MZERO = ScalarTraits<MT>::zero();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const MT M0 = ScalarTraits<MT>::zero();
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = TWO;
-    const Ordinal numVectors = TWO;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
-    MV mvec(map,TWO,numVectors);
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 2;
+    const Ordinal numVectors = 2;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
+    MV mvec(map,2,numVectors);
     // randomize the multivector
     mvec.random();
     // take norms; they should not be zero
@@ -1018,9 +965,9 @@ namespace {
     mvec.norm2(normsZero());
     // check the answers
     bool local_success = true;
-    for (Ordinal i=ZERO; i<numVectors; ++i) {
-      TEST_ARRAY_ELE_INEQUALITY(normsRand,i,MZERO);
-      TEST_ARRAY_ELE_EQUALITY(normsZero,i,MZERO);
+    for (Teuchos_Ordinal i=0; i<numVectors; ++i) {
+      TEST_ARRAY_ELE_INEQUALITY(normsRand,i,M0);
+      TEST_ARRAY_ELE_EQUALITY(normsZero,i,M0);
     }
     success &= local_success;
   }
@@ -1029,25 +976,20 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, MinMaxMean, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType MT;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
-    const Ordinal TWO = ONE+ONE;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const MT MZERO = ScalarTraits<MT>::zero();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const MT M0 = ScalarTraits<MT>::zero();
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     // create a Map
-    const Ordinal indexBase = ZERO;
-    const Ordinal numLocal = TWO;
-    const Ordinal numVectors = TWO;
-    const Ordinal LDA = TWO;
-    Map<Ordinal> map(INVALID,numLocal,indexBase,platform);
+    const Ordinal indexBase = 0;
+    const Ordinal numLocal = 2;
+    const Teuchos_Ordinal numVectors = 2;
+    const Teuchos_Ordinal LDA = 2;
+    Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     Array<Scalar> values(4);
     // on proc i of n:
     // values = {i, i+1, n-i, n-i-1} = [ i   n-i ]
@@ -1062,7 +1004,7 @@ namespace {
     values[0] = as<Scalar>(myImageID);
     values[1] = as<Scalar>(myImageID+1);
     values[2] = as<Scalar>(numImages-myImageID);
-    values[3] = as<Scalar>(numImages-myImageID-ONE);
+    values[3] = as<Scalar>(numImages-myImageID-1);
     MV mvec(map,values(),LDA,numVectors);
   }
 
@@ -1074,29 +1016,24 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadCombinations, Ordinal, Scalar )
   {
-    typedef Tpetra::MultiVector<Ordinal,Scalar> MV;
+    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
-    const Ordinal ONE = OrdinalTraits<Ordinal>::one();
-    const Ordinal TWO = ONE+ONE;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
     // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create a Map
-    const Ordinal indexBase = ZERO;
+    const Ordinal indexBase = 0;
     const Scalar rnd = ScalarTraits<Scalar>::random();
     // two maps: one has two entires per node, the other disagrees on node 0
-    Map<Ordinal> map1(INVALID,TWO,indexBase,platform),
-                 map2(INVALID,(myImageID == ZERO ? ONE : TWO),indexBase,platform);
+    Map<Ordinal> map1(INVALID,2,indexBase,comm),
+                 map2(INVALID,(myImageID == 0 ? 1 : 2),indexBase,comm);
     // multivectors from different maps are incompatible for all ops
     // multivectors from the same map are compatible only if they have the same number of
     //    columns
-    MV m1n1(map1,ONE), m1n2(map1,TWO), m2n2(map2,TWO), m1n2_2(map1,TWO);
-    Array<Scalar> dots(ONE);
-    Array<Mag>    norms(ONE);
+    MV m1n1(map1,1), m1n2(map1,2), m2n2(map2,2), m1n2_2(map1,2);
+    Array<Scalar> dots(1);
+    Array<Mag>    norms(1);
     // FINISH: test multiply (both), reciprocalMultiply
     TEST_THROW(m1n2.dot(m1n1,dots()), std::runtime_error); // dot
     TEST_THROW(m1n2.dot(m2n2,dots()), std::runtime_error);
@@ -1179,7 +1116,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, basic             , ORDINAL, SCALAR ) \

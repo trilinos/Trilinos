@@ -33,23 +33,20 @@
 
 namespace Tpetra {
 
-  template<typename Ordinal>
-  MapData<Ordinal>::MapData(
-            Ordinal indexBase, 
-            Ordinal numGlobalEntries,
-            Ordinal numMyEntries,
-            Ordinal minAllGID,
-            Ordinal maxAllGID,
-            Ordinal minMyGID,
-            Ordinal maxMyGID,
-            const Teuchos::ArrayRCP<Ordinal> &lgMap,
-            const std::map<Ordinal,Ordinal>  &glMap,
+  template<class LocalOrdinal,class GlobalOrdinal>
+  MapData<LocalOrdinal,GlobalOrdinal>::MapData(
+            Teuchos_Ordinal indexBase, 
+            GlobalOrdinal numGlobalEntries,
+            LocalOrdinal numMyEntries,
+            GlobalOrdinal minAllGID,
+            GlobalOrdinal maxAllGID,
+            GlobalOrdinal minMyGID,
+            GlobalOrdinal maxMyGID,
+            const Teuchos::ArrayRCP<GlobalOrdinal> &lgMap,
+            const std::map<GlobalOrdinal,LocalOrdinal>  &glMap,
             bool contiguous,
-            Teuchos::RCP< Platform<Ordinal> > platform,
-            Teuchos::RCP< Teuchos::Comm<Ordinal> > comm) 
-      : Teuchos::Object("Tpetra::MapData")
-      , platform_(platform)
-      , comm_(comm)
+            Teuchos::RCP<const Teuchos::Comm<int> > comm) 
+      : comm_(comm)
       , numGlobalEntries_(numGlobalEntries)
       , indexBase_(indexBase)
       , numMyEntries_(numMyEntries)
@@ -63,24 +60,21 @@ namespace Tpetra {
       , glMap_(glMap)
   {}
 
-  template<typename Ordinal>
-  MapData<Ordinal>::MapData(
-            Ordinal indexBase, 
-            Ordinal numGlobalEntries,
-            Ordinal numMyEntries,
-            Ordinal minAllGID,
-            Ordinal maxAllGID,
-            Ordinal minMyGID,
-            Ordinal maxMyGID,
-            const Teuchos::ArrayRCP<Ordinal> &lgMap,
-            const std::map<Ordinal,Ordinal>  &glMap,
+  template<class LocalOrdinal,class GlobalOrdinal>
+  MapData<LocalOrdinal,GlobalOrdinal>::MapData(
+            Teuchos_Ordinal indexBase, 
+            GlobalOrdinal numGlobalEntries,
+            LocalOrdinal numMyEntries,
+            GlobalOrdinal minAllGID,
+            GlobalOrdinal maxAllGID,
+            GlobalOrdinal minMyGID,
+            GlobalOrdinal maxMyGID,
+            const Teuchos::ArrayRCP<GlobalOrdinal> &lgMap,
+            const std::map<GlobalOrdinal,LocalOrdinal>  &glMap,
             bool contiguous,
-            Teuchos::RCP< Platform<Ordinal> > platform,
-            Teuchos::RCP< Teuchos::Comm<Ordinal> > comm,
+            Teuchos::RCP<const Teuchos::Comm<int> > comm,
             bool isLocal)
-      : Teuchos::Object("Tpetra::MapData")
-      , platform_(platform)
-      , comm_(comm)
+      : comm_(comm)
       , numGlobalEntries_(numGlobalEntries)
       , indexBase_(indexBase)
       , numMyEntries_(numMyEntries)
@@ -93,23 +87,25 @@ namespace Tpetra {
       , lgMap_(lgMap)
       , glMap_(glMap)
     {}
-  template<typename Ordinal>
-  MapData<Ordinal>::~MapData() {}
 
-  template<typename Ordinal>
-  bool MapData<Ordinal>::checkIsDist() {
+  template<class LocalOrdinal,class GlobalOrdinal>
+  MapData<LocalOrdinal,GlobalOrdinal>::~MapData() {}
+
+  template<class LocalOrdinal,class GlobalOrdinal>
+  bool MapData<LocalOrdinal,GlobalOrdinal>::checkIsDist() {
     bool global = false;
     if(comm_->getSize() > 1) {
-      int localRep = 0;
-      int allLocalRep;
-      if(numGlobalEntries_ == numMyEntries_) {
+      char localRep = 0;
+      if (numGlobalEntries_ == numMyEntries_) {
         localRep = 1;
       }
-      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MIN,localRep,&allLocalRep);
-      if(allLocalRep != 1)
+      char allLocalRep;
+      Teuchos::reduceAll<int>(*comm_,Teuchos::REDUCE_MIN,localRep,&allLocalRep);
+      if (allLocalRep != 1) {
         global = true;
+      }
     }
-    return(global);
+    return global;
   }
 
 } // namespace Tpetra

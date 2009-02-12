@@ -6,7 +6,7 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE(Tpetra)
+PACKAGE(Tpetra CLEANED)
 
 #
 # B) Set up package-specific options

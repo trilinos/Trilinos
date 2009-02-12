@@ -29,34 +29,54 @@
 #ifndef TPETRA_MULTIVECTORDATA_DECL_HPP
 #define TPETRA_MULTIVECTORDATA_DECL_HPP
 
-#include <Teuchos_Object.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 
 namespace Tpetra {
 
-  template<typename Ordinal, typename Scalar>
-  class MultiVectorData : public Teuchos::Object {
+  template<class Scalar>
+  class MultiVectorData {
 
-  friend class MultiVector<Ordinal, Scalar>;
-  friend class Vector<Ordinal, Scalar>;
+  // cannot declare as friends any partial specializations; therefore, all MultiVectors and Vectors will be friends
+  template <class S2, class O1, class O2>
+  friend class MultiVector;
+  template <class S2, class O1, class O2>
+  friend class Vector;
 
   public:
     MultiVectorData();
     ~MultiVectorData();
 
   protected:
-    void updateConstPointers();
-    Teuchos::ArrayRCP<Scalar> values_;
-    Teuchos::Array<Teuchos::ArrayView<Scalar> > ptrs_;
-    Teuchos::Array<Teuchos::ArrayView<const Scalar> > cPtrs_;
+
+    /* only one of the following is valid:
+       if constantStride_ == false then
+         - contigValues_ == Teuchos::null
+         - nonContigValues_.size() == ptrs_.size()
+       else, if constantStride_ == true, then
+         - nonContigValues_.size() == 0
+         - contigValues_ == null only if stride_ == 0
+
+       if constantStride_ == true and contigValues_ != null, then it points to the 
+       first entry in the first vector and runs to the last entry of the last vector.
+       if stride == myLength(), then it has length myLength() * numVectors()
+    */
+    Teuchos::ArrayRCP<Scalar> contigValues_;                          
+    Teuchos::Array<Teuchos::ArrayRCP<Scalar> > nonContigValues_;
+
+    /* make sure that this is an iterator of an appropriately sized view, so that the iterator is valid only for the span of the column.
+       this is filled under all circumstances, although when the data is contiguous, it may be more efficient to access data through values_ */
+    mutable Teuchos::Array<typename Teuchos::ArrayView<Scalar>::iterator>  ptrs_;
+
     bool constantStride_;
-    Ordinal stride_;
+    Teuchos_Ordinal stride_;
     
   private:
-    //! Copy constructor (declared but not defined, do not use)
-    MultiVectorData(const MultiVectorData<Ordinal,Scalar> &source);
-    //! Assignment operator (declared but not defined, do not use)
-    MultiVectorData<Ordinal,Scalar>& operator=(const MultiVectorData<Ordinal,Scalar> &source);
+    void setupPointers(Teuchos_Ordinal MyLength, Teuchos_Ordinal NumVectors); 
+
+    // Copy constructor (declared but not defined, do not use)
+    MultiVectorData(const MultiVectorData<Scalar> &source);
+    // Assignment operator (declared but not defined, do not use)
+    MultiVectorData<Scalar>& operator=(const MultiVectorData<Scalar> &source);
 
   }; // class MultiVectorData
 

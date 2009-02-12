@@ -30,17 +30,17 @@
 #define TPETRA_MAP_DECL_HPP
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Object.hpp>
-#include "Tpetra_Platform.hpp"
+#include <Teuchos_Describable.hpp>
+#include <Teuchos_Comm.hpp>
 
 namespace Tpetra {
 
-  template<typename Ordinal> class MapData;
+  template <class LocalOrdinal, class GlobalOrdinal> class MapData;
 
   //! Tpetra::Map
 
-  template<typename Ordinal>
-  class Map : public Teuchos::Object {
+  template<typename LocalOrdinal, class GlobalOrdinal=LocalOrdinal>
+  class Map : public Teuchos::Describable {
 
   public:
 
@@ -52,32 +52,32 @@ namespace Tpetra {
      *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
      *   possible.
      */
-    Map(Ordinal numGlobalEntries, Ordinal indexBase, const Platform<Ordinal> &platform, bool local=false);
+    Map(GlobalOrdinal numGlobalEntries, Teuchos_Ordinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, bool local=false);
 
     /*! \brief Map constructor with a user-defined contiguous distribution.
      *  The entries are distributed among the nodes so that the subsets of global entries
      *  are non-overlapping and contiguous 
      *  
-     *  If numGlobalEntries == Teuchos::OrdinalTraits<Ordinal>::invalid(), it will be computed via a global communication.
+     *  If numGlobalEntries == Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), it will be computed via a global communication.
      *  Otherwise, it must be equal to the sum of the local entries across all 
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    Map(Ordinal numGlobalEntries, Ordinal numMyEntries, Ordinal indexBase, 
-        const Platform<Ordinal> &platform);
+    Map(GlobalOrdinal numGlobalEntries, LocalOrdinal numMyEntries, Teuchos_Ordinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
+        
 
     /*! \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
      *  
-     *  If numGlobalEntries == Teuchos::OrdinalTraits<Ordinal>::invalid(), it will be computed via a global communication.
+     *  If numGlobalEntries == Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), it will be computed via a global communication.
      *  Otherwise, it must be equal to the sum of the local entries across all 
      *  nodes. This will only be verified if Trilinos was compiled with --enable-teuchos-debug.
      *  If this verification fails, a std::invalid_argument exception will be thrown.
      */
-    Map(Ordinal numGlobalEntries, const Teuchos::ArrayView<const Ordinal> &entryList, 
-        Ordinal indexBase, const Platform<Ordinal> &platform);
+    Map(GlobalOrdinal numGlobalEntries, const Teuchos::ArrayView<const GlobalOrdinal> &entryList, 
+        Teuchos_Ordinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm);
 
     //! Map copy constructor.
-    Map(const Map<Ordinal> &Map);
+    Map(const Map<LocalOrdinal,GlobalOrdinal> &Map);
 
     //! Map destructor. 
     ~Map();
@@ -89,66 +89,68 @@ namespace Tpetra {
     //@{ 
 
     //! Returns the number of entries in this Map.
-    Ordinal getNumGlobalEntries() const;
+    inline GlobalOrdinal getNumGlobalEntries() const;
 
-    //! Returns the number of entries belonging to the calling image.
-    Ordinal getNumMyEntries() const;
+    //! Returns the number of entries belonging to the calling node.
+    inline LocalOrdinal getNumMyEntries() const;
 
     //! Returns the index base for this Map.
-    Ordinal getIndexBase() const;
+    inline Teuchos_Ordinal getIndexBase() const;
 
     //! Returns minimum local index
-    Ordinal getMinLocalIndex() const;
+    inline LocalOrdinal getMinLocalIndex() const;
 
     //! Returns maximum local index
-    Ordinal getMaxLocalIndex() const;
+    inline LocalOrdinal getMaxLocalIndex() const;
 
-    //! Returns minimum global index owned by this image
-    Ordinal getMinGlobalIndex() const;
+    //! Returns minimum global index owned by this node
+    inline GlobalOrdinal getMinGlobalIndex() const;
 
-    //! Returns maximum global index owned by this image
-    Ordinal getMaxGlobalIndex() const;
+    //! Returns maximum global index owned by this node
+    inline GlobalOrdinal getMaxGlobalIndex() const;
 
-    //! Return the minimum global index over all images
-    Ordinal getMinAllGlobalIndex() const;
+    //! Return the minimum global index over all nodes
+    inline GlobalOrdinal getMinAllGlobalIndex() const;
 
-    //! Return the maximum global index over all images
-    Ordinal getMaxAllGlobalIndex() const;
+    //! Return the maximum global index over all nodes
+    inline GlobalOrdinal getMaxAllGlobalIndex() const;
 
-    //! Return the local index for a given global index
-    Ordinal getLocalIndex(Ordinal globalIndex) const;
+    //! \brief Return the local index for a given global index
+    /*! If the global index is not owned by this node, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid(). */
+    LocalOrdinal getLocalIndex(GlobalOrdinal globalIndex) const;
 
     //! Return the global index for a given local index
-    Ordinal getGlobalIndex(Ordinal localIndex) const;
+    /*! If the local index is not valid for this node, returns Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(). */
+    GlobalOrdinal getGlobalIndex(LocalOrdinal localIndex) const;
 
     //! Returns the node IDs and corresponding local indices for a given list of global indices.
     /*! 
       \returns \c true signifies at least one specified global entry was not present in the directory.
      */
-    bool getRemoteIndexList(const Teuchos::ArrayView<const Ordinal> & GIDList, 
-                            const Teuchos::ArrayView<Ordinal> & imageIDList, 
-                            const Teuchos::ArrayView<Ordinal> & LIDList) const;
+    bool getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
+                            const Teuchos::ArrayView<int> & nodeIDList, 
+                            const Teuchos::ArrayView<LocalOrdinal> & LIDList) const;
 
     //! Returns the node IDs for a given list of global indices.
     /*! 
       \returns \c true signifies at least one specified global entry was not present in the directory.
      */
-    bool getRemoteIndexList(const Teuchos::ArrayView<const Ordinal> & GIDList, 
-                            const Teuchos::ArrayView<Ordinal> & imageIDList) const;
+    bool getRemoteIndexList(const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
+                            const Teuchos::ArrayView<int> & nodeIDList) const;
 
-    //! Return a list of the global entries owned by this image
-    Teuchos::ArrayView<const Ordinal> getMyGlobalEntries() const;
+    //! Return a list of the global entries owned by this node
+    Teuchos::ArrayView<const GlobalOrdinal> getMyGlobalEntries() const;
 
-    //! Returns true if the local index value passed in is found on the calling image, returns false if it doesn't.
-    bool isMyLocalIndex(Ordinal localIndex) const;
+    //! Returns true if the local index value passed in is found on the calling node, returns false if it doesn't.
+    bool isMyLocalIndex(LocalOrdinal localIndex) const;
 
-    //! Returns true if the global index value passed in is found the calling image, returns false if it doesn't.
-    bool isMyGlobalIndex(Ordinal globalIndex) const;
+    //! Returns true if the global index value passed in is found the calling node, returns false if it doesn't.
+    bool isMyGlobalIndex(GlobalOrdinal globalIndex) const;
 
     //! Returns true if this Map is distributed contiguously, returns false otherwise.
     bool isContiguous() const;
 
-    //! Returns true if this Map is distributed across more than one image, returns false otherwise.
+    //! Returns true if this Map is distributed across more than one node, returns false otherwise.
     bool isDistributed() const;
 
     //@}
@@ -157,29 +159,26 @@ namespace Tpetra {
     //@{ 
 
     //! Returns true if \c map is compatible with this Map.
-    bool isCompatible (const Map< Ordinal> &map) const;
+    bool isCompatible (const Map<LocalOrdinal,GlobalOrdinal> &map) const;
 
     //! Returns true if \c map is identical to this Map.
-    bool isSameAs (const Map<Ordinal> &map) const;
+    bool isSameAs (const Map<LocalOrdinal,GlobalOrdinal> &map) const;
 
     //! Returns true if \c map is identical to this Map. Implemented in isSameAs().
-    bool operator== (const Map< Ordinal > &map) const;
+    bool operator== (const Map<LocalOrdinal,GlobalOrdinal> &map) const;
 
     //! Returns true if \c map is not identical to this Map. Implemented in isSameAs().
-    bool operator!= (const Map< Ordinal > &map) const;
+    bool operator!= (const Map<LocalOrdinal,GlobalOrdinal> &map) const;
 
     //@}
 
     //@{ Misc. 
 
     //! Assignment operator
-    Map<Ordinal>& operator = (const Map<Ordinal> & Source);
-
-    //! Get the Platform object for this Map
-    Teuchos::RCP< const Platform<Ordinal> > getPlatform() const;
+    Map<LocalOrdinal,GlobalOrdinal>& operator = (const Map<LocalOrdinal,GlobalOrdinal> &source);
 
     //! Get the Comm object for this Map
-    Teuchos::RCP<const Teuchos::Comm<Ordinal> > getComm() const;
+    Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
     //@}
 
@@ -194,7 +193,7 @@ namespace Tpetra {
 
   private:
 
-    Teuchos::RCP< MapData<Ordinal> > MapData_;
+    Teuchos::RCP<MapData<LocalOrdinal,GlobalOrdinal> > MapData_;
 
     // setup the directory
     void directorySetup();

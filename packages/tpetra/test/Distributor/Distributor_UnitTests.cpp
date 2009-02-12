@@ -7,6 +7,7 @@
 #include <Teuchos_Array.hpp>
 
 // FINISH: test handling of null export in createFromSends
+// FINISH: test efficiency warnings if THROW_TPETRA_EFFICIENCY_WARNINGS for non-contig 
 
 namespace {
 
@@ -16,30 +17,21 @@ namespace {
   using Tpetra::Distributor;
   using Tpetra::DefaultPlatform;
   using Tpetra::Platform;
-  using std::vector;
   using std::sort;
   using Teuchos::arrayViewFromVector;
   using Teuchos::broadcast;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
   using Teuchos::Array;
+  using Teuchos::Comm;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
 
-  template <typename T>
-  T generateValue(T const x, T const y) {
-    const T two = as<T>(2);
+  int generateValue(int x, int y) {
     // formula for z(x,y) = 0.5(x^2 + y^2 + 3x + y) + xy
-    return(((x*x + y*y + x+x+x + y) / two) + (x*y));
+    return(((x*x + y*y + x+x+x + y) / 2) + (x*y));
   }
-
-#define PRINT_VECTOR(v) \
-   { \
-     out << #v << ": "; \
-     copy(v.begin(), v.end(), ostream_iterator<Ordinal>(out," ")); \
-     out << endl; \
-   }
 
   TEUCHOS_STATIC_SETUP()
   {
@@ -54,75 +46,65 @@ namespace {
         "Slack off of machine epsilon used to check test results" );
   }
 
-  template<class Ordinal>
-  RCP<const Platform<Ordinal> > getDefaultPlatform()
+  RCP<const Comm<int> > getDefaultComm()
   {
+    RCP<Platform<double> > plat;
     if (testMpi) {
-      return DefaultPlatform<Ordinal>::getPlatform();
+      plat = DefaultPlatform<double>::getPlatform();
     }
-    return rcp(new Tpetra::SerialPlatform<Ordinal>());
+    else {
+      plat = rcp(new Tpetra::SerialPlatform<double>());
+    }
+    return plat->getComm();
   }
 
   //
   // UNIT TESTS
   // 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, basic, Ordinal )
-  {
-    out << "sizeof(Ordinal): " << sizeof(Ordinal) << std::endl;
-    out << "sizeof(std::size_t): " << sizeof(std::string::size_type) << std::endl;
-    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    TEST_INEQUALITY_CONST( platform->createComm(), Teuchos::null );
-  }
-
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromSendsContig, Ordinal )
+  TEUCHOS_UNIT_TEST( Distributor, createFromSendsContig)
   {
-    typedef Teuchos::OrdinalTraits<Ordinal> OT;
-    typedef typename std::vector<Ordinal>::size_type size_type;
-
-    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    const Ordinal ZERO = OT::zero();
 
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
     Teuchos_Ordinal numImports = 0;
     // fill exportImageIDs with {0,0, 1,1, 2,2, ... numImages-1,numImages-1}
     // two sends to each image, contiguous, in order
-    vector<Ordinal> exportImageIDs(0);
+    Array<int> exportImageIDs(0);
     exportImageIDs.reserve(numImages*2);
-    for(Ordinal i = ZERO; i < as<Ordinal>(numImages); ++i) {
+    for(int i=0; i < numImages; ++i) {
       exportImageIDs.push_back(i);
       exportImageIDs.push_back(i);
     }
 
     // create from contiguous sends
-    Distributor<Ordinal> distributor(comm);
+    Distributor distributor(comm);
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
     TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(2*numImages));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
-    TEST_EQUALITY(distributor.getNumSends(), as<Ordinal>(numImages-1));
-    TEST_EQUALITY(distributor.getNumReceives(), as<Ordinal>(numImages-1));
-    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(numImages > 1 ? 2 : 0))
-    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Ordinal>(2*numImages));
+    TEST_EQUALITY(distributor.getNumSends(), numImages-1);
+    TEST_EQUALITY(distributor.getNumReceives(), numImages-1);
+    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), (numImages > 1 ? 2 : 0))
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), 2*numImages);
     {
-      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
-      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getImagesFrom());
+      ArrayView<const int> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
-      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numImages));
-      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numImages));
+      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),as<Teuchos_Ordinal>(numImages));
+      TEST_EQUALITY(lenTo.size()  ,as<Teuchos_Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
-        TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(2) );
-        TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(2) );
+        TEST_EQUALITY_CONST( lenFrom[i], 2);
+        TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
     TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), 0);
@@ -135,16 +117,11 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromSendsMixedContig, Ordinal )
+  TEUCHOS_UNIT_TEST( Distributor, createFromSendsMixedContig)
   {
-    typedef Teuchos::OrdinalTraits<Ordinal> OT;
-    typedef typename std::vector<Ordinal>::size_type size_type;
-
-    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const Ordinal ZERO = OT::zero();
 
     if (numImages < 2) return;
 
@@ -155,56 +132,56 @@ namespace {
     // on even imageIDs, send data contig
     // on odd imageIDs, send data non-contig
     Teuchos_Ordinal numImports = 0;
-    vector<Ordinal> exportImageIDs(0);
+    Array<int> exportImageIDs(0);
     exportImageIDs.reserve(numImages*2);
     if (even) {
       // fill exportImageIDs with {0,0, 1,1, 2,2, ... numImages-1,numImages-1}
-      for(Ordinal i = ZERO; i < as<Ordinal>(numImages); ++i) {
+      for(int i = 0; i < numImages; ++i) {
         exportImageIDs.push_back(i);
         exportImageIDs.push_back(i);
       }
     }
     else {
       // fill exportImageIDs with {0,0, 1,1, 2,2, ... numImages-1,numImages-1}
-      for(Ordinal i = ZERO; i < as<Ordinal>(numImages); ++i) {
+      for(int i = 0; i < numImages; ++i) {
         exportImageIDs.push_back(i);
       }
-      for(Ordinal i = ZERO; i < as<Ordinal>(numImages); ++i) {
+      for(int i = 0; i < numImages; ++i) {
         exportImageIDs.push_back(i);
       }
     }
 
     // create from sends, contiguous and non-contiguous
-    Distributor<Ordinal> distributor(comm);
+    Distributor distributor(comm);
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
     TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(2*numImages));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
-    TEST_EQUALITY(distributor.getNumSends(), as<Ordinal>(numImages-1));
-    TEST_EQUALITY(distributor.getNumReceives(), as<Ordinal>(numImages-1));
-    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(2));
-    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Ordinal>(2*numImages));
+    TEST_EQUALITY(distributor.getNumSends(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY(distributor.getNumReceives(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 2);
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Teuchos_Ordinal>(2*numImages));
     {
-      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
-      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getImagesFrom());
+      ArrayView<const int> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
-      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numImages));
-      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numImages));
+      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),as<Teuchos_Ordinal>(numImages));
+      TEST_EQUALITY(lenTo.size()  ,as<Teuchos_Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
-        TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(2) );
-        TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(2) );
+        TEST_EQUALITY_CONST( lenFrom[i], 2);
+        TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
     if (even) {
       TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), 0);
     }
     else {
-      TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), as<typename ArrayView<Ordinal>::Ordinal>(2*numImages));
+      TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), as<Teuchos_Ordinal>(2*numImages));
     }
 
     // All procs fail if any proc fails
@@ -215,67 +192,61 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromSendsRedBlack, Ordinal )
+  TEUCHOS_UNIT_TEST( Distributor, createFromSendsRedBlack)
   {
-    typedef Teuchos::OrdinalTraits<Ordinal> OT;
-    typedef typename std::vector<Ordinal>::size_type size_type;
-
-    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const Ordinal ZERO = OT::zero();
-    const Ordinal  ONE = OT::one();
 
     if (numImages < 3) return;
 
     // partition world into red/black (according to imageID even/odd)
     // even is black, odd is red
     bool black = ((myImageID % 2) == 0);
-    Ordinal numInMyPartition = ZERO;
+    Teuchos_Ordinal numInMyPartition = 0;
 
     Teuchos_Ordinal numImports = 0;
     // fill exportImageIDs with all images from partition
-    vector<Ordinal> exportImageIDs(0);
+    Array<int> exportImageIDs(0);
     if (black) {
       // evens
-      for(Ordinal i = ZERO; i < as<Ordinal>(numImages); i+=2) {
+      for(int i=0; i < numImages; i+=2) {
         exportImageIDs.push_back(i);
         numInMyPartition++;
       }
     }
     else {
       // odds
-      for(Ordinal i = ONE; i < as<Ordinal>(numImages); i+=2) {
+      for(int i=1; i < numImages; i+=2) {
         exportImageIDs.push_back(i);
         numInMyPartition++;
       }
     }
 
     // create from contiguous sends
-    Distributor<Ordinal> distributor(comm);
+    Distributor distributor(comm);
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
-    TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(numInMyPartition));
+    TEST_EQUALITY(numImports, numInMyPartition);
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
-    TEST_EQUALITY(distributor.getNumSends(), numInMyPartition-ONE);
-    TEST_EQUALITY(distributor.getNumReceives(), numInMyPartition-ONE);
-    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), (numInMyPartition > 1 ? ONE : ZERO));
+    TEST_EQUALITY(distributor.getNumSends(), numInMyPartition-1);
+    TEST_EQUALITY(distributor.getNumReceives(), numInMyPartition-1);
+    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), (numInMyPartition > 1 ? 1 : 0));
     TEST_EQUALITY(distributor.getTotalReceiveLength(), numInMyPartition);
     {
-      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
-      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getImagesFrom());
+      ArrayView<const int> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
-      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numInMyPartition));
-      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numInMyPartition));
+      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),numInMyPartition);
+      TEST_EQUALITY(lenTo.size()  ,numInMyPartition);
       for (int i=0; i<numInMyPartition; ++i) {
-        TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(1) );
-        TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(1) );
+        TEST_EQUALITY_CONST( lenFrom[i], as<Teuchos_Ordinal>(1) );
+        TEST_EQUALITY_CONST( lenTo[i],   as<Teuchos_Ordinal>(1) );
       }
     }
     TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), 0);
@@ -288,16 +259,11 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromSendsContigNoself, Ordinal )
+  TEUCHOS_UNIT_TEST( Distributor, createFromSendsContigNoself)
   {
-    typedef typename std::vector<Ordinal>::size_type size_type;
-    typedef Teuchos::OrdinalTraits<Ordinal> OT;
-
-    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const Ordinal ZERO = OT::zero();
 
     if (numImages < 2) return;
 
@@ -306,39 +272,39 @@ namespace {
     Teuchos_Ordinal numImports = 0;
     // fill exportImageIDs with {0,1,...,myImageID-1,myImageID+1,...,numImages-1}
     // one send to each image, contiguous, in order, but not to myself
-    vector<Ordinal> exportImageIDs(0);
+    Array<int> exportImageIDs(0);
     exportImageIDs.reserve(numImages-1);
-    for(Ordinal i = ZERO; i < as<Ordinal>(myImageID); ++i) {
+    for (int i=0; i < myImageID; ++i) {
       exportImageIDs.push_back(i);
     }
-    for(Ordinal i = as<Ordinal>(myImageID+1); i < as<Ordinal>(numImages); ++i) {
+    for (int i = myImageID+1; i < numImages; ++i) {
       exportImageIDs.push_back(i);
     }
 
     // create from contiguous sends
-    Distributor<Ordinal> distributor(comm);
+    Distributor distributor(comm);
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
     TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(numImages-1));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), false);
-    TEST_EQUALITY(distributor.getNumSends(), as<Ordinal>(numImages-1));
-    TEST_EQUALITY(distributor.getNumReceives(), as<Ordinal>(numImages-1));
-    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(1));
-    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Ordinal>(numImages-1));
+    TEST_EQUALITY(distributor.getNumSends(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY(distributor.getNumReceives(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 1);
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Teuchos_Ordinal>(numImages-1));
     {
-      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
-      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getImagesFrom());
+      ArrayView<const int> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
-      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numImages-1));
-      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numImages-1));
+      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),as<Teuchos_Ordinal>(numImages-1));
+      TEST_EQUALITY(lenTo.size()  ,as<Teuchos_Ordinal>(numImages-1));
       for (int i=0; i<numImages-1; ++i) {
-        TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(1) );
-        TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(1) );
+        TEST_EQUALITY_CONST( lenFrom[i], 1);
+        TEST_EQUALITY_CONST( lenTo[i],   1);
       }
     }
     TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), 0);
@@ -351,16 +317,10 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromSendsContigUnordered, Ordinal )
+  TEUCHOS_UNIT_TEST( Distributor, createFromSendsContigUnordered)
   {
-    typedef Teuchos::OrdinalTraits<Ordinal> OT;
-    typedef typename std::vector<Ordinal>::size_type size_type;
-
-    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    const Ordinal ZERO = OT::zero();
-    const Ordinal  ONE = OT::one();
 
     if (numImages < 3) return;
 
@@ -370,45 +330,45 @@ namespace {
     // fill exportImageIDs with {0,0,0, 1,1,1, 2,2,2, ... numImages-1,numImages-1,numImages-1}
     // three sends to each image, out of order (even first, then odd)
     // only test if numImages > 2
-    vector<Ordinal> exportImageIDs(0);
+    Array<int> exportImageIDs(0);
     exportImageIDs.reserve(numImages*3);
     // even first: {0,0,0, 2,2,2, 4,4,4, ...}
-    for(Ordinal i = ZERO; i < as<Ordinal>(numImages); i+=2) {
+    for(int i=0; i < numImages; i+=2) {
       exportImageIDs.push_back(i);
       exportImageIDs.push_back(i);
       exportImageIDs.push_back(i);
     }
     // then odd: {1,1,1, 3,3,3, 5,5,5, ...}
-    for(Ordinal i = ONE; i < as<Ordinal>(numImages); i+=2) {
+    for(int i=1; i < numImages; i+=2) {
       exportImageIDs.push_back(i);
       exportImageIDs.push_back(i);
       exportImageIDs.push_back(i);
     }
 
     // create from contiguous sends
-    Distributor<Ordinal> distributor(comm);
+    Distributor distributor(comm);
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
     TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(3*numImages));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
-    TEST_EQUALITY(distributor.getNumSends(), as<Ordinal>(numImages-1));
-    TEST_EQUALITY(distributor.getNumReceives(), as<Ordinal>(numImages-1));
-    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(3));
-    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Ordinal>(3*numImages));
+    TEST_EQUALITY(distributor.getNumSends(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY(distributor.getNumReceives(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 3);
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Teuchos_Ordinal>(3*numImages));
     {
-      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
-      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getImagesFrom());
+      ArrayView<const int> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
-      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numImages));
-      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numImages));
+      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),as<Teuchos_Ordinal>(numImages));
+      TEST_EQUALITY(lenTo.size()  ,as<Teuchos_Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
-        TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(3) );
-        TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(3) );
+        TEST_EQUALITY_CONST(lenFrom[i], 3);
+        TEST_EQUALITY_CONST(lenTo[i],   3);
       }
     }
     TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), 0);
@@ -421,15 +381,10 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromSendsNonContig, Ordinal )
+  TEUCHOS_UNIT_TEST( Distributor, createFromSendsNonContig)
   {
-    typedef Teuchos::OrdinalTraits<Ordinal> OT;
-    typedef typename std::vector<Ordinal>::size_type size_type;
-
-    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    const Ordinal ZERO = OT::zero();
 
     if (numImages < 2) return;
 
@@ -438,42 +393,42 @@ namespace {
     Teuchos_Ordinal numImports = 0;
     // fill exportImageIDs with {0, 1, 2, ... numImages-1,
     //                           0, 1, 2, ... numImages-1}
-    vector<Ordinal> exportImageIDs(0);
+    Array<int> exportImageIDs(0);
     exportImageIDs.reserve(2*numImages);
-    for(Ordinal i = ZERO; i < as<Ordinal>(numImages); ++i) {
+    for(int i=0; i < numImages; ++i) {
       exportImageIDs.push_back(i);
     }
-    for(Ordinal i = ZERO; i < as<Ordinal>(numImages); ++i) {
+    for(int i=0; i < numImages; ++i) {
       exportImageIDs.push_back(i);
     }
 
     // create from non-contiguous sends
-    Distributor<Ordinal> distributor(comm);
+    Distributor distributor(comm);
     distributor.createFromSends(exportImageIDs, numImports);
 
     // tests
     TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(2*numImages));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
-    TEST_EQUALITY(distributor.getNumSends(), as<Ordinal>(numImages-1));
-    TEST_EQUALITY(distributor.getNumReceives(), as<Ordinal>(numImages-1));
-    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), as<Ordinal>(2));
-    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Ordinal>(2*numImages));
+    TEST_EQUALITY(distributor.getNumSends(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY(distributor.getNumReceives(), as<Teuchos_Ordinal>(numImages-1));
+    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 2);
+    TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Teuchos_Ordinal>(2*numImages));
     {
-      ArrayView<const Ordinal> imgFrom(distributor.getImagesFrom());
-      ArrayView<const Ordinal> imgTo(distributor.getImagesTo());
+      ArrayView<const int> imgFrom(distributor.getImagesFrom());
+      ArrayView<const int> imgTo(distributor.getImagesTo());
       TEST_COMPARE_ARRAYS(imgFrom, imgTo);
     }
     {
-      ArrayView<const Ordinal> lenFrom(distributor.getLengthsFrom());
-      ArrayView<const Ordinal> lenTo(distributor.getLengthsTo());
-      TEST_EQUALITY(lenFrom.size(),as<typename ArrayView<Ordinal>::Ordinal>(numImages));
-      TEST_EQUALITY(lenTo.size()  ,as<typename ArrayView<Ordinal>::Ordinal>(numImages));
+      ArrayView<const Teuchos_Ordinal> lenFrom(distributor.getLengthsFrom());
+      ArrayView<const Teuchos_Ordinal> lenTo(distributor.getLengthsTo());
+      TEST_EQUALITY(lenFrom.size(),as<Teuchos_Ordinal>(numImages));
+      TEST_EQUALITY(lenTo.size()  ,as<Teuchos_Ordinal>(numImages));
       for (int i=0; i<numImages; ++i) {
-        TEST_EQUALITY_CONST( lenFrom[i], as<Ordinal>(2) );
-        TEST_EQUALITY_CONST( lenTo[i],   as<Ordinal>(2) );
+        TEST_EQUALITY_CONST( lenFrom[i], 2);
+        TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
-    TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), as<typename ArrayView<Ordinal>::Ordinal>(2*numImages));
+    TEST_EQUALITY_CONST(distributor.getIndicesTo().size(), as<Teuchos_Ordinal>(2*numImages));
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -483,38 +438,34 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Distributor, doPosts1, Ordinal, Packet )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, doPosts1, Packet )
   {
-    typedef Teuchos::OrdinalTraits<Ordinal> OT;
     typedef Teuchos::ScalarTraits<Packet>   PT;
-    typedef typename std::vector<Ordinal>::size_type size_type;
 
-    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const Ordinal ZERO = OT::zero();
 
     // send data to each image, including myself
-    const Ordinal numExportIDs = as<Ordinal>(numImages); 
+    const Teuchos_Ordinal numExportIDs = numImages; 
     Teuchos_Ordinal numRemoteIDs = 0;
     // fill exportImageIDs with {0, 1, 2, ... numImages-1}
-    vector<Ordinal> exportImageIDs; 
+    Array<int> exportImageIDs; 
     exportImageIDs.reserve(numExportIDs);
-    for(Ordinal i = ZERO; i < numExportIDs; ++i) {
+    for(int i=0; i < numExportIDs; ++i) {
       exportImageIDs.push_back(i);
     }
-    Distributor<Ordinal> distributor(comm);
+    Distributor distributor(comm);
     distributor.createFromSends(exportImageIDs, numRemoteIDs);
 
     // generate global random data set: each image sends 1 packet to each image
     // we need numImages*numImages "unique" values (we don't want redundant data allowing false positives)
-    vector<Packet> exports(numImages*numImages);
+    Array<Packet> exports(numImages*numImages);
     for (int i=0; i<numImages*numImages; i++) {
         exports[i] = PT::random();
     }
     // broadcast
-    broadcast(*comm,0,arrayViewFromVector(exports));
+    broadcast(*comm,0,exports());
 
     // pick a subset of entries to post
     Array<Packet> myExports(exports.begin()+myImageID*numImages,exports.begin()+(myImageID+1)*numImages);
@@ -525,10 +476,10 @@ namespace {
     // it corresponds to element i*numImages+myImageID in the global export vector
     // make a copy of the corresponding entries in the global vector, then compare these against the 
     // entries that I received
-    vector<Packet> expectedImports(numImages);
+    Array<Packet> expectedImports(numImages);
     {
-      typename vector<Packet>::iterator eI = expectedImports.begin(), 
-                                         E = exports.begin()+myImageID;
+      typename Array<Packet>::iterator eI = expectedImports.begin(), 
+                                        E = exports.begin()+myImageID;
       int left = numImages;
       while (true) {
         *eI = *E;
@@ -555,14 +506,11 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromReceives, Ordinal )
   {
     typedef Teuchos::OrdinalTraits<Ordinal> OT;
-    typedef typename std::vector<Ordinal>::size_type size_type;
 
-    RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-    RCP<Teuchos::Comm<Ordinal> > comm = platform->createComm();
+    RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-    const Ordinal ZERO = OT::zero();
-    const Ordinal length = as<Ordinal>(numImages);
+    const int length = numImages;
 
     // fill remoteImageIDs with {0, 1, 2, ... length-1}
     // we'll receive one GID from every image
@@ -571,23 +519,25 @@ namespace {
     // we'll receive generateValue(i,myImageID) from proc "i"
     // "i" sends us generateValue(i,myImageID)
     // similarly, we send generateValue(myImageID,i) to proc "i"
-    vector<Ordinal> importImageIDs, importGIDs;
+    Array<int> importImageIDs;
+    Array<Ordinal> importGIDs;
     importImageIDs.reserve(length);
     importGIDs.reserve(length);
-    for(Ordinal i = ZERO; i < length; ++i) {
+    for(int i=0; i < length; ++i) {
       importImageIDs.push_back(i);
-      importGIDs.push_back( generateValue(i, as<Ordinal>(myImageID)) );
+      importGIDs.push_back( as<Ordinal>(generateValue(i, myImageID)) );
     }
 
-    Distributor<Ordinal> distributor(comm);
-    ArrayRCP<Ordinal> exportGIDs, exportImageIDs;
-    distributor.createFromRecvs(importGIDs, importImageIDs, exportGIDs, exportImageIDs);
+    Distributor distributor(comm);
+    ArrayRCP<int> exportImageIDs;
+    ArrayRCP<Ordinal> exportGIDs;
+    distributor.createFromRecvs<Ordinal>(importGIDs, importImageIDs, exportGIDs, exportImageIDs);
     
     TEST_EQUALITY(exportGIDs.size(), exportImageIDs.size());  // should *always* be the case
 
-    vector<Ordinal> expectedGIDs;
-    for (Ordinal i = ZERO; i < length; ++i) {
-      expectedGIDs.push_back( generateValue(as<Ordinal>(myImageID),i) );
+    Array<Ordinal> expectedGIDs;
+    for (int i=0; i < length; ++i) {
+      expectedGIDs.push_back( as<Ordinal>(generateValue(myImageID,i)) );
     }
     TEST_COMPARE_ARRAYS(importImageIDs, exportImageIDs);             
     TEST_COMPARE_ARRAYS(expectedGIDs, exportGIDs);
@@ -611,39 +561,22 @@ namespace {
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, basic, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsContig, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsMixedContig, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsContigUnordered, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsContigNoself, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsRedBlack, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsNonContig, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, double )
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, ORDINAL )
 
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, doPosts1, double )
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_COMPLEX_FLOAT( Distributor, doPosts1 )
     UNIT_TEST_GROUP_ORDINAL(int)
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-      // FINISH: add complex tests
-
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, basic, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsContig, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsMixedContig, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsContigUnordered, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsContigNoself, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsRedBlack, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromSendsNonContig, ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, char ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, int ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, double ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Distributor, doPosts1, ORDINAL, float )
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, ORDINAL )
 
-    UNIT_TEST_GROUP_ORDINAL(int)
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( Distributor, doPosts1 )
+
     typedef short int ShortInt;
     UNIT_TEST_GROUP_ORDINAL(ShortInt)
+    UNIT_TEST_GROUP_ORDINAL(int)
     typedef long int LongInt;
     UNIT_TEST_GROUP_ORDINAL(LongInt)
 #   ifdef HAVE_TEUCHOS_LONG_LONG_INT
@@ -654,4 +587,3 @@ namespace {
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }
-

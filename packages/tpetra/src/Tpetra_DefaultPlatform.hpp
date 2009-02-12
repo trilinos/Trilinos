@@ -43,40 +43,40 @@ namespace Tpetra {
  * created.  Otherwise, a <tt>SerialPlatform</tt>
  * is returned.
  */
-template<typename Ordinal>
+template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
 class DefaultPlatform {
 public:
 
   /** \brief Return the default platform.
    */
-  static Teuchos::RCP<const Platform<Ordinal> > getPlatform();
+  static Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal> > getPlatform();
 
 private:
 
-  static Teuchos::RCP<const Platform<Ordinal> > platform_;
+  static Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal> > platform_;
 
 };
 
 // ///////////////////////////
 // Template Implementations
 
-template<typename Ordinal>
-Teuchos::RCP<const Platform<Ordinal> >
-DefaultPlatform<Ordinal>::getPlatform()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
+Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal> >
+DefaultPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::getPlatform()
 {
   if(!platform_.get()) {
 #ifdef HAVE_MPI
-    platform_ = Teuchos::rcp(new MpiPlatform<Ordinal>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD)));
+    platform_ = Teuchos::rcp(new MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD)));
 #else // HAVE_MPI    
-    platform_ = Teuchos::rcp(new SerialPlatform<Ordinal>());
+    platform_ = Teuchos::rcp(new SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal>());
 #endif // HAVE_MPI    
   }
   return platform_;
 }
 
-template<typename Ordinal>
-Teuchos::RCP<const Platform<Ordinal> >
-DefaultPlatform<Ordinal>::platform_ = Teuchos::null;
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
+Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal> >
+DefaultPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::platform_ = Teuchos::null;
 
 } // namespace Tpetra
 

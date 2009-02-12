@@ -29,21 +29,15 @@
 #ifndef TPETRA_MPIPLATFORM_HPP
 #define TPETRA_MPIPLATFORM_HPP
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Object.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
 #include "Tpetra_Platform.hpp"
-
-// FINISH: this should have a getComm() method; Comm should then have a clone() method
-//         because of MPI tag issues, we want to always use the same Comm, unless the user 
-//         specifies a different Comm
 
 namespace Tpetra {
 
   //! Tpetra::MpiPlatform: MPI Implementation of the Platform class.
-  template<typename Ordinal>
-  class MpiPlatform : public virtual Platform<Ordinal> {
+	template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
+  class MpiPlatform : public virtual Platform<Scalar, LocalOrdinal, GlobalOrdinal> 
+  {
   public:
 
     //! @name Constructor/Destructor Methods
@@ -52,14 +46,14 @@ namespace Tpetra {
     //! Constructor
     MpiPlatform(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm);
 
-    //! Copy Constructor
-    MpiPlatform(const MpiPlatform<Ordinal> & platform);
+    //! Constructor with object label
+    MpiPlatform(const std::string &label);
 
     //! Destructor
     ~MpiPlatform();
 
-    //! Clone Constructor - implements Tpetra::Platform virtual clone method.
-    Teuchos::RCP< Platform<Ordinal> > clone() const;
+    //! Clone constructor - implements Tpetra::Platform clone() method.
+    Teuchos::RCP< Platform<Scalar,LocalOrdinal,GlobalOrdinal> > clone() const;
 
     //@}
 
@@ -67,45 +61,50 @@ namespace Tpetra {
     //@{ 
 
     //! Comm Instance
-    Teuchos::RCP< Teuchos::Comm<Ordinal> > createComm() const;
+    Teuchos::RCP< Teuchos::Comm<int> > getComm() const;
 
     //@}
 
-  private:
-    Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > MpiComm_;
+    private:
+    Teuchos::RCP<Teuchos::MpiComm<int> > comm_;
+    MpiPlatform(const MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal> &platform);
 
-  }; // MpiPlatform class
+  };
 
-  template <typename Ordinal>
-  MpiPlatform<Ordinal>::MpiPlatform(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
-  : Platform<Ordinal>("Tpetra::MpiPlatform<"+Teuchos::TypeNameTraits<Ordinal>::name()+">") 
-  , MpiComm_(rawMpiComm)
-  {}
-
-  template <typename Ordinal>
-  MpiPlatform<Ordinal>::MpiPlatform(const MpiPlatform<Ordinal> & platform) 
-  : Platform<Ordinal>("Tpetra::MpiPlatform<"+Teuchos::TypeNameTraits<Ordinal>::name()+">") 
-  , MpiComm_(platform.MpiComm_)
-  {}
-
-  template <typename Ordinal>
-  MpiPlatform<Ordinal>::~MpiPlatform() 
-  {}
-
-  template <typename Ordinal>
-  Teuchos::RCP< Platform<Ordinal> > 
-  MpiPlatform<Ordinal>::clone() const 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::MpiPlatform(const Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm> > &rawMpiComm)
   {
-    Teuchos::RCP< MpiPlatform<Ordinal> > platform;
-    platform = Teuchos::rcp(new MpiPlatform<Ordinal>(*this));
-    return platform;
+    comm_ = Teuchos::createMpiComm<int>(rawMpiComm);
   }
 
-  template <typename Ordinal>
-  Teuchos::RCP< Teuchos::Comm<Ordinal> > 
-  MpiPlatform<Ordinal>::createComm() const 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::MpiPlatform(const std::string &label) 
+  : Teuchos::LabeledObject(label) 
   {
-    return Teuchos::createMpiComm<Ordinal>(MpiComm_);
+    comm_ = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD));
+  } 
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::~MpiPlatform() {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::MpiPlatform(const MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal> &platform)
+  {
+    comm_ = platform.comm_;
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Teuchos::RCP< Platform<Scalar,LocalOrdinal,GlobalOrdinal> > 
+  MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::clone() const 
+  {
+    return Teuchos::rcp(new MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal>(comm_->getRawMpiComm()));
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  Teuchos::RCP< Teuchos::Comm<int> > 
+  MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::getComm() const 
+  {
+    return comm_;
   }
 
 } // namespace Tpetra

@@ -39,68 +39,64 @@ namespace Tpetra {
    * Like all data classes, Tpetra::MapData provides no functionality. It's sole purpose is to store 
    * the data associated with a Tpetra::Map object.
    */
-  template <typename Ordinal>
-  class MapData : public Teuchos::Object {
-    friend class Map<Ordinal>;
+  template <class LocalOrdinal, class GlobalOrdinal=LocalOrdinal>
+  class MapData {
+    friend class Map<LocalOrdinal,GlobalOrdinal>;
 
-  public:
+    private:
     /*! \brief Default constructor
      */
-    MapData(Ordinal indexBase, 
-            Ordinal numGlobalEntries,
-            Ordinal numMyEntries,
-            Ordinal minAllGID,
-            Ordinal maxAllGID,
-            Ordinal minMyGID,
-            Ordinal maxMyGID,
-            const Teuchos::ArrayRCP<Ordinal> &lgMap,
-            const std::map<Ordinal,Ordinal> &glMap,
+    MapData(Teuchos_Ordinal indexBase, 
+            GlobalOrdinal numGlobalEntries,
+            LocalOrdinal numMyEntries,
+            GlobalOrdinal minAllGID,
+            GlobalOrdinal maxAllGID,
+            GlobalOrdinal minMyGID,
+            GlobalOrdinal maxMyGID,
+            const Teuchos::ArrayRCP<GlobalOrdinal> &lgMap,
+            const std::map<GlobalOrdinal,LocalOrdinal> &glMap,
             bool contiguous,
-            Teuchos::RCP< Platform<Ordinal> > platform,
-            Teuchos::RCP< Teuchos::Comm<Ordinal> > comm);
+            Teuchos::RCP<const Teuchos::Comm<int> > comm);
 
-  MapData(Ordinal indexBase, 
-          Ordinal numGlobalEntries,
-          Ordinal numMyEntries,
-          Ordinal minAllGID,
-          Ordinal maxAllGID,
-          Ordinal minMyGID,
-          Ordinal maxMyGID,
-          const Teuchos::ArrayRCP<Ordinal> &lgMap,
-          const std::map<Ordinal,Ordinal>  &glMap,
-          bool contiguous,
-          Teuchos::RCP< Platform<Ordinal> > platform,
-          Teuchos::RCP< Teuchos::Comm<Ordinal> > comm,
-          bool isLocal);
+    MapData(Teuchos_Ordinal indexBase, 
+            GlobalOrdinal numGlobalEntries,
+            LocalOrdinal numMyEntries,
+            GlobalOrdinal minAllGID,
+            GlobalOrdinal maxAllGID,
+            GlobalOrdinal minMyGID,
+            GlobalOrdinal maxMyGID,
+            const Teuchos::ArrayRCP<GlobalOrdinal> &lgMap,
+            const std::map<GlobalOrdinal,LocalOrdinal>  &glMap,
+            bool contiguous,
+            Teuchos::RCP<const Teuchos::Comm<int> > comm,
+            bool isLocal);
 
+  public:
 		//! Destructor.
 		~MapData();
 
   private:
     // some of the following are globally coherent: that is, they have been guaranteed to 
     // match across all images, and may be assumed to do so
-    Teuchos::RCP< const Platform<Ordinal> > platform_;
-		Teuchos::RCP< Teuchos::Comm<Ordinal> > comm_;
-		const Ordinal numGlobalEntries_;
-		const Ordinal indexBase_;
-		const Ordinal numMyEntries_;
-    const Ordinal minMyGID_;
-    const Ordinal maxMyGID_;
-    const Ordinal minAllGID_;
-    const Ordinal maxAllGID_;
+		Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+		const GlobalOrdinal numGlobalEntries_;
+		const Teuchos_Ordinal indexBase_;
+		const LocalOrdinal numMyEntries_;
+    const GlobalOrdinal minMyGID_;
+    const GlobalOrdinal maxMyGID_;
+    const GlobalOrdinal minAllGID_;
+    const GlobalOrdinal maxAllGID_;
     const bool contiguous_;
     const bool distributed_;
-    Teuchos::ArrayRCP<Ordinal> lgMap_;
-    std::map<Ordinal, Ordinal> glMap_;
-    Teuchos::RCP< Directory<Ordinal> > directory_;
-
-		//! Copy constructor (declared but not defined, do not use)
-		MapData(MapData<Ordinal> const& source);
-		//! Assignment operator (declared but not defined, do not use)
-		MapData<Ordinal>& operator = (MapData<Ordinal> const& source);
+    Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
+    std::map<GlobalOrdinal, LocalOrdinal> glMap_;
+    Teuchos::RCP< Directory<LocalOrdinal,GlobalOrdinal> > directory_;
 
     bool checkIsDist();
-    
+
+		// declared but not defined, do not use
+		MapData(const MapData<LocalOrdinal,GlobalOrdinal> & source);
+		MapData<LocalOrdinal,GlobalOrdinal>& operator=(const MapData<LocalOrdinal,GlobalOrdinal> & source);
   };
 
 } // namespace Tpetra

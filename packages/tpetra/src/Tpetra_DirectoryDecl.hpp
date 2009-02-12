@@ -30,7 +30,7 @@
 #define TPETRA_DIRECTORY_DECL_HPP
 
 #include <Teuchos_RCP.hpp>
-#include <Teuchos_Object.hpp>
+#include <Teuchos_Describable.hpp>
 #include "Tpetra_MapDecl.hpp"
 
 namespace Tpetra {
@@ -39,25 +39,22 @@ namespace Tpetra {
   
   /*! For Map objects, a Directory object must be created to allow referencing
       of non-local elements. Tpetra::Directory produces and contains a uniform linear
-      Map and a list of imageIDs allowing non-local elements to be accessed
+      Map and a list of nodeIDs allowing non-local elements to be accessed
       by dereferencing throught the Directory.
       
-      This class currently has one constructor, taking an Map object.
+      This class currently has one constructor, taking a Map object.
   */
-  
-  template<typename Ordinal>
-  class Directory : public Teuchos::Object {
+
+  template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal>
+  class Directory : public Teuchos::Describable {
   public:
     
     //! @name Constructors/Destructor.
     //@{ 
     
     //! constructor
-    Directory(const Map<Ordinal> & map);
+    Directory(const Map<LocalOrdinal,GlobalOrdinal> & map);
     
- private:
-    //! copy constructor
-    Directory(const Directory<Ordinal> & Directory);
  public:
     //! destructor.
     ~Directory();
@@ -67,53 +64,61 @@ namespace Tpetra {
     //! @name Query methods.
     //@{ 
     
-    //! getDirectoryEntries : Returns image info for non-local Map entries
-    /*! Given a list of Global Entry IDs, this function returns the list of
-      IDs of the owning memory image that correspond to the list of entries.
+    //! getDirectoryEntries : Returns node info for non-local Map entries
+    /*! Given a list of global IDs, this function returns the corresponding list of
+      owning node IDs.
+
       \param In
-      globalEntries - List of Global IDs being passed in.
+      globalIDs - List of global IDs to look up.
+
       \param Out
-      images - On return contains list of Image IDs owning the Global IDs in question. 
-      -1 correspond to global entries not present in the directory.
+      nodeIDs - On return, contains node IDs for the global IDs in question. 
+      -1 corresponds to global entries not present in the directory.
+
       \returns \c true signifies at least one specified global entry was not present in the directory.
     */
-    bool getDirectoryEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
-                             const Teuchos::ArrayView<Ordinal> &images) const;
+    bool getDirectoryEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
+                             const Teuchos::ArrayView<int> &nodeIDs) const;
     
-    //! getDirectoryEntries : Returns image and local id info for non-local Map entries
-    /*! Given a list of Global Entry IDs, this function returns the list of
-      image IDs and local IDs on the owning memory image that correspond
-      to the list of entries.  
+    //! getDirectoryEntries : Returns node info for non-local Map entries
+    /*! Given a list of global IDs, this function returns the corresponding list of
+      owning node IDs and local IDs.
+
       \param In
-      globalEntries - List of Global IDs being passed in.
+      globalIDs - List of global IDs to look up.
+
       \param Out
-      images - On return contains list of Image IDs owning the Global IDs in question.
-      -1 correspond to global entries not present in the directory.
+      nodeIDs - On return, contains node IDs for the global IDs in question. 
+      -1 corresponds to global entries not present in the directory.
+
       \param Out
-      localEntries - On return contains the local ID of the global on the owning image. 
-      -1 correspond to global entries not present in the directory.
+      localIDs - On return contains the local ID of the global on the owning node. 
+      Teuchos::OrdinalTraits<LocalOrdinal>::invalid() corresponds to global entries not present in the directory.
+
       \returns \c true signifies at least one specified global entry was not present in the directory.
     */
-    bool getDirectoryEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
-                             const Teuchos::ArrayView<Ordinal> &images, 
-                             const Teuchos::ArrayView<Ordinal> &localEntries) const;
+    bool getDirectoryEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
+                             const Teuchos::ArrayView<int> &nodeIDs, 
+                             const Teuchos::ArrayView<LocalOrdinal> &localIDs) const;
     //@}
     
   private:
-    const Map<Ordinal> map_;
-    Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm_;
-    std::vector<Ordinal> allMinGIDs_;
-    std::vector<Ordinal> imageIDs_;
-    std::vector<Ordinal> LIDs_;
-    Teuchos::RCP< Map<Ordinal> > directoryMap_;
+    const Map<LocalOrdinal,GlobalOrdinal> map_;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+    std::vector<GlobalOrdinal> allMinGIDs_; // size comm_->getSize()+1; entry i contains minGID for ith node, except last entry contains maxGID in the directory
+    std::vector<int> nodeIDs_;
+    std::vector<LocalOrdinal> LIDs_;
+    Teuchos::RCP< Map<LocalOrdinal,GlobalOrdinal> > directoryMap_;
+
+    Directory(const Directory<LocalOrdinal,GlobalOrdinal> &directory);
     
-    //! Assignment operator (declared but not defined, do not use)
-    Directory<Ordinal>& operator = (const Directory<Ordinal> & Source);
+    //! declared but not defined, to prevent default implementation, do not use
+    Directory<LocalOrdinal,GlobalOrdinal> & operator = (const Directory<LocalOrdinal,GlobalOrdinal> &source);
 
     // common code for both versions of getDirectoryEntries
-    bool getEntries(const Teuchos::ArrayView<const Ordinal> &globalEntries, 
-                    const Teuchos::ArrayView<Ordinal> &images, 
-                    const Teuchos::ArrayView<Ordinal> &localEntries, 
+    bool getEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
+                    const Teuchos::ArrayView<int> &nodeIDs, 
+                    const Teuchos::ArrayView<LocalOrdinal> &localIDs, 
                           bool computeLIDs) const;
     
     // directory setup for non-contiguous ES

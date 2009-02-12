@@ -57,13 +57,13 @@ namespace {
         "Slack off of machine epsilon used to check test results" );
   }
 
-  template<class Ordinal>
-  RCP<const Platform<Ordinal> > getDefaultPlatform()
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal> > getDefaultPlatform()
   {
     if (testMpi) {
-      return DefaultPlatform<Ordinal>::getPlatform();
+      return DefaultPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::getPlatform();
     }
-    return rcp(new Tpetra::SerialPlatform<Ordinal>());
+    return rcp(new Tpetra::SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal>());
   }
 
   //
@@ -71,15 +71,21 @@ namespace {
   // 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Platform, basic, Ordinal )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Platform, basic, Scalar, Ordinal )
   {
     // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
-    // create a comm  
-    RCP<Comm<Ordinal> > comm = platform.createComm();
+    RCP<Platform<Scalar,Ordinal> > platform = getDefaultPlatform<Scalar,Ordinal,Ordinal>();
+    platform->setObjectLabel("not the default label");
+    // get the comm for this platform
+    RCP<Comm<int> > comm = platform->getComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     TEST_EQUALITY( myImageID < numImages, true );
+    // clone the platform and get the new comm, test that it is different
+    RCP<const Platform<Scalar,Ordinal> > platform2 = platform->clone();
+    RCP<Comm<int> > comm2 = platform2->getComm();
+    TEST_EQUALITY_CONST( comm == comm2, false );
+    TEST_EQUALITY_CONST( platform->getObjectLabel() == platform2->getObjectLabel(), false );
   }
 
 
@@ -92,12 +98,13 @@ namespace {
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Platform, basic, ORDINAL )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Platform, basic, double, ORDINAL )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
      UNIT_TEST_GROUP_ORDINAL(int)
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
+     UNIT_TEST_GROUP_ORDINAL(char)
      UNIT_TEST_GROUP_ORDINAL(int)
      typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
      typedef long int LongInt;   UNIT_TEST_GROUP_ORDINAL(LongInt)

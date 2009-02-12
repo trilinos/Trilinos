@@ -102,27 +102,26 @@ RCP<const Platform<Ordinal> > getDefaultPlatform()
 
 
 template <class Ordinal, class Scalar>
-void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int numProcsY, int numPoints, 
-            int *xoff, int *yoff, int numRHS,
+void GenerateCrsProblem(int *xoff, int *yoff, int numRHS,
             const Platform<Ordinal> &platform,
             RCP<Map<Ordinal> > &map,
-            RCP<CrsMatrix<Ordinal,Scalar> > &A,
-            RCP<MultiVector<Ordinal,Scalar> > &b,
-            RCP<MultiVector<Ordinal,Scalar> > &bt,
-            RCP<MultiVector<Ordinal,Scalar> > &xexact,
+            RCP<CrsMatrix<Scalar,Ordinal> > &A,
+            RCP<MultiVector<Scalar,Ordinal> > &b,
+            RCP<MultiVector<Scalar,Ordinal> > &bt,
+            RCP<MultiVector<Scalar,Ordinal> > &xexact,
             FancyOStream &out);
 
 template <class Ordinal>
 ArrayRCP<Ordinal> GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int myPID);
 
 template <class Ordinal, class Scalar>
-void runMatrixTests(RCP<CrsMatrix<Ordinal,Scalar> > A,  RCP<MultiVector<Ordinal,Scalar> > b, RCP<MultiVector<Ordinal,Scalar> > bt,
-                    RCP<MultiVector<Ordinal,Scalar> > xexact, FancyOStream &out);
+void runMatrixTests(RCP<CrsMatrix<Scalar,Ordinal> > A,  RCP<MultiVector<Scalar,Ordinal> > b, RCP<MultiVector<Scalar,Ordinal> > bt,
+                    RCP<MultiVector<Scalar,Ordinal> > xexact, FancyOStream &out);
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal, Scalar )
 {
   RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
-  RCP<const Comm<Ordinal> > comm = platform->createComm();
+  RCP<const Comm<int> > comm = platform->getComm();
   if (comm->getSize() != numProcsX*numProcsY) {
     out << "numProcsX*numProcsY must equal numProcs!" << endl;
     success = false;
@@ -183,10 +182,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal,
   }
 
   RCP<Map<Ordinal> > map;
-  RCP<CrsMatrix<Ordinal,Scalar> > A;
-  RCP<MultiVector<Ordinal,Scalar> > b;
-  RCP<MultiVector<Ordinal,Scalar> > bt;
-  RCP<MultiVector<Ordinal,Scalar> > xexact;
+  RCP<CrsMatrix<Scalar,Ordinal> > A;
+  RCP<MultiVector<Scalar,Ordinal> > b;
+  RCP<MultiVector<Scalar,Ordinal> > bt;
+  RCP<MultiVector<Scalar,Ordinal> > xexact;
   Array<Scalar> scavec;
   Array<typename ScalarTraits<Scalar>::magnitudeType> magvec;
 
@@ -206,8 +205,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal,
         int nrhs=k;
         out << "\n*************** Results for " << nrhs << " RHS ";
 
-        GenerateCrsProblem(numNodesX, numNodesY, numProcsX, numProcsY, numPoints,
-            Xoff.getRawPtr(), Yoff.getRawPtr(), nrhs, *platform, 
+        GenerateCrsProblem(Xoff.getRawPtr(), Yoff.getRawPtr(), nrhs, *platform, 
             map, A, b, bt, xexact, out);
 
         runMatrixTests(A, b, bt, xexact, out);
@@ -217,8 +215,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal,
         bt = null;
         xexact = null;
 
-        MultiVector<Ordinal,Scalar> q(*map,nrhs);
-        MultiVector<Ordinal,Scalar> z(q), r(q);
+        MultiVector<Scalar,Ordinal> q(*map,nrhs);
+        MultiVector<Scalar,Ordinal> z(q), r(q);
 
         scavec.resize(nrhs);
         magvec.resize(nrhs);
@@ -282,7 +280,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal,
 //
 // comm    (In) - an Epetra_Comm object describing the parallel machine (numProcs and my proc ID)
 // map    (Out) - Map<Ordinal> describing distribution of matrix and vectors/multivectors
-// A      (Out) - CrsMatrix<Ordinal,Scalar> constructed for nx by ny grid using prescribed stencil
+// A      (Out) - CrsMatrix<Scalar,Ordinal> constructed for nx by ny grid using prescribed stencil
 //                Off-diagonal values are random between 0 and 1.  If diagonal is part of stencil,
 //                diagonal will be slightly diag dominant.
 // b      (Out) - Generated RHS.  Values satisfy b = A*xexact
@@ -290,29 +288,28 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal,
 // xexact (Out) - Generated exact solution to Ax = b and b' = A'xexact
 //
 template <class Ordinal, class Scalar>
-void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int /*numProcsY*/, int numPoints, 
-            int * xoff, int * yoff, int nrhs,
+void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
             const Platform<Ordinal> &platform, 
             RCP<Map<Ordinal> > &map,
-            RCP<CrsMatrix<Ordinal,Scalar> > &A,
-            RCP<MultiVector<Ordinal,Scalar> > &b,
-            RCP<MultiVector<Ordinal,Scalar> > &bt,
-            RCP<MultiVector<Ordinal,Scalar> > &xexact,
+            RCP<CrsMatrix<Scalar,Ordinal> > &A,
+            RCP<MultiVector<Scalar,Ordinal> > &b,
+            RCP<MultiVector<Scalar,Ordinal> > &bt,
+            RCP<MultiVector<Scalar,Ordinal> > &xexact,
             FancyOStream &out)
 {
   Time timer("GenerateCrsProblem",false);
-  RCP<Comm<Ordinal> > comm = platform.createComm();
+  RCP<const Comm<int> > comm = platform.getComm();
 
   // Determine my global IDs
   ArrayRCP<Ordinal> myGlobalElements = GenerateMyGlobalElements<Ordinal>(numNodesX, numNodesY, numProcsX, comm->getRank());
 
   int numMyEquations = numNodesX*numNodesY;
 
-  map = rcp(new Map<Ordinal>(OrdinalTraits<Ordinal>::invalid(), myGlobalElements(), 0, platform)); // Create map with 2D block partitioning.
+  map = rcp(new Map<Ordinal>(OrdinalTraits<Ordinal>::invalid(), myGlobalElements(), 0, comm)); // Create map with 2D block partitioning.
   myGlobalElements = null;
   Ordinal numGlobalEquations = map->getNumGlobalEntries();
 
-  A = rcp(new CrsMatrix<Ordinal,Scalar>(*map));
+  A = rcp(new CrsMatrix<Scalar,Ordinal>(*map,numPoints));
 
   Array<Ordinal> indices(numPoints);
   Array<Scalar>   values(numPoints);
@@ -348,14 +345,14 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int /*numPr
       << "Time to complete fill        = " << fillCompleteTime << endl;
 
   if (nrhs<=1) {  
-    b = rcp(new Vector<Ordinal,Scalar>(*map));
-    bt = rcp(new Vector<Ordinal,Scalar>(*map));
-    xexact = rcp(new Vector<Ordinal,Scalar>(*map));
+    b = rcp(new Vector<Scalar,Ordinal>(*map));
+    bt = rcp(new Vector<Scalar,Ordinal>(*map));
+    xexact = rcp(new Vector<Scalar,Ordinal>(*map));
   }
   else {
-    b = rcp(new MultiVector<Ordinal,Scalar>(*map, nrhs));
-    bt = rcp(new MultiVector<Ordinal,Scalar>(*map, nrhs));
-    xexact = rcp(new MultiVector<Ordinal,Scalar>(*map, nrhs));
+    b = rcp(new MultiVector<Scalar,Ordinal>(*map, nrhs));
+    bt = rcp(new MultiVector<Scalar,Ordinal>(*map, nrhs));
+    xexact = rcp(new MultiVector<Scalar,Ordinal>(*map, nrhs));
   }
 
   xexact->random(); // Fill xexact with random values
@@ -366,27 +363,27 @@ void GenerateCrsProblem(int numNodesX, int numNodesY, int numProcsX, int /*numPr
 }
 
 template <class Ordinal>
-ArrayRCP<Ordinal> GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int myPID)
+ArrayRCP<Ordinal> GenerateMyGlobalElements(int NumNodesX, int NumNodesY, int NumProcsX, int myPID)
 {
-  ArrayRCP<Ordinal> myGEs = arcp<Ordinal>(numNodesX*numNodesY);
-  int myProcX = myPID%numProcsX;
-  int myProcY = myPID/numProcsX;
-  int curGID = myProcY*(numProcsX*numNodesX)*numNodesY+myProcX*numNodesX;
-  for (int j=0; j<numNodesY; j++) {
-    for (int i=0; i<numNodesX; i++) {
-      myGEs[j*numNodesX+i] = as<Ordinal>(curGID+i);
+  ArrayRCP<Ordinal> myGEs = arcp<Ordinal>(NumNodesX*NumNodesY);
+  int myProcX = myPID%NumProcsX;
+  int myProcY = myPID/NumProcsX;
+  int curGID = myProcY*(NumProcsX*NumNodesX)*NumNodesY+myProcX*NumNodesX;
+  for (int j=0; j<NumNodesY; j++) {
+    for (int i=0; i<NumNodesX; i++) {
+      myGEs[j*NumNodesX+i] = as<Ordinal>(curGID+i);
     }
-    curGID+=numNodesX*numProcsX;
+    curGID+=NumNodesX*NumProcsX;
   }
   return myGEs;
 }
 
 template <class Ordinal, class Scalar>
-void runMatrixTests(RCP<CrsMatrix<Ordinal,Scalar> > A,  RCP<MultiVector<Ordinal,Scalar> > b, RCP<MultiVector<Ordinal,Scalar> > bt,
-                    RCP<MultiVector<Ordinal,Scalar> > xexact, FancyOStream &out)
+void runMatrixTests(RCP<CrsMatrix<Scalar,Ordinal> > A,  RCP<MultiVector<Scalar,Ordinal> > b, RCP<MultiVector<Scalar,Ordinal> > bt,
+                    RCP<MultiVector<Scalar,Ordinal> > xexact, FancyOStream &out)
 {
-  MultiVector<Ordinal,Scalar> z(*b);
-  MultiVector<Ordinal,Scalar> r(*b);
+  MultiVector<Scalar,Ordinal> z(*b);
+  MultiVector<Scalar,Ordinal> r(*b);
   Array<typename ScalarTraits<Scalar>::magnitudeType> resvec(b->numVectors());
 
   Time timer("runMatrixTests");
@@ -432,7 +429,7 @@ void runMatrixTests(RCP<CrsMatrix<Ordinal,Scalar> > A,  RCP<MultiVector<Ordinal,
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BasicPerfTest, MatrixAndMultiVector, ORDINAL, SCALAR )
