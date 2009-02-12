@@ -24,12 +24,13 @@
  * @author H. Carter Edwards
  */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <TPI.h>
 
 int test_c_tpi_noop( int , int * );
 int test_c_tpi_single( int );
-int test_c_tpi_dnax( int );
+int test_c_tpi_dnax( int , int );
 int test_pthreads_performance( int , int * );
 int test_c_tpi_unit( int nthread , int nwork );
 
@@ -37,6 +38,8 @@ int main( int argc , char ** argv )
 {
   int num_thread[] = { 1 , 2 , 4 , 8 , 12 , 16 };
   int num_test = sizeof(num_thread) / sizeof(int);
+
+  int num_trial = 1 < argc ? atoi( argv[1] ) : 0 ;
 
 /*  test_pthreads_performance( num_test , num_thread ); */
 
@@ -48,7 +51,9 @@ int main( int argc , char ** argv )
 
     test_c_tpi_noop( num_test , num_thread );
 
-    for ( i = 0 ; i < num_test ; ++i ) { test_c_tpi_dnax( num_thread[i] ); }
+    for ( i = 0 ; i < num_test ; ++i ) {
+      test_c_tpi_dnax( num_thread[i] , num_trial );
+    }
   }
 
   return 0 ;

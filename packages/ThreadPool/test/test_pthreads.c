@@ -216,10 +216,10 @@ void test_pthreads_performance( int n_test , int * n_concurrent )
   {
     int i ;
 
+    pthread_attr_t thread_attr ;
+
     fprintf(stdout,"\n\"test pthreads SCOPE_SYSTEM run-blocking\"\n");
     fprintf(stdout,"\"#Threads\" , \"#Spawned\" \"Spawn (microsec)\" , \"Loop (microsec)\"\n");
-
-    pthread_attr_t thread_attr ;
 
     pthread_attr_init( & thread_attr );
     pthread_attr_setscope(       & thread_attr, PTHREAD_SCOPE_SYSTEM );
@@ -245,10 +245,10 @@ void test_pthreads_performance( int n_test , int * n_concurrent )
   {
     int i ;
 
+    pthread_attr_t thread_attr ;
+
     fprintf(stdout,"\n\"test pthreads SCOPE_PROCESS run-blocking\"\n");
     fprintf(stdout,"\"#Threads\" , \"#Spawned\" \"Spawn (microsec)\" , \"Loop (microsec)\"\n");
-
-    pthread_attr_t thread_attr ;
 
     pthread_attr_init( & thread_attr );
     pthread_attr_setscope(       & thread_attr, PTHREAD_SCOPE_PROCESS );

@@ -90,6 +90,16 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
              int                 work_count  ,
              int                 lock_count  );
 
+/** Run a work subprogram in thread parallel;
+ *  run it exactly once on each thread.
+ *
+ *  The thread pool must be in the 'paused' state when this
+ *  function is called.  Thus a recursive call to TPI_Run is illegal.
+ */
+int TPI_Run_threads( TPI_work_subprogram subprogram  ,
+                     void *              shared ,
+                     int                 lock_count  );
+
 /*--------------------------------------------------------------------*/
 /** \brief  Blocks until lock lock_rank is obtained.
  *          The thread pool must be in the 'active' state.

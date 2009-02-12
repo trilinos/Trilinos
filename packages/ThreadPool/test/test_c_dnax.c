@@ -26,6 +26,7 @@
  *  Multi-array 'axpby'
  */
 
+#include <math.h>
 #include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -176,21 +177,21 @@ void test_tpi_dnax_driver( const int nthread ,
   const unsigned stride_array = num_chunk * length_chunk ;
   const unsigned size_alloc   = max_array * stride_array ;
 
-  SCALAR coef[ max_array ];
-
+  SCALAR * const coef  = (SCALAR *) malloc( max_array * sizeof(SCALAR) );
   SCALAR * const array = (SCALAR *) malloc( size_alloc * sizeof(SCALAR) );
 
-  struct TestTPI_DNAX data = { coef , NULL , 0 , 0 , 0 , 0 };
+  struct TestTPI_DNAX data = { NULL , NULL , 0 , 0 , 0 , 0 };
+
+  unsigned i_test , i , j ;
+
+  data.coef = coef ;
 
   if ( NULL == array ) {
     fprintf(stderr,"allocation failure for %u\n",size_alloc);
     abort();
   }
 
-  {
-    unsigned i = 0 ;
-    for ( ; i < max_array ; ++i ) { coef[i] = 0 ; }
-  }
+  for ( i = 0 ; i < max_array ; ++i ) { coef[i] = 0 ; }
 
   printf("\n\"test_tpi_dnax[%d]( length_array = %u , stride_array = %u )\"\n",
          nthread , length_array , stride_array );
@@ -198,318 +199,168 @@ void test_tpi_dnax_driver( const int nthread ,
   printf("\"NUMBER OF CHUNKS\" , %u\n" , num_chunk );
   printf("\"NUMBER OF TRIALS\" , %u \n", num_trials );
 
-  printf("\"NUMBER OF ARRAYS\"");
-  {
-    unsigned i_test = 0 ;
-    for ( ; i_test < num_test ; ++i_test ) {
-      printf(" , %u", num_test_array[ i_test ] );
-    }
-  }
-  printf("\n");
+  printf("\"TEST\" , \"#ARRAY\" \"DT-MEAN\" , \"DT-STDDEV\" , \"MFLOP-MEAN\" , \"MFLOP-STDDEV\"\n");
 
   /*----------------------------------------------------------------------*/
-  {
-    double dt_min[ num_test ];
-    double dt_max[ num_test ];
-    double dt_mean[ num_test ];
-    double mflops_min[ num_test ];
-    double mflops_max[ num_test ];
-    double mflops_mean[ num_test ];
 
-    unsigned i_test = 0 ;
+  for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
+    const unsigned num_array = num_test_array[ i_test ];
+    const unsigned num_sets  = max_array / num_array ;
 
-    for ( ; i_test < num_test ; ++i_test ) {
-      const unsigned num_array = num_test_array[ i_test ];
-      const unsigned num_sets  = max_array / num_array ;
+    const double mflop_cycle =
+      ((double)( 2 * num_array * length_array )) / 1.0e6 ;
 
-      const double mflop_cycle =
-        ((double)( 2 * num_array * length_array )) / 1.0e6 ;
+    const unsigned ncycle = 1 + (unsigned)( Mflop_target / mflop_cycle );
 
-      const unsigned ncycle = 1 + (unsigned)( Mflop_target / mflop_cycle );
+    double dt_sum = 0 ;
+    double dt_sum_2 = 0 ;
 
-      data.length       = length_array ;
-      data.number       = num_array ;
-      data.stride       = stride_array ;
-      data.chunk_length = length_chunk ;
+    data.length       = length_array ;
+    data.number       = num_array ;
+    data.stride       = stride_array ;
+    data.chunk_length = length_chunk ;
 
-      { unsigned i = 0 ; for ( ; i < size_alloc ; ++i ) { array[i] = 0 ; } }
+    for ( i = 0 ; i < size_alloc ; ++i ) { array[i] = 0 ; }
 
-      {
-        double dt_tmp ;
-        unsigned repeat = 0 ;
-        unsigned i ;
-        for ( ; repeat < num_trials ; ++repeat ) {
+    for ( j = 0 ; j < num_trials ; ++j ) {
 
-          dt_tmp = TPI_Walltime();
-          for ( i = 0 ; i < ncycle ; ++i ) {
-            data.array = array + stride_array * num_array * ( i % num_sets );
-            TPI_Run( & test_dnax_flat_work , & data , num_chunk , 0 );
-          }
-          dt_tmp = TPI_Walltime() - dt_tmp ;
-
-          if ( 0 == repeat ) {
-            dt_min[ i_test ] = dt_tmp ;
-            dt_max[ i_test ] = dt_tmp ;
-            dt_mean[ i_test ] = dt_tmp / num_trials ;
-          }
-          else {
-            dt_mean[ i_test ] += dt_tmp / num_trials ;
-          }
-          if ( dt_tmp < dt_min[ i_test ] ) { dt_min[ i_test ] = dt_tmp ; }
-          if ( dt_tmp > dt_max[ i_test ] ) { dt_max[ i_test ] = dt_tmp ; }
-        }
+      double dt_tmp = TPI_Walltime();
+      for ( i = 0 ; i < ncycle ; ++i ) {
+        data.array = array + stride_array * num_array * ( i % num_sets );
+        TPI_Run( & test_dnax_flat_work , & data , num_chunk , 0 );
       }
+      dt_tmp = TPI_Walltime() - dt_tmp ;
 
-      mflops_max[ i_test ] = mflop_cycle * ncycle / dt_min[ i_test ];
-      mflops_min[ i_test ] = mflop_cycle * ncycle / dt_max[ i_test ];
-      mflops_mean[ i_test ] = mflop_cycle * ncycle / dt_mean[ i_test ];
+      dt_sum += dt_tmp ;
+      dt_sum_2 += dt_tmp * dt_tmp ;
     }
 
-    printf("\"FLAT ARRAY max  time (sec)\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", dt_max[ i_test ] );
-    }
-    printf("\n");
+    {
+      const double dt_mean = dt_sum / num_trials ;
+      const double dt_sdev = sqrt( ( num_trials * dt_sum_2 - dt_sum * dt_sum ) / ( num_trials * ( num_trials - 1 ) ) );
+      const double mflop_mean = mflop_cycle * ncycle / dt_mean ;
+      const double mflop_sdev = mflop_mean * dt_sdev / ( dt_mean + dt_sdev );
 
-    printf("\"FLAT ARRAY mean time (sec)\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", dt_mean[ i_test ] );
+      printf("\"FLAT  ARRAY\"  , %6u , %9.5g , %9.3g , %9.5g , %9.3g\n",
+             num_array, dt_mean, dt_sdev, mflop_mean, mflop_sdev );
     }
-    printf("\n");
-
-    printf("\"FLAT ARRAY min  time (sec)\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", dt_min[ i_test ] );
-    }
-    printf("\n");
-
-    printf("\"FLAT ARRAY max  Mflops\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", mflops_max[ i_test ] );
-    }
-    printf("\n");
-
-    printf("\"FLAT ARRAY mean Mflops\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", mflops_mean[ i_test ] );
-    }
-    printf("\n");
-
-    printf("\"FLAT ARRAY min  Mflops\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", mflops_min[ i_test ] );
-    }
-    printf("\n");
   }
 
   /*----------------------------------------------------------------------*/
-  {
-    double dt_min[ num_test ];
-    double dt_max[ num_test ];
-    double dt_mean[ num_test ];
-    double mflops_min[ num_test ];
-    double mflops_max[ num_test ];
-    double mflops_mean[ num_test ];
 
-    unsigned i_test = 0 ;
+  for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
 
-    for ( ; i_test < num_test ; ++i_test ) {
-      const unsigned num_array = num_test_array[ i_test ];
-      const unsigned num_sets  = max_array / num_array ;
+    const unsigned num_array = num_test_array[ i_test ];
+    const unsigned num_sets  = max_array / num_array ;
 
-      const double mflop_cycle =
-        ((double)( 2 * num_array * length_array )) / 1.0e6 ;
+    const double mflop_cycle =
+      ((double)( 2 * num_array * length_array )) / 1.0e6 ;
 
-      const unsigned ncycle = 1 + (unsigned)( Mflop_target / mflop_cycle );
+    const unsigned ncycle = 1 + (unsigned)( Mflop_target / mflop_cycle );
 
-      data.length       = length_array ;
-      data.number       = num_array ;
-      data.stride       = stride_array ;
-      data.chunk_length = length_chunk ;
+    double dt_sum = 0 ;
+    double dt_sum_2 = 0 ;
 
-      { unsigned i = 0 ; for ( ; i < size_alloc ; ++i ) { array[i] = 0 ; } }
+    data.length       = length_array ;
+    data.number       = num_array ;
+    data.stride       = stride_array ;
+    data.chunk_length = length_chunk ;
 
-      {
-        double dt_tmp ;
-        unsigned i ;
-        unsigned repeat = 0 ;
-        for ( ; repeat < num_trials ; ++repeat ) {
+    for ( i = 0 ; i < size_alloc ; ++i ) { array[i] = 0 ; }
 
-          dt_tmp = TPI_Walltime();
-          for ( i = 0 ; i < ncycle ; ++i ) {
-            data.array = array + stride_array * num_array * ( i % num_sets );
-            TPI_Run( & test_dnax_column_work , & data , num_chunk , 0 );
-          }
-          dt_tmp = TPI_Walltime() - dt_tmp ;
+    for ( j = 0 ; j < num_trials ; ++j ) {
 
-          if ( 0 == repeat ) {
-            dt_min[ i_test ] = dt_tmp ;
-            dt_max[ i_test ] = dt_tmp ;
-            dt_mean[ i_test ] = dt_tmp / num_trials ;
-          }
-          else {
-            dt_mean[ i_test ] += dt_tmp / num_trials ;
-          }
-          if ( dt_tmp < dt_min[ i_test ] ) { dt_min[ i_test ] = dt_tmp ; }
-          if ( dt_tmp > dt_max[ i_test ] ) { dt_max[ i_test ] = dt_tmp ; }
-        }
+      double dt_tmp = TPI_Walltime();
+      for ( i = 0 ; i < ncycle ; ++i ) {
+        data.array = array + stride_array * num_array * ( i % num_sets );
+        TPI_Run( & test_dnax_column_work , & data , num_chunk , 0 );
       }
+      dt_tmp = TPI_Walltime() - dt_tmp ;
 
-      mflops_max[ i_test ] = mflop_cycle * ncycle / dt_min[ i_test ];
-      mflops_min[ i_test ] = mflop_cycle * ncycle / dt_max[ i_test ];
-      mflops_mean[ i_test ] = mflop_cycle * ncycle / dt_mean[ i_test ];
+      dt_sum += dt_tmp ;
+      dt_sum_2 += dt_tmp * dt_tmp ;
     }
 
-    printf("\"CHUNK COLUMN max  time (sec)\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", dt_max[ i_test ] );
-    }
-    printf("\n");
+    {
+      const double dt_mean = dt_sum / num_trials ;
+      const double dt_sdev = sqrt( ( num_trials * dt_sum_2 - dt_sum * dt_sum ) / ( num_trials * ( num_trials - 1 ) ) );
+      const double mflop_mean = mflop_cycle * ncycle / dt_mean ;
+      const double mflop_sdev = mflop_mean * dt_sdev / ( dt_mean + dt_sdev );
 
-    printf("\"CHUNK COLUMN mean time (sec)\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", dt_mean[ i_test ] );
+      printf("\"CHUNK COLUMN\" , %6u , %9.5g , %9.3g , %9.5g , %9.3g\n",
+             num_array, dt_mean, dt_sdev, mflop_mean, mflop_sdev );
     }
-    printf("\n");
-
-    printf("\"CHUNK COLUMN min  time (sec)\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", dt_min[ i_test ] );
-    }
-    printf("\n");
-
-    printf("\"CHUNK COLUMN max  Mflops\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", mflops_max[ i_test ] );
-    }
-    printf("\n");
-
-    printf("\"CHUNK COLUMN mean Mflops\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", mflops_mean[ i_test ] );
-    }
-    printf("\n");
-
-    printf("\"CHUNK COLUMN min  Mflops\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", mflops_min[ i_test ] );
-    }
-    printf("\n");
   }
 
   /*----------------------------------------------------------------------*/
-  {
-    double dt_min[ num_test ];
-    double dt_max[ num_test ];
-    double dt_mean[ num_test ];
-    double mflops_min[ num_test ];
-    double mflops_max[ num_test ];
-    double mflops_mean[ num_test ];
 
-    unsigned i_test = 0 ;
+  for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
 
-    for ( ; i_test < num_test ; ++i_test ) {
-      const unsigned num_array = num_test_array[ i_test ];
-      const unsigned num_sets  = max_array / num_array ;
+    const unsigned num_array = num_test_array[ i_test ];
+    const unsigned num_sets  = max_array / num_array ;
 
-      const double mflop_cycle =
-        ((double)( 2 * num_array * length_array )) / 1.0e6 ;
+    const double mflop_cycle =
+      ((double)( 2 * num_array * length_array )) / 1.0e6 ;
 
-      const unsigned ncycle = 1 + (unsigned)( Mflop_target / mflop_cycle );
+    const unsigned ncycle = 1 + (unsigned)( Mflop_target / mflop_cycle );
 
-      data.length       = length_array ;
-      data.number       = num_array ;
-      data.stride       = stride_array ;
-      data.chunk_length = length_chunk ;
+    double dt_sum = 0 ;
+    double dt_sum_2 = 0 ;
 
-      { unsigned i = 0 ; for ( ; i < size_alloc ; ++i ) { array[i] = 0 ; } }
+    data.length       = length_array ;
+    data.number       = num_array ;
+    data.stride       = stride_array ;
+    data.chunk_length = length_chunk ;
 
-      {
-        double dt_tmp ;
-        unsigned i ;
-        unsigned repeat = 0 ;
-        for ( ; repeat < num_trials ; ++repeat ) {
+    for ( i = 0 ; i < size_alloc ; ++i ) { array[i] = 0 ; }
 
-          dt_tmp = TPI_Walltime();
-          for ( i = 0 ; i < ncycle ; ++i ) {
-            data.array = array + stride_array * num_array * ( i % num_sets );
-            TPI_Run( & test_dnax_row_work , & data , num_chunk , 0 );
-          }
-          dt_tmp = TPI_Walltime() - dt_tmp ;
+    for ( j = 0 ; j < num_trials ; ++j ) {
 
-          if ( 0 == repeat ) {
-            dt_min[ i_test ] = dt_tmp ;
-            dt_max[ i_test ] = dt_tmp ;
-            dt_mean[ i_test ] = dt_tmp / num_trials ;
-          }
-          else {
-            dt_mean[ i_test ] += dt_tmp / num_trials ;
-          }
-          if ( dt_tmp < dt_min[ i_test ] ) { dt_min[ i_test ] = dt_tmp ; }
-          if ( dt_tmp > dt_max[ i_test ] ) { dt_max[ i_test ] = dt_tmp ; }
-        }
+      double dt_tmp = TPI_Walltime();
+
+      for ( i = 0 ; i < ncycle ; ++i ) {
+        data.array = array + stride_array * num_array * ( i % num_sets );
+        TPI_Run( & test_dnax_row_work , & data , num_chunk , 0 );
       }
+      dt_tmp = TPI_Walltime() - dt_tmp ;
 
-      mflops_max[ i_test ] = mflop_cycle * ncycle / dt_min[ i_test ];
-      mflops_min[ i_test ] = mflop_cycle * ncycle / dt_max[ i_test ];
-      mflops_mean[ i_test ] = mflop_cycle * ncycle / dt_mean[ i_test ];
+      dt_sum += dt_tmp ;
+      dt_sum_2 += dt_tmp * dt_tmp ;
     }
 
-    printf("\"CHUNK ROW max  time (sec)\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", dt_max[ i_test ] );
-    }
-    printf("\n");
+    {
+      const double dt_mean = dt_sum / num_trials ;
+      const double dt_sdev = sqrt( ( num_trials * dt_sum_2 - dt_sum * dt_sum ) / ( num_trials * ( num_trials - 1 ) ) );
+      const double mflop_mean = mflop_cycle * ncycle / dt_mean ;
+      const double mflop_sdev = mflop_mean * dt_sdev / ( dt_mean + dt_sdev );
 
-    printf("\"CHUNK ROW mean time (sec)\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", dt_mean[ i_test ] );
+      printf("\"CHUNK ROW\"    , %6u , %9.5g , %9.3g , %9.5g , %9.3g\n",
+             num_array, dt_mean, dt_sdev, mflop_mean, mflop_sdev );
     }
-    printf("\n");
-
-    printf("\"CHUNK ROW min  time (sec)\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", dt_min[ i_test ] );
-    }
-    printf("\n");
-
-    printf("\"CHUNK ROW max  Mflops\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", mflops_max[ i_test ] );
-    }
-    printf("\n");
-
-    printf("\"CHUNK ROW mean Mflops\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", mflops_mean[ i_test ] );
-    }
-    printf("\n");
-
-    printf("\"CHUNK ROW min  Mflops\"");
-    for ( i_test = 0 ; i_test < num_test ; ++i_test ) {
-      printf(" , %lf", mflops_min[ i_test ] );
-    }
-    printf("\n");
   }
 
   /*----------------------------------------------------------------------*/
 
   free( array );
+  free( coef );
 }
 
 /*------------------------------------------------------------------------*/
 
-int test_c_tpi_dnax( int nthread )
+int test_c_tpi_dnax( int nthread , int ntrial )
 {
   const unsigned Mflop_target = 10 ;
   const unsigned num_array[6] = { 2 , 5 , 10 , 20 , 50 , 100 };
+  const unsigned ntest = sizeof(num_array) / sizeof(unsigned);
+
+  if ( ntrial <= 0 ) { ntrial = 7 ; }
 
   TPI_Init( nthread );
 
   test_tpi_dnax_driver( nthread ,
                         Mflop_target * nthread ,
-                        5         /* number trials */ ,
-                        6         /* number of tests */ ,
+                        ntrial    /* number trials */ ,
+                        ntest     /* number of tests */ ,
                         num_array /* number of arrays for each test */ ,
                         1e6       /* array computation length */ ,
                         1000      /* chunk length */ );

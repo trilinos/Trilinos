@@ -3,8 +3,6 @@
 # . /usr/local/modules/3.2.6/Modules/$MODULE_VERSION/bin/modulecmd tcsh	\
 #	load sierra-devel-desktop-intel-10.1ip
 
-rm -f ThreadPool_config.h
-echo "#define HAVE_PTHREAD 1" > ThreadPool_config.h
 
 TEST_SRC="test_main.c test_c_dnax.c test_c_tpi.c test_tpi_unit.c test_pthreads.c"
 
@@ -12,67 +10,71 @@ LIB_SRC="../src/TPI.c ../src/TPI_Walltime.c"
 
 LIB_OBJ="TPI.o TPI_Walltime.o"
 
+#CFLAGS="-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419"
+CFLAGS="-std=c89 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419"
+CCFLAGS="        -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419"
+
 OPT="-O3"
 # OPT="-g"
+# OPT="-O"
 
 #-----------------------------------------------------------------------
 
-icc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
-	${OPT} -c	\
+rm -f ThreadPool_config.h
+echo "#define HAVE_PTHREAD 1" > ThreadPool_config.h
+
+icc	${CFLAGS} ${OPT} -c	\
 	-I. -I../src ${LIB_SRC}
 
-icc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
-	${OPT}	\
+icc	${CFLAGS} ${OPT}	\
 	-o test_tpi.intel.exe	\
 	-I. -I../src ${TEST_SRC} ${LIB_OBJ} -lpthread
 
-icc	-strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
-	${OPT}	\
+icc	${CCFLAGS} ${OPT}	\
 	-o test_tpi_cpp.intel.exe	\
 	-I. -I../src test_tpi.cpp ${LIB_OBJ} -lpthread -lstdc++
 
-icc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
-	${OPT}	\
+icc	${CFLAGS} ${OPT}	\
 	-o test_sum.intel.exe	\
 	-I. -I../src test_mpi_sum.c ${LIB_OBJ} -lpthread
 
 #-----------------------------------------------------------------------
 
-mpicc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
-	${OPT}	\
+mpicc	${CFLAGS} ${OPT}	\
 	-o test_sum.mpi.intel.exe	\
-	-I../src -DTEST_WITH_MPI test_mpi_sum.c ${LIB_OBJ} -lpthread
+	-I. -I../src -DTEST_WITH_MPI test_mpi_sum.c ${LIB_OBJ} -lpthread
 
 #-----------------------------------------------------------------------
 
 rm -f ThreadPool_config.h
 echo "/* #define HAVE_PTHREAD 1 */" > ThreadPool_config.h
 
-icc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
-	${OPT} -c	\
+icc	${CFLAGS} ${OPT} -c	\
 	-I. -I../src ${LIB_SRC}
 
-icc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
-	${OPT}	\
+icc	${CFLAGS} ${OPT}	\
 	-o test_tpi.intel.noth.exe	\
 	-I. -I../src ${TEST_SRC} ${LIB_OBJ} -lpthread
 
-icc	-strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
-	${OPT}	\
+icc	${CCFLAGS} ${OPT}	\
 	-o test_tpi_cpp.intel.noth.exe	\
 	-I. -I../src test_tpi.cpp ${LIB_OBJ} -lpthread -lstdc++
 
-icc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
-	${OPT}	\
+icc	${CFLAGS} ${OPT}	\
 	-o test_sum.intel.noth.exe	\
 	-I. -I../src test_mpi_sum.c ${LIB_OBJ} -lpthread
 
 #-----------------------------------------------------------------------
 
-mpicc	-std=c99 -strict-ansi -Wall -Wcheck -Werror -wd1418 -wd1419	\
-	${OPT}	\
+rm -f ThreadPool_config.h
+echo "/* #define HAVE_PTHREAD 1 */" > ThreadPool_config.h
+echo "#define HAVE_MPI 1" >> ThreadPool_config.h
+
+mpicc	${CFLAGS} ${OPT}	\
 	-o test_sum.mpi.intel.noth.exe	\
-	-I../src -DTEST_WITH_MPI test_mpi_sum.c ${LIB_OBJ} -lpthread
+	-I. -I../src -DTEST_WITH_MPI test_mpi_sum.c ${LIB_OBJ} -lpthread
 
 #-----------------------------------------------------------------------
+
+rm -f ThreadPool_config.h
 

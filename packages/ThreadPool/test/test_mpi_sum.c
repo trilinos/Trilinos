@@ -24,15 +24,17 @@
  * @author H. Carter Edwards
  */
 
+#include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <TPI.h>
+#include <ThreadPool_config.h>
 
 int rand_r( unsigned int * );
 
 /*--------------------------------------------------------------------*/
 
-#if defined(TEST_WITH_MPI)
+#if defined(HAVE_MPI)
 
 #include <mpi.h>
 
@@ -46,8 +48,20 @@ typedef int COMM ;
 
 static int comm_size( COMM );
 static int comm_rank( COMM );
+static void comm_reduce_dmax( COMM , double * );
 static void comm_reduce_dsum( COMM , double * );
 static void comm_reduce_d4_sum( COMM , double * );
+
+/*--------------------------------------------------------------------*/
+
+static void my_span( const unsigned count , const unsigned rank ,
+                     const unsigned size ,
+                     unsigned * begin , unsigned * length )
+{
+  const unsigned int max = ( size + count - 1 ) / count ;
+  const unsigned int len = size - ( *begin = max * rank );
+  *length = max < len ? max : len ;
+}
 
 /*--------------------------------------------------------------------*/
 
@@ -93,10 +107,9 @@ double ddot( unsigned n , const double * x , const double * y )
 
 struct TaskXY {
   unsigned n ;
-  unsigned nb ;
   const double * x ;
   const double * y ;
-        double * v ;
+        double   v[4] ;
 };
 
 static
@@ -104,77 +117,82 @@ void task_d4_dot_tp( TPI_Work * work )
 {
   struct TaskXY * const data = (struct TaskXY *) work->shared ;
 
-  const int begin  = data->nb * work->work_rank ;
-  const int length = data->n - begin < data->nb ?
-                     data->n - begin : data->nb ;
+  double tmp[4] = { 0 , 0 , 0 , 0 };
 
-  d4_dot( data->v + 4 * work->work_rank ,
-          length , data->x + begin , data->y + begin );
+  unsigned int begin , length ;
+
+  my_span( work->work_count , work->work_rank , data->n , & begin , & length );
+
+  d4_dot( tmp , length , data->x + begin , data->y + begin );
+
+  TPI_Lock(0);
+  d2_add_d( data->v ,     tmp[0] );
+  d2_add_d( data->v ,     tmp[1] );
+  d2_add_d( data->v + 2 , tmp[2] );
+  d2_add_d( data->v + 2 , tmp[3] );
+  TPI_Unlock(0);
 }
 
 double d4_dot_tp( COMM comm, unsigned n, unsigned nblock ,
                   const double * x, const double * y )
 {
-  const int nwork = ( n + nblock - 1 ) / nblock ;
-  const int ntmp = 4 * nwork ;
-  double tmp[ ntmp ];
+  struct TaskXY data = { 0 , NULL , NULL , { 0 , 0 , 0 , 0 } };
+  data.n = n ;
+  data.x = x ;
+  data.y = y ;
 
-  struct TaskXY data = { n , nblock , x , y , tmp };
-
-  int i ;
-
-  for ( i = 0 ; i < ntmp ; ++i ) { tmp[i] = 0 ; }
-
-  TPI_Run( task_d4_dot_tp , & data , nwork , 0 );
-
-  for ( i = 1 ; i < nwork ; ++i ) {
-    d2_add_d( tmp ,   tmp[  i*4] ); 
-    d2_add_d( tmp ,   tmp[1+i*4] ); 
-    d2_add_d( tmp+2 , tmp[2+i*4] ); 
-    d2_add_d( tmp+2 , tmp[3+i*4] ); 
+  if ( nblock ) {
+    const int nwork = ( n + nblock - 1 ) / nblock ;
+    TPI_Run( task_d4_dot_tp , & data , nwork , 1 );
+  }
+  else {
+    TPI_Run_threads( task_d4_dot_tp , & data , 1 );
   }
 
-  comm_reduce_d4_sum( comm , tmp );
+  comm_reduce_d4_sum( comm , data.v );
 
-  d2_add_d( tmp , tmp[2] );
-  d2_add_d( tmp , tmp[3] );
+  d2_add_d( data.v , data.v[2] );
+  d2_add_d( data.v , data.v[3] );
 
-  return tmp[0] ;
+  return data.v[0] ;
 }
 
 static
 void task_ddot_tp( TPI_Work * work )
 {
   struct TaskXY * const data = (struct TaskXY *) work->shared ;
+  double tmp ;
+  unsigned int begin , length ;
 
-  const int begin  = data->nb * work->work_rank ;
-  const int length = data->n - begin < data->nb ?
-                     data->n - begin : data->nb ;
+  my_span( work->work_count , work->work_rank , data->n , & begin , & length );
 
-  data->v[ work->work_rank ] =
-    ddot( length , data->x + begin , data->y + begin );
+  tmp = ddot( length , data->x + begin , data->y + begin );
+
+  TPI_Lock(0);
+  data->v[0] += tmp ;
+  TPI_Unlock(0);
   return ;
 }
 
 double ddot_tp( COMM comm, unsigned n, unsigned nblock,
                 const double * x, const double * y )
 {
-  const int nwork = ( n + nblock - 1 ) / nblock ;
-  double tmp[ nwork ];
+  struct TaskXY data = { 0 , NULL , NULL , { 0 , 0 , 0 , 0 } };
+  data.n = n ;
+  data.x = x ;
+  data.y = y ;
 
-  struct TaskXY data = { n , nblock , x , y , tmp };
+  if ( nblock ) {
+    const int nwork = ( n + nblock - 1 ) / nblock ;
+    TPI_Run( task_ddot_tp , & data , nwork , 1 );
+  }
+  else {
+    TPI_Run_threads( task_ddot_tp , & data , 1 );
+  }
 
-  int i ;
+  comm_reduce_dsum( comm , data.v );
 
-  for ( i = 0 ; i < nwork ; ++i ) { tmp[i] = 0 ; }
-
-  TPI_Run( task_ddot_tp , & data , nwork , 0 );
-
-  for ( i = 1 ; i < nwork ; ++i ) { tmp[0] += tmp[i] ; }
-
-  comm_reduce_dsum( comm , tmp );
-
-  return tmp[0] ;
+  return data.v[0] ;
 }
 
 /*--------------------------------------------------------------------*/
@@ -193,7 +211,6 @@ struct FillWork {
   double   mag ;
   double * beg ;
   unsigned length ;
-  unsigned nblock ;
   unsigned seed ;
 };
 
@@ -201,75 +218,209 @@ static void task_dfill_rand( TPI_Work * work )
 {
   struct FillWork * const w = (struct FillWork *) work->shared ;
 
-  const int begin  = w->nblock * work->work_rank ;
-  const int length = w->length - begin < w->nblock ?
-                     w->length - begin : w->nblock ;
+  unsigned int begin , length ;
+
+  my_span( work->work_count, work->work_rank, w->length, & begin , & length );
 
   dfill_rand( w->seed + begin , length , w->beg + begin , w->mag );
 }
 
-void dfill_rand_tp( unsigned seed , unsigned n , unsigned nblock ,
-                    double * x , double mag )
+void dfill_rand_tp( unsigned nblock , unsigned seed ,
+                    unsigned n , double * x , double mag )
 {
-  const int nwork = ( n + nblock - 1 ) / nblock ;
-  struct FillWork data = { mag , x , n , nblock , seed };
-  TPI_Run( & task_dfill_rand , & data , nwork , 0 );
+  struct FillWork data ;
+  data.mag    = mag ;
+  data.beg    = x ;
+  data.length = n ;
+  data.seed   = seed ;
+  if ( nblock ) {
+    const int nwork = ( n + nblock - 1 ) / nblock ;
+    TPI_Run( & task_dfill_rand , & data , nwork , 0 );
+  }
+  else {
+    TPI_Run_threads( & task_dfill_rand , & data , 0 );
+  }
 }
 
 /*--------------------------------------------------------------------*/
 
 static
-void test_tpi_ddot_driver(
+void test_ddot_performance(
   COMM comm ,
   const int nthreads ,
   const int nblock ,
-  const unsigned Mflop_target  /* Per concurrent thread */ ,
-  const unsigned num_trials ,
-  const unsigned num_tests ,
-  const unsigned length_array[]  /* Global array length for each test */ ,
+  const unsigned int num_trials ,
+  const unsigned int num_tests ,
+  const unsigned int length_array[]  /* Global array length for each test */ ,
   const double   mag )
 {
-  const unsigned num_times = num_trials * num_tests ;
-  double dt_ddot[ num_times ];
-  double dt_d4_dot[ num_times ];
-  double val_d4_dot[ num_tests ] ;
-  double val_ddot[ num_tests ] ;
+  const unsigned int ddot_flop   = 2 ;  /* 1 mult, 1 sum */
+  const unsigned int d4_dot_flop = 12 ; /* 1 mult, 7 sum, 4 compare */
 
-  const unsigned ddot_flop   = 2 ;  /* 1 mult, 1 sum */
-  const unsigned d4_dot_flop = 12 ; /* 1 mult, 7 sum, 4 compare */
+  const unsigned int p_rank = comm_rank( comm );
+  const unsigned int p_size = comm_size( comm );
 
-  const unsigned p_rank = comm_rank( comm );
-  const unsigned p_size = comm_size( comm );
-  const unsigned np = p_size * nthreads ;
+  const unsigned int max_array = length_array[ num_tests - 1 ];
 
-  const unsigned max_array = length_array[ num_tests - 1 ];
-
-  const unsigned local_max_begin = ( max_array * p_rank ) / p_size ;
-  const unsigned local_max_end   = ( max_array * ( p_rank + 1 ) ) / p_size ;
-  const unsigned local_max_size  = local_max_end - local_max_begin ;
+  unsigned int local_max_size = 0 ;
+  unsigned int i_test ;
 
   TPI_Init( nthreads );
+
+  if ( 0 == p_rank ) {
+    fprintf(stdout,"\n\"DDOT and D4DOT Performance testing\"\n");
+    fprintf(stdout,"\"MPI size = %u , TPI size = %d , BlockSize = %d , #Trials = %u\"\n",p_size,nthreads,nblock,num_trials);
+    fprintf(stdout,"\"TEST\" , \"LENGTH\" , \"#CYCLE\" , \"DT-MEAN\" , \"DT-STDDEV\" , \"MFLOP-MEAN\" , \"MFLOP-STDDEV\"\n");
+  }
+
+  for ( i_test = 0 ; i_test < num_tests ; ++i_test ) {
+    const unsigned length = length_array[ i_test ]; /* Global */
+    const unsigned ncycle = 2 * max_array / length ;
+    const unsigned local_max = ncycle * ( ( length + p_size - 1 ) / p_size );
+    if ( local_max_size < local_max ) { local_max_size = local_max ; }
+  }
 
   {
     double * const x = (double*) malloc(local_max_size * 2 * sizeof(double));
     double * const y = x + local_max_size ;
 
-    unsigned i_test , i , j ;
+    unsigned int i , j ;
+
+    dfill_rand_tp( nblock, 0,              local_max_size, x, mag );
+    dfill_rand_tp( nblock, local_max_size, local_max_size, y, mag );
+
+    for ( i_test = 0 ; i_test < num_tests ; ++i_test ) {
+      const unsigned length = length_array[ i_test ]; /* Global */
+      const unsigned ncycle = 2 * max_array / length ;
+
+      unsigned int local_begin , local_length ;
+
+      double dt_sum = 0.0 ;
+      double dt_sum_2 = 0.0 ;
+
+      my_span( p_size, p_rank, length, & local_begin , & local_length );
+
+      /*--------------------------------------------------------------*/
+
+      for ( i = 0 ; i < num_trials ; ++i ) {
+        double dt = TPI_Walltime();
+        for ( j = 0 ; j < ncycle ; ++j ) {
+            ddot_tp( comm, local_length, nblock,
+                     x + j * local_length ,
+                     y + j * local_length );
+        }
+        dt = TPI_Walltime() - dt ;
+        comm_reduce_dmax( comm , & dt );
+        dt_sum   += dt ;
+        dt_sum_2 += dt * dt ;
+      }
+
+      if ( 0 == p_rank ) {
+        const double mflop = ((double)( ddot_flop * length * ncycle ) ) / ((double) 1e6 );
+
+        const double dt_mean = dt_sum / num_trials ;
+        const double dt_sdev = sqrt( ( num_trials * dt_sum_2 - dt_sum * dt_sum ) /
+                                     ( num_trials * ( num_trials - 1 ) ) );
+        const double mflop_mean = mflop / dt_mean ;
+        const double mflop_sdev = mflop_mean * dt_sdev / ( dt_mean + dt_sdev );
+
+        fprintf(stdout,"\"DDOT\"  , %8u , %8u , %9.5g , %9.5g , %9.5g , %9.5g\n",
+                length, ncycle, dt_mean, dt_sdev, mflop_mean, mflop_sdev );
+        fflush(stdout);
+      }
+    }
+
+    for ( i_test = 0 ; i_test < num_tests ; ++i_test ) {
+      const unsigned length = length_array[ i_test ]; /* Global */
+      const unsigned ncycle = 2 * max_array / length ;
+
+      unsigned int local_begin , local_length ;
+
+      double dt_sum = 0 ;
+      double dt_sum_2 = 0 ;
+
+      my_span( p_size, p_rank, length, & local_begin , & local_length );
+
+      /*--------------------------------------------------------------*/
+
+      for ( i = 0 ; i < num_trials ; ++i ) {
+        double dt = TPI_Walltime();
+        for ( j = 0 ; j < ncycle ; ++j ) {
+            d4_dot_tp( comm, local_length, nblock,
+                       x + j * local_length ,
+                       y + j * local_length );
+        }
+        dt = TPI_Walltime() - dt ;
+        comm_reduce_dmax( comm , & dt );
+        dt_sum   += dt ;
+        dt_sum_2 += dt * dt ;
+      }
+
+      if ( 0 == p_rank ) {
+        const double mflop = ((double)( d4_dot_flop * length * ncycle ) ) / ((double) 1e6 );
+
+        const double dt_mean = dt_sum / num_trials ;
+        const double dt_sdev = sqrt( ( num_trials * dt_sum_2 - dt_sum * dt_sum ) /
+                                     ( num_trials * ( num_trials - 1 ) ) );
+        const double mflop_mean = mflop / dt_mean ;
+        const double mflop_sdev = mflop_mean * dt_sdev / ( dt_mean + dt_sdev );
+
+        fprintf(stdout,"\"DDOT\"  , %8u , %8u , %9.5g , %9.5g , %9.5g , %9.5g\n",
+                length, ncycle, dt_mean, dt_sdev, mflop_mean, mflop_sdev );
+        fflush(stdout);
+      }
+    }
+
+    /*--------------------------------------------------------------*/
+
+    free( x );
+  }
+
+  TPI_Finalize();
+
+  return ;
+}
+
+/*--------------------------------------------------------------------*/
+
+static
+void test_ddot_accuracy(
+  COMM comm ,
+  const int nthreads ,
+  const int nblock ,
+  const unsigned int num_tests ,
+  const unsigned int length_array[]  /* Global array length for each test */ ,
+  const double   mag )
+{
+  const unsigned int p_rank = comm_rank( comm );
+  const unsigned int p_size = comm_size( comm );
+
+  const unsigned int max_array = length_array[ num_tests - 1 ];
+  const unsigned int local_max_size = ( max_array + p_size - 1 ) / p_size ;
+
+  unsigned int i_test ;
+
+  TPI_Init( nthreads );
+
+  if ( 0 == p_rank ) {
+    fprintf(stdout,"\n\"DDOT and D4DOT Accuracy testing\"\n");
+    fprintf(stdout,"\"MPI size = %u , TPI size = %d , BlockSize = %d\"\n",p_size,nthreads,nblock);
+    fprintf(stdout,"\"TEST\" , \"LENGTH\" , \"VALUE\"\n");
+  }
+
+  {
+    double * const x = (double*) malloc(local_max_size * 2 * sizeof(double));
+    double * const y = x + local_max_size ;
 
     for ( i_test = 0 ; i_test < num_tests ; ++i_test ) {
       const unsigned length      = length_array[ i_test ]; /* Global */
       const int      length_half = length / 2 ;
-      const unsigned num_array   = max_array / length ;
-
-      const unsigned ddot_ncycle =
-        1 + (unsigned)( ( Mflop_target * np * 1e6 ) / ( ddot_flop * length ) );
-
-      const unsigned d4_dot_ncycle =
-        1 + (unsigned)( ( Mflop_target * np * 1e6 ) / ( d4_dot_flop * length));
 
       const unsigned local_begin = ( length * p_rank ) / p_size ;
       const unsigned local_end   = ( length * ( p_rank + 1 ) ) / p_size ;
       const unsigned local_size  = local_end - local_begin ;
+
+      double val_ddot ;
 
       /*--------------------------------------------------------------*/
 
@@ -277,11 +428,8 @@ void test_tpi_ddot_driver(
         const unsigned len = local_size < length_half - local_begin
                            ? local_size : length_half - local_begin ;
 
-        for ( i = 0 ; i < num_array ; ++i ) {
-          const int n = i * local_size ;
-          dfill_rand_tp(          local_begin, len, nblock, x + n, mag );
-          dfill_rand_tp( length + local_begin, len, nblock, y + n, mag );
-        }
+        dfill_rand_tp( nblock,          local_begin, len, x, mag );
+        dfill_rand_tp( nblock, length + local_begin, len, y, mag );
       }
 
       if ( length_half < local_begin + local_size ) {
@@ -290,117 +438,66 @@ void test_tpi_ddot_driver(
         const unsigned off = beg - local_begin ;
         const unsigned len = local_size - off ;
 
-        for ( i = 0 ; i < num_array ; ++i ) {
-          const int n = i * local_size + off ;
-          dfill_rand_tp(          beg - length_half, len, nblock, x + n, mag );
-          dfill_rand_tp( length + beg - length_half, len, nblock, y + n, - mag );
-        }
+        dfill_rand_tp( nblock,          beg - length_half, len, x + off, mag );
+        dfill_rand_tp( nblock, length + beg - length_half, len, y + off, - mag );
       }
 
       /*--------------------------------------------------------------*/
 
-      for ( i = 0 ; i < num_trials ; ++i ) {
-        {
-          const unsigned n = i * d4_dot_ncycle ;
-          const double   t = TPI_Walltime();
-          for ( j = 0 ; j < d4_dot_ncycle ; ++j ) {
-            const unsigned k = ( ( j + n ) % num_array ) * local_size ;
-            val_d4_dot[i_test] =
-              d4_dot_tp( comm, local_size, nblock, x + k, y + k);
-          }
-          dt_d4_dot[ i + i_test * num_trials ] = TPI_Walltime() - t ;
-        }
-      }
+      val_ddot = ddot_tp( comm, local_size, nblock, x, y );
 
-      /*--------------------------------------------------------------*/
-
-      for ( i = 0 ; i < num_trials ; ++i ) {
-        {
-          const unsigned n = i * ddot_ncycle ;
-          const double   t = TPI_Walltime();
-          for ( j = 0 ; j < ddot_ncycle ; ++j ) {
-            const unsigned k = ( ( j + n ) % num_array ) * local_size ;
-            val_ddot[i_test] = ddot_tp( comm, local_size, nblock, x + k, y + k);
-          }
-          dt_ddot[ i + i_test * num_trials ] = TPI_Walltime() - t ;
-        }
+      if ( 0 == p_rank ) {
+        fprintf(stdout,"\"DDOT\"  , %8u , %9.3g\n", length , val_ddot );
+        fflush(stdout);
       }
     }
+
+    for ( i_test = 0 ; i_test < num_tests ; ++i_test ) {
+      const unsigned length      = length_array[ i_test ]; /* Global */
+      const int      length_half = length / 2 ;
+
+      const unsigned local_begin = ( length * p_rank ) / p_size ;
+      const unsigned local_end   = ( length * ( p_rank + 1 ) ) / p_size ;
+      const unsigned local_size  = local_end - local_begin ;
+
+      double val_d4_dot ;
+
+      /*--------------------------------------------------------------*/
+
+      if ( local_begin < length_half ) {
+        const unsigned len = local_size < length_half - local_begin
+                           ? local_size : length_half - local_begin ;
+
+        dfill_rand_tp( nblock,          local_begin, len, x, mag );
+        dfill_rand_tp( nblock, length + local_begin, len, y, mag );
+      }
+
+      if ( length_half < local_begin + local_size ) {
+        const unsigned beg = length_half > local_begin
+                           ? length_half : local_begin ;
+        const unsigned off = beg - local_begin ;
+        const unsigned len = local_size - off ;
+
+        dfill_rand_tp( nblock,          beg - length_half, len, x + off, mag );
+        dfill_rand_tp( nblock, length + beg - length_half, len, y + off, - mag );
+      }
+
+      /*--------------------------------------------------------------*/
+
+      val_d4_dot = d4_dot_tp( comm, local_size, nblock, x , y );
+
+      if ( 0 == p_rank ) {
+        fprintf(stdout,"\"DDOT\"  , %8u , %9.3g\n", length , val_d4_dot );
+        fflush(stdout);
+      }
+    }
+
+    /*--------------------------------------------------------------*/
 
     free( x );
   }
 
   TPI_Finalize();
-
-  /*------------------------------------------------------------------*/
-
-  if ( 0 == p_rank ) {
-
-    unsigned i_test , i ;
-
-    fprintf(stdout,"\n\"DDOT and D4DOT Performance testing\"\n");
-    fprintf(stdout,"\"MPI size = %u , TPI size = %d , Bounds = %g , #Trials = %u\"\n",p_size,nthreads,mag,num_trials);
-    fprintf(stdout,"\"TEST\" , \"LENGTH\" , \"VALUE\" , \"DT-MAX\" , \"DT-AVG\" , \"DT-MIN\" , \"MFLOP-MIN\" , \"MFLOP-AVG\" , \"MFLOP-MAX\"\n");
-
-    for ( i_test = 0 ; i_test < num_tests ; ++i_test ) {
-      const unsigned length = length_array[ i_test ];
-      const unsigned ncycle =
-        1 + (unsigned)( ( Mflop_target * np * 1e6 ) / ( ddot_flop * length ));
-      const double mflop = ((double)( ddot_flop * length ) ) / ((double) 1e6 );
-
-      const double * const dt = dt_ddot + i_test * num_trials ;
-      double dt_max = dt[0] ;
-      double dt_min = dt[0] ;
-      double dt_avg = dt[0]  ;
-
-      for ( i = 1 ; i < num_trials ; ++i ) {
-        if ( dt_max < dt[i] ) { dt_max = dt[i] ; }
-        if ( dt_min > dt[i] ) { dt_min = dt[i] ; }
-        dt_avg += dt[i] ;
-      }
-      dt_avg /= (double) num_trials ;
-
-      dt_max /= (double) ncycle ;
-      dt_avg /= (double) ncycle ;
-      dt_min /= (double) ncycle ;
-
-      fprintf(stdout,"\"DDOT\"  , %8u , %9.3g , %9.5g , %9.5g , %9.5g , %9.5g , %9.5g , %9.5g\n",
-              length , val_ddot[i_test] ,
-              dt_max , dt_avg , dt_min,
-              ( mflop / dt_max ) , ( mflop / dt_avg ) , ( mflop / dt_min ) );
-    }
-
-    for ( i_test = 0 ; i_test < num_tests ; ++i_test ) {
-      const unsigned length = length_array[ i_test ];
-      const unsigned ncycle =
-        1 + (unsigned)(( Mflop_target * np * 1e6 ) / ( ddot_flop * length ));
-      const double mflop = ((double)( d4_dot_flop * length ) ) /
-                           ((double) 1e6 );
-
-      const double * const dt = dt_d4_dot + i_test * num_trials ;
-      double dt_max = dt[0] ;
-      double dt_min = dt[0] ;
-      double dt_avg = dt[0] ;
-
-      for ( i = 1 ; i < num_trials ; ++i ) {
-        if ( dt_max < dt[i] ) { dt_max = dt[i] ; }
-        if ( dt_min > dt[i] ) { dt_min = dt[i] ; }
-        dt_avg += dt[i] ;
-      }
-      dt_avg /= (double) num_trials ;
-
-      dt_max /= (double) ncycle ;
-      dt_avg /= (double) ncycle ;
-      dt_min /= (double) ncycle ;
-
-      fprintf(stdout,"\"D4DOT\" , %8u , %9.3g , %9.5g , %9.5g , %9.5g , %9.5g , %9.5g , %9.5g\n",
-              length , val_d4_dot[i_test] ,
-              dt_max , dt_avg , dt_min ,
-              ( mflop / dt_max ) , ( mflop / dt_avg ) , ( mflop / dt_min ) );
-    }
-  }
-
-  fflush(stdout);
 
   return ;
 }
@@ -409,26 +506,29 @@ void test_tpi_ddot_driver(
 
 static void test_main( COMM comm , int nthreads )
 {
-  const unsigned lengths[] = { 1e3 , 2e3 , 5e3 ,
-                               1e4 , 2e4 , 5e4 ,
+  const unsigned lengths[] = { 1e4 , 2e4 , 5e4 ,
                                1e5 , 2e5 , 5e5 ,
                                1e6 , 2e6 , 5e6 , 1e7 };
 
   const unsigned nblock = 1000 ;
   const unsigned num_tests = sizeof(lengths) / sizeof(unsigned);
-  const unsigned num_trials = 5 ;
-  const unsigned mflop_target = 100 ;
+  const unsigned num_trials = 11 ;
   const double mag = 1e4 ;
 
-  test_tpi_ddot_driver( comm , nthreads , nblock,
-                        mflop_target , num_trials ,
-                        num_tests , lengths , mag );
+  test_ddot_accuracy( comm , nthreads , nblock, num_tests, lengths, mag );
+  test_ddot_accuracy( comm , nthreads , 0, num_tests, lengths, mag );
+
+  test_ddot_performance( comm , nthreads , nblock,
+                         num_trials , num_tests , lengths , mag );
+
+  test_ddot_performance( comm , nthreads , 0,
+                         num_trials , num_tests , lengths , mag );
 }
 
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
 
-#if defined(TEST_WITH_MPI)
+#if defined(HAVE_MPI)
 
 int main( int argc , char **argv )
 {
@@ -457,6 +557,18 @@ static int comm_rank( COMM comm )
   int rank = 0 ;
   MPI_Comm_rank( comm , & rank );
   return rank ;
+}
+
+static void comm_reduce_dmax( COMM comm , double * val )
+{
+  double tmp ;
+  if ( MPI_SUCCESS ==
+       MPI_Allreduce( val , & tmp , 1 , MPI_DOUBLE , MPI_MAX , comm ) ) {
+    *val = tmp ;
+  }
+  else {
+    *val = 0 ;
+  }
 }
 
 static void comm_reduce_dsum( COMM comm , double * val )
@@ -527,6 +639,11 @@ int main( int argc , char **argv )
 
 static int comm_size( COMM comm ) { return comm ? -1 : 1 ; }
 static int comm_rank( COMM comm ) { return comm ? -1 : 0 ; }
+static void comm_reduce_dmax( COMM comm , double * val )
+{
+  if ( comm ) { *val = 0 ; }
+  return ;
+}
 static void comm_reduce_dsum( COMM comm , double * val )
 {
   if ( comm ) { *val = 0 ; }
