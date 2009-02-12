@@ -28,27 +28,36 @@
 // @HEADER
 */
 
-#ifndef GLOBIPACK_POLY_INTERP_LINE_SEARCH_DECL_HPP
-#define GLOBIPACK_POLY_INTERP_LINE_SEARCH_DECL_HPP
+#ifndef GLOBIPACK_BRENTS_LINE_SEARCH_DECL_HPP
+#define GLOBIPACK_BRENTS_LINE_SEARCH_DECL_HPP
 
 
 #include "GlobiPack_LineSearchBase.hpp"
+#include "GlobiPack_GoldenQuadInterpBracket.hpp"
+#include "GlobiPack_Brents1DMinimization.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 
 namespace GlobiPack {
 
 
-/** \brief Linesearch subclass implementing a backtracking-only line search
- * using an Armijo cord test condition and a quadratic interploation.
+/** \brief Linesearch subclass implementing a function-value-only approximate
+ * minimization algorithm using bracketing and then Brent's 1D minimization
+ * method.
  *
- * This linesearch class is really designed for (quasi) Newton methods where a
- * backtracking only linesearch is the only thing the makes sense.
+ * This lineserach class is designed for more accurate linesearches and it
+ * will march forward (as well as backward) from the given initial guess for
+ * the step length in order to find it.  This linesearch is therefore more
+ * appropriate for optimization algorithms like steppest decent and nonlinear
+ * CG what require more accurate linesearches and where the scaling of the
+ * step is not well know.  Also, this linesearch likely satisifies the Strong
+ * Wolf Conditions but there are not checks for this at all so in the end it
+ * may not.
  *
  * ToDo: Finish Documentation!
  */
 template<typename Scalar>
-class ArmijoPolyInterpLineSearch
+class BrentsLineSearch
   : public LineSearchBase<Scalar>,
     protected Teuchos::ParameterListAcceptorDefaultBase
 {
@@ -58,20 +67,13 @@ public:
   //@{
 
   /** \brief Construct with default parameters. */
-  ArmijoPolyInterpLineSearch();
+  BrentsLineSearch();
 
-  /** \brief . */
-  Scalar eta() const;
-  /** \brief . */
-  Scalar minFrac() const;
-  /** \brief . */
-  Scalar maxFrac() const;
-  /** \brief . */
-  int	minIters() const;
-  /** \brief . */
-  int	maxIters() const;
-  /** \brief . */
-  bool doMaxIters() const;
+  /** \brief For unit testing only . */
+  const GoldenQuadInterpBracket<Scalar>& bracket() const;
+
+  /** \brief For unit testing only . */
+  const Brents1DMinimization<Scalar>& brentsMin() const;
 
   //@}
 
@@ -109,57 +111,39 @@ private:
   // //////////////////////
   // Private data members
 
-  Scalar eta_;
-  Scalar minFrac_;
-  Scalar maxFrac_;
-  int	minIters_;
-  int	maxIters_;
-  bool doMaxIters_;
+  GoldenQuadInterpBracket<Scalar> bracket_;
+  Brents1DMinimization<Scalar> brentsMin_;
 
 };
 
 
 /** \brief Nonmember constructor.
  *
- * \relates ArmijoPolyInterpLineSearch
+ * \relates BrentsLineSearch
  */
 template<typename Scalar>
-const RCP<ArmijoPolyInterpLineSearch<Scalar> > armijoQuadraticLineSearch()
+const RCP<BrentsLineSearch<Scalar> > brentsLineSearch()
 {
-  return Teuchos::rcp(new ArmijoPolyInterpLineSearch<Scalar>());
+  return Teuchos::rcp(new BrentsLineSearch<Scalar>());
 }
 
 
 // Default values are exposed here for unit testing purposes
 
 
-namespace ArmijoPolyInterpLineSearchUtils {
+namespace BrentsLineSearchUtils {
 
 
-const std::string eta_name = "Armijo Slope Fraction";
-const double eta_default = 1.0e-4;
+const std::string bracket_name = "Bracket";
 
-const std::string minFrac_name = "Min Backtrack Fraction";
-const double minFrac_default = 0.1;
-
-const std::string maxFrac_name = "Max Backtrack Fraction";
-const double maxFrac_default = 0.5;
-
-const std::string minIters_name = "Min Num Iterations";
-const int minIters_default = 0;
-
-const std::string maxIters_name = "Max Num Iterations";
-const int maxIters_default = 20;
-
-const std::string doMaxIters_name = "Do Max Iterations";
-const bool doMaxIters_default = false;
+const std::string minimize_name = "Minimize";
 
 
-} // namespace ArmijoPolyInterpLineSearchUtils
+} // namespace BrentsLineSearchUtils
 
 
 
 } // namespace GlobiPack
 
 
-#endif // GLOBIPACK_POLY_INTERP_LINE_SEARCH_DECL_HPP
+#endif // GLOBIPACK_BRENTS_LINE_SEARCH_DECL_HPP

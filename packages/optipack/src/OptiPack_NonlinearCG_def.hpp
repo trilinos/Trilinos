@@ -219,6 +219,7 @@ NonlinearCG<Scalar>::doSolve(
   using Teuchos::optInArg;
   using Teuchos::inOutArg;
   using GlobiPack::computeValue;
+  using GlobiPack::PointEval1D;
   using Thyra::VectorSpaceBase;
   using Thyra::VectorBase;
   using Thyra::MultiVectorBase;
@@ -443,8 +444,16 @@ NonlinearCG<Scalar>::doSolve(
 
     ScalarMag g_kp1 = computeValue(*meritFunc, alpha_k); // Updates p_kp1 and g_vec as well!
 
+    PointEval1D<ScalarMag> point_k(ST::zero(), g_k);
+    if (linesearch_->requiresBaseDeriv())
+      point_k.Dphi = g_grad_k_inner_d_k;
+    PointEval1D<ScalarMag> point_kp1(alpha_k, g_kp1);
+
     const bool linesearchResult = linesearch_->doLineSearch(
-      *meritFunc, g_k, inOutArg(alpha_k), inOutArg(g_kp1), null );
+      *meritFunc, point_k, inOutArg(point_kp1), null );
+
+    alpha_k = point_kp1.alpha;
+    g_kp1 = point_kp1.phi;
 
     if (!linesearchResult) {
       if (!linsearchFailureLastIter) {

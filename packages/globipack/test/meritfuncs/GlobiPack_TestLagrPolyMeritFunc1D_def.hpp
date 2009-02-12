@@ -53,28 +53,11 @@ TestLagrPolyMeritFunc1D<Scalar>::TestLagrPolyMeritFunc1D(
 
 // Overridden from MeritFunc1DBase
 
-
-template<typename Scalar>
-bool TestLagrPolyMeritFunc1D<Scalar>::supportsBaseDeriv() const
-{
-  return true;
-}
-
   
 template<typename Scalar>
 bool TestLagrPolyMeritFunc1D<Scalar>::supportsDerivEvals() const
 {
   return true;
-}
-
-   
-template<typename Scalar>
-Scalar TestLagrPolyMeritFunc1D<Scalar>::baseDeriv() const
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  Scalar deriv = ST::zero();
-  eval( ST::zero(), Teuchos::null, Teuchos::outArg(deriv) );
-  return deriv;
 }
 
 

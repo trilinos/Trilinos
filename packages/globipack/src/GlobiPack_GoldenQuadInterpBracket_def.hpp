@@ -53,15 +53,24 @@ GoldenQuadInterpBracket<Scalar>::GoldenQuadInterpBracket()
 template<typename Scalar>
 void GoldenQuadInterpBracket<Scalar>::setParameterList(RCP<ParameterList> const& paramList)
 {
-  TEST_FOR_EXCEPT(true);
+  typedef ScalarTraits<Scalar> ST;
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters());
+  // ToDo: Add parameters!
+  setMyParamList(paramList);
 }
 
 
 template<typename Scalar>
 RCP<const ParameterList> GoldenQuadInterpBracket<Scalar>::getValidParameters() const
 {
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  static RCP<const ParameterList> validPL;
+  if (is_null(validPL)) {
+    RCP<Teuchos::ParameterList>
+      pl = Teuchos::rcp(new Teuchos::ParameterList());
+    // ToDo: Add parameters!
+    validPL = pl;
+  }
+  return validPL;
 }
 
 

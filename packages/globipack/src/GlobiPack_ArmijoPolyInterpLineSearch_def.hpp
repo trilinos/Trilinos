@@ -49,16 +49,8 @@ ArmijoPolyInterpLineSearch<Scalar>::ArmijoPolyInterpLineSearch()
     maxFrac_(ArmijoPolyInterpLineSearchUtils::maxFrac_default),
     minIters_(ArmijoPolyInterpLineSearchUtils::minIters_default),
     maxIters_(ArmijoPolyInterpLineSearchUtils::maxIters_default),
-    doMaxIters_(ArmijoPolyInterpLineSearchUtils::doMaxIters_default),
-    numIters_(0)
+    doMaxIters_(ArmijoPolyInterpLineSearchUtils::doMaxIters_default)
 {}
-
-
-template<typename Scalar>
-int ArmijoPolyInterpLineSearch<Scalar>::numIterations() const
-{
-  return numIters_;
-}
 
 
 template<typename Scalar>
@@ -165,40 +157,49 @@ bool ArmijoPolyInterpLineSearch<Scalar>::requiresBaseDeriv() const
 template<typename Scalar>
 bool ArmijoPolyInterpLineSearch<Scalar>::requiresDerivEvals() const
 {
-  return true;
+  return false;
 }
 
 
 template<typename Scalar>
 bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
   const MeritFunc1DBase<Scalar> &phi,
-  const Scalar &phi_k,
-  const Ptr<Scalar> &alpha_k,
-  const Ptr<Scalar> &phi_kp1,
-  const Ptr<Scalar> &Dphi_kp1
+  const PointEval1D<Scalar> &point_k,
+  const Ptr<PointEval1D<Scalar> > &point_kp1,
+  const Ptr<int> &numIters_out
   ) const
 {
 
   using Teuchos::as;
+  using Teuchos::ptrFromRef;
   using Teuchos::TabularOutputter;
   typedef Teuchos::TabularOutputter TO;
   typedef ScalarTraits<Scalar> ST;
-
-  using std::endl;
+  typedef PointEval1D<Scalar> PE1D;
   using std::min;
   using std::max;
 
   const RCP<Teuchos::FancyOStream> out = this->getOStream();
 
-  TEST_FOR_EXCEPTION( !(*alpha_k > ST::zero()), std::logic_error,
-    "ArmijoPolyInterpLineSearch::doLineSearch(): "
-    "alpha_k can't start out less than 0.0"	);
-
   *out << "\nStarting Armijo Quadratic interpolation linesearch ...\n";
+
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(point_k.alpha, ST::zero());
+  TEUCHOS_ASSERT_INEQUALITY(point_k.phi, !=, PE1D::valNotGiven());
+  TEUCHOS_ASSERT_INEQUALITY(point_k.Dphi, !=, PE1D::valNotGiven());
+  TEUCHOS_ASSERT(!is_null(point_kp1));
+  TEUCHOS_ASSERT_INEQUALITY(point_kp1->alpha, >, ST::zero());
+  TEUCHOS_ASSERT_INEQUALITY(point_kp1->phi, !=, PE1D::valNotGiven());
+  TEUCHOS_ASSERT_EQUALITY(point_kp1->Dphi, PE1D::valNotGiven());
+#endif
+
+  const Scalar phi_k = point_k.phi;
+  Scalar &alpha_k = point_kp1->alpha;
+  Scalar &phi_kp1 = point_kp1->phi;
 
   // Loop initialization (technically the first iteration)
 
-  const Scalar Dphi_k = phi.baseDeriv();
+  const Scalar Dphi_k = point_k.Dphi;
 
   // output header
 
@@ -232,38 +233,39 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
     "phi Dphi_k="<<Dphi_k<<" >= 0!" );
   
   // keep memory of the best value
-  Scalar best_alpha = *alpha_k;
-  Scalar best_phi = *phi_kp1;
+  Scalar best_alpha = alpha_k;
+  Scalar best_phi = phi_kp1;
 
   // Perform linesearch.
   bool success = false;
-  for ( numIters_ = 0; numIters_ < maxIters_; ++numIters_ ) {
+  int numIters = 0;
+  for ( ; numIters < maxIters_; ++numIters ) {
 
     // Print out this iteration.
 
-    Scalar frac_phi = phi_k + eta_ * (*alpha_k) * Dphi_k;
-    tblout.outputField(numIters_);
-    tblout.outputField(*alpha_k);
-    tblout.outputField(*phi_kp1);
-    tblout.outputField(((*phi_kp1)-frac_phi));
+    Scalar frac_phi = phi_k + eta_ * alpha_k * Dphi_k;
+    tblout.outputField(numIters);
+    tblout.outputField(alpha_k);
+    tblout.outputField(phi_kp1);
+    tblout.outputField(((phi_kp1)-frac_phi));
     
-    if (ST::isnaninf(*phi_kp1)) {
+    if (ST::isnaninf(phi_kp1)) {
 
       // Cut back the step to minFrac * alpha_k
-      *alpha_k = minFrac_ * (*alpha_k);
+      alpha_k = minFrac_ * alpha_k;
       best_alpha = ST::zero();
       best_phi = phi_k;
     }
     else {		
 
       // Armijo condition
-      if (*phi_kp1 < frac_phi) {
+      if (phi_kp1 < frac_phi) {
         // We have found an acceptable point
         success = true;
-        if (numIters_ < minIters_) {
+        if (numIters < minIters_) {
           // Keep going!
         }
-        else if ( !doMaxIters_ || ( doMaxIters_ && numIters_ == maxIters_ - 1 ) ) {
+        else if ( !doMaxIters_ || ( doMaxIters_ && numIters == maxIters_ - 1 ) ) {
           tblout.nextRow(true);
           break;	// get out of the loop, we are done!
         }
@@ -273,7 +275,7 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
       }
 
       // Select a new alpha to try:
-      //   alpha_k = ( minFrac*alpha_k <= quadratic interpolation <= maxFrac*alpha_k )
+      //   alpha_k = ( minFracalpha_k <= quadratic interpolation <= maxFracalpha_k )
 
       // Quadratic interpolation of alpha_k that minimizes phi.
       // We know the values of phi at the initail point and alpha_k and
@@ -281,22 +283,22 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
       // that's enough information for a quandratic interpolation.
       
       Scalar alpha_quad =
-        ( -as<Scalar>(0.5) * Dphi_k * (*alpha_k) * (*alpha_k) )
+        ( -as<Scalar>(0.5) * Dphi_k * alpha_k * alpha_k )
         /
-        ( (*phi_kp1) - phi_k - (*alpha_k) * Dphi_k );
+        ( (phi_kp1) - phi_k - alpha_k * Dphi_k );
 
       tblout.outputField(alpha_quad);
 
       // 2009/01/29: rabartl: ToDo: Call the interpolation and then add
       // support for other types of interpolations based on various points.
 
-      const Scalar alpha_min = minFrac_ * (*alpha_k);
-      const Scalar alpha_max = maxFrac_ * (*alpha_k);
+      const Scalar alpha_min = minFrac_ * alpha_k;
+      const Scalar alpha_max = maxFrac_ * alpha_k;
 
       tblout.outputField(alpha_min);
       tblout.outputField(alpha_max);
 
-      *alpha_k =
+      alpha_k =
         min(
           max(alpha_min, alpha_quad),
           alpha_max
@@ -309,15 +311,18 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
     
     // Evaluate the point
 
-    *phi_kp1 = computeValue<Scalar>(phi, *alpha_k);
+    phi_kp1 = computeValue<Scalar>(phi, alpha_k);
 
     // Save the best point found
-    if (*phi_kp1 < best_phi) {
-      best_phi = *phi_kp1;
-      best_alpha = *alpha_k;
+    if (phi_kp1 < best_phi) {
+      best_phi = phi_kp1;
+      best_alpha = alpha_k;
     }
 
   }
+
+  if (!is_null(numIters_out))
+    *numIters_out = numIters;
 
   if( success ) {
     *out << "\nLine search success!\n";
@@ -326,8 +331,8 @@ bool ArmijoPolyInterpLineSearch<Scalar>::doLineSearch(
 
   // Line search failure.  Return the best point found and let the client
   // decide what to do.
-  *alpha_k = best_alpha;
-  *phi_kp1 = computeValue<Scalar>(phi, best_alpha);
+  alpha_k = best_alpha;
+  phi_kp1 = computeValue<Scalar>(phi, best_alpha);
   *out << "\nLine search failure!\n";
   return false; 
   

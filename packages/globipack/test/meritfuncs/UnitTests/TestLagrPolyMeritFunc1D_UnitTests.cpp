@@ -19,6 +19,7 @@ using Teuchos::RCP;
 using Teuchos::Array;
 using Teuchos::tuple;
 using GlobiPack::TestLagrPolyMeritFunc1D;
+using GlobiPack::computeValue;
 
 
 template<class Scalar>
@@ -70,11 +71,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( TestLagrPolyMeritFunc1D, basic, Scalar )
   ECHO(Array<Scalar> alphaPoints = tuple<Scalar>(0.0, 2.0, 4.0));
   ECHO(Array<Scalar> phiPoints = tuple<Scalar>(4.0, 2.0, 4.0));
   ECHO(TestLagrPolyMeritFunc1D<Scalar> meritFunc(alphaPoints, phiPoints));
-  TEST_ASSERT(meritFunc.supportsBaseDeriv());
   TEST_ASSERT(meritFunc.supportsDerivEvals());
-
-  ECHO(Scalar Dphi0 = meritFunc.baseDeriv());
-  TEST_EQUALITY(Dphi0, Dphi_quad1(as<Scalar>(0.0)));
 
   Array<Scalar> alphaTestPoints = tuple<Scalar>(0.0, 1.0, 2.0, 3.0, 4.0);
   for (int test_i = 0; test_i < as<int>(alphaTestPoints.size()); ++test_i) {

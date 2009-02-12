@@ -65,54 +65,43 @@ public:
 
   /** \brief Called to perform a linesearch.
    *
-   * \param phi [in] The merit function object that will compute the initial
-   * descent direction <tt>Dphi</tt>, and the value <tt>phi(alpha)</tt> and/or
-   * derivative <tt>Dphi(alpha) at different points <tt>alpha</tt>.  The last
-   * call to <tt>phi.eval(...)</tt> will always be with the value of
-   * <tt>alpha_k</tt> returned.
+   * \param phi [in] The merit function object that will compute the merit
+   * function value <tt>phi(alpha)</tt> and/or derivative <tt>Dphi(alpha) at
+   * different points <tt>alpha</tt>.  The last call to <tt>phi.eval(...)</tt>
+   * will always be at the value of <tt>point_kp1->alpha</tt> returned.
    *
-   * \param phi_k [in] The value of <tt>phi(0)</tt>.  This must be computed by
-   * the client externally and passed in.
+   * \param point_k [in] The evaluation of the merit function and optionally
+   * its derivative at <tt>alpha=0.0</tt>.
    *
-   * \param alpha_k [in/out] On input, <tt>alpha_k</tt> is the initial value
-   * to try out (usually 1.0 for most Newton-based algorithms).  On output,
-   * <tt>alpha_k</tt> is the accepted value for a successful line search, or
-   * it will be the <tt>alpha</tt> for the minimum <tt>phi(alpha)</tt> found
-   * during a failed line search algorithm.  The initial value of
-   * <tt>alpha_k</tt> on input will typically not be exceeded internally. but
-   * that is not guaranteed.
-   *
-   * \param phi_kp1 [in/out] Merit function at new point
-   * <tt>phi(alpha_k)</tt>.  On input it must be the value of
-   * <tt>phi(alpha_k)</tt> for <tt>alpha_k</tt> on input.  On output it is set
-   * to <tt>phi(alpha_k)</tt>.
-   *
-   * \param Dphi_kp1 [in/out] Derivative Merit function at new point
-   * <tt>phi(alpha_k)</tt>.  On input it can be set the the value of
-   * <tt>Dphi(alpha_k)</tt> for <tt>alpha_k</tt> on input.  On output, it is
-   * set to <tt>phi.value(alpha_k)</tt>.  Must be <tt>null</tt> if
-   * <tt>this->requiresDerivEvals()==false</tt>.
+   * \param point_kp1 [in/out] On input, <tt>point_kp1->alpha</tt> is the
+   * initial value to try out (usually 1.0 for most Newton-based algorithms).
+   * Also, <tt>point_kp1->phi</tt> must be computed at this value for alpha as
+   * well as <tt>point_kp1->Dphi</tt> if required.  On output,
+   * <tt>point_kp1->alpha</tt> is the accepted value for a successful line
+   * search, or it will be the <tt>alpha</tt> for the minimum
+   * <tt>phi(alpha)</tt> found during a failed line search algorithm.
    *
    * <b>Preconditions:</b><ul>
    *
+   * <tt>point_k.alpha == 0.0</tt>
+   *
+   * <tt>point_k.phi != PointEval1D<Scalar>::valNotGiven()</tt>
+   *
    * <li> [<tt>this->requiresBaseDeriv()==true</tt>]
-   * <tt>phi.supportsBaseDeriv()==true</tt>
+   * <tt>point_k.Dphi != PointEval1D<Scalar>::valNotGiven()</tt>
+   *
+   * <li> [<tt>this->requiresBaseDeriv()==true</tt>]
+   * <tt>point_k.Dphi < 0.0</tt> (throw <tt>Exceptions::NotDescentDirection</tt>)
    *
    * <li> [<tt>this->requiresDerivEvals()==true</tt>]
    * <tt>phi.supportsDerivEvals()==true</tt>
    *
-   * <li> [<tt>this->requiresBaseDeriv()</tt>==true] <tt>phi.baseDeriv() <
-   * 0.0</tt> (throw <tt>Exceptions::NotDescentDirection</tt>)
+   * <li> <tt>!is_null(point_kp1)</tt>
    *
-   * <li> <tt>!is_null(alpha_k)</tt>
-   *
-   * <li> <tt>!is_null(phi_kp1)</tt>
+   * <tt>point_kp1->phi != PointEval1D<Scalar>::valNotGiven()</tt>
    *
    * <li> [<tt>this->requiresDerivEvals()==true</tt>]
-   * <tt>!is_null(Dphi_kp1)==true</tt>
-   *
-   * <li> [<tt>this->requiresDerivEvals()==false</tt>]
-   * <tt>is_null(Dphi_kp1)==true</tt>
+   * <tt>point_kp1->Dphi != PointEval1D<Scalar>::valNotGiven()</tt>
    *
    * </ul>
    *
@@ -127,24 +116,25 @@ public:
      min  phi(alpha)  s.t. alpha = [0, alpha_upper]<br>
    \endverbatim
 
-   * Actually, if the initial <tt>alpha_k</tt> satisfies an internally defied
-   * descent requirement, then it will be choosen over smaller values of
-   * <tt>alpha_k</tt> that may result in a greater reduction in the given
-   * merit function..
+   * For many lineserach algorithms, if the initial <tt>point_kp1->alpha</tt>
+   * satisfies the internally defined descent requirement, then it will
+   * typically be choosen over smaller values of <tt>point_kp1->alpha</tt>
+   * that may result in a greater reduction in the given merit function.
+   * Other linesearch implementions will actually seek an approximate
+   * minimizer.
    *
    * If the maximum number of iterations is exceeded without finding an
    * acceptable point, then the subclass object will return <tt>false</tt> and
-   * will return values of <tt>alpha_k</tt> and <tt>phi_kp1</tt> will be for
-   * the lowest value of <tt>phi_kp1 = phi(alpha_k)</tt> found.  In this case,
-   * the last call to <tt>phi(alpha_k)</tt> will be this best value of
-   * <tt>phi_kp1</tt>.
+   * will return values of <tt>point_kp1->alpha</tt> and
+   * <tt>point_kp1->phi</tt> will be for the lowest value of <tt>phi_kp1 =
+   * phi(alpha_k)</tt> found.  In this case, the last call to
+   * <tt>phi(alpha_k)</tt> will be this best value of <tt>phi_kp1</tt>.
    */
   virtual bool doLineSearch(
     const MeritFunc1DBase<Scalar> &phi,
-    const Scalar &phi_k,
-    const Ptr<Scalar> &alpha_k,
-    const Ptr<Scalar> &phi_kp1,
-    const Ptr<Scalar> &Dphi_kp1
+    const PointEval1D<Scalar> &point_k,
+    const Ptr<PointEval1D<Scalar> > &point_kp1,
+    const Ptr<int> &numIters
     ) const = 0;
 
 };

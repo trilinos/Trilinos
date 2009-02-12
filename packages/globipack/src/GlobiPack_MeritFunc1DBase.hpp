@@ -51,18 +51,7 @@ class MeritFunc1DBase : virtual public Teuchos::Describable
 public:
 
   /** \brief Determine if derivative evaluations are supported or not. */
-  virtual bool supportsBaseDeriv() const = 0;
-
-  /** \brief Determine if derivative evaluations are supported or not. */
   virtual bool supportsDerivEvals() const = 0;
-
-  /** \brief Return the base derivative at <tt>alpha=0</tt>.
-   *
-   * <b>Preconditions:</b><ul>
-   * <li> <tt>supportsBaseDeriv() == true</tt>
-   * </ul>
-   */
-  virtual Scalar baseDeriv() const = 0;
 
   /** \brief Evaluate the merit function at <tt>alpha</tt>.
    *

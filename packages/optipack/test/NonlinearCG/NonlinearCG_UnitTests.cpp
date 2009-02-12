@@ -6,6 +6,7 @@
 #include "OptiPack_NonlinearCG.hpp"
 #include "OptiPack_DiagonalQuadraticResponseOnlyModelEvaluator.hpp"
 #include "GlobiPack_ArmijoPolyInterpLineSearch.hpp"
+#include "GlobiPack_BrentsLineSearch.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -44,6 +45,8 @@ using Thyra::VectorBase;
 using Thyra::applyOp;
 using GlobiPack::ArmijoPolyInterpLineSearch;
 using GlobiPack::armijoQuadraticLineSearch;
+using GlobiPack::BrentsLineSearch;
+using GlobiPack::brentsLineSearch;
 using OptiPack::NonlinearCG;
 using OptiPack::nonlinearCG;
 using OptiPack::DiagonalQuadraticResponseOnlyModelEvaluator;
@@ -307,7 +310,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, printValidP
 // Test basic convergence in one iteration for one eignvalue
 //
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_oneEigenVal, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, oneEigenVal, Scalar )
 {
 
   using Teuchos::optInArg;
@@ -353,14 +356,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_oneEigenVal, Scalar )
   
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, FR_oneEigenVal )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, oneEigenVal )
 
 
 //
 // Test convergence for partially unique eigen values
 //
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_partialEigenVal, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, partialEigenVal, Scalar )
 {
 
   using Teuchos::optInArg;
@@ -423,14 +426,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_partialEigenVal, Scalar )
   
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, FR_partialEigenVal )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, partialEigenVal )
 
 
 //
 // Test convergence in full iterations for unique eigen values
 //
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_fullEigenVal, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, fullEigenVal, Scalar )
 {
 
   using Teuchos::optInArg;
@@ -489,7 +492,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_fullEigenVal, Scalar )
   
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, FR_fullEigenVal )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, fullEigenVal )
 
 
 //
@@ -498,7 +501,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, FR_fullEige
 // ANA.
 //
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_fullEigenValScalarProd, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, fullEigenValScalarProd, Scalar )
 {
 
   using Teuchos::optInArg;
@@ -570,14 +573,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_fullEigenValScalarProd, Scala
   
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, FR_fullEigenValScalarProd )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, fullEigenValScalarProd )
 
 
 //
 // Test general convergence for a general nonlinear objective
 //
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_generalNonlinearProblem, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem, Scalar )
 {
 
   using Teuchos::optInArg;
@@ -601,12 +604,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_generalNonlinearProblem, Scal
 
   const ScalarMag nonlinearTermFactor = as<ScalarMag>(g_nonlin_term_factor);
   model->setNonlinearTermFactor(nonlinearTermFactor);
-
-  const RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
-    armijoQuadraticLineSearch<Scalar>();
-  const RCP<ParameterList> lsPL = parameterList();
-  lsPL->set("Min Num Iterations", 1); // Force at least one line search iteration!
-  linesearch->setParameterList(lsPL);
+  
+  RCP<BrentsLineSearch<Scalar> > linesearch = brentsLineSearch<Scalar>();
 
   const RCP<NonlinearCG<Scalar> > cgSolver =
     nonlinearCG<Scalar>(model, 0, 0, linesearch);
@@ -645,7 +644,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_generalNonlinearProblem, Scal
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG,
-  FR_generalNonlinearProblem )
+  generalNonlinearProblem )
 
 
 //
@@ -653,7 +652,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG,
 // control options through the PL
 //
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_generalNonlinearProblem_PL, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem_PL, Scalar )
 {
 
   using Teuchos::optInArg;
@@ -677,12 +676,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_generalNonlinearProblem_PL, S
 
   const ScalarMag nonlinearTermFactor = as<ScalarMag>(g_nonlin_term_factor);
   model->setNonlinearTermFactor(nonlinearTermFactor);
-
-  const RCP<ArmijoPolyInterpLineSearch<Scalar> > linesearch =
-    armijoQuadraticLineSearch<Scalar>();
-  const RCP<ParameterList> lsPL = parameterList();
-  lsPL->set("Min Num Iterations", 1); // Force at least one line search iteration!
-  linesearch->setParameterList(lsPL);
+   
+  RCP<BrentsLineSearch<Scalar> > linesearch = brentsLineSearch<Scalar>();
 
   const RCP<NonlinearCG<Scalar> > cgSolver =
     nonlinearCG<Scalar>(model, 0, 0, linesearch);
@@ -724,7 +719,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, FR_generalNonlinearProblem_PL, S
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG,
-  FR_generalNonlinearProblem_PL )
+  generalNonlinearProblem_PL )
 
 
 } // namespace

@@ -1,6 +1,9 @@
 INCLUDE(PackageAddExecutableAndTest)
 
 
+#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   VersionUnitTests
   SOURCES
@@ -40,6 +43,17 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Brents1DMinimization_UnitTests
   SOURCES
     Brents1DMinimization_UnitTests.cpp
+    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  DEPLIBS globipack_test_meritfuncs
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+  )
+
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  BrentsLineSearch_UnitTests
+  SOURCES
+    BrentsLineSearch_UnitTests.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   DEPLIBS globipack_test_meritfuncs
   NUM_MPI_PROCS 1

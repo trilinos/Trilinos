@@ -80,7 +80,7 @@ struct PointEval1D {
     {}
   /** \brief . */
   PointEval1D( const Scalar &alpha_in, const Scalar &phi_in,
-    const Scalar &Dphi_in)
+    const Scalar &Dphi_in = valNotGiven())
     : alpha(alpha_in), phi(phi_in), Dphi(Dphi_in)
     {}
   /** \brief The value of the unknown <tt>alpha</tt>. */

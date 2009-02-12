@@ -102,11 +102,7 @@ public:
   //@{
 
   /** \brief . */
-  virtual bool supportsBaseDeriv() const;
-  /** \brief . */
   virtual bool supportsDerivEvals() const;
-  /** \brief . */
-  virtual Scalar baseDeriv() const;
   /** \brief . */
   virtual void eval( const Scalar &alpha, const Ptr<Scalar> &phi,
     const Ptr<Scalar> &Dphi ) const;
