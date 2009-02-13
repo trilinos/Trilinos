@@ -46,7 +46,7 @@ double * Epetra_NumPySerialDenseMatrix::getArray(PyObject * pyObject, int numCol
     if (PyBool_Check(pyObject))
     {
       tmp_bool = (bool) PyInt_AsLong(pyObject);
-      intp dimensions[ ] = {0,0};
+      npy_intp dimensions[ ] = {0,0};
       tmp_array = (PyArrayObject *)
 	PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
     }
@@ -55,8 +55,8 @@ double * Epetra_NumPySerialDenseMatrix::getArray(PyObject * pyObject, int numCol
     {
       if (PyInt_Check(pyObject))
       {
-	int      numRows = (int) PyInt_AsLong(pyObject);
-	intp dimensions[ ] = {numRows, numCols};
+	int numRows = (int) PyInt_AsLong(pyObject);
+	npy_intp dimensions[ ] = {numRows, numCols};
 	tmp_array = (PyArrayObject *)
 	  PyArray_SimpleNew(2,dimensions,PyArray_DOUBLE);
       }
@@ -68,7 +68,7 @@ double * Epetra_NumPySerialDenseMatrix::getArray(PyObject * pyObject, int numCol
 	PyArray_Descr * dtype = 
 	  PyArray_DescrFromType(PyArray_DOUBLE);
 	tmp_array = (PyArrayObject *) PyArray_FromAny(pyObject, dtype, 2, 2,
-						      FARRAY_FLAGS, NULL);
+						      NPY_FARRAY, NULL);
 	tmp_bool  = (bool) numCols;
       }
     }
@@ -94,14 +94,14 @@ void Epetra_NumPySerialDenseMatrix::setArray(bool copy)
   }
   else
   {
-    intp dimensions[ ] = { M(), N() };
-    double * data      = NULL;
-    if (!copy) data    = Epetra_SerialDenseMatrix::A();
+    npy_intp dimensions[ ] = { M(), N() };
+    double * data = NULL;
+    if (!copy) data = Epetra_SerialDenseMatrix::A();
     // This NumPy function returns a borrowed pointer: no DECREF
     PyArray_Descr * dtype  = PyArray_DescrFromType(PyArray_DOUBLE);
     array = (PyArrayObject*)
       PyArray_NewFromDescr(&PyArray_Type,dtype,2,dimensions,NULL,(void*)data,
-			   FARRAY_FLAGS,NULL);
+			   NPY_FARRAY,NULL);
     if (!array)
     {
       cleanup();

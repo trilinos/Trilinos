@@ -678,6 +678,8 @@ HAVE_PYTRILINOS_ANASAZI_TRUE
 HAVE_PYTRILINOS_ANASAZI_FALSE
 HAVE_PYTRILINOS_ML_TRUE
 HAVE_PYTRILINOS_ML_FALSE
+HAVE_PYTRILINOS_PLIRIS_TRUE
+HAVE_PYTRILINOS_PLIRIS_FALSE
 HAVE_PYTRILINOS_NOX_TRUE
 HAVE_PYTRILINOS_NOX_FALSE
 HAVE_PYTRILINOS_NOX_EPETRA_TRUE
@@ -1466,6 +1468,12 @@ Optional Features:
   --enable-ml             Build python interface and shared library for ml.
                           Can be overridden with --disable-pytrilinos-ml.
   --enable-pytrilinos-ml  Build python interface and shared library for ml.
+  --enable-pliris         Build python interface and shared library for
+                          pliris. Can be overridden with
+                          --disable-pytrilinos-pliris.
+  --enable-pytrilinos-pliris
+                          Build python interface and shared library for
+                          pliris.
   --enable-nox            Build python interface and shared library for nox.
                           Can be overridden with --disable-pytrilinos-nox.
   --enable-pytrilinos-nox Build python interface and shared library for nox.
@@ -2714,6 +2722,57 @@ fi
 else
   HAVE_PYTRILINOS_ML_TRUE='#'
   HAVE_PYTRILINOS_ML_FALSE=
+fi
+
+
+
+
+
+
+# Check whether --enable-pliris was given.
+if test "${enable_pliris+set}" = set; then
+  enableval=$enable_pliris; ac_cv_implicit_use_pliris=$enableval
+else
+  ac_cv_implicit_use_pliris=no
+fi
+
+
+if test "Xyes" != "Xno"; then
+  ac_cv_pytrilinos_using_pliris_default=$ac_cv_implicit_use_pliris
+else
+  ac_cv_pytrilinos_using_pliris_default=no
+fi
+
+# Check whether --enable-pytrilinos-pliris was given.
+if test "${enable_pytrilinos_pliris+set}" = set; then
+  enableval=$enable_pytrilinos_pliris; ac_cv_use_pliris=$enableval
+else
+  ac_cv_use_pliris=$ac_cv_pytrilinos_using_pliris_default
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to build optional pliris dependent code in pytrilinos" >&5
+echo $ECHO_N "checking whether to build optional pliris dependent code in pytrilinos... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_pliris" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PYTRILINOS_PLIRIS 1
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_pliris" = "Xyes"; then
+  HAVE_PYTRILINOS_PLIRIS_TRUE=
+  HAVE_PYTRILINOS_PLIRIS_FALSE='#'
+else
+  HAVE_PYTRILINOS_PLIRIS_TRUE='#'
+  HAVE_PYTRILINOS_PLIRIS_FALSE=
 fi
 
 
@@ -7556,6 +7615,13 @@ echo "$as_me: error: conditional \"HAVE_PYTRILINOS_ML\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_PYTRILINOS_PLIRIS_TRUE}" && test -z "${HAVE_PYTRILINOS_PLIRIS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_PYTRILINOS_PLIRIS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_PYTRILINOS_PLIRIS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_PYTRILINOS_NOX_TRUE}" && test -z "${HAVE_PYTRILINOS_NOX_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_PYTRILINOS_NOX\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -8412,6 +8478,8 @@ HAVE_PYTRILINOS_ANASAZI_TRUE!$HAVE_PYTRILINOS_ANASAZI_TRUE$ac_delim
 HAVE_PYTRILINOS_ANASAZI_FALSE!$HAVE_PYTRILINOS_ANASAZI_FALSE$ac_delim
 HAVE_PYTRILINOS_ML_TRUE!$HAVE_PYTRILINOS_ML_TRUE$ac_delim
 HAVE_PYTRILINOS_ML_FALSE!$HAVE_PYTRILINOS_ML_FALSE$ac_delim
+HAVE_PYTRILINOS_PLIRIS_TRUE!$HAVE_PYTRILINOS_PLIRIS_TRUE$ac_delim
+HAVE_PYTRILINOS_PLIRIS_FALSE!$HAVE_PYTRILINOS_PLIRIS_FALSE$ac_delim
 HAVE_PYTRILINOS_NOX_TRUE!$HAVE_PYTRILINOS_NOX_TRUE$ac_delim
 HAVE_PYTRILINOS_NOX_FALSE!$HAVE_PYTRILINOS_NOX_FALSE$ac_delim
 HAVE_PYTRILINOS_NOX_EPETRA_TRUE!$HAVE_PYTRILINOS_NOX_EPETRA_TRUE$ac_delim
@@ -8444,8 +8512,6 @@ HAVE_PYTRILINOS_RYTHMOS_TRUE!$HAVE_PYTRILINOS_RYTHMOS_TRUE$ac_delim
 HAVE_PYTRILINOS_RYTHMOS_FALSE!$HAVE_PYTRILINOS_RYTHMOS_FALSE$ac_delim
 HAVE_PYTRILINOS_MOOCHO_TRUE!$HAVE_PYTRILINOS_MOOCHO_TRUE$ac_delim
 HAVE_PYTRILINOS_MOOCHO_FALSE!$HAVE_PYTRILINOS_MOOCHO_FALSE$ac_delim
-MAINTAINER_MODE_TRUE!$MAINTAINER_MODE_TRUE$ac_delim
-MAINTAINER_MODE_FALSE!$MAINTAINER_MODE_FALSE$ac_delim
 _ACEOF
 
   if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 97; then
@@ -8487,6 +8553,8 @@ _ACEOF
 ac_delim='%!_!# '
 for ac_last_try in false false false false false :; do
   cat >conf$$subs.sed <<_ACEOF
+MAINTAINER_MODE_TRUE!$MAINTAINER_MODE_TRUE$ac_delim
+MAINTAINER_MODE_FALSE!$MAINTAINER_MODE_FALSE$ac_delim
 MAINT!$MAINT$ac_delim
 build!$build$ac_delim
 build_cpu!$build_cpu$ac_delim
@@ -8577,7 +8645,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 88; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 90; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5
@@ -8978,22 +9046,21 @@ echo "$as_me: $ac_file is unchanged" >&6;}
   fi
   rm -f "$tmp/out12"
 # Compute $ac_file's index in $config_headers.
-_am_arg=$ac_file
 _am_stamp_count=1
 for _am_header in $config_headers :; do
   case $_am_header in
-    $_am_arg | $_am_arg:* )
+    $ac_file | $ac_file:* )
       break ;;
     * )
       _am_stamp_count=`expr $_am_stamp_count + 1` ;;
   esac
 done
-echo "timestamp for $_am_arg" >`$as_dirname -- "$_am_arg" ||
-$as_expr X"$_am_arg" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X"$_am_arg" : 'X\(//\)[^/]' \| \
-	 X"$_am_arg" : 'X\(//\)$' \| \
-	 X"$_am_arg" : 'X\(/\)' \| . 2>/dev/null ||
-echo X"$_am_arg" |
+echo "timestamp for $ac_file" >`$as_dirname -- $ac_file ||
+$as_expr X$ac_file : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
+	 X$ac_file : 'X\(//\)[^/]' \| \
+	 X$ac_file : 'X\(//\)$' \| \
+	 X$ac_file : 'X\(/\)' \| . 2>/dev/null ||
+echo X$ac_file |
     sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
 	    s//\1/
 	    q
@@ -9030,7 +9097,7 @@ echo "$as_me: executing $ac_file commands" >&6;}
   # each Makefile.in and add a new line on top of each file to say so.
   # Grep'ing the whole file is not good either: AIX grep has a line
   # limit of 2048, but all sed's we know have understand at least 4000.
-  if sed -n 's,^#.*generated by automake.*,X,p' "$mf" | grep X >/dev/null 2>&1; then
+  if sed 10q "$mf" | grep '^#.*generated by automake' > /dev/null 2>&1; then
     dirpart=`$as_dirname -- "$mf" ||
 $as_expr X"$mf" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
 	 X"$mf" : 'X\(//\)[^/]' \| \

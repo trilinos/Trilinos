@@ -1,46 +1,36 @@
 
-FIND_PACKAGE(SWIG REQUIRED)
-INCLUDE(${SWIG_USE_FILE})
-
-FIND_PACKAGE(PythonLibs)
-INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
-MESSAGE(${SWIG_USE_FILE})
-MESSAGE(${PYTHON_INCLUDE_PATH})
-MESSAGE(${CMAKE_CURRENT_SOURCE_DIR})
-
 INCLUDE(PackageMacros)
-INCLUDE(AddOptionAndDefine)
-
-#
-# A) Define the package
-#
 
 PACKAGE(PyTrilinos)
 
-#
-# B) Set up package-specific options
-#
+SET(${PACKAGE_NAME}_VERSION "4.2d")
 
-#ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Experimental
-#  HAVE_KOKKOS_EXPERIMENTAL
-#  "Enable experimental."
-#  OFF )
+# Python interpreter and header files are required
+FIND_PACKAGE(PythonInterp  REQUIRED)
+FIND_PACKAGE(PythonInclude REQUIRED)
+MESSAGE("   Python executable   ... " ${PYTHON_EXECUTABLE})
+MESSAGE("   Python include path ... " ${PYTHON_INCLUDE_PATH})
+
+# Python module numpy is required
+FIND_PACKAGE(NumPy REQUIRED)
+MESSAGE("   NumPy version       ... " ${NUMPY_VERSION})
+MESSAGE("   NumPy include dir   ... " ${NUMPY_INCLUDE_DIR})
+
+# Simple wrapper interface generator (SWIG) is required
+FIND_PACKAGE(SWIG REQUIRED)
+INCLUDE(${SWIG_USE_FILE})
+MESSAGE("   SWIG executable     ... " ${SWIG_EXECUTABLE})
+MESSAGE("   SWIG version        ... " ${SWIG_VERSION})
+MESSAGE("   SWIG dir            ... " ${SWIG_DIR})
 
 #
 # C) Add the libraries, tests, and examples
 #
 
 ADD_SUBDIRECTORY(src)
-#ADD_SUBDIRECTORY(shared)
 
 #PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 #PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
-
-#
-# D) Do standard postprocessing
-#
 
 PACKAGE_POSTPROCESS()

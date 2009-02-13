@@ -1,8 +1,18 @@
-SET(LIB_REQUIRED_DEP_PACKAGES)
+SET(LIB_REQUIRED_DEP_PACKAGES
+  Epetra)
 SET(LIB_OPTIONAL_DEP_PACKAGES
-  Teuchos Epetra Triutils EpetraExt AztecOO Galeri Amesos Ifpack Anasazi ML NOX
-  RTOp Kokkos Tpetra Thyra Isorropia Komplex Claps Belos Moertel Stratimikos Meros
-    Sacado Rythmos MOOCHO
+  Teuchos
+  Triutils
+  EpetraExt
+  AztecOO
+  Galeri
+  Amesos
+  Ifpack
+  Komplex
+  Anasazi
+  Pliris
+  ML
+  NOX
   )
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES)

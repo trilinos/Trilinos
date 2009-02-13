@@ -66,7 +66,7 @@ double * Epetra_NumPyVector::getArray(const Epetra_BlockMap & blockMap,
   if (!tmp_array)
   {
     // Default dimensions
-    intp defaultDims[ ] = { blockMap.NumMyPoints() };
+    npy_intp defaultDims[ ] = { blockMap.NumMyPoints() };
 
     // PyObject argument is a bool
     if (PyBool_Check(pyObject))
@@ -105,14 +105,14 @@ double * Epetra_NumPyVector::getArray(const Epetra_BlockMap & blockMap,
       // it has the correct number of dimensions
       else
       {
-	int  nd = tmp_array->nd;
-	intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
+	int nd = tmp_array->nd;
+	npy_intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
 	if (arraySize != defaultDims[0])
 	{
 	  PyArrayObject * myArray = (PyArrayObject *)
 	    PyArray_SimpleNew(1,defaultDims,PyArray_DOUBLE);
-	  double        * myData  = (double *) myArray->data;
-	  double        * tmpData = (double *) tmp_array->data;
+	  double * myData  = (double *) myArray->data;
+	  double * tmpData = (double *) tmp_array->data;
 	  for (int i=0; i<defaultDims[0]; i++)
 	  {
 	    myData[i] = tmpData[i];
@@ -168,7 +168,7 @@ Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_BlockMap & blockMap, bool ze
   Epetra_Vector(blockMap, zeroOut)
 {
   // Create the array object
-  intp dims[ ] = { blockMap.NumMyPoints() };
+  npy_intp dims[ ] = { blockMap.NumMyPoints() };
   double *v = NULL;
   Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *)
@@ -188,7 +188,7 @@ Epetra_NumPyVector::Epetra_NumPyVector(const Epetra_Vector & source):
   Epetra_Vector(source)
 {
   map = new Epetra_BlockMap(source.Map());
-  intp dims[ ] = { map->NumMyPoints() };
+  npy_intp dims[ ] = { map->NumMyPoints() };
   double *v = NULL;
   Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *)
@@ -222,7 +222,7 @@ Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess CV,
   map = new Epetra_BlockMap(source.Map());
 
   // Wrap the Epetra_Vector
-  intp dims[ ] = { (intp) map->NumMyElements() };
+  npy_intp dims[ ] = { (npy_intp) map->NumMyElements() };
   double *v = NULL;
   Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *)
@@ -244,7 +244,7 @@ Epetra_NumPyVector::Epetra_NumPyVector(Epetra_DataAccess CV,
   map = new Epetra_BlockMap(source.Map());
 
   // Wrap the Epetra_MultiVector
-  intp dims[ ] = { map->NumMyElements() };
+  npy_intp dims[ ] = { map->NumMyElements() };
   double *v = NULL;
   Epetra_Vector::ExtractView(&v);
   array = (PyArrayObject *)

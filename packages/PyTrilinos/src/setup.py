@@ -47,6 +47,7 @@ modules = [
            "IFPACK",
            "Komplex",
            "Anasazi",
+           "Pliris",
            "ML",
            "NOX",
            "LOCA",

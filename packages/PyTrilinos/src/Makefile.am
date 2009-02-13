@@ -64,13 +64,13 @@ EXTRA_DIST = Amesos.i                             \
 	     LOCA.Bifurcation.i                   \
 	     LOCA.Chan.i                          \
 	     LOCA.Continuation.i                  \
-	     LOCA.Epetra.Interface.i               \
-	     LOCA.Epetra.__init__.i                \
+	     LOCA.Epetra.Interface.i              \
+	     LOCA.Epetra.__init__.i               \
 	     LOCA.Homotopy.i                      \
 	     LOCA.LAPACK.i                        \
 	     LOCA.MultiContinuation.i             \
-	     LOCA.TurningPoint.i             \
-	     LOCA.Pitchfork.i             \
+	     LOCA.TurningPoint.i                  \
+	     LOCA.Pitchfork.i                     \
 	     LOCA.TimeDependent.i                 \
 	     LOCA.Extended.i     \
 	     LOCA.BorderedSystem.i   \
@@ -84,6 +84,7 @@ EXTRA_DIST = Amesos.i                             \
 	     NOX.StatusTest.i                     \
 	     NOX.__init__.i                       \
 	     NumPyImporter.h                      \
+	     Pliris.i                             \
 	     PythonException.cpp                  \
 	     PythonException.h                    \
 	     Teuchos.i                            \
@@ -145,6 +146,9 @@ ENABLE_THYRA=
 
 @HAVE_PYTRILINOS_ANASAZI_TRUE@ENABLE_ANASAZI=true
 @HAVE_PYTRILINOS_ANASAZI_FALSE@ENABLE_ANASAZI=
+
+@HAVE_PYTRILINOS_PLIRIS_TRUE@ENABLE_PLIRIS=true
+@HAVE_PYTRILINOS_PLIRIS_FALSE@ENABLE_PLIRIS=
 
 @HAVE_PYTRILINOS_ML_TRUE@ENABLE_ML=true
 @HAVE_PYTRILINOS_ML_FALSE@ENABLE_ML=
@@ -259,6 +263,13 @@ ANASAZI_INTERFACES = Anasazi.i
 ANASAZI_PROXIES = PyTrilinos/Anasazi.py
 endif
 
+# Pliris
+if HAVE_PYTRILINOS_PLIRIS
+include $(top_builddir)/../pliris/Makefile.export.pliris
+PLIRIS_INTERFACES = Pliris.i
+PLIRIS_PROXIES = PyTrilinos/Pliris.py
+endif
+
 # ML
 if HAVE_PYTRILINOS_ML
 include $(top_builddir)/../ml/Makefile.export.ml
@@ -283,13 +294,23 @@ endif
 # LOCA
 if HAVE_PYTRILINOS_NOX
 if HAVE_PYTRILINOS_LOCA
-LOCA_BASE_INTERFACES =  LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i  LOCA.TurningPoint.i \
-	                LOCA.Continuation.i LOCA.Homotopy.i LOCA.MultiContinuation.i LOCA.Pitchfork.i \
-	                LOCA.TimeDependent.i LOCA.Hopf.i LOCA.Extended.i LOCA.BorderedSystem.i 
-LOCA_BASE_PROXIES =  PyTrilinos/LOCA/__init__.py PyTrilinos/LOCA/Abstract.py PyTrilinos/LOCA/TurningPoint.i \
-	             PyTrilinos/LOCA/Bifurcation.py PyTrilinos/LOCA/Continuation.py PyTrilinos/LOCA/Pitchfork.i \
-	             PyTrilinos/LOCA/Homotopy.py PyTrilinos/LOCA/MultiContinuation.py PyTrilinos/LOCA/Hopf.i \
-	             PyTrilinos/LOCA/TimeDependent.py PyTrilinos/LOCA/Extended.py PyTrilinos/LOCA/BorderedSystem.py
+LOCA_BASE_INTERFACES = LOCA.__init__.i LOCA.Abstract.i LOCA.Bifurcation.i \
+	               LOCA.TurningPoint.i LOCA.Continuation.i            \
+	               LOCA.Homotopy.i LOCA.MultiContinuation.i           \
+	               LOCA.Pitchfork.i LOCA.TimeDependent.i LOCA.Hopf.i  \
+	               LOCA.Extended.i LOCA.BorderedSystem.i
+LOCA_BASE_PROXIES = PyTrilinos/LOCA/__init__.py          \
+	            PyTrilinos/LOCA/Abstract.py          \
+	            PyTrilinos/LOCA/TurningPoint.i       \
+	            PyTrilinos/LOCA/Bifurcation.py       \
+	            PyTrilinos/LOCA/Continuation.py      \
+	            PyTrilinos/LOCA/Pitchfork.i          \
+	            PyTrilinos/LOCA/Homotopy.py          \
+	            PyTrilinos/LOCA/MultiContinuation.py \
+	            PyTrilinos/LOCA/Hopf.i               \
+	            PyTrilinos/LOCA/TimeDependent.py     \
+	            PyTrilinos/LOCA/Extended.py          \
+	            PyTrilinos/LOCA/BorderedSystem.py
 if HAVE_PYTRILINOS_NOX_EPETRA
 LOCA_EPETRA_INTERFACES = LOCA.Epetra.__init__.i LOCA.Epetra.Interface.i
 LOCA_EPETRA_PROXIES = PyTrilinos/LOCA/Epetra/__init__.py PyTrilinos/LOCA/Epetra/Interface.py
@@ -307,13 +328,13 @@ endif
 INTERFACES = $(TEUCHOS_INTERFACES)  $(THYRA_INTERFACES)     $(EPETRA_INTERFACES)  \
 	     $(TRIUTILS_INTERFACES) $(EPETRAEXT_INTERFACES) $(AZTECOO_INTERFACES) \
 	     $(GALERI_INTERFACES)   $(AMESOS_INTERFACES)    $(IFPACK_INTERFACES)  \
-	     $(KOMPLEX_INTERFACES)  $(ANASAZI_INTERFACES)   $(ML_INTERFACES)      \
-	     $(NOX_INTERFACES)      $(LOCA_INTERFACES)
+	     $(KOMPLEX_INTERFACES)  $(ANASAZI_INTERFACES)   $(PLIRIS_INTERFACES)  \
+	     $(ML_INTERFACES)       $(NOX_INTERFACES)       $(LOCA_INTERFACES)
 PROXIES  =   $(TEUCHOS_PROXIES)  $(THYRA_PROXIES)     $(EPETRA_PROXIES)  \
 	     $(TRIUTILS_PROXIES) $(EPETRAEXT_PROXIES) $(AZTECOO_PROXIES) \
 	     $(GALERI_PROXIES)   $(AMESOS_PROXIES)    $(IFPACK_PROXIES)  \
-	     $(KOMPLEX_PROXIES)  $(ANASAZI_PROXIES)   $(ML_PROXIES)      \
-	     $(NOX_PROXIES)      $(LOCA_INTERFACES)
+	     $(KOMPLEX_PROXIES)  $(ANASAZI_PROXIES)   $(PLIRIS_PROXIES)  \
+	     $(ML_PROXIES)       $(NOX_PROXIES)       $(LOCA_INTERFACES)
 WRAPPERS   = $(INTERFACES:.i=_wrap.cpp)
 DIR_HDRS   = $(INTERFACES:.i=_wrap.h)
 

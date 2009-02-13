@@ -119,6 +119,11 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, ml, PYTRILINOS_ML,
        [Build python interface and shared library for ml.],
        [Build python interface and shared library for ml.  Can be overridden with --disable-pytrilinos-ml.])
 
+TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, pliris, PYTRILINOS_PLIRIS,
+       HAVE_PYTRILINOS_PLIRIS, yes,
+       [Build python interface and shared library for pliris.],
+       [Build python interface and shared library for pliris.  Can be overridden with --disable-pytrilinos-pliris.])
+
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(pytrilinos, nox, PYTRILINOS_NOX,
        HAVE_PYTRILINOS_NOX, yes,
        [Build python interface and shared library for nox.],

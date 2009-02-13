@@ -63,7 +63,7 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
   if (!tmp_array)
   {
     // Default dimensions
-    intp defaultDims[ ] = { blockMap.NumMyPoints() };
+    npy_intp defaultDims[ ] = { blockMap.NumMyPoints() };
 
     // PyObject argument is a bool
     if (PyBool_Check(pyObject))
@@ -86,7 +86,7 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
       throw PythonException();
     }
     int  nd = tmp_array->nd;
-    intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
+    npy_intp arraySize = PyArray_MultiplyList(tmp_array->dimensions,nd);
     if (arraySize != defaultDims[0])
     {
       PyArrayObject * myArray = (PyArrayObject *)
@@ -96,8 +96,8 @@ int * Epetra_NumPyIntVector::getArray(const Epetra_BlockMap & blockMap,
 	cleanup();
 	throw PythonException();
       }
-      int           * myData  = (int *) myArray->data;
-      int           * tmpData = (int *) tmp_array->data;
+      int * myData  = (int *) myArray->data;
+      int * tmpData = (int *) tmp_array->data;
       for (int i=0; i<defaultDims[0]; i++)
       {
 	myData[i] = tmpData[i];
@@ -145,7 +145,7 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_BlockMap & blockMap,
   Epetra_IntVector(blockMap, zeroOut)
 {
   // Create the array object
-  intp dims[ ] = { blockMap.NumMyPoints() };
+  npy_intp dims[ ] = { blockMap.NumMyPoints() };
   int *v = NULL;
   Epetra_IntVector::ExtractView(&v);
   array = (PyArrayObject *)
@@ -164,7 +164,7 @@ Epetra_NumPyIntVector::Epetra_NumPyIntVector(const Epetra_IntVector & source):
   Epetra_IntVector(source)
 {
   map = new Epetra_BlockMap(source.Map());
-  intp dims[ ] = { map->NumMyPoints() };
+  npy_intp dims[ ] = { map->NumMyPoints() };
   int *v = NULL;
   Epetra_IntVector::ExtractView(&v);
   array = (PyArrayObject *)

@@ -42,7 +42,7 @@ double * Epetra_NumPySerialDenseVector::getArray(PyObject * pyObject)
     // If pyObject is an int, build an array of that length
     if (PyInt_Check(pyObject))
     {
-      intp dimensions[ ] = {(intp) PyInt_AsLong(pyObject)};
+      npy_intp dimensions[ ] = {(npy_intp) PyInt_AsLong(pyObject)};
       tmp_array = (PyArrayObject*)
 	PyArray_SimpleNew(1,dimensions,PyArray_DOUBLE);
     }
@@ -73,7 +73,7 @@ void Epetra_NumPySerialDenseVector::setArray()
   }
   else
   {
-    intp dimensions[ ] = {Length()};
+    npy_intp dimensions[ ] = {Length()};
     array = (PyArrayObject*)
       PyArray_SimpleNewFromData(1,dimensions,PyArray_DOUBLE,
 				(void*)Epetra_SerialDenseVector::Values());

@@ -42,7 +42,7 @@ int * Epetra_NumPyIntSerialDenseMatrix::getArray(PyObject * pyObject)
     // This NumPy function returns a borrowed pointer: do not DECREF
     PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_INT);
     tmp_array = (PyArrayObject *)
-      PyArray_FromAny(pyObject,dtype,2,2,FARRAY_FLAGS,NULL);
+      PyArray_FromAny(pyObject,dtype,2,2,NPY_FARRAY,NULL);
   }
 
   // If this fails, clean up and throw a PythonException
@@ -65,14 +65,14 @@ void Epetra_NumPyIntSerialDenseMatrix::setArray(bool copy)
   }
   else
   {
-    intp   dimensions[ ]  = { M(), N() };
-    int  * data           = NULL;
-    if (!copy) data       = Epetra_IntSerialDenseMatrix::A();
+    npy_intp dimensions[ ]  = { M(), N() };
+    int    * data           = NULL;
+    if (!copy) data = Epetra_IntSerialDenseMatrix::A();
     // This NumPy function returns a borrowed pointer: do not DECREF
     PyArray_Descr * dtype = PyArray_DescrFromType(PyArray_INT);
     array = (PyArrayObject*)
       PyArray_NewFromDescr(&PyArray_Type,dtype,2,dimensions,NULL,(void*)data,
-			   FARRAY_FLAGS,NULL);
+			   NPY_FARRAY,NULL);
     if (!array)
     {
       cleanup();

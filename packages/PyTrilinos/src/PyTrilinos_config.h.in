@@ -85,6 +85,9 @@
 #undef HAVE_PYTRILINOS_NOX_EPETRA
 
 /* Define if want to build with pytrilinos enabled */
+#undef HAVE_PYTRILINOS_PLIRIS
+
+/* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_RTOP
 
 /* Define if want to build with pytrilinos enabled */
