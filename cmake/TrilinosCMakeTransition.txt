@@ -333,9 +333,9 @@ Final Certification Evidence: [???]
 
 Package: Belos
 
-Package Transition Lead: [???]
+Package Transition Lead: Heidi Thornquist (hkthorn@sandia.gov)
 
-Status: Basic libraries and a few tests and examples.
+Status: Basic support for library and all Epetra tests, but few examples.
 
 Final Certification Date: [???]
 
@@ -396,9 +396,9 @@ Final Certification Evidence: [???]
 
 Package: Anasazi
 
-Package Transition Lead: [???]
+Package Transition Lead: Heidi Thornquist (hkthorn@sandia.gov)
 
-Status: Basic libraries and several tests and examples
+Status: Basic support for library and all Epetra tests, but few examples.
 
 Final Certification Date: [???]
 
