@@ -2,8 +2,7 @@
 How to CMakeify an Existing Trilinos Package
 --------------------------------------------
 
-Last updated: 2000/01/20
-------------------------
+Last updated: 2009/02/13
 
 Here, we describe how to add full CMake/CTest support to an existing
 Trilinos package.  The process of providing CMake/CTest support for a
@@ -27,19 +26,24 @@ together with ADD_SUBDIRECTORY(...) calls, you are finished!
 Here are the steps for CMakeifying a Trilinos package:
 
 
-1) Add/enable the package in Trilinos/cmake/TrilinosPackages.cmake
+1) Add the package in Trilinos/cmake/TrilinosPackages.cmake
 
-Add the package name PACKAGE_NAME and the package directory name
-PACKAGE_DIR to the list of supported Trilinos packages in the file
+Add the package name PACKAGE_NAME and the package directory name PACKAGE_DIR
+to the list of supported Trilinos packages in the file
 Trilinos/cmake/TrilinosPackages.cmake in the variable
 Trilinos_PACKAGES_AND_DIRS_AND_ENABLES.
 
-Or, if this package is already listed but is disabled, change the
-default ENABLE column from OFF to empty "".
+If the package is considered Primary Stable Code, you can make the default
+enable field empty "".  This will allow the package to be automatically
+enabled based on other enabled packages.  However, if the package is
+Experimental code, the default enable must be OFF.  If the package is
+Secondary Stable Code, the default package enable might be empty "" or OFF
+depending on situration.  Talk with Ross Bartlett and/or Brent Perschbacher
+about these issues.
 
 NOTE: You have to list the packages in strictly increasing order of
-dependencies.  Don't worry, if you get the order wrong, you will find
-this out at configure time automatically with a nice error message.
+dependencies.  Don't worry, if you get the order wrong, you will find this out
+at configure time automatically with a nice error message.
 
 
 2) Create the package's base-level packages/PACKAGE_DIR/CMakeLists.txt
@@ -61,9 +65,10 @@ NOTE: If the name you pass into PACKAGE(...) is not the same as you
 specified in the Trilinos_PACKAGES_AND_DIRS_AND_ENABLES variable
 mentioned above, then you will get an error message telling you this.
 
-Modify this CMakeLists.txt file to pull in ADD_SUBDIRECTORY(...) calls
-to include other CMakeLists.txt files for the libraries and the
-tests/examples for the package.
+Modify this CMakeLists.txt file to pull in ADD_SUBDIRECTORY(...) calls to
+include other CMakeLists.txt files for the libraries and the tests/examples
+for the package.  At the beginning, just comment out these calls and then
+comment them back in as you add the needed CMakeLists.txt files.
 
 NOTE: You must include the ADD_SUBDIRETORY(...) calls in the order of
 the build dependencies.  For example, you have to add the subdirectory
@@ -72,9 +77,10 @@ for the library(s) in 'src' before the subdirectories in 'test' or
 
 Special cases:
 
-2.a) Overridding an optional intra-package enable
+2.a) Overridding an optional intra-package enables
 
-See turning off Zoltan support without MPI in packages/ml/CMakeLists.txt
+See turning off Zoltan support in ML when MPI is not enabled by looking at
+packages/ml/CMakeLists.txt
 
 
 3) Create the directory PACKAGE_DIR/cmake
@@ -93,11 +99,11 @@ The dependencies file:
 
   Trilinos/packages/PACKAGE_DIR/cmake/Dependencies.cmake
 
-should already exist for this package.  If not, then copy a
-Dependencies.cmake file from some other package.
+should already exist for this package.  If not, then copy a Dependencies.cmake
+file from some other package to get started.
 
-You have to modify PACKAGE_DIR/cmake/Dependencies.cmake for this
-package's various dependencies.
+You have to modify PACKAGE_DIR/cmake/Dependencies.cmake for this package's
+various dependencies.
 
 To get the list of package dependencies, look at the file
 
@@ -124,42 +130,42 @@ package dependencies is that it will take longer to test code before
 you check in because you will have to build more libraries and test
 executables than you really need to.
 
-NOTE: If a package is included in a 'REQUIRED' list, then it does not
-need to be included in the corresponding 'OPTIONAL' list.
+NOTE: If a package is included in a 'REQUIRED' list, then it does not need to
+be included in another 'OPTIONAL' list.
 
-NOTE: Once you list out these package dependencies, you will never
-directly refer to these packages again.  All of the dependency
-handling is performed automatically by the provided macros.  You can
-only overstate the dependencies, you can never understate them.
+NOTE: Once you list out these package dependencies, you will typically not
+need to directly refer to these packages again.  All of the dependency
+handling is performed automatically by the provided macros.  You can only
+overstate the dependencies, you can never understate them.  An exception is
+with optional package dependencies in deciding what tests/examples to build
+and what tests to define.
 
-NOTE: The top-level CMake support code will automatically create user
-cache variables for packages and TPLs that exist in the lists
-[LIB,TEST]_OPTIONAL_DEP_PACKAGES and [LIB,TEST]_OPTIONAL_DEP_TPLS.
-For [LIB,TEST]_OPTIONAL_DEP_PACKAGES, user cache variables with the
-name PACKAGE_ENABLE_DEPPACKAGE will be created where PACKAGE is the
-name of this package (i.e. ML, NOX, EpetraExt, etc.) and DEPPACKAGE is
-the name of the listed dependent package.  Also, regular variables
-will be created with the name HAVE_UCPACKAGE_UCDEPPACKAGES where
-UCPACKAGE and UCDEPPACKAGES are the respective upper-case names of
-PACKAGE and DEPPACKAGE.  The same applies to the optional TPLs listed
-in [LIB,TEST]_OPTIONAL_DEP_TPLS.
+NOTE: The top-level CMake support code will automatically create user cache
+variables for packages and TPLs that exist in the lists
+[LIB,TEST]_OPTIONAL_DEP_PACKAGES and [LIB,TEST]_OPTIONAL_DEP_TPLS.  For
+[LIB,TEST]_OPTIONAL_DEP_PACKAGES, user cache variables with the name
+<PACKAGE>_ENABLE_<DEPPACKAGE> will be created where PACKAGE is the name of
+this package (i.e. ML, NOX, EpetraExt, etc.) and DEPPACKAGE is the name of the
+listed dependent package.  Also, regular variables will be created with the
+name HAVE_<UCPACKAGE>_<UCDEPPACKAGES> where UCPACKAGE and UCDEPPACKAGES are
+the respective upper-case names of PACKAGE and DEPPACKAGE.  The same applies
+to the optional TPLs listed in [LIB,TEST]_OPTIONAL_DEP_TPLS.
 
 
 5) Copy and modify the PACKAGE_config.h.in file
 
-Copy the package's autotools-generated PACKAGE_config.h.in file from:
+Copy the package's autotools-generated <PACKAGE>_config.h.in file from:
 
-  Trilinos/packages/PACKAGE_DIR/src/PACKAGE_config.h.in
+  Trilinos/packages/PACKAGE_DIR/src/<PACKAGE>_config.h.in
 
 to:
 
-  Trilinos/packages/PACKAGE_DIR/cmake/PACKAGE_config.h.in
+  Trilinos/packages/PACKAGE_DIR/cmake/<PACKAGE>_config.h.in
 
 You will then to need to manually modify the file
-PACKAGE_DIR/cmake/PACKAGE_config.h.in to replace '#undef' with
-'#cmakedefine'.  Also use this opportunity to strip out the mess of
-extra macro defines that the package does not need.  Compare the
-files:
+PACKAGE_DIR/cmake/<PACKAGE>_config.h.in to replace '#undef' with
+'#cmakedefine'.  Also use this opportunity to strip out the mess of extra
+macro defines that the package does not need.  Compare the files:
 
   Trilinos/packages/epetraext/cmake/EpetraExt_config.h.in
 
@@ -170,16 +176,17 @@ with :
 to see the significant reduction in the amount of junk you can clean
 out.
 
-Typically, you should clean out obsolete macros related if standard
-C++ header files exist or not.  Typically, you need to keep the macros
-that define conditional code.
+Typically, you should clean out obsolete macros related if standard C++ header
+files exist or not.  Typically, you need to keep the macros that define
+conditional code.  Always clean out all of the autotool generated junk like
+PACKAGE_NAME.
 
 
 6) Create the package's library PACKAGE_DIR/src/CMakeLists.txt file
 
-Most Trilinos packages just create a single library from a single
-Makefile.am file with autotools.  This is the case that is described
-here.
+Most Trilinos packages just create a single library from a single Makefile.am
+file with autotools.  This is the case that is described here.  More general
+cases are mentioned after that.
 
 Start by copying over an existing library CMakelists file from another
 package.  For example, copy the file:
@@ -212,21 +219,25 @@ to
 
 you will see the nature of the changes to these lists that is needed.
 
-NOTE: We need to move to globing the source files instead of listing
-them out in order to make the SIERRA BJAM Jamfiles more maintainable.
+NOTE: You can easily glob the header and source files in a CMakeLists.txt
+file.  See an example of this in:
 
-Also, if you have headers that are not part of you "public" interface
-and you do not want to install, then see zoltan/src/CMakeLists.txt for
-an example of how to do that.
+  Trilinos/packages/thyra/src/CMakeLists.txt
+
+NOTE: If you have headers that are not part of your "public" interface and you
+do not want to install, then see zoltan/src/CMakeLists.txt for an example of
+how to do that (see NOINSTALLHEADERS).
 
 6.b) Specify the name of the library(s) being created
 
 Set the name of the library being created in the macro call
 PACKAGE_ADD_LIBRARY(...).
 
-NOTE: The name of this library will never be manually listed again in
-any other build-system file.  The macros take care of everything
-automatically.
+NOTE: The nane of this library typically will not need to be listed again in
+any other CMakeLists.txt file as it will become part of the package's offical
+list of libraries.  On exception is when you need to link multiple libraries
+together within a package (see below) and when you have a TESTONLY library
+(see below).
 
 6.c) Multiple libraries
 
@@ -237,7 +248,7 @@ file, see thyra/src/CMakeLists.txt,
 thyra/adapters/epetra/src/CMakeLists.txt, and
 thyra/adapters/epetraext/src/CMakeLists.txt for an example.
 
-6.d) Test-only libraries
+6.d) Test-only libraries (TESTONLY)
 
 If your package has test-only libraries, then look at how this is
 handled in nox/test/utils/CMakeLists.txt with the library
@@ -261,18 +272,17 @@ Comparing the autotools Makefile.am files in epetraext/test with the
 CMakeLists.txt files in those same directories provides a good example
 of how to write the CMakeLists.txt files for tests and examples.
 
-In general, most test/example executables and the accompanying test
-harness test can be added in one shot with the
-PACKAGE_ADD_EXECUTABLE_AND_TEST(...) macro.  For cases where you need
-finer control, you can use the separate macros
-PACKAGE_ADD_EXECUTABLE(...) and PACKAGE_ADD_TEST(...).
+In general, most test/example executables and the accompanying test harness
+test can be added in one shot with the macro
+PACKAGE_ADD_EXECUTABLE_AND_TEST(...).  For cases where you need finer control,
+you can use the separate macros PACKAGE_ADD_EXECUTABLE(...) and
+PACKAGE_ADD_TEST(...).
 
-To see lots of examples of how to use the macros
-PACKAGE_ADD_EXECUTABLE(...) PACKAGE_ADD_TEST(...), and
-PACKAGE_ADD_EXECUTABLE_AND_TEST(...) look at examples in the packages
-teuchos, epetra, epetraext, and thyra.  Don't be lazy, look at working
-examples in other packages!  Look for usage examples, for instance,
-with:
+To see lots of examples of how to use the macros PACKAGE_ADD_EXECUTABLE(...) 
+PACKAGE_ADD_TEST(...), and PACKAGE_ADD_EXECUTABLE_AND_TEST(...) look at
+examples in the packages teuchos, epetra, epetraext, thyra, and other
+packages.  Don't be lazy, look at working examples in other packages!  Look
+for usage examples, for instance, with:
 
   $ find . -name CMakeLists.txt -exec grep -nH 'PACKAGE_ADD_EXECUTABLE' {} \;
 
@@ -288,6 +298,12 @@ PACKAGE_DIR/test/defintion
 The package thyra has some of the more varied examples of how to
 specify CTest tests for a variety of use cases.  It is worth your time
 to look through some of these examples.
+
+7.b) You must define test/example executables after the libraries they
+depend
+
+You need to remember to use the ADD_SUBDIRECTORY(...) and related commands to
+add tests and examples after the libraries within a pacakge.
 
 
 8) Configure, build, and test
@@ -337,8 +353,7 @@ running MPI) is in the file:
 
 (note, you will have to go to the most recent date directory)
 
-As the final verification step, you need to run the tests through
-CTest with:
+As the final verification step, you need to run the new CMake tests as:
 
   $ cd CMAKE_BUILD_DIR
   $ ctest -R '^PACKAGE_NAME_' -W 100
@@ -348,11 +363,11 @@ and verify that the output in:
   CMAKE_BUILD_DIR/Testing/Temporary/LastTest.log
 
 is equivalent to the output run through the autotools-build system and
-run with the perl-based test harness in::
+run with the perl-based test harness in:
 
   AUTOTOOLS_BUILD_DIR/packages/PACKAGE_DIR/test/runtests-results/
 
-I don't think you can easily automate these types of comparisons and I
-think the package developers themselves must be the ones to ultimately
-verify that the CMakeification of their package is complete by
-carefully looking at the various test outputs described above.
+I don't think we can easily automate these types of comparisons and I think
+that the package developers themselves must be the ones to ultimately verify
+that the CMakeification of their package is complete by carefully looking at
+the various test outputs described above.

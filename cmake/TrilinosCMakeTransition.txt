@@ -157,7 +157,7 @@ tests
 
 -------------------------------------------------------------------------------
 
-Package: Triutils (Orphaned Package)
+Package: Triutils
 
 Package Transition Lead: [???]
 
@@ -181,7 +181,7 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: EpetraExt (Orphaned Package)
+Package: EpetraExt
 
 Package Transition Lead: [???]
 
@@ -246,11 +246,11 @@ Final Certification Evidence: [???]
 
 Package: Claps (Non-released)
 
-Package Transition Lead: [???]
+Package Transition Lead: None needed
 
 Status: Will not be converted over to the CMake build system.  Claps will be
 moved into Salinas and another solver package will be put into Trilinos in its
-palce.
+place.
 
 Final Certification Date: [???]
 
@@ -523,7 +523,7 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: Aristos
+Package: Aristos (Non-released)
 
 Package Transition Lead: Denis Ridzal (dridzal@sandia.gov)
 
@@ -620,7 +620,7 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: Didasko (Orphaned Package)
+Package: Didasko
 
 Package Transition Lead: [???]
 
