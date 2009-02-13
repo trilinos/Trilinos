@@ -31,7 +31,8 @@ Package: Teuchos
 
 Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
 
-Status: Mostly finished but a few tests and examples need to be added.
+Status: Mostly finished but a few tests and examples need to be added.  Final
+verification is needed.
 
 Final Certification Date: [???]
 
@@ -76,11 +77,14 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: Stokhos
+Package: Stokhos (Non-released)
 
-Package Transition Lead: [???]
+Package Transition Lead: Eric Phipps (etphipp@sandia.gov)
 
-Status: Has basic CMake support for libraries and a few tests and examples
+Status: Has basic CMake support for libraries and a few tests and examples.
+However, this is categorized as Expermental Code (i.e. not even Secondary
+Stable Code) and therefore the package developers are solely responsible for
+testing the package and an Experimental package can not be released.
 
 Final Certification Date: [???]
 
@@ -90,7 +94,7 @@ Final Certification Evidence: [???]
 
 Package: Sacado
 
-Package Transition Lead: [???]
+Package Transition Lead: Eric Phipps (etphipp@sandia.gov)
 
 Status: Has mostly complete CMake support but there are some problem-some
 tests that still need to be converted.
@@ -103,21 +107,10 @@ Final Certification Evidence: [???]
 
 Package: Zoltan
 
-Package Transition Lead: [???]
+Package Transition Lead: Karen Devine (kddevin@sandia.gov)
 
-Status: [???]
-
-Final Certification Date: [???]
-
-Final Certification Evidence: [???]
-
--------------------------------------------------------------------------------
-
-Package: Shards
-
-Package Transition Lead: [???]
-
-Status: [???]
+Status: Has faily complete CMake support and should duplicate the
+functionality of the autotools system.
 
 Final Certification Date: [???]
 
@@ -125,11 +118,11 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: Intrepid
+Package: Shards (Non-released)
 
-Package Transition Lead: [???]
+Package Transition Lead: Roger Pawlowski (rppawlo@sandia.gov)
 
-Status: Not started yet
+Status: Has basic CMake support and some tests and examples.
 
 Final Certification Date: [???]
 
@@ -137,7 +130,20 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: GlobiPack
+Package: Intrepid (Non-released)
+
+Package Transition Lead: Denis Ridzal (dridzal@sandia.gov)
+
+Status: Not started yet.  This package may lag behind in the transition and
+that is fine with the developers.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: GlobiPack (New Package)
 
 Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
 
@@ -151,7 +157,7 @@ tests
 
 -------------------------------------------------------------------------------
 
-Package: Triutils
+Package: Triutils (Orphaned Package)
 
 Package Transition Lead: [???]
 
@@ -175,11 +181,12 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: EpetraExt
+Package: EpetraExt (Orphaned Package)
 
 Package Transition Lead: [???]
 
-Status: [???]
+Status: Has basic CMake support for libraries and has a few tests and
+exmaples.
 
 Final Certification Date: [???]
 
@@ -200,7 +207,7 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: OptiPack
+Package: OptiPack (New Package)
 
 Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
 
@@ -237,11 +244,13 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: Claps
+Package: Claps (Non-released)
 
 Package Transition Lead: [???]
 
-Status: [???]
+Status: Will not be converted over to the CMake build system.  Claps will be
+moved into Salinas and another solver package will be put into Trilinos in its
+palce.
 
 Final Certification Date: [???]
 
@@ -261,7 +270,7 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: Galeri
+Package: Galeri (Orphaned Package)
 
 Package Transition Lead: [???]
 
@@ -273,7 +282,7 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: Amesos
+Package: Amesos (Orphaned Package)
 
 Package Transition Lead: [???]
 
@@ -301,7 +310,8 @@ Package: Komplex
 
 Package Transition Lead: [???]
 
-Status: Basic libraries and several tests and examples
+Status: Basic libraries and a single test.  However, the transition should be
+complete.
 
 Final Certification Date: [???]
 
@@ -313,7 +323,7 @@ Package: ML
 
 Package Transition Lead: [???]
 
-Status: [???]
+Status: Basic libraries and a few tests and examples.
 
 Final Certification Date: [???]
 
@@ -325,7 +335,7 @@ Package: Belos
 
 Package Transition Lead: [???]
 
-Status: [???]
+Status: Basic libraries and a few tests and examples.
 
 Final Certification Date: [???]
 
@@ -335,9 +345,10 @@ Final Certification Evidence: [???]
 
 Package: Stratimikos
 
-Package Transition Lead: [???]
+Package Transition Lead: Roscoe Bartlett (rabartl@sandia.gov)
 
-Status: [???]
+Status: Should have complete support for all libraries, tests and examples.
+Only final certification should be needed.
 
 Final Certification Date: [???]
 
@@ -345,7 +356,7 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: Meros
+Package: Meros (Orphaned Package)
 
 Package Transition Lead: [???]
 
@@ -387,7 +398,7 @@ Package: Anasazi
 
 Package Transition Lead: [???]
 
-Status: [???]
+Status: Basic libraries and several tests and examples
 
 Final Certification Date: [???]
 
@@ -397,9 +408,10 @@ Final Certification Evidence: [???]
 
 Package: ThreadPool
 
-Package Transition Lead: [???]
+Package Transition Lead: Carter Edwards (hcedwar@sandia.gov)
 
-Status: [???]
+Status: Did have basic (or even complete) CMake support but does not currently
+build with CMake system.
 
 Final Certification Date: [???]
 
@@ -409,9 +421,9 @@ Final Certification Evidence: [???]
 
 Package: Phalanx
 
-Package Transition Lead: [???]
+Package Transition Lead: Roger Pawlowski (rppawlo@sandia.gov)
 
-Status: [???]
+Status: Should have complete CMake support.
 
 Final Certification Date: [???]
 
@@ -423,7 +435,10 @@ Package: Pamgen
 
 Package Transition Lead: [???]
 
-Status: [???]
+Status: Has basic CMake support for libraries but there are a bunch of unix
+shell scripts that need to be converted over.  An expended CTest macros and
+script wrapper system needs to be created that would allow all of these tests
+to be stated in CMake form.
 
 Final Certification Date: [???]
 
@@ -433,21 +448,9 @@ Final Certification Evidence: [???]
 
 Package: Phdmesh
 
-Package Transition Lead: [???]
+Package Transition Lead: Carter Edwards (hcedwar@sandia.gov)
 
-Status: [???]
-
-Final Certification Date: [???]
-
-Final Certification Evidence: [???]
-
--------------------------------------------------------------------------------
-
-Package: NOX
-
-Package Transition Lead: [???]
-
-Status: [???]
+Status: Not started yet.
 
 Final Certification Date: [???]
 
@@ -455,11 +458,28 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: Moertel
+Package: NOX (and therefore also LOCA)
+
+Package Transition Lead: Roger Pawlowski (rppawlo@sandia.gov)
+
+Status: Should have nearly complete CMake support.  Just a few loose ends to
+tie up.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: Moertel (Orphaned Package)
 
 Package Transition Lead: [???]
 
-Status: [???]
+Status: Basic libraries should be done.  This package never had any tests
+(i.e. moertel/tests does not even exist and therefore moertel/tests/definition
+does not even exist).  No other package in Trilinos depends on this package.
+Since this package does not contain any tests it is questionable if this
+package should even be released.
 
 Final Certification Date: [???]
 
@@ -471,7 +491,7 @@ Package: TrilinosCouplings
 
 Package Transition Lead: [???]
 
-Status: [???]
+Status: Basic libraries and a single test.
 
 Final Certification Date: [???]
 
@@ -481,9 +501,9 @@ Final Certification Evidence: [???]
 
 Package: Rythmos
 
-Package Transition Lead: [???]
+Package Transition Lead: Todd Coffey (tscoffe@sandia.gov)
 
-Status: Basic libraries and several tests and examples
+Status: Basic libraries and several tests and examples.  Almost complete.
 
 Final Certification Date: [???]
 
@@ -493,9 +513,9 @@ Final Certification Evidence: [???]
 
 Package: MOOCHO
 
-Package Transition Lead: [???]
+Package Transition Lead: Roscoe Bartlett (rabartl@sandia.gov)
 
-Status: Not started yet
+Status: Basic libraries and a few tests and examples
 
 Final Certification Date: [???]
 
@@ -505,9 +525,10 @@ Final Certification Evidence: [???]
 
 Package: Aristos
 
-Package Transition Lead: [???]
+Package Transition Lead: Denis Ridzal (dridzal@sandia.gov)
 
-Status: [???]
+Status: Has not been started yet.  However, this package will not be released
+in the upcomming release so it is not critical to get in CMake support.
 
 Final Certification Date: [???]
 
@@ -517,21 +538,9 @@ Final Certification Evidence: [???]
 
 Package: Sundance
 
-Package Transition Lead: [???]
+Package Transition Lead: Kevin Long (kevin.long@ttu.edu)
 
-Status: [???]
-
-Final Certification Date: [???]
-
-Final Certification Evidence: [???]
-
--------------------------------------------------------------------------------
-
-Package: TriKota
-
-Package Transition Lead: [???]
-
-Status: [???]
+Status: Only basic libraries only so far.
 
 Final Certification Date: [???]
 
@@ -539,11 +548,14 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: CTrilinos
+Package: TriKota (Non-released)
 
-Package Transition Lead: [???]
+Package Transition Lead: None needed
 
-Status: [???]
+Status: Has not been started yet.  This package will not be released in the
+next release and is not yet building in general.  CMake support will be put in
+at the same time that the Dakota dependency and coupled build issues are
+resolved.
 
 Final Certification Date: [???]
 
@@ -551,11 +563,27 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: ForTrilinos
+Package: CTrilinos (Non-released)
 
-Package Transition Lead: [???]
+Package Transition Lead: None needed
 
-Status: [???]
+Status: Has not been started yet.  However, since this is an experimental
+package and is extremely small, getting CMake suppport is not critical.
+
+Final Certification Date: [???]
+
+Final Certification Evidence: [???]
+
+-------------------------------------------------------------------------------
+
+Package: ForTrilinos (Non-released)
+
+Package Transition Lead: None needed
+
+Status: Has not been started yet.  However, since this is an experimental
+package and is extremely small, getting CMake suppport is not critical.  Also,
+this package requires *very* a recent GNU Fortran 2003 compiler and
+compiler-specific issues like module file linking needs to be resolved.
 
 Final Certification Date: [???]
 
@@ -577,11 +605,14 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: WebTrilinos
+Package: WebTrilinos (Orphaned package)
 
-Package Transition Lead: [???]
+Package Transition Lead: None needed (for now)
 
-Status: [???]
+Status: Not started yet.  However, this packages does not represent a
+significant capability and is only used for running demos and tutorials.  The
+transition to the CMake build system can be put off until after the next
+Trilinos release.
 
 Final Certification Date: [???]
 
@@ -589,11 +620,11 @@ Final Certification Evidence: [???]
 
 -------------------------------------------------------------------------------
 
-Package: Didasko
+Package: Didasko (Orphaned Package)
 
 Package Transition Lead: [???]
 
-Status: [???]
+Status: Brent is working on basic CMakeification right now.
 
 Final Certification Date: [???]
 
@@ -603,9 +634,12 @@ Final Certification Evidence: [???]
 
 Package: NewPackage
 
-Package Transition Lead: [???]
+Package Transition Lead: None needed
 
-Status: [???]
+Status: Do not represent a capability and therefore does not have to be
+transitioned over to the CMake build system on any schedule.  When someone
+want to update this it can be done but doing so or not doing so will not hold
+up anything else.
 
 Final Certification Date: [???]
 
