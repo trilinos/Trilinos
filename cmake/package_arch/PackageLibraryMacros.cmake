@@ -6,6 +6,7 @@ INCLUDE(AppendGlobalSet)
 INCLUDE(PrependGlobalSet)
 INCLUDE(RemoveGlobalDuplicates)
 INCLUDE(PackageGeneralMacros)
+INCLUDE(SetAndIncDirs)
 
 
 #

@@ -15,19 +15,13 @@ funcitonality.
 
 (*) [Ross and Kitware] (Ongoing) Create separate dashboards for each
 Trilinos package.  Kitware is going to actively work on this.
-
-
-Backlog:
 --------
 
-(*) [???] Add configure-time test for LAPACK support for GGEV and/or GEEV to
+(*) [Roger] Add configure-time test for LAPACK support for GGEV and/or GEEV to
 define HAVE_LAPACK_GGEV/GEEV.  See the file teuchos/config/acx_ggev.m4.
 
 
-(*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG and
-MPI_OPT build directory and enable only "Primary Stable" code.  This will need
-a minimal configuration script to pull in only the basic info needed in order
-to find compilers, MPI, BLAS, and LAPACK and nothing else.
+Backlog:
 
 (*) [???] Revise TPL support so that PACKAGE1_ENABLE_TPL1 will enable the TPL
 only for PACKAGE1 and not for any of the other packages (see bug 4298).
@@ -35,6 +29,11 @@ only for PACKAGE1 and not for any of the other packages (see bug 4298).
 (*) [???] Revise package enabling logic so that PACKAGE1_ENABLE_PACKAGE2 will
 automatically set Trilinos_ENABLE_PACAKGE2=ON in case it is not already.  This
 will be consistent with the above mentioned TPL behavior.
+
+(*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG and
+MPI_OPT build directory and enable only "Primary Stable" code.  This will need
+a minimal configuration script to pull in only the basic info needed in order
+to find compilers, MPI, BLAS, and LAPACK and nothing else.
 
 (*) [???] Experiment with using cmake -P <script_file> as a
 platform-independent scripting language.  We can use this for creating
@@ -78,8 +77,6 @@ pased in header files are found (This was requested by Roger P.).
 will be the default for all TPL_${TPL_NAME}_[INCLUDE_DIRS,LIBRARY_DIRS] user
 cache variables.
 
-(*) [???] Fix PACKAGE_ADD_EXECUTABLE(...) to not add ./ to absolute paths
-
 (*) [???] Set the variable CPACK_SOURCE_IGNORE_FILES to ignore groups of files
 (and hopefully directories) that you don't want to add to the source
 distribution tarball!  We need to be able to set these at the global level as
@@ -87,7 +84,7 @@ an internal cache variables and then reset them at the package level.
 
 (*) [???] Change all source files to be globbed and use internal ifdefs to
 control what gets built.  This will make it easier to maintain the BJAM build
-system.
+system.  I have done this for MOOCHO and it is great.
 
 (*) [???] Add a global 'libs' target to rebuild only libraries so that we can
 skip unecessary relinking when shared libraries are used.  This target can be
