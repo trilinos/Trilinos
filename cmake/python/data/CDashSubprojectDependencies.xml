@@ -296,32 +296,26 @@
   </SubProject>
   <SubProject name="PyTrilinos">
     <Dependency name="Teuchos" type="LO"/>
-    <Dependency name="RTOp" type="LO"/>
-    <Dependency name="Kokkos" type="LO"/>
-    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Epetra" type="LR"/>
     <Dependency name="Stokhos" type="ILO"/>
-    <Dependency name="Sacado" type="LO"/>
+    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="LO"/>
-    <Dependency name="Tpetra" type="LO"/>
+    <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Thyra" type="LO"/>
-    <Dependency name="Isorropia" type="LO"/>
-    <Dependency name="Claps" type="LO"/>
+    <Dependency name="Thyra" type="ILO"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="Pliris" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="LO"/>
     <Dependency name="Amesos" type="LO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="Komplex" type="LO"/>
     <Dependency name="ML" type="LO"/>
-    <Dependency name="Belos" type="LO"/>
-    <Dependency name="Stratimikos" type="LO"/>
-    <Dependency name="Meros" type="LO"/>
+    <Dependency name="Belos" type="ILO"/>
     <Dependency name="Anasazi" type="LO"/>
     <Dependency name="NOX" type="LO"/>
-    <Dependency name="Moertel" type="LO"/>
-    <Dependency name="Rythmos" type="LO"/>
-    <Dependency name="MOOCHO" type="LO"/>
   </SubProject>
   <SubProject name="WebTrilinos">
   </SubProject>

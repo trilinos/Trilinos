@@ -60,7 +60,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   TriKota               TriKota                        OFF
   CTrilinos             CTrilinos                      OFF
   ForTrilinos           ForTrilinos                    OFF
-  PyTrilinos            PyTrilinos                     ""
+  PyTrilinos            PyTrilinos                     OFF
   WebTrilinos           WebTrilinos                    OFF
   Didasko               didasko                        OFF
   NewPackage            new_package                    OFF
