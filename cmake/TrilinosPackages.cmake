@@ -54,9 +54,9 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Moertel               moertel                        ""
   TrilinosCouplings     trilinoscouplings              ""
   Rythmos               rythmos                        ""
-  MOOCHO                moocho                         OFF
+  MOOCHO                moocho                         ""
   Aristos               aristos                        OFF
-  Sundance              Sundance                       OFF
+  Sundance              Sundance                       ""
   TriKota               TriKota                        OFF
   CTrilinos             CTrilinos                      OFF
   ForTrilinos           ForTrilinos                    OFF

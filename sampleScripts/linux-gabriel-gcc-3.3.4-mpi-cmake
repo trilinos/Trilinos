@@ -9,6 +9,7 @@ cmake \
 -D Trilinos_ENABLE_FORTRAN:BOOL=OFF \
 -D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
 -D EpetraExt_BUILD_BDF:BOOL=ON \
+-D Anasazi_ENABLE_Tpetra:BOOL=OFF \
 -D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/mpi/opt \
 $EXTRA_ARGS \
 ../../../Trilinos

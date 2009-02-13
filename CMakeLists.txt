@@ -161,24 +161,24 @@ ADVANCED_SET(Trilinos_DEPS_HTML_OUTPUT_FILE
 #
 
 PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nExplicitly enabled packages on input" ON)
+  "\nExplicitly enabled packages on input (by user)" ON FALSE)
 PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nExplicitly disabled packages on input" OFF)
+  "\nExplicitly disabled packages on input (by user or by default)" OFF FALSE)
 PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nExplicitly enabled TPLs on input" ON)
+  "\nExplicitly enabled TPLs on input (by user)" ON FALSE)
 PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nExplicitly disabled TPLs on input" OFF)
+  "\nExplicitly disabled TPLs on input (by user or by default)" OFF FALSE)
 
 PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES()
 
 PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nFinal set of enabled packages" ON)
+  "\nFinal set of enabled packages" ON FALSE)
 PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nFinal set of disabled packages" OFF)
+  "\nFinal set of non-enabled packages" OFF TRUE)
 PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nFinal set of enabled TPLs" ON)
+  "\nFinal set of enabled TPLs" ON FALSE)
 PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nFinal set of disabled TPLs" OFF)
+  "\nFinal set of non-enabled TPLs" OFF TRUE)
 
 IF (Trilinos_DEPS_XML_OUTPUT_FILE)
   MESSAGE("" )
