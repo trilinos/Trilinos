@@ -54,11 +54,15 @@ using OptiPack::diagonalQuadraticResponseOnlyModelEvaluator;
 namespace NCGU = OptiPack::NonlinearCGUtils;
 
 
+std::string g_solverType = "FR";
+
 Teuchos_Ordinal g_globalDim = 16;
 
 double g_solve_tol_scale = 10.0;
 
 double g_error_tol_scale = 1000.0;
+
+int g_nonlin_max_iters = 20;
 
 double g_nonlin_term_factor = 1e-2;
 
@@ -70,6 +74,9 @@ double g_nonlin_error_tol = 1e-3;
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::UnitTestRepository::getCLP().setOption(
+    "solver-type", &g_solverType,
+    "Type type of nonlinear solver.  Just pass in blah to see valid options." );
+  Teuchos::UnitTestRepository::getCLP().setOption(
     "global-dim", &g_globalDim,
     "Number of global vector elements over all processes" );
   Teuchos::UnitTestRepository::getCLP().setOption(
@@ -79,8 +86,11 @@ TEUCHOS_STATIC_SETUP()
     "error-tol-scale", &g_error_tol_scale,
     "Floating point tolerance for error checks for linear CG tests" );
   Teuchos::UnitTestRepository::getCLP().setOption(
+    "nonlin-max-iters", &g_nonlin_max_iters,
+    "Max nubmer of CG iterations for general nonlinear problem" );
+  Teuchos::UnitTestRepository::getCLP().setOption(
     "nonlin-term-factor", &g_nonlin_term_factor,
-    "Scale factor for cubic term in objective" );
+    "Scale factor for cubic term in objective for general nonlinear problem" );
   Teuchos::UnitTestRepository::getCLP().setOption(
     "nonlin-solve-tol", &g_nonlin_solve_tol,
     "Floating point tolerance for general nonlinear CG solve" );
@@ -95,7 +105,7 @@ template<class Scalar>
 const RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> >
 createModel(
   const int globalDim,
-  const typename ScalarTraits<Scalar>::magnitudeType & g_offset
+  const typename ScalarTraits<Scalar>::magnitudeType &g_offset
   )
 {
 
@@ -150,7 +160,7 @@ createNonlinearCGSolver(
     nonlinearCG<Scalar>(model, 0, 0, linesearch);
 
   const RCP<ParameterList> pl = parameterList();
-  //pl->set("AND Convergence Tests", true);
+  pl->set("Solver Type", g_solverType);
   cgSolver->setParameterList(pl);
 
   cgSolver->setOStream(out);
@@ -211,6 +221,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, defaultParams, Scalar )
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   namespace NCGU = OptiPack::NonlinearCGUtils;
   const RCP<NonlinearCG<Scalar> > cgSolver = nonlinearCG<Scalar>();
+  TEST_EQUALITY(cgSolver->get_solverType(), as<ScalarMag>(NCGU::solverType_default_integral_val));
   TEST_EQUALITY(cgSolver->get_alpha_init(), as<ScalarMag>(NCGU::alpha_init_default));
   TEST_EQUALITY(cgSolver->get_alpha_reinit(), NCGU::alpha_reinit_default);
   TEST_EQUALITY(cgSolver->get_minIters(), NCGU::minIters_default);
@@ -237,6 +248,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, parseParamsDefaultParams, Scalar
   const RCP<NonlinearCG<Scalar> > cgSolver = nonlinearCG<Scalar>();
   const RCP<ParameterList> pl = parameterList();
   cgSolver->setParameterList(pl);
+  TEST_EQUALITY(cgSolver->get_solverType(), as<ScalarMag>(NCGU::solverType_default_integral_val));
   TEST_EQUALITY(cgSolver->get_alpha_init(), as<ScalarMag>(NCGU::alpha_init_default));
   TEST_EQUALITY(cgSolver->get_alpha_reinit(), NCGU::alpha_reinit_default);
   TEST_EQUALITY(cgSolver->get_minIters(), NCGU::minIters_default);
@@ -260,6 +272,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, parseParams, Scalar )
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   namespace NCGU = OptiPack::NonlinearCGUtils;
   const RCP<NonlinearCG<Scalar> > cgSolver = nonlinearCG<Scalar>();
+  NCGU::ESolverTypes solverType = NCGU::NONLINEAR_CG_PR_PLUS;
+  const std::string solverTypeStrVal = "PR+";
   const double alpha_init = 0.9;
   const bool alpha_reinit = true;
   const int minIters = 92;
@@ -267,8 +281,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, parseParams, Scalar )
   const double g_reduct_tol = 2.5;
   const double g_grad_tol = 2.8;
   const double g_mag = 3.1;
-  TEST_INEQUALITY( alpha_reinit, NCGU::alpha_reinit_default ); // Make sure different
+  TEST_INEQUALITY( solverType, NCGU::solverType_default_integral_val ); // different!
+  TEST_INEQUALITY( alpha_reinit, NCGU::alpha_reinit_default ); // different!
   const RCP<ParameterList> pl = parameterList();
+  pl->set("Solver Type", solverTypeStrVal);
   pl->set("Initial Linesearch Step Length", alpha_init);
   pl->set("Reinitlaize Linesearch Step Length", alpha_reinit);
   pl->set("Min Num Iterations", minIters);
@@ -278,6 +294,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, parseParams, Scalar )
   pl->set("Objective Magnitude", g_mag);
   cgSolver->setParameterList(pl);
   const ScalarMag tol = SMT::eps();
+  TEST_EQUALITY(cgSolver->get_solverType(), solverType);
   TEST_FLOATING_EQUALITY(cgSolver->get_alpha_init(), as<ScalarMag>(alpha_init), tol);
   TEST_EQUALITY(cgSolver->get_alpha_reinit(), alpha_reinit);
   TEST_EQUALITY(cgSolver->get_minIters(), minIters);
@@ -613,7 +630,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem, Scalar 
   cgSolver->setOStream(rcpFromRef(out));
 
   const RCP<ParameterList> pl = parameterList();
-  pl->set("Reinitlaize Linesearch Step Length", true);
+  pl->set("Solver Type", g_solverType);
+  pl->set("Reinitlaize Linesearch Step Length", false);
+  pl->set("Max Num Iterations", g_nonlin_max_iters);
   cgSolver->setParameterList(pl);
 
   const RCP<VectorBase<Scalar> > p = createMember(p_space);
@@ -690,8 +709,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, generalNonlinearProblem_PL, Scal
   const double tol = as<double>(g_nonlin_solve_tol);
   const double alpha_init = as<double>(5.0);
   const RCP<ParameterList> pl = parameterList();
+  pl->set("Solver Type", g_solverType);
   pl->set("Initial Linesearch Step Length", alpha_init);
-  pl->set("Reinitlaize Linesearch Step Length", true);
+  pl->set("Reinitlaize Linesearch Step Length", false);
+  pl->set("Max Num Iterations", g_nonlin_max_iters);
   pl->set("Objective Reduction Tol", tol);
   pl->set("Objective Gradient Tol", tol);
   cgSolver->setParameterList(pl);

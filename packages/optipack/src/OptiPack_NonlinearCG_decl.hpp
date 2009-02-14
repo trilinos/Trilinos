@@ -38,6 +38,7 @@
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
+#include "Teuchos_ParameterEntryValidator.hpp"
 
 
 namespace OptiPack {
@@ -54,8 +55,16 @@ enum ESolveReturn {
 };
 
 
-} // namespace NonlinearCGUtils
+/** \brief . */
+enum ESolverTypes {
+  NONLINEAR_CG_FR,      ///< Fletcher-Reeves Method
+  NONLINEAR_CG_PR_PLUS, ///< Polak-Ribiere Method
+  NONLINEAR_CG_FR_PR,   ///< Fletcher-Reeves Polak-Ribiere Hybrid Method
+  NONLINEAR_CG_HS       ///< Hestenes-Stiefel Method
+};
 
+
+} // namespace NonlinearCGUtils
 
 
 /** \brief Concrete class implementing several nonlinear CG algorithms.
@@ -88,21 +97,23 @@ public:
     );
 
   /** \brief . */
-  const ScalarMag get_alpha_init() const;
+  NonlinearCGUtils::ESolverTypes get_solverType() const;
   /** \brief . */
-  const bool get_alpha_reinit() const;
+  ScalarMag get_alpha_init() const;
   /** \brief . */
-  const bool get_and_conv_tests() const;
+  bool get_alpha_reinit() const;
   /** \brief . */
-  const int get_minIters() const;
+  bool get_and_conv_tests() const;
   /** \brief . */
-  const int get_maxIters() const;
+  int get_minIters() const;
   /** \brief . */
-  const ScalarMag get_g_reduct_tol() const;
+  int get_maxIters() const;
   /** \brief . */
-  const ScalarMag get_g_grad_tol() const;
+  ScalarMag get_g_reduct_tol() const;
   /** \brief . */
-  const ScalarMag get_g_mag() const;
+  ScalarMag get_g_grad_tol() const;
+  /** \brief . */
+  ScalarMag get_g_mag() const;
 
   //@}
 
@@ -164,6 +175,7 @@ private:
   int responseIndex_;
   RCP<GlobiPack::LineSearchBase<Scalar> > linesearch_;
 
+  NonlinearCGUtils::ESolverTypes solverType_;
   ScalarMag alpha_init_;
   bool alpha_reinit_;
   bool and_conv_tests_;
@@ -172,8 +184,11 @@ private:
   ScalarMag g_reduct_tol_;
   ScalarMag g_grad_tol_;
   ScalarMag g_mag_;
-
+  
   mutable int numIters_;
+  
+  static RCP<Teuchos::ParameterEntryValidator>
+  solverType_validator_;
 
 };
 
@@ -215,6 +230,9 @@ nonlinearCG(
 
 namespace NonlinearCGUtils {
 
+const std::string solverType_name = "Solver Type";
+const std::string solverType_default = "FR";
+const ESolverTypes solverType_default_integral_val = NONLINEAR_CG_FR;
 
 const std::string alpha_init_name = "Initial Linesearch Step Length";
 const double alpha_init_default = 1.0;
@@ -249,22 +267,6 @@ const double g_mag_default = 1.0;
 
 
 /* Todos:
-
-4) Add PL parameters for:
-
-  - Initial linear search length
-
-  - Use last line search length
-
-  - Max iterations
-
-  - g_mag
-
-  - verbose object sublist
-
-  - echo valid parameters sublist
-
-5) Implement PR+ method
 
 6) Implement FR-PR method
 

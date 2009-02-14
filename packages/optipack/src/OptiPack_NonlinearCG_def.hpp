@@ -38,10 +38,16 @@
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_Tuple.hpp"
 
 
 namespace OptiPack {
+
+
+template<typename Scalar>
+RCP<Teuchos::ParameterEntryValidator>
+NonlinearCG<Scalar>::solverType_validator_ = Teuchos::null;
 
 
 // Constructor/Initializers/Accessors
@@ -51,6 +57,7 @@ template<typename Scalar>
 NonlinearCG<Scalar>::NonlinearCG()
   : paramIndex_(-1),
     responseIndex_(-1),
+    solverType_(NonlinearCGUtils::solverType_default_integral_val),
     alpha_init_(NonlinearCGUtils::alpha_init_default),
     alpha_reinit_(NonlinearCGUtils::alpha_reinit_default),
     and_conv_tests_(NonlinearCGUtils::and_conv_tests_default),
@@ -80,7 +87,14 @@ void NonlinearCG<Scalar>::initialize(
 
 
 template<typename Scalar>
-const typename NonlinearCG<Scalar>::ScalarMag
+NonlinearCGUtils::ESolverTypes NonlinearCG<Scalar>::get_solverType() const
+{
+  return solverType_;
+}
+
+
+template<typename Scalar>
+typename NonlinearCG<Scalar>::ScalarMag
 NonlinearCG<Scalar>::get_alpha_init() const
 {
   return alpha_init_;
@@ -88,35 +102,35 @@ NonlinearCG<Scalar>::get_alpha_init() const
 
 
 template<typename Scalar>
-const bool NonlinearCG<Scalar>::get_alpha_reinit() const
+bool NonlinearCG<Scalar>::get_alpha_reinit() const
 {
   return alpha_reinit_;
 }
 
 
 template<typename Scalar>
-const bool NonlinearCG<Scalar>::get_and_conv_tests() const
+bool NonlinearCG<Scalar>::get_and_conv_tests() const
 {
   return and_conv_tests_;
 }
 
 
 template<typename Scalar>
-const int NonlinearCG<Scalar>::get_minIters() const
+int NonlinearCG<Scalar>::get_minIters() const
 {
   return minIters_;
 }
 
 
 template<typename Scalar>
-const int NonlinearCG<Scalar>::get_maxIters() const
+int NonlinearCG<Scalar>::get_maxIters() const
 {
   return maxIters_;
 }
 
 
 template<typename Scalar>
-const typename NonlinearCG<Scalar>::ScalarMag
+typename NonlinearCG<Scalar>::ScalarMag
 NonlinearCG<Scalar>::get_g_reduct_tol() const
 {
   return g_reduct_tol_;
@@ -124,7 +138,7 @@ NonlinearCG<Scalar>::get_g_reduct_tol() const
 
 
 template<typename Scalar>
-const typename NonlinearCG<Scalar>::ScalarMag
+typename NonlinearCG<Scalar>::ScalarMag
 NonlinearCG<Scalar>::get_g_grad_tol() const
 {
   return g_grad_tol_;
@@ -132,7 +146,7 @@ NonlinearCG<Scalar>::get_g_grad_tol() const
 
 
 template<typename Scalar>
-const typename NonlinearCG<Scalar>::ScalarMag
+typename NonlinearCG<Scalar>::ScalarMag
 NonlinearCG<Scalar>::get_g_mag() const
 {
   return g_mag_;
@@ -149,7 +163,9 @@ void NonlinearCG<Scalar>::setParameterList(RCP<ParameterList> const& paramList)
   typedef ScalarTraits<ScalarMag> SMT;
   namespace NCGU = NonlinearCGUtils;
   using Teuchos::getParameter;
+  using Teuchos::getIntegralValue;
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
+  solverType_ = getIntegralValue<NCGU::ESolverTypes>(*paramList, NCGU::solverType_name);
   alpha_init_ = getParameter<double>(*paramList, NCGU::alpha_init_name);
   alpha_reinit_ = getParameter<bool>(*paramList, NCGU::alpha_reinit_name);
   and_conv_tests_ = getParameter<bool>(*paramList, NCGU::and_conv_tests_name);
@@ -173,11 +189,37 @@ template<typename Scalar>
 RCP<const ParameterList>
 NonlinearCG<Scalar>::getValidParameters() const
 {
+  using Teuchos::tuple;
   namespace NCGU = NonlinearCGUtils;
   static RCP<const ParameterList> validPL;
   if (is_null(validPL)) {
     RCP<Teuchos::ParameterList>
       pl = Teuchos::rcp(new Teuchos::ParameterList());
+    solverType_validator_ = 
+      Teuchos::stringToIntegralParameterEntryValidator<NCGU::ESolverTypes>(
+        tuple<std::string>(
+          "FR",
+          "PR+",
+          "FR-PR",
+          "HS"
+          ),
+        tuple<std::string>(
+          "Fletcher-Reeves Method",
+          "Polak-Ribiere Method",
+          "Fletcher-Reeves Polak-Ribiere Hybrid Method",
+          "Hestenes-Stiefel Method"
+          ),
+        tuple<NCGU::ESolverTypes>(
+          NCGU::NONLINEAR_CG_FR,
+          NCGU::NONLINEAR_CG_PR_PLUS,
+          NCGU::NONLINEAR_CG_FR_PR,
+          NCGU::NONLINEAR_CG_HS
+          ),
+        NCGU::solverType_name
+        );
+    pl->set( NCGU::solverType_name, NCGU::solverType_default,
+      "Set the type of nonlinear CG solver algorithm to use.",
+      solverType_validator_ );
     pl->set( NCGU::alpha_init_name, NCGU::alpha_init_default );
     pl->set( NCGU::alpha_reinit_name, NCGU::alpha_reinit_default );
     pl->set( NCGU::and_conv_tests_name, NCGU::and_conv_tests_default );
@@ -231,7 +273,10 @@ NonlinearCG<Scalar>::doSolve(
   using Thyra::V_StV;
   using Thyra::Vt_S;
   using Thyra::eval_g_DgDp;
+  typedef Thyra::Ordinal Ordinal;
   typedef Thyra::ModelEvaluatorBase MEB;
+  namespace NCGU = NonlinearCGUtils;
+  using std::max;
 
   // Validate input
 
@@ -241,6 +286,17 @@ NonlinearCG<Scalar>::doSolve(
 
   const RCP<Teuchos::FancyOStream> out = this->getOStream();
   linesearch_->setOStream(out);
+
+  // Determine what step constants will be computed
+
+  const bool compute_beta_PR =
+    (
+      solverType_ == NCGU::NONLINEAR_CG_PR_PLUS
+      ||
+      solverType_ == NCGU::NONLINEAR_CG_FR_PR
+      );
+
+  const bool compute_beta_HS = (solverType_ == NCGU::NONLINEAR_CG_HS);
 
   //
   // A) Set up the storage for the algorithm
@@ -260,20 +316,30 @@ NonlinearCG<Scalar>::doSolve(
   // Stoarge for current iteration
   RCP<VectorBase<Scalar> >
     p_k = rcpFromPtr(p_inout),        // Current solution for p
-    p_kp1 = createMember(p_space),  // Trial point for p (in line search)
+    p_kp1 = createMember(p_space),    // Trial point for p (in line search)
     g_vec = createMember(g_space),    // Vector (size 1) form of objective g(p) 
     g_grad_k = createMember(p_space), // Gradient of g DgDp^T
-    d_k = createMember(p_space);      // Search direction
+    d_k = createMember(p_space),      // Search direction
+    g_grad_k_diff_km1 = null;         // g_grad_k - g_grad_km1 (if needed)
 
   // Storage for previous iteration
   RCP<VectorBase<Scalar> >
-    g_grad_km1 = createMember(p_space);
+    g_grad_km1 = null, // Will allocate if we need it!
+    d_km1 = null; // Will allocate if we need it!
   ScalarMag
     alpha_km1 = SMT::zero(),
     g_km1 = SMT::zero(),
     g_grad_km1_inner_g_grad_km1 = SMT::zero(),
     g_grad_km1_inner_d_km1 = SMT::zero();
   
+  if (compute_beta_PR || compute_beta_HS) {
+    g_grad_km1 = createMember(p_space);
+    g_grad_k_diff_km1 = createMember(p_space);
+  }
+  
+  if (compute_beta_HS) {
+    d_km1 = createMember(p_space);
+  }
 
   //
   // B) Do the nonlinear CG iterations
@@ -282,15 +348,12 @@ NonlinearCG<Scalar>::doSolve(
   *out << "\nStarting nonlinear CG iterations ...\n";
 
   if (and_conv_tests_) {
-    *out << "\nNOTE: Using an AND of convergence tests!\n";
+    *out << "\nNOTE: Using AND of convergence tests!\n";
   }
   else {
-    *out << "\nNOTE: Using an OR of convergence tests!\n";
+    *out << "\nNOTE: Using OR of convergence tests!\n";
   }
 
-  bool foundSolution = false;
-  bool linesearchFailure = false;
-  bool linsearchFailureLastIter = false;
   const Scalar alpha_init =
     ( !is_null(alpha_init_in) ? *alpha_init_in : alpha_init_ );
   const Scalar g_reduct_tol =
@@ -298,7 +361,16 @@ NonlinearCG<Scalar>::doSolve(
   const Scalar g_grad_tol =
     ( !is_null(g_grad_tol_in) ? *g_grad_tol_in : g_grad_tol_ );
 
-  for (numIters_ = 0; numIters_ < maxIters_; ++numIters_) {
+  const Ordinal globalDim = p_space->dim();
+
+  bool foundSolution = false;
+  bool fatalLinesearchFailure = false;
+  bool restart = true;
+  int numConsecutiveLineSearchFailures = 0;
+
+  int numConsecutiveIters = 0;
+
+  for (numIters_ = 0; numIters_ < maxIters_; ++numIters_, ++numConsecutiveIters) {
 
     Teuchos::OSTab tab(out);
 
@@ -387,23 +459,95 @@ NonlinearCG<Scalar>::doSolve(
     }
 
     //
-    // B.3) Compute the search direction
+    // B.3) Compute the search direction d_k
     //
 
-    if (numIters_ == 0) {
+    if (numConsecutiveIters == globalDim) {
+
+      *out << "\nThe number of consecutive iterations exceeds the"
+           << " global dimension so restarting!\n";
+
+      restart = true;
+
+    }
+
+    if (restart) {
+
+      *out << "\nResetting search direction back to steppest descent!\n";
 
       // d_k = -g_grad_k
       V_StV( d_k.ptr(), as<Scalar>(-1.0), *g_grad_k );
 
+      restart = false;
+
     }
     else {
+      
+      // g_grad_k - g_grad_km1
+      if (!is_null(g_grad_k_diff_km1)) {
+        V_VmV( g_grad_k_diff_km1.ptr(), *g_grad_k, *g_grad_km1 );
+      }
 
       // beta_FR = inner(g_grad_k, g_grad_k) / inner(g_grad_km1, g_grad_km1)
-      const Scalar beta_k =
+      const Scalar beta_FR =
         g_grad_k_inner_g_grad_k / g_grad_km1_inner_g_grad_km1;
+      *out << "\nbeta_FR = " << beta_FR << "\n";
+      // NOTE: Computing beta_FR is free so we might as well just do it!
+
+      // beta_PR = inner(g_grad_k, g_grad_k - g_grad_km1) /
+      //    inner(g_grad_km1, g_grad_km1)
+      Scalar beta_PR = ST::zero();
+      if (compute_beta_PR) {
+        beta_PR =
+          inner(*g_grad_k, *g_grad_k_diff_km1) / g_grad_km1_inner_g_grad_km1;
+        *out << "\nbeta_PR = " << beta_PR << "\n";
+      }
+
+      // beta_HS = inner(g_grad_k, g_grad_k - g_grad_km1) /
+      //    inner(g_grad_k - g_grad_km1, d_km1)
+      Scalar beta_HS = ST::zero();
+      if (compute_beta_HS) {
+        beta_HS =
+          inner(*g_grad_k, *g_grad_k_diff_km1) / inner(*g_grad_k_diff_km1, *d_km1);
+        *out << "\nbeta_HS = " << beta_HS << "\n";
+      }
+      
+      Scalar beta_k = ST::zero();
+      switch(solverType_) {
+        case NCGU::NONLINEAR_CG_FR: {
+          beta_k = beta_FR;
+          break;
+        }
+        case NCGU::NONLINEAR_CG_PR_PLUS: {
+          beta_k = max(beta_PR, ST::zero());
+          break;
+        }
+        case NCGU::NONLINEAR_CG_FR_PR: {
+          // NOTE: This does not seem to be working :-(
+          if (numConsecutiveIters < 2) {
+            beta_k = beta_PR;
+          }
+          else if (beta_PR < -beta_FR)
+            beta_k = -beta_FR;
+          else if (ST::magnitude(beta_PR) <= beta_FR)
+            beta_k = beta_PR;
+          else // beta_PR > beta_FR
+            beta_k = beta_FR;
+        }
+        case NCGU::NONLINEAR_CG_HS: {
+          beta_k = beta_HS;
+          break;
+        }
+        default:
+          TEST_FOR_EXCEPT(true);
+      }
+      *out << "\nbeta_k = " << beta_k << "\n";
 
       // d_k = beta_k * d_last + -g_grad_k
-      Vt_S( d_k.ptr(), beta_k );
+      if (!is_null(d_km1))
+        V_StV( d_k.ptr(), beta_k, *d_km1 );
+      else
+        Vt_S( d_k.ptr(), beta_k );
       Vp_StV( d_k.ptr(), as<Scalar>(-1.0), *g_grad_k );
 
     }
@@ -426,27 +570,28 @@ NonlinearCG<Scalar>::doSolve(
       else {
         alpha_k = alpha_km1;
         // ToDo: Implement better logic from Nocedal and Wright for selecting
-        // this step length after first iteration.
+        // this step length after first iteration!
       }
     }
 
     // B.4.b) Perform the linesearch (computing updated quantities in process)
 
-    pointEvaluator->initialize(
-      tuple<RCP<const VectorBase<Scalar> > >(p_k, d_k)() );
+    pointEvaluator->initialize(tuple<RCP<const VectorBase<Scalar> > >(p_k, d_k)());
 
-    const ScalarMag g_grad_k_inner_d_k = scalarProd(*g_grad_k, *d_k);
+    ScalarMag g_grad_k_inner_d_k = ST::zero();
 
-    // Set up the merit function to only compute the value but give it its
-    // initial descent derivative.
-    meritFunc->setEvaluationQuantities(
-      pointEvaluator, p_kp1, g_vec, null, optInArg(g_grad_k_inner_d_k) );
-
-    ScalarMag g_kp1 = computeValue(*meritFunc, alpha_k); // Updates p_kp1 and g_vec as well!
+    // Set up the merit function to only compute the value
+    meritFunc->setEvaluationQuantities(pointEvaluator, p_kp1, g_vec, null);
 
     PointEval1D<ScalarMag> point_k(ST::zero(), g_k);
-    if (linesearch_->requiresBaseDeriv())
+    if (linesearch_->requiresBaseDeriv()) {
+      g_grad_k_inner_d_k = scalarProd(*g_grad_k, *d_k);
       point_k.Dphi = g_grad_k_inner_d_k;
+    }
+
+    ScalarMag g_kp1 = computeValue(*meritFunc, alpha_k);
+    // NOTE: The above call updates p_kp1 and g_vec as well!
+
     PointEval1D<ScalarMag> point_kp1(alpha_k, g_kp1);
 
     const bool linesearchResult = linesearch_->doLineSearch(
@@ -455,18 +600,22 @@ NonlinearCG<Scalar>::doSolve(
     alpha_k = point_kp1.alpha;
     g_kp1 = point_kp1.phi;
 
-    if (!linesearchResult) {
-      if (!linsearchFailureLastIter) {
-        *out << "\nLine search failure, but doing another iteration anyway!\n";
-        linsearchFailureLastIter = true;
+    if (linesearchResult) {
+      numConsecutiveLineSearchFailures = 0;
+    }
+    else {
+      if (numConsecutiveLineSearchFailures==0) {
+        *out << "\nLine search failure, resetting the search direction!\n";
+        restart = true;
       }
-      else {
-        *out << "\nLine search failure, terminating nonlinear CG algorithm!\n";
-        linesearchFailure = true;
+      if (numConsecutiveLineSearchFailures==1) {
+        *out << "\nLine search failure on last iteration also, terminating algorithm!\n";
+        fatalLinesearchFailure = true;
       }
+      ++numConsecutiveLineSearchFailures;
     }
 
-    if (linesearchFailure) {
+    if (fatalLinesearchFailure) {
       break;
     }
 
@@ -478,10 +627,14 @@ NonlinearCG<Scalar>::doSolve(
     g_km1 = g_k;
     g_grad_km1_inner_g_grad_km1 = g_grad_k_inner_g_grad_k;
     g_grad_km1_inner_d_km1 = g_grad_k_inner_d_k;
-
-    std::swap(g_grad_km1, g_grad_k);
     std::swap(p_k, p_kp1);
+    if (!is_null(g_grad_km1))
+      std::swap(g_grad_km1, g_grad_k);
+    if (!is_null(d_km1))
+      std::swap(d_k, d_km1);
+    
 #ifdef TEUCHOS_DEBUG
+    // Make sure we compute these correctly before they are used!
     V_S(g_grad_k.ptr(), ST::nan());
     V_S(p_kp1.ptr(), ST::nan());
 #endif
@@ -509,7 +662,7 @@ NonlinearCG<Scalar>::doSolve(
   if (foundSolution) {
     return NonlinearCGUtils::SOLVE_SOLUTION_FOUND;
   }
-  else if(linesearchFailure) {
+  else if(fatalLinesearchFailure) {
     return NonlinearCGUtils::SOLVE_LINSEARCH_FAILURE;
   }
 

@@ -101,8 +101,7 @@ public:
     const RCP<const LineSearchPointEvaluatorBase<Scalar> > &pointEvaluator,
     const RCP<Thyra::VectorBase<Scalar> > &p,
     const RCP<Thyra::VectorBase<Scalar> > &g_vec,
-    const RCP<Thyra::VectorBase<Scalar> > &g_grad_vec,
-    const Ptr<const ScalarMag> &baseDeriv
+    const RCP<Thyra::VectorBase<Scalar> > &g_grad_vec
     );
 
   //@}
@@ -111,11 +110,7 @@ public:
   //@{
   
   /** \brief . */
-  virtual bool supportsBaseDeriv() const;
-  /** \brief . */
   virtual bool supportsDerivEvals() const;
-  /** \brief . */
-  virtual ScalarMag baseDeriv() const;
   /** \brief . */
   virtual void eval( const ScalarMag &alpha, const Ptr<ScalarMag> &phi,
     const Ptr<ScalarMag> &Dphi ) const;
@@ -135,8 +130,6 @@ private:
   RCP<Thyra::VectorBase<Scalar> > p_;
   RCP<Thyra::VectorBase<Scalar> > g_vec_;
   RCP<Thyra::VectorBase<Scalar> > g_grad_vec_;
-  ScalarMag baseDeriv_;
-  bool supportsBaseDeriv_;
 
 };
 

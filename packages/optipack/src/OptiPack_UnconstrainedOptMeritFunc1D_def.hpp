@@ -48,9 +48,7 @@ namespace OptiPack {
 template<typename Scalar>
 UnconstrainedOptMeritFunc1D<Scalar>::UnconstrainedOptMeritFunc1D()
   : paramIndex_(-1),
-    responseIndex_(-1),
-    baseDeriv_(ScalarTraits<Scalar>::zero()),
-    supportsBaseDeriv_(false)
+    responseIndex_(-1)
 {}
 
 
@@ -77,8 +75,7 @@ void UnconstrainedOptMeritFunc1D<Scalar>::setEvaluationQuantities(
   const RCP<const LineSearchPointEvaluatorBase<Scalar> > &pointEvaluator,
   const RCP<Thyra::VectorBase<Scalar> > &p,
   const RCP<Thyra::VectorBase<Scalar> > &g_vec,
-  const RCP<Thyra::VectorBase<Scalar> > &g_grad_vec,
-  const Ptr<const ScalarMag> &baseDeriv_in
+  const RCP<Thyra::VectorBase<Scalar> > &g_grad_vec
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -91,16 +88,6 @@ void UnconstrainedOptMeritFunc1D<Scalar>::setEvaluationQuantities(
   p_ = p;
   g_vec_ = g_vec;
   g_grad_vec_ = g_grad_vec; // Can be null and that is okay
-  if (!is_null(baseDeriv_in)) {
-    baseDeriv_ = *baseDeriv_in;
-    supportsBaseDeriv_ = true;
-  }
-  else {
-    baseDeriv_ = ScalarTraits<Scalar>::zero();
-    supportsBaseDeriv_ = false;
-  }
-
-
 }
 
 
@@ -108,27 +95,9 @@ void UnconstrainedOptMeritFunc1D<Scalar>::setEvaluationQuantities(
 
 
 template<typename Scalar>
-bool UnconstrainedOptMeritFunc1D<Scalar>::supportsBaseDeriv() const
-{
-  return supportsBaseDeriv_;
-}
-
-
-template<typename Scalar>
 bool UnconstrainedOptMeritFunc1D<Scalar>::supportsDerivEvals() const
 {
   return !is_null(g_grad_vec_);
-}
-
-
-template<typename Scalar>
-typename ScalarTraits<Scalar>::magnitudeType
-UnconstrainedOptMeritFunc1D<Scalar>::baseDeriv() const
-{
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT(supportsBaseDeriv_);
-#endif
-  return baseDeriv_;
 }
 
 
@@ -144,7 +113,7 @@ void UnconstrainedOptMeritFunc1D<Scalar>::eval(
   pointEvaluator_->computePoint(alpha, p_.ptr());
   if (!is_null(g_grad_vec_)) {
     TEST_FOR_EXCEPT_MSG( true,
-      "Error, this has not been implemented yet!.");
+      "Error, g_grad_vec has not been implemented yet!.");
   }
   else {
 #ifdef TEUCHOS_DEBUG
