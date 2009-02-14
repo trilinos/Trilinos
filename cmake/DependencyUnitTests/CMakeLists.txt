@@ -137,3 +137,17 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   "-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON -D TPL_ENABLE_Boost:BOOL=ON  -D TPL_ENABLE_ParMETIS:BOOL=ON"
   "Final set of enabled TPLs:  BLAS LAPACK Boost ParMETIS 4"
   )
+
+
+CREATE_DEPENCENCY_HANDLING_TEST_CASE(
+  TrilinosDep_EnableZoltan_ZoltanEnableParMETIS
+  " -DTrilinos_ENABLE_Zoltan=ON -DZoltan_ENABLE_ParMETIS=ON"
+  "Final set of enabled TPLs:  ParMETIS 1"
+  )
+
+
+CREATE_DEPENCENCY_HANDLING_TEST_CASE(
+  TrilinosDep_EnableThyra_ThyraEnableEpetraExt
+  " -DTrilinos_ENABLE_Thyra=ON -DThyra_ENABLE_EpetraExt=ON"
+  "Final set of enabled packages:  Teuchos Epetra RTOp EpetraExt Thyra 5"
+  )

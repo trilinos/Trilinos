@@ -954,15 +954,34 @@ ENDMACRO()
 # Private helper macros
 #
 
+
 MACRO(PACKAGE_ARCH_PRIVATE_ENABLE_DEP_PACKAGE PACKAGE_NAME DEP_PACKAGE_NAME)
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
-  IF(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME} STREQUAL "")
+  #PRINT_VAR(ENABLE_OVERRIDE)
+  #PRINT_VAR(${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME})
+  IF (${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME} STREQUAL "")
+    IF (ENABLE_OVERRIDE OR ${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME})
+      MESSAGE(STATUS "Setting ${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON"
+        " because ${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON")
+      ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
+      SET(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME} ON)
+    ENDIF()
+  ENDIF()
+ENDMACRO()
+
+
+MACRO(PACKAGE_ARCH_PRIVATE_ENABLE_REQUIRED_DEP_PACKAGE PACKAGE_NAME DEP_PACKAGE_NAME)
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
+  #PRINT_VAR(ENABLE_OVERRIDE)
+  #PRINT_VAR(${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME})
+  IF (${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME} STREQUAL "")
     MESSAGE(STATUS "Setting ${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON"
       " because ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON")
     ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
     SET(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME} ON)
   ENDIF()
 ENDMACRO()
+
 
 MACRO(PACKAGE_ARCH_PRIVATE_ENABLE_DEP_TPL PACKAGE_NAME DEP_TPL_NAME)
   ASSERT_DEFINED(TPL_ENABLE_${DEP_TPL_NAME})
@@ -972,6 +991,43 @@ MACRO(PACKAGE_ARCH_PRIVATE_ENABLE_DEP_TPL PACKAGE_NAME DEP_TPL_NAME)
     ASSERT_DEFINED(TPL_ENABLE_${DEP_TPL_NAME})
     SET(TPL_ENABLE_${DEP_TPL_NAME} ON)
   ENDIF()
+ENDMACRO()
+
+
+MACRO(PACKAGE_ARCH_PRIVATE_ENABLE_OPTIONAL_DEP_TPL PACKAGE_NAME DEP_TPL_NAME)
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_${DEP_TPL_NAME})
+  IF(${PACKAGE_NAME}_ENABLE_${DEP_TPL_NAME} AND NOT TPL_ENABLE_${DEP_TPL_NAME})
+    MESSAGE(STATUS "Setting TPL_ENABLE_${DEP_TPL_NAME}=ON because"
+      " ${PACKAGE_NAME}_ENABLE_${DEP_TPL_NAME}=ON")
+    ASSERT_DEFINED(TPL_ENABLE_${DEP_TPL_NAME})
+    SET(TPL_ENABLE_${DEP_TPL_NAME} ON)
+  ENDIF()
+ENDMACRO()
+
+
+#
+# Macro that enables the optional TPLs for given package
+#
+
+MACRO(PACKAGE_ARCH_ENABLE_OPTIONAL_TPLS PACKAGE_NAME)
+
+  #MESSAGE("PACKAGE_ARCH_ENABLE_OPTIONAL_TPLS: ${PACKAGE_NAME}")
+  #MESSAGE(STATUS "${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=${${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}}")
+
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
+
+  IF (${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
+
+    FOREACH(DEP_TPL ${${PACKAGE_NAME}_LIB_OPTIONAL_DEP_TPLS})
+      PACKAGE_ARCH_PRIVATE_ENABLE_OPTIONAL_DEP_TPL(${PACKAGE_NAME} ${DEP_TPL})
+    ENDFOREACH()
+
+    FOREACH(DEP_TPL ${${PACKAGE_NAME}_TEST_OPTIONAL_DEP_TPLS})
+      PACKAGE_ARCH_PRIVATE_ENABLE_OPTIONAL_DEP_TPL(${PACKAGE_NAME} ${DEP_TPL})
+    ENDFOREACH()
+
+  ENDIF()
+
 ENDMACRO()
 
 
@@ -986,15 +1042,24 @@ MACRO(PACKAGE_ARCH_ENABLE_OPTIONAL_PACKAGES PACKAGE_NAME)
 
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
 
+  #PRINT_VAR(ENABLE_ALL_DEP_PKGS)
+
   IF (${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
 
     FOREACH(DEP_PKG ${${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES})
+      SET(ENABLE_OVERRIDE ${ENABLE_ALL_DEP_PKGS})
       PACKAGE_ARCH_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG})
     ENDFOREACH()
 
     FOREACH(DEP_PKG ${${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES})
+      SET(ENABLE_OVERRIDE ${ENABLE_ALL_DEP_PKGS})
       PACKAGE_ARCH_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG})
     ENDFOREACH()
+
+    # 2008/02/13: rabartl: Above, I had to set the varaible ENABLE_OVERRIDE
+    # and then call the function because it was not being passed
+    # as an argument as was zero on the other side.  This is very
+    # strange but you have to do what you have to do!
 
   ENDIF()
 
@@ -1015,11 +1080,11 @@ MACRO(PACKAGE_ARCH_ENABLE_REQUIRED_PACKAGES PACKAGE_NAME)
   IF (${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
 
     FOREACH(DEP_PKG ${${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES})
-      PACKAGE_ARCH_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG})
+      PACKAGE_ARCH_PRIVATE_ENABLE_REQUIRED_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG} ON)
     ENDFOREACH()
 
     FOREACH(DEP_PKG ${${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES})
-      PACKAGE_ARCH_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG})
+      PACKAGE_ARCH_PRIVATE_ENABLE_REQUIRED_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG} ON)
     ENDFOREACH()
 
   ENDIF()
@@ -1162,7 +1227,16 @@ ENDFUNCTION()
 MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
 
   MESSAGE("")
-  MESSAGE("Disabling all packages that have a required dependency on explicitly disabled TPLs ...")
+  MESSAGE("Enabling and overriding disables for TPLs based on"
+    " <PACKAGE>_ENABLE_<TPL>=ON ...")
+  MESSAGE("")
+  FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
+    PACKAGE_ARCH_ENABLE_OPTIONAL_TPLS(${PACKAGE})
+  ENDFOREACH()
+
+  MESSAGE("")
+  MESSAGE("Disabling all packages that have a required dependency"
+    " on disabled TPLs with TPL_ENABLE_<TPL>=OFF ...")
   MESSAGE("")
   FOREACH(TPL ${${PROJECT_NAME}_TPLS})
     PACKAGE_ARCH_DISABLE_TPL_DEP_PACKAGES(${TPL})
@@ -1170,7 +1244,8 @@ MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
 
   MESSAGE("")
   MESSAGE("Disabling forward required packages and optional intra-package"
-    " support that have a dependancy on explicitly disabled packages ...")
+    " support that have a dependancy on disabled packages"
+    " ${PROJECT_NAME}_ENABLE_<PACKAGE>=OFF ...")
   MESSAGE("")
   FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
     PACKAGE_ARCH_DISABLE_FORWARD_REQUIRED_DEP_PACKAGES(${PACKAGE})
@@ -1178,7 +1253,8 @@ MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
   
   IF (${PROJECT_NAME}_ENABLE_ALL_PACKAGES)
     MESSAGE("")
-    MESSAGE("Enabling all packages that are not currently disabled ...")
+    MESSAGE("Enabling all packages that are not currently disabled because of"
+      " ${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON ...")
     MESSAGE("")
     FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
       PACKAGE_ARCH_APPLY_ALL_PACKAGE_ENABLES(${PACKAGE})
@@ -1187,7 +1263,8 @@ MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
   
   IF (${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES)
     MESSAGE("")
-    MESSAGE("Enabling all forward dependent packages ...")
+    MESSAGE("Enabling all forward dependent packages because"
+      " ${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON ...")
     MESSAGE("")
     FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
       PACKAGE_ARCH_ENABLE_FORWARD_PACKAGE_ENABLES(${PACKAGE})
@@ -1197,7 +1274,8 @@ MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
   
   IF (${PROJECT_NAME}_ENABLE_TESTS OR ${PROJECT_NAME}_ENABLE_EXAMPLES)
     MESSAGE("")
-    MESSAGE("Enabling all tests and examples that have not been explicitly disabled ...")
+    MESSAGE("Enabling all tests and/or examples that have not been"
+      " explicitly disabled because ${PROJECT_NAME}_ENABLE_[TESTS,EXAMPLES]=ON ...")
     MESSAGE("")
     FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
       PACKAGE_ARCH_APPLY_TEST_EXAMPLE_ENABLES(${PACKAGE})
@@ -1206,44 +1284,61 @@ MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
   # NOTE: Above, we enable tests and examples here, before the remaining required
   # packages so that we don't enable tests that don't need to be enabled based
   # on the use of the option ${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES.
-  
+
   IF (${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES)
     MESSAGE("")
-    MESSAGE("Enabling all optional packages for current set of enabled packages ...")
+    MESSAGE("Enabling all optional packages for current set of enabled"
+      " packages because ${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON ...")
     MESSAGE("")
     FOREACH(PACKAGE ${${PROJECT_NAME}_REVERSE_PACKAGES})
+      SET(ENABLE_ALL_DEP_PKGS ON) # Hack to get around CMake bug?
       PACKAGE_ARCH_ENABLE_OPTIONAL_PACKAGES(${PACKAGE})
     ENDFOREACH()
+    # NOTE: Above, we have to loop through the packages backward to enable all the
+    # packages that feed into these packages.
+    # NOTE Above, we don't have to enable the required packages because that will
+    # come next
+  ELSE()
+    MESSAGE("")
+    MESSAGE("Enabling all packages that are not disabled for"
+      " <PACKAGE>_ENABLE_<DEPPACKAGE>=ON  ...")
+    MESSAGE("")
+    FOREACH(PACKAGE ${${PROJECT_NAME}_REVERSE_PACKAGES})
+      SET(ENABLE_ALL_DEP_PKGS OFF) # Hack to get around CMake bug?
+      PACKAGE_ARCH_ENABLE_OPTIONAL_PACKAGES(${PACKAGE})
+    ENDFOREACH()
+    # NOTE: Aaove, we loop backwards through the packages to pick up as many
+    # package enables as we can.  Also, we do this after the tests/examples are 
+    # enabled.
   ENDIF()
-  # NOTE: Above, we have to loop through the packages backward to enable all the
-  # packages that feed into these packages.
-  # NOTE Above, we don't have to enable the required packages because that will
-  # come next
   
   MESSAGE("")
-  MESSAGE("Enabling all remaining required packages for the current set of enabled packages ...")
+  MESSAGE("Enabling all remaining required packages for the current set"
+    " of enabled packages ...")
   MESSAGE("")
   FOREACH(PACKAGE ${${PROJECT_NAME}_REVERSE_PACKAGES})
     PACKAGE_ARCH_ENABLE_REQUIRED_PACKAGES(${PACKAGE})
   ENDFOREACH()
   
   MESSAGE("")
-  MESSAGE("Enabling all optional intra-package enables that are not explicitly"
-    " disabled if both sets of packages are enabled ...")
+  MESSAGE("Enabling all optional intra-package enables <PACKAGE>_ENABLE_<DEPPACKAGE>"
+    " that are not currently disabled if both sets of packages are enabled ...")
   MESSAGE("")
   FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
     PACKAGE_ARCH_POSTPROCESS_OPTIONAL_PACKAGE_ENABLES(${PACKAGE})
   ENDFOREACH()
 
   MESSAGE("")
-  MESSAGE("Enabling all remaining required TPLs for current set of enabled packages ...")
+  MESSAGE("Enabling all remaining required TPLs for current set of"
+    " enabled packages ...")
   MESSAGE("")
   FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
     PACKAGE_ARCH_ENABLE_REQUIRED_TPLS(${PACKAGE})
   ENDFOREACH()
 
   MESSAGE("")
-  MESSAGE("Enabling all optional package TPL support for currently enabled TPLs ...")
+  MESSAGE("Enabling all optional package TPL support for currently"
+    " enabled TPLs ...")
   MESSAGE("")
   FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
     PACKAGE_ARCH_POSTPROCESS_OPTIONAL_TPL_ENABLES(${PACKAGE})

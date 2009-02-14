@@ -15,20 +15,13 @@ funcitonality.
 
 (*) [Ross and Kitware] (Ongoing) Create separate dashboards for each
 Trilinos package.  Kitware is going to actively work on this.
---------
 
 (*) [Roger] Add configure-time test for LAPACK support for GGEV and/or GEEV to
 define HAVE_LAPACK_GGEV/GEEV.  See the file teuchos/config/acx_ggev.m4.
 
 
 Backlog:
-
-(*) [???] Revise TPL support so that PACKAGE1_ENABLE_TPL1 will enable the TPL
-only for PACKAGE1 and not for any of the other packages (see bug 4298).
-
-(*) [???] Revise package enabling logic so that PACKAGE1_ENABLE_PACKAGE2 will
-automatically set Trilinos_ENABLE_PACAKGE2=ON in case it is not already.  This
-will be consistent with the above mentioned TPL behavior.
+--------
 
 (*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG and
 MPI_OPT build directory and enable only "Primary Stable" code.  This will need
@@ -59,16 +52,21 @@ install the libraries and headers instead.  The CMake build system would be
 used to configure and build the tests and examples against the installed
 libraries and headers.
 
+(*) [???] Add option SKIPMEMCHECK to PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...) to
+add test to CMAKE_CUSTOM_MEMCHECK_IGNORE that gets written to
+CTestCustomer.ctest.
+
+(*) [???] Add a global 'libs' target to rebuild only libraries so that we can
+skip unecessary relinking when shared libraries are used.  This target can be
+built by simply looping over all enabled packages and adding dependencies on
+${PACKAGE}_libs.
+
 (*) [???] Add unit testing infrastructure and documentation for
 PACKAGE_ADD_EXECUTABLE(...) and PACKAGE_ADD_TEST(...).  These unit tests will
 serve both as tests and as extra documentation.  I need to see if you can
 redefine ADD_EXECUTABLE(...), ADD_TEST(...), and other commands so that I can
 unit test that these things are being set correctly.  If not, then I can
 always wrap these with my own and then redefine them when unit testing.
-
-(*) [???] Add option SKIPMEMCHECK to PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...) to
-add test to CMAKE_CUSTOM_MEMCHECK_IGNORE that gets written to
-CTestCustomer.ctest.
 
 (*) [???] Change the macro TPL_DELCARE_LIBRARIES(...) to validate that all
 pased in header files are found (This was requested by Roger P.).
@@ -85,11 +83,6 @@ an internal cache variables and then reset them at the package level.
 (*) [???] Change all source files to be globbed and use internal ifdefs to
 control what gets built.  This will make it easier to maintain the BJAM build
 system.  I have done this for MOOCHO and it is great.
-
-(*) [???] Add a global 'libs' target to rebuild only libraries so that we can
-skip unecessary relinking when shared libraries are used.  This target can be
-built by simply looping over all enabled packages and adding dependencies on
-${PACKAGE}_libs.
 
 (*) [???] Add POSTFIX and POSTFIXES arguments to
 PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...)  to avoid duplicating the exec name in
@@ -145,8 +138,3 @@ automatically to exclude all such files.
 
 Tentative:
 ----------
-
-(*) [???] Change how XXX_config.h.in files get created so that they get
-created automatically.  We can do this by changing the scripts
-PACKAGE_ADD_OPTION(...) and PACKAGE_CONFIGURE_FILE(...) and adding a few new
-scripts.
