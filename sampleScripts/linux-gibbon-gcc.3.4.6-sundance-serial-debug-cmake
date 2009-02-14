@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# This is the script I used to get Sundance with ExodusII building on
+# gibbon.sandia.gov.
+
+
+EXTRA_ARGS=$@
+
+LIB_PATH=/usr/local/gcc-3.4.6/lib
+INC_PATH=/usr/local/gcc-3.4.6/include
+
+cmake \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D CMAKE_SYSTEM_LIBRARY_PATH:FILEPATH="$LIB_PATH" \
+-D CMAKE_SYSTEM_INCLUDE_PATH:FILEPATH="$INC_PATH" \
+-D CMAKE_Fortran_COMPILER:FILEPATH="/usr/local/gcc-3.4.6/bin/g77" \
+-D TPL_ENABLE_ExodusII:BOOL=ON \
+-D Trilinos_EXTRA_LINK_FLAGS:STRING="$LIB_PATH/libg2c.a" \
+-D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_Sundance:BOOL=ON \
+-D NOX_ENABLE_LOCA:BOOL=OFF \
+-D CMAKE_INSTALL_PREFIX:PATH=$PWD \
+$EXTRA_ARGS \
+../../../../Trilinos
+
+# -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
+# -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+# -D Sundance_ENABLE_ExodusII:BOOL=ON \
+# -D Amesos_ENABLE_KLU:BOOL=ON \
+# -D Trilinos_ENABLE_Sundance:BOOL=ON \
