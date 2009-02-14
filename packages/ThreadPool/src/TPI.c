@@ -24,13 +24,16 @@
  * @author H. Carter Edwards
  */
 
+/* #define DEBUG_PRINT */
+
 #include <stdio.h>
 #include <stdlib.h>
 
 #include <TPI.h>
 #include <ThreadPool_config.h>
 
-enum { MAXIMUM_LOCK_COUNT = 256 };
+enum { THREAD_COUNT_MAX = 1024 };
+enum { LOCK_COUNT_MAX   = 256 };
 
 /*--------------------------------------------------------------------*/
 /*--------------------------------------------------------------------*/
@@ -46,53 +49,48 @@ struct ThreadPool_Data ;
 
 typedef void (*Thread_Work)( struct ThreadPool_Data * const , unsigned int );
 
-struct Thread_Data {
-  pthread_cond_t       m_run_cond ;
-  pthread_mutex_t      m_run_lock ;
-  struct Thread_Data * m_next ;
-  unsigned int         m_number ;
-};
+typedef struct Thread_Data {
+  pthread_cond_t  m_cond ;
+  pthread_mutex_t m_lock ;
+  unsigned int    m_pending ;
+} Thread ;
 
 typedef struct ThreadPool_Data {
   pthread_mutex_t       m_work_lock ;
   pthread_cond_t        m_work_cond ;
-  pthread_mutex_t       m_master_lock ;
-  pthread_cond_t        m_master_cond ;
-  Thread_Work           m_thread_work ;
-  struct Thread_Data  * m_thread_next ;
-  int                   m_thread_count ;
-  pthread_mutex_t     * m_lock ;
-  int                   m_lock_init ;
-  int                   m_lock_count ;
   TPI_work_subprogram   m_work_routine ;
   void                * m_work_argument ;
   int                   m_work_count_total ;
   int                   m_work_count_claim ;
   int                   m_work_count_pending ;
+
+  Thread_Work           m_thread_driver ;
+  int                   m_thread_count ;
+  int                   m_thread_upper ;
+  int                   m_lock_init ;
+  int                   m_lock_count ;
+
+  Thread                m_thread[ THREAD_COUNT_MAX ];
+  pthread_mutex_t       m_lock[ LOCK_COUNT_MAX ];
 } ThreadPool ;
 
 /*--------------------------------------------------------------------*/
 
 static ThreadPool * local_thread_pool()
 {
-  static pthread_mutex_t lock_pool[ MAXIMUM_LOCK_COUNT ];
-
   static ThreadPool thread_pool = {
     /* m_work_lock           */  PTHREAD_MUTEX_INITIALIZER ,
     /* m_work_cond           */  PTHREAD_COND_INITIALIZER ,
-    /* m_master_lock         */  PTHREAD_MUTEX_INITIALIZER ,
-    /* m_master_cond         */  PTHREAD_COND_INITIALIZER ,
-    /* m_thread_work         */  NULL ,
-    /* m_thread_next         */  NULL ,
-    /* m_thread_count        */  0 ,
-    /* m_lock                */  lock_pool ,
-    /* m_lock_init           */  0 ,
-    /* m_lock_count          */  0 ,
     /* m_work_routine        */  NULL ,
     /* m_work_argument       */  NULL ,
     /* m_work_count_total    */  0 ,
     /* m_work_count_claim    */  0 ,
-    /* m_work_count_pending  */  0 };
+    /* m_work_count_pending  */  0 ,
+    /* m_thread_driver       */  NULL ,
+    /* m_thread_count        */  0 ,
+    /* m_thread_upper        */  0 ,
+    /* m_lock_init           */  0 ,
+    /* m_lock_count          */  0 };
 
   return & thread_pool ;
 }
@@ -147,19 +145,18 @@ int TPI_Unlock( int i )
 static void local_run_work( ThreadPool * const thread_pool ,
                             unsigned int work_item )
 {
+  struct TPI_Work_Struct work ;
+
+  work.shared     = thread_pool->m_work_argument ;
+  work.lock_count = thread_pool->m_lock_count ;
+  work.work_count = thread_pool->m_work_count_total ;
+
   work_item = 0 ;
 
   do {
 
-    /* Have a work item to do */
-
-    if ( work_item ) {
-      struct TPI_Work_Struct work ;
-
-      work.shared     = thread_pool->m_work_argument ;
-      work.lock_count = thread_pool->m_lock_count ;
-      work.work_count = thread_pool->m_work_count_total ;
-      work.work_rank  = thread_pool->m_work_count_total - work_item ;
+    if ( work_item ) { /* Have a work item to do */
+      work.work_rank = work.work_count - work_item ;
 
       (* thread_pool->m_work_routine)( & work );
     }
@@ -168,20 +165,13 @@ static void local_run_work( ThreadPool * const thread_pool ,
 
     pthread_mutex_lock( & thread_pool->m_work_lock );
 
-    if ( work_item ) {
-      /* Record work just performed */
-      if ( ! --( thread_pool->m_work_count_pending ) ) {
-        /* Signal master thread I completed the last work item */
-        pthread_cond_signal( & thread_pool->m_work_cond );
-      }
-    }
+    /* Record work just performed, if any */
+    if ( work_item ) { --( thread_pool->m_work_count_pending ); }
 
     /* Claim more work, if any */
     work_item = thread_pool->m_work_count_claim ;
 
-    if ( work_item ) {
-      thread_pool->m_work_count_claim = work_item - 1 ;
-    }
+    if ( work_item ) { thread_pool->m_work_count_claim = work_item - 1 ; }
 
     pthread_mutex_unlock( & thread_pool->m_work_lock );
 
@@ -189,93 +179,167 @@ static void local_run_work( ThreadPool * const thread_pool ,
 }
 
 /*--------------------------------------------------------------------*/
-/*  Run the work subprogram exactly once for each thread.
- */
-static void local_run_thread( ThreadPool * const thread_pool ,
-                              unsigned int thread_number )
+
+static
+void local_broadcast( ThreadPool * const control ,
+                      const unsigned int thread_rank ,
+                      unsigned int thread_cycle )
 {
-  struct TPI_Work_Struct work ;
+  Thread * const     thread_data  = control->m_thread ;
+  const unsigned int thread_count = control->m_thread_count ;
+ 
+  for ( ; thread_cycle < thread_count ; thread_cycle <<= 1 ) {
+    const unsigned int next_rank = thread_rank + thread_cycle ;
+    if ( next_rank < thread_count ) {
+      Thread * const next_thread = thread_data + next_rank ;
+ 
+#ifdef DEBUG_PRINT
+  fprintf(stdout,"  broadcast run %u to %u\n",thread_rank,next_rank);
+  fflush(stdout);
+#endif
 
-  work.shared     = thread_pool->m_work_argument ;
-  work.lock_count = thread_pool->m_lock_count ;
-  work.work_count = thread_pool->m_thread_count ;
-  work.work_rank  = thread_pool->m_thread_count - thread_number ;
+      next_thread->m_pending = thread_data->m_pending ;
+ 
+      pthread_mutex_unlock( & next_thread->m_lock );
+      pthread_cond_signal(  & next_thread->m_cond );
+    }
+  }
+}
+ 
+static
+void local_barrier( ThreadPool * const control ,
+                    const unsigned int thread_rank )
+{
+  Thread * const     thread_data  = control->m_thread ;
+  const unsigned int thread_count = control->m_thread_count ;
+        unsigned int thread_cycle = control->m_thread_upper ;
+ 
+  for ( ; thread_rank < thread_cycle ; thread_cycle >>= 1 ) {
+    const unsigned next_rank = thread_rank + thread_cycle ;
+    if ( next_rank < thread_count ) {
+      Thread * const next_thread = thread_data + next_rank ;
+ 
+#ifdef DEBUG_PRINT
+  fprintf(stdout,"  barrier halt %u from %u lock\n",thread_rank,next_rank);
+  fflush(stdout);
+#endif
+ 
+      pthread_mutex_lock( & next_thread->m_lock );
 
-  (* thread_pool->m_work_routine)( & work );
+      if ( next_thread->m_pending ) {
+ 
+#ifdef DEBUG_PRINT
+  fprintf(stdout,"  barrier halt %u from %u wait\n",thread_rank,next_rank);
+  fflush(stdout);
+#endif
 
-  /* Finished my work item, update the work queue */
+        pthread_cond_wait( & next_thread->m_cond , & next_thread->m_lock );
+      }
 
-  pthread_mutex_lock( & thread_pool->m_work_lock );
-
-  /* Record work just performed */
-  if ( ! --( thread_pool->m_work_count_pending ) ) {
-    /* Signal master thread I completed the last work item */
-    pthread_cond_signal( & thread_pool->m_work_cond );
+#ifdef DEBUG_PRINT
+  fprintf(stdout,"  barrier halt %u from %u done\n",thread_rank,next_rank);
+  fflush(stdout);
+#endif
+ 
+    }
   }
 
-  pthread_mutex_unlock( & thread_pool->m_work_lock );
+  if ( thread_data->m_pending ) {
+    Thread * const my_thread = thread_data + thread_rank ;
+    my_thread->m_pending = 0 ;
+    pthread_cond_signal( & my_thread->m_cond );
+  }
+}
+ 
+static unsigned int local_fan_cycle( const unsigned int i )
+{
+  unsigned j ;
+  for ( j = 1 ; j <= i ; j <<= 1 );
+  return j ;
 }
 
 /*--------------------------------------------------------------------*/
 /*  The driver given to 'pthread_create'.
  *  Run work until told to terminate.
  */
-
-static void * local_thread_pool_driver( void * arg )
+static void * local_driver( void * arg )
 {
   ThreadPool * const thread_pool = (ThreadPool *) arg ;
+  Thread     * const root_thread = thread_pool->m_thread ;
 
-  struct Thread_Data my_data = {
-    /* m_run_cond */  PTHREAD_COND_INITIALIZER ,
-    /* m_run_lock */  PTHREAD_MUTEX_INITIALIZER ,
-    /* m_next     */  NULL ,
-    /* m_number   */  0 };
+  const unsigned my_rank   = --thread_pool->m_work_count_pending ;
+  const unsigned my_cycle  = local_fan_cycle( my_rank );
+  Thread * const my_thread = root_thread + my_rank ;
 
-  /*------------------------------*/
+  /* Aquire my lock */
+  pthread_mutex_lock( & my_thread->m_lock );
+
   /* Signal master thread that I have started */
 
-  pthread_mutex_lock( & my_data.m_run_lock );
-  pthread_mutex_lock( & thread_pool->m_master_lock );
+  pthread_mutex_lock( & root_thread->m_lock );
+  pthread_cond_signal(  & root_thread->m_cond );
+  pthread_mutex_unlock( & root_thread->m_lock );
 
-  my_data.m_next   = thread_pool->m_thread_next ;
-  my_data.m_number = my_data.m_next ? my_data.m_next->m_number - 1
-                                    : thread_pool->m_thread_count - 1 ;
-
-  thread_pool->m_thread_next = & my_data ;
-
-  pthread_mutex_unlock( & thread_pool->m_master_lock );
-  pthread_cond_signal(  & thread_pool->m_master_cond );
+  local_barrier( thread_pool , my_rank );
 
   /*------------------------------*/
-  /*  While I'm active wait for run signal.
-   *  I give up my run lock while I am waiting.
-   */
+
   do {
-    pthread_cond_wait( & my_data.m_run_cond , & my_data.m_run_lock );
+    /* Wait for the run signal, giving up my lock */
+    pthread_cond_wait( & my_thread->m_cond , & my_thread->m_lock );
 
-    if ( my_data.m_next &&
-        ! pthread_mutex_trylock( & my_data.m_next->m_run_lock ) ) {
-      pthread_mutex_unlock( & my_data.m_next->m_run_lock );
-      pthread_cond_signal(  & my_data.m_next->m_run_cond );
-    }
+    /* Continue broadcasting the run signal */
+    local_broadcast( thread_pool , my_rank , my_cycle );
 
-    if ( thread_pool->m_thread_work ) {
-      (*thread_pool->m_thread_work)( thread_pool , my_data.m_number );
+    if ( thread_pool->m_thread_driver ) {
+
+#ifdef DEBUG_PRINT
+  fprintf(stdout,"  thread %u running\n",my_rank);
+  fflush(stdout);
+#endif
+
+      /* Participate in the work */
+      (*thread_pool->m_thread_driver)( thread_pool , my_rank );
+
+      /* Resume waiting */
+      local_barrier( thread_pool , my_rank );
     }
-  } while ( thread_pool->m_thread_work );
+  } while ( thread_pool->m_thread_driver );
 
   /*------------------------------*/
-  /* Termination, the main thread is waiting for the last thread to signal */
+  /* Termination, unlock my thread and count down */
 
-  pthread_mutex_unlock(  & my_data.m_run_lock );
-  pthread_mutex_destroy( & my_data.m_run_lock );
-  pthread_cond_destroy(  & my_data.m_run_cond );
+  pthread_mutex_unlock( & my_thread->m_lock );
 
-  pthread_mutex_lock(   & thread_pool->m_master_lock );
-  pthread_cond_signal(  & thread_pool->m_master_cond );
-  pthread_mutex_unlock( & thread_pool->m_master_lock );
+  pthread_mutex_lock(  & root_thread->m_lock );
+  if ( ! --thread_pool->m_work_count_pending ) {
+    pthread_cond_signal( & root_thread->m_cond );
+  }
+  pthread_mutex_unlock(  & root_thread->m_lock );
+
+#ifdef DEBUG_PRINT
+  fprintf( stdout , "  thread %u exiting\n",my_rank);
+  fflush( stdout );
+#endif
 
   return NULL ;
+}
+
+/*--------------------------------------------------------------------*/
+/*  Run the work subprogram exactly once for each thread.
+ *  The last thread signals the root thread.
+ */
+static void local_run_thread( ThreadPool * const thread_pool ,
+                              unsigned int thread_rank )
+{
+  struct TPI_Work_Struct work ;
+
+  work.shared     = thread_pool->m_work_argument ;
+  work.lock_count = thread_pool->m_lock_count ;
+  work.work_count = thread_pool->m_thread_count ;
+  work.work_rank  = thread_rank ;
+
+  (* thread_pool->m_work_routine)( & work );
 }
 
 /*--------------------------------------------------------------------*/
@@ -283,7 +347,7 @@ static void * local_thread_pool_driver( void * arg )
 static int set_lock_count( ThreadPool * const thread_pool ,
                            const int lock_count )
 {
-  int result = lock_count < 0 || MAXIMUM_LOCK_COUNT < lock_count
+  int result = lock_count < 0 || LOCK_COUNT_MAX < lock_count
              ? TPI_ERROR_SIZE : 0 ;
 
   while ( ! result && thread_pool->m_lock_init < lock_count ) {
@@ -317,16 +381,32 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
     0 ) );
 
   if ( ! result ) {
-    struct Thread_Data * const worker = thread_pool->m_thread_next ;
 
-    if ( ! worker ) {
-      /* No worker threads */
-      result = set_lock_count( thread_pool , lock_count );
+    result = set_lock_count( thread_pool , lock_count );
 
-      if ( ! result ) {
+    if ( ! result ) {
+
+      thread_pool->m_lock_count         = lock_count ;
+      thread_pool->m_work_argument      = shared_data ;
+      thread_pool->m_work_routine       = subprogram ;
+      thread_pool->m_work_count_total   = work_count ;
+      thread_pool->m_work_count_pending = work_count ;
+      thread_pool->m_work_count_claim   = work_count ;
+      thread_pool->m_thread_driver      = & local_run_work ;
+
+      if ( 1 < thread_pool->m_thread_count ) {
+        /* Activate the blocked worker threads */
+        local_broadcast( thread_pool , 0 , 1 );
+
+        /* Participate in work queue */
+        local_run_work( thread_pool , 0 );
+
+        /* Block the worker threads */
+        local_barrier( thread_pool , 0 );
+      }
+      else {
+        /* No worker threads, can bypass work queue locking */
         struct TPI_Work_Struct work ;
-
-        thread_pool->m_lock_count = lock_count ;
 
         work.shared     = shared_data ;
         work.lock_count = lock_count ;
@@ -336,55 +416,15 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
         for ( ; work.work_rank < work.work_count ; ++( work.work_rank ) ) {
           (* subprogram)( & work );
         }
-
-        thread_pool->m_lock_count = 0 ;
-      }
-    }
-    else {
-      /* Have worker threads */
-
-      pthread_mutex_lock( & thread_pool->m_work_lock );
-
-      result = set_lock_count( thread_pool , lock_count );
-
-      if ( ! result ) {
-
-        thread_pool->m_lock_count         = lock_count ;
-        thread_pool->m_work_argument      = shared_data ;
-        thread_pool->m_work_routine       = subprogram ;
-        thread_pool->m_work_count_total   = work_count ;
-        thread_pool->m_work_count_pending = work_count ;
-        thread_pool->m_work_count_claim   = work_count ;
-
-        pthread_mutex_unlock( & thread_pool->m_work_lock );
-
-        /* If first worker waiting for a signal then signal it.
-         * This signal will be passed along thread-to-thread.
-         */
-        if ( ! pthread_mutex_trylock( & worker->m_run_lock ) ) {
-          pthread_mutex_unlock( & worker->m_run_lock );
-          pthread_cond_signal(  & worker->m_run_cond );
-        }
-
-        local_run_work( thread_pool , thread_pool->m_thread_count );
-
-        pthread_mutex_lock( & thread_pool->m_work_lock );
-
-        if ( thread_pool->m_work_count_pending ) {
-          /* Wait for worker threads to complete last claimed work item */
-          pthread_cond_wait( & thread_pool->m_work_cond ,
-                             & thread_pool->m_work_lock );
-        }
-
-        thread_pool->m_work_count_claim   = 0 ;
-        thread_pool->m_work_count_pending = 0 ;
-        thread_pool->m_work_count_total   = 0 ;
-        thread_pool->m_work_routine       = NULL ;
-        thread_pool->m_work_argument      = NULL ;
-        thread_pool->m_lock_count         = 0 ;
       }
 
-      pthread_mutex_unlock( & thread_pool->m_work_lock );
+      thread_pool->m_thread_driver      = NULL ;
+      thread_pool->m_work_count_claim   = 0 ;
+      thread_pool->m_work_count_pending = 0 ;
+      thread_pool->m_work_count_total   = 0 ;
+      thread_pool->m_work_routine       = NULL ;
+      thread_pool->m_work_argument      = NULL ;
+      thread_pool->m_lock_count         = 0 ;
     }
   }
 
@@ -406,66 +446,45 @@ int TPI_Run_threads( TPI_work_subprogram subprogram  ,
 
   if ( ! result ) {
 
-    struct Thread_Data * w ;
-
-    /* Lock all worker threads */
-
-    for ( w = thread_pool->m_thread_next ; w ; w = w->m_next ) {
-      pthread_mutex_lock( & w->m_run_lock );
-    }
-
     result = set_lock_count( thread_pool , lock_count );
 
     if ( ! result ) {
-      /* Use the run_threads driver */
 
-      thread_pool->m_thread_work        = & local_run_thread ;
-      thread_pool->m_lock_count         = lock_count ;
-      thread_pool->m_work_argument      = shared_data ;
-      thread_pool->m_work_routine       = subprogram ;
-      thread_pool->m_work_count_pending = thread_pool->m_thread_count ;
+      thread_pool->m_lock_count    = lock_count ;
+      thread_pool->m_work_argument = shared_data ;
+      thread_pool->m_work_routine  = subprogram ;
+      thread_pool->m_thread_driver = & local_run_thread ;
 
-      /* Unlock all worker threads */
-      for ( w = thread_pool->m_thread_next ; w ; w = w->m_next ) {
-        pthread_mutex_unlock( & w->m_run_lock );
+      if ( 1 < thread_pool->m_thread_count ) {
+        thread_pool->m_thread->m_pending = 1 ;
+
+        /* Activate the blocked worker threads */
+        local_broadcast( thread_pool , 0 , 1 );
+
+        /* Participate in work */
+        local_run_thread( thread_pool , 0 );
+
+        /* Block the worker threads */
+        local_barrier( thread_pool , 0 );
+
+        thread_pool->m_thread->m_pending = 1 ;
+      }
+      else {
+        /* No worker threads */
+        struct TPI_Work_Struct work ;
+
+        work.shared     = shared_data ;
+        work.lock_count = lock_count ;
+        work.work_count = 1 ;
+        work.work_rank  = 0 ;
+
+        (* subprogram)( & work );
       }
 
-      /* Signal the first thread to go.
-       * This signal will be passed along thread-to-thread.
-       */
-      if ( thread_pool->m_thread_next ) {
-        pthread_cond_signal( & thread_pool->m_thread_next->m_run_cond );
-      }
-
-      local_run_thread( thread_pool , thread_pool->m_thread_count );
-
-      pthread_mutex_lock( & thread_pool->m_work_lock );
-
-      if ( thread_pool->m_work_count_pending ) {
-        /* Wait for worker threads to complete last claimed work item */
-        pthread_cond_wait( & thread_pool->m_work_cond ,
-                           & thread_pool->m_work_lock );
-      }
-
-      pthread_mutex_unlock( & thread_pool->m_work_lock );
-
-      /* Lock all worker threads, they must complete to be locked. */
-
-      for ( w = thread_pool->m_thread_next ; w ; w = w->m_next ) {
-        pthread_mutex_lock( & w->m_run_lock );
-      }
-
-      /* Change the driver back to run-work */
-
-      thread_pool->m_work_routine     = NULL ;
-      thread_pool->m_work_argument    = NULL ;
-      thread_pool->m_lock_count       = 0 ;
-      thread_pool->m_thread_work      = & local_run_work ;
-    }
-
-    /* Unlock all worker threads */
-    for ( w = thread_pool->m_thread_next ; w ; w = w->m_next ) {
-      pthread_mutex_unlock( & w->m_run_lock );
+      thread_pool->m_thread_driver = NULL ;
+      thread_pool->m_work_routine  = NULL ;
+      thread_pool->m_work_argument = NULL ;
+      thread_pool->m_lock_count    = 0 ;
     }
   }
 
@@ -473,49 +492,67 @@ int TPI_Run_threads( TPI_work_subprogram subprogram  ,
 }
 
 /*--------------------------------------------------------------------*/
-/*--------------------------------------------------------------------*/
 
 int TPI_Init( int n )
 {
   ThreadPool * const thread_pool = local_thread_pool();
+  pthread_attr_t attr ;
+  int result , i ;
 
-  int result = thread_pool->m_thread_count ? TPI_ERROR_ACTIVE : 0 ;
+  result = thread_pool->m_thread_count ? TPI_ERROR_ACTIVE : 0 ;
 
-  if ( ! result ) {
-    pthread_attr_t thread_attr ;
+  if ( ! result && ( n < 1 || THREAD_COUNT_MAX <= n ) ) {
+    result = TPI_ERROR_SIZE ;
+  }
 
-    if ( pthread_attr_init( & thread_attr ) ) {
+  for ( i = 0 ; ! result && i < n ; ++i ) {
+    thread_pool->m_thread[i].m_pending = 0 ;
+    if ( pthread_mutex_init( & thread_pool->m_thread[i].m_lock , NULL ) ||
+         pthread_cond_init(  & thread_pool->m_thread[i].m_cond , NULL ) ) {
       result = TPI_ERROR_INTERNAL ;
     }
-    else {
-      int p ;
+  }
 
-      pthread_attr_setscope(       & thread_attr, PTHREAD_SCOPE_SYSTEM );
-      pthread_attr_setdetachstate( & thread_attr, PTHREAD_CREATE_DETACHED );
+  if ( ! result &&
+       ( pthread_attr_init( & attr ) ||
+         pthread_attr_setscope(       & attr, PTHREAD_SCOPE_SYSTEM ) ||
+         pthread_attr_setdetachstate( & attr, PTHREAD_CREATE_DETACHED ) ) ) {
+    result = TPI_ERROR_INTERNAL ;
+  }
 
-      thread_pool->m_thread_count = n ;
-      thread_pool->m_thread_work  = & local_run_work ;
+  if ( ! result ) {
 
-      pthread_mutex_lock( & thread_pool->m_master_lock );
+    pthread_mutex_lock( & thread_pool->m_thread->m_lock );
 
-      for ( p = 1 ; p < n && ! result ; ++p ) {
-        pthread_t pt ;
+    for ( i = 1 ; i <= n ; i <<= 1 );
 
-        if ( pthread_create( & pt, & thread_attr,
-                             & local_thread_pool_driver, thread_pool ) ) {
-          result = TPI_ERROR_INTERNAL ;
-        }
-        else {
-          /* Wait for start */
-          pthread_cond_wait( & thread_pool->m_master_cond ,
-                             & thread_pool->m_master_lock );
-        }
+    thread_pool->m_thread_upper = i ;
+    thread_pool->m_thread_count = n ;
+    thread_pool->m_work_count_pending = n ;
+
+    for ( i = 1 ; ! result && i < n ; ++i ) {
+      pthread_t pt ;
+
+      if ( pthread_create( & pt, & attr, & local_driver, thread_pool ) ) {
+        result = TPI_ERROR_INTERNAL ;
       }
-
-      pthread_attr_destroy( & thread_attr );
+      else {
+        /* Wait for worker thread to start */
+        pthread_cond_wait( & thread_pool->m_thread->m_cond ,
+                           & thread_pool->m_thread->m_lock );
+      }
     }
 
-    if ( result ) { TPI_Finalize(); }
+    thread_pool->m_work_count_pending = 0 ;
+
+    pthread_attr_destroy( & attr );
+
+    if ( ! result ) {
+      local_barrier( thread_pool , 0 );
+    }
+    else {
+      TPI_Finalize();
+    }
   }
 
   if ( ! result ) { result = n ; }
@@ -529,39 +566,47 @@ int TPI_Init( int n )
 int TPI_Finalize()
 {
   ThreadPool * const thread_pool = local_thread_pool();
+  int result , i ;
 
-  int result = NULL != thread_pool->m_work_routine ? TPI_ERROR_ACTIVE : 0 ;
+  result = NULL != thread_pool->m_thread_driver ? TPI_ERROR_ACTIVE : 0 ;
+
+#ifdef DEBUG_PRINT
+  fprintf(stdout,"TPI_Finalize\n");
+  fflush(stdout);
+#endif
 
   if ( ! result ) {
 
-    struct Thread_Data * t ;
+    thread_pool->m_work_count_pending = thread_pool->m_thread_count - 1 ;
 
-    for ( t = thread_pool->m_thread_next ; NULL != t ; t = t->m_next ) {
-      pthread_mutex_lock( & t->m_run_lock );
+    local_broadcast( thread_pool , 0 , 1 );
+
+    if ( 0 < thread_pool->m_work_count_pending ) {
+      /* Wait for signal from last worker thread */
+      pthread_cond_wait( & thread_pool->m_thread->m_cond ,
+                         & thread_pool->m_thread->m_lock );
     }
 
-    thread_pool->m_thread_work = NULL ;
-
-    for ( t = thread_pool->m_thread_next ; NULL != t ; ) {
-      struct Thread_Data * const t_now = t ; t = t->m_next ;
-      pthread_mutex_unlock( & t_now->m_run_lock );
-      pthread_cond_signal(  & t_now->m_run_cond );
-
-      /* Wait for termination */
-      pthread_cond_wait( & thread_pool->m_master_cond ,
-                         & thread_pool->m_master_lock );
+    pthread_mutex_unlock( & thread_pool->m_thread->m_lock );
+ 
+    for ( i = 0 ; i < thread_pool->m_thread_count ; ++i ) {
+      pthread_mutex_destroy( & thread_pool->m_thread[i].m_lock );
+      pthread_cond_destroy(  & thread_pool->m_thread[i].m_cond );
     }
-
-    thread_pool->m_thread_next  = NULL ;
+ 
     thread_pool->m_thread_count = 0 ;
+    thread_pool->m_thread_upper = 0 ;
 
     while ( thread_pool->m_lock_init ) {
       pthread_mutex_destroy( thread_pool->m_lock + thread_pool->m_lock_init );
       --( thread_pool->m_lock_init );
     }
-
-    pthread_mutex_unlock( & thread_pool->m_master_lock );
   }
+
+#ifdef DEBUG_PRINT
+  fprintf(stdout,"TPI_Finalize DONE\n");
+  fflush(stdout);
+#endif
 
   return result ;
 }
@@ -575,7 +620,7 @@ int TPI_Finalize()
 typedef struct LocalWorkData {
   int m_active ;
   int m_lock_count ;
-  int m_lock[ MAXIMUM_LOCK_COUNT ];
+  int m_lock[ LOCK_COUNT_MAX ];
 } LocalWork ;
 
 static LocalWork * local_work()
@@ -620,7 +665,7 @@ int TPI_Unlock( int i )
 
 static int set_lock_count( LocalWork * const work , const int lock_count )
 {
-  const int result = lock_count < 0 || MAXIMUM_LOCK_COUNT < lock_count
+  const int result = lock_count < 0 || LOCK_COUNT_MAX < lock_count
                    ? TPI_ERROR_SIZE : 0 ;
 
   if ( ! result ) {
