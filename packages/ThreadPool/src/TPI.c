@@ -200,8 +200,8 @@ void local_broadcast( ThreadPool * const control ,
 
       next_thread->m_pending = thread_data->m_pending ;
  
-      pthread_mutex_unlock( & next_thread->m_lock );
       pthread_cond_signal(  & next_thread->m_cond );
+      pthread_mutex_unlock( & next_thread->m_lock );
     }
   }
 }
@@ -244,7 +244,7 @@ void local_barrier( ThreadPool * const control ,
     }
   }
 
-  if ( thread_data->m_pending ) {
+  if ( thread_data->m_pending ) { /* My parent is waiting for my signal */
     Thread * const my_thread = thread_data + thread_rank ;
     my_thread->m_pending = 0 ;
     pthread_cond_signal( & my_thread->m_cond );
