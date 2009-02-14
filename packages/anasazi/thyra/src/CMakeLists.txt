@@ -74,9 +74,6 @@ APPEND_SET(HEADERS
   AnasaziTypes.hpp
   )
 
-APPEND_SET(SOURCES ${SOURCES}
-  AnasaziVersion.cpp
-  )
 
 #
 # Util Files
@@ -114,7 +111,7 @@ ENDIF()
 #
 
 PACKAGE_ADD_LIBRARY(
-  anasazi
+  anasazithyra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

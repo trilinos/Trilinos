@@ -405,9 +405,9 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="ExodusII"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="ExodusII"/>
   </Package>
   <Package name="TriKota" dir="TriKota">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>

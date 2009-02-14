@@ -26,6 +26,7 @@ SET(Trilinos_TPLS_ENABLED
   ADOLC          OFF
   TVMET          OFF
   MF             OFF
+  ExodusII       OFF
   )
 
 # NOTES:
