@@ -35,7 +35,7 @@ MARK_AS_ADVANCED(PYTHON_EXECUTABLE)
 # of the list, and compare it to the requested version
 IF(PythonInterp_FIND_VERSION)
   EXECUTE_PROCESS(COMMAND
-    ${PYTHON_EXECUTABLE} "--version"
+    ${PYTHON_EXECUTABLE} "-V"
     ERROR_VARIABLE PythonInterp_VERSION
     ERROR_STRIP_TRAILING_WHITESPACE
     )
