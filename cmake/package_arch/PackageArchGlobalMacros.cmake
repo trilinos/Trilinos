@@ -1227,14 +1227,6 @@ ENDFUNCTION()
 MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
 
   MESSAGE("")
-  MESSAGE("Enabling and overriding disables for TPLs based on"
-    " <PACKAGE>_ENABLE_<TPL>=ON ...")
-  MESSAGE("")
-  FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
-    PACKAGE_ARCH_ENABLE_OPTIONAL_TPLS(${PACKAGE})
-  ENDFOREACH()
-
-  MESSAGE("")
   MESSAGE("Disabling all packages that have a required dependency"
     " on disabled TPLs with TPL_ENABLE_<TPL>=OFF ...")
   MESSAGE("")
@@ -1343,6 +1335,17 @@ MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
   FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
     PACKAGE_ARCH_POSTPROCESS_OPTIONAL_TPL_ENABLES(${PACKAGE})
   ENDFOREACH()
+
+  MESSAGE("")
+  MESSAGE("Enabling and overriding disables for TPLs based on"
+    " <PACKAGE>_ENABLE_<TPL>=ON ...")
+  MESSAGE("")
+  FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
+    PACKAGE_ARCH_ENABLE_OPTIONAL_TPLS(${PACKAGE})
+  ENDFOREACH()
+  # NOTE: We need to do this after the above optional package TPL support
+  # logic so that the TPL will be turned on for this package only as requested
+  # in bug 4298.
 
 ENDMACRO()
 
