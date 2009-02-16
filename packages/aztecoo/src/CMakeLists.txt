@@ -103,18 +103,17 @@ SET(SOURCES ${SOURCES}
   az_util.c
   )
 
-SET(HEADERS ${HEADERS}
-  md_timer_generic.c
-  md_wrap_scalar_c.c 
-  )
-
 IF (TPL_ENABLE_MPI)
 
   SET(SOURCES ${SOURCES}
     md_timer_mpi.c
     md_wrap_mpi_c.c 
     )
-
+ELSE()
+  SET(HEADERS ${HEADERS}
+    md_timer_generic.c
+    md_wrap_scalar_c.c 
+    )
 ENDIF()
 
 SET(SOURCES ${SOURCES}

@@ -62,6 +62,6 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   ForTrilinos           ForTrilinos                    OFF
   PyTrilinos            PyTrilinos                     OFF
   WebTrilinos           WebTrilinos                    OFF
-  Didasko               didasko                        OFF
+  Didasko               didasko                        ""
   NewPackage            new_package                    OFF
   )
