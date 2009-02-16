@@ -79,7 +79,7 @@ typedef ScalarTraits<ST>         SCT;
 typedef SCT::magnitudeType           MT;
 
 // this is the tolerance that all tests are performed against
-const MT TOL = 1.0e-12;
+const MT TOL = 1.0e-10;
 const MT ATOL = 10;
 
 // declare an output manager for handling local output

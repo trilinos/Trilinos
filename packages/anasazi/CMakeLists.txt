@@ -35,7 +35,7 @@ ENDIF()
 
 
 IF (Anasazi_ENABLE_Tpetra)
-  ADD_SUBDIRECTORY(tpetra)
+  #ADD_SUBDIRECTORY(tpetra)
 ENDIF()
 
 #

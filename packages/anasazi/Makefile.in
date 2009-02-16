@@ -116,7 +116,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src example test epetra thyra tpetra
+DIST_SUBDIRS = src example test epetra thyra
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -284,7 +284,8 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 @SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
 @BUILD_ANASAZI_THYRA_TRUE@THYRA_SUBDIR = thyra
 @BUILD_ANASAZI_EPETRA_TRUE@EPETRA_SUBDIR = epetra
-@BUILD_ANASAZI_TPETRA_TRUE@TPETRA_SUBDIR = tpetra
+
+#TPETRA_SUBDIR = tpetra
 SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(EPETRA_SUBDIR) $(THYRA_SUBDIR) $(TPETRA_SUBDIR) 
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
