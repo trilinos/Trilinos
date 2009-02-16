@@ -155,7 +155,7 @@ RUN (exetazo-serial) {
     INVOKE-CONFIGURE    = linux-exetazo-serial;
     MAKE-COMMAND        = make -j4;
     TEST-CATEGORY       = FRAMEWORK;
-    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
+    TTR-DIR             = /space/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
 
 }
 
@@ -175,7 +175,7 @@ RUN (exetazo-mpi) {
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 8;
     MPI-GO              = /usr/alt/bin/mpiexec -np ;
-    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
+    TTR-DIR             = /space/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
 
 }
 
@@ -195,7 +195,7 @@ RUN (exetazo-mpi-cont) {
     TEST-CATEGORY       = FRAMEWORK;
     MAX-PROC            = 8;
     MPI-GO              = /usr/alt/bin/mpiexec -np ;
-    TTR-DIR             = /home/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
+    TTR-DIR             = /space/jmwille/TrilinosTestHarness/TrilinosTestResults;    SSG-USERNAME        = jmwille;
 
 }
 
