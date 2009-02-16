@@ -88,18 +88,14 @@ static void d2_add_d( double v[] , const double a )
 
 void d4_dot( double v[] , unsigned n , const double * x , const double * y )
 {
-  double pos[2] = { 0 , 0 };
-  double neg[2] = { 0 , 0 };
+  double * pos = v ;
+  double * neg = v + 2 ;
   const double * const x_end = x + n ;
   for ( ; x < x_end ; ++x , ++y ) {
     const double a = *x * *y ;
     if ( a < 0 ) { d2_add_d( neg , a ); }
     else         { d2_add_d( pos , a ); }
   }
-  v[0] = pos[0] ;
-  v[1] = pos[1] ;
-  v[2] = neg[0] ;
-  v[3] = neg[1] ;
 }
 
 double ddot( unsigned n , const double * x , const double * y )
@@ -116,90 +112,101 @@ struct TaskXY {
   unsigned n ;
   const double * x ;
   const double * y ;
-        double   v[4] ;
 };
 
 static
-void task_d4_dot_tp( TPI_Work * work )
+void reduce_tp( void * arg_dst , const void * arg_src , int arg_n )
+{
+        double * const dst =       (double *) arg_dst ;
+  const double * const src = (const double *) arg_src ;
+
+  if ( arg_n == 4 * sizeof(double) ) {
+    d2_add_d( dst ,     src[0] );
+    d2_add_d( dst ,     src[1] );
+    d2_add_d( dst + 2 , src[2] );
+    d2_add_d( dst + 2 , src[3] );
+  }
+  else if ( arg_n == sizeof(double) ) {
+    *dst += *src ;
+  }
+}
+
+static
+void work_d4_dot_tp( TPI_Work * work )
 {
   struct TaskXY * const data = (struct TaskXY *) work->shared ;
-
-  double tmp[4] = { 0 , 0 , 0 , 0 };
+  double * const reduce = (double *) work->reduce ;
 
   unsigned int begin , length ;
 
   my_span( work->work_count , work->work_rank , data->n , & begin , & length );
 
-  d4_dot( tmp , length , data->x + begin , data->y + begin );
-
-  TPI_Lock(0);
-  d2_add_d( data->v ,     tmp[0] );
-  d2_add_d( data->v ,     tmp[1] );
-  d2_add_d( data->v + 2 , tmp[2] );
-  d2_add_d( data->v + 2 , tmp[3] );
-  TPI_Unlock(0);
+  d4_dot( reduce , length , data->x + begin , data->y + begin );
 }
 
 double d4_dot_tp( COMM comm, unsigned n, unsigned nblock ,
                   const double * x, const double * y )
 {
-  struct TaskXY data = { 0 , NULL , NULL , { 0 , 0 , 0 , 0 } };
+  struct TaskXY data = { 0 , NULL , NULL };
+  double result[4] = { 0 , 0 , 0 , 0 };
   data.n = n ;
   data.x = x ;
   data.y = y ;
 
   if ( nblock ) {
     const int nwork = ( n + nblock - 1 ) / nblock ;
-    TPI_Run( task_d4_dot_tp , & data , nwork , 1 );
+    TPI_Run_reduce( work_d4_dot_tp , & data , nwork ,
+                    reduce_tp , result , sizeof(result) );
   }
   else {
-    TPI_Run_threads( task_d4_dot_tp , & data , 1 );
+    TPI_Run_threads_reduce( work_d4_dot_tp , & data ,
+                            reduce_tp , result , sizeof(result) );
   }
 
-  comm_reduce_d4_sum( comm , data.v );
+  comm_reduce_d4_sum( comm , result );
 
-  d2_add_d( data.v , data.v[2] );
-  d2_add_d( data.v , data.v[3] );
+  d2_add_d( result , result[2] );
+  d2_add_d( result , result[3] );
 
-  return data.v[0] ;
+  return result[0] ;
 }
 
 static
 void task_ddot_tp( TPI_Work * work )
 {
   struct TaskXY * const data = (struct TaskXY *) work->shared ;
-  double tmp ;
+  double * const reduce = (double *) work->reduce ;
   unsigned int begin , length ;
 
   my_span( work->work_count , work->work_rank , data->n , & begin , & length );
 
-  tmp = ddot( length , data->x + begin , data->y + begin );
+  *reduce += ddot( length , data->x + begin , data->y + begin );
 
-  TPI_Lock(0);
-  data->v[0] += tmp ;
-  TPI_Unlock(0);
   return ;
 }
 
 double ddot_tp( COMM comm, unsigned n, unsigned nblock,
                 const double * x, const double * y )
 {
-  struct TaskXY data = { 0 , NULL , NULL , { 0 , 0 , 0 , 0 } };
+  struct TaskXY data = { 0 , NULL , NULL };
+  double result = 0 ;
   data.n = n ;
   data.x = x ;
   data.y = y ;
 
   if ( nblock ) {
     const int nwork = ( n + nblock - 1 ) / nblock ;
-    TPI_Run( task_ddot_tp , & data , nwork , 1 );
+    TPI_Run_reduce( task_ddot_tp , & data , nwork ,
+                    reduce_tp , & result , sizeof(result) );
   }
   else {
-    TPI_Run_threads( task_ddot_tp , & data , 1 );
+    TPI_Run_threads_reduce( task_ddot_tp , & data ,
+                            reduce_tp , & result , sizeof(result) );
   }
 
-  comm_reduce_dsum( comm , data.v );
+  comm_reduce_dsum( comm , & result );
 
-  return data.v[0] ;
+  return result ;
 }
 
 /*--------------------------------------------------------------------*/
@@ -511,31 +518,22 @@ void test_ddot_accuracy(
 
 /*--------------------------------------------------------------------*/
 
-static void test_main(
+const unsigned test_lengths[] = 
+  { 1e4 , 2e4 , 5e4 ,
+    1e5 , 2e5 , 5e5 ,
+    1e6 , 2e6 , 5e6 , 1e7 };
+
+const unsigned test_count = sizeof(test_lengths) / sizeof(unsigned);
+const unsigned nblock = 2500 ;
+
+const double test_mag = 1e4 ;
+
+static void test_performance(
   COMM comm , const int test_thread_count , const int test_thread[] )
 {
-  const unsigned test_lengths[] = 
-    { 1e4 , 2e4 , 5e4 ,
-      1e5 , 2e5 , 5e5 ,
-      1e6 , 2e6 , 5e6 , 1e7 };
-
-  const unsigned test_count = sizeof(test_lengths) / sizeof(unsigned);
-
-  const double test_mag = 1e4 ;
-
-  const unsigned nblock = 2500 ;
   const unsigned num_trials = 11 ;
 
   int i ;
-
-  for ( i = 0 ; i < test_thread_count ; ++i ) {
-
-    test_ddot_accuracy( comm, test_thread[i], nblock,
-                        test_count, test_lengths, test_mag );
-
-    test_ddot_accuracy( comm, test_thread[i], 0,
-                        test_count, test_lengths, test_mag );
-  }
 
   for ( i = 0 ; i < test_thread_count ; ++i ) {
 
@@ -544,6 +542,24 @@ static void test_main(
 
     test_ddot_performance( comm , test_thread[i] , 0,
                            num_trials , test_count , test_lengths , test_mag );
+  }
+}
+
+static void test_accuracy(
+  COMM comm , const int test_thread_count , const int test_thread[] ,
+              int test_do )
+{
+  int i ;
+
+  if ( test_do < 0 || test_count < test_do ) { test_do = test_count ; }
+
+  for ( i = 0 ; i < test_thread_count ; ++i ) {
+
+    test_ddot_accuracy( comm, test_thread[i], nblock,
+                        test_do, test_lengths, test_mag );
+
+    test_ddot_accuracy( comm, test_thread[i], 0,
+                        test_do, test_lengths, test_mag );
   }
 }
 
@@ -565,18 +581,26 @@ int main( int argc , char **argv )
 
   if ( 0 == comm_rank( MPI_COMM_WORLD ) ) {
     if ( 1 < argc && argc < TEST_THREAD_MAX ) {
-      nthread[0] = argc - 1 ;
-      for ( i = 1 ; i < argc ; ++i ) { nthread[i] = atoi( argv[i] ); }
+      nthread[0] = 1 ;
+      nthread[1] = argc - 1 ;
+      for ( i = 1 ; i < argc ; ++i ) { nthread[i+1] = atoi( argv[i] ); }
     }
     else {
-      nthread[0] = 1 ;
+      nthread[0] = 0 ;
       nthread[1] = 1 ;
+      nthread[2] = 1 ;
     }
   }
 
   MPI_Bcast( nthread , TEST_THREAD_MAX , MPI_INT , 0 , MPI_COMM_WORLD );
 
-  test_main( MPI_COMM_WORLD , nthread[0] , nthread + 1 );
+  if ( nthread[0] ) {
+    test_accuracy(    MPI_COMM_WORLD , nthread[1] , nthread + 2 , test_count );
+    test_performance( MPI_COMM_WORLD , nthread[1] , nthread + 2 );
+  }
+  else {
+    test_accuracy(    MPI_COMM_WORLD , nthread[1] , nthread + 2 , 3 );
+  }
 
   MPI_Finalize();
 
@@ -662,20 +686,29 @@ int main( int argc , char **argv )
   int nthread[ TEST_THREAD_MAX ];
   int i ;
 
+  for ( i = 0 ; i < TEST_THREAD_MAX ; ++i ) { nthread[i] = 0 ; }
+
   if ( 1 < argc && argc < TEST_THREAD_MAX ) {
-    nthread[0] = argc - 1 ;
-    for ( i = 1 ; i < argc ; ++i ) { nthread[i] = atoi( argv[i] ); }
-    for ( ; i < TEST_THREAD_MAX ; ++i ) { nthread[i] = 0 ; }
+    nthread[0] = 1 ;
+    nthread[1] = argc - 1 ;
+    for ( i = 1 ; i < argc ; ++i ) { nthread[i+1] = atoi( argv[i] ); }
   }
   else {
-    nthread[0] = 4 ;
-    nthread[1] = 1 ;
-    nthread[2] = 2 ;
-    nthread[3] = 4 ;
-    nthread[4] = 8 ;
+    nthread[0] = 0 ;
+    nthread[1] = 4 ;
+    nthread[2] = 1 ;
+    nthread[3] = 2 ;
+    nthread[4] = 4 ;
+    nthread[5] = 8 ;
   }
 
-  test_main( 0 , nthread[0] , nthread + 1 );
+  if ( nthread[0] ) {
+    test_accuracy(    0 , nthread[1] , nthread + 2 , test_count );
+    test_performance( 0 , nthread[1] , nthread + 2 );
+  }
+  else {
+    test_accuracy(    0 , nthread[1] , nthread + 2 , 3 );
+  }
 
   return 0 ;
 }

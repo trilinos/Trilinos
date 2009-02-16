@@ -4,7 +4,7 @@
 #	load sierra-devel-desktop-intel-10.1ip
 
 
-TEST_SRC="test_main.c test_c_dnax.c test_c_tpi.c test_tpi_unit.c test_pthreads.c"
+TEST_SRC="test_main.c test_c_dnax.c test_tpi_unit.c test_pthreads.c"
 
 LIB_SRC="../src/TPI.c ../src/TPI_Walltime.c"
 
