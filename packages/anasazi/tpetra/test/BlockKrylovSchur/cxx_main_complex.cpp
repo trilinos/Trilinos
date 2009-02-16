@@ -58,6 +58,7 @@ using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
 using Tpetra::Map;
+using std::vector;
 
 int main(int argc, char *argv[]) 
 {
@@ -67,8 +68,8 @@ int main(int argc, char *argv[])
   typedef std::complex<double>                ST;
   typedef ScalarTraits<ST>                   SCT;
   typedef SCT::magnitudeType                  MT;
-  typedef MultiVector<int,ST>         MV;
-  typedef Operator<int,ST>            OP;
+  typedef MultiVector<ST,int>                 MV;
+  typedef Operator<ST,int>                    OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
   ST ONE  = SCT::one();
@@ -76,11 +77,10 @@ int main(int argc, char *argv[])
   GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
   int info = 0;
-  bool boolret;
   int MyPID = 0;
 
   RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
-  RCP<Comm<int> > comm = platform->createComm();
+  RCP<const Comm<int> > comm = platform->getComm();
 
   MyPID = rank(*comm);
 
@@ -125,11 +125,18 @@ int main(int argc, char *argv[])
 
   // Get the data from the HB file
   int dim,dim2,nnz;
+  int rnnzmax;
   double *dvals;
   int *colptr,*rowind;
   nnz = -1;
   if (MyPID == 0) {
     info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+    // find maximum NNZ over all rows
+    vector<int> rnnz(dim,0);
+    for (int *ri=rowind; ri<rowind+nnz; ++ri) {
+      ++rnnz[*ri-1];
+    }
+    rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
   }
   else {
     // address uninitialized data warnings
@@ -140,6 +147,7 @@ int main(int argc, char *argv[])
   Teuchos::broadcast(*comm,0,&info);
   Teuchos::broadcast(*comm,0,&nnz);
   Teuchos::broadcast(*comm,0,&dim);
+  Teuchos::broadcast(*comm,0,&rnnzmax);
   if (info == 0 || nnz < 0) {
     if (MyPID == 0) {
       cout << "Error reading '" << filename << "'" << endl
@@ -148,8 +156,8 @@ int main(int argc, char *argv[])
     return -1;
   }
   // create map
-  Map<int> map(dim,0,*platform);
-  RCP<CrsMatrix<int,ST> > K = rcp(new CrsMatrix<int,ST>(map));
+  Map<int> map(dim,0,comm);
+  RCP<CrsMatrix<ST,int> > K = rcp(new CrsMatrix<ST,int>(map,rnnzmax));
   if (MyPID == 0) {
     // Convert interleaved doubles to complex values
     // HB format is compressed column. CrsMatrix is compressed row.
@@ -172,7 +180,7 @@ int main(int argc, char *argv[])
   // cout << *K << endl;
 
   // Create initial vectors
-  RCP<MultiVector<int,ST> > ivec = rcp( new MultiVector<int,ST>(map,blockSize) );
+  RCP<MV> ivec = rcp( new MV(map,blockSize) );
   ivec->random();
 
   // Create eigenproblem
@@ -186,7 +194,7 @@ int main(int argc, char *argv[])
   problem->setNEV( nev );
   //
   // Inform the eigenproblem that you are done passing it information
-  boolret = problem->setProblem();
+  bool boolret = problem->setProblem();
   if (boolret != true) {
     if (MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl

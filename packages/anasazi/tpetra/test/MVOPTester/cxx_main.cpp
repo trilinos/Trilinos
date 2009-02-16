@@ -70,7 +70,7 @@ namespace {
   template<class Scalar, class Ordinal> 
   RCP<CrsMatrix<Scalar,Ordinal> > constructTriDiagMatrix(const Map<Ordinal> &map) 
   {
-    RCP<CrsMatrix<Scalar,Ordinal> > op = rcp( new CrsMatrix<Scalar,Ordinal>(map) );
+    RCP<CrsMatrix<Scalar,Ordinal> > op = rcp( new CrsMatrix<Scalar,Ordinal>(map,1) );
     for (Teuchos_Ordinal i=0; i<map.getNumMyEntries(); ++i) {
       op->submitEntry(map.getGlobalIndex(i),map.getGlobalIndex(i), ScalarTraits<Scalar>::one());
     }

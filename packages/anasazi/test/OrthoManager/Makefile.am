@@ -53,7 +53,7 @@ endif
 noinst_PROGRAMS = $(ORTHOMANAGER_COMPLEX_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/../MVOPTester/mhd1280b.cua mhd1280b.cua
+	cp  $(top_srcdir)/testmatrices/mhd1280b.cua mhd1280b.cua
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 

@@ -57,20 +57,19 @@ int main(int argc, char *argv[])
   typedef double                              ST;
   typedef ScalarTraits<ST>                   SCT;
   typedef SCT::magnitudeType                  MT;
-  typedef MultiVector<int,ST>         MV;
-  typedef Operator<int,ST>            OP;
+  typedef MultiVector<ST,int>                 MV;
+  typedef Operator<ST,int>                    OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
-  ST ONE  = SCT::one();
+  const ST ONE  = SCT::one();
 
   GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
-  bool boolret;
   int MyPID = 0;
   int NumImages = 1;
 
   RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
-  RCP<Comm<int> > comm = platform->createComm();
+  RCP<const Comm<int> > comm = platform->getComm();
 
   MyPID = rank(*comm);
   NumImages = size(*comm);
@@ -110,8 +109,8 @@ int main(int argc, char *argv[])
   int dim = ROWS_PER_PROC * NumImages;
 
   // create map
-  Map<int> map(dim,0,*platform);
-  RCP<CrsMatrix<int,ST> > K = rcp(new CrsMatrix<int,ST>(map));
+  Map<int> map(dim,0,comm);
+  RCP<CrsMatrix<ST,int> > K = rcp(new CrsMatrix<ST,int>(map,3));
   int base = MyPID*ROWS_PER_PROC;
   if (MyPID != NumImages-1) {
     for (int i=0; i<ROWS_PER_PROC; ++i) {
@@ -132,7 +131,7 @@ int main(int argc, char *argv[])
   K->fillComplete();
 
   // Create initial vectors
-  RCP<MultiVector<int,ST> > ivec = rcp( new MultiVector<int,ST>(map,blockSize) );
+  RCP<MV> ivec = rcp( new MV(map,blockSize) );
   ivec->random();
 
   // Create eigenproblem
@@ -146,7 +145,7 @@ int main(int argc, char *argv[])
   problem->setNEV( nev );
   //
   // Inform the eigenproblem that you are done passing it information
-  boolret = problem->setProblem();
+  bool boolret = problem->setProblem();
   if (boolret != true) {
     if (MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl

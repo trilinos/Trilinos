@@ -6,7 +6,7 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE(Anasazi)
+PACKAGE(Anasazi CLEANED)
 
 #
 # B) Set up package-specific options
@@ -35,7 +35,7 @@ ENDIF()
 
 
 IF (Anasazi_ENABLE_Tpetra)
-  #ADD_SUBDIRECTORY(tpetra)
+  ADD_SUBDIRECTORY(tpetra)
 ENDIF()
 
 #

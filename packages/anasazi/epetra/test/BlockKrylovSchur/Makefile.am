@@ -54,8 +54,8 @@ EXEEXT = .exe
 noinst_PROGRAMS = BlockKrylovSchur_solvertest BlockKrylovSchur_test BlockKrylovSchur_nh_test $(QEVPTEST) Dummy
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/linearized_qevp_A.hb linearized_qevp_A.hb
-	cp  $(srcdir)/linearized_qevp_B.hb linearized_qevp_B.hb
+	cp  $(top_srcdir)/testmatrices/linearized_qevp_A.hb linearized_qevp_A.hb
+	cp  $(top_srcdir)/testmatrices/linearized_qevp_B.hb linearized_qevp_B.hb
 Dummy_SOURCES = Dummy
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 

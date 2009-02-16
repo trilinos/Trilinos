@@ -94,23 +94,23 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = Tpetra_BlockDavidson_complex_test$(EXEEXT) \
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@am__EXEEXT_1 = Tpetra_BlockDavidson_Complex_test$(EXEEXT) \
 @BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@	Dummy$(EXEEXT)
 am__EXEEXT_2 =
 PROGRAMS = $(noinst_PROGRAMS)
 am_Dummy_OBJECTS =
 Dummy_OBJECTS = $(am_Dummy_OBJECTS)
 Dummy_LDADD = $(LDADD)
-am_Tpetra_BlockDavidson_complex_test_OBJECTS =  \
-	Tpetra_BlockDavidson_complex_test-cxx_main_complex.$(OBJEXT)
-Tpetra_BlockDavidson_complex_test_OBJECTS =  \
-	$(am_Tpetra_BlockDavidson_complex_test_OBJECTS)
+am_Tpetra_BlockDavidson_Complex_test_OBJECTS =  \
+	Tpetra_BlockDavidson_Complex_test-cxx_main_complex.$(OBJEXT)
+Tpetra_BlockDavidson_Complex_test_OBJECTS =  \
+	$(am_Tpetra_BlockDavidson_Complex_test_OBJECTS)
 am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
 @USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
 @USING_GNUMAKE_TRUE@	$(ANASAZI_TEST_LIBS))
-Tpetra_BlockDavidson_complex_test_LINK = $(CXXLD) \
-	$(Tpetra_BlockDavidson_complex_test_CXXFLAGS) $(CXXFLAGS) \
+Tpetra_BlockDavidson_Complex_test_LINK = $(CXXLD) \
+	$(Tpetra_BlockDavidson_Complex_test_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -125,9 +125,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(Dummy_SOURCES) \
-	$(Tpetra_BlockDavidson_complex_test_SOURCES)
+	$(Tpetra_BlockDavidson_Complex_test_SOURCES)
 DIST_SOURCES = $(Dummy_SOURCES) \
-	$(Tpetra_BlockDavidson_complex_test_SOURCES)
+	$(Tpetra_BlockDavidson_Complex_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -164,7 +164,7 @@ INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 
-#Tpetra_BlockDavidson_complex_lap_test_LDADD = \
+#Tpetra_BlockDavidson_Complex_lap_test_LDADD = \
 #	$(EXPORT_LIBS)
 
 # Dummy for new export makefiles
@@ -255,37 +255,37 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = \
 	$(EXPORT_INC_PATH)
 
-@BUILD_TEUCHOS_COMPLEX_TRUE@BD_COMPLEX_LAP_TEST = # Tpetra_BlockDavidson_complex_lap_test
-@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BD_COMPLEX_TEST = Tpetra_BlockDavidson_complex_test Dummy
+@BUILD_TEUCHOS_COMPLEX_TRUE@BD_COMPLEX_LAP_TEST = # Tpetra_BlockDavidson_Complex_lap_test
+@BUILD_TEUCHOS_COMPLEX_TRUE@@BUILD_TRIUTILS_TRUE@BD_COMPLEX_TEST = Tpetra_BlockDavidson_Complex_test Dummy
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
-Tpetra_BlockDavidson_complex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
+Tpetra_BlockDavidson_Complex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
 #Tpetra_BlockDavidson_complex_lap_test_SOURCES = $(srcdir)/cxx_main_complex_lap.cpp
 Dummy_SOURCES = Dummy
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
-Tpetra_BlockDavidson_complex_test_DEPENDENCIES = \
+Tpetra_BlockDavidson_Complex_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
 
-#Tpetra_BlockDavidson_complex_lap_test_DEPENDENCIES = \
+#Tpetra_BlockDavidson_Complex_lap_test_DEPENDENCIES = \
 #	$(top_builddir)/src/libanasazi.a \
 #	$(top_builddir)/../teuchos/src/libteuchos.a
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-Tpetra_BlockDavidson_complex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+Tpetra_BlockDavidson_Complex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
-#Tpetra_BlockDavidson_complex_lap_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+#Tpetra_BlockDavidson_Complex_lap_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-Tpetra_BlockDavidson_complex_test_LDADD = \
+Tpetra_BlockDavidson_Complex_test_LDADD = \
 	$(EXPORT_LIBS)
 
 all: all-am
@@ -324,9 +324,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-Tpetra_BlockDavidson_complex_test$(EXEEXT): $(Tpetra_BlockDavidson_complex_test_OBJECTS) $(Tpetra_BlockDavidson_complex_test_DEPENDENCIES) 
-	@rm -f Tpetra_BlockDavidson_complex_test$(EXEEXT)
-	$(Tpetra_BlockDavidson_complex_test_LINK) $(Tpetra_BlockDavidson_complex_test_OBJECTS) $(Tpetra_BlockDavidson_complex_test_LDADD) $(LIBS)
+Tpetra_BlockDavidson_Complex_test$(EXEEXT): $(Tpetra_BlockDavidson_Complex_test_OBJECTS) $(Tpetra_BlockDavidson_Complex_test_DEPENDENCIES) 
+	@rm -f Tpetra_BlockDavidson_Complex_test$(EXEEXT)
+	$(Tpetra_BlockDavidson_Complex_test_LINK) $(Tpetra_BlockDavidson_Complex_test_OBJECTS) $(Tpetra_BlockDavidson_Complex_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -334,7 +334,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_BlockDavidson_complex_test-cxx_main_complex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tpetra_BlockDavidson_Complex_test-cxx_main_complex.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -350,19 +350,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-Tpetra_BlockDavidson_complex_test-cxx_main_complex.o: $(srcdir)/cxx_main_complex.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_BlockDavidson_complex_test_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_BlockDavidson_complex_test-cxx_main_complex.o -MD -MP -MF $(DEPDIR)/Tpetra_BlockDavidson_complex_test-cxx_main_complex.Tpo -c -o Tpetra_BlockDavidson_complex_test-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_BlockDavidson_complex_test-cxx_main_complex.Tpo $(DEPDIR)/Tpetra_BlockDavidson_complex_test-cxx_main_complex.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='Tpetra_BlockDavidson_complex_test-cxx_main_complex.o' libtool=no @AMDEPBACKSLASH@
+Tpetra_BlockDavidson_Complex_test-cxx_main_complex.o: $(srcdir)/cxx_main_complex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_BlockDavidson_Complex_test_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_BlockDavidson_Complex_test-cxx_main_complex.o -MD -MP -MF $(DEPDIR)/Tpetra_BlockDavidson_Complex_test-cxx_main_complex.Tpo -c -o Tpetra_BlockDavidson_Complex_test-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_BlockDavidson_Complex_test-cxx_main_complex.Tpo $(DEPDIR)/Tpetra_BlockDavidson_Complex_test-cxx_main_complex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='Tpetra_BlockDavidson_Complex_test-cxx_main_complex.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_BlockDavidson_complex_test_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_BlockDavidson_complex_test-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_BlockDavidson_Complex_test_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_BlockDavidson_Complex_test-cxx_main_complex.o `test -f '$(srcdir)/cxx_main_complex.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_main_complex.cpp
 
-Tpetra_BlockDavidson_complex_test-cxx_main_complex.obj: $(srcdir)/cxx_main_complex.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_BlockDavidson_complex_test_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_BlockDavidson_complex_test-cxx_main_complex.obj -MD -MP -MF $(DEPDIR)/Tpetra_BlockDavidson_complex_test-cxx_main_complex.Tpo -c -o Tpetra_BlockDavidson_complex_test-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_BlockDavidson_complex_test-cxx_main_complex.Tpo $(DEPDIR)/Tpetra_BlockDavidson_complex_test-cxx_main_complex.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='Tpetra_BlockDavidson_complex_test-cxx_main_complex.obj' libtool=no @AMDEPBACKSLASH@
+Tpetra_BlockDavidson_Complex_test-cxx_main_complex.obj: $(srcdir)/cxx_main_complex.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_BlockDavidson_Complex_test_CXXFLAGS) $(CXXFLAGS) -MT Tpetra_BlockDavidson_Complex_test-cxx_main_complex.obj -MD -MP -MF $(DEPDIR)/Tpetra_BlockDavidson_Complex_test-cxx_main_complex.Tpo -c -o Tpetra_BlockDavidson_Complex_test-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Tpetra_BlockDavidson_Complex_test-cxx_main_complex.Tpo $(DEPDIR)/Tpetra_BlockDavidson_Complex_test-cxx_main_complex.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main_complex.cpp' object='Tpetra_BlockDavidson_Complex_test-cxx_main_complex.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_BlockDavidson_complex_test_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_BlockDavidson_complex_test-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(Tpetra_BlockDavidson_Complex_test_CXXFLAGS) $(CXXFLAGS) -c -o Tpetra_BlockDavidson_Complex_test-cxx_main_complex.obj `if test -f '$(srcdir)/cxx_main_complex.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main_complex.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main_complex.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -542,7 +542,7 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.anasazi
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/../../../test/MVOPTester/mhd1280b.cua mhd1280b.cua
+	cp  $(top_srcdir)/testmatrices/mhd1280b.cua mhd1280b.cua
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

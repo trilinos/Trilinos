@@ -13,26 +13,26 @@ PACKAGE_NAME=Anasazi
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziTpetraTests,AnasaziComplexTests,COVERAGE) {
-    TESTS = ../tpetra/test/BlockKrylovSchur/Tpetra_BlockKrylovSchur_complex_lap_test.exe,
-            ../tpetra/test/IRTR/Tpetra_IRTR_complex_lap_test.exe;
+    TESTS = ../tpetra/test/BlockKrylovSchur/Tpetra_BlockKrylovSchur_Complex_lap_test.exe,
+            ../tpetra/test/IRTR/Tpetra_IRTR_Complex_lap_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
     COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziTpetraTests,AnasaziComplexTests,COVERAGE) {
-    TESTS = ../tpetra/test/BlockKrylovSchur/Tpetra_BlockKrylovSchur_complex_test.exe;
+    TESTS = ../tpetra/test/BlockKrylovSchur/Tpetra_BlockKrylovSchur_Complex_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --herm,
-           --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280a.cua --nonherm;
+    ARGS = --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua --herm,
+           --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280a.cua --nonherm;
     COMM = SERIAL, MPI;
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziTpetraTests,AnasaziComplexTests,COVERAGE) {
-    TESTS = ../tpetra/test/BlockDavidson/Tpetra_BlockDavidson_complex_test.exe, 
-            ../tpetra/test/IRTR/Tpetra_IRTR_complex_test.exe, 
-            ../tpetra/test/LOBPCG/Tpetra_LOBPCG_complex_test.exe;
+    TESTS = ../tpetra/test/BlockDavidson/Tpetra_BlockDavidson_Complex_test.exe, 
+            ../tpetra/test/IRTR/Tpetra_IRTR_Complex_test.exe, 
+            ../tpetra/test/LOBPCG/Tpetra_LOBPCG_Complex_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
+    ARGS = --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua;
     COMM = SERIAL, MPI;
 }
 
@@ -118,7 +118,7 @@ PACKAGE_NAME=Anasazi
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziEpetraTests,COVERAGE) {
     TESTS = ../epetra/test/BlockKrylovSchur/BlockKrylovSchurQEVP_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --A-filename=$ABS_TOP_SRCDIR/packages/anasazi/epetra/test/BlockKrylovSchur/linearized_qevp_A.hb --B-filename=$ABS_TOP_SRCDIR/packages/anasazi/epetra/test/BlockKrylovSchur/linearized_qevp_B.hb;
+    ARGS = --A-filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/linearized_qevp_A.hb --B-filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/linearized_qevp_B.hb;
     COMM = SERIAL;
 }
 
@@ -170,9 +170,9 @@ PACKAGE_NAME=Anasazi
     TESTS = OrthoManager/OrthoManagerComplex_test.exe,
             OrthoManager/OrthoManagerComplex_mattest.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --ortho=SVQB,  --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --ortho=SVQB,
-           --verbose --ortho=Basic, --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --ortho=Basic,
-           --verbose --ortho=ICGS,  --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --ortho=ICGS;
+    ARGS = --verbose --ortho=SVQB,  --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua --ortho=SVQB,
+           --verbose --ortho=Basic, --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua --ortho=Basic,
+           --verbose --ortho=ICGS,  --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua --ortho=ICGS;
     COMM = SERIAL;
 }
 
@@ -180,7 +180,7 @@ PACKAGE_NAME=Anasazi
     TESTS = OrthoManager/OrthoManagerComplex_gentest.exe;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --verbose, 
-           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua;
     COMM = SERIAL;
 }
 
@@ -188,27 +188,27 @@ PACKAGE_NAME=Anasazi
     TESTS = MVOPTester/MVOPComplex_test.exe,
             LOBPCG/LOBPCGComplex_test.exe,
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
+    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua;
     COMM = SERIAL;
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
     TESTS = BlockDavidson/BlockDavidsonComplex_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --longrun --locking, 
-           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --longrun --nolocking, 
-           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --longrun --nolocking, 
-           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --longrun --locking;
+    ARGS = --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua --insitu --longrun --locking, 
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua --insitu --longrun --nolocking, 
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua --exsitu --longrun --nolocking, 
+           --verbose --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua --exsitu --longrun --locking;
     COMM = SERIAL;
 }
 
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
     TESTS = BlockKrylovSchur/BlockKrylovSchur_complex_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --insitu --herm,
-           --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280a.cua --insitu --nonherm,
-           --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua --exsitu --herm,
-           --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280a.cua --exsitu --nonherm;
+    ARGS = --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua --insitu --herm,
+           --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280a.cua --insitu --nonherm,
+           --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua --exsitu --herm,
+           --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280a.cua --exsitu --nonherm;
     COMM = SERIAL;
 }
 
@@ -234,7 +234,7 @@ PACKAGE_NAME=Anasazi
 (FRAMEWORK,INSTALL,AnasaziTests,AnasaziComplexTests,COVERAGE) {
     TESTS = IRTR/IRTR_complex_test.exe;
     EXIT-STATUS = STRING-COMPARISON;
-    ARGS = --sort=LR --verbose --hefty --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua, --sort=LR --verbose --skinny --filename=$ABS_TOP_SRCDIR/packages/anasazi/test/MVOPTester/mhd1280b.cua;
+    ARGS = --sort=LR --verbose --hefty --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua, --sort=LR --verbose --skinny --filename=$ABS_TOP_SRCDIR/packages/anasazi/testmatrices/mhd1280b.cua;
            
     COMM = SERIAL, MPI;
 }

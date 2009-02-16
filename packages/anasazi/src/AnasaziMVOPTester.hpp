@@ -160,12 +160,12 @@ namespace Anasazi {
        However, to spice things up, grab the first vector,
        last vector, and choose the others randomly.
     */
+    TEST_FOR_EXCEPT(numvecs_2 != 5);
     ind[0] = 0;
-    ind[numvecs_2-1] = numvecs-1;
-    for (unsigned int i=1; i<numvecs_2-1; i++) {
-      ind[i] = rand() % numvecs;
-    }
-
+    ind[1] = 5;
+    ind[2] = 2;
+    ind[3] = 2;
+    ind[4] = 9;
 
     /*********** GetNumberVecs() *****************************************
        Verify:

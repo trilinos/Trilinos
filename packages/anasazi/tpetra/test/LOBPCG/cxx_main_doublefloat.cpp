@@ -31,12 +31,15 @@
 // float or double.
 //
 // This driver reads the problem from a Harwell-Boeing (HB) file.
-
+//
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 #include "AnasaziLOBPCGSolMgr.hpp"
 #include "AnasaziBasicEigenproblem.hpp"
 #include "AnasaziTpetraAdapter.hpp"
+
+// I/O for Harwell-Boeing files
+#include <iohb.h>
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
@@ -44,8 +47,6 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
-// I/O for Harwell-Boeing files
-#include <iohb.h>
 
 using namespace Teuchos;
 using namespace Anasazi;
@@ -54,6 +55,7 @@ using Tpetra::Platform;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
+using Tpetra::Vector;
 using Tpetra::Map;
 using std::endl;
 using std::cout;
@@ -67,27 +69,28 @@ using std::vector;
 
 bool proc_verbose = false, reduce_tol, precond = true, dumpdata = false;
 RCP<Map<int> > vmap;
-ParameterList pl; 
-int dim, nev, blockSize;
+ParameterList mptestpl; 
+int rnnzmax;
+int dim, mptestnev, blockSize;
 double *dvals; 
 int *colptr, *rowind;
-int MyPID = 0;
+int mptestmypid = 0;
 
 ///////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////
 template <class Scalar> 
-RCP<EigenProblem<Scalar,MultiVector<int,Scalar>,Operator<int,Scalar> > > buildProblem()
+RCP<Eigenproblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildProblem()
 {
   typedef ScalarTraits<Scalar>         SCT;
   typedef typename SCT::magnitudeType  MT;
-  typedef Operator<int,Scalar>         OP;
-  typedef MultiVector<int,Scalar>      MV;
+  typedef Operator<Scalar,int>         OP;
+  typedef MultiVector<Scalar,int>      MV;
   typedef OperatorTraits<Scalar,MV,OP> OPT;
   typedef MultiVecTraits<Scalar,MV>    MVT;
-  RCP<CrsMatrix<int,Scalar> > A = rcp(new CrsMatrix<int,Scalar>(*vmap));
-  if (MyPID == 0) {
+  RCP<CrsMatrix<Scalar,int> > A = rcp(new CrsMatrix<Scalar,int>(*vmap,rnnzmax));
+  if (mptestmypid == 0) {
     // HB format is compressed column. CrsMatrix is compressed row.
-    const float *dptr = dvals;
+    const double *dptr = dvals;
     const int *rptr = rowind;
     for (int c=0; c<dim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
@@ -105,21 +108,21 @@ RCP<EigenProblem<Scalar,MultiVector<int,Scalar>,Operator<int,Scalar> > > buildPr
   X0 = rcp( new MV(*vmap,blockSize) );
   MVT::MvRandom( *X0 );
   // Construct a linear problem instance with zero initial MV
-  RCP<EigenProblem<Scalar,MV,OP> > problem = rcp( new BasicEigenProblem<Scalar,MV,OP>(A,X0) );
-  problem->setNEV(nev);
+  RCP<Eigenproblem<Scalar,MV,OP> > problem = rcp( new BasicEigenproblem<Scalar,MV,OP>(A,X0) );
+  problem->setHermitian(true);
+  problem->setNEV(mptestnev);
   // diagonal preconditioner
   if (precond) {
-    Array<Scalar> diags(A->getNumMyDiagonals());
-    A->getMyDiagCopy(diags());
-    typename Array<Scalar>::iterator i;
-    for (i=diags.begin(); i != diags.end(); ++i) {
-      TEST_FOR_EXCEPTION(*i <= SCT::zero(), std::runtime_error,"Matrix has non-positive diagonal: " << *i);
-      *i = SCT::one() / *i;
+    RCP<MultiVector<Scalar,int> > diagsvec = A->getLocalDiagCopy();
+    typename MultiVector<Scalar,int>::pointer diags = (*diagsvec)[0];
+    for (Teuchos_Ordinal i=0; i<vmap->getNumMyEntries(); ++i) {
+      TEST_FOR_EXCEPTION(diags[i] <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite: " << diags[i]);
+      diags[i] = SCT::one() / diags[i];
     }
-    RCP<CrsMatrix<int,Scalar> > P = rcp(new CrsMatrix<int,Scalar>(*vmap));
+    RCP<CrsMatrix<Scalar,int> > P = rcp(new CrsMatrix<Scalar,int>(*vmap,1));
     int gid=vmap->getMinGlobalIndex();
-    for (i=diags.begin(); i!=diags.end(); ++i) {
-      P->submitEntry(gid,gid,*i);
+    for (Teuchos_Ordinal i=0; i<vmap->getNumMyEntries(); ++i) {
+      P->submitEntry(gid,gid,diags[i]);
       ++gid;
     }
     P->fillComplete();
@@ -137,31 +140,32 @@ bool runTest(double ltol, double times[], int &numIters)
 {
   typedef ScalarTraits<Scalar>         SCT;
   typedef typename SCT::magnitudeType  MT;
-  typedef Operator<int,Scalar>         OP;
-  typedef MultiVector<int,Scalar>      MV;
+  typedef Operator<Scalar,int>         OP;
+  typedef MultiVector<Scalar,int>      MV;
   typedef OperatorTraits<Scalar,MV,OP> OPT;
   typedef MultiVecTraits<Scalar,MV>    MVT;
 
   const Scalar ONE  = SCT::one();
-  pl.set<MT>( "Convergence Tolerance", ltol );         // Relative convergence tolerance requested
+  mptestpl.set<MT>( "Convergence Tolerance", ltol );         // Relative convergence tolerance requested
+  mptestpl.set<MT>( "Locking Tolerance", 0.1*ltol );         // Relative convergence tolerance requested
 
-  if (MyPID==0) cout << "Testing Scalar == " << typeName(ONE) << endl;
+  if (mptestmypid==0) cout << "Testing Scalar == " << typeName(ONE) << endl;
 
-  RCP<EigenProblem<Scalar,MV,OP> > problem;
+  RCP<Eigenproblem<Scalar,MV,OP> > problem;
   Time btimer("Build Timer"), ctimer("Construct Timer"), stimer("Solve Timer");
   ReturnType ret;
-  if (MyPID==0) cout << "Building problem..." << endl;
+  if (mptestmypid==0) cout << "Building problem..." << endl;
   { 
     TimeMonitor localtimer(btimer);
     problem = buildProblem<Scalar>();
   }
   RCP<SolverManager<Scalar,MV,OP> > solver;
-  if (MyPID==0) cout << "Constructing solver..." << endl; 
+  if (mptestmypid==0) cout << "Constructing solver..." << endl; 
   {
     TimeMonitor localtimer(ctimer);
-    solver = rcp(new LOBPCGSolMgr<Scalar,MV,OP>( problem, rcp(&pl,false) ));
+    solver = rcp(new LOBPCGSolMgr<Scalar,MV,OP>( problem, mptestpl));
   }
-  if (MyPID==0) cout << "Solving problem..." << endl;
+  if (mptestmypid==0) cout << "Solving problem..." << endl;
   {
     TimeMonitor localtimer(stimer);
     try {
@@ -180,15 +184,15 @@ bool runTest(double ltol, double times[], int &numIters)
   bool badRes = false;
   if (ret == Converged) {
     if (proc_verbose) cout << endl;
-    if (MyPID==0) cout << "Computing residuals..." << endl;
+    if (mptestmypid==0) cout << "Computing residuals..." << endl;
     //
     // Compute actual residuals.
     //
     Eigensolution<Scalar,MV> solution = problem->getSolution();
     int numsol = solution.numVecs;
-    RCP<const OP> A = problem->getA();
+    RCP<const OP> A = problem->getOperator();
     RCP<MV> X = solution.Evecs;
-    RCP<MV> R = MVT::MvClone(*X,numsol);
+    RCP<MV> R = MVT::Clone(*X,numsol);
     OPT::Apply(*A,*X,*R); // R = A*X
     vector<Value<Scalar> > lambdas = solution.Evals;
     SerialDenseMatrix<int,Scalar> L(numsol,numsol);
@@ -199,13 +203,13 @@ bool runTest(double ltol, double times[], int &numIters)
     vector<MT> resnorms( numsol );
     MVT::MvNorm(*R,resnorms);
     for (int i=0; i<numsol; ++i) {
-      if (lambdas[i] != 0.0) {
-        resnorms[i] /= SCT::magnitude(lambdas[i]);
+      if (lambdas[i].realpart != 0.0) {
+        resnorms[i] /= SCT::magnitude(lambdas[i].realpart);
       }
     }
     if (proc_verbose) cout << setw(16) << "Lambda" << setw(16) << "Residuals" << endl;
     for ( int i=0; i<numsol; ++i) {
-      if (proc_verbose) cout << setw(16) << lambdas[i] << setw(16) << resnorms[i] << endl;
+      if (proc_verbose) cout << setw(16) << lambdas[i].realpart << setw(16) << resnorms[i] << endl;
       if (resnorms[i] > ltol) badRes = true;
     }
     if (proc_verbose) cout << endl;
@@ -221,14 +225,14 @@ int main(int argc, char *argv[])
 {
   GlobalMPISession mpisess(&argc,&argv,&cout);
   RCP<const Platform<int> > platform = DefaultPlatform<int>::getPlatform();
-  RCP<Comm<int> > comm = platform->createComm();
+  RCP<const Comm<int> > comm = platform->getComm();
 
   //
   // Get test parameters from command-line processor
   //  
   bool verbose = false, debug = false;
-  nev = 1;             // number of eigenpairs to find
-  int blocksize = 1;   // blocksize used by solver
+  mptestnev = 1;             // number of eigenpairs to find
+  blockSize = 1;   // blocksize used by solver
   int maxiters = -1;   // maximum number of iterations for solver to use
   string filename("bcsstk14.hb");
   double tol = 1.0e-5;     // relative residual tolerance
@@ -238,9 +242,9 @@ int main(int argc, char *argv[])
   cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
   cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-  cmdp.setOption("nev",&nev,"Number of eigenpairs to find.");
+  cmdp.setOption("nev",&mptestnev,"Number of eigenpairs to find.");
   cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
-  cmdp.setOption("block-size",&blocksize,"Block size to be used by the CG solver.");
+  cmdp.setOption("block-size",&blockSize,"Block size to be used by the CG solver.");
   cmdp.setOption("reduce-tol","fixed-tol",&reduce_tol,"Require increased accuracy from higher precision scalar types.");
   cmdp.setOption("use-precond","no-precond",&precond,"Use a diagonal preconditioner.");
   cmdp.setOption("dump-data","no-dump-data",&dumpdata,"Dump raw data to data.dat.");
@@ -251,8 +255,8 @@ int main(int argc, char *argv[])
     verbose = true;
   }
 
-  MyPID = rank(*comm);
-  proc_verbose = ( verbose && (MyPID==0) );
+  mptestmypid = rank(*comm);
+  proc_verbose = ( verbose && (mptestmypid==0) );
   if (proc_verbose) cout << Anasazi_Version() << endl << endl;
 
   //
@@ -260,9 +264,18 @@ int main(int argc, char *argv[])
   //
   int nnz, info;
   nnz = -1;
-  if (MyPID == 0) {
+  if (mptestmypid == 0) {
     int dim2;
     info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+    // find maximum NNZ over all rows
+    vector<int> rnnz(dim,0);
+    for (int *ri=rowind; ri<rowind+nnz; ++ri) {
+      ++rnnz[*ri-1];
+    }
+    for (int c=0; c<dim; ++c) {
+      rnnz[c] += colptr[c+1]-colptr[c];
+    }
+    rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
   }
   else {
     // address uninitialized data warnings
@@ -274,7 +287,7 @@ int main(int argc, char *argv[])
   broadcast(*comm,0,&nnz);
   broadcast(*comm,0,&dim);
   if (info == 0 || nnz < 0) {
-    if (MyPID == 0) {
+    if (mptestmypid == 0) {
       cout << "Error reading '" << filename << "'" << endl
            << "End Result: TEST FAILED" << endl;
     }
@@ -282,14 +295,14 @@ int main(int argc, char *argv[])
   }
 
   // create map
-  vmap = rcp(new Map<int>(dim,0,*platform));
+  vmap = rcp(new Map<int>(dim,0,comm));
   // create the parameter list
   if (maxiters == -1) {
-    maxiters = dim/blocksize - 1; // maximum number of iterations to run
+    maxiters = dim/blockSize - 1; // maximum number of iterations to run
   }
   //
-  pl.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
-  pl.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
+  mptestpl.set( "Block Size", blockSize );              // Blocksize to be used by iterative solver
+  mptestpl.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   int verbLevel = Errors + Warnings;
   if (debug) {
     verbLevel += Debug;
@@ -297,17 +310,17 @@ int main(int argc, char *argv[])
   if (verbose) {
     verbLevel += TimingDetails + FinalSummary;
   }
-  pl.set( "Verbosity", verbLevel );
+  mptestpl.set( "Verbosity", verbLevel );
 
   //
   // **********Print out information about problem*******************
   //
-  if (MyPID==0) {
+  if (mptestmypid==0) {
     cout << "Filename: " << filename << endl;
     cout << "Dimension of matrix: " << dim << endl;
     cout << "Number of nonzeros: " << nnz << endl;
-    cout << "NEV: " << nev << endl;
-    cout << "Block size used by solver: " << blocksize << endl;
+    cout << "NEV: " << mptestnev << endl;
+    cout << "Block size used by solver: " << blockSize << endl;
     cout << "Max number of iterations: " << maxiters << endl; 
     cout << "Relative residual tolerance: " << tol << endl;
     cout << endl;
@@ -330,13 +343,13 @@ int main(int argc, char *argv[])
   */
 
   // done with the matrix data now; delete it
-  if (MyPID == 0) {
+  if (mptestmypid == 0) {
     free( dvals );
     free( colptr );
     free( rowind );
   }
 
-  if (MyPID==0) {
+  if (mptestmypid==0) {
     cout << "Scalar field     Build time     Init time     Solve time     Num Iters     Test Passsed" << endl;
     cout << "---------------------------------------------------------------------------------------" << endl;
     cout << setw(12) << "float"   << "     " << setw(10) <<  ftime[0] << "     " << setw(9) <<  ftime[1] << "     " << setw(10) <<  ftime[2] << "     " << setw(9) <<  fiter << "     " << ( fpass ? "pass" : "fail") << endl;
@@ -370,13 +383,13 @@ int main(int argc, char *argv[])
   */
 
   if (!allpass) {
-    if (MyPID==0) cout << "\nEnd Result: TEST FAILED" << endl;	
+    if (mptestmypid==0) cout << "\nEnd Result: TEST FAILED" << endl;	
     return -1;
   }
   //
   // Default return value
   //
-  if (MyPID==0) cout << "\nEnd Result: TEST PASSED" << endl;
+  if (mptestmypid==0) cout << "\nEnd Result: TEST PASSED" << endl;
   return 0;
 }
 

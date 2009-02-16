@@ -42,11 +42,10 @@
 #include <iohb.h>
 
 #include <Teuchos_CommandLineProcessor.hpp>
-#include <Teuchos_ParameterList.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-#include <Teuchos_ScalarTraits.hpp>
 
 #ifdef HAVE_TEUCHOS_QD
 #include <qd/dd_real.h>
@@ -219,7 +218,7 @@ int main(int argc, char *argv[])
 {
   GlobalMPISession mpisess(&argc,&argv,&cout);
   RCP<const Platform<int> > platform = DefaultPlatform<int>::getPlatform();
-  RCP<Comm<int> > comm = platform->getComm();
+  RCP<const Comm<int> > comm = platform->getComm();
 
   //
   // Get test parameters from command-line processor

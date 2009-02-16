@@ -64,11 +64,11 @@ using std::cout;
 using std::endl;
 using std::vector;
 
-typedef std::complex<double>                ST; 
+typedef std::complex<double>                ST;
 typedef ScalarTraits<ST>                   SCT;
 typedef SCT::magnitudeType                  MT;
-typedef MultiVector<int,ST>                 MV;
-typedef Tpetra::Operator<int,ST>                    OP;
+typedef MultiVector<ST,int>                 MV;
+typedef Operator<ST,int>                    OP;
 typedef MultiVecTraits<ST,MV>              MVT;
 typedef OperatorTraits<ST,MV,OP>           OPT;
 
@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
   int MyPID = 0;
 
   RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
-  RCP<Comm<int> > comm = platform->createComm();
+  RCP<const Comm<int> > comm = platform->getComm();
 
   MyPID = rank(*comm);
 
@@ -141,14 +141,21 @@ int main(int argc, char *argv[])
     MyOM->stream(Anasazi::Warnings) << Anasazi_Version() << endl << endl;
 
     RCP<Map<int> > map;
-    RCP<CrsMatrix<int,ST> > M;
+    RCP<CrsMatrix<ST,int> > M;
     if (filename != "") {
       int dim2,nnz;
+      int rnnzmax;
       double *dvals;
       int *colptr,*rowind;
       nnz = -1;
       if (MyPID == 0) {
         info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+        // find maximum NNZ over all rows
+        vector<int> rnnz(dim,0);
+        for (int *ri=rowind; ri<rowind+nnz; ++ri) {
+          ++rnnz[*ri-1];
+        }
+        rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
       }
       else {
         // address uninitialized data warnings
@@ -159,6 +166,7 @@ int main(int argc, char *argv[])
       Teuchos::broadcast(*comm,0,&info);
       Teuchos::broadcast(*comm,0,&nnz);
       Teuchos::broadcast(*comm,0,&dim);
+      Teuchos::broadcast(*comm,0,&rnnzmax);
       if (info == 0 || nnz < 0) {
         if (MyPID == 0) {
           cout << "Error reading '" << filename << "'" << endl
@@ -167,8 +175,8 @@ int main(int argc, char *argv[])
         return -1;
       }
       // create map
-      map = rcp(new Map<int>(dim,0,*platform));
-      M = rcp(new CrsMatrix<int,ST>(*map));
+      map = rcp(new Map<int>(dim,0,comm));
+      M = rcp(new CrsMatrix<ST,int>(*map,rnnzmax));
       if (MyPID == 0) {
         // Convert interleaved doubles to complex values
         // HB format is compressed column. CrsMatrix is compressed row.
@@ -191,7 +199,7 @@ int main(int argc, char *argv[])
     } // else M == null
     else {
       // let M remain null, allocate map with command-line specified dim
-      map = rcp(new Map<int>(dim,0,*platform));
+      map = rcp(new Map<int>(dim,0,comm));
     }
 
     // Create ortho managers
@@ -210,7 +218,7 @@ int main(int argc, char *argv[])
     }
 
     // multivector to spawn off of
-    RCP<MV> S = rcp( new MultiVector<int,ST>(*map, sizeS) );
+    RCP<MV> S = rcp( new MultiVector<ST,int>(*map, sizeS) );
 
     // create X1, X2
     // they must be M-orthonormal and mutually M-orthogonal

@@ -524,7 +524,7 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.anasazi
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/mhd1280b.cua mhd1280b.cua; fi
+	cp  $(top_srcdir)/testmatrices/mhd1280b.cua mhd1280b.cua
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

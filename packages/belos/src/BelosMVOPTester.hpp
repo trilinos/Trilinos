@@ -72,14 +72,14 @@ namespace Belos {
 
          Clone(MV,int)
          CloneCopy(MV)
-         CloneCopy(MV,std::vector<int>)
+         CloneCopy(MV,vector<int>)
            USER: will request positive number of vectors
              MV: will return a multivector with exactly the number of
                    requested vectors.
                  vectors are the same dimension as the cloned MV
          
 
-         CloneView(MV,std::vector<int>) [const and non-const]
+         CloneView(MV,vector<int>) [const and non-const]
            USER: There is no assumed communication between creation and
            destruction of a view. I.e., after a view is created, changes to the
            source multivector are not reflected in the view. Likewise, until
@@ -112,16 +112,16 @@ namespace Belos {
                  alpha == 0  =>  SerialDenseMatrix == 0
 
          MvDot 
-          USER: Results std::vector will be large enough for results.
+          USER: Results vector will be large enough for results.
                 Both multivectors will have the same number of vectors.
                     (Epetra crashes, otherwise.)
             MV: Inner products will satisfy |a'*b| <= |a|*|b|
-                Results std::vector will not be resized.
+                Results vector will not be resized.
 
          MvNorm 
-             MV: std::vector norm is always non-negative, and zero
+             MV: vector norm is always non-negative, and zero
                    only for zero vectors.
-                 results std::vector should not be resized
+                 results vector should not be resized
 
          SetBlock 
           USER: indices will be distinct
@@ -129,7 +129,7 @@ namespace Belos {
                 locations, leaving the other vectors untouched.
 
          MvRandom 
-             MV: Generate zero std::vector with "zero" probability
+             MV: Generate zero vector with "zero" probability
                  Don't gen the same vectors twice.
 
          MvInit 

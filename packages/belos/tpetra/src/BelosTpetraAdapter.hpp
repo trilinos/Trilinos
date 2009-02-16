@@ -33,11 +33,12 @@
     \brief Provides several interfaces between Belos virtual classes and Tpetra concrete classes.
 */
 
+// TODO: the assumption is made that the solver, multivector and operator are templated on the same scalar. this will need to be modified.
+
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Operator.hpp>
-#include <Tpetra_Map.hpp>
-#include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_TestForException.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
@@ -88,7 +89,7 @@ namespace Belos {
     }
 
     static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO> > CloneView( Tpetra::MultiVector<Scalar,LO,GO>& mv, const std::vector<int>& index )
-    {  
+    {
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
 #ifdef TPETRA_DEBUG
@@ -239,7 +240,6 @@ namespace Belos {
                               Tpetra::MultiVector<Scalar,LO,GO> & Y,
                         ETrans trans=NOTRANS )
     { 
-      TEST_FOR_EXCEPTION(trans != NOTRANS, std::logic_error, "Feature not yet implemented.");
       Op.apply(X,Y,Teuchos::NO_TRANS);
     }
   };

@@ -45,9 +45,9 @@ AM_CPPFLAGS = \
 EXEEXT = .exe
 
 if BUILD_TEUCHOS_COMPLEX
-BD_COMPLEX_LAP_TEST = # Tpetra_BlockDavidson_complex_lap_test
+BD_COMPLEX_LAP_TEST = # Tpetra_BlockDavidson_Complex_lap_test
 if BUILD_TRIUTILS
-BD_COMPLEX_TEST = Tpetra_BlockDavidson_complex_test Dummy
+BD_COMPLEX_TEST = Tpetra_BlockDavidson_Complex_test Dummy
 endif
 endif
 
@@ -55,39 +55,39 @@ endif
 noinst_PROGRAMS = $(BD_COMPLEX_TEST) $(BD_COMPLEX_LAP_TEST)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/../../../test/MVOPTester/mhd1280b.cua mhd1280b.cua
+	cp  $(top_srcdir)/testmatrices/mhd1280b.cua mhd1280b.cua
 
 #np# One SOURCES primary is needed for EACH exe.  (Notice for all of the following 
 #np# primaries that the pattern is "(Exe_name)_(PRIMARY_NAME) = ").  List all source 
 #np# files needed to compile the exe.
-Tpetra_BlockDavidson_complex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
+Tpetra_BlockDavidson_Complex_test_SOURCES = $(srcdir)/cxx_main_complex.cpp
 #Tpetra_BlockDavidson_complex_lap_test_SOURCES = $(srcdir)/cxx_main_complex_lap.cpp
 
 Dummy_SOURCES = Dummy
 
 #np# One DEPENDENCIES primary is needed for each exe.  List any libraries that the 
 #np# exe depends on.  (This primary is not absolutely essential.)
-Tpetra_BlockDavidson_complex_test_DEPENDENCIES = \
+Tpetra_BlockDavidson_Complex_test_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/../triutils/src/libtriutils.a \
 	$(top_builddir)/../teuchos/src/libteuchos.a
 
-#Tpetra_BlockDavidson_complex_lap_test_DEPENDENCIES = \
+#Tpetra_BlockDavidson_Complex_lap_test_DEPENDENCIES = \
 #	$(top_builddir)/src/libanasazi.a \
 #	$(top_builddir)/../teuchos/src/libteuchos.a
 
 #np# One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 #np# building the exe.
-Tpetra_BlockDavidson_complex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+Tpetra_BlockDavidson_Complex_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
-#Tpetra_BlockDavidson_complex_lap_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
+#Tpetra_BlockDavidson_Complex_lap_test_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/test/MVOPTester
 
 #np# One LDADD primary can be defined for each exe.  Include any LDFLAGS necessary for 
 #np# building the exe.
-Tpetra_BlockDavidson_complex_test_LDADD = \
+Tpetra_BlockDavidson_Complex_test_LDADD = \
 	$(EXPORT_LIBS)
 
-#Tpetra_BlockDavidson_complex_lap_test_LDADD = \
+#Tpetra_BlockDavidson_Complex_lap_test_LDADD = \
 #	$(EXPORT_LIBS)
 
 # Dummy for new export makefiles

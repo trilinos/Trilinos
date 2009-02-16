@@ -57,20 +57,19 @@ int main(int argc, char *argv[])
   typedef double                              ST;
   typedef ScalarTraits<ST>                   SCT;
   typedef SCT::magnitudeType                  MT;
-  typedef MultiVector<int,ST>         MV;
-  typedef Operator<int,ST>            OP;
+  typedef MultiVector<ST,int>                 MV;
+  typedef Operator<ST,int>                    OP;
   typedef Anasazi::MultiVecTraits<ST,MV>     MVT;
   typedef Anasazi::OperatorTraits<ST,MV,OP>  OPT;
-  ST ONE  = SCT::one();
+  const ST ONE  = SCT::one();
 
   GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
-  bool boolret;
   int MyPID = 0;
   int NumImages = 1;
 
   RCP<const Platform<int> > platform = Tpetra::DefaultPlatform<int>::getPlatform();
-  RCP<Comm<int> > comm = platform->createComm();
+  RCP<const Comm<int> > comm = platform->getComm();
 
   MyPID = rank(*comm);
   NumImages = size(*comm);
@@ -79,7 +78,6 @@ int main(int argc, char *argv[])
   bool verbose = false;
   bool debug = false;
   bool skinny = true;
-  std::string filename("mhd1280b.cua");
   std::string which("LR");
   int nev = 4;
   int blockSize = 4;
@@ -89,7 +87,6 @@ int main(int argc, char *argv[])
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("skinny","hefty",&skinny,"Use a skinny (low-mem) or hefty (higher-mem) implementation of IRTR.");
   cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
-  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("sort",&which,"Targetted eigenvalues (SR or LR).");
   cmdp.setOption("nev",&nev,"Number of eigenvalues to compute.");
   cmdp.setOption("blockSize",&blockSize,"Block size for the algorithm.");
@@ -111,8 +108,8 @@ int main(int argc, char *argv[])
   int dim = ROWS_PER_PROC * NumImages;
 
   // create map
-  Map<int> map(dim,0,*platform);
-  RCP<CrsMatrix<int,ST> > K = rcp(new CrsMatrix<int,ST>(map));
+  Map<int> map(dim,0,comm);
+  RCP<CrsMatrix<ST,int> > K = rcp(new CrsMatrix<ST,int>(map,3));
   int base = MyPID*ROWS_PER_PROC;
   if (MyPID != NumImages-1) {
     for (int i=0; i<ROWS_PER_PROC; ++i) {
@@ -133,7 +130,7 @@ int main(int argc, char *argv[])
   K->fillComplete();
 
   // Create initial vectors
-  RCP<MultiVector<int,ST> > ivec = rcp( new MultiVector<int,ST>(map,blockSize) );
+  RCP<MV> ivec = rcp( new MV(map,blockSize) );
   ivec->random();
 
   // Create eigenproblem
@@ -147,7 +144,7 @@ int main(int argc, char *argv[])
   problem->setNEV( nev );
   //
   // Inform the eigenproblem that you are done passing it information
-  boolret = problem->setProblem();
+  bool boolret = problem->setProblem();
   if (boolret != true) {
     if (MyPID == 0) {
       cout << "Anasazi::BasicEigenproblem::SetProblem() returned with error." << endl

@@ -645,8 +645,8 @@ uninstall-am:
 include $(top_builddir)/Makefile.export.anasazi
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(srcdir)/linearized_qevp_A.hb linearized_qevp_A.hb
-	cp  $(srcdir)/linearized_qevp_B.hb linearized_qevp_B.hb
+	cp  $(top_srcdir)/testmatrices/linearized_qevp_A.hb linearized_qevp_A.hb
+	cp  $(top_srcdir)/testmatrices/linearized_qevp_B.hb linearized_qevp_B.hb
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

@@ -52,7 +52,7 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos)
     )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestBlockKrylovSchurQEVPFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/epetra/test/BlockKrylovSchur
+    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/anasazi/testmatrices
     SOURCE_FILES linearized_qevp_A.hb linearized_qevp_B.hb
     EXEDEPS Epetra_BKS_QEVP_test
     )
