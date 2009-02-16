@@ -239,6 +239,7 @@ int main(int argc, char *argv[])
 
   // Create Anasazi Eigensolver sublist (needs --with-loca-anasazi)
   locaStepperList.set("Compute Eigenvalues",false);
+#ifdef HAVE_LOCA_ANASAZI
   Teuchos::ParameterList& aList = locaStepperList.sublist("Eigensolver");
   aList.set("Method", "Anasazi");
   aList.set("Block Size", 1);
@@ -252,6 +253,7 @@ int main(int argc, char *argv[])
 	    Anasazi::Errors + 
 	    Anasazi::Warnings +
 	    Anasazi::FinalSummary);
+#endif
 
   // Create the "Solver" parameters sublist to be used with NOX Solvers
   Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
