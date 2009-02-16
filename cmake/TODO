@@ -28,6 +28,23 @@ MPI_OPT build directory and enable only "Primary Stable" code.  This will need
 a minimal configuration script to pull in only the basic info needed in order
 to find compilers, MPI, BLAS, and LAPACK and nothing else.
 
+(*) [???] Rework TPL and package enables for Secondary Stable and Primary
+Stable code to make all TPLs have empty enables and then make the enable on
+Secondary Stable and Experimental packages OFF.  Right now, I had to implement
+the <PACKAGE>_ENABLE_<TPL>=ON logic to enable a TPL to override a disabled
+TPL.  This is inconsistent with the behavior for package enables where we say
+that if a package is explicitly disabled, it will override all enables.
+Therefore, I would like to make all TPL enables to be empty by default, and
+then I want to make all packages that have a required dependency on extra TPLs
+be given a default OFF.  For example, right now Phalanx has a default enable
+of empty "" but has a required dependency on the Boost TPL (which is default
+OFF).  Therefore, if Boost is not explicitly enabled, then Phalanx will be
+disabled.  What like to happen is for the Boost TPL enable to be empty "" by
+default and then to have Phalanx default enable to be OFF.  When the user
+wants Phalanx, the will set Trilinos_ENABLE_Phalanx=ON and then the existing
+logic will result in TPL_ENABLE_Boost being set to ON and everything will
+work.
+
 (*) [???] Experiment with using cmake -P <script_file> as a
 platform-independent scripting language.  We can use this for creating
 platform-independent scripts that will allow us to run on any platform.  This
