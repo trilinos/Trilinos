@@ -16,6 +16,7 @@ using namespace std;
 void cms_residual_check(const char * tag, const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
 
+#define ABS(x)((x)>0?(x):-(x))
 
 #define NO_OUTPUT
 extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, const char* of);
@@ -113,13 +114,14 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
 
   /* ML Communicator */
   ML_Comm_Create(&ml_comm_);
-  
+
   /* Parameter List Options */
   int OutputLevel = List_.get("ML output", -47);
   if(OutputLevel == -47) OutputLevel = List_.get("output", 1);
   if(OutputLevel>=15) very_verbose_=verbose_=true;
   if(OutputLevel > 5) {very_verbose_=false;verbose_=true;}
   else very_verbose_=verbose_=false;  
+  
   int SmootherSweeps = List_.get("smoother: sweeps (level 0)", 0);
   MaxLevels = List_.get("max levels",10); 
   print_hierarchy= List_.get("print hierarchy",false);  
@@ -409,7 +411,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   for(int i=0;i<Prolongator_->NumMyRows();i++){
     Psparse->ExtractMyRowView(i,ne1,vals1,idx1);
     nonzeros=0;
-    for(int j=0;j<ne1;j++) nonzeros+=vals1[j]>0;
+    for(int j=0;j<ne1;j++) nonzeros+=ABS(vals1[j])>0;
 
     for(int j=0;j<ne1;j++){
       for(int k=0;k<dim;k++) {
@@ -603,7 +605,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
 #ifdef HAVE_ML_IFPACK
     if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
 #endif
-
+    
     if(MaxLevels > 0){
       if(i != 0
 #ifdef HAVE_ML_IFPACK
@@ -627,15 +629,16 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
       
       /* Xfer back to fine grid (e_e = P * e_n) */
       ML_CHK_ERR(Prolongator_->Multiply(false,e_node,e_edge));
-
-      /* Add in correction (x = x + e_e) */
+      
+      /* Add in correction (x = x + e_e)        */
       ML_CHK_ERR(X.Update(1.0,e_edge,1.0));
     }/*end if*/
     
-    /* Post-Smoothing*/
+    /* Post-Smoothing */
 #ifdef HAVE_ML_IFPACK
     if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
 #endif
+    
   }/*end for*/
   return 0;
 }/*end ApplyInverse*/
