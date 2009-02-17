@@ -1292,7 +1292,7 @@ MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
     # come next
   ELSE()
     MESSAGE("")
-    MESSAGE("Enabling all packages that are not disabled for"
+    MESSAGE("Enabling all packages that are not disabled based on"
       " <PACKAGE>_ENABLE_<DEPPACKAGE>=ON  ...")
     MESSAGE("")
     FOREACH(PACKAGE ${${PROJECT_NAME}_REVERSE_PACKAGES})

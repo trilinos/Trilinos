@@ -2,7 +2,7 @@
 How to CMakeify an Existing Trilinos Package
 --------------------------------------------
 
-Last updated: 2009/02/13
+Last updated: 2009/02/16
 
 Here, we describe how to add full CMake/CTest support to an existing
 Trilinos package.  The process of providing CMake/CTest support for a
@@ -81,6 +81,13 @@ Special cases:
 
 See turning off Zoltan support in ML when MPI is not enabled by looking at
 packages/ml/CMakeLists.txt
+
+2.b) Creating multi-options
+
+There are cases where in order to enable something in a package one or more
+other enables must also be set.  For example to turn on NOX/Epetra support as
+it is called, you must have Epetra, AztecOO, and Ifpack.  See the example of
+how to do this in packages/nox/CMakeLists.txt.
 
 
 3) Create the directory PACKAGE_DIR/cmake

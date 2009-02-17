@@ -1,5 +1,6 @@
 INCLUDE(PackageMacros)
 INCLUDE(AddOptionAndDefine)
+INCLUDE(CombinedOption)
 
 #
 # A) Define the package
@@ -81,30 +82,26 @@ ENDIF()
 ###################################################
 
 # LAPACK
-SET(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK OFF CACHE BOOL "Enables support for LAPACK implementation of Abstract Group and Vector classes.  Defaults to OFF")
+OPTION(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK
+  "Enables support for LAPACK implementation of Abstract Group and Vector classes.  Defaults to OFF"
+  OFF
+  )
 
-# Epetra - requires Epetra, AztecOO, and Ifpack
-IF(NOX_ENABLE_AztecOO AND NOX_ENABLE_Epetra AND NOX_ENABLE_Ifpack)
-  SET(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA_DEFAULT ON)
-ELSE()
-  SET(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA_DEFAULT OFF)
-ENDIF()
-
-SET(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA 
-  ${NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA_DEFAULT} 
-  CACHE BOOL "Enables support for Epetra implementation of Abstract Group and Vector classes.  Defaults to ON if Epetra, AztecOO, and Ifpack are enabled, otherwise defaults to OFF.")
-
-IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
-  
-  IF (NOT NOX_ENABLE_AztecOO OR NOT NOX_ENABLE_Epetra OR 
-      NOT NOX_ENABLE_Ifpack)
-    MESSAGE(FATAL_ERROR "ERROR: The NOX-Epetra Support has been enabled by the flag NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA but this requires the Trilinos libraries AztecOO, Epetra, and Ifpack to be enabled!  Please fix your configure script to enable all of these packages.  Current status is:\n Epetra:  ${NOX_ENABLE_Epetra} \n AztecOO: ${NOX_ENABLE_AztecOO} \n Ifpack:  ${NOX_ENABLE_Ifpack}")
-  ENDIF()
-
-ENDIF()
+# Epetra
+COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA
+  DEP_OPTIONS_NAMES NOX_ENABLE_AztecOO NOX_ENABLE_Epetra NOX_ENABLE_Ifpack
+  DOCSTR "Enables support for Epetra implementation of Abstract Group and"
+    " Vector classes.  Defaults to ON if Epetra, AztecOO, and Ifpack are"
+    " enabled, otherwise defaults to OFF."
+  )
 
 # Thyra
-SET(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA ${NOX_ENABLE_Thyra} CACHE BOOL "Enables support for Thyra implementation of Abstract Group and Vector classes.  Defaults to ON if Thyra is enabled, otherwise defaults to OFF")
+COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA
+  DEP_OPTIONS_NAMES NOX_ENABLE_Thyra
+  DOCSTR "Enables support for Thyra implementation of Abstract Group"
+    " and Vector classes.  Defaults to ON if Thyra is enabled,"
+    " otherwise defaults to OFF"
+  )
 
 ###################################################
 ###################################################
