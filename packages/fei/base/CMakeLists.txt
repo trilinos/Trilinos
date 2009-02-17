@@ -35,7 +35,6 @@ APPEND_SET(HEADERS
 ../fei_fwd.hpp
 ../fei_base.hpp
 cfei.h
-feiArray.hpp
 fei_BlockDescriptor.hpp
 fei_BlockLinearProblemManager.hpp
 fei_bool.h

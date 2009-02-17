@@ -11,7 +11,7 @@
 
 #include <fei_macros.hpp>
 
-#include <feiArray.hpp>
+#include <vector>
 
 class ElemContribution {
  public:
@@ -43,8 +43,8 @@ class ElemContribution {
       return( !( *this == rhs) );
     }
 
-  feiArray<double> matrixContributions;
-  feiArray<double> rhsContributions;
+  std::vector<double> matrixContributions;
+  std::vector<double> rhsContributions;
 };
 
 class InputData {
@@ -55,9 +55,9 @@ class InputData {
       for(int i=0; i<elemIDs.length(); i++) delete elemIDs[i];
     }
 
-  feiArray<int> elemBlockIDs;
-  feiArray<feiArray<int>*> elemIDs;
-  feiArray<feiArray<ElemContribution>*> elemContributions;
+  std::vector<int> elemBlockIDs;
+  std::vector<std::vector<int>*> elemIDs;
+  std::vector<std::vector<ElemContribution>*> elemContributions;
 
   bool operator==(const InputData& rhs)
     {
@@ -67,8 +67,8 @@ class InputData {
       }
 
       for(int i=0; i<elemIDs.length(); i++) {
-	feiArray<ElemContribution>& elems = *(elemContributions[i]);
-	feiArray<ElemContribution>& rhsElems = *(rhs.elemContributions[i]);
+	std::vector<ElemContribution>& elems = *(elemContributions[i]);
+	std::vector<ElemContribution>& rhsElems = *(rhs.elemContributions[i]);
 
 	for(int j=0; j<elemIDs[i]->length(); j++) {
 	  int id1 = (*(elemIDs[i]))[j];
@@ -105,28 +105,27 @@ class InputData {
       int err, insertPoint = -1;
       int blkInd = elemBlockIDs.binarySearch(elemBlockID, insertPoint);
       if (blkInd < 0) {
-	err = elemBlockIDs.insert(elemBlockID, insertPoint);
-	err += elemIDs.insert(new feiArray<int>, insertPoint);
-	err += elemContributions.insert(new feiArray<ElemContribution>,
-					insertPoint);
+	err = elemBlockIDs.insert(elemBlockIDs.begin()+insertPoint, elemBlockID);
+	err += elemIDs.insert(elemIDs.begin()+insertPoint, new std::vector<int>);
+	err += elemContributions.insert(elemContributions.begin()+insertPoint, new std::vector<ElemContribution>);
 	if (err != 0) return(err);
 	blkInd = insertPoint;
       }
 
-      feiArray<int>& IDs = *(elemIDs[blkInd]);
-      feiArray<ElemContribution>& ec = *(elemContributions[blkInd]);
+      std::vector<int>& IDs = *(elemIDs[blkInd]);
+      std::vector<ElemContribution>& ec = *(elemContributions[blkInd]);
 
       err = IDs.insertSorted(elemID);      
       if (err == -2) return(err);
 
       ElemContribution dummy;
-      if (err >= 0) err = ec.insert(dummy, err);
+      if (err >= 0) err = ec.insert(ec.begin()+err, dummy);
       if (err == -2) return(err);
 
       return(0);
     }
 
-  int addElemMatrix(int elemBlockID, int elemID, feiArray<double>& matrixData)
+  int addElemMatrix(int elemBlockID, int elemID, std::vector<double>& matrixData)
     {
       int insertPoint = -1;
       int blkInd = elemBlockIDs.binarySearch(elemBlockID, insertPoint);
@@ -145,7 +144,7 @@ class InputData {
 
       ElemContribution& elemContr = (*(elemContributions[blkInd]))[elemIdx];
 
-      feiArray<double>& elemContrMatrix = elemContr.matrixContributions;
+      std::vector<double>& elemContrMatrix = elemContr.matrixContributions;
       int len = matrixData.length();
       int oldLen = elemContrMatrix.length();
       if (oldLen < len) {
@@ -160,7 +159,7 @@ class InputData {
       return(0);
     }
 
-  int addElemRHS(int elemBlockID, int elemID, feiArray<double>& rhsData)
+  int addElemRHS(int elemBlockID, int elemID, std::vector<double>& rhsData)
     {
       int insertPoint = -1;
       int blkInd = elemBlockIDs.binarySearch(elemBlockID, insertPoint);
@@ -178,7 +177,7 @@ class InputData {
 
       ElemContribution& elemContr = (*(elemContributions[blkInd]))[elemIdx];
 
-      feiArray<double>& elemContrRHS = elemContr.rhsContributions;
+      std::vector<double>& elemContrRHS = elemContr.rhsContributions;
       int len = rhsData.length();
       int oldLen = elemContrRHS.length();
       if (oldLen < len) {

@@ -11,7 +11,6 @@
 #include <test_utils/snl_fei_tester.hpp>
 
 #include <fei_LinearSystemCore.hpp>
-#include <feiArray.hpp>
 #include <snl_fei_ArrayUtils.hpp>
 #include <test_utils/LibraryFactory.hpp>
 
@@ -42,7 +41,7 @@ snl_fei_tester::snl_fei_tester(fei::SharedPtr<DataReader> data_reader,
     linSysCore_(NULL),
     feData_(NULL),
     data_(data_reader),
-    idTypes_(0, 4),
+    idTypes_(),
     numPatterns_(0),
     localProc_(localProc),
     numProcs_(numProcs)
@@ -245,15 +244,15 @@ void snl_fei_tester::defineFieldsAndIDTypes()
   vecSpace_->defineFields(data_->numFields_, data_->fieldIDs_, data_->fieldSizes_);
 
   //nodeIDType == 0
-  idTypes_.append(0);
+  idTypes_.push_back(0);
 
   //constraintIDType == 1
-  idTypes_.append(1);
+  idTypes_.push_back(1);
 
   //elemDofIDType == 2
-  idTypes_.append(2);
+  idTypes_.push_back(2);
 
-  vecSpace_->defineIDTypes(idTypes_.length(), idTypes_.dataPtr() );
+  vecSpace_->defineIDTypes(idTypes_.size(), &idTypes_[0] );
 
   nodeTypeOffset_ = 0;
   constraintTypeOffset_ = 1;
@@ -274,7 +273,7 @@ int snl_fei_tester::initElemBlocks()
 					       patternID) );
 
     for(int j=0; j<eb.numElements_; ++j) {
-      feiArray<int> conn(eb.numNodesPerElement_+1);
+      std::vector<int> conn(eb.numNodesPerElement_+1);
       for(int ii=0; ii<eb.numNodesPerElement_; ++ii) {
 	conn[ii] = eb.elemConn_[j][ii];
       }
@@ -282,7 +281,7 @@ int snl_fei_tester::initElemBlocks()
 
       CHK_ERR( matrixGraph_->initConnectivity(eb.blockID_,
 					      eb.elemIDs_[j],
-					      conn.dataPtr()) );
+					      &conn[0]) );
     }
   }
 
@@ -302,14 +301,14 @@ int snl_fei_tester::loadElemBlocks()
 
     int numIndices = matrixGraph_->getConnectivityNumIndices(eb.blockID_);
 
-    feiArray<int> indices(numIndices);
+    std::vector<int> indices(numIndices);
 
     for(int j=0; j<eb.numElements_; ++j) {
       int checkNum;
       CHK_ERR( matrixGraph_->getConnectivityIndices(eb.blockID_,
 						    eb.elemIDs_[j],
 						    numIndices,
-						    indices.dataPtr(),
+						    &indices[0],
 						    checkNum) );
       if (numIndices != checkNum) {
 	ERReturn(-1);
@@ -318,7 +317,7 @@ int snl_fei_tester::loadElemBlocks()
       CHK_ERR( A_->sumIn(eb.blockID_, eb.elemIDs_[j],
 			 eb.elemStiff_[j]) );
 
-      CHK_ERR( b_->sumIn(numIndices, indices.dataPtr(),
+      CHK_ERR( b_->sumIn(numIndices, &indices[0],
 			 eb.elemLoad_[j], 0) );
     }
   }
@@ -329,23 +328,21 @@ int snl_fei_tester::loadElemBlocks()
 //----------------------------------------------------------------------------
 int snl_fei_tester::initConstraints()
 {
-  feiArray<int> idTypes;
+  std::vector<int> idTypes;
   int constraintID = localProc_*100000;
   int i;
   for(i=0; i<data_->numCRMultSets_; ++i) {
     CRSet& crSet = data_->crMultSets_[i];
 
     for(int j=0; j<1; ++j) {
-      idTypes.resize(crSet.numNodes_);
-
-      idTypes = idTypes_[nodeTypeOffset_]; //feiArray::operator=
+      idTypes.assign(crSet.numNodes_, idTypes_[nodeTypeOffset_]);
 
       crSet.crID_ = constraintID++;
       int constraintIDType = idTypes_[constraintTypeOffset_];
       CHK_ERR( matrixGraph_->initLagrangeConstraint(crSet.crID_,
 						  constraintIDType,
 						  crSet.numNodes_,
-						  idTypes.dataPtr(),
+						  &idTypes[0],
 						  crSet.nodeIDs_[j],
 						  crSet.fieldIDs_) );
     }
@@ -355,16 +352,14 @@ int snl_fei_tester::initConstraints()
     CRSet& crSet = data_->crPenSets_[i];
 
     for(int j=0; j<1; ++j) {
-      idTypes.resize(crSet.numNodes_);
-
-      idTypes = idTypes_[nodeTypeOffset_]; //feiArray::operator=
+      idTypes.assign(crSet.numNodes_, idTypes_[nodeTypeOffset_]);
 
       crSet.crID_ = constraintID++;
       int constraintIDType = idTypes_[constraintTypeOffset_];
       CHK_ERR( matrixGraph_->initPenaltyConstraint(crSet.crID_,
 						  constraintIDType,
 						  crSet.numNodes_,
-						  idTypes.dataPtr(),
+						  &idTypes[0],
 						  crSet.nodeIDs_[j],
 						  crSet.fieldIDs_) );
     }
@@ -375,9 +370,9 @@ int snl_fei_tester::initConstraints()
     fieldDB.insert(std::pair<int,int>(data_->fieldIDs_[i], data_->fieldSizes_[i]));
   }
 
-  feiArray<int> nodeIDs;
-  feiArray<int> fieldIDs;
-  feiArray<double> weights;
+  std::vector<int> nodeIDs;
+  std::vector<int> fieldIDs;
+  std::vector<double> weights;
 
   for(i=0; i<data_->numSlaveVars_; i++) {
     int ii;
@@ -386,35 +381,34 @@ int snl_fei_tester::initConstraints()
     nodeIDs.resize(crSet.numNodes_+1);
     nodeIDs[0] = crSet.slaveNodeID_;
     fieldIDs.resize(0);
-    fieldIDs.append(crSet.slaveFieldID_);
+    fieldIDs.push_back(crSet.slaveFieldID_);
 
     for(ii=0; ii<crSet.numNodes_; ++ii) {
       nodeIDs[ii+1] = crSet.nodeIDs_[0][ii];
-      fieldIDs.append(crSet.fieldIDs_[ii]);
+      fieldIDs.push_back(crSet.fieldIDs_[ii]);
     }
 
-    idTypes.resize(crSet.numNodes_+1);
-    idTypes = idTypes_[nodeTypeOffset_];
+    idTypes.assign(crSet.numNodes_+1, idTypes_[nodeTypeOffset_]);
 
     int fieldSize = fieldDB[crSet.slaveFieldID_];
     weights.resize(0);
-    for(ii=0; ii<fieldSize; ++ii) weights.append(0.0);
+    for(ii=0; ii<fieldSize; ++ii) weights.push_back(0.0);
     weights[crSet.slaveOffset_] = -1.0;
     int offset = 0;
     for(ii=0; ii<crSet.numNodes_; ++ii) {
       fieldSize = fieldDB[crSet.fieldIDs_[ii]];
       for(int jj=0; jj<fieldSize; ++jj) {
-	weights.append(crSet.weights_[offset++]);
+	weights.push_back(crSet.weights_[offset++]);
       }
     }
 
     CHK_ERR( matrixGraph_->initSlaveConstraint(crSet.numNodes_+1,
-					       idTypes.dataPtr(),
-					       nodeIDs.dataPtr(),
-					       fieldIDs.dataPtr(),
+					       &idTypes[0],
+					       &nodeIDs[0],
+					       &fieldIDs[0],
 					       0,
 					       crSet.slaveOffset_,
-					       weights.dataPtr(),
+					       &weights[0],
 					       crSet.values_[0]));
   }
 
@@ -475,7 +469,7 @@ void snl_fei_tester::definePattern(ElemBlock& eb, int& patternID)
 				nodalFieldIDs[0]);
   }
   else if (numIDTypes == 1) {
-    feiArray<int> numFieldsPerID(eb.numNodesPerElement_);
+    std::vector<int> numFieldsPerID(eb.numNodesPerElement_);
 
     matrixGraph_->definePattern(patternID,
 				eb.numNodesPerElement_,
@@ -484,27 +478,26 @@ void snl_fei_tester::definePattern(ElemBlock& eb, int& patternID)
 				&flatFieldIDsArray[0]);
   }
   else {
-    feiArray<int> idTypes(eb.numNodesPerElement_+1);
-    idTypes = idTypes_[nodeTypeOffset_];
-    idTypes[idTypes.length()-1] = idTypes_[elemTypeOffset_];
-    feiArray<int> numFieldsPerID(idTypes.length());
-    feiArray<int> fieldIDs;
+    std::vector<int> idTypes(eb.numNodesPerElement_+1, idTypes_[nodeTypeOffset_]);
+    idTypes[idTypes.size()-1] = idTypes_[elemTypeOffset_];
+    std::vector<int> numFieldsPerID(idTypes.size());
+    std::vector<int> fieldIDs;
     for(i=0; i<eb.numNodesPerElement_; ++i) {
       numFieldsPerID[i] = eb.numFieldsPerNode_[i];
       for(j=0; j<eb.numFieldsPerNode_[i]; ++j) {
-	fieldIDs.append(eb.nodalFieldIDs_[i][j]);
+	fieldIDs.push_back(eb.nodalFieldIDs_[i][j]);
       }
     }
-    numFieldsPerID[idTypes.length()-1] = eb.numElemDOF_;
+    numFieldsPerID[idTypes.size()-1] = eb.numElemDOF_;
     for(i=0; i<eb.numElemDOF_; ++i) {
-      fieldIDs.append(eb.elemDOFFieldIDs_[i]);
+      fieldIDs.push_back(eb.elemDOFFieldIDs_[i]);
     }
 
     matrixGraph_->definePattern(patternID,
-				idTypes.length(),
-				idTypes.dataPtr(),
-				numFieldsPerID.dataPtr(),
-				fieldIDs.dataPtr());
+				idTypes.size(),
+				&idTypes[0],
+				&numFieldsPerID[0],
+				&fieldIDs[0]);
   }
 }
 
@@ -596,7 +589,7 @@ int snl_fei_tester::save_block_elem_soln(DataReader& data, fei::Vector* vec,
     return(-1);
   }
 
-  feiArray<double> solnData;
+  std::vector<double> solnData;
   std::vector<int> fieldList;
 
   for(int i=0; i<numLocalElems; i++) {
@@ -613,7 +606,7 @@ int snl_fei_tester::save_block_elem_soln(DataReader& data, fei::Vector* vec,
       int fieldSize = vecSpace_->getFieldSize(fieldList[j]);
 
       CHK_ERR( vec->copyOutFieldData(fieldList[j], idType,
-				     1, &ID, solnData.dataPtr()) );
+				     1, &ID, &solnData[0]) );
 
       for(int k=0; k<fieldSize; ++k) {
 	outfile << solnData[k] << " ";
@@ -671,8 +664,8 @@ int snl_fei_tester::save_multiplier_soln(DataReader& data, fei::Vector* vec,
     return(-1);
   }
 
-  feiArray<double> solnData;
-  feiArray<int> fieldList;
+  std::vector<double> solnData;
+  std::vector<int> fieldList;
 
   for(int i=0; i<numLocalCRs; i++) {
     int idType = idTypes_[constraintTypeOffset_];
@@ -685,7 +678,7 @@ int snl_fei_tester::save_multiplier_soln(DataReader& data, fei::Vector* vec,
       int globalIndex = -1;
       CHK_ERR( vecSpace_->getGlobalIndex(idType, ID, globalIndex) );
 
-      CHK_ERR( vec->copyOut(1, &globalIndex, solnData.dataPtr()) );
+      CHK_ERR( vec->copyOut(1, &globalIndex, &solnData[0]) );
 
       for(int k=0; k<1; ++k) {
 	outfile << solnData[k] << " ";

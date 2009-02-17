@@ -22,10 +22,10 @@
 //------------------------------------------------------------------------------
 NodeDatabase::NodeDatabase(std::map<int,int>* fieldDatabase,
 			   NodeCommMgr* nodeCommMgr)
-  : nodePtrs_(NULL), numNodePtrs_(0),
+  : nodePtrs_(),
     eqnNumbers_(0), eqnNodeIndices_(),
     nodeIDs_(),
-    allocated_(false), synchronized_(false),
+    synchronized_(false),
     need_to_alloc_and_sync_(true),
     fieldDB_(fieldDatabase),
     nodeCommMgr_(nodeCommMgr),
@@ -44,24 +44,15 @@ NodeDatabase::~NodeDatabase()
 //------------------------------------------------------------------------------
 void NodeDatabase::deleteMemory()
 {
-  for(int i=0; i<numNodePtrs_; ++i) {
+  for(size_t i=0; i<nodePtrs_.size(); ++i) {
     nodePool_.destroy(nodePtrs_[i]);
     nodePool_.deallocate(nodePtrs_[i], 1);
   }
-
-  delete [] nodePtrs_;
-  nodePtrs_ = NULL;
-  numNodePtrs_ = 0;
 }
 
 //------------------------------------------------------------------------------
 int NodeDatabase::getNodeWithID(GlobalID nodeID, NodeDescriptor*& node)
 {
-  if (!allocated_) {
-    FEI_CERR << "NodeDatabase::getNodeWithID: not yet allocated."<<FEI_ENDL;
-    ERReturn(-1);
-  }
-
   int index = getIndexOfID(nodeID);
   if (index < 0) {
     //FEI_CERR << "FEI NodeDatabase: node " << (int)nodeID << " not found."<<FEI_ENDL;
@@ -84,7 +75,7 @@ int NodeDatabase::getNodeWithNumber(int nodeNumber, NodeDescriptor*& node)
     //array of nodes...
     int index = nodeNumber - firstLocalNodeNumber_;
 
-    while(index < numNodePtrs_) {
+    while(index < (int)nodePtrs_.size()) {
       if (nodePtrs_[index]->getNodeNumber() == nodeNumber) {
 	node = nodePtrs_[index];
 	return(0);
@@ -94,7 +85,7 @@ int NodeDatabase::getNodeWithNumber(int nodeNumber, NodeDescriptor*& node)
   }
   else {
     //since it's not a local nodeNumber, we'll search all of our nodes...
-    for(int i=0; i<numNodePtrs_; i++) {
+    for(size_t i=0; i<nodePtrs_.size(); i++) {
       int nodeNum = nodePtrs_[i]->getNodeNumber();
       if (nodeNum == nodeNumber) {
 	node = nodePtrs_[i];
@@ -149,7 +140,6 @@ int NodeDatabase::getNodeAtIndex(int i, NodeDescriptor*& node)
 {
   //For performance reasons, we will assume that the caller is providing a
   //valid in-range index, and will forego the safety check:
-  //if (!allocated_ || i < 0 || i >= numNodePtrs_) ERReturn(-1);
 
   node = nodePtrs_[i];
   return(0);
@@ -158,11 +148,9 @@ int NodeDatabase::getNodeAtIndex(int i, NodeDescriptor*& node)
 //------------------------------------------------------------------------------
 int NodeDatabase::countLocalNodalEqns(int localRank)
 {
-  if (!allocated_) return(-1);
-
   int numEqns = 0;
 
-  for(int i=0; i<numNodePtrs_; i++) {
+  for(size_t i=0; i<nodePtrs_.size(); i++) {
     NodeDescriptor* node = nodePtrs_[i];
 
     if (node->getOwnerProc() == localRank) {
@@ -184,7 +172,7 @@ int NodeDatabase::countLocalNodalEqns(int localRank)
 int NodeDatabase::countLocalNodeDescriptors(int localRank)
 {
   int numLocal = 0;
-  for(int i=0; i<numNodePtrs_; i++) {
+  for(size_t i=0; i<nodePtrs_.size(); i++) {
     if (nodePtrs_[i]->getOwnerProc() == localRank) numLocal++;
   }
 
@@ -205,11 +193,24 @@ int NodeDatabase::getIndexOfID(GlobalID nodeID)
 //------------------------------------------------------------------------------
 int NodeDatabase::initNodeID(GlobalID nodeID)
 {
-  if (allocated_) need_to_alloc_and_sync_ = true;
+  static NodeDescriptor dummyNode;
 
-  //insert an index of 0 for now. A meaningful index will be added
-  //during allocateNodeDescriptors().
-  nodeIDs_.insert(std::make_pair(nodeID,0));
+  int index = nodeIDs_.size();
+  std::map<GlobalID,int>::iterator
+    iter = nodeIDs_.lower_bound(nodeID);
+
+  if (iter == nodeIDs_.end() || iter->first != nodeID) {
+    nodeIDs_.insert(iter, std::make_pair(nodeID,index));
+
+    NodeDescriptor* nodePtr = nodePool_.allocate(1);
+    nodePool_.construct(nodePtr, dummyNode);
+
+    nodePtr->setGlobalNodeID(nodeID);
+
+    nodePtrs_.push_back(nodePtr);
+
+    need_to_alloc_and_sync_ = true;
+  }
 
   return(0);
 }
@@ -217,81 +218,11 @@ int NodeDatabase::initNodeID(GlobalID nodeID)
 //------------------------------------------------------------------------------
 int NodeDatabase::initNodeIDs(GlobalID* nodeIDs, int numNodes)
 {
-  if (allocated_) need_to_alloc_and_sync_ = true;
-
-  for(int i=0; i<numNodes; i++) {
-    nodeIDs_.insert(std::make_pair(nodeIDs[i],0));
-  }
-
-  return(0);
-}
-
-//------------------------------------------------------------------------------
-int NodeDatabase::allocateNodeDescriptors()
-{
-  //
-  //Should we store the NodeDescriptors as an array of NodeDescriptors, or as
-  //an array of pointers-to-NodeDescriptors? The latter approach is more
-  //flexible (the pointers can be re-arranged if necessary, for optimizing
-  //various look-ups...). For now, I'll store an array of
-  //pointers-to-NodeDescriptor.
-  //
-
   static NodeDescriptor dummyNode;
 
-  NodeDescriptor** newNodePtrs = nodePtrs_;
-  int nodeIDs_size = nodeIDs_.size();
-  if (numNodePtrs_ != nodeIDs_size) {
-    newNodePtrs = new NodeDescriptor*[nodeIDs_size];
-    for(int i=0; i<nodeIDs_size; ++i) newNodePtrs[i] = NULL;
-    if (numNodePtrs_ > 0) {
-      for(int j=0; j<numNodePtrs_; ++j) {
-	NodeDescriptor* nodePtr = nodePtrs_[j];
-	GlobalID nodeID = nodePtr->getGlobalNodeID();
-        std::map<GlobalID,int>::iterator
-          iter = nodeIDs_.find(nodeID);
-        if (iter == nodeIDs_.end()) {
-          ERReturn(-1);
-        }
-        int index = iter->second;
-        if (index >= 0) newNodePtrs[index] = nodePtr;
-      }
-    }
+  for(int i=0; i<numNodes; i++) {
+    initNodeID(nodeIDs[i]);
   }
-  else {
-    allocated_ = true;
-    synchronized_ = false;
-    return(0);
-  }
-
-  std::map<GlobalID,int>::iterator
-    n_end = nodeIDs_.end(),
-    n_iter = nodeIDs_.begin();
-
-  for(int i=0; i<nodeIDs_size; ++i, ++n_iter) {
-    if (n_iter == n_end) {
-      ERReturn(-1);
-    }
-
-    NodeDescriptor*& nodePtr = newNodePtrs[i];
-    if (nodePtr == NULL) {
-      nodePtr = nodePool_.allocate(1);
-      nodePool_.construct(nodePtr, dummyNode);
-    }
-    else {
-      continue;
-    }
-
-    nodePtr->setGlobalNodeID(n_iter->first);
-    n_iter->second = i;
-  }
-
-  numNodePtrs_ = nodeIDs_size;
-  delete [] nodePtrs_;
-  nodePtrs_ = newNodePtrs;
-
-  allocated_ = true;
-  synchronized_ = false;
 
   return(0);
 }
@@ -302,10 +233,8 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
 			      int localRank,
 			      MPI_Comm comm)
 {
-  if (!allocated_) ERReturn(-1);
-
-  eqnNumbers_.reserve(numNodePtrs_);
-  eqnNodeIndices_.reserve(numNodePtrs_);
+  eqnNumbers_.reserve(nodePtrs_.size());
+  eqnNodeIndices_.reserve(nodePtrs_.size());
 
   eqnNumbers_.resize(0);
   eqnNodeIndices_.resize(0);
@@ -315,8 +244,11 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
   int numEqns = 0;
   
   numLocalNodes_ = 0;
-  int i;
-  for(i=0; i<numNodePtrs_; i++) {
+  std::map<GlobalID,int>::iterator
+    iter = nodeIDs_.begin(), iter_end = nodeIDs_.end();
+
+  for(; iter!=iter_end; ++iter) {
+    int i = iter->second;
     NodeDescriptor* node = NULL;
     CHK_ERR( getNodeAtIndex(i, node) );
 
@@ -365,7 +297,7 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
   //eqnNumbers_ and eqnNodeIndices_ lists, for future lookups...
 
   int numSharedNodes = nodeCommMgr_->getNumSharedNodes();
-  for(i=0; i<numSharedNodes; i++) {
+  for(int i=0; i<numSharedNodes; i++) {
     NodeDescriptor& node = nodeCommMgr_->getSharedNodeAtIndex(i);
     GlobalID nodeID = node.getGlobalNodeID();
     int index = getIndexOfID(nodeID);

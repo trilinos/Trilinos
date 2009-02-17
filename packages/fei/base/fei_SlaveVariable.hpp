@@ -18,8 +18,8 @@ class SlaveVariable {
   /** Default constructor */
   SlaveVariable()
     : nodeID_(-1), fieldID_(-1), offset_(0){
-    masterNodes_ = new feiArray<GlobalID>; masterFields_ = new feiArray<int>;
-    weights_ = new feiArray<double>;
+    masterNodes_ = new std::vector<GlobalID>; masterFields_ = new std::vector<int>;
+    weights_ = new std::vector<double>;
   }
 
   /** Destructor */
@@ -34,27 +34,27 @@ class SlaveVariable {
   int getFieldOffset() {return(offset_);}
   void setFieldOffset(int foff) {offset_ = foff;}
 
-  const feiArray<GlobalID>* getMasterNodeIDs() {return(masterNodes_);}
-  const feiArray<int>* getMasterFields() {return(masterFields_);}
-  const feiArray<double>* getWeights() {return(weights_);}
+  const std::vector<GlobalID>* getMasterNodeIDs() {return(masterNodes_);}
+  const std::vector<int>* getMasterFields() {return(masterFields_);}
+  const std::vector<double>* getWeights() {return(weights_);}
 
-  int addMasterNodeID(GlobalID masterNode) 
-    {masterNodes_->append(masterNode); return(0);}
+  void addMasterNodeID(GlobalID masterNode) 
+    {masterNodes_->push_back(masterNode);}
 
-  int addMasterField(int masterField)
-    {masterFields_->append(masterField); return(0);}
+  void addMasterField(int masterField)
+    {masterFields_->push_back(masterField);}
 
-  int addWeight(double weight)
-    {weights_->append(weight); return(0);}
+  void addWeight(double weight)
+    {weights_->push_back(weight);}
 
  private:
   GlobalID nodeID_;
   int fieldID_;
   int offset_;
 
-  feiArray<GlobalID>* masterNodes_;
-  feiArray<int>* masterFields_;
-  feiArray<double>* weights_;
+  std::vector<GlobalID>* masterNodes_;
+  std::vector<int>* masterFields_;
+  std::vector<double>* weights_;
 };
 
 #endif

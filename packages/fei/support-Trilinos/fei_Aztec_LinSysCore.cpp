@@ -6,7 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#include "fei_sstream.hpp"
+#include <fei_trilinos_macros.hpp>
+#include <fei_sstream.hpp>
 
 #ifdef HAVE_FEI_AZTECOO
 

@@ -210,34 +210,31 @@ int test_VectorSpace::test1()
     ERReturn(-1);
   }
 
-  feiArray<int> globalIndices(ids.size()*numDOFsPerID);
+  std::vector<int> globalIndices(ids.size()*numDOFsPerID);
 
   CHK_ERR( vectorSpace.getGlobalIndices(ids.size(),
 					&(ids[0]),
 					idTypes[0], fieldIDs[0],
-					globalIndices.dataPtr() ));
+					&globalIndices[0] ));
 
-  feiArray<int> idFieldIDs(ids.size());
-  idFieldIDs = fieldIDs[0];
-  feiArray<int> idIDTypes(ids.size());
-  idIDTypes = idTypes[0];
+  std::vector<int> idFieldIDs(ids.size(), fieldIDs[1]);
+  std::vector<int> idIDTypes(ids.size(), idTypes[0]);
 
-  idFieldIDs = fieldIDs[1];
   CHK_ERR( vectorSpace.getGlobalIndices(ids.size(),
 					&ids[0],
 					idTypes[0], fieldIDs[0],
-					globalIndices.dataPtr() ));
+					&globalIndices[0] ));
 
   CHK_ERR( vectorSpace.getGlobalBlkIndices(ids.size(),
 					   &ids[0],
 					   idTypes[0],
-					   globalIndices.dataPtr() ));
+					   &globalIndices[0] ));
 
   CHK_ERR( vectorSpace.getGlobalIndices(ids.size(),
 					&ids[0],
-					idIDTypes.dataPtr(),
-					idFieldIDs.dataPtr(),
-					globalIndices.dataPtr()) );
+					&idIDTypes[0],
+					&idFieldIDs[0],
+					&globalIndices[0]) );
 
   unsigned numFields = vectorSpace.getNumFields();
   if (numFields != fieldIDs.size()) {

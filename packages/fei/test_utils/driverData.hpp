@@ -11,7 +11,6 @@
 
 #include <fei_macros.hpp>
 #include <fei_defs.h>
-#include <feiArray.hpp>
 
 class initElem {
  public:
@@ -126,13 +125,13 @@ class sharedNodes {
 
 class parameters {
  public:
-  parameters() : paramList(0,1) {}
+  parameters() : paramList() {}
   ~parameters()
     {
-      for(int i=0; i<paramList.length(); ++i) delete [] paramList[i];
+      for(size_t i=0; i<paramList.size(); ++i) delete [] paramList[i];
     }
 
-  feiArray<char*> paramList;
+  std::vector<char*> paramList;
 };
 
 class setIDLists {
@@ -172,7 +171,7 @@ class driverData {
   */
   int call_fei_method(const char* method, FEI* fei);
 
-  feiArray<const char*>& get_methodNames() { return( methodNames ); }
+  std::vector<const char*>& get_methodNames() { return( methodNames ); }
 
  private:
   int readData(FEI_ISTREAM* instr, char* keyword);
@@ -184,7 +183,7 @@ class driverData {
   int readData(FEI_ISTREAM* instr, double& val);
   int appendName(const char* name);
 
-  feiArray<const char*> methodNames;
+  std::vector<const char*> methodNames;
   char* temp_;
   int tempLen_;
 
@@ -200,16 +199,16 @@ class driverData {
   int** initElemBlock_fieldIDs_;
   int* initElemBlock_elemDofFieldIDs_;
 
-  feiArray<initElem*> initElems_;
+  std::vector<initElem*> initElems_;
   int initElemCounter_;
 
-  feiArray<sumInElem*> sumInElems_;
+  std::vector<sumInElem*> sumInElems_;
   int sumInElemCounter_;
 
-  feiArray<sumInElem*> sumInElemMatrix_;
+  std::vector<sumInElem*> sumInElemMatrix_;
   int sumInElemMatrixCounter_;
 
-  feiArray<sumInElem*> sumInElemRHS_;
+  std::vector<sumInElem*> sumInElemRHS_;
   int sumInElemRHSCounter_;
 
   double resetSystem_;
@@ -217,31 +216,31 @@ class driverData {
   double resetRHSVector_;
   double resetInitialGuess_;
 
-  feiArray<nodeBC*> loadNodeBCs_;
+  std::vector<nodeBC*> loadNodeBCs_;
   int loadNodeBCsCounter_;
 
-  feiArray<initCR*> initCRMult_;
+  std::vector<initCR*> initCRMult_;
   int initCRMultCounter_;
 
-  feiArray<loadCR*> loadCRMult_;
+  std::vector<loadCR*> loadCRMult_;
   int loadCRMultCounter_;
 
-  feiArray<sharedNodes*> initSharedNodes_;
+  std::vector<sharedNodes*> initSharedNodes_;
   int initSharedNodesCounter_;
 
-  feiArray<parameters*> parameters_;
+  std::vector<parameters*> parameters_;
   int parametersCounter_;
 
-  feiArray<setIDLists*> setIDLists_;
+  std::vector<setIDLists*> setIDLists_;
   int setIDListsCounter_;
 
-  feiArray<int> setCurrentMatrix_;
+  std::vector<int> setCurrentMatrix_;
   int setCurrentMatrixCounter_;
 
-  feiArray<int> setCurrentRHS_;
+  std::vector<int> setCurrentRHS_;
   int setCurrentRHSCounter_;
 
-  feiArray<putBlockFieldNodeSolution*> putBlockFieldNodeSolution_;
+  std::vector<putBlockFieldNodeSolution*> putBlockFieldNodeSolution_;
   int putBlockFieldNodeSolutionCounter_;
 };
 

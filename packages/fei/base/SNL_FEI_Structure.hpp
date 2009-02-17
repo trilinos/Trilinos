@@ -124,9 +124,9 @@ class SNL_FEI_Structure : public Lookup {
        int len = fieldDatabase_->size();
        workarray_.resize(len*2);
        fei::copyToArrays<std::map<int,int> >(*fieldDatabase_, len,
-						 workarray_.dataPtr(),
-						 workarray_.dataPtr()+len);
-       return( workarray_.dataPtr() );
+						 &workarray_[0],
+						 &workarray_[0]+len);
+       return( &workarray_[0] );
      }
 
    /** implementation of Lookup::getFieldSizesPtr */
@@ -135,9 +135,9 @@ class SNL_FEI_Structure : public Lookup {
        int len = fieldDatabase_->size();
        workarray_.resize(len*2);
        fei::copyToArrays<std::map<int,int> >(*fieldDatabase_, len,
-						 workarray_.dataPtr(),
-						 workarray_.dataPtr()+len);
-       return( workarray_.dataPtr()+len );
+						 &workarray_[0],
+						 &workarray_[0]+len);
+       return( &workarray_[0]+len );
      }
 
    /** implementation of Lookup::getNumFields */
@@ -317,9 +317,9 @@ class SNL_FEI_Structure : public Lookup {
    std::map<GlobalID,int>& getActiveNodeIDList()
      { return( nodeDatabase_->getNodeIDs() ); }
 
-   feiArray<int>& getGlobalNodeOffsets() {return(globalNodeOffsets_);}
-   feiArray<int>& getGlobalEqnOffsets() {return(globalEqnOffsets_);}
-   feiArray<int>& getGlobalBlkEqnOffsets() {return(globalBlkEqnOffsets_);}
+   std::vector<int>& getGlobalNodeOffsets() {return(globalNodeOffsets_);}
+   std::vector<int>& getGlobalEqnOffsets() {return(globalEqnOffsets_);}
+   std::vector<int>& getGlobalBlkEqnOffsets() {return(globalBlkEqnOffsets_);}
 
    NodeCommMgr& getNodeCommMgr() {return(*nodeCommMgr_);}
    EqnCommMgr&  getEqnCommMgr()  {return(*eqnCommMgr_ );}
@@ -380,7 +380,7 @@ class SNL_FEI_Structure : public Lookup {
        return( returncode );
      }
 
-   int addSlaveVariable(SlaveVariable* svar) {slaveVars_->append(svar);return(0);}
+   void addSlaveVariable(SlaveVariable* svar) {slaveVars_->push_back(svar);}
 
    int calculateSlaveEqns(MPI_Comm comm);
 
@@ -435,7 +435,7 @@ class SNL_FEI_Structure : public Lookup {
    */
    int translateFromReducedEqn(int reducedEqn);
 
-   /** Given a slave equation, provide an feiArray pointer containing the
+   /** Given a slave equation, fill a std::vector with the
        equation-numbers upon which the slave depends.
        @param slaveEqn
        @param masterEqns Output. NULL if slaveEqn is not a slave equation.
@@ -443,7 +443,7 @@ class SNL_FEI_Structure : public Lookup {
    */
    int getMasterEqnNumbers(int slaveEqn, std::vector<int>*& masterEqns);
 
-   /** Given a slave equation, provide an feiArray pointer containing the
+   /** Given a slave equation, fill a std::vector with the
        coefficients of the equations upon which the slave depends.
        @param slaveEqn
        @param masterCoefs Output. NULL if slaveEqn is not a slave equation.
@@ -475,13 +475,13 @@ class SNL_FEI_Structure : public Lookup {
 
    int getNumLocalReducedEqns() { return( numLocalReducedRows_ ); }
 
-   int getMatrixRowLengths(feiArray<int>& rowLengths);
-   int getMatrixStructure(int** colIndices, feiArray<int>& rowLengths);
+   int getMatrixRowLengths(std::vector<int>& rowLengths);
+   int getMatrixStructure(int** colIndices, std::vector<int>& rowLengths);
 
-   int getMatrixStructure(int** ptColIndices, feiArray<int>& ptRowLengths,
+   int getMatrixStructure(int** ptColIndices, std::vector<int>& ptRowLengths,
 			  int** blkColIndices, int* blkIndices_1D,
-			  feiArray<int>& blkRowLengths,
-			  feiArray<int>& numPtRowsPerBlkRow);
+			  std::vector<int>& blkRowLengths,
+			  std::vector<int>& numPtRowsPerBlkRow);
 
    static int gatherSlaveEqns(MPI_Comm comm,
 			      EqnCommMgr* eqnCommMgr,
@@ -612,21 +612,21 @@ class SNL_FEI_Structure : public Lookup {
    int localProc_, masterProc_, numProcs_;
 
    std::map<int,int>* fieldDatabase_;
-   feiArray<int> workarray_;
+   std::vector<int> workarray_;
 
    std::vector<GlobalID> blockIDs_;
-   feiArray<BlockDescriptor*> blocks_;
-   feiArray<ConnectivityTable*> connTables_;
+   std::vector<BlockDescriptor*> blocks_;
+   std::vector<ConnectivityTable*> connTables_;
 
    NodeDatabase* nodeDatabase_;
 
    bool activeNodesInitialized_;
 
-   feiArray<int> globalNodeOffsets_;
-   feiArray<int> globalEqnOffsets_;
-   feiArray<int> globalBlkEqnOffsets_;
+   std::vector<int> globalNodeOffsets_;
+   std::vector<int> globalEqnOffsets_;
+   std::vector<int> globalBlkEqnOffsets_;
 
-   feiArray<SlaveVariable*>* slaveVars_;
+   std::vector<SlaveVariable*>* slaveVars_;
    EqnBuffer* slaveEqns_;
    std::vector<int>* slvEqnNumbers_;
    int numSlvs_, lowestSlv_, highestSlv_;
@@ -651,7 +651,7 @@ class SNL_FEI_Structure : public Lookup {
    fei::FillableMat *Kid_, *Kdi_, *Kdd_;
    fei::CSRMat csrD, csrKid, csrKdi, csrKdd, tmpMat1_, tmpMat2_;
    int reducedEqnCounter_, reducedRHSCounter_;
-   feiArray<bool> rSlave_, cSlave_;
+   std::vector<int> rSlave_, cSlave_;
    std::vector<NodeDescriptor*> work_nodePtrs_;
 
    bool structureFinalized_;
@@ -673,7 +673,7 @@ class SNL_FEI_Structure : public Lookup {
    fei::ctg_set<int>* sysBlkMatIndices_;
    bool matIndicesDestroyed_;
 
-   feiArray<int> workSpace_, workSpace2_;
+   std::vector<int> workSpace_;
 
    snl_fei::PointBlockMap* blkEqnMapper_;
 

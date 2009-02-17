@@ -39,7 +39,7 @@ public:
   //int parameters:
   //for setting generic argc/argv style parameters.
   
-  int parameters(int numParams, char** params);
+  int parameters(int numParams, const char*const* params);
   
   int setLookup(Lookup& lookup);
   

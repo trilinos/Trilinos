@@ -522,4 +522,5 @@ July 7 2005: version 2.14.00
   - Removed the *CoefAccessPattern* functions from the 'old' FEI interface.
     These methods were ill-conceived and overly cumbersome, and not used by
     any known customers.
+  - Removed the feiArray class. Using std::vector instead.
 

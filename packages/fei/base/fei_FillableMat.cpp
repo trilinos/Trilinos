@@ -33,9 +33,10 @@ FillableMat::FillableMat(EqnBuffer& eqnbuf)
     fei::CSVec* row_vec = eqns[i];
     int rowlen = row_vec->size();
     int* indices = &(row_vec->indices()[0]);
+    double* coefs = &(row_vec->coefs()[0]);
 
     for(int j=0; j<rowlen; ++j) {
-      putCoef(row, indices[j], 0.0);
+      putCoef(row, indices[j], coefs[j]);
     }
   }
 }

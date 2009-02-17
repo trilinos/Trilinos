@@ -40,20 +40,20 @@ FEI_Implementation::FEI_Implementation(fei::SharedPtr<LibraryWrapper> libWrapper
                                        MPI_Comm comm, int masterRank)
  : wrapper_(libWrapper),
    linSysCore_(NULL),
-   lscArray_(0, 1),
+   lscArray_(),
    haveLinSysCore_(false),
    haveFEData_(false),
    problemStructure_(NULL),
    filter_(NULL),
    numInternalFEIs_(0),
    internalFEIsAllocated_(false),
-   matrixIDs_(0, 8),
-   numRHSIDs_(0, 8),
-   rhsIDs_(0, 8),
+   matrixIDs_(),
+   numRHSIDs_(),
+   rhsIDs_(),
    IDsAllocated_(false),
-   matScalars_(0, 8),
+   matScalars_(),
    matScalarsSet_(false),
-   rhsScalars_(0, 8),
+   rhsScalars_(),
    rhsScalarsSet_(false),
    index_soln_filter_(0),
    index_current_filter_(0),
@@ -105,7 +105,7 @@ FEI_Implementation::FEI_Implementation(fei::SharedPtr<LibraryWrapper> libWrapper
    haveLinSysCore_ = wrapper_->haveLinearSystemCore();
    if (haveLinSysCore_) {
      linSysCore_ = wrapper_->getLinearSystemCore();
-     lscArray_.append(linSysCore_);
+     lscArray_.push_back(linSysCore_);
    }
 
    numInternalFEIs_ = 1;
@@ -177,7 +177,7 @@ FEI_Implementation::~FEI_Implementation()
 void FEI_Implementation::deleteIDs()
 {
   matrixIDs_.resize(0);
-  for(int i=0; i<rhsIDs_.length(); i++) {
+  for(size_t i=0; i<rhsIDs_.size(); i++) {
     delete [] rhsIDs_[i];
   }
   rhsIDs_.resize(0);
@@ -187,7 +187,7 @@ void FEI_Implementation::deleteIDs()
 //------------------------------------------------------------------------------
 void FEI_Implementation::deleteRHSScalars()
 {
-  for(int i=0; i<rhsScalars_.length(); i++) {
+  for(size_t i=0; i<rhsScalars_.size(); i++) {
     delete [] rhsScalars_[i];
   }
   rhsScalars_.resize(0);
@@ -274,7 +274,7 @@ int FEI_Implementation::setSolveType(int solveType)
   solveType_ = solveType;
 
   if (solveType_ == FEI_SINGLE_SYSTEM) {
-    if (matrixIDs_.length() > 1) {
+    if (matrixIDs_.size() > 1) {
       messageAbort("setSolveType: solve-type is FEI_SINGLE_SYSTEM, but setIDLists() has been called with numMatrices > 1.");
     }
   }
@@ -323,7 +323,7 @@ int FEI_Implementation::setIDLists(int numMatrices, const int* matrixIDs,
 
    matrixIDs_.resize(myNumMatrices);
 
-   if (rhsScalars_.length() != 0) deleteRHSScalars();
+   if (rhsScalars_.size() != 0) deleteRHSScalars();
 
    numInternalFEIs_ = myNumMatrices;
 
@@ -741,8 +741,10 @@ int FEI_Implementation::setMatScalars(int numScalars,
                                       const int* IDs, const double* scalars)
 {
    for(int i=0; i<numScalars; i++){
-      int index = matrixIDs_.find(IDs[i]);
-      if (index>=0) {
+      std::vector<int>::iterator iter =
+          std::find(matrixIDs_.begin(), matrixIDs_.end(), IDs[i]);
+      if (iter != matrixIDs_.end()) {
+         int index = iter - matrixIDs_.begin();
          matScalars_[index] = scalars[i];
       }
       else {
@@ -766,8 +768,7 @@ int FEI_Implementation::setRHSScalars(int numScalars,
      bool found = false;
 
      for(int j=0; j<numInternalFEIs_; j++){
-         int index = snl_fei::searchList(IDs[i], rhsIDs_[j],
-						numRHSIDs_[j]);
+         int index = snl_fei::searchList(IDs[i], rhsIDs_[j], numRHSIDs_[j]);
          if (index>=0) {
              rhsScalars_[j][index] = scalars[i];
              found = true;
@@ -1470,7 +1471,7 @@ int FEI_Implementation::allocateInternalFEIs(){
 
    matScalars_.resize(numInternalFEIs_);
 
-   if (rhsScalars_.length() != 0) deleteRHSScalars();
+   if (rhsScalars_.size() != 0) deleteRHSScalars();
 
    rhsScalars_.resize(numInternalFEIs_);
 
@@ -1512,7 +1513,7 @@ int FEI_Implementation::allocateInternalFEIs(){
 	    lsc->setNumRHSVectors(numRHSIDs_[i], rhsIDs_[i]);
 	  }
 
-	  lscArray_.append(lsc);
+	  lscArray_.push_back(lsc);
 	}
       }
 

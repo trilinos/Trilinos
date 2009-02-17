@@ -12,7 +12,6 @@
 
 #include <test_utils/test_FEI_Impl.hpp>
 
-#include <feiArray.hpp>
 #include <fei_FEI_Impl.hpp>
 #ifdef HAVE_FEI_AZTECOO
 #include <fei_Aztec_LinSysCore.hpp>
@@ -110,16 +109,14 @@ int test_FEI_Impl::test1()
 				&(testdata->fieldIDs[0])) );
 
   int numNodesPerElem = testdata->ids.size();
-  feiArray<int> numFieldsPerNode(numNodesPerElem);
-  numFieldsPerNode = 1;
-  feiArray<int*>nodalFieldIDs(numNodesPerElem);
-  nodalFieldIDs = &(testdata->fieldIDs[0]);
+  std::vector<int> numFieldsPerNode(numNodesPerElem, 1);
+  std::vector<int*>nodalFieldIDs(numNodesPerElem, &(testdata->fieldIDs[0]));
 
   CHK_ERR( fei->initElemBlock(0, //blockID
 				   1, //numElements
 				   numNodesPerElem,
-				   numFieldsPerNode.dataPtr(),
-				   nodalFieldIDs.dataPtr(),
+				   &numFieldsPerNode[0],
+				   &nodalFieldIDs[0],
 				   0, //numElemDofFieldsPerElement
 				   NULL, //elemDofFieldIDs
 				   0)); //interleaveStrategy
@@ -128,7 +125,7 @@ int test_FEI_Impl::test1()
 			      0, //elemID
 			      &(testdata->ids[0])) );
 
-  feiArray<int*> sharingProcs2D(testdata->sharedIDs.size());
+  std::vector<int*> sharingProcs2D(testdata->sharedIDs.size());
   int offset = 0;
   for(int i=0; i<(int)testdata->numSharingProcsPerID.size(); ++i) {
     sharingProcs2D[i] = &(testdata->sharingProcs[offset]);
@@ -139,13 +136,12 @@ int test_FEI_Impl::test1()
     CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
 				     &(testdata->sharedIDs[0]),
 				     &(testdata->numSharingProcsPerID[0]),
-				     sharingProcs2D.dataPtr()) );
+				     &sharingProcs2D[0]) );
   }
 
   CHK_ERR( fei->initComplete() );
 
-  feiArray<double> rhsData(testdata->ids.size());
-  rhsData = 1.0;
+  std::vector<double> rhsData(testdata->ids.size(), 1.0);
 
   double one = 1.0;
   CHK_ERR( fei->setMatScalars(1, &(testdata->ids[0]), &one) );
@@ -157,7 +153,7 @@ int test_FEI_Impl::test1()
   CHK_ERR( fei->putIntoRHS(FEI_NODE, testdata->fieldIDs[0],
 			   testdata->ids.size(),
 			   &(testdata->ids[0]),
-			   rhsData.dataPtr()) );
+			   &rhsData[0]) );
 
   int numBCNodes = 2;
   GlobalID* BCNodeIDs = &(testdata->ids[0]);
@@ -249,16 +245,14 @@ int test_FEI_Impl::test2()
 				&(testdata->fieldIDs[0])) );
 
   int numNodesPerElem = testdata->ids.size();
-  feiArray<int> numFieldsPerNode(numNodesPerElem);
-  numFieldsPerNode = 1;
-  feiArray<int*>nodalFieldIDs(numNodesPerElem);
-  nodalFieldIDs = &(testdata->fieldIDs[0]);
+  std::vector<int> numFieldsPerNode(numNodesPerElem, 1);
+  std::vector<int*>nodalFieldIDs(numNodesPerElem, &(testdata->fieldIDs[0]));
 
   CHK_ERR( fei->initElemBlock(0, //blockID
 				   1, //numElements
 				   numNodesPerElem,
-				   numFieldsPerNode.dataPtr(),
-				   nodalFieldIDs.dataPtr(),
+				   &numFieldsPerNode[0],
+				   &nodalFieldIDs[0],
 				   0, //numElemDofFieldsPerElement
 				   NULL, //elemDofFieldIDs
 				   0)); //interleaveStrategy
@@ -267,7 +261,7 @@ int test_FEI_Impl::test2()
 			      0, //elemID
 			      &(testdata->ids[0])) );
 
-  feiArray<int*> sharingProcs2D(testdata->sharedIDs.size());
+  std::vector<int*> sharingProcs2D(testdata->sharedIDs.size());
   int i, offset = 0;
   for(i=0; i<(int)testdata->numSharingProcsPerID.size(); ++i) {
     sharingProcs2D[i] = &(testdata->sharingProcs[offset]);
@@ -278,13 +272,12 @@ int test_FEI_Impl::test2()
     CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
 				     &(testdata->sharedIDs[0]),
 				     &(testdata->numSharingProcsPerID[0]),
-				     sharingProcs2D.dataPtr()) );
+				     &sharingProcs2D[0]) );
   }
 
   CHK_ERR( fei->initComplete() );
 
-  feiArray<double> rhsData(testdata->ids.size());
-  rhsData = 1.0;
+  std::vector<double> rhsData(testdata->ids.size(), 1.0);
 
   double one = 1.0;
   CHK_ERR( fei->setMatScalars(1, &(testdata->ids[0]), &one) );

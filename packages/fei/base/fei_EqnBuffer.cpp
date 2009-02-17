@@ -11,7 +11,6 @@
 #include <fei_EqnBuffer.hpp>
 #include <fei_CSVec.hpp>
 
-#include <feiArray.hpp>
 #include <fei_TemplateUtils.hpp>
 
 //==============================================================================
@@ -22,11 +21,10 @@ EqnBuffer::EqnBuffer()
    eqns_(),
    indices_union_(0),
    numRHSs_(1),
-   rhsCoefs_(0,8000),
+   rhsCoefs_(),
    setNumRHSsCalled_(false),
    rhsCoefsAllocated_(false),
-   dummyCoefs_(0, 32),
-   dummyCoefsLen_(0)
+   dummyCoefs_()
 {
 }
 
@@ -38,11 +36,10 @@ EqnBuffer::EqnBuffer(const EqnBuffer& src)
    eqns_(),
    indices_union_(0),
    numRHSs_(1),
-   rhsCoefs_(0,8000),
+   rhsCoefs_(),
    setNumRHSsCalled_(false),
    rhsCoefsAllocated_(false),
-   dummyCoefs_(0, 32),
-   dummyCoefsLen_(0)
+   dummyCoefs_()
 {
   *this = src;
 }
@@ -69,9 +66,9 @@ EqnBuffer& EqnBuffer::operator=(const EqnBuffer& src)
       eqns_[i] = new fei::CSVec(*row);
 
       //since we allow for multiple rhs's, rhsCoefs_ is a table too...
-      feiArray<double>* rhsCoefs = src.rhsCoefs_[i];
+      std::vector<double>* rhsCoefs = src.rhsCoefs_[i];
 
-      rhsCoefs_.append( new feiArray<double>(*rhsCoefs) );
+      rhsCoefs_.push_back( new std::vector<double>(*rhsCoefs) );
    }
 
    return(*this);
@@ -101,7 +98,7 @@ void EqnBuffer::deleteMemory() {
    }
 
    eqns_.clear();
-   rhsCoefs_.reAllocate(0);
+   rhsCoefs_.clear();
    numRHSs_ = 0;
 }
 
@@ -121,10 +118,8 @@ void EqnBuffer::setNumRHSs(int n) {
    if (getNumEqns() <= 0) return;
 
    for(int i=0; i<getNumEqns(); i++) {
-     feiArray<double>* rhsCoefs = rhsCoefs_[i];
-     rhsCoefs->resize(numRHSs_);
-
-     (*rhsCoefs) = 0.0; // uses feiArray operator= for initialization
+     std::vector<double>* rhsCoefs = rhsCoefs_[i];
+     rhsCoefs->assign(numRHSs_, 0.0);
    }
 }
 
@@ -140,9 +135,9 @@ int EqnBuffer::addRHS(int eqnNumber, int rhsIndex, double value,
       return(-1);
    }
 
-   feiArray<double>* rhsCoefs = rhsCoefs_[index];
+   std::vector<double>* rhsCoefs = rhsCoefs_[index];
 
-   if ( rhsCoefs->length() <= rhsIndex) setNumRHSs(rhsIndex+1);
+   if ( (int)rhsCoefs->size() <= rhsIndex) setNumRHSs(rhsIndex+1);
 
    if (accumulate==true) (*rhsCoefs)[rhsIndex] += value;
    else (*rhsCoefs)[rhsIndex] = value;
@@ -279,7 +274,7 @@ int EqnBuffer::addEqns(EqnBuffer& inputEqns, bool accumulate)
   fei::CSVec** eqs = &(inputEqns.eqns()[0]);
 
   int numRHSs = inputEqns.getNumRHSs();
-  feiArray<double>** rhsCoefs = inputEqns.rhsCoefsPtr()->dataPtr();
+  std::vector<double>** rhsCoefs = &((*(inputEqns.rhsCoefsPtr()))[0]);
 
   for(int i=0; i<inputEqns.getNumEqns(); i++) {
     std::vector<int>& indices_i  = eqs[i]->indices();
@@ -312,9 +307,8 @@ int EqnBuffer::insertNewEqn(int eqn, int insertPoint)
 
     if (numRHSs_ <= 0) return(-1);
 
-    feiArray<double>* newRhsCoefRow = new feiArray<double>(numRHSs_, 1);
-    *newRhsCoefRow = 0.0;
-    rhsCoefs_.insert(newRhsCoefRow, insertPoint);
+    std::vector<double>* newRhsCoefRow = new std::vector<double>(numRHSs_, 0.0);
+    rhsCoefs_.insert(rhsCoefs_.begin()+insertPoint, newRhsCoefRow);
   }
   catch (std::runtime_error& exc) {
     FEI_CERR << exc.what() << FEI_ENDL;
@@ -360,16 +354,14 @@ void EqnBuffer::resetCoefs() {
 //==============================================================================
 int EqnBuffer::addIndices(int eqnNumber, const int* indices, int len)
 {
-   int err, insertPoint = -1;
+   int err = 0, insertPoint = -1;
    int index = snl_fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
 
    //(we're adding dummy coefs as well, even though there are no
    //incoming coefs at this point).
 
-   if (dummyCoefsLen_ < len) {
-     dummyCoefs_.resize(len);
-     dummyCoefs_ = 0.0;
-     dummyCoefsLen_ = len;
+   if ((int)dummyCoefs_.size() < len) {
+     dummyCoefs_.assign(len, 0.0);
    }
 
    if (index < 0) {
@@ -380,14 +372,16 @@ int EqnBuffer::addIndices(int eqnNumber, const int* indices, int len)
      index = insertPoint;
    }
 
-   err = internalAddEqn(index, dummyCoefs_.dataPtr(), indices, len, true);
+   if (len > 0) {
+     err = internalAddEqn(index, &dummyCoefs_[0], indices, len, true);
+   }
    return(err);
 }
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, EqnBuffer& eq)
 {
   std::vector<int>& eqnNums = eq.eqnNumbers();
-  feiArray<feiArray<double>*>& rhsCoefs = *(eq.rhsCoefsPtr());
+  std::vector<std::vector<double>*>& rhsCoefs = *(eq.rhsCoefsPtr());
 
   os << "#ereb num-eqns: " << eqnNums.size() << FEI_ENDL;
   for(size_t i=0; i<eqnNums.size(); i++) {
@@ -401,8 +395,8 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, EqnBuffer& eq)
     }
 
     os << " rhs: ";
-    feiArray<double>& rhs = *(rhsCoefs[i]);
-    for(int k=0; k<rhs.length(); k++) {
+    std::vector<double>& rhs = *(rhsCoefs[i]);
+    for(size_t k=0; k<rhs.size(); k++) {
       os << rhs[k] << ", ";
     }
 

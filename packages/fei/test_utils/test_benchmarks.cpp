@@ -436,44 +436,21 @@ int test_benchmarks::test3()
   int len = 100000;
   int   n = 100000;
 
-  feiArray<int> feiarray(len, len);
   std::vector<int> stdvector(len);
 
-  feiArray<int> fei_dest;
   std::vector<int> stdv_dest;
 
-  int feilen = feiarray.length();
-  int* feiptr = feiarray.dataPtr();
   int* stdvptr = &(stdvector[0]);
 
   for(int i=0; i<len; ++i) {
-    feiptr[i] = i*2;
     stdvptr[i] = i*2;
   }
-
-  FEI_COUT << FEI_ENDL << "time to perform " << n
-           << " binary-searches and inserts on an feiArray" << FEI_ENDL
-	   << " of length " << len << ": " << FEI_ENDL;
-
-  double start_time = fei::utils::cpu_time();
-
-  int offset;
-  for(int j=0; j<n; ++j) {
-    offset = snl_fei::lowerBound(j*2, feiptr, feilen);
-    feiarray.insert(j*2-1, offset);
-    feiptr = feiarray.dataPtr();
-    feilen = feiarray.length();
-  }
-
-  double elapsed_time = fei::utils::cpu_time() - start_time;
-
-  FEI_COUT << elapsed_time << FEI_ENDL;
 
   FEI_COUT << FEI_ENDL << "time to perform " << n
            << " binary-searches and inserts on an std::vector" << FEI_ENDL
 	   << " of length " << len << ": " << FEI_ENDL;
 
-  start_time = fei::utils::cpu_time();
+  double start_time = fei::utils::cpu_time();
 
   stdvector.reserve(n*2);
 
@@ -489,7 +466,7 @@ int test_benchmarks::test3()
     v_end = stdvector.end();
   }
 
-  elapsed_time = fei::utils::cpu_time() - start_time;
+  double elapsed_time = fei::utils::cpu_time() - start_time;
 
   FEI_COUT << elapsed_time << FEI_ENDL;
 

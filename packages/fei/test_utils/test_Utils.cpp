@@ -10,7 +10,6 @@
 
 #include <test_utils/test_Utils.hpp>
 
-#include <feiArray.hpp>
 #include <snl_fei_ArrayUtils.hpp>
 #include <fei_utils.hpp>
 #include <fei_CommUtils.hpp>
@@ -35,55 +34,55 @@ test_Utils::~test_Utils()
 
 void test_Utils_binarySearch()
 {
-  feiArray<int> intarray;
-  intarray.append(1);
-  intarray.append(2);
-  intarray.append(5);
-  intarray.append(6);
-  intarray.append(9);
+  std::vector<int> intarray;
+  intarray.push_back(1);
+  intarray.push_back(2);
+  intarray.push_back(5);
+  intarray.push_back(6);
+  intarray.push_back(9);
 
   int offset = 0;
   int insertPoint = -1;
 
   FEI_COUT << "testing correctness of snl_fei::binarySearch(int,int*,int,int)...";
 
-  offset = snl_fei::binarySearch(0, intarray.dataPtr(), intarray.length(),
+  offset = snl_fei::binarySearch(0, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 0) {
     throw std::runtime_error("snl_fei::binarySearch test failed 1.");
   }
 
-  offset = snl_fei::binarySearch(2, intarray.dataPtr(), intarray.length(),
+  offset = snl_fei::binarySearch(2, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != 1) {
     throw std::runtime_error("snl_fei::binarySearch test failed 2.");
   }
 
-  offset = snl_fei::binarySearch(3, intarray.dataPtr(), intarray.length(),
+  offset = snl_fei::binarySearch(3, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 2) {
     throw std::runtime_error("snl_fei::binarySearch test failed 3.");
   }
 
-  offset = snl_fei::binarySearch(4, intarray.dataPtr(), intarray.length(),
+  offset = snl_fei::binarySearch(4, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 2) {
     throw std::runtime_error("snl_fei::binarySearch test failed 4.");
   }
 
-  offset = snl_fei::binarySearch(9, intarray.dataPtr(), intarray.length(),
+  offset = snl_fei::binarySearch(9, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != 4) {
     throw std::runtime_error("snl_fei::binarySearch test failed 5.");
   }
 
-  offset = snl_fei::binarySearch(8, intarray.dataPtr(), intarray.length(),
+  offset = snl_fei::binarySearch(8, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 4) {
     throw std::runtime_error("snl_fei::binarySearch test failed 6.");
   }
 
-  offset = snl_fei::binarySearch(10, intarray.dataPtr(), intarray.length(),
+  offset = snl_fei::binarySearch(10, &intarray[0], intarray.size(),
 				 insertPoint);
   if (offset != -1 || insertPoint != 5) {
     throw std::runtime_error("snl_fei::binarySearch test failed 7.");
@@ -144,22 +143,22 @@ int test_Utils::serialtest2()
   static char string3[] = "DOUBLE3 1.0E+0";
   static char string4[] = "DOUBLE4 1";
 
-  feiArray<char*> params;
-  params.append(string1);
-  params.append(string2);
-  params.append(string3);
-  params.append(string4);
+  std::vector<char*> params;
+  params.push_back(string1);
+  params.push_back(string2);
+  params.push_back(string3);
+  params.push_back(string4);
 
   double d1,d2,d3,d4;
 
   CHK_ERR( snl_fei::getDoubleParamValue("DOUBLE1",
-					params.length(), params.dataPtr(),d1));
+					params.size(), &params[0],d1));
   CHK_ERR( snl_fei::getDoubleParamValue("DOUBLE2",
-					params.length(), params.dataPtr(),d2));
+					params.size(), &params[0],d2));
   CHK_ERR( snl_fei::getDoubleParamValue("DOUBLE3",
-					params.length(), params.dataPtr(),d3));
+					params.size(), &params[0],d3));
   CHK_ERR( snl_fei::getDoubleParamValue("DOUBLE4",
-					params.length(), params.dataPtr(),d4));
+					params.size(), &params[0],d4));
 
   if (std::abs(d1 - 1.0) > 1.e-49 || std::abs(d2 - 1.0) > 1.e-49 ||
       std::abs(d3 - 1.0) > 1.e-49 || std::abs(d4 - 1.0) > 1.e-49) {

@@ -11,7 +11,6 @@
 
 #include <test_utils/test_Algebraic.hpp>
 
-#include <feiArray.hpp>
 #include <fei_VectorSpace.hpp>
 #include <fei_MatrixGraph_Impl2.hpp>
 #include <fei_SparseRowGraph.hpp>
@@ -52,12 +51,12 @@ int test_Algebraic::serialtest1()
 
   vspace->defineIDTypes(1, &idType);
 
-  feiArray<int> rowNumbers(numRows);
+  std::vector<int> rowNumbers(numRows);
   for(i=0; i<numRows; ++i) {
     rowNumbers[i] = i;
   }
 
-  CHK_ERR( vspace->addDOFs(idType, numRows, rowNumbers.dataPtr()) );
+  CHK_ERR( vspace->addDOFs(idType, numRows, &rowNumbers[0]) );
 
   CHK_ERR( vspace->initComplete() );
 
@@ -89,8 +88,8 @@ int test_Algebraic::serialtest1()
   fei::SharedPtr<fei::VectorSpace> dummy;
   fei::MatrixGraph_Impl2 mgraph(vspace, dummy);
 
-  feiArray<int> rowOffsets(numRows+1);
-  feiArray<int> packedColumnIDs(numRows);
+  std::vector<int> rowOffsets(numRows+1);
+  std::vector<int> packedColumnIDs(numRows);
   for(i=0; i<numRows; ++i) {
     rowOffsets[i] = i;
     packedColumnIDs[i] = i;
@@ -98,9 +97,9 @@ int test_Algebraic::serialtest1()
   rowOffsets[numRows] = numRows;
 
   CHK_ERR( mgraph.initConnectivity(idType, numRows,
-				   rowNumbers.dataPtr(),
-				   rowOffsets.dataPtr(),
-				   packedColumnIDs.dataPtr()) );
+				   &rowNumbers[0],
+				   &rowOffsets[0],
+				   &packedColumnIDs[0]) );
 
   CHK_ERR( mgraph.initComplete() );
 
@@ -140,12 +139,12 @@ int test_Algebraic::serialtest2()
 
   vspace->defineIDTypes(1, &idType);
 
-  feiArray<int> rowNumbers(numRows);
+  std::vector<int> rowNumbers(numRows);
   for(i=0; i<numRows; ++i) {
     rowNumbers[i] = i;
   }
 
-  CHK_ERR( vspace->addDOFs(idType, numRows, rowNumbers.dataPtr()) );
+  CHK_ERR( vspace->addDOFs(idType, numRows, &rowNumbers[0]) );
 
   CHK_ERR( vspace->initComplete() );
 
@@ -177,9 +176,9 @@ int test_Algebraic::serialtest2()
   fei::SharedPtr<fei::VectorSpace> dummy;
   fei::MatrixGraph_Impl2 mgraph(vspace, dummy);
 
-  feiArray<int> rowLengths(numRows);
-  feiArray<int> packedColumnIDs(numRows);
-  feiArray<int*> columnIDs(numRows);
+  std::vector<int> rowLengths(numRows);
+  std::vector<int> packedColumnIDs(numRows);
+  std::vector<int*> columnIDs(numRows);
 
   for(i=0; i<numRows; ++i) {
     rowLengths[i] = 1;
@@ -188,9 +187,9 @@ int test_Algebraic::serialtest2()
   }
 
   CHK_ERR( mgraph.initConnectivity(idType, numRows,
-				   rowNumbers.dataPtr(),
-				   rowLengths.dataPtr(),
-				   columnIDs.dataPtr()) );
+				   &rowNumbers[0],
+				   &rowLengths[0],
+				   &columnIDs[0]) );
 
   CHK_ERR( mgraph.initComplete() );
 

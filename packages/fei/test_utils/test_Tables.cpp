@@ -11,7 +11,6 @@
 
 #include <test_utils/test_Tables.hpp>
 
-#include <feiArray.hpp>
 #include <snl_fei_RaggedTable.hpp>
 #include <fei_ProcEqns.hpp>
 #include <fei_ctg_set.hpp>
@@ -101,7 +100,7 @@ int test_Tables::test3()
 
   ProcEqns peqns;
 
-  feiArray<int> keys(len), values(len);
+  std::vector<int> keys(len), values(len);
   for(int i=0; i<len; ++i) {
     keys[i] = i;
     values[i] = i;

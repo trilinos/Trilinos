@@ -11,8 +11,6 @@
 
 #include <test_utils/fei_test_utils.hpp>
 
-#include <feiArray.hpp>
-
 #include <test_utils/FEI_tester.hpp>
 
 #include <fei_LinearSystemCore.hpp>
@@ -507,19 +505,18 @@ int FEI_tester::exercisePutFunctions()
 
    int numNodes;
    CHK_ERR( fei_->getNumLocalNodes(numNodes) );
-   feiArray<int> nodeIDs(numNodes);
-   int* nodeIDsPtr = nodeIDs.dataPtr();
+   std::vector<int> nodeIDs(numNodes);
+   int* nodeIDsPtr = &nodeIDs[0];
    int checkNumNodes;
    CHK_ERR( fei_->getLocalNodeIDList(checkNumNodes, nodeIDsPtr, numNodes) );
 
    for(int i=0; i<data_->numFields_; ++i) {
      int fieldID = data_->fieldIDs_[i];
      int fieldSize = data_->fieldSizes_[i];
-     feiArray<double> data(numNodes*fieldSize);
-     data = 0.0001;
+     std::vector<double> data(numNodes*fieldSize, 0.0001);
 
      CHK_ERR( fei_->putNodalFieldData(fieldID, numNodes, nodeIDsPtr,
-				      data.dataPtr()) );
+				      &data[0]) );
    }
 
    return(0);
@@ -538,13 +535,13 @@ int FEI_tester::save_block_node_soln(DataReader& data, FEI& fei,
      maxNumEqnsPerNode += data.fieldSizes_[i];
    }
 
-   feiArray<double> soln(maxNumEqnsPerNode);
+   std::vector<double> soln(maxNumEqnsPerNode);
 
    int numNodes;
    CHK_ERR( fei.getNumLocalNodes(numNodes) );
 
-   feiArray<GlobalID> nodes(numNodes);
-   int* nodesPtr = nodes.dataPtr();
+   std::vector<GlobalID> nodes(numNodes);
+   int* nodesPtr = &nodes[0];
 
    int checkNumNodes;
    CHK_ERR( fei.getLocalNodeIDList( checkNumNodes, nodesPtr, numNodes) );
@@ -564,11 +561,11 @@ int FEI_tester::save_block_node_soln(DataReader& data, FEI& fei,
 
    outfile.setf(IOS_SCIENTIFIC, IOS_FLOATFIELD);
 
-   feiArray<int> offsets(2);
+   std::vector<int> offsets(2);
 
    for(i=0; i<numNodes; ++i) {
      CHK_ERR( fei.getNodalSolution(1, &(nodesPtr[i]),
-				   offsets.dataPtr(), soln.dataPtr()) );
+				   &offsets[0], &soln[0]) );
 
      int numDOF = offsets[1];
 

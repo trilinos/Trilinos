@@ -50,7 +50,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_ErrMacros.hpp \
 	$(top_srcdir)/base/fei_FEDataFilter.hpp \
 	$(top_srcdir)/base/FEI.hpp \
-	$(top_srcdir)/base/feiArray.hpp \
 	$(top_srcdir)/base/fei_bool.h \
 	$(top_srcdir)/base/fei_chk_mpi.hpp \
 	$(top_srcdir)/base/fei_ctg_set.hpp \

@@ -79,21 +79,18 @@ int test_MatrixGraph_test6(MPI_Comm comm, int numProcs, int localProc,
     std::vector<int>& idTypes = testdata->idTypes;
     int offsetOfSlave = 0;
     int offsetIntoSlaveField = 0;
-    feiArray<double> weights(2);
-    weights = 1.0;
+    std::vector<double> weights(2, 1.0);
     double rhsValue = 0.0;
-    feiArray<int> cr_idTypes(2);
-    cr_idTypes = idTypes[0];
-    feiArray<int> cr_fieldIDs(2);
-    cr_fieldIDs = fieldIDs[0];
+    std::vector<int> cr_idTypes(2, idTypes[0]);
+    std::vector<int> cr_fieldIDs(2, fieldIDs[0]);
 
     CHK_ERR( matrixGraph3Ptr->initSlaveConstraint(2,
-					       cr_idTypes.dataPtr(),
+					       &cr_idTypes[0],
 					       &ids[2],
-					       cr_fieldIDs.dataPtr(),
+					       &cr_fieldIDs[0],
 					       offsetOfSlave,
 					       offsetIntoSlaveField,
-					       weights.dataPtr(),
+					       &weights[0],
 					       rhsValue) );
   }
 
@@ -165,12 +162,12 @@ void test_MatrixGraph_test8(MPI_Comm comm, int numProcs, int localProc)
   bool diagonal = true;
   mgraph.initConnectivityBlock(blockID, numConnLists, patternID, diagonal);
 
-  feiArray<int> ids(numIDs);
+  std::vector<int> ids(numIDs);
   for(int i=0; i<numIDs; ++i) {
     ids[i] = i;
   }
 
-  mgraph.initConnectivity(blockID, 0, ids.dataPtr());
+  mgraph.initConnectivity(blockID, 0, &ids[0]);
 
   mgraph.initComplete();
 
@@ -215,22 +212,14 @@ int test_MatrixGraph::runtests()
 
 int test_MatrixGraph::serialtest1()
 {
-  int i, numIDs = 2;
-  feiArray<int> idTypes(numIDs);
-  feiArray<int> numFieldsPerID(numIDs);
-  feiArray<int> fieldIDs(numIDs);
-  feiArray<int> fieldSizes(numIDs);
+  int numIDs = 2;
+  std::vector<int> idTypes(numIDs, 1);
+  std::vector<int> numFieldsPerID(numIDs, 1);
+  std::vector<int> fieldIDs(numIDs, 0);
+  std::vector<int> fieldSizes(numIDs, 1);
 
-  for(i=0; i<numIDs; ++i) {
-    idTypes[i] = 1;
-    numFieldsPerID[i] = 1;
-    fieldIDs[i] = 0;
-    fieldSizes[i] = 1;
-  }
-
-  fei::Pattern pattern(0, numIDs, idTypes.dataPtr(),
-			   numFieldsPerID.dataPtr(), fieldIDs.dataPtr(),
-			   fieldSizes.dataPtr());
+  fei::Pattern pattern(0, numIDs, &idTypes[0],
+			   &numFieldsPerID[0], &fieldIDs[0], &fieldSizes[0]);
 
   fei::Pattern::PatternType pType = pattern.getPatternType();
 
@@ -419,7 +408,7 @@ int test_MatrixGraph::test3()
 
   std::vector<int>& nonzeros = localgraph->packedColumnIndices;
 
-  feiArray<int> rowindices;
+  std::vector<int> rowindices;
   int offset = 0;
   for(int i=0; i<numLocalRows; ++i) {
     int globalRow = globalIndexOffsets[localProc_]+i;
@@ -565,34 +554,31 @@ int test_MatrixGraph::test5()
   if (localProc_ == 0) {
     int offsetOfSlave = 0;
     int offsetIntoSlaveField = 0;
-    feiArray<double> weights(6);
-    weights = 0.0;
+    std::vector<double> weights(6, 0.0);
     weights[3] = 1.0;
     double rhsValue = 0.0;
-    feiArray<int> cr_idTypes(2);
-    cr_idTypes = idTypes[0];
-    feiArray<int> cr_fieldIDs(2);
-    cr_fieldIDs = fieldIDs[1];
+    std::vector<int> cr_idTypes(2, idTypes[0]);
+    std::vector<int> cr_fieldIDs(2, fieldIDs[1]);
 
     CHK_ERR( matrixGraphPtr->initSlaveConstraint(2,
-					       cr_idTypes.dataPtr(),
+					       &cr_idTypes[0],
 					       &ids[2],
-					       cr_fieldIDs.dataPtr(),
+					       &cr_fieldIDs[0],
 					       offsetOfSlave,
 					       offsetIntoSlaveField,
-					       weights.dataPtr(),
+					       &weights[0],
 					       rhsValue) );
 
     weights[3] = 0.0;
     weights[4] = 1.0;
     offsetIntoSlaveField = 1;
     CHK_ERR( matrixGraphPtr->initSlaveConstraint(2,
-					       cr_idTypes.dataPtr(),
+					       &cr_idTypes[0],
 					       &ids[2],
-					       cr_fieldIDs.dataPtr(),
+					       &cr_fieldIDs[0],
 					       offsetOfSlave,
 					       offsetIntoSlaveField,
-					       weights.dataPtr(),
+					       &weights[0],
 					       rhsValue) );
   }
 
@@ -696,17 +682,16 @@ fei::SharedPtr<fei::MatrixGraph> test_MatrixGraph::create_MatrixGraph(testData* 
   int fieldID = testdata->fieldIDs[0];
 
   if (bothFields) {
-    feiArray<int> numFieldsPerID(numIDs);
-    numFieldsPerID = 2;
-    feiArray<int> fieldIDsArray(numIDs*2);
+    std::vector<int> numFieldsPerID(numIDs, 2);
+    std::vector<int> fieldIDsArray(numIDs*2);
     for(int i=0; i<numIDs; ++i) {
       fieldIDsArray[i*2] = testdata->fieldIDs[0];
       fieldIDsArray[i*2+1] = testdata->fieldIDs[1];
     }
 
     matrixGraphPtr->definePattern(patternID, numIDs, idType,
-					 numFieldsPerID.dataPtr(),
-					 fieldIDsArray.dataPtr());
+					 &numFieldsPerID[0],
+					 &fieldIDsArray[0]);
   }
   else {
     matrixGraphPtr->definePattern(patternID, numIDs, idType, fieldID);
@@ -729,20 +714,19 @@ fei::SharedPtr<fei::MatrixGraph> test_MatrixGraph::create_MatrixGraph(testData* 
   int numRowIDs = 1, numColIDs = 4;
 
   if (bothFields) {
-    feiArray<int> numFieldsPerID(numIDs);
-    numFieldsPerID = 2;
-    feiArray<int> fieldIDsArray(numIDs*2);
+    std::vector<int> numFieldsPerID(numIDs, 2);
+    std::vector<int> fieldIDsArray(numIDs*2);
     for(int i=0; i<numIDs; ++i) {
       fieldIDsArray[i*2] = testdata->fieldIDs[0];
       fieldIDsArray[i*2+1] = testdata->fieldIDs[1];
     }
 
     matrixGraphPtr->definePattern(patternID1, numRowIDs, idType,
-					 numFieldsPerID.dataPtr(),
-					 fieldIDsArray.dataPtr());
+					 &numFieldsPerID[0],
+					 &fieldIDsArray[0]);
     matrixGraphPtr->definePattern(patternID2, numColIDs, idType,
-					 numFieldsPerID.dataPtr(),
-					 fieldIDsArray.dataPtr());
+					 &numFieldsPerID[0],
+					 &fieldIDsArray[0]);
   }
   else {
     matrixGraphPtr->definePattern(patternID1, numRowIDs,

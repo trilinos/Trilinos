@@ -311,6 +311,8 @@ namespace snl_fei {
     }
 
   /** Insert an item into a sorted list, maintaining sortedness.
+      If the item is inserted, return the offset at which it was inserted.
+      If the item was already present, return -1.
    */
   template<class T>
     int sortedListInsert(const T& item, std::vector<T>& list)
@@ -320,9 +322,10 @@ namespace snl_fei {
 
       if (iter == list.end() || *iter != item) {
         iter = list.insert(iter, item);
+        return( iter - list.begin() );
       }
 
-      return( iter - list.begin() );
+      return(-1);
     }
 
   /** Insert an item into a sorted list, maintaining sortedness.

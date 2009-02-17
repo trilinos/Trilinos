@@ -36,8 +36,6 @@ Reducer::Reducer(fei::SharedPtr<FillableMat> globalSlaveDependencyMatrix,
    csrKdd(),
    fi_(),
    fd_(),
-   xi_(),
-   xd_(),
    csfi(),
    csvec(),
    csvec_i(),
@@ -63,7 +61,6 @@ Reducer::Reducer(fei::SharedPtr<FillableMat> globalSlaveDependencyMatrix,
    comm_(comm),
    dbgprefix_("Reducer: "),
    mat_counter_(0),
-   soln_vec_counter_(0),
    rhs_vec_counter_(0),
    bool_array_(0),
    int_array_(0),
@@ -158,8 +155,6 @@ Reducer::Reducer(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
    Kdd_(),
    fi_(),
    fd_(),
-   xi_(),
-   xd_(),
    tmpMat1_(),
    tmpMat2_(),
    tmpVec1_(),
@@ -182,7 +177,6 @@ Reducer::Reducer(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
    comm_(),
    dbgprefix_("Reducer: "),
    mat_counter_(0),
-   soln_vec_counter_(0),
    rhs_vec_counter_(0),
    bool_array_(0),
    int_array_(0),
@@ -693,59 +687,6 @@ int
 Reducer::addMatrixValues(int numRows, const int* rows,
                          int numCols, const int* cols,
                          const double* const* values,
-                         bool sum_into)
-{
-  if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
-    FEI_OSTREAM& os = *output_stream_;
-    os << dbgprefix_<<"addMatrixValues()"<<FEI_ENDL;
-  }
-
-  expand_work_arrays(numCols);
-
-  for(int j=0; j<numCols; ++j) {
-    bool_array_[j] = isSlaveEqn(cols[j]);
-  }
-
-  for(int i=0; i<numRows; ++i) {
-    if (isSlaveEqn(rows[i])) {
-      //slave row: slave columns go into Kdd, non-slave columns go
-      //into Kdi.
-      fei::FillableVec* Kdd_row = Kdd_.getRow(rows[i], true);
-      fei::FillableVec* Kdi_row = Kdi_.getRow(rows[i], true);
-
-      for(int j=0; j<numCols; ++j) {
-        if (bool_array_[j]) {
-          Kdd_row->addEntry(cols[j], values[i][j]);
-        }
-        else {
-          Kdi_row->addEntry(cols[j], values[i][j]);
-        }
-      }
-    }
-    else {//not slave row
-      //put non-slave columns into Kii,
-      //and slave columns into Kid.
-      fei::FillableVec* Kid_row = Kid_.getRow(rows[i], true);
-      fei::FillableVec* Kii_row = Kii_.getRow(rows[i], true);
-
-      for(int j=0; j<numCols; ++j) {
-        if (bool_array_[j]) {
-          Kid_row->addEntry(cols[j], values[i][j]);
-        }
-        else {
-          Kii_row->addEntry(cols[j], values[i][j]);
-        }
-      }
-    }
-  }
-
-  return(0);
-}
-
-int
-Reducer::addMatrixValues(int numRows, const int* rows,
-                         int numCols, const int* cols,
-                         const double* const* values,
                          bool sum_into,
                          fei::Matrix& feimat,
                          int format)
@@ -870,47 +811,6 @@ Reducer::addVectorValues(int numValues,
                          const double* values,
                          bool sum_into,
                          bool soln_vector,
-                         int vectorIndex)
-{
-  if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
-    FEI_OSTREAM& os = *output_stream_;
-    os << dbgprefix_<<"addVectorValues()"<<FEI_ENDL;
-  }
-
-  for(int i=0; i<numValues; ++i) {
-    if (isSlaveEqn(globalIndices[i])) {
-      if (sum_into) {
-        if (soln_vector) xd_.addEntry(globalIndices[i], values[i]);
-        else fd_.addEntry(globalIndices[i], values[i]);
-      }
-      else {
-        if (soln_vector) xd_.putEntry(globalIndices[i], values[i]);
-        else fd_.putEntry(globalIndices[i], values[i]);
-      }
-      if (soln_vector) ++soln_vec_counter_;
-      else ++rhs_vec_counter_;
-    }
-    else {
-      if (sum_into) {
-        if (soln_vector) xi_.addEntry(globalIndices[i], values[i]);
-        else fi_.addEntry(globalIndices[i], values[i]);
-      }
-      else {
-        if (soln_vector) xi_.putEntry(globalIndices[i], values[i]);
-        else fi_.putEntry(globalIndices[i], values[i]);
-      }
-    }
-  }
-
-  return(0);
-}
-
-int
-Reducer::addVectorValues(int numValues,
-                         const int* globalIndices,
-                         const double* values,
-                         bool sum_into,
-                         bool soln_vector,
                          int vectorIndex,
                          fei::Vector& feivec)
 {
@@ -922,15 +822,12 @@ Reducer::addVectorValues(int numValues,
   for(int i=0; i<numValues; ++i) {
     if (isSlaveEqn(globalIndices[i])) {
       if (sum_into) {
-        if (soln_vector) xd_.addEntry(globalIndices[i], values[i]);
-        else fd_.addEntry(globalIndices[i], values[i]);
+        if (!soln_vector) fd_.addEntry(globalIndices[i], values[i]);
       }
       else {
-        if (soln_vector) xd_.putEntry(globalIndices[i], values[i]);
-        else fd_.putEntry(globalIndices[i], values[i]);
+        if (!soln_vector) fd_.putEntry(globalIndices[i], values[i]);
       }
-      if (soln_vector) ++soln_vec_counter_;
-      else ++rhs_vec_counter_;
+      if (!soln_vector) ++rhs_vec_counter_;
     }
     else {
       int reduced_index = translateToReducedEqn(globalIndices[i]);
@@ -944,10 +841,7 @@ Reducer::addVectorValues(int numValues,
     }
   }
 
-  if (soln_vector && soln_vec_counter_ > 600) {
-    assembleReducedVector(soln_vector, feivec, sum_into);
-  }
-  else if (!soln_vector && rhs_vec_counter_ > 600) {
+  if (rhs_vec_counter_ > 600) {
     assembleReducedVector(soln_vector, feivec, sum_into);
   }
 
@@ -964,7 +858,11 @@ Reducer::assembleReducedVector(bool soln_vector,
     os << dbgprefix_<<"assembleReducedVector(fei::Vector)"<<FEI_ENDL;
   }
 
-  fei::FillableVec& vec = soln_vector ? xd_ : fd_;
+  if (soln_vector) {
+    return;
+  }
+
+  fei::FillableVec& vec = fd_;
 
   if (vec.size() > 0) {
     //form tmpVec1 = D^T*vec.
@@ -986,7 +884,7 @@ Reducer::assembleReducedVector(bool soln_vector,
     }
   }
 
-  fei::FillableVec& vec_i = soln_vector ? xi_ : fi_;
+  fei::FillableVec& vec_i = fi_;
 
   if (vec_i.size() > 0) {
     csvec_i = vec_i;
@@ -1005,12 +903,7 @@ Reducer::assembleReducedVector(bool soln_vector,
     vec_i.clear();
   }
 
-  if (soln_vector) {
-    soln_vec_counter_ = 0;
-  }
-  else {
-    rhs_vec_counter_ = 0;
-  }
+  rhs_vec_counter_ = 0;
 }
 
 int

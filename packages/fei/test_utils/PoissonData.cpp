@@ -1020,8 +1020,8 @@ int load_elem_data(fei::MatrixGraph* matrixGraph,
 
   int numIndices = matrixGraph->getConnectivityNumIndices(elemBlockID);
 
-  feiArray<int> indicesArray(numIndices);
-  int* indicesPtr = indicesArray.dataPtr();
+  std::vector<int> indicesArray(numIndices);
+  int* indicesPtr = &indicesArray[0];
 
   for(int elem=0; elem<numLocalElements; elem++) {
     double** elemStiffness = poissonData.getElemStiffness(elemIDs[elem]);
@@ -1034,10 +1034,6 @@ int load_elem_data(fei::MatrixGraph* matrixGraph,
 
     CHK_ERR( mat->sumIn(elemBlockID, elemIDs[elem],
 			elemStiffness));
-
-//     CHK_ERR( mat->sumIn(numIndices, indicesPtr,
-// 			numIndices, indicesPtr,
-// 			elemStiffness));
 
     double* elemLoad = poissonData.getElemLoad(elemIDs[elem]);
 

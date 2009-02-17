@@ -11,7 +11,6 @@
 //
 #include <fei_macros.hpp>
 
-#include <feiArray.hpp>
 
 //Including the header fei_base.hpp gets us the declaration for
 //most FEI classes.
@@ -96,9 +95,9 @@ int feiDriver_main(int argc, char** argv,
 
   CHK_ERR( fei->parameters(numParams, params) );
 
-  feiArray<const char*>& methodNames = drv.get_methodNames();
+  std::vector<const char*>& methodNames = drv.get_methodNames();
 
-  for(int i=0; i<methodNames.length(); i++) {
+  for(size_t i=0; i<methodNames.size(); i++) {
     if (!strcmp("destructor", methodNames[i])) {
       //In some cases the input file indicates that the FEI should be
       //destroyed and then re-allocated before continuing. Note that we

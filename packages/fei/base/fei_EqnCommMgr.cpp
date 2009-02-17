@@ -16,7 +16,6 @@
 
 #include <fei_ProcEqns.hpp>
 #include <fei_EqnBuffer.hpp>
-#include <feiArray.hpp>
 #include <fei_TemplateUtils.hpp>
 
 #include <algorithm>
@@ -32,10 +31,10 @@ EqnCommMgr::EqnCommMgr(MPI_Comm comm, bool accumulate)
    recvProcEqns_(NULL),
    exchangeIndicesCalled_(false),
    recvEqns_(NULL),
-   solnValues_(0, 8000),
+   solnValues_(),
    sendProcEqns_(NULL),
    sendEqns_(NULL),
-   sendEqnSoln_(0, 2000),
+   sendEqnSoln_(),
    essBCEqns_(NULL),
    comm_(comm)
 {
@@ -55,10 +54,10 @@ EqnCommMgr::EqnCommMgr(const EqnCommMgr& src)
    recvProcEqns_(NULL),
    exchangeIndicesCalled_(false),
    recvEqns_(NULL),
-   solnValues_(0, 8000),
+   solnValues_(),
    sendProcEqns_(NULL),
    sendEqns_(NULL),
-   sendEqnSoln_(0, 2000),
+   sendEqnSoln_(),
    essBCEqns_(NULL),
    comm_(src.comm_)
 {
@@ -88,7 +87,7 @@ EqnCommMgr& EqnCommMgr::operator=(const EqnCommMgr& src)
    delete recvEqns_;
    recvEqns_ = src.recvEqns_->deepCopy();
 
-   int len = src.solnValues_.length();
+   int len = src.solnValues_.size();
 
    solnValues_.resize(len);
 
@@ -102,7 +101,7 @@ EqnCommMgr& EqnCommMgr::operator=(const EqnCommMgr& src)
    delete sendEqns_;
    sendEqns_ = src.sendEqns_->deepCopy();
 
-   len = src.sendEqnSoln_.length();
+   len = src.sendEqnSoln_.size();
    sendEqnSoln_.resize(len);
 
    for(int i=0; i<len; i++) {
@@ -155,7 +154,7 @@ void EqnCommMgr::addSolnValues(int* eqnNumbers, double* values, int num)
 
   std::vector<int>& recvEqnNumbers = recvEqns_->eqnNumbers();
 
-  double* solnValuesPtr = solnValues_.dataPtr();
+  double* solnValuesPtr = &solnValues_[0];
   for(int i=0; i<num; i++) {
     int index = snl_fei::binarySearch(eqnNumbers[i], recvEqnNumbers);
 
@@ -551,7 +550,7 @@ int EqnCommMgr::exchangeEqnBuffers(MPI_Comm comm, ProcEqns* sendProcEqns,
    std::vector<std::vector<int>*>& sendProcEqnLengths =
      sendProcEqns->procEqnLengthsPtr();
 
-   feiArray<feiArray<double>*>& sendRHS = *(sendEqns->rhsCoefsPtr());
+   std::vector<std::vector<double>*>& sendRHS = *(sendEqns->rhsCoefsPtr());
 
    for(unsigned i=0; i<numSendProcs; i++) {
       int totalLength = 0;
@@ -1002,7 +1001,7 @@ int EqnCommMgr::gatherSharedBCs(EqnBuffer& bcEqns)
       if (std::binary_search(sendProcEqnNumbers[p]->begin(),
                              sendProcEqnNumbers[p]->end(), eqn)) {
 
-        sendBCProcEqns.addEqn(eqn, 3, sendProcs[p]);
+        sendBCProcEqns.addEqn(eqn, indices.size(), sendProcs[p]);
       }
     }
   }
@@ -1050,8 +1049,8 @@ int EqnCommMgr::exchangeRemEssBCs(int* essEqns, int numEssEqns,double* essAlpha,
 
   bool accumulate = false;
 
-  feiArray<int> offsets(numEssEqns);
-  int* offsetsPtr = offsets.dataPtr();
+  std::vector<int> offsets(numEssEqns);
+  int* offsetsPtr = numEssEqns>0 ? &offsets[0] : NULL;
 
   for(int j=0; j<_numSendEqns; j++) {
 

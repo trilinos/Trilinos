@@ -93,10 +93,10 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
 
   mgraph->initConnectivityBlock(0, 1, patternID1);
 
-  feiArray<int> ids(2);
+  std::vector<int> ids(2);
   ids[0] = 0; ids[1] = 1;
 
-  int err = mgraph->initConnectivity(0, 0, ids.dataPtr());
+  int err = mgraph->initConnectivity(0, 0, &ids[0]);
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit2, initConnectivity returned err="<<err;
@@ -127,14 +127,13 @@ void test_Matrix_unit2(MPI_Comm comm, int numProcs, int localProc)
 
   int numrowindices = rowpattern->getNumIndices();
 
-  feiArray<double> coefs(numrowindices*numrowindices);
-  coefs = 1.0;
-  feiArray<double*> coefs_2D(numrowindices);
+  std::vector<double> coefs(numrowindices*numrowindices, 1.0);
+  std::vector<double*> coefs_2D(numrowindices);
   for(int i=0; i<numrowindices; ++i) {
     coefs_2D[i] = &(coefs[i*numrowindices]);
   }
 
-  err = feimat->sumIn(0, 0, coefs_2D.dataPtr());
+  err = feimat->sumIn(0, 0, &coefs_2D[0]);
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit2, feimat->sumIn returned err="<<err;
@@ -195,10 +194,10 @@ void test_Matrix_unit4(MPI_Comm comm, int numProcs, int localProc)
   bool diagonal = true;
   mgraph->initConnectivityBlock(0, 1, patternID1, diagonal);
 
-  feiArray<int> ids(2);
+  std::vector<int> ids(2);
   ids[0] = 0; ids[1] = 1;
 
-  int err = mgraph->initConnectivity(0, 0, ids.dataPtr());
+  int err = mgraph->initConnectivity(0, 0, &ids[0]);
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit4, initConnectivity returned err="<<err;
@@ -237,23 +236,22 @@ void test_Matrix_unit4(MPI_Comm comm, int numProcs, int localProc)
 
   int numrowindices = rowpattern->getNumIndices();
 
-  feiArray<double> coefs(numrowindices*rowfieldsize*rowfieldsize);
-  coefs = 1.0;
-  feiArray<double*> coefs_2D(numrowindices*rowfieldsize);
+  std::vector<double> coefs(numrowindices*rowfieldsize*rowfieldsize, 1.0);
+  std::vector<double*> coefs_2D(numrowindices*rowfieldsize);
   int offset = 0;
   for(int i=0; i<numrowindices*rowfieldsize; ++i) {
     coefs_2D[i] = &(coefs[offset]);
     offset += rowfieldsize;
   }
 
-  err = feimat->sumIn(0, 0, coefs_2D.dataPtr(), FEI_BLOCK_DIAGONAL_ROW);
+  err = feimat->sumIn(0, 0, &coefs_2D[0], FEI_BLOCK_DIAGONAL_ROW);
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit4, feimat->sumIn returned err="<<err;
     throw std::runtime_error(osstr.str());
   }
 
-  err = feiblkmat->sumIn(0, 0, coefs_2D.dataPtr(), FEI_BLOCK_DIAGONAL_ROW);
+  err = feiblkmat->sumIn(0, 0, &coefs_2D[0], FEI_BLOCK_DIAGONAL_ROW);
   if (err) {
     FEI_OSTRINGSTREAM osstr;
     osstr << "test_Matrix_unit4, feiblkmat->sumIn returned err="<<err;
@@ -439,12 +437,11 @@ int test_Matrix::serialtest1()
 
   fei::SharedPtr<fei::Matrix> matrixT(new fei::Matrix_Impl<fei::FillableMat>(ssmatT, matgraph, localsize));
 
-  feiArray<int> indices(numIDs);
-  CHK_ERR( matgraph->getConnectivityIndices(0, 0, numIDs,
-					   indices.dataPtr(), numIDs) );
+  std::vector<int> indices(numIDs);
+  CHK_ERR( matgraph->getConnectivityIndices(0, 0, numIDs, &indices[0], numIDs) );
 
-  feiArray<double> data1(numIDs*numIDs);
-  feiArray<double*> data2d(numIDs);
+  std::vector<double> data1(numIDs*numIDs);
+  std::vector<double*> data2d(numIDs);
 
   int i;
   for(i=0; i<numIDs; ++i) {
@@ -455,19 +452,15 @@ int test_Matrix::serialtest1()
     data1[i] = 1.0*i;
   }
 
-  CHK_ERR( matrix->sumIn(numIDs, indices.dataPtr(),
-			 numIDs, indices.dataPtr(),
-			 data2d.dataPtr(),
-			 0) );
+  CHK_ERR( matrix->sumIn(numIDs, &indices[0], numIDs, &indices[0],
+			 &data2d[0], 0) );
 
-  CHK_ERR( matrix->sumIn(0, 0, data2d.dataPtr(), 0) );
+  CHK_ERR( matrix->sumIn(0, 0, &data2d[0], 0) );
 
-  CHK_ERR( matrixT->sumIn(numIDs, indices.dataPtr(),
-			 numIDs, indices.dataPtr(),
-			 data2d.dataPtr(),
-			 3) );
+  CHK_ERR( matrixT->sumIn(numIDs, &indices[0],
+			 numIDs, &indices[0], &data2d[0], 3) );
 
-  CHK_ERR( matrixT->sumIn(0, 0, data2d.dataPtr(), 3) );
+  CHK_ERR( matrixT->sumIn(0, 0, &data2d[0], 3) );
 
   if (*ssmat != *ssmatT) {
     ERReturn(-1);
@@ -506,12 +499,11 @@ int test_Matrix::serialtest2()
 
   fei::Matrix* matrixT = new fei::Matrix_Impl<fei::FillableMat>(ssmatT, matgraph, localsize);
 
-  feiArray<int> indices(numIDs);
-  CHK_ERR( matgraph->getConnectivityIndices(0, 0, numIDs,
-					   indices.dataPtr(), numIDs) );
+  std::vector<int> indices(numIDs);
+  CHK_ERR( matgraph->getConnectivityIndices(0, 0, numIDs, &indices[0], numIDs) );
 
-  feiArray<double> data1(numIDs*numIDs);
-  feiArray<double*> data2d(numIDs);
+  std::vector<double> data1(numIDs*numIDs);
+  std::vector<double*> data2d(numIDs);
 
   int i;
   for(i=0; i<numIDs; ++i) {
@@ -522,15 +514,11 @@ int test_Matrix::serialtest2()
     data1[i] = 1.0*i;
   }
 
-  CHK_ERR( matrix->sumIn(numIDs, indices.dataPtr(),
-			 numIDs, indices.dataPtr(),
-			 data2d.dataPtr(),
-			 0) );
+  CHK_ERR( matrix->sumIn(numIDs, &indices[0],
+			 numIDs, &indices[0], &data2d[0], 0) );
 
-  CHK_ERR( matrixT->sumIn(numIDs, indices.dataPtr(),
-			 numIDs, indices.dataPtr(),
-			 data2d.dataPtr(),
-			 3) );
+  CHK_ERR( matrixT->sumIn(numIDs, &indices[0],
+			 numIDs, &indices[0], &data2d[0], 3) );
 
   if (*ssmat != *ssmatT) {
     ERReturn(-1);
@@ -575,22 +563,20 @@ int test_Matrix::serialtest3()
   //id 1, field 0.
   int offsetOfSlave = 1;
   int offsetIntoSlaveField = 0;
-  feiArray<double> weights(2);
+  std::vector<double> weights(2);
   weights[0] = 1.0;
   weights[1] = -1.0;
   double rhsValue = 0.0;
-  feiArray<int> cr_idtypes(2);
-  cr_idtypes = idTypes[0];
-  feiArray<int> cr_fieldIDs(2);
-  cr_fieldIDs = fieldIDs[0];
+  std::vector<int> cr_idtypes(2, idTypes[0]);
+  std::vector<int> cr_fieldIDs(2, fieldIDs[0]);
 
   CHK_ERR( matgraph->initSlaveConstraint(2, //numIDs
-					cr_idtypes.dataPtr(),
+					&cr_idtypes[0],
 					&ids[1],
-					cr_fieldIDs.dataPtr(),
+					&cr_fieldIDs[0],
 					offsetOfSlave,
 					offsetIntoSlaveField,
-					weights.dataPtr(),
+					&weights[0],
 					rhsValue) );
 
   CHK_ERR( matgraph->initComplete() );
@@ -604,12 +590,12 @@ int test_Matrix::serialtest3()
     ERReturn(-1);
   }
 
-  feiArray<int> indices(numIDs);
+  std::vector<int> indices(numIDs);
   CHK_ERR( matgraph->getConnectivityIndices(0, 0, numIDs,
-					   indices.dataPtr(), numIDs) );
+					   &indices[0], numIDs) );
 
-  feiArray<double> data1(numIDs*numIDs);
-  feiArray<double*> data2d(numIDs);
+  std::vector<double> data1(numIDs*numIDs);
+  std::vector<double*> data2d(numIDs);
 
   int i;
   for(i=0; i<numIDs; ++i) {
@@ -620,12 +606,10 @@ int test_Matrix::serialtest3()
     data1[i] = 1.0*i;
   }
 
-  CHK_ERR( matrix->sumIn(numIDs, indices.dataPtr(),
-			 numIDs, indices.dataPtr(),
-			 data2d.dataPtr(),
-			 0) );
+  CHK_ERR( matrix->sumIn(numIDs, &indices[0],
+			 numIDs, &indices[0], &data2d[0], 0) );
 
-  CHK_ERR( matrix->sumIn(0, 0, data2d.dataPtr(), 0) );
+  CHK_ERR( matrix->sumIn(0, 0, &data2d[0], 0) );
 
   delete matrix;
   delete testdata;
@@ -684,23 +668,21 @@ int test_Matrix::test3()
   int blockID=0;
   int numIndices = matrixGraphPtr->getConnectivityNumIndices(blockID);
 
-  feiArray<int> indicesArray(numIndices);
-  int* indicesPtr = indicesArray.dataPtr();
+  std::vector<int> indicesArray(numIndices);
+  int* indicesPtr = &indicesArray[0];
 
   int checkNumIndices = 0;
   CHK_ERR( matrixGraphPtr->getConnectivityIndices(blockID, 0,
 					     numIndices, indicesPtr,
 					     checkNumIndices) );
 
-  feiArray<double> data(ids.length());
-  data = 1.0;
-  double* dptr = data.dataPtr();
-  feiArray<double*> coefPtrs(ids.length());
-  for(int ii=0; ii<ids.length(); ++ii) coefPtrs[ii] = dptr;
+  std::vector<double> data(ids.size(), 1.0);
+  double* dptr = &data[0];
+  std::vector<double*> coefPtrs(ids.size(), dptr);
 
-  CHK_ERR( mat_fed->sumIn(blockID, 0, coefPtrs.dataPtr()) );
+  CHK_ERR( mat_fed->sumIn(blockID, 0, &coefPtrs[0]) );
 
-  CHK_ERR( vec_fed->sumIn(blockID, 0, data.dataPtr()) );
+  CHK_ERR( vec_fed->sumIn(blockID, 0, &data[0]) );
 
   CHK_ERR( mat_fed->gatherFromOverlap() );
 

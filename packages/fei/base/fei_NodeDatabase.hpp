@@ -38,7 +38,7 @@ a single node, whereas each node only has one nodeNumber and one nodeID.
 </ul>
 
 The goal of this class is to be able to provide a node's descriptor as fast as
-possible, given a nodeNumber, nodeID, etc. Binary searches are used wherever
+possible, given a nodeID, nodeNumber, or eqnNumber. Binary searches are used wherever
 possible.
 
 The return-value of all functions in this class (except trivial query/accessor
@@ -75,7 +75,7 @@ class NodeDatabase {
   /** Obtain number-of-node-descriptors (in function's return-value). Note that
       this remains 0 until after allocateNodeDescriptors() is called.
    */
-  int getNumNodeDescriptors() { return( numNodePtrs_ ); };
+  int getNumNodeDescriptors() const { return( nodePtrs_.size() ); };
 
   /** Obtain the set of nodeIDs. This is available anytime, and doesn't
       necessarily imply that there is a corresponding array of NodeDescriptors.
@@ -120,7 +120,7 @@ class NodeDatabase {
   int getNodeAtIndex(int i, NodeDescriptor*& node);
 
   /** Run through the locally-owned NodeDescriptors and count the number of
-      nodal equations. (Obviously returns 0 if the node-descriptors haven't
+      nodal equations. (Returns 0 if the node-descriptors haven't
       been allocated or initialized yet.) The result is produced in the
       function's return-value.
   */
@@ -159,13 +159,6 @@ class NodeDatabase {
   */
   int initNodeIDs(GlobalID* nodeIDs, int numNodes);
 
-  /** Request that the internal array of NodeDescriptors be allocated. This
-      function internally allocates an array (of length 'getNodeIDs().length()')
-      of NodeDescriptors. After this function is called, initNodeID() will not
-      insert any more nodeIDs (will simply return -1).
-   */
-  int allocateNodeDescriptors();
-
   /** Signal that node-descriptor initialization is complete. In other words,
       that the calling code has set fieldIDs, equation-numbers and owner-proc
       information on each node-descriptor. At this point, this class will run
@@ -194,9 +187,6 @@ class NodeDatabase {
   */
   int getAssociatedFieldID(int eqnNumber);
 
-  /** Query whether allocateNodeDescriptors() has been called yet. */
-  bool isAllocated() { return( allocated_ ); };
-
   /** Query whether synchronize() has been called. */
   bool isSynchronized() { return( synchronized_ ); };
 
@@ -206,8 +196,7 @@ class NodeDatabase {
 
   void deleteMemory();
 
-  NodeDescriptor** nodePtrs_;
-  int numNodePtrs_;
+  std::vector<NodeDescriptor*> nodePtrs_;
 
   std::vector<int> eqnNumbers_;  //eqnNumbers_ will be a sorted list of the
                                   //first global equation number at each node
@@ -221,7 +210,7 @@ class NodeDatabase {
   std::map<GlobalID,int> nodeIDs_; //nodeIDs_ maps node-ID to an index into
                                 //the nodePtrs_ array of NodeDescriptors.
 
-  bool allocated_, synchronized_;
+  bool synchronized_;
   bool need_to_alloc_and_sync_;
 
   std::map<int,int>* fieldDB_;

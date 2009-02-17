@@ -14,8 +14,6 @@
 #include <fei_SharedPtr.hpp>
 #include <fei_defs.h>
 
-#include <feiArray.hpp>
-
 #include <FEI.hpp>
 
 /**
@@ -736,7 +734,7 @@ class FEI_Implementation : public FEI {
 
     fei::SharedPtr<LibraryWrapper> wrapper_;
     fei::SharedPtr<LinearSystemCore> linSysCore_;
-    feiArray<fei::SharedPtr<LinearSystemCore> > lscArray_;
+    std::vector<fei::SharedPtr<LinearSystemCore> > lscArray_;
     bool haveLinSysCore_;
     bool haveFEData_;
     SNL_FEI_Structure* problemStructure_;
@@ -745,15 +743,15 @@ class FEI_Implementation : public FEI {
     int numInternalFEIs_;
     bool internalFEIsAllocated_;
 
-    feiArray<int> matrixIDs_;
-    feiArray<int> numRHSIDs_;
-    feiArray<int*> rhsIDs_;
+    std::vector<int> matrixIDs_;
+    std::vector<int> numRHSIDs_;
+    std::vector<int*> rhsIDs_;
 
     bool IDsAllocated_;
 
-    feiArray<double> matScalars_;
+    std::vector<double> matScalars_;
     bool matScalarsSet_;
-    feiArray<double*> rhsScalars_;
+    std::vector<double*> rhsScalars_;
     bool rhsScalarsSet_;
 
     int index_soln_filter_;

@@ -176,7 +176,9 @@ int test_AztecWrappers::test1()
 
   for(i=0; i<localSize; ++i) {
     for(int j=0; j<globalSize; ++j) values[i][j] *= 2.0;
+    delete [] elemcoefs[i];
   }
+  delete [] elemcoefs;
 
   CHK_ERR( compare_DMSR_contents(*matrix, localOffset, colIndices, values) );
 

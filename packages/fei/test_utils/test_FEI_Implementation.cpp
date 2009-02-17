@@ -12,7 +12,6 @@
 
 #include <test_utils/test_FEI_Implementation.hpp>
 
-#include <feiArray.hpp>
 #include <FEI_Implementation.hpp>
 #ifdef HAVE_FEI_AZTECOO
 #include <fei_Aztec_LinSysCore.hpp>
@@ -182,7 +181,7 @@ int test_FEI_Implementation::test1()
 			      0, //elemID
 			      &(testdata->ids[0])) );
 
-  feiArray<int*> sharingProcs2D(testdata->sharedIDs.size());
+  std::vector<int*> sharingProcs2D(testdata->sharedIDs.size());
   int offset = 0;
   for(unsigned i=0; i<testdata->numSharingProcsPerID.size(); ++i) {
     sharingProcs2D[i] = &(testdata->sharingProcs[offset]);
@@ -192,7 +191,7 @@ int test_FEI_Implementation::test1()
   CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
       testdata->sharedIDs.size() ? &(testdata->sharedIDs[0]) : 0,
       testdata->numSharingProcsPerID.size() ? &(testdata->numSharingProcsPerID[0]) : 0,
-      sharingProcs2D.dataPtr()) );
+      &sharingProcs2D[0]) );
 
   CHK_ERR( fei->initComplete() );
 
@@ -308,16 +307,14 @@ int test_FEI_Implementation::test2()
 				&(testdata->fieldIDs[0])) );
 
   unsigned numNodesPerElem = testdata->ids.size();
-  feiArray<int> numFieldsPerNode(numNodesPerElem);
-  numFieldsPerNode = 1;
-  feiArray<int*>nodalFieldIDs(numNodesPerElem);
-  nodalFieldIDs = &(testdata->fieldIDs[0]);
+  std::vector<int> numFieldsPerNode(numNodesPerElem, 1);
+  std::vector<int*>nodalFieldIDs(numNodesPerElem, &(testdata->fieldIDs[0]));
 
   CHK_ERR( fei->initElemBlock(0, //blockID
 			      1, //numElements
 			      numNodesPerElem,
-			      numFieldsPerNode.dataPtr(),
-			      nodalFieldIDs.dataPtr(),
+			      &numFieldsPerNode[0],
+			      &nodalFieldIDs[0],
 			      0, //numElemDofFieldsPerElement
 			      NULL, //elemDofFieldIDs
 			      0)); //interleaveStrategy
@@ -326,7 +323,7 @@ int test_FEI_Implementation::test2()
 			      0, //elemID
 			      &(testdata->ids[0])) );
 
-  feiArray<int*> sharingProcs2D(testdata->sharedIDs.size());
+  std::vector<int*> sharingProcs2D(testdata->sharedIDs.size());
   int offset = 0;
   for(unsigned i=0; i<testdata->numSharingProcsPerID.size(); ++i) {
     sharingProcs2D[i] = &(testdata->sharingProcs[offset]);
@@ -336,7 +333,7 @@ int test_FEI_Implementation::test2()
   CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
       testdata->sharedIDs.size() ? &(testdata->sharedIDs[0]) : 0,
       testdata->numSharingProcsPerID.size() ? &(testdata->numSharingProcsPerID[0]) : 0,
-      sharingProcs2D.dataPtr()) );
+      &sharingProcs2D[0]) );
 
   CHK_ERR( fei->initComplete() );
 

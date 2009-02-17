@@ -80,16 +80,16 @@ int test_LinearSystem::test2()
 					 false, false, "U_LS2", vectorSpacePtr,
 					 factory, path_);
 
-  feiArray<int> crIDTypes(2);
-  feiArray<int> crFieldIDs(2);
+  std::vector<int> crIDTypes(2);
+  std::vector<int> crFieldIDs(2);
   crIDTypes[0] = idTypes[0]; crIDTypes[1] = idTypes[0];
   crFieldIDs[0] = fieldIDs[0]; crFieldIDs[1] = fieldIDs[0];
 
   CHK_ERR( matrixGraphPtr->initLagrangeConstraint(0, idTypes[1],
 						  2, //numIDs
-						  crIDTypes.dataPtr(),
+						  &crIDTypes[0],
 						  &(ids[1]),
-						  crFieldIDs.dataPtr()) );
+						  &crFieldIDs[0]) );
 
   CHK_ERR( matrixGraphPtr->initComplete() );
 
@@ -107,32 +107,31 @@ int test_LinearSystem::test2()
   int blockID=0;
   int numIndices = matrixGraphPtr->getConnectivityNumIndices(blockID);
 
-  feiArray<int> indicesArray(numIndices);
-  int* indicesPtr = indicesArray.dataPtr();
+  std::vector<int> indicesArray(numIndices);
+  int* indicesPtr = &indicesArray[0];
 
   int checkNumIndices = 0;
   CHK_ERR( matrixGraphPtr->getConnectivityIndices(blockID, 0,
 					     numIndices, indicesPtr,
 					     checkNumIndices) );
 
-  feiArray<double> data(ids.size());
-  data = 1.0;
-  double* dptr = data.dataPtr();
-  feiArray<double*> coefPtrs(ids.size());
-  feiArray<double> crdata(2);
+  std::vector<double> data(ids.size(), 1.0);
+  double* dptr = &data[0];
+  std::vector<double*> coefPtrs(ids.size());
+  std::vector<double> crdata(2);
   crdata[0] = 1.0;
   crdata[1] = -1.0;
 
   for(unsigned ii=0; ii<ids.size(); ++ii) coefPtrs[ii] = dptr;
 
   CHK_ERR( mat_lsc->sumIn(numIndices, indicesPtr, numIndices, indicesPtr,
-			  coefPtrs.dataPtr()) );
+			  &coefPtrs[0]) );
 
   CHK_ERR( vec_lsc->sumInFieldData(fieldIDs[0], idTypes[0],
 				    ids.size(), &ids[0],
-				    data.dataPtr()) );
+				    &data[0]) );
 
-  CHK_ERR( linsys->loadLagrangeConstraint(0, crdata.dataPtr(), 0.0) );
+  CHK_ERR( linsys->loadLagrangeConstraint(0, &crdata[0], 0.0) );
 
   CHK_ERR( mat_lsc->gatherFromOverlap() );
 
@@ -181,16 +180,16 @@ int test_LinearSystem::test3()
 					 false, false, "U_LS3", vectorSpacePtr,
 					 factory, path_);
 
-  feiArray<int> crIDTypes(2);
-  feiArray<int> crFieldIDs(2);
+  std::vector<int> crIDTypes(2);
+  std::vector<int> crFieldIDs(2);
   crIDTypes[0] = idTypes[0]; crIDTypes[1] = idTypes[0];
   crFieldIDs[0] = fieldIDs[0]; crFieldIDs[1] = fieldIDs[0];
 
   CHK_ERR( matrixGraphPtr->initPenaltyConstraint(0, idTypes[1],
 						  2, //numIDs
-						  crIDTypes.dataPtr(),
+						  &crIDTypes[0],
 						  &(ids[1]),
-						  crFieldIDs.dataPtr()) );
+						  &crFieldIDs[0]) );
 
   CHK_ERR( matrixGraphPtr->initComplete() );
 
@@ -211,32 +210,31 @@ int test_LinearSystem::test3()
   int blockID=0;
   int numIndices = matrixGraphPtr->getConnectivityNumIndices(blockID);
 
-  feiArray<int> indicesArray(numIndices);
-  int* indicesPtr = indicesArray.dataPtr();
+  std::vector<int> indicesArray(numIndices);
+  int* indicesPtr = &indicesArray[0];
 
   int checkNumIndices = 0;
   CHK_ERR( matrixGraphPtr->getConnectivityIndices(blockID, 0,
 					     numIndices, indicesPtr,
 					     checkNumIndices) );
 
-  feiArray<double> data(ids.size());
-  data = 1.0;
-  double* dptr = data.dataPtr();
-  feiArray<double*> coefPtrs(ids.size());
-  feiArray<double> crdata(2);
+  std::vector<double> data(ids.size(), 1.0);
+  double* dptr = &data[0];
+  std::vector<double*> coefPtrs(ids.size());
+  std::vector<double> crdata(2);
   crdata[0] = 1.0;
   crdata[1] = -1.0;
 
   for(unsigned ii=0; ii<ids.size(); ++ii) coefPtrs[ii] = dptr;
 
   CHK_ERR( mat_lsc->sumIn(numIndices, indicesPtr, numIndices, indicesPtr,
-			  coefPtrs.dataPtr()) );
+			  &coefPtrs[0]) );
 
   CHK_ERR( vec_lsc->sumInFieldData(fieldIDs[0], idTypes[0],
 				    ids.size(), &ids[0],
-				    data.dataPtr()) );
+				    &data[0]) );
 
-  CHK_ERR( linsys->loadPenaltyConstraint(0, crdata.dataPtr(), 100.0, 0.0) );
+  CHK_ERR( linsys->loadPenaltyConstraint(0, &crdata[0], 100.0, 0.0) );
 
   CHK_ERR( mat_lsc->gatherFromOverlap() );
 
@@ -280,16 +278,16 @@ int test_LinearSystem::test4()
 					 false, false, "U_LS4", vectorSpacePtr,
 					 factory, path_);
 
-  feiArray<int> crIDTypes(2);
-  feiArray<int> crFieldIDs(2);
+  std::vector<int> crIDTypes(2);
+  std::vector<int> crFieldIDs(2);
   crIDTypes[0] = idTypes[0]; crIDTypes[1] = idTypes[0];
   crFieldIDs[0] = fieldIDs[0]; crFieldIDs[1] = fieldIDs[0];
 
   CHK_ERR( matrixGraphPtr->initLagrangeConstraint(0, idTypes[1],
 						  2, //numIDs
-						  crIDTypes.dataPtr(),
+						  &crIDTypes[0],
 						  &(ids[1]),
-						  crFieldIDs.dataPtr()) );
+						  &crFieldIDs[0]) );
 
   CHK_ERR( matrixGraphPtr->initComplete() );
 
@@ -307,32 +305,30 @@ int test_LinearSystem::test4()
   int blockID=0;
   int numIndices = matrixGraphPtr->getConnectivityNumIndices(blockID);
 
-  feiArray<int> indicesArray(numIndices);
-  int* indicesPtr = indicesArray.dataPtr();
+  std::vector<int> indicesArray(numIndices);
+  int* indicesPtr = &indicesArray[0];
 
   int checkNumIndices = 0;
   CHK_ERR( matrixGraphPtr->getConnectivityIndices(blockID, 0,
 					     numIndices, indicesPtr,
 					     checkNumIndices) );
 
-  feiArray<double> data(ids.size());
-  data = 1.0;
-  double* dptr = data.dataPtr();
-  feiArray<double*> coefPtrs(ids.size());
-  feiArray<double> crdata(2);
+  std::vector<double> data(ids.size(), 1.0);
+  double* dptr = &data[0];
+  std::vector<double*> coefPtrs(ids.size());
+  std::vector<double> crdata(2);
   crdata[0] = 1.0;
   crdata[1] = -1.0;
 
   for(unsigned ii=0; ii<ids.size(); ++ii) coefPtrs[ii] = dptr;
 
   CHK_ERR( mat_lsc->sumIn(numIndices, indicesPtr, numIndices, indicesPtr,
-			  coefPtrs.dataPtr()) );
+			  &coefPtrs[0]) );
 
   CHK_ERR( vec_lsc->sumInFieldData(fieldIDs[0], idTypes[0],
-				   ids.size(), &ids[0],
-				   data.dataPtr()) );
+				   ids.size(), &ids[0], &data[0]) );
 
-  CHK_ERR( linsys->loadLagrangeConstraint(0, crdata.dataPtr(), 0.0) );
+  CHK_ERR( linsys->loadLagrangeConstraint(0, &crdata[0], 0.0) );
 
   CHK_ERR( mat_lsc->gatherFromOverlap() );
 

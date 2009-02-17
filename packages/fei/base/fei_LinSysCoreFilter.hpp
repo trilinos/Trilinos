@@ -355,9 +355,6 @@ class LinSysCoreFilter : public Filter {
 
    int formResidual(double* residValues, int numLocalEqns);
 
-   int getLocalSharedEqns(int numPtRows, const int* ptRows,
-			  feiArray<int>& localSharedEqns);
-
    int getRemoteSharedEqns(int numPtRows, const int* ptRows,
 			   ProcEqns& remoteProcEqns);
 
@@ -418,7 +415,7 @@ class LinSysCoreFilter : public Filter {
     int iterations_;
     int numRHSs_;
     int currentRHS_;
-    feiArray<int> rhsIDs_;
+    std::vector<int> rhsIDs_;
 
     int outputLevel_;
 
@@ -435,7 +432,7 @@ class LinSysCoreFilter : public Filter {
     fei::CSRMat csrD, csrKid, csrKdi, csrKdd, tmpMat1_, tmpMat2_;
     fei::CSVec fd_, tmpVec1_;
     int reducedEqnCounter_, reducedRHSCounter_;
-    feiArray<bool> rSlave_, cSlave_;
+    std::vector<int> rSlave_, cSlave_;
 
     int nodeIDType_;
     fei::DirichletBCManager* bcManager_; //Boundary condition manager
@@ -445,11 +442,11 @@ class LinSysCoreFilter : public Filter {
                                  // functions
 
     int maxElemRows_;
-    feiArray<int> scatterIndices_;
-    feiArray<int> blkScatterIndices_;
-    feiArray<int> iworkSpace_, iworkSpace2_;
-    feiArray<double> dworkSpace_;
-    feiArray<const double*> dworkSpace2_;
+    std::vector<int> scatterIndices_;
+    std::vector<int> blkScatterIndices_;
+    std::vector<int> iworkSpace_, iworkSpace2_;
+    std::vector<double> dworkSpace_;
+    std::vector<const double*> dworkSpace2_;
 
     double** eStiff_;
     double* eStiff1D_;

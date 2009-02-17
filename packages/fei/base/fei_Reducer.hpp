@@ -66,53 +66,9 @@ namespace fei {
     int addMatrixValues(int numRows, const int* rows,
                         int numCols, const int* cols,
                         const double* const* values,
-                        bool sum_into);
-
-    /** Put a C-style table (array of pointers) of coefficient data into the
-        matrix.  This is a rectangular array of coefficients for
-        rows/columns defined by the 'rows' and 'cols' lists.
-        If the sum_into argument is true, values should be added to any that
-        already exist at the specified locations. Otherwise (if sum_into is
-        false) incoming values should overwrite already-existing values.
-     */
-    int addMatrixValues(int numRows, const int* rows,
-                        int numCols, const int* cols,
-                        const double* const* values,
                         bool sum_into,
                         fei::Matrix& feimat,
                         int format);
-
-    /** Put coefficient data into a vector at the specified global indices.
-      If any specified indices are out of range (negative or too large) the
-      corresponding positions in the values array will not be referenced,
-      and a positive warning code will be returned.
-
-      @param numValues Length of caller-allocated 'globalIndices' and
-                       'values' arrays.
-
-      @param globalIndices List of global-indices specifying the locations in
-                the vector for incoming values to be placed.
-
-      @param values List of incoming values.
-
-      @param sum_into If true, incoming values should be added to values that
-                 may already be in the specified locations. If sum_into is
-                 false, then incoming values should overwrite existing values.
- 
-      @param soln_vector If true, incoming values should be placed in the
-                   solution vector. Otherwise, they should be placed in the
-                   rhs vector.
-
-      @param vectorIndex If the linear system has multiple rhs/soln vectors,
-                       then this parameter specifies which vector the incoming
-                       values should be put into.
-    */
-    int addVectorValues(int numValues,
-                        const int* globalIndices,
-                        const double* values,
-                        bool sum_into,
-                        bool soln_vector,
-                        int vectorIndex);
 
     /** Put coefficient data into a vector at the specified global indices.
       If any specified indices are out of range (negative or too large) the
@@ -182,7 +138,7 @@ namespace fei {
     int* slavesPtr_;
     fei::FillableMat Kii_, Kid_, Kdi_, Kdd_;
     fei::CSRMat csrKii, csrKid, csrKdi, csrKdd;
-    fei::FillableVec fi_, fd_, xi_, xd_;
+    fei::FillableVec fi_, fd_;
     fei::CSVec csfi, csvec, csvec_i;
     fei::CSRMat tmpMat1_, tmpMat2_;
     fei::CSVec tmpVec1_, tmpVec2_;
@@ -207,7 +163,6 @@ namespace fei {
     MPI_Comm comm_;
     std::string dbgprefix_;
     unsigned mat_counter_;
-    unsigned soln_vec_counter_;
     unsigned rhs_vec_counter_;
 
     bool* bool_array_;

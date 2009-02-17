@@ -33,32 +33,6 @@ test_misc::~test_misc()
 {
 }
 
-void test_misc_feiArray()
-{
-  FEI_COUT << "testing feiArray.[append,dataPtr]...";
-
-  feiArray<int> array;
-  for(int i=0; i<20; ++i) {
-    array.append(i);
-  }
-
-  if (array.length() != 20) {
-    throw std::runtime_error("basic feiArray test1 failed.");
-  }
-
-  int* arrayptr = array.dataPtr();
-
-  if (arrayptr == 0) {
-    throw std::runtime_error("basic feiArray test2 failed.");
-  }
-
-  if (arrayptr[array.length()-1] != 19) {
-    throw std::runtime_error("basic feiArray test3 failed.");
-  }
-
-  FEI_COUT << "ok" << FEI_ENDL;
-}
-
 void test_misc_FieldMask()
 {
   FEI_COUT << "testing fei::FieldMask...";
@@ -234,7 +208,6 @@ void test_misc_RecordCollection()
 int test_misc::runtests()
 {
   if (numProcs_ < 2) {
-    test_misc_feiArray();
     test_misc_FieldMask();
     test_misc_RecordCollection();
 

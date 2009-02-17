@@ -82,7 +82,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int numRowIDs,
   connectivities_.resize(numRowIDs);
   connectivityOffsets_.resize(numRowIDs+1);
 
-  int clen = rowOffsets[numRowIDs];
+  int clen = 0;
   if (offsets_are_lengths) {
     int sum = 0;
     for(int ii=0; ii<numRowIDs; ++ii) {
@@ -90,6 +90,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int numRowIDs,
     }
     clen = sum;
   }
+  else clen = rowOffsets[numRowIDs];
 
   colConnectivities_.resize(clen);
 
@@ -135,7 +136,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int fldID,
   connectivities_.resize(numRowIDs);
   connectivityOffsets_.resize(numRowIDs+1);
 
-  int clen = rowOffsets[numRowIDs];
+  int clen = 0;
   if (offsets_are_lengths) {
     int sum = 0;
     for(int ii=0; ii<numRowIDs; ++ii) {
@@ -143,6 +144,7 @@ fei::ConnectivityBlock::ConnectivityBlock(int fldID,
     }
     clen = sum;
   }
+  else clen = rowOffsets[numRowIDs];
 
   colConnectivities_.resize(clen);
 

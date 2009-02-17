@@ -12,7 +12,6 @@
 
 #include <test_utils/test_SNL_FEI_Structure.hpp>
 
-#include <feiArray.hpp>
 #include <SNL_FEI_Structure.hpp>
 
 #include <test_utils/testData.hpp>
@@ -50,16 +49,14 @@ int test_SNL_FEI_Structure::test1()
 				&(testdata->fieldIDs[0])) );
 
   int numNodesPerElem = testdata->ids.size();
-  feiArray<int> numFieldsPerNode(numNodesPerElem);
-  numFieldsPerNode = 1;
-  feiArray<int*>nodalFieldIDs(numNodesPerElem);
-  nodalFieldIDs = &(testdata->fieldIDs[0]);
+  std::vector<int> numFieldsPerNode(numNodesPerElem, 1);
+  std::vector<int*>nodalFieldIDs(numNodesPerElem, &(testdata->fieldIDs[0]));
 
   CHK_ERR( structure.initElemBlock(0, //blockID
 				   1, //numElements
 				   numNodesPerElem,
-				   numFieldsPerNode.dataPtr(),
-				   nodalFieldIDs.dataPtr(),
+				   &numFieldsPerNode[0],
+				   &nodalFieldIDs[0],
 				   0, //numElemDofFieldsPerElement
 				   NULL, //elemDofFieldIDs
 				   0)); //interleaveStrategy
@@ -68,7 +65,7 @@ int test_SNL_FEI_Structure::test1()
 			      0, //elemID
 			      &(testdata->ids[0])) );
 
-  feiArray<int*> sharingProcs2D(testdata->sharedIDs.size());
+  std::vector<int*> sharingProcs2D(testdata->sharedIDs.size());
   int i, offset = 0;
   for(i=0; i<(int)testdata->numSharingProcsPerID.size(); ++i) {
     sharingProcs2D[i] = &(testdata->sharingProcs[offset]);
@@ -78,7 +75,7 @@ int test_SNL_FEI_Structure::test1()
   CHK_ERR( structure.initSharedNodes(testdata->sharedIDs.size(),
       testdata->sharedIDs.size() ? &(testdata->sharedIDs[0]) : 0,
       testdata->numSharingProcsPerID.size() ? &(testdata->numSharingProcsPerID[0]) : 0,
-      sharingProcs2D.dataPtr()) );
+      &sharingProcs2D[0]) );
 
   CHK_ERR( structure.initComplete() );
 
@@ -102,24 +99,24 @@ int test_SNL_FEI_Structure::test1()
     ERReturn(-1);
   }
 
-  feiArray<int> rowLengths;
+  std::vector<int> rowLengths;
   CHK_ERR( structure.getMatrixRowLengths(rowLengths) );
 
   int numNonzeros = 0;
-  for(i=0; i<rowLengths.length(); ++i) {
-    numNonzeros += rowLengths[i];
+  for(size_t j=0; j<rowLengths.size(); ++j) {
+    numNonzeros += rowLengths[j];
   }
 
-  feiArray<int> colIndices_1d(numNonzeros);
-  feiArray<int*> colIndPtrs(rowLengths.length());
+  std::vector<int> colIndices_1d(numNonzeros);
+  std::vector<int*> colIndPtrs(rowLengths.size());
 
   offset = 0;
-  for(i=0; i<rowLengths.length(); ++i) {
-    colIndPtrs[i] = &(colIndices_1d[offset]);
-    offset += rowLengths[i];
+  for(size_t j=0; j<rowLengths.size(); ++j) {
+    colIndPtrs[j] = &(colIndices_1d[offset]);
+    offset += rowLengths[j];
   }
 
-  CHK_ERR( structure.getMatrixStructure(colIndPtrs.dataPtr(),
+  CHK_ERR( structure.getMatrixStructure(&colIndPtrs[0],
 					rowLengths) );
 
   delete testdata;
@@ -138,17 +135,15 @@ int test_SNL_FEI_Structure::test2()
 				&(testdata->fieldIDs[0])) );
 
   int numNodesPerElem = testdata->ids.size();
-  feiArray<int> numFieldsPerNode(numNodesPerElem);
-  numFieldsPerNode = testdata->fieldIDs.size();
-  feiArray<int*>nodalFieldIDs(numNodesPerElem);
-  nodalFieldIDs = &(testdata->fieldIDs[0]);
+  std::vector<int> numFieldsPerNode(numNodesPerElem, testdata->fieldIDs.size());
+  std::vector<int*>nodalFieldIDs(numNodesPerElem, &(testdata->fieldIDs[0]));
   std::vector<int> elemDofFieldIDs = testdata->fieldIDs;
 
   CHK_ERR( structure.initElemBlock(0, //blockID
 				   1, //numElements
 				   numNodesPerElem,
-				   numFieldsPerNode.dataPtr(),
-				   nodalFieldIDs.dataPtr(),
+				   &numFieldsPerNode[0],
+				   &nodalFieldIDs[0],
 				   elemDofFieldIDs.size(),
 				   &elemDofFieldIDs[0],
 				   0)); //interleaveStrategy
@@ -157,7 +152,7 @@ int test_SNL_FEI_Structure::test2()
 			      0, //elemID
 			      &(testdata->ids[0])) );
 
-  feiArray<int*> sharingProcs2D(testdata->sharedIDs.size());
+  std::vector<int*> sharingProcs2D(testdata->sharedIDs.size());
   int i, offset = 0;
   for(i=0; i<(int)testdata->numSharingProcsPerID.size(); ++i) {
     sharingProcs2D[i] = &(testdata->sharingProcs[offset]);
@@ -167,7 +162,7 @@ int test_SNL_FEI_Structure::test2()
   CHK_ERR( structure.initSharedNodes(testdata->sharedIDs.size(),
       testdata->sharedIDs.size() ? &(testdata->sharedIDs[0]) : 0,
       testdata->numSharingProcsPerID.size() ? &(testdata->numSharingProcsPerID[0]) : 0,
-      sharingProcs2D.dataPtr()) );
+      &sharingProcs2D[0]) );
 
   CHK_ERR( structure.initComplete() );
 
@@ -195,24 +190,24 @@ int test_SNL_FEI_Structure::test2()
     ERReturn(-1);
   }
 
-  feiArray<int> rowLengths;
+  std::vector<int> rowLengths;
   CHK_ERR( structure.getMatrixRowLengths(rowLengths) );
 
   int numNonzeros = 0;
-  for(i=0; i<rowLengths.length(); ++i) {
-    numNonzeros += rowLengths[i];
+  for(size_t j=0; j<rowLengths.size(); ++j) {
+    numNonzeros += rowLengths[j];
   }
 
-  feiArray<int> colIndices_1d(numNonzeros);
-  feiArray<int*> colIndPtrs(rowLengths.length());
+  std::vector<int> colIndices_1d(numNonzeros);
+  std::vector<int*> colIndPtrs(rowLengths.size());
 
   offset = 0;
-  for(i=0; i<rowLengths.length(); ++i) {
-    colIndPtrs[i] = &(colIndices_1d[offset]);
-    offset += rowLengths[i];
+  for(size_t j=0; j<rowLengths.size(); ++j) {
+    colIndPtrs[j] = &(colIndices_1d[offset]);
+    offset += rowLengths[j];
   }
 
-  CHK_ERR( structure.getMatrixStructure(colIndPtrs.dataPtr(),
+  CHK_ERR( structure.getMatrixStructure(&colIndPtrs[0],
 					rowLengths) );
 
   delete testdata;

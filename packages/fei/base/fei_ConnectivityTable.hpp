@@ -10,9 +10,9 @@
 /*--------------------------------------------------------------------*/
 
 #include "fei_macros.hpp"
-#include "feiArray.hpp"
 #include "fei_defs.h"
 
+#include <vector>
 #include <map>
 
 /** ConnectivityTable is basically a struct that holds the nodal connectivity
@@ -42,10 +42,10 @@ class ConnectivityTable {
 
    int numRows;
    std::map<GlobalID,int> elemIDs;
-   feiArray<int> elemNumbers;
-   feiArray<GlobalID>* elem_conn_ids;
-   feiArray<NodeDescriptor*>* elem_conn_ptrs;
-   feiArray<GlobalID>** connectivities;
+   std::vector<int> elemNumbers;
+   std::vector<GlobalID>* elem_conn_ids;
+   std::vector<NodeDescriptor*>* elem_conn_ptrs;
+   std::vector<GlobalID>** connectivities;
    int numNodesPerElem;
 
  private:

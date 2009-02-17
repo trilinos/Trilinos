@@ -11,7 +11,6 @@
 
 #include "fei_fwd.hpp"
 
-#include <feiArray.hpp>
 #include <vector>
 
 /**
@@ -74,7 +73,7 @@ class EqnBuffer {
        right-hand-side coefficients. Number-of-arrays == 'getNumEqns()',
        number-of-columns == 'getNumRHSs()'.
    */
-   feiArray<feiArray<double>*>* rhsCoefsPtr() {return(&rhsCoefs_);};
+   std::vector<std::vector<double>*>* rhsCoefsPtr() {return(&rhsCoefs_);};
 
    /** Return an offset into the 'eqnNumbers()' list, being the position at
        which equation-number 'eqn' is located.
@@ -163,13 +162,12 @@ class EqnBuffer {
    std::vector<int> indices_union_; //union of all equation-indices
 
    int numRHSs_;     //number of right-hand-side coefficients per equation
-   feiArray<feiArray<double>*> rhsCoefs_; //list of feiArray-pointers, each 
-                                          //feiArray is of length numRHSs_
+   std::vector<std::vector<double>*> rhsCoefs_; //list of vector-pointers, each 
+                                          //vector is of length numRHSs_
    bool setNumRHSsCalled_;
    bool rhsCoefsAllocated_;
 
-   feiArray<double> dummyCoefs_;
-   int dummyCoefsLen_;
+   std::vector<double> dummyCoefs_;
 };
 
 std::ostream& operator<<(std::ostream& os, EqnBuffer& eq);

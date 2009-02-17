@@ -18,7 +18,6 @@
 #include "fei_defs.h"
 
 #include <fei_ostream_ops.hpp>
-#include "feiArray.hpp"
 #include "fei_CommUtils.hpp"
 #include "fei_TemplateUtils.hpp"
 #include "snl_fei_Constraint.hpp"
@@ -51,10 +50,10 @@ typedef snl_fei::Constraint<GlobalID> ConstraintType;
 
 //------------------------------------------------------------------------------
 LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
-				   MPI_Comm comm,
-				   SNL_FEI_Structure* probStruct,
-				   LinearSystemCore* lsc,
-				   int masterRank)
+                                   MPI_Comm comm,
+                                   SNL_FEI_Structure* probStruct,
+                                   LinearSystemCore* lsc,
+                                   int masterRank)
  : Filter(probStruct),
    timesInitializeCalled_(0),
    lsc_(lsc),
@@ -81,7 +80,7 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
    numLocalReducedEqnBlks_(0),
    iterations_(0),
    currentRHS_(0),
-   rhsIDs_(0, 8),
+   rhsIDs_(),
    outputLevel_(0),
    comm_(comm),
    masterRank_(masterRank),
@@ -96,10 +95,10 @@ LinSysCoreFilter::LinSysCoreFilter(FEI_Implementation* owner,
    maxElemRows_(0),
    scatterIndices_(),
    blkScatterIndices_(),
-   iworkSpace_(0, 32),
-   iworkSpace2_(0, 32),
-   dworkSpace_(0, 32),
-   dworkSpace2_(0, 32),
+   iworkSpace_(),
+   iworkSpace2_(),
+   dworkSpace_(),
+   dworkSpace2_(),
    eStiff_(NULL),
    eStiff1D_(NULL),
    eLoad_(NULL)
@@ -180,12 +179,12 @@ int LinSysCoreFilter::initialize()
   // node numbering than the application-supplied nodeIDs which may not be
   // assumed to be contiguous or 0-based, or anything else.
 
-  feiArray<int>& eqnOffsets = problemStructure_->getGlobalEqnOffsets();
+  std::vector<int>& eqnOffsets = problemStructure_->getGlobalEqnOffsets();
   localStartRow_ = eqnOffsets[localRank_];
   localEndRow_ = eqnOffsets[localRank_+1]-1;
   numGlobalEqns_ = eqnOffsets[numProcs_];
 
-  feiArray<int>& nodeOffsets = problemStructure_->getGlobalNodeOffsets();
+  std::vector<int>& nodeOffsets = problemStructure_->getGlobalNodeOffsets();
   firstLocalNodeNumber_ =  nodeOffsets[localRank_];
   numGlobalNodes_ = nodeOffsets[numProcs_];
 
@@ -218,78 +217,60 @@ int LinSysCoreFilter::initialize()
     // let's prepare some arrays for handing the matrix structure to
     // the linear system.
 
-    feiArray<int> rowLengths;
+    std::vector<int> rowLengths;
     CHK_ERR( problemStructure_->getMatrixRowLengths(rowLengths) );
 
     int numReducedEqns = problemStructure_->getNumLocalReducedEqns();
     int maxBlkSize = problemStructure_->getGlobalMaxBlkSize();
-    feiArray<int> blkSizes(numLocalReducedEqnBlks_);
+    std::vector<int> blkSizes(numLocalReducedEqnBlks_, 1);
 
-    int ii, numNonzeros = 0;
-    int* rowLenPtr = rowLengths.dataPtr();
-    for(ii=0; ii<rowLengths.length(); ++ii) {
-      numNonzeros += rowLenPtr[ii];
+    int numNonzeros = 0;
+    for(size_t ii=0; ii<rowLengths.size(); ++ii) {
+      numNonzeros += rowLengths[ii];
     }
 
-    int* indices_1D = numNonzeros > 0 ? new int[numNonzeros] : NULL;
-    int** indices = numReducedEqns ? new int*[numReducedEqns] : NULL;
-    if (indices == NULL && numReducedEqns != 0) {
-      ERReturn(-1);
-    }
-
-    if (numNonzeros > 0 && indices_1D == NULL) {
-      ERReturn(-1);
-    }
+    std::vector<int> indices_1D(numNonzeros);
+    std::vector<int*> indices(numReducedEqns);
 
     int offset = 0;
-    for(ii=0; ii<rowLengths.length(); ++ii) {
+    for(size_t ii=0; ii<rowLengths.size(); ++ii) {
       indices[ii] = &(indices_1D[offset]);
-      offset += rowLenPtr[ii];
+      offset += rowLengths[ii];
     }
 
     if (maxBlkSize == 0) ERReturn(-1);
 
     if (maxBlkSize == 1) {
-      CHK_ERR( problemStructure_->getMatrixStructure(indices, rowLengths) );
-
-      //feiArray::operator=
-      blkSizes = 1;
+      CHK_ERR( problemStructure_->getMatrixStructure(&indices[0], rowLengths) );
 
       debugOutput("#LinSysCoreFilter calling point lsc_->setMatrixStructure");
-      CHK_ERR( lsc_->setMatrixStructure(indices, rowLengths.dataPtr(),
-					indices, rowLengths.dataPtr(),
-					blkSizes.dataPtr()) );
+      CHK_ERR( lsc_->setMatrixStructure(&indices[0], &rowLengths[0],
+                                        &indices[0], &rowLengths[0], &blkSizes[0]) );
     }
     else {
-      feiArray<int> blkRowLengths;
+      std::vector<int> blkRowLengths;
       int* blkIndices_1D = numNonzeros > 0 ? new int[numNonzeros] : NULL;
       int** blkIndices = numLocalReducedEqnBlks_ ?
-	new int*[numLocalReducedEqnBlks_] : NULL;
+        new int*[numLocalReducedEqnBlks_] : NULL;
       if (blkIndices == NULL && numLocalReducedEqnBlks_ != 0) ERReturn(-1);
 
-      CHK_ERR( problemStructure_->getMatrixStructure(indices, rowLengths,
-						     blkIndices, blkIndices_1D,
-						     blkRowLengths,
-						     blkSizes) );
+      CHK_ERR( problemStructure_->getMatrixStructure(&indices[0], rowLengths,
+                                                     blkIndices, blkIndices_1D,
+                                                     blkRowLengths, blkSizes) );
 
       offset = 0;
-      for(ii=0; ii<numLocalReducedEqnBlks_; ++ii) {
-	blkIndices[ii] = &(blkIndices_1D[offset]);
-	offset += blkRowLengths[ii];
+      for(int ii=0; ii<numLocalReducedEqnBlks_; ++ii) {
+        blkIndices[ii] = &(blkIndices_1D[offset]);
+        offset += blkRowLengths[ii];
       }
 
       debugOutput("#LinSysCoreFilter calling block lsc_->setMatrixStructure");
-      CHK_ERR( lsc_->setMatrixStructure(indices, rowLengths.dataPtr(),
-					blkIndices,
-					blkRowLengths.dataPtr(),
-					blkSizes.dataPtr()) );
+      CHK_ERR( lsc_->setMatrixStructure(&indices[0], &rowLengths[0],
+                                        blkIndices, &blkRowLengths[0], &blkSizes[0]) );
 
       if (numLocalReducedEqnBlks_ != 0) delete [] blkIndices;
       if (numNonzeros > 0) delete [] blkIndices_1D;
     }
-
-    if (numReducedEqns > 0) delete [] indices;
-    if (numNonzeros > 0) delete [] indices_1D;
   }
 
   matrixAllocated_ = true;
@@ -322,9 +303,9 @@ int LinSysCoreFilter::initLinSysCore()
     useLookup_ = false;
   }
 
-  feiArray<int>& globalNodeOffsets = problemStructure_->getGlobalNodeOffsets();
-  feiArray<int>& globalEqnOffsets = problemStructure_->getGlobalEqnOffsets();
-  feiArray<int>& globalBlkEqnOffsets =
+  std::vector<int>& globalNodeOffsets = problemStructure_->getGlobalNodeOffsets();
+  std::vector<int>& globalEqnOffsets = problemStructure_->getGlobalEqnOffsets();
+  std::vector<int>& globalBlkEqnOffsets =
     problemStructure_->getGlobalBlkEqnOffsets();
 
   int startRow = localStartRow_;
@@ -336,9 +317,9 @@ int LinSysCoreFilter::initLinSysCore()
   problemStructure_->translateToReducedEqn(endRow, reducedEndRow_);
   numReducedRows_ = reducedEndRow_ - reducedStartRow_ + 1;
 
-  std::vector<int> reducedEqnOffsets(globalEqnOffsets.length());
-  std::vector<int> reducedBlkEqnOffsets(globalBlkEqnOffsets.length());
-  std::vector<int> reducedNodeOffsets(globalNodeOffsets.length());
+  std::vector<int> reducedEqnOffsets(globalEqnOffsets.size());
+  std::vector<int> reducedBlkEqnOffsets(globalBlkEqnOffsets.size());
+  std::vector<int> reducedNodeOffsets(globalNodeOffsets.size());
 
   int numSlaveEqns = problemStructure_->numSlaveEquations();
 
@@ -350,7 +331,7 @@ int LinSysCoreFilter::initLinSysCore()
   tmpSend[1] = reducedNodeNum;
   CHK_ERR( fei::Allgatherv(comm_, tmpSend, tmpRecvLengths, tmpRecv) );
 
-  for(int ii=0; ii<globalEqnOffsets.length()-1; ++ii) {
+  for(size_t ii=0; ii<globalEqnOffsets.size()-1; ++ii) {
     reducedEqnOffsets[ii] = tmpRecv[ii*2];
     reducedNodeOffsets[ii] = tmpRecv[ii*2+1];
 
@@ -389,9 +370,9 @@ int LinSysCoreFilter::initLinSysCore()
 
   debugOutput("#LinSysCoreFilter calling lsc_->setGlobalOffsets");
   CHK_ERR( lsc_->setGlobalOffsets(numProcs_+1,
-				  &reducedNodeOffsets[0],
-				  &reducedEqnOffsets[0],
-				  &reducedBlkEqnOffsets[0]) );
+                                  &reducedNodeOffsets[0],
+                                  &reducedEqnOffsets[0],
+                                  &reducedBlkEqnOffsets[0]) );
 
   if (connectivitiesInitialized_) return(0);
 
@@ -424,7 +405,7 @@ int LinSysCoreFilter::initLinSysCore()
       int indx = numDofPerNode.size()-1;
       
       for(int nf=0; nf<fieldsPerNode[nn]; nf++) {
-	numDofPerNode[indx] += problemStructure_->getFieldSize(fieldIDsTable[nn][nf]);
+        numDofPerNode[indx] += problemStructure_->getFieldSize(fieldIDsTable[nn][nf]);
       }
     }
   }
@@ -450,25 +431,25 @@ int LinSysCoreFilter::initLinSysCore()
       int indx = numDofPerNode.size()-1;
 
       for(int nf=0; nf<fieldsPerNode[nn]; nf++) {
-	numDofPerNode[indx] += problemStructure_->getFieldSize(fieldIDsTable[nn][nf]);
+        numDofPerNode[indx] += problemStructure_->getFieldSize(fieldIDsTable[nn][nf]);
       }
     }
 
     int nodesPerElement = block->numNodesPerElement;
-    NodeDescriptor** elemNodePtrs = ctbl.elem_conn_ptrs->dataPtr();
+    NodeDescriptor** elemNodePtrs = &((*ctbl.elem_conn_ptrs)[0]);
     int offset = 0;
     for(int j=0; j<block->getNumElements(); j++) {
 
       for(int k=0; k<nodesPerElement; k++) {
-	NodeDescriptor* node = elemNodePtrs[offset++];
-	cNodeList[k] = node->getNodeNumber();
+        NodeDescriptor* node = elemNodePtrs[offset++];
+        cNodeList[k] = node->getNodeNumber();
       }
 
       int elemID = ctbl.elemNumbers[j];
       int* nodeNumbers = &cNodeList[0];
       debugOutput("#LinSysCoreFilter calling lsc->setConnectivities");
       CHK_ERR( lsc_->setConnectivities(i, 1, nodesPerElement,
-				       &elemID, &nodeNumbers) );
+                                       &elemID, &nodeNumbers) );
     }
   }
 
@@ -497,7 +478,7 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
       GlobalID* nodeIDPtr = &nodeID_vec[0];
 
       if ((int)iwork.size() < 2*numNodesPerCR) {
-	iwork.resize(2*numNodesPerCR);
+        iwork.resize(2*numNodesPerCR);
       }
 
       int* nodeList = &(iwork[0]);
@@ -508,27 +489,27 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
       int* fieldIDs = &fieldIDs_vec[0];
 
       for(int k=0; k<numNodesPerCR; k++) {
-	NodeDescriptor& node = Filter::findNodeDescriptor(nodeIDPtr[k]);
-	nodeList[k] = node.getNodeNumber();
+        NodeDescriptor& node = Filter::findNodeDescriptor(nodeIDPtr[k]);
+        nodeList[k] = node.getNodeNumber();
 
-	int eqn = -1;
-	if (!node.getFieldEqnNumber(fieldIDs[k], eqn)) voidERReturn;
+        int eqn = -1;
+        if (!node.getFieldEqnNumber(fieldIDs[k], eqn)) voidERReturn;
 
-	eqnList[k] = eqn;
+        eqnList[k] = eqn;
       }
 
       int crMultID = constraint.getConstraintID() + i++;
       if (Filter::logStream() != NULL) {
-	FEI_OSTREAM& os = *logStream();
-	os << "#LinSysCoreFilter calling lsc_->setMultCREqns"<<FEI_ENDL;
-	os << "#  multiplier eqn: " << meqn << ", columns: ";
-	for(int j=0; j<numNodesPerCR; ++j) os << eqnList[j] << " ";
-	os << FEI_ENDL;
+        FEI_OSTREAM& os = *logStream();
+        os << "#LinSysCoreFilter calling lsc_->setMultCREqns"<<FEI_ENDL;
+        os << "#  multiplier eqn: " << meqn << ", columns: ";
+        for(int j=0; j<numNodesPerCR; ++j) os << eqnList[j] << " ";
+        os << FEI_ENDL;
       }
 
       err = lsc_->setMultCREqns(crMultID, 1, numNodesPerCR,
-				&nodeList, &eqnList,
-				fieldIDs, &meqn);
+                                &nodeList, &eqnList,
+                                fieldIDs, &meqn);
       if (err) voidERReturn;
       ++cr_iter;
    }
@@ -539,7 +520,7 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
      err = lscf->setMultCRComplete();
      if (err != 0) {
        FEI_CERR << "LinSysCoreFilter::setLinSysCoreCREqns ERROR returned from "
-	    << "lscf->setMultCRComplete()" << FEI_ENDL;
+            << "lscf->setMultCRComplete()" << FEI_ENDL;
      }
    }
 
@@ -557,7 +538,7 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
       GlobalID* nodeIDsPtr = &nodeIDs_vec[0];
 
       if ((int)iwork.size() < 2*numNodesPerCR) {
-	iwork.resize(2*numNodesPerCR);
+        iwork.resize(2*numNodesPerCR);
       }
 
       int* nodeList = &(iwork[0]);
@@ -568,19 +549,19 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
       int* fieldIDs = &fieldIDs_vec[0];
 
       for(int k=0; k<numNodesPerCR; k++) {
-	NodeDescriptor& node = Filter::findNodeDescriptor(nodeIDsPtr[k]);
-	nodeList[k] = node.getNodeNumber();
+        NodeDescriptor& node = Filter::findNodeDescriptor(nodeIDsPtr[k]);
+        nodeList[k] = node.getNodeNumber();
 
-	int eqn = -1;
-	if (!node.getFieldEqnNumber(fieldIDs[k], eqn)) voidERReturn;
+        int eqn = -1;
+        if (!node.getFieldEqnNumber(fieldIDs[k], eqn)) voidERReturn;
 
-	eqnList[k] = eqn;
+        eqnList[k] = eqn;
       }
 
       int crPenID = crset.getConstraintID() + i;
       err = lsc_->setPenCREqns(crPenID, 1, numNodesPerCR,
-			       &nodeList, &eqnList,
-			       fieldIDs);
+                               &nodeList, &eqnList,
+                               fieldIDs);
       if (err) voidERReturn;
       ++cr_iter;
    }
@@ -588,8 +569,8 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
 
 //==============================================================================
 int LinSysCoreFilter::storeNodalColumnCoefs(int eqn, NodeDescriptor& node,
-					    int fieldID, int fieldSize,
-					    double* coefs)
+                                            int fieldID, int fieldSize,
+                                            double* coefs)
 {
   //
   //This function stores the coeficients for 'node' at 'fieldID' at the correct
@@ -605,11 +586,11 @@ int LinSysCoreFilter::storeNodalColumnCoefs(int eqn, NodeDescriptor& node,
     return(0);
   }
 
-  if (iworkSpace2_.length() < numParams) {
+  if ((int)iworkSpace2_.size() < numParams) {
     iworkSpace2_.resize(numParams);
   }
 
-  int* cols = iworkSpace2_.dataPtr();
+  int* cols = &iworkSpace2_[0];
 
   for(int j=0; j<numParams; j++) {
     cols[j] = eqnNumber + j;
@@ -622,8 +603,8 @@ int LinSysCoreFilter::storeNodalColumnCoefs(int eqn, NodeDescriptor& node,
 
 //==============================================================================
 int LinSysCoreFilter::storeNodalRowCoefs(NodeDescriptor& node,
-					 int fieldID, int fieldSize,
-					 double* coefs, int eqn)
+                                         int fieldID, int fieldSize,
+                                         double* coefs, int eqn)
 {
   //
   //This function stores coeficients in the equations for 'node', 'fieldID' at
@@ -640,17 +621,17 @@ int LinSysCoreFilter::storeNodalRowCoefs(NodeDescriptor& node,
     return(0);
   }
 
-  if (iworkSpace2_.length() < numParams) {
+  if ((int)iworkSpace2_.size() < numParams) {
     iworkSpace2_.resize(numParams);
   }
 
-  int* ptRows = iworkSpace2_.dataPtr();
+  int* ptRows = &iworkSpace2_[0];
 
-  if (dworkSpace2_.length() < numParams) {
+  if ((int)dworkSpace2_.size() < numParams) {
     dworkSpace2_.resize(numParams);
   }
 
-  const double* * values = dworkSpace2_.dataPtr();
+  const double* * values = &dworkSpace2_[0];
 
   for(int j=0; j<numParams; j++) {
     ptRows[j] = eqnNumber + j;
@@ -664,8 +645,8 @@ int LinSysCoreFilter::storeNodalRowCoefs(NodeDescriptor& node,
 
 //==============================================================================
 void LinSysCoreFilter::storeNodalSendEqn(NodeDescriptor& node,
-					 int fieldID, int col,
-					 double* coefs)
+                                         int fieldID, int col,
+                                         double* coefs)
 {
   //
   //This is a private LinSysCoreFilter function. We can safely assume that
@@ -689,12 +670,12 @@ void LinSysCoreFilter::storeNodalSendEqn(NodeDescriptor& node,
 
 //==============================================================================
 void LinSysCoreFilter::storePenNodeSendData(NodeDescriptor& iNode,
-					    int iField, int iFieldSize,
-					    double* iCoefs,
-					    NodeDescriptor& jNode,
-					    int jField, int jFieldSize,
-					    double* jCoefs,
-					    double penValue, double CRValue)
+                                            int iField, int iFieldSize,
+                                            double* iCoefs,
+                                            NodeDescriptor& jNode,
+                                            int jField, int jFieldSize,
+                                            double* jCoefs,
+                                            double penValue, double CRValue)
 {
 //
 //This function will register with the eqn comm mgr the equations associated
@@ -711,22 +692,22 @@ void LinSysCoreFilter::storePenNodeSendData(NodeDescriptor& iNode,
    int jNumParams = jFieldSize;
    if (iNumParams < 1 || jNumParams < 1) {
      FEI_CERR << "FEI ERROR, attempt to store indices for field with non-positive size"
-	  << " field "<<iField<<", size "<<iNumParams<<", field "<<jField<<", size "
-	  << jNumParams<<FEI_ENDL;
+          << " field "<<iField<<", size "<<iNumParams<<", field "<<jField<<", size "
+          << jNumParams<<FEI_ENDL;
      voidERReturn;
    }
 
-   if (dworkSpace_.length() < jNumParams) {
+   if ((int)dworkSpace_.size() < jNumParams) {
      dworkSpace_.resize(jNumParams);
    }
 
-   double* coefs = dworkSpace_.dataPtr();
+   double* coefs = &dworkSpace_[0];
 
-   if (iworkSpace2_.length() < jNumParams) {
+   if ((int)iworkSpace2_.size() < jNumParams) {
      iworkSpace2_.resize(jNumParams);
    }
 
-   int* cols = iworkSpace2_.dataPtr();
+   int* cols = &iworkSpace2_[0];
 
    for(int i=0; i<iNumParams; i++) {
       for(int j=0; j<jNumParams; j++) {
@@ -744,12 +725,12 @@ void LinSysCoreFilter::storePenNodeSendData(NodeDescriptor& iNode,
 
 //==============================================================================
 int LinSysCoreFilter::storePenNodeData(NodeDescriptor& iNode,
-				       int iField, int iFieldSize,
-				       double* iCoefs,
-				       NodeDescriptor& jNode,
-				       int jField, int jFieldSize,
-				       double* jCoefs,
-				       double penValue, double CRValue){
+                                       int iField, int iFieldSize,
+                                       double* iCoefs,
+                                       NodeDescriptor& jNode,
+                                       int jField, int jFieldSize,
+                                       double* jCoefs,
+                                       double penValue, double CRValue){
 //
 //This function will add to the local matrix the penalty constraint equations
 //associated with iNode at iField, having column indices that are the
@@ -764,29 +745,29 @@ int LinSysCoreFilter::storePenNodeData(NodeDescriptor& iNode,
    int jNumParams = jFieldSize;
    if (iNumParams < 1 || jNumParams < 1) {
      FEI_CERR << "FEI ERROR, attempt to store indices for field with non-positive size"
-	  << " field "<<iField<<", size "<<iNumParams<<", field "<<jField<<", size "
-	  << jNumParams<<FEI_ENDL;
+          << " field "<<iField<<", size "<<iNumParams<<", field "<<jField<<", size "
+          << jNumParams<<FEI_ENDL;
      ERReturn(-1);
    }
 
-   if (dworkSpace2_.length() < iNumParams) {
+   if ((int)dworkSpace2_.size() < iNumParams) {
      dworkSpace2_.resize(iNumParams);
    }
 
-   const double* * coefs = dworkSpace2_.dataPtr();
+   const double* * coefs = &dworkSpace2_[0];
 
-   if (dworkSpace_.length() < iNumParams * jNumParams) {
+   if ((int)dworkSpace_.size() < iNumParams * jNumParams) {
      dworkSpace_.resize(iNumParams * jNumParams);
    }
 
-   double* coefList = dworkSpace_.dataPtr();
+   double* coefList = &dworkSpace_[0];
 
-   if (iworkSpace2_.length() < jNumParams+iNumParams) {
+   if ((int)iworkSpace2_.size() < jNumParams+iNumParams) {
      iworkSpace2_.resize(jNumParams+iNumParams);
    }
 
-   int* cols = iworkSpace2_.dataPtr();
-   int* rows = iworkSpace2_.dataPtr() + jNumParams;
+   int* cols = &iworkSpace2_[0];
+   int* rows = &iworkSpace2_[jNumParams];
 
 
    for(int i=0; i<iNumParams; i++) {
@@ -805,7 +786,7 @@ int LinSysCoreFilter::storePenNodeData(NodeDescriptor& iNode,
    }
 
    CHK_ERR( giveToMatrix(iNumParams, rows,
-			 jNumParams, cols, coefs, ASSEMBLE_SUM) );
+                         jNumParams, cols, coefs, ASSEMBLE_SUM) );
 
    return(FEI_SUCCESS);
 }
@@ -836,7 +817,7 @@ int LinSysCoreFilter::deleteMultCRs()
   LinSysCore_flexible* lscf = dynamic_cast<LinSysCore_flexible*>(lsc_);
   if (lscf == NULL) {
 //    FEI_CERR << "FEI::LinSysCoreFilter: ERROR deleteMultCRs requested, but "
-//	 << "underlying solver doesn't support this operation." << FEI_ENDL;
+//         << "underlying solver doesn't support this operation." << FEI_ENDL;
     return(-1);
   }
 
@@ -976,11 +957,11 @@ int LinSysCoreFilter::loadNodeBCs(int numNodes,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::loadElemBCs(int numElems,
-				  const GlobalID *elemIDs,
-				  int fieldID,
-				  const double *const *alpha,
-				  const double *const *beta,
-				  const double *const *gamma)
+                                  const GlobalID *elemIDs,
+                                  int fieldID,
+                                  const double *const *alpha,
+                                  const double *const *beta,
+                                  const double *const *gamma)
 {
    return(-1);
 }
@@ -999,7 +980,7 @@ void LinSysCoreFilter::allocElemStuff()
       if (maxElemRows_ < numEqns) maxElemRows_ = numEqns;
    }
 
-   scatterIndices_.reAllocate(maxElemRows_);
+   scatterIndices_.resize(maxElemRows_);
 
    if (eStiff_ != NULL) delete [] eStiff_;
    if (eStiff1D_ != NULL) delete [] eStiff1D_;
@@ -1021,16 +1002,16 @@ void LinSysCoreFilter::allocElemStuff()
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::sumInElem(GlobalID elemBlockID,
-				GlobalID elemID,
-				const GlobalID* elemConn,
-				const double* const* elemStiffness,
-				const double* elemLoad,
-				int elemFormat)
+                                GlobalID elemID,
+                                const GlobalID* elemConn,
+                                const double* const* elemStiffness,
+                                const double* elemLoad,
+                                int elemFormat)
 {
   if (Filter::logStream() != NULL && outputLevel_ > 2) {
     (*logStream()) << "FEI: sumInElem" << FEI_ENDL <<"#blkID" << FEI_ENDL
-		      << static_cast<int>(elemBlockID) << FEI_ENDL
-		      << "#elID" << FEI_ENDL << static_cast<int>(elemID) << FEI_ENDL;
+                      << static_cast<int>(elemBlockID) << FEI_ENDL
+                      << "#elID" << FEI_ENDL << static_cast<int>(elemID) << FEI_ENDL;
     BlockDescriptor* block = NULL;
     CHK_ERR( problemStructure_->getBlockDescriptor(elemBlockID, block) );
     int numNodes = block->numNodesPerElement;
@@ -1044,20 +1025,20 @@ int LinSysCoreFilter::sumInElem(GlobalID elemBlockID,
   }
 
   return(generalElemInput(elemBlockID, elemID, elemConn, elemStiffness,
-			  elemLoad, elemFormat));
+                          elemLoad, elemFormat));
 }
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::sumInElemMatrix(GlobalID elemBlockID,
-				      GlobalID elemID,
-				      const GlobalID* elemConn,
-				      const double* const* elemStiffness,
-				      int elemFormat)
+                                      GlobalID elemID,
+                                      const GlobalID* elemConn,
+                                      const double* const* elemStiffness,
+                                      int elemFormat)
 {
   if (Filter::logStream() != NULL && outputLevel_ > 2) {
     (*logStream()) << "FEI: sumInElemMatrix"<<FEI_ENDL
-		      << "#blkID" << FEI_ENDL << static_cast<int>(elemBlockID) << FEI_ENDL
-		      << "#elID" << FEI_ENDL << static_cast<int>(elemID) << FEI_ENDL;
+                      << "#blkID" << FEI_ENDL << static_cast<int>(elemBlockID) << FEI_ENDL
+                      << "#elID" << FEI_ENDL << static_cast<int>(elemID) << FEI_ENDL;
     BlockDescriptor* block = NULL;
     CHK_ERR( problemStructure_->getBlockDescriptor(elemBlockID, block) );
     int numNodes = block->numNodesPerElement;
@@ -1071,7 +1052,7 @@ int LinSysCoreFilter::sumInElemMatrix(GlobalID elemBlockID,
   }
 
   return(generalElemInput(elemBlockID, elemID, elemConn, elemStiffness,
-			  NULL, elemFormat));
+                          NULL, elemFormat));
 }
 
 //------------------------------------------------------------------------------
@@ -1082,8 +1063,8 @@ int LinSysCoreFilter::sumInElemRHS(GlobalID elemBlockID,
 {
   if (Filter::logStream() != NULL && outputLevel_ > 2) {
     (*logStream()) << "FEI: sumInElemRHS"<<FEI_ENDL<<"#blID" << FEI_ENDL
-		      <<(int)elemBlockID << FEI_ENDL
-		      << "#elID" << FEI_ENDL << static_cast<int>(elemID) << FEI_ENDL;
+                      <<(int)elemBlockID << FEI_ENDL
+                      << "#elID" << FEI_ENDL << static_cast<int>(elemID) << FEI_ENDL;
     BlockDescriptor* block = NULL;
     CHK_ERR( problemStructure_->getBlockDescriptor(elemBlockID, block) );
     int numNodes = block->numNodesPerElement;
@@ -1097,28 +1078,28 @@ int LinSysCoreFilter::sumInElemRHS(GlobalID elemBlockID,
   }
 
   return(generalElemInput(elemBlockID, elemID, elemConn, NULL,
-			  elemLoad, -1));
+                          elemLoad, -1));
 }
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
-				       GlobalID elemID,
-				       const GlobalID* elemConn,
-				       const double* const* elemStiffness,
-				       const double* elemLoad,
-				       int elemFormat)
+                                       GlobalID elemID,
+                                       const GlobalID* elemConn,
+                                       const double* const* elemStiffness,
+                                       const double* elemLoad,
+                                       int elemFormat)
 {
   (void)elemConn;
   return(generalElemInput(elemBlockID, elemID, elemStiffness, elemLoad,
-			  elemFormat) );
+                          elemFormat) );
 }
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
-				       GlobalID elemID,
-				       const double* const* elemStiffness,
-				       const double* elemLoad,
-				       int elemFormat)
+                                       GlobalID elemID,
+                                       const double* const* elemStiffness,
+                                       const double* elemLoad,
+                                       int elemFormat)
 {
   //first get the block-descriptor for this elemBlockID...
 
@@ -1133,7 +1114,7 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
   int numBlkElemRows = block->getNumBlkEqnsPerElement();
   int interleave = block->getInterleaveStrategy();
 
-  //an feiArray.resize operation is free if the size is either shrinking or
+  //an std::vector.resize operation is free if the size is either shrinking or
   //staying the same.
 
   scatterIndices_.resize(numElemRows);
@@ -1152,9 +1133,9 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
   //diagonal or block-diagonal formats.
   if (elemFormat != FEI_DENSE_ROW && stiff != NULL) {
     if (elemFormat == FEI_BLOCK_DIAGONAL_ROW ||
-	elemFormat == FEI_BLOCK_DIAGONAL_COL) {
+        elemFormat == FEI_BLOCK_DIAGONAL_COL) {
       FEI_CERR << "LinSysCoreFilter::generalElemInput ERROR, elemFormat="
-	       << elemFormat << " not supported."<<FEI_ENDL;
+               << elemFormat << " not supported."<<FEI_ENDL;
       ERReturn(-1);
     }
 
@@ -1175,18 +1156,18 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
     if (stiff != NULL) {
       os << "#elem-stiff (after copy into dense-row format)" << FEI_ENDL;
       for(int i=0; i<numElemRows; i++) {
-	const double* stiff_i = stiff[i];
-	for(int j=0; j<numElemRows; j++) {
-	  os << stiff_i[j] << " ";
-	}
-	os << FEI_ENDL;
+        const double* stiff_i = stiff[i];
+        for(int j=0; j<numElemRows; j++) {
+          os << stiff_i[j] << " ";
+        }
+        os << FEI_ENDL;
       }
     }
 
     if (load != NULL) {
       os << "#elem-load" << FEI_ENDL;
       for(int i=0; i<numElemRows; i++) {
-	os << load[i] << " ";
+        os << load[i] << " ";
       }
       os<<FEI_ENDL;
     }
@@ -1199,16 +1180,16 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
   //now let's obtain the scatter indices for assembling the equations
   //into their appropriate places in the global matrix and rhs vectors
 
-  int* indPtr = scatterIndices_.dataPtr();
-  int* blkIndPtr = blkScatterIndices_.dataPtr();
+  int* indPtr = &scatterIndices_[0];
+  int* blkIndPtr = &blkScatterIndices_[0];
   int* blkSizesPtr = blkIndPtr + numBlkElemRows;
 
   bool useBlkEqns = false;
   if (interleave == 0) {
     //interleave==0 is node-major, so we'll get the block-indices too.
     problemStructure_->getScatterIndices_ID(elemBlockID, elemID,
-					    interleave, indPtr,
-					    blkIndPtr, blkSizesPtr);
+                                            interleave, indPtr,
+                                            blkIndPtr, blkSizesPtr);
     int sumBlkSizes = 0;
     for(int ii=0; ii<numBlkElemRows; ++ii) {
       sumBlkSizes += blkSizesPtr[ii];
@@ -1220,7 +1201,7 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
   else {
     //interleave!=0 is field-major, and we'll only bother with point-indices.
     problemStructure_->getScatterIndices_ID(elemBlockID, elemID,
-					    interleave, indPtr);
+                                            interleave, indPtr);
   }
 
   if (stiff != NULL) {
@@ -1229,20 +1210,20 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
       //I wasn't even calling it until recently, and I'm not sure if all
       //LinearSystemCore implementations even have it implemented.
       lsc_->setStiffnessMatrices(elemBlockID, 1, &elemID,
-				 &stiff, scatterIndices_.length(),
-				 &indPtr);
+                                 &stiff, scatterIndices_.size(),
+                                 &indPtr);
     }
 
-    int len = scatterIndices_.length();
+    int len = scatterIndices_.size();
     if (interleave == 0) {
       CHK_ERR( assembleEqns( len, len, indPtr, indPtr, stiff, true,
                              numBlkElemRows, blkIndPtr,
-			     blkSizesPtr, useBlkEqns, ASSEMBLE_SUM ) );
+                             blkSizesPtr, useBlkEqns, ASSEMBLE_SUM ) );
     }
     else {
       CHK_ERR( assembleEqns( len, len, indPtr, indPtr, stiff, true,
                              numBlkElemRows, blkIndPtr,
-			     blkSizesPtr, false, ASSEMBLE_SUM ) );
+                             blkSizesPtr, false, ASSEMBLE_SUM ) );
     }
   }
 
@@ -1252,11 +1233,11 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
       //I wasn't even calling it until recently, and I'm not sure if all
       //LinearSystemCore implementations even have it implemented.
       lsc_->setLoadVectors(elemBlockID, 1, &elemID,
-			   &load, scatterIndices_.length(),
-			   &indPtr);
+                           &load, scatterIndices_.size(),
+                           &indPtr);
     }
 
-    CHK_ERR( assembleRHS(scatterIndices_.length(), indPtr, load, ASSEMBLE_SUM) );
+    CHK_ERR( assembleRHS(scatterIndices_.size(), indPtr, load, ASSEMBLE_SUM) );
   }
 
   return(FEI_SUCCESS);
@@ -1264,10 +1245,10 @@ int LinSysCoreFilter::generalElemInput(GlobalID elemBlockID,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::putIntoRHS(int IDType,
-			  int fieldID,
-			  int numIDs,
-			  const GlobalID* IDs,
-			  const double* rhsEntries)
+                          int fieldID,
+                          int numIDs,
+                          const GlobalID* IDs,
+                          const double* rhsEntries)
 {
   int fieldSize = problemStructure_->getFieldSize(fieldID);
 
@@ -1275,8 +1256,8 @@ int LinSysCoreFilter::putIntoRHS(int IDType,
   int checkNumEqns;
 
   CHK_ERR( problemStructure_->getEqnNumbers(numIDs, IDs, IDType, fieldID,
-					    checkNumEqns,
-					    &rowIndices_[0]));
+                                            checkNumEqns,
+                                            &rowIndices_[0]));
   if (checkNumEqns != numIDs*fieldSize) {
     ERReturn(-1);
   }
@@ -1290,10 +1271,10 @@ int LinSysCoreFilter::putIntoRHS(int IDType,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::sumIntoRHS(int IDType,
-			  int fieldID,
-			  int numIDs,
-			  const GlobalID* IDs,
-			  const double* rhsEntries)
+                          int fieldID,
+                          int numIDs,
+                          const GlobalID* IDs,
+                          const double* rhsEntries)
 {
   int fieldSize = problemStructure_->getFieldSize(fieldID);
 
@@ -1301,8 +1282,8 @@ int LinSysCoreFilter::sumIntoRHS(int IDType,
   int checkNumEqns;
 
   CHK_ERR( problemStructure_->getEqnNumbers(numIDs, IDs, IDType, fieldID,
-					    checkNumEqns,
-					    &rowIndices_[0]));
+                                            checkNumEqns,
+                                            &rowIndices_[0]));
   if (checkNumEqns != numIDs*fieldSize) {
     ERReturn(-1);
   }
@@ -1343,8 +1324,8 @@ int LinSysCoreFilter::implementAllBCs() {
 
    if (essEqns.size() > 0) {
       CHK_ERR( enforceEssentialBCs(&essEqns[0],
-				   &essAlpha[0],
-				   &essGamma[0], essEqns.size()) );
+                                   &essAlpha[0],
+                                   &essGamma[0], essEqns.size()) );
    }
 
    debugOutput("#LinSysCoreFilter leaving implementAllBCs");
@@ -1353,9 +1334,9 @@ int LinSysCoreFilter::implementAllBCs() {
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::enforceEssentialBCs(const int* eqns,
-					  const double* alpha,
-					  const double* gamma,
-					  int numEqns)
+                                          const double* alpha,
+                                          const double* gamma,
+                                          int numEqns)
 {
   int* cc_eqns = const_cast<int*>(eqns);
   double* cc_alpha = const_cast<double*>(alpha);
@@ -1363,8 +1344,8 @@ int LinSysCoreFilter::enforceEssentialBCs(const int* eqns,
 
   if (problemStructure_->numSlaveEquations() == 0) {
     CHK_ERR( lsc_->enforceEssentialBC(cc_eqns,
-				      cc_alpha, cc_gamma,
-				      numEqns) );
+                                      cc_alpha, cc_gamma,
+                                      numEqns) );
   }
   else {
     std::vector<int> reducedEqns(numEqns);
@@ -1380,8 +1361,8 @@ int LinSysCoreFilter::enforceEssentialBCs(const int* eqns,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::enforceRemoteEssBCs(int numEqns, const int* eqns, 
-			   const int* const* colIndices, const int* colIndLens,
-			   const double* const* BCcoefs)
+                           const int* const* colIndices, const int* colIndLens,
+                           const double* const* BCcoefs)
 {
   //These eqn-numbers were reduced to the slave-eqn space by
   //LinSysCore::exchangeRemoteBCs, which is the only function that calls THIS
@@ -1394,7 +1375,7 @@ int LinSysCoreFilter::enforceRemoteEssBCs(int numEqns, const int* eqns,
   double** cc_BCcoefs = const_cast<double**>(BCcoefs);
 
   CHK_ERR( lsc_->enforceRemoteEssBCs(numEqns, cc_eqns, cc_colIndices,
-				     cc_colIndLens, cc_BCcoefs) );
+                                     cc_colIndLens, cc_BCcoefs) );
 
   return(FEI_SUCCESS);
 }
@@ -1439,21 +1420,21 @@ int LinSysCoreFilter::resolveConflictingCRs(EqnBuffer& bcEqns)
     for(int j=0; j<lenList; ++j) {
       int fieldSize = problemStructure_->getFieldSize(CRFieldPtr[j]);
       for(int k=0; k<fieldSize; ++k) {
-	if (std::abs(weights[offset++] + 1.0) < fei_eps) {
-	  NodeDescriptor* node = NULL;
-	  CHK_ERR( nodeDB.getNodeWithID(CRNodePtr[j], node) );
-	  int eqn = 0;
-	  node->getFieldEqnNumber(CRFieldPtr[j], eqn);
-	  eqn += k;
+        if (std::abs(weights[offset++] + 1.0) < fei_eps) {
+          NodeDescriptor* node = NULL;
+          CHK_ERR( nodeDB.getNodeWithID(CRNodePtr[j], node) );
+          int eqn = 0;
+          node->getFieldEqnNumber(CRFieldPtr[j], eqn);
+          eqn += k;
 
-	  if (snl_fei::binarySearch(eqn, bcEqnNumbers) >= 0) {
-	    coefs[0] = 1.0;
-	    coefs[1] = 0.0;
-	    coefs[2] = 1.0;
-	    int crEqn = multCR.getEqnNumber();
-	    CHK_ERR( bcEqns.addEqn(crEqn, coefs, indices, 3, false) );
-	  }
-	}
+          if (snl_fei::binarySearch(eqn, bcEqnNumbers) >= 0) {
+            coefs[0] = 1.0;
+            coefs[1] = 0.0;
+            coefs[2] = 1.0;
+            int crEqn = multCR.getEqnNumber();
+            CHK_ERR( bcEqns.addEqn(crEqn, coefs, indices, 3, false) );
+          }
+        }
       }
     }
     ++cr_iter;
@@ -1519,12 +1500,12 @@ int LinSysCoreFilter::exchangeRemoteEquations()
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
-						int assemblyMode)
+                                                int assemblyMode)
 {
   int numRecvEqns = eqnCommMgr.getNumLocalEqns();
-  std::vector<int>& recvEqnNumbers = eqnCommMgr.localEqnNumbersPtr();
+  std::vector<int>& recvEqnNumbers = eqnCommMgr.localEqnNumbers();
   std::vector<fei::CSVec*>& recvEqns = eqnCommMgr.localEqns();
-  feiArray<feiArray<double>*>& recvRHSs = *(eqnCommMgr.localRHSsPtr());
+  std::vector<std::vector<double>*>& recvRHSs = *(eqnCommMgr.localRHSsPtr());
 
   bool newCoefs = eqnCommMgr.newCoefData();
   bool newRHSs = eqnCommMgr.newRHSData();
@@ -1541,34 +1522,34 @@ int LinSysCoreFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
     int eqn = recvEqnNumbers[i];
     if ((reducedStartRow_ > eqn) || (reducedEndRow_ < eqn)) {
       FEI_CERR << "LinSysCoreFilter::unpackRemoteContributions: ERROR, recvEqn "
-	   << eqn << " out of range. (localStartRow_: " << reducedStartRow_
-	   << ", localEndRow_: " << reducedEndRow_ << ", localRank_: "
-	   << localRank_ << ")" << FEI_ENDL;
+           << eqn << " out of range. (localStartRow_: " << reducedStartRow_
+           << ", localEndRow_: " << reducedEndRow_ << ", localRank_: "
+           << localRank_ << ")" << FEI_ENDL;
       MPI_Abort(comm_, -1);
     }
 
     for(size_t ii=0; ii<recvEqns[i]->size(); ii++) {
       if (coefs[i][ii] > 1.e+200) {
-	FEI_CERR << localRank_ << ": LinSysCoreFilter::unpackRemoteContributions: "
-	     << "WARNING, coefs["<<i<<"]["<<ii<<"]: " << coefs[i][ii]
-	     << FEI_ENDL;
-	MPI_Abort(comm_, -1);
+        FEI_CERR << localRank_ << ": LinSysCoreFilter::unpackRemoteContributions: "
+             << "WARNING, coefs["<<i<<"]["<<ii<<"]: " << coefs[i][ii]
+             << FEI_ENDL;
+        MPI_Abort(comm_, -1);
       }
     }
 
     if (recvEqns[i]->size() > 0 && newCoefs) {
       //contribute this equation to the matrix,
       CHK_ERR( giveToLocalReducedMatrix(1, &(recvEqnNumbers[i]),
-					recvEqns[i]->size(),
-					&(recvEqns[i]->indices()[0]),
-					&(coefs[i]), assemblyMode ) );
+                                        recvEqns[i]->size(),
+                                        &(recvEqns[i]->indices()[0]),
+                                        &(coefs[i]), assemblyMode ) );
     }
 
     //and now the RHS contributions.
     if (newRHSs) {
       for(int j=0; j<numRHSs_; j++) {
-	CHK_ERR( giveToLocalReducedRHS(1, &( (*(recvRHSs[i]))[j] ),
-				       &eqn, assemblyMode) );
+        CHK_ERR( giveToLocalReducedRHS(1, &( (*(recvRHSs[i]))[j] ),
+                                       &eqn, assemblyMode) );
       }
     }
   }
@@ -1580,8 +1561,8 @@ int LinSysCoreFilter::unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::exchangeRemoteBCs(std::vector<int>& essEqns,
-					std::vector<double>& essAlpha,
-					std::vector<double>& essGamma)
+                                        std::vector<double>& essAlpha,
+                                        std::vector<double>& essGamma)
 {
   //we need to make sure that the right thing happens for essential
   //boundary conditions that get applied to nodes on elements that touch
@@ -1611,8 +1592,8 @@ int LinSysCoreFilter::exchangeRemoteBCs(std::vector<int>& essEqns,
   }
 
   eqnCommMgr_->exchangeRemEssBCs(&(*eqns)[0], eqns->size(),
-				 &essAlpha[0], &essGamma[0],
-				 comm_, dbgOut);
+                                 &essAlpha[0], &essGamma[0],
+                                 comm_, dbgOut);
 
   int numRemoteEssBCEqns = eqnCommMgr_->getNumRemEssBCEqns();
   if (numRemoteEssBCEqns > 0) {
@@ -1630,8 +1611,8 @@ int LinSysCoreFilter::exchangeRemoteBCs(std::vector<int>& essEqns,
     }
 
     CHK_ERR( enforceRemoteEssBCs(numRemoteEssBCEqns,
-				 &remEssBCEqnNumbers[0], indices,
-				 &remEssBCEqnLengths[0], coefs));
+                                 &remEssBCEqnNumbers[0], indices,
+                                 &remEssBCEqnLengths[0], coefs));
 
     delete [] indices;
     delete [] coefs;
@@ -1648,11 +1629,11 @@ int LinSysCoreFilter::exchangeRemoteBCs(std::vector<int>& essEqns,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::loadCRMult(int CRID,
-				 int numCRNodes,
-				 const GlobalID* CRNodes,
-				 const int* CRFields,
-				 const double* CRWeights,
-				 double CRValue)
+                                 int numCRNodes,
+                                 const GlobalID* CRNodes,
+                                 const int* CRFields,
+                                 const double* CRWeights,
+                                 double CRValue)
 {
 //
 // Load Lagrange multiplier constraint relation data
@@ -1684,7 +1665,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
     for(i=0; i<numCRNodes; ++i) {
       int size = problemStructure_->getFieldSize(CRFields[i]);
       for(int j=0; j<size; ++j) {
-	os << CRWeights[offset++] << " ";
+        os << CRWeights[offset++] << " ";
       }
     }
     os << FEI_ENDL<<"#CRValue:"<<FEI_ENDL<<CRValue<<FEI_ENDL;
@@ -1698,7 +1679,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
   int lenList = multCR->getMasters()->size();
   if (lenList < 1) {
     FEI_CERR << "ERROR in FEI, constraint with ID="<<CRID<<" appears to have"
-	 <<" a constrained-node list of length "<<lenList<<", should be > 0."<<FEI_ENDL;
+         <<" a constrained-node list of length "<<lenList<<", should be > 0."<<FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -1711,7 +1692,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
   for(i=0; i<lenList; i++) {
     if (CRNodePtr[i] != CRNodes[i]) {
       FEI_CERR << "ERROR in FEI, constraint with ID="<<CRID<<" had different node-list"
-	   << " in initCRMult than it has in loadCRMult."<<FEI_ENDL;
+           << " in initCRMult than it has in loadCRMult."<<FEI_ENDL;
       ERReturn(-1);
     }
   }
@@ -1722,18 +1703,18 @@ int LinSysCoreFilter::loadCRMult(int CRID,
   for (i = 0; i < lenList; i++) {
     if (CRFieldPtr[i] != CRFields[i]) {
       FEI_CERR <<"ERROR in FEI, constraint with CRID="<<CRID<<" had different field-list"
-	   <<" in initCRMult than it has in loadCRMult."<<FEI_ENDL;
+           <<" in initCRMult than it has in loadCRMult."<<FEI_ENDL;
       ERReturn(-1);
     }
   }
 
   newConstraintData_ = true;
 
-  if (iworkSpace_.length() < lenList) {
+  if ((int)iworkSpace_.size() < lenList) {
     iworkSpace_.resize(lenList);
   }
 
-  int* fieldSizes = iworkSpace_.dataPtr();
+  int* fieldSizes = &iworkSpace_[0];
 
   for (i = 0; i < lenList; i++) {
     int numSolnParams = problemStructure_->getFieldSize(CRFields[i]);
@@ -1781,7 +1762,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
     //first, store the column coeficients for equation irow, the
     //constraint's equation.
     storeNodalColumnCoefs(irow, node, myFieldID, fieldSizes[j],
-			  &(CRWeightsPtr[offset]));
+                          &(CRWeightsPtr[offset]));
 
 
     //next, store store the transpose of the above. i.e., column irow,
@@ -1790,7 +1771,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
     if (node.getOwnerProc() == localRank_) {
 
       storeNodalRowCoefs(node, myFieldID, fieldSizes[j],
-			 &(CRWeightsPtr[offset]), irow);
+                         &(CRWeightsPtr[offset]), irow);
     }
     else {
 
@@ -1805,12 +1786,12 @@ int LinSysCoreFilter::loadCRMult(int CRID,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::loadCRPen(int CRID, 
-				int numCRNodes,
-				const GlobalID* CRNodes,
-				const int* CRFields,
-				const double* CRWeights,
-				double CRValue,
-				double penValue)
+                                int numCRNodes,
+                                const GlobalID* CRNodes,
+                                const int* CRFields,
+                                const double* CRWeights,
+                                double CRValue,
+                                double penValue)
 {
   //
   // Load penalty constraint relation data
@@ -1825,7 +1806,7 @@ int LinSysCoreFilter::loadCRPen(int CRID,
   int lenList = penCR->getMasters()->size();
   if (lenList < 1) {
     FEI_CERR << "ERROR in FEI, constraint with ID="<<CRID<<" appears to have"
-	 <<" a constrained-node list of length "<<lenList<<", should be > 0."<<FEI_ENDL;
+         <<" a constrained-node list of length "<<lenList<<", should be > 0."<<FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -1838,7 +1819,7 @@ int LinSysCoreFilter::loadCRPen(int CRID,
   for(int j = 0; j < lenList; j++) {
     if (CRNodePtr[j] != CRNodes[j]) {
       FEI_CERR << "ERROR in FEI, constraint with ID="<<CRID<<" had different node-list"
-	   << " in initCRPen than it has in loadCRPen."<<FEI_ENDL;
+           << " in initCRPen than it has in loadCRPen."<<FEI_ENDL;
       ERReturn(-1);
     }
   }
@@ -1847,11 +1828,11 @@ int LinSysCoreFilter::loadCRPen(int CRID,
 
   //  store the weights and rhs-value in the constraint records.
 
-  if (iworkSpace_.length() < lenList) {
+  if ((int)iworkSpace_.size() < lenList) {
     iworkSpace_.resize(lenList);
   }
 
-  int* fieldSizes = iworkSpace_.dataPtr();
+  int* fieldSizes = &iworkSpace_[0];
 
   for (i = 0; i < lenList; i++) {
     int numSolnParams = problemStructure_->getFieldSize(CRFields[i]);
@@ -1900,19 +1881,19 @@ int LinSysCoreFilter::loadCRPen(int CRID,
 
       double rhsValue = CRValue;
       if (j < lenList-1) {
-	rhsValue = 0.0;
+        rhsValue = 0.0;
       }
 
       if (iNode.getOwnerProc() == localRank_) {
 
-	storePenNodeData(iNode, iField, fieldSizes[i], iweights,
-			 jNode, jField, fieldSizes[j], jweights,
-			 penValue, rhsValue);
+        storePenNodeData(iNode, iField, fieldSizes[i], iweights,
+                         jNode, jField, fieldSizes[j], jweights,
+                         penValue, rhsValue);
       }
       else {
-	storePenNodeSendData(iNode, iField, fieldSizes[i], iweights,
-			     jNode, jField, fieldSizes[j], jweights,
-			     penValue, rhsValue);
+        storePenNodeSendData(iNode, iField, fieldSizes[i], iweights,
+                             jNode, jField, fieldSizes[j], jweights,
+                             penValue, rhsValue);
       }
     }
   }
@@ -1931,28 +1912,28 @@ int LinSysCoreFilter::parameters(int numParams, const char *const* paramStrings)
    }
    else {
       const char* param1 = snl_fei::getParamValue("AZ_matrix_type",
-							 numParams,
-							 paramStrings);
+                                                         numParams,
+                                                         paramStrings);
 
       if (param1 != NULL) {
-	if (!strcmp(param1, "AZ_VBR_MATRIX") ||
-	    !strcmp(param1, "blockMatrix")) {
-	  blockMatrix_ = true;
-	}	
+        if (!strcmp(param1, "AZ_VBR_MATRIX") ||
+            !strcmp(param1, "blockMatrix")) {
+          blockMatrix_ = true;
+        }        
       }
       else {
-	param1 = snl_fei::getParamValue("matrixType",
-					       numParams, paramStrings);
-	if (param1 != NULL) {
-	  if (!strcmp(param1, "AZ_VBR_MATRIX") ||
-	      !strcmp(param1, "blockMatrix")) {
+        param1 = snl_fei::getParamValue("matrixType",
+                                               numParams, paramStrings);
+        if (param1 != NULL) {
+          if (!strcmp(param1, "AZ_VBR_MATRIX") ||
+              !strcmp(param1, "blockMatrix")) {
             blockMatrix_ = true;
-	  }	
-	}
+          }        
+        }
       }
 
       param1 = snl_fei::getParamValue("outputLevel",
-					     numParams,paramStrings);
+                                             numParams,paramStrings);
       if ( param1 != NULL){
         std::string str(param1);
         FEI_ISTRINGSTREAM isstr(str);
@@ -1973,14 +1954,14 @@ int LinSysCoreFilter::parameters(int numParams, const char *const* paramStrings)
 
       if (Filter::logStream() != NULL) {
 
-	(*logStream())<<"#LinSysCoreFilter::parameters"<<FEI_ENDL
-			 <<"# --- numParams: "<< numParams<<FEI_ENDL;
+        (*logStream())<<"#LinSysCoreFilter::parameters"<<FEI_ENDL
+                         <<"# --- numParams: "<< numParams<<FEI_ENDL;
          for(int i=0; i<numParams; i++){
-	   (*logStream())<<"#------ paramStrings["<<i<<"]: "
-			    <<paramStrings[i];
-	   if (paramStrings[i][strlen(paramStrings[i])-1] != '\n') {
-	     (*logStream())<<FEI_ENDL;
-	   }
+           (*logStream())<<"#------ paramStrings["<<i<<"]: "
+                            <<paramStrings[i];
+           if (paramStrings[i][strlen(paramStrings[i])-1] != '\n') {
+             (*logStream())<<FEI_ENDL;
+           }
          }
       }
    }
@@ -2059,7 +2040,7 @@ int LinSysCoreFilter::residualNorm(int whichNorm, int numFields,
   residTime = fei::utils::cpu_time() - start;
 
   CHK_ERR( Filter::calculateResidualNorms(whichNorm, numFields,
-					  fieldIDs, norms, residValues) );
+                                          fieldIDs, norms, residValues) );
 
   return(FEI_SUCCESS);
 }
@@ -2121,10 +2102,12 @@ int LinSysCoreFilter::setNumRHSVectors(int numRHSs, int* rhsIDs){
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::setCurrentRHS(int rhsID)
 {
-   int index = rhsIDs_.find(rhsID);
+   std::vector<int>::iterator iter =
+      std::find( rhsIDs_.begin(), rhsIDs_.end(), rhsID);
 
-   if (index < 0) ERReturn(-1)
-   
+   if (iter == rhsIDs_.end()) ERReturn(-1)
+ 
+   int index = iter - rhsIDs_.begin();
    currentRHS_ = index;
 
    lsc_->setRHSID(rhsID);
@@ -2134,9 +2117,9 @@ int LinSysCoreFilter::setCurrentRHS(int rhsID)
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::giveToMatrix_symm_noSlaves(int numPtRows,
-						 const int* ptRowNumbers,
+                                                 const int* ptRowNumbers,
                                                  const double* const* coefs,
-						 int mode)
+                                                 int mode)
 {
   for(int i=0; i<numPtRows; i++) {
     int row = ptRowNumbers[i];
@@ -2148,21 +2131,21 @@ int LinSysCoreFilter::giveToMatrix_symm_noSlaves(int numPtRows,
 
     if (mode == ASSEMBLE_SUM) {
       if (Filter::logStream() != NULL && 0) {
-	FEI_OSTREAM& os = *logStream();
-	os << "#  calling sumIntoSystemMatrix, row: " << ptRowNumbers[i]
-	   << ", columns: ";
-	for(int j=0; j<numPtRows; ++j) os << ptRowNumbers[j] << " ";
-	os << FEI_ENDL;
+        FEI_OSTREAM& os = *logStream();
+        os << "#  calling sumIntoSystemMatrix, row: " << ptRowNumbers[i]
+           << ", columns: ";
+        for(int j=0; j<numPtRows; ++j) os << ptRowNumbers[j] << " ";
+        os << FEI_ENDL;
       }
 
       CHK_ERR( lsc_->sumIntoSystemMatrix(1, &(ptRowNumbers[i]),
-					 numPtRows, ptRowNumbers,
-					 &valptr) );
+                                         numPtRows, ptRowNumbers,
+                                         &valptr) );
     }
     else {
       CHK_ERR( lsc_->putIntoSystemMatrix(1, &(ptRowNumbers[i]),
-					 numPtRows, ptRowNumbers,
-					 &valptr) );
+                                         numPtRows, ptRowNumbers,
+                                         &valptr) );
     }
   }
 
@@ -2171,18 +2154,18 @@ int LinSysCoreFilter::giveToMatrix_symm_noSlaves(int numPtRows,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::giveToBlkMatrix_symm_noSlaves(int numPtRows,
-						    const int* ptRowNumbers,
-						    int numBlkRows,
-						    const int* blkRowNumbers,
-						    const int* blkRowSizes,
-						    const double* const* coefs,
-						    int mode)
+                                                    const int* ptRowNumbers,
+                                                    int numBlkRows,
+                                                    const int* blkRowNumbers,
+                                                    const int* blkRowSizes,
+                                                    const double* const* coefs,
+                                                    int mode)
 {
   int i;
-  if (dworkSpace2_.length() < numPtRows) {
+  if ((int)dworkSpace2_.size() < numPtRows) {
     dworkSpace2_.resize(numPtRows);
   }
-  const double* * valptr = dworkSpace2_.dataPtr();
+  const double* * valptr = &dworkSpace2_[0];
   for(i=0; i<numPtRows; i++) {
     int row = ptRowNumbers[i];
     valptr[i] = coefs[i];
@@ -2193,8 +2176,8 @@ int LinSysCoreFilter::giveToBlkMatrix_symm_noSlaves(int numPtRows,
 
     if (mode == ASSEMBLE_PUT) {
        CHK_ERR( lsc_->putIntoSystemMatrix(1, &(ptRowNumbers[i]),
-					 numPtRows, ptRowNumbers,
-					 &(valptr[i])) );
+                                         numPtRows, ptRowNumbers,
+                                         &(valptr[i])) );
    }
   }
 
@@ -2208,18 +2191,18 @@ int LinSysCoreFilter::giveToBlkMatrix_symm_noSlaves(int numPtRows,
 
     if (mode == ASSEMBLE_SUM) {
       if (Filter::logStream() != NULL && 0) {
-	FEI_OSTREAM& os = *logStream();
-	os << "#  calling sumIntoSystemMatrix, row: " << ptRowNumbers[i]
-	   << ", columns: ";
-	for(int j=0; j<numPtRows; ++j) os << ptRowNumbers[j] << " ";
-	os << FEI_ENDL;
+        FEI_OSTREAM& os = *logStream();
+        os << "#  calling sumIntoSystemMatrix, row: " << ptRowNumbers[i]
+           << ", columns: ";
+        for(int j=0; j<numPtRows; ++j) os << ptRowNumbers[j] << " ";
+        os << FEI_ENDL;
       }
       
       CHK_ERR(lsc_->sumIntoSystemMatrix(blkRowSizes[i],&(ptRowNumbers[offset]),
-					numPtRows, ptRowNumbers,
-					1, &(blkRowNumbers[i]),
-					numBlkRows, blkRowNumbers,
-					&(valptr[offset])) );
+                                        numPtRows, ptRowNumbers,
+                                        1, &(blkRowNumbers[i]),
+                                        numBlkRows, blkRowNumbers,
+                                        &(valptr[offset])) );
     }
     
     offset += blkRowSizes[i];
@@ -2230,55 +2213,55 @@ int LinSysCoreFilter::giveToBlkMatrix_symm_noSlaves(int numPtRows,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::giveToMatrix(int numPtRows, const int* ptRows,
-			   int numPtCols, const int* ptCols,
-			   const double* const* values, int mode)
+                           int numPtCols, const int* ptCols,
+                           const double* const* values, int mode)
 {
   try {
 
   if (problemStructure_->numSlaveEquations() == 0) {
     for(int i=0; i<numPtRows; i++) {
       if (ptRows[i] < localStartRow_ || ptRows[i] > localEndRow_) {
-	eqnCommMgr_->addRemoteEqn(ptRows[i], values[i], ptCols, numPtCols);
-	continue;
+        eqnCommMgr_->addRemoteEqn(ptRows[i], values[i], ptCols, numPtCols);
+        continue;
       }
 
       if (mode == ASSEMBLE_SUM) {
-	if (Filter::logStream() != NULL && 0) {
-	  FEI_OSTREAM& os = *logStream();
-	  os << "#  calling sumIntoSystemMatrix, row: " << ptRows[i]
-	     << ", columns: ";
-	  for(int j=0; j<numPtCols; ++j) os << ptCols[j] << " ";
-	  os << FEI_ENDL;
-	}
+        if (Filter::logStream() != NULL && 0) {
+          FEI_OSTREAM& os = *logStream();
+          os << "#  calling sumIntoSystemMatrix, row: " << ptRows[i]
+             << ", columns: ";
+          for(int j=0; j<numPtCols; ++j) os << ptCols[j] << " ";
+          os << FEI_ENDL;
+        }
 
-	CHK_ERR( lsc_->sumIntoSystemMatrix(1, &(ptRows[i]),
-					   numPtCols, ptCols,
-					   &(values[i])) );
+        CHK_ERR( lsc_->sumIntoSystemMatrix(1, &(ptRows[i]),
+                                           numPtCols, ptCols,
+                                           &(values[i])) );
       }
       else {
-	CHK_ERR( lsc_->putIntoSystemMatrix(1, &(ptRows[i]),
-					   numPtCols, ptCols,
-					   &(values[i])) );
+        CHK_ERR( lsc_->putIntoSystemMatrix(1, &(ptRows[i]),
+                                           numPtCols, ptCols,
+                                           &(values[i])) );
       }
     }
   }
   else {
     iworkSpace_.resize(numPtCols);
     iworkSpace2_.resize(numPtCols);
-    int* iworkPtr = iworkSpace_.dataPtr();
-    int* iworkPtr2= iworkSpace2_.dataPtr();
+    int* iworkPtr = &iworkSpace_[0];
+    int* iworkPtr2= &iworkSpace2_[0];
     int offset = 0;
     for(int ii=0; ii<numPtCols; ii++) {
       int reducedEqn = -1;
       bool isSlave = problemStructure_->translateToReducedEqn(ptCols[ii],
-							      reducedEqn);
+                                                              reducedEqn);
       if (isSlave) {
-	reducedEqn = -1;
-	iworkPtr[ii] = reducedEqn;
+        reducedEqn = -1;
+        iworkPtr[ii] = reducedEqn;
       }
       else {
-	iworkPtr[ii] = reducedEqn;
-	iworkPtr2[offset++] = reducedEqn;
+        iworkPtr[ii] = reducedEqn;
+        iworkPtr2[offset++] = reducedEqn;
       }
     }
     iworkSpace2_.resize(offset);
@@ -2292,68 +2275,68 @@ int LinSysCoreFilter::giveToMatrix(int numPtRows, const int* ptRows,
 
       if (reducedStartRow_ > reducedRow || reducedRow > reducedEndRow_) {
 
-	dworkSpace_.resize(0);
-	for(int j=0; j<numPtCols; j++) {
-	  if (iworkSpace_[j]>=0) {
-	    if (Filter::logStream() != NULL) {
-	      (*logStream())<<"#  giveToMatrix remote("<<reducedRow<<","
-			    <<iworkSpace_[j]<<","<<values[i][j]<<")"<<FEI_ENDL;
-	    }
+        dworkSpace_.resize(0);
+        for(int j=0; j<numPtCols; j++) {
+          if (iworkSpace_[j]>=0) {
+            if (Filter::logStream() != NULL) {
+              (*logStream())<<"#  giveToMatrix remote("<<reducedRow<<","
+                            <<iworkSpace_[j]<<","<<values[i][j]<<")"<<FEI_ENDL;
+            }
 
-	    dworkSpace_.append(values[i][j]);
-	  }
-	}
+            dworkSpace_.push_back(values[i][j]);
+          }
+        }
 
-	if (mode == ASSEMBLE_SUM) {
-	  if (Filter::logStream() != NULL) {
-	    (*logStream())<<"sum"<<FEI_ENDL;
-	  }
+        if (mode == ASSEMBLE_SUM) {
+          if (Filter::logStream() != NULL) {
+            (*logStream())<<"sum"<<FEI_ENDL;
+          }
 
-	  eqnCommMgr_->addRemoteEqn(reducedRow,
-				    dworkSpace_.dataPtr(),
-				    iworkSpace2_.dataPtr(),
-				    iworkSpace2_.length());
-	}
-	else {
-	  if (Filter::logStream() != NULL) {
-	    (*logStream())<<"put"<<FEI_ENDL;
-	  }
+          eqnCommMgr_->addRemoteEqn(reducedRow,
+                                    &dworkSpace_[0],
+                                    &iworkSpace2_[0],
+                                    iworkSpace2_.size());
+        }
+        else {
+          if (Filter::logStream() != NULL) {
+            (*logStream())<<"put"<<FEI_ENDL;
+          }
 
-	  eqnCommMgr_put_->addRemoteEqn(reducedRow,
-					dworkSpace_.dataPtr(),
-					iworkSpace2_.dataPtr(),
-					iworkSpace2_.length());
-	}
+          eqnCommMgr_put_->addRemoteEqn(reducedRow,
+                                        &dworkSpace_[0],
+                                        &iworkSpace2_[0],
+                                        iworkSpace2_.size());
+        }
 
-	continue;
+        continue;
       }
 
       for(int j=0; j<numPtCols; j++) {
 
-	int reducedCol = iworkPtr[j];
-	if (reducedCol<0) continue;
+        int reducedCol = iworkPtr[j];
+        if (reducedCol<0) continue;
 
-	double* tmpCoef = const_cast<double*>(&(values[i][j]));
+        double* tmpCoef = const_cast<double*>(&(values[i][j]));
 
-	if (Filter::logStream() != NULL) {
-	  (*logStream())<< "#  giveToMatrix local("<<reducedRow
-			<<","<<reducedCol<<","<<*tmpCoef<<")"<<FEI_ENDL;
-	}
+        if (Filter::logStream() != NULL) {
+          (*logStream())<< "#  giveToMatrix local("<<reducedRow
+                        <<","<<reducedCol<<","<<*tmpCoef<<")"<<FEI_ENDL;
+        }
 
-	if (mode == ASSEMBLE_SUM) {
-	  if (Filter::logStream() != NULL && 0) {
-	    FEI_OSTREAM& os = *logStream();
-	    os << "#  calling sumIntoSystemMatrix, row: " << reducedRow
-	       << ", columns: " << reducedCol << FEI_ENDL;
-	  }
+        if (mode == ASSEMBLE_SUM) {
+          if (Filter::logStream() != NULL && 0) {
+            FEI_OSTREAM& os = *logStream();
+            os << "#  calling sumIntoSystemMatrix, row: " << reducedRow
+               << ", columns: " << reducedCol << FEI_ENDL;
+          }
 
-	  CHK_ERR( lsc_->sumIntoSystemMatrix(1, &reducedRow, 1, &reducedCol,
-					     &tmpCoef ) );
-	}
-	else {
-	  CHK_ERR( lsc_->putIntoSystemMatrix(1, &reducedRow, 1, &reducedCol,
-					     &tmpCoef ) );
-	}
+          CHK_ERR( lsc_->sumIntoSystemMatrix(1, &reducedRow, 1, &reducedCol,
+                                             &tmpCoef ) );
+        }
+        else {
+          CHK_ERR( lsc_->putIntoSystemMatrix(1, &reducedRow, 1, &reducedCol,
+                                             &tmpCoef ) );
+        }
       }
     }
   }
@@ -2369,11 +2352,11 @@ int LinSysCoreFilter::giveToMatrix(int numPtRows, const int* ptRows,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::giveToLocalReducedMatrix(int numPtRows, const int* ptRows,
-				       int numPtCols, const int* ptCols,
-				       const double* const* values, int mode)
+                                       int numPtCols, const int* ptCols,
+                                       const double* const* values, int mode)
 {
   bool specialCase = (!firstRemEqnExchange_ && newConstraintData_
-		      && !newMatrixData_) ? true : false;
+                      && !newMatrixData_) ? true : false;
 
   double fei_eps = std::numeric_limits<double>::epsilon();
 
@@ -2383,16 +2366,16 @@ int LinSysCoreFilter::giveToLocalReducedMatrix(int numPtRows, const int* ptRows,
       const double* values_i = values[i];
 
       for(int j=0; j<numPtCols; ++j) {
-	if (specialCase && std::abs(values_i[j]) < fei_eps) continue;
+        if (specialCase && std::abs(values_i[j]) < fei_eps) continue;
 
-	const double* valPtr = &(values_i[j]);
-	CHK_ERR( lsc_->sumIntoSystemMatrix(1, &(ptRows[i]), 1, &(ptCols[j]),
-					   &valPtr) );
+        const double* valPtr = &(values_i[j]);
+        CHK_ERR( lsc_->sumIntoSystemMatrix(1, &(ptRows[i]), 1, &(ptCols[j]),
+                                           &valPtr) );
       }
     }
     else {
       CHK_ERR( lsc_->putIntoSystemMatrix(1, &(ptRows[i]), numPtCols, ptCols,
-					 &(values[i])) );
+                                         &(values[i])) );
     }
   }
 
@@ -2424,8 +2407,8 @@ int LinSysCoreFilter::sumIntoMatrix(fei::CSRMat& mat)
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
-			    const int* rowColOffsets, const int* ptCols,
-			    int numColsPerRow, double** values)
+                            const int* rowColOffsets, const int* ptCols,
+                            int numColsPerRow, double** values)
 {
   //This function may be attempting to retrieve matrix rows that are not
   //locally owned. If those rows correspond to finite-element nodes that we
@@ -2466,7 +2449,7 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
   }
 
   localProcEqns.setProcEqnLengths(&eqnNumbers[0], &eqnLengths[0],
-				  eqnNumbers.size());
+                                  eqnNumbers.size());
 
   //now mirror those lengths in the remoteProcEqns objects to get ready for the
   //all-to-all exchange of equation data.
@@ -2475,7 +2458,7 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
   EqnBuffer remoteEqns;
   //we're now ready to do the exchange.
   CHK_ERR( EqnCommMgr::exchangeEqnBuffers(comm_, &localProcEqns, &localEqns,
-					  &remoteProcEqns, &remoteEqns, false));
+                                          &remoteProcEqns, &remoteEqns, false));
 
   std::vector<int>& remEqnNumbers = remoteEqns.eqnNumbers();
   fei::CSVec** remEqnsPtr = (remoteEqns.eqns().size() ? &(remoteEqns.eqns()[0]) : 0);
@@ -2495,7 +2478,7 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
     //row) into 'values'.
     if (ptCols == NULL) {
       for(size_t j=0; j<remEqnsPtr[eqnIndex]->size(); j++) {
-	values[i][j] = remEqns[eqnIndex]->coefs()[j];
+        values[i][j] = remEqns[eqnIndex]->coefs()[j];
       }
       continue;
     }
@@ -2535,7 +2518,7 @@ int LinSysCoreFilter::getFromMatrix(int numPtRows, const int* ptRows,
     //(the whole row) into 'values'.
     if (ptCols == NULL) {
       for(int j=0; j<rowLen; j++) {
-	values[i][j] = coefs[j];
+        values[i][j] = coefs[j];
       }
       continue;
     }
@@ -2583,7 +2566,7 @@ int LinSysCoreFilter::getEqnsFromMatrix(ProcEqns& procEqns, EqnBuffer& eqnData)
       int outputLen = 0;
 
       CHK_ERR( lsc_->getMatrixRow(eqn, &coefs[0], &indices[0],
-				  len, outputLen) );
+                                  len, outputLen) );
       if (outputLen != len) ERReturn(-1);
 
       CHK_ERR( eqnData.addEqn(eqn, &coefs[0], &indices[0], len, false) );
@@ -2633,26 +2616,26 @@ int LinSysCoreFilter::getEqnsFromRHS(ProcEqns& procEqns, EqnBuffer& eqnData)
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::giveToRHS(int num, const double* values,
-			const int* indices, int mode)
+                        const int* indices, int mode)
 {
   if (problemStructure_->numSlaveEquations() == 0) {
     for(int i=0; i<num; i++) {
       if (indices[i] < localStartRow_ || indices[i] > localEndRow_) {
-	if (mode == ASSEMBLE_SUM) {
-	  eqnCommMgr_->addRemoteRHS(indices[i], currentRHS_, values[i]);
-	}
-	else {
-	  eqnCommMgr_put_->addRemoteRHS(indices[i], currentRHS_, values[i]);
-	}
+        if (mode == ASSEMBLE_SUM) {
+          eqnCommMgr_->addRemoteRHS(indices[i], currentRHS_, values[i]);
+        }
+        else {
+          eqnCommMgr_put_->addRemoteRHS(indices[i], currentRHS_, values[i]);
+        }
 
-	continue;
+        continue;
       }
 
       if (mode == ASSEMBLE_SUM) {
-	CHK_ERR( lsc_->sumIntoRHSVector(1, &(values[i]), &(indices[i])) );
+        CHK_ERR( lsc_->sumIntoRHSVector(1, &(values[i]), &(indices[i])) );
       }
       else {
-	CHK_ERR( lsc_->putIntoRHSVector(1, &(values[i]), &(indices[i])) );
+        CHK_ERR( lsc_->putIntoRHSVector(1, &(values[i]), &(indices[i])) );
       }
     }
   }
@@ -2660,25 +2643,25 @@ int LinSysCoreFilter::giveToRHS(int num, const double* values,
     for(int i=0; i<num; i++) {
       int reducedEqn;
       bool isSlave = problemStructure_->
-	translateToReducedEqn(indices[i], reducedEqn);
+        translateToReducedEqn(indices[i], reducedEqn);
       if (isSlave) continue;
 
       if (reducedEqn < reducedStartRow_ || reducedEqn > reducedEndRow_) {
-	if (mode == ASSEMBLE_SUM) {
-	  eqnCommMgr_->addRemoteRHS(reducedEqn, currentRHS_, values[i]);
-	}
-	else {
-	  eqnCommMgr_put_->addRemoteRHS(reducedEqn, currentRHS_, values[i]);
-	}
+        if (mode == ASSEMBLE_SUM) {
+          eqnCommMgr_->addRemoteRHS(reducedEqn, currentRHS_, values[i]);
+        }
+        else {
+          eqnCommMgr_put_->addRemoteRHS(reducedEqn, currentRHS_, values[i]);
+        }
 
-	continue;
+        continue;
       }
 
       if (mode == ASSEMBLE_SUM) {
-	CHK_ERR( lsc_->sumIntoRHSVector(1, &(values[i]), &reducedEqn) );
+        CHK_ERR( lsc_->sumIntoRHSVector(1, &(values[i]), &reducedEqn) );
       }
       else {
-	CHK_ERR( lsc_->putIntoRHSVector(1, &(values[i]), &reducedEqn) );
+        CHK_ERR( lsc_->putIntoRHSVector(1, &(values[i]), &reducedEqn) );
       }
     }
   }
@@ -2688,7 +2671,7 @@ int LinSysCoreFilter::giveToRHS(int num, const double* values,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::giveToLocalReducedRHS(int num, const double* values,
-				    const int* indices, int mode)
+                                    const int* indices, int mode)
 {
   for(int i=0; i<num; i++) {
 
@@ -2753,7 +2736,7 @@ int LinSysCoreFilter::getFromRHS(int num, double* values, const int* indices)
   }
 
   localProcEqns.setProcEqnLengths(&eqnNumbers[0], &eqnLengths[0],
-				  eqnNumbers.size());
+                                  eqnNumbers.size());
 
   //now mirror those lengths in the remoteProcEqns objects to get ready for the
   //all-to-all exchange of equation data.
@@ -2762,11 +2745,11 @@ int LinSysCoreFilter::getFromRHS(int num, double* values, const int* indices)
   EqnBuffer remoteEqns;
   //we're now ready to do the exchange.
   CHK_ERR( EqnCommMgr::exchangeEqnBuffers(comm_, &localProcEqns, &localEqns,
-					   &remoteProcEqns, &remoteEqns, false))
+                                           &remoteProcEqns, &remoteEqns, false))
 
   //now we're ready to get the rhs data we've received from other processors.
   std::vector<int>& remEqnNumbers = remoteEqns.eqnNumbers();
-  feiArray<feiArray<double>*>& remRhsCoefs = *(remoteEqns.rhsCoefsPtr());
+  std::vector<std::vector<double>*>& remRhsCoefs = *(remoteEqns.rhsCoefsPtr());
 
   for(int i=0; i<num; i++) {
     int row = indices[i];
@@ -2840,10 +2823,10 @@ int LinSysCoreFilter::getEqnSolnEntry(int eqnNumber, double& solnValue)
       problemStructure_->translateToReducedEqn(mEqn, mReducedeqn);
 
       if (reducedStartRow_ > mReducedeqn || mReducedeqn > reducedEndRow_) {
-	CHK_ERR( getSharedRemoteSolnEntry(mReducedeqn, coef) );
+        CHK_ERR( getSharedRemoteSolnEntry(mReducedeqn, coef) );
       }
       else {
-	CHK_ERR( getReducedSolnEntry(mReducedeqn, coef) );
+        CHK_ERR( getReducedSolnEntry(mReducedeqn, coef) );
       }
       solnValue += coef * (*masterCoefs)[i];
     }
@@ -2872,7 +2855,7 @@ int LinSysCoreFilter::getSharedRemoteSolnEntry(int eqnNumber, double& solnValue)
   int index = snl_fei::binarySearch(eqnNumber, remoteEqnNumbers);
   if (index < 0) {
     FEI_CERR << "LinSysCoreFilter::getSharedRemoteSolnEntry: ERROR, eqn "
-	 << eqnNumber << " not found." << FEI_ENDL;
+         << eqnNumber << " not found." << FEI_ENDL;
     ERReturn(-1);
   }
   solnValue = remoteSoln[index];
@@ -2902,7 +2885,7 @@ int LinSysCoreFilter::unpackSolution()
   //
   if (Filter::logStream() != NULL) {
     (*logStream())<< "#  entering unpackSolution, outputLevel: "
-		     <<outputLevel_<<FEI_ENDL;
+                     <<outputLevel_<<FEI_ENDL;
   }
 
   //what we need to do is as follows.
@@ -2912,14 +2895,14 @@ int LinSysCoreFilter::unpackSolution()
   //to be made available to those remote contributing processors.
 
   int numRecvEqns = eqnCommMgr_->getNumLocalEqns();
-  std::vector<int>& recvEqnNumbers = eqnCommMgr_->localEqnNumbersPtr();
+  std::vector<int>& recvEqnNumbers = eqnCommMgr_->localEqnNumbers();
 
   for(int i=0; i<numRecvEqns; i++) {
     int eqn = recvEqnNumbers[i];
 
     if ((reducedStartRow_ > eqn) || (reducedEndRow_ < eqn)) {
       FEI_CERR << "LinSysCoreFilter::unpackSolution: ERROR, 'recv' eqn (" << eqn
-	   << ") out of local range." << FEI_ENDL;
+           << ") out of local range." << FEI_ENDL;
       MPI_Abort(comm_, -1);
     }
 
@@ -2983,7 +2966,7 @@ int LinSysCoreFilter::getBlockNodeSolution(GlobalID elemBlockID,
       //Don't call the getActiveNodeDesc_ID function unless we have to.
 
       if (nodeID == node_i->getGlobalNodeID()) {
-	node = node_i;
+        node = node_i;
       }
       else {
          err = nodeDB.getNodeWithID(nodeID, node);
@@ -2993,26 +2976,26 @@ int LinSysCoreFilter::getBlockNodeSolution(GlobalID elemBlockID,
       //activeNodes list, then skip to the next loop iteration.
 
       if (err != 0) {
-	continue;
+        continue;
       }
 
       int numFields = node->getNumFields();
       const int* fieldIDs = node->getFieldIDList();
 
       for(int j=0; j<numFields; j++) {
-	if (block->containsField(fieldIDs[j])) {
-	  int size = problemStructure_->getFieldSize(fieldIDs[j]);
-	  assert(size >= 0);
+        if (block->containsField(fieldIDs[j])) {
+          int size = problemStructure_->getFieldSize(fieldIDs[j]);
+          assert(size >= 0);
 
-	  int thisEqn = -1;
-	  node->getFieldEqnNumber(fieldIDs[j], thisEqn);
+          int thisEqn = -1;
+          node->getFieldEqnNumber(fieldIDs[j], thisEqn);
 
-	  double answer;
-	  for(int k=0; k<size; k++) {
-	    CHK_ERR( getEqnSolnEntry(thisEqn+k, answer) )
-	      results[numSolnParams++] = answer;
-	  }
-	}
+          double answer;
+          for(int k=0; k<size; k++) {
+            CHK_ERR( getEqnSolnEntry(thisEqn+k, answer) )
+              results[numSolnParams++] = answer;
+          }
+        }
       }//for(j<numFields)loop
    }
 
@@ -3023,9 +3006,9 @@ int LinSysCoreFilter::getBlockNodeSolution(GlobalID elemBlockID,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::getNodalSolution(int numNodes, 
-				       const GlobalID *nodeIDs, 
-				       int *offsets,
-				       double *results)
+                                       const GlobalID *nodeIDs, 
+                                       int *offsets,
+                                       double *results)
 {
   debugOutput("FEI: getNodalSolution");
 
@@ -3082,8 +3065,8 @@ int LinSysCoreFilter::getNodalSolution(int numNodes,
 
       double answer;
       for(int k=0; k<size; k++) {
-	CHK_ERR( getEqnSolnEntry(thisEqn+k, answer) )
-	  results[numSolnParams++] = answer;
+        CHK_ERR( getEqnSolnEntry(thisEqn+k, answer) )
+          results[numSolnParams++] = answer;
       }
     }//for(j<numFields)loop
   }
@@ -3120,7 +3103,7 @@ int LinSysCoreFilter::getBlockFieldNodeSolution(GlobalID elemBlockID,
 
   if (!block->containsField(fieldID)) {
     FEI_CERR << "LinSysCoreFilter::getBlockFieldNodeSolution WARNING: fieldID " << fieldID
-	 << " not contained in element-block " << (int)elemBlockID << FEI_ENDL;
+         << " not contained in element-block " << (int)elemBlockID << FEI_ENDL;
     return(1);
   }
 
@@ -3172,9 +3155,9 @@ int LinSysCoreFilter::getBlockFieldNodeSolution(GlobalID elemBlockID,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::getNodalFieldSolution(int fieldID,
-				    int numNodes, 
-				    const GlobalID *nodeIDs, 
-				    double *results)
+                                    int numNodes, 
+                                    const GlobalID *nodeIDs, 
+                                    double *results)
 {
   debugOutput("FEI: getNodalFieldSolution");
 
@@ -3278,11 +3261,11 @@ int LinSysCoreFilter::putBlockNodeSolution(GlobalID elemBlockID,
          if (block->containsField(fieldIDs[j])) {
             for(int k=0; k<size; k++) {
                int reducedEqn;
-	       problemStructure_->
-		 translateToReducedEqn(fieldEqnNumbers[j]+k, reducedEqn);
+               problemStructure_->
+                 translateToReducedEqn(fieldEqnNumbers[j]+k, reducedEqn);
 
-	       CHK_ERR( lsc_->putInitialGuess(&reducedEqn,
-					      &estimates[offs+k], 1) );
+               CHK_ERR( lsc_->putInitialGuess(&reducedEqn,
+                                              &estimates[offs+k], 1) );
             }
          }
          offs += size;
@@ -3305,10 +3288,10 @@ int LinSysCoreFilter::putBlockFieldNodeSolution(GlobalID elemBlockID,
      FEI_OSTREAM& os = *logStream();
      os << "FEI: putBlockFieldNodeSolution" << FEI_ENDL;
      os << "#blkID" << FEI_ENDL << (int)elemBlockID << FEI_ENDL
-	<< "#fieldID"<<FEI_ENDL << fieldID << FEI_ENDL
-	<< "#fieldSize"<<FEI_ENDL << fieldSize << FEI_ENDL
-	<< "#numNodes"<<FEI_ENDL << numNodes << FEI_ENDL
-	<< "#nodeIDs" << FEI_ENDL;
+        << "#fieldID"<<FEI_ENDL << fieldID << FEI_ENDL
+        << "#fieldSize"<<FEI_ENDL << fieldSize << FEI_ENDL
+        << "#numNodes"<<FEI_ENDL << numNodes << FEI_ENDL
+        << "#nodeIDs" << FEI_ENDL;
      int i;
      for(i=0; i<numNodes; ++i) os << (int)nodeIDs[i] << FEI_ENDL;
      os << "#estimates" << FEI_ENDL;
@@ -3346,20 +3329,20 @@ int LinSysCoreFilter::putBlockFieldNodeSolution(GlobalID elemBlockID,
       if (fieldID < 0) numbers[count++] = node->getNodeNumber();
       else {
          int eqn = -1;
-	 if (node->getFieldEqnNumber(fieldID, eqn)) {
+         if (node->getFieldEqnNumber(fieldID, eqn)) {
            if (eqn >= localStartRow_ && eqn <= localEndRow_) {
              for(int j=0; j<fieldSize; j++) { 
                data[count] = estimates[i*fieldSize + j];
                problemStructure_->translateToReducedEqn(eqn+j, numbers[count++]);
              }
-	   }
-	 }
+           }
+         }
       }
    }
 
    if (fieldID < 0) {
      CHK_ERR( lsc_->putNodalFieldData(fieldID, fieldSize, 
-				      &numbers[0], numNodes, estimates));
+                                      &numbers[0], numNodes, estimates));
    }
    else {
      CHK_ERR(lsc_->putInitialGuess(&numbers[0], &data[0], count));
@@ -3446,11 +3429,11 @@ int LinSysCoreFilter::putBlockElemSolution(GlobalID elemBlockID,
 
       for(int j=0; j<DOFPerElement; j++) {
          int reducedEqn;
-	 problemStructure_->
-	   translateToReducedEqn(elemDOFEqnNumbers[index] + j, reducedEqn);
+         problemStructure_->
+           translateToReducedEqn(elemDOFEqnNumbers[index] + j, reducedEqn);
          double soln = estimates[i*DOFPerElement + j];
 
-	 CHK_ERR( lsc_->putInitialGuess(&reducedEqn, &soln, 1) );
+         CHK_ERR( lsc_->putInitialGuess(&reducedEqn, &soln, 1) );
       }
    }
 
@@ -3459,8 +3442,8 @@ int LinSysCoreFilter::putBlockElemSolution(GlobalID elemBlockID,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::getCRMultipliers(int numCRs,
-				       const int* CRIDs,
-				       double* multipliers)
+                                       const int* CRIDs,
+                                       double* multipliers)
 {
   int multCRsLen = problemStructure_->getNumMultConstRecords();
   if (numCRs > multCRsLen) {
@@ -3510,9 +3493,9 @@ int LinSysCoreFilter::putCRMultipliers(int numMultCRs,
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::putNodalFieldData(int fieldID,
-					int numNodes,
-					const GlobalID* nodeIDs,
-					const double* nodeData)
+                                        int numNodes,
+                                        const GlobalID* nodeIDs,
+                                        const double* nodeData)
 {
   debugOutput("FEI: putNodalFieldData");
 
@@ -3523,7 +3506,7 @@ int LinSysCoreFilter::putNodalFieldData(int fieldID,
   int fieldSize = problemStructure_->getFieldSize(fieldID);
   NodeDatabase& nodeDB = problemStructure_->getNodeDatabase();
 
-  feiArray<int> nodeNumbers(numNodes);
+  std::vector<int> nodeNumbers(numNodes);
 
   for(int i=0; i<numNodes; i++) {
     NodeDescriptor* node = NULL;
@@ -3532,9 +3515,9 @@ int LinSysCoreFilter::putNodalFieldData(int fieldID,
     int nodeNumber = node->getNodeNumber();
     if (nodeNumber < 0) {
       FEI_CERR << "LinSysCoreFilter::putNodalFieldData ERROR, node with ID " 
-	   << (int)nodeIDs[i] << " doesn't have an associated nodeNumber "
-	   << "assigned. putNodalFieldData shouldn't be called until after the "
-	   << "initComplete method has been called." << FEI_ENDL;
+           << (int)nodeIDs[i] << " doesn't have an associated nodeNumber "
+           << "assigned. putNodalFieldData shouldn't be called until after the "
+           << "initComplete method has been called." << FEI_ENDL;
       ERReturn(-1);
     }
 
@@ -3542,16 +3525,16 @@ int LinSysCoreFilter::putNodalFieldData(int fieldID,
   }
 
   CHK_ERR( lsc_->putNodalFieldData(fieldID, fieldSize,
-				   nodeNumbers.dataPtr(), numNodes, nodeData) );
+                                   &nodeNumbers[0], numNodes, nodeData) );
 
   return(0);
 }
 
 //------------------------------------------------------------------------------
 int LinSysCoreFilter::putNodalFieldSolution(int fieldID,
-				int numNodes,
-				const GlobalID* nodeIDs,
-				const double* nodeData)
+                                int numNodes,
+                                const GlobalID* nodeIDs,
+                                const double* nodeData)
 {
   debugOutput("FEI: putNodalFieldSolution");
 
@@ -3562,7 +3545,7 @@ int LinSysCoreFilter::putNodalFieldSolution(int fieldID,
   int fieldSize = problemStructure_->getFieldSize(fieldID);
   NodeDatabase& nodeDB = problemStructure_->getNodeDatabase();
 
-  feiArray<int> eqnNumbers(fieldSize);
+  std::vector<int> eqnNumbers(fieldSize);
 
   for(int i=0; i<numNodes; i++) {
     NodeDescriptor* node = NULL;
@@ -3582,15 +3565,15 @@ int LinSysCoreFilter::putNodalFieldSolution(int fieldID,
     for(int j=0; j<fieldSize; j++) {
       int thisEqn = reducedEqn+j;
       if (reducedStartRow_ > thisEqn || reducedEndRow_ <thisEqn) {
-	localLen = j;
+        localLen = j;
       }
 
       eqnNumbers[j] = reducedEqn+j;
     }
 
     int offset = i*fieldSize;
-    CHK_ERR( lsc_->putInitialGuess(eqnNumbers.dataPtr(),
-				   &nodeData[offset], localLen) );
+    CHK_ERR( lsc_->putInitialGuess(&eqnNumbers[0],
+                                   &nodeData[offset], localLen) );
   }
 
   return(0);
@@ -3603,9 +3586,9 @@ int LinSysCoreFilter::assembleEqns(int numPtRows,
                                    const int* colIndices,
                                    const double* const* coefs,
                                    bool structurallySymmetric,
-				   int numBlkEqns, int* blkEqns,
-				   int* blkSizes, bool useBlkEqns,
-				   int mode)
+                                   int numBlkEqns, int* blkEqns,
+                                   int* blkSizes, bool useBlkEqns,
+                                   int mode)
 {
   if (numPtRows == 0) return(FEI_SUCCESS);
 
@@ -3616,13 +3599,13 @@ int LinSysCoreFilter::assembleEqns(int numPtRows,
     cSlave_.resize(0);
     const int* indPtr = colIndices;
     for(int r=0; r<numPtRows; r++) {
-      rSlave_[r] = problemStructure_->isSlaveEqn(rowNumbers[r]);
-      if (rSlave_[r]) anySlaves = true;
+      rSlave_[r] = problemStructure_->isSlaveEqn(rowNumbers[r]) ? 1 : 0;
+      if (rSlave_[r] == 1) anySlaves = true;
 
       for(int j=0; j<numPtCols; j++) {
-	bool isSlave = problemStructure_->isSlaveEqn(indPtr[j]);
-	cSlave_.append(isSlave);
-	if (isSlave) anySlaves = true;
+        int isSlave = problemStructure_->isSlaveEqn(indPtr[j]) ? 1 : 0;
+        cSlave_.push_back(isSlave);
+        if (isSlave == 1) anySlaves = true;
       }
 
       if (!structurallySymmetric) indPtr += numPtCols;
@@ -3632,37 +3615,37 @@ int LinSysCoreFilter::assembleEqns(int numPtRows,
   if (numSlaveEqns == 0 || !anySlaves) {
     if (numSlaveEqns == 0 && structurallySymmetric) {
       if (useBlkEqns) {
-	CHK_ERR( giveToBlkMatrix_symm_noSlaves(numPtRows, rowNumbers,
-					       numBlkEqns, blkEqns, blkSizes,
-					       coefs, mode) );
+        CHK_ERR( giveToBlkMatrix_symm_noSlaves(numPtRows, rowNumbers,
+                                               numBlkEqns, blkEqns, blkSizes,
+                                               coefs, mode) );
       }
       else {
-	CHK_ERR( giveToMatrix_symm_noSlaves(numPtRows, rowNumbers, coefs, mode) );
+        CHK_ERR( giveToMatrix_symm_noSlaves(numPtRows, rowNumbers, coefs, mode) );
       }
     }
     else {
-      if (dworkSpace2_.length() < numPtRows) {
-	dworkSpace2_.resize(numPtRows);
+      if ((int)dworkSpace2_.size() < numPtRows) {
+        dworkSpace2_.resize(numPtRows);
       }
-      const double* * coefPtr = dworkSpace2_.dataPtr();
+      const double* * coefPtr = &dworkSpace2_[0];
       for(int i=0; i<numPtRows; i++) {
-	coefPtr[i] = coefs[i];
+        coefPtr[i] = coefs[i];
       }
 
       if (structurallySymmetric) {
-	CHK_ERR( giveToMatrix(numPtRows, rowNumbers, numPtRows, rowNumbers,
-			      coefPtr, mode) );
+        CHK_ERR( giveToMatrix(numPtRows, rowNumbers, numPtRows, rowNumbers,
+                              coefPtr, mode) );
       }
       else {
         const int* indPtr = colIndices;
-	for(int i=0; i<numPtRows; i++) {
-	  int row = rowNumbers[i];
+        for(int i=0; i<numPtRows; i++) {
+          int row = rowNumbers[i];
 
-	  const double* coefPtr1 = coefs[i];
+          const double* coefPtr1 = coefs[i];
 
-	  CHK_ERR(giveToMatrix(1, &row, numPtCols, indPtr, &coefPtr1, mode));
+          CHK_ERR(giveToMatrix(1, &row, numPtCols, indPtr, &coefPtr1, mode));
           indPtr += numPtCols;
-	}
+        }
       }
     }
   }
@@ -3673,47 +3656,47 @@ int LinSysCoreFilter::assembleEqns(int numPtRows,
       int row = rowNumbers[i];
 
       const double* coefPtr = coefs[i];
-      bool* colSlave = cSlave_.dataPtr() + offset;
+      int* colSlave = &cSlave_[offset];
       offset += numPtCols;
 
-      if (rSlave_[i]) {
-	//Since this is a slave equation, the non-slave columns of this row go
-	//into 'Kdi_', and the slave columns go into 'Kdd_'.
-	for(int jj=0; jj<numPtCols; jj++) {
-	  int col = indicesPtr[jj];
-	  if (colSlave[jj]) {
-	    Kdd_->sumInCoef(row, col, coefPtr[jj]);
-	  }
-	  else {
-	    Kdi_->sumInCoef(row, col, coefPtr[jj]);
-	  }
-	}
+      if (rSlave_[i] == 1) {
+        //Since this is a slave equation, the non-slave columns of this row go
+        //into 'Kdi_', and the slave columns go into 'Kdd_'.
+        for(int jj=0; jj<numPtCols; jj++) {
+          int col = indicesPtr[jj];
+          if (colSlave[jj]) {
+            Kdd_->sumInCoef(row, col, coefPtr[jj]);
+          }
+          else {
+            Kdi_->sumInCoef(row, col, coefPtr[jj]);
+          }
+        }
 
-	//We also need to put the non-slave rows of column 'row' into 'K_id'.
+        //We also need to put the non-slave rows of column 'row' into 'K_id'.
         const int* ii_indicesPtr = colIndices;
-	for(int ii=0; ii<numPtRows; ii++) {
-	  int rowi = rowNumbers[ii];
-	  if (rSlave_[ii]) continue;
+        for(int ii=0; ii<numPtRows; ii++) {
+          int rowi = rowNumbers[ii];
+          if (rSlave_[ii] == 1) continue;
 
-	  int index = snl_fei::binarySearch(row, ii_indicesPtr, numPtCols);
-	  if (index < 0) continue;
+          int index = snl_fei::binarySearch(row, ii_indicesPtr, numPtCols);
+          if (index < 0) continue;
 
-	  const double* coefs_ii = coefs[ii];
+          const double* coefs_ii = coefs[ii];
 
-	  Kid_->sumInCoef(rowi, row, coefs_ii[index]);
+          Kid_->sumInCoef(rowi, row, coefs_ii[index]);
 
           if (!structurallySymmetric) ii_indicesPtr += numPtCols;
-	}
+        }
 
-	reducedEqnCounter_++;
+        reducedEqnCounter_++;
 
-	continue;
+        continue;
       }
       else {//row is not a slave eqn...
 
-	//put all non-slave columns from this row into the assembled matrix.
+        //put all non-slave columns from this row into the assembled matrix.
 
-	CHK_ERR( giveToMatrix(1, &row, numPtCols, indicesPtr, &coefPtr, mode) );
+        CHK_ERR( giveToMatrix(1, &row, numPtCols, indicesPtr, &coefPtr, mode) );
       }
 
       if (!structurallySymmetric) indicesPtr += numPtCols;

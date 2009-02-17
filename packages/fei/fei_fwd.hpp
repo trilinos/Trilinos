@@ -20,9 +20,6 @@
 //First, the "old" classes that aren't in a namespace.
 //
 
-template<class T> struct lessthan;
-template<typename T, class COMPARE=lessthan<T> > class feiArray;
-
 class BlockDescriptor;
 class ConnectivityTable;
 class Data;

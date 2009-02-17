@@ -15,7 +15,6 @@
 
 #include <test_utils/feitester.hpp>
 #include <test_utils/DataReader.hpp>
-#include <feiArray.hpp>
 
 #include <fei_fwd.hpp>
 
@@ -86,7 +85,7 @@ class snl_fei_tester : public feitester {
 
   fei::SharedPtr<DataReader> data_;
 
-  feiArray<int> idTypes_;
+  std::vector<int> idTypes_;
   int numPatterns_;
   int nodeTypeOffset_, elemTypeOffset_, constraintTypeOffset_;
 

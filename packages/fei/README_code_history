@@ -15,10 +15,6 @@ Thus, if you examine the FEI code, you'll notice a number of things:
   of them have been migrated into a namespace, and in recent years all new
   classes have been created in a namespace.
 
-- For a few years we avoided using STL containers like std::vector and std::map.
-  This explains the existence of feiArray. Now, std::vector is used extensively
-  in FEI code, but feiArray still persists in many places.
-
 - Macros like FEI_COUT and FEI_ENDL are used instead of std::cout and std::endl.
   This is because cout and endl weren't always in the std namespace, so these
   macros are defined appropriately, depending on the C++ implementation being

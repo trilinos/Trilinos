@@ -297,9 +297,6 @@ class FEDataFilter : public Filter {
 
    int formResidual(double* residValues, int numLocalEqns);
 
-   int getLocalSharedEqns(int numPtRows, const int* ptRows,
-			  feiArray<int>& localSharedEqns);
-
    int getRemoteSharedEqns(int numPtRows, const int* ptRows,
 			   ProcEqns& remoteProcEqns);
 
@@ -339,7 +336,7 @@ class FEDataFilter : public Filter {
     int iterations_;
     int numRHSs_;
     int currentRHS_;
-    feiArray<int> rhsIDs_;
+    std::vector<int> rhsIDs_;
 
     int outputLevel_;
 
@@ -365,8 +362,8 @@ class FEDataFilter : public Filter {
 
     int numRegularElems_;
     std::vector<int> constraintBlocks_;
-    feiArray<int> constraintNodeOffsets_;
-    feiArray<int> packedFieldSizes_;
+    std::vector<int> constraintNodeOffsets_;
+    std::vector<int> packedFieldSizes_;
 };
 
 #endif

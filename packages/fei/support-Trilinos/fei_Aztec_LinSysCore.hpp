@@ -17,6 +17,8 @@
 #include <string>
 #include <map>
 
+#include <az_aztec.h>
+
 //
 //This is the Aztec implementation of LinSysCore.
 //
@@ -26,8 +28,6 @@ class Aztec_BlockMap;
 class Aztec_Vector;
 class AztecDMSR_Matrix;
 class AztecDVBR_Matrix;
-
-#include <az_aztec.h>
 
 class Aztec_LinSysCore: public LinearSystemCore {
  public:

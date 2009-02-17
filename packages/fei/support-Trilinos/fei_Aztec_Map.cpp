@@ -5,6 +5,8 @@
 /*    of the U.S. Government.  Export of this program may require     */
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
+
+#include <fei_trilinos_macros.hpp>
 #include <fei_iostream.hpp>
 
 #ifdef HAVE_FEI_AZTECOO

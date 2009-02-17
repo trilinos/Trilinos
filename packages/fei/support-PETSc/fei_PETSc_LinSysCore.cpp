@@ -345,7 +345,7 @@ LinearSystemCore* PETSc_LinSysCore::clone()
 // PETSc_LinSysCore::parameters ==============================================
 #undef __FUNC__    
 #define __FUNC__ "PETSc_LinSysCore::parameters"
-int PETSc_LinSysCore::parameters( int numParams, char** params ) 
+int PETSc_LinSysCore::parameters( int numParams, const char*const* params ) 
 {
   PRINT1(numParams);
   int ierr, ii, jj, done, i1, i2;

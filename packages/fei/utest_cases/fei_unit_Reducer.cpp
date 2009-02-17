@@ -116,7 +116,8 @@ void fill_matrices(fei::FillableMat& Kii, fei::FillableMat& Kid,
   Kdd.putCoef(4,4, 2.0);
 }
 
-void addFillableMatToReducer(fei::FillableMat& mat, fei::Reducer& reducer)
+void addFillableMatToReducer(fei::FillableMat& mat, fei::Reducer& reducer,
+                             fei::Matrix& feimat)
 {
   fei::FillableMat::iterator
     iter = mat.begin(), iter_end = mat.end();
@@ -129,7 +130,7 @@ void addFillableMatToReducer(fei::FillableMat& mat, fei::Reducer& reducer)
       int col = viter->first;
       double coef = viter->second;
       double* coefPtr = &coef;
-      reducer.addMatrixValues(1, &row, 1, &col, &coefPtr, true);
+      reducer.addMatrixValues(1, &row, 1, &col, &coefPtr, true, feimat, FEI_DENSE_ROW);
     }
   }
 }
@@ -187,12 +188,6 @@ int test_Reducer_test1(MPI_Comm comm)
 
   fei::impl_utils::translate_to_reduced_eqns(reducer, Kr);
 
-  //now add the unreduced K** matrices to the reducer
-  addFillableMatToReducer(Kii, reducer);
-  addFillableMatToReducer(Kid, reducer);
-  addFillableMatToReducer(Kdi, reducer);
-  addFillableMatToReducer(Kdd, reducer);
-
   fei::SharedPtr<fei::Factory> factory;
   try {
     factory = fei::create_fei_Factory(comm, "Trilinos");
@@ -219,6 +214,12 @@ int test_Reducer_test1(MPI_Comm comm)
 
   fei::SharedPtr<fei::FillableMat> target(new fei::FillableMat);
   fei::Matrix_Impl<fei::FillableMat> feimat(target, mgraph, Kr.getNumRows());
+
+  //now add the unreduced K** matrices to the reducer
+  addFillableMatToReducer(Kii, reducer, feimat);
+  addFillableMatToReducer(Kid, reducer, feimat);
+  addFillableMatToReducer(Kdi, reducer, feimat);
+  addFillableMatToReducer(Kdd, reducer, feimat);
 
   reducer.assembleReducedMatrix(feimat);
 

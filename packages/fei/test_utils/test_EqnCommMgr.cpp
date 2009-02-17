@@ -10,7 +10,6 @@
 #include <fei_macros.hpp>
 
 #include <test_utils/test_EqnCommMgr.hpp>
-#include <feiArray.hpp>
 #include <fei_CommUtils.hpp>
 #include <fei_defs.h>
 
@@ -90,8 +89,8 @@ int test_EqnCommMgr::test1()
 
   EqnCommMgr* eCopy = eqnCommMgr->deepCopy();
 
-  std::vector<int>& localEqns = eqnCommMgr->localEqnNumbersPtr();
-  std::vector<int>& localEqnsCopy = eCopy->localEqnNumbersPtr();
+  std::vector<int>& localEqns = eqnCommMgr->localEqnNumbers();
+  std::vector<int>& localEqnsCopy = eCopy->localEqnNumbers();
 
   if (localEqns != localEqnsCopy) {
     ERReturn(-1);

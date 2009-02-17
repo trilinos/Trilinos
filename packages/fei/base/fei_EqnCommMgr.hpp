@@ -12,7 +12,6 @@
 #include "fei_fwd.hpp"
 #include "fei_mpi.h"
 
-#include "feiArray.hpp"
 #include "snl_fei_PointBlockMap.hpp"
 
 #include <fei_CSRMat.hpp>
@@ -48,7 +47,7 @@
          exchangeIndices
   
          getNumLocalEqns
-         localEqnNumbersPtr
+         localEqnNumbers
          localIndicesPtr
   
   in Filter::sumInElem/sumInElemMatrix/sumInElemRHS
@@ -64,7 +63,7 @@
   
   in Filter::unpackSolution
          getNumLocalEqns
-         localEqnNumbersPtr
+         localEqnNumbers
          addSolnValues
          exchangeSoln
   
@@ -195,9 +194,9 @@ class EqnCommMgr {
 
    int getNumLocalEqns() {return(recvEqns_->getNumEqns());};
 
-   std::vector<int>& localEqnNumbersPtr() {return(recvEqns_->eqnNumbers());};
+   std::vector<int>& localEqnNumbers() {return(recvEqns_->eqnNumbers());};
    std::vector<fei::CSVec*>& localEqns(){return(recvEqns_->eqns());};
-   feiArray<feiArray<double>*>* localRHSsPtr()
+   std::vector<std::vector<double>*>* localRHSsPtr()
      {return(recvEqns_->rhsCoefsPtr());};
 
    int addRemoteEqn(int eqnNumber, int destProc, const double* coefs,
@@ -221,7 +220,7 @@ class EqnCommMgr {
 
    std::vector<int>& sendEqnNumbersPtr() {return(sendEqns_->eqnNumbers());};
 
-   double* sendEqnSolnPtr() {return(sendEqnSoln_.dataPtr());};
+   double* sendEqnSolnPtr() {return(sendEqnSoln_.size()>0? &sendEqnSoln_[0] : NULL);};
 
    void resetCoefs();
 
@@ -253,10 +252,6 @@ class EqnCommMgr {
    void deleteEssBCs();
    int getSendProcNumber(int eqn);
 
-   int getEqnsPerRecvProc(ProcEqns* sendProcEqns, MPI_Comm comm,
-                          feiArray<int>& eqnsPerRecvProc,
-			  feiArray<int>& recvProcs);
-
    int consistencyCheck(const char* caller,
 			std::vector<int>& recvProcs,
 			std::vector<int>& recvProcTotalLengths,
@@ -272,14 +267,14 @@ class EqnCommMgr {
 
    EqnBuffer* recvEqns_;
 
-   feiArray<double> solnValues_; //solution values we'll need to return to the
+   std::vector<double> solnValues_; //solution values we'll need to return to the
                               //processors that contribute to our equations
 
    ProcEqns* sendProcEqns_;
 
    EqnBuffer* sendEqns_;
 
-   feiArray<double> sendEqnSoln_; 
+   std::vector<double> sendEqnSoln_; 
                           //the solution values for the send equations. i.e.,
                           //we'll recv these solution values for the equations
                           //that we contributed to (sent) for other processors.

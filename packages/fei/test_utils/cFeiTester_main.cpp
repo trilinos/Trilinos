@@ -10,7 +10,6 @@
 #include <fei_utils.hpp>
 #include <stdio.h>
 
-#include <feiArray.hpp>
 #include <snl_fei_ArrayUtils.hpp>
 
 //A user can enable all solver-support with the macro FEI_ALL_SOLVERS.
@@ -984,7 +983,7 @@ int cfei_save_block_node_soln(DataReader& data, CFEI* cfei, char* solnFileName,
    int returnValue = 0;
 
    std::vector<GlobalID> allNodes;
-   feiArray<feiArray<double> > allSolns;
+   std::vector<std::vector<double> > allSolns;
 
    for(int i=0; i<data.numElemBlocks_; i++) {
       if (returnValue != 0) break;
@@ -1039,7 +1038,7 @@ int cfei_save_block_node_soln(DataReader& data, CFEI* cfei, char* solnFileName,
             int index = snl_fei::binarySearch(nodeList[j], allNodes);
 
             for(int k=0; k<ndof; k++) {
-               allSolns[index].append(solnValues[offsets[j]+k]);
+               allSolns[index].push_back(solnValues[offsets[j]+k]);
             }
          }
       }
@@ -1062,8 +1061,8 @@ int cfei_save_block_node_soln(DataReader& data, CFEI* cfei, char* solnFileName,
    delete [] fileName;
 
    for(size_t i=0; i<allNodes.size(); i++) {
-     outfile << allNodes[i] << " " << allSolns[i].length() << FEI_ENDL;
-     for(int j=0; j<allSolns[i].length(); j++) {
+     outfile << allNodes[i] << " " << allSolns[i].size() << FEI_ENDL;
+     for(size_t j=0; j<allSolns[i].size(); j++) {
        outfile << allSolns[i][j] << " ";
      }
      outfile << FEI_ENDL;

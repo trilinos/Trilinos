@@ -2,8 +2,6 @@
 #include <fei_iostream.hpp>
 #include "fei_CommUtils.hpp"
 
-#include "feiArray.hpp"
-
 #include <fei_unit_CommUtils.hpp>
 
 #include <vector>
