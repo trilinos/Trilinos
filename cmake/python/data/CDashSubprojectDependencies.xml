@@ -8,13 +8,6 @@
   </SubProject>
   <SubProject name="Epetra">
   </SubProject>
-  <SubProject name="Stokhos">
-    <Dependency name="Teuchos" type="LR"/>
-  </SubProject>
-  <SubProject name="Sacado">
-    <Dependency name="Teuchos" type="LO"/>
-    <Dependency name="Stokhos" type="LO"/>
-  </SubProject>
   <SubProject name="Zoltan">
   </SubProject>
   <SubProject name="Shards">
@@ -35,6 +28,16 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Triutils" type="LO"/>
+  </SubProject>
+  <SubProject name="Stokhos">
+    <Dependency name="Teuchos" type="LR"/>
+  </SubProject>
+  <SubProject name="Sacado">
+    <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Stokhos" type="LO"/>
   </SubProject>
   <SubProject name="Thyra">
     <Dependency name="Teuchos" type="LR"/>
@@ -166,6 +169,9 @@
   </SubProject>
   <SubProject name="Phalanx">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="Stokhos" type="ILO"/>
     <Dependency name="Sacado" type="LR"/>
   </SubProject>
@@ -178,12 +184,12 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
-    <Dependency name="Stokhos" type="ILO"/>
-    <Dependency name="Sacado" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="LO"/>
     <Dependency name="Thyra" type="LO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="LO"/>
@@ -211,12 +217,12 @@
     <Dependency name="Teuchos" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="ILO"/>
-    <Dependency name="Stokhos" type="ILO"/>
-    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
@@ -261,12 +267,12 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Epetra" type="LR"/>
-    <Dependency name="Stokhos" type="ILO"/>
-    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILR"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="Thyra" type="LR"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="LR"/>
@@ -298,12 +304,12 @@
     <Dependency name="Teuchos" type="LO"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
-    <Dependency name="Stokhos" type="ILO"/>
-    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="LO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="Pliris" type="LO"/>

@@ -20,8 +20,6 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   RTOp                  rtop                           ""
   Kokkos                kokkos                         ""
   Epetra                epetra                         ""
-  Stokhos               stokhos                        OFF
-  Sacado                sacado                         ""
   Zoltan                zoltan                         ""
   Shards                shards                         ""
   Intrepid              intrepid                       OFF
@@ -29,6 +27,8 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Triutils              triutils                       ""
   Tpetra                tpetra                         ""
   EpetraExt             epetraext                      ""
+  Stokhos               stokhos                        OFF
+  Sacado                sacado                         ""
   Thyra                 thyra                          ""
   OptiPack              optipack                       ""
   Isorropia             isorropia                      ""
