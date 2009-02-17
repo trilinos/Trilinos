@@ -117,6 +117,18 @@ GET_FILENAME_COMPONENT(PYTRILINOS_DOXDIR
   ${CMAKE_CURRENT_SOURCE_DIR}/../doc/Doxygen ABSOLUTE
 )
 APPEND_SET(CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
+#SET(CMAKE_SWIG_OUTDIR PyTrilinos)
+
+#
+# Define the swig-generated PyTrilinos.Teuchos module
+SET_SOURCE_FILES_PROPERTIES(Teuchos.i
+  PROPERTIES CPLUSPLUS ON
+             SWIG_FLAGS "${CMAKE_SWIG_FLAGS}"
+  )
+SWIG_ADD_MODULE(Teuchos python Teuchos.i)
+SWIG_LINK_LIBRARIES(Teuchos ${TEUCHOS_LIBRARIES})
+SWIG_LINK_LIBRARIES(Teuchos pytrilinos)
+SWIG_LINK_LIBRARIES(Teuchos ${PYTHON_LIBRARIES})
 
 #
 # Define the swig-generated PyTrilinos.Epetra module

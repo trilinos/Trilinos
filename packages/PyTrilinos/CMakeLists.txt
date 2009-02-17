@@ -6,7 +6,6 @@ PACKAGE(PyTrilinos)
 SET(${PACKAGE_NAME}_VERSION "4.2d")
 
 # Python interpreter and header files are required
-MESSAGE("   Python library path ... " ${PYTHON_LIBRARIES})
 FIND_PACKAGE(PythonInterp 2.2 REQUIRED)
 FIND_PACKAGE(PythonInclude REQUIRED)
 MESSAGE("   Python executable   ... " ${PYTHON_EXECUTABLE})
