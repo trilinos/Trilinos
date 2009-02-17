@@ -593,7 +593,7 @@ Final Certification Evidence: [???]
 
 Package: PyTrilinos
 
-Package Transition Lead: Bill Spotz
+Package Transition Lead: Bill Spotz (wfspotz@sandia.gov)
 
 Status: Dependency checks for python, numpy and swig are completed.
         Source files for pytrilinos library compile, but compile flags
