@@ -34,7 +34,7 @@
 CPPUNIT_TEST_SUITE_REGISTRATION( CacheTaylorOpsUnitTest );
 
 CacheTaylorOpsUnitTest::CacheTaylorOpsUnitTest() :
-  urand(0.0, 1.0), d(5), tol_a(1.0e-14), tol_r(1.0e-13) 
+  urand(0.0, 1.0), d(5), tol_a(1.0e-13), tol_r(1.0e-12) 
 {
   X = new double*[2];
   X[0] = new double[d+1];
