@@ -1,73 +1,79 @@
 #!/bin/bash
 
-TEST_SRC="test_main.c test_c_dnax.c test_c_tpi.c test_pthreads.c"
+TEST_SRC="test_main.c test_c_dnax.c test_tpi_unit.c test_pthreads.c"
 
-LIB_SRC="../src/TPI_pthreads.c ../src/TPI_Walltime.c ../src/TPI_Concurrency.c"
+LIB_SRC="../src/TPI.c ../src/TPI_Walltime.c"
 
-LIB_OBJ="TPI_pthreads.o TPI_Walltime.o TPI_Concurrency.o"
+LIB_OBJ="TPI.o TPI_Walltime.o"
+
+#CFLAGS=" -std=c99   -Wall -Wextra"
+
+CFLAGS=" -std=c89   -Wall -Wextra -DHAVE_ATOMIC_OPERATIONS"
+CCFLAGS="-std=c++98 -Wall -Wextra"
+
+OPT="-O3"
+# OPT="-g"
+# OPT="-O"
+
+echo build ${OPT}
 
 #-----------------------------------------------------------------------
 
-gcc	-O3 -c	\
-	-I../include ${LIB_SRC}
-	
-gcc	-O3	\
-	-o test_tpi.gnu_plain.exe	\
-	-I../include ${TEST_SRC} ${LIB_OBJ} -lpthread
-	
-g++	-O3	\
-	-o test_tpi_cpp.gnu_plain.exe	\
-	-I../include test_tpi.cpp ${LIB_OBJ} -lpthread
+rm -f ThreadPool_config.h
+echo "#define HAVE_PTHREAD 1" > ThreadPool_config.h
 
-gcc	-O3	\
-	-o test_sum.gnu_plain.exe	\
-	-I../include test_mpi_sum.c ${LIB_OBJ} -lpthread
-	
+gcc	${CFLAGS} ${OPT} -c	\
+	-I. -I../src ${LIB_SRC}
+
+gcc	${CFLAGS} ${OPT}	\
+	-o test_tpi.gnu.exe	\
+	-I. -I../src ${TEST_SRC} ${LIB_OBJ} -lpthread -lm
+
+g++	${CCFLAGS} ${OPT}	\
+	-o test_tpi_cpp.gnu.exe	\
+	-I. -I../src test_tpi.cpp ${LIB_OBJ} -lpthread -lstdc++ -lm
+
+gcc	${CFLAGS} ${OPT}	\
+	-o test_sum.gnu.exe	\
+	-I. -I../src test_mpi_sum.c ${LIB_OBJ} -lpthread -lm
+
 #-----------------------------------------------------------------------
 
-GNU_PATH="/usr/local/gcc/32Bit/4.0.1/bin"
+mpicc	${CFLAGS} ${OPT}	\
+	-o test_sum.mpi.gnu.exe	\
+	-I. -I../src -DTEST_WITH_MPI test_mpi_sum.c ${LIB_OBJ} -lpthread -lm
 
-export PATH="${GNU_PATH}:${PATH}"
-
-gcc	-std=c99 -Wall -Wextra -Werror	\
-	-Wa,--32 -m32 -static	\
-	-O3 -c	\
-	-I../include ${LIB_SRC}
-
-gcc	-std=c99 -Wall -Wextra -Werror	\
-	-Wa,--32 -m32 -static	\
-	-O3	\
-	-o test_tpi.gnu_4_c99.exe	\
-	-I../include ${TEST_SRC} ${LIB_OBJ} -lpthread
-
-g++	-std=c++98 -Wall -Wextra -Werror	\
-	-Wa,--32 -m32 -static	\
-	-O3	\
-	-o test_tpi.gnu_4_c++98.exe	\
-	-I../include test_tpi.cpp ${LIB_OBJ} -lpthread
-
-gcc	-std=c99 -Wall -Wextra -Werror	\
-	-Wa,--32 -m32 -static	\
-	-O3	\
-	-o test_sum.gnu_4_c99.exe	\
-	-I../include test_mpi_sum.c ${LIB_OBJ} -lpthread
-	
 #-----------------------------------------------------------------------
 
-GNU_PATH="/usr/local/gcc/32Bit/3.4.3/bin"
-MPI_PATH="/usr/local/mpi/sierra/32Bit/1.2.7/gcc-3.4.3"
+rm -f ThreadPool_config.h
+echo "/* #define HAVE_PTHREAD 1 */" > ThreadPool_config.h
 
-export PATH="${MPI_PATH}/bin:${GNU_PATH}:${PATH}"
+gcc	${CFLAGS} ${OPT} -c	\
+	-I. -I../src ${LIB_SRC}
 
-gcc	-std=c99 -Wall -Wextra -Werror	\
-	-Wa,--32 -m32 -static	\
-	-O3 -c	\
-	-I../include ${LIB_SRC}
+gcc	${CFLAGS} ${OPT}	\
+	-o test_tpi.gnu.noth.exe	\
+	-I. -I../src ${TEST_SRC} ${LIB_OBJ} -lpthread -lm
 
-mpicc	-std=c99 -Wall -Wextra -Werror  \
-	-Wa,--32 -m32 -static	\
-	-O3	\
-	-o test_sum.mpi.gnu_3_4_c99.exe	\
-	-I../include -DTEST_WITH_MPI test_mpi_sum.c ${LIB_OBJ} -lpthread
-	
+g++	${CCFLAGS} ${OPT}	\
+	-o test_tpi_cpp.gnu.noth.exe	\
+	-I. -I../src test_tpi.cpp ${LIB_OBJ} -lpthread -lstdc++ -lm
+
+gcc	${CFLAGS} ${OPT}	\
+	-o test_sum.gnu.noth.exe	\
+	-I. -I../src test_mpi_sum.c ${LIB_OBJ} -lpthread -lm
+
+#-----------------------------------------------------------------------
+
+rm -f ThreadPool_config.h
+echo "/* #define HAVE_PTHREAD 1 */" > ThreadPool_config.h
+echo "#define HAVE_MPI 1" >> ThreadPool_config.h
+
+mpicc	${CFLAGS} ${OPT}	\
+	-o test_sum.mpi.gnu.noth.exe	\
+	-I. -I../src -DTEST_WITH_MPI test_mpi_sum.c ${LIB_OBJ} -lpthread -lm
+
+#-----------------------------------------------------------------------
+
+rm -f ThreadPool_config.h
 

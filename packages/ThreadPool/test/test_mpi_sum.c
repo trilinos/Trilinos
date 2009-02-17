@@ -144,7 +144,7 @@ void work_d4_dot_tp( TPI_Work * work )
   d4_dot( reduce , length , data->x + begin , data->y + begin );
 }
 
-double d4_dot_tp( COMM comm, unsigned n, unsigned nblock ,
+double d4_dot_tp( COMM comm, unsigned nwork, unsigned n,
                   const double * x, const double * y )
 {
   struct TaskXY data = { 0 , NULL , NULL };
@@ -153,8 +153,7 @@ double d4_dot_tp( COMM comm, unsigned n, unsigned nblock ,
   data.x = x ;
   data.y = y ;
 
-  if ( nblock ) {
-    const int nwork = ( n + nblock - 1 ) / nblock ;
+  if ( nwork ) {
     TPI_Run_reduce( work_d4_dot_tp , & data , nwork ,
                     reduce_tp , result , sizeof(result) );
   }
@@ -185,7 +184,7 @@ void task_ddot_tp( TPI_Work * work )
   return ;
 }
 
-double ddot_tp( COMM comm, unsigned n, unsigned nblock,
+double ddot_tp( COMM comm, unsigned nwork, unsigned n,
                 const double * x, const double * y )
 {
   struct TaskXY data = { 0 , NULL , NULL };
@@ -194,8 +193,7 @@ double ddot_tp( COMM comm, unsigned n, unsigned nblock,
   data.x = x ;
   data.y = y ;
 
-  if ( nblock ) {
-    const int nwork = ( n + nblock - 1 ) / nblock ;
+  if ( nwork ) {
     TPI_Run_reduce( task_ddot_tp , & data , nwork ,
                     reduce_tp , & result , sizeof(result) );
   }
@@ -307,19 +305,21 @@ void test_ddot_performance(
       const unsigned length = length_array[ i_test ]; /* Global */
       const unsigned ncycle = 2 * max_array / length ;
 
-      unsigned int local_begin , local_length ;
+      unsigned int local_begin , local_length , local_nwork ;
 
       double dt_sum = 0.0 ;
       double dt_sum_2 = 0.0 ;
 
       my_span( p_size, p_rank, length, & local_begin , & local_length );
 
+      local_nwork = nblock ? ( local_length + nblock - 1 ) / nblock : 0 ;
+
       /*--------------------------------------------------------------*/
 
       for ( i = 0 ; i < num_trials ; ++i ) {
         double dt = TPI_Walltime();
         for ( j = 0 ; j < ncycle ; ++j ) {
-            ddot_tp( comm, local_length, nblock,
+            ddot_tp( comm, local_nwork, local_length,
                      x + j * local_length ,
                      y + j * local_length );
         }
@@ -348,19 +348,21 @@ void test_ddot_performance(
       const unsigned length = length_array[ i_test ]; /* Global */
       const unsigned ncycle = 2 * max_array / length ;
 
-      unsigned int local_begin , local_length ;
+      unsigned int local_begin , local_length , local_nwork ;
 
       double dt_sum = 0 ;
       double dt_sum_2 = 0 ;
 
       my_span( p_size, p_rank, length, & local_begin , & local_length );
 
+      local_nwork = nblock ? ( local_length + nblock - 1 ) / nblock : 0 ;
+
       /*--------------------------------------------------------------*/
 
       for ( i = 0 ; i < num_trials ; ++i ) {
         double dt = TPI_Walltime();
         for ( j = 0 ; j < ncycle ; ++j ) {
-            d4_dot_tp( comm, local_length, nblock,
+            d4_dot_tp( comm, local_nwork, local_length,
                        x + j * local_length ,
                        y + j * local_length );
         }
@@ -428,29 +430,31 @@ void test_ddot_accuracy(
 
     for ( i_test = 0 ; i_test < num_tests ; ++i_test ) {
       const unsigned length      = length_array[ i_test ]; /* Global */
-      const int      length_half = length / 2 ;
+      const unsigned length_half = length / 2 ;
 
-      const unsigned local_begin = ( length * p_rank ) / p_size ;
-      const unsigned local_end   = ( length * ( p_rank + 1 ) ) / p_size ;
-      const unsigned local_size  = local_end - local_begin ;
+      unsigned local_begin , local_length , local_nwork ;
 
       double val_ddot ;
+
+      my_span( p_size, p_rank, length, & local_begin , & local_length );
+
+      local_nwork = nblock ? ( local_length + nblock - 1 ) / nblock : 0 ;
 
       /*--------------------------------------------------------------*/
 
       if ( local_begin < length_half ) {
-        const unsigned len = local_size < length_half - local_begin
-                           ? local_size : length_half - local_begin ;
+        const unsigned len = local_length < length_half - local_begin
+                           ? local_length : length_half - local_begin ;
 
         dfill_rand_tp( nblock,          local_begin, len, x, mag );
         dfill_rand_tp( nblock, length + local_begin, len, y, mag );
       }
 
-      if ( length_half < local_begin + local_size ) {
+      if ( length_half < local_begin + local_length ) {
         const unsigned beg = length_half > local_begin
                            ? length_half : local_begin ;
         const unsigned off = beg - local_begin ;
-        const unsigned len = local_size - off ;
+        const unsigned len = local_length - off ;
 
         dfill_rand_tp( nblock,          beg - length_half, len, x + off, mag );
         dfill_rand_tp( nblock, length + beg - length_half, len, y + off, - mag );
@@ -458,7 +462,7 @@ void test_ddot_accuracy(
 
       /*--------------------------------------------------------------*/
 
-      val_ddot = ddot_tp( comm, local_size, nblock, x, y );
+      val_ddot = ddot_tp( comm, local_nwork, local_length, x, y );
 
       if ( 0 == p_rank ) {
         fprintf(stdout,"\"DDOT\"  , %8u , %9.3g\n", length , val_ddot );
@@ -468,29 +472,31 @@ void test_ddot_accuracy(
 
     for ( i_test = 0 ; i_test < num_tests ; ++i_test ) {
       const unsigned length      = length_array[ i_test ]; /* Global */
-      const int      length_half = length / 2 ;
+      const unsigned length_half = length / 2 ;
 
-      const unsigned local_begin = ( length * p_rank ) / p_size ;
-      const unsigned local_end   = ( length * ( p_rank + 1 ) ) / p_size ;
-      const unsigned local_size  = local_end - local_begin ;
+      unsigned local_begin , local_length , local_nwork ;
 
       double val_d4_dot ;
+
+      my_span( p_size, p_rank, length, & local_begin , & local_length );
+
+      local_nwork = nblock ? ( local_length + nblock - 1 ) / nblock : 0 ;
 
       /*--------------------------------------------------------------*/
 
       if ( local_begin < length_half ) {
-        const unsigned len = local_size < length_half - local_begin
-                           ? local_size : length_half - local_begin ;
+        const unsigned len = local_length < length_half - local_begin
+                           ? local_length : length_half - local_begin ;
 
         dfill_rand_tp( nblock,          local_begin, len, x, mag );
         dfill_rand_tp( nblock, length + local_begin, len, y, mag );
       }
 
-      if ( length_half < local_begin + local_size ) {
+      if ( length_half < local_begin + local_length ) {
         const unsigned beg = length_half > local_begin
                            ? length_half : local_begin ;
         const unsigned off = beg - local_begin ;
-        const unsigned len = local_size - off ;
+        const unsigned len = local_length - off ;
 
         dfill_rand_tp( nblock,          beg - length_half, len, x + off, mag );
         dfill_rand_tp( nblock, length + beg - length_half, len, y + off, - mag );
@@ -498,7 +504,7 @@ void test_ddot_accuracy(
 
       /*--------------------------------------------------------------*/
 
-      val_d4_dot = d4_dot_tp( comm, local_size, nblock, x , y );
+      val_d4_dot = d4_dot_tp( comm, local_nwork, local_length, x , y );
 
       if ( 0 == p_rank ) {
         fprintf(stdout,"\"DDOT\"  , %8u , %9.3g\n", length , val_d4_dot );
@@ -547,11 +553,11 @@ static void test_performance(
 
 static void test_accuracy(
   COMM comm , const int test_thread_count , const int test_thread[] ,
-              int test_do )
+              unsigned test_do )
 {
   int i ;
 
-  if ( test_do < 0 || test_count < test_do ) { test_do = test_count ; }
+  if ( test_count < test_do ) { test_do = test_count ; }
 
   for ( i = 0 ; i < test_thread_count ; ++i ) {
 

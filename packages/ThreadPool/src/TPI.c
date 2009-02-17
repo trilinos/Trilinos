@@ -33,6 +33,8 @@
 #include <TPI.h>
 #include <ThreadPool_config.h>
 
+/* #define HAVE_ATOMIC_OPERATIONS 1 */
+
 enum { THREAD_COUNT_MAX = 1024 };
 enum { LOCK_COUNT_MAX   = 256 };
 
@@ -58,12 +60,10 @@ typedef struct Thread_Data {
 
 typedef struct ThreadPool_Data {
   pthread_mutex_t       m_work_lock ;
-  pthread_cond_t        m_work_cond ;
   TPI_work_subprogram   m_work_routine ;
   void                * m_work_argument ;
   int                   m_work_count_total ;
   int                   m_work_count_claim ;
-  int                   m_work_count_pending ;
 
   TPI_reduce_subprogram m_reduce_routine ;
   unsigned char       * m_reduce_alloc ;
@@ -88,12 +88,10 @@ static ThreadPool * local_thread_pool()
 {
   static ThreadPool thread_pool = {
     /* m_work_lock           */  PTHREAD_MUTEX_INITIALIZER ,
-    /* m_work_cond           */  PTHREAD_COND_INITIALIZER ,
     /* m_work_routine        */  NULL ,
     /* m_work_argument       */  NULL ,
     /* m_work_count_total    */  0 ,
     /* m_work_count_claim    */  0 ,
-    /* m_work_count_pending  */  0 ,
 
     /* m_reduce_routine      */  NULL ,
     /* m_reduce_alloc        */  NULL ,
@@ -155,15 +153,39 @@ int TPI_Unlock( int i )
 }
 
 /*--------------------------------------------------------------------*/
+
+#ifdef HAVE_ATOMIC_OPERATIONS
+
+#define ATOMIC_FETCH_AND_DECREMENT( VALUE_PTR , LOCK_PTR )	\
+	__sync_fetch_and_sub(VALUE_PTR,1)
+
+#else
+
+static
+int pthread_fetch_and_decrement( volatile int * value , pthread_mutex_t * lock )
+{
+  int result ;
+  pthread_mutex_lock( lock );
+  result = ( *value )-- ;
+  pthread_mutex_unlock( lock );
+  return result ;
+}
+
+#define ATOMIC_FETCH_AND_DECREMENT( VALUE_PTR , LOCK_PTR )	\
+	pthread_fetch_and_decrement( VALUE_PTR , LOCK_PTR )
+
+#endif
+
+/*--------------------------------------------------------------------*/
 /*  Run the work queue until it is empty.
  *  The input 'thread_number' is deliberately ignored.
  */
 static void local_run_work( ThreadPool * const thread_pool ,
                             unsigned int thread_rank )
 {
-  struct TPI_Work_Struct work ;
+  int * const claim = & thread_pool->m_work_count_claim ;
 
-  unsigned int work_item = 0 ;
+  struct TPI_Work_Struct work ;
 
   work.shared     = thread_pool->m_work_argument ;
   work.reduce     = thread_pool->m_reduce_data +
@@ -171,29 +193,14 @@ static void local_run_work( ThreadPool * const thread_pool ,
   work.lock_count = thread_pool->m_lock_count ;
   work.work_count = thread_pool->m_work_count_total ;
 
-  do {
+  while ( 0 < ( work.work_rank =
+                ATOMIC_FETCH_AND_DECREMENT(claim,& thread_pool->m_work_lock))) {
 
-    if ( work_item ) { /* Have a work item to do */
-      work.work_rank = work.work_count - work_item ;
+    work.work_rank = work.work_count - work.work_rank ;
 
-      (* thread_pool->m_work_routine)( & work );
-    }
-
-    /* Finished my work item, update the work queue */
-
-    pthread_mutex_lock( & thread_pool->m_work_lock );
-
-    /* Record work just performed, if any */
-    if ( work_item ) { --( thread_pool->m_work_count_pending ); }
-
-    /* Claim more work, if any */
-    work_item = thread_pool->m_work_count_claim ;
-
-    if ( work_item ) { thread_pool->m_work_count_claim = work_item - 1 ; }
-
-    pthread_mutex_unlock( & thread_pool->m_work_lock );
-
-  } while ( work_item );
+    (* thread_pool->m_work_routine)( & work );
+  }
+  return ;
 }
 
 /*--------------------------------------------------------------------*/
@@ -318,7 +325,7 @@ static void * local_driver( void * arg )
   ThreadPool * const thread_pool = (ThreadPool *) arg ;
   Thread     * const root_thread = thread_pool->m_thread ;
 
-  const unsigned my_rank   = --thread_pool->m_work_count_pending ;
+  const unsigned my_rank   = --thread_pool->m_work_count_claim ;
   const unsigned my_cycle  = local_fan_cycle( my_rank );
   Thread * const my_thread = root_thread + my_rank ;
 
@@ -361,7 +368,7 @@ static void * local_driver( void * arg )
   pthread_mutex_unlock( & my_thread->m_lock );
 
   pthread_mutex_lock(  & root_thread->m_lock );
-  if ( ! --thread_pool->m_work_count_pending ) {
+  if ( ! --thread_pool->m_work_count_claim ) {
     pthread_cond_signal( & root_thread->m_cond );
   }
   pthread_mutex_unlock(  & root_thread->m_lock );
@@ -424,7 +431,6 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
       thread_pool->m_work_argument      = shared_data ;
       thread_pool->m_work_routine       = subprogram ;
       thread_pool->m_work_count_total   = work_count ;
-      thread_pool->m_work_count_pending = work_count ;
       thread_pool->m_work_count_claim   = work_count ;
       thread_pool->m_thread_driver      = & local_run_work ;
 
@@ -455,7 +461,6 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
 
       thread_pool->m_thread_driver      = NULL ;
       thread_pool->m_work_count_claim   = 0 ;
-      thread_pool->m_work_count_pending = 0 ;
       thread_pool->m_work_count_total   = 0 ;
       thread_pool->m_work_routine       = NULL ;
       thread_pool->m_work_argument      = NULL ;
@@ -473,10 +478,10 @@ static void set_reduce( ThreadPool * const    thread_pool ,
                         void *                reduce_data ,
                         int                   reduce_size )
 {
-  const unsigned int grain = 64 ;
-  const unsigned int grain_count  = ( reduce_size + grain - 1 ) / grain ;
-  const unsigned int reduce_grain = grain * grain_count ; 
-  const unsigned int alloc_size   = reduce_grain * thread_pool->m_thread_count ;
+  const int grain = 64 ;
+  const int grain_count  = ( reduce_size + grain - 1 ) / grain ;
+  const int reduce_grain = grain * grain_count ; 
+  const int alloc_size   = reduce_grain * thread_pool->m_thread_count ;
 
   if ( thread_pool->m_reduce_alloc_size < alloc_size ) {
     thread_pool->m_reduce_alloc_size = alloc_size ;
@@ -533,7 +538,6 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
     thread_pool->m_work_argument      = work_shared ;
     thread_pool->m_work_routine       = work_subprogram ;
     thread_pool->m_work_count_total   = work_count ;
-    thread_pool->m_work_count_pending = work_count ;
     thread_pool->m_work_count_claim   = work_count ;
     thread_pool->m_thread_driver      = & local_run_work ;
 
@@ -568,7 +572,6 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
 
     thread_pool->m_thread_driver      = NULL ;
     thread_pool->m_work_count_claim   = 0 ;
-    thread_pool->m_work_count_pending = 0 ;
     thread_pool->m_work_count_total   = 0 ;
     thread_pool->m_work_routine       = NULL ;
     thread_pool->m_work_argument      = NULL ;
@@ -737,7 +740,7 @@ int TPI_Init( int n )
 
     thread_pool->m_thread_upper = i ;
     thread_pool->m_thread_count = n ;
-    thread_pool->m_work_count_pending = n ;
+    thread_pool->m_work_count_claim = n ;
 
     for ( i = 1 ; ! result && i < n ; ++i ) {
       pthread_t pt ;
@@ -752,7 +755,7 @@ int TPI_Init( int n )
       }
     }
 
-    thread_pool->m_work_count_pending = 0 ;
+    thread_pool->m_work_count_claim = 0 ;
 
     pthread_attr_destroy( & attr );
 
@@ -786,11 +789,11 @@ int TPI_Finalize()
 
   if ( ! result ) {
 
-    thread_pool->m_work_count_pending = thread_pool->m_thread_count - 1 ;
+    thread_pool->m_work_count_claim = thread_pool->m_thread_count - 1 ;
 
     local_broadcast( thread_pool , 0 , 1 );
 
-    if ( 0 < thread_pool->m_work_count_pending ) {
+    if ( 0 < thread_pool->m_work_count_claim ) {
       /* Wait for signal from last worker thread */
       pthread_cond_wait( & thread_pool->m_thread->m_cond ,
                          & thread_pool->m_thread->m_lock );
@@ -985,7 +988,7 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   subprogram  ,
                          reduce_subprogram , reduce_data , reduce_size );
 }
 
-int TPI_Init( int )
+int TPI_Init( int nthread )
 {
   LocalWork * const work = local_work();
 
