@@ -57,8 +57,8 @@ void HermiteUnitTest::setUp() {
   bc = pce_type(val);
   b = val;
 
-//   cc = pce_type(0.0);
-//   c = 0.0;
+  cc = pce_type(1.123);
+  c = 1.123;
 }
 
 void HermiteUnitTest::tearDown() {}
