@@ -28,6 +28,7 @@
 
 #include "Teuchos_exit.h"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_VerboseObject.hpp"
 
 void Teuchos_exit_helper(
   const char file[],
@@ -42,5 +43,11 @@ void Teuchos_exit_helper(
     omsg << ": " << msg;
   const std::string &omsgstr = omsg.str();
   TestForException_break(omsgstr); // Allows us to set a breakpoint!
+#ifdef HAVE_TEUCHOS_C_EXCEPTIONS
   throw std::logic_error(omsgstr);
+#else
+  *Teuchos::VerboseObjectBase::getDefaultOStream()
+    << omsg.str() << "\n" << std::flush;
+  std::exit(error_code);
+#endif
 }

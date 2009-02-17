@@ -76,7 +76,9 @@ IF (NOT NATIVE_MS_WINDOWS AND NOT TPL_ENABLE_MPI)
 ENDIF()
 
 # Check for isnan and isinf support
-INCLUDE(FiniteValue)
+IF (${PROJECT_NAME}_ENABLE_CXX)
+  INCLUDE(FiniteValue)
+ENDIF()
 
 # Check for Doxygen/dot - We can use variables set in this check to
 # enable/disable the grapical dependency graphs in doxygen Doxyfiles.

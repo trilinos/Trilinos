@@ -78,6 +78,13 @@ ADD_OPTION_AND_DEFINE(
   )
 
 ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_C_EXCEPTIONS
+  HAVE_TEUCHOS_C_EXCEPTIONS
+  "Enable support for the C macro TEUCHOS_EXIT(...) to thrown an exception."
+  OFF
+  )
+
+ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_GCC_DEMANGLE
   HAVE_TEUCHOS_DEMANGLE
   "Enable Teuchos calls to GCC demangle library function if it exists (see HAVE_TEUCHOS_BLASFLOAT)."

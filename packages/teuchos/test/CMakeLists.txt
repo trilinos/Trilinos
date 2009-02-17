@@ -7,6 +7,7 @@ ADD_SUBDIRECTORY(TabularOutputter)
 ADD_SUBDIRECTORY(MemoryManagement)
 ADD_SUBDIRECTORY(Comm)
 ADD_SUBDIRECTORY(DenseMatrix)
+ADD_SUBDIRECTORY(exit)
 
 # Test definitions
 
@@ -153,20 +154,6 @@ PACKAGE_ADD_TEST(
   NAME dyn_cast_test
   NUM_MPI_PROCS 1
   COMM serial mpi
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  exit_test  
-  DIRECTORY exit
-  COMM serial mpi  
-  SOURCES cxx_main.cpp some_c_func.c 
-  )
-PACKAGE_ADD_TEST(
-  exit_test  
-  DIRECTORY exit
-  NUM_MPI_PROCS 1
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(

@@ -1,7 +1,7 @@
 
 INCLUDE(CheckCSourceCompiles)
 
-SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_EXE_LINKER_FLAGS})
+SET(CMAKE_REQUIRED_LIBRARIES ${${PROJECT_NAME}_EXTRA_LINK_FLAGS})
 CHECK_C_SOURCE_COMPILES(
   "
 #include <math.h>
@@ -24,8 +24,13 @@ IF (NOT MATH_LIBRARY_IS_SUPPLIED)
   IF (MATH_LIBRARY)
     IF (NOT MATH_LIBRARY_IS_SET)
       MESSAGE(STATUS "Appending math library ${MATH_LIBRARY} to link line ...")
-      SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MATH_LIBRARY}"
-        CACHE STRING ""  FORCE)
+      IF (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
+        SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS "${${PROJECT_NAME}_EXTRA_LINK_FLAGS} ${MATH_LIBRARY}"
+          CACHE STRING ""  FORCE)
+      ELSE()
+        SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS "${MATH_LIBRARY}"
+          CACHE STRING ""  FORCE)
+      ENDIF()
       GLOBAL_SET(MATH_LIBRARY_IS_SET ON)
       # NOTE: Only do this once and not over and over or you will relink
       # everything after each configure!

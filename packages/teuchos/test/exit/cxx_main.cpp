@@ -33,22 +33,22 @@
 int main( int argc, char* argv[] ) {
 
   bool result, success = true;
-  
-  result = true;
-  try {
-    std::cerr << "\nRaise an std::exception with TEUCHOS_MSG_EXIT(...) right here in C++ code with a message ...\n";
-    TEUCHOS_MSG_EXIT("This std::exception is raised from C++ code!",1);
-	}
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,result);
-  if(result==true) success = false;
 
   result = true;
 	try {
     std::cerr << "\nCall a C function that call TEUCHOS_EXIT(...) ...\n";
     some_c_func();
 	}
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,result);
-  if(result==true) success = false;
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, result);
+  if (result) success = false;
+  
+  result = true;
+  try {
+    std::cerr << "\nRaise an std::exception with TEUCHOS_MSG_EXIT(...) right here in C++ code with a message ...\n";
+    TEUCHOS_MSG_EXIT("This std::exception is raised from C++ code!",1);
+	}
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, result);
+  if (result) success = false;
   
   if(success)
     std::cerr << "\nEnd Result: TEST PASSED" << std::endl;	

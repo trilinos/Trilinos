@@ -46,7 +46,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   FEI                   fei                            ""
   RBGen                 rbgen                          ""
   Anasazi               anasazi                        ""
-  ThreadPool            ThreadPool                     OFF
+  ThreadPool            ThreadPool                     ""
   Phalanx               phalanx                        ""
   Pamgen                pamgen                         ""
   Phdmesh               phdmesh                        OFF

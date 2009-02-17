@@ -32,5 +32,5 @@
 
 void some_c_func()
 {
-  TEUCHOS_EXIT(1);
+  TEUCHOS_EXIT(5);
 }

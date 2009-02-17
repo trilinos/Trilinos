@@ -224,9 +224,11 @@ MESSAGE("")
 MESSAGE("Probing the environment ...")
 MESSAGE("")
 
-PACKAGE_ARCH_SETUP_ENV()
+PACKAGE_ARCH_PRE_SETUP_ENV()
 
 INCLUDE(TrilinosProbeEnv)
+
+PACKAGE_ARCH_POST_SETUP_ENV()
 
 
 #

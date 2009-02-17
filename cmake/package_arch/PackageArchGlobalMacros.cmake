@@ -1354,7 +1354,8 @@ ENDMACRO()
 # Set up the standard environment
 #
 
-MACRO(PACKAGE_ARCH_SETUP_ENV)
+
+MACRO(PACKAGE_ARCH_PRE_SETUP_ENV)
 
   # Set to release build by default
   
@@ -1370,18 +1371,6 @@ MACRO(PACKAGE_ARCH_SETUP_ENV)
   ENDIF()
   PRINT_VAR(CMAKE_BUILD_TYPE)
 
-  # Set the hack library to get link options on
-
-  IF (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE(STATUS "Creating dummy last_lib for appending the link flags: "
-        "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
-    ENDIF()
-    FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c "")
-    ADD_LIBRARY(last_lib STATIC ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c)
-    TARGET_LINK_LIBRARIES(last_lib ${${PROJECT_NAME}_EXTRA_LINK_FLAGS})
-  ENDIF()
-
   # Set up MPI if MPI is being used
 
   ASSERT_DEFINED(TPL_ENABLE_MPI)
@@ -1394,24 +1383,25 @@ MACRO(PACKAGE_ARCH_SETUP_ENV)
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_C)
   IF (${PROJECT_NAME}_ENABLE_C)
     ENABLE_LANGUAGE(C)
+    INCLUDE(CMakeDetermineCCompiler)
+    PRINT_VAR(CMAKE_C_COMPILER_ID)
+    # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
+    # directory for a listing of known compiler types.
   ENDIF()
   
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX)
   IF (${PROJECT_NAME}_ENABLE_CXX)
     ENABLE_LANGUAGE(CXX)
+    INCLUDE(CMakeDetermineCXXCompiler)
+    PRINT_VAR(CMAKE_CXX_COMPILER_ID)
+    # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
+    # directory for a listing of known compiler types.
   ENDIF()
   
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Fortran)
   IF (${PROJECT_NAME}_ENABLE_Fortran)
     ENABLE_LANGUAGE(Fortran)
   ENDIF()
-  
-  # Determine compiler type
-  
-  INCLUDE(CMakeDetermineCXXCompiler)
-  PRINT_VAR(CMAKE_CXX_COMPILER_ID)
-  # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
-  # directory for a listing of known compiler types.
 
   # Set up for strong compiler warnings and warnings as errors
  
@@ -1428,6 +1418,23 @@ MACRO(PACKAGE_ARCH_SETUP_ENV)
 
   IF(WIN32)
     ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE)
+  ENDIF()
+
+ENDMACRO()
+
+
+MACRO(PACKAGE_ARCH_POST_SETUP_ENV)
+
+  # Set the hack library to get link options on
+
+  IF (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE(STATUS "Creating dummy last_lib for appending the link flags: "
+        "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
+    ENDIF()
+    FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c "")
+    ADD_LIBRARY(last_lib STATIC ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c)
+    TARGET_LINK_LIBRARIES(last_lib ${${PROJECT_NAME}_EXTRA_LINK_FLAGS})
   ENDIF()
 
 ENDMACRO()
