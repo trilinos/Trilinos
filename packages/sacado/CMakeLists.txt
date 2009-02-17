@@ -1,5 +1,6 @@
 INCLUDE(PackageMacros)
 INCLUDE(AddOptionAndDefine)
+INCLUDE(CombinedOption)
 
 #
 # A) Define the package
@@ -39,11 +40,24 @@ OPTION(${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
   ${Trilinos_ENABLE_PERFORMANCE_TESTS}
   )
 
+COMBINED_OPTION( Sacado_ENABLE_FEApp
+  DEP_OPTIONS_NAMES Sacado_ENABLE_Epetra Sacado_ENABLE_EpetraExt
+  DOCSTR "Enables compiling FEApp example finite element application"
+    " that demonstrates incorporating Sacado into a applcaitons."
+    "  Defaults to ON if Epetra and EpetrExt are enabled, otherwise defaults"
+    " to OFF."
+  )
+
 #
 # C) Add the libraries, tests, and examples
 #
 
 ADD_SUBDIRECTORY(src)
+
+# We are treating FEApp as a library, not an example
+# This way packages that wish to use FEApp do not need to enable
+# Sacado examples
+ADD_SUBDIRECTORY(example/FEApp)
 
 # This adds directories for non-performance tests as well
 PACKAGE_ADD_PERFORMANCE_TEST_DIRECTORIES(
