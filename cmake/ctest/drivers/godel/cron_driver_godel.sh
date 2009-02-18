@@ -4,7 +4,8 @@
 cd $HOME
 source .bash_profile
 
-CTEST_EXE=/usr/local/bin/ctest
+#CTEST_EXE=/usr/local/bin/ctest
+CTEST_EXE=/home/rabartl/install/bin/ctest
 
 echo
 echo "Starting nightly Trilinos testing on godel: `date`"

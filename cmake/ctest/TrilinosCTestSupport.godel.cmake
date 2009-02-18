@@ -5,7 +5,7 @@
 #
 
 SET( CTEST_CVS_COMMAND "cvs -q -z3" )
-SET( CTEST_CMAKE_COMMAND /usr/local/bin/cmake )
+SET( CTEST_CMAKE_COMMAND /home/rabartl/install/bin/cmake )
 
 #
 # Read in the platform-independent options
