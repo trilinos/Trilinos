@@ -88,6 +88,10 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ?  1 : 0),0,comm), std::invalid_argument);
       TEST_THROW(M map(0,(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
+    // All procs fail if any proc fails 
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
@@ -112,6 +116,10 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ?  1 :  0),0,0,comm), std::invalid_argument);
       TEST_THROW(M map(0,0,(myImageID == 0 ? 0 : 1),comm), std::invalid_argument);
     }
+    // All procs fail if any proc fails 
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
@@ -133,6 +141,10 @@ namespace {
       TEST_THROW(M map((myImageID == 0 ? -1 :  0),arcp(rcp(new vector<GO>(1,myImageID+1))).getConst(),1, comm), std::invalid_argument);
       TEST_THROW(M map(0,arcp(rcp(new vector<GO>(1,myImageID+1))).getConst(),(myImageID == 0 ? 0 : 1), comm), std::invalid_argument);
     }
+    // All procs fail if any proc fails 
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
@@ -238,7 +250,7 @@ namespace {
     TEST_EQUALITY( map.getGlobalIndex(myLocal[1]), myGlobal[1] );
     TEST_EQUALITY( map.getLocalIndex(numGlobalEntries), OrdinalTraits<LO>::invalid() );
     TEST_EQUALITY( map.getGlobalIndex(2),               OrdinalTraits<GO>::invalid() );
-    TEST_EQUALITY( map.getLocalIndex(numGlobalEntries-1), myImageID == numImages-1 ? 2 : OrdinalTraits<LO>::invalid() );
+    TEST_EQUALITY( map.getLocalIndex(numGlobalEntries-1), myImageID == numImages-1 ? 1 : OrdinalTraits<LO>::invalid() );
     TEST_COMPARE_ARRAYS( map.getMyGlobalEntries(), myGlobal);
     TEST_EQUALITY_CONST( map.isMyLocalIndex(0), true );
     TEST_EQUALITY_CONST( map.isMyLocalIndex(1), true );
@@ -252,10 +264,10 @@ namespace {
         TEST_EQUALITY_CONST( map.isMyGlobalIndex(i), true );
       }
     }
-    /* FINISH: Methods left to test
-       void 	getRemoteIndexList (const std::vector< Ordinal > &GIDList, std::vector< Ordinal > &imageIDList, std::vector< Ordinal > &LIDList) const
-       void 	getRemoteIndexList (const std::vector< Ordinal > &GIDList, std::vector< Ordinal > &imageIDList) const
-     */
+    // All procs fail if any proc fails 
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
