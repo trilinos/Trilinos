@@ -30,10 +30,12 @@
 //   must contain the lengths of each row, *NOT* including the
 //   coefficient on the diagonal.
 //
+#include <az_aztec.h>
+
+namespace fei_trilinos {
+
 class Aztec_Map;
 class Aztec_Vector;
-
-#include <az_aztec.h>
 
 class AztecDMSR_Matrix {
     
@@ -175,6 +177,8 @@ class AztecDMSR_Matrix {
 
     bool azTransformed_;
 };
+
+}//namespace fei_trilinos
 
 #endif //HAVE_FEI_AZTECOO
 

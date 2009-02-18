@@ -47,7 +47,7 @@
 extern "C" int Aztec_LinSysCore_create(LinSysCore** lsc, MPI_Comm comm)
 {
    fei::SharedPtr<LinearSystemCore>* linSys =
-     new fei::SharedPtr<LinearSystemCore>(new Aztec_LinSysCore(comm));
+     new fei::SharedPtr<LinearSystemCore>(new fei_trilinos::Aztec_LinSysCore(comm));
 
    if (linSys->get() == NULL) return(1);
 

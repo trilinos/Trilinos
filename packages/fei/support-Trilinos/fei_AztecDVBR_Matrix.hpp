@@ -15,6 +15,8 @@
 // Some functions return an int. This will be the ESI_error_code. It
 // will be 0 if there were no errors, 1 if an error occurred.
 //
+namespace fei_trilinos {
+
 class Aztec_BlockMap;
 
 class AztecDVBR_Matrix {
@@ -129,5 +131,7 @@ class AztecDVBR_Matrix {
     int* remoteInds_;
     int* remoteBlockSizes_;
 };
+
+}//namespace fei_trilinos
 
 #endif

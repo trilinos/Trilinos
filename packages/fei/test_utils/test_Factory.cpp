@@ -66,7 +66,7 @@ int test_Factory::runtests()
   {
   if (localProc_==0) FEI_COUT << "constructing snl_fei::Factory(Aztec)...";
 
-  fei::SharedPtr<LinearSystemCore> az_lsc(new Aztec_LinSysCore(comm_));
+  fei::SharedPtr<LinearSystemCore> az_lsc(new fei_trilinos::Aztec_LinSysCore(comm_));
 
   fei::SharedPtr<fei::Factory> factory(new snl_fei::Factory(comm_, az_lsc));
 

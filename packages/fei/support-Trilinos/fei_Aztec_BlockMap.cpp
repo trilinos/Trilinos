@@ -31,6 +31,7 @@
 #include <fei_Aztec_Map.hpp>
 #include <fei_Aztec_BlockMap.hpp>
 
+namespace fei_trilinos {
 
 //==============================================================================
 Aztec_BlockMap::Aztec_BlockMap(int globalSz, int localSz, int localOffs,
@@ -93,6 +94,8 @@ void Aztec_BlockMap::checkInput() {
        abort();
     }
 }
+
+}//namespace fei_trilinos
 
 #endif
 //HAVE_FEI_AZTECOO

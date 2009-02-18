@@ -42,7 +42,7 @@ fei::create_LibraryWrapper(MPI_Comm comm,
 
   if (libname == "Aztec") {
 #ifdef HAVE_FEI_AZTECOO
-    lsc.reset(new Aztec_LinSysCore(comm));
+    lsc.reset(new fei_trilinos::Aztec_LinSysCore(comm));
 #else
     std::string msg("Aztec not available.");
     throw std::runtime_error(msg);

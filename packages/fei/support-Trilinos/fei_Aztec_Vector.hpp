@@ -31,6 +31,7 @@
 //   instantiation of an Aztec_Vector, then v[9] literally returns the
 //   entry at position 9 (the 10th entry, since indexing is 0-based).
 //
+namespace fei_trilinos {
 
 class Aztec_Map;
 
@@ -80,5 +81,7 @@ class Aztec_Vector {
     double *localCoeffs_;        // local vector coefficients
     int length_;
 };
+
+}//namespace fei_trilinos
 
 #endif

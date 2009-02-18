@@ -124,7 +124,7 @@ int test_FEI_Implementation::test1()
 #ifdef HAVE_FEI_AZTECOO
   fei::SharedPtr<testData> testdata(new testData(localProc_, numProcs_));
 
-  fei::SharedPtr<LinearSystemCore> linSys(new Aztec_LinSysCore(comm_));
+  fei::SharedPtr<LinearSystemCore> linSys(new fei_trilinos::Aztec_LinSysCore(comm_));
   fei::SharedPtr<LibraryWrapper> wrapper(new LibraryWrapper(linSys));
 
   fei::SharedPtr<FEI_Implementation>

@@ -60,7 +60,7 @@ int test_LinearSystem::test2()
   std::vector<int>& idTypes = testdata->idTypes;
   std::vector<int>& ids = testdata->ids;
 
-  fei::SharedPtr<LinearSystemCore> az_lsc(new Aztec_LinSysCore(comm_));
+  fei::SharedPtr<LinearSystemCore> az_lsc(new fei_trilinos::Aztec_LinSysCore(comm_));
 
   char* param = new char[64];
   sprintf(param,"debugOutput .");
@@ -161,7 +161,7 @@ int test_LinearSystem::test3()
   std::vector<int>& idTypes = testdata->idTypes;
   std::vector<int>& ids = testdata->ids;
 
-  fei::SharedPtr<LinearSystemCore> az_lsc(new Aztec_LinSysCore(comm_));
+  fei::SharedPtr<LinearSystemCore> az_lsc(new fei_trilinos::Aztec_LinSysCore(comm_));
 
   char* param = new char[64];
   sprintf(param,"debugOutput .");
@@ -258,7 +258,7 @@ int test_LinearSystem::test4()
   std::vector<int>& idTypes = testdata->idTypes;
   std::vector<int>& ids = testdata->ids;
 
-  fei::SharedPtr<LinearSystemCore> az_lsc(new Aztec_LinSysCore(comm_));
+  fei::SharedPtr<LinearSystemCore> az_lsc(new fei_trilinos::Aztec_LinSysCore(comm_));
 
   char* param = new char[64];
   sprintf(param,"debugOutput .");

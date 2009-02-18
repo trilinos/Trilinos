@@ -28,11 +28,11 @@
 #include <fei_ErrMacros.hpp>
 
 #ifdef HAVE_FEI_AZTECOO
-int compare_DMSR_contents(AztecDMSR_Matrix& matrix, int localOffset,
+int compare_DMSR_contents(fei_trilinos::AztecDMSR_Matrix& matrix, int localOffset,
 			  std::vector<std::vector<int> >& colIndices,
 			  std::vector<std::vector<double> >& values);
 
-int fill_DMSR(AztecDMSR_Matrix& matrix, int localOffset,
+int fill_DMSR(fei_trilinos::AztecDMSR_Matrix& matrix, int localOffset,
 	      std::vector<std::vector<int> >& colIndices,
 	      std::vector<std::vector<double> >& values, bool sumInto);
 #endif
@@ -71,13 +71,13 @@ int test_AztecWrappers::test1()
   int localOffset = localSize*localProc_;
   int i;
 
-  Aztec_Map* map =
-    new Aztec_Map(globalSize, localSize, localOffset, comm_);
+  fei_trilinos::Aztec_Map* map =
+    new fei_trilinos::Aztec_Map(globalSize, localSize, localOffset, comm_);
 
   std::vector<int> update(localSize);
   for(i=0; i<localSize; i++) update[i] = localOffset+i;
 
-  AztecDMSR_Matrix* matrix = new AztecDMSR_Matrix(*map, &update[0], true);
+  fei_trilinos::AztecDMSR_Matrix* matrix = new fei_trilinos::AztecDMSR_Matrix(*map, &update[0], true);
 
   std::vector<int> elemrows(localSize);
   std::vector<int> elemcols(globalSize);
@@ -215,7 +215,7 @@ int test_AztecWrappers::test4()
 
 #ifdef HAVE_FEI_AZTECOO
 //==============================================================================
-int compare_DMSR_contents(AztecDMSR_Matrix& matrix, int localOffset,
+int compare_DMSR_contents(fei_trilinos::AztecDMSR_Matrix& matrix, int localOffset,
 			  std::vector<std::vector<int> >& colIndices,
 			  std::vector<std::vector<double> >& values)
 {
@@ -257,7 +257,7 @@ int compare_DMSR_contents(AztecDMSR_Matrix& matrix, int localOffset,
 }
 
 //==============================================================================
-int fill_DMSR(AztecDMSR_Matrix& matrix, int localOffset,
+int fill_DMSR(fei_trilinos::AztecDMSR_Matrix& matrix, int localOffset,
 	      std::vector<std::vector<int> >& colIndices,
 	      std::vector<std::vector<double> >& values, bool sumInto)
 {

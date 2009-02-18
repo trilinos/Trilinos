@@ -33,6 +33,8 @@
 #include <fei_Aztec_Map.hpp>
 #include <fei_Aztec_Vector.hpp>
 
+namespace fei_trilinos {
+
 //=============================================================================
 Aztec_Vector::Aztec_Vector(const Aztec_Map& map, int* data_org)
  : amap_(map)
@@ -345,6 +347,8 @@ bool Aztec_Vector::writeToFile(const char *fileName) const {
 
    return(true);
 }
+
+}//namespace fei_trilinos
 
 #endif
 //HAVE_FEI_AZTECOO

@@ -49,6 +49,8 @@
 
 #include "fei_Aztec_LinSysCore.hpp"
 
+namespace fei_trilinos {
+
 static int azlsc_solveCounter_ = 0;
 static int azlsc_debugFileCounter_ = 0;
 
@@ -3092,6 +3094,8 @@ int Aztec_LinSysCore::messageAbort(const char* msg) const {
 #endif
    return(-1);
 }
+
+}//namespace fei_trilinos
 
 #endif
 //HAVE_FEI_AZTECOO

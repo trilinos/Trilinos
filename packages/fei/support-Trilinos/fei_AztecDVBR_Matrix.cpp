@@ -34,6 +34,8 @@
 #include <fei_Aztec_Vector.hpp>
 #include <fei_AztecDVBR_Matrix.hpp>
 
+namespace fei_trilinos {
+
 //==============================================================================
 AztecDVBR_Matrix::AztecDVBR_Matrix(Aztec_BlockMap& map, int* update)
   : amap_(map),
@@ -1176,6 +1178,8 @@ void AztecDVBR_Matrix::insertList(int item, int*& list, int& len) {
    //update the length.
    len++;
 }
+
+}//namespace fei_trilinos
 
 #endif
 //HAVE_FEI_AZTECOO

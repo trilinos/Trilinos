@@ -43,6 +43,8 @@
            col = index<N_update_ ? update_[orderingUpdate_[index]] : \
                                    external_[index-N_update_];
 
+namespace fei_trilinos {
+
 //==============================================================================
 AztecDMSR_Matrix::AztecDMSR_Matrix(Aztec_Map& map, int* update,
 				   bool linearDistribution)
@@ -1248,6 +1250,8 @@ void AztecDMSR_Matrix::messageAbort(const char* mesg) {
     FEI_CERR << "AztecDMSR_Matrix: ERROR: " << mesg << " Aborting." << FEI_ENDL;
     abort();
 }
+
+}//namespace fei_trilinos
 
 #endif
 //HAVE_FEI_AZTECOO

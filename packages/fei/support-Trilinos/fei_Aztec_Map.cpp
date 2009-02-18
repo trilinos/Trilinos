@@ -30,6 +30,7 @@
 #include <az_aztec.h>
 #include <fei_Aztec_Map.hpp>
 
+namespace fei_trilinos {
 
 //==============================================================================
 Aztec_Map::Aztec_Map(int globalSz, int localSz,
@@ -85,6 +86,8 @@ void Aztec_Map::checkInput() {
         abort();
     }
 }
+
+}//namespace fei_trilinos
 
 #endif
 //HAVE_FEI_AZTECOO

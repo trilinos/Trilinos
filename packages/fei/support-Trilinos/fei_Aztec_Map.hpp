@@ -20,6 +20,7 @@
 // Aztec_Map allows the storage and retrieval of information such as
 // local and global sizes, the MPI communicator, and the proc_config array.
 //
+namespace fei_trilinos {
 
 class Aztec_Map {
     
@@ -49,6 +50,8 @@ class Aztec_Map {
 
     int* proc_config_;  //Aztec information container
 };
+
+}//namespace fei_trilinos
 
 #endif
 

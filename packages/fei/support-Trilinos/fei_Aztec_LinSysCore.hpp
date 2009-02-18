@@ -22,6 +22,7 @@
 //
 //This is the Aztec implementation of LinSysCore.
 //
+namespace fei_trilinos {
 
 class Aztec_Map;
 class Aztec_BlockMap;
@@ -408,6 +409,8 @@ class Aztec_LinSysCore: public LinearSystemCore {
 
    std::map<std::string,unsigned> named_solve_counter_;
 };
+
+}//namespace fei_trilinos
 
 #endif
 

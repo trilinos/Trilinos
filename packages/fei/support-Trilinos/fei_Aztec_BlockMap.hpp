@@ -22,6 +22,8 @@
 // describes the partitioning and layout of a block matrix.
 //
 
+namespace fei_trilinos {
+
 class Aztec_BlockMap : public Aztec_Map {
     
   public:
@@ -48,6 +50,8 @@ class Aztec_BlockMap : public Aztec_Map {
     int localBlockOffset_;
     int* blockSizes_;
 };
+
+}// namespace fei_trilinos
 
 #endif
 
