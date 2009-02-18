@@ -124,12 +124,12 @@ namespace Teuchos {
     //! Equality of two matrices.
     /*! \return True if \e this vector and \c Operand are of the same length and have the same entries, else False will be returned.
     */
-    bool operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
+    bool operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand) const;
 
     //! Inequality of two matrices.
     /*! \return True if \e this vector and \c Operand are not of the same length or do not have the same entries, else False will be returned.
     */
-    bool operator != (const SerialDenseVector<OrdinalType, ScalarType> &Operand);
+    bool operator != (const SerialDenseVector<OrdinalType, ScalarType> &Operand) const;
   //@}
 
   //! @name Set methods.
@@ -221,7 +221,7 @@ namespace Teuchos {
   }
 
   template<typename OrdinalType, typename ScalarType>
-  bool SerialDenseVector<OrdinalType, ScalarType>::operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand) 
+  bool SerialDenseVector<OrdinalType, ScalarType>::operator == (const SerialDenseVector<OrdinalType, ScalarType> &Operand) const 
   {
     bool result = 1;
     if(this->numRows_ != Operand.numRows_)
@@ -242,7 +242,7 @@ namespace Teuchos {
   }
 
   template<typename OrdinalType, typename ScalarType>
-  bool SerialDenseVector<OrdinalType, ScalarType>::operator != (const SerialDenseVector<OrdinalType, ScalarType> &Operand)
+  bool SerialDenseVector<OrdinalType, ScalarType>::operator != (const SerialDenseVector<OrdinalType, ScalarType> &Operand) const
   {
     return !((*this)==Operand);
   }

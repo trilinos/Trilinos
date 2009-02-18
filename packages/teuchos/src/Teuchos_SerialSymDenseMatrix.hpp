@@ -332,13 +332,13 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
   /*! \return True if \e this matrix and \c Operand are of the same shape (rows / columns) and have
     the same entries in the active (upper / lower triangular) area of the matrix, else False will be returned.
   */
-  bool operator== (const SerialSymDenseMatrix<OrdinalType, ScalarType> &Operand);
+  bool operator== (const SerialSymDenseMatrix<OrdinalType, ScalarType> &Operand) const;
 
   //! Inequality of two matrices.
   /*! \return True if \e this matrix and \c Operand of not of the same shape (rows / columns) or don't
     have the same entries in the active (upper / lower triangular), else False will be returned.
   */
-  bool operator!= (const SerialSymDenseMatrix<OrdinalType, ScalarType> &Operand);
+  bool operator!= (const SerialSymDenseMatrix<OrdinalType, ScalarType> &Operand) const;
 
   //@}
 
@@ -869,7 +869,7 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialSymDenseMatrix<OrdinalTyp
 //----------------------------------------------------------------------------------------------------
   
 template<typename OrdinalType, typename ScalarType>
-bool SerialSymDenseMatrix<OrdinalType, ScalarType>::operator== (const SerialSymDenseMatrix<OrdinalType, ScalarType> &Operand)
+bool SerialSymDenseMatrix<OrdinalType, ScalarType>::operator== (const SerialSymDenseMatrix<OrdinalType, ScalarType> &Operand) const
 {
   bool result = 1;
   if((numRowCols_ != Operand.numRowCols_)) {
@@ -889,7 +889,7 @@ bool SerialSymDenseMatrix<OrdinalType, ScalarType>::operator== (const SerialSymD
 }
 
 template<typename OrdinalType, typename ScalarType>
-bool SerialSymDenseMatrix<OrdinalType, ScalarType>::operator!= (const SerialSymDenseMatrix<OrdinalType, ScalarType> &Operand)
+bool SerialSymDenseMatrix<OrdinalType, ScalarType>::operator!= (const SerialSymDenseMatrix<OrdinalType, ScalarType> &Operand) const
 {
   return !((*this) == Operand);
 }

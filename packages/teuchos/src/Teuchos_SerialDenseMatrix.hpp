@@ -330,13 +330,13 @@ public:
   /*! \return True if \e this matrix and \c Operand are of the same shape (rows and columns) and have
     the same entries, else False will be returned.
   */
-  bool operator== (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand);
+  bool operator== (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand) const;
 
   //! Inequality of two matrices.
   /*! \return True if \e this matrix and \c Operand of not of the same shape (rows and columns) or don't
     have the same entries, else False will be returned.
   */
-  bool operator!= (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand);
+  bool operator!= (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand) const;
 
   //@}
 
@@ -792,7 +792,7 @@ typename ScalarTraits<ScalarType>::magnitudeType SerialDenseMatrix<OrdinalType, 
 //----------------------------------------------------------------------------------------------------
   
 template<typename OrdinalType, typename ScalarType>
-bool SerialDenseMatrix<OrdinalType, ScalarType>::operator== (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand)
+bool SerialDenseMatrix<OrdinalType, ScalarType>::operator== (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand) const
 {
   bool result = 1;
   if((numRows_ != Operand.numRows_) || (numCols_ != Operand.numCols_))
@@ -817,7 +817,7 @@ bool SerialDenseMatrix<OrdinalType, ScalarType>::operator== (const SerialDenseMa
 }
   
 template<typename OrdinalType, typename ScalarType>
-bool SerialDenseMatrix<OrdinalType, ScalarType>::operator!= (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand)
+bool SerialDenseMatrix<OrdinalType, ScalarType>::operator!= (const SerialDenseMatrix<OrdinalType, ScalarType> &Operand) const
 {
   return !((*this) == Operand);
 }
