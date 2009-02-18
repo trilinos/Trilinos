@@ -427,7 +427,7 @@ none)
     #mv "$depfile" "$tmpdepfile"
     #echo "# dummy" > "$depfile"
   else
-    echo "depcomp: depmode==none, not building in depeandency tracking!"
+    echo "depcomp: depmode==none, not building in dependency tracking!"
     exec "$@"
   fi
   ;;
