@@ -85,7 +85,7 @@ typedef void (*TPI_work_subprogram)( TPI_Work * );
  *   Reduce the 'src' data into the 'dest' data.
  */
 typedef
-void (*TPI_reduce_subprogram)( void * dest , const void * src , int );
+void (*TPI_reduce_subprogram)( void * dest , const void * src );
 
 /** Run a work subprogram in thread parallel.
  *

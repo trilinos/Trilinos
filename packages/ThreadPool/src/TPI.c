@@ -33,8 +33,6 @@
 #include <TPI.h>
 #include <ThreadPool_config.h>
 
-/* #define HAVE_ATOMIC_OPERATIONS 1 */
-
 enum { THREAD_COUNT_MAX = 1024 };
 enum { LOCK_COUNT_MAX   = 256 };
 
@@ -48,6 +46,34 @@ enum { LOCK_COUNT_MAX   = 256 };
 #include <pthread.h>
 #include <sys/types.h>
 
+/*--------------------------------------------------------------------*/
+/*  Performance is heavily impacted by an
+ *  atomic decrement of the work counter.
+ *  Optimize this if at all possible.
+ */
+
+#if defined(__GNUC__) && ( 4 <= __GNUC__ )
+
+#define atomic_fetch_and_decrement( VALUE_PTR )	\
+	__sync_fetch_and_sub(VALUE_PTR,1)
+
+#else
+
+static
+int atomic_fetch_and_decrement( volatile int * value )
+{
+  static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER ;
+  int result ;
+  while ( pthread_mutex_trylock( & lock ) );
+  result = ( *value )-- ;
+  pthread_mutex_unlock( & lock );
+  return result ;
+}
+
+#endif
+
+/*--------------------------------------------------------------------*/
+
 struct ThreadPool_Data ;
 
 typedef void (*Thread_Work)( struct ThreadPool_Data * const , unsigned int );
@@ -59,7 +85,6 @@ typedef struct Thread_Data {
 } Thread ;
 
 typedef struct ThreadPool_Data {
-  pthread_mutex_t       m_work_lock ;
   TPI_work_subprogram   m_work_routine ;
   void                * m_work_argument ;
   int                   m_work_count_total ;
@@ -87,7 +112,6 @@ typedef struct ThreadPool_Data {
 static ThreadPool * local_thread_pool()
 {
   static ThreadPool thread_pool = {
-    /* m_work_lock           */  PTHREAD_MUTEX_INITIALIZER ,
     /* m_work_routine        */  NULL ,
     /* m_work_argument       */  NULL ,
     /* m_work_count_total    */  0 ,
@@ -153,30 +177,6 @@ int TPI_Unlock( int i )
 }
 
 /*--------------------------------------------------------------------*/
-
-#ifdef HAVE_ATOMIC_OPERATIONS
-
-#define ATOMIC_FETCH_AND_DECREMENT( VALUE_PTR , LOCK_PTR )	\
-	__sync_fetch_and_sub(VALUE_PTR,1)
-
-#else
-
-static
-int pthread_fetch_and_decrement( volatile int * value , pthread_mutex_t * lock )
-{
-  int result ;
-  pthread_mutex_lock( lock );
-  result = ( *value )-- ;
-  pthread_mutex_unlock( lock );
-  return result ;
-}
-
-#define ATOMIC_FETCH_AND_DECREMENT( VALUE_PTR , LOCK_PTR )	\
-	pthread_fetch_and_decrement( VALUE_PTR , LOCK_PTR )
-
-#endif
-
-/*--------------------------------------------------------------------*/
 /*  Run the work queue until it is empty.
  *  The input 'thread_number' is deliberately ignored.
  */
@@ -193,8 +193,7 @@ static void local_run_work( ThreadPool * const thread_pool ,
   work.lock_count = thread_pool->m_lock_count ;
   work.work_count = thread_pool->m_work_count_total ;
 
-  while ( 0 < ( work.work_rank =
-                ATOMIC_FETCH_AND_DECREMENT(claim,& thread_pool->m_work_lock))) {
+  while ( 0 < ( work.work_rank = atomic_fetch_and_decrement(claim))) {
 
     work.work_rank = work.work_count - work.work_rank ;
 
@@ -297,8 +296,7 @@ void local_barrier( ThreadPool * const control ,
       if ( control->m_reduce_routine ) {
         (* control->m_reduce_routine)
           ( control->m_reduce_data + thread_rank * control->m_reduce_grain ,
-            control->m_reduce_data + next_rank   * control->m_reduce_grain ,
-            control->m_reduce_size );
+            control->m_reduce_data + next_rank   * control->m_reduce_grain );
       }
     }
   }

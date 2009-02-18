@@ -7,7 +7,7 @@
 static void test_flag( TPI_Work * );
 static void test_lock( TPI_Work * );
 static void test_reduce_work( TPI_Work * );
-static void test_reduce_reduce( void * , const void * , int );
+static void test_reduce_reduce( void * , const void * );
 
 int test_c_tpi_unit( const int nthread , const int nwork )
 {
@@ -117,12 +117,10 @@ static void test_reduce_work( TPI_Work * work )
   ++*count ;
 }
 
-static void test_reduce_reduce( void * dest , const void * src , int size )
+static void test_reduce_reduce( void * dest , const void * src )
 {
         int * const d = (int *) dest ;
   const int * const s = (const int *) src ;
-
-  if ( size != sizeof(int) ) { abort(); }
 
   *d += *s ;
 }

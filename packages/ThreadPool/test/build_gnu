@@ -6,40 +6,40 @@ LIB_SRC="../src/TPI.c ../src/TPI_Walltime.c"
 
 LIB_OBJ="TPI.o TPI_Walltime.o"
 
-#CFLAGS=" -std=c99   -Wall -Wextra"
-
-CFLAGS=" -std=c89   -Wall -Wextra -DHAVE_ATOMIC_OPERATIONS"
-CCFLAGS="-std=c++98 -Wall -Wextra"
-
 OPT="-O3"
 # OPT="-g"
 # OPT="-O"
 
-echo build ${OPT}
+#CFLAGS="${OPT} -std=c99   -Wall -Wextra"
+
+CFLAGS=" ${OPT} -std=c89   -Wall -Wextra"
+CCFLAGS="${OPT} -std=c++98 -Wall -Wextra"
+
+echo build: gcc ${CFLAGS}
 
 #-----------------------------------------------------------------------
 
 rm -f ThreadPool_config.h
 echo "#define HAVE_PTHREAD 1" > ThreadPool_config.h
 
-gcc	${CFLAGS} ${OPT} -c	\
+gcc	${CFLAGS} -c	\
 	-I. -I../src ${LIB_SRC}
 
-gcc	${CFLAGS} ${OPT}	\
+gcc	${CFLAGS} \
 	-o test_tpi.gnu.exe	\
 	-I. -I../src ${TEST_SRC} ${LIB_OBJ} -lpthread -lm
 
-g++	${CCFLAGS} ${OPT}	\
+g++	${CCFLAGS} \
 	-o test_tpi_cpp.gnu.exe	\
 	-I. -I../src test_tpi.cpp ${LIB_OBJ} -lpthread -lstdc++ -lm
 
-gcc	${CFLAGS} ${OPT}	\
+gcc	${CFLAGS} \
 	-o test_sum.gnu.exe	\
 	-I. -I../src test_mpi_sum.c ${LIB_OBJ} -lpthread -lm
 
 #-----------------------------------------------------------------------
 
-mpicc	${CFLAGS} ${OPT}	\
+mpicc	${CFLAGS} \
 	-o test_sum.mpi.gnu.exe	\
 	-I. -I../src -DTEST_WITH_MPI test_mpi_sum.c ${LIB_OBJ} -lpthread -lm
 
@@ -48,18 +48,18 @@ mpicc	${CFLAGS} ${OPT}	\
 rm -f ThreadPool_config.h
 echo "/* #define HAVE_PTHREAD 1 */" > ThreadPool_config.h
 
-gcc	${CFLAGS} ${OPT} -c	\
+gcc	${CFLAGS} -c	\
 	-I. -I../src ${LIB_SRC}
 
-gcc	${CFLAGS} ${OPT}	\
+gcc	${CFLAGS} \
 	-o test_tpi.gnu.noth.exe	\
 	-I. -I../src ${TEST_SRC} ${LIB_OBJ} -lpthread -lm
 
-g++	${CCFLAGS} ${OPT}	\
+g++	${CCFLAGS} \
 	-o test_tpi_cpp.gnu.noth.exe	\
 	-I. -I../src test_tpi.cpp ${LIB_OBJ} -lpthread -lstdc++ -lm
 
-gcc	${CFLAGS} ${OPT}	\
+gcc	${CFLAGS} \
 	-o test_sum.gnu.noth.exe	\
 	-I. -I../src test_mpi_sum.c ${LIB_OBJ} -lpthread -lm
 
@@ -69,7 +69,7 @@ rm -f ThreadPool_config.h
 echo "/* #define HAVE_PTHREAD 1 */" > ThreadPool_config.h
 echo "#define HAVE_MPI 1" >> ThreadPool_config.h
 
-mpicc	${CFLAGS} ${OPT}	\
+mpicc	${CFLAGS} \
 	-o test_sum.mpi.gnu.noth.exe	\
 	-I. -I../src -DTEST_WITH_MPI test_mpi_sum.c ${LIB_OBJ} -lpthread -lm
 

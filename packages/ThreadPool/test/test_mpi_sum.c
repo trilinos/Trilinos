@@ -108,78 +108,85 @@ double ddot( unsigned n , const double * x , const double * y )
 
 /*--------------------------------------------------------------------*/
 
+typedef struct ReduceDot_Struct {
+  unsigned int count ;
+  double       value[4];
+} ReduceDot ;
+
+static
+void reduce_tp( void * arg_dst , const void * arg_src )
+{
+        ReduceDot * const dst =       (ReduceDot *) arg_dst ;
+  const ReduceDot * const src = (const ReduceDot *) arg_src ;
+
+  if ( src->count == 4 ) {
+    d2_add_d( dst->value ,     src->value[0] );
+    d2_add_d( dst->value ,     src->value[1] );
+    d2_add_d( dst->value + 2 , src->value[2] );
+    d2_add_d( dst->value + 2 , src->value[3] );
+  }
+  else if ( src->count == 1 ) {
+    dst->value[0] += src->value[0] ;
+  }
+}
+
+/*--------------------------------------------------------------------*/
+
 struct TaskXY {
-  unsigned n ;
+  unsigned int   n ;
   const double * x ;
   const double * y ;
 };
 
 static
-void reduce_tp( void * arg_dst , const void * arg_src , int arg_n )
-{
-        double * const dst =       (double *) arg_dst ;
-  const double * const src = (const double *) arg_src ;
-
-  if ( arg_n == 4 * sizeof(double) ) {
-    d2_add_d( dst ,     src[0] );
-    d2_add_d( dst ,     src[1] );
-    d2_add_d( dst + 2 , src[2] );
-    d2_add_d( dst + 2 , src[3] );
-  }
-  else if ( arg_n == sizeof(double) ) {
-    *dst += *src ;
-  }
-}
-
-static
 void work_d4_dot_tp( TPI_Work * work )
 {
-  struct TaskXY * const data = (struct TaskXY *) work->shared ;
-  double * const reduce = (double *) work->reduce ;
+  struct TaskXY * const data   = (struct TaskXY *) work->shared ;
+  ReduceDot     * const reduce = (ReduceDot *) work->reduce ;
 
   unsigned int begin , length ;
 
   my_span( work->work_count , work->work_rank , data->n , & begin , & length );
 
-  d4_dot( reduce , length , data->x + begin , data->y + begin );
+  d4_dot( reduce->value , length , data->x + begin , data->y + begin );
 }
 
 double d4_dot_tp( COMM comm, unsigned nwork, unsigned n,
                   const double * x, const double * y )
 {
   struct TaskXY data = { 0 , NULL , NULL };
-  double result[4] = { 0 , 0 , 0 , 0 };
+  ReduceDot result = { 4 , { 0 , 0 , 0 , 0 } };
   data.n = n ;
   data.x = x ;
   data.y = y ;
 
   if ( nwork ) {
     TPI_Run_reduce( work_d4_dot_tp , & data , nwork ,
-                    reduce_tp , result , sizeof(result) );
+                    reduce_tp , & result , sizeof(result) );
   }
   else {
     TPI_Run_threads_reduce( work_d4_dot_tp , & data ,
-                            reduce_tp , result , sizeof(result) );
+                            reduce_tp , & result , sizeof(result) );
   }
 
-  comm_reduce_d4_sum( comm , result );
+  comm_reduce_d4_sum( comm , result.value );
 
-  d2_add_d( result , result[2] );
-  d2_add_d( result , result[3] );
+  d2_add_d( result.value , result.value[2] );
+  d2_add_d( result.value , result.value[3] );
 
-  return result[0] ;
+  return result.value[0] ;
 }
 
 static
 void task_ddot_tp( TPI_Work * work )
 {
   struct TaskXY * const data = (struct TaskXY *) work->shared ;
-  double * const reduce = (double *) work->reduce ;
+  ReduceDot     * const reduce = (ReduceDot *) work->reduce ;
   unsigned int begin , length ;
 
   my_span( work->work_count , work->work_rank , data->n , & begin , & length );
 
-  *reduce += ddot( length , data->x + begin , data->y + begin );
+  reduce->value[0] += ddot( length , data->x + begin , data->y + begin );
 
   return ;
 }
@@ -188,7 +195,7 @@ double ddot_tp( COMM comm, unsigned nwork, unsigned n,
                 const double * x, const double * y )
 {
   struct TaskXY data = { 0 , NULL , NULL };
-  double result = 0 ;
+  ReduceDot result = { 1 , { 0 , 0 , 0 , 0 } };
   data.n = n ;
   data.x = x ;
   data.y = y ;
@@ -202,9 +209,9 @@ double ddot_tp( COMM comm, unsigned nwork, unsigned n,
                             reduce_tp , & result , sizeof(result) );
   }
 
-  comm_reduce_dsum( comm , & result );
+  comm_reduce_dsum( comm , result.value );
 
-  return result ;
+  return result.value[0] ;
 }
 
 /*--------------------------------------------------------------------*/
