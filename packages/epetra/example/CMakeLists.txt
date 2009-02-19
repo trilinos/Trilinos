@@ -6,44 +6,12 @@ INCLUDE(PackageAddExecutable)
 INCLUDE(PackageAddTest)
 
 # Example definitions
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(petra_power_method EXAMPLE SOURCES cxx_main.cpp ARGS 100)
-PACKAGE_ADD_EXECUTABLE(
-  petra_power_method 
-  COMM serial  
-  SOURCES cxx_main.cpp
-  DIRECTORY petra_power_method
-  )
 
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(verySimple EXAMPLE SOURCES cxx_main.cpp)
-PACKAGE_ADD_EXECUTABLE(
-  verySimple 
-  COMM serial  
-  SOURCES cxx_main.cpp
-  DIRECTORY verySimple
-  )
-
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(UG_Ex1 EXAMPLE SOURCES cxx_main.cpp power_method.cpp ARGS 100)
-PACKAGE_ADD_EXECUTABLE(
-  UG_Ex1
-  COMM serial  
-  SOURCES cxx_main.cpp power_method.cpp
-  DIRECTORY UG_Ex1
-  )
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(UG_ExMaps EXAMPLE SOURCES cxx_main.cpp ARGS 100)
-PACKAGE_ADD_EXECUTABLE(
-  UG_ExMaps
-  COMM serial  
-  SOURCES cxx_main.cpp 
-  DIRECTORY UG_ExMaps
-  )
-
-#PACKAGE_ADD_EXECUTABLE_AND_TEST(my_example EXAMPLE SOURCES cxx_main.cpp ARGS -v)
-PACKAGE_ADD_EXECUTABLE(
-  my_example
-  COMM mpi serial  
-  SOURCES cxx_main.cpp
-  DIRECTORY my_example
-  )
+ADD_SUBDIRECTORY(petra_power_method)
+ADD_SUBDIRECTORY(verySimple)
+ADD_SUBDIRECTORY(UG_Ex1)
+ADD_SUBDIRECTORY(UG_ExMaps)
+ADD_SUBDIRECTORY(my_example)
 
 # Below this line are subdirectories in epetra/example that are not exposed using autotools
 

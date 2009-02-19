@@ -67,13 +67,14 @@ Final Certification Evidence: [???]
 
 Package: Epetra
 
-Package Transition Lead: [???]
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
-Status: Has basic CMake support for libraries and a few tests and examples
+Status: Code and all tests and examples listed in the definition file have been
+  converted and run.
 
-Final Certification Date: [???]
+Final Certification Date: 2/19/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests and examples ran and worked on mac os X
 
 -------------------------------------------------------------------------------
 
@@ -296,7 +297,7 @@ Final Certification Evidence: [???]
 
 Package: Ifpack
 
-Package Transition Lead: [???]
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
 Status: Basic libraries and several tests and examples
 

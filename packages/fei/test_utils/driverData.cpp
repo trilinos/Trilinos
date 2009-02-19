@@ -17,6 +17,8 @@
 
 #include <test_utils/driverData.hpp>
 
+#include <cstring>
+
 #ifdef CHK_ERR
 #undef CHK_ERR
 #endif
@@ -131,11 +133,11 @@ int driverData::readData(const char* fileName)
 
 int driverData::call_fei_method(const char* method, FEI* fei)
 {
-  if (!strcmp("setSolveType", method)) {
+  if (!std::strcmp("setSolveType", method)) {
     return( fei->setSolveType(solveType_) );
   }
 
-  if (!strcmp("setIDLists", method)) {
+  if (!std::strcmp("setIDLists", method)) {
     if (setIDListsCounter_ >= (int)setIDLists_.size()) {
       FEI_CERR << "driverData ERROR, can't call setIDLists again" << FEI_ENDL;
       return(-1);
@@ -147,7 +149,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 			       sidl->numRHSs, sidl->rhsIDs) );
   }
 
-  if (!strcmp("setCurrentMatrix", method)) {
+  if (!std::strcmp("setCurrentMatrix", method)) {
     if (setCurrentMatrixCounter_ >= (int)setCurrentMatrix_.size()) {
       FEI_CERR << "driverData ERROR, can't call setCurrentMatrix again" << FEI_ENDL;
       return(-1);
@@ -158,7 +160,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
     return( fei->setCurrentMatrix(matID) );
   }
 
-  if (!strcmp("setCurrentRHS", method)) {
+  if (!std::strcmp("setCurrentRHS", method)) {
     if (setCurrentRHSCounter_ >= (int)setCurrentRHS_.size()) {
       FEI_CERR << "driverData ERROR, can't call setCurrentRHS again" << FEI_ENDL;
       return(-1);
@@ -169,13 +171,13 @@ int driverData::call_fei_method(const char* method, FEI* fei)
     return( fei->setCurrentMatrix(rhsID) );
   }
 
-  if (!strcmp("initFields", method)) {
+  if (!std::strcmp("initFields", method)) {
     return( fei->initFields(initFields_numFields_,
 			       initFields_fieldSizes_,
 			       initFields_fieldIDs_) );
   }
 
-  if (!strcmp("initElemBlock", method)) {
+  if (!std::strcmp("initElemBlock", method)) {
     return( fei->initElemBlock((GlobalID)initElemBlock_ints_[0],
 				  initElemBlock_ints_[1],
 				  initElemBlock_ints_[2],
@@ -187,7 +189,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
   }
 
-  if (!strcmp("parameters", method)) {
+  if (!std::strcmp("parameters", method)) {
     if (parametersCounter_ >= (int)parameters_.size()) {
       FEI_CERR << "driverData ERROR, can't call parameters again" << FEI_ENDL;
       return(-1);
@@ -199,7 +201,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 			    &param->paramList[0]) );
   }
 
-  if (!strcmp("initCRMult", method)) {
+  if (!std::strcmp("initCRMult", method)) {
     if (initCRMultCounter_ >= (int)initCRMult_.size()) {
       FEI_CERR << "driverData ERROR, can't call initCRMult again" << FEI_ENDL;
       return(-1);
@@ -211,7 +213,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 			       icr->fieldIDs, icr->CRID) );
   }
 
-  if (!strcmp("initSharedNodes", method)) {
+  if (!std::strcmp("initSharedNodes", method)) {
     if (initSharedNodesCounter_ >= (int)initSharedNodes_.size()) {
       FEI_CERR << "driverData ERROR, can't call initSharedNodes again" << FEI_ENDL;
       return(-1);
@@ -223,7 +225,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 			       sn->numProcsPerNode, sn->sharedProcIDs) );
   }
 
-  if (!strcmp("loadCRMult", method)) {
+  if (!std::strcmp("loadCRMult", method)) {
     if (loadCRMultCounter_ >= (int)loadCRMult_.size()) {
       FEI_CERR << "driverData ERROR, can't call loadCRMult again" << FEI_ENDL;
       return(-1);
@@ -235,11 +237,11 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 			       lcr->fieldIDs, lcr->weights, lcr->CRValue) );
   }
 
-  if (!strcmp("deleteMultCRs", method)) {
+  if (!std::strcmp("deleteMultCRs", method)) {
     return( fei->deleteMultCRs() );
   }
 
-  if (!strcmp("initElem", method)) {
+  if (!std::strcmp("initElem", method)) {
     if (initElemCounter_ >= (int)initElems_.size()) {
       FEI_CERR << "driverData ERROR, can't call initElem again" << FEI_ENDL;
       return(-1);
@@ -250,27 +252,27 @@ int driverData::call_fei_method(const char* method, FEI* fei)
     return( fei->initElem(ie->elemBlockID, ie->elemID, ie->nodeIDs) );
   }
 
-  if (!strcmp("initComplete", method)) {
+  if (!std::strcmp("initComplete", method)) {
     return( fei->initComplete() );
   }
 
-  if (!strcmp("resetSystem", method)) {
+  if (!std::strcmp("resetSystem", method)) {
     return( fei->resetSystem(resetSystem_) );
   }
 
-  if (!strcmp("resetMatrix", method)) {
+  if (!std::strcmp("resetMatrix", method)) {
     return( fei->resetMatrix(resetMatrix_) );
   }
 
-  if (!strcmp("resetRHSVector", method)) {
+  if (!std::strcmp("resetRHSVector", method)) {
     return( fei->resetRHSVector(resetRHSVector_) );
   }
 
-  if (!strcmp("resetInitialGuess", method)) {
+  if (!std::strcmp("resetInitialGuess", method)) {
     return( fei->resetInitialGuess(resetInitialGuess_) );
   }
 
-  if (!strcmp("sumInElem", method)) {
+  if (!std::strcmp("sumInElem", method)) {
     if (sumInElemCounter_ >= (int)sumInElems_.size()) {
       FEI_CERR << "driverData ERROR, can't call sumInElem again" << FEI_ENDL;
       return(-1);
@@ -282,7 +284,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 			      sie->stiffness, sie->load, sie->elemFormat) );
   }
 
-  if (!strcmp("sumInElemMatrix", method)) {
+  if (!std::strcmp("sumInElemMatrix", method)) {
     if (sumInElemMatrixCounter_ >= (int)sumInElemMatrix_.size()) {
       FEI_CERR << "driverData ERROR, can't call sumInElemMatrix again" << FEI_ENDL;
       return(-1);
@@ -294,7 +296,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 			      sie->stiffness, sie->elemFormat) );
   }
 
-  if (!strcmp("sumInElemRHS", method)) {
+  if (!std::strcmp("sumInElemRHS", method)) {
     if (sumInElemRHSCounter_ >= (int)sumInElemRHS_.size()) {
       FEI_CERR << "driverData ERROR, can't call sumInElemRHS again" << FEI_ENDL;
       return(-1);
@@ -306,7 +308,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 			         sie->load) );
   }
 
-  if (!strcmp("putBlockFieldNodeSolution", method)) {
+  if (!std::strcmp("putBlockFieldNodeSolution", method)) {
     if (putBlockFieldNodeSolutionCounter_ >=
 	(int)putBlockFieldNodeSolution_.size()) {
       FEI_CERR << "driverData ERROR, can't call putBlockFieldNodeSolution again"
@@ -324,7 +326,7 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 					      pbfns->estimates) );
   }
 
-  if (!strcmp("loadNodeBCs", method)) {
+  if (!std::strcmp("loadNodeBCs", method)) {
     if (loadNodeBCsCounter_ >= (int)loadNodeBCs_.size()) {
       FEI_CERR << "driverData ERROR, can't call loadNodeBCs again" << FEI_ENDL;
       return(-1);
@@ -334,18 +336,18 @@ int driverData::call_fei_method(const char* method, FEI* fei)
     return( -1 );
   }
 
-  if (!strcmp("loadComplete", method)) {
+  if (!std::strcmp("loadComplete", method)) {
     return( fei->loadComplete() );
   }
 
-  if (!strcmp("solve", method)) {
+  if (!std::strcmp("solve", method)) {
     int status;
     return( fei->solve(status) );
   }
 
-  if (!strcmp("getBlockNodeIDList", method) ||
-      !strcmp("residualNorm",       method) ||
-      !strcmp("getBlockFieldNodeSolution", method)) {
+  if (!std::strcmp("getBlockNodeIDList", method) ||
+      !std::strcmp("residualNorm",       method) ||
+      !std::strcmp("getBlockFieldNodeSolution", method)) {
     return(0);
   }
 
@@ -355,12 +357,12 @@ int driverData::call_fei_method(const char* method, FEI* fei)
 
 int driverData::readData(FEI_ISTREAM* instr, char* keyword)
 {
-  if (!strcmp("setSolveType", keyword)) {
+  if (!std::strcmp("setSolveType", keyword)) {
     CHK_ERR( appendName(keyword) );
     return(readData(instr, solveType_));
   }
 
-  if (!strcmp("setIDLists", keyword)) {
+  if (!std::strcmp("setIDLists", keyword)) {
     int numMatrices = 0;
     CHK_ERR( readData(instr, numMatrices) );
     setIDLists* sidl = new setIDLists;
@@ -382,21 +384,21 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("setCurrentMatrix", keyword)) {
+  if (!std::strcmp("setCurrentMatrix", keyword)) {
     int matID = 0;
     CHK_ERR( readData(instr, matID) );
     setCurrentMatrix_.push_back(matID);
     return( appendName(keyword) );
   }
 
-  if (!strcmp("setCurrentRHS", keyword)) {
+  if (!std::strcmp("setCurrentRHS", keyword)) {
     int rhsID = 0;
     CHK_ERR( readData(instr, rhsID) );
     setCurrentRHS_.push_back(rhsID);
     return( appendName(keyword) );
   }
 
-  if (!strcmp("initFields", keyword)) {
+  if (!std::strcmp("initFields", keyword)) {
     int i;
     CHK_ERR( readData(instr, initFields_numFields_) );
     initFields_fieldSizes_ = new int[initFields_numFields_];
@@ -412,7 +414,7 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("parameters", keyword)) {
+  if (!std::strcmp("parameters", keyword)) {
     int numParams = 0;
     CHK_ERR( readData(instr, numParams) );
     parameters* param = new parameters;
@@ -427,7 +429,7 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("initElemBlock", keyword)) {
+  if (!std::strcmp("initElemBlock", keyword)) {
     initElemBlock_numInts_ = 5;
     int i, intOffset = 0;
     initElemBlock_ints_ = new int[initElemBlock_numInts_];
@@ -467,7 +469,7 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("initElem", keyword) ) {
+  if (!std::strcmp("initElem", keyword) ) {
     initElem* ie = new initElem;
     int tmp;
     CHK_ERR( readData(instr, tmp) );
@@ -485,7 +487,7 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("initCRMult", keyword) ) {
+  if (!std::strcmp("initCRMult", keyword) ) {
     initCR* icr = new initCR;
     CHK_ERR( readData(instr, icr->numNodes) );
     if (icr->numNodes > 0) {
@@ -508,7 +510,7 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("loadCRMult", keyword) ) {
+  if (!std::strcmp("loadCRMult", keyword) ) {
     loadCR* lcr = new loadCR;
     CHK_ERR( readData(instr, lcr->numNodes) );
     if (lcr->numNodes > 0) {
@@ -549,11 +551,11 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("deleteMultCRs", keyword) ) {
+  if (!std::strcmp("deleteMultCRs", keyword) ) {
     return( appendName(keyword) );
   }
 
-  if (!strcmp("initSharedNodes", keyword) ) {
+  if (!std::strcmp("initSharedNodes", keyword) ) {
     sharedNodes* sn = new sharedNodes;
     CHK_ERR( readData(instr, sn->numNodes) );
     if (sn->numNodes > 0) {
@@ -579,11 +581,11 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("initComplete", keyword) ) {
+  if (!std::strcmp("initComplete", keyword) ) {
     return( appendName(keyword) );
   }
 
-  if (!strcmp("sumInElem", keyword) ) {
+  if (!std::strcmp("sumInElem", keyword) ) {
     sumInElem* sie = new sumInElem;
     int tmp;
     double dtmp;
@@ -626,7 +628,7 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("sumInElemMatrix", keyword) ) {
+  if (!std::strcmp("sumInElemMatrix", keyword) ) {
     sumInElem* sie = new sumInElem;
     int tmp;
     double dtmp;
@@ -664,7 +666,7 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("sumInElemRHS", keyword) ) {
+  if (!std::strcmp("sumInElemRHS", keyword) ) {
     sumInElem* sie = new sumInElem;
     int tmp;
     double dtmp;
@@ -693,27 +695,27 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("resetSystem", keyword) ) {
+  if (!std::strcmp("resetSystem", keyword) ) {
     CHK_ERR( readData(instr, resetSystem_) );
     return( appendName(keyword) );
   }
 
-  if (!strcmp("resetMatrix", keyword) ) {
+  if (!std::strcmp("resetMatrix", keyword) ) {
     CHK_ERR( readData(instr, resetMatrix_) );
     return( appendName(keyword) );
   }
 
-  if (!strcmp("resetRHSVector", keyword) ) {
+  if (!std::strcmp("resetRHSVector", keyword) ) {
     CHK_ERR( readData(instr, resetRHSVector_) );
     return( appendName(keyword) );
   }
 
-  if (!strcmp("resetInitialGuess", keyword) ) {
+  if (!std::strcmp("resetInitialGuess", keyword) ) {
     CHK_ERR( readData(instr, resetInitialGuess_) );
     return( appendName(keyword) );
   }
 
-  if (!strcmp("putBlockFieldNodeSolution", keyword) ) {
+  if (!std::strcmp("putBlockFieldNodeSolution", keyword) ) {
     putBlockFieldNodeSolution* pbfns = new putBlockFieldNodeSolution;
     CHK_ERR( readData(instr, pbfns->elemBlockID) );
     CHK_ERR( readData(instr, pbfns->fieldID) );
@@ -738,7 +740,7 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("loadNodeBCs", keyword) ) {
+  if (!std::strcmp("loadNodeBCs", keyword) ) {
     nodeBC* nbc = new nodeBC;
     CHK_ERR( readData(instr, nbc->numNodes) );
     CHK_ERR( readData(instr, nbc->fieldID) );
@@ -775,12 +777,12 @@ int driverData::readData(FEI_ISTREAM* instr, char* keyword)
     return( appendName(keyword) );
   }
 
-  if (!strcmp("loadComplete",       keyword) ||
-      !strcmp("solve",              keyword) ||
-      !strcmp("destructor",         keyword) ||
-      !strcmp("getBlockNodeIDList", keyword) ||
-      !strcmp("getBlockFieldNodeSolution", keyword) ||
-      !strcmp("residualNorm",       keyword)) {
+  if (!std::strcmp("loadComplete",       keyword) ||
+      !std::strcmp("solve",              keyword) ||
+      !std::strcmp("destructor",         keyword) ||
+      !std::strcmp("getBlockNodeIDList", keyword) ||
+      !std::strcmp("getBlockFieldNodeSolution", keyword) ||
+      !std::strcmp("residualNorm",       keyword)) {
     return( appendName(keyword) );
   }
 
