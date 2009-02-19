@@ -1432,7 +1432,8 @@ MACRO(PACKAGE_ARCH_POST_SETUP_ENV)
       MESSAGE(STATUS "Creating dummy last_lib for appending the link flags: "
         "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
     ENDIF()
-    FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c "")
+    FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c
+      "typedef int last_lib_dummy_t;\n")
     ADD_LIBRARY(last_lib STATIC ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c)
     TARGET_LINK_LIBRARIES(last_lib ${${PROJECT_NAME}_EXTRA_LINK_FLAGS})
   ENDIF()
