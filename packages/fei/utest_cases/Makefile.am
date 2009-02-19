@@ -14,14 +14,6 @@
 
 include $(top_builddir)/Makefile.export.fei
 
-if HAVE_FEI_PETSC
-PETSC_INCLUDES=@PETSC_INCLUDE@
-PETSC_CPPFLAGS=$(PETSC_INCLUDES)
-else
-PETSC_INCLUDES=
-PETSC_CPPFLAGS=
-endif
-
 if HAVE_FEI_FETI
 FETIDP_INCLUDES=@FETIDP_INCLUDE@
 FETIDP_CPPFLAGS=$(FETIDP_INCLUDES)
@@ -38,7 +30,7 @@ endif
 # ------------------------------------------------------------------------
 
 DEFS =
-DEFAULT_INCLUDES = -I$(top_srcdir)/utest_cases $(FEI_INCLUDES) $(PETSC_CPPFLAGS) $(FETIDP_CPPFLAGS)
+DEFAULT_INCLUDES = -I$(top_srcdir)/utest_cases $(FEI_INCLUDES) $(FETIDP_CPPFLAGS)
 
 CORE_H = \
 	$(top_srcdir)/utest_cases/fei_unit_CommUtils.hpp \

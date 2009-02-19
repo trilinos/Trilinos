@@ -25,10 +25,6 @@
 #include <FETI_DP_FiniteElementData.h>
 #endif
 
-#ifdef HAVE_FEI_PETSC
-#include <fei_PETSc_LinSysCore.hpp>
-#endif
-
 //----------------------------------------------------------------------------
 fei::SharedPtr<LibraryWrapper>
 fei::create_LibraryWrapper(MPI_Comm comm,
@@ -52,15 +48,6 @@ fei::create_LibraryWrapper(MPI_Comm comm,
   if (libname == "FETI") {
 #ifdef HAVE_FEI_FETI
     fedata.reset(new FETI_DP_FiniteElementData(comm));
-#endif
-  }
-
-  if (libname == "PETSc") {
-#ifdef HAVE_FEI_PETSC
-    lsc.reset(new PETSc_LinSysCore(comm));
-#else
-    std::string msg("PETSc not available.");
-    throw std::runtime_error(msg);
 #endif
   }
 

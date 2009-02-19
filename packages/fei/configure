@@ -681,10 +681,6 @@ BUILD_ML_TRUE
 BUILD_ML_FALSE
 BUILD_IFPACK_TRUE
 BUILD_IFPACK_FALSE
-HAVE_FEI_PETSC_TRUE
-HAVE_FEI_PETSC_FALSE
-PETSC_INCLUDE
-PETSC_LIB_DIR
 HAVE_FEI_FETI_TRUE
 HAVE_FEI_FETI_FALSE
 FETIDP_INCLUDE
@@ -1344,10 +1340,6 @@ Optional Packages:
   --with-mpi-incdir=DIR   MPI include directory [MPIROOT/include] Do not use
                           -I
   --with-mpi-libdir=DIR   MPI library directory [MPIROOT/lib] Do not use -L
-  --with-petsc-include=-IDIR
-                          Specify PETSc include
-  --with-petsc-libdir=LIBDIR
-                          Specify PETSc library directory
   --with-fetidp-include=-IDIR
                           Specify FETI-DP include
   --with-fetidp-libdir=LIBDIR
@@ -4938,96 +4930,6 @@ fi
 
 
 
-# ------------------------------------------------------------------------
-# Check for PETSc include directives
-# ------------------------------------------------------------------------
-
-SPECIFIED_PETSC_INCLUDE=no
-
-
-# Check whether --with-petsc-include was given.
-if test "${with_petsc_include+set}" = set; then
-  withval=$with_petsc_include;
-  { echo "$as_me:$LINENO: checking whether petsc-include specified" >&5
-echo $ECHO_N "checking whether petsc-include specified... $ECHO_C" >&6; }
-  { echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6; }
-  SPECIFIED_PETSC_INCLUDE=yes
-  PETSCINC="${withval}"
-
-
-fi
-
-
- if test "X${SPECIFIED_PETSC_INCLUDE}" != "Xno"; then
-  HAVE_FEI_PETSC_TRUE=
-  HAVE_FEI_PETSC_FALSE='#'
-else
-  HAVE_FEI_PETSC_TRUE='#'
-  HAVE_FEI_PETSC_FALSE=
-fi
-
-
-if test "X${SPECIFIED_PETSC_INCLUDE}" != "Xno"; then
-PETSC_INCLUDE=${PETSCINC}
-
-fi
-
-# ------------------------------------------------------------------------
-# Check for PETSC library directory
-# ------------------------------------------------------------------------
-
-SPECIFIED_PETSC_LIB=no
-
-
-# Check whether --with-petsc-libdir was given.
-if test "${with_petsc_libdir+set}" = set; then
-  withval=$with_petsc_libdir;
-  { echo "$as_me:$LINENO: checking whether petsc-libdir specified" >&5
-echo $ECHO_N "checking whether petsc-libdir specified... $ECHO_C" >&6; }
-  { echo "$as_me:$LINENO: result: ${withval}" >&5
-echo "${ECHO_T}${withval}" >&6; }
-  SPECIFIED_PETSC_LIB=yes
-  PETSCLIBDIR="${withval}"
-
-
-fi
-
-
-if test "X${SPECIFIED_PETSC_LIB}" != "Xno"; then
-
-  if test "X$cross_compiling" != "Xyes"; then
-    { as_ac_File=`echo "ac_cv_file_${PETSCLIBDIR}/libpetsc.a" | $as_tr_sh`
-{ echo "$as_me:$LINENO: checking for ${PETSCLIBDIR}/libpetsc.a" >&5
-echo $ECHO_N "checking for ${PETSCLIBDIR}/libpetsc.a... $ECHO_C" >&6; }
-if { as_var=$as_ac_File; eval "test \"\${$as_var+set}\" = set"; }; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  test "$cross_compiling" = yes &&
-  { { echo "$as_me:$LINENO: error: cannot check for file existence when cross compiling" >&5
-echo "$as_me: error: cannot check for file existence when cross compiling" >&2;}
-   { (exit 1); exit 1; }; }
-if test -r "${PETSCLIBDIR}/libpetsc.a"; then
-  eval "$as_ac_File=yes"
-else
-  eval "$as_ac_File=no"
-fi
-fi
-ac_res=`eval echo '${'$as_ac_File'}'`
-	       { echo "$as_me:$LINENO: result: $ac_res" >&5
-echo "${ECHO_T}$ac_res" >&6; }
- }
-  fi
-
-PETSC_LIB_DIR=${PETSCLIBDIR}
-
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_FEI_PETSC
-_ACEOF
-
-fi
-
 
 # ------------------------------------------------------------------------
 # Check for FETI-DP include directives
@@ -5332,7 +5234,7 @@ fi
 
 
 
-ac_config_files="$ac_config_files Makefile Makefile.export.fei base/Makefile test_utils/Makefile support-Trilinos/Makefile support-PETSc/Makefile test/Makefile test/cr_lagrange_20quad/Makefile test/cr_slave_20quad/Makefile test/cr_slave_20quad_old/Makefile test/cr_lagrange_20quad_AZLSC/Makefile test/cr_lagrange_20quad_old/Makefile test/cr_multifield_slave/Makefile test/elemDOF_Aztec/Makefile test/remEssBCs/Makefile test/remEssBCs_Trilinos/Makefile utest/Makefile utest_cases/Makefile example/Makefile example/beam/Makefile example/poisson/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.fei base/Makefile test_utils/Makefile support-Trilinos/Makefile test/Makefile test/cr_lagrange_20quad/Makefile test/cr_slave_20quad/Makefile test/cr_slave_20quad_old/Makefile test/cr_lagrange_20quad_AZLSC/Makefile test/cr_lagrange_20quad_old/Makefile test/cr_multifield_slave/Makefile test/elemDOF_Aztec/Makefile test/remEssBCs/Makefile test/remEssBCs_Trilinos/Makefile utest/Makefile utest_cases/Makefile example/Makefile example/beam/Makefile example/poisson/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -5519,13 +5421,6 @@ if test -z "${BUILD_IFPACK_TRUE}" && test -z "${BUILD_IFPACK_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_IFPACK\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"BUILD_IFPACK\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_FEI_PETSC_TRUE}" && test -z "${HAVE_FEI_PETSC_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_FEI_PETSC\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_FEI_PETSC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -6052,7 +5947,6 @@ do
     "base/Makefile") CONFIG_FILES="$CONFIG_FILES base/Makefile" ;;
     "test_utils/Makefile") CONFIG_FILES="$CONFIG_FILES test_utils/Makefile" ;;
     "support-Trilinos/Makefile") CONFIG_FILES="$CONFIG_FILES support-Trilinos/Makefile" ;;
-    "support-PETSc/Makefile") CONFIG_FILES="$CONFIG_FILES support-PETSc/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/cr_lagrange_20quad/Makefile") CONFIG_FILES="$CONFIG_FILES test/cr_lagrange_20quad/Makefile" ;;
     "test/cr_slave_20quad/Makefile") CONFIG_FILES="$CONFIG_FILES test/cr_slave_20quad/Makefile" ;;
@@ -6274,10 +6168,6 @@ BUILD_ML_TRUE!$BUILD_ML_TRUE$ac_delim
 BUILD_ML_FALSE!$BUILD_ML_FALSE$ac_delim
 BUILD_IFPACK_TRUE!$BUILD_IFPACK_TRUE$ac_delim
 BUILD_IFPACK_FALSE!$BUILD_IFPACK_FALSE$ac_delim
-HAVE_FEI_PETSC_TRUE!$HAVE_FEI_PETSC_TRUE$ac_delim
-HAVE_FEI_PETSC_FALSE!$HAVE_FEI_PETSC_FALSE$ac_delim
-PETSC_INCLUDE!$PETSC_INCLUDE$ac_delim
-PETSC_LIB_DIR!$PETSC_LIB_DIR$ac_delim
 HAVE_FEI_FETI_TRUE!$HAVE_FEI_FETI_TRUE$ac_delim
 HAVE_FEI_FETI_FALSE!$HAVE_FEI_FETI_FALSE$ac_delim
 FETIDP_INCLUDE!$FETIDP_INCLUDE$ac_delim
@@ -6301,7 +6191,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 31; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 27; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -28,26 +28,13 @@
 
 include $(top_builddir)/Makefile.export.fei
 
-PETSC_INCLUDE=@PETSC_INCLUDE@
-PETSC_LIB_DIR=@PETSC_LIB_DIR@
-
 FETIDP_INCLUDE=@FETIDP_INCLUDE@
 FETIDP_LIB_DIR=@FETIDP_LIB_DIR@
 
 DEFAULT_INCLUDES = $(FEI_INCLUDES) \
-	 $(PETSC_INCLUDE) $(FETIDP_INCLUDE)
+	 $(FETIDP_INCLUDE)
 
 INSTRUMENT_CMD=@INSTRUMENT_CMD@
-
-if HAVE_FEI_PETSC
-FEI_PETSC_LIB=$(top_builddir)/support-PETSc/libfei_petsc.a
-FEI_PETSC_LDADD=-L$(top_builddir)/support-PETSc -lfei_petsc
-FEI_PETSC_LIBS=$(FEI_PETSC_LDADD) -L$(PETSC_LIB_DIR) -lpetscksp -lpetscmat -lpetscvec -lpetsc
-else
-FEI_PETSC_LIB=
-FEI_PETSC_LDADD=
-FEI_PETSC_LIBS=
-endif
 
 if HAVE_FEI_FETI
 FEI_FETIDP_LIBS=-L$(FETIDP_LIB_DIR) -lfeti-mpi
@@ -88,11 +75,11 @@ fei_test_plugins_SOURCES = $(srcdir)/fei_test_plugins.cpp
 # exe depends on.  (This primary is not absolutely essential.)
 fei_test_DEPENDENCIES = \
 	$(top_builddir)/base/libfei_base.a $(FEI_LIBS) \
-	$(top_builddir)/test_utils/libfei_test_utils.a $(FEI_PETSC_LIB)
+	$(top_builddir)/test_utils/libfei_test_utils.a
 
 fei_test_plugins_DEPENDENCIES = \
 	$(FEI_LIBS) \
-	$(top_builddir)/test_utils/libfei_test_utils.a $(FEI_PETSC_LIB)
+	$(top_builddir)/test_utils/libfei_test_utils.a
 
 # One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
 # building the exe.
@@ -104,13 +91,13 @@ fei_test_plugins_CXXFLAGS = $(FEI_INCLUDES)
 # Include any LDFLAGS necessary for building the exe.
 fei_test_LDADD = \
 	-L$(top_builddir)/test_utils -lfei_test_utils \
-	$(FEI_LIBS) $(FEI_PETSC_LIBS) \
+	$(FEI_LIBS) \
 	$(FEI_FETIDP_LIBS) \
 	$(LIBS) $(FLIBS)
 
 fei_test_plugins_LDADD = \
 	-L$(top_builddir)/test_utils -lfei_test_utils \
-	$(FEI_LIBS) $(FEI_PETSC_LIBS) \
+	$(FEI_LIBS) \
 	$(FEI_FETIDP_LIBS) \
 	$(LIBS) $(FLIBS)
 

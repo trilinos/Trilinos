@@ -210,6 +210,8 @@ class NodeDatabase {
   std::map<GlobalID,int> nodeIDs_; //nodeIDs_ maps node-ID to an index into
                                 //the nodePtrs_ array of NodeDescriptors.
 
+  std::map<int,int> nodeNumbers_;
+
   bool synchronized_;
   bool need_to_alloc_and_sync_;
 

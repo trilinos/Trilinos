@@ -31,13 +31,8 @@ class ConnectivityTable {
          delete [] connectivities;
       }
 
-      if (elem_conn_ids != NULL) {
-	delete elem_conn_ids;
-      }
-
-      if (elem_conn_ptrs != NULL) {
-	delete elem_conn_ptrs;
-      }
+      delete elem_conn_ids;
+      delete elem_conn_ptrs;
    }
 
    int numRows;

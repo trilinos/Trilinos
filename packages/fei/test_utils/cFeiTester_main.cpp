@@ -19,8 +19,6 @@
 #if defined(FEI_ALL_SOLVERS)
 #define HAVE_FEI_FETI
 
-#define HAVE_FEI_PETSC
-
 #define HAVE_FEI_AZTECOO
 #endif
 
@@ -30,10 +28,6 @@
 
 #if defined(HAVE_FEI_AZTECOO)
 #include <cfei_aztec.h>
-#endif
-
-#if defined(HAVE_FEI_PETSC)
-#include <cfei_petsc.h>
 #endif
 
 //And we also need the FEI prototypes. e.g., FEI_create(...), etc.
@@ -170,12 +164,6 @@ int cFeiTester_main(int argc, char** argv,
      CHK_ERR( Aztec_LinSysCore_create(&linSys, MPI_COMM_WORLD));
 #endif
    }
-   if (cfei_namesMatch(solverName, "PETSc")) {
-#ifdef HAVE_FEI_PETSC
-     CHK_ERR( PETSc_LinSysCore_create(&linSys, MPI_COMM_WORLD));
-#endif
-   }
-
 
    //now we're ready to create an fei instance...
 

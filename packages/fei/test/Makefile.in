@@ -86,7 +86,6 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_fei_test_OBJECTS = fei_test-fei_test.$(OBJEXT)
 fei_test_OBJECTS = $(am_fei_test_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_FEI_PETSC_TRUE@am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 fei_test_LINK = $(CXXLD) $(fei_test_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_fei_test_plugins_OBJECTS =  \
@@ -151,8 +150,6 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PETSC_INCLUDE = @PETSC_INCLUDE@
-PETSC_LIB_DIR = @PETSC_LIB_DIR@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -202,14 +199,8 @@ target_alias = @target_alias@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 DEFAULT_INCLUDES = $(FEI_INCLUDES) \
-	 $(PETSC_INCLUDE) $(FETIDP_INCLUDE)
+	 $(FETIDP_INCLUDE)
 
-@HAVE_FEI_PETSC_FALSE@FEI_PETSC_LIB = 
-@HAVE_FEI_PETSC_TRUE@FEI_PETSC_LIB = $(top_builddir)/support-PETSc/libfei_petsc.a
-@HAVE_FEI_PETSC_FALSE@FEI_PETSC_LDADD = 
-@HAVE_FEI_PETSC_TRUE@FEI_PETSC_LDADD = -L$(top_builddir)/support-PETSc -lfei_petsc
-@HAVE_FEI_PETSC_FALSE@FEI_PETSC_LIBS = 
-@HAVE_FEI_PETSC_TRUE@FEI_PETSC_LIBS = $(FEI_PETSC_LDADD) -L$(PETSC_LIB_DIR) -lpetscksp -lpetscmat -lpetscvec -lpetsc
 @HAVE_FEI_FETI_FALSE@FEI_FETIDP_LIBS = 
 @HAVE_FEI_FETI_TRUE@FEI_FETIDP_LIBS = -L$(FETIDP_LIB_DIR) -lfeti-mpi
 FEI_TEST = fei_test fei_test_plugins
@@ -229,11 +220,11 @@ fei_test_plugins_SOURCES = $(srcdir)/fei_test_plugins.cpp
 # exe depends on.  (This primary is not absolutely essential.)
 fei_test_DEPENDENCIES = \
 	$(top_builddir)/base/libfei_base.a $(FEI_LIBS) \
-	$(top_builddir)/test_utils/libfei_test_utils.a $(FEI_PETSC_LIB)
+	$(top_builddir)/test_utils/libfei_test_utils.a
 
 fei_test_plugins_DEPENDENCIES = \
 	$(FEI_LIBS) \
-	$(top_builddir)/test_utils/libfei_test_utils.a $(FEI_PETSC_LIB)
+	$(top_builddir)/test_utils/libfei_test_utils.a
 
 
 # One CXXFLAGS primary can be defined for each exe.  Include any -I's necessary for 
@@ -245,13 +236,13 @@ fei_test_plugins_CXXFLAGS = $(FEI_INCLUDES)
 # Include any LDFLAGS necessary for building the exe.
 fei_test_LDADD = \
 	-L$(top_builddir)/test_utils -lfei_test_utils \
-	$(FEI_LIBS) $(FEI_PETSC_LIBS) \
+	$(FEI_LIBS) \
 	$(FEI_FETIDP_LIBS) \
 	$(LIBS) $(FLIBS)
 
 fei_test_plugins_LDADD = \
 	-L$(top_builddir)/test_utils -lfei_test_utils \
-	$(FEI_LIBS) $(FEI_PETSC_LIBS) \
+	$(FEI_LIBS) \
 	$(FEI_FETIDP_LIBS) \
 	$(LIBS) $(FLIBS)
 

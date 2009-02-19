@@ -162,53 +162,6 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, ml, FEI_ML, BUILD_ML, yes, [Enable ML suppor
 
 TAC_ARG_ENABLE_CAN_USE_PACKAGE(fei, ifpack, FEI_IFPACK, BUILD_IFPACK, yes, [Enable Ifpack support.], [Enable Ifpack support. Can be overridden with --disable-fei-ifpack.])
 
-# ------------------------------------------------------------------------
-# Check for PETSc include directives
-# ------------------------------------------------------------------------
-
-SPECIFIED_PETSC_INCLUDE=no
-
-AC_ARG_WITH(petsc-include,
-  AC_HELP_STRING([--with-petsc-include=-IDIR], [Specify PETSc include]),
-  [
-  AC_MSG_CHECKING(whether petsc-include specified)
-  AC_MSG_RESULT([${withval}])
-  SPECIFIED_PETSC_INCLUDE=yes
-  PETSCINC="${withval}"
-  ]
-)
-
-AM_CONDITIONAL(HAVE_FEI_PETSC, [test "X${SPECIFIED_PETSC_INCLUDE}" != "Xno"])
-
-if test "X${SPECIFIED_PETSC_INCLUDE}" != "Xno"; then
-PETSC_INCLUDE=${PETSCINC}
-AC_SUBST( PETSC_INCLUDE )
-fi
-
-# ------------------------------------------------------------------------
-# Check for PETSC library directory
-# ------------------------------------------------------------------------
-
-SPECIFIED_PETSC_LIB=no
-
-AC_ARG_WITH(petsc-libdir,
-  AC_HELP_STRING([--with-petsc-libdir=LIBDIR], [Specify PETSc library directory]),
-  [
-  AC_MSG_CHECKING(whether petsc-libdir specified)
-  AC_MSG_RESULT([${withval}])
-  SPECIFIED_PETSC_LIB=yes
-  PETSCLIBDIR="${withval}"
-  ]
-)
-
-if test "X${SPECIFIED_PETSC_LIB}" != "Xno"; then
-TAC_CHECK_FILE(${PETSCLIBDIR}/libpetsc.a)
-PETSC_LIB_DIR=${PETSCLIBDIR}
-AC_SUBST( PETSC_LIB_DIR )
-AC_DEFINE([HAVE_FEI_PETSC],,
-          [Enable use of PETSC library])
-fi
-
 
 # ------------------------------------------------------------------------
 # Check for FETI-DP include directives
@@ -343,7 +296,6 @@ AC_CONFIG_FILES([
                 base/Makefile
                 test_utils/Makefile
                 support-Trilinos/Makefile
-                support-PETSc/Makefile
                 test/Makefile
                 test/cr_lagrange_20quad/Makefile
                 test/cr_slave_20quad/Makefile

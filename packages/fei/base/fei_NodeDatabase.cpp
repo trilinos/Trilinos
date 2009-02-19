@@ -21,10 +21,11 @@
 
 //------------------------------------------------------------------------------
 NodeDatabase::NodeDatabase(std::map<int,int>* fieldDatabase,
-			   NodeCommMgr* nodeCommMgr)
+                           NodeCommMgr* nodeCommMgr)
   : nodePtrs_(),
     eqnNumbers_(0), eqnNodeIndices_(),
     nodeIDs_(),
+    nodeNumbers_(),
     synchronized_(false),
     need_to_alloc_and_sync_(true),
     fieldDB_(fieldDatabase),
@@ -68,34 +69,15 @@ int NodeDatabase::getNodeWithNumber(int nodeNumber, NodeDescriptor*& node)
 {
   if (!synchronized_) ERReturn(-1);
 
-  if (nodeNumber >= firstLocalNodeNumber_ &&
-      nodeNumber <= lastLocalNodeNumber_) {
-    //if this is a local nodeNumber, we can save ourself a little time and
-    //start the search "close" (hopefully) to where the node lies in our
-    //array of nodes...
-    int index = nodeNumber - firstLocalNodeNumber_;
-
-    while(index < (int)nodePtrs_.size()) {
-      if (nodePtrs_[index]->getNodeNumber() == nodeNumber) {
-	node = nodePtrs_[index];
-	return(0);
-      }
-      index++;
-    }
-  }
-  else {
-    //since it's not a local nodeNumber, we'll search all of our nodes...
-    for(size_t i=0; i<nodePtrs_.size(); i++) {
-      int nodeNum = nodePtrs_[i]->getNodeNumber();
-      if (nodeNum == nodeNumber) {
-	node = nodePtrs_[i];
-	return(0);
-      }
-    }
+  std::map<int,int>::iterator iter = nodeNumbers_.find(nodeNumber);
+  if (iter == nodeNumbers_.end()) {
+    ERReturn(-1);
   }
 
-  //if we get to here, then we can't find a node with nodeNumber.
-  return(-1);
+  int index = iter->second;
+  node = nodePtrs_[index];
+
+  return(0);
 }
 
 //------------------------------------------------------------------------------
@@ -158,9 +140,9 @@ int NodeDatabase::countLocalNodalEqns(int localRank)
       const int* fieldIDList = node->getFieldIDList();
 
       for(int j=0; j<numFields; j++) {
-	int numParams =	(*fieldDB_)[fieldIDList[j]];
+        int numParams =        (*fieldDB_)[fieldIDList[j]];
 
-	numEqns += numParams;
+        numEqns += numParams;
       }
     }
   }
@@ -229,9 +211,9 @@ int NodeDatabase::initNodeIDs(GlobalID* nodeIDs, int numNodes)
 
 //------------------------------------------------------------------------------
 int NodeDatabase::synchronize(int firstLocalNodeNumber,
-			      int firstLocalEqn,
-			      int localRank,
-			      MPI_Comm comm)
+                              int firstLocalEqn,
+                              int localRank,
+                              MPI_Comm comm)
 {
   eqnNumbers_.reserve(nodePtrs_.size());
   eqnNodeIndices_.reserve(nodePtrs_.size());
@@ -243,6 +225,8 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
   int nodeNumber = firstLocalNodeNumber;
   int numEqns = 0;
   
+  nodeNumbers_.clear();
+
   numLocalNodes_ = 0;
   std::map<GlobalID,int>::iterator
     iter = nodeIDs_.begin(), iter_end = nodeIDs_.end();
@@ -263,12 +247,12 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
       numNodalDOF += numFieldParams;
 
       if (node->getOwnerProc() == localRank) {
-	eqnNumber = firstLocalEqn + numEqns;
-	if (j==0) firstEqnNumber = eqnNumber;
+        eqnNumber = firstLocalEqn + numEqns;
+        if (j==0) firstEqnNumber = eqnNumber;
 
-	numEqns += numFieldParams;
+        numEqns += numFieldParams;
 
-	node->setFieldEqnNumber(fieldIDList[j], eqnNumber);
+        node->setFieldEqnNumber(fieldIDList[j], eqnNumber);
       }
     }
 
@@ -282,6 +266,9 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
     }
 
     node->setNumNodalDOF(numNodalDOF);
+
+    int thisNodeNumber = node->getNodeNumber();
+    nodeNumbers_.insert(std::make_pair(thisNodeNumber, i));
   }
 
   lastLocalNodeNumber_ = nodeNumber - 1;
@@ -304,13 +291,16 @@ int NodeDatabase::synchronize(int firstLocalNodeNumber,
     int nDOF = node.getNumNodalDOF();
     if (nDOF <= 0) {
       FEI_COUT << "localRank " << localRank << ", node "<<nodeID<<" has nDOF="
-	   << nDOF<<FEI_ENDL;
+           << nDOF<<FEI_ENDL;
       ERReturn(-1);
     }
     int firstEqn = node.getFieldEqnNumbers()[0];
     int insertPoint = snl_fei::sortedListInsert(firstEqn, eqnNumbers_);
     if (insertPoint == -2) ERReturn(-2);
     if (insertPoint >= 0) eqnNodeIndices_.insert(eqnNodeIndices_.begin()+insertPoint, index);
+
+    int thisNodeNumber = node.getNodeNumber();
+    nodeNumbers_.insert(std::make_pair(thisNodeNumber, index));
   }
 
   synchronized_ = true;
@@ -345,8 +335,7 @@ int NodeDatabase::getAssociatedNodeNumber(int eqnNumber)
 
     //if eqnNumber is inside the range of eqn-numbers assocated with this node,
     //then return this node's node-number
-    if (eqnNumber >= fieldEqnNumbers[0] && 
-	(lastEqn+fieldSize - 1) >= eqnNumber) {
+    if (eqnNumber >= fieldEqnNumbers[0] && (lastEqn+fieldSize - 1) >= eqnNumber) {
       return( node.getNodeNumber() );
     }
   }
@@ -383,13 +372,15 @@ int NodeDatabase::getAssociatedFieldID(int eqnNumber)
 
   //if eqnNumber is outside the range of eqn-numbers that are associated with
   //this node, then we're in trouble...
-  if (eqnNumber < fieldEqnNumbers[0] ||
-      eqnNumber > lastEqn+fieldSize) ERReturn(-1);
+  if (eqnNumber < fieldEqnNumbers[0] || eqnNumber > lastEqn+fieldSize) {
+    ERReturn(-1);
+  }
 
   //ok, so we're ready to figure out which fieldID eqnNumber is associated with.
   for(int i=0; i<numFields-1; i++) {
-    if (eqnNumber >= fieldEqnNumbers[i] && eqnNumber < fieldEqnNumbers[i+1])
+    if (eqnNumber >= fieldEqnNumbers[i] && eqnNumber < fieldEqnNumbers[i+1]) {
       return(fieldIDList[i]);
+    }
   }
 
   //if we get to here, then eqnNumber is associated with the last fieldID on the

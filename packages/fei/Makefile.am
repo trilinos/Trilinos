@@ -32,12 +32,6 @@ include_HEADERS = $(CORE_H)
 
 TRILINOS_DIR=support-Trilinos
 
-if HAVE_FEI_PETSC
-PETSC_DIR=support-PETSc
-else
-PETSC_DIR=
-endif
-
 if SUB_EXAMPLE
 EXAMPLES=example
 else
@@ -59,7 +53,7 @@ else
 TESTS=
 endif
 
-SUBDIRS=base $(TRILINOS_DIR) $(PETSC_DIR) test_utils $(TESTS) $(EXAMPLES)
+SUBDIRS=base $(TRILINOS_DIR) test_utils $(TESTS) $(EXAMPLES)
 
 EXTRA_DIST = \
 	RELEASE_NOTES.txt

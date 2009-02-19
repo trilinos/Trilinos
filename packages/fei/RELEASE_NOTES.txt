@@ -523,4 +523,6 @@ July 7 2005: version 2.14.00
     These methods were ill-conceived and overly cumbersome, and not used by
     any known customers.
   - Removed the feiArray class. Using std::vector instead.
+  - Removed support for the PETSc library. This support code was terribly
+    outdated, tied to a 5-year-old version of PETSc.
 

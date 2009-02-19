@@ -26,9 +26,6 @@
 /* Define to build with fei-ml support enabled */
 #undef HAVE_FEI_ML
 
-/* Enable use of PETSC library */
-#undef HAVE_FEI_PETSC
-
 /* Define to build with fei-teuchos support enabled */
 #undef HAVE_FEI_TEUCHOS
 

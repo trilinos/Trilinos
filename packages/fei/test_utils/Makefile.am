@@ -14,14 +14,6 @@
 
 include $(top_builddir)/Makefile.export.fei
 
-if HAVE_FEI_PETSC
-PETSC_INCLUDES=@PETSC_INCLUDE@
-PETSC_CPPFLAGS=$(PETSC_INCLUDES)
-else
-PETSC_INCLUDES=
-PETSC_CPPFLAGS=
-endif
-
 if HAVE_FEI_FETI
 FETIDP_INCLUDES=@FETIDP_INCLUDE@
 FETIDP_CPPFLAGS=$(FETIDP_INCLUDES)
@@ -38,7 +30,7 @@ endif
 # ------------------------------------------------------------------------
 
 DEFS =
-DEFAULT_INCLUDES = $(FEI_INCLUDES) -I@abs_top_srcdir@/test_utils -I@abs_top_srcdir@/support-Trilinos $(PETSC_CPPFLAGS) $(FETIDP_CPPFLAGS)
+DEFAULT_INCLUDES = $(FEI_INCLUDES) -I@abs_top_srcdir@/test_utils -I@abs_top_srcdir@/support-Trilinos $(FETIDP_CPPFLAGS)
 
 CORE_H = \
 	$(top_srcdir)/test_utils/AccessPattern.hpp \

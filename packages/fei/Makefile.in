@@ -101,12 +101,11 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = base support-Trilinos support-PETSc test_utils test \
-	utest_cases utest test/elemDOF_Aztec test/remEssBCs \
-	test/remEssBCs_Trilinos test/cr_lagrange_20quad \
-	test/cr_slave_20quad test/cr_slave_20quad_old \
-	test/cr_lagrange_20quad_AZLSC test/cr_lagrange_20quad_old \
-	test/cr_multifield_slave example
+DIST_SUBDIRS = base support-Trilinos test_utils test utest_cases utest \
+	test/elemDOF_Aztec test/remEssBCs test/remEssBCs_Trilinos \
+	test/cr_lagrange_20quad test/cr_slave_20quad \
+	test/cr_slave_20quad_old test/cr_lagrange_20quad_AZLSC \
+	test/cr_lagrange_20quad_old test/cr_multifield_slave example
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -164,8 +163,6 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PETSC_INCLUDE = @PETSC_INCLUDE@
-PETSC_LIB_DIR = @PETSC_LIB_DIR@
 RANLIB = @RANLIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -225,11 +222,9 @@ CORE_H = \
 
 include_HEADERS = $(CORE_H)
 TRILINOS_DIR = support-Trilinos
-@HAVE_FEI_PETSC_FALSE@PETSC_DIR = 
-@HAVE_FEI_PETSC_TRUE@PETSC_DIR = support-PETSc
 @SUB_EXAMPLE_FALSE@EXAMPLES = 
 @SUB_EXAMPLE_TRUE@EXAMPLES = example
-SUBDIRS = base $(TRILINOS_DIR) $(PETSC_DIR) test_utils $(TESTS) $(EXAMPLES)
+SUBDIRS = base $(TRILINOS_DIR) test_utils $(TESTS) $(EXAMPLES)
 EXTRA_DIST = \
 	RELEASE_NOTES.txt
 

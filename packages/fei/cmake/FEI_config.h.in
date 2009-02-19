@@ -6,9 +6,6 @@
 /* Enable use of FETI library */
 #cmakedefine HAVE_FEI_FETI
 
-/* Enable use of PETSC library */
-#cmakedefine HAVE_FEI_PETSC
-
 /* Define to build with fei-amesos support enabled */
 #cmakedefine HAVE_FEI_AMESOS
 
