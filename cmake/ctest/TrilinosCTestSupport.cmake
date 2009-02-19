@@ -1,3 +1,4 @@
+
 #
 # Helper macros
 #
@@ -38,6 +39,7 @@ MACRO(SET_DEFAULT_AND_FROM_ENV VAR DEFAULT_VAL)
 
 ENDMACRO()
 
+
 #
 # Validate that the platform-specific and build-specific options have been set up
 #
@@ -46,8 +48,9 @@ ASSERT_DEFINED(BUILD_DIR_NAME)
 ASSERT_DEFINED(BUILD_TYPE)
 ASSERT_DEFINED(CTEST_INITIAL_CACHE)
 
+
 #
-# Static varable settings
+# Static variable settings
 #
 
 SET( CTEST_SOURCE_NAME Trilinos )
@@ -67,6 +70,7 @@ SET( CTEST_SOURCE_DIRECTORY
 SET( CTEST_BINARY_DIRECTORY
   "${CTEST_DASHBOARD_ROOT}/${CTEST_BINARY_NAME}")
 
+
 #
 # Variables that can be set by the platform-specific code and reset
 # from the environment
@@ -85,6 +89,7 @@ SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
 SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
 
 SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
+
 
 #
 # Other stuff
@@ -108,6 +113,7 @@ IF (NOT EXISTS "${CTEST_DASHBOARD_ROOT}")
   FILE(MAKE_DIRECTORY "${CTEST_DASHBOARD_ROOT}")
 ENDIF()
 
+
 #
 # Update the working directory first in case the last configure or
 # update failed.
@@ -117,8 +123,9 @@ IF (CTEST_DO_UPDATES)
   SET(CTEST_EXTRA_UPDATES_1 "${CTEST_SOURCE_DIRECTORY}" "-dPA")
 ENDIF()
 
+
 #
-# Set up the command that will run the build/tests
+# Set up the commands that will run the build and tests
 #
 
 SET(CTEST_COMMAND
@@ -175,6 +182,7 @@ SET(CTEST_COMMAND
   )
 
 PRINT_VAR(CTEST_COMMAND)
+
 
 #
 # Add platform-independnet variables to the initial cache
