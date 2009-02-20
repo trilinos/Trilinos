@@ -51,6 +51,12 @@
 #ifndef SACADO_TRAITS_HPP
 #define SACADO_TRAITS_HPP
 
+#include "Sacado_ConfigDefs.h"
+
+#ifdef HAVE_SACADO_COMPLEX
+#include <complex>
+#endif
+
 namespace Sacado {
 
   //! Base template specification for %Promote
@@ -79,6 +85,16 @@ namespace Sacado {
   SACADO_PROMOTE_SPECIALIZATION(double,int,double)
   SACADO_PROMOTE_SPECIALIZATION(float,long,float)
   SACADO_PROMOTE_SPECIALIZATION(float,int,float)
+#ifdef HAVE_SACADO_COMPLEX
+  SACADO_PROMOTE_SPECIALIZATION(std::complex<double>,std::complex<float>,std::complex<double>)
+  SACADO_PROMOTE_SPECIALIZATION(std::complex<double>,double,std::complex<double>)
+  SACADO_PROMOTE_SPECIALIZATION(std::complex<double>,float,std::complex<double>)
+  SACADO_PROMOTE_SPECIALIZATION(std::complex<double>,long,std::complex<double>)
+  SACADO_PROMOTE_SPECIALIZATION(std::complex<double>,int,std::complex<double>)
+  SACADO_PROMOTE_SPECIALIZATION(std::complex<float>,float,std::complex<float>)
+  SACADO_PROMOTE_SPECIALIZATION(std::complex<float>,long,std::complex<float>)
+  SACADO_PROMOTE_SPECIALIZATION(std::complex<float>,int,std::complex<float>)
+#endif // HAVE_SACADO_COMPLEX
 
 #undef SACADO_PROMOTE_SPECIALIZATION
 
@@ -157,9 +173,19 @@ namespace Sacado {
   SACADO_BUILTIN_SPECIALIZATION(long)
   SACADO_BUILTIN_SPECIALIZATION(unsigned long)
   SACADO_BUILTIN_SPECIALIZATION(bool)
+#ifdef HAVE_SACADO_COMPLEX
+  SACADO_BUILTIN_SPECIALIZATION(std::complex<double>)
+  SACADO_BUILTIN_SPECIALIZATION(std::complex<float>)
+#endif
 
 #undef SACADO_BUILTIN_SPECIALIZATION
 
 } // namespace Sacado
+
+// Teuchos traits classes
+#ifdef HAVE_SACADO_TEUCHOS
+#include "Teuchos_PromotionTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#endif
 
 #endif // SACADO_TRAITS_HPP

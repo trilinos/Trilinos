@@ -37,10 +37,8 @@ noinst_PROGRAMS = TestSuite.exe
 if ENABLE_ADOLC
 
 TAYLOR_SOURCES = \
-	$(srcdir)/CacheTaylorUnitTests.hpp \
-	$(srcdir)/CacheTaylorUnitTests.cpp \
-	$(srcdir)/TaylorUnitTests.hpp \
-	$(srcdir)/TaylorUnitTests.cpp
+	$(srcdir)/TayUnitTests.hpp \
+	$(srcdir)/TayUnitTests.cpp
 
 TAYLOR_CXXFLAGS = -I$(ADOLC_INCDIR)
 
@@ -75,16 +73,11 @@ PCE_LDADD =
 endif
 
 TestSuite_exe_SOURCES = \
-	$(srcdir)/DFadUnitTests.hpp \
-	$(srcdir)/DFadUnitTests.cpp \
-	$(srcdir)/CacheDFadUnitTests.hpp \
-	$(srcdir)/CacheDFadUnitTests.cpp \
-	$(srcdir)/ELRDFadUnitTests.hpp \
-	$(srcdir)/ELRDFadUnitTests.cpp \
-	$(srcdir)/SFadUnitTests.hpp \
-	$(srcdir)/SFadUnitTests.cpp \
-	$(srcdir)/ELRSFadUnitTests.hpp \
-	$(srcdir)/ELRSFadUnitTests.cpp \
+	$(srcdir)/FadUnitTests.hpp \
+	$(srcdir)/FadUnitTests2.hpp \
+	$(srcdir)/FadUnitTests.cpp \
+	$(srcdir)/ELRFadUnitTests.cpp \
+	$(srcdir)/CacheFadUnitTests.cpp \
 	$(TAYLOR_SOURCES) \
 	$(PCE_SOURCES) \
 	$(srcdir)/LogicalSparseUnitTests.hpp \

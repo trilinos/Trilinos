@@ -213,6 +213,13 @@ else
 fi
 AM_CONDITIONAL(BUILD_NESTED_FAD, test "X$ac_cv_use_sacado_nested_fad" != "Xno")
 
+#
+#  --enable-sacado-complex
+#
+
+TAC_ARG_ENABLE_FEATURE_SUB( sacado, complex, [Enable Sacado complex code], SACADO_COMPLEX, yes)
+AM_CONDITIONAL(HAVE_SACADO_COMPLEX, [test "X$ac_cv_use_sacado_complex" != "Xno"])
+
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------

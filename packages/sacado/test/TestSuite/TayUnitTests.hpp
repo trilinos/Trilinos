@@ -29,8 +29,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef CACHETAYLORUNITTESTS_HPP
-#define CACHETAYLORUNITTESTS_HPP
+#ifndef TAYLORUNITTESTS_HPP
+#define TAYLORUNITTESTS_HPP
 
 // ADOL-C includes
 #include "adolc/adouble.h"
@@ -39,9 +39,6 @@
 // Sacado includes
 #include "Sacado.hpp"
 #include "Sacado_Random.hpp"
-#include "Sacado_Tay_CacheTaylor.hpp"
-
-typedef Sacado::Tay::CacheTaylor<double> TaylorType;
 
 inline adouble max(const adouble& a, const adouble& b) { return fmax(a,b); }
 inline adouble max(const adouble& a, double v) { return fmax(a,v); }
@@ -53,7 +50,15 @@ inline adouble min(double v, const adouble& b) { return fmin(v,b); }
 // Cppunit includes
 #include <cppunit/extensions/HelperMacros.h>
 
-using namespace std;
+#define COMPARE_DOUBLES(a, b)				\
+  CPPUNIT_ASSERT( fabs(a-b) < tol_a + tol_r*fabs(a) );
+
+#define COMPARE_POLYS(x_dtay, x_adolc)				\
+  CPPUNIT_ASSERT(x_dtay.degree() == d);				\
+  for (unsigned int i=0; i<=d; i++) {				\
+    COMPARE_DOUBLES(x_dtay.coeff(i), x_adolc[i]);		\
+  }								\
+  ;
 
 #define BINARY_OP2_TEST(TESTNAME,OP)	    \
   void TESTNAME () {			    \
@@ -66,7 +71,7 @@ using namespace std;
     ac >>= Y[0][0];			    \
     trace_off();			    \
     forward(0,1,2,d,0,X,Y);		    \
-    comparePolys(c_dtay,Y[0]);		    \
+    COMPARE_POLYS(c_dtay,Y[0]);		    \
   }
 
 #define BINARY_OPRC_TEST(TESTNAME,OP)	    \
@@ -80,7 +85,7 @@ using namespace std;
     ac >>= Y[0][0];			    \
     trace_off();			    \
     forward(0,1,1,d,0,X,Y);		    \
-    comparePolys(c_dtay,Y[0]);		    \
+    COMPARE_POLYS(c_dtay,Y[0]);		    \
   }
 
 #define BINARY_OPLC_TEST(TESTNAME,OP)	    \
@@ -94,7 +99,7 @@ using namespace std;
     ac >>= Y[0][0];			    \
     trace_off();			    \
     forward(0,1,1,d,0,X,Y);		    \
-    comparePolys(c_dtay,Y[0]);		    \
+    COMPARE_POLYS(c_dtay,Y[0]);		    \
   }
 
 #define BINARY_OP_TEST(TESTNAME,OP)			\
@@ -151,7 +156,7 @@ using namespace std;
     ac >>= Y[0][0];			    \
     trace_off();			    \
     forward(0,1,2,d,0,X,Y);		    \
-    comparePolys(c_dtay,Y[0]);		    \
+    COMPARE_POLYS(c_dtay,Y[0]);		    \
   }
 
 #define BINARY_FUNCRC_TEST(TESTNAME,FUNC)   \
@@ -165,7 +170,7 @@ using namespace std;
     ac >>= Y[0][0];			    \
     trace_off();			    \
     forward(0,1,1,d,0,X,Y);		    \
-    comparePolys(c_dtay,Y[0]);		    \
+    COMPARE_POLYS(c_dtay,Y[0]);		    \
   }
 
 #define BINARY_FUNCLC_TEST(TESTNAME,FUNC)   \
@@ -179,7 +184,7 @@ using namespace std;
     ac >>= Y[0][0];			    \
     trace_off();			    \
     forward(0,1,1,d,0,X,Y);		    \
-    comparePolys(c_dtay,Y[0]);		    \
+    COMPARE_POLYS(c_dtay,Y[0]);		    \
   }
 
 #define BINARY_FUNC_TEST(TESTNAME,FUNC)				\
@@ -202,7 +207,7 @@ using namespace std;
     ac >>= Y[0][0];				    \
     trace_off();				    \
     forward(0,1,1,d,0,X,Y);			    \
-    comparePolys(c_dtay,Y[0]);			    \
+    COMPARE_POLYS(c_dtay,Y[0]);			    \
   }
 
 #define UNARY_FUNC_TEST(TESTNAME,FUNC)		    \
@@ -215,7 +220,7 @@ using namespace std;
     ac >>= Y[0][0];				    \
     trace_off();				    \
     forward(0,1,1,d,0,X,Y);			    \
-    comparePolys(c_dtay,Y[0]);			    \
+    COMPARE_POLYS(c_dtay,Y[0]);			    \
   }
 
 #define UNARY_ASSIGNOP2_TEST(TESTNAME,OP)	    \
@@ -231,7 +236,7 @@ using namespace std;
     ac >>= Y[0][0];				    \
     trace_off();				    \
     forward(0,1,2,d,0,X,Y);			    \
-    comparePolys(c_dtay,Y[0]);			    \
+    COMPARE_POLYS(c_dtay,Y[0]);			    \
   }
 
 #define UNARY_ASSIGNOPRC_TEST(TESTNAME,OP)	    \
@@ -247,7 +252,7 @@ using namespace std;
     ac >>= Y[0][0];				    \
     trace_off();				    \
     forward(0,1,1,d,0,X,Y);			    \
-    comparePolys(c_dtay,Y[0]);			    \
+    COMPARE_POLYS(c_dtay,Y[0]);			    \
   }
 
 #define UNARY_ASSIGNOPLC_TEST(TESTNAME,OP)	    \
@@ -263,7 +268,7 @@ using namespace std;
     ac >>= Y[0][0];				    \
     trace_off();				    \
     forward(0,1,1,d,0,X,Y);			    \
-    comparePolys(c_dtay,Y[0]);			    \
+    COMPARE_POLYS(c_dtay,Y[0]);			    \
   }
 
 #define UNARY_ASSIGNOP_TEST(TESTNAME,OP)		\
@@ -276,10 +281,11 @@ using namespace std;
   CPPUNIT_TEST(TESTNAME ## LeftConstant);	\
   CPPUNIT_TEST(TESTNAME ## RightConstant)
 
-// A class for testing each DTaylor operation
-class CacheTaylorOpsUnitTest : public CppUnit::TestFixture {
+// A class for testing each Taylor operation
+template <class TaylorType>
+class TaylorOpsUnitTest : public CppUnit::TestFixture {
 
-  CPPUNIT_TEST_SUITE( CacheTaylorOpsUnitTest );
+  CPPUNIT_TEST_SUITE( TaylorOpsUnitTest );
 
   CPPUNIT_BINARY_OP_TEST(testAddition);
   CPPUNIT_BINARY_OP_TEST(testSubtraction);
@@ -326,23 +332,16 @@ class CacheTaylorOpsUnitTest : public CppUnit::TestFixture {
 
 public:
 
-  CacheTaylorOpsUnitTest();
+  TaylorOpsUnitTest();
 
-  CacheTaylorOpsUnitTest(unsigned int degree, double absolute_tolerance, 
+  TaylorOpsUnitTest(unsigned int degree, double absolute_tolerance, 
 		     double relative_tolerance);
 
-  ~CacheTaylorOpsUnitTest();
+  ~TaylorOpsUnitTest();
 
   void setUp();
 
   void tearDown();
-
-  // Assert to Fad objects are the same
-  void comparePolys(const TaylorType& x_dtay,
-		    double* x_adolc);
-
-  // Assert to doubles are the same to relative precision
-  void compareDoubles(double a, double b);
 
   BINARY_OP_TEST(testAddition, +);
   BINARY_OP_TEST(testSubtraction, -);
@@ -407,7 +406,7 @@ public:
     ac >>= Y[0][0];
     trace_off();
     forward(0,1,2,d,0,X,Y);
-    comparePolys(c_dtay,Y[0]);
+    COMPARE_POLYS(c_dtay,Y[0]);
   }
 
   void print_poly(double *x);
@@ -416,7 +415,7 @@ public:
 
 protected:
 
-  // CacheTaylor variables
+  // Taylor variables
   TaylorType a_dtay, b_dtay, c_dtay;
 
   // ADOL-C arrays
@@ -431,6 +430,166 @@ protected:
   // Tolerances to which fad objects should be the same
   double tol_a, tol_r;
 
-}; // class CacheTaylorOpsUnitTest
+}; // class TaylorOpsUnitTest
 
-#endif // CACHETAYLORUNITTESTS_HPP
+template <class TaylorType>
+TaylorOpsUnitTest<TaylorType>::TaylorOpsUnitTest() :
+  urand(0.0, 1.0), d(5), tol_a(1.0e-11), tol_r(1.0e-10) 
+{
+  X = new double*[2];
+  X[0] = new double[d+1];
+  X[1] = new double[d+1];
+
+  Y = new double*[1];
+  Y[0] = new double[d+1];
+}
+
+template <class TaylorType>
+TaylorOpsUnitTest<TaylorType>::TaylorOpsUnitTest(unsigned int degree, 
+						 double absolute_tolerance, 
+						 double relative_tolerance) :
+  urand(0.0, 1.0), 
+  d(degree), 
+  tol_a(absolute_tolerance), 
+  tol_r(relative_tolerance) 
+{
+  X = new double*[2];
+  X[0] = new double[d+1];
+  X[1] = new double[d+1];
+
+  Y = new double*[1];
+  Y[0] = new double[d+1];
+}
+
+template <class TaylorType>
+TaylorOpsUnitTest<TaylorType>::~TaylorOpsUnitTest()
+{
+  delete [] X[1];
+  delete [] X[0];
+  delete [] X;
+
+  delete [] Y[0];
+  delete [] Y;
+}
+
+template <class TaylorType>
+void TaylorOpsUnitTest<TaylorType>::setUp() {
+  double val;
+
+  a_dtay = TaylorType(d,0.0);
+  b_dtay = TaylorType(d,0.0);
+  
+  for (unsigned int i=0; i<=d; i++) {
+    val = urand.number();
+    a_dtay.fastAccessCoeff(i) = val;
+    X[0][i] = val;
+
+    val = urand.number();
+    b_dtay.fastAccessCoeff(i) = val;
+    X[1][i] = val;
+
+    Y[0][i] = 0.0;
+  }
+}
+
+template <class TaylorType>
+void TaylorOpsUnitTest<TaylorType>::tearDown() {}
+
+template <class TaylorType>
+void TaylorOpsUnitTest<TaylorType>::print_poly(double *x) {
+  std::cout.setf(std::ios::fixed,std::ios::floatfield);
+  std::cout.width(12);
+  std::cout << "[";
+      
+  for (unsigned int i=0; i<=d; i++) {
+    std::cout.width(12);
+    std::cout << x[i];
+  }
+
+  std::cout << "]\n";
+}
+
+template <class TaylorType>
+void TaylorOpsUnitTest<TaylorType>::print_diff(const TaylorType& x_dtay,
+					       double *x) {
+  std::cout.setf(std::ios::scientific,std::ios::floatfield);
+  //std::cout.width(12);
+  std::cout << "[";
+      
+  for (unsigned int i=0; i<=d; i++) {
+    //std::cout.width(12);
+    std::cout << x_dtay.coeff(i) - x[i] << " ";
+  }
+
+  std::cout << "]\n";
+}
+
+#include "Sacado_Tay_CacheTaylor.hpp"
+// CacheTaylor unit tests that don't test max/min, since this class
+// doesn't define those yet
+class CacheTaylorOpsUnitTest : 
+  public TaylorOpsUnitTest< Sacado::Tay::CacheTaylor<double> > {
+
+  CPPUNIT_TEST_SUITE( CacheTaylorOpsUnitTest );
+
+  CPPUNIT_BINARY_OP_TEST(testAddition);
+  CPPUNIT_BINARY_OP_TEST(testSubtraction);
+  CPPUNIT_BINARY_OP_TEST(testMultiplication);
+  CPPUNIT_BINARY_OP_TEST(testDivision);
+
+  CPPUNIT_RELOP_OP_TEST(testEquals);
+  CPPUNIT_RELOP_OP_TEST(testNotEquals);
+  CPPUNIT_RELOP_OP_TEST(testLessThanOrEquals);
+  CPPUNIT_RELOP_OP_TEST(testGreaterThanOrEquals);
+  CPPUNIT_RELOP_OP_TEST(testLessThan);
+  CPPUNIT_RELOP_OP_TEST(testGreaterThan);
+
+  CPPUNIT_BINARY_FUNC_TEST(testPow);
+  CPPUNIT_BINARY_FUNC_TEST(testMax);
+  CPPUNIT_BINARY_FUNC_TEST(testMin);
+
+  CPPUNIT_TEST(testUnaryPlus);
+  CPPUNIT_TEST(testUnaryMinus);
+  
+  CPPUNIT_TEST(testExp);
+  CPPUNIT_TEST(testLog);
+  CPPUNIT_TEST(testLog10);
+  CPPUNIT_TEST(testSqrt);
+  CPPUNIT_TEST(testCos);
+  CPPUNIT_TEST(testSin);
+  CPPUNIT_TEST(testTan);
+  CPPUNIT_TEST(testACos);
+  CPPUNIT_TEST(testASin);
+  CPPUNIT_TEST(testATan);
+  CPPUNIT_TEST(testCosh);
+  CPPUNIT_TEST(testSinh);
+  CPPUNIT_TEST(testTanh);
+  CPPUNIT_TEST(testFAbs);
+
+  CPPUNIT_UNARY_ASSIGNOP_TEST(testPlusEquals);
+  CPPUNIT_UNARY_ASSIGNOP_TEST(testMinusEquals);
+  CPPUNIT_UNARY_ASSIGNOP_TEST(testTimesEquals);
+  CPPUNIT_UNARY_ASSIGNOP_TEST(testDivideEquals);
+
+  CPPUNIT_TEST(testComposite1);
+
+  CPPUNIT_TEST_SUITE_END();
+
+public:
+
+  CacheTaylorOpsUnitTest() {}
+
+  CacheTaylorOpsUnitTest(unsigned int degree, double absolute_tolerance, 
+			 double relative_tolerance) :
+    TaylorOpsUnitTest< Sacado::Tay::CacheTaylor<double> >(degree, 
+							  absolute_tolerance, 
+							  relative_tolerance) {}
+
+  ~CacheTaylorOpsUnitTest() {}
+
+  void testMax() {}
+  void testMin() {}
+
+};
+
+#endif // TAYLORUNITTESTS_HPP

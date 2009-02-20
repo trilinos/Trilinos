@@ -11,6 +11,12 @@ PACKAGE(Sacado)
 #
 # B) Set up package-specific options
 #
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_COMPLEX
+  HAVE_SACADO_COMPLEX
+  "Enable Sacado features for complex data type."
+  ON
+  )
 
 OPTION(${PACKAGE_NAME}_ENABLE_PARAMLIB
   "Enable parameter library support"

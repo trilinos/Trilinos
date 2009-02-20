@@ -79,6 +79,7 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -95,7 +96,6 @@ CONFIG_CLEAN_FILES = testgen.as
 PROGRAMS = $(noinst_PROGRAMS)
 am_hesopcheck_OBJECTS = hesopcheck-hesopcheck.$(OBJEXT)
 hesopcheck_OBJECTS = $(am_hesopcheck_OBJECTS)
-am__DEPENDENCIES_1 =
 hesopcheck_LINK = $(CXXLD) $(hesopcheck_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -230,11 +230,11 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/mpl
+INCLUDES = $(SACADO_INCLUDES)
 hesopcheck_SOURCES = hesopcheck.cpp
 hesopcheck_CXXFLAGS = 
 hesopcheck_DEPENDENCIES = $(top_builddir)/src/libsacado.a tradoptest.exe
-hesopcheck_LDADD = -L$(top_builddir)/src -lsacado $(LIBS)
+hesopcheck_LDADD = $(SACADO_LIBS)
 CLEANFILES = tradoptest*.cpp *.exe *.o *.obj
 EXTRA_DIST = tradoptest.c0 GNUMakefile
 all: all-am
@@ -490,6 +490,9 @@ uninstall-am:
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
+
+# Include export Makefiles for correct paths
+include $(top_builddir)/Makefile.export.sacado
 
 testall : $(noinst_PROGRAMS) tradoptest.exe
 	./hesopcheck.exe

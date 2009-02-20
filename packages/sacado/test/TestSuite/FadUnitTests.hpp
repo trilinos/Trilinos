@@ -29,14 +29,12 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef DFADUNITTESTS_HPP
-#define DFADUNITTESTS_HPP
+#ifndef FADUNITTESTS_HPP
+#define FADUNITTESTS_HPP
 
 // Sacado includes
 #include "Sacado.hpp"
 #include "Sacado_Random.hpp"
-
-typedef Sacado::Fad::DFad<double> DFadType;
 
 // Fad includes
 #include "Fad/fad.h"
@@ -44,20 +42,33 @@ typedef Sacado::Fad::DFad<double> DFadType;
 // Cppunit includes
 #include <cppunit/extensions/HelperMacros.h>
 
+#define COMPARE_VALUES(a, b) \
+  CPPUNIT_ASSERT( std::abs(a-b) < this->tol_a + this->tol_r*std::abs(a) );
+
+#define COMPARE_FADS(a, b)                              \
+CPPUNIT_ASSERT(a.size() == b.size());			\
+CPPUNIT_ASSERT(a.hasFastAccess() == b.hasFastAccess()); \
+COMPARE_VALUES(a.val(), b.val());			\
+for (int i=0; i<a.size(); i++) {			\
+  COMPARE_VALUES(a.dx(i), b.dx(i));			\
+  COMPARE_VALUES(a.fastAccessDx(i), b.fastAccessDx(i)); \
+ }							\
+ ;
+
 #define BINARY_OP_TEST(TESTNAME,OP) \
   void TESTNAME () {		    \
     c_dfad = a_dfad OP b_dfad;	    \
     c_fad = a_fad OP b_fad;	    \
-    compareFads(c_dfad, c_fad);	    \
+    COMPARE_FADS(c_dfad, c_fad);	    \
 				    \
     double val = urand.number();    \
     c_dfad = a_dfad OP val;	    \
     c_fad = a_fad OP val;	    \
-    compareFads(c_dfad, c_fad);	    \
+    COMPARE_FADS(c_dfad, c_fad);	    \
 				    \
     c_dfad = val OP b_dfad;	    \
     c_fad = val OP b_fad;	    \
-    compareFads(c_dfad, c_fad);	    \
+    COMPARE_FADS(c_dfad, c_fad);	    \
   }
 
 #define RELOP_TEST(TESTNAME,OP)     \
@@ -80,48 +91,49 @@ typedef Sacado::Fad::DFad<double> DFadType;
   void TESTNAME () {			\
     c_dfad = FUNC (a_dfad,b_dfad);	\
     c_fad = FUNC (a_fad,b_fad);		\
-    compareFads(c_dfad, c_fad);		\
+    COMPARE_FADS(c_dfad, c_fad);		\
     					\
     double val = urand.number();	\
     c_dfad = FUNC (a_dfad,val);		\
     c_fad = FUNC (a_fad,val);		\
-    compareFads(c_dfad, c_fad);		\
+    COMPARE_FADS(c_dfad, c_fad);		\
     					\
     c_dfad = FUNC (val,b_dfad);		\
     c_fad = FUNC (val,b_fad);		\
-    compareFads(c_dfad, c_fad);		\
+    COMPARE_FADS(c_dfad, c_fad);		\
   }
 
 #define UNARY_OP_TEST(TESTNAME,OP)	    \
   void TESTNAME () {			    \
     c_dfad = OP a_dfad;			    \
     c_fad = OP a_fad;			    \
-    compareFads(c_dfad, c_fad);		    \
+    COMPARE_FADS(c_dfad, c_fad);		    \
   }
 
 #define UNARY_FUNC_TEST(TESTNAME,FUNC)	    \
   void TESTNAME () {			    \
     c_dfad = FUNC (a_dfad);		    \
     c_fad = FUNC (a_fad);		    \
-    compareFads(c_dfad, c_fad);		    \
+    COMPARE_FADS(c_dfad, c_fad);		    \
   }
 
 #define UNARY_ASSIGNOP_TEST(TESTNAME,OP)    \
   void TESTNAME () {			    \
     c_dfad OP a_dfad;			    \
     c_fad OP a_fad;			    \
-    compareFads(c_dfad, c_fad);		    \
+    COMPARE_FADS(c_dfad, c_fad);		    \
 					    \
     double val = urand.number();	    \
     c_dfad OP val;			    \
     c_fad OP val;			    \
-    compareFads(c_dfad, c_fad);		    \
+    COMPARE_FADS(c_dfad, c_fad);		    \
   }
 
-// A class for testing each DFad operation
-class DFadOpsUnitTest : public CppUnit::TestFixture {
+// A class for testing each Fad operation
+template <class FadType, class ScalarType>
+class FadOpsUnitTest : public CppUnit::TestFixture {
 
-  CPPUNIT_TEST_SUITE( DFadOpsUnitTest );
+  CPPUNIT_TEST_SUITE( FadOpsUnitTest );
   
   CPPUNIT_TEST(testAddition);
   CPPUNIT_TEST(testSubtraction);
@@ -174,21 +186,14 @@ class DFadOpsUnitTest : public CppUnit::TestFixture {
 
 public:
 
-  DFadOpsUnitTest();
+  FadOpsUnitTest();
 
-  DFadOpsUnitTest(int numComponents, double absolute_tolerance, 
-		  double relative_tolerance);
+  FadOpsUnitTest(int numComponents, ScalarType absolute_tolerance, 
+		 ScalarType relative_tolerance);
 
   void setUp();
 
   void tearDown();
-
-  // Assert to Fad objects are the same
-  void compareFads(const DFadType& x_dfad,
-		   const FAD::Fad<double>& x_fad);
-
-  // Assert to doubles are the same to relative precision
-  void compareDoubles(double a, double b);
 
   BINARY_OP_TEST(testAddition, +);
   BINARY_OP_TEST(testSubtraction, -);
@@ -248,56 +253,56 @@ public:
   void testComposite1() {
     c_dfad = composite1(a_dfad, b_dfad);
     c_fad = composite1(a_fad, b_fad);
-    compareFads(c_dfad, c_fad);
+    COMPARE_FADS(c_dfad, c_fad);
   }
 
   void testPlusLR() {
-    DFadType aa_dfad = a_dfad;
-    FAD::Fad<double> aa_fad = a_fad;
+    FadType aa_dfad = a_dfad;
+    FAD::Fad<ScalarType> aa_fad = a_fad;
     aa_dfad = 1.0;
     aa_fad = 1.0;
     aa_dfad = aa_dfad + b_dfad;
     aa_fad = aa_fad + b_fad;
-    compareFads(aa_dfad, aa_fad);
+    COMPARE_FADS(aa_dfad, aa_fad);
   }
 
   void testMinusLR() {
-    DFadType aa_dfad = a_dfad;
-    FAD::Fad<double> aa_fad = a_fad;
+    FadType aa_dfad = a_dfad;
+    FAD::Fad<ScalarType> aa_fad = a_fad;
     aa_dfad = 1.0;
     aa_fad = 1.0;
     aa_dfad = aa_dfad - b_dfad;
     aa_fad = aa_fad - b_fad;
-    compareFads(aa_dfad, aa_fad);
+    COMPARE_FADS(aa_dfad, aa_fad);
   }
 
   void testTimesLR() {
-    DFadType aa_dfad = a_dfad;
-    FAD::Fad<double> aa_fad = a_fad;
+    FadType aa_dfad = a_dfad;
+    FAD::Fad<ScalarType> aa_fad = a_fad;
     aa_dfad = 2.0;
     aa_fad = 2.0;
     aa_dfad = aa_dfad * b_dfad;
     aa_fad = aa_fad * b_fad;
-    compareFads(aa_dfad, aa_fad);
+    COMPARE_FADS(aa_dfad, aa_fad);
   }
 
   void testDivideLR() {
-    DFadType aa_dfad = a_dfad;
-    FAD::Fad<double> aa_fad = a_fad;
+    FadType aa_dfad = a_dfad;
+    FAD::Fad<ScalarType> aa_fad = a_fad;
     aa_dfad = 2.0;
     aa_fad = 2.0;
     aa_dfad = aa_dfad / b_dfad;
     aa_fad = aa_fad / b_fad;
-    compareFads(aa_dfad, aa_fad);
+    COMPARE_FADS(aa_dfad, aa_fad);
   }
 
 protected:
 
   // DFad variables
-  DFadType a_dfad, b_dfad, c_dfad;
+  FadType a_dfad, b_dfad, c_dfad;
 
   // Fad variables
-  FAD::Fad<double> a_fad, b_fad, c_fad;
+  FAD::Fad<ScalarType> a_fad, b_fad, c_fad;
 
   // Random number generator
   Sacado::Random urand;
@@ -306,8 +311,164 @@ protected:
   int n;
 
   // Tolerances to which fad objects should be the same
-  double tol_a, tol_r;
+  ScalarType tol_a, tol_r;
 
-}; // class DFadOpsUnitTest
+}; // class FadOpsUnitTest
 
-#endif // DFADUNITTESTS_HPP
+template <class FadType, class ScalarType>
+FadOpsUnitTest<FadType,ScalarType>::
+FadOpsUnitTest() :
+  urand(0.0, 1.0), n(5), tol_a(1.0e-15), tol_r(1.0e-14) {}
+
+template <class FadType, class ScalarType>
+FadOpsUnitTest<FadType,ScalarType>::
+FadOpsUnitTest(int numComponents, ScalarType absolute_tolerance, 
+	       ScalarType relative_tolerance) :
+  urand(0.0, 1.0), 
+  n(numComponents), 
+  tol_a(absolute_tolerance), 
+  tol_r(relative_tolerance) {}
+
+template <class FadType, class ScalarType>
+void FadOpsUnitTest<FadType,ScalarType>::setUp() {
+  ScalarType val;
+
+  val = urand.number();
+  a_dfad = FadType(n,val);
+  a_fad = FAD::Fad<ScalarType>(n,val);
+  
+  val = urand.number();
+  b_dfad = FadType(n,val);
+  b_fad = FAD::Fad<ScalarType>(n,val);
+
+  for (int i=0; i<n; i++) {
+    val = urand.number();
+    a_dfad.fastAccessDx(i) = val;
+    a_fad.fastAccessDx(i) = val;
+
+    val = urand.number();
+    b_dfad.fastAccessDx(i) = val;
+    b_fad.fastAccessDx(i) = val;
+  }
+}
+
+template <class FadType, class ScalarType>
+void FadOpsUnitTest<FadType,ScalarType>::
+tearDown() {}
+
+template <class FadType, class ScalarType>
+void FadOpsUnitTest<FadType,ScalarType>::
+testMax() {
+  ScalarType val;
+
+  FadType aa_dfad = a_dfad + 1.0;
+  c_dfad = max(aa_dfad, a_dfad);
+  COMPARE_VALUES(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    COMPARE_VALUES(c_dfad.dx(i), aa_dfad.dx(i));
+    COMPARE_VALUES(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
+  
+  c_dfad = max(a_dfad, aa_dfad);
+  COMPARE_VALUES(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    COMPARE_VALUES(c_dfad.dx(i), aa_dfad.dx(i));
+    COMPARE_VALUES(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
+
+  c_dfad = max(a_dfad+1.0, a_dfad);
+  COMPARE_VALUES(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    COMPARE_VALUES(c_dfad.dx(i), aa_dfad.dx(i));
+    COMPARE_VALUES(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
+  
+  c_dfad = max(a_dfad, a_dfad+1.0);
+  COMPARE_VALUES(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    COMPARE_VALUES(c_dfad.dx(i), aa_dfad.dx(i));
+    COMPARE_VALUES(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
+  
+  val = a_dfad.val() + 1;
+  c_dfad = max(a_dfad, val);
+  COMPARE_VALUES(c_dfad.val(), val);
+  for (int i=0; i<n; i++)
+    COMPARE_VALUES(c_dfad.dx(i), 0.0);
+  
+  val = a_dfad.val() - 1;
+  c_dfad = max(a_dfad, val);
+  COMPARE_VALUES(c_dfad.val(), a_dfad.val());
+  for (int i=0; i<n; i++) {
+    COMPARE_VALUES(c_dfad.dx(i), a_dfad.dx(i));
+    COMPARE_VALUES(c_dfad.fastAccessDx(i), a_dfad.fastAccessDx(i));
+  }
+
+  val = b_dfad.val() + 1;
+  c_dfad = max(val, b_dfad);
+  COMPARE_VALUES(c_dfad.val(), val);
+  for (int i=0; i<n; i++)
+    COMPARE_VALUES(c_dfad.dx(i), 0.0);
+  
+  val = b_dfad.val() - 1;
+  c_dfad = max(val, b_dfad);
+  COMPARE_VALUES(c_dfad.val(), b_dfad.val());
+  for (int i=0; i<n; i++) {
+    COMPARE_VALUES(c_dfad.dx(i), b_dfad.dx(i));
+    COMPARE_VALUES(c_dfad.fastAccessDx(i), b_dfad.fastAccessDx(i));
+  }
+}
+
+template <class FadType, class ScalarType>
+void FadOpsUnitTest<FadType,ScalarType>::
+testMin() {
+  ScalarType val;
+
+  FadType aa_dfad = a_dfad - 1.0;
+  c_dfad = min(aa_dfad, a_dfad);
+  COMPARE_VALUES(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    COMPARE_VALUES(c_dfad.dx(i), aa_dfad.dx(i));
+    COMPARE_VALUES(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
+
+  c_dfad = min(a_dfad, aa_dfad);
+  COMPARE_VALUES(c_dfad.val(), aa_dfad.val());
+  for (int i=0; i<n; i++) {
+    COMPARE_VALUES(c_dfad.dx(i), aa_dfad.dx(i));
+    COMPARE_VALUES(c_dfad.fastAccessDx(i), aa_dfad.fastAccessDx(i));
+  }
+
+  val = a_dfad.val() - 1;
+  c_dfad = min(a_dfad, val);
+  COMPARE_VALUES(c_dfad.val(), val);
+  for (int i=0; i<n; i++)
+    COMPARE_VALUES(c_dfad.dx(i), 0.0);
+  
+  val = a_dfad.val() + 1;
+  c_dfad = min(a_dfad, val);
+  COMPARE_VALUES(c_dfad.val(), a_dfad.val());
+  for (int i=0; i<n; i++) {
+    COMPARE_VALUES(c_dfad.dx(i), a_dfad.dx(i));
+    COMPARE_VALUES(c_dfad.fastAccessDx(i), a_dfad.fastAccessDx(i));
+  }
+
+  val = b_dfad.val() - 1;
+  c_dfad = min(val, b_dfad);
+  COMPARE_VALUES(c_dfad.val(), val);
+  for (int i=0; i<n; i++)
+    COMPARE_VALUES(c_dfad.dx(i), 0.0);
+  
+  val = b_dfad.val() + 1;
+  c_dfad = min(val, b_dfad);
+  COMPARE_VALUES(c_dfad.val(), b_dfad.val());
+  for (int i=0; i<n; i++) {
+    COMPARE_VALUES(c_dfad.dx(i), b_dfad.dx(i));
+    COMPARE_VALUES(c_dfad.fastAccessDx(i), b_dfad.fastAccessDx(i));
+  }
+}
+
+#undef COMPARE_VALUES(a, b)
+#undef COMPARE_FADS(a, b)
+
+#endif // FADUNITTESTS_HPP

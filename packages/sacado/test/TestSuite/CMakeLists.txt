@@ -7,10 +7,8 @@ SET(${PACKAGE_NAME}_TESTSUITE_SOURCES "")
 IF (TPL_ENABLE_ADOLC)
 
   SET(${PACKAGE_NAME}_TESTSUITE_SOURCES ${${PACKAGE_NAME}_TESTSUITE_SOURCES}
-    CacheTaylorUnitTests.hpp
-    CacheTaylorUnitTests.cpp
-    TaylorUnitTests.hpp
-    TaylorUnitTests.cpp
+    TayUnitTests.hpp
+    TayUnitTests.cpp
     )
 
 ENDIF()
@@ -26,16 +24,11 @@ ENDIF()
 
 
 SET(${PACKAGE_NAME}_TESTSUITE_SOURCES ${${PACKAGE_NAME}_TESTSUITE_SOURCES}
-  DFadUnitTests.hpp
-  DFadUnitTests.cpp
-  CacheDFadUnitTests.hpp
-  CacheDFadUnitTests.cpp
-  ELRDFadUnitTests.hpp
-  ELRDFadUnitTests.cpp
-  SFadUnitTests.hpp
-  SFadUnitTests.cpp
-  ELRSFadUnitTests.hpp
-  ELRSFadUnitTests.cpp
+  FadUnitTests.hpp
+  FadUnitTests2.hpp
+  FadUnitTests.cpp
+  ELRFadUnitTests.cpp
+  CacheFadUnitTests.cpp
   LogicalSparseUnitTests.hpp
   LogicalSparseUnitTests.cpp
   TestSuite.cpp

@@ -32,6 +32,9 @@
 # Break tradoptest.c0 into 64 pieces for use with g++ -O3, which uses
 # too much memory if we try to compile all tests at once.
 
+# Include export Makefiles for correct paths
+include $(top_builddir)/Makefile.export.sacado
+
 EXEEXT = .exe
 
 noinst_PROGRAMS = hesopcheck
@@ -40,11 +43,11 @@ testall : $(noinst_PROGRAMS) tradoptest.exe
 	./hesopcheck.exe
 	for i in `ls tradoptest_*.exe`; do ./$$i; done
 
-INCLUDES = -I$(top_srcdir)/src -I$(top_srcdir)/src/mpl
+INCLUDES = $(SACADO_INCLUDES)
 hesopcheck_SOURCES = hesopcheck.cpp
 hesopcheck_CXXFLAGS =
 hesopcheck_DEPENDENCIES = $(top_builddir)/src/libsacado.a tradoptest.exe
-hesopcheck_LDADD = -L$(top_builddir)/src -lsacado $(LIBS)
+hesopcheck_LDADD = $(SACADO_LIBS)
 
 # If we are configured with --with-gnumake, use GNU's extensions to make
 # to compile all of the tradoptests a lot faster if using -j xx for

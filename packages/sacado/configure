@@ -741,6 +741,8 @@ BUILD_PARAMLIB_TRUE
 BUILD_PARAMLIB_FALSE
 BUILD_NESTED_FAD_TRUE
 BUILD_NESTED_FAD_FALSE
+HAVE_SACADO_COMPLEX_TRUE
+HAVE_SACADO_COMPLEX_FALSE
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
 BUILD_EXAMPLES_TRUE
@@ -1384,6 +1386,7 @@ Optional Features:
   --enable-sacado-nestedfad
                           Enable nested Fad inside of Fad types (default is
                           yes except on Sun platform)
+  --enable-sacado-complex Enable Sacado complex code (default is yes)
   --enable-tests          Make tests for all Trilinos packages buildable with
                           'make tests' (default is yes)
 
@@ -6011,6 +6014,44 @@ else
 fi
 
 
+#
+#  --enable-sacado-complex
+#
+
+
+# Check whether --enable-sacado-complex was given.
+if test "${enable_sacado_complex+set}" = set; then
+  enableval=$enable_sacado_complex; ac_cv_use_sacado_complex=$enableval
+else
+  ac_cv_use_sacado_complex=yes
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use sacado-complex" >&5
+echo $ECHO_N "checking whether to use sacado-complex... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_sacado_complex" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_SACADO_COMPLEX
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_sacado_complex" != "Xno"; then
+  HAVE_SACADO_COMPLEX_TRUE=
+  HAVE_SACADO_COMPLEX_FALSE='#'
+else
+  HAVE_SACADO_COMPLEX_TRUE='#'
+  HAVE_SACADO_COMPLEX_FALSE=
+fi
+
+
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
@@ -7026,6 +7067,13 @@ echo "$as_me: error: conditional \"BUILD_NESTED_FAD\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_SACADO_COMPLEX_TRUE}" && test -z "${HAVE_SACADO_COMPLEX_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_SACADO_COMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_SACADO_COMPLEX\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${BUILD_TESTS_TRUE}" && test -z "${BUILD_TESTS_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"BUILD_TESTS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -7777,6 +7825,8 @@ BUILD_PARAMLIB_TRUE!$BUILD_PARAMLIB_TRUE$ac_delim
 BUILD_PARAMLIB_FALSE!$BUILD_PARAMLIB_FALSE$ac_delim
 BUILD_NESTED_FAD_TRUE!$BUILD_NESTED_FAD_TRUE$ac_delim
 BUILD_NESTED_FAD_FALSE!$BUILD_NESTED_FAD_FALSE$ac_delim
+HAVE_SACADO_COMPLEX_TRUE!$HAVE_SACADO_COMPLEX_TRUE$ac_delim
+HAVE_SACADO_COMPLEX_FALSE!$HAVE_SACADO_COMPLEX_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
@@ -7802,7 +7852,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 52; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 54; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

@@ -46,6 +46,16 @@ FADFAD_EXAMPLES =
 
 endif
 
+if ENABLE_SACADO_STOKHOS
+
+BLAS_EXAMPLES = blas_example
+
+else
+
+BLAS_EXAMPLES =
+
+endif
+
 noinst_PROGRAMS = \
 	ad_example \
 	dfad_example \
@@ -60,7 +70,8 @@ noinst_PROGRAMS = \
 	dfad_sfc_example \
 	trad_sfc_example \
 	pce_example \
-	sparse_example
+	sparse_example \
+	$(BLAS_EXAMPLES)
 
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 dfad_example_CXXFLAGS = $(SACADO_INCLUDES)
@@ -131,6 +142,11 @@ sparse_example_SOURCES = $(srcdir)/sparse_example.cpp
 sparse_example_CXXFLAGS =  $(dfad_example_CXXFLAGS)
 sparse_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 sparse_example_LDADD = $(dfad_example_LDADD)
+
+blas_example_SOURCES = $(srcdir)/blas_example.cpp
+blas_example_CXXFLAGS =  $(dfad_example_CXXFLAGS)
+blas_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+blas_example_LDADD = $(dfad_example_LDADD)
 
 include FEApp/MakefileFEAppStub.am
 EXTRA_DIST = $(FEAPP_H) $(FEAPP)

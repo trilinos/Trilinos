@@ -115,3 +115,15 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
+
+IF(Sacado_ENABLE_Teuchos)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    blas_example
+    SOURCES blas_example.cpp
+    ARGS -v
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+ENDIF()
+
+

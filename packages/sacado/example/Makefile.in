@@ -101,7 +101,7 @@ noinst_PROGRAMS = ad_example$(EXEEXT) dfad_example$(EXEEXT) \
 	trad_dfad_example$(EXEEXT) taylor_example$(EXEEXT) \
 	dfad_taylor_example$(EXEEXT) dfad_sfc_example$(EXEEXT) \
 	trad_sfc_example$(EXEEXT) pce_example$(EXEEXT) \
-	sparse_example$(EXEEXT)
+	sparse_example$(EXEEXT) $(am__EXEEXT_2)
 DIST_COMMON = $(srcdir)/FEApp/MakefileFEAppStub.am \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 subdir = example
@@ -115,6 +115,7 @@ am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/tac_arg_enable_can_use_package.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
+	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -129,11 +130,16 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Sacado_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_NESTED_FAD_TRUE@am__EXEEXT_1 = dfad_dfad_example$(EXEEXT)
+@ENABLE_SACADO_STOKHOS_TRUE@am__EXEEXT_2 = blas_example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_ad_example_OBJECTS = ad_example-ad_example.$(OBJEXT)
 ad_example_OBJECTS = $(am_ad_example_OBJECTS)
 am__DEPENDENCIES_1 =
 ad_example_LINK = $(CXXLD) $(ad_example_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_blas_example_OBJECTS = blas_example-blas_example.$(OBJEXT)
+blas_example_OBJECTS = $(am_blas_example_OBJECTS)
+blas_example_LINK = $(CXXLD) $(blas_example_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_dfad_dfad_example_OBJECTS =  \
 	dfad_dfad_example-dfad_dfad_example.$(OBJEXT)
@@ -203,20 +209,22 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) \
-	$(dfad_example_SOURCES) $(dfad_sfc_example_SOURCES) \
-	$(dfad_taylor_example_SOURCES) $(dmfad_example_SOURCES) \
-	$(pce_example_SOURCES) $(sfad_example_SOURCES) \
-	$(sparse_example_SOURCES) $(taylor_example_SOURCES) \
-	$(trad_dfad_example_SOURCES) $(trad_example_SOURCES) \
-	$(trad_sfc_example_SOURCES) $(tradvec_example_SOURCES)
-DIST_SOURCES = $(ad_example_SOURCES) $(dfad_dfad_example_SOURCES) \
-	$(dfad_example_SOURCES) $(dfad_sfc_example_SOURCES) \
-	$(dfad_taylor_example_SOURCES) $(dmfad_example_SOURCES) \
-	$(pce_example_SOURCES) $(sfad_example_SOURCES) \
-	$(sparse_example_SOURCES) $(taylor_example_SOURCES) \
-	$(trad_dfad_example_SOURCES) $(trad_example_SOURCES) \
-	$(trad_sfc_example_SOURCES) $(tradvec_example_SOURCES)
+SOURCES = $(ad_example_SOURCES) $(blas_example_SOURCES) \
+	$(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) \
+	$(dfad_sfc_example_SOURCES) $(dfad_taylor_example_SOURCES) \
+	$(dmfad_example_SOURCES) $(pce_example_SOURCES) \
+	$(sfad_example_SOURCES) $(sparse_example_SOURCES) \
+	$(taylor_example_SOURCES) $(trad_dfad_example_SOURCES) \
+	$(trad_example_SOURCES) $(trad_sfc_example_SOURCES) \
+	$(tradvec_example_SOURCES)
+DIST_SOURCES = $(ad_example_SOURCES) $(blas_example_SOURCES) \
+	$(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) \
+	$(dfad_sfc_example_SOURCES) $(dfad_taylor_example_SOURCES) \
+	$(dmfad_example_SOURCES) $(pce_example_SOURCES) \
+	$(sfad_example_SOURCES) $(sparse_example_SOURCES) \
+	$(taylor_example_SOURCES) $(trad_dfad_example_SOURCES) \
+	$(trad_example_SOURCES) $(trad_sfc_example_SOURCES) \
+	$(tradvec_example_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -341,6 +349,8 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 @BUILD_NESTED_FAD_FALSE@FADFAD_EXAMPLES = 
 @BUILD_NESTED_FAD_TRUE@FADFAD_EXAMPLES = dfad_dfad_example
+@ENABLE_SACADO_STOKHOS_FALSE@BLAS_EXAMPLES = 
+@ENABLE_SACADO_STOKHOS_TRUE@BLAS_EXAMPLES = blas_example
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 dfad_example_CXXFLAGS = $(SACADO_INCLUDES)
 dfad_example_DEPENDENCIES = $(top_builddir)/src/libsacado.a
@@ -397,6 +407,10 @@ sparse_example_SOURCES = $(srcdir)/sparse_example.cpp
 sparse_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
 sparse_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 sparse_example_LDADD = $(dfad_example_LDADD)
+blas_example_SOURCES = $(srcdir)/blas_example.cpp
+blas_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+blas_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+blas_example_LDADD = $(dfad_example_LDADD)
 FEAPP_PATH = $(top_srcdir)/../sacado/example/FEApp
 ELEMENT_H = \
 	$(FEAPP_PATH)/FEApp_AbstractElement.hpp \
@@ -579,6 +593,9 @@ clean-noinstPROGRAMS:
 ad_example$(EXEEXT): $(ad_example_OBJECTS) $(ad_example_DEPENDENCIES) 
 	@rm -f ad_example$(EXEEXT)
 	$(ad_example_LINK) $(ad_example_OBJECTS) $(ad_example_LDADD) $(LIBS)
+blas_example$(EXEEXT): $(blas_example_OBJECTS) $(blas_example_DEPENDENCIES) 
+	@rm -f blas_example$(EXEEXT)
+	$(blas_example_LINK) $(blas_example_OBJECTS) $(blas_example_LDADD) $(LIBS)
 dfad_dfad_example$(EXEEXT): $(dfad_dfad_example_OBJECTS) $(dfad_dfad_example_DEPENDENCIES) 
 	@rm -f dfad_dfad_example$(EXEEXT)
 	$(dfad_dfad_example_LINK) $(dfad_dfad_example_OBJECTS) $(dfad_dfad_example_LDADD) $(LIBS)
@@ -626,6 +643,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ad_example-ad_example.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blas_example-blas_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dfad_dfad_example-dfad_dfad_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dfad_example-dfad_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dfad_sfc_example-dfad_sfc_example.Po@am__quote@
@@ -667,6 +685,20 @@ ad_example-ad_example.obj: $(srcdir)/ad_example.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ad_example.cpp' object='ad_example-ad_example.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(ad_example_CXXFLAGS) $(CXXFLAGS) -c -o ad_example-ad_example.obj `if test -f '$(srcdir)/ad_example.cpp'; then $(CYGPATH_W) '$(srcdir)/ad_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ad_example.cpp'; fi`
+
+blas_example-blas_example.o: $(srcdir)/blas_example.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(blas_example_CXXFLAGS) $(CXXFLAGS) -MT blas_example-blas_example.o -MD -MP -MF $(DEPDIR)/blas_example-blas_example.Tpo -c -o blas_example-blas_example.o `test -f '$(srcdir)/blas_example.cpp' || echo '$(srcdir)/'`$(srcdir)/blas_example.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/blas_example-blas_example.Tpo $(DEPDIR)/blas_example-blas_example.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/blas_example.cpp' object='blas_example-blas_example.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(blas_example_CXXFLAGS) $(CXXFLAGS) -c -o blas_example-blas_example.o `test -f '$(srcdir)/blas_example.cpp' || echo '$(srcdir)/'`$(srcdir)/blas_example.cpp
+
+blas_example-blas_example.obj: $(srcdir)/blas_example.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(blas_example_CXXFLAGS) $(CXXFLAGS) -MT blas_example-blas_example.obj -MD -MP -MF $(DEPDIR)/blas_example-blas_example.Tpo -c -o blas_example-blas_example.obj `if test -f '$(srcdir)/blas_example.cpp'; then $(CYGPATH_W) '$(srcdir)/blas_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/blas_example.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/blas_example-blas_example.Tpo $(DEPDIR)/blas_example-blas_example.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/blas_example.cpp' object='blas_example-blas_example.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(blas_example_CXXFLAGS) $(CXXFLAGS) -c -o blas_example-blas_example.obj `if test -f '$(srcdir)/blas_example.cpp'; then $(CYGPATH_W) '$(srcdir)/blas_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/blas_example.cpp'; fi`
 
 dfad_dfad_example-dfad_dfad_example.o: $(srcdir)/dfad_dfad_example.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(dfad_dfad_example_CXXFLAGS) $(CXXFLAGS) -MT dfad_dfad_example-dfad_dfad_example.o -MD -MP -MF $(DEPDIR)/dfad_dfad_example-dfad_dfad_example.Tpo -c -o dfad_dfad_example-dfad_dfad_example.o `test -f '$(srcdir)/dfad_dfad_example.cpp' || echo '$(srcdir)/'`$(srcdir)/dfad_dfad_example.cpp

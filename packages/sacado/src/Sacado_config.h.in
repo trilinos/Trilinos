@@ -57,6 +57,9 @@
 /* Define to 1 if you have the <new> header file. */
 #undef HAVE_NEW
 
+/* Define if want to build sacado-complex */
+#undef HAVE_SACADO_COMPLEX
+
 /* Define if want to build sacado-examples */
 #undef HAVE_SACADO_EXAMPLES
 
