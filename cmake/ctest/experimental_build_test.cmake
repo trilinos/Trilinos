@@ -28,8 +28,6 @@ SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_SOURCE_DIRECTORY "$ENV{TRILINOS_HOME}")
 SET(CTEST_BINARY_DIRECTORY "$ENV{PWD}")
 
-SET(CTEST_CMAKE_GENERATOR "Unix Makefiles")
-
 SET(CTEST_NOTES_FILES "${CTEST_BINARY_DIRECTORY}/do-configure")
 
 # Get the name of the build directory we are in

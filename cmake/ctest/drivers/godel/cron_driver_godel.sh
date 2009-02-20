@@ -15,40 +15,40 @@ echo
 echo "Checking out just the drivers: `date`"
 echo
 
-BASEDIR=/home/rabartl/PROJECTS/dashboards/Trilinos
+BASEDIR=/home/rabartl/PROJECTS/dashboards/Trilinos.base
 
 cd $BASEDIR
-cvs -q -d :ext:@software.sandia.gov:/space/CVS co -d scripts Trilinos/cmake/ctest
+cvs -q -d :ext:software:/space/CVS co Trilinos/cmake Trilinos/CTestConfig.cmake
 
-echo
-echo "Doing dependency checking-only build: `date`"
-echo
+#echo
+#echo "Doing dependency checking-only build: `date`"
+#echo
+#
+#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_package_deps_godel.cmake -VV
 
-time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_package_deps_godel.cmake -VV
-
-echo
-echo "Doing serial performance build: `date`"
-echo
-
-time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_serial_performance_godel.cmake -VV
+#echo
+#echo "Doing serial performance build: `date`"
+#echo
+#
+#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_performance_godel.cmake -VV
 
 echo
 echo "Doing mpi optimized build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_mpi_optimized_godel.cmake -VV
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_optimized_godel.cmake -VV
 
 echo
 echo "Doing serial debug build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_serial_debug_godel.cmake -VV
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_godel.cmake -VV
 
-echo
-echo "Doing mpi optimized shared library build: `date`"
-echo
-
-time ${CTEST_EXE} -S $BASEDIR/scripts/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV
+#echo
+#echo "Doing mpi optimized shared library build: `date`"
+#echo
+#
+#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV
 
 echo
 echo "Ending nightly Trilinos testing on godel: `date`"
