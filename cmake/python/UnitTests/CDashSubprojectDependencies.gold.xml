@@ -13,6 +13,8 @@
   </SubProject>
   <SubProject name="Tpetra">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="ITO"/>
+    <Dependency name="Triutils" type="TO"/>
   </SubProject>
   <SubProject name="EpetraExt">
     <Dependency name="Teuchos" type="LR"/>
@@ -47,8 +49,9 @@
   <SubProject name="Amesos">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
-    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Triutils" type="TO"/>
     <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Galeri" type="TO"/>
   </SubProject>
   <SubProject name="Ifpack">
     <Dependency name="Teuchos" type="LR"/>
@@ -56,6 +59,7 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="AztecOO" type="LO"/>
+    <Dependency name="Galeri" type="TO"/>
     <Dependency name="Amesos" type="LO"/>
   </SubProject>
   <SubProject name="ML">
@@ -73,6 +77,16 @@
   <SubProject name="Belos">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ITO"/>
+    <Dependency name="Triutils" type="TO"/>
+    <Dependency name="Tpetra" type="TO"/>
+    <Dependency name="EpetraExt" type="TO"/>
+    <Dependency name="Isorropia" type="ITO"/>
+    <Dependency name="AztecOO" type="ITO"/>
+    <Dependency name="Galeri" type="ITO"/>
+    <Dependency name="Amesos" type="ITO"/>
+    <Dependency name="Ifpack" type="TO"/>
+    <Dependency name="ML" type="TO"/>
   </SubProject>
   <SubProject name="RBGen">
     <Dependency name="Teuchos" type="LR"/>
@@ -83,8 +97,8 @@
     <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
-    <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Triutils" type="TO"/>
+    <Dependency name="EpetraExt" type="TO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="Thyra" type="LR"/>
     <Dependency name="AztecOO" type="LO"/>

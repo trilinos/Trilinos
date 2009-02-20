@@ -447,7 +447,7 @@ class TrilinosDependencies:
   
 
   def createCDashDepsXML(self):
-    return self.createCDashDepsXMLFromRawDepsTable(self.createRawTable(True))
+    return self.createCDashDepsXMLFromRawDepsTable(self.createRawTable(False))
 
 
   def writeCDashXmlDepsFile(self, xmlDepsFile=defaultCDashDepsXmlFile):
