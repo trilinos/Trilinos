@@ -729,12 +729,11 @@ namespace Belos {
     else if( leftPrec ) 
       {
         {
-          Teuchos::TimeMonitor PrecTimer(*timerPrec_);
+          Teuchos::TimeMonitor OpTimer(*timerOp_);
 	  OPT::Apply( *A_, x, *ytemp );
         }
         {
-          Teuchos::TimeMonitor OpTimer(*timerOp_);
-
+          Teuchos::TimeMonitor PrecTimer(*timerPrec_);
 	  OPT::Apply( *LP_, *ytemp, y );
         }
       }
