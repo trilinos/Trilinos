@@ -18,40 +18,6 @@ MACRO(TRILINOS_SETUP_TESTING_SUPPORT)
     SET(Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT ON)
   ENDIF()
   
-  ADVANCED_OPTION(Trilinos_ENABLE_NATIVE_TEST_HARNESS
-    "Enable the native Trilinos perl-based test harness."
-    ${Trilinos_ENABLE_NATIVE_TEST_HARNESS_DEFAULT} )
-  
-  IF (Trilinos_ENABLE_NATIVE_TEST_HARNESS)
-  
-    ADD_CUSTOM_TARGET(
-      runtests-serial
-       ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
-      --trilinos-dir=${TRILINOS_HOME_DIR}
-      --comm=serial
-      --build-dir=${TRILINOS_BUILD_DIR}
-      --category=${TRILINOS_TEST_CATEGORY}
-      --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-      )
-  
-    IF (TPL_ENABLE_MPI)
-    
-      ADD_CUSTOM_TARGET(
-        runtests-mpi
-         ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
-        --trilinos-dir=${TRILINOS_HOME_DIR}
-        --comm=mpi
-        --mpi-go="${TRILINOS_MPI_GO}"
-        --max-proc=${MPIEXEC_MAX_NUMPROCS}
-        --build-dir=${TRILINOS_BUILD_DIR}
-        --category=${TRILINOS_TEST_CATEGORY}
-        --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-        )
-  
-    ENDIF()
-  
-  ENDIF()
-  
   IF (WIN32)
     SET(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT OFF)
   ELSE()

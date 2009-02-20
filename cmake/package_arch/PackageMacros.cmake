@@ -96,47 +96,6 @@ MACRO(PACKAGE PACKAGE_NAME_IN)
   GLOBAL_NULL_SET(${PACKAGE_NAME}_LIB_TARGETS)
   GLOBAL_NULL_SET(${PACKAGE_NAME}_ALL_TARGETS)
 
-  #
-  # E) Define standard runtests targets for home-grown perl-based test harness
-  #
-
-  IF (${PROJECT_NAME}_ENABLE_NATIVE_TEST_HARNESS)
-  
-    ADD_CUSTOM_TARGET(
-      ${PACKAGE_NAME}-runtests-serial
-       ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
-      --trilinos-dir=${TRILINOS_HOME_DIR}
-      --comm=serial
-      --build-dir=${TRILINOS_BUILD_DIR}
-      --category=${TRILINOS_TEST_CATEGORY}
-      --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-      --verbosity=1
-      --packages=${PACKAGE_DIR_NAME}
-      )
-
-    IF (TPL_ENABLE_MPI)
-    
-      ADD_CUSTOM_TARGET(
-        ${PACKAGE_NAME}-runtests-mpi
-         ${PERL_EXECUTABLE} ${TRILINOS_HOME_DIR}/commonTools/test/utilities/runtests
-        --trilinos-dir=${TRILINOS_HOME_DIR}
-        --comm=mpi
-        --mpi-go="${TRILINOS_MPI_GO}"
-        --max-proc=${MPIEXEC_MAX_NUMPROCS}
-        --build-dir=${TRILINOS_BUILD_DIR}
-        --category=${TRILINOS_TEST_CATEGORY}
-        --output-dir=${TRILINOS_BUILD_DIR}/runtests-results
-        --verbosity=1
-        --packages=${PACKAGE_DIR_NAME}
-        )
-
-    ENDIF()
-
-  ENDIF()
-
-  # 2008/12/23: rabartl: ToDo: Above: Get rid of these targets since
-  # we will not need them very soon.
-
 ENDMACRO()
 
 
