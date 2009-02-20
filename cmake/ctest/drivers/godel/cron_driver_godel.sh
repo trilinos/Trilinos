@@ -26,11 +26,11 @@ cvs -q -d :ext:software:/space/CVS co Trilinos/cmake Trilinos/CTestConfig.cmake
 #
 #time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_package_deps_godel.cmake -VV
 
-#echo
-#echo "Doing serial performance build: `date`"
-#echo
-#
-#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_performance_godel.cmake -VV
+echo
+echo "Doing serial performance build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_performance_godel.cmake -VV
 
 echo
 echo "Doing mpi optimized build: `date`"
@@ -44,11 +44,11 @@ echo
 
 time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_godel.cmake -VV
 
-#echo
-#echo "Doing mpi optimized shared library build: `date`"
-#echo
-#
-#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV
+echo
+echo "Doing mpi optimized shared library build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV
 
 echo
 echo "Ending nightly Trilinos testing on godel: `date`"

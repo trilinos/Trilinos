@@ -153,6 +153,8 @@ MACRO(TRILINOS_CTEST_DRIVER)
     "${HOST_TYPE}-${CTEST_TEST_TYPE}-${BUILD_DIR_NAME}" )
  
   SET_DEFAULT_AND_FROM_ENV( CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE )
+ 
+  SET_DEFAULT_AND_FROM_ENV( CTEST_WIPE_CACHE TRUE )
 
   SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR "Unix Makefiles")
   
@@ -203,23 +205,27 @@ MACRO(TRILINOS_CTEST_DRIVER)
 
   IF (CTEST_DO_UPDATES)
     FIND_PACKAGE(CVS)
-    SET(CTEST_UPDATE_COMMAND "${CVS_EXECUTABLE} ${CTEST_UPDATE_ARGS}")
+    #SET(CTEST_UPDATE_COMMAND "${CVS_EXECUTABLE} ${CTEST_UPDATE_ARGS}")
+    SET(CTEST_UPDATE_COMMAND "${CVS_EXECUTABLE}")
     MESSAGE("CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
     SET( CTEST_CHECKOUT_COMMAND
       "${CVS_EXECUTABLE} ${CTEST_UPDATE_ARGS} -d :ext:software.sandia.gov:/space/CVS co ${CTEST_SOURCE_NAME}" )
     MESSAGE("CTEST_CHECKOUT_COMMAND='${CTEST_CHECKOUT_COMMAND}'")
   ENDIF() 
- 
-  # 2009/02/18: rabartl: Above: If this update fails, how will I figure this
-  # out?  Will the dashboard get updated?
   
   #
   # Empty out the binary directory
   #
   
   IF (CTEST_START_WITH_EMPTY_BINARY_DIRECTORY)
-    MESSAGE("Cleaning out binary directory '${CTEST_BINARY_DIRECTORY}'")
+    MESSAGE("Cleaning out binary directory '${CTEST_BINARY_DIRECTORY}' ...")
     CTEST_EMPTY_BINARY_DIRECTORY("${CTEST_BINARY_DIRECTORY}")
+  ELSEIF (CTEST_WIPE_CACHE)
+    SET(CACHE_FILE_NAME "${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
+    IF (EXISTS "${CACHE_FILE_NAME}")
+      MESSAGE("Removing existing cache file '${CACHE_FILE_NAME}' ...")
+      FILE(REMOVE "${CACHE_FILE_NAME}")
+    ENDIF()
   ENDIF()
   
   #
@@ -236,7 +242,15 @@ MACRO(TRILINOS_CTEST_DRIVER)
     MESSAGE("Doing CVS update of '${CTEST_SOURCE_DIRECTORY}' ...")
     CTEST_UPDATE( SOURCE "${CTEST_SOURCE_DIRECTORY}"
       RETURN_VALUE  UPDATE_RETURN_VAL)
-    MESSAGE("Updated return = '${UPDATE_RETURN_VAL}'")
+    MESSAGE("CTEST_UPDATE(...) returned '${UPDATE_RETURN_VAL}'")
+  ENDIF()
+
+  IF ("${UPDATE_RETURN_VAL}" LESS "0")
+    MESSAGE("The VC update failed so submitting update and stopping ...") 
+    IF (CTEST_DO_SUBMIT)
+      CTEST_SUBMIT( PARTS update notes )
+    ENDIF()
+    RETURN()
   ENDIF()
   
   #
@@ -248,7 +262,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
       "${CTEST_SCRIPT_DIRECTORY}/../python/data/CDashSubprojectDependencies.xml"
       RETURN_VALUE SUBMIT_RETURN_VAL
       )
-    MESSAGE("Submitted subproject dependencies: Return='${SUBMIT_RETURN_VAL}'")
+    MESSAGE("\nSubmitted subproject dependencies: Return='${SUBMIT_RETURN_VAL}'")
   ENDIF()
   
   #
@@ -259,6 +273,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
   
   SET(Trilinos_LAST_WORKING_PACKAGE)
   SET(Trilinos_FAILED_PACKAGES)
+  SET(FIRST_SUBMIT TRUE)
   
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
   
@@ -266,6 +281,13 @@ MACRO(TRILINOS_CTEST_DRIVER)
     SET_PROPERTY(GLOBAL PROPERTY Label ${PACKAGE})
   
     MESSAGE("\nCurrent Trilinos package: '${PACKAGE}'\n")
+
+    IF (FIRST_SUBMIT)
+        SET(SUBMIT_APPEND_ARG)
+      ELSE()
+        SET(SUBMIT_APPEND_ARG APPEND)
+      ENDIF()
+    ENDIF()
   
     #
     # Configure the package and its dependent packages
@@ -321,7 +343,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
   
     if ("${CONFIGURE_RETURN_VAL}" EQUAL "0")
   
-      # Start by trying to build just the librries for the current package
+      # Start by trying to build just the libraries for the current package
   
       SET( CTEST_BUILD_TARGET ${PACKAGE}_libs )
       MESSAGE("\nBuilding target: '${CTEST_BUILD_TARGET}' ...\n")
@@ -348,7 +370,9 @@ MACRO(TRILINOS_CTEST_DRIVER)
       # Submit the library build results to the dashboard
   
       IF (CTEST_DO_SUBMIT)
-        CTEST_SUBMIT( PARTS build APPEND )
+        CTEST_SUBMIT( PARTS build
+          #${SUBMIT_APPEND_ARG}
+           )
       ENDIF()
   
       # If the build of the libraries passed, then go on the build
@@ -370,7 +394,9 @@ MACRO(TRILINOS_CTEST_DRIVER)
   
         # Submit the build for all target
         IF (CTEST_DO_SUBMIT)
-          CTEST_SUBMIT( PARTS build APPEND )  
+          CTEST_SUBMIT( PARTS build
+            #APPEND
+            )  
         ENDIF()
   
         IF (CTEST_DO_TEST)
@@ -378,10 +404,12 @@ MACRO(TRILINOS_CTEST_DRIVER)
           MESSAGE("\nRunning test for package '${PACKAGE}' ...\n")
           CTEST_TEST(BUILD "${CTEST_BINARY_DIRECTORY}"
             INCLUDE "^${PACKAGE}_"
-            APPEND
+            #${SUBMIT_APPEND_ARG}
             )
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT(PARTS Test APPEND)
+            CTEST_SUBMIT(PARTS Test
+              #${SUBMIT_APPEND_ARG}
+              )
           ENDIF()
         ENDIF()
   
@@ -389,7 +417,9 @@ MACRO(TRILINOS_CTEST_DRIVER)
           MESSAGE("\nRunning coverage for package '${PACKAGE}' ...\n")
           CTEST_COVERAGE(BUILD "${CTEST_BINARY_DIRECTORY}")
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT(PARTS Test APPEND)
+            CTEST_SUBMIT(PARTS Test
+              #${SUBMIT_APPEND_ARG}
+              )
           ENDIF()
         ENDIF() 
  
@@ -397,7 +427,9 @@ MACRO(TRILINOS_CTEST_DRIVER)
           MESSAGE("\nRunning memory testing for package '${PACKAGE}' ...\n")
           CTEST_MEMCHECK(BUILD "${CTEST_BINARY_DIRECTORY}")
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT(PARTS Test APPEND)
+            CTEST_SUBMIT(PARTS Test
+             #${SUBMIT_APPEND_ARG}
+             )
           ENDIF()
         ENDIF()
   
@@ -413,6 +445,8 @@ MACRO(TRILINOS_CTEST_DRIVER)
   
     ENDIF()
   
+    SET(FIRST_SUBMIT FALSE)
+
   ENDFOREACH(PACKAGE)
   
   IF(Trilinos_FAILED_PACKAGES)
