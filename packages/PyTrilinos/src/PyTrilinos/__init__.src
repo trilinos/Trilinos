@@ -29,6 +29,14 @@
 # ************************************************************************
 # @HEADER
 
+"""
+${PACKAGE_NAME}: A python interface to selected Trilinos packages.  This
+  installation of ${PACKAGE_NAME} was built with the following python-wrapped
+  packages enabled:
+
+${${PACKAGE_NAME}_PACKAGES}
+"""
+
 # We need symbol names to be recognized across PyTrilinos extension modules.  On
 # some systems, this requires that the dynamic library opener be given certain
 # flags: runtime load now and runtime load global.  This has to be set before
@@ -57,10 +65,10 @@ sys.setdlopenflags(dlopenflags)
 
 # Set the __all__ special variable, a list of strings which define all of the
 # PyTrilinos public names, namely the Trilinos packages that are enabled.
-__all__ = [${PyTrilinos_ALL}]
+${${PACKAGE_NAME}_ALL}
 
 # Versioning.  Set the __version__ special variable and define a version()
 # function.
-__version__ = '${PyTrilinos_VERSION}'
+__version__ = '${${PACKAGE_NAME}_VERSION}'
 def version():
-    return 'Trilinos version: ${Trilinos_VERSION}\nPyTrilinos version: ' + __version__
+    return 'Trilinos version: ${Trilinos_VERSION}\n${PACKAGE_NAME} version: ' + __version__
