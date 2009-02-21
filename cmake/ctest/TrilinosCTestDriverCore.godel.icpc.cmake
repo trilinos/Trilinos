@@ -23,20 +23,17 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     )
   
   IF (COMM_TYPE STREQUAL MPI)
-  
-    SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
-      ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DTPL_ENABLE_MPI:BOOL=ON"
-      "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc"
-      )
+
+    MESSAGE(FATAL_ERROR "Error, Intel build does not support MPI yet!")
   
   ELSE()
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/usr/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/usr/bin/gcc"
+      "-DCMAKE_C_COMPILER:FILEPATH=/opt/intel/cc/10.1.015/bin/icc"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/opt/intel/cc/10.1.015/bin/icpc"
       "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77"
+      "-DCMAKE_LIBRARY_PATH:PATH=/usr/lib64"
       )
   
   ENDIF()
