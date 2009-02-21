@@ -1,0 +1,66 @@
+#! ${PYTHON_EXECUTABLE}
+# -*- python -*-
+
+# @HEADER
+# ************************************************************************
+# 
+#              PyTrilinos: Python Interface to Trilinos
+#                 Copyright (2004) Sandia Corporation
+# 
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+# 
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#  
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#  
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov) 
+# 
+# ************************************************************************
+# @HEADER
+
+# We need symbol names to be recognized across PyTrilinos extension modules.  On
+# some systems, this requires that the dynamic library opener be given certain
+# flags: runtime load now and runtime load global.  This has to be set before
+# any PyTrilinos extension modules are loaded.  Unfortunately, the python module
+# we want that contains the named values of these flags is called "dl" on some
+# systems, "DLFCN" on others, and does not even exist on some.  The following
+# logic loads the module into name "dl" if it exists and extracts the needed
+# flags.  If the module we need does not exist, we use our best guess at what
+# the flags values are.  After all this, the sys module setdlopenflags()
+# function is called.
+dl = None
+try:
+    import dl
+except (SystemError, ImportError):
+    try:
+        import DLFCN as dl
+    except (SystemError, ImportError):
+        pass
+if dl:
+    dlopenflags = dl.RTLD_NOW | dl.RTLD_GLOBAL
+    del dl
+else:
+    dlopenflags = 258
+import sys
+sys.setdlopenflags(dlopenflags)
+
+# Set the __all__ special variable, a list of strings which define all of the
+# PyTrilinos public names, namely the Trilinos packages that are enabled.
+__all__ = [${PyTrilinos_ALL}]
+
+# Versioning.  Set the __version__ special variable and define a version()
+# function.
+__version__ = '${PyTrilinos_VERSION}'
+def version():
+    return 'Trilinos version: ${Trilinos_VERSION}\nPyTrilinos version: ' + __version__
