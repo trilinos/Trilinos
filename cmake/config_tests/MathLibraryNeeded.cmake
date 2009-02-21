@@ -24,13 +24,8 @@ IF (NOT MATH_LIBRARY_IS_SUPPLIED)
   IF (MATH_LIBRARY)
     IF (NOT MATH_LIBRARY_IS_SET)
       MESSAGE(STATUS "Appending math library ${MATH_LIBRARY} to link line ...")
-      IF (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
-        SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS "${${PROJECT_NAME}_EXTRA_LINK_FLAGS} ${MATH_LIBRARY}"
-          CACHE STRING ""  FORCE)
-      ELSE()
-        SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS "${MATH_LIBRARY}"
-          CACHE STRING ""  FORCE)
-      ENDIF()
+      SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS ${${PROJECT_NAME}_EXTRA_LINK_FLAGS} ${MATH_LIBRARY}
+        CACHE STRING ""  FORCE)
       GLOBAL_SET(MATH_LIBRARY_IS_SET ON)
       # NOTE: Only do this once and not over and over or you will relink
       # everything after each configure!
