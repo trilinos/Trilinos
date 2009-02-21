@@ -131,6 +131,14 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/Sacado_Fad_MemPoolStorage.hpp \
 	$(srcdir)/Sacado_Fad_DMFad.hpp \
 	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_DVFad.hpp \
+	$(srcdir)/Sacado_Fad_DVFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_FadVector.hpp \
+	$(srcdir)/Sacado_Fad_FadVectorImp.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFad.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
+	$(srcdir)/Sacado_Fad_VectorDynamicStorage.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadExpr.hpp \
@@ -282,6 +290,14 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Fad_MemPoolStorage.hpp \
 	$(srcdir)/Sacado_Fad_DMFad.hpp \
 	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_DVFad.hpp \
+	$(srcdir)/Sacado_Fad_DVFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_FadVector.hpp \
+	$(srcdir)/Sacado_Fad_FadVectorImp.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFad.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
+	$(srcdir)/Sacado_Fad_VectorDynamicStorage.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadExpr.hpp \
@@ -535,7 +551,15 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_MemPoolManagerImp.hpp \
 	$(srcdir)/Sacado_Fad_MemPoolStorage.hpp \
 	$(srcdir)/Sacado_Fad_DMFad.hpp \
-	$(srcdir)/Sacado_Fad_DMFadTraits.hpp
+	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_DVFad.hpp \
+	$(srcdir)/Sacado_Fad_DVFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_FadVector.hpp \
+	$(srcdir)/Sacado_Fad_FadVectorImp.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFad.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
+	$(srcdir)/Sacado_Fad_VectorDynamicStorage.hpp
 
 SACADO_ELRFAD_H = \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \

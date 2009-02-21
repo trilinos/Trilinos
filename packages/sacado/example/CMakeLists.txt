@@ -124,6 +124,14 @@ IF(Sacado_ENABLE_Teuchos)
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    vector_blas_example
+    SOURCES vector_blas_example.cpp
+    ARGS -v
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
 ENDIF()
 
 

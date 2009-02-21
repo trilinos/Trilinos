@@ -46,6 +46,8 @@
 #include "Sacado_Fad_DMFad.hpp"
 #include "Sacado_Fad_ExpressionTraits.hpp"
 #include "Sacado_LFad_LogicalSparse.hpp"
+#include "Sacado_Fad_DVFad.hpp"
+#include "Sacado_Fad_FadVector.hpp"
 
 // Expression-level-reverse forward AD classes
 #include "Sacado_ELRFad_DFad.hpp"

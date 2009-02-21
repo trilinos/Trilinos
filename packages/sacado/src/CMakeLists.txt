@@ -46,6 +46,14 @@ SET(HEADERS ${HEADERS}
   Sacado_Fad_MemPoolStorage.hpp
   Sacado_Fad_DMFad.hpp
   Sacado_Fad_DMFadTraits.hpp
+  Sacado_Fad_DVFad.hpp
+  Sacado_Fad_DVFadTraits.hpp
+  Sacado_Fad_FadVector.hpp
+  Sacado_Fad_FadVectorImp.hpp
+  Sacado_Fad_GeneralVFad.hpp
+  Sacado_Fad_GeneralVFadExpr.hpp
+  Sacado_Fad_GeneralVFadImp.hpp
+  Sacado_Fad_VectorDynamicStorage.hpp
   ) 
 
 # ELRFAD

@@ -48,7 +48,7 @@ endif
 
 if ENABLE_SACADO_STOKHOS
 
-BLAS_EXAMPLES = blas_example
+BLAS_EXAMPLES = blas_example vector_blas_example
 
 else
 
@@ -147,6 +147,11 @@ blas_example_SOURCES = $(srcdir)/blas_example.cpp
 blas_example_CXXFLAGS =  $(dfad_example_CXXFLAGS)
 blas_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 blas_example_LDADD = $(dfad_example_LDADD)
+
+vector_blas_example_SOURCES = $(srcdir)/vector_blas_example.cpp
+vector_blas_example_CXXFLAGS =  $(dfad_example_CXXFLAGS)
+vector_blas_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+vector_blas_example_LDADD = $(dfad_example_LDADD)
 
 include FEApp/MakefileFEAppStub.am
 EXTRA_DIST = $(FEAPP_H) $(FEAPP)

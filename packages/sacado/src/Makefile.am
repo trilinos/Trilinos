@@ -63,7 +63,15 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_MemPoolManagerImp.hpp \
 	$(srcdir)/Sacado_Fad_MemPoolStorage.hpp \
 	$(srcdir)/Sacado_Fad_DMFad.hpp \
-	$(srcdir)/Sacado_Fad_DMFadTraits.hpp
+	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_DVFad.hpp \
+	$(srcdir)/Sacado_Fad_DVFadTraits.hpp \
+	$(srcdir)/Sacado_Fad_FadVector.hpp \
+	$(srcdir)/Sacado_Fad_FadVectorImp.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFad.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
+	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
+	$(srcdir)/Sacado_Fad_VectorDynamicStorage.hpp
 
 SACADO_ELRFAD_H = \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \

@@ -130,7 +130,8 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Sacado_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_NESTED_FAD_TRUE@am__EXEEXT_1 = dfad_dfad_example$(EXEEXT)
-@ENABLE_SACADO_STOKHOS_TRUE@am__EXEEXT_2 = blas_example$(EXEEXT)
+@ENABLE_SACADO_STOKHOS_TRUE@am__EXEEXT_2 = blas_example$(EXEEXT) \
+@ENABLE_SACADO_STOKHOS_TRUE@	vector_blas_example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_ad_example_OBJECTS = ad_example-ad_example.$(OBJEXT)
 ad_example_OBJECTS = $(am_ad_example_OBJECTS)
@@ -201,6 +202,11 @@ tradvec_example_OBJECTS = $(am_tradvec_example_OBJECTS)
 tradvec_example_LDADD = $(LDADD)
 tradvec_example_LINK = $(CXXLD) $(tradvec_example_CXXFLAGS) \
 	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_vector_blas_example_OBJECTS =  \
+	vector_blas_example-vector_blas_example.$(OBJEXT)
+vector_blas_example_OBJECTS = $(am_vector_blas_example_OBJECTS)
+vector_blas_example_LINK = $(CXXLD) $(vector_blas_example_CXXFLAGS) \
+	$(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -216,7 +222,7 @@ SOURCES = $(ad_example_SOURCES) $(blas_example_SOURCES) \
 	$(sfad_example_SOURCES) $(sparse_example_SOURCES) \
 	$(taylor_example_SOURCES) $(trad_dfad_example_SOURCES) \
 	$(trad_example_SOURCES) $(trad_sfc_example_SOURCES) \
-	$(tradvec_example_SOURCES)
+	$(tradvec_example_SOURCES) $(vector_blas_example_SOURCES)
 DIST_SOURCES = $(ad_example_SOURCES) $(blas_example_SOURCES) \
 	$(dfad_dfad_example_SOURCES) $(dfad_example_SOURCES) \
 	$(dfad_sfc_example_SOURCES) $(dfad_taylor_example_SOURCES) \
@@ -224,7 +230,7 @@ DIST_SOURCES = $(ad_example_SOURCES) $(blas_example_SOURCES) \
 	$(sfad_example_SOURCES) $(sparse_example_SOURCES) \
 	$(taylor_example_SOURCES) $(trad_dfad_example_SOURCES) \
 	$(trad_example_SOURCES) $(trad_sfc_example_SOURCES) \
-	$(tradvec_example_SOURCES)
+	$(tradvec_example_SOURCES) $(vector_blas_example_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -350,7 +356,7 @@ top_srcdir = @top_srcdir@
 @BUILD_NESTED_FAD_FALSE@FADFAD_EXAMPLES = 
 @BUILD_NESTED_FAD_TRUE@FADFAD_EXAMPLES = dfad_dfad_example
 @ENABLE_SACADO_STOKHOS_FALSE@BLAS_EXAMPLES = 
-@ENABLE_SACADO_STOKHOS_TRUE@BLAS_EXAMPLES = blas_example
+@ENABLE_SACADO_STOKHOS_TRUE@BLAS_EXAMPLES = blas_example vector_blas_example
 dfad_example_SOURCES = $(srcdir)/dfad_example.cpp
 dfad_example_CXXFLAGS = $(SACADO_INCLUDES)
 dfad_example_DEPENDENCIES = $(top_builddir)/src/libsacado.a
@@ -411,6 +417,10 @@ blas_example_SOURCES = $(srcdir)/blas_example.cpp
 blas_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
 blas_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
 blas_example_LDADD = $(dfad_example_LDADD)
+vector_blas_example_SOURCES = $(srcdir)/vector_blas_example.cpp
+vector_blas_example_CXXFLAGS = $(dfad_example_CXXFLAGS)
+vector_blas_example_DEPENDENCIES = $(dfad_example_DEPENDENCIES)
+vector_blas_example_LDADD = $(dfad_example_LDADD)
 FEAPP_PATH = $(top_srcdir)/../sacado/example/FEApp
 ELEMENT_H = \
 	$(FEAPP_PATH)/FEApp_AbstractElement.hpp \
@@ -635,6 +645,9 @@ trad_sfc_example$(EXEEXT): $(trad_sfc_example_OBJECTS) $(trad_sfc_example_DEPEND
 tradvec_example$(EXEEXT): $(tradvec_example_OBJECTS) $(tradvec_example_DEPENDENCIES) 
 	@rm -f tradvec_example$(EXEEXT)
 	$(tradvec_example_LINK) $(tradvec_example_OBJECTS) $(tradvec_example_LDADD) $(LIBS)
+vector_blas_example$(EXEEXT): $(vector_blas_example_OBJECTS) $(vector_blas_example_DEPENDENCIES) 
+	@rm -f vector_blas_example$(EXEEXT)
+	$(vector_blas_example_LINK) $(vector_blas_example_OBJECTS) $(vector_blas_example_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -657,6 +670,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trad_example-trad_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trad_sfc_example-trad_sfc_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tradvec_example-tradvec_example.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vector_blas_example-vector_blas_example.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -881,6 +895,20 @@ tradvec_example-tradvec_example.obj: $(srcdir)/tradvec_example.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/tradvec_example.cpp' object='tradvec_example-tradvec_example.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(tradvec_example_CXXFLAGS) $(CXXFLAGS) -c -o tradvec_example-tradvec_example.obj `if test -f '$(srcdir)/tradvec_example.cpp'; then $(CYGPATH_W) '$(srcdir)/tradvec_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tradvec_example.cpp'; fi`
+
+vector_blas_example-vector_blas_example.o: $(srcdir)/vector_blas_example.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vector_blas_example_CXXFLAGS) $(CXXFLAGS) -MT vector_blas_example-vector_blas_example.o -MD -MP -MF $(DEPDIR)/vector_blas_example-vector_blas_example.Tpo -c -o vector_blas_example-vector_blas_example.o `test -f '$(srcdir)/vector_blas_example.cpp' || echo '$(srcdir)/'`$(srcdir)/vector_blas_example.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/vector_blas_example-vector_blas_example.Tpo $(DEPDIR)/vector_blas_example-vector_blas_example.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vector_blas_example.cpp' object='vector_blas_example-vector_blas_example.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vector_blas_example_CXXFLAGS) $(CXXFLAGS) -c -o vector_blas_example-vector_blas_example.o `test -f '$(srcdir)/vector_blas_example.cpp' || echo '$(srcdir)/'`$(srcdir)/vector_blas_example.cpp
+
+vector_blas_example-vector_blas_example.obj: $(srcdir)/vector_blas_example.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vector_blas_example_CXXFLAGS) $(CXXFLAGS) -MT vector_blas_example-vector_blas_example.obj -MD -MP -MF $(DEPDIR)/vector_blas_example-vector_blas_example.Tpo -c -o vector_blas_example-vector_blas_example.obj `if test -f '$(srcdir)/vector_blas_example.cpp'; then $(CYGPATH_W) '$(srcdir)/vector_blas_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vector_blas_example.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/vector_blas_example-vector_blas_example.Tpo $(DEPDIR)/vector_blas_example-vector_blas_example.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/vector_blas_example.cpp' object='vector_blas_example-vector_blas_example.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(vector_blas_example_CXXFLAGS) $(CXXFLAGS) -c -o vector_blas_example-vector_blas_example.obj `if test -f '$(srcdir)/vector_blas_example.cpp'; then $(CYGPATH_W) '$(srcdir)/vector_blas_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/vector_blas_example.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
