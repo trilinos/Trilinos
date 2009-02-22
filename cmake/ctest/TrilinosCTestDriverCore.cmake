@@ -90,7 +90,6 @@ MACRO(TRILINOS_CTEST_DRIVER)
     Epetra
     Zoltan
     Shards
-    Intrepid
     GlobiPack
     Triutils
     Tpetra
@@ -116,22 +115,13 @@ MACRO(TRILINOS_CTEST_DRIVER)
     Anasazi
     ThreadPool
     Phalanx
-    Pamgen
-    Phdmesh
     NOX
     Moertel
     TrilinosCouplings
     Rythmos
     MOOCHO
-    Aristos
     Sundance
-    TriKota
-    CTrilinos
-    ForTrilinos
-    PyTrilinos
-    WebTrilinos
     Didasko
-    NewPackage
     )
   # ToDo: Read this list from TrilinosPackages.cmake
 
