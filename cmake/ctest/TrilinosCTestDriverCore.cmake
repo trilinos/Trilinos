@@ -173,14 +173,6 @@ MACRO(TRILINOS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
   
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
-  
-  #
-  # Some platform-independnet setup
-  #
-  
-  INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../CTestConfig.cmake")
-  SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CTEST_BINARY_DIRECTORY}/CMakeCache.txt")
-  SET(CTEST_USE_LAUNCHERS 1)
 
   #
   # Setup and create the base dashboard directory if it is not created yet.
@@ -198,6 +190,15 @@ MACRO(TRILINOS_CTEST_DRIVER)
       FILE(MAKE_DIRECTORY "${CTEST_DASHBOARD_ROOT}")
     ENDIF()
   ENDIF()
+  
+  #
+  # Some platform-independnet setup
+  #
+  
+  INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../CTestConfig.cmake")
+  SET(CMAKE_CACHE_CLEAN_FILE "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
+  SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CMAKE_CACHE_CLEAN_FILE}")
+  SET(CTEST_USE_LAUNCHERS 1)
   
   #
   # Setup for the CVS update
@@ -320,6 +321,13 @@ MACRO(TRILINOS_CTEST_DRIVER)
       OPTIONS "${CONFIGURE_OPTIONS}" # New option!
       RETURN_VALUE CONFIGURE_RETURN_VAL
       )
+
+    MESSAGE("Generating the file CMakeCache.clean.txt ...")
+    EXECUTE_PROCESS( COMMAND
+      ${CTEST_SCRIPT_DIRECTORY}/makeCMakeCacheFile.sh ${CTEST_BINARY_DIRECTORY} )
+    IF (NOT EXISTS "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
+      MESSAGE("Error, the file '${CMAKE_CACHE_CLEAN_FILE}' does not exist!")
+    ENDIF()
   
     # If the configure failed, add the package to the list
     # of failed packages
