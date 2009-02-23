@@ -94,15 +94,15 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   void Vector<Scalar,LocalOrdinal,GlobalOrdinal>::extractCopy1D(Teuchos::ArrayView<Scalar> A) const 
   {
-    Teuchos_Ordinal dummy;
-    this->extractCopy1D(A,dummy);
+    Teuchos_Ordinal lda = this->myLength();
+    this->extractCopy1D(A,lda);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   void Vector<Scalar,LocalOrdinal,GlobalOrdinal>::extractCopy1D(Scalar *A) const 
   {
-    Teuchos_Ordinal dummy;
-    this->extractCopy1D(A,dummy);
+    Teuchos_Ordinal lda = this->myLength();
+    this->extractCopy1D(A,lda);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
