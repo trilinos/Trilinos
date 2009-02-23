@@ -17,7 +17,6 @@ CXXFLAGS="-g -O0 -Wall" \
 --with-libs="-lumfpack -lamd" \
 --disable-default-packages \
 --enable-sundance \
---enable-python \
 --with-sundance-exodus \
 --enable-sundance-tests \
 --enable-sundance-examples \
@@ -32,9 +31,8 @@ CXXFLAGS="-g -O0 -Wall" \
 --enable-anasazi-thyra \
 --enable-amesos-thyra \
 --enable-ifpack-thyra \
---enable-anasazi \ 
+--enable-anasazi \
 --enable-ml-thyra \
---enable-stratimikos \
 --enable-epetra \
 --enable-epetraext \
 --enable-ml \
