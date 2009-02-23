@@ -386,8 +386,8 @@ double sum_time;
 
   if (proc == my_proc) 
     fprintf(fp,
-            "%3d ZOLTAN_TIMER %3d %23s:  MyTime %7.4lf  "
-            "MaxTime %7.4lf  MinTime %7.4lf  AvgTime %7.4lf\n",
+            "%3d ZOLTAN_TIMER %3d %23s:  MyTime %7.4f  "
+            "MaxTime %7.4f  MinTime %7.4f  AvgTime %7.4f\n",
             proc, ts_idx, ts->Name, ts->My_Tot_Time, 
             max_time, min_time, sum_time/nproc);
 

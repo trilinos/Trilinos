@@ -569,13 +569,15 @@ ZOLTAN_ID_PTR gid;
 
       if (error == ZOLTAN_OK){
         ZOLTAN_FREE(&fdummy);
-        if (Zoltan_Special_Malloc(zz, (void **)export_procs, *num_export_objs,
-                            ZOLTAN_SPECIAL_MALLOC_INT)){
-          for (i=0; i<*num_export_objs; i++)
-            (*export_procs)[i] = zz->Proc;
-        }
-        else{
-          error = ZOLTAN_MEMERR;
+        if (*num_export_objs) {
+          if (Zoltan_Special_Malloc(zz, (void **)export_procs, *num_export_objs,
+                                    ZOLTAN_SPECIAL_MALLOC_INT)){
+            for (i=0; i<*num_export_objs; i++)
+              (*export_procs)[i] = zz->Proc;
+          }
+          else{
+            error = ZOLTAN_MEMERR;
+          }
         }
       }
       if ((error != ZOLTAN_OK) && (error != ZOLTAN_WARN)) goto End;

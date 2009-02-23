@@ -32,7 +32,8 @@ typedef void ZOLTAN_VOID_FN(void);
 extern "C" {
 #endif
 
-#define ZOLTAN_VERSION_NUMBER   3.1
+#define ZOLTAN_VERSION_NUMBER   3.101
+/* 3.101: BETA release for David Hysom at LLNL */
 /* 2.101 is update for Plimpton/Crozier; fixed memory leak in HG partitioning */
 /* 2.102 is update for Steensland; improve partition remapping to consider
    previous remapping vector. */

@@ -184,7 +184,7 @@ void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany)
 
   for (i=0; rcb->Dots && (i<num_obj); i++){
     dot = rcb->Dots[i];
-    printf("(Dots %d) (%6.4lf %6.4lf %6.4lf) (%6.4lf %6.4lf %6.4lf %6.4lf) proc %d, part %d, new part %dn",
+    printf("(Dots %d) (%6.4f %6.4f %6.4f) (%6.4f %6.4f %6.4f %6.4f) proc %d, part %d, new part %dn",
      i, dot.X[0], dot.X[1], dot.X[2], 
      dot.Weight[0], dot.Weight[1], dot.Weight[2], dot.Weight[3],
      dot.Proc, dot.Input_Part, dot.Part);
@@ -199,7 +199,7 @@ void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany)
 
   for (i=0; rcb->Tree_Ptr && (i<len); i++){
     r = rcb->Tree_Ptr[i];
-    printf("(Tree %d) cut: %6.4lf, dim %d, up %d, left %d, right %d\n",
+    printf("(Tree %d) cut: %6.4f, dim %d, up %d, left %d, right %d\n",
       i, r.cut, r.dim, r.parent, r.left_leaf, r.right_leaf);
     printed=1;
   }
@@ -209,7 +209,7 @@ void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany)
 
   b = rcb->Box;
   if (b){
-     printf("Box: (%6.4lf, %6.4lf) (%6.4lf, %6.4lf) (%6.4lf, %6.4lf)\n",
+     printf("Box: (%6.4f, %6.4f) (%6.4f, %6.4f) (%6.4f, %6.4f)\n",
        b->lo[0], b->hi[0],
        b->lo[1], b->hi[1],
        b->lo[2], b->hi[2]);

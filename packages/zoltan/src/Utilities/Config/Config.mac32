@@ -29,7 +29,7 @@ CFLAGS 			= $(DBG_FLAGS)
 
 # To use fortran, MUST USE lam mpi in ~/code/lib-m32/lam-7.1.2.
 # Make sure path to mpif77 points to ~/code/lib-m32/lam-7.1.2/bin/mpif77.
-F90			= mpif77 
+F90			= /Users/kddevin/code/lib-m32/lam-7.1.4/bin/mpif77 
 LOCAL_F90		= gfortran
 F90CFLAGS 		= -DFMANGLE=UNDERSCORE 
 FFLAGS    		= 
@@ -50,5 +50,5 @@ PARMETIS_INCPATH        = -I/Users/kddevin/code/lib-m32/ParMETIS3_1
 #JOSTLE_INCPATH 	= -I/Net/local/proj/zoltan/arch/all/src
 #JOSTLE_SRCPATH 	= /Net/local/proj/zoltan/arch/all/src
 
-#NEMESIS_LIBPATH	= -L/Net/local/proj/zoltan/arch/solaris/lib
-#NEMESIS_INCPATH	= -I/Net/local/proj/zoltan/arch/solaris/include
+NEMESIS_LIBPATH	= -L/Users/kddevin/code/lib-m64/lib
+NEMESIS_INCPATH	= -I/Users/kddevin/code/lib-m64/include

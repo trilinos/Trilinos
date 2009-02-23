@@ -126,8 +126,8 @@ PARMETIS_INCPATH        = -I/Net/local/proj/zoltan/arch/all/src/ParMETIS3
 SCOTCH_LIBPATH           = -L/Net/local/proj/zoltan/arch/linux64/lib/openmpi/Scotch5
 SCOTCH_INCPATH           = -I/Net/local/proj/zoltan/arch/all/src/Scotch5
 
-#NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/linux/lib
-#NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/linux/include
+NEMESIS_LIBPATH		= -L/Net/local/proj/zoltan/arch/linux64/lib
+NEMESIS_INCPATH		= -I/Net/local/proj/zoltan/arch/linux64/include
 
 PATOH_LIBPATH           = -L/Net/local/proj/zoltan/arch/linux64/lib
 PATOH_INCPATH           = -I/Net/local/proj/zoltan/arch/linux64/PaToH

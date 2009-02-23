@@ -65,23 +65,31 @@ int rc;
   Zoltan_Assign_Param_Vals(zz->Params, Graph_Package_params, zz->Debug_Level,
           zz->Proc, zz->Debug_Proc);
 
-#ifdef ZOLTAN_PARMETIS
   if (!strcasecmp(package, "PARMETIS")){
+#ifdef ZOLTAN_PARMETIS
     rc = Zoltan_ParMetis(zz, part_sizes, num_imp, imp_gids, imp_lids,
                          imp_procs, imp_to_part,
                          num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
-  }
-  else
+#else
+    ZOLTAN_PRINT_ERROR(zz->Proc, __func__,
+                       "ParMETIS partitioning was requested but "
+                       "Zoltan was compiled without ParMETIS.\n");
+    rc = ZOLTAN_FATAL;
 #endif /* ZOLTAN_PARMETIS */
+  }
+  else if (!strcasecmp(package, "SCOTCH")){
 #ifdef ZOLTAN_SCOTCH
-  if (!strcasecmp(package, "SCOTCH")){
     rc = Zoltan_Scotch(zz, part_sizes, num_imp, imp_gids, imp_lids,
                          imp_procs, imp_to_part,
                          num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
-  }
-  else
+#else
+    ZOLTAN_PRINT_ERROR(zz->Proc, __func__,
+                       "Scotch partitioning was requested but "
+                       "Zoltan was compiled without Scotch.\n");
+    rc = ZOLTAN_FATAL;
 #endif /* ZOLTAN_SCOTCH */
- if (!strcasecmp(package, "ZOLTAN") ||
+  }
+  else if (!strcasecmp(package, "ZOLTAN") ||
            !strcasecmp(package, "PHG")) {
 
     /* Use hypergraph partitioner on graph model. */
@@ -92,7 +100,8 @@ int rc;
                          num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
   }
   else{
-    fprintf(stderr, "Invalid value for GRAPH_PACKAGE parameter\n");
+    ZOLTAN_PRINT_ERROR(zz->Proc, __func__, 
+                       "Invalid value for GRAPH_PACKAGE parameter\n");
     rc = ZOLTAN_FATAL;
   }
 

@@ -194,16 +194,18 @@ int Zoltan_Preprocess_Graph(
 
   if (prt) {
     prt->part_sizes = prt->input_part_sizes;
+    /* ParMETIS needs prt->part to be allocated, even when num_obj=0. */
+    /* See Zoltan bug 4299. */
+    prt->part = (indextype *)ZOLTAN_MALLOC((gr->num_obj+1) * sizeof(indextype));
+    if (!prt->part) {
+      /* Not enough memory */
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+    }
     if (gr->num_obj >0) {
-      prt->part = (indextype *)ZOLTAN_MALLOC((gr->num_obj+1) * sizeof(indextype));
-      if (!prt->part){
-	/* Not enough memory */
-	ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
-      }
       memcpy (prt->part, prt->input_part, (gr->num_obj) * sizeof(indextype));
     }
     else {
-      prt->input_part = prt->part = NULL;
+      prt->input_part = NULL;
     }
   }
 

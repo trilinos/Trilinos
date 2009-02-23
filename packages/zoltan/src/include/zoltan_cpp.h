@@ -25,6 +25,7 @@
 #include "zoltan.h"
 #include "zoltan_comm_cpp.h"
 #include "zoltan_dd_cpp.h"
+#include <cstdlib>
 
 /* F90 names must be less than 31 characters, support old name */
 #define Set_HG_Size_Edge_Weights_Fn    Set_HG_Size_Edge_Wts_Fn 
@@ -609,7 +610,7 @@ public:
     int rc = Zoltan_Generate_Files( ZZ_Ptr, fn, base_index,
                                   gen_geom, gen_graph, gen_hg );
 
-    free(fn);
+    std::free(fn);
 
     return rc;
   }

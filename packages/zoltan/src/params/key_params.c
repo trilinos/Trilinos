@@ -349,7 +349,7 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
          i, zz->LB.Imbalance_Tol[i]);
   printf("ZOLTAN Parameter %s = %s\n", Key_params[1].name, 
          (zz->Migrate.Auto_Migrate ? "TRUE" : "FALSE"));
-  printf("ZOLTAN Parameter %s = %d\n", Key_params[16].name, 
+  printf("ZOLTAN Parameter %s = %d\n", Key_params[18].name, 
          zz->Migrate.Only_Proc_Changes);
   printf("ZOLTAN Parameter %s = %d\n", Key_params[2].name, 
          zz->Obj_Weight_Dim);
@@ -393,13 +393,13 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
      printf("ZOLTAN Parameter %s = %s\n", Key_params[12].name, "TRUE");
   printf("ZOLTAN Parameter %s = %d\n", Key_params[14].name, 
          zz->LB.Num_Global_Parts_Param);
-  printf("ZOLTAN Parameter %s = %d\n", Key_params[15].name, 
+  printf("ZOLTAN Parameter %s = %d\n", Key_params[16].name, 
          zz->LB.Num_Local_Parts_Param);
-  printf("ZOLTAN Parameter %s = %d\n", Key_params[17].name, 
+  printf("ZOLTAN Parameter %s = %d\n", Key_params[19].name, 
          zz->LB.Remap_Flag);
-  printf("ZOLTAN Parameter %s = %d (%u)\n", Key_params[18].name, 
+  printf("ZOLTAN Parameter %s = %d (%u)\n", Key_params[20].name, 
          Zoltan_Seed(), Zoltan_Seed());
-  printf("ZOLTAN Parameter %s = %s\n", Key_params[19].name, 
+  printf("ZOLTAN Parameter %s = %s\n", Key_params[21].name, 
          zz->LB.Approach);
 }
 

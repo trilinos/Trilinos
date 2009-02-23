@@ -104,6 +104,12 @@ int Zoltan_RB_find_median(
   int     rank=0;                    /* rank in partition (Tflops_Special) */
   int     loopCount=0;
 
+  /* MPI data types and user functions */
+
+  MPI_Op            med_op;
+  MPI_Datatype      med_type;
+  MPI_User_function Zoltan_RB_median_merge;
+
 #ifdef WATCH_MEDIAN_FIND
   char debugText[64];
   double initmin, initmax;
@@ -116,12 +122,6 @@ int Zoltan_RB_find_median(
 #endif
 
   rank = proc - proclower;
-
-  /* MPI data types and user functions */
-
-  MPI_Op            med_op;
-  MPI_Datatype      med_type;
-  MPI_User_function Zoltan_RB_median_merge;
 
 
 /***************************** BEGIN EXECUTION ******************************/

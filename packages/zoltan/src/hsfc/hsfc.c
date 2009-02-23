@@ -502,10 +502,10 @@ int Zoltan_HSFC(
 
    total_stat_time = 0.0;
    if (final_output){
+     int *objSizes = NULL;
      if (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME) {
         start_stat_time = Zoltan_Time(zz->Timer);
         }
-     int *objSizes = NULL;
      if ((ndots > 0) && ((zz->Get_Obj_Size_Multi) || (zz->Get_Obj_Size))){
        
        objSizes = (int *) ZOLTAN_MALLOC(ndots * sizeof(int));
@@ -734,7 +734,7 @@ Partition *p;
   if (data->final_partition){
     p = data->final_partition;
     for (i=0; i< nparts; i++){
-      printf("interval %d: [%6.4lf, %6.4lf), owner %d\n",
+      printf("interval %d: [%6.4f, %6.4f), owner %d\n",
        i, p->l, p->r, p->index);
       p++;
     }
@@ -743,13 +743,13 @@ Partition *p;
     printf("Final partition: NULL\n");
   }
 
-  printf("bbox low: %6.4lf %6.4lf %6.4lf, bbox hi: %6.4lf %6.4lf %6.4lf\n",
+  printf("bbox low: %6.4f %6.4f %6.4f, bbox hi: %6.4f %6.4f %6.4f\n",
      data->bbox_lo[0], data->bbox_lo[1], data->bbox_lo[2],
      data->bbox_hi[0], data->bbox_hi[1], data->bbox_hi[2]);
 
-  printf("extent: %6.4lf %6.4lf %6.4lf, dim: %d, func: %p\n",
+  printf("extent: %6.4f %6.4f %6.4f, dim: %d\n",
       data->bbox_extent[0], data->bbox_extent[1], data->bbox_extent[2],
-      data->ndimension, data->fhsfc);
+      data->ndimension);
 
   Zoltan_Print_Transformation(&(data->tran));
 }
@@ -825,6 +825,7 @@ double *gpartWgt = NULL;
     static int nRuns=0;
     static double balsum, balmax, balmin;
     static double movesum, movemax, movemin;
+    char *countType;
 
     max_imbal = 0.0;
 
@@ -853,7 +854,7 @@ double *gpartWgt = NULL;
       balmax = balmin = balsum = bal;
     }
 
-    char *countType = "moveCnt";
+    countType = "moveCnt";
     if (obj_sizes){
       countType = "moveVol";
     }
