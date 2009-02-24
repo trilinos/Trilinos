@@ -420,7 +420,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
           MESSAGE("\nRunning coverage for package '${PACKAGE}' ...\n")
           CTEST_COVERAGE(BUILD "${CTEST_BINARY_DIRECTORY}")
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT(PARTS Test
+            CTEST_SUBMIT(PARTS Coverage
               #${SUBMIT_APPEND_ARG}
               )
           ENDIF()
