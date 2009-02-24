@@ -311,17 +311,17 @@ int main(int argc, char* argv[])
   {
     for(j = 0; j < hugeSize; j++)
     {
-      MultTestHugeA(i, j) = i;
-      MultTestHugeB(i, j) = j;
-      MultTestHugeATimesHugeBExpResult(i, j) = -1.0; // ToDo: Fix for the smaller size
+      MultTestHugeA(i, j) = j;
+      MultTestHugeB(i, j) = i;
+      MultTestHugeATimesHugeBExpResult(i, j) = 328350;
     }
   }
   
   MultTestHugeATimesHugeB.multiply(Teuchos::NO_TRANS, Teuchos::NO_TRANS, 1.0,
     MultTestHugeA, MultTestHugeB, 1.0);
-  //numberFailedTests += PrintTestResults(
-  //  "multiply() -- mult. results -- huge * huge",
-  //  MultTestHugeATimesHugeB, MultTestHugeATimesHugeBExpResult, verbose);
+  numberFailedTests += PrintTestResults(
+    "multiply() -- mult. results -- huge * huge",
+    MultTestHugeATimesHugeB, MultTestHugeATimesHugeBExpResult, verbose);
 
   //
   //  Check scale methods.
