@@ -10,13 +10,14 @@ Active items:
 define HAVE_LAPACK_GGEV/GEEV.  See the file teuchos/config/acx_ggev.m4.
 
 (*) [Ross and Brent] Get new CTest/CDash driver working:
-- Add back compression of CMakeCache.txt file that is submitted as notes
+- Get MySQL database 'trilinos-cdash' and CDash server moved over to a new
+server machine.
 - Automatically read in the list of packages and deal correctly with
 Primary and Secondary Stable enables (see below)
-- Add more important test cases
-- Get coverage testing working
-- Get memory testing working (for limited packages only for now)
-- Add intel tests
+- Get segmented coverage testing working (see tracker item 0008579)
+- Get segmented memory testing working ()
+- Add more important test cases (tests on mac, etc.)
+- Get package-specific emails sent out
 
 
 Backlog:

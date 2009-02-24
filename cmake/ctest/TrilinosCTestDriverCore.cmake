@@ -125,18 +125,18 @@ MACRO(TRILINOS_CTEST_DRIVER)
     )
   # ToDo: Read this list from TrilinosPackages.cmake
 
-  # Allow override from the specific use case or from the environment
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_PACKAGES "${Trilinos_PACKAGES_DEFAULT}" )
-
   #
   # Variables that can be set by the platform-specific code and reset
   # from the environment
   #
+
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_PACKAGES "${Trilinos_PACKAGES_DEFAULT}" )
   
   SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
   
   SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
 
+  # You almost never need to override this from the ENV
   SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
  
   SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_NAME
@@ -161,6 +161,8 @@ MACRO(TRILINOS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
   
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
+
+  SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND valgrind )
   
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
 

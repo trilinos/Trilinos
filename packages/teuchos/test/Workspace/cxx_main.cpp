@@ -85,14 +85,19 @@ int main( int argc, char* argv[] )
   try {
 
     // Read options from the commandline
-    double rel_proc_speed   = 1.0;
-    int  size               = 1;
-    bool allocate_workspace = true;
     CommandLineProcessor  clp(false); // Don't throw exceptions
+
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not." );
-    clp.setOption( "rel-proc-speed", &rel_proc_speed, "Relative processor speed." );
+
+    double rel_proc_speed = 1e-5; // Should 
+    clp.setOption( "rel-proc-speed", &rel_proc_speed, "Relative processor speed (try around 1.0 for timing)." );
+
+    int size = 1;
     clp.setOption( "size", &size, "Size of memory blocks created." );
+
+    bool allocate_workspace = true;
     clp.setOption( "allocate-workspace", "no-allocate-workspace", &allocate_workspace, "Preallocate workspace or not." );
+
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 

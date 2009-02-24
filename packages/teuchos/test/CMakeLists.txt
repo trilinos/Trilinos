@@ -2,11 +2,12 @@
 # Required modules
 INCLUDE(PackageAddExecutableAndTest)
 
-ADD_SUBDIRECTORY(UnitTest)
-ADD_SUBDIRECTORY(TabularOutputter)
-ADD_SUBDIRECTORY(MemoryManagement)
 ADD_SUBDIRECTORY(Comm)
 ADD_SUBDIRECTORY(DenseMatrix)
+ADD_SUBDIRECTORY(MemoryManagement)
+ADD_SUBDIRECTORY(TabularOutputter)
+ADD_SUBDIRECTORY(UnitTest)
+ADD_SUBDIRECTORY(Workspace)
 ADD_SUBDIRECTORY(exit)
 
 # Test definitions
@@ -96,20 +97,6 @@ PACKAGE_ADD_TEST(
   NUM_MPI_PROCS 1
   COMM serial mpi
   STANDARD_PASS_OUTPUT
-  )
-
-PACKAGE_ADD_EXECUTABLE(
-  Workspace_test  
-  COMM serial mpi  
-  SOURCES cxx_main.cpp 
-  DIRECTORY Workspace
-  )
-PACKAGE_ADD_TEST(
-  Workspace_test
-  DIRECTORY Workspace
-  NAME Workspace_test
-  NUM_MPI_PROCS 1
-  COMM serial mpi
   )
 
 PACKAGE_ADD_EXECUTABLE(

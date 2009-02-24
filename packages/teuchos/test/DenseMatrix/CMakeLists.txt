@@ -8,6 +8,7 @@ IF (${PACKAGE_NAME}_ENABLE_COMPLEX)
     SOURCES cxx_main.cpp
     NUM_MPI_PROCS 1
     COMM serial mpi
+    ARGS -v
     STANDARD_PASS_OUTPUT
     )
 
