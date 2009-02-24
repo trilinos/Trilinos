@@ -1,15 +1,16 @@
 INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(
+  CompareWithAztecOO
+  Container
+  CrsRiluk
+  IC
+  ILU
   IlukGraph
-  #SetParameters
-  #CompareWithAztecOO
-  #Container
-  #OverlappingRowMatrix
-  #PreconditionerFactory
-  #Relaxation
-  #ILU
-  #IC
+  OverlappingRowMatrix
+  PreconditionerFactory
+  Relaxation
+  SetParameters
+  TestAll
   #UseTranspose
-  #TestAll
   )

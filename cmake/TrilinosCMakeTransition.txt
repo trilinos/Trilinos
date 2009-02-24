@@ -301,9 +301,9 @@ Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
 Status: Basic libraries and several tests and examples
 
-Final Certification Date: [???]
+Final Certification Date: 2/24/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests and examples ran and worked on mac os X
 
 -------------------------------------------------------------------------------
 
