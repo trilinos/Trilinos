@@ -46,19 +46,25 @@ namespace Rythmos {
   /*
    * This is the canonical Sine Cosine differential equation \ddot{x} = -x with a few enhancements.
    * We start with the exact solution to the differential equation as:
-   * x0(t) = a + b*sin(f*t+phi)
-   * x1(t) =   b*f*cos(f*t+phi)
+   * x0(t) = a + b*sin((f/L)*t+phi)
+   * x1(t) =   b*(f/L)*cos((f/L)*t+phi)
    * Then the form of the model is:
    * d/dt x0(t) = x1(t)
-   * d/dt x1(t) = f*f*(a-x0(t)) [a=0,f=1]
+   * d/dt x1(t) = (f/L)*(f/L)*(a-x0(t)) [a=0,f=1,L=1]
    * With Initial conditions:
    * x0(t0) = gamma0 [0.0]
    * x1(t0) = gamma1 [1.0]
    * We can use gamma0 and gamma1 to solve for phi and b:
-   * phi = atan((f/gamma1)*(gamma0-a))-f*t0 [0.0]
-   * b = gamma1/(f*cos(f*t0+phi)) [1.0]
-   * Therefore this model has two model parameters and two initial conditions
+   * phi = atan(((f/L)/gamma1)*(gamma0-a))-(f/L)*t0 [0.0]
+   * b = gamma1/((f/L)*cos((f/L)*t0+phi)) [1.0]
+   * Therefore this model has three model parameters and two initial conditions
    * which effect the exact solution as above.
+   * p = (a, f, L)
+   *
+   * \dot{x}=F(x,t,p)
+   * F_0 = x0
+   * F_1 = (f/L)^2*(a-x0)
+   *
    */
 
 class SinCosModel 
@@ -160,6 +166,7 @@ private:
   //                            x_1(t) = b*f*cos(f*t+phi)
   double a_; // This is a model parameter 
   double f_; // This is a model parameter
+  double L_; // This is a model parameter
   double phi_; // This is a parameter determined from the IC
   double b_; // This is a parameter determined from the IC
   double t0_ic_; // This is the time value where the initial condition is specified

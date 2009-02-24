@@ -58,6 +58,9 @@ namespace {
   const std::string Coeff_f_name = "Coeff f";
   const double Coeff_f_default = 1.0;
 
+  const std::string Coeff_L_name = "Coeff L";
+  const double Coeff_L_default = 1.0;
+
   const std::string IC_x0_name = "IC x_0";
   const double IC_x0_default = 0.0;
 
@@ -92,7 +95,7 @@ SinCosModel::SinCosModel()
   isInitialized_ = false;
   dim_ = 2;
   Np_ = 1; // Number of parameter vectors (1)
-  np_ = 2; // Number of parameters in this vector (2)
+  np_ = 3; // Number of parameters in this vector (3)
   Ng_ = 1; // Number of observation functions (1)
   ng_ = 1; // Number of elements in this observation function (1)
   isImplicit_ = Implicit_default;
@@ -100,6 +103,7 @@ SinCosModel::SinCosModel()
   haveIC_ = HaveIC_default;
   a_ = Coeff_a_default;
   f_ = Coeff_f_default;
+  L_ = Coeff_L_default;
   x0_ic_ = IC_x0_default;
   x1_ic_ = IC_x1_default;
   t0_ic_ = IC_t0_default;
@@ -133,16 +137,16 @@ ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSolution(double t) const
   RCP<VectorBase<double> > exact_x = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<double> exact_x_view(*exact_x);
-    exact_x_view[0] = a_+b_*sin(f_*t+phi_);
-    exact_x_view[1] = b_*f_*cos(f_*t+phi_);
+    exact_x_view[0] = a_+b_*sin((f_/L_)*t+phi_);
+    exact_x_view[1] = b_*(f_/L_)*cos((f_/L_)*t+phi_);
   }
   inArgs.set_x(exact_x);
   if (isImplicit_) {
     RCP<VectorBase<double> > exact_x_dot = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<double> exact_x_dot_view(*exact_x_dot);
-      exact_x_dot_view[0] = b_*f_*cos(f_*t+phi_);
-      exact_x_dot_view[1] = -b_*f_*f_*sin(f_*t+phi_);
+      exact_x_dot_view[0] = b_*(f_/L_)*cos((f_/L_)*t+phi_);
+      exact_x_dot_view[1] = -b_*(f_/L_)*(f_/L_)*sin((f_/L_)*t+phi_);
     }
     inArgs.set_x_dot(exact_x_dot);
   }
@@ -169,9 +173,12 @@ ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSensSolution(int j, doub
     if (j == 0) { // dx/da
       exact_s_view[0] = 1.0;
       exact_s_view[1] = 0.0;
-    } else { // dx/df
-      exact_s_view[0] = b_*t*cos(f_*t+phi_);
-      exact_s_view[1] = -b_*f_*t*sin(f_*t+phi_);
+    } else if (j == 1) { // dx/df
+      exact_s_view[0] = (b_/L_)*t*cos((f_/L_)*t+phi_);
+      exact_s_view[1] = (b_/L_)*cos((f_/L_)*t+phi_)-(b_*f_*t/(L_*L_))*sin((f_/L_)*t+phi_);
+    } else { // dx/dL
+      exact_s_view[0] = -(b_*f_*t/(L_*L_))*cos((f_/L_)*t+phi_);
+      exact_s_view[1] = -(b_*f_/(L_*L_))*cos((f_/L_)*t+phi_)+(b_*f_*f_*t/(L_*L_*L_))*sin((f_/L_)*t+phi_);
     }
   }
   inArgs.set_x(exact_s);
@@ -182,9 +189,12 @@ ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSensSolution(int j, doub
       if (j == 0) { // dxdot/da
         exact_s_dot_view[0] = 0.0;
         exact_s_dot_view[1] = 0.0;
-      } else { // dxdot/df
-        exact_s_dot_view[0] = b_*cos(f_*t+phi_) - b_*f_*t*sin(f_*t+phi_);
-        exact_s_dot_view[1] = -2.0*b_*f_*sin(f_*t+phi_) - b_*f_*f_*t*cos(f_*t+phi_);
+      } else if (j == 1) { // dxdot/df
+        exact_s_dot_view[0] = (b_/L_)*cos((f_/L_)*t+phi_)-(b_*f_*t/(L_*L_))*sin((f_/L_)*t+phi_);
+        exact_s_dot_view[1] = -(2.0*b_*f_/(L_*L_))*sin((f_/L_)*t+phi_)-(b_*f_*f_*t/(L_*L_*L_))*cos((f_/L_)*t+phi_);
+      } else { // dxdot/dL
+        exact_s_dot_view[0] = -(b_*f_/(L_*L_))*cos((f_/L_)*t+phi_)+(b_*f_*f_*t/(L_*L_*L_))*sin((f_/L_)*t+phi_);
+        exact_s_dot_view[1] = (2.0*b_*f_*f_/(L_*L_*L_))*sin((f_/L_)*t+phi_)+(b_*f_*f_*f_*t/(L_*L_*L_*L_))*cos((f_/L_)*t+phi_);
       }
     }
     inArgs.set_x_dot(exact_s_dot);
@@ -332,11 +342,13 @@ void SinCosModel::evalModelImpl(
   //double t = inArgs.get_t();
   double a = a_;
   double f = f_;
+  double L = L_;
   if (acceptModelParams_) {
     const RCP<const VectorBase<double> > p_in = inArgs.get_p(0).assert_not_null();
     Thyra::ConstDetachedVectorView<double> p_in_view( *p_in ); 
     a = p_in_view[0];
     f = p_in_view[1];
+    L = p_in_view[2];
   }
 
   RCP<const VectorBase<double> > x_dot_in;
@@ -359,44 +371,48 @@ void SinCosModel::evalModelImpl(
     if (!is_null(f_out)) {
       Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
       f_out_view[0] = x_in_view[1];
-      f_out_view[1] = f*f*(a-x_in_view[0]);
+      f_out_view[1] = (f/L)*(f/L)*(a-x_in_view[0]);
     }
     if (!is_null(W_out)) {
       RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_out,true);
       Thyra::DetachedMultiVectorView<double> matrix_view( *matrix );
       matrix_view(0,0) = 0.0;
       matrix_view(0,1) = +beta;
-      matrix_view(1,0) = -beta*f*f;
+      matrix_view(1,0) = -beta*(f/L)*(f/L);
       matrix_view(1,1) = 0.0;
     }
     if (!is_null(DfDp_out)) {
       Thyra::DetachedMultiVectorView<double> DfDp_out_view( *DfDp_out );
       DfDp_out_view(0,0) = 0.0;
       DfDp_out_view(0,1) = 0.0;
-      DfDp_out_view(1,0) = f*f;
-      DfDp_out_view(1,1) = 2.0*f*(a-x_in_view[0]);
+      DfDp_out_view(0,2) = 0.0;
+      DfDp_out_view(1,0) = (f/L)*(f/L);
+      DfDp_out_view(1,1) = (2.0*f/(L*L))*(a-x_in_view[0]);
+      DfDp_out_view(1,2) = -(2.0*f*f/(L*L*L))*(a-x_in_view[0]);
     }
   } else { // isImplicit_ == true
     if (!is_null(f_out)) {
       Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
       Thyra::ConstDetachedVectorView<double> x_dot_in_view( *x_dot_in );
       f_out_view[0] = x_dot_in_view[0] - x_in_view[1];
-      f_out_view[1] = x_dot_in_view[1] - f*f*(a-x_in_view[0]);
+      f_out_view[1] = x_dot_in_view[1] - (f/L)*(f/L)*(a-x_in_view[0]);
     }
     if (!is_null(W_out)) {
       RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_out,true);
       Thyra::DetachedMultiVectorView<double> matrix_view( *matrix );
       matrix_view(0,0) = alpha;
       matrix_view(0,1) = -beta;
-      matrix_view(1,0) = +beta*f*f;
+      matrix_view(1,0) = +beta*(f/L)*(f/L);
       matrix_view(1,1) = alpha;
     }
     if (!is_null(DfDp_out)) {
       Thyra::DetachedMultiVectorView<double> DfDp_out_view( *DfDp_out );
       DfDp_out_view(0,0) = 0.0;
       DfDp_out_view(0,1) = 0.0;
-      DfDp_out_view(1,0) = -f*f;
-      DfDp_out_view(1,1) = -2.0*f*(a-x_in_view[0]);
+      DfDp_out_view(0,2) = 0.0;
+      DfDp_out_view(1,0) = -(f/L)*(f/L);
+      DfDp_out_view(1,1) = -(2.0*f/(L*L))*(a-x_in_view[0]);
+      DfDp_out_view(1,2) = +(2.0*f*f/(L*L*L))*(a-x_in_view[0]);
     }
   }
 }
@@ -424,6 +440,7 @@ RCP<const Teuchos::Array<std::string> > SinCosModel::get_p_names(int l) const
     Teuchos::rcp(new Teuchos::Array<std::string>());
   p_strings->push_back("Model Coefficient:  a");
   p_strings->push_back("Model Coefficient:  f");
+  p_strings->push_back("Model Coefficient:  L");
   return p_strings;
 }
 
@@ -478,8 +495,8 @@ void SinCosModel::setupInOutArgs_()
       const RCP<VectorBase<double> > x_ic = createMember(x_space_);
       { // scope to delete DetachedVectorView
         Thyra::DetachedVectorView<double> x_ic_view( *x_ic );
-        x_ic_view[0] = a_+b_*sin(f_*t0_ic_+phi_);
-        x_ic_view[1] = b_*f_*cos(f_*t0_ic_+phi_);
+        x_ic_view[0] = a_+b_*sin((f_/L_)*t0_ic_+phi_);
+        x_ic_view[1] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
       }
       nominalValues_.set_x(x_ic);
       if (acceptModelParams_) {
@@ -488,6 +505,7 @@ void SinCosModel::setupInOutArgs_()
           Thyra::DetachedVectorView<double> p_ic_view( *p_ic );
           p_ic_view[0] = a_;
           p_ic_view[1] = f_;
+          p_ic_view[2] = L_;
         }
         nominalValues_.set_p(0,p_ic);
       }
@@ -495,8 +513,8 @@ void SinCosModel::setupInOutArgs_()
         const RCP<VectorBase<double> > x_dot_ic = createMember(x_space_);
         { // scope to delete DetachedVectorView
           Thyra::DetachedVectorView<double> x_dot_ic_view( *x_dot_ic );
-          x_dot_ic_view[0] = b_*f_*cos(f_*t0_ic_+phi_);
-          x_dot_ic_view[1] = -b_*f_*f_*sin(f_*t0_ic_+phi_);
+          x_dot_ic_view[0] = b_*(f_/L_)*cos((f_/L_)*t0_ic_+phi_);
+          x_dot_ic_view[1] = -b_*(f_/L_)*(f_/L_)*sin((f_/L_)*t0_ic_+phi_);
         }
         nominalValues_.set_x_dot(x_dot_ic);
       }
@@ -528,6 +546,7 @@ void SinCosModel::setParameterList(RCP<ParameterList> const& paramList)
   haveIC_ = haveIC;
   a_ = get<double>(*pl,Coeff_a_name);
   f_ = get<double>(*pl,Coeff_f_name);
+  L_ = get<double>(*pl,Coeff_L_name);
   x0_ic_ = get<double>(*pl,IC_x0_name);
   x1_ic_ = get<double>(*pl,IC_x1_name);
   t0_ic_ = get<double>(*pl,IC_t0_name);
@@ -552,6 +571,10 @@ RCP<const ParameterList> SinCosModel::getValidParameters() const
         &*pl 
         );
     Teuchos::setDoubleParameter(
+        Coeff_L_name, Coeff_L_default, "Coefficient L in model", 
+        &*pl 
+        );
+    Teuchos::setDoubleParameter(
         IC_x0_name, IC_x0_default, "Initial Condition for x0", 
         &*pl 
         );
@@ -570,8 +593,8 @@ RCP<const ParameterList> SinCosModel::getValidParameters() const
 
 void SinCosModel::calculateCoeffFromIC_() 
 {
-  phi_ = atan((f_/x1_ic_)*(x0_ic_-a_))-f_*t0_ic_;
-  b_ = x1_ic_/(f_*cos(f_*t0_ic_+phi_));
+  phi_ = atan(((f_/L_)/x1_ic_)*(x0_ic_-a_))-(f_/L_)*t0_ic_;
+  b_ = x1_ic_/((f_/L_)*cos((f_/L_)*t0_ic_+phi_));
 }
 
 } // namespace Rythmos

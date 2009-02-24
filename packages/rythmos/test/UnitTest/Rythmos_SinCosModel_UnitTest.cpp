@@ -91,6 +91,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, nominalValues ) {
     pl->set("Accept model parameters",true);
     pl->set("Coeff a",25.0);
     pl->set("Coeff f",10.0);
+    pl->set("Coeff L",3.0);
     explicit_model->setParameterList(pl);
     MEB::InArgs<double> explicit_ic = explicit_model->getNominalValues();
     TEST_EQUALITY_CONST( explicit_ic.supports(MEB::IN_ARG_t), true );
@@ -110,6 +111,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, nominalValues ) {
     RCP<const VectorBase<double> > explicit_ic_p = explicit_ic.get_p(0);
     TEST_EQUALITY_CONST( Thyra::get_ele(*explicit_ic_p,0), 25.0 );
     TEST_EQUALITY_CONST( Thyra::get_ele(*explicit_ic_p,1), 10.0 );
+    TEST_EQUALITY_CONST( Thyra::get_ele(*explicit_ic_p,2),  3.0 );
   }
   
   {
@@ -181,11 +183,14 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, p_names ) {
   pl->set("Accept model parameters", true);
   model->setParameterList(pl);
   RCP<const Teuchos::Array<std::string> > p_names;
+#ifdef TEUCHOS_DEBUG
   TEST_THROW( p_names = model->get_p_names(1), std::logic_error );
+#endif // TEUCHOS_DEBUG
   p_names = model->get_p_names(0);
-  TEST_EQUALITY_CONST( Teuchos::as<int>(p_names->size()), 2 );
+  TEST_EQUALITY_CONST( Teuchos::as<int>(p_names->size()), 3 );
   TEST_EQUALITY_CONST( (*p_names)[0], "Model Coefficient:  a" );
   TEST_EQUALITY_CONST( (*p_names)[1], "Model Coefficient:  f" );
+  TEST_EQUALITY_CONST( (*p_names)[2], "Model Coefficient:  L" );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, spaces ) {
@@ -197,15 +202,19 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, spaces ) {
     TEST_EQUALITY_CONST( f_space->dim(), 2 );
     RCP<const Thyra::VectorSpaceBase<double> > g_space = explicit_model->get_g_space(0);
     TEST_EQUALITY_CONST( g_space->dim(), 1 );
+#ifdef TEUCHOS_DEBUG
     TEST_THROW( explicit_model->get_g_space(1), std::logic_error );
+#endif // TEUCHOS_DEBUG
     RCP<const Thyra::VectorSpaceBase<double> > p_space = explicit_model->get_p_space(0);
     TEST_EQUALITY_CONST( is_null(p_space), true );
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->set("Accept model parameters",true);
     explicit_model->setParameterList(pl);
     p_space = explicit_model->get_p_space(0);
-    TEST_EQUALITY_CONST( p_space->dim(), 2 );
+    TEST_EQUALITY_CONST( p_space->dim(), 3 );
+#ifdef TEUCHOS_DEBUG
     TEST_THROW( explicit_model->get_p_space(1), std::logic_error );
+#endif // TEUCHOS_DEBUG
   }
   {
     RCP<ParameterList> pl = Teuchos::parameterList();
@@ -217,14 +226,18 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, spaces ) {
     TEST_EQUALITY_CONST( f_space->dim(), 2 );
     RCP<const Thyra::VectorSpaceBase<double> > g_space = implicit_model->get_g_space(0);
     TEST_EQUALITY_CONST( g_space->dim(), 1 );
+#ifdef TEUCHOS_DEBUG
     TEST_THROW( implicit_model->get_g_space(1), std::logic_error );
+#endif // TEUCHOS_DEBUG
     RCP<const Thyra::VectorSpaceBase<double> > p_space = implicit_model->get_p_space(0);
     TEST_EQUALITY_CONST( is_null(p_space), true );
     pl->set("Accept model parameters",true);
     implicit_model->setParameterList(pl);
     p_space = implicit_model->get_p_space(0);
-    TEST_EQUALITY_CONST( p_space->dim(), 2 );
+    TEST_EQUALITY_CONST( p_space->dim(), 3 );
+#ifdef TEUCHOS_DEBUG
     TEST_THROW( implicit_model->get_p_space(1), std::logic_error );
+#endif // TEUCHOS_DEBUG
   }
 }
 
@@ -294,14 +307,16 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSolution ) {
 
   double a = 1.0; // [0.0]
   double f = 3.0; // [1.0]
+  double L = 4.0; // [1.0]
   double x0 = 0.5; // [0.0]
   double x1 = 1.4; // [1.0]
   double t0 = 0.333; // [0.0]
-  double phi = atan((f/x1)*(x0-a))-f*t0; 
-  double b = x1/(f*cos(f*t0+phi));
+  double phi = atan(((f/L)/x1)*(x0-a))-(f/L)*t0; 
+  double b = x1/((f/L)*cos((f/L)*t0+phi));
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->set("Coeff a", a);
   pl->set("Coeff f", f);
+  pl->set("Coeff L", L);
   pl->set("IC x_0", x0);
   pl->set("IC x_1", x1);
   pl->set("IC t_0", t0);
@@ -319,8 +334,8 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSolution ) {
       MEB::InArgs<double> exact_sol = explicit_model->getExactSolution(t_values[i]);
       TEST_FLOATING_EQUALITY( exact_sol.get_t(), t_values[i], tol );
       RCP<const VectorBase<double> > x = exact_sol.get_x();
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,0), a+b*sin(f*t_values[i]+phi), tol );
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,1), b*f*cos(f*t_values[i]+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,0), a+b*sin((f/L)*t_values[i]+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,1), b*(f/L)*cos((f/L)*t_values[i]+phi), tol );
       TEST_EQUALITY_CONST( exact_sol.get_beta(), 0.0 );
     }
   }
@@ -338,17 +353,25 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSolution ) {
       MEB::InArgs<double> exact_sol = implicit_model->getExactSolution(t_values[i]);
       TEST_FLOATING_EQUALITY( exact_sol.get_t(), t_values[i], tol );
       RCP<const VectorBase<double> > x = exact_sol.get_x();
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,0), a+b*sin(f*t_values[i]+phi), tol );
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,1), b*f*cos(f*t_values[i]+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,0), a+b*sin((f/L)*t_values[i]+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,1), b*(f/L)*cos((f/L)*t_values[i]+phi), tol );
       RCP<const VectorBase<double> > x_dot = exact_sol.get_x_dot();
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x_dot,0), b*f*cos(f*t_values[i]+phi), tol );
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x_dot,1), -b*f*f*sin(f*t_values[i]+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x_dot,0), b*(f/L)*cos((f/L)*t_values[i]+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*x_dot,1), -b*(f/L)*(f/L)*sin((f/L)*t_values[i]+phi), tol );
       TEST_EQUALITY_CONST( exact_sol.get_alpha(), 0.0 );
       TEST_EQUALITY_CONST( exact_sol.get_beta(), 0.0 );
     }
   }
 }
 
+/* x_0(t) = a + b*sin((f/L)*t+phi)
+ * x_1(t) = b*(f/L)*cos((f/L)*t+phi)
+ *
+ * xdot_0(t) = b*(f/L)*cos((f/L)*t+phi)
+ * xdot_1(t) = -b*(f/L)^2*sin((f/L)*t+phi)
+ *
+ * p = (a,f,L)
+ */
 TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSensSolution ) {
   std::vector<double> t_values;
   int N = 10;
@@ -361,15 +384,17 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSensSolution ) {
 
   double a = 1.0; // [0.0]
   double f = 3.0; // [1.0]
+  double L = 4.0; // [1.0]
   double x0 = 0.5; // [0.0]
   double x1 = 1.4; // [1.0]
   double t0 = 0.333; // [0.0]
-  double phi = atan((f/x1)*(x0-a))-f*t0; 
-  double b = x1/(f*cos(f*t0+phi));
+  double phi = atan(((f/L)/x1)*(x0-a))-(f/L)*t0; 
+  double b = x1/((f/L)*cos((f/L)*t0+phi));
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->set("Accept model parameters",true);
   pl->set("Coeff a", a);
   pl->set("Coeff f", f);
+  pl->set("Coeff L", L);
   pl->set("IC x_0", x0);
   pl->set("IC x_1", x1);
   pl->set("IC t_0", t0);
@@ -383,10 +408,16 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSensSolution ) {
       RCP<const VectorBase<double> > sens = exact_sol.get_x();
       TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,0), 1.0, tol );
       TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,1), 0.0, tol );
+
       exact_sol = explicit_model->getExactSensSolution(1,t_values[i]);
       sens = exact_sol.get_x();
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,0), b*t*cos(f*t+phi), tol );
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,1), -b*f*t*sin(f*t+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,0), (b*t/L)*cos((f/L)*t+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,1), (b/L)*cos((f/L)*t+phi)-(b*f*t/(L*L))*sin((f/L)*t+phi), tol );
+
+      exact_sol = explicit_model->getExactSensSolution(2,t_values[i]);
+      sens = exact_sol.get_x();
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,0), -(b*f*t/(L*L))*cos((f/L)*t+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,1), -(b*f/(L*L))*cos((f/L)*t+phi)+(b*f*f*t/(L*L*L))*sin((f/L)*t+phi), tol );
     }
   }
   {
@@ -405,12 +436,19 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSensSolution ) {
 
       exact_sol = implicit_model->getExactSensSolution(1,t);
       sens = exact_sol.get_x();
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,0), b*t*cos(f*t+phi), tol );
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,1), -b*f*t*sin(f*t+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,0), (b*t/L)*cos((f/L)*t+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,1), (b/L)*cos((f/L)*t+phi)-(b*f*t/(L*L))*sin((f/L)*t+phi), tol );
       sens_dot = exact_sol.get_x_dot();
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens_dot,0), b*cos(f*t+phi)-b*f*t*sin(f*t+phi),  tol );
-      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens_dot,1), -2.0*b*f*sin(f*t+phi)-b*f*f*t*cos(f*t+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens_dot,0), (b/L)*cos((f/L)*t+phi)-(b*f*t/(L*L))*sin((f/L)*t+phi),  tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens_dot,1), -(2.0*b*f/(L*L))*sin((f/L)*t+phi)-(b*f*f*t/(L*L*L))*cos((f/L)*t+phi), tol );
 
+      exact_sol = implicit_model->getExactSensSolution(2,t);
+      sens = exact_sol.get_x();
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,0), -(b*f*t/(L*L))*cos((f/L)*t+phi), tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens,1), -(b*f/(L*L))*cos((f/L)*t+phi)+(b*f*f*t/(L*L*L))*sin((f/L)*t+phi), tol );
+      sens_dot = exact_sol.get_x_dot();
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens_dot,0), -(b*f/(L*L))*cos((f/L)*t+phi)+(b*f*f*t/(L*L*L))*sin((f/L)*t+phi),  tol );
+      TEST_FLOATING_EQUALITY( Thyra::get_ele(*sens_dot,1), +(2.0*b*f*f/(L*L*L))*sin((f/L)*t+phi)+(b*f*f*f*t/(L*L*L*L))*cos((f/L)*t+phi), tol );
     }
   }
 }
@@ -418,10 +456,12 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSensSolution ) {
 TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalexplicitModel ) {
   double a = 2.0;
   double freq = 3.0;
+  double L = 4.0;
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->set("Implicit model formulation", false);
   pl->set("Coeff a", a);
   pl->set("Coeff f", freq);
+  pl->set("Coeff L", L);
   { // Explicit model, just load f.
     RCP<SinCosModel> explicit_model = sinCosModel();
     explicit_model->setParameterList(pl);
@@ -443,7 +483,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalexplicitModel ) {
     explicit_model->evalModel(inArgs,outArgs);
 
     TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), 6.0 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), freq*freq*(a-5.0) );
+    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), (freq/L)*(freq/L)*(a-5.0) );
   }
   { // Explicit model, load f and W_op
     RCP<SinCosModel> explicit_model = sinCosModel();
@@ -470,13 +510,13 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalexplicitModel ) {
     explicit_model->evalModel(inArgs,outArgs);
 
     TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), 6.0 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), freq*freq*(a-5.0) );
+    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), (freq/L)*(freq/L)*(a-5.0) );
 
     RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_op);
     Thyra::DetachedMultiVectorView<double> matrix_view(*matrix);
     TEST_EQUALITY_CONST( matrix_view(0,0), 0.0 );
     TEST_EQUALITY_CONST( matrix_view(0,1), 7.0 );
-    TEST_EQUALITY_CONST( matrix_view(1,0), -freq*freq*7.0 );
+    TEST_EQUALITY_CONST( matrix_view(1,0), -(freq/L)*(freq/L)*7.0 );
     TEST_EQUALITY_CONST( matrix_view(1,1), 0.0 );
   }
   { // Explicit model, just load W_op
@@ -505,7 +545,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalexplicitModel ) {
     Thyra::DetachedMultiVectorView<double> matrix_view(*matrix);
     TEST_EQUALITY_CONST( matrix_view(0,0), 0.0 );
     TEST_EQUALITY_CONST( matrix_view(0,1), 7.0 );
-    TEST_EQUALITY_CONST( matrix_view(1,0), -freq*freq*7.0 );
+    TEST_EQUALITY_CONST( matrix_view(1,0), -(freq/L)*(freq/L)*7.0 );
     TEST_EQUALITY_CONST( matrix_view(1,1), 0.0 );
   }
 
@@ -514,10 +554,12 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalexplicitModel ) {
 TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalImplicitModel ) {
   double a = 2.0;
   double freq = 3.0;
+  double L = 4.0;
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->set("Implicit model formulation", true);
   pl->set("Coeff a", a);
   pl->set("Coeff f", freq);
+  pl->set("Coeff L", L);
   { // Implicit model, just load f.
     RCP<SinCosModel> implicit_model = sinCosModel();
     implicit_model->setParameterList(pl);
@@ -546,7 +588,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalImplicitModel ) {
     implicit_model->evalModel(inArgs,outArgs);
 
     TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), 8.0 - 6.0 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), 9.0 - freq*freq*(a-5.0) );
+    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), 9.0 - (freq/L)*(freq/L)*(a-5.0) );
   }
   { // Implicit model, load f and W_op
     RCP<SinCosModel> implicit_model = sinCosModel();
@@ -582,13 +624,13 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalImplicitModel ) {
     implicit_model->evalModel(inArgs,outArgs);
 
     TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), 8.0 - 6.0 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), 9.0 - freq*freq*(a-5.0) );
+    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), 9.0 - (freq/L)*(freq/L)*(a-5.0) );
 
     RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_op);
     Thyra::DetachedMultiVectorView<double> matrix_view(*matrix);
     TEST_EQUALITY_CONST( matrix_view(0,0), 11.0 );
     TEST_EQUALITY_CONST( matrix_view(0,1), -7.0 );
-    TEST_EQUALITY_CONST( matrix_view(1,0), freq*freq*7.0 );
+    TEST_EQUALITY_CONST( matrix_view(1,0), (freq/L)*(freq/L)*7.0 );
     TEST_EQUALITY_CONST( matrix_view(1,1), 11.0 );
   }
   { // Implicit model, just load W_op
@@ -626,7 +668,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalImplicitModel ) {
     Thyra::DetachedMultiVectorView<double> matrix_view(*matrix);
     TEST_EQUALITY_CONST( matrix_view(0,0), 11.0 );
     TEST_EQUALITY_CONST( matrix_view(0,1), -7.0 );
-    TEST_EQUALITY_CONST( matrix_view(1,0), freq*freq*7.0 );
+    TEST_EQUALITY_CONST( matrix_view(1,0), (freq/L)*(freq/L)*7.0 );
     TEST_EQUALITY_CONST( matrix_view(1,1), 11.0 );
   }
 
@@ -652,11 +694,13 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, modelParams ) {
     inArgs.set_x(x);
     double a = 25.0;
     double freq = 10.0;
+    double L = 3.0;
     RCP<VectorBase<double> > p = Thyra::createMember(model->get_p_space(0));
     {
       Thyra::DetachedVectorView<double> p_view(*p);
       p_view[0] = a;
       p_view[1] = freq;
+      p_view[2] = L;
     }
     inArgs.set_p(0,p);
 
@@ -665,24 +709,70 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, modelParams ) {
 
     model->evalModel(inArgs,outArgs);
 
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), 6.0 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), freq*freq*(a-5.0) );
+    double tol = 1.0e-10;
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,0), 6.0, tol );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,1), (freq/L)*(freq/L)*(a-5.0), tol );
+  }
+  { // Implicit model, just load f.
+    RCP<SinCosModel> model = sinCosModel();
+    pl->set("Implicit model formulation", true);
+    model->setParameterList(pl);
+    MEB::InArgs<double> inArgs = model->createInArgs();
+    MEB::OutArgs<double> outArgs = model->createOutArgs();
+    double t = 4.0; 
+    RCP<VectorBase<double> > x = Thyra::createMember(model->get_x_space());
+    {
+      Thyra::DetachedVectorView<double> x_view(*x);
+      x_view[0] = 5.0;
+      x_view[1] = 6.0;
+    }
+    RCP<VectorBase<double> > xdot = Thyra::createMember(model->get_x_space());
+    {
+      Thyra::DetachedVectorView<double> xdot_view(*xdot);
+      xdot_view[0] = 8.0;
+      xdot_view[1] = 9.0;
+    }
+    inArgs.set_t(t);
+    inArgs.set_x(x);
+    inArgs.set_x_dot(xdot);
+    double a = 25.0;
+    double freq = 10.0;
+    double L = 3.0;
+    RCP<VectorBase<double> > p = Thyra::createMember(model->get_p_space(0));
+    {
+      Thyra::DetachedVectorView<double> p_view(*p);
+      p_view[0] = a;
+      p_view[1] = freq;
+      p_view[2] = L;
+    }
+    inArgs.set_p(0,p);
+
+    RCP<VectorBase<double> > f = Thyra::createMember(model->get_f_space());
+    outArgs.set_f(f);
+
+    model->evalModel(inArgs,outArgs);
+
+    double tol = 1.0e-10;
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,0), 8.0-6.0, tol );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,1), 9.0-(freq/L)*(freq/L)*(a-5.0), tol );
   }
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
   double a = 1.0;
   double freq = 2.0;
+  double L = 3.0;
   double x0 = 1.2;
   double x1 = 1.3;
-  double t0 = 0.0;
-  double phi = atan((freq/x1)*(x0-a))-freq*t0; 
-  double b = x1/(freq*cos(freq*t0+phi));
+  //double t0 = 0.0;
+  //double phi = atan(((freq/L)/x1)*(x0-a))-(freq/L)*t0; 
+  //double b = x1/((freq/L)*cos((freq/L)*t0+phi));
 
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->set("Accept model parameters", true);
   pl->set("Coeff a", a);
   pl->set("Coeff f", freq);
+  pl->set("Coeff L", L);
   pl->set("IC x_0", x0);
   pl->set("IC x_1", x1);
   { // Explicit model, load f and DfDp
@@ -702,33 +792,37 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
     inArgs.set_x(x);
     double a = 25.0;
     double freq = 10.0;
+    double L = 4.0;
     RCP<VectorBase<double> > p = Thyra::createMember(model->get_p_space(0));
     {
       Thyra::DetachedVectorView<double> p_view(*p);
       p_view[0] = a;
       p_view[1] = freq;
+      p_view[2] = L;
     }
     inArgs.set_p(0,p);
 
     RCP<VectorBase<double> > f = Thyra::createMember(model->get_f_space());
     outArgs.set_f(f);
 
-    RCP<Thyra::MultiVectorBase<double> > mv = Thyra::createMembers(model->get_f_space(),2);
+    RCP<Thyra::MultiVectorBase<double> > mv = Thyra::createMembers(model->get_f_space(),3);
     MEB::Derivative<double> DfDp(mv);
     outArgs.set_DfDp(0, DfDp);
 
     model->evalModel(inArgs,outArgs);
 
     TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), 6.0 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), freq*freq*(a-5.0) );
+    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), (freq/L)*(freq/L)*(a-5.0) );
 
     // Check that DfDp is correct
     {
       Thyra::ConstDetachedMultiVectorView<double> mv_view( *mv );
-      TEST_EQUALITY_CONST( mv_view(0,0), 0.0 );
-      TEST_EQUALITY_CONST( mv_view(0,1), 0.0 );
-      TEST_EQUALITY_CONST( mv_view(1,0), freq*freq );
-      TEST_EQUALITY_CONST( mv_view(1,1), 2.0*freq*(a-5.0) );
+      TEST_EQUALITY_CONST( mv_view(0,0), 0.0 ); // df0dp0 = df0da = 0.0
+      TEST_EQUALITY_CONST( mv_view(0,1), 0.0 ); // df0dp1 = df0df = 0.0
+      TEST_EQUALITY_CONST( mv_view(0,2), 0.0 ); // df0dp2 = df0dL = 0.0
+      TEST_EQUALITY_CONST( mv_view(1,0), (freq/L)*(freq/L) ); // df1dp0 = df1da = (f/L)*(f/L)
+      TEST_EQUALITY_CONST( mv_view(1,1), (2.0*freq/(L*L))*(a-5.0) ); // df1dp1 = df1df = 2*f/(L*L)*(a-x0)
+      TEST_EQUALITY_CONST( mv_view(1,2), -(2.0*freq*freq/(L*L*L))*(a-5.0) ); // df1dp2 = df1dL = -2*f*f/(L*L*L)*(a-x0)
     }
     
   }
@@ -756,33 +850,37 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
     inArgs.set_x_dot(x_dot);
     double a = 25.0;
     double freq = 10.0;
+    double L = 4.0;
     RCP<VectorBase<double> > p = Thyra::createMember(model->get_p_space(0));
     {
       Thyra::DetachedVectorView<double> p_view(*p);
       p_view[0] = a;
       p_view[1] = freq;
+      p_view[2] = L;
     }
     inArgs.set_p(0,p);
 
     RCP<VectorBase<double> > f = Thyra::createMember(model->get_f_space());
     outArgs.set_f(f);
 
-    RCP<Thyra::MultiVectorBase<double> > mv = Thyra::createMembers(model->get_f_space(),2);
+    RCP<Thyra::MultiVectorBase<double> > mv = Thyra::createMembers(model->get_f_space(),3);
     MEB::Derivative<double> DfDp(mv);
     outArgs.set_DfDp(0, DfDp);
 
     model->evalModel(inArgs,outArgs);
 
     TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), 8.0 - 6.0 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), 9.0 - freq*freq*(a-5.0) );
+    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), 9.0 - (freq/L)*(freq/L)*(a-5.0) );
 
     // Check that DfDp is correct
     {
       Thyra::ConstDetachedMultiVectorView<double> mv_view( *mv );
       TEST_EQUALITY_CONST( mv_view(0,0), 0.0 );
       TEST_EQUALITY_CONST( mv_view(0,1), 0.0 );
-      TEST_EQUALITY_CONST( mv_view(1,0), -freq*freq );
-      TEST_EQUALITY_CONST( mv_view(1,1), -2.0*freq*(a-5.0) );
+      TEST_EQUALITY_CONST( mv_view(0,2), 0.0 );
+      TEST_EQUALITY_CONST( mv_view(1,0), -(freq/L)*(freq/L) );
+      TEST_EQUALITY_CONST( mv_view(1,1), -(2.0*freq/(L*L))*(a-5.0) );
+      TEST_EQUALITY_CONST( mv_view(1,2), +(2.0*freq*freq/(L*L*L))*(a-5.0) );
     }
     
   }
