@@ -709,7 +709,13 @@ int two_proc_test(Epetra_Comm& Comm,
 
 int time_matrix_matrix_multiply(Epetra_Comm& Comm, bool verbose)
 {
-  int localn = 30000/Comm.NumProc();
+
+  const int magic_num = 3000;
+  // 2009/02/23: rabartl: If you are going to do a timing test you need to
+  // make this number adjustable form the command-line and you need to put in
+  // a real test that compares against hard numbers for pass/fail.
+
+  int localn = magic_num/Comm.NumProc();
 
   Epetra_CrsMatrix* A = create_epetra_crsmatrix(Comm.NumProc(),
                                                 Comm.MyPID(),
