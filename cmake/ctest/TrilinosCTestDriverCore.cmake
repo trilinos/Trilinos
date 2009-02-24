@@ -250,6 +250,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
   # Tell CDash about the latest subproject dependencies:
   #
   
+  PRINT_VAR(CTEST_DROP_SITE)
   IF (CTEST_DO_SUBMIT)
     CTEST_SUBMIT( FILES
       "${CTEST_SCRIPT_DIRECTORY}/../python/data/CDashSubprojectDependencies.xml"
@@ -329,6 +330,8 @@ MACRO(TRILINOS_CTEST_DRIVER)
     ELSE()
       # load target properties and test keywords
       CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
+      # Overridde from this file!
+      INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../CTestConfig.cmake")
     ENDIF()
   
     # Submit configure results and the notes to the dashboard 
@@ -427,7 +430,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
           MESSAGE("\nRunning memory testing for package '${PACKAGE}' ...\n")
           CTEST_MEMCHECK(BUILD "${CTEST_BINARY_DIRECTORY}")
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT(PARTS Test
+            CTEST_SUBMIT(PARTS Memcheck
              #${SUBMIT_APPEND_ARG}
              )
           ENDIF()
