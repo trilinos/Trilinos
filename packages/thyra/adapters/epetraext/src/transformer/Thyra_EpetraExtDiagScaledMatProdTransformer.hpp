@@ -1,7 +1,7 @@
 // @HEADER
 // ***********************************************************************
 // 
-//               Thyra: Trilinos Solver Framework Core
+//    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -26,22 +26,58 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Thyra_get_Epetra_Operator.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#include "Teuchos_dyn_cast.hpp"
+#ifndef THYRA_EPETRAEXT_DIAG_SCALED_MAT_PROD_TRANSFORMER_HPP
+#define THYRA_EPETRAEXT_DIAG_SCALED_MAT_PROD_TRANSFORMER_HPP
 
 
-Teuchos::RCP<Epetra_Operator>
-Thyra::get_Epetra_Operator( LinearOpBase<double> &op )
+#include "Thyra_LinearOpTransformerBase.hpp"
+
+
+namespace Thyra {
+
+
+/** \brief Base interface for transforming a LinearOpBase object. */
+class EpetraExtDiagScaledMatProdTransformer : public LinearOpTransformerBase<double>
 {
-  EpetraLinearOp &thyra_epetra_op = Teuchos::dyn_cast<EpetraLinearOp>(op);
-  return thyra_epetra_op.epetra_op();
+public:
+
+  /** \name Overridden from LinearOpTransformerBase. */
+  //@{
+
+  /** \brief . */
+  virtual bool isCompatible(const LinearOpBase<double> &op_in) const;
+
+  /** \brief . */
+  virtual RCP<LinearOpBase<double> > createOutputOp() const;
+
+  /** \brief . */
+  virtual void transform(
+    const LinearOpBase<double> &op_in,
+    const Ptr<LinearOpBase<double>
+  
+ > &op_inout
+    ) const;
+
+  //@}
+
+private:
+  
+};
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates EpetraExtDiagScaledMatProdTransformer
+ */
+inline
+RCP<EpetraExtDiagScaledMatProdTransformer>
+epetraExtDiagScaledMatProdTransformer()
+{
+  return Teuchos::rcp(new EpetraExtDiagScaledMatProdTransformer());
 }
 
 
-Teuchos::RCP<const Epetra_Operator>
-Thyra::get_Epetra_Operator( const LinearOpBase<double> &op )
-{
-  const EpetraLinearOp &thyra_epetra_op = Teuchos::dyn_cast<const EpetraLinearOp>(op);
-  return thyra_epetra_op.epetra_op();
-}
+} // namespace Thyra
+
+
+#endif	// THYRA_EPETRAEXT_DIAG_SCALED_MAT_PROD_TRANSFORMER_HPP

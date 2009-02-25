@@ -29,7 +29,9 @@
 #ifndef THYRA_MULTIPLIED_LINEAR_OP_BASE_HPP
 #define THYRA_MULTIPLIED_LINEAR_OP_BASE_HPP
 
+
 #include "Thyra_LinearOpBase.hpp"
+
 
 namespace Thyra {
 
@@ -105,6 +107,8 @@ public:
 
 };
 
+
 } // namespace Thyra
+
 
 #endif	// THYRA_MULTIPLIED_LINEAR_OP_BASE_HPP

@@ -31,7 +31,9 @@
 
 #include "Thyra_EpetraTypes.hpp"
 
+
 namespace Thyra {
+
 
 /** \defgroup Epetra_Thyra_Op_Vec_get_Epetra_Operator_grp Epetra_Operator extraction utility functions
 
@@ -40,6 +42,7 @@ namespace Thyra {
 These function allow the extraction of an <tt>Epetra_Operator</tt> from a <tt>Thyra::LinearOpBase</tt> object.
 
 */
+
 
 /** \brief Get smart pointer to non-<tt>const</tt>
  * <tt>Epetra_Operator</tt> object from reference to a
@@ -69,6 +72,7 @@ These function allow the extraction of an <tt>Epetra_Operator</tt> from a <tt>Th
 Teuchos::RCP<Epetra_Operator>
 get_Epetra_Operator( LinearOpBase<double> &op );
 
+
 /** \brief Get smart pointer to <tt>const</tt>
  * <tt>Epetra_Operator</tt> object from reference to a <tt>const</tt>
  * <tt>EpetraLinearOp</tt> accessed through its <tt>LinearOpBase</tt>
@@ -97,6 +101,8 @@ get_Epetra_Operator( LinearOpBase<double> &op );
 Teuchos::RCP<const Epetra_Operator>
 get_Epetra_Operator( const LinearOpBase<double> &op );
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_GET_EPETRA_OPERATOR_HPP

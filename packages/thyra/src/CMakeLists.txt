@@ -55,6 +55,7 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/support/nonlinear/model_evaluator/client_support)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/nonlinear/solvers/ana/fundamental)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)

@@ -32,12 +32,13 @@
 #include "Thyra_ScaledAdjointLinearOpBaseDecl.hpp"
 #include "Thyra_LinearOpBase.hpp"
 
+
 template<class Scalar>
 void Thyra::unwrap(
-  const LinearOpBase<Scalar>      &Op
-  ,Scalar                         *scalar
-  ,EOpTransp                        *transp
-  ,const LinearOpBase<Scalar>*    *origOp
+  const LinearOpBase<Scalar> &Op,
+  Scalar *scalar,
+  EOpTransp *transp,
+  const LinearOpBase<Scalar>* *origOp
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -60,12 +61,13 @@ void Thyra::unwrap(
   }
 }
 
+
 template<class Scalar>
 void Thyra::unwrap(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >     &Op
-  ,Scalar                                                     *scalar
-  ,EOpTransp                                                    *transp
-  ,Teuchos::RCP<const LinearOpBase<Scalar> >          *origOp
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &Op,
+  Scalar *scalar,
+  EOpTransp *transp,
+  Teuchos::RCP<const LinearOpBase<Scalar> > *origOp
   )
 {
 #ifdef TEUCHOS_DEBUG

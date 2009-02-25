@@ -1,15 +1,16 @@
 
 INCLUDE(PackageLibraryMacros)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/model_evaluator)
+SET(HEADERS "")
+SET(SOURCES "")
 
-SET(HEADERS
-  model_evaluator/Thyra_EpetraModelEvaluator.hpp
-  )
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/model_evaluator)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
-SET(SOURCES
-  model_evaluator/Thyra_EpetraModelEvaluator.cpp
-  )
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/transformer)
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
 PACKAGE_ADD_LIBRARY(
   thyraepetraext
