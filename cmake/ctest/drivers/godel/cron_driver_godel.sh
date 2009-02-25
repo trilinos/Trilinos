@@ -12,7 +12,7 @@ echo "Starting nightly Trilinos testing on godel: `date`"
 echo
 
 echo
-echo "Checking out just the drivers: `date`"
+echo "Checking out just the skeleton cmake/ctest code: `date`"
 echo
 
 BASEDIR=/home/rabartl/PROJECTS/dashboards/Trilinos.base

@@ -439,6 +439,18 @@ class TrilinosDependencies:
           xmlText += ("    <Dependency name=\""+depPackageName+"\"" + \
             " type=\""+entry+"\"/>\n" )
 
+      xmlText += ("    <EmailAddresses>\n")
+      xmlText += \
+         ("      <Email addresss=\""+packageName.lower()+"-regression@software.sandia.gov\"/>\n")
+      xmlText += ("    </EmailAddresses>\n")
+      # 2009/02/25: rabartl: ToDo: Above, I really should allow the various packages
+      # to define what lists they will send email.  This would require allowing each
+      # package to overridde its email addresses, embedding this info in the output
+      # XML file written by the CMake code, reading in this XML info into
+      # the python data structure self.__packagesList and then reading it back out
+      # here to writ back into XML.  That is too hard for right now so I am
+      # doing the above hack :-)
+
       xmlText += ("  </SubProject>\n")
 
     xmlText += "</Project>\n"
