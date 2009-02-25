@@ -373,6 +373,22 @@ C) Configuring
 
   NOTE: This will print a complete stack trace to see exactly where you are
 
+(*) Disabling framework level dependency tests
+
+    -D Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF
+
+  NOTE: Above will disable the Trilinos framework-level dependency unit tests
+  which have names ike TrilinosDep_* and TrilinosOutputDep_*.  You should turn
+  these off, for example, when you are doing a dynamic analysis (i.e. memcheck
+  with valgrind) test.
+
+(*) Enabling support for coverage testing:
+
+    -D Trilinos_ENABLE_COVERAGE_TESTING:BOOL=ON 
+
+  NOTE: The above will set the compile and link options -fprofile-arcs
+  -ftest-coverage when the compiler is GNU.
+  
 (*) Viewing available configure-time options with documentation
 
   $ cd $BUILD_DIR
@@ -408,9 +424,6 @@ C) Configuring
   Configure time errors are shown in the file:
 
       $BUILD_BASE_DIR/CMakeFiles/CMakeError.log.
-
-(*) Removing warnings as errors
-
 
 
 D) Building

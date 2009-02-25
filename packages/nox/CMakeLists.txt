@@ -110,6 +110,9 @@ COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA
 # C) Add the libraries, tests, and examples
 #
 
+# Limit the number of MPI procs to 2 for now (see bug 4335)
+#SET( MPI_EXEC_MAX_NUMPROCS 2 )
+
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(src-lapack)
 ADD_SUBDIRECTORY(src-epetra)
