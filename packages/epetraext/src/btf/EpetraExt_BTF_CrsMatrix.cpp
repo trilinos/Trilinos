@@ -307,14 +307,18 @@ bool
 CrsMatrix_BTF::
 fwd()
 {
-  NewMatrix_->Import( *origObj_, *Importer_, Insert );
+  int ret = NewMatrix_->Import( *origObj_, *Importer_, Insert );
+  if (ret<0) return false;
+  return true;
 }
 
 bool
 CrsMatrix_BTF::
 rvs()
 {
-  origObj_->Export( *NewMatrix_, *Importer_, Insert );
+  int ret = origObj_->Export( *NewMatrix_, *Importer_, Insert );
+  if (ret<0) return false;
+  return true;
 }
 
 } //namespace EpetraExt
