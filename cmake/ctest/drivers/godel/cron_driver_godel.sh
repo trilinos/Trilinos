@@ -51,6 +51,12 @@ echo
 time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV
 
 echo
+echo "Doing serial optimized implicit instantiation build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_opt_impl_instant_godel.cmake -VV
+
+echo
 echo "Doing mpi optimized zoltan c-only build: `date`"
 echo
 
@@ -61,6 +67,12 @@ echo "Doing serial debug intel build: `date`"
 echo
 
 time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_icpc_godel.cmake -VV
+
+echo
+echo "Doing serial optimized memcheck build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_opt_memcheck_godel.cmake -VV
 
 echo
 echo "Ending nightly Trilinos testing on godel: `date`"
