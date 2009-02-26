@@ -111,6 +111,7 @@ APPEND_SET(HEADERS
   Teuchos_RefCountPtrDecl.hpp
   Teuchos_ScalarTraits.hpp
   Teuchos_SerialDenseMatrix.hpp
+  Teuchos_SerialSymDenseMatrix.hpp
   Teuchos_SerialDenseVector.hpp
   Teuchos_SerializationTraits.hpp
   Teuchos_SerializationTraitsHelpers.hpp
