@@ -35,7 +35,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
-        "--trace-children=yes  --suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_godel_openmpi_1.2.7.txt  ${CTEST_MEMORYCHECK_COMMAND_OPTIONS}" )
+        "--trace-children=yes --gen-suppressions=all --suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_godel_openmpi_1.2.7.txt  ${CTEST_MEMORYCHECK_COMMAND_OPTIONS}" )
   
   ELSE()
   

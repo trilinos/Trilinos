@@ -56,32 +56,5 @@
    fun:mca_oob_xcast
    fun:ompi_mpi_init
    fun:PMPI_Init
-   fun:_ZN7Teuchos16GlobalMPISessionC1EPiPPPcPSo
-   fun:main
-}
-
-{
-   <insert a suppression name here>
-   Memcheck:Cond
-   fun:__strcpy_chk
-   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/libmpi.so.0.0.0
-   fun:orte_gpr_proxy_deliver_notify_msg
-   fun:mca_oob_xcast
-   fun:ompi_mpi_init
-   fun:PMPI_Init
-   fun:_ZN7Teuchos16GlobalMPISessionC1EPiPPPcPSo
-   fun:main
-}
-
-{
-   <insert a suppression name here>
-   Memcheck:Cond
-   fun:__strcpy_chk
-   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/libmpi.so.0.0.0
-   fun:orte_gpr_proxy_deliver_notify_msg
-   fun:mca_oob_xcast
-   fun:ompi_mpi_init
-   fun:PMPI_Init
-   fun:_ZN7Teuchos16GlobalMPISessionC1EPiPPPcPSo
    fun:main
 }
