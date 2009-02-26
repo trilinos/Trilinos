@@ -68,21 +68,48 @@ LevelScheduler::schedule(bool force_scheduling)
 
   // algorithm from legacy Petra_CRS_Graph.cc 
 
-  for (int i=0; i < nrows ; i++){
-
-    int numIDs = 0;
-    int *IDs = NULL;
-    graph.ExtractMyRowView(i, numIDs, IDs);
-
-    int depth = -1;
-
-    for (int j=0; j < numIDs; j++){
-      if (properties_[IDs[j]] > depth)
-        depth = properties_[IDs[j]];
+  if (graph.LowerTriangular()){
+    for (int i=0; i < nrows ; i++){
+  
+      int numIDs = 0;
+      int *IDs = NULL;
+      graph.ExtractMyRowView(i, numIDs, IDs);
+  
+      int depth = -1;
+  
+      for (int j=0; j < numIDs; j++){
+        if (properties_[IDs[j]] > depth)
+          depth = properties_[IDs[j]];
+      }
+      depth++;
+  
+      properties_.push_back(depth);
     }
-    depth++;
+  }
+  else if (graph.UpperTriangular()){
 
-    properties_.push_back(depth);
+    properties_.assign(nrows,0);
+
+    for (int i=nrows-1; i >= 0 ; i--){
+  
+      int numIDs = 0;
+      int *IDs = NULL;
+      graph.ExtractMyRowView(i, numIDs, IDs);
+  
+      int depth = -1;
+  
+      for (int j=0; j < numIDs; j++){
+        if (properties_[IDs[j]] > depth)
+          depth = properties_[IDs[j]];
+      }
+      depth++;
+  
+      properties_[i] = depth;
+    }
+  }
+  else{
+    // error
+    properties_.assign(nrows,-1);
   }
 
   operation_already_computed_ = true;
