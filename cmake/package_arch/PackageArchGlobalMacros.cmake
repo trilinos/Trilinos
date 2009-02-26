@@ -1494,13 +1494,24 @@ MACRO(PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES)
     ENDIF()
   ENDFOREACH()
 
+  ADVANCED_SET( ${PROJECT_NAME}_ALLOW_NO_PACKAGES ON
+    CACHE BOOL "Allow configuration to finish even if no packages are enabled")
+
   IF (NOT CONFIGURED_A_PACKAGE)
+    IF (${PROJECT_NAME}_ALLOW_NO_PACKAGES)
+      SET(MSG_TYPE WARNING)
+    ELSE()
+      SET(MSG_TYPE ERROR)
+    ENDIF()
     MESSAGE(
       "\n***"
-      "\n*** WARNING:  There where no packages configured so no libraries"
+      "\n*** ${MSG_TYPE}:  There where no packages configured so no libraries"
         " or tests/examples will be built!"
       "\n***\n"
       )
+    IF (NOT ${PROJECT_NAME}_ALLOW_NO_PACKAGES)
+      MESSAGE(SEND_ERROR "Stopping configure!")
+    ENDIF()
   ENDIF()
   
   REMOVE_GLOBAL_DUPLICATES(${PROJECT_NAME}_INCLUDE_DIRS)
