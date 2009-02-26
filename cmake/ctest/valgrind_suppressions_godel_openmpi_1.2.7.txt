@@ -1,0 +1,87 @@
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   fun:mca_oob_tcp_msg_send_handler
+   fun:mca_oob_tcp_peer_send
+   fun:mca_oob_tcp_send
+   fun:orte_iof_proxy_svc_publish
+   fun:orte_iof_proxy_publish
+   fun:orte_iof_base_setup_parent
+   fun:orte_odls_default_launch_local_procs
+   obj:/usr/lib64/openmpi/1.2.7-gcc/bin/orted
+   fun:orte_gpr_proxy_deliver_notify_msg
+   fun:orte_gpr_proxy_notify_recv
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/libopen-rte.so.0.0.0
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   fun:mca_oob_tcp_msg_send_handler
+   fun:mca_oob_tcp_peer_send
+   fun:mca_oob_tcp_send_nb
+   fun:_orte_iof_base_frag_ack
+   fun:orte_iof_base_endpoint_forward
+   fun:orte_iof_svc_proxy_recv
+   fun:mca_oob_tcp_msg_recv_complete
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/openmpi/mca_oob_tcp.so
+   fun:opal_event_base_loop
+   fun:opal_progress
+   obj:/usr/lib64/openmpi/1.2.7-gcc/bin/orterun
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:__strcpy_chk
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/libmpi.so.0.0.0
+   fun:orte_gpr_proxy_deliver_notify_msg
+   fun:mca_oob_xcast
+   fun:ompi_mpi_init
+   fun:PMPI_Init
+   fun:_ZN7Teuchos16GlobalMPISessionC1EPiPPPcPSo
+   fun:main
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:__strcpy_chk
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/libmpi.so.0.0.0
+   fun:orte_gpr_proxy_deliver_notify_msg
+   fun:mca_oob_xcast
+   fun:ompi_mpi_init
+   fun:PMPI_Init
+   fun:_ZN7Teuchos16GlobalMPISessionC1EPiPPPcPSo
+   fun:main
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:__strcpy_chk
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/libmpi.so.0.0.0
+   fun:orte_gpr_proxy_deliver_notify_msg
+   fun:mca_oob_xcast
+   fun:ompi_mpi_init
+   fun:PMPI_Init
+   fun:_ZN7Teuchos16GlobalMPISessionC1EPiPPPcPSo
+   fun:main
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Cond
+   fun:__strcpy_chk
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/libmpi.so.0.0.0
+   fun:orte_gpr_proxy_deliver_notify_msg
+   fun:mca_oob_xcast
+   fun:ompi_mpi_init
+   fun:PMPI_Init
+   fun:_ZN7Teuchos16GlobalMPISessionC1EPiPPPcPSo
+   fun:main
+}
