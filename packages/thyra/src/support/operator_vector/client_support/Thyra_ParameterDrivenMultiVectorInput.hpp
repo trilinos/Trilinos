@@ -30,6 +30,7 @@
 #define THYRA_PARAMETER_DRIVEN_MULTI_VECTOR_INPUT_HPP
 
 #include "Thyra_MultiVectorFileIOBase.hpp"
+#include "Thyra_DetachedVectorView.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"
