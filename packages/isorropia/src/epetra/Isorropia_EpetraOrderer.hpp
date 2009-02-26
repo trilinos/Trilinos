@@ -59,7 +59,7 @@ namespace Epetra {
 
 */
 
-class Orderer : virtual public Isorropia::Orderer, public Isorropia::Epetra::Operator {
+class Orderer : public Isorropia::Orderer, public Isorropia::Epetra::Operator {
 public:
 
   Orderer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,

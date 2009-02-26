@@ -97,6 +97,14 @@ public:
    */
   virtual int numProperties() const = 0;
 
+  /** Return the number of different values used for "properties"
+      for this process only.
+
+      \return Local number of values for properties
+
+   */
+  virtual int numLocalProperties() const = 0;
+
 
   /** Return the "property" for a given element that resided locally.
 

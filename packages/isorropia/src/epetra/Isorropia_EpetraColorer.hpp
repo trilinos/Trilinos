@@ -62,7 +62,7 @@ namespace Epetra {
 
 */
 
-class Colorer : virtual public Isorropia::Colorer, public Isorropia::Epetra::Operator {
+class Colorer : public Isorropia::Colorer, public Isorropia::Epetra::Operator {
 public:
 
     /** Constructor

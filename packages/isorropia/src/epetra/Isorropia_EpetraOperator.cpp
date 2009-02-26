@@ -63,6 +63,19 @@ namespace Isorropia {
 namespace Epetra {
 
 Operator::
+Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph)
+  : input_graph_(input_graph),
+    input_matrix_(0),
+    input_coords_(0),
+    costs_(0),
+    weights_(0),
+    lib_(0),
+    operation_already_computed_(false)
+{
+  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
+}
+
+Operator::
 Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	 const Teuchos::ParameterList& paramlist)
   : input_graph_(input_graph),
@@ -219,6 +232,7 @@ Operator::computeNumberOfProperties()
   }
 
   input_comm.MaxAll(&max, &numberOfProperties_, 1);
+  localNumberOfProperties_ = max;
 }
 
 void Operator::stringToUpper(std::string &s, int &changed)

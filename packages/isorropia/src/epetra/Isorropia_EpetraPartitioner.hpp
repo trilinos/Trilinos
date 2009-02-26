@@ -59,7 +59,7 @@ namespace Epetra {
 
 */
 
-class Partitioner : virtual public Isorropia::Partitioner, virtual public Isorropia::Epetra::Operator  {
+class Partitioner : public Isorropia::Partitioner, public Isorropia::Epetra::Operator  {
 public:
   
   Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
