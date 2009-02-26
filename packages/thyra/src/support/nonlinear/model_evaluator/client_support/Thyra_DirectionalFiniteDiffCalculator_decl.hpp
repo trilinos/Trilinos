@@ -122,14 +122,15 @@ public:
   //@{
 
   /** \brief . */
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-
+  typedef ScalarTraits<Scalar> ST;
+  /** \brief . */
+  typedef typename ST::magnitudeType ScalarMag;
+  /** \brief . */
+  typedef ScalarTraits<ScalarMag> SMT;
   /** \brief . */
   typedef DirectionalFiniteDiffCalculatorTypes::EFDMethodType EFDMethodType;
-
   /** \brief . */
   typedef DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType EFDStepSelectType;
-
   /** \brief . */
   typedef DirectionalFiniteDiffCalculatorTypes::SelectedDerivatives SelectedDerivatives;
 

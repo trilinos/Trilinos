@@ -351,7 +351,6 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
 {
 
   using std::string;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
 
   TEUCHOS_FUNC_TIME_MONITOR(
     string("Thyra::DirectionalFiniteDiffCalculator<")+ST::name()+">::calcVariations(...)"
@@ -360,7 +359,6 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   using std::setw;
   using std::endl;
   using std::right;
-  typedef typename ST::magnitudeType ScalarMag;
   typedef ModelEvaluatorBase MEB;
   namespace DFDCT = DirectionalFiniteDiffCalculatorTypes;
   typedef VectorBase<Scalar> V;
@@ -450,13 +448,13 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   //
 
   const ScalarMag
-    sqrt_epsilon = ST::squareroot(ST::eps()),
+    sqrt_epsilon = SMT::squareroot(SMT::eps()),
     u_optimal_1  = sqrt_epsilon,
-    u_optimal_2  = ST::squareroot(sqrt_epsilon),
-    u_optimal_4  = ST::squareroot(u_optimal_2);
+    u_optimal_2  = SMT::squareroot(sqrt_epsilon),
+    u_optimal_4  = SMT::squareroot(u_optimal_2);
 
   ScalarMag
-    bp_norm = ST::zero();
+    bp_norm = SMT::zero();
   // ToDo above: compute a reasonable norm somehow based on the base-point vector(s)!
   
   ScalarMag
@@ -590,8 +588,8 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   // Compute the weighted sum of the terms
   //
     
-  int         num_evals  = 0;
-  ScalarMag   dwgt       = ST::zero();
+  int num_evals = 0;
+  ScalarMag dwgt = SMT::zero();
   switch(fd_method_type) {
     case DFDCT::FD_ORDER_ONE: // may only need one eval if f(xo) etc is passed in
       num_evals = 2;
@@ -747,12 +745,12 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
         *out << "\nSetting variations = wgt_i * basePoint ...\n";
       VectorPtr f;
       if( pfunc.supports(MEB::OUT_ARG_f) && (f=var.get_f()).get() ) {
-        V_StV(&*f,wgt_i,*bfuncall.get_f());
+        V_StV<Scalar>(f.ptr(), wgt_i, *bfuncall.get_f());
       }
       for( int j = 0; j < Ng; ++j ) {
         VectorPtr g_j;
         if( (g_j=var.get_g(j)).get() ) {
-          V_StV(&*g_j,wgt_i,*bfuncall.get_g(j));
+          V_StV<Scalar>(g_j.ptr(), wgt_i, *bfuncall.get_g(j));
         }
       }
     }
@@ -785,11 +783,11 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
           *out << "\nComputing variations += wgt_i*perturbedfunctions ...\n";
         VectorPtr f;
         if( pfunc.supports(MEB::OUT_ARG_f) && (f=pfunc.get_f()).get() )
-          Vp_StV(&*var.get_f(),wgt_i,*f);
+          Vp_StV<Scalar>(var.get_f().ptr(), wgt_i, *f);
         for( int j = 0; j < Ng; ++j ) {
           VectorPtr g_j;
           if( (g_j=pfunc.get_g(j)).get() )
-            Vp_StV(&*var.get_g(j),wgt_i,*g_j);
+            Vp_StV<Scalar>(var.get_g(j).ptr(), wgt_i, *g_j);
         }
       }
     }
