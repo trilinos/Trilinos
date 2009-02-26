@@ -46,6 +46,7 @@ CORE_H = \
 	$(srcdir)/Isorropia_Partitioner.hpp \
 	$(srcdir)/Isorropia_Partitioner2D.hpp \
 	$(srcdir)/Isorropia_Colorer.hpp \
+	$(srcdir)/Isorropia_LevelScheduler.hpp \
 	$(srcdir)/Isorropia_Orderer.hpp \
 	$(srcdir)/Isorropia_Redistributor.hpp \
 	$(srcdir)/Isorropia_Utils.hpp \
@@ -58,6 +59,7 @@ EPETRA = \
 	$(srcdir)/epetra/Isorropia_EpetraOperator.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraPartitioner.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraColorer.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraLevelScheduler.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraOrderer.cpp \
 	$(srcdir)/epetra/Isorropia_Epetra.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp \
@@ -69,6 +71,7 @@ EPETRA_H = \
 	$(srcdir)/epetra/Isorropia_EpetraPartitioner.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraOperator.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraColorer.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraLevelScheduler.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraOrderer.hpp \
 	$(srcdir)/epetra/Isorropia_Epetra.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp \
