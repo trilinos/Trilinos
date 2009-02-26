@@ -1824,9 +1824,8 @@ smoother. Can only be used on finest level with a matrix of type
 \href{http://\trilinosWeb/packages/epetraext}{\epetraext} package.}
 
 \choicebox{\tt subsmoother: type $\star$}{[{\tt string}] Smoother to be used
-as a subsmoother on the nodal and edge subproblems within Hiptmair smoothing.  It can assume the
-  following values: {\tt Chebyshev}, {\tt symmetric Gauss-Seidel}. Default: {\tt
-    Chebyshev}.}
+as a subsmoother on the nodal and edge subproblems within Hiptmair smoothing.  It can assume one of the
+  following values: {\tt Chebyshev}, {\tt symmetric Gauss-Seidel}, {\tt ILU}, {\tt IC}, {\tt ILUT}, {\tt ICT}. Default: {\tt Chebyshev}.}
 
 \choicebox{\tt subsmoother: Chebyshev alpha $\star$}{[{\tt double}] 
 Hiptmair {\tt Chebyshev} subsmoother will damps errors between $\rho$ and $\rho/$alpha
