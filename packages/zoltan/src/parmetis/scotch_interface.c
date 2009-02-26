@@ -206,6 +206,7 @@ int Zoltan_Scotch_Order(
   ord.iperm = NULL;
   if ((gr.graph_type!=GLOBAL_GRAPH) && (iperm != NULL)) {
   /* Allocate space for inverse perm */
+    order_opt->return_args |= RETURN_IPERM;
     ord.iperm = (indextype *) ZOLTAN_MALLOC(gr.num_obj*sizeof(indextype));
     if (!ord.iperm){
       /* Not enough memory */
@@ -322,7 +323,7 @@ int Zoltan_Scotch_Order(
       if (tmp == -1) {
 	root = numbloc;
 	continue;
-    }
+      }
       while ((index<3) && (children[3*tmp+index] > 0))
 	index ++;
 
@@ -536,6 +537,16 @@ int Zoltan_Scotch(
     Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch graph.");
   }
+
+/*   { */
+/*     FILE * graphfile; */
+/*     char name[80]; */
+
+/*     sprintf(name, "kdd.%d.src", zz->Proc); */
+/*     graphfile = fopen(name, "w+"); */
+/*     SCOTCH_dgraphSave(&grafdat, graphfile); */
+/*     fclose(graphfile); */
+/*   } */
 
   if (!prt.part_sizes){
     Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);

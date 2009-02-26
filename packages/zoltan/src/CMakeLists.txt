@@ -49,7 +49,7 @@ APPEND_SET(HEADERS
   include/zoltan_timer.h
   include/zoltan_dd.h
   include/zoltan_dd_cpp.h
-  include/zoltan_mem.h  
+  include/zoltan_mem.h
   )
 
 #
@@ -171,7 +171,7 @@ APPEND_SET(SOURCES
 IF (${PACKAGE_NAME}_ENABLE_OCT)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/oct)
-  
+
   APPEND_SET(NOINSTALLHEADERS
     oct/costs_const.h
     oct/costs.h
@@ -190,7 +190,7 @@ IF (${PACKAGE_NAME}_ENABLE_OCT)
     oct/rootlist_const.h
     oct/SFC.h
     )
-  
+
   APPEND_SET(SOURCES
     oct/costs.c
     oct/dfs.c
@@ -299,7 +299,7 @@ IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
   APPEND_SET(NOINSTALLHEADERS
     parmetis/parmetis_interface.h
     )
-  
+
   APPEND_SET(SOURCES
     parmetis/parmetis_interface.c
     )
@@ -311,7 +311,7 @@ IF (${PACKAGE_NAME}_ENABLE_Scotch)
   APPEND_SET(NOINSTALLHEADERS
   parmetis/scotch_interface.h
     )
-  
+
   APPEND_SET(SOURCES
   parmetis/scotch_interface.c
     )

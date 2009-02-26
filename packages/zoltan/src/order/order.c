@@ -231,7 +231,8 @@ int Zoltan_Order(
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done ordering");
 
 /*   Compute inverse permutation if necessary */
-  if (!(opt.return_args & RETURN_RANK) || !(opt.return_args & RETURN_IPERM)) {
+  if ((!(opt.return_args & RETURN_RANK) && (rank != NULL))
+      || (!(opt.return_args & RETURN_IPERM) && (iperm != NULL))) {
     ierr = Zoltan_Get_Distribution(zz, &vtxdist);
     if (ierr){
       /* Error */
@@ -239,12 +240,12 @@ int Zoltan_Order(
       return (ierr);
     }
 
-    if (!(opt.return_args & RETURN_RANK)){
+    if (!(opt.return_args & RETURN_RANK) && (rank != NULL)){
       /* Compute rank from iperm */
       ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
       Zoltan_Inverse_Perm(zz, iperm, rank, vtxdist, opt.order_type, opt.start_index);
     }
-    else if (!(opt.return_args & RETURN_IPERM)){
+    else if (!(opt.return_args & RETURN_IPERM) && (iperm != NULL)){
     /* Compute iperm from rank */
       ZOLTAN_TRACE_DETAIL(zz, yo, "Inverting permutation");
       Zoltan_Inverse_Perm(zz, rank, iperm, vtxdist, opt.order_type, opt.start_index);

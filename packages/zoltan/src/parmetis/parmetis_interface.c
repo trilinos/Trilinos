@@ -54,6 +54,14 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
 static  int pmv3method( char *alg);
 #endif
 
+int mylog2(int x)
+{
+  int i = 0;
+
+  for (i=0 ; (1<<i) <= x ; ++i);
+  return (i-1);
+}
+
 
 int
 Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg, float* itr, double *pmv3_itr, ZOLTAN_Output_Order*);
@@ -656,7 +664,11 @@ int Zoltan_ParMetis_Order(
       Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
     }
-    ord.sep_sizes = zz->Order.start; /* Trick : use the same table */
+    ord.sep_sizes = (int*)ZOLTAN_MALLOC((2*zz->Num_Proc+1)*sizeof(int));
+    if (ord.sep_sizes == NULL) {
+      Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
+      ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
+    }
     memset(ord.sep_sizes, 0, (2*zz->Num_Proc+1)*sizeof(int)); /* It seems parmetis don't initialize correctly */
   }
 
@@ -718,24 +730,56 @@ int Zoltan_ParMetis_Order(
   if (gr.graph_type==GLOBAL_GRAPH){ /* Update Elimination tree */
     int numbloc;
     int start;
+    int leaf;
+    int * converttab;
+    int levelmax;
 
-    for (numbloc = 0, start=0 ; numbloc < 2*zz->Num_Proc ; ++numbloc) { /* convert size tab in start tab */
-      int tmp;
-      tmp = start;
-      start += ord.sep_sizes[numbloc]; /* Save save for next bloc */
-      zz->Order.start[numbloc] = tmp;
-    }
-    zz->Order.start[numbloc] = zz->Order.start[numbloc - 1];
+    levelmax = mylog2(zz->Num_Proc) + 1;
+    converttab = (int*)ZOLTAN_MALLOC(zz->Num_Proc*2*sizeof(int));
 
-    for (numbloc = 0, start=0 ; numbloc < zz->Num_Proc - 1 ; ++numbloc) { /* define ancestors */
-      zz->Order.ancestor[2*numbloc] = zz->Num_Proc+numbloc;
-      zz->Order.ancestor[2*numbloc+1] = zz->Num_Proc+numbloc;
-    }
-    zz->Order.ancestor[2*(zz->Num_Proc-1)] = -1;
+    memset(converttab, 0, zz->Num_Proc*2*sizeof(int));
+     /* Determine the first node in each separator, store it in zz->Order.start */
+    for (numbloc = 0, start=0, leaf=0; numbloc < zz->Num_Proc /2; numbloc++) {
+      int father;
 
-    for (numbloc = 0, start=0 ; numbloc < zz->Num_Proc ; ++numbloc) { /* define leaves */
-      zz->Order.leaves[numbloc] = numbloc;
+      father = zz->Num_Proc + numbloc;
+      converttab[start] = 2*numbloc;
+      zz->Order.leaves[leaf++]=start;
+      zz->Order.ancestor[start] = start + 2;
+      converttab[start+1] = 2*numbloc+1;
+      zz->Order.leaves[leaf++]=start+1;
+      zz->Order.ancestor[start+1] = start + 2;
+      start+=2;
+      do {
+	converttab[start] = father;
+	if (father %2 == 0) {
+	  int nextoffset;
+	  int level;
+
+	  level = mylog2(2*zz->Num_Proc - 1 - father);
+	  nextoffset = (1<<(levelmax-level));
+	  zz->Order.ancestor[start] = start+nextoffset;
+	  start++;
+	  break;
+	}
+	else {
+	  zz->Order.ancestor[start] = start+1;
+	  start++;
+	  father = zz->Num_Proc + father/2;
+	}
+      } while (father < 2*zz->Num_Proc - 1);
     }
+
+    zz->Order.start[0] = 0;
+    zz->Order.ancestor [2*zz->Num_Proc - 2] = -1;
+    for (numbloc = 1 ; numbloc < 2*zz->Num_Proc ; numbloc++) {
+      int oldblock=converttab[numbloc-1];
+      zz->Order.start[numbloc] = zz->Order.start[numbloc-1] + ord.sep_sizes[oldblock];
+    }
+
+    ZOLTAN_FREE(&converttab);
+    ZOLTAN_FREE(&ord.sep_sizes);
+
     zz->Order.leaves[zz->Num_Proc] = -1;
     zz->Order.nbr_leaves = zz->Num_Proc;
     zz->Order.nbr_blocks = 2*zz->Num_Proc-1;
