@@ -38,7 +38,6 @@ APPEND_SET(HEADERS
   fei_Aztec_LinSysCore.hpp
   fei_Aztec_Map.hpp
   fei_Aztec_Vector.hpp
-  cfei_aztec.h
   fei_Factory_Trilinos.hpp
   fei_Include_Trilinos.hpp
   fei_LinProbMgr_EpetraBasic.hpp
@@ -57,7 +56,6 @@ APPEND_SET(SOURCES
   fei_Aztec_LinSysCore.cpp
   fei_Aztec_Map.cpp
   fei_Aztec_Vector.cpp
-  cfei_aztec.cpp
   fei_Factory_Trilinos.cpp
   fei_LinProbMgr_EpetraBasic.cpp
   fei_Solver_Amesos.cpp

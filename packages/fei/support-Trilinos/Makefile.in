@@ -85,8 +85,7 @@ libfei_trilinos_a_DEPENDENCIES =
 am__objects_1 = fei_Aztec_BlockMap.$(OBJEXT) \
 	fei_AztecDMSR_Matrix.$(OBJEXT) fei_AztecDVBR_Matrix.$(OBJEXT) \
 	fei_Aztec_LinSysCore.$(OBJEXT) fei_Aztec_Map.$(OBJEXT) \
-	fei_Aztec_Vector.$(OBJEXT) cfei_aztec.$(OBJEXT) \
-	fei_Factory_Trilinos.$(OBJEXT) \
+	fei_Aztec_Vector.$(OBJEXT) fei_Factory_Trilinos.$(OBJEXT) \
 	fei_LinProbMgr_EpetraBasic.$(OBJEXT) \
 	fei_Solver_Amesos.$(OBJEXT) fei_Solver_AztecOO.$(OBJEXT) \
 	fei_Trilinos_Helpers.$(OBJEXT)
@@ -217,7 +216,6 @@ CORE_H = \
 	$(top_srcdir)/support-Trilinos/fei_Aztec_LinSysCore.hpp \
 	$(top_srcdir)/support-Trilinos/fei_Aztec_Map.hpp \
 	$(top_srcdir)/support-Trilinos/fei_Aztec_Vector.hpp \
-	$(top_srcdir)/support-Trilinos/cfei_aztec.h \
 	$(top_srcdir)/support-Trilinos/fei_Factory_Trilinos.hpp \
 	$(top_srcdir)/support-Trilinos/fei_Include_Trilinos.hpp \
 	$(top_srcdir)/support-Trilinos/fei_LinProbMgr_EpetraBasic.hpp \
@@ -235,7 +233,6 @@ CORE = \
 	$(srcdir)/fei_Aztec_LinSysCore.cpp \
 	$(srcdir)/fei_Aztec_Map.cpp \
 	$(srcdir)/fei_Aztec_Vector.cpp \
-	$(srcdir)/cfei_aztec.cpp \
 	$(srcdir)/fei_Factory_Trilinos.cpp \
 	$(srcdir)/fei_LinProbMgr_EpetraBasic.cpp \
 	$(srcdir)/fei_Solver_Amesos.cpp \
@@ -359,7 +356,6 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfei_aztec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_AztecDMSR_Matrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_AztecDVBR_Matrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Aztec_BlockMap.Po@am__quote@
@@ -469,20 +465,6 @@ fei_Aztec_Vector.obj: $(srcdir)/fei_Aztec_Vector.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_Aztec_Vector.cpp' object='fei_Aztec_Vector.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_Aztec_Vector.obj `if test -f '$(srcdir)/fei_Aztec_Vector.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_Aztec_Vector.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_Aztec_Vector.cpp'; fi`
-
-cfei_aztec.o: $(srcdir)/cfei_aztec.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cfei_aztec.o -MD -MP -MF $(DEPDIR)/cfei_aztec.Tpo -c -o cfei_aztec.o `test -f '$(srcdir)/cfei_aztec.cpp' || echo '$(srcdir)/'`$(srcdir)/cfei_aztec.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/cfei_aztec.Tpo $(DEPDIR)/cfei_aztec.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cfei_aztec.cpp' object='cfei_aztec.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cfei_aztec.o `test -f '$(srcdir)/cfei_aztec.cpp' || echo '$(srcdir)/'`$(srcdir)/cfei_aztec.cpp
-
-cfei_aztec.obj: $(srcdir)/cfei_aztec.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cfei_aztec.obj -MD -MP -MF $(DEPDIR)/cfei_aztec.Tpo -c -o cfei_aztec.obj `if test -f '$(srcdir)/cfei_aztec.cpp'; then $(CYGPATH_W) '$(srcdir)/cfei_aztec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cfei_aztec.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/cfei_aztec.Tpo $(DEPDIR)/cfei_aztec.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cfei_aztec.cpp' object='cfei_aztec.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cfei_aztec.obj `if test -f '$(srcdir)/cfei_aztec.cpp'; then $(CYGPATH_W) '$(srcdir)/cfei_aztec.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cfei_aztec.cpp'; fi`
 
 fei_Factory_Trilinos.o: $(srcdir)/fei_Factory_Trilinos.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_Factory_Trilinos.o -MD -MP -MF $(DEPDIR)/fei_Factory_Trilinos.Tpo -c -o fei_Factory_Trilinos.o `test -f '$(srcdir)/fei_Factory_Trilinos.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_Factory_Trilinos.cpp

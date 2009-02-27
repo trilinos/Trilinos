@@ -72,9 +72,8 @@ ARFLAGS = cru
 libfei_test_utils_a_DEPENDENCIES =
 am__objects_1 =
 am__objects_2 = BCNodeSet.$(OBJEXT) CommNodeSet.$(OBJEXT) \
-	CRSet.$(OBJEXT) cFeiTester_main.$(OBJEXT) beam_main.$(OBJEXT) \
-	beam_oldfei_main.$(OBJEXT) DataReader.$(OBJEXT) \
-	driverData.$(OBJEXT) ElemBlock.$(OBJEXT) \
+	CRSet.$(OBJEXT) beam_main.$(OBJEXT) beam_oldfei_main.$(OBJEXT) \
+	DataReader.$(OBJEXT) driverData.$(OBJEXT) ElemBlock.$(OBJEXT) \
 	feiDriver_main.$(OBJEXT) fei_test_utils.$(OBJEXT) \
 	FEData.$(OBJEXT) FEI_tester.$(OBJEXT) HexBeam.$(OBJEXT) \
 	HexBeamCR.$(OBJEXT) InputFileReader.$(OBJEXT) \
@@ -270,7 +269,6 @@ CORE = \
 	$(srcdir)/BCNodeSet.cpp \
 	$(srcdir)/CommNodeSet.cpp \
 	$(srcdir)/CRSet.cpp \
-	$(srcdir)/cFeiTester_main.cpp \
 	$(srcdir)/beam_main.cpp \
 	$(srcdir)/beam_oldfei_main.cpp \
 	$(srcdir)/DataReader.cpp \
@@ -409,7 +407,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SolnCheck.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/beam_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/beam_oldfei_main.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cFeiTester_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/driverData.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/feiDriver_main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_test_utils.Po@am__quote@
@@ -495,20 +492,6 @@ CRSet.obj: $(srcdir)/CRSet.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CRSet.cpp' object='CRSet.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o CRSet.obj `if test -f '$(srcdir)/CRSet.cpp'; then $(CYGPATH_W) '$(srcdir)/CRSet.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CRSet.cpp'; fi`
-
-cFeiTester_main.o: $(srcdir)/cFeiTester_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cFeiTester_main.o -MD -MP -MF $(DEPDIR)/cFeiTester_main.Tpo -c -o cFeiTester_main.o `test -f '$(srcdir)/cFeiTester_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cFeiTester_main.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/cFeiTester_main.Tpo $(DEPDIR)/cFeiTester_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cFeiTester_main.cpp' object='cFeiTester_main.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cFeiTester_main.o `test -f '$(srcdir)/cFeiTester_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cFeiTester_main.cpp
-
-cFeiTester_main.obj: $(srcdir)/cFeiTester_main.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cFeiTester_main.obj -MD -MP -MF $(DEPDIR)/cFeiTester_main.Tpo -c -o cFeiTester_main.obj `if test -f '$(srcdir)/cFeiTester_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cFeiTester_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cFeiTester_main.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/cFeiTester_main.Tpo $(DEPDIR)/cFeiTester_main.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cFeiTester_main.cpp' object='cFeiTester_main.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cFeiTester_main.obj `if test -f '$(srcdir)/cFeiTester_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cFeiTester_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cFeiTester_main.cpp'; fi`
 
 beam_main.o: $(srcdir)/beam_main.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT beam_main.o -MD -MP -MF $(DEPDIR)/beam_main.Tpo -c -o beam_main.o `test -f '$(srcdir)/beam_main.cpp' || echo '$(srcdir)/'`$(srcdir)/beam_main.cpp

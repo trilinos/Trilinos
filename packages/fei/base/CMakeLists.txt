@@ -34,7 +34,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
 ../fei_fwd.hpp
 ../fei_base.hpp
-cfei.h
 fei_BlockDescriptor.hpp
 fei_BlockLinearProblemManager.hpp
 fei_bool.h
@@ -78,7 +77,6 @@ fei_LinearSystemCore.hpp
 fei_LinearSystem.hpp
 fei_LinSysCoreFilter.hpp
 fei_LinSysCore_flexible.hpp
-fei_LinSysCore_struct.h
 fei_LogFile.hpp
 fei_Logger.hpp
 fei_LogManager.hpp
@@ -162,7 +160,6 @@ snl_fei_Utils.hpp
   )
 
 APPEND_SET(SOURCES
-cfei.cpp
 fei_BlockDescriptor.cpp
 fei_CommUtils.cpp
 fei_ConnectivityBlock.cpp

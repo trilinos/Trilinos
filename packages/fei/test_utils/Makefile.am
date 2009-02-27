@@ -85,7 +85,6 @@ CORE = \
 	$(srcdir)/BCNodeSet.cpp \
 	$(srcdir)/CommNodeSet.cpp \
 	$(srcdir)/CRSet.cpp \
-	$(srcdir)/cFeiTester_main.cpp \
 	$(srcdir)/beam_main.cpp \
 	$(srcdir)/beam_oldfei_main.cpp \
 	$(srcdir)/DataReader.cpp \

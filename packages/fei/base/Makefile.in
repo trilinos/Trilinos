@@ -96,25 +96,25 @@ ARFLAGS = cru
 libfei_base_a_DEPENDENCIES =
 am__objects_1 = fei_BlockDescriptor.$(OBJEXT) fei_CSRMat.$(OBJEXT) \
 	fei_CSVec.$(OBJEXT) fei_DirichletBCManager.$(OBJEXT) \
-	cfei.$(OBJEXT) fei_EqnBuffer.$(OBJEXT) \
-	fei_EqnCommMgr.$(OBJEXT) fei_FEDataFilter.$(OBJEXT) \
-	FEI_Implementation.$(OBJEXT) fei_ostream_ops.$(OBJEXT) \
-	fei_EqnComm.$(OBJEXT) fei_Factory.$(OBJEXT) \
-	fei_FillableMat.$(OBJEXT) fei_FillableVec.$(OBJEXT) \
-	fei_LinearSystem.$(OBJEXT) fei_LogFile.$(OBJEXT) \
-	fei_Logger.$(OBJEXT) fei_LogManager.$(OBJEXT) \
-	fei_Matrix_core.$(OBJEXT) fei_Matrix_Local.$(OBJEXT) \
-	fei_Vector_Local.$(OBJEXT) fei_MatrixReducer.$(OBJEXT) \
-	fei_MatrixGraph_Impl2.$(OBJEXT) fei_Param.$(OBJEXT) \
-	fei_ParameterSet.$(OBJEXT) fei_Pool.$(OBJEXT) \
-	fei_Pool_alloc.$(OBJEXT) fei_Reducer.$(OBJEXT) \
-	fei_impl_utils.$(OBJEXT) fei_utils.$(OBJEXT) \
-	fei_VectorSpace.$(OBJEXT) fei_Vector_core.$(OBJEXT) \
-	fei_VectorReducer.$(OBJEXT) fei_Filter.$(OBJEXT) \
-	fei_LibraryWrapper.$(OBJEXT) fei_LinSysCoreFilter.$(OBJEXT) \
-	fei_NodeCommMgr.$(OBJEXT) fei_NodeDatabase.$(OBJEXT) \
-	fei_NodeDescriptor.$(OBJEXT) fei_ProcEqns.$(OBJEXT) \
-	fei_Solver.$(OBJEXT) snl_fei_BlkSizeMsgHandler.$(OBJEXT) \
+	fei_EqnBuffer.$(OBJEXT) fei_EqnCommMgr.$(OBJEXT) \
+	fei_FEDataFilter.$(OBJEXT) FEI_Implementation.$(OBJEXT) \
+	fei_ostream_ops.$(OBJEXT) fei_EqnComm.$(OBJEXT) \
+	fei_Factory.$(OBJEXT) fei_FillableMat.$(OBJEXT) \
+	fei_FillableVec.$(OBJEXT) fei_LinearSystem.$(OBJEXT) \
+	fei_LogFile.$(OBJEXT) fei_Logger.$(OBJEXT) \
+	fei_LogManager.$(OBJEXT) fei_Matrix_core.$(OBJEXT) \
+	fei_Matrix_Local.$(OBJEXT) fei_Vector_Local.$(OBJEXT) \
+	fei_MatrixReducer.$(OBJEXT) fei_MatrixGraph_Impl2.$(OBJEXT) \
+	fei_Param.$(OBJEXT) fei_ParameterSet.$(OBJEXT) \
+	fei_Pool.$(OBJEXT) fei_Pool_alloc.$(OBJEXT) \
+	fei_Reducer.$(OBJEXT) fei_impl_utils.$(OBJEXT) \
+	fei_utils.$(OBJEXT) fei_VectorSpace.$(OBJEXT) \
+	fei_Vector_core.$(OBJEXT) fei_VectorReducer.$(OBJEXT) \
+	fei_Filter.$(OBJEXT) fei_LibraryWrapper.$(OBJEXT) \
+	fei_LinSysCoreFilter.$(OBJEXT) fei_NodeCommMgr.$(OBJEXT) \
+	fei_NodeDatabase.$(OBJEXT) fei_NodeDescriptor.$(OBJEXT) \
+	fei_ProcEqns.$(OBJEXT) fei_Solver.$(OBJEXT) \
+	snl_fei_BlkSizeMsgHandler.$(OBJEXT) \
 	snl_fei_Broker_FEData.$(OBJEXT) \
 	snl_fei_Broker_LinSysCore.$(OBJEXT) fei_CommUtils.$(OBJEXT) \
 	fei_ConnectivityBlock.$(OBJEXT) snl_fei_Factory.$(OBJEXT) \
@@ -251,7 +251,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_BlockDescriptor.hpp \
 	$(top_srcdir)/base/fei_CSRMat.hpp \
 	$(top_srcdir)/base/fei_CSVec.hpp \
-	$(top_srcdir)/base/cfei.h \
 	$(top_srcdir)/base/fei_ConnectivityTable.hpp \
 	$(top_srcdir)/base/fei_EqnBuffer.hpp \
 	$(top_srcdir)/base/fei_EqnCommMgr.hpp \
@@ -306,7 +305,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_Filter.hpp \
 	$(top_srcdir)/base/fei_LibraryWrapper.hpp \
 	$(top_srcdir)/base/fei_LinSysCoreFilter.hpp \
-	$(top_srcdir)/base/fei_LinSysCore_struct.h \
 	$(top_srcdir)/base/fei_NodeCommMgr.hpp \
 	$(top_srcdir)/base/fei_NodeDatabase.hpp \
 	$(top_srcdir)/base/fei_NodeDescriptor.hpp \
@@ -368,7 +366,6 @@ CORE = \
 	$(srcdir)/fei_CSRMat.cpp \
 	$(srcdir)/fei_CSVec.cpp \
 	$(srcdir)/fei_DirichletBCManager.cpp \
-	$(srcdir)/cfei.cpp \
 	$(srcdir)/fei_EqnBuffer.cpp \
 	$(srcdir)/fei_EqnCommMgr.cpp \
 	$(srcdir)/fei_FEDataFilter.cpp \
@@ -547,7 +544,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEI_Implementation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SNL_FEI_Structure.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cfei.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_BlockDescriptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_CSRMat.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_CSVec.Po@am__quote@
@@ -678,20 +674,6 @@ fei_DirichletBCManager.obj: $(srcdir)/fei_DirichletBCManager.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_DirichletBCManager.cpp' object='fei_DirichletBCManager.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_DirichletBCManager.obj `if test -f '$(srcdir)/fei_DirichletBCManager.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_DirichletBCManager.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_DirichletBCManager.cpp'; fi`
-
-cfei.o: $(srcdir)/cfei.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cfei.o -MD -MP -MF $(DEPDIR)/cfei.Tpo -c -o cfei.o `test -f '$(srcdir)/cfei.cpp' || echo '$(srcdir)/'`$(srcdir)/cfei.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/cfei.Tpo $(DEPDIR)/cfei.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cfei.cpp' object='cfei.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cfei.o `test -f '$(srcdir)/cfei.cpp' || echo '$(srcdir)/'`$(srcdir)/cfei.cpp
-
-cfei.obj: $(srcdir)/cfei.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT cfei.obj -MD -MP -MF $(DEPDIR)/cfei.Tpo -c -o cfei.obj `if test -f '$(srcdir)/cfei.cpp'; then $(CYGPATH_W) '$(srcdir)/cfei.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cfei.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/cfei.Tpo $(DEPDIR)/cfei.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cfei.cpp' object='cfei.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o cfei.obj `if test -f '$(srcdir)/cfei.cpp'; then $(CYGPATH_W) '$(srcdir)/cfei.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cfei.cpp'; fi`
 
 fei_EqnBuffer.o: $(srcdir)/fei_EqnBuffer.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_EqnBuffer.o -MD -MP -MF $(DEPDIR)/fei_EqnBuffer.Tpo -c -o fei_EqnBuffer.o `test -f '$(srcdir)/fei_EqnBuffer.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_EqnBuffer.cpp

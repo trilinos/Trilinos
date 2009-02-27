@@ -301,11 +301,6 @@ int execute_named_test(const std::string& testname,
     testname_recognized = true;
   }
 
-  if (testname == "cFeiTester_main") {
-    errcode = cFeiTester_main(argc, argv, comm, numProcs, localProc);
-    testname_recognized = true;
-  }
-
   if (testname == "library_plugins") {
     errcode = test_library_plugins(comm);
     testname_recognized = true;
@@ -336,8 +331,7 @@ int execute_named_test(const std::string& testname,
 	     << "    poisson3_main"<<FEI_ENDL
 	     << "    cube_main"<<FEI_ENDL
 	     << "    cube3_main"<<FEI_ENDL
-	     << "    feiDriver_main"<<FEI_ENDL
-	     << "    cFeiTester_main"<<FEI_ENDL << FEI_ENDL;
+	     << "    feiDriver_main"<<FEI_ENDL << FEI_ENDL;
     return(-1);
   }
   return(errcode);

@@ -85,7 +85,6 @@ APPEND_SET(SOURCES
   BCNodeSet.cpp
   CommNodeSet.cpp
   CRSet.cpp
-  cFeiTester_main.cpp
   beam_main.cpp
   beam_oldfei_main.cpp
   DataReader.cpp

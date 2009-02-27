@@ -43,7 +43,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_BlockDescriptor.hpp \
 	$(top_srcdir)/base/fei_CSRMat.hpp \
 	$(top_srcdir)/base/fei_CSVec.hpp \
-	$(top_srcdir)/base/cfei.h \
 	$(top_srcdir)/base/fei_ConnectivityTable.hpp \
 	$(top_srcdir)/base/fei_EqnBuffer.hpp \
 	$(top_srcdir)/base/fei_EqnCommMgr.hpp \
@@ -98,7 +97,6 @@ CORE_H = \
 	$(top_srcdir)/base/fei_Filter.hpp \
 	$(top_srcdir)/base/fei_LibraryWrapper.hpp \
 	$(top_srcdir)/base/fei_LinSysCoreFilter.hpp \
-	$(top_srcdir)/base/fei_LinSysCore_struct.h \
 	$(top_srcdir)/base/fei_NodeCommMgr.hpp \
 	$(top_srcdir)/base/fei_NodeDatabase.hpp \
 	$(top_srcdir)/base/fei_NodeDescriptor.hpp \
@@ -160,7 +158,6 @@ CORE = \
 	$(srcdir)/fei_CSRMat.cpp \
 	$(srcdir)/fei_CSVec.cpp \
 	$(srcdir)/fei_DirichletBCManager.cpp \
-	$(srcdir)/cfei.cpp \
 	$(srcdir)/fei_EqnBuffer.cpp \
 	$(srcdir)/fei_EqnCommMgr.cpp \
 	$(srcdir)/fei_FEDataFilter.cpp \
