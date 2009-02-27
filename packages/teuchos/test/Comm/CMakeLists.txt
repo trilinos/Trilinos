@@ -2,21 +2,42 @@
 # Required modules
 INCLUDE(PackageAddExecutableAndTest)
 
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  DefaultMpiComm_UnitTests  
+PACKAGE_ADD_EXECUTABLE(
+  DefaultMpiComm_UnitTests
   SOURCES
     DefaultMpiComm_UnitTests.cpp
     ../UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_ADD_EXECUTABLE(
-  ReduceAllAndScatter_test  
-  COMM serial mpi  
-  SOURCES ReduceAllAndScatter_test.cpp
+PACKAGE_ADD_TEST(
+  DefaultMpiComm_UnitTests  
+  NAME DefaultMpiComm_UnitTests_serial
+  ARGS "--teuchos-suppress-startup-banner --show-test-details=ALL --test-serial"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  #STANDARD_PASS_OUTPUT
   )
+
+PACKAGE_ADD_TEST(
+  DefaultMpiComm_UnitTests  
+  NAME DefaultMpiComm_UnitTests_mpi1
+  ARGS "--teuchos-suppress-startup-banner --show-test-details=ALL"
+  COMM mpi
+  NUM_MPI_PROCS 1
+  #STANDARD_PASS_OUTPUT
+  )
+
+PACKAGE_ADD_TEST(
+  DefaultMpiComm_UnitTests  
+  NAME DefaultMpiComm_UnitTests_mpi
+  ARGS "--teuchos-suppress-startup-banner --show-test-details=ALL"
+  COMM mpi
+  NUM_MPI_PROCS 1-4
+  STANDARD_PASS_OUTPUT
+  )
+  # 2008/07/16: rabartl: Note: We can't run on more than 4 procs or the char
+  # ordinals will overflow for std::complex<double> packet type.
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Comm_test  
@@ -24,4 +45,10 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1-10
   STANDARD_PASS_OUTPUT
+  )
+
+PACKAGE_ADD_EXECUTABLE(
+  ReduceAllAndScatter_test  
+  COMM serial mpi  
+  SOURCES ReduceAllAndScatter_test.cpp
   )

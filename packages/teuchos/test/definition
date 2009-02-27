@@ -64,8 +64,7 @@ PACKAGE_NAME=Teuchos
 # Note that above the last two test cases fail due to empty lists!
 
 (FRAMEWORK,INSTALL) {
-    TESTS = RCP/RefCountPtr_test.exe,
-            Workspace/workspace_test.exe,
+    TESTS = Workspace/workspace_test.exe,
             dyn_cast/dyn_cast_test.exe;
     ARGS = --verbose;
     COMM = SERIAL;

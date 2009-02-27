@@ -2,9 +2,10 @@
 INCLUDE(PackageAddExecutableAndTest)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  Workspace_test  
-  SOURCES cxx_main.cpp 
-  ARGS --verbose
-  COMM serial mpi
+  BLAS_test  
+  SOURCES cxx_main.cpp
+  ARGS -v
   NUM_MPI_PROCS 1
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
   )

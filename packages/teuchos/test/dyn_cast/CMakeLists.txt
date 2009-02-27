@@ -2,7 +2,7 @@
 INCLUDE(PackageAddExecutableAndTest)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  Workspace_test  
+  dyn_cast_test  
   SOURCES cxx_main.cpp 
   ARGS --verbose
   COMM serial mpi

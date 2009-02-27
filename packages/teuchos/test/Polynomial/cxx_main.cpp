@@ -33,4 +33,3 @@ int main( int argc, char* argv[] ) {
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }
-
