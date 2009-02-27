@@ -24,61 +24,71 @@ cvs -q -d :ext:software:/space/CVS co Trilinos/cmake Trilinos/CTestConfig.cmake
 #echo "Doing dependency checking-only build: `date`"
 #echo
 #
-#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_package_deps_godel.cmake -VV
+#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_package_deps_godel.cmake -VV \
+#  &> $BASEDIR/ctest_linux_nightly_package_deps_godel.out
 
 echo
 echo "Doing serial performance build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_performance_godel.cmake -VV
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_performance_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_serial_performance_godel.out
 
 echo
 echo "Doing mpi optimized build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_optimized_godel.cmake -VV
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_optimized_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_mpi_optimized_godel.out
 
 echo
 echo "Doing serial debug build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_godel.cmake -VV
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_serial_debug_godel.out
 
 echo
 echo "Doing mpi optimized shared library build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_mpi_optimized_shared_godel.out
 
 echo
 echo "Doing serial optimized implicit instantiation build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_opt_impl_instant_godel.cmake -VV
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_opt_impl_instant_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_serial_opt_impl_instant_godel.out
 
 echo
 echo "Doing mpi optimized zoltan c-only build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_opt_zoltan_c_godel.cmake -VV
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_opt_zoltan_c_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_mpi_opt_zoltan_c_godel.out
 
 echo
 echo "Doing serial debug intel build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_icpc_godel.cmake -VV
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_icpc_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_serial_debug_icpc_godel.out
 
 echo
 echo "Doing serial debug memcheck build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_memcheck_godel.cmake -VV
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_memcheck_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_serial_debug_memcheck_godel.out
 
 echo
 echo "Doing mpi debug memcheck build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake -VV
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_mpi_debug_memcheck_godel.out
 
 echo
 echo "Ending nightly Trilinos testing on godel: `date`"
