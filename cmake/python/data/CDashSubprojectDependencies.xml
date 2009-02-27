@@ -230,7 +230,7 @@
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="ITR"/>
-    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="EpetraExt" type="LR"/>
     <Dependency name="Thyra" type="LR"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="TR"/>

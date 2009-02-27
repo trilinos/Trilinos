@@ -260,14 +260,14 @@
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="Meros" dir="meros">
-    <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Thyra"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Thyra,EpetraExt"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES value="Stratimikos,AztecOO"/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="MPI"/>
   </Package>
   <Package name="FEI" dir="fei">
     <LIB_REQUIRED_DEP_PACKAGES/>
