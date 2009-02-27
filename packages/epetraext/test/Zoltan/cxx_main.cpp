@@ -26,11 +26,11 @@
 // ***********************************************************************
 //@HEADER
 
-// SymmRCM Test routine
-#include <Epetra_ConfigDefs.h>
+// AMD Test routine
+#include <EpetraExt_ConfigDefs.h>
 #include "EpetraExt_Version.h"
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
 #include <mpi.h>
 #endif
@@ -40,13 +40,17 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Vector.h"
+#include "Epetra_LinearProblem.h"
 
-//#include "Trilinos_Util.h"
+#include "Trilinos_Util.h"
 
 #include "EpetraExt_Zoltan_CrsGraph.h"
-//#include "EpetraExt_ZoltanOrder_CrsGraph.h"
 #include "EpetraExt_LPTrans_From_GraphTrans.h"
 #include "../epetra_test_err.h"
+
+#ifdef HAVE_EXPERIMENTAL
+#include "EpetraExt_AMD_CrsGraph.h"
+#endif
 
 #define perror(str) { fprintf(stderr,"%s\n",str);  exit(-1); }
 #define perror1(str,ierr) { fprintf(stderr,"%s %d\n",str,ierr);  exit(ierr); }
@@ -55,7 +59,7 @@ int main(int argc, char *argv[]) {
 
   int i, ierr=0, returnierr=0;
 
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
 
   // Initialize MPI
 
@@ -72,18 +76,15 @@ int main(int argc, char *argv[]) {
 
 #endif
 
-  bool verbose = false;
+  bool verbose = true;
+  bool failure = false;
 
-  // Check if we should print results to standard out
-//  if (argc>2) if (argv[2][0]=='-' && argv[2][1]=='v') verbose = true;
-
-#ifdef EPETRA_MPI
+#ifdef HAVE_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;
 #endif
-  if (!verbose) Comm.SetTracebackMode(0); // This should shut down any error traceback reporting
-
+  
   int MyPID = Comm.MyPID();
   int NumProc = Comm.NumProc();
 
@@ -93,13 +94,6 @@ int main(int argc, char *argv[]) {
 
   if (verbose) cout << EpetraExt::EpetraExt_Version() << endl << endl;
 
-  Comm.Barrier();
-
-  if (verbose_all) cout << Comm << endl << flush;
-
-  Comm.Barrier();
-
-/*
   //Read in Matrix File and distribute
   int NumGlobalEqs;
   int NumLocalEqs;
@@ -122,7 +116,7 @@ int main(int argc, char *argv[]) {
 
   Epetra_Map Map(NumGlobalEqs,NumLocalEqs,Update,0,Comm);
 
-  if( verbose ) cout << "Building Epetra_CrsMatrix" << endl;
+  if( verbose ) cout << endl << "Building Epetra_CrsMatrix" << endl;
 
   Epetra_CrsMatrix A(Copy, Map, NumRowNZs );
 
@@ -133,9 +127,9 @@ int main(int argc, char *argv[]) {
   {
     RowVals = Values + Bindx[i];
     ColInds = Bindx + Bindx[i];
-    NumEntries = Bindx[i+1] - Bindx[i];
+    int NumEntries = Bindx[i+1] - Bindx[i];
     ierr = A.InsertGlobalValues( Update[i], NumEntries, RowVals, ColInds );
-    if( ierr ) { printf("Row %d:", Update[Row] ); perror1("Error Putting Row: ",ierr); }
+    if( ierr ) { printf("Row %d:", Update[i] ); perror1("Error Putting Row: ",ierr); }
     ierr = A.InsertGlobalValues( Update[i], 1, Values+i, Update+i);
     if( ierr ) { perror1("Error Putting Diag: ",ierr); }
   }
@@ -148,10 +142,12 @@ int main(int argc, char *argv[]) {
 
   Epetra_LinearProblem Prob(&A,&XX,&BB);
 
-  //Generate Zoltan Load Balanced Version of Linear Problem
+  // Generate Zoltan Load Balanced Version of Linear Problem
   if( verbose ) cout << "Creating Zoltan Partitioning Transform!\n";
 
-  EpetraExt::CrsGraph_Zoltan * ZoltanTrans = new EpetraExt::CrsGraph_Zoltan();
+  EpetraExt::Zoltan_CrsGraph * ZoltanTrans = new EpetraExt::Zoltan_CrsGraph();
+  if (!ZoltanTrans) failure = true;
+
   EpetraExt::LinearProblem_GraphTrans * ZoltanLPTrans =
     new EpetraExt::LinearProblem_GraphTrans( 
          *(dynamic_cast<EpetraExt::StructuralSameTypeTransform<Epetra_CrsGraph>*>(ZoltanTrans)) );
@@ -159,19 +155,44 @@ int main(int argc, char *argv[]) {
   if( verbose ) cout << "Creating Load Balanced Linear Problem\n";
   Epetra_LinearProblem &BalancedProb = (*ZoltanLPTrans)(Prob);
 
-  EpetraExt::CrsGraph_SymmRCM * RCMTrans = new EpetraExt::CrsGraph_SymmRCM();
-  EpetraExt::LinearProblem_GraphTrans * RCMLPTrans =
+  // Running this transform fwd() and rvs()
+  failure = failure || !ZoltanLPTrans->fwd();
+  failure = failure || !ZoltanLPTrans->rvs();
+
+#ifdef HAVE_EXPERIMENTAL
+
+  EpetraExt::CrsGraph_AMD * AMDTrans = new EpetraExt::CrsGraph_AMD();
+  if (!AMDTrans) failure = true;
+
+  EpetraExt::LinearProblem_GraphTrans * AMDLPTrans =
     new EpetraExt::LinearProblem_GraphTrans( 
-         *(dynamic_cast<EpetraExt::StructuralSameTypeTransform<Epetra_CrsGraph>*>(RCMTrans)) );
+         *(dynamic_cast<EpetraExt::StructuralSameTypeTransform<Epetra_CrsGraph>*>(AMDTrans)) );
 
-  if( verbose ) cout << "Creating SymmRCMed Linear Problem\n";
-  Epetra_LinearProblem &RCMProb = (*RCMLPTrans)(BalancedProb);
-*/
+  if( verbose ) cout << "Creating AMD Linear Problem\n";
+  Epetra_LinearProblem &AMDProb = (*AMDLPTrans)(BalancedProb);
 
-#ifdef EPETRA_MPI
+  // Running this transform fwd() and rvs()
+  failure = failure || !AMDLPTrans->fwd();
+  failure = failure || !AMDLPTrans->rvs();
+
+#endif
+ 
+  Comm.Barrier();
+
+  if ( ierr != 0 || failure ) {
+    if (verbose)
+      std::cout << "End Result: TEST FAILED" << std::endl;
+    return -1;
+  }
+  //
+  // Default return value
+  //
+  if (verbose)
+    std::cout << "End Result: TEST PASSED" << std::endl;
+  return 0;
+
+#ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-
-  return returnierr;
 }
 

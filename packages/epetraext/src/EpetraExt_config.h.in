@@ -146,6 +146,9 @@
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
 
+/* Define if want to build with parmetis enabled */
+#undef HAVE_PARMETIS
+
 /* Define if want to build with petsc enabled */
 #undef HAVE_PETSC
 

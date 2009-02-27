@@ -28,15 +28,30 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = Zoltan_test
+if BUILD_TRANSFORM
+if BUILD_GRAPH_REORDERINGS
+if BUILD_EPETRAEXT_TRIUTILS
+ZOLTAN_TRANSFORM_TEST = Zoltan_test Dummy
+endif
+endif
+endif
+
+noinst_PROGRAMS = $(ZOLTAN_TRANSFORM_TEST)
 
 Zoltan_test_SOURCES = \
   $(srcdir)/cxx_main.cpp \
   $(top_srcdir)/test/epetra_test_err.h
 
+Dummy_SOURCES = Dummy
+
+Dummy$(EXEEXT): $(srcdir)/Dummy
+	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/bcsstk14.hb bcsstk14.hb; fi
+
+
 Zoltan_test_DEPENDENCIES = \
   $(top_builddir)/src/libepetraext.a \
   $(top_builddir)/../epetra/src/libepetra.a \
+  $(top_builddir)/../triutils/src/libtriutils.a \
   $(top_builddir)/../teuchos/src/libteuchos.a
 
 include $(top_builddir)/Makefile.export.epetraext
@@ -52,4 +67,7 @@ endif
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
 Zoltan_test_LDADD = $(EXPORT_LIBS)
+
+EXTRA_DIST = \
+	$(srcdir)/bcsstk14.hb
 

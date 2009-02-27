@@ -329,6 +329,21 @@ AM_CONDITIONAL(BUILD_COLORING, [test "X$ac_cv_use_epetraext_coloring" != "Xno"])
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, zoltan, [Enable EpetraExt interface support for Zoltan], ZOLTAN, no)
 AM_CONDITIONAL(BUILD_ZOLTAN, [test "X$ac_cv_use_epetraext_zoltan" != "Xno"])
 
+dnl Check for enabling of zoltan
+AC_ARG_ENABLE([zoltan],
+AC_HELP_STRING([--enable-zoltan],[Build EpetraExt interface support for Zoltan using native library.]),
+ac_cv_use_native_zoltan=yes,
+ac_cv_use_native_zoltan=no)
+
+dnl Also check if the ParMETIS interface is enabled, if not disable using the native Zoltan library
+TAC_ARG_WITH_PACKAGE(parmetis, [Enable Parmetis support for Zoltan.], PARMETIS, no)
+if test "X$ac_cv_use_parmetis" = "Xno"; then
+  ac_cv_use_native_zoltan=no
+fi
+
+dnl If both Zoltan and the ParMETIS interface are enabled, use the native Zoltan
+AM_CONDITIONAL(BUILD_NATIVE_ZOLTAN, [test "X$ac_cv_use_native_zoltan" != "Xno"])
+
 TAC_ARG_ENABLE_FEATURE_SUB( epetraext, btf, [Enable EpetraExt BTF subpkg], BTF, no)
 AM_CONDITIONAL(BUILD_BTF, [test "X$ac_cv_use_epetraext_btf" != "Xno"])
 
@@ -534,10 +549,12 @@ fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
 
-if test "X$ac_cv_use_epetraext_zoltan" != "Xno"; then
-  AC_CHECK_LIB(metis,METIS_PartGraphKway,[],[AC_MSG_ERROR([Cannot find libmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>])])
-  AC_CHECK_LIB(parmetis,ParMETIS_PartKway,[],[AC_MSG_ERROR([Cannot find libparmetis.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>])])
-  AC_CHECK_LIB(zoltan,Zoltan_LB_Balance,[],[AC_MSG_ERROR([Cannot find libzoltan.a library needed for Zoltan subpkg, specify using --with-libs=-L<DIR>])])
+if test "X$ac_cv_use_epetraext_zoltan" != "Xno" -a "X$ac_cv_use_native_zoltan" != "Xyes"; then
+  dnl Check if METIS and ParMETIS libraries have proper functionality
+  dnl NOTE: This is not checked if we are using the native Zoltan library, we will leave it up to Zoltan to check.
+  AC_CHECK_LIB(metis,METIS_PartGraphKway,[],[AC_MSG_ERROR([Cannot find libmetis.a library needed for Zoltan subpkg, specify using --with-ldflags=-L<DIR>])])
+  AC_CHECK_LIB(parmetis,ParMETIS_PartKway,[],[AC_MSG_ERROR([Cannot find libparmetis.a library needed for Zoltan subpkg, specify using --with-ldflags=-L<DIR>])])
+  AC_CHECK_LIB(zoltan,Zoltan_LB_Balance,[],[AC_MSG_ERROR([Cannot find libzoltan.a library needed for Zoltan subpkg, specify using --with-ldflags=-L<DIR>])])
 fi
 
 if test "X$ac_cv_use_epetraext_matlab" != "Xno"; then
