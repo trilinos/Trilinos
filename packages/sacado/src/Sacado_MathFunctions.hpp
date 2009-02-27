@@ -40,6 +40,9 @@ namespace Sacado {							\
     template <typename T> class Expr;					\
     template <typename T>						\
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);			\
+    template <typename T, typename S> class SimpleFad;			\
+    template <typename T, typename S>					\
+    SimpleFad<T,S> OP (const SimpleFad<T,S>&);				\
   }									\
 									\
   namespace ELRFad {							\
@@ -141,6 +144,19 @@ namespace Sacado {							\
     template <typename T>						\
     Expr< FADOP< Expr<T>, typename Expr<T>::value_type > >		\
     OP (const Expr<T>&, const typename Expr<T>::value_type&);		\
+									\
+    template <typename T, typename S> class SimpleFad;			\
+    template <typename T, typename S>					\
+    SimpleFad<T,S>							\
+    OP (const SimpleFad<T,S>&, const SimpleFad<T,S>&);			\
+									\
+    template <typename T, typename S>					\
+    SimpleFad<T,S>							\
+    OP (const SimpleFad<T,S>&, const T&);				\
+									\
+    template <typename T, typename S>					\
+    SimpleFad<T,S>							\
+    OP (const T&, const SimpleFad<T,S>&);				\
   }									\
 									\
   namespace ELRFad {							\

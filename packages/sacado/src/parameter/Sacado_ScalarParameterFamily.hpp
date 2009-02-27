@@ -53,10 +53,10 @@ namespace Sacado {
   public:
   
     //! Constructor
-    ScalarParameterFamily(const std::string& name, 
-                          bool supports_ad, 
-                          bool supports_analytic) : 
-      BaseT(name, supports_ad, supports_analytic) {}
+    ScalarParameterFamily(const std::string& name_, 
+                          bool supports_ad_, 
+                          bool supports_analytic_) : 
+      BaseT(name_, supports_ad_, supports_analytic_) {}
       
 
     //! Destructor

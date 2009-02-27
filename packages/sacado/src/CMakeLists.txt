@@ -54,6 +54,10 @@ SET(HEADERS ${HEADERS}
   Sacado_Fad_GeneralVFadExpr.hpp
   Sacado_Fad_GeneralVFadImp.hpp
   Sacado_Fad_VectorDynamicStorage.hpp
+  Sacado_Fad_SimpleFad.hpp
+  Sacado_Fad_SimpleFadImp.hpp
+  Sacado_Fad_SimpleFadOps.hpp
+  Sacado_Fad_SimpleFadTraits.hpp
   ) 
 
 # ELRFAD
@@ -238,6 +242,7 @@ SET(HEADERS ${HEADERS}
   Sacado_Traits.hpp
   Sacado.hpp
   Sacado_MathFunctions.hpp
+  Sacado_cmath.hpp
   )
 
 #

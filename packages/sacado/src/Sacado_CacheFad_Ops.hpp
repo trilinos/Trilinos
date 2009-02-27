@@ -55,8 +55,7 @@
 #define SACADO_CACHEFAD_OPS_HPP
 
 #include "Sacado_CacheFad_Expression.hpp"
-#include <cmath>
-#include <algorithm>	// for std::min and std::max
+#include "Sacado_cmath.hpp"
 #include <ostream>	// for std::ostream
 
 #define FAD_UNARYOP_MACRO(OPNAME,OP,PARTIAL,VALUE,DX,FASTACCESSDX)	\
@@ -205,19 +204,19 @@ FAD_UNARYOP_MACRO(tanh,
 FAD_UNARYOP_MACRO(acosh,
 		  ACoshOp, 
 		  a = std::sqrt((v-value_type(1))*(v+value_type(1))),
-		  acosh(v),
+		  std::acosh(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(asinh,
 		  ASinhOp, 
 		  a = std::sqrt(value_type(1)+v*v),
-		  asinh(v),
+		  std::asinh(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(atanh,
 		  ATanhOp, 
 		  a = value_type(1)-v*v,
-		  atanh(v),
+		  std::atanh(v),
 		  expr.dx(i)/a,
 		  expr.fastAccessDx(i)/a)
 FAD_UNARYOP_MACRO(abs,

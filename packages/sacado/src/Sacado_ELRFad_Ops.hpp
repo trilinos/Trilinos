@@ -55,8 +55,7 @@
 #define SACADO_ELRFAD_OPS_HPP
 
 #include "Sacado_ELRFad_Expression.hpp"
-#include <cmath>
-#include <algorithm>	// for std::min and std::max
+#include "Sacado_cmath.hpp"
 #include <ostream>	// for std::ostream
 
 #define FAD_UNARYOP_MACRO(OPNAME,OP,VALUE,ADJOINT)			\
@@ -178,16 +177,16 @@ FAD_UNARYOP_MACRO(tanh,
 		  bar/(std::cosh(expr.val())*std::cosh(expr.val())))
 FAD_UNARYOP_MACRO(acosh,
 		  ACoshOp, 
-		  acosh(expr.val()),
+		  std::acosh(expr.val()),
 		  bar/std::sqrt((expr.val()-value_type(1.)) * 
 				(expr.val()+value_type(1.))))
 FAD_UNARYOP_MACRO(asinh,
 		  ASinhOp, 
-		  asinh(expr.val()),
+		  std::asinh(expr.val()),
 		  bar/std::sqrt(value_type(1.)+expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(atanh,
 		  ATanhOp, 
-		  atanh(expr.val()),
+		  std::atanh(expr.val()),
 		  bar/(value_type(1.)-expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(abs,
 		  AbsOp, 
@@ -333,7 +332,7 @@ FAD_BINARYOP_MACRO(atan2,
 		   std::atan2(expr1.val(), expr2.val()),
 		   bar*expr2.val()/
 		   (expr1.val()*expr1.val() + expr2.val()*expr2.val()),
-		   bar*expr1.val()/
+		   -bar*expr1.val()/
 		   (expr1.val()*expr1.val() + expr2.val()*expr2.val()))
 FAD_BINARYOP_MACRO(pow,
 		   PowerOp,

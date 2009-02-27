@@ -109,7 +109,7 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/Sacado_ScalarFlopCounter.cpp \
 	$(srcdir)/Sacado_ConfigDefs.h $(srcdir)/Sacado_Version.hpp \
 	$(srcdir)/Sacado_Traits.hpp $(srcdir)/Sacado.hpp \
-	$(srcdir)/Sacado_MathFunctions.hpp \
+	$(srcdir)/Sacado_MathFunctions.hpp $(srcdir)/Sacado_cmath.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadExpr.hpp \
@@ -139,6 +139,10 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
 	$(srcdir)/Sacado_Fad_VectorDynamicStorage.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFad.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFadImp.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFadOps.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFadTraits.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadExpr.hpp \
@@ -269,7 +273,7 @@ DIST_SOURCES = $(am__libsacado_a_SOURCES_DIST) \
 am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Version.hpp $(srcdir)/Sacado_Traits.hpp \
 	$(srcdir)/Sacado.hpp $(srcdir)/Sacado_MathFunctions.hpp \
-	$(srcdir)/Sacado_Fad_GeneralFad.hpp \
+	$(srcdir)/Sacado_cmath.hpp $(srcdir)/Sacado_Fad_GeneralFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadExpr.hpp \
 	$(srcdir)/Sacado_Fad_ExpressionTraits.hpp \
@@ -298,6 +302,10 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
 	$(srcdir)/Sacado_Fad_VectorDynamicStorage.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFad.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFadImp.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFadOps.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFadTraits.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_ELRFad_GeneralFadExpr.hpp \
@@ -559,7 +567,11 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_GeneralVFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
-	$(srcdir)/Sacado_Fad_VectorDynamicStorage.hpp
+	$(srcdir)/Sacado_Fad_VectorDynamicStorage.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFad.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFadImp.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFadOps.hpp \
+	$(srcdir)/Sacado_Fad_SimpleFadTraits.hpp
 
 SACADO_ELRFAD_H = \
 	$(srcdir)/Sacado_ELRFad_GeneralFad.hpp \
@@ -702,6 +714,7 @@ SACADO_H = \
 	$(srcdir)/Sacado_Traits.hpp \
 	$(srcdir)/Sacado.hpp \
 	$(srcdir)/Sacado_MathFunctions.hpp \
+	$(srcdir)/Sacado_cmath.hpp \
 	$(SACADO_FAD_H) \
 	$(SACADO_ELRFAD_H) \
 	$(SACADO_LFAD_H) \

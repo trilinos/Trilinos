@@ -55,8 +55,7 @@
 #define SACADO_FAD_OPS_HPP
 
 #include "Sacado_Fad_Expression.hpp"
-#include <cmath>
-#include <algorithm>	// for std::min and std::max
+#include "Sacado_cmath.hpp"
 #include <ostream>	// for std::ostream
 
 #define FAD_UNARYOP_MACRO(OPNAME,OP,VALUE,DX,FASTACCESSDX)		\
@@ -190,20 +189,20 @@ FAD_UNARYOP_MACRO(tanh,
 		    ( std::cosh(expr.val())* std::cosh(expr.val())))
 FAD_UNARYOP_MACRO(acosh,
 		  ACoshOp, 
-		  acosh(expr.val()),
+		  std::acosh(expr.val()),
 		  expr.dx(i)/ std::sqrt((expr.val()-value_type(1)) * 
 				       (expr.val()+value_type(1))),
 		  expr.fastAccessDx(i)/ std::sqrt((expr.val()-value_type(1)) * 
 						 (expr.val()+value_type(1))))
 FAD_UNARYOP_MACRO(asinh,
 		  ASinhOp, 
-		  asinh(expr.val()),
+		  std::asinh(expr.val()),
 		  expr.dx(i)/ std::sqrt(value_type(1)+expr.val()*expr.val()),
 		  expr.fastAccessDx(i)/ std::sqrt(value_type(1)+
 						 expr.val()*expr.val()))
 FAD_UNARYOP_MACRO(atanh,
 		  ATanhOp, 
-		  atanh(expr.val()),
+		  std::atanh(expr.val()),
 		  expr.dx(i)/(value_type(1)-expr.val()*expr.val()),
 		  expr.fastAccessDx(i)/(value_type(1)-
 						 expr.val()*expr.val()))

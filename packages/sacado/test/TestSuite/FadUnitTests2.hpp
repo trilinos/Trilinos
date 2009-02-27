@@ -571,7 +571,7 @@ testPlusLR() {
   FadType aa_fad = a_fad;
   aa_fad = 1.0;
   aa_fad = aa_fad + b_fad;
-  c_fad = 1.0 + b_fad;
+  c_fad = ScalarType(1.0) + b_fad;
   COMPARE_FADS(aa_fad, c_fad);
 }
 
@@ -582,7 +582,7 @@ testMinusLR() {
   FadType aa_fad = a_fad;
   aa_fad = 1.0;
   aa_fad = aa_fad - b_fad;
-  c_fad = 1.0 - b_fad;
+  c_fad = ScalarType(1.0) - b_fad;
   COMPARE_FADS(aa_fad, c_fad);
 }
 
@@ -593,7 +593,7 @@ testTimesLR() {
   FadType aa_fad = a_fad;
   aa_fad = 2.0;
   aa_fad = aa_fad * b_fad;
-  c_fad = 2.0 * b_fad;
+  c_fad = ScalarType(2.0) * b_fad;
   COMPARE_FADS(aa_fad, c_fad);
 }
 
@@ -604,7 +604,7 @@ testDivideLR() {
   FadType aa_fad = a_fad;
   aa_fad = 2.0;
   aa_fad = aa_fad / b_fad;
-  c_fad = 2.0 / b_fad;
+  c_fad = ScalarType(2.0) / b_fad;
   COMPARE_FADS(aa_fad, c_fad);
 }
 
@@ -629,6 +629,7 @@ class RealFadOpsUnitTest2 : public FadOpsUnitTest2<FadType,ScalarType> {
   CPPUNIT_TEST(testGreaterThan);
 
   CPPUNIT_TEST(testPow);
+  CPPUNIT_TEST(testATan2);
   CPPUNIT_TEST(testMax);
   CPPUNIT_TEST(testMin);
 
@@ -648,6 +649,9 @@ class RealFadOpsUnitTest2 : public FadOpsUnitTest2<FadType,ScalarType> {
   CPPUNIT_TEST(testCosh);
   CPPUNIT_TEST(testSinh);
   CPPUNIT_TEST(testTanh);
+  CPPUNIT_TEST(testACosh);
+  CPPUNIT_TEST(testASinh);
+  CPPUNIT_TEST(testATanh);
   CPPUNIT_TEST(testAbs);
   CPPUNIT_TEST(testFAbs);
 
@@ -679,9 +683,13 @@ public:
   void testACos();
   void testASin();
   void testATan();
+  void testACosh();
+  void testASinh();
+  void testATanh();
   void testAbs();
   void testFAbs();
 
+  void testATan2();
   void testMax();
   void testMin();
 };
@@ -794,6 +802,42 @@ testATan() {
 template <class FadType, class ScalarType>
 void
 RealFadOpsUnitTest2<FadType,ScalarType>::
+testACosh() {
+  FadType aa_fad = this->a_fad;
+  if (this->a_fad.val() < 1.0)
+    aa_fad.val() = 1.0 / this->a_fad.val();
+  this->c_fad = std::acosh(aa_fad);
+  FadType t1(this->n, std::acosh(aa_fad.val()));
+  for (int i=0; i<this->n; i++)
+    t1.fastAccessDx(i) = aa_fad.dx(i)/std::sqrt(aa_fad.val()*aa_fad.val()-1.0);
+  COMPARE_FADS(this->c_fad, t1);
+}
+
+template <class FadType, class ScalarType>
+void
+RealFadOpsUnitTest2<FadType,ScalarType>::
+testASinh() {
+  this->c_fad = std::asinh(this->a_fad);
+  FadType t1(this->n, std::asinh(this->a_fad.val()));
+  for (int i=0; i<this->n; i++)
+    t1.fastAccessDx(i) = this->a_fad.dx(i)/std::sqrt(this->a_fad.val()*this->a_fad.val()+1.0);
+  COMPARE_FADS(this->c_fad, t1);
+}
+
+template <class FadType, class ScalarType>
+void
+RealFadOpsUnitTest2<FadType,ScalarType>::
+testATanh() {
+  this->c_fad = std::atanh(this->a_fad);
+  FadType t1(this->n, std::atanh(this->a_fad.val()));
+  for (int i=0; i<this->n; i++)
+    t1.fastAccessDx(i) = this->a_fad.dx(i)/(1.0 - this->a_fad.val()*this->a_fad.val());
+  COMPARE_FADS(this->c_fad, t1);
+}
+
+template <class FadType, class ScalarType>
+void
+RealFadOpsUnitTest2<FadType,ScalarType>::
 testAbs() {
   this->c_fad = std::abs(this->a_fad);
   FadType t1(this->n, std::abs(this->a_fad.val()));
@@ -819,6 +863,35 @@ testFAbs() {
       t1.fastAccessDx(i) = -this->a_fad.dx(i);
   }
   COMPARE_FADS(this->c_fad, t1);
+}
+
+template <class FadType, class ScalarType>
+void
+RealFadOpsUnitTest2<FadType,ScalarType>::
+testATan2() {
+  this->c_fad = std::atan2(this->a_fad, this->b_fad);
+  FadType t1(this->n, std::atan2(this->a_fad.val(),this->b_fad.val()));
+  ScalarType t = this->a_fad.val()*this->a_fad.val() + 
+    this->b_fad.val()*this->b_fad.val();
+  for (int i=0; i<this->n; i++)
+    t1.fastAccessDx(i) = (this->b_fad.val()*this->a_fad.dx(i) - 
+			  this->a_fad.val()*this->b_fad.dx(i))/t; 
+  COMPARE_FADS(this->c_fad, t1);
+  
+  ScalarType val = this->urand.number();
+  this->c_fad = std::atan2(this->a_fad, val);
+  FadType t2(this->n, std::atan2(this->a_fad.val(), val));
+  t = this->a_fad.val()*this->a_fad.val() + val*val;
+  for (int i=0; i<this->n; i++)
+    t2.fastAccessDx(i) = val*this->a_fad.dx(i)/t;
+  COMPARE_FADS(this->c_fad, t2);
+
+  this->c_fad = std::atan2(val, this->b_fad);
+  FadType t3(this->n, std::atan2(val, this->b_fad.val()));
+  t = val*val + this->b_fad.val()*this->b_fad.val();
+  for (int i=0; i<this->n; i++)
+    t3.fastAccessDx(i) = -val*this->b_fad.dx(i)/t;
+  COMPARE_FADS(this->c_fad, t3);
 }
 
 template <class FadType, class ScalarType>
@@ -901,7 +974,7 @@ testMin() {
   COMPARE_FADS(this->c_fad, this->b_fad);
 }
 
-#undef COMPARE_VALUES(a, b)
-#undef COMPARE_FADS(a, b)
+#undef COMPARE_VALUES
+#undef COMPARE_FADS
 
 #endif // FADUNITTESTS2_HPP

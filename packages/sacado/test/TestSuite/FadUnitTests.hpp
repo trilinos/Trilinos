@@ -468,7 +468,7 @@ testMin() {
   }
 }
 
-#undef COMPARE_VALUES(a, b)
-#undef COMPARE_FADS(a, b)
+#undef COMPARE_VALUES
+#undef COMPARE_FADS
 
 #endif // FADUNITTESTS_HPP

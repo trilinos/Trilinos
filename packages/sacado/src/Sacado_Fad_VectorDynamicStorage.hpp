@@ -47,34 +47,33 @@ namespace Sacado {
 
       //! Default constructor
       VectorDynamicStorage(const T & x) : 
-	owns_mem(true), sz_(0), len_(0), val_(new T(x)), dx_(NULL) {}
+	v_(x), owns_mem(true), sz_(0), len_(0), val_(&v_), dx_(NULL) {}
 
       //! Constructor with size \c sz
       /*!
        * Initializes derivative array 0 of length \c sz
        */
       VectorDynamicStorage(const int sz, const T & x) : 
-	owns_mem(true), sz_(sz), len_(sz), val_(new T(x)) {
+	v_(x), owns_mem(true), sz_(sz), len_(sz), val_(&v_) {
 	dx_ = ds_array<S>::get_and_fill(sz_);
       }
 
       //! Constructor with supplied memory
       VectorDynamicStorage(const int sz, T* x, S* dx, bool zero_out) : 
-	owns_mem(false), sz_(sz), len_(sz), val_(x), dx_(dx) {
+	v_(), owns_mem(false), sz_(sz), len_(sz), val_(x), dx_(dx) {
 	if (zero_out)
 	  zero(dx_, sz_);
       }
 
       //! Copy constructor
       VectorDynamicStorage(const VectorDynamicStorage& x) : 
-	owns_mem(true), sz_(x.sz_), len_(x.sz_), val_(new T(*x.val_))  {
+	v_(*x.val_), owns_mem(true), sz_(x.sz_), len_(x.sz_), val_(&v_)  {
 	dx_ = ds_array<S>::get_and_fill(x.dx_, sz_);
       }
       
       //! Destructor
       ~VectorDynamicStorage() {
 	if (owns_mem) {
-	  delete val_;
 	  if (len_ != 0)
 	    ds_array<S>::destroy_and_release(dx_, len_);
 	}
@@ -128,7 +127,6 @@ namespace Sacado {
 
 	// Destroy old memory
 	if (owns_mem) {
-	  delete val_;
 	  if (len_ != 0)
 	    ds_array<S>::destroy_and_release(dx_, len_);
 	}
@@ -140,6 +138,10 @@ namespace Sacado {
 	val_ = x;
 	dx_ = dx;
       }
+
+    private:
+
+      T v_;
 
     public:
 
