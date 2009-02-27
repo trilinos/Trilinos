@@ -53,6 +53,9 @@ Stokhos::OrthogPolyExpansion<T>::
 solve(typename Stokhos::OrthogPolyExpansion<T>::ordinal_type s,
       typename Stokhos::OrthogPolyExpansion<T>::ordinal_type nrhs)
 {
+  if (s == 0 || nrhs == 0)
+    return 0;
+
   ordinal_type info;
 //   lapack.GESV(s, nrhs, A.values(), A.numRows(), &(piv[0]), b.values(), 
 // 	      b.numRows(), &info);
@@ -66,7 +69,7 @@ solve(typename Stokhos::OrthogPolyExpansion<T>::ordinal_type s,
   norm = dlange_(&t, &s, &s, A.values(), &n, &work[0]);
   lapack.GECON('1', s, A.values(), A.numRows(), norm, &rcond, &work[0], 
 	       &iwork[0], &info);
-  std::cout << "condition number = " << 1.0/rcond << std::endl;
+  //std::cout << "condition number = " << 1.0/rcond << std::endl;
   lapack.GETRS('N', s, nrhs, A.values(), A.numRows(), &(piv[0]), B.values(), 
 	       B.numRows(), &info);
   return info;
