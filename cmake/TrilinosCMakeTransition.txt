@@ -235,9 +235,9 @@ Final Certification Evidence: [???]
 
 Package: Pliris
 
-Package Transition Lead: [???]
+Package Transition Lead: Joseph D. Kotulski (jdkotul@sandia.gov)
 
-Status: Basic libraries and several tests and examples
+Status:  Not started but will begin the transition shortly.
 
 Final Certification Date: [???]
 
