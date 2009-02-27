@@ -41,6 +41,7 @@ fei_unit_impl_utils.hpp
 fei_unit_MatrixTraits.hpp
 fei_unit_Params.hpp
 fei_unit_Reducer.hpp
+fei_unit_ReverseMapper.hpp
 fei_unit_register_tests.hpp
 fei_unit_testcase.hpp
 fei_unit_testcontainer.hpp
@@ -56,6 +57,7 @@ fei_unit_impl_utils.cpp
 fei_unit_MatrixTraits.cpp
 fei_unit_Params.cpp
 fei_unit_Reducer.cpp
+fei_unit_ReverseMapper.cpp
 fei_unit_register_tests.cpp
 fei_unit_testcase.cpp
 fei_unit_testcontainer.cpp

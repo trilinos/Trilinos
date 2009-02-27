@@ -83,6 +83,12 @@ namespace snl_fei {
 	return( records_ );
       }
 
+    /** Get the map containing the records */
+    const map_type& getRecords() const
+      {
+	return( records_ );
+      }
+
     /** Get record with the specified ID. Returns NULL if not found. */
     fei::Record* getRecordWithID(int ID);
 

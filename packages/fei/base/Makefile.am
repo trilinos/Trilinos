@@ -81,6 +81,7 @@ CORE_H = \
 	$(top_srcdir)/base/fei_ParameterSet.hpp \
 	$(top_srcdir)/base/fei_ostream_ops.hpp \
 	$(top_srcdir)/base/fei_Reducer.hpp \
+	$(top_srcdir)/base/fei_ReverseMapper.hpp \
 	$(top_srcdir)/base/fei_SharedPtr.hpp \
 	$(top_srcdir)/base/fei_Solver.hpp \
 	$(top_srcdir)/base/fei_SparseRowGraph.hpp \
@@ -181,6 +182,7 @@ CORE = \
 	$(srcdir)/fei_Pool.cpp \
 	$(srcdir)/fei_Pool_alloc.cpp \
 	$(srcdir)/fei_Reducer.cpp \
+	$(srcdir)/fei_ReverseMapper.cpp \
 	$(srcdir)/fei_impl_utils.cpp \
 	$(srcdir)/fei_utils.cpp \
 	$(srcdir)/fei_VectorSpace.cpp \

@@ -81,8 +81,14 @@ namespace fei {
     /** Return an array of the fields in this field-mask. */
     std::vector<int>& getFieldIDs() { return(fieldIDs_); }
 
+    /** Return an array of the fields in this field-mask. */
+    const std::vector<int>& getFieldIDs() const { return(fieldIDs_); }
+
     /** Return an array of the fieldSizes in this field-mask. */
     std::vector<int>& getFieldSizes() { return(fieldSizes_); }
+
+    /** Return an array of the fieldSizes in this field-mask. */
+    const std::vector<int>& getFieldSizes() const { return(fieldSizes_); }
 
     /** Return an array of the number-of-field-instances for the fields
         in this field-mask. */

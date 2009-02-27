@@ -280,9 +280,9 @@ namespace fei {
 
         @param fieldID Input. Identifier for the field being specified.
 
-        @param globalIndex Output. This is the global index of the specified
-        degree-of-freedom. Not referenced if the specified degree-of-freedom is
-        not found.
+        @param globalIndex Output. This is the global index of the first component
+        of the specified field.
+         Not referenced if the specified field is not found on the given ID.
 
         @return error-code 0 if successful. If the specified degree-of-freedom
         is not found, -1 is returned.
@@ -612,9 +612,17 @@ namespace fei {
     */
     int getRecordCollection(int idType, snl_fei::RecordCollection*& records);
 
+    /** Intended to be used by other fei classes.
+    */
+    int getRecordCollection(int idType, const snl_fei::RecordCollection*& records) const;
+
     /** Intended to be used only by other fei classes.
     */
     std::vector<int>& getEqnNumbers();
+
+    /** Intended to be used only by other fei classes.
+    */
+    const std::vector<int>& getEqnNumbers() const;
 
     /** Intended to be used by other implementation classes.
     */
@@ -729,6 +737,11 @@ namespace fei {
   }; // class fei::VectorSpace
 
   inline std::vector<int>& VectorSpace::getEqnNumbers()
+    {
+      return( eqnNumbers_ );
+    }
+
+  inline const std::vector<int>& VectorSpace::getEqnNumbers() const
     {
       return( eqnNumbers_ );
     }

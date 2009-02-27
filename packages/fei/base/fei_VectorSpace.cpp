@@ -1397,6 +1397,17 @@ int fei::VectorSpace::getRecordCollection(int idType,
 }
 
 //----------------------------------------------------------------------------
+int fei::VectorSpace::getRecordCollection(int idType,
+                                          const snl_fei::RecordCollection*& records) const
+{
+  int idx = snl_fei::binarySearch(idType, idTypes_);
+  if (idx < 0) return(-1);
+
+  records = recordCollections_[idx];
+  return(0);
+}
+
+//----------------------------------------------------------------------------
 int fei::VectorSpace::setOwners_lowestSharing()
 {
   //first, add localProc to each of the sharing-proc lists, in case it wasn't

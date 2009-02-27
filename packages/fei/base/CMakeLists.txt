@@ -203,6 +203,7 @@ fei_Pool.cpp
 fei_ProcEqns.cpp
 fei_Record.cpp
 fei_Reducer.cpp
+fei_ReverseMapper.cpp
 fei_Solver.cpp
 fei_utils.cpp
 fei_Vector_core.cpp
