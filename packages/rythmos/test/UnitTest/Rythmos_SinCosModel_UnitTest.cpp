@@ -66,6 +66,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, setImplicitFlag ) {
   }
 }
 
+
 TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, nominalValues ) {
   double tol = 1.0e-10;
   {
@@ -80,7 +81,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, nominalValues ) {
     TEST_EQUALITY_CONST( explicit_ic.get_t(), 0.0 );
     RCP<const VectorBase<double> > explicit_ic_x = explicit_ic.get_x();
     TEST_FLOATING_EQUALITY( Thyra::get_ele(*explicit_ic_x,0)+1.0, 1.0, tol );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*explicit_ic_x,1), 1.0 );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*explicit_ic_x,1), 1.0, tol );
     TEST_EQUALITY_CONST( explicit_ic.get_beta(), 0.0 );
   }
 
@@ -103,8 +104,8 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, nominalValues ) {
     TEST_EQUALITY_CONST( explicit_ic.get_t(), 0.0 );
 
     RCP<const VectorBase<double> > explicit_ic_x = explicit_ic.get_x();
-    TEST_FLOATING_EQUALITY( Thyra::get_ele(*explicit_ic_x,0)+1.0, 1.0, tol );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*explicit_ic_x,1), 1.0 );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*explicit_ic_x, 0)+1.0, 1.0, tol );
+    TEST_FLOATING_EQUALITY( Thyra::get_ele(*explicit_ic_x, 1), 1.0, tol );
 
     TEST_EQUALITY_CONST( explicit_ic.get_beta(), 0.0 );
 
@@ -331,35 +332,35 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSolution ) {
     TEST_EQUALITY_CONST( exact_sol.supports(MEB::IN_ARG_alpha), false );
     TEST_EQUALITY_CONST( exact_sol.supports(MEB::IN_ARG_beta), true );
     for (int i=0 ; i < as<int>(t_values.size()); ++i) {
-      MEB::InArgs<double> exact_sol = explicit_model->getExactSolution(t_values[i]);
-      TEST_FLOATING_EQUALITY( exact_sol.get_t(), t_values[i], tol );
-      RCP<const VectorBase<double> > x = exact_sol.get_x();
+      MEB::InArgs<double> exact_sol2 = explicit_model->getExactSolution(t_values[i]);
+      TEST_FLOATING_EQUALITY( exact_sol2.get_t(), t_values[i], tol );
+      RCP<const VectorBase<double> > x = exact_sol2.get_x();
       TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,0), a+b*sin((f/L)*t_values[i]+phi), tol );
       TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,1), b*(f/L)*cos((f/L)*t_values[i]+phi), tol );
-      TEST_EQUALITY_CONST( exact_sol.get_beta(), 0.0 );
+      TEST_EQUALITY_CONST( exact_sol2.get_beta(), 0.0 );
     }
   }
   {
     RCP<SinCosModel> implicit_model = sinCosModel();
     pl->set("Implicit model formulation", true);
     implicit_model->setParameterList(pl);
-    MEB::InArgs<double> exact_sol = implicit_model->getExactSolution(0.0);
-    TEST_EQUALITY_CONST( exact_sol.supports(MEB::IN_ARG_t), true );
-    TEST_EQUALITY_CONST( exact_sol.supports(MEB::IN_ARG_x), true );
-    TEST_EQUALITY_CONST( exact_sol.supports(MEB::IN_ARG_x_dot), true );
-    TEST_EQUALITY_CONST( exact_sol.supports(MEB::IN_ARG_alpha), true );
-    TEST_EQUALITY_CONST( exact_sol.supports(MEB::IN_ARG_beta), true );
+    MEB::InArgs<double> exact_sol2 = implicit_model->getExactSolution(0.0);
+    TEST_EQUALITY_CONST( exact_sol2.supports(MEB::IN_ARG_t), true );
+    TEST_EQUALITY_CONST( exact_sol2.supports(MEB::IN_ARG_x), true );
+    TEST_EQUALITY_CONST( exact_sol2.supports(MEB::IN_ARG_x_dot), true );
+    TEST_EQUALITY_CONST( exact_sol2.supports(MEB::IN_ARG_alpha), true );
+    TEST_EQUALITY_CONST( exact_sol2.supports(MEB::IN_ARG_beta), true );
     for (int i=0 ; i < as<int>(t_values.size()); ++i) {
-      MEB::InArgs<double> exact_sol = implicit_model->getExactSolution(t_values[i]);
-      TEST_FLOATING_EQUALITY( exact_sol.get_t(), t_values[i], tol );
-      RCP<const VectorBase<double> > x = exact_sol.get_x();
+      MEB::InArgs<double> exact_sol3 = implicit_model->getExactSolution(t_values[i]);
+      TEST_FLOATING_EQUALITY( exact_sol3.get_t(), t_values[i], tol );
+      RCP<const VectorBase<double> > x = exact_sol3.get_x();
       TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,0), a+b*sin((f/L)*t_values[i]+phi), tol );
       TEST_FLOATING_EQUALITY( Thyra::get_ele(*x,1), b*(f/L)*cos((f/L)*t_values[i]+phi), tol );
-      RCP<const VectorBase<double> > x_dot = exact_sol.get_x_dot();
+      RCP<const VectorBase<double> > x_dot = exact_sol3.get_x_dot();
       TEST_FLOATING_EQUALITY( Thyra::get_ele(*x_dot,0), b*(f/L)*cos((f/L)*t_values[i]+phi), tol );
       TEST_FLOATING_EQUALITY( Thyra::get_ele(*x_dot,1), -b*(f/L)*(f/L)*sin((f/L)*t_values[i]+phi), tol );
-      TEST_EQUALITY_CONST( exact_sol.get_alpha(), 0.0 );
-      TEST_EQUALITY_CONST( exact_sol.get_beta(), 0.0 );
+      TEST_EQUALITY_CONST( exact_sol3.get_alpha(), 0.0 );
+      TEST_EQUALITY_CONST( exact_sol3.get_beta(), 0.0 );
     }
   }
 }
@@ -375,9 +376,11 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSolution ) {
 TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSensSolution ) {
   std::vector<double> t_values;
   int N = 10;
-  double t = 25;
-  for (int i=0 ; i<2*N+1 ; ++i) {
-    t_values.push_back( -t + 2*t*i/(2*N) );
+  {
+    double t = 25;
+    for (int i=0 ; i<2*N+1 ; ++i) {
+      t_values.push_back( -t + 2*t*i/(2*N) );
+    }
   }
 
   double tol = 1.0e-10;
@@ -790,15 +793,15 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
     }
     inArgs.set_t(t);
     inArgs.set_x(x);
-    double a = 25.0;
-    double freq = 10.0;
-    double L = 4.0;
+    double a2 = 25.0;
+    double freq2 = 10.0;
+    double L2 = 4.0;
     RCP<VectorBase<double> > p = Thyra::createMember(model->get_p_space(0));
     {
       Thyra::DetachedVectorView<double> p_view(*p);
-      p_view[0] = a;
-      p_view[1] = freq;
-      p_view[2] = L;
+      p_view[0] = a2;
+      p_view[1] = freq2;
+      p_view[2] = L2;
     }
     inArgs.set_p(0,p);
 
@@ -812,7 +815,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
     model->evalModel(inArgs,outArgs);
 
     TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), 6.0 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), (freq/L)*(freq/L)*(a-5.0) );
+    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), (freq2/L2)*(freq2/L2)*(a2-5.0) );
 
     // Check that DfDp is correct
     {
@@ -820,9 +823,9 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
       TEST_EQUALITY_CONST( mv_view(0,0), 0.0 ); // df0dp0 = df0da = 0.0
       TEST_EQUALITY_CONST( mv_view(0,1), 0.0 ); // df0dp1 = df0df = 0.0
       TEST_EQUALITY_CONST( mv_view(0,2), 0.0 ); // df0dp2 = df0dL = 0.0
-      TEST_EQUALITY_CONST( mv_view(1,0), (freq/L)*(freq/L) ); // df1dp0 = df1da = (f/L)*(f/L)
-      TEST_EQUALITY_CONST( mv_view(1,1), (2.0*freq/(L*L))*(a-5.0) ); // df1dp1 = df1df = 2*f/(L*L)*(a-x0)
-      TEST_EQUALITY_CONST( mv_view(1,2), -(2.0*freq*freq/(L*L*L))*(a-5.0) ); // df1dp2 = df1dL = -2*f*f/(L*L*L)*(a-x0)
+      TEST_EQUALITY_CONST( mv_view(1,0), (freq2/L2)*(freq2/L2) ); // df1dp0 = df1da = (f/L2)*(f/L2)
+      TEST_EQUALITY_CONST( mv_view(1,1), (2.0*freq2/(L2*L2))*(a2-5.0) ); // df1dp1 = df1df = 2*f/(L2*L2)*(a2-x0)
+      TEST_EQUALITY_CONST( mv_view(1,2), -(2.0*freq2*freq2/(L2*L2*L2))*(a2-5.0) ); // df1dp2 = df1dL = -2*f*f/(L2*L2*L2)*(a2-x0)
     }
     
   }
@@ -848,15 +851,15 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
     inArgs.set_t(t);
     inArgs.set_x(x);
     inArgs.set_x_dot(x_dot);
-    double a = 25.0;
-    double freq = 10.0;
-    double L = 4.0;
+    double a2 = 25.0;
+    double freq2 = 10.0;
+    double L2 = 4.0;
     RCP<VectorBase<double> > p = Thyra::createMember(model->get_p_space(0));
     {
       Thyra::DetachedVectorView<double> p_view(*p);
-      p_view[0] = a;
-      p_view[1] = freq;
-      p_view[2] = L;
+      p_view[0] = a2;
+      p_view[1] = freq2;
+      p_view[2] = L2;
     }
     inArgs.set_p(0,p);
 
@@ -870,7 +873,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
     model->evalModel(inArgs,outArgs);
 
     TEST_EQUALITY_CONST( Thyra::get_ele(*f,0), 8.0 - 6.0 );
-    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), 9.0 - (freq/L)*(freq/L)*(a-5.0) );
+    TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), 9.0 - (freq2/L2)*(freq2/L2)*(a2-5.0) );
 
     // Check that DfDp is correct
     {
@@ -878,9 +881,9 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
       TEST_EQUALITY_CONST( mv_view(0,0), 0.0 );
       TEST_EQUALITY_CONST( mv_view(0,1), 0.0 );
       TEST_EQUALITY_CONST( mv_view(0,2), 0.0 );
-      TEST_EQUALITY_CONST( mv_view(1,0), -(freq/L)*(freq/L) );
-      TEST_EQUALITY_CONST( mv_view(1,1), -(2.0*freq/(L*L))*(a-5.0) );
-      TEST_EQUALITY_CONST( mv_view(1,2), +(2.0*freq*freq/(L*L*L))*(a-5.0) );
+      TEST_EQUALITY_CONST( mv_view(1,0), -(freq2/L2)*(freq2/L2) );
+      TEST_EQUALITY_CONST( mv_view(1,1), -(2.0*freq2/(L2*L2))*(a2-5.0) );
+      TEST_EQUALITY_CONST( mv_view(1,2), +(2.0*freq2*freq2/(L2*L2*L2))*(a2-5.0) );
     }
     
   }
