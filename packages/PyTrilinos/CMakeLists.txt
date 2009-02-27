@@ -2,7 +2,7 @@
 INCLUDE(PackageMacros)
 
 # Set the package name
-PACKAGE(PyTrilinos)
+PACKAGE(PyTrilinos  DISABLE_STRONG_WARNINGS)
 
 # Set the package version number
 SET(${PACKAGE_NAME}_VERSION 4.2d)

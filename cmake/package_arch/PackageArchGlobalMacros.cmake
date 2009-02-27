@@ -1413,8 +1413,8 @@ MACRO(PACKAGE_ARCH_PRE_SETUP_ENV)
 
   # Set up for strong compiler warnings and warnings as errors
  
-  INCLUDE(PackageArchSetupStrongCompileWarnings)
-  PACKAGE_ARCH_SETUP_STRONG_COMPILE_WARNINGS()
+  INCLUDE(PackageArchSetupBasicCompileLinkFlags)
+  PACKAGE_ARCH_SETUP_BASIC_COMPILE_LINK_FLAGS()
 
   # Find the hostname used in selecting or deselecting tests by the
   # PACKAGE_ADD_TEST(...) function.

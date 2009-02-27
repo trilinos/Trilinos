@@ -7,6 +7,11 @@ INCLUDE(PackageGeneralMacros)
 
 SET(CMAKE_EXECUTABLE_SUFFIX ".exe")
 
+#
+# Add an test/example executable
+#
+# 
+
 
 FUNCTION(PACKAGE_ADD_EXECUTABLE EXE_NAME)
    

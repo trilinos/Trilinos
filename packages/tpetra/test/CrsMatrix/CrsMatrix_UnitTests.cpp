@@ -574,13 +574,13 @@ namespace {
     CrsMatrix<Scalar,Ordinal> A(map,3);
     if (myImageID == 0) {
       myNNZ = 2;
-      Array<Scalar> vals(2); vals[0] = as<Scalar>(2.0)*ST::one(); vals[1]= ST::one();
+      Array<Scalar> vals(2); vals[0] = as<Scalar>(2)*ST::one(); vals[1]= ST::one();
       Array<Ordinal> cols(2); cols[0] = myImageID; cols[1] = myImageID+1;
       A.submitEntries(myImageID,cols(),vals());
     }
     else if (myImageID == numImages-1) {
       myNNZ = 2;
-      Array<Scalar> vals(2); vals[0] = ST::one(); vals[1]= as<Scalar>(2.0)*ST::one();
+      Array<Scalar> vals(2); vals[0] = ST::one(); vals[1]= as<Scalar>(2)*ST::one();
       Array<Ordinal> cols(2); cols[0] = myImageID-1; cols[1] = myImageID;
       A.submitEntries(myImageID,cols(),vals());
     }
@@ -609,7 +609,7 @@ namespace {
     threes.random();
     A.apply(ones,threes);
     // now, threes should be 3*ones
-    threes.update(as<Scalar>(-3.0)*ST::one(),ones,ST::one());
+    threes.update(as<Scalar>(-3)*ST::one(),ones,ST::one());
     Array<Mag> norms(1), zeros(1,MT::zero());
     threes.norm2(norms());
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
@@ -953,8 +953,8 @@ namespace {
       const int *rptr = rowind;
       for (int c=0; c<dim; ++c) {
         for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          A_crs.submitEntry(*rptr-1,c,as<Scalar>(*dptr));
-          A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,as<Scalar>(*dptr));
+          A_crs.submitEntry(*rptr-1,c,static_cast<Scalar>(*dptr));
+          A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,static_cast<Scalar>(*dptr));
           ++rptr;
           ++dptr;
         }
