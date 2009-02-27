@@ -368,16 +368,18 @@ int fei::Matrix_Impl<T>::giveToUnderlyingBlockMatrix(int row,
                                                     bool sumInto)
 {
   if (sumInto) {
-    CHK_ERR( snl_fei::BlockMatrixTraits<T>::sumIn(matrix_.get(),
-                                         row, rowDim,
-                                         numCols, cols,
-                                         LDAs, colDims, values) );
+    if ( snl_fei::BlockMatrixTraits<T>::sumIn(matrix_.get(),
+                                         row, rowDim, numCols, cols,
+                                         LDAs, colDims, values) != 0) {
+      ERReturn(-1);
+    }
   }
   else {
-    CHK_ERR( snl_fei::BlockMatrixTraits<T>::copyIn(matrix_.get(),
-                                          row, rowDim,
-                                          numCols, cols,
-                                          LDAs, colDims, values) );
+    if ( snl_fei::BlockMatrixTraits<T>::copyIn(matrix_.get(),
+                                          row, rowDim, numCols, cols,
+                                          LDAs, colDims, values) != 0) {
+      ERReturn(-1);
+    }
   }
 
   changedSinceMark_ = true;
@@ -511,6 +513,14 @@ int fei::Matrix_Impl<T>::sumIn(int numRows, const int* rows,
   if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
     os << dbgprefix_<<"sumIn"<<FEI_ENDL;
+    if (output_level_ >= fei::FULL_LOGS) {
+      for(int i=0; i<numRows; ++i) {
+        for(int j=0; j<numCols; ++j) {
+          os << "("<<rows[i]<<","<<cols[j]<<","<<values[i][j]<<") ";
+        }
+        os << FEI_ENDL;
+      }
+    }
   }
 
   return( giveToMatrix( numRows, rows, numCols, cols, values, true, format) );
@@ -970,9 +980,8 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
       blockColSizes.push_back(size);
       colSizeTotal += size;
     }
-    std::vector<double> coefs_1d(rowSizeTotal*colSizeTotal);
+    std::vector<double> coefs_1d(rowSizeTotal*colSizeTotal, 0.0);
     double* coefs1dPtr = &coefs_1d[0];
-    std::fill(coefs_1d.begin(), coefs_1d.end(), 0.0);
     std::vector<double*> coefs_2d(blockRows.size()*blockCols.size());
     double** coefs2dPtr = &coefs_2d[0];
 
@@ -1004,7 +1013,7 @@ int fei::Matrix_Impl<T>::giveToBlockMatrix(int numRows, const int* rows,
                                            &blockCols[0],
                                            &blockColSizes[0],
                                            &blockColSizes[0],
-                                           coefs2dPtr,
+                                           &coefs2dPtr[i*blockCols.size()],
                                            true) );
     }
 

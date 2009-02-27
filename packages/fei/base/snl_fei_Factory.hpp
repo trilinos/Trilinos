@@ -118,6 +118,7 @@ namespace snl_fei {
     fei::SharedPtr<FiniteElementData> feData_;
     fei::SharedPtr<LibraryWrapper> wrapper_;
     int outputLevel_;
+    bool blockMatrix_;
   };//class Factory
 }//namespace snl_fei
 

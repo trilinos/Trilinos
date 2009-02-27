@@ -23,7 +23,8 @@ snl_fei::Factory::Factory(MPI_Comm comm,
     lsc_(),
     feData_(),
     wrapper_(wrapper),
-    outputLevel_(0)
+    outputLevel_(0),
+    blockMatrix_(false)
 {
   if (wrapper_.get() != NULL) {
     lsc_ = wrapper->getLinearSystemCore();
@@ -116,6 +117,36 @@ snl_fei::Factory::parameters(const fei::ParameterSet& parameterset)
   }
 
   parameterset.getIntParamValue("outputLevel", outputLevel_);
+
+  const fei::Param* param = 0;
+  fei::Param::ParamType ptype = fei::Param::BAD_TYPE;
+
+  param = parameterset.get("BLOCK_GRAPH");
+  ptype = param != NULL ? param->getType() : fei::Param::BAD_TYPE;
+  if (ptype != fei::Param::BAD_TYPE) {
+    blockMatrix_ = true;
+  }
+
+  param = parameterset.get("BLOCK_MATRIX");
+  ptype = param != NULL ? param->getType() : fei::Param::BAD_TYPE;
+  if (ptype != fei::Param::BAD_TYPE) {
+    if (ptype == fei::Param::BOOL) {
+      blockMatrix_ = param->getBoolValue();
+    }
+    else {
+      blockMatrix_ = true;
+    }
+  }
+
+  param = parameterset.get("AZ_matrix_type");
+  ptype = param != NULL ? param->getType() : fei::Param::BAD_TYPE;
+  if (ptype != fei::Param::BAD_TYPE) {
+    if (ptype == fei::Param::STRING) {
+      if (param->getStringValue() == "AZ_VBR_MATRIX") {
+        blockMatrix_ = true;
+      }
+    }
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -303,8 +334,8 @@ snl_fei::Factory::createBroker_LinSysCore(fei::SharedPtr<fei::MatrixGraph> matri
                                 fei::SharedPtr<LinearSystemCore> lsc)
 {
   if (broker_.get() == NULL) {
-    fei::SharedPtr<snl_fei::Broker>
-    brokerptr(new snl_fei::Broker_LinSysCore(lsc, matrixGraph, reducer_));          broker_ = brokerptr;
+    fei::SharedPtr<snl_fei::Broker> brokerptr(new snl_fei::Broker_LinSysCore(lsc, matrixGraph, reducer_, blockMatrix_));
+    broker_ = brokerptr;
   }
 
   return(0);

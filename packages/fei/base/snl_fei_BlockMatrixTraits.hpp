@@ -42,112 +42,112 @@ namespace snl_fei {
     { return(-1); }
 
     /** Given a global (zero-based) row number, pass out a copy of the contents
-	of that row.
-	@param mat
-	@param row
-	@param numBlkCols Length of the user-allocated arrays indices and colDims.
-	@param rowDim Number of point-equations associated with this block-row.
-	@param blkCols User-allocated array which will hold column-indices on
-	output.
-	@param colDims User-allocated array which will hold the number of point-
-	indices per block-column.
-	@param coefs User-allocated array of arrays. First dimension (number of
-	arrays) must be 'len'. i-th array will hold the coefficients from the i-th
-	block-entry in this matrix row, packed in column-major order as a 1D list.
-	@param coefsLen Length of the user-allocated coefs array.
-	@param blkRowLength Output value, will be the length of the matrix row,
-	(number of blk-cols) which may be more or less than the length of the
-	input 'numBlkCols'. If blkRowLength is less than numBlkCols, then only
-	'blkRowLength' positions in the above array arguments will be referenced.
-	If blkRowLength is greater than numBlkCols, then only numBlkCols positions
-	will be referenced.
-	@return error-code 0 if successful. Non-zero return-value may indicate
-	that the specified row is not locally owned.
+        of that row.
+        @param mat
+        @param row
+        @param numBlkCols Length of the user-allocated arrays indices and colDims.
+        @param rowDim Number of point-equations associated with this block-row.
+        @param blkCols User-allocated array which will hold column-indices on
+        output.
+        @param colDims User-allocated array which will hold the number of point-
+        indices per block-column.
+        @param coefs User-allocated array of arrays. First dimension (number of
+        arrays) must be 'len'. i-th array will hold the coefficients from the i-th
+        block-entry in this matrix row, packed in column-major order as a 1D list.
+        @param coefsLen Length of the user-allocated coefs array.
+        @param blkRowLength Output value, will be the length of the matrix row,
+        (number of blk-cols) which may be more or less than the length of the
+        input 'numBlkCols'. If blkRowLength is less than numBlkCols, then only
+        'blkRowLength' positions in the above array arguments will be referenced.
+        If blkRowLength is greater than numBlkCols, then only numBlkCols positions
+        will be referenced.
+        @return error-code 0 if successful. Non-zero return-value may indicate
+        that the specified row is not locally owned.
     */
     static int copyOutRow(T* /*mat*/,
-			  int /*row*/,
-			  int /*numBlkCols*/,
-			  int /*rowDim*/,
-			  int* /*blkCols*/,
-			  int* /*colDims*/,
-			  double* /*coefs*/,
-			  int /*coefsLen*/,
-			  int& /*blkRowLength*/)
+                          int /*row*/,
+                          int /*numBlkCols*/,
+                          int /*rowDim*/,
+                          int* /*blkCols*/,
+                          int* /*colDims*/,
+                          double* /*coefs*/,
+                          int /*coefsLen*/,
+                          int& /*blkRowLength*/)
       { return(-1); }
 
     /** Given a global (zero-based) point-row number, pass out a copy of the
-	contents of that row.
-	@param mat
-	@param firstLocalOffset First point-equation that is owned by the local
-	processor.
-	@param row Global equation-number of the point-row being requested.
-	@param len Length of the user-allocated arrays coefs and indices.
-	@param coefs User-allocated array which will hold matrix coefficients
-	on output.
-	@param indices User-allocated array which will hold column-indices on
-	output.
-	@param rowLength Output value, will be the length of the matrix row,
-	which may be more or less than the length of the above user-allocated
-	arrays.
-	@return error-code 0 if successful. Non-zero return-value may indicate
-	that the specified row is not locally owned.
+        contents of that row.
+        @param mat
+        @param firstLocalOffset First point-equation that is owned by the local
+        processor.
+        @param row Global equation-number of the point-row being requested.
+        @param len Length of the user-allocated arrays coefs and indices.
+        @param coefs User-allocated array which will hold matrix coefficients
+        on output.
+        @param indices User-allocated array which will hold column-indices on
+        output.
+        @param rowLength Output value, will be the length of the matrix row,
+        which may be more or less than the length of the above user-allocated
+        arrays.
+        @return error-code 0 if successful. Non-zero return-value may indicate
+        that the specified row is not locally owned.
     */
     static int copyOutPointRow(T* /*mat*/,
-			       int /*firstLocalOffset*/,
-			       int /*row*/, int /*len*/,
-			       double* /*coefs*/, int* /*indices*/,
-			       int& /*rowLength*/)
+                               int /*firstLocalOffset*/,
+                               int /*row*/, int /*len*/,
+                               double* /*coefs*/, int* /*indices*/,
+                               int& /*rowLength*/)
     { return(-1); }
 
     /** Sum a flat Fortran-style array of coefficient data into the
-	underlying matrix.
+        underlying matrix.
     */
     static int sumIn(T* /*mat*/,
-		     int /*blockRow*/,
-		     int /*rowDim*/,
-		     int /*numBlockCols*/,
-		     const int* /*blockCols*/,
-		     const int* /*colDims*/,
-		     int /*LDA*/,
-		     const double* /*values*/)
+                     int /*blockRow*/,
+                     int /*rowDim*/,
+                     int /*numBlockCols*/,
+                     const int* /*blockCols*/,
+                     const int* /*colDims*/,
+                     int /*LDA*/,
+                     const double* /*values*/)
     { return(-1); }
 
     /** Copy a flat Fortran-style array of coefficient data into the
-	underlying matrix.
+        underlying matrix.
     */
     static int copyIn(T* /*mat*/,
-		     int /*blockRow*/,
-		     int /*rowDim*/,
-		     int /*numBlockCols*/,
-		     const int* /*blockCols*/,
-		     const int* /*colDims*/,
-		     int /*LDA*/,
-		     const double* /*values*/)
+                     int /*blockRow*/,
+                     int /*rowDim*/,
+                     int /*numBlockCols*/,
+                     const int* /*blockCols*/,
+                     const int* /*colDims*/,
+                     int /*LDA*/,
+                     const double* /*values*/)
     { return(-1); }
 
     /** Sum a C-style table of coefficient data into the underlying matrix.
      */
     static int sumIn(T* /*mat*/,
-		     int /*row*/, int /*rowDim*/,
-		     int /*numCols*/, const int* /*cols*/,
-		     const int* /*LDAs*/,
-		     const int* /*colDims*/,
-		     const double* const* /*values*/)
+                     int /*row*/, int /*rowDim*/,
+                     int /*numCols*/, const int* /*cols*/,
+                     const int* /*LDAs*/,
+                     const int* /*colDims*/,
+                     const double* const* /*values*/)
     { return(-1); }
 
     /** Copy (replacing any already-existing values at the specified locations)
-	a C-style table of coefficient data into the underlying matrix.
+        a C-style table of coefficient data into the underlying matrix.
     */
     static int copyIn(T* /*mat*/,
-		      int /*row*/, int /*rowDim*/,
-		      int /*numCols*/, const int* /*cols*/,
-		      const int* /*LDAs*/,
-		      const int* /*colDims*/,
-		      const double* const* /*values*/)
+                      int /*row*/, int /*rowDim*/,
+                      int /*numCols*/, const int* /*cols*/,
+                      const int* /*LDAs*/,
+                      const int* /*colDims*/,
+                      const double* const* /*values*/)
       { return(-1); }
 
     /** Have the underlying matrix perform any global synchronization or
-	assembly that needs to be done after all data has been input.
+        assembly that needs to be done after all data has been input.
     */
     static int globalAssemble(T* /*mat*/)
     { return(-1); }

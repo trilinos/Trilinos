@@ -118,7 +118,7 @@ int snl_fei::PointBlockMap::getBlkEqnSize(int blkEqn)
 }
 
 //----------------------------------------------------------------------------
-int snl_fei::PointBlockMap::eqnToBlkEqn(int eqn)
+int snl_fei::PointBlockMap::eqnToBlkEqn(int eqn) const
 {
   if (ptEqualBlk_ == true) return(eqn);
 
@@ -130,7 +130,7 @@ int snl_fei::PointBlockMap::eqnToBlkEqn(int eqn)
 }
 
 //----------------------------------------------------------------------------
-int snl_fei::PointBlockMap::blkEqnToPtEqn(int blkEqn)
+int snl_fei::PointBlockMap::blkEqnToPtEqn(int blkEqn) const
 {
   if (ptEqualBlk_ == true) return(blkEqn);
 

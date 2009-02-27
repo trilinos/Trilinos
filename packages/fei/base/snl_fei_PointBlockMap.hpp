@@ -76,14 +76,14 @@ namespace snl_fei {
        returned.
        A return-value of -1 always indicates a not-found or not-valid error.
    */
-   int eqnToBlkEqn(int eqn);
+   int eqnToBlkEqn(int eqn) const;
 
    /** Given a block-equation, return the corresponding point-equation (the
        first of the point-equations that correspond to that block-equation).
        If blkEqn does not correspond to a point-equation, then -1 is
        returned.
    */
-   int blkEqnToPtEqn(int blkEqn);
+   int blkEqnToPtEqn(int blkEqn) const;
 
    /** Given a block-equation, query for the corresponding point-equation (the
        first of the corresponding point-equations) and the block-size, or

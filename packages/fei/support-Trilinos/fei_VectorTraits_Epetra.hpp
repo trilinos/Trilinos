@@ -31,63 +31,61 @@ namespace fei {
       { return("Epetra_MultiVector"); }
 
     static int setValues(Epetra_MultiVector* vec, int firstLocalOffset,
-			 double scalar, bool isSolnVector=false)
+                         double scalar, bool isSolnVector=false)
       {
-	return( vec->PutScalar(scalar) );
+        return( vec->PutScalar(scalar) );
       }
 
+    //note that incoming indices are point-entry indices, not block-indices.
     static int putValuesIn(Epetra_MultiVector* vec,
-		           int firstLocalOffset,
-		           int numValues,
+                           int firstLocalOffset,
+                           int numValues,
                            const int* indices,
                            const double* values,
                            bool sum_into,
                            bool isSolnVector=false,
                            int vectorIndex=0)
       {
+        double* localVecValues = (*vec)[vectorIndex];
         if (sum_into) {
           for(int i=0; i<numValues; ++i) {
-            if (vec->SumIntoGlobalValue(indices[i],vectorIndex,values[i])!=0){
-              return(-1);
-            }
+            localVecValues[indices[i]-firstLocalOffset] += values[i];
           }
-	}
-        else {
-	  for(int i=0; i<numValues; ++i) {
-	    if (vec->ReplaceGlobalValue(indices[i],vectorIndex,values[i])!=0){
-	      return(-1);
-	    }
-	  }
         }
-	return(0);
+        else {
+          for(int i=0; i<numValues; ++i) {
+            localVecValues[indices[i]-firstLocalOffset] = values[i];
+          }
+        }
+        return(0);
       }
 
+    //note that incoming indices are point-entry indices, not block-indices.
     static int copyOut(Epetra_MultiVector* vec,
-		       int firstLocalOffset,
-		       int numValues, const int* indices, double* values,
-		       bool isSolnVector=false,
-		       int vectorIndex=0)
+                       int firstLocalOffset,
+                       int numValues, const int* indices, double* values,
+                       bool isSolnVector=false,
+                       int vectorIndex=0)
       {
-	const Epetra_BlockMap& map = vec->Map();
-	double* coefPtr = (*vec)[vectorIndex];
-	for(int i=0; i<numValues; ++i) {
-	  values[i] = coefPtr[map.LID(indices[i])];
-	}
+        double* localVecValues = (*vec)[vectorIndex];
+        for(int i=0; i<numValues; ++i) {
+          values[i] = localVecValues[indices[i]-firstLocalOffset];
+        }
 
-	return(0);
+        return(0);
       }
 
     static double* getLocalCoefsPtr(Epetra_MultiVector* vec,
                                     bool isSolnVector=false,
                                     int vectorIndex=0)
       {
-        return(vec->Pointers()[vectorIndex]);
+        return((*vec)[vectorIndex]);
       }
 
     static int update(Epetra_MultiVector* vec,
-		      double a,
-		      Epetra_MultiVector* x,
-		      double b)
+                      double a,
+                      Epetra_MultiVector* x,
+                      double b)
     {
       return( vec->Update(a, *x, b) );
     }

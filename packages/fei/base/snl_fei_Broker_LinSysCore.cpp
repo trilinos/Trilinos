@@ -17,14 +17,16 @@
 //----------------------------------------------------------------------------
 snl_fei::Broker_LinSysCore::Broker_LinSysCore(fei::SharedPtr<LinearSystemCore> lsc,
 			      fei::SharedPtr<fei::MatrixGraph> matrixGraph,
-                              fei::SharedPtr<fei::Reducer> reducer)
+                              fei::SharedPtr<fei::Reducer> reducer,
+                              bool blockMatrix)
   : linsyscore_(lsc),
     matrixGraph_(matrixGraph),
     reducer_(reducer),
     lookup_(NULL),
     setGlobalOffsets_(false),
     numLocalEqns_(0),
-    setMatrixStructure_(false)
+    setMatrixStructure_(false),
+    blockMatrix_(blockMatrix)
 {
   int dummyID = -1;
   lsc->setNumRHSVectors(1, &dummyID);

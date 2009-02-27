@@ -204,6 +204,105 @@ IF(FEI_ENABLE_AztecOO)
     NUM_MPI_PROCS 4
     )
 
+  PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestMultifieldCopyFiles
+    DEST_FILES
+    mf.i mf.in.1.0 mf.in.2.0 mf.in.2.1 mf.in.3.0 mf.in.3.1 mf.in.3.2
+    mf.input mf.soln.node.correct.1.1.0 parameters.Trilinos
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/multifield
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/multifield
+    EXEDEPS fei_test
+  )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestMultifieldCopyFiles
+    NAME multifield
+    ARGS "-d ./multifield -i mf.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestMultifieldCopyFiles
+    NAME multifield
+    ARGS "-d ./multifield -i mf.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestMultifieldCopyFiles
+    NAME multifield
+    ARGS "-d ./multifield -i mf.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 3
+    )
+
+  PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestMultifieldVBRCopyFiles
+    DEST_FILES
+    mf.i mf.in.1.0 mf.in.2.0 mf.in.2.1 mf.in.3.0 mf.in.3.1 mf.in.3.2
+    mf.input mf.soln.node.correct.1.1.0 parameters.Trilinos
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/multifield_vbr
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/multifield_vbr
+    EXEDEPS fei_test
+  )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestMultifieldVBRCopyFiles
+    NAME multifield_vbr
+    ARGS "-d ./multifield_vbr -i mf.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestMultifieldVBRCopyFiles
+    NAME multifield_vbr
+    ARGS "-d ./multifield_vbr -i mf.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestMultifieldVBRCopyFiles
+    NAME multifield_vbr
+    ARGS "-d ./multifield_vbr -i mf.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 3
+    )
+
+  PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestMultifieldVBRAZCopyFiles
+    DEST_FILES
+    mf.i mf.in.1.0 mf.in.2.0 mf.in.2.1 mf.in.3.0 mf.in.3.1 mf.in.3.2
+    mf.input mf.soln.node.correct.1.1.0 parameters.Trilinos
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/multifield_vbr_az
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/multifield_vbr_az
+    EXEDEPS fei_test
+  )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestMultifieldVBRAZCopyFiles
+    NAME multifield_vbr_az
+    ARGS "-d ./multifield_vbr_az -i mf.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestMultifieldVBRAZCopyFiles
+    NAME multifield_vbr_az
+    ARGS "-d ./multifield_vbr_az -i mf.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 2
+    )
+
+  PACKAGE_ADD_TEST(
+    fei_test FEITestMultifieldVBRAZCopyFiles
+    NAME multifield_vbr_az
+    ARGS "-d ./multifield_vbr_az -i mf.i"
+    COMM serial mpi
+    NUM_MPI_PROCS 3
+    )
+
   PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRMultifieldSlaveCopyFiles
     DEST_FILES
     mf.i mf.in.1.0 mf.in.2.0 mf.in.2.1 mf.in.3.0 mf.in.3.1 mf.in.3.2

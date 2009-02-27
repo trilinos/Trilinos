@@ -48,6 +48,9 @@ TESTS=test utest_cases utest \
 	test/cr_slave_20quad_old \
 	test/cr_lagrange_20quad_AZLSC \
 	test/cr_lagrange_20quad_old \
+	test/multifield \
+	test/multifield_vbr \
+	test/multifield_vbr_az \
 	test/cr_multifield_slave
 else
 TESTS=
@@ -92,6 +95,9 @@ tests:
 	cd $(top_builddir)/test/cr_slave_20quad_old && $(MAKE)
 	cd $(top_builddir)/test/cr_lagrange_20quad_AZLSC && $(MAKE)
 	cd $(top_builddir)/test/cr_lagrange_20quad_old && $(MAKE)
+	cd $(top_builddir)/test/multifield && $(MAKE)
+	cd $(top_builddir)/test/multifield_vbr && $(MAKE)
+	cd $(top_builddir)/test/multifield_vbr_az && $(MAKE)
 	cd $(top_builddir)/test/cr_multifield_slave && $(MAKE)
 	@echo ""
 	@echo "Finished building fei tests."
@@ -133,6 +139,9 @@ clean-tests:
 	cd $(top_builddir)/test/cr_slave_20quad_old && $(MAKE) clean
 	cd $(top_builddir)/test/cr_lagrange_20quad_AZLSC && $(MAKE) clean
 	cd $(top_builddir)/test/cr_lagrange_20quad_old && $(MAKE) clean
+	cd $(top_builddir)/test/multifield && $(MAKE) clean
+	cd $(top_builddir)/test/multifield_vbr && $(MAKE) clean
+	cd $(top_builddir)/test/multifield_vbr_az && $(MAKE) clean
 	cd $(top_builddir)/test/cr_multifield_slave && $(MAKE) clean
 
 clean-examples:

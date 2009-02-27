@@ -228,7 +228,7 @@ int Aztec_LinSysCore::parameters(int numParams, const char*const * params) {
    const char* param = NULL;
 
    snl_fei::mergeStringLists(paramStrings_, numParams_,
-				    params, numParams);
+                                    params, numParams);
 
    param = snl_fei::getParamValue("outputLevel",numParams,params);
    if (param != NULL){
@@ -393,13 +393,13 @@ int Aztec_LinSysCore::setMatrixStructure(int** ptColIndices,
     for(int i=0; i<numLocalEqnBlks_; i++) {
       int blkEqn = localBlkOffset_+i;
       fprintf(debugFile_, "   blkRow %d, ptRowsPerBlkRow %d\n",
-	      blkEqn, ptRowsPerBlkRow[i]);
+              blkEqn, ptRowsPerBlkRow[i]);
     }
     fflush(debugFile_);
   }
 
   int err = allocateMatrix(ptColIndices, ptRowLengths, blkColIndices,
-			   blkRowLengths, ptRowsPerBlkRow);
+                           blkRowLengths, ptRowsPerBlkRow);
   return(err);
 }
 
@@ -434,7 +434,7 @@ int Aztec_LinSysCore::createMiscStuff()
    if (azS_ != NULL) scalingCreated_ = true;
    else {
      FEI_CERR << "Aztec_LinSysCore::createMiscStuff ERROR: failed to create scaling"
-	  << FEI_ENDL;
+          << FEI_ENDL;
      return(-1);
    }
 
@@ -502,7 +502,7 @@ int Aztec_LinSysCore::allocateMatrix(int** ptColIndices,
 
   for (int i = 0; i < numLocalEqns_; i++) {
     if (snl_fei::searchList(localOffset_+i,
-			    ptColIndices[i], ptRowLengths[i]) >= 0) {
+                            ptColIndices[i], ptRowLengths[i]) >= 0) {
       row_lengths[i] = ptRowLengths[i] - 1;
     }
     else {
@@ -527,9 +527,9 @@ int Aztec_LinSysCore::createBlockMatrix(int** blkColIndices,
 {
   int i;
   blkMap_ = new Aztec_BlockMap(numGlobalEqns_, numLocalEqns_,
-			       localOffset_, comm_,
-			       numGlobalEqnBlks_, numLocalEqnBlks_,
-			       localBlkOffset_, ptRowsPerBlkRow);
+                               localOffset_, comm_,
+                               numGlobalEqnBlks_, numLocalEqnBlks_,
+                               localBlkOffset_, ptRowsPerBlkRow);
 
   blkUpdate_ = new int[numLocalEqnBlks_];
 
@@ -692,7 +692,7 @@ int Aztec_LinSysCore::sumIntoSystemMatrix(int numPtRows, const int* ptRows,
    }
    else {
       return( sumIntoPointRow(numPtRows, ptRows, numPtCols, ptCols, values,
-			      false));
+                              false));
    }
 }
 
@@ -727,8 +727,8 @@ int Aztec_LinSysCore::getMatrixRowLength(int row, int& length)
 
 //==============================================================================
 int Aztec_LinSysCore::getMatrixRow(int row, double* coefs,
-				   int* indices,
-				   int len, int& rowLength)
+                                   int* indices,
+                                   int len, int& rowLength)
 {
   int err = getMatrixRowLength(row, rowLength);
   if (err != 0) return(-1);
@@ -766,7 +766,7 @@ int Aztec_LinSysCore::sumIntoBlockRow(int numBlkRows, const int* blkRows,
                                        int numBlkCols, const int* blkCols,
                                        const double* const* values,
                                        int numPtCols,
-				      bool overwriteInsteadOfAccumulate)
+                                      bool overwriteInsteadOfAccumulate)
 {
   int i;
   //first, let's figure out which of the incoming blkRows is the biggest --
@@ -791,18 +791,18 @@ int Aztec_LinSysCore::sumIntoBlockRow(int numBlkRows, const int* blkRows,
     //now shove it into the matrix.
     if (overwriteInsteadOfAccumulate) {
       int err = blkA_ptr_->putBlockRow(blkRows[i], coefs,
-				       (int*)blkCols, numBlkCols);
+                                       (int*)blkCols, numBlkCols);
       if (err != 0) {
-	FEI_CERR << thisProc_ << " DVBR::putBlockRow failed." << FEI_ENDL;
-	return(err);
+        FEI_CERR << thisProc_ << " DVBR::putBlockRow failed." << FEI_ENDL;
+        return(err);
       }
     }
     else {
       int err = blkA_ptr_->sumIntoBlockRow(blkRows[i], coefs,
-					   (int*)blkCols, numBlkCols);
+                                           (int*)blkCols, numBlkCols);
       if (err != 0) {
-	FEI_CERR << thisProc_ << " DVBR::sumIntoBlockRow failed." << FEI_ENDL;
-	return(err);
+        FEI_CERR << thisProc_ << " DVBR::sumIntoBlockRow failed." << FEI_ENDL;
+        return(err);
       }
     }
 
@@ -872,7 +872,7 @@ int Aztec_LinSysCore::getBlockSize(int blkInd) {
 int Aztec_LinSysCore::sumIntoPointRow(int numPtRows, const int* ptRows,
                                        int numPtCols, const int* ptColIndices,
                                        const double* const* values,
-				      bool overwriteInsteadOfAccumulate)
+                                      bool overwriteInsteadOfAccumulate)
 {
   int i, j;
   if (debugOutput_) {
@@ -889,16 +889,16 @@ int Aztec_LinSysCore::sumIntoPointRow(int numPtRows, const int* ptRows,
   if (!blockMatrix_) {
     if (overwriteInsteadOfAccumulate) {
       for(i=0; i<numPtRows; ++i) {
-	CHK_ERR( A_ptr_->putRow(ptRows[i], numPtCols, values[i], ptColIndices) );
+        CHK_ERR( A_ptr_->putRow(ptRows[i], numPtCols, values[i], ptColIndices) );
       }
     }
     else {
       int err = A_ptr_->sumIntoRow(numPtRows, ptRows, numPtCols, ptColIndices,
-				   values);
+                                   values);
       if (err != 0) {
-	FEI_OSTRINGSTREAM osstr;
-	osstr << "Aztec_LinSysCore::sumIntoPointRow ERROR calling A_ptr->sumIntoRow";
-	throw std::runtime_error(osstr.str());
+        FEI_OSTRINGSTREAM osstr;
+        osstr << "Aztec_LinSysCore::sumIntoPointRow ERROR calling A_ptr->sumIntoRow";
+        throw std::runtime_error(osstr.str());
       }
     }
 
@@ -926,7 +926,7 @@ int Aztec_LinSysCore::sumIntoPointRow(int numPtRows, const int* ptRows,
     blkCols[i] = lookup_->ptEqnToBlkEqn(ptColIndices[i]);
     if (blkCols[i] < 0) {
       FEI_CERR << thisProc_ << " lookup ptEqnToBlkEqn("<<ptColIndices[i]<<"): "
-	   << blkCols[i] << FEI_ENDL;
+           << blkCols[i] << FEI_ENDL;
       messageAbort("negative blk-col");
     }
 
@@ -936,7 +936,7 @@ int Aztec_LinSysCore::sumIntoPointRow(int numPtRows, const int* ptRows,
   for(i=0; i<numPtRows; i++) {
     for(j=0; j<numPtCols; j++) {
       sumPointIntoBlockRow(blkRows[i], blkRowOffsets[i],
-			   blkCols[j], blkColOffsets[j], values[i][j]);
+                           blkCols[j], blkColOffsets[j], values[i][j]);
     }
   }
 
@@ -976,7 +976,7 @@ int Aztec_LinSysCore::sumPointIntoBlockRow(int blkRow, int rowOffset,
 
 //==============================================================================
 int Aztec_LinSysCore::sumIntoRHSVector(int num,
-				       const double* values,
+                                       const double* values,
                                        const int* indices)
 {
   //
@@ -1085,7 +1085,7 @@ int Aztec_LinSysCore::matrixLoadComplete() {
      }
      else {
        if (!A_ptr_->isFilled()) {
-	 A_ptr_->fillComplete();
+         A_ptr_->fillComplete();
        }
      }
 
@@ -1183,9 +1183,9 @@ int Aztec_LinSysCore::getBlkEqnsAndOffsets(int* ptEqns, int* blkEqns,
    for(int i=0; i<numEqns; i++) {
       blkEqns[i] = lookup_->ptEqnToBlkEqn(ptEqns[i]);
       if (blkEqns[i] < 0) {
-	FEI_CERR << thisProc_ << "ptEqn: " << ptEqns[i] << ", blkEqn: " << blkEqns[i]
-	     << FEI_ENDL;
-	messageAbort("getBlkEqnsAndOffsets: blk-eqn lookup failed.");
+        FEI_CERR << thisProc_ << "ptEqn: " << ptEqns[i] << ", blkEqn: " << blkEqns[i]
+             << FEI_ENDL;
+        messageAbort("getBlkEqnsAndOffsets: blk-eqn lookup failed.");
       }
 
       blkOffsets[i] = lookup_->getOffsetIntoBlkEqn(blkEqns[i], ptEqns[i]);
@@ -1363,10 +1363,10 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
 
 //==============================================================================
 int Aztec_LinSysCore::enforceBlkEssentialBC(int* blkEqn,
-					    int* blkOffset,
-					    double* alpha,
-					    double* gamma,
-					    int len)
+                                            int* blkOffset,
+                                            double* alpha,
+                                            double* gamma,
+                                            int len)
 {
 //
 //This function must enforce an essential boundary condition on each local
@@ -1494,8 +1494,8 @@ int Aztec_LinSysCore::blkRowEssBCMod(int blkEqn, int blkOffset, double* val,
          //'blkOffset'th point-row and point-column, leaving a 1.0 on the
          //diagonal.
          double bc_term = gamma/alpha;
-	 double rhs_term = bc_term;
-	 if (explicitDirichletBCs_) rhs_term = 0.0;
+         double rhs_term = bc_term;
+         if (explicitDirichletBCs_) rhs_term = 0.0;
 
          int thisOffset = offset;
 
@@ -1687,7 +1687,7 @@ int Aztec_LinSysCore::enforceRemoteEssBCs(int numEqns, int* globalEqns,
     for(int i=0; i<numEqns; ++i) {
       fprintf(debugFile_,"remBC row %d, (cols,coefs): ", globalEqns[i]);
       for(int j=0; j<colIndLen[i]; ++j) {
-	fprintf(debugFile_, "(%d,%e) ",colIndices[i][j], coefs[i][j]);
+        fprintf(debugFile_, "(%d,%e) ",colIndices[i][j], coefs[i][j]);
       }
       fprintf(debugFile_,"\n");
     }
@@ -1744,30 +1744,30 @@ int Aztec_LinSysCore::enforceRemoteEssBCs(int numEqns, int* globalEqns,
 
      for(int j=0; j<colIndLen[i]; j++) {
        for(int k=0; k<rowLen; k++) {
-	 if (A_ptr_->getTransformedEqn(AcolInds[k]) == colIndices[i][j]) {
-	   double value = Acoefs[k]*coefs[i][j];
+         if (A_ptr_->getTransformedEqn(AcolInds[k]) == colIndices[i][j]) {
+           double value = Acoefs[k]*coefs[i][j];
 
-	   double old_rhs_val = 0.0;
-	   if (rhsLoaded_) {
-	     old_rhs_val = (*b_ptr_)[globalEqn_i];
-	     (*b_ptr_)[globalEqn_i] -= value;
-	     (*bc_)[globalEqn_i] -= value;
-	   }
-	   else {
-	     old_rhs_val = tmp_b_[currentRHS_][globalEqn_i -localOffset_];
-	     tmp_b_[currentRHS_][globalEqn_i -localOffset_] -= value;
-	     tmp_bc_[globalEqn_i -localOffset_] -= value;
-	   }
+           double old_rhs_val = 0.0;
+           if (rhsLoaded_) {
+             old_rhs_val = (*b_ptr_)[globalEqn_i];
+             (*b_ptr_)[globalEqn_i] -= value;
+             (*bc_)[globalEqn_i] -= value;
+           }
+           else {
+             old_rhs_val = tmp_b_[currentRHS_][globalEqn_i -localOffset_];
+             tmp_b_[currentRHS_][globalEqn_i -localOffset_] -= value;
+             tmp_bc_[globalEqn_i -localOffset_] -= value;
+           }
 
-	   if (debugOutput_) {
-	     fprintf(debugFile_,"remBC mod, rhs %d (%e) -= %e\n",
-		     globalEqn_i, old_rhs_val, value);
-	     fprintf(debugFile_,"remBC, set A(%d,%d)==%e, to 0.0\n",
-		     globalEqn_i, AcolInds[k], Acoefs[k]);
-	   }
+           if (debugOutput_) {
+             fprintf(debugFile_,"remBC mod, rhs %d (%e) -= %e\n",
+                     globalEqn_i, old_rhs_val, value);
+             fprintf(debugFile_,"remBC, set A(%d,%d)==%e, to 0.0\n",
+                     globalEqn_i, AcolInds[k], Acoefs[k]);
+           }
 
-	   Acoefs[k] = 0.0;
-	 }
+           Acoefs[k] = 0.0;
+         }
        }
      }
 
@@ -1935,7 +1935,7 @@ int Aztec_LinSysCore::sumInMatrix(double scalar, const Data& data) {
    if (blockMatrix_) {
      if (strcmp("AztecDVBR_Matrix", data.getTypeName())) {
        FEI_CERR << "Aztec_LinSysCore::sumInMatrix ERROR, incoming type-string: "
-	    << data.getTypeName() << ", expected AztecDVBR_Matrix." << FEI_ENDL;
+            << data.getTypeName() << ", expected AztecDVBR_Matrix." << FEI_ENDL;
        messageAbort("Aborting.");
      }
      AztecDVBR_Matrix* source = (AztecDVBR_Matrix*)data.getDataPtr();
@@ -2410,7 +2410,7 @@ void Aztec_LinSysCore::recordUserOptions()
    }
 
    param = snl_fei::getParamValue("AZ_subdomain_solve",
-					 numParams_, paramStrings_);
+                                         numParams_, paramStrings_);
    if (param != NULL){
       setSubdomainSolve(param);
    }
@@ -2426,7 +2426,7 @@ void Aztec_LinSysCore::recordUserOptions()
    }
 
    param = snl_fei::getParamValue("AZ_pre_calc",
-					 numParams_, paramStrings_);
+                                         numParams_, paramStrings_);
    if (param != NULL){
       setPreCalc(param);
    }
@@ -2437,7 +2437,7 @@ void Aztec_LinSysCore::recordUserOptions()
    }
 
    param = snl_fei::getParamValue("AZ_type_overlap",
-					 numParams_, paramStrings_);
+                                         numParams_, paramStrings_);
    if (param != NULL){
       setTypeOverlap(param);
    }
@@ -2629,7 +2629,7 @@ int Aztec_LinSysCore::launchSolver(int& solveStatus, int& iterations) {
        double omega = 0.67;
 
        initialize_ML(azA_, &azP_, numLevels_,
-		     numFineSweeps, numCoarseSweeps, omega,
+                     numFineSweeps, numCoarseSweeps, omega,
                      map_->getProcConfig(), &ml);
      }
      else {

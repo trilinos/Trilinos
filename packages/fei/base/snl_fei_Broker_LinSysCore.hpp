@@ -38,34 +38,35 @@ namespace snl_fei {
   public:
     /** Constructor */
     Broker_LinSysCore(fei::SharedPtr<LinearSystemCore> lsc,
-		      fei::SharedPtr<fei::MatrixGraph> matrixGraph,
-                      fei::SharedPtr<fei::Reducer> reducer);
+                      fei::SharedPtr<fei::MatrixGraph> matrixGraph,
+                      fei::SharedPtr<fei::Reducer> reducer,
+                      bool blockMatrix);
 
     /** destructor */
     virtual ~Broker_LinSysCore();
 
     /** Produce an instance of an fei::Vector. This overloading of the
-	createVector() method is for use by Broker implementations that are
-	dispensing 'views' of vectors that reside in LinearSystemCore or
-	FiniteElementData container implementations. In those cases, there is
-	a distinction that must be made between solution-vectors and
-	rhs-vectors.
+        createVector() method is for use by Broker implementations that are
+        dispensing 'views' of vectors that reside in LinearSystemCore or
+        FiniteElementData container implementations. In those cases, there is
+        a distinction that must be made between solution-vectors and
+        rhs-vectors.
 
-	@param isSolutionVector
+        @param isSolutionVector
      */
     fei::SharedPtr<fei::Vector> createVector(bool isSolutionVector=false)
       {
-	fei::SharedPtr<fei::Vector> vptr;
-	if (matrixGraph_.get() == NULL) return(vptr);
-	if (setGlobalOffsets() != 0) return(vptr);
+        fei::SharedPtr<fei::Vector> vptr;
+        if (matrixGraph_.get() == NULL) return(vptr);
+        if (setGlobalOffsets() != 0) return(vptr);
 
-	fei::SharedPtr<fei::Vector> tmpvec;
+        fei::SharedPtr<fei::Vector> tmpvec;
         tmpvec.reset(new fei::Vector_Impl<LinearSystemCore >(matrixGraph_->getRowSpace(),
-						       linsyscore_.get(),
+                                                       linsyscore_.get(),
                                                        numLocalEqns_,
-						       isSolutionVector));
+                                                       isSolutionVector));
 
-	fei::SharedPtr<fei::Vector> vec;
+        fei::SharedPtr<fei::Vector> vec;
         if (reducer_.get() != NULL) {
           vec.reset(new fei::VectorReducer(reducer_, tmpvec, isSolutionVector));
         }
@@ -73,21 +74,21 @@ namespace snl_fei {
           vec = tmpvec;
         }
 
-	return(vec);
+        return(vec);
       }
 
     /** Produce an instance of an fei::Matrix
      */
     fei::SharedPtr<fei::Matrix> createMatrix()
       {
-	fei::SharedPtr<fei::Matrix> mptr;
-	if (matrixGraph_.get() == NULL) return(mptr);
+        fei::SharedPtr<fei::Matrix> mptr;
+        if (matrixGraph_.get() == NULL) return(mptr);
 
-	if (setMatrixStructure() != 0) return(mptr);
+        if (setMatrixStructure() != 0) return(mptr);
 
-	fei::SharedPtr<fei::Matrix> tmpmat;
+        fei::SharedPtr<fei::Matrix> tmpmat;
         tmpmat.reset(new fei::Matrix_Impl<LinearSystemCore>(linsyscore_,
-							 matrixGraph_,
+                                                         matrixGraph_,
                                                            numLocalEqns_));
         fei::SharedPtr<fei::Matrix> matptr;
         if (reducer_.get() != NULL) {
@@ -97,21 +98,21 @@ namespace snl_fei {
           matptr = tmpmat;
         }
 
-	return(matptr);
+        return(matptr);
       }
 
     /** Produce an instance of an fei::LinearSystem
      */
     fei::SharedPtr<fei::LinearSystem> createLinearSystem()
       {
-	fei::SharedPtr<fei::LinearSystem> lsptr;
-	if (matrixGraph_.get() == NULL) return(lsptr);
+        fei::SharedPtr<fei::LinearSystem> lsptr;
+        if (matrixGraph_.get() == NULL) return(lsptr);
 
-	if (setMatrixStructure() != 0) return(lsptr);
+        if (setMatrixStructure() != 0) return(lsptr);
 
-	fei::SharedPtr<fei::LinearSystem>
-	  linSys(new snl_fei::LinearSystem_General(matrixGraph_));
-	return(linSys);
+        fei::SharedPtr<fei::LinearSystem>
+          linSys(new snl_fei::LinearSystem_General(matrixGraph_));
+        return(linSys);
       }
 
     /** Set the MatrixGraph object used by this broker. */
@@ -121,17 +122,17 @@ namespace snl_fei {
   private:
     int setGlobalOffsets()
       {
-	//only set the global offsets once.
-	if (setGlobalOffsets_) return(0);
+        //only set the global offsets once.
+        if (setGlobalOffsets_) return(0);
 
-	if (matrixGraph_.get() == NULL) return(-1);
+        if (matrixGraph_.get() == NULL) return(-1);
 
         MPI_Comm comm = matrixGraph_->getRowSpace()->getCommunicator();
         int num_procs = fei::numProcs(comm);
         int local_proc = fei::localProc(comm);
 
-	std::vector<int> globalOffsets;
-	std::vector<int> globalBlkOffsets;
+        std::vector<int> globalOffsets;
+        std::vector<int> globalBlkOffsets;
 
         if (reducer_.get() != NULL) {
           int localsize = reducer_->getLocalReducedEqns().size();
@@ -164,55 +165,59 @@ namespace snl_fei {
                                               &globalOffsets[0],
                                               &globalBlkOffsets[0]));
 
-	setGlobalOffsets_ = true;
-	return(0);
+        setGlobalOffsets_ = true;
+        return(0);
       }
 
     int setMatrixStructure()
       {
-	//only set the matrix matrixGraph once.
-	if (setMatrixStructure_) return(0);
+        //only set the matrix matrixGraph once.
+        if (setMatrixStructure_) return(0);
 
-	if (matrixGraph_.get() == NULL) return(-1);
+        if (matrixGraph_.get() == NULL) return(-1);
 
-	lookup_ = new fei::Lookup_Impl(matrixGraph_, 0);
+        lookup_ = new fei::Lookup_Impl(matrixGraph_, 0);
 
-	CHK_ERR( linsyscore_->setLookup(*lookup_) );
+        CHK_ERR( linsyscore_->setLookup(*lookup_) );
 
-	CHK_ERR( setGlobalOffsets() );
+        CHK_ERR( setGlobalOffsets() );
 
         MPI_Comm comm = matrixGraph_->getRowSpace()->getCommunicator();
 
-	fei::SharedPtr<fei::SparseRowGraph> localSRGraph =
-	  matrixGraph_->createGraph(false);
+        fei::SharedPtr<fei::SparseRowGraph> localSRGraph =
+          matrixGraph_->createGraph(blockMatrix_);
 
-	int numLocalRows = localSRGraph->rowNumbers.size();
-	int* rowOffsets = &(localSRGraph->rowOffsets[0]);
-	int numLocalNonzeros = localSRGraph->packedColumnIndices.size();
-	int* nonzeros = &(localSRGraph->packedColumnIndices[0]);
+        std::vector<int>& rowNumbers = localSRGraph->rowNumbers;
+        int numLocalRows = rowNumbers.size();
+        int* rowOffsets = &(localSRGraph->rowOffsets[0]);
+        int numLocalNonzeros = localSRGraph->packedColumnIndices.size();
+        int* nonzeros = &(localSRGraph->packedColumnIndices[0]);
 
-	int numGlobalNonzeros = 0;
-	fei::GlobalSum(comm, numLocalNonzeros, numGlobalNonzeros);
+        int numGlobalNonzeros = 0;
+        fei::GlobalSum(comm, numLocalNonzeros, numGlobalNonzeros);
 
-	std::vector<int*> colPtrs(numLocalRows);
-	std::vector<int> ones(numLocalRows, 1);
-	std::vector<int> rowLengths(numLocalRows);
+        std::vector<int*> colPtrs(numLocalRows);
+        std::vector<int> ptRowsPerBlkRow(numLocalRows, 1);
+        std::vector<int> rowLengths(numLocalRows);
         int* rowLengthsPtr = &rowLengths[0];
 
-	for(int i=0; i<numLocalRows; ++i) {
-	  colPtrs[i] = &(nonzeros[rowOffsets[i]]);
+        for(int i=0; i<numLocalRows; ++i) {
+          colPtrs[i] = &(nonzeros[rowOffsets[i]]);
           rowLengthsPtr[i] = rowOffsets[i+1]-rowOffsets[i];
-	}
+          if (blockMatrix_ == true) {
+            ptRowsPerBlkRow[i] = lookup_->getBlkEqnSize(rowNumbers[i]);
+          }
+        }
 
-	CHK_ERR( linsyscore_->setMatrixStructure(&colPtrs[0],
-						 rowLengthsPtr,
-						 &colPtrs[0],
-						 rowLengthsPtr,
-						 &ones[0]));
+        CHK_ERR( linsyscore_->setMatrixStructure(&colPtrs[0],
+                                                 rowLengthsPtr,
+                                                 &colPtrs[0],
+                                                 rowLengthsPtr,
+                                                 &ptRowsPerBlkRow[0]));
 
-	setMatrixStructure_ = true;
+        setMatrixStructure_ = true;
 
-	return(0);
+        return(0);
       }
 
 
@@ -224,6 +229,7 @@ namespace snl_fei {
     bool setGlobalOffsets_;
     int numLocalEqns_;
     bool setMatrixStructure_;
+    bool blockMatrix_;
   };//class Broker_LinSysCore
 }//namespace snl_fei
 

@@ -190,13 +190,9 @@ create_from_Epetra_Matrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
                           bool orderRowsWithLocalColsFirst)
 {
   fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph->getRowSpace();
-  int localSize;
-  if (blockEntryMatrix) {
-    localSize = vecSpace->getNumBlkIndices_Owned();
-  }
-  else {
-    localSize = vecSpace->getNumIndices_Owned();
-  }
+  //localSize is in point-equations, because we will only use it for constructing
+  //the fei::Matrix_Impl, and those always deal in point-equations.
+  int localSize = vecSpace->getNumIndices_Owned();
 
   fei::SharedPtr<fei::Matrix> tmpmat;
   fei::SharedPtr<fei::Matrix> feimat;

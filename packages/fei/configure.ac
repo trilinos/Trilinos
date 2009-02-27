@@ -302,6 +302,9 @@ AC_CONFIG_FILES([
                 test/cr_slave_20quad_old/Makefile
                 test/cr_lagrange_20quad_AZLSC/Makefile
                 test/cr_lagrange_20quad_old/Makefile
+                test/multifield/Makefile
+                test/multifield_vbr/Makefile
+                test/multifield_vbr_az/Makefile
                 test/cr_multifield_slave/Makefile
                 test/elemDOF_Aztec/Makefile
                 test/remEssBCs/Makefile

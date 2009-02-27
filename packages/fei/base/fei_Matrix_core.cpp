@@ -10,6 +10,7 @@
 #include <fei_utils.hpp>
 
 #include <fei_ParameterSet.hpp>
+#include <fei_LogManager.hpp>
 #include <fei_Matrix_core.hpp>
 #include <fei_CSRMat.hpp>
 #include <fei_TemplateUtils.hpp>
@@ -96,6 +97,15 @@ fei::Matrix_core::parameters(const fei::ParameterSet& paramset)
   if (ptype == fei::Param::STRING) {
     setName(param->getStringValue().c_str());
   }
+
+  param = paramset.get("FEI_OUTPUT_LEVEL");
+  ptype = param != NULL ? param->getType() : fei::Param::BAD_TYPE;
+  if (ptype == fei::Param::STRING) {
+    fei::LogManager& log_manager = fei::LogManager::getLogManager();
+    log_manager.setOutputLevel(param->getStringValue().c_str());
+    setOutputLevel(fei::utils::string_to_output_level(param->getStringValue()));
+  }
+
 }
 
 void fei::Matrix_core::setName(const char* name)
@@ -246,10 +256,16 @@ int fei::Matrix_core::gatherFromOverlap(bool accumulate)
 
       int* indices = &(M.getGraph().packedColumnIndices[rowOffset]);
       double* vals = &(M.getPackedCoefs()[rowOffset]);
-      int err = giveToUnderlyingMatrix(1, &row, rowLen, indices,
-                                       &vals, accumulate, FEI_DENSE_ROW);
+      int err = 0;
+      if (haveBlockMatrix()) {
+        err = giveToBlockMatrix(1, &row, rowLen, indices, &vals, accumulate);
+      }
+      else {
+        err = giveToUnderlyingMatrix(1, &row, rowLen, indices,
+                                     &vals, accumulate, FEI_DENSE_ROW);
+      }
       if (err != 0) {
-        FEI_COUT << "fei::Matrix_Impl::gatherFromOverlap ERROR storing "
+        FEI_COUT << "fei::Matrix_core::gatherFromOverlap ERROR storing "
          << "values for row=" << row<<", recv'd from proc " << recvProcs[i]
          << FEI_ENDL;
         

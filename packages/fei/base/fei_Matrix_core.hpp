@@ -30,10 +30,10 @@ class Matrix_core : protected fei::Logger {
   virtual ~Matrix_core();
 
   virtual int giveToMatrix(int numRows, const int* rows,
-			   int numCols, const int* cols,
-			   const double* const* values,
-			   bool sumInto,
-			   int format) = 0;
+                           int numCols, const int* cols,
+                           const double* const* values,
+                           bool sumInto,
+                           int format) = 0;
 
   /** Given a 2-D table (C-style list-of-pointers) of size numRows X numCols,
       copy the transpose of the data into the given 1-D work array and set the
@@ -60,9 +60,9 @@ class Matrix_core : protected fei::Logger {
       work_2D represents a table with 'numCols' rows, each of length 'numRows'.
   */
   static void copyTransposeToWorkArrays(int numRows, int numCols,
-				       const double*const* values,
-				       std::vector<double>& work_1D,
-				       std::vector<const double*>& work_2D);
+                                       const double*const* values,
+                                       std::vector<double>& work_1D,
+                                       std::vector<const double*>& work_2D);
 
   /** If slave-constraints have been registered with the matrix-graph, and if
       the constraints have a non-zero right-hand-side coefficient, then this
@@ -88,19 +88,24 @@ class Matrix_core : protected fei::Logger {
   void parameters(const fei::ParameterSet& paramset);
 
   virtual int giveToUnderlyingMatrix(int numRows, const int* rows,
-				     int numCols, const int* cols,
-				     const double* const* values,
-				     bool sumInto,
-				     int format) = 0;
+                                     int numCols, const int* cols,
+                                     const double* const* values,
+                                     bool sumInto,
+                                     int format) = 0;
+
+  virtual int giveToBlockMatrix(int numRows, const int* rows,
+                                          int numCols, const int* cols,
+                                          const double* const* values,
+                                          bool sumInto) = 0;
 
   virtual int giveToUnderlyingBlockMatrix(int row,
-					  int rowDim,
-					  int numCols,
-					  const int* cols,
-					  const int* LDAs,
-					  const int* colDims,
-					  const double* const* values,
-					  bool sumInto) = 0;
+                                          int rowDim,
+                                          int numCols,
+                                          const int* cols,
+                                          const int* LDAs,
+                                          const int* colDims,
+                                          const double* const* values,
+                                          bool sumInto) = 0;
 
   void setName(const char* name);
 
@@ -118,23 +123,24 @@ class Matrix_core : protected fei::Logger {
       contiguous memory.
   */
   int copyPointRowsToBlockRow(int numPtRows,
-			      int numPtCols,
-			      const double*const* ptValues,
-			      int numBlkCols,
-			      const int* blkColDims,
-			      double** blkValues);
+                              int numPtCols,
+                              const double*const* ptValues,
+                              int numBlkCols,
+                              const int* blkColDims,
+                              double** blkValues);
 
   int convertPtToBlk(int numRows,
-		       const int* rows,
-		       int numCols,
-		       const int* cols,
-		       int* blkRows,
-		       int* blkRowOffsets,
-		       int* blkCols,
-		       int* blkColOffsets);
+                       const int* rows,
+                       int numCols,
+                       const int* cols,
+                       int* blkRows,
+                       int* blkRowOffsets,
+                       int* blkCols,
+                       int* blkColOffsets);
 
   MPI_Comm getCommunicator() const { return( comm_ ); }
 
+  const fei::SharedPtr<fei::VectorSpace> vecSpace() const { return( vecSpace_ ); }
   fei::SharedPtr<fei::VectorSpace> vecSpace() { return( vecSpace_ ); }
 
   std::vector<int>& globalOffsets() { return( globalOffsets_ ); }

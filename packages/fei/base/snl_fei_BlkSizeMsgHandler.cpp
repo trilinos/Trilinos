@@ -31,8 +31,8 @@
 
 //----------------------------------------------------------------------------
 snl_fei::BlkSizeMsgHandler::BlkSizeMsgHandler(fei::VectorSpace* vspace,
-					      fei::Graph* graph,
-					      MPI_Comm comm)
+                                              fei::Graph* graph,
+                                              MPI_Comm comm)
   : remote_colIndices_(NULL),
     local_colIndices_(NULL),
     vecSpace_(vspace),
@@ -87,7 +87,7 @@ int snl_fei::BlkSizeMsgHandler::do_the_exchange()
       owner = vecSpace_->getOwnerProcBlkIndex(col);
 
       if (owner != local_proc) {
-	remote_colIndices_->addIndices(owner, 1, &col);
+        remote_colIndices_->addIndices(owner, 1, &col);
       }
     }
   }
@@ -134,7 +134,7 @@ std::vector<int>& snl_fei::BlkSizeMsgHandler::getRecvProcs()
 
 //----------------------------------------------------------------------------
 int snl_fei::BlkSizeMsgHandler::getSendMessageLength(int destProc,
-						     int& messageLength)
+                                                     int& messageLength)
 {
   if (firstExchange_) {
     fei::comm_map::row_type* cols = remote_colIndices_->getRow(destProc);
@@ -150,7 +150,7 @@ int snl_fei::BlkSizeMsgHandler::getSendMessageLength(int destProc,
 
 //----------------------------------------------------------------------------
 int snl_fei::BlkSizeMsgHandler::getSendMessage(int destProc,
-					       std::vector<int>& message)
+                                               std::vector<int>& message)
 {
   if (firstExchange_) {
     fei::comm_map::row_type* cols = remote_colIndices_->getRow(destProc);
@@ -170,7 +170,7 @@ int snl_fei::BlkSizeMsgHandler::getSendMessage(int destProc,
     int offset = 0;
     for(; iter != iter_end; ++iter) {
       CHK_ERR( ptBlkMap_->getBlkEqnInfo(*iter,
-					message[offset], message[offset+1]) );
+                                        message[offset], message[offset+1]) );
       offset += 2;
     }
 
@@ -180,7 +180,7 @@ int snl_fei::BlkSizeMsgHandler::getSendMessage(int destProc,
 
 //----------------------------------------------------------------------------
 int snl_fei::BlkSizeMsgHandler::processRecvMessage(int srcProc,
-						   std::vector<int>& message)
+                                                   std::vector<int>& message)
 {
   if (firstExchange_) {
     for(unsigned i=0; i<message.size(); ++i) {
@@ -197,7 +197,9 @@ int snl_fei::BlkSizeMsgHandler::processRecvMessage(int srcProc,
     for(; iter != iter_end; ++iter) {
       int ptEqn = message[offset];
       int blkSize = message[offset+1];
-      CHK_ERR( ptBlkMap_->setEqn(ptEqn, *iter, blkSize) );
+      for(int i=0; i<blkSize; ++i) {
+        CHK_ERR( ptBlkMap_->setEqn(ptEqn+i, *iter, blkSize) );
+      }
       offset += 2;
     }
   }

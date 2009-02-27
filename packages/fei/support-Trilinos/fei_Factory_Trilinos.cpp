@@ -233,10 +233,6 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     return(feivec);
   }
 
-//  if (blockEntryMatrix_) {
-//    throw std::runtime_error("Factory_Trilinos: fei ERROR, block-entry matrices/vectors not currently supported.");
-//  }
-
   int globalNumSlaves = matrixGraph->getGlobalNumSlaveConstraints();
 
   if (globalNumSlaves > 0 && reducer_.get()==NULL) {
@@ -253,16 +249,9 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
     localSize = indices.size();
   }
   else {
-    if (blockEntryMatrix_) {
-      localSize = vecSpace->getNumBlkIndices_Owned();
-      indices.resize(localSize*2);
-      err = vecSpace->getBlkIndices_Owned(localSize, &indices[0], &indices[localSize], localSize);
-    }
-    else {
-      localSize = vecSpace->getNumIndices_Owned();
-      indices.resize(localSize);
-      err = vecSpace->getIndices_Owned(localSize, &indices[0], localSize);
-    }
+    localSize = vecSpace->getNumIndices_Owned();
+    indices.resize(localSize);
+    err = vecSpace->getIndices_Owned(localSize, &indices[0], localSize);
   }
   if (err != 0) {
     throw std::runtime_error("error in vecSpace->getIndices_Owned");
@@ -278,8 +267,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
       Epetra_MultiVector* emvec = new Epetra_MultiVector(emap, numVectors);
 
       tmpvec.reset(new fei::Vector_Impl<Epetra_MultiVector>(matrixGraph->getRowSpace(), emvec,
-                                                  localSize,
-                                                       isSolutionVector, true));
+                                                  localSize, isSolutionVector, true));
     }
     catch(std::runtime_error& exc) {
       FEI_CERR << "Factory_Trilinos::createVector: caught exception '"
@@ -297,8 +285,7 @@ Factory_Trilinos::createVector(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
 
     lpm_epetrabasic_->setRowDistribution(indices);
     tmpvec.reset(new fei::Vector_Impl<fei::LinearProblemManager>(vecSpace,
-                                   lpm_epetrabasic_.get(),
-                                   localSize, isSolutionVector));
+                                   lpm_epetrabasic_.get(), localSize, isSolutionVector));
 #endif
   }
 
@@ -337,10 +324,8 @@ Factory_Trilinos::createMatrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph)
   }
 
   return(
-      Trilinos_Helpers::create_from_Epetra_Matrix(matrixGraph,
-                                                  blockEntryMatrix_,
-                                                  reducer_,
-                                                  orderRowsWithLocalColsFirst_)
+      Trilinos_Helpers::create_from_Epetra_Matrix(matrixGraph, blockEntryMatrix_,
+                                                  reducer_, orderRowsWithLocalColsFirst_)
   );
 #else
   FEI_CERR << "fei_Factory_Trilinos::createMatrix ERROR, HAVE_FEI_EPETRA "
