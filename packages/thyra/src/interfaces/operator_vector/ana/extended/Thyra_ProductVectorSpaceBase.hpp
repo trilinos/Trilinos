@@ -29,9 +29,13 @@
 #ifndef THYRA_PRODUCT_VECTOR_SPACE_BASE_HPP
 #define THYRA_PRODUCT_VECTOR_SPACE_BASE_HPP
 
+
 #include "Thyra_VectorSpaceBase.hpp"
+#include "Teuchos_ExpandScalarTypeMacros.hpp"
+
 
 namespace Thyra {
+
 
 /** \brief Base interface for product vector spaces.
  *
@@ -101,6 +105,71 @@ private:
 
 };
 
+
+/** \brief Dynamic cast from a <tt>VectorSpaceBase</tt> to a
+ * <tt>ProductVectorSpaceBase</tt> object and thow exception if this fails.
+ *
+ * \relates ProductVectorSpaceBase
+ */
+template<class Scalar>
+inline
+RCP<ProductVectorSpaceBase<Scalar> >
+nonconstProductVectorSpaceBase(
+  const RCP<VectorSpaceBase<Scalar> > &v
+  )
+{
+  return Teuchos::rcp_dynamic_cast<ProductVectorSpaceBase<Scalar> >(v, true);
+}
+
+
+/** \brief Dynamic cast from a <tt>const VectorSpaceBase</tt> to a <tt>const
+ * ProductVectorSpaceBase</tt> object and thow exception if this fails.
+ *
+ * \relates ProductVectorSpaceBase
+ */
+template<class Scalar>
+inline
+RCP<const ProductVectorSpaceBase<Scalar> >
+productVectorSpaceBase(
+  const RCP<const VectorSpaceBase<Scalar> > &v
+  )
+{
+  return Teuchos::rcp_dynamic_cast<const ProductVectorSpaceBase<Scalar> >(v, true);
+}
+
+
 } // namespace Thyra
+
+
+//
+// Non-template non-member inline functions
+//
+
+
+#define THYRA_PRODUCT_VECTOR_SPACE_BASE_NONMEMBER_INLINE_FUNCS(SCALAR) \
+   \
+  inline \
+  RCP<ProductVectorSpaceBase<SCALAR > > \
+  nonconstProductVectorSpaceBase( \
+    const RCP<VectorSpaceBase<SCALAR > > &vs \
+    ) \
+  { \
+    return nonconstProductVectorSpaceBase<SCALAR >(vs); \
+  } \
+ \
+  inline \
+  RCP<const ProductVectorSpaceBase<SCALAR > > \
+  productVectorSpaceBase( \
+    const RCP<const VectorSpaceBase<SCALAR > > &vs \
+    ) \
+  { \
+    return productVectorSpaceBase<SCALAR >(vs); \
+  }
+
+
+namespace Thyra {
+TEUCHOS_MACRO_EXPAND_SCALAR_TYPES(THYRA_PRODUCT_VECTOR_SPACE_BASE_NONMEMBER_INLINE_FUNCS)
+} // namespace Thyra
+
 
 #endif // THYRA_PRODUCT_VECTOR_SPACE_BASE_HPP

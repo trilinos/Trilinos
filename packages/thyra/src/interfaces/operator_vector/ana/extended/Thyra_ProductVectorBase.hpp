@@ -98,7 +98,7 @@ public:
    * performed until the view returned from this function is released as
    * described above.
    */
-  virtual Teuchos::RCP<VectorBase<Scalar> >
+  virtual RCP<VectorBase<Scalar> >
   getNonconstVectorBlock(const int k) = 0; 
 
   /** \brief Returns a non-persisting <tt>const</tt> view of the (zero-based)
@@ -112,7 +112,7 @@ public:
    * <li> <tt>0 <= k <= productSpace()->numBlocks()-1tt>
    * </ul>
    */
-  virtual Teuchos::RCP<const VectorBase<Scalar> >
+  virtual RCP<const VectorBase<Scalar> >
   getVectorBlock(const int k) const = 0; 
 
 };
@@ -120,29 +120,33 @@ public:
 
 /** \brief Dynamic cast from a <tt>VectorBase</tt> to a
  * <tt>ProductVectorBase</tt> object and thow exception if this fails.
+ *
+ * \relates ProductVectorBase
  */
 template<class Scalar>
 inline
-Teuchos::RCP<Thyra::ProductVectorBase<Scalar> >
+RCP<Thyra::ProductVectorBase<Scalar> >
 nonconstProductVectorBase(
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> > &v
+  const RCP<Thyra::VectorBase<Scalar> > &v
   )
 {
-  return Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(v,true);
+  return Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(v, true);
 }
 
 
 /** \brief Dynamic cast from a <tt>const VectorBase</tt> to a <tt>const
  * ProductVectorBase</tt> object and thow exception if this fails.
+ *
+ * \relates ProductVectorBase
  */
 template<class Scalar>
 inline
-Teuchos::RCP<const Thyra::ProductVectorBase<Scalar> >
+RCP<const Thyra::ProductVectorBase<Scalar> >
 productVectorBase(
-  const Teuchos::RCP<const Thyra::VectorBase<Scalar> > &v
+  const RCP<const Thyra::VectorBase<Scalar> > &v
   )
 {
-  return Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar> >(v,true);
+  return Teuchos::rcp_dynamic_cast<const Thyra::ProductVectorBase<Scalar> >(v, true);
 }
 
 
