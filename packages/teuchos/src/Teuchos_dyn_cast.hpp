@@ -29,9 +29,12 @@
 #ifndef TEUCHOS_DYN_CAST_HPP
 #define TEUCHOS_DYN_CAST_HPP
 
+
 #include "Teuchos_TypeNameTraits.hpp"
 
+
 namespace Teuchos {
+
 
 /** \brief Exception class for bad cast.
 
@@ -49,12 +52,14 @@ public:
 	virtual const char* what() const throw() { return msg.data(); }
 };
 
-// Throw the std::exception <tt>std::invalid_argument</tt> for below functions
+
+// Throw <tt>m_bad_cast</tt> for below function
 void dyn_cast_throw_exception(
-  const std::string   &type_from_name
-  ,const std::string  &type_from_concr_name
-  ,const std::string  &type_to_name
+  const std::string &T_from,
+  const std::string &T_from_concr,
+  const std::string &T_to
   );
+
 
 /** \brief Dynamic casting utility function meant to replace
  * <tt>dynamic_cast<T&></tt> by throwing a better documented error
@@ -157,13 +162,15 @@ T_To& dyn_cast(T_From &from)
   T_To *to_ = dynamic_cast<T_To*>(&from);
   if(!to_)
     dyn_cast_throw_exception(
-      TypeNameTraits<T_From>::name()
-      ,typeName(from)
-      ,TypeNameTraits<T_To>::name()
+      TypeNameTraits<T_From>::name(),
+      typeName(from),
+      TypeNameTraits<T_To>::name()
       );
   return *to_;
 }
 
+
 } // namespace Teuchos
+
 
 #endif // TEUCHOS_DYN_CAST_HPP

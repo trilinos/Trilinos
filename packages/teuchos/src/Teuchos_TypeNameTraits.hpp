@@ -87,7 +87,7 @@ template<typename T>
 std::string typeName( const T &t )
 {
   typedef typename ConstTypeTraits<T>::NonConstType ncT;
-  return TypeNameTraits<ncT>::name();
+  return TypeNameTraits<ncT>::concreteName(t);
 }
 
 

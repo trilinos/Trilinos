@@ -138,9 +138,6 @@ productVectorSpaceBase(
 }
 
 
-} // namespace Thyra
-
-
 //
 // Non-template non-member inline functions
 //
@@ -167,9 +164,9 @@ productVectorSpaceBase(
   }
 
 
-namespace Thyra {
-TEUCHOS_MACRO_EXPAND_SCALAR_TYPES(THYRA_PRODUCT_VECTOR_SPACE_BASE_NONMEMBER_INLINE_FUNCS)
-} // namespace Thyra
+THYRA_PRODUCT_VECTOR_SPACE_BASE_NONMEMBER_INLINE_FUNCS(double)
 
+
+} // namespace Thyra
 
 #endif // THYRA_PRODUCT_VECTOR_SPACE_BASE_HPP

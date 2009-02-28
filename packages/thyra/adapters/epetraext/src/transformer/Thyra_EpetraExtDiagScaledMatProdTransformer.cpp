@@ -35,6 +35,8 @@
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Epetra_Map.h"
+#include "Epetra_LocalMap.h"
+#include "Epetra_SerialComm.h"
 #include "Epetra_CrsMatrix.h"
 #include "EpetraExt_MatrixMatrix.h"
 #include "Teuchos_Assert.hpp"
@@ -123,14 +125,19 @@ void EpetraExtDiagScaledMatProdTransformer::transform(
     epetra_op = Teuchos::rcp(
       new Epetra_CrsMatrix(::Copy, op_inout_row_map, op_inout_col_map, 0)
       );
+    // 2009/02/27: rabartl: Note: Above, the row map must be the right size
+    // and distribution and the column map can not be arbitrary.
   }
    
   // ToDo: Implement the case where d != 1.0!
 
-  MatrixMatrix::Multiply(
-    *epetra_B, B_transp != NOTRANS,
-    *epetra_G, false,
-    *epetra_op
+  TEUCHOS_ASSERT_INEQUALITY(
+    MatrixMatrix::Multiply(
+      *epetra_B, B_transp != NOTRANS,
+      *epetra_G, false,
+      *epetra_op
+      ),
+    >=, 0
     );
 
   thyra_epetra_op_inout.initialize(epetra_op);
