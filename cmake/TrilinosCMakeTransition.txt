@@ -31,8 +31,8 @@ Package: Teuchos
 
 Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
 
-Status: Mostly finished but a few tests and examples need to be added.  Final
-verification is needed.
+Status: Should be completely finished but a careful final certification should
+be done.
 
 Final Certification Date: [???]
 
@@ -110,7 +110,7 @@ Package: Zoltan
 
 Package Transition Lead: Karen Devine (kddevin@sandia.gov)
 
-Status: Has faily complete CMake support and should duplicate the
+Status: Has fairly complete CMake support and should duplicate the
 functionality of the autotools system.
 
 Final Certification Date: [???]
