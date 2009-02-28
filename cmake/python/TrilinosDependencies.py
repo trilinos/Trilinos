@@ -441,7 +441,7 @@ class TrilinosDependencies:
 
       xmlText += ("    <EmailAddresses>\n")
       xmlText += \
-         ("      <Email addresss=\""+packageName.lower()+"-regression@software.sandia.gov\"/>\n")
+         ("      <Email address=\""+packageName.lower()+"-regression@software.sandia.gov\"/>\n")
       xmlText += ("    </EmailAddresses>\n")
       # 2009/02/25: rabartl: ToDo: Above, I really should allow the various packages
       # to define what lists they will send email.  This would require allowing each
