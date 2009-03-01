@@ -31,6 +31,16 @@ using Teuchos::implicit_ptr_cast;
 //
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, implicitConversions, T )
+{
+
+  ECHO(ArrayRCP<T> arcp1 = arcp<T>(n));
+  ECHO(ArrayRCP<const T> arcp2 = arcp1);
+  TEST_ASSERT(arcp1.shares_resource(arcp2));
+
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, weakDelete, T )
 {
 
@@ -250,6 +260,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
 
 
 #define UNIT_TEST_GROUP( T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, implicitConversions, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, weakDelete, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, danglingArrayView, T ) \
   DEBUG_UNIT_TEST_GROUP(T)
