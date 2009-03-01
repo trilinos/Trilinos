@@ -76,19 +76,19 @@ echo
 time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_icpc_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_debug_icpc_godel.out
 
-echo
-echo "Doing serial debug memcheck build: `date`"
-echo
+#echo
+#echo "Doing serial debug memcheck build: `date`"
+#echo
+#
+#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_memcheck_godel.cmake -VV \
+#  &> $BASEDIR/ctest_linux_nightly_serial_debug_memcheck_godel.out
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_memcheck_godel.cmake -VV \
-  &> $BASEDIR/ctest_linux_nightly_serial_debug_memcheck_godel.out
-
-echo
-echo "Doing mpi debug memcheck build: `date`"
-echo
-
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake -VV \
-  &> $BASEDIR/ctest_linux_nightly_mpi_debug_memcheck_godel.out
+#echo
+#echo "Doing mpi debug memcheck build: `date`"
+#echo
+#
+#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake -VV \
+#  &> $BASEDIR/ctest_linux_nightly_mpi_debug_memcheck_godel.out
 
 echo
 echo "Ending nightly Trilinos testing on godel: `date`"
