@@ -1416,11 +1416,17 @@ MACRO(PACKAGE_ARCH_PRE_SETUP_ENV)
   INCLUDE(PackageArchSetupBasicCompileLinkFlags)
   PACKAGE_ARCH_SETUP_BASIC_COMPILE_LINK_FLAGS()
 
-  # Find the hostname used in selecting or deselecting tests by the
+  # Find the host site name used in selecting or deselecting tests by the
   # PACKAGE_ADD_TEST(...) function.
   
   SITE_NAME(${PROJECT_NAME}_HOSTNAME)
   MARK_AS_ADVANCED(${PROJECT_NAME}_HOSTNAME)
+  PRINT_VAR(${PROJECT_NAME}_HOSTNAME)
+
+  # Find the host site type name used in selecting or deselecting tests by the
+  # PACKAGE_ADD_TEST(...) function.
+
+  PRINT_VAR(CMAKE_HOST_SYSTEM_NAME)
 
   # Set some other options
 
