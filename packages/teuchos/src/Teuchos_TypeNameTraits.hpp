@@ -75,11 +75,12 @@ public:
 };
 
 
-/** \brief Template function for returning the type name of a passed-in
- * object.
+/** \brief Template function for returning the concrete type name of a
+ * passed-in object.
  *
  * Uses the traits class TypeNameTraits so the behavior of this function can
- * be specialized in every possible way.
+ * be specialized in every possible way.  The default return value is
+ * typically derived from <tt>typeid(t).name()</tt>.
  *
  * \ingroup teuchos_language_support_grp
  */
@@ -87,7 +88,14 @@ template<typename T>
 std::string typeName( const T &t )
 {
   typedef typename ConstTypeTraits<T>::NonConstType ncT;
+#ifndef _AIX
   return TypeNameTraits<ncT>::concreteName(t);
+#else
+  // You can't pass general objects to AIX by value as above.  This means that
+  // you will not get the concrete name printed on AIX but that is life on
+  // such compilers.
+  return TypeNameTraits<ncT>::name();
+#endif
 }
 
 
