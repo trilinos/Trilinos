@@ -258,7 +258,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     try {
       lobpcg_solver->iterate();
     }
-    catch (std::exception e) {
+    catch (const std::exception &e) {
       // we are a simple solver manager. we don't catch exceptions. set solution empty, then rethrow.
       printer->stream(Anasazi::Errors) << "Exception: " << e.what() << std::endl;
       Eigensolution<ScalarType,MV> sol;
@@ -359,7 +359,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     // put the eigenvectors
     MVT::SetBlock(*foundvecs[i],lclind,*sol.Evecs);
     // put the eigenvalues
-    copy( foundvals[i]->begin(), foundvals[i]->end(), vals.begin()+curttl );
+    std::copy( foundvals[i]->begin(), foundvals[i]->end(), vals.begin()+curttl );
 
     curttl += lclnum;
   }

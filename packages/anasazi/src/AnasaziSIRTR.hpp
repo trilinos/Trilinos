@@ -367,7 +367,7 @@ namespace Anasazi {
       }
       this->om_->stream(Debug) 
         << " Debugging checks: SIRTR inner iteration " << innerIters_ << endl
-        << " >> m_X(eta) : " << accumulate(d_mxe.begin(),d_mxe.end(),0.0) << endl;
+        << " >> m_X(eta) : " << std::accumulate(d_mxe.begin(),d_mxe.end(),0.0) << endl;
       for (int j=0; j<this->blockSize_; ++j) {
         this->om_->stream(Debug)
           << " >> m_X(eta_" << j << ") : " << d_mxe[j] << endl;
@@ -554,7 +554,7 @@ namespace Anasazi {
         }
         this->om_->stream(Debug) 
           << " Debugging checks: SIRTR inner iteration " << innerIters_ << endl
-          << " >> m_X(eta) : " << accumulate(d_mxe.begin(),d_mxe.end(),0.0) << endl;
+          << " >> m_X(eta) : " << std::accumulate(d_mxe.begin(),d_mxe.end(),0.0) << endl;
         for (int j=0; j<this->blockSize_; ++j) {
           this->om_->stream(Debug)
             << " >> m_X(eta_" << j << ") : " << d_mxe[j] << endl;
@@ -838,7 +838,7 @@ namespace Anasazi {
       }
       //
       // update f(x)
-      this->fx_ = accumulate(this->theta_.begin(),this->theta_.end(),ZERO);
+      this->fx_ = std::accumulate(this->theta_.begin(),this->theta_.end(),ZERO);
 
       //
       // if debugging, do rho analysis before overwriting X,AX,BX

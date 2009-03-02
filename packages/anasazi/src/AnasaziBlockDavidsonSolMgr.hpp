@@ -897,7 +897,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           for (int i=0; i<curdim; i++) tmp_vector_int[i] = i;
           const std::vector<int> curind(tmp_vector_int);       // curind = [0 ... curdim-1]
           tmp_vector_int.resize(numUnlocked); 
-          set_difference(curind.begin(),curind.end(),lockind.begin(),lockind.end(),tmp_vector_int.begin());
+          std::set_difference(curind.begin(),curind.end(),lockind.begin(),lockind.end(),tmp_vector_int.begin());
           const std::vector<int> unlockind(tmp_vector_int);    // unlockind = [0 ... curdim-1] - lockind
           tmp_vector_int.clear();
 
@@ -1164,7 +1164,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
           TEST_FOR_EXCEPTION(true,std::logic_error,"Anasazi::BlockDavidsonSolMgr::solve(): Invalid return from bd_solver::iterate().");
         }
       }
-      catch (AnasaziError err) {
+      catch (const AnasaziError &err) {
         printer_->stream(Errors) 
           << "Anasazi::BlockDavidsonSolMgr::solve() caught unexpected exception from Anasazi::BlockDavidson::iterate() at iteration " << bd_solver->getNumIters() << std::endl
           << err.what() << std::endl
