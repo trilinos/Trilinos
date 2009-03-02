@@ -107,14 +107,14 @@ am__objects_1 = fei_BlockDescriptor.$(OBJEXT) fei_CSRMat.$(OBJEXT) \
 	fei_MatrixReducer.$(OBJEXT) fei_MatrixGraph_Impl2.$(OBJEXT) \
 	fei_Param.$(OBJEXT) fei_ParameterSet.$(OBJEXT) \
 	fei_Pool.$(OBJEXT) fei_Pool_alloc.$(OBJEXT) \
-	fei_Reducer.$(OBJEXT) fei_impl_utils.$(OBJEXT) \
-	fei_utils.$(OBJEXT) fei_VectorSpace.$(OBJEXT) \
-	fei_Vector_core.$(OBJEXT) fei_VectorReducer.$(OBJEXT) \
-	fei_Filter.$(OBJEXT) fei_LibraryWrapper.$(OBJEXT) \
-	fei_LinSysCoreFilter.$(OBJEXT) fei_NodeCommMgr.$(OBJEXT) \
-	fei_NodeDatabase.$(OBJEXT) fei_NodeDescriptor.$(OBJEXT) \
-	fei_ProcEqns.$(OBJEXT) fei_Solver.$(OBJEXT) \
-	snl_fei_BlkSizeMsgHandler.$(OBJEXT) \
+	fei_Reducer.$(OBJEXT) fei_ReverseMapper.$(OBJEXT) \
+	fei_impl_utils.$(OBJEXT) fei_utils.$(OBJEXT) \
+	fei_VectorSpace.$(OBJEXT) fei_Vector_core.$(OBJEXT) \
+	fei_VectorReducer.$(OBJEXT) fei_Filter.$(OBJEXT) \
+	fei_LibraryWrapper.$(OBJEXT) fei_LinSysCoreFilter.$(OBJEXT) \
+	fei_NodeCommMgr.$(OBJEXT) fei_NodeDatabase.$(OBJEXT) \
+	fei_NodeDescriptor.$(OBJEXT) fei_ProcEqns.$(OBJEXT) \
+	fei_Solver.$(OBJEXT) snl_fei_BlkSizeMsgHandler.$(OBJEXT) \
 	snl_fei_Broker_FEData.$(OBJEXT) \
 	snl_fei_Broker_LinSysCore.$(OBJEXT) fei_CommUtils.$(OBJEXT) \
 	fei_ConnectivityBlock.$(OBJEXT) snl_fei_Factory.$(OBJEXT) \
@@ -289,6 +289,7 @@ CORE_H = \
 	$(top_srcdir)/base/fei_ParameterSet.hpp \
 	$(top_srcdir)/base/fei_ostream_ops.hpp \
 	$(top_srcdir)/base/fei_Reducer.hpp \
+	$(top_srcdir)/base/fei_ReverseMapper.hpp \
 	$(top_srcdir)/base/fei_SharedPtr.hpp \
 	$(top_srcdir)/base/fei_Solver.hpp \
 	$(top_srcdir)/base/fei_SparseRowGraph.hpp \
@@ -389,6 +390,7 @@ CORE = \
 	$(srcdir)/fei_Pool.cpp \
 	$(srcdir)/fei_Pool_alloc.cpp \
 	$(srcdir)/fei_Reducer.cpp \
+	$(srcdir)/fei_ReverseMapper.cpp \
 	$(srcdir)/fei_impl_utils.cpp \
 	$(srcdir)/fei_utils.cpp \
 	$(srcdir)/fei_VectorSpace.cpp \
@@ -584,6 +586,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_ProcEqns.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Record.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Reducer.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_ReverseMapper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_Solver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_VectorReducer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fei_VectorSpace.Po@am__quote@
@@ -996,6 +999,20 @@ fei_Reducer.obj: $(srcdir)/fei_Reducer.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_Reducer.cpp' object='fei_Reducer.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_Reducer.obj `if test -f '$(srcdir)/fei_Reducer.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_Reducer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_Reducer.cpp'; fi`
+
+fei_ReverseMapper.o: $(srcdir)/fei_ReverseMapper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_ReverseMapper.o -MD -MP -MF $(DEPDIR)/fei_ReverseMapper.Tpo -c -o fei_ReverseMapper.o `test -f '$(srcdir)/fei_ReverseMapper.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_ReverseMapper.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_ReverseMapper.Tpo $(DEPDIR)/fei_ReverseMapper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_ReverseMapper.cpp' object='fei_ReverseMapper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_ReverseMapper.o `test -f '$(srcdir)/fei_ReverseMapper.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_ReverseMapper.cpp
+
+fei_ReverseMapper.obj: $(srcdir)/fei_ReverseMapper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_ReverseMapper.obj -MD -MP -MF $(DEPDIR)/fei_ReverseMapper.Tpo -c -o fei_ReverseMapper.obj `if test -f '$(srcdir)/fei_ReverseMapper.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_ReverseMapper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_ReverseMapper.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fei_ReverseMapper.Tpo $(DEPDIR)/fei_ReverseMapper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/fei_ReverseMapper.cpp' object='fei_ReverseMapper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o fei_ReverseMapper.obj `if test -f '$(srcdir)/fei_ReverseMapper.cpp'; then $(CYGPATH_W) '$(srcdir)/fei_ReverseMapper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/fei_ReverseMapper.cpp'; fi`
 
 fei_impl_utils.o: $(srcdir)/fei_impl_utils.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT fei_impl_utils.o -MD -MP -MF $(DEPDIR)/fei_impl_utils.Tpo -c -o fei_impl_utils.o `test -f '$(srcdir)/fei_impl_utils.cpp' || echo '$(srcdir)/'`$(srcdir)/fei_impl_utils.cpp
