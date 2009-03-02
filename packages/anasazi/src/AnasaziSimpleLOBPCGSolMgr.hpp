@@ -359,7 +359,7 @@ SimpleLOBPCGSolMgr<ScalarType,MV,OP>::solve() {
     // put the eigenvectors
     MVT::SetBlock(*foundvecs[i],lclind,*sol.Evecs);
     // put the eigenvalues
-    copy( foundvals[i]->begin(), foundvals[i]->end(), vals.begin()+curttl );
+    std::copy( foundvals[i]->begin(), foundvals[i]->end(), vals.begin()+curttl );
 
     curttl += lclnum;
   }

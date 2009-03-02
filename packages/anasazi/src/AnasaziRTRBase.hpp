@@ -1345,7 +1345,7 @@ namespace Anasazi {
 
 
     // get objective function value
-    fx_ = accumulate(theta_.begin(),theta_.end(),ZERO);
+    fx_ = std::accumulate(theta_.begin(),theta_.end(),ZERO);
 
     // set up R
     if (newstate.R != Teuchos::null) {
@@ -1617,7 +1617,7 @@ namespace Anasazi {
   {
     std::vector<ScalarType> d(MVT::GetNumberVecs(xi));
     MVT::MvDot(xi,zeta,d);
-    return SCT::real(accumulate(d.begin(),d.end(),SCT::zero()));
+    return SCT::real(std::accumulate(d.begin(),d.end(),SCT::zero()));
   }
 
 
