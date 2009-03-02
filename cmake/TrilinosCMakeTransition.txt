@@ -324,7 +324,10 @@ Package: ML
 
 Package Transition Lead: Jonathan Hu (jhu@sandia.gov)
 
-Status: Basic libraries and a few tests and examples.
+Status: Basic libraries.  All examples that run under the current test
+harness.  Most of the tests that run under the current test harness.  The
+tests that are missing are those that require CompareTestOutput, which
+compares output to a "gold-copy" output file.
 
 Final Certification Date: [???]
 
