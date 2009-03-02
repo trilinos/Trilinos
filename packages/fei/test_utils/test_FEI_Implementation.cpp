@@ -188,10 +188,12 @@ int test_FEI_Implementation::test1()
     offset += testdata->numSharingProcsPerID[i];
   }
 
-  CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
+  if (testdata->sharedIDs.size() > 0) {
+    CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
       testdata->sharedIDs.size() ? &(testdata->sharedIDs[0]) : 0,
       testdata->numSharingProcsPerID.size() ? &(testdata->numSharingProcsPerID[0]) : 0,
       &sharingProcs2D[0]) );
+  }
 
   CHK_ERR( fei->initComplete() );
 
@@ -330,10 +332,12 @@ int test_FEI_Implementation::test2()
     offset += testdata->numSharingProcsPerID[i];
   }
 
-  CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
+  if (testdata->sharedIDs.size() > 0) {
+    CHK_ERR( fei->initSharedNodes(testdata->sharedIDs.size(),
       testdata->sharedIDs.size() ? &(testdata->sharedIDs[0]) : 0,
       testdata->numSharingProcsPerID.size() ? &(testdata->numSharingProcsPerID[0]) : 0,
       &sharingProcs2D[0]) );
+  }
 
   CHK_ERR( fei->initComplete() );
 
