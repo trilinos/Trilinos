@@ -17,6 +17,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     brussCont.C
     COMM serial mpi
     DEPLIBS noxtestutils
+    NUM_MPI_PROCS 2
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
@@ -34,6 +35,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
       Problem_Interface.C
       brussHopfCont.C
       COMM serial mpi
+      NUM_MPI_PROCS 2
       DEPLIBS noxtestutils
       ARGS -v
       PASS_REGULAR_EXPRESSION "All tests passed"

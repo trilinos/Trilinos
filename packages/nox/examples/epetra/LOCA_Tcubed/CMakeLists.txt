@@ -17,6 +17,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     Problem_Interface.C
     Example.C
     COMM serial mpi
+    NUM_MPI_PROCS 1
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
@@ -32,6 +33,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
     Problem_Interface.C
     ExampleTPContinuation.C
     COMM serial mpi
+    NUM_MPI_PROCS 1
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
     )
@@ -49,6 +51,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)
       Problem_Interface.C
       ExampleMultiContinuation.C       
       COMM serial mpi
+      NUM_MPI_PROCS 1
       ARGS -v
       PASS_REGULAR_EXPRESSION "All tests passed"
       )

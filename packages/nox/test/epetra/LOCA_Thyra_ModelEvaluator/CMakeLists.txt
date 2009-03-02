@@ -11,6 +11,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND NOX_ENABLE_LOCA AND
     SOURCES 
     tcubed.C
     COMM serial mpi
+    NUM_MPI_PROCS 2
     DEPLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
@@ -21,6 +22,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA AND NOX_ENABLE_LOCA AND
     SOURCES 
     tcubedTP.C
     COMM serial mpi
+    NUM_MPI_PROCS 2
     DEPLIBS noxtestutils locaepetratestproblems
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"

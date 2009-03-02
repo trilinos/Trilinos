@@ -16,6 +16,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt AND NOX_EN
     Problem_Interface.C
     brussXYZT_ifpack.C
     COMM serial mpi
+    NUM_MPI_PROCS 2
     DEPLIBS noxtestutils
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
@@ -32,6 +33,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt AND NOX_EN
     Problem_Interface.C
     brussXYZT_global.C
     COMM serial mpi
+    NUM_MPI_PROCS 2
     DEPLIBS noxtestutils
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
@@ -48,6 +50,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt AND NOX_EN
     Problem_Interface.C
     brussXYZT_sequential.C
     COMM serial mpi
+    NUM_MPI_PROCS 2
     DEPLIBS noxtestutils
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
@@ -64,6 +67,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt AND NOX_EN
     Problem_Interface.C
     brussXYZT_sequential_IPS.C
     COMM serial mpi
+    NUM_MPI_PROCS 2
     DEPLIBS noxtestutils
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
@@ -80,6 +84,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt AND NOX_EN
     Problem_Interface.C
     brussXYZT_sequential_OPS.C
     COMM serial mpi
+    NUM_MPI_PROCS 2
     DEPLIBS noxtestutils
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
@@ -96,6 +101,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt AND NOX_EN
     Problem_Interface.C
     brussXYZT_parallel.C
     COMM serial mpi
+    NUM_MPI_PROCS 2
     DEPLIBS noxtestutils
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
@@ -130,6 +136,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt AND NOX_EN
     Problem_Interface.C
     brussXYZT_blockdiagonal.C
     COMM serial mpi
+    NUM_MPI_PROCS 2
     DEPLIBS noxtestutils
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
@@ -146,6 +153,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_EpetraExt AND NOX_EN
     Problem_Interface.C
     brussXYZT_bdsdt.C
     COMM serial mpi
+    NUM_MPI_PROCS 2
     DEPLIBS noxtestutils
     ARGS -v
     PASS_REGULAR_EXPRESSION "All tests passed"
