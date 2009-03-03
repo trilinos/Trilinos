@@ -26,35 +26,19 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+EXEEXT = .exe
 
-all-local:
+include $(top_builddir)/Makefile.export.teuchos
 
-if HAVE_TEUCHOS_EXTENDED
-CONTAINERS_SUBDIR = Containers
-XML_SUBDIR = XML XMLParser
-FANCY_OUTPUTTING_SUBDIR = FancyOutputting
-endif
-STANDARD_SUBDIRS = \
-  BLAS \
-  Comm \
-  DenseMatrix \
-  Handle \
-  LAPACK \
-  MemoryManagement \
-	ObjectBuilder \
-  ParameterList \
-  Polling \
-	Polynomial \
-  ScalarTraits \
-  Time \
-  UnitTest \
-  Workspace \
-  dyn_cast \
-  exit \
-  scripts
+bin_PROGRAMS = ObjectBuilder_UnitTests 
 
-SUBDIRS = $(STANDARD_SUBDIRS) $(CONTAINERS_SUBDIR) $(XML_SUBDIR) $(FANCY_OUTPUTTING_SUBDIR)
+ObjectBuilder_UnitTests_SOURCES = \
+  $(srcdir)/ObjectBuilder_UnitTests.cpp \
+  $(srcdir)/Teuchos_StandardUnitTestMain.cpp
+ObjectBuilder_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+ObjectBuilder_UnitTests_LDADD = $(TEUCHOS_LIBS)
 
-EXTRA_DIST = definition
+AM_CPPFLAGS = $(TEUCHOS_INCLUDES)
 
+# This is already added part of TEUCHOS_LIBS and therefore automake does not need to add this again!
+LIBS =

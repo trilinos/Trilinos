@@ -97,6 +97,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_MPITraits.hpp \
 	$(srcdir)/Teuchos_NullIteratorTraits.hpp \
 	$(srcdir)/Teuchos_Object.hpp \
+	$(srcdir)/Teuchos_ObjectBuilder.hpp \
 	$(srcdir)/Teuchos_OpaqueWrapper.hpp \
 	$(srcdir)/Teuchos_OrdinalTraits.hpp \
 	$(srcdir)/Teuchos_ParameterEntry.hpp \

@@ -82,6 +82,7 @@ APPEND_SET(HEADERS
   Teuchos_MPITraits.hpp
   Teuchos_NullIteratorTraits.hpp
   Teuchos_Object.hpp
+  Teuchos_ObjectBuilder.hpp
   Teuchos_OpaqueWrapper.hpp
   Teuchos_OrdinalTraits.hpp
   Teuchos_ParameterEntry.hpp

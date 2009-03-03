@@ -17243,7 +17243,7 @@ fi
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.teuchos src/Makefile test/BLAS/Makefile test/Comm/Makefile test/Containers/Makefile test/DenseMatrix/Makefile test/FancyOutputting/Makefile test/Handle/Makefile test/LAPACK/Makefile test/Makefile test/MemoryManagement/Makefile test/ParameterList/Makefile test/Polling/Makefile test/Polynomial/Makefile test/ScalarTraits/Makefile test/Time/Makefile test/UnitTest/Makefile test/Workspace/Makefile test/XML/Makefile test/XMLParser/Makefile test/dyn_cast/Makefile test/exit/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/run-teuchos-tests.pl example/Makefile example/BLAS/Makefile example/CommandLineProcessor/Makefile example/DenseMatrix/Makefile example/hilbert/Makefile example/LAPACK/Makefile example/ParameterList/Makefile example/RefCountPtr/Makefile example/TimeMonitor/Makefile example/XML/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export Makefile.export.teuchos src/Makefile test/BLAS/Makefile test/Comm/Makefile test/Containers/Makefile test/DenseMatrix/Makefile test/FancyOutputting/Makefile test/Handle/Makefile test/LAPACK/Makefile test/Makefile test/MemoryManagement/Makefile test/ObjectBuilder/Makefile test/ParameterList/Makefile test/Polling/Makefile test/Polynomial/Makefile test/ScalarTraits/Makefile test/Time/Makefile test/UnitTest/Makefile test/Workspace/Makefile test/XML/Makefile test/XMLParser/Makefile test/dyn_cast/Makefile test/exit/Makefile test/scripts/Makefile test/scripts/daily/Makefile test/scripts/daily/mpi/Makefile test/scripts/daily/serial/run-teuchos-tests.pl example/Makefile example/BLAS/Makefile example/CommandLineProcessor/Makefile example/DenseMatrix/Makefile example/hilbert/Makefile example/LAPACK/Makefile example/ParameterList/Makefile example/RefCountPtr/Makefile example/TimeMonitor/Makefile example/XML/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -17985,6 +17985,7 @@ do
     "test/LAPACK/Makefile") CONFIG_FILES="$CONFIG_FILES test/LAPACK/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "test/MemoryManagement/Makefile") CONFIG_FILES="$CONFIG_FILES test/MemoryManagement/Makefile" ;;
+    "test/ObjectBuilder/Makefile") CONFIG_FILES="$CONFIG_FILES test/ObjectBuilder/Makefile" ;;
     "test/ParameterList/Makefile") CONFIG_FILES="$CONFIG_FILES test/ParameterList/Makefile" ;;
     "test/Polling/Makefile") CONFIG_FILES="$CONFIG_FILES test/Polling/Makefile" ;;
     "test/Polynomial/Makefile") CONFIG_FILES="$CONFIG_FILES test/Polynomial/Makefile" ;;

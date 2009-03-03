@@ -153,56 +153,56 @@ PACKAGE_NAME=Teuchos
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 18, passed = 18, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 29, passed = 29, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="someFunc*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 4, passed = 4, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 4, passed = 4, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="*double";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 5, passed = 5, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 5, passed = 5, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="*ouble";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 6, passed = 6, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 6, passed = 6, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="*Complex*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 2, passed = 2, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 2, passed = 2, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name="Int";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 2, passed = 2, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 2, passed = 2, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --test-name="Assignment";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 1, passed = 1, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 1, passed = 1, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
 (FRAMEWORK,INSTALL,UNITTESTS) {
     TESTS = UnitTest/UnitTest_UnitTests.exe;
     ARGS = --show-test-details=TEST_NAMES --test-name="*si*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 18, run = 5, passed = 5, failed = 0);
+    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 5, passed = 5, failed = 0);
     COMM = MPI(1),SERIAL;
 }
 
@@ -251,5 +251,13 @@ PACKAGE_NAME=Teuchos
     TESTS = UnitTest/UnitTest_BadUnitTest.exe;
     ARGS = --show-test-details=TEST_NAMES --group-name=Int --test-name=BadAssignment;
     EXIT-STATUS = STRING-COMPARISON([FAILED]);
+    COMM = MPI(1),SERIAL;
+}
+
+# ObjectBuilder unit tests
+(FRAMEWORK,INSTALL,UNITTESTS) {
+    TESTS = ObjectBuilder/ObjectBuilder_UnitTests.exe;
+    ARGS = --show-test-details=ALL;
+    EXIT-STATUS = STRING-COMPARISON;
     COMM = MPI(1),SERIAL;
 }

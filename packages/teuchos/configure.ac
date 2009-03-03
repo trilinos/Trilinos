@@ -804,6 +804,7 @@ AC_CONFIG_FILES([
 		test/LAPACK/Makefile
 		test/Makefile
 		test/MemoryManagement/Makefile
+		test/ObjectBuilder/Makefile
 		test/ParameterList/Makefile
 		test/Polling/Makefile
 		test/Polynomial/Makefile

@@ -10,6 +10,7 @@ ADD_SUBDIRECTORIES(
   FancyOutputting
   LAPACK
   MemoryManagement
+  ObjectBuilder
   ParameterList
   Polling
   Polynomial
