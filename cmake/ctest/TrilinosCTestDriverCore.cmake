@@ -279,13 +279,6 @@ MACRO(TRILINOS_CTEST_DRIVER)
     SET_PROPERTY(GLOBAL PROPERTY Label ${PACKAGE})
   
     MESSAGE("\nCurrent Trilinos package: '${PACKAGE}'\n")
-
-    IF (FIRST_SUBMIT)
-        SET(SUBMIT_APPEND_ARG)
-      ELSE()
-        SET(SUBMIT_APPEND_ARG APPEND)
-      ENDIF()
-    ENDIF()
   
     #
     # Configure the package and its dependent packages
@@ -389,9 +382,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
       # Submit the library build results to the dashboard
   
       IF (CTEST_DO_SUBMIT)
-        CTEST_SUBMIT( PARTS build
-          #${SUBMIT_APPEND_ARG}
-           )
+        CTEST_SUBMIT( PARTS build )
       ENDIF()
   
       # If the build of the libraries passed, then go on the build
@@ -413,9 +404,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
   
         # Submit the build for all target
         IF (CTEST_DO_SUBMIT)
-          CTEST_SUBMIT( PARTS build
-            #APPEND
-            )  
+          CTEST_SUBMIT( PARTS build )
         ENDIF()
   
         IF (CTEST_DO_TEST)
@@ -423,22 +412,20 @@ MACRO(TRILINOS_CTEST_DRIVER)
           MESSAGE("\nRunning test for package '${PACKAGE}' ...\n")
           CTEST_TEST(BUILD "${CTEST_BINARY_DIRECTORY}"
             INCLUDE "^${PACKAGE}_"
-            #${SUBMIT_APPEND_ARG}
             )
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT(PARTS Test
-              #${SUBMIT_APPEND_ARG}
-              )
+            CTEST_SUBMIT( PARTS Test )
           ENDIF()
         ENDIF()
   
         IF (CTEST_DO_COVERAGE_TESTING)
           MESSAGE("\nRunning coverage for package '${PACKAGE}' ...\n")
-          CTEST_COVERAGE(BUILD "${CTEST_BINARY_DIRECTORY}")
+          CTEST_COVERAGE(
+            BUILD "${CTEST_BINARY_DIRECTORY}"
+            LABELS ${PACKAGE}
+            )
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT(PARTS Coverage
-              #${SUBMIT_APPEND_ARG}
-              )
+            CTEST_SUBMIT( PARTS Coverage )
           ENDIF()
         ENDIF() 
  
@@ -446,9 +433,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
           MESSAGE("\nRunning memory testing for package '${PACKAGE}' ...\n")
           CTEST_MEMCHECK(BUILD "${CTEST_BINARY_DIRECTORY}")
           IF (CTEST_DO_SUBMIT)
-            CTEST_SUBMIT(PARTS Memcheck
-             #${SUBMIT_APPEND_ARG}
-             )
+            CTEST_SUBMIT( PARTS Memcheck )
           ENDIF()
         ENDIF()
   
