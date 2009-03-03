@@ -1,0 +1,21 @@
+#! /bin/sh
+
+EXTRA_ARGS=$@
+
+export PYTHONPATH=/home/wfspotz/lib64/python2.4/site-packages
+
+cmake \
+  -D CMAKE_CXX_COMPILER:FILEPATH=/usr/bin/c++ \
+  -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+  -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+  -D DART_TESTING_TIMEOUT:STRING=600 \
+  -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+  -D Trilinos_ENABLE_DEBUG:BOOL=OFF \
+  -D Trilinos_ENABLE_Teuchos:BOOL=ON \
+  -D Trilinos_ENABLE_Epetra:BOOL=ON \
+  -D Trilinos_ENABLE_EpetraExt:BOOL=OFF \
+  -D Trilinos_ENABLE_PyTrilinos:BOOL=ON \
+  -D BUILD_SHARED_LIBS:BOOL=ON \
+  -D SWIG_EXECUTABLE:FILEPATH=/home/wfspotz/bin/swig \
+  $EXTRA_ARGS \
+  ..
