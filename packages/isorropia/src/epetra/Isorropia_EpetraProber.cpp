@@ -39,12 +39,13 @@ namespace Isorropia{
 namespace Epetra{
 
   
-Prober::Prober():input_graph_(0),colorer_(0),has_colored(false),has_probed(false){
+Prober::Prober():input_graph_(0),colorer_(0),has_colored(false){
 }
 
 Prober::Prober(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
                const Teuchos::ParameterList& paramlist,
-               bool compute_now):input_graph_(input_graph),List_(paramlist),colorer_(0),has_colored(false),has_probed(false){
+               bool compute_now):input_graph_(input_graph),colorer_(0),has_colored(false){
+  setList(paramlist);
   if(compute_now) color();
 }
 
@@ -52,11 +53,30 @@ Prober::Prober(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 
 Prober::Prober(Teuchos::RCP<const Epetra_CrsMatrix> input_matrix,
                const Teuchos::ParameterList & paramlist,
-               bool compute_now):input_graph_(Teuchos::rcp<const Epetra_CrsGraph>(&input_matrix->Graph(),false)),List_(paramlist),colorer_(0),has_colored(false),has_probed(false){
+               bool compute_now):input_graph_(Teuchos::rcp<const Epetra_CrsGraph>(&input_matrix->Graph(),false)),List_(paramlist),colorer_(0),has_colored(false){
+  setList(paramlist);
   if(compute_now) color();
 }
   
 
+
+void Prober::setList(const Teuchos::ParameterList& paramlist){
+  List_=paramlist;
+
+  /* Ensure Distance 2 */
+  Teuchos::ParameterList dummy;
+  string two,s_dummy;
+  Teuchos::ParameterList zoltan=List_.get("ZOLTAN",dummy);
+  two=zoltan.get("DISTANCE",s_dummy);
+  if(strcmp(two.c_str(),"2")){
+    if(!input_graph_->Comm().MyPID())
+      cerr<<"WARNING: Prober requires distance 2 coloring.  Resetting coloring type for you."<<endl;
+    zoltan.set("DISTANCE","2");
+    List_.set("ZOLTAN",zoltan);
+  }
+
+}
+  
 void Prober::color(){
   if(!has_colored) {
     delete colorer_;
@@ -69,14 +89,13 @@ void Prober::color(){
 
 
 int Prober::probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix){
-  /* Sanity Checks*/
+  /* Sanity Checks */
   if(input_graph_.is_null()) return -1;
   if(input_graph_->DataPtr() != out_matrix.Graph().DataPtr()) return -1;
-  // NTS: The above is a bad test, ask Heroux/Jhu how is best to check graph compatibility 
+
   if(!has_colored) color();
   int Ncolors=colorer_->numColors();
   int N=out_matrix.NumMyRows();
-
   if(Ncolors==0) return -1;
 
   /* Allocs */
@@ -115,8 +134,17 @@ int Prober::probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix){
   return 0;
 }
 
-  
 
+
+Teuchos::RCP<Epetra_CrsMatrix> Prober::probe(const Epetra_Operator & op){
+  Teuchos::RCP<Epetra_CrsMatrix> out_matrix = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*input_graph_));
+  Teuchos::RCP<Epetra_CrsMatrix> null;
+  int rv=probe(op,*out_matrix); 
+  if(rv) return out_matrix;
+  else return null;
+}
+
+  
 }//epetra
 }//isorropia
 

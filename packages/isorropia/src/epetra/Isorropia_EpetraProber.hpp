@@ -48,7 +48,8 @@ namespace Isorropia {
 namespace Epetra {
 
 /** An implementation of the Prober interface that operates on
-    Epetra matrices and linear systems.
+    Epetra matrices and linear systems.  The Prober currently works only on structurally
+    symmetric problems.  Support for structually non-symmetric problems is under development.
 
 */
 
@@ -90,10 +91,10 @@ public:
 
 
   /** Sets the parameter list */
-  void setList(const Teuchos::ParameterList& paramlist){List_=paramlist;}
+  void setList(const Teuchos::ParameterList& paramlist);
 
   /** Sets the graph */
-  void setGraph(Teuchos::RCP<const Epetra_CrsGraph> input_graph){input_graph_=input_graph; has_colored=has_probed=false;}  
+  void setGraph(Teuchos::RCP<const Epetra_CrsGraph> input_graph){input_graph_=input_graph; has_colored=false;}  
 
   /** Compute the coloring.
     */
@@ -106,16 +107,17 @@ public:
     */
   int probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix);
 
+ /** Perform the actual probing.
+   \param[in] op is the operator we are probing
+   \param[out] return value is a RCP to the matrix
+    */
+  Teuchos::RCP<Epetra_CrsMatrix> probe(const Epetra_Operator & op);
+  
 private:
-
   Teuchos::RCP<const Epetra_CrsGraph> input_graph_;
   Colorer *colorer_;
   Teuchos::ParameterList List_;
   bool has_colored;
-  bool has_probed;
-
-
-
 };//class Prober
 
 }//namespace Epetra
