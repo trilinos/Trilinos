@@ -81,9 +81,13 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled ) {
   RCP<ParameterList> stepperPL = Teuchos::parameterList();
   stepperPL->set("Stepper Type","Backward Euler");
   builder->setParameterList(stepperPL);
-  RCP<TimeStepNonlinearSolver<double> > nonlinearSolver = timeStepNonlinearSolver<double>();
-  builder->setNonlinearSolver(nonlinearSolver);
   RCP<StepperBase<double> > stateStepper = builder->create();
+  RCP<TimeStepNonlinearSolver<double> > nonlinearSolver = timeStepNonlinearSolver<double>();
+  {
+    // Set the nonlinear solver on the stepper.
+    RCP<SolverAcceptingStepperBase<double> > SAStateStepper = Teuchos::rcp_dynamic_cast<SolverAcceptingStepperBase<double> >(stateStepper,true);
+    SAStateStepper->setSolver(nonlinearSolver);
+  }
   int p_index = 0;
   RCP<ForwardSensitivityStepper<double> > stateAndSensStepper = 
     forwardSensitivityStepper<double>();

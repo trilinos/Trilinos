@@ -30,40 +30,49 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Rythmos_StepperBuilder.hpp"
-#include "Rythmos_TimeStepNonlinearSolver.hpp"
+
+namespace {
+  const std::string StepperType_name = "Stepper Type";
+}
 
 namespace Rythmos {
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, setParameterList ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, setParameterList ) {
   RCP<ParameterList> pl = Teuchos::parameterList();
-  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
   TEST_NOTHROW(builder->setParameterList(pl));
-  // Test that StepperBuilder validates its parameter list
-  pl->set("Hello","World");
+  // Test that StepperBuilderNewNew validates its parameter list
+  pl->set("Hello","World"); // This changes the parameter list inside the builder.
   TEST_THROW(builder->setParameterList(pl), std::logic_error);
+#ifdef TEUCHOS_DEBUG
+  // This throws because we changed the internal parameter list to an invalid one.
+  TEST_THROW(builder = Teuchos::null, std::logic_error);  
+#else // TEUCHOS_DEBUG
+  TEST_NOTHROW(builder = Teuchos::null );
+#endif // TEUCHOS_DEBUG
+  builder = stepperBuilderNewNew<double>();
+  pl = Teuchos::parameterList();
+  pl->set("Hello","World"); 
+  TEST_THROW(builder->setParameterList(pl), std::logic_error); // invalid parameterlist
+  TEST_NOTHROW(builder = Teuchos::null); // invalid parameter list not stored
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, invalidCreate ) {
-  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
-  TEST_THROW(builder->create(), std::logic_error);
-}
-
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, getNonconstParameterList ) {
-  StepperBuilder<double> builder;
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, getNonconstParameterList ) {
+  StepperBuilderNewNew<double> builder;
   RCP<ParameterList> pl = builder.getNonconstParameterList();
   TEST_EQUALITY( is_null(pl), true );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, getValidParameters ) {
-  StepperBuilder<double> builder;
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, getValidParameters ) {
+  StepperBuilderNewNew<double> builder;
   RCP<const ParameterList> pl = builder.getValidParameters();
   TEST_EQUALITY( is_null(pl), false );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, unsetParameterList ) {
-  StepperBuilder<double> builder;
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, unsetParameterList ) {
+  StepperBuilderNewNew<double> builder;
   RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->set(StepperType_name(), ForwardEuler_name());
+  pl->set(StepperType_name, "Forward Euler");
   builder.setParameterList(pl);
   RCP<ParameterList> oldPL = builder.unsetParameterList();
   // Did I get my parameter list back?
@@ -72,25 +81,18 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, unsetParameterList ) {
   TEST_EQUALITY( is_null(builder.getParameterList()), true );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createBEStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createBEStepper ) {
   // Verify the builder operates correctly for Backward Euler
-  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name(), BackwardEuler_name());
+    pl->set(StepperType_name, "Backward Euler");
     // Specify a BackwardEuler setting
-    RCP<ParameterList> beSettings = Teuchos::sublist(pl,BackwardEulerSettings_name());
+    RCP<ParameterList> beSettings = Teuchos::sublist(pl,"Backward Euler");
     RCP<ParameterList> vopl = Teuchos::sublist(beSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);
-  }
-  // Verify we get an exception when we try to create the BE stepper without a nonlinear solver
-  TEST_THROW( builder->create(), std::logic_error );
-  {
-    // Specify a nonlinear solver
-    RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
-    builder->setNonlinearSolver(nlSolver);
   }
   // Create the stepper
   RCP<StepperBase<double> > stepper = builder->create();
@@ -98,34 +100,23 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createBEStepper ) {
   // Verify we got the correct stepper
   RCP<BackwardEulerStepper<double> > beStepper = Teuchos::rcp_dynamic_cast<BackwardEulerStepper<double> >(stepper,false);
   TEST_EQUALITY( is_null(beStepper), false );
-  // Verify it has the correct nonlinear solver
-  RCP<const Thyra::NonlinearSolverBase<double> > nlSolver = beStepper->getSolver();
-  RCP<const TimeStepNonlinearSolver<double> > tsnlSolver = Teuchos::rcp_dynamic_cast<const TimeStepNonlinearSolver<double> >(nlSolver,false);
-  TEST_EQUALITY( is_null(tsnlSolver), false );
   // Verify appropriate settings have propagated into the stepper correctly
   Teuchos::EVerbosityLevel verbLevel = beStepper->getVerbLevel();
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createIBDFStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createIBDFStepper ) {
   // Verify the builder operates correctly for IBDF Stepper
-  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name(), ImplicitBDF_name());
+    pl->set(StepperType_name, "Implicit BDF");
     // Specify a IBDF setting
-    RCP<ParameterList> ibdfSettings = Teuchos::sublist(pl,ImplicitBDFSettings_name());
+    RCP<ParameterList> ibdfSettings = Teuchos::sublist(pl,"Implicit BDF");
     RCP<ParameterList> vopl = Teuchos::sublist(ibdfSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);
-  }
-  // Verify we get an exception when we try to create the IBDF stepper without a nonlinear solver
-  TEST_THROW( builder->create(), std::logic_error );
-  {
-    // Specify a nonlinear solver
-    RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
-    builder->setNonlinearSolver(nlSolver);
   }
   // Create the stepper
   RCP<StepperBase<double> > stepper = builder->create();
@@ -133,24 +124,20 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createIBDFStepper ) {
   // Verify we got the correct stepper
   RCP<ImplicitBDFStepper<double> > ibdfStepper = Teuchos::rcp_dynamic_cast<ImplicitBDFStepper<double> >(stepper,false);
   TEST_EQUALITY( is_null(ibdfStepper), false );
-  // Verify it has the correct nonlinear solver
-  RCP<const Thyra::NonlinearSolverBase<double> > nlSolver = ibdfStepper->getSolver();
-  RCP<const TimeStepNonlinearSolver<double> > tsnlSolver = Teuchos::rcp_dynamic_cast<const TimeStepNonlinearSolver<double> >(nlSolver,false);
-  TEST_EQUALITY( is_null(tsnlSolver), false );
   // Verify appropriate settings have propagated into the stepper correctly
   Teuchos::EVerbosityLevel verbLevel = ibdfStepper->getVerbLevel();
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createFEStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createFEStepper ) {
   // Verify the builder operates correctly for FE Stepper
-  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name(), ForwardEuler_name());
+    pl->set(StepperType_name, "Forward Euler");
     // Specify a FE setting
-    RCP<ParameterList> feSettings = Teuchos::sublist(pl,ForwardEulerSettings_name());
+    RCP<ParameterList> feSettings = Teuchos::sublist(pl,"Forward Euler");
     RCP<ParameterList> vopl = Teuchos::sublist(feSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);
@@ -166,15 +153,15 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createFEStepper ) {
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createERKStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createERKStepper ) {
   // Verify the builder operates correctly for ERK Stepper
-  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name(), ExplicitRK_name());
+    pl->set(StepperType_name, "Explicit RK");
     // Specify a ERK setting
-    RCP<ParameterList> erkSettings = Teuchos::sublist(pl,ExplicitRKSettings_name());
+    RCP<ParameterList> erkSettings = Teuchos::sublist(pl,"Explicit RK");
     RCP<ParameterList> vopl = Teuchos::sublist(erkSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);
@@ -190,25 +177,18 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createERKStepper ) {
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createIRKStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createIRKStepper ) {
   // Verify the builder operates correctly for IRK Stepper
-  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name(), ImplicitRK_name());
+    pl->set(StepperType_name, "Implicit RK");
     // Specify a IRK setting
-    RCP<ParameterList> irkSettings = Teuchos::sublist(pl,ImplicitRKSettings_name());
+    RCP<ParameterList> irkSettings = Teuchos::sublist(pl,"Implicit RK");
     RCP<ParameterList> vopl = Teuchos::sublist(irkSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);
-  }
-  // Verify we get an exception when we try to create the IRK stepper without a nonlinear solver
-  TEST_THROW( builder->create(), std::logic_error );
-  {
-    // Specify a nonlinear solver
-    RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
-    builder->setNonlinearSolver(nlSolver);
   }
   // Create the stepper
   RCP<StepperBase<double> > stepper = builder->create();
@@ -216,24 +196,20 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createIRKStepper ) {
   // Verify we got the correct stepper
   RCP<ImplicitRKStepper<double> > irkStepper = Teuchos::rcp_dynamic_cast<ImplicitRKStepper<double> >(stepper,false);
   TEST_EQUALITY( is_null(irkStepper), false );
-  // Verify it has the correct nonlinear solver
-  RCP<const Thyra::NonlinearSolverBase<double> > nlSolver = irkStepper->getSolver();
-  RCP<const TimeStepNonlinearSolver<double> > tsnlSolver = Teuchos::rcp_dynamic_cast<const TimeStepNonlinearSolver<double> >(nlSolver,false);
-  TEST_EQUALITY( is_null(tsnlSolver), false );
   // Verify appropriate settings have propagated into the stepper correctly
   Teuchos::EVerbosityLevel verbLevel = irkStepper->getVerbLevel();
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createETPStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createETPStepper ) {
   // Verify the builder operates correctly for ETP Stepper
-  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->set(StepperType_name(), ExplicitTP_name());
+    pl->set(StepperType_name, "Explicit Taylor Polynomial");
     // Specify a ETP setting
-    RCP<ParameterList> etpSettings = Teuchos::sublist(pl,ExplicitTPSettings_name());
+    RCP<ParameterList> etpSettings = Teuchos::sublist(pl,"Explicit Taylor Polynomial");
     RCP<ParameterList> vopl = Teuchos::sublist(etpSettings,"VerboseObject");
     vopl->set("Verbosity Level","none");
     builder->setParameterList(pl);
@@ -250,5 +226,6 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createETPStepper ) {
 }
 
 } // namespace Rythmos 
+
 
 
