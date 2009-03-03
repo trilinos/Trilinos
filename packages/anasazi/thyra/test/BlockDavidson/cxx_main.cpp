@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 #endif
   MyPID = Comm.MyPID();
 
-  bool testFailed;
+  bool testFailed = false;
   bool verbose = false;
   bool debug = false;
   std::string filename("mhd1280b.cua");
