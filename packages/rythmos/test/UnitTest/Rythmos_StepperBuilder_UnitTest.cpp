@@ -37,11 +37,11 @@ namespace {
 
 namespace Rythmos {
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, setParameterList ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, setParameterList ) {
   RCP<ParameterList> pl = Teuchos::parameterList();
-  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
+  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
   TEST_NOTHROW(builder->setParameterList(pl));
-  // Test that StepperBuilderNewNew validates its parameter list
+  // Test that StepperBuilder validates its parameter list
   pl->set("Hello","World"); // This changes the parameter list inside the builder.
   TEST_THROW(builder->setParameterList(pl), std::logic_error);
 #ifdef TEUCHOS_DEBUG
@@ -50,27 +50,27 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, setParameterList ) {
 #else // TEUCHOS_DEBUG
   TEST_NOTHROW(builder = Teuchos::null );
 #endif // TEUCHOS_DEBUG
-  builder = stepperBuilderNewNew<double>();
+  builder = stepperBuilder<double>();
   pl = Teuchos::parameterList();
   pl->set("Hello","World"); 
   TEST_THROW(builder->setParameterList(pl), std::logic_error); // invalid parameterlist
   TEST_NOTHROW(builder = Teuchos::null); // invalid parameter list not stored
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, getNonconstParameterList ) {
-  StepperBuilderNewNew<double> builder;
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, getNonconstParameterList ) {
+  StepperBuilder<double> builder;
   RCP<ParameterList> pl = builder.getNonconstParameterList();
   TEST_EQUALITY( is_null(pl), true );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, getValidParameters ) {
-  StepperBuilderNewNew<double> builder;
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, getValidParameters ) {
+  StepperBuilder<double> builder;
   RCP<const ParameterList> pl = builder.getValidParameters();
   TEST_EQUALITY( is_null(pl), false );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, unsetParameterList ) {
-  StepperBuilderNewNew<double> builder;
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, unsetParameterList ) {
+  StepperBuilder<double> builder;
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->set(StepperType_name, "Forward Euler");
   builder.setParameterList(pl);
@@ -81,9 +81,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, unsetParameterList ) {
   TEST_EQUALITY( is_null(builder.getParameterList()), true );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createBEStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createBEStepper ) {
   // Verify the builder operates correctly for Backward Euler
-  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
+  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
@@ -105,9 +105,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createBEStepper ) {
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createIBDFStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createIBDFStepper ) {
   // Verify the builder operates correctly for IBDF Stepper
-  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
+  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
@@ -129,9 +129,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createIBDFStepper ) {
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createFEStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createFEStepper ) {
   // Verify the builder operates correctly for FE Stepper
-  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
+  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
@@ -153,9 +153,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createFEStepper ) {
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createERKStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createERKStepper ) {
   // Verify the builder operates correctly for ERK Stepper
-  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
+  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
@@ -177,9 +177,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createERKStepper ) {
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createIRKStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createIRKStepper ) {
   // Verify the builder operates correctly for IRK Stepper
-  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
+  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();
@@ -201,9 +201,9 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createIRKStepper ) {
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperBuilderNewNew, createETPStepper ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createETPStepper ) {
   // Verify the builder operates correctly for ETP Stepper
-  RCP<StepperBuilderNewNew<double> > builder = stepperBuilderNewNew<double>();
+  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
   {
     // Specify which stepper we want
     RCP<ParameterList> pl = Teuchos::parameterList();

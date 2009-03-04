@@ -26,10 +26,11 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_ParameterList.hpp"
-
 #include "Teuchos_ObjectBuilder.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterListAcceptorHelpers.hpp"
+
+#include "Teuchos_UnitTestHarness.hpp"
 
 namespace Teuchos {
 
@@ -170,7 +171,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, constructor) {
 // Note:  it should throw an exception if the string is ""
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setNames) {
   {
-    RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
+    const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
     TEST_THROW( ob->setObjectName(""), std::logic_error );
     TEST_THROW( ob->setObjectTypeName(""), std::logic_error );
   }
@@ -181,10 +182,10 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setNames) {
     TEST_THROW( ob = objectBuilder<Foo>("",""), std::logic_error );
   }
   {
-    RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
+    const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
     ob->setObjectName("Foo");
     ob->setObjectTypeName("Foo Type");
-    RCP<const ParameterList> validpl = ob->getValidParameters();
+    const RCP<const ParameterList> validpl = ob->getValidParameters();
     // Now we check that the parameterlist is correct
     TEST_EQUALITY_CONST( validpl->get<std::string>("Foo Type"), "None" );
     const ParameterEntry pe = validpl->getEntry("Foo Type");
@@ -193,8 +194,8 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setNames) {
         );
   }
   {
-    RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
-    RCP<const ParameterList> validpl = ob->getValidParameters();
+    const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
+    const RCP<const ParameterList> validpl = ob->getValidParameters();
     // Now we check that the parameterlist is correct
     TEST_EQUALITY_CONST( validpl->get<std::string>("Foo Type"), "None" );
     const ParameterEntry pe = validpl->getEntry("Foo Type");
@@ -217,15 +218,15 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setNames) {
 // 3.  The default Object is accessible through both getObjectName and the valid parameter list.
 // 4.  The validParameterList is deleted and this can only be sensed through calling getValidParameters
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setObjectFactory) {
-  RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
+  const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
   TEST_EQUALITY_CONST( ob->getObjectName(), "None" );
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
   TEST_EQUALITY_CONST( ob->getObjectName(), "Foo A" );  // 3.
   RCP<const ParameterList> pl = ob->getValidParameters();
   TEST_EQUALITY_CONST( pl->get<std::string>("Foo Type"), "Foo A" ); // 1.
   TEST_EQUALITY_CONST( pl->sublist("Foo A").get<std::string>("String"), "A" ); // 1.
-  RCP<Foo> foo = ob->create();
-  RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
+  const RCP<Foo> foo = ob->create();
+  const RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
   TEST_EQUALITY_CONST( is_null(fooA), false ); // 2.
   ob->setObjectFactory(abstractFactoryStd<Foo,FooB>(),"Foo B");
   pl = ob->getValidParameters();
@@ -238,10 +239,10 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setObjectFactory) {
 // 1.  no parameter list is given, uses default in valid parameter list.
 // 2.  parameter list is given, and uses its default
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getObjectName) {
-  RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo", "Foo Type");
+  const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo", "Foo Type");
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
   ob->setObjectFactory(abstractFactoryStd<Foo,FooB>(),"Foo B");
-  RCP<ParameterList> pl = parameterList();
+  const RCP<ParameterList> pl = parameterList();
   pl->setParameters(*ob->getValidParameters()); // copy parameters 
   pl->set("Foo Type", "Foo A"); // change default
   // 1.
@@ -265,12 +266,14 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getObjectName) {
 // 6.  It will throw an exception with a nice message if the factory creates a null RCP
 //     Under what conditions could this happen?
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, create) {
-  RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo", "Foo Type");
+  const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo", "Foo Type");
   TEST_EQUALITY_CONST( ob->create(), null ); // 1.
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
   ob->setObjectFactory(abstractFactoryStd<Foo,FooB>(),"Foo B");
   ob->setObjectFactory(abstractFactoryStd<Foo,FooC>(),"Foo C");
-  RCP<ParameterList> pl = parameterList();
+  out << "op.getValidParamters():\n";
+  printValidParameters(*ob, out);
+  const RCP<ParameterList> pl = parameterList();
   pl->setParameters(*ob->getValidParameters());
   pl->set("Foo Type","None");
   ob->setParameterList(pl);
@@ -279,27 +282,27 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, create) {
   pl->sublist("Foo B").set("String","BB");
   pl->sublist("Foo C").set("String","CC");
   {
-    RCP<Foo> foo = ob->create();
-    RCP<FooB> fooB = rcp_dynamic_cast<FooB>(foo,false);
+    const RCP<Foo> foo = ob->create();
+    const RCP<FooB> fooB = rcp_dynamic_cast<FooB>(foo,false);
     TEST_EQUALITY_CONST( is_null(fooB), false ); // 3.
     TEST_EQUALITY_CONST( foo->getString(), "BB" ); // 5a.
   }
   ob->unsetParameterList();
   {
-    RCP<Foo> foo = ob->create();
-    RCP<FooC> fooC = rcp_dynamic_cast<FooC>(foo,false);
+    const RCP<Foo> foo = ob->create();
+    const RCP<FooC> fooC = rcp_dynamic_cast<FooC>(foo,false);
     TEST_EQUALITY_CONST( is_null(fooC), false ); // 3a.
     TEST_EQUALITY_CONST( foo->getString(), "C" ); // 5.
   }
   {
-    RCP<Foo> foo = ob->create("Foo A");
-    RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
+    const RCP<Foo> foo = ob->create("Foo A");
+    const RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
     TEST_EQUALITY_CONST( is_null(fooA), false ); // 4.
   }
   ob->setParameterList(pl);
   {
-    RCP<Foo> foo = ob->create("Foo A");
-    RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
+    const RCP<Foo> foo = ob->create("Foo A");
+    const RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
     TEST_EQUALITY_CONST( is_null(fooA), false ); // 4.
   }
   {
@@ -333,9 +336,9 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
     TEST_THROW( ob = null, std::logic_error ); // 4.
 #else // TEUCHOS_DEBUG
     TEST_NOTHROW( ob->unsetParameterList() ); 
-    RCP<Foo> foo;
+    const RCP<Foo> foo;
     TEST_NOTHROW( foo = ob->create() );
-    RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
+    const RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
     TEST_EQUALITY_CONST( is_null(fooA), false );
     TEST_NOTHROW( ob = null );
 #endif // TEUCHOS_DEBUG
@@ -345,23 +348,22 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
 // 1.  That it returns a null RCP before we give it a parameter list.
 // 2.  That we can set up a valid parameter list, give it to the ObjectBuilder, and get it back out.
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getParameterList) {
-  RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
+  const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
-  RCP<const ParameterList> pl = ob->getParameterList();
+  const RCP<const ParameterList> pl = ob->getParameterList();
   TEST_EQUALITY_CONST( is_null(pl), true ); // 1.
-  RCP<ParameterList> nonconstPL = parameterList();
+  const RCP<ParameterList> nonconstPL = parameterList();
   nonconstPL->set("Object Type","None");
   TEST_NOTHROW( ob->setParameterList(nonconstPL) );
   {
-    RCP<const ParameterList> newPL = null;
-    newPL = ob->getParameterList();
+    const RCP<const ParameterList> newPL = ob->getParameterList();
     TEST_EQUALITY_CONST( nonconstPL.get(), newPL.get() ); // 2.
   }
 }
 
 // Same as getParameterList
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getNonconstParameterList) {
-  RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
+  const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
   RCP<ParameterList> pl = ob->getNonconstParameterList();
   TEST_EQUALITY_CONST( is_null(pl), true );
@@ -384,7 +386,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getNonconstParameterList) {
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, unsetParameterList) {
   RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
-  RCP<ParameterList> pl = parameterList();
+  const RCP<ParameterList> pl = parameterList();
   pl->set("Object Type","None");
   ob->setParameterList(pl);
   RCP<Foo> foo = ob->create();
@@ -392,7 +394,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, unsetParameterList) {
   RCP<ParameterList> newPL = ob->unsetParameterList();
   TEST_EQUALITY_CONST( pl.get(), newPL.get() ); // 1a.
   foo = ob->create();
-  RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
+  const RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
   TEST_EQUALITY_CONST( is_null(fooA), false ); // 1.
   ob->setParameterList(pl);
   pl->set("Hello","World");
@@ -415,18 +417,18 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, unsetParameterList) {
 // 4.  It fills the parameter list out with the valid parameteres for each object it can create
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getValidParameters) {
   {
-    RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
+    const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
     ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
-    RCP<ParameterList> pl = parameterList();
+    const RCP<ParameterList> pl = parameterList();
     pl->set("Object Type","Foo B");
     TEST_THROW( ob->setParameterList(pl), std::logic_error ); // 2.
   }
   {
-    RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
+    const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>();
     ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
     ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo B");
     ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo C");
-    RCP<ParameterList> validPL = parameterList();
+    const RCP<ParameterList> validPL = parameterList();
     validPL->set("Object Type","Foo C");
     validPL->sublist("Foo A").set("String","A");
     validPL->sublist("Foo B").set("String","B");
@@ -436,7 +438,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getValidParameters) {
     validObjectNames.push_back("Foo A");
     validObjectNames.push_back("Foo B");
     validObjectNames.push_back("Foo C");
-    RCP<const StringToIntegralParameterEntryValidator<int> > 
+    const RCP<const StringToIntegralParameterEntryValidator<int> > 
       objectValidator = rcp(
         new StringToIntegralParameterEntryValidator<int>(
           validObjectNames,"Object Type"
@@ -449,7 +451,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getValidParameters) {
         ).c_str()
       ,objectValidator
       );
-    RCP<const ParameterList> pl = ob->getValidParameters();
+    const RCP<const ParameterList> pl = ob->getValidParameters();
     TEST_NOTHROW( pl->validateParameters(*validPL) ); // 4.
     validPL->set("Object Type","Foo A");
     TEST_NOTHROW( pl->validateParameters(*validPL) ); // 4.
@@ -467,14 +469,14 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getValidParameters) {
 // 2.  Pass in a full parameter list and create an object.  We should get 
 // used parameters for only the sublist of the object we created.
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, usedParameters) {
-  RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
+  const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo B");
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo C");
   {
-    RCP<ParameterList> pl = parameterList();
+    const RCP<ParameterList> pl = parameterList();
     ob->setParameterList(pl);
-    RCP<Foo> foo = ob->create("Foo A");
+    const RCP<Foo> foo = ob->create("Foo A");
     TEST_EQUALITY_CONST( foo->getString(), "A" );
     TEST_EQUALITY_CONST( pl->isSublist("Foo A"), true ); // 1.
     TEST_EQUALITY_CONST( pl->sublist("Foo A").isParameter("String"), true ); // 1.
@@ -492,9 +494,9 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, usedParameters) {
     pl->sublist("Foo A").set("String","AA");
     ob->setParameterList(pl);
     pl = null;
-    RCP<Foo> foo = ob->create("Foo A");
+    const RCP<Foo> foo = ob->create("Foo A");
     TEST_EQUALITY_CONST( foo->getString(), "AA" );
-    RCP<const ParameterList> outPL = ob->getParameterList();
+    const RCP<const ParameterList> outPL = ob->getParameterList();
     TEST_EQUALITY_CONST( outPL->isSublist("Foo A"), true );
     TEST_EQUALITY_CONST( outPL->sublist("Foo A").isParameter("String"), true );
     const ParameterEntry& pe = outPL->sublist("Foo A").getEntry("String");

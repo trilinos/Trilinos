@@ -1513,7 +1513,7 @@ MACRO(PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES)
     ENDIF()
     MESSAGE(
       "\n***"
-      "\n*** ${MSG_TYPE}:  There where no packages configured so no libraries"
+      "\n*** ${MSG_TYPE}:  There were no packages configured so no libraries"
         " or tests/examples will be built!"
       "\n***\n"
       )

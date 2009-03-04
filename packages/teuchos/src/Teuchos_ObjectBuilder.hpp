@@ -140,6 +140,8 @@ private:
 
 
 // Nonmember constructors
+
+
 template<class ObjectType>
 RCP<ObjectBuilder<ObjectType> > objectBuilder()
 {
@@ -147,8 +149,10 @@ RCP<ObjectBuilder<ObjectType> > objectBuilder()
   return ob;
 }
 
+
 template<class ObjectType>
-RCP<ObjectBuilder<ObjectType> > objectBuilder(const std::string& objectName, const std::string& objectTypeName)
+RCP<ObjectBuilder<ObjectType> >
+objectBuilder(const std::string& objectName, const std::string& objectTypeName)
 {
   RCP<ObjectBuilder<ObjectType> > ob = rcp(new ObjectBuilder<ObjectType>() );
   ob->setObjectName(objectName);
@@ -156,11 +160,13 @@ RCP<ObjectBuilder<ObjectType> > objectBuilder(const std::string& objectName, con
   return ob;
 }
 
+
 template<class ObjectType>
 ObjectBuilder<ObjectType>::ObjectBuilder()
 {
   this->initializeDefaults_();
 }
+
 
 template<class ObjectType>
 ObjectBuilder<ObjectType>::~ObjectBuilder()
@@ -172,6 +178,7 @@ ObjectBuilder<ObjectType>::~ObjectBuilder()
   }
 #endif    
 }
+
 
 template<class ObjectType>
 void ObjectBuilder<ObjectType>::setObjectFactory(
@@ -185,8 +192,6 @@ void ObjectBuilder<ObjectType>::setObjectFactory(
   defaultObject_ = objectName;
   validParamList_ = null;
 }
-
-
 
 
 template<class ObjectType>
@@ -204,9 +209,9 @@ ObjectBuilder<ObjectType>::getObjectName() const
     pl = parameterList();
     pl->setParameters(*this->getValidParameters());
   }
-  return objectValidator_->getStringValue(
-    *pl,objectType_name_,defaultObject_);
+  return objectValidator_->getStringValue(*pl, objectType_name_, defaultObject_);
 }
+
 
 template<class ObjectType>
 void ObjectBuilder<ObjectType>::setParameterList(
@@ -218,6 +223,7 @@ void ObjectBuilder<ObjectType>::setParameterList(
     paramList_ = paramList;
   }
 }
+
 
 template<class ObjectType>
 RCP<ParameterList>
@@ -249,6 +255,7 @@ ObjectBuilder<ObjectType>::getParameterList() const
   return paramList_;
 }
 
+
 template<class ObjectType>
 RCP<const ParameterList>
 ObjectBuilder<ObjectType>::getValidParameters() const
@@ -258,27 +265,29 @@ ObjectBuilder<ObjectType>::getValidParameters() const
     // Object Types
     objectValidator_ = rcp(
       new StringToIntegralParameterEntryValidator<int>(
-        validObjectNames_,objectType_name_
+        validObjectNames_, objectType_name_
         )
       );
     validParamList->set(
-      objectType_name_,defaultObject_
-      ,(std::string("Determines the type of " + object_name_ + " object that will be built.\n")
+      objectType_name_, defaultObject_,
+      (std::string("Determines the type of " + object_name_ + " object that will be built.\n")
         + "The parameters for each " + objectType_name_ + " are specified in this sublist" 
-        ).c_str()
-      ,objectValidator_
+        ).c_str(),
+      objectValidator_
       );
     for( int i = 0; i < static_cast<int>(objectArray_.size()); ++i ) {
       const std::string
         &sname = validObjectNames_[i+1];
       const RCP<ObjectType >
         object = objectArray_[i]->create();
-      validParamList->sublist(sname).setParameters(*object->getValidParameters()).disableRecursiveValidation();
+      validParamList->sublist(sname).setParameters(
+        *object->getValidParameters()).disableRecursiveValidation();
     }
     validParamList_ = validParamList;
   }
   return validParamList_;
 }
+
 
 template<class ObjectType>
 RCP<ObjectType >
@@ -293,7 +302,7 @@ ObjectBuilder<ObjectType>::create(
   RCP<ObjectType> object = null; 
   // Get the index of this object factory (this will validate!)
   const int
-    s_idx = objectValidator_->getIntegralValue(sname,objectType_name_);
+    s_idx = objectValidator_->getIntegralValue(sname, objectType_name_);
   if (s_idx != 0) {
     // Create the uninitialized object
     object = objectArray_[s_idx-1]->create(); 
@@ -321,6 +330,7 @@ ObjectBuilder<ObjectType>::create(
   return object;
 }
 
+
 template<class ObjectType>
 void ObjectBuilder<ObjectType>::setObjectName(
     const std::string &objectName
@@ -331,6 +341,7 @@ void ObjectBuilder<ObjectType>::setObjectName(
   validParamList_ = null;
 }
 
+
 template<class ObjectType>
 void ObjectBuilder<ObjectType>::setObjectTypeName(
     const std::string &objectTypeName
@@ -340,6 +351,7 @@ void ObjectBuilder<ObjectType>::setObjectTypeName(
   objectType_name_ = objectTypeName;
   validParamList_ = null;
 }
+
 
 template<class ObjectType>
 void ObjectBuilder<ObjectType>::initializeDefaults_()
@@ -354,7 +366,8 @@ void ObjectBuilder<ObjectType>::initializeDefaults_()
 
 }
 
+
 } // namespace Teuchos
 
-#endif //Teuchos_OBJECT_BUILDER_H
 
+#endif //Teuchos_OBJECT_BUILDER_H

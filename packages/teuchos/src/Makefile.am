@@ -105,6 +105,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.hpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorHelpers.hpp \
 	$(srcdir)/Teuchos_ParameterListExceptions.hpp \
 	$(srcdir)/Teuchos_ParameterListNonAcceptor.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
@@ -192,6 +193,7 @@ CORE = \
 	$(srcdir)/Teuchos_ParameterList.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp \
 	$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
 	$(srcdir)/Teuchos_Ptr.cpp \

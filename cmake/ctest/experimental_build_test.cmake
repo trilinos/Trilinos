@@ -2,6 +2,9 @@
 # CTest script that is used to do an experimental build/test right from a
 # developer's own build directory.
 #
+# NOTE: You need a recent (CVS) version of CMake/CTest for this to work!  You
+# can't use CMake/CTest 2.6.x.
+#
 # To run this script:
 #
 # 1) First configure your directory without enabling any packages (to

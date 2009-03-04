@@ -46,11 +46,13 @@
 
 namespace Rythmos {
 
+
 TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, create ) { 
   RCP<ForwardSensitivityStepper<double> > sensStepper =
     forwardSensitivityStepper<double>();
   TEST_EQUALITY_CONST( is_null(sensStepper), false );
 }
+
 
 TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled ) {
   //RCP<Teuchos::FancyOStream>
@@ -77,7 +79,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled ) {
   modelPL->set("IC x_0", x0);
   modelPL->set("IC x_1", x1);
   stateModel->setParameterList(modelPL);
-  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  const RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
   RCP<ParameterList> stepperPL = Teuchos::parameterList();
   stepperPL->set("Stepper Type","Backward Euler");
   builder->setParameterList(stepperPL);

@@ -42,18 +42,20 @@
 #include "Rythmos_ImplicitRKStepper.hpp"
 #include "Rythmos_ExplicitTaylorPolynomialStepper.hpp"
 
+
 namespace Rythmos {
 
+
 template<class Scalar>
-  class StepperBuilderNewNew : virtual public Teuchos::ParameterListAcceptor
+  class StepperBuilder : virtual public Teuchos::ParameterListAcceptor
 {
 public:
 
   /** \brief . */
-  StepperBuilderNewNew();
+  StepperBuilder();
 
   /** \brief . */
-  ~StepperBuilderNewNew();
+  ~StepperBuilder();
 
   /** \brief Set a new Stepper factory object. */
   void setStepperFactory(
@@ -70,7 +72,6 @@ public:
   RCP<StepperBase<Scalar> > create(
     const std::string &stepperName = ""
     ) const;
-
   
   /** \name Overridden from Teuchos::ParameterListAcceptor */
   //@{
@@ -91,7 +92,6 @@ public:
   RCP<const Teuchos::ParameterList> getValidParameters() const;
  
   //@}
-  
 
 private:
 
@@ -107,32 +107,36 @@ private:
 
 };
 
+
 } // namespace Rythmos
+
 
 namespace Rythmos {
 
 
 // Nonmember constructor
 template<class Scalar>
-RCP<StepperBuilderNewNew<Scalar> > stepperBuilderNewNew()
+RCP<StepperBuilder<Scalar> > stepperBuilder()
 {
-  RCP<StepperBuilderNewNew<Scalar> > sb = rcp(new StepperBuilderNewNew<Scalar> );
+  RCP<StepperBuilder<Scalar> > sb = rcp(new StepperBuilder<Scalar> );
   return sb;
 }
 
 template<class Scalar>
-StepperBuilderNewNew<Scalar>::StepperBuilderNewNew()
+StepperBuilder<Scalar>::StepperBuilder()
 {
   this->initializeDefaults_();
 }
 
+
 template<class Scalar>
-StepperBuilderNewNew<Scalar>::~StepperBuilderNewNew()
+StepperBuilder<Scalar>::~StepperBuilder()
 {
 }
 
+
 template<class Scalar>
-void StepperBuilderNewNew<Scalar>::setStepperFactory(
+void StepperBuilder<Scalar>::setStepperFactory(
   const RCP<const Teuchos::AbstractFactory<StepperBase<Scalar> > > &stepperFactory,
   const std::string &stepperName
   )
@@ -141,25 +145,26 @@ void StepperBuilderNewNew<Scalar>::setStepperFactory(
 }
 
 
-
 template<class Scalar>
 std::string
-StepperBuilderNewNew<Scalar>::getStepperName() const
+StepperBuilder<Scalar>::getStepperName() const
 {
   return builder_.getObjectName();
 }
 
+
 template<class Scalar>
-void StepperBuilderNewNew<Scalar>::setParameterList(
+void StepperBuilder<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
   builder_.setParameterList(paramList);
 }
 
+
 template<class Scalar>
 RCP<Teuchos::ParameterList>
-StepperBuilderNewNew<Scalar>::getNonconstParameterList()
+StepperBuilder<Scalar>::getNonconstParameterList()
 {
   return builder_.getNonconstParameterList();
 }
@@ -167,7 +172,7 @@ StepperBuilderNewNew<Scalar>::getNonconstParameterList()
 
 template<class Scalar>
 RCP<Teuchos::ParameterList>
-StepperBuilderNewNew<Scalar>::unsetParameterList()
+StepperBuilder<Scalar>::unsetParameterList()
 {
   return builder_.unsetParameterList();
 }
@@ -175,29 +180,32 @@ StepperBuilderNewNew<Scalar>::unsetParameterList()
 
 template<class Scalar>
 RCP<const Teuchos::ParameterList>
-StepperBuilderNewNew<Scalar>::getParameterList() const
+StepperBuilder<Scalar>::getParameterList() const
 {
   return builder_.getParameterList();
 }
 
+
 template<class Scalar>
 RCP<const Teuchos::ParameterList>
-StepperBuilderNewNew<Scalar>::getValidParameters() const
+StepperBuilder<Scalar>::getValidParameters() const
 {
   return builder_.getValidParameters();
 }
 
+
 template<class Scalar>
 RCP<StepperBase<Scalar> >
-StepperBuilderNewNew<Scalar>::create(
+StepperBuilder<Scalar>::create(
   const std::string &stepperName
   ) const
 {
   return builder_.create(stepperName);
 }
 
+
 template<class Scalar>
-void StepperBuilderNewNew<Scalar>::initializeDefaults_()
+void StepperBuilder<Scalar>::initializeDefaults_()
 {
 
   using Teuchos::abstractFactoryStd;
@@ -246,6 +254,7 @@ void StepperBuilderNewNew<Scalar>::initializeDefaults_()
 
 
 } // namespace Rythmos
+
 
 #endif //Rythmos_STEPPER_BUILDER_NEWNEW_H
 

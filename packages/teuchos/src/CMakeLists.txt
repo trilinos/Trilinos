@@ -90,6 +90,7 @@ APPEND_SET(HEADERS
   Teuchos_ParameterList.hpp
   Teuchos_ParameterListAcceptor.hpp
   Teuchos_ParameterListAcceptorDefaultBase.hpp
+  Teuchos_ParameterListAcceptorHelpers.hpp
   Teuchos_ParameterListExceptions.hpp
   Teuchos_ParameterListNonAcceptor.hpp
   Teuchos_PerformanceMonitorBase.hpp
@@ -173,6 +174,7 @@ APPEND_SET(SOURCES
   Teuchos_Object.cpp
   Teuchos_ParameterEntry.cpp
   Teuchos_ParameterList.cpp
+  Teuchos_ParameterListAcceptorHelpers.cpp
   Teuchos_ParameterListAcceptor.cpp
   Teuchos_ParameterListAcceptorDefaultBase.cpp
   Teuchos_ParameterListNonAcceptor.cpp

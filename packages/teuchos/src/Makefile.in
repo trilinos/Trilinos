@@ -132,6 +132,7 @@ am__libteuchos_a_SOURCES_DIST = $(srcdir)/Teuchos_BLAS.cpp \
 	$(srcdir)/Teuchos_ParameterList.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp \
 	$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
 	$(srcdir)/Teuchos_Ptr.cpp $(srcdir)/Teuchos_RCPNode.cpp \
@@ -185,6 +186,7 @@ am__objects_1 = Teuchos_BLAS.$(OBJEXT) Teuchos_CTimeMonitor.$(OBJEXT) \
 	Teuchos_ParameterList.$(OBJEXT) \
 	Teuchos_ParameterListAcceptor.$(OBJEXT) \
 	Teuchos_ParameterListAcceptorDefaultBase.$(OBJEXT) \
+	Teuchos_ParameterListAcceptorHelpers.$(OBJEXT) \
 	Teuchos_ParameterListNonAcceptor.$(OBJEXT) \
 	Teuchos_PerformanceMonitorUtils.$(OBJEXT) \
 	Teuchos_Ptr.$(OBJEXT) Teuchos_RCPNode.$(OBJEXT) \
@@ -290,6 +292,7 @@ am__include_HEADERS_DIST = $(srcdir)/Teuchos_AbstractFactory.hpp \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.hpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorHelpers.hpp \
 	$(srcdir)/Teuchos_ParameterListExceptions.hpp \
 	$(srcdir)/Teuchos_ParameterListNonAcceptor.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
@@ -575,6 +578,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_ParameterList.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.hpp \
 	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.hpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorHelpers.hpp \
 	$(srcdir)/Teuchos_ParameterListExceptions.hpp \
 	$(srcdir)/Teuchos_ParameterListNonAcceptor.hpp \
 	$(srcdir)/Teuchos_PerformanceMonitorBase.hpp \
@@ -662,6 +666,7 @@ CORE = \
 	$(srcdir)/Teuchos_ParameterList.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptor.cpp \
 	$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp \
+	$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp \
 	$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp \
 	$(srcdir)/Teuchos_PerformanceMonitorUtils.cpp \
 	$(srcdir)/Teuchos_Ptr.cpp \
@@ -977,6 +982,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterList.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterListAcceptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterListAcceptorDefaultBase.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterListAcceptorHelpers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterListNonAcceptor.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_ParameterXMLFileReader.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_PerformanceMonitorUtils.Po@am__quote@
@@ -1267,6 +1273,20 @@ Teuchos_ParameterListAcceptorDefaultBase.obj: $(srcdir)/Teuchos_ParameterListAcc
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp' object='Teuchos_ParameterListAcceptorDefaultBase.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterListAcceptorDefaultBase.obj `if test -f '$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterListAcceptorDefaultBase.cpp'; fi`
+
+Teuchos_ParameterListAcceptorHelpers.o: $(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_ParameterListAcceptorHelpers.o -MD -MP -MF $(DEPDIR)/Teuchos_ParameterListAcceptorHelpers.Tpo -c -o Teuchos_ParameterListAcceptorHelpers.o `test -f '$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_ParameterListAcceptorHelpers.Tpo $(DEPDIR)/Teuchos_ParameterListAcceptorHelpers.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp' object='Teuchos_ParameterListAcceptorHelpers.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterListAcceptorHelpers.o `test -f '$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp
+
+Teuchos_ParameterListAcceptorHelpers.obj: $(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_ParameterListAcceptorHelpers.obj -MD -MP -MF $(DEPDIR)/Teuchos_ParameterListAcceptorHelpers.Tpo -c -o Teuchos_ParameterListAcceptorHelpers.obj `if test -f '$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Teuchos_ParameterListAcceptorHelpers.Tpo $(DEPDIR)/Teuchos_ParameterListAcceptorHelpers.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp' object='Teuchos_ParameterListAcceptorHelpers.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Teuchos_ParameterListAcceptorHelpers.obj `if test -f '$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp'; then $(CYGPATH_W) '$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Teuchos_ParameterListAcceptorHelpers.cpp'; fi`
 
 Teuchos_ParameterListNonAcceptor.o: $(srcdir)/Teuchos_ParameterListNonAcceptor.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Teuchos_ParameterListNonAcceptor.o -MD -MP -MF $(DEPDIR)/Teuchos_ParameterListNonAcceptor.Tpo -c -o Teuchos_ParameterListNonAcceptor.o `test -f '$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp' || echo '$(srcdir)/'`$(srcdir)/Teuchos_ParameterListNonAcceptor.cpp
