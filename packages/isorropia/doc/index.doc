@@ -10,6 +10,9 @@ Isorropia is a package for combinatorial scientific computing, with focus on par
       In addition to matrix/graph partitioning, Isorropia has the capability to partition 1, 2 or 3-dimensional real coordinates into balanced spatial regions.  The coordinates are represented as an Epetra_MultiVector.
 <br>
 
+Isorropia's coloring capability can also be employed for the purpose of probing structurally symmetric matrices.
+<br>
+
       Isorropia is primarily an interface to the Zoltan toolkit, which is now required. Zoltan became a Trilinos package in 9.0 and is automatically enabled by
 Isorropia.
 To enable Isorropia in your Trilinos build, provide the argument
@@ -22,6 +25,7 @@ If you wish to use third-party libraries (such as ParMetis or PT-Scotch) with Is
 <li> <a href="#example_programs">Example Programs</a>
 <li> <a href="#coloring">Coloring</a>
 <li> <a href="#ordering">Ordering</a>
+<li> <a href="#ordering">Probing</a>
 </ul>
 
 <a name="overview"> </a>
@@ -139,5 +143,14 @@ for details. Currently, coloring is limited to structurally symmetric matrices b
 <a name="ordering"> </a>
 \section ordering  Ordering 
 Isorropia currently supports a subset of the graph (sparse matrix) ordering features in Zoltan. The intended main use is to produce a permutation that can be used as fill-reducing ordering for direct solvers. Currently Zoltan relies on third-party libraries (ParMetis and PT-Scotch) for this.
+
+
+<a name="probing"> </a>
+\section probing  Probing
+Isorropia's distance-2 graph vertex capability enables matrix probing, the re-construction (or approximation) of a matrix from matrix-vector products with specially chosen vectors.  These vectors are combinations of columns of the identity which are carefully chosen such that the columns probed by such a vector are structurally orthogonal.  The most common use case of probing is when the matrix is not explicitly stored, but the matrix entries are necessary for some other procedure (e.g. preconditioning).  In certain applications, an exact reconstruction of the matrix is needed.  In others, an approximation based on <em>a priori</em> knowledge of the ``significant'' matrix entries suffices.  Isorropia's probing functionality works in both cases.  See \ref probing for an example of how probing is used.
+
+Currently, Isorropia's probing functionality is limited to structurally symmetric matrices but we expect to support nonsymmetric matrices (e.g. Jacobians) in the future.
+
+
 
 */
