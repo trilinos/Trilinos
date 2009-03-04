@@ -29,20 +29,16 @@
 // ***********************************************************************
 // @HEADER
 
-#include "FadUnitTests.hpp"
+#include "FadUnitTests2.hpp"
 
 #include "Sacado_Fad_SimpleFad.hpp"
 
-void FAD::error(const char *msg) {
-  std::cout << msg << endl;
-}
+typedef RealFadOpsUnitTest2<Sacado::Fad::DFad<double>,double> DFadDoubleTest2;
+typedef RealFadOpsUnitTest2<Sacado::Fad::SFad<double,5>,double> SFadDoubleTest2;
+typedef RealFadOpsUnitTest2<Sacado::Fad::SLFad<double,10>,double> SLFadDoubleTest2;
+typedef RealFadOpsUnitTest2<Sacado::Fad::SimpleFad<double>,double> SimpleFadDoubleTest2;
 
-typedef FadOpsUnitTest<Sacado::Fad::DFad<double>,double> DFadDoubleTest;
-typedef FadOpsUnitTest<Sacado::Fad::SFad<double,5>,double> SFadDoubleTest;
-typedef FadOpsUnitTest<Sacado::Fad::SLFad<double,10>,double> SLFadDoubleTest;
-typedef FadOpsUnitTest<Sacado::Fad::SimpleFad<double>,double> SimpleFadDoubleTest;
-
-CPPUNIT_TEST_SUITE_REGISTRATION(DFadDoubleTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(SFadDoubleTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(SLFadDoubleTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(SimpleFadDoubleTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(DFadDoubleTest2);
+CPPUNIT_TEST_SUITE_REGISTRATION(SFadDoubleTest2);
+CPPUNIT_TEST_SUITE_REGISTRATION(SLFadDoubleTest2);
+CPPUNIT_TEST_SUITE_REGISTRATION(SimpleFadDoubleTest2);

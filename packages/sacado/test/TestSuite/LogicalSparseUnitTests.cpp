@@ -109,6 +109,7 @@ void LogicalSparseOpsUnitTest::compareDx(double a, bool b) {
 void LogicalSparseOpsUnitTest::testMax() {
   double val;
 
+  // LFAd, LFad
   LSType aa_ls = a_ls + 1.0;
   c_ls = max(aa_ls, a_ls);
   compareDoubles(c_ls.val(), aa_ls.val());
@@ -116,7 +117,6 @@ void LogicalSparseOpsUnitTest::testMax() {
     compareBools(c_ls.dx(i), aa_ls.dx(i));
     compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
   }
-  
   c_ls = max(a_ls, aa_ls);
   compareDoubles(c_ls.val(), aa_ls.val());
   for (int i=0; i<n; i++) {
@@ -124,26 +124,48 @@ void LogicalSparseOpsUnitTest::testMax() {
     compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
   }
 
+  // Expr, LFad
   c_ls = max(a_ls+1.0, a_ls);
   compareDoubles(c_ls.val(), aa_ls.val());
   for (int i=0; i<n; i++) {
     compareBools(c_ls.dx(i), aa_ls.dx(i));
     compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
   }
-  
   c_ls = max(a_ls, a_ls+1.0);
   compareDoubles(c_ls.val(), aa_ls.val());
   for (int i=0; i<n; i++) {
     compareBools(c_ls.dx(i), aa_ls.dx(i));
     compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
   }
+
+  // Expr, Expr (same)
+  c_ls = max(a_ls+1.0, a_ls+1.0);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
+  }
+
+  // Expr, Expr (different)
+  c_ls = max(a_ls+1.0, a_ls-1.0);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
+  }
+  c_ls = max(a_ls-1.0, a_ls+1.0);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
+  }
   
+  // LFad, const
   val = a_ls.val() + 1;
   c_ls = max(a_ls, val);
   compareDoubles(c_ls.val(), val);
   for (int i=0; i<n; i++)
     compareBools(c_ls.dx(i), 0);
-  
   val = a_ls.val() - 1;
   c_ls = max(a_ls, val);
   compareDoubles(c_ls.val(), a_ls.val());
@@ -151,13 +173,11 @@ void LogicalSparseOpsUnitTest::testMax() {
     compareBools(c_ls.dx(i), a_ls.dx(i));
     compareBools(c_ls.fastAccessDx(i), a_ls.fastAccessDx(i));
   }
-
   val = b_ls.val() + 1;
   c_ls = max(val, b_ls);
   compareDoubles(c_ls.val(), val);
   for (int i=0; i<n; i++)
     compareBools(c_ls.dx(i), 0);
-  
   val = b_ls.val() - 1;
   c_ls = max(val, b_ls);
   compareDoubles(c_ls.val(), b_ls.val());
@@ -165,11 +185,28 @@ void LogicalSparseOpsUnitTest::testMax() {
     compareBools(c_ls.dx(i), b_ls.dx(i));
     compareBools(c_ls.fastAccessDx(i), b_ls.fastAccessDx(i));
   }
+
+  // Expr, const
+  val = a_ls.val();
+  c_ls = max(a_ls+1.0, val);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
+  }
+  c_ls = max(val, a_ls+1.0);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
+  }
+  
 }
 
 void LogicalSparseOpsUnitTest::testMin() {
   double val;
 
+  // LFad, LFad
   LSType aa_ls = a_ls - 1.0;
   c_ls = min(aa_ls, a_ls);
   compareDoubles(c_ls.val(), aa_ls.val());
@@ -177,7 +214,6 @@ void LogicalSparseOpsUnitTest::testMin() {
     compareBools(c_ls.dx(i), aa_ls.dx(i));
     compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
   }
-
   c_ls = min(a_ls, aa_ls);
   compareDoubles(c_ls.val(), aa_ls.val());
   for (int i=0; i<n; i++) {
@@ -185,12 +221,48 @@ void LogicalSparseOpsUnitTest::testMin() {
     compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
   }
 
+  // Expr, LFad
+  c_ls = min(a_ls-1.0, a_ls);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
+  }
+  c_ls = min(a_ls, a_ls-1.0);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
+  }
+
+  // Expr, Expr (same)
+  c_ls = min(a_ls-1.0, a_ls-1.0);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
+  }
+
+  // Expr, Expr (different)
+  c_ls = min(a_ls+1.0, a_ls-1.0);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
+  }
+  c_ls = min(a_ls-1.0, a_ls+1.0);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
+  }
+
+  // LFad, const
   val = a_ls.val() - 1;
   c_ls = min(a_ls, val);
   compareDoubles(c_ls.val(), val);
   for (int i=0; i<n; i++)
     compareBools(c_ls.dx(i), 0);
-  
   val = a_ls.val() + 1;
   c_ls = min(a_ls, val);
   compareDoubles(c_ls.val(), a_ls.val());
@@ -198,18 +270,31 @@ void LogicalSparseOpsUnitTest::testMin() {
     compareBools(c_ls.dx(i), a_ls.dx(i));
     compareBools(c_ls.fastAccessDx(i), a_ls.fastAccessDx(i));
   }
-
   val = b_ls.val() - 1;
   c_ls = min(val, b_ls);
   compareDoubles(c_ls.val(), val);
   for (int i=0; i<n; i++)
     compareBools(c_ls.dx(i), 0);
-  
   val = b_ls.val() + 1;
   c_ls = min(val, b_ls);
   compareDoubles(c_ls.val(), b_ls.val());
   for (int i=0; i<n; i++) {
     compareBools(c_ls.dx(i), b_ls.dx(i));
     compareBools(c_ls.fastAccessDx(i), b_ls.fastAccessDx(i));
+  }
+
+  // Expr, const
+  val = a_ls.val();
+  c_ls = min(a_ls-1.0, val);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
+  }
+  c_ls = min(val, a_ls-1.0);
+  compareDoubles(c_ls.val(), aa_ls.val());
+  for (int i=0; i<n; i++) {
+    compareBools(c_ls.dx(i), aa_ls.dx(i));
+    compareBools(c_ls.fastAccessDx(i), aa_ls.fastAccessDx(i));
   }
 }

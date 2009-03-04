@@ -138,6 +138,10 @@ namespace Sacado {							\
     OP (const Expr<T1>&, const Expr<T2>&);				\
 									\
     template <typename T>						\
+    Expr< FADOP< Expr<T>, Expr<T> > >					\
+    OP (const Expr<T>&, const Expr<T>&);				\
+									\
+    template <typename T>						\
     Expr< FADOP< typename Expr<T>::value_type, Expr<T> > >		\
     OP (const typename Expr<T>::value_type&, const Expr<T>&);		\
 									\
@@ -168,6 +172,10 @@ namespace Sacado {							\
     OP (const Expr<T1>&, const Expr<T2>&);				\
 									\
     template <typename T>						\
+    Expr< FADOP< Expr<T>, Expr<T> > >					\
+    OP (const Expr<T>&, const Expr<T>&);				\
+									\
+    template <typename T>						\
     Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >	\
     OP (const typename Expr<T>::value_type&, const Expr<T>&);		\
 									\
@@ -185,6 +193,10 @@ namespace Sacado {							\
     OP (const Expr<T1>&, const Expr<T2>&);				\
 									\
     template <typename T>						\
+    Expr< FADOP< Expr<T>, Expr<T> > >					\
+    OP (const Expr<T>&, const Expr<T>&);				\
+									\
+    template <typename T>						\
     Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >	\
     OP (const typename Expr<T>::value_type&, const Expr<T>&);		\
 									\
@@ -200,6 +212,10 @@ namespace Sacado {							\
     template <typename T1, typename T2>					\
     Expr< FADOP< Expr<T1>, Expr<T2> > >					\
     OP (const Expr<T1>&, const Expr<T2>&);				\
+									\
+    template <typename T>						\
+    Expr< FADOP< Expr<T>, Expr<T> > >					\
+    OP (const Expr<T>&, const Expr<T>&);				\
 									\
     template <typename T>						\
     Expr< FADOP< typename Expr<T>::value_type, Expr<T> > >		\

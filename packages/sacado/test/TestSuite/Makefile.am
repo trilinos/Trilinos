@@ -76,7 +76,11 @@ TestSuite_exe_SOURCES = \
 	$(srcdir)/FadUnitTests.hpp \
 	$(srcdir)/FadUnitTests2.hpp \
 	$(srcdir)/FadUnitTests.cpp \
+	$(srcdir)/RealFadUnitTests.cpp \
+	$(srcdir)/ComplexFadUnitTests.cpp \
 	$(srcdir)/ELRFadUnitTests.cpp \
+	$(srcdir)/RealELRFadUnitTests.cpp \
+	$(srcdir)/ComplexELRFadUnitTests.cpp \
 	$(srcdir)/CacheFadUnitTests.cpp \
 	$(TAYLOR_SOURCES) \
 	$(PCE_SOURCES) \

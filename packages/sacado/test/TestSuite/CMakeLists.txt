@@ -27,7 +27,11 @@ SET(${PACKAGE_NAME}_TESTSUITE_SOURCES ${${PACKAGE_NAME}_TESTSUITE_SOURCES}
   FadUnitTests.hpp
   FadUnitTests2.hpp
   FadUnitTests.cpp
+  RealFadUnitTests.cpp
+  ComplexFadUnitTests.cpp
   ELRFadUnitTests.cpp
+  RealELRFadUnitTests.cpp
+  ComplexELRFadUnitTests.cpp
   CacheFadUnitTests.cpp
   LogicalSparseUnitTests.hpp
   LogicalSparseUnitTests.cpp

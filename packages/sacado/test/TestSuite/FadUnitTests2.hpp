@@ -900,38 +900,53 @@ RealFadOpsUnitTest2<FadType,ScalarType>::
 testMax() {
   ScalarType val;
 
+  // Fad, Fad
   FadType aa_fad = this->a_fad + 1.0;
   this->c_fad = max(aa_fad, this->a_fad);
   COMPARE_FADS(this->c_fad, aa_fad);
-  
   this->c_fad = max(this->a_fad, aa_fad);
   COMPARE_FADS(this->c_fad, aa_fad);
 
+  // Expr, Fad
   this->c_fad = max(this->a_fad+1.0, this->a_fad);
   COMPARE_FADS(this->c_fad, aa_fad);
-  
   this->c_fad = max(this->a_fad, this->a_fad+1.0);
   COMPARE_FADS(this->c_fad, aa_fad);
+
+  // Expr, Expr (same)
+  this->c_fad = max(this->a_fad+1.0, this->a_fad+1.0);
+  COMPARE_FADS(this->c_fad, aa_fad);
+
+  // Expr, Expr (different)
+  this->c_fad = max(this->a_fad+1.0, this->a_fad-1.0);
+  COMPARE_FADS(this->c_fad, aa_fad);
+  this->c_fad = max(this->a_fad-1.0, this->a_fad+1.0);
+  COMPARE_FADS(this->c_fad, aa_fad);
   
+  // Fad, const
   val = this->a_fad.val() + 1;
   this->c_fad = max(this->a_fad, val);
   COMPARE_VALUES(this->c_fad.val(), val);
   for (int i=0; i<this->n; i++)
     COMPARE_VALUES(this->c_fad.dx(i), 0.0);
-  
   val = this->a_fad.val() - 1;
   this->c_fad = max(this->a_fad, val);
   COMPARE_FADS(this->c_fad, this->a_fad);
-
   val = this->b_fad.val() + 1;
   this->c_fad = max(val, this->b_fad);
   COMPARE_VALUES(this->c_fad.val(), val);
   for (int i=0; i<this->n; i++)
     COMPARE_VALUES(this->c_fad.dx(i), 0.0);
-  
   val = this->b_fad.val() - 1;
   this->c_fad = max(val, this->b_fad);
   COMPARE_FADS(this->c_fad, this->b_fad);
+
+  // Expr, const
+  val = this->a_fad.val();
+  this->c_fad = max(this->a_fad+1.0, val);
+  COMPARE_FADS(this->c_fad, aa_fad);
+  this->c_fad = max(val, this->a_fad+1.0);
+  COMPARE_FADS(this->c_fad, aa_fad);
 }
 
 template <class FadType, class ScalarType>
@@ -940,38 +955,53 @@ RealFadOpsUnitTest2<FadType,ScalarType>::
 testMin() {
   ScalarType val;
 
+  // Fad, Fad
   FadType aa_fad = this->a_fad - 1.0;
   this->c_fad = min(aa_fad, this->a_fad);
   COMPARE_FADS(this->c_fad, aa_fad);
-
   this->c_fad = min(this->a_fad, aa_fad);
   COMPARE_FADS(this->c_fad, aa_fad);
 
+  // Expr, Fad
   this->c_fad = min(this->a_fad-1.0, this->a_fad);
   COMPARE_FADS(this->c_fad, aa_fad);
-  
   this->c_fad = min(this->a_fad, this->a_fad-1.0);
   COMPARE_FADS(this->c_fad, aa_fad);
 
+  // Expr, Expr (same)
+  this->c_fad = min(this->a_fad-1.0, this->a_fad-1.0);
+  COMPARE_FADS(this->c_fad, aa_fad);
+
+  // Expr, Expr (different)
+  this->c_fad = min(this->a_fad+1.0, this->a_fad-1.0);
+  COMPARE_FADS(this->c_fad, aa_fad);
+  this->c_fad = min(this->a_fad-1.0, this->a_fad+1.0);
+  COMPARE_FADS(this->c_fad, aa_fad);
+
+  // Fad, const
   val = this->a_fad.val() - 1;
   this->c_fad = min(this->a_fad, val);
   COMPARE_VALUES(this->c_fad.val(), val);
   for (int i=0; i<this->n; i++)
     COMPARE_VALUES(this->c_fad.dx(i), 0.0);
-  
   val = this->a_fad.val() + 1;
   this->c_fad = min(this->a_fad, val);
   COMPARE_FADS(this->c_fad, this->a_fad);
-
   val = this->b_fad.val() - 1;
   this->c_fad = min(val, this->b_fad);
   COMPARE_VALUES(this->c_fad.val(), val);
   for (int i=0; i<this->n; i++)
     COMPARE_VALUES(this->c_fad.dx(i), 0.0);
-  
   val = this->b_fad.val() + 1;
   this->c_fad = min(val, this->b_fad);
   COMPARE_FADS(this->c_fad, this->b_fad);
+
+  // Expr, const
+  val = this->a_fad.val();
+  this->c_fad = min(this->a_fad-1.0, val);
+  COMPARE_FADS(this->c_fad, aa_fad);
+  this->c_fad = min(val, this->a_fad-1.0);
+  COMPARE_FADS(this->c_fad, aa_fad);
 }
 
 #undef COMPARE_VALUES

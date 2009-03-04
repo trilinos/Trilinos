@@ -30,32 +30,12 @@
 // @HEADER
 
 #include "FadUnitTests.hpp"
-#include "FadUnitTests2.hpp"
 
 typedef FadOpsUnitTest<Sacado::ELRFad::DFad<double>,double> DFadDoubleTest;
 typedef FadOpsUnitTest<Sacado::ELRFad::SFad<double,5>,double> SFadDoubleTest;
 typedef FadOpsUnitTest<Sacado::ELRFad::SLFad<double,10>,double> SLFadDoubleTest;
 
-typedef RealFadOpsUnitTest2<Sacado::ELRFad::DFad<double>,double> DFadDoubleTest2;
-typedef RealFadOpsUnitTest2<Sacado::ELRFad::SFad<double,5>,double> SFadDoubleTest2;
-typedef RealFadOpsUnitTest2<Sacado::ELRFad::SLFad<double,10>,double> SLFadDoubleTest2;
-
 CPPUNIT_TEST_SUITE_REGISTRATION(DFadDoubleTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(SFadDoubleTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(SLFadDoubleTest);
 
-CPPUNIT_TEST_SUITE_REGISTRATION(DFadDoubleTest2);
-CPPUNIT_TEST_SUITE_REGISTRATION(SFadDoubleTest2);
-CPPUNIT_TEST_SUITE_REGISTRATION(SLFadDoubleTest2);
-
-#ifdef HAVE_SACADO_COMPLEX
-typedef FadOpsUnitTest2<Sacado::ELRFad::DFad<std::complex<double> >,
-			std::complex<double> > DFadComplexDoubleTest;
-typedef FadOpsUnitTest2<Sacado::ELRFad::SFad<std::complex<double>,5>,
-			std::complex<double> > SFadComplexDoubleTest;
-typedef FadOpsUnitTest2<Sacado::ELRFad::SLFad<std::complex<double>,10>,
-			std::complex<double> > SLFadComplexDoubleTest;
-CPPUNIT_TEST_SUITE_REGISTRATION(DFadComplexDoubleTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(SFadComplexDoubleTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(SLFadComplexDoubleTest);
-#endif

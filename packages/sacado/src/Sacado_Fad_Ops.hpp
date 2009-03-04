@@ -371,6 +371,15 @@ namespace Sacado {							\
     }									\
 									\
     template <typename T>						\
+    inline Expr< OP< Expr<T>, Expr<T> > >				\
+    OPNAME (const Expr<T>& expr1, const Expr<T>& expr2)			\
+    {									\
+      typedef OP< Expr<T>, Expr<T> > expr_t;				\
+    									\
+      return Expr<expr_t>(expr1, expr2);				\
+    }									\
+									\
+    template <typename T>						\
     inline Expr< OP< typename Expr<T>::value_type, Expr<T> > >		\
     OPNAME (const typename Expr<T>::value_type& c,			\
 	    const Expr<T>& expr)					\

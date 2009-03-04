@@ -281,6 +281,15 @@ namespace Sacado {							\
     }									\
 									\
     template <typename T>						\
+    inline Expr< OP< Expr<T>, Expr<T> > >				\
+    OPNAME (const Expr<T>& expr1, const Expr<T>& expr2)			\
+    {									\
+      typedef OP< Expr<T>, Expr<T> > expr_t;				\
+    									\
+      return Expr<expr_t>(expr1, expr2);				\
+    }									\
+									\
+    template <typename T>						\
     inline Expr< OP< ConstExpr<typename Expr<T>::value_type>,		\
 		     Expr<T> > >					\
     OPNAME (const typename Expr<T>::value_type& c,			\
@@ -344,12 +353,12 @@ FAD_BINARYOP_MACRO(max,
                    MaxOp,
                    std::max(expr1.val(), expr2.val()),
                    expr1.val() >= expr2.val() ? bar : value_type(0.),
-                   expr2.val() >= expr1.val() ? bar : value_type(0.))
+                   expr2.val() > expr1.val() ? bar : value_type(0.))
 FAD_BINARYOP_MACRO(min,
                    MinOp,
                    std::min(expr1.val(), expr2.val()),
                    expr1.val() <= expr2.val() ? bar : value_type(0.),
-                   expr2.val() <= expr1.val() ? bar : value_type(0.))
+                   expr2.val() < expr1.val() ? bar : value_type(0.))
 
 #undef FAD_BINARYOP_MACRO
 
