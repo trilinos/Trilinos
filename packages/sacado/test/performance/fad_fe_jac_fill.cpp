@@ -502,11 +502,11 @@ double adolc_jac_fill(unsigned int num_nodes, unsigned int num_eqns,
 		       jac, seed, jac_local);
   }
   for (unsigned int i=0; i<e.nnode*num_eqns; i++) {
-    delete jac_local[i];
-    delete seed[i];
+    delete [] jac_local[i];
+    delete [] seed[i];
   }
-  delete jac_local;
-  delete seed;
+  delete [] jac_local;
+  delete [] seed;
   timer.stop();
 
   // std::cout << "ADOL-C Residual = " << std::endl;
@@ -572,11 +572,11 @@ double adolc_retape_jac_fill(unsigned int num_nodes, unsigned int num_eqns,
 		       jac, seed, jac_local);
   }
   for (unsigned int i=0; i<e.nnode*num_eqns; i++) {
-    delete jac_local[i];
-    delete seed[i];
+    delete [] jac_local[i];
+    delete [] seed[i];
   }
-  delete jac_local;
-  delete seed;
+  delete [] jac_local;
+  delete [] seed;
   timer.stop();
 
   // std::cout << "ADOL-C Residual (retaped) = " << std::endl;
