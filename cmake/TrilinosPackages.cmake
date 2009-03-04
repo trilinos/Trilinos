@@ -64,4 +64,5 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   WebTrilinos           WebTrilinos                    OFF
   Didasko               didasko                        ""
   NewPackage            new_package                    OFF
+  StratRunner           StratRunner                    OFF
   )
