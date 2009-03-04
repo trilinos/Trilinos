@@ -106,3 +106,16 @@ PACKAGE_NAME=Isorropria
    ARGS = --v --f=mtx/simple_50X25.mtx;
    COMM = SERIAL, MPI;
 }
+
+(FRAMEWORK, IsorropiaTests) {
+   DIRS = probing;
+   ARGS = --v;
+   COMM = SERIAL, MPI;
+}
+
+(INSTALL, IsorropiaTests) {
+   DIRS = probing;
+   ARGS = --v;
+   COMM = SERIAL, MPI;
+}
+

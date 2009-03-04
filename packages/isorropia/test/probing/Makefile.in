@@ -60,8 +60,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = $(am__EXEEXT_1)
-subdir = example/geometric
+noinst_PROGRAMS = probing$(EXEEXT)
+subdir = test/probing
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -89,12 +89,11 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Isorropia_config.h
 CONFIG_CLEAN_FILES =
-@BUILD_EXAMPLES_TRUE@am__EXEEXT_1 = example_rcb$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am_example_rcb_OBJECTS = example_rcb-example_rcb.$(OBJEXT)
-example_rcb_OBJECTS = $(am_example_rcb_OBJECTS)
-example_rcb_LINK = $(CXXLD) $(example_rcb_CXXFLAGS) $(CXXFLAGS) \
-	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_probing_OBJECTS = probing-probing.$(OBJEXT)
+probing_OBJECTS = $(am_probing_OBJECTS)
+probing_LINK = $(CXXLD) $(probing_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -103,8 +102,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(example_rcb_SOURCES)
-DIST_SOURCES = $(example_rcb_SOURCES)
+SOURCES = $(probing_SOURCES)
+DIST_SOURCES = $(probing_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -220,16 +219,15 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@BUILD_EXAMPLES_TRUE@PROGS = example_rcb
-UTIL_INCLUDE = -I$(top_srcdir)/utils
-UTIL_LIB = $(top_builddir)/utils/libisorropia_test_utils.a
-example_rcb_SOURCES = $(srcdir)/example_rcb.cpp 
-example_rcb_DEPENDENCIES = \
-	$(top_builddir)/utils/libisorropia_test_utils.a \
-	$(top_builddir)/src/libisorropia.a
+probing_SOURCES = $(srcdir)/probing.cpp
+probing_DEPENDENCIES = \
+	$(top_builddir)/src/libisorropia.a \
+	$(top_builddir)/utils/libisorropia_test_utils.a
 
-example_rcb_CXXFLAGS = $(ISORROPIA_INCLUDES) $(UTIL_INCLUDE)
-example_rcb_LDADD = $(ISORROPIA_LIBS) $(UTIL_LIB)
+probing_CXXFLAGS = -I$(top_srcdir)/utils $(ISORROPIA_INCLUDES) 
+probing_LDADD = \
+   -L$(top_builddir)/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
+
 all: all-am
 
 .SUFFIXES:
@@ -243,9 +241,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  example/geometric/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/probing/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  example/geometric/Makefile
+	  $(AUTOMAKE) --foreign  test/probing/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -266,9 +264,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
-example_rcb$(EXEEXT): $(example_rcb_OBJECTS) $(example_rcb_DEPENDENCIES) 
-	@rm -f example_rcb$(EXEEXT)
-	$(example_rcb_LINK) $(example_rcb_OBJECTS) $(example_rcb_LDADD) $(LIBS)
+probing$(EXEEXT): $(probing_OBJECTS) $(probing_DEPENDENCIES) 
+	@rm -f probing$(EXEEXT)
+	$(probing_LINK) $(probing_OBJECTS) $(probing_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -276,7 +274,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example_rcb-example_rcb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/probing-probing.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -292,19 +290,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-example_rcb-example_rcb.o: $(srcdir)/example_rcb.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_rcb_CXXFLAGS) $(CXXFLAGS) -MT example_rcb-example_rcb.o -MD -MP -MF $(DEPDIR)/example_rcb-example_rcb.Tpo -c -o example_rcb-example_rcb.o `test -f '$(srcdir)/example_rcb.cpp' || echo '$(srcdir)/'`$(srcdir)/example_rcb.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/example_rcb-example_rcb.Tpo $(DEPDIR)/example_rcb-example_rcb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/example_rcb.cpp' object='example_rcb-example_rcb.o' libtool=no @AMDEPBACKSLASH@
+probing-probing.o: $(srcdir)/probing.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(probing_CXXFLAGS) $(CXXFLAGS) -MT probing-probing.o -MD -MP -MF $(DEPDIR)/probing-probing.Tpo -c -o probing-probing.o `test -f '$(srcdir)/probing.cpp' || echo '$(srcdir)/'`$(srcdir)/probing.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/probing-probing.Tpo $(DEPDIR)/probing-probing.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/probing.cpp' object='probing-probing.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_rcb_CXXFLAGS) $(CXXFLAGS) -c -o example_rcb-example_rcb.o `test -f '$(srcdir)/example_rcb.cpp' || echo '$(srcdir)/'`$(srcdir)/example_rcb.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(probing_CXXFLAGS) $(CXXFLAGS) -c -o probing-probing.o `test -f '$(srcdir)/probing.cpp' || echo '$(srcdir)/'`$(srcdir)/probing.cpp
 
-example_rcb-example_rcb.obj: $(srcdir)/example_rcb.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_rcb_CXXFLAGS) $(CXXFLAGS) -MT example_rcb-example_rcb.obj -MD -MP -MF $(DEPDIR)/example_rcb-example_rcb.Tpo -c -o example_rcb-example_rcb.obj `if test -f '$(srcdir)/example_rcb.cpp'; then $(CYGPATH_W) '$(srcdir)/example_rcb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/example_rcb.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/example_rcb-example_rcb.Tpo $(DEPDIR)/example_rcb-example_rcb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/example_rcb.cpp' object='example_rcb-example_rcb.obj' libtool=no @AMDEPBACKSLASH@
+probing-probing.obj: $(srcdir)/probing.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(probing_CXXFLAGS) $(CXXFLAGS) -MT probing-probing.obj -MD -MP -MF $(DEPDIR)/probing-probing.Tpo -c -o probing-probing.obj `if test -f '$(srcdir)/probing.cpp'; then $(CYGPATH_W) '$(srcdir)/probing.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/probing.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/probing-probing.Tpo $(DEPDIR)/probing-probing.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/probing.cpp' object='probing-probing.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(example_rcb_CXXFLAGS) $(CXXFLAGS) -c -o example_rcb-example_rcb.obj `if test -f '$(srcdir)/example_rcb.cpp'; then $(CYGPATH_W) '$(srcdir)/example_rcb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/example_rcb.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(probing_CXXFLAGS) $(CXXFLAGS) -c -o probing-probing.obj `if test -f '$(srcdir)/probing.cpp'; then $(CYGPATH_W) '$(srcdir)/probing.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/probing.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -382,7 +380,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) all-local
+all-am: Makefile $(PROGRAMS)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -467,24 +465,21 @@ uninstall-am:
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-noinstPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-noinstPROGRAMS ctags distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
 	uninstall-am
 
 
 include $(top_builddir)/Makefile.export.isorropia
-
-all-local:
-	@if test -e *.coords; then : ; else cp $(srcdir)/*.coords .; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

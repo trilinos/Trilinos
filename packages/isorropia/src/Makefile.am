@@ -64,6 +64,7 @@ EPETRA = \
 	$(srcdir)/epetra/Isorropia_Epetra.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.cpp \
+	$(srcdir)/epetra/Isorropia_EpetraProber.cpp \
 	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.cpp
 
 EPETRA_H = \
@@ -76,6 +77,7 @@ EPETRA_H = \
 	$(srcdir)/epetra/Isorropia_Epetra.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraRedistributor.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraLibrary.hpp \
+	$(srcdir)/epetra/Isorropia_EpetraProber.hpp \
 	$(srcdir)/epetra/Isorropia_EpetraInternalPartitioner.hpp
 
 EPETRA_ZOLTAN = \

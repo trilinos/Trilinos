@@ -308,6 +308,7 @@ AC_CONFIG_FILES([
     test/utest/Makefile
     test/mtx/Makefile
     test/geometric/Makefile
+    test/probing/Makefile
     utils/Makefile
     ])
 

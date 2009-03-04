@@ -119,33 +119,30 @@ Epetra_CrsMatrix* create_epetra_test_matrix_1(int numProcs,
 
 
 
-bool probing_test(Epetra_CrsMatrix & in_mat){
+bool probing_test(Epetra_CrsMatrix & in_mat, bool build_list){
   const Epetra_CrsGraph & graph=in_mat.Graph();
 
   Teuchos::ParameterList main, zoltan;
-  zoltan.set("DISTANCE","2");
-  main.set("ZOLTAN",zoltan);
 
-  //  Isorropia::Epetra::Colorer(Teuchos::RCP<const Epetra_CrsGraph>(&graph,false),main);
-
+  if(build_list){
+    zoltan.set("DISTANCE","2");
+    main.set("ZOLTAN",zoltan);
+  }
 
   Isorropia::Epetra::Prober prober(Teuchos::rcp<const Epetra_CrsGraph>(&graph,false),main);
   Epetra_CrsMatrix out_mat(Copy,graph);
-
   int rv=prober.probe(in_mat,out_mat);
   if(rv!=0) {printf("ERROR: probing failed\n");return false;}
-
   
 #ifdef HAVE_EPETRAEXT
   EpetraExt::MatrixMatrix::Add(in_mat,false,1,out_mat,-1);
   double nrm=out_mat.NormInf()/in_mat.NormInf();
-  printf("diff norm = %22.16e\n",nrm);
+  if(!in_mat.Comm().MyPID())
+    printf("diff norm = %22.16e\n",nrm);
   if(nrm < 1e-12) return true;
   else return false;
 #endif
-
-  
-  
+  return true;
 }
 
 
@@ -190,11 +187,9 @@ int main(int argc, char** argv) {
   bool test_passed = true;
 #ifdef HAVE_EPETRA
   //TEST HERE  
-
   Epetra_CrsMatrix* mat=create_epetra_test_matrix_1(numProcs,localProc,true);
-  bool success=probing_test(*mat);
-
-  
+  test_passed=probing_test(*mat,true);
+  test_passed=test_passed && probing_test(*mat,false);
 
   // Cleanup
   delete mat;

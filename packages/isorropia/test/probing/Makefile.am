@@ -25,32 +25,19 @@
 # ************************************************************************
 #@HEADER
 
-# The following line helps the test harness recover from build errors.
+include $(top_builddir)/Makefile.export.isorropia
 
-all-local:
+EXEEXT = .exe
 
-#Isorropia now depends on Zoltan, and these tests depend on MPI
-if HAVE_MPI
-ZOLTAN_TEST_DIR = zoltan
-ZOLTAN_TEST = rebalance_zoltan.exe
-else
-ZOLTAN_TEST_DIR =
-ZOLTAN_TEST =
-endif
+noinst_PROGRAMS = probing
 
-if BUILD_EPETRAEXT
-MTX_TEST_DIR = mtx
-MTX_TESTS = test_simple.exe test_colorer.exe
-endif
+probing_SOURCES = $(srcdir)/probing.cpp
 
-SUBDIRS = geometric utest rebalance_1d_default probing $(ZOLTAN_TEST_DIR) $(MTX_TEST_DIR)
+probing_DEPENDENCIES = \
+	$(top_builddir)/src/libisorropia.a \
+	$(top_builddir)/utils/libisorropia_test_utils.a
 
-TESTS = \
-geometric/test_geometric.exe \
-utest/utest.exe \
-rebalance_1d_default/rebalance_1d_default.exe \
-probing/probing.exe \
-$(ZOLTAN_TEST) $(MTX_TESTS)
-
-EXTRA_DIST = definition README
+probing_CXXFLAGS = -I$(top_srcdir)/utils $(ISORROPIA_INCLUDES) 
+probing_LDADD = \
+   -L$(top_builddir)/utils -lisorropia_test_utils $(ISORROPIA_LIBS)
 
