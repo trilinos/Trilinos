@@ -223,7 +223,7 @@ Final Certification Evidence: See Trilinos/packages/optipack and nightly tests
 
 Package: Isorropia
 
-Package Transition Lead: [???]
+Package Transition Lead: Cedric Chevalier (ccheval)
 
 Status: Basic libraries and several tests and examples
 
