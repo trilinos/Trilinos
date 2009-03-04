@@ -336,7 +336,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setParameterList) {
     TEST_THROW( ob = null, std::logic_error ); // 4.
 #else // TEUCHOS_DEBUG
     TEST_NOTHROW( ob->unsetParameterList() ); 
-    const RCP<Foo> foo;
+    RCP<Foo> foo;
     TEST_NOTHROW( foo = ob->create() );
     const RCP<FooA> fooA = rcp_dynamic_cast<FooA>(foo,false);
     TEST_EQUALITY_CONST( is_null(fooA), false );
