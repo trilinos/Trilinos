@@ -96,14 +96,17 @@ EpetraOperatorWrapper
   Array<int> myGIDs(myLocalElements);
   
   int count=0;
+  int blockOffset = 0;
   for (int b=0; b<vs.numBlocks(); b++)
     {
       int lowGIDInBlock = lowestLocallyOwnedIndex(vs.getBlock(b));
       int numLocalElementsInBlock = numLocalElements(vs.getBlock(b));
       for (int i=0; i<numLocalElementsInBlock; i++, count++)
         {
-          myGIDs[count] = lowGIDInBlock+i;
+          myGIDs[count] = blockOffset+lowGIDInBlock+i;
         }
+
+      blockOffset += vs.getBlock(b).dim();
     }
 
   /* create the std::map */
