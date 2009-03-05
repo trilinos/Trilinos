@@ -124,6 +124,28 @@ void SFadOpsUnitTest::testMax() {
     compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
     compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
   }
+
+  // Expr, Expr (same)
+  this->c_sfad = max(this->a_sfad+1.0, this->a_sfad+1.0);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
+
+  // Expr, Expr (different)
+  this->c_sfad = max(this->a_sfad+1.0, this->a_sfad-1.0);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
+  this->c_sfad = max(this->a_sfad-1.0, this->a_sfad+1.0);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
   
   val = a_sfad.val() + 1;
   c_sfad = max(a_sfad, val);
@@ -166,6 +188,28 @@ void SFadOpsUnitTest::testMin() {
   }
 
   c_sfad = min(a_sfad, aa_sfad);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
+
+  // Expr, Expr (same)
+  this->c_sfad = min(this->a_sfad-1.0, this->a_sfad-1.0);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
+
+  // Expr, Expr (different)
+  this->c_sfad = min(this->a_sfad+1.0, this->a_sfad-1.0);
+  compareDoubles(c_sfad.val(), aa_sfad.val());
+  for (int i=0; i<n; i++) {
+    compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
+    compareDoubles(c_sfad.fastAccessDx(i), aa_sfad.fastAccessDx(i));
+  }
+  this->c_sfad = min(this->a_sfad-1.0, this->a_sfad+1.0);
   compareDoubles(c_sfad.val(), aa_sfad.val());
   for (int i=0; i<n; i++) {
     compareDoubles(c_sfad.dx(i), aa_sfad.dx(i));
