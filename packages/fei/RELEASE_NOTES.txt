@@ -494,14 +494,14 @@ July 7 2005: version 2.14.00
     projection reduction for solution-vector operations. It should only
     use the projection for right-hand-side and matrix assembly ops.
 
- Jan 13 2008 minor version 2.23.03
+ Jan 13 2009 minor version 2.23.03
   - Fix a bug in AztecDMSR_Matrix where maxRowLen_ was not calculated
     correctly. This was causing an error in the sumIntoRow method that
     was discovered by a Sierra application. maxRowLen_ is no longer a
     class member. A non-member temporary maxRowLen is now computed and
     used in sumIntoRow.
 
- ??? ?? ???? version 2.24.00
+ Mar 08 2009 version 2.24.00
   - Removed classes fei::CommCore, fei::CommUtilsBase, snl_fei::CommUtils. These
     are replaced by functions in fei_CommUtils.hpp. This is a simplification
     and cleanup of the communications-code infrastructure.
@@ -512,7 +512,7 @@ July 7 2005: version 2.14.00
     better mechanism for filling an array to return to the caller.
     There are still occurrences of the cumbersome three-argument pattern in
     various fei API's, but all of them will eventually be replaced.
-  - Removed more occurences of feiArray, using std::vector instead. This
+  - Removed remaining occurences of feiArray, using std::vector instead. This
     effects the API in places where an array is a return value. Specifically
     in the snl_fei::Constraint class, methods like getMasterWeights(), etc.
   - Continued development of fei::FillableMat, fei::CSRMat and fei::CSVec.
@@ -522,7 +522,9 @@ July 7 2005: version 2.14.00
   - Removed the *CoefAccessPattern* functions from the 'old' FEI interface.
     These methods were ill-conceived and overly cumbersome, and not used by
     any known customers.
-  - Removed the feiArray class. Using std::vector instead.
-  - Removed support for the PETSc library. This support code was terribly
+  - Removed support for the PETSc library. This support code was extremely
     outdated, tied to a 5-year-old version of PETSc.
+  - Remove the 'C' support files. As far as I know these were unused.
+  - Fixed bug in fei_Solver_AztecOO.cpp where using ML multiple times led to
+    a null pointer read in Aztec.
 

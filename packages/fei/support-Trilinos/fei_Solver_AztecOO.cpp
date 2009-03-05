@@ -116,13 +116,6 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
   fei::SharedPtr<fei::Vector> feix = linearSystem->getSolutionVector();
   fei::SharedPtr<fei::Vector> feib = linearSystem->getRHS();
 
-  bool needNewPreconditioner = false;
-
-  if (feiA->changedSinceMark()) {
-    feiA->markState();
-    needNewPreconditioner = true;
-  }
-
   Epetra_MultiVector*    x = NULL;
   Epetra_MultiVector*    b = NULL;
   Epetra_Operator* epetra_op = 0;
@@ -158,13 +151,6 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
     azparams[i] = azparamsptr[i];
   }
 
-  azoo_->SetProblem(linProb);
-
-  azoo_->SetAllAztecOptions(&(azoptions[0]));
-  azoo_->SetAllAztecParams(&(azparams[0]));
-
-  azoo_->SetUseAdaptiveDefaultsTrue();
-
   Epetra_RowMatrix* precond = NULL;
   if (preconditioningMatrix != NULL) {
     fei::Matrix_Impl<Epetra_CrsMatrix>* snl_epetra_crs =
@@ -185,10 +171,31 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
   }
 
   if (precond != NULL) {
+    azoo_->SetProblem(linProb);
+
+    azoo_->SetAllAztecOptions(&(azoptions[0]));
+    azoo_->SetAllAztecParams(&(azparams[0]));
+
+    azoo_->SetUseAdaptiveDefaultsTrue();
+
     azoo_->SetPrecMatrix(precond);
   }
 
+  bool needNewPreconditioner = false;
+
+  if (feiA->changedSinceMark()) {
+    feiA->markState();
+    needNewPreconditioner = true;
+  }
+
   if (needNewPreconditioner) {
+    azoo_->SetProblem(linProb);
+
+    azoo_->SetAllAztecOptions(&(azoptions[0]));
+    azoo_->SetAllAztecParams(&(azparams[0]));
+
+    azoo_->SetUseAdaptiveDefaultsTrue();
+
     if (useML_) {
 #ifdef HAVE_FEI_ML
       setup_ml_operator(*azoo_, crsA);
@@ -198,12 +205,15 @@ int Solver_AztecOO::solve(fei::LinearSystem* linearSystem,
       return(-1);
 #endif
     }
-
-    azoo_->SetAztecOption(AZ_pre_calc, AZ_calc);
-    azoo_->SetAztecOption(AZ_keep_info, 1);
+    else {
+      azoo_->SetAztecOption(AZ_pre_calc, AZ_calc);
+      azoo_->SetAztecOption(AZ_keep_info, 1);
+    }
   }
   else {
-    azoo_->SetAztecOption(AZ_pre_calc, AZ_reuse);
+    if (!useML_) {
+      azoo_->SetAztecOption(AZ_pre_calc, AZ_reuse);
+    }
   }
 
   epetra_op->SetUseTranspose(useTranspose_);

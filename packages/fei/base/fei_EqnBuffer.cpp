@@ -270,6 +270,10 @@ int EqnBuffer::getCoefAndRemoveIndex(int eqnNumber, int colIndex, double& coef)
 //==============================================================================
 int EqnBuffer::addEqns(EqnBuffer& inputEqns, bool accumulate)
 {
+  if (inputEqns.eqnNumbers().size() < 1) {
+    return(0);
+  }
+
   int* eqnNums = &(inputEqns.eqnNumbers()[0]);
   fei::CSVec** eqs = &(inputEqns.eqns()[0]);
 
