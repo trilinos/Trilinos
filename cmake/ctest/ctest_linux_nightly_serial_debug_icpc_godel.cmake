@@ -14,7 +14,7 @@ SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Rythmos)
 # without Fortran yet!
 
 SET( EXTRA_CONFIGURE_OPTIONS
-  "-DDART_TESTING_TIMEOUT:STRING=600"
+  "-DDART_TESTING_TIMEOUT:STRING=120"
   "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
   )
 
