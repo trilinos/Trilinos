@@ -160,7 +160,7 @@ tests
 
 Package: Triutils
 
-Package Transition Lead: [???]
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
 Status: Basic support for libraries but only a few tests and examples.
 
@@ -184,7 +184,7 @@ Final Certification Evidence: [???]
 
 Package: EpetraExt
 
-Package Transition Lead: [???]
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
 Status: Has basic CMake support for libraries and has a few tests and
 exmaples.
@@ -261,7 +261,7 @@ Final Certification Evidence: [???]
 
 Package: AztecOO
 
-Package Transition Lead: [???]
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
 Status: Basic libraries and several tests and examples
 
@@ -273,7 +273,7 @@ Final Certification Evidence: [???]
 
 Package: Galeri (Orphaned Package)
 
-Package Transition Lead: [???]
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
 Status: Basic libraries and several tests and examples
 
@@ -309,7 +309,7 @@ Final Certification Evidence: All tests and examples ran and worked on mac os X
 
 Package: Komplex
 
-Package Transition Lead: [???]
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
 Status: Basic libraries and a single test.  However, the transition should be
 complete.
@@ -626,9 +626,9 @@ Final Certification Evidence: [???]
 
 Package: Didasko
 
-Package Transition Lead: [???]
+Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
-Status: Brent is working on basic CMakeification right now.
+Status: Basic CMakeification is finished
 
 Final Certification Date: [???]
 
