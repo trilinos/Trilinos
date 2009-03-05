@@ -30,13 +30,13 @@ int ml_pdmout__(USR_COMM *comm, int *lout, int *m, int *n, double *a,
 
     /* Function Body */
 #ifdef HAVE_ML_PARPACK
-    pdmout_(comm,
+    PDMOUT_F77(comm,
 	    lout, m, n, &a[a_offset], lda, idigit, "Ritz values (Real,Imag) a\
 nd direct residuals", (ftnlen)44);
 
 #else
 #ifdef HAVE_ML_ARPACK    
-    dmout_(lout, m, n, &a[a_offset], lda, idigit, "Ritz values (Real,Imag) a\
+    DMOUT_F77(lout, m, n, &a[a_offset], lda, idigit, "Ritz values (Real,Imag) a\
 nd direct residuals", (ftnlen)44);
    
        
@@ -113,7 +113,7 @@ int ml_pdneupc__(USR_COMM *comm,
 
 #ifdef HAVE_ML_PARPACK
     
-    pdneupd_(comm,
+    PDNEUPD_F77(comm,
 	     &rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv, &
 	     sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv, 
 	     &v[v_offset], ldv, &iparam[1], &ipntr[1], &workd[1], &workl[1], 
@@ -123,7 +123,7 @@ int ml_pdneupc__(USR_COMM *comm,
 #else
 #ifdef HAVE_ML_ARPACK    
     
-    dneupd_(&rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv, 
+    DNEUPD_F77(&rvec, "A", select, &d__[1], &d__[*ncv + 1], &v[v_offset], ldv, 
 	    &sigma, &mu, &workev[1], bmat, n, which, nev, tol, &resid[1], ncv, 
 	    &v[v_offset], ldv, &iparam[1], &ipntr[1], &workd[1], &workl[1], 
 	    lworkl, ierr, (ftnlen)1, (ftnlen)1, (ftnlen)2);

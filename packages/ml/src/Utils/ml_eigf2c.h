@@ -10,9 +10,10 @@
 #include "ml_memory.h"
 #include "ml_comm.h"
 
-#define DMOUT_F77   F77_FUNC(dmout,DMOUT)
-#define PDMOUT_F77  F77_FUNC(pdmout,PDMOUT)
-#define DNEUPD_F77  F77_FUNC(dneupd,DNEUPD)
+#define DMOUT_F77   F77_BLAS_MANGLE(dmout,DMOUT)
+#define PDMOUT_F77  F77_BLAS_MANGLE(pdmout,PDMOUT)
+#define DNEUPD_F77  F77_BLAS_MANGLE(dneupd,DNEUPD)
+#define PDNEUPD_F77 F77_BLAS_MANGLE(pdneupd,PDNEUPD)
 
 #ifndef ML_CPP
 #ifdef __cplusplus
