@@ -10,7 +10,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_Sacado AND
     NOX_Sacado_FEApp_Brusselator_Example
     SOURCES brusselator.C
     COMM serial mpi
-    NUM_MPI_PROCS 3
+    NUM_MPI_PROCS 2
     ARGS -v
     PASS_REGULAR_EXPRESSION "Test Passed"
     )
