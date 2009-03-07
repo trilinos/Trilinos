@@ -184,4 +184,4 @@ echo "Ending nightly Trilinos testing on godel: `date`"
 echo
 
 
-/home/rabartl/mailmsg.py "Finished nightly Trilinos tests godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
+/home/rabartl/mailmsg.py "Finished nightly Trilinos tests godel: http://trilinos-dev.sandia.gov/cdash/index.php?project=Trilinos"
