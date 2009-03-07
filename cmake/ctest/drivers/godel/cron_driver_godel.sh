@@ -7,9 +7,37 @@ source .bash_profile
 #CTEST_EXE=/usr/local/bin/ctest
 CTEST_EXE=/home/rabartl/install/bin/ctest
 
+if [ "$_DAYOFWEEK" == "" ] ; then
+  _DAYOFWEEK=`date +%A`
+fi
+
+echo "_DAYOFWEEK=$_DAYOFWEEK"
+
+if [ "$_DAYOFWEEK" == "Saturday" ] ; then
+  _RUN_REGULAR_TESTS=1
+  _RUN_COVERAGE_TESTS=1
+  _RUN_MEMCHECK_TESTS=0
+elif [ "$_DAYOFWEEK" == "Sunday" ] ; then
+  _RUN_REGULAR_TESTS=0 
+  _RUN_COVERAGE_TESTS=0
+  _RUN_MEMCHECK_TESTS=1
+else
+  _RUN_REGULAR_TESTS=1
+  _RUN_COVERAGE_TESTS=0
+  _RUN_MEMCHECK_TESTS=0
+fi
+
+echo "_RUN_REGULAR_TESTS=$_RUN_REGULAR_TESTS"
+echo "_RUN_COVERAGE_TESTS=$_RUN_COVERAGE_TESTS"
+echo "_RUN_MEMCHECK_TESTS=$_RUN_MEMCHECK_TESTS"
+
+#exit
+
+
 echo
 echo "Starting nightly Trilinos testing on godel: `date`"
 echo
+
 
 echo
 echo "Checking out just the skeleton cmake/ctest code: `date`"
@@ -19,6 +47,17 @@ BASEDIR=/home/rabartl/PROJECTS/dashboards/Trilinos.base
 
 cd $BASEDIR
 cvs -q -d :ext:software:/space/CVS co Trilinos/cmake Trilinos/CTestConfig.cmake
+
+
+#
+# Weekday tests
+#
+
+if [ "$_RUN_REGULAR_TESTS" == "1" ] ; then
+
+echo
+echo "Running weekday tests ..."
+echo
 
 #echo
 #echo "Doing dependency checking-only build: `date`"
@@ -63,6 +102,13 @@ time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_op
   &> $BASEDIR/ctest_linux_nightly_serial_opt_impl_instant_godel.out
 
 echo
+echo "Doing mpi debug build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_mpi_debug_godel.out
+
+echo
 echo "Doing mpi optimized zoltan c-only build: `date`"
 echo
 
@@ -76,22 +122,58 @@ echo
 time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_icpc_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_debug_icpc_godel.out
 
-#echo
-#echo "Doing serial debug memcheck build: `date`"
-#echo
-#
-#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_memcheck_godel.cmake -VV \
-#  &> $BASEDIR/ctest_linux_nightly_serial_debug_memcheck_godel.out
+fi # weekday
 
-#echo
-#echo "Doing mpi debug memcheck build: `date`"
-#echo
+
 #
-#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake -VV \
-#  &> $BASEDIR/ctest_linux_nightly_mpi_debug_memcheck_godel.out
+# Coverage tests
+#
+
+if [ "$_RUN_COVERAGE_TESTS" == "1" ] ; then
+
+echo
+echo "Doing serial debug coverage build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_coverage_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_serial_debug_coverage_godel.out
+
+echo
+echo "Doing mpi debug coverage build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_coverage_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_mpi_debug_coverage_godel.out
+
+fi # coverage
+
+
+#
+# Memcheck tests
+#
+
+if [ "$_RUN_MEMCHECK_TESTS" == "1" ] ; then
+
+echo
+echo "Doing serial debug memcheck build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_memcheck_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_serial_debug_memcheck_godel.out
+
+echo
+echo "Doing mpi debug memcheck build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_mpi_debug_memcheck_godel.out
+
+fi # memcheck
+
 
 echo
 echo "Ending nightly Trilinos testing on godel: `date`"
 echo
+
 
 /home/rabartl/mailmsg.py "Finished nightly Trilinos tests godel: http://trilinos.sandia.gov/cdash/index.php?project=Trilinos"
