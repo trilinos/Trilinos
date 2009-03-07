@@ -122,7 +122,7 @@ echo
 time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_icpc_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_debug_icpc_godel.out
 
-fi # weekday
+fi
 
 
 #
@@ -130,6 +130,10 @@ fi # weekday
 #
 
 if [ "$_RUN_COVERAGE_TESTS" == "1" ] ; then
+
+echo
+echo "Running coverage tests ..."
+echo
 
 echo
 echo "Doing serial debug coverage build: `date`"
@@ -145,7 +149,7 @@ echo
 time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_coverage_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_mpi_debug_coverage_godel.out
 
-fi # coverage
+fi
 
 
 #
@@ -153,6 +157,10 @@ fi # coverage
 #
 
 if [ "$_RUN_MEMCHECK_TESTS" == "1" ] ; then
+
+echo
+echo "Running memcheck tests ..."
+echo
 
 echo
 echo "Doing serial debug memcheck build: `date`"
@@ -168,7 +176,7 @@ echo
 time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_mpi_debug_memcheck_godel.out
 
-fi # memcheck
+fi
 
 
 echo
