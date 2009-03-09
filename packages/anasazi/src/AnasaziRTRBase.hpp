@@ -484,7 +484,7 @@ namespace Anasazi {
     Teuchos::RCP<const OP> AOp_;
     Teuchos::RCP<const OP> BOp_;
     Teuchos::RCP<const OP> Prec_;
-    bool hasBOp_, hasPrec_;
+    bool hasBOp_, hasPrec_, olsenPrec_;
     //
     // Internal timers
     //
@@ -665,6 +665,7 @@ namespace Anasazi {
     Prec_ = problem_->getPrec();
     hasBOp_ = (BOp_ != Teuchos::null);
     hasPrec_ = (Prec_ != Teuchos::null);
+    olsenPrec_ = params.get<bool>("Olsen Prec", true);
 
     TEST_FOR_EXCEPTION(orthman_->getOp() != BOp_,std::invalid_argument,
         "Anasazi::RTRBase::constructor: orthogonalization manager must use mass matrix for inner product.");
@@ -759,7 +760,7 @@ namespace Anasazi {
         BV_ = V_;
       }
       // PBV
-      if (hasPrec_) {
+      if (hasPrec_ && olsenPrec_) {
         if (numAuxVecs_ > 0) Q = MVT::CloneView(*PBV_,indQ);
         PBV_ = MVT::Clone(*tmp,numAuxVecs_ + blockSize);
         if (numAuxVecs_ > 0) MVT::SetBlock(*Q,indQ,*PBV_);
@@ -780,7 +781,7 @@ namespace Anasazi {
         BV_ = V_;
       }
       // PBV
-      if (hasPrec_) {
+      if (hasPrec_ && olsenPrec_) {
         PBV_ = MVT::CloneCopy(*PBV_,indV);
       }
     }
@@ -1024,7 +1025,7 @@ namespace Anasazi {
       else {
         BV_ = V_;
       }
-      if (hasPrec_) {
+      if (hasPrec_ && olsenPrec_) {
         PBV_ = MVT::Clone(*R_,numAuxVecs_ + blockSize_);
         OPT::Apply(*Prec_,*BV_,*V_);
       }

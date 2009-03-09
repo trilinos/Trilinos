@@ -77,6 +77,7 @@ int main(int argc, char *argv[])
   bool skinny = true;
   std::string which("SR");
   int numElements = 100;
+  std::string prec("none");
 
   bool success = true;
   try {
@@ -88,6 +89,7 @@ int main(int argc, char *argv[])
     cmdp.setOption("shortrun","longrun",&shortrun,"Allow only a small number of iterations.");
     cmdp.setOption("skinny","hefty",&skinny,"Use a skinny (low-mem) or hefty (higher-mem) implementation of IRTR.");
     cmdp.setOption("numElements",&numElements,"Number of elements in discretization.");
+    cmdp.setOption("prec",&prec,"Preconditioning type (""none"", ""olsen"", ""simple""");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
       MPI_Finalize();
@@ -95,6 +97,9 @@ int main(int argc, char *argv[])
       return -1;
     }
     if (debug) verbose = true;
+    if (prec != "olsen" && prec != "simple") {
+      prec = "none";
+    }
 
     typedef double ScalarType;
     typedef ScalarTraits<ScalarType>                   SCT;
@@ -122,6 +127,22 @@ int main(int argc, char *argv[])
     // Get the stiffness and mass matrices
     RCP<const Epetra_CrsMatrix> K = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getStiffness()), false );
     RCP<const Epetra_CrsMatrix> M = rcp( const_cast<Epetra_CrsMatrix *>(testCase->getMass()), false );
+    RCP<const Epetra_CrsMatrix> P;
+    if (prec != "none") {
+      // construct a diagonal preconditioner
+      Epetra_Vector D(K->RowMap(),false);
+      K->ExtractDiagonalCopy(D);
+      for (int i=0; i<D.MyLength(); ++i) {
+        D[i] = 1.0 / D[i];
+      }
+      RCP<Epetra_CrsMatrix> ncP = rcp( new Epetra_CrsMatrix(::Copy,K->RowMap(),K->RowMap(),1,true) );
+      const int ONE = 1;
+      for (int i=0; i<D.MyLength(); ++i) {
+        ncP->InsertMyValues(i,1,&D[i],&i);
+      }
+      ncP->FillComplete(true);
+      P = ncP;
+    }
     //
     // Create the initial vectors
     int blockSize = 5;
@@ -138,6 +159,11 @@ int main(int argc, char *argv[])
     //
     // Set the number of eigenvalues requested
     problem->setNEV( nev );
+    //
+    // Set the preconditioner, if using one. Also, indicates the type.
+    if (prec != "none") {
+      problem->setPrec(P);
+    }
     //
     // Inform the eigenproblem that you are done passing it information
     boolret = problem->setProblem();
@@ -181,9 +207,25 @@ int main(int argc, char *argv[])
     MyPL.set( "Block Size", blockSize );
     MyPL.set( "Maximum Iterations", maxIters );
     MyPL.set( "Convergence Tolerance", tol );
+    if (prec == "olsen") {
+      MyPL.set( "Olsen Prec", true );
+    }
+    else if (prec == "simple") {
+      MyPL.set( "Olsen Prec", false );
+    }
     //
     // Create the solver manager
     Anasazi::RTRSolMgr<ScalarType,MV,OP> MySolverMan(problem, MyPL);
+
+    // Solve the problem to the specified tolerances or length
+    Anasazi::ReturnType returnCode = MySolverMan.solve();
+    testFailed = false;
+    if (returnCode != Anasazi::Converged) {
+      if (shortrun==false) {
+        testFailed = true;
+      }
+    }
+
     // 
     // Check that the parameters were all consumed
     if (MyPL.getEntryPtr("Verbosity")->isUsed() == false ||
@@ -195,16 +237,6 @@ int main(int argc, char *argv[])
       if (verbose && MyPID==0) {
         cout << "Failure! Unused parameters: " << endl;
         MyPL.unused(cout);
-      }
-    }
-
-
-    // Solve the problem to the specified tolerances or length
-    Anasazi::ReturnType returnCode = MySolverMan.solve();
-    testFailed = false;
-    if (returnCode != Anasazi::Converged) {
-      if (shortrun==false) {
-        testFailed = true;
       }
     }
 

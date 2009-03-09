@@ -130,7 +130,7 @@ namespace Anasazi {
     trRetType innerStop_;
     // 
     // number of inner iterations
-    int innerIters_;
+    int innerIters_, totalInnerIters_;
   };
 
 
@@ -149,7 +149,8 @@ namespace Anasazi {
         ) : 
     RTRBase<ScalarType,MV,OP>(problem,sorter,printer,tester,ortho,params,"IRTR",false), 
     ZERO(MAT::zero()),
-    ONE(MAT::one())
+    ONE(MAT::one()),
+    totalInnerIters_(0)
   {     
     // set up array of stop reasons
     stopReasons_.push_back("n/a");
@@ -266,10 +267,11 @@ namespace Anasazi {
     }
 
     // 
-    // The preconditioner is 
+    // For Olsen preconditioning, the preconditioner is 
     // Z = P_{Prec^-1 BX, BX} Prec^-1 R
     // for efficiency, we compute Prec^-1 BX once here for use later
-    if (this->hasPrec_) 
+    // Otherwise, we don't need PBX
+    if (this->hasPrec_ && this->olsenPrec_) 
     {
       std::vector<int> ind(this->blockSize_);
       for (int i=0; i<this->blockSize_; ++i) ind[i] = this->numAuxVecs_+i;
@@ -283,20 +285,30 @@ namespace Anasazi {
     }
 
     // Z = P_{Prec^-1 BV, BV} Prec^-1 R
-    // Prec^-1 BV in PBV
+    //    Prec^-1 BV in PBV
+    // or
+    // Z = P_{BV,BV} Prec^-1 R
     if (this->hasPrec_) 
     {
       TimeMonitor prectimer( *this->timerPrec_ );
       OPT::Apply(*this->Prec_,*this->R_,*this->Z_);
       this->counterPrec_ += this->blockSize_;
       // the orthogonalization time counts under Ortho and under Preconditioning
-      {
+      if (this->olsenPrec_) {
         TimeMonitor orthtimer( *this->timerOrtho_ );
         this->orthman_->projectGen(
             *this->Z_,                                             // operating on Z
             tuple<PCMV>(this->PBV_),tuple<PCMV>(this->V_),false,   // P_{PBV,V}, B inner product, and <PBV,V>_B != I
             tuple<PSDM>(null),                                     // don't care about coeffs
             null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));       // don't have B*PBV or B*Z, but do have B*V
+      }
+      else {
+        TimeMonitor orthtimer( *this->timerOrtho_ );
+        this->orthman_->projectGen(
+            *this->Z_,                                             // operating on Z
+            tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,    // P_{BV,V}, and <BV,V>_B != I
+            tuple<PSDM>(null),                                     // don't care about coeffs
+            null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));       // don't have B*BV, but do have B*V
       }
       ginnersep(*this->R_,*this->Z_,z_r);
     }
@@ -602,7 +614,9 @@ namespace Anasazi {
       }
 
       // Z = P_{Prec^-1 BV, BV} Prec^-1 R
-      // Prec^-1 BV in PBV
+      //    Prec^-1 BV in PBV
+      // or
+      // Z = P_{BV,BV} Prec^-1 R
       zold_rold = z_r;
       if (this->hasPrec_)
       {
@@ -610,13 +624,21 @@ namespace Anasazi {
         OPT::Apply(*this->Prec_,*this->R_,*this->Z_);
         this->counterPrec_ += this->blockSize_;
         // the orthogonalization time counts under Ortho and under Preconditioning
-        {
+        if (this->olsenPrec_) {
           TimeMonitor orthtimer( *this->timerOrtho_ );
           this->orthman_->projectGen(
               *this->Z_,                                             // operating on Z
               tuple<PCMV>(this->PBV_),tuple<PCMV>(this->V_),false,   // P_{PBV,V}, B inner product, and <PBV,V>_B != I
               tuple<PSDM>(null),                                     // don't care about coeffs
               null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));       // don't have B*PBV or B*Z, but do have B*V
+        }
+        else {
+          TimeMonitor orthtimer( *this->timerOrtho_ );
+          this->orthman_->projectGen(
+              *this->Z_,                                             // operating on Z
+              tuple<PCMV>(this->BV_),tuple<PCMV>(this->V_),false,    // P_{BV,V}, and <BV,V>_B != I
+              tuple<PSDM>(null),                                     // don't care about coeffs
+              null,tuple<PCMV>(null), tuple<PCMV>(this->BV_));       // don't have B*BV, but do have B*V
         }
         ginnersep(*this->R_,*this->Z_,z_r);
       }
@@ -703,6 +725,7 @@ namespace Anasazi {
 
       // solve the trust-region subproblem
       solveTRSubproblem();
+      totalInnerIters_ += innerIters_;
 
       // perform debugging on eta et al.
       if (this->om_->isVerbosity( Debug ) ) {
@@ -922,6 +945,7 @@ namespace Anasazi {
     os <<"Parameter rho_prime is  " << rho_prime_ << endl;
     os <<"Inner stopping condition was " << stopReasons_[innerStop_] << endl;
     os <<"Number of inner iterations was " << innerIters_ << endl;
+    os <<"Total number of inner iterations is " << totalInnerIters_ << endl;
     os <<"f(x) is " << this->fx_ << endl;
 
     os.setf(std::ios_base::right, std::ios_base::adjustfield);
