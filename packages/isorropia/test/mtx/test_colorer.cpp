@@ -103,6 +103,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 	  int objectType)         // use isorropia's CrsMatrix or CrsGraph
 {
   int rc=0, fail = 0;
+
 #ifdef HAVE_EPETRAEXT
   int localProc = 0;
   int numProcs = 1;
@@ -256,7 +257,6 @@ int main(int argc, char** argv) {
   int failures = 0;
   bool verbose = false;
   int numProcs = 1;
-
 
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
