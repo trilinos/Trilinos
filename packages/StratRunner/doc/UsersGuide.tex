@@ -1,0 +1,61 @@
+\documentclass{article}
+\title{How to use StratRunner}
+\author{Kurtis Nusbaum}
+\date{February 27th 2009}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+StratRunner is a Graphical Interface for the Stratimikos package in the Trilinos Project. It is inteded to assist users in defining solvers
+and applying those solvers to Matricies. The hope is that users who are unfamiliar with the Trilinos Project or lack the technical ability
+to write their own C++ code will be able to access some of the power inside of Trilinos. It is worth noting that StratRunner is a Graphical User
+Interface. While an attempt was made to minimize the compromising of controll on the users part, some simplifications have been made. I feel that even
+power users of the Stratimikos package will find this GUI usefull.
+
+\section{Creating a New Solver from Scratch}
+
+When you first start StratRunner you are prompted with a choice, you can either load an existing solver or start a new one. By clicking the new solver
+button, the user is present with the primary StratRunner interface. Here the user can modify any and all of the parameters available in the Stratimikos
+package. While at some points there may seem to be an overwhelming amount of parameters, know this: all parameters in StratRunner are set to appropriate 
+defaults. If you don't know what a certain parameter does, then just leave it alone because it is already set to its default setting.
+
+To change a particular parameter, simply right click on it's name, and select "Change Parameter" form the context menu that pops up. A list of
+appropriate choices or an appropriate input type will be presented to you in the form of a dialog window. If the parameter is a boolean the context
+menu will simply have either the option to set it true, or set it false.
+
+To see the all of the parameters included withing a particular Parameter List, simply click the "+" sign next to the name of the Parameter List. To
+minimize the Parameters displayed within a Parameter List, simply clikc the "-" sign next to the name of the Parameter List.
+
+\section{Loading a Solver}
+
+When you first start StratRunner you may load an exisiting solver that you have previously saved, or one that you have written yourself by hand (note
+that you must have written this solver as an .xml file). To load the solver, click the load solver button and you will be prompted with a dialog box.
+Navigate to the folder containing your solver and select it. Your solver will then be loaded into StratRunner and all of the Parameters will now be
+set to correspond with those specified in the file you just loaded.
+
+You may also load a solver from the primary interface. Click on the file menu and select the "Load" option.
+
+\section{Running a Solver}
+
+In order to run a solver you must first save the one you are currently working on. This can be done by going to the "File" menu and selecting
+either "Save" or "Save As". Note that if you have just loaded a file, you do not need to save it.
+
+Once you are ready to run your solver, click on the "Run" menu and select the "Open Run Window" option. A new window will open up. This is called the 
+"Run Window". From it you may apply the current solver that you are working on to any matrix file. Click the "Open Matrix" button to select a matrix
+file to use. The matrix must be in Market Matrix file format (.mtx).
+
+Once you have selected the matrix file, you may click the "Run" button. This will use the solver you have created to solve the matrix that you have
+specified. All the results will be displayed in the text area in the Run Window. You may save these results to a file by clicking the "Save Output"
+button in the lower right hand corner of the Run Window.
+
+\section{Contact}
+
+If you are having any problems with StratRunner, please contact Kurtis Nusbaum at klnusbaum@csbsju.edu.
+
+\section{Acknoledgements}
+
+I would like to thank Dr. Mike Heroux for giving me the wonderful opportunity to do reasearch for him. It has been a truely enjoyable experience. I 
+would like to thank Jonathan Hu and Christopher Baker for there help in determining options for certain parameters. Lastly I would like to thank all
+my Family, Friends, and specifically my Mother and Father. You have all been so amazing and there are not words to express my gratitued towards you all.
+My love for you is infinite.
+\end{document}
