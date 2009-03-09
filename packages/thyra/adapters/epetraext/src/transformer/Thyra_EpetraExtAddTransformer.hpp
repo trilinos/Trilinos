@@ -26,9 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_EPETRAEXT_DIAG_SCALED_MAT_PROD_TRANSFORMER_HPP
-#define THYRA_EPETRAEXT_DIAG_SCALED_MAT_PROD_TRANSFORMER_HPP
-
+#ifndef THYRA_EPETRAEXT_ADD_TRANSFORMER_HPP
+#define THYRA_EPETRAEXT_ADD_TRANSFORMER_HPP
 
 #include "Thyra_LinearOpTransformerBase.hpp"
 
@@ -37,7 +36,7 @@ namespace Thyra {
 
 
 /** \brief Base interface for transforming a LinearOpBase object. */
-class EpetraExtDiagScaledMatProdTransformer : public LinearOpTransformerBase<double>
+class EpetraExtAddTransformer : public LinearOpTransformerBase<double>
 {
 public:
 
@@ -65,17 +64,17 @@ private:
 
 /** \brief Nonmember constructor.
  *
- * \relates EpetraExtDiagScaledMatProdTransformer
+ * \relates EpetraExtAddTransformer
  */
 inline
-RCP<EpetraExtDiagScaledMatProdTransformer>
-epetraExtDiagScaledMatProdTransformer()
+RCP<EpetraExtAddTransformer>
+epetraExtAddTransformer()
 {
-  return Teuchos::rcp(new EpetraExtDiagScaledMatProdTransformer());
+  return Teuchos::rcp(new EpetraExtAddTransformer());
 }
 
 
 } // namespace Thyra
 
 
-#endif	// THYRA_EPETRAEXT_DIAG_SCALED_MAT_PROD_TRANSFORMER_HPP
+#endif	// THYRA_EPETRAEXT_ADD_TRANSFORMER_HPP

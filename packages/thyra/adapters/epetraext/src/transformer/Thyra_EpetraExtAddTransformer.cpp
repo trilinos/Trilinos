@@ -27,9 +27,8 @@
 // @HEADER
 
 
-#include "Thyra_EpetraExtDiagScaledMatProdTransformer.hpp"
-#include "Thyra_MultipliedLinearOpBase.hpp"
-#include "Thyra_DiagonalLinearOpBase.hpp"
+#include "Thyra_EpetraExtAddTransformer.hpp"
+#include "Thyra_AddedLinearOpBase.hpp"
 #include "Thyra_ScaledAdjointLinearOpBase.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
@@ -48,7 +47,7 @@ namespace Thyra {
 // Overridden from LinearOpTransformerBase
 
 
-bool EpetraExtDiagScaledMatProdTransformer::isCompatible(
+bool EpetraExtAddTransformer::isCompatible(
       const LinearOpBase<double> &op_in) const
 {
    TEST_FOR_EXCEPT(true);
@@ -57,13 +56,13 @@ bool EpetraExtDiagScaledMatProdTransformer::isCompatible(
 
 
 RCP<LinearOpBase<double> >
-EpetraExtDiagScaledMatProdTransformer::createOutputOp() const
+EpetraExtAddTransformer::createOutputOp() const
 {
    return nonconstEpetraLinearOp();
 }
 
 
-void EpetraExtDiagScaledMatProdTransformer::transform(
+void EpetraExtAddTransformer::transform(
    const LinearOpBase<double> &op_in,
    const Ptr<LinearOpBase<double> > &op_inout) const
 {
@@ -77,59 +76,44 @@ void EpetraExtDiagScaledMatProdTransformer::transform(
    // A) Get the component Thyra objects for M = op(B) * D * G
    //
  
-   const MultipliedLinearOpBase<double> &multi_op =
-         dyn_cast<const MultipliedLinearOpBase<double> >(op_in);
+   const AddedLinearOpBase<double> & add_op =
+         dyn_cast<const AddedLinearOpBase<double> >(op_in);
 
-   bool haveDiagScaling = (multi_op.numOps()==3);
+#ifdef TEUCHOS_DEBUG
+   TEUCHOS_ASSERT_EQUALITY( add_op.numOps(), 2 );
+#endif
+
  
    // get properties of first operator: Transpose, scaler multiply...etc
-   const RCP<const LinearOpBase<double> > op_B = multi_op.getOp(0);
+   const RCP<const LinearOpBase<double> > op_A = add_op.getOp(0);
+   double A_scalar = 0.0;
+   EOpTransp A_transp = NOTRANS;
+   RCP<const LinearOpBase<double> > A;
+   unwrap( op_A, &A_scalar, &A_transp, &A );
+   TEUCHOS_ASSERT(A_transp==NOTRANS || A_transp==CONJTRANS); // sanity check
+ 
+   // get properties of third operator: Transpose, scaler multiply...etc
+   const RCP<const LinearOpBase<double> > op_B = add_op.getOp(1);
    double B_scalar = 0.0;
    EOpTransp B_transp = NOTRANS;
    RCP<const LinearOpBase<double> > B;
    unwrap( op_B, &B_scalar, &B_transp, &B );
    TEUCHOS_ASSERT(B_transp==NOTRANS || B_transp==CONJTRANS); // sanity check
- 
-   // get diagonal scaling
-   RCP<const VectorBase<double> > d;
-   if(haveDiagScaling) {
-      const RCP<const LinearOpBase<double> > D = multi_op.getOp(1);
-      d = rcp_dynamic_cast<const DiagonalLinearOpBase<double> >(D, true)->getDiag();
-   }
- 
-   // get properties of third operator: Transpose, scaler multiply...etc
-   const RCP<const LinearOpBase<double> > op_G = multi_op.getOp(haveDiagScaling ? 2 : 1);
-   double G_scalar = 0.0;
-   EOpTransp G_transp = NOTRANS;
-   RCP<const LinearOpBase<double> > G;
-   unwrap( op_G, &G_scalar, &G_transp, &G );
-   TEUCHOS_ASSERT(G_transp==NOTRANS || G_transp==CONJTRANS); // sanity check
 
    //
    // B) Extract out the Epetra_CrsMatrix objects and the vector
    //
    
-   // convert second operator to an Epetra_CrsMatrix
+  // convert operators to Epetra_CrsMatrix
+   const RCP<const Epetra_CrsMatrix> epetra_A =
+         rcp_dynamic_cast<const Epetra_CrsMatrix>(get_Epetra_Operator(*A), true);
    const RCP<const Epetra_CrsMatrix> epetra_B =
          rcp_dynamic_cast<const Epetra_CrsMatrix>(get_Epetra_Operator(*B), true);
-   // TEUCHOS_ASSERT( B_transp == NOTRANS ); // ToDo: Handle the transpose
    
-   // extract dagonal
-   RCP<const Epetra_Vector> epetra_d;
-   if(haveDiagScaling) {
-      epetra_d = (B_transp==CONJTRANS ? get_Epetra_Vector(epetra_B->OperatorRangeMap(), d)
-                                      : get_Epetra_Vector(epetra_B->OperatorDomainMap(), d));
-   }
- 
-   // convert third operator to an Epetra_CrsMatrix
-   const RCP<const Epetra_CrsMatrix> epetra_G =
-     rcp_dynamic_cast<const Epetra_CrsMatrix>(get_Epetra_Operator(*G), true);
-   
-   // determine row map for final operator
    const Epetra_Map op_inout_row_map 
-         = (B_transp==CONJTRANS ? epetra_B->ColMap() : epetra_B->RowMap());
+         = (A_transp==CONJTRANS ? epetra_A->ColMap() : epetra_A->RowMap());
    const Epetra_Map op_inout_col_map 
-         = (G_transp==CONJTRANS ? epetra_B->RowMap() : epetra_B->ColMap());
+         = (A_transp==CONJTRANS ? epetra_A->RowMap() : epetra_A->ColMap());
  
    //
    // C) Do the explicit multiplication
@@ -149,32 +133,14 @@ void EpetraExtDiagScaledMatProdTransformer::transform(
        // and distribution and the column map can not be arbitrary.
    }
     
-   // if necessary scale B by diagonal vector
-   RCP<const Epetra_CrsMatrix> epetra_BD;
-   if(haveDiagScaling) {
-      // create a temporary to get around const issue
-      RCP<Epetra_CrsMatrix> epetra_BD_temp = rcp(new Epetra_CrsMatrix(*epetra_B));
+   // perform multiply: Its annoying I have to do this with two adds.
+   // Problem is I can't find a copy of CrsMatrices that doesn't call FillComplete.
+   // I want this sum operation to allow new entries into the sparse matrix
+   // not to be resricted to the sparsity pattern of A or B
+   TEST_FOR_EXCEPT(EpetraExt::MatrixMatrix::Add(*epetra_A,A_transp==CONJTRANS,A_scalar,*epetra_op,0.0)); // epetra_op = A_scalar*A
+   TEST_FOR_EXCEPT(EpetraExt::MatrixMatrix::Add(*epetra_B,A_transp==CONJTRANS,B_scalar,*epetra_op,1.0)); // epetra_op += B_Scalar*B
+   epetra_op->FillComplete(op_inout_col_map,op_inout_row_map);
 
-      // scale matrix depending on properties of B
-      if(B_transp==CONJTRANS) 
-         epetra_BD_temp->LeftScale(*epetra_d);
-      else
-         epetra_BD_temp->RightScale(*epetra_d);
- 
-      epetra_BD = epetra_BD_temp;
-   }
-   else
-      epetra_BD = epetra_B;
- 
-   // perform multiply
-   TEUCHOS_ASSERT(
-       MatrixMatrix::Multiply( *epetra_BD,  B_transp==CONJTRANS,
-                               *epetra_G,   G_transp==CONJTRANS, *epetra_op)==0);
-
-   // scale the whole thing if neccessary
-   if(B_scalar*G_scalar!=1.0)
-      epetra_op->Scale(B_scalar*G_scalar);
- 
    // set output operator to use newly create epetra_op
    thyra_epetra_op_inout.initialize(epetra_op);
 }
