@@ -136,6 +136,10 @@ int main(int argc, char *argv[])
   if (Comm.MyPID() == 0)
     cout << "||Y_EBE - Y_VBR||_2 = " << norm << endl;
 
+  delete A;
+  delete CrsA;
+  delete Map;
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
