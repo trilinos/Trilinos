@@ -75,9 +75,12 @@ int main(int argc, char *argv[])
   bool debug = false;
   bool shortrun = false;
   bool skinny = true;
+  bool useSA = false;
   std::string which("SR");
   int numElements = 100;
   std::string prec("none");
+  int user_verbosity = 0;
+  int numicgs = 2;
 
   bool success = true;
   try {
@@ -90,6 +93,9 @@ int main(int argc, char *argv[])
     cmdp.setOption("skinny","hefty",&skinny,"Use a skinny (low-mem) or hefty (higher-mem) implementation of IRTR.");
     cmdp.setOption("numElements",&numElements,"Number of elements in discretization.");
     cmdp.setOption("prec",&prec,"Preconditioning type (""none"", ""olsen"", ""simple""");
+    cmdp.setOption("useSA","noSA",&useSA,"Use subspace acceleration.");
+    cmdp.setOption("verbosity",&user_verbosity,"Additional verbosity falgs.");
+    cmdp.setOption("numICGS",&numicgs,"Num ICGS iterations");
     if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
 #ifdef HAVE_MPI
       MPI_Finalize();
@@ -136,7 +142,6 @@ int main(int argc, char *argv[])
         D[i] = 1.0 / D[i];
       }
       RCP<Epetra_CrsMatrix> ncP = rcp( new Epetra_CrsMatrix(::Copy,K->RowMap(),K->RowMap(),1,true) );
-      const int ONE = 1;
       for (int i=0; i<D.MyLength(); ++i) {
         ncP->InsertMyValues(i,1,&D[i],&i);
       }
@@ -187,6 +192,7 @@ int main(int argc, char *argv[])
     if (debug) {
       verbosity += Anasazi::Debug;
     }
+    verbosity |= user_verbosity;
 
 
     // Eigensolver parameters
@@ -207,6 +213,8 @@ int main(int argc, char *argv[])
     MyPL.set( "Block Size", blockSize );
     MyPL.set( "Maximum Iterations", maxIters );
     MyPL.set( "Convergence Tolerance", tol );
+    MyPL.set( "Use SA", useSA );
+    MyPL.set( "Num ICGS", numicgs );
     if (prec == "olsen") {
       MyPL.set( "Olsen Prec", true );
     }
@@ -226,6 +234,7 @@ int main(int argc, char *argv[])
       }
     }
 
+    /*
     // 
     // Check that the parameters were all consumed
     if (MyPL.getEntryPtr("Verbosity")->isUsed() == false ||
@@ -239,6 +248,7 @@ int main(int argc, char *argv[])
         MyPL.unused(cout);
       }
     }
+    */
 
     // Get the eigenvalues and eigenvectors from the eigenproblem
     Anasazi::Eigensolution<ScalarType,MV> sol = problem->getSolution();

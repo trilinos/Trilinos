@@ -785,7 +785,7 @@ namespace Anasazi {
 
 
       // compute the retraction of eta: R_X(eta) = X+eta
-      // we must accept, but we will work out of delta so that we can multiply back into X below
+      // we must accept, but we will work out of temporary so that we can multiply back into X below
       RCP<MV> XpEta;
       SIRTR_GET_TEMP_MV(XpEta,workspace);                 // workspace size is 3
       {
@@ -794,7 +794,7 @@ namespace Anasazi {
       }
 
       //
-      // perform rayleigh-ritz for newX = X+eta
+      // perform rayleigh-ritz for XpEta = X+eta
       // save an old copy of f(X) for rho analysis below
       //
       MagnitudeType oldfx = this->fx_;
@@ -831,7 +831,7 @@ namespace Anasazi {
         }
       }
       else {
-        // project B onto X+eta
+        // project I onto X+eta
         TimeMonitor lcltimer( *this->timerLocalProj_ );
         MVT::MvTransMv(ONE,*XpEta,*XpEta,BB);
       }

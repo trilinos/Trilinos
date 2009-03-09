@@ -131,6 +131,9 @@ namespace Anasazi {
     // 
     // number of inner iterations
     int innerIters_, totalInnerIters_;
+    // 
+    // use 2D subspace acceleration of X+Eta to generate new iterate?
+    bool useSA_;
   };
 
 
@@ -163,6 +166,8 @@ namespace Anasazi {
     rho_prime_ = params.get("Rho Prime",0.5);
     TEST_FOR_EXCEPTION(rho_prime_ <= 0 || rho_prime_ >= 1,std::invalid_argument,
                        "Anasazi::IRTR::constructor: rho_prime must be in (0,1).");
+
+    useSA_ = params.get<bool>("Use SA",false);
   }
 
 
@@ -701,9 +706,17 @@ namespace Anasazi {
       this->initialize();
     }
 
-    Teuchos::SerialDenseMatrix<int,ScalarType> AA(this->blockSize_,this->blockSize_), 
-                                               BB(this->blockSize_,this->blockSize_),
-                                               S(this->blockSize_,this->blockSize_);
+    Teuchos::SerialDenseMatrix<int,ScalarType> AA, BB, S;
+    if (useSA_ == true) {
+      AA.reshape(2*this->blockSize_,2*this->blockSize_);
+      BB.reshape(2*this->blockSize_,2*this->blockSize_);
+      S.reshape(2*this->blockSize_,2*this->blockSize_);
+    }
+    else {
+      AA.reshape(this->blockSize_,this->blockSize_);
+      BB.reshape(this->blockSize_,this->blockSize_);
+      S.reshape(this->blockSize_,this->blockSize_);
+    }
 
     // set iteration details to invalid, as they don't have any meaning right now
     innerIters_ = -1;
@@ -741,43 +754,59 @@ namespace Anasazi {
           << endl;
       }
 
-      // compute the retraction of eta: R_X(eta) = X+eta
-      // we must accept, but we will work out of delta so that we can multiply back into X below
-      {
-        TimeMonitor lcltimer( *this->timerLocalUpdate_ );
-        MVT::MvAddMv(ONE,*this->X_,ONE,*this->eta_,*this->delta_);
-        MVT::MvAddMv(ONE,*this->AX_,ONE,*this->Aeta_,*this->Adelta_);
-        if (this->hasBOp_) {
-          MVT::MvAddMv(ONE,*this->BX_,ONE,*this->Beta_,*this->Bdelta_);
+      if (useSA_ == false) {
+        // compute the retraction of eta: R_X(eta) = X+eta
+        // we must accept, but we will work out of delta so that we can multiply back into X below
+        {
+          TimeMonitor lcltimer( *this->timerLocalUpdate_ );
+          MVT::MvAddMv(ONE,*this->X_,ONE,*this->eta_,*this->delta_);
+          MVT::MvAddMv(ONE,*this->AX_,ONE,*this->Aeta_,*this->Adelta_);
+          if (this->hasBOp_) {
+            MVT::MvAddMv(ONE,*this->BX_,ONE,*this->Beta_,*this->Bdelta_);
+          }
+        }
+        // perform some debugging on X+eta
+        if (this->om_->isVerbosity( Debug ) ) {
+          // X^T B X = I
+          // X^T B Eta = 0
+          // (X+Eta)^T B (X+Eta) = I + Eta^T B Eta
+          Teuchos::SerialDenseMatrix<int,ScalarType> XE(this->blockSize_,this->blockSize_),
+            E(this->blockSize_,this->blockSize_);
+          MVT::MvTransMv(ONE,*this->delta_,*this->Bdelta_,XE);
+          MVT::MvTransMv(ONE,*this->eta_,*this->Beta_,E);
+          this->om_->stream(Debug) 
+            << " >> Error in AX+AEta == A(X+Eta) : " << Utils::errorEquality(*this->delta_,*this->Adelta_,this->AOp_) << endl 
+            << " >> Error in BX+BEta == B(X+Eta) : " << Utils::errorEquality(*this->delta_,*this->Bdelta_,this->BOp_) << endl 
+            << " >> norm( (X+Eta)^T B (X+Eta) )  : " << XE.normFrobenius() << endl
+            << " >> norm( Eta^T B Eta )          : " << E.normFrobenius() << endl
+            << endl;
         }
       }
 
-      // perform some debugging on X+eta
-      if (this->om_->isVerbosity( Debug ) ) {
-        // X^T B X = I
-        // X^T B Eta = 0
-        // (X+Eta)^T B (X+Eta) = I + Eta^T B Eta
-        Teuchos::SerialDenseMatrix<int,ScalarType> XE(this->blockSize_,this->blockSize_),
-                                                    E(this->blockSize_,this->blockSize_);
-        MVT::MvTransMv(ONE,*this->delta_,*this->Bdelta_,XE);
-        MVT::MvTransMv(ONE,*this->eta_,*this->Beta_,E);
-        this->om_->stream(Debug) 
-          << " >> Error in AX+AEta == A(X+Eta) : " << Utils::errorEquality(*this->delta_,*this->Adelta_,this->AOp_) << endl 
-          << " >> Error in BX+BEta == B(X+Eta) : " << Utils::errorEquality(*this->delta_,*this->Bdelta_,this->BOp_) << endl 
-          << " >> norm( (X+Eta)^T B (X+Eta) )  : " << XE.normFrobenius() << endl
-          << " >> norm( Eta^T B Eta )          : " << E.normFrobenius() << endl
-          << endl;
-      }
-
       //
-      // perform rayleigh-ritz for newX = X+eta
+      // perform rayleigh-ritz for X+eta or [X,eta] according to useSA_
       // save an old copy of f(X) for rho analysis below
       //
       MagnitudeType oldfx = this->fx_;
-      std::vector<MagnitudeType> oldtheta(this->theta_);
+      std::vector<MagnitudeType> oldtheta(this->theta_), newtheta(AA.numRows());
       int rank, ret;
-      rank = this->blockSize_;
-      {
+      rank = AA.numRows();
+      if (useSA_ == true) {
+        TimeMonitor lcltimer( *this->timerLocalProj_ );
+        Teuchos::SerialDenseMatrix<int,ScalarType> AA11(Teuchos::View,AA,this->blockSize_,this->blockSize_,0,0), 
+                                                   AA12(Teuchos::View,AA,this->blockSize_,this->blockSize_,0,this->blockSize_),
+                                                   AA22(Teuchos::View,AA,this->blockSize_,this->blockSize_,this->blockSize_,this->blockSize_);
+        Teuchos::SerialDenseMatrix<int,ScalarType> BB11(Teuchos::View,BB,this->blockSize_,this->blockSize_,0,0), 
+                                                   BB12(Teuchos::View,BB,this->blockSize_,this->blockSize_,0,this->blockSize_),
+                                                   BB22(Teuchos::View,BB,this->blockSize_,this->blockSize_,this->blockSize_,this->blockSize_);
+        MVT::MvTransMv(ONE,*this->X_  ,*this->AX_  ,AA11);
+        MVT::MvTransMv(ONE,*this->X_  ,*this->Aeta_,AA12);
+        MVT::MvTransMv(ONE,*this->eta_,*this->Aeta_,AA22);
+        MVT::MvTransMv(ONE,*this->X_  ,*this->BX_  ,BB11);
+        MVT::MvTransMv(ONE,*this->X_  ,*this->Beta_,BB12);
+        MVT::MvTransMv(ONE,*this->eta_,*this->Beta_,BB22);
+      }
+      else {
         TimeMonitor lcltimer( *this->timerLocalProj_ );
         MVT::MvTransMv(ONE,*this->delta_,*this->Adelta_,AA);
         MVT::MvTransMv(ONE,*this->delta_,*this->Bdelta_,BB);
@@ -786,23 +815,26 @@ namespace Anasazi {
       this->om_->stream(Debug) << "BB: " << std::endl << BB << std::endl;;
       {
         TimeMonitor lcltimer( *this->timerDS_ );
-        ret = Utils::directSolver(this->blockSize_,AA,Teuchos::rcpFromRef(BB),S,this->theta_,rank,1);
+        ret = Utils::directSolver(AA.numRows(),AA,Teuchos::rcpFromRef(BB),S,newtheta,rank,1);
       }
       this->om_->stream(Debug) << "S: " << std::endl << S << std::endl;;
       TEST_FOR_EXCEPTION(ret != 0,std::logic_error,"Anasazi::IRTR::iterate(): failure solving projected eigenproblem after retraction. ret == " << ret);
-      TEST_FOR_EXCEPTION(rank != this->blockSize_,RTRRitzFailure,"Anasazi::IRTR::iterate(): retracted iterate failed in Ritz analysis. rank == " << rank);
+      TEST_FOR_EXCEPTION(rank != AA.numRows(),RTRRitzFailure,"Anasazi::IRTR::iterate(): retracted iterate failed in Ritz analysis. rank == " << rank);
 
       //
       // order the projected ritz values and vectors
       // this ensures that the ritz vectors produced below are ordered
       {
         TimeMonitor lcltimer( *this->timerSort_ );
-        std::vector<int> order(this->blockSize_);
-        // sort the first blockSize_ values in theta_
-        this->sm_->sort(this->theta_, Teuchos::rcpFromRef(order), this->blockSize_);   // don't catch exception
+        std::vector<int> order(newtheta.size());
+        // sort the values in newtheta
+        this->sm_->sort(newtheta, Teuchos::rcpFromRef(order), -1);   // don't catch exception
         // apply the same ordering to the primitive ritz vectors
         Utils::permuteVectors(order,S);
       }
+      // 
+      // save the first blockSize values into this->theta_
+      std::copy(newtheta.begin(), newtheta.begin()+this->blockSize_, this->theta_.begin());
       //
       // update f(x)
       this->fx_ = std::accumulate(this->theta_.begin(),this->theta_.end(),ZERO);
@@ -812,11 +844,11 @@ namespace Anasazi {
       if (this->om_->isVerbosity( Debug ) ) {
         //
         // compute rho
-        //        f(X) - f(X+eta)         f(X) - f(X+eta)     
-        // rho = ----------------- = -------------------------
-        //         m(0) - m(eta)      -<2AX,eta> - .5*<Heta,eta> 
+        //        f(X) - f(newX)           f(X) - f(newX)     
+        // rho = ---------------- = ---------------------------
+        //         m(0) - m(eta)    -<2AX,eta> - .5*<Heta,eta> 
         //
-        //            f(X) - f(X+eta)     
+        //            f(X) - f(newX)
         //     = ---------------------------------------
         //        -<2AX,eta> - <eta,Aeta> + <eta,Beta XAX>
         //
@@ -849,16 +881,15 @@ namespace Anasazi {
         }
       }
 
-      // multiply delta=(X+eta),Adelta=...,Bdelta=... 
-      // by primitive Ritz vectors back into X,AX,BX
-      // this makes X into Ritz vectors
+      // form new X as Ritz vectors, using the primitive Ritz vectors in S and 
+      // either [X eta] or X+eta
       // we will clear the const views of X,BX into V,BV and 
       // work from non-const temporary views
       {
         // release const views to X, BX
+        // get non-const views
         this->X_  = Teuchos::null;
         this->BX_ = Teuchos::null;
-        // get non-const views
         std::vector<int> ind(this->blockSize_);
         for (int i=0; i<this->blockSize_; ++i) ind[i] = this->numAuxVecs_+i;
         Teuchos::RCP<MV> X, BX;
@@ -866,13 +897,38 @@ namespace Anasazi {
         if (this->hasBOp_) {
           BX = MVT::CloneView(*this->BV_,ind);
         }
-        // compute ritz vectors, A,B products into X,AX,BX
-        {
+        if (useSA_ == false) {
+          // multiply delta=(X+eta),Adelta=...,Bdelta=... 
+          // by primitive Ritz vectors back into X,AX,BX
+          // compute ritz vectors, A,B products into X,AX,BX
           TimeMonitor lcltimer( *this->timerLocalUpdate_ );
           MVT::MvTimesMatAddMv(ONE,*this->delta_,S,ZERO,*X);
           MVT::MvTimesMatAddMv(ONE,*this->Adelta_,S,ZERO,*this->AX_);
           if (this->hasBOp_) {
             MVT::MvTimesMatAddMv(ONE,*this->Bdelta_,S,ZERO,*BX);
+          }
+        }
+        else {
+          // compute ritz vectors, A,B products into X,AX,BX
+          // currently, X in X and eta in eta
+          // compute each result into delta, then copy to appropriate place
+          // decompose S into [Sx;Se]
+          Teuchos::SerialDenseMatrix<int,ScalarType> Sx(Teuchos::View,S,this->blockSize_,this->blockSize_,0,0),
+                                                     Se(Teuchos::View,S,this->blockSize_,this->blockSize_,this->blockSize_,0);
+          TimeMonitor lcltimer( *this->timerLocalUpdate_ );
+          // X = [X eta] S = X*Sx + eta*Se
+          MVT::MvTimesMatAddMv(ONE,*      X   ,Sx,ZERO,*this->delta_);
+          MVT::MvTimesMatAddMv(ONE,*this->eta_,Se,ONE ,*this->delta_);
+          MVT::MvAddMv(ONE,*this->delta_,ZERO,*this->delta_,*X);
+          // AX = [AX Aeta] S = AX*Sx + Aeta*Se
+          MVT::MvTimesMatAddMv(ONE,*this->AX_  ,Sx,ZERO,*this->delta_);
+          MVT::MvTimesMatAddMv(ONE,*this->Aeta_,Se,ONE ,*this->delta_);
+          MVT::MvAddMv(ONE,*this->delta_,ZERO,*this->delta_,*this->AX_);
+          if (this->hasBOp_) {
+            // BX = [BX Beta] S = BX*Sx + Beta*Se
+            MVT::MvTimesMatAddMv(ONE,*      BX   ,Sx,ZERO,*this->delta_);
+            MVT::MvTimesMatAddMv(ONE,*this->Beta_,Se,ONE ,*this->delta_);
+            MVT::MvAddMv(ONE,*this->delta_,ZERO,*this->delta_,*BX);
           }
         }
         // clear non-const views, restore const views

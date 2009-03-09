@@ -536,26 +536,26 @@ namespace Anasazi {
     //   V = [Q,X]
     //  BV = [BQ,BX]
     // 
-    //  In the context of preconditioning, we need to apply the projector
-    //   P_{prec*[BQ,BX],[BQ,BX]
+    //  In the context of preconditioning, we may need to apply the projector
+    //   P_{prec*[BQ,BX],[BQ,BX]}
     //  Because [BQ,BX] do not change during the supproblem solver, we will apply 
     //  the preconditioner to [BQ,BX] only once. This result is stored in PBV.
     // 
     // X,BX are views into V,BV
     // We don't need views for Q,BQ
-    // Inside the subproblem solver, X,BX are static, so we can allow these
+    // Inside the subproblem solver, X,BX are constant, so we can allow these
     // views to exist alongside the full view of V,BV without violating
     // view semantics.
     // 
     // Skinny solver allocates 6/7/8 multivectors:
     //    V_, BV_ (if hasB)
-    //    PBV_ (if hasPrec)
-    //    R_, Z_  (regardless of hasPrec!)
+    //    PBV_ (if hasPrec and olsenPrec)
+    //    R_, Z_  (regardless of hasPrec)
     //    eta_, delta_, Hdelta_
     //
     // Hefty solver allocates 10/11/12/13 multivectors:
     //    V_, AX_, BV_ (if hasB)
-    //    PBV_ (if hasPrec)
+    //    PBV_ (if hasPrec and olsenPrec)
     //    R_, Z_ (if hasPrec)
     //    eta_, Aeta_, Beta_
     //    delta_, Adelta_, Bdelta_, Hdelta_

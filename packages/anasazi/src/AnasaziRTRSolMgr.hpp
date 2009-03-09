@@ -153,6 +153,7 @@ class RTRSolMgr : public SolverManager<ScalarType,MV,OP> {
   bool relconvtol_;
   enum StatusTestResNorm<ScalarType,MV,OP>::ResType convNorm_;
   int numIters_;
+  int numICGS_;
 
   Teuchos::RCP<Teuchos::Time> _timerSolve;
   Teuchos::RCP<BasicOutputManager<ScalarType> > printer_;
@@ -207,6 +208,9 @@ RTRSolMgr<ScalarType,MV,OP>::RTRSolMgr(
 
   // skinny solver or not
   skinny_ = pl_.get("Skinny Solver",skinny_);
+
+  // number if ICGS iterations
+  numICGS_ = pl_.get("Num ICGS",2);
 
   // output stream
   std::string fntemplate = "";
@@ -332,7 +336,7 @@ RTRSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // Orthomanager
   Teuchos::RCP<ICGSOrthoManager<ScalarType,MV,OP> > ortho 
-    = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>(problem_->getM()) );
+    = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>(problem_->getM(),numICGS_) );
 
   //////////////////////////////////////////////////////////////////////////////////////
   // create an RTR solver
