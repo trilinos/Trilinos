@@ -150,61 +150,61 @@ PACKAGE_NAME=Teuchos
     COMM = MPI(1),SERIAL;
 }
 
-(FRAMEWORK,INSTALL,UNITTESTS) {
-    TESTS = UnitTest/UnitTest_UnitTests.exe;
-    ARGS = --show-test-details=TEST_NAMES --group-name="*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 29, passed = 29, failed = 0);
-    COMM = MPI(1),SERIAL;
-}
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="*";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 29, passed = 29, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
 
-(FRAMEWORK,INSTALL,UNITTESTS) {
-    TESTS = UnitTest/UnitTest_UnitTests.exe;
-    ARGS = --show-test-details=TEST_NAMES --group-name="someFunc*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 4, passed = 4, failed = 0);
-    COMM = MPI(1),SERIAL;
-}
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="someFunc*";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 4, passed = 4, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
 
-(FRAMEWORK,INSTALL,UNITTESTS) {
-    TESTS = UnitTest/UnitTest_UnitTests.exe;
-    ARGS = --show-test-details=TEST_NAMES --group-name="*double";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 5, passed = 5, failed = 0);
-    COMM = MPI(1),SERIAL;
-}
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="*double";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 5, passed = 5, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
 
-(FRAMEWORK,INSTALL,UNITTESTS) {
-    TESTS = UnitTest/UnitTest_UnitTests.exe;
-    ARGS = --show-test-details=TEST_NAMES --group-name="*ouble";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 6, passed = 6, failed = 0);
-    COMM = MPI(1),SERIAL;
-}
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="*ouble";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 6, passed = 6, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
 
-(FRAMEWORK,INSTALL,UNITTESTS) {
-    TESTS = UnitTest/UnitTest_UnitTests.exe;
-    ARGS = --show-test-details=TEST_NAMES --group-name="*Complex*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 2, passed = 2, failed = 0);
-    COMM = MPI(1),SERIAL;
-}
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="*Complex*";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 2, passed = 2, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
 
-(FRAMEWORK,INSTALL,UNITTESTS) {
-    TESTS = UnitTest/UnitTest_UnitTests.exe;
-    ARGS = --show-test-details=TEST_NAMES --group-name="Int";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 2, passed = 2, failed = 0);
-    COMM = MPI(1),SERIAL;
-}
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --group-name="Int";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 2, passed = 2, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
 
-(FRAMEWORK,INSTALL,UNITTESTS) {
-    TESTS = UnitTest/UnitTest_UnitTests.exe;
-    ARGS = --show-test-details=TEST_NAMES --test-name="Assignment";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 1, passed = 1, failed = 0);
-    COMM = MPI(1),SERIAL;
-}
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --test-name="Assignment";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 1, passed = 1, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
 
-(FRAMEWORK,INSTALL,UNITTESTS) {
-    TESTS = UnitTest/UnitTest_UnitTests.exe;
-    ARGS = --show-test-details=TEST_NAMES --test-name="*si*";
-    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 5, passed = 5, failed = 0);
-    COMM = MPI(1),SERIAL;
-}
+#(FRAMEWORK,INSTALL,UNITTESTS) {
+#    TESTS = UnitTest/UnitTest_UnitTests.exe;
+#    ARGS = --show-test-details=TEST_NAMES --test-name="*si*";
+#    EXIT-STATUS = STRING-COMPARISON(Summary: total = 29, run = 5, passed = 5, failed = 0);
+#    COMM = MPI(1),SERIAL;
+#}
 
 # Make sure bad unit test name is shown
 (FRAMEWORK,INSTALL,UNITTESTS) {
