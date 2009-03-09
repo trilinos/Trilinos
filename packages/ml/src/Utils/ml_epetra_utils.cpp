@@ -3474,8 +3474,9 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
     sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
 #else
     gethostname(hostname, sizeof(hostname));
-    sprintf(buf, "Host: %s\tComm.MyPID(): %d\tPID: %d", 
-        hostname, Comm.MyPID(), getpid());
+    int pid = getpid();
+    sprintf(buf, "Host: %s\tComm.MyPID(): %d\tPID: %d\n\tattach %d\n\tcontinue\n",
+        hostname, Comm.MyPID(), pid, pid);
 #endif
     printf("%s\n",buf);
     fflush(stdout);
@@ -3492,6 +3493,7 @@ void ML_BreakForDebugger(const Epetra_Comm &Comm)
        printf( "** Enter a character to continue > "); fflush(stdout);
        scanf("%c",&go);
      }
+     Comm.Barrier();
    }
 
 } //BreakForDebugger()
