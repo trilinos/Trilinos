@@ -155,7 +155,7 @@ bool probing_test(Epetra_CrsMatrix & in_mat, bool build_list){
 
 
 #endif
-                  
+
 int main(int argc, char** argv) {
 
 
@@ -175,7 +175,9 @@ int main(int argc, char** argv) {
   catch(std::exception& exc) {
     std::cout << "err, setting verbosity: " << exc.what() << std::endl;
     std::cout << "End Result: TEST FAILED" << std::endl;
+#ifdef HAVE_MPI
     MPI_Finalize();
+#endif /* HAVE_MPI */
     return(-1);
   }
 
