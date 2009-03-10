@@ -437,10 +437,10 @@ Final Certification Evidence: [???]
 
 Package: Pamgen
 
-Package Transition Lead: [???]
+Package Transition Lead: David Hensinger (dmhensi@sandia.gov)
 
 Status: Has basic CMake support for libraries but there are a bunch of unix
-shell scripts that need to be converted over.  An expended CTest macros and
+shell scripts that need to be converted over.  An extended CTest macros and
 script wrapper system needs to be created that would allow all of these tests
 to be stated in CMake form.
 
