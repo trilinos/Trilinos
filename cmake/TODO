@@ -6,18 +6,22 @@ TODOs for the Trilinos/CMake System
 Active items:
 -------------
 
-(*) [Roger] Add configure-time test for LAPACK support for GGEV and/or GEEV to
-define HAVE_LAPACK_GGEV/GEEV.  See the file teuchos/config/acx_ggev.m4.
-
 (*) [Ross and Brent] Get new CTest/CDash driver working:
-- Get MySQL database 'trilinos-cdash' and CDash server moved over to a new
-server machine.
+- Test scalability of segmented coverage testing working (see tracker item
+0008579)
+- Test package-specific emails get sent out.
 - Automatically read in the list of packages and deal correctly with
 Primary and Secondary Stable enables (see below)
-- Get segmented coverage testing working (see tracker item 0008579)
-- Get segmented memory testing working ()
-- Add more important test cases (tests on mac, etc.)
-- Get package-specific emails sent out
+
+(*) [Ross and Brent] Get basic MS Windows Visual Studio port of Trilinos
+packages (see email from Wed 3/11/2009 8:51 AM) for QuantumWise.
+
+(*) [Ross] Create new PACKAGE_ADD_ADVANCED_TEST(...) function that will group
+together a set of commands (with various pass/fail critieria) and then run as
+a CMake -P script.  Write all supporting CMake code with unit tests.
+
+(*) [Roger] Add configure-time test for LAPACK support for GGEV and/or GEEV to
+define HAVE_LAPACK_GGEV/GEEV.  See the file teuchos/config/acx_ggev.m4.
 
 
 Backlog:
@@ -61,16 +65,6 @@ sure that you test correctly.  Note that packages enables should then
 key off of Trilinos_ENABLE_SECONDARY_STABLE_CODE to turn on by default
 those parts of their packageq that they don't consider PS code but are
 SS.
-
-(*) [???] Experiment with using cmake -P <script_file> as a
-platform-independent scripting language.  We can use this for creating
-platform-independent scripts that will allow us to run on any platform.  This
-will also allow us to append more types of tests on to an existing test like
-running the compareOutput program.
-
-(*) [???] Create new PACKAGE_ADD_ADVANCED_TEST(...) function that will group
-together a set of commands (with various pass/fail critieria) and then run as
-a CMake -P script.
 
 (*) [???] Add installation testing for the CMake build system.  Here, we will
 build and install libraries, and then configure the tests and examples in a
