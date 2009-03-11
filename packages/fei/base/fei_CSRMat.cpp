@@ -206,7 +206,7 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
   const std::vector<int>& Bcols = B.getGraph().packedColumnIndices;
   const double* Bcoefs = &(B.getPackedCoefs()[0]);
 
-  static double fei_eps = std::numeric_limits<double>::epsilon();
+  static double fei_min = std::numeric_limits<double>::min();
 
   int jbeg = *Arowoffs++;
   for(size_t i=0; i<Arows.size(); ++i) {
@@ -233,7 +233,7 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
       }
 
       if (!storeResultZeros) {
-        if (std::abs(Acoef) < fei_eps) {
+        if (std::abs(Acoef) < fei_min) {
           continue;
         }
       }
@@ -247,7 +247,7 @@ void multiply_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
         int resultCol = Brow_cols[k];
 
         if (!storeResultZeros) {
-          if (std::abs(resultCoef) < fei_eps) {
+          if (std::abs(resultCoef) < fei_min) {
             continue;
           }
         }
@@ -289,7 +289,7 @@ void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
 
   std::vector<double> row_coefs;
 
-  static double fei_eps = std::numeric_limits<double>::epsilon();
+  static double fei_min = std::numeric_limits<double>::min();
 
   std::vector<int> offsets;
   fei::impl_utils::find_offsets(Arows, Brows, offsets);
@@ -315,7 +315,7 @@ void multiply_trans_CSRMat_CSRMat(const CSRMat& A, const CSRMat& B, CSRMat& C,
       int Acol = Acols[jbeg];
       double Acoef = Acoefs[jbeg++];
 
-      if (std::abs(Acoef) < fei_eps && !storeResultZeros) {
+      if (std::abs(Acoef) < fei_min && !storeResultZeros) {
         continue;
       }
 

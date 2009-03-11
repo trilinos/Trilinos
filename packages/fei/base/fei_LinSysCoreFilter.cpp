@@ -471,10 +471,10 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
 
    while(cr_iter != cr_end) {
       ConstraintType& constraint = *((*cr_iter).second);
-      int numNodesPerCR = constraint.getMasters()->size();
+      int numNodesPerCR = constraint.getMasters().size();
       int meqn = constraint.getEqnNumber();
 
-      std::vector<GlobalID>& nodeID_vec = *(constraint.getMasters());
+      std::vector<GlobalID>& nodeID_vec = constraint.getMasters();
       GlobalID* nodeIDPtr = &nodeID_vec[0];
 
       if ((int)iwork.size() < 2*numNodesPerCR) {
@@ -485,7 +485,7 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
 
       int* eqnList = nodeList+numNodesPerCR;
 
-      std::vector<int>& fieldIDs_vec = *(constraint.getMasterFieldIDs());
+      std::vector<int>& fieldIDs_vec = constraint.getMasterFieldIDs();
       int* fieldIDs = &fieldIDs_vec[0];
 
       for(int k=0; k<numNodesPerCR; k++) {
@@ -532,9 +532,9 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
 
    while(cr_iter != cr_end) {
       ConstraintType& crset = *((*cr_iter).second);
-      int numNodesPerCR = crset.getMasters()->size();
+      int numNodesPerCR = crset.getMasters().size();
 
-      std::vector<GlobalID>& nodeIDs_vec = *(crset.getMasters());
+      std::vector<GlobalID>& nodeIDs_vec = crset.getMasters();
       GlobalID* nodeIDsPtr = &nodeIDs_vec[0];
 
       if ((int)iwork.size() < 2*numNodesPerCR) {
@@ -545,7 +545,7 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
 
       int* eqnList = nodeList+numNodesPerCR;
 
-      std::vector<int>& fieldIDs_vec = *(crset.getMasterFieldIDs());
+      std::vector<int>& fieldIDs_vec = crset.getMasterFieldIDs();
       int* fieldIDs = &fieldIDs_vec[0];
 
       for(int k=0; k<numNodesPerCR; k++) {
@@ -1407,13 +1407,13 @@ int LinSysCoreFilter::resolveConflictingCRs(EqnBuffer& bcEqns)
   while(cr_iter != cr_end) {
     ConstraintType& multCR = *((*cr_iter).second);
 
-    int lenList = multCR.getMasters()->size();
+    int lenList = multCR.getMasters().size();
 
-    std::vector<GlobalID>& CRNode_vec = *(multCR.getMasters());
+    std::vector<GlobalID>& CRNode_vec = multCR.getMasters();
     GlobalID *CRNodePtr = &CRNode_vec[0];
-    std::vector<int>& CRField_vec = *(multCR.getMasterFieldIDs());
+    std::vector<int>& CRField_vec = multCR.getMasterFieldIDs();
     int* CRFieldPtr = &CRField_vec[0];
-    std::vector<double>& weights_vec = *(multCR.getMasterWeights());
+    std::vector<double>& weights_vec = multCR.getMasterWeights();
     double* weights = &weights_vec[0];
 
     int offset = 0;
@@ -1676,7 +1676,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
 
   int i;
 
-  int lenList = multCR->getMasters()->size();
+  int lenList = multCR->getMasters().size();
   if (lenList < 1) {
     FEI_CERR << "ERROR in FEI, constraint with ID="<<CRID<<" appears to have"
          <<" a constrained-node list of length "<<lenList<<", should be > 0."<<FEI_ENDL;
@@ -1686,7 +1686,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
   //  recall the data stored earlier and ensure that the passed data (here, the
   //  node list) agrees with the initialization data
 
-  std::vector<GlobalID>& CRNode_vec = *(multCR->getMasters());
+  std::vector<GlobalID>& CRNode_vec = multCR->getMasters();
   GlobalID *CRNodePtr = &CRNode_vec[0];
 
   for(i=0; i<lenList; i++) {
@@ -1697,7 +1697,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
     }
   }
 
-  std::vector<int>& CRField_vec = *(multCR->getMasterFieldIDs());
+  std::vector<int>& CRField_vec = multCR->getMasterFieldIDs();
   int *CRFieldPtr = &CRField_vec[0];
 
   for (i = 0; i < lenList; i++) {
@@ -1722,7 +1722,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
     fieldSizes[i] = numSolnParams;
   }
 
-  std::vector<double>* CRWeightArray = multCR->getMasterWeights();
+  std::vector<double>& CRWeightArray = multCR->getMasterWeights();
 
   int offset = 0;
 
@@ -1730,7 +1730,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
 
   for(i = 0; i < lenList; i++) {
     for(int j = 0; j < fieldSizes[i]; j++) {
-      CRWeightArray->push_back(CRWeights[offset++]);
+      CRWeightArray.push_back(CRWeights[offset++]);
     }
   }
 
@@ -1741,7 +1741,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
   }
 
   multCR->setRHSValue(CRValue);
-  double* CRWeightsPtr = &(*CRWeightArray)[0];
+  double* CRWeightsPtr = &CRWeightArray[0];
 
 //  next, perform assembly of the various terms into the system arrays
 //  (this is a good candidate for a separate function...)
@@ -1803,7 +1803,7 @@ int LinSysCoreFilter::loadCRPen(int CRID,
   CHK_ERR( problemStructure_->getPenConstRecord(CRID, penCR) );
 
   int i;
-  int lenList = penCR->getMasters()->size();
+  int lenList = penCR->getMasters().size();
   if (lenList < 1) {
     FEI_CERR << "ERROR in FEI, constraint with ID="<<CRID<<" appears to have"
          <<" a constrained-node list of length "<<lenList<<", should be > 0."<<FEI_ENDL;
@@ -1813,7 +1813,7 @@ int LinSysCoreFilter::loadCRPen(int CRID,
   // recall the data stored earlier and ensure that the passed data (here,
   // the node list) agrees with the initialization data
 
-  std::vector<GlobalID>& CRNode_vec = *(penCR->getMasters());
+  std::vector<GlobalID>& CRNode_vec = penCR->getMasters();
   GlobalID* CRNodePtr = &CRNode_vec[0];
                                   
   for(int j = 0; j < lenList; j++) {
@@ -1840,14 +1840,14 @@ int LinSysCoreFilter::loadCRPen(int CRID,
     fieldSizes[i] = numSolnParams;
   }
 
-  std::vector<double>* CRWeightArray = penCR->getMasterWeights();
+  std::vector<double>& CRWeightArray = penCR->getMasterWeights();
 
   try {
 
   int offset = 0;
   for (i = 0; i < lenList; i++) {
     for (int j = 0; j < fieldSizes[i]; j++) {
-      CRWeightArray->push_back(CRWeights[offset++]);
+      CRWeightArray.push_back(CRWeights[offset++]);
     }
   }
 
@@ -1859,7 +1859,7 @@ int LinSysCoreFilter::loadCRPen(int CRID,
 
   penCR->setRHSValue(CRValue);
 
-  double* CRWeightPtr = &(*CRWeightArray)[0];
+  double* CRWeightPtr = &CRWeightArray[0];
 
   int ioffset = 0, joffset = 0;
   for(i = 0; i < lenList; i++) {
@@ -2358,7 +2358,7 @@ int LinSysCoreFilter::giveToLocalReducedMatrix(int numPtRows, const int* ptRows,
   bool specialCase = (!firstRemEqnExchange_ && newConstraintData_
                       && !newMatrixData_) ? true : false;
 
-  double fei_eps = std::numeric_limits<double>::epsilon();
+  double fei_min = std::numeric_limits<double>::min();
 
   for(int i=0; i<numPtRows; i++) {
 
@@ -2366,7 +2366,7 @@ int LinSysCoreFilter::giveToLocalReducedMatrix(int numPtRows, const int* ptRows,
       const double* values_i = values[i];
 
       for(int j=0; j<numPtCols; ++j) {
-        if (specialCase && std::abs(values_i[j]) < fei_eps) continue;
+        if (specialCase && std::abs(values_i[j]) < fei_min) continue;
 
         const double* valPtr = &(values_i[j]);
         CHK_ERR( lsc_->sumIntoSystemMatrix(1, &(ptRows[i]), 1, &(ptCols[j]),

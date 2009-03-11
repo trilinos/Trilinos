@@ -152,7 +152,9 @@ void snl_fei::LinearSystem_General::setName(const char* name)
   std::map<std::string,unsigned>::iterator
     iter = named_loadcomplete_counter_.find(name_);
   if (iter == named_loadcomplete_counter_.end()) {
-    named_loadcomplete_counter_.insert(std::make_pair(name_, 0));
+    static int counter = 0;
+    named_loadcomplete_counter_.insert(std::make_pair(name_, counter));
+    ++counter;
   }
 }
 
@@ -855,10 +857,10 @@ int snl_fei::LinearSystem_General::loadLagrangeConstraint(int constraintID,
   CHK_ERR( matrixGraph_->getConstraintConnectivityIndices(cr, iwork_) );
 
   //Let's attach the weights to the constraint-record now.
-  std::vector<double>* cr_weights = cr->getMasterWeights();
-  cr_weights->resize(iwork_.size());
+  std::vector<double>& cr_weights = cr->getMasterWeights();
+  cr_weights.resize(iwork_.size());
   for(unsigned i=0; i<iwork_.size(); ++i) {
-    cr_weights->push_back(weights[i]);
+    cr_weights.push_back(weights[i]);
   }
 
   fei::SharedPtr<fei::VectorSpace> vecSpace = matrixGraph_->getRowSpace();

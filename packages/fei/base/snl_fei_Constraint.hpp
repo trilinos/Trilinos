@@ -27,37 +27,37 @@ namespace snl_fei {
 
     /** constructor */
     Constraint(int id,
-	       int constraintIDType,
-	       bool isSlave,
-	       bool isPenaltyConstr,
-	       int numIDs,
-	       const int* idTypes,
-	       const int* IDs,
-	       const int* fieldIDs,
-	       int offsetOfSlave,
-	       int offsetIntoSlaveField,
-	       const double* weights,
-	       double rhsValue,
-	       fei::VectorSpace* vspace);
+               int constraintIDType,
+               bool isSlave,
+               bool isPenaltyConstr,
+               int numIDs,
+               const int* idTypes,
+               const int* IDs,
+               const int* fieldIDs,
+               int offsetOfSlave,
+               int offsetIntoSlaveField,
+               const double* weights,
+               double rhsValue,
+               fei::VectorSpace* vspace);
 
     /** destructor */
     virtual ~Constraint();
 
     /** get constraint identifier */
-    int getConstraintID() { return( constraintID_ ); }
+    int getConstraintID() const { return( constraintID_ ); }
 
     /** set constraint identifier. power-users only */
     void setConstraintID(int id) { constraintID_ = id; }
 
     /** get the identifier-type that the fei uses to reference constraints */ 
-    int getIDType() { return( idType_ ); }
+    int getIDType() const { return( idType_ ); }
 
     /** set the identifier-type that the fei uses to reference constraints.
       power-users only, this is a dangerous function with side-effects */ 
     void setIDType(int idType) { idType_ = idType; }
 
     /** query whether constraint is a penalty constraint */
-    bool isPenalty() { return( isPenalty_ ); }
+    bool isPenalty() const { return( isPenalty_ ); }
 
     /** set whether constraint is a penalty constraint. Another dangerous
      function for power-users. */
@@ -65,7 +65,7 @@ namespace snl_fei {
 
     /** get equation-number of constraint. (only valid if lagrange-multiplier)
     */
-    int getEqnNumber() { return( eqnNumber_ ); }
+    int getEqnNumber() const { return( eqnNumber_ ); }
 
     /** set equation-number of constraint. (only valid if lagrange-multiplier)
     */
@@ -73,15 +73,11 @@ namespace snl_fei {
 
     /** get block-equation number of constraint. (only valid if
      lagrange-multiplier */
-    int getBlkEqnNumber() { return( blkEqnNumber_ ); }
+    int getBlkEqnNumber() const { return( blkEqnNumber_ ); }
 
     /** set block-equation number of constraint. (only valid if
      lagrange-multiplier */
     void setBlkEqnNumber(int blkEqn) { blkEqnNumber_ = blkEqn; }
-
-    /** not for public use (note to self: review this class, remove the
-     many dangerous, ill-defined functions) */
-    int allocate();
 
 
     /** intended for fei-implementation use only */
@@ -92,34 +88,34 @@ namespace snl_fei {
 
     /** if slave constraint, return constrained field-identifier of
         slaved mesh-object */
-    int getSlaveFieldID() { return( slaveField_ ); }
+    int getSlaveFieldID() const { return( slaveField_ ); }
 
     /** if slave constraint, set constrained field-identifier of
         slaved mesh-object */
     void setSlaveFieldID(int f) { slaveField_ = f; }
 
     /** get offset of slaved field-component */
-    int getOffsetIntoSlaveField() { return( offsetIntoSlaveField_ ); }
+    int getOffsetIntoSlaveField() const { return( offsetIntoSlaveField_ ); }
 
     /** set offset of slaved field-component */
     void setOffsetIntoSlaveField(int offset) { offsetIntoSlaveField_ = offset; }
 
 
     /** get master mesh-objects */
-    std::vector<RecordType>* getMasters() { return( masters_ ); }
+    std::vector<RecordType>& getMasters() { return( masters_ ); }
 
     /** get identifier-types of master mesh-objects */
-    std::vector<int>* getMasterIDTypes() { return( masterIDTypes_ ); }
+    std::vector<int>& getMasterIDTypes() { return( masterIDTypes_ ); }
 
     /** get field-identifiers of master mesh-objects */
-    std::vector<int>* getMasterFieldIDs() { return( masterFields_ ); }
+    std::vector<int>& getMasterFieldIDs() { return( masterFields_ ); }
 
     /** get weight-coefficients of master mesh-objects */
-    std::vector<double>* getMasterWeights() { return( masterWeights_ ); }
+    std::vector<double>& getMasterWeights() { return( masterWeights_ ); }
 
 
     /** get right-hand-side value of constraint */
-    double getRHSValue() { return( rhsValue_ ); }
+    double getRHSValue() const { return( rhsValue_ ); }
 
     /** set right-hand-side value of constraint */
     void setRHSValue(double rhs) { rhsValue_ = rhs; }
@@ -134,7 +130,7 @@ namespace snl_fei {
     Constraint(const Constraint<RecordType>& src);
     Constraint<RecordType>& operator=(const Constraint<RecordType>& src)
       {
-	return(*this);
+        return(*this);
       }
 
     int constraintID_;
@@ -148,10 +144,10 @@ namespace snl_fei {
     int slaveField_;
     int offsetIntoSlaveField_;
 
-    std::vector<RecordType>* masters_;
-    std::vector<int>* masterIDTypes_;
-    std::vector<int>* masterFields_;
-    std::vector<double>* masterWeights_;
+    std::vector<RecordType> masters_;
+    std::vector<int> masterIDTypes_;
+    std::vector<int> masterFields_;
+    std::vector<double> masterWeights_;
 
     double rhsValue_;
 
@@ -166,12 +162,15 @@ inline snl_fei::Constraint<RecordType>::Constraint(int id, bool isPenaltyConstr)
   : constraintID_(id),
     idType_(0),
     isPenalty_(isPenaltyConstr),
+    eqnNumber_(-1),
+    blkEqnNumber_(-1),
+    slave_(),
     slaveField_(0),
     offsetIntoSlaveField_(0),
-    masters_(NULL),
-    masterIDTypes_(NULL),
-    masterFields_(NULL),
-    masterWeights_(NULL),
+    masters_(),
+    masterIDTypes_(),
+    masterFields_(),
+    masterWeights_(),
     rhsValue_(0.0)
 {
 }
@@ -179,29 +178,30 @@ inline snl_fei::Constraint<RecordType>::Constraint(int id, bool isPenaltyConstr)
 //----------------------------------------------------------------------------
 template<class RecordType>
 inline snl_fei::Constraint<RecordType>::Constraint(int id,
-					    int constraintIDType,
-					    bool isSlave,
-					    bool isPenaltyConstr,
-					    int numIDs,
-					    const int* idTypes,
-					    const int* IDs,
-					    const int* fieldIDs,
-					    int offsetOfSlave,
-					    int offsetIntoSlaveField,
-					    const double* weights,
-					    double rhsValue,
-					    fei::VectorSpace* vspace)
+                                            int constraintIDType,
+                                            bool isSlave,
+                                            bool isPenaltyConstr,
+                                            int numIDs,
+                                            const int* idTypes,
+                                            const int* IDs,
+                                            const int* fieldIDs,
+                                            int offsetOfSlave,
+                                            int offsetIntoSlaveField,
+                                            const double* weights,
+                                            double rhsValue,
+                                            fei::VectorSpace* vspace)
   : constraintID_(id),
     idType_(constraintIDType),
     isPenalty_(isPenaltyConstr),
     eqnNumber_(-1),
     blkEqnNumber_(-1), 
+    slave_(),
     slaveField_(0),
     offsetIntoSlaveField_(offsetIntoSlaveField),
-    masters_(NULL),
-    masterIDTypes_(NULL),
-    masterFields_(NULL),
-    masterWeights_(NULL),
+    masters_(),
+    masterIDTypes_(),
+    masterFields_(),
+    masterWeights_(),
     rhsValue_(rhsValue)
 {
 }
@@ -210,33 +210,32 @@ inline snl_fei::Constraint<RecordType>::Constraint(int id,
 namespace snl_fei {
 template<>
 inline snl_fei::Constraint<fei::Record*>::Constraint(int id,
-					    int constraintIDType,
-					    bool isSlave,
-					    bool isPenaltyConstr,
-					    int numIDs,
-					    const int* idTypes,
-					    const int* IDs,
-					    const int* fieldIDs,
-					    int offsetOfSlave,
-					    int offsetIntoSlaveField,
-					    const double* weights,
-					    double rhsValue,
-					    fei::VectorSpace* vspace)
+                                            int constraintIDType,
+                                            bool isSlave,
+                                            bool isPenaltyConstr,
+                                            int numIDs,
+                                            const int* idTypes,
+                                            const int* IDs,
+                                            const int* fieldIDs,
+                                            int offsetOfSlave,
+                                            int offsetIntoSlaveField,
+                                            const double* weights,
+                                            double rhsValue,
+                                            fei::VectorSpace* vspace)
   : constraintID_(id),
     idType_(constraintIDType),
     isPenalty_(isPenaltyConstr),
     eqnNumber_(-1),
     blkEqnNumber_(-1), 
+    slave_(),
     slaveField_(0),
     offsetIntoSlaveField_(offsetIntoSlaveField),
-    masters_(NULL),
-    masterIDTypes_(NULL),
-    masterFields_(NULL),
-    masterWeights_(NULL),
+    masters_(),
+    masterIDTypes_(),
+    masterFields_(),
+    masterWeights_(),
     rhsValue_(rhsValue)
 {
-  allocate();
-
   int weightsOffset = 0;
   for(int i=0; i<numIDs; ++i) {
     snl_fei::RecordCollection* recordCollection = NULL;
@@ -257,14 +256,14 @@ inline snl_fei::Constraint<fei::Record*>::Constraint(int id,
       weightsOffset += fieldSize;
     }
     else {
-      getMasters()->push_back(rec);
-      getMasterIDTypes()->push_back(idTypes[i]);
-      getMasterFieldIDs()->push_back(fieldIDs[i]);
+      getMasters().push_back(rec);
+      getMasterIDTypes().push_back(idTypes[i]);
+      getMasterFieldIDs().push_back(fieldIDs[i]);
 
       if (weights != NULL) {
-	for(unsigned j=0; j<fieldSize; ++j) {
-	  masterWeights_->push_back(weights[weightsOffset++]);
-	}
+        for(unsigned j=0; j<fieldSize; ++j) {
+          masterWeights_.push_back(weights[weightsOffset++]);
+        }
       }
     }
   }
@@ -280,12 +279,13 @@ inline snl_fei::Constraint<RecordType>::Constraint(const Constraint<RecordType>&
     isPenalty_(false),
     eqnNumber_(-1),
     blkEqnNumber_(-1), 
+    slave_(),
     slaveField_(0),
     offsetIntoSlaveField_(0),
-    masters_(NULL),
-    masterIDTypes_(NULL),
-    masterFields_(NULL),
-    masterWeights_(NULL),
+    masters_(),
+    masterIDTypes_(),
+    masterFields_(),
+    masterWeights_(),
     rhsValue_(0.0)
 {
 }
@@ -294,29 +294,6 @@ inline snl_fei::Constraint<RecordType>::Constraint(const Constraint<RecordType>&
 template<class RecordType>
 inline snl_fei::Constraint<RecordType>::~Constraint()
 {
-  delete masters_;
-  delete masterIDTypes_;
-  delete masterFields_;
-  delete masterWeights_;
-}
-
-//----------------------------------------------------------------------------
-template<class RecordType>
-inline int snl_fei::Constraint<RecordType>::allocate()
-{
-  if (masters_ != NULL) delete masters_;
-  masters_ = new std::vector<RecordType>;
-
-  if (masterIDTypes_ != NULL) delete masterIDTypes_;
-  masterIDTypes_ = new std::vector<int>;
-
-  if (masterFields_ != NULL) delete masterFields_;
-  masterFields_ = new std::vector<int>;
-
-  if (masterWeights_ != NULL) delete masterWeights_;
-  masterWeights_ = new std::vector<double>;
-
-  return(0);
 }
 
 //----------------------------------------------------------------------------
@@ -334,25 +311,13 @@ inline bool snl_fei::Constraint<RecordType>::operator!=(const snl_fei::Constrain
     return( true );
   }
 
-  if (masters_ != NULL) {
-    if (rhs.masters_ == NULL) return(true);
-    if (*masters_ != *(rhs.masters_)) return(true);
-  }
+  if (masters_ != rhs.masters_) return(true);
 
-  if (masterIDTypes_ != NULL) {
-    if (rhs.masterIDTypes_ == NULL) return(true);
-    if (*masterIDTypes_ != *(rhs.masterIDTypes_)) return(true);
-  }
+  if (masterIDTypes_ != rhs.masterIDTypes_) return(true);
 
-  if (masterFields_ != NULL) {
-    if (rhs.masterFields_ == NULL) return(true);
-    if (*masterFields_ != *(rhs.masterFields_)) return(true);
-  }
+  if (masterFields_ != rhs.masterFields_) return(true);
 
-  if (masterWeights_ != NULL) {
-    if (rhs.masterWeights_ == NULL) return(true);
-    if (*masterWeights_ != *(rhs.masterWeights_)) return(true);
-  }
+  if (masterWeights_ != rhs.masterWeights_) return(true);
 
   return(false);
 }
@@ -371,22 +336,14 @@ inline bool snl_fei::Constraint<RecordType>::structurallySame(const Constraint<R
     return( false );
   }
 
-  if (masters_ != NULL) {
-    if (rhs.masters_ == NULL) return(false);
-    if (*masters_ != *(rhs.masters_)) return(false);
-  }
+  if (masters_ != rhs.masters_) return(false);
 
-  if (masterIDTypes_ != NULL) {
-    if (rhs.masterIDTypes_ == NULL) return(false);
-    if (*masterIDTypes_ != *(rhs.masterIDTypes_)) return(false);
-  }
+  if (masterIDTypes_ != rhs.masterIDTypes_) return(false);
 
-  if (masterFields_ != NULL) {
-    if (rhs.masterFields_ == NULL) return(false);
-    if (*masterFields_ != *(rhs.masterFields_)) return(false);
-  }
+  if (masterFields_ != rhs.masterFields_) return(false);
 
   return(true);
 }
 
 #endif // _snl_fei_Constraint_hpp_
+

@@ -45,7 +45,7 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableVec& vec)
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::FillableMat& mat)
 {
-  os << "FillableMat numRows: " << mat.getNumRows() << FEI_ENDL;
+  os << "num rows: " << mat.getNumRows() << FEI_ENDL;
   fei::FillableMat::iterator
     iter = mat.begin(), iter_end = mat.end();
 
@@ -79,7 +79,7 @@ FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::CSVec& vec)
 
 FEI_OSTREAM& operator<<(FEI_OSTREAM& os, fei::CSRMat& mat)
 {
-  os << "FillableMat numRows: " << mat.getNumRows() << FEI_ENDL;
+  os << "num rows: " << mat.getNumRows() << FEI_ENDL;
 
   const std::vector<int>& rows = mat.getGraph().rowNumbers;
   const int* rowoffs = &(mat.getGraph().rowOffsets[0]);

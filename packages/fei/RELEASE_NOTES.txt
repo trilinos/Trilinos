@@ -501,7 +501,7 @@ July 7 2005: version 2.14.00
     class member. A non-member temporary maxRowLen is now computed and
     used in sumIntoRow.
 
- Mar 08 2009 version 2.24.00
+ Mar 11 2009 version 2.24.00
   - Removed classes fei::CommCore, fei::CommUtilsBase, snl_fei::CommUtils. These
     are replaced by functions in fei_CommUtils.hpp. This is a simplification
     and cleanup of the communications-code infrastructure.

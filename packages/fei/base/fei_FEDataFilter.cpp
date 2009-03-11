@@ -318,7 +318,7 @@ int FEDataFilter::initLinSysCore()
   while(cr_iter != cr_end) {
     penCRIDs_[counter++] = (*cr_iter).first;
     ConstraintType& cr = *((*cr_iter).second);
-    int nNodes = cr.getMasters()->size();
+    int nNodes = cr.getMasters().size();
 
     int insertPoint = -1;
     int offset = snl_fei::binarySearch(nNodes, constraintBlocks_, insertPoint);
@@ -342,8 +342,8 @@ int FEDataFilter::initLinSysCore()
       continue;
     }
 
-    std::vector<int>* fieldIDsvec = cr.getMasterFieldIDs();
-    int* fieldIDs = &(*fieldIDsvec)[0];
+    std::vector<int>& fieldIDsvec = cr.getMasterFieldIDs();
+    int* fieldIDs = &fieldIDsvec[0];
     for(int k=0; k<nNodes; ++k) {
       int fieldSize = problemStructure_->getFieldSize(fieldIDs[k]);
       packedFieldSizes_.insert(packedFieldSizes_.begin()+nodeOffset+k, fieldSize);
@@ -422,9 +422,9 @@ int FEDataFilter::initLinSysCore()
   int i = 0;
   while(cr_iter != cr_end) {
     ConstraintType& cr = *((*cr_iter).second);
-    std::vector<GlobalID>* nodeIDsvec = cr.getMasters();
-    GlobalID* nodeIDs = &(*nodeIDsvec)[0];
-    int nNodes = cr.getMasters()->size();
+    std::vector<GlobalID>& nodeIDsvec = cr.getMasters();
+    GlobalID* nodeIDs = &nodeIDsvec[0];
+    int nNodes = cr.getMasters().size();
     int index = snl_fei::binarySearch(nNodes, constraintBlocks_);
     if (index < 0) {
       ERReturn(-1);
@@ -1104,7 +1104,7 @@ int FEDataFilter::loadFEDataMultCR(int CRID,
 
   NodeDatabase& nodeDB = problemStructure_->getNodeDatabase();
 
-  double fei_eps = std::numeric_limits<double>::epsilon();
+  double fei_min = std::numeric_limits<double>::min();
 
   int offset = 0;
   for(int i=0; i<numCRNodes; i++) {
@@ -1120,7 +1120,7 @@ int FEDataFilter::loadFEDataMultCR(int CRID,
 
     for(int f=0; f<fieldSize; f++) {
       double weight = CRWeights[offset++];
-      if (std::abs(weight) > fei_eps) {
+      if (std::abs(weight) > fei_min) {
 	nodeNumbers.push_back(node->getNodeNumber());
 	dofOffsets.push_back((fieldEqn+f)-firstEqn);
 	weights.push_back(weight);

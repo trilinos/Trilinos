@@ -407,7 +407,7 @@ class Aztec_LinSysCore: public LinearSystemCore {
    char* debugFileName_;
    FILE* debugFile_;
 
-   std::map<std::string,unsigned> named_solve_counter_;
+   std::map<std::string,unsigned>& named_solve_counter_;
 };
 
 }//namespace fei_trilinos

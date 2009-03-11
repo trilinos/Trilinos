@@ -734,14 +734,13 @@ int SNL_FEI_Structure::initCRMult(int numCRNodes,
   ConstraintType& multCR = *multCRPtr;
 
   multCR.setConstraintID(CRID);
-  CHK_ERR( multCR.allocate() );
 
-  std::vector<GlobalID>* CRNodeArray = multCR.getMasters();
-  std::vector<int>* CRFieldArray = multCR.getMasterFieldIDs();
+  std::vector<GlobalID>& CRNodeArray = multCR.getMasters();
+  std::vector<int>& CRFieldArray = multCR.getMasterFieldIDs();
 
   for(int j = 0; j < numCRNodes; j++) {
-    CRNodeArray->push_back(CRNodes[j]);
-    CRFieldArray->push_back(CRFields[j]);
+    CRNodeArray.push_back(CRNodes[j]);
+    CRFieldArray.push_back(CRFields[j]);
   }
 
   if (debugOutput_) dbgOut() << "#(output) CRID:"<<FEI_ENDL << CRID << FEI_ENDL;
@@ -773,15 +772,13 @@ int SNL_FEI_Structure::initCRPen(int numCRNodes,
   penCR.setConstraintID(CRID);
   penCR.setIsPenalty(true);
 
-  CHK_ERR( penCR.allocate() );
+  std::vector<GlobalID>& CRNodesArray = penCR.getMasters();
 
-  std::vector<GlobalID>* CRNodesArray = penCR.getMasters();
-
-  std::vector<int>* CRFieldArray = penCR.getMasterFieldIDs();
+  std::vector<int>& CRFieldArray = penCR.getMasterFieldIDs();
 
   for(int i = 0; i < numCRNodes; i++) {
-    CRNodesArray->push_back(CRNodes[i]);
-    CRFieldArray->push_back(CRFields[i]);
+    CRNodesArray.push_back(CRNodes[i]);
+    CRFieldArray.push_back(CRFields[i]);
   }
 
   return(FEI_SUCCESS);
@@ -1369,11 +1366,11 @@ int SNL_FEI_Structure::initMultCRStructure()
   while(cr_iter != cr_end) {
     ConstraintType& multCR = *((*cr_iter).second);
 
-    int lenList = multCR.getMasters()->size();
+    int lenList = multCR.getMasters().size();
 
-    std::vector<GlobalID>& CRNode_vec = *(multCR.getMasters());
+    std::vector<GlobalID>& CRNode_vec = multCR.getMasters();
     GlobalID *CRNodePtr = &CRNode_vec[0];
-    std::vector<int>& CRField_vec = *(multCR.getMasterFieldIDs());
+    std::vector<int>& CRField_vec = multCR.getMasterFieldIDs();
     int* CRFieldPtr = &CRField_vec[0];
 
     int crEqn = multCR.getEqnNumber();
@@ -1451,11 +1448,11 @@ int SNL_FEI_Structure::initPenCRStructure()
   while(cr_iter != cr_end) {
     ConstraintType& penCR = *((*cr_iter).second);
 
-    int lenList = penCR.getMasters()->size();
-    std::vector<GlobalID>& CRNode_vec = *(penCR.getMasters());
+    int lenList = penCR.getMasters().size();
+    std::vector<GlobalID>& CRNode_vec = penCR.getMasters();
     GlobalID* CRNodesPtr = &CRNode_vec[0];
 
-    std::vector<int>& CRField_vec = *(penCR.getMasterFieldIDs());
+    std::vector<int>& CRField_vec = penCR.getMasterFieldIDs();
     int* CRFieldPtr = &CRField_vec[0];
 
     // each constraint equation generates a set of nodal energy terms, so
@@ -2976,9 +2973,9 @@ int SNL_FEI_Structure::finalizeActiveNodes()
 
     while(cr_iter != cr_end) {
       ConstraintType& cr = *((*cr_iter).second);
-      std::vector<GlobalID>& nodeID_vec = *(cr.getMasters());
+      std::vector<GlobalID>& nodeID_vec = cr.getMasters();
       GlobalID* nodeIDs = &nodeID_vec[0];
-      int numNodes = cr.getMasters()->size();
+      int numNodes = cr.getMasters().size();
 
       NodeDescriptor* node = NULL;
       for(int k=0; k<numNodes; ++k) {

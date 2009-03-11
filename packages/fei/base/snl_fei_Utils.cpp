@@ -402,7 +402,7 @@ int snl_fei::resolveConflictingCRs(fei::MatrixGraph& matrixGraph,
 
     CHK_ERR( matrixGraph.getConstraintConnectivityIndices(cr, cr_indices) );
 
-    std::vector<double>& weights = *(cr->getMasterWeights());
+    std::vector<double>& weights = cr->getMasterWeights();
     double* weightsPtr = &weights[0];
 
     int len = cr_indices.size();

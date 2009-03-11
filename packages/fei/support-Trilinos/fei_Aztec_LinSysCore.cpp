@@ -54,6 +54,8 @@ namespace fei_trilinos {
 static int azlsc_solveCounter_ = 0;
 static int azlsc_debugFileCounter_ = 0;
 
+static std::map<std::string, unsigned> fei_aztec_named_solve_counter;
+
 //=========CONSTRUCTOR==========================================================
 Aztec_LinSysCore::Aztec_LinSysCore(MPI_Comm comm)
  : comm_(comm),
@@ -117,7 +119,7 @@ Aztec_LinSysCore::Aztec_LinSysCore(MPI_Comm comm)
    debugPath_(NULL),
    debugFileName_(NULL),
    debugFile_(NULL),
-   named_solve_counter_()
+   named_solve_counter_(fei_aztec_named_solve_counter)
 {
    masterProc_ = 0;
    numProcs_ = 1;
@@ -139,7 +141,11 @@ Aztec_LinSysCore::Aztec_LinSysCore(MPI_Comm comm)
    rhsIDs_ = new int[numRHSs_];
    rhsIDs_[0] = 0;
 
-   named_solve_counter_.insert(std::make_pair(name_, 0));
+   std::map<std::string,unsigned>::iterator
+     iter = named_solve_counter_.find(name_);
+   if (iter == named_solve_counter_.end()) {
+     named_solve_counter_.insert(std::make_pair(name_, 0));
+   }
 }
 
 //========DESTRUCTOR============================================================

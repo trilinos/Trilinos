@@ -541,6 +541,7 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
 
   //form tmpMat1_ = Kid_*D
   csrKid = Kid_;
+
   fei::multiply_CSRMat_CSRMat(csrKid, csrD_, tmpMat1_);
 
   //form tmpMat2_ = D^T*Kdi_
@@ -549,6 +550,7 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
 
   //accumulate the above two results into the global system matrix.
   fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat1_);
+
   fei::impl_utils::add_to_matrix(tmpMat1_, true, matrix);
 
   fei::impl_utils::translate_to_reduced_eqns(*this, tmpMat2_);
