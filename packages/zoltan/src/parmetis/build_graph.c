@@ -198,12 +198,24 @@ int Zoltan_Build_Graph(
     max_proc_list_len = 0;
 
     if (graph_type == GLOBAL_GRAPH){
+#ifdef KDDKDD_TOO_MUCH_REALLOCING
+/* This strategy produced too much realloc'ing, shredding the memory and 
+ * causing memory allocation errors.  The alternative probably
+ * does too little, overallocating the temporary array.  Still, I suspect
+ * that ParMETIS will use more memory than this temporary array, so we
+ * can afford to allocate it for now.
+ */
       num_border = 4*sqrt((double) num_obj);
       if (num_border > num_obj) num_border = num_obj;
+#endif
        
       /* Assume that the edges are approx. evenly distributed among the objs. */
       if (num_obj>0){
+#ifdef KDDKDD_TOO_MUCH_REALLOCING
          max_proc_list_len = num_edges * num_border / num_obj;
+#else
+         max_proc_list_len = num_edges;
+#endif
          if (max_proc_list_len < CHUNKSIZE)
             max_proc_list_len = CHUNKSIZE;
       }
