@@ -5,10 +5,6 @@
  *      Author: kurtis
  */
 
-/*
- * TODO
- * -instead of using value, use the setData fucntion to store the value like it should be, within the QTreeWidgetItem
- */
 #ifndef BOOLTREEITEM_HPP_
 #define BOOLTREEITEM_HPP_
 #include "parametertreeitem.hpp"
@@ -37,7 +33,6 @@ public:
 	void readInput(QXmlStreamReader &xmlReader);
 private:
 	QString name, dialogLabel;
-	//bool value;
 };
 
 

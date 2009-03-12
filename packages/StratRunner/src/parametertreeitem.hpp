@@ -10,7 +10,6 @@
 #include <QTreeWidgetItem>
 #include <QXmlStreamWriter>
 #include <QXmlStreamReader>
-#include <QMenu>
 class QTreeWidget;
 class SolverTree;
 

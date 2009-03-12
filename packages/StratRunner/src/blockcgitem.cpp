@@ -1,13 +1,4 @@
 /*
- * TODO
- * -figure out what the heck is up with the outputstream dealio
- *  	-It looks like the outputstream dealio has to do with where all the output from the solver goes (gee, who would have guessed that)
- *  	Maybe I just need to include the option to output the solver results to a file since that's the only other place I can think of to which a person would want to write output.
- * -can Timer label just be anything the user wants?
- *  	-I think it can be. I'm just going to add a new type of item called the FreeStringTreeItem to accomidate this.
- */
-
-/*
  * blockcgitem.cpp
  *
  *  Created on: Dec 10, 2008
@@ -45,8 +36,6 @@ void BlockCGItem::addParameters(){
 	QStringList orthognalizationList = QStringList() << "DGKS" << "ICGS" << "IMGS";
 	addChild(new StringTreeItem("Orthogonalization", "Orthogonalization:", orthognalizationList, this));
 
-//	QStringList timerList = QStringList() << "Belos";
-//	addChild(new StringTreeItem("Timer Label", "Label:", timerList, this));
 	addChild(new FreeStringTreeItem("Timer Label", "Label:", this, "Belos"));
 }
 

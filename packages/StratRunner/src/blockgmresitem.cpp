@@ -1,13 +1,4 @@
 /*
- * TODO
- * -figure out what the heck is up with the outputstream dealio
- *  	-see blockcg for the proposed solution for this
- * -can Timer label just be anything the user wants?
- *  	-see blockcg for the proposed solution for this
- * -what are the options for explicit and implicit residual scailing?
- */
-
-/*
  * blockgmresitem.cpp
  *
  *  Created on: Dec 10, 2008

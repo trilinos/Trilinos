@@ -4,12 +4,11 @@
  */
 #include "solvertree.hpp"
 #include "stratroot.hpp"
-#include "inttreeitem.hpp"
-#include "doubletreeitem.hpp"
 #include <QTreeWidgetItem>
 #include <QStringList>
 #include <QInputDialog>
 #include <QFileDialog>
+#include <QMenu>
 
 SolverTree::SolverTree(QWidget *parent, QString saveFileName)
 	:QTreeWidget(parent)
@@ -91,9 +90,10 @@ void SolverTree::launchDialog(QAction *option){
 	}
 }
 
-void SolverTree::writeOutput(QString fileName){
+bool SolverTree::writeOutput(QString fileName){
 	QFile *file = new QFile(fileName);
-	file->open(QIODevice::WriteOnly);
+	if(!file->open(QIODevice::WriteOnly))
+		return false;
 	QXmlStreamWriter xmlWriter(file);
 	xmlWriter.setAutoFormatting(true);
 	xmlWriter.writeStartDocument();
@@ -103,6 +103,7 @@ void SolverTree::writeOutput(QString fileName){
 	delete file;
 	saved = true;
 	saveFileName = fileName;
+	return true;
 }
 
 void SolverTree::readInput(QString fileName){

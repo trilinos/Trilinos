@@ -28,7 +28,7 @@ public:
 	 *
 	 * @param fileName The name of the file to which the SolverTree should write the XML output.
 	 */
-	void writeOutput(QString fileName);
+	bool writeOutput(QString fileName);
 	/**
 	 * Reads an xml file that specifies a stratimikos solver and sets all the parameters accordingly
 	 *

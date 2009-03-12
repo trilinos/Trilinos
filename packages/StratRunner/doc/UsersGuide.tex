@@ -11,7 +11,15 @@ and applying those solvers to Matricies. The hope is that users who are unfamili
 to write their own C++ code will be able to access some of the power inside of Trilinos. It is worth noting that StratRunner is a Graphical User
 Interface. While an attempt was made to minimize the compromising of controll on the users part, some simplifications have been made. I feel that even
 power users of the Stratimikos package will find this GUI usefull.
-
+\subsection{Installation Notes}
+In order to compile StratRunner you must have Qt installed. You can either download Qt directly from the website (http://www.qtsoftware.com) or if you are on Linux, you can use your package manager.
+If you use your package manager, may sure you download the Qt developement package (usually something like qt4-devel) and that it is Qt version 4.3 or higher. If you download Qt directly and put it some where other than the default
+	installation directory you will have to compile trilinos using these cmake arguments:
+	\begin{itemize}
+	\item -DQT\_INCLUDE\_DIRS:STRING=directory containing your qt include files
+	\item -DQT\_LIBRARY\_DIRS:STRING=directory containing your qt libraries
+	\item -DQT\_BINARY\_DIR:STRING=directory containing your qt binaries
+	\end{itemize}	
 \section{Creating a New Solver from Scratch}
 
 When you first start StratRunner you are prompted with a choice, you can either load an existing solver or start a new one. By clicking the new solver

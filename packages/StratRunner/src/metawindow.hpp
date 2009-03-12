@@ -8,8 +8,6 @@
 #ifndef METAWINDOW_HPP_
 #define METAWINDOW_HPP_
 #include <QMainWindow>
-class Preconditioner;
-class LinearSolver;
 class QAction;
 class QMenu;
 class SolverTree;

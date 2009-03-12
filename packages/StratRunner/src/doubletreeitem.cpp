@@ -22,7 +22,6 @@ DoubleTreeItem::DoubleTreeItem(QString name, QString dialogLabel, ParameterTreeI
 	else{
 		this->validator = validator;
 	}
-//	this->value = value;
 	setText(0,name);
 	setText(1,QString::number(value));
 	setText(2,QString("Double"));
@@ -51,7 +50,6 @@ QString DoubleTreeItem::getOptionLabel(QString optionName){
 QStringList DoubleTreeItem::getOptionOptions(QString optionName){
 	QStringList optionOptions;
 	if(optionName == "Change Value"){
-//		optionOptions << QString::number(value) <<  QString::number(validator->bottom()) << QString::number(validator->top());
 		optionOptions << text(1) <<  QString::number(validator->bottom()) << QString::number(validator->top());
 	}
 	return optionOptions;
@@ -64,7 +62,6 @@ void DoubleTreeItem::changeParameter(QString option, QString value){
 }
 
 void DoubleTreeItem::changeValue(double value){
-	//this->value = value;
 	setText(1,QString::number(value));
 }
 /*

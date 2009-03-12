@@ -9,7 +9,6 @@
 #include "booltreeitem.hpp"
 #include "amesossettingsitem.hpp"
 #include "verboseobjectitem.hpp"
-#include "amesossettingsitem.hpp"
 
 AmesosItem::AmesosItem(ParameterTreeItem *parent)
 	:ParameterListTreeItem(parent, AmesosItem::Type)

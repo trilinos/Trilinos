@@ -208,7 +208,6 @@ void MetaWindow::newRunWindow(){
 		QMessageBox::warning(this, QString(tr("Unsaved Changes!")), QString(tr("You have made changes to the solver that you have not yet saved. Please save them before continuing")), QMessageBox::Save, QMessageBox::Save);
 		saveSolveAs();
 	}
-	//this if statement here enforces that the user actually did the save and didn't just exit out of the save dialog without saving
 	if(theSolverTreeWidget->isSaved()){
 		RunWindow *theRunWindow = new RunWindow(theSolverTreeWidget->getSaveFileName());
 		theRunWindow->show();
@@ -228,10 +227,11 @@ void MetaWindow::saveSolve(){
 bool MetaWindow::saveSolveAs(){
 	QString fileName = QFileDialog::getSaveFileName(this, tr("Save To..."), currentSaveDir);
 	if(fileName != ""){
-		theSolverTreeWidget->writeOutput(fileName);
-		currentSaveDir = fileName.section("/",0,-2);
-		addRecentDocument(fileName);		
-		return true;
+		if(theSolverTreeWidget->writeOutput(fileName)){
+			currentSaveDir = fileName.section("/",0,-2);
+			addRecentDocument(fileName);		
+			return true;
+		}
 	}
 	return false;
 }
@@ -278,7 +278,7 @@ void MetaWindow::load(){
 }
 
 void MetaWindow::showAbout(){
-	QMessageBox::about(this, "About StratRunner", "StratRunner was developed by Kurtis Nusbaum. It is licensed under the LGPL.\nContact: klnusbaum@gmail.com");
+	QMessageBox::about(this, "About StratRunner", "StratRunner was developed by Kurtis Nusbaum. For detailed information on how to use StratRunner please consult the UsersGuide.pdf.\nLicense:LGPL.\nContact: klnusbaum@gmail.com");
 }
 
 void MetaWindow::closeEvent(QCloseEvent *event){

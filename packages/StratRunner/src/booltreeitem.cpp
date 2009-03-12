@@ -63,7 +63,6 @@ void BoolTreeItem::changeParameter(QString option, QString value){
 }
 
 void BoolTreeItem::changeValue(bool value){
-	//this->value = value;
 	setText(1,value ? "True" : "False");
 }
 void BoolTreeItem::writeOutput(QXmlStreamWriter &xmlWriter){

@@ -5,7 +5,6 @@
  *      Author: kurtis
  */
 #include "stringtreeitem.hpp"
-//#include "parameterlisttreeitem.hpp"
 
 StringTreeItem::StringTreeItem(QString name, QString dialogLabel, QStringList validChoices, ParameterTreeItem *parent)
 	:ParameterTreeItem(parent, StringTreeItem::Type)

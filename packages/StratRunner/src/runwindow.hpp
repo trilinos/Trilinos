@@ -8,6 +8,8 @@
 #ifndef RUNWINDOW_HPP_
 #define RUNWINDOW_HPP_
 #include <QWidget>
+#include <QXmlStreamReader>
+#include <QXmlStreamWriter>
 class QString;
 class QTextEdit;
 class QLineEdit;
@@ -26,6 +28,7 @@ public:
 	 * @param xmlFileName Name of the xml file associated with the current solver tree.
 	 */
 	RunWindow(QString xmlFileName);
+	~RunWindow();
 private slots:
 	/**
 	 * Opens a matrix file to be solved.
@@ -45,7 +48,9 @@ private:
 	QLineEdit *matrixFilePath;
 	QPushButton *openMatrixFileButton, *runButton, *saveOutputButton;
 	QGridLayout *theLayout;
-	QString xmlFileName;
+	QString xmlFileName, lastSaveDir;
+	void loadLastSettings();
+	void saveSettings();
 };
 
 

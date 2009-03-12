@@ -1,12 +1,4 @@
 /*
- * TODO
- * -figure out what the heck is up with the outputstream dealio
- *  	-see blockcg for solution
- * -can Timer label just be anything the user wants?
- *  	-see blockcg for solution
- */
-
-/*
  * psuedoblockgmresitem.cpp
  *
  *  Created on: Dec 10, 2008
@@ -45,10 +37,11 @@ void PsuedoBlockGMRESItem::addParameters(){
 	QStringList orthognalizationList = QStringList() << "DGKS" << "ICGS" << "IMGS";
 	addChild(new StringTreeItem("Orthogonalization", "Orthogonalization:", orthognalizationList, this));
 
-	//QStringList explicitScailingList = QStringList() << "
-	//QStringList implicitScailingList = QStringList() <<	
-	//QStringList timerList = QStringList() << "Belos";
-	//addChild(new StringTreeItem("Timer Label", "Label:", timerList, this));
+	QStringList implicitScailingList = QStringList() << "Norm of Preconditioned Initial Residual" << "Norm of Initial Residual" << "Norm of RHS" << "None";
+	addChild(new StringTreeItem("Implicit Residual Scaling", "Scaling:", implicitScailingList, this));
+	QStringList explicitScailingList = QStringList() << "Norm of Initial Residual" << "Norm of Preconditioned Initial Residual" << "Norm of RHS" << "None";
+	addChild(new StringTreeItem("Explicit Residual Scaling", "Scaling:", explicitScailingList, this));
+
 	addChild(new FreeStringTreeItem("Timer Label", "Label:", this, "Belos"));
 }
 

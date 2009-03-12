@@ -4,10 +4,6 @@
  *  Created on: Dec 10, 2008
  *      Author: kurtis
  */
-/*
- * TODO
- * -Figure out the options for sparskit: type
- */
 #include "ifpacksettingsitem.hpp"
 #include "booltreeitem.hpp"
 #include "doubletreeitem.hpp"
@@ -41,7 +37,6 @@ void IfpackSettingsItem::addParameters(){
 	addChild(new IntTreeItem("fact: sparskit: mbloc", "value:", this, -1));
 	addChild(new DoubleTreeItem("fact: sparskit: permtol", "value:", this, 0.1));
 	addChild(new DoubleTreeItem("fact: sparskit: tol", "value:", this));
-	//QStringList sparskitTypeList = QStringList() << "ILUT";
 	addChild(new IntTreeItem("partitioner: local parts", "value:", this, 1));
 	addChild(new IntTreeItem("partitioner: overlap", "value:", this));
 	addChild(new IntTreeItem("partitioner: print level", "value:", this));

@@ -1,5 +1,5 @@
 /*
- * stringedittreeitem.hpp
+ * filenametreeitem.hpp
  *
  *  Created on: Dec 19, 2008
  *      Author: kurtis

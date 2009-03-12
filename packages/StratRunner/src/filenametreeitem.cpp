@@ -11,9 +11,7 @@ FileNameTreeItem::FileNameTreeItem(QString name, QString dialogLabel, ParameterT
 {
 	this->name = name;
 	this->dialogLabel = dialogLabel;
-//	this->value = "";
 	setText(0,name);
-//	setText(1,value);
 	setText(1,"none");
 	setText(2,QString("String"));
 }
@@ -37,7 +35,6 @@ QString FileNameTreeItem::getOptionLabel(QString optionName){
 QStringList FileNameTreeItem::getOptionOptions(QString optionName){
 	QStringList optionOptions;
 	if(optionName == "Change Value"){
-		//optionOptions.append(value);
 		optionOptions.append(text(1));
 	}
 	return optionOptions;
@@ -50,7 +47,6 @@ void FileNameTreeItem::changeParameter(QString option, QString value){
 }
 
 void FileNameTreeItem::changeValue(QString value){
-	//this->value = value;
 	setText(1,value);
 }
 
