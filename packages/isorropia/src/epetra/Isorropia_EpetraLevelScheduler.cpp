@@ -42,7 +42,7 @@ namespace Epetra {
 
 
 LevelScheduler::LevelScheduler(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-		 bool compute_now) : Operator(input_graph)
+		 bool compute_now) : Operator(input_graph, 0)
 {
   if (compute_now)
     schedule(true);
@@ -55,13 +55,14 @@ LevelScheduler::schedule(bool force_scheduling)
     return;
 
   const Epetra_CrsGraph &graph = *input_graph_;
-  properties_.clear();
 
   int nrows = graph.NumMyRows();
   int maxNonZeros = graph.MaxNumIndices();
+
+  properties_.clear();
+  properties_.assign(nrows, 0);
   
   if ((nrows < 2) || (maxNonZeros < 1)){
-    properties_.assign(nrows,1);
     computeNumberOfProperties();
     return;
   }
@@ -78,17 +79,16 @@ LevelScheduler::schedule(bool force_scheduling)
       int depth = -1;
   
       for (int j=0; j < numIDs; j++){
-        if (properties_[IDs[j]] > depth)
-          depth = properties_[IDs[j]];
+        int col = IDs[j];
+        if ((col < i) && (properties_[col] > depth))
+          depth = properties_[col];
       }
       depth++;
   
-      properties_.push_back(depth);
+      properties_[i] = depth;
     }
   }
   else if (graph.UpperTriangular()){
-
-    properties_.assign(nrows,0);
 
     for (int i=nrows-1; i >= 0 ; i--){
   
@@ -99,8 +99,9 @@ LevelScheduler::schedule(bool force_scheduling)
       int depth = -1;
   
       for (int j=0; j < numIDs; j++){
-        if (properties_[IDs[j]] > depth)
-          depth = properties_[IDs[j]];
+        int col = IDs[j];
+        if ((col > i) && (properties_[col] > depth))
+          depth = properties_[col];
       }
       depth++;
   

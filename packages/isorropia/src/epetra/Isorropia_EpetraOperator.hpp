@@ -68,7 +68,7 @@ public:
         is to be computed. 
     */
 
-  Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph);
+  Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int base);
 
   /** Constructor that accepts an Epetra_CrsGraph object
 
@@ -84,7 +84,7 @@ public:
   */
 
   Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-              const Teuchos::ParameterList& paramlist);
+              const Teuchos::ParameterList& paramlist, int base);
 
   /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber
 
@@ -103,7 +103,7 @@ public:
   */
   Operator (Teuchos::RCP<const Epetra_CrsGraph> input_graph,
               Teuchos::RCP<CostDescriber> costs,
-              const Teuchos::ParameterList& paramlist);
+              const Teuchos::ParameterList& paramlist, int base);
 
   /**
      Constructor that accepts an Epetra_RowMatrix object.
@@ -119,7 +119,7 @@ public:
   parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
   */
   Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-	   const Teuchos::ParameterList& paramlist);
+	   const Teuchos::ParameterList& paramlist, int base);
 
   /**
      Constructor that accepts an Epetra_RowMatrix object and a
@@ -140,7 +140,7 @@ public:
   */
   Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	   Teuchos::RCP<CostDescriber> costs,
-	   const Teuchos::ParameterList& paramlist);
+	   const Teuchos::ParameterList& paramlist, int base);
 
   /**
      Constructor that accepts an Epetra_MultiVector object and a
@@ -157,7 +157,7 @@ public:
   parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
   */
   Operator(Teuchos::RCP<const Epetra_MultiVector> coords,
-	   const Teuchos::ParameterList& paramlist);
+	   const Teuchos::ParameterList& paramlist, int base);
 
   /**
      Constructor that accepts an Epetra_MultiVector object and a
@@ -178,7 +178,7 @@ public:
   */
   Operator(Teuchos::RCP<const Epetra_MultiVector> coords,
            Teuchos::RCP<const Epetra_MultiVector> weights,
-	   const Teuchos::ParameterList& paramlist);
+	   const Teuchos::ParameterList& paramlist, int base);
 
   /** Destructor */
   virtual ~Operator();
@@ -249,6 +249,8 @@ protected:
   int global_num_hg_edge_weights_;
 
   Teuchos::RCP<Library> lib_;
+
+  int base_;
 
   void computeNumberOfProperties();
 };//class Operator

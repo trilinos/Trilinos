@@ -84,7 +84,7 @@ namespace Epetra {
 Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (input_graph, paramlist)
+  Operator (input_graph, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -120,7 +120,7 @@ Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_g
 			 Teuchos::RefCountPtr<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (input_graph, costs, paramlist)
+  Operator (input_graph, costs, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -154,7 +154,7 @@ Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_CrsGraph> input_g
 Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (input_matrix, paramlist)
+  Operator (input_matrix, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -192,7 +192,7 @@ Partitioner2D::Partitioner2D(Teuchos::RefCountPtr<const Epetra_RowMatrix> input_
 			 Teuchos::RefCountPtr<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (input_matrix, costs, paramlist)
+  Operator (input_matrix, costs, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);

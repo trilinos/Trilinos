@@ -63,13 +63,14 @@ namespace Isorropia {
 namespace Epetra {
 
 Operator::
-Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph)
+Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int base)
   : input_graph_(input_graph),
     input_matrix_(0),
     input_coords_(0),
     costs_(0),
     weights_(0),
     lib_(0),
+    base_(base),
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
@@ -77,13 +78,14 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph)
 
 Operator::
 Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-	 const Teuchos::ParameterList& paramlist)
+	 const Teuchos::ParameterList& paramlist, int base)
   : input_graph_(input_graph),
     input_matrix_(0),
     input_coords_(0),
     costs_(0),
     weights_(0),
     lib_(0),
+    base_(base),
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
@@ -93,13 +95,14 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 Operator::
 Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	 Teuchos::RCP<CostDescriber> costs,
-	 const Teuchos::ParameterList& paramlist)
+	 const Teuchos::ParameterList& paramlist, int base)
   : input_graph_(input_graph),
     costs_(costs),
     input_matrix_(0),
     input_coords_(0),
     weights_(0),
     lib_(0),
+    base_(base),
     operation_already_computed_(false)
 {
 
@@ -109,13 +112,14 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 
 Operator::
 Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-	 const Teuchos::ParameterList& paramlist)
+	 const Teuchos::ParameterList& paramlist, int base)
   : input_matrix_(input_matrix),
     input_graph_(0),
     input_coords_(0),
     costs_(0),
     weights_(0),
     lib_(0),
+    base_(base),
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
@@ -125,13 +129,14 @@ Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 Operator::
 Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	 Teuchos::RCP<CostDescriber> costs,
-	 const Teuchos::ParameterList& paramlist)
+	 const Teuchos::ParameterList& paramlist, int base)
   : input_matrix_(input_matrix),
     costs_(costs),
     input_graph_(0),
     input_coords_(0),
     weights_(0),
     lib_(0),
+    base_(base),
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
@@ -140,13 +145,14 @@ Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 
 Operator::
 Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords,
-	 const Teuchos::ParameterList& paramlist)
+	 const Teuchos::ParameterList& paramlist, int base)
   : input_coords_(input_coords),
     weights_(0),
     input_graph_(0),
     input_matrix_(0),
     costs_(0),
     lib_(0),
+    base_(base),
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_coords->Map()),false);
@@ -156,13 +162,14 @@ Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords,
 Operator::
 Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords,
          Teuchos::RCP<const Epetra_MultiVector> weights,
-	 const Teuchos::ParameterList& paramlist)
+	 const Teuchos::ParameterList& paramlist, int base)
   : input_coords_(input_coords),
     weights_(weights),
     input_graph_(0),
     input_matrix_(0),
     costs_(0),
     lib_(0),
+    base_(base),
     operation_already_computed_(false)
 {
   input_map_ = Teuchos::rcp(&(input_coords->Map()),false);
@@ -232,7 +239,10 @@ Operator::computeNumberOfProperties()
   }
 
   input_comm.MaxAll(&max, &numberOfProperties_, 1);
-  localNumberOfProperties_ = max;
+
+  numberOfProperties_ = numberOfProperties_ - base_ + 1;
+
+  localNumberOfProperties_ = max - base_ + 1;
 }
 
 void Operator::stringToUpper(std::string &s, int &changed)

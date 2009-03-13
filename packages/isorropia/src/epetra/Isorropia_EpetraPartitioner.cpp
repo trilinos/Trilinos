@@ -66,7 +66,7 @@ namespace Epetra {
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (input_graph, paramlist)
+  Operator (input_graph, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -76,7 +76,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 Teuchos::RCP<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (input_graph, costs, paramlist)
+  Operator (input_graph, costs, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -85,7 +85,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (input_matrix, paramlist)
+  Operator (input_matrix, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -95,7 +95,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 Teuchos::RCP<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (input_matrix, costs, paramlist)
+  Operator (input_matrix, costs, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -104,7 +104,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (coords, paramlist)
+  Operator (coords, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -114,7 +114,7 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
                          Teuchos::RCP<const Epetra_MultiVector> weights,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (coords, weights, paramlist)
+  Operator (coords, weights, paramlist, 0)
 {
   if (compute_partitioning_now)
     partition(true);

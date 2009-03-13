@@ -65,7 +65,7 @@ namespace Epetra {
 Colorer::Colorer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
-  Operator(input_graph, paramlist) {
+  Operator(input_graph, paramlist, 1){
 #ifdef HAVE_ISORROPIA_ZOLTAN
   lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph, Library::graph_input_));
 #else /* HAVE_ISORROPIA_ZOLTAN */
@@ -79,7 +79,7 @@ Colorer::Colorer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 Colorer::Colorer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
-  Operator (input_matrix, paramlist) {
+  Operator (input_matrix, paramlist, 1) { 
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
   lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix, Library::graph_input_));
