@@ -32,7 +32,7 @@ UTIL_LIB=$(top_builddir)/utils/libisorropia_test_utils.a
 
 EXEEXT = .exe
 
-SUBDIRS=geometric
+SUBDIRS=geometric levelSchedule
 
 if BUILD_EXAMPLES
 PROGS = matrix_1 part_redist vert_weights graphedge_weights hgedge_weights
