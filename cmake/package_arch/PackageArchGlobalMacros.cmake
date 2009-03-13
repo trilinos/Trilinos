@@ -9,6 +9,7 @@ INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
 INCLUDE(CMakeBuildTypesList)
 INCLUDE(PackageArchSetupMPI)
+INCLUDE(SetCacheOnOffEmpty)
 
 
 #
@@ -133,10 +134,10 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   SET(${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES OFF CACHE BOOL
     "Recursively enable all optional packages for set of enabled packages." )
   
-  SET( ${PROJECT_NAME}_ENABLE_TESTS "" CACHE STRING
+  SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_TESTS ""
     "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
   
-  SET(${PROJECT_NAME}_ENABLE_EXAMPLES "" CACHE STRING
+  SET_CACHE_ON_OFF_EMPTY(${PROJECT_NAME}_ENABLE_EXAMPLES ""
     "Enable examples in all packages  (set to ON, OFF, or leave empty).  If left empty, then this will be set to ON if ${PROJECT_NAME}_ENABLE_TESTS=ON" )
   
   IF (${PROJECT_NAME}_ENABLE_TESTS AND ${PROJECT_NAME}_ENABLE_EXAMPLES STREQUAL "")
@@ -417,19 +418,19 @@ MACRO(PACKAGE_ARCH_INSERT_STANDARD_PACKAGE_OPTIONS PACKAGE_NAME PACKAGE_ENABLE)
     "Enable the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave"
     " empty to allow for other logic to decide."
     )
-  SET( ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME} "${PACKAGE_ENABLE}" CACHE STRING ${DOCSTR})
+  SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME} "${PACKAGE_ENABLE}" ${DOCSTR} )
 
   MULTILINE_SET(DOCSTR
     "Build tests for the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty ''"
      " to allow for other logic to decide."
      )
-  SET( ${PACKAGE_NAME}_ENABLE_TESTS "" CACHE STRING ${DOCSTR})
+  SET_CACHE_ON_OFF_EMPTY( ${PACKAGE_NAME}_ENABLE_TESTS "" ${DOCSTR} )
 
   MULTILINE_SET(DOCSTR
     "Build examples for the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty ''"
      " to allow for other logic to decide."
      )
-  SET( ${PACKAGE_NAME}_ENABLE_EXAMPLES "" CACHE STRING ${DOCSTR})
+  SET_CACHE_ON_OFF_EMPTY( ${PACKAGE_NAME}_ENABLE_EXAMPLES "" ${DOCSTR} )
 
 ENDMACRO()
 
@@ -479,7 +480,7 @@ MACRO(PACKAGE_ARCH_PRIVATE_ADD_OPTIONAL_PACKAGE_ENABLE PACKAGE_NAME OPTIONAL_DEP
     " to allow for other logic to decide."
     )
 
-  SET( ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE} "" CACHE STRING
+  SET_CACHE_ON_OFF_EMPTY( ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE} ""
     ${DOCSTR} )
 
 ENDMACRO()
@@ -493,7 +494,7 @@ MACRO(PACKAGE_ARCH_PRIVATE_ADD_OPTIONAL_TPL_ENABLE PACKAGE_NAME OPTIONAL_DEP_TPL
     " to allow for other logic to decide."
     )
 
-  SET( ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL} "" CACHE STRING
+  SET_CACHE_ON_OFF_EMPTY( ${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_TPL} ""
     ${DOCSTR} )
 
 ENDMACRO()
