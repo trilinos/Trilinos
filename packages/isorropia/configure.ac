@@ -302,6 +302,7 @@ AC_CONFIG_FILES([
     src/Makefile
     example/Makefile
     example/geometric/Makefile
+    example/levelSchedule/Makefile
     test/Makefile
     test/rebalance_1d_default/Makefile
     test/zoltan/Makefile
