@@ -36,8 +36,9 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
 #include "BelosGCRODRSolMgr.hpp"
-
-#include "EpetraExt_readEpetraLinearSystem.h"
+#include "createEpetraProblem.hpp"
+#include "Ifpack_IlukGraph.h"
+#include "Ifpack_CrsRiluk.h"
 #include "Epetra_Map.h"
 #ifdef EPETRA_MPI
   #include "Epetra_MpiComm.h"
@@ -45,9 +46,6 @@
   #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_CrsMatrix.h"
-
-#include "Ifpack.h"
-
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 
@@ -109,66 +107,55 @@ int main(int argc, char *argv[]) {
   //
   // *************Get the problem*********************
   //
-  RCP<Epetra_Map> Map;
   RCP<Epetra_CrsMatrix> A;
   RCP<Epetra_MultiVector> B, X;
-  RCP<Epetra_Vector> vecB, vecX;
-  EpetraExt::readEpetraLinearSystem(filename, Comm, &A, &Map, &vecX, &vecB);
-  A->OptimizeStorage();
-  proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
-
-  // Check to see if the number of right-hand sides is the same as requested.
-  if (numrhs>1) {
-    X = rcp( new Epetra_MultiVector( *Map, numrhs ) );
-    B = rcp( new Epetra_MultiVector( *Map, numrhs ) );
-    X->Seed();
-    X->Random();
-    OPT::Apply( *A, *X, *B );
-    X->PutScalar( 0.0 );
-  }
-  else {
-    X = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecX);
-    B = Teuchos::rcp_implicit_cast<Epetra_MultiVector>(vecB);
-  }
+  int return_val =Belos::createEpetraProblem(filename,NULL,&A,NULL,NULL,&MyPID);
+  const Epetra_Map &Map = A->RowMap();
+  if(return_val != 0) return return_val;
+  proc_verbose = verbose && (MyPID==0); /* Only print on zero processor */
+  X = rcp( new Epetra_MultiVector( Map, numrhs ) );
+  B = rcp( new Epetra_MultiVector( Map, numrhs ) );
+  X->Seed();
+  X->Random();
+  OPT::Apply( *A, *X, *B );
+  X->PutScalar( 0.0 );
   //
   // ************Construct preconditioner*************
   //
-  ParameterList ifpackList;
-
-  // allocates an IFPACK factory. No data is associated
-  // to this object (only method Create()).
-  Ifpack Factory;
-
-  // create the preconditioner. For valid PrecType values,
-  // please check the documentation
-  std::string PrecType = "ILU"; // incomplete LU
-  int OverlapLevel = 1; // must be >= 0. If Comm.NumProc() == 1,
-                        // it is ignored.
-
-  RCP<Ifpack_Preconditioner> Prec = Teuchos::rcp( Factory.Create(PrecType, &*A, OverlapLevel) );
-  assert(Prec != Teuchos::null);
-
-  // specify parameters for ILU
-  ifpackList.set("fact: level-of-fill", 1);
-  // the combine mode is on the following:
-  // "Add", "Zero", "Insert", "InsertAdd", "Average", "AbsMax"
-  // Their meaning is as defined in file Epetra_CombineMode.h
-  ifpackList.set("schwarz: combine mode", "Add");
-  // sets the parameters
-  IFPACK_CHK_ERR(Prec->SetParameters(ifpackList));
-
-  // initialize the preconditioner. At this point the matrix must
-  // have been FillComplete()'d, but actual values are ignored.
-  IFPACK_CHK_ERR(Prec->Initialize());
-
-  // Builds the preconditioners, by looking for the values of
-  // the matrix.
-  IFPACK_CHK_ERR(Prec->Compute());
+  if (proc_verbose) std::cout << std::endl << std::endl;
+  if (proc_verbose) std::cout << "Constructing ILU preconditioner" << std::endl;
+  int Lfill = 2;
+  if (proc_verbose) std::cout << "Using Lfill = " << Lfill << std::endl;
+  int Overlap = 2;
+  if (proc_verbose) std::cout << "Using Level Overlap = " << Overlap << std::endl;
+  double Athresh = 0.0;
+  if (proc_verbose) std::cout << "Using Absolute Threshold Value of " << Athresh << std::endl;
+  double Rthresh = 1.0;
+  if (proc_verbose) std::cout << "Using Relative Threshold Value of " << Rthresh << std::endl;
+  //
+  Teuchos::RCP<Ifpack_IlukGraph> ilukGraph;
+  Teuchos::RCP<Ifpack_CrsRiluk> ilukFactors;
+  //
+  ilukGraph = Teuchos::rcp(new Ifpack_IlukGraph(A->Graph(), Lfill, Overlap));
+  int info = ilukGraph->ConstructFilledGraph();
+  assert( info == 0 );
+  ilukFactors = Teuchos::rcp(new Ifpack_CrsRiluk(*ilukGraph));
+  int initerr = ilukFactors->InitValues(*A);
+  if (initerr != 0) std::cout << "InitValues error = " << initerr;
+  info = ilukFactors->Factor();
+  assert( info == 0 );
+  bool transA = false;
+  double Cond_Est;
+  ilukFactors->Condest(transA, Cond_Est);
+  if (proc_verbose) {
+    std::cout << "Condition number estimate for this preconditoner = " << Cond_Est << std::endl;
+    std::cout << std::endl;
+  }
 
   // Create the Belos preconditioned operator from the Ifpack preconditioner.
   // NOTE:  This is necessary because Belos expects an operator to apply the
   //        preconditioner with Apply() NOT ApplyInverse().
-  RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( Prec ) );
+  RCP<Belos::EpetraPrecOp> belosPrec = rcp( new Belos::EpetraPrecOp( ilukFactors ) );
 
   //
   // ********Other information used by block solver***********
@@ -244,7 +231,7 @@ int main(int argc, char *argv[]) {
   bool badRes = false;
   std::vector<double> actual_resids( numrhs );
   std::vector<double> rhs_norm( numrhs );
-  Epetra_MultiVector resid(*Map, numrhs);
+  Epetra_MultiVector resid(Map, numrhs);
   OPT::Apply( *A, *X, resid );
   MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
   MVT::MvNorm( resid, actual_resids );

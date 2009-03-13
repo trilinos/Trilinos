@@ -16,12 +16,10 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 EXEEXT = .exe
 
 if BUILD_TRIUTILS
-if BUILD_EPETRAEXT
 if BUILD_IFPACK
 BELOS_GCRODR_IFPACK_EX = prec_gcrodr_hb 
 endif
 BELOS_GCRODR_NOPREC_EX = gcrodr_hb Dummy 
-endif
 endif
 
 noinst_PROGRAMS = $(BELOS_GCRODR_NOPREC_EX) $(BELOS_GCRODR_IFPACK_EX)
@@ -31,18 +29,16 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 
 Dummy_SOURCES = Dummy
 
-gcrodr_hb_SOURCES = $(srcdir)/test_gcrodr_hb.cpp 
+gcrodr_hb_SOURCES = $(srcdir)/test_gcrodr_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
-prec_gcrodr_hb_SOURCES = $(srcdir)/test_prec_gcrodr_hb.cpp 
+prec_gcrodr_hb_SOURCES = $(srcdir)/test_prec_gcrodr_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
 gcrodr_hb_DEPENDENCIES = \
-			$(top_builddir)/../epetraext/src/libepetraext.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
 prec_gcrodr_hb_DEPENDENCIES = \
 			$(top_builddir)/../ifpack/src/libifpack.a \
-			$(top_builddir)/../epetraext/src/libepetraext.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
@@ -57,3 +53,5 @@ prec_gcrodr_hb_LDADD = $(EXPORT_LIBS)
 # Dummy for new export makefiles
 LIBS = 
 
+EXTRA_DIST = \
+        $(srcdir)/createEpetraProblem.hpp
