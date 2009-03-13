@@ -95,7 +95,7 @@ namespace fei {
        */
     static int update(LinearSystemCore* vec,
 		      double a,
-		      LinearSystemCore* x,
+		      const LinearSystemCore* x,
 		      double b)
     { return(-1); }
 

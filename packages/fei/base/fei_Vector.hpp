@@ -119,7 +119,7 @@ namespace fei {
     /** Update 'this' = b*'this' + a*x
      */
     virtual int update(double a,
-		       fei::Vector* x,
+		       const fei::Vector* x,
 		       double b) = 0;
 
     /** Scatter data from the underlying non-overlapping data decomposition to

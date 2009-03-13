@@ -92,7 +92,6 @@ create_Epetra_BlockMap(const fei::SharedPtr<fei::VectorSpace>& vecspace)
 
 Epetra_CrsGraph
 create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
-                       const fei::SharedPtr<fei::Reducer>& reducer,
 		       bool blockEntries, bool orderRowsWithLocalColsFirst)
 {
   fei::SharedPtr<fei::SparseRowGraph> localSRGraph =
@@ -198,8 +197,7 @@ create_from_Epetra_Matrix(fei::SharedPtr<fei::MatrixGraph> matrixGraph,
   fei::SharedPtr<fei::Matrix> feimat;
   try {
     Epetra_CrsGraph egraph =
-      Trilinos_Helpers::create_Epetra_CrsGraph(matrixGraph, reducer,
-                                               blockEntryMatrix,
+      Trilinos_Helpers::create_Epetra_CrsGraph(matrixGraph, blockEntryMatrix,
                                                orderRowsWithLocalColsFirst);
 
     if (blockEntryMatrix) {

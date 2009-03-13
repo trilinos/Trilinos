@@ -44,7 +44,7 @@ namespace fei {
     /** Update 'this' = b*'this' + a*x
      */
     int update(double a,
-	       fei::Vector* x,
+	       const fei::Vector* x,
 	       double b);
 
     /** Use data in the underlying non-overlapping decomposition to update

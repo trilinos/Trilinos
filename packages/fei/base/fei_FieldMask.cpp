@@ -8,6 +8,10 @@
 
 #include "fei_macros.hpp"
 
+#include <string>
+#include <exception>
+#include <stdexcept>
+
 #include "snl_fei_ArrayUtils.hpp"
 #include "fei_FieldMask.hpp"
 

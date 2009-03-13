@@ -73,7 +73,7 @@ namespace fei {
     /** Update 'this' = b*'this' + a*x
      */
     int update(double a,
-	       fei::Vector* x,
+	       const fei::Vector* x,
 	       double b);
 
     /** Use data in the underlying non-overlapping decomposition to update
@@ -172,10 +172,8 @@ namespace fei {
     /** Get the library-specific underlying vector object that this
 	snl_fei::Vector is filtering data in and out of.
     */
-    T* getUnderlyingVector()
-      {
-	return( vector_ );
-      }
+    T* getUnderlyingVector() { return( vector_ ); }
+    const T* getUnderlyingVector() const { return( vector_ ); }
 
     int copyOut(int numValues,
 		const int* indices,
@@ -279,12 +277,12 @@ int fei::Vector_Impl<T>::putScalar(double scalar)
 //----------------------------------------------------------------------------
 template<typename T>
 int fei::Vector_Impl<T>::update(double a,
-			       fei::Vector* x,
+			       const fei::Vector* x,
 			       double b)
 {
-  fei::Vector_Impl<T>* sx = dynamic_cast<fei::Vector_Impl<T>* >(x);
+  const fei::Vector_Impl<T>* sx = dynamic_cast<const fei::Vector_Impl<T>* >(x);
   if (sx != 0) {
-    T* tx = sx->getUnderlyingVector();
+    const T* tx = sx->getUnderlyingVector();
     return( fei::VectorTraits<T>::update(vector_, a, tx, b) );
   }
   else {

@@ -44,7 +44,6 @@ namespace Trilinos_Helpers {
 
   Epetra_CrsGraph
     create_Epetra_CrsGraph(const fei::SharedPtr<fei::MatrixGraph>& matgraph,
-                           const fei::SharedPtr<fei::Reducer>& reducer,
                            bool blockEntries,
                            bool orderRowsWithLocalColsFirst=false);
 

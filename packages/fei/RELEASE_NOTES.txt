@@ -528,3 +528,9 @@ July 7 2005: version 2.14.00
   - Fixed bug in fei_Solver_AztecOO.cpp where using ML multiple times led to
     a null pointer read in Aztec.
 
+ ??? ?? ???? minor version 2.24.01
+  - Fixed a couple issues of const-ness in fei::Vector_Impl and
+    fei::Matrix_Impl.
+  - Removed an unused argument (reducer) from
+    fei::Trilinos_Helpers::create_Epetra_CrsGraph.
+

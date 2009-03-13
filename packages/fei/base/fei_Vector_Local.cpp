@@ -43,7 +43,7 @@ Vector_Local::~Vector_Local()
 
 int
 Vector_Local::update(double a,
-               fei::Vector* x,
+               const fei::Vector* x,
                double b)
 {
   FEI_CERR << "Vector_Local::update NOT IMPLEMENTED."<<FEI_ENDL;

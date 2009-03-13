@@ -83,6 +83,7 @@ namespace fei {
      only the locally-owned portion of the matrix, not including any data
     corresponding to shared-but-not-owned nodes, etc. */
     fei::SharedPtr<T> getMatrix() { return( matrix_ ); }
+    const fei::SharedPtr<T> getMatrix() const { return( matrix_ ); }
 
     fei::SharedPtr<fei::MatrixGraph> getMatrixGraph()
       {return( Matrix_core::getMatrixGraph() ); }

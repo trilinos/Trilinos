@@ -84,7 +84,7 @@ namespace fei {
 
     static int update(Epetra_MultiVector* vec,
                       double a,
-                      Epetra_MultiVector* x,
+                      const Epetra_MultiVector* x,
                       double b)
     {
       return( vec->Update(a, *x, b) );

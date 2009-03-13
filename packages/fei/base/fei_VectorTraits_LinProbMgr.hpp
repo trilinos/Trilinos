@@ -71,7 +71,7 @@ namespace fei {
        */
     static int update(fei::LinearProblemManager* vec,
 		      double a,
-		      fei::LinearProblemManager* x,
+		      const fei::LinearProblemManager* x,
 		      double b)
     { return(-1); }
 

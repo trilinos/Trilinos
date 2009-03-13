@@ -65,7 +65,7 @@ namespace fei {
 
     static int update(FillableVec* vec,
                       double a,
-                      FillableVec* x,
+                      const FillableVec* x,
                       double b)
     { return(-1); }
 

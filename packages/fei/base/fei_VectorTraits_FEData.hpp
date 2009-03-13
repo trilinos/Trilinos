@@ -57,7 +57,7 @@ namespace fei {
     /** vec = b*vec + a*x */
     static int update(FiniteElementData* vec,
 		      double a,
-		      FiniteElementData* x,
+		      const FiniteElementData* x,
 		      double b)
     { return(-1); }
 

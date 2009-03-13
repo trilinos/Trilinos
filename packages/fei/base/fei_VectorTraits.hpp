@@ -97,7 +97,7 @@ namespace fei {
        */
       static int update(T* vec,
 			double a,
-			T* x,
+			const T* x,
 			double b);
 
       /** Perform global communication or whatever operations may be

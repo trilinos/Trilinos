@@ -69,7 +69,7 @@ int VectorReducer::putScalar(double scalar)
 }
 
 //----------------------------------------------------------------------------
-int VectorReducer::update(double a, fei::Vector* x, double b)
+int VectorReducer::update(double a, const fei::Vector* x, double b)
 {
   return(target_->update(a, x, b));
 }
