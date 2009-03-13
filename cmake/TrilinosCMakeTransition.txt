@@ -263,11 +263,12 @@ Package: AztecOO
 
 Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
-Status: Basic libraries and several tests and examples
+Status: Completed.
 
-Final Certification Date: [???]
+Final Certification Date: 03/13/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests run under auto tools version are now being
+  built and produce the same answer
 
 -------------------------------------------------------------------------------
 
