@@ -4,12 +4,11 @@ INCLUDE(PackageAddTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
-IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
+IF (${PACKAGE_NAME}_ENABLE_Triutils)
     
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     gcrodr_hb
-    SOURCES test_gcrodr_hb.cpp 
+    SOURCES test_gcrodr_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
     XHOST gabriel.sandia.gov
     ARGS
@@ -28,7 +27,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
 
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       prec_gcrodr_hb
-      SOURCES test_prec_gcrodr_hb.cpp
+      SOURCES test_prec_gcrodr_hb.cpp createEpetraProblem.cpp
       COMM serial mpi
       XHOST gabriel.sandia.gov
       ARGS
