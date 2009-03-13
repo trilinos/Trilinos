@@ -127,9 +127,6 @@
 /* Define to 1 if you have the <numeric> header file. */
 #undef HAVE_NUMERIC
 
-/* define if the compiler supports numeric_limits<> */
-#undef HAVE_NUMERIC_LIMITS
-
 /* Define to 1 if you have the `pow' function. */
 #undef HAVE_POW
 
