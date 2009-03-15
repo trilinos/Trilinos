@@ -478,14 +478,16 @@ Final Certification Evidence: [???]
 
 Package: Moertel (Orphaned Package)
 
-Package Transition Lead: None needed for now.
+Package Transition Lead: Jim Willenbring (jmwille@sandia.gov)
 
 Status: Basic libraries should be done.  This package never had any tests
 (i.e. moertel/tests does not even exist and therefore moertel/tests/definition
 does not even exist).  No other package in Trilinos depends on this package.
 Since this package does not contain any tests it is questionable if this
-package should even be released.  Whether we decide to transition Moertel or
-not, it should not hold up a release.
+package should even be released.  We found out that this package has users at
+INL, so this package needs to be transitioned.  Though an ideal test suite
+will not result, we probably should look at turning some of Moertel's examples
+into tests.
 
 Final Certification Date: [???]
 
