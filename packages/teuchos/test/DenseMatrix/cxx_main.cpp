@@ -28,6 +28,7 @@
 
 #include "Teuchos_SerialDenseMatrix.hpp"
 #include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_SerialDenseHelpers.hpp"
 #include "Teuchos_Version.hpp"
 
 #define OTYPE int
@@ -481,6 +482,18 @@ int main(int argc, char* argv[])
   DVector Con3TestCopyV( Con2Test1V );
   if(verbose) std::cout <<"constructor 3 -- copy constructor ";
   if ( Con3TestCopyV != Con2Test1V ) {
+        if (verbose) std::cout << "unsuccessful."<<std::endl;
+        numberFailedTests++;
+  } else {
+        if (verbose) std::cout << "successful."<<std::endl;
+  }
+
+  // non-member helper function (construct vector view of matrix column)
+
+  OTYPE col = Teuchos::OrdinalTraits<OTYPE>::one();
+  DVector ColViewTestV = Teuchos::getColView<OTYPE,STYPE>( AAA, col );
+  if (verbose) std::cout <<"non-method helper function -- construct vector view of second column of matrix ";
+  if ( ColViewTestV.normInf() != 1.0 || ColViewTestV.normOne() != 3.0 ) {
         if (verbose) std::cout << "unsuccessful."<<std::endl;
         numberFailedTests++;
   } else {

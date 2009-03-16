@@ -30,7 +30,7 @@
 #define _TEUCHOS_SERIALDENSEHELPERS_HPP_
 
 /*! \file Teuchos_SerialDenseHelpers.hpp
-  \brief Non-member helper functions on the templated serial, dense matrix classes.
+  \brief Non-member helper functions on the templated serial, dense matrix/vector classes.
 */
 
 #include "Teuchos_ScalarTraits.hpp"
@@ -128,6 +128,21 @@ void symMatTripleProduct( ETransp transw, const ScalarType alpha, const SerialSy
   }
 
   return;
+}
+	
+/*! \relates SerialDenseMatrix 
+  \brief A templated, non-member, helper function for returning a column view of a SerialDenseMatrix as a SerialDenseVector.
+  
+  \param A - [in] SerialDenseMatrix
+  \param col - [in] Integer indicating which column of A to return
+  
+  \note The syntax for calling this function is:  <tt>Teuchos::SerialDenseVector<int,double> col_j = Teuchos::getColView<int,double>( A, j )</tt>
+*/
+template<typename OrdinalType, typename ScalarType>
+SerialDenseVector<OrdinalType,ScalarType>
+getColView( SerialDenseMatrix<OrdinalType, ScalarType>& A, const OrdinalType col )
+{
+  return SerialDenseVector<OrdinalType, ScalarType>(View, A[col], A.numRows());
 }
 
 } // namespace Teuchos
