@@ -265,8 +265,13 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getObjectName) {
 // 5a.  If a parameter list is provided, then it will use that parameter list to set parameters on the object
 // 6.  It will throw an exception with a nice message if the factory creates a null RCP
 //     Under what conditions could this happen?
+// 7.  [03/05/09 tscoffe: found bug]  create() uses objectValidator_, so
+// getValidParameters must be valid at the beginning to avoid a null
+// dereference of the objectValidator_ pointer in the case that we ask for an
+// object by name and the validParamList_ has not been set up yet.
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, create) {
   const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo", "Foo Type");
+  TEST_EQUALITY_CONST( ob->create("None"), null ); // 7.
   TEST_EQUALITY_CONST( ob->create(), null ); // 1.
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
   ob->setObjectFactory(abstractFactoryStd<Foo,FooB>(),"Foo B");
@@ -508,7 +513,6 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, usedParameters) {
     ob->unsetParameterList();
   }
 }  
-
 
 } // namespace Teuchos
 

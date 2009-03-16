@@ -295,6 +295,9 @@ ObjectBuilder<ObjectType>::create(
   const std::string &objectName
   ) const
 {
+  if (is_null(validParamList_)) { // We need the objectValidator_
+    this->getValidParameters();
+  }
   const std::string
     sname = ( objectName.length()
              ? objectName
