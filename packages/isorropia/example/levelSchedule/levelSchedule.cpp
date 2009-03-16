@@ -30,14 +30,12 @@
 // matrix L, and computes a partitioning of the rows of L into level sets.
 // In solving Lx = y for x, the rows in level set k can not be computed
 // until the rows in level set k-1 have completed. 
-// using multiple cores that share memory.
 //
 // Two optional arguments:
 //     --dim=100  --sparsity=.1
 //
 //  dim - the number of rows in L, default is 50
 //  sparsity - the proportion of non-zeros, default is 1/10
-//
 //
 //--------------------------------------------------------------------
 
@@ -154,8 +152,7 @@ map<int, int> dummyPermutation;
                    dummyEpetraVector, dummyEpetraVector);
   }
 
-  // Create a problem to be solved.  We know in advance what the solution
-  // is, so we can check later on.  (Write rhs and lhs.)
+  // Create a problem to be solved. 
 
   make_problem();
 
@@ -347,8 +344,7 @@ void compute_level_scheduling()
 //----------------------------------------------------------------------
 // Create a problem.
 //
-// Create a simple lhs, calculate rhs.  Then we'll try to solve for rhs
-// and compare with original lhs.
+// Create a simple lhs, calculate rhs.  We'll solve for a lhs later.
 //----------------------------------------------------------------------
 void make_problem()
 {
