@@ -53,3 +53,4 @@ cmake \
 $EXTRA_ARGS \
 ../../Trilinos
 
+#-D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
