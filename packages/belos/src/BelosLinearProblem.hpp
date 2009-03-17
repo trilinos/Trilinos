@@ -255,6 +255,17 @@ namespace Belos {
     */
     int getLSNumber() const { return(lsNum_); }
 
+    /*! \brief Return the timers for this object.
+     *
+     * The timers are ordered as follows:
+     *   - time spent applying operator
+     *   - time spent applying preconditioner
+     */
+    Teuchos::Array<Teuchos::RCP<Teuchos::Time> > getTimers() const {
+      return tuple(timerOp_,timerPrec_);
+    }
+
+
     //@}
     
     //! @name State methods
