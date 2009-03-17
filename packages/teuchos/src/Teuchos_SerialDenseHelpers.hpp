@@ -39,6 +39,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"	
 #include "Teuchos_SerialSymDenseMatrix.hpp"	
+#include "Teuchos_SerialDenseVector.hpp"	
 
 namespace Teuchos {
 
