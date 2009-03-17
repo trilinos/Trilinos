@@ -428,7 +428,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
   {
     stride_ = numRows_;
     values_ = new ScalarType[stride_*numCols_];
-    copyMat(values_in, stride_in, numRows_, numCols_, values_, stride_, 0, 0, false);
+    copyMat(values_in, stride_in, numRows_, numCols_, values_, stride_, 0, 0);
     valuesCopied_ = true;
   }
 }
@@ -442,7 +442,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(const SerialDenseM
     numCols_ = Source.numCols_;
     stride_ = numRows_;
     values_ = new ScalarType[stride_*numCols_];
-    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0, false);
+    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0);
   } 
   else if ( trans == Teuchos::CONJ_TRANS && ScalarTraits<ScalarType>::isComplex ) 
   {	  
@@ -483,7 +483,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::SerialDenseMatrix(
   {
     stride_ = numRows_in;
     values_ = new ScalarType[stride_ * numCols_in];
-    copyMat(Source.values_, Source.stride_, numRows_in, numCols_in, values_, stride_, startRow, startCol, false);
+    copyMat(Source.values_, Source.stride_, numRows_in, numCols_in, values_, stride_, startRow, startCol);
     valuesCopied_ = true;
   }
   else // CV == View
@@ -548,7 +548,7 @@ int SerialDenseMatrix<OrdinalType, ScalarType>::reshape(
   if(values_ != 0)
   {
     copyMat(values_, stride_, numRows_tmp, numCols_tmp, values_tmp,
-      numRows_in, 0, 0, false); // Copy principal submatrix of A to new A
+      numRows_in, 0, 0); // Copy principal submatrix of A to new A
   }
   deleteArrays(); // Get rid of anything that might be already allocated
   numRows_ = numRows_in;
@@ -646,7 +646,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>::operator=(
         }
       }
     }
-    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0, false);
+    copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0);
   } 
   return(*this);
 }
@@ -659,7 +659,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>& SerialDenseMatrix<OrdinalType, Scala
   {
     TEUCHOS_CHK_REF(*this); // Return *this without altering it.
   }
-  copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0, 1.0);
+  copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0, ScalarTraits<ScalarType>::one());
   return(*this);
 }
 
@@ -671,7 +671,7 @@ SerialDenseMatrix<OrdinalType, ScalarType>& SerialDenseMatrix<OrdinalType, Scala
   {
     TEUCHOS_CHK_REF(*this); // Return *this without altering it.
   }
-  copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0, -1.0);
+  copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0, -ScalarTraits<ScalarType>::one());
   return(*this);
 }
 
@@ -687,7 +687,7 @@ SerialDenseMatrix<OrdinalType,ScalarType>& SerialDenseMatrix<OrdinalType, Scalar
   {
     TEUCHOS_CHK_REF(*this); // Return *this without altering it.
   }
-  copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0 );
+  copyMat(Source.values_, Source.stride_, numRows_, numCols_, values_, stride_, 0, 0);
   return(*this);
 }
 
