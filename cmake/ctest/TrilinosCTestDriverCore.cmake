@@ -348,7 +348,8 @@ MACRO(TRILINOS_CTEST_DRIVER)
   
     # Submit configure results and the notes to the dashboard 
     IF (CTEST_DO_SUBMIT)
-      CTEST_SUBMIT( PARTS configure notes )
+      MESSAGE("\nSubmitting update, configure, and notes ...")
+      CTEST_SUBMIT( PARTS update configure notes )
     ENDIF()
   
     #
