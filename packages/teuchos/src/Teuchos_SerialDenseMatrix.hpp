@@ -74,6 +74,11 @@ class SerialDenseMatrix : public CompObject, public Object, public BLAS<OrdinalT
 {
 public:
 
+  //! Typedef for ordinal type
+  typedef OrdinalType ordinalType;
+  //! Typedef for scalar type
+  typedef ScalarType scalarType;
+
   //! @name Constructor/Destructor methods.
   //@{ 
 

@@ -108,6 +108,11 @@ class SerialSymDenseMatrix : public CompObject, public Object, public BLAS<Ordin
 {
  public:
 
+  //! Typedef for ordinal type
+  typedef OrdinalType ordinalType;
+  //! Typedef for scalar type
+  typedef ScalarType scalarType;
+
   //! @name Constructor/Destructor Methods
   //@{ 
   //! Default constructor; defines a zero size object.
