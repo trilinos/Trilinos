@@ -24,7 +24,7 @@
 /*                    Denis Ridzal      (dridzal@sandia.gov).             */
 /*------------------------------------------------------------------------*/
 
-#define HAVE_SHARDS_DEBUG
+//#define HAVE_SHARDS_DEBUG
 
 #include <stdexcept>
 #include <sstream>

@@ -222,6 +222,18 @@ public:
       return getTopology(subcell_dim,subcell_ord)->key ;
     }
 
+
+        
+  /** \brief  Name of a subcell of the given dimension and ordinal. 
+   *  \param  subcell_dim    [in]  - spatial dimension of the subcell
+   *  \param  subcell_ord    [in]  - subcell ordinal
+   */
+  const char * getName(const unsigned subcell_dim,   
+                       const unsigned subcell_ord) const
+    {
+      return getTopology(subcell_dim,subcell_ord) -> name;
+    }
+        
         
   /** \brief  Node count of a subcell of the given dimension and ordinal. 
    *  \param  subcell_dim    [in]  - spatial dimension of the subcell
