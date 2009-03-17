@@ -16,48 +16,42 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 EXEEXT = .exe
 
 if BUILD_TRIUTILS
-if BUILD_EPETRAEXT
 if BUILD_IFPACK
-BELOS_GCRODR_IFPACK_EX = GCRODRPrecEpetraExFile 
+BELOS_GCRODR_IFPACK_EX = prec_gcrodr_hb 
 endif
-BELOS_GCRODR_NOPREC_EX = GCRODREpetraExFile Dummy 
-endif
+BELOS_GCRODR_NOPREC_EX = gcrodr_hb Dummy 
 endif
 
 noinst_PROGRAMS = $(BELOS_GCRODR_NOPREC_EX) $(BELOS_GCRODR_IFPACK_EX)
 
 Dummy$(EXEEXT): $(srcdir)/Dummy
-	if [ $(srcdir) != '.' ]; then cp  $(srcdir)/sherman5.hb sherman5.hb; fi
-	cp  $(srcdir)/../BlockGmres/orsirr1.hb orsirr1.hb
-	cp  $(srcdir)/../BlockGmres/fidap036.hb fidap036.hb
+	cp $(top_srcdir)/example/GCRODR/sherman5.hb sherman5.hb
 
 Dummy_SOURCES = Dummy
 
-GCRODREpetraExFile_SOURCES = $(srcdir)/GCRODREpetraExFile.cpp 
+gcrodr_hb_SOURCES = $(srcdir)/test_gcrodr_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
-GCRODRPrecEpetraExFile_SOURCES = $(srcdir)/GCRODRPrecEpetraExFile.cpp 
+prec_gcrodr_hb_SOURCES = $(srcdir)/test_prec_gcrodr_hb.cpp $(srcdir)/createEpetraProblem.cpp
 
-GCRODREpetraExFile_DEPENDENCIES = \
-			$(top_builddir)/../epetraext/src/libepetraext.a \
+gcrodr_hb_DEPENDENCIES = \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-GCRODRPrecEpetraExFile_DEPENDENCIES = \
+prec_gcrodr_hb_DEPENDENCIES = \
 			$(top_builddir)/../ifpack/src/libifpack.a \
-			$(top_builddir)/../epetraext/src/libepetraext.a \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
 
-GCRODREpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+gcrodr_hb_CXXFLAGS = -I$(top_srcdir)/src 
 
-GCRODRPrecEpetraExFile_CXXFLAGS = -I$(top_srcdir)/src 
+prec_gcrodr_hb_CXXFLAGS = -I$(top_srcdir)/src 
 
-GCRODREpetraExFile_LDADD = $(EXPORT_LIBS)
+gcrodr_hb_LDADD = $(EXPORT_LIBS)
 
-GCRODRPrecEpetraExFile_LDADD = $(EXPORT_LIBS)
+prec_gcrodr_hb_LDADD = $(EXPORT_LIBS)
 
 # Dummy for new export makefiles
 LIBS = 
 
 EXTRA_DIST = \
-        $(srcdir)/sherman5.hb
+        $(srcdir)/createEpetraProblem.hpp
