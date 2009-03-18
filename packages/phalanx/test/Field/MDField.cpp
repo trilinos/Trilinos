@@ -201,6 +201,15 @@ int main(int argc, char *argv[])
       cout << "passed!" << endl;
 
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      // rank()
+      cout << "Testing rank() method...";
+      TEST_FOR_EXCEPTION(a.rank() != 2, std::logic_error,
+			 "Rank in a is wrong!");
+      TEST_FOR_EXCEPTION(b.rank() != 3, std::logic_error,
+			 "Rank in b is wrong!");
+      cout << "passed!" << endl;
+      
+      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // dimension()
       cout << "Testing dimension() method...";
       TEST_FOR_EXCEPTION(b.dimension(0) != num_cells, std::logic_error,
@@ -330,9 +339,10 @@ int main(int argc, char *argv[])
       // ostream
       cout << "Testing operator<<()...";
       ostringstream output;
-      output << a << endl;
+      output << a;
+      TEST_FOR_EXCEPTION(output.str() != "MDField<Cell,Node>(100,4): Tag: density, double, DataLayout: MDA(cell)<Node>(4)", std::logic_error, "String match failed!"); 
       cout << "passed!" << endl;
-      cout << output.str() << endl; 
+      cout << output.str() << endl;
 
     }
 

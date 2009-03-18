@@ -254,6 +254,22 @@ template<typename DataT, PHX::ArrayOrder Order,
 inline
 typename PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type 
 PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+rank() const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data.rank();
+}
+
+//**********************************************************************
+template<typename DataT, PHX::ArrayOrder Order,
+	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
+	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
+inline
+typename PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type 
+PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 dimension(size_type ord) const
 { 
 #ifdef PHX_DEBUG

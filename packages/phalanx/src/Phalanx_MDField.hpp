@@ -89,6 +89,8 @@ namespace PHX {
     
     DataT& operator[](size_type index);
 
+    size_type rank() const;
+
     size_type dimension(size_type ord) const;
 
     void dimensions(std::vector<size_type>& dims);
