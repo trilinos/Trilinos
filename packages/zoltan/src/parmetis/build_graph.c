@@ -541,6 +541,11 @@ int Zoltan_Build_Graph(
   /* Successful finish */
   ierr = ZOLTAN_OK; 
 
+/*   ierr = Zoltan_Symmetrize_Graph(zz, graph_type, check_graph, num_obj, */
+/* 				 global_ids, local_ids, obj_wgt_dim, edge_wgt_dim, */
+/* 				 vtxdist, xadj, adjncy, ewgts, adjproc); */
+
+
 End:
   /* Free all local arrays */
   ZOLTAN_FREE(&sendbuf);
