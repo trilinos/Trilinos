@@ -270,11 +270,10 @@ MACRO(TRILINOS_CTEST_DRIVER)
   # loop over all Trilinos packages
   #
   
-  MESSAGE("\nBegin incremental building and testing of Trilinos pacakges ...\n")
+  MESSAGE("\nBegin incremental building and testing of Trilinos packages ...\n")
   
   SET(Trilinos_LAST_WORKING_PACKAGE)
   SET(Trilinos_FAILED_PACKAGES)
-  SET(FIRST_SUBMIT TRUE)
   
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
   
@@ -452,8 +451,11 @@ MACRO(TRILINOS_CTEST_DRIVER)
       ENDIF()
   
     ENDIF()
-  
-    SET(FIRST_SUBMIT FALSE)
+
+    IF (CTEST_DO_SUBMIT)
+      MESSAGE("\nSubmit the update file that will trigger the notification email!")
+      CTEST_SUBMIT( PARTS update )
+    ENDIF()
 
   ENDFOREACH(PACKAGE)
   
@@ -461,6 +463,6 @@ MACRO(TRILINOS_CTEST_DRIVER)
     MESSAGE("\nFinal set of failed packages: '${Trilinos_FAILED_PACKAGES}'")
   ENDIF()
   
-  MESSAGE("\nDone with the incremental building and testing of Trilinos pacakges!\n")
+  MESSAGE("\nDone with the incremental building and testing of Trilinos packages!\n")
 
 ENDMACRO()
