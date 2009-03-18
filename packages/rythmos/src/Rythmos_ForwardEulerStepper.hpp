@@ -30,6 +30,7 @@
 #define Rythmos_FORWARDEULER_STEPPER_H
 
 #include "Rythmos_StepperBase.hpp"
+#include "Rythmos_StepperHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorBase.hpp"
@@ -351,7 +352,8 @@ ForwardEulerStepper<Scalar>::getValidParameters() const
 template<class Scalar>
 void ForwardEulerStepper<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
 {
-  TEST_FOR_EXCEPT(model == Teuchos::null)
+  TEST_FOR_EXCEPT( is_null(model) );
+  assertValidModel( *this, *model );
   model_ = model;
 }
 

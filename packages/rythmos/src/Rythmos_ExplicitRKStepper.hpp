@@ -210,6 +210,9 @@ void ExplicitRKStepper<Scalar>::setRKButcherTableau(RKButcherTableau<Scalar> rkb
   validateERKButcherTableau(rkbt);
   int numStages_old = erkButcherTableau_.numStages();
   int numStages_new = rkbt.numStages();
+  TEST_FOR_EXCEPTION( numStages_new == 0, std::logic_error,
+      "Error!  The Runge-Kutta Butcher tableau has no stages!"
+      );
   int numNewStages = numStages_new - numStages_old;
   if ( numNewStages > 0 ) {
     k_vector_.reserve(numStages_new);
@@ -258,6 +261,9 @@ template<class Scalar>
 Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
+  TEST_FOR_EXCEPTION( erkButcherTableau_.numStages() == 0, std::logic_error,
+      "Error!  The Runge-Kutta Butcher Tableau has no stages!"
+      );
   if ((flag == STEP_TYPE_VARIABLE) || (dt == ST::zero())) {
     return(Scalar(-ST::one()));
   }
@@ -486,8 +492,9 @@ ExplicitRKStepper<Scalar>::getValidParameters() const
 template<class Scalar>
 void ExplicitRKStepper<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
 {
-  TEST_FOR_EXCEPT(model == Teuchos::null);
+  TEST_FOR_EXCEPT( is_null(model) );
   TEST_FOR_EXCEPT( !Teuchos::is_null(model_) ); // For now you can only call this once.
+  assertValidModel( *this, *model );
   model_ = model;
 }
 

@@ -68,6 +68,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, emptyCreate ) {
       );
 }
 
+
+
 TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, emptyInitialize ) {
   RCP<Thyra::ModelEvaluator<double> > daeModel;
   RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory;
@@ -656,6 +658,26 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, create ) {
   TEST_EQUALITY_CONST( Teuchos::is_null(irkStepper), false );
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, invalidRKBT ) {
+  RCP<ImplicitRKStepper<double> > stepper = implicitRKStepper<double>();
+  RKButcherTableau<double> rkbt;
+  TEST_THROW( stepper->setRKButcherTableau(rkbt), std::logic_error ); // empty RKBT
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, assertValidModel ) {
+  {
+    // implicit model, OK
+    RCP<SinCosModel> model = sinCosModel(true);
+    RCP<ImplicitRKStepper<double> > stepper = implicitRKStepper<double>();
+    TEST_NOTHROW( stepper->setModel(model) );
+  }
+  {
+    // explicit model, throw
+    RCP<SinCosModel> model = sinCosModel(false);
+    RCP<ImplicitRKStepper<double> > stepper = implicitRKStepper<double>();
+    TEST_THROW( stepper->setModel(model), std::logic_error );
+  }
+}
 
 TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, takeStep ) {
   // Create the model

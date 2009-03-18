@@ -29,6 +29,7 @@
 #ifndef Rythmos_IMPLICITBDF_STEPPER_H
 #define Rythmos_IMPLICITBDF_STEPPER_H
 
+#include "Rythmos_StepperHelpers.hpp"
 #include "Rythmos_ImplicitBDFStepperDecl.hpp"
 #include "Rythmos_ImplicitBDFStepperStepControl.hpp"
 
@@ -153,6 +154,12 @@ ImplicitBDFStepper<Scalar>::getSolver() const
 
 
 template<class Scalar>
+bool ImplicitBDFStepper<Scalar>::isImplicit() const
+{
+  return true;
+}
+
+template<class Scalar>
 bool ImplicitBDFStepper<Scalar>::supportsCloning() const
 {
   return true;
@@ -201,8 +208,9 @@ void ImplicitBDFStepper<Scalar>::setModel(
   )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  TEST_FOR_EXCEPT(model == Teuchos::null)
-    model_= model;
+  TEST_FOR_EXCEPT( is_null(model) );
+  assertValidModel( *this, *model );
+  model_ = model;
 }
 
 

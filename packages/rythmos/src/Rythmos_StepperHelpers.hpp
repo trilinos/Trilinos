@@ -28,16 +28,22 @@ void assertValidModel(
   const MEB::InArgs<Scalar> inArgs = model.createInArgs();
   const MEB::OutArgs<Scalar> outArgs = model.createOutArgs();
 
-  TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_t));
+  //TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_t));
   TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_x));
   TEUCHOS_ASSERT(outArgs.supports(MEB::OUT_ARG_f));
   
-  if (stepper.isImplicit()) {
-    TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_x_dot));
-    TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_alpha));
-    TEUCHOS_ASSERT(inArgs.supports(MEB::IN_ARG_beta));
-    TEUCHOS_ASSERT(outArgs.supports(MEB::OUT_ARG_W));
-  }
+  if (stepper.isImplicit()) { // implicit stepper
+    TEUCHOS_ASSERT( inArgs.supports(MEB::IN_ARG_x_dot) );
+    TEUCHOS_ASSERT( inArgs.supports(MEB::IN_ARG_alpha) );
+    TEUCHOS_ASSERT( inArgs.supports(MEB::IN_ARG_beta) );
+    TEUCHOS_ASSERT( outArgs.supports(MEB::OUT_ARG_W) );
+  } 
+  //else { // explicit stepper
+  //  TEUCHOS_ASSERT( !inArgs.supports(MEB::IN_ARG_x_dot) );
+  //  TEUCHOS_ASSERT( !inArgs.supports(MEB::IN_ARG_alpha) );
+  //  TEUCHOS_ASSERT( !inArgs.supports(MEB::IN_ARG_beta) );
+  //  TEUCHOS_ASSERT( !outArgs.supports(MEB::OUT_ARG_W) );
+  //}
 
 }
 

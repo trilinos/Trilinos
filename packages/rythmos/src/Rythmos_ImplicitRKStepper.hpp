@@ -31,6 +31,7 @@
 
 #include "Rythmos_Types.hpp"
 #include "Rythmos_StepperBase.hpp"
+#include "Rythmos_StepperHelpers.hpp"
 #include "Rythmos_DataStore.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_SingleResidualModelEvaluator.hpp"
@@ -123,6 +124,9 @@ public:
 
   /** \name Overridden from StepperBase */
   //@{
+
+  /** \brief Returns true. */
+  bool isImplicit() const;
  
   /** \brief Returns true. */
   bool supportsCloning() const;
@@ -370,6 +374,12 @@ ImplicitRKStepper<Scalar>::getSolver() const
  
 
 template<class Scalar>
+bool ImplicitRKStepper<Scalar>::isImplicit() const
+{
+  return true;
+}
+
+template<class Scalar>
 bool ImplicitRKStepper<Scalar>::supportsCloning() const
 {
   return true;
@@ -391,6 +401,7 @@ void ImplicitRKStepper<Scalar>::setModel(
   )
 {
   TEST_FOR_EXCEPT(is_null(model));
+  assertValidModel( *this, *model );
   model_ = model;
 }
 

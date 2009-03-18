@@ -131,6 +131,9 @@ public:
   //@{
  
   /** \brief Returns true. */
+  bool isImplicit() const;
+
+  /** \brief Returns true. */
   bool supportsCloning() const;
 
   /** \brief Creates copies of all internal data (including the parameter

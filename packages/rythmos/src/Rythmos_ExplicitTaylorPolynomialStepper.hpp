@@ -30,6 +30,7 @@
 #define RYTHMOS_EXPLICIT_TAYLOR_POLYNOMIAL_STEPPER_H
 
 #include "Rythmos_StepperBase.hpp"
+#include "Rythmos_StepperHelpers.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -343,7 +344,8 @@ namespace Rythmos {
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model
     )
   {
-    TEST_FOR_EXCEPT(model == Teuchos::null)
+    TEST_FOR_EXCEPT( is_null(model) );
+    assertValidModel( *this, *model );
     
     model_ = model;
     x_vector_ = model_->getNominalValues().get_x()->clone_v();

@@ -53,6 +53,21 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, create ) {
   TEST_EQUALITY_CONST( is_null(stepper), false );
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, assertValidModel ) {
+  {
+    // explicit model, OK
+    RCP<SinCosModel> model = sinCosModel(false);
+    RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>();
+    TEST_NOTHROW( stepper->setModel(model) );
+  }
+//  {
+    // implicit model, throw
+//    RCP<SinCosModel> model = sinCosModel(true);
+//    RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>();
+//    TEST_THROW( stepper->setModel(model), std::logic_error );
+//  }
+}
+
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, setgetRKButcherTableau ) {
   RCP<SinCosModel> model = sinCosModel(false);
   RKButcherTableau<double> rkbt = createExplicit4Stage4thOrder_RKBT<double>();
@@ -60,6 +75,12 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, setgetRKButcherTableau ) {
   TEST_EQUALITY_CONST( is_null(stepper), false );
   RKButcherTableau<double> rkbt_out = stepper->getRKButcherTableau();
   TEST_EQUALITY_CONST( rkbt == rkbt_out, true );
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, invalidRKBT ) {
+  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>();
+  RKButcherTableau<double> rkbt;
+  TEST_THROW( stepper->setRKButcherTableau(rkbt), std::logic_error ); // empty RKBT
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, getTimeRange ) {
@@ -70,6 +91,15 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, getTimeRange ) {
   TEST_EQUALITY_CONST( tr.lower(), 0.0 );
   TEST_EQUALITY_CONST( tr.upper(), 0.0 );
 } 
+
+TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, noRKBT ) {
+  RCP<SinCosModel> model = sinCosModel(false);
+  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>();
+  stepper->setModel(model);
+  double dt = 1.0;
+  double step_taken = 0.0;
+  TEST_THROW( step_taken = stepper->takeStep(dt, STEP_TYPE_FIXED), std::logic_error ); // no RKBT defined
+}
 
 // 12/17/08 tscoffe:  I need a model evaluator _without_ a nominal values to
 // test the initialization behavior of the ERK stepper (and the ImplicitBDF stepper).

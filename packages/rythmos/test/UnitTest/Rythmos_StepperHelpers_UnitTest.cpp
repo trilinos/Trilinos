@@ -29,11 +29,42 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include "Rythmos_StepperHelpers.hpp"
+#include "Rythmos_StepperBuilder.hpp"
+#include "../SinCos/SinCosModel.hpp"
 
 namespace Rythmos {
 
 // Functions to test:
 // assertValidModel
+TEUCHOS_UNIT_TEST( Rythmos_StepperHelpers, assertValidModel ) {
+  RCP<SinCosModel> model = sinCosModel(false);
+  RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  RCP<StepperBase<double> > stepper = builder->create("Implicit BDF");
+  TEST_EQUALITY_CONST( is_null(stepper), false );
+  // implicit Stepper and explicit model, throws
+  TEST_THROW(
+      assertValidModel( *stepper, *model ),
+      std::logic_error
+      ); 
+  stepper = builder->create("Explicit RK");
+  // explicit stepper and explicit model, OK
+  TEST_NOTHROW(
+      assertValidModel( *stepper, *model )
+      );
+  model = sinCosModel(true);
+  // explicit stepper and implicit model, throws
+//  TEST_THROW( 
+//      assertValidModel( *stepper, *model ),
+//      std::logic_error
+//      )
+  stepper = builder->create("Implicit RK");
+  // implicit stepper and implicit model, OK
+  TEST_NOTHROW(
+      assertValidModel( *stepper, *model )
+      );
+
+}
+
 // setDefaultInitialConditionFromNominalValues
 // restart
 
