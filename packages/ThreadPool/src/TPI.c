@@ -57,16 +57,38 @@ enum { LOCK_COUNT_MAX   = 256 };
 #define atomic_fetch_and_decrement( VALUE_PTR )	\
 	__sync_fetch_and_sub(VALUE_PTR,1)
 
-#else
+#elif defined( HAVE_PTHREAD_SPIN )
+
+static pthread_once_t     atomic_once = PTHREAD_ONCE_INIT ;
+static pthread_spinlock_t atomic_lock ;
+
+static void atomic_init()
+{
+  pthread_spin_init( & atomic_lock , PTHREAD_PROCESS_PRIVATE );
+}
 
 static
 int atomic_fetch_and_decrement( volatile int * value )
 {
-  static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER ;
+  pthread_once( & atomic_once , once_init );
   int result ;
-  while ( pthread_mutex_trylock( & lock ) );
+  pthread_spin_lock( & lock );
   result = ( *value )-- ;
-  pthread_mutex_unlock( & lock );
+  pthread_spin_unlock( & lock );
+  return result ;
+}
+
+#else
+
+static pthread_mutex_t atomic_lock = PTHREAD_MUTEX_INITIALIZER ;
+
+static
+int atomic_fetch_and_decrement( volatile int * value )
+{
+  int result ;
+  while ( pthread_mutex_trylock( & atomic_lock ) );
+  result = ( *value )-- ;
+  pthread_mutex_unlock( & atomic_lock );
   return result ;
 }
 
