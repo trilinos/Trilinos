@@ -159,11 +159,11 @@ ADcontext::new_ADmemblock(size_t len)
 	}
 
  void
-ADcontext::Gradcomp()
+ADcontext::Gradcomp(int wantgrad)
 {
 	Derp *d;
 
-	if (rad_need_reinit) {
+	if (rad_need_reinit && wantgrad) {
 		for(d = Derp::LastDerp; d; d = d->next)
 			d->c->aval = 0;
 		}
@@ -175,7 +175,7 @@ ADcontext::Gradcomp()
 		ADvari::adc.Mleft = 0;
 		}
 
-	if ((d = Derp::LastDerp)) {
+	if ((d = Derp::LastDerp) && wantgrad) {
 		d->b->aval = 1;
 		do d->c->aval += *d->a * d->b->aval;
 		while((d = d->next));
@@ -274,7 +274,7 @@ ConstADvar::ConstADvar_ctr(double d)
 ConstADvar::ConstADvar(const ADvari &x)
 {
 	ConstADvari *y = new ConstADvari(x.Val);
-	Derp *d = new Derp(&CADcontext::One, y, &x);
+	new Derp(&CADcontext::One, y, &x); /*for side effect; value not used */
 	cv = y;
 	}
 

@@ -225,7 +225,8 @@ ADcontext {
 	static const Double One, negOne;
 	ADcontext();
 	void *Memalloc(size_t len);
-	static void Gradcomp();
+	static void Gradcomp(int wantgrad);
+	static inline void Gradcomp() { Gradcomp(1); }
 	static void aval_reset(void);
 	static void Weighted_Gradcomp(size_t, ADVar**, Double*);
 	static void Outvar_Gradcomp(ADVar&);
@@ -740,7 +741,10 @@ IndepADvar: protected IndepADvar_base<Double> {		// an independent ADvar
 	friend ADVari& ADf2<>(Double, Double, Double, const ADVari&, const IndepADvar&);
 	friend ADVari& ADf2<>(Double, Double, Double, const IndepADvar&, const ADVari&);
 
-	static inline void Gradcomp() { ADcontext<Double>::Gradcomp(); }
+	static inline void Gradcomp(int wantgrad)
+				{ ADcontext<Double>::Gradcomp(wantgrad); }
+	static inline void Gradcomp()
+				{ ADcontext<Double>::Gradcomp(1); }
 	static inline void aval_reset() { ConstADvari<Double>::aval_reset(); }
 	static inline void Weighted_Gradcomp(size_t n, ADVar **v, Double *w)
 				{ ADcontext<Double>::Weighted_Gradcomp(n, v, w); }
@@ -940,7 +944,10 @@ ADvar: public IndepADvar<Double> {	// an "active" variable
 	inline static void set_fpval_implies_const(bool newval) {}
 	inline static bool setget_fpval_implies_const(bool newval) { return newval; }
 #endif
-	static inline void Gradcomp() { ADcontext<Double>::Gradcomp(); }
+	static inline void Gradcomp(int wantgrad)
+				{ ADcontext<Double>::Gradcomp(wantgrad); }
+	static inline void Gradcomp()
+				{ ADcontext<Double>::Gradcomp(1); }
 	static inline void aval_reset() { ConstADVari::aval_reset(); }
 	static inline void Weighted_Gradcomp(size_t n, ADvar **v, Double *w)
 				{ ADcontext<Double>::Weighted_Gradcomp(n, v, w); }
@@ -1492,13 +1499,13 @@ ADcontext<Double>::new_ADmemblock(size_t len)
 	}
 
 template<typename Double> void
-ADcontext<Double>::Gradcomp()
+ADcontext<Double>::Gradcomp(int wantgrad)
 {
 #if RAD_REINIT > 0 //{{
 	ADMemblock *mb;
 	DErp *d, *de;
 
-	if (ADVari::adc.rad_need_reinit) {
+	if (ADVari::adc.rad_need_reinit && wantgrad) {
 		mb = ADVari::adc.DBusy;
 		d = ((DErp*)mb->memblk) + ADVari::adc.DMleft;
 		de = ((DErp*)mb->memblk) + ADVari::adc.nderps;
@@ -1514,7 +1521,7 @@ ADcontext<Double>::Gradcomp()
 #else //}{ RAD_REINIT == 0
 	DErp *d;
 
-	if (ADVari::adc.rad_need_reinit) {
+	if (ADVari::adc.rad_need_reinit && wantgrad) {
 		for(d = DErp::LastDerp; d; d = d->next)
 			d->c->aval = 0;
 		}
@@ -1527,7 +1534,7 @@ ADcontext<Double>::Gradcomp()
 		RAD_REINIT_2(++IndepADvar_base<Double>::IndepADvar_root.gen;)
 		}
 #ifdef RAD_DEBUG
-	if (ADVari::gcgen_cur == ADVari::zap_gcgen1) {
+	if (ADVari::gcgen_cur == ADVari::zap_gcgen1 && wantgrad) {
 		const char *fname;
 		if (!(fname = getenv("RAD_DEBUG_FILE")))
 			fname = "rad_debug.out";
@@ -1539,7 +1546,7 @@ ADcontext<Double>::Gradcomp()
 		}
 #endif
 #if RAD_REINIT > 0 //{{
-	if (ADVari::adc.DMleft < ADVari::adc.nderps) {
+	if (ADVari::adc.DMleft < ADVari::adc.nderps && wantgrad) {
 		mb = ADVari::adc.DBusy;
 		d = ((DErp*)mb->memblk) + ADVari::adc.DMleft;
 		de = ((DErp*)mb->memblk) + ADVari::adc.nderps;
@@ -1565,7 +1572,7 @@ ADcontext<Double>::Gradcomp()
 		    }
 		}
 #else //}{ RAD_REINIT == 0
-	if ((d = DErp::LastDerp)) {
+	if ((d = DErp::LastDerp) && wantgrad) {
 		d->b->aval = 1;
 #ifdef RAD_DEBUG
 		if (ADVari::debug_file)

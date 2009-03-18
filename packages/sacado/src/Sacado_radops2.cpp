@@ -194,11 +194,11 @@ ADcontext::new_ADvari_block()
 	}
 
  void
-ADcontext::Gradcomp()
+ADcontext::Gradcomp(int wantgrad)
 {
 	Derp *d;
 
-	if (rad_need_reinit) {
+	if (rad_need_reinit && wantgrad) {
 		for(d = Derp::LastDerp; d; d = d->next)
 			d->c->aval = 0;
 		}
@@ -210,7 +210,7 @@ ADcontext::Gradcomp()
 		ADvari::adc.Mleft = 0;
 		}
 
-	if ((d = Derp::LastDerp)) {
+	if ((d = Derp::LastDerp) && wantgrad) {
 		d->b->aval = 1;
 		do d->c->aval += *d->a * d->b->aval;
 		while((d = d->next));
@@ -309,7 +309,7 @@ ConstADvar::ConstADvar_ctr(double d)
 ConstADvar::ConstADvar(const ADvari &x)
 {
 	ConstADvari *y = new ConstADvari(x.Val);
-	Derp *d = new Derp(&CADcontext::One, y, &x);
+	new Derp(&CADcontext::One, y, &x); /* for side effect; value not used */
 	cv = y;
 	}
 
@@ -793,14 +793,14 @@ ADf2(double f, double gx, double gy, double hxx, double hxy, double hyy,
 	}
 
  ADvarn::ADvarn(double val1, int n1, const ADvar *x, const double *g, const double *h):
-		n(n1), ADvari(Hv_nary,val1)
+		ADvari(Hv_nary,val1), n(n1)
 {
 	Derp *d1, *dlast;
 	double *a1;
 	int i, nh;
 
-	a1 = G = (double*)ADvari::adc.Memalloc(n*sizeof(*g));
-	d1 = D =  (Derp*)ADvari::adc.Memalloc(n*sizeof(Derp));
+	a1 = G = (double*)ADvari::adc.Memalloc(n1*sizeof(*g));
+	d1 = D =  (Derp*)ADvari::adc.Memalloc(n1*sizeof(Derp));
 	dlast = Derp::LastDerp;
 	for(i = 0; i < n1; i++, d1++) {
 		d1->next = dlast;
@@ -811,7 +811,7 @@ ADf2(double f, double gx, double gy, double hxx, double hxy, double hyy,
 		d1->c = x[i].cv;
 		}
 	Derp::LastDerp = dlast;
-	nh = (n*(n+1)) >> 1;
+	nh = (n1*(n1+1)) >> 1;
 	a1 = H = (double*)ADvari::adc.Memalloc(nh * sizeof(*h));
 	for(i = 0; i < nh; i++)
 		a1[i] = h[i];
@@ -873,6 +873,8 @@ ADcontext::Hvprod(int n, ADvar **x, double *v, double *hv)
 			 case Hv_quotLR:
 				a->dO =   ((ADvar2q*)a)->pL * ((ADvar2q*)a)->dL.c->dO
 					+ ((ADvar2q*)a)->pR * ((ADvar2q*)a)->dR.c->dO;
+			 case Hv_const:	// This case does not arise; the intent here
+					// is to eliminate a red-herring compiler warning.
 				break;
 			 case Hv_nary:
 				d = ((ADvarn*)a)->D;
@@ -966,6 +968,8 @@ ADcontext::Hvprod(int n, ADvar **x, double *v, double *hv)
 					+ tR*((ADvar2q*)a)->pR2;
 				aL->adO += adO * ((ADvar2q*)a)->pL;
 				aR->adO += adO * ((ADvar2q*)a)->pR;
+			 case Hv_const:	// This case does not arise; the intent here
+					// is to eliminate a red-herring compiler warning.
 				break;
 			 case Hv_nary:
 				d  = ((ADvarn*)a)->D;

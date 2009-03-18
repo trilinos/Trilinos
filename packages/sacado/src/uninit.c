@@ -108,7 +108,7 @@ _uninit_f2c(void *x, int type, long len)
 		*(char*)x = 'Z';
 		return;
 	  case TYSHORT:
-		*(short*)x = 0xfa7a;
+		*(unsigned short*)x = 0xfa7a;
 		break;
 	  case TYLONG:
 		*(unsigned Long*)x = FA7UL;
@@ -133,7 +133,7 @@ _uninit_f2c(void *x, int type, long len)
 		memset(x, 'Z', len);
 		break;
 	  case TYSHORT:
-		*(short*)x = 0xfa7a;
+		*(unsigned short*)x = 0xfa7a;
 		break;
 	  case TYQUAD:
 		len *= 2;

@@ -108,7 +108,8 @@ ADcontext {	// A singleton class: one instance in radops.c
  public:
 	ADcontext();
 	void *Memalloc(size_t len);
-	static void Gradcomp();
+	static void Gradcomp(int);
+	static inline void Gradcomp() { Gradcomp(1); }
 	static void Hvprod(int, ADvar**, double*, double*);
 	static void Weighted_Gradcomp(int, ADvar**, double*);
 	inline void ADvari_record(ADvari *x) {
@@ -364,7 +365,10 @@ IndepADvar
 
 	inline double val() const { return cv->Val; }
 	inline double adj() const { return cv->aval; }
-	static inline void Gradcomp() { ADcontext::Gradcomp(); }
+	static inline void Gradcomp(int wantgrad)
+				{ ADcontext::Gradcomp(wantgrad); }
+	static inline void Gradcomp()
+				{ ADcontext::Gradcomp(1); }
 	static inline void Hvprod(int n, ADvar **vp, double *v, double *hv)
 				{ ADcontext::Hvprod(n, vp, v, hv); }
 	static inline void aval_reset() { ConstADvari::aval_reset(); }
@@ -489,7 +493,10 @@ ADvar: public IndepADvar {		// an "active" variable
 		ConstADvari::cadc.fpval_implies_const = newval;
 		return oldval;
 		}
-	static inline void Gradcomp() { ADcontext::Gradcomp(); }
+	static inline void Gradcomp(int wantgrad)
+				{ ADcontext::Gradcomp(wantgrad); }
+	static inline void Gradcomp()
+				{ ADcontext::Gradcomp(1); }
 	static inline void Hvprod(int n, ADvar **vp, double *v, double *hv)
 				{ ADcontext::Hvprod(n, vp, v, hv); }
 	static inline void aval_reset() { ConstADvari::aval_reset(); }

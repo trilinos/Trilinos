@@ -206,10 +206,11 @@ ADcontext {	// A singleton class: one instance in radops.c
 	static const Double One, negOne;
 	ADcontext();
 	void *Memalloc(size_t len);
-	static void Gradcomp();
+	static void Gradcomp(int wantgrad);
 	static void Hvprod(int, ADVar**, Double*, Double*);
 	static void aval_reset(void);
 	static void Weighted_Gradcomp(int, ADVar**, Double*);
+	static inline void Gradcomp() { Gradcomp(1); }
 	inline void ADvari_record(ADVari *x) {
 		if (Ainext >= Ailimit)
 			new_ADvari_block();
@@ -642,7 +643,10 @@ IndepADvar {		// an independent ADvar
 	friend ADVari& ADf2<>(Double, Double, Double, const ADVari&, const IndepADvar&);
 	friend ADVari& ADf2<>(Double, Double, Double, const IndepADvar&, const ADVari&);
 
-	static inline void Gradcomp() { ADcontext<Double>::Gradcomp(); }
+	static inline void Gradcomp(int wantgrad)
+				{ ADcontext<Double>::Gradcomp(wantgrad); }
+	static inline void Gradcomp()
+				{ ADcontext<Double>::Gradcomp(1); }
 	static inline void Hvprod(int n, ADVar **vp, Double *v, Double *hv)
 				{ ADcontext<Double>::Hvprod(n, vp, v, hv); }
 	static inline void aval_reset() { ConstADvari<Double>::aval_reset(); }
@@ -797,7 +801,10 @@ ADvar: public IndepADvar<Double> {	// an "active" variable
 		ConstADVari::cadc.fpval_implies_const = newval;
 		return oldval;
 		}
-	static inline void Gradcomp() { ADcontext<Double>::Gradcomp(); }
+	static inline void Gradcomp(int wantgrad)
+				{ ADcontext<Double>::Gradcomp(wantgrad); }
+	static inline void Gradcomp()
+				{ ADcontext<Double>::Gradcomp(1); }
 	static inline void aval_reset() { ConstADVari::aval_reset(); }
 	static inline void Weighted_Gradcomp(int n, ADvar **v, Double *w)
 				{ ADcontext<Double>::Weighted_Gradcomp(n, v, w); }
@@ -966,8 +973,8 @@ ADvarn: public ADvari<Double> { // n-ary ops with partials g and
 		Double *a1;
 		int i, nh;
 
-		a1 = G = (Double*)ADVari::adc.Memalloc(n*sizeof(*g));
-		d1 = D = (DErp*)ADVari::adc.Memalloc(n*sizeof(DErp));
+		a1 = G = (Double*)ADVari::adc.Memalloc(n1*sizeof(*g));
+		d1 = D = (DErp*)ADVari::adc.Memalloc(n1*sizeof(DErp));
 		dlast = DErp::LastDerp;
 		for(i = 0; i < n1; i++, d1++) {
 			d1->next = dlast;
@@ -978,7 +985,7 @@ ADvarn: public ADvari<Double> { // n-ary ops with partials g and
 			d1->c = x[i].cv;
 			}
 		DErp::LastDerp = dlast;
-		nh = (n*(n+1)) >> 1;
+		nh = (n1*(n1+1)) >> 1;
 		a1 = H = (double*)ADVari::adc.Memalloc(nh * sizeof(*h));
 		for(i = 0; i < nh; i++)
 			a1[i] = h[i];
@@ -1205,7 +1212,7 @@ ADcontext<Double>::new_ADvari_block()
 	}
 
 template<typename Double> void
-ADcontext<Double>::Gradcomp()
+ADcontext<Double>::Gradcomp(int wantgrad)
 {
 	DErp *d;
 #ifdef RAD_AUTO_AD_Const
@@ -1238,7 +1245,7 @@ ADcontext<Double>::Gradcomp()
 		ADVari::zap_gcgen1 = -1;
 		}
 #endif
-	if ((d = DErp::LastDerp)) {
+	if ((d = DErp::LastDerp) && wantgrad) {
 		d->b->aval = 1;
 #ifdef RAD_DEBUG
 		if (ADVari::debug_file)
