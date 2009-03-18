@@ -48,15 +48,19 @@ EpetraOperator::EpetraOperator( const RCP<LinearProblem<double,Epetra_MultiVecto
     plist_(plist),
     initSolnVec_(initSolnVec)
 {
+  // Get the solver's name from the parameter list, use block Gmres by default.
   std::string solver = plist_->get("Solver", "BlockGmres");
-  
+
+  // Create a label for this Epetra_Operator.
+  std::string solver_name = "Belos " + solver + " Solver";
+ 
   // Copy std::string to character array.  
   // Not using conversion routine copy() because it's not supported by RW on Janus. (HKT 11/13/2003) 
-  Solver.resize(solver.length()+1);
-  for (int i=0; i<(int)solver.length()+1; i++) {
-    Solver[i] = solver[i];
+  Solver.resize(solver_name.length()+1);
+  for (int i=0; i<(int)solver_name.length(); i++) {
+    Solver[i] = solver_name[i];
   } 
-  Solver[solver.length()] = 0;
+  Solver[solver_name.length()] = 0;
 
   //
   // Create solver and solve problem.  This is inefficient, an instance of the solver should
