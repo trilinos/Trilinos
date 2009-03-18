@@ -453,7 +453,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
     ENDIF()
 
     IF (CTEST_DO_SUBMIT)
-      MESSAGE("\nSubmit the update file that will trigger the notification email!")
+      MESSAGE("\nSubmit the update file that will trigger the notification email ...\n")
       CTEST_SUBMIT( PARTS update )
     ENDIF()
 
