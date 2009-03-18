@@ -28,11 +28,17 @@
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = BLAS_test
+noinst_PROGRAMS = BLAS_test BLAS_tmpl_test
+
 BLAS_test_SOURCES = $(srcdir)/cxx_main.cpp
 BLAS_test_DEPENDENCIES = 
 BLAS_test_CXXFLAGS = -I$(top_srcdir)/src
 BLAS_test_LDADD = $(EXPORT_LIBS)
+
+BLAS_tmpl_test_SOURCES = $(srcdir)/cxx_tmpl_main.cpp
+BLAS_tmpl_test_DEPENDENCIES = 
+BLAS_tmpl_test_CXXFLAGS = -I$(top_srcdir)/src
+BLAS_tmpl_test_LDADD = $(EXPORT_LIBS)
 
 include $(top_builddir)/Makefile.export.teuchos
 

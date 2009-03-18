@@ -61,7 +61,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = BLAS_test$(EXEEXT)
+noinst_PROGRAMS = BLAS_test$(EXEEXT) BLAS_tmpl_test$(EXEEXT)
 subdir = test/BLAS
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -107,6 +107,10 @@ am__DEPENDENCIES_1 =
 @USING_GNUMAKE_TRUE@	$(TEUCHOS_LIBS))
 BLAS_test_LINK = $(CXXLD) $(BLAS_test_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+am_BLAS_tmpl_test_OBJECTS = BLAS_tmpl_test-cxx_tmpl_main.$(OBJEXT)
+BLAS_tmpl_test_OBJECTS = $(am_BLAS_tmpl_test_OBJECTS)
+BLAS_tmpl_test_LINK = $(CXXLD) $(BLAS_tmpl_test_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -115,8 +119,8 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(BLAS_test_SOURCES)
-DIST_SOURCES = $(BLAS_test_SOURCES)
+SOURCES = $(BLAS_test_SOURCES) $(BLAS_tmpl_test_SOURCES)
+DIST_SOURCES = $(BLAS_test_SOURCES) $(BLAS_tmpl_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -248,6 +252,10 @@ BLAS_test_SOURCES = $(srcdir)/cxx_main.cpp
 BLAS_test_DEPENDENCIES = 
 BLAS_test_CXXFLAGS = -I$(top_srcdir)/src
 BLAS_test_LDADD = $(EXPORT_LIBS)
+BLAS_tmpl_test_SOURCES = $(srcdir)/cxx_tmpl_main.cpp
+BLAS_tmpl_test_DEPENDENCIES = 
+BLAS_tmpl_test_CXXFLAGS = -I$(top_srcdir)/src
+BLAS_tmpl_test_LDADD = $(EXPORT_LIBS)
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(TEUCHOS_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(TEUCHOS_INCLUDES))
 @USING_GNUMAKE_FALSE@EXPORT_LIBS = $(TEUCHOS_LIBS)
@@ -291,6 +299,9 @@ clean-noinstPROGRAMS:
 BLAS_test$(EXEEXT): $(BLAS_test_OBJECTS) $(BLAS_test_DEPENDENCIES) 
 	@rm -f BLAS_test$(EXEEXT)
 	$(BLAS_test_LINK) $(BLAS_test_OBJECTS) $(BLAS_test_LDADD) $(LIBS)
+BLAS_tmpl_test$(EXEEXT): $(BLAS_tmpl_test_OBJECTS) $(BLAS_tmpl_test_DEPENDENCIES) 
+	@rm -f BLAS_tmpl_test$(EXEEXT)
+	$(BLAS_tmpl_test_LINK) $(BLAS_tmpl_test_OBJECTS) $(BLAS_tmpl_test_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -299,6 +310,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLAS_test-cxx_main.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BLAS_tmpl_test-cxx_tmpl_main.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -327,6 +339,20 @@ BLAS_test-cxx_main.obj: $(srcdir)/cxx_main.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_main.cpp' object='BLAS_test-cxx_main.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BLAS_test_CXXFLAGS) $(CXXFLAGS) -c -o BLAS_test-cxx_main.obj `if test -f '$(srcdir)/cxx_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_main.cpp'; fi`
+
+BLAS_tmpl_test-cxx_tmpl_main.o: $(srcdir)/cxx_tmpl_main.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BLAS_tmpl_test_CXXFLAGS) $(CXXFLAGS) -MT BLAS_tmpl_test-cxx_tmpl_main.o -MD -MP -MF $(DEPDIR)/BLAS_tmpl_test-cxx_tmpl_main.Tpo -c -o BLAS_tmpl_test-cxx_tmpl_main.o `test -f '$(srcdir)/cxx_tmpl_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_tmpl_main.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BLAS_tmpl_test-cxx_tmpl_main.Tpo $(DEPDIR)/BLAS_tmpl_test-cxx_tmpl_main.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_tmpl_main.cpp' object='BLAS_tmpl_test-cxx_tmpl_main.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BLAS_tmpl_test_CXXFLAGS) $(CXXFLAGS) -c -o BLAS_tmpl_test-cxx_tmpl_main.o `test -f '$(srcdir)/cxx_tmpl_main.cpp' || echo '$(srcdir)/'`$(srcdir)/cxx_tmpl_main.cpp
+
+BLAS_tmpl_test-cxx_tmpl_main.obj: $(srcdir)/cxx_tmpl_main.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BLAS_tmpl_test_CXXFLAGS) $(CXXFLAGS) -MT BLAS_tmpl_test-cxx_tmpl_main.obj -MD -MP -MF $(DEPDIR)/BLAS_tmpl_test-cxx_tmpl_main.Tpo -c -o BLAS_tmpl_test-cxx_tmpl_main.obj `if test -f '$(srcdir)/cxx_tmpl_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_tmpl_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_tmpl_main.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BLAS_tmpl_test-cxx_tmpl_main.Tpo $(DEPDIR)/BLAS_tmpl_test-cxx_tmpl_main.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/cxx_tmpl_main.cpp' object='BLAS_tmpl_test-cxx_tmpl_main.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BLAS_tmpl_test_CXXFLAGS) $(CXXFLAGS) -c -o BLAS_tmpl_test-cxx_tmpl_main.obj `if test -f '$(srcdir)/cxx_tmpl_main.cpp'; then $(CYGPATH_W) '$(srcdir)/cxx_tmpl_main.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/cxx_tmpl_main.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
