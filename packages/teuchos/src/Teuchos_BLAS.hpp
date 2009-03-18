@@ -210,28 +210,39 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   void BLAS<OrdinalType, ScalarType>::ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const
   {
-    ScalarType scale, r;
-    ScalarType roe = ScalarTraits<ScalarType>::zero();
+    ScalarType roe, alpha;
     ScalarType zero = ScalarTraits<ScalarType>::zero();
     ScalarType one = ScalarTraits<ScalarType>::one();
+    MagnitudeType scale, norm;
+    MagnitudeType m_one = ScalarTraits<MagnitudeType>::one();
+    MagnitudeType m_zero = ScalarTraits<MagnitudeType>::zero();
 
+    roe = *db;
     if ( ScalarTraits<ScalarType>::magnitude( *da ) > ScalarTraits<ScalarType>::magnitude( *db ) ) { roe = *da; }
     scale = ScalarTraits<ScalarType>::magnitude( *da ) + ScalarTraits<ScalarType>::magnitude( *db );
-    if ( scale == zero ) // There is nothing to do.
+    if ( scale == m_zero ) // There is nothing to do.
     {
-      *c = one;
+      *c = m_one;
       *s = zero;
       *da = zero; *db = zero;
-    } else { // Compute the Givens rotation.
-      r = scale*ScalarTraits<ScalarType>::squareroot( ( *da/scale)*(*da/scale) + (*db/scale)*(*db/scale) );
-      if ( roe < zero ) { r *= -one; }
-      *c = *da / r;
-      *s = *db / r;
-      *db = ScalarTraits<ScalarType>::one();
+    } 
+    else if ( *da == zero ) // Still nothing to do.
+    { 
+      *c = m_zero;
+      *s = one;
+      *da = *db; *db = zero;
+    } 
+    else 
+    { // Compute the Givens rotation.
+      norm = scale*ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::squareroot( ( *da/scale)*(*da/scale) + (*db/scale)*(*db/scale) ) );
+      alpha = roe / ScalarTraits<ScalarType>::magnitude(roe);
+      *c = ScalarTraits<ScalarType>::magnitude(*da) / norm;
+      *s = alpha * ScalarTraits<ScalarType>::conjugate(*db) / norm;
+      *db = one;
       if( ScalarTraits<ScalarType>::magnitude( *da ) > ScalarTraits<ScalarType>::magnitude( *db ) ){ *db = *s; }
       if( ScalarTraits<ScalarType>::magnitude( *db ) >= ScalarTraits<ScalarType>::magnitude( *da ) &&
-	   *c != ScalarTraits<ScalarType>::zero() ) { *db = one / *c; }
-      *da = r;
+	   *c != ScalarTraits<MagnitudeType>::zero() ) { *db = one / *c; }
+      *da = norm * alpha;
     }
   } /* end ROTG */
       
@@ -359,10 +370,10 @@ namespace Teuchos
     
 	for(i = izero; i < n; i++)
       	  {
-	    result += ScalarTraits<ScalarType>::conjugate(x[ix]) * x[ix];
+	    result += ScalarTraits<ScalarType>::magnitude(ScalarTraits<ScalarType>::conjugate(x[ix]) * x[ix]);
 	    ix += incx;
        	  }
-    	result = ScalarTraits<ScalarType>::squareroot(result);
+    	result = ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::squareroot(result);
       }	
     return result;
   } /* end NRM2 */
@@ -373,7 +384,8 @@ namespace Teuchos
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     OrdinalType result = izero, ix = izero, i;
-    ScalarType maxval;
+    typename ScalarTraits<ScalarType>::magnitudeType maxval =
+      ScalarTraits<typename ScalarTraits<ScalarType>::magnitudeType>::zero();
 
     if ( n > izero ) 
       {
