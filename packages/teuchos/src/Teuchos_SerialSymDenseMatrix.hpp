@@ -705,7 +705,7 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>& SerialSymDenseMatrix<OrdinalType,
     {
       TEUCHOS_CHK_REF(*this); // Return *this without altering it.
     }
-  copyMat(Source.upper_, Source.values_, Source.stride_, numRowCols_, upper_, values_, stride_, 0, 1.0);
+  copyMat(Source.upper_, Source.values_, Source.stride_, numRowCols_, upper_, values_, stride_, 0, ScalarTraits<ScalarType>::one());
   return(*this);
 }
 
@@ -717,7 +717,7 @@ SerialSymDenseMatrix<OrdinalType, ScalarType>& SerialSymDenseMatrix<OrdinalType,
   {
     TEUCHOS_CHK_REF(*this); // Return *this without altering it.
   }
-  copyMat(Source.upper_, Source.values_, Source.stride_, numRowCols_, upper_, values_, stride_, 0, -1.0);
+  copyMat(Source.upper_, Source.values_, Source.stride_, numRowCols_, upper_, values_, stride_, 0, -ScalarTraits<ScalarType>::one());
   return(*this);
 }
 
