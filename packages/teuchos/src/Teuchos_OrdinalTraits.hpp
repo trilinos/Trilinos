@@ -37,6 +37,7 @@
 */
 
 #include "Teuchos_ConfigDefs.hpp"
+#include <limits.h>
 
 /*! \struct Teuchos::OrdinalTraits
   \brief This structure defines some basic traits for the ordinal field type.
@@ -75,6 +76,12 @@ struct OrdinalTraits {
   //! Returns representation of one for this ordinal type.
   static inline T one()                      { return UndefinedOrdinalTraits<T>::notDefined(); }
 
+  //! \brief Returns a value designating the maximum value accessible by code using OrdinalTraits. 
+  /*! For a signed ordinal, this will typically be the maximum positive value. However, for an unsigned ordinal, this will typically be one less than the 
+   *  maximum value, because the maximum value will typically be reserved for designating an invalid value.
+   */
+  static inline T max()                  { return UndefinedOrdinalTraits<T>::notDefined(); }
+
   //! Returns a value designating an invalid number. For signed types, this is typically negative one; for unsigned types, it is typically the largest value.
   static inline T invalid()                  { return UndefinedOrdinalTraits<T>::notDefined(); }
 
@@ -90,16 +97,18 @@ struct OrdinalTraits<char> {
   static inline char zero()                   {return(0);}
   static inline char one()                    {return(1);}
   static inline char invalid()                {return(-1);}
+  static inline char max()                    {return(CHAR_MAX);}
   static inline std::string name()            {return("char");}
 };
 
 template<>
 struct OrdinalTraits<short int> {
   static const bool hasMachineParameters = false;
-  static inline short int zero()                   {return(0);}
-  static inline short int one()                    {return(1);}
-  static inline short int invalid()                {return(-1);}
-  static inline std::string name()           {return("short int");}
+  static inline short int zero()              {return(0);}
+  static inline short int one()               {return(1);}
+  static inline short int invalid()           {return(-1);}
+  static inline short int max()               {return(SHRT_MAX);}
+  static inline std::string name()            {return("short int");}
 };
 
 template<>
@@ -108,6 +117,7 @@ struct OrdinalTraits<int> {
   static inline int zero()                   {return(0);}
   static inline int one()                    {return(1);}
   static inline int invalid()                {return(-1);}
+  static inline int max()                    {return(INT_MAX);}
   static inline std::string name()           {return("int");}
 };
 
@@ -117,6 +127,7 @@ struct OrdinalTraits<long int> {
   static inline long int zero()              {return(static_cast<long int>(0));}
   static inline long int one()               {return(static_cast<long int>(1));}
   static inline long int invalid()           {return(static_cast<long int>(-1));}
+  static inline long int max()               {return(LONG_MAX);}
   static inline std::string name()           {return("long int");}
 };
 
@@ -125,10 +136,11 @@ struct OrdinalTraits<long int> {
 template<>
 struct OrdinalTraits<long long int> {
   static const bool hasMachineParameters = false;
-  static inline long long int zero() {return(static_cast<long long int>(0));}
-  static inline long long int one() {return(static_cast<long long int>(1));}
-  static inline long long int invalid() {return(static_cast<long long int>(-1));}
-  static inline std::string name() {return("long long int");}
+  static inline long long int zero()          {return(static_cast<long long int>(0));}
+  static inline long long int one()           {return(static_cast<long long int>(1));}
+  static inline long long int invalid()       {return(static_cast<long long int>(-1));}
+  static inline long long int max()           {return(LLONG_MAX);}
+  static inline std::string name()            {return("long long int");}
 };
 
 #endif // HAVE_TEUCHOS_LONG_LONG_INT

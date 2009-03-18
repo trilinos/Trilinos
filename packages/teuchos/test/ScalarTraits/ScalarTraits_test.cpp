@@ -27,6 +27,7 @@
 // @HEADER
 
 
+#include "Teuchos_OrdinalTraits.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
@@ -159,6 +160,94 @@ bool testScalarTraits(
 }
 
 
+template<class Ordinal>
+bool testOrdinalTraits(
+  Teuchos::FancyOStream &out
+  )
+{
+  
+  typedef Teuchos::OrdinalTraits<Ordinal> OT;
+  
+  bool success = true;
+  bool result;
+
+  out << "\nTesting: " << Teuchos::TypeNameTraits<OT>::name() << " ...\n";
+
+  Teuchos::OSTab tab(out);
+
+  const Ordinal zero = OT::zero();
+  const Ordinal one  = OT::one();
+  const Ordinal max  = OT::max();
+  const Ordinal invalid  = OT::invalid();
+  out << "\nmax() == " << max << "\n";
+  out << "\ninvalid() == " << invalid << "\n";
+
+  out << "\nTesting that zero() * one() == zero() ...\n";
+  {
+    const Ordinal zto = zero*one;
+    result = (zto == zero);
+    if (!result) success = false;
+    out
+      << "zero*one = " << zto << " == " << zero << " : "
+      << passfail(result) << "\n";
+  }
+
+  out << "\nTesting that one() * one() == one() ...\n";
+  {
+    const Ordinal oto = one*one;
+    result = (oto == one);
+    if (!result) success = false;
+    out
+      << "one*one = " << oto << " == " << one << " : "
+      << passfail(result) << "\n";
+  }
+
+  out << "\nTesting that one() + zero() == zero() + one() == one() ...\n";
+  {
+    const Ordinal opz = one+zero;
+    const Ordinal zpo = zero+one;
+    result = (opz == one) && (zpo == one);
+    if (!result) success = false;
+    out
+      << "one+zero = " << opz << " == zero+one = " << zpo << " == " << one << " : "
+      << passfail(result) << "\n";
+  }
+
+  out << "\nTesting that one() - one() == zero() ...\n";
+  {
+    const Ordinal omo = one-one;
+    result = (omo == zero);
+    if (!result) success = false;
+    out
+      << "one-one = " << omo << " == " << zero << " : "
+      << passfail(result) << "\n";
+  }
+
+  out << "\nTesting that zero() < one() <= max() ...\n";
+  {
+    result = (zero < one) && (one <= max) && (zero < max);
+    if (!result) success = false;
+    out
+      << "(zero < one) = " << (zero < one) << " == " 
+      << "(one <= max) = " << (one <= max) << " == " 
+      << "(zero < max) = " << (zero < max) << " == " 
+      << true << " : "
+      << passfail(result) << "\n";
+  }
+
+  out << "\nTesting that invalid() not in [zero(),max()]...\n";
+  {
+    result = !( (invalid > zero || invalid==zero) && (invalid <= max) );
+    if (!result) success = false;
+    out
+      << "invalid in [zero,max] == false : " << passfail(result) << "\n";
+  }
+
+  return success;
+
+}
+
+
 int main( int argc, char* argv[] ) {
 
   using Teuchos::CommandLineProcessor;
@@ -187,6 +276,24 @@ int main( int argc, char* argv[] ) {
 
     result = testScalarTraits<double>(*out);
     if(!result) success = false;
+
+    result = testOrdinalTraits<char>(*out);
+    if(!result) success = false;
+
+    result = testOrdinalTraits<short int>(*out);
+    if(!result) success = false;
+
+    result = testOrdinalTraits<int>(*out);
+    if(!result) success = false;
+
+    result = testOrdinalTraits<long int>(*out);
+    if(!result) success = false;
+
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+    result = testOrdinalTraits<long long int>(*out);
+    if(!result) success = false;
+#endif
+
 
 // #ifdef HAVE_TEUCHOS_COMPLEX
 //     result = testScalarTraits<std::complex<double> >(*out);
