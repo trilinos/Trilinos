@@ -479,7 +479,9 @@ void SinCosModel::setupInOutArgs_()
       ModelEvaluatorBase::OutArgsSetup<double> outArgs;
       outArgs.setModelEvalDescription(this->description());
       outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_f );
-      outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_W_op );
+      //if (isImplicit_) { // Thyra_ModelEvaluatorBase requires this
+        outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_W_op );
+      //}
       if (acceptModelParams_) {
         outArgs.set_Np_Ng(Np_,Ng_);
         outArgs.setSupports( ModelEvaluatorBase::OUT_ARG_DfDp,0,DERIV_MV_BY_COL );
