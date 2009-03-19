@@ -116,13 +116,15 @@ IF (TPL_ENABLE_MPI)
 # sence to have this be conditional on something we must have
 # to compile at all
 
-  APPEND_SET(HEADERS
-    Pliris.cpp
-    )
+  IF(Pliris_ENABLE_DREAL)
+    APPEND_SET(HEADERS
+      Pliris.cpp
+      )
 
-  APPEND_SET(SOURCES
-    Pliris.h
-    )
+    APPEND_SET(SOURCES
+      Pliris.h
+      )
+  ENDIF()
 
 
 ENDIF()
