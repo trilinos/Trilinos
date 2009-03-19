@@ -10,6 +10,7 @@ INCLUDE(AdvancedOption)
 INCLUDE(CMakeBuildTypesList)
 INCLUDE(PackageArchSetupMPI)
 INCLUDE(SetCacheOnOffEmpty)
+INCLUDE(AppendStringVar)
 
 
 #
@@ -1122,14 +1123,6 @@ ENDMACRO()
 #
 # Private helper stuff
 #
-
-
-FUNCTION(APPEND_STRING_VAR  STRING_VAR  LINE)
-  SET(${STRING_VAR} "${${STRING_VAR}}${LINE}" PARENT_SCOPE)
-  #PRINT_VAR(STRING_VAR)
-ENDFUNCTION()
-# 2009/01/19: rabartl: ToDo: Above, move this function to
-# cmake/utils/ppendStringVar.cmake module.
 
 
 FUNCTION(PACKAGE_ARCH_WRITE_DEPS_TO_XML_STRING PACKAGE_NAME LIST_TYPE

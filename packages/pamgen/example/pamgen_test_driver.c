@@ -312,6 +312,8 @@ int main(int argc, char** argv)
   if(file_char_array)free(file_char_array);
   if(out_file_name)free(out_file_name);
   if(file_name)free(file_name);
+
+  return 0;
 }
 
 /*****************************************************************************/

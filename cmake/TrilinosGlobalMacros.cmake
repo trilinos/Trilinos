@@ -19,9 +19,9 @@ MACRO(TRILINOS_SETUP_TESTING_SUPPORT)
   ENDIF()
   
   IF (WIN32)
-    SET(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT OFF)
+    SET(Trilinos_ENABLE_UNIT_TESTS_DEFAULT OFF)
   ELSE()
-    SET(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT ON)
+    SET(Trilinos_ENABLE_UNIT_TESTS_DEFAULT ON)
   ENDIF()
   
   # 2008/10/17: rabartl: Above, I can not turn these tests on by default
@@ -30,7 +30,12 @@ MACRO(TRILINOS_SETUP_TESTING_SUPPORT)
   
   ADVANCED_OPTION(Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS
     "Enable dependency unit tests."
-    ${Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS_DEFAULT}
+    ${Trilinos_ENABLE_UNIT_TESTS_DEFAULT}
+    )
+  
+  ADVANCED_OPTION(Trilinos_ENABLE_TESTING_UNIT_TESTS
+    "Enable testing support unit tests."
+    ${Trilinos_ENABLE_UNIT_TESTS_DEFAULT}
     )
 
   # Add the directory for the unit tests
