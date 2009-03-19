@@ -246,19 +246,19 @@ public:
     {}
   /** \brief. */
   RKButcherTableau(
-    const Teuchos::SerialDenseMatrix<int,Scalar>& A,
-    const Teuchos::SerialDenseVector<int,Scalar>& b,
-    const Teuchos::SerialDenseVector<int,Scalar>& c,
-    int order
+    const Teuchos::SerialDenseMatrix<int,Scalar>& A_in,
+    const Teuchos::SerialDenseVector<int,Scalar>& b_in,
+    const Teuchos::SerialDenseVector<int,Scalar>& c_in,
+    int order_in
     )
-    : A_(A), b_(b), c_(c), order_(order)
+    : A_(A_in), b_(b_in), c_(c_in), order_(order_in)
     {
-      const int numStages = A.numRows();
-      TEUCHOS_ASSERT_EQUALITY( A.numRows(), numStages );
-      TEUCHOS_ASSERT_EQUALITY( A.numCols(), numStages );
-      TEUCHOS_ASSERT_EQUALITY( b.length(), numStages );
-      TEUCHOS_ASSERT_EQUALITY( c.length(), numStages );
-      TEUCHOS_ASSERT( order > 0 );
+      const int numStages_in = A_in.numRows();
+      TEUCHOS_ASSERT_EQUALITY( A_in.numRows(), numStages_in );
+      TEUCHOS_ASSERT_EQUALITY( A_in.numCols(), numStages_in );
+      TEUCHOS_ASSERT_EQUALITY( b_in.length(), numStages_in );
+      TEUCHOS_ASSERT_EQUALITY( c_in.length(), numStages_in );
+      TEUCHOS_ASSERT( order_in > 0 );
     }
   /** \brief . */
   int numStages() const { return A_.numRows(); }
@@ -356,7 +356,7 @@ void RKButcherTableau<Scalar>::describe(
 template<class Scalar>
 void assembleIRKState(
   const int stageIndex,
-  const Teuchos::SerialDenseMatrix<int,Scalar> &A,
+  const Teuchos::SerialDenseMatrix<int,Scalar> &A_in,
   const Scalar dt,
   const Thyra::VectorBase<Scalar> &x_base,
   const Thyra::ProductVectorBase<Scalar> &x_stage_bar,
@@ -366,16 +366,16 @@ void assembleIRKState(
 
   typedef ScalarTraits<Scalar> ST;
 
-  const int numStages = A.numRows();
-  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( stageIndex, 0, numStages );
-  TEUCHOS_ASSERT_EQUALITY( A.numRows(), numStages );
-  TEUCHOS_ASSERT_EQUALITY( A.numCols(), numStages );
-  TEUCHOS_ASSERT_EQUALITY( x_stage_bar.productSpace()->numBlocks(), numStages );
+  const int numStages_in = A_in.numRows();
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( stageIndex, 0, numStages_in );
+  TEUCHOS_ASSERT_EQUALITY( A_in.numRows(), numStages_in );
+  TEUCHOS_ASSERT_EQUALITY( A_in.numCols(), numStages_in );
+  TEUCHOS_ASSERT_EQUALITY( x_stage_bar.productSpace()->numBlocks(), numStages_in );
   Thyra::VectorBase<Scalar>& x_out = *x_out_ptr;
 
   V_V( outArg(x_out), x_base );
-  for ( int j = 0; j < numStages; ++j ) {
-    Vp_StV( outArg(x_out), dt * A(stageIndex,j), *x_stage_bar.getVectorBlock(j) );
+  for ( int j = 0; j < numStages_in; ++j ) {
+    Vp_StV( outArg(x_out), dt * A_in(stageIndex,j), *x_stage_bar.getVectorBlock(j) );
   }
 
 }
@@ -384,7 +384,7 @@ void assembleIRKState(
 /* \brief . */
 template<class Scalar>
 void assembleIRKSolution(
-  const Teuchos::SerialDenseVector<int,Scalar> &b,
+  const Teuchos::SerialDenseVector<int,Scalar> &b_in,
   const Scalar dt,
   const Thyra::VectorBase<Scalar> &x_base,
   const Thyra::ProductVectorBase<Scalar> &x_stage_bar,
@@ -394,14 +394,14 @@ void assembleIRKSolution(
 
   typedef ScalarTraits<Scalar> ST;
 
-  const int numStages = b.length();
-  TEUCHOS_ASSERT_EQUALITY( b.length(), numStages );
-  TEUCHOS_ASSERT_EQUALITY( x_stage_bar.productSpace()->numBlocks(), numStages );
+  const int numStages_in = b_in.length();
+  TEUCHOS_ASSERT_EQUALITY( b_in.length(), numStages_in );
+  TEUCHOS_ASSERT_EQUALITY( x_stage_bar.productSpace()->numBlocks(), numStages_in );
   Thyra::VectorBase<Scalar>& x_out = *x_out_ptr;
 
   V_V( outArg(x_out), x_base );
-  for ( int j = 0; j < numStages; ++j ) {
-    Vp_StV( outArg(x_out), dt * b(j), *x_stage_bar.getVectorBlock(j) );
+  for ( int j = 0; j < numStages_in; ++j ) {
+    Vp_StV( outArg(x_out), dt * b_in(j), *x_stage_bar.getVectorBlock(j) );
   }
 
 }
@@ -410,7 +410,7 @@ void assembleIRKSolution(
 template<class Scalar>
 void assembleERKState(
   const int stageIndex,
-  const Teuchos::SerialDenseMatrix<int,Scalar> &A,
+  const Teuchos::SerialDenseMatrix<int,Scalar> &A_in,
   const Scalar dt,
   const Thyra::VectorBase<Scalar> &x_base,
   const Thyra::VectorBase<Scalar> &x_stage_bar,
@@ -423,7 +423,7 @@ void assembleERKState(
 /* \brief . */
 template<class Scalar>
 void assembleERKSolution(
-  const Teuchos::SerialDenseVector<int,Scalar> &b,
+  const Teuchos::SerialDenseVector<int,Scalar> &b_in,
   const Scalar dt,
   const Thyra::VectorBase<Scalar> &x_base,
   const Thyra::VectorBase<Scalar> &x_stage_bar,
@@ -445,10 +445,10 @@ void assertNonEmptyRKButcherTableau( RKButcherTableau<Scalar> rkbt )
 
   // Check that the b vector has _some_ non-zero entry
   int numNonZero = 0;
-  int numStages = rkbt.numStages();
-  const Teuchos::SerialDenseVector<int,Scalar> b = rkbt.b();
-  for (int i=0 ; i<numStages ; ++i) {
-    if (b(i) != ST::zero()) {
+  int numStages_local = rkbt.numStages();
+  const Teuchos::SerialDenseVector<int,Scalar> b_local = rkbt.b();
+  for (int i=0 ; i<numStages_local ; ++i) {
+    if (b_local(i) != ST::zero()) {
       numNonZero++;
     }
   }
@@ -473,12 +473,12 @@ void validateDIRKButcherTableau( RKButcherTableau<Scalar> rkbt )
   assertNonEmptyRKButcherTableau(rkbt);
   // Verify the upper triangular part is zero
   typedef ScalarTraits<Scalar> ST;
-  int numStages = rkbt.numStages();
-  const Teuchos::SerialDenseMatrix<int,Scalar> A = rkbt.A();
-  for (int i=0 ; i<numStages ; ++i) {
-    for (int j=0 ; j<numStages ; ++j) {
+  int numStages_local = rkbt.numStages();
+  const Teuchos::SerialDenseMatrix<int,Scalar> A_local = rkbt.A();
+  for (int i=0 ; i<numStages_local ; ++i) {
+    for (int j=0 ; j<numStages_local ; ++j) {
       if (j>i) {
-        TEST_FOR_EXCEPTION( A(i,j) != ST::zero(), std::logic_error,
+        TEST_FOR_EXCEPTION( A_local(i,j) != ST::zero(), std::logic_error,
            "Error!  This Diagonal Implicit RK Butcher Tableau has non-zeros in the upper triangular part!\n" 
            );
       }
@@ -494,11 +494,11 @@ void validateSDIRKButcherTableau( RKButcherTableau<Scalar> rkbt )
   validateDIRKButcherTableau( rkbt );
   // Verify the diagonal entries are all equal.
   typedef ScalarTraits<Scalar> ST;
-  int numStages = rkbt.numStages();
-  const Teuchos::SerialDenseMatrix<int,Scalar> A = rkbt.A();
-  Scalar val = A(0,0);
-  for (int i=0 ; i<numStages ; ++i) {
-    TEST_FOR_EXCEPTION( A(i,i) != val, std::logic_error,
+  int numStages_local = rkbt.numStages();
+  const Teuchos::SerialDenseMatrix<int,Scalar> A_local = rkbt.A();
+  Scalar val = A_local(0,0);
+  for (int i=0 ; i<numStages_local ; ++i) {
+    TEST_FOR_EXCEPTION( A_local(i,i) != val, std::logic_error,
         "Error!  This Singly Diagonal Implicit RK Butcher Tableau does not have equal diagonal entries!\n"
         );
   }
@@ -511,19 +511,19 @@ void validateERKButcherTableau( RKButcherTableau<Scalar> rkbt )
   assertNonEmptyRKButcherTableau(rkbt);
   // Verify the diagonal is zero and the upper triangular part is zero
   typedef ScalarTraits<Scalar> ST;
-  int numStages = rkbt.numStages();
-  const Teuchos::SerialDenseMatrix<int,Scalar> A = rkbt.A();
-  for (int i=0 ; i<numStages ; ++i) {
-    for (int j=0 ; j<numStages ; ++j) {
+  int numStages_local = rkbt.numStages();
+  const Teuchos::SerialDenseMatrix<int,Scalar> A_local = rkbt.A();
+  for (int i=0 ; i<numStages_local ; ++i) {
+    for (int j=0 ; j<numStages_local ; ++j) {
       if (j>=i) {
-        TEST_FOR_EXCEPTION( A(i,j) != ST::zero(), std::logic_error,
+        TEST_FOR_EXCEPTION( A_local(i,j) != ST::zero(), std::logic_error,
            "Error!  This ERK Butcher Tableau is not lower triangular!\n" 
            );
       }
     }
   }
-  const Teuchos::SerialDenseVector<int,Scalar> c = rkbt.c();
-  TEST_FOR_EXCEPTION( c(0) != ST::zero(), std::logic_error,
+  const Teuchos::SerialDenseVector<int,Scalar> c_local = rkbt.c();
+  TEST_FOR_EXCEPTION( c_local(0) != ST::zero(), std::logic_error,
       "Error!  c(0) must be zero for an explicit RK method!\n"
       );
   // 08/13/08 tscoffe:  I'm not sure what else I can check for b & c...
@@ -531,27 +531,27 @@ void validateERKButcherTableau( RKButcherTableau<Scalar> rkbt )
 
 /*
 template<class Scalar>
-void validateERKOrder( RKButcherTableau<Scalar> rkbt, int order )
+void validateERKOrder( RKButcherTableau<Scalar> rkbt, int order_in )
 {
   typedef ScalarTraits<Scalar> ST;
-  Teuchos::SerialDenseMatrix<int,Scalar> A = rkbt.A();
-  Teuchos::SerialDenseVector<int,Scalar> b = rkbt.b();
-  Teuchos::SerialDenseVector<int,Scalar> c = rkbt.c();
+  Teuchos::SerialDenseMatrix<int,Scalar> A_local = rkbt.A();
+  Teuchos::SerialDenseVector<int,Scalar> b_local = rkbt.b();
+  Teuchos::SerialDenseVector<int,Scalar> c_local = rkbt.c();
   int N = rkbt.numStages();
   TEST_FOR_EXCEPT(N == 0);
 
-  if (order == 3) {
+  if (order_in == 3) {
     Scalar sum1 = ST::zero();
     Scalar sum2 = ST::zero();
     Scalar sum3 = ST::zero();
     Scalar sum4 = ST::zero();
     for (int j=0 ; j<N ; ++j) {
-      sum1 += b(j);
+      sum1 += b_local(j);
       for (int k=0 ; k<N ; ++k) {
-        sum2 += 2*b(j)*A(j,k);
+        sum2 += 2*b_local(j)*A_local(j,k);
         for (int l=0 ; l<N ; ++l) {
-          sum3 += 3*b(j)*A(j,k)*A(j,l);
-          sum4 += 6*b(j)*A(j,k)*A(k,l);
+          sum3 += 3*b_local(j)*A_local(j,k)*A_local(j,l);
+          sum4 += 6*b_local(j)*A_local(j,k)*A_local(k,l);
         }
       }
     }
@@ -573,19 +573,19 @@ void validateERKOrder( RKButcherTableau<Scalar> rkbt, int order )
 }
 
 template<class Scalar>
-void validateIRKOrder( RKButcherTableau<Scalar> rkbt, int order )
+void validateIRKOrder( RKButcherTableau<Scalar> rkbt, int order_in )
 {
   TEST_FOR_EXCEPT(true);
 }
 
 template<class Scalar>
-void validateDIRKOrder( RKButcherTableau<Scalar> rkbt, int order )
+void validateDIRKOrder( RKButcherTableau<Scalar> rkbt, int order_in )
 {
   TEST_FOR_EXCEPT(true);
 }
 
 template<class Scalar>
-void validateSDIRKOrder( RKButcherTableau<Scalar> rkbt, int order )
+void validateSDIRKOrder( RKButcherTableau<Scalar> rkbt, int order_in )
 {
   TEST_FOR_EXCEPT(true);
 }
@@ -2217,58 +2217,58 @@ RKButcherTableau<Scalar> DefaultRKButcherTableauFactory<Scalar>::create(Teuchos:
       TEST_FOR_EXCEPT(true);
     }
   } else if (selectionTypeEnum == RYTHMOS_RKBUTCHERTABLEAU_SELECTION_TYPE_EXPLICIT_BY_ORDER) {
-    int order = paramList.get<int>(SelectionTypeExplicitByOrder_name);
-    if (order == 1) {
+    int order_local = paramList.get<int>(SelectionTypeExplicitByOrder_name);
+    if (order_local == 1) {
       rkbt_out = createForwardEuler_RKBT<Scalar>();
-    } else if (order == 2) {
+    } else if (order_local == 2) {
       rkbt_out = createExplicit2Stage2ndOrderRunge_RKBT<Scalar>();
-    } else if (order == 3) {
+    } else if (order_local == 3) {
       rkbt_out = createExplicit3Stage3rdOrderHeun_RKBT<Scalar>();
-    } else if (order == 4) {
+    } else if (order_local == 4) {
       rkbt_out = createExplicit4Stage4thOrder_RKBT<Scalar>();
     } else {
-      TEST_FOR_EXCEPTION( order > 4, std::logic_error,
+      TEST_FOR_EXCEPTION( order_local > 4, std::logic_error,
           "Error!  Explicit method by order is only implemented for orders 1 - 4\n"
           );
     }
   } else if (selectionTypeEnum == RYTHMOS_RKBUTCHERTABLEAU_SELECTION_TYPE_IMPLICIT_BY_ORDER) {
-    int order = paramList.get<int>(SelectionTypeImplicitByOrder_name);
-    if (order == 1) {
+    int order_local = paramList.get<int>(SelectionTypeImplicitByOrder_name);
+    if (order_local == 1) {
       rkbt_out = createBackwardEuler_RKBT<Scalar>();
-    } else if (order == 2) {
+    } else if (order_local == 2) {
       rkbt_out = createImplicit1Stage2ndOrderGauss_RKBT<Scalar>();
-    } else if (order == 4) {
+    } else if (order_local == 4) {
       rkbt_out = createImplicit2Stage4thOrderGauss_RKBT<Scalar>();
-    } else if (order == 6) {
+    } else if (order_local == 6) {
       rkbt_out = createImplicit3Stage6thOrderGauss_RKBT<Scalar>();
     } else {
-      TEST_FOR_EXCEPTION( order>1, std::logic_error,
+      TEST_FOR_EXCEPTION( order_local>1, std::logic_error,
           "Error!  Implicit method by order is only implemented for orders = 1,2,4,6 \n"
           );
     }
   } else if (selectionTypeEnum == RYTHMOS_RKBUTCHERTABLEAU_SELECTION_TYPE_DIRK_BY_ORDER) {
-    int order = paramList.get<int>(SelectionTypeDIRKByOrder_name);
-    if (order == 1) {
+    int order_local = paramList.get<int>(SelectionTypeDIRKByOrder_name);
+    if (order_local == 1) {
       rkbt_out = createBackwardEuler_RKBT<Scalar>();
-    } else if (order == 4) {
+    } else if (order_local == 4) {
       rkbt_out = createSDIRK3Stage4thOrder_RKBT<Scalar>();
-    } else if (order == 5) {
+    } else if (order_local == 5) {
       rkbt_out = createSDIRK5Stage5thOrder_RKBT<Scalar>();
     } else {
-      TEST_FOR_EXCEPTION( ((order != 1) && (order != 4) && (order != 5)), std::logic_error,
+      TEST_FOR_EXCEPTION( ((order_local != 1) && (order_local != 4) && (order_local != 5)), std::logic_error,
           "Error!  DIRK method by order is only implemented for orders 1, 4, and 5\n"
           );
     }
   } else if (selectionTypeEnum == RYTHMOS_RKBUTCHERTABLEAU_SELECTION_TYPE_SDIRK_BY_ORDER) {
-    int order = paramList.get<int>(SelectionTypeSDIRKByOrder_name);
-    if (order == 1) {
+    int order_local = paramList.get<int>(SelectionTypeSDIRKByOrder_name);
+    if (order_local == 1) {
       rkbt_out = createBackwardEuler_RKBT<Scalar>();
-    } else if (order == 4) {
+    } else if (order_local == 4) {
       rkbt_out = createSDIRK3Stage4thOrder_RKBT<Scalar>();
-    } else if (order == 5) {
+    } else if (order_local == 5) {
       rkbt_out = createSDIRK5Stage5thOrder_RKBT<Scalar>();
     } else {
-      TEST_FOR_EXCEPTION( ((order != 1) && (order != 4) && (order != 5)),  std::logic_error,
+      TEST_FOR_EXCEPTION( ((order_local != 1) && (order_local != 4) && (order_local != 5)),  std::logic_error,
           "Error!  SDIRK method by order is only implemented for orders 1, 4, and 5\n"
           );
     }

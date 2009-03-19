@@ -241,8 +241,6 @@ int main(int argc, char *argv[])
       success = true;
     else 
       success = false;
-    if (success)
-      cout << "Test Passed!" << endl;
 
    } // end try
    catch( const std::exception &excpt ) {
@@ -254,6 +252,11 @@ int main(int argc, char *argv[])
      std::cerr << "*** Caught an unknown exception!\n";
      success = false;
    }
+
+  if(success)
+    *out << "\nEnd Result: TEST PASSED" << endl;
+  else
+    *out << "\nEnd Result: TEST FAILED" << endl;
 
   return success ? 0 : 1;
 } // end main() [Doxygen looks for this!]

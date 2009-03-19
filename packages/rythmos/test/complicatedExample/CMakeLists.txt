@@ -34,7 +34,6 @@ PACKAGE_ADD_TEST(
     "--numelements=10 --verbose --echo-command-line"
     # Vector Forward Euler
     "--method=FE --maxerror=1e-1 --numelements=10 --verbose --echo-command-line"
-    "--numelements=100 --method=FE --T=0.1 --numsteps=5000 --verbose --echo-command-line"
     # Vector Forward Euler with same accuracy as ERK
     "--numelements=100 --method=FE --T=0.1 --numsteps=5000 --verbose --echo-command-line"
   COMM serial mpi  

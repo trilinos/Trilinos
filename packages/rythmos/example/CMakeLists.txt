@@ -5,7 +5,8 @@ IF(${PACKAGE_NAME}_ENABLE_EpetraExt AND ${PACKAGE_NAME}_ENABLE_Stratimikos)
 
   ADD_SUBDIRECTORIES(
     diagonalTransient
-    #timeDiscretizedBackwardEuler
+    epetra
+    timeDiscretizedBackwardEuler
     )
 
 ENDIF()

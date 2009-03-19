@@ -44,7 +44,7 @@ IF (Stratimikos_ENABLE_Amesos)
     "       </ParameterList>"
     "     </ParameterList>"
     "   </ParameterList>\""
-    " --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM"
+    " --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM "
     )
   PACKAGE_ADD_TEST(
     diagonalTransient
@@ -69,7 +69,9 @@ IF (Stratimikos_ENABLE_Amesos)
     "        </ParameterList>"
     "      </ParameterList>"
     "    </ParameterList>\""
-    "  --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM"
+    "  --final-time=1e-3 "
+    "  --num-time-steps=10 "
+    "  --verb-level=VERB_MEDIUM "
     )
   PACKAGE_ADD_TEST(
     diagonalTransient
@@ -95,13 +97,15 @@ IF (Stratimikos_ENABLE_Amesos)
     )
 
   MULTILINE_SET(ARGS
-    " --params-file=diagonalTransient.amesos.fwd-sens-solve.n1.p1.xml"
-    " --final-time=1e-4 --num-time-steps=10 --verb-level=VERB_LOW"
-    " --echo-command-line"
-    " --fwd-sens-solve"
-    " --max-state-error=1e-6"
-    " --max-sens-error=1e-6"
-    " --dump-final-solutions"
+    " --params-file=diagonalTransient.amesos.fwd-sens-solve.n1.p1.xml "
+    " --final-time=1e-4 "
+    " --num-time-steps=10 "
+    " --verb-level=VERB_LOW "
+    " --echo-command-line "
+    " --fwd-sens-solve "
+    " --max-state-error=1e-6 "
+    " --max-sens-error=1e-6 "
+    " --dump-final-solutions "
     )
   PACKAGE_ADD_TEST(
     diagonalTransient

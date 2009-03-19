@@ -56,9 +56,7 @@
 #include "Thyra_TestingTools.hpp"
 
 // Includes for Stratimikos:
-#ifdef HAVE_RYTHMOS_STRATIMIKOS
-#  include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#endif
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 #include <string>
 
@@ -111,10 +109,8 @@ int main(int argc, char *argv[])
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
     clp.addOutputSetupOptions(true);
-#ifdef HAVE_RYTHMOS_STRATIMIKOS
     Stratimikos::DefaultLinearSolverBuilder lowsfCreator;
     lowsfCreator.setupCLP(&clp);
-#endif
 
     clp.setOption( "T", &finalTime, "Final time for simulation." );
     clp.setOption( "numelements", &numElements, "Problem size");
@@ -135,12 +131,9 @@ int main(int argc, char *argv[])
     // 10/23/06 tscoffe:  bounds on Teuchos::EVerbosityLevel:
     outputLevel = min(max(outputLevel,-1),4);
 
-#ifdef HAVE_RYTHMOS_STRATIMIKOS
     lowsfCreator.readParameters(out.get());
     *out << "\nThe parameter list after being read in:\n";
     lowsfCreator.getParameterList()->print(*out,2,true,false);
-#endif
-
 
     if (version) // Display version information and exit.
     {
@@ -172,13 +165,10 @@ int main(int argc, char *argv[])
     {
       //W_factory = Teuchos::rcp(new Thyra::DiagonalEpetraLinearOpWithSolveFactory());
       //W_factory = Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory());
-#ifdef HAVE_RYTHMOS_STRATIMIKOS
       W_factory = lowsfCreator.createLinearSolveStrategy("");
       *out
         << "\nCreated a LinearOpWithSolveFactory described as:\n"
         << Teuchos::describe(*W_factory,Teuchos::VERB_MEDIUM);
-#endif
-
     }
 
     // create interface to problem
@@ -326,11 +316,9 @@ int main(int argc, char *argv[])
       );
     if(!result) success = false;
 
-#ifdef HAVE_RYTHMOS_STRATIMIKOS
     // Write the final parameters to file
     if(W_factory.get())
       lowsfCreator.writeParamsFile(*W_factory);
-#endif
     
 #ifdef HAVE_MPI
     MPI_Finalize();
@@ -339,6 +327,14 @@ int main(int argc, char *argv[])
    } // end try
    TEUCHOS_STANDARD_CATCH_STATEMENTS(true,*out,success)
 
+  if(success) {
+    *out << "\nEnd Result: TEST PASSED" << endl;
+  }
+  else {
+    *out << "\nEnd Result: TEST FAILED" << endl;
+  }
+
   return success ? 0 : 1;
+
 } // end main() [Doxygen looks for this!]
 

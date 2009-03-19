@@ -25,76 +25,9 @@ APPEND_SET(HEADERS
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-APPEND_SET(HEADERS
-  Rythmos_AdjointModelEvaluator.hpp
-  Rythmos_BackwardEulerStepper.hpp
-  Rythmos_BreakPointInformerBase.hpp
-  Rythmos_CompositeIntegratorObserver.hpp
-  Rythmos_ConfigDefs.h
-  Rythmos_CubicSplineInterpolator.hpp
-  Rythmos_DataStore.hpp
-  Rythmos_DefaultIntegrator.hpp
-  Rythmos_DiagonalImplicitRKModelEvaluator.hpp
-  Rythmos_ErrorEstimateBase.hpp
-  Rythmos_ErrorEstimatorBase.hpp
-  Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp
-  Rythmos_ErrWtVecCalcBase.hpp
-  Rythmos_ExplicitRKStepper.hpp
-  Rythmos_ExplicitTaylorPolynomialStepper.hpp
-  Rythmos_ForwardEulerStepper.hpp
-  Rythmos_ForwardResponseSensitivityComputer.hpp
-  Rythmos_ForwardResponseSensitivityComputerObserver.hpp
-  Rythmos_ForwardSensitivityIntegratorAsModelEvaluator.hpp
-  Rythmos_ForwardSensitivityModelEvaluator.hpp
-  Rythmos_ForwardSensitivityStepper.hpp
-  Rythmos_HermiteInterpolator.hpp
-  Rythmos_ImplicitBDFStepper.hpp
-  Rythmos_ImplicitBDFStepperDecl.hpp
-  Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp
-  Rythmos_ImplicitBDFStepperStepControl.hpp
-  Rythmos_ImplicitBDFStepperStepControlDecl.hpp
-  Rythmos_ImplicitRKModelEvaluator.hpp
-  Rythmos_ImplicitRKStepper.hpp
-  Rythmos_IntegrationControlStrategyBase.hpp
-  Rythmos_IntegrationObserverBase.hpp
-  Rythmos_IntegratorBase.hpp
-  Rythmos_InterpolationBuffer.hpp
-  Rythmos_InterpolationBufferAppenderBase.hpp
-  Rythmos_InterpolationBufferBase.hpp
-  Rythmos_InterpolationBufferHelpers.hpp
-  Rythmos_InterpolatorBase.hpp
-  Rythmos_InterpolatorBaseHelpers.hpp
-  Rythmos_LinearInterpolator.hpp
-  Rythmos_PointwiseInterpolationBufferAppender.hpp
-  Rythmos_QuadratureBase.hpp
-  Rythmos_RKButcherTableau.hpp
-  Rythmos_ResponseAndFwdSensPoint.hpp
-  Rythmos_SimpleIntegrationControlStrategy.hpp
-  Rythmos_SingleResidualModelEvaluator.hpp
-  Rythmos_SingleResidualModelEvaluatorBase.hpp
-  Rythmos_SmartInterpolationBufferAppender.hpp
-  Rythmos_SolverAcceptingStepperBase.hpp
-  Rythmos_StateAndForwardSensitivityModelEvaluator.hpp
-  Rythmos_StepControlInfo.hpp
-  Rythmos_StepControlStrategyAcceptingStepperBase.hpp
-  Rythmos_StepControlStrategyBase.hpp
-  Rythmos_StepperAsModelEvaluator.hpp
-  Rythmos_StepperBase.hpp
-  Rythmos_StepperBuilder.hpp
-  Rythmos_StepperHelpers.hpp
-  Rythmos_StepperSupportTypes.hpp
-  Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp
-  Rythmos_TimeRange.hpp
-  Rythmos_TimeStepNonlinearSolver.hpp
-  Rythmos_Types.hpp
-  Rythmos_extractStateAndSens.hpp
-  Rythmos_Version.h
-  )
+FILE(GLOB HEADERS *.hpp *.h)
 
-APPEND_SET(SOURCES
-  Rythmos_Version.cpp
-  Rythmos_RKButcherTableau.cpp
-  )
+FILE(GLOB SOURCES *.cpp)
 
 #
 # C) Define the targets for package's library(s)

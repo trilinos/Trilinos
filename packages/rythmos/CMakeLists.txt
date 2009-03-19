@@ -1,6 +1,7 @@
 
 INCLUDE(PackageMacros)
 INCLUDE(AddOptionAndDefine)
+INCLUDE(CombinedOption)
 
 #
 # A) Define the package
@@ -21,6 +22,23 @@ ADD_SUBDIRECTORY(src)
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
+
+ADD_SUBDIRECTORY(adapters)
+
+#
+# GAASP options:
+#
+
+#COMBINED_OPTION( ${PACKAGE_NAME}_ENABLE_GAASP
+#  DEP_OPTIONS_NAMES Teuchos_ENABLE_BOOST
+#  DOCSTR "Enables GAASP adapters in Rythmos for global error estimation and control, requires Boost and its support in Teuchos"
+#  OFF
+#  )
+
+#COMBINED_OPTION( ${PACKAGE_NAME}_ENABLE_GAASP_INTERNAL
+#  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_GAASP
+#  DOCSTR "Enables internal TPL libraries for GAASP"
+#  )
 
 #
 # D) Do standard postprocessing

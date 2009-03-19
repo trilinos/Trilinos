@@ -22,7 +22,8 @@ template<class Scalar> class StepperBase;
 template<class Scalar>
 class IntegrationControlStrategyBase
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::VerboseObject<IntegrationControlStrategyBase<Scalar> >
+    virtual public Teuchos::VerboseObject<IntegrationControlStrategyBase<Scalar> >,
+    virtual public Teuchos::ParameterListAcceptor
 {
 public:
 
