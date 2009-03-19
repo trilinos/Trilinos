@@ -52,7 +52,7 @@ enum { LOCK_COUNT_MAX   = 256 };
  *  Optimize this if at all possible.
  */
 
-#if defined(__GNUC__) && ( 4 <= __GNUC__ )
+#if defined(__GNUC__) && defined(__linux__) && ( 4 <= __GNUC__ )
 
 #define atomic_fetch_and_decrement( VALUE_PTR )	\
 	__sync_fetch_and_sub(VALUE_PTR,1)
