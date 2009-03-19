@@ -122,6 +122,13 @@ echo
 time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_icpc_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_debug_icpc_godel.out
 
+echo
+echo "Doing serial release intel build: `date`"
+echo
+
+time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_release_icpc_godel.cmake -VV \
+  &> $BASEDIR/ctest_linux_nightly_serial_release_icpc_godel.out
+
 fi
 
 
