@@ -130,10 +130,10 @@ namespace {
     // FINISH: add more tests here
     TEST_THROW(zero.apply(mv1,mv1)            , std::runtime_error);
 #   if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
-       TEST_THROW(zero.submitEntry(0,0,ST::one()), std::runtime_error);
+       TEST_THROW(zero.insertGlobalValue(0,0,ST::one()), std::runtime_error);
 #   endif
     zero.fillComplete();
-    TEST_THROW(zero.submitEntry(0,0,ST::one()), std::runtime_error); // submit after fill
+    TEST_THROW(zero.insertGlobalValue(0,0,ST::one()), std::runtime_error); // submit after fill
     TEST_THROW(zero.apply(mv2,mv1)            , std::runtime_error); // MVs have different number of vectors
     TEST_THROW(zero.apply(mv2,mv3)            , std::runtime_error); // MVs have different number of vectors
   }
@@ -164,19 +164,19 @@ namespace {
     Ordinal base = numLocal*myImageID;
     CrsMatrix<Scalar,Ordinal> eye(map,1);
     for (int i=0; i<numLocal; ++i) {
-      eye.submitEntry(base+i,base+i,ST::one());
+      eye.insertGlobalValue(base+i,base+i,ST::one());
     }
     eye.fillComplete();
     // test the properties
-    TEST_EQUALITY(eye.getGlobalNNZ()  , numImages*numLocal);
-    TEST_EQUALITY(eye.getLocalNNZ()      , numLocal);
-    TEST_EQUALITY(eye.getNumGlobalRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye.getNumLocalRows()          , numLocal);
-    TEST_EQUALITY(eye.getNumLocalCols()          , numLocal);
-    TEST_EQUALITY(eye.getNumGlobalNZDiags() , numImages*numLocal);
-    TEST_EQUALITY(eye.getNumLocalNZDiags()     , numLocal);
-    TEST_EQUALITY(eye.getGlobalMaxRowNNZ(), 1);
-    TEST_EQUALITY(eye.getLocalMaxRowNNZ()    , 1);
+    TEST_EQUALITY(eye.numGlobalEntries()  , numImages*numLocal);
+    TEST_EQUALITY(eye.numMyEntries()      , numLocal);
+    TEST_EQUALITY(eye.numGlobalRows()      , numImages*numLocal);
+    TEST_EQUALITY(eye.numLocalRows()          , numLocal);
+    TEST_EQUALITY(eye.numLocalCols()          , numLocal);
+    TEST_EQUALITY(eye.numGlobalDiagonals() , numImages*numLocal);
+    TEST_EQUALITY(eye.numMyDiagonals()     , numLocal);
+    TEST_EQUALITY(eye.globalMaxNumRowEntries(), 1);
+    TEST_EQUALITY(eye.myMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye.getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getColMap())   , true);
     TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getDomainMap()), true);
@@ -245,7 +245,7 @@ namespace {
     CrsMatrix<Scalar,Ordinal> A(rowmap,P);
     for (int i=0; i<M; ++i) {
       for (int j=0; j<P; ++j) {
-        A.submitEntry( M*myImageID+i, j, as<Scalar>(M*myImageID+i + j*M*N) );
+        A.insertGlobalValue( M*myImageID+i, j, as<Scalar>(M*myImageID+i + j*M*N) );
       }
     }
     // call fillComplete()
@@ -338,7 +338,7 @@ namespace {
     CrsMatrix<Scalar,Ordinal> A(rowmap,P);
     for (int i=0; i<M; ++i) {
       for (int j=0; j<P; ++j) {
-        A.submitEntry( M*myImageID+i, j, as<Scalar>(M*myImageID+i + j*M*N) );
+        A.insertGlobalValue( M*myImageID+i, j, as<Scalar>(M*myImageID+i + j*M*N) );
       }
     }
     // call fillComplete()
@@ -426,31 +426,31 @@ namespace {
     Array<Scalar>  vals(3,ST::one());
     if (myImageID == 0) {
       Array<Ordinal> cols( tuple<Ordinal>(2*myImageID,2*myImageID+1,2*myImageID+2) );
-      tri.submitEntries(2*myImageID  ,cols(0,2),vals(0,2));
-      tri.submitEntries(2*myImageID+1,cols(0,3),vals(0,3));
+      tri.insertGlobalValues(2*myImageID  ,cols(0,2),vals(0,2));
+      tri.insertGlobalValues(2*myImageID+1,cols(0,3),vals(0,3));
     }
     else if (myImageID == numImages-1) {        
       Array<Ordinal> cols( tuple<Ordinal>(2*myImageID-1,2*myImageID,2*myImageID+1) );
-      tri.submitEntries(2*myImageID  ,cols(0,3),vals(0,3));
-      tri.submitEntries(2*myImageID+1,cols(1,2),vals(1,2));
+      tri.insertGlobalValues(2*myImageID  ,cols(0,3),vals(0,3));
+      tri.insertGlobalValues(2*myImageID+1,cols(1,2),vals(1,2));
     }
     else {
       Array<Ordinal> cols( tuple<Ordinal>(2*myImageID-1,2*myImageID,2*myImageID+1,2*myImageID+2) );
-      tri.submitEntries(2*myImageID  ,cols(0,3),vals(0,3));
-      tri.submitEntries(2*myImageID+1,cols(1,3),vals(0,3));
+      tri.insertGlobalValues(2*myImageID  ,cols(0,3),vals(0,3));
+      tri.insertGlobalValues(2*myImageID+1,cols(1,3),vals(0,3));
     }
     // call fillComplete(), specifying domain and range maps and requiring custom importer and exporter
     tri.fillComplete(rowmap,rngmap);
     // test the properties
-    TEST_EQUALITY(tri.getGlobalNNZ()  , 6*numImages-2);          
-    TEST_EQUALITY(tri.getLocalNNZ()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
-    TEST_EQUALITY(tri.getNumGlobalRows()      , 2*numImages);
-    TEST_EQUALITY(tri.getNumLocalRows()          , 2);
-    TEST_EQUALITY(tri.getNumLocalCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
-    TEST_EQUALITY(tri.getNumGlobalNZDiags() , 2*numImages);
-    TEST_EQUALITY(tri.getNumLocalNZDiags()     , 2);
-    TEST_EQUALITY(tri.getGlobalMaxRowNNZ(), 3);
-    TEST_EQUALITY(tri.getLocalMaxRowNNZ()    , 3);
+    TEST_EQUALITY(tri.numGlobalEntries()  , 6*numImages-2);          
+    TEST_EQUALITY(tri.numMyEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
+    TEST_EQUALITY(tri.numGlobalRows()      , 2*numImages);
+    TEST_EQUALITY(tri.numLocalRows()          , 2);
+    TEST_EQUALITY(tri.numLocalCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
+    TEST_EQUALITY(tri.numGlobalDiagonals() , 2*numImages);
+    TEST_EQUALITY(tri.numMyDiagonals()     , 2);
+    TEST_EQUALITY(tri.globalMaxNumRowEntries(), 3);
+    TEST_EQUALITY(tri.myMaxNumRowEntries()    , 3);
     TEST_EQUALITY(tri.getIndexBase()          , 0);
     TEST_EQUALITY_CONST(tri.getRowMap().isSameAs(rowmap), true);
     TEST_EQUALITY_CONST(tri.getRangeMap().isSameAs(rngmap), true);
@@ -510,20 +510,20 @@ namespace {
     CrsMatrix<Scalar,Ordinal> eye(map,1);
     if (myImageID == 0) {
       for (int i=0; i<map.getNumGlobalEntries(); ++i) {
-        eye.submitEntry(i,i,ST::one());
+        eye.insertGlobalValue(i,i,ST::one());
       }
     }
     eye.fillComplete();
     // test the properties
-    TEST_EQUALITY(eye.getGlobalNNZ()  , numImages*numLocal);
-    TEST_EQUALITY(eye.getLocalNNZ()      , numLocal);
-    TEST_EQUALITY(eye.getNumGlobalRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye.getNumLocalRows()          , numLocal);
-    TEST_EQUALITY(eye.getNumLocalCols()          , numLocal);
-    TEST_EQUALITY(eye.getNumGlobalNZDiags() , numImages*numLocal);
-    TEST_EQUALITY(eye.getNumLocalNZDiags()     , numLocal);
-    TEST_EQUALITY(eye.getGlobalMaxRowNNZ(), 1);
-    TEST_EQUALITY(eye.getLocalMaxRowNNZ()    , 1);
+    TEST_EQUALITY(eye.numGlobalEntries()  , numImages*numLocal);
+    TEST_EQUALITY(eye.numMyEntries()      , numLocal);
+    TEST_EQUALITY(eye.numGlobalRows()      , numImages*numLocal);
+    TEST_EQUALITY(eye.numLocalRows()          , numLocal);
+    TEST_EQUALITY(eye.numLocalCols()          , numLocal);
+    TEST_EQUALITY(eye.numGlobalDiagonals() , numImages*numLocal);
+    TEST_EQUALITY(eye.numMyDiagonals()     , numLocal);
+    TEST_EQUALITY(eye.globalMaxNumRowEntries(), 1);
+    TEST_EQUALITY(eye.myMaxNumRowEntries()    , 1);
     TEST_EQUALITY(eye.getIndexBase()          , 0);
     TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getColMap())   , true);
     TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getDomainMap()), true);
@@ -576,31 +576,31 @@ namespace {
       myNNZ = 2;
       Array<Scalar> vals(2); vals[0] = as<Scalar>(2)*ST::one(); vals[1]= ST::one();
       Array<Ordinal> cols(2); cols[0] = myImageID; cols[1] = myImageID+1;
-      A.submitEntries(myImageID,cols(),vals());
+      A.insertGlobalValues(myImageID,cols(),vals());
     }
     else if (myImageID == numImages-1) {
       myNNZ = 2;
       Array<Scalar> vals(2); vals[0] = ST::one(); vals[1]= as<Scalar>(2)*ST::one();
       Array<Ordinal> cols(2); cols[0] = myImageID-1; cols[1] = myImageID;
-      A.submitEntries(myImageID,cols(),vals());
+      A.insertGlobalValues(myImageID,cols(),vals());
     }
     else {
       myNNZ = 3;
       Array<Scalar> vals(3,ST::one());
       Array<Ordinal> cols(3); cols[0] = myImageID-1; cols[1] = myImageID; cols[2] = myImageID+1;
-      A.submitEntries(myImageID,cols(),vals());
+      A.insertGlobalValues(myImageID,cols(),vals());
     }
     A.fillComplete();
     // test the properties
-    TEST_EQUALITY(A.getGlobalNNZ()   , 3*numImages-2);
-    TEST_EQUALITY(A.getLocalNNZ()       , myNNZ);
-    TEST_EQUALITY(A.getNumGlobalRows()       , numImages);
-    TEST_EQUALITY_CONST(A.getNumLocalRows()     , ONE);
-    TEST_EQUALITY(A.getNumLocalCols()           , myNNZ);
-    TEST_EQUALITY(A.getNumGlobalNZDiags()  , numImages);
-    TEST_EQUALITY_CONST(A.getNumLocalNZDiags(), ONE);
-    TEST_EQUALITY(A.getGlobalMaxRowNNZ() , (numImages > 2 ? 3 : 2));
-    TEST_EQUALITY(A.getLocalMaxRowNNZ()     , myNNZ);
+    TEST_EQUALITY(A.numGlobalEntries()   , 3*numImages-2);
+    TEST_EQUALITY(A.numMyEntries()       , myNNZ);
+    TEST_EQUALITY(A.numGlobalRows()       , numImages);
+    TEST_EQUALITY_CONST(A.numLocalRows()     , ONE);
+    TEST_EQUALITY(A.numLocalCols()           , myNNZ);
+    TEST_EQUALITY(A.numGlobalDiagonals()  , numImages);
+    TEST_EQUALITY_CONST(A.numMyDiagonals(), ONE);
+    TEST_EQUALITY(A.globalMaxNumRowEntries() , (numImages > 2 ? 3 : 2));
+    TEST_EQUALITY(A.myMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , ZERO);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getColMap())   , false);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), true);
@@ -653,8 +653,8 @@ namespace {
     if (myImageID != numImages-1) { // last image assigns none
       Array<Scalar> vals(3); vals[1] = as<Scalar>(1); vals[0] = vals[2] = as<Scalar>(2);
       Array<Ordinal> cols(2); cols[0] = myImageID; cols[1] = myImageID + 1;
-      A.submitEntries(myImageID  ,cols(),vals(0,2));
-      A.submitEntries(myImageID+1,cols(),vals(1,2));
+      A.insertGlobalValues(myImageID  ,cols(),vals(0,2));
+      A.insertGlobalValues(myImageID+1,cols(),vals(1,2));
     }
     // divine myNNZ and build multivector with matrix
     mveye.replaceMyValue(0,myImageID,ST::one());
@@ -676,15 +676,15 @@ namespace {
     }
     A.fillComplete();
     // test the properties
-    TEST_EQUALITY(A.getGlobalNNZ()   , 3*numImages-2);
-    TEST_EQUALITY(A.getLocalNNZ()       , myNNZ);
-    TEST_EQUALITY(A.getNumGlobalRows()       , numImages);
-    TEST_EQUALITY_CONST(A.getNumLocalRows()     , ONE);
-    TEST_EQUALITY(A.getNumLocalCols()           , myNNZ);
-    TEST_EQUALITY(A.getNumGlobalNZDiags()  , numImages);
-    TEST_EQUALITY_CONST(A.getNumLocalNZDiags(), ONE);
-    TEST_EQUALITY(A.getGlobalMaxRowNNZ() , 3);
-    TEST_EQUALITY(A.getLocalMaxRowNNZ()     , myNNZ);
+    TEST_EQUALITY(A.numGlobalEntries()   , 3*numImages-2);
+    TEST_EQUALITY(A.numMyEntries()       , myNNZ);
+    TEST_EQUALITY(A.numGlobalRows()       , numImages);
+    TEST_EQUALITY_CONST(A.numLocalRows()     , ONE);
+    TEST_EQUALITY(A.numLocalCols()           , myNNZ);
+    TEST_EQUALITY(A.numGlobalDiagonals()  , numImages);
+    TEST_EQUALITY_CONST(A.numMyDiagonals(), ONE);
+    TEST_EQUALITY(A.globalMaxNumRowEntries() , 3);
+    TEST_EQUALITY(A.myMaxNumRowEntries()     , myNNZ);
     TEST_EQUALITY_CONST(A.getIndexBase()     , ZERO);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getColMap())   , false);
     TEST_EQUALITY_CONST(A.getRowMap().isSameAs(A.getDomainMap()), true);
@@ -757,7 +757,7 @@ namespace {
       const int *rptr = rowind;
       for (int c=0; c<dim; ++c) {
         for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          A_crs.submitEntry(*rptr-1,c,Scalar(dptr[0],dptr[1]));
+          A_crs.insertGlobalValue(*rptr-1,c,Scalar(dptr[0],dptr[1]));
           A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,Scalar(dptr[0],dptr[1]));
           ++rptr;
           dptr += 2;
@@ -782,8 +782,8 @@ namespace {
       mveye.replaceGlobalValue(gid,gid,ST::one());
     }
     // test the properties
-    TEST_EQUALITY(A_crs.getGlobalNNZ()   , nnz);
-    TEST_EQUALITY(A_crs.getNumGlobalRows()       , dim);
+    TEST_EQUALITY(A_crs.numGlobalEntries()   , nnz);
+    TEST_EQUALITY(A_crs.numGlobalRows()       , dim);
     TEST_EQUALITY_CONST(A_crs.getIndexBase()     , ZERO);
     TEST_EQUALITY_CONST(A_crs.getRowMap().isSameAs(A_crs.getRangeMap()) , true);
     // test the action
@@ -851,7 +851,7 @@ namespace {
       const int *rptr = rowind;
       for (int c=0; c<dim; ++c) {
         for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          A_crs.submitEntry(*rptr-1,c,Scalar(dptr[0],dptr[1]));
+          A_crs.insertGlobalValue(*rptr-1,c,Scalar(dptr[0],dptr[1]));
           ++rptr;
           dptr += 2;
         }
@@ -953,8 +953,8 @@ namespace {
       const int *rptr = rowind;
       for (int c=0; c<dim; ++c) {
         for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          A_crs.submitEntry(*rptr-1,c,static_cast<Scalar>(*dptr));
-          A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,static_cast<Scalar>(*dptr));
+          A_crs.insertGlobalValue(*rptr-1,c,as<Scalar>(*dptr));
+          A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,as<Scalar>(*dptr));
           ++rptr;
           ++dptr;
         }
@@ -978,8 +978,8 @@ namespace {
       mveye.replaceGlobalValue(gid,gid,ST::one());
     }
     // test the properties
-    TEST_EQUALITY(A_crs.getGlobalNNZ()   , nnz);
-    TEST_EQUALITY(A_crs.getNumGlobalRows()       , dim);
+    TEST_EQUALITY(A_crs.numGlobalEntries()   , nnz);
+    TEST_EQUALITY(A_crs.numGlobalRows()       , dim);
     TEST_EQUALITY_CONST(A_crs.getIndexBase()     , ZERO);
     TEST_EQUALITY_CONST(A_crs.getRowMap().isSameAs(A_crs.getRangeMap()) , true);
     // test the action
@@ -995,7 +995,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, BadGID, Ordinal, Scalar )
   {
-    // what happens when we call CrsMatrix::submitEntry() for a row that isn't on the Map?
+    // what happens when we call CrsMatrix::insertGlobalValue() for a row that isn't on the Map?
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,Ordinal> MV;
     typedef typename ST::magnitudeType Mag;
@@ -1015,7 +1015,7 @@ namespace {
       CrsMatrix<Scalar,Ordinal> A(map,1);
       // add an entry off the map: row too high
       // this will only be off the map for the last node, for the others it will induce communication
-      A.submitEntry(map.getMaxGlobalIndex()+1,map.getIndexBase(),ST::one());
+      A.insertGlobalValue(map.getMaxGlobalIndex()+1,map.getIndexBase(),ST::one());
       TEST_THROW(A.fillComplete(), std::runtime_error);
     }
     {
@@ -1024,7 +1024,7 @@ namespace {
       // add an entry off the map: row too high
       // this will only be off the map for the last node, for the others there is nothing
       if (myImageID == numImages-1) {
-        A.submitEntry(map.getMaxAllGlobalIndex()+1,map.getIndexBase(),ST::one());
+        A.insertGlobalValue(map.getMaxAllGlobalIndex()+1,map.getIndexBase(),ST::one());
       }
       TEST_THROW(A.fillComplete(), std::runtime_error);
     }
@@ -1096,7 +1096,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, TheEyeOfTruth, ORDINAL, SCALAR ) \

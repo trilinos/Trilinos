@@ -69,7 +69,7 @@ bool proc_verbose = false, reduce_tol, precond = true, dumpdata = false;
 RCP<Map<int> > vmap;
 ParameterList mptestpl; 
 int rnnzmax;
-int dim, numrhs; 
+int mptestdim, numrhs; 
 double *dvals; 
 int *colptr, *rowind;
 int mptestmypid = 0;
@@ -91,10 +91,10 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
     // HB format is compressed column. CrsMatrix is compressed row.
     const double *dptr = dvals;
     const int *rptr = rowind;
-    for (int c=0; c<dim; ++c) {
+    for (int c=0; c<mptestdim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        A->submitEntry(*rptr-1,c,*dptr);
-        A->submitEntry(c,*rptr-1,*dptr);
+        A->insertGlobalValue(*rptr-1,c,*dptr);
+        A->insertGlobalValue(c,*rptr-1,*dptr);
         ++rptr;
         ++dptr;
       }
@@ -112,14 +112,15 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
   // Construct a linear problem instance with zero initial MV
   RCP<LinearProblem<Scalar,MV,OP> > problem = rcp( new LinearProblem<Scalar,MV,OP>(A,X,B) );
   problem->setLabel(Teuchos::typeName(SCT::one()));
-  // diagonal preconditione
+  // diagonal preconditioner
   if (precond) {
-    RCP<Vector<Scalar,int> > diags = A->getLocalDiagCopy();
+    Vector<Scalar,int> diags(A->getRowMap());
+    A->getLocalDiagCopy(diags);
     for (Teuchos_Ordinal i=0; i<vmap->getNumMyEntries(); ++i) {
-      TEST_FOR_EXCEPTION((*diags)[i] <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite: " << (*diags)[i]);
-      (*diags)[i] = SCT::one() / (*diags)[i];
+      TEST_FOR_EXCEPTION(diags[i] <= SCT::zero(), std::runtime_error,"Matrix is not positive-definite: " << diags[i]);
+      diags[i] = SCT::one() / diags[i];
     }
-    RCP<Operator<Scalar,int> > P = rcp(new DiagPrecond<Scalar,int>(*diags));
+    RCP<Operator<Scalar,int> > P = rcp(new DiagPrecond<Scalar,int>(diags));
     problem->setRightPrec(P);
   }
   TEST_FOR_EXCEPT(problem->setProblem() == false);
@@ -259,13 +260,13 @@ int main(int argc, char *argv[])
   nnz = -1;
   if (mptestmypid == 0) {
     int dim2;
-    info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
+    info = readHB_newmat_double(filename.c_str(),&mptestdim,&dim2,&nnz,&colptr,&rowind,&dvals);
     // find maximum NNZ over all rows
-    vector<int> rnnz(dim,0);
+    vector<int> rnnz(mptestdim,0);
     for (int *ri=rowind; ri<rowind+nnz; ++ri) {
       ++rnnz[*ri-1];
     }
-    for (int c=0; c<dim; ++c) {
+    for (int c=0; c<mptestdim; ++c) {
       rnnz[c] += colptr[c+1]-colptr[c];
     }
     rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
@@ -278,7 +279,7 @@ int main(int argc, char *argv[])
   }
   broadcast(*comm,0,&info);
   broadcast(*comm,0,&nnz);
-  broadcast(*comm,0,&dim);
+  broadcast(*comm,0,&mptestdim);
   broadcast(*comm,0,&rnnzmax);
   if (info == 0 || nnz < 0) {
     if (mptestmypid == 0) {
@@ -289,7 +290,7 @@ int main(int argc, char *argv[])
   }
 
   // create map
-  vmap = rcp(new Map<int>(dim,0,comm));
+  vmap = rcp(new Map<int>(mptestdim,0,comm));
   //
   mptestpl.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
   mptestpl.set( "Num Blocks", numblocks);
@@ -312,7 +313,7 @@ int main(int argc, char *argv[])
   //
   if (mptestmypid==0) {
     cout << "Filename: " << filename << endl;
-    cout << "Dimension of matrix: " << dim << endl;
+    cout << "Dimension of matrix: " << mptestdim << endl;
     cout << "Number of nonzeros: " << nnz << endl;
     cout << "Number of right-hand sides: " << numrhs << endl;
     cout << "Block size used by solver: " << blocksize << endl;
@@ -344,8 +345,8 @@ int main(int argc, char *argv[])
   if (dumpdata) {
     std::ofstream fout("data.dat",std::ios_base::app | std::ios_base::out);
     fout << setw(80) << "filename" << setw(14) << "numimages"       << setw(14) << "blocksize" << setw(14) << "numblocks" << setw(14) << "dim" << setw(14) << "nnz" << setw(8) << "Scalar"   << setw(12) <<  "build"  << setw(12) <<  "init"   << setw(12) <<  "solve"  << setw(12) <<  "numiter" << endl;
-    fout << setw(80) << filename   << setw(14) <<  mptestnumimages  << setw(14) <<  blocksize  << setw(14) << numblocks   << setw(14) << dim   << setw(14) << nnz   << setw(8) << "float"    << setw(12) <<  ftime[0] << setw(12) <<  ftime[1] << setw(12) <<  ftime[2] << setw(12) <<  fiter     << endl;
-    fout << setw(80) << filename   << setw(14) <<  mptestnumimages  << setw(14) <<  blocksize  << setw(14) << numblocks   << setw(14) << dim   << setw(14) << nnz   << setw(8) << "double"   << setw(12) <<  dtime[0] << setw(12) <<  dtime[1] << setw(12) <<  dtime[2] << setw(12) <<  diter     << endl;
+    fout << setw(80) << filename   << setw(14) <<  mptestnumimages  << setw(14) <<  blocksize  << setw(14) << numblocks   << setw(14) << mptestdim   << setw(14) << nnz   << setw(8) << "float"    << setw(12) <<  ftime[0] << setw(12) <<  ftime[1] << setw(12) <<  ftime[2] << setw(12) <<  fiter     << endl;
+    fout << setw(80) << filename   << setw(14) <<  mptestnumimages  << setw(14) <<  blocksize  << setw(14) << numblocks   << setw(14) << mptestdim   << setw(14) << nnz   << setw(8) << "double"   << setw(12) <<  dtime[0] << setw(12) <<  dtime[1] << setw(12) <<  dtime[2] << setw(12) <<  diter     << endl;
     fout.close();
   }
 

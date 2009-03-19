@@ -335,8 +335,9 @@ AC_CONFIG_FILES([
         test/Directory/Makefile
         test/ImportExport/Makefile
         test/MultiVector/Makefile
-        test/CrsMatrix/Makefile
         test/BasicPerfTest/Makefile
+        test/CrsGraph/Makefile
+        test/CrsMatrix/Makefile
         ])
 # example/verySimple/Makefile
 # example/EpetraTpetraProfile/Makefile

@@ -21,6 +21,10 @@ PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
+IF (Belos_ENABLE_Tpetra)
+  ADD_SUBDIRECTORY(tpetra)
+ENDIF()
+
 #
 # D) Do standard postprocessing
 #

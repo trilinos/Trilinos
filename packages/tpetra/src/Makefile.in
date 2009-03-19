@@ -140,12 +140,17 @@ am__include_HEADERS_DIST = $(srcdir)/Tpetra_DefaultPlatform.hpp \
 	$(srcdir)/Tpetra_ImportExportData.hpp \
 	$(srcdir)/Tpetra_Import.hpp $(srcdir)/Tpetra_Export.hpp \
 	$(srcdir)/Tpetra_VectorDecl.hpp $(srcdir)/Tpetra_Vector.hpp \
+	$(srcdir)/Tpetra_CrsGraph.hpp \
+	$(srcdir)/Tpetra_CrsGraphData.hpp \
 	$(srcdir)/Tpetra_CrsMatrix.hpp \
+	$(srcdir)/Tpetra_DiagPrecond.hpp \
 	$(srcdir)/Tpetra_MultiVectorDecl.hpp \
 	$(srcdir)/Tpetra_MultiVector.hpp \
 	$(srcdir)/Tpetra_MultiVectorDataDecl.hpp \
 	$(srcdir)/Tpetra_MultiVectorData.hpp \
-	$(srcdir)/Tpetra_Operator.hpp $(srcdir)/Tpetra_MpiPlatform.hpp
+	$(srcdir)/Tpetra_Operator.hpp $(srcdir)/Tpetra_RowGraph.hpp \
+	$(srcdir)/Tpetra_RowMatrix.hpp \
+	$(srcdir)/Tpetra_MpiPlatform.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -324,12 +329,17 @@ DIST =
 COMP_H = \
 	$(srcdir)/Tpetra_VectorDecl.hpp \
 	$(srcdir)/Tpetra_Vector.hpp \
+	$(srcdir)/Tpetra_CrsGraph.hpp \
+	$(srcdir)/Tpetra_CrsGraphData.hpp \
 	$(srcdir)/Tpetra_CrsMatrix.hpp \
+	$(srcdir)/Tpetra_DiagPrecond.hpp \
 	$(srcdir)/Tpetra_MultiVectorDecl.hpp \
 	$(srcdir)/Tpetra_MultiVector.hpp \
 	$(srcdir)/Tpetra_MultiVectorDataDecl.hpp \
 	$(srcdir)/Tpetra_MultiVectorData.hpp \
-	$(srcdir)/Tpetra_Operator.hpp 
+	$(srcdir)/Tpetra_Operator.hpp   \
+	$(srcdir)/Tpetra_RowGraph.hpp   \
+    $(srcdir)/Tpetra_RowMatrix.hpp  
 
 COMP = 
 

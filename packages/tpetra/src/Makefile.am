@@ -110,12 +110,17 @@ DIST =
 COMP_H = \
 	$(srcdir)/Tpetra_VectorDecl.hpp \
 	$(srcdir)/Tpetra_Vector.hpp \
+	$(srcdir)/Tpetra_CrsGraph.hpp \
+	$(srcdir)/Tpetra_CrsGraphData.hpp \
 	$(srcdir)/Tpetra_CrsMatrix.hpp \
+	$(srcdir)/Tpetra_DiagPrecond.hpp \
 	$(srcdir)/Tpetra_MultiVectorDecl.hpp \
 	$(srcdir)/Tpetra_MultiVector.hpp \
 	$(srcdir)/Tpetra_MultiVectorDataDecl.hpp \
 	$(srcdir)/Tpetra_MultiVectorData.hpp \
-	$(srcdir)/Tpetra_Operator.hpp 
+	$(srcdir)/Tpetra_Operator.hpp   \
+	$(srcdir)/Tpetra_RowGraph.hpp   \
+    $(srcdir)/Tpetra_RowMatrix.hpp  
 
 COMP = 
 

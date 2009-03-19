@@ -114,18 +114,18 @@ int main(int argc, char *argv[])
   int base = MyPID*ROWS_PER_PROC;
   if (MyPID != NumImages-1) {
     for (int i=0; i<ROWS_PER_PROC; ++i) {
-      K->submitEntry(base+i  ,base+i  , 2);
-      K->submitEntry(base+i  ,base+i+1,-1);
-      K->submitEntry(base+i+1,base+i  ,-1);
-      K->submitEntry(base+i+1,base+i+1, 2);
+      K->insertGlobalValue(base+i  ,base+i  , 2);
+      K->insertGlobalValue(base+i  ,base+i+1,-1);
+      K->insertGlobalValue(base+i+1,base+i  ,-1);
+      K->insertGlobalValue(base+i+1,base+i+1, 2);
     }
   }
   else {
     for (int i=0; i<ROWS_PER_PROC-1; ++i) {
-      K->submitEntry(base+i  ,base+i  , 2);
-      K->submitEntry(base+i  ,base+i+1,-1);
-      K->submitEntry(base+i+1,base+i  ,-1);
-      K->submitEntry(base+i+1,base+i+1, 2);
+      K->insertGlobalValue(base+i  ,base+i  , 2);
+      K->insertGlobalValue(base+i  ,base+i+1,-1);
+      K->insertGlobalValue(base+i+1,base+i  ,-1);
+      K->insertGlobalValue(base+i+1,base+i+1, 2);
     }
   }
   K->fillComplete();

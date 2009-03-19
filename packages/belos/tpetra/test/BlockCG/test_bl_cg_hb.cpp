@@ -160,8 +160,8 @@ int main(int argc, char *argv[]) {
     const int *rptr = rowind;
     for (int c=0; c<dim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        A->submitEntry(*rptr-1,c,*dptr);
-        A->submitEntry(c,*rptr-1,*dptr);
+        A->insertGlobalValue(*rptr-1,c,*dptr);
+        A->insertGlobalValue(c,*rptr-1,*dptr);
         ++rptr;
         ++dptr;
       }

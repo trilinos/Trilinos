@@ -241,9 +241,9 @@
   </Package>
   <Package name="Belos" dir="belos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Tpetra"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt,Ifpack,ML,Tpetra"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt,Ifpack,ML"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -291,9 +291,9 @@
   </Package>
   <Package name="Anasazi" dir="anasazi">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,Tpetra,Thyra"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Tpetra,Epetra,Thyra"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt,Amesos,AztecOO,Ifpack,Belos"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,EpetraExt,Ifpack,Amesos,AztecOO,Belos"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>

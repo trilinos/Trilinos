@@ -5,7 +5,12 @@ INCLUDE(PackageLibraryMacros)
 # A) Package-specific configuration options
 #
 
-SET(HAVE_TPETRA_TRIUTILS ${PACKAGE_NAME}_ENABLE_Triutils)
+ASSERT_DEFINED(Tpetra_ENABLE_Triutils)
+IF(Tpetra_ENABLE_Triutils)
+  SET(HAVE_TPETRA_TRIUTILS 1)
+ENDIF()
+
+# SET(HAVE_TPETRA_TRIUTILS ${PACKAGE_NAME}_ENABLE_Triutils)
 
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 

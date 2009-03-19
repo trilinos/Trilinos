@@ -94,8 +94,8 @@ RCP<Eigenproblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildPr
     const int *rptr = rowind;
     for (int c=0; c<dim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        A->submitEntry(*rptr-1,c,*dptr);
-        A->submitEntry(c,*rptr-1,*dptr);
+        A->insertGlobalValue(*rptr-1,c,*dptr);
+        A->insertGlobalValue(c,*rptr-1,*dptr);
         ++rptr;
         ++dptr;
       }
@@ -122,7 +122,7 @@ RCP<Eigenproblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildPr
     RCP<CrsMatrix<Scalar,int> > P = rcp(new CrsMatrix<Scalar,int>(*vmap,1));
     int gid=vmap->getMinGlobalIndex();
     for (Teuchos_Ordinal i=0; i<vmap->getNumMyEntries(); ++i) {
-      P->submitEntry(gid,gid,diags[i]);
+      P->insertGlobalValue(gid,gid,diags[i]);
       ++gid;
     }
     P->fillComplete();

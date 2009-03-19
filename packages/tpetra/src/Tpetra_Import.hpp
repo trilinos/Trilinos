@@ -342,7 +342,7 @@ namespace Tpetra {
 
     // sort remoteImageIDs in ascending order
     // apply same permutation to remoteGIDs_
-    sortArrays(remoteImageIDs(), remoteGIDs);
+    sort2(remoteImageIDs.begin(), remoteImageIDs.end(), remoteGIDs.begin());
 
     // call Distributor.createFromRecvs()
     // takes in remoteGIDs and remoteImageIDs_

@@ -701,7 +701,7 @@ namespace Tpetra {
     }
     comm_->barrier();
 
-    sortArrays(imagesFrom_(), lengthsFrom_());
+    sort2(imagesFrom_.begin(), imagesFrom_.end(), lengthsFrom_.begin());
 
     // Compute indicesFrom_
     totalReceiveLength_ = std::accumulate(lengthsFrom_.begin(), lengthsFrom_.end(), 0);
@@ -897,7 +897,7 @@ namespace Tpetra {
       // sort the startsTo and image IDs together, in ascending order, according
       // to image IDs
       if (numSends_ > 0) {
-        sortArrays(imagesTo_(), startsTo_());
+        sort2(imagesTo_.begin(), imagesTo_.end(), startsTo_.begin());
       }
 
       // compute the maximum send length

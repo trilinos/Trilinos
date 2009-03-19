@@ -333,7 +333,7 @@ void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
         }
       }
     }
-    A->submitEntries(rowID, indices(0,numIndices), values(0,numIndices));
+    A->insertGlobalValues(rowID, indices(0,numIndices), values(0,numIndices));
   }
   double insertTime = timer.stop();
 

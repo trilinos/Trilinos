@@ -26,9 +26,6 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 
 Dummy_SOURCES = Dummy
 
-ComplexDummy$(EXEEXT): $(srcdir)/Dummy
-	cp  $(top_srcdir)/test/MVOPTester/mhd1280b.cua mhd1280b.cua
-
 Tpetra_bl_gmres_hb_df_SOURCES = $(srcdir)/test_bl_gmres_hb_df.cpp 
 
 Tpetra_bl_gmres_hb_df_DEPENDENCIES = $(top_builddir)/../triutils/src/libtriutils.a \

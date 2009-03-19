@@ -71,7 +71,7 @@ namespace {
   {
     RCP<CrsMatrix<Scalar,Ordinal> > op = rcp( new CrsMatrix<Scalar,Ordinal>(map,1) );
     for (Teuchos_Ordinal i=0; i<map.getNumMyEntries(); ++i) {
-      op->submitEntry(map.getGlobalIndex(i),map.getGlobalIndex(i), ScalarTraits<Scalar>::one());
+      op->insertGlobalValue(map.getGlobalIndex(i),map.getGlobalIndex(i), ScalarTraits<Scalar>::one());
     }
     op->fillComplete();
     return op;

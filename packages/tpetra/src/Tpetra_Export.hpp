@@ -343,7 +343,7 @@ namespace Tpetra {
     // make sure export IDs are ordered by image
     // sort exportImageIDs_ in ascending order,
     // and apply the same permutation to exportGIDs_ and exportLIDs_.
-    sortArrays(ExportData_->exportImageIDs_(), ExportData_->exportGIDs_(), ExportData_->exportLIDs_());
+    sort3(ExportData_->exportImageIDs_.begin(), ExportData_->exportImageIDs_.end(), ExportData_->exportGIDs_.begin(), ExportData_->exportLIDs_.begin());
 
     // Construct list of entries that calling image needs to send as a result
     // of everyone asking for what it needs to receive.

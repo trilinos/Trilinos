@@ -5,7 +5,7 @@ PACKAGE_NAME=Tpetra
 #
 
 (FRAMEWORK, INSTALL, TpetraTests) {
-    DIRS = Platform, Distributor, Map, Directory, ImportExport, MultiVector;
+    DIRS = Platform, Distributor, Map, Directory, ImportExport, MultiVector, CrsGraph;
     EXIT-STATUS = STRING-COMPARISON;
     #ARGS = ;
     COMM = SERIAL, MPI;
@@ -15,13 +15,5 @@ PACKAGE_NAME=Tpetra
     DIRS = CrsMatrix;
     EXIT-STATUS = STRING-COMPARISON;
     ARGS = --filedir="$ABS_TOP_SRCDIR/packages/tpetra/test/CrsMatrix/";
-    COMM = SERIAL, MPI;
-}
-
-
-(TpetraInProgress) {
-    DIRS = Vector;
-    EXIT-STATUS = STRING-COMPARISON;
-    #ARGS = ;
     COMM = SERIAL, MPI;
 }

@@ -3,8 +3,9 @@ INCLUDE(PackageAddExecutable)
 INCLUDE(PackageAddTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
-IF (${PACKAGE_NAME}_ENABLE_Triutils)
+IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     gcrodr_hb

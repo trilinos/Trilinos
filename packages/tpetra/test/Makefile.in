@@ -216,10 +216,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-
-#if BUILD_TPETRA_TESTS
-STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector CrsMatrix BasicPerfTest 
-#endif
+STANDARD_SUBDIRS = Platform Distributor Map Directory ImportExport MultiVector BasicPerfTest CrsGraph CrsMatrix 
 SUBDIRS = $(STANDARD_SUBDIRS)
 EXTRA_DIST = 
 all: all-recursive
