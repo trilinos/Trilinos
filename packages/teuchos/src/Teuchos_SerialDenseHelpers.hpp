@@ -146,6 +146,27 @@ getColView( SerialDenseMatrix<OrdinalType, ScalarType>& A, const OrdinalType col
   return SerialDenseVector<OrdinalType, ScalarType>(View, A[col], A.numRows());
 }
 
+/*! \relates SerialDenseMatrix 
+  \brief A templated, non-member, helper function for setting a SerialDenseMatrix column using a SerialDenseVector.
+  
+  \param v - [in] SerialDenseVector
+  \param col - [in] Integer indicating which column of A to replace with v 
+  \param A - [out] SerialDenseMatrix
+  
+  \note The syntax for calling this function is:  bool err = Teuchos::setCol<int,double>( v, j, A )</tt>
+*/
+template<typename OrdinalType, typename ScalarType>
+bool setCol( const SerialDenseVector<OrdinalType, ScalarType>& v,
+             const OrdinalType col,
+             SerialDenseMatrix<OrdinalType, ScalarType>& A )
+{
+  if (v.length() != A.numRows()) return false;
+
+  std::copy(v.values(),v.values()+v.length(),A[col]);
+
+  return true;
+}
+
 } // namespace Teuchos
 
 #endif /* _TEUCHOS_SERIALDENSEHELPERS_HPP_ */

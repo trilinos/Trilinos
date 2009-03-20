@@ -600,6 +600,16 @@ int main(int argc, char* argv[])
     numberFailedTests++;
   }  
 
+  DVector ColSetTestV( AAA.numRows() );
+  ColSetTestV.putScalar( 2.0 );
+  bool ret = Teuchos::setCol<OTYPE,STYPE>( ColSetTestV, col, AAA );
+  if (verbose) std::cout <<"non-method helper function -- set second column of matrix with vector ";
+  if ( ColViewTestV.normInf() != 2.0 || ColViewTestV.normOne() != 6.0 || ret == false ) {
+        if (verbose) std::cout << "unsuccessful."<<std::endl;
+        numberFailedTests++;
+  } else {
+        if (verbose) std::cout << "successful."<<std::endl;
+  }
   //
   // If a test failed output the number of failed tests.
   //
