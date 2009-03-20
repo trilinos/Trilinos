@@ -600,6 +600,44 @@ int main(int argc, char *argv[]) {
     //<< "Base topology of custom 1-cell: \n" << Line5.getBaseTopology(1,0) -> name << "\n"; 
   */
   
+  /**
+    // accessing cell topology using compile time traits
+   cout << " number 0-subcells = " << Triangle<3>::subcell<0>::count <<"\n";
+   cout << " number 1-subcells = " << Triangle<3>::subcell<1>::count <<"\n";
+   cout << " number 2-subcells = " << Triangle<3>::subcell<2>::count <<"\n";
+   
+   // access subcell-1 with ordinal 0 (edge 0)
+   cout << " num nodes in edge 0 = " << Triangle<3>::subcell<1,0>::topology::node_count <<"\n";
+   cout << " num nodes in edge 0 = " << Triangle<3>::subcell<1,0>::topology::subcell<0>::count <<"\n";
+   
+   // access node numbers:
+   cout << " node 0 of edge  2 = " << Triangle<3>::subcell<1,2,0>::node <<"\n";
+   cout << " node 1 of edge  2 = " << Triangle<3>::subcell<1,2,1>::node <<"\n";
+   
+   
+   // runtime access:
+   const phdmesh::CellTopology & myTri = *cell_topology<Triangle<3> >();
+   const phdmesh::CellTopology & myOtherTri = *cell_topology<Triangle<> >();
+   
+   
+   cout << " topology name   = " <<  myTri.name << "\n";
+   cout << " dimension       = " <<  myTri.dimension << "\n";
+   cout << " number of nodes = " <<  myTri.subcell_count[0] <<"\n";
+   cout << " number of edges = " <<  myTri.subcell_count[1] <<"\n";
+   
+   cell_topology<Triangle<3> >() -> subcell_count[0];
+   
+   
+   cout << cell_topology<Triangle<> >()[0] << "\n";
+   cout << cell_topology<Triangle<3> >()[0] << "\n";
+   cout << cell_topology<Triangle<6> >()[0] << "\n\n";
+   cout << cell_topology<ShellTriangle<> >()[0] << "\n";
+   cout << cell_topology<ShellTriangle<3> >()[0] << "\n\n";
+   
+   cout << cell_topology<Tetrahedron<> >()[0] << "\n";
+   cout << cell_topology<Tetrahedron<4> >()[0] << "\n";
+   
+   **/
   
   
   return 0;

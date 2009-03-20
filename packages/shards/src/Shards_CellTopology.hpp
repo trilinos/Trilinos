@@ -135,7 +135,17 @@ public:
       SHARDS_REQUIRE( requireCell() );
       return m_cell->key ;
     }
-  
+
+        
+  /** \brief  Unique key for this cell topology;
+   *          under certain subcell uniformity conditions.
+   */
+  const char* getName() const
+    {
+        SHARDS_REQUIRE( requireCell() );
+        return m_cell->name ;
+    }
+        
         
   /** \brief  Node count of this cell topology */
   unsigned getNodeCount() const
