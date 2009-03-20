@@ -6,7 +6,8 @@ INCLUDE(PrintVar)
 
 
 #
-# Function that creates an advanced package test that is run as a CMake script.
+# Function that creates an advanced test defined using one or more executable
+# commands that is run as a separate CMake script.
 #
 # This function allows you to add a single CTest test as a single unit that is
 # actually a sequence of one or more separate commands strung together in some
@@ -21,6 +22,7 @@ INCLUDE(PrintVar)
 #     ...
 #     TEST_N [ EXEC <ExecTarget> | CMND <cmndExec>] ...
 #     [ COMM [serial] [mpi] ]
+#     [ OVERALL_NUM_MPI_PROCS <number> ]
 #     [ HOST ]
 #     [ XHOST ]
 #     )
@@ -69,18 +71,21 @@ INCLUDE(PrintVar)
 # a non-zero value.  However, a test case can also be defined to pass based
 # on:
 #
-#   PASS_ANY : The test command 'i' will be assumed to pass reguardless of the
-#   return value or any other output.  This would be used when a command that
-#   is to follow will determine pass or fail based on output from this command
-#   in some way.
+#   PASS_ANY
+#      If specified, the test command 'i' will be assumed to pass reguardless
+#      of the return value or any other output.  This would be used when a
+#      command that is to follow will determine pass or fail based on output
+#      from this command in some way.
 #
-#   PASS_REGULAR_EXPRESSION <regex>: The test command 'i' will be assumed to
-#   pass if it matches the given regular expression.  Otherwise, it is assumed
-#   to fail.
+#   PASS_REGULAR_EXPRESSION <regex>
 #
-#   FAIL_REGULAR_EXPRESSION <regex>: The test command 'i' will be assumed to
-#   fail if it matches the given regular expression.  Otherwise, it is assumed
-#   to pass.
+#     If specified, the test command 'i' will be assumed to pass if it matches
+#     the given regular expression.  Otherwise, it is assumed to fail.
+#
+#   FAIL_REGULAR_EXPRESSION <regex>
+#
+#     The test command 'i' will be assumed to fail if it matches the given
+#     regular expression.  Otherwise, it is assumed to pass.
 #
 
 FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)

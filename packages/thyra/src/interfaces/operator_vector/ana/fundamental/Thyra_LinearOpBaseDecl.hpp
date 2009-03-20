@@ -512,6 +512,22 @@ void apply(
   );
 
 
+/** \brief Calls <tt>apply<double>(...)</tt>.
+ *
+ * Non-tempalted double inlined non-member helper function.
+ *
+ * \relates LinearOpBase
+ */
+void apply(
+  const LinearOpBase<double> &M,
+  const EOpTransp M_trans,
+  const MultiVectorBase<double> &X,
+  const Ptr<MultiVectorBase<double> > &Y,
+  const double alpha = 1.0,
+  const double beta = 0.0
+  );
+
+
 /** \brief Deprecated. */
 template<class Scalar>
 void apply(
@@ -622,6 +638,20 @@ void Thyra::applyTranspose(
 }
 
 
+inline
+void Thyra::apply(
+  const LinearOpBase<double> &M,
+  const EOpTransp M_trans,
+  const MultiVectorBase<double> &X,
+  const Ptr<MultiVectorBase<double> > &Y,
+  const double alpha,
+  const double beta
+  )
+{
+  apply<double>(M, M_trans, X, Y, alpha, beta);
+}
+
+
 template<class Scalar>
 inline
 void Thyra::apply(
@@ -635,32 +665,6 @@ void Thyra::apply(
 {
   apply(M, M_trans, X, Teuchos::ptr(Y), alpha, beta);
 }
-
-
-//
-// Non-template non-member inline functions
-//
-
-#define THYRA_LINEAR_OP_BASE_NONMEMBER_INLINE_FUNCS(SCALAR) \
-   \
-  inline \
-  void apply( \
-    const LinearOpBase<SCALAR > &M, \
-    const EOpTransp M_trans, \
-    const MultiVectorBase<SCALAR > &X, \
-    const Ptr<MultiVectorBase<SCALAR > > &Y, \
-    const SCALAR alpha = static_cast<SCALAR >(1.0), \
-    const SCALAR beta = static_cast<SCALAR >(0.0) \
-    ) \
-  { \
-    apply<SCALAR >(M, M_trans, X, Y, alpha, beta); \
-  }
-
-
-namespace Thyra {
-TEUCHOS_MACRO_EXPAND_SCALAR_TYPES(THYRA_LINEAR_OP_BASE_NONMEMBER_INLINE_FUNCS)
-} // namespace Thyra
-
 
 
 #endif	// THYRA_LINEAR_OP_DECL_HPP

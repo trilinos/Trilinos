@@ -6,7 +6,7 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE(Anasazi CLEANED)
+PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS CLEANED )
 
 #
 # B) Set up package-specific options

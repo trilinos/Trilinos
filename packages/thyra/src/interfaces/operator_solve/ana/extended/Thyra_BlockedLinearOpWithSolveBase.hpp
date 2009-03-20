@@ -43,20 +43,20 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
-template<class RangeScalar, class DomainScalar=RangeScalar>
+template<class Scalar>
 class BlockedLinearOpWithSolveBase
-  : virtual public LinearOpWithSolveBase<RangeScalar,DomainScalar>,
-    virtual public BlockedLinearOpBase<RangeScalar,DomainScalar>
+  : virtual public LinearOpWithSolveBase<Scalar>,
+    virtual public BlockedLinearOpBase<Scalar>
   
 {
 public:
 
   /** \brief . */
-  virtual Teuchos::RCP<LinearOpWithSolveBase<RangeScalar,DomainScalar> >
+  virtual Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
   getNonconstLOWSBlock(const int i, const int j) = 0; 
 
   /** \brief . */
-  virtual Teuchos::RCP<const LinearOpWithSolveBase<RangeScalar,DomainScalar> >
+  virtual Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
   getLOWSBlock(const int i, const int j) const = 0; 
 
 };

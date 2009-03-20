@@ -37,16 +37,16 @@ namespace Thyra {
 
 
 /** \brief Base interface for linear operators with a solve that are composed
- * out of individual LOB and LOWSB objects..
+ * out of individual LOB and LOWSB objects.
  *
  * ToDo: Finish Documentation.
  *
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
-template<class RangeScalar, class DomainScalar=RangeScalar>
+template<class Scalar>
 class PhysicallyBlockedLinearOpWithSolveBase
-  : virtual public BlockedLinearOpWithSolveBase<RangeScalar,DomainScalar>,
-    virtual public PhysicallyBlockedLinearOpBase<RangeScalar,DomainScalar>
+  : virtual public BlockedLinearOpWithSolveBase<Scalar>,
+    virtual public PhysicallyBlockedLinearOpBase<Scalar>
 {
 public:
 
@@ -70,13 +70,13 @@ public:
   /** \brief . */
   virtual void setNonconstLOWSBlock(
     const int i, const int j,
-    const Teuchos::RCP<LinearOpWithSolveBase<RangeScalar,DomainScalar> > &block
+    const Teuchos::RCP<LinearOpWithSolveBase<Scalar> > &block
     ) = 0;
   
   /** \brief . */
   virtual void setLOWSBlock(
     const int i, const int j,
-    const Teuchos::RCP<const LinearOpWithSolveBase<RangeScalar,DomainScalar> > &block
+    const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &block
     ) = 0;
 
 };

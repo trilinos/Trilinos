@@ -10,7 +10,7 @@ INCLUDE(DualScopeSet)
 # Macro that just defines the basic flags
 #
 
-MACRO(PACKAGE_ARCH_DEFINE_STANDARD_COMPILE_FLAGS_VARS)
+MACRO(PACKAGE_ARCH_DEFINE_STANDARD_COMPILE_FLAGS_VARS  ENABLE_SHADOWING_WARNINGS)
 
   #
   # Setup and general flags
@@ -39,10 +39,13 @@ MACRO(PACKAGE_ARCH_DEFINE_STANDARD_COMPILE_FLAGS_VARS)
     " -Wwrite-strings" # Checks for non-const char * copy of string constants
     )
 
-  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS ON
-    CACHE BOOL "Turn on shadowing warnings or not" )
+  MULTILINE_SET( ENABLE_SHADOW_WARNINGS_DOC
+    "Turn on shadowing warnings for all packages where strong warnings have"
+    " not been explicitly disabled." )
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS OFF
+    CACHE BOOL "${ENABLE_SHADOW_WARNINGS_DOC}" )
   
-  IF (${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS)
+  IF (${PROJECT_NAME}_ENABLE_SHADOW_WARNINGS OR ENABLE_SHADOWING_WARNINGS)
 
     MULTILINE_SET(CXX_STRONG_COMPILE_WARNING_FLAGS
       ${CXX_STRONG_COMPILE_WARNING_FLAGS}

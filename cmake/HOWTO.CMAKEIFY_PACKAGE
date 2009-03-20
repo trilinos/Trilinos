@@ -57,9 +57,11 @@ Copy the top-level CMakeLists.txt from:
 
   Trilinos/packages/PACKAGE_DIR/CMakeLists.txt
 
-In the new PACKAGE_DIR/CMakeLists.txt file, change the name of the
-package in the PACKAGE(...) macro to the name of the Trilinos package
-PACKAGE_NAME.
+In the new PACKAGE_DIR/CMakeLists.txt file, change the name of the package in
+the PACKAGE(...) macro to the name of the Trilinos package PACKAGE_NAME.  You
+can also turn on shadowing warnings with 'ENABLE_SHADOWING_WARNINGS' and mark
+the package as being 'CLEANED' (which elevates warnings to errors).  See
+packages/teuchos/CMakeLists.txt for an example.
 
 NOTE: If the name you pass into PACKAGE(...) is not the same as you
 specified in the Trilinos_PACKAGES_AND_DIRS_AND_ENABLES variable

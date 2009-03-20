@@ -1,7 +1,7 @@
 
 INCLUDE(PackageMacros)
 
-PACKAGE(Thyra)
+PACKAGE( Thyra CLEANED )
 
 ADD_SUBDIRECTORY(src)
 

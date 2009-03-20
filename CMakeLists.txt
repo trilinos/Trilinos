@@ -33,6 +33,7 @@ INCLUDE(AdvancedOption)
 OPTION(Trilinos_VERBOSE_CONFIGURE
   "Make the Trilinos configure process verbose." OFF)
 
+# Find Python executable which is needed for dependency file building
 FIND_PACKAGE(PythonInterp)
 
 

@@ -131,11 +131,18 @@ C) Configuring
   NOTE: By default, this will set -D_GLIBCXX_DEBUG as a compile option for all
   C++ code.
 
-(*) Disabling shadowing warnings:
+(*) Enable shadowing warnings for all Trilinos pacakges:
 
-  To disable shadowing warnings add the following option to cmake configure:
+  To enable shadowing warnings for all Trilinos packages (that don't already
+  have them) enabled add the following option to cmake configure:
 
-    -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF
+    -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=ON
+
+  NOTE: You can not turn off shadowing warnings for all packages with this
+  option.  If Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF, shadowing warnings in
+  packages that have them explicitly enabled will still have them turned on.
+  To turn off shadowing warnings for all Trilinos packages you must turn off
+  all strong warning options.  However, this is not recommended.
 
 (*) Overriding all compiler options
 

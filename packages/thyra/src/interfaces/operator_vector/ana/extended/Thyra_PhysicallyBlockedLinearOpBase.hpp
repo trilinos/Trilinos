@@ -44,9 +44,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
-template<class RangeScalar, class DomainScalar=RangeScalar>
+template<class Scalar>
 class PhysicallyBlockedLinearOpBase
-  : virtual public BlockedLinearOpBase<RangeScalar,DomainScalar>
+  : virtual public BlockedLinearOpBase<Scalar>
 {
 public:
 
@@ -101,8 +101,8 @@ public:
    * </ul>
    */
   virtual void beginBlockFill(
-    const Teuchos::RCP<const ProductVectorSpaceBase<RangeScalar> >    &productRange
-    ,const Teuchos::RCP<const ProductVectorSpaceBase<DomainScalar> >  &productDomain
+    const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >    &productRange
+    ,const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >  &productDomain
     ) = 0;
   
   /** \brief Determines if a block fill is active or not . */
@@ -137,7 +137,7 @@ public:
    */
   virtual void setNonconstBlock(
     const int i, const int j
-    ,const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> > &block
+    ,const Teuchos::RCP<LinearOpBase<Scalar> > &block
     ) = 0;
   
   /** \brief Set a const block linear operator.
@@ -153,7 +153,7 @@ public:
    */
   virtual void setBlock(
     const int i, const int j
-    ,const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> > &block
+    ,const Teuchos::RCP<const LinearOpBase<Scalar> > &block
     ) = 0;
   
   /** \brief End a block fill after which <tt>*this</tt> object can be used.

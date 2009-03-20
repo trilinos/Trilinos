@@ -106,8 +106,8 @@ namespace Thyra
   ConstLinearOperator<RangeScalar, DomainScalar>::getBlock(int blockRow, 
                                                            int blockCol) const
   {
-    const Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* p = 
-      dynamic_cast<const Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* >(this->constPtr().get());
+    const Thyra::BlockedLinearOpBase<Scalar>* p = 
+      dynamic_cast<const Thyra::BlockedLinearOpBase<Scalar>* >(this->constPtr().get());
     TEST_FOR_EXCEPTION(p==0 && blockRow != 0, std::runtime_error,
                        "request for block row=" << blockRow << " in a non-block operator");
     
@@ -126,8 +126,8 @@ namespace Thyra
   LinearOperator<RangeScalar, DomainScalar>::getBlock(int blockRow, 
                                                       int blockCol) 
   {
-    Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* p = 
-      dynamic_cast<Thyra::BlockedLinearOpBase<RangeScalar, DomainScalar>* >(this->ptr().get());
+    Thyra::BlockedLinearOpBase<Scalar>* p = 
+      dynamic_cast<Thyra::BlockedLinearOpBase<Scalar>* >(this->ptr().get());
     TEST_FOR_EXCEPTION(p==0 && blockRow != 0, std::runtime_error,
                        "request for block row=" << blockRow << " in a non-block operator");
     

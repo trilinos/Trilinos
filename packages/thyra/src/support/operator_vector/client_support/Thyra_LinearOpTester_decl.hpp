@@ -58,12 +58,9 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class RangeScalar, class DomainScalar = RangeScalar>
+template<class Scalar>
 class LinearOpTester {
 public:
-
-  /** \brief Local typedef for promoted scalar type .*/
-  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote Scalar;
 
   /** \brief Local typedef for promoted scalar magnitude */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
@@ -254,15 +251,15 @@ public:
    * implementation by clicking on the following link to the source code:
    */
   bool check(
-    const LinearOpBase<RangeScalar,DomainScalar> &op,
-    const Ptr<MultiVectorRandomizerBase<RangeScalar> > &rangeRandomizer,
-    const Ptr<MultiVectorRandomizerBase<DomainScalar> > &domainRandomizer,
+    const LinearOpBase<Scalar> &op,
+    const Ptr<MultiVectorRandomizerBase<Scalar> > &rangeRandomizer,
+    const Ptr<MultiVectorRandomizerBase<Scalar> > &domainRandomizer,
     const Ptr<Teuchos::FancyOStream> &out
     ) const;
 
   /** \brief Calls <tt>this->check(op,NULL,NULL,out,leadingIndent,indentSpacer)</tt> */
   bool check(
-    const LinearOpBase<RangeScalar,DomainScalar> &op,
+    const LinearOpBase<Scalar> &op,
     const Ptr<Teuchos::FancyOStream> &out
     ) const;
 
@@ -305,9 +302,9 @@ public:
    * implementation by clicking on the following link to the source code:
    */
   bool compare(
-    const LinearOpBase<RangeScalar,DomainScalar> &op1,
-    const LinearOpBase<RangeScalar,DomainScalar> &op2,
-    MultiVectorRandomizerBase<DomainScalar> *domainRandomizer,
+    const LinearOpBase<Scalar> &op1,
+    const LinearOpBase<Scalar> &op2,
+    MultiVectorRandomizerBase<Scalar> *domainRandomizer,
     Teuchos::FancyOStream *out
     ) const;
  
@@ -315,8 +312,8 @@ public:
    * <tt>this->compare(op1,op2,NULL,out,leadingIndent,indentSpacer)</tt>.
    */
   bool compare(
-    const LinearOpBase<RangeScalar,DomainScalar> &op1,
-    const LinearOpBase<RangeScalar,DomainScalar> &op2,
+    const LinearOpBase<Scalar> &op1,
+    const LinearOpBase<Scalar> &op2,
     Teuchos::FancyOStream *out
     ) const;
 
@@ -325,9 +322,9 @@ public:
 
   /** \brief Deprecated. */
   bool check(
-    const LinearOpBase<RangeScalar,DomainScalar> &op,
-    MultiVectorRandomizerBase<RangeScalar> *rangeRandomizer,
-    MultiVectorRandomizerBase<DomainScalar> *domainRandomizer,
+    const LinearOpBase<Scalar> &op,
+    MultiVectorRandomizerBase<Scalar> *rangeRandomizer,
+    MultiVectorRandomizerBase<Scalar> *domainRandomizer,
     Teuchos::FancyOStream *out
     ) const
     {
@@ -337,7 +334,7 @@ public:
 
   /** \brief Deprecated. */
   bool check(
-    const LinearOpBase<RangeScalar,DomainScalar> &op,
+    const LinearOpBase<Scalar> &op,
     Teuchos::FancyOStream *out
     ) const
     {

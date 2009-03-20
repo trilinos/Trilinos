@@ -181,7 +181,7 @@ TEUCHOS_UNIT_TEST( EpetraExtDiagScaledMatProdTransformer, basic_BDB )
 
   // build scenario=1 -> B*D*B, scenario=2 -> B*D*B',
   //       scenario=3 -> B'*D*B, scenario=4 -> B'*D*B'
-  int scenario = 3;
+  //int scenario = 3;
   for(int scenario=1;scenario<=4;scenario++) {
      const RCP<const Thyra::LinearOpBase<double> > M = buildBDBOperator(scenario,B,4.5,out);
 

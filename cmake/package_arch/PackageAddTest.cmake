@@ -1,112 +1,132 @@
-
-INCLUDE(ParseVariableArguments)
-INCLUDE(PrintVar)
-
-
-MACRO(PACKAGE_PRIVATE_ADD_TEST_SET_PASS_PROPERTY TEST_NAME_IN)
-
-  IF (PARSE_PASS_REGULAR_EXPRESSION)
-    SET_TESTS_PROPERTIES(${TEST_NAME_IN} PROPERTIES PASS_REGULAR_EXPRESSION
-      ${PARSE_PASS_REGULAR_EXPRESSION})
-  ENDIF()
-
-  IF (PARSE_FAIL_REGULAR_EXPRESSION)
-    SET_TESTS_PROPERTIES(${TEST_NAME_IN} PROPERTIES FAIL_REGULAR_EXPRESSION
-      ${PARSE_FAIL_REGULAR_EXPRESSION})
-  ENDIF()
-
-  IF (PARSE_STANDARD_PASS_OUTPUT)
-    SET_TESTS_PROPERTIES(${TEST_NAME_IN} PROPERTIES PASS_REGULAR_EXPRESSION
-      "End Result: TEST PASSED")
-  ENDIF()
-
-ENDMACRO()
+INCLUDE(PackageAddTestHelpers)
 
 
 #
-# Function that converts a complete string of command-line arguments
-# into a form that ADD_TEST(...) can correctly deal with this.
+# Add a test or a set of tests for a single executable.
 #
-# The main thing this function does is to replace spaces ' ' with
-# array separators ';' since this is how ADD_TEST(...) expects to deal
-# with command-line arguments, as array arguments.  However, this
-# function will not do a replacement of ' ' with ';' if a quote is
-# active.  This allows you to pass in quoted arguments and have them
-# treated as a single argument.
-#
-
-
-FUNCTION(CONVERT_CMND_ARG_STRING_TO_ADD_TEST_ARG_ARRAY CMND_ARG_STRING ARG_ARRAY_VARNAME)
-  
-  #MESSAGE("CONVERT_CMND_ARG_STRING_TO_ADD_TEST_ARG_ARRAY")
-  #PRINT_VAR(CMND_ARG_STRING)
-  #PRINT_VAR(ARG_ARRAY_VARNAME)
-
-  STRING(LENGTH ${CMND_ARG_STRING} STR_LEN)
-  #PRINT_VAR(STR_LEN)
-
-  MATH(EXPR STR_LAST_IDX "${STR_LEN}-1")
-
-  SET(NEWSTR)
-
-  SET(ACTIVE_QUOTE OFF)
-
-  FOREACH(IDX RANGE ${STR_LAST_IDX})
-
-    STRING(SUBSTRING ${CMND_ARG_STRING} ${IDX} 1 STR_CHAR)
-    #PRINT_VAR(STR_CHAR)
-
-    IF (STR_CHAR STREQUAL "\"")
-      IF (NOT ACTIVE_QUOTE)
-        SET(ACTIVE_QUOTE ON)
-      ELSE()
-        SET(ACTIVE_QUOTE OFF)
-      ENDIF()
-      #PRINT_VAR(ACTIVE_QUOTE)
-    ENDIF()
-
-    IF (NOT STR_CHAR STREQUAL " ")
-      SET(NEWSTR "${NEWSTR}${STR_CHAR}")
-    ELSE()
-      IF (ACTIVE_QUOTE)
-        SET(NEWSTR "${NEWSTR}${STR_CHAR}")
-      ELSE()
-        SET(NEWSTR "${NEWSTR};")
-      ENDIF()
-    ENDIF()
-
-  ENDFOREACH()
-   
-  #PRINT_VAR(NEWSTR)
-
-  SET(${ARG_ARRAY_VARNAME} ${NEWSTR} PARENT_SCOPE)
-
-ENDFUNCTION()
-
-
-
-SET(CMAKE_EXECUTABLE_SUFFIX ".exe")
-
-
-
-
-#
-# Add a set of package tests
-#
+# PACKAGE_ADD_TEST(
+#   <execName>
+#   [ NOEXEPREFIX ]
+#   [ NOEXESUFFIX ]
+#   [ NAME <testName> ]
+#   [ DIRECTORY <directory> ]
+#   [ ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ... ]
+#   [ COMM [serial] [mpi] ]
+#   [ NUM_MPI_PROCS <numProcs> ]
+#   [ HOST <host1> <host2> ... ]
+#   [ XHOST <host1> <host2> ... ]
+#   [ HOSTTYPE <hosttype1> <hosttype2> ... ]
+#   [ XHOSTTYPE <hosttype1> <hosttype2> ... ]
+#   [ STANDARD_PASS_OUTPUT
+#     | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..." 
+#     | FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..." ]
+#   )
 #  
+# The arguments to the function are as followes:
 #
+#   <execName>
 #
-#   HOSTTYPE name1 name2 ...
+#     The mandatory root name of the executable that will be run to define the
+#     test.  The full name of the executable is assumed to be
+#     ${PACKAGE_NAME}_<execName>.exe and this executable is assumed to exist
+#     in the current binary directory from where this function is called from
+#     a CMakeLists.txt file.  This names is the default naming of executables
+#     created by the function PACKAGE_ADD_EXECUTABLE(<execName> ...).
+#     However, any arbitrary execuable program or script can be called by
+#     setting NOEXEPREFIX and NOEXESUFFIX and you can also give <execName> as
+#     an absolute path.
 #
-#     The names of the host system type (given by ${CMAKE_HOST_SYSTEM_NAME})
-#     to include the test for.  Typical shost system type names include
-#     'Linux', 'Darwain' etc.
+#   NOEXEPREFIX
 #
-#   XHOSTTYPE name1 name2 ...
+#     If specified, then the prefix ${PACKAGE_NAME}_ is not assumed to be
+#     appended to <execName>.
 #
-#     The names of the host system type (given by ${CMAKE_HOST_SYSTEM_NAME})
-#     to *not* include the test for.  Typical shost system type names include
-#     'Linux', 'Darwain' etc.
+#   NOEXESUFFIX
+#
+#     If specified, then the postfix '.exe' is not assumed to be post-pended
+#     to <execName>.
+#
+#   NAME <testName>
+#
+#     If specified, gives the root name of the test.  If not specified, then
+#     <testName> is taked to be <execName>.  The actual test name will always
+#     prefixed as ${PACKAGE_NAME}_<testName> and as added in the call to the
+#     built-in CMake command ADD_TEST(...).  The main purpose of this argument
+#     is to allow multiple tests to be defined for the same execurable.
+#     Otherwise, you can not do this because CTest requires all test names to
+#     be globally unique in a single project.
+#
+#   DIRECTORY <directory>
+#
+#     If specified, then the executable is assumed to be in the directory
+#     given by relative <directory>.
+#
+#   ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...
+#
+#     If specified, then a set of arguments can be passed in quotes.  If
+#     multiple groups of arguments are passed in different quoted clusters of
+#     arguments than a different test will be added for each set of arguments.
+#     In this way, many different tests can be added for a single executable
+#     in a single call to this function.  Each of these separate tests will be
+#     named ${PACKAGE_NAME}_<testName>_xy where xy = 00, 01, 02, and so on.
+#
+#   COMM [serial] [mpi]
+#
+#     If specified, selects if the test will be added in serial and/or MPI
+#     mode.  If the COMM argument is missing, the test will be added in both
+#     serial and MPI builds of the code.
+#
+#   NUM_MPI_PROCS <numProcs>
+#
+#     If specified, gives the number of processes that the test will be
+#     defined to run on and can also result in the test being exluded all
+#     together based on comparison to MPI_EXEC_MAX_NUMPROCS.  *** ToDo: Finish
+#     specification of this arugment! ***
+#
+#   HOST <host1> <host2> ...
+#
+#     If specified, gives a list of hostnames where the test will be included.
+#     The current hostname is determined by the built-in CMake command
+#     SITE_NAME(...).  On Linux/Unix systems, this is typically the value
+#     returned by 'uname -n'.
+#
+#   XHOST <host1> <host2> ...
+#
+#     If specified, gives a list of hostnames where the test will *not* be
+#     included.  This check is performed after the check for the hostnames in
+#     the 'HOST' list if it should exist.  Therefore, this list exclusion list
+#     overrides the 'HOST' inclusion list.
+#
+#   HOSTTYPE <hosttype1> <hosttype2> ...
+#
+#     If specified, gives the names of the host system type (given by
+#     ${CMAKE_HOST_SYSTEM_NAME}) to include the test.  Typical host system
+#     type names include 'Linux', 'Darwain' etc.
+#
+#   XHOSTTYPE <name1> <name2> ...
+#
+#     If specified, gives the names of the host system type to *not* include
+#     the test.  This check is performed after the check for the host system
+#     names in the 'HOSTTYPE' list if it should exist.  Therefore, this list
+#     exclusion list overrides the 'HOSTTYPE' inclusion list.
+#
+#   STANDARD_PASS_OUTPUT
+#
+#     If specified, then the standard test output "End Result: TEST PASSED" is
+#     greped for to determine success.  This is needed for MPI tests on some
+#     platforms since the return value is unreliable.
+#
+#   PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..." 
+#
+#     If specified, then a test will be assumed to pass only if one of the
+#     regular expressions <regex1>, <regex2> etc. match the output.
+#     Otherwise, the test will fail.
+#
+#   FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."
+#
+#     If specified, then a test will be assumed to fail if one of the regular
+#     expressions <regex1>, <regex2> etc. match the output.  Otherwise, the
+#     test will pass.
 # 
 
 FUNCTION(PACKAGE_ADD_TEST EXE_NAME)

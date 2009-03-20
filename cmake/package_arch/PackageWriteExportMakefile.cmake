@@ -46,8 +46,11 @@
 #     case, but I don't know whether it's been formally specified in the
 #     TPL setup process. 
 #
-# Kevin Long, Texas Tech University
+# Author: Kevin Long, Texas Tech University
 # kevin.long@ttu.edu
+#
+# Contributors:
+# Roscoe A. Bartlett (rabartl@sandia.gov)
 #
 #############################################################################
 
@@ -166,7 +169,8 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
   # Write the specification of the rpath if necessary. This is only needed
   # if we're building shared libraries. 
   IF(BUILD_SHARED_LIBS)
-    SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${CMAKE_INSTALL_PREFIX}/lib)
+    SET(SHARED_LIB_RPATH_COMMAND
+      ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${CMAKE_INSTALL_PREFIX}/lib)
   ENDIF()
 
   # Remove duplicates from the TPL list. To preserve dependency order the
@@ -187,7 +191,6 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
     SET(TPL_LIB_STR "${TPL_LIB_STR} ${LIB}")
   ENDFOREACH()
 
- 
 
   # Gather TPL includes into a single string as would appear on the 
   # linker command line. 
@@ -210,20 +213,6 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
     PRINT_VAR(TPL_INCLUDE_STR)
   ENDIF()
 
-  # Get compiler flags
-  PACKAGE_ARCH_DEFINE_STANDARD_COMPILE_FLAGS_VARS()
-
-  # Find the directory name associated with a package. Try the package name
-  # and an all-lower-case version of the package name. 
-  STRING(TOLOWER ${PACKAGE} LOWER_CASE_PACKAGE)
-  IF(EXISTS ${PROJECT_SOURCE_DIR}/packages/${PACKAGE})
-    SET(PACKAGE_DIR_NAME ${PACKAGE})
-  ELSEIF(EXISTS ${PROJECT_SOURCE_DIR}/packages/${LOWER_CASE_PACKAGE} )
-    SET(PACKAGE_DIR_NAME ${LOWER_CASE_PACKAGE})
-  ELSE()
-    MESSAGE(SEND_ERROR "PackageWriteExportMakefile could not find ${PROJECT_SOURCE_DIR}/packages/${PACKAGE} or ${PROJECT_SOURCE_DIR}/packages/${LOWER_CASE_PACKAGE}")
-  ENDIF()
-
 
   # Generate an all-caps version of the package name. This will be used
   # in package-specific variables inside the export makefile, in keeping
@@ -231,22 +220,41 @@ FUNCTION(PACKAGE_WRITE_EXPORT_MAKEFILE Proj PACKAGE EMFName CMFName)
   STRING(TOUPPER ${PACKAGE} CAPS_PACKAGE_NAME)
 
   # Generate a note discouraging editing of the export makefile
-  SET(DISCOURAGE_EDITING "Do not edit: This file was generated automatically by CMake.")
+  SET(DISCOURAGE_EDITING
+    "Do not edit: This file was generated automatically by CMake.")
+
+  # Set the variables to the flags for the build type that will be
+  # tacked on to the end.
+  SET( CXX_FLAGS_EXTRA  ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}} )
+  SET( C_FLAGS_EXTRA  ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}} )
+  SET( Fortran_FLAGS_EXTRA  ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}} )
+
+  # Make the export makefiles created in the build directory hidden so
+  # that people don't think they can use them directly.  These only exist
+  # in the binary build tree as an intermediate stage before they get
+  # installed.
+  SET( BINARY_EMF ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${EMFName}.${PACKAGE} )
+  SET( BINARY_CMF ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${CMFName}.${PACKAGE} )
 
   # Splice the library, include, and compiler information into the export
   # makefile. 
-  ### WARNING: hardwired "/" separator here.
   CONFIGURE_FILE(
-    ${PROJECT_SOURCE_DIR}/cmake/${EMFName}.in 
-    ${CMAKE_CURRENT_BINARY_DIR}/${EMFName}
+    ${PROJECT_SOURCE_DIR}/cmake/package_arch/${EMFName}.in 
+    ${BINARY_EMF}
     )
 
   # Splice the path and package name information into the client makefile
   CONFIGURE_FILE(
-    ${PROJECT_SOURCE_DIR}/cmake/${CMFName}.in 
-    ${CMAKE_CURRENT_BINARY_DIR}/${CMFName}
+    ${PROJECT_SOURCE_DIR}/cmake/package_arch/${CMFName}.in 
+    ${BINARY_CMF}
     )
-
+    
+  # Install the export makefiles where users will actually use them
+  INSTALL(
+    FILES ${BINARY_EMF} ${BINARY_CMF}
+    DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
+    COMPONENT ${PACKAGE_NAME}
+    )
 
 
 ENDFUNCTION()

@@ -42,11 +42,13 @@ namespace Thyra
    *
    * \ingroup Thyra_Op_Vec_ANA_Development_grp
    */
-  template <class RangeScalar, class DomainScalar=RangeScalar>
+ template <class RangeScalar, class DomainScalar=RangeScalar>
   class ConstLinearOperator 
     : public virtual Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >
   {
   public:
+
+    typedef RangeScalar Scalar;
 
     /** \brief . */
     ConstLinearOperator( const Teuchos::ENull _null = Teuchos::null )
@@ -113,6 +115,8 @@ namespace Thyra
       public ConstLinearOperator<RangeScalar, DomainScalar>
   {
   public:
+
+    typedef RangeScalar Scalar;
 
     /** \brief .  */
     LinearOperator( const Teuchos::ENull _null = Teuchos::null )

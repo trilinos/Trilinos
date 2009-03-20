@@ -268,7 +268,8 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultAdjointLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultAdjointLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp\
-  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve_decl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve_def.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveFactory.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveFactoryDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolve.hpp\
@@ -281,7 +282,8 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultMultiVectorLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultMultiVectorLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.hpp\
-  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditionerDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner_decl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner_def.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp\
@@ -302,8 +304,9 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleScalarLinearOpWithSolveBaseDecl.hpp
 
 SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT = \
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp
-
 
 
 INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL_H = \

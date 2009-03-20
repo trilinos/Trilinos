@@ -1,4 +1,5 @@
 INCLUDE(PackageArchSetupStrongCompileWarnings)
+INCLUDE(PackageWriteExportMakefile)
 
 INCLUDE(ParseVariableArguments)
 INCLUDE(GlobalNullSet)
@@ -6,12 +7,43 @@ INCLUDE(AppendGlobalSet)
 INCLUDE(PrintVar)
 INCLUDE(PrependSet)
 INCLUDE(RemoveGlobalDuplicates)
-INCLUDE(PackageWriteExportMakefile)
 
 
 #
-# Macro called at the very beginning of a ${PROJECT_NAME} package's top-level
-# CMakeLists.txt file
+# PACKAGE(...): Macro called at the very beginning of a ${PROJECT_NAME}
+# package's top-level CMakeLists.txt file.
+#
+# Usage is:
+#
+#   PACKAGE(
+#     <packageName>
+#     [ENABLE_SHADOWING_WARNINGS]
+#     [DISABLE_STRONG_WARNINGS]
+#     [CLEANED]
+#     )
+#
+# The arguments are:
+#
+#   <packageName>
+#
+#     Gives the name of the Package, mostly just for checking and
+#     documentation purposes.
+#
+#   ENABLE_SHADOWING_WARNINGS
+#
+#     If specified, then shadowing warnings will be turned on for supported
+#     platforms/compilers.  The default is for shadowing warnings to be turned
+#     off.
+#
+#   DISABLE_STRONG_WARNINGS
+#
+#     If specified, then all strong warnings will be turned off, if they are
+#     not already turned off by global cache varaibles.
+#
+#   CLEANED
+#
+#     If specified, then warnings will be promoted to errors for all defined
+#     warnings.
 #
 
 MACRO(PACKAGE PACKAGE_NAME_IN)
@@ -30,7 +62,7 @@ MACRO(PACKAGE PACKAGE_NAME_IN)
     #lists
     ""
     #options
-    "CLEANED;DISABLE_STRONG_WARNINGS"
+    "CLEANED;ENABLE_SHADOWING_WARNINGS;DISABLE_STRONG_WARNINGS"
     ${ARGN}
     )
 
@@ -40,7 +72,9 @@ MACRO(PACKAGE PACKAGE_NAME_IN)
 
   IF (DEFINED PACKAGE_NAME_GLOBAL)
     IF (NOT ${PACKAGE_NAME_IN} STREQUAL ${PACKAGE_NAME_GLOBAL})
-      MESSAGE(FATAL_ERROR "Error, the package-defined package name '${PACKAGE_NAME_IN}' is not the same as the package name defined at the global level '${PACKAGE_NAME_GLOBAL}'")
+      MESSAGE(FATAL_ERROR "Error, the package-defined package name"
+        " '${PACKAGE_NAME_IN}' is not the same as the package name"
+        " defined at the global level '${PACKAGE_NAME_GLOBAL}'")
     ENDIF()
   ENDIF()
 
@@ -60,10 +94,10 @@ MACRO(PACKAGE PACKAGE_NAME_IN)
   FILE(TO_CMAKE_PATH ${CMAKE_CURRENT_SOURCE_DIR} STANDARD_PACKAGE_SOURCE_DIR)
   STRING(REGEX REPLACE "/.+/(.+)" "\\1" PACKAGE_DIR_NAME "${STANDARD_PACKAGE_SOURCE_DIR}")
 
-  # Set up for strong warnings
+  # Set up strong warning flags
 
   IF (NOT PARSE_DISABLE_STRONG_WARNINGS)
-    PACKAGE_ARCH_SETUP_STRONG_COMPILE_WARNINGS()
+    PACKAGE_ARCH_SETUP_STRONG_COMPILE_WARNINGS(${PARSE_ENABLE_SHADOWING_WARNINGS})
   ENDIF()
 
   # Set up for warnings as errors if requested
@@ -189,7 +223,13 @@ MACRO(PACKAGE_POSTPROCESS)
   ADD_CUSTOM_TARGET(${PACKAGE_NAME}_libs DEPENDS ${${PACKAGE_NAME}_LIB_TARGETS})
   ADD_CUSTOM_TARGET(${PACKAGE_NAME}_all DEPENDS ${${PACKAGE_NAME}_ALL_TARGETS})
 
-  PACKAGE_WRITE_EXPORT_MAKEFILE(${PROJECT_NAME} ${PACKAGE_NAME} "Makefile.export" "Makefile.client")
+  IF (${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("\nWriting hidden export makefiles in binary build directory ...")
+    ENDIF()
+    PACKAGE_WRITE_EXPORT_MAKEFILE(${PROJECT_NAME} ${PACKAGE_NAME}
+      "Makefile.export" "Makefile.client")
+  ENDIF()
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nPACKAGE_POSTPROCESS: ${PACKAGE_NAME}")

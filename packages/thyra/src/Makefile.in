@@ -117,7 +117,10 @@ am__objects_4 = Thyra_DefaultSpmdVectorSpace.$(OBJEXT) \
 	Thyra_ScalarProdBase.$(OBJEXT) \
 	Thyra_ScalarProdVectorSpaceBase.$(OBJEXT) \
 	Thyra_SpmdVectorSpaceUtilities.$(OBJEXT)
-am__objects_5 = Thyra_DefaultInverseLinearOp.$(OBJEXT)
+am__objects_5 =  \
+	Thyra_DefaultBlockedTriangularLinearOpWithSolve.$(OBJEXT) \
+	Thyra_DefaultPreconditioner.$(OBJEXT) \
+	Thyra_DefaultInverseLinearOp.$(OBJEXT)
 am_libthyra_a_OBJECTS = Thyra_Version.$(OBJEXT) $(am__objects_1) \
 	$(am__objects_2) $(am__objects_3) $(am__objects_4) \
 	$(am__objects_5)
@@ -481,7 +484,8 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultAdjointLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultAdjointLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp\
-  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve_decl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve_def.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveFactory.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolveFactoryDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultDiagonalLinearOpWithSolve.hpp\
@@ -494,7 +498,8 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultMultiVectorLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultMultiVectorLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.hpp\
-  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditionerDecl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner_decl.hpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner_def.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolve.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolveDecl.hpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp\
@@ -515,6 +520,8 @@ SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_solve/client_support/Thyra_SingleScalarLinearOpWithSolveBaseDecl.hpp
 
 SUPPORT_OPERATOR_SOLVE_CLIENT_SUPPORT = \
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp\
+  $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp\
   $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp
 
 INTERFACES_NONLINEAR_MODEL_EVALUATOR_ANA_FUNDAMENTAL_H = \
@@ -727,8 +734,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DefaultBlockedTriangularLinearOpWithSolve.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DefaultInverseLinearOp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DefaultMultipliedLinearOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DefaultPreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DefaultProductMultiVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DefaultProductVector.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Thyra_DefaultProductVectorSpace.Po@am__quote@
@@ -982,6 +991,34 @@ Thyra_SpmdVectorSpaceUtilities.obj: $(srcdir)/support/operator_vector/adapter_su
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp' object='Thyra_SpmdVectorSpaceUtilities.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_SpmdVectorSpaceUtilities.obj `if test -f '$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.cpp'; fi`
+
+Thyra_DefaultBlockedTriangularLinearOpWithSolve.o: $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_DefaultBlockedTriangularLinearOpWithSolve.o -MD -MP -MF $(DEPDIR)/Thyra_DefaultBlockedTriangularLinearOpWithSolve.Tpo -c -o Thyra_DefaultBlockedTriangularLinearOpWithSolve.o `test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_DefaultBlockedTriangularLinearOpWithSolve.Tpo $(DEPDIR)/Thyra_DefaultBlockedTriangularLinearOpWithSolve.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp' object='Thyra_DefaultBlockedTriangularLinearOpWithSolve.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_DefaultBlockedTriangularLinearOpWithSolve.o `test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp
+
+Thyra_DefaultBlockedTriangularLinearOpWithSolve.obj: $(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_DefaultBlockedTriangularLinearOpWithSolve.obj -MD -MP -MF $(DEPDIR)/Thyra_DefaultBlockedTriangularLinearOpWithSolve.Tpo -c -o Thyra_DefaultBlockedTriangularLinearOpWithSolve.obj `if test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_DefaultBlockedTriangularLinearOpWithSolve.Tpo $(DEPDIR)/Thyra_DefaultBlockedTriangularLinearOpWithSolve.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp' object='Thyra_DefaultBlockedTriangularLinearOpWithSolve.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_DefaultBlockedTriangularLinearOpWithSolve.obj `if test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_solve/client_support/Thyra_DefaultBlockedTriangularLinearOpWithSolve.cpp'; fi`
+
+Thyra_DefaultPreconditioner.o: $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_DefaultPreconditioner.o -MD -MP -MF $(DEPDIR)/Thyra_DefaultPreconditioner.Tpo -c -o Thyra_DefaultPreconditioner.o `test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_DefaultPreconditioner.Tpo $(DEPDIR)/Thyra_DefaultPreconditioner.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp' object='Thyra_DefaultPreconditioner.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_DefaultPreconditioner.o `test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp
+
+Thyra_DefaultPreconditioner.obj: $(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_DefaultPreconditioner.obj -MD -MP -MF $(DEPDIR)/Thyra_DefaultPreconditioner.Tpo -c -o Thyra_DefaultPreconditioner.obj `if test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Thyra_DefaultPreconditioner.Tpo $(DEPDIR)/Thyra_DefaultPreconditioner.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp' object='Thyra_DefaultPreconditioner.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Thyra_DefaultPreconditioner.obj `if test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp'; then $(CYGPATH_W) '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/support/operator_solve/client_support/Thyra_DefaultPreconditioner.cpp'; fi`
 
 Thyra_DefaultInverseLinearOp.o: $(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Thyra_DefaultInverseLinearOp.o -MD -MP -MF $(DEPDIR)/Thyra_DefaultInverseLinearOp.Tpo -c -o Thyra_DefaultInverseLinearOp.o `test -f '$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp' || echo '$(srcdir)/'`$(srcdir)/support/operator_solve/client_support/Thyra_DefaultInverseLinearOp.cpp

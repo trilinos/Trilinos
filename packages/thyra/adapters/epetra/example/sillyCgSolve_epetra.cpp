@@ -53,8 +53,6 @@ int main(int argc, char *argv[])
   //
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  const int procRank = Teuchos::GlobalMPISession::getRank();
-  const int numProc  = Teuchos::GlobalMPISession::getNProc();
 #ifdef HAVE_MPI
   MPI_Comm mpiComm = MPI_COMM_WORLD;
 #endif

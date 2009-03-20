@@ -32,7 +32,9 @@
 #include "Thyra_PreconditionerBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Default implementation of a <tt>PreconditionerBase</tt> that just
  * accepts precreated preconditioner linear operators.
@@ -61,8 +63,8 @@ namespace Thyra {
  *
  * ToDo: Finish documentation!
  */
-template <class RangeScalar, class DomainScalar = RangeScalar>
-class DefaultPreconditioner : virtual public PreconditionerBase<RangeScalar,DomainScalar>
+template <class Scalar>
+class DefaultPreconditioner : virtual public PreconditionerBase<Scalar>
 {
 public:
 
@@ -77,80 +79,80 @@ public:
    * preconditioner.
    */
   DefaultPreconditioner(
-    const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
-    ,const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> >    &leftPrecOp
+    ,const Teuchos::RCP<LinearOpBase<Scalar> >   &rightPrecOp
     );
 
   /** \brief Construct a const-only left-only, or right-only, or split
    * left/right preconditioner.
    */
   DefaultPreconditioner(
-    const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
-    ,const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> >    &leftPrecOp
+    ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &rightPrecOp
     );
 
   /** \brief Construct a single unspecified preconditioner.
    */
   DefaultPreconditioner(
-    const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> >    &unspecifiedPrecOp
     );
 
   /** \brief Construct a const-only single unspecified preconditioner.
    */
   DefaultPreconditioner(
-    const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> >    &unspecifiedPrecOp
     );
 
   /** \brief Initialize a left preconditioner.
    */
   void initializeLeft(
-    const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> >    &leftPrecOp
     );
 
   /** \brief Initialize a const-only left preconditioner.
    */
   void initializeLeft(
-    const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> >    &leftPrecOp
     );
 
   /** \brief Initialize a right preconditioner.
    */
   void initializeRight(
-    const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &rightPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> >    &rightPrecOp
     );
 
   /** \brief Initialize a const-only right preconditioner.
    */
   void initializeRight(
-    const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &rightPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> >    &rightPrecOp
     );
 
   /** \brief Initialize a split left/right preconditioner.
    */
   void initializeLeftRight(
-    const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
-    ,const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> >    &leftPrecOp
+    ,const Teuchos::RCP<LinearOpBase<Scalar> >   &rightPrecOp
     );
 
   /** \brief Initialize a const-only split left/right preconditioner.
    */
   void initializeLeftRight(
-    const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &leftPrecOp
-    ,const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >   &rightPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> >    &leftPrecOp
+    ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &rightPrecOp
     );
 
   /** \brief Initialize a single unspecified preconditioner
    * operator.
    */
   void initializeUnspecified(
-    const Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> >    &unspecifiedPrecOp
     );
 
   /** \brief Initialize a const-only single unspecified preconditioner
    * operator.
    */
   void initializeUnspecified(
-    const Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> >    &unspecifiedPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> >    &unspecifiedPrecOp
     );
 
   /** \brief Uninitialize.
@@ -179,28 +181,28 @@ public:
   /** \brief . */
   bool isLeftPrecOpConst() const;
   /** \brief . */
-  Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> > getNonconstLeftPrecOp();
+  Teuchos::RCP<LinearOpBase<Scalar> > getNonconstLeftPrecOp();
   /** \brief . */
-  Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> > getLeftPrecOp() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > getLeftPrecOp() const;
   /** \brief . */
   bool isRightPrecOpConst() const;
   /** \brief . */
-  Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> > getNonconstRightPrecOp();
+  Teuchos::RCP<LinearOpBase<Scalar> > getNonconstRightPrecOp();
   /** \brief . */
-  Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> > getRightPrecOp() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > getRightPrecOp() const;
   /** \brief . */
   bool isUnspecifiedPrecOpConst() const;
   /** \brief . */
-  Teuchos::RCP<LinearOpBase<RangeScalar,DomainScalar> > getNonconstUnspecifiedPrecOp();
+  Teuchos::RCP<LinearOpBase<Scalar> > getNonconstUnspecifiedPrecOp();
   /** \brief . */
-  Teuchos::RCP<const LinearOpBase<RangeScalar,DomainScalar> > getUnspecifiedPrecOp() const;
+  Teuchos::RCP<const LinearOpBase<Scalar> > getUnspecifiedPrecOp() const;
   //@}
   
 private:
   
-  Teuchos::ConstNonconstObjectContainer<LinearOpBase<RangeScalar,DomainScalar> >  leftPrecOp_;
-  Teuchos::ConstNonconstObjectContainer<LinearOpBase<RangeScalar,DomainScalar> >  rightPrecOp_;
-  Teuchos::ConstNonconstObjectContainer<LinearOpBase<RangeScalar,DomainScalar> >  unspecifiedPrecOp_;
+  Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> >  leftPrecOp_;
+  Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> >  rightPrecOp_;
+  Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> >  unspecifiedPrecOp_;
   
 };
 
@@ -264,6 +266,8 @@ splitPrec(
   return Teuchos::rcp(new DefaultPreconditioner<Scalar>(leftPrecOp,rightPrecOp));
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_DEFUALT_PRECONDITIONER_DECL_HPP

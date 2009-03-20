@@ -41,52 +41,21 @@
 namespace Thyra {
 
 
-// SymmetricLinearOpTester (using partial specialization only test symmetry on
-// operators where RangeScalar and DomainScalar are the same)
-
-
-template<class RangeScalar, class DomainScalar>
+template<class Scalar>
 class SymmetricLinearOpTester {
 public:
-  typedef typename Teuchos::PromotionTraits<RangeScalar,DomainScalar>::promote Scalar;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
   static void checkSymmetry(
-    const LinearOpBase<RangeScalar,DomainScalar>  &op
-    ,MultiVectorRandomizerBase<DomainScalar>      *dRand
-    ,Teuchos::FancyOStream                        &oss
-    ,const int                                    num_rhs
-    ,const int                                    num_random_vectors
-    ,const Teuchos::EVerbosityLevel               verbLevel
-    ,const bool                                   dump_all
-    ,const ScalarMag                              &symmetry_error_tol
-    ,const ScalarMag                              &symmetry_warning_tol
-    ,bool                                         *these_results
-    )
-    {
-      using std::endl;
-      typedef Teuchos::ScalarTraits<RangeScalar>  RST;
-      typedef Teuchos::ScalarTraits<DomainScalar> DST;
-      oss << endl << "RangeScalar = "<<RST::name()<<" == DomainScalar = "<<DST::name()<<": failed, the opeator can not be symmetric!\n";
-      *these_results = false;
-    }
-};
-
-
-template<class Scalar>
-class SymmetricLinearOpTester<Scalar,Scalar> {
-public:
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
-  static void checkSymmetry(
-    const LinearOpBase<Scalar>                    &op
-    ,MultiVectorRandomizerBase<Scalar>            *dRand
-    ,Teuchos::FancyOStream                        &oss
-    ,const int                                    num_rhs
-    ,const int                                    num_random_vectors
-    ,const Teuchos::EVerbosityLevel               verbLevel
-    ,const bool                                   dump_all
-    ,const ScalarMag                              &symmetry_error_tol
-    ,const ScalarMag                              &symmetry_warning_tol
-    ,bool                                         *these_results
+    const LinearOpBase<Scalar> &op,
+    MultiVectorRandomizerBase<Scalar> *dRand,
+    Teuchos::FancyOStream &oss,
+    const int num_rhs,
+    const int num_random_vectors,
+    const Teuchos::EVerbosityLevel verbLevel,
+    const bool dump_all,
+    const ScalarMag &symmetry_error_tol,
+    const ScalarMag &symmetry_warning_tol,
+    const Ptr<bool> &these_results
     )
     {
 
@@ -168,70 +137,70 @@ public:
 //
 
 
-template<class RangeScalar, class DomainScalar>
-LinearOpTester<RangeScalar,DomainScalar>::LinearOpTester(
-  const bool          check_linear_properties
-  ,const ScalarMag    linear_properties_warning_tol
-  ,const ScalarMag    linear_properties_error_tol
-  ,const bool         check_adjoint
-  ,const ScalarMag    adjoint_warning_tol
-  ,const ScalarMag    adjoint_error_tol
-  ,const bool         check_for_symmetry
-  ,const ScalarMag    symmetry_warning_tol
-  ,const ScalarMag    symmetry_error_tol
-  ,const int          num_random_vectors
-  ,const bool         show_all_tests
-  ,const bool         dump_all
-  ,const int          num_rhs
+template<class Scalar>
+LinearOpTester<Scalar>::LinearOpTester(
+  const bool check_linear_properties_in,
+  const ScalarMag linear_properties_warning_tol_in,
+  const ScalarMag linear_properties_error_tol_in,
+  const bool check_adjoint_in,
+  const ScalarMag adjoint_warning_tol_in,
+  const ScalarMag adjoint_error_tol_in,
+  const bool check_for_symmetry_in,
+  const ScalarMag symmetry_warning_tol_in,
+  const ScalarMag symmetry_error_tol_in,
+  const int num_random_vectors_in,
+  const bool show_all_tests_in,
+  const bool dump_all_in,
+  const int num_rhs_in
   )
-  :check_linear_properties_(check_linear_properties)
-  ,linear_properties_warning_tol_(linear_properties_warning_tol)
-  ,linear_properties_error_tol_(linear_properties_error_tol)
-  ,check_adjoint_(check_adjoint)
-  ,adjoint_warning_tol_(adjoint_warning_tol)
-  ,adjoint_error_tol_(adjoint_error_tol)
-  ,check_for_symmetry_(check_for_symmetry)
-  ,symmetry_warning_tol_(symmetry_warning_tol)
-  ,symmetry_error_tol_(symmetry_error_tol)
-  ,num_random_vectors_(num_random_vectors)
-  ,show_all_tests_(show_all_tests)
-  ,dump_all_(dump_all)
-  ,num_rhs_(num_rhs)
+  :check_linear_properties_(check_linear_properties_in),
+   linear_properties_warning_tol_(linear_properties_warning_tol_in),
+   linear_properties_error_tol_(linear_properties_error_tol_in),
+   check_adjoint_(check_adjoint_in),
+   adjoint_warning_tol_(adjoint_warning_tol_in),
+   adjoint_error_tol_(adjoint_error_tol_in),
+   check_for_symmetry_(check_for_symmetry_in),
+   symmetry_warning_tol_(symmetry_warning_tol_in),
+   symmetry_error_tol_(symmetry_error_tol_in),
+   num_random_vectors_(num_random_vectors_in),
+   show_all_tests_(show_all_tests_in),
+   dump_all_(dump_all_in),
+   num_rhs_(num_rhs_in)
 {}
 
 
-template<class RangeScalar, class DomainScalar>
-void LinearOpTester<RangeScalar,DomainScalar>::enable_all_tests( const bool enable_all_tests )
+template<class Scalar>
+void LinearOpTester<Scalar>::enable_all_tests( const bool enable_all_tests_in )
 {
-  check_linear_properties_ = enable_all_tests;
-  check_adjoint_           = enable_all_tests;
-  check_for_symmetry_      = enable_all_tests;
+  check_linear_properties_ = enable_all_tests_in;
+  check_adjoint_ = enable_all_tests_in;
+  check_for_symmetry_ = enable_all_tests_in;
 }
 
 
-template<class RangeScalar, class DomainScalar>
-void LinearOpTester<RangeScalar,DomainScalar>::set_all_warning_tol( const ScalarMag warning_tol )
+template<class Scalar>
+void LinearOpTester<Scalar>::set_all_warning_tol( const ScalarMag warning_tol_in )
 {
-  linear_properties_warning_tol_  = warning_tol;
-  adjoint_warning_tol_            = warning_tol;
-  symmetry_warning_tol_           = warning_tol;
+  linear_properties_warning_tol_ = warning_tol_in;
+  adjoint_warning_tol_ = warning_tol_in;
+  symmetry_warning_tol_ = warning_tol_in;
 }
 
 
-template<class RangeScalar, class DomainScalar>
-void LinearOpTester<RangeScalar,DomainScalar>::set_all_error_tol( const ScalarMag error_tol )
+template<class Scalar>
+void LinearOpTester<Scalar>::set_all_error_tol( const ScalarMag error_tol_in )
 {
-  linear_properties_error_tol_  = error_tol;
-  adjoint_error_tol_            = error_tol;
-  symmetry_error_tol_           = error_tol;
+  linear_properties_error_tol_ = error_tol_in;
+  adjoint_error_tol_ = error_tol_in;
+  symmetry_error_tol_ = error_tol_in;
 }
 
 
-template<class RangeScalar, class DomainScalar>
-bool LinearOpTester<RangeScalar,DomainScalar>::check(
-  const LinearOpBase<RangeScalar,DomainScalar> &op,
-  const Ptr<MultiVectorRandomizerBase<RangeScalar> > &rangeRandomizer,
-  const Ptr<MultiVectorRandomizerBase<DomainScalar> > &domainRandomizer,
+template<class Scalar>
+bool LinearOpTester<Scalar>::check(
+  const LinearOpBase<Scalar> &op,
+  const Ptr<MultiVectorRandomizerBase<Scalar> > &rangeRandomizer,
+  const Ptr<MultiVectorRandomizerBase<Scalar> > &domainRandomizer,
   const Ptr<Teuchos::FancyOStream> &out_inout
   ) const
 {
@@ -241,17 +210,18 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
   using Teuchos::rcp;
   using Teuchos::rcpFromPtr;
   using Teuchos::rcpFromRef;
+  using Teuchos::outArg;
   using Teuchos::fancyOStream;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
-  typedef Teuchos::ScalarTraits<RangeScalar>  RST;
-  typedef Teuchos::ScalarTraits<DomainScalar> DST;
+  typedef Teuchos::ScalarTraits<Scalar>  RST;
+  typedef Teuchos::ScalarTraits<Scalar> DST;
   bool success = true, result;
-  const int num_rhs = this->num_rhs();
-  const RangeScalar r_one  = RST::one();
-  const DomainScalar d_one  = DST::one();
-  const RangeScalar r_half = as<RangeScalar>(0.5)*r_one;
-  const DomainScalar d_half = as<DomainScalar>(0.5)*d_one;
+  const int loc_num_rhs = this->num_rhs();
+  const Scalar r_one  = RST::one();
+  const Scalar d_one  = DST::one();
+  const Scalar r_half = as<Scalar>(0.5)*r_one;
+  const Scalar d_half = as<Scalar>(0.5)*d_one;
 
   RCP<FancyOStream> out;
   if (!is_null(out_inout))
@@ -262,7 +232,7 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
   const Teuchos::EVerbosityLevel verbLevel =
     (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
-  OSTab tab(out,1,"THYRA");
+  OSTab tab2(out,1,"THYRA");
 
   // ToDo 04/28/2005:
   // * Test the MultiVectorBase apply() function and output to the VectorBase apply() function!
@@ -281,21 +251,21 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
     *out << endl << "describe op:\n" << Teuchos::describe(op,Teuchos::VERB_LOW);
   }
 
-  RCP< MultiVectorRandomizerBase<RangeScalar> >  rRand;
+  RCP< MultiVectorRandomizerBase<Scalar> >  rRand;
   if (!is_null(rangeRandomizer))
     rRand = rcpFromPtr(rangeRandomizer);
   else
-    rRand = rcp(new UniversalMultiVectorRandomizer<RangeScalar>());
-  RCP< MultiVectorRandomizerBase<DomainScalar> > dRand;
+    rRand = rcp(new UniversalMultiVectorRandomizer<Scalar>());
+  RCP< MultiVectorRandomizerBase<Scalar> > dRand;
   if (!is_null(domainRandomizer))
     dRand = rcpFromPtr(domainRandomizer);
   else
-    dRand = rcp(new UniversalMultiVectorRandomizer<DomainScalar>());
+    dRand = rcp(new UniversalMultiVectorRandomizer<Scalar>());
   
   *out << endl << "Checking the domain and range spaces ... ";
 
-  RCP<const VectorSpaceBase<RangeScalar> >  range  = op.range();
-  RCP<const VectorSpaceBase<DomainScalar> > domain = op.domain();
+  RCP<const VectorSpaceBase<Scalar> >  range  = op.range();
+  RCP<const VectorSpaceBase<Scalar> > domain = op.domain();
   
   {
 
@@ -350,30 +320,30 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
         
         *oss << endl << "Random vector tests = " << rand_vec_i << endl;
 
-        OSTab tab(oss);
+        OSTab tab3(oss);
         
         *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
-        RCP<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,loc_num_rhs);
         dRand->randomize(&*v1);
         if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
         
         *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
-        RCP<MultiVectorBase<DomainScalar> > v2 = createMembers(domain,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v2 = createMembers(domain,loc_num_rhs);
         dRand->randomize(&*v2);
         if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
         
         *oss << endl << "v3 = v1 + v2 ...\n" ;
-        RCP<MultiVectorBase<DomainScalar> > v3 = createMembers(domain,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v3 = createMembers(domain,loc_num_rhs);
         V_VpV(&*v3,*v1,*v2);
         if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
         
         *oss << endl << "v4 = 0.5*op*v3 ...\n" ;
-        RCP<MultiVectorBase<RangeScalar> > v4 = createMembers(range,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v4 = createMembers(range,loc_num_rhs);
         apply( op, NONCONJ_ELE, *v3, &*v4, r_half );
         if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
         
         *oss << endl << "v5 = op*v1 ...\n" ;
-        RCP<MultiVectorBase<RangeScalar> > v5 = createMembers(range,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v5 = createMembers(range,loc_num_rhs);
         apply( op, NONCONJ_ELE, *v1, &*v5 );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
@@ -381,12 +351,12 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
         apply( op, NONCONJ_ELE, *v2, &*v5, r_half, r_half );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
 
-        std::vector<RangeScalar> sum_v4(num_rhs), sum_v5(num_rhs);
+        std::vector<Scalar> sum_v4(loc_num_rhs), sum_v5(loc_num_rhs);
         sums(*v4,&sum_v4[0]);
         sums(*v5,&sum_v5[0]);
         
         result = testRelErrors(
-          num_rhs
+          loc_num_rhs
           ,"sum(v4)", &sum_v4[0]
           ,"sum(v5)", &sum_v5[0]
           ,"linear_properties_error_tol()", linear_properties_error_tol()
@@ -444,27 +414,27 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
         OSTab tab(oss);
         
         *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
-        RCP<MultiVectorBase<RangeScalar> > v1 = createMembers(range,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v1 = createMembers(range,loc_num_rhs);
         rRand->randomize(&*v1);
         if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
         
         *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
-        RCP<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,loc_num_rhs);
         rRand->randomize(&*v2);
         if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
         
         *oss << endl << "v3 = v1 + v2 ...\n" ;
-        RCP<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,loc_num_rhs);
         V_VpV(&*v3,*v1,*v2);
         if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
         
         *oss << endl << "v4 = 0.5*op'*v3 ...\n" ;
-        RCP<MultiVectorBase<DomainScalar> > v4 = createMembers(domain,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,loc_num_rhs);
         applyTranspose( op, CONJ_ELE, *v3, &*v4, d_half );
         if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
         
         *oss << endl << "v5 = op'*v1 ...\n" ;
-        RCP<MultiVectorBase<DomainScalar> > v5 = createMembers(domain,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v5 = createMembers(domain,loc_num_rhs);
         applyTranspose( op, CONJ_ELE, *v1, &*v5 );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
@@ -473,12 +443,12 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
 
-        std::vector<DomainScalar> sum_v4(num_rhs), sum_v5(num_rhs);
+        std::vector<Scalar> sum_v4(loc_num_rhs), sum_v5(loc_num_rhs);
         sums(*v4,&sum_v4[0]);
         sums(*v5,&sum_v5[0]);
         
         result = testRelErrors(
-          num_rhs
+          loc_num_rhs
           ,"sum(v4)", &sum_v4[0]
           ,"sum(v5)", &sum_v5[0]
           ,"linear_properties_error_tol()", linear_properties_error_tol()
@@ -534,32 +504,32 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
         OSTab tab(oss);
       
         *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
-        RCP<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,loc_num_rhs);
         dRand->randomize(&*v1);
         if(dump_all()) *oss << endl << "v1 =\n" << describe(*v1,verbLevel);
       
         *oss << endl << "v2 = randomize(-1,+1); ...\n" ;
-        RCP<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,loc_num_rhs);
         rRand->randomize(&*v2);
         if(dump_all()) *oss << endl << "v2 =\n" << describe(*v2,verbLevel);
       
         *oss << endl << "v3 = 0.5*op*v1 ...\n" ;
-        RCP<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,loc_num_rhs);
         apply( op, NONCONJ_ELE, *v1, &*v3, r_half );
         if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
       
         *oss << endl << "v4 = 0.5*op'*v2 ...\n" ;
-        RCP<MultiVectorBase<DomainScalar> > v4 = createMembers(domain,num_rhs);
+        RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,loc_num_rhs);
         applyTranspose( op, CONJ_ELE, *v2, &*v4, d_half );
         if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
 
-        std::vector<DomainScalar> prod_v4_v1(num_rhs);
+        std::vector<Scalar> prod_v4_v1(loc_num_rhs);
         domain->scalarProds(*v4,*v1,&prod_v4_v1[0]);
-        std::vector<RangeScalar> prod_v2_v3(num_rhs);
+        std::vector<Scalar> prod_v2_v3(loc_num_rhs);
         range->scalarProds(*v2,*v3,&prod_v2_v3[0]);
         
         result = testRelErrors(
-          num_rhs
+          loc_num_rhs
           ,"<v4,v1>", &prod_v4_v1[0]
           ,"<v2,v3>", &prod_v2_v3[0]
           ,"adjoint_error_tol()", adjoint_error_tol()
@@ -593,8 +563,10 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
     ossStore.copyfmt(*out);
     bool these_results = true;
     
-    SymmetricLinearOpTester<RangeScalar,DomainScalar>::checkSymmetry(
-      op,&*dRand,*oss,num_rhs,num_random_vectors(),verbLevel,dump_all(),symmetry_error_tol(),symmetry_warning_tol(),&these_results
+    SymmetricLinearOpTester<Scalar>::checkSymmetry(
+      op,&*dRand, *oss, loc_num_rhs,num_random_vectors(), verbLevel,dump_all(),
+      symmetry_error_tol(), symmetry_warning_tol(),
+      outArg(these_results)
       );
     
     printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
@@ -615,9 +587,9 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
 }
 
 
-template<class RangeScalar, class DomainScalar>
-bool LinearOpTester<RangeScalar,DomainScalar>::check(
-  const LinearOpBase<RangeScalar,DomainScalar> &op,
+template<class Scalar>
+bool LinearOpTester<Scalar>::check(
+  const LinearOpBase<Scalar> &op,
   const Ptr<Teuchos::FancyOStream> &out
   ) const
 {
@@ -626,11 +598,11 @@ bool LinearOpTester<RangeScalar,DomainScalar>::check(
 }
 
 
-template<class RangeScalar, class DomainScalar>
-bool LinearOpTester<RangeScalar,DomainScalar>::compare(
-  const LinearOpBase<RangeScalar,DomainScalar>  &op1
-  ,const LinearOpBase<RangeScalar,DomainScalar> &op2
-  ,MultiVectorRandomizerBase<DomainScalar>      *domainRandomizer
+template<class Scalar>
+bool LinearOpTester<Scalar>::compare(
+  const LinearOpBase<Scalar>  &op1
+  ,const LinearOpBase<Scalar> &op2
+  ,MultiVectorRandomizerBase<Scalar>      *domainRandomizer
   ,Teuchos::FancyOStream                        *out_arg
   ) const
 {
@@ -639,11 +611,11 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
   using Teuchos::arrayArg;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
-  typedef Teuchos::ScalarTraits<RangeScalar>  RST;
-  typedef Teuchos::ScalarTraits<DomainScalar> DST;
+  typedef Teuchos::ScalarTraits<Scalar>  RST;
+  typedef Teuchos::ScalarTraits<Scalar> DST;
   bool success = true, result;
-  const int num_rhs = this->num_rhs();
-  const RangeScalar  r_half = RangeScalar(0.5)*RST::one();
+  const int loc_num_rhs = this->num_rhs();
+  const Scalar  r_half = Scalar(0.5)*RST::one();
   RCP<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
@@ -662,12 +634,12 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
       *out << endl << "describe op2: " << op2.description() << endl;
   }
 
-  RCP< MultiVectorRandomizerBase<DomainScalar> > dRand;
+  RCP< MultiVectorRandomizerBase<Scalar> > dRand;
   if(domainRandomizer)  dRand = Teuchos::rcp(domainRandomizer,false);
-  else                  dRand = Teuchos::rcp(new UniversalMultiVectorRandomizer<DomainScalar>());
+  else                  dRand = Teuchos::rcp(new UniversalMultiVectorRandomizer<Scalar>());
 
-  RCP<const VectorSpaceBase<RangeScalar> >  range  = op1.range();
-  RCP<const VectorSpaceBase<DomainScalar> > domain = op1.domain();
+  RCP<const VectorSpaceBase<Scalar> >  range  = op1.range();
+  RCP<const VectorSpaceBase<Scalar> > domain = op1.domain();
 
   if(out.get()) *out << endl << "Checking that range and domain spaces are compatible ... ";
 
@@ -719,29 +691,29 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
       
       *oss << endl << "Random vector tests = " << rand_vec_i << endl;
 
-      OSTab tab(oss);
+      OSTab tab2(oss);
       
       if(dump_all()) *oss << endl << "v1 = randomize(-1,+1); ...\n" ;
-      RCP<MultiVectorBase<DomainScalar> > v1 = createMembers(domain,num_rhs);
+      RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,loc_num_rhs);
       dRand->randomize(&*v1);
       if(dump_all()) *oss << endl << "v1 =\n" << *v1;
       
       if(dump_all()) *oss << endl << "v2 = 0.5*op1*v1 ...\n" ;
-      RCP<MultiVectorBase<RangeScalar> > v2 = createMembers(range,num_rhs);
+      RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,loc_num_rhs);
       apply( op1, NONCONJ_ELE, *v1, &*v2, r_half );
       if(dump_all()) *oss << endl << "v2 =\n" << *v2;
       
       if(dump_all()) *oss << endl << "v3 = 0.5*op2*v1 ...\n" ;
-      RCP<MultiVectorBase<RangeScalar> > v3 = createMembers(range,num_rhs);
+      RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,loc_num_rhs);
       apply( op2, NONCONJ_ELE, *v1, &*v3, r_half );
       if(dump_all()) *oss << endl << "v3 =\n" << *v3;
       
-      std::vector<RangeScalar> sum_v2(num_rhs), sum_v3(num_rhs);
+      std::vector<Scalar> sum_v2(loc_num_rhs), sum_v3(loc_num_rhs);
       sums(*v2,&sum_v2[0]);
       sums(*v3,&sum_v3[0]);
       
       result = testRelErrors(
-        num_rhs
+        loc_num_rhs
         ,"sum(v2)", &sum_v2[0]
         ,"sum(v3)", &sum_v3[0]
         ,"linear_properties_error_tol()", linear_properties_error_tol()
@@ -752,7 +724,8 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
       
     }
 
-    printTestResults(these_results,ossStore.str(),show_all_tests(),&success,OSTab(out).get());
+    printTestResults(these_results, ossStore.str(), show_all_tests(),
+      &success, OSTab(out).get() );
 
   }
   
@@ -769,10 +742,10 @@ bool LinearOpTester<RangeScalar,DomainScalar>::compare(
 }
 
 
-template<class RangeScalar, class DomainScalar>
-bool LinearOpTester<RangeScalar,DomainScalar>::compare(
-  const LinearOpBase<RangeScalar,DomainScalar>  &op1
-  ,const LinearOpBase<RangeScalar,DomainScalar> &op2
+template<class Scalar>
+bool LinearOpTester<Scalar>::compare(
+  const LinearOpBase<Scalar>  &op1
+  ,const LinearOpBase<Scalar> &op2
   ,Teuchos::FancyOStream                        *out
   ) const
 {

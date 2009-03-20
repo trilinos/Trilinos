@@ -5,7 +5,7 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE(Teuchos CLEANED)
+PACKAGE( Teuchos ENABLE_SHADOWING_WARNINGS CLEANED )
 
 SET(${PACKAGE_NAME}_VERSION "1.5d")
 

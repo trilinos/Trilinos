@@ -186,6 +186,11 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     "Location where the runtime DLLs will be installed.  If given as an absolute path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
     )
   
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES ON
+    CACHE BOOL
+    "Determines if export makefiles will be create and installed."
+    )
+  
   MARK_AS_ADVANCED(BUILD_TESTING)
   MARK_AS_ADVANCED(CMAKE_BACKWARDS_COMPATIBILITY)
   MARK_AS_ADVANCED(DART_TESTING_TIMEOUT)
