@@ -121,7 +121,7 @@
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="TO"/>
-    <Dependency name="Tpetra" type="TO"/>
+    <Dependency name="Tpetra" type="LO"/>
     <Dependency name="EpetraExt" type="TO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="ITO"/>
@@ -146,6 +146,7 @@
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Triutils" type="TO"/>
+    <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="TO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="Thyra" type="LR"/>
