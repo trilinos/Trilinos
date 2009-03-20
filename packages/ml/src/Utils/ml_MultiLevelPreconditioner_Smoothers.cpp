@@ -142,6 +142,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   double IfpackRelThreshold=List_.get("smoother: ifpack relative threshold",1.);
   double IfpackAbsThreshold=List_.get("smoother: ifpack absolute threshold",0.);
 
+  // Block Chebyshev parameters
+  int cheby_nBlocks=List_.get("smoother: Block Chebyshev number of blocks",-1);
+  int *cheby_blockIndices=List_.get("smoother: Block Chebyshev block list",(int*)0);
+  
   // Hiptmair-specific declarations
   string SubSmType,NodeSubSmType,EdgeSubSmType;
   int NodeSubSmIts = 1, EdgeSubSmIts = 1;
@@ -280,9 +284,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 */
     }
 
-
-
-
     if( MySmoother == "Jacobi" ) {
 
       // ============ //
@@ -350,16 +351,23 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
           ML_Gen_Smoother_GaussSeidel(ml_, currentLevel, pre_or_post,
                                       Mynum_smoother_steps, Myomega);
 
-    } else if( Smoother == "ML Gauss-Seidel" ) {
+    } else if( MySmoother == "ML Gauss-Seidel" ) {
 
       // ======================= //
       // ML's point Gauss-Seidel //
       // ======================= //
+
+      bool gs_type = List_.get("smoother: Gauss-Seidel efficient symmetric",false);
       if( verbose_ ) cout << msg << "Gauss-Seidel (sweeps="
                          << Mynum_smoother_steps << ",omega=" << Myomega << ","
                          << MyPreOrPostSmoother << ")" << endl;
-      ML_Gen_Smoother_GaussSeidel(ml_, currentLevel, pre_or_post,
-                                  Mynum_smoother_steps, Myomega);
+
+      if(gs_type)
+        ML_Gen_Smoother_EffSymGaussSeidel(ml_, currentLevel, pre_or_post,
+                                          Mynum_smoother_steps, Myomega);
+      else
+        ML_Gen_Smoother_GaussSeidel(ml_, currentLevel, pre_or_post,
+                                    Mynum_smoother_steps, Myomega);
 
 
     } else if( MySmoother == "symmetric Gauss-Seidel" ) {
@@ -389,7 +397,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       ML_Gen_Smoother_SymGaussSeidel(ml_, currentLevel, pre_or_post,
 				     Mynum_smoother_steps, Myomega);
 
-    } else if( Smoother == "ML symmetric Gauss-Seidel" ) {
+    } else if( MySmoother == "ML symmetric Gauss-Seidel" ) {
 
       // =========================== //
       // ML's symmetric Gauss-Seidel //
@@ -425,7 +433,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       ML_Gen_Smoother_SymBlockGaussSeidel(ml_, currentLevel, pre_or_post,
 				    Mynum_smoother_steps, Myomega, NumPDEEqns_);
 
-    } else if( ( MySmoother == "MLS" ) || ( MySmoother == "Chebyshev" )) {
+    } else if( ( MySmoother == "MLS" ) || ( MySmoother == "Chebyshev" )
+               || (MySmoother == "Block Chebyshev") ) {
 
       // ========= //
       // Chebyshev //
@@ -446,9 +455,20 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       if (MyChebyshevAlpha == -2.) MyChebyshevAlpha = 20.;
       MyChebyshevAlpha = ML_Smoother_ChebyshevAlpha(MyChebyshevAlpha, ml_,
                                                     thisLevel, nextLevel);
-
+      /* Grab the Block-Cheby stuff, if applicable */
+      cheby_nBlocks=smList.get("smoother: Block Chebyshev number of blocks",cheby_nBlocks);
+      cheby_blockIndices=smList.get("smoother: Block Chebyshev block list",cheby_blockIndices);
+      
       if (verbose_) {
-        if (MyChebyshevPolyOrder > 0)
+        if (MySmoother == "Block Chebyshev" && cheby_blockIndices && cheby_nBlocks>0)
+        {
+          cout << msg << "MLS/Block Chebyshev, polynomial order = "
+               <<  MyChebyshevPolyOrder
+               << ", alpha = " << MyChebyshevAlpha << ", "
+               << MyPreOrPostSmoother << endl;
+
+        }
+        else if (MySmoother == "Chebyshev" && MyChebyshevPolyOrder > 0)
         {
           cout << msg << "MLS/Chebyshev, polynomial order = "
                <<  MyChebyshevPolyOrder
@@ -463,9 +483,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         }
       }
 
-      ML_Gen_Smoother_Cheby(ml_, currentLevel, pre_or_post,
-                          MyChebyshevAlpha, MyChebyshevPolyOrder);
-
+      /* Check the input block indices */
+      if(MySmoother == "Block Chebyshev" && cheby_nBlocks>0 && cheby_blockIndices) {
+        ML_Gen_Smoother_BlockDiagScaledCheby(ml_, currentLevel, pre_or_post,
+                                             MyChebyshevAlpha, MyChebyshevPolyOrder,
+                                             cheby_nBlocks,cheby_blockIndices);
+        
+      }
+      else
+        ML_Gen_Smoother_Cheby(ml_, currentLevel, pre_or_post,
+                              MyChebyshevAlpha, MyChebyshevPolyOrder);     
+      
       if (verbose_) {
         ML_Operator* this_A = &(ml_->Amat[currentLevel]);
         cout << msg << "lambda_min = " << this_A->lambda_min

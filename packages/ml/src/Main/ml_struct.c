@@ -2096,7 +2096,7 @@ int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, int pre_or_post,
   struct MLSthing *widget;
   ML_Operator *Amat;
   ML_Operator *blockMat;
-
+  char str[80];
 
   if (deg < 0) {
     printf("ML_Gen_Smoother_BlockDiagScaledCheby: deg < 0 not allowed\n");
@@ -2120,9 +2120,13 @@ int ML_Gen_Smoother_BlockDiagScaledCheby(ML *ml, int nl, int pre_or_post,
 
   if (pre_or_post != ML_POSTSMOOTHER) {
     widget = (struct MLSthing *) ml->pre_smoother[nl].smoother->data;
+    sprintf(str,"BCheby_pre%d",nl);
+    ML_Smoother_Set_Label(&(ml->pre_smoother[nl]),str);                        
   }
   else {
     widget = (struct MLSthing *) ml->post_smoother[nl].smoother->data;
+    sprintf(str,"BCheby_post%d",nl);
+    ML_Smoother_Set_Label(&(ml->post_smoother[nl]),str);                        
   }
 
   ML_Gen_BlockScaledMatrix_with_Eigenvalues(Amat, nBlocks, blockIndices,
@@ -2154,7 +2158,7 @@ int ML_Gen_BlockScaledMatrix_with_Eigenvalues(ML_Operator *Amat,
   ML_Operator_Set_ApplyFuncData(*blockMat,Amat->invec_leng, Amat->outvec_leng, 
 				widget,Amat->outvec_leng, NULL,0);
   ML_Operator_Set_ApplyFunc (*blockMat, ML_BlockScaledApply);
-
+  
   widget->scaled_matrix = *blockMat;
 
   ML_Gimmie_Eigenvalues(*blockMat, ML_NO_SCALE, ML_USE_POWER, ML_NO_SYMMETRIZE);
