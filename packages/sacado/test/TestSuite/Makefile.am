@@ -36,7 +36,7 @@ noinst_PROGRAMS = TestSuite.exe
 
 if ENABLE_ADOLC
 
-TAYLOR_SOURCES = \
+TAYLOR_SRC = \
 	$(srcdir)/TayUnitTests.hpp \
 	$(srcdir)/TayUnitTests.cpp
 
@@ -44,31 +44,17 @@ TAYLOR_CXXFLAGS = -I$(ADOLC_INCDIR)
 
 TAYLOR_LDADD = -L$(ADOLC_LIBDIR) $(ADOLC_LIBS)
 
-else
-
-TAYLOR_SOURCES = 
-
-TAYLOR_CXXFLAGS = 
-
-TAYLOR_LDADD = 
-
 endif
 
 if ENABLE_SACADO_STOKHOS
 
-PCE_SOURCES = $(srcdir)/HermiteUnitTests.hpp $(srcdir)/HermiteUnitTests.cpp
+PCE_SRC = $(srcdir)/HermiteUnitTests.hpp $(srcdir)/HermiteUnitTests.cpp
 
-PCE_CXXFLAGS =
+endif
 
-PCE_LDADD = 
+if ENABLE_SACADO_TEUCHOS
 
-else
-
-PCE_SOURCES = 
-
-PCE_CXXFLAGS =
-
-PCE_LDADD = 
+BLAS_SRC = $(srcdir)/FadBLASUnitTests.hpp $(srcdir)/FadBLASUnitTests.cpp
 
 endif
 
@@ -82,8 +68,9 @@ TestSuite_exe_SOURCES = \
 	$(srcdir)/RealELRFadUnitTests.cpp \
 	$(srcdir)/ComplexELRFadUnitTests.cpp \
 	$(srcdir)/CacheFadUnitTests.cpp \
-	$(TAYLOR_SOURCES) \
-	$(PCE_SOURCES) \
+	$(BLAS_SRC) \
+	$(TAYLOR_SRC) \
+	$(PCE_SRC) \
 	$(srcdir)/LogicalSparseUnitTests.hpp \
 	$(srcdir)/LogicalSparseUnitTests.cpp \
 	$(srcdir)/TestSuite.cpp
@@ -93,7 +80,6 @@ TestSuite_exe_CXXFLAGS = \
 	-I$(top_srcdir)/test/utils \
 	-I$(top_srcdir)/Fad \
 	$(TAYLOR_CXXFLAGS) \
-	$(PCE_CXXFLAGS) \
 	$(CPPUNIT_CFLAGS)
 
 TestSuite_exe_DEPENDENCIES = \
@@ -102,6 +88,5 @@ TestSuite_exe_DEPENDENCIES = \
 TestSuite_exe_LDADD = \
 	-L$(top_builddir)/test/utils -lsacadoutils \
 	$(TAYLOR_LDADD) \
-	$(PCE_LDADD) \
 	$(CPPUNIT_LIBS) \
 	$(SACADO_LIBS)

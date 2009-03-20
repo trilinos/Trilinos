@@ -133,8 +133,8 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
 	$(srcdir)/Sacado_Fad_DVFad.hpp \
 	$(srcdir)/Sacado_Fad_DVFadTraits.hpp \
-	$(srcdir)/Sacado_Fad_FadVector.hpp \
-	$(srcdir)/Sacado_Fad_FadVectorImp.hpp \
+	$(srcdir)/Sacado_Fad_Vector.hpp \
+	$(srcdir)/Sacado_Fad_VectorImp.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
@@ -207,6 +207,7 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/mpl/Sacado_mpl_quote.hpp \
 	$(srcdir)/mpl/Sacado_mpl_type_wrap.hpp \
 	$(srcdir)/mpl/Sacado_mpl_is_placeholder.hpp \
+	$(srcdir)/Sacado_Fad_BLAS.hpp $(srcdir)/Sacado_Fad_BLASImp.hpp \
 	$(srcdir)/template/Sacado_TemplateManager.hpp \
 	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 	$(srcdir)/template/Sacado_TemplateIterator.hpp \
@@ -252,7 +253,7 @@ am__objects_5 = $(am__objects_4) $(am__objects_4) $(am__objects_4) \
 	$(am__objects_4) $(am__objects_4) $(am__objects_4) \
 	$(am__objects_4) $(am__objects_4) $(am__objects_4) \
 	$(am__objects_4) $(am__objects_4) $(am__objects_4) \
-	$(am__objects_4)
+	$(am__objects_4) $(am__objects_4)
 am_libsacado_a_OBJECTS = $(am__objects_3) $(am__objects_5)
 libsacado_a_OBJECTS = $(am_libsacado_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
@@ -296,8 +297,8 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
 	$(srcdir)/Sacado_Fad_DVFad.hpp \
 	$(srcdir)/Sacado_Fad_DVFadTraits.hpp \
-	$(srcdir)/Sacado_Fad_FadVector.hpp \
-	$(srcdir)/Sacado_Fad_FadVectorImp.hpp \
+	$(srcdir)/Sacado_Fad_Vector.hpp \
+	$(srcdir)/Sacado_Fad_VectorImp.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
@@ -370,6 +371,7 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/mpl/Sacado_mpl_quote.hpp \
 	$(srcdir)/mpl/Sacado_mpl_type_wrap.hpp \
 	$(srcdir)/mpl/Sacado_mpl_is_placeholder.hpp \
+	$(srcdir)/Sacado_Fad_BLAS.hpp $(srcdir)/Sacado_Fad_BLASImp.hpp \
 	$(srcdir)/template/Sacado_TemplateManager.hpp \
 	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 	$(srcdir)/template/Sacado_TemplateIterator.hpp \
@@ -562,8 +564,8 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
 	$(srcdir)/Sacado_Fad_DVFad.hpp \
 	$(srcdir)/Sacado_Fad_DVFadTraits.hpp \
-	$(srcdir)/Sacado_Fad_FadVector.hpp \
-	$(srcdir)/Sacado_Fad_FadVectorImp.hpp \
+	$(srcdir)/Sacado_Fad_Vector.hpp \
+	$(srcdir)/Sacado_Fad_VectorImp.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
@@ -632,6 +634,10 @@ SACADO_UTIL_H = \
 	$(srcdir)/Sacado_DynamicArrayTraits.hpp \
 	$(srcdir)/Sacado_StaticArrayTraits.hpp \
 	$(srcdir)/Sacado_Handle.hpp
+
+@ENABLE_SACADO_TEUCHOS_TRUE@SACADO_BLAS_H = \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_Fad_BLAS.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_Fad_BLASImp.hpp
 
 @ENABLE_SACADO_TEUCHOS_TRUE@SACADO_TEMPLATE_H = \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/template/Sacado_TemplateManager.hpp \
@@ -722,6 +728,7 @@ SACADO_H = \
 	$(SACADO_TAYLOR_H) \
 	$(SACADO_RAD_H) \
 	$(SACADO_MPL_H) \
+	$(SACADO_BLAS_H) \
 	$(SACADO_TEMPLATE_H) \
 	$(SACADO_PCE_H) \
 	$(SACADO_SG_H) \

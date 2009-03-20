@@ -67,7 +67,8 @@ target_triplet = @target@
 @ENABLE_SACADO_TEUCHOS_TRUE@	fad_lj_grad$(EXEEXT) \
 @ENABLE_SACADO_TEUCHOS_TRUE@	taylor_expr$(EXEEXT) \
 @ENABLE_SACADO_TEUCHOS_TRUE@	fad_fe_jac_fill$(EXEEXT) \
-@ENABLE_SACADO_TEUCHOS_TRUE@	rad_fe_adj_fill$(EXEEXT)
+@ENABLE_SACADO_TEUCHOS_TRUE@	rad_fe_adj_fill$(EXEEXT) \
+@ENABLE_SACADO_TEUCHOS_TRUE@	fad_blas$(EXEEXT)
 subdir = test/performance
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -95,9 +96,13 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Sacado_config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+am_fad_blas_OBJECTS = fad_blas-fad_blas.$(OBJEXT)
+fad_blas_OBJECTS = $(am_fad_blas_OBJECTS)
+am__DEPENDENCIES_1 =
+fad_blas_LINK = $(CXXLD) $(fad_blas_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_fad_expr_OBJECTS = fad_expr-fad_expr.$(OBJEXT)
 fad_expr_OBJECTS = $(am_fad_expr_OBJECTS)
-am__DEPENDENCIES_1 =
 fad_expr_LINK = $(CXXLD) $(fad_expr_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_fad_expr_depth_OBJECTS = fad_expr_depth-fad_expr_depth.$(OBJEXT)
@@ -131,12 +136,14 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(fad_expr_SOURCES) $(fad_expr_depth_SOURCES) \
-	$(fad_fe_jac_fill_SOURCES) $(fad_lj_grad_SOURCES) \
-	$(rad_fe_adj_fill_SOURCES) $(taylor_expr_SOURCES)
-DIST_SOURCES = $(fad_expr_SOURCES) $(fad_expr_depth_SOURCES) \
-	$(fad_fe_jac_fill_SOURCES) $(fad_lj_grad_SOURCES) \
-	$(rad_fe_adj_fill_SOURCES) $(taylor_expr_SOURCES)
+SOURCES = $(fad_blas_SOURCES) $(fad_expr_SOURCES) \
+	$(fad_expr_depth_SOURCES) $(fad_fe_jac_fill_SOURCES) \
+	$(fad_lj_grad_SOURCES) $(rad_fe_adj_fill_SOURCES) \
+	$(taylor_expr_SOURCES)
+DIST_SOURCES = $(fad_blas_SOURCES) $(fad_expr_SOURCES) \
+	$(fad_expr_depth_SOURCES) $(fad_fe_jac_fill_SOURCES) \
+	$(fad_lj_grad_SOURCES) $(rad_fe_adj_fill_SOURCES) \
+	$(taylor_expr_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -297,6 +304,10 @@ rad_fe_adj_fill_SOURCES = rad_fe_adj_fill.cpp
 rad_fe_adj_fill_CXXFLAGS = $(TAYLOR_CXXFLAGS) $(fad_expr_depth_CXXFLAGS)
 rad_fe_adj_fill_DEPENDENCIES = $(fad_expr_depth_DEPENDENCIES)
 rad_fe_adj_fill_LDADD = $(TAYLOR_LDADD) $(fad_expr_depth_LDADD)
+fad_blas_SOURCES = fad_blas.cpp
+fad_blas_CXXFLAGS = $(fad_expr_depth_CXXFLAGS)
+fad_blas_DEPENDENCIES = $(fad_expr_depth_DEPENDENCIES)
+fad_blas_LDADD = $(fad_expr_depth_LDADD)
 all: all-am
 
 .SUFFIXES:
@@ -333,6 +344,9 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+fad_blas$(EXEEXT): $(fad_blas_OBJECTS) $(fad_blas_DEPENDENCIES) 
+	@rm -f fad_blas$(EXEEXT)
+	$(fad_blas_LINK) $(fad_blas_OBJECTS) $(fad_blas_LDADD) $(LIBS)
 fad_expr$(EXEEXT): $(fad_expr_OBJECTS) $(fad_expr_DEPENDENCIES) 
 	@rm -f fad_expr$(EXEEXT)
 	$(fad_expr_LINK) $(fad_expr_OBJECTS) $(fad_expr_LDADD) $(LIBS)
@@ -358,6 +372,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fad_blas-fad_blas.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fad_expr-fad_expr.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fad_expr_depth-fad_expr_depth.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fad_fe_jac_fill-fad_fe_jac_fill.Po@am__quote@
@@ -378,6 +393,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
+
+fad_blas-fad_blas.o: fad_blas.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_blas_CXXFLAGS) $(CXXFLAGS) -MT fad_blas-fad_blas.o -MD -MP -MF $(DEPDIR)/fad_blas-fad_blas.Tpo -c -o fad_blas-fad_blas.o `test -f 'fad_blas.cpp' || echo '$(srcdir)/'`fad_blas.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fad_blas-fad_blas.Tpo $(DEPDIR)/fad_blas-fad_blas.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='fad_blas.cpp' object='fad_blas-fad_blas.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_blas_CXXFLAGS) $(CXXFLAGS) -c -o fad_blas-fad_blas.o `test -f 'fad_blas.cpp' || echo '$(srcdir)/'`fad_blas.cpp
+
+fad_blas-fad_blas.obj: fad_blas.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_blas_CXXFLAGS) $(CXXFLAGS) -MT fad_blas-fad_blas.obj -MD -MP -MF $(DEPDIR)/fad_blas-fad_blas.Tpo -c -o fad_blas-fad_blas.obj `if test -f 'fad_blas.cpp'; then $(CYGPATH_W) 'fad_blas.cpp'; else $(CYGPATH_W) '$(srcdir)/fad_blas.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/fad_blas-fad_blas.Tpo $(DEPDIR)/fad_blas-fad_blas.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='fad_blas.cpp' object='fad_blas-fad_blas.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_blas_CXXFLAGS) $(CXXFLAGS) -c -o fad_blas-fad_blas.obj `if test -f 'fad_blas.cpp'; then $(CYGPATH_W) 'fad_blas.cpp'; else $(CYGPATH_W) '$(srcdir)/fad_blas.cpp'; fi`
 
 fad_expr-fad_expr.o: fad_expr.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(fad_expr_CXXFLAGS) $(CXXFLAGS) -MT fad_expr-fad_expr.o -MD -MP -MF $(DEPDIR)/fad_expr-fad_expr.Tpo -c -o fad_expr-fad_expr.o `test -f 'fad_expr.cpp' || echo '$(srcdir)/'`fad_expr.cpp

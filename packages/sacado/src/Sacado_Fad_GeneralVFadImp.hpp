@@ -66,10 +66,10 @@ inline Sacado::Fad::GeneralVFad<T,Storage>::GeneralVFad(const Expr<S>& x) :
   if (sz) {
     if (x.hasFastAccess())
       for(int i=0; i<sz; ++i) 
-	s_.dx_[i] = x.fastAccessDx(i);
+	s_.dx_[i*s_.stride_] = x.fastAccessDx(i);
     else
       for(int i=0; i<sz; ++i) 
-	s_.dx_[i] = x.dx(i);
+	s_.dx_[i*s_.stride_] = x.dx(i);
   }
 
   *s_.val_ = x.val();
@@ -84,7 +84,7 @@ Sacado::Fad::GeneralVFad<T,Storage>::diff(const int ith, const int n)
     s_.resize(n);
 
   s_.zero();
-  s_.dx_[ith] = T(1.);
+  s_.dx_[ith*s_.stride_] = T(1.);
 
 }
 
@@ -126,10 +126,10 @@ Sacado::Fad::GeneralVFad<T,Storage>::operator=(const Expr<S>& x)
   if (sz) {
     if (x.hasFastAccess())
       for(int i=0; i<sz; ++i)
-	s_.dx_[i] = x.fastAccessDx(i);
+	s_.dx_[i*s_.stride_] = x.fastAccessDx(i);
     else
       for(int i=0; i<sz; ++i)
-	s_.dx_[i] = x.dx(i);
+	s_.dx_[i*s_.stride_] = x.dx(i);
   }
   
   *s_.val_ = x.val();
@@ -163,7 +163,7 @@ Sacado::Fad::GeneralVFad<T,Storage>::operator *= (const T& v)
 
   *s_.val_ *= v;
   for (int i=0; i<sz; ++i)
-    s_.dx_[i] *= v;
+    s_.dx_[i*s_.stride_] *= v;
 
   return *this;
 }
@@ -176,7 +176,7 @@ Sacado::Fad::GeneralVFad<T,Storage>::operator /= (const T& v)
 
   *s_.val_ /= v;
   for (int i=0; i<sz; ++i)
-    s_.dx_[i] /= v;
+    s_.dx_[i*s_.stride_] /= v;
 
   return *this;
 }
@@ -197,19 +197,19 @@ Sacado::Fad::GeneralVFad<T,Storage>::operator += (const Sacado::Fad::Expr<S>& x)
     if (sz) {
       if (x.hasFastAccess())
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] += x.fastAccessDx(i);
+	  s_.dx_[i*s_.stride_] += x.fastAccessDx(i);
       else
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] += x.dx(i);
+	  s_.dx_[i*s_.stride_] += x.dx(i);
     }
     else {
       s_.resize(xsz);
       if (x.hasFastAccess())
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.fastAccessDx(i);
+	  s_.dx_[i*s_.stride_] = x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.dx(i);
+	  s_.dx_[i*s_.stride_] = x.dx(i);
     }
   }
 
@@ -234,19 +234,19 @@ Sacado::Fad::GeneralVFad<T,Storage>::operator -= (const Sacado::Fad::Expr<S>& x)
     if (sz) {
       if (x.hasFastAccess())
 	for(int i=0; i<sz; ++i)
-	  s_.dx_[i] -= x.fastAccessDx(i);
+	  s_.dx_[i*s_.stride_] -= x.fastAccessDx(i);
       else
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] -= x.dx(i);
+	  s_.dx_[i*s_.stride_] -= x.dx(i);
     }
     else {
       s_.resize(xsz);
       if (x.hasFastAccess())
 	for(int i=0; i<xsz; ++i)
-	  s_.dx_[i] = -x.fastAccessDx(i);
+	  s_.dx_[i*s_.stride_] = -x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = -x.dx(i);
+	  s_.dx_[i*s_.stride_] = -x.dx(i);
     }
   }
 
@@ -273,25 +273,27 @@ Sacado::Fad::GeneralVFad<T,Storage>::operator *= (const Sacado::Fad::Expr<S>& x)
     if (sz) {
       if (x.hasFastAccess())
 	for(int i=0; i<sz; ++i)
-	  s_.dx_[i] = (*s_.val_) * x.fastAccessDx(i) + s_.dx_[i] * xval;
+	  s_.dx_[i*s_.stride_] = (*s_.val_) * x.fastAccessDx(i) + 
+	    s_.dx_[i*s_.stride_] * xval;
       else
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] = (*s_.val_) * x.dx(i) + s_.dx_[i] * xval;
+	  s_.dx_[i*s_.stride_] = (*s_.val_) * x.dx(i) + 
+	    s_.dx_[i*s_.stride_] * xval;
     }
     else {
       s_.resize(xsz);
       if (x.hasFastAccess())
 	for(int i=0; i<xsz; ++i)
-	  s_.dx_[i] = (*s_.val_) * x.fastAccessDx(i);
+	  s_.dx_[i*s_.stride_] = (*s_.val_) * x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = (*s_.val_) * x.dx(i);
+	  s_.dx_[i*s_.stride_] = (*s_.val_) * x.dx(i);
     }
   }
   else {
     if (sz) {
       for (int i=0; i<sz; ++i)
-	s_.dx_[i] *= xval;
+	s_.dx_[i*s_.stride_] *= xval;
     }
   }
 
@@ -317,25 +319,28 @@ Sacado::Fad::GeneralVFad<T,Storage>::operator /= (const Sacado::Fad::Expr<S>& x)
     if (sz) {
       if (x.hasFastAccess())
 	for(int i=0; i<sz; ++i)
-	  s_.dx_[i] = ( s_.dx_[i]*xval - (*s_.val_)*x.fastAccessDx(i) )/ (xval*xval);
+	  s_.dx_[i*s_.stride_] = 
+	    ( s_.dx_[i*s_.stride_]*xval - (*s_.val_)*x.fastAccessDx(i) ) / 
+	    (xval*xval);
       else
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] = ( s_.dx_[i]*xval - (*s_.val_)*x.dx(i) )/ (xval*xval);
+	  s_.dx_[i*s_.stride_] = 
+	    ( s_.dx_[i*s_.stride_]*xval - (*s_.val_)*x.dx(i) ) / (xval*xval);
     }
     else {
       s_.resize(xsz);
       if (x.hasFastAccess())
 	for(int i=0; i<xsz; ++i)
-	  s_.dx_[i] = - (*s_.val_)*x.fastAccessDx(i) / (xval*xval);
+	  s_.dx_[i*s_.stride_] = - (*s_.val_)*x.fastAccessDx(i) / (xval*xval);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = -(*s_.val_) * x.dx(i) / (xval*xval);
+	  s_.dx_[i*s_.stride_] = -(*s_.val_) * x.dx(i) / (xval*xval);
     }
   }
   else {
     if (sz) {
       for (int i=0; i<sz; ++i)
-	s_.dx_[i] /= xval;
+	s_.dx_[i*s_.stride_] /= xval;
     }
   }
 

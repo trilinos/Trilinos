@@ -42,8 +42,11 @@ typedef FadOpsUnitTest2<Sacado::Fad::SLFad<std::complex<double>,10>,
 			std::complex<double> > SLFadComplexDoubleTest;
 typedef FadOpsUnitTest2<Sacado::Fad::SimpleFad<std::complex<double> >,
 			std::complex<double> > SimpleFadComplexDoubleTest;
+typedef FadOpsUnitTest2<Sacado::Fad::DVFad<std::complex<double> >,
+			std::complex<double> > DVFadComplexDoubleTest;
 CPPUNIT_TEST_SUITE_REGISTRATION(DFadComplexDoubleTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(SFadComplexDoubleTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(SLFadComplexDoubleTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(SimpleFadComplexDoubleTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(DVFadComplexDoubleTest);
 #endif

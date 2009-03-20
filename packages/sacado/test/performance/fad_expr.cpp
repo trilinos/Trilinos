@@ -184,6 +184,9 @@ int main(int argc, char* argv[]) {
     
     t = do_time< Sacado::CacheFad::DFad<double> >(nderiv, nloop);
     std::cout << "CacheFad:  " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
+
+    t = do_time< Sacado::Fad::DVFad<double> >(nderiv, nloop);
+    std::cout << "DVFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << std::endl;
     
   }
   catch (std::exception& e) {

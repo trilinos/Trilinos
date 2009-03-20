@@ -47,28 +47,32 @@ namespace Sacado {
 
       //! Default constructor
       VectorDynamicStorage(const T & x) : 
-	v_(x), owns_mem(true), sz_(0), len_(0), val_(&v_), dx_(NULL) {}
+	v_(x), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_), dx_(NULL)
+      {}
 
       //! Constructor with size \c sz
       /*!
        * Initializes derivative array 0 of length \c sz
        */
       VectorDynamicStorage(const int sz, const T & x) : 
-	v_(x), owns_mem(true), sz_(sz), len_(sz), val_(&v_) {
+	v_(x), owns_mem(true), sz_(sz), len_(sz), stride_(1), val_(&v_) {
 	dx_ = ds_array<S>::get_and_fill(sz_);
       }
 
       //! Constructor with supplied memory
-      VectorDynamicStorage(const int sz, T* x, S* dx, bool zero_out) : 
-	v_(), owns_mem(false), sz_(sz), len_(sz), val_(x), dx_(dx) {
+      VectorDynamicStorage(const int sz, T* x, S* dx, const int stride,
+			   bool zero_out) : 
+	v_(), owns_mem(false), sz_(sz), len_(sz), stride_(stride), 
+	val_(x), dx_(dx) {
 	if (zero_out)
 	  zero(dx_, sz_);
       }
 
       //! Copy constructor
       VectorDynamicStorage(const VectorDynamicStorage& x) : 
-	v_(*x.val_), owns_mem(true), sz_(x.sz_), len_(x.sz_), val_(&v_)  {
-	dx_ = ds_array<S>::get_and_fill(x.dx_, sz_);
+	v_(*x.val_), owns_mem(true), sz_(x.sz_), len_(x.sz_), 
+	stride_(1), val_(&v_)  {
+	dx_ = ds_array<S>::strided_get_and_fill(x.dx_, x.stride_, sz_);
       }
       
       //! Destructor
@@ -90,19 +94,22 @@ namespace Sacado {
 	    if (len_ != 0)
 	      ds_array<S>::destroy_and_release(dx_, len_);
 	    len_ = x.sz_;
-	    dx_ = ds_array<S>::get_and_fill(x.dx_, sz_);
+	    dx_ = ds_array<S>::strided_get_and_fill(x.dx_, x.stride_, sz_);
 	  }
 	  else 
-	    ds_array<S>::copy(x.dx_, dx_, sz_);
+	    ds_array<S>::strided_copy(x.dx_, x.stride_, dx_, stride_, sz_);
 	}
 	else 
-	  ds_array<S>::copy(x.dx_, dx_, sz_);
+	  ds_array<S>::strided_copy(x.dx_, x.stride_, dx_, stride_, sz_);
 
 	return *this; 
       } 
 
       //! Returns number of derivative components
       int size() const { return sz_;}
+
+      //! Returns array length
+      int length() const { return len_; }
 
       //! Resize the derivative array to sz
       void resize(int sz) { 
@@ -111,19 +118,19 @@ namespace Sacado {
 	      throw "Can\'t resize beyond original size when memory isn't owned!";
 	  if (len_ != 0)
 	    ds_array<S>::destroy_and_release(dx_, len_);
-	  dx_ = ds_array<S>::get_and_fill(sz);
 	  len_ = sz;
+	  dx_ = ds_array<S>::get_and_fill(len_);
 	}
 	sz_ = sz;
       }
 
       //! Zero out derivative array
       void zero() { 
-	ds_array<S>::zero(dx_, sz_);
+	ds_array<S>::strided_zero(dx_, stride_, sz_);
       }
 
       //! Set value/derivative array memory
-      void setMemory(int sz, T* x, S* dx) {
+      void setMemory(int sz, T* x, S* dx, int stride) {
 
 	// Destroy old memory
 	if (owns_mem) {
@@ -135,6 +142,7 @@ namespace Sacado {
 	owns_mem = false;
 	sz_ = sz;
 	len_ = sz;
+	stride_ = stride;
 	val_ = x;
 	dx_ = dx;
       }
@@ -153,6 +161,9 @@ namespace Sacado {
 
       //! Derivative array length
       int len_;
+
+      //! Derivative array stride
+      int stride_;
 
       //! Value
       T* val_;

@@ -37,8 +37,10 @@ typedef RealFadOpsUnitTest2<Sacado::Fad::DFad<double>,double> DFadDoubleTest2;
 typedef RealFadOpsUnitTest2<Sacado::Fad::SFad<double,5>,double> SFadDoubleTest2;
 typedef RealFadOpsUnitTest2<Sacado::Fad::SLFad<double,10>,double> SLFadDoubleTest2;
 typedef RealFadOpsUnitTest2<Sacado::Fad::SimpleFad<double>,double> SimpleFadDoubleTest2;
+typedef RealFadOpsUnitTest2<Sacado::Fad::DVFad<double>,double> DVFadDoubleTest2;
 
 CPPUNIT_TEST_SUITE_REGISTRATION(DFadDoubleTest2);
 CPPUNIT_TEST_SUITE_REGISTRATION(SFadDoubleTest2);
 CPPUNIT_TEST_SUITE_REGISTRATION(SLFadDoubleTest2);
 CPPUNIT_TEST_SUITE_REGISTRATION(SimpleFadDoubleTest2);
+CPPUNIT_TEST_SUITE_REGISTRATION(DVFadDoubleTest2);

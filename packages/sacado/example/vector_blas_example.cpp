@@ -45,13 +45,14 @@
 
 #include "Sacado.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Sacado_Fad_BLAS.hpp"
 
 typedef Sacado::Fad::DVFad<double> FadType;
 
 int main(int argc, char **argv)
 {
   const unsigned int n = 5;
-  Sacado::Fad::FadVector<double> A(n*n,0), B(n,n), C(n,n);
+  Sacado::Fad::Vector<unsigned int, FadType> A(n*n,0),B(n,n), C(n,n);
   for (unsigned int i=0; i<n; i++) {
     for (unsigned int j=0; j<n; j++)
       A[i+j*n] = FadType(Teuchos::ScalarTraits<double>::random());
@@ -68,10 +69,13 @@ int main(int argc, char **argv)
 
   Teuchos::BLAS<int,double> blas;
   blas.GEMV(Teuchos::NO_TRANS, n, n, 1.0, &a[0], n, &b[0], 1, 0.0, &c[0], 1);
-  blas.GEMM(Teuchos::NO_TRANS, Teuchos::TRANS, n, n, n, 1.0, &a[0], n, &bdx[0], n, 0.0, &cdx[0], n);
+  blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, n, n, n, 1.0, &a[0], n, &bdx[0], n, 0.0, &cdx[0], n);
 
-  Teuchos::BLAS<int,FadType> blas_fad;
-  blas_fad.GEMV(Teuchos::NO_TRANS, n, n, 1.0, &A[0], n, &B[0], 1, 0.0, &C[0], 1);
+  // Teuchos::BLAS<int,FadType> blas_fad;
+  // blas_fad.GEMV(Teuchos::NO_TRANS, n, n, 1.0, &A[0], n, &B[0], 1, 0.0, &C[0], 1);
+
+  Sacado::Fad::BLAS<int,FadType> sacado_fad_blas;
+  sacado_fad_blas.GEMV(Teuchos::NO_TRANS, n, n, 1.0, &A[0], n, &B[0], 1, 0.0, &C[0], 1);
 
   // Print the results
   int p = 4;

@@ -161,6 +161,12 @@ namespace Sacado {
       //! Returns number of derivative components
       int size() const { return Num;}
 
+      /*! 
+       * \brief Returns number of derivative components that can be stored 
+       * without reallocation
+       */
+      int availableSize() const { return Num; }
+
       //! Returns true if derivative array is not empty
       bool hasFastAccess() const { return true; }
 

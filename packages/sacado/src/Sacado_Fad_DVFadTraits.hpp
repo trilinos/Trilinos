@@ -169,7 +169,8 @@ namespace Teuchos {
     typedef Sacado::Fad::DVFad<ValueT,ScalarT> FadType;
 
     typedef Sacado::Fad::DVFad<typename ScalarTraits<ValueT>::magnitudeType,
-			      typename ScalarTraits<ScalarT>::magnitudeType> magnitudeType;
+    			      typename ScalarTraits<ScalarT>::magnitudeType> magnitudeType;
+    // typedef FadType magnitudeType;
     typedef Sacado::Fad::DVFad<typename ScalarTraits<ValueT>::halfPrecision,
 			      typename ScalarTraits<ScalarT>::halfPrecision> 
     halfPrecision;
@@ -217,7 +218,11 @@ namespace Teuchos {
         a, "Error, the input value to magnitude(...) a = " << a << 
 	" can not be NaN!" );
 #endif
-      return std::fabs(a); 
+      //return std::fabs(a);
+      magnitudeType b(a.size(), ScalarTraits<ValueT>::magnitude(a.val()));
+      for (int i=0; i<a.size(); i++)
+	b.fastAccessDx(i) = (ScalarTraits<ValueT>::real(a.val())*ScalarTraits<ValueT>::real(a.fastAccessDx(i)) + ScalarTraits<ValueT>::imag(a.val())*ScalarTraits<ValueT>::imag(a.fastAccessDx(i)))/b.val();
+      return b;
     }
     static inline ValueT zero()  { 
       return ValueT(0.0); 
@@ -272,7 +277,7 @@ namespace Teuchos {
     static inline bool isnaninf(const FadType& x) { 
       if (ScalarTraits<ValueT>::isnaninf(x.val()))
 	return true;
-      for (unsigned int i=0; i<x.size(); i++)
+      for (int i=0; i<x.size(); i++)
 	if (ScalarTraits<ValueT>::isnaninf(x.dx(i)))
 	  return true;
       return false;
@@ -310,7 +315,7 @@ namespace Teuchos {
     // components
     static inline bool is_fad_real(const FadType& x) {
       if (ScalarTraits<ValueT>::isComplex) {
-	for (unsigned int i=0; i<x.size(); i++)
+	for (int i=0; i<x.size(); i++)
 	  if (!is_complex_real(x.fastAccessDx(i)))
 	    return false;
       }

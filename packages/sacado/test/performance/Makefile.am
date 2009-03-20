@@ -42,7 +42,8 @@ noinst_PROGRAMS = \
 	fad_lj_grad \
 	taylor_expr \
 	fad_fe_jac_fill \
-	rad_fe_adj_fill
+	rad_fe_adj_fill \
+	fad_blas
 
 endif
 
@@ -90,3 +91,8 @@ rad_fe_adj_fill_SOURCES = rad_fe_adj_fill.cpp
 rad_fe_adj_fill_CXXFLAGS = $(TAYLOR_CXXFLAGS) $(fad_expr_depth_CXXFLAGS)
 rad_fe_adj_fill_DEPENDENCIES = $(fad_expr_depth_DEPENDENCIES)
 rad_fe_adj_fill_LDADD = $(TAYLOR_LDADD) $(fad_expr_depth_LDADD)
+
+fad_blas_SOURCES = fad_blas.cpp
+fad_blas_CXXFLAGS = $(fad_expr_depth_CXXFLAGS)
+fad_blas_DEPENDENCIES = $(fad_expr_depth_DEPENDENCIES)
+fad_blas_LDADD = $(fad_expr_depth_LDADD)

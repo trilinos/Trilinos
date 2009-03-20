@@ -97,14 +97,16 @@ am__TestSuite_exe_SOURCES_DIST = $(srcdir)/FadUnitTests.hpp \
 	$(srcdir)/ELRFadUnitTests.cpp \
 	$(srcdir)/RealELRFadUnitTests.cpp \
 	$(srcdir)/ComplexELRFadUnitTests.cpp \
-	$(srcdir)/CacheFadUnitTests.cpp $(srcdir)/TayUnitTests.hpp \
+	$(srcdir)/CacheFadUnitTests.cpp $(srcdir)/FadBLASUnitTests.hpp \
+	$(srcdir)/FadBLASUnitTests.cpp $(srcdir)/TayUnitTests.hpp \
 	$(srcdir)/TayUnitTests.cpp $(srcdir)/HermiteUnitTests.hpp \
 	$(srcdir)/HermiteUnitTests.cpp \
 	$(srcdir)/LogicalSparseUnitTests.hpp \
 	$(srcdir)/LogicalSparseUnitTests.cpp $(srcdir)/TestSuite.cpp
-@ENABLE_ADOLC_TRUE@am__objects_1 =  \
+@ENABLE_SACADO_TEUCHOS_TRUE@am__objects_1 = TestSuite_exe-FadBLASUnitTests.$(OBJEXT)
+@ENABLE_ADOLC_TRUE@am__objects_2 =  \
 @ENABLE_ADOLC_TRUE@	TestSuite_exe-TayUnitTests.$(OBJEXT)
-@ENABLE_SACADO_STOKHOS_TRUE@am__objects_2 = TestSuite_exe-HermiteUnitTests.$(OBJEXT)
+@ENABLE_SACADO_STOKHOS_TRUE@am__objects_3 = TestSuite_exe-HermiteUnitTests.$(OBJEXT)
 am_TestSuite_exe_OBJECTS = TestSuite_exe-FadUnitTests.$(OBJEXT) \
 	TestSuite_exe-RealFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-ComplexFadUnitTests.$(OBJEXT) \
@@ -112,7 +114,7 @@ am_TestSuite_exe_OBJECTS = TestSuite_exe-FadUnitTests.$(OBJEXT) \
 	TestSuite_exe-RealELRFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-ComplexELRFadUnitTests.$(OBJEXT) \
 	TestSuite_exe-CacheFadUnitTests.$(OBJEXT) $(am__objects_1) \
-	$(am__objects_2) \
+	$(am__objects_2) $(am__objects_3) \
 	TestSuite_exe-LogicalSparseUnitTests.$(OBJEXT) \
 	TestSuite_exe-TestSuite.$(OBJEXT)
 TestSuite_exe_OBJECTS = $(am_TestSuite_exe_OBJECTS)
@@ -256,21 +258,14 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@ENABLE_ADOLC_FALSE@TAYLOR_SOURCES = 
-@ENABLE_ADOLC_TRUE@TAYLOR_SOURCES = \
+@ENABLE_ADOLC_TRUE@TAYLOR_SRC = \
 @ENABLE_ADOLC_TRUE@	$(srcdir)/TayUnitTests.hpp \
 @ENABLE_ADOLC_TRUE@	$(srcdir)/TayUnitTests.cpp
 
-@ENABLE_ADOLC_FALSE@TAYLOR_CXXFLAGS = 
 @ENABLE_ADOLC_TRUE@TAYLOR_CXXFLAGS = -I$(ADOLC_INCDIR)
-@ENABLE_ADOLC_FALSE@TAYLOR_LDADD = 
 @ENABLE_ADOLC_TRUE@TAYLOR_LDADD = -L$(ADOLC_LIBDIR) $(ADOLC_LIBS)
-@ENABLE_SACADO_STOKHOS_FALSE@PCE_SOURCES = 
-@ENABLE_SACADO_STOKHOS_TRUE@PCE_SOURCES = $(srcdir)/HermiteUnitTests.hpp $(srcdir)/HermiteUnitTests.cpp
-@ENABLE_SACADO_STOKHOS_FALSE@PCE_CXXFLAGS = 
-@ENABLE_SACADO_STOKHOS_TRUE@PCE_CXXFLAGS = 
-@ENABLE_SACADO_STOKHOS_FALSE@PCE_LDADD = 
-@ENABLE_SACADO_STOKHOS_TRUE@PCE_LDADD = 
+@ENABLE_SACADO_STOKHOS_TRUE@PCE_SRC = $(srcdir)/HermiteUnitTests.hpp $(srcdir)/HermiteUnitTests.cpp
+@ENABLE_SACADO_TEUCHOS_TRUE@BLAS_SRC = $(srcdir)/FadBLASUnitTests.hpp $(srcdir)/FadBLASUnitTests.cpp
 TestSuite_exe_SOURCES = \
 	$(srcdir)/FadUnitTests.hpp \
 	$(srcdir)/FadUnitTests2.hpp \
@@ -281,8 +276,9 @@ TestSuite_exe_SOURCES = \
 	$(srcdir)/RealELRFadUnitTests.cpp \
 	$(srcdir)/ComplexELRFadUnitTests.cpp \
 	$(srcdir)/CacheFadUnitTests.cpp \
-	$(TAYLOR_SOURCES) \
-	$(PCE_SOURCES) \
+	$(BLAS_SRC) \
+	$(TAYLOR_SRC) \
+	$(PCE_SRC) \
 	$(srcdir)/LogicalSparseUnitTests.hpp \
 	$(srcdir)/LogicalSparseUnitTests.cpp \
 	$(srcdir)/TestSuite.cpp
@@ -292,7 +288,6 @@ TestSuite_exe_CXXFLAGS = \
 	-I$(top_srcdir)/test/utils \
 	-I$(top_srcdir)/Fad \
 	$(TAYLOR_CXXFLAGS) \
-	$(PCE_CXXFLAGS) \
 	$(CPPUNIT_CFLAGS)
 
 TestSuite_exe_DEPENDENCIES = \
@@ -301,7 +296,6 @@ TestSuite_exe_DEPENDENCIES = \
 TestSuite_exe_LDADD = \
 	-L$(top_builddir)/test/utils -lsacadoutils \
 	$(TAYLOR_LDADD) \
-	$(PCE_LDADD) \
 	$(CPPUNIT_LIBS) \
 	$(SACADO_LIBS)
 
@@ -355,6 +349,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-ComplexELRFadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-ComplexFadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-ELRFadUnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-FadBLASUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-FadUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-HermiteUnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestSuite_exe-LogicalSparseUnitTests.Po@am__quote@
@@ -474,6 +469,20 @@ TestSuite_exe-CacheFadUnitTests.obj: $(srcdir)/CacheFadUnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/CacheFadUnitTests.cpp' object='TestSuite_exe-CacheFadUnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-CacheFadUnitTests.obj `if test -f '$(srcdir)/CacheFadUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/CacheFadUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/CacheFadUnitTests.cpp'; fi`
+
+TestSuite_exe-FadBLASUnitTests.o: $(srcdir)/FadBLASUnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-FadBLASUnitTests.o -MD -MP -MF $(DEPDIR)/TestSuite_exe-FadBLASUnitTests.Tpo -c -o TestSuite_exe-FadBLASUnitTests.o `test -f '$(srcdir)/FadBLASUnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/FadBLASUnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestSuite_exe-FadBLASUnitTests.Tpo $(DEPDIR)/TestSuite_exe-FadBLASUnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FadBLASUnitTests.cpp' object='TestSuite_exe-FadBLASUnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-FadBLASUnitTests.o `test -f '$(srcdir)/FadBLASUnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/FadBLASUnitTests.cpp
+
+TestSuite_exe-FadBLASUnitTests.obj: $(srcdir)/FadBLASUnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-FadBLASUnitTests.obj -MD -MP -MF $(DEPDIR)/TestSuite_exe-FadBLASUnitTests.Tpo -c -o TestSuite_exe-FadBLASUnitTests.obj `if test -f '$(srcdir)/FadBLASUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/FadBLASUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FadBLASUnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/TestSuite_exe-FadBLASUnitTests.Tpo $(DEPDIR)/TestSuite_exe-FadBLASUnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/FadBLASUnitTests.cpp' object='TestSuite_exe-FadBLASUnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -c -o TestSuite_exe-FadBLASUnitTests.obj `if test -f '$(srcdir)/FadBLASUnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/FadBLASUnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/FadBLASUnitTests.cpp'; fi`
 
 TestSuite_exe-TayUnitTests.o: $(srcdir)/TayUnitTests.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(TestSuite_exe_CXXFLAGS) $(CXXFLAGS) -MT TestSuite_exe-TayUnitTests.o -MD -MP -MF $(DEPDIR)/TestSuite_exe-TayUnitTests.Tpo -c -o TestSuite_exe-TayUnitTests.o `test -f '$(srcdir)/TayUnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/TayUnitTests.cpp

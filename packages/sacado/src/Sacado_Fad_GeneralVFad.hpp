@@ -61,11 +61,19 @@ namespace Sacado {
   //! Namespace for forward-mode AD classes
   namespace Fad {
 
-    //! Forward-mode AD class templated on the storage for the derivative array
+    /*! 
+     * \brief Forward-mode AD class templated on the storage for the 
+     * derivative array that supports contiguous allocation of values and
+     * derivative components (i.e., vector mode).
+     */
     /*!
      * This class provides a general forward mode AD implementation for any
      * type of derivative array storage.  It does not incorporate expression
-     * templates.
+     * templates.  It is different from GeneralFad in that it adds a new
+     * constructor providing pointers to the value and derivative components.
+     * The value is then accessed in the storage through dereferencing a 
+     * pointer (which adds extra cost), and the derivative array can have
+     * a non-unit stride (which also adds additional cost).  
      */
     template <typename T, typename Storage> 
     class GeneralVFad {
@@ -103,26 +111,31 @@ namespace Sacado {
        */
       GeneralVFad(const int sz, const int i, const T & x) : 
 	s_(sz, x) { 
-	s_.dx_[i]=1.; 
+	s_.dx_[i*s_.stride_]=1.; 
       }
 
       //! Constructor with supplied memory
       /*!
        * Initializes value to point to \c x and derivative array to point 
-       * to\c dx.  Derivative array is zero'd out if \c zero_out is true.
+       * to\c dx.  Stride of the derivative array is specified through
+       * \c stride.  Derivative array is zero'd out if \c zero_out is true.
        */
-      GeneralVFad(const int sz, T* x, T* dx_, bool zero_out = false) 
-	: s_(sz, x, dx_, zero_out) {}
+      GeneralVFad(const int sz, T* x, T* dx_, const int stride = 1,
+		  bool zero_out = false) 
+	: s_(sz, x, dx_, stride, zero_out) {}
 
       //! Constructor with supplied memory and index \c i
       /*!
        * Initializes value to point to \c x and derivative array to point 
-       * to\c dx.  Initializes derivative array row \c i of the identity matrix,
-       * i.e., sets derivative component \c i to 1 and all other's to zero.
+       * to\c dx.  Stride of the derivative array is specified through
+       * \c stride.  Initializes derivative array row \c i of the identity 
+       * matrix, i.e., sets derivative component \c i to 1 and all other's to 
+       * zero.
        */
-      GeneralVFad(const int sz, const int i, T* x, T* dx_) : 
-	s_(sz, x, dx_, true) { 
-	s_.dx_[i]=1.; 
+      GeneralVFad(const int sz, const int i, T* x, T* dx_, const int stride = 1)
+	: 
+	s_(sz, x, dx_, stride, true) { 
+	s_.dx_[i*s_.stride_]=1.; 
       }
 
       //! Copy constructor
@@ -161,7 +174,8 @@ namespace Sacado {
       /*!
        * Any previous values in value/derivative array storage will be lost
        */
-      void setMemory(int sz, T* x, T* dx_) { s_.setMemory(sz,x,dx_); }
+      void setMemory(const int sz, T* x, T* dx_, const int stride = 1) { 
+	s_.setMemory(sz,x,dx_,stride); }
 
       //@}
 
@@ -184,13 +198,19 @@ namespace Sacado {
       //@{
 
       //! Returns number of derivative components
-      int size() const { return s_.size();}
+      int size() const { return s_.size(); }
+
+      /*! 
+       * \brief Returns number of derivative components that can be stored 
+       * without reallocation
+       */
+      int availableSize() const { return s_.length(); }
 
       //! Returns true if derivative array is not empty
-      bool hasFastAccess() const { return s_.size()!=0;}
+      bool hasFastAccess() const { return s_.size()!=0; }
 
       //! Returns true if derivative array is empty
-      bool isPassive() const { return s_.size()!=0;}
+      bool isPassive() const { return s_.size()!=0; }
       
       //! Set whether variable is constant
       void setIsConstant(bool is_const) { 
@@ -203,13 +223,13 @@ namespace Sacado {
 
       //! Returns derivative component \c i with bounds checking
       T dx(int i) const { 
-	return s_.size() ? s_.dx_[i] : T(0.); }
+	return s_.size() ? s_.dx_[i*s_.stride_] : T(0.); }
     
       //! Returns derivative component \c i without bounds checking
-      T& fastAccessDx(int i) { return s_.dx_[i];}
+      T& fastAccessDx(int i) { return s_.dx_[i*s_.stride_];}
 
       //! Returns derivative component \c i without bounds checking
-      const T& fastAccessDx(int i) const { return s_.dx_[i];}
+      const T& fastAccessDx(int i) const { return s_.dx_[i*s_.stride_];}
     
       //@}
 

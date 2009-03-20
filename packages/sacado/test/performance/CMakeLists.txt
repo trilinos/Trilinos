@@ -46,6 +46,13 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     COMM serial mpi
     )
 
+  PACKAGE_ADD_EXECUTABLE(
+    fad_blas
+    SOURCES fad_blas.cpp
+    DEPLIBS sacadoutils
+    COMM serial mpi
+    )
+
   IF (${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS)
 
     PACKAGE_ADD_TEST(
@@ -91,6 +98,14 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
     PACKAGE_ADD_TEST(
       rad_fe_adj_fill
       SOURCES rad_fe_adj_fill.cpp
+      DEPLIBS sacadoutils
+      COMM serial mpi
+      NUM_MPI_PROCS 1
+      )
+
+    PACKAGE_ADD_TEST(
+      fad_blas
+      SOURCES fad_blas.cpp
       DEPLIBS sacadoutils
       COMM serial mpi
       NUM_MPI_PROCS 1

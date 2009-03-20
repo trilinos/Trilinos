@@ -193,7 +193,8 @@ namespace Sacado {
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
-       */      SimpleFad(const int sz, const ValueT& x) : 
+       */      
+      SimpleFad(const int sz, const ValueT& x) : 
 	GeneralFad< ValueT,DynamicStorage<ValueT> >(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x

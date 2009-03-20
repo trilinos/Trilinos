@@ -66,8 +66,8 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_DMFadTraits.hpp \
 	$(srcdir)/Sacado_Fad_DVFad.hpp \
 	$(srcdir)/Sacado_Fad_DVFadTraits.hpp \
-	$(srcdir)/Sacado_Fad_FadVector.hpp \
-	$(srcdir)/Sacado_Fad_FadVectorImp.hpp \
+	$(srcdir)/Sacado_Fad_Vector.hpp \
+	$(srcdir)/Sacado_Fad_VectorImp.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
 	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
@@ -138,6 +138,10 @@ SACADO_UTIL_H = \
 	$(srcdir)/Sacado_Handle.hpp
 
 if ENABLE_SACADO_TEUCHOS
+
+SACADO_BLAS_H = \
+	$(srcdir)/Sacado_Fad_BLAS.hpp \
+	$(srcdir)/Sacado_Fad_BLASImp.hpp
 
 SACADO_TEMPLATE_H = \
 	$(srcdir)/template/Sacado_TemplateManager.hpp \
@@ -238,6 +242,7 @@ SACADO_H = \
 	$(SACADO_TAYLOR_H) \
 	$(SACADO_RAD_H) \
 	$(SACADO_MPL_H) \
+	$(SACADO_BLAS_H) \
 	$(SACADO_TEMPLATE_H) \
 	$(SACADO_PCE_H) \
 	$(SACADO_SG_H) \

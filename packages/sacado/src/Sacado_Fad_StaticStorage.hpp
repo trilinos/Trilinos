@@ -88,6 +88,9 @@ namespace Sacado {
       //! Returns number of derivative components
       int size() const { return sz_;}
 
+      //! Returns array length
+      int length() const { return Num; }
+
       //! Resize the derivative array to sz
       void resize(int sz) { 
 #ifdef SACADO_DEBUG

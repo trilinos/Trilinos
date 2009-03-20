@@ -48,8 +48,8 @@ SET(HEADERS ${HEADERS}
   Sacado_Fad_DMFadTraits.hpp
   Sacado_Fad_DVFad.hpp
   Sacado_Fad_DVFadTraits.hpp
-  Sacado_Fad_FadVector.hpp
-  Sacado_Fad_FadVectorImp.hpp
+  Sacado_Fad_Vector.hpp
+  Sacado_Fad_VectorImp.hpp
   Sacado_Fad_GeneralVFad.hpp
   Sacado_Fad_GeneralVFadExpr.hpp
   Sacado_Fad_GeneralVFadImp.hpp
@@ -135,6 +135,12 @@ SET(HEADERS ${HEADERS}
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Teuchos)
+
+  # BLAS
+  SET(HEADERS ${HEADERS}
+    Sacado_Fad_BLAS.hpp
+    Sacado_Fad_BLASImp.hpp
+    )
 
   # TEMPLATE
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/template)

@@ -66,16 +66,48 @@ namespace Sacado {
       return m;
     }
 
+    /*! 
+     * \brief Get memory for new array of length \c sz and fill with 
+     * entries from \c src
+     */
+    static inline T* strided_get_and_fill(const T* src, int stride, int sz) {
+      T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+      T* p = m; 
+      for (int i=0; i<sz; ++i) {
+	new (p++) T(*(src));
+	src += stride;
+      }
+      return m;
+    }
+
     //! Copy array from \c src to \c dest of length \c sz
     static inline void copy(const T* src, T*  dest, int sz) {
       for (int i=0; i<sz; ++i)
 	*(dest++) = *(src++);
     }
 
+    //! Copy array from \c src to \c dest of length \c sz
+    static inline void strided_copy(const T* src, int src_stride, 
+				    T* dest, int dest_stride, int sz) {
+      for (int i=0; i<sz; ++i) {
+	*(dest) = *(src);
+	dest += dest_stride;
+	src += src_stride;
+      }
+    }
+
     //! Zero out array \c dest of length \c sz
     static inline void zero(T* dest, int sz) {
       for (int i=0; i<sz; ++i)
 	*(dest++) = T(0.);
+    }
+
+    //! Zero out array \c dest of length \c sz
+    static inline void strided_zero(T* dest, int stride, int sz) {
+      for (int i=0; i<sz; ++i) {
+	*(dest) = T(0.);
+	dest += stride;
+      }
     }
 
     //! Destroy array elements and release memory
@@ -112,9 +144,30 @@ namespace Sacado {
       return m;
     }
 
+    /*! 
+     * \brief Get memory for new array of length \c sz and fill with 
+     * entries from \c src
+     */
+    static inline T* strided_get_and_fill(const T* src, int stride, int sz) {
+      T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+      for (int i=0; i<sz; ++i)
+	m[i] = src[i*stride];
+      return m;
+    }
+
     //! Copy array from \c src to \c dest of length \c sz
     static inline void copy(const T* src, T* dest, int sz) {
       std::memcpy(dest,src,sz*sizeof(T));
+    }
+
+    //! Copy array from \c src to \c dest of length \c sz
+    static inline void strided_copy(const T* src, int src_stride, 
+				    T* dest, int dest_stride, int sz) {
+      for (int i=0; i<sz; ++i) {
+	*(dest) = *(src);
+	dest += dest_stride;
+	src += src_stride;
+      }
     }
 
     //! Zero out array \c dest of length \c sz
@@ -122,10 +175,18 @@ namespace Sacado {
       std::memset(dest,0,sz*sizeof(T));
     }
 
+    //! Zero out array \c dest of length \c sz
+    static inline void strided_zero(T* dest, int stride, int sz) {
+      for (int i=0; i<sz; ++i) {
+	*(dest) = T(0.);
+	dest += stride;
+      }
+    }
+
     //! Destroy array elements and release memory
     static inline void destroy_and_release(T* m, int sz) {
       operator delete((void*) m);
-      }
+    }
   };
 
 } // namespace Sacado
