@@ -8,8 +8,6 @@
 # Originally written by Ross Bartlett, modified by Kevin Long
 
 
-
-
 EXTRA_ARGS=$@
 
 # Set the location of the compilers and libraries. On a simple out-of-the-box
@@ -29,10 +27,12 @@ INC_PATH=${COMPILER_ROOT}/include
 TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
 
 # Set the fortran compiler and libraries. 
-# Currently configured for gfortran. Older systems may need g77 and 
-# libg2c.a. 
+# Currently configured for gfortran. Older systems may need g77 and -lg2c. 
 FORTRAN_COMP=${BIN_PATH}/gfortran
-FORTRAN_LIBS="${LIB_PATH}/libgfortran.a"
+# IMPORTANT: be sure to use -lgfortran instead of libgfortran.a so that 
+# the linker can choose correctly between shared and static 
+# fortran libraries when you're building shared Trilinos libraries.
+FORTRAN_LIBS="-lgfortran"
 
 # Run cmake
 cmake \
@@ -40,6 +40,7 @@ cmake \
 -D CMAKE_SYSTEM_LIBRARY_PATH:FILEPATH="$LIB_PATH" \
 -D CMAKE_SYSTEM_INCLUDE_PATH:FILEPATH="$INC_PATH" \
 -D CMAKE_Fortran_COMPILER:FILEPATH="${FORTRAN_COMP}" \
+-D BUILD_SHARED_LIBS:BOOL=ON \
 -D TPL_ENABLE_ExodusII:BOOL=ON \
 -D Trilinos_EXTRA_LINK_FLAGS:STRING=${FORTRAN_LIBS} \
 -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF \

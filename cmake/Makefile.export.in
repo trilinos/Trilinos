@@ -1,0 +1,67 @@
+##############################################################################
+#
+# Makefile macros for use by Trilinos clients. 
+#
+# @DISCOURAGE_EDITING@
+#
+##############################################################################
+
+
+## ---------------------------------------------------------------------------
+## Compilers used by @Proj@/@PACKAGE@ build
+## ---------------------------------------------------------------------------
+
+@CAPS_PACKAGE_NAME@_CXX_COMPILER=@CMAKE_CXX_COMPILER@
+
+@CAPS_PACKAGE_NAME@_C_COMPILER=@CMAKE_C_COMPILER@
+
+@CAPS_PACKAGE_NAME@_FORTRAN_COMPILER=@CMAKE_Fortran_COMPILER@
+
+
+
+
+## ---------------------------------------------------------------------------
+## Compiler flags used by @Proj@/@PACKAGE@ build
+## ---------------------------------------------------------------------------
+
+# Set debug or optimized flags according to build type
+BUILD_TYPE=@CMAKE_BUILD_TYPE@
+
+ifeq ($(BUILD_TYPE),DEBUG)
+  BUILD_FLAGS=@GENERAL_DEBUG_FLAGS@
+else ifeq ($(BUILD_TYPE),RELEASE)
+  BUILD_FLAGS=@GENERAL_RELEASE_FLAGS@
+endif
+
+## Set compiler flags, including those determined by build type
+@CAPS_PACKAGE_NAME@_CXX_FLAGS=@CMAKE_CXX_FLAGS@ $(BUILD_FLAGS)
+
+@CAPS_PACKAGE_NAME@_C_FLAGS=@CMAKE_C_FLAGS@ $(BUILD_FLAGS)
+
+@CAPS_PACKAGE_NAME@_FORTRAN_FLAGS=@CMAKE_FORTRAN_FLAGS@ $(BUILD_FLAGS)
+
+## Extra link flags (e.g., specification of fortran libraries)
+@CAPS_PACKAGE_NAME@_EXTRA_LD_FLAGS=@Trilinos_EXTRA_LINK_FLAGS@
+
+## This is the command-line entry used for setting rpaths. In a build
+## with static libraries it will be empty. 
+SHARED_LIB_RPATH_COMMAND=@SHARED_LIB_RPATH_COMMAND@
+
+
+## ---------------------------------------------------------------------------
+## Set library specifications and paths 
+## ---------------------------------------------------------------------------
+
+## Extra link flags (e.g., specification of fortran libraries)
+@CAPS_PACKAGE_NAME@_EXTRA_LD_FLAGS=@Trilinos_EXTRA_LINK_FLAGS@
+
+## List of Trilinos libraries
+@CAPS_PACKAGE_NAME@_LIBRARIES=@LIB_STR@
+
+## List of TPLs required by Trilinos
+@CAPS_PACKAGE_NAME@_TPL_LIBRARIES=@TPL_LIB_STR@
+
+## Specification of directories for TPL headers
+@CAPS_PACKAGE_NAME@_TPL_INCLUDE=@TPL_INCLUDE_STR@
+
+
