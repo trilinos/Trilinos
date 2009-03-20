@@ -56,16 +56,16 @@ namespace Tpetra
       //@{ 
 
       //! Constructor with fixed number of indices per row.
-      CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, Teuchos_Ordinal maxNumEntriesPerRow);
+      CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, Teuchos_Ordinal maxNumEntriesPerRow, bool staticProfile = false);
 
       //! Constructor with variable number of indices per row.
-      CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Teuchos::ArrayView<Teuchos_Ordinal> &NumEntriesPerRowToAlloc);
+      CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Teuchos::ArrayView<Teuchos_Ordinal> &NumEntriesPerRowToAlloc, bool staticProfile = false);
 
       //! Constructor with fixed number of indices per row and specified column map.
-      CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Map<LocalOrdinal,GlobalOrdinal> &colMap, Teuchos_Ordinal maxNumEntriesPerRow);
+      CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Map<LocalOrdinal,GlobalOrdinal> &colMap, Teuchos_Ordinal maxNumEntriesPerRow, bool staticProfile = false);
 
       //! Constructor with variable number of indices per row and specified column map.
-      CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Map<LocalOrdinal,GlobalOrdinal> &colMap, const Teuchos::ArrayView<Teuchos_Ordinal> &NumEntriesPerRowToAlloc);
+      CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Map<LocalOrdinal,GlobalOrdinal> &colMap, const Teuchos::ArrayView<Teuchos_Ordinal> &NumEntriesPerRowToAlloc, bool staticProfile = false);
 
       // !Destructor.
       virtual ~CrsGraph();
@@ -95,7 +95,7 @@ namespace Tpetra
       /*! \brief Signal that data entry is complete. 
           Off-node entries are distributed, repeated entries are summed, and global indices are transformed to local indices.
           If \c OptimizeStorage is true, then optimizeStorage() is called as well.
-          \note This method calls fillComplete( getRowMap(), getRowMap() ).
+          \note This method calls fillComplete( getRowMap(), getRowMap(), OptimizeStorage ).
        */
       void fillComplete(bool OptimizeStorage=false);
 
@@ -110,6 +110,9 @@ namespace Tpetra
 
       //! Returns \c true if optimizeStorage() has been called.
       bool isStorageOptimized() const;
+
+      //! Returns \c true if the graph data was allocated in static data structures.
+      bool isStaticProfile() const;
 
       //@}
 
@@ -314,6 +317,7 @@ namespace Tpetra
       bool indicesAreAllocated() const;
       void staticAssertions();
       inline Teuchos_Ordinal RNNZ(Teuchos_Ordinal row) const;
+      inline Teuchos_Ordinal RNumAlloc(Teuchos_Ordinal row) const;
 
       Teuchos::RCP<CrsGraphData<LocalOrdinal,GlobalOrdinal> > graphData_;
       std::map<GlobalOrdinal, std::deque<GlobalOrdinal> > nonlocals_;
@@ -323,40 +327,44 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
 
   template <class LocalOrdinal, class GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal>::CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, Teuchos_Ordinal maxNumEntriesPerRow)
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, Teuchos_Ordinal maxNumEntriesPerRow, bool staticProfile)
   : graphData_(Teuchos::rcp(new CrsGraphData<LocalOrdinal,GlobalOrdinal>(rowMap)))
   {
     staticAssertions();
+    graphData_->staticProfile_ = staticProfile;
     TEST_FOR_EXCEPTION(maxNumEntriesPerRow < 1 && maxNumEntriesPerRow != 0, std::runtime_error,
         Teuchos::typeName(*this) << "::CrsGraph(rowMap,maxNumEntriesPerRow): maxNumEntriesPerRow must be non-negative.");
-    std::fill(graphData_->rowNumAlloc_.begin(), graphData_->rowNumAlloc_.end(), maxNumEntriesPerRow);
+    std::fill(graphData_->rowNumToAlloc_.begin(), graphData_->rowNumToAlloc_.end(), maxNumEntriesPerRow);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal>::CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Map<LocalOrdinal,GlobalOrdinal> &colMap, Teuchos_Ordinal maxNumEntriesPerRow)
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Map<LocalOrdinal,GlobalOrdinal> &colMap, Teuchos_Ordinal maxNumEntriesPerRow, bool staticProfile)
   : graphData_(Teuchos::rcp(new CrsGraphData<LocalOrdinal,GlobalOrdinal>(rowMap,colMap)))
   {
     staticAssertions();
+    graphData_->staticProfile_ = staticProfile;
     TEST_FOR_EXCEPTION(maxNumEntriesPerRow < 1 && maxNumEntriesPerRow != 0, std::runtime_error,
         Teuchos::typeName(*this) << "::CrsGraph(rowMap,colMap,maxNumEntriesPerRow): maxNumEntriesPerRow must be non-negative.");
-    std::fill(graphData_->rowNumAlloc_.begin(), graphData_->rowNumAlloc_.end(), maxNumEntriesPerRow);
+    std::fill(graphData_->rowNumToAlloc_.begin(), graphData_->rowNumToAlloc_.end(), maxNumEntriesPerRow);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal>::CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Teuchos::ArrayView<Teuchos_Ordinal> &NumEntriesPerRowToAlloc)
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Teuchos::ArrayView<Teuchos_Ordinal> &NumEntriesPerRowToAlloc, bool staticProfile)
   : graphData_(Teuchos::rcp(new CrsGraphData<LocalOrdinal,GlobalOrdinal>(rowMap)))
   {
     staticAssertions();
+    graphData_->staticProfile_ = staticProfile;
     TEST_FOR_EXCEPTION(NumEntriesPerRowToAlloc.size() != numLocalRows(), std::runtime_error,
         Teuchos::typeName(*this) << "::CrsGraph(rowMap,NumEntriesPerRowToAlloc): NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
     initNumAlloc(NumEntriesPerRowToAlloc);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal>
-  CrsGraph<LocalOrdinal,GlobalOrdinal>::CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Map<LocalOrdinal,GlobalOrdinal> &colMap, const Teuchos::ArrayView<Teuchos_Ordinal> &NumEntriesPerRowToAlloc)
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::CrsGraph(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Map<LocalOrdinal,GlobalOrdinal> &colMap, const Teuchos::ArrayView<Teuchos_Ordinal> &NumEntriesPerRowToAlloc, bool staticProfile)
   : graphData_(Teuchos::rcp(new CrsGraphData<LocalOrdinal,GlobalOrdinal>(rowMap,colMap)))
   {
     staticAssertions();
+    graphData_->staticProfile_ = staticProfile;
     TEST_FOR_EXCEPTION(NumEntriesPerRowToAlloc.size() != numLocalRows(), std::runtime_error,
         Teuchos::typeName(*this) << "::CrsGraph(rowMap,colMap,NumEntriesPerRowToAlloc): NumEntriesPerRowToAlloc must have as many entries as specified by rowMap for this node.");
     initNumAlloc(NumEntriesPerRowToAlloc);
@@ -365,21 +373,22 @@ namespace Tpetra
   template <class LocalOrdinal, class GlobalOrdinal>
   void CrsGraph<LocalOrdinal,GlobalOrdinal>::allocateIndices(bool local)
   {
+    TEST_FOR_EXCEPT( isStaticProfile() == true );
+
+    // this is a protected function, only callable by us. if it was called incorrectly, it is our fault.
+    TEST_FOR_EXCEPTION(indicesAreLocal() && local==false, std::logic_error,
+        Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
+    TEST_FOR_EXCEPTION(indicesAreGlobal() && local==true, std::logic_error,
+        Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
     if (indicesAreAllocated()) {
-      TEST_FOR_EXCEPTION(indicesAreLocal() && local==false, std::logic_error,
-          Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
-      TEST_FOR_EXCEPTION(indicesAreGlobal() && local==true, std::logic_error,
-          Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
       return;
     }
-    typename Teuchos::Array<LocalOrdinal>::iterator    nnz = graphData_->rowNumAlloc_.begin(),
-                                                    nnzend = graphData_->rowNumAlloc_.end();
+    typename Teuchos::Array<LocalOrdinal>::iterator    nnz = graphData_->rowNumToAlloc_.begin(),
+                                                    nnzend = graphData_->rowNumToAlloc_.end();
     if (local)  // allocate local indices in graphData_->colLInds_
     {
-      TEST_FOR_EXCEPTION(indicesAreGlobal(), std::logic_error, 
-          Teuchos::typeName(*this) << "::allocateIndices(local): indices already allocated for global.");
       graphData_->indicesAreLocal_ = true;
-      graphData_->colLInds_.resize(graphData_->rowNumAlloc_.size());
+      graphData_->colLInds_.resize(numLocalRows());
       typename Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> >::iterator rinds  = graphData_->colLInds_.begin();
       for (; nnz != nnzend; ++nnz, ++rinds) {
         if (*nnz > 0) {
@@ -389,10 +398,8 @@ namespace Tpetra
     }
     else        // allocate global indices in graphData_->colGInds_
     {
-      TEST_FOR_EXCEPTION(indicesAreLocal(), std::logic_error, 
-          Teuchos::typeName(*this) << "::allocateIndices(global): indices already allocated for local.");
       graphData_->indicesAreGlobal_ = true;
-      graphData_->colGInds_.resize(graphData_->rowNumAlloc_.size());
+      graphData_->colGInds_.resize(numLocalRows());
       typename Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> >::iterator rinds  = graphData_->colGInds_.begin();
       for (; nnz != nnzend; ++nnz, ++rinds) {
         if (*nnz > 0) {
@@ -400,6 +407,9 @@ namespace Tpetra
         }
       }
     }
+    nnz = Teuchos::null;
+    nnzend = Teuchos::null;
+    graphData_->rowNumToAlloc_.clear();
     graphData_->indicesAreAllocated_ = true;    
   }
 
@@ -408,7 +418,7 @@ namespace Tpetra
   {
     typename Teuchos::ArrayView<Teuchos_Ordinal>::iterator nnz    = NumEntriesPerRowToAlloc.begin(),
                                                            nnzend = NumEntriesPerRowToAlloc.end();
-    typename Teuchos::Array<LocalOrdinal>::iterator ralloc = graphData_->rowNumAlloc_.begin();
+    typename Teuchos::Array<LocalOrdinal>::iterator ralloc = graphData_->rowNumToAlloc_.begin();
     for (; nnz != nnzend; ++nnz, ++ralloc) {
       if (*nnz > 0) {
         (*ralloc) = *nnz;
@@ -679,7 +689,11 @@ namespace Tpetra
 
   template <class LocalOrdinal, class GlobalOrdinal>
   bool CrsGraph<LocalOrdinal,GlobalOrdinal>::isStorageOptimized() const
-  { return false; }
+  { return graphData_->storageOptimized_; }
+
+  template <class LocalOrdinal, class GlobalOrdinal>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal>::isStaticProfile() const
+  { return graphData_->staticProfile_; }
 
   template <class LocalOrdinal, class GlobalOrdinal>
   GlobalOrdinal CrsGraph<LocalOrdinal,GlobalOrdinal>::numGlobalEntries() const
@@ -728,7 +742,7 @@ namespace Tpetra
     using Teuchos::OrdinalTraits;
     LocalOrdinal rlid = getRowMap().getLocalIndex(globalRow);
     if (rlid == OrdinalTraits<LocalOrdinal>::invalid()) return OrdinalTraits<Teuchos_Ordinal>::invalid();
-    return graphData_->rowNumAlloc_[rlid];
+    return RNumAlloc(rlid);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal>
@@ -736,7 +750,7 @@ namespace Tpetra
   {
     using Teuchos::OrdinalTraits;
     if (!getRowMap().isMyLocalIndex(localRow)) return OrdinalTraits<Teuchos_Ordinal>::invalid();
-    return graphData_->rowNumAlloc_[localRow];
+    return RNumAlloc(localRow);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal>
@@ -766,8 +780,11 @@ namespace Tpetra
     if (lrow != OrdinalTraits<LocalOrdinal>::invalid()) {
       // add to allocated space
       Teuchos_Ordinal rowNE = graphData_->rowNumEntries_[lrow],
+                      rowNA = RNumAlloc(lrow),
                       toAdd = indices.size();
-      if (rowNE+toAdd > graphData_->rowNumAlloc_[lrow]) {
+      if (rowNE+toAdd > rowNA) {
+        TEST_FOR_EXCEPTION(isStaticProfile(), std::runtime_error,
+            Teuchos::typeName(*this) << "::insertGlobalIndices(): new indices exceed statically allocated graph structure.");
 #       if defined(THROW_TPETRA_EFFICIENCY_WARNINGS) || defined(PRINT_TPETRA_EFFICIENCY_WARNINGS)
           std::string err = Teuchos::typeName(*this) + "::insertGlobalIndices(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.";
 #         if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
@@ -779,8 +796,8 @@ namespace Tpetra
         // increase allocation to necessary amount, copy previous data, reassign ArrayRCP
         ArrayView<const GlobalOrdinal> curInds;
         extractGlobalRowConstView(grow,curInds);
-        graphData_->rowNumAlloc_[lrow] = rowNE+toAdd;             
-        ArrayRCP<GlobalOrdinal> newInds = Teuchos::arcp<GlobalOrdinal>(graphData_->rowNumAlloc_[lrow]);
+        rowNA = rowNE+toAdd;
+        ArrayRCP<GlobalOrdinal> newInds = Teuchos::arcp<GlobalOrdinal>(rowNA);
         std::copy(curInds.begin(), curInds.end(), newInds.begin());
         graphData_->colGInds_[lrow] = newInds;
       }
@@ -819,6 +836,8 @@ namespace Tpetra
     using Teuchos::ArrayRCP;
     TEST_FOR_EXCEPTION(indicesAreGlobal() == true, std::runtime_error,
         Teuchos::typeName(*this) << "::insertGlobalIndices(): graph already contains local indices.");
+    TEST_FOR_EXCEPTION(isFillComplete() == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::insertGlobalIndices(): graph fill already complete.");
     if (hasColMap()) {
       graphData_->indicesAreLocal_ = true;
     }
@@ -839,8 +858,11 @@ namespace Tpetra
 
     // add to allocated space
     Teuchos_Ordinal rowNE = graphData_->rowNumEntries_[lrow],
+                    rowNA = RNumAlloc(lrow),
                     toAdd = indices.size();
-    if (rowNE+toAdd > graphData_->rowNumAlloc_[lrow]) {
+    if (rowNE+toAdd > rowNA) {
+        TEST_FOR_EXCEPTION(isStaticProfile(), std::runtime_error,
+            Teuchos::typeName(*this) << "::insertMyIndices(): new indices exceed statically allocated graph structure.");
 #     if defined(THROW_TPETRA_EFFICIENCY_WARNINGS) || defined(PRINT_TPETRA_EFFICIENCY_WARNINGS)
         std::string err = Teuchos::typeName(*this) + "::insertGlobalIndices(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.";
 #       if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
@@ -852,8 +874,8 @@ namespace Tpetra
       // increase allocation to necessary amount, copy previous data, reassign ArrayRCP
       ArrayView<const LocalOrdinal> curInds;
       extractMyRowConstView(lrow,curInds);
-      graphData_->rowNumAlloc_[lrow] = rowNE+toAdd;             
-      ArrayRCP<LocalOrdinal> newInds = Teuchos::arcp<LocalOrdinal>(graphData_->rowNumAlloc_[lrow]);
+      rowNA = rowNE+toAdd;             
+      ArrayRCP<LocalOrdinal> newInds = Teuchos::arcp<LocalOrdinal>(rowNA);
       std::copy(curInds.begin(), curInds.end(), newInds.begin());
       graphData_->colLInds_[lrow] = newInds;
     }
@@ -1485,11 +1507,41 @@ namespace Tpetra
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos_Ordinal CrsGraph<LocalOrdinal,GlobalOrdinal>::RNNZ(Teuchos_Ordinal row) const
   {
+    // if storage is optimized, then numalloc == numnz, and indices are local
     if (isStorageOptimized()) {
-      return (graphData_->colIndsPtrs_[row+1] - graphData_->colIndsPtrs_[row]);
+      return (graphData_->colLIndsPtrs_[row+1] - graphData_->colLIndsPtrs_[row]);
     }
+    // otherwise, we are still numnz
     else {
       return graphData_->rowNumEntries_[row];
+    }
+  }
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class LocalOrdinal, class GlobalOrdinal>
+  Teuchos_Ordinal CrsGraph<LocalOrdinal,GlobalOrdinal>::RNumAlloc(Teuchos_Ordinal row) const
+  {
+    if (indicesAreAllocated() == false) {
+      return graphData_->rowNumToAlloc_[row];
+    }
+    // if static graph or optimize storage, pointers tell us the allocation size
+    else if (isStorageOptimized() || isStaticProfile()) {
+      if (indicesAreLocal()) {
+        return graphData_->colLIndsPtrs_[row+1] - graphData_->colLIndsPtrs_[row];
+      }
+      else {
+        return graphData_->colGIndsPtrs_[row+1] - graphData_->colGIndsPtrs_[row];
+      }
+    }
+    // otherwise, the ArrayRCP knows
+    else {
+      if (indicesAreLocal()) {
+        return graphData_->colLInds_[row].size();
+      }
+      else {
+        return graphData_->colGInds_[row].size();
+      }
     }
   }
 

@@ -452,10 +452,5 @@ void runMatrixTests(RCP<CrsMatrix<Scalar,Ordinal> > A,  RCP<MultiVector<Scalar,O
 
      typedef long int LongInt;
      UNIT_TEST_GROUP_ORDINAL(LongInt)
-#    ifdef HAVE_TEUCHOS_LONG_LONG_INT
-        typedef long long int LongLongInt;
-        UNIT_TEST_GROUP_ORDINAL(LongLongInt)
-#    endif
-
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 }

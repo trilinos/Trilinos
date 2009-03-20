@@ -153,7 +153,7 @@ if test "X$ac_cv_use_teuchos" != "Xno" ||
 	test "X$ac_cv_use_thyra" != "Xno" ||
 	test "X$ac_cv_use_stratimikos" != "Xno" ||
 	test "X$ac_cv_use_tpetra" != "Xno" ||
-        test "X$ac_cv_use_loca" != "Xno" ||
+    test "X$ac_cv_use_loca" != "Xno" ||
 	test "X$ac_cv_use_galeri" != "Xno" || 
 	test "X$ac_cv_use_amesos" != "Xno" || 
  	test "X$ac_cv_use_anasazi" != "Xno" ||
@@ -258,8 +258,7 @@ else
 fi
 AM_CONDITIONAL(BUILD_STRATIMIKOS, test "X$BUILD_STRATIMIKOS" != "Xno")
 
-if test "X$ac_cv_use_kokkos" != "Xno" ||
-  	test "X$ac_cv_use_tpetra" != "Xno"; then
+if test "X$ac_cv_use_kokkos" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/kokkos])
   BUILD_KOKKOS=yes
   if test "X$ac_cv_use_kokkos_explicit" != "Xyes"; then

@@ -65,16 +65,18 @@ namespace Tpetra {
     GlobalOrdinal     numGlobalEntries_, numGlobalDiags_, globalMaxNumRowEntries_;
     Teuchos_Ordinal    numLocalEntries_,  numLocalDiags_,  localMaxNumEntries_;
     // structures used before optimizeStorage()
-    Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > colGInds_;                      // empty after fillComplete()
-    Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> >  colLInds_;                      // empty before fillComplete(), after optimizeStorage()
-    Teuchos::Array<LocalOrdinal> rowNumEntries_, rowNumAlloc_;                        // empty after OptimizeStorage()
-    // structure used after optimizeStorage()
-    Teuchos::ArrayRCP<LocalOrdinal> contigColInds_;                                   // allocated during optimizeStorage()
+    Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > colGInds_;                      // allocated only if indices are global and fill is not complete
+    Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> >  colLInds_;                      // allocated only if indices are local and storage is not optimized
+    Teuchos::Array<LocalOrdinal> rowNumEntries_, rowNumToAlloc_;                      // allocated only if storage is not optimized
+    // structure used after optimizeStorage() or for static profle
+    Teuchos::ArrayRCP<GlobalOrdinal> contigColGInds_;                                 // allocated if storage is optimized and indices are global
+    Teuchos::ArrayRCP<LocalOrdinal> contigColLInds_;                                  // allocated if storage is optimized and indices are local
     /* colIndsPtrs_[j] is always the begin() iterator from an ArrayView of the source or contigColInds_
        of the appropriate length. in a debug build, it is an ArrayRCP, which does bounds checking. in an optimized
        build, it is a C pointer. colIndsPtrs_ is allocated to numLocalRows()+1; the span of the jth row begins with
        colIndsPtrs_[j] and ends before colIndsPtrs_[j+1] */
-    Teuchos::Array<typename Teuchos::ArrayRCP<LocalOrdinal>::iterator> colIndsPtrs_;
+    Teuchos::Array<typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator> colGIndsPtrs_;  // allocated if indicesAreGlobal() and storage is optimized
+    Teuchos::Array<typename Teuchos::ArrayRCP<LocalOrdinal >::iterator> colLIndsPtrs_;  // allocated if indicesAreLocal() and storage is optimized
     // these are RCPs because they are optional
     // importer is needed if DomainMap is not sameas ColumnMap
     Teuchos::RCP<Import<LocalOrdinal,GlobalOrdinal> > importer_;
@@ -82,10 +84,11 @@ namespace Tpetra {
     Teuchos::RCP<Export<LocalOrdinal,GlobalOrdinal> > exporter_;
 
     bool fillComplete_;
+    bool storageOptimized_;
+    bool staticProfile_;
     bool hasColMap_;
     bool lowerTriangular_;
     bool upperTriangular_;
-    bool noDiagonal_;
     bool indicesAreLocal_;
     bool indicesAreGlobal_;
     bool indicesAreSorted_;
@@ -109,16 +112,19 @@ namespace Tpetra {
   , colGInds_(0)
   , colLInds_(0)
   , rowNumEntries_(rowMap.getNumMyEntries(),0)
-  , rowNumAlloc_(rowMap.getNumMyEntries(),0)
-  , contigColInds_(Teuchos::null)
-  , colIndsPtrs_(0)
+  , rowNumToAlloc_(rowMap.getNumMyEntries(),0)
+  , contigColGInds_(Teuchos::null)
+  , contigColLInds_(Teuchos::null)
+  , colGIndsPtrs_(0)
+  , colLIndsPtrs_(0)
   , importer_(Teuchos::null)
   , exporter_(Teuchos::null)
   , fillComplete_(false)
+  , storageOptimized_(false)
+  , staticProfile_(false)
   , hasColMap_(false)
   , lowerTriangular_(true)
   , upperTriangular_(true)
-  , noDiagonal_(true)
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   , indicesAreSorted_(false)
@@ -142,16 +148,19 @@ namespace Tpetra {
   , colGInds_(0)
   , colLInds_(0)
   , rowNumEntries_(rowMap.getNumMyEntries(),0)
-  , rowNumAlloc_(rowMap.getNumMyEntries(),0)
-  , contigColInds_(Teuchos::null)
-  , colIndsPtrs_(0)
+  , rowNumToAlloc_(rowMap.getNumMyEntries(),0)
+  , contigColGInds_(Teuchos::null)
+  , contigColLInds_(Teuchos::null)
+  , colGIndsPtrs_(0)
+  , colLIndsPtrs_(0)
   , importer_(Teuchos::null)
   , exporter_(Teuchos::null)
   , fillComplete_(false)
+  , storageOptimized_(false)
+  , staticProfile_(false)
   , hasColMap_(true)
   , lowerTriangular_(true)
   , upperTriangular_(true)
-  , noDiagonal_(true)
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   , indicesAreSorted_(false)
