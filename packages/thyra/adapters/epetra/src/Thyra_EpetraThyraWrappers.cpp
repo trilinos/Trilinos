@@ -598,10 +598,10 @@ Thyra::get_Epetra_MultiVector(
   Index mvLeadingDim = -1;
   SpmdMultiVectorBase<double> *mvSpmdMv = 0;
   SpmdVectorBase<double> *mvSpmdV = 0;
-  if (mvSpmdMv = dynamic_cast<SpmdMultiVectorBase<double>*>(&mv)) {
+  if ((mvSpmdMv = dynamic_cast<SpmdMultiVectorBase<double>*>(&mv))) {
     mvSpmdMv->getLocalData(&mvData,&mvLeadingDim);
   }
-  else if (mvSpmdV = dynamic_cast<SpmdVectorBase<double>*>(&mv)) {
+  else if ((mvSpmdV = dynamic_cast<SpmdVectorBase<double>*>(&mv))) {
     Index mvStride = -1;
     mvSpmdV->getLocalData(&mvData,&mvStride);
 #ifdef TEUCHOS_DEBUG
@@ -631,10 +631,10 @@ Thyra::get_Epetra_MultiVector(
   Index mvLeadingDim = -1;
   const SpmdMultiVectorBase<double> *mvSpmdMv = 0;
   const SpmdVectorBase<double> *mvSpmdV = 0;
-  if (mvSpmdMv = dynamic_cast<const SpmdMultiVectorBase<double>*>(&mv)) {
+  if ((mvSpmdMv = dynamic_cast<const SpmdMultiVectorBase<double>*>(&mv))) {
     mvSpmdMv->getLocalData(&mvData,&mvLeadingDim);
   }
-  else if (mvSpmdV = dynamic_cast<const SpmdVectorBase<double>*>(&mv)) {
+  else if ((mvSpmdV = dynamic_cast<const SpmdVectorBase<double>*>(&mv))) {
     Index mvStride = -1;
     mvSpmdV->getLocalData(&mvData,&mvStride);
 #ifdef TEUCHOS_DEBUG
