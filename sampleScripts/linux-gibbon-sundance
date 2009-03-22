@@ -85,7 +85,7 @@ TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
 #
 # ---------------------------------------------------------------------------
 # Argument parsing logic.
-TEMP=`getopt -o x --long help,mpi,serial,shared,static,check-stl,debug,opt,exodus,no-exodus,g77,meros,lax,src:,data:,prefix:,gcc-version: -- "$@"`
+TEMP=`getopt -o x --long help,mpi,serial,shared,static,check-stl,debug,opt,exodus,no-exodus,g77,meros,lax,src:,data:,prefix:: -- "$@"`
 
 eval set -- "$TEMP"
 
@@ -130,7 +130,6 @@ while true ; do
             echo "--src <srcdir>   set location of Trilinos sources (default: \${HOME}/Code/Trilinos)"
             echo "--data <dir>     set location of Trilinos data (default: \${HOME}/Code/TrilinosData)"
             echo "--prefix <dir>   set installation directory (default: \${PWD})"
-            echo "--gcc-version <x.y.z>   set gcc version (default: 4.3.2)"
             echo " ";
             exit 0;
             shift
@@ -149,9 +148,7 @@ cmake \
 -D CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE} \
 -D CMAKE_SYSTEM_LIBRARY_PATH:FILEPATH="$LIB_PATH" \
 -D CMAKE_SYSTEM_INCLUDE_PATH:FILEPATH="$INC_PATH" \
--D CMAKE_Fortran_COMPILER:FILEPATH="${COMPILER_ROOT}/bin/${FORTRAN_COMP}" \
--D CMAKE_CXX_COMPILER:FILEPATH="${COMPILER_ROOT}/bin/g++" \
--D CMAKE_C_COMPILER:FILEPATH="${COMPILER_ROOT}/bin/gcc" \
+-D CMAKE_Fortran_COMPILER:FILEPATH="${FORTRAN_COMP}" \
 -D BUILD_SHARED_LIBS:BOOL=${BUILD_SHARED} \
 -D TPL_ENABLE_ExodusII:BOOL=${HAVE_EXODUS} \
 -D TPL_ENABLE_MPI:BOOL=${ENABLE_MPI} \
