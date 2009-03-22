@@ -16,6 +16,7 @@ SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Phalanx 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=120"
   "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
+  "-DTPL_ENABLE_Boost:BOOL=ON"
   )
 
 #
