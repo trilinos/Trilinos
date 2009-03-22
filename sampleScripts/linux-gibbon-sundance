@@ -1,0 +1,171 @@
+#!/bin/sh
+# -----------------------------------------------------------------------------
+# Generic script for building Trilinos and Sundance on Linux machines with 
+# configurations similar to gibbon.math.ttu.edu
+#
+# Run this script as 
+# <kevin@gibbon> ./gibbon-linux-sundance-base [flags]
+# where the possible flags are listed by running
+# <kevin@gibbon> ./gibbon-linux-sundance-base --help
+#
+# This isn't meant as a completely general configuration script; rather, it
+# allows streamlined setting of the several options I most commonly vary in
+# my own work. You'll probably want to tweak this script for your own system
+# and your own selection of packages. In particular, I've assumed we're always# building Sundance and that the directory layout is identical to that on 
+# my development machines gibbon and chimera. 
+#
+# 22 March 2009
+# Kevin Long (kevin.long@ttu.edu)
+#
+#------------------------------------------------------------------------------
+
+# -----------------------------------------------------------------------------
+# Set the location of the compilers and libraries. On a simple out-of-the-box
+# Linux system, COMPILER_ROOT will probably be someplace like /usr/local. 
+# On Kevin's TTU machines, there are multiple compiler versions located
+# in directories /usr/local/${COMPILER_VERSION}, e.g., /usr/local/gcc-4.3.2.
+
+GCC_VERSION=4.3.2
+COMPILER_VERSION=gcc-${GCC_VERSION}
+COMPILER_ROOT=/usr/local/${COMPILER_VERSION}
+BIN_PATH=${COMPILER_ROOT}/bin
+LIB_PATH=${COMPILER_ROOT}/lib
+INC_PATH=${COMPILER_ROOT}/include
+
+# -----------------------------------------------------------------------------
+# Set the fortran compiler and library. On older Linux systems these will 
+# need to be changed to g77 and -lg2c.
+FORTRAN_COMP=gfortran
+FORTRAN_LIBS="-lgfortran"
+
+
+# -----------------------------------------------------------------------------
+# Set variables that control the type of build
+#
+# Whether to build shared libraries. Default=no.
+BUILD_SHARED=OFF
+# Whether to build with MPI. Default=yes.
+ENABLE_MPI=ON
+# Whether to build optimized or debug. Default=debug. Set to RELEASE or leave
+# blank to enable an optimized build.
+BUILD_TYPE=DEBUG
+# Whether to enable runtime checking of STL calls. Default=no. 
+# Do NOT enable this feature unless you know what you're doing, because if any
+# other libraries were built without it the combination of enabled and
+# disabled STL checking in a single executable will cause serious problems,
+# i.e., segfaults in random places.  
+CHECK_STL=OFF        
+# Whether to enable a paranoid level of compiler warnings. This can cause
+# problems with Python. Default: on. 
+PARANOID_COMPILER=ON
+
+# -----------------------------------------------------------------------------
+# Set variables controlling which third-party libraries are available and
+# should be linked in. 
+#
+# Whether the exodus mesh database libraries are available. Default=no.
+HAVE_EXODUS=OFF
+
+ENABLE_MEROS=OFF
+
+INSTALL_PREFIX=$PWD
+
+# Set the path to the Trilinos source distribution
+TRILINOS_SRC_DIR=${HOME}/Code/Trilinos
+
+# Set the path to the Trilinos data files. Some of the Sundance tests require
+# large mesh files stored in TrilinosData. If the TrilinosData directory
+# cannot be found, these tests will be disabled.
+TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
+
+# ---------------------------------------------------------------------------
+#
+# At this point, all variables have been assigned default values. We now
+# parse the command line to see if any values are overridden.
+#
+# ---------------------------------------------------------------------------
+# Argument parsing logic.
+TEMP=`getopt -o x --long help,mpi,serial,shared,static,check-stl,debug,opt,exodus,no-exodus,g77,meros,lax,src:,data:,prefix:,gcc-version: -- "$@"`
+
+eval set -- "$TEMP"
+
+while true ; do
+  case "$1" in 
+      --mpi) ENABLE_MPI=ON; shift ;;
+      --serial) ENABLE_MPI=OFF; shift ;;
+      --shared) BUILD_SHARED=ON; shift;;
+      --static) BUILD_SHARED=OFF; shift;;
+      --check-stl) CHECK_STL=ON; shift;;
+      --debug) BUILD_TYPE=DEBUG; shift;;
+      --opt) BUILD_TYPE=RELEASE; shift;;
+      --lax) PARANOID_COMPILER=OFF; shift;;
+      --g77) FORTRAN_COMP=g77
+             FORTRAN_LIBS="-lg2c"; shift;;
+      --exodus) HAVE_EXODUS=ON; shift;;
+      --no-exodus) HAVE_EXODUS=OFF; shift;;
+      --meros) ENABLE_MEROS=ON; shift;;
+      --src)
+            TRILINOS_SRC_DIR="$2"; shift 2;;
+      --data)
+            TRILINOS_DATA_DIR="$2"; shift 2;;
+      --prefix)
+            INSTALL_PREFIX="$2"; shift 2;;
+      --gcc-version)
+            GCC_VERSION="$2"; shift 2;;
+      --help)
+            echo "Command-line arguments:"
+            echo "--help           help"
+            echo "--mpi            enable MPI (default: on)"
+            echo "--serial         turn off MPI"
+            echo "--shared         build shared libraries (default: off)"
+            echo "--static         build static libraries (default: on)"
+            echo "--check-stl      turn on STL runtime checking (expert use only)"
+            echo "--debug          turn on debugging features (default: on)"
+            echo "--opt            turn on optimized compilation (default: off)"
+            echo "--lax            turn off paranoid compiler flags (necessary for python wrappers)"
+            echo "--g77            use g77 instead of gfortran (default: off)"
+            echo "--exodus         enable ExodusII readers (requires ExodusII libraries. Default: off)"
+            echo "--no-exodus      disable ExodusII readers"
+            echo "--meros          enable Meros block preconditioners (default: off)"
+            echo "--src <srcdir>   set location of Trilinos sources (default: \${HOME}/Code/Trilinos)"
+            echo "--data <dir>     set location of Trilinos data (default: \${HOME}/Code/TrilinosData)"
+            echo "--prefix <dir>   set installation directory (default: \${PWD})"
+            echo "--gcc-version <x.y.z>   set gcc version (default: 4.3.2)"
+            echo " ";
+            exit 0;
+            shift
+            ;;
+      --) shift; break;;
+  esac
+done
+
+# ---------------------------------------------------------------------------
+#
+# Now run cmake!!
+#
+# ---------------------------------------------------------------------------
+
+cmake \
+-D CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE} \
+-D CMAKE_SYSTEM_LIBRARY_PATH:FILEPATH="$LIB_PATH" \
+-D CMAKE_SYSTEM_INCLUDE_PATH:FILEPATH="$INC_PATH" \
+-D CMAKE_Fortran_COMPILER:FILEPATH="${COMPILER_ROOT}/bin/${FORTRAN_COMP}" \
+-D CMAKE_CXX_COMPILER:FILEPATH="${COMPILER_ROOT}/bin/g++" \
+-D CMAKE_C_COMPILER:FILEPATH="${COMPILER_ROOT}/bin/gcc" \
+-D BUILD_SHARED_LIBS:BOOL=${BUILD_SHARED} \
+-D TPL_ENABLE_ExodusII:BOOL=${HAVE_EXODUS} \
+-D TPL_ENABLE_MPI:BOOL=${ENABLE_MPI} \
+-D Trilinos_EXTRA_LINK_FLAGS:STRING=${FORTRAN_LIBS} \
+-D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF \
+-D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=${PARANOID_COMPILER} \
+-D Trilinos_ENABLE_CHECKED_STL:BOOL=${CHECK_STL} \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_Sundance:BOOL=ON \
+-D Trilinos_ENABLE_Meros:BOOL=${ENABLE_MEROS} \
+-D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
+-D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \
+-D NOX_ENABLE_LOCA:BOOL=OFF \
+-D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PREFIX} \
+${TRILINOS_SRC_DIR}
+
+exit 0
