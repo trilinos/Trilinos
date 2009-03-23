@@ -122,7 +122,7 @@ inline
 DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4, size_type index5, size_type index6,
-	   size_type index7, size_type index8)
+	   size_type index7, size_type index8) const
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
@@ -138,7 +138,7 @@ inline
 DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4, size_type index5, size_type index6,
-	   size_type index7)
+	   size_type index7) const
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
@@ -153,7 +153,7 @@ template<typename DataT, PHX::ArrayOrder Order,
 inline
 DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
-	   size_type index4, size_type index5, size_type index6)
+	   size_type index4, size_type index5, size_type index6) const
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
@@ -168,7 +168,7 @@ template<typename DataT, PHX::ArrayOrder Order,
 inline
 DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
-	   size_type index4, size_type index5)
+	   size_type index4, size_type index5) const
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
@@ -183,7 +183,7 @@ template<typename DataT, PHX::ArrayOrder Order,
 inline
 DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
-	   size_type index4)
+	   size_type index4) const
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
@@ -197,7 +197,7 @@ template<typename DataT, PHX::ArrayOrder Order,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
 DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator()(size_type index1, size_type index2, size_type index3)
+operator()(size_type index1, size_type index2, size_type index3) const
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
@@ -211,7 +211,7 @@ template<typename DataT, PHX::ArrayOrder Order,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
 DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator()(size_type index1, size_type index2)
+operator()(size_type index1, size_type index2) const
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
@@ -225,7 +225,7 @@ template<typename DataT, PHX::ArrayOrder Order,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
 DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator()(size_type index1)
+operator()(size_type index1) const
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
@@ -239,7 +239,7 @@ template<typename DataT, PHX::ArrayOrder Order,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
 DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
-operator[](size_type index)
+operator[](size_type index) const
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);

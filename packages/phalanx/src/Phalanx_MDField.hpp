@@ -66,28 +66,30 @@ namespace PHX {
 
     DataT& operator()(size_type index1, size_type index2, size_type index3, 
 		      size_type index4, size_type index5, size_type index6,
-		      size_type index7, size_type index8);
+		      size_type index7, size_type index8) const;
 
     DataT& operator()(size_type index1, size_type index2, size_type index3, 
 		      size_type index4, size_type index5, size_type index6,
-		      size_type index7);
+		      size_type index7) const;
 
     DataT& operator()(size_type index1, size_type index2, size_type index3, 
-		      size_type index4, size_type index5, size_type index6);
+		      size_type index4, size_type index5, 
+		      size_type index6) const;
     
     DataT& operator()(size_type index1, size_type index2, size_type index3, 
-		      size_type index4, size_type index5);
+		      size_type index4, size_type index5) const;
     
     DataT& operator()(size_type index1, size_type index2, size_type index3, 
-		      size_type index4);
+		      size_type index4) const;
     
-    DataT& operator()(size_type index1, size_type index2, size_type index3);
+    DataT& operator()(size_type index1, size_type index2,
+		      size_type index3) const;
     
-    DataT& operator()(size_type index1, size_type index2);
+    DataT& operator()(size_type index1, size_type index2) const;
     
-    DataT& operator()(size_type index1);
+    DataT& operator()(size_type index1) const;
     
-    DataT& operator[](size_type index);
+    DataT& operator[](size_type index) const;
 
     size_type rank() const;
 
