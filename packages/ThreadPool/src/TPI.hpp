@@ -103,8 +103,8 @@ public:
   static void run( TPI_Work * work )
     {
       try {
-        WorkerMethodHelper & wm =
-          * reinterpret_cast<WorkerMethodHelper*>(work->shared);
+        const WorkerMethodHelper & wm =
+          * reinterpret_cast<const WorkerMethodHelper*>(work->info);
         (wm.worker.*wm.method)(*work);
       } catch(...){}
     }

@@ -114,9 +114,9 @@ typedef struct ReduceDot_Struct {
 } ReduceDot ;
 
 static
-void reduce_tp( void * arg_dst , const void * arg_src )
+void reduce_tp( TPI_Work * work , const void * arg_src )
 {
-        ReduceDot * const dst =       (ReduceDot *) arg_dst ;
+        ReduceDot * const dst =       (ReduceDot *) ( work->reduce );
   const ReduceDot * const src = (const ReduceDot *) arg_src ;
 
   if ( src->count == 4 ) {
@@ -141,31 +141,31 @@ struct TaskXY {
 static
 void work_d4_dot_tp( TPI_Work * work )
 {
-  struct TaskXY * const data   = (struct TaskXY *) work->shared ;
+  struct TaskXY * const info   = (struct TaskXY *) work->info ;
   ReduceDot     * const reduce = (ReduceDot *) work->reduce ;
 
   unsigned int begin , length ;
 
-  my_span( work->work_count , work->work_rank , data->n , & begin , & length );
+  my_span( work->count , work->rank , info->n , & begin , & length );
 
-  d4_dot( reduce->value , length , data->x + begin , data->y + begin );
+  d4_dot( reduce->value , length , info->x + begin , info->y + begin );
 }
 
 double d4_dot_tp( COMM comm, unsigned nwork, unsigned n,
                   const double * x, const double * y )
 {
-  struct TaskXY data = { 0 , NULL , NULL };
+  struct TaskXY info = { 0 , NULL , NULL };
   ReduceDot result = { 4 , { 0 , 0 , 0 , 0 } };
-  data.n = n ;
-  data.x = x ;
-  data.y = y ;
+  info.n = n ;
+  info.x = x ;
+  info.y = y ;
 
   if ( nwork ) {
-    TPI_Run_reduce( work_d4_dot_tp , & data , nwork ,
+    TPI_Run_reduce( work_d4_dot_tp , & info , nwork ,
                     reduce_tp , & result , sizeof(result) );
   }
   else {
-    TPI_Run_threads_reduce( work_d4_dot_tp , & data ,
+    TPI_Run_threads_reduce( work_d4_dot_tp , & info ,
                             reduce_tp , & result , sizeof(result) );
   }
 
@@ -180,13 +180,13 @@ double d4_dot_tp( COMM comm, unsigned nwork, unsigned n,
 static
 void task_ddot_tp( TPI_Work * work )
 {
-  struct TaskXY * const data = (struct TaskXY *) work->shared ;
+  struct TaskXY * const info = (struct TaskXY *) work->info ;
   ReduceDot     * const reduce = (ReduceDot *) work->reduce ;
   unsigned int begin , length ;
 
-  my_span( work->work_count , work->work_rank , data->n , & begin , & length );
+  my_span( work->count , work->rank , info->n , & begin , & length );
 
-  reduce->value[0] += ddot( length , data->x + begin , data->y + begin );
+  reduce->value[0] += ddot( length , info->x + begin , info->y + begin );
 
   return ;
 }
@@ -194,18 +194,18 @@ void task_ddot_tp( TPI_Work * work )
 double ddot_tp( COMM comm, unsigned nwork, unsigned n,
                 const double * x, const double * y )
 {
-  struct TaskXY data = { 0 , NULL , NULL };
+  struct TaskXY info = { 0 , NULL , NULL };
   ReduceDot result = { 1 , { 0 , 0 , 0 , 0 } };
-  data.n = n ;
-  data.x = x ;
-  data.y = y ;
+  info.n = n ;
+  info.x = x ;
+  info.y = y ;
 
   if ( nwork ) {
-    TPI_Run_reduce( task_ddot_tp , & data , nwork ,
+    TPI_Run_reduce( task_ddot_tp , & info , nwork ,
                     reduce_tp , & result , sizeof(result) );
   }
   else {
-    TPI_Run_threads_reduce( task_ddot_tp , & data ,
+    TPI_Run_threads_reduce( task_ddot_tp , & info ,
                             reduce_tp , & result , sizeof(result) );
   }
 
@@ -235,11 +235,11 @@ struct FillWork {
 
 static void task_dfill_rand( TPI_Work * work )
 {
-  struct FillWork * const w = (struct FillWork *) work->shared ;
+  struct FillWork * const w = (struct FillWork *) work->info ;
 
   unsigned int begin , length ;
 
-  my_span( work->work_count, work->work_rank, w->length, & begin , & length );
+  my_span( work->count, work->rank, w->length, & begin , & length );
 
   dfill_rand( w->seed + begin , length , w->beg + begin , w->mag );
 }

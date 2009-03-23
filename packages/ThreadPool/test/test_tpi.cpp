@@ -56,13 +56,13 @@ template<unsigned N>
 void TEST<N>::flag( TPI::Work & work )
 {
   static const char method[] = "TEST::flag" ;
-  if ( work.work_count != (int) N ) {
+  if ( work.count != (int) N ) {
     std::cerr << method
-              << "<" << N << "> work_count(" << work.work_count << ") failed"
+              << "<" << N << "> count(" << work.count << ") failed"
               << std::endl ;
     throw std::exception();
   }
-  m_flag[ work.work_rank ] = 1 ;
+  m_flag[ work.rank ] = 1 ;
 }
 
 template<unsigned N>

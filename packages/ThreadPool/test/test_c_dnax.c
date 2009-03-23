@@ -88,20 +88,20 @@ void test_dnax_row( const unsigned num_array ,
 static
 void test_dnax_flat_work( TPI_Work * work )
 {
-  const struct TestTPI_DNAX * const data =
-    (struct TestTPI_DNAX *) work->shared ;
+  const struct TestTPI_DNAX * const info =
+    (struct TestTPI_DNAX *) work->info ;
 
-  const unsigned which_chunk = work->work_rank ;
-  const unsigned beg_local   = data->chunk_length * which_chunk ;
-  const unsigned max_local   = data->length - beg_local ;
-  const unsigned len_local   = data->chunk_length < max_local ?
-                               data->chunk_length : max_local ;
+  const unsigned which_chunk = work->rank ;
+  const unsigned beg_local   = info->chunk_length * which_chunk ;
+  const unsigned max_local   = info->length - beg_local ;
+  const unsigned len_local   = info->chunk_length < max_local ?
+                               info->chunk_length : max_local ;
 
-  test_dnax_column( data->number ,
-                    data->stride ,
+  test_dnax_column( info->number ,
+                    info->stride ,
                     len_local ,
-                    data->coef ,
-                    data->array + beg_local );
+                    info->coef ,
+                    info->array + beg_local );
 
   return ;
 }
@@ -112,22 +112,22 @@ void test_dnax_flat_work( TPI_Work * work )
 static
 void test_dnax_column_work( TPI_Work * work )
 {
-  const struct TestTPI_DNAX * const data =
-    (struct TestTPI_DNAX *) work->shared ;
+  const struct TestTPI_DNAX * const info =
+    (struct TestTPI_DNAX *) work->info ;
 
-  const unsigned which_chunk = work->work_rank ;
-  const unsigned beg_local   = data->chunk_length * which_chunk ;
-  const unsigned max_local   = data->length - beg_local ;
-  const unsigned len_local   = data->chunk_length < max_local ?
-                               data->chunk_length : max_local ;
+  const unsigned which_chunk = work->rank ;
+  const unsigned beg_local   = info->chunk_length * which_chunk ;
+  const unsigned max_local   = info->length - beg_local ;
+  const unsigned len_local   = info->chunk_length < max_local ?
+                               info->chunk_length : max_local ;
 
-  const unsigned chunk_size = data->chunk_length * data->number ;
+  const unsigned chunk_size = info->chunk_length * info->number ;
 
-  test_dnax_column( data->number ,
-                    data->chunk_length ,
+  test_dnax_column( info->number ,
+                    info->chunk_length ,
                     len_local ,
-                    data->coef ,
-                    data->array + which_chunk * chunk_size );
+                    info->coef ,
+                    info->array + which_chunk * chunk_size );
 
   return ;
 }
@@ -135,22 +135,22 @@ void test_dnax_column_work( TPI_Work * work )
 static
 void test_dnax_row_work( TPI_Work * work )
 {
-  const struct TestTPI_DNAX * const data =
-    (struct TestTPI_DNAX *) work->shared ;
+  const struct TestTPI_DNAX * const info =
+    (struct TestTPI_DNAX *) work->info ;
 
-  const unsigned which_chunk = work->work_rank ;
-  const unsigned beg_local   = data->chunk_length * which_chunk ;
-  const unsigned max_local   = data->length - beg_local ;
-  const unsigned len_local   = data->chunk_length < max_local ?
-                               data->chunk_length : max_local ;
+  const unsigned which_chunk = work->rank ;
+  const unsigned beg_local   = info->chunk_length * which_chunk ;
+  const unsigned max_local   = info->length - beg_local ;
+  const unsigned len_local   = info->chunk_length < max_local ?
+                               info->chunk_length : max_local ;
 
-  const unsigned chunk_size = data->chunk_length * data->number ;
+  const unsigned chunk_size = info->chunk_length * info->number ;
 
-  test_dnax_row( data->number ,
-                 data->number ,
+  test_dnax_row( info->number ,
+                 info->number ,
                  len_local ,
-                 data->coef ,
-                 data->array + which_chunk * chunk_size );
+                 info->coef ,
+                 info->array + which_chunk * chunk_size );
 
   return ;
 }

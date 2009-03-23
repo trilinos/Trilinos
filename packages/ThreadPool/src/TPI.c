@@ -108,7 +108,7 @@ typedef struct Thread_Data {
 
 typedef struct ThreadPool_Data {
   TPI_work_subprogram   m_work_routine ;
-  void                * m_work_argument ;
+  const void          * m_work_argument ;
   int                   m_work_count_total ;
   int                   m_work_count_claim ;
 
@@ -209,15 +209,15 @@ static void local_run_work( ThreadPool * const thread_pool ,
 
   struct TPI_Work_Struct work ;
 
-  work.shared     = thread_pool->m_work_argument ;
+  work.info       = thread_pool->m_work_argument ;
   work.reduce     = thread_pool->m_reduce_data +
                     thread_pool->m_reduce_grain * thread_rank ;
+  work.count      = thread_pool->m_work_count_total ;
   work.lock_count = thread_pool->m_lock_count ;
-  work.work_count = thread_pool->m_work_count_total ;
 
-  while ( 0 < ( work.work_rank = atomic_fetch_and_decrement(claim))) {
+  while ( 0 < ( work.rank = atomic_fetch_and_decrement(claim))) {
 
-    work.work_rank = work.work_count - work.work_rank ;
+    work.rank = work.count - work.rank ;
 
     (* thread_pool->m_work_routine)( & work );
   }
@@ -233,12 +233,12 @@ static void local_run_thread( ThreadPool * const thread_pool ,
 {
   struct TPI_Work_Struct work ;
 
-  work.shared     = thread_pool->m_work_argument ;
+  work.info       = thread_pool->m_work_argument ;
   work.reduce     = thread_pool->m_reduce_data +
                     thread_pool->m_reduce_grain * thread_rank ;
+  work.count      = thread_pool->m_thread_count ;
+  work.rank       = thread_rank ;
   work.lock_count = thread_pool->m_lock_count ;
-  work.work_count = thread_pool->m_thread_count ;
-  work.work_rank  = thread_rank ;
 
   (* thread_pool->m_work_routine)( & work );
 }
@@ -316,9 +316,17 @@ void local_barrier( ThreadPool * const control ,
       /* Reduce next_thread's data into this thread's data */
 
       if ( control->m_reduce_routine ) {
-        (* control->m_reduce_routine)
-          ( control->m_reduce_data + thread_rank * control->m_reduce_grain ,
-            control->m_reduce_data + next_rank   * control->m_reduce_grain );
+        struct TPI_Work_Struct work ;
+
+        work.info       = control->m_work_argument ;
+        work.reduce     = control->m_reduce_data +
+                          control->m_reduce_grain * thread_rank ;
+        work.count      = control->m_thread_count ;
+        work.rank       = thread_rank ;
+        work.lock_count = control->m_lock_count ;
+
+        (* control->m_reduce_routine)( & work ,
+           control->m_reduce_data + next_rank * control->m_reduce_grain );
       }
     }
   }
@@ -427,8 +435,8 @@ static int set_lock_count( ThreadPool * const thread_pool ,
 
 /*--------------------------------------------------------------------*/
 
-int TPI_Run( TPI_work_subprogram subprogram  ,
-             void *              shared_data ,
+int TPI_Run( TPI_work_subprogram work_subprogram  ,
+             const void *        work_info ,
              int                 work_count  ,
              int                 lock_count  )
 {
@@ -436,7 +444,7 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
 
   int result =
     NULL != thread_pool->m_work_routine ? TPI_ERROR_ACTIVE : (
-    NULL == subprogram                  ? TPI_ERROR_NULL : (
+    NULL == work_subprogram             ? TPI_ERROR_NULL : (
     work_count  < 0                     ? TPI_ERROR_SIZE : (
     lock_count  < 0                     ? TPI_ERROR_SIZE : (
     0 ) ) ) );
@@ -448,8 +456,8 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
     if ( ! result ) {
 
       thread_pool->m_lock_count         = lock_count ;
-      thread_pool->m_work_argument      = shared_data ;
-      thread_pool->m_work_routine       = subprogram ;
+      thread_pool->m_work_argument      = work_info ;
+      thread_pool->m_work_routine       = work_subprogram ;
       thread_pool->m_work_count_total   = work_count ;
       thread_pool->m_work_count_claim   = work_count ;
       thread_pool->m_thread_driver      = & local_run_work ;
@@ -468,14 +476,14 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
         /* No worker threads, can bypass work queue locking */
         struct TPI_Work_Struct work ;
 
-        work.shared     = shared_data ;
+        work.info       = work_info ;
         work.reduce     = NULL ;
+        work.count      = work_count ;
+        work.rank       = 0 ;
         work.lock_count = lock_count ;
-        work.work_count = work_count ;
-        work.work_rank  = 0 ;
 
-        for ( ; work.work_rank < work.work_count ; ++( work.work_rank ) ) {
-          (* subprogram)( & work );
+        for ( ; work.rank < work.count ; ++( work.rank ) ) {
+          (* work_subprogram)( & work );
         }
       }
 
@@ -536,7 +544,7 @@ static void clear_reduce( ThreadPool * const thread_pool ,
 }
 
 int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
-                    void *                work_shared ,
+                    const void *          work_info ,
                     int                   work_count  ,
                     TPI_reduce_subprogram reduce_subprogram ,
                     void *                reduce_data ,
@@ -555,7 +563,7 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
 
   if ( ! result ) {
 
-    thread_pool->m_work_argument      = work_shared ;
+    thread_pool->m_work_argument      = work_info ;
     thread_pool->m_work_routine       = work_subprogram ;
     thread_pool->m_work_count_total   = work_count ;
     thread_pool->m_work_count_claim   = work_count ;
@@ -579,13 +587,13 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
       /* No worker threads, can bypass work queue locking */
       struct TPI_Work_Struct work ;
 
-      work.shared     = work_shared ;
+      work.info       = work_info ;
       work.reduce     = reduce_data ;
+      work.count      = work_count ;
+      work.rank       = 0 ;
       work.lock_count = 0 ;
-      work.work_count = work_count ;
-      work.work_rank  = 0 ;
 
-      for ( ; work.work_rank < work.work_count ; ++( work.work_rank ) ) {
+      for ( ; work.rank < work.count ; ++( work.rank ) ) {
         (* work_subprogram)( & work );
       }
     }
@@ -602,15 +610,15 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
 
 /*--------------------------------------------------------------------*/
 
-int TPI_Run_threads( TPI_work_subprogram subprogram  ,
-                     void *              shared_data ,
+int TPI_Run_threads( TPI_work_subprogram work_subprogram  ,
+                     const void *        work_info ,
                      int                 lock_count  )
 {
   ThreadPool * const thread_pool = local_thread_pool();
 
   int result =
     NULL != thread_pool->m_work_routine ? TPI_ERROR_ACTIVE : (
-    NULL == subprogram                  ? TPI_ERROR_NULL : (
+    NULL == work_subprogram             ? TPI_ERROR_NULL : (
     0 ) );
 
   if ( ! result ) {
@@ -620,8 +628,8 @@ int TPI_Run_threads( TPI_work_subprogram subprogram  ,
     if ( ! result ) {
 
       thread_pool->m_lock_count    = lock_count ;
-      thread_pool->m_work_argument = shared_data ;
-      thread_pool->m_work_routine  = subprogram ;
+      thread_pool->m_work_argument = work_info ;
+      thread_pool->m_work_routine  = work_subprogram ;
       thread_pool->m_thread_driver = & local_run_thread ;
 
       if ( 1 < thread_pool->m_thread_count ) {
@@ -642,13 +650,13 @@ int TPI_Run_threads( TPI_work_subprogram subprogram  ,
         /* No worker threads */
         struct TPI_Work_Struct work ;
 
-        work.shared     = shared_data ;
+        work.info       = work_info ;
         work.reduce     = NULL ;
+        work.count      = 1 ;
+        work.rank       = 0 ;
         work.lock_count = lock_count ;
-        work.work_count = 1 ;
-        work.work_rank  = 0 ;
 
-        (* subprogram)( & work );
+        (* work_subprogram)( & work );
       }
 
       thread_pool->m_thread_driver = NULL ;
@@ -661,8 +669,8 @@ int TPI_Run_threads( TPI_work_subprogram subprogram  ,
   return result ;
 }
 
-int TPI_Run_threads_reduce( TPI_work_subprogram   subprogram  ,
-                            void *                shared_data ,
+int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram  ,
+                            const void *          work_info ,
                             TPI_reduce_subprogram reduce_subprogram ,
                             void *                reduce_data ,
                             int                   reduce_size )
@@ -671,7 +679,7 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   subprogram  ,
 
   int result =
     NULL != thread_pool->m_work_routine ? TPI_ERROR_ACTIVE : (
-    NULL == subprogram                  ? TPI_ERROR_NULL : (
+    NULL == work_subprogram             ? TPI_ERROR_NULL : (
     NULL == reduce_subprogram           ? TPI_ERROR_NULL : (
     NULL == reduce_data                 ? TPI_ERROR_NULL : (
     reduce_size < 0                     ? TPI_ERROR_SIZE : (
@@ -679,8 +687,8 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   subprogram  ,
 
   if ( ! result ) {
 
-    thread_pool->m_work_argument = shared_data ;
-    thread_pool->m_work_routine  = subprogram ;
+    thread_pool->m_work_argument = work_info ;
+    thread_pool->m_work_routine  = work_subprogram ;
     thread_pool->m_thread_driver = & local_run_thread ;
 
     if ( 1 < thread_pool->m_thread_count ) {
@@ -705,13 +713,13 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   subprogram  ,
       /* No worker threads */
       struct TPI_Work_Struct work ;
 
-      work.shared     = shared_data ;
+      work.info       = work_info ;
       work.reduce     = reduce_data ;
+      work.count      = 1 ;
+      work.rank       = 0 ;
       work.lock_count = 0 ;
-      work.work_count = 1 ;
-      work.work_rank  = 0 ;
 
-      (* subprogram)( & work );
+      (* work_subprogram)( & work );
     }
 
     thread_pool->m_thread_driver = NULL ;
@@ -913,10 +921,10 @@ static int set_lock_count( LocalWork * const work , const int lock_count )
   return result ; 
 }
 
-int TPI_Run( TPI_work_subprogram subprogram  ,
-             void * const        shared_data ,
-             const int           work_count  ,
-             const int           lock_count  )
+int TPI_Run( TPI_work_subprogram work_subprogram  ,
+             const void *        work_info ,
+             int                 work_count  ,
+             int                 lock_count  )
 {
   LocalWork * const work = local_work();
 
@@ -932,14 +940,14 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
       work->m_active     = 1 ;
       work->m_lock_count = lock_count ;
 
-      w.shared     = shared_data ;
+      w.info       = work_info ;
       w.reduce     = NULL ;
+      w.count      = work_count ;
+      w.rank       = 0 ;
       w.lock_count = lock_count ;
-      w.work_count = work_count ;
-      w.work_rank  = 0 ;
 
-      for ( w.work_rank = 0 ; w.work_rank < work_count ; ++(w.work_rank) ) {
-        (*subprogram)( & w );
+      for ( w.rank = 0 ; w.rank < work_count ; ++(w.rank) ) {
+        (*work_subprogram)( & w );
       }
 
       work->m_active     = 0 ;
@@ -951,7 +959,7 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
 }
 
 int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
-                    void *                work_shared ,
+                    const void *          work_info ,
                     int                   work_count  ,
                     TPI_reduce_subprogram reduce_subprogram ,
                     void *                reduce_data ,
@@ -973,13 +981,13 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
 
     work->m_active = 1 ;
 
-    w.shared     = work_shared ;
+    w.info       = work_info ;
     w.reduce     = reduce_data ;
+    w.count      = work_count ;
+    w.rank       = 0 ;
     w.lock_count = 0 ;
-    w.work_count = work_count ;
-    w.work_rank  = 0 ;
 
-    for ( ; w.work_rank < w.work_count ; ++( w.work_rank ) ) {
+    for ( ; w.rank < w.count ; ++( w.rank ) ) {
       (* work_subprogram)( & w );
     }
 
@@ -991,20 +999,20 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
 
 /*--------------------------------------------------------------------*/
 
-int TPI_Run_threads( TPI_work_subprogram subprogram  ,
-                     void * const        shared_data ,
-                     const int           lock_count  )
+int TPI_Run_threads( TPI_work_subprogram work_subprogram  ,
+                     const void *        work_info ,
+                     int                 lock_count  )
 {
-  return TPI_Run( subprogram , shared_data , 1 , lock_count );
+  return TPI_Run( work_subprogram , work_info , 1 , lock_count );
 }
 
-int TPI_Run_threads_reduce( TPI_work_subprogram   subprogram  ,
-                            void *                shared_data ,
+int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram  ,
+                            const void *          work_info ,
                             TPI_reduce_subprogram reduce_subprogram ,
                             void *                reduce_data ,
                             int                   reduce_size )
 {
-  return TPI_Run_reduce( subprogram , shared_data , 1 ,
+  return TPI_Run_reduce( work_subprogram , work_info , 1 ,
                          reduce_subprogram , reduce_data , reduce_size );
 }
 

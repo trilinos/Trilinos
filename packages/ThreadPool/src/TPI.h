@@ -68,11 +68,11 @@ double TPI_Walltime();
 
 /** \brief  Work information passed to a work subprogram. */
 struct TPI_Work_Struct {
-  void * shared ;     /**<  Shared data input to TPI_Run */
-  void * reduce ;     /**<  Data for reduce operation, if any */
-  int    lock_count ; /**<  Count of locks requested via TPI_Run */
-  int    work_count ; /**<  Count of work  requested via TPI_Run */
-  int    work_rank ;  /**<  Rank of work fot the current call */
+  const void * info ;       /**<  Shared info input to TPI_Run */
+  void       * reduce ;     /**<  Data for reduce operation, if any */
+  int          count ;      /**<  Count of work  requested via TPI_Run */
+  int          rank ;       /**<  Rank of work fot the current call */
+  int          lock_count ; /**<  Count of locks requested via TPI_Run */
 };
 
 /** \brief  Typedef for work subprogram argument */
@@ -85,17 +85,17 @@ typedef void (*TPI_work_subprogram)( TPI_Work * );
  *   Reduce the 'src' data into the 'dest' data.
  */
 typedef
-void (*TPI_reduce_subprogram)( void * dest , const void * src );
+void (*TPI_reduce_subprogram)( TPI_Work * , const void * reduce );
 
 /** Run a work subprogram in thread parallel.
  *
  *  The thread pool must be in the 'paused' state when this
  *  function is called.  Thus a recursive call to TPI_Run is illegal.
  */
-int TPI_Run( TPI_work_subprogram subprogram  ,
-             void *              shared ,
+int TPI_Run( TPI_work_subprogram work_subprogram  ,
+             const void *        work_info ,
              int                 work_count  ,
-             int                 lock_count  );
+             int                 lock_count );
 
 /** Run a work and reduction subprograms in thread parallel.
  *  Each call to the work_subprogram has exclusive (thread safe)
@@ -107,7 +107,7 @@ int TPI_Run( TPI_work_subprogram subprogram  ,
  *  originally input reduce_data.
  */
 int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
-                    void *                work_shared ,
+                    const void *          work_info ,
                     int                   work_count  ,
                     TPI_reduce_subprogram reduce_subprogram ,
                     void *                reduce_data ,
@@ -119,12 +119,12 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
  *  The thread pool must be in the 'paused' state when this
  *  function is called.  Thus a recursive call to TPI_Run is illegal.
  */
-int TPI_Run_threads( TPI_work_subprogram subprogram ,
-                     void *              shared ,
+int TPI_Run_threads( TPI_work_subprogram work_subprogram ,
+                     const void *        work_info ,
                      int                 lock_count );
 
-int TPI_Run_threads_reduce( TPI_work_subprogram   subprogram ,
-                            void *                shared ,
+int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram ,
+                            const void *          work_info ,
                             TPI_reduce_subprogram reduce_subprogram ,
                             void *                reduce_data ,
                             int                   reduce_size );
