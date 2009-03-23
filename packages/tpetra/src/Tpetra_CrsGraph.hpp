@@ -319,6 +319,10 @@ namespace Tpetra
       void staticAssertions();
       inline Teuchos_Ordinal RNNZ(Teuchos_Ordinal row) const;
       inline Teuchos_Ordinal RNumAlloc(Teuchos_Ordinal row) const;
+      inline typename Teuchos::ArrayRCP<const LocalOrdinal>::iterator getLptr(Teuchos_Ordinal row) const;
+      inline typename Teuchos::ArrayRCP<const GlobalOrdinal>::iterator getGptr(Teuchos_Ordinal row) const;
+      inline typename Teuchos::ArrayRCP<LocalOrdinal>::iterator getLptr(Teuchos_Ordinal row);
+      inline typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator getGptr(Teuchos_Ordinal row);
 
       Teuchos::RCP<CrsGraphData<LocalOrdinal,GlobalOrdinal> > graphData_;
       std::map<GlobalOrdinal, std::deque<GlobalOrdinal> > nonlocals_;
@@ -817,7 +821,7 @@ namespace Tpetra
     LocalOrdinal lrow = getRowMap().getLocalIndex(grow);
     if (lrow != OrdinalTraits<LocalOrdinal>::invalid()) {
       // add to allocated space
-      Teuchos_Ordinal rowNE = graphData_->rowNumEntries_[lrow],
+      Teuchos_Ordinal rowNE = RNNZ(lrow),
                       rowNA = RNumAlloc(lrow),
                       toAdd = indices.size();
       if (rowNE+toAdd > rowNA) {
@@ -839,22 +843,23 @@ namespace Tpetra
         std::copy(curInds.begin(), curInds.end(), newInds.begin());
         graphData_->colGInds_[lrow] = newInds;
       }
+      typename ArrayRCP<GlobalOrdinal>::iterator dstbeg, dstind;
+      dstbeg = getGptr(lrow);
+      dstind = dstbeg + rowNE;
       if (hasColMap()) {
         // check the global indices against the column map; only add ones that are defined
-        typename ArrayView<const GlobalOrdinal>::iterator srcind;
-        typename ArrayRCP<GlobalOrdinal>::iterator        dstind;
-        ArrayRCP<GlobalOrdinal> ginds = graphData_->colGInds_[lrow];
-        for (srcind = indices.begin(), dstind = graphData_->colGInds_[lrow].begin(); 
-             srcind != indices.end(); ++srcind, ++dstind) 
+        typename ArrayView<const GlobalOrdinal>::iterator srcind = indices.begin();
+        while (srcind != indices.end()) 
         {
           if (getColMap().isMyGlobalIndex(*srcind)) {
-            (*ginds++) = (*srcind);
+            (*dstind++) = (*srcind);
           }
-          graphData_->rowNumEntries_[lrow] = ginds - graphData_->colGInds_[lrow];
+          ++srcind;
         }
+        graphData_->rowNumEntries_[lrow] = dstind - dstbeg;
       }
       else {
-        std::copy( indices.begin(), indices.end(), graphData_->colGInds_[lrow].begin()+rowNE );
+        std::copy( indices.begin(), indices.end(), dstind );
         graphData_->rowNumEntries_[lrow] += toAdd;
       }
     }
@@ -876,13 +881,8 @@ namespace Tpetra
         Teuchos::typeName(*this) << "::insertGlobalIndices(): graph already contains local indices.");
     TEST_FOR_EXCEPTION(isFillComplete() == true, std::runtime_error,
         Teuchos::typeName(*this) << "::insertGlobalIndices(): graph fill already complete.");
-    if (hasColMap()) {
-      graphData_->indicesAreLocal_ = true;
-    }
-    else {
-      TEST_FOR_EXCEPTION(indicesAreLocal() == false, std::runtime_error,
-          Teuchos::typeName(*this) << "::insertMyIndices(): requires a predefined column map.");
-    }
+    TEST_FOR_EXCEPTION(hasColMap() == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::insertMyIndices(): requires a predefined column map.");
     if (indicesAreAllocated() == false) {
       bool local = true;
       allocateIndices(local);
@@ -899,7 +899,7 @@ namespace Tpetra
                     rowNA = RNumAlloc(lrow),
                     toAdd = indices.size();
     if (rowNE+toAdd > rowNA) {
-        TEST_FOR_EXCEPTION(isStaticProfile(), std::runtime_error,
+        TEST_FOR_EXCEPTION(isStaticProfile()==true, std::runtime_error,
             Teuchos::typeName(*this) << "::insertMyIndices(): new indices exceed statically allocated graph structure.");
 #     if defined(THROW_TPETRA_EFFICIENCY_WARNINGS) || defined(PRINT_TPETRA_EFFICIENCY_WARNINGS)
         std::string err = Teuchos::typeName(*this) + "::insertGlobalIndices(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.";
@@ -918,17 +918,18 @@ namespace Tpetra
       graphData_->colLInds_[lrow] = newInds;
     }
     // check the local indices against the column map; only add ones that are defined
-    typename ArrayView<const LocalOrdinal>::iterator srcind;
-    typename ArrayRCP<LocalOrdinal>::iterator        dstind;
-    ArrayRCP<LocalOrdinal> ginds = graphData_->colLInds_[lrow];
-    for (srcind = indices.begin(), dstind = graphData_->colLInds_[lrow].begin(); 
-         srcind != indices.end(); ++srcind, ++dstind) 
+    typename ArrayView<const LocalOrdinal>::iterator srcind = indices.begin();
+    typename ArrayRCP<LocalOrdinal>::iterator dstbeg, dstind;
+    dstbeg = getLptr(lrow);
+    dstind = dstbeg + rowNE;
+    while (srcind != indices.end()) 
     {
       if (getColMap().isMyLocalIndex(*srcind)) {
-        (*ginds++) = (*srcind);
+        (*dstind++) = (*srcind);
       }
-      graphData_->rowNumEntries_[lrow] = ginds - graphData_->colLInds_[lrow];
+      ++srcind;
     }
+    graphData_->rowNumEntries_[lrow] = dstind - dstbeg;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal>
@@ -1250,21 +1251,27 @@ namespace Tpetra
     // Transform indices to local index space
     const Teuchos_Ordinal nlrs = numLocalRows();
     
-    if (indicesAreGlobal()) {   // this is implictly also a test of indicesAreAllocated()
-      graphData_->colLInds_.resize(nlrs);
-      for (Teuchos_Ordinal r=0; r < nlrs; ++r)
-      {
-        graphData_->colLInds_[r] = Teuchos::arcp_reinterpret_cast<LocalOrdinal>(graphData_->colGInds_[r]);
-        typename ArrayRCP<GlobalOrdinal>::const_iterator cindG = graphData_->colGInds_[r].begin(),
-                                                         cendG = graphData_->colGInds_[r].begin() + graphData_->rowNumEntries_[r];
-        typename ArrayRCP<LocalOrdinal>::iterator        cindL = graphData_->colLInds_[r].begin();
-        for (; cindG != cendG; ++cindG, ++cindL)
+    if (indicesAreGlobal() && indicesAreAllocated()) {
+      // allocate data for local indices
+      if (isStaticProfile()) {
+        TEST_FOR_EXCEPT(true);
+      }
+      else {
+        graphData_->colLInds_.resize(nlrs);
+        for (Teuchos_Ordinal r=0; r < nlrs; ++r)
         {
-          (*cindL) = graphData_->colMap_.getLocalIndex(*cindG);
-          TEST_FOR_EXCEPTION((*cindL) == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::logic_error,
-              Teuchos::typeName(*this) << ": Internal error in fillComplete(). Please contact Tpetra team.");
+          graphData_->colLInds_[r] = Teuchos::arcp_reinterpret_cast<LocalOrdinal>(graphData_->colGInds_[r]);
+          typename ArrayRCP<GlobalOrdinal>::const_iterator cindG = graphData_->colGInds_[r].begin(),
+                   cendG = graphData_->colGInds_[r].begin() + graphData_->rowNumEntries_[r];
+          typename ArrayRCP<LocalOrdinal>::iterator        cindL = graphData_->colLInds_[r].begin();
+          for (; cindG != cendG; ++cindG, ++cindL)
+          {
+            (*cindL) = graphData_->colMap_.getLocalIndex(*cindG);
+            TEST_FOR_EXCEPTION((*cindL) == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::logic_error,
+                Teuchos::typeName(*this) << ": Internal error in fillComplete(). Please contact Tpetra team.");
+          }
+          graphData_->colGInds_[r] = Teuchos::null;   // data is owned by colLInds_[r] now
         }
-        graphData_->colGInds_[r] = Teuchos::null;   // data is owned by colLInds_[r] now
       }
     }
     graphData_->indicesAreLocal_  = true;
@@ -1598,6 +1605,54 @@ namespace Tpetra
         Teuchos::typeName(*this) << ": Object cannot be allocated with stated template arguments: size assumptions are not valid.");
     TEST_FOR_EXCEPTION( OrdinalTraits<Teuchos_Ordinal>::max() < OrdinalTraits<LocalOrdinal>::max(), std::runtime_error,
         Teuchos::typeName(*this) << ": Object cannot be allocated with stated template arguments: size assumptions are not valid.");
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal>
+  typename Teuchos::ArrayRCP<const LocalOrdinal>::iterator 
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::getLptr(Teuchos_Ordinal row) const
+  {
+    if (isStaticProfile() || isFillComplete()) {
+      return graphData_->colLIndsPtrs_[row];
+    }
+    else {
+      return graphData_->colLInds_[row].begin();
+    }
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal>
+  typename Teuchos::ArrayRCP<const GlobalOrdinal>::iterator 
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::getGptr(Teuchos_Ordinal row) const
+  {
+    if (isStaticProfile() || isFillComplete()) {
+      return graphData_->colGIndsPtrs_[row];
+    }
+    else {
+      return graphData_->colGInds_[row].begin();
+    }
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal>
+  typename Teuchos::ArrayRCP<LocalOrdinal>::iterator 
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::getLptr(Teuchos_Ordinal row)
+  {
+    if (isStaticProfile() || isFillComplete()) {
+      return graphData_->colLIndsPtrs_[row];
+    }
+    else {
+      return graphData_->colLInds_[row].begin();
+    }
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal>
+  typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator 
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::getGptr(Teuchos_Ordinal row) 
+  {
+    if (isStaticProfile() || isFillComplete()) {
+      return graphData_->colGIndsPtrs_[row];
+    }
+    else {
+      return graphData_->colGInds_[row].begin();
+    }
   }
 
 

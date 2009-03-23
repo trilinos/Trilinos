@@ -175,7 +175,7 @@ Package: Tpetra
 
 Package Transition Lead: Chris Baker (cgbaker@sandia.gov)
 
-Status: Basic support for library, but only a few tests.
+Status: All tests are built and run under CMake system.
 
 Final Certification Date: [???]
 
