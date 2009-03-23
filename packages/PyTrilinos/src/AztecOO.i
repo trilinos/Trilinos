@@ -67,6 +67,13 @@ example subdirectory of the PyTrilinos package:
 
 // Configuration includes
 #include "PyTrilinos_config.h"
+#undef HAVE_SYS_TIME_H
+#include "AztecOO_ConfigDefs.h"
+
+// Optional Teuchos support
+#ifdef HAVE_AZTECOO_TEUCHOS
+#include "Teuchos_PythonParameter.h"
+#endif
 
 // Epetra includes
 #ifdef HAVE_EPETRA
@@ -94,11 +101,6 @@ example subdirectory of the PyTrilinos package:
 #include "AztecOO.h"
 #include "AztecOO_Version.h"
 
-// Optional Teuchos support
-#ifdef HAVE_AZTECOO_TEUCHOS
-#include "Teuchos_PythonParameter.h"
-#endif
-
 %}
 
 // SWIG does not support wrapping nested classes.  To suppress the
@@ -107,6 +109,23 @@ example subdirectory of the PyTrilinos package:
 
 // Auto-documentation feature
 %feature("autodoc", "1");
+
+// Include PyTrilinos configuration
+%include "PyTrilinos_config.h"
+
+// AztecOO enumerated types support
+#undef  PACKAGE_BUGREPORT
+%ignore PACKAGE_BUGREPORT;
+#undef  PACKAGE_NAME
+%ignore PACKAGE_NAME;
+#undef  PACKAGE_STRING
+%ignore PACKAGE_STRING;
+#undef  PACKAGE_TARNAME
+%ignore PACKAGE_TARNAME;
+#undef  PACKAGE_VERSION
+%ignore PACKAGE_VERSION;
+%include "AztecOO_config.h"
+%include "az_aztec_defs.h"
 
 // Include AztecOO documentation
 %include "AztecOO_dox.i"
@@ -170,11 +189,6 @@ example subdirectory of the PyTrilinos package:
 }
 %ignore className::methodName() const;
 %enddef
-
-//////////////////////////////////////
-// AztecOO enumerated types support //
-//////////////////////////////////////
-%include "az_aztec_defs.h"
 
 /////////////////////////////
 // AztecOO Version support //

@@ -119,6 +119,9 @@ example subdirectory of the PyTrilinos package:
 
 %}
 
+// Include PyTrilinos configuration
+%include "PyTrilinos_config.h"
+
 // Standard exception handling
 %include "exception.i"
 
@@ -163,9 +166,25 @@ example subdirectory of the PyTrilinos package:
   }
 }
 
+////////////////////////
+// I/O Stream support //
+////////////////////////
+// #pragma SWIG nowarn=401
+%include "std_iostream.i"
+
 //////////////////////////////////
 // IFPACK configuration support //
 //////////////////////////////////
+#undef  PACKAGE_BUGREPORT
+%ignore PACKAGE_BUGREPORT;
+#undef  PACKAGE_NAME
+%ignore PACKAGE_NAME;
+#undef  PACKAGE_STRING
+%ignore PACKAGE_STRING;
+#undef  PACKAGE_TARNAME
+%ignore PACKAGE_TARNAME;
+#undef  PACKAGE_VERSION
+%ignore PACKAGE_VERSION;
 %include "Ifpack_config.h"
 %include "Ifpack_ConfigDefs.h"
 

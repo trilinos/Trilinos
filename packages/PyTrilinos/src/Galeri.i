@@ -114,6 +114,9 @@ example subdirectory of the PyTrilinos package:
 #include "Galeri_ReadHB.h"
 %}
 
+// Include PyTrilinos configuration
+%include "PyTrilinos_config.h"
+
 // Standard exception handling
 %include "exception.i"
 

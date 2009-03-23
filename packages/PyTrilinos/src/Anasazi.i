@@ -167,6 +167,9 @@ package:
 
 %}
 
+// Include PyTrilinos configuration
+%include "PyTrilinos_config.h"
+
 // Standard exception handling
 %include "exception.i"
 

@@ -93,14 +93,17 @@ example subdirectory of the PyTrilinos package:
 #include "Trilinos_Util_Version.h"
 %}
 
-// Standard exception handling
-%include "exception.i"
+// Include PyTrilinos configuration
+%include "PyTrilinos_config.h"
 
 // Auto-documentation feature
 %feature("autodoc", "1");
 
 // Include the TriUtils documentation
 %include "TriUtils_dox.i"    // Doxygen-generated documentation
+
+// Standard exception handling
+%include "exception.i"
 
 // General ignore directives
 #pragma SWIG nowarn=503

@@ -69,14 +69,6 @@ example subdirectory of the PyTrilinos package:
 	autodoc   = "1",
 	docstring = %ml_docstring) ML
 
-// This is to avoid BaseLinearCombination and derived classes.
-// MLAPI_LC is defined in setup.py; the MLAPI code contains some 
-// `#ifndef MLAPI_LC' that must be kept in place.
-#define MLAPI_LC
-
-// Turning bounds-checking on is appropriate for a dynamic interface
-#define MLAPI_CHECK
-
 %{
 //  PyTrilinos includes
 #include "PythonException.h"
@@ -122,11 +114,17 @@ example subdirectory of the PyTrilinos package:
 #endif
 
 // ML includes
+#undef HAVE_STDINT_H
+#undef HAVE_INTTYPES_H
+#undef HAVE_SYS_TIME_H
 #include "ml_MultiLevelPreconditioner.h"
 #include "MLAPI.h"
 #include "MLAPI_PyMatrix.h"
 
 %}
+
+// Include PyTrilinos configuration
+%include "PyTrilinos_config.h"
 
 // Standard exception handling
 %include "exception.i"
@@ -207,6 +205,16 @@ example subdirectory of the PyTrilinos package:
 ///////////////////////
 // ml_config support //
 ///////////////////////
+#undef  PACKAGE_BUGREPORT
+%ignore PACKAGE_BUGREPORT;
+#undef  PACKAGE_NAME
+%ignore PACKAGE_NAME;
+#undef  PACKAGE_STRING
+%ignore PACKAGE_STRING;
+#undef  PACKAGE_TARNAME
+%ignore PACKAGE_TARNAME;
+#undef  PACKAGE_VERSION
+%ignore PACKAGE_VERSION;
 %include "ml_config.h"
 
 /////////////////////////////

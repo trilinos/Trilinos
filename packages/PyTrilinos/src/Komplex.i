@@ -82,6 +82,7 @@ following class:
 #include "Epetra_NumPyFEVector.h"
 
 // Komplex includes
+#include "Komplex_Version.h"
 #include "Komplex_LinearProblem.h"
 
 #endif
@@ -94,6 +95,10 @@ following class:
 // Include Komplex documentation
 %include "Komplex_dox.i"
 
+// SWIG library includes
+using std::string;
+%include "stl.i"
+
 // External Trilinos modules
 #ifdef HAVE_EPETRA
 %ignore Epetra_Version();
@@ -104,9 +109,11 @@ following class:
 // Komplex configuration support //
 ///////////////////////////////////
 %include "Komplex_config.h"
+%rename(Version) Komplex_Version;
+%include "Komplex_Version.h"
 %pythoncode
 {
-__version__ = PACKAGE_VERSION
+__version__ = Version().split()[2]
 }
 
 ///////////////////////////////////

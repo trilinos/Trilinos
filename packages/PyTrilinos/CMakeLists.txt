@@ -2,17 +2,21 @@
 INCLUDE(PackageMacros)
 
 # Set the package name
-PACKAGE(PyTrilinos  DISABLE_STRONG_WARNINGS)
+PACKAGE(PyTrilinos DISABLE_STRONG_WARNINGS)
 
 # Set the package version number
 SET(${PACKAGE_NAME}_VERSION 4.2d)
 
 # Define the list of PyTrilinos modules
-SET(${PACKAGE_NAME}_MODULES Epetra)
+SET(${PACKAGE_NAME}_MODULES "")
 
 IF(PyTrilinos_ENABLE_Teuchos)
   APPEND_SET(${PACKAGE_NAME}_MODULES Teuchos)
 ENDIF(PyTrilinos_ENABLE_Teuchos)
+
+IF(PyTrilinos_ENABLE_Epetra)
+  APPEND_SET(${PACKAGE_NAME}_MODULES Epetra)
+ENDIF(PyTrilinos_ENABLE_Epetra)
 
 IF(PyTrilinos_ENABLE_Triutils)
   APPEND_SET(${PACKAGE_NAME}_MODULES TriUtils)
@@ -85,7 +89,7 @@ INCLUDE(${SWIG_USE_FILE})
 
 ADD_SUBDIRECTORY(src)
 
-#PACKAGE_ADD_TEST_DIRECTORIES(test)
+PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 #PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 

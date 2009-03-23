@@ -142,6 +142,9 @@ exAmesos_Factory.py.
 
 %}
 
+// Include PyTrilinos configuration
+%include "PyTrilinos_config.h"
+
 // Standard exception handling
 %include "exception.i"
 
@@ -191,6 +194,16 @@ exAmesos_Factory.py.
 /////////////////////////
 // Amesos core support //
 /////////////////////////
+#undef  PACKAGE_BUGREPORT
+%ignore PACKAGE_BUGREPORT;
+#undef  PACKAGE_NAME
+%ignore PACKAGE_NAME;
+#undef  PACKAGE_STRING
+%ignore PACKAGE_STRING;
+#undef  PACKAGE_TARNAME
+%ignore PACKAGE_TARNAME;
+#undef  PACKAGE_VERSION
+%ignore PACKAGE_VERSION;
 %include "Amesos_config.h"
 %include "Amesos_ConfigDefs.h"
 %rename(Factory) Amesos;

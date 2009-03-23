@@ -2,40 +2,24 @@
 INCLUDE(PackageLibraryMacros)
 
 #
-# A) Package-specific configuration options
-#
+# Package-specific configuration options
+IF(Trilinos_ENABLE_Epetra)
+  SET(HAVE_EPETRA ON)
+ENDIF(Trilinos_ENABLE_Epetra)
+
+IF(Trilinos_ENABLE_Teuchos)
+  SET(HAVE_TEUCHOS ON)
+ENDIF(Trilinos_ENABLE_Teuchos)
+
+IF(TPL_ENABLE_MPI)
+  SET(HAVE_MPI ON)
+ENDIF(TPL_ENABLE_MPI)
 
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
-# B) Define the header and source files (and directories)
-#
-
-#
-# src
-#
-
-SET(HEADERS    "")
-SET(SOURCES    "")
-SET(DEFINES    "")
-SET(SWIG_OPTS  "")
-SET(INTERFACES "")
-
-# Add the current binary directory to the include directories
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-
-# Add the python include path to the include directories
-INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
-
-# Add the NumPy include path to the include directories
-INCLUDE_DIRECTORIES(${NumPy_INCLUDE_DIR})
-
-SET(HEADERS ${HEADERS}
-  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
-  )
-
 # On Mac OS X Gnu compilers, add dynamic lookup for undefined symbols
-# to the pytrilinos library
+# to the pytrilinos library and PyTrilinos extension modules
 SET(EXTRA_LINK_ARGS "")
 IF(APPLE)
   IF(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -43,12 +27,24 @@ IF(APPLE)
   ENDIF()
 ENDIF(APPLE)
 
+#
+# Add the current binary and source directories, the python include
+# path, and the NumPy include path to the include directories
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_PATH})
+INCLUDE_DIRECTORIES(${NumPy_INCLUDE_DIR})
 
-######################################
+#
+# Initialize the headers and sources
+SET(HEADERS "")
+SET(SOURCES "")
+SET(HEADERS ${HEADERS}
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
+  )
+
+#
 # Core PyTrilinos headers and sources
-######################################
-
 APPEND_SET(HEADERS
   PythonException.h
   FILEstream.h
@@ -61,11 +57,9 @@ APPEND_SET(SOURCES
   FILEstream.cpp
   )
 
-#########################################
-# PyTrilinos+Teuchos headers and sources
-#########################################
-
-IF(Trilinos_ENABLE_Teuchos)
+#
+# PyTrilinos + Teuchos headers and sources
+IF(PyTrilinos_ENABLE_Teuchos)
 
   APPEND_SET(HEADERS
     Teuchos_PythonParameter.h
@@ -75,17 +69,11 @@ IF(Trilinos_ENABLE_Teuchos)
     Teuchos_PythonParameter.cpp
     )
 
-  APPEND_SET(DEFINES
-    -DHAVE_TEUCHOS
-    )
+ENDIF(PyTrilinos_ENABLE_Teuchos)
 
-ENDIF(Trilinos_ENABLE_Teuchos)
-
-########################################
-# PyTrilinos+Epetra headers and sources
-########################################
-
-IF(Trilinos_ENABLE_Epetra)
+#
+# PyTrilinos + Epetra headers and sources
+IF(PyTrilinos_ENABLE_Epetra)
 
   APPEND_SET(HEADERS
     Epetra_NumPyFEVector.h
@@ -109,28 +97,17 @@ IF(Trilinos_ENABLE_Epetra)
     Epetra_NumPyVector.cpp
     )
 
-  APPEND_SET(DEFINES
-    -DHAVE_EPETRA
-    )
+ENDIF(PyTrilinos_ENABLE_Epetra)
 
-ENDIF(Trilinos_ENABLE_Epetra)
-
-####################################
-# PyTrilinos+ML headers and sources
-####################################
-
-IF(Trilinos_ENABLE_ML)
+#
+# PyTrilinos + ML headers and sources
+IF(PyTrilinos_ENABLE_ML)
 
   APPEND_SET(HEADERS
     MLAPI_PyMatrix.h
     )
 
-ENDIF(Trilinos_ENABLE_ML)
-
-######################################
-
-IF (TPL_ENABLE_MPI)
-ENDIF()
+ENDIF(PyTrilinos_ENABLE_ML)
 
 #
 # Define the target for the swig runtime header
@@ -162,45 +139,25 @@ APPEND_SET(CMAKE_SWIG_FLAGS -I${PYTRILINOS_DOXDIR})
 SET(CMAKE_SWIG_OUTDIR PyTrilinos)
 
 #
-# Define the swig-generated PyTrilinos.Teuchos module
-IF(Trilinos_ENABLE_Teuchos)
-
-  SET_SOURCE_FILES_PROPERTIES(Teuchos.i
-    PROPERTIES CPLUSPLUS ON
-    SWIG_FLAGS "${DEFINES}"
+# Loop over the PyTrilinos-enabled Trilinos modules and define the
+# swig-generated PyTrilinos extension modules
+FOREACH(MODULE ${PyTrilinos_MODULES})
+  STRING(TOUPPER $MODULE MODULE_UPPER)
+  SET_SOURCE_FILES_PROPERTIES(${MODULE}.i PROPERTIES
+    CPLUSPLUS ON
     )
-  SWIG_ADD_MODULE(Teuchos python Teuchos.i)
-  SWIG_LINK_LIBRARIES(Teuchos ${TEUCHOS_LIBRARIES})
-  SWIG_LINK_LIBRARIES(Teuchos pytrilinos)
-  SET_TARGET_PROPERTIES(${SWIG_MODULE_Teuchos_REAL_NAME}
-    PROPERTIES LIBRARY_OUTPUT_DIRECTORY PyTrilinos
+  SWIG_ADD_MODULE(${MODULE} python ${MODULE}.i)
+  SWIG_LINK_LIBRARIES(${MODULE} pytrilinos)
+  SWIG_LINK_LIBRARIES(${MODULE} ${${MODULE_UPPER}_LIBRARIES})
+  SET_TARGET_PROPERTIES(${SWIG_MODULE_${MODULE}_REAL_NAME} PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY PyTrilinos
     )
-  SET_TARGET_PROPERTIES(${SWIG_MODULE_Teuchos_REAL_NAME}
-    PROPERTIES LINK_FLAGS "${EXTRA_LINK_ARGS}"
+  SET_TARGET_PROPERTIES(${SWIG_MODULE_${MODULE}_REAL_NAME} PROPERTIES
+    LINK_FLAGS "${EXTRA_LINK_ARGS}"
     )
-
-ENDIF(Trilinos_ENABLE_Teuchos)
+ENDFOREACH(MODULE ${PyTrilinos_MODULES})
 
 #
-# Define the swig-generated PyTrilinos.Epetra module
-IF(Trilinos_ENABLE_Epetra)
-
-  SET_SOURCE_FILES_PROPERTIES(Epetra.i
-    PROPERTIES CPLUSPLUS ON
-    SWIG_FLAGS "-DHAVE_EPETRA"
-    )
-  SWIG_ADD_MODULE(Epetra python Epetra.i)
-  SWIG_LINK_LIBRARIES(Epetra ${EPETRA_LIBRARIES})
-  SWIG_LINK_LIBRARIES(Epetra pytrilinos)
-  SET_TARGET_PROPERTIES(${SWIG_MODULE_Epetra_REAL_NAME}
-    PROPERTIES LIBRARY_OUTPUT_DIRECTORY PyTrilinos
-    )
-  SET_TARGET_PROPERTIES(${SWIG_MODULE_Epetra_REAL_NAME}
-    PROPERTIES LINK_FLAGS "${EXTRA_LINK_ARGS}"
-    )
-
-ENDIF(Trilinos_ENABLE_Epetra)
-
-##############
-
+# Add the PyTrilinos subdirectory, which is top-level package
+# directory
 ADD_SUBDIRECTORY(PyTrilinos)
