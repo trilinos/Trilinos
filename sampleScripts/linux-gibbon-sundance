@@ -110,8 +110,6 @@ while true ; do
             TRILINOS_DATA_DIR="$2"; shift 2;;
       --prefix)
             INSTALL_PREFIX="$2"; shift 2;;
-      --gcc-version)
-            GCC_VERSION="$2"; shift 2;;
       --help)
             echo "Command-line arguments:"
             echo "--help           help"
@@ -148,7 +146,6 @@ cmake \
 -D CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE} \
 -D CMAKE_SYSTEM_LIBRARY_PATH:FILEPATH="$LIB_PATH" \
 -D CMAKE_SYSTEM_INCLUDE_PATH:FILEPATH="$INC_PATH" \
--D CMAKE_Fortran_COMPILER:FILEPATH="${FORTRAN_COMP}" \
 -D BUILD_SHARED_LIBS:BOOL=${BUILD_SHARED} \
 -D TPL_ENABLE_ExodusII:BOOL=${HAVE_EXODUS} \
 -D TPL_ENABLE_MPI:BOOL=${ENABLE_MPI} \
