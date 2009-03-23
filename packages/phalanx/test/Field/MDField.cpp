@@ -94,7 +94,17 @@ const char * Point::name() const
 const Point & Point::tag() 
 { static const Point myself ; return myself ; }
 
+template<typename T>
+void assign(T& y, const T& x)
+{
+  for (std::size_t i=0; i < x.size(); ++i) {
+    y[i] = x[i];
 
+    // The following line should cause compilation failure if const is
+    // implemented correctly
+    //x[i] = y[i];
+  }
+}
 
 
 int main(int argc, char *argv[]) 
@@ -109,7 +119,7 @@ int main(int argc, char *argv[])
     TimeMonitor tm(*total_time);
 
     // *********************************************************************
-    // Start of Field Tag Testing
+    // Start of MDField Testing
     // *********************************************************************
     {
 
@@ -313,6 +323,15 @@ int main(int argc, char *argv[])
       f6(99,0,1,2,3,4,5) = 1.0;
       f7(99,0,1,2,3,4,5,6) = 1.0;
 
+      // Test const/ non-const versions
+      assign(f1,f1);
+      assign(f2,f2);
+      assign(f3,f3);
+      assign(f4,f4);
+      assign(f5,f5);
+      assign(f6,f6);
+      assign(f7,f7);
+
       cout << "passed!" << endl;
 
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -348,7 +367,7 @@ int main(int argc, char *argv[])
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    
+
 
 
     // *********************************************************************
