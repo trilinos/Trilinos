@@ -7,14 +7,13 @@ Active items:
 -------------
 
 (*) [Ross and Brent] Get new CTest/CDash driver working:
-- Test scalability of segmented coverage testing working (see tracker item
-0008579)
-- Test package-specific emails get sent out.
+- Fix *massively* duplicate configure failure email emails
+- Find out why wrong date is being used for nightly checkouts (godel and s909348)
 - Automatically read in the list of packages and deal correctly with
 Primary and Secondary Stable enables (see below)
 
-(*) [Ross and Brent] Get basic MS Windows Visual Studio port of Trilinos
-packages (see email from Wed 3/11/2009 8:51 AM) for QuantumWise.
+(*) [Ross and Brent] Get a Windows CSRI machine set up to build Trilinos Dev
+with CMake and run nightly tests.
 
 (*) [Ross] Create new PACKAGE_ADD_ADVANCED_TEST(...) function that will group
 together a set of commands (with various pass/fail critieria) and then run as
