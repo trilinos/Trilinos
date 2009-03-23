@@ -68,6 +68,7 @@ MemoryManagement_UnitTests_SOURCES = \
   $(srcdir)/Ptr_UnitTests.cpp \
   $(srcdir)/Array_UnitTest_helpers.cpp \
   $(srcdir)/Array_UnitTests.cpp \
+  $(srcdir)/ArrayRCP_UnitTests.cpp \
   $(srcdir)/ArrayView_UnitTests.cpp \
   $(srcdir)/ArrayConversions_UnitTests.cpp \
   $(unit_test_common_sources) \

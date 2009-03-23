@@ -70,6 +70,7 @@ APPEND_SET(HEADERS
   Teuchos_F77_wrappers.h
   Teuchos_FancyOStream.hpp
   Teuchos_Flops.hpp
+  Teuchos_getRawPtr.hpp
   Teuchos_GlobalMPISession.hpp
   Teuchos_Handle.hpp
   Teuchos_Handleable.hpp

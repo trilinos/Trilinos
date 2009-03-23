@@ -84,6 +84,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_F77_wrappers.h \
 	$(srcdir)/Teuchos_FancyOStream.hpp \
 	$(srcdir)/Teuchos_Flops.hpp \
+	$(srcdir)/Teuchos_getRawPtr.hpp \
 	$(srcdir)/Teuchos_GlobalMPISession.hpp \
 	$(srcdir)/Teuchos_Handle.hpp \
 	$(srcdir)/Teuchos_Handleable.hpp \

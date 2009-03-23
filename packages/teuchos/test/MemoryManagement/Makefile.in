@@ -126,7 +126,8 @@ am__objects_2 = Teuchos_StandardUnitTestMain.$(OBJEXT)
 am_MemoryManagement_UnitTests_OBJECTS =  \
 	RCPNodeHandle_UnitTests.$(OBJEXT) RCP_UnitTests.$(OBJEXT) \
 	Ptr_UnitTests.$(OBJEXT) Array_UnitTest_helpers.$(OBJEXT) \
-	Array_UnitTests.$(OBJEXT) ArrayView_UnitTests.$(OBJEXT) \
+	Array_UnitTests.$(OBJEXT) ArrayRCP_UnitTests.$(OBJEXT) \
+	ArrayView_UnitTests.$(OBJEXT) \
 	ArrayConversions_UnitTests.$(OBJEXT) $(am__objects_2) \
 	$(am__objects_1)
 MemoryManagement_UnitTests_OBJECTS =  \
@@ -308,6 +309,7 @@ MemoryManagement_UnitTests_SOURCES = \
   $(srcdir)/Ptr_UnitTests.cpp \
   $(srcdir)/Array_UnitTest_helpers.cpp \
   $(srcdir)/Array_UnitTests.cpp \
+  $(srcdir)/ArrayRCP_UnitTests.cpp \
   $(srcdir)/ArrayView_UnitTests.cpp \
   $(srcdir)/ArrayConversions_UnitTests.cpp \
   $(unit_test_common_sources) \
@@ -416,6 +418,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ArrayConversions_UnitTests.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ArrayRCP_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ArrayRCP_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ArrayView_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ArrayView_test.Po@am__quote@
@@ -585,6 +588,20 @@ Array_UnitTests.obj: $(srcdir)/Array_UnitTests.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Array_UnitTests.cpp' object='Array_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Array_UnitTests.obj `if test -f '$(srcdir)/Array_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/Array_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Array_UnitTests.cpp'; fi`
+
+ArrayRCP_UnitTests.o: $(srcdir)/ArrayRCP_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ArrayRCP_UnitTests.o -MD -MP -MF $(DEPDIR)/ArrayRCP_UnitTests.Tpo -c -o ArrayRCP_UnitTests.o `test -f '$(srcdir)/ArrayRCP_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ArrayRCP_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ArrayRCP_UnitTests.Tpo $(DEPDIR)/ArrayRCP_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ArrayRCP_UnitTests.cpp' object='ArrayRCP_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ArrayRCP_UnitTests.o `test -f '$(srcdir)/ArrayRCP_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ArrayRCP_UnitTests.cpp
+
+ArrayRCP_UnitTests.obj: $(srcdir)/ArrayRCP_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ArrayRCP_UnitTests.obj -MD -MP -MF $(DEPDIR)/ArrayRCP_UnitTests.Tpo -c -o ArrayRCP_UnitTests.obj `if test -f '$(srcdir)/ArrayRCP_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ArrayRCP_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ArrayRCP_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/ArrayRCP_UnitTests.Tpo $(DEPDIR)/ArrayRCP_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/ArrayRCP_UnitTests.cpp' object='ArrayRCP_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o ArrayRCP_UnitTests.obj `if test -f '$(srcdir)/ArrayRCP_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/ArrayRCP_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ArrayRCP_UnitTests.cpp'; fi`
 
 ArrayView_UnitTests.o: $(srcdir)/ArrayView_UnitTests.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT ArrayView_UnitTests.o -MD -MP -MF $(DEPDIR)/ArrayView_UnitTests.Tpo -c -o ArrayView_UnitTests.o `test -f '$(srcdir)/ArrayView_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/ArrayView_UnitTests.cpp

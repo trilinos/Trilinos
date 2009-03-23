@@ -3,13 +3,14 @@
 #include "Teuchos_ArrayRCP.hpp"
 #include "Teuchos_implicit_cast.hpp"
 #include "Teuchos_as.hpp"
-
+#include "Teuchos_getRawPtr.hpp"
 
 namespace {
 
 using ArrayUnitTestHelpers::n;
 using ArrayUnitTestHelpers::generateArray;
 
+using Teuchos::getRawPtr;
 using Teuchos::as;
 using Teuchos::null;
 using Teuchos::ArrayRCP;
@@ -24,6 +25,7 @@ using Teuchos::RCP_STRONG;
 using Teuchos::RCP_WEAK;
 using Teuchos::RCP_STRENGTH_INVALID;
 using Teuchos::implicit_ptr_cast;
+using Teuchos::getRawPtr;
 
 
 //
@@ -206,6 +208,34 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, danglingArrayView, T )
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, getRawPtr, T )
+{
+  ArrayRCP<const T> cptr;
+  ArrayRCP<T> ptr;
+  TEST_EQUALITY_CONST( getRawPtr(cptr), (const T*)NULL );
+  TEST_EQUALITY_CONST( getRawPtr(ptr), (T*)NULL );
+  cptr = arcp<T>(n);
+  ptr  = arcp<T>(n);
+  TEST_EQUALITY( getRawPtr(cptr), &cptr[0]);
+  TEST_EQUALITY( getRawPtr(ptr),  &ptr[0] );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CPtr, getRawPtr, T )
+{
+  const T *cptr = NULL;
+  T *ptr = NULL;
+  TEST_EQUALITY_CONST( getRawPtr(cptr), (const T*)NULL );
+  TEST_EQUALITY_CONST( getRawPtr(ptr),  (T*)NULL );
+  cptr = new T[n];
+  ptr  = new T[n];
+  TEST_EQUALITY( getRawPtr(cptr), &cptr[0]);
+  TEST_EQUALITY( getRawPtr(ptr),  &ptr[0] );
+  delete [] cptr;
+  delete [] ptr;
+}
+
+
 #ifdef TEUCHOS_DEBUG
 
 
@@ -263,6 +293,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, implicitConversions, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, weakDelete, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, danglingArrayView, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, getRawPtr, T) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CPtr, getRawPtr, T) \
   DEBUG_UNIT_TEST_GROUP(T)
 
 
