@@ -16,6 +16,10 @@
 #include <iohb.h>
 #endif
 
+// FINISH: add tests where:
+//            node has local rows, some with no graph entries
+//            node has local rows, none with graph entries
+
 namespace {
 
   using Teuchos::as;
@@ -236,58 +240,61 @@ namespace {
     // create a Map, one row per processor
     const Teuchos_Ordinal indexBase = 0;
     const Teuchos_Ordinal numLocal = 1;
-    Map<LO,GO> rmap(INVALID,numLocal,indexBase,comm);
-    GO myrowind = rmap.getGlobalIndex(0);
-    // specify the column map to control ordering
-    // construct tridiagonal graph
-    Array<GO> ginds(0);
-    if (myImageID==0) {
-      ginds.resize(2);
-      ginds[0] = myrowind;
-      ginds[1] = myrowind+1;
+    for (int s=0; s<2; ++s) {
+      bool StaticProfile = (s == 0);
+      Map<LO,GO> rmap(INVALID,numLocal,indexBase,comm);
+      GO myrowind = rmap.getGlobalIndex(0);
+      // specify the column map to control ordering
+      // construct tridiagonal graph
+      Array<GO> ginds(0);
+      if (myImageID==0) {
+        ginds.resize(2);
+        ginds[0] = myrowind;
+        ginds[1] = myrowind+1;
+      }
+      else if (myImageID==numImages-1) {
+        ginds.resize(2);
+        ginds[0] = myrowind-1;
+        ginds[1] = myrowind;
+      }
+      else {
+        ginds.resize(3);
+        ginds[0] = myrowind-1;
+        ginds[1] = myrowind;
+        ginds[2] = myrowind+1;
+      }
+      Array<LO> linds(ginds.size());
+      for (unsigned int i=0; i<linds.size(); ++i) linds[i] = i;
+      Map<LO,GO> cmap(INVALID,ginds,0,comm);
+      GRAPH trigraph(rmap,cmap,3,StaticProfile);
+      Array<GO> GCopy(4); Array<LO> LCopy(4);
+      ArrayView<const GO> GView; ArrayView<const LO> LView;
+      Teuchos_Ordinal numindices;
+      // at this point, there are no global or local indices, but views and copies should succeed
+      trigraph.extractMyRowCopy(0,LCopy,numindices);
+      trigraph.extractMyRowConstView(0,LView);
+      trigraph.extractGlobalRowCopy(myrowind,GCopy,numindices);
+      trigraph.extractGlobalRowConstView(myrowind,GView);
+      trigraph.insertGlobalIndices(myrowind,ginds);
+      trigraph.fillComplete();
+      // check that inserting entries throws
+      {
+        Array<LO> zero(0);
+        TEST_THROW( trigraph.insertMyIndices(0,zero()), std::runtime_error );
+        TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
+      }
+      // check for throws and no-throws/values
+      TEST_THROW( trigraph.extractGlobalRowConstView(myrowind,GView    ), std::runtime_error );
+      TEST_THROW( trigraph.extractMyRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
+      TEST_THROW( trigraph.extractGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
+      TEST_NOTHROW( trigraph.extractMyRowConstView(0,LView) );
+      TEST_COMPARE_ARRAYS( LView, linds );
+      TEST_NOTHROW( trigraph.extractMyRowCopy(0,LCopy,numindices) );
+      TEST_COMPARE_ARRAYS( LCopy(0,numindices), linds );
+      TEST_NOTHROW( trigraph.extractGlobalRowCopy(myrowind,GCopy,numindices) );
+      TEST_COMPARE_ARRAYS( GCopy(0,numindices), ginds );
+      STD_TESTS(trigraph);
     }
-    else if (myImageID==numImages-1) {
-      ginds.resize(2);
-      ginds[0] = myrowind-1;
-      ginds[1] = myrowind;
-    }
-    else {
-      ginds.resize(3);
-      ginds[0] = myrowind-1;
-      ginds[1] = myrowind;
-      ginds[2] = myrowind+1;
-    }
-    Array<LO> linds(ginds.size());
-    for (unsigned int i=0; i<linds.size(); ++i) linds[i] = i;
-    Map<LO,GO> cmap(INVALID,ginds,0,comm);
-    GRAPH trigraph(rmap,cmap,3);
-    Array<GO> GCopy(4); Array<LO> LCopy(4);
-    ArrayView<const GO> GView; ArrayView<const LO> LView;
-    Teuchos_Ordinal numindices;
-    // at this point, there are no global or local indices, but views and copies should succeed
-    trigraph.extractMyRowCopy(0,LCopy,numindices);
-    trigraph.extractMyRowConstView(0,LView);
-    trigraph.extractGlobalRowCopy(myrowind,GCopy,numindices);
-    trigraph.extractGlobalRowConstView(myrowind,GView);
-    trigraph.insertGlobalIndices(myrowind,ginds);
-    trigraph.fillComplete();
-    // check that inserting entries throws
-    {
-      Array<LO> zero(0);
-      TEST_THROW( trigraph.insertMyIndices(0,zero()), std::runtime_error );
-      TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
-    }
-    // check for throws and no-throws/values
-    TEST_THROW( trigraph.extractGlobalRowConstView(myrowind,GView    ), std::runtime_error );
-    TEST_THROW( trigraph.extractMyRowCopy(    0       ,LCopy(0,1),numindices), std::runtime_error );
-    TEST_THROW( trigraph.extractGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
-    TEST_NOTHROW( trigraph.extractMyRowConstView(0,LView) );
-    TEST_COMPARE_ARRAYS( LView, linds );
-    TEST_NOTHROW( trigraph.extractMyRowCopy(0,LCopy,numindices) );
-    TEST_COMPARE_ARRAYS( LCopy(0,numindices), linds );
-    TEST_NOTHROW( trigraph.extractGlobalRowCopy(myrowind,GCopy,numindices) );
-    TEST_COMPARE_ARRAYS( GCopy(0,numindices), ginds );
-    STD_TESTS(trigraph);
     // All procs fail if any node fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
@@ -306,77 +313,80 @@ namespace {
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     if (numImages < 3) return;
-    // create a Map, one row per processor
-    const Teuchos_Ordinal indexBase = 0;
-    const Teuchos_Ordinal numLocal = 1;
-    Map<LO,GO> map(INVALID,numLocal,indexBase,comm);
-    GO myrowind = map.getGlobalIndex(0);
-    {
-      // create a diagonal graph, where the graph entries are contributed by a single off-node contribution, no filtering
-      // let node i contribute to row i+1, where node the last node contributes to row 0
-      GRAPH diaggraph(map,1);
-      GO grow = myImageID+1;
-      if (grow == numImages) {
-        grow = 0;
+    for (int s=0; s<2; ++s) {
+      bool StaticProfile = (s == 0);
+      // create a Map, one row per processor
+      const Teuchos_Ordinal indexBase = 0;
+      const Teuchos_Ordinal numLocal = 1;
+      Map<LO,GO> map(INVALID,numLocal,indexBase,comm);
+      GO myrowind = map.getGlobalIndex(0);
+      {
+        // create a diagonal graph, where the graph entries are contributed by a single off-node contribution, no filtering
+        // let node i contribute to row i+1, where node the last node contributes to row 0
+        GRAPH diaggraph(map,1,StaticProfile);
+        GO grow = myImageID+1;
+        if (grow == numImages) {
+          grow = 0;
+        }
+        Array<GO> colinds(1);
+        colinds[0] = grow;
+        diaggraph.insertGlobalIndices(grow,colinds());
+        // before the fillComplete() (and the associated globalAssemble()), there should be no local entries
+        ArrayView<const GO> myrow_gbl;
+        diaggraph.extractGlobalRowConstView(myrowind,myrow_gbl);
+        TEST_EQUALITY_CONST( myrow_gbl.size(), 0 );
+        TEST_NOTHROW( diaggraph.fillComplete() );
+        // after fillComplete(), there should be a single entry on my row, corresponding to the diagonal
+        ArrayView<const LO> myrow_lcl;
+        diaggraph.extractMyRowConstView(0,myrow_lcl);
+        TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
+        if (myrow_lcl.size() == 1) {
+          TEST_EQUALITY( diaggraph.getColMap().getGlobalIndex(myrow_lcl[0]), myrowind );
+        }
+        // also, the row map and column map should be equivalent
+        TEST_EQUALITY_CONST( diaggraph.getRowMap().isSameAs(diaggraph.getColMap()), true );
+        TEST_EQUALITY( diaggraph.numGlobalDiagonals(), numImages );
+        TEST_EQUALITY( diaggraph.numMyDiagonals(), 1 );
+        STD_TESTS(diaggraph);
       }
-      Array<GO> colinds(1);
-      colinds[0] = grow;
-      diaggraph.insertGlobalIndices(grow,colinds());
-      // before the fillComplete() (and the associated globalAssemble()), there should be no local entries
-      ArrayView<const GO> myrow_gbl;
-      diaggraph.extractGlobalRowConstView(myrowind,myrow_gbl);
-      TEST_EQUALITY_CONST( myrow_gbl.size(), 0 );
-      TEST_NOTHROW( diaggraph.fillComplete() );
-      // after fillComplete(), there should be a single entry on my row, corresponding to the diagonal
-      ArrayView<const LO> myrow_lcl;
-      diaggraph.extractMyRowConstView(0,myrow_lcl);
-      TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
-      if (myrow_lcl.size() == 1) {
-        TEST_EQUALITY( diaggraph.getColMap().getGlobalIndex(myrow_lcl[0]), myrowind );
+      {
+        // create a next-door-neighbor graph (tridiagonal plus corners), where the graph entries are contributed by single off-node contribution, no filtering
+        // let node i add the contributions for column i of the graph: (i-1,i), (i,i), (i+1,i)
+        // require at least two procs
+        GRAPH trigraph(map,3,StaticProfile);
+        Array<GO> colinds(1), grows(3);
+        colinds[0] = myImageID;
+        grows[0] = (numImages+myImageID-1) % numImages;
+        grows[1] = (numImages+myImageID  ) % numImages;
+        grows[2] = (numImages+myImageID+1) % numImages;
+        trigraph.insertGlobalIndices(grows[0],colinds());
+        trigraph.insertGlobalIndices(grows[1],colinds());
+        trigraph.insertGlobalIndices(grows[2],colinds());
+        // before the fillComplete() (and the associated globalAssemble()), there should be a single local entry
+        ArrayView<const GO> myrow_gbl;
+        trigraph.extractGlobalRowConstView(myrowind,myrow_gbl);
+        TEST_EQUALITY_CONST( myrow_gbl.size(), 1 );
+        TEST_NOTHROW( trigraph.fillComplete() );
+        // after fillComplete(), there should be three entries on my row
+        ArrayView<const LO> myrow_lcl;
+        trigraph.extractMyRowConstView(0,myrow_lcl);
+        TEST_EQUALITY_CONST( myrow_lcl.size(), 3 );
+        if (myrow_lcl.size() == 3) {
+          sort(grows.begin(),grows.end());
+          Teuchos_Ordinal numinds;
+          Array<GO> inds(4);
+          TEST_THROW(   trigraph.extractGlobalRowCopy(myrowind,inds(0,2),numinds), std::runtime_error );
+          TEST_NOTHROW( trigraph.extractGlobalRowCopy(myrowind,inds(0,3),numinds) );
+          TEST_NOTHROW( trigraph.extractGlobalRowCopy(myrowind,inds(0,4),numinds) );
+          TEST_EQUALITY(numinds, 3);
+          sort(inds.begin(),inds.begin()+numinds);
+          TEST_COMPARE_ARRAYS( inds(0,3), grows );
+        }
+        TEST_EQUALITY_CONST( trigraph.getRowMap().isSameAs(trigraph.getColMap()), false );
+        TEST_EQUALITY( trigraph.numGlobalDiagonals(), numImages );
+        TEST_EQUALITY( trigraph.numMyDiagonals(), 1 );
+        STD_TESTS(trigraph);
       }
-      // also, the row map and column map should be equivalent
-      TEST_EQUALITY_CONST( diaggraph.getRowMap().isSameAs(diaggraph.getColMap()), true );
-      TEST_EQUALITY( diaggraph.numGlobalDiagonals(), numImages );
-      TEST_EQUALITY( diaggraph.numMyDiagonals(), 1 );
-      STD_TESTS(diaggraph);
-    }
-    {
-      // create a next-door-neighbor graph (tridiagonal plus corners), where the graph entries are contributed by single off-node contribution, no filtering
-      // let node i add the contributions for column i of the graph: (i-1,i), (i,i), (i+1,i)
-      // require at least two procs
-      GRAPH trigraph(map,3);
-      Array<GO> colinds(1), grows(3);
-      colinds[0] = myImageID;
-      grows[0] = (numImages+myImageID-1) % numImages;
-      grows[1] = (numImages+myImageID  ) % numImages;
-      grows[2] = (numImages+myImageID+1) % numImages;
-      trigraph.insertGlobalIndices(grows[0],colinds());
-      trigraph.insertGlobalIndices(grows[1],colinds());
-      trigraph.insertGlobalIndices(grows[2],colinds());
-      // before the fillComplete() (and the associated globalAssemble()), there should be a single local entry
-      ArrayView<const GO> myrow_gbl;
-      trigraph.extractGlobalRowConstView(myrowind,myrow_gbl);
-      TEST_EQUALITY_CONST( myrow_gbl.size(), 1 );
-      TEST_NOTHROW( trigraph.fillComplete() );
-      // after fillComplete(), there should be three entries on my row
-      ArrayView<const LO> myrow_lcl;
-      trigraph.extractMyRowConstView(0,myrow_lcl);
-      TEST_EQUALITY_CONST( myrow_lcl.size(), 3 );
-      if (myrow_lcl.size() == 3) {
-        sort(grows.begin(),grows.end());
-        Teuchos_Ordinal numinds;
-        Array<GO> inds(4);
-        TEST_THROW(   trigraph.extractGlobalRowCopy(myrowind,inds(0,2),numinds), std::runtime_error );
-        TEST_NOTHROW( trigraph.extractGlobalRowCopy(myrowind,inds(0,3),numinds) );
-        TEST_NOTHROW( trigraph.extractGlobalRowCopy(myrowind,inds(0,4),numinds) );
-        TEST_EQUALITY(numinds, 3);
-        sort(inds.begin(),inds.begin()+numinds);
-        TEST_COMPARE_ARRAYS( inds(0,3), grows );
-      }
-      TEST_EQUALITY_CONST( trigraph.getRowMap().isSameAs(trigraph.getColMap()), false );
-      TEST_EQUALITY( trigraph.numGlobalDiagonals(), numImages );
-      TEST_EQUALITY( trigraph.numMyDiagonals(), 1 );
-      STD_TESTS(trigraph);
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;

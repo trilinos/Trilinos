@@ -32,6 +32,7 @@
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Array.hpp>
+#include <Teuchos_getRawPtr.hpp>
 
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_CrsGraphData.hpp"
@@ -39,7 +40,7 @@
 
 namespace Tpetra 
 {
-  
+
   // forward declaration
   template <class S, class LO, class GO>
   class CrsMatrix;
@@ -373,8 +374,6 @@ namespace Tpetra
   template <class LocalOrdinal, class GlobalOrdinal>
   void CrsGraph<LocalOrdinal,GlobalOrdinal>::allocateIndices(bool local)
   {
-    TEST_FOR_EXCEPT( isStaticProfile() == true );
-
     // this is a protected function, only callable by us. if it was called incorrectly, it is our fault.
     TEST_FOR_EXCEPTION(indicesAreLocal() && local==false, std::logic_error,
         Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
@@ -383,34 +382,69 @@ namespace Tpetra
     if (indicesAreAllocated()) {
       return;
     }
-    if (local)  // allocate local indices in graphData_->colLInds_
-    {
-      typename Teuchos::Array<LocalOrdinal>::iterator    nnz = graphData_->rowNumToAlloc_.begin(),
-                                                      nnzend = graphData_->rowNumToAlloc_.end();
-      graphData_->indicesAreLocal_ = true;
-      graphData_->colLInds_.resize(numLocalRows());
-      typename Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> >::iterator rinds  = graphData_->colLInds_.begin();
-      for (; nnz != nnzend; ++nnz, ++rinds) {
-        if (*nnz > 0) {
-          (*rinds) = Teuchos::arcp<LocalOrdinal>(*nnz);
+    graphData_->indicesAreLocal_  =  local;
+    graphData_->indicesAreGlobal_ = !local;
+    if (isStaticProfile()) {
+      typename Teuchos::Array<LocalOrdinal>::iterator    
+        ntaptr = graphData_->rowNumToAlloc_.begin(),
+        ntaend = graphData_->rowNumToAlloc_.end();
+      Teuchos_Ordinal ntasum = std::accumulate(ntaptr, ntaend, 0);
+      Teuchos_Ordinal sofar = 0, r = 0;
+      if (local) {
+        graphData_->colLIndsPtrs_.resize(numLocalRows());
+        if (ntasum) {
+          graphData_->contigColLInds_ = Teuchos::arcp<LocalOrdinal>(ntasum);
+          while (ntaptr != ntaend) {
+            graphData_->colLIndsPtrs_[r++] = graphData_->contigColLInds_(sofar,*ntaptr).begin();
+            sofar += (*ntaptr++);
+          }
         }
       }
-    }
-    else        // allocate global indices in graphData_->colGInds_
-    {
-      typename Teuchos::Array<LocalOrdinal>::iterator    nnz = graphData_->rowNumToAlloc_.begin(),
-                                                      nnzend = graphData_->rowNumToAlloc_.end();
-      graphData_->indicesAreGlobal_ = true;
-      graphData_->colGInds_.resize(numLocalRows());
-      typename Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> >::iterator rinds  = graphData_->colGInds_.begin();
-      for (; nnz != nnzend; ++nnz, ++rinds) {
-        if (*nnz > 0) {
-          (*rinds) = Teuchos::arcp<GlobalOrdinal>(*nnz);
+      else {
+        graphData_->colGIndsPtrs_.resize(numLocalRows());
+        if (ntasum) {
+          graphData_->contigColGInds_ = Teuchos::arcp<GlobalOrdinal>(ntasum);
+          while (ntaptr != ntaend) {
+            graphData_->colGIndsPtrs_[r++] = graphData_->contigColGInds_(sofar,*ntaptr).begin();
+            sofar += (*ntaptr++);
+          }
         }
       }
+#ifdef TPETRA_DEBUG
+      TEST_FOR_EXCEPT(sofar != ntasum, std::logic_error, 
+          Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
+#endif
     }
-    graphData_->rowNumToAlloc_.clear();
-    graphData_->indicesAreAllocated_ = true;    
+    else {
+      if (local)  // allocate local indices in graphData_->colLInds_
+      {
+        typename Teuchos::Array<LocalOrdinal>::iterator 
+          ntaptr = graphData_->rowNumToAlloc_.begin(),
+          ntaend = graphData_->rowNumToAlloc_.end();
+        graphData_->colLInds_.resize(numLocalRows());
+        typename Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> >::iterator rinds  = graphData_->colLInds_.begin();
+        for (; ntaptr != ntaend; ++ntaptr, ++rinds) {
+          if (*ntaptr > 0) {
+            (*rinds) = Teuchos::arcp<LocalOrdinal>(*ntaptr);
+          }
+        }
+      }
+      else        // allocate global indices in graphData_->colGInds_
+      {
+        typename Teuchos::Array<LocalOrdinal>::iterator 
+          ntaptr = graphData_->rowNumToAlloc_.begin(),
+          ntaend = graphData_->rowNumToAlloc_.end();
+        graphData_->colGInds_.resize(numLocalRows());
+        typename Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> >::iterator rinds  = graphData_->colGInds_.begin();
+        for (; ntaptr != ntaend; ++ntaptr, ++rinds) {
+          if (*ntaptr > 0) {
+            (*rinds) = Teuchos::arcp<GlobalOrdinal>(*ntaptr);
+          }
+        }
+      }
+      graphData_->rowNumToAlloc_.clear();
+      graphData_->indicesAreAllocated_ = true;    
+    }
   }
 
   template <class LocalOrdinal, class GlobalOrdinal>
@@ -481,16 +515,17 @@ namespace Tpetra
         Teuchos::typeName(*this) << "::extractMyRowConstView(): local indices do not exist.");
     TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(LocalRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::extractMyRowConstView(LocalRow,...): LocalRow (== " << LocalRow << ") is not valid on this node.");
-    if (indicesAreAllocated() == false) {
+    Teuchos_Ordinal rnnz = RNNZ(LocalRow);
+    if (indicesAreAllocated() == false || rnnz == 0) {
       indices = Teuchos::ArrayView<const LocalOrdinal>(Teuchos::null);
       return;
     }
-    if (isStorageOptimized() == true) {
-      TEST_FOR_EXCEPT(true); // not implemented yet
-      // get pointer from a dereferencing of &*colIndsPtrs_[LocalRow], size from RNNZ
+    // RNNZ > 0, so there must be something allocated
+    if (isStorageOptimized() == true || isStaticProfile() == true) {
+      indices = Teuchos::arrayView<const LocalOrdinal>(Teuchos::getRawPtr(graphData_->colLIndsPtrs_[LocalRow]),rnnz);
     }
     else {
-      indices = graphData_->colLInds_[LocalRow](0,graphData_->rowNumEntries_[LocalRow]);
+      indices = graphData_->colLInds_[LocalRow](0,rnnz);
     }
     return;
   }
@@ -503,16 +538,17 @@ namespace Tpetra
     Teuchos_Ordinal lrow = getRowMap().getLocalIndex(GlobalRow);
     TEST_FOR_EXCEPTION(lrow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
         Teuchos::typeName(*this) << "::extractGlobalRowConstView(GlobalRow,...): GlobalRow (== " << GlobalRow << ") does not belong to this node.");
-    if (indicesAreAllocated() == false || RNNZ(lrow) == 0) {
+    Teuchos_Ordinal rnnz = RNNZ(lrow);
+    if (indicesAreAllocated() == false || rnnz == 0) {
       indices = Teuchos::ArrayView<const GlobalOrdinal>(Teuchos::null);
       return;
     }
-    if (isStorageOptimized() == true) {
-      TEST_FOR_EXCEPT(true); // not implemented yet
-      // get pointer from a dereferencing of &*colIndsPtrs_[lrow], size from RNNZ
+    // RNNZ > 0, so there must be something allocated
+    if (isStorageOptimized() == true || isStaticProfile() == true) {
+      indices = Teuchos::arrayView<const GlobalOrdinal>(Teuchos::getRawPtr(graphData_->colGIndsPtrs_[lrow]),rnnz);
     }
     else {
-      indices = graphData_->colGInds_[lrow](0,graphData_->rowNumEntries_[lrow]);
+      indices = graphData_->colGInds_[lrow](0,rnnz);
     }
     return;
   }
@@ -524,16 +560,17 @@ namespace Tpetra
         Teuchos::typeName(*this) << "::extractMyRowView(): local indices do not exist.");
     TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(LocalRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::extractMyRowView(LocalRow,...): LocalRow (== " << LocalRow << ") is not valid on this node.");
-    if (indicesAreAllocated() == false || RNNZ(LocalRow) == 0) {
+    Teuchos_Ordinal rnnz = RNNZ(LocalRow);
+    if (indicesAreAllocated() == false || rnnz == 0) {
       indices = Teuchos::ArrayView<LocalOrdinal>(Teuchos::null);
       return;
     }
-    if (isStorageOptimized() == true) {
-      TEST_FOR_EXCEPT(true); // not implemented yet
-      // get pointer from a dereferencing of &*colIndsPtrs_[LocalRow], size from RNNZ
+    // RNNZ > 0, so there must be something allocated
+    if (isStorageOptimized() == true || isStaticProfile() == true) {
+      indices = Teuchos::arrayView<LocalOrdinal>(Teuchos::getRawPtr(graphData_->colLIndsPtrs_[LocalRow]),rnnz);
     }
     else {
-      indices = graphData_->colLInds_[LocalRow](0,graphData_->rowNumEntries_[LocalRow]);
+      indices = graphData_->colLInds_[LocalRow](0,rnnz);
     }
     return;
   }
@@ -546,16 +583,17 @@ namespace Tpetra
     Teuchos_Ordinal lrow = getRowMap().getLocalIndex(GlobalRow);
     TEST_FOR_EXCEPTION(lrow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
         Teuchos::typeName(*this) << "::extractGlobalRowView(GlobalRow,...): GlobalRow (== " << GlobalRow << ") does not belong to this node.");
-    if (indicesAreAllocated() == false || RNNZ(lrow) == 0) {
+    Teuchos_Ordinal rnnz = RNNZ(lrow);
+    if (indicesAreAllocated() == false || rnnz == 0) {
       indices = Teuchos::ArrayView<GlobalOrdinal>(Teuchos::null);
       return;
     }
-    if (isStorageOptimized() == true) {
-      TEST_FOR_EXCEPT(true); // not implemented yet
-      // get pointer from a dereferencing of &*colIndsPtrs_[lrow], size from RNNZ
+    // RNNZ > 0, so there must be something allocated
+    if (isStorageOptimized() == true || isStaticProfile() == true) {
+      indices = Teuchos::arrayView<GlobalOrdinal>(Teuchos::getRawPtr(graphData_->colGIndsPtrs_[lrow]),rnnz);
     }
     else {
-      indices = graphData_->colGInds_[lrow](0,graphData_->rowNumEntries_[lrow]);
+      indices = graphData_->colGInds_[lrow](0,rnnz);
     }
     return;
   }
@@ -1498,9 +1536,7 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal>
   bool CrsGraph<LocalOrdinal,GlobalOrdinal>::indicesAreAllocated() const
-  {
-    return graphData_->indicesAreAllocated_;
-  }
+  { return graphData_->indicesAreAllocated_; }
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
