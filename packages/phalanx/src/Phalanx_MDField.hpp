@@ -73,8 +73,7 @@ namespace PHX {
 		      size_type index7);
 
     DataT& operator()(size_type index1, size_type index2, size_type index3, 
-		      size_type index4, size_type index5, 
-		      size_type index6);
+		      size_type index4, size_type index5, size_type index6);
     
     DataT& operator()(size_type index1, size_type index2, size_type index3, 
 		      size_type index4, size_type index5);
@@ -82,8 +81,7 @@ namespace PHX {
     DataT& operator()(size_type index1, size_type index2, size_type index3, 
 		      size_type index4);
     
-    DataT& operator()(size_type index1, size_type index2,
-		      size_type index3);
+    DataT& operator()(size_type index1, size_type index2, size_type index3);
     
     DataT& operator()(size_type index1, size_type index2);
     
