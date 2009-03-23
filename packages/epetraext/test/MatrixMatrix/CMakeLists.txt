@@ -6,6 +6,7 @@ INCLUDE(PackageCopyFilesToBinaryDir)
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   MatrixMatrix_test
   SOURCES cxx_main.cpp
+  ARGS -v
   COMM serial mpi
   )
 

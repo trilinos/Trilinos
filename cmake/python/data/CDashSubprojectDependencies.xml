@@ -496,7 +496,7 @@
   <SubProject name="PyTrilinos">
     <Dependency name="Teuchos" type="LO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="LO"/>
     <Dependency name="Tpetra" type="ILO"/>

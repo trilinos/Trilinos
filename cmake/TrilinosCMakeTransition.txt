@@ -162,11 +162,12 @@ Package: Triutils
 
 Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
-Status: Basic support for libraries but only a few tests and examples.
+Status: Code and all tests and examples listed in the definition file have been
+  converted and run.
 
-Final Certification Date: [???]
+Final Certification Date: 3/17/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests are converted and match auto tools results.
 
 -------------------------------------------------------------------------------
 
@@ -186,12 +187,15 @@ Package: EpetraExt
 
 Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
-Status: Has basic CMake support for libraries and has a few tests and
-exmaples.
+Status: Code and all tests and examples listed in the definition file have been
+  converted and run. Several tests that were only built are now being built under
+  cmake. Not all of those builds could be sufficiently tested since the options 
+  aren't all fully supported on my machine. Though they were simple enough that
+  I'm fairly sure that the cmakification is right.
 
-Final Certification Date: [???]
+Final Certification Date: 3/23/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests are converted and match auto tools results.
 
 -------------------------------------------------------------------------------
 
