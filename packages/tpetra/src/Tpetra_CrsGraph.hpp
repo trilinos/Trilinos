@@ -383,10 +383,10 @@ namespace Tpetra
     if (indicesAreAllocated()) {
       return;
     }
-    typename Teuchos::Array<LocalOrdinal>::iterator    nnz = graphData_->rowNumToAlloc_.begin(),
-                                                    nnzend = graphData_->rowNumToAlloc_.end();
     if (local)  // allocate local indices in graphData_->colLInds_
     {
+      typename Teuchos::Array<LocalOrdinal>::iterator    nnz = graphData_->rowNumToAlloc_.begin(),
+                                                      nnzend = graphData_->rowNumToAlloc_.end();
       graphData_->indicesAreLocal_ = true;
       graphData_->colLInds_.resize(numLocalRows());
       typename Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> >::iterator rinds  = graphData_->colLInds_.begin();
@@ -398,6 +398,8 @@ namespace Tpetra
     }
     else        // allocate global indices in graphData_->colGInds_
     {
+      typename Teuchos::Array<LocalOrdinal>::iterator    nnz = graphData_->rowNumToAlloc_.begin(),
+                                                      nnzend = graphData_->rowNumToAlloc_.end();
       graphData_->indicesAreGlobal_ = true;
       graphData_->colGInds_.resize(numLocalRows());
       typename Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> >::iterator rinds  = graphData_->colGInds_.begin();
@@ -407,8 +409,6 @@ namespace Tpetra
         }
       }
     }
-    nnz = Teuchos::null;
-    nnzend = Teuchos::null;
     graphData_->rowNumToAlloc_.clear();
     graphData_->indicesAreAllocated_ = true;    
   }
