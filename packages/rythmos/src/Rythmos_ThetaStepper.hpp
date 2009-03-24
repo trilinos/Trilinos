@@ -230,6 +230,8 @@ private:
   Scalar dt_;
   int numSteps_;
 
+  Scalar theta_;
+
   RCP<Rythmos::SingleResidualModelEvaluator<Scalar> >  neModel_;
 
   RCP<Teuchos::ParameterList> parameterList_;
@@ -281,7 +283,8 @@ ThetaStepper<Scalar>::ThetaStepper()
    t_(-1.0),
    t_old_(0.0),
    dt_(0.0),
-   numSteps_(0)
+   numSteps_(0),
+   theta_(-1.0)
 {}
 
 
@@ -295,7 +298,8 @@ ThetaStepper<Scalar>::ThetaStepper(
    t_(-1.0),
    t_old_(0.0),
    dt_(0.0),
-   numSteps_(0)
+   numSteps_(0),
+   theta_(-1.0)
 {
   setModel(model);
   setSolver(solver);
