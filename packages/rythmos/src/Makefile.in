@@ -305,6 +305,7 @@ CORE_H = \
   $(srcdir)/Rythmos_StepperBuilder.hpp\
   $(srcdir)/Rythmos_StepperHelpers.hpp\
   $(srcdir)/Rythmos_StepperSupportTypes.hpp\
+  $(srcdir)/Rythmos_ThetaStepper.hpp\
   $(srcdir)/Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp\
   $(srcdir)/Rythmos_TimeRange.hpp\
   $(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp\

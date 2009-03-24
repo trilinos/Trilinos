@@ -6,6 +6,11 @@ INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(UnitTest ConvergenceTest)
 
+ASSERT_DEFINED( ${PACKAGE_NAME}_ENABLE_Experimental )
+IF ( ${PACKAGE_NAME}_ENABLE_Experimental )
+  ADD_SUBDIRECTORIES(ThetaStepper)
+ENDIF()
+
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Stratimikos)
 IF (${PACKAGE_NAME}_ENABLE_Stratimikos)
   ADD_SUBDIRECTORIES(complicatedExample)

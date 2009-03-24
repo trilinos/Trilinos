@@ -13,17 +13,11 @@ PACKAGE(Rythmos)
 # B) Set up package-specific options
 #
 
-#
-# C) Add the libraries, tests, and examples
-#
-
-ADD_SUBDIRECTORY(src)
-
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
-
-PACKAGE_ADD_TEST_DIRECTORIES(test)
-
-ADD_SUBDIRECTORY(adapters)
+ADD_OPTION_AND_DEFINE( ${PACKAGE_NAME}_ENABLE_Experimental
+  HAVE_RYTHMOS_EXPERIMENTAL
+  "Enables Rythmos experimental features"
+  OFF
+  )
 
 #
 # GAASP options:
@@ -39,6 +33,19 @@ ADD_SUBDIRECTORY(adapters)
 #  DEP_OPTIONS_NAMES ${PACKAGE_NAME}_ENABLE_GAASP
 #  DOCSTR "Enables internal TPL libraries for GAASP"
 #  )
+
+
+#
+# C) Add the libraries, tests, and examples
+#
+
+ADD_SUBDIRECTORY(src)
+
+PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+
+PACKAGE_ADD_TEST_DIRECTORIES(test)
+
+ADD_SUBDIRECTORY(adapters)
 
 #
 # D) Do standard postprocessing

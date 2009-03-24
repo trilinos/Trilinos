@@ -11,3 +11,7 @@
 
 /* Define if want to build with teuchos enabled */
 #cmakedefine HAVE_RYTHMOS_TEUCHOS_BOOST
+
+/* Define if we want Experimental features */
+#cmakedefine HAVE_RYTHMOS_EXPERIMENTAL
+
