@@ -19,7 +19,15 @@ PACKAGE_ADD_EXECUTABLE(
 
 PACKAGE_ADD_EXECUTABLE(
   test_tpi_sum
-  COMM serial mpi
+  COMM serial
+  SOURCES test_mpi_sum.c
+  DEPLIBS pthread
+  DIRECTORY .
+  )
+
+PACKAGE_ADD_EXECUTABLE(
+  test_tpi_sum_mpi
+  COMM mpi
   SOURCES test_mpi_sum.c
   DEPLIBS pthread
   DIRECTORY .
@@ -47,7 +55,7 @@ PACKAGE_ADD_TEST(
   )
 
 PACKAGE_ADD_TEST(
-  test_tpi_sum
+  test_tpi_sum_mpi
   NAME test_tpi_sum_np1
   COMM mpi
   NUM_MPI_PROCS 1
@@ -55,7 +63,7 @@ PACKAGE_ADD_TEST(
   )
 
 PACKAGE_ADD_TEST(
-  test_tpi_sum
+  test_tpi_sum_mpi
   NAME test_tpi_sum_np2
   COMM mpi
   NUM_MPI_PROCS 2
@@ -63,7 +71,7 @@ PACKAGE_ADD_TEST(
   )
 
 PACKAGE_ADD_TEST(
-  test_tpi_sum
+  test_tpi_sum_mpi
   NAME test_tpi_sum_np4
   COMM mpi
   NUM_MPI_PROCS 4
