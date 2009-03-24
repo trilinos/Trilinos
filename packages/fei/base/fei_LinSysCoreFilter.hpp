@@ -259,11 +259,11 @@ class LinSysCoreFilter : public Filter {
 		       double CRValue,
 		       double penValue);
 
-   int storeNodalColumnCoefs(int eqn, NodeDescriptor& node,
+   int storeNodalColumnCoefs(int eqn, const NodeDescriptor& node,
 			     int fieldID, int fieldSize,
 			     double* coefs);
 
-   int storeNodalRowCoefs(NodeDescriptor& node,
+   int storeNodalRowCoefs(const NodeDescriptor& node,
 			  int fieldID, int fieldSize,
 			  double* coefs, int eqn);
 
@@ -280,24 +280,24 @@ class LinSysCoreFilter : public Filter {
                         const double* elemLoad,
                         int elemFormat);
 
-   void storeNodalSendIndex(NodeDescriptor& node, int fieldID, int col);
-   void storeNodalSendEqn(NodeDescriptor& node, int fieldID, int col,
+   void storeNodalSendIndex(const NodeDescriptor& node, int fieldID, int col);
+   void storeNodalSendEqn(const NodeDescriptor& node, int fieldID, int col,
 			  double* coefs);
-   void storeNodalSendIndices(NodeDescriptor& iNode, int iField,
-			      NodeDescriptor& jNode, int jField);
+   void storeNodalSendIndices(const NodeDescriptor& iNode, int iField,
+			      const NodeDescriptor& jNode, int jField);
 
-   void storePenNodeSendData(NodeDescriptor& iNode,
+   void storePenNodeSendData(const NodeDescriptor& iNode,
 			     int iField, int iFieldSize,
 			     double* iCoefs,
-			     NodeDescriptor& jNode,
+			     const NodeDescriptor& jNode,
 			     int jField, int jFieldSize,
 			     double* jCoefs,
 			     double penValue, double CRValue);
 
-   int storePenNodeData(NodeDescriptor& iNode,
+   int storePenNodeData(const NodeDescriptor& iNode,
 			int iField, int iFieldSize,
 			double* iCoefs,
-			NodeDescriptor& jNode,
+			const NodeDescriptor& jNode,
 			int jField, int jFieldSize,
 			double* jCoefs,
 			double penValue, double CRValue);

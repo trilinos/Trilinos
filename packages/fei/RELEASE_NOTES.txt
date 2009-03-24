@@ -530,7 +530,9 @@ July 7 2005: version 2.14.00
 
  ??? ?? ???? minor version 2.24.01
   - Fixed a couple issues of const-ness in fei::Vector_Impl and
-    fei::Matrix_Impl.
+    fei::Matrix_Impl, and several other APIs.
   - Removed an unused argument (reducer) from
     fei::Trilinos_Helpers::create_Epetra_CrsGraph.
+  - Added matrix diagonal contribution for FiniteElementData interface.
+    (Not yet implemented for other objects.)
 

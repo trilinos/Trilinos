@@ -321,7 +321,7 @@ int SNL_FEI_Structure::getEqnNumber(int nodeNumber, int fieldID)
 
   int eqnNumber;
 
-  NodeDescriptor* node = NULL;
+  const NodeDescriptor* node = NULL;
   CHK_ERR( nodeDatabase_->getNodeWithNumber(nodeNumber, node) );
 
   bool hasField = node->getFieldEqnNumber(fieldID, eqnNumber);
@@ -792,7 +792,7 @@ bool SNL_FEI_Structure::isInLocalElement(int nodeNumber)
   //element.
   if (numProcs_ < 2) return(true);
 
-  NodeDescriptor* node = NULL;
+  const NodeDescriptor* node = NULL;
   int err = nodeDatabase_->getNodeWithNumber(nodeNumber, node);
   if (err != 0) return(false);
 
@@ -1303,7 +1303,7 @@ int SNL_FEI_Structure::getMatrixStructure(int** ptColIndices,
 }
 
 //------------------------------------------------------------------------------
-bool SNL_FEI_Structure::nodalEqnsAllSlaves(NodeDescriptor* node,
+bool SNL_FEI_Structure::nodalEqnsAllSlaves(const NodeDescriptor* node,
 					   std::vector<int>& slaveEqns)
 {
   int numFields = node->getNumFields();
@@ -3372,7 +3372,7 @@ int SNL_FEI_Structure::calculateSlaveEqns(MPI_Comm comm)
     GlobalID lastNodeID = -1;
 
     for(int i=0; i<numSlvs_; i++) {
-      NodeDescriptor* node = NULL;
+      const NodeDescriptor* node = NULL;
       int reducedSlaveEqn;
       translateToReducedEqn(slvEqns[i], reducedSlaveEqn);
       int numMasters = mstrEqns[i]->size();

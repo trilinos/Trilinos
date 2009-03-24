@@ -68,33 +68,33 @@ class FiniteElementData {
       @param numNodesPerElem List of length numElemBlocks.
       @param elemMatrixSizePerBlock List of length numElemBlocks, i-th entry
         gives the number of scalar degrees-of-freedom in element-matrices for
-	the i-th element-block.
+        the i-th element-block.
       @param totalNumNodes Total number of local nodes.
       @param numSharedNodes Number of nodes that are shared with other
       processors.
       @return error-code 0 if successful
   */
   virtual int describeStructure(int numElemBlocks,
-				const int* numElemsPerBlock,
-				const int* numNodesPerElem,
-				const int* elemMatrixSizePerBlock,
-				int totalNumNodes,
-				int numSharedNodes,
-				int numMultCRs) = 0;
+                                const int* numElemsPerBlock,
+                                const int* numNodesPerElem,
+                                const int* elemMatrixSizePerBlock,
+                                int totalNumNodes,
+                                int numSharedNodes,
+                                int numMultCRs) = 0;
 
    /** For passing element-connectivity arrays.
        @param elemBlockID Identifier for the element-block that this element
         belongs to.
-	@param elemID Locally zero-based identifier for this element.
-	@param numNodes Number of nodes for this element.
-	@param nodeNumbers List of length numNodes.
-	@param numDofPerNode List of length numNodes.
+        @param elemID Locally zero-based identifier for this element.
+        @param numNodes Number of nodes for this element.
+        @param nodeNumbers List of length numNodes.
+        @param numDofPerNode List of length numNodes.
    */
    virtual int setConnectivity(int elemBlockID,
-			       int elemID,
-			       int numNodes,
-			       const int* nodeNumbers,
-			       const int* numDofPerNode) = 0;
+                               int elemID,
+                               int numNodes,
+                               const int* nodeNumbers,
+                               const int* numDofPerNode) = 0;
 
    /** For passing element-stiffness arrays.
     @param elemBlockID Identifier for the element-block that these elements
@@ -107,8 +107,8 @@ class FiniteElementData {
     length sum(dofPerNode[i]), and that is also the number of rows.
    */
    virtual int setElemMatrix(int elemBlockID,
-			     int elemID,
-			     int numNodes,
+                             int elemID,
+                             int numNodes,
                              const int* nodeNumbers,
                              const int* dofPerNode,
                              const double *const * coefs) = 0;
@@ -123,34 +123,34 @@ class FiniteElementData {
     @param coefs Packed list, length sum(dofPerNode[i]).
    */
    virtual int setElemVector(int elemBlockID,
-			     int elemID,
-			     int numNodes,
-			     const int* nodeNumbers,
-			     const int* dofPerNode,
-			     const double* coefs) = 0;
+                             int elemID,
+                             int numNodes,
+                             const int* nodeNumbers,
+                             const int* dofPerNode,
+                             const double* coefs) = 0;
 
    virtual int setDirichletBCs(int numBCs,
-			       const int* nodeNumbers,
-			       const int* dofOffsets,
-			       const double* values) = 0;
+                               const int* nodeNumbers,
+                               const int* dofOffsets,
+                               const double* values) = 0;
 
    virtual int sumIntoMatrix(int numRowNodes,
-			     const int* rowNodeNumbers,
-			     const int* rowDofOffsets,
-			     const int* numColNodesPerRow,
-			     const int* colNodeNumbers,
-			     const int* colDofOffsets,
-			     const double* coefs) = 0;
+                             const int* rowNodeNumbers,
+                             const int* rowDofOffsets,
+                             const int* numColNodesPerRow,
+                             const int* colNodeNumbers,
+                             const int* colDofOffsets,
+                             const double* coefs) = 0;
 
    virtual int sumIntoRHSVector(int numNodes,
-			     const int* nodeNumbers,
-			     const int* dofOffsets,
-			     const double* coefs) = 0;
+                             const int* nodeNumbers,
+                             const int* dofOffsets,
+                             const double* coefs) = 0;
 
    virtual int putIntoRHSVector(int numNodes,
-			     const int* nodeNumbers,
-			     const int* dofOffsets,
-			     const double* coefs) = 0;
+                             const int* nodeNumbers,
+                             const int* dofOffsets,
+                             const double* coefs) = 0;
 
    /** Function called to signal to the FiniteElementData implementation that
        data-loading is complete and any synchronization or other final
@@ -185,8 +185,8 @@ class FiniteElementData {
    virtual int deleteConstraints() = 0;
 
    virtual int getSolnEntry(int nodeNumber,
-			    int dofOffset,
-			    double& value) = 0;
+                            int dofOffset,
+                            double& value) = 0;
 
    /** Function for requesting the solution value of a Lagrange Multiplier.
     */
@@ -197,32 +197,32 @@ class FiniteElementData {
      geometric coordinates, nullspace data, etc.
     @param fieldID Identifier for the field that describes this data. Lists of
        field identifiers and field sizes defined for the finite-element problem
-       may be obtained from the Lookup interface that is supplied to the
-       ESI_Broker by the FEI implementation.
+       may be obtained from the Lookup interface that is supplied by the
+       FEI implementation.
     @param nodeNumbers List of nodes for which data is being supplied.
     @param numNodes
     @param data List of length numNodes * (size of field 'fieldID')
    */
    virtual int putNodalFieldData(int fieldID,
-				 int fieldSize,
-				 int numNodes,
-				 const int* nodeNumbers,
-				 const double* coefs) = 0;
+                                 int fieldSize,
+                                 int numNodes,
+                                 const int* nodeNumbers,
+                                 const double* coefs) = 0;
 
    virtual int setMultiplierCR(int CRID,
-			       int numNodes,
-			       const int* nodeNumbers,
-			       const int* dofOffsets,
-			       const double* coefWeights,
-			       double rhsValue) = 0;
+                               int numNodes,
+                               const int* nodeNumbers,
+                               const int* dofOffsets,
+                               const double* coefWeights,
+                               double rhsValue) = 0;
 
    virtual int setPenaltyCR(int CRID,
-			    int numNodes,
-			    const int* nodeNumbers,
-			    const int* dofOffsets,
-			    const double* coefWeights,
-			    double penaltyValue,
-			    double rhsValue) = 0;
+                            int numNodes,
+                            const int* nodeNumbers,
+                            const int* dofOffsets,
+                            const double* coefWeights,
+                            double penaltyValue,
+                            double rhsValue) = 0;
 };
 
 #endif

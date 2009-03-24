@@ -52,6 +52,19 @@ void NodeDatabase::deleteMemory()
 }
 
 //------------------------------------------------------------------------------
+int NodeDatabase::getNodeWithID(GlobalID nodeID, const NodeDescriptor*& node) const
+{
+  int index = getIndexOfID(nodeID);
+  if (index < 0) {
+    //FEI_CERR << "FEI NodeDatabase: node " << (int)nodeID << " not found."<<FEI_ENDL;
+    return(-1);
+  }
+
+  node = nodePtrs_[index];
+  return(0);
+}
+
+//------------------------------------------------------------------------------
 int NodeDatabase::getNodeWithID(GlobalID nodeID, NodeDescriptor*& node)
 {
   int index = getIndexOfID(nodeID);
@@ -65,11 +78,11 @@ int NodeDatabase::getNodeWithID(GlobalID nodeID, NodeDescriptor*& node)
 }
 
 //------------------------------------------------------------------------------
-int NodeDatabase::getNodeWithNumber(int nodeNumber, NodeDescriptor*& node)
+int NodeDatabase::getNodeWithNumber(int nodeNumber, const NodeDescriptor*& node) const
 {
   if (!synchronized_) ERReturn(-1);
 
-  std::map<int,int>::iterator iter = nodeNumbers_.find(nodeNumber);
+  std::map<int,int>::const_iterator iter = nodeNumbers_.find(nodeNumber);
   if (iter == nodeNumbers_.end()) {
     ERReturn(-1);
   }
@@ -81,7 +94,7 @@ int NodeDatabase::getNodeWithNumber(int nodeNumber, NodeDescriptor*& node)
 }
 
 //------------------------------------------------------------------------------
-int NodeDatabase::getNodeWithEqn(int eqnNumber, NodeDescriptor*& node)
+int NodeDatabase::getNodeWithEqn(int eqnNumber, const NodeDescriptor*& node) const
 {
   int insertPoint = -1;
   int index = snl_fei::binarySearch(eqnNumber, eqnNumbers_, insertPoint);
@@ -115,6 +128,16 @@ int NodeDatabase::getNodeWithEqn(int eqnNumber, NodeDescriptor*& node)
   if (eqnNumber <= lastEqnOnNode) return(0);
 
   return(-1);
+}
+
+//------------------------------------------------------------------------------
+int NodeDatabase::getNodeAtIndex(int i, const NodeDescriptor*& node) const
+{
+  //For performance reasons, we will assume that the caller is providing a
+  //valid in-range index, and will forego the safety check:
+
+  node = nodePtrs_[i];
+  return(0);
 }
 
 //------------------------------------------------------------------------------
@@ -162,7 +185,7 @@ int NodeDatabase::countLocalNodeDescriptors(int localRank)
 }
 
 //------------------------------------------------------------------------------
-int NodeDatabase::getIndexOfID(GlobalID nodeID)
+int NodeDatabase::getIndexOfID(GlobalID nodeID) const
 {
   std::map<GlobalID,int>::const_iterator
     iter = nodeIDs_.find(nodeID);

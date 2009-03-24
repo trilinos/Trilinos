@@ -71,7 +71,7 @@ class NodeDescriptor {
        @param eqnNumber
        @return false if fieldID is not present at this node
    */
-   bool getFieldEqnNumber(int fieldID, int& eqnNumber);
+   bool getFieldEqnNumber(int fieldID, int& eqnNumber) const;
 
    bool operator==(const NodeDescriptor& nd) const
      { return( nodeID_ == nd.nodeID_ ); }
@@ -96,7 +96,7 @@ class NodeDescriptor {
 
    int getNumBlocks() const {return(numBlocks_);};
    const GlobalID* getBlockList() const {return(blockList_);};
-   bool containedInBlock(GlobalID blk);
+   bool containedInBlock(GlobalID blk) const;
 
  private:
    NodeDescriptor& operator=(const NodeDescriptor& src);

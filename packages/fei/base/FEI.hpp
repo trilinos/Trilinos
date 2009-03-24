@@ -346,13 +346,13 @@ class FEI {
        @param rhsValue 
    */
    virtual int initSlaveVariable(GlobalID slaveNodeID,
-				 int slaveFieldID,
-				 int offsetIntoSlaveField,
-				 int numMasterNodes,
-				 const GlobalID* masterNodeIDs,
-				 const int* masterFieldIDs,
-				 const double* weights,
-				 double rhsValue) = 0;
+                                 int slaveFieldID,
+                                 int offsetIntoSlaveField,
+                                 int numMasterNodes,
+                                 const GlobalID* masterNodeIDs,
+                                 const int* masterFieldIDs,
+                                 const double* weights,
+                                 double rhsValue) = 0;
 
     /** Indicate that initialization phase is complete.
         This function will internally finish calculating the structure of the
@@ -552,17 +552,24 @@ class FEI {
 
    /** Put a copy of coefficient data into the rhs vector. */
    virtual int putIntoRHS(int IDType,
-			  int fieldID,
-			  int numIDs,
-			  const GlobalID* IDs,
-			  const double* coefficients) = 0;
+                          int fieldID,
+                          int numIDs,
+                          const GlobalID* IDs,
+                          const double* coefficients) = 0;
 
    /** Sum a copy of coefficient data into the rhs vector. */
    virtual int sumIntoRHS(int IDType,
-			  int fieldID,
-			  int numIDs,
-			  const GlobalID* IDs,
-			  const double* coefficients) = 0;
+                          int fieldID,
+                          int numIDs,
+                          const GlobalID* IDs,
+                          const double* coefficients) = 0;
+
+   virtual int sumIntoMatrixDiagonal(int /*IDType*/,
+                                     int /*fieldID*/,
+                                     int /*numIDs*/,
+                                     const GlobalID* /*IDs*/,
+                                     const double* /*coefficients*/)
+    { return -1; }
 
     /** Set scalars by which to multiply matrices, in cases where a linear-
      combination of several matrices is to be solved.
@@ -649,10 +656,10 @@ class FEI {
      above-described equation-numbers. They are global 0-based numbers.
    */
    virtual int getEqnNumbers(GlobalID ID,
-			     int idType, 
-			     int fieldID,
-			     int& numEqns,
-			     int* eqnNumbers) = 0;
+                             int idType, 
+                             int fieldID,
+                             int& numEqns,
+                             int* eqnNumbers) = 0;
 
    /**Get the solution data for a particular field, on an arbitrary set of
       nodes.
@@ -667,9 +674,9 @@ class FEI {
       @return error-code 0 if successful
    */
    virtual int getNodalFieldSolution(int fieldID,
-				     int numNodes,
-				     const GlobalID* nodeIDs,
-				     double* results) = 0;
+                                     int numNodes,
+                                     const GlobalID* nodeIDs,
+                                     double* results) = 0;
 
    /**Get the number of nodes that are local to this processor (includes nodes
       that are shared by other processors).
@@ -690,16 +697,16 @@ class FEI {
       @return error-code 0 if successful
    */
    virtual int getLocalNodeIDList(int& numNodes,
-				  GlobalID* nodeIDs,
-				  int lenNodeIDs) = 0;
+                                  GlobalID* nodeIDs,
+                                  int lenNodeIDs) = 0;
 
    /** Input data associated with the specified field on a specified list
        of nodes.
    */
    virtual int putNodalFieldData(int fieldID,
-				 int numNodes,
-				 const GlobalID* nodeIDs,
-				 const double* data) = 0;
+                                 int numNodes,
+                                 const GlobalID* nodeIDs,
+                                 const double* data) = 0;
 
     /** Return nodal solutions for an element-block. The user supplies the list
         of nodes for which solutions are required. This list may be a subset of
@@ -739,9 +746,9 @@ class FEI {
        length sum-of-num-dof-per-node.
    */
    virtual int getNodalSolution(int numNodes,
-				const GlobalID* nodeIDs,
-				int* offsets,
-				double* results) = 0;
+                                const GlobalID* nodeIDs,
+                                int* offsets,
+                                double* results) = 0;
  
     /** Return nodal solutions for one field.
        @param elemBlockID Element-block identifier.
@@ -905,9 +912,9 @@ class FEI {
      @param solnReturn Time in seconds, spent in the solution-return functions.
    */
    virtual int cumulative_cpu_times(double& initPhase,
-				    double& loadPhase,
-				    double& solve,
-				    double& solnReturn) = 0;
+                                    double& loadPhase,
+                                    double& solve,
+                                    double& solnReturn) = 0;
  
    /** Return the number of scalar degrees of freedom associated with a node.
       @param globalNodeID Globally unique node identifier

@@ -91,6 +91,7 @@ class NodeDatabase {
       called yet, node is not referenced.
       @return error-code 0 if successful, -1 if nodeID not found.
   */
+  int getNodeWithID(GlobalID nodeID, const NodeDescriptor*& node) const;
   int getNodeWithID(GlobalID nodeID, NodeDescriptor*& node);
 
   /** Given a nodeNumber, return the corresponding node-descriptor.
@@ -102,7 +103,7 @@ class NodeDatabase {
       @return error-code 0 if successful, -1 if node with nodeNumber not 
       present.
   */
-  int getNodeWithNumber(int nodeNumber, NodeDescriptor*& node);
+  int getNodeWithNumber(int nodeNumber, const NodeDescriptor*& node) const;
 
   /** Given an equation-number, return the corresponding node-descriptor.
       @param eqnNumber Input. eqnNumber for which a NodeDescriptor is required.
@@ -110,13 +111,14 @@ class NodeDatabase {
       corresponding node is found, node is not referenced.
       @return error-code 0 if successful, -1 if node with eqnNumber not present.
   */
-  int getNodeWithEqn(int eqnNumber, NodeDescriptor*& node);
+  int getNodeWithEqn(int eqnNumber, const NodeDescriptor*& node) const;
 
   /** Given an index i, return the i-th node-descriptor.
       @param i Input. Offset of requested NodeDescriptor.
       @param node Output. i-th NodeDescriptor.
       @return error-code. 0 if successful. -1 if i is out of bounds.
   */
+  int getNodeAtIndex(int i, const NodeDescriptor*& node) const;
   int getNodeAtIndex(int i, NodeDescriptor*& node);
 
   /** Run through the locally-owned NodeDescriptors and count the number of
@@ -139,7 +141,7 @@ class NodeDatabase {
       @param nodeID Input
       @return offset if nodeID is found, -1 if nodeID not present.
    */
-  int getIndexOfID(GlobalID nodeID);
+  int getIndexOfID(GlobalID nodeID) const;
 
   /** Initialization, add node with global identifier 'nodeID'. Only available
       before 'allocatedNodeDescriptors' has been called. Note that nodeIDs can

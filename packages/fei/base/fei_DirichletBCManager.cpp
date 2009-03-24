@@ -40,7 +40,7 @@ DirichletBCManager::getEqnNumber(int IDType, int ID, int fieldID, int offsetInto
         throw std::runtime_error("fei::DirichletBCManager has NULL SNL_FEI_Structure.");
       }
       NodeDatabase& nodeDB = structure_->getNodeDatabase();
-      NodeDescriptor* node = NULL;
+      const NodeDescriptor* node = NULL;
       nodeDB.getNodeWithID(ID, node);
       if (node == NULL) {
         throw std::runtime_error("fei::DirichletBCManager::getEqnNumber failed to get node.");

@@ -28,9 +28,9 @@ class FEDataFilter : public Filter {
  public:
    // Constructor.
    FEDataFilter(FEI_Implementation* owner, MPI_Comm comm,
-		SNL_FEI_Structure* probStruct,
-		LibraryWrapper* wrapper,
-		int masterRank=0);
+                SNL_FEI_Structure* probStruct,
+                LibraryWrapper* wrapper,
+                int masterRank=0);
 
    //Destructor
    virtual ~FEDataFilter();
@@ -91,16 +91,22 @@ class FEDataFilter : public Filter {
                   double penValue);
 
    int putIntoRHS(int IDType,
-		  int fieldID,
-			  int numIDs,
-		  const GlobalID* IDs,
-		  const double* rhsEntries);
+                  int fieldID,
+                          int numIDs,
+                  const GlobalID* IDs,
+                  const double* rhsEntries);
 
    int sumIntoRHS(int IDType,
-		  int fieldID,
-			  int numIDs,
-		  const GlobalID* IDs,
-		  const double* rhsEntries);
+                  int fieldID,
+                          int numIDs,
+                  const GlobalID* IDs,
+                  const double* rhsEntries);
+
+   int sumIntoMatrixDiagonal(int  IDType,
+                             int  fieldID,
+                             int  numIDs,
+                             const GlobalID*  IDs,
+                             const double*  coefficients);
 
    int loadComplete();
 
@@ -127,9 +133,9 @@ class FEDataFilter : public Filter {
                              double *results);
  
     int getNodalSolution(int numNodes, 
-			 const GlobalID *nodeIDs, 
-			 int *offsets,
-			 double *results);
+                         const GlobalID *nodeIDs, 
+                         int *offsets,
+                         double *results);
 
     // return nodal solution for one field on a block-by-block basis 
     int getBlockFieldNodeSolution(GlobalID elemBlockID,
@@ -188,19 +194,19 @@ class FEDataFilter : public Filter {
 //
   public:
     int getNodalFieldSolution(int fieldID,
-			      int numNodes,
-			      const GlobalID* nodeIDs,
-			      double* results);
+                              int numNodes,
+                              const GlobalID* nodeIDs,
+                              double* results);
 
     int putNodalFieldData(int fieldID,
-			  int numNodes,
-			  const GlobalID* nodeIDs,
-			  const double* nodeData);
+                          int numNodes,
+                          const GlobalID* nodeIDs,
+                          const double* nodeData);
 
     int putNodalFieldSolution(int fieldID,
-			      int numNodes,
-			      const GlobalID* nodeIDs,
-			      const double* nodeData);
+                              int numNodes,
+                              const GlobalID* nodeIDs,
+                              const double* nodeData);
 
     int unpackSolution();
 
@@ -210,8 +216,6 @@ class FEDataFilter : public Filter {
 
    int setNumRHSVectors(int numRHSs, int* rhsIDs);
    int setCurrentRHS(int rhsID);
-
-   int exchangeRemoteEquations();
 
    int enforceEssentialBCs(const int* eqns, const double* alpha,
                                   const double* gamma, int numEqns);
@@ -223,30 +227,24 @@ class FEDataFilter : public Filter {
 //==============================================================================
   private:
    FEDataFilter(const FEDataFilter& src);
-   FEDataFilter& operator=(const FEDataFilter& src)
-     {
-       return(*this);
-     }
+   FEDataFilter& operator=(const FEDataFilter& src);
 
    int initLinSysCore();
 
-   int unpackRemoteContributions(EqnCommMgr& eqnCommMgr,
-				 int assemblyMode);
-
    int loadFEDataMultCR(int CRID,
-			int numCRNodes,
-			const GlobalID* CRNodes, 
-			const int* CRFields,
-			const double* CRWeights,
-			double CRValue);
+                        int numCRNodes,
+                        const GlobalID* CRNodes, 
+                        const int* CRFields,
+                        const double* CRWeights,
+                        double CRValue);
 
    int loadFEDataPenCR(int CRID,
-		       int numCRNodes,
-		       const GlobalID* CRNodes, 
-		       const int* CRFields,
-		       const double* CRWeights,
-		       double CRValue,
-		       double penValue);
+                       int numCRNodes,
+                       const GlobalID* CRNodes, 
+                       const int* CRFields,
+                       const double* CRWeights,
+                       double CRValue,
+                       double penValue);
 
    int generalElemInput(GlobalID elemBlockID,
                         GlobalID elemID,
@@ -265,13 +263,13 @@ class FEDataFilter : public Filter {
 
    int giveToMatrix(int numPtRows, const int* ptRows,
                     int numPtCols, const int* ptCols,
-		    const double* const* values,
-		    int mode);
+                    const double* const* values,
+                    int mode);
 
    int giveToLocalReducedMatrix(int numPtRows, const int* ptRows,
-				int numPtCols, const int* ptCols,
-				const double* const* values,
-				int mode);
+                                int numPtCols, const int* ptCols,
+                                const double* const* values,
+                                int mode);
 
    int getFromMatrix(int numPtRows, const int* ptRows,
                      const int* rowColOffsets, const int* ptCols,
@@ -282,10 +280,10 @@ class FEDataFilter : public Filter {
    int getEqnsFromRHS(ProcEqns& procEqns, EqnBuffer& eqnData);
 
    int giveToRHS(int num, const double* values,
-		 const int* indices, int mode);
+                 const int* indices, int mode);
 
    int giveToLocalReducedRHS(int num, const double* values,
-			     const int* indices, int mode);
+                             const int* indices, int mode);
 
    int getFromRHS(int num, double* values, const int* indices);
 
@@ -298,7 +296,7 @@ class FEDataFilter : public Filter {
    int formResidual(double* residValues, int numLocalEqns);
 
    int getRemoteSharedEqns(int numPtRows, const int* ptRows,
-			   ProcEqns& remoteProcEqns);
+                           ProcEqns& remoteProcEqns);
 
    int resetTheMatrix(double s);
    int resetTheRHSVector(double s);

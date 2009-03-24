@@ -61,22 +61,22 @@ class Filter {
                    const double *const *gamma) = 0;
 
    virtual int sumInElem(GlobalID /*elemBlockID*/,
-			 GlobalID /*elemID*/,
-			 const GlobalID* /*elemConn*/,
-			 const double* const* /*elemStiffness*/,
-			 const double* /*elemLoad*/,
-			   int /*elemFormat*/) { return(0); }
+                         GlobalID /*elemID*/,
+                         const GlobalID* /*elemConn*/,
+                         const double* const* /*elemStiffness*/,
+                         const double* /*elemLoad*/,
+                           int /*elemFormat*/) { return(0); }
 
    virtual int sumInElemMatrix(GlobalID /*elemBlockID*/,
-			       GlobalID /*elemID*/,
-			       const GlobalID* /*elemConn*/,
-			       const double* const* /*elemStiffness*/,
-			       int /*elemFormat*/) { return(0); }
+                               GlobalID /*elemID*/,
+                               const GlobalID* /*elemConn*/,
+                               const double* const* /*elemStiffness*/,
+                               int /*elemFormat*/) { return(0); }
 
    virtual int sumInElemRHS(GlobalID /*elemBlockID*/,
-			    GlobalID /*elemID*/,
-			    const GlobalID* /*elemConn*/,
-			    const double* /*elemLoad*/) { return(0); }
+                            GlobalID /*elemID*/,
+                            const GlobalID* /*elemConn*/,
+                            const double* /*elemLoad*/) { return(0); }
 
     virtual int loadCRMult(int CRMultID, 
                    int numCRNodes,
@@ -94,16 +94,23 @@ class Filter {
                   double penValue) = 0;
 
    virtual int putIntoRHS(int IDType,
-		  int fieldID,
-			  int numIDs,
-		  const GlobalID* IDs,
-		  const double* rhsEntries) = 0;
+                  int fieldID,
+                          int numIDs,
+                  const GlobalID* IDs,
+                  const double* rhsEntries) = 0;
 
    virtual int sumIntoRHS(int IDType,
-		  int fieldID,
-			  int numIDs,
-		  const GlobalID* IDs,
-		  const double* rhsEntries) = 0;
+                  int fieldID,
+                          int numIDs,
+                  const GlobalID* IDs,
+                  const double* rhsEntries) = 0;
+
+   virtual int sumIntoMatrixDiagonal(int /* IDType*/,
+                                     int /* fieldID*/,
+                                     int /* numIDs*/,
+                                     const GlobalID* /* IDs*/,
+                                     const double* /* coefficients*/)
+   { return -1; }
 
    virtual int loadComplete() = 0;
 
@@ -130,9 +137,9 @@ class Filter {
                              double *results) = 0;
  
     virtual int getNodalSolution(int numNodes, 
-				 const GlobalID *nodeIDs, 
-				 int *offsets,
-				 double *results) = 0;
+                                 const GlobalID *nodeIDs, 
+                                 int *offsets,
+                                 double *results) = 0;
 
     // return nodal solution for one field on a block-by-block basis 
     virtual int getBlockFieldNodeSolution(GlobalID elemBlockID,
@@ -149,7 +156,7 @@ class Filter {
                              double *results) = 0;
 
    virtual int getCRMultipliers(int numCRs, const int* CRIDs,
-				double* multipliers) = 0;
+                                double* multipliers) = 0;
 
 // associated "puts" paralleling the solution return services.
 // 
@@ -176,10 +183,10 @@ class Filter {
                                   const double *estimates) = 0;
   
     virtual int putBlockElemSolution(GlobalID elemBlockID,  
-				     int numElems, 
-				     const GlobalID *elemIDs, 
-				     int dofPerElem,
-				     const double *estimates) = 0;
+                                     int numElems, 
+                                     const GlobalID *elemIDs, 
+                                     int dofPerElem,
+                                     const double *estimates) = 0;
   
     virtual int putCRMultipliers(int numMultCRs, 
                          const int* CRIDs,
@@ -192,19 +199,19 @@ class Filter {
   public:
 
     virtual int getNodalFieldSolution(int fieldID,
-			      int numNodes,
-			      const GlobalID* nodeIDs,
-			      double* results) = 0;
+                              int numNodes,
+                              const GlobalID* nodeIDs,
+                              double* results) = 0;
 
     virtual int putNodalFieldData(int fieldID,
-			  int numNodes,
-			  const GlobalID* nodeIDs,
-			  const double* nodeData) = 0;
+                          int numNodes,
+                          const GlobalID* nodeIDs,
+                          const double* nodeData) = 0;
 
     virtual int putNodalFieldSolution(int fieldID,
-			      int numNodes,
-			      const GlobalID* nodeIDs,
-			      const double* nodeData) = 0;
+                              int numNodes,
+                              const GlobalID* nodeIDs,
+                              const double* nodeData) = 0;
 
     virtual int unpackSolution() = 0;
 
@@ -215,39 +222,39 @@ class Filter {
    virtual int setNumRHSVectors(int numRHSs, int* rhsIDs) = 0;
    virtual int setCurrentRHS(int rhsID) = 0;
 
-   virtual int exchangeRemoteEquations() = 0;
+   virtual int exchangeRemoteEquations() { return 0; }
 
    virtual int enforceEssentialBCs(const int* eqns, const double* alpha,
                                   const double* gamma, int numEqns) = 0;
 
    static void copyStiffness(const double* const* elemStiff, int numRows,
-			     int elemFormat, double** copy);
+                             int elemFormat, double** copy);
 
    void setLogStream(std::ostream* logstrm);
    std::ostream* logStream();
 
  protected:
    virtual int generalElemInput(GlobalID /*elemBlockID*/,
-				GlobalID /*elemID*/,
-				const GlobalID* /*elemConn*/,
-				const double* const* /*elemStiffness*/,
-				const double* /*elemLoad*/,
-				  int /*elemFormat*/) {return(-1);}
+                                GlobalID /*elemID*/,
+                                const GlobalID* /*elemConn*/,
+                                const double* const* /*elemStiffness*/,
+                                const double* /*elemLoad*/,
+                                  int /*elemFormat*/) {return(-1);}
 
    int generalCoefInput(int /*patternID*/,
-			const int* /*rowIDTypes*/,
+                        const int* /*rowIDTypes*/,
                         const GlobalID* /*rowIDs*/,
-			const int* /*colIDTypes*/,
+                        const int* /*colIDTypes*/,
                         const GlobalID* /*colIDs*/,
                         const double* const* /*matrixEntries*/,
                         const double* /*vectorEntries*/,
-			  int /*numRows*/, int /*numCols*/) {return(-1);}
+                          int /*numRows*/, int /*numCols*/) {return(-1);}
 
    int calculateResidualNorms(int whichNorm, int numFields,
-			      int* fieldIDs, double* norms,
-			      std::vector<double>& residValues);
+                              int* fieldIDs, double* norms,
+                              std::vector<double>& residValues);
 
-   NodeDescriptor& findNodeDescriptor(GlobalID nodeID) const;
+   const NodeDescriptor& findNodeDescriptor(GlobalID nodeID) const;
 
    SNL_FEI_Structure* problemStructure_;
 

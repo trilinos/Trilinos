@@ -14,7 +14,7 @@
   fei implementation code. This number should be updated whenever
   an fei update is released.
 */
-static const char fei_version_number[16] = {"2.24.00"};
+static const char fei_version_number[16] = {"2.24.01"};
 
 /* IMPORTANT: Keep the version-number portion of the following macros
    synchronized with the above version number. These macros, which redefine
@@ -22,14 +22,14 @@ static const char fei_version_number[16] = {"2.24.00"};
    if an application uses one version of FEI headers with another version
    of FEI libraries.
 */
-#define fei_VERSION fei_2_24_00
+#define fei_VERSION fei_2_24_01
 
 #define FEI_MAJOR_VERSION 2
 #define FEI_MINOR_VERSION 24
-#define FEI_PATCH_VERSION 00
+#define FEI_PATCH_VERSION 01
 
-#define FEI_Implementation FEI_Implementation_2_24_00
-#define FEI_create FEI_create_2_24_00
+#define FEI_Implementation FEI_Implementation_2_24_01
+#define FEI_create FEI_create_2_24_01
 
 #endif // _fei_version_h_
 

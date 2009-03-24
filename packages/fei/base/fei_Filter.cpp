@@ -132,11 +132,11 @@ void Filter::copyStiffness(const double* const* elemStiff,
 }
 
 //------------------------------------------------------------------------------
-NodeDescriptor& Filter::findNodeDescriptor(GlobalID nodeID) const {
+const NodeDescriptor& Filter::findNodeDescriptor(GlobalID nodeID) const {
 //
 //This function returns a NodeDescriptor reference if nodeID is an active node.
 //
-  NodeDescriptor* node = NULL;
+  const NodeDescriptor* node = NULL;
   int err = problemStructure_->getNodeDatabase().getNodeWithID(nodeID, node);
 
   if (err != 0) {
@@ -193,7 +193,7 @@ int Filter::calculateResidualNorms(int whichNorm, int numFields,
   bool haveSlaves = problemStructure_->numSlaveEquations() > 0;
 
   for(int i=0; i<numNodes; i++) {
-    NodeDescriptor* node = NULL;
+    const NodeDescriptor* node = NULL;
     CHK_ERR( nodeDB.getNodeAtIndex(i, node) );
 
     if (node->getOwnerProc() != localRank_) continue;

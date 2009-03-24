@@ -198,7 +198,7 @@ int FEI_Implementation::setCurrentMatrix(int matID)
 {
    if (debugOutput_) {
      (*dbgOStreamPtr_) << "FEI: setCurrentMatrix" << FEI_ENDL << "#matrix-id"
-		       << FEI_ENDL<<matID<<FEI_ENDL;
+                       << FEI_ENDL<<matID<<FEI_ENDL;
    }
 
    index_current_filter_ = -1;
@@ -209,7 +209,7 @@ int FEI_Implementation::setCurrentMatrix(int matID)
 
    if (debugOutput_) {
      (*dbgOStreamPtr_) << "#--- ID: " << matID
-		       << ", ind: "<<index_current_filter_<<FEI_ENDL;
+                       << ", ind: "<<index_current_filter_<<FEI_ENDL;
    }
 
    //if matID wasn't found, return non-zero (error)
@@ -237,7 +237,7 @@ int FEI_Implementation::setCurrentRHS(int rhsID)
 {
   if (debugOutput_) {
     (*dbgOStreamPtr_) << "FEI: setCurrentRHS" << FEI_ENDL << "#rhs-id"
-		      << FEI_ENDL<<rhsID<<FEI_ENDL;
+                      << FEI_ENDL<<rhsID<<FEI_ENDL;
   }
 
   bool found = false;
@@ -247,14 +247,14 @@ int FEI_Implementation::setCurrentRHS(int rhsID)
     if (index >= 0) {
       index_current_rhs_row_ = j;
       CHK_ERR( filter_[index_current_rhs_row_]->setCurrentRHS(rhsID) )
-	found = true;
+        found = true;
       break;
     }
   }
 
   if (!found) {
     FEI_CERR << "FEI_Implementation::setCurrentRHS: ERROR, invalid RHS ID" 
-	 << FEI_ENDL;
+         << FEI_ENDL;
     ERReturn(-1);
   }
 
@@ -302,8 +302,8 @@ int FEI_Implementation::setIDLists(int numMatrices, const int* matrixIDs,
    if (debugOutput_) {
      FEI_OSTREAM& os = *dbgOStreamPtr_;
      os << "FEI: setIDLists" << FEI_ENDL
-	<< "#num-matrices" << FEI_ENDL << numMatrices << FEI_ENDL
-	<< "#matrixIDs" << FEI_ENDL;
+        << "#num-matrices" << FEI_ENDL << numMatrices << FEI_ENDL
+        << "#matrixIDs" << FEI_ENDL;
      int i;
      for(i=0; i<numMatrices; ++i) os << matrixIDs[i] << " ";
      os << FEI_ENDL << "#num-rhs's" << FEI_ENDL;
@@ -354,7 +354,7 @@ int FEI_Implementation::setIDLists(int numMatrices, const int* matrixIDs,
       rhsIDs_[i] = numRHSIDs_[i] > 0 ? new int[numRHSIDs_[i]] : NULL ;
 
       for(int j=0; j<numRHSIDs_[i]; j++) {
-	rhsIDs_[i][j] = rhsIDs[offset+j];
+        rhsIDs_[i][j] = rhsIDs[offset+j];
       }
 
       offset += numRHSIDs_[i];
@@ -365,8 +365,8 @@ int FEI_Implementation::setIDLists(int numMatrices, const int* matrixIDs,
 
 //------------------------------------------------------------------------------
 int FEI_Implementation::initFields(int numFields,
-				   const int *fieldSizes,
-				   const int *fieldIDs)
+                                   const int *fieldSizes,
+                                   const int *fieldIDs)
 {
     CHK_ERR( problemStructure_->initFields(numFields, fieldSizes, fieldIDs) );
 
@@ -384,13 +384,13 @@ int FEI_Implementation::initElemBlock(GlobalID elemBlockID,
                                       int interleaveStrategy)
 {
    CHK_ERR( problemStructure_->initElemBlock(elemBlockID,
-					     numElements,
-					     numNodesPerElement,
-					     numFieldsPerNode,
-					     nodalFieldIDs,
-					     numElemDofFieldsPerElement,
-					     elemDOFFieldIDs,
-					     interleaveStrategy) );
+                                             numElements,
+                                             numNodesPerElement,
+                                             numFieldsPerNode,
+                                             nodalFieldIDs,
+                                             numElemDofFieldsPerElement,
+                                             elemDOFFieldIDs,
+                                             interleaveStrategy) );
 
    return(0);
 }
@@ -407,18 +407,18 @@ int FEI_Implementation::initElem(GlobalID elemBlockID,
 
 //------------------------------------------------------------------------------
 int FEI_Implementation::initSlaveVariable(GlobalID slaveNodeID, 
-					  int slaveFieldID,
-					  int offsetIntoSlaveField,
-					  int numMasterNodes,
-					  const GlobalID* masterNodeIDs,
-					  const int* masterFieldIDs,
-					  const double* weights,
-					  double rhsValue)
+                                          int slaveFieldID,
+                                          int offsetIntoSlaveField,
+                                          int numMasterNodes,
+                                          const GlobalID* masterNodeIDs,
+                                          const int* masterFieldIDs,
+                                          const double* weights,
+                                          double rhsValue)
 {
    CHK_ERR( problemStructure_->initSlaveVariable(slaveNodeID, slaveFieldID,
-					    offsetIntoSlaveField,
-				       	    numMasterNodes, masterNodeIDs,
-			        	    masterFieldIDs, weights, rhsValue));
+                                            offsetIntoSlaveField,
+                                                   numMasterNodes, masterNodeIDs,
+                                            masterFieldIDs, weights, rhsValue));
 
    return(0);
 }
@@ -449,9 +449,9 @@ int FEI_Implementation::initSharedNodes(int numSharedNodes,
   // internal arrays in the problemStructure_ object.
   //
   CHK_ERR( problemStructure_->initSharedNodes(numSharedNodes,
-					      sharedNodeIDs,
-					      numProcsPerNode,
-					      sharingProcIDs));
+                                              sharedNodeIDs,
+                                              numProcsPerNode,
+                                              sharingProcIDs));
 
   return(0);
 }
@@ -469,9 +469,9 @@ int FEI_Implementation::initCRMult(int numCRNodes,
 //
 
    CHK_ERR( problemStructure_->initCRMult(numCRNodes,
-					  CRNodes,
-					  CRFields,
-					  CRID));
+                                          CRNodes,
+                                          CRFields,
+                                          CRID));
 
    return(0);
 }
@@ -488,9 +488,9 @@ int FEI_Implementation::initCRPen(int numCRNodes,
 //
 
    CHK_ERR( problemStructure_->initCRPen(numCRNodes,
-					 CRNodes,
-					 CRFields,
-					 CRID));
+                                         CRNodes,
+                                         CRFields,
+                                         CRID));
 
    return(0);
 }
@@ -615,8 +615,8 @@ int FEI_Implementation::sumInElem(GlobalID elemBlockID,
   }
 
   CHK_ERR( filter_[index_current_filter_]->sumInElem(elemBlockID, elemID,
-						     elemConn, elemStiffness,
-						     elemLoad, elemFormat));
+                                                     elemConn, elemStiffness,
+                                                     elemLoad, elemFormat));
 
   newMatrixDataLoaded_ = 1;
 
@@ -704,16 +704,33 @@ int FEI_Implementation::loadCRPen(int CRID,
 
 //------------------------------------------------------------------------------
 int FEI_Implementation::sumIntoRHS(int IDType,
-				   int fieldID,
-				   int numIDs,
-				   const GlobalID* IDs,
-				   const double* rhsEntries)
+                                   int fieldID,
+                                   int numIDs,
+                                   const GlobalID* IDs,
+                                   const double* rhsEntries)
 {
   if (!internalFEIsAllocated_)
     notAllocatedAbort("FEI_Implementation::sumIntoRHS");
 
   CHK_ERR( filter_[index_current_rhs_row_]->sumIntoRHS(IDType, fieldID,
-						       numIDs, IDs, rhsEntries) );
+                                                       numIDs, IDs, rhsEntries) );
+  newMatrixDataLoaded_ = 1;
+
+  return(0);
+}
+
+//------------------------------------------------------------------------------
+int FEI_Implementation::sumIntoMatrixDiagonal(int IDType,
+                             int fieldID,
+                             int numIDs,
+                             const GlobalID* IDs,
+                             const double* coefficients)
+{
+  if (!internalFEIsAllocated_)
+    notAllocatedAbort("FEI_Implementation::sumIntoMatrixDiagonal");
+
+  CHK_ERR( filter_[index_current_filter_]->sumIntoMatrixDiagonal(IDType, fieldID,
+                                                       numIDs, IDs, coefficients) );
   newMatrixDataLoaded_ = 1;
 
   return(0);
@@ -721,16 +738,16 @@ int FEI_Implementation::sumIntoRHS(int IDType,
 
 //------------------------------------------------------------------------------
 int FEI_Implementation::putIntoRHS(int IDType,
-				   int fieldID,
-				   int numIDs,
-				   const GlobalID* IDs,
-				   const double* rhsEntries)
+                                   int fieldID,
+                                   int numIDs,
+                                   const GlobalID* IDs,
+                                   const double* rhsEntries)
 {
   if (!internalFEIsAllocated_)
     notAllocatedAbort("FEI_Implementation::putIntoRHS");
 
   CHK_ERR( filter_[index_current_rhs_row_]->putIntoRHS(IDType, fieldID,
-						       numIDs, IDs, rhsEntries) );
+                                                       numIDs, IDs, rhsEntries) );
   newMatrixDataLoaded_ = 1;
 
   return(0);
@@ -802,7 +819,7 @@ int FEI_Implementation::parameters(int numParams, const char *const* paramString
 
   // merge these parameters with any others we may have, for later use.
   snl_fei::mergeStringLists(paramStrings_, numParams_,
-				   paramStrings, numParams);
+                                   paramStrings, numParams);
 
   snl_fei::getIntParamValue("numMatrices", numParams,paramStrings, numInternalFEIs_);
 
@@ -816,7 +833,7 @@ int FEI_Implementation::parameters(int numParams, const char *const* paramString
   if (debugOutput_) {
     (*dbgOStreamPtr_)<<"FEI: parameters"<<FEI_ENDL;
     (*dbgOStreamPtr_)<<"#FEI_Implementation, num-params "<<FEI_ENDL
-		     <<numParams<<FEI_ENDL;
+                     <<numParams<<FEI_ENDL;
     (*dbgOStreamPtr_)<<"# "<<numParams<<" parameter lines follow:"<<FEI_ENDL;
     for(int i=0; i<numParams; i++){
       (*dbgOStreamPtr_)<<paramStrings[i]<<FEI_ENDL;
@@ -882,7 +899,7 @@ void FEI_Implementation::setDebugOutput(const char* path, const char* name)
 
     if (internalFEIsAllocated_) {
       for(int i=0; i<numInternalFEIs_; ++i) {
-	filter_[i]->setLogStream(dbgOStreamPtr_);
+        filter_[i]->setLogStream(dbgOStreamPtr_);
       }
     }
   }
@@ -945,9 +962,9 @@ int FEI_Implementation::version(const char*& versionString)
 
 //------------------------------------------------------------------------------
 int FEI_Implementation::cumulative_cpu_times(double& initTime,
-					     double& loadTime,
-					     double& solveTime,
-					     double& solnReturnTime)
+                                             double& loadTime,
+                                             double& solveTime,
+                                             double& solnReturnTime)
 {
    initTime = initTime_;
    loadTime = loadTime_;
@@ -974,14 +991,14 @@ int FEI_Implementation::getBlockNodeSolution(GlobalID elemBlockID,
 
 //------------------------------------------------------------------------------
 int FEI_Implementation::getNodalSolution(int numNodes,
-					 const GlobalID *nodeIDs,
-					 int *offsets,
-					 double *results)
+                                         const GlobalID *nodeIDs,
+                                         int *offsets,
+                                         double *results)
 {
    CHK_ERR(filter_[index_soln_filter_]->getNodalSolution(numNodes,
-							 nodeIDs,
-							 offsets,
-							 results))
+                                                         nodeIDs,
+                                                         offsets,
+                                                         results))
 
    return(0);
 }
@@ -1142,7 +1159,7 @@ int FEI_Implementation::getBlockNodeIDList(GlobalID elemBlockID,
 
   int offset = 0;
   for(int i=0; i<numActiveNodes; i++) {
-    NodeDescriptor* node = NULL;
+    const NodeDescriptor* node = NULL;
     CHK_ERR( nodeDB.getNodeAtIndex(i, node) );
     if (node->containedInBlock(elemBlockID))
       nodeIDs[offset++] = node->getGlobalNodeID();
@@ -1186,7 +1203,7 @@ const {
   //
   //  return the number of solution parameters at a given node
   //
-  NodeDescriptor* node = NULL;
+  const NodeDescriptor* node = NULL;
   int err = problemStructure_->getNodeDatabase().getNodeWithID(nodeID, node);
 
   if (err != 0) {
@@ -1263,7 +1280,7 @@ int FEI_Implementation::getNumBlockElemDOF(GlobalID blockID,
 
 //------------------------------------------------------------------------------
 int FEI_Implementation::getFieldSize(int fieldID,
-				     int& numScalars)
+                                     int& numScalars)
 {
   //
   //  return the number of scalars associated with a given fieldID
@@ -1276,24 +1293,24 @@ int FEI_Implementation::getFieldSize(int fieldID,
 //------------------------------------------------------------------------------
 int FEI_Implementation::getEqnNumbers(GlobalID ID, int idType,
                                       int fieldID, int& numEqns,
-				      int* eqnNumbers)
+                                      int* eqnNumbers)
 {
   //
   // Translate from an ID/fieldID pair to a list of equation-numbers
   //
 
   return( problemStructure_->getEqnNumbers(ID, idType, fieldID,
-					   numEqns, eqnNumbers) );
+                                           numEqns, eqnNumbers) );
 }
 
 //------------------------------------------------------------------------------
 int FEI_Implementation::getNodalFieldSolution(int fieldID,
-					      int numNodes,
-					      const GlobalID* nodeIDs,
-					      double* results)
+                                              int numNodes,
+                                              const GlobalID* nodeIDs,
+                                              double* results)
 {
   return( filter_[index_soln_filter_]->getNodalFieldSolution(fieldID, numNodes,
-						       nodeIDs, results) );
+                                                       nodeIDs, results) );
 }
 
 //------------------------------------------------------------------------------
@@ -1305,8 +1322,8 @@ int FEI_Implementation::getNumLocalNodes(int& numNodes)
 
 //------------------------------------------------------------------------------
 int FEI_Implementation::getLocalNodeIDList(int& numNodes,
-					   GlobalID* nodeIDs,
-					   int lenNodeIDs)
+                                           GlobalID* nodeIDs,
+                                           int lenNodeIDs)
 {
   std::map<GlobalID,int>& nodes =
     problemStructure_->getNodeDatabase().getNodeIDs();
@@ -1321,12 +1338,12 @@ int FEI_Implementation::getLocalNodeIDList(int& numNodes,
 
 //------------------------------------------------------------------------------
 int FEI_Implementation::putNodalFieldData(int fieldID,
-					  int numNodes,
-					  const GlobalID* nodeIDs,
-					  const double* nodeData)
+                                          int numNodes,
+                                          const GlobalID* nodeIDs,
+                                          const double* nodeData)
 {
   return( filter_[index_soln_filter_]->putNodalFieldData(fieldID, numNodes,
-						   nodeIDs, nodeData) );
+                                                   nodeIDs, nodeData) );
 }
 
 //------------------------------------------------------------------------------
@@ -1398,7 +1415,7 @@ int FEI_Implementation::aggregateSystem()
       soln_fei_matrix_ = new Data();
 
       CHK_ERR( lscArray_[index_soln_filter_]->
-	       copyOutMatrix(1.0, *soln_fei_matrix_) );
+               copyOutMatrix(1.0, *soln_fei_matrix_) );
    }
 
    if (soln_fei_vector_ == NULL) {
@@ -1493,66 +1510,66 @@ int FEI_Implementation::allocateInternalFEIs(){
       filter_ = new Filter*[numInternalFEIs_];
 
       if (haveLinSysCore_) {
-	if (numRHSIDs_[0] == 0) {
-	  int dummyID = -1;
-	  linSysCore_->setNumRHSVectors(1, &dummyID);
-	}
-	else {
-	  linSysCore_->setNumRHSVectors(numRHSIDs_[0], rhsIDs_[0]);
-	}
+        if (numRHSIDs_[0] == 0) {
+          int dummyID = -1;
+          linSysCore_->setNumRHSVectors(1, &dummyID);
+        }
+        else {
+          linSysCore_->setNumRHSVectors(numRHSIDs_[0], rhsIDs_[0]);
+        }
 
-	for(int i=1; i<numInternalFEIs_; i++) {
-	  fei::SharedPtr<LinearSystemCore> lsc(linSysCore_->clone());
-	  lsc->parameters(numParams_, paramStrings_);
+        for(int i=1; i<numInternalFEIs_; i++) {
+          fei::SharedPtr<LinearSystemCore> lsc(linSysCore_->clone());
+          lsc->parameters(numParams_, paramStrings_);
 
-	  if (numRHSIDs_[i] == 0) {
-	    int dummyID = -1;
-	    lsc->setNumRHSVectors(1, &dummyID);
-	  }
-	  else {
-	    lsc->setNumRHSVectors(numRHSIDs_[i], rhsIDs_[i]);
-	  }
+          if (numRHSIDs_[i] == 0) {
+            int dummyID = -1;
+            lsc->setNumRHSVectors(1, &dummyID);
+          }
+          else {
+            lsc->setNumRHSVectors(numRHSIDs_[i], rhsIDs_[i]);
+          }
 
-	  lscArray_.push_back(lsc);
-	}
+          lscArray_.push_back(lsc);
+        }
       }
 
       for(int i=0; i<numInternalFEIs_; i++){
 
-	if (haveLinSysCore_) {
-	  filter_[i] = new LinSysCoreFilter(this, comm_, problemStructure_,
-					    lscArray_[i].get(), masterRank_);
-	}
-	else if (haveFEData_) {
-	  filter_[i] = new FEDataFilter(this, comm_, problemStructure_,
-					wrapper_.get(), masterRank_);
-	}
-	else {
-	  FEI_CERR << "FEI_Implementation: ERROR, don't have LinearSystemCore"
-	       << " or FiniteElementData implementation..." << FEI_ENDL;
-	  ERReturn(-1);
-	}
+        if (haveLinSysCore_) {
+          filter_[i] = new LinSysCoreFilter(this, comm_, problemStructure_,
+                                            lscArray_[i].get(), masterRank_);
+        }
+        else if (haveFEData_) {
+          filter_[i] = new FEDataFilter(this, comm_, problemStructure_,
+                                        wrapper_.get(), masterRank_);
+        }
+        else {
+          FEI_CERR << "FEI_Implementation: ERROR, don't have LinearSystemCore"
+               << " or FiniteElementData implementation..." << FEI_ENDL;
+          ERReturn(-1);
+        }
 
-	filter_[i]->setLogStream(dbgOStreamPtr_);
+        filter_[i]->setLogStream(dbgOStreamPtr_);
 
-	FEI_OSTRINGSTREAM osstr;
-	osstr<<"internalFei "<< i;
+        FEI_OSTRINGSTREAM osstr;
+        osstr<<"internalFei "<< i;
         std::string osstr_str = osstr.str();
-	const char* param = osstr_str.c_str();
-	filter_[i]->parameters(1, &param);
+        const char* param = osstr_str.c_str();
+        filter_[i]->parameters(1, &param);
 
-	if (debugOutput_) {
-	  (*dbgOStreamPtr_)<<"#-- fei["<<i<<"]->setNumRHSVectors "
-			   <<numRHSIDs_[i]<<FEI_ENDL;
-	}
+        if (debugOutput_) {
+          (*dbgOStreamPtr_)<<"#-- fei["<<i<<"]->setNumRHSVectors "
+                           <<numRHSIDs_[i]<<FEI_ENDL;
+        }
 
-	if (numRHSIDs_[i] == 0) {
-	  int dummyID = -1;
-	  filter_[i]->setNumRHSVectors(1, &dummyID);
-	}
-	else {
-	  filter_[i]->setNumRHSVectors(numRHSIDs_[i], rhsIDs_[i]);
-	}
+        if (numRHSIDs_[i] == 0) {
+          int dummyID = -1;
+          filter_[i]->setNumRHSVectors(1, &dummyID);
+        }
+        else {
+          filter_[i]->setNumRHSVectors(numRHSIDs_[i], rhsIDs_[i]);
+        }
       }
 
       internalFEIsAllocated_ = true;

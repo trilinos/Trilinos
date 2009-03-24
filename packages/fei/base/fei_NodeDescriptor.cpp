@@ -89,7 +89,7 @@ void NodeDescriptor::setFieldEqnNumber(int fieldID, int eqn) {
 }
 
 //==============================================================================
-bool NodeDescriptor::getFieldEqnNumber(int fieldID, int& eqnNumber)
+bool NodeDescriptor::getFieldEqnNumber(int fieldID, int& eqnNumber) const
 {
    int insert = -1;
    int index = snl_fei::binarySearch(fieldID, fieldIDList_,
@@ -104,7 +104,7 @@ bool NodeDescriptor::getFieldEqnNumber(int fieldID, int& eqnNumber)
 }
 
 //==============================================================================
-bool NodeDescriptor::containedInBlock(GlobalID blk)
+bool NodeDescriptor::containedInBlock(GlobalID blk) const
 {
   //return true if this node is contained in element-block 'blk'.
 

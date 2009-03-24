@@ -60,7 +60,7 @@ class FEI_Implementation : public FEI {
       value greater than 0 via a call to the parameters function.
   */
    FEI_Implementation(fei::SharedPtr<LibraryWrapper> libWrapper,
-		      MPI_Comm comm,
+                      MPI_Comm comm,
                       int masterRank=0);
 
    /** Destructor. */
@@ -219,13 +219,13 @@ class FEI_Implementation : public FEI {
        @param rhsValue 
    */
    int initSlaveVariable(GlobalID slaveNodeID, 
-			 int slaveFieldID,
-			 int offsetIntoSlaveField,
-			 int numMasterNodes,
-			 const GlobalID* masterNodeIDs,
-			 const int* masterFieldIDs,
-			 const double* weights,
-			 double rhsValue);
+                         int slaveFieldID,
+                         int offsetIntoSlaveField,
+                         int numMasterNodes,
+                         const GlobalID* masterNodeIDs,
+                         const int* masterFieldIDs,
+                         const double* weights,
+                         double rhsValue);
 
    /** Request that any existing Lagrange-Multiplier constraints be deleted.
        (Intended to be called in preparation for loading new/different
@@ -430,17 +430,23 @@ class FEI_Implementation : public FEI {
 
    /** Put a copy of coefficient data into the rhs vector. */
    int putIntoRHS(int IDType,
-		  int fieldID,
-		  int numIDs,
-		  const GlobalID* IDs,
-		  const double* rhsEntries);
+                  int fieldID,
+                  int numIDs,
+                  const GlobalID* IDs,
+                  const double* rhsEntries);
 
    /** Sum a copy of coefficient data into the rhs vector. */
    int sumIntoRHS(int IDType,
-		  int fieldID,
-		  int numIDs,
-		  const GlobalID* IDs,
-		  const double* rhsEntries);
+                  int fieldID,
+                  int numIDs,
+                  const GlobalID* IDs,
+                  const double* rhsEntries);
+
+   int sumIntoMatrixDiagonal(int IDType,
+                             int fieldID,
+                             int numIDs,
+                             const GlobalID* IDs,
+                             const double* coefficients);
 
 // Equation solution services.....................................
 
@@ -486,9 +492,9 @@ class FEI_Implementation : public FEI {
 
    /** query for some accumulated timing information.*/
    int cumulative_cpu_times(double& initTime,
-			    double& loadTime,
-			    double& solveTime,
-			    double& solnReturnTime);
+                            double& loadTime,
+                            double& solveTime,
+                            double& solnReturnTime);
 
 // Solution return services.......................................
  
@@ -501,9 +507,9 @@ class FEI_Implementation : public FEI {
 
     /** return all nodal solution params for an arbitrary list of nodes */
     int getNodalSolution(int numNodes,
-			 const GlobalID* nodeIDs,
-			 int* offsets,
-			 double* results);
+                         const GlobalID* nodeIDs,
+                         int* offsets,
+                         double* results);
 
     /** return nodal solution for one field on a block-by-block basis */
     int getBlockFieldNodeSolution(GlobalID elemBlockID,
@@ -597,11 +603,11 @@ class FEI_Implementation : public FEI {
     int getNumBlockActEqns(GlobalID blockID, int& numEqns) const;
 
     /**  return the number of nodes associated with elements of a
-	 given block ID */
+         given block ID */
     int getNumNodesPerElement(GlobalID blockID, int& nodesPerElem) const;
     
     /**  return the number of equations (including element eqns)
-	 associated with elements of a given block ID */
+         associated with elements of a given block ID */
     int getNumEqnsPerElement(GlobalID blockID, int& numEqns) const;
 
     /**  return the number of elements associated with this blockID */
@@ -621,8 +627,8 @@ class FEI_Implementation : public FEI {
     //argue to have these included in the FEI 2.1 specification update.
 
     /** Query the size of a field. This info is supplied to the FEI (initFields)
-	by the application, but may not be easily obtainable on the app side at
-	all times. Thus, it would be nice if the FEI could answer this query.
+        by the application, but may not be easily obtainable on the app side at
+        all times. Thus, it would be nice if the FEI could answer this query.
     */
     int getFieldSize(int fieldID, int& numScalars);
 
@@ -639,10 +645,10 @@ class FEI_Implementation : public FEI {
      above-described equation-numbers. They are global 0-based numbers.
     */
     int getEqnNumbers(GlobalID ID,
-		      int idType, 
-		      int fieldID,
-		      int& numEqns,
-		      int* eqnNumbers);
+                      int idType, 
+                      int fieldID,
+                      int& numEqns,
+                      int* eqnNumbers);
 
     /**Get the solution data for a particular field, on an arbitrary set of
        nodes.
@@ -658,9 +664,9 @@ class FEI_Implementation : public FEI {
        @return error-code 0 if successful
     */
     int getNodalFieldSolution(int fieldID,
-			      int numNodes,
-			      const GlobalID* nodeIDs,
-			      double* results);
+                              int numNodes,
+                              const GlobalID* nodeIDs,
+                              double* results);
 
    /**Get the number of nodes that are local to this processor (includes nodes
       that are shared by other processors).
@@ -681,8 +687,8 @@ class FEI_Implementation : public FEI {
       @return error-code 0 if successful
    */
     int getLocalNodeIDList(int& numNodes,
-			   GlobalID* nodeIDs,
-			   int lenNodeIDs);
+                           GlobalID* nodeIDs,
+                           int lenNodeIDs);
 
     /** Pass nodal data for a specified field through to the solver. Example
       is geometric coordinates, etc.
@@ -701,9 +707,15 @@ class FEI_Implementation : public FEI {
       data for nodeIDs[i] begins in position i*fieldSize of this array.
     */
     int putNodalFieldData(int fieldID,
-			  int numNodes,
-			  const GlobalID* nodeIDs,
-			  const double* nodeData);
+                          int numNodes,
+                          const GlobalID* nodeIDs,
+                          const double* nodeData);
+
+  const SNL_FEI_Structure& getProblemStructure() const
+  { return *problemStructure_; }
+
+  SNL_FEI_Structure& getProblemStructure()
+  { return *problemStructure_; }
 
   //============================================================================
   private: //functions

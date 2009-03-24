@@ -489,7 +489,7 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
       int* fieldIDs = &fieldIDs_vec[0];
 
       for(int k=0; k<numNodesPerCR; k++) {
-        NodeDescriptor& node = Filter::findNodeDescriptor(nodeIDPtr[k]);
+        const NodeDescriptor& node = Filter::findNodeDescriptor(nodeIDPtr[k]);
         nodeList[k] = node.getNodeNumber();
 
         int eqn = -1;
@@ -549,7 +549,7 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
       int* fieldIDs = &fieldIDs_vec[0];
 
       for(int k=0; k<numNodesPerCR; k++) {
-        NodeDescriptor& node = Filter::findNodeDescriptor(nodeIDsPtr[k]);
+        const NodeDescriptor& node = Filter::findNodeDescriptor(nodeIDsPtr[k]);
         nodeList[k] = node.getNodeNumber();
 
         int eqn = -1;
@@ -568,7 +568,7 @@ void LinSysCoreFilter::setLinSysCoreCREqns()
 }
 
 //==============================================================================
-int LinSysCoreFilter::storeNodalColumnCoefs(int eqn, NodeDescriptor& node,
+int LinSysCoreFilter::storeNodalColumnCoefs(int eqn, const NodeDescriptor& node,
                                             int fieldID, int fieldSize,
                                             double* coefs)
 {
@@ -602,7 +602,7 @@ int LinSysCoreFilter::storeNodalColumnCoefs(int eqn, NodeDescriptor& node,
 }
 
 //==============================================================================
-int LinSysCoreFilter::storeNodalRowCoefs(NodeDescriptor& node,
+int LinSysCoreFilter::storeNodalRowCoefs(const NodeDescriptor& node,
                                          int fieldID, int fieldSize,
                                          double* coefs, int eqn)
 {
@@ -644,7 +644,7 @@ int LinSysCoreFilter::storeNodalRowCoefs(NodeDescriptor& node,
 }
 
 //==============================================================================
-void LinSysCoreFilter::storeNodalSendEqn(NodeDescriptor& node,
+void LinSysCoreFilter::storeNodalSendEqn(const NodeDescriptor& node,
                                          int fieldID, int col,
                                          double* coefs)
 {
@@ -669,10 +669,10 @@ void LinSysCoreFilter::storeNodalSendEqn(NodeDescriptor& node,
 }
 
 //==============================================================================
-void LinSysCoreFilter::storePenNodeSendData(NodeDescriptor& iNode,
+void LinSysCoreFilter::storePenNodeSendData(const NodeDescriptor& iNode,
                                             int iField, int iFieldSize,
                                             double* iCoefs,
-                                            NodeDescriptor& jNode,
+                                            const NodeDescriptor& jNode,
                                             int jField, int jFieldSize,
                                             double* jCoefs,
                                             double penValue, double CRValue)
@@ -724,10 +724,10 @@ void LinSysCoreFilter::storePenNodeSendData(NodeDescriptor& iNode,
 }
 
 //==============================================================================
-int LinSysCoreFilter::storePenNodeData(NodeDescriptor& iNode,
+int LinSysCoreFilter::storePenNodeData(const NodeDescriptor& iNode,
                                        int iField, int iFieldSize,
                                        double* iCoefs,
-                                       NodeDescriptor& jNode,
+                                       const NodeDescriptor& jNode,
                                        int jField, int jFieldSize,
                                        double* jCoefs,
                                        double penValue, double CRValue){
@@ -1421,7 +1421,7 @@ int LinSysCoreFilter::resolveConflictingCRs(EqnBuffer& bcEqns)
       int fieldSize = problemStructure_->getFieldSize(CRFieldPtr[j]);
       for(int k=0; k<fieldSize; ++k) {
         if (std::abs(weights[offset++] + 1.0) < fei_eps) {
-          NodeDescriptor* node = NULL;
+          const NodeDescriptor* node = NULL;
           CHK_ERR( nodeDB.getNodeWithID(CRNodePtr[j], node) );
           int eqn = 0;
           node->getFieldEqnNumber(CRFieldPtr[j], eqn);
@@ -1757,7 +1757,7 @@ int LinSysCoreFilter::loadCRMult(int CRID,
   for(int j = 0; j < lenList; j++) {
     int myFieldID = CRFields[j];
 
-    NodeDescriptor& node = Filter::findNodeDescriptor(CRNodePtr[j]);
+    const NodeDescriptor& node = Filter::findNodeDescriptor(CRNodePtr[j]);
 
     //first, store the column coeficients for equation irow, the
     //constraint's equation.
@@ -1866,7 +1866,7 @@ int LinSysCoreFilter::loadCRPen(int CRID,
     GlobalID iNodeID = CRNodePtr[i];
     int iField = CRFields[i];
 
-    NodeDescriptor& iNode = Filter::findNodeDescriptor(iNodeID);
+    const NodeDescriptor& iNode = Filter::findNodeDescriptor(iNodeID);
     double* iweights = &(CRWeightPtr[ioffset]);
     ioffset += fieldSizes[i];
 
@@ -1875,7 +1875,7 @@ int LinSysCoreFilter::loadCRPen(int CRID,
       GlobalID jNodeID = CRNodePtr[j];
       int jField = CRFields[j];
 
-      NodeDescriptor& jNode = Filter::findNodeDescriptor(jNodeID);
+      const NodeDescriptor& jNode = Filter::findNodeDescriptor(jNodeID);
       double* jweights = &(CRWeightPtr[joffset]);
       joffset += fieldSizes[j];
 
@@ -2950,7 +2950,7 @@ int LinSysCoreFilter::getBlockNodeSolution(GlobalID elemBlockID,
 
    int offset = 0;
    for(int i=0; i<numActiveNodes; i++) {
-     NodeDescriptor* node_i = NULL;
+     const NodeDescriptor* node_i = NULL;
      CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
 
       if (offset == numNodes) break;
@@ -2960,7 +2960,7 @@ int LinSysCoreFilter::getBlockNodeSolution(GlobalID elemBlockID,
       //first let's set the offset at which this node's solution coefs start.
       offsets[offset++] = numSolnParams;
 
-      NodeDescriptor* node = NULL;
+      const NodeDescriptor* node = NULL;
       int err = 0;
       //Obtain the NodeDescriptor of nodeID in the activeNodes list...
       //Don't call the getActiveNodeDesc_ID function unless we have to.
@@ -3024,7 +3024,7 @@ int LinSysCoreFilter::getNodalSolution(int numNodes,
 
   int offset = 0;
   for(int i=0; i<numActiveNodes; i++) {
-    NodeDescriptor* node_i = NULL;
+    const NodeDescriptor* node_i = NULL;
     CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
 
     if (offset == numNodes) break;
@@ -3034,7 +3034,7 @@ int LinSysCoreFilter::getNodalSolution(int numNodes,
     //first let's set the offset at which this node's solution coefs start.
     offsets[offset++] = numSolnParams;
 
-    NodeDescriptor* node = NULL;
+    const NodeDescriptor* node = NULL;
     int err = 0;
     //Obtain the NodeDescriptor of nodeID in the activeNodes list...
     //Don't call the getNodeWithID function unless we have to.
@@ -3111,12 +3111,12 @@ int LinSysCoreFilter::getBlockFieldNodeSolution(GlobalID elemBlockID,
    //If so, put the answers in the results list.
 
    for(int i=0; i<numNodes; i++) {
-     NodeDescriptor* node_i = NULL;
+     const NodeDescriptor* node_i = NULL;
      CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
 
      GlobalID nodeID = nodeIDs[i];
 
-     NodeDescriptor* node = NULL;
+     const NodeDescriptor* node = NULL;
      int err = 0;
      //Obtain the NodeDescriptor of nodeID in the activeNodes list...
      //Don't call the getNodeWithID function unless we have to. (getNodeWithID
@@ -3173,12 +3173,12 @@ int LinSysCoreFilter::getNodalFieldSolution(int fieldID,
   //If so, put the answers in the results list.
 
   for(int i=0; i<numNodes; i++) {
-    NodeDescriptor* node_i = NULL;
+    const NodeDescriptor* node_i = NULL;
     CHK_ERR( nodeDB.getNodeAtIndex(i, node_i) );
 
     GlobalID nodeID = nodeIDs[i];
 
-    NodeDescriptor* node = NULL;
+    const NodeDescriptor* node = NULL;
     int err = 0;
     //Obtain the NodeDescriptor of nodeID in the activeNodes list...
     //Don't call the getNodeWithID function unless we have to.
@@ -3237,7 +3237,7 @@ int LinSysCoreFilter::putBlockNodeSolution(GlobalID elemBlockID,
    //when an associated node is found, put its 'answers' into the linear system.
 
    for(int i=0; i<numNodes; i++) {
-     NodeDescriptor* node = NULL;
+     const NodeDescriptor* node = NULL;
      int err = nodeDB.getNodeWithID(nodeIDs[i], node);
 
       if (err != 0) continue;
@@ -3323,7 +3323,7 @@ int LinSysCoreFilter::putBlockFieldNodeSolution(GlobalID elemBlockID,
    int count = 0;
 
    for(int i=0; i<numNodes; i++) {
-     NodeDescriptor* node = NULL;
+     const NodeDescriptor* node = NULL;
      CHK_ERR( nodeDB.getNodeWithID(nodeIDs[i], node) );
 
       if (fieldID < 0) numbers[count++] = node->getNodeNumber();
@@ -3509,7 +3509,7 @@ int LinSysCoreFilter::putNodalFieldData(int fieldID,
   std::vector<int> nodeNumbers(numNodes);
 
   for(int i=0; i<numNodes; i++) {
-    NodeDescriptor* node = NULL;
+    const NodeDescriptor* node = NULL;
     CHK_ERR( nodeDB.getNodeWithID(nodeIDs[i], node) );
 
     int nodeNumber = node->getNodeNumber();
@@ -3548,7 +3548,7 @@ int LinSysCoreFilter::putNodalFieldSolution(int fieldID,
   std::vector<int> eqnNumbers(fieldSize);
 
   for(int i=0; i<numNodes; i++) {
-    NodeDescriptor* node = NULL;
+    const NodeDescriptor* node = NULL;
     CHK_ERR( nodeDB.getNodeWithID(nodeIDs[i], node) );
 
     int eqn = -1;

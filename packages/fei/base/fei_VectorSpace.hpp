@@ -627,6 +627,7 @@ namespace fei {
     /** Intended to be used by other implementation classes.
     */
     snl_fei::PointBlockMap* getPointBlockMap();
+    const snl_fei::PointBlockMap* getPointBlockMap() const;
 
     void getGlobalIndices(const fei::Pattern* pattern,
                           const fei::Record*const* records,
@@ -747,6 +748,11 @@ namespace fei {
     }
 
   inline snl_fei::PointBlockMap* VectorSpace::getPointBlockMap()
+    {
+      return( ptBlkMap_ );
+    }
+
+  inline const snl_fei::PointBlockMap* VectorSpace::getPointBlockMap() const
     {
       return( ptBlkMap_ );
     }

@@ -249,7 +249,7 @@ class SNL_FEI_Structure : public Lookup {
    };
 
    int getNumSubdomains(int nodeNumber) {
-     NodeDescriptor* node = NULL;
+     const NodeDescriptor* node = NULL;
      int err = nodeDatabase_->getNodeWithNumber(nodeNumber, node);
      if (err != 0) return(-1);
      GlobalID nodeID = node->getGlobalNodeID();
@@ -257,7 +257,7 @@ class SNL_FEI_Structure : public Lookup {
    }
 
    int* getSubdomainList(int nodeNumber) {
-     NodeDescriptor* node = NULL;
+     const NodeDescriptor* node = NULL;
      int err = nodeDatabase_->getNodeWithNumber(nodeNumber, node);
      if (err != 0) return(NULL);
      GlobalID nodeID = node->getGlobalNodeID();
@@ -582,7 +582,7 @@ class SNL_FEI_Structure : public Lookup {
 
    int assembleReducedStructure();
 
-   bool nodalEqnsAllSlaves(NodeDescriptor* node, std::vector<int>& slaveEqns);
+   bool nodalEqnsAllSlaves(const NodeDescriptor* node, std::vector<int>& slaveEqns);
 
    int initializeBlkEqnMapper();
 
