@@ -122,6 +122,16 @@ C) Configuring
 
   where LANGUAGE = C, CXX, Fortran, etc.
 
+(*) Disabling the Fortran compiler and all Fortran code:
+
+  To disable the Fortran compiler and all Trilinos code that depends on
+  Fortran set:
+
+    -D Trilinos_ENABLE_Fortran:BOOL=OFF
+
+  The user cache variable Trilinos_ENABLE_Fortran is used as a trigger in the
+  Trilinos CMake build system to enable Fortran support or not.
+
 (*) Enabling checked STL implementation:
 
   To turn on the checked STL implementation set:
