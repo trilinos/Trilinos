@@ -360,10 +360,11 @@ C) Configuring
   are what are directly used by the CMake build infrastructure.  These
   variables are normally set by the varaibles <TPLNAME>_INCLUDE_DIRS,
   <TPLNAME>_LIBRARY_NAMES, and <TPLNAME>_LIBRARY_DIRS using find commands but
-  you can always override these and directly set the (FILEPATH) cache varibles
-  TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES.  This gives the user
-  complete and directl control in specifying set exactly what is used in the
-  build process.
+  you can always override these and directly by setting the (FILEPATH) cache
+  varibles TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES.  This gives
+  the user complete and direct control in specifying exactly what is used in
+  the build process.  The other varibles that start with <TPLNAME>_ are just a
+  convenience to make it easier to specify the location of the libraries.
 
   Optional package-specific support for a TPL can be turned off by passing
   into 'cmake':
@@ -373,7 +374,15 @@ C) Configuring
   where PACKAGE is Epetra, NOX etc.  This gives the user full control over
   what TPLs are supported by which package independently.
 
-(*) Getting verbose output from configure
+  Note that support for an optional TPL can also be turned on implicitly by
+  setting:
+
+    -D <PACKAGE>_ENABLE_<TPLNAME>:BOOL=ON
+
+  That will result in setting TPL_ENABLE_<TPLNAME>=ON internally (but not set
+  in the cache) if TPL_ENABLE_<TPLNAME>=OFF is not already set.
+
+(*) Getting verbose output from configure:
 
     $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON
 

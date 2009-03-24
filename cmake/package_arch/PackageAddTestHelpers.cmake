@@ -69,6 +69,83 @@ ENDFUNCTION()
 
 
 #
+# Process the COMM arguments
+#
+# NOTE: The COMM array arguments is passed as ${ARGN}
+#
+
+FUNCTION( PACKAGE_ADD_TEST_PROCESS_COMM  ADD_SERIAL_TEST  ADD_MPI_TEST )
+
+  SET(COMM_ARRAY ${ARGN})
+
+  IF (COMM_ARRAY)
+    SET(ADD_MPI_TEST OFF PARENT_SCOPE)
+    SET(ADD_SERIAL_TEST OFF PARENT_SCOPE)
+    FOREACH(COMM ${COMM_ARRAY})
+      IF (COMM STREQUAL "mpi")
+        SET(ADD_MPI_TEST ON PARENT_SCOPE)
+      ELSEIF(COMM STREQUAL "serial")
+        SET(ADD_SERIAL_TEST ON PARENT_SCOPE)
+      ELSE()
+        MESSAGE(SEND_ERROR "Error, the COMM value '${COMM}' is not valid."
+          "  Only 'mpi' and 'serial' are allowed.")
+      ENDIF()
+    ENDFOREACH()
+  ELSE()
+    SET(ADD_MPI_TEST ON PARENT_SCOPE)
+    SET(ADD_SERIAL_TEST ON PARENT_SCOPE)
+  ENDIF()
+
+  IF (TPL_ENABLE_MPI)
+    SET(ADD_SERIAL_TEST OFF PARENT_SCOPE)
+  ELSE()
+    SET(ADD_MPI_TEST OFF PARENT_SCOPE)
+  ENDIF()
+
+ENDFUNCTION()
+
+
+#
+# Generate the array of arguments for an MPI run
+#
+# NOTE: The extra test program arguments are passed through ${ARGN}.
+#
+
+FUNCTION( PACAKGE_ADD_TEST_GET_MPI_CMND  MPI_CMND_ARRAY_VAR_NAME
+  EXECUTABLE_PATH  NUM_PROCS_USED
+  )
+
+  SET(${MPI_CMND_ARRAY_VAR_NAME}
+     "${MPI_EXEC}"
+     ${MPI_EXEC_PRE_NUMPROCS_FLAGS}
+     ${MPI_EXEC_NUMPROCS_FLAG} ${NUM_PROCS_USED}
+     ${MPI_EXEC_POST_NUMPROCS_FLAGS}
+     "${EXECUTABLE_PATH}"
+     ${ARGN}
+     PARENT_SCOPE
+     )
+
+ENDFUNCTION()
+
+
+#
+# Wrapper for adding a test to facilitate unit testing
+#
+
+FUNCTION(PACKAGE_ADD_TEST_ADD_TEST)
+
+  IF (PACKAGE_ADD_TEST_ADD_TEST_CAPTURE)
+    APPEND_GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT ${ARGN})
+  ENDIF()
+
+  IF (NOT PACKAGE_ADD_TEST_ADD_TEST_SKIP)
+    ADD_TEST(${ARGN})
+  ENDIF()
+
+ENDFUNCTION()
+
+
+#
 # Set the pass/fail properties of a test that has already been added
 #
 
@@ -92,18 +169,5 @@ MACRO(PACKAGE_PRIVATE_ADD_TEST_SET_PASS_PROPERTY TEST_NAME_IN)
 ENDMACRO()
 
 
-#
-# Wrapper for adding a test to facilitate unit testing
-#
 
-FUNCTION(PACKAGE_ADD_TEST_ADD_TEST)
 
-  IF (PACKAGE_ADD_TEST_ADD_TEST_CAPTURE)
-    APPEND_GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT ${ARGN})
-  ENDIF()
-
-  IF (NOT PACKAGE_ADD_TEST_ADD_TEST_SKIP)
-    ADD_TEST(${ARGN})
-  ENDIF()
-
-ENDFUNCTION()
