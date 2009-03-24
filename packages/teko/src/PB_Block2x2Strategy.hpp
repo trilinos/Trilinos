@@ -10,14 +10,14 @@ namespace PB {
  *         Block2x2PreconditionerFactory.
  *
  * This should be paired with a Block2x2PreconditionerFactory,
- * it build the Inv F and InvSchur opreators. Building an approximate
+ * it build the \f$A_{00}^{-1}\f$ and \f$S\f$ opreators. Building an approximate
  * inverse of this system
  * 
  * \f$
  * A = \left[ 
  * \begin{array}{cc}
- * F & U \\
- * L & D
+ * A_{00} & A_{01} \\
+ * A_{10} & A_{11}
  * \end{array}
  * \right]
  * \f$
@@ -28,36 +28,36 @@ namespace PB {
  * A = \left[ 
  * \begin{array}{cc}
  * I & 0  \\
- * L F^{-1} & I
+ * A_{10} A_{00}^{-1} & I
  * \end{array}
  * \right]
  * \left[ 
  * \begin{array}{cc}
- * F & 0  \\
+ * A_{00} & 0  \\
  * 0 & -S
  * \end{array}
  * \right]
  * \left[ 
  * \begin{array}{cc}
- * I &  F^{-1} U \\
+ * I &  A_{00}^{-1} A_{01} \\
  * 0 & I
  * \end{array}
  * \right]
  * \f$
  *
- * where the Shur complement is \f$ S = -D + L F^{-1} U \f$
- * To invert \f$ A \f$, \f$ F^{-1} \f$ and \f$ S^{-1} \f$ are required.  The idea
+ * where the Shur complement is \f$ S = -A_{11} + A_{10} A_{00}^{-1} A_{01} \f$
+ * To invert \f$ A \f$, \f$ A_{00}^{-1} \f$ and \f$ S^{-1} \f$ are required.  The idea
  * of this strategy is to give those operators.
  */
 class Block2x2Strategy {
 public:
-   /** returns an (approximate) inverse of F */
+   /** returns an (approximate) inverse of \f$A_{00}\f$ */
    virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
-   getInvF(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const = 0;
+   getInvA00(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const = 0;
 
-   /** returns an (approximate) inverse of S = -D + L*inv(F)*U */
+   /** returns an (approximate) inverse of \f$S = -A_{11} + A_{10} A_{00}^{-1} A_{01} */
    virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
-   getInvSchur(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const = 0;
+   getInvS(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const = 0;
 };
 
 /** @brief A simple strategy for use with Block2x2PreconditionerFactory, that
@@ -70,16 +70,16 @@ public:
  */
 class StaticBlock2x2Strategy : public Block2x2Strategy {
 public:
-   /** @brief Constructor that takes the static inv(F) and inv(S) objects
+   /** @brief Constructor that takes the static \f$A_{00}^{-1}\f$ and \f$S^{-1}\f$ objects
      *
-     * Constructor that takes the static inv(F) and inv(S) objects.
+     * Constructor that takes the static \f$A_{00}^{-1}\f$ and \f$S^{-1}\f$ objects.
      *
-     * @param[in] invF Inverse of the (1,1) block in the source matrix.
+     * @param[in] invA00 Inverse of \f$A_{00}\f$ in the source matrix.
      * @param[in] invS Inverse of the Schur complement of the source matrix.
      */
-   StaticBlock2x2Strategy(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invF,
+   StaticBlock2x2Strategy(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invA00,
                           const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invS)
-      : invF_(invF), invSchur_(invS)
+      : invA00_(invA00), invS_(invS)
    {}
  
    /** @name Methods inherited from Block2x2Strategy. */
@@ -87,19 +87,19 @@ public:
 
    /** returns a static (approximate) inverse of F */
    virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> > 
-   getInvF(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const
-   { return invF_; }
+   getInvA00(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const
+   { return invA00_; }
 
    /** returns a static (approximate) inverse of S = -D + L*inv(F)*U */
    virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> > 
-   getInvSchur(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const
-   { return invSchur_; }
+   getInvS(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const
+   { return invS_; }
 
    //@}
 
 protected:
-   const Teuchos::RCP<const Thyra::LinearOpBase<double> > invF_;  /**< Stored value of inv(F) */
-   const Teuchos::RCP<const Thyra::LinearOpBase<double> > invSchur_; /**< Stored value of inv(S) */
+   const Teuchos::RCP<const Thyra::LinearOpBase<double> > invA00_;  /**< Stored value of \f$A_{00}^{-1}\f$ */
+   const Teuchos::RCP<const Thyra::LinearOpBase<double> > invS_; /**< Stored value of \f$S^{-1}\f$ */
 
 private:
    // hide me!

@@ -22,12 +22,12 @@ using namespace Thyra;
 namespace PB {
 
 // construct a PreconditionerFactory
-Block2x2PreconditionerFactory::Block2x2PreconditionerFactory(const RCP<const LinearOpBase<double> > & invF,
-      const RCP<const LinearOpBase<double> > & invPschur)
+Block2x2PreconditionerFactory::Block2x2PreconditionerFactory(const RCP<const LinearOpBase<double> > & invA00,
+      const RCP<const LinearOpBase<double> > & invS)
          : invOpsStrategy_(Teuchos::null)
 { 
    // create a static strategy for this object
-   invOpsStrategy_ = rcp(new StaticBlock2x2Strategy(invF,invPschur));
+   invOpsStrategy_ = rcp(new StaticBlock2x2Strategy(invA00,invS));
 }
 
 Block2x2PreconditionerFactory::Block2x2PreconditionerFactory(const RCP<const Block2x2Strategy> & strategy)
@@ -55,11 +55,10 @@ void Block2x2PreconditionerFactory::initializePrec(const RCP<const LinearOpSourc
       PreconditionerBase<double> * prec, const ESupportSolveUse supportSolveUse) const
 {
    const RCP<const LinearOpBase<double> > A = opSrc->getOp();
-   const RCP<const LinearOpBase<double> > invF      = invOpsStrategy_->getInvF(A);
-   const RCP<const LinearOpBase<double> > invPschur = invOpsStrategy_->getInvSchur(A);
+   const RCP<const LinearOpBase<double> > invA00 = invOpsStrategy_->getInvA00(A);
+   const RCP<const LinearOpBase<double> > invS   = invOpsStrategy_->getInvS(A);
 
-   //const RCP<const LinearOpBase<double> > precOp = build2x2InverseOperator(opSrc->getOp(),invF_,invPschur_);
-   const RCP<const LinearOpBase<double> > precOp = build2x2InverseOperator(A,invF,invPschur);
+   const RCP<const LinearOpBase<double> > precOp = build2x2InverseOperator(A,invA00,invS);
  
    // must first cast that to be initialized
    DefaultPreconditioner<double> & dPrec = dyn_cast<DefaultPreconditioner<double> >(*prec);
@@ -80,15 +79,15 @@ void Block2x2PreconditionerFactory::uninitializePrec(PreconditionerBase<double> 
 // build a 2x2 inverse operator
 const RCP<const LinearOpBase<double> > 
 Block2x2PreconditionerFactory::build2x2InverseOperator(const RCP<const LinearOpBase<double> > & A,
-                                                       const RCP<const LinearOpBase<double> > & invF, 
-                                                       const RCP<const LinearOpBase<double> > & invPschur) const
+                                                       const RCP<const LinearOpBase<double> > & invA00, 
+                                                       const RCP<const LinearOpBase<double> > & invS) const
 {
    // cast to a blocked operator
    const RCP<const BlockedLinearOpBase<double> > blkA 
          = rcp_dynamic_cast<const BlockedLinearOpBase<double> >(A);
 
    // return a Schur complement solve operator
-   return rcp(new SchurSolveLinearOp(blkA,invF,invPschur));
+   return rcp(new SchurSolveLinearOp(blkA,invA00,invS));
 }
 
 // for ParameterListAcceptor
