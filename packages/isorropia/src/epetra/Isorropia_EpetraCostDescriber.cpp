@@ -390,7 +390,7 @@ void CostDescriber::getCosts(std::map<int, float> &vertexWeights,
 
   if (haveGraphEdgeWeights()){
     std::set<int> vgids;
-    int ngids = getGraphEdgeVertices(vgids);
+//     int ngids = getGraphEdgeVertices(vgids);
     std::set<int>::iterator curr;
     std::set<int>::iterator end = vgids.end();
     curr = vgids.begin();

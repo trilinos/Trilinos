@@ -62,8 +62,8 @@ namespace Epetra {
 
 Library::
 Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int itype)
-  : input_graph_(input_graph),
-    input_type_(itype),
+  : input_type_(itype),
+    input_graph_(input_graph),
     input_matrix_(0),
     input_coords_(0),
     costs_(0),
@@ -75,11 +75,11 @@ Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int itype)
 Library::
 Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
         Teuchos::RCP<CostDescriber> costs, int itype)
-  : input_graph_(input_graph),
-    input_type_(itype),
-    costs_(costs),
+  : input_type_(itype),
+    input_graph_(input_graph),
     input_matrix_(0),
     input_coords_(0),
+    costs_(costs),
     weights_(0)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
@@ -87,9 +87,9 @@ Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 
 Library::
 Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int itype)
-  : input_matrix_(input_matrix),
-    input_type_(itype),
+  : input_type_(itype),
     input_graph_(0),
+    input_matrix_(input_matrix),
     input_coords_(0),
     costs_(0),
     weights_(0)
@@ -100,11 +100,11 @@ Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int itype)
 Library::
 Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	Teuchos::RCP<CostDescriber> costs, int itype)
-  : input_matrix_(input_matrix),
-    input_type_(itype),
-    costs_(costs),
+  : input_type_(itype),
     input_graph_(0),
+    input_matrix_(input_matrix),
     input_coords_(0),
+    costs_(costs),
     weights_(0)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
@@ -112,10 +112,10 @@ Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 
 Library::
 Library(Teuchos::RCP<const Epetra_MultiVector> input_coords, int itype)
-  : input_coords_(input_coords),
-    input_type_(itype),
+  : input_type_(itype),
     input_graph_(0),
     input_matrix_(0),
+    input_coords_(input_coords),
     costs_(0),
     weights_(0)
 {
@@ -125,10 +125,10 @@ Library(Teuchos::RCP<const Epetra_MultiVector> input_coords, int itype)
 Library::
 Library(Teuchos::RCP<const Epetra_MultiVector> input_coords,
         Teuchos::RCP<const Epetra_MultiVector> weights, int itype)
-  : input_coords_(input_coords),
-    input_type_(itype),
+  : input_type_(itype),
     input_graph_(0),
     input_matrix_(0),
+    input_coords_(input_coords),    
     costs_(0) ,
     weights_(weights)
 {

@@ -68,6 +68,12 @@ namespace ZoltanLib {
  */
 class QueryObject
 {
+
+  /** haveGraph is true if we have CrsGraph, and not a CrsMatrix or
+      a MultiVector.
+    */
+  const bool haveGraph_;
+
   /** The CrsGraph.  The QueryObject must be constructed with one of
       an Epetra_CrsGraph, an Epetra_RowMatrix or an Epetra_MultiVector.
     */
@@ -110,10 +116,6 @@ class QueryObject
   std::map<int,int> procmap_;
   std::set<int> graph_self_edges_;
 
-  /** haveGraph is true if we have CrsGraph, and not a CrsMatrix or
-      a MultiVector.
-    */
-  const bool haveGraph_;
   int myProc_;
   int base_;
 

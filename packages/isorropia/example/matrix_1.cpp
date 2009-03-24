@@ -74,7 +74,7 @@ Teuchos::RCP<Epetra_CrsMatrix>
 int main(int argc, char** argv) {
 #if defined(HAVE_MPI) && defined(HAVE_EPETRA)
 
-  int p, numProcs = 1;
+  int numProcs = 1;
   int localProc = 0;
 
   //first, set up our MPI environment...

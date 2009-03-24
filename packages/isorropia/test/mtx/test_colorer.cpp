@@ -102,8 +102,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 	  bool verbose,           // display the graph before & after
 	  int objectType)         // use isorropia's CrsMatrix or CrsGraph
 {
-  int rc=0, fail = 0;
-
 #ifdef HAVE_EPETRAEXT
   int localProc = 0;
   int numProcs = 1;
@@ -125,9 +123,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     // matrix, there may be nothing left.
     keepDenseEdges = 1;
   }
-
-  double myShareBefore = 1.0 / numProcs;
-  double myShare = myShareBefore;
 
 
   // Check that input matrix is valid.  This test constructs an "x"

@@ -53,13 +53,13 @@ namespace ZoltanLib{
 QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
 	   Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
                                      int inputType) 
-  : graph_(graph),
+  : haveGraph_(true) ,
+    graph_(graph),
+    matrix_(0),
+    coords_(0),
     rowMap_(&(graph->RowMap())),
     colMap_(&(graph->ColMap())),
     costs_(costs),
-    haveGraph_(true) ,
-    matrix_(0),
-    coords_(0),
     weights_(0),
     input_type_(inputType) 
 {
@@ -99,13 +99,13 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
 QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
 	     Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
                                  int inputType) 
-  : matrix_(matrix),
+  : haveGraph_(false),
+    graph_(0),
+    matrix_(matrix),
+    coords_(0),
     rowMap_((const Epetra_BlockMap*)&(matrix->RowMatrixRowMap())),
     colMap_((const Epetra_BlockMap*)&(matrix->RowMatrixColMap())),
     costs_(costs),
-    haveGraph_(false),
-    graph_(0),
-    coords_(0),
     weights_(0),
     input_type_(inputType) 
 {
@@ -143,13 +143,13 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
 
 QueryObject::QueryObject( Teuchos::RCP<const Epetra_MultiVector> coords,
                           Teuchos::RCP<const Epetra_MultiVector> weights)
-  : coords_(coords),
-    weights_(weights),
-    rowMap_(&(coords->Map())),
+  : haveGraph_(false),
     graph_(0),
     matrix_(0),
+    coords_(coords),
+    rowMap_(&(coords->Map())),
     costs_(0),
-    haveGraph_(false)
+    weights_(weights)
 {
   myProc_ = rowMap_->Comm().MyPID();
   base_ = rowMap_->IndexBase();

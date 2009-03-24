@@ -292,7 +292,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   // Maps for original object
   const Epetra_Map &sourceRowMap = matrix->RowMap();
   const Epetra_Map &sourceRangeMap = matrix->RangeMap();
-  const Epetra_Map &sourceColMap = matrix->ColMap();
+//   const Epetra_Map &sourceColMap = matrix->ColMap();
   const Epetra_Map &sourceDomainMap = matrix->DomainMap();
 
   int numCols = matrix->NumGlobalCols();
@@ -893,7 +893,7 @@ int main(int argc, char** argv) {
   bool verbose = false;
   int numProcs = 1;
   int localProc = 0;
-  std::string *fstr;
+//   std::string *fstr;
 
 #ifdef HAVE_MPI
   MPI_Init(&argc, &argv);

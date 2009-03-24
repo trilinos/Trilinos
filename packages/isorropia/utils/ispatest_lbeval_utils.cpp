@@ -202,7 +202,7 @@ static int compute_graph_metrics(const Epetra_BlockMap &rowmap,
   const Epetra_Comm &comm  = rowmap.Comm();
   int myProc = comm.MyPID();
   int myRows = rowmap.NumMyElements();
-  double min, max, avg;
+  double min, avg;
   int rc;
   std::map<int, float> vertexWeights;  // vertex global ID -> weight
   // vertex global ID -> map from neighbor global ID to edge weight
@@ -426,7 +426,7 @@ static int compute_hypergraph_metrics(const Epetra_BlockMap &rowmap,
   int nProcs = comm.NumProc();
   int myProc = comm.MyPID();
   int myRows = rowmap.NumMyElements();
-  double min, max, avg;
+  double min, avg;
   std::map<int, float> vertexWeights;  // vertex global ID -> weight
   // vertex global ID -> map from neighbor global ID to edge weight
   std::map<int, std::map<int, float > > graphEdgeWeights;
@@ -677,7 +677,7 @@ void show_matrix(const char *txt, const Epetra_RowMatrix &matrix, const Epetra_C
 
   int *myA = new int [numRows * numCols];
 
-  int rc = make_my_A(matrix, myA, comm);
+  make_my_A(matrix, myA, comm);
 
   printMatrix(txt, myA, NULL, NULL, numRows, numCols, comm);
 
@@ -712,7 +712,7 @@ void show_matrix(const char *txt, const Epetra_LinearProblem &problem, const Epe
 
   int *myA = new int [numRows * numCols];
 
-  int rc = make_my_A(*matrix, myA, comm);
+  make_my_A(*matrix, myA, comm);
 
   int *myX = new int [numCols];
   int *myB = new int [numRows];
