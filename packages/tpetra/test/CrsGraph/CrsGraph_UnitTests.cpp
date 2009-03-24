@@ -661,7 +661,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, StaticProfile , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViews, LO, GO ) \
     /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, NonLocalsStatic, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViewsStatic, LO, GO ) */
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViewsStatic, LO, GO )*/
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
      UNIT_TEST_GROUP_LO_GO(int,int)
