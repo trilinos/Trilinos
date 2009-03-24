@@ -235,7 +235,10 @@ Partitioner::createNewMap()
   int myPID = input_map_->Comm().MyPID();
   int numMyElements = input_map_->NumMyElements();
   std::vector<int> elementList( numMyElements );
-  input_map_->MyGlobalElements( &elementList[0] );
+  if (numMyElements > 0)
+    input_map_->MyGlobalElements( &elementList[0] );
+  else
+    input_map_->MyGlobalElements(NULL);
 
   std::vector<int> myNewGID (numMyElements - exportsSize_);
   std::vector<int>::iterator newElemsIter;
@@ -251,8 +254,14 @@ Partitioner::createNewMap()
   //Add imports to end of list
   myNewGID.insert(myNewGID.end(), imports_.begin(), imports_.end());
 
+  int *gidptr;
+  if (myNewGID.size() > 0)
+    gidptr = &myNewGID[0];
+  else
+    gidptr = NULL;
+
   Teuchos::RCP<Epetra_Map> target_map =
-    Teuchos::rcp(new Epetra_Map(-1, myNewGID.size(), &myNewGID[0], 0, input_map_->Comm()));
+    Teuchos::rcp(new Epetra_Map(-1, myNewGID.size(), gidptr, 0, input_map_->Comm()));
 
   return(target_map);
 }
