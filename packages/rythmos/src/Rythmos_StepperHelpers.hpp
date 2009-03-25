@@ -133,7 +133,6 @@ void restart( StepperBase<Scalar> *stepper )
   stepper->setInitialCondition(initialCondition);
 }
 
-
 } // namespace Rythmos
 
 

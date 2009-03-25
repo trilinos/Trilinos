@@ -351,7 +351,9 @@ int main(int argc, char *argv[])
           defaultIntegrator = Rythmos::controlledDefaultIntegrator<double>(
             Rythmos::simpleIntegrationControlStrategy<double>(integratorParams)
             );
-        Rythmos::IntegratorBase<double> &integrator = *defaultIntegrator;
+        RCP<Rythmos::DefaultIntegrator<double> > dIntegrator = 
+          Teuchos::rcp_dynamic_cast<Rythmos::DefaultIntegrator<double> >(defaultIntegrator,true);
+        Rythmos::DefaultIntegrator<double> &integrator = *dIntegrator;
         integrator.setStepper(stepper_ptr,finalTime);
         integrator.setTrailingInterpolationBuffer(IB);
         // Ask for desired time value:
@@ -419,7 +421,9 @@ int main(int argc, char *argv[])
           defaultIntegrator = Rythmos::controlledDefaultIntegrator<double>(
             Rythmos::simpleIntegrationControlStrategy<double>(integratorParams)
             );
-        Rythmos::IntegratorBase<double> &integrator = *defaultIntegrator;
+        RCP<Rythmos::DefaultIntegrator<double> > dIntegrator = 
+          Teuchos::rcp_dynamic_cast<Rythmos::DefaultIntegrator<double> >(defaultIntegrator,true);
+        Rythmos::DefaultIntegrator<double> &integrator = *dIntegrator;
         integrator.setStepper(stepper_ptr,finalTime);
         integrator.setTrailingInterpolationBuffer(IB);
         // Ask for desired time value:

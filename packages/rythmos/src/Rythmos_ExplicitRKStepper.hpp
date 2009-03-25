@@ -197,11 +197,23 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RCP<const Thyra::Mod
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
 
+  t_ = ST::nan();
+  t_old_ = ST::nan();
+  dt_ = ST::nan();
   numSteps_ = 0;
   haveInitialCondition_ = false;
   this->setModel(model);
   this->setRKButcherTableau(rkbt);
   initialize_();
+}
+
+template<class Scalar>
+ExplicitRKStepper<Scalar>::ExplicitRKStepper()
+  : isInitialized_(false)
+{
+  t_ = ST::nan();
+  t_old_ = ST::nan();
+  dt_ = ST::nan();
 }
 
 template<class Scalar>
@@ -239,11 +251,6 @@ void ExplicitRKStepper<Scalar>::initialize_()
   isInitialized_ = true;
 }
 
-template<class Scalar>
-ExplicitRKStepper<Scalar>::ExplicitRKStepper()
-  : isInitialized_(false)
-{
-}
 
 template<class Scalar>
 ExplicitRKStepper<Scalar>::~ExplicitRKStepper()
@@ -493,7 +500,7 @@ template<class Scalar>
 void ExplicitRKStepper<Scalar>::setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
 {
   TEST_FOR_EXCEPT( is_null(model) );
-  TEST_FOR_EXCEPT( !Teuchos::is_null(model_) ); // For now you can only call this once.
+  TEST_FOR_EXCEPT( !is_null(model_) ); // For now you can only call this once.
   assertValidModel( *this, *model );
   model_ = model;
 }
@@ -529,7 +536,7 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
     "then x can not be null!" );
   THYRA_ASSERT_VEC_SPACES(
-    "Rythmos::BackwardEulerStepper::setInitialCondition(...)",
+    "Rythmos::ExplicitRKStepper::setInitialCondition(...)",
     *x_init->space(), *model_->get_x_space() );
 #endif
 

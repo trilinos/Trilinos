@@ -277,10 +277,13 @@ CORE_H = \
   $(srcdir)/Rythmos_ImplicitBDFStepperStepControlDecl.hpp\
   $(srcdir)/Rythmos_ImplicitRKModelEvaluator.hpp\
   $(srcdir)/Rythmos_ImplicitRKStepper.hpp\
+  $(srcdir)/Rythmos_IntegrationControlStrategyAcceptingIntegratorBase.hpp\
   $(srcdir)/Rythmos_IntegrationControlStrategyBase.hpp\
   $(srcdir)/Rythmos_IntegrationObserverBase.hpp\
   $(srcdir)/Rythmos_IntegratorBase.hpp\
+  $(srcdir)/Rythmos_IntegratorBuilder.hpp\
   $(srcdir)/Rythmos_InterpolationBuffer.hpp\
+  $(srcdir)/Rythmos_InterpolationBufferAppenderAcceptingIntegratorBase.hpp\
   $(srcdir)/Rythmos_InterpolationBufferAppenderBase.hpp\
   $(srcdir)/Rythmos_InterpolationBufferBase.hpp\
   $(srcdir)/Rythmos_InterpolationBufferHelpers.hpp\
@@ -309,6 +312,7 @@ CORE_H = \
   $(srcdir)/Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp\
   $(srcdir)/Rythmos_TimeRange.hpp\
   $(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp\
+  $(srcdir)/Rythmos_TrailingInterpolationBufferAcceptingIntegratorBase.hpp\
   $(srcdir)/Rythmos_Types.hpp\
   $(srcdir)/Rythmos_extractStateAndSens.hpp\
   $(srcdir)/Rythmos_Version.h

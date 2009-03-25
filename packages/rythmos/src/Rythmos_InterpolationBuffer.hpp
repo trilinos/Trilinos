@@ -38,6 +38,10 @@
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_Array.hpp"
+
 namespace Rythmos {
 
 enum IBPolicy {
@@ -45,6 +49,45 @@ enum IBPolicy {
   BUFFER_POLICY_STATIC = 1,
   BUFFER_POLICY_KEEP_NEWEST = 2
 };
+
+} // namespace Rythmos
+
+
+namespace {
+
+  static std::string IBPolicyTypeInvalid_name = "Invalid Policy";
+  static std::string IBPolicyTypeStatic_name = "Static Policy";
+  static std::string IBPolicyTypeKeepNewest_name = "Keep Newest Policy";
+  static std::string interpolationBufferPolicySelection_name = "InterpolationBufferPolicy";
+  static std::string interpolationBufferPolicySelection_default = IBPolicyTypeKeepNewest_name;
+
+  static std::string interpolationBufferStorageLimit_name = "StorageLimit";
+  static int interpolationBufferStorageLimit_default = 0;
+
+  Teuchos::Array<std::string>
+    S_InterpolationBufferPolicyTypes = Teuchos::tuple<std::string>(
+        IBPolicyTypeInvalid_name,
+        IBPolicyTypeStatic_name,
+        IBPolicyTypeKeepNewest_name
+        );
+
+  const Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<Rythmos::IBPolicy> >
+    interpolationBufferPolicyValidator = Teuchos::rcp(
+        new Teuchos::StringToIntegralParameterEntryValidator<Rythmos::IBPolicy>(
+          S_InterpolationBufferPolicyTypes,
+          Teuchos::tuple<Rythmos::IBPolicy>(
+            Rythmos::BUFFER_POLICY_INVALID,
+            Rythmos::BUFFER_POLICY_STATIC,
+            Rythmos::BUFFER_POLICY_KEEP_NEWEST
+            ),
+          interpolationBufferPolicySelection_name
+          )
+        );
+
+} // namespace
+
+
+namespace Rythmos {
 
 /** \brief concrete class for interpolation buffer functionality. */
 template<class Scalar> 
@@ -75,6 +118,9 @@ public:
     
   /// Get the maximum storage of this buffer
   int getStorage() const;
+
+  /** \brief . */
+  IBPolicy getIBPolicy();
         
   /// Destructor
   ~InterpolationBuffer() {};
@@ -125,9 +171,7 @@ public:
   /** \brief . */
   RCP<Teuchos::ParameterList> unsetParameterList();
 
-  /** \brief . */
-  IBPolicy getIBPolicy();
-
+  RCP<const Teuchos::ParameterList> getValidParameters() const;
     
 private:
 
@@ -135,7 +179,7 @@ private:
   int storage_limit_;
   RCP<typename DataStore<Scalar>::DataStoreVector_t> data_vec_;
 
-  RCP<Teuchos::ParameterList> parameterList_;
+  RCP<Teuchos::ParameterList> paramList_;
 
   IBPolicy policy_;
 
@@ -519,19 +563,54 @@ void InterpolationBuffer<Scalar>::describe(
 template <class Scalar>
 void InterpolationBuffer<Scalar>::setParameterList(RCP<Teuchos::ParameterList> const& paramList)
 {
-  // 2007/12/05: rabartl: ToDo: Validate the parameter list!
-  parameterList_ = paramList;
-  int outputLevel = parameterList_->get( "outputLevel", int(-1) );
-  outputLevel = std::min(std::max(outputLevel,-1),4);
-  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
-  IBPolicy policyLevel = parameterList_->get( "InterpolationBufferPolicy", policy_ );
+  TEST_FOR_EXCEPT( is_null(paramList) );
+  paramList->validateParameters(*this->getValidParameters());
+  paramList_ = paramList;
+
+  Teuchos::readVerboseObjectSublist(&*paramList_,this);
+
+  //int outputLevel = paramList_->get( "outputLevel", int(-1) );
+  //outputLevel = std::min(std::max(outputLevel,-1),4);
+  //this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
+  IBPolicy policyLevel = interpolationBufferPolicyValidator->getIntegralValue(
+      *paramList_, interpolationBufferPolicySelection_name, interpolationBufferPolicySelection_default
+      );
   if (policyLevel != BUFFER_POLICY_INVALID) {
     policy_ = policyLevel;
   }
-  int storage_limit = parameterList_->get( "StorageLimit", storage_limit_ );
-  if (storage_limit != storage_limit_) {
-    this->setStorage(storage_limit);
+  int storage_limit = paramList_->get( interpolationBufferStorageLimit_name, interpolationBufferStorageLimit_default);
+  setStorage(storage_limit);
+}
+
+template<class Scalar>
+RCP<const Teuchos::ParameterList> InterpolationBuffer<Scalar>::getValidParameters() const
+{
+  static RCP<Teuchos::ParameterList> validPL;
+
+  if (is_null(validPL)) {
+
+    RCP<Teuchos::ParameterList>
+      pl = Teuchos::parameterList();
+
+    Teuchos::setupVerboseObjectSublist(&*pl);
+
+    pl->set( 
+        interpolationBufferPolicySelection_name, 
+        interpolationBufferPolicySelection_default,
+        "Interpolation Buffer Policy for when the maximum storage size is exceeded.  Static will throw an exception when the storage limit is exceeded.  Keep Newest will over-write the oldest data in the buffer when the storage limit is exceeded.",
+        interpolationBufferPolicyValidator
+        );
+
+    pl->set(
+        interpolationBufferStorageLimit_name,
+        interpolationBufferStorageLimit_default,
+        "Storage limit for the interpolation buffer."
+        );
+
+    validPL = pl;
+
   }
+  return validPL;
 }
 
 
@@ -539,15 +618,15 @@ template <class Scalar>
 RCP<Teuchos::ParameterList>
 InterpolationBuffer<Scalar>::getNonconstParameterList()
 {
-  return(parameterList_);
+  return(paramList_);
 }
 
 
 template <class Scalar>
 RCP<Teuchos::ParameterList> InterpolationBuffer<Scalar>::unsetParameterList()
 {
-  RCP<Teuchos::ParameterList> temp_param_list = parameterList_;
-  parameterList_ = Teuchos::null;
+  RCP<Teuchos::ParameterList> temp_param_list = paramList_;
+  paramList_ = Teuchos::null;
   return(temp_param_list);
 }
 

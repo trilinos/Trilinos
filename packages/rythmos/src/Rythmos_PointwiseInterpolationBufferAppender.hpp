@@ -30,6 +30,7 @@
 #define RYTHMOS_POINTWISE_INTERPOLATION_BUFFER_APPENDER_HPP
 
 #include "Rythmos_InterpolationBufferAppenderBase.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 
 namespace Rythmos {
@@ -40,7 +41,8 @@ namespace Rythmos {
  */
 template<class Scalar>
 class PointwiseInterpolationBufferAppender
-  : virtual public InterpolationBufferAppenderBase<Scalar>
+  : virtual public InterpolationBufferAppenderBase<Scalar>,
+    virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
 public:
 
@@ -67,21 +69,16 @@ public:
 
   //@}
 
-  /** \name Overridden from ParameterListAcceptor */
+  /** \name Overridden from ParameterListAcceptorDefaultBase */
   //@{
 
   /** \brief . */
-  void setParameterList(RCP<ParameterList> const& paramList);
+  void setParameterList(const RCP<ParameterList> &paramList);
+
   /** \brief . */
-  RCP<ParameterList> getNonconstParameterList();
-  /** \brief . */
-  RCP<ParameterList> unsetParameterList();
+  RCP<const ParameterList> getValidParameters() const;
 
   //@}
-
-private:
-
-  RCP<ParameterList> parameterList_;
 
 };
 
@@ -151,31 +148,27 @@ void PointwiseInterpolationBufferAppender<Scalar>::describe(
 
 template<class Scalar>
 void PointwiseInterpolationBufferAppender<Scalar>::setParameterList(
-  RCP<ParameterList> const& paramList
+  const RCP<ParameterList> &paramList
   )
 {
-  TEST_FOR_EXCEPTION(
-    paramList==Teuchos::null, std::logic_error,
-    "Error, paramList == Teuchos::null!\n" );
-  parameterList_ = paramList;
+  TEST_FOR_EXCEPT( is_null(paramList) );
+  paramList->validateParameters(*this->getValidParameters());
+  Teuchos::readVerboseObjectSublist(&*paramList,this);
+  setMyParamList(paramList);
 }
 
 
 template<class Scalar>
-RCP<ParameterList>
-PointwiseInterpolationBufferAppender<Scalar>::getNonconstParameterList()
+RCP<const ParameterList>
+PointwiseInterpolationBufferAppender<Scalar>::getValidParameters() const
 {
-  return(parameterList_);
-}
-
-
-template<class Scalar>
-RCP<ParameterList>
-PointwiseInterpolationBufferAppender<Scalar>::unsetParameterList()
-{
-  RCP<ParameterList> temp_param_list = parameterList_;
-  parameterList_ = Teuchos::null;
-  return(temp_param_list);
+  static RCP<Teuchos::ParameterList> validPL;
+  if (is_null(validPL)) {
+    RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    Teuchos::setupVerboseObjectSublist(&*pl);
+    validPL = pl;
+  }
+  return (validPL);
 }
 
 

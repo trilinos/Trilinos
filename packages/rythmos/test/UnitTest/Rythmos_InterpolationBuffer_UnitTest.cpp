@@ -56,6 +56,7 @@ namespace Rythmos {
 // setParameterList (StorageLimit [TESTED], InterpolationBufferPolicy [TESTED])
 // getNonconstParameterList
 // unsetParameterList
+// getValidParameters TESTED
 // IBPolicy (set through ParameterList) TESTED
 // getIBPolicy TESTED
 // high verbosity output
@@ -205,10 +206,10 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, setIBPolicy ) {
   RCP<InterpolationBuffer<double> > ib = interpolationBuffer<double>();
   TEST_EQUALITY_CONST( ib->getIBPolicy(), BUFFER_POLICY_KEEP_NEWEST );
   RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->set("InterpolationBufferPolicy", BUFFER_POLICY_STATIC);
+  pl->set("InterpolationBufferPolicy", "Static Policy");
   ib->setParameterList(pl);
   TEST_EQUALITY_CONST( ib->getIBPolicy(), BUFFER_POLICY_STATIC );
-  pl->set("InterpolationBufferPolicy", BUFFER_POLICY_INVALID );
+  pl->set("InterpolationBufferPolicy", "Invalid Policy");
   ib->setParameterList(pl);
   TEST_EQUALITY_CONST( ib->getIBPolicy(), BUFFER_POLICY_STATIC );
 }
@@ -227,22 +228,22 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, setParameterList ) {
   {
     // Verify setting empty parameter list on non-default IB does not change values
     RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("InterpolationBufferPolicy", BUFFER_POLICY_STATIC);
+    pl->set("InterpolationBufferPolicy", "Static Policy");
     pl->set("StorageLimit", 15);
     ib->setParameterList(pl);
     TEST_EQUALITY_CONST( ib->getIBPolicy(), BUFFER_POLICY_STATIC );
     TEST_EQUALITY_CONST( ib->getStorage(), 15 );
     pl = Teuchos::parameterList();
     ib->setParameterList(pl);
-    TEST_EQUALITY_CONST( ib->getIBPolicy(), BUFFER_POLICY_STATIC );
-    TEST_EQUALITY_CONST( ib->getStorage(), 15 );
+    TEST_EQUALITY_CONST( ib->getIBPolicy(), BUFFER_POLICY_KEEP_NEWEST);
+    TEST_EQUALITY_CONST( ib->getStorage(), 2 );
   }
   {
     // Verify that invalid policy is not accepted
     RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("InterpolationBufferPolicy", BUFFER_POLICY_INVALID );
+    pl->set("InterpolationBufferPolicy", "Invalid Policy");
     ib->setParameterList(pl);
-    TEST_EQUALITY_CONST( ib->getIBPolicy(), BUFFER_POLICY_STATIC );
+    TEST_EQUALITY_CONST( ib->getIBPolicy(), BUFFER_POLICY_KEEP_NEWEST );
   }
   {
     // Verify that invalid storage is fixed
@@ -251,6 +252,15 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, setParameterList ) {
     ib->setParameterList(pl);
     TEST_EQUALITY_CONST( ib->getStorage(), 2 );
   }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, getValidParameters ) {
+  RCP<InterpolationBuffer<double> > ib = interpolationBuffer<double>();
+  RCP<const ParameterList> pl = ib->getValidParameters();
+  TEST_EQUALITY_CONST( is_null(pl), false );
+  TEST_EQUALITY_CONST( pl->isSublist("VerboseObject"), true );
+  TEST_EQUALITY_CONST( pl->isParameter("InterpolationBufferPolicy"), true );
+  TEST_EQUALITY_CONST( pl->isParameter("StorageLimit"), true );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, addPoints_basic ) {
@@ -463,10 +473,10 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, addPoints_bad ) {
 #else // TEUCHOS_DEBUG
   // TODO:  What happens in this case?
 #endif // TEUCHOS_DEBUG
-  ib->setStorage(N);
   xdot_vec[0] = createDefaultVector(2,32.0);
   RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->set("InterpolationBufferPolicy", BUFFER_POLICY_STATIC);
+  pl->set("InterpolationBufferPolicy", "Static Policy");
+  pl->set("StorageLimit",N);
   ib->setParameterList(pl);
   // Exceed storage due to IBPolicy == static 
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::logic_error );
@@ -629,7 +639,7 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, addPoints_IBPolicy ) {
     // Policy = static
     RCP<InterpolationBuffer<double> > ib = interpolationBuffer<double>();
     RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("InterpolationBufferPolicy", BUFFER_POLICY_STATIC);
+    pl->set("InterpolationBufferPolicy", "Static Policy");
     ib->setParameterList(pl);
     ib->setStorage(N);
     ib->addPoints(

@@ -60,6 +60,11 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     getModel() const;
 
     /** \brief . */
+    void setInitialCondition(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+      );
+
+    /** \brief . */
     RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
     
     /** \brief . */
@@ -362,6 +367,13 @@ Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardEulerStepper<Scalar>::getModel() const
 {
   return model_;
+}
+
+template<class Scalar>
+void ForwardEulerStepper<Scalar>::setInitialCondition(
+    const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+    )
+{
 }
 
 } // namespace Rythmos

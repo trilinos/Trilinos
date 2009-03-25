@@ -103,6 +103,7 @@ am_Rythmos_UnitTest_OBJECTS =  \
 	Rythmos_HermiteInterpolator_UnitTest.$(OBJEXT) \
 	Rythmos_ImplicitBDF_UnitTest.$(OBJEXT) \
 	Rythmos_ImplicitRK_UnitTest.$(OBJEXT) \
+	Rythmos_IntegratorBuilder_UnitTest.$(OBJEXT) \
 	Rythmos_InterpolationBuffer_UnitTest.$(OBJEXT) \
 	Rythmos_LinearInterpolator_UnitTest.$(OBJEXT) \
 	Rythmos_Quadrature_UnitTest.$(OBJEXT) \
@@ -268,6 +269,7 @@ Rythmos_UnitTest_SOURCES = \
 	$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitBDF_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
+	$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
 	$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp\
 	$(srcdir)/Rythmos_Quadrature_UnitTest.cpp\
@@ -375,6 +377,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_HermiteInterpolator_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitBDF_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitRK_UnitTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_IntegratorBuilder_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_InterpolationBuffer_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_LinearInterpolator_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_Quadrature_UnitTest.Po@am__quote@
@@ -540,6 +543,20 @@ Rythmos_ImplicitRK_UnitTest.obj: $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp' object='Rythmos_ImplicitRK_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ImplicitRK_UnitTest.obj `if test -f '$(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp'; fi`
+
+Rythmos_IntegratorBuilder_UnitTest.o: $(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_IntegratorBuilder_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_IntegratorBuilder_UnitTest.Tpo -c -o Rythmos_IntegratorBuilder_UnitTest.o `test -f '$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_IntegratorBuilder_UnitTest.Tpo $(DEPDIR)/Rythmos_IntegratorBuilder_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp' object='Rythmos_IntegratorBuilder_UnitTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_IntegratorBuilder_UnitTest.o `test -f '$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp
+
+Rythmos_IntegratorBuilder_UnitTest.obj: $(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_IntegratorBuilder_UnitTest.obj -MD -MP -MF $(DEPDIR)/Rythmos_IntegratorBuilder_UnitTest.Tpo -c -o Rythmos_IntegratorBuilder_UnitTest.obj `if test -f '$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_IntegratorBuilder_UnitTest.Tpo $(DEPDIR)/Rythmos_IntegratorBuilder_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp' object='Rythmos_IntegratorBuilder_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_IntegratorBuilder_UnitTest.obj `if test -f '$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp'; fi`
 
 Rythmos_InterpolationBuffer_UnitTest.o: $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_InterpolationBuffer_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_InterpolationBuffer_UnitTest.Tpo -c -o Rythmos_InterpolationBuffer_UnitTest.o `test -f '$(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp

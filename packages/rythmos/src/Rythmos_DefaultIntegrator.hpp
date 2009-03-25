@@ -30,7 +30,9 @@
 #define RYTHMOS_DEFAULT_INTEGRATOR_HPP
 
 
-#include "Rythmos_IntegratorBase.hpp"
+#include "Rythmos_IntegrationControlStrategyAcceptingIntegratorBase.hpp"
+#include "Rythmos_InterpolationBufferAppenderAcceptingIntegratorBase.hpp"
+#include "Rythmos_TrailingInterpolationBufferAcceptingIntegratorBase.hpp"
 #include "Rythmos_InterpolationBufferHelpers.hpp"
 #include "Rythmos_IntegrationControlStrategyBase.hpp"
 #include "Rythmos_IntegrationObserverBase.hpp"
@@ -51,7 +53,9 @@ namespace Rythmos {
  */
 template<class Scalar> 
 class DefaultIntegrator
-  : virtual public IntegratorBase<Scalar>,
+  : virtual public IntegrationControlStrategyAcceptingIntegratorBase<Scalar>,
+    virtual public InterpolationBufferAppenderAcceptingIntegratorBase<Scalar>,
+    virtual public TrailingInterpolationBufferAcceptingIntegratorBase<Scalar>,
     virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
 public:
@@ -66,14 +70,12 @@ public:
   DefaultIntegrator();
 
   /** \brief . */
-  void setIntegrationControlStrategy(
-    const RCP<IntegrationControlStrategyBase<Scalar> > &integrationControlStrategy
-    );
-
-  /** \brief . */
   void setIntegrationObserver(
     const RCP<IntegrationObserverBase<Scalar> > &integrationObserver
     );
+
+  /** \name Overridden from InterpolationBufferAppenderAcceptingIntegratorBase */
+  //@{
 
   /** \brief . */
   void setInterpolationBufferAppender(
@@ -82,11 +84,33 @@ public:
 
   /** \brief . */
   RCP<const InterpolationBufferAppenderBase<Scalar> >
-  getInterpolationBufferAppender();
+    getInterpolationBufferAppender();
 
   /** \brief . */
   RCP<InterpolationBufferAppenderBase<Scalar> >
-  unSetInterpolationBufferAppender();
+    getNonconstInterpolationBufferAppender();
+
+  /** \brief . */
+  RCP<InterpolationBufferAppenderBase<Scalar> >
+    unSetInterpolationBufferAppender();
+
+  //@}
+  
+  /** \name Overridden from IntegrationControlStrategyAcceptingIntegratorBase */
+  //@{
+  
+  /** \brief . */
+  void setIntegrationControlStrategy(
+    const RCP<IntegrationControlStrategyBase<Scalar> > &integrationControlStrategy
+    );
+
+  /** \brief . */
+  RCP<IntegrationControlStrategyBase<Scalar> > 
+    getNonconstIntegrationControlStrategy();
+
+  /** \brief . */
+  RCP<const IntegrationControlStrategyBase<Scalar> > 
+    getIntegrationControlStrategy() const;
 
   //@}
 
@@ -120,8 +144,8 @@ public:
   /** \brief . */
   RCP<const StepperBase<Scalar> > getStepper() const;
 
-  /** \brief . */
-  bool acceptsTrailingInterpolationBuffer() const;
+  /** \name Overridden from TrailingInterpolationBufferAcceptingIntegratorBase */
+  //@{
   
   /** \brief . */
   void setTrailingInterpolationBuffer(
@@ -130,11 +154,17 @@ public:
 
   /** \brief . */
   RCP<InterpolationBufferBase<Scalar> >
-  getTrailingInterpolationBuffer();
+    getNonconstTrailingInterpolationBuffer();
 
   /** \brief . */
   RCP<const InterpolationBufferBase<Scalar> >
-  getTrailingInterpolationBuffer() const;
+    getTrailingInterpolationBuffer() const;
+
+  /** \brief . */
+  RCP<InterpolationBufferBase<Scalar> >
+    unSetTrailingInterpolationBuffer();
+
+  //@}
 
   /** \brief . */
   void getFwdPoints(
@@ -328,6 +358,20 @@ void DefaultIntegrator<Scalar>::setIntegrationControlStrategy(
   integrationControlStrategy_ = integrationControlStrategy;
 }
 
+template<class Scalar>
+RCP<IntegrationControlStrategyBase<Scalar> > 
+  DefaultIntegrator<Scalar>::getNonconstIntegrationControlStrategy()
+{
+  return integrationControlStrategy_;
+}
+
+template<class Scalar>
+RCP<const IntegrationControlStrategyBase<Scalar> > 
+  DefaultIntegrator<Scalar>::getIntegrationControlStrategy() const
+{
+  return integrationControlStrategy_;
+}
+
 
 template<class Scalar>
 void DefaultIntegrator<Scalar>::setIntegrationObserver(
@@ -357,6 +401,12 @@ DefaultIntegrator<Scalar>::getInterpolationBufferAppender()
   return interpBufferAppender_;
 }
 
+template<class Scalar> 
+RCP<InterpolationBufferAppenderBase<Scalar> >
+DefaultIntegrator<Scalar>::getNonconstInterpolationBufferAppender()
+{
+  return interpBufferAppender_;
+}
 
 template<class Scalar> 
 RCP<InterpolationBufferAppenderBase<Scalar> >
@@ -480,13 +530,6 @@ RCP<const StepperBase<Scalar> > DefaultIntegrator<Scalar>::getStepper() const
 
 
 template<class Scalar>
-bool DefaultIntegrator<Scalar>::acceptsTrailingInterpolationBuffer() const
-{
-  return true;
-}
-
-
-template<class Scalar>
 void DefaultIntegrator<Scalar>::setTrailingInterpolationBuffer(
   const RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
   )
@@ -497,7 +540,7 @@ void DefaultIntegrator<Scalar>::setTrailingInterpolationBuffer(
 
 template<class Scalar>
 RCP<InterpolationBufferBase<Scalar> >
-DefaultIntegrator<Scalar>::getTrailingInterpolationBuffer()
+DefaultIntegrator<Scalar>::getNonconstTrailingInterpolationBuffer()
 {
   return trailingInterpBuffer_;
 }
@@ -508,6 +551,15 @@ RCP<const InterpolationBufferBase<Scalar> >
 DefaultIntegrator<Scalar>::getTrailingInterpolationBuffer() const
 {
   return trailingInterpBuffer_;
+}
+
+template<class Scalar>
+RCP<InterpolationBufferBase<Scalar> >
+DefaultIntegrator<Scalar>::unSetTrailingInterpolationBuffer()
+{
+  RCP<InterpolationBufferBase<Scalar> > trailingInterpBuffer;
+  std::swap( trailingInterpBuffer, trailingInterpBuffer_ );
+  return trailingInterpBuffer;
 }
 
 

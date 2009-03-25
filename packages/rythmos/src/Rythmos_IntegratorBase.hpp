@@ -70,26 +70,6 @@ public:
   virtual RCP<IntegratorBase<Scalar> > cloneIntegrator() const
     { return Teuchos::null; }
 
-  /** \brief . */
-  virtual bool acceptsTrailingInterpolationBuffer() const 
-    { return false; }
-
-  /** \brief . */
-  virtual void setTrailingInterpolationBuffer(
-    const RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
-    ) 
-    { TEST_FOR_EXCEPT(true); }
-
-  /** \brief . */
-  virtual RCP<InterpolationBufferBase<Scalar> >
-  getTrailingInterpolationBuffer()
-    { return Teuchos::null; }
-
-  /** \brief . */
-  virtual RCP<const InterpolationBufferBase<Scalar> >
-  getTrailingInterpolationBuffer() const
-    { return Teuchos::null; }
-
   /** \brief Specify the stepper to use for integration which effectively
    * reinitializes the intergrator.
    *

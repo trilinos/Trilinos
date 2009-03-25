@@ -30,6 +30,7 @@
 #define RYTHMOS_SMART_INTERPOLATION_BUFFER_APPENDER_HPP
 
 #include "Rythmos_InterpolationBufferAppenderBase.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 
 namespace Rythmos {
@@ -38,7 +39,8 @@ namespace Rythmos {
 /** \brief Smart interplation buffer class. */
 template<class Scalar>
 class SmartInterpolationBufferAppender
-  : virtual public InterpolationBufferAppenderBase<Scalar>
+  : virtual public InterpolationBufferAppenderBase<Scalar>,
+    virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
   public:
     /** \brief Concrete implementation that attempts to use the order of
@@ -50,6 +52,17 @@ class SmartInterpolationBufferAppender
         const TimeRange<Scalar>& range,
         const Ptr<InterpolationBufferBase<Scalar> > &interpBuffSink 
         );
+
+    /** \name Overridden from Teuchos::ParameterListAcceptorDefaultBase */
+    //@{
+
+    /** \brief . */
+    void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
+
+    /** \brief . */
+    RCP<const Teuchos::ParameterList> getValidParameters() const;
+
+    //@}
 };
 
 
@@ -97,6 +110,26 @@ void SmartInterpolationBufferAppender<Scalar>::append(
   }
 }
 
+template<class Scalar>
+void SmartInterpolationBufferAppender<Scalar>::setParameterList(RCP<Teuchos::ParameterList> const& paramList)
+{
+  TEST_FOR_EXCEPT( is_null(paramList) );
+  paramList->validateParameters(*this->getValidParameters());
+  setMyParamList(paramList);
+  Teuchos::readVerboseObjectSublist(&*paramList,this);
+}
+
+template<class Scalar>
+RCP<const Teuchos::ParameterList> SmartInterpolationBufferAppender<Scalar>::getValidParameters() const
+{
+  static RCP<Teuchos::ParameterList> validPL;
+  if (is_null(validPL)) {
+    RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    Teuchos::setupVerboseObjectSublist(&*pl);
+    validPL = pl;
+  }
+  return (validPL);
+}
 
 } // namespace Rythmos
 

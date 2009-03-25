@@ -92,9 +92,6 @@ public:
   TimeRange( const TimeType &lower, const TimeType &upper )
     : lower_(lower), upper_(upper)
     {
-#ifdef TEUCHOS_DEBUG
-      TEUCHOS_ASSERT( lower_ <= upper_ ); 
-#endif
     }
   /** \brief . */
   bool isValid() const { return (lower_ <= upper_); }

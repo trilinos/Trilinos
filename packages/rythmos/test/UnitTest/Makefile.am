@@ -52,6 +52,7 @@ Rythmos_UnitTest_SOURCES =\
 	$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitBDF_UnitTest.cpp\
   $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
+	$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
 	$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp\
 	$(srcdir)/Rythmos_Quadrature_UnitTest.cpp\

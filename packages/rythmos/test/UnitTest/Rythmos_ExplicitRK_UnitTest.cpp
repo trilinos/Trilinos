@@ -84,12 +84,23 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, invalidRKBT ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, getTimeRange ) {
-  RCP<SinCosModel> model = sinCosModel(false);
-  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model);
-  TimeRange<double> tr = stepper->getTimeRange();
-  TEST_EQUALITY_CONST( tr.isValid(), true );
-  TEST_EQUALITY_CONST( tr.lower(), 0.0 );
-  TEST_EQUALITY_CONST( tr.upper(), 0.0 );
+  {
+    RCP<SinCosModel> model = sinCosModel(false);
+    RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model);
+    TimeRange<double> tr = stepper->getTimeRange();
+    TEST_EQUALITY_CONST( tr.isValid(), true );
+    TEST_EQUALITY_CONST( tr.lower(), 0.0 );
+    TEST_EQUALITY_CONST( tr.upper(), 0.0 );
+    TEST_EQUALITY_CONST( tr.length(), 0.0 );
+  }
+  {
+    RCP<SinCosModel> model = sinCosModel(false);
+    RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>();
+    stepper->setModel(model);
+    TimeRange<double> tr;
+    TEST_NOTHROW( tr = stepper->getTimeRange() );
+    TEST_EQUALITY_CONST( tr.isValid(), false );
+  }
 } 
 
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, noRKBT ) {

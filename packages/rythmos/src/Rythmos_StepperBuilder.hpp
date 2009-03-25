@@ -250,6 +250,13 @@ void StepperBuilder<Scalar>::initializeDefaults_()
   // Note: Above, the last Stepper object set will be the default unless we are
   // on multiple processors!
 
+#ifdef Rythmos_HAVE_Experimental
+  builder_.setObjectFactory(
+      abstractFactoryStd< StepperBase<Scalar>, ThetaStepper<Scalar> >(),
+      "Theta"
+      );
+#endif // Rythmos_HAVE_Experimental
+  
 }
 
 
