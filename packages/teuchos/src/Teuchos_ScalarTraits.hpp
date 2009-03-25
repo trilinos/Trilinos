@@ -172,7 +172,7 @@ void throwScalarTraitsNanInfError( const std::string &errMsg );
   if (isnaninf(VALUE)) { \
     std::ostringstream omsg; \
     omsg << MSG; \
-    throwScalarTraitsNanInfError(omsg.str()); \
+    Teuchos::throwScalarTraitsNanInfError(omsg.str());	\
   }
 
 
