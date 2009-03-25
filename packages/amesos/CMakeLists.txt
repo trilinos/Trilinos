@@ -12,13 +12,18 @@ PACKAGE(Amesos)
 # B) Set up package-specific options
 #
 
+# if using SuperLUDist, must also link in ParMETIS for some reason
+IF(${PACKAGE_NAME}_ENABLE_SuperLUDist AND NOT ${PACKAGE_NAME}_ENABLE_ParMETIS)
+  MESSAGE(FATAL_ERROR "The Amesos support for the SuperLUIDist TPL requires the ParMETIS TPL.  Either disable Amesos SuperLUDist support or enable the ParMETIS TPL.")
+ENDIF()
+
+## Most of the options below are bogus.  The handling of TPLs is done
+## through the dependencies file.  This needs to be cleaned up. I'm
+## leaving them for now so that we have a list of all options.  They
+## will be removed as correct TPL support is added.
+
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SUPERLU
   HAVE_AMESOS_SUPERLU
-  "Enable SuperLU functionality."
-  OFF )
-
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SUPERLUDIST
-  HAVE_AMESOS_SUPERLUDIST
   "Enable SuperLU functionality."
   OFF )
 
