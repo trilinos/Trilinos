@@ -29,11 +29,6 @@ APPEND_SET(HEADERS
   LOCA_BorderedSolver_EpetraAugmented.H
   LOCA_Epetra_Factory.H
   LOCA_Epetra_ShiftInvertOperator.H
-  continuation-manager/ContinuationManager.H
-  continuation-manager/LOCAInterface.H
-  continuation-manager/ProblemNOXPrototype.H
-  continuation-manager/ProblemLOCAPrototype.H
-  continuation-manager/IOContFileUtils.H
   )
 
 APPEND_SET(SOURCES
@@ -51,11 +46,6 @@ APPEND_SET(SOURCES
   LOCA_BorderedSolver_EpetraAugmented.C
   LOCA_Epetra_Factory.C
   LOCA_Epetra_ShiftInvertOperator.C
-  continuation-manager/ContinuationManager.C
-  continuation-manager/LOCAInterface.C
-  continuation-manager/ProblemNOXPrototype.C
-  continuation-manager/ProblemLOCAPrototype.C
-  continuation-manager/IOContFileUtils.C
   )
 
 # EpetraExt stuff
@@ -67,6 +57,11 @@ IF (NOX_ENABLE_EpetraExt)
     LOCA_Epetra_AnasaziOperator_Floquet.H
     LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.H
     LOCA_Epetra_ModelEvaluatorInterface.H
+    continuation-manager/ContinuationManager.H
+    continuation-manager/LOCAInterface.H
+    continuation-manager/ProblemNOXPrototype.H
+    continuation-manager/ProblemLOCAPrototype.H
+    continuation-manager/IOContFileUtils.H
     )
   APPEND_SET(SOURCES
     LOCA_Epetra_Interface_xyzt.C
@@ -75,6 +70,11 @@ IF (NOX_ENABLE_EpetraExt)
     LOCA_Epetra_AnasaziOperator_Floquet.C
     LOCA_Epetra_TransposeLinearSystem_ExplicitTranspose.C
     LOCA_Epetra_ModelEvaluatorInterface.C
+    continuation-manager/ContinuationManager.C
+    continuation-manager/LOCAInterface.C
+    continuation-manager/ProblemNOXPrototype.C
+    continuation-manager/ProblemLOCAPrototype.C
+    continuation-manager/IOContFileUtils.C
     )
 ENDIF()
 

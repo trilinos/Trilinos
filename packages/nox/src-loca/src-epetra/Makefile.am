@@ -60,12 +60,7 @@ LOCA_EPETRA_H = \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.H \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.H \
 	$(srcdir)/LOCA_Epetra_Factory.H \
-	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H \
-	$(srcdir)/continuation-manager/ContinuationManager.H \
-	$(srcdir)/continuation-manager/LOCAInterface.H \
-	$(srcdir)/continuation-manager/ProblemNOXPrototype.H \
-	$(srcdir)/continuation-manager/ProblemLOCAPrototype.H \
-	$(srcdir)/continuation-manager/IOContFileUtils.H
+	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.H
 
 LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_TransposeLinearSystem_TransposePreconditioner.C \
@@ -81,12 +76,7 @@ LOCA_EPETRA = \
 	$(srcdir)/LOCA_Epetra_AugmentedOp.C \
 	$(srcdir)/LOCA_BorderedSolver_EpetraAugmented.C \
 	$(srcdir)/LOCA_Epetra_Factory.C \
-	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C \
-	$(srcdir)/continuation-manager/ContinuationManager.C \
-	$(srcdir)/continuation-manager/LOCAInterface.C \
-	$(srcdir)/continuation-manager/ProblemNOXPrototype.C \
-	$(srcdir)/continuation-manager/ProblemLOCAPrototype.C \
-	$(srcdir)/continuation-manager/IOContFileUtils.C
+	$(srcdir)/LOCA_Epetra_ShiftInvertOperator.C
 
 if BUILD_NOX_EPETRAEXT_SUPPORT
 
@@ -112,6 +102,20 @@ EPETRAEXT_TLS = \
 MODELEVAL = \
         $(srcdir)/LOCA_Epetra_ModelEvaluatorInterface.C
 
+CONTMGR_H = \
+	$(srcdir)/continuation-manager/ContinuationManager.H \
+	$(srcdir)/continuation-manager/LOCAInterface.H \
+	$(srcdir)/continuation-manager/ProblemNOXPrototype.H \
+	$(srcdir)/continuation-manager/ProblemLOCAPrototype.H \
+	$(srcdir)/continuation-manager/IOContFileUtils.H
+
+CONTMGR = \
+	$(srcdir)/continuation-manager/ContinuationManager.C \
+	$(srcdir)/continuation-manager/LOCAInterface.C \
+	$(srcdir)/continuation-manager/ProblemNOXPrototype.C \
+	$(srcdir)/continuation-manager/ProblemLOCAPrototype.C \
+	$(srcdir)/continuation-manager/IOContFileUtils.C
+
 endif
 
 # ------------------------------------------------------------------------
@@ -133,8 +137,9 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 
 liblocaepetra_a_SOURCES = \
 	$(LOCA_EPETRA)  $(LOCA_EPETRA_XYZT) $(EPETRAEXT_TLS) $(MODELEVAL) \
+	$(CONTMGR) \
 	$(LOCA_EPETRA_H) $(LOCA_EPETRA_XYZT_H) $(EPETRAEXT_TLS_H) \
-	$(MODELEVAL_H)
+	$(MODELEVAL_H) $(CONTMGR_H)
 
 # ------------------------------------------------------------------------
 # When to turn it on

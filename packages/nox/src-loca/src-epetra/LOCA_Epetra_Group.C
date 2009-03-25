@@ -1341,6 +1341,11 @@ LOCA::Epetra::Group::getComplexMaps(
 		 Teuchos::RCP<const Epetra_BlockMap>& baseMap,
 		 Teuchos::RCP<const Epetra_BlockMap>& globalMap) const
 {
+#ifdef HAVE_NOX_EPETRAEXT
   baseMap = Teuchos::rcp(&(xVector.getEpetraVector().Map()),false);
   globalMap = Teuchos::rcp(&(complexVec->Map()),false);
+#else
+  globalData->locaErrorCheck->throwError("LOCA::Epetra::Group::getComplexMaps()", 
+					 "Must have EpetraExt support for Hopf tracking.  Configure trilinos with --enable-epetraext");
+#endif
 }
