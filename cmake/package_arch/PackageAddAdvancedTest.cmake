@@ -17,10 +17,10 @@ INCLUDE(PrintVar)
 #
 #   PACKAGE_ADD_ADVANCED_TEST(
 #     <TestName>
-#     TEST_0 [ EXEC <ExecTarget> | CMND <cmndExec>] ...
-#     TEST_1 [ EXEC <ExecTarget> | CMND <cmndExec>] ...
+#     TEST_0 [ EXEC <execTarget> | CMND <cmndExec>] ...
+#     TEST_1 [ EXEC <execTarget> | CMND <cmndExec>] ...
 #     ...
-#     TEST_N [ EXEC <ExecTarget> | CMND <cmndExec>] ...
+#     TEST_N [ EXEC <execTarget> | CMND <cmndExec>] ...
 #     [ COMM [serial] [mpi] ]
 #     [ OVERALL_NUM_MPI_PROCS <number> ]
 #     [ HOST ]
@@ -37,7 +37,7 @@ INCLUDE(PrintVar)
 # Each atomic test case is either a package-built executable or just a basic
 # command.  An atomic test or command takes the form:
 #
-#   TEST_i [EXEC <ExecTarget> | CMND <cmndExec>]
+#   TEST_i [EXEC <execTarget> | CMND <cmndExec>]
 #      ARGS <arg1> <arg2> ... <argn>
 #      [ NOEXEPREFIX ]
 #      [ NOEXESUFFIX ]
@@ -48,34 +48,35 @@ INCLUDE(PrintVar)
 #          | FAIL_REGULAR_EXPRESSION <regex>
 #          | STANDARD_PASS_OUTPUT ]
 #
-# Each test test line is either package-built test executable or some general
+# Each test line is either package-built test executable or some general
 # command executable.  If it is a package executable, then you specify just
-# the executable target name as "EXEC ExecTarget".  This is the same string
-# that was passed in as the first argument to the PACKAGE_ADD_EXECUTABLE(...) 
-# function.  If it is a general command, then it takes the form "CMND
-# <cmndExec>".  If this is an MPI build, then ExecTarget will be run with MPI
-# using NUM_MPI_PROCS <number>.  If the number of maximum MPI processes
-# allowed is less than this number of MPI processes, then the test will *not*
-# be run.  When this is a general command, then the command is run as is
-# without MPI.
+# the executable target name as "EXEC <execTarget>".  The value <execTarget>
+# is same string that was passed in as the first argument to
+# PACKAGE_ADD_EXECUTABLE( <execTarget>...) used to define the executable.  If
+# this is an MPI build, then <execTarget> will be run with MPI using
+# NUM_MPI_PROCS <number>.  If the number of maximum MPI processes allowed is
+# less than this number of MPI processes, then the test will *not* be run.
+# When this is a general command, then the command is run as is without MPI.
+# If it is a general command, then it takes the form "CMND <cmndExec>".  In
+# this case, MPI will not be used to run the executable even when configured
+# in MPI mode (i.e. TPL_ENABLE_MPI=ON).
 #
-
-# If OUTPUT_FILE is given, the next argment <outputFile> is the name of a file
+# If "OUTPUT_FILE <outputFile>" is given, <outputFile> is the name of a file
 # that standard out will be captured into (relative to the current working
 # directory).  Capturing the output to a file allows a later command to read
 # the file and perform some type of test (e.g. like a diff or something).
-
-
 #
 # By default, an atomic test line is assumed to pass if the executable returns
 # a non-zero value.  However, a test case can also be defined to pass based
 # on:
 #
 #   PASS_ANY
+#
 #      If specified, the test command 'i' will be assumed to pass reguardless
 #      of the return value or any other output.  This would be used when a
 #      command that is to follow will determine pass or fail based on output
-#      from this command in some way.
+#      from this command in some way.  Therefore, you would typically use
+#      "OUTPUT_FILE <outputFile>" when using this.
 #
 #   PASS_REGULAR_EXPRESSION <regex>
 #
@@ -101,6 +102,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
   # comands we will have
   #
 
+  # Allow for a maximum of 10 (0 through 9) test commands
   SET(MAX_NUM_TEST_CMND_IDX 9)
 
   SET(TEST_IDX_LIST "")
@@ -161,7 +163,6 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
        "NOEXEPREFIX;NOEXESUFFIX;PASS_ANY;STANDARD_PASS_OUTPUT"
        ${PARSE_TEST_${TEST_CMND_IDX}}
        )
-
     # Write the command
 
     IF (PARSE_EXEC)
@@ -191,6 +192,8 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
     ENDIF()
 
   ENDFOREACH()
+
+  # ToDo: Verify that TEST_${MAX_NUM_TEST_CMND_IDX}+1 does *not* exist!
 
   APPEND_STRING_VAR( TEST_SCRIPT_STR
     "\n"
