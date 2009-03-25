@@ -20,48 +20,64 @@ namespace PB {
 using namespace Teuchos;
 using namespace Thyra;
 
-// Builds matrix 
-//    inv(M) = [ inv(D0)    0       0     0 ]
-//             [ 0       inv(D1)    0     0 ]
-//             [ 0          0    inv(D2)  0 ]
-//             [ 0          0       0    ...]
-//              
-// as an approximate inverse of
-//    A = [ D0  U01 U02 ...]
-//        [ L10  D1 U12 ...]
-//        [ L20 L21  D2 ...]
-//        [  .   .   .  ...]
-//
+//! BlockJacobiPreconditionerFactory: Factory for building a block Jacobi preconditioner.
+/*!
+ Builds matrix 
+\f[
+    M^{-1} = \left( \begin{array}{cccc}
+                   D_0^{-1} & 0        & 0         & 0      \\
+                    0       & D_1^{-1} & 0         & 0      \\
+                    0       & 0        & D_2^{-1}  & 0      \\
+                    0       & 0        & 0         & \cdots
+                    \end{array} \right)
+\f]
+              
+as an approximate inverse of
+\f[
+    A = \left( \begin{array}{cccc}
+          D_0     & U_{01}  & U_{02} & \dots \\
+          L_{10}  & D_1     & U_{12} & \dots \\
+          L_{20}  & L_{21}  & D_2    & \dots \\
+           .      &  .      & .      & \dots
+               \end{array} \right)
+\f]
+*/
+
 class BlockJacobiPreconditionerFactory 
    : public virtual PreconditionerFactoryBase<double> {
    public:
-      // construct a PreconditonerFactory assumeing a specific block
-      // 2x2 matrix. This case is a common one.
-      // 
+      //! @name Constructors.
+
+      /*! Construct a PreconditionerFactory assuming a specific block
+          \f$2\times2\f$ matrix. This case is a common one.
+      */ 
       BlockJacobiPreconditionerFactory(const RCP<const LinearOpBase<double> > & invD0,
                                        const RCP<const LinearOpBase<double> > & invD1);
 
-      // the most flexible BlockJacobiPrecondtionerFactory constructor 
-      // pass in a generally defined BlockInvDiagonalStrategy to use the
-      // full generality of this class
-      //
+      /*! The most flexible BlockJacobiPreconditionerFactory constructor.
+          Pass in a generally defined BlockInvDiagonalStrategy to use the
+          full generality of this class.
+      */
       BlockJacobiPreconditionerFactory(const RCP<const BlockInvDiagonalStrategy> & strategy);
+      //@}
 
       // for PreconditionerFactoryBase
       ///////////////////////////////////////////////////////////////////////
-
-      // is this operator compatiable with the preconditioner factory?
+ 
+      //! @name Public methods.
+      //@{
+      //! is this operator compatiable with the preconditioner factory?
       bool isCompatible(const LinearOpSourceBase<double> &fwdOpSrc) const;
 
-      // create an instance of the preconditioner
+      //! create an instance of the preconditioner
       RCP<PreconditionerBase<double> > createPrec() const;
 
-      // initialize a newly created preconditioner object
+      //! initialize a newly created preconditioner object
       void initializePrec(const RCP<const LinearOpSourceBase<double> > & fwdOpSrc,
                           PreconditionerBase<double> * precOp,
                           const ESupportSolveUse supportSolveUse=SUPPORT_SOLVE_UNSPECIFIED) const;
 
-      // wipe clean a already initialized preconditioner object
+      //! wipe clean a already initialized preconditioner object
       void uninitializePrec(PreconditionerBase<double> * prec, 
                             RCP<const LinearOpSourceBase<double> > * fwdOpSrc=NULL,
                             ESupportSolveUse *supportSolveUse=NULL) const;
@@ -69,25 +85,24 @@ class BlockJacobiPreconditionerFactory
       // for ParameterListAcceptor
       ///////////////////////////////////////////////////////////////////////
 
-      // Set parameters from a parameter list and return with default values.
+      //! Set parameters from a parameter list and return with default values.
       void setParameterList(const RCP<ParameterList> & paramList); 
 
-      // Get the parameter list that was set using setParameterList().
+      //! Get the parameter list that was set using setParameterList().
       RCP< ParameterList > getNonconstParameterList();
 
-      // Unset the parameter list that was set using setParameterList(). 
+      //! Unset the parameter list that was set using setParameterList(). 
       RCP< ParameterList > unsetParameterList();
-
+      //@}
 
    protected:
-
-      // for use by inherited classes only
+      //! for use by inherited classes only
       BlockJacobiPreconditionerFactory() {}
 
-      // some members
+      //! some members
       Teuchos::RCP<const BlockInvDiagonalStrategy> invOpsStrategy_;
 
-      // for ParameterListAcceptor
+      //! for ParameterListAcceptor
       mutable RCP<ParameterList>  validPL_;
       RCP<ParameterList>          paramList_;
 };
