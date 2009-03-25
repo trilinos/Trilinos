@@ -205,7 +205,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,Galeri"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="SuperLUDist,ParMETIS"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
@@ -235,9 +235,9 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI,METIS,ParMETIS,ZoltanTpl"/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="METIS,ParMETIS,ZoltanTpl"/>
+    <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="Belos" dir="belos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
