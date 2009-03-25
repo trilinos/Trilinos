@@ -130,7 +130,7 @@ namespace Tpetra {
        */
       LocalOrdinal numLocalEntries = Teuchos::as<LocalOrdinal>(numGlobalEntries / numImages);
       LocalOrdinal remainder = Teuchos::as<LocalOrdinal>(numGlobalEntries % numImages);
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
       // the above code assumes truncation. is that safe?
       SHARED_TEST_FOR_EXCEPTION(numLocalEntries * numImages + remainder != numGlobalEntries,
           std::logic_error, "Tpetra::Map::constructor(numGlobal,indexBase,platform): GlobalOrdinal does not implement division with truncation."
@@ -675,7 +675,7 @@ namespace Tpetra {
     // if so (and we have local entries), then fill it.
     if (MapData_->lgMap_ == Teuchos::null && MapData_->numMyEntries_ > LZERO) {
       // this would have been set up for a non-contiguous map
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(MapData_->contiguous_ != true, std::logic_error,
           "Tpetra::Map::getMyGlobalEntries: logic error. Please notify the Tpetra team.");
 #endif

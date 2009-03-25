@@ -23,6 +23,13 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_TBB
   "Enable Tpetra's use of Intel's Thread Building Blocks library"
   OFF )
 
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEBUG
+  HAVE_TPETRA_DEBUG
+  "Enable a host of runtime debug checking."
+  ${Trilinos_ENABLE_DEBUG}
+  )
+
 #
 # C) Add the libraries, tests, and examples
 #

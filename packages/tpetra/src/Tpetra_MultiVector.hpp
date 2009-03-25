@@ -117,7 +117,7 @@ namespace Tpetra {
     const Teuchos_Ordinal myLen = myLength();
     TEST_FOR_EXCEPTION(LDA < myLen, std::runtime_error,
         "Tpetra::MultiVector::MultiVector(): LDA must be large enough to accomodate the local entries.");
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION(A.size() < LDA*(NumVectors-1)+myLen, std::runtime_error,
         "Tpetra::MultiVector::MultiVector(A,LDA): A.size() is not large enough for the specified NumVectors and LDA.");
 #endif
@@ -147,7 +147,7 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     TEST_FOR_EXCEPTION(LDA < myLen, std::runtime_error,
         "Tpetra::MultiVector::MultiVector(): LDA must be large enough to accomodate the local entries.");
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION(A.size() < LDA*(NumVectors-1)+myLen, std::runtime_error,
         "Tpetra::MultiVector::MultiVector(A,LDA): A.size() is not large enough for the specified NumVectors and LDA.");
 #endif
@@ -180,7 +180,7 @@ namespace Tpetra {
     }
     if (myLen > 0) {
       for (Teuchos_Ordinal j = 0; j < NumVectors; ++j) {
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
         TEST_FOR_EXCEPTION(ArrayOfPtrs[j].size() != myLength(), std::runtime_error,
           "Tpetra::MultiVector::MultiVector(map,ArrayOfPtrs): ArrayOfPtrs[" << j << "].size() (== " << ArrayOfPtrs[j].size() << 
           ") is not equal to myLength() (== " << myLength());
@@ -368,7 +368,7 @@ namespace Tpetra {
                    all of the data from row exportLIDs.back() }
       this doesn't have the best locality, but is necessary because the data for a Packet
       (all data associated with an LID) is required to be contiguous */
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION(imports.size() != numVectors()*importLIDs.size(), std::runtime_error,
         "Tpetra::MultiVector::unpackAndCombine(): sizing of imports buffer should be appropriate for the amount of data to be exported.");
 #endif
@@ -411,7 +411,7 @@ namespace Tpetra {
   {
     Teuchos::BLAS<int,Scalar> blas;
     const Teuchos_Ordinal numVecs = numVectors();
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << this->getMap() 
@@ -514,7 +514,7 @@ namespace Tpetra {
       TEST_FOR_EXCEPTION(weights.numVectors() != numVecs, std::runtime_error,
           "Tpetra::MultiVector::normWeighted(): MultiVector of weights must contain either one vector or the same number of vectors as this.");
     }
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(weights.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << this->getMap() 
@@ -653,7 +653,7 @@ namespace Tpetra {
   {
     Teuchos::BLAS<int,Scalar> blas;
     const Teuchos_Ordinal numVecs = this->numVectors();
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << this->getMap() 
@@ -687,7 +687,7 @@ namespace Tpetra {
     typedef Teuchos::ScalarTraits<Scalar>                     ST;
     typedef Teuchos::ScalarTraits<typename ST::magnitudeType> MT;
     const Teuchos_Ordinal numVecs = this->numVectors();
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << this->getMap() 
@@ -738,7 +738,7 @@ namespace Tpetra {
   {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     const Teuchos_Ordinal numVecs = this->numVectors();
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << this->getMap() 
@@ -769,7 +769,7 @@ namespace Tpetra {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     using Teuchos::ArrayView;
     const Teuchos_Ordinal numVecs = this->numVectors();
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()), std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << this->getMap() 
@@ -819,7 +819,7 @@ namespace Tpetra {
     // can't short circuit on alpha==0.0 or beta==0.0 or gamma==0.0, because 0.0*NaN != 0.0
     typedef Teuchos::ScalarTraits<Scalar> ST;
     const Teuchos_Ordinal numVecs = this->numVectors();
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(A.getMap()) || !this->getMap().isCompatible(B.getMap()),
         std::runtime_error,
         "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
@@ -911,7 +911,7 @@ namespace Tpetra {
   {
     // Check for special case of this=Source, in which case we do nothing
     if (this != &source) {
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION( !this->getMap().isCompatible(source.getMap()), std::runtime_error,
           "Tpetra::MultiVector::dots(): MultiVectors do not have compatible Maps:" << std::endl
           << "this->getMap(): " << std::endl << this->getMap() 
@@ -1142,7 +1142,7 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(ArrayOfPtrs.size() != numVectors(), std::runtime_error,
         "Tpetra::MultiVector::extractCopy2D(ArrayOfPtrs): Array of pointers must contain as many pointers as the MultiVector has rows.");
     for (Teuchos_Ordinal j=0; j<numVectors(); ++j) {
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION(ArrayOfPtrs[j].size() < myLength(), std::runtime_error,
         "Tpetra::MultiVector::extractCopy2D(ArrayOfPtrs): The ArrayView provided in ArrayOfPtrs[" << j << "] was not large enough to contain the local entries.");
 #endif
@@ -1313,7 +1313,7 @@ namespace Tpetra {
     if (B.constantStride() == false) Btmp = rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(B));
     else Btmp = rcp(&B,false);
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(!Ctmp->constantStride() || !Btmp->constantStride() || !Atmp->constantStride(), std::logic_error,
         errPrefix << "failed making temporary strided copies of input multivectors.");
 #endif
@@ -1417,7 +1417,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>::replaceMyValue(LocalOrdinal MyRow, Teuchos_Ordinal VectorIndex, const Scalar &ScalarValue)
   {
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION(MyRow < this->getMap().getMinLocalIndex() || MyRow > this->getMap().getMaxLocalIndex(), std::runtime_error,
         "Tpetra::MultiVector::replaceMyValue(): row index is invalid.");
     TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
@@ -1430,7 +1430,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>::sumIntoMyValue(LocalOrdinal MyRow, Teuchos_Ordinal VectorIndex, const Scalar &ScalarValue)
   {
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION(MyRow < this->getMap().getMinLocalIndex() || MyRow > this->getMap().getMaxLocalIndex(), std::runtime_error,
         "Tpetra::MultiVector::sumIntoMyValue(): row index is invalid.");
     TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
@@ -1444,7 +1444,7 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>::replaceGlobalValue(GlobalOrdinal GlobalRow, Teuchos_Ordinal VectorIndex, const Scalar &ScalarValue)
   {
     LocalOrdinal MyRow = this->getMap().getLocalIndex(GlobalRow);
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
         "Tpetra::MultiVector::replaceGlobalValue(): row index is not present on this processor.");
     TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,
@@ -1458,7 +1458,7 @@ namespace Tpetra {
   void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>::sumIntoGlobalValue(GlobalOrdinal GlobalRow, Teuchos_Ordinal VectorIndex, const Scalar &ScalarValue)
   {
     LocalOrdinal MyRow = this->getMap().getLocalIndex(GlobalRow);
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(MyRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
         "Tpetra::MultiVector::sumIntoGlobalValue(): row index is not present on this processor.");
     TEST_FOR_EXCEPTION(VectorIndex < 0 || VectorIndex >= numVectors(), std::runtime_error,

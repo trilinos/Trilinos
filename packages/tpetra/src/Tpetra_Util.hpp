@@ -1,4 +1,4 @@
-// @HEADER
+// HAVE_@HEADER
 // ***********************************************************************
 // 
 //          Tpetra: Templated Linear Algebra Services Package
@@ -51,7 +51,7 @@ namespace Tpetra {
 
 // if TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION
 // otherwise, it calls TEST_FOR_EXCEPTION
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
 #define SWITCHED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
     SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm); \

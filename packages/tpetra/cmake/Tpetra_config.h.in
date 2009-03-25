@@ -8,3 +8,7 @@
 
 /* Define if want to build tbb */
 #cmakedefine HAVE_TPETRA_TBB
+
+/* Define if want to build teuchos-debug */
+#cmakedefine HAVE_TPETRA_DEBUG
+

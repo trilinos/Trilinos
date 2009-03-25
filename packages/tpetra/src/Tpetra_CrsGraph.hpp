@@ -416,8 +416,8 @@ namespace Tpetra
           graphData_->colGIndsPtrs_[r] = graphData_->contigColGInds_.end();
         }
       }
-#ifdef TPETRA_DEBUG
-      TEST_FOR_EXCEPT(sofar != ntasum, std::logic_error, 
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(sofar != ntasum, std::logic_error, 
           Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
 #endif
     }
@@ -448,9 +448,9 @@ namespace Tpetra
           }
         }
       }
-      graphData_->rowNumToAlloc_.clear();
-      graphData_->indicesAreAllocated_ = true;    
     }
+    graphData_->rowNumToAlloc_.clear();
+    graphData_->indicesAreAllocated_ = true;    
   }
 
   template <class LocalOrdinal, class GlobalOrdinal>
@@ -615,13 +615,13 @@ namespace Tpetra
     Teuchos_Ordinal rnnz = RNNZ(LocalRow);
     TEST_FOR_EXCEPTION(indices.size() < rnnz, std::runtime_error,
         Teuchos::typeName(*this) << "::extractMyRowCopy(): specified storage (size==" << indices.size() 
-        << ") is not large enough to hold all entries for this row (rnnz=" << rnnz << " .");
+        << ") is not large enough to hold all entries for this row (rnnz=" << rnnz << ").");
     // use one of the view routines to get the proper view, then copy it over
     NumIndices = rnnz;
     Teuchos::ArrayView<const LocalOrdinal> lview;
     extractMyRowConstView(LocalRow,lview);
-#ifdef TPETRA_DEBUG
-    TEST_FOR_EXCEPTION(lview.size() == rnnz, std::logic_error,
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION(lview.size() != rnnz, std::logic_error,
         typeName(*this) << "::extractMyRowCopy(): Internal logic error. Please contact Tpetra team.");
 #endif
     std::copy(lview.begin(),lview.end(),indices.begin());
@@ -639,14 +639,14 @@ namespace Tpetra
     Teuchos_Ordinal rnnz = RNNZ(lrow);
     TEST_FOR_EXCEPTION(indices.size() < rnnz, std::runtime_error,
         Teuchos::typeName(*this) << "::extractGlobalRowCopy(): specified storage (size==" << indices.size() 
-        << ") is not large enough to hold all entries for this row (rnnz=" << rnnz << " .");
+        << ") is not large enough to hold all entries for this row (rnnz=" << rnnz << ").");
     // use one of the view routines to get the proper view, then copy it over
     NumIndices = rnnz;
     if (indicesAreLocal()) {
       ArrayView<const LocalOrdinal> lview;
       extractMyRowConstView(lrow,lview);
-#ifdef TPETRA_DEBUG
-      TEST_FOR_EXCEPTION(lview.size() == rnnz, std::logic_error,
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(lview.size() != rnnz, std::logic_error,
           typeName(*this) << "::extractGlobalRowCopy(): Internal logic error. Please contact Tpetra team.");
 #endif
       // copy and convert
@@ -659,8 +659,8 @@ namespace Tpetra
     }
     else if (indicesAreGlobal()) {
       ArrayView<const GlobalOrdinal> gview;
-#ifdef TPETRA_DEBUG
-      TEST_FOR_EXCEPTION(gview.size() == rnnz, std::logic_error,
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(gview.size() != rnnz, std::logic_error,
           typeName(*this) << "::extractGlobalRowCopy(): Internal logic error. Please contact Tpetra team.");
 #endif
       extractGlobalRowConstView(GlobalRow,gview);
@@ -818,6 +818,10 @@ namespace Tpetra
     if (indicesAreAllocated() == false) {
       bool local = false;
       allocateIndices(local);
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(indicesAreAllocated() == false, std::logic_error, 
+          Teuchos::typeName(*this) << "::insertGlobalIndices(): Internal logic error. Please contact Tpetra team.");
+#endif
     }
     graphData_->indicesAreSorted_ = false;
     graphData_->haveGlobalConstants_ = false;
@@ -825,7 +829,7 @@ namespace Tpetra
     LocalOrdinal lrow = getRowMap().getLocalIndex(grow);
     if (lrow != OrdinalTraits<LocalOrdinal>::invalid()) {
       // add to allocated space
-      Teuchos_Ordinal rowNE = RNNZ(lrow),
+      Teuchos_Ordinal rowNE = graphData_->rowNumEntries_[lrow],
                       rowNA = RNumAlloc(lrow),
                       toAdd = indices.size();
       if (rowNE+toAdd > rowNA) {
@@ -886,12 +890,18 @@ namespace Tpetra
     TEST_FOR_EXCEPTION(indicesAreGlobal() == true, std::runtime_error,
         Teuchos::typeName(*this) << "::insertGlobalIndices(): graph already contains local indices.");
     TEST_FOR_EXCEPTION(isFillComplete() == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::insertGlobalIndices(): graph fill already complete.");
+        Teuchos::typeName(*this) << "::insertGlobalIndices(): graph fill already complete; cannot insert new entries.");
+    TEST_FOR_EXCEPTION(isStorageOptimized() == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::insertGlobalIndices(): graph storage is already optimized; cannot insert new entires.");
     TEST_FOR_EXCEPTION(hasColMap() == false, std::runtime_error,
         Teuchos::typeName(*this) << "::insertMyIndices(): requires a predefined column map.");
     if (indicesAreAllocated() == false) {
       bool local = true;
       allocateIndices(local);
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(indicesAreAllocated() == false, std::logic_error, 
+          Teuchos::typeName(*this) << "::insertGlobalIndices(): Internal logic error. Please contact Tpetra team.");
+#endif
     }
     // insert the indices into the graph
     TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(lrow) == false, std::runtime_error,
@@ -1271,7 +1281,7 @@ namespace Tpetra
             graphData_->colLIndsPtrs_[r] = graphData_->contigColLInds_(sofar,numalloc).begin();
             for (Teuchos_Ordinal j=0; j<numentry; ++j) {
               graphData_->colLIndsPtrs_[r][j] = getColMap().getLocalIndex( graphData_->colGIndsPtrs_[r][j] );
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
               TEST_FOR_EXCEPTION(graphData_->colLIndsPtrs_[r][j] == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::logic_error,
                   Teuchos::typeName(*this) << ": Internal error in fillComplete(). Please contact Tpetra team.");
 #endif
@@ -1281,7 +1291,7 @@ namespace Tpetra
             sofar += numalloc;
           }
           graphData_->colLIndsPtrs_[r] = graphData_->contigColLInds_.end();
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
           TEST_FOR_EXCEPTION(sofar != graphData_->contigColGInds_.size(), std::logic_error,
               Teuchos::typeName(*this) << "::makeIndicesLocal(): Internal logic error. Please contact Tpetra team.");
 #endif
@@ -1301,7 +1311,7 @@ namespace Tpetra
           for (; cindG != cendG; ++cindG, ++cindL)
           {
             (*cindL) = graphData_->colMap_.getLocalIndex(*cindG);
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
             TEST_FOR_EXCEPTION((*cindL) == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::logic_error,
                 Teuchos::typeName(*this) << ": Internal error in fillComplete(). Please contact Tpetra team.");
 #endif
@@ -1322,15 +1332,14 @@ namespace Tpetra
   {
     using Teuchos::ArrayView;
     TEST_FOR_EXCEPT(indicesAreGlobal()==true);   // this should be called only after makeIndicesLocal()
-    TEST_FOR_EXCEPT(isStorageOptimized()==true); // assumptions about available data structures
     if (indicesAreSorted()) return;
     if (indicesAreAllocated()) {                 // are there any indices?
       const Teuchos_Ordinal nlrs = numLocalRows();
       for (Teuchos_Ordinal r=0; r < nlrs; ++r)
       {
-        ArrayView<LocalOrdinal> inds;
-        extractMyRowView(r,inds);
-        std::sort(inds.begin(), inds.end());
+        Teuchos_Ordinal rnnz = RNNZ(r);
+        typename Teuchos::ArrayRCP<LocalOrdinal>::iterator rowbeg = getLptr(r);
+        std::sort(rowbeg, rowbeg + rnnz);
       }
     }
     graphData_->indicesAreSorted_ = true;
@@ -1364,17 +1373,16 @@ namespace Tpetra
       // should be a partial specialization of vector<> which represents each entry via a single
       // bit, instead of a full byte.
       const LocalOrdinal LINV = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
-      Teuchos_Ordinal numLocalColGIDs = 0, 
-                      numRemoteColGIDs = 0;
+      Teuchos_Ordinal numLocalColGIDs = 0, numRemoteColGIDs = 0;
       //
       // intitial: partitioning into local and remote
       std::vector<bool>       GIDisLocal(domainMap.getNumMyEntries());
       std::set<GlobalOrdinal> RemoteGIDSet;
       for (Teuchos_Ordinal r=0; r < nlrs; ++r)
       {
-        typename ArrayRCP<GlobalOrdinal>::const_iterator 
-          cind = graphData_->colGInds_[r].begin(),
-               cend = graphData_->colGInds_[r].begin() + graphData_->rowNumEntries_[r];
+        typename ArrayRCP<GlobalOrdinal>::const_iterator cind, cend;
+        cind = getGptr(r);
+        cend = cind + graphData_->rowNumEntries_[r];
         for (; cind != cend; ++cind) {
           GlobalOrdinal gid = (*cind);
           LocalOrdinal lid = domainMap.getLocalIndex(gid);
@@ -1476,7 +1484,7 @@ namespace Tpetra
             Teuchos::typeName(*this) << "::makeColMap(): Internal logic error. Please contact Tpetra team.");
       }
     }
-    graphData_->colMap_ = Map<LocalOrdinal,GlobalOrdinal>(GOT::invalid(), myColumns(), domainMap.getIndexBase(), domainMap.getComm());
+    graphData_->colMap_ = Map<LocalOrdinal,GlobalOrdinal>(GOT::invalid(), myColumns, domainMap.getIndexBase(), domainMap.getComm());
     graphData_->hasColMap_ = true;
   }
 
@@ -1486,8 +1494,8 @@ namespace Tpetra
   void CrsGraph<LocalOrdinal,GlobalOrdinal>::removeRedundantIndices() 
   {
     TEST_FOR_EXCEPT(indicesAreGlobal()!=false);  // this should be called only after makeIndicesLocal()
-    TEST_FOR_EXCEPT(indicesAreSorted()!=true); // this should be called only after sortIndices()
-    TEST_FOR_EXCEPT(isStorageOptimized()==true);// assumptions about available data structures
+    TEST_FOR_EXCEPT(indicesAreSorted()!=true);   // this should be called only after sortIndices()
+    TEST_FOR_EXCEPT(isStorageOptimized()==true); // assumptions about available data structures
     const Teuchos_Ordinal nlrs = numLocalRows();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalEntries = getRowMap().getMyGlobalEntries();
     // reset all local quantities
@@ -1502,13 +1510,12 @@ namespace Tpetra
       {
         GlobalOrdinal rgid = myGlobalEntries[r];
         LocalOrdinal rlcid = getColMap().getLocalIndex(rgid);   // determine the local column index for this row, used for delimiting the diagonal
-        const typename Teuchos::ArrayRCP<LocalOrdinal>::iterator 
-          beg = graphData_->colLInds_[r].begin(),
-          end = graphData_->colLInds_[r].begin() + graphData_->rowNumEntries_[r];
+        typename Teuchos::ArrayRCP<LocalOrdinal>::iterator beg, end;
+        beg = getLptr(r);
+        end = beg + graphData_->rowNumEntries_[r];
         typename Teuchos::ArrayRCP<LocalOrdinal>::iterator newend, cur;
         newend = beg;
         if (beg != end) {
-          // our range is [beg,newend], both are safe to dereference
           if (rlcid == (*newend)) ++graphData_->numLocalDiags_;
           for (cur = beg + 1; cur != end; ++cur) {
             // it is unique; add it and test it for the diagonal
@@ -1656,18 +1663,6 @@ namespace Tpetra
   }
 
   template <class LocalOrdinal, class GlobalOrdinal>
-  typename Teuchos::ArrayRCP<const GlobalOrdinal>::iterator 
-  CrsGraph<LocalOrdinal,GlobalOrdinal>::getGptr(Teuchos_Ordinal row) const
-  {
-    if (isStaticProfile() || isFillComplete()) {
-      return graphData_->colGIndsPtrs_[row];
-    }
-    else {
-      return graphData_->colGInds_[row].begin();
-    }
-  }
-
-  template <class LocalOrdinal, class GlobalOrdinal>
   typename Teuchos::ArrayRCP<LocalOrdinal>::iterator 
   CrsGraph<LocalOrdinal,GlobalOrdinal>::getLptr(Teuchos_Ordinal row)
   {
@@ -1676,6 +1671,18 @@ namespace Tpetra
     }
     else {
       return graphData_->colLInds_[row].begin();
+    }
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal>
+  typename Teuchos::ArrayRCP<const GlobalOrdinal>::iterator 
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::getGptr(Teuchos_Ordinal row) const
+  {
+    if (isStaticProfile() || isFillComplete()) {
+      return graphData_->colGIndsPtrs_[row];
+    }
+    else {
+      return graphData_->colGInds_[row].begin();
     }
   }
 

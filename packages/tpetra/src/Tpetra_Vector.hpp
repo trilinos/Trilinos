@@ -125,7 +125,7 @@ namespace Tpetra {
     Teuchos::BLAS<int,Scalar> blas;
     // compute local dot products of *this and a
     // sum these across all nodes
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(a.getMap()), std::runtime_error,
         "Tpetra::Vector::dot(): Vectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << this->getMap() 
@@ -238,7 +238,7 @@ namespace Tpetra {
     using Teuchos::as;
     typedef ScalarTraits<Scalar> SCT;
     typedef typename SCT::magnitudeType Mag;
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( !this->getMap().isCompatible(weights.getMap()), std::runtime_error,
         "Tpetra::Vector::normWeighted(): Vectors do not have compatible Maps:" << std::endl
         << "this->getMap(): " << std::endl << this->getMap() 

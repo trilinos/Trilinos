@@ -442,7 +442,7 @@ namespace Tpetra {
     const int myImageID = comm_->getRank();
     Teuchos_Ordinal selfReceiveOffset = 0;
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(imports.size() != totalReceiveLength_ * numPackets, std::runtime_error,
         Teuchos::typeName(*this) << "::doPosts(): imports must be large enough to store the imported data.");
 #endif
@@ -561,7 +561,7 @@ namespace Tpetra {
     if (numReceives > 0) {
       Teuchos::waitAll(*comm_,requests_());
       // Requests should all be null, clear them
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
       for (Teuchos::Array<Teuchos::RCP<Teuchos::CommRequest> >::const_iterator i = requests_.begin(); 
            i != requests_.end(); ++i) 
       {
@@ -652,16 +652,16 @@ namespace Tpetra {
     // therefore, each node will be listed in imagesTo_ at most once
     {
       std::vector<Teuchos_Ordinal> to_nodes_from_me(numImages,0);
-#     ifdef TEUCHOS_DEBUG 
+#     ifdef HAVE_TEUCHOS_DEBUG 
         bool counting_error = false;
 #     endif
       for (int i=0; i < (numSends_ + (selfMessage_ ? 1 : 0)); ++i) {
-#       ifdef TEUCHOS_DEBUG
+#       ifdef HAVE_TEUCHOS_DEBUG
           if (to_nodes_from_me[imagesTo_[i]] != 0) counting_error = true;
 #       endif
         to_nodes_from_me[imagesTo_[i]] = 1;
       }
-#     ifdef TEUCHOS_DEBUG
+#     ifdef HAVE_TEUCHOS_DEBUG
         SHARED_TEST_FOR_EXCEPTION(counting_error, std::logic_error,
             "Tpetra::Distributor::createFromSends: logic error. Please notify the Tpetra team.",*comm_);
 #     endif
@@ -855,7 +855,7 @@ namespace Tpetra {
     }
 
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
     bool index_neq_numActive = false;
     bool send_neq_numSends = false;
 #endif
@@ -887,7 +887,7 @@ namespace Tpetra {
           imagesTo_[i] = imageID;
           index += starts[imageID];
         }
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
         if (index != numActive) {
           index_neq_numActive = true;
         }
@@ -995,13 +995,13 @@ namespace Tpetra {
           ++snd;
         }
       }
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
       if (snd != numSends_) {
         send_neq_numSends = true;
       }
 #endif
     }
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_TEUCHOS_DEBUG
         SHARED_TEST_FOR_EXCEPTION(index_neq_numActive, std::logic_error,
             "Tpetra::Distributor::createFromSends: logic error. Please notify the Tpetra team.",*comm_);
         SHARED_TEST_FOR_EXCEPTION(send_neq_numSends, std::logic_error,

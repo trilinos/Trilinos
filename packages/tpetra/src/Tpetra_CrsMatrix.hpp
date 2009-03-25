@@ -516,7 +516,7 @@ namespace Tpetra
       // insert indices and values
       graph_.insertGlobalIndices(globalRow,indices);
       std::copy( values.begin(), values.end(),  values_[myRow].begin()+rowNNZ);
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
       // the assumption is that graph_.numAllocatedEntriesForMyRow is the allocated size here
       TEST_FOR_EXCEPTION( rowAlloc != graph_.numAllocatedEntriesForMyRow(myRow) 
                           || rowNNZ+toAdd != numEntriesForMyRow(myRow), std::logic_error,
@@ -1214,7 +1214,7 @@ namespace Tpetra
         Teuchos::typeName(*this) << ": cannot call getLocalDiagCopy() until fillComplete() has been called.");
     TEST_FOR_EXCEPTION(!dvec.getMap().isSameAs(getRowMap()), std::runtime_error,
         Teuchos::typeName(*this) << "::getLocalDiagCopy(dvec): dvec must have the same map as the CrsMatrix.");
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     int numDiagFound = 0;
 #endif
     Teuchos::ArrayView<Scalar> values;
@@ -1236,7 +1236,7 @@ namespace Tpetra
         while (i != cinds.end()) {
           if (*i == rlid) {
             *ov = *v;
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
             ++numDiagFound;
 #endif
             break;
@@ -1251,7 +1251,7 @@ namespace Tpetra
       }
       ++ov;
     }
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION(numDiagFound != graph_.numMyDiagonals(), std::logic_error, 
         "CrsMatrix::getLocalDiagCopy(): logic error. Please contact Tpetra team.");
 #endif
