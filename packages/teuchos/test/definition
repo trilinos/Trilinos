@@ -78,13 +78,13 @@ PACKAGE_NAME=Teuchos
     COMM = SERIAL;
 }
 
-(FRAMEWORK, INSTALL) {
-    TESTS = BLAS/BLAS_tmpl_test.exe,
-    ARGS = -v;
-    X-HOST = paunchy;
-    EXIT-STATUS = STRING-COMPARISON;
-    COMM = SERIAL;
-}
+#(FRAMEWORK, INSTALL) {
+#    TESTS = BLAS/BLAS_tmpl_test.exe,
+#    ARGS = -v;
+#    X-HOST = paunchy;
+#    EXIT-STATUS = STRING-COMPARISON;
+#    COMM = SERIAL;
+#}
 
 (FRAMEWORK,INSTALL) {
     TESTS = LAPACK/LAPACK_test.exe,
