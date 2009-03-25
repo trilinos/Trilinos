@@ -344,10 +344,18 @@ everything:
 	 $(MAKE) && $(MAKE) examples && $(MAKE) tests
 
 install-everything:
-	$(MAKE) install && $(MAKE) install-examples
+	$(MAKE) install && $(MAKE) install-examples && $(MAKE) install-finish
 
 clean-everything:
 	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
+
+#The below target was added because make install was previously not called in
+#the top level directory when using make install-everything, which caused 
+#these files to be missing from the install directory.
+install-finish:
+	cp $(top_srcdir)/Trilinos_version.h $(DESTDIR)$(includedir)/. ;
+	cp $(top_srcdir)/commonTools/buildTools/strip_dup_incl_paths.pl $(DESTDIR)$(includedir)/. ;
+	cp $(top_srcdir)/commonTools/buildTools/strip_dup_libs.pl $(DESTDIR)$(includedir)/.
 
 partial-clean:
 	find . -name "*.a" -exec rm {} \;
