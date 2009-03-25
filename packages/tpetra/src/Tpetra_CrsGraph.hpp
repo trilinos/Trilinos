@@ -299,7 +299,7 @@ namespace Tpetra
       //! @name I/O Methods
       //@{ 
       
-      //! Prints the matrix on the specified stream. This is very verbose.
+      //! Prints the graph on the specified stream. This is very verbose.
       void print(std::ostream& os) const;
 
       // @}
@@ -1493,9 +1493,9 @@ namespace Tpetra
   template <class LocalOrdinal, class GlobalOrdinal>
   void CrsGraph<LocalOrdinal,GlobalOrdinal>::removeRedundantIndices() 
   {
-    TEST_FOR_EXCEPT(indicesAreGlobal()!=false);  // this should be called only after makeIndicesLocal()
-    TEST_FOR_EXCEPT(indicesAreSorted()!=true);   // this should be called only after sortIndices()
-    TEST_FOR_EXCEPT(isStorageOptimized()==true); // assumptions about available data structures
+    TEST_FOR_EXCEPT(indicesAreGlobal()==true);    // this should be called only after makeIndicesLocal()
+    TEST_FOR_EXCEPT(indicesAreSorted()==false);   // this should be called only after sortIndices()
+    TEST_FOR_EXCEPT(isStorageOptimized()==true);  // assumptions about available data structures
     const Teuchos_Ordinal nlrs = numLocalRows();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalEntries = getRowMap().getMyGlobalEntries();
     // reset all local quantities
@@ -1528,9 +1528,9 @@ namespace Tpetra
             }
           }
           // because of sorting, smallest column index is (*beg); it indicates upper triangularity
-          if ((*beg) < rlcid) graphData_->upperTriangular_ = false;
+          if ((*beg) < r) graphData_->upperTriangular_ = false;
           // because of sorting, largest column index is (*newend); it indicates lower triangularity
-          if (rlcid < (*newend)) graphData_->lowerTriangular_ = false;
+          if (r < (*newend)) graphData_->lowerTriangular_ = false;
           // increment newend so that our range is [beg,newend) instead of [beg,newend]
           ++newend;
         }
@@ -1695,6 +1695,59 @@ namespace Tpetra
     }
     else {
       return graphData_->colGInds_[row].begin();
+    }
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal>
+  void
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::print(std::ostream &os) const
+  {
+    // support this operation whether fillComplete() or not
+    using std::endl;
+    int myImageID = Teuchos::rank(*getComm());
+    if (myImageID == 0)
+    {
+      os << "Tpetra::CrsGraph, label = " << this->getObjectLabel() << endl;
+      os << "Number of global rows   = " << numGlobalRows() << endl;
+      if (isFillComplete())
+      {
+        os << "Number of global columns    = " << numGlobalCols() << endl;
+        os << "Status = fill complete" << endl;
+        os << "Number of global nonzeros   = " << numGlobalEntries() << endl;
+        os << "Global max nonzeros per row = " << globalMaxNumRowEntries() << endl;
+      }
+      else
+      {
+        os << "Status = fill not complete" << endl;
+      }
+    }
+    if (isFillComplete())
+    {
+      for (int pid=0; pid < Teuchos::size(*getComm()); ++pid)
+      {
+        if (pid == myImageID)
+        {
+          Teuchos::Array<GlobalOrdinal> indices(myMaxNumRowEntries());
+          Teuchos::ArrayView<const GlobalOrdinal> mgis = getRowMap().getMyGlobalEntries();
+          os << "% Number of rows on image " << myImageID << " = " << numLocalRows() << endl;
+          for (Teuchos_Ordinal r=0; r < numLocalRows(); ++r)
+          {                                                        
+            GlobalOrdinal globalRow = mgis[r];
+            Teuchos_Ordinal rowSize;
+            extractGlobalRowCopy(globalRow, indices(), rowSize);
+            if (rowSize > 0) {
+              os << "Row " << globalRow << ":";
+              for (Teuchos_Ordinal j=0; j < rowSize; ++j) {
+                os << " " << indices[j];
+              }
+              os << std::endl;
+            }
+          }
+        }
+        Teuchos::barrier(*getComm());
+        Teuchos::barrier(*getComm());
+        Teuchos::barrier(*getComm());
+      }
     }
   }
 
