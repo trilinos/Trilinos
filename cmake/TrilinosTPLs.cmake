@@ -27,6 +27,7 @@ SET(Trilinos_TPLS_ENABLED
   TVMET          OFF
   MF             OFF
   ExodusII       OFF
+  ZoltanTpl      OFF
   y12m           OFF
   )
 
