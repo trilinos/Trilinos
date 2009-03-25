@@ -3,6 +3,8 @@
 
 #cmakedefine HAVE_NOX_DEBUG
 
+#cmakedefine WITH_PRERELEASE
+
 #cmakedefine FINITE_VALUE_HAVE_GLOBAL_ISINF
 #cmakedefine FINITE_VALUE_HAVE_STD_ISINF
 #cmakedefine FINITE_VALUE_HAVE_GLOBAL_ISNAN

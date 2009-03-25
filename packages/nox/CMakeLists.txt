@@ -12,6 +12,14 @@ PACKAGE(NOX)
 # B) Set up package-specific options
 #
 
+# Prerelease code
+OPTION(${PACKAGE_NAME}_BUILD_PRERELEASE
+  "Build experimental code"
+  OFF )
+IF(NOX_BUILD_PRERELEASE)
+  SET(WITH_PRERELEASE TRUE)
+ENDIF()
+
 # LOCA support
 OPTION(${PACKAGE_NAME}_ENABLE_LOCA
   "Enable parameter LOCA support"
