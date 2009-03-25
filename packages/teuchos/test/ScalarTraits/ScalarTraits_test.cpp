@@ -36,6 +36,35 @@
 #include "Teuchos_Version.hpp"
 
 
+namespace {
+
+
+//
+// Output of the ordinal that will avoid printing non-asci chars.
+//
+// The issue is that if you just print a raw char then if it prints non-asci
+// character, it can not be printed in some cases and causes trouble with
+// CTest/CDash.
+//
+
+// For general types, just print the type
+template <class T>
+T outputOrdinal(const T &t)
+{
+  return t;
+}
+
+// For char, print the int value (avoid non-ansi chars)
+int outputOrdinal(const char& t)
+{
+  return t;
+}
+
+
+//
+// Type ouptutting
+//
+
 template <class T>
 void TYPE_CHAIN_A(Teuchos::FancyOStream &out) {
   T b; typename Teuchos::ScalarTraits<T>::doublePrecision d;
@@ -179,8 +208,8 @@ bool testOrdinalTraits(
   const Ordinal one  = OT::one();
   const Ordinal max  = OT::max();
   const Ordinal invalid  = OT::invalid();
-  out << "\nmax() == " << max << "\n";
-  out << "\ninvalid() == " << invalid << "\n";
+  out << "\nmax() == " << outputOrdinal(max) << "\n";
+  out << "\ninvalid() == " << outputOrdinal(invalid) << "\n";
 
   out << "\nTesting that zero() * one() == zero() ...\n";
   {
@@ -188,7 +217,7 @@ bool testOrdinalTraits(
     result = (zto == zero);
     if (!result) success = false;
     out
-      << "zero*one = " << zto << " == " << zero << " : "
+      << "zero*one = " << outputOrdinal(zto) << " == " << outputOrdinal(zero) << " : "
       << passfail(result) << "\n";
   }
 
@@ -198,7 +227,7 @@ bool testOrdinalTraits(
     result = (oto == one);
     if (!result) success = false;
     out
-      << "one*one = " << oto << " == " << one << " : "
+      << "one*one = " << outputOrdinal(oto) << " == " << outputOrdinal(one) << " : "
       << passfail(result) << "\n";
   }
 
@@ -209,7 +238,8 @@ bool testOrdinalTraits(
     result = (opz == one) && (zpo == one);
     if (!result) success = false;
     out
-      << "one+zero = " << opz << " == zero+one = " << zpo << " == " << one << " : "
+      << "one+zero = " << outputOrdinal(opz) << " == zero+one = "
+      << outputOrdinal(zpo) << " == " << outputOrdinal(one) << " : "
       << passfail(result) << "\n";
   }
 
@@ -219,7 +249,7 @@ bool testOrdinalTraits(
     result = (omo == zero);
     if (!result) success = false;
     out
-      << "one-one = " << omo << " == " << zero << " : "
+      << "one-one = " << outputOrdinal(omo) << " == " << outputOrdinal(zero) << " : "
       << passfail(result) << "\n";
   }
 
@@ -246,6 +276,9 @@ bool testOrdinalTraits(
   return success;
 
 }
+
+
+} // namespace
 
 
 int main( int argc, char* argv[] ) {
@@ -311,9 +344,9 @@ int main( int argc, char* argv[] ) {
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
   
   if(success)
-    *out << "\nEnd Result: TEST PASSED" << std::endl;	
+    *out << "\nEnd Result: TEST PASSED\n" << std::endl;	
   else
-    *out << "\nEnd Result: TEST FAILED" << std::endl;	
+    *out << "\nEnd Result: TEST FAILED\n" << std::endl;
   
   return ( success ? 0 : 1 );
   
