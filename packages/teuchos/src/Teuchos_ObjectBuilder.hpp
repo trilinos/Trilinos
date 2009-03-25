@@ -191,6 +191,9 @@ void ObjectBuilder<ObjectType>::setObjectFactory(
   objectArray_.push_back(objectFactory);
   defaultObject_ = objectName;
   validParamList_ = null;
+#ifdef TEUCHOS_DEBUG
+  this->getValidParameters();
+#endif // TEUCHOS_DEBUG
 }
 
 

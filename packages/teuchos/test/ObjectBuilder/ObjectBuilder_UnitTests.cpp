@@ -234,6 +234,27 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setObjectFactory) {
   TEST_THROW( ob->setObjectFactory(abstractFactoryStd<Foo,FooC>(),""), std::logic_error ); // 1a.
 }
 
+// We shouldn't be able to set two factories with the same name.
+TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setObjectFactory_bad ) {
+  {
+    const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
+    ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
+    // ObjectBuilder will let you add the object, but will not throw until getValidParameters is called
+#ifdef TEUCHOS_DEBUG
+    TEST_THROW( ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A"), std::logic_error );
+#else // TEUCHOS_DEBUG
+    TEST_NOTHROW( ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A") );
+    TEST_THROW( ob->getValidParameters(), std::logic_error );
+#endif // TEUCHOS_DEBUG
+  }
+  {
+    const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
+    ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
+    TEST_NOTHROW( ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"New Foo A") );
+    TEST_NOTHROW( ob->getValidParameters() );
+  }
+}
+
 // getObjectName returns the default in the parameter list (if given), or the
 // default in the valid parameter list (if no parameter list is given)
 // 1.  no parameter list is given, uses default in valid parameter list.
