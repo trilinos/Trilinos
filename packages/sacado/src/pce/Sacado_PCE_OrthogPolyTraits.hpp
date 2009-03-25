@@ -78,19 +78,13 @@ namespace Sacado {
   //! Specialization of %ScalarType to OrthogPoly types
   template <typename T>
   struct ScalarType< PCE::OrthogPoly<T> > {
-    typedef typename PCE::OrthogPoly<T>::value_type type;
+    typedef typename ScalarType<typename PCE::OrthogPoly<T>::value_type>::type type;
   };
 
   //! Specialization of %ValueType to OrthogPoly types
   template <typename T>
   struct ValueType< PCE::OrthogPoly<T> > {
     typedef typename PCE::OrthogPoly<T>::value_type type;
-  };
-
-   //! Specialization of %ScalarValueType to OrthogPoly types
-  template <typename T>
-  struct ScalarValueType< PCE::OrthogPoly<T> > {
-    typedef typename ScalarValueType<typename PCE::OrthogPoly<T>::value_type>::type type;
   };
 
   //! Specialization of %IsADType to OrthogPoly types
@@ -111,6 +105,23 @@ namespace Sacado {
     typedef typename ValueType< PCE::OrthogPoly<T> >::type value_type;
     static const value_type& eval(const PCE::OrthogPoly<T>& x) { 
       return x.val(); }
+  };
+
+  //! Specialization of %ScalarValue to OrthogPoly types
+  template <typename T>
+  struct ScalarValue< PCE::OrthogPoly<T> > {
+    typedef typename ValueType< PCE::OrthogPoly<T> >::type value_type;
+    typedef typename ScalarType< PCE::OrthogPoly<T> >::type scalar_type;
+    static const scalar_type& eval(const PCE::OrthogPoly<T>& x) { 
+      return ScalarValue<value_type>::eval(x.val()); }
+  };
+
+  //! Specialization of %StringName to OrthogPoly types
+  template <typename T>
+  struct StringName< PCE::OrthogPoly<T> > {
+    static std::string eval() { 
+      return std::string("Sacado::PCE::OrthogPoly< ") + 
+	StringName<T>::eval() + " >"; }
   };
 
 } // namespace Sacado

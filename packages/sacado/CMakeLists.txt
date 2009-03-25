@@ -67,7 +67,7 @@ ADD_SUBDIRECTORY(example/FEApp)
 
 # This adds directories for non-performance tests as well
 PACKAGE_ADD_PERFORMANCE_TEST_DIRECTORIES(
-  test/utils test/performance)
+  test/performance)
 
 # Must be after the performance tests so dependency on test/utils is picked
 # up.

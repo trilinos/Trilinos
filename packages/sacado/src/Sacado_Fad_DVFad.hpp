@@ -58,14 +58,20 @@ namespace Sacado {
      * higher derivatives, \c ValueT may be DVFad<double> while \c ScalarT will
      * still be \c double.  Usually \c ScalarT does not need to be explicitly
      * specified since it can be deduced from \c ValueT through the template
-     * metafunction ScalarValueType.
+     * metafunction ScalarType.
      */
     template <typename ValueT, 
-	      typename ScalarT = typename ScalarValueType<ValueT>::type >
+	      typename ScalarT = typename ScalarType<ValueT>::type >
     class DVFad : 
       public Expr< GeneralVFad<ValueT,VectorDynamicStorage<ValueT> > > {
 
     public:
+
+      //! Turn DVFad into a meta-function class usable with mpl::apply
+      template <typename T, typename U = typename ScalarType<T>::type> 
+      struct apply {
+	typedef DVFad<T,U> type;
+      };
 
       /*!
        * @name Initialization methods
@@ -180,6 +186,12 @@ namespace Sacado {
       public Expr< GeneralVFad<ValueT,VectorDynamicStorage<ValueT> > > {
 
     public:
+
+      //! Turn DVFad into a meta-function class usable with mpl::apply
+      template <typename T, typename U = typename ScalarType<T>::type> 
+      struct apply {
+	typedef DVFad<T,U> type;
+      };
 
       /*!
        * @name Initialization methods

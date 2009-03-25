@@ -29,44 +29,10 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_HPP
-#define SACADO_HPP
+#include "FadBLASUnitTests.hpp"
 
-// Version string
-#include "Sacado_Version.hpp"
-
-// Declarations of all overloaded math functions
-#include "Sacado_MathFunctions.hpp"
-
-// Standard forward AD classes
-#include "Sacado_Fad_DFad.hpp"
-#include "Sacado_Fad_SFad.hpp"
-#include "Sacado_Fad_SLFad.hpp"
-#include "Sacado_Fad_MemPoolManager.hpp"
-#include "Sacado_Fad_DMFad.hpp"
-#include "Sacado_Fad_ExpressionTraits.hpp"
-#include "Sacado_LFad_LogicalSparse.hpp"
-#include "Sacado_Fad_DVFad.hpp"
-#include "Sacado_Fad_Vector.hpp"
-
-// Expression-level-reverse forward AD classes
-#include "Sacado_ELRFad_DFad.hpp"
-#include "Sacado_ELRFad_SFad.hpp"
-#include "Sacado_ELRFad_SLFad.hpp"
-#include "Sacado_ELRFad_ExpressionTraits.hpp"
-
-// Caching forward AD classes
-#include "Sacado_CacheFad_DFad.hpp"
-
-// Reverse AD classes
-#include "Sacado_trad.hpp"
-#include "Sacado_trad2.hpp"
-#include "Sacado_tradvec.hpp"
-
-// Taylor polynomial AD classes
-#include "Sacado_Tay_Taylor.hpp"
-
-// Flop-counting classes
-#include "Sacado_ScalarFlopCounter.hpp"
-
-#endif // SACADO_HPP 
+#ifdef HAVE_SACADO_COMPLEX
+typedef FadBLASUnitTests<Sacado::Fad::DVFad<std::complex<double> >,
+			 std::complex<double> > DVFadComplexDoubleTest;
+CPPUNIT_TEST_SUITE_REGISTRATION(DVFadComplexDoubleTest);
+#endif

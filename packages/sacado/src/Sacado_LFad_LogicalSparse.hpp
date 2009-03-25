@@ -290,6 +290,12 @@ namespace Sacado {
 
     public:
 
+      //! Turn LogicalSparse into a meta-function class usable with mpl::apply
+      template <typename T, typename U = LogT> 
+      struct apply {
+	typedef LogicalSparse<T,U> type;
+      };
+
       /*!
        * @name Initialization methods
        */

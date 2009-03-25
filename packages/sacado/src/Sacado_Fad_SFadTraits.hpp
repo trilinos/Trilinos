@@ -52,6 +52,7 @@
 #define SACADO_FAD_SFADTRAITS_HPP
 
 #include "Sacado_Traits.hpp"
+#include <sstream>
 
 // Forward declarations
 namespace Sacado {
@@ -103,12 +104,6 @@ namespace Sacado {
     typedef ValueT type;
   };
 
-   //! Specialization of %ScalarValueType to SFad types
-  template <typename ValueT, int Num, typename ScalarT>
-  struct ScalarValueType< Fad::SFad<ValueT,Num,ScalarT> > {
-    typedef typename ScalarValueType< ValueT >::type type;
-  };
-
   //! Specialization of %IsADType to SFad types
   template <typename ValueT, int Num, typename ScalarT>
   struct IsADType< Fad::SFad<ValueT,Num,ScalarT> > {
@@ -129,6 +124,69 @@ namespace Sacado {
       return x.val(); }
   };
 
+  //! Specialization of %ScalarValue to SFad types
+  template <typename ValueT, int Num, typename ScalarT>
+  struct ScalarValue< Fad::SFad<ValueT,Num,ScalarT> > {
+    typedef typename ValueType< Fad::SFad<ValueT,Num,ScalarT> >::type value_type;
+    typedef typename ScalarType< Fad::SFad<ValueT,Num,ScalarT> >::type scalar_type;
+    static const scalar_type& eval(const Fad::SFad<ValueT,Num,ScalarT>& x) { 
+      return ScalarValue<value_type>::eval(x.val()); }
+  };
+
+  //! Specialization of %StringName to SFad types
+  template <typename ValueT, int Num, typename ScalarT>
+  struct StringName< Fad::SFad<ValueT,Num,ScalarT> > {
+    static std::string eval() { 
+       std::stringstream ss;
+      ss << "Sacado::Fad::SFad< " 
+	 << StringName<ValueT>::eval() << ", " << Num << ", "
+	 << StringName<ScalarT>::eval() << " >";
+      return ss.str(); 
+    }
+  };
+
 } // namespace Sacado
+
+// Define Teuchos traits classes
+#ifdef HAVE_SACADO_TEUCHOS
+#include "Teuchos_PromotionTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Sacado_Fad_ScalarTraitsImp.hpp"
+
+namespace Teuchos {
+
+  //! Specialization of %Teuchos::PromotionTraits to SFad types
+  template <typename ValueT, int Num, typename ScalarT>
+  struct PromotionTraits< Sacado::Fad::SFad<ValueT,Num,ScalarT>, 
+			  Sacado::Fad::SFad<ValueT,Num,ScalarT> > {
+    typedef typename Sacado::Promote< Sacado::Fad::SFad<ValueT,Num,ScalarT>,
+				      Sacado::Fad::SFad<ValueT,Num,ScalarT> >::type
+    promote;
+  };
+
+  //! Specialization of %Teuchos::PromotionTraits to SFad types
+  template <typename ValueT, int Num, typename ScalarT, typename R>
+  struct PromotionTraits< Sacado::Fad::SFad<ValueT,Num,ScalarT>, R > {
+    typedef typename Sacado::Promote< Sacado::Fad::SFad<ValueT,Num,ScalarT>,
+				      R >::type 
+    promote;
+  };
+
+  //! Specialization of %Teuchos::PromotionTraits to SFad types
+  template <typename L, typename ValueT, int Num, typename ScalarT>
+  struct PromotionTraits< L, Sacado::Fad::SFad<ValueT,Num,ScalarT> > {
+  public:
+    typedef typename Sacado::Promote< L, 
+				      Sacado::Fad::SFad<ValueT,Num,ScalarT> >::type 
+    promote;
+  };
+
+  //! Specializtion of Teuchos::ScalarTraits
+  template <typename ValueT, int Num, typename ScalarT>
+  struct ScalarTraits< Sacado::Fad::SFad<ValueT,Num,ScalarT> > :
+    public Sacado::Fad::ScalarTraitsImp< Sacado::Fad::SFad<ValueT,Num,ScalarT> >
+  {};
+}
+#endif // HAVE_SACADO_TEUCHOS
 
 #endif // SACADO_FAD_SFADTRAITS_HPP

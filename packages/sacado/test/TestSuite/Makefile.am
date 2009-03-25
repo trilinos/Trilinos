@@ -54,7 +54,12 @@ endif
 
 if ENABLE_SACADO_TEUCHOS
 
-BLAS_SRC = $(srcdir)/FadBLASUnitTests.hpp $(srcdir)/FadBLASUnitTests.cpp
+BLAS_SRC = \
+	$(srcdir)/FadBLASUnitTests.hpp \
+	$(srcdir)/RealDFadBLASUnitTests.cpp \
+	$(srcdir)/RealDVFadBLASUnitTests.cpp \
+	$(srcdir)/ComplexDFadBLASUnitTests.cpp \
+	$(srcdir)/ComplexDVFadBLASUnitTests.cpp
 
 endif
 
@@ -73,6 +78,8 @@ TestSuite_exe_SOURCES = \
 	$(PCE_SRC) \
 	$(srcdir)/LogicalSparseUnitTests.hpp \
 	$(srcdir)/LogicalSparseUnitTests.cpp \
+	$(srcdir)/TraitsTests.hpp \
+	$(srcdir)/TraitsTests.cpp \
 	$(srcdir)/TestSuite.cpp
 
 TestSuite_exe_CXXFLAGS = \
@@ -82,11 +89,9 @@ TestSuite_exe_CXXFLAGS = \
 	$(TAYLOR_CXXFLAGS) \
 	$(CPPUNIT_CFLAGS)
 
-TestSuite_exe_DEPENDENCIES = \
-	$(top_builddir)/test/utils/libsacadoutils.a 
+TestSuite_exe_DEPENDENCIES =
 
 TestSuite_exe_LDADD = \
-	-L$(top_builddir)/test/utils -lsacadoutils \
 	$(TAYLOR_LDADD) \
 	$(CPPUNIT_LIBS) \
 	$(SACADO_LIBS)

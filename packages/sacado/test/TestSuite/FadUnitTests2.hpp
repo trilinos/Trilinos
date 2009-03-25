@@ -147,7 +147,7 @@ protected:
   FadType a_fad, b_fad, c_fad;
 
   // Random number generator
-  Sacado::Random urand;
+  Sacado::Random<ScalarType> urand;
 
   // Number of derivative components
   int n;
@@ -160,13 +160,13 @@ protected:
 template <class FadType, class ScalarType>
 FadOpsUnitTest2<FadType,ScalarType>::
 FadOpsUnitTest2() :
-  urand(0.0, 1.0), n(5), tol_a(1.0e-15), tol_r(1.0e-14) {}
+  urand(), n(5), tol_a(1.0e-15), tol_r(1.0e-14) {}
 
 template <class FadType, class ScalarType>
 FadOpsUnitTest2<FadType,ScalarType>::
 FadOpsUnitTest2(int numComponents, double absolute_tolerance, 
 	       double relative_tolerance) :
-  urand(0.0, 1.0), 
+  urand(), 
   n(numComponents), 
   tol_a(absolute_tolerance), 
   tol_r(relative_tolerance) {}
@@ -571,7 +571,7 @@ testPlusLR() {
   FadType aa_fad = a_fad;
   aa_fad = 1.0;
   aa_fad = aa_fad + b_fad;
-  c_fad = ScalarType(1.0) + b_fad;
+  c_fad = 1.0 + b_fad;
   COMPARE_FADS(aa_fad, c_fad);
 }
 
@@ -582,7 +582,7 @@ testMinusLR() {
   FadType aa_fad = a_fad;
   aa_fad = 1.0;
   aa_fad = aa_fad - b_fad;
-  c_fad = ScalarType(1.0) - b_fad;
+  c_fad = 1.0 - b_fad;
   COMPARE_FADS(aa_fad, c_fad);
 }
 
@@ -593,7 +593,7 @@ testTimesLR() {
   FadType aa_fad = a_fad;
   aa_fad = 2.0;
   aa_fad = aa_fad * b_fad;
-  c_fad = ScalarType(2.0) * b_fad;
+  c_fad = 2.0 * b_fad;
   COMPARE_FADS(aa_fad, c_fad);
 }
 
@@ -604,7 +604,7 @@ testDivideLR() {
   FadType aa_fad = a_fad;
   aa_fad = 2.0;
   aa_fad = aa_fad / b_fad;
-  c_fad = ScalarType(2.0) / b_fad;
+  c_fad = 2.0 / b_fad;
   COMPARE_FADS(aa_fad, c_fad);
 }
 

@@ -34,7 +34,6 @@
 
 #include "Teuchos_BLAS.hpp"
 #include "Sacado_Traits.hpp"
-#include "Sacado_Fad_DVFad.hpp"
 
 namespace Sacado {
 

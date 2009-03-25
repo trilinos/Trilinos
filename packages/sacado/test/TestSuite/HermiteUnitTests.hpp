@@ -246,7 +246,7 @@ protected:
   double a, b, c;
 
   // Random number generator
-  Sacado::Random urand;
+  Sacado::Random<double> urand;
 
   // Tolerances to which expansions should be the same
   double tol_a, tol_r;

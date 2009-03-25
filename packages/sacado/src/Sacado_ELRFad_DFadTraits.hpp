@@ -102,12 +102,6 @@ namespace Sacado {
     typedef ValueT type;
   };
 
-   //! Specialization of %ScalarValueType to DFad types
-  template <typename ValueT, typename ScalarT>
-  struct ScalarValueType< ELRFad::DFad<ValueT,ScalarT> > {
-    typedef typename ScalarValueType< ValueT >::type type;
-  };
-
   //! Specialization of %IsADType to DFad types
   template <typename ValueT, typename ScalarT>
   struct IsADType< ELRFad::DFad<ValueT,ScalarT> > {
@@ -128,6 +122,66 @@ namespace Sacado {
       return x.val(); }
   };
 
+  //! Specialization of %ScalarValue to DELRFad types
+  template <typename ValueT, typename ScalarT>
+  struct ScalarValue< ELRFad::DFad<ValueT,ScalarT> > {
+    typedef typename ValueType< ELRFad::DFad<ValueT,ScalarT> >::type value_type;
+    typedef typename ScalarType< ELRFad::DFad<ValueT,ScalarT> >::type scalar_type;
+    static const scalar_type& eval(const ELRFad::DFad<ValueT,ScalarT>& x) { 
+      return ScalarValue<value_type>::eval(x.val()); }
+  };
+
+  //! Specialization of %StringName to DFad types
+  template <typename ValueT, typename ScalarT>
+  struct StringName< ELRFad::DFad<ValueT,ScalarT> > {
+    static std::string eval() { 
+      return std::string("Sacado::ELRFad::DFad< ") + 
+	StringName<ValueT>::eval() + ", " + 
+	StringName<ScalarT>::eval() + " >"; }
+  };
+
 } // namespace Sacado
+
+// Define Teuchos traits classes
+#ifdef HAVE_SACADO_TEUCHOS
+#include "Teuchos_PromotionTraits.hpp"
+#include "Teuchos_ScalarTraits.hpp"
+#include "Sacado_Fad_ScalarTraitsImp.hpp"
+
+namespace Teuchos {
+
+  //! Specialization of %Teuchos::PromotionTraits to DFad types
+  template <typename ValueT, typename ScalarT>
+  struct PromotionTraits< Sacado::ELRFad::DFad<ValueT,ScalarT>, 
+			  Sacado::ELRFad::DFad<ValueT,ScalarT> > {
+    typedef typename Sacado::Promote< Sacado::ELRFad::DFad<ValueT,ScalarT>,
+				      Sacado::ELRFad::DFad<ValueT,ScalarT> >::type
+    promote;
+  };
+
+  //! Specialization of %Teuchos::PromotionTraits to DFad types
+  template <typename ValueT, typename ScalarT, typename R>
+  struct PromotionTraits< Sacado::ELRFad::DFad<ValueT,ScalarT>, R > {
+    typedef typename Sacado::Promote< Sacado::ELRFad::DFad<ValueT,ScalarT>,
+				      R >::type 
+    promote;
+  };
+
+  //! Specialization of %Teuchos::PromotionTraits to DFad types
+  template <typename L, typename ValueT, typename ScalarT>
+  struct PromotionTraits< L, Sacado::ELRFad::DFad<ValueT, ScalarT> > {
+  public:
+    typedef typename Sacado::Promote< L, 
+				      Sacado::ELRFad::DFad<ValueT,ScalarT> >::type 
+    promote;
+  };
+
+  //! Specializtion of Teuchos::ScalarTraits
+  template <typename ValueT, typename ScalarT>
+  struct ScalarTraits< Sacado::ELRFad::DFad<ValueT,ScalarT> > :
+    public Sacado::Fad::ScalarTraitsImp< Sacado::ELRFad::DFad<ValueT,ScalarT> >
+  {};
+}
+#endif // HAVE_SACADO_TEUCHOS
 
 #endif // SACADO_ELRFAD_DFADTRAITS_HPP

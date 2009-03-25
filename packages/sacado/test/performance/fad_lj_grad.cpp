@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
     std::cout.precision(p);
     std::cout << "Times (sec) nloop =  " << nloop << ":  " << std::endl;
 
-    Sacado::Random urand(0.0, 1.0);
+    Sacado::Random<double> urand(0.0, 1.0);
     for (int i=0; i<3; i++) {
       xi[i] = urand.number();
       xj[i] = urand.number();

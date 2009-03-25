@@ -422,7 +422,7 @@ protected:
   double **X, **Y;
 
   // Random number generator
-  Sacado::Random urand;
+  Sacado::Random<double> urand;
 
   // Degree of polynomials
   unsigned int d;
@@ -434,7 +434,7 @@ protected:
 
 template <class TaylorType>
 TaylorOpsUnitTest<TaylorType>::TaylorOpsUnitTest() :
-  urand(0.0, 1.0), d(5), tol_a(1.0e-11), tol_r(1.0e-10) 
+  urand(), d(5), tol_a(1.0e-11), tol_r(1.0e-10) 
 {
   X = new double*[2];
   X[0] = new double[d+1];
@@ -448,7 +448,7 @@ template <class TaylorType>
 TaylorOpsUnitTest<TaylorType>::TaylorOpsUnitTest(unsigned int degree, 
 						 double absolute_tolerance, 
 						 double relative_tolerance) :
-  urand(0.0, 1.0), 
+  urand(), 
   d(degree), 
   tol_a(absolute_tolerance), 
   tol_r(relative_tolerance) 

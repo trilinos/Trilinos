@@ -315,14 +315,20 @@ namespace Sacado {
      * higher derivatives, \c ValueT may be SFad<double> while \c ScalarT will
      * still be \c double.  Usually \c ScalarT does not need to be explicitly
      * specified since it can be deduced from \c ValueT through the template
-     * metafunction ScalarValueType.
+     * metafunction ScalarType.
      */
     template <typename ValueT, int Num,
-	      typename ScalarT = typename ScalarValueType<ValueT>::type >
+	      typename ScalarT = typename ScalarType<ValueT>::type >
     class SFad : 
       public Expr< SFadExprTag<ValueT,Num > > {
 
     public:
+
+      //! Turn SFad into a meta-function class usable with mpl::apply
+      template <typename T, typename U = typename ScalarType<T>::type> 
+      struct apply {
+	typedef SFad<T,Num,U> type;
+      };
 
       /*!
        * @name Initialization methods
@@ -417,6 +423,12 @@ namespace Sacado {
       public Expr< SFadExprTag<ValueT,Num >  >{
 
     public:
+
+      //! Turn SFad into a meta-function class usable with mpl::apply
+      template <typename T, typename U = typename ScalarType<T>::type> 
+      struct apply {
+	typedef SFad<T,Num,U> type;
+      };
 
       /*!
        * @name Initialization methods

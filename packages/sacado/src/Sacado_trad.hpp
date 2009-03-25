@@ -824,6 +824,9 @@ T1(copy)
  template<typename Double> class
 ADvar: public IndepADvar<Double> {	// an "active" variable
  public:
+        //! Turn ADvar into a meta-function class usable with mpl::apply
+        template <typename U> struct apply { typedef ADvar<U> type; };
+
 	typedef IndepADvar<Double> IndepADVar;
 	typedef typename IndepADVar::ADVari ADVari;
 	typedef ConstADvari<Double> ConstADVari;

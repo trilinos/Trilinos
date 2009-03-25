@@ -72,7 +72,7 @@ double
 do_time(int nderiv, int nloop)
 {
   FadType x1, x2, y;
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
 
   x1 = FadType(nderiv,  urand.number());
   x2 = FadType(nderiv,  urand.number());
@@ -97,7 +97,7 @@ do_time_analytic(int nderiv, int nloop)
 {
   double x1, x2, y;
   double *x1dot, *x2dot, *ydot;
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
 
   x1 = urand.number();
   x2 = urand.number();

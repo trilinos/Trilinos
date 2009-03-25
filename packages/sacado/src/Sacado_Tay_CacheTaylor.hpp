@@ -190,6 +190,12 @@ namespace Sacado {
 
     public:
 
+      //! Turn CacheTaylor into a meta-function class usable with mpl::apply
+      template <typename U> 
+      struct apply {
+	typedef CacheTaylor<U> type;
+      };
+
       /*!
        * @name Initialization methods
        */

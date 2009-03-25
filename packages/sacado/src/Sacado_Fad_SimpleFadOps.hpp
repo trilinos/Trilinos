@@ -203,7 +203,7 @@ namespace Sacado {
 
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
-    operator + (const ValueT& a, 
+    operator + (const typename SimpleFad<ValueT,ScalarT>::value_type& a, 
 		const SimpleFad<ValueT,ScalarT>& b) {
       return SimpleFad<ValueT,ScalarT>(b, a+b.val(), 1.0);
     }
@@ -211,7 +211,7 @@ namespace Sacado {
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
     operator + (const SimpleFad<ValueT,ScalarT>& a, 
-		const ValueT& b) {
+		const typename SimpleFad<ValueT,ScalarT>::value_type& b) {
       return SimpleFad<ValueT,ScalarT>(a, a.val()+b, 1.0);
     }
 
@@ -236,7 +236,7 @@ namespace Sacado {
 
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
-    operator - (const ValueT& a, 
+    operator - (const typename SimpleFad<ValueT,ScalarT>::value_type& a, 
 		const SimpleFad<ValueT,ScalarT>& b) {
       return SimpleFad<ValueT,ScalarT>(b, a-b.val(), -1.0);
     }
@@ -244,7 +244,7 @@ namespace Sacado {
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
     operator - (const SimpleFad<ValueT,ScalarT>& a, 
-		const ValueT& b) {
+		const typename SimpleFad<ValueT,ScalarT>::value_type& b) {
       return SimpleFad<ValueT,ScalarT>(a, a.val()-b, 1.0);
     }
 
@@ -270,7 +270,7 @@ namespace Sacado {
 
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
-    operator * (const ValueT& a, 
+    operator * (const typename SimpleFad<ValueT,ScalarT>::value_type& a, 
 		const SimpleFad<ValueT,ScalarT>& b) {
       return SimpleFad<ValueT,ScalarT>(b, a*b.val(), a);
     }
@@ -278,7 +278,7 @@ namespace Sacado {
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
     operator * (const SimpleFad<ValueT,ScalarT>& a, 
-		const ValueT& b) {
+		const typename SimpleFad<ValueT,ScalarT>::value_type& b) {
       return SimpleFad<ValueT,ScalarT>(a, a.val()*b, b);
     }
 
@@ -308,7 +308,7 @@ namespace Sacado {
 
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
-    operator / (const ValueT& a, 
+    operator / (const typename SimpleFad<ValueT,ScalarT>::value_type& a, 
 		const SimpleFad<ValueT,ScalarT>& b) {
       return SimpleFad<ValueT,ScalarT>(b, a/b.val(), -a/(b.val()*b.val()));
     }
@@ -316,7 +316,7 @@ namespace Sacado {
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
     operator / (const SimpleFad<ValueT,ScalarT>& a, 
-		const ValueT& b) {
+		const typename SimpleFad<ValueT,ScalarT>::value_type& b) {
       return SimpleFad<ValueT,ScalarT>(a, a.val()/b, 1.0/b);
     }
 
@@ -349,7 +349,7 @@ namespace Sacado {
 
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
-    pow(const ValueT& a, 
+    pow(const typename SimpleFad<ValueT,ScalarT>::value_type& a, 
 	const SimpleFad<ValueT,ScalarT>& b) {
       ValueT t = std::pow(a,b.val());
       return SimpleFad<ValueT,ScalarT>(b, t, t*std::log(a));
@@ -358,7 +358,7 @@ namespace Sacado {
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
     pow(const SimpleFad<ValueT,ScalarT>& a, 
-	const ValueT& b) {
+	const typename SimpleFad<ValueT,ScalarT>::value_type& b) {
       ValueT t = std::pow(a.val(),b);
       return SimpleFad<ValueT,ScalarT>(a, t, t*b/a.val());
     }
@@ -393,8 +393,8 @@ namespace Sacado {
 
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
-    atan2(const ValueT& a, 
-	const SimpleFad<ValueT,ScalarT>& b) {
+    atan2(const typename SimpleFad<ValueT,ScalarT>::value_type& a, 
+	  const SimpleFad<ValueT,ScalarT>& b) {
       return SimpleFad<ValueT,ScalarT>(b, std::atan2(a,b.val()), 
 				       -a/(a*a + b.val()*b.val()));
     }
@@ -402,7 +402,7 @@ namespace Sacado {
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
     atan2(const SimpleFad<ValueT,ScalarT>& a, 
-	  const ValueT& b) {
+	  const typename SimpleFad<ValueT,ScalarT>::value_type& b) {
       return SimpleFad<ValueT,ScalarT>(a, std::atan2(a.val(),b), 
 				       b/(a.val()*a.val() + b*b));
     }
@@ -443,7 +443,7 @@ namespace Sacado {
 
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
-    max(const ValueT& a, 
+    max(const typename SimpleFad<ValueT,ScalarT>::value_type& a, 
 	const SimpleFad<ValueT,ScalarT>& b) {
       SimpleFad<ValueT,ScalarT> c(b.size(), std::max(a, b.val()));
       if (a >= b.val())
@@ -459,7 +459,7 @@ namespace Sacado {
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
     max(const SimpleFad<ValueT,ScalarT>& a, 
-	const ValueT& b) {
+	const typename SimpleFad<ValueT,ScalarT>::value_type& b) {
       SimpleFad<ValueT,ScalarT> c(a.size(), std::max(a.val(), b));
       if (a.val() >= b)
 	for (int i=0; i<c.size(); i++)
@@ -507,7 +507,7 @@ namespace Sacado {
 
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
-    min(const ValueT& a, 
+    min(const typename SimpleFad<ValueT,ScalarT>::value_type& a, 
 	const SimpleFad<ValueT,ScalarT>& b) {
       SimpleFad<ValueT,ScalarT> c(b.size(), std::min(a, b.val()));
       if (a <= b.val())
@@ -523,7 +523,7 @@ namespace Sacado {
     template <typename ValueT, typename ScalarT>
     SimpleFad<ValueT,ScalarT>
     min(const SimpleFad<ValueT,ScalarT>& a, 
-	const ValueT& b) {
+	const typename SimpleFad<ValueT,ScalarT>::value_type& b) {
       SimpleFad<ValueT,ScalarT> c(a.size(), std::min(a.val(), b));
       if (a.val() <= b)
 	for (int i=0; i<c.size(); i++)

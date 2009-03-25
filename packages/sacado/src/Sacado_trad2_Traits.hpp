@@ -29,14 +29,14 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_TRAD_TRAITS_HPP
-#define SACADO_TRAD_TRAITS_HPP
+#ifndef SACADO_TRAD2_TRAITS_HPP
+#define SACADO_TRAD2_TRAITS_HPP
 
 #include "Sacado_Traits.hpp"
 
 // Forward declarations
 namespace Sacado {
-  namespace Rad {
+  namespace Rad2 {
     template <typename T> class ADvar;
     template <typename T> class ADvari;
   }
@@ -46,118 +46,118 @@ namespace Sacado {
 
   //! Specialization of %Promote to ADvar types
   template <typename T>
-  class Promote< Rad::ADvar<T>, Rad::ADvar<T> > {
+  class Promote< Rad2::ADvar<T>, Rad2::ADvar<T> > {
   public:
 
-    typedef Rad::ADvar<T> type;
+    typedef Rad2::ADvar<T> type;
   };
 
   //! Specialization of %Promote to ADvar types
   template <typename L, typename R>
-  class Promote< Rad::ADvar<L>, R > {
+  class Promote< Rad2::ADvar<L>, R > {
   public:
 
-    typedef typename ValueType< Rad::ADvar<L> >::type value_type_l;
+    typedef typename ValueType< Rad2::ADvar<L> >::type value_type_l;
     typedef typename ValueType<R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Rad::ADvar<value_type> type;
+    typedef Rad2::ADvar<value_type> type;
   };
 
   //! Specialization of %Promote to ADvar types
   template <typename L, typename R>
-  class Promote< L, Rad::ADvar<R> > {
+  class Promote< L, Rad2::ADvar<R> > {
   public:
 
     typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< Rad::ADvar<R> >::type value_type_r;
+    typedef typename ValueType< Rad2::ADvar<R> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Rad::ADvar<value_type> type;
+    typedef Rad2::ADvar<value_type> type;
   };
 
   //! Specialization of %ScalarType to ADvar types
   template <typename T>
-  struct ScalarType< Rad::ADvar<T> > {
+  struct ScalarType< Rad2::ADvar<T> > {
     typedef typename ScalarType<T>::type type;
   };
 
   //! Specialization of %ScalarType to ADvari types
   template <typename T>
-  struct ScalarType< Rad::ADvari<T> > {
+  struct ScalarType< Rad2::ADvari<T> > {
     typedef typename ScalarType<T>::type type;
   };
 
   //! Specialization of %ValueType to ADvar types
   template <typename T>
-  struct ValueType< Rad::ADvar<T> > {
+  struct ValueType< Rad2::ADvar<T> > {
     typedef T type;
   };
 
   //! Specialization of %ValueType to ADvari types
   template <typename T>
-  struct ValueType< Rad::ADvari<T> > {
+  struct ValueType< Rad2::ADvari<T> > {
     typedef T type;
   };
 
   //! Specialization of %IsADType to ADvar types
   template <typename T>
-  struct IsADType< Rad::ADvar<T> > {
+  struct IsADType< Rad2::ADvar<T> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to ADvari types
   template <typename T>
-  struct IsADType< Rad::ADvari<T> > {
+  struct IsADType< Rad2::ADvari<T> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to ADvar types
   template <typename T>
-  struct IsScalarType< Rad::ADvar<T> > {
+  struct IsScalarType< Rad2::ADvar<T> > {
     static const bool value = false;
   };
 
   //! Specialization of %IsADType to ADvari types
   template <typename T>
-  struct IsScalarType< Rad::ADvari<T> > {
+  struct IsScalarType< Rad2::ADvari<T> > {
     static const bool value = false;
   };
 
   //! Specialization of %Value to ADvar types
   template <typename T>
-  struct Value< Rad::ADvar<T> > {
-    typedef typename ValueType< Rad::ADvar<T> >::type value_type;
-    static value_type eval(const Rad::ADvar<T>& x) { 
+  struct Value< Rad2::ADvar<T> > {
+    typedef typename ValueType< Rad2::ADvar<T> >::type value_type;
+    static value_type eval(const Rad2::ADvar<T>& x) { 
       return x.val(); }
   };
 
   //! Specialization of %MarkConstant to ADvar types
   template <typename T> 
-  struct MarkConstant< Rad::ADvar<T> > {
-    static void eval(Rad::ADvar<T>& x) { AD_Const(x); }
+  struct MarkConstant< Rad2::ADvar<T> > {
+    static void eval(Rad2::ADvar<T>& x) { AD_Const(x); }
   };
 
   //! Specialization of %MarkConstant to ADvari types
   template <typename T> 
-  struct MarkConstant< Rad::ADvari<T> > {
-    static void eval(Rad::ADvari<T>& x) { AD_Const(x); }
+  struct MarkConstant< Rad2::ADvari<T> > {
+    static void eval(Rad2::ADvari<T>& x) { AD_Const(x); }
   };
 
   //! Specialization of %ScalarValue to ADvar types
   template <typename T>
-  struct ScalarValue< Rad::ADvar<T> > {
-    typedef typename ValueType< Rad::ADvar<T> >::type value_type;
-    typedef typename ScalarType< Rad::ADvar<T> >::type scalar_type;
-    static scalar_type eval(const Rad::ADvar<T>& x) { 
+  struct ScalarValue< Rad2::ADvar<T> > {
+    typedef typename ValueType< Rad2::ADvar<T> >::type value_type;
+    typedef typename ScalarType< Rad2::ADvar<T> >::type scalar_type;
+    static scalar_type eval(const Rad2::ADvar<T>& x) { 
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
   //! Specialization of %StringName to ADvar types
   template <typename T>
-  struct StringName< Rad::ADvar<T> > {
+  struct StringName< Rad2::ADvar<T> > {
     static std::string eval() { 
-      return std::string("Sacado::Rad::ADvar< ") + 
+      return std::string("Sacado::Rad2::ADvar< ") + 
 	StringName<T>::eval() + " >"; }
   };
 

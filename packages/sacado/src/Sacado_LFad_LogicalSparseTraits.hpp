@@ -75,19 +75,13 @@ namespace Sacado {
   //! Specialization of %ScalarType to LogicalSparse types
   template <typename ValT, typename LogT>
   struct ScalarType< LFad::LogicalSparse<ValT,LogT> > {
-    typedef typename LFad::LogicalSparse<ValT,LogT>::value_type type;
+    typedef typename ScalarType< typename LFad::LogicalSparse<ValT,LogT>::value_type >::type type;
   };
 
   //! Specialization of %ValueType to LogicalSparse types
   template <typename ValT, typename LogT>
   struct ValueType< LFad::LogicalSparse<ValT,LogT> > {
     typedef typename LFad::LogicalSparse<ValT,LogT>::value_type type;
-  };
-
-   //! Specialization of %ScalarValueType to LogicalSparse types
-  template <typename ValT, typename LogT>
-  struct ScalarValueType< LFad::LogicalSparse<ValT,LogT> > {
-    typedef typename ScalarValueType< ValT >::type type;
   };
 
   //! Specialization of %IsADType to LogicalSparse types
@@ -108,6 +102,24 @@ namespace Sacado {
     typedef typename ValueType< LFad::LogicalSparse<ValT,LogT> >::type value_type;
     static const value_type& eval(const LFad::LogicalSparse<ValT,LogT>& x) { 
       return x.val(); }
+  };
+
+  //! Specialization of %ScalarValue to DFad types
+  template <typename ValT, typename LogT>
+  struct ScalarValue< LFad::LogicalSparse<ValT,LogT> > {
+    typedef typename ValueType< LFad::LogicalSparse<ValT,LogT> >::type value_type;
+    typedef typename ScalarType< LFad::LogicalSparse<ValT,LogT> >::type scalar_type;
+    static const scalar_type& eval(const LFad::LogicalSparse<ValT,LogT>& x) { 
+      return ScalarValue<value_type>::eval(x.val()); }
+  };
+
+  //! Specialization of %StringName to DFad types
+  template <typename ValT, typename LogT>
+  struct StringName< LFad::LogicalSparse<ValT,LogT> > {
+    static std::string eval() { 
+      return std::string("Sacado::LFad::LoginalSparse< ") + 
+	StringName<ValT>::eval() + ", " + 
+	StringName<LogT>::eval() + " >"; }
   };
 
 } // namespace Sacado

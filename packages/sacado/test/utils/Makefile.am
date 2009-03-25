@@ -39,19 +39,11 @@
 UTILS_H = \
 	$(srcdir)/Sacado_Random.hpp 
 
-UTILS = \
-	$(srcdir)/Sacado_Random.cpp
+noinst_HEADERS = $(UTILS_H)
 
 # ------------------------------------------------------------------------
 # Utils library specifications
 # ------------------------------------------------------------------------
-UTILS_LIB = libsacadoutils.a
-
-libsacadoutils_a_SOURCES = $(UTILS) $(UTILS_H)
-
-libsacadoutils_a_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_builddir)/src
 
 # ------------------------------------------------------------------------
 # For using a special archiver
@@ -61,28 +53,14 @@ libsacadoutils_a_CXXFLAGS = \
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
 
-if USE_ALTERNATE_AR
-
-libsacadoutils_a_AR = $(ALTERNATE_AR)
-
-else
-
-libsacadoutils_a_AR = $(AR) cru
-
-endif
-
 # ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
 
-libsacadoutils_a_LIBADD = $(XTRALDADD)
-
 # ------------------------------------------------------------------------
 # List of all libraries not to be installed
 # ------------------------------------------------------------------------
-
-noinst_LIBRARIES = $(UTILS_LIB)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

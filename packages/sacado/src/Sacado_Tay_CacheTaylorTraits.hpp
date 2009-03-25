@@ -78,19 +78,13 @@ namespace Sacado {
   //! Specialization of %ScalarType to DFad types
   template <typename T>
   struct ScalarType< Tay::CacheTaylor<T> > {
-    typedef T type;
+    typedef typename ScalarType<T>::type type;
   };
 
   //! Specialization of %ValueType to DFad types
   template <typename T>
   struct ValueType< Tay::CacheTaylor<T> > {
     typedef T type;
-  };
-
-   //! Specialization of %ScalarValueType to DFad types
-  template <typename T>
-  struct ScalarValueType< Tay::CacheTaylor<T> > {
-    typedef typename ScalarValueType< T >::type type;
   };
 
   //! Specialization of %IsADType to DFad types
@@ -111,6 +105,23 @@ namespace Sacado {
     typedef typename ValueType< Tay::CacheTaylor<T> >::type value_type;
     static const value_type& eval(const Tay::CacheTaylor<T>& x) { 
       return x.val(); }
+  };
+
+  //! Specialization of %ScalarValue to CacheTaylor types
+  template <typename T>
+  struct ScalarValue< Tay::CacheTaylor<T> > {
+    typedef typename ValueType< Tay::CacheTaylor<T> >::type value_type;
+    typedef typename ScalarType< Tay::CacheTaylor<T> >::type scalar_type;
+    static const scalar_type& eval(const Tay::CacheTaylor<T>& x) { 
+      return ScalarValue<value_type>::eval(x.val()); }
+  };
+
+  //! Specialization of %StringName to CacheTaylor types
+  template <typename T>
+  struct StringName< Tay::CacheTaylor<T> > {
+    static std::string eval() { 
+      return std::string("Sacado::Tay::CacheTaylor< ") + 
+	StringName<T>::eval() + " >"; }
   };
 
 } // namespace Sacado

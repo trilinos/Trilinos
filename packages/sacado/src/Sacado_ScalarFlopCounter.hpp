@@ -191,6 +191,12 @@ namespace Sacado {
     template<class T>
     class ScalarFlopCounter {
     public:
+      
+      //! Turn ScalarFlopCounter into a meta-function class usable with mpl::apply
+      template <typename U> 
+      struct apply {
+	typedef ScalarFlopCounter<U> type;
+      };
   
       /** @name Static functions for general clients (apply to all object with type <tt>T</tt> */
       //@{ 

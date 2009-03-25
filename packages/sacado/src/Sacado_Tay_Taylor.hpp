@@ -51,6 +51,12 @@ namespace Sacado {
     class Taylor {
     public:
 
+      //! Turn Taylor into a meta-function class usable with mpl::apply
+      template <typename U> 
+      struct apply {
+	typedef Taylor<U> type;
+      };
+
       //! Typename of values
       typedef T value_type;
 

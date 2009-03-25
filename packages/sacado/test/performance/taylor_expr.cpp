@@ -80,7 +80,7 @@ double
 do_time(int degree, int nloop)
 {
   TaylorType x1, x2, y;
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
 
   x1 = TaylorType(degree, urand.number());
   x2 = TaylorType(degree, urand.number());
@@ -104,7 +104,7 @@ do_time(int degree, int nloop)
 double
 do_time_adolc(int degree, int nloop)
 {
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
   double **X, **Y;
 
   X = new double*[2];
@@ -146,7 +146,7 @@ do_time_adolc(int degree, int nloop)
 double
 do_time_adolc_retape(int degree, int nloop)
 {
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
   double **X, **Y;
 
   X = new double*[2];

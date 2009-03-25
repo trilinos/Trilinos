@@ -56,6 +56,12 @@ namespace Sacado {
     class Hermite {
     public:
 
+      //! Turn Hermite into a meta-function class usable with mpl::apply
+      template <typename U> 
+      struct apply {
+	typedef Hermite<U> type;
+      };
+
       //! Typename of values
       typedef T value_type;
 

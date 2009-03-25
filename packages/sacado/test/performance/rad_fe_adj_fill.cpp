@@ -29,7 +29,6 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Sacado_Random.hpp"
 #include "Sacado.hpp"
 #include "Sacado_tradvec.hpp"
 

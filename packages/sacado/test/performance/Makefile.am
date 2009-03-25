@@ -53,10 +53,8 @@ fad_expr_depth_CXXFLAGS = -O3  \
 	-I$(top_srcdir)/Fad \
 	-I$(top_srcdir)/test/utils
 fad_expr_depth_DEPENDENCIES = \
-        $(top_builddir)/src/libsacado.a \
-	$(top_builddir)/test/utils/libsacadoutils.a
+        $(top_builddir)/src/libsacado.a 
 fad_expr_depth_LDADD = \
-	-L$(top_builddir)/test/utils -lsacadoutils \
 	$(SACADO_LIBS) 
 
 fad_expr_SOURCES = fad_expr.cpp

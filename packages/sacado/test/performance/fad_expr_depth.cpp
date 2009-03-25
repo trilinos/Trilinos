@@ -131,7 +131,7 @@ do_times(const std::string& name)
     nloop[i] = static_cast<int>(1000000.0/(deriv_dim[i]+1));
 
   FadType x1, x2, y;
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
   for (int i=0; i<nderiv; i++) {
     std::cout << std::setw(5) << deriv_dim[i] << " ";
 

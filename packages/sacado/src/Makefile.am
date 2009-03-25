@@ -121,7 +121,9 @@ SACADO_TAYLOR_H = \
 SACADO_RAD_H = \
 	$(srcdir)/Sacado_trad_Traits.hpp \
 	$(srcdir)/Sacado_trad.hpp \
+	$(srcdir)/Sacado_trad2_Traits.hpp \
 	$(srcdir)/Sacado_trad2.hpp \
+	$(srcdir)/Sacado_tradvec_Traits.hpp \
 	$(srcdir)/Sacado_tradvec.hpp \
 	$(srcdir)/Sacado_rad.hpp \
 	$(srcdir)/Sacado_rad2.hpp
@@ -141,7 +143,8 @@ if ENABLE_SACADO_TEUCHOS
 
 SACADO_BLAS_H = \
 	$(srcdir)/Sacado_Fad_BLAS.hpp \
-	$(srcdir)/Sacado_Fad_BLASImp.hpp
+	$(srcdir)/Sacado_Fad_BLASImp.hpp \
+	$(srcdir)/Sacado_Fad_ScalarTraitsImp.hpp
 
 SACADO_TEMPLATE_H = \
 	$(srcdir)/template/Sacado_TemplateManager.hpp \

@@ -52,6 +52,7 @@
 #define SACADO_TRAITS_HPP
 
 #include "Sacado_ConfigDefs.h"
+#include <string>
 
 #ifdef HAVE_SACADO_COMPLEX
 #include <complex>
@@ -112,13 +113,6 @@ namespace Sacado {
    */
   template <typename T> struct ValueType {};
 
-  //! Base template specification for %ScalarValueType
-  /*!
-   * The %ScalarValueType classes provide a mechanism for computing the 
-   * base underlying type of the value type of nested AD classes
-   */
-  template <typename T> struct ScalarValueType {};
-
   //! Base template specification for %IsADType
   /*!
    * The %IsADType classes provide a mechanism for computing the 
@@ -135,24 +129,31 @@ namespace Sacado {
 
   //! Base template specification for %Value
   /*!
-   * The %Value functor returns the value of an AD type
+   * The %Value functor returns the value of an AD type.
    */
   template <typename T> struct Value {};
+
+  //! Base template specification for %ScalarValue
+  /*!
+   * The %ScalarValue functor returns the base scalar value of an AD type,
+   * i.e., something that isn't an AD type.
+   */
+  template <typename T> struct ScalarValue {};
 
   //! Base template specification for marking constants
   template <typename T> struct MarkConstant {
     static void eval(T& x) {}
   };
 
+  //! Base template specification for string names of types
+  template <typename T> struct StringName {};
+
   //! Specialization of above classes to builtin types
-#define SACADO_BUILTIN_SPECIALIZATION(t)                  \
+#define SACADO_BUILTIN_SPECIALIZATION(t,NAME)		  \
   template <> struct ScalarType< t > {		          \
     typedef t type;				          \
   };                                                      \
   template <> struct ValueType< t > {		          \
-    typedef t type;				          \
-  };                                                      \
-  template <> struct ScalarValueType< t > {		  \
     typedef t type;				          \
   };                                                      \
   template <> struct IsADType< t > {		          \
@@ -163,29 +164,29 @@ namespace Sacado {
   };                                                      \
   template <> struct Value< t > {		          \
     static const t& eval(const t& x) { return x; }        \
+  };							  \
+  template <> struct ScalarValue< t > {		          \
+    static const t& eval(const t& x) { return x; }        \
+  };							  \
+  template <> struct StringName< t > {			  \
+    static std::string eval() { return NAME; }		  \
   };
 
-  SACADO_BUILTIN_SPECIALIZATION(char)
-  SACADO_BUILTIN_SPECIALIZATION(float)
-  SACADO_BUILTIN_SPECIALIZATION(double)
-  SACADO_BUILTIN_SPECIALIZATION(int)
-  SACADO_BUILTIN_SPECIALIZATION(unsigned int)
-  SACADO_BUILTIN_SPECIALIZATION(long)
-  SACADO_BUILTIN_SPECIALIZATION(unsigned long)
-  SACADO_BUILTIN_SPECIALIZATION(bool)
+  SACADO_BUILTIN_SPECIALIZATION(char,"char")
+  SACADO_BUILTIN_SPECIALIZATION(float,"float")
+  SACADO_BUILTIN_SPECIALIZATION(double,"double")
+  SACADO_BUILTIN_SPECIALIZATION(int,"int")
+  SACADO_BUILTIN_SPECIALIZATION(unsigned int,"unsigned int")
+  SACADO_BUILTIN_SPECIALIZATION(long,"long")
+  SACADO_BUILTIN_SPECIALIZATION(unsigned long,"unsigned long")
+  SACADO_BUILTIN_SPECIALIZATION(bool,"bool")
 #ifdef HAVE_SACADO_COMPLEX
-  SACADO_BUILTIN_SPECIALIZATION(std::complex<double>)
-  SACADO_BUILTIN_SPECIALIZATION(std::complex<float>)
+  SACADO_BUILTIN_SPECIALIZATION(std::complex<double>,"std::complex<double>")
+  SACADO_BUILTIN_SPECIALIZATION(std::complex<float>,"std::complex<float>")
 #endif
 
 #undef SACADO_BUILTIN_SPECIALIZATION
 
 } // namespace Sacado
-
-// Teuchos traits classes
-#ifdef HAVE_SACADO_TEUCHOS
-#include "Teuchos_PromotionTraits.hpp"
-#include "Teuchos_ScalarTraits.hpp"
-#endif
 
 #endif // SACADO_TRAITS_HPP

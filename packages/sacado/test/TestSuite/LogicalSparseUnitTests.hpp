@@ -303,7 +303,7 @@ protected:
   LSType a_ls, b_ls, c_ls;
 
   // Random number generator
-  Sacado::Random urand;
+  Sacado::Random<double> urand;
 
   // Number of derivative components
   int n;

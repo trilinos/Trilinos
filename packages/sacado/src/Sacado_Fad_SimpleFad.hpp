@@ -58,13 +58,19 @@ namespace Sacado {
      * \c ScalarT will
      * still be \c double.  Usually \c ScalarT does not need to be explicitly
      * specified since it can be deduced from \c ValueT through the template
-     * metafunction ScalarValueType.
+     * metafunction ScalarType.
      */
     template <typename ValueT, 
-	      typename ScalarT = typename ScalarValueType<ValueT>::type >
+	      typename ScalarT = typename ScalarType<ValueT>::type >
     class SimpleFad : public GeneralFad<ValueT,DynamicStorage<ValueT> >  {
 
     public:
+
+      //! Turn SimpleFad into a meta-function class usable with mpl::apply
+      template <typename T, typename U = typename ScalarType<T>::type> 
+      struct apply {
+	typedef SimpleFad<T,U> type;
+      };
 
       /*!
        * @name Initialization methods
@@ -170,6 +176,12 @@ namespace Sacado {
       public GeneralFad<ValueT,DynamicStorage<ValueT> > {
 
     public:
+
+      //! Turn SimpleFad into a meta-function class usable with mpl::apply
+      template <typename T, typename U = typename ScalarType<T>::type> 
+      struct apply {
+	typedef SimpleFad<T,U> type;
+      };
 
       /*!
        * @name Initialization methods

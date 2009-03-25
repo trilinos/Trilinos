@@ -36,7 +36,7 @@
 #define SACADO_TRAD2_H
 
 #include "Sacado_ConfigDefs.h"
-#include "Sacado_trad_Traits.hpp"
+#include "Sacado_trad2_Traits.hpp"
 
 #include <stddef.h>
 #include <cmath>
@@ -726,6 +726,9 @@ T1(copy)
  template<typename Double> class
 ADvar: public IndepADvar<Double> {	// an "active" variable
  public:
+        //! Turn ADvar into a meta-function class usable with mpl::apply
+        template <typename U> struct apply { typedef ADvar<U> type; };
+
 	typedef IndepADvar<Double> IndepADVar;
 	typedef typename IndepADVar::ADVari ADVari;
 	typedef ConstADvari<Double> ConstADVari;

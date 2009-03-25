@@ -250,7 +250,10 @@ public:
 protected:
 
   // Random number generator
-  Sacado::Random urand;
+  Sacado::Random<ScalarType> urand;
+
+  // Real random number generator for derivative components
+  Sacado::Random<double> real_urand;
 
   // Number of matrix rows
   unsigned int m;
@@ -272,13 +275,14 @@ protected:
 template <class FadType, class ScalarType>
 FadBLASUnitTests<FadType,ScalarType>::
 FadBLASUnitTests() :
-  urand(0.0, 1.0), m(5), n(6), l(4), ndot(7), tol_a(1.0e-12), tol_r(1.0e-12) {}
+  urand(), real_urand(), m(5), n(6), l(4), ndot(7), tol_a(1.0e-12), tol_r(1.0e-12) {}
 
 template <class FadType, class ScalarType>
 FadBLASUnitTests<FadType,ScalarType>::
 FadBLASUnitTests(int m_, int n_, int l_, int ndot_, double absolute_tolerance, 
 		 double relative_tolerance) :
-  urand(0.0, 1.0), 
+  urand(),
+  real_urand(),
   m(m_),
   n(n_),
   l(l_),
@@ -756,11 +760,11 @@ FadBLASUnitTests<FadType,ScalarType>::
 testDOT1() {
   VectorType X(m,ndot), Y(m,ndot);
   for (unsigned int i=0; i<m; i++) {
-    X[i] = FadType(ndot, urand.number());
-    Y[i] = FadType(ndot, urand.number());
+    X[i] = FadType(ndot, real_urand.number());
+    Y[i] = FadType(ndot, real_urand.number());
     for (unsigned int k=0; k<ndot; k++) {
-      X[i].fastAccessDx(k) = urand.number();
-      Y[i].fastAccessDx(k) = urand.number();
+      X[i].fastAccessDx(k) = real_urand.number();
+      Y[i].fastAccessDx(k) = real_urand.number();
     }
   }
   
@@ -788,15 +792,15 @@ testDOT2() {
   unsigned int incy = 3;
   VectorType X(m*incx,ndot), Y(m*incy,ndot);
   for (unsigned int i=0; i<m*incx; i++) {
-    X[i] = FadType(ndot, urand.number());
+    X[i] = FadType(ndot, real_urand.number());
     for (unsigned int k=0; k<ndot; k++) {
-      X[i].fastAccessDx(k) = urand.number();
+      X[i].fastAccessDx(k) = real_urand.number();
     }
   }
   for (unsigned int i=0; i<m*incy; i++) {
-    Y[i] = FadType(ndot, urand.number());
+    Y[i] = FadType(ndot, real_urand.number());
     for (unsigned int k=0; k<ndot; k++) {
-      Y[i].fastAccessDx(k) = urand.number();
+      Y[i].fastAccessDx(k) = real_urand.number();
     }
   }
   
@@ -825,9 +829,9 @@ testDOT3() {
   for (unsigned int i=0; i<m; i++) {
     x[i] = urand.number();
     X[i] = x[i];
-    Y[i] = FadType(ndot, urand.number());
+    Y[i] = FadType(ndot, real_urand.number());
     for (unsigned int k=0; k<ndot; k++) {
-      Y[i].fastAccessDx(k) = urand.number();
+      Y[i].fastAccessDx(k) = real_urand.number();
     }
   }
   
@@ -858,11 +862,11 @@ testDOT4() {
   VectorType X(m,ndot), Y(m,0);
   std::vector<ScalarType> y(m);
   for (unsigned int i=0; i<m; i++) {
-    X[i] = FadType(ndot, urand.number());
+    X[i] = FadType(ndot, real_urand.number());
     y[i] = urand.number();
     Y[i] = y[i];
     for (unsigned int k=0; k<ndot; k++) {
-      X[i].fastAccessDx(k) = urand.number();
+      X[i].fastAccessDx(k) = real_urand.number();
     }
   }
   
@@ -892,9 +896,9 @@ FadBLASUnitTests<FadType,ScalarType>::
 testNRM21() {
   VectorType X(m,ndot);
   for (unsigned int i=0; i<m; i++) {
-    X[i] = FadType(ndot, urand.number());
+    X[i] = FadType(ndot, real_urand.number());
     for (unsigned int k=0; k<ndot; k++) {
-      X[i].fastAccessDx(k) = urand.number();
+      X[i].fastAccessDx(k) = real_urand.number();
     }
   }
   
@@ -924,9 +928,9 @@ testNRM22() {
   unsigned int incx = 2;
   VectorType X(m*incx,ndot);
   for (unsigned int i=0; i<m*incx; i++) {
-    X[i] = FadType(ndot, urand.number());
+    X[i] = FadType(ndot, real_urand.number());
     for (unsigned int k=0; k<ndot; k++) {
-      X[i].fastAccessDx(k) = urand.number();
+      X[i].fastAccessDx(k) = real_urand.number();
     }
   }
   

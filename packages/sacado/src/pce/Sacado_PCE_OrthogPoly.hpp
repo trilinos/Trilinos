@@ -60,6 +60,12 @@ namespace Sacado {
     class OrthogPoly {
     public:
 
+      //! Turn OrthogPoly into a meta-function class usable with mpl::apply
+      template <typename U> 
+      struct apply {
+	typedef OrthogPoly<U> type;
+      };
+
       //! Typename of values
       typedef T value_type;
 
@@ -152,10 +158,10 @@ namespace Sacado {
       //@{
 
       //! Returns value
-      const value_type& val() const { return th->coeff_[0];}
+      const value_type& val() const { return (*th)[0]; }
 
       //! Returns value
-      value_type& val() { return th->coeff_[0];}
+      value_type& val() { return (*th)[0]; }
 
       //@}
 

@@ -78,19 +78,13 @@ namespace Sacado {
   //! Specialization of %ScalarType to Taylor types
   template <typename T>
   struct ScalarType< Tay::Taylor<T> > {
-    typedef T type;
+    typedef typename ScalarType<T>::type type;
   };
 
   //! Specialization of %ValueType to Taylor types
   template <typename T>
   struct ValueType< Tay::Taylor<T> > {
     typedef T type;
-  };
-
-   //! Specialization of %ScalarValueType to Taylor types
-  template <typename T>
-  struct ScalarValueType< Tay::Taylor<T> > {
-    typedef typename ScalarValueType< T >::type type;
   };
 
   //! Specialization of %IsADType to Taylor types
@@ -111,6 +105,23 @@ namespace Sacado {
     typedef typename ValueType< Tay::Taylor<T> >::type value_type;
     static const value_type& eval(const Tay::Taylor<T>& x) { 
       return x.val(); }
+  };
+
+  //! Specialization of %ScalarValue to Taylor types
+  template <typename T>
+  struct ScalarValue< Tay::Taylor<T> > {
+    typedef typename ValueType< Tay::Taylor<T> >::type value_type;
+    typedef typename ScalarType< Tay::Taylor<T> >::type scalar_type;
+    static const scalar_type& eval(const Tay::Taylor<T>& x) { 
+      return ScalarValue<value_type>::eval(x.val()); }
+  };
+
+  //! Specialization of %StringName to Taylor types
+  template <typename T>
+  struct StringName< Tay::Taylor<T> > {
+    static std::string eval() { 
+      return std::string("Sacado::Tay::Taylor< ") + 
+	StringName<T>::eval() + " >"; }
   };
 
 } // namespace Sacado

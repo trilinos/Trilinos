@@ -94,19 +94,13 @@ namespace Sacado {
   //! Specialization of %ScalarType to ScalarFlopCounter types
   template <typename ScalarT>
   struct ScalarType< FlopCounterPack::ScalarFlopCounter<ScalarT> > {
-    typedef ScalarT type;
+    typedef typename ScalarType<ScalarT>::type type;
   };
 
   //! Specialization of %ValueType to ScalarFlopCounter types
   template <typename ScalarT>
   struct ValueType< FlopCounterPack::ScalarFlopCounter<ScalarT> > {
     typedef ScalarT type;
-  };
-
-   //! Specialization of %ScalarValueType to ScalarFlopCounter types
-  template <typename ScalarT>
-  struct ScalarValueType< FlopCounterPack::ScalarFlopCounter<ScalarT> > {
-    typedef typename ScalarValueType<ScalarT>::type type;
   };
 
   //! Specialization of %IsADType to ScalarFlopCounter types
@@ -127,6 +121,23 @@ namespace Sacado {
     typedef typename ValueType< FlopCounterPack::ScalarFlopCounter<ScalarT> >::type value_type;
     static const value_type& eval(const FlopCounterPack::ScalarFlopCounter<ScalarT>& x) { 
       return x.val(); }
+  };
+
+  //! Specialization of %ScalarValue to ScalarFlopCounter types
+  template <typename ScalarT>
+  struct ScalarValue< FlopCounterPack::ScalarFlopCounter<ScalarT> > {
+    typedef typename ValueType< FlopCounterPack::ScalarFlopCounter<ScalarT> >::type value_type;
+    typedef typename ScalarType< FlopCounterPack::ScalarFlopCounter<ScalarT> >::type scalar_type;
+    static const scalar_type& eval(const FlopCounterPack::ScalarFlopCounter<ScalarT>& x) { 
+      return ScalarValue<value_type>::eval(x.val()); }
+  };
+
+  //! Specialization of %StringName to ScalarFlopCounter types
+  template <typename ScalarT>
+  struct StringName< FlopCounterPack::ScalarFlopCounter<ScalarT> > {
+    static std::string eval() { 
+      return std::string("Sacado::FlopCounterPack::ScalarFlopCounter< ") + 
+	StringName<ScalarT>::eval() + " >"; }
   };
 
 } // namespace Sacado

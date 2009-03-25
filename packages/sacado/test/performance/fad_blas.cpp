@@ -41,9 +41,40 @@
 // with Fad
 
 double
+do_time_teuchos_double_gemm(unsigned int m, unsigned int n, unsigned int k,
+			    unsigned int nloop)
+{
+  Sacado::Random<double> urand(0.0, 1.0);
+  Teuchos::BLAS<int,double> blas;
+
+  std::vector<double> A(m*k), B(k*n), C(m*n);
+  for (unsigned int j=0; j<k; j++)
+    for (unsigned int i=0; i<m; i++)
+      A[i+j*m] = urand.number();
+  for (unsigned int j=0; j<n; j++)
+    for (unsigned int i=0; i<k; i++)
+    B[i+j*k] = urand.number();
+  for (unsigned int j=0; j<n; j++)
+    for (unsigned int i=0; i<m; i++)
+      C[i+j*m] = urand.number();
+  double alpha = urand.number();
+  double beta = urand.number();
+  
+  Teuchos::Time timer("Teuchos Double GEMM", false);
+  timer.start(true);
+  for (unsigned int j=0; j<nloop; j++) {
+    blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, k, alpha, &A[0], m, 
+	      &B[0], k, beta, &C[0], m);
+  }
+  timer.stop();
+
+  return timer.totalElapsedTime() / nloop;
+}
+
+double
 do_time_teuchos_double_gemv(unsigned int m, unsigned int n, unsigned int nloop)
 {
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
   Teuchos::BLAS<int,double> blas;
 
   std::vector<double> A(m*n), B(n), C(m);
@@ -70,7 +101,7 @@ do_time_teuchos_double_gemv(unsigned int m, unsigned int n, unsigned int nloop)
 double
 do_time_teuchos_double_dot(unsigned int m, unsigned int nloop)
 {
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
   Teuchos::BLAS<int,double> blas;
 
   std::vector<double> X(m), Y(m);
@@ -81,8 +112,57 @@ do_time_teuchos_double_dot(unsigned int m, unsigned int nloop)
   
   Teuchos::Time timer("Teuchos Double DOT", false);
   timer.start(true);
+  double z;
   for (unsigned int j=0; j<nloop; j++) {
-    double z = blas.DOT(m, &X[0], 1, &Y[0], 1);
+    z = blas.DOT(m, &X[0], 1, &Y[0], 1);
+  }
+  timer.stop();
+
+  return timer.totalElapsedTime() / nloop;
+}
+
+template <typename FadType>
+double
+do_time_teuchos_fad_gemm(unsigned int m, unsigned int n, unsigned int k,
+			 unsigned int ndot, unsigned int nloop)
+{
+  Sacado::Random<double> urand(0.0, 1.0);
+  Teuchos::BLAS<int,FadType> blas;
+
+  std::vector<FadType> A(m*k), B(k*n), C(m*n);
+  for (unsigned int j=0; j<k; j++) {
+    for (unsigned int i=0; i<m; i++) {
+      A[i+j*m] = FadType(ndot, urand.number());
+      for (unsigned int l=0; l<ndot; l++)
+      	A[i+j*m].fastAccessDx(l) = urand.number();
+    }
+  }
+  for (unsigned int j=0; j<n; j++) {
+    for (unsigned int i=0; i<k; i++) {
+      B[i+j*k] = FadType(ndot, urand.number());
+      for (unsigned int l=0; l<ndot; l++)
+	B[i+j*k].fastAccessDx(l) = urand.number();
+    }
+  }
+  for (unsigned int j=0; j<n; j++) {
+    for (unsigned int i=0; i<m; i++) {
+      C[i+j*m] = FadType(ndot, urand.number());
+      for (unsigned int l=0; l<ndot; l++)
+	C[i+j*m].fastAccessDx(l) = urand.number();
+    }
+  }
+  FadType alpha(ndot, urand.number());
+  FadType beta(ndot, urand.number());
+  for (unsigned int l=0; l<ndot; l++) {
+    alpha.fastAccessDx(l) = urand.number();
+    beta.fastAccessDx(l) = urand.number();
+  }
+  
+  Teuchos::Time timer("Teuchos Fad GEMM", false);
+  timer.start(true);
+  for (unsigned int j=0; j<nloop; j++) {
+    blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, k, alpha, &A[0], m, 
+	      &B[0], k, beta, &C[0], m);
   }
   timer.stop();
 
@@ -94,7 +174,7 @@ double
 do_time_teuchos_fad_gemv(unsigned int m, unsigned int n, unsigned int ndot, 
 			 unsigned int nloop)
 {
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
   Teuchos::BLAS<int,FadType> blas;
 
   std::vector<FadType> A(m*n), B(n), C(m);
@@ -135,7 +215,7 @@ template <typename FadType>
 double
 do_time_teuchos_fad_dot(unsigned int m, unsigned int ndot, unsigned int nloop)
 {
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
   Teuchos::BLAS<int,FadType> blas;
 
   std::vector<FadType> X(m), Y(m);
@@ -160,10 +240,60 @@ do_time_teuchos_fad_dot(unsigned int m, unsigned int ndot, unsigned int nloop)
 
 template <typename FadType>
 double
+do_time_sacado_fad_gemm(unsigned int m, unsigned int n, unsigned int k,
+			unsigned int ndot, unsigned int nloop, bool use_dynamic)
+{
+  Sacado::Random<double> urand(0.0, 1.0);
+  unsigned int sz = (m*k+k*n+m*n)*(1+ndot);
+  Sacado::Fad::BLAS<int,FadType> blas(false,use_dynamic,sz);
+
+  Sacado::Fad::Vector<unsigned int, FadType> A(m*k,ndot), B(k*n,ndot), C
+    (m*n,ndot);
+  for (unsigned int j=0; j<k; j++) {
+    for (unsigned int i=0; i<m; i++) {
+      A[i+j*m] = FadType(ndot, urand.number());
+      for (unsigned int l=0; l<ndot; l++)
+      	A[i+j*m].fastAccessDx(l) = urand.number();
+    }
+  }
+  for (unsigned int j=0; j<n; j++) {
+    for (unsigned int i=0; i<k; i++) {
+      B[i+j*k] = FadType(ndot, urand.number());
+      for (unsigned int l=0; l<ndot; l++)
+	B[i+j*k].fastAccessDx(l) = urand.number();
+    }
+  }
+  for (unsigned int j=0; j<n; j++) {
+    for (unsigned int i=0; i<m; i++) {
+      C[i+j*m] = FadType(ndot, urand.number());
+      for (unsigned int l=0; l<ndot; l++)
+	C[i+j*m].fastAccessDx(l) = urand.number();
+    }
+  }
+  FadType alpha(ndot, urand.number());
+  FadType beta(ndot, urand.number());
+  for (unsigned int l=0; l<ndot; l++) {
+    alpha.fastAccessDx(l) = urand.number();
+    beta.fastAccessDx(l) = urand.number();
+  }
+  
+  Teuchos::Time timer("Teuchos Fad GEMM", false);
+  timer.start(true);
+  for (unsigned int j=0; j<nloop; j++) {
+    blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, k, alpha, &A[0], m, 
+	      &B[0], k, beta, &C[0], m);
+  }
+  timer.stop();
+
+  return timer.totalElapsedTime() / nloop;
+}
+
+template <typename FadType>
+double
 do_time_sacado_fad_gemv(unsigned int m, unsigned int n, unsigned int ndot, 
 			unsigned int nloop, bool use_dynamic)
 {
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
   unsigned int sz = m*n*(1+ndot) + 2*n*(1+ndot);
   Sacado::Fad::BLAS<int,FadType> blas(false,use_dynamic,sz);
 
@@ -175,7 +305,7 @@ do_time_sacado_fad_gemv(unsigned int m, unsigned int n, unsigned int ndot,
       for (unsigned int k=0; k<ndot; k++)
       	A[i+j*m].fastAccessDx(k) = urand.number();
     }
-    B[j] = FadType(n, urand.number());
+    B[j] = FadType(ndot, urand.number());
     for (unsigned int k=0; k<ndot; k++)
       B[j].fastAccessDx(k) = urand.number();
   }
@@ -206,7 +336,7 @@ double
 do_time_sacado_fad_dot(unsigned int m, unsigned int ndot, 
 		       unsigned int nloop, bool use_dynamic)
 {
-  Sacado::Random urand(0.0, 1.0);
+  Sacado::Random<double> urand(0.0, 1.0);
   unsigned int sz = 2*m*(1+ndot);
   Sacado::Fad::BLAS<int,FadType> blas(false,use_dynamic,sz);
 
@@ -245,6 +375,8 @@ int main(int argc, char* argv[]) {
     clp.setOption("m", &m, "Number of rows");
     int n = 10;
     clp.setOption("n", &n, "Number of columns");
+    int k = 10;
+    clp.setOption("k", &k, "Number of columns for GEMM");
     int ndot = 10;
     clp.setOption("ndot", &ndot, "Number of derivative components");
     int nloop = 100000;
@@ -266,51 +398,76 @@ int main(int argc, char* argv[]) {
 	      << ", dynamic = " << use_dynamic << ":  " 
 	      << std::endl;
 
+    tb = do_time_teuchos_double_gemm(m,n,k,nloop);
+    std::cout << "GEMM:                 " << std::setw(w) << tb << std::endl;
+
+    t = do_time_sacado_fad_gemm< Sacado::Fad::DVFad<double> >(m,n,k,ndot,nloop,use_dynamic);
+    std::cout << "Sacado DVFad GEMM:    " << std::setw(w) << t << "\t" 
+	      << std::setw(w) << t/tb << std::endl;
+
+    t = do_time_sacado_fad_gemm< Sacado::Fad::DFad<double> >(m,n,k,ndot,nloop,use_dynamic);
+    std::cout << "Sacado DFad GEMM:     " << std::setw(w) << t << "\t" 
+	      << std::setw(w) << t/tb << std::endl;
+    
+    t = do_time_teuchos_fad_gemm< Sacado::Fad::DFad<double> >(m,n,k,ndot,nloop);
+    std::cout << "Teuchos DFad GEMM:    " << std::setw(w) << t << "\t" 
+	      << std::setw(w) << t/tb << std::endl;
+
+    // t = do_time_teuchos_fad_gemm< Sacado::ELRFad::DFad<double> >(m,n,k,ndot,nloop);
+    // std::cout << "Teuchos ELRDFad GEMM:  " << std::setw(w) << t << "\t" 
+    // 	      << std::setw(w) << t/tb << std::endl;
+
+    t = do_time_teuchos_fad_gemm< Sacado::Fad::DVFad<double> >(m,n,k,ndot,nloop);
+    std::cout << "Teuchos DVFad GEMM:   " << std::setw(w) << t << "\t" 
+    	      << std::setw(w) << t/tb << std::endl;
+    
+    std::cout << std::endl;
+
     tb = do_time_teuchos_double_gemv(m,n,nloop);
     std::cout << "GEMV:                 " << std::setw(w) << tb << std::endl;
 
-    t = do_time_sacado_fad_gemv< Sacado::Fad::DVFad<double> >(m,n,ndot,nloop,use_dynamic);
+    t = do_time_sacado_fad_gemv< Sacado::Fad::DVFad<double> >(m,n,ndot,nloop*10,use_dynamic);
     std::cout << "Sacado DVFad GEMV:    " << std::setw(w) << t << "\t" 
 	      << std::setw(w) << t/tb << std::endl;
 
-    t = do_time_sacado_fad_gemv< Sacado::Fad::DFad<double> >(m,n,ndot,nloop,use_dynamic);
+    t = do_time_sacado_fad_gemv< Sacado::Fad::DFad<double> >(m,n,ndot,nloop*10,use_dynamic);
     std::cout << "Sacado DFad GEMV:     " << std::setw(w) << t << "\t" 
 	      << std::setw(w) << t/tb << std::endl;
     
-    t = do_time_teuchos_fad_gemv< Sacado::Fad::DFad<double> >(m,n,ndot,nloop);
+    t = do_time_teuchos_fad_gemv< Sacado::Fad::DFad<double> >(m,n,ndot,nloop*10);
     std::cout << "Teuchos DFad GEMV:    " << std::setw(w) << t << "\t" 
 	      << std::setw(w) << t/tb << std::endl;
 
-    // t = do_time_teuchos_fad_gemv< Sacado::ELRFad::DFad<double> >(m,n,ndot,nloop);
+    // t = do_time_teuchos_fad_gemv< Sacado::ELRFad::DFad<double> >(m,n,ndot,nloop*10);
     // std::cout << "Teuchos ELRDFad GEMV:  " << std::setw(w) << t << "\t" 
     // 	      << std::setw(w) << t/tb << std::endl;
 
-    t = do_time_teuchos_fad_gemv< Sacado::Fad::DVFad<double> >(m,n,ndot,nloop);
+    t = do_time_teuchos_fad_gemv< Sacado::Fad::DVFad<double> >(m,n,ndot,nloop*10);
     std::cout << "Teuchos DVFad GEMV:   " << std::setw(w) << t << "\t" 
     	      << std::setw(w) << t/tb << std::endl;
     
     std::cout << std::endl;
 
-    tb = do_time_teuchos_double_dot(m,nloop);
+    tb = do_time_teuchos_double_dot(m,nloop*100);
     std::cout << "DOT:                  " << std::setw(w) << tb << std::endl;
 
-    t = do_time_sacado_fad_dot< Sacado::Fad::DVFad<double> >(m,ndot,nloop,use_dynamic);
+    t = do_time_sacado_fad_dot< Sacado::Fad::DVFad<double> >(m,ndot,nloop*100,use_dynamic);
     std::cout << "Sacado DVFad DOT:     " << std::setw(w) << t << "\t" 
 	      << std::setw(w) << t/tb << std::endl;
 
-    t = do_time_sacado_fad_dot< Sacado::Fad::DFad<double> >(m,ndot,nloop,use_dynamic);
+    t = do_time_sacado_fad_dot< Sacado::Fad::DFad<double> >(m,ndot,nloop*100,use_dynamic);
     std::cout << "Sacado DFad DOT:      " << std::setw(w) << t << "\t" 
 	      << std::setw(w) << t/tb << std::endl;
     
-    t = do_time_teuchos_fad_dot< Sacado::Fad::DFad<double> >(m,ndot,nloop);
+    t = do_time_teuchos_fad_dot< Sacado::Fad::DFad<double> >(m,ndot,nloop*100);
     std::cout << "Teuchos DFad DOT:     " << std::setw(w) << t << "\t" 
 	      << std::setw(w) << t/tb << std::endl;
 
-    // t = do_time_teuchos_fad_dot< Sacado::ELRFad::DFad<double> >(m,ndot,nloop);
+    // t = do_time_teuchos_fad_dot< Sacado::ELRFad::DFad<double> >(m,ndot,nloop*100);
     // std::cout << "Teuchos ELRDFad DOT:  " << std::setw(w) << t << "\t" 
     // 	      << std::setw(w) << t/tb << std::endl;
 
-    t = do_time_teuchos_fad_dot< Sacado::Fad::DVFad<double> >(m,ndot,nloop);
+    t = do_time_teuchos_fad_dot< Sacado::Fad::DVFad<double> >(m,ndot,nloop*100);
     std::cout << "Teuchos DVFad DOT:    " << std::setw(w) << t << "\t" 
     	      << std::setw(w) << t/tb << std::endl;
     

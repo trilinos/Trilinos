@@ -156,11 +156,13 @@ namespace Sacado {							\
 									\
     template <typename T, typename S>					\
     SimpleFad<T,S>							\
-    OP (const SimpleFad<T,S>&, const T&);				\
+    OP (const SimpleFad<T,S>&,						\
+	const typename SimpleFad<T,S>::value_type&);			\
 									\
     template <typename T, typename S>					\
     SimpleFad<T,S>							\
-    OP (const T&, const SimpleFad<T,S>&);				\
+    OP (const typename SimpleFad<T,S>::value_type&,			\
+	const SimpleFad<T,S>&);						\
   }									\
 									\
   namespace ELRFad {							\

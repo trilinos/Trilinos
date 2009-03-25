@@ -78,19 +78,13 @@ namespace Sacado {
   //! Specialization of %ScalarType to Hermite types
   template <typename T>
   struct ScalarType< PCE::Hermite<T> > {
-    typedef T type;
+    typedef typename ScalarType<T>::type type;
   };
 
   //! Specialization of %ValueType to Hermite types
   template <typename T>
   struct ValueType< PCE::Hermite<T> > {
     typedef T type;
-  };
-
-   //! Specialization of %ScalarValueType to Hermite types
-  template <typename T>
-  struct ScalarValueType< PCE::Hermite<T> > {
-    typedef typename ScalarValueType< T >::type type;
   };
 
   //! Specialization of %IsADType to Hermite types
@@ -111,6 +105,23 @@ namespace Sacado {
     typedef typename ValueType< PCE::Hermite<T> >::type value_type;
     static const value_type& eval(const PCE::Hermite<T>& x) { 
       return x.val(); }
+  };
+
+  //! Specialization of %ScalarValue to Hermite types
+  template <typename T>
+  struct ScalarValue< PCE::Hermite<T> > {
+    typedef typename ValueType< PCE::Hermite<T> >::type value_type;
+    typedef typename ScalarType< PCE::Hermite<T> >::type scalar_type;
+    static const scalar_type& eval(const PCE::Hermite<T>& x) { 
+      return ScalarValue<value_type>::eval(x.val()); }
+  };
+
+  //! Specialization of %StringName to Hermite types
+  template <typename T>
+  struct StringName< PCE::Hermite<T> > {
+    static std::string eval() { 
+      return std::string("Sacado::PCE::Hermite< ") + 
+	StringName<T>::eval() + " >"; }
   };
 
 } // namespace Sacado

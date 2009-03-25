@@ -1097,7 +1097,7 @@ TRMV(Teuchos::EUplo uplo, Teuchos::ETransp trans, Teuchos::EDiag diag,
 #endif
 
   // Compute [xd_1 .. xd_n] = A*[xd_1 .. xd_n]
-  if (n_x_dot > 0)
+  if (n_x_dot > 0) {
     if (incx_dot == 1)
       blas.TRMM(Teuchos::LEFT_SIDE, uplo, trans, diag, n, n_x_dot, 1.0, A_val, 
     		lda_val, x_dot, n);
@@ -1105,6 +1105,7 @@ TRMV(Teuchos::EUplo uplo, Teuchos::ETransp trans, Teuchos::EDiag diag,
       for (OrdinalType i=0; i<n_x_dot; i++)
 	blas.TRMV(uplo, trans, diag, n, A_val, lda_val, x_dot+i*incx_dot*n, 
 		  incx_dot);
+  }
   
   // Compute [xd_1 .. xd_n] = [Ad_1*x .. Ad_n*x]
   if (gemv_Ax.size() != std::size_t(n))
@@ -1151,13 +1152,14 @@ TRMV(Teuchos::EUplo uplo, Teuchos::ETransp trans, Teuchos::EDiag diag,
 #endif
 
   // Compute [xd_1 .. xd_n] = A*[xd_1 .. xd_n]
-  if (n_x_dot > 0)
+  if (n_x_dot > 0) {
     if (incx_dot == 1)
       blas.TRMM(Teuchos::LEFT_SIDE, uplo, trans, diag, n, n_x_dot, 1.0, A, 
     		lda, x_dot, n);
     else
       for (OrdinalType i=0; i<n_x_dot; i++)
 	blas.TRMV(uplo, trans, diag, n, A, lda, x_dot+i*incx_dot*n, incx_dot);
+  }
 
   // Compute x = A*x
   blas.TRMV(uplo, trans, diag, n, A, lda, x_val, incx_val);
@@ -2061,22 +2063,25 @@ Fad_DOT(const OrdinalType n,
 #endif 
   
   // Compute [zd_1 .. zd_n] = [xd_1 .. xd_n]^T*y
-  if (n_x_dot > 0)
+  if (n_x_dot > 0) {
     if (incx_dot == OrdinalType(1))
       blas.GEMV(Teuchos::TRANS, n, n_x_dot, 1.0, x_dot, n, y, incy, 0.0, z_dot, 
 		OrdinalType(1));
     else
       for (OrdinalType i=0; i<n_z_dot; i++)
 	z_dot[i] = blas.DOT(n, x_dot+i*incx_dot*n, incx_dot, y, incy);
+  }
 
   // Compute [zd_1 .. zd_n] += [yd_1 .. yd_n]^T*x
-  if (n_y_dot > 0)
-    if (incy_dot == OrdinalType(1))
+  if (n_y_dot > 0) {
+    if (incy_dot == OrdinalType(1) && 
+	!Teuchos::ScalarTraits<ValueType>::isComplex)
       blas.GEMV(Teuchos::TRANS, n, n_y_dot, 1.0, y_dot, n, x, incx, 1.0, z_dot, 
 		OrdinalType(1));
     else
       for (OrdinalType i=0; i<n_z_dot; i++)
 	z_dot[i] += blas.DOT(n, x, incx, y_dot+i*incy_dot*n, incy_dot);
+  }
 
   // Compute z = x^T*y
   z = blas.DOT(n, x, incx, y, incy);
@@ -2138,7 +2143,7 @@ Fad_GEMV(Teuchos::ETransp trans,
     blas.SCAL(n_y_rows*n_y_dot, beta, y_dot, incy_dot);
 
   // Compute [yd_1 .. yd_n] = alpha*A*[xd_1 .. xd_n]
-  if (n_x_dot > 0)
+  if (n_x_dot > 0) {
     if (incx_dot == 1)
       blas.GEMM(trans, Teuchos::NO_TRANS, n_A_rows, n_dot, n_A_cols, 
 		alpha, A, lda, x_dot, n_x_rows, 1.0, y_dot, n_y_rows);
@@ -2146,6 +2151,7 @@ Fad_GEMV(Teuchos::ETransp trans,
       for (OrdinalType i=0; i<n_x_dot; i++)
 	blas.GEMV(trans, m, n, alpha, A, lda, x_dot+i*incx_dot*n_x_rows, 
 		  incx_dot, 1.0, y_dot+i*incy_dot*n_y_rows, incy_dot);
+  }
   
   // Compute [yd_1 .. yd_n] += diag([alphad_1 .. alphad_n])*A*x
   if (n_alpha_dot > 0) {
@@ -2287,13 +2293,14 @@ Fad_GEMM(Teuchos::ETransp transa,
   }
 
   // Compute [Cd_1 .. Cd_n] = beta*[Cd_1 .. Cd_n]
-  if (n_C_dot > 0)
+  if (n_C_dot > 0) {
     if (ldc_dot == m)
       blas.SCAL(m*n*n_C_dot, beta, C_dot, OrdinalType(1));
     else
       for (OrdinalType i=0; i<n_C_dot; i++)
 	for (OrdinalType j=0; j<n; j++)
 	  blas.SCAL(m, beta, C_dot+i*ldc_dot*n+j*ldc_dot, OrdinalType(1));
+  }
 
   // Compute [Cd_1 .. Cd_n] += alpha*A*[Bd_1 .. Bd_n]
   for (OrdinalType i=0; i<n_B_dot; i++)
@@ -2398,13 +2405,14 @@ Fad_SYMM(Teuchos::ESide side, Teuchos::EUplo uplo,
   }
 
   // Compute [Cd_1 .. Cd_n] = beta*[Cd_1 .. Cd_n]
-  if (n_C_dot > 0)
+  if (n_C_dot > 0) {
     if (ldc_dot == m)
       blas.SCAL(m*n*n_C_dot, beta, C_dot, OrdinalType(1));
     else
       for (OrdinalType i=0; i<n_C_dot; i++)
 	for (OrdinalType j=0; j<n; j++)
 	  blas.SCAL(m, beta, C_dot+i*ldc_dot*n+j*ldc_dot, OrdinalType(1));
+  }
 
   // Compute [Cd_1 .. Cd_n] += alpha*A*[Bd_1 .. Bd_n]
   for (OrdinalType i=0; i<n_B_dot; i++)

@@ -177,9 +177,10 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/Sacado_Tay_Taylor.hpp \
 	$(srcdir)/Sacado_Tay_TaylorImp.hpp \
 	$(srcdir)/Sacado_trad_Traits.hpp $(srcdir)/Sacado_trad.hpp \
-	$(srcdir)/Sacado_trad2.hpp $(srcdir)/Sacado_tradvec.hpp \
-	$(srcdir)/Sacado_rad.hpp $(srcdir)/Sacado_rad2.hpp \
-	$(srcdir)/mpl/Sacado_mpl_is_same.hpp \
+	$(srcdir)/Sacado_trad2_Traits.hpp $(srcdir)/Sacado_trad2.hpp \
+	$(srcdir)/Sacado_tradvec_Traits.hpp \
+	$(srcdir)/Sacado_tradvec.hpp $(srcdir)/Sacado_rad.hpp \
+	$(srcdir)/Sacado_rad2.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
 	$(srcdir)/mpl/Sacado_mpl_disable_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_none.hpp \
@@ -208,6 +209,7 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/mpl/Sacado_mpl_type_wrap.hpp \
 	$(srcdir)/mpl/Sacado_mpl_is_placeholder.hpp \
 	$(srcdir)/Sacado_Fad_BLAS.hpp $(srcdir)/Sacado_Fad_BLASImp.hpp \
+	$(srcdir)/Sacado_Fad_ScalarTraitsImp.hpp \
 	$(srcdir)/template/Sacado_TemplateManager.hpp \
 	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 	$(srcdir)/template/Sacado_TemplateIterator.hpp \
@@ -341,9 +343,10 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Tay_Taylor.hpp \
 	$(srcdir)/Sacado_Tay_TaylorImp.hpp \
 	$(srcdir)/Sacado_trad_Traits.hpp $(srcdir)/Sacado_trad.hpp \
-	$(srcdir)/Sacado_trad2.hpp $(srcdir)/Sacado_tradvec.hpp \
-	$(srcdir)/Sacado_rad.hpp $(srcdir)/Sacado_rad2.hpp \
-	$(srcdir)/mpl/Sacado_mpl_is_same.hpp \
+	$(srcdir)/Sacado_trad2_Traits.hpp $(srcdir)/Sacado_trad2.hpp \
+	$(srcdir)/Sacado_tradvec_Traits.hpp \
+	$(srcdir)/Sacado_tradvec.hpp $(srcdir)/Sacado_rad.hpp \
+	$(srcdir)/Sacado_rad2.hpp $(srcdir)/mpl/Sacado_mpl_is_same.hpp \
 	$(srcdir)/mpl/Sacado_mpl_disable_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_if.hpp \
 	$(srcdir)/mpl/Sacado_mpl_none.hpp \
@@ -372,6 +375,7 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/mpl/Sacado_mpl_type_wrap.hpp \
 	$(srcdir)/mpl/Sacado_mpl_is_placeholder.hpp \
 	$(srcdir)/Sacado_Fad_BLAS.hpp $(srcdir)/Sacado_Fad_BLASImp.hpp \
+	$(srcdir)/Sacado_Fad_ScalarTraitsImp.hpp \
 	$(srcdir)/template/Sacado_TemplateManager.hpp \
 	$(srcdir)/template/Sacado_TemplateManagerImp.hpp \
 	$(srcdir)/template/Sacado_TemplateIterator.hpp \
@@ -619,7 +623,9 @@ SACADO_TAYLOR_H = \
 SACADO_RAD_H = \
 	$(srcdir)/Sacado_trad_Traits.hpp \
 	$(srcdir)/Sacado_trad.hpp \
+	$(srcdir)/Sacado_trad2_Traits.hpp \
 	$(srcdir)/Sacado_trad2.hpp \
+	$(srcdir)/Sacado_tradvec_Traits.hpp \
 	$(srcdir)/Sacado_tradvec.hpp \
 	$(srcdir)/Sacado_rad.hpp \
 	$(srcdir)/Sacado_rad2.hpp
@@ -637,7 +643,8 @@ SACADO_UTIL_H = \
 
 @ENABLE_SACADO_TEUCHOS_TRUE@SACADO_BLAS_H = \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_Fad_BLAS.hpp \
-@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_Fad_BLASImp.hpp
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_Fad_BLASImp.hpp \
+@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/Sacado_Fad_ScalarTraitsImp.hpp
 
 @ENABLE_SACADO_TEUCHOS_TRUE@SACADO_TEMPLATE_H = \
 @ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/template/Sacado_TemplateManager.hpp \

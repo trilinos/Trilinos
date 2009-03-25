@@ -70,7 +70,8 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = test/utils
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps =  \
 	$(top_srcdir)/config/ac_arg_with_execlincludedir.m4 \
@@ -95,28 +96,9 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Sacado_config.h
 CONFIG_CLEAN_FILES =
-LIBRARIES = $(noinst_LIBRARIES)
-AR = ar
-ARFLAGS = cru
-libsacadoutils_a_DEPENDENCIES =
-am__objects_1 = libsacadoutils_a-Sacado_Random.$(OBJEXT)
-am__objects_2 =
-am_libsacadoutils_a_OBJECTS = $(am__objects_1) $(am__objects_2)
-libsacadoutils_a_OBJECTS = $(am_libsacadoutils_a_OBJECTS)
-DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
-depcomp = $(SHELL) $(top_srcdir)/config/depcomp
-am__depfiles_maybe = depfiles
-CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
-CXXLD = $(CXX)
-CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(libsacadoutils_a_SOURCES)
-DIST_SOURCES = $(libsacadoutils_a_SOURCES)
+SOURCES =
+DIST_SOURCES =
+HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -242,20 +224,11 @@ top_srcdir = @top_srcdir@
 UTILS_H = \
 	$(srcdir)/Sacado_Random.hpp 
 
-UTILS = \
-	$(srcdir)/Sacado_Random.cpp
-
+noinst_HEADERS = $(UTILS_H)
 
 # ------------------------------------------------------------------------
 # Utils library specifications
 # ------------------------------------------------------------------------
-UTILS_LIB = libsacadoutils.a
-libsacadoutils_a_SOURCES = $(UTILS) $(UTILS_H)
-libsacadoutils_a_CXXFLAGS = \
-	-I$(top_srcdir)/src \
-	-I$(top_builddir)/src
-
-@USE_ALTERNATE_AR_FALSE@libsacadoutils_a_AR = $(AR) cru
 
 # ------------------------------------------------------------------------
 # For using a special archiver
@@ -264,18 +237,15 @@ libsacadoutils_a_CXXFLAGS = \
 # SPECIAL NOTE: Why is the "else" there?  For some reason, automake
 # fails to define <lib>_AR of USE_ALTERNATE_AR is false, so we have to
 # define it manually.
-@USE_ALTERNATE_AR_TRUE@libsacadoutils_a_AR = $(ALTERNATE_AR)
 
 # ------------------------------------------------------------------------
 # Some C++ compilers create extra .o-files for templates. We need to
 # be sure to include these, and this is the hack to do it.
 # ------------------------------------------------------------------------
-libsacadoutils_a_LIBADD = $(XTRALDADD)
 
 # ------------------------------------------------------------------------
 # List of all libraries not to be installed
 # ------------------------------------------------------------------------
-noinst_LIBRARIES = $(UTILS_LIB)
 
 # ------------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
@@ -284,7 +254,6 @@ MAINTAINERCLEANFILES = Makefile.in
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -314,49 +283,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-
-clean-noinstLIBRARIES:
-	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
-libsacadoutils.a: $(libsacadoutils_a_OBJECTS) $(libsacadoutils_a_DEPENDENCIES) 
-	-rm -f libsacadoutils.a
-	$(libsacadoutils_a_AR) libsacadoutils.a $(libsacadoutils_a_OBJECTS) $(libsacadoutils_a_LIBADD)
-	$(RANLIB) libsacadoutils.a
-
-mostlyclean-compile:
-	-rm -f *.$(OBJEXT)
-
-distclean-compile:
-	-rm -f *.tab.c
-
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libsacadoutils_a-Sacado_Random.Po@am__quote@
-
-.cpp.o:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ $<
-
-.cpp.obj:
-@am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
-
-libsacadoutils_a-Sacado_Random.o: $(srcdir)/Sacado_Random.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacadoutils_a_CXXFLAGS) $(CXXFLAGS) -MT libsacadoutils_a-Sacado_Random.o -MD -MP -MF $(DEPDIR)/libsacadoutils_a-Sacado_Random.Tpo -c -o libsacadoutils_a-Sacado_Random.o `test -f '$(srcdir)/Sacado_Random.cpp' || echo '$(srcdir)/'`$(srcdir)/Sacado_Random.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libsacadoutils_a-Sacado_Random.Tpo $(DEPDIR)/libsacadoutils_a-Sacado_Random.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Sacado_Random.cpp' object='libsacadoutils_a-Sacado_Random.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacadoutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libsacadoutils_a-Sacado_Random.o `test -f '$(srcdir)/Sacado_Random.cpp' || echo '$(srcdir)/'`$(srcdir)/Sacado_Random.cpp
-
-libsacadoutils_a-Sacado_Random.obj: $(srcdir)/Sacado_Random.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacadoutils_a_CXXFLAGS) $(CXXFLAGS) -MT libsacadoutils_a-Sacado_Random.obj -MD -MP -MF $(DEPDIR)/libsacadoutils_a-Sacado_Random.Tpo -c -o libsacadoutils_a-Sacado_Random.obj `if test -f '$(srcdir)/Sacado_Random.cpp'; then $(CYGPATH_W) '$(srcdir)/Sacado_Random.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Sacado_Random.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/libsacadoutils_a-Sacado_Random.Tpo $(DEPDIR)/libsacadoutils_a-Sacado_Random.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Sacado_Random.cpp' object='libsacadoutils_a-Sacado_Random.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libsacadoutils_a_CXXFLAGS) $(CXXFLAGS) -c -o libsacadoutils_a-Sacado_Random.obj `if test -f '$(srcdir)/Sacado_Random.cpp'; then $(CYGPATH_W) '$(srcdir)/Sacado_Random.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Sacado_Random.cpp'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -434,7 +360,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LIBRARIES)
+all-am: Makefile $(HEADERS)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -463,13 +389,11 @@ maintainer-clean-generic:
 	-test -z "$(MAINTAINERCLEANFILES)" || rm -f $(MAINTAINERCLEANFILES)
 clean: clean-am
 
-clean-am: clean-generic clean-noinstLIBRARIES mostlyclean-am
+clean-am: clean-generic mostlyclean-am
 
 distclean: distclean-am
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
-distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+distclean-am: clean-am distclean-generic distclean-tags
 
 dvi: dvi-am
 
@@ -500,13 +424,12 @@ install-ps: install-ps-am
 installcheck-am:
 
 maintainer-clean: maintainer-clean-am
-	-rm -rf ./$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-am
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic
+mostlyclean-am: mostlyclean-generic
 
 pdf: pdf-am
 
@@ -521,17 +444,15 @@ uninstall-am:
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-noinstLIBRARIES ctags distclean distclean-compile \
-	distclean-generic distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic pdf pdf-am ps ps-am tags uninstall \
-	uninstall-am
+	ctags distclean distclean-generic distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-html install-html-am \
+	install-info install-info-am install-man install-pdf \
+	install-pdf-am install-ps install-ps-am install-strip \
+	installcheck installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
+	pdf-am ps ps-am tags uninstall uninstall-am
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

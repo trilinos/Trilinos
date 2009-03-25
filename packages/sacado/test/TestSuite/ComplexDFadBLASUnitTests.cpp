@@ -31,17 +31,8 @@
 
 #include "FadBLASUnitTests.hpp"
 
-typedef FadBLASUnitTests<Sacado::Fad::DFad<double>,double> DFadDoubleTest;
-typedef FadBLASUnitTests<Sacado::Fad::DVFad<double>,double> DVFadDoubleTest;
-
-CPPUNIT_TEST_SUITE_REGISTRATION(DFadDoubleTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(DVFadDoubleTest);
-
 #ifdef HAVE_SACADO_COMPLEX
 typedef FadBLASUnitTests<Sacado::Fad::DFad<std::complex<double> >,
 			 std::complex<double> > DFadComplexDoubleTest;
-typedef FadBLASUnitTests<Sacado::Fad::DVFad<std::complex<double> >,
-			 std::complex<double> > DVFadComplexDoubleTest;
 CPPUNIT_TEST_SUITE_REGISTRATION(DFadComplexDoubleTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(DVFadComplexDoubleTest);
 #endif

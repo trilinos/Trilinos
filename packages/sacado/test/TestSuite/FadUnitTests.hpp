@@ -305,7 +305,7 @@ protected:
   FAD::Fad<ScalarType> a_fad, b_fad, c_fad;
 
   // Random number generator
-  Sacado::Random urand;
+  Sacado::Random<ScalarType> urand;
 
   // Number of derivative components
   int n;
@@ -318,13 +318,13 @@ protected:
 template <class FadType, class ScalarType>
 FadOpsUnitTest<FadType,ScalarType>::
 FadOpsUnitTest() :
-  urand(0.0, 1.0), n(5), tol_a(1.0e-15), tol_r(1.0e-14) {}
+  urand(), n(5), tol_a(1.0e-15), tol_r(1.0e-14) {}
 
 template <class FadType, class ScalarType>
 FadOpsUnitTest<FadType,ScalarType>::
 FadOpsUnitTest(int numComponents, ScalarType absolute_tolerance, 
 	       ScalarType relative_tolerance) :
-  urand(0.0, 1.0), 
+  urand(), 
   n(numComponents), 
   tol_a(absolute_tolerance), 
   tol_r(relative_tolerance) {}

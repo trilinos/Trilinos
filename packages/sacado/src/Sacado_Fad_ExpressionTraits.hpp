@@ -58,12 +58,6 @@ namespace Sacado {
     typedef typename Fad::Expr<T>::value_type type;
   };
 
-   //! Specialization of %ScalarValueType to Expr types
-  template <typename T>
-  struct ScalarValueType< Fad::Expr<T> > {
-    typedef typename ScalarValueType< typename Fad::Expr<T>::value_type >::type type;
-  };
-
   //! Specialization of %IsADType to Expr types
   template <typename T>
   struct IsADType< Fad::Expr<T> > {
@@ -82,6 +76,15 @@ namespace Sacado {
     typedef typename ValueType< Fad::Expr<T> >::type value_type;
     static const value_type& eval(const Fad::Expr<T>& x) { 
       return x.val(); }
+  };
+
+  //! Specialization of %ScalarValue to Expr types
+  template <typename T>
+  struct ScalarValue< Fad::Expr<T> > {
+    typedef typename ValueType< Fad::Expr<T> >::type value_type;
+    typedef typename ScalarType< Fad::Expr<T> >::type scalar_type;
+    static const scalar_type& eval(const Fad::Expr<T>& x) { 
+      return ScalarValue<value_type>::eval(x.val()); }
   };
 
 } // namespace Sacado

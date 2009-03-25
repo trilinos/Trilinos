@@ -113,7 +113,9 @@ SET(HEADERS ${HEADERS}
 SET(HEADERS ${HEADERS}
   Sacado_trad_Traits.hpp
   Sacado_trad.hpp
+  Sacado_trad2_Traits.hpp
   Sacado_trad2.hpp
+  Sacado_tradvec_Traits.hpp
   Sacado_tradvec.hpp
   Sacado_rad.hpp
   Sacado_rad2.hpp
@@ -140,6 +142,7 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
   SET(HEADERS ${HEADERS}
     Sacado_Fad_BLAS.hpp
     Sacado_Fad_BLASImp.hpp
+    Sacado_Fad_ScalarTraitsImp.hpp
     )
 
   # TEMPLATE

@@ -1,6 +1,7 @@
 INCLUDE(PackageAddExecutableAndTest)
 
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/Fad)
+INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/test/utils)
 
 SET(${PACKAGE_NAME}_TESTSUITE_SOURCES "")
 
@@ -26,7 +27,10 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
 
   SET(${PACKAGE_NAME}_TESTSUITE_SOURCES ${${PACKAGE_NAME}_TESTSUITE_SOURCES}
     FadBLASUnitTests.hpp
-    FadBLASUnitTests.cpp
+    RealDFadBLASUnitTests.cpp
+    RealDVFadBLASUnitTests.cpp
+    ComplexDFadBLASUnitTests.cpp
+    ComplexDVFadBLASUnitTests.cpp
     )
 
 ENDIF()
@@ -44,13 +48,14 @@ SET(${PACKAGE_NAME}_TESTSUITE_SOURCES ${${PACKAGE_NAME}_TESTSUITE_SOURCES}
   CacheFadUnitTests.cpp
   LogicalSparseUnitTests.hpp
   LogicalSparseUnitTests.cpp
+  TraitsTests.hpp
+  TraitsTests.cpp
   TestSuite.cpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   TestSuite
   SOURCES ${${PACKAGE_NAME}_TESTSUITE_SOURCES}
-  DEPLIBS sacadoutils
   ARGS 
   COMM serial mpi
   NUM_MPI_PROCS 1
