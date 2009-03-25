@@ -39,10 +39,8 @@ DISABLED =
 ## #######################################################################
 #
 SUBDIRS = \
-  Basis \
-  Cubature \
-  MultiCell \
-  RealSpace \
-  FieldContainer
+  Cell \
+  Discretization \
+  Shared
 
 EXTRA_DIST = definition

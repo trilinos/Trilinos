@@ -46,7 +46,7 @@ echo "----------------------------------------"
 # preferably one that is unlikely to be removed or renamed.
 # ------------------------------------------------------------------------
 #
-AC_CONFIG_SRCDIR([src/local/Intrepid_MultiCell.hpp])
+AC_CONFIG_SRCDIR([src/Shared/Intrepid_Types.hpp])
 
 
 
@@ -300,7 +300,7 @@ TAC_ARG_ENABLE_FEATURE_SUB_CHECK( intrepid, tests, [Make Intrepid tests buildabl
 AM_CONDITIONAL(BUILD_TESTS, test "X$ac_cv_use_intrepid_tests" != "Xno")
 
 TAC_ARG_ENABLE_FEATURE(examples, [Make examples for all Trilinos packages buildable with 'make examples'], EXAMPLES, yes)
-TAC_ARG_ENABLE_FEATURE_SUB_CHECK( intrepid, examples, [Make Intrepid examples buildable with 'make examples'], NEW_PACKAGE_EXAMPLES)
+TAC_ARG_ENABLE_FEATURE_SUB_CHECK( intrepid, examples, [Make Intrepid examples buildable with 'make examples'], INTREPID_EXAMPLES)
 AM_CONDITIONAL(BUILD_EXAMPLES, test "X$ac_cv_use_intrepid_examples" != "Xno")
 
 # We now build tests and examples through separate make targets, rather than
@@ -374,39 +374,30 @@ AC_CONFIG_FILES([
   src/Makefile
   test/Makefile
   example/Makefile
-  test/Basis/Makefile
-  test/Cubature/Makefile
-  test/MultiCell/Makefile
-  test/RealSpace/Makefile
-  test/FieldContainer/Makefile
-  test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile
-  test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile
-  test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile
-  example/Cubature/Makefile
-  example/MultiCell/Makefile
-  example/RealSpace/Makefile
+  test/Cell/Makefile
+  test/Discretization/Makefile
+  test/Discretization/Integration/Makefile
+  test/Discretization/FunctionSpaceTools/Makefile
+  test/Discretization/Basis/Makefile
+  test/Discretization/Basis/HGRAD_HEX_C1_FEM/Makefile
+  test/Discretization/Basis/HGRAD_QUAD_C1_FEM/Makefile
+  test/Discretization/Basis/HGRAD_TET_C1_FEM/Makefile
+  test/Discretization/Basis/HGRAD_TRI_C1_FEM/Makefile
+  test/Discretization/Basis/HGRAD_WEDGE_C1_FEM/Makefile
+  test/Discretization/Basis/HCURL_HEX_I1_FEM/Makefile
+  test/Discretization/Basis/HCURL_TET_I1_FEM/Makefile
+  test/Discretization/Basis/HCURL_WEDGE_I1_FEM/Makefile
+  test/Discretization/Basis/HDIV_HEX_I1_FEM/Makefile
+  test/Discretization/Basis/HDIV_TET_I1_FEM/Makefile
+  test/Discretization/Basis/HDIV_WEDGE_I1_FEM/Makefile
+  test/Shared/Makefile
+  test/Shared/ArrayTools/Makefile
+  test/Shared/FieldContainer/Makefile
+  test/Shared/IntrepidPolylib/Makefile
+  test/Shared/RealSpaceTools/Makefile
+  example/CellTools/Makefile
   example/FieldContainer/Makefile
-  example/Basis/Makefile
-  example/SparseConv/Makefile
-  test/Basis/F0_TRI_C1_FEM_FIAT/Makefile
-  test/Basis/F0_TRI_C2_FEM_FIAT/Makefile
-  test/Basis/F0_TRI_C3_FEM_FIAT/Makefile
-  test/Basis/F0_TET_C1_FEM_FIAT/Makefile
-  test/Basis/F0_TET_C2_FEM_FIAT/Makefile
-  test/Basis/F0_TET_C3_FEM_FIAT/Makefile
-  test/Basis/F2_TRI_I1_FEM_FIAT/Makefile
-  test/Basis/F2_TRI_I2_FEM_FIAT/Makefile
-  test/Basis/F2_TRI_I3_FEM_FIAT/Makefile
-  test/Basis/F2_TET_I1_FEM_FIAT/Makefile
-  test/Basis/F2_TET_I2_FEM_FIAT/Makefile
-  test/Basis/F2_TET_I3_FEM_FIAT/Makefile
-  test/Basis/F1_TRI_I1_FEM_FIAT/Makefile
-  test/Basis/F1_TRI_I2_FEM_FIAT/Makefile
-  test/Basis/F1_TRI_I3_FEM_FIAT/Makefile
-  test/Basis/F1_TET_I1_FEM_FIAT/Makefile
-  test/Basis/F1_TET_I2_FEM_FIAT/Makefile
-  test/Basis/F1_TET_I3_FEM_FIAT/Makefile
-  test/Basis/FIAT/Makefile
+  example/Drivers/Makefile
 ])
 
 AC_OUTPUT()

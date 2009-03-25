@@ -1,0 +1,418 @@
+// @HEADER
+// ************************************************************************
+//
+//                           Intrepid Package
+//                 Copyright (2007) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
+//                    Denis Ridzal  (dridzal@sandia.gov),
+//                    Kara Peterson (kjpeter@sandia.gov).
+//
+// ************************************************************************
+// @HEADER
+
+/** \file test_01.cpp
+\brief  Unit tests for the Intrepid::C_WEDGE_I1_FEM class.
+\author Created by P. Bochev, D. Ridzal, and K. Peterson.
+*/
+#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid_HCURL_WEDGE_I1_FEM.hpp"
+#include "Teuchos_oblackholestream.hpp"
+#include "Teuchos_RCP.hpp"
+
+using namespace std;
+using namespace Intrepid;
+
+#define INTREPID_TEST_COMMAND( S , throwCounter, nException )                                                              \
+{                                                                                                                          \
+  ++nException;                                                                                                            \
+  try {                                                                                                                    \
+    S ;                                                                                                                    \
+  }                                                                                                                        \
+  catch (std::logic_error err) {                                                                                           \
+      ++throwCounter;                                                                                                      \
+      *outStream << "Expected Error " << nException << " -------------------------------------------------------------\n"; \
+      *outStream << err.what() << '\n';                                                                                    \
+      *outStream << "-------------------------------------------------------------------------------" << "\n\n";           \
+  };                                                                                                                       \
+}
+
+int main(int argc, char *argv[]) {
+  
+  // This little trick lets us print to std::cout only if
+  // a (dummy) command-line argument is provided.
+  int iprint     = argc - 1;
+  Teuchos::RCP<std::ostream> outStream;
+  Teuchos::oblackholestream bhs; // outputs nothing
+  if (iprint > 0)
+    outStream = Teuchos::rcp(&std::cout, false);
+  else
+    outStream = Teuchos::rcp(&bhs, false);
+  
+  // Save the format state of the original std::cout.
+  Teuchos::oblackholestream oldFormatState;
+  oldFormatState.copyfmt(std::cout);
+  
+  *outStream \
+    << "===============================================================================\n" \
+    << "|                                                                             |\n" \
+    << "|                 Unit Test (Basis_HCURL_WEDGE_I1_FEM)                        |\n" \
+    << "|                                                                             |\n" \
+    << "|     1) Conversion of Dof tags into Dof ordinals and back                    |\n" \
+    << "|     2) Basis values for VALUE, GRAD, CURL, and Dk operators                 |\n" \
+    << "|                                                                             |\n" \
+    << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
+    << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
+    << "|                      Kara Peterson (kjpeter@sandia.gov).                    |\n" \
+    << "|                                                                             |\n" \
+    << "|  Intrepid's website: http://trilinos.sandia.gov/packages/intrepid           |\n" \
+    << "|  Trilinos website:   http://trilinos.sandia.gov                             |\n" \
+    << "|                                                                             |\n" \
+    << "===============================================================================\n"\
+    << "| TEST 1: Basis creation, exception testing                                   |\n"\
+    << "===============================================================================\n";
+  
+  // Define basis and error flag
+  Basis_HCURL_WEDGE_I1_FEM<double, FieldContainer<double> > wedgeBasis;
+  int errorFlag = 0;
+
+  // Initialize throw counter for exception testing
+  int nException     = 0;
+  int throwCounter   = 0;
+
+  // Define array containing the 6 vertices of the reference WEDGE and 6 other points.
+  FieldContainer<double> wedgeNodes(12, 3);
+  wedgeNodes(0,0) =  0.0;  wedgeNodes(0,1) =  0.0;  wedgeNodes(0,2) = -1.0;
+  wedgeNodes(1,0) =  1.0;  wedgeNodes(1,1) =  0.0;  wedgeNodes(1,2) = -1.0;
+  wedgeNodes(2,0) =  0.0;  wedgeNodes(2,1) =  1.0;  wedgeNodes(2,2) = -1.0;
+  wedgeNodes(3,0) =  0.0;  wedgeNodes(3,1) =  0.0;  wedgeNodes(3,2) =  1.0;
+  wedgeNodes(4,0) =  1.0;  wedgeNodes(4,1) =  0.0;  wedgeNodes(4,2) =  1.0;
+  wedgeNodes(5,0) =  0.0;  wedgeNodes(5,1) =  1.0;  wedgeNodes(5,2) =  1.0;
+
+  wedgeNodes(6,0) =  0.25; wedgeNodes(6,1) =  0.5;  wedgeNodes(6,2) = -1.0;
+  wedgeNodes(7,0) =  0.5;  wedgeNodes(7,1) =  0.25; wedgeNodes(7,2) =  0.0;
+  wedgeNodes(8,0) =  0.25; wedgeNodes(8,1) =  0.25; wedgeNodes(8,2) =  1.0;
+  wedgeNodes(9,0) =  0.25; wedgeNodes(9,1) =  0.0;  wedgeNodes(9,2) =  0.75;
+  wedgeNodes(10,0)=  0.0;  wedgeNodes(10,1)=  0.5;  wedgeNodes(10,2)= -0.25;
+  wedgeNodes(11,0)=  0.5;  wedgeNodes(11,1)=  0.5;  wedgeNodes(11,2)=  0.0;
+
+
+
+  // Generic array for the output values; needs to be properly resized depending on the operator type
+  FieldContainer<double> vals;
+
+  try{
+    // exception #1: GRAD cannot be applied to HCURL functions 
+    // resize vals to rank-3 container with dimensions (num. basis functions, num. points, arbitrary)
+    vals.resize(wedgeBasis.getCardinality(), wedgeNodes.dimension(0), 3 );
+    INTREPID_TEST_COMMAND( wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_GRAD), throwCounter, nException );
+
+    // exception #2: DIV cannot be applied to HCURL functions
+    // resize vals to rank-2 container with dimensions (num. basis functions, num. points)
+    vals.resize(wedgeBasis.getCardinality(), wedgeNodes.dimension(0));
+    INTREPID_TEST_COMMAND( wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_DIV), throwCounter, nException );
+        
+    // Exceptions 3-7: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and 
+    // getDofTag() to access invalid array elements thereby causing bounds check exception
+    // exception #3
+    INTREPID_TEST_COMMAND( wedgeBasis.getDofOrdinal(3,0,0), throwCounter, nException );
+    // exception #4
+    INTREPID_TEST_COMMAND( wedgeBasis.getDofOrdinal(1,1,1), throwCounter, nException );
+    // exception #5
+    INTREPID_TEST_COMMAND( wedgeBasis.getDofOrdinal(0,4,1), throwCounter, nException );
+    // exception #6
+    INTREPID_TEST_COMMAND( wedgeBasis.getDofTag(10), throwCounter, nException );
+    // exception #7
+    INTREPID_TEST_COMMAND( wedgeBasis.getDofTag(-1), throwCounter, nException );
+    
+#ifdef HAVE_INTREPID_DEBUG
+    // Exceptions 8- test exception handling with incorrectly dimensioned input/output arrays
+    // exception #8: input points array must be of rank-2
+    FieldContainer<double> badPoints1(4, 5, 3);
+    INTREPID_TEST_COMMAND( wedgeBasis.getValues(vals, badPoints1, OPERATOR_VALUE), throwCounter, nException );
+    
+    // exception #9 dimension 1 in the input point array must equal space dimension of the cell
+    FieldContainer<double> badPoints2(4, 2);
+    INTREPID_TEST_COMMAND( wedgeBasis.getValues(vals, badPoints1, OPERATOR_VALUE), throwCounter, nException );
+    
+    // exception #10 output values must be of rank-3 for OPERATOR_VALUE
+    FieldContainer<double> badVals1(4, 3);
+    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals1, wedgeNodes, OPERATOR_VALUE), throwCounter, nException );
+ 
+    // exception #11 output values must be of rank-3 for OPERATOR_CURL
+    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals1, wedgeNodes, OPERATOR_CURL), throwCounter, nException );
+    
+    // exception #12 incorrect 0th dimension of output array (must equal number of basis functions)
+    FieldContainer<double> badVals2(wedgeBasis.getCardinality() + 1, wedgeNodes.dimension(0), 3);
+    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals2, wedgeNodes, OPERATOR_VALUE), throwCounter, nException );
+    
+    // exception #13 incorrect 1st dimension of output array (must equal number of points)
+    FieldContainer<double> badVals3(wedgeBasis.getCardinality(), wedgeNodes.dimension(0) + 1, 3);
+    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals3, wedgeNodes, OPERATOR_VALUE), throwCounter, nException );
+
+    // exception #14: incorrect 2nd dimension of output array (must equal the space dimension)
+    FieldContainer<double> badVals4(wedgeBasis.getCardinality(), wedgeNodes.dimension(0), 4);
+    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals4, wedgeNodes, OPERATOR_VALUE), throwCounter, nException );
+    
+    // exception #15: incorrect 2nd dimension of output array (must equal the space dimension)
+    INTREPID_TEST_COMMAND( wedgeBasis.getValues(badVals4, wedgeNodes, OPERATOR_CURL), throwCounter, nException );
+#endif
+    
+  }
+  catch (std::logic_error err) {
+    *outStream << "UNEXPECTED ERROR !!! ----------------------------------------------------------\n";
+    *outStream << err.what() << '\n';
+    *outStream << "-------------------------------------------------------------------------------" << "\n\n";
+    errorFlag = -1000;
+  };
+  
+  // Check if number of thrown exceptions matches the one we expect 
+  // Note Teuchos throw number will not pick up exceptions 3-7 and therefore will not match.
+  if (throwCounter != nException) {
+    errorFlag++;
+    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+  }
+  
+  *outStream \
+    << "\n"
+    << "===============================================================================\n"\
+    << "| TEST 2: correctness of tag to enum and enum to tag lookups                  |\n"\
+    << "===============================================================================\n";
+  
+  try{
+    std::vector<std::vector<int> > allTags = wedgeBasis.getAllDofTags();
+    
+    // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
+    for (unsigned i = 0; i < allTags.size(); i++) {
+      int bfOrd  = wedgeBasis.getDofOrdinal(allTags[i][0], allTags[i][1], allTags[i][2]);
+      
+      std::vector<int> myTag = wedgeBasis.getDofTag(bfOrd);
+       if( !( (myTag[0] == allTags[i][0]) &&
+              (myTag[1] == allTags[i][1]) &&
+              (myTag[2] == allTags[i][2]) &&
+              (myTag[3] == allTags[i][3]) ) ) {
+        errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        *outStream << " getDofOrdinal( {" 
+          << allTags[i][0] << ", " 
+          << allTags[i][1] << ", " 
+          << allTags[i][2] << ", " 
+          << allTags[i][3] << "}) = " << bfOrd <<" but \n";   
+        *outStream << " getDofTag(" << bfOrd << ") = { "
+          << myTag[0] << ", " 
+          << myTag[1] << ", " 
+          << myTag[2] << ", " 
+          << myTag[3] << "}\n";        
+      }
+    }
+    
+    // Now do the same but loop over basis functions
+    for( int bfOrd = 0; bfOrd < wedgeBasis.getCardinality(); bfOrd++) {
+      std::vector<int> myTag  = wedgeBasis.getDofTag(bfOrd);
+      int myBfOrd = wedgeBasis.getDofOrdinal(myTag[0], myTag[1], myTag[2]);
+      if( bfOrd != myBfOrd) {
+        errorFlag++;
+        *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+        *outStream << " getDofTag(" << bfOrd << ") = { "
+          << myTag[0] << ", " 
+          << myTag[1] << ", " 
+          << myTag[2] << ", " 
+          << myTag[3] << "} but getDofOrdinal({" 
+          << myTag[0] << ", " 
+          << myTag[1] << ", " 
+          << myTag[2] << ", " 
+          << myTag[3] << "} ) = " << myBfOrd << "\n";
+      }
+    }
+  }
+  catch (std::logic_error err){
+    *outStream << err.what() << "\n\n";
+    errorFlag = -1000;
+  };
+  
+  *outStream \
+    << "\n"
+    << "===============================================================================\n"\
+    << "| TEST 3: correctness of basis function values                                |\n"\
+    << "===============================================================================\n";
+  
+  outStream -> precision(20);
+  
+  // VALUE: Each row pair gives the 9x3 correct basis set values at an evaluation point
+  double basisValues[] = {
+    // 6 vertices
+    1.0,0.,0.,  0.,0.,0.,  0.,-1.0,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,0.,
+    0.,0.,1.0,  0.,0.,0.,  0.,0.,0.,
+
+    1.0,1.0,0.,  0.,1.4142135623730950488,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,0., 
+    0.,0.,0.,  0.,0.,0.,  0.,0.,1.0,  0.,0.,0.,  
+
+    0.,0.,0., -1.4142135623730950488,0.,0.,  -1.0,-1.0,0.,  0.,0.,0.,  0.,0.,0.,
+    0.,0.,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,1.0,
+
+    0.,0.,0.,  0.,0.,0.,  0.,0.,0.,  1.0,0.,0.,  0.,0.,0.,  0.,-1.0,0.,
+    0.,0.,1.0,  0.,0.,0.,  0.,0.,0.,
+
+    0.,0.,0.,  0.,0.,0.,  0.,0.,0.,  1.0,1.0,0.,  0.,1.4142135623730950488,0.,  
+    0.,0.,0.,  0.,0.,0.,  0.,0.,1.0,  0.,0.,0.,
+
+    0.,0.,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,0.,  -1.4142135623730950488,0.,0.,
+   -1.0,-1.0,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,1.0,
+
+    // 6 other points
+    0.5,0.25,0.,  -0.70710678118654752440,0.35355339059327376220,0.,  -0.5,-0.75,0.,
+    0.,0.,0.,  0.,0.,0.,  0.,0.,0.,  0.,0.,0.25,  0.,0.,0.25,  0.,0.,0.5,
+
+    0.375,0.25,0.,  -0.17677669529663688110,0.35355339059327376220,0.,  -0.125,-0.25,0.,
+    0.375,0.25,0.,  -0.17677669529663688110,0.35355339059327376220,0.,  -0.125,-0.25,0.,
+    0.,0.,0.25,  0.,0.,0.5,  0.,0.,0.25,
+
+    0.,0.,0.,  0.,0.,0.,  0.,0.,0.,  0.75,0.25,0.,  -0.35355339059327376220,0.35355339059327376220,0.,
+   -0.25,-0.75,0.,  0.,0.,0.5,  0.,0.,0.25,  0.,0.,0.25,
+
+    0.125,0.03125,0.,  0.,0.044194173824159220275,0.,  0.,-0.09375,0.,  0.875,0.21875,0.,  
+    0.,0.30935921676911454193,0.,  0.,-0.65625,0.,  0.,0.,0.75,  0.,0.,0.25,  0.,0.,0.,
+
+    0.3125,0.,0.,  -0.44194173824159220275,0.,0.,  -0.3125,-0.625,0.,  0.1875,0.,0.,
+   -0.26516504294495532165,0.,0.,  -0.1875,-0.375,0.,  0.,0.,0.5,  0.,0.,0.,  0.,0.,0.5,
+
+    0.25,0.25,0.,  -0.35355339059327376220,0.35355339059327376220,0.,  -0.25,-0.25,0.,
+    0.25,0.25,0.,  -0.35355339059327376220,0.35355339059327376220,0.,  -0.25,-0.25,0.,
+    0.,0.,0.,  0.,0.,0.5,  0.,0.,0.5
+  };
+  
+  // CURL: each row pair gives the 9x3 correct values of the curls of the 9 basis functions
+  double basisCurls[] = {   
+    // 6 vertices
+    0.,-0.5,2.0,  0.,0.,2.8284271247461900976,  -0.5,0.,2.0,  0.,0.5,0.,  0.,0.,0.,  0.5,0.,0.,
+   -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.,
+
+    0.5,-0.5,2.0,  0.70710678118654752440,0.,2.8284271247461900976,  0.,0.,2.0,  -0.5,0.5,0.,
+   -0.70710678118654752440,0.,0.,  0.,0.,0.,  -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.,
+
+    0.,0.,2.0,  0.,0.70710678118654752440,2.8284271247461900976,  -0.5,0.5,2.0,  0.,0.,0.,  
+    0.,-0.70710678118654752440,0.,  0.5,-0.5,0.,  -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.,
+
+    0.,-0.5,0.,  0.,0.,0.,  -0.5,0.,0.,  0.,0.5,2.0,  0.,0.,2.8284271247461900976,  0.5,0.,2.0,
+   -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.,
+
+    0.5,-0.5,0.,  0.70710678118654752440,0.,0.,  0.,0.,0.,  -0.5,0.5,2.0,  -0.70710678118654752440,0.,2.8284271247461900976,  
+    0.,0.,2.0, -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.,
+   
+
+    0.,0.,0.,  0.,0.70710678118654752440,0.,  -0.5,0.5,0.,  0.,0.,2.0,  0.,-0.70710678118654752440,2.8284271247461900976,
+    0.5,-0.5,2.0,  -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.,
+
+    // 6 other points
+    0.125,-0.25,2.0,  0.17677669529663688110,0.35355339059327376220,2.8284271247461900976,
+   -0.375,0.25,2.0,  -0.125,0.25,0.,  -0.17677669529663688110,-0.35355339059327376220,0.,
+    0.375,-0.25,0.,  -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.,
+
+    0.25,-0.375,1.0,  0.35355339059327376220,0.17677669529663688110,1.4142135623730950488,
+   -0.25,0.125,1.0,  -0.25,0.375,1.0,  -0.35355339059327376220,-0.17677669529663688110,1.4142135623730950488,
+    0.25,-0.125,1.0,  -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.,
+
+    0.125,-0.375,0.,  0.17677669529663688110,0.17677669529663688110,0.,  -0.375,0.125,0.,
+   -0.125,0.375,2.0,  -0.17677669529663688110,-0.17677669529663688110,2.8284271247461900976,
+    0.375,-0.125,2.0,  -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.,
+
+    0.125,-0.5,0.25,  0.17677669529663688110,0.,0.35355339059327376220,  -0.375,0.,0.25,
+   -0.125,0.5,1.75,  -0.17677669529663688110,0.,2.4748737341529163354,  0.375,0.,1.75,
+   -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.,
+
+    0.,-0.25,1.25,  0.,0.35355339059327376220,1.7677669529663688110,  -0.5,0.25,1.25,  
+    0.,0.25,0.75,  0.,-0.35355339059327376220,1.0606601717798212866,  0.5,-0.25,0.75, 
+   -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.,
+
+    0.25,-0.25,1.0,  0.35355339059327376220,0.35355339059327376220,1.4142135623730950488,
+   -0.25,0.25,1.0,  -0.25,0.25,1.0,  -0.35355339059327376220,-0.35355339059327376220,1.4142135623730950488,
+    0.25,-0.25,1.0,  -1.0,1.0,0.,  0.,-1.0,0.,  1.0,0.,0.
+  };
+  
+  try{
+        
+    // Dimensions for the output arrays:
+    int numFields = wedgeBasis.getCardinality();
+    int numPoints = wedgeNodes.dimension(0);
+    int spaceDim  = wedgeBasis.getBaseCellTopology().getDimension();
+    
+    // Generic array for values and curls that will be properly sized before each call
+    FieldContainer<double> vals;
+    
+    // Check VALUE of basis functions: resize vals to rank-3 container:
+    vals.resize(numFields, numPoints, spaceDim);
+    wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_VALUE);
+    for (int i = 0; i < numFields; i++) {
+      for (int j = 0; j < numPoints; j++) {
+        for (int k = 0; k < spaceDim; k++) {
+           int l = k + i * spaceDim + j * spaceDim * numFields;
+           if (std::abs(vals(i,j,k) - basisValues[l]) > INTREPID_TOL) {
+             errorFlag++;
+             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+
+             // Output the multi-index of the value where the error is:
+             *outStream << " At multi-index { ";
+             *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+             *outStream << "}  computed value: " << vals(i,j,k)
+               << " but reference value: " << basisValues[l] << "\n";
+            }
+         }
+      }
+    }
+
+    // Check CURL of basis function: resize vals to rank-3 container
+    vals.resize(numFields, numPoints, spaceDim);
+    wedgeBasis.getValues(vals, wedgeNodes, OPERATOR_CURL);
+    for (int i = 0; i < numFields; i++) {
+      for (int j = 0; j < numPoints; j++) {
+        for (int k = 0; k < spaceDim; k++) {
+           int l = k + i * spaceDim + j * spaceDim * numFields;
+           if (std::abs(vals(i,j,k) - basisCurls[l]) > INTREPID_TOL) {
+             errorFlag++;
+             *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+
+             // Output the multi-index of the value where the error is:
+             *outStream << " At multi-index { ";
+             *outStream << i << " ";*outStream << j << " ";*outStream << k << " ";
+             *outStream << "}  computed curl component: " << vals(i,j,k)
+               << " but reference curl component: " << basisCurls[l] << "\n";
+            }
+         }
+      }
+    }
+    
+   }    
+  
+  // Catch unexpected errors
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n\n";
+    errorFlag = -1000;
+  };
+  
+  if (errorFlag != 0)
+    std::cout << "End Result: TEST FAILED\n";
+  else
+    std::cout << "End Result: TEST PASSED\n";
+  
+  // reset format state of std::cout
+  std::cout.copyfmt(oldFormatState);
+  
+  return errorFlag;
+}

@@ -42,106 +42,74 @@ lib_LIBRARIES = libintrepid.a
 INTREPID_ALL_H = \
   $(srcdir)/Intrepid_ConfigDefs.hpp
 
-INTREPID_COMMON_H = \
-  $(srcdir)/common/Intrepid_FieldContainerDef.hpp \
-  $(srcdir)/common/Intrepid_FieldContainer.hpp \
-  $(srcdir)/common/Intrepid_RealSpaceDef.hpp \
-  $(srcdir)/common/Intrepid_RealSpace.hpp \
-  $(srcdir)/common/Intrepid_RealSpaceToolsDef.hpp \
-  $(srcdir)/common/Intrepid_RealSpaceTools.hpp \
-  $(srcdir)/common/Intrepid_Types.hpp \
-  $(srcdir)/common/Intrepid_Utils.hpp
+INTREPID_SHARED_H = \
+  $(srcdir)/Shared/Intrepid_ArrayToolsDef.hpp \
+  $(srcdir)/Shared/Intrepid_ArrayTools.hpp \
+  $(srcdir)/Shared/Intrepid_FieldContainerDef.hpp \
+  $(srcdir)/Shared/Intrepid_FieldContainer.hpp \
+  $(srcdir)/Shared/Intrepid_PolylibDef.hpp \
+  $(srcdir)/Shared/Intrepid_Polylib.hpp \
+  $(srcdir)/Shared/Intrepid_RealSpaceToolsDef.hpp \
+  $(srcdir)/Shared/Intrepid_RealSpaceTools.hpp \
+  $(srcdir)/Shared/Intrepid_Types.hpp \
+  $(srcdir)/Shared/Intrepid_Utils.hpp
 
-INTREPID_LOCAL_H =  \
-  $(srcdir)/local/basis/Intrepid_Basis.hpp \
-  $(srcdir)/local/basis/Intrepid_DefaultBasisFactoryDef.hpp \
-  $(srcdir)/local/basis/Intrepid_DefaultBasisFactory.hpp \
-  $(srcdir)/local/basis/Intrepid_Tabulate.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_QUAD_I1_FEM_DEFAULTDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_QUAD_I1_FEM_DEFAULT.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C1_FEM_DEFAULTDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C1_FEM_DEFAULT.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C2_FEM_DEFAULTDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C2_FEM_DEFAULT.hpp \
-  $(srcdir)/local/Intrepid_CellDef.hpp \
-  $(srcdir)/local/Intrepid_Cell.hpp \
-  $(srcdir)/local/Intrepid_CellTemplates.hpp \
-  $(srcdir)/local/Intrepid_CubatureDirectDef.hpp \
-  $(srcdir)/local/Intrepid_CubatureDirect.hpp \
-  $(srcdir)/local/Intrepid_Cubature.hpp \
-  $(srcdir)/local/Intrepid_CubatureGenSparseDef.hpp \
-  $(srcdir)/local/Intrepid_CubatureGenSparse.hpp \
-  $(srcdir)/local/Intrepid_CubatureSparseDef.hpp \
-  $(srcdir)/local/Intrepid_CubatureSparse.hpp \
-  $(srcdir)/local/Intrepid_CubatureSparseHelper.hpp \
-  $(srcdir)/local/Intrepid_CubatureTensorDef.hpp \
-  $(srcdir)/local/Intrepid_CubatureTensor.hpp \
-  $(srcdir)/local/Intrepid_DefaultCubatureFactory.hpp \
-  $(srcdir)/local/Intrepid_DefaultCubatureFactoryDef.hpp \
-  $(srcdir)/local/Intrepid_DefaultFieldFactory.hpp \
-  $(srcdir)/local/Intrepid_DefaultFieldFactoryDef.hpp \
-  $(srcdir)/local/Intrepid_LocalField.hpp \
-  $(srcdir)/local/Intrepid_LocalForm0Def.hpp \
-  $(srcdir)/local/Intrepid_LocalForm0.hpp \
-  $(srcdir)/local/Intrepid_MultiCellDef.hpp \
-  $(srcdir)/local/Intrepid_MultiCell.hpp \
-  $(srcdir)/local/Intrepid_MultiCell.icpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C1_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C1_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C2_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C2_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C3_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TRI_C3_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TET_C1_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TET_C1_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TET_C2_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TET_C2_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TET_C3_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_TET_C3_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TRI_I1_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TRI_I1_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TRI_I2_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TRI_I2_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TRI_I3_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TRI_I3_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TET_I1_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TET_I1_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TET_I2_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TET_I2_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TET_I3_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F2_TET_I3_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TRI_I1_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TRI_I1_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TRI_I2_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TRI_I2_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TRI_I3_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TRI_I3_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TET_I1_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TET_I1_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TET_I2_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TET_I2_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TET_I3_FEM_FIAT.hpp \
-  $(srcdir)/local/basis/Intrepid_F1_TET_I3_FEM_FIATDef.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_AffineMap.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_AffineMapDef.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_ReferenceElement.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_ReferenceElementDef.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_Line.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_LineDef.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_Line.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_LineDef.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_DefaultLine.hpp \
-  $(srcdir)/local/basis/FIAT/FIAT_DefaultLineDef.hpp \
-  $(srcdir)/local/basis/FIAT/Lagrange1d.hpp \
-  $(srcdir)/local/basis/FIAT/Lagrange1dDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_QUAD_DD.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_QUAD_DDDef.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_HEX_DD.hpp \
-  $(srcdir)/local/basis/Intrepid_F0_HEX_DDDef.hpp
+INTREPID_DISCRETIZATION_H = \
+  $(srcdir)/Discretization/Integration/Intrepid_Cubature.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureDirectDef.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureDirect.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureDirectLineGaussDef.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureDirectLineGauss.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureDirectTetDefaultDef.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureDirectTetDefault.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureDirectTriDefaultDef.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureDirectTriDefault.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureGenSparseDef.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureGenSparse.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureSparseDef.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureSparse.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureSparseHelper.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureTensorDef.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubatureTensor.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubaturePolylib.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_CubaturePolylibDef.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_DefaultCubatureFactoryDef.hpp \
+  $(srcdir)/Discretization/Integration/Intrepid_DefaultCubatureFactory.hpp \
+  $(srcdir)/Discretization/FunctionSpaceTools/Intrepid_FunctionSpaceToolsDef.hpp \
+  $(srcdir)/Discretization/FunctionSpaceTools/Intrepid_FunctionSpaceTools.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_BasisDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_Basis.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_HEX_C1_FEM.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_HEX_C1_FEMDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_QUAD_C1_FEM.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_QUAD_C1_FEMDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_TET_C1_FEM.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_TET_C1_FEMDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_TRI_C1_FEM.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_TRI_C1_FEMDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_WEDGE_C1_FEM.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_WEDGE_C1_FEMDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HCURL_HEX_I1_FEM.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HCURL_HEX_I1_FEMDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HCURL_TET_I1_FEM.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HCURL_TET_I1_FEMDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HCURL_WEDGE_I1_FEM.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HCURL_WEDGE_I1_FEMDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HDIV_HEX_I1_FEM.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HDIV_HEX_I1_FEMDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HDIV_TET_I1_FEM.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HDIV_TET_I1_FEMDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HDIV_WEDGE_I1_FEM.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HDIV_WEDGE_I1_FEMDef.hpp 
+
+INTREPID_CELL_H = \
+  $(srcdir)/Cell/Intrepid_CellTools.hpp \
+  $(srcdir)/Cell/Intrepid_CellToolsDef.hpp
 
 
 INTREPID_ALL_C = \
-  $(srcdir)/Intrepid_Version.cpp
+  $(srcdir)/Intrepid_Version.cpp \
+  $(srcdir)/Shared/Intrepid_Utils.cpp
 
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
@@ -177,8 +145,9 @@ endif
 # The list of header files which are to be installed
 include_HEADERS = \
   $(INTREPID_ALL_H) \
-  $(INTREPID_COMMON_H) \
-  $(INTREPID_LOCAL_H)
+  $(INTREPID_SHARED_H) \
+  $(INTREPID_DISCRETIZATION_H) \
+  $(INTREPID_CELL_H)
 
 # All Intrepid headers are now installed in the same directory
 execincludedir = $(exec_prefix)/include

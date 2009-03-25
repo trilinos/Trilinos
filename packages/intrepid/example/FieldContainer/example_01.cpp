@@ -192,7 +192,7 @@ int main(int argc, char *argv[]) {
   std::cout << myNewContainer;
 
   // Access by overloaded (), multiindex and []:
-  multiIndex.resize(myNewContainer.getRank());
+  multiIndex.resize(myNewContainer.rank());
   multiIndex[0] = 3; 
   multiIndex[1] = 1;
   multiIndex[2] = 2;
@@ -224,8 +224,8 @@ int main(int argc, char *argv[]) {
   myNewContainer.clear();
   std::cout << myNewContainer;
   
-  // Now use storeZero() to reset the container to hold a single zero
-  myNewContainer.storeZero();
+  // Now use initialize() to reset the container to hold a single zero
+  myNewContainer.initialize();
   std::cout << myNewContainer;
   
   
@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
   int dim4 = 3;      // 2nd space dim
   
   FieldContainer<double> myTensorContainer(dim0, dim1, dim2, dim3, dim4);
-  multiIndex.resize(myTensorContainer.getRank());
+  multiIndex.resize(myTensorContainer.rank());
   double aValue;
   
   Teuchos::Time timerGetValue("Reading and writing from rank-5 container using getValue");

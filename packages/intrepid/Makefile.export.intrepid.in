@@ -1,18 +1,21 @@
-# Required dependence on teuchos
+# Required dependence on teuchos and shards
 include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+include @abs_top_builddir@/../shards/Makefile.export.shards
 
 # Intrepid include path
 _INTREPID_INCLUDES = \
         -I@abs_top_srcdir@/src \
-        -I@abs_top_srcdir@/src/common \
-        -I@abs_top_srcdir@/src/local \
-        -I@abs_top_srcdir@/src/local/basis \
-        -I@abs_top_srcdir@/src/local/basis/FIAT \
+        -I@abs_top_srcdir@/src/Shared \
+        -I@abs_top_srcdir@/src/Cell \
+        -I@abs_top_srcdir@/src/Discretization/Basis \
+        -I@abs_top_srcdir@/src/Discretization/Integration \
+        -I@abs_top_srcdir@/src/Discretization/FunctionSpaceTools \
         -I@abs_top_builddir@/src \
-        $(TEUCHOS_INCLUDES)
+        $(TEUCHOS_INCLUDES) \
+        $(SHARDS_INCLUDES)
 
 # Intrepid library path
-_INTREPID_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lintrepid $(TEUCHOS_LIBS)
+_INTREPID_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lintrepid $(TEUCHOS_LIBS) $(SHARDS_LIBS)
 
 @USING_GNUMAKE_TRUE@INTREPID_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_INTREPID_INCLUDES))
 @USING_GNUMAKE_TRUE@INTREPID_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_INTREPID_LIBS))
@@ -22,15 +25,17 @@ _INTREPID_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lintrepid $(TEUCHOS_LIBS)
 #Test, example, etc. include path (can be different from above)
 _INTREPID_TEST_INCLUDES = \
         -I@abs_top_srcdir@/src \
-        -I@abs_top_srcdir@/src/common \
-        -I@abs_top_srcdir@/src/local \
-        -I@abs_top_srcdir@/src/local/basis \
-        -I@abs_top_srcdir@/src/local/basis/FIAT \
+        -I@abs_top_srcdir@/src/Shared \
+        -I@abs_top_srcdir@/src/Cell \
+        -I@abs_top_srcdir@/src/Discretization/Basis \
+        -I@abs_top_srcdir@/src/Discretization/Integration \
+        -I@abs_top_srcdir@/src/Discretization/FunctionSpaceTools \
         -I@abs_top_builddir@/src \
-        $(TEUCHOS_INCLUDES)
+        $(TEUCHOS_INCLUDES) \
+        $(SHARDS_INCLUDES)
 
 # Test, example, etc. library path
-_INTREPID_TEST_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lintrepid $(TEUCHOS_LIBS)
+_INTREPID_TEST_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lintrepid $(TEUCHOS_LIBS) $(SHARDS_LIBS)
 
 @USING_GNUMAKE_TRUE@INTREPID_TEST_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_INTREPID_INCLUDES))
 @USING_GNUMAKE_TRUE@INTREPID_TEST_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_INTREPID_LIBS))

@@ -42,6 +42,9 @@
 /* Define if want to build with intrepid enabled */
 #undef HAVE_INTREPID_EPETRAEXT
 
+/* Define if want to build intrepid-examples */
+#undef HAVE_INTREPID_EXAMPLES
+
 /* Define if want to build with intrepid enabled */
 #undef HAVE_INTREPID_SACADO
 
@@ -86,9 +89,6 @@
 
 /* define if the compiler accepts the new for scoping rules */
 #undef HAVE_NEW_FOR_SCOPING
-
-/* Define if want to build intrepid-examples */
-#undef HAVE_NEW_PACKAGE_EXAMPLES
 
 /* Define to 1 if you have the <sstream> header file. */
 #undef HAVE_SSTREAM

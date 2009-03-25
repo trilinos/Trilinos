@@ -221,7 +221,7 @@ top_srcdir = @top_srcdir@
 DISABLED = 
 
 #
-SUBDIRS = Cubature MultiCell RealSpace FieldContainer Basis SparseConv
+SUBDIRS = CellTools Drivers FieldContainer
 all: all-recursive
 
 .SUFFIXES:

@@ -185,7 +185,8 @@ TAB_SIZE               = 8
 # will result in a user-defined paragraph with heading "Side Effects:". 
 # You can put \n's in the value part of an alias to insert newlines.
 
-ALIASES                = 
+# ALIASES += vb{1}="<var><b>\1</b></var>" DOESN'T WORK WITH 1.5.1 ???
+
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C 
 # sources only. Doxygen will then generate output that is more tailored for C. 
@@ -478,13 +479,9 @@ WARN_LOGFILE           =
 # with spaces.
 
 INPUT                  = \
-../src \
-../example \
-../test/Cubature \
-../test/FieldContainer \
-../test/MultiCell \
-../test/RealSpace \
-../test/Basis/F0_TRI_C1_FEM_DEFAULT
+../src/Cell \
+../src/Shared \
+../src/Discretization
 
 # This tag can be used to specify the character encoding of the source files that 
 # doxygen parses. Internally doxygen uses the UTF-8 encoding, which is also the default 

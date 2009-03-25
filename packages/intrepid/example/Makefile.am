@@ -38,6 +38,6 @@ DISABLED =
 ## Subdirectories.
 ## #######################################################################
 #
-SUBDIRS = Cubature MultiCell RealSpace FieldContainer Basis SparseConv
+SUBDIRS = CellTools Drivers FieldContainer
 
 # EXTRA_DIST = definition

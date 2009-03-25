@@ -578,7 +578,7 @@ PACKAGE_VERSION='1.0'
 PACKAGE_STRING='intrepid 1.0'
 PACKAGE_BUGREPORT='pbboche@sandia.gov,dridzal@sandia.gov'
 
-ac_unique_file="src/local/Intrepid_MultiCell.hpp"
+ac_unique_file="src/Shared/Intrepid_Types.hpp"
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -7985,7 +7985,7 @@ if test "X$ac_cv_use_intrepid_examples" != "Xno"; then
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_NEW_PACKAGE_EXAMPLES
+#define HAVE_INTREPID_EXAMPLES
 _ACEOF
 
 else
@@ -8395,7 +8395,7 @@ fi
 # List all necessary Makefiles here.
 # ------------------------------------------------------------------------
 #
-ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Basis/Makefile test/Cubature/Makefile test/MultiCell/Makefile test/RealSpace/Makefile test/FieldContainer/Makefile test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile example/Cubature/Makefile example/MultiCell/Makefile example/RealSpace/Makefile example/FieldContainer/Makefile example/Basis/Makefile example/SparseConv/Makefile test/Basis/F0_TRI_C1_FEM_FIAT/Makefile test/Basis/F0_TRI_C2_FEM_FIAT/Makefile test/Basis/F0_TRI_C3_FEM_FIAT/Makefile test/Basis/F0_TET_C1_FEM_FIAT/Makefile test/Basis/F0_TET_C2_FEM_FIAT/Makefile test/Basis/F0_TET_C3_FEM_FIAT/Makefile test/Basis/F2_TRI_I1_FEM_FIAT/Makefile test/Basis/F2_TRI_I2_FEM_FIAT/Makefile test/Basis/F2_TRI_I3_FEM_FIAT/Makefile test/Basis/F2_TET_I1_FEM_FIAT/Makefile test/Basis/F2_TET_I2_FEM_FIAT/Makefile test/Basis/F2_TET_I3_FEM_FIAT/Makefile test/Basis/F1_TRI_I1_FEM_FIAT/Makefile test/Basis/F1_TRI_I2_FEM_FIAT/Makefile test/Basis/F1_TRI_I3_FEM_FIAT/Makefile test/Basis/F1_TET_I1_FEM_FIAT/Makefile test/Basis/F1_TET_I2_FEM_FIAT/Makefile test/Basis/F1_TET_I3_FEM_FIAT/Makefile test/Basis/FIAT/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.intrepid src/Makefile test/Makefile example/Makefile test/Cell/Makefile test/Discretization/Makefile test/Discretization/Integration/Makefile test/Discretization/FunctionSpaceTools/Makefile test/Discretization/Basis/Makefile test/Discretization/Basis/HGRAD_HEX_C1_FEM/Makefile test/Discretization/Basis/HGRAD_QUAD_C1_FEM/Makefile test/Discretization/Basis/HGRAD_TET_C1_FEM/Makefile test/Discretization/Basis/HGRAD_TRI_C1_FEM/Makefile test/Discretization/Basis/HGRAD_WEDGE_C1_FEM/Makefile test/Discretization/Basis/HCURL_HEX_I1_FEM/Makefile test/Discretization/Basis/HCURL_TET_I1_FEM/Makefile test/Discretization/Basis/HCURL_WEDGE_I1_FEM/Makefile test/Discretization/Basis/HDIV_HEX_I1_FEM/Makefile test/Discretization/Basis/HDIV_TET_I1_FEM/Makefile test/Discretization/Basis/HDIV_WEDGE_I1_FEM/Makefile test/Shared/Makefile test/Shared/ArrayTools/Makefile test/Shared/FieldContainer/Makefile test/Shared/IntrepidPolylib/Makefile test/Shared/RealSpaceTools/Makefile example/CellTools/Makefile example/FieldContainer/Makefile example/Drivers/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -9101,39 +9101,30 @@ do
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "test/Makefile") CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
     "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
-    "test/Basis/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/Makefile" ;;
-    "test/Cubature/Makefile") CONFIG_FILES="$CONFIG_FILES test/Cubature/Makefile" ;;
-    "test/MultiCell/Makefile") CONFIG_FILES="$CONFIG_FILES test/MultiCell/Makefile" ;;
-    "test/RealSpace/Makefile") CONFIG_FILES="$CONFIG_FILES test/RealSpace/Makefile" ;;
-    "test/FieldContainer/Makefile") CONFIG_FILES="$CONFIG_FILES test/FieldContainer/Makefile" ;;
-    "test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_QUAD_I1_FEM_DEFAULT/Makefile" ;;
-    "test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C1_FEM_DEFAULT/Makefile" ;;
-    "test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C2_FEM_DEFAULT/Makefile" ;;
-    "example/Cubature/Makefile") CONFIG_FILES="$CONFIG_FILES example/Cubature/Makefile" ;;
-    "example/MultiCell/Makefile") CONFIG_FILES="$CONFIG_FILES example/MultiCell/Makefile" ;;
-    "example/RealSpace/Makefile") CONFIG_FILES="$CONFIG_FILES example/RealSpace/Makefile" ;;
+    "test/Cell/Makefile") CONFIG_FILES="$CONFIG_FILES test/Cell/Makefile" ;;
+    "test/Discretization/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Makefile" ;;
+    "test/Discretization/Integration/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Integration/Makefile" ;;
+    "test/Discretization/FunctionSpaceTools/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/FunctionSpaceTools/Makefile" ;;
+    "test/Discretization/Basis/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/Makefile" ;;
+    "test/Discretization/Basis/HGRAD_HEX_C1_FEM/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/HGRAD_HEX_C1_FEM/Makefile" ;;
+    "test/Discretization/Basis/HGRAD_QUAD_C1_FEM/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/HGRAD_QUAD_C1_FEM/Makefile" ;;
+    "test/Discretization/Basis/HGRAD_TET_C1_FEM/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/HGRAD_TET_C1_FEM/Makefile" ;;
+    "test/Discretization/Basis/HGRAD_TRI_C1_FEM/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/HGRAD_TRI_C1_FEM/Makefile" ;;
+    "test/Discretization/Basis/HGRAD_WEDGE_C1_FEM/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/HGRAD_WEDGE_C1_FEM/Makefile" ;;
+    "test/Discretization/Basis/HCURL_HEX_I1_FEM/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/HCURL_HEX_I1_FEM/Makefile" ;;
+    "test/Discretization/Basis/HCURL_TET_I1_FEM/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/HCURL_TET_I1_FEM/Makefile" ;;
+    "test/Discretization/Basis/HCURL_WEDGE_I1_FEM/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/HCURL_WEDGE_I1_FEM/Makefile" ;;
+    "test/Discretization/Basis/HDIV_HEX_I1_FEM/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/HDIV_HEX_I1_FEM/Makefile" ;;
+    "test/Discretization/Basis/HDIV_TET_I1_FEM/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/HDIV_TET_I1_FEM/Makefile" ;;
+    "test/Discretization/Basis/HDIV_WEDGE_I1_FEM/Makefile") CONFIG_FILES="$CONFIG_FILES test/Discretization/Basis/HDIV_WEDGE_I1_FEM/Makefile" ;;
+    "test/Shared/Makefile") CONFIG_FILES="$CONFIG_FILES test/Shared/Makefile" ;;
+    "test/Shared/ArrayTools/Makefile") CONFIG_FILES="$CONFIG_FILES test/Shared/ArrayTools/Makefile" ;;
+    "test/Shared/FieldContainer/Makefile") CONFIG_FILES="$CONFIG_FILES test/Shared/FieldContainer/Makefile" ;;
+    "test/Shared/IntrepidPolylib/Makefile") CONFIG_FILES="$CONFIG_FILES test/Shared/IntrepidPolylib/Makefile" ;;
+    "test/Shared/RealSpaceTools/Makefile") CONFIG_FILES="$CONFIG_FILES test/Shared/RealSpaceTools/Makefile" ;;
+    "example/CellTools/Makefile") CONFIG_FILES="$CONFIG_FILES example/CellTools/Makefile" ;;
     "example/FieldContainer/Makefile") CONFIG_FILES="$CONFIG_FILES example/FieldContainer/Makefile" ;;
-    "example/Basis/Makefile") CONFIG_FILES="$CONFIG_FILES example/Basis/Makefile" ;;
-    "example/SparseConv/Makefile") CONFIG_FILES="$CONFIG_FILES example/SparseConv/Makefile" ;;
-    "test/Basis/F0_TRI_C1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C1_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TRI_C2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C2_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TRI_C3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TRI_C3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TET_C1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C1_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TET_C2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C2_FEM_FIAT/Makefile" ;;
-    "test/Basis/F0_TET_C3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F0_TET_C3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TRI_I1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I1_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TRI_I2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I2_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TRI_I3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TRI_I3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TET_I1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I1_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TET_I2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I2_FEM_FIAT/Makefile" ;;
-    "test/Basis/F2_TET_I3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F2_TET_I3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TRI_I1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I1_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TRI_I2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I2_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TRI_I3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TRI_I3_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TET_I1_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I1_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TET_I2_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I2_FEM_FIAT/Makefile" ;;
-    "test/Basis/F1_TET_I3_FEM_FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/F1_TET_I3_FEM_FIAT/Makefile" ;;
-    "test/Basis/FIAT/Makefile") CONFIG_FILES="$CONFIG_FILES test/Basis/FIAT/Makefile" ;;
+    "example/Drivers/Makefile") CONFIG_FILES="$CONFIG_FILES example/Drivers/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
