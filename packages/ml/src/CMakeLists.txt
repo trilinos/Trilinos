@@ -5,6 +5,9 @@ INCLUDE(PackageLibraryMacros)
 # A) Package-specific configuration options
 #
 
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ZoltanTpl)
+SET(HAVE_ML_ZOLTAN_THREE ${${PACKAGE_NAME}_ENABLE_ZoltanTpl})
+
 PACKAGE_CONFIGURE_FILE(ml_config.h)
 
 #

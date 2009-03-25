@@ -108,7 +108,7 @@
 #cmakedefine HAVE_ML_PARMETIS_2x
 
 /* Define if want to build with ml_parmetis3x enabled */
-#cmakedefine HAVE_ML_PARMETIS_3x
+#cmakedefine HAVE_ML_PARMETIS
 
 /* Define if want to build with ml_parpack enabled */
 #cmakedefine HAVE_ML_PARPACK
