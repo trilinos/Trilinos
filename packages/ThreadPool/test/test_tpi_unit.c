@@ -7,7 +7,8 @@
 static void test_flag( TPI_Work * );
 static void test_lock( TPI_Work * );
 static void test_reduce_work( TPI_Work * );
-static void test_reduce_reduce( TPI_Work * , const void * );
+static void test_reduce_init( TPI_Work * );
+static void test_reduce_join( TPI_Work * , void * );
 
 int test_c_tpi_unit( const int nthread , const int nwork )
 {
@@ -93,7 +94,8 @@ int test_c_tpi_unit( const int nthread , const int nwork )
       int work_count = 0 ;
       const double t = TPI_Walltime();
       TPI_Run_reduce( test_reduce_work , NULL , nwork ,
-                      test_reduce_reduce , & work_count , sizeof(int) );
+                      test_reduce_join , test_reduce_init ,
+                      sizeof(int) , & work_count );
       dt += TPI_Walltime() - t ;
       if ( work_count != nwork ) {
         printf("  TPI_Run_reduce(test_reduce) failed at trial = %d\n",i);
@@ -117,7 +119,13 @@ static void test_reduce_work( TPI_Work * work )
   ++*count ;
 }
 
-static void test_reduce_reduce( TPI_Work * work , const void * src )
+static void test_reduce_init( TPI_Work * work )
+{
+  int * const d = (int *) ( work->reduce );
+  *d = 0 ;
+}
+
+static void test_reduce_join( TPI_Work * work , void * src )
 {
         int * const d = (int *) ( work->reduce );
   const int * const s = (const int *) src ;

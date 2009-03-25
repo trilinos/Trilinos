@@ -181,9 +181,14 @@ static void tpi_work_dot_partial_self( TPI_Work * work )
   *s = tmp ;
 }
 
-static void tpi_work_dot_reduce( TPI_Work * work , const void * src  )
+static void tpi_work_dot_join( TPI_Work * work , void * src  )
 {
   *((double *) ( work->reduce) ) += *((const double *) src);
+}
+
+static void tpi_work_dot_init( TPI_Work * work )
+{
+  *((double *) ( work->reduce) ) = 0 ;
 }
 
 double tpi_dot( int n , const double * x , const double * y )
@@ -195,11 +200,13 @@ double tpi_dot( int n , const double * x , const double * y )
   tmp.n = n ;
   if ( x != y ) {
     TPI_Run_threads_reduce( tpi_work_dot_partial , & tmp ,
-                            tpi_work_dot_reduce , & result , sizeof(result) );
+                            tpi_work_dot_join , tpi_work_dot_init ,
+                            sizeof(result) , & result );
   }
   else {
     TPI_Run_threads_reduce( tpi_work_dot_partial_self , & tmp ,
-                            tpi_work_dot_reduce , & result , sizeof(result) );
+                            tpi_work_dot_join , tpi_work_dot_init ,
+                            sizeof(result) , & result );
   }
   return result ;
 }

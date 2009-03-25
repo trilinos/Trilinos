@@ -6,8 +6,8 @@ LIB_SRC="../src/TPI.c ../src/TPI_Walltime.c"
 
 LIB_OBJ="TPI.o TPI_Walltime.o"
 
-OPT="-O3"
-# OPT="-g"
+# OPT="-O3"
+OPT="-g"
 # OPT="-O"
 
 #CFLAGS="${OPT} -std=c99   -Wall -Wextra"

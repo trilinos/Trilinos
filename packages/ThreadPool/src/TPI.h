@@ -82,10 +82,18 @@ typedef const struct TPI_Work_Struct TPI_Work ;
 typedef void (*TPI_work_subprogram)( TPI_Work * );
 
 /**  The interface for a parallel reduction operation.
- *   Reduce the 'src' data into the 'dest' data.
+ *   Initialize  work->reduce value.
  */
 typedef
-void (*TPI_reduce_subprogram)( TPI_Work * , const void * reduce );
+void (*TPI_reduce_init)( TPI_Work * work );
+
+/**  The interface for a parallel reduction operation.
+ *   Perform reduction operation  work->reduce OP= reduce.
+ *   Every initialized reduce value will appear exactly
+ *   once as the 'reduce' argument of a call to the join function.
+ */
+typedef
+void (*TPI_reduce_join)( TPI_Work * work , void * reduce );
 
 /** Run a work subprogram in thread parallel.
  *
@@ -100,18 +108,16 @@ int TPI_Run( TPI_work_subprogram work_subprogram  ,
 /** Run a work and reduction subprograms in thread parallel.
  *  Each call to the work_subprogram has exclusive (thread safe)
  *  access to its work->reduce data.
- *  The reduce_subprogram has exclusive access to its input data.
- *  The reduce data given to the work_subprogram and reduce_subprogram
- *  may be the originally input reduce_data.  However, this data will
- *  most often be a memory-copy (memcpy) initialized version of the
- *  originally input reduce_data.
+ *  The reduce_init and reduce_join subprograms have
+ *  exclusive access to their arguments.
  */
 int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
                     const void *          work_info ,
                     int                   work_count  ,
-                    TPI_reduce_subprogram reduce_subprogram ,
-                    void *                reduce_data ,
-                    int                   reduce_size );
+                    TPI_reduce_join       reduce_join ,
+                    TPI_reduce_init       reduce_init ,
+                    int                   reduce_size ,
+                    void *                reduce_data );
 
 /** Run a work subprogram in thread parallel;
  *  run it exactly once on each thread.
@@ -125,9 +131,10 @@ int TPI_Run_threads( TPI_work_subprogram work_subprogram ,
 
 int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram ,
                             const void *          work_info ,
-                            TPI_reduce_subprogram reduce_subprogram ,
-                            void *                reduce_data ,
-                            int                   reduce_size );
+                            TPI_reduce_join       reduce_join ,
+                            TPI_reduce_init       reduce_init ,
+                            int                   reduce_size ,
+                            void *                reduce_data );
 
 /*--------------------------------------------------------------------*/
 /** \brief  Blocks until lock lock_rank is obtained.

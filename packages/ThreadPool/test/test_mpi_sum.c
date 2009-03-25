@@ -108,85 +108,99 @@ double ddot( unsigned n , const double * x , const double * y )
 
 /*--------------------------------------------------------------------*/
 
-typedef struct ReduceDot_Struct {
-  unsigned int count ;
-  double       value[4];
-} ReduceDot ;
-
-static
-void reduce_tp( TPI_Work * work , const void * arg_src )
-{
-        ReduceDot * const dst =       (ReduceDot *) ( work->reduce );
-  const ReduceDot * const src = (const ReduceDot *) arg_src ;
-
-  if ( src->count == 4 ) {
-    d2_add_d( dst->value ,     src->value[0] );
-    d2_add_d( dst->value ,     src->value[1] );
-    d2_add_d( dst->value + 2 , src->value[2] );
-    d2_add_d( dst->value + 2 , src->value[3] );
-  }
-  else if ( src->count == 1 ) {
-    dst->value[0] += src->value[0] ;
-  }
-}
-
-/*--------------------------------------------------------------------*/
-
 struct TaskXY {
+  unsigned int   nreduce ;
   unsigned int   n ;
   const double * x ;
   const double * y ;
 };
 
 static
+void reduce_init( TPI_Work * work )
+{
+  struct TaskXY * const info = (struct TaskXY *) work->info ;
+  double        * const dst  = (double *)        work->reduce ;
+
+  if ( info->nreduce == 4 ) {
+    dst[0] = 0 ;
+    dst[1] = 0 ;
+    dst[2] = 0 ;
+    dst[3] = 0 ;
+  }
+  else if ( info->nreduce == 1 ) {
+    dst[0] = 0 ;
+  }
+}
+
+static
+void reduce_join( TPI_Work * work , void * arg_src )
+{
+  struct TaskXY * const info = (struct TaskXY *) work->info ;
+  double        * const dst  = (double *)        work->reduce ;
+  const double  * const src  = (const double *)  arg_src ;
+
+  if ( info->nreduce == 4 ) {
+    d2_add_d( dst ,     src[0] );
+    d2_add_d( dst ,     src[1] );
+    d2_add_d( dst + 2 , src[2] );
+    d2_add_d( dst + 2 , src[3] );
+  }
+  else if ( info->nreduce == 4 ) {
+    dst[0] += src[0] ;
+  }
+}
+
+/*--------------------------------------------------------------------*/
+
+static
 void work_d4_dot_tp( TPI_Work * work )
 {
-  struct TaskXY * const info   = (struct TaskXY *) work->info ;
-  ReduceDot     * const reduce = (ReduceDot *) work->reduce ;
+  struct TaskXY * const info = (struct TaskXY *) work->info ;
+  double        * const dst  = (double *)        work->reduce ;
 
   unsigned int begin , length ;
 
   my_span( work->count , work->rank , info->n , & begin , & length );
 
-  d4_dot( reduce->value , length , info->x + begin , info->y + begin );
+  d4_dot( dst , length , info->x + begin , info->y + begin );
 }
 
 double d4_dot_tp( COMM comm, unsigned nwork, unsigned n,
                   const double * x, const double * y )
 {
-  struct TaskXY info = { 0 , NULL , NULL };
-  ReduceDot result = { 4 , { 0 , 0 , 0 , 0 } };
+  struct TaskXY info = { 4 , 0 , NULL , NULL };
+  double result[4] = { 0 , 0 , 0 , 0 };
   info.n = n ;
   info.x = x ;
   info.y = y ;
 
   if ( nwork ) {
     TPI_Run_reduce( work_d4_dot_tp , & info , nwork ,
-                    reduce_tp , & result , sizeof(result) );
+                    reduce_join, reduce_init, sizeof(result) , result );
   }
   else {
     TPI_Run_threads_reduce( work_d4_dot_tp , & info ,
-                            reduce_tp , & result , sizeof(result) );
+                            reduce_join, reduce_init, sizeof(result), result);
   }
 
-  comm_reduce_d4_sum( comm , result.value );
+  comm_reduce_d4_sum( comm , result );
 
-  d2_add_d( result.value , result.value[2] );
-  d2_add_d( result.value , result.value[3] );
+  d2_add_d( result , result[2] );
+  d2_add_d( result , result[3] );
 
-  return result.value[0] ;
+  return result[0] ;
 }
 
 static
 void task_ddot_tp( TPI_Work * work )
 {
   struct TaskXY * const info = (struct TaskXY *) work->info ;
-  ReduceDot     * const reduce = (ReduceDot *) work->reduce ;
+  double        * const dst  = (double *) work->reduce ;
   unsigned int begin , length ;
 
   my_span( work->count , work->rank , info->n , & begin , & length );
 
-  reduce->value[0] += ddot( length , info->x + begin , info->y + begin );
+  *dst += ddot( length , info->x + begin , info->y + begin );
 
   return ;
 }
@@ -194,24 +208,24 @@ void task_ddot_tp( TPI_Work * work )
 double ddot_tp( COMM comm, unsigned nwork, unsigned n,
                 const double * x, const double * y )
 {
-  struct TaskXY info = { 0 , NULL , NULL };
-  ReduceDot result = { 1 , { 0 , 0 , 0 , 0 } };
+  struct TaskXY info = { 1 , 0 , NULL , NULL };
+  double result = 0 ;
   info.n = n ;
   info.x = x ;
   info.y = y ;
 
   if ( nwork ) {
     TPI_Run_reduce( task_ddot_tp , & info , nwork ,
-                    reduce_tp , & result , sizeof(result) );
+                    reduce_join, reduce_init, sizeof(result), & result);
   }
   else {
     TPI_Run_threads_reduce( task_ddot_tp , & info ,
-                            reduce_tp , & result , sizeof(result) );
+                            reduce_join, reduce_init, sizeof(result), & result);
   }
 
-  comm_reduce_dsum( comm , result.value );
+  comm_reduce_dsum( comm , & result );
 
-  return result.value[0] ;
+  return result ;
 }
 
 /*--------------------------------------------------------------------*/

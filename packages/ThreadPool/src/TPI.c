@@ -111,7 +111,8 @@ typedef struct ThreadPool_Data {
   TPI_work_subprogram   m_work_routine ;
   int                   m_work_count_claim ;
 
-  TPI_reduce_subprogram m_reduce_routine ;
+  TPI_reduce_join       m_reduce_join ;
+  TPI_reduce_init       m_reduce_init ;
   unsigned char       * m_reduce_alloc ;
   int                   m_reduce_alloc_size ;
   int                   m_reduce_size ;
@@ -134,7 +135,8 @@ static ThreadPool * local_thread_pool()
     /* m_work_routine        */  NULL ,
     /* m_work_count_claim    */  0 ,
 
-    /* m_reduce_routine      */  NULL ,
+    /* m_reduce_join         */  NULL ,
+    /* m_reduce_init         */  NULL ,
     /* m_reduce_alloc        */  NULL ,
     /* m_reduce_alloc_size   */  0 ,
     /* m_reduce_size         */  0 ,
@@ -253,21 +255,20 @@ void local_broadcast( ThreadPool * const control ,
   fflush(stdout);
 #endif
 
-    next_thread->m_must_run        = this_thread->m_must_run ;
-    next_thread->m_work.info       = this_thread->m_work.info ;
-    next_thread->m_work.reduce     = NULL ;
-    next_thread->m_work.rank       = -1 ;
-    next_thread->m_work.count      = this_thread->m_work.count ;
-    next_thread->m_work.lock_count = this_thread->m_work.lock_count ;
+    next_thread->m_must_run    = this_thread->m_must_run ;
+    next_thread->m_work.info   = this_thread->m_work.info ;
+    next_thread->m_work.reduce = NULL ;
 
-    if ( control->m_reduce_routine ) {
+    if ( control->m_reduce_init ) {
       next_thread->m_work.reduce = control->m_reduce_alloc +
                                    control->m_reduce_grain * next_rank ;
 
-      memcpy( next_thread->m_work.reduce ,
-              this_thread->m_work.reduce ,
-              control->m_reduce_size );
+      control->m_reduce_init( & next_thread->m_work );
     }
+
+    next_thread->m_work.rank       = -1 ;
+    next_thread->m_work.count      = this_thread->m_work.count ;
+    next_thread->m_work.lock_count = this_thread->m_work.lock_count ;
 
     pthread_cond_signal(  & next_thread->m_cond );
     pthread_mutex_unlock( & next_thread->m_lock );
@@ -286,7 +287,7 @@ void local_barrier( ThreadPool * const control ,
   for ( ; thread_count <= thread_rank + thread_cycle ; thread_cycle >>= 1 );
 
   for ( ; thread_rank < thread_cycle ; thread_cycle >>= 1 ) {
-    const unsigned next_rank = thread_rank + thread_cycle ;
+    const unsigned next_rank   = thread_rank + thread_cycle ;
     Thread * const next_thread = thread_data + next_rank ;
  
 #ifdef DEBUG_PRINT
@@ -311,23 +312,21 @@ void local_barrier( ThreadPool * const control ,
   fflush(stdout);
 #endif
 
-    /* Reduce next_thread's data into this thread's data */
-
-    if ( control->m_reduce_routine ) {
-      this_thread->m_work.count = thread_count ;
-      this_thread->m_work.rank  = thread_rank ;
-
-      (* control->m_reduce_routine)( & this_thread->m_work ,
-                                       next_thread->m_work.reduce );
-    }
-
     /* next_thread is done */
 
-    next_thread->m_work.info       = NULL ;
-    next_thread->m_work.reduce     = NULL ;
     next_thread->m_work.rank       = -1 ;
     next_thread->m_work.count      = 0 ;
     next_thread->m_work.lock_count = 0 ;
+
+    /* Reduce next_thread's data into this thread's data */
+
+    if ( control->m_reduce_join ) {
+      (* control->m_reduce_join)( & this_thread->m_work ,
+                                    next_thread->m_work.reduce );
+    }
+
+    next_thread->m_work.reduce = NULL ;
+    next_thread->m_work.info   = NULL ;
   }
 
   if ( thread_data->m_must_run ) { /* My parent is waiting for my signal */
@@ -515,20 +514,22 @@ static void alloc_reduce( ThreadPool * const thread_pool ,
 int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
                     const void *          work_info ,
                     int                   work_count  ,
-                    TPI_reduce_subprogram reduce_subprogram ,
-                    void *                reduce_data ,
-                    int                   reduce_size )
+                    TPI_reduce_join       reduce_join ,
+                    TPI_reduce_init       reduce_init ,
+                    int                   reduce_size ,
+                    void *                reduce_data )
 {
   ThreadPool * const thread_pool = local_thread_pool();
 
   int result =
     NULL != thread_pool->m_work_routine ? TPI_ERROR_ACTIVE : (
     NULL == work_subprogram             ? TPI_ERROR_NULL : (
-    NULL == reduce_subprogram           ? TPI_ERROR_NULL : (
+    NULL == reduce_join                 ? TPI_ERROR_NULL : (
+    NULL == reduce_init                 ? TPI_ERROR_NULL : (
     NULL == reduce_data                 ? TPI_ERROR_NULL : (
-    work_count  < 0                     ? TPI_ERROR_SIZE : (
-    reduce_size < 0                     ? TPI_ERROR_SIZE : (
-    0 ) ) ) ) ) );
+    work_count  <= 0                    ? TPI_ERROR_SIZE : (
+    reduce_size <= 0                    ? TPI_ERROR_SIZE : (
+    0 ) ) ) ) ) ) );
 
   if ( ! result ) {
     Thread * const root_thread = thread_pool->m_thread ;
@@ -543,7 +544,8 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
       alloc_reduce( thread_pool, reduce_size );
 
       thread_pool->m_thread_driver    = & local_run_work ;
-      thread_pool->m_reduce_routine   = reduce_subprogram ;
+      thread_pool->m_reduce_join      = reduce_join ;
+      thread_pool->m_reduce_init      = reduce_init ;
       thread_pool->m_work_routine     = work_subprogram ;
       thread_pool->m_work_count_claim = work_count ;
 
@@ -559,7 +561,8 @@ int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
       thread_pool->m_thread_driver    = NULL ;
       thread_pool->m_work_count_claim = 0 ;
       thread_pool->m_work_routine     = NULL ;
-      thread_pool->m_reduce_routine   = NULL ;
+      thread_pool->m_reduce_join      = NULL ;
+      thread_pool->m_reduce_init      = NULL ;
       thread_pool->m_reduce_grain     = 0 ;
       thread_pool->m_reduce_size      = 0 ;
     }
@@ -642,19 +645,21 @@ int TPI_Run_threads( TPI_work_subprogram work_subprogram  ,
 
 int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram  ,
                             const void *          work_info ,
-                            TPI_reduce_subprogram reduce_subprogram ,
-                            void *                reduce_data ,
-                            int                   reduce_size )
+                            TPI_reduce_join       reduce_join ,
+                            TPI_reduce_init       reduce_init ,
+                            int                   reduce_size ,
+                            void *                reduce_data )
 {
   ThreadPool * const thread_pool = local_thread_pool();
 
   int result =
     NULL != thread_pool->m_work_routine ? TPI_ERROR_ACTIVE : (
     NULL == work_subprogram             ? TPI_ERROR_NULL : (
-    NULL == reduce_subprogram           ? TPI_ERROR_NULL : (
+    NULL == reduce_join                 ? TPI_ERROR_NULL : (
+    NULL == reduce_init                 ? TPI_ERROR_NULL : (
     NULL == reduce_data                 ? TPI_ERROR_NULL : (
-    reduce_size < 0                     ? TPI_ERROR_SIZE : (
-    0 ) ) ) ) );
+    reduce_size <= 0                    ? TPI_ERROR_SIZE : (
+    0 ) ) ) ) ) );
 
   if ( ! result ) {
     Thread * const root_thread = thread_pool->m_thread ;
@@ -669,7 +674,8 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram  ,
       alloc_reduce( thread_pool , reduce_size );
 
       thread_pool->m_thread_driver  = & local_run_thread ;
-      thread_pool->m_reduce_routine = reduce_subprogram ;
+      thread_pool->m_reduce_join    = reduce_join ;
+      thread_pool->m_reduce_init    = reduce_init ;
       thread_pool->m_work_routine   = work_subprogram ;
 
       root_thread->m_work.count = thread_pool->m_thread_count ;
@@ -688,7 +694,8 @@ int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram  ,
 
       thread_pool->m_thread_driver  = NULL ;
       thread_pool->m_work_routine   = NULL ;
-      thread_pool->m_reduce_routine = NULL ;
+      thread_pool->m_reduce_join    = NULL ;
+      thread_pool->m_reduce_init    = NULL ;
       thread_pool->m_reduce_grain   = 0 ;
       thread_pool->m_reduce_size    = 0 ;
     }
@@ -938,20 +945,22 @@ int TPI_Run( TPI_work_subprogram work_subprogram  ,
 int TPI_Run_reduce( TPI_work_subprogram   work_subprogram  ,
                     const void *          work_info ,
                     int                   work_count  ,
-                    TPI_reduce_subprogram reduce_subprogram ,
-                    void *                reduce_data ,
-                    int                   reduce_size )
+                    TPI_reduce_join       reduce_join ,
+                    TPI_reduce_init       reduce_init ,
+                    int                   reduce_size ,
+                    void *                reduce_data )
 {
   LocalWork * const work = local_work();
 
   int result =
     0    != work->m_active    ? TPI_ERROR_ACTIVE : (
     NULL == work_subprogram   ? TPI_ERROR_NULL : (
-    NULL == reduce_subprogram ? TPI_ERROR_NULL : (
+    NULL == reduce_join       ? TPI_ERROR_NULL : (
+    NULL == reduce_init       ? TPI_ERROR_NULL : (
     NULL == reduce_data       ? TPI_ERROR_NULL : (
-    work_count  < 0           ? TPI_ERROR_SIZE : (
-    reduce_size < 0           ? TPI_ERROR_SIZE : (
-    0 ) ) ) ) ) );
+    work_count  <= 0          ? TPI_ERROR_SIZE : (
+    reduce_size <= 0          ? TPI_ERROR_SIZE : (
+    0 ) ) ) ) ) ) );
 
   if ( ! result ) {
     struct TPI_Work_Struct w ;
@@ -985,12 +994,13 @@ int TPI_Run_threads( TPI_work_subprogram work_subprogram  ,
 
 int TPI_Run_threads_reduce( TPI_work_subprogram   work_subprogram  ,
                             const void *          work_info ,
-                            TPI_reduce_subprogram reduce_subprogram ,
-                            void *                reduce_data ,
-                            int                   reduce_size )
+                            TPI_reduce_join       reduce_join ,
+                            TPI_reduce_init       reduce_init ,
+                            int                   reduce_size ,
+                            void *                reduce_data )
 {
-  return TPI_Run_reduce( work_subprogram , work_info , 1 ,
-                         reduce_subprogram , reduce_data , reduce_size );
+  return TPI_Run_reduce( work_subprogram, work_info, 1,
+                         reduce_join, reduce_init, reduce_size, reduce_data );
 }
 
 int TPI_Init( int nthread )
