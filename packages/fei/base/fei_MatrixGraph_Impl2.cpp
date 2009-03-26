@@ -744,6 +744,25 @@ int fei::MatrixGraph_Impl2::initConnectivity(int blockID,
 }
 
 //------------------------------------------------------------------------------
+int fei::MatrixGraph_Impl2::initConnectivity(int patternID,
+                                       const int* connectedIdentifiers)
+{
+  std::map<int,fei::Pattern*>::iterator
+    p_iter = patterns_.find(patternID);
+  if (p_iter == patterns_.end()) ERReturn(-1);
+
+  fei::Pattern* pattern = p_iter->second;
+
+  int blockID = -arbitraryBlockCounter_++;
+  fei::ConnectivityBlock* cblock = new fei::ConnectivityBlock(blockID, pattern, 1);
+
+  connectivityBlocks_.insert(std::pair<int,fei::ConnectivityBlock*>(blockID, cblock));
+
+  CHK_ERR( initConnectivity(blockID, 0, connectedIdentifiers) );
+  return(0);
+}
+
+//------------------------------------------------------------------------------
 int fei::MatrixGraph_Impl2::initConnectivity(int rowPatternID,
                                        const int* rowConnectedIdentifiers,
                                        int colPatternID,

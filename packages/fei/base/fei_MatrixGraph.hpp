@@ -39,19 +39,19 @@ class MatrixGraph {
     virtual ~Factory(){}
 
     /** Produce an instance of a MatrixGraph. Either or both of columnSpace
-	and name may be NULL. If columnSpace is NULL, it will be assumed that
-	the structure to be created/defined is symmetric. i.e., columnSpace
-	will be assumed to be identically equal to rowSpace. */
+        and name may be NULL. If columnSpace is NULL, it will be assumed that
+        the structure to be created/defined is symmetric. i.e., columnSpace
+        will be assumed to be identically equal to rowSpace. */
     virtual fei::SharedPtr<fei::MatrixGraph>
                  createMatrixGraph(fei::SharedPtr<fei::VectorSpace> rowSpace,
-			           fei::SharedPtr<fei::VectorSpace> columnSpace,
-			           const char* name) = 0;
+                                   fei::SharedPtr<fei::VectorSpace> columnSpace,
+                                   const char* name) = 0;
   };
 
   enum { REDUCED_INDICES   = 0,
-	 UNREDUCED_INDICES = 1,
-	 BLOCK_ENTRY_GRAPH = 2,
-	 POINT_ENTRY_GRAPH = 3};
+         UNREDUCED_INDICES = 1,
+         BLOCK_ENTRY_GRAPH = 2,
+         POINT_ENTRY_GRAPH = 3};
 
   /** Destructor. */
   virtual ~MatrixGraph(){}
@@ -112,291 +112,306 @@ class MatrixGraph {
       defined via the method VectorSpace::defineIDTypes().
     */
   virtual void definePattern(int patternID,
- 		     int numIDs,
-		     int idType) = 0;
+                      int numIDs,
+                     int idType) = 0;
 
     /** Define a pattern to use for subsequent blocked-contributions. Examples
-	include element-contributions.<br>
+        include element-contributions.<br>
 
-	This is the simplest of the 3 pattern-definition methods that
-	associate fields with identifiers (there is one pattern-definition
-	method above that allows for specifying a pattern of identifiers that
-	don't have associated fields). This method defines
-	patterns for contributions where a single field is associated with each
-	identifier in a list of identifiers, and all the identifiers in the list
-	are of the same type.<br>
+        This is the simplest of the 3 pattern-definition methods that
+        associate fields with identifiers (there is one pattern-definition
+        method above that allows for specifying a pattern of identifiers that
+        don't have associated fields). This method defines
+        patterns for contributions where a single field is associated with each
+        identifier in a list of identifiers, and all the identifiers in the list
+        are of the same type.<br>
 
-	@param patternID Input. Identifier to be used later when referring to
-	this pattern.
-	@param numIDs Input. number of identifiers per pattern 'instance'.
-	@param idType Input. Specifies which type of identifiers are associated
-	with instances of this pattern. Must be one of the idTypes defined for a
-	VectorSpace that is associated with this MatrixGraph. idTypes are
-	defined via the method VectorSpace::defineIDTypes().
-	@param fieldID Input. field-identifier for the single field that is to
-	reside at each identifier.
+        @param patternID Input. Identifier to be used later when referring to
+        this pattern.
+        @param numIDs Input. number of identifiers per pattern 'instance'.
+        @param idType Input. Specifies which type of identifiers are associated
+        with instances of this pattern. Must be one of the idTypes defined for a
+        VectorSpace that is associated with this MatrixGraph. idTypes are
+        defined via the method VectorSpace::defineIDTypes().
+        @param fieldID Input. field-identifier for the single field that is to
+        reside at each identifier.
     */
   virtual void definePattern(int patternID,
-		    int numIDs,
-		    int idType,
-		    int fieldID) = 0;
+                    int numIDs,
+                    int idType,
+                    int fieldID) = 0;
 
     /** Define a pattern to use for subsequent blocked-contributions. Examples
-	include element-contributions.<br>
+        include element-contributions.<br>
 
-	This is the 'middle' of the pattern-definition methods, in terms of
-	the complexity of pattern that can be defined. This method
-	defines patterns for contributions where the identifiers are all of the
-	same type, but an arbitrary list of fields can be associated with each
-	identifier. <br>
+        This is the 'middle' of the pattern-definition methods, in terms of
+        the complexity of pattern that can be defined. This method
+        defines patterns for contributions where the identifiers are all of the
+        same type, but an arbitrary list of fields can be associated with each
+        identifier. <br>
 
-	@param patternID Input. Identifier to be used later when referring to
-	this pattern.
-	@param numIDs Input. number of identifiers per pattern 'instance'.
-	@param idType Input. Specifies which type of identifiers are associated
-	with instances of this pattern. Must be one of the idTypes defined for
-	a VectorSpace that is associated with this MatrixGraph. idTypes are
-	defined via the method VectorSpace::defineIDTypes().
-	@param numFieldsPerID Input. List of length numIDs. i-th entry ives the
-	number of fields to be associated with the i-th identifier in a
-	contribution.
-	@param fieldIDs Input. Packed list of length sum(numFieldsPerID[i]).
-	Contains the fieldIDs to be associated with the identifiers for a
-	contribution.
+        @param patternID Input. Identifier to be used later when referring to
+        this pattern.
+        @param numIDs Input. number of identifiers per pattern 'instance'.
+        @param idType Input. Specifies which type of identifiers are associated
+        with instances of this pattern. Must be one of the idTypes defined for
+        a VectorSpace that is associated with this MatrixGraph. idTypes are
+        defined via the method VectorSpace::defineIDTypes().
+        @param numFieldsPerID Input. List of length numIDs. i-th entry ives the
+        number of fields to be associated with the i-th identifier in a
+        contribution.
+        @param fieldIDs Input. Packed list of length sum(numFieldsPerID[i]).
+        Contains the fieldIDs to be associated with the identifiers for a
+        contribution.
     */
    virtual void definePattern(int patternID,
-		     int numIDs,
-		     int idType,
-		     const int* numFieldsPerID,
-		     const int* fieldIDs) = 0;
+                     int numIDs,
+                     int idType,
+                     const int* numFieldsPerID,
+                     const int* fieldIDs) = 0;
 
     /** Define a pattern to use for subsequent blocked-contributions. Examples
-	include element-contributions.<br>
+        include element-contributions.<br>
 
-	This is the most general of the pattern-definition methods. This
-	method defines a pattern consisting of a mixture of identifier-types,
-	with each identifier having an arbitrary list of associated fields.<br>
+        This is the most general of the pattern-definition methods. This
+        method defines a pattern consisting of a mixture of identifier-types,
+        with each identifier having an arbitrary list of associated fields.<br>
 
-	@param patternID Input. Identifier to be used later when referring to
-	this pattern.
-	@param numIDs Input. number of identifiers per pattern 'instance'.
-	@param idTypes Input. List of length numIDs. Specifies the type of each
-	identifier to be contributed for instances of this pattern. Each of the
-	idTypes must be one of the idTypes defined for a VectorSpace that is
-	associated with this MatrixGraph. idTypes are defined via the method
-	VectorSpace::defineIDTypes().
-	@param numFieldsPerID Input. List of length numIDs. i-th entry gives the
-	number of fields to be associated with the i-th identifier in a
-	contribution.
-	@param fieldIDs Input. Packed list of length sum(numFieldsPerID[i]).
-	Contains the fieldIDs to be associated with the identifiers for a
-	contribution.
+        @param patternID Input. Identifier to be used later when referring to
+        this pattern.
+        @param numIDs Input. number of identifiers per pattern 'instance'.
+        @param idTypes Input. List of length numIDs. Specifies the type of each
+        identifier to be contributed for instances of this pattern. Each of the
+        idTypes must be one of the idTypes defined for a VectorSpace that is
+        associated with this MatrixGraph. idTypes are defined via the method
+        VectorSpace::defineIDTypes().
+        @param numFieldsPerID Input. List of length numIDs. i-th entry gives the
+        number of fields to be associated with the i-th identifier in a
+        contribution.
+        @param fieldIDs Input. Packed list of length sum(numFieldsPerID[i]).
+        Contains the fieldIDs to be associated with the identifiers for a
+        contribution.
     */
    virtual void definePattern(int patternID,
-		     int numIDs,
-		     const int* idTypes,
-		     const int* numFieldsPerID,
-		     const int* fieldIDs) = 0;
+                     int numIDs,
+                     const int* idTypes,
+                     const int* numFieldsPerID,
+                     const int* fieldIDs) = 0;
 
     /** Initialize a block of connectivity contributions. An example
-	is a block of elements which share a common layout of nodes/fields per
-	element.<br>
-	This method accepts only one pattern-id, implying that connectivities in
-	this block describe a symmetric structure. See the other overloading of
-	this method for the non-symmetric case.
+        is a block of elements which share a common layout of nodes/fields per
+        element.<br>
+        This method accepts only one pattern-id, implying that connectivities in
+        this block describe a symmetric structure. See the other overloading of
+        this method for the non-symmetric case.
 
-	@param blockID Input. User-specified identifier for this block. Will
-	generally be required to be non-negative.
-	@param numConnectivityLists Input. Number of connectivity-lists that
-	will be supplied for this block.
-	@param patternID Input. Descriptor for the connectivities to be
-	provided. Must be a pattern that was previously defined via
-	definePattern().
+        @param blockID Input. User-specified identifier for this block. Will
+        generally be required to be non-negative.
+        @param numConnectivityLists Input. Number of connectivity-lists that
+        will be supplied for this block.
+        @param patternID Input. Descriptor for the connectivities to be
+        provided. Must be a pattern that was previously defined via
+        definePattern().
 
-	@param diagonal Optional argument, defaults to false. If specified as true,
-	each connectivity list will only contribute diagonal entries to the graph.
-	This is used if the connectivity-block represents a collection of lumped-
-	mass submatrix contributions, or something similar.
+        @param diagonal Optional argument, defaults to false. If specified as true,
+        each connectivity list will only contribute diagonal entries to the graph.
+        This is used if the connectivity-block represents a collection of lumped-
+        mass submatrix contributions, or something similar.
 
-	@return error-code 0 if successful
+        @return error-code 0 if successful
     */
    virtual int initConnectivityBlock(int blockID,
-			     int numConnectivityLists,
-			     int patternID,
-			     bool diagonal=false) = 0;
+                             int numConnectivityLists,
+                             int patternID,
+                             bool diagonal=false) = 0;
 
     /** Initialize a block of connectivity contributions. An example
-	is a block of elements which share a common layout of nodes/fields per
-	element.<br>
-	This method accepts two pattern-ids, implying that connectivities in
-	this block describe a non-symmetric structure. See the other overloading
-	of this method for the symmetric case.
+        is a block of elements which share a common layout of nodes/fields per
+        element.<br>
+        This method accepts two pattern-ids, implying that connectivities in
+        this block describe a non-symmetric structure. See the other overloading
+        of this method for the symmetric case.
 
-	@param blockID Input. User-specified identifier for this block. Will
-	generally be required to be non-negative.
-	@param numConnectivityLists Input. Number of connectivity-lists that
-	will be supplied for this block.
-	@param rowPatternID Input. Descriptor for the row-connectivities to be
-	provided.
-	Must be a pattern that was previously defined via definePattern().
-	@param colPatternID Input. Descriptor for the column-connectivities to
-	be provided.
-	Must be a pattern that was previously defined via definePattern().
+        @param blockID Input. User-specified identifier for this block. Will
+        generally be required to be non-negative.
+        @param numConnectivityLists Input. Number of connectivity-lists that
+        will be supplied for this block.
+        @param rowPatternID Input. Descriptor for the row-connectivities to be
+        provided.
+        Must be a pattern that was previously defined via definePattern().
+        @param colPatternID Input. Descriptor for the column-connectivities to
+        be provided.
+        Must be a pattern that was previously defined via definePattern().
 
-	@return error-code 0 if successful
+        @return error-code 0 if successful
     */
    virtual int initConnectivityBlock(int blockID,
-			     int numConnectivityLists,
-			     int rowPatternID,
-			     int colPatternID) = 0;
+                             int numConnectivityLists,
+                             int rowPatternID,
+                             int colPatternID) = 0;
 
     /** Make a contribution to the MatrixGraph's connectivity. Examples would
-	include element-node connectivity lists, etc.
+        include element-node connectivity lists, etc.
 
-	@param blockID Input. Must correspond to a blockID that was previously
-	used in a call to initConnectivityBlock().
-	@param connectivityID Input. Identifier for this connectivity list.
-	May be an element-identifier, etc.
-	@param connectedIdentifiers Input. List of the identifiers that form
-	this connectivity list.
+        @param blockID Input. Must correspond to a blockID that was previously
+        used in a call to initConnectivityBlock().
+        @param connectivityID Input. Identifier for this connectivity list.
+        May be an element-identifier, etc.
+        @param connectedIdentifiers Input. List of the identifiers that form
+        this connectivity list.
 
-	@return error-code 0 if successful
+        @return error-code 0 if successful
      */
    virtual int initConnectivity(int blockID,
-			int connectivityID,
-			const int* connectedIdentifiers) = 0;
+                        int connectivityID,
+                        const int* connectedIdentifiers) = 0;
 
     /** Make a contribution to the MatrixGraph's connectivity. This overloading
-	of initConnectivity() provides for structurally non-symmetric entries.
+        of initConnectivity() provides for structurally non-symmetric entries.
 
-	@param blockID Input. Must correspond to a blockID that was previously
-	used in a call to initConnectivityBlock().
-	@param connectivityID Input. Identifier for this connectivity list.
-	May be an element-identifier, etc.
-	@param rowConnectedIdentifiers Input. List of the identifiers that form
-	the connectivity list for the row-space.
-	@param colConnectedIdentifiers Input. List of the identifiers that form
-	the connectivity list for the column-space.
+        @param blockID Input. Must correspond to a blockID that was previously
+        used in a call to initConnectivityBlock().
+        @param connectivityID Input. Identifier for this connectivity list.
+        May be an element-identifier, etc.
+        @param rowConnectedIdentifiers Input. List of the identifiers that form
+        the connectivity list for the row-space.
+        @param colConnectedIdentifiers Input. List of the identifiers that form
+        the connectivity list for the column-space.
 
-	@return error-code 0 if successful
+        @return error-code 0 if successful
      */
    virtual int initConnectivity(int blockID,
-			int connectivityID,
-			const int* rowConnectedIdentifiers,
-			const int* colConnectedIdentifiers) = 0;
+                        int connectivityID,
+                        const int* rowConnectedIdentifiers,
+                        const int* colConnectedIdentifiers) = 0;
 
     /** Make a contribution to the MatrixGraph's connectivity. This overloading
-	of initConnectivity() provides for structurally non-symmetric entries.
+        of initConnectivity() assumes structurally symmetric entries.
 
-	@param rowPatternID Input. Must correspond to a Pattern ID that was
-	previously used in a call to definePattern().
-	@param rowConnectedIdentifiers Input. List of the identifiers that form
-	the connectivity list for the row-space.
-	@param colPatternID Input. Must correspond to a Pattern ID that was
-	previously used in a call to definePattern().
-	@param colConnectedIdentifiers Input. List of the identifiers that form
-	the connectivity list for the column-space.
+        @param patternID Input. Must correspond to a Pattern ID that was
+        previously used in a call to definePattern().
 
-	@return error-code 0 if successful
+        @param connectedIdentifiers Input. List of the identifiers that form
+        the connectivity list for the row-space (and the column-space, since this
+        is a structurally symmetric contribution).
+
+        @return error-code 0 if successful
+     */
+   virtual int initConnectivity(int patternID,
+                        const int* connectedIdentifiers) = 0;
+
+    /** Make a contribution to the MatrixGraph's connectivity. This overloading
+        of initConnectivity() provides for structurally non-symmetric entries.
+
+        @param rowPatternID Input. Must correspond to a Pattern ID that was
+        previously used in a call to definePattern().
+        @param rowConnectedIdentifiers Input. List of the identifiers that form
+        the connectivity list for the row-space.
+        @param colPatternID Input. Must correspond to a Pattern ID that was
+        previously used in a call to definePattern().
+        @param colConnectedIdentifiers Input. List of the identifiers that form
+        the connectivity list for the column-space.
+
+        @return error-code 0 if successful
      */
    virtual int initConnectivity(int rowPatternID,
-			const int* rowConnectedIdentifiers,
-			int colPatternID,
-			const int* colConnectedIdentifiers) = 0;
+                        const int* rowConnectedIdentifiers,
+                        int colPatternID,
+                        const int* colConnectedIdentifiers) = 0;
 
     /** Initialize a set of arbitrary positions in the graph by providing
-	data in a "raw" or "purely algebraic" format similar to what might be
-	used with a standard sparse CSR (compressed sparse row) matrix.
+        data in a "raw" or "purely algebraic" format similar to what might be
+        used with a standard sparse CSR (compressed sparse row) matrix.
 
-	@param idType identifier-type
-	@param numRows Number of rows, length of the following 'rowIDs' list.
-	@param rowIDs List of length 'numRows', specifying identifiers in
-	the row-space.
-	@param rowOffsets List of length numRows+1, giving offsets into the
-	'packedColumnIDs' list at which each row begins. i.e., the column IDs
-	for rowIDs[i] are packedColumnIDs[rowOffsets[i]...rowOffsets[i+1]-1].
+        @param idType identifier-type
+        @param numRows Number of rows, length of the following 'rowIDs' list.
+        @param rowIDs List of length 'numRows', specifying identifiers in
+        the row-space.
+        @param rowOffsets List of length numRows+1, giving offsets into the
+        'packedColumnIDs' list at which each row begins. i.e., the column IDs
+        for rowIDs[i] are packedColumnIDs[rowOffsets[i]...rowOffsets[i+1]-1].
 
-	@param packedColumnIDs Packed list of length rowOffsets[numRows],
-	containing the column IDs.
+        @param packedColumnIDs Packed list of length rowOffsets[numRows],
+        containing the column IDs.
     */
    virtual int initConnectivity(int idType,
-			int numRows,
-			const int* rowIDs,
-			const int* rowOffsets,
-			const int* packedColumnIDs) = 0;
+                        int numRows,
+                        const int* rowIDs,
+                        const int* rowOffsets,
+                        const int* packedColumnIDs) = 0;
 
     /** Initialize a set of arbitrary positions in the graph by providing
-	data in a "raw" or "purely algebraic" format similar to what might be
-	used with a standard sparse CSR (compressed sparse row) matrix. Also
-	specify a fieldID to be associated with these graph positions.
+        data in a "raw" or "purely algebraic" format similar to what might be
+        used with a standard sparse CSR (compressed sparse row) matrix. Also
+        specify a fieldID to be associated with these graph positions.
 
-	@param idType identifier-type
-	@param fieldID field-identifier
-	@param numRows Number of rows, length of the following 'rowIDs' list.
-	@param rowIDs List of length 'numRows', specifying identifiers in
-	the row-space.
-	@param rowOffsets List of length numRows+1, giving offsets into the
-	'packedColumnIDs' list at which each row begins. i.e., the column IDs
-	for rowIDs[i] are packedColumnIDs[rowOffsets[i]...rowOffsets[i+1]-1].
+        @param idType identifier-type
+        @param fieldID field-identifier
+        @param numRows Number of rows, length of the following 'rowIDs' list.
+        @param rowIDs List of length 'numRows', specifying identifiers in
+        the row-space.
+        @param rowOffsets List of length numRows+1, giving offsets into the
+        'packedColumnIDs' list at which each row begins. i.e., the column IDs
+        for rowIDs[i] are packedColumnIDs[rowOffsets[i]...rowOffsets[i+1]-1].
 
-	@param packedColumnIDs Packed list of length rowOffsets[numRows],
-	containing the column IDs.
+        @param packedColumnIDs Packed list of length rowOffsets[numRows],
+        containing the column IDs.
     */
    virtual int initConnectivity(int idType,
-			int fieldID,
-			int numRows,
-			const int* rowIDs,
-			const int* rowOffsets,
-			const int* packedColumnIDs) = 0;
+                        int fieldID,
+                        int numRows,
+                        const int* rowIDs,
+                        const int* rowOffsets,
+                        const int* packedColumnIDs) = 0;
 
     /** Initialize a set of arbitrary positions in the graph by providing
-	data in a "raw" or "purely algebraic" format similar to what might be
-	used with a standard sparse CSR (compressed sparse row) matrix.
+        data in a "raw" or "purely algebraic" format similar to what might be
+        used with a standard sparse CSR (compressed sparse row) matrix.
 
-	@param idType identifier-type
-	@param numRows Number of rows, length of the following 'rowIDs' list.
-	@param rowIDs List of length 'numRows', specifying identifiers in
-	the row-space.
-	@param rowLengths List of length numRows, giving the number of column
-	IDs for each row ID.
+        @param idType identifier-type
+        @param numRows Number of rows, length of the following 'rowIDs' list.
+        @param rowIDs List of length 'numRows', specifying identifiers in
+        the row-space.
+        @param rowLengths List of length numRows, giving the number of column
+        IDs for each row ID.
 
-	@param columnIDs C-style table (list of lists) containing the column
-	IDs. Number of rows is numRows, length of i-th row is rowLengths[i].
+        @param columnIDs C-style table (list of lists) containing the column
+        IDs. Number of rows is numRows, length of i-th row is rowLengths[i].
     */
    virtual int initConnectivity(int idType,
-			int numRows,
-			const int* rowIDs,
-			const int* rowLengths,
-			const int*const* columnIDs) = 0;
+                        int numRows,
+                        const int* rowIDs,
+                        const int* rowLengths,
+                        const int*const* columnIDs) = 0;
 
     /** Initialize a lagrange-multiplier constraint.
     */
    virtual int initLagrangeConstraint(int constraintID,
-			      int constraintIDType,
-			      int numIDs,
-			      const int* idTypes,
-			      const int* IDs,
-			      const int* fieldIDs) = 0;
+                              int constraintIDType,
+                              int numIDs,
+                              const int* idTypes,
+                              const int* IDs,
+                              const int* fieldIDs) = 0;
 
     /** Initialize a penalty constraint.
     */
    virtual int initPenaltyConstraint(int constraintID,
-			     int constraintIDType,
-			     int numIDs,
-			     const int* idTypes,
-			     const int* IDs,
-			     const int* fieldIDs) = 0;
+                             int constraintIDType,
+                             int numIDs,
+                             const int* idTypes,
+                             const int* IDs,
+                             const int* fieldIDs) = 0;
 
     /** Initialize a slave constraint. (Note to self: document the parameters.)
      */
    virtual int initSlaveConstraint(int numIDs,
-			   const int* idTypes,
-			   const int* IDs,
-			   const int* fieldIDs,
-			   int offsetOfSlave,
-			   int offsetIntoSlaveField,
-			   const double* weights,
-			   double rhsValue) = 0;
+                           const int* idTypes,
+                           const int* IDs,
+                           const int* fieldIDs,
+                           int offsetOfSlave,
+                           int offsetIntoSlaveField,
+                           const double* weights,
+                           double rhsValue) = 0;
 
    virtual bool newSlaveData() = 0;
 
@@ -411,25 +426,25 @@ class MatrixGraph {
    virtual int initComplete() = 0;
 
     /** Generate a sparse row-based graph from structural data that has been
-	accumulated. Don't use this until after initComplete() has been called.
+        accumulated. Don't use this until after initComplete() has been called.
 
-	@param locallyOwnedRows Those rows of a matrix that would be owned by the
-	local processor.
+        @param locallyOwnedRows Those rows of a matrix that would be owned by the
+        local processor.
 
-	@param blockEntryGraph Specifies whether the graph should be constructed
-	on a block-entry or point-entry basis. If there is only 1 scalar DOF at
-	each mesh-object, then a block-entry graph is the same as a point-entry
-	graph.
+        @param blockEntryGraph Specifies whether the graph should be constructed
+        on a block-entry or point-entry basis. If there is only 1 scalar DOF at
+        each mesh-object, then a block-entry graph is the same as a point-entry
+        graph.
     */
    virtual fei::SharedPtr<fei::SparseRowGraph>
      createGraph(bool blockEntryGraph,
                  bool localRowGraph_includeSharedRows=false) = 0;
 
     /** Query whether the specified MatrixGraph is structurally equivalent to
-	this MatrixGraph.
+        this MatrixGraph.
     */
    virtual int compareStructure(const fei::MatrixGraph& matrixGraph,
-			bool& equivalent) const = 0;
+                        bool& equivalent) const = 0;
 
     /** Query how many connectivity blocks have been initialized. */
    virtual int getNumConnectivityBlocks() const = 0;
@@ -444,48 +459,48 @@ class MatrixGraph {
    virtual int getNumIDsPerConnectivityList(int blockID) const = 0;
 
     /** Query how many scatter-indices are associated with each connectivity
-	list for a given connectivity-block.
+        list for a given connectivity-block.
      */
    virtual int getConnectivityNumIndices(int blockID) const = 0;
 
     /** Query how many scatter-indices are associated with each connectivity
-	list for a given connectivity-block,
-	in both the row-dimension and the column-dimension.
+        list for a given connectivity-block,
+        in both the row-dimension and the column-dimension.
      */
    virtual int getConnectivityNumIndices(int blockID,
-				 int& numRowIndices,
-				 int& numColIndices) = 0;
+                                 int& numRowIndices,
+                                 int& numColIndices) = 0;
 
     /** Obtain the scatter-indices associated with a connectivity list.
      */
    virtual int getConnectivityIndices(int blockID,
-			      int connectivityID,
-			      int indicesAllocLen,
-			      int* indices,
-			      int& numIndices) = 0;
+                              int connectivityID,
+                              int indicesAllocLen,
+                              int* indices,
+                              int& numIndices) = 0;
 
     /** Obtain the scatter-indices for both the row- and column-dimension,
-	associated with a connectivity list.
+        associated with a connectivity list.
     */
    virtual int getConnectivityIndices(int blockID,
-			      int connectivityID,
-			      int rowIndicesAllocLen,
-			      int* rowIndices,
-			      int& numRowIndices,
-			      int colIndicesAllocLen,
-			      int* colIndices,
-			      int& numColIndices) = 0;
+                              int connectivityID,
+                              int rowIndicesAllocLen,
+                              int* rowIndices,
+                              int& numRowIndices,
+                              int colIndicesAllocLen,
+                              int* colIndices,
+                              int& numColIndices) = 0;
 
    /** Query associated with Pattern rather than connectivity-block.
     */
    virtual int getPatternNumIndices(int patternID,
-			    int& numIndices) = 0;
+                            int& numIndices) = 0;
 
    /** Query associated with Pattern rather than connectivity-block.
     */
    virtual int getPatternIndices(int patternID,
-			 const int* IDs,
-			 std::vector<int>& indices) = 0;
+                         const int* IDs,
+                         std::vector<int>& indices) = 0;
 
    /** Query number of local lagrange constraints */
    virtual int getLocalNumLagrangeConstraints() const = 0;
@@ -518,7 +533,7 @@ class MatrixGraph {
        interest to application users of fei:: methods.
     */
    virtual int getConstraintConnectivityIndices(ConstraintType* cr,
-					std::vector<int>& globalIndices) = 0;
+                                        std::vector<int>& globalIndices) = 0;
 
    /** Won't typically be of
        interest to application users of fei:: methods.

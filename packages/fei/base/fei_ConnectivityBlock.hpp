@@ -27,24 +27,24 @@ namespace fei {
   public:
     /** constructor */
     ConnectivityBlock(int blockID,
-		      fei::Pattern* pattern,
-		      int numConnectivities);
+                      fei::Pattern* pattern,
+                      int numConnectivities);
     /** constructor */
     ConnectivityBlock(int blockID,
-		      fei::Pattern* rowpattern, fei::Pattern* colpattern,
-		      int numConnectivities);
+                      fei::Pattern* rowpattern, fei::Pattern* colpattern,
+                      int numConnectivities);
     /** constructor */
     ConnectivityBlock(int numRowIDs,
-		      const int* rowIDs,
-		      const int* rowOffsets,
-		      bool offsets_are_lengths = false);
+                      const int* rowIDs,
+                      const int* rowOffsets,
+                      bool offsets_are_lengths = false);
 
     /** constructor */
     ConnectivityBlock(int fieldID,
-		      int numRowIDs,
-		      const int* rowIDs,
-		      const int* rowOffsets,
-		      bool offsets_are_lengths = false);
+                      int numRowIDs,
+                      const int* rowIDs,
+                      const int* rowOffsets,
+                      bool offsets_are_lengths = false);
 
     /** destructor */
     virtual ~ConnectivityBlock();
