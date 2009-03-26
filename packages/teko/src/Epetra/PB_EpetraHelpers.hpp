@@ -27,13 +27,6 @@ Epetra_Operator * block2x2(const Epetra_Operator * sub00,const Epetra_Operator *
 // swaps the Apply,ApplyInverse to ApplyInverse,Apply
 Epetra_Operator * mechanicalInverse(const Epetra_Operator * inverse);
 
-
-// here we assume that Epetra_Vector is blocked and each block is distributed across all processors
-void thyraToEpetra(const Teuchos::RCP<const Thyra::VectorBase<double> > & t, Epetra_MultiVector & e);
-
-// here we assume that Epetra_Vector is blocked and each block is distributed across all processors
-void epetraToThyra(const Epetra_MultiVector & e,const Teuchos::Ptr<Thyra::VectorBase<double> > & t);
-
 } // end namespace Epetra
 } // end namespace PB
 

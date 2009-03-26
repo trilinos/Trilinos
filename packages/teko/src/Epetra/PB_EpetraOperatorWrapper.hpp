@@ -19,24 +19,43 @@ namespace Epetra {
 
   class EpetraOperatorWrapper;
 
-  // fully abstract Mapping strategy for an EpetraOperatorWrapper
+  /// Abstract Mapping strategy for an EpetraOperatorWrapper
   class MappingStrategy {
   public:
-     /** */
-     virtual void copyEpetraIntoThyra(const Epetra_MultiVector& x,
-                                      const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyraVec,
+     /** \brief Copy an Epetra_MultiVector into a Thyra::MultiVectorBase
+       *
+       * Copy an Epetra_MultiVector into a Thyra::MultiVectorBase. The exact
+       * method for copying is specified by the concrete implementations.
+       *
+       * \param[in]     epetraX Vector to be copied into the Thyra object
+       * \param[in,out] thyraX  Destination Thyra object
+       * \param[in]     eow     EpetraOperatorWrapper using this object (may be unecessary)
+       */
+     virtual void copyEpetraIntoThyra(const Epetra_MultiVector& epetraX,
+                                      const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyraX,
                                       const EpetraOperatorWrapper & eow) const = 0;
 
-     /** */
-     virtual void copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyraVec,
-                                      Epetra_MultiVector& v,
+     /** \brief Copy an Thyra::MultiVectorBase into a Epetra_MultiVector
+       *
+       * Copy an Thyra::MultiVectorBase into an Epetra_MultiVector. The exact
+       * method for copying is specified by the concrete implementations.
+       *
+       * \param[in]     thyraX  Source Thyra object
+       * \param[in,out] epetraX Destination Epetra object
+       * \param[in]     eow     EpetraOperatorWrapper using this object (may be unecessary)
+       */
+     virtual void copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyraX,
+                                      Epetra_MultiVector& epetraX,
                                       const EpetraOperatorWrapper & eow) const = 0;
 
+     /** \brief Domain map for this strategy */
      virtual const RCP<const Epetra_Map> domainMap() const = 0; 
+
+     /** \brief Range map for this strategy */
      virtual const RCP<const Epetra_Map> rangeMap() const = 0;
 
+     /** \brief Identifier string */
      virtual std::string toString() const = 0;
-
   };
 
   /// default mapping strategy for the basic EpetraOperatorWrapper
@@ -45,41 +64,48 @@ namespace Epetra {
      /** */
      DefaultMappingStrategy(const RCP<const Thyra::LinearOpBase<double> > & thyraOp, Epetra_Comm & comm);
 
-     /** */
-     virtual void copyEpetraIntoThyra(const Epetra_MultiVector& x,
-                                      const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyraVec,
+     /** \brief Copy an Epetra_MultiVector into a Thyra::MultiVectorBase
+       *
+       * Copy an Epetra_MultiVector into a Thyra::MultiVectorBase. The exact
+       * method for copying is specified by the concrete implementations.
+       *
+       * \param[in]     epetraX Vector to be copied into the Thyra object
+       * \param[in,out] thyraX  Destination Thyra object
+       * \param[in]     eow     EpetraOperatorWrapper using this object (may be unecessary)
+       */
+     virtual void copyEpetraIntoThyra(const Epetra_MultiVector& epetraX,
+                                      const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyraX,
                                       const EpetraOperatorWrapper & eow) const;
 
-     /** */
-     virtual void copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyraVec,
-                                      Epetra_MultiVector& v,
+     /** \brief Copy an Thyra::MultiVectorBase into a Epetra_MultiVector
+       *
+       * Copy an Thyra::MultiVectorBase into an Epetra_MultiVector. The exact
+       * method for copying is specified by the concrete implementations.
+       *
+       * \param[in]     thyraX  Source Thyra object
+       * \param[in,out] epetraX Destination Epetra object
+       * \param[in]     eow     EpetraOperatorWrapper using this object (may be unecessary)
+       */
+     virtual void copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyraX,
+                                      Epetra_MultiVector& epetraX,
                                       const EpetraOperatorWrapper & eow) const;
 
-     /** */
+     /** \brief Domain map for this strategy */
      virtual const RCP<const Epetra_Map> domainMap() const { return domainMap_; }
-     /** */
+
+     /** \brief Range map for this strategy */
      virtual const RCP<const Epetra_Map> rangeMap() const { return rangeMap_; }
 
-     /** */
+     /** \brief Identifier string */
      virtual std::string toString() const
      { return std::string("DefaultMappingStrategy"); } 
 
   protected:
-     /** */
-     RCP<Epetra_Map> thyraVSToEpetraMap(const Thyra::VectorSpaceBase<double>& vs,
-                                                const RCP<Epetra_Comm>& comm) const ;
-  
-     /** */
-     RCP<const Thyra::VectorSpaceBase<double> > domainSpace_;
+     RCP<const Thyra::VectorSpaceBase<double> > domainSpace_; ///< Domain space object
+     RCP<const Thyra::VectorSpaceBase<double> > rangeSpace_; ///< Range space object
 
-     /** */
-     RCP<const Thyra::VectorSpaceBase<double> > rangeSpace_;
-
-     /** */
-     RCP<const Epetra_Map> domainMap_;
-
-     /** */
-     RCP<const Epetra_Map> rangeMap_;
+     RCP<const Epetra_Map> domainMap_; ///< Pointer to the constructed domain map
+     RCP<const Epetra_Map> rangeMap_; ///< Pointer to the constructed range map
   };
 
   /** \brief 

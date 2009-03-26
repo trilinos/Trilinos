@@ -45,33 +45,6 @@ void StridedEpetraOperator::SetContent(const std::vector<int> & vars,const Teuch
    BuildBlockedOperator(); 
 }
 
-int StridedEpetraOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
-{
-   if (!useTranspose_)
-   {
-       // allocate space for each vector
-       const RCP<Thyra::MultiVectorBase<double> > tX = Thyra::createMembers(thyraOp_->domain(),X.NumVectors()); 
-       const RCP<Thyra::MultiVectorBase<double> > tY = Thyra::createMembers(thyraOp_->range(),X.NumVectors());
-       Thyra::assign(tX.ptr(),0.0);
-       Thyra::assign(tY.ptr(),0.0);
-
-       // copy epetra X into thyra X
-       mapStrategy_->copyEpetraIntoThyra(X, tX.ptr(),*this);
-
-       // perform matrix vector multiplication
-       thyraOp_->apply(Thyra::NONCONJ_ELE,*tX,&*tY);
-
-       // copy thyra Y into epetra Y
-       mapStrategy_->copyThyraIntoEpetra(tY, Y,*this);
-   }
-   else
-   {
-       TEUCHOS_ASSERT(false);
-   }
- 
-   return 0;
-}
-
 void StridedEpetraOperator::BuildBlockedOperator()
 {
    TEUCHOS_ASSERT(mapStrategy_!=Teuchos::null);

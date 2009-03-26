@@ -41,6 +41,7 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 
 #include "PB_EpetraHelpers.hpp"
+#include "PB_EpetraThyraConverter.hpp"
 #include "Teuchos_Ptr.hpp"
 
 
@@ -57,71 +58,23 @@ DefaultMappingStrategy::DefaultMappingStrategy(const RCP<const Thyra::LinearOpBa
    domainSpace_ = thyraOp->domain();
    rangeSpace_ = thyraOp->range();
 
-   domainMap_ = thyraVSToEpetraMap(*domainSpace_,Teuchos::rcpFromRef(comm));
-   rangeMap_ = thyraVSToEpetraMap(*rangeSpace_,Teuchos::rcpFromRef(comm));
-}
-
-RCP<Epetra_Map> DefaultMappingStrategy::thyraVSToEpetraMap(const VectorSpaceBase<double>& abs_vs,
-                                                    const RCP<Epetra_Comm>& comm) const 
-{
-  const Thyra::VectorSpace<double> vs(rcp(&abs_vs,false));
-
-  int globalDim = vs.dim();
-  int myLocalElements = 0;
-  
-  /* find the number of local elements, summed over all blocks */
-  if (isSPMD(vs))
-    {
-      myLocalElements = numLocalElements(vs);
-    }
-  else
-    {
-      for (int b=0; b<vs.numBlocks(); b++)
-        {
-          TEST_FOR_EXCEPTION(!isSPMD(vs.getBlock(b)), std::runtime_error, 
-                             "EpetraOperatorWrapper requires std::vector space "
-                             "blocks to be SPMD vectors");
-          myLocalElements += numLocalElements(vs.getBlock(b));
-        }
-    }
-
-  
-  /* find the GIDs owned by this processor, taken from all blocks */
-  Array<int> myGIDs(myLocalElements);
-  
-  int count=0;
-  int blockOffset = 0;
-  for (int b=0; b<vs.numBlocks(); b++)
-    {
-      int lowGIDInBlock = lowestLocallyOwnedIndex(vs.getBlock(b));
-      int numLocalElementsInBlock = numLocalElements(vs.getBlock(b));
-      for (int i=0; i<numLocalElementsInBlock; i++, count++)
-        {
-          myGIDs[count] = blockOffset+lowGIDInBlock+i;
-        }
-
-      blockOffset += vs.getBlock(b).dim();
-    }
-
-  /* create the std::map */
-  RCP<Epetra_Map> rtn 
-    = rcp(new Epetra_Map(globalDim, myLocalElements, &(myGIDs[0]), 0, *comm));
-
-  return rtn;
+   domainMap_ = PB::Epetra::thyraVSToEpetraMap(*domainSpace_,Teuchos::rcpFromRef(comm));
+   rangeMap_ = PB::Epetra::thyraVSToEpetraMap(*rangeSpace_,Teuchos::rcpFromRef(comm));
 }
 
 void DefaultMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& x, const Ptr<Thyra::MultiVectorBase<double> > & thyraVec,
                                       const EpetraOperatorWrapper & eow) const
 {
-   epetraToThyra(x,Teuchos::ptr_dynamic_cast<Thyra::VectorBase<double> >(thyraVec));
+   // epetraToThyra(x,Teuchos::ptr_dynamic_cast<Thyra::VectorBase<double> >(thyraVec));
+   PB::Epetra::blockEpetraToThyra(x,thyraVec);
 }
 
 void DefaultMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyraVec, Epetra_MultiVector& v,
                                       const EpetraOperatorWrapper & eow) const
 {
-   thyraToEpetra(rcp_dynamic_cast<const Thyra::VectorBase<double> >(thyraVec), v);
+   // thyraToEpetra(rcp_dynamic_cast<const Thyra::VectorBase<double> >(thyraVec), v);
+   PB::Epetra::blockThyraToEpetra(thyraVec,v);
 }
-
 
 EpetraOperatorWrapper::EpetraOperatorWrapper()
 {
@@ -171,22 +124,14 @@ double EpetraOperatorWrapper::NormInf() const
 
 int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-   bool handlesMultiVector = rcp_dynamic_cast<const DefaultMappingStrategy>(mapStrategy_)==Teuchos::null;
-
    if (!useTranspose_)
    {
        // allocate space for each vector
        RCP<Thyra::MultiVectorBase<double> > tX;
        RCP<Thyra::MultiVectorBase<double> > tY; 
 
-       if(handlesMultiVector) {
-          tX = Thyra::createMembers(thyraOp_->domain(),X.NumVectors()); 
-          tY = Thyra::createMembers(thyraOp_->range(),X.NumVectors());
-       }
-       else {
-          tX = Thyra::createMember(thyraOp_->domain()); 
-          tY = Thyra::createMember(thyraOp_->range());
-       }
+       tX = Thyra::createMembers(thyraOp_->domain(),X.NumVectors()); 
+       tY = Thyra::createMembers(thyraOp_->range(),X.NumVectors());
 
        Thyra::assign(tX.ptr(),0.0);
        Thyra::assign(tY.ptr(),0.0);

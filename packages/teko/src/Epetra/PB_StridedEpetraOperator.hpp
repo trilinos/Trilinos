@@ -48,9 +48,6 @@ public:
    virtual int SetUseTranspose(bool useTranspose)
    { return -1; }
 
-   // mathematical functions 
-   virtual int Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;
-
    virtual int ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const
    { TEUCHOS_ASSERT(false); return -1; }
 
