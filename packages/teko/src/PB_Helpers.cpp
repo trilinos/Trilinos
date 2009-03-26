@@ -11,7 +11,6 @@
 
 // Anasazi includes
 #include "AnasaziBasicEigenproblem.hpp"
-#include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziThyraAdapter.hpp"
 #include "AnasaziBlockKrylovSchurSolMgr.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"

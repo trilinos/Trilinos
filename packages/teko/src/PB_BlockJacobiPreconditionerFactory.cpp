@@ -76,7 +76,8 @@ void BlockJacobiPreconditionerFactory::initializePrec(const RCP<const LinearOpSo
    blkPrecOp->endBlockFill();
    blkPrecOp->setObjectLabel("inv(diag("+opSrc->getOp()->getObjectLabel()+"))");
 
-   // set preconditioner
+   // set preconditioner: this cast is needed to force it 
+   //    to use the const version of initializeUnspecified
    const RCP<const LinearOpBase<double> > precOp = blkPrecOp;
 
    // must first cast that to be initialized
