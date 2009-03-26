@@ -1354,7 +1354,7 @@ GEMM(Teuchos::ETransp transa, Teuchos::ETransp transb,
      ScalarType* C, const OrdinalType ldc) const 
 {
   if (use_default_impl) {
-    BLASType::GEMM(transa,transb,m,n,k,alpha,A,lda,B,lda,beta,C,ldc);
+    BLASType::GEMM(transa,transb,m,n,k,alpha,A,lda,B,ldb,beta,C,ldc);
     return;
   }
 
@@ -1622,7 +1622,7 @@ SYMM(Teuchos::ESide side, Teuchos::EUplo uplo,
      ScalarType* C, const OrdinalType ldc) const 
 {
   if (use_default_impl) {
-    BLASType::SYMM(side,uplo,m,n,alpha,A,lda,B,lda,beta,C,ldc);
+    BLASType::SYMM(side,uplo,m,n,alpha,A,lda,B,ldb,beta,C,ldc);
     return;
   }
 

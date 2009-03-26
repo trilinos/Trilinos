@@ -33,7 +33,7 @@
 #define SACADO_FAD_BLAS_HPP
 
 #include "Teuchos_BLAS.hpp"
-#include "Sacado_Traits.hpp"
+#include "Sacado.hpp"
 
 namespace Sacado {
 
@@ -127,19 +127,19 @@ namespace Sacado {
 
     //! Fad specializations for Teuchos::BLAS wrappers
     template <typename OrdinalType, typename FadType>
-    class BLAS : public Teuchos::BLAS<OrdinalType,FadType> {    
+    class BLAS : public Teuchos::DefaultBLASImpl<OrdinalType,FadType> {    
       
       typedef typename Teuchos::ScalarTraits<FadType>::magnitudeType MagnitudeType;
       typedef FadType ScalarType;
       typedef typename Sacado::ValueType<FadType>::type ValueType;
-      typedef Teuchos::BLAS<OrdinalType,ScalarType> BLASType;
+      typedef Teuchos::DefaultBLASImpl<OrdinalType,ScalarType> BLASType;
     
     public:
       //! @name Constructor/Destructor.
       //@{ 
     
       //! Default constructor.
-      BLAS(bool use_default_impl = false,
+      BLAS(bool use_default_impl = true,
 	   bool use_dynamic = true, OrdinalType static_workspace_size = 0);
 
       //! Copy constructor.
@@ -761,6 +761,51 @@ namespace Sacado {
   }  // namespace Fad
 
 } // namespace Sacado
+
+// Here we provide partial specializations for Teuchos::BLAS for each Fad type
+#define TEUCHOS_BLAS_FAD_SPEC(FADTYPE)					\
+namespace Teuchos {							\
+  template <typename OrdinalType, typename ValueT, typename ScalarT>	\
+  class BLAS< OrdinalType, FADTYPE<ValueT,ScalarT> > :			\
+    public Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,ScalarT> > {	\
+  public:								\
+    BLAS(bool use_default_impl = true,	bool use_dynamic = true,	\
+	 OrdinalType static_workspace_size = 0) :			\
+      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,ScalarT> >(	\
+	use_default_impl, use_dynamic,static_workspace_size) {}		\
+    BLAS(const BLAS& x) :						\
+      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,ScalarT> >(x) {}	\
+    virtual ~BLAS() {}							\
+  };									\
+}
+#define TEUCHOS_BLAS_SFAD_SPEC(FADTYPE)					\
+namespace Teuchos {							\
+  template <typename OrdinalType, typename ValueT, int Num,		\
+	    typename ScalarT>						\
+  class BLAS< OrdinalType, FADTYPE<ValueT,Num,ScalarT> > :		\
+    public Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,Num,ScalarT> > { \
+  public:								\
+    BLAS(bool use_default_impl = true,	bool use_dynamic = true,	\
+	 OrdinalType static_workspace_size = 0) :			\
+      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,Num,ScalarT> >(	\
+	use_default_impl, use_dynamic, static_workspace_size) {}	\
+    BLAS(const BLAS& x) :						\
+      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,Num,ScalarT> >(x) {} \
+    virtual ~BLAS() {}							\
+  };									\
+}
+TEUCHOS_BLAS_FAD_SPEC(Sacado::Fad::DFad)
+TEUCHOS_BLAS_SFAD_SPEC(Sacado::Fad::SFad)
+TEUCHOS_BLAS_SFAD_SPEC(Sacado::Fad::SLFad)
+TEUCHOS_BLAS_FAD_SPEC(Sacado::Fad::DMFad)
+TEUCHOS_BLAS_FAD_SPEC(Sacado::Fad::DVFad)
+TEUCHOS_BLAS_FAD_SPEC(Sacado::ELRFad::DFad)
+TEUCHOS_BLAS_SFAD_SPEC(Sacado::ELRFad::SFad)
+TEUCHOS_BLAS_SFAD_SPEC(Sacado::ELRFad::SLFad)
+TEUCHOS_BLAS_FAD_SPEC(Sacado::CacheFad::DFad)
+
+#undef TEUCHOS_BLAS_FAD_SPEC
+#undef TEUCHOS_BLAS_SFAD_SPEC
 
 #include "Sacado_Fad_BLASImp.hpp"
 

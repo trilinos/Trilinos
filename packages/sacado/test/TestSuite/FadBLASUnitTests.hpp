@@ -324,13 +324,13 @@ testSCAL1() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.SCAL(m, alpha, &x1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SCAL(m, alpha, &x2[0], 1);
 
   COMPARE_FAD_VECTORS(x1, x2, m);
 
   unsigned int sz = m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SCAL(m, alpha, &x3[0], 1);
 
   COMPARE_FAD_VECTORS(x1, x3, m);
@@ -363,13 +363,13 @@ testSCAL2() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.SCAL(m, alpha, &x1[0], incx);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SCAL(m, alpha, &x2[0], incx);
 
   COMPARE_FAD_VECTORS(x1, x2, m*incx);
 
   unsigned int sz = m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SCAL(m, alpha, &x3[0], incx);
 
   COMPARE_FAD_VECTORS(x1, x3, m*incx);
@@ -398,13 +398,13 @@ testSCAL3() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.SCAL(m, alpha, &x1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SCAL(m, alpha, &x2[0], 1);
 
   COMPARE_FAD_VECTORS(x1, x2, m);
 
   unsigned int sz = m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SCAL(m, alpha, &x3[0], 1);
 
   COMPARE_FAD_VECTORS(x1, x3, m);
@@ -429,13 +429,13 @@ testSCAL4() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.SCAL(m, alpha, &x1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SCAL(m, alpha, &x2[0], 1);
 
   COMPARE_FAD_VECTORS(x1, x2, m);
 
   unsigned int sz = m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SCAL(m, alpha, &x3[0], 1);
 
   COMPARE_FAD_VECTORS(x1, x3, m);
@@ -465,13 +465,13 @@ testCOPY1() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.COPY(m, &x[0], 1, &y1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.COPY(m, &x[0], 1, &y2[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y2, m);
 
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.COPY(m, &x[0], 1, &y3[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y3, m);
@@ -507,13 +507,13 @@ testCOPY2() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.COPY(m, &x[0], incx, &y1[0], incy);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.COPY(m, &x[0], incx, &y2[0], incy);
 
   COMPARE_FAD_VECTORS(y1, y2, m*incy);
 
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.COPY(m, &x[0], incx, &y3[0], incy);
 
   COMPARE_FAD_VECTORS(y1, y3, m*incy);
@@ -544,13 +544,13 @@ testCOPY3() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.COPY(m, &x[0], 1, &y1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.COPY(m, &x[0], 1, &y2[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y2, m);
 
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.COPY(m, &x[0], 1, &y3[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y3, m);
@@ -576,13 +576,13 @@ testCOPY4() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.COPY(m, &x[0], 1, &y1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.COPY(m, &x[0], 1, &y2[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y2, m);
 
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.COPY(m, &x[0], 1, &y3[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y3, m);
@@ -615,13 +615,13 @@ testAXPY1() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.AXPY(m, alpha, &x[0], 1, &y1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.AXPY(m, alpha, &x[0], 1, &y2[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y2, m);
 
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.AXPY(m, alpha, &x[0], 1, &y3[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y3, m);
@@ -660,13 +660,13 @@ testAXPY2() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.AXPY(m, alpha, &x[0], incx, &y1[0], incy);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.AXPY(m, alpha, &x[0], incx, &y2[0], incy);
 
   COMPARE_FAD_VECTORS(y1, y2, m*incy);
 
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.AXPY(m, alpha, &x[0], incx, &y3[0], incy);
 
   COMPARE_FAD_VECTORS(y1, y3, m*incy);
@@ -702,13 +702,13 @@ testAXPY3() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.AXPY(m, alpha, &x[0], 1, &y1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.AXPY(m, alpha, &x[0], 1, &y2[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y2, m);
 
   unsigned int sz = m*(1+ndot)+m;
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.AXPY(m, alpha, &x[0], 1, &y3[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y3, m);
@@ -741,13 +741,13 @@ testAXPY4() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.AXPY(m, alpha, &x[0], 1, &y1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.AXPY(m, alpha, &x[0], 1, &y2[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y2, m);
 
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.AXPY(m, alpha, &x[0], 1, &y3[0], 1);
 
   COMPARE_FAD_VECTORS(y1, y3, m);
@@ -771,13 +771,13 @@ testDOT1() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   FadType z1 = teuchos_blas.DOT(m, &X[0], 1, &Y[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   FadType z2 = sacado_blas.DOT(m, &X[0], 1, &Y[0], 1);
 
   COMPARE_FADS(z1, z2);
 
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   FadType z3 = sacado_blas2.DOT(m, &X[0], 1, &Y[0], 1);
 
   COMPARE_FADS(z1, z3);
@@ -807,13 +807,13 @@ testDOT2() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   FadType z1 = teuchos_blas.DOT(m, &X[0], incx, &Y[0], incy);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   FadType z2 = sacado_blas.DOT(m, &X[0], incx, &Y[0], incy);
 
   COMPARE_FADS(z1, z2);
 
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   FadType z3 = sacado_blas2.DOT(m, &X[0], incx, &Y[0], incy);
 
   COMPARE_FADS(z1, z3);
@@ -838,13 +838,13 @@ testDOT3() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   FadType z1 = teuchos_blas.DOT(m, &X[0], 1, &Y[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   FadType z2 = sacado_blas.DOT(m, &X[0], 1, &Y[0], 1);
 
   COMPARE_FADS(z1, z2);
 
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   FadType z3 = sacado_blas2.DOT(m, &X[0], 1, &Y[0], 1);
 
   COMPARE_FADS(z1, z3);
@@ -873,13 +873,13 @@ testDOT4() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   FadType z1 = teuchos_blas.DOT(m, &X[0], 1, &Y[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   FadType z2 = sacado_blas.DOT(m, &X[0], 1, &Y[0], 1);
 
   COMPARE_FADS(z1, z2);
 
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   FadType z3 = sacado_blas2.DOT(m, &X[0], 1, &Y[0], 1);
 
   COMPARE_FADS(z1, z3);
@@ -906,14 +906,14 @@ testNRM21() {
   typename Teuchos::ScalarTraits<FadType>::magnitudeType z1 = 
     teuchos_blas.NRM2(m, &X[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   typename Teuchos::ScalarTraits<FadType>::magnitudeType z2 = 
     sacado_blas.NRM2(m, &X[0], 1);
 
   COMPARE_FADS(z1, z2);
 
   unsigned int sz = m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   typename Teuchos::ScalarTraits<FadType>::magnitudeType z3 = 
     sacado_blas2.NRM2(m, &X[0], 1);
 
@@ -938,14 +938,14 @@ testNRM22() {
   typename Teuchos::ScalarTraits<FadType>::magnitudeType z1 = 
     teuchos_blas.NRM2(m, &X[0], incx);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   typename Teuchos::ScalarTraits<FadType>::magnitudeType z2 = 
     sacado_blas.NRM2(m, &X[0], incx);
 
   COMPARE_FADS(z1, z2);
 
   unsigned int sz = m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   typename Teuchos::ScalarTraits<FadType>::magnitudeType z3 = 
     sacado_blas2.NRM2(m, &X[0], incx);
 
@@ -992,14 +992,14 @@ testGEMV1() {
   teuchos_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		   beta, &C2[0], 1);
 
   COMPARE_FAD_VECTORS(C1, C2, m);
 
   unsigned int sz = m*n*(1+ndot) + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C3[0], 1);
 
@@ -1052,14 +1052,14 @@ testGEMV2() {
   teuchos_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], lda, &B[0], incb, 
 		    beta, &C1[0], incc);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], lda, &B[0], incb, 
 		   beta, &C2[0], incc);
 
   COMPARE_FAD_VECTORS(C1, C2, m*incc);
 
   unsigned int sz = m*n*(1+ndot) + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], lda, &B[0], incb, 
 		    beta, &C3[0], incc);
 
@@ -1108,14 +1108,14 @@ testGEMV3() {
   teuchos_blas.GEMV(Teuchos::TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMV(Teuchos::TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		   beta, &C2[0], 1);
 
   COMPARE_FAD_VECTORS(C1, C2, n);
 
   unsigned int sz = m*n*(1+ndot) + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMV(Teuchos::TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C3[0], 1);
 
@@ -1168,14 +1168,14 @@ testGEMV4() {
   teuchos_blas.GEMV(Teuchos::TRANS, m, n, alpha, &A[0], lda, &B[0], incb, 
 		    beta, &C1[0], incc);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMV(Teuchos::TRANS, m, n, alpha, &A[0], lda, &B[0], incb, 
 		   beta, &C2[0], incc);
 
   COMPARE_FAD_VECTORS(C1, C2, n*incc);
 
   unsigned int sz = m*n*(1+ndot) + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMV(Teuchos::TRANS, m, n, alpha, &A[0], lda, &B[0], incb, 
   		    beta, &C3[0], incc);
 
@@ -1216,14 +1216,14 @@ testGEMV5() {
   teuchos_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		   beta, &C2[0], 1);
 
   COMPARE_FAD_VECTORS(C1, C2, m);
 
   unsigned int sz = m*n*(1+ndot) + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C3[0], 1);
 
@@ -1266,14 +1266,14 @@ testGEMV6() {
   teuchos_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		   beta, &C2[0], 1);
 
   COMPARE_FAD_VECTORS(C1, C2, m);
 
   unsigned int sz = m*n*(1+ndot) + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C3[0], 1);
 
@@ -1323,14 +1323,14 @@ testGEMV7() {
   teuchos_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C1[0], 1);
   
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		   beta, &C2[0], 1);
   
   COMPARE_FAD_VECTORS(C1, C2, m);
   
   unsigned int sz = m*n*(1+ndot) + n + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C3[0], 1);
   
@@ -1385,14 +1385,14 @@ testGEMV8() {
   teuchos_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		   beta, &C2[0], 1);
 
   COMPARE_FAD_VECTORS(C1, C2, m);
 
   unsigned int sz = m*n* + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C3[0], 1);
   
@@ -1446,14 +1446,14 @@ testGEMV9() {
   teuchos_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		   beta, &C2[0], 1);
 
   COMPARE_FAD_VECTORS(C1, C2, m);
 
   unsigned int sz = m*n* + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMV(Teuchos::NO_TRANS, m, n, alpha, &A[0], m, &B[0], 1, 
 		    beta, &C3[0], 1);
   
@@ -1493,14 +1493,14 @@ testTRMV1() {
   teuchos_blas.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], n, &x1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], n, &x2[0], 1);
 
   COMPARE_FAD_VECTORS(x1, x2, n);
 
   unsigned int sz = n*n*(1+ndot) + n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], n, &x3[0], 1);
 
@@ -1571,14 +1571,14 @@ testTRMV2() {
   teuchos_blas.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], lda, &x1[0], incx);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], lda, &x2[0], incx);
 
   COMPARE_FAD_VECTORS(x1, x2, n*incx);
 
   unsigned int sz = n*n*(1+ndot) + n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], lda, &x3[0], incx);
 
@@ -1650,14 +1650,14 @@ testTRMV3() {
   teuchos_blas.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], n, &x1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], n, &x2[0], 1);
 
   COMPARE_FAD_VECTORS(x1, x2, n);
 
   unsigned int sz = n*n+n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], n, &x3[0], 1);
 
@@ -1746,14 +1746,14 @@ testTRMV4() {
   teuchos_blas.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], n, &x1[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], n, &x2[0], 1);
 
   COMPARE_FAD_VECTORS(x1, x2, n);
 
   unsigned int sz = n*n*(1+ndot) + n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRMV(Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, n, &A[0], n, &x3[0], 1);
 
@@ -1835,13 +1835,13 @@ testGER1() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A2[0], m);
 
   COMPARE_FAD_VECTORS(A1, A2, m*n);
 
   unsigned int sz = m*n*(1+ndot) + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A3[0], m);
 
   COMPARE_FAD_VECTORS(A1, A3, m*n);
@@ -1894,13 +1894,13 @@ testGER2() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.GER(m, n, alpha, &x[0], incx, &y[0], incy, &A1[0], lda);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GER(m, n, alpha, &x[0], incx, &y[0], incy, &A2[0], lda);
 
   COMPARE_FAD_VECTORS(A1, A2, lda*n);
 
   unsigned int sz = m*n*(1+ndot) + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GER(m, n, alpha, &x[0], incx, &y[0], incy, &A3[0], lda);
 
   COMPARE_FAD_VECTORS(A1, A3, lda*n);
@@ -1946,13 +1946,13 @@ testGER3() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A2[0], m);
 
   COMPARE_FAD_VECTORS(A1, A2, m*n);
 
   unsigned int sz = m*n*(1+ndot) + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A3[0], m);
 
   COMPARE_FAD_VECTORS(A1, A3, m*n);
@@ -2006,13 +2006,13 @@ testGER4() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A2[0], m);
 
   COMPARE_FAD_VECTORS(A1, A2, m*n);
 
   unsigned int sz = m*n*(1+ndot) + n*(1+ndot) + m;
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A3[0], m);
 
   COMPARE_FAD_VECTORS(A1, A3, m*n);
@@ -2074,13 +2074,13 @@ testGER5() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A2[0], m);
 
   COMPARE_FAD_VECTORS(A1, A2, m*n);
 
   unsigned int sz = m*n*(1+ndot) + m*(1+ndot) + n;
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A3[0], m);
 
   COMPARE_FAD_VECTORS(A1, A3, m*n);
@@ -2141,13 +2141,13 @@ testGER6() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A2[0], m);
 
   COMPARE_FAD_VECTORS(A1, A2, m*n);
 
   unsigned int sz = m*n*(1+ndot) + m + n;
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A3[0], m);
 
   COMPARE_FAD_VECTORS(A1, A3, m*n);
@@ -2198,13 +2198,13 @@ testGER7() {
   Teuchos::BLAS<int,FadType> teuchos_blas;
   teuchos_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A2[0], m);
 
   COMPARE_FAD_VECTORS(A1, A2, m*n);
 
   unsigned int sz = m*n*(1+ndot) + n*(1+ndot) + m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GER(m, n, alpha, &x[0], 1, &y[0], 1, &A3[0], m);
 
   COMPARE_FAD_VECTORS(A1, A3, m*n);
@@ -2256,14 +2256,14 @@ testGEMM1() {
   teuchos_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*l*(1+ndot) + l*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C3[0], m);
 
@@ -2353,14 +2353,14 @@ testGEMM2() {
   teuchos_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C1[0], ldc);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C2[0], ldc);
 
   COMPARE_FAD_VECTORS(C1, C2, ldc*n);
 
   unsigned int sz = m*l*(1+ndot) + l*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C3[0], ldc);
 
@@ -2417,14 +2417,14 @@ testGEMM3() {
   teuchos_blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C1[0], ldc);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C2[0], ldc);
 
   COMPARE_FAD_VECTORS(C1, C2, ldc*n);
 
   unsigned int sz = m*l*(1+ndot) + l*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMM(Teuchos::TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C3[0], ldc);
 
@@ -2481,14 +2481,14 @@ testGEMM4() {
   teuchos_blas.GEMM(Teuchos::NO_TRANS, Teuchos::TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C1[0], ldc);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMM(Teuchos::NO_TRANS, Teuchos::TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C2[0], ldc);
 
   COMPARE_FAD_VECTORS(C1, C2, ldc*n);
 
   unsigned int sz = m*l*(1+ndot) + l*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMM(Teuchos::NO_TRANS, Teuchos::TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C3[0], ldc);
 
@@ -2545,14 +2545,14 @@ testGEMM5() {
   teuchos_blas.GEMM(Teuchos::TRANS, Teuchos::TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C1[0], ldc);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMM(Teuchos::TRANS, Teuchos::TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C2[0], ldc);
 
   COMPARE_FAD_VECTORS(C1, C2, ldc*n);
 
   unsigned int sz = m*l*(1+ndot) + l*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMM(Teuchos::TRANS, Teuchos::TRANS, m, n, l, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C3[0], ldc);
 
@@ -2599,14 +2599,14 @@ testGEMM6() {
   teuchos_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*l*(1+ndot) + l*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C3[0], m);
 
@@ -2688,14 +2688,14 @@ testGEMM7() {
   teuchos_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*l*(1+ndot) + l*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C3[0], m);
 
@@ -2786,14 +2786,14 @@ testGEMM8() {
   teuchos_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*l + l*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C3[0], m);
 
@@ -2912,14 +2912,14 @@ testGEMM9() {
   teuchos_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*l*(1+ndot) + l*n + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C3[0], m);
 
@@ -3037,14 +3037,14 @@ testGEMM10() {
   teuchos_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*l + l*n + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.GEMM(Teuchos::NO_TRANS, Teuchos::NO_TRANS, m, n, l, alpha, 
 		    &A[0], m, &B[0], l, beta, &C3[0], m);
 
@@ -3163,14 +3163,14 @@ testSYMM1() {
   teuchos_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*m*(1+ndot) + 2*m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C3[0], m);
 
@@ -3239,14 +3239,14 @@ testSYMM2() {
   teuchos_blas.SYMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], n, &B[0], m, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SYMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], n, &B[0], m, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = n*n*(1+ndot) + 2*m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SYMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], n, &B[0], m, beta, &C3[0], m);
 
@@ -3319,14 +3319,14 @@ testSYMM3() {
   teuchos_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C1[0], ldc);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C2[0], ldc);
 
   COMPARE_FAD_VECTORS(C1, C2, ldc*n);
 
   unsigned int sz = m*m*(1+ndot) + 2*m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C3[0], ldc);
 
@@ -3399,14 +3399,14 @@ testSYMM4() {
   teuchos_blas.SYMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C1[0], ldc);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SYMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C2[0], ldc);
 
   COMPARE_FAD_VECTORS(C1, C2, ldc*n);
 
   unsigned int sz = n*n*(1+ndot) + 2*m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SYMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], lda, &B[0], ldb, beta, &C3[0], ldc);
 
@@ -3469,14 +3469,14 @@ testSYMM5() {
   teuchos_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*m*(1+ndot) + 2*m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C3[0], m);
 
@@ -3541,14 +3541,14 @@ testSYMM6() {
   teuchos_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*m*(1+ndot) + 2*m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C3[0], m);
 
@@ -3622,14 +3622,14 @@ testSYMM7() {
   teuchos_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*m + 2*m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C3[0], m);
 
@@ -3719,14 +3719,14 @@ testSYMM8() {
   teuchos_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*m*(1+ndot) + m*n*(2+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C3[0], m);
 
@@ -3815,14 +3815,14 @@ testSYMM9() {
   teuchos_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C2[0], m);
 
   COMPARE_FAD_VECTORS(C1, C2, m*n);
 
   unsigned int sz = m*m + m*n*(2+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.SYMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, m, n, alpha, 
 		    &A[0], m, &B[0], m, beta, &C3[0], m);
 
@@ -3893,14 +3893,14 @@ testTRMM1() {
   teuchos_blas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B2[0], m);
 
   COMPARE_FAD_VECTORS(B1, B2, m*n);
 
   unsigned int sz = m*m*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B3[0], m);
 
@@ -3976,14 +3976,14 @@ testTRMM2() {
   teuchos_blas.TRMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], n, &B1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], n, &B2[0], m);
 
   COMPARE_FAD_VECTORS(B1, B2, m*n);
 
   unsigned int sz = n*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], n, &B3[0], m);
 
@@ -4061,14 +4061,14 @@ testTRMM3() {
   teuchos_blas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B1[0], ldb);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B2[0], ldb);
 
   COMPARE_FAD_VECTORS(B1, B2, ldb*n);
 
   unsigned int sz = m*m*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B3[0], ldb);
 
@@ -4146,14 +4146,14 @@ testTRMM4() {
   teuchos_blas.TRMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B1[0], ldb);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		   Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B2[0], ldb);
 
   COMPARE_FAD_VECTORS(B1, B2, ldb*n);
 
   unsigned int sz = n*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRMM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B3[0], ldb);
 
@@ -4226,14 +4226,14 @@ testTRMM5() {
   teuchos_blas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B2[0], m);
 
   COMPARE_FAD_VECTORS(B1, B2, m*n);
 
   unsigned int sz = m*m*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B3[0], m);
 
@@ -4303,14 +4303,14 @@ testTRMM6() {
   teuchos_blas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B2[0], m);
 
   COMPARE_FAD_VECTORS(B1, B2, m*n);
 
   unsigned int sz = m*m*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B3[0], m);
 
@@ -4391,14 +4391,14 @@ testTRMM7() {
   teuchos_blas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B2[0], m);
 
   COMPARE_FAD_VECTORS(B1, B2, m*n);
 
   unsigned int sz = m*m + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRMM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B3[0], m);
 
@@ -4507,14 +4507,14 @@ testTRSM1() {
   teuchos_blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B2[0], m);
 
   COMPARE_FAD_VECTORS(B1, B2, m*n);
 
   unsigned int sz = m*m*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B3[0], m);
 
@@ -4590,14 +4590,14 @@ testTRSM2() {
   teuchos_blas.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], n, &B1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], n, &B2[0], m);
 
   COMPARE_FAD_VECTORS(B1, B2, m*n);
 
   unsigned int sz = n*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], n, &B3[0], m);
 
@@ -4675,14 +4675,14 @@ testTRSM3() {
   teuchos_blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B1[0], ldb);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B2[0], ldb);
 
   COMPARE_FAD_VECTORS(B1, B2, ldb*n);
 
   unsigned int sz = m*m*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B3[0], ldb);
 
@@ -4760,14 +4760,14 @@ testTRSM4() {
   teuchos_blas.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B1[0], ldb);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		   Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B2[0], ldb);
 
   COMPARE_FAD_VECTORS(B1, B2, ldb*n);
 
   unsigned int sz = n*n*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRSM(Teuchos::RIGHT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], lda, &B3[0], ldb);
 
@@ -4840,14 +4840,14 @@ testTRSM5() {
   teuchos_blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B2[0], m);
 
   COMPARE_FAD_VECTORS(B1, B2, m*n);
 
   unsigned int sz = m*m*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B3[0], m);
 
@@ -4917,14 +4917,14 @@ testTRSM6() {
   teuchos_blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B2[0], m);
 
   COMPARE_FAD_VECTORS(B1, B2, m*n);
 
   unsigned int sz = m*m*(1+ndot) + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B3[0], m);
 
@@ -5005,14 +5005,14 @@ testTRSM7() {
   teuchos_blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B1[0], m);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_blas;
+  Teuchos::BLAS<int,FadType> sacado_blas(false);
   sacado_blas.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B2[0], m);
 
   COMPARE_FAD_VECTORS(B1, B2, m*n);
 
   unsigned int sz = m*m + m*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> sacado_blas2(false,false,sz);
+  Teuchos::BLAS<int,FadType> sacado_blas2(false,false,sz);
   sacado_blas2.TRSM(Teuchos::LEFT_SIDE, Teuchos::UPPER_TRI, Teuchos::NO_TRANS, 
 		    Teuchos::NON_UNIT_DIAG, m, n, alpha, &A[0], m, &B3[0], m);
 

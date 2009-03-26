@@ -245,7 +245,7 @@ do_time_sacado_fad_gemm(unsigned int m, unsigned int n, unsigned int k,
 {
   Sacado::Random<double> urand(0.0, 1.0);
   unsigned int sz = (m*k+k*n+m*n)*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> blas(false,use_dynamic,sz);
+  Teuchos::BLAS<int,FadType> blas(false,use_dynamic,sz);
 
   Sacado::Fad::Vector<unsigned int, FadType> A(m*k,ndot), B(k*n,ndot), C
     (m*n,ndot);
@@ -295,7 +295,7 @@ do_time_sacado_fad_gemv(unsigned int m, unsigned int n, unsigned int ndot,
 {
   Sacado::Random<double> urand(0.0, 1.0);
   unsigned int sz = m*n*(1+ndot) + 2*n*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> blas(false,use_dynamic,sz);
+  Teuchos::BLAS<int,FadType> blas(false,use_dynamic,sz);
 
   Sacado::Fad::Vector<unsigned int, FadType> A(m*n,ndot), B(n,ndot), C(m,ndot);
   for (unsigned int j=0; j<n; j++) {
@@ -338,7 +338,7 @@ do_time_sacado_fad_dot(unsigned int m, unsigned int ndot,
 {
   Sacado::Random<double> urand(0.0, 1.0);
   unsigned int sz = 2*m*(1+ndot);
-  Sacado::Fad::BLAS<int,FadType> blas(false,use_dynamic,sz);
+  Teuchos::BLAS<int,FadType> blas(false,use_dynamic,sz);
 
   Sacado::Fad::Vector<unsigned int, FadType> X(m,ndot), Y(m,ndot);
   for (unsigned int i=0; i<m; i++) {

@@ -74,7 +74,7 @@ int main(int argc, char **argv)
   // Teuchos::BLAS<int,FadType> blas_fad;
   // blas_fad.GEMV(Teuchos::NO_TRANS, n, n, 1.0, &A[0], n, &B[0], 1, 0.0, &C[0], 1);
 
-  Sacado::Fad::BLAS<int,FadType> sacado_fad_blas;
+  Teuchos::BLAS<int,FadType> sacado_fad_blas(false);
   sacado_fad_blas.GEMV(Teuchos::NO_TRANS, n, n, 1.0, &A[0], n, &B[0], 1, 0.0, &C[0], 1);
 
   // Print the results
