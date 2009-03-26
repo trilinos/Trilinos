@@ -1,3 +1,7 @@
+03/26/2009:  A bug was fixed where calling max/min with expression arguments
+of the same type, e.g., max(a+b,c+d), would cause an ambiguous overload
+compiler error.  See bug #4348 for more details.
+
 09/17/2008:  A new AD type has been added to Sacado called 
 Sacado::LFad::LogicalSparse for determining the logical sparsity pattern
 of a derivative computation.
