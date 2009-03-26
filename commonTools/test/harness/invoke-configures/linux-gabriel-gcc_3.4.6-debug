@@ -36,7 +36,6 @@ FLIBS="-lg2c" \
 --enable-meros \
 --enable-new_package \
 --enable-anasazi \
---enable-ctrilinos \
 --enable-sundance \
 --with-trilinosdatadir=/mnt/disk2/rabartl/Trilinos.nightly-tests/TrilinosData \
 --enable-didasko
