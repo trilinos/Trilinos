@@ -116,8 +116,14 @@ namespace Teuchos
   extern const char EUploChar[];
   extern const char EDiagChar[];
 
+  //! Default implementation for BLAS routines
+  /*!
+   * This class provides the default implementation for the BLAS routines.  It
+   * is put in a separate class so that specializations of BLAS for other types
+   * still have this implementation available.
+   */
   template<typename OrdinalType, typename ScalarType>
-  class BLAS
+  class DefaultBLASImpl
   {    
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -127,13 +133,13 @@ namespace Teuchos
     //@{ 
     
     //! Default constructor.
-    inline BLAS(void) {}
+    inline DefaultBLASImpl(void) {}
 
     //! Copy constructor.
-    inline BLAS(const BLAS<OrdinalType, ScalarType>& /*BLAS_source*/) {}
+    inline DefaultBLASImpl(const DefaultBLASImpl<OrdinalType, ScalarType>& /*BLAS_source*/) {}
 
     //! Destructor.
-    inline virtual ~BLAS(void) {}
+    inline virtual ~DefaultBLASImpl(void) {}
     //@}
 
     //! @name Level 1 BLAS Routines.
@@ -203,12 +209,99 @@ namespace Teuchos
     //@}
   };
 
+  template<typename OrdinalType, typename ScalarType>
+  class BLAS : DefaultBLASImpl<OrdinalType,ScalarType>
+  {    
+
+    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+    
+  public:
+    //! @name Constructor/Destructor.
+    //@{ 
+    
+    //! Default constructor.
+    inline BLAS(void) {}
+
+    //! Copy constructor.
+    inline BLAS(const BLAS<OrdinalType, ScalarType>& /*BLAS_source*/) {}
+
+    //! Destructor.
+    inline virtual ~BLAS(void) {}
+    //@}
+
+    //! @name Level 1 BLAS Routines.
+    //@{ 
+
+    //! Computes a Givens plane rotation.
+    inline void ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const { DefaultBLASImpl<OrdinalType,ScalarType>::ROTG(da, db, c, s); }
+
+    //! Applies a Givens plane rotation.
+    inline void ROT(const OrdinalType n, ScalarType* dx, const OrdinalType incx, ScalarType* dy, const OrdinalType incy, MagnitudeType* c, ScalarType* s) const { DefaultBLASImpl<OrdinalType,ScalarType>::ROT(n,dx,incx,dy,incy,c,s); }
+
+    //! Scale the std::vector \c x by the constant \c alpha.
+    inline void SCAL(const OrdinalType n, const ScalarType alpha, ScalarType* x, const OrdinalType incx) const { DefaultBLASImpl<OrdinalType,ScalarType>::SCAL(n,alpha,x,incx); }
+
+    //! Copy the std::vector \c x to the std::vector \c y.
+    inline void COPY(const OrdinalType n, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const { DefaultBLASImpl<OrdinalType,ScalarType>::COPY(n,x,incx,y,incy); }
+
+    //! Perform the operation: \c y \c <- \c y+alpha*x.
+    inline void AXPY(const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const { DefaultBLASImpl<OrdinalType,ScalarType>::AXPY(n,alpha,x,incx,y,incy); }
+
+    //! Sum the absolute values of the entries of \c x.
+    inline typename ScalarTraits<ScalarType>::magnitudeType ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const { return DefaultBLASImpl<OrdinalType,ScalarType>::ASUM(n,x,incx); }
+
+    //! Form the dot product of the vectors \c x and \c y.
+    inline ScalarType DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy) const { return DefaultBLASImpl<OrdinalType,ScalarType>::DOT(n,x,incx,y,incy); }
+
+    //! Compute the 2-norm of the std::vector \c x.
+    inline typename ScalarTraits<ScalarType>::magnitudeType NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const { return DefaultBLASImpl<OrdinalType,ScalarType>::NRM2(n,x,incx); }
+
+    //! Return the index of the element of \c x with the maximum magnitude.
+    inline OrdinalType IAMAX(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const { return DefaultBLASImpl<OrdinalType,ScalarType>::IAMAX(n,x,incx); }
+
+    //@}
+
+    //! @name Level 2 BLAS Routines.
+    //@{ 
+
+    //! Performs the matrix-std::vector operation:  \c y \c <- \c alpha*A*x+beta*y or \c y \c <- \c alpha*A'*x+beta*y where \c A is a general \c m by \c n matrix.
+    inline void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, 
+	      const OrdinalType lda, const ScalarType* x, const OrdinalType incx, const ScalarType beta, ScalarType* y, const OrdinalType incy) const { DefaultBLASImpl<OrdinalType,ScalarType>::GEMV(trans,m,n,alpha,A,lda,x,incx,beta,y,incy); }
+
+    //! Performs the matrix-std::vector operation:  \c x \c <- \c A*x or \c x \c <- \c A'*x where \c A is a unit/non-unit \c n by \c n upper/lower triangular matrix.
+    inline void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const ScalarType* A, 
+	      const OrdinalType lda, ScalarType* x, const OrdinalType incx) const { DefaultBLASImpl<OrdinalType,ScalarType>::TRMV(uplo,trans,diag,n,A,lda,x,incx); }
+
+    //! \brief Performs the rank 1 operation:  \c A \c <- \c alpha*x*y'+A. 
+    inline void GER(const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, 
+	     const ScalarType* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const { DefaultBLASImpl<OrdinalType,ScalarType>::GER(m,n,alpha,x,incx,y,incy,A,lda); }
+    //@}
+    
+    //! @name Level 3 BLAS Routines. 
+    //@{ 
+
+    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*op(B)+beta*C where \c op(A) is either \c A or \c A', \c op(B) is either \c B or \c B', and C is an \c m by \c k matrix.
+    inline void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const { DefaultBLASImpl<OrdinalType,ScalarType>::GEMM(transa,transb,m,n,k,alpha,A,lda,B,ldb,beta,C,ldc); }
+
+    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*A*B+beta*C or \c C \c <- \c alpha*B*A+beta*C where \c A is an \c m by \c m or \c n by \c n symmetric matrix and \c B is a general matrix.
+    inline void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const { DefaultBLASImpl<OrdinalType,ScalarType>::SYMM(side,uplo,m,n,alpha,A,lda,B,ldb,beta,C,ldc); }
+
+    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*B+beta*C or \c C \c <- \c alpha*B*op(A)+beta*C where \c op(A) is an unit/non-unit, upper/lower triangular matrix and \c B is a general matrix.
+    inline void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n,
+	      const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const { DefaultBLASImpl<OrdinalType,ScalarType>::TRMM(side,uplo,transa,diag,m,n,alpha,A,lda,B,ldb); }
+
+    //! Solves the matrix equations:  \c op(A)*X=alpha*B or \c X*op(A)=alpha*B where \c X and \c B are \c m by \c n matrices, \c A is a unit/non-unit, upper/lower triangular matrix and \c op(A) is \c A or \c A'.  The matrix \c X is overwritten on \c B.
+    inline void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n,
+	      const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const { DefaultBLASImpl<OrdinalType,ScalarType>::TRSM(side,uplo,transa,diag,m,n,alpha,A,lda,B,ldb); }
+    //@}
+  };
+
 //------------------------------------------------------------------------------------------
 //      LEVEL 1 BLAS ROUTINES  
 //------------------------------------------------------------------------------------------
     
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const
+  void DefaultBLASImpl<OrdinalType, ScalarType>::ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const
   {
     ScalarType roe, alpha;
     ScalarType zero = ScalarTraits<ScalarType>::zero();
@@ -247,13 +340,13 @@ namespace Teuchos
   } /* end ROTG */
       
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType,ScalarType>::ROT(const OrdinalType n, ScalarType* dx, const OrdinalType incx, ScalarType* dy, const OrdinalType incy, MagnitudeType* c, ScalarType* s) const
+  void DefaultBLASImpl<OrdinalType,ScalarType>::ROT(const OrdinalType n, ScalarType* dx, const OrdinalType incx, ScalarType* dy, const OrdinalType incy, MagnitudeType* c, ScalarType* s) const
   {
     // ToDo:  Implement this.
   }
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::SCAL(const OrdinalType n, const ScalarType alpha, ScalarType* x, const OrdinalType incx) const
+  void DefaultBLASImpl<OrdinalType, ScalarType>::SCAL(const OrdinalType n, const ScalarType alpha, ScalarType* x, const OrdinalType incx) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -271,7 +364,7 @@ namespace Teuchos
   } /* end SCAL */
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::COPY(const OrdinalType n, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const
+  void DefaultBLASImpl<OrdinalType, ScalarType>::COPY(const OrdinalType n, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -291,7 +384,7 @@ namespace Teuchos
   } /* end COPY */
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::AXPY(const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const
+  void DefaultBLASImpl<OrdinalType, ScalarType>::AXPY(const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -312,7 +405,7 @@ namespace Teuchos
   } /* end AXPY */
 
   template<typename OrdinalType, typename ScalarType>
-  typename ScalarTraits<ScalarType>::magnitudeType BLAS<OrdinalType, ScalarType>::ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
+  typename ScalarTraits<ScalarType>::magnitudeType DefaultBLASImpl<OrdinalType, ScalarType>::ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -333,7 +426,7 @@ namespace Teuchos
   } /* end ASUM */
   
   template<typename OrdinalType, typename ScalarType>
-  ScalarType BLAS<OrdinalType, ScalarType>::DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy) const
+  ScalarType DefaultBLASImpl<OrdinalType, ScalarType>::DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -356,7 +449,7 @@ namespace Teuchos
   } /* end DOT */
   
   template<typename OrdinalType, typename ScalarType>
-  typename ScalarTraits<ScalarType>::magnitudeType BLAS<OrdinalType, ScalarType>::NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
+  typename ScalarTraits<ScalarType>::magnitudeType DefaultBLASImpl<OrdinalType, ScalarType>::NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -379,7 +472,7 @@ namespace Teuchos
   } /* end NRM2 */
   
   template<typename OrdinalType, typename ScalarType>
-  OrdinalType BLAS<OrdinalType, ScalarType>::IAMAX(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
+  OrdinalType DefaultBLASImpl<OrdinalType, ScalarType>::IAMAX(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -410,7 +503,7 @@ namespace Teuchos
 //------------------------------------------------------------------------------------------
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* x, const OrdinalType incx, const ScalarType beta, ScalarType* y, const OrdinalType incy) const
+  void DefaultBLASImpl<OrdinalType, ScalarType>::GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* x, const OrdinalType incx, const ScalarType beta, ScalarType* y, const OrdinalType incy) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -545,7 +638,7 @@ namespace Teuchos
   } /* end GEMV */
 
  template<typename OrdinalType, typename ScalarType>
- void BLAS<OrdinalType, ScalarType>::TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const ScalarType* A, const OrdinalType lda, ScalarType* x, const OrdinalType incx) const
+ void DefaultBLASImpl<OrdinalType, ScalarType>::TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const ScalarType* A, const OrdinalType lda, ScalarType* x, const OrdinalType incx) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -704,7 +797,7 @@ namespace Teuchos
   } /* end TRMV */
         
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::GER(const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const
+  void DefaultBLASImpl<OrdinalType, ScalarType>::GER(const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -780,7 +873,7 @@ namespace Teuchos
 //------------------------------------------------------------------------------------------
         
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const
+  void DefaultBLASImpl<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const
   {
 
     typedef TypeNameTraits<OrdinalType> OTNT;
@@ -941,7 +1034,7 @@ namespace Teuchos
 
 
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const
+  void DefaultBLASImpl<OrdinalType, ScalarType>::SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -1071,7 +1164,7 @@ namespace Teuchos
 } // end SYMM
   
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const
+  void DefaultBLASImpl<OrdinalType, ScalarType>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -1273,7 +1366,7 @@ namespace Teuchos
   } // end TRMM
   
   template<typename OrdinalType, typename ScalarType>
-  void BLAS<OrdinalType, ScalarType>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const
+  void DefaultBLASImpl<OrdinalType, ScalarType>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
