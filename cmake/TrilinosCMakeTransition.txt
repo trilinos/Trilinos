@@ -385,9 +385,10 @@ Status: Builds and run tests with cmake/ctest. It is possible that some
     minor changes still need to be made for optional dependencies and other
     subtleties, but I think FEI is pretty much cmake-ified.
 
-Final Certification Date: [???]
+Final Certification Date: 3/26/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: more tests are being built/run with cmake than
+with autotools.
 
 -------------------------------------------------------------------------------
 
