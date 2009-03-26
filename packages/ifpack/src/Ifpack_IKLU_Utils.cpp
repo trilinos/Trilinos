@@ -934,7 +934,7 @@ int csr_print (const csr *A, int brief)
     {
       if( nnz == 0)
         {  /* print intermeidate matrices from csr_lu */
-	  while (Ap[m] == 0 & m > 0)
+	  while ((Ap[m] == 0) && (m > 0))
 	    {
               --m;
 	    }
