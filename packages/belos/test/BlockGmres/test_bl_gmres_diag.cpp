@@ -304,7 +304,7 @@ void Iterative_Inverse_Operator::operator () (const Epetra_MultiVector &b, Epetr
   
   int pid = pComm->MyPID();
   
-  if (pid == 0 && print)
+  if (pid == 0 && print) {
     if (ret == Belos::Converged)
       {
 	std::cout << std::endl << "pid[" << pid << "] Block GMRES converged" << std::endl;
@@ -313,6 +313,7 @@ void Iterative_Inverse_Operator::operator () (const Epetra_MultiVector &b, Epetr
       }
     else 
       std::cout << std::endl << "pid[" << pid << "] Block GMRES did not converge" << std::endl;
+  }
 }
 
 //************************************************************************************************

@@ -90,6 +90,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
         "--verbose --filename=mhd1280b.cua"
         "--verbose --filename=mhd1280b.cua --pseudo"
         "--verbose --filename=mhd1280a.cua --subspace-length=200 --tol=1e-4"
+      STANDARD_PASS_OUTPUT 
       )
 
     PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestBlockGmresComplexFiles
