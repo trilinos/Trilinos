@@ -13,8 +13,14 @@ PACKAGE_NAME=EpetraExt
     COMM = SERIAL, MPI;
 }
 
-# Removed MapColoring & MatrixMatrix from MPI for now because they always seem to hang.
 
+#(FRAMEWORK, INSTALL, EpetraExtTests) {
+#    DIRS = Zoltan;
+#    ARGS = bcsstk14.hb;
+#    COMM = MPI;
+#}
+
+# Removed MapColoring & MatrixMatrix from MPI for now because they always seem to hang.
 (FRAMEWORK, INSTALL, EpetraExtTests) {
     DIRS = MapColoring;
     ARGS = -v;

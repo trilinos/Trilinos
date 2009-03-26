@@ -52,6 +52,8 @@
 #include "EpetraExt_AMD_CrsGraph.h"
 #endif
 
+#include "Teuchos_RCP.hpp"
+
 #define perror(str) { fprintf(stderr,"%s\n",str);  exit(-1); }
 #define perror1(str,ierr) { fprintf(stderr,"%s %d\n",str,ierr);  exit(ierr); }
 
@@ -145,12 +147,12 @@ int main(int argc, char *argv[]) {
   // Generate Zoltan Load Balanced Version of Linear Problem
   if( verbose ) cout << "Creating Zoltan Partitioning Transform!\n";
 
-  EpetraExt::Zoltan_CrsGraph * ZoltanTrans = new EpetraExt::Zoltan_CrsGraph();
-  if (!ZoltanTrans) failure = true;
+  Teuchos::RCP<EpetraExt::Zoltan_CrsGraph> ZoltanTrans = Teuchos::rcp( new EpetraExt::Zoltan_CrsGraph() );
+  if (ZoltanTrans==Teuchos::null) failure = true;
 
-  EpetraExt::LinearProblem_GraphTrans * ZoltanLPTrans =
-    new EpetraExt::LinearProblem_GraphTrans( 
-         *(dynamic_cast<EpetraExt::StructuralSameTypeTransform<Epetra_CrsGraph>*>(ZoltanTrans)) );
+  Teuchos::RCP<EpetraExt::LinearProblem_GraphTrans> ZoltanLPTrans =
+    Teuchos::rcp( new EpetraExt::LinearProblem_GraphTrans( 
+         *(dynamic_cast<EpetraExt::StructuralSameTypeTransform<Epetra_CrsGraph>*>(&*ZoltanTrans)) ) );
 
   if( verbose ) cout << "Creating Load Balanced Linear Problem\n";
   Epetra_LinearProblem &BalancedProb = (*ZoltanLPTrans)(Prob);
@@ -161,12 +163,12 @@ int main(int argc, char *argv[]) {
 
 #ifdef HAVE_EXPERIMENTAL
 
-  EpetraExt::CrsGraph_AMD * AMDTrans = new EpetraExt::CrsGraph_AMD();
-  if (!AMDTrans) failure = true;
+  Teuchos::RCP<EpetraExt::CrsGraph_AMD> AMDTrans = Teuchos::rcp( new EpetraExt::CrsGraph_AMD() );
+  if (AMDTrans==Teuchos::null) failure = true;
 
-  EpetraExt::LinearProblem_GraphTrans * AMDLPTrans =
-    new EpetraExt::LinearProblem_GraphTrans( 
-         *(dynamic_cast<EpetraExt::StructuralSameTypeTransform<Epetra_CrsGraph>*>(AMDTrans)) );
+  Teuchos::RCP<EpetraExt::LinearProblem_GraphTrans> AMDLPTrans =
+    Teuchos::rcp( new EpetraExt::LinearProblem_GraphTrans( 
+         *(dynamic_cast<EpetraExt::StructuralSameTypeTransform<Epetra_CrsGraph>*>(&*AMDTrans)) ) );
 
   if( verbose ) cout << "Creating AMD Linear Problem\n";
   Epetra_LinearProblem &AMDProb = (*AMDLPTrans)(BalancedProb);
@@ -177,6 +179,15 @@ int main(int argc, char *argv[]) {
 
 #endif
  
+  // Clean up
+  if (NumRowNZs) delete [] NumRowNZs;
+  if (Values) free(Values);
+  if (Bindx) free(Bindx);
+  if (Xprime) free(Xprime);
+  if (B) free(B);
+  if (X) free(X);
+  if (Update) free(Update);
+
   Comm.Barrier();
 
   if ( ierr != 0 || failure ) {

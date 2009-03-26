@@ -90,8 +90,6 @@ operator()( OriginalTypeRef orig )
   ZOLTAN_ID_PTR export_global_ids, export_local_ids;
   int * export_procs;
 
-//  orig.Comm().Barrier();
-//  err = LB.Generate_Files( "zoltan_output" );
   orig.Comm().Barrier();
   err = LB.Balance( &changes,
                      &num_gid_entries, &num_lid_entries,
@@ -150,10 +148,10 @@ operator()( OriginalTypeRef orig )
   Epetra_CrsGraph & trans2 = transTrans( *NewGraph );
   ZoltanQuery query( *NewGraph, &trans2 );
   if( err == ZOLTAN_OK ) err = LB2.Set_QueryObject( &query );
-  err = LB2.Balance( &changes,
-                     &num_gid_entries, &num_lid_entries,
-                     &num_import, &import_global_ids, &import_local_ids, &import_procs,
-                     &num_export, &export_global_ids, &export_local_ids, &export_procs );
+  //err = LB2.Balance( &changes,
+  //                   &num_gid_entries, &num_lid_entries,
+  //                   &num_import, &import_global_ids, &import_local_ids, &import_procs,
+  //                   &num_export, &export_global_ids, &export_local_ids, &export_procs );
   LB2.Evaluate( 1, 0, 0, 0, 0, 0, 0 );
 
   newObj_ = NewGraph;
