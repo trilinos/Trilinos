@@ -23,6 +23,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       COMM serial mpi
       ARGS
         "--verbose --filename=mhd1280b.cua"
+      STANDARD_PASS_OUTPUT
       )
 
     PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestMVOPTesterComplexFiles
