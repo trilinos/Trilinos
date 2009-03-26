@@ -186,6 +186,9 @@ package:
 %ignore *::operator=;
 %ignore *::print;
 
+// General rename directive
+%rename(_global) global;
+
 // Support for other Trilinos packages
 %include "numpy.i"
 #ifdef HAVE_TEUCHOS
@@ -231,6 +234,9 @@ package:
 // Teuchos::RCP<...>, as function arguments //
 //////////////////////////////////////////////
 #ifdef HAVE_TEUCHOS
+%teuchos_rcp_typemaps(std::ostream)
+%teuchos_rcp_typemaps(std::vector<int, std::allocator<int> >)
+%teuchos_rcp_typemaps(Teuchos::SerialDenseMatrix<int, double>)
 %teuchos_rcp_typemaps(Anasazi::MultiVec< double >)
 %teuchos_rcp_typemaps(Anasazi::OutputManager< double >)
 #ifdef HAVE_EPETRA

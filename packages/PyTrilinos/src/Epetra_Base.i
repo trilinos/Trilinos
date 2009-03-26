@@ -363,14 +363,75 @@ or it will hang your code."
 /////////////////////////
 // Epetra_BLAS support //
 /////////////////////////
-// I do not want to expose this functionality to python
-%import "Epetra_BLAS.h"
+// I used to %import here, but newer versions of swig raise a bunch of
+// warnings for doing this.  Now I use %include, coupled with a bunch
+// of %ignores, because I want a simple python base class without the
+// C-style BLAS interface.
+%rename(BLAS) Epetra_BLAS;
+%ignore Epetra_BLAS::ASUM;
+%ignore Epetra_BLAS::AXPY;
+%ignore Epetra_BLAS::COPY;
+%ignore Epetra_BLAS::DOT;
+%ignore Epetra_BLAS::GEMM;
+%ignore Epetra_BLAS::GEMV;
+%ignore Epetra_BLAS::IAMAX;
+%ignore Epetra_BLAS::NRM2;
+%ignore Epetra_BLAS::SCAL;
+%ignore Epetra_BLAS::SYMM;
+%ignore Epetra_BLAS::TRMM;
+%include "Epetra_BLAS.h"
 
 ///////////////////////////
 // Epetra_LAPACK support //
 ///////////////////////////
-// I do not want to expose this functionality to python
-%import "Epetra_LAPACK.h"
+// I used to %import here, but newer versions of swig raise a bunch of
+// warnings for doing this.  Now I use %include, coupled with a bunch
+// of %ignores, because I want a simple python base class without the
+// C-style LAPACK interface.
+%rename(LAPACK) Epetra_LAPACK;
+%ignore Epetra_LAPACK::GECON;
+%ignore Epetra_LAPACK::GEEQU;
+%ignore Epetra_LAPACK::GEEV;
+%ignore Epetra_LAPACK::GEEVX;
+%ignore Epetra_LAPACK::GEHRD;
+%ignore Epetra_LAPACK::GELS;
+%ignore Epetra_LAPACK::GEQRF;
+%ignore Epetra_LAPACK::GERFS;
+%ignore Epetra_LAPACK::GESDD;
+%ignore Epetra_LAPACK::GESV;
+%ignore Epetra_LAPACK::GESVD;
+%ignore Epetra_LAPACK::GESVX;
+%ignore Epetra_LAPACK::GETRF;
+%ignore Epetra_LAPACK::GETRI;
+%ignore Epetra_LAPACK::GETRS;
+%ignore Epetra_LAPACK::GGEV;
+%ignore Epetra_LAPACK::GGLSE;
+%ignore Epetra_LAPACK::GGSVD;
+%ignore Epetra_LAPACK::HSEQR;
+%ignore Epetra_LAPACK::LAMCH;
+%ignore Epetra_LAPACK::LARFT;
+%ignore Epetra_LAPACK::ORGHR;
+%ignore Epetra_LAPACK::ORGQR;
+%ignore Epetra_LAPACK::ORMHR;
+%ignore Epetra_LAPACK::POCON;
+%ignore Epetra_LAPACK::POEQU;
+%ignore Epetra_LAPACK::PORFS;
+%ignore Epetra_LAPACK::POSV;
+%ignore Epetra_LAPACK::POSVX;
+%ignore Epetra_LAPACK::POTRF;
+%ignore Epetra_LAPACK::POTRI;
+%ignore Epetra_LAPACK::POTRS;
+%ignore Epetra_LAPACK::SPEV;
+%ignore Epetra_LAPACK::SPGV;
+%ignore Epetra_LAPACK::SYEV;
+%ignore Epetra_LAPACK::SYEVD;
+%ignore Epetra_LAPACK::SYEVR;
+%ignore Epetra_LAPACK::SYEVX;
+%ignore Epetra_LAPACK::SYGV;
+%ignore Epetra_LAPACK::SYGVX;
+%ignore Epetra_LAPACK::TREVC;
+%ignore Epetra_LAPACK::TREXC;
+%include "Epetra_LAPACK.h"
 
 //////////////////////////
 // Epetra_Flops support //

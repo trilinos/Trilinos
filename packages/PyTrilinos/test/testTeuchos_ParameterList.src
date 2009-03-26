@@ -112,7 +112,10 @@ class ParameterListTestCase(unittest.TestCase):
     def testConstructor3(self):
         "Test Teuchos.ParameterList nested dictionary constructor"
         plist = Teuchos.ParameterList(self.dict)
+        print
         for key in self.dict.keys():
+            print key, ":"
+            print plist.get(key), self.dict[key]
             self.assertEqual(plist.get(key), self.dict[key])
 
     def testConstructor4(self):

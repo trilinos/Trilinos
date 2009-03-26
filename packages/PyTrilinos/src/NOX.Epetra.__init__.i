@@ -170,6 +170,7 @@ using namespace NOX::Epetra;
 %teuchos_rcp_typemaps(NOX::Epetra::LinearSystem)
 %teuchos_rcp_typemaps(NOX::Epetra::LinearSystemAztecOO)
 %teuchos_rcp_typemaps(NOX::Epetra::Scaling)
+%teuchos_rcp_typemaps(NOX::Epetra::VectorSpace)
 %teuchos_rcp_typemaps(Epetra_CrsGraph)
 %teuchos_rcp_typemaps(Epetra_MapColoring)
 %teuchos_rcp_typemaps(Epetra_Operator)
