@@ -1,4 +1,5 @@
 INCLUDE(PackageAddTest)
+INCLUDE(PackageAddAdvancedTest)
 INCLUDE(UnitTestHelpers)
 
 
@@ -155,14 +156,180 @@ FUNCTION(UNITEST_PACKAGE_ADD_TEST_COMM)
 ENDFUNCTION()
 
 
+#
+# PACKAGE_ADD_ADVANCED_TEST(...) UnitTest Stuff
+#
+
+
+SET(PackageAddAdvancedTest_basic_cmnd_1_args_0_OUTPUT
+"
+#
+# This is a CMake script and must be run as \"cmake -P SCRIPT_NAME\"
+#
+
+#
+# Variables
+#
+
+SET( TEST_CMND_0 ls )
+
+SET(NUM_CMNDS 1)
+
+#
+# Test invocation
+#
+
+SET(CMAKE_MODULE_PATH /home/rabartl/PROJECTS/Trilinos.base/Trilinos/cmake/utils)
+
+INCLUDE(DriveAdvancedTest)
+
+DRIVE_ADVANCED_TEST()
+"
+)
+
+
 FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC)
 
-  # Needed by PACKAGE_ADD_TEST(...)
+  # Needed by PACKAGE_ADD_ADVANCED_TEST(...)
   SET(PACKAGE_NAME PackageA)
 
   # Used locally
   SET(EXEN SomeExec)
   SET(PACKEXEN ${PACKAGE_NAME}_${EXEN})
+  SET(CMNDN ls)
+
+  MESSAGE("***\n*** Add a single basic command with no arguments\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_cmnd_1_args_0
+    TEST_0 CMND ${CMNDN}
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "${CMNDN}"
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+  # Check that the whole scirpt was written correctly.  I don't want to check
+  # this too much because it will be hard to maintain this test if the scirpt
+  # generation changes in even trival ways.
+  FILE(READ
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_cmnd_1_args_0.cmake"
+    PACKAGE_ADD_ADVANCED_SCRIPT)
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_SCRIPT
+    "${PackageAddAdvancedTest_basic_cmnd_1_args_0_OUTPUT}"
+    )
+
+  MESSAGE("***\n*** Add a single basic command with two arguments\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_cmnd_1_args_2
+    TEST_0 CMND ${CMNDN} ARGS CMakeLists.txt CMakeFiles
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "${CMNDN} \"CMakeLists.txt\" \"CMakeFiles\""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_cmnd_1_args_2.cmake"
+    REGEX_STRINGS
+      "TEST_CMND_0 ls \"CMakeLists.txt\" \"CMakeFiles\""
+    )
+
+  MESSAGE("***\n*** Add two basic commands with 1 and two arguments\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_cmnd_2_args_1_2
+    TEST_0 CMND echo ARGS "Cats and Dogs"
+    TEST_1 CMND ls ARGS Cats
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    2
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "echo \"Cats and Dogs\""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_1
+    "ls \"Cats\""
+    )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_cmnd_2_args_1_2.cmake"
+    REGEX_STRINGS
+      "TEST_CMND_0 echo \"Cats and Dogs\""
+      "TEST_CMND_1 ls \"Cats\""
+      "NUM_CMNDS 2"
+    )
+
+ENDFUNCTION()
+
+
+FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_COMM)
+
+  # Needed by PACKAGE_ADD_ADVANCED_TEST(...)
+  SET(PACKAGE_NAME PackageA)
+
+  # Used locally
+  SET(EXEN SomeExec)
+  SET(PACKEXEN ${PACKAGE_NAME}_${EXEN})
+  SET(CMNDN ls)
+
+  SET(PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT TRUE)
+
+  # Default serial mode
+
+  MESSAGE("***\n*** Add a test with no COMM argument\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( DummyTest
+    TEST_0 CMND ${CMNDN}
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "${CMNDN}"
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+
+  MESSAGE("***\n*** Add a serial test with 'COMM serial'\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( DummyTest
+    TEST_0 CMND ${CMNDN}
+    COMM serial
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "${CMNDN}"
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+
+  # Doing MPI mode
+  SET(TPL_ENABLE_MPI ON)
+
+  MESSAGE("***\n*** Add serial-only test with 'COMM mpi' (will not add the test)\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( DummyTest
+    TEST_0 CMND ${CMNDN}
+    COMM serial
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    ""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    ""
+    )
 
 ENDFUNCTION()
 
@@ -202,9 +369,11 @@ MESSAGE("***\n")
 
 UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC()
 
+UNITEST_PACKAGE_ADD_ADVANCED_TEST_COMM()
+
 MESSAGE("\n***")
 MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(13)
+UNITTEST_FINAL_RESULT(31)

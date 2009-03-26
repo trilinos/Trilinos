@@ -33,6 +33,20 @@ INCLUDE(AdvancedOption)
 OPTION(Trilinos_VERBOSE_CONFIGURE
   "Make the Trilinos configure process verbose." OFF)
 
+
+#
+# A.1) Run misc unit tests that don't need anything else
+#
+
+IF (Trilinos_INVOKE_TESTING_UNIT_TESTS)
+  ADD_SUBDIRECTORY(cmake/TestingUnitTests/UnitTests)
+  RETURN()
+ENDIF()
+
+#
+# A.2) Set up other stuff
+#
+
 # Find Python executable which is needed for dependency file building
 FIND_PACKAGE(PythonInterp)
 

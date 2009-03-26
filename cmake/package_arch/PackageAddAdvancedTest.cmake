@@ -1,7 +1,7 @@
 
-INCLUDE(ParseVariableArguments)
+INCLUDE(PackageAddAdvancedTestHelpers)
+
 INCLUDE(AppendStringVar)
-INCLUDE(Join)
 INCLUDE(PrintVar)
 
 
@@ -72,11 +72,11 @@ INCLUDE(PrintVar)
 #
 #   PASS_ANY
 #
-#      If specified, the test command 'i' will be assumed to pass reguardless
-#      of the return value or any other output.  This would be used when a
-#      command that is to follow will determine pass or fail based on output
-#      from this command in some way.  Therefore, you would typically use
-#      "OUTPUT_FILE <outputFile>" when using this.
+#     If specified, the test command 'i' will be assumed to pass reguardless
+#     of the return value or any other output.  This would be used when a
+#     command that is to follow will determine pass or fail based on output
+#     from this command in some way.  Therefore, you would typically use
+#     "OUTPUT_FILE <outputFile>" when using this.
 #
 #   PASS_REGULAR_EXPRESSION <regex>
 #
@@ -103,7 +103,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
   #
 
   # Allow for a maximum of 10 (0 through 9) test commands
-  SET(MAX_NUM_TEST_CMND_IDX 9)
+  SET(MAX_NUM_TEST_CMND_IDX ${PACKAGE_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX})
 
   SET(TEST_IDX_LIST "")
   FOREACH( TEST_CMND_IDX RANGE ${MAX_NUM_TEST_CMND_IDX})
@@ -115,11 +115,21 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
      #prefix
      PARSE
      #lists
-     "${TEST_IDX_LIST}"
+     "${TEST_IDX_LIST};COMM"
      #options
      ""
      ${ARGN}
      )
+
+  #
+  # E) Determine if we will add the serial or MPI tests based on input COMM
+  # and TPL_ENABLE_MPI
+  #
+
+  PACKAGE_PROCESS_COMM_ARGS(ADD_SERIAL_TEST  ADD_MPI_TEST  ${PARSE_COMM})
+  IF (NOT ADD_SERIAL_TEST AND NOT ADD_MPI_TEST)
+    RETURN()
+  ENDIF()
 
   #
   # B) Build the test script
@@ -168,6 +178,11 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
     IF (PARSE_EXEC)
       MESSAGE( FATAL_ERROR "EXEC not implmeneted yet!" )
     ELSEIF (PARSE_CMND)
+      LIST( LENGTH PARSE_CMND PARSE_CMND_LEN )
+      IF (NOT PARSE_CMND_LEN EQUAL 1)
+        MESSAGE(SEND_ERROR "Error, TEST_${TEST_CMND_IDX} CMND = '${PARSE_CMND}'"
+          " must be a single command.  To add arguments use ARGS <arg1> <arg2> ...." )
+      ENDIF()
       SET( TEST_CMND_ARRAY ${PARSE_CMND} )
     ELSE()
       MESSAGE( FATAL_ERROR
@@ -175,14 +190,18 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
     ENDIF()
 
     IF (PARSE_ARGS)
-      JOIN( ARGS_STR " " ${PARSE_ARGS} )
-      LIST( APPEND TEST_CMND_ARRAY "${ARGS_STR}" )
+      JOIN_EXEC_PROCESS_SET_ARGS( ARGS_STR ${PARSE_ARGS} )
+      SET( TEST_CMND_ARRAY "${TEST_CMND_ARRAY} ${ARGS_STR}" )
     ENDIF()
 
     APPEND_STRING_VAR( TEST_SCRIPT_STR
       "\n"
       "SET( TEST_CMND_${TEST_CMND_IDX} ${TEST_CMND_ARRAY} )\n"
       )
+    IF (PACKAGE_ADD_ADVANCED_TEST_UNITTEST)
+      GLOBAL_SET(PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_${TEST_CMND_IDX}
+        "${TEST_CMND_ARRAY}" )
+    ENDIF()
 
     IF (PARSE_OUTPUT_FILE)
       APPEND_STRING_VAR( TEST_SCRIPT_STR
@@ -210,6 +229,10 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
     "DRIVE_ADVANCED_TEST()\n"
     )
 
+  IF (PACKAGE_ADD_ADVANCED_TEST_UNITTEST)
+    GLOBAL_SET(PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS ${NUM_CMNDS})
+  ENDIF()
+
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     PRINT_VAR(TEST_SCRIPT_STR)
   ENDIF()
@@ -218,22 +241,30 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
 
   SET(TEST_SCRIPT_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TEST_NAME}.cmake")
 
-  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nWriting file \"${TEST_SCRIPT_FILE}\" ...")
-  ENDIF()
+  IF (NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT)
 
-  FILE( WRITE "${TEST_SCRIPT_FILE}"
-    "${TEST_SCRIPT_STR}" )
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE("\nWriting file \"${TEST_SCRIPT_FILE}\" ...")
+    ENDIF()
+  
+    FILE( WRITE "${TEST_SCRIPT_FILE}"
+      "${TEST_SCRIPT_STR}" )
+
+  ENDIF()
 
   #
   # C) Set the CTest test to run the new script
   #
 
-  ADD_TEST( ${TEST_NAME}
-    ${CMAKE_COMMAND} -P "${TEST_SCRIPT_FILE}"
-    )
+  IF (NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT)
 
-  SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
-    PASS_REGULAR_EXPRESSION "FINAL RESULT: TEST PASSED" )
+    ADD_TEST( ${TEST_NAME}
+      ${CMAKE_COMMAND} -P "${TEST_SCRIPT_FILE}"
+      )
+
+    SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
+      PASS_REGULAR_EXPRESSION "FINAL RESULT: TEST PASSED" )
+
+  ENDIF()
 
 ENDFUNCTION()
