@@ -37,10 +37,16 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_INOUT
   "Enable input/output functionality"
   ON )
 
+# Requires the TPL ZoltanTpl or Zoltan package 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_Zoltan
   HAVE_ZOLTAN
   "Enable zoltan functionality"
   OFF )
+IF(${PACKAGE_NAME}_BUILD_Zoltan)
+  IF(NOT ${PACKAGE_NAME}_ENABLE_Zoltan AND NOT ${PACKAGE_NAME}_ENABLE_ZoltanTpl)
+    MESSAGE(FATAL_ERROR "Zoltan support is being built since the flag ${PACKAGE_NAME}_BUILD_Zoltan was enabled, but neither the TPl ZoltanTpl or the Trilinos package Zoltan was enabled.  Please enable the Zoltan package or the TPL ZoltanTpl.")
+  ENDIF()
+ENDIF()
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_COLORING
   HAVE_COLORING
