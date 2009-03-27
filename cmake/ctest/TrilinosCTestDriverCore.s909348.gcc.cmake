@@ -38,9 +38,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
       ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
-      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.4/bin/g++"
-      "-DCMAKE_C_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.4/bin/gcc"
-      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.4/bin/gfortran"
+      "-DCMAKE_CXX_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.3.3/bin/g++"
+      "-DCMAKE_C_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.3.3/bin/gcc"
+      "-DCMAKE_Fortran_COMPILER:FILEPATH=/Users/bmpersc/bin/gcc-4.3.3/bin/gfortran"
       )
   
   ENDIF()
