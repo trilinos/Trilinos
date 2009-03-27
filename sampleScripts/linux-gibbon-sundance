@@ -133,7 +133,7 @@ while true ; do
             echo "--opt            turn on optimized compilation (default: off)"
             echo "--lax            turn off paranoid compiler flags (necessary for python wrappers)"
             echo "--g77            use g77 instead of gfortran (default: off)"
-            echo "--exodus         enable ExodusII readers (requires ExodusII libraries. Default: off)"
+            echo "--exodus         enable ExodusII readers (requires ExodusII libraries. Default: on)"
             echo "--no-exodus      disable ExodusII readers"
             echo "--meros          enable Meros block preconditioners (default: off)"
             echo "--src <srcdir>   set location of Trilinos sources (default: \${HOME}/Code/Trilinos)"

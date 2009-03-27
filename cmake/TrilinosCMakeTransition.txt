@@ -553,7 +553,8 @@ Package: Sundance
 
 Package Transition Lead: Kevin Long (kevin.long@ttu.edu)
 
-Status: Only basic libraries only so far.
+Status: All C++ libraries and tests converted. The C++ examples haven't been done
+yet. The python wrappers haven't been converted yet. 
 
 Final Certification Date: [???]
 
