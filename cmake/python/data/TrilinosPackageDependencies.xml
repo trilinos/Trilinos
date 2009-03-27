@@ -101,11 +101,11 @@
   </Package>
   <Package name="EpetraExt" dir="epetraext">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Triutils"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Triutils,Zoltan"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="ZoltanTpl"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
@@ -270,8 +270,8 @@
     <TEST_OPTIONAL_DEP_TPLS value="MPI"/>
   </Package>
   <Package name="FEI" dir="fei">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Epetra,AztecOO,Amesos,Ifpack,ML"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,AztecOO,Amesos,Ifpack,ML"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>

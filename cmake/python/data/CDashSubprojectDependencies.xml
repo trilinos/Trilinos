@@ -60,6 +60,7 @@
   <SubProject name="EpetraExt">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Triutils" type="LO"/>
     <EmailAddresses>
       <Email address="epetraext-regression@software.sandia.gov"/>
@@ -74,6 +75,7 @@
   <SubProject name="Sacado">
     <Dependency name="Teuchos" type="LO"/>
     <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Stokhos" type="LO"/>
@@ -85,6 +87,7 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="RTOp" type="LR"/>
     <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <EmailAddresses>
@@ -95,6 +98,7 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="GlobiPack" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
@@ -136,6 +140,7 @@
   <SubProject name="Galeri">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <EmailAddresses>
@@ -145,6 +150,7 @@
   <SubProject name="Amesos">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Galeri" type="TO"/>
@@ -155,6 +161,7 @@
   <SubProject name="Ifpack">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="AztecOO" type="LO"/>
@@ -229,7 +236,7 @@
     <Dependency name="Teuchos" type="ILR"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Epetra" type="LR"/>
-    <Dependency name="Zoltan" type="ITO"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ITR"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="LR"/>
@@ -247,7 +254,7 @@
     </EmailAddresses>
   </SubProject>
   <SubProject name="FEI">
-    <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -273,6 +280,7 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="LO"/>
     <Dependency name="EpetraExt" type="TO"/>
@@ -293,6 +301,7 @@
   <SubProject name="Phalanx">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="TO"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="ILO"/>
@@ -385,7 +394,7 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Epetra" type="ILO"/>
-    <Dependency name="Zoltan" type="ITO"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="TO"/>
@@ -410,7 +419,7 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="RTOp" type="LR"/>
     <Dependency name="Epetra" type="ILO"/>
-    <Dependency name="Zoltan" type="ITO"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="TO"/>
@@ -472,6 +481,7 @@
   <SubProject name="TriKota">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
     <EmailAddresses>
