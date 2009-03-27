@@ -170,7 +170,6 @@ int Allgatherv(MPI_Comm comm,
                std::vector<int>& recvLengths,
                std::vector<T>& recvbuf)
 {
-  int numProcs = 1;
 #ifdef FEI_SER
   //If we're in serial mode, just copy sendbuf to recvbuf and return.
 
@@ -178,6 +177,7 @@ int Allgatherv(MPI_Comm comm,
   recvLengths.resize(1);
   recvLengths[0] = sendbuf.size();
 #else
+  int numProcs = 1;
   MPI_Comm_size(comm, &numProcs);
 
   try {

@@ -8,19 +8,17 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../support-Trilinos)
 
 ADD_SUBDIRECTORY(remEssBCs)
 
-ASSERT_DEFINED(FEI_ENABLE_Teuchos)
-IF(FEI_ENABLE_Teuchos)
 
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../teuchos/src)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../teuchos/src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../teuchos/src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../teuchos/src)
 
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    fei_test
-    SOURCES fei_test.cpp
-    ARGS "-d . -test unit_tests"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    )
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  fei_test
+  SOURCES fei_test.cpp
+  ARGS "-d . -test unit_tests"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
 
 IF(FEI_ENABLE_AztecOO)
 
@@ -406,4 +404,3 @@ IF(FEI_ENABLE_AztecOO)
 
 ENDIF()
 
-ENDIF()

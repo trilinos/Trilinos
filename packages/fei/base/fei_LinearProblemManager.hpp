@@ -13,6 +13,8 @@
 #include <fei_SharedPtr.hpp>
 #include <fei_mpi.h>
 
+#include <vector>
+
 namespace fei {
   class ParameterSet;
   class SparseRowGraph;

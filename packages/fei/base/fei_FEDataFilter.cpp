@@ -1205,14 +1205,8 @@ int FEDataFilter::loadCRMult(int CRID,
 //
 // Load Lagrange multiplier constraint relation data
 //
-//   Question: do we really need to pass CRNodes again?  Here, I'm going
-//            to ignore it for now (i.e., not store it, but just check it), 
-//            as it got passed during the initialization phase, so all we'll 
-//            do here is check for errors...
-//
 
-  //If we're using the FiniteElementData interface, we give the constraint
-  //data to the underlying solver using this special function...
+  //Give the constraint data to the underlying solver using this special function...
   CHK_ERR( loadFEDataMultCR(CRID, numCRNodes, CRNodes, CRFields, CRWeights,
                             CRValue) );
 
@@ -1234,8 +1228,7 @@ int FEDataFilter::loadCRPen(int CRID,
 
    debugOutput("FEI: loadCRPen");
 
-   //If we're using the FiniteElementData interface, we give the constraint
-   //data to the underlying solver using this special function...
+   //Give the constraint data to the underlying solver using this special function...
    CHK_ERR( loadFEDataPenCR(CRID, numCRNodes, CRNodes, CRFields, CRWeights,
                             CRValue, penValue) );
 
