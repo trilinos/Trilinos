@@ -27,6 +27,7 @@
 //@HEADER
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 #include "Rythmos_Types.hpp"
 #include "Rythmos_UnitTestHelpers.hpp"
@@ -40,13 +41,19 @@ TEUCHOS_UNIT_TEST( Rythmos_ThetaStepper, create) {
   // Model
   RCP<SinCosModel> model = sinCosModel(true);
 
+  // TODO: get xml files working
+  //RCP<ParameterList> modelPL = 
+  //  Teuchos::getParametersFromXmlFile("modelParams.xml");
+  //modelPL->validateParametersAndSetDefaults(*model->getValidParameters());
+
   Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
 
   // Solver
   RCP<TimeStepNonlinearSolver<double> > nlSolver = timeStepNonlinearSolver<double>();
 
   // Stepper
-  RCP<ThetaStepper<double> > stepper = thetaStepper<double>();
+  const double theta = 1.0;
+  RCP<ThetaStepper<double> > stepper = thetaStepper<double>(theta);
   TEST_ASSERT( !is_null(stepper) );
   stepper->setModel(model);
   stepper->setSolver(nlSolver);

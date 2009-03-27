@@ -54,15 +54,8 @@
 namespace Rythmos {
 
 
-/** \brief Simple concrete stepper subclass implementing an implicit backward
- * Euler method.
+/** \brief Stepper class for theta integration scheme common in SNL thermal/fluids codes.
  *
- * This class exists primarily as a simple example of an implicit time stepper
- * and as a vehicle for experimentation.  The <tt>ImplicitBDFStepper</tt> also
- * implements backward Euler and is a more powerful stepper class.  This class
- * does not implement a local truncation error test and therefore also does
- * not handle the automatic step size selection.  Therefore, if you need these
- * features, you should really use the <tt>ImplicitBDFStepper</tt> class.
  */
 template<class Scalar>
 class ThetaStepper : virtual public SolverAcceptingStepperBase<Scalar>
@@ -90,6 +83,9 @@ public:
   /** \brief . */
   RCP<InterpolatorBase<Scalar> > unsetInterpolator();
 
+  /** \brief . */
+  void setTheta(const Scalar theta);
+  
   //@}
 
   /** \name Overridden from SolverAcceptingStepperBase */
@@ -218,7 +214,7 @@ private:
   bool haveInitialCondition_;
   RCP<const Thyra::ModelEvaluator<Scalar> > model_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > solver_;
-  RCP<Thyra::VectorBase<Scalar> > scaled_x_old_;
+  RCP<Thyra::VectorBase<Scalar> > x_dot_base_;
   RCP<Thyra::VectorBase<Scalar> > x_dot_old_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
@@ -263,9 +259,12 @@ thetaStepper(
 
 template<class Scalar>
 RCP<ThetaStepper<Scalar> >
-thetaStepper()
+thetaStepper(const Scalar theta = 1.0)
 {
-  return Teuchos::rcp(new ThetaStepper<Scalar>());
+  Teuchos::RCP<ThetaStepper<Scalar> > stepper = Teuchos::rcp(new ThetaStepper<Scalar>());
+  stepper->setTheta(theta);
+
+  return stepper;
 }
 
 
@@ -330,6 +329,12 @@ ThetaStepper<Scalar>::unsetInterpolator()
 }
 
 
+template<class Scalar>
+void ThetaStepper<Scalar>::setTheta(const Scalar theta)
+{
+  theta_ = theta;
+}
+
 // Overridden from SolverAcceptingStepperBase
 
 
@@ -346,7 +351,7 @@ void ThetaStepper<Scalar>::setSolver(
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"BES::setSolver");
+  Teuchos::OSTab ostab(out,1,"TS::setSolver");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "solver = " << solver->description() << std::endl;
   }
@@ -396,8 +401,8 @@ ThetaStepper<Scalar>::cloneStepperAlgorithm() const
     stepper->solver_ = solver_->cloneNonlinearSolver().assert_not_null();
   if (!is_null(x_))
     stepper->x_ = x_->clone_v().assert_not_null();
-  if (!is_null(scaled_x_old_))
-    stepper->scaled_x_old_ = scaled_x_old_->clone_v().assert_not_null();
+  if (!is_null(x_dot_base_))
+    stepper->x_dot_base_ = x_dot_base_->clone_v().assert_not_null();
   stepper->t_ = t_;
   stepper->t_old_ = t_old_;
   stepper->dt_ = dt_;
@@ -427,7 +432,7 @@ void ThetaStepper<Scalar>::setModel(
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"BES::setModel");
+  Teuchos::OSTab ostab(out,1,"TS::setModel");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "model = " << model->description() << std::endl;
   }
@@ -436,7 +441,7 @@ void ThetaStepper<Scalar>::setModel(
   // Wipe out x.  This will either be set thorugh setInitialCondition(...) or
   // it will be taken from the model's nominal vlaues!
   x_ = Teuchos::null;
-  scaled_x_old_ = Teuchos::null;
+  x_dot_base_ = Teuchos::null;
   x_dot_ = Teuchos::null;
   x_dot_old_ = Teuchos::null;
 
@@ -522,7 +527,7 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"BES::takeStep");
+  Teuchos::OSTab ostab(out,1,"TS::takeStep");
   VOTSNSB solver_outputTempState(solver_,out,incrVerbLevel(verbLevel,-1));
 
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
@@ -536,31 +541,40 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   if ((stepSizeType == STEP_TYPE_VARIABLE) || (dt == ST::zero())) {
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
       *out << "\nThe arguments to takeStep are not valid for ThetaStepper at this time." << std::endl;
-    // print something out about this method not supporting automatic variable step-size
     return(Scalar(-ST::one()));
   }
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "\ndt = " << dt << std::endl;
+    *out << "\nstepSizeType = " << stepSizeType << std::endl;
   }
 
 
   //
   // Setup the nonlinear equations:
   //
-  //   f( (1/dt)* x + (-1/dt)*x_old), x, t ) = 0
+  //   substitute:
+  // 
+  //   x_dot = ( 1/(theta*dt) )*x + ( -1/(theta*dt) )*x_old + ( (1-theta)/theta )*x_dot_old
+  //   
+  //   f( x_dot, x, t ) = 0
   //
 
-  V_StV( &*scaled_x_old_, Scalar(-ST::one()/dt), *x_ );
+  V_StV( &*x_dot_base_, Scalar(-ST::one()/(theta_*dt)), *x_ );
+  Vp_StV( &*x_dot_base_, Scalar( (ST::one()-theta_)/theta_), *x_);
+
   t_old_ = t_;
   if(!neModel_.get()) {
     neModel_ = Teuchos::rcp(new Rythmos::SingleResidualModelEvaluator<Scalar>());
   }
   neModel_->initializeSingleResidualModel(
-    model_, basePoint_,
-    Scalar(ST::one()/dt), scaled_x_old_,
-    ST::one(), Teuchos::null,
-    t_old_+dt,
-    Teuchos::null
+    model_, 
+    basePoint_,
+    Scalar(ST::one()/(theta_*dt)), // coeff_x_dot
+    x_dot_base_,
+    ST::one(), // coeff_x
+    Teuchos::null, // x_base
+    t_old_+dt, // t_base
+    Teuchos::null // x_bar_init
     );
   if( solver_->getModel().get() != neModel_.get() ) {
     solver_->setModel(neModel_);
@@ -600,7 +614,7 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
   // x_dot = (1/dt)*x - (1/dt)*x_old 
   V_StV( &*x_dot_, Scalar(ST::one()/dt), *x_ );
-  Vp_StV( &*x_dot_, Scalar(ST::one()), *scaled_x_old_ );
+  Vp_StV( &*x_dot_, Scalar(ST::one()), *x_dot_base_ );
 
   t_ += dt;
 
@@ -733,7 +747,7 @@ void ThetaStepper<Scalar>::addPoints(
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"BES::setPoints");
+  Teuchos::OSTab ostab(out,1,"TS::setPoints");
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_vec = " << std::endl;
@@ -746,7 +760,7 @@ void ThetaStepper<Scalar>::addPoints(
     t_ = time_vec[n];
     t_old_ = t_;
     Thyra::V_V(&*x_,*x_vec[n]);
-    Thyra::V_V(&*scaled_x_old_,*x_);
+    Thyra::V_V(&*x_dot_base_,*x_);
   }
   else {
     int n = time_vec.size()-1;
@@ -755,7 +769,7 @@ void ThetaStepper<Scalar>::addPoints(
     t_old_ = time_vec[nm1];
     Thyra::V_V(&*x_,*x_vec[n]);
     Scalar dt = t_ - t_old_;
-    Thyra::V_StV(&*scaled_x_old_,Scalar(-ST::one()/dt),*x_vec[nm1]);
+    Thyra::V_StV(&*x_dot_base_,Scalar(-ST::one()/dt),*x_vec[nm1]);
   }
 }
 
@@ -794,7 +808,7 @@ void ThetaStepper<Scalar>::getPoints(
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"BES::getPoints");
+  Teuchos::OSTab ostab(out,1,"TS::getPoints");
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
     *out
       << "\nEntering " << Teuchos::TypeNameTraits<ThetaStepper<Scalar> >::name()
@@ -823,7 +837,7 @@ void ThetaStepper<Scalar>::getPoints(
       );
 #endif
     RCP<Thyra::VectorBase<Scalar> >
-      x_temp = scaled_x_old_->clone_v();
+      x_temp = x_dot_base_->clone_v();
     Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));  // undo the scaling
     ds_temp.time = t_old_;
     ds_temp.x = x_temp;
@@ -896,7 +910,7 @@ void ThetaStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
   }
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"BES::getNodes");
+  Teuchos::OSTab ostab(out,1,"TS::getNodes");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << this->description() << std::endl;
     for (int i=0 ; i<Teuchos::as<int>(time_vec->size()) ; ++i) {
@@ -913,7 +927,7 @@ void ThetaStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
   using Teuchos::as;
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab ostab(out,1,"BES::removeNodes");
+  Teuchos::OSTab ostab(out,1,"TS::removeNodes");
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "time_vec = " << std::endl;
     for (int i=0 ; i<Teuchos::as<int>(time_vec.size()) ; ++i) {
@@ -923,8 +937,8 @@ void ThetaStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
   TEST_FOR_EXCEPTION(true,std::logic_error,"Error, removeNodes is not implemented for ThetaStepper at this time.\n");
   // TODO:
   // if any time in time_vec matches t_ or t_old_, then do the following:
-  // remove t_old_:  set t_old_ = t_ and set scaled_x_old_ = x_
-  // remove t_:  set t_ = t_old_ and set x_ = -dt*scaled_x_old_
+  // remove t_old_:  set t_old_ = t_ and set x_dot_base_ = x_
+  // remove t_:  set t_ = t_old_ and set x_ = -dt*x_dot_base_
 }
 
 
@@ -1033,8 +1047,8 @@ void ThetaStepper<Scalar>::describe(
     }
     out << "x_ = " << std::endl;
     x_->describe(out,verbLevel);
-    out << "scaled_x_old_ = " << std::endl;
-    scaled_x_old_->describe(out,verbLevel);
+    out << "x_dot_base_ = " << std::endl;
+    x_dot_base_->describe(out,verbLevel);
   }
 }
 
@@ -1061,8 +1075,8 @@ void ThetaStepper<Scalar>::initialize()
     // when it is implementated!
   }
 
-  if (is_null(scaled_x_old_))
-    scaled_x_old_ = createMember(model_->get_x_space());
+  if (is_null(x_dot_base_))
+    x_dot_base_ = createMember(model_->get_x_space());
 
   if (is_null(x_dot_))
     x_dot_ = createMember(model_->get_x_space());

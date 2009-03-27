@@ -44,7 +44,11 @@ using Thyra::ModelEvaluatorBase;
 namespace Rythmos {
 
   /*
-   * This is the canonical Sine Cosine differential equation \ddot{x} = -x with a few enhancements.
+   * This is the canonical Sine Cosine differential equation 
+   * 
+   * \ddot{x} = -x 
+   * 
+   * with a few enhancements.
    * We start with the exact solution to the differential equation as:
    * x0(t) = a + b*sin((f/L)*t+phi)
    * x1(t) =   b*(f/L)*cos((f/L)*t+phi)
