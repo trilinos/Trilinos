@@ -17,7 +17,7 @@
 #endif
 
 #include "Test_Utils.hpp"
-#include "src/tBlock2x2PreconditionerFactory.hpp"
+#include "src/tLU2x2PreconditionerFactory.hpp"
 #include "src/tLSCStablePreconditionerFactory.hpp"
 #include "src/tJacobi2x2PreconditionerFactory.hpp"
 #include "src/tBlockJacobiPreconditionerFactory.hpp"
@@ -25,6 +25,7 @@
 #include "src/Epetra/tEpetraOperatorWrapper.hpp"
 #include "src/Epetra/tStridedEpetraOperator.hpp"
 #include "src/Epetra/tInterlacedEpetra.hpp"
+#include "src/Epetra/tEpetraThyraConverter.hpp"
 
 
 int main(int argc,char * argv[])
@@ -68,12 +69,15 @@ int main(int argc,char * argv[])
    termout->setOutputToRootOnly(0);
    failout->setOutputToRootOnly(0);
 
-   PB_ADD_UNIT_TEST(PB::Test::tBlock2x2PreconditionerFactory,Block2x2PreconditionerFactory);
+#if 1
+   PB_ADD_UNIT_TEST(PB::Test::tLU2x2PreconditionerFactory,LU2x2PreconditionerFactory);
    PB_ADD_UNIT_TEST(PB::Test::tLSCStablePreconditionerFactory,LSCStablePreconditionerFactory);
    PB_ADD_UNIT_TEST(PB::Test::tJacobi2x2PreconditionerFactory,Jacobi2x2PreconditionerFactory);
    PB_ADD_UNIT_TEST(PB::Test::tBlockJacobiPreconditionerFactory,BlockJacobiPreconditionerFactory);
    PB_ADD_UNIT_TEST(PB::Test::tEpetraOperatorWrapper,EpetraOperatorWrapper);
    PB_ADD_UNIT_TEST(PB::Test::tInterlacedEpetra,InterlacedEpetra);
+   PB_ADD_UNIT_TEST(PB::Test::tEpetraThyraConverter,EpetraThyraConverter);
+#endif
    if(not isfast) {
       PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
       PB_ADD_UNIT_TEST(PB::Test::tEpetraLSCIntegrationTest,EpetraLSCIntegrationTest);

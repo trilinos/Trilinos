@@ -6,7 +6,10 @@ include ../../make.include
 INCLUDE = -I$(TRILINOS_INCLUDE) -I$(PB_TESTS_INCLUDE) -I$(PB_INCLUDE)
 CPPFLAGS=-DHAVE_CONFIG_H $(THYRA_CXXFLAGS) $(DEBUG_FLAGS)
 
-OBJS = tBlock2x2PreconditionerFactory.o tLSCStablePreconditionerFactory.o tJacobi2x2PreconditionerFactory.o tBlockJacobiPreconditionerFactory.o
+OBJS = tLSCStablePreconditionerFactory.o \
+       tJacobi2x2PreconditionerFactory.o tBlockJacobiPreconditionerFactory.o \
+       tLU2x2PreconditionerFactory.o
+
 PREC = $(OBJS:%.o=%._tmp)
 
 all: $(OBJS)

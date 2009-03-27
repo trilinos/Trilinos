@@ -1,5 +1,5 @@
 #include "tBlockJacobiPreconditionerFactory.hpp"
-#include "PB_BlockJacobiPreconditionerFactory.hpp"
+#include "PB_JacobiPreconditionerFactory.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
@@ -129,7 +129,7 @@ int tBlockJacobiPreconditionerFactory::runTest(int verbosity,std::ostream & stds
 
 bool tBlockJacobiPreconditionerFactory::test_createPrec(int verbosity,std::ostream & os)
 {
-   RCP<BlockJacobiPreconditionerFactory> fact = rcp(new BlockJacobiPreconditionerFactory(invF_,invC_));
+   RCP<JacobiPreconditionerFactory> fact = rcp(new JacobiPreconditionerFactory(invF_,invC_));
 
    try {
       // preconditioner factory should return a DefaultPreconditionerBase
@@ -143,7 +143,7 @@ bool tBlockJacobiPreconditionerFactory::test_createPrec(int verbosity,std::ostre
       return false;
    }
 
-   fact = rcp(new BlockJacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invF_,invC_))));
+   fact = rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invF_,invC_))));
 
    try {
       // preconditioner factory should return a DefaultPreconditionerBase
@@ -195,10 +195,10 @@ bool tBlockJacobiPreconditionerFactory::test_initializePrec(int verbosity,std::o
    invBlkOp->endBlockFill();
 
    // build factory array
-   RCP<BlockJacobiPreconditionerFactory> fact_array[3] 
-         = { rcp(new BlockJacobiPreconditionerFactory(invF_,invC_)),
-             rcp(new BlockJacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invF_,invC_)))),
-             rcp(new BlockJacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invD)))) };
+   RCP<JacobiPreconditionerFactory> fact_array[3] 
+         = { rcp(new JacobiPreconditionerFactory(invF_,invC_)),
+             rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invF_,invC_)))),
+             rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invD)))) };
 
    RCP<const Thyra::LinearOpBase<double> > A[3] = { 
        block2x2(F_,Bt_,B_,C_),
@@ -215,7 +215,7 @@ bool tBlockJacobiPreconditionerFactory::test_initializePrec(int verbosity,std::o
    for(int i=0;i<3;i++) {
       RCP<const Thyra::LinearOpBase<double> > op;
 
-      RCP<BlockJacobiPreconditionerFactory> fact = fact_array[i];
+      RCP<Thyra::PreconditionerFactoryBase<double> > fact = fact_array[i];
       RCP<Thyra::PreconditionerBase<double> > prec = fact->createPrec();
 
       // initialize the preconditioner
@@ -264,6 +264,8 @@ bool tBlockJacobiPreconditionerFactory::test_isCompatible(int verbosity,std::ost
    bool status = false;
    bool allPassed = true;
 
+   // with the "new" PreconditionerFactory this test is now meaningless.
+#if 0
    {
       // three by three bloock diagonal 
       std::vector<RCP<const Thyra::LinearOpBase<double> > > invD;
@@ -280,7 +282,7 @@ bool tBlockJacobiPreconditionerFactory::test_isCompatible(int verbosity,std::ost
    
       // build factory array
       RCP<const Thyra::PreconditionerFactoryBase<double> > fact
-            = rcp(new BlockJacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invD))));
+            = rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invD))));
    
       const RCP<const Thyra::LinearOpBase<double> > A = blkOp;
       bool result = fact->isCompatible(*Thyra::defaultLinearOpSource<double>(A));
@@ -304,7 +306,7 @@ bool tBlockJacobiPreconditionerFactory::test_isCompatible(int verbosity,std::ost
    
       // build factory array
       RCP<const Thyra::PreconditionerFactoryBase<double> > fact
-            = rcp(new BlockJacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invD))));
+            = rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invD))));
    
       const RCP<const Thyra::LinearOpBase<double> > A = blkOp;
       bool result = fact->isCompatible(*Thyra::defaultLinearOpSource<double>(A));
@@ -329,7 +331,7 @@ bool tBlockJacobiPreconditionerFactory::test_isCompatible(int verbosity,std::ost
    
       // build factory array
       RCP<const Thyra::PreconditionerFactoryBase<double> > fact
-            = rcp(new BlockJacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invD))));
+            = rcp(new JacobiPreconditionerFactory(rcp(new StaticInvDiagStrategy(invD))));
    
       const RCP<const Thyra::LinearOpBase<double> > A = blkOp;
       bool result = fact->isCompatible(*Thyra::defaultLinearOpSource<double>(A));
@@ -337,6 +339,7 @@ bool tBlockJacobiPreconditionerFactory::test_isCompatible(int verbosity,std::ost
                std::endl << "   tBlockJacobiPreconditionerFactory::test_isCompatible " << toString(status) 
                << ": On failure 3x2 based block operator is compatible with 3x3 preconditioner!");
    }
+#endif
 
    return allPassed;
 }

@@ -25,9 +25,6 @@
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
 
-// PB-Package includes
-#include "PB_Block2x2PreconditionerFactory.hpp"
-
 #include <iostream>
 
 using namespace Teuchos;

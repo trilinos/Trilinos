@@ -1,37 +1,25 @@
 #ifndef __PB_LSCPreconditionerFactory_hpp__
 #define __PB_LSCPreconditionerFactory_hpp__
 
-#include "Teuchos_ParameterListAcceptor.hpp"
-
-#include "Thyra_SolveSupportTypes.hpp"
-#include "Thyra_LinearOpSourceBase.hpp"
-#include "Thyra_PreconditionerBase.hpp"
-#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
-#include "Thyra_LinearOpWithSolveBase.hpp"
-#include "Thyra_PreconditionerFactoryHelpers.hpp"
-#include "Thyra_PreconditionerFactoryBase.hpp"
-
-#include "PB_Block2x2PreconditionerFactory.hpp"
+#include "PB_BlockPreconditionerFactory.hpp"
 #include "PB_LSCStrategy.hpp"
 
 namespace PB {
 namespace NS { // Navier-Stokes specialization
 
 class LSCPreconditionerFactory 
-   : public Block2x2PreconditionerFactory {
+   : public BlockPreconditionerFactory {
    public:
       // constructors for a LSCPreconditionerFactory
 
       // Staiblized constructor
-      LSCPreconditionerFactory(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invF,
-                               const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invBQBtmC,
-                               const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invD,
-                               const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invMass);
+      LSCPreconditionerFactory(const LinearOp & invF,const LinearOp & invBQBtmC,
+                               const LinearOp & invD,const LinearOp & invMass);
  
       // Stable constructor
-      LSCPreconditionerFactory(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invF,
-                               const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invBQBtmC,
-                               const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invMass);
+      LSCPreconditionerFactory(const LinearOp & invF,
+                               const LinearOp & invBQBtmC,
+                               const LinearOp & invMass);
 
       // fully generic constructor
       LSCPreconditionerFactory(const Teuchos::RCP<const LSCStrategy> & strategy);
@@ -39,10 +27,8 @@ class LSCPreconditionerFactory
       // for PreconditionerFactoryBase
       ///////////////////////////////////////////////////////////////////////
 
-      // initialize a newly created preconditioner object
-      void initializePrec(const Teuchos::RCP<const Thyra::LinearOpSourceBase<double> > & fwdOpSrc,
-                          Thyra::PreconditionerBase<double> * precOp,
-                          const Thyra::ESupportSolveUse supportSolveUse=Thyra::SUPPORT_SOLVE_UNSPECIFIED) const;
+      virtual LinearOp buildPreconditionerOperator(BlockedLinearOp & blo) const;
+
    protected:
       // main driver for code
       Teuchos::RCP<const LSCStrategy> invOpsStrategy_;

@@ -1,5 +1,4 @@
 #include "tLSCStablePreconditionerFactory.hpp"
-//#include "NS/PB_LSCStablePreconditionerFactory.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
 
 // Teuchos includes
@@ -21,6 +20,7 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_PreconditionerFactoryHelpers.hpp"
 
 #include <vector>
 

@@ -45,6 +45,12 @@ namespace Epetra {
   * <b>Postconditions</b><ul>
   * <li> [<code>thryaX==epetraX</code>] Contents of <code>epetraX</code> are copied into <code>thyraX</code>
   * </ul>
+  *
+  * \note Due to a Thyra issue with a somewhat incomplete inheritance hierarchy surrounding
+  *       the <code>SpmdMultiVectorBase</code> and <code>SpmdVectorBase</code> interfaces <code>thyraX</code> must be of
+  *       type <code>SpmdMultiVectorBase</code>, <code>ProductMultiVectorBase</code>, or <code>ProductVectorBase</code>.
+  *       Notice that this does not include the <code>SpmdVectorBase</code> class. A fix of this might involve a more
+  *       general implementation and use of <code>DetachedSpmdMultiVectorView</code>.
   */
 void blockEpetraToThyra(const Epetra_MultiVector & epetraX,const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyraX); 
 
@@ -78,6 +84,12 @@ void blockEpetraToThyra(const Epetra_MultiVector & epetraX,const Teuchos::Ptr<Th
   * <b>Postconditions</b><ul>
   * <li> [<code>thryaX==epetraX</code>] Contents of <code>epetraX</code> are copied into <code>thyraX</code>
   * </ul>
+  *
+  * \note Due to a Thyra issue with a somewhat incomplete inheritance hierarchy surrounding
+  *       the <code>SpmdMultiVectorBase</code> and <code>SpmdVectorBase</code> interfaces <code>thyraX</code> must be of
+  *       type <code>SpmdMultiVectorBase</code>, <code>ProductMultiVectorBase</code>, or <code>ProductVectorBase</code>.
+  *       Notice that this does not include the <code>SpmdVectorBase</code> class. A fix of this might involve a more
+  *       general implementation and use of <code>ConstDetachedSpmdMultiVectorView</code>.
   */
 void blockThyraToEpetra(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & thyraX,Epetra_MultiVector & epetraX);
 

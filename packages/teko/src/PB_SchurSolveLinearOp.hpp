@@ -4,6 +4,8 @@
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 
+#include "PB_BlockPreconditionerFactory.hpp"
+
 namespace PB {
 
 /** \brief This linear operator approximates the inverse
@@ -99,6 +101,11 @@ private:
    SchurSolveLinearOp();
    SchurSolveLinearOp(const SchurSolveLinearOp &);
 };
+
+inline LinearOp createNewSchurSolveLinearOp(BlockedLinearOp & A,LinearOp & invA00,LinearOp & invS)
+{
+   return Teuchos::rcp(new SchurSolveLinearOp(A,invA00,invS));
+}
 
 } // end namespace PB
 

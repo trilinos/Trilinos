@@ -1,5 +1,5 @@
-#include "tBlock2x2PreconditionerFactory.hpp"
-#include "PB_Block2x2PreconditionerFactory.hpp"
+#include "tLU2x2PreconditionerFactory.hpp"
+#include "PB_LU2x2PreconditionerFactory.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
@@ -20,6 +20,7 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_PreconditionerFactoryHelpers.hpp"
 
 #include <vector>
 
@@ -38,7 +39,7 @@ namespace Test {
 using namespace Teuchos;
 using namespace Thyra;
 
-void tBlock2x2PreconditionerFactory::initializeTest()
+void tLU2x2PreconditionerFactory::initializeTest()
 {
    std::vector<int> indicies(2);
    std::vector<double> row0(2),row1(2);
@@ -101,13 +102,13 @@ void tBlock2x2PreconditionerFactory::initializeTest()
    A_ = Thyra::block2x2<double>(F_,Bt_,B_,F_,"A");
 }
 
-int tBlock2x2PreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun)
+int tLU2x2PreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun)
 {
    bool allTests = true;
    bool status;
    int failcount = 0;
 
-   failstrm << "tBlock2x2PreconditionerFactory";
+   failstrm << "tLU2x2PreconditionerFactory";
 
    status = test_createPrec(verbosity,failstrm);
    allTests &= status;
@@ -153,18 +154,18 @@ int tBlock2x2PreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tBlock2x2PreconditionedFactory...PASSED","tBlock2x2PreconditionedFactory...FAILED");
+      PB_TEST_MSG(failstrm,0,"tLU2x2PreconditionedFactory...PASSED","tLU2x2PreconditionedFactory...FAILED");
    }
    else {// Normal Operatoring Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tBlock2x2PreconditionedFactory...FAILED");
+      PB_TEST_MSG(failstrm,0,"...PASSED","tLU2x2PreconditionedFactory...FAILED");
    }
 
    return failcount;
 }
 
-bool tBlock2x2PreconditionerFactory::test_createPrec(int verbosity,std::ostream & os)
+bool tLU2x2PreconditionerFactory::test_createPrec(int verbosity,std::ostream & os)
 {
-   RCP<Block2x2PreconditionerFactory> fact = rcp(new Block2x2PreconditionerFactory(invF_,invS_));
+   RCP<LU2x2PreconditionerFactory> fact = rcp(new LU2x2PreconditionerFactory(invF_,invS_));
 
    try {
       // preconditioner factory should return a DefaultPreconditionerBase
@@ -181,14 +182,14 @@ bool tBlock2x2PreconditionerFactory::test_createPrec(int verbosity,std::ostream 
    return true;
 }
 
-bool tBlock2x2PreconditionerFactory::test_initializePrec(int verbosity,std::ostream & os)
+bool tLU2x2PreconditionerFactory::test_initializePrec(int verbosity,std::ostream & os)
 {
    bool status = false;
    bool allPassed = true;
 
    // Build block2x2 preconditioner
    RCP<Thyra::PreconditionerFactoryBase<double> > precFactory 
-         = rcp(new Block2x2PreconditionerFactory(invF_,invS_));
+         = rcp(new LU2x2PreconditionerFactory(invF_,invS_));
    RCP<Thyra::PreconditionerBase<double> > prec = precFactory->createPrec();
 
    // initialize the preconditioner
@@ -199,7 +200,7 @@ bool tBlock2x2PreconditionerFactory::test_initializePrec(int verbosity,std::ostr
    op = prec->getUnspecifiedPrecOp();
    status = (op!=Teuchos::null);
    if(not status) {
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_initializePrec " << toString(status) << std::endl;
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_initializePrec " << toString(status) << std::endl;
       os << "      " << "Preconditioner \"getUnspecifiedPrecOp\" is null (it should not be!)" << std::endl;;
    }
    allPassed &= status;
@@ -207,7 +208,7 @@ bool tBlock2x2PreconditionerFactory::test_initializePrec(int verbosity,std::ostr
    op = prec->getRightPrecOp();
    status = (op==Teuchos::null);
    if(not status) {
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_initializePrec " << toString(status) << std::endl;
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_initializePrec " << toString(status) << std::endl;
       os << "      " << "Preconditioner \"getRightPrecOp\" is not null (it should be!)" << std::endl;;
    }
    allPassed &= status;
@@ -215,7 +216,7 @@ bool tBlock2x2PreconditionerFactory::test_initializePrec(int verbosity,std::ostr
    op = prec->getLeftPrecOp();
    status = (op==Teuchos::null);
    if(not status) {
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_initializePrec " << toString(status) << std::endl;
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_initializePrec " << toString(status) << std::endl;
       os << "      " << "Preconditioner \"getLeftPrecOp\" is not null (it should be!)" << std::endl;;
    }
    allPassed &= status;
@@ -223,17 +224,17 @@ bool tBlock2x2PreconditionerFactory::test_initializePrec(int verbosity,std::ostr
    return allPassed;
 }
 
-bool tBlock2x2PreconditionerFactory::test_uninitializePrec(int verbosity,std::ostream & os)
+bool tLU2x2PreconditionerFactory::test_uninitializePrec(int verbosity,std::ostream & os)
 {
    return true;
 }
 
-bool tBlock2x2PreconditionerFactory::test_isCompatable(int verbosity,std::ostream & os)
+bool tLU2x2PreconditionerFactory::test_isCompatable(int verbosity,std::ostream & os)
 {
    return true;
 }
 
-bool tBlock2x2PreconditionerFactory::test_identity(int verbosity,std::ostream & os)
+bool tLU2x2PreconditionerFactory::test_identity(int verbosity,std::ostream & os)
 {
    // make sure the preconditioner is working by testing against the identity matrix
    typedef RCP<const Thyra::VectorBase<double> > Vector;
@@ -251,7 +252,7 @@ bool tBlock2x2PreconditionerFactory::test_identity(int verbosity,std::ostream & 
 
    LinearOp A = Thyra::block2x2(Iu,Zp,Zu,Ip);
    RCP<Thyra::PreconditionerFactoryBase<double> > precFactory 
-         = rcp(new Block2x2PreconditionerFactory(Iu,invS));
+         = rcp(new LU2x2PreconditionerFactory(Iu,invS));
    RCP<Thyra::PreconditionerBase<double> > prec = Thyra::prec<double>(*precFactory,A);
 
    // build linear operator
@@ -268,7 +269,7 @@ bool tBlock2x2PreconditionerFactory::test_identity(int verbosity,std::ostream & 
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(x,y)<tolerance_);
    if(not status) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_Identity " << toString(status) << ": A*x != y" << std::endl;
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_Identity " << toString(status) << ": A*x != y" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
    }
@@ -279,7 +280,7 @@ bool tBlock2x2PreconditionerFactory::test_identity(int verbosity,std::ostream & 
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(x,y)<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_Identity " << toString(status) << ": A*x != y" << std::endl;
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_Identity " << toString(status) << ": A*x != y" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
    }
@@ -290,7 +291,7 @@ bool tBlock2x2PreconditionerFactory::test_identity(int verbosity,std::ostream & 
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(x,y)<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_Identity " << toString(status) << ": A*x != y" << std::endl;
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_Identity " << toString(status) << ": A*x != y" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
    }
@@ -301,7 +302,7 @@ bool tBlock2x2PreconditionerFactory::test_identity(int verbosity,std::ostream & 
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(x,y)<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_Identity " << toString(status) << ": A*x != y" << std::endl;
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_Identity " << toString(status) << ": A*x != y" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
    }
@@ -310,7 +311,7 @@ bool tBlock2x2PreconditionerFactory::test_identity(int verbosity,std::ostream & 
    return allPassed;
 }
 
-bool tBlock2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & os)
+bool tLU2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & os)
 {
    // make sure the preconditioner is working by testing against the identity matrix
    typedef RCP<const Thyra::VectorBase<double> > Vector;
@@ -350,7 +351,7 @@ bool tBlock2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & 
 
    LinearOp A = Thyra::block2x2(F,G,D,C);
    RCP<Thyra::PreconditionerFactoryBase<double> > precFactory 
-         = rcp(new Block2x2PreconditionerFactory(iF,iS));
+         = rcp(new LU2x2PreconditionerFactory(iF,iS));
    RCP<Thyra::PreconditionerBase<double> > prec = Thyra::prec<double>(*precFactory,A);
 
    // build linear operator
@@ -373,7 +374,7 @@ bool tBlock2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & 
    Thyra::apply(*A,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  A*y != z" << std::endl;
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  A*y != z" << std::endl;
       os << "      "; Print(os,"y",y);
       os << "      "; Print(os,"z",z);
    }
@@ -385,7 +386,7 @@ bool tBlock2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & 
    Thyra::apply(*A,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  A*y != z" << std::endl;
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  A*y != z" << std::endl;
       os << "      "; Print(os,"y",y);
       os << "      "; Print(os,"z",z);
    }
@@ -397,7 +398,7 @@ bool tBlock2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & 
    Thyra::apply(*A,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  A*y != z" << std::endl;
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  A*y != z" << std::endl;
       os << "      "; Print(os,"y",y);
       os << "      "; Print(os,"z",z);
    }
@@ -409,7 +410,7 @@ bool tBlock2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & 
    Thyra::apply(*A,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  A*y != z" << std::endl;
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_diagonal " << toString(status) << ":  A*y != z" << std::endl;
       os << "      "; Print(os,"y",y);
       os << "      "; Print(os,"z",z);
    }
@@ -424,7 +425,7 @@ bool tBlock2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & 
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_diagonal " << toString(status) 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_diagonal " << toString(status) 
                       << ":  (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -438,7 +439,7 @@ bool tBlock2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & 
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_diagonal " << toString(status) 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_diagonal " << toString(status) 
                       << ":  (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -452,7 +453,7 @@ bool tBlock2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & 
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_diagonal " << toString(status) 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_diagonal " << toString(status) 
                       << ":  (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -466,7 +467,7 @@ bool tBlock2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & 
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = (PB::Test::Difference(y,z)<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_diagonal " << toString(status) 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_diagonal " << toString(status) 
                       << ":  (y=inv(A)*x) != z" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -477,7 +478,7 @@ bool tBlock2x2PreconditionerFactory::test_diagonal(int verbosity,std::ostream & 
    return allPassed;
 }
 
-bool tBlock2x2PreconditionerFactory::test_result(int verbosity,std::ostream & os)
+bool tLU2x2PreconditionerFactory::test_result(int verbosity,std::ostream & os)
 {
    typedef RCP<const Thyra::VectorBase<double> > Vector;
    typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
@@ -488,7 +489,7 @@ bool tBlock2x2PreconditionerFactory::test_result(int verbosity,std::ostream & os
  
    // Build block2x2 preconditioner
    RCP<Thyra::PreconditionerFactoryBase<double> > precFactory 
-         = rcp(new Block2x2PreconditionerFactory(invF_,invS_));
+         = rcp(new LU2x2PreconditionerFactory(invF_,invS_));
    RCP<Thyra::PreconditionerBase<double> > prec = Thyra::prec<double>(*precFactory,A_);
 
    // build linear operator
@@ -515,7 +516,7 @@ bool tBlock2x2PreconditionerFactory::test_result(int verbosity,std::ostream & os
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = ((diff = PB::Test::Difference(y,z))<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -530,7 +531,7 @@ bool tBlock2x2PreconditionerFactory::test_result(int verbosity,std::ostream & os
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = ((diff = PB::Test::Difference(y,z))<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -545,7 +546,7 @@ bool tBlock2x2PreconditionerFactory::test_result(int verbosity,std::ostream & os
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = ((diff = PB::Test::Difference(y,z))<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);
@@ -560,7 +561,7 @@ bool tBlock2x2PreconditionerFactory::test_result(int verbosity,std::ostream & os
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
    status = ((diff = PB::Test::Difference(y,z))<tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tBlock2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
                       << diff << ")" << std::endl;
       os << "      "; Print(os,"x",x);
       os << "      "; Print(os,"y",y);

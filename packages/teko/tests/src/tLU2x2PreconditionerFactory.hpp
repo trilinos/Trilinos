@@ -1,5 +1,5 @@
-#ifndef __tBlock2x2PreconditionerFactory_hpp__
-#define __tBlock2x2PreconditionerFactory_hpp__
+#ifndef __tLU2x2PreconditionerFactory_hpp__
+#define __tLU2x2PreconditionerFactory_hpp__
 
 // Thyra includes
 #include "Thyra_LinearOpBase.hpp"
@@ -13,9 +13,9 @@
 namespace PB {
 namespace Test {
 
-class tBlock2x2PreconditionerFactory : public UnitTest {
+class tLU2x2PreconditionerFactory : public UnitTest {
 public:
-   virtual ~tBlock2x2PreconditionerFactory() {}
+   virtual ~tLU2x2PreconditionerFactory() {}
 
    virtual void initializeTest();
    virtual int runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun);

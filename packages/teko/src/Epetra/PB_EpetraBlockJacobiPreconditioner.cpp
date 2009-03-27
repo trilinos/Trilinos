@@ -10,10 +10,13 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 
 #include "PB_EpetraHelpers.hpp"
-#include "PB_BlockJacobiPreconditionerFactory.hpp"
+#include "PB_JacobiPreconditionerFactory.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::dyn_cast;
+using Teuchos::rcp_dynamic_cast;
+using Teuchos::null;
 
 namespace PB {
 namespace Epetra {
@@ -27,8 +30,8 @@ EpetraBlockJacobiPreconditioner::EpetraBlockJacobiPreconditioner(const Epetra_Op
    TEUCHOS_ASSERT(invD2!=0);
 
    // Have to convert epetra inverses to something I can handle
-   const RCP<const Thyra::LinearOpBase<double> > thyraInvD1 = Thyra::epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(invD1)));
-   const RCP<const Thyra::LinearOpBase<double> > thyraInvD2 = Thyra::epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(invD2)));
+   LinearOp thyraInvD1 = Thyra::epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(invD1)));
+   LinearOp thyraInvD2 = Thyra::epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(invD2)));
 
    // get blocked version of the matrix 
    const RCP<const EpetraOperatorWrapper> wrapA = rcp_dynamic_cast<const EpetraOperatorWrapper>(rcp(A,false));
@@ -37,7 +40,7 @@ EpetraBlockJacobiPreconditioner::EpetraBlockJacobiPreconditioner(const Epetra_Op
   
    // build preconditioned operator
    const RCP<const Thyra::PreconditionerFactoryBase<double> > precFactory
-         = rcp(new PB::BlockJacobiPreconditionerFactory(thyraInvD1,thyraInvD2));
+         = rcp(new PB::JacobiPreconditionerFactory(thyraInvD1,thyraInvD2));
    const RCP<const Thyra::PreconditionerBase<double> > prec = Thyra::prec(*precFactory,wrapA->getThyraOp());
    const RCP<const Thyra::LinearOpBase<double> > precOp = prec->getUnspecifiedPrecOp();
 

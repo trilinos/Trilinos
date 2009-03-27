@@ -27,7 +27,6 @@ clean:
 	-rm -f make.include
 	-rm -f objs/*.o
 	-rm -f lib/*.a
-	-rm -fr doc/html
 
 cleandoc:
 	-rm -fr doc/html
