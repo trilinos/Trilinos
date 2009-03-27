@@ -35,12 +35,6 @@
 /* Define if the C complier supports __PRETTY_FUNCTION__ */
 #cmakedefine HAVE_CFUNC
 
-/* Define if you want to build export makefiles. */
-#cmakedefine HAVE_EXPORT_MAKEFILES
-
-/* Define if you are using gnumake - this will shorten your link lines. */
-#cmakedefine HAVE_GNUMAKE
-
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine HAVE_INTTYPES_H
 
@@ -73,9 +67,6 @@
 
 /* Define if want to build with ml enabled */
 #cmakedefine HAVE_ML_EPETRAEXT
-
-/* Define if want to build ml-examples */
-#cmakedefine HAVE_ML_EXAMPLES
 
 /* Define if want to build with ml_flops enabled */
 #cmakedefine HAVE_ML_FLOPS
@@ -122,9 +113,6 @@
 /* Define if want to build with ml_superlu_dist enabled */
 #cmakedefine HAVE_ML_SUPERLU_DIST
 
-/* Define if want to build ml-tests */
-#cmakedefine HAVE_ML_TESTS
-
 /* Define if want to build with ml enabled */
 #cmakedefine HAVE_ML_TEUCHOS
 
@@ -148,9 +136,6 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
-
-/* Define if want to build tests */
-#cmakedefine HAVE_TESTS
 
 /* Support for 64-bit integers */
 #cmakedefine ML_BIG_INT

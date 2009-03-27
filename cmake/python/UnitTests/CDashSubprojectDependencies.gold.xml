@@ -37,6 +37,7 @@
   <SubProject name="EpetraExt">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Triutils" type="LO"/>
     <EmailAddresses>
       <Email address="epetraext-regression@software.sandia.gov"/>
@@ -55,6 +56,7 @@
   <SubProject name="Thyra">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="RTOp" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
@@ -73,6 +75,7 @@
   <SubProject name="Galeri">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <EmailAddresses>
@@ -82,6 +85,7 @@
   <SubProject name="Amesos">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Galeri" type="TO"/>
@@ -92,6 +96,7 @@
   <SubProject name="Ifpack">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="AztecOO" type="LO"/>

@@ -93,7 +93,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_EnableEpetraExt_EnableAllOptionalPackages
   "-D Trilinos_ENABLE_EpetraExt:BOOL=ON -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON"
-  "Final set of enabled packages:  Teuchos Epetra Triutils EpetraExt 4"
+  "Final set of enabled packages:  Teuchos Epetra Zoltan Triutils EpetraExt 5"
   )
 
 
