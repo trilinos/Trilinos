@@ -115,6 +115,11 @@ computeSlope(const NOX::Abstract::Vector& dir,
   // directional derivatives.  dir^T J^T F = F^T Jd
   if (!(grp.isJacobian()))
     return this->computeSlopeWithoutJacobian(dir, grp);
+  // If the Jacobian is computed but doesn't support a gradient, 
+  // employ a different form for the inner product, eg
+  // return <v, F> = F' * J * dir = <J'F, dir> = <g, dir>
+  else if(!(grp.isGradient()))
+    return this->computeSlopeWithoutJacobianTranspose(dir, grp);
   
   this->computeGradient(grp, *(tmpVecPtr.get()));
   
@@ -176,6 +181,34 @@ computeSlopeWithoutJacobian(const NOX::Abstract::Vector& dir,
   // Compute Js = (F(x + eta * dir) - F(x))/eta
   tmpVecPtr->update(-1.0/eta, grp.getF(), 1.0/eta, tmpGrpPtr->getF(), 0.0);
   
+  return(tmpVecPtr->innerProduct(grp.getF()));
+}
+
+double NOX::MeritFunction::SumOfSquares::
+computeSlopeWithoutJacobianTranspose(const Abstract::Vector& dir, 
+                                     const Abstract::Group& grp) const
+{
+  // Allocate space for vecPtr if necessary
+  if (Teuchos::is_null(tmpVecPtr))
+    tmpVecPtr = grp.getF().clone(NOX::ShapeCopy);
+
+  // v = J * dir
+  NOX::Abstract::Group::ReturnType status = grp.applyJacobian(dir,*tmpVecPtr);
+  
+  if (status != NOX::Abstract::Group::Ok) 
+  {
+    utils->out() << "NOX::MeritFunction::SumOfSquares::computeSlopeWithoutJacobianTranspose -  Unable to apply Jacobian!" << endl;
+    throw "NOX Error";
+  }
+
+  // Check that F exists
+  if (!grp.isF()) 
+  {
+    utils->out() << "NOX::MeritFunction::SumOfSquares::computeSlopeWithoutJacobianTranspose - Invalid F" << endl;
+    throw "NOX Error";
+  }
+
+  // Return <v, F> = F' * J * dir = <J'F, dir> = <g, dir>
   return(tmpVecPtr->innerProduct(grp.getF()));
 }
 

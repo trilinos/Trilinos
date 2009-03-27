@@ -156,6 +156,21 @@ namespace MeritFunction {
     computeSlopeWithoutJacobian(const NOX::Abstract::Vector& dir,
 				const NOX::Abstract::Group& grp) const;
 
+    //! This is a variant of the computeSlope() method above that works when the Jacobian operator is available but doesn't support transpose
+    /*!
+      Calculates and returns 
+      \f[
+      \zeta = d^T \nabla f(x) = (Jd)^TF
+      \f]
+
+    Variables are as defined above.  This alternative form for the slope
+    is provided to support Jacobian operators which do not
+    support the transpose operation.
+    */
+    virtual double 
+    computeSlopeWithoutJacobianTranspose(const NOX::Abstract::Vector& dir,
+				         const NOX::Abstract::Group& grp) const;
+
   private:
 
     //!Printing utilities.
