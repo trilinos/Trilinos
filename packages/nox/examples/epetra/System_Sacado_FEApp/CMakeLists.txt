@@ -13,7 +13,6 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA AND
     AppModelEval.C
     SystemMain.C
     COMM serial mpi
-    ARGS -v
     )
 
 ENDIF()

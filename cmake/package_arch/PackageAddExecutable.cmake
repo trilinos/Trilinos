@@ -1,8 +1,10 @@
 
+INCLUDE(PackageAddExecutableTestHelpers)
+INCLUDE(PackageGeneralMacros)
+
 INCLUDE(PrintVar)
 INCLUDE(AppendSet)
 INCLUDE(ParseVariableArguments)
-INCLUDE(PackageGeneralMacros)
 
 
 SET(CMAKE_EXECUTABLE_SUFFIX ".exe")
