@@ -399,7 +399,7 @@ namespace Tpetra
         if (ntasum) {
           graphData_->contigColLInds_ = Teuchos::arcp<LocalOrdinal>(ntasum);
           while (ntaptr != ntaend) {
-            graphData_->colLIndsPtrs_[r++] = graphData_->contigColLInds_(sofar,*ntaptr).begin();
+            graphData_->colLIndsPtrs_[r++] = graphData_->contigColLInds_.persistingView(sofar,*ntaptr).begin();
             sofar += (*ntaptr++);
           }
           graphData_->colLIndsPtrs_[r] = graphData_->contigColLInds_.end();
@@ -410,7 +410,7 @@ namespace Tpetra
         if (ntasum) {
           graphData_->contigColGInds_ = Teuchos::arcp<GlobalOrdinal>(ntasum);
           while (ntaptr != ntaend) {
-            graphData_->colGIndsPtrs_[r++] = graphData_->contigColGInds_(sofar,*ntaptr).begin();
+            graphData_->colGIndsPtrs_[r++] = graphData_->contigColGInds_.persistingView(sofar,*ntaptr).begin();
             sofar += (*ntaptr++);
           }
           graphData_->colGIndsPtrs_[r] = graphData_->contigColGInds_.end();
@@ -1278,7 +1278,7 @@ namespace Tpetra
             // RNumAlloc(r) uses colGIndsPtrs_[r+1] and colGIndsPtrs_[r], can't erase till done
             Teuchos_Ordinal numalloc = RNumAlloc(r),
                             numentry = RNNZ(r);
-            graphData_->colLIndsPtrs_[r] = graphData_->contigColLInds_(sofar,numalloc).begin();
+            graphData_->colLIndsPtrs_[r] = graphData_->contigColLInds_.persistingView(sofar,numalloc).begin();
             for (Teuchos_Ordinal j=0; j<numentry; ++j) {
               graphData_->colLIndsPtrs_[r][j] = getColMap().getLocalIndex( graphData_->colGIndsPtrs_[r][j] );
 #ifdef HAVE_TPETRA_DEBUG

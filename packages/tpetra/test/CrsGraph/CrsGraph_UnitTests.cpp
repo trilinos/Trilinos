@@ -432,8 +432,6 @@ namespace {
         TEST_EQUALITY( ddgraph.numGlobalRows(), 3*numImages );
         TEST_EQUALITY( ddgraph.numGlobalDiagonals(), numImages );
         TEST_EQUALITY_CONST( ddgraph.numMyDiagonals(), 1 );
-        TEST_EQUALITY_CONST( ddgraph.upperTriangular(), true );
-        TEST_EQUALITY_CONST( ddgraph.lowerTriangular(), true );
         STD_TESTS(ddgraph);
       }
     }
@@ -569,7 +567,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, BadGIDs   , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, BadLIDs   , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, NonLocals , LO, GO ) \
-   /* TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, DottedDiag , LO, GO ) */ \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, DottedDiag , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, StaticProfile , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViews, LO, GO )
 
