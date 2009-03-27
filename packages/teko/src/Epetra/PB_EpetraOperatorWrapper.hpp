@@ -58,6 +58,46 @@ namespace Epetra {
      virtual std::string toString() const = 0;
   };
 
+  /// Flip a mapping strategy object around to give the "inverse" mapping strategy.
+  class InverseMappingStrategy : public MappingStrategy {
+  public:
+     /** \brief Constructor to build a inverse MappingStrategy from
+       * a forward map.
+       */
+     InverseMappingStrategy(const RCP<const MappingStrategy> & forward)
+        : forwardStrategy_(forward)
+     { }
+
+     virtual void copyEpetraIntoThyra(const Epetra_MultiVector& epetraX,
+                                      const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyraX,
+                                      const EpetraOperatorWrapper & eow) const
+     { forwardStrategy_->copyEpetraIntoThyra(epetraX,thyraX,eow); }
+
+     virtual void copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyraX,
+                                      Epetra_MultiVector& epetraX,
+                                      const EpetraOperatorWrapper & eow) const
+     { forwardStrategy_->copyThyraIntoEpetra(thyraX,epetraX,eow); }
+
+     /** \brief Domain map for this strategy */
+     virtual const RCP<const Epetra_Map> domainMap() const
+     { return forwardStrategy_->rangeMap(); }
+
+     /** \brief Range map for this strategy */
+     virtual const RCP<const Epetra_Map> rangeMap() const 
+     { return forwardStrategy_->domainMap(); }
+
+     /** \brief Identifier string */
+     virtual std::string toString() const
+     { return std::string("InverseMapping(")+forwardStrategy_->toString()+std::string(")"); }
+  protected:
+     /** \brief Forward mapping strategy object */
+     const RCP<const MappingStrategy> forwardStrategy_;
+
+  private:
+     InverseMappingStrategy();
+     InverseMappingStrategy(const InverseMappingStrategy &);
+  };
+
   /// default mapping strategy for the basic EpetraOperatorWrapper
   class DefaultMappingStrategy : public MappingStrategy {
   public:

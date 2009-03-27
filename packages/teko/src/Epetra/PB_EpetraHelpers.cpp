@@ -22,6 +22,7 @@
 
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::rcpFromRef;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::null;
 
@@ -73,6 +74,13 @@ Epetra_Operator * mechanicalInverse(const Epetra_Operator * inverse)
    EpetraExt::ProductOperator::EApplyMode epetraOpsApplyMode[] = { EpetraExt::ProductOperator::APPLY_MODE_APPLY_INVERSE };
 
    return new EpetraExt::ProductOperator(1,opAr,epetraOpsTransp,epetraOpsApplyMode);
+}
+
+const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const Epetra_Vector & ev,const Epetra_Map & map)
+{
+   const RCP<const Thyra::VectorBase<double> > thyraVec  // need a Thyra::VectorBase object
+         = Thyra::create_Vector(rcpFromRef(ev),Thyra::create_VectorSpace(rcpFromRef(map)));
+   return Teuchos::rcp(new Thyra::DefaultDiagonalLinearOp<double>(thyraVec));
 }
 
 } // end namespace Epetra

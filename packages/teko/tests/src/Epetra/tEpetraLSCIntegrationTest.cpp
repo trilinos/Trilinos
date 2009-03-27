@@ -18,6 +18,10 @@
 #include "Epetra/PB_EpetraHelpers.hpp"
 #include "Epetra/PB_EpetraLSCHelpers.hpp"
 #include "Epetra/PB_EpetraLSCStablePreconditioner.hpp"
+#include "Epetra/PB_EpetraBlockPreconditioner.hpp"
+#include "NS/PB_LSCPreconditionerFactory.hpp"
+
+#include "Thyra_EpetraLinearOp.hpp"
 
 // Aztec includes
 #include "AztecOO.h"
@@ -31,6 +35,7 @@ namespace Test {
 
 using Teuchos::rcp;
 using Teuchos::RCP;
+using Thyra::epetraLinearOp;
 
 void tEpetraLSCIntegrationTest::initializeTest()
 {
@@ -172,8 +177,14 @@ bool tEpetraLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream &
    TEST_FOR_EXCEPT(sQu_->ExtractDiagonalCopy(*invMass));
    TEST_FOR_EXCEPT(invMass->Reciprocal(*invMass));
 
-   const RCP<Epetra_Operator> prec 
-      = rcp(new PB::Epetra::EpetraLSCStablePreconditioner(&*sA_,&*invF,&*invS,&*invMass));
+   const RCP<PB::BlockPreconditionerFactory> precFact 
+         = rcp(new PB::NS::LSCPreconditionerFactory(epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(&*invF))),
+                                                    epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(&*invS))),
+                                                    PB::Epetra::thyraDiagOp(*invMass,invF->OperatorRangeMap())));
+   const RCP<PB::Epetra::EpetraBlockPreconditioner> prec 
+      // = rcp(new PB::Epetra::EpetraLSCStablePreconditioner(&*sA_,&*invF,&*invS,&*invMass));
+         = rcp(new PB::Epetra::EpetraBlockPreconditioner(precFact));
+   prec->buildPreconditioner(*sA_);
 
    // B. Build solver and solve system
    Epetra_Vector x(sA_->OperatorDomainMap());
@@ -240,8 +251,14 @@ bool tEpetraLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & o
    const RCP<const Epetra_Operator> invF = mlSolve(sF_,vcycles);
    const RCP<const Epetra_Operator> invS = mlSolve(BBt,vcycles);
 
-   const RCP<Epetra_Operator> prec 
-      = rcp(new PB::Epetra::EpetraLSCStablePreconditioner(&*sA_,&*invF,&*invS));
+   //const RCP<Epetra_Operator> prec 
+   //   = rcp(new PB::Epetra::EpetraLSCStablePreconditioner(&*sA_,&*invF,&*invS));
+   const RCP<PB::BlockPreconditionerFactory> precFact 
+         = rcp(new PB::NS::LSCPreconditionerFactory(epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(&*invF))),
+                                                    epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(&*invS))),Teuchos::null));
+   const RCP<PB::Epetra::EpetraBlockPreconditioner> prec 
+         = rcp(new PB::Epetra::EpetraBlockPreconditioner(precFact));
+   prec->buildPreconditioner(*sA_);
 
    // B. Build solver and solve system
    Epetra_Vector x(sA_->OperatorDomainMap());

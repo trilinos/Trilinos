@@ -17,11 +17,13 @@ public:
     /** */
     virtual int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-    /** */
-    virtual const Epetra_Map& OperatorDomainMap() const; 
-
-    /** */
-    virtual const Epetra_Map& OperatorRangeMap() const;
+//    /** */
+//    virtual const Epetra_Map& OperatorDomainMap() const; 
+//
+//    /** */
+//    virtual const Epetra_Map& OperatorRangeMap() const;
+protected:
+    EpetraInverseOpWrapper() {}
 };
 
 } // end Epetra

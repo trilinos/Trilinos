@@ -23,7 +23,7 @@ namespace Epetra {
 
 EpetraBlockJacobiPreconditioner::EpetraBlockJacobiPreconditioner(const Epetra_Operator * A, const Epetra_Operator * invD1, 
                                                              const Epetra_Operator * invD2)
-   : EpetraInverseOpWrapper(dyn_cast<const EpetraOperatorWrapper>(*A).getMapStrategy())
+   : EpetraInverseOpWrapper(rcp(new InverseMappingStrategy(dyn_cast<const EpetraOperatorWrapper>(*A).getMapStrategy())))
 {
    TEUCHOS_ASSERT(A!=0);
    TEUCHOS_ASSERT(invD1!=0);
