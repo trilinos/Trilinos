@@ -161,33 +161,6 @@ ENDFUNCTION()
 #
 
 
-SET(PackageAddAdvancedTest_basic_cmnd_1_args_0_OUTPUT
-"
-#
-# This is a CMake script and must be run as \"cmake -P SCRIPT_NAME\"
-#
-
-#
-# Variables
-#
-
-SET( TEST_CMND_0 ls )
-
-SET(NUM_CMNDS 1)
-
-#
-# Test invocation
-#
-
-SET(CMAKE_MODULE_PATH /home/rabartl/PROJECTS/Trilinos.base/Trilinos/cmake/utils)
-
-INCLUDE(DriveAdvancedTest)
-
-DRIVE_ADVANCED_TEST()
-"
-)
-
-
 FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC)
 
   # Needed by PACKAGE_ADD_ADVANCED_TEST(...)
@@ -211,15 +184,11 @@ FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC)
     PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
     1
     )
-  # Check that the whole scirpt was written correctly.  I don't want to check
-  # this too much because it will be hard to maintain this test if the scirpt
-  # generation changes in even trival ways.
-  FILE(READ
-    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_cmnd_1_args_0.cmake"
-    PACKAGE_ADD_ADVANCED_SCRIPT)
-  UNITTEST_COMPARE_CONST(
-    PACKAGE_ADD_ADVANCED_SCRIPT
-    "${PackageAddAdvancedTest_basic_cmnd_1_args_0_OUTPUT}"
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_cmnd_1_args_2.cmake"
+    REGEX_STRINGS
+      "TEST_CMND_0 ls"
+      "NUM_CMNDS 1"
     )
 
   MESSAGE("***\n*** Add a single basic command with two arguments\n***")
@@ -239,6 +208,10 @@ FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC)
     "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_cmnd_1_args_2.cmake"
     REGEX_STRINGS
       "TEST_CMND_0 ls \"CMakeLists.txt\" \"CMakeFiles\""
+      "NUM_CMNDS 1"
+      "CMAKE_MODULE_PATH"
+      "DriveAdvancedTest"
+      "DRIVE_ADVANCED_TEST"
     )
 
   MESSAGE("***\n*** Add two basic commands with 1 and two arguments\n***")
@@ -376,4 +349,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(31)
+UNITTEST_FINAL_RESULT(36)
