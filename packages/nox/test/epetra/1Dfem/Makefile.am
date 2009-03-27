@@ -54,7 +54,7 @@ if BUILD_NOX_EPETRAEXT_SUPPORT
 1DFEM_WITHMODELEVALUATOR = 1DfemWithModelEvaluator
 endif
 
-noinst_PROGRAMS = 1Dfem 1DfemScaled 1DfemScaledInexactTrustRegion 1DfemTransient 1DfemMLPreconditioner 1DfemAztecSolverPrecReuse 1DfemAztecSolverPrecRebuild 1DfemAztecSolverPrecRecompute 1DfemAztecPrecRebuild 1DfemAztecPrecReuse 1DfemIfpackReuse 1DfemIfpackRecompute 1DfemIfpackRebuild 1DfemNonlinearCG 1DfemTensorBased $(1DFEM_BELOS) $(1DFEM_WITHMODELEVALUATOR) 
+noinst_PROGRAMS = 1Dfem 1DfemScaled 1DfemScaledInexactTrustRegion 1DfemTransient 1DfemMLPreconditioner 1DfemAztecSolverPrecReuse 1DfemAztecSolverPrecRebuild 1DfemAztecSolverPrecRecompute 1DfemAztecPrecRebuild 1DfemAztecPrecReuse 1DfemIfpackReuse 1DfemIfpackRecompute 1DfemIfpackRebuild 1DfemNonlinearCG 1DfemTensorBased 1DfemLinesearch $(1DFEM_BELOS) $(1DFEM_WITHMODELEVALUATOR) 
 
 endif
 
@@ -253,3 +253,15 @@ endif
                               $(top_builddir)/src-epetra/libnoxepetra.a
 
 1DfemTensorBased_LDADD = $(TEST_LIBS)
+
+1DfemLinesearch_SOURCES = \
+                         $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemLinesearch.C
+
+1DfemLinesearch_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemLinesearch_LDADD = $(TEST_LIBS)
+

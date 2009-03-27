@@ -80,6 +80,7 @@ target_triplet = @target@
 @BUILD_EPETRA_TESTS_TRUE@	1DfemIfpackRebuild$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemNonlinearCG$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	1DfemTensorBased$(EXEEXT) \
+@BUILD_EPETRA_TESTS_TRUE@	1DfemLinesearch$(EXEEXT) \
 @BUILD_EPETRA_TESTS_TRUE@	$(am__EXEEXT_1) $(am__EXEEXT_2)
 subdir = test/epetra/1Dfem
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -146,6 +147,9 @@ am_1DfemIfpackRecompute_OBJECTS = 1DfemInterface.$(OBJEXT) \
 am_1DfemIfpackReuse_OBJECTS = 1DfemInterface.$(OBJEXT) \
 	1DfemIfpackReuse.$(OBJEXT)
 1DfemIfpackReuse_OBJECTS = $(am_1DfemIfpackReuse_OBJECTS)
+am_1DfemLinesearch_OBJECTS = 1DfemInterface.$(OBJEXT) \
+	1DfemLinesearch.$(OBJEXT)
+1DfemLinesearch_OBJECTS = $(am_1DfemLinesearch_OBJECTS)
 am_1DfemMLPreconditioner_OBJECTS = 1DfemInterface.$(OBJEXT) \
 	1DfemMLPreconditioner.$(OBJEXT)
 1DfemMLPreconditioner_OBJECTS = $(am_1DfemMLPreconditioner_OBJECTS)
@@ -189,8 +193,9 @@ SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) \
 	$(1DfemAztecSolverPrecRecompute_SOURCES) \
 	$(1DfemAztecSolverPrecReuse_SOURCES) $(1DfemBelos_SOURCES) \
 	$(1DfemIfpackRebuild_SOURCES) $(1DfemIfpackRecompute_SOURCES) \
-	$(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) \
-	$(1DfemNonlinearCG_SOURCES) $(1DfemScaled_SOURCES) \
+	$(1DfemIfpackReuse_SOURCES) $(1DfemLinesearch_SOURCES) \
+	$(1DfemMLPreconditioner_SOURCES) $(1DfemNonlinearCG_SOURCES) \
+	$(1DfemScaled_SOURCES) \
 	$(1DfemScaledInexactTrustRegion_SOURCES) \
 	$(1DfemTensorBased_SOURCES) $(1DfemTransient_SOURCES) \
 	$(1DfemWithModelEvaluator_SOURCES)
@@ -200,8 +205,9 @@ DIST_SOURCES = $(1Dfem_SOURCES) $(1DfemAztecPrecRebuild_SOURCES) \
 	$(1DfemAztecSolverPrecRecompute_SOURCES) \
 	$(1DfemAztecSolverPrecReuse_SOURCES) $(1DfemBelos_SOURCES) \
 	$(1DfemIfpackRebuild_SOURCES) $(1DfemIfpackRecompute_SOURCES) \
-	$(1DfemIfpackReuse_SOURCES) $(1DfemMLPreconditioner_SOURCES) \
-	$(1DfemNonlinearCG_SOURCES) $(1DfemScaled_SOURCES) \
+	$(1DfemIfpackReuse_SOURCES) $(1DfemLinesearch_SOURCES) \
+	$(1DfemMLPreconditioner_SOURCES) $(1DfemNonlinearCG_SOURCES) \
+	$(1DfemScaled_SOURCES) \
 	$(1DfemScaledInexactTrustRegion_SOURCES) \
 	$(1DfemTensorBased_SOURCES) $(1DfemTransient_SOURCES) \
 	$(1DfemWithModelEvaluator_SOURCES)
@@ -533,6 +539,16 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
                               $(top_builddir)/src-epetra/libnoxepetra.a
 
 1DfemTensorBased_LDADD = $(TEST_LIBS)
+1DfemLinesearch_SOURCES = \
+	                 $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.C \
+                         $(srcdir)/1DfemLinesearch.C
+
+1DfemLinesearch_DEPENDENCIES = \
+                              $(top_builddir)/src/libnox.a \
+                              $(top_builddir)/src-epetra/libnoxepetra.a
+
+1DfemLinesearch_LDADD = $(TEST_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -599,6 +615,9 @@ clean-noinstPROGRAMS:
 1DfemIfpackReuse$(EXEEXT): $(1DfemIfpackReuse_OBJECTS) $(1DfemIfpackReuse_DEPENDENCIES) 
 	@rm -f 1DfemIfpackReuse$(EXEEXT)
 	$(CXXLINK) $(1DfemIfpackReuse_OBJECTS) $(1DfemIfpackReuse_LDADD) $(LIBS)
+1DfemLinesearch$(EXEEXT): $(1DfemLinesearch_OBJECTS) $(1DfemLinesearch_DEPENDENCIES) 
+	@rm -f 1DfemLinesearch$(EXEEXT)
+	$(CXXLINK) $(1DfemLinesearch_OBJECTS) $(1DfemLinesearch_LDADD) $(LIBS)
 1DfemMLPreconditioner$(EXEEXT): $(1DfemMLPreconditioner_OBJECTS) $(1DfemMLPreconditioner_DEPENDENCIES) 
 	@rm -f 1DfemMLPreconditioner$(EXEEXT)
 	$(CXXLINK) $(1DfemMLPreconditioner_OBJECTS) $(1DfemMLPreconditioner_LDADD) $(LIBS)
@@ -638,6 +657,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemIfpackRecompute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemIfpackReuse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemInterface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemLinesearch.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemMLPreconditioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemModelEvaluator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/1DfemNonlinearCG.Po@am__quote@
@@ -829,6 +849,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemIfpackReuse.C' object='1DfemIfpackReuse.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemIfpackReuse.obj `if test -f '$(srcdir)/1DfemIfpackReuse.C'; then $(CYGPATH_W) '$(srcdir)/1DfemIfpackReuse.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemIfpackReuse.C'; fi`
+
+1DfemLinesearch.o: $(srcdir)/1DfemLinesearch.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemLinesearch.o -MD -MP -MF $(DEPDIR)/1DfemLinesearch.Tpo -c -o 1DfemLinesearch.o `test -f '$(srcdir)/1DfemLinesearch.C' || echo '$(srcdir)/'`$(srcdir)/1DfemLinesearch.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/1DfemLinesearch.Tpo $(DEPDIR)/1DfemLinesearch.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemLinesearch.C' object='1DfemLinesearch.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemLinesearch.o `test -f '$(srcdir)/1DfemLinesearch.C' || echo '$(srcdir)/'`$(srcdir)/1DfemLinesearch.C
+
+1DfemLinesearch.obj: $(srcdir)/1DfemLinesearch.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemLinesearch.obj -MD -MP -MF $(DEPDIR)/1DfemLinesearch.Tpo -c -o 1DfemLinesearch.obj `if test -f '$(srcdir)/1DfemLinesearch.C'; then $(CYGPATH_W) '$(srcdir)/1DfemLinesearch.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemLinesearch.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/1DfemLinesearch.Tpo $(DEPDIR)/1DfemLinesearch.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/1DfemLinesearch.C' object='1DfemLinesearch.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o 1DfemLinesearch.obj `if test -f '$(srcdir)/1DfemLinesearch.C'; then $(CYGPATH_W) '$(srcdir)/1DfemLinesearch.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/1DfemLinesearch.C'; fi`
 
 1DfemMLPreconditioner.o: $(srcdir)/1DfemMLPreconditioner.C
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT 1DfemMLPreconditioner.o -MD -MP -MF $(DEPDIR)/1DfemMLPreconditioner.Tpo -c -o 1DfemMLPreconditioner.o `test -f '$(srcdir)/1DfemMLPreconditioner.C' || echo '$(srcdir)/'`$(srcdir)/1DfemMLPreconditioner.C
