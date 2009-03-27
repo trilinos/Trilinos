@@ -128,9 +128,7 @@ void EpetraExtAddTransformer::transform(
          rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.epetra_op());
    if(is_null(epetra_op)) {
       epetra_op = Teuchos::rcp(
-            new Epetra_CrsMatrix(::Copy, op_inout_row_map, op_inout_col_map, 0));
-       // 2009/02/27: rabartl: Note: Above, the row map must be the right size
-       // and distribution and the column map can not be arbitrary.
+            new Epetra_CrsMatrix(::Copy, op_inout_row_map, 0));
    }
     
    // perform multiply: Its annoying I have to do this with two adds.
