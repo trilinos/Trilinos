@@ -611,18 +611,6 @@ void Thyra::apply(
 }
 
 
-template<class Scalar>
-void Thyra::apply(
-  const LinearOpBase<Scalar> &M,
-  const EOpTransp M_trans,
-  const MultiVectorBase<Scalar> &X,
-  const Ptr<MultiVectorBase<Scalar> > &Y,
-  const Scalar alpha,
-  const Scalar beta
-  );
-// See the *.hpp and *.cpp file for details on above!
-
-
 template<class RangeScalar, class DomainScalar>
 inline
 void Thyra::applyTranspose(
