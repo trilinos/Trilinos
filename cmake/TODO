@@ -7,8 +7,6 @@ Active items:
 -------------
 
 (*) [Ross and Brent] Get new CTest/CDash driver working:
-- Fix *massively* duplicate configure failure email emails
-- Find out why wrong date is being used for nightly checkouts (godel and s909348)
 - Automatically read in the list of packages and deal correctly with
 Primary and Secondary Stable enables (see below)
 
@@ -19,16 +17,13 @@ with CMake and run nightly tests.
 together a set of commands (with various pass/fail critieria) and then run as
 a CMake -P script.  Write all supporting CMake code with unit tests.
 
-(*) [Roger] Add configure-time test for LAPACK support for GGEV and/or GEEV to
-define HAVE_LAPACK_GGEV/GEEV.  See the file teuchos/config/acx_ggev.m4.
+(*) [Ross] Add unit testing infrastructure and documentation for
+PACKAGE_ADD_EXECUTABLE(...) and PACKAGE_ADD_TEST(...).  These unit tests will
+serve both as tests and as extra documentation.
 
 
 Backlog:
 --------
-
-(*) [???] Follow up on ML TPL issue
-
-(*) [???] Follow up with Bill Spotz on PyTrilinos
 
 (*) [???] Resolve the runtime MPI errors on godel: Perhaps we should just
 rebuild and reinstall MPI on godel.
@@ -75,6 +70,11 @@ key off of Trilinos_ENABLE_SECONDARY_STABLE_CODE to turn on by default
 those parts of their packageq that they don't consider PS code but are
 SS.
 
+(*) [???] Add a global 'libs' target to rebuild only libraries so that we can
+skip unecessary relinking when shared libraries are used.  This target can be
+built by simply looping over all enabled packages and adding dependencies on
+${PACKAGE}_libs.
+
 (*) [???] Add installation testing for the CMake build system.  Here, we will
 build and install libraries, and then configure the tests and examples in a
 new build directory against this.  It would be good to install a
@@ -89,21 +89,22 @@ install the libraries and headers instead.  The CMake build system would be
 used to configure and build the tests and examples against the installed
 libraries and headers.
 
+(*) [???] Revise the behavior of Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON so
+that it only enables packages needed for the initial set of enabled packages.
+Currently, all packges used by the libraries and the tests are being enabled.
+However, this is too much.  You only need to enabled the optional and required
+packages for the tests and examples of the initial set of required packages.
+To implement the right set of packages, first you need to loop forward over
+all of the currently enabled packages that have enabled tests and/or examples
+and enable all of the packages that are test/example dependencies (required
+and optional).  Then you need to loop in reverse over all currenty enabled
+packages and enabled all required and optional library dependent packages.  At
+the end of this, all of the packages that could possibly affect the libraries,
+tests and examples of the set of initially enabled packages will be enabled.
+
 (*) [???] Add option SKIPMEMCHECK to PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...) to
 add test to CMAKE_CUSTOM_MEMCHECK_IGNORE that gets written to
 CTestCustomer.ctest.
-
-(*) [???] Add a global 'libs' target to rebuild only libraries so that we can
-skip unecessary relinking when shared libraries are used.  This target can be
-built by simply looping over all enabled packages and adding dependencies on
-${PACKAGE}_libs.
-
-(*) [???] Add unit testing infrastructure and documentation for
-PACKAGE_ADD_EXECUTABLE(...) and PACKAGE_ADD_TEST(...).  These unit tests will
-serve both as tests and as extra documentation.  I need to see if you can
-redefine ADD_EXECUTABLE(...), ADD_TEST(...), and other commands so that I can
-unit test that these things are being set correctly.  If not, then I can
-always wrap these with my own and then redefine them when unit testing.
 
 (*) [???] Change the macro TPL_DELCARE_LIBRARIES(...) to validate that all
 pased in header files are found (This was requested by Roger P.).
@@ -141,28 +142,14 @@ Trilinos_generate_sample_output and this target should dependend on
 package-level targets ${PACKAGE_NAME}_generate_sample_output.  Some type of
 macro should be created to automate this process.
 
-(*) [???] Clean up tests and examples:
-
-- Move (almost) all tests into subdirectories since that is the right
-thing to do.
-
-(*) [???] Set up our own CDash results for Trilinos serial and mpi
-
-- Set up a MS Windows test machine feeding into Trilinos dashbaord
-  + Get automated builds/tests with CTest/CDash running on Esteban
-  + Get CVS update working
-
-- Set up a MAC test machine feeding into Trilinos dashboard ...
-
-(*) [???] Add an auto-documentation print system so that each package
-has detailed documentation on what options that it supports.  In this
-way, we could provide an option like Trilinos_PRINT_DOCUMENTATION
-who's main purpose was to print out a complete set of documentation at
-the top level and for all of the enabled packages.  I think that we
-could set this up so that it would automatically print out all of the
-cache variables with documentation inside of the detailed
-documentation.  We may need to an external tool to do this that would
-read everything out of CMakeCache.txt.
+(*) [???] Add an auto-documentation print system so that each package has
+detailed documentation on what options that it supports.  In this way, we
+could provide an option like Trilinos_PRINT_DOCUMENTATION who's main purpose
+was to print out a complete set of documentation at the top level and for all
+of the enabled packages.  I think that we could set this up so that it would
+automatically print out all of the cache variables with documentation inside
+of the detailed documentation.  We may need to an external tool to do this
+that would read everything out of CMakeCache.txt.
 
 (*) [???] Create automated support for stripping out all "Experimental" code
 (both files and code inside of ifdefs) so that we don't put it out in releases
