@@ -223,9 +223,9 @@ if HAVE_PYTRILINOS_AZTECOO
 include $(top_builddir)/../aztecoo/Makefile.export.aztecoo
 AZTECOO_INTERFACES = AztecOO.i
 AZTECOO_PROXIES = PyTrilinos/AztecOO.py
-if HAVE_PYTRILINOS_AZTECOO_TEUCHOS
-SWIG_OPTS += -DHAVE_AZTECOO_TEUCHOS 
-endif
+# if HAVE_PYTRILINOS_AZTECOO_TEUCHOS
+# SWIG_OPTS += -DHAVE_AZTECOO_TEUCHOS 
+# endif
 endif
 
 # Galeri
@@ -275,6 +275,7 @@ if HAVE_PYTRILINOS_ML
 include $(top_builddir)/../ml/Makefile.export.ml
 ML_INTERFACES = ML.i
 ML_PROXIES = PyTrilinos/ML.py
+SWIG_OPTS += -DMLAPI_LC
 endif
 
 # NOX

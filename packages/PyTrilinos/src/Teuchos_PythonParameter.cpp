@@ -402,10 +402,11 @@ bool synchronizeParameters(PyObject * dict, ParameterList & plist,
 
 // **************************************************************** //
 
-ParameterList * pyDictToNewParameterList(PyObject * dict,
-					 ResponseToIllegalParameters flag)
+Teuchos::ParameterList *
+pyDictToNewParameterList(PyObject * dict,
+			 ResponseToIllegalParameters flag)
 {
-  ParameterList * plist = 0;
+  Teuchos::ParameterList * plist = 0;
   // The dict pointer must point to a dictionary
   if (!PyDict_Check(dict))
   {

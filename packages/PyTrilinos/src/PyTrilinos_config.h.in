@@ -114,9 +114,6 @@
 /* Define if want to build with pytrilinos enabled */
 #undef HAVE_PYTRILINOS_TRIUTILS
 
-#define MLAPI_LC
-#define MLAPI_CHECK
-
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 

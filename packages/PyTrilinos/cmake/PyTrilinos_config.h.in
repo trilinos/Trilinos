@@ -1,4 +1,4 @@
-/* src/PyTrilinos_config.h.in.  Generated from configure.ac by autoheader.  */
+/* cmake/PyTrilinos_config.h.in.  Modified from version in src/.  */
 
 /* Define if Teuchos is enabled */
 #cmakedefine HAVE_TEUCHOS
@@ -8,7 +8,7 @@
 
 /* Define ML options */
 #define MLAPI_LC
-#define MLAPI_CHECK
+/* #define MLAPI_CHECK */
 
 
 /* Define if want to build default-packages */
