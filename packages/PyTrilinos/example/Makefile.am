@@ -191,13 +191,13 @@ EXAMPLE_SUITE = $(TEUCHOS_EXAMPLES)  $(THYRA_EXAMPLES)     $(EPETRA_EXAMPLES) \
 	        $(KOMPLEX_EXAMPLES)  $(ANASAZI_EXAMPLES)   $(ML_EXAMPLES) \
 	        $(NOX_EXAMPLES)      $(LOCA_EXAMPLES)
 
-SETPATH  = setpath.py
+TESTUTIL  = testutil.py
 GRE__115 = gre__115.rua
 
 # The following line helps the test harness recover from build errors.
 all:
 
-all-local: $(SETPATH) $(EXAMPLE_SUITE) $(GRE__115)
+all-local: $(TESTUTIL) $(EXAMPLE_SUITE) $(GRE__115)
 
 %.py: %.src
 	@echo "copying $@"; /bin/cp $< $@
@@ -209,4 +209,4 @@ run-examples: all-local
 	@for ex_script in $(EXAMPLE_SUITE); do echo; echo "Running $$ex_script"; \
 	 echo; $$ex_script -t; done
 
-CLEANFILES = $(EXAMPLE_SUITE) $(SETPATH) $(GRE__115) *.pyc *.dat *.mm *.xml
+CLEANFILES = $(EXAMPLE_SUITE) $(TESTUTIL) $(GRE__115) *.pyc *.dat *.mm *.xml

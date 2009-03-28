@@ -127,12 +127,12 @@ TEST_SUITE = $(TEUCHOS_TESTS)   $(THYRA_TESTS)   $(EPETRA_TESTS)  $(TRIUTILS_TES
 	     $(IFPACK_TESTS)    $(KOMPLEX_TESTS) $(ANASAZI_TESTS) $(ML_TESTS) \
 	     $(NOX_TESTS)
 
-SETPATH     = setpath.py
+TESTUTIL   = testutil.py
 
 # The following line helps the test harness recover from build errors.
 all:
 
-all-local: $(SETPATH) $(TEST_SUITE)
+all-local: $(TESTUTIL) $(TEST_SUITE)
 
 %.py: %.src
 	@echo "copying $@"; /bin/cp $< $@
@@ -141,4 +141,4 @@ run-tests: all-local
 	@for test_script in $(TEST_SUITE); do echo; echo "Running $$test_script"; \
 	  echo; $$test_script -t; done
 
-CLEANFILES = $(TEST_SUITE) $(SETPATH) *.pyc *.dat *.xml
+CLEANFILES = $(TEST_SUITE) $(TESTUTIL) *.pyc *.dat *.xml

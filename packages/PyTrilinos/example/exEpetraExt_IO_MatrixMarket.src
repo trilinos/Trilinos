@@ -29,9 +29,13 @@
 # ************************************************************************
 # @header
 
+#
+# System imports
 from   optparse import *
 import sys
 
+#
+# Parse the command-line arguments
 parser = OptionParser()
 parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
                   default=False,
@@ -42,23 +46,14 @@ parser.add_option("-t", "--testharness", action="store_true",
 parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
                   help="set the verbosity level [default 2]")
 options,args = parser.parse_args()
-if options.testharness:
-    import setpath
-    if options.boost: setpath.setpath("src-boost")
-    else:             setpath.setpath()
-    import Epetra
-    import EpetraExt
-else:
-    try:
-        import setpath
-        if options.boost: setpath.setpath("src-boost")
-        else:             setpath.setpath()
-        import Epetra
-        import EpetraExt
-    except ImportError:
-        from PyTrilinos import Epetra
-        from PyTrilinos import EpetraExt
-        print >>sys.stderr, "Using system-installed Epetra, EptraExt"
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
+EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
 
 # Build a global communicator
 comm    = Epetra.PyComm()

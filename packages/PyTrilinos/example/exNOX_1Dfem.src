@@ -48,6 +48,8 @@ from   numpy    import *
 from   optparse import *
 import sys
 
+#
+# Parse the command-line arguments
 parser = OptionParser()
 parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
                   default=False,
@@ -69,33 +71,15 @@ parser.add_option("-p", "--plot", action="store_true", dest="plot",
                   default=False, help="Plot the resulting solution")
 options,args = parser.parse_args()
 
-# PyTrilinos imports.  If the -t or --testharness option is given, then only
-# import the PyTrilinos modules from the current build directory structure.  If
-# not, first try to load from the current build directories, but if that fails,
-# try to import from a system-installed PyTrilinos.
-if options.testharness:
-    import setpath
-    if options.boost: setpath.setpath("src-boost")
-    else:             setpath.setpath()
-    import Teuchos
-    import Epetra
-    import EpetraExt
-    import NOX
-else:
-    try:
-        import setpath
-        if options.boost: setpath.setpath("src-boost")
-        else:             setpath.setpath()
-        import Teuchos
-        import Epetra
-        import EpetraExt
-        import NOX
-    except ImportError:
-        from PyTrilinos import Teuchos
-        from PyTrilinos import Epetra
-        from PyTrilinos import EpetraExt
-        from PyTrilinos import NOX
-        print >>sys.stderr, "Using system-installed Teuchos, Epetra, EpetraExt, NOX"
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Teuchos   = fromPyTrilinosImport('Teuchos'  , options.testharness)
+Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
+EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
+NOX       = fromPyTrilinosImport('NOX'      , options.testharness)
 
 # Plotting import
 if options.plot:

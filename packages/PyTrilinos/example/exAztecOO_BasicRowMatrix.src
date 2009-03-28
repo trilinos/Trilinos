@@ -46,9 +46,14 @@
 # Based on a script originally written by Marzio Sala.  Updated by Bill Spotz.
 #
 ######################################################################
+
+#
+# System imports
 import numpy
 from   optparse import *
 
+#
+# Parse the command-line arguments
 parser = OptionParser()
 parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
                   default=False,
@@ -61,22 +66,14 @@ parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
 parser.add_option("-n", type="int", dest="nodes", default=100,
                   help="number of nodes [default 100]")
 options,args = parser.parse_args()
-if options.testharness:
-    import setpath
-    if options.boost: setpath.setpath("src-boost")
-    else:             setpath.setpath()
-    import Epetra
-    import AztecOO
-else:
-    try:
-        import setpath
-        if options.boost: setpath.setpath("src-boost")
-        else:             setpath.setpath()
-        import Epetra
-        import AztecOO
-    except:
-        from PyTrilinos import Epetra, AztecOO
-        print "Using installed version of Epetra, AztecOO"
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra  = fromPyTrilinosImport('Epetra' , options.testharness)
+AztecOO = fromPyTrilinosImport('AztecOO', options.testharness)
 
 ################################################################################
 

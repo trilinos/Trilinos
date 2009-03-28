@@ -29,17 +29,14 @@
 # ************************************************************************
 # @HEADER
 
-# Imports.  Users importing an installed version of PyTrilinos should use the
-# "from PyTrilinos import ..." syntax.  Here, the setpath module adds the build
-# directory, including "PyTrilinos", to the front of the search path.  We thus
-# use "import ..." for Trilinos modules.  This prevents us from accidentally
-# picking up a system-installed version and ensures that we are testing the
-# build module.
-#from   numpy    import *
+#
+# System imports
 from   optparse import *
 import sys
 import unittest
 
+#
+# Parse the command-line arguments
 parser = OptionParser()
 parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
                   default=False,
@@ -50,23 +47,14 @@ parser.add_option("-t", "--testharness", action="store_true",
 parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
                   help="set the verbosity level [default 2]")
 options,args = parser.parse_args()
-if options.testharness:
-    import setpath
-    if options.boost: setpath.setpath("src-boost")
-    else:             setpath.setpath()
-    import Epetra
-    import ML
-else:
-    try:
-        import setpath
-        if options.boost: setpath.setpath("src-boost")
-        else:             setpath.setpath()
-        import Epetra
-        import ML
-    except ImportError:
-        from PyTrilinos import Epetra
-        from PyTrilinos import ML
-        print >>sys.stderr, "Using system-installed Epetra, ML"
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+ML     = fromPyTrilinosImport('ML'    , options.testharness)
 
 ##########################################################################
 

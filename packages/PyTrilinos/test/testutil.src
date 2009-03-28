@@ -1,0 +1,62 @@
+#! /usr/bin/env python
+# -*- python -*-
+
+# System module imports
+from   distutils.util import get_platform
+import imp
+import os.path
+import sys
+
+def fromPyTrilinosImport(name, fromBuild=False):
+    """
+    fromPyTrilinosImport(name, fromBuild=False) -> module
+
+    Return the requested PyTrilinos module.  Argument 'name' must be a valid
+    PyTrilinos module name, such as 'Teuchos', Epetra', 'AztecOO', etc.  If
+    argument 'fromBuild' is False, then this function returns what would be
+    obtained from the statement 'from PyTrilinos import <name>', which in all
+    liklihood will be a system-installed version of PyTrilinos.  If it is True,
+    the function ensures that the module that gets returned is from the local
+    build directory.
+
+    FromPyTrilinosImport() is designed to work from the local build directory,
+    whether that directory is an autotools build directory, or a cmake build
+    directory.
+    """
+
+    # If fromBuild is False, then perform the equivalent of
+    # 'from PyTrilinos import <name>'
+    if not fromBuild:
+        module = __import__('PyTrilinos', fromlist=[name])
+        return module
+
+    # At this point in the algorithm, we must import from the build directory.
+    # There are two posibilites: the autotools build directory or the cmake
+    # build directory.  The cmake build system utilizes a directory that should
+    # always exist, so we check for the existence of the autotools build
+    # directory to determine which build system is being used.
+    myDir,myName = os.path.split(__file__)
+    libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
+    autoDir = os.path.normpath(os.path.join(myDir, "..", "src", "build",
+                                            libDir, "PyTrilinos"))
+    cmakeDir = os.path.normpath(os.path.join(myDir, "..", "src", "PyTrilinos"))
+    if os.path.isdir(autoDir):
+        buildDir = autoDir
+    else:
+        buildDir = cmakeDir
+
+    # Update the sys.path list of search paths
+    shortPath = os.path.split(buildDir)[0]
+    sys.path.insert(1, shortPath)
+    sys.path.insert(2, buildDir)
+
+    # Import the module directly from the build directory
+    result = imp.find_module(name, [buildDir])
+    if result is None:
+        raise ImportError, fullName + " not found"
+    module = imp.load_module(name, *result)
+    modFile = result[0]
+    if (modFile):
+        modFile.close()
+
+    return module

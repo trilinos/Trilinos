@@ -29,9 +29,13 @@
 # ************************************************************************
 # @HEADER
 
+#
+# System imports
 from   optparse import *
 import sys
 
+#
+# Parse the command-line arguments
 parser = OptionParser()
 parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
                   default=False,
@@ -42,32 +46,17 @@ parser.add_option("-t", "--testharness", action="store_true",
 parser.add_option("-v", "--verbosity", type="int", dest="verbosity", default=2,
                   help="set the verbosity level [default 2]")
 options,args = parser.parse_args()
-if options.testharness:
-    import setpath
-    if options.boost: setpath.setpath("src-boost")
-    else:             setpath.setpath()
-    import Epetra
-    import TriUtils
-    import Galeri
-    import AztecOO
-    import IFPACK
-else:
-    try:
-      import setpath
-      if options.boost: setpath.setpath("src-boost")
-      else:             setpath.setpath()
-      import Epetra
-      import TriUtils
-      import Galeri
-      import AztecOO
-      import IFPACK
-    except ImportError:
-      from PyTrilinos import Epetra
-      from PyTrilinos import TriUtils
-      from PyTrilinos import Galeri
-      from PyTrilinos import AztecOO
-      from PyTrilinos import IFPACK
-      print >>sys.stderr, "Using system-installed Epetra, TriUtils, Galeri, AztecOO, IFPACK"
+
+#
+# Under normal usage, simply use 'from PyTrilinos import Epetra'.  For testing,
+# we want to be able to control whether we import from the build directory or
+# from a system-installed version of PyTrilinos.
+from testutil import fromPyTrilinosImport
+Epetra   = fromPyTrilinosImport('Epetra'  , options.testharness)
+TriUtils = fromPyTrilinosImport('TriUtils', options.testharness)
+Galeri   = fromPyTrilinosImport('Galeri'  , options.testharness)
+AztecOO  = fromPyTrilinosImport('AztecOO' , options.testharness)
+IFPACK   = fromPyTrilinosImport('IFPACK'  , options.testharness)
 
 comm    = Epetra.PyComm()
 iAmRoot = comm.MyPID() == 0
