@@ -36,7 +36,7 @@ AUTOMAKE_OPTIONS = foreign
 ## #######################################################################
 ACLOCAL_AMFLAGS = -I config
 
-EXTRA_DIST = setpath.src gre__115.mx \
+EXTRA_DIST = testutil.src gre__115.mx \
 	     exAmesos_Factory.src exAmesos_Solvers.src \
 	     exAnasazi_BlockDavidson.src exAztecOO.src exAztecOO_Operator.src \
 	     exAztecOO_RowMatrix.src exAztecOO_BasicRowMatrix.src exEpetra.src \

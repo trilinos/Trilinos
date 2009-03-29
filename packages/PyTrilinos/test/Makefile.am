@@ -36,7 +36,7 @@ AUTOMAKE_OPTIONS = foreign
 ## #######################################################################
 ACLOCAL_AMFLAGS = -I config
 
-EXTRA_DIST = definition setpath.src \
+EXTRA_DIST = definition testutil.src \
 	     testAmesos.src testAnasazi.src testAztecOO.src \
 	     testEpetraExt_Coloring.src testEpetra_BlockMap.src \
 	     testEpetra_Comm.src testEpetra_CompObject.src \

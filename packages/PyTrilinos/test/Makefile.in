@@ -197,7 +197,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I config
-EXTRA_DIST = definition setpath.src \
+EXTRA_DIST = definition testutil.src \
 	     testAmesos.src testAnasazi.src testAztecOO.src \
 	     testEpetraExt_Coloring.src testEpetra_BlockMap.src \
 	     testEpetra_Comm.src testEpetra_CompObject.src \
@@ -251,8 +251,8 @@ TEST_SUITE = $(TEUCHOS_TESTS)   $(THYRA_TESTS)   $(EPETRA_TESTS)  $(TRIUTILS_TES
 	     $(IFPACK_TESTS)    $(KOMPLEX_TESTS) $(ANASAZI_TESTS) $(ML_TESTS) \
 	     $(NOX_TESTS)
 
-SETPATH = setpath.py testutil.py
-CLEANFILES = $(TEST_SUITE) $(SETPATH) *.pyc *.dat *.xml
+TESTUTIL = testutil.py
+CLEANFILES = $(TEST_SUITE) $(TESTUTIL) *.pyc *.dat *.xml
 all: all-am
 
 .SUFFIXES:
@@ -419,7 +419,7 @@ uninstall-am:
 # The following line helps the test harness recover from build errors.
 all:
 
-all-local: $(SETPATH) $(TEST_SUITE)
+all-local: $(TESTUTIL) $(TEST_SUITE)
 
 %.py: %.src
 	@echo "copying $@"; /bin/cp $< $@
