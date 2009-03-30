@@ -2,6 +2,7 @@ INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(
   geometric
+  #probing
   #utest
   #rebalance_1d_default
   )

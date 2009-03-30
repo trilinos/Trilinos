@@ -61,6 +61,7 @@ SET(HEADERS ${HEADERS}
   epetra/Isorropia_EpetraOperator.hpp
   epetra/Isorropia_EpetraColorer.hpp
   epetra/Isorropia_EpetraOrderer.hpp
+  epetra/Isorropia_EpetraProber.hpp
   epetra/Isorropia_Epetra.hpp
   epetra/Isorropia_EpetraRedistributor.hpp
   epetra/Isorropia_EpetraLibrary.hpp
@@ -73,6 +74,7 @@ SET(SOURCES ${SOURCES}
   epetra/Isorropia_EpetraPartitioner.cpp
   epetra/Isorropia_EpetraColorer.cpp
   epetra/Isorropia_EpetraOrderer.cpp
+  epetra/Isorropia_EpetraProber.cpp
   epetra/Isorropia_Epetra.cpp
   epetra/Isorropia_EpetraRedistributor.cpp
   epetra/Isorropia_EpetraLibrary.cpp
