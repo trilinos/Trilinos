@@ -18,11 +18,12 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearO
    int cols = blo->productDomain()->numBlocks();
  
    TEUCHOS_ASSERT(rows==cols);
-   TEUCHOS_ASSERT(rows==invOpsStrategy_->numDiagonalBlocks());
+   // TEUCHOS_ASSERT(rows==invOpsStrategy_->numDiagonalBlocks());
 
    // get diagonal blocks
-   const std::vector<Teuchos::RCP<const Thyra::LinearOpBase<double> >  > & invDiag
-         = invOpsStrategy_->getInvD(blo);
+   std::vector<LinearOp> invDiag;
+   invOpsStrategy_->getInvD(blo,invDiag);
+   TEUCHOS_ASSERT(rows==invDiag.size());
 
    // create a blocked linear operator
    BlockedLinearOp precond = createNewBlockedOp();

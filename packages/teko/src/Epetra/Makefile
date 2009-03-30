@@ -11,7 +11,6 @@ OBJS = PB_EpetraHelpers.o \
        PB_EpetraLSCHelpers.o \
        PB_EpetraLSCStablePreconditioner.o \
        PB_EpetraLSCStabilizedPreconditioner.o \
-       PB_EpetraBlockJacobiPreconditioner.o \
        PB_EpetraOperatorWrapper.o \
        PB_EpetraThyraConverter.o \
        PB_InterlacedEpetra.o \

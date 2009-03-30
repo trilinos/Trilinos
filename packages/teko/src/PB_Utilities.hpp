@@ -6,9 +6,11 @@
 // Thyra includes
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_ProductMultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
 namespace PB {
 
@@ -84,6 +86,20 @@ inline LinearOp getBlock(int i,int j,const BlockedLinearOp & blo)
 //! Set the <code>i,j</code> block in a BlockedLinearOp object
 inline void setBlock(int i,int j,BlockedLinearOp & blo, const LinearOp & lo)
 { return blo->setBlock(i,j,lo); }
+
+//@}
+
+//! @name Functions for constructing and initializing solvers
+//@{
+typedef Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > InverseFactory;
+
+//! Build an inverse operator using a factory and a linear operator
+LinearOp buildInverse(const InverseFactory & factory,const LinearOp & A);
+
+/** Using a prebuilt linear operator, use factory to build an inverse operator
+  * given a new forward operator.
+  */
+void rebuildInverse(const InverseFactory & factory, const LinearOp & A, LinearOp & invA);
 
 //@}
 
