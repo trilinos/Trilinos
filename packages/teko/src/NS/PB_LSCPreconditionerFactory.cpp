@@ -5,7 +5,7 @@
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
 
-#include "PB_SchurSolveLinearOp.hpp"
+#include "PB_LU2x2InverseOp.hpp"
 
 namespace PB {
 namespace NS {
@@ -70,7 +70,7 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
       invPschur = multiply(invBQBtmC, M , invBQBtmC,"inv(B*Bt)*(B*F*Bt)*inv(B*Bt)");
 
    // build a preconditioner operator using the parent classes utility function
-   return createNewSchurSolveLinearOp(blockOp,invF,invPschur);
+   return createNewLU2x2InverseOp(blockOp,invF,invPschur);
 }
 
 } // end namespace NS

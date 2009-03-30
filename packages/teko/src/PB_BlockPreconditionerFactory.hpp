@@ -3,24 +3,19 @@
 
 #include "Teuchos_ParameterListAcceptor.hpp"
 
+// Thyra includes
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Thyra_LinearOpSourceBase.hpp"
-#include "Thyra_LinearOpBase.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
-#include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
-#include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
+
+// PB includes
+#include "PB_Utilities.hpp"
 
 namespace PB {
 
 using Teuchos::RCP;
 using Teuchos::ParameterList;
-using Thyra::LinearOpBase;
-using Thyra::VectorSpaceBase;
-
-typedef RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > BlockedLinearOp;
-typedef RCP<const LinearOpBase<double> > LinearOp;
-typedef RCP<const VectorSpaceBase<double> > VectorSpace;
 
 inline BlockedLinearOp createNewBlockedOp()
 {

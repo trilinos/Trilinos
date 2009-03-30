@@ -1,10 +1,8 @@
-#ifndef __PB_SchurSolveLinearOp_hpp__
-#define __PB_SchurSolveLinearOp_hpp__
+#ifndef __PB_LU2x2InverseOp_hpp__
+#define __PB_LU2x2InverseOp_hpp__
 
-#include "Thyra_BlockedLinearOpBase.hpp"
-#include "Thyra_ProductVectorSpaceBase.hpp"
-
-#include "PB_BlockPreconditionerFactory.hpp"
+#include "PB_Utilities.hpp"
+#include "PB_BlockImplicitLinearOp.hpp"
 
 namespace PB {
 
@@ -40,7 +38,7 @@ namespace PB {
  * In order to do this 2 evaluations of \f$ A_{00}^{-1} \f$ and a single
  * evalution of \f$ S^{-1} \f$ are needed.
  */
-class SchurSolveLinearOp : public Thyra::LinearOpBase<double> {
+class LU2x2InverseOp : public BlockImplicitLinearOp {
 public:
    /** @brief This constructor explicitly takes the parts of \f$ A \f$ required to
      *        build the inverse operator.
@@ -52,18 +50,18 @@ public:
      * @param[in] invA00  An approximate inverse of \f$ A_{00} \f$.
      * @param[in] invS  An approximate inverse of \f$ S = -A_{11} + A_{10} A_{00}^{-1} A_{01} \f$.
      */
-   SchurSolveLinearOp(const Teuchos::RCP<const Thyra::BlockedLinearOpBase<double> > & A,
-                      const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invA00,
-                      const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invS);
+   LU2x2InverseOp(const BlockedLinearOp & A,
+                       const LinearOp & invA00,
+                       const LinearOp & invS);
 
-   /** @name Inherited methods from Thyra::LinearOpBase */
+   //! @name Inherited methods from Thyra::LinearOpBase
    //@{
 
    /** @brief Range space of this operator */
-   Teuchos::RCP< const Thyra::VectorSpaceBase<double> > range() const { return productRange_; }
+   virtual VectorSpace range() const { return productRange_; }
 
    /** @brief Domain space of this operator */
-   Teuchos::RCP< const Thyra::VectorSpaceBase<double> > domain() const { return productDomain_; }
+   virtual VectorSpace domain() const { return productDomain_; }
 
    /** @brief Perform a matrix vector multiply with this operator. 
      *
@@ -72,39 +70,37 @@ public:
      * is returned in \f$y\f$. If this operator is reprsented as \f$M\f$ then
      * \f$ y = \alpha M x + \beta y \f$ (ignoring conjugation!).
      *
-     * @param[in]     conj (Must be set to Thyra::NONCONJ_ELE)
      * @param[in]     x 
      * @param[in,out] y 
      * @param[in]     alpha (default=1)
      * @param[in]     beta  (default=0)
      */
-   void apply(const Thyra::EConj conj, const Thyra::MultiVectorBase<double> & x, Thyra::MultiVectorBase<double> * y,
-      const double alpha = Teuchos::ScalarTraits<double>::one(),
-      const double beta = Teuchos::ScalarTraits<double>::zero()) const;
+   virtual void apply(const BlockedMultiVector & x, BlockedMultiVector & y,
+              const double alpha = 1.0, const double beta = 0.0) const;
    //@}
 
 protected:
    // fundamental operators to use
-   const Teuchos::RCP<const Thyra::BlockedLinearOpBase<double> > A_;  ///< operator \f$ A \f$
-   const Teuchos::RCP<const Thyra::LinearOpBase<double> > invA00_;    ///< inverse of \f$ A_{00} \f$
-   const Teuchos::RCP<const Thyra::LinearOpBase<double> > invS_;      ///< inverse of \f$ S \f$
+   const BlockedLinearOp A_;  ///< operator \f$ A \f$
+   const LinearOp invA00_;    ///< inverse of \f$ A_{00} \f$
+   const LinearOp invS_;      ///< inverse of \f$ S \f$
 
    // some blocks of A
-   const Teuchos::RCP<const Thyra::LinearOpBase<double> > A10_;       ///< operator \f$ A_{10} \f$
-   const Teuchos::RCP<const Thyra::LinearOpBase<double> > A01_;       ///< operator \f$ A_{01} \f$
+   const LinearOp A10_;       ///< operator \f$ A_{10} \f$
+   const LinearOp A01_;       ///< operator \f$ A_{01} \f$
 
    Teuchos::RCP<const Thyra::ProductVectorSpaceBase<double> > productRange_; ///< Range vector space.
    Teuchos::RCP<const Thyra::ProductVectorSpaceBase<double> > productDomain_; ///< Domain vector space.
 
 private:
    // hide me!
-   SchurSolveLinearOp();
-   SchurSolveLinearOp(const SchurSolveLinearOp &);
+   LU2x2InverseOp();
+   LU2x2InverseOp(const LU2x2InverseOp &);
 };
 
-inline LinearOp createNewSchurSolveLinearOp(BlockedLinearOp & A,LinearOp & invA00,LinearOp & invS)
+inline LinearOp createNewLU2x2InverseOp(BlockedLinearOp & A,LinearOp & invA00,LinearOp & invS)
 {
-   return Teuchos::rcp(new SchurSolveLinearOp(A,invA00,invS));
+   return Teuchos::rcp(new LU2x2InverseOp(A,invA00,invS));
 }
 
 } // end namespace PB

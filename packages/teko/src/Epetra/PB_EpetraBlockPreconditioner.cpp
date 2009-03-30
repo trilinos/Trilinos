@@ -32,13 +32,13 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A)
 {
    // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
    const RCP<const EpetraOperatorWrapper> & eow = rcp_dynamic_cast<const EpetraOperatorWrapper>(rcpFromRef(A),true);
-   RCP<const LinearOpBase<double> > thyraA = eow->getThyraOp(); 
+   RCP<const Thyra::LinearOpBase<double> > thyraA = eow->getThyraOp(); 
 
    // set the mapping strategy
    SetMapStrategy(rcp(new InverseMappingStrategy(eow->getMapStrategy())));
    
    // actually build the preconditioner
-   RCP<const LinearOpBase<double> > preconditioner = preconFactory_->buildPreconditionerOperator(thyraA);
+   RCP<const Thyra::LinearOpBase<double> > preconditioner = preconFactory_->buildPreconditionerOperator(thyraA);
 
    SetOperator(preconditioner,false);
 

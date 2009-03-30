@@ -1,7 +1,7 @@
 #include "PB_LU2x2PreconditionerFactory.hpp"
 
 // PB includes
-#include "PB_SchurSolveLinearOp.hpp"
+#include "PB_LU2x2InverseOp.hpp"
 
 using Teuchos::rcp;
 using Teuchos::RCP;
@@ -27,7 +27,7 @@ LinearOp LU2x2PreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp
    LinearOp invS   = invOpsStrategy_->getInvS(A);
 
    // build the SchurSolve LinearOp
-   return createNewSchurSolveLinearOp(A,invA00,invS);
+   return createNewLU2x2InverseOp(A,invA00,invS);
 }
 
 } // end namespace PB

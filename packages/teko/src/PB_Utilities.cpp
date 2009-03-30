@@ -1,5 +1,9 @@
 #include "PB_Utilities.hpp"
 
+#include "Thyra_MultiVectorStdOps.hpp"
+
+#include "Teuchos_Array.hpp"
+
 #include <cmath>
 
 namespace PB {
@@ -82,6 +86,41 @@ void buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stenci
    }
 
    gl.FillComplete();
+}
+
+/** \brief Apply a linear operator to a multivector (think of this as a matrix
+  *        vector multiply).
+  *
+  * Apply a linear operator to a multivector. This also permits arbitrary scaling
+  * and addition of the result. This function gives
+  *     
+  *    \f$ y = \alpha A x + \beta y \f$
+  *
+  * \param[in]     A
+  * \param[in]     x
+  * \param[in,out] y
+  * \param[in]     \alpha
+  * \param[in]     \beta
+  *
+  */
+void applyOp(const LinearOp & A,const MultiVector & x,MultiVector & y,double alpha,double beta)
+{
+   Thyra::apply(*A,Thyra::NONCONJ_ELE,*x,&*y,alpha,beta);
+}
+
+/** \brief Update the <code>y</code> vector so that \f$y = \alpha x+\beta y\f$
+  */
+void update(double alpha,const MultiVector & x,double beta,MultiVector & y)
+{
+   Teuchos::Array<double> scale;
+   Teuchos::Array<Teuchos::Ptr<const Thyra::MultiVectorBase<double> > >  vec;
+
+   // build arrays needed for linear combo
+   scale.push_back(alpha);
+   vec.push_back(x.ptr());
+
+   // compute linear combination
+   Thyra::linear_combination<double>(scale,vec,beta,y.ptr());
 }
 
 }

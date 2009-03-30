@@ -21,6 +21,7 @@
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #include <vector>
 
@@ -149,6 +150,12 @@ int tLU2x2PreconditionerFactory::runTest(int verbosity,std::ostream & stdstrm,st
    status = test_result(verbosity,failstrm);
    allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"result\" ... PASSED","   \"result\" ... FAILED");
+   failcount += status ? 0 : 1;
+   totalrun++;
+
+   status = test_alphabeta(verbosity,failstrm);
+   allTests &= status;
+   PB_TEST_MSG(stdstrm,1,"   \"alphabeta\" ... PASSED","   \"alphabeta\" ... FAILED");
    failcount += status ? 0 : 1;
    totalrun++;
 
@@ -559,6 +566,107 @@ bool tLU2x2PreconditionerFactory::test_result(int verbosity,std::ostream & os)
    ef[0] = 0.539682539682540; ef[1] = 1.809523809523809;
    eg[0] = 3.523809523809524; eg[1] = 3.682539682539683;
    Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
+   status = ((diff = PB::Test::Difference(y,z))<tolerance_);
+   if(not status || verbosity>=10 ) { 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
+                      << diff << ")" << std::endl;
+      os << "      "; Print(os,"x",x);
+      os << "      "; Print(os,"y",y);
+      os << "      "; Print(os,"z",z);
+   }
+   allPassed &= status;
+
+   return allPassed;
+}
+
+bool tLU2x2PreconditionerFactory::test_alphabeta(int verbosity,std::ostream & os)
+{
+   typedef RCP<const Thyra::VectorBase<double> > Vector;
+   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
+
+   bool status = false;
+   bool allPassed = true;
+   double diff;
+ 
+   // Build block2x2 preconditioner
+   RCP<Thyra::PreconditionerFactoryBase<double> > precFactory 
+         = rcp(new LU2x2PreconditionerFactory(invF_,invS_));
+   RCP<Thyra::PreconditionerBase<double> > prec = Thyra::prec<double>(*precFactory,A_);
+
+   // build linear operator
+   RCP<const Thyra::LinearOpBase<double> > precOp = prec->getUnspecifiedPrecOp();
+
+   const RCP<Epetra_Map> map = rcp(new Epetra_Map(2,0,*comm));
+   // construct a couple of vectors
+   Epetra_Vector ea(*map),eb(*map);
+   Epetra_Vector ef(*map),eg(*map);
+   Epetra_Vector ec(*map),ed(*map);
+   
+   const RCP<const Thyra::VectorBase<double> > x = BlockVector(ea,eb,A_->domain());
+   const RCP<const Thyra::VectorBase<double> > z = BlockVector(ef,eg,A_->domain());
+   const RCP<const Thyra::VectorBase<double> > q = BlockVector(ec,ed,A_->domain());
+   RCP<Thyra::VectorBase<double> > y = Thyra::createMember(q->space());
+
+   // now checks of the preconditioner (should be exact!)
+   /////////////////////////////////////////////////////////////////////////
+  
+   double alpha = 0.5; double beta = -1.9;
+   ec[0] = 6.2; ec[1] = -2.4; ed[0] = 9.7; ed[1] = 0.04; // set q
+
+   // test vector [0 1 1 3]
+   Thyra::copy<double>(*q,y.ptr());
+   ea[0] = 0.0; ea[1] = 1.0; eb[0] = 1.0; eb[1] = 3.0;
+   ef[0] = -11.875238095238094; ef[1] = 4.917142857142856;
+   eg[0] = -18.287142857142854; eg[1] = 0.685904761904762;
+   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y,alpha,beta);
+   status = ((diff = PB::Test::Difference(y,z))<tolerance_);
+   if(not status || verbosity>=10 ) { 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
+                      << diff << ")" << std::endl;
+      os << "      "; Print(os,"x",x);
+      os << "      "; Print(os,"y",y);
+      os << "      "; Print(os,"z",z);
+   }
+   allPassed &= status;
+
+   // test vector [-2 4 7 9]
+   Thyra::copy<double>(*q,y.ptr());
+   ea[0] =-2.0; ea[1] = 4.0; eb[0] = 7.0; eb[1] = 9.0;
+   ef[0] =-11.938730158730158; ef[1]= 5.321904761904761;
+   eg[0] =-18.025238095238091; eg[1]= 2.693841269841270;
+   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y,alpha,beta);
+   status = ((diff = PB::Test::Difference(y,z))<tolerance_);
+   if(not status || verbosity>=10 ) { 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
+                      << diff << ")" << std::endl;
+      os << "      "; Print(os,"x",x);
+      os << "      "; Print(os,"y",y);
+      os << "      "; Print(os,"z",z);
+   }
+   allPassed &= status;
+
+   // test vector [1 0 0 -5]
+   Thyra::copy<double>(*q,y.ptr());
+   ea[0] = 1.0; ea[1] = 0.0; eb[0] = 0.0; eb[1] =-5.0;
+   ef[0] =-11.145079365079365; ef[1] = 4.012380952380952;
+   eg[0] =-18.549047619047617; eg[1] =-1.155365079365079;
+   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y,alpha,beta);
+   status = ((diff = PB::Test::Difference(y,z))<tolerance_);
+   if(not status || verbosity>=10 ) { 
+      os << std::endl << "   tLU2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 
+                      << diff << ")" << std::endl;
+      os << "      "; Print(os,"x",x);
+      os << "      "; Print(os,"y",y);
+      os << "      "; Print(os,"z",z);
+   }
+   allPassed &= status;
+
+   // test vector [4 -4 6 12]
+   Thyra::copy<double>(*q,y.ptr());
+   ea[0] = 4.0; ea[1] =-4.0; eb[0] = 6.0; eb[1] =12.0;
+   ef[0] =-11.510158730158729; ef[1] = 5.464761904761904;
+   eg[0] =-16.668095238095233; eg[1] = 1.765269841269841;
+   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y,alpha,beta);
    status = ((diff = PB::Test::Difference(y,z))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tLU2x2PreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2 = " 

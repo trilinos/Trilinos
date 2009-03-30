@@ -27,6 +27,7 @@ public:
    bool test_isCompatable(int verbosity,std::ostream & os);
 
    // non-member tests
+   bool test_alphabeta(int verbosity,std::ostream & os);
    bool test_result(int verbosity,std::ostream & os);
    bool test_identity(int verbosity,std::ostream & os);
    bool test_diagonal(int verbosity,std::ostream & os);
