@@ -287,6 +287,7 @@ APPEND_SET(NOINSTALLHEADERS
 
 APPEND_SET(SOURCES
   parmetis/build_graph.c
+#  parmetis/build_graph2.c
   parmetis/postprocessing.c
   parmetis/preprocessing.c
   parmetis/scatter_graph.c

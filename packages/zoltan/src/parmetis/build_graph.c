@@ -64,7 +64,7 @@ int Zoltan_Build_Graph(
   int  num_edges, cross_edges, max_edges;
   int *nbors_proc, *plist = NULL;
   int *edges_per_obj = NULL;
-  int nsend, nrecv, nself, num_border, max_proc_list_len;
+  int nsend, nrecv, nself, max_proc_list_len;
   int i, i99, j, jj, k, ierr, packet_size, offset, tmp;
   float *tmp_ewgts;
   char *sendbuf = NULL, *recvbuf = NULL;
