@@ -38,6 +38,7 @@ bin_PROGRAMS = Rythmos_UnitTest
 EXTRA_DIST =\
   $(srcdir)/Rythmos_UnitTestHelpers.hpp \
 	$(srcdir)/Rythmos_UnitTestModels.hpp \
+	$(srcdir)/Rythmos_IntegratorBuilder_Helpers.hpp \
 	$(srcdir)/../SinCos/SinCosModel.hpp \
 	$(srcdir)/../PolynomialModel/PolynomialModel.hpp
 

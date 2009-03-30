@@ -31,343 +31,11 @@
 #include "Teuchos_ParameterList.hpp"
 
 #include "Rythmos_IntegratorBuilder.hpp"
+#include "Rythmos_IntegratorBuilder_Helpers.hpp"
 #include "../SinCos/SinCosModel.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
 namespace Rythmos {
-
-// Classes for testing the IntegratorBuilder
-class FoolishIntegrator : 
-  virtual public IntegratorBase<double>,
-  virtual public Teuchos::ParameterListAcceptorDefaultBase
-{
-  public:
-  FoolishIntegrator() {}
-  ~FoolishIntegrator() {}
-  // Overridden from IntegratorBase:
-  void setStepper(
-    const RCP<StepperBase<double> > &stepper,
-    const double &finalTime,
-    const bool landOnFinalTime = true
-    ) 
-  { }
-  Teuchos::RCP<const StepperBase<double> > getStepper() const
-  { 
-    RCP<StepperBase<double> > stepper; return stepper; 
-  }
-  RCP<StepperBase<double> > unSetStepper() 
-  { 
-    RCP<StepperBase<double> > stepper; return stepper; 
-  }
-  void getFwdPoints(
-    const Array<double>& time_vec,
-    Array<RCP<const Thyra::VectorBase<double> > >* x_vec,
-    Array<RCP<const Thyra::VectorBase<double> > >* xdot_vec,
-    Array<double>* accuracy_vec
-    ) 
-  { }
-  TimeRange<double> getFwdTimeRange() const
-  { 
-    return TimeRange<double>(); 
-  }
-  // Overridden from InterpolationBufferBase:
-  RCP<const Thyra::VectorSpaceBase<double> >
-  get_x_space() const
-  {
-    RCP<Thyra::VectorSpaceBase<double> > space;
-    return space;
-  }
-  void addPoints(
-    const Array<double>& time_vec,
-    const Array<RCP<const Thyra::VectorBase<double> > >& x_vec,
-    const Array<RCP<const Thyra::VectorBase<double> > >& xdot_vec
-    )
-  { }
-  TimeRange<double> getTimeRange() const
-  {
-    return TimeRange<double>();
-  }
-  void getPoints(
-    const Array<double>& time_vec,
-    Array<RCP<const Thyra::VectorBase<double> > >* x_vec,
-    Array<RCP<const Thyra::VectorBase<double> > >* xdot_vec,
-    Array<double>* accuracy_vec
-    ) const
-  { }
-  void getNodes(Array<double>* time_vec) const
-  { }
-  void removeNodes(Array<double>& time_vec)
-  { }
-  int getOrder() const
-  { 
-    return 0; 
-  }
-  // Overridden from ParameterListAcceptor
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
-  { }
-  RCP<const Teuchos::ParameterList> getValidParameters() const
-  {
-    return Teuchos::parameterList();
-  }
-};
-
-class FoolishIntegrationControlStrategy : 
-  virtual public IntegrationControlStrategyBase<double>,
-  virtual public Teuchos::ParameterListAcceptorDefaultBase
-{
-  public:
-  FoolishIntegrationControlStrategy() {}
-  ~FoolishIntegrationControlStrategy() {}
-  // Overridden from IntegrationControlStrategyBase:
-  RCP<IntegrationControlStrategyBase<double> > cloneIntegrationControlStrategy() const
-  {
-    return Teuchos::null;
-  }
-  void resetIntegrationControlStrategy(
-    const TimeRange<double> &integrationTimeDomain
-    )
-  { }
-  StepControlInfo<double> getNextStepControlInfo(
-    const StepperBase<double> &stepper,
-    const StepControlInfo<double> &stepCtrlInfoLast,
-    const int timeStepIter
-    )
-  { 
-    return StepControlInfo<double>();
-  }
-  // Overridden from ParameterListAcceptorDefaultBase
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
-  { }
-  RCP<const Teuchos::ParameterList> getValidParameters() const
-  {
-    return Teuchos::parameterList();
-  }
-};
-
-class FoolishStepControlStrategy : 
-  virtual public StepControlStrategyBase<double>,
-  virtual public Teuchos::ParameterListAcceptorDefaultBase
-{
-  public:
-  FoolishStepControlStrategy() {}
-  virtual ~FoolishStepControlStrategy() {}
-  void initialize(const StepperBase<double>& stepper)
-  { }
-  void setRequestedStepSize(
-      const StepperBase<double>& stepper
-      , const double& stepSize
-      , const StepSizeType& stepSizeType
-      )
-  { }
-  void nextStepSize(
-      const StepperBase<double>& stepper
-      , double* stepSize
-      , StepSizeType* stepSizeType
-      , int* order 
-      )
-  { }
-  void setCorrection(
-      const StepperBase<double>& stepper
-      , const RCP<const Thyra::VectorBase<double> >& soln
-      , const RCP<const Thyra::VectorBase<double> >& ee
-      , int solveStatus
-      )
-  { }
-  bool acceptStep(
-      const StepperBase<double>& stepper
-      ,double* LETValue
-      )
-  {
-    return false;
-  }
-  void completeStep(
-      const StepperBase<double>& stepper
-      )
-  { }
-  AttemptedStepStatusFlag rejectStep(
-      const StepperBase<double>& stepper
-      )
-  {
-    return CONTINUE_ANYWAY;
-  }
-  StepControlStrategyState getCurrentState()
-  {
-    return UNINITIALIZED;
-  }
-  int getMaxOrder() const
-  {
-    return 0;
-  }
-  void setStepControlData(const StepperBase<double>& stepper)
-  { }
-  bool supportsCloning() const
-  { 
-    return false;
-  }
-  RCP<StepControlStrategyBase<double> > cloneStepControlStrategyAlgorithm() const
-  {
-    RCP<StepControlStrategyBase<double> > scsb;
-    return scsb;
-  }
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
-  { }
-  RCP<const Teuchos::ParameterList> getValidParameters() const
-  {
-    return Teuchos::parameterList();
-  }
-};
-
-class FoolishStepper :
-  virtual public StepperBase<double>,
-  virtual public Teuchos::ParameterListAcceptorDefaultBase
-{
-  public:
-  FoolishStepper() {}
-  virtual ~FoolishStepper() {}
-  void setInitialCondition(
-    const Thyra::ModelEvaluatorBase::InArgs<double> &initialCondition
-    )
-  { }
-  void setModel(
-    const RCP<const Thyra::ModelEvaluator<double> > &model
-    )
-  { }
-  RCP<const Thyra::ModelEvaluator<double> > getModel() const
-  {
-    return Teuchos::null;
-  }
-  double takeStep(double dt, StepSizeType stepType)
-  {
-    return 0.0;
-  }
-  const StepStatus<double> getStepStatus() const
-  {
-    StepStatus<double> ss;
-    return ss;
-  }
-  // Overridden from InterpolationBufferBase
-  RCP<const Thyra::VectorSpaceBase<double> > get_x_space() const
-  {
-    return Teuchos::null;
-  }
-  void addPoints(
-    const Array<double>& time_vec,
-    const Array<RCP<const Thyra::VectorBase<double> > >& x_vec,
-    const Array<RCP<const Thyra::VectorBase<double> > >& xdot_vec
-    )
-  { }
-  TimeRange<double> getTimeRange() const
-  {
-    return TimeRange<double>(0.0,0.0);
-  }
-  void getPoints(
-    const Array<double>& time_vec,
-    Array<RCP<const Thyra::VectorBase<double> > >* x_vec,
-    Array<RCP<const Thyra::VectorBase<double> > >* xdot_vec,
-    Array<double>* accuracy_vec
-    ) const
-  { }
-  void getNodes(Array<double>* time_vec) const
-  { }
-  void removeNodes(Array<double>& time_vec)
-  { }
-  int getOrder() const
-  {
-    return 0;
-  }
-  // Overridden from ParameterListAcceptorDefaultBase
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
-  { }
-  RCP<const Teuchos::ParameterList> getValidParameters() const
-  {
-    return Teuchos::parameterList();
-  }
-};
-
-
-class FoolishInterpolationBuffer : 
-  virtual public InterpolationBufferBase<double>,
-  virtual public Teuchos::ParameterListAcceptorDefaultBase
-{
-  public:
-  FoolishInterpolationBuffer() {}
-  virtual ~FoolishInterpolationBuffer() {}
-  RCP<const Thyra::VectorSpaceBase<double> > get_x_space() const
-  {
-    return Teuchos::null;
-  }
-  void addPoints(
-    const Array<double>& time_vec,
-    const Array<RCP<const Thyra::VectorBase<double> > >& x_vec,
-    const Array<RCP<const Thyra::VectorBase<double> > >& xdot_vec
-    )
-  { }
-  TimeRange<double> getTimeRange() const
-  {
-    return TimeRange<double>();
-  }
-  void getPoints(
-    const Array<double>& time_vec,
-    Array<RCP<const Thyra::VectorBase<double> > >* x_vec,
-    Array<RCP<const Thyra::VectorBase<double> > >* xdot_vec,
-    Array<double>* accuracy_vec
-    ) const
-  { }
-  void getNodes(Array<double>* time_vec) const
-  { }
-  void removeNodes(Array<double>& time_vec)
-  { }
-  int getOrder() const
-  {
-    return 0;
-  }
-  // Overriden from ParameterListAcceptor
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
-  { }
-  RCP<const Teuchos::ParameterList> getValidParameters() const
-  {
-    return Teuchos::parameterList();
-  }
-};
-
-class FoolishInterpolationBufferAppender
-: virtual public InterpolationBufferAppenderBase<double>,
-  virtual public Teuchos::ParameterListAcceptorDefaultBase
-{
-  void append(
-    const InterpolationBufferBase<double>& interpBuffSource,
-    const TimeRange<double>& range,
-    const Ptr<InterpolationBufferBase<double> > &interpBuffSink
-    )
-  { }
-  // Overriden from ParameterListAcceptor
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
-  { }
-  RCP<const Teuchos::ParameterList> getValidParameters() const
-  {
-    return Teuchos::parameterList();
-  }
-};
- 
-class FoolishErrWtVecCalc
-: virtual public ErrWtVecCalcBase<double>,
-  virtual public Teuchos::ParameterListAcceptorDefaultBase
-{
-  void errWtVecSet(
-       Thyra::VectorBase<double>* weight 
-      ,const Thyra::VectorBase<double>& vector
-      ,double relTol
-      ,double absTol
-      ) const
-  { }
-  // Overriden from ParameterListAcceptor
-  void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
-  { }
-  RCP<const Teuchos::ParameterList> getValidParameters() const
-  {
-    return Teuchos::parameterList();
-  }
-};
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, construct ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
@@ -410,8 +78,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegratorFactory ) {
       );
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*ib->getValidParameters());
-  pl->sublist("Integrator").set("Integrator Type","Foolish Integrator");
-  pl->sublist("Stepper").set("Stepper Type","Explicit RK");
+  pl->sublist("Integrator Settings").sublist("Integrator Selection").set("Integrator Type","Foolish Integrator");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Explicit RK");
   ib->setParameterList(pl);
   // Model:
   RCP<SinCosModel> model = sinCosModel(false);
@@ -459,8 +127,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegrationControlFactory ) {
       );
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*ib->getValidParameters());
-  pl->sublist("Integration Control").set("Integration Control Strategy Type","Foolish Integration Control");
-  pl->sublist("Stepper").set("Stepper Type","Explicit RK");
+  pl->sublist("Integration Control Selection").set("Integration Control Strategy Type","Foolish Integration Control");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Explicit RK");
   ib->setParameterList(pl);
   // Model:
   RCP<SinCosModel> model = sinCosModel(false);
@@ -517,7 +185,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setStepperBuilder ) {
 
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*ib->getValidParameters());
-  pl->sublist("Stepper").set("Stepper Type","Foolish Stepper");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Foolish Stepper");
   ib->setParameterList(pl);
   // Model:
   RCP<SinCosModel> model = sinCosModel(false);
@@ -548,8 +216,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setStepControlFactory ) {
 
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*ib->getValidParameters());
-  pl->sublist("Stepper").set("Stepper Type","Implicit BDF");
-  pl->sublist("Step Control").set("Step Control Strategy Type","Foolish Step Control");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
+  pl->sublist("Stepper Settings").sublist("Step Control Settings").sublist("Step Control Selection").set("Step Control Strategy Type","Foolish Step Control");
   ib->setParameterList(pl);
 
   // Model:
@@ -607,8 +275,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferFactory ) {
 
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*ib->getValidParameters());
-  pl->sublist("Stepper").set("Stepper Type","Explicit RK");
-  pl->sublist("Trailing Interpolation Buffer").set("Interpolation Buffer Type","Foolish InterpolationBuffer");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Explicit RK");
+  pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","Foolish InterpolationBuffer");
   ib->setParameterList(pl);
   
   // Model:
@@ -664,8 +332,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferAppenderFact
 
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*ib->getValidParameters());
-  pl->sublist("Stepper").set("Stepper Type","Explicit RK");
-  pl->sublist("Interpolation Buffer Appender").set("Interpolation Buffer Appender Type","Foolish InterpolationBufferAppender");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Explicit RK");
+  pl->sublist("Interpolation Buffer Settings").sublist("Interpolation Buffer Appender Selection").set("Interpolation Buffer Appender Type","Foolish InterpolationBufferAppender");
   ib->setParameterList(pl);
   
   // Model:
@@ -722,9 +390,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setErrWtVecCalcFactory ) {
 
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*ib->getValidParameters());
-  pl->sublist("Stepper").set("Stepper Type","Implicit BDF");
-  pl->sublist("Step Control").set("Step Control Strategy Type","Implicit BDF Step Control Strategy");
-  pl->sublist("Error Weight Vector Calculator").set("Error Weight Vector Calculator Type","Foolish ErrWtVecCalc");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
+  pl->sublist("Stepper Settings").sublist("Step Control Settings").sublist("Step Control Selection").set("Step Control Strategy Type","Implicit BDF Step Control Strategy");
+  pl->sublist("Stepper Settings").sublist("Step Control Settings").sublist("Error Weight Vector Calculator Selection").set("Error Weight Vector Calculator Type","Foolish ErrWtVecCalc");
   ib->setParameterList(pl);
   
   // Model:
@@ -779,7 +447,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ExplicitRK ) {
   Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*(ib->getValidParameters()));
-  pl->sublist("Stepper").set("Stepper Type","Explicit RK");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Explicit RK");
   ib->setParameterList(pl);
   RCP<Thyra::NonlinearSolverBase<double> > nlSolver; // null
   RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
@@ -823,7 +491,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitRK ) {
   Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*(ib->getValidParameters()));
-  pl->sublist("Stepper").set("Stepper Type","Implicit RK");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit RK");
   ib->setParameterList(pl);
   RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
   RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
@@ -852,7 +520,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->setParameters(*(ib->getValidParameters()));
-    pl->sublist("Stepper").set("Stepper Type","Implicit BDF");
+    pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
     ib->setParameterList(pl);
     RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
@@ -904,8 +572,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->setParameters(*(ib->getValidParameters()));
-    pl->sublist("Stepper").set("Stepper Type","Implicit BDF");
-    pl->sublist("Integration Control").set("Integration Control Strategy Type","None");
+    pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
+    pl->sublist("Integration Control Selection").set("Integration Control Strategy Type","None");
     ib->setParameterList(pl);
     RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
@@ -924,8 +592,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->setParameters(*(ib->getValidParameters()));
-    pl->sublist("Stepper").set("Stepper Type","Implicit BDF");
-    pl->sublist("Step Control").set("Step Control Strategy Type","None");
+    pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
+    pl->sublist("Stepper Settings").sublist("Step Control Settings").sublist("Step Control Selection").set("Step Control Strategy Type","None");
     ib->setParameterList(pl);
     RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
@@ -946,8 +614,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->setParameters(*(ib->getValidParameters()));
-    pl->sublist("Stepper").set("Stepper Type","Implicit BDF");
-    pl->sublist("Trailing Interpolation Buffer").set("Interpolation Buffer Type","None");
+    pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
+    pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","None");
     ib->setParameterList(pl);
     RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
@@ -967,7 +635,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_BackwardEuler ) {
   Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*(ib->getValidParameters()));
-  pl->sublist("Stepper").set("Stepper Type","Backward Euler");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
   ib->setParameterList(pl);
   RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
   RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
@@ -992,8 +660,8 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_invalid ) {
   {
     // Integrator == null
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->sublist("Integrator").set("Integrator Type","None");
-    pl->sublist("Stepper").set("Stepper Type","Explicit RK");
+    pl->sublist("Integrator Settings").sublist("Integrator Selection").set("Integrator Type","None");
+    pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Explicit RK");
     RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
     ib->setParameterList(pl);
     RCP<IntegratorBase<double> > integrator;
@@ -1005,7 +673,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_invalid ) {
   {
     // Stepper == null
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->sublist("Stepper").set("Stepper Type","None");
+    pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","None");
     RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
     ib->setParameterList(pl);
     RCP<IntegratorBase<double> > integrator;
@@ -1028,7 +696,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_invalid ) {
   {
     // Implicit Stepper and Solver == null
     RCP<ParameterList> pl = Teuchos::parameterList();
-    pl->sublist("Stepper").set("Stepper Type","Implicit BDF");
+    pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
     RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
     ib->setParameterList(pl);
     RCP<IntegratorBase<double> > integrator;
@@ -1048,61 +716,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setParameterList ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, getValidParameters ) {
-  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-  RCP<const ParameterList> pl = ib->getValidParameters();
-  TEST_EQUALITY_CONST( is_null(pl), false );
-  TEST_EQUALITY_CONST( 
-      pl->isSublist("Integrator"), 
-      true 
-      );
-  TEST_EQUALITY_CONST( 
-      pl->sublist("Integrator").isParameter("Integrator Type"), 
-      true 
-      );
-  TEST_EQUALITY_CONST( 
-      pl->isSublist("Integration Control"), 
-      true 
-      );
-  TEST_EQUALITY_CONST( 
-      pl->sublist("Integration Control").isParameter("Integration Control Strategy Type"), 
-      true 
-      );
-  TEST_EQUALITY_CONST( 
-      pl->isSublist("Stepper"), 
-      true 
-      );
-  TEST_EQUALITY_CONST( 
-      pl->sublist("Stepper").isParameter("Stepper Type"), 
-      true
-      );
-  TEST_EQUALITY_CONST( 
-      pl->isSublist("Step Control"), 
-      true 
-      );
-  TEST_EQUALITY_CONST(
-      pl->sublist("Step Control").isParameter("Step Control Strategy Type"),
-      true
-      );
-  TEST_EQUALITY_CONST(
-      pl->sublist("Trailing Interpolation Buffer").isParameter("Interpolation Buffer Type"),
-      true
-      );
-  TEST_EQUALITY_CONST(
-      pl->sublist("Interpolation Buffer Appender").isParameter("Interpolation Buffer Appender Type"),
-      true
-      );
-  TEST_EQUALITY_CONST(
-      pl->isParameter("Final Time"),
-      true
-      );
-  TEST_EQUALITY_CONST(
-      pl->isParameter("Land On Final Time"),
-      true
-      );
-}
-
-/*
-TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, getValidParameters_NEW ) {
   // Create a hand-version of the Valid Parameter List 
   // "Foo Settings" => sublist of various options that IntegratorBuilder owns
   // "Foo Selection" => sublist of various options that ObjectBuilder owns
@@ -1114,39 +727,39 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, getValidParameters_NEW ) {
       integratorSettingsPL.set("Land On Final Time", true);
       integratorSettingsPL.sublist("Integrator Selection").disableRecursiveValidation();
     }
+    validPL->sublist("Integration Control Selection").disableRecursiveValidation();
     ParameterList& stepperSettingsPL = validPL->sublist("Stepper Settings");
     {
       stepperSettingsPL.sublist("Stepper Selection").disableRecursiveValidation();
       ParameterList& stepControlSettingsPL = stepperSettingsPL.sublist("Step Control Settings");
       {
-        stepControlSettingsPL.sublist("Step Control Strategy Selection").disableRecursiveValidation();
+        stepControlSettingsPL.sublist("Step Control Selection").disableRecursiveValidation();
         stepControlSettingsPL.sublist("Error Weight Vector Calculator Selection").disableRecursiveValidation();
       }
       //stepperSettingsPL.sublist("Nonlinear Solver Selection").disableRecursiveValidation();
       //stepperSettingsPL.sublist("Interpolator Selection").disableRecursiveValidation();
-      //stepperSettingsPL.sublist("Runge-Kutta Stepper Tableau Selection").disableRecursiveValidation();
+      //stepperSettingsPL.sublist("Runge-Kutta Stepper Butcher Tableau Selection").disableRecursiveValidation();
     }
-    validPL->sublist("Integration Control Selection").disableRecursiveValidation();
     ParameterList& ibSettingsPL = validPL->sublist("Interpolation Buffer Settings");
     {
       ibSettingsPL.sublist("Trailing Interpolation Buffer Selection").disableRecursiveValidation();
       ibSettingsPL.sublist("Interpolation Buffer Appender Selection").disableRecursiveValidation();
       //ibSettingsPL.sublist("Interpolator Selection").disableRecursiveValidation();
     }
-    ParameterList& observerSettingsPL = validPL->sublist("Integration Observer Settings");
-    {
-      observerSettingsPL.sublist("Integration Observer Enabled").disableRecursiveValidation();
-      observerSettingsPL.sublist("Integration Observer List").disableRecursiveValidation();
-    }
+    //ParameterList& observerSettingsPL = validPL->sublist("Integration Observer Settings");
+    //{
+    //  observerSettingsPL.sublist("Integration Observer Enabled").disableRecursiveValidation();
+    //  observerSettingsPL.sublist("Integration Observer List").disableRecursiveValidation();
+    //}
   }
 
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
   RCP<const ParameterList> pl = ib->getValidParameters();
   TEST_ASSERT( !is_null(pl) );
 
-  TEST_NOTHROW( validPL->validateParameters(pl) );  
+  //TEST_NOTHROW( validPL->validateParameters(*pl) );  
+  validPL->validateParameters(*pl);  
 }
-*/
 
 /*
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, printParams ) {

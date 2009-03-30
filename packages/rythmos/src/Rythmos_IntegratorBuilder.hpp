@@ -61,15 +61,18 @@
 
 namespace {
 
-  // Top level Parameter Sublist names:
-  static std::string integrator_name = "Integrator";
-  static std::string integrationControl_name = "Integration Control";
-  static std::string stepper_name = "Stepper";
-  static std::string stepControl_name = "Step Control";
-  static std::string interpolationBuffer_name = "Trailing Interpolation Buffer";
-  static std::string interpolationBufferAppender_name = "Interpolation Buffer Appender";
-  static std::string errWtVecCalc_name = "Error Weight Vector Calculator";
-  // Top level Parameter names:
+  // Valid ParameterList names:
+  static std::string integratorSettings_name = "Integrator Settings";
+  static std::string integratorSelection_name = "Integrator Selection";
+  static std::string integrationControlSelection_name = "Integration Control Selection";
+  static std::string stepperSettings_name = "Stepper Settings";
+  static std::string stepperSelection_name = "Stepper Selection";
+  static std::string stepControlSettings_name = "Step Control Settings";
+  static std::string stepControlSelection_name = "Step Control Selection";
+  static std::string errWtVecSelection_name = "Error Weight Vector Calculator Selection";
+  static std::string interpolationBufferSettings_name = "Interpolation Buffer Settings";
+  static std::string interpolationBufferSelection_name = "Trailing Interpolation Buffer Selection";
+  static std::string interpolationBufferAppenderSelection_name = "Interpolation Buffer Appender Selection";
   static std::string finalTime_name = "Final Time";
   static int finalTime_default = 1; // Should be Scalar(1.0)
   static std::string landOnFinalTime_name = "Land On Final Time";
@@ -306,8 +309,6 @@ void IntegratorBuilder<Scalar>::setParameterList(
   paramList_ = paramList;
 }
 
-
-
 template<class Scalar>
 RCP<const Teuchos::ParameterList>
 IntegratorBuilder<Scalar>::getValidParameters() const
@@ -315,44 +316,52 @@ IntegratorBuilder<Scalar>::getValidParameters() const
   if (is_null(validPL_)) {
     RCP<ParameterList> pl = Teuchos::parameterList();
 
-    // Integrator 
-    ParameterList& integratorPL = 
-      pl->sublist(integrator_name).disableRecursiveValidation();
-    integratorPL.setParameters(*(integratorBuilder_->getValidParameters()));
-
-    // Integration Control 
-    ParameterList& integrationControlPL = 
-      pl->sublist(integrationControl_name).disableRecursiveValidation();
-    integrationControlPL.setParameters(*(integrationControlBuilder_->getValidParameters()));
-
-    // Stepper
-    ParameterList& stepperPL = 
-      pl->sublist(stepper_name).disableRecursiveValidation();
-    stepperPL.setParameters(*(stepperBuilder_->getValidParameters()));
-
-    // Step Control
-    ParameterList& stepControlPL = 
-      pl->sublist(stepControl_name).disableRecursiveValidation();
-    stepControlPL.setParameters(*(stepControlBuilder_->getValidParameters()));
-
-    // Interpolation Buffer
-    ParameterList& interpolationBufferPL = 
-      pl->sublist(interpolationBuffer_name).disableRecursiveValidation();
-    interpolationBufferPL.setParameters(*(interpolationBufferBuilder_->getValidParameters()));
-
-    // Interpolation Buffer Appender
-    ParameterList& interpolationBufferAppenderPL = 
-      pl->sublist(interpolationBufferAppender_name).disableRecursiveValidation();
-    interpolationBufferAppenderPL.setParameters(*(interpolationBufferAppenderBuilder_->getValidParameters()));
-
-    // ErrWtVecCalc
-    ParameterList& errWtVecCalcPL = 
-      pl->sublist(errWtVecCalc_name).disableRecursiveValidation();
-    errWtVecCalcPL.setParameters(*(errWtVecCalcBuilder_->getValidParameters()));
-
-    // These parameters are necessary in order to set the stepper on the integrator
-    pl->set(finalTime_name,Teuchos::as<Scalar>(finalTime_default));
-    pl->set(landOnFinalTime_name,landOnFinalTime_default);
+    // Integrator Settings
+    ParameterList& integratorSettingsPL = pl->sublist(integratorSettings_name);
+    {
+      // Final Time
+      integratorSettingsPL.set(finalTime_name,Teuchos::as<Scalar>(finalTime_default));
+      // Land On Final Time
+      integratorSettingsPL.set(landOnFinalTime_name,landOnFinalTime_default);
+      // Integrator Selection
+      ParameterList& integratorSelectionPL = 
+        integratorSettingsPL.sublist(integratorSelection_name).disableRecursiveValidation();
+      integratorSelectionPL.setParameters(*(integratorBuilder_->getValidParameters()));
+    }
+    // Integration Control Selection
+    ParameterList& integrationControlSelectionPL = pl->sublist(integrationControlSelection_name).disableRecursiveValidation();
+    integrationControlSelectionPL.setParameters(*(integrationControlBuilder_->getValidParameters()));
+    // Stepper Settings
+    ParameterList& stepperSettingsPL = pl->sublist(stepperSettings_name);
+    {
+      // Stepper Selection
+      ParameterList& stepperSelectionPL = stepperSettingsPL.sublist(stepperSelection_name).disableRecursiveValidation();
+      stepperSelectionPL.setParameters(*(stepperBuilder_->getValidParameters()));
+      // Step Control Settings
+      ParameterList& stepControlSettingsPL = stepperSettingsPL.sublist(stepControlSettings_name);
+      {
+        // Step Control Selection
+        ParameterList& stepControlSelectionPL = stepControlSettingsPL.sublist(stepControlSelection_name).disableRecursiveValidation();
+        stepControlSelectionPL.setParameters(*(stepControlBuilder_->getValidParameters()));
+        // ErrWtVec Selection
+        ParameterList& errWtVecSelectionPL = stepControlSettingsPL.sublist(errWtVecSelection_name).disableRecursiveValidation();
+        errWtVecSelectionPL.setParameters(*(errWtVecCalcBuilder_->getValidParameters()));
+      }
+      // Nonlinear Solver Selection
+      // Interpolator Selection
+      // RKBT Selection
+    }
+    ParameterList& interpolationBufferSettingsPL = pl->sublist(interpolationBufferSettings_name);
+    {
+      // Interpolation Buffer Selection
+      ParameterList& interpolationBufferSelectionPL = interpolationBufferSettingsPL.sublist(interpolationBufferSelection_name).disableRecursiveValidation();
+      interpolationBufferSelectionPL.setParameters(*(interpolationBufferBuilder_->getValidParameters()));
+      // Interpolation Buffer Appender Selection
+      ParameterList& interpolationBufferAppenderSelectionPL = interpolationBufferSettingsPL.sublist(interpolationBufferAppenderSelection_name).disableRecursiveValidation();
+      interpolationBufferAppenderSelectionPL.setParameters(*(interpolationBufferAppenderBuilder_->getValidParameters()));
+      // Interpolator Selection
+    }
+    // Integration Observer Settings 
 
     validPL_ = pl;
   }
@@ -403,19 +412,32 @@ IntegratorBuilder<Scalar>::create(
   TEST_FOR_EXCEPTION( is_null(paramList_), std::logic_error,
       "Error!  IntegratorBuilder::create(...)  Please set a parameter list on this class before calling create."
       );
+  RCP<ParameterList> integratorSettingsPL = sublist(paramList_,integratorSettings_name);
   // Create the integrator first
-  RCP<ParameterList> integratorPL = sublist(paramList_,integrator_name);
-  integratorBuilder_->setParameterList(integratorPL);
+  RCP<ParameterList> integratorSelectionPL = sublist(integratorSettingsPL,integratorSelection_name);
+  integratorBuilder_->setParameterList(integratorSelectionPL);
   RCP<IntegratorBase<Scalar> > integrator = integratorBuilder_->create();
   TEST_FOR_EXCEPTION( is_null(integrator), std::logic_error,
       "Error!  IntegratorBuilder::create(...)  The integrator came back null from the ObjectBuilder!"
       );
+  // Check for IntegrationControlStrategy and set it on the integrator
+  RCP<IntegrationControlStrategyAcceptingIntegratorBase<Scalar> > icsaIntegrator = 
+    Teuchos::rcp_dynamic_cast<IntegrationControlStrategyAcceptingIntegratorBase<Scalar> >(integrator,false);
+  if (!is_null(icsaIntegrator)) {
+    RCP<ParameterList> integrationControlSelectionPL = sublist(paramList_,integrationControlSelection_name);
+    integrationControlBuilder_->setParameterList(integrationControlSelectionPL);
+    RCP<IntegrationControlStrategyBase<Scalar> > integrationControl = integrationControlBuilder_->create();
+    if (!is_null(integrationControl)) {
+      icsaIntegrator->setIntegrationControlStrategy(integrationControl);
+    }
+  }
+  RCP<ParameterList> interpolationBufferSettingsPL = sublist(paramList_,interpolationBufferSettings_name);
   // Check for a trailing interpolation buffer and set it on the integrator
   RCP<TrailingInterpolationBufferAcceptingIntegratorBase<Scalar> > tibaIntegrator = 
     Teuchos::rcp_dynamic_cast<TrailingInterpolationBufferAcceptingIntegratorBase<Scalar> >(integrator,false);
   if (!is_null(tibaIntegrator)) {
-    RCP<ParameterList> interpolationBufferPL = sublist(paramList_,interpolationBuffer_name);
-    interpolationBufferBuilder_->setParameterList(interpolationBufferPL);
+    RCP<ParameterList> interpolationBufferSelectionPL = sublist(interpolationBufferSettingsPL,interpolationBufferSelection_name);
+    interpolationBufferBuilder_->setParameterList(interpolationBufferSelectionPL);
     RCP<InterpolationBufferBase<Scalar> > ib = interpolationBufferBuilder_->create();
     if (!is_null(ib)) {
       tibaIntegrator->setTrailingInterpolationBuffer(ib);
@@ -425,45 +447,36 @@ IntegratorBuilder<Scalar>::create(
   RCP<InterpolationBufferAppenderAcceptingIntegratorBase<Scalar> > ibaaIntegrator = 
     Teuchos::rcp_dynamic_cast<InterpolationBufferAppenderAcceptingIntegratorBase<Scalar> >(integrator,false);
   if (!is_null(ibaaIntegrator)) {
-    RCP<ParameterList> interpolationBufferAppenderPL = sublist(paramList_,interpolationBufferAppender_name);
-    interpolationBufferAppenderBuilder_->setParameterList(interpolationBufferAppenderPL);
+    RCP<ParameterList> interpolationBufferAppenderSelectionPL = sublist(interpolationBufferSettingsPL,interpolationBufferAppenderSelection_name);
+    interpolationBufferAppenderBuilder_->setParameterList(interpolationBufferAppenderSelectionPL);
     RCP<InterpolationBufferAppenderBase<Scalar> > interpolationBufferAppender = interpolationBufferAppenderBuilder_->create();
     if (!is_null(interpolationBufferAppender)) {
       ibaaIntegrator->setInterpolationBufferAppender(interpolationBufferAppender);
     }
   }
-  // Check for IntegrationControlStrategy and set it on the integrator
-  RCP<IntegrationControlStrategyAcceptingIntegratorBase<Scalar> > icsaIntegrator = 
-    Teuchos::rcp_dynamic_cast<IntegrationControlStrategyAcceptingIntegratorBase<Scalar> >(integrator,false);
-  if (!is_null(icsaIntegrator)) {
-    RCP<ParameterList> integrationControlPL = sublist(paramList_,integrationControl_name);
-    integrationControlBuilder_->setParameterList(integrationControlPL);
-    RCP<IntegrationControlStrategyBase<Scalar> > integrationControl = integrationControlBuilder_->create();
-    if (!is_null(integrationControl)) {
-      icsaIntegrator->setIntegrationControlStrategy(integrationControl);
-    }
-  }
+  RCP<ParameterList> stepperSettingsPL = sublist(paramList_,stepperSettings_name);
   // Create the Stepper
-  RCP<ParameterList> stepperPL = sublist(paramList_,stepper_name);
-  stepperBuilder_->setParameterList(stepperPL);
+  RCP<ParameterList> stepperSelectionPL = sublist(stepperSettingsPL,stepperSelection_name);
+  stepperBuilder_->setParameterList(stepperSelectionPL);
   RCP<StepperBase<Scalar> > stepper = stepperBuilder_->create();
   TEST_FOR_EXCEPTION( is_null(stepper), std::logic_error,
       "Error!  IntegratorBuilder::create(...)  The stepper came back null from the StepperBuilder!"
       );
   // Create the Step Control
+  RCP<ParameterList> stepControlSettingsPL = sublist(stepperSettingsPL,stepControlSettings_name);
   RCP<StepControlStrategyAcceptingStepperBase<Scalar> > scsaStepper = 
     Teuchos::rcp_dynamic_cast<StepControlStrategyAcceptingStepperBase<Scalar> >(stepper,false);
   if (!is_null(scsaStepper)) {
-    RCP<ParameterList> stepControlPL = sublist(paramList_,stepControl_name);
-    stepControlBuilder_->setParameterList(stepControlPL);
+    RCP<ParameterList> stepControlSelectionPL = sublist(stepControlSettingsPL,stepControlSelection_name);
+    stepControlBuilder_->setParameterList(stepControlSelectionPL);
     RCP<StepControlStrategyBase<Scalar> > stepControl = stepControlBuilder_->create();
     if (!is_null(stepControl)) {
       // Create the ErrWtVecCalc
       RCP<ErrWtVecCalcAcceptingStepControlStrategyBase<Scalar> > ewvcaStepControl = 
         Teuchos::rcp_dynamic_cast<ErrWtVecCalcAcceptingStepControlStrategyBase<Scalar> >(stepControl,false);
       if (!is_null(ewvcaStepControl)) {
-        RCP<ParameterList> errWtVecCalcPL = sublist(paramList_,errWtVecCalc_name);
-        errWtVecCalcBuilder_->setParameterList(errWtVecCalcPL);
+        RCP<ParameterList> errWtVecSelectionPL = sublist(stepControlSettingsPL,errWtVecSelection_name);
+        errWtVecCalcBuilder_->setParameterList(errWtVecSelectionPL);
         RCP<ErrWtVecCalcBase<Scalar> > errWtVecCalc = errWtVecCalcBuilder_->create();
         if (!is_null(errWtVecCalc)) {
           ewvcaStepControl->setErrWtVecCalc(errWtVecCalc);
@@ -484,8 +497,8 @@ IntegratorBuilder<Scalar>::create(
         );
     saStepper->setSolver(nlSolver);
   }
-  Scalar finalTime = paramList_->get<Scalar>(finalTime_name,Teuchos::as<Scalar>(finalTime_default));
-  bool landOnFinalTime = paramList_->get<bool>(landOnFinalTime_name,landOnFinalTime_default);
+  Scalar finalTime = integratorSettingsPL->get<Scalar>(finalTime_name,Teuchos::as<Scalar>(finalTime_default));
+  bool landOnFinalTime = integratorSettingsPL->get<bool>(landOnFinalTime_name,landOnFinalTime_default);
   integrator->setStepper(stepper,finalTime,landOnFinalTime);
   return integrator;
 }
