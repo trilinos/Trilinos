@@ -121,6 +121,7 @@ am__libifpack_a_SOURCES_DIST = $(srcdir)/Ifpack_IlukGraph.cpp \
 	$(srcdir)/Ifpack_Condest.cpp $(srcdir)/Ifpack.cpp \
 	$(srcdir)/Ifpack_DenseContainer.cpp \
 	$(srcdir)/Ifpack_LocalFilter.cpp \
+	$(srcdir)/Ifpack_NodeFilter.cpp \
 	$(srcdir)/Ifpack_DropFilter.cpp \
 	$(srcdir)/Ifpack_SparsityFilter.cpp \
 	$(srcdir)/Ifpack_ReorderFilter.cpp \
@@ -151,8 +152,9 @@ am__objects_2 = Ifpack_IlukGraph.$(OBJEXT) Ifpack_CrsRiluk.$(OBJEXT) \
 	Ifpack_DiagPreconditioner.$(OBJEXT) \
 	Ifpack_PointRelaxation.$(OBJEXT) Ifpack_Condest.$(OBJEXT) \
 	Ifpack.$(OBJEXT) Ifpack_DenseContainer.$(OBJEXT) \
-	Ifpack_LocalFilter.$(OBJEXT) Ifpack_DropFilter.$(OBJEXT) \
-	Ifpack_SparsityFilter.$(OBJEXT) Ifpack_ReorderFilter.$(OBJEXT) \
+	Ifpack_LocalFilter.$(OBJEXT) Ifpack_NodeFilter.$(OBJEXT) \
+	Ifpack_DropFilter.$(OBJEXT) Ifpack_SparsityFilter.$(OBJEXT) \
+	Ifpack_ReorderFilter.$(OBJEXT) \
 	Ifpack_SingletonFilter.$(OBJEXT) \
 	Ifpack_DiagonalFilter.$(OBJEXT) \
 	Ifpack_Graph_Epetra_RowMatrix.$(OBJEXT) \
@@ -206,7 +208,8 @@ am__include_HEADERS_DIST = $(srcdir)/Ifpack_ConfigDefs.h \
 	$(srcdir)/Ifpack_SparseContainer.h \
 	$(srcdir)/Ifpack_DenseContainer.h \
 	$(srcdir)/Ifpack_AdditiveSchwarz.h \
-	$(srcdir)/Ifpack_LocalFilter.h $(srcdir)/Ifpack_DropFilter.h \
+	$(srcdir)/Ifpack_LocalFilter.h $(srcdir)/Ifpack_NodeFilter.h \
+	$(srcdir)/Ifpack_DropFilter.h \
 	$(srcdir)/Ifpack_SparsityFilter.h \
 	$(srcdir)/Ifpack_ReorderFilter.h \
 	$(srcdir)/Ifpack_SingletonFilter.h \
@@ -415,6 +418,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_DenseContainer.h      \
 	$(srcdir)/Ifpack_AdditiveSchwarz.h     \
 	$(srcdir)/Ifpack_LocalFilter.h         \
+	$(srcdir)/Ifpack_NodeFilter.h         \
 	$(srcdir)/Ifpack_DropFilter.h          \
 	$(srcdir)/Ifpack_SparsityFilter.h      \
 	$(srcdir)/Ifpack_ReorderFilter.h       \
@@ -461,6 +465,7 @@ COMP = \
 	$(srcdir)/Ifpack.cpp                        \
 	$(srcdir)/Ifpack_DenseContainer.cpp         \
 	$(srcdir)/Ifpack_LocalFilter.cpp            \
+	$(srcdir)/Ifpack_NodeFilter.cpp            \
 	$(srcdir)/Ifpack_DropFilter.cpp             \
 	$(srcdir)/Ifpack_SparsityFilter.cpp         \
 	$(srcdir)/Ifpack_ReorderFilter.cpp          \
@@ -695,6 +700,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_LocalFilter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_METISPartitioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_METISReordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_NodeFilter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_OverlapGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_OverlappingPartitioner.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_OverlappingRowMatrix.Po@am__quote@
@@ -1017,6 +1023,20 @@ Ifpack_LocalFilter.obj: $(srcdir)/Ifpack_LocalFilter.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_LocalFilter.cpp' object='Ifpack_LocalFilter.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_LocalFilter.obj `if test -f '$(srcdir)/Ifpack_LocalFilter.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_LocalFilter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_LocalFilter.cpp'; fi`
+
+Ifpack_NodeFilter.o: $(srcdir)/Ifpack_NodeFilter.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_NodeFilter.o -MD -MP -MF $(DEPDIR)/Ifpack_NodeFilter.Tpo -c -o Ifpack_NodeFilter.o `test -f '$(srcdir)/Ifpack_NodeFilter.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_NodeFilter.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ifpack_NodeFilter.Tpo $(DEPDIR)/Ifpack_NodeFilter.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_NodeFilter.cpp' object='Ifpack_NodeFilter.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_NodeFilter.o `test -f '$(srcdir)/Ifpack_NodeFilter.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_NodeFilter.cpp
+
+Ifpack_NodeFilter.obj: $(srcdir)/Ifpack_NodeFilter.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_NodeFilter.obj -MD -MP -MF $(DEPDIR)/Ifpack_NodeFilter.Tpo -c -o Ifpack_NodeFilter.obj `if test -f '$(srcdir)/Ifpack_NodeFilter.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_NodeFilter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_NodeFilter.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ifpack_NodeFilter.Tpo $(DEPDIR)/Ifpack_NodeFilter.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_NodeFilter.cpp' object='Ifpack_NodeFilter.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_NodeFilter.obj `if test -f '$(srcdir)/Ifpack_NodeFilter.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_NodeFilter.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_NodeFilter.cpp'; fi`
 
 Ifpack_DropFilter.o: $(srcdir)/Ifpack_DropFilter.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_DropFilter.o -MD -MP -MF $(DEPDIR)/Ifpack_DropFilter.Tpo -c -o Ifpack_DropFilter.o `test -f '$(srcdir)/Ifpack_DropFilter.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_DropFilter.cpp

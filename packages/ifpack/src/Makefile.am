@@ -121,6 +121,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_DenseContainer.h      \
 	$(srcdir)/Ifpack_AdditiveSchwarz.h     \
 	$(srcdir)/Ifpack_LocalFilter.h         \
+	$(srcdir)/Ifpack_NodeFilter.h         \
 	$(srcdir)/Ifpack_DropFilter.h          \
 	$(srcdir)/Ifpack_SparsityFilter.h      \
 	$(srcdir)/Ifpack_ReorderFilter.h       \
@@ -168,6 +169,7 @@ COMP = \
 	$(srcdir)/Ifpack.cpp                        \
 	$(srcdir)/Ifpack_DenseContainer.cpp         \
 	$(srcdir)/Ifpack_LocalFilter.cpp            \
+	$(srcdir)/Ifpack_NodeFilter.cpp            \
 	$(srcdir)/Ifpack_DropFilter.cpp             \
 	$(srcdir)/Ifpack_SparsityFilter.cpp         \
 	$(srcdir)/Ifpack_ReorderFilter.cpp          \

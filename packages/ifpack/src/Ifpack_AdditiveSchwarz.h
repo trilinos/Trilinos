@@ -9,6 +9,7 @@
 #include "Ifpack_RCMReordering.h"
 #include "Ifpack_METISReordering.h"
 #include "Ifpack_LocalFilter.h"
+#include "Ifpack_NodeFilter.h"
 #include "Ifpack_SingletonFilter.h"
 #include "Ifpack_ReorderFilter.h"
 #include "Ifpack_Utils.h"
@@ -23,6 +24,12 @@
 #include "Epetra_CrsMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+
+#ifdef IFPACK_NODE_AWARE_CODE
+#include "EpetraExt_OperatorOut.h"
+#include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_BlockMapOut.h"
+#endif
 
 #ifdef HAVE_IFPACK_AMESOS
   #include "Ifpack_AMDReordering.h"
@@ -339,7 +346,11 @@ protected:
   //! Pointers to the overlapping matrix.
   Teuchos::RefCountPtr<Ifpack_OverlappingRowMatrix> OverlappingMatrix_;
   //! Localized version of Matrix_ or OverlappingMatrix_.
+# ifdef IFPACK_NODE_AWARE_CODE
+  Teuchos::RefCountPtr<Ifpack_NodeFilter> LocalizedMatrix_;
+# else
   Teuchos::RefCountPtr<Ifpack_LocalFilter> LocalizedMatrix_;
+# endif
   //! Contains the label of \c this object.
   string Label_;
   //! If true, the preconditioner has been successfully initialized.
@@ -436,6 +447,10 @@ Ifpack_AdditiveSchwarz(Epetra_RowMatrix* Matrix_in,
   SetParameters(List_in);
 }
 
+#ifdef IFPACK_NODE_AWARE_CODE
+extern int ML_NODE_ID;
+#endif
+
 //==============================================================================
 template<typename T>
 int Ifpack_AdditiveSchwarz<T>::Setup()
@@ -443,10 +458,60 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 
   Epetra_RowMatrix* MatrixPtr;
 
+#ifdef HAVE_MPI
+  Epetra_MpiComm *temp;
+  temp = new Epetra_MpiComm(MPI_COMM_SELF);
+#else
+  Epetra_SerialComm *temp;
+  temp = new Epetra_SerialComm();
+#endif
+
+# ifdef IFPACK_NODE_AWARE_CODE
+  sleep(3);
+  if (Comm().MyPID() == 0) cout << "Printing out ovArowmap" << endl;
+  Comm().Barrier();
+
+  EpetraExt::BlockMapToMatrixMarketFile("ovArowmap",OverlappingMatrix_->RowMatrixRowMap());
+  if (Comm().MyPID() == 0) cout << "Printing out ovAcolmap" << endl;
+  Comm().Barrier();
+  EpetraExt::BlockMapToMatrixMarketFile("ovAcolmap",OverlappingMatrix_->RowMatrixColMap());
+  Comm().Barrier();
+/*
+  EpetraExt::RowMatrixToMatlabFile("ovA",*OverlappingMatrix_);
+  fprintf(stderr,"p %d n %d matrix file done\n",Comm().MyPID(),ML_NODE_ID);
+  Comm().Barrier();
+*/
+  int nodeID;
+  try{ nodeID = List_.get("ML node id",0);}
+  catch(...){fprintf(stderr,"Ifpack_AdditiveSchwarz<T>::Setup(): no parameter \"ML node id\"\n\n");
+             cout << List_ << endl;}
+# endif
+
+  try{
   if (OverlappingMatrix_ != Teuchos::null)
+  {
+#   ifdef IFPACK_NODE_AWARE_CODE
+    Ifpack_NodeFilter *tt = new Ifpack_NodeFilter(OverlappingMatrix_,nodeID); //FIXME
+    LocalizedMatrix_ = Teuchos::rcp(tt);
+    //LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(OverlappingMatrix_) );
+#   else
     LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(OverlappingMatrix_) );
+#   endif
+  }
   else
+  {
+#   ifdef IFPACK_NODE_AWARE_CODE
+    Ifpack_NodeFilter *tt = new Ifpack_NodeFilter(Matrix_,nodeID); //FIXME
+    LocalizedMatrix_ = Teuchos::rcp(tt);
+    //LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(Matrix_) );
+#   else
     LocalizedMatrix_ = Teuchos::rcp( new Ifpack_LocalFilter(Matrix_) );
+#   endif
+  }
+  }
+  catch(...) {
+     fprintf(stderr,"AdditiveSchwarz Setup: problem creating local filter matrix.\n");
+  }
 
   if (LocalizedMatrix_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);
@@ -578,13 +643,35 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
 
   // compute the overlapping matrix if necessary
   if (IsOverlapping_) {
-    OverlappingMatrix_ = 
-      Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_) );
-    if (OverlappingMatrix_ == Teuchos::null)
+#     ifdef IFPACK_NODE_AWARE_CODE
+      int myNodeID;
+      try{ myNodeID = List_.get("ML node id",-1);}
+      catch(...){fprintf(stderr,"pid %d: no such entry (returned %d)\n",Comm().MyPID(),myNodeID);}
+      cout << "pid " << Comm().MyPID()
+           << ": calling Ifpack_OverlappingRowMatrix with myNodeID = "
+           << myNodeID << ", OverlapLevel_ = " << OverlapLevel_ << endl;
+      OverlappingMatrix_ = Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_, myNodeID) );
+#   else
+      OverlappingMatrix_ =
+        Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_) );
+#   endif
+
+    if (OverlappingMatrix_ == Teuchos::null) {
       IFPACK_CHK_ERR(-5);
+    } 
   }
 
+# ifdef IFPACK_NODE_AWARE_CODE
+  sleep(1);
+  Comm().Barrier();
+# endif
+
   IFPACK_CHK_ERR(Setup());
+
+# ifdef IFPACK_NODE_AWARE_CODE
+  sleep(1);
+  Comm().Barrier();
+#endif
 
   if (Inverse_ == Teuchos::null)
     IFPACK_CHK_ERR(-5);
@@ -739,7 +826,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // compute the preconditioner is not done by the user
   if (!IsComputed())
     IFPACK_CHK_ERR(-3);
-  
+
   int NumVectors = X.NumVectors();
 
   if (NumVectors != Y.NumVectors())

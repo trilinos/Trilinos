@@ -27,38 +27,76 @@
 //@HEADER
 */
 
-#ifndef IFPACK_OVERLAPPINGROWMATRIX_H
-#define IFPACK_OVERLAPPINGROWMATRIX_H
+#ifndef IFPACK_NODEFILTER_H
+#define IFPACK_NODEFILTER_H
+
+#ifdef IFPACK_NODE_AWARE_CODE
 
 #include "Ifpack_ConfigDefs.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CombineMode.h"
-#include "Teuchos_RefCountPtr.hpp"
-#include "Epetra_Import.h"
-#ifdef IFPACK_NODE_AWARE_CODE
-#include "Epetra_IntVector.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
 #endif
-
+#include "Epetra_RowMatrix.h"
+#include "Epetra_IntVector.h"
+#include "Teuchos_RefCountPtr.hpp"
+#include "Ifpack_OverlappingRowMatrix.h"
 class Epetra_Map;
+class Epetra_MultiVector;
+class Epetra_Vector;
+class Epetra_Import;
 class Epetra_BlockMap;
-class Epetra_CrsMatrix;
-class Epetra_Comm;
 
-//! Ifpack_OverlappingRowMatrix: matrix with ghost rows, based on Epetra_RowMatrix
-//
-class Ifpack_OverlappingRowMatrix : public virtual Epetra_RowMatrix {
+//! Ifpack_NodeFilter a class for light-weight extraction of the submatrix corresponding to local rows and columns.
+
+/*! Class Ifpack_NodeFilter enables a light-weight contruction of an
+ Epetra_RowMatrix-derived object, containing only the elements of the original, 
+ distributed matrix with local row and column ID. The local
+ submatrix is based on a communicator containing the local process only. 
+ Each process will have its local object, corresponding to the local submatrix.
+ Submatrices may or may not overlap.
+ 
+ The following instructions can be used to create "localized" matrices:
+ \code
+ #include "Ifpack_NodeFilter.h"
+ ...
+ Teuchos::RefCountPtr<Epetra_RowMatrix> A;             // fill the elements of A,
+ A->FillComplete();
+
+ Ifpack_NodeFilter LocalA(A);
+ \endcode
+
+ Once created, \c LocalA defined, on each process, the submatrix 
+ corresponding to local rows and columns only. The creation 
+ and use of
+ \c LocalA is "cheap", as the elements of the local matrix are
+ obtained through calls to ExtractMyRowCopy on the original, distributed
+ matrix, say A. This means that \c A must remain in scope every time 
+ \c LocalA is accessed.
+
+ A very convenient use of this class is to use Ifpack solvers to
+ compute the LU factorizations of local blocks. If applied to
+ a localized matrix, several Ifpack objects can operator in the same
+ phase in a safe way, without non-required data exchange.
+
+ \author Marzio Sala, SNL 9214
+
+ \date Sep-04
+ 
+ */ 
+class Ifpack_NodeFilter : public virtual Epetra_RowMatrix {
 
 public:
+  //@{ \name Constructor.
+  //! Constructor
+  Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix, int nodeID);
+  //Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix,const Epetra_Comm *);
 
-  //@{ Constructors/Destructors
-# ifdef IFPACK_NODE_AWARE_CODE
-  Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
-                              int OverlapLevel_in, int myNodeID);
-# endif
-  Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
-                              int OverlapLevel_in);
-
-  ~Ifpack_OverlappingRowMatrix() {};
+  //@}
+  //@{ \name Destructor.
+  //! Destructor
+  virtual ~Ifpack_NodeFilter();
   //@}
 
   //@{ \name Matrix data extraction routines
@@ -72,7 +110,11 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual int NumMyRowEntries(int MyRow, int & NumEntries) const;
+  virtual int NumMyRowEntries(int MyRow, int & NumEntries) const
+  {
+    NumEntries = NumEntries_[MyRow];
+    return(0);
+  }
 
   //! Returns the maximum of NumMyRowEntries() over all rows.
   virtual int MaxNumEntries() const
@@ -95,10 +137,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
-#ifdef IFPACK_NODE_AWARE_CODE
-  virtual int ExtractGlobalRowCopy(int MyRow, int Length, int & NumEntries, double* Values, int* Indices) const;
-#endif
+  virtual inline int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
 
   //! Returns a copy of the main diagonal in a user-provided vector.
   /*! 
@@ -123,7 +162,15 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  virtual int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+  {
+    if (TransA == true) {
+      IFPACK_CHK_ERR(-1);
+    }
+
+    IFPACK_CHK_ERR(Apply(X,Y));
+    return(0);
+  }
 
   //! Returns result of a local-only solve using a triangular Epetra_RowMatrix with Epetra_MultiVectors X and Y (NOT IMPLEMENTED).
   virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, 
@@ -169,7 +216,7 @@ public:
   //! If FillComplete() has been called, this query returns true, otherwise it returns false.
   virtual bool Filled() const
   {
-    return(true);
+    return true;
   }
 
   //! Returns the infinity norm of the global matrix.
@@ -178,7 +225,7 @@ public:
      */ 
   virtual double NormInf() const
   {
-    return(A().NormInf());
+    return(-1.0);
   }
 
   //! Returns the one norm of the global matrix.
@@ -187,7 +234,7 @@ public:
      */ 
   virtual double NormOne() const
   {
-    IFPACK_RETURN(A().NormOne());
+    IFPACK_RETURN(-1.0);
   }
 
   //! Returns the number of nonzero entries in the global matrix.
@@ -199,19 +246,19 @@ public:
   //! Returns the number of global matrix rows.
   virtual int NumGlobalRows() const
   {
-    return(A().NumGlobalRows());
+    return(NumGlobalRows_);
   }
 
   //! Returns the number of global matrix columns.
   virtual int NumGlobalCols() const
   {
-    return(A().NumGlobalCols());
+    return(NumGlobalRows_);
   }
 
   //! Returns the number of global nonzero diagonal entries, based on global row/column index comparisons.
   virtual int NumGlobalDiagonals() const
   {
-    return(A().NumGlobalDiagonals());
+    return(NumGlobalRows_);
   }
 
   //! Returns the number of nonzero entries in the calling processor's portion of the matrix.
@@ -235,19 +282,19 @@ public:
   //! Returns the number of local nonzero diagonal entries, based on global row/column index comparisons.
   virtual int NumMyDiagonals() const
   {
-    return(NumMyDiagonals_);
+    return(NumMyRows_);
   }
 
   //! If matrix is lower triangular in local index space, this query returns true, otherwise it returns false.
   virtual bool LowerTriangular() const
   {
-    return(A().LowerTriangular());
+    return(Matrix_->LowerTriangular());
   }
 
   //! If matrix is upper triangular in local index space, this query returns true, otherwise it returns false.
   virtual bool UpperTriangular() const
   {
-    return(A().UpperTriangular());
+    return(Matrix_->UpperTriangular());
   }
 
   //! Returns the Epetra_Map object associated with the rows of this matrix.
@@ -259,19 +306,19 @@ public:
   //! Returns the Epetra_Map object associated with the columns of this matrix.
   virtual const Epetra_Map & RowMatrixColMap() const
   {
-#   ifdef IFPACK_NODE_AWARE_CODE
     return(*colMap_);
-#   else
-    return(*Map_);
-#   endif
   }
 
   //! Returns the Epetra_Import object that contains the import operations for distributed operations.
   virtual const Epetra_Import * RowMatrixImporter() const
   {
-    return(&*Importer_);
+    return(Importer_);
   }
   //@}
+
+  virtual const Epetra_Import* Importer() const {return(Importer_);}
+
+  virtual const Epetra_Export* Exporter() const {return(Exporter_);}
 
   // following functions are required to derive Epetra_RowMatrix objects.
 
@@ -297,13 +344,13 @@ public:
   //! Returns true if the \e this object can provide an approximate Inf-norm, false otherwise.
   bool HasNormInf() const
   {
-    return(A().HasNormInf());
+    return(false);
   }
 
   //! Returns a pointer to the Epetra_Comm communicator associated with this operator.
   const Epetra_Comm & Comm() const
   {
-    return(A().Comm());
+    return(*SubComm_);
   }
 
   //! Returns the Epetra_Map object associated with the domain of this operator.
@@ -322,57 +369,63 @@ public:
 const Epetra_BlockMap& Map() const;
 
 const char* Label() const{
-  return(Label_.c_str());
+  return(Label_);
 };
 
-int OverlapLevel() const
-{
-  return(OverlapLevel_);
-}
-
-int ImportMultiVector(const Epetra_MultiVector& X,
-                      Epetra_MultiVector& OvX,
-                      Epetra_CombineMode CM = Insert);
-
-int ExportMultiVector(const Epetra_MultiVector& OvX,
-                      Epetra_MultiVector& X,
-                      Epetra_CombineMode CM = Add);
 private:
+  void UpdateImportVector(int NumVectors) const;
+  void UpdateExportVector(int NumVectors) const;
 
-  inline const Epetra_RowMatrix& A() const 
-  {
-    return(*Matrix_);
-  }
-
-  inline Epetra_RowMatrix& B() const;
-
-  int NumMyRows_;
-  int NumMyCols_;
-  int NumMyDiagonals_;
-  int NumMyNonzeros_;
-
-  int NumGlobalNonzeros_;
-  int MaxNumEntries_;
-
-  int NumMyRowsA_;
-  int NumMyRowsB_;
-
-  bool UseTranspose_;
-
-  Teuchos::RefCountPtr<const Epetra_Map> Map_;
-# ifdef IFPACK_NODE_AWARE_CODE
-  Teuchos::RefCountPtr<const Epetra_Map> colMap_;
-# endif
-  Teuchos::RefCountPtr<const Epetra_Import> Importer_;
-
+  //! Pointer to the matrix to be preconditioned.
   Teuchos::RefCountPtr<const Epetra_RowMatrix> Matrix_;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> ExtMatrix_;
-  Teuchos::RefCountPtr<Epetra_Map> ExtMap_;
-  Teuchos::RefCountPtr<Epetra_Import> ExtImporter_;
+#ifdef HAVE_MPI
+  //! Communicator containing this process only.
+  Teuchos::RefCountPtr<Epetra_MpiComm> SubComm_;
+  MPI_Comm nodeMPIComm_;
+#else
+  //! Communicator containing this process only.
+  Teuchos::RefCountPtr<Epetra_SerialComm> SubComm_;
+#endif
+  //! Row, domain, and range map, based on SubComm_, containing the local rows only.
+  Teuchos::RefCountPtr<Epetra_Map> Map_;
+  //! Column map based on SubComm_, containing the local rows only.
+  Teuchos::RefCountPtr<Epetra_Map> colMap_;
+  //! Number of rows in the local matrix.
+  int NumMyRows_;
+  //! Number of cols in the local matrix.
+  int NumMyCols_;
+  //! Number of nonzeros in the local matrix.
+  int NumMyNonzeros_;
+  //! Number of rows in the global filtered matrix.
+  int NumGlobalRows_;
+  //! Number of nonzeros in the global filtered matrix.
+  int NumGlobalNonzeros_;
+  //! Maximum number of nonzero entries in a row for the filtered matrix.
+  int MaxNumEntries_;
+  //! Maximum number of nonzero entries in a row for Matrix_.
+  int MaxNumEntriesA_;
+  //! NumEntries_[i] contains the nonzero entries in row `i'.
+  std::vector<int> NumEntries_;
+  //! Used in ExtractMyRowCopy, to avoid allocation each time.
+  mutable std::vector<int> Indices_;
+  //! Used in ExtractMyRowCopy, to avoid allocation each time.
+  mutable std::vector<double> Values_;
+  //! If true, the tranpose of the local matrix will be used.
+  bool UseTranspose_;
+  //! Label for \c this object.
+  char Label_[80];
+  Teuchos::RefCountPtr<Epetra_Vector> Diagonal_;
+  double NormOne_;
+  double NormInf_;
 
-  int OverlapLevel_;
-  string Label_;
+  //const Epetra_IntVector *colToNodeMap_;
+  Teuchos::RefCountPtr<Epetra_IntVector> colToNodeMap_; //TODO delete this
 
-}; // class Ifpack_OverlappingRowMatrix
+  mutable Epetra_MultiVector * ImportVector_;
+  mutable Epetra_MultiVector * ExportVector_;
+  Epetra_Import * Importer_;
+  Epetra_Export * Exporter_;
 
-#endif // IFPACK_OVERLAPPINGROWMATRIX_H
+};
+#endif //ifdef IFPACK_NODE_AWARE_CODE
+#endif /* IFPACK_NODEFILTER_H */
