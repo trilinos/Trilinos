@@ -609,9 +609,12 @@ Package: PyTrilinos
 
 Package Transition Lead: Bill Spotz (wfspotz@sandia.gov)
 
-Status: Dependency checks for python, numpy and swig are completed.
-        Source files for pytrilinos library compile, but compile flags
-        for library are incomplete.
+Status: Build is complete for packages that do not utilize nested
+namespaces (everything except NOX and LOCA).  NOX and LOCA wrappers
+may require consultation with Kitware.  Backward compatibility with
+the autotools build system has been maintained.  Tests and examples
+have not been implemented yet.  In theory they should be easy, but
+they may be so easy that cmake doesn't really account for my use case.
 
 Final Certification Date: [???]
 
