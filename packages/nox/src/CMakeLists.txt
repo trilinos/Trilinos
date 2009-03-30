@@ -91,6 +91,27 @@ APPEND_SET(SOURCES
   NOX_Direction_Utils_InexactNewton.C
   )
 
+# Prerelease Code
+IF (${PACKAGE_NAME}_BUILD_PRERELEASE)
+  
+  APPEND_SET(HEADERS
+    NOX_Solver_TensorBasedTest.H
+    NOX_LineSearch_Tensor.H
+    NOX_Direction_Tensor.H
+    NOX_Direction_QuasiNewton.H
+    NOX_Direction_ModifiedNewton.H
+    )
+
+  APPEND_SET(SOURCES
+    NOX_Solver_TensorBasedTest.C
+    NOX_LineSearch_Tensor.C
+    NOX_Direction_Tensor.C
+    NOX_Direction_QuasiNewton.C
+    NOX_Direction_ModifiedNewton.C
+    )
+
+ENDIF()
+
 # Solvers
 APPEND_SET(HEADERS
   NOX_Solver_Generic.H
@@ -183,27 +204,6 @@ APPEND_SET(SOURCES
   NOX_Multiphysics_Solver_Manager.C
   NOX_Multiphysics_Solver_FixedPointBased.C
   )
-
-# Prerelease Code
-IF (${PACKAGE_NAME}_BUILD_PRERELEASE)
-  
-  APPEND_SET(HEADERS
-    NOX_Solver_TensorBasedTest.H
-    NOX_LineSearch_Tensor.H
-    NOX_Direction_Tensor.H
-    NOX_Direction_QuasiNewton.H
-    NOX_Direction_ModifiedNewton.H
-    )
-
-  APPEND_SET(SOURCES
-    NOX_Solver_TensorBasedTest.C
-    NOX_LineSearch_Tensor.C
-    NOX_Direction_Tensor.C
-    NOX_Direction_QuasiNewton.C
-    NOX_Direction_ModifiedNewton.C
-    )
-
-ENDIF()
 
 #
 # C) Define the targets for package's library(s)
