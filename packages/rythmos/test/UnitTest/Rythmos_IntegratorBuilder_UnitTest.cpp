@@ -349,6 +349,25 @@ class FoolishInterpolationBufferAppender
   }
 };
  
+class FoolishErrWtVecCalc
+: virtual public ErrWtVecCalcBase<double>,
+  virtual public Teuchos::ParameterListAcceptorDefaultBase
+{
+  void errWtVecSet(
+       Thyra::VectorBase<double>* weight 
+      ,const Thyra::VectorBase<double>& vector
+      ,double relTol
+      ,double absTol
+      ) const
+  { }
+  // Overriden from ParameterListAcceptor
+  void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
+  { }
+  RCP<const Teuchos::ParameterList> getValidParameters() const
+  {
+    return Teuchos::parameterList();
+  }
+};
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, construct ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
@@ -374,6 +393,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, constructFoolish ) {
 
   RCP<FoolishInterpolationBufferAppender> fiba;
   TEST_NOTHROW( fiba = rcp(new FoolishInterpolationBufferAppender()) );
+
+  RCP<FoolishErrWtVecCalc> fewvc;
+  TEST_NOTHROW( fewvc = rcp(new FoolishErrWtVecCalc()) );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegratorFactory ) {
@@ -687,6 +709,69 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferAppenderFact
 #endif // TEUCHOS_DEBUG
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setErrWtVecCalcFactory ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  ib->setErrWtVecCalcFactory(
+      Teuchos::abstractFactoryStd< ErrWtVecCalcBase<double>, FoolishErrWtVecCalc >(),
+      "Foolish ErrWtVecCalc"
+      );
+  ib->setErrWtVecCalcFactory(
+      Teuchos::abstractFactoryStd< ErrWtVecCalcBase<double>, ImplicitBDFStepperErrWtVecCalc<double> >(),
+      "Other ErrWtVecCalc"
+      );
+
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*ib->getValidParameters());
+  pl->sublist("Stepper").set("Stepper Type","Implicit BDF");
+  pl->sublist("Step Control").set("Step Control Strategy Type","Implicit BDF Step Control Strategy");
+  pl->sublist("Error Weight Vector Calculator").set("Error Weight Vector Calculator Type","Foolish ErrWtVecCalc");
+  ib->setParameterList(pl);
+  
+  // Model:
+  RCP<SinCosModel> model = sinCosModel(true);
+  // IC:
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  // Nonlinear Solver:
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
+
+  // Create Integrator
+  RCP<IntegratorBase<double> > integrator;
+  integrator = ib->create(model,ic,nlSolver);
+  RCP<const StepperBase<double> > stepper = integrator->getStepper();
+  RCP<const StepControlStrategyAcceptingStepperBase<double> > scsaStepper = 
+    Teuchos::rcp_dynamic_cast<const StepControlStrategyAcceptingStepperBase<double> >(stepper,false);
+  TEST_ASSERT( !is_null(scsaStepper) );
+  RCP<const StepControlStrategyBase<double> > stepControl = scsaStepper->getStepControlStrategy();
+  RCP<const ImplicitBDFStepperStepControl<double> > ibdfStepControl = 
+    Teuchos::rcp_dynamic_cast<const ImplicitBDFStepperStepControl<double> >(stepControl,false);
+  TEST_ASSERT( !is_null(ibdfStepControl) );
+  RCP<const ErrWtVecCalcBase<double> > myErrWtVecCalc = ibdfStepControl->getErrWtVecCalc();
+  RCP<const FoolishErrWtVecCalc> foolishErrWtVecCalc = 
+    Teuchos::rcp_dynamic_cast<const FoolishErrWtVecCalc>(myErrWtVecCalc,false);
+  TEST_ASSERT( !is_null(foolishErrWtVecCalc) );
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setErrWtVecCalcFactory_bad ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+#ifdef TEUCHOS_DEBUG
+  TEST_THROW(
+      ib->setErrWtVecCalcFactory(
+        Teuchos::abstractFactoryStd< ErrWtVecCalcBase<double>, FoolishErrWtVecCalc >(),
+        "Implicit BDF Stepper Error Weight Vector Calculator"
+        ),
+      std::logic_error
+      );
+#else // TEUCHOS_DEBUG
+  TEST_NOTHROW(
+      ib->setErrWtVecCalcFactory(
+        Teuchos::abstractFactoryStd< ErrWtVecCalcBase<double>, FoolishErrWtVecCalc >(),
+        "Implicit BDF Stepper Error Weight Vector Calculator"
+        )
+      );
+  TEST_THROW( ib->getValidParameters(), std::logic_error );
+#endif // TEUCHOS_DEBUG
+}
+
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ExplicitRK ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
@@ -792,7 +877,12 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     RCP<const StepControlStrategyBase<double> > stepControl_out = ibdfStepper->getStepControlStrategy();
     TEST_EQUALITY_CONST( is_null(stepControl_out), false );
     RCP<const ImplicitBDFStepperStepControl<double> > ibdfStepControl = Teuchos::rcp_dynamic_cast<const ImplicitBDFStepperStepControl<double> >(stepControl_out, false);
-    TEST_EQUALITY_CONST( is_null(ibdfStepControl), false );
+    TEST_ASSERT( !is_null(ibdfStepControl) );
+    // ErrWtVecCalc = ImplicitBDFStepperErrWtVecCalc
+    RCP<const ErrWtVecCalcBase<double> > myErrWtVecCalc = ibdfStepControl->getErrWtVecCalc();
+    RCP<const ImplicitBDFStepperErrWtVecCalc<double> > myIBDFErrWtVecCalc = 
+      Teuchos::rcp_dynamic_cast<const ImplicitBDFStepperErrWtVecCalc<double> >(myErrWtVecCalc);
+    TEST_ASSERT( !is_null(myIBDFErrWtVecCalc) );
     // Integrator = DefaultIntegrator
     RCP<DefaultIntegrator<double> > defInt = Teuchos::rcp_dynamic_cast<DefaultIntegrator<double> >(integrator,false);
     TEST_EQUALITY_CONST( is_null(defInt), false );
@@ -1010,6 +1100,63 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, getValidParameters ) {
       true
       );
 }
+
+/*
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, getValidParameters_NEW ) {
+  // Create a hand-version of the Valid Parameter List 
+  // "Foo Settings" => sublist of various options that IntegratorBuilder owns
+  // "Foo Selection" => sublist of various options that ObjectBuilder owns
+  RCP<ParameterList> validPL = Teuchos::parameterList();
+  {
+    ParameterList& integratorSettingsPL = validPL->sublist("Integrator Settings");
+    {
+      integratorSettingsPL.set("Final Time",1.0);
+      integratorSettingsPL.set("Land On Final Time", true);
+      integratorSettingsPL.sublist("Integrator Selection").disableRecursiveValidation();
+    }
+    ParameterList& stepperSettingsPL = validPL->sublist("Stepper Settings");
+    {
+      stepperSettingsPL.sublist("Stepper Selection").disableRecursiveValidation();
+      ParameterList& stepControlSettingsPL = stepperSettingsPL.sublist("Step Control Settings");
+      {
+        stepControlSettingsPL.sublist("Step Control Strategy Selection").disableRecursiveValidation();
+        stepControlSettingsPL.sublist("Error Weight Vector Calculator Selection").disableRecursiveValidation();
+      }
+      //stepperSettingsPL.sublist("Nonlinear Solver Selection").disableRecursiveValidation();
+      //stepperSettingsPL.sublist("Interpolator Selection").disableRecursiveValidation();
+      //stepperSettingsPL.sublist("Runge-Kutta Stepper Tableau Selection").disableRecursiveValidation();
+    }
+    validPL->sublist("Integration Control Selection").disableRecursiveValidation();
+    ParameterList& ibSettingsPL = validPL->sublist("Interpolation Buffer Settings");
+    {
+      ibSettingsPL.sublist("Trailing Interpolation Buffer Selection").disableRecursiveValidation();
+      ibSettingsPL.sublist("Interpolation Buffer Appender Selection").disableRecursiveValidation();
+      //ibSettingsPL.sublist("Interpolator Selection").disableRecursiveValidation();
+    }
+    ParameterList& observerSettingsPL = validPL->sublist("Integration Observer Settings");
+    {
+      observerSettingsPL.sublist("Integration Observer Enabled").disableRecursiveValidation();
+      observerSettingsPL.sublist("Integration Observer List").disableRecursiveValidation();
+    }
+  }
+
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<const ParameterList> pl = ib->getValidParameters();
+  TEST_ASSERT( !is_null(pl) );
+
+  TEST_NOTHROW( validPL->validateParameters(pl) );  
+}
+*/
+
+/*
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, printParams ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<const ParameterList> pl = ib->getValidParameters();
+  std::cout << "Valid Parameter List for IntegratorBase:" << std::endl;
+  pl->print(std::cout);
+  TEST_ASSERT( false );
+}
+*/
 
 } // namespace Rythmos 
 

@@ -39,6 +39,7 @@
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
 #include "Rythmos_InterpolationBufferBase.hpp"
 #include "Rythmos_InterpolationBufferAppenderBase.hpp"
+#include "Rythmos_ErrWtVecCalcBase.hpp"
 
 // Specific objects to seed the builder:
 #include "Rythmos_DefaultIntegrator.hpp"
@@ -47,6 +48,7 @@
 #include "Rythmos_InterpolationBuffer.hpp"
 #include "Rythmos_PointwiseInterpolationBufferAppender.hpp"
 //#include "Rythmos_SmartInterpolationBufferAppender.hpp"
+#include "Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp"
 
 // Teuchos:
 #include "Teuchos_ObjectBuilder.hpp"
@@ -66,6 +68,7 @@ namespace {
   static std::string stepControl_name = "Step Control";
   static std::string interpolationBuffer_name = "Trailing Interpolation Buffer";
   static std::string interpolationBufferAppender_name = "Interpolation Buffer Appender";
+  static std::string errWtVecCalc_name = "Error Weight Vector Calculator";
   // Top level Parameter names:
   static std::string finalTime_name = "Final Time";
   static int finalTime_default = 1; // Should be Scalar(1.0)
@@ -83,6 +86,8 @@ namespace {
   static std::string interpolationBufferBuilderType_name = "Interpolation Buffer Type";
   static std::string interpolationBufferAppenderBuilder_name = "Rythmos::InterpolationBufferAppender";
   static std::string interpolationBufferAppenderBuilderType_name = "Interpolation Buffer Appender Type";
+  static std::string errWtVecCalcBuilder_name = "Rythmos::ErrWtVecCalc";
+  static std::string errWtVecCalcBuilderType_name = "Error Weight Vector Calculator Type";
 
   // Specific object names:
   static std::string defaultIntegrator_name = "Default Integrator";
@@ -91,6 +96,7 @@ namespace {
   static std::string defaultInterpolationBuffer_name = "Interpolation Buffer";
   static std::string pointwiseInterpolationBufferAppender_name = "Pointwise Interpolation Buffer Appender";
 //  static std::string smartInterpolationBufferAppender_name = "Smart Interpolation Buffer Appender";
+  static std::string implicitBDFStepperErrWtVecCalc_name = "Implicit BDF Stepper Error Weight Vector Calculator";
 
 } // namespace
 
@@ -142,6 +148,11 @@ public:
     const std::string &interpolationBufferAppenderName
     );
 
+  /** \brief Set an ErrWtVecCalc factory object. */
+  void setErrWtVecCalcFactory(
+    const RCP<const Teuchos::AbstractFactory<ErrWtVecCalcBase<Scalar> > > &errWtVecCalcFactory,
+    const std::string &errWtVecCalcFactoryName
+    );
   
   /** \brief . */
   RCP<IntegratorBase<Scalar> > create(
@@ -181,6 +192,7 @@ private:
   RCP<Teuchos::ObjectBuilder<StepControlStrategyBase<Scalar> > > stepControlBuilder_;
   RCP<Teuchos::ObjectBuilder<InterpolationBufferBase<Scalar> > > interpolationBufferBuilder_;
   RCP<Teuchos::ObjectBuilder<InterpolationBufferAppenderBase<Scalar> > > interpolationBufferAppenderBuilder_;
+  RCP<Teuchos::ObjectBuilder<ErrWtVecCalcBase<Scalar> > > errWtVecCalcBuilder_;
 
   RCP<ParameterList> paramList_;
   mutable RCP<ParameterList> validPL_;
@@ -274,6 +286,15 @@ void IntegratorBuilder<Scalar>::setInterpolationBufferAppenderFactory(
   validPL_ = Teuchos::null;
 }
 
+template<class Scalar>
+void IntegratorBuilder<Scalar>::setErrWtVecCalcFactory(
+    const RCP<const Teuchos::AbstractFactory<ErrWtVecCalcBase<Scalar> > > &errWtVecCalcFactory,
+    const std::string &errWtVecCalcFactoryName
+    )
+{
+  errWtVecCalcBuilder_->setObjectFactory(errWtVecCalcFactory,errWtVecCalcFactoryName);
+  validPL_ = Teuchos::null;
+}
 
 template<class Scalar>
 void IntegratorBuilder<Scalar>::setParameterList(
@@ -294,29 +315,40 @@ IntegratorBuilder<Scalar>::getValidParameters() const
   if (is_null(validPL_)) {
     RCP<ParameterList> pl = Teuchos::parameterList();
 
+    // Integrator 
     ParameterList& integratorPL = 
       pl->sublist(integrator_name).disableRecursiveValidation();
     integratorPL.setParameters(*(integratorBuilder_->getValidParameters()));
 
+    // Integration Control 
     ParameterList& integrationControlPL = 
       pl->sublist(integrationControl_name).disableRecursiveValidation();
     integrationControlPL.setParameters(*(integrationControlBuilder_->getValidParameters()));
 
+    // Stepper
     ParameterList& stepperPL = 
       pl->sublist(stepper_name).disableRecursiveValidation();
     stepperPL.setParameters(*(stepperBuilder_->getValidParameters()));
 
+    // Step Control
     ParameterList& stepControlPL = 
       pl->sublist(stepControl_name).disableRecursiveValidation();
     stepControlPL.setParameters(*(stepControlBuilder_->getValidParameters()));
 
+    // Interpolation Buffer
     ParameterList& interpolationBufferPL = 
       pl->sublist(interpolationBuffer_name).disableRecursiveValidation();
     interpolationBufferPL.setParameters(*(interpolationBufferBuilder_->getValidParameters()));
 
+    // Interpolation Buffer Appender
     ParameterList& interpolationBufferAppenderPL = 
       pl->sublist(interpolationBufferAppender_name).disableRecursiveValidation();
     interpolationBufferAppenderPL.setParameters(*(interpolationBufferAppenderBuilder_->getValidParameters()));
+
+    // ErrWtVecCalc
+    ParameterList& errWtVecCalcPL = 
+      pl->sublist(errWtVecCalc_name).disableRecursiveValidation();
+    errWtVecCalcPL.setParameters(*(errWtVecCalcBuilder_->getValidParameters()));
 
     // These parameters are necessary in order to set the stepper on the integrator
     pl->set(finalTime_name,Teuchos::as<Scalar>(finalTime_default));
@@ -426,6 +458,17 @@ IntegratorBuilder<Scalar>::create(
     stepControlBuilder_->setParameterList(stepControlPL);
     RCP<StepControlStrategyBase<Scalar> > stepControl = stepControlBuilder_->create();
     if (!is_null(stepControl)) {
+      // Create the ErrWtVecCalc
+      RCP<ErrWtVecCalcAcceptingStepControlStrategyBase<Scalar> > ewvcaStepControl = 
+        Teuchos::rcp_dynamic_cast<ErrWtVecCalcAcceptingStepControlStrategyBase<Scalar> >(stepControl,false);
+      if (!is_null(ewvcaStepControl)) {
+        RCP<ParameterList> errWtVecCalcPL = sublist(paramList_,errWtVecCalc_name);
+        errWtVecCalcBuilder_->setParameterList(errWtVecCalcPL);
+        RCP<ErrWtVecCalcBase<Scalar> > errWtVecCalc = errWtVecCalcBuilder_->create();
+        if (!is_null(errWtVecCalc)) {
+          ewvcaStepControl->setErrWtVecCalc(errWtVecCalc);
+        }
+      }
       scsaStepper->setStepControlStrategy(stepControl);
     }
   }
@@ -505,6 +548,16 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< InterpolationBufferAppenderBase<Scalar>, PointwiseInterpolationBufferAppender<Scalar> >(),
       pointwiseInterpolationBufferAppender_name
       );
+
+  // ErrWtVecCalc
+  errWtVecCalcBuilder_ = Teuchos::objectBuilder<ErrWtVecCalcBase<Scalar> >();
+  errWtVecCalcBuilder_->setObjectName(errWtVecCalcBuilder_name);
+  errWtVecCalcBuilder_->setObjectTypeName(errWtVecCalcBuilderType_name);
+  errWtVecCalcBuilder_->setObjectFactory(
+      abstractFactoryStd< ErrWtVecCalcBase<Scalar>, ImplicitBDFStepperErrWtVecCalc<Scalar> >(),
+      implicitBDFStepperErrWtVecCalc_name
+      );
+
 }
 
 
