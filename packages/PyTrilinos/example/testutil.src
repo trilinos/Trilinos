@@ -19,7 +19,7 @@ def fromPyTrilinosImport(name, fromBuild=False):
     the function ensures that the module that gets returned is from the local
     build directory.
 
-    FromPyTrilinosImport() is designed to work from the local build directory,
+    fromPyTrilinosImport() is designed to work from the local build directory,
     whether that directory is an autotools build directory, or a cmake build
     directory.
     """
@@ -46,17 +46,26 @@ def fromPyTrilinosImport(name, fromBuild=False):
         buildDir = cmakeDir
 
     # Update the sys.path list of search paths
-    shortPath = os.path.split(buildDir)[0]
-    sys.path.insert(1, shortPath)
-    sys.path.insert(2, buildDir)
+    if buildDir not in sys.path:
+        sys.path.insert(1, buildDir)
+    buildDir = os.path.split(buildDir)[0]
+    if buildDir not in sys.path:
+        sys.path.insert(2, buildDir)
 
-    # Import the module directly from the build directory
-    result = imp.find_module(name, [buildDir])
-    if result is None:
-        raise ImportError, fullName + " not found"
-    module = imp.load_module(name, *result)
-    modFile = result[0]
-    if (modFile):
-        modFile.close()
+    # Import the top-level PyTrilinos package from the build directory
+    try:
+        result     = imp.find_module("PyTrilinos", [buildDir])
+        PyTrilinos = imp.load_module("PyTrilinos", *result   )
+    finally:
+        modFile = result[0]
+        if modFile: modFile.close()
+
+    # Import the requested module from the PyTrilinos package
+    try:
+        result = imp.find_module(name, PyTrilinos.__path__)
+        module = imp.load_module(name, *result)
+    finally:
+        modFile = result[0]
+        if (modFile): modFile.close()
 
     return module
