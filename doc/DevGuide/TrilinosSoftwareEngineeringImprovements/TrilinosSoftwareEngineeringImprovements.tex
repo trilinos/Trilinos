@@ -5,6 +5,7 @@
 \usepackage{latexsym}
 %\usepackage{color}
 \usepackage[all]{draftcopy}
+\usepackage{hyperref}
 \input{rab_commands}
 
 \raggedright
@@ -1218,6 +1219,54 @@ for different purposes:
   \end{itemize}
 
 \end{itemize}
+
+
+%
+{}\subsection{Trilinos Developer Toolset}
+%
+
+We should seriously consider putting together an offical Trilinos
+Devleoepr Toolset and make it trivially easy to install it on
+resonable Linux and Mac machines.  Here is what such a toolset would
+include:
+
+\begin{itemize}
+{}\item gcc (4.2.4) - no fortran
+{}\item CMake
+{}\item eg/git
+{}\item BLAS
+{}\item LAPACK
+{}\item OpenMPI
+\end{itemize}
+
+With this script, you could just run it as:
+
+\begin{verbatim}
+   TRILINOS_HOME/commonTools/install-developers-toolset.py  \
+       --install-dir=~/trilinos-toolset
+\end{verbatim}
+
+This script would check out everything, configure, and build the
+components in the right order.
+
+There are many advantages to having an offical toolset:
+
+\begin{itemize}
+
+\item Make it easier to set up a new machine to do Trilinos
+development on.
+
+{}\item Made development cheaper, easier, and more uniform: Code that
+builds and runs for developer \#1 will more likely work for developer
+\#2 on a different machine.  This will significanly improve the
+development process, avoid waisting peoples time tracking down failing
+builds and tests.
+
+\end{itemize}
+
+Note that the script 'install-developers-toolkit.py' would allow the
+user to skip inistalling any of the default components if they would
+like.
 
 
 %
