@@ -44,7 +44,7 @@ namespace shards {
  *  \{
  */
 
-/*------------------------------------------------------------------------*/         
+/*------------------------------------------------------------------------*/
 
 class CellTopology ;
 class CellTopologyPrivate ;
@@ -85,7 +85,7 @@ private:
    *          admissible space dimension 3.
    *  \param  subcell_dim    [in]  - spatial dimension of a subcell
    */
-  void requireDimension( const unsigned subcell_dim ) const ;
+  void requireDimension( const unsigned subcellDim ) const ;
   
   
   /** \brief  Throws invalid_argument if subcell_ord exceeds the actual number
@@ -93,8 +93,8 @@ private:
    *  \param  subcell_dim    [in]  - spatial dimension of a subcell
    *  \param  subcell_ord    [in]  - subcell ordinal
    */
-  void requireSubcell( const unsigned subcell_dim ,
-                       const unsigned subcell_ord ) const ;
+  void requireSubcell( const unsigned subcellDim ,
+                       const unsigned subcellOrd ) const ;
   
   
   /** \brief  Throws invalid_argument if node_ord exceeds the actual number 
@@ -103,10 +103,12 @@ private:
    *  \param  subcell_ord    [in]  - subcell ordinal
    *  \param  node_ord       [in]  - node ordinal
    */
-  void requireNodeMap( const unsigned subcell_dim ,
-                       const unsigned subcell_ord ,
-                       const unsigned node_ord ) const ;
+  void requireNodeMap( const unsigned subcellDim ,
+                       const unsigned subcellOrd ,
+                       const unsigned nodeOrd ) const ;
 
+  void requireNodePermutation( const unsigned permutationOrd ,
+                               const unsigned nodeOrd ) const ;
   
   const CellTopologyData    * m_cell ;
         CellTopologyPrivate * m_owned ;
@@ -328,6 +330,38 @@ public:
       SHARDS_REQUIRE( requireNodeMap(subcell_dim,subcell_ord,subcell_node_ord));
       return m_cell->subcell[subcell_dim][subcell_ord].node[subcell_node_ord];
     }
+
+
+  /** \brief  Number of node permutations defined for this cell */
+  unsigned getNodePermutationCount() const
+    {
+      SHARDS_REQUIRE(requireCell());
+      return m_cell->permutation_count ;
+    }
+
+  /** \brief  Permutation of a cell's node ordinals.
+   *  \param  permutation_ordinal [in]
+   *  \param  node_ordinal        [in]
+   */
+  unsigned getNodePermutation( const unsigned permutation_ord ,
+                               const unsigned node_ord ) const
+    {
+      SHARDS_REQUIRE(requireCell());
+      SHARDS_REQUIRE(requireNodePermutation(permutation_ord,node_ord));
+      return m_cell->permutation[permutation_ord].node[node_ord];
+    }
+  
+  /** \brief  Inverse permutation of a cell's node ordinals.
+   *  \param  permutation_ordinal [in]
+   *  \param  node_ordinal        [in]
+   */
+  unsigned getNodePermutationInverse( const unsigned permutation_ord ,
+                                      const unsigned node_ord ) const
+    {
+      SHARDS_REQUIRE(requireCell());
+      SHARDS_REQUIRE(requireNodePermutation(permutation_ord,node_ord));
+      return m_cell->permutation_inverse[permutation_ord].node[node_ord];
+    }
   
   /** \} */
   
@@ -415,7 +449,30 @@ public:
 
 }; // class CellTopology
 
+/*------------------------------------------------------------------------*/
+/* \brief  Find the permutation from the expected nodes to the actual nodes */
 
+template< typename id_type >
+int find_permutation( const CellTopologyData & top ,
+                      const id_type * const expected_node ,
+                      const id_type * const actual_node )
+{
+  const int nn = top.node_count ;
+  const int np = top.permutation_count ;
+  int p = 0 ;
+  for ( ; p < np ; ++p ) {
+    int j = 0 ;
+    for ( ; j < nn ; ++j ) {
+      const int jp = top.permutation[p].node[j] ;
+      if ( actual_node[jp] != expected_node[j] ) break ;
+    }
+    if ( nn == j ) break ;
+  }
+  if ( np == p ) p = -1 ;
+  return p ;
+}
+
+/*------------------------------------------------------------------------*/
 /** \brief  Generates detailed message if one or more input parameters are
  *          out of their admissible bounds.
  *  \param  dimension          [in]  - maximum value = 7

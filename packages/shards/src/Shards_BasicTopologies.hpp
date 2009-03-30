@@ -31,6 +31,7 @@ namespace shards {
 /** \addtogroup shards_package_cell_topology
  *  \{
  */
+
 //----------------------------------------------------------------------
  
 /** \brief Topological traits: Dimension = 0, Vertices = 0, Nodes = 0. */
@@ -108,7 +109,7 @@ template<> const CellTopologyData * getCellTopologyData< ShellLine<3> >();
  *          and Nodes = 3 or 6.
  *
  * <PRE>
- *  Triangle node numbering, up to 6 nodes:
+ *  Triangle node numbering, 3 and 6 nodes:
  *
  *                  2
  *                  o
@@ -348,16 +349,34 @@ template<> const CellTopologyData * getCellTopologyData< Hexahedron<27> >();
 
 #ifndef DOXYGEN_COMPILE
 
-template<> struct Line<2> : public CellTopologyTraits<1,2,2>
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
+// Topologies for Rank-1 cells.
+
+typedef IndexList< 0 , 1 , 2 > LineNodeMapIdentity ;
+typedef IndexList< 1 , 0 , 2 > LineNodeMapReversed ;
+
+typedef MakeTypeList< LineNodeMapIdentity , LineNodeMapReversed >::type
+  LineNodePermutation ;
+
+template<> struct Line<2> : public
+  CellTopologyTraits< 1 , 2 , 2 ,
+                     TypeListEnd, TypeListEnd,
+                     TypeListEnd, TypeListEnd,
+                     LineNodePermutation >
 { typedef Line<2> base ; };
 
-template<> struct Line<3> : public CellTopologyTraits<1,2,3>
+template<> struct Line<3> : public
+  CellTopologyTraits< 1 , 2 , 3 ,
+                     TypeListEnd, TypeListEnd,
+                     TypeListEnd, TypeListEnd,
+                     LineNodePermutation >
 { typedef Line<2> base ; };
 
 // Beam is a line with one edge:
 
 typedef
-  MakeTypeList< IndexList< 0 , 1 , 2 > >::type BeamEdgeNodeMap ;
+  MakeTypeList< LineNodeMapIdentity >::type BeamEdgeNodeMap ;
 
 template<> struct Beam<2> : public
   CellTopologyTraits< 2 , 2 , 2 ,
@@ -374,8 +393,7 @@ template<> struct Beam<3> : public
 // Shell-line has two edges:
 
 typedef
-  MakeTypeList< IndexList< 0 , 1 , 2 > ,
-                IndexList< 1 , 0 , 2 > >::type
+  MakeTypeList< LineNodeMapIdentity , LineNodeMapReversed >::type
     ShellLineEdgeNodeMap ;
 
 template<> struct ShellLine<2> : public
@@ -391,19 +409,36 @@ template<> struct ShellLine<3> : public
 { typedef ShellLine<2> base ; };
 
 //----------------------------------------------------------------------
+//----------------------------------------------------------------------
+// Topologies for Rank-2 cells.
 
-typedef
-  MakeTypeList< IndexList< 0 , 1 , 3 > ,
-                IndexList< 1 , 2 , 4 > ,
-                IndexList< 2 , 0 , 5 > >::type
-    TriangleEdgeNodeMap ;
+// A permutation should either be the identity or reversed.
+// Simple (non-reversed) rotations should not happen in practice.
+
+typedef IndexList< 0, 1, 2,  3, 4, 5 > TriangleNodeMapIdentity ;
+typedef IndexList< 0, 2, 1,  5, 4, 3 > TriangleNodeMapReversed0 ;
+typedef IndexList< 2, 1, 0,  4, 3, 5 > TriangleNodeMapReversed1 ;
+typedef IndexList< 1, 0, 2,  3, 5, 4 > TriangleNodeMapReversed2 ;
+
+typedef MakeTypeList< TriangleNodeMapIdentity ,
+                      TriangleNodeMapReversed0 , 
+                      TriangleNodeMapReversed1 , 
+                      TriangleNodeMapReversed2 >::type
+  TriangleNodePermutation ;
+
+typedef MakeTypeList< IndexList< 0 , 1 , 3 > ,
+                      IndexList< 1 , 2 , 4 > ,
+                      IndexList< 2 , 0 , 5 > >::type
+  TriangleEdgeNodeMap ;
 
 template<> struct Triangle<3> : public
   CellTopologyTraits< 2 , 3 , 3 ,
                             MakeTypeList< Line<2>  ,
                                           Line<2>  ,
                                           Line<2>  >::type ,
-                            TriangleEdgeNodeMap >
+                            TriangleEdgeNodeMap ,
+                            TypeListEnd , TypeListEnd ,
+                            TriangleNodePermutation >
 { typedef Triangle<3> base ; };
 
 template<> struct Triangle<6> : public
@@ -411,23 +446,37 @@ template<> struct Triangle<6> : public
                             MakeTypeList< Line<3>  ,
                                           Line<3>  ,
                                           Line<3>  >::type ,
-                            TriangleEdgeNodeMap >
+                            TriangleEdgeNodeMap ,
+                            TypeListEnd , TypeListEnd ,
+                            TriangleNodePermutation >
 { typedef Triangle<3> base ; };
+
+typedef IndexList< 0, 1, 2,  3 > Triangle4_NodeMapIdentity ;
+typedef IndexList< 0, 2, 1,  3 > Triangle4_NodeMapReversed0 ;
+typedef IndexList< 2, 1, 0,  3 > Triangle4_NodeMapReversed1 ;
+typedef IndexList< 1, 0, 2,  3 > Triangle4_NodeMapReversed2 ;
+
+typedef MakeTypeList< Triangle4_NodeMapIdentity ,
+                      Triangle4_NodeMapReversed0 , 
+                      Triangle4_NodeMapReversed1 , 
+                      Triangle4_NodeMapReversed2 >::type
+  Triangle4_NodePermutation ;
 
 template<> struct Triangle<4> : public
   CellTopologyTraits< 2 , 3 , 4 ,
                             MakeTypeList< Line<2>  ,
                                           Line<2>  ,
                                           Line<2>  >::type ,
-                            TriangleEdgeNodeMap >
+                            TriangleEdgeNodeMap ,
+                            TypeListEnd , TypeListEnd ,
+                            Triangle4_NodePermutation >
 { typedef Triangle<3> base ; };
 
 //------------------------------------------------------------------------
 
-typedef
-  MakeTypeList< IndexList< 0,1,2,  3,4,5 > ,
-                IndexList< 0,2,1,  5,4,3 >
-    >::type ShellTriangleFaceNodeMap ;
+typedef MakeTypeList< TriangleNodeMapIdentity ,
+                      TriangleNodeMapReversed0 >::type
+  ShellTriangleFaceNodeMap ;
 
 template<> struct ShellTriangle<3> : public
   CellTopologyTraits< 3 , 3 , 3 ,
@@ -453,11 +502,26 @@ template<> struct ShellTriangle<6> : public
 
 //----------------------------------------------------------------------
 
-typedef
-  MakeTypeList< IndexList< 0 , 1 ,  4 > ,
-                IndexList< 1 , 2 ,  5 > ,
-                IndexList< 2 , 3 ,  6 > ,
-                IndexList< 3 , 0 ,  7 > >::type
+// A permutation should either be the identity or reversed.
+// Simple (non-reversed) rotations should not happen in practice.
+
+typedef IndexList< 0, 1, 2, 3,  4, 5, 6, 7,  8 > QuadrilateralNodeMapIdentity ;
+typedef IndexList< 0, 3, 2, 1,  7, 6, 5, 4,  8 > QuadrilateralNodeMapReversed0 ;
+typedef IndexList< 3, 2, 1, 0,  6, 5, 4, 7,  8 > QuadrilateralNodeMapReversed1 ;
+typedef IndexList< 2, 1, 0, 3,  5, 4, 7, 6,  8 > QuadrilateralNodeMapReversed2 ;
+typedef IndexList< 1, 0, 3, 2,  4, 7, 6, 5,  8 > QuadrilateralNodeMapReversed3 ;
+
+typedef MakeTypeList< QuadrilateralNodeMapIdentity ,
+                      QuadrilateralNodeMapReversed0 ,
+                      QuadrilateralNodeMapReversed1 ,
+                      QuadrilateralNodeMapReversed2 ,
+                      QuadrilateralNodeMapReversed3 >::type
+  QuadrilateralNodePermutation ;
+
+typedef MakeTypeList< IndexList< 0 , 1 ,  4 > ,
+                      IndexList< 1 , 2 ,  5 > ,
+                      IndexList< 2 , 3 ,  6 > ,
+                      IndexList< 3 , 0 ,  7 > >::type
   QuadrilateralEdgeNodeMap ;
 
 template<> struct Quadrilateral<4> : public
@@ -466,7 +530,9 @@ template<> struct Quadrilateral<4> : public
                                           Line<2>  ,
                                           Line<2>  ,
                                           Line<2>  >::type ,
-                            QuadrilateralEdgeNodeMap >
+                            QuadrilateralEdgeNodeMap ,
+                            TypeListEnd , TypeListEnd ,
+                            QuadrilateralNodePermutation >
 { typedef Quadrilateral<4> base ; };
 
 template<> struct Quadrilateral<8> : public
@@ -475,7 +541,9 @@ template<> struct Quadrilateral<8> : public
                                           Line<3>  ,
                                           Line<3>  ,
                                           Line<3>  >::type ,
-                            QuadrilateralEdgeNodeMap >
+                            QuadrilateralEdgeNodeMap ,
+                            TypeListEnd , TypeListEnd ,
+                            QuadrilateralNodePermutation >
 { typedef Quadrilateral<4> base ; };
 
 template<> struct Quadrilateral<9> : public
@@ -484,15 +552,16 @@ template<> struct Quadrilateral<9> : public
                                           Line<3>  ,
                                           Line<3>  ,
                                           Line<3>  >::type ,
-                            QuadrilateralEdgeNodeMap >
+                            QuadrilateralEdgeNodeMap ,
+                            TypeListEnd , TypeListEnd ,
+                            QuadrilateralNodePermutation >
 { typedef Quadrilateral<4> base ; };
 
 //----------------------------------------------------------------------
 
-typedef
-  MakeTypeList< IndexList< 0,1,2,3,  4,5,6,7,  8 > ,
-                IndexList< 0,3,2,1,  7,6,5,4,  8 > >::type
-    ShellQuadrilateralFaceNodeMap ;
+typedef MakeTypeList< QuadrilateralNodeMapIdentity ,
+                      QuadrilateralNodeMapReversed0 >::type
+  ShellQuadrilateralFaceNodeMap ;
 
 template<> struct ShellQuadrilateral<4> : public
   CellTopologyTraits< 3 , 4 , 4 ,
@@ -532,20 +601,19 @@ template<> struct ShellQuadrilateral<9> : public
 
 //------------------------------------------------------------------------
 
-typedef
-  MakeTypeList< IndexList< 0 , 1 , 4 > ,
-                IndexList< 1 , 2 , 5 > ,
-                IndexList< 2 , 0 , 6 > ,
-                IndexList< 0 , 3 , 7 > ,
-                IndexList< 1 , 3 , 8 > ,
-                IndexList< 2 , 3 , 9 > >::type TetrahedronEdgeNodeMap ;
+typedef MakeTypeList< IndexList< 0 , 1 , 4 > ,
+                      IndexList< 1 , 2 , 5 > ,
+                      IndexList< 2 , 0 , 6 > ,
+                      IndexList< 0 , 3 , 7 > ,
+                      IndexList< 1 , 3 , 8 > ,
+                      IndexList< 2 , 3 , 9 > >::type
+  TetrahedronEdgeNodeMap ;
 
-typedef
-  MakeTypeList< IndexList< 0 , 1 , 3 ,   4 , 8 , 7 > ,
-                IndexList< 1 , 2 , 3 ,   5 , 9 , 8 > ,
-                IndexList< 0 , 3 , 2 ,   7 , 9 , 6 > ,
-                IndexList< 0 , 2 , 1 ,   6 , 5 , 4 >
-  >::type TetrahedronSideNodeMap ;
+typedef MakeTypeList< IndexList< 0 , 1 , 3 ,   4 , 8 , 7 > ,
+                      IndexList< 1 , 2 , 3 ,   5 , 9 , 8 > ,
+                      IndexList< 0 , 3 , 2 ,   7 , 9 , 6 > ,
+                      IndexList< 0 , 2 , 1 ,   6 , 5 , 4 > >::type
+  TetrahedronSideNodeMap ;
 
 template<> struct Tetrahedron<4> : public
   CellTopologyTraits< 3 , 4 , 4 ,
@@ -605,15 +673,16 @@ typedef
                 IndexList< 0 , 4 ,   9 > ,
                 IndexList< 1 , 4 ,  10 > ,
                 IndexList< 2 , 4 ,  11 > ,
-                IndexList< 3 , 4 ,  12 > >::type PyramidEdgeNodeMap ;
+                IndexList< 3 , 4 ,  12 > >::type
+  PyramidEdgeNodeMap ;
 
 typedef
-  MakeTypeList< IndexList< 0 , 1 , 4 ,       5 , 10 ,  9 > ,
-                IndexList< 1 , 2 , 4 ,       6 , 11 , 10 > ,
-                IndexList< 2 , 3 , 4 ,       7 , 12 , 11 > ,
-                IndexList< 3 , 0 , 4 ,       8 ,  9 , 12 > ,
-                IndexList< 0 , 3 , 2 , 1 ,   8 ,  7 ,  6 ,  5 ,  13 >
-  >::type PyramidFaceNodeMap ;
+  MakeTypeList< IndexList< 0, 1, 4,     5, 10,  9 > ,
+                IndexList< 1, 2, 4,     6, 11, 10 > ,
+                IndexList< 2, 3, 4,     7, 12, 11 > ,
+                IndexList< 3, 0, 4,     8,  9, 12 > ,
+                IndexList< 0, 3, 2, 1,  8,  7,  6,  5,  13 > >::type
+  PyramidFaceNodeMap ;
 
 template<> struct Pyramid<5> : public
   CellTopologyTraits< 3 , 5 , 5 ,
@@ -894,13 +963,6 @@ CellTopologyTraits< 2 , 5 , 5 ,
   typedef Pentagon<5> base ; 
 };
 
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Pentagon<5>::Traits >()
-{ 
-  return getCellTopologyData< Pentagon<5> >(); 
-}
-
 //----------------------------------------------------------------------
 
 /** \brief Topological traits: Dimension = 2, Sides = 6, Edges = 6,
@@ -935,143 +997,123 @@ CellTopologyTraits< 2 , 6 , 6 ,
   typedef Hexagon<6> base ; 
 };
 
+//------------------------------------------------------------------------
+/** \brief  Map a CellTopologyTraits specialization to its basic topology. */
+template< class Traits > struct BasicTopologyOf ;
 
-template<> inline
-const CellTopologyData * getCellTopologyData< Hexagon<6>::Traits >()
-{ 
-  return getCellTopologyData< Hexagon<6> >(); 
-}
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Node::Traits >
+{ typedef Node type ; };
 
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Particle::Traits >
+{ typedef Particle type ; };
 
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Line<2>::Traits >
+{ typedef Line<2> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Line<3>::Traits >
+{ typedef Line<3> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Beam<2>::Traits >
+{ typedef Beam<2> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Beam<3>::Traits >
+{ typedef Beam<3> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< ShellLine<2>::Traits >
+{ typedef ShellLine<2> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< ShellLine<3>::Traits >
+{ typedef ShellLine<3> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Triangle<3>::Traits >
+{ typedef Triangle<3> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Triangle<6>::Traits >
+{ typedef Triangle<6> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Triangle<4>::Traits >
+{ typedef Triangle<4> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Quadrilateral<4>::Traits >
+{ typedef Quadrilateral<4> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Quadrilateral<8>::Traits >
+{ typedef Quadrilateral<8> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Quadrilateral<9>::Traits >
+{ typedef Quadrilateral<9> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Pentagon<5>::Traits >
+{ typedef Pentagon<5> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Hexagon<6>::Traits >
+{ typedef Hexagon<6> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Tetrahedron<4>::Traits >
+{ typedef Tetrahedron<4> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Tetrahedron<10>::Traits >
+{ typedef Tetrahedron<10> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Tetrahedron<8>::Traits >
+{ typedef Tetrahedron<8> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Pyramid<5>::Traits >
+{ typedef Tetrahedron<5> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Pyramid<13>::Traits >
+{ typedef Tetrahedron<13> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Pyramid<14>::Traits >
+{ typedef Tetrahedron<14> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Wedge<6>::Traits >
+{ typedef Wedge<6> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Wedge<15>::Traits >
+{ typedef Wedge<15> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Wedge<18>::Traits >
+{ typedef Wedge<18> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Hexahedron<8>::Traits >
+{ typedef Hexahedron<8> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Hexahedron<20>::Traits >
+{ typedef Hexahedron<20> type ; };
+
+/** \brief  Map traits to basic topology type */
+template<> struct BasicTopologyOf< Hexahedron<27>::Traits >
+{ typedef Hexahedron<27> type ; };
 
 //------------------------------------------------------------------------
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Node::Traits >()
-{ return getCellTopologyData< Node >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Particle::Traits >()
-{ return getCellTopologyData< Particle >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Line<2>::Traits >()
-{ return getCellTopologyData< Line<2> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Line<3>::Traits >()
-{ return getCellTopologyData< Line<3> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Beam<2>::Traits >()
-{ return getCellTopologyData< Beam<2> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Beam<3>::Traits >()
-{ return getCellTopologyData< Beam<3> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< ShellLine<2>::Traits >()
-{ return getCellTopologyData< ShellLine<2> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< ShellLine<3>::Traits >()
-{ return getCellTopologyData< ShellLine<3> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Triangle<3>::Traits >()
-{ return getCellTopologyData< Triangle<3> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Triangle<4>::Traits >()
-{ return getCellTopologyData< Triangle<4> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Triangle<6>::Traits >()
-{ return getCellTopologyData< Triangle<6> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< ShellTriangle<3>::Traits >()
-{ return getCellTopologyData< ShellTriangle<3> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< ShellTriangle<6>::Traits >()
-{ return getCellTopologyData< ShellTriangle<6> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Quadrilateral<4>::Traits >()
-{ return getCellTopologyData< Quadrilateral<4> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Quadrilateral<8>::Traits >()
-{ return getCellTopologyData< Quadrilateral<8> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Quadrilateral<9>::Traits >()
-{ return getCellTopologyData< Quadrilateral<9> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< ShellQuadrilateral<4>::Traits >()
-{ return getCellTopologyData< ShellQuadrilateral<4> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< ShellQuadrilateral<8> ::Traits>()
-{ return getCellTopologyData< ShellQuadrilateral<8> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< ShellQuadrilateral<9>::Traits >()
-{ return getCellTopologyData< ShellQuadrilateral<9> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Tetrahedron<4>::Traits >()
-{ return getCellTopologyData< Tetrahedron<4> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Tetrahedron<8>::Traits >()
-{ return getCellTopologyData< Tetrahedron<8> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Tetrahedron<10>::Traits >()
-{ return getCellTopologyData< Tetrahedron<10> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Pyramid<5>::Traits >()
-{ return getCellTopologyData< Pyramid<5> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Pyramid<13>::Traits >()
-{ return getCellTopologyData< Pyramid<13> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Pyramid<14>::Traits >()
-{ return getCellTopologyData< Pyramid<14> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Wedge<6>::Traits >()
-{ return getCellTopologyData< Wedge<6> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Wedge<15>::Traits >()
-{ return getCellTopologyData< Wedge<15> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Wedge<18>::Traits >()
-{ return getCellTopologyData< Wedge<18> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Hexahedron<8>::Traits >()
-{ return getCellTopologyData< Hexahedron<8> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Hexahedron<20>::Traits >()
-{ return getCellTopologyData< Hexahedron<20> >(); }
-
-template<> inline
-const CellTopologyData * getCellTopologyData< Hexahedron<27>::Traits >()
-{ return getCellTopologyData< Hexahedron<27> >(); }
-
-//------------------------------------------------------------------------
-
 /** \brief Returns pointer to a static array of 256 ints filled with integers 
            representing the allowable index range in cell templates: {0,1,...,255}
 */

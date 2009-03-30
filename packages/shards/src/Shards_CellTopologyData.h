@@ -19,6 +19,9 @@
 /*  License along with this library; if not, write to the Free Software   */
 /*  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307   */
 /*  USA                                                                   */
+/* Questions? Contact Pavel Bochev      (pbboche@sandia.gov)              */
+/*                    H. Carter Edwards (hcedwar@sandia.gov)              */
+/*                    Denis Ridzal      (dridzal@sandia.gov).             */
 /*------------------------------------------------------------------------*/
 
 #ifndef Shards_CellTopologyData_h
@@ -74,6 +77,9 @@ struct CellTopologyData {
   /** \brief Number of sides (a.k.a. \f$ {Cell}^{D-1} \f$ boundary subcells). */
   unsigned side_count ;
 
+  /** \brief Number of defined permutations */
+  unsigned permutation_count ;
+
   /** \brief Flag if the subcells of a given dimension are homogeneous */
   unsigned subcell_homogeneity[4] ;
 
@@ -119,6 +125,29 @@ struct CellTopologyData {
    *  - <b> edge[Ord].node[I]  </b> node ordinal of the edge's node I
    */
   const struct Subcell * edge ;
+
+  /** \brief  Array of node permutations.
+   *
+   *  - required: 0 <= P < permutation_count
+   *  - required: 0 <= I < node_count
+   *
+   *  Let ParentCell be dimension D and SubCell be dimension dim < D. 
+   *  Let SubCell be connected as subcell Ord with permutation P. 
+   * 
+   *  Then <b> ParentCell.node(K) == SubCell.node(I) </b> where: 
+   *  -  SubCellTopology == ParentCellTopology->subcell[dim][Ord].topology
+   *  -  K  = ParentCellTopology->subcell[dim][Ord].node[IP]
+   *  -  IP = SubCellTopology->permutation[P].node[I]
+   *  -  I  = SubCellTopology->permutation_inverse[P].node[IP]
+   *
+   *  The permutation map for P == 0 is required to be identity. 
+   */
+  struct Permutation {
+    const unsigned * node ;
+  };
+
+  const struct Permutation * permutation ;
+  const struct Permutation * permutation_inverse ;
 };
 
 /** \brief  Self-typedef */

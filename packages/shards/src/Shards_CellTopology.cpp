@@ -181,15 +181,41 @@ void CellTopology::requireNodeMap( const unsigned subcellDim ,
   if ( n <= nodeOrd ) {
     std::ostringstream msg ;
     msg << "shards::CellTopology::requireNodeMap( " 
-        << " , " << subcellDim
-        << " , " << subcellOrd
-        << " , ERROR: " << nodeOrd
-        << " >= '"
+        << subcellDim << " , "
+        << subcellOrd
+        << " , ERROR: " << nodeOrd << " >= '"
         << m_cell->name 
         << "'.subcell[" << subcellDim
         << "][" << subcellOrd
         << "].topology->node_count = "
         << n << " )" ;
+    throw std::invalid_argument( msg.str() );
+  }
+}
+
+void CellTopology::requireNodePermutation( const unsigned permutationOrd ,
+                                           const unsigned nodeOrd ) const
+{
+  const bool bad_p = m_cell->permutation_count <= permutationOrd ;
+  const bool bad_n = m_cell->node_count        <= nodeOrd ;
+  if ( bad_p || bad_n ) {
+    std::ostringstream msg ;
+    msg << "shards::CellTopology::requireNodePermutation( " ;
+    if ( bad_p ) {
+      msg << " ERROR: " << permutationOrd << " >= "
+          << m_cell->permutation_count ;
+    }
+    else {
+      msg << permutationOrd ;
+    }
+    msg << " , " ;
+    if ( bad_n ) {
+      msg << " ERROR: " << nodeOrd << " >= " << m_cell->node_count ;
+    }
+    else {
+      msg << nodeOrd ;
+    }
+    msg << " )" ;
     throw std::invalid_argument( msg.str() );
   }
 }

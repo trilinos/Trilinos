@@ -46,7 +46,8 @@ template< unsigned Dimension ,
           class    EdgeList = TypeListEnd ,
           class    EdgeMaps = TypeListEnd ,
           class    FaceList = TypeListEnd ,
-          class    FaceMaps = TypeListEnd >
+          class    FaceMaps = TypeListEnd ,
+          class    PermutationMaps = TypeListEnd >
 struct CellTopologyTraits ;
 
 struct Node ;
@@ -62,13 +63,13 @@ struct SubcellNodeIndex ;
 
 template< class CellTop , class CellMap , unsigned Index >
 struct SubcellNodeIndex< CellTop , CellMap , Index , false >
-{ enum { value = -1 }; };
+{ enum { value = ~0u }; };
 
 template< class CellTop , class CellMap , unsigned Index >
 struct SubcellNodeIndex< CellTop , CellMap , Index , true >
 {
   enum { value = Index < CellTop::template subcell<0>::count
-               ? IndexListAt< CellMap , Index >::value : -1 };
+               ? IndexListAt< CellMap , Index >::value : ~0u };
 };
 
 //----------------------------------------------------------------------
@@ -76,7 +77,8 @@ struct SubcellNodeIndex< CellTop , CellMap , Index , true >
 template< unsigned SubcellDim , unsigned SubcellOrd , unsigned NodeIndex ,
           unsigned Dimension , unsigned Number_Vertex , unsigned Number_Node ,
           class EdgeList , class EdgeMaps ,
-          class FaceList , class FaceMaps >
+          class FaceList , class FaceMaps ,
+          class PermMaps >
 struct SubcellTopologyTraits ;
 
 template< class ListType > struct TypeListHomogeneous ;
@@ -86,47 +88,51 @@ template< class ListType > struct TypeListHomogeneous ;
 
 template<>
 struct SubcellTopologyTraits<0,0,0,0,0,0,TypeListEnd,TypeListEnd,
-                                         TypeListEnd,TypeListEnd>
+                                         TypeListEnd,TypeListEnd,
+                                         TypeListEnd>
 {
   typedef CellTopologyTraits<0,0,0> topology ;
   enum { count = 1 };
-  enum { node = -1 };
+  enum { node = ~0u };
   enum { homogeneity = true };
 };
 
 template< unsigned NodeIndex ,
           unsigned NV , unsigned NN ,
           class EList , class EMaps ,
-          class FList , class FMaps >
-struct SubcellTopologyTraits<1,0,NodeIndex, 1,NV,NN,EList,EMaps,FList,FMaps>
+          class FList , class FMaps ,
+          class PMaps >
+struct SubcellTopologyTraits<1,0,NodeIndex, 1,NV,NN,EList,EMaps,FList,FMaps,PMaps>
 {
-  typedef CellTopologyTraits<1,NV,NN,EList,EMaps,FList,FMaps> topology ;
+  typedef CellTopologyTraits<1,NV,NN,EList,EMaps,FList,FMaps,PMaps> topology ;
   enum { count = 1 };
-  enum { node = NodeIndex < NN ? (int) NodeIndex : -1 };
+  enum { node = NodeIndex < NN ? NodeIndex : ~0u };
   enum { homogeneity = true };
 };
 
 template< unsigned NodeIndex ,
           unsigned NV , unsigned NN ,
           class EList , class EMaps ,
-          class FList , class FMaps >
-struct SubcellTopologyTraits<2,0,NodeIndex, 2,NV,NN,EList,EMaps,FList,FMaps>
+          class FList , class FMaps ,
+          class PMaps >
+struct SubcellTopologyTraits<2,0,NodeIndex, 2,NV,NN,EList,EMaps,FList,FMaps,PMaps>
 {
-  typedef CellTopologyTraits<2,NV,NN,EList,EMaps,FList,FMaps> topology ;
+  typedef CellTopologyTraits<2,NV,NN,EList,EMaps,FList,FMaps,PMaps> topology ;
   enum { count = 1 };
-  enum { node = NodeIndex < NN ? (int) NodeIndex : -1 };
+  enum { node = NodeIndex < NN ? NodeIndex : ~0u };
   enum { homogeneity = true };
 };
 
 template< unsigned NodeIndex ,
           unsigned NV , unsigned NN ,
           class EList , class EMaps ,
-          class FList , class FMaps >
-struct SubcellTopologyTraits<3,0,NodeIndex, 3,NV,NN,EList,EMaps,FList,FMaps>
+          class FList , class FMaps ,
+          class PMaps >
+struct SubcellTopologyTraits<3,0,NodeIndex, 3,NV,NN,EList,EMaps,FList,FMaps,PMaps>
 {
-  typedef CellTopologyTraits<3,NV,NN,EList,EMaps,FList,FMaps> topology ;
+  typedef CellTopologyTraits<3,NV,NN,EList,EMaps,FList,FMaps,PMaps> topology ;
   enum { count = 1 };
-  enum { node = NodeIndex < NN ? (int) NodeIndex : -1 };
+  enum { node = NodeIndex < NN ? NodeIndex : ~0u };
   enum { homogeneity = true };
 };
 
@@ -136,12 +142,13 @@ struct SubcellTopologyTraits<3,0,NodeIndex, 3,NV,NN,EList,EMaps,FList,FMaps>
 template< unsigned SubcellOrd ,
           unsigned D , unsigned NV , unsigned NN ,
           class EList , class EMaps ,
-          class FList , class FMaps >
-struct SubcellTopologyTraits<0,SubcellOrd,0, D,NV,NN,EList,EMaps,FList,FMaps>
+          class FList , class FMaps ,
+          class PMaps >
+struct SubcellTopologyTraits<0,SubcellOrd,0, D,NV,NN,EList,EMaps,FList,FMaps,PMaps>
 {
   typedef CellTopologyTraits<0,0,0> topology ;
   enum { count = NN };
-  enum { node = SubcellOrd < NN ? (int) SubcellOrd : -1 };
+  enum { node = SubcellOrd < NN ? SubcellOrd : ~0u };
   enum { homogeneity = true };
 };
 
@@ -150,9 +157,10 @@ struct SubcellTopologyTraits<0,SubcellOrd,0, D,NV,NN,EList,EMaps,FList,FMaps>
 template< unsigned SubcellOrd , unsigned NodeIndex ,
           unsigned D , unsigned NV , unsigned NN ,
           class EList , class EMaps ,
-          class FList , class FMaps >
+          class FList , class FMaps ,
+          class PMaps >
 struct SubcellTopologyTraits<1,SubcellOrd,NodeIndex,
-                             D,NV,NN,EList,EMaps,FList,FMaps>
+                             D,NV,NN,EList,EMaps,FList,FMaps,PMaps>
 {
 private:
   typedef typename TypeListAt<EMaps,SubcellOrd>::type node_map ;
@@ -173,9 +181,10 @@ public:
 template< unsigned SubcellOrd , unsigned NodeIndex ,
           unsigned D , unsigned NV , unsigned NN ,
           class EList , class EMaps ,
-          class FList , class FMaps >
+          class FList , class FMaps ,
+          class PMaps >
 struct SubcellTopologyTraits< 2, SubcellOrd, NodeIndex,
-                              D,NV,NN,EList,EMaps,FList,FMaps>
+                              D,NV,NN,EList,EMaps,FList,FMaps,PMaps>
 {
 private:
   typedef typename TypeListAt<FMaps,SubcellOrd>::type node_map ;
@@ -198,12 +207,13 @@ template< unsigned SubcellDim , unsigned SubcellOrd , unsigned NodeIndex ,
           unsigned Dimension ,
           unsigned Number_Vertex , unsigned Number_Node ,
           class EdgeList , class EdgeMaps ,
-          class FaceList , class FaceMaps >
+          class FaceList , class FaceMaps ,
+          class PermMaps >
 struct SubcellTopologyTraits
 {
   typedef void topology ;
   enum { count = 0 };
-  enum { node = -1 };
+  enum { node = ~0u };
   enum { homogeneity = false };
 };
 
@@ -232,9 +242,9 @@ struct TypeListHomogeneous
 
 //----------------------------------------------------------------------
 
-template< int I , int J > struct AssertEqual ;
+template< unsigned I , unsigned J > struct AssertEqual ;
 
-template< int I > struct AssertEqual<I,I> { enum { OK = true }; };
+template< unsigned I > struct AssertEqual<I,I> { enum { OK = true }; };
 
 #endif /* DOXYGEN_COMPILE */
 
@@ -242,12 +252,14 @@ template< int I > struct AssertEqual<I,I> { enum { OK = true }; };
 /**  \brief  Compile-time traits for a cell topology. */
 template< unsigned Dimension , unsigned Number_Vertex , unsigned Number_Node ,
           class EdgeList , class EdgeMaps ,
-          class FaceList , class FaceMaps >
+          class FaceList , class FaceMaps ,
+          class PermutationMaps >
 struct CellTopologyTraits
 {
   /** \brief  The <em> self </em> type for the traits */
   typedef CellTopologyTraits< Dimension, Number_Vertex, Number_Node,
-                              EdgeList, EdgeMaps, FaceList, FaceMaps > Traits ;
+                              EdgeList, EdgeMaps, FaceList, FaceMaps,
+                              PermutationMaps > Traits ;
 
   enum {
     /** \brief  Topological dimension */
@@ -295,7 +307,8 @@ struct CellTopologyTraits
     public SubcellTopologyTraits< Dim , Ord , J ,
                                   dimension , vertex_count , node_count ,
                                   EdgeList , EdgeMaps ,
-                                  FaceList , FaceMaps > {};
+                                  FaceList , FaceMaps ,
+                                  PermutationMaps > {};
 
   /** \brief Side subcell information
    *
@@ -310,7 +323,8 @@ struct CellTopologyTraits
                                   Ord , J ,
                                   dimension , vertex_count , node_count ,
                                   EdgeList , EdgeMaps ,
-                                  FaceList , FaceMaps > {};
+                                  FaceList , FaceMaps ,
+                                  PermutationMaps > {};
 
   /** \brief Edge subcell information
    *
@@ -324,7 +338,47 @@ struct CellTopologyTraits
     public SubcellTopologyTraits< ( 1 < dimension ? 1 : 4 ) , Ord , J ,
                                   dimension , vertex_count , node_count ,
                                   EdgeList , EdgeMaps ,
-                                  TypeListEnd , TypeListEnd > {};
+                                  TypeListEnd , TypeListEnd ,
+                                  PermutationMaps > {};
+
+  //--------------------------------------------------------------------
+  /** \brief  Node permutations for proper subcells.
+   *
+   *  ParentCell and SubCell are connected if every node of SubCell
+   *  is also a node of ParentCell.  However, the connection may be
+   *  permuted.
+   *
+   *  Let ParentCell be dimension D and SubCell be dimension dim < D.
+   *  Let SubCell be connected as subcell Ord with permutation P.
+   *
+   *  Then <b> ParentCell.node(K) == SubCell.node(J) </b> where:
+   *  -  SubCellTopology == ParentCellTopology::subcell<dim,Ord>::topology
+   *  -  K  = ParentCellTopology::subcell<dim,Ord,JP>::node
+   *  -  JP = SubCellTopology::permutation<P,J>::node
+   *  -  J  = SubCellTopology::permutation_inverse<P,JP>::node
+   *
+   *  The permutation map for P == 0 is required to be identity.
+   */
+  template< unsigned Perm , unsigned J = 0 >
+  struct permutation {
+  private:
+    typedef typename TypeListAt< PermutationMaps , Perm >::type node_map ;
+  public:
+    enum { node = J < node_count ? IndexListAt< node_map , J >::value : ~0u };
+  };
+
+  template< unsigned Perm , unsigned J = 0 >
+  struct permutation_inverse {
+  private:
+    typedef typename TypeListAt< PermutationMaps , Perm >::type forward_map ;
+    typedef typename IndexListInverse< forward_map >::type node_map ;
+  public:
+    enum { node = J < node_count ? IndexListAt< node_map , J >::value : ~0u };
+  };
+
+  enum { permutation_count = TypeListLength< PermutationMaps >::value };
+
+  //--------------------------------------------------------------------
 
 private:
 

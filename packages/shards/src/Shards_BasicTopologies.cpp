@@ -26,7 +26,8 @@
 #include <Shards_BasicTopologies.hpp>
 
 extern "C" {
-typedef CellTopologyData::Subcell  Subcell ;
+typedef CellTopologyData::Subcell      Subcell ;
+typedef CellTopologyData::Permutation  Permutation ;
 }
 
 namespace shards {
@@ -139,6 +140,50 @@ struct SubcellArray {
 
   SubcellArray() { SubcellValue<TList,IList,N>::assign( array ); }
 };
+
+//----------------------------------------------------------------------
+
+template< class IList , unsigned N >
+struct PermutationValue ;
+
+template< class IList >
+struct PermutationValue<IList,0>
+{ static void assign( Permutation * , Permutation * ) {} };
+
+template< class IList , unsigned N >
+struct PermutationValue {
+  static void assign( Permutation * forward , Permutation * inverse )
+    {
+      enum { I = N - 1 };
+      typedef typename TypeListAt<IList,I>::type ForwardType ;
+      typedef typename IndexListInverse< ForwardType >::type InverseType ;
+      PermutationValue<IList,I>::assign( forward , inverse );
+      forward[I].node = index_list( ForwardType() );
+      inverse[I].node = index_list( InverseType() );
+    }
+};
+
+template< class IList , unsigned NPerm = TypeListLength< IList >::value >
+struct PermutationArray ;
+
+template< class IList >
+struct PermutationArray< IList , 0 > {
+  Permutation * forward ;
+  Permutation * inverse ;
+  PermutationArray() : forward(NULL), inverse(NULL) {}
+};
+
+template< class IList , unsigned NPerm >
+struct PermutationArray {
+
+  enum { N = NPerm };
+
+  Permutation forward[ N ];
+  Permutation inverse[ N ];
+
+  PermutationArray()
+    { PermutationValue< IList , N >::assign( forward , inverse ); }
+};
   
 //----------------------------------------------------------------------
 
@@ -152,11 +197,13 @@ template< unsigned Number_Vertex ,
           class    FaceMaps >
 struct Descriptor<
   CellTopologyTraits< 3 , Number_Vertex , Number_Node ,
-                      EdgeList , EdgeMaps , FaceList , FaceMaps > >
+                      EdgeList , EdgeMaps , FaceList , FaceMaps ,
+                      TypeListEnd > >
 {
   typedef CellTopologyTraits< 3 , Number_Vertex , Number_Node ,
                               EdgeList , EdgeMaps ,
-                              FaceList , FaceMaps > Traits ;
+                              FaceList , FaceMaps ,
+                              TypeListEnd > Traits ;
 
   typedef SubcellArray< EdgeList , EdgeMaps > EdgeArray ;
   typedef SubcellArray< FaceList , FaceMaps > FaceArray ;
@@ -207,18 +254,23 @@ struct Descriptor<
 template< unsigned Number_Vertex ,
           unsigned Number_Node ,
           class    EdgeList ,
-          class    EdgeMaps >
+          class    EdgeMaps ,
+          class    PermutationMaps >
 struct Descriptor<
   CellTopologyTraits< 2 , Number_Vertex , Number_Node ,
-                      EdgeList , EdgeMaps , TypeListEnd , TypeListEnd > >
+                      EdgeList , EdgeMaps , TypeListEnd , TypeListEnd ,
+                      PermutationMaps > >
 {
   typedef CellTopologyTraits< 2 , Number_Vertex , Number_Node ,
                               EdgeList , EdgeMaps ,
-                              TypeListEnd , TypeListEnd > Traits ;
+                              TypeListEnd , TypeListEnd ,
+                              PermutationMaps > Traits ;
   
   typedef SubcellArray< EdgeList , EdgeMaps > EdgeArray ;
+  typedef PermutationArray< PermutationMaps > PermArray ;
 
   EdgeArray edges ;
+  PermArray perm ;
 
   Subcell self ;
 
@@ -234,41 +286,51 @@ struct Descriptor<
       self.topology = & top ;
       self.node     = index_identity_array();
 
-      top.base             = base ? base : & top ;
-      top.name             = name ;
-      top.key              = Traits::key ;
-      top.dimension        = 2 ;
-      top.vertex_count     = Number_Vertex ;
-      top.node_count       = Number_Node ;
-      top.edge_count       = EdgeArray::N ;
-      top.side_count       = Traits::side_count ;
+      top.base              = base ? base : & top ;
+      top.name              = name ;
+      top.key               = Traits::key ;
+      top.dimension         = 2 ;
+      top.vertex_count      = Number_Vertex ;
+      top.node_count        = Number_Node ;
+      top.edge_count        = EdgeArray::N ;
+      top.side_count        = Traits::side_count ;
+      top.permutation_count = Traits::permutation_count ;
       top.subcell_homogeneity[0] = subcell_0::homogeneity ;
       top.subcell_homogeneity[1] = subcell_1::homogeneity ;
       top.subcell_homogeneity[2] = subcell_2::homogeneity ;
       top.subcell_homogeneity[3] = subcell_3::homogeneity ;
-      top.subcell_count[0] = Number_Node ;
-      top.subcell_count[1] = EdgeArray::N ;
-      top.subcell_count[2] = 1 ;
-      top.subcell_count[3] = 0 ;
-      top.subcell[0]       = subcell_nodes_array();
-      top.subcell[1]       = edges.array ;
-      top.subcell[2]       = & self ;
-      top.subcell[3]       = NULL ;
-      top.side             = edges.array ;
-      top.edge             = edges.array ;
+      top.subcell_count[0]    = Number_Node ;
+      top.subcell_count[1]    = EdgeArray::N ;
+      top.subcell_count[2]    = 1 ;
+      top.subcell_count[3]    = 0 ;
+      top.subcell[0]          = subcell_nodes_array();
+      top.subcell[1]          = edges.array ;
+      top.subcell[2]          = & self ;
+      top.subcell[3]          = NULL ;
+      top.side                = edges.array ;
+      top.edge                = edges.array ;
+      top.permutation         = perm.forward ;
+      top.permutation_inverse = perm.inverse ;
     };
 };
 
-template< unsigned Number_Node , unsigned Number_Vertex >
+template< unsigned Number_Node , unsigned Number_Vertex ,
+          class PermutationMaps >
 struct Descriptor<
   CellTopologyTraits< 1 , Number_Vertex , Number_Node ,
                       TypeListEnd , TypeListEnd ,
-                      TypeListEnd , TypeListEnd > >
+                      TypeListEnd , TypeListEnd ,
+                      PermutationMaps > >
 {
   typedef CellTopologyTraits< 1 , Number_Vertex , Number_Node ,
                               TypeListEnd , TypeListEnd ,
-                              TypeListEnd , TypeListEnd > Traits ;
+                              TypeListEnd , TypeListEnd ,
+                              PermutationMaps > Traits ;
   
+  typedef PermutationArray< PermutationMaps > PermArray ;
+
+  PermArray perm ;
+
   Subcell self ;
 
   CellTopologyData top ;
@@ -283,28 +345,31 @@ struct Descriptor<
       self.topology = & top ;
       self.node     = index_identity_array();
 
-      top.base             = base ? base : & top ;
-      top.name             = name ;
-      top.key              = Traits::key ;
-      top.dimension        = 1 ;
-      top.vertex_count     = Number_Vertex ;
-      top.node_count       = Number_Node ;
-      top.edge_count       = 0 ;
-      top.side_count       = 0 ;
+      top.base              = base ? base : & top ;
+      top.name              = name ;
+      top.key               = Traits::key ;
+      top.dimension         = 1 ;
+      top.vertex_count      = Number_Vertex ;
+      top.node_count        = Number_Node ;
+      top.edge_count        = 0 ;
+      top.side_count        = 0 ;
+      top.permutation_count = Traits::permutation_count ;
       top.subcell_homogeneity[0] = subcell_0::homogeneity ;
       top.subcell_homogeneity[1] = subcell_1::homogeneity ;
       top.subcell_homogeneity[2] = subcell_2::homogeneity ;
       top.subcell_homogeneity[3] = subcell_3::homogeneity ;
-      top.subcell_count[0] = Number_Node ;
-      top.subcell_count[1] = 1 ;
-      top.subcell_count[2] = 0 ;
-      top.subcell_count[3] = 0 ;
-      top.subcell[0]       = subcell_nodes_array();
-      top.subcell[1]       = & self ;
-      top.subcell[2]       = NULL ;
-      top.subcell[3]       = NULL ;
-      top.side             = NULL ;
-      top.edge             = NULL ;
+      top.subcell_count[0]    = Number_Node ;
+      top.subcell_count[1]    = 1 ;
+      top.subcell_count[2]    = 0 ;
+      top.subcell_count[3]    = 0 ;
+      top.subcell[0]          = subcell_nodes_array();
+      top.subcell[1]          = & self ;
+      top.subcell[2]          = NULL ;
+      top.subcell[3]          = NULL ;
+      top.side                = NULL ;
+      top.edge                = NULL ;
+      top.permutation         = perm.forward ;
+      top.permutation_inverse = perm.inverse ;
     };
 };
 
@@ -312,11 +377,13 @@ template<>
 struct Descriptor<
   CellTopologyTraits< 0 , 0 , 0 ,
                       TypeListEnd , TypeListEnd ,
-                      TypeListEnd , TypeListEnd > >
+                      TypeListEnd , TypeListEnd ,
+                      TypeListEnd > >
 {
   typedef CellTopologyTraits< 0 , 0 , 0 ,
                               TypeListEnd , TypeListEnd ,
-                              TypeListEnd , TypeListEnd > Traits ;
+                              TypeListEnd , TypeListEnd ,
+                              TypeListEnd > Traits ;
   
   Subcell self ;
 
@@ -327,28 +394,31 @@ struct Descriptor<
       self.topology = & top ;
       self.node     = index_identity_array();
 
-      top.base             = base ? base : & top ;
-      top.name             = name ;
-      top.key              = Traits::key ;
-      top.dimension        = 0 ;
-      top.vertex_count     = 0 ;
-      top.node_count       = 0 ;
-      top.edge_count       = 0 ;
-      top.side_count       = Traits::side_count ;
+      top.base              = base ? base : & top ;
+      top.name              = name ;
+      top.key               = Traits::key ;
+      top.dimension         = 0 ;
+      top.vertex_count      = 0 ;
+      top.node_count        = 0 ;
+      top.edge_count        = 0 ;
+      top.side_count        = 0 ;
+      top.permutation_count = 0 ;
       top.subcell_homogeneity[0] = true ;
       top.subcell_homogeneity[1] = false ;
       top.subcell_homogeneity[2] = false ;
       top.subcell_homogeneity[3] = false ;
-      top.subcell_count[0] = 1 ;
-      top.subcell_count[1] = 0 ;
-      top.subcell_count[2] = 0 ;
-      top.subcell_count[3] = 0 ;
-      top.subcell[0]       = & self ;
-      top.subcell[1]       = NULL ;
-      top.subcell[2]       = NULL ;
-      top.subcell[3]       = NULL ;
-      top.side             = NULL ;
-      top.edge             = NULL ;
+      top.subcell_count[0]       = 1 ;
+      top.subcell_count[1]       = 0 ;
+      top.subcell_count[2]       = 0 ;
+      top.subcell_count[3]       = 0 ;
+      top.subcell[0]             = & self ;
+      top.subcell[1]             = NULL ;
+      top.subcell[2]             = NULL ;
+      top.subcell[3]             = NULL ;
+      top.side                   = NULL ;
+      top.edge                   = NULL ;
+      top.permutation            = NULL ;
+      top.permutation_inverse    = NULL ;
     };
 };
 
