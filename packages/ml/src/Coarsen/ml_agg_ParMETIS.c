@@ -200,19 +200,19 @@ int ML_Aggregate_Get_OptimalReqLocalCoarseSize( int value )
  This function is used to redistributed the tentative prolongator with
  ParMETIS as coarsen scheme.
 
- \date Albuquerque, 12-Nov-03
- 
+ input:
+    Nlevels           equal to ml->ML_num_levels
+
 */
 /* ------------------------------------------------------------------------ */
 
-int ML_Aggregate_Set_ReqLocalCoarseSize( ML *ml, ML_Aggregate *ag, 
+int ML_Aggregate_Set_ReqLocalCoarseSize( int Nlevels, ML_Aggregate *ag, 
 					 int level,
 					 int desired_aggre_per_proc )
 {
 
   int i;
   ML_Aggregate_Options *pointer = NULL;
-  int Nlevels = ml->ML_num_levels;
   double debug_starting_time = 0.;
   
   /* ------------------- execution begins --------------------------------- */

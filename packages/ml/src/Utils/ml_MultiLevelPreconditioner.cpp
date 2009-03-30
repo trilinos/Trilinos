@@ -38,6 +38,10 @@
 #include "ml_common.h"
 #include "ml_include.h"
 
+#ifdef IFPACK_NODE_AWARE_CODE
+extern int ML_NODE_ID; //FIXME
+#endif
+
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 #include "ml_memory.h"
 #include "ml_DD_prec.h"
@@ -73,6 +77,7 @@
 
 #ifdef HAVE_ML_EPETRAEXT
 #include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_OperatorOut.h"
 #endif
 
 #include "ml_ifpack_wrap.h"
@@ -808,6 +813,14 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
 
   mlpLabel_ = List_.get("ML label","not-set");
+#ifdef IFPACK_NODE_AWARE_CODE
+  if (mlpLabel_ != "not-set") {
+    char tempLabel[80];
+    sprintf(tempLabel,"A_topOfMLP_%s_nodeID_%d.dat",mlpLabel_.c_str(),ML_NODE_ID);
+    try{EpetraExt::OperatorToMatlabFile(tempLabel,*RowMatrix_);}
+    catch(...) {cout << "*** ** * MLP: Problem during call to EpetraExt::OperatorToMatlabFile" << endl;}
+  }
+#endif
 
   // avoid possible integer overflow in Epetra's global nnz count
   double localNnz = RowMatrix_->NumMyNonzeros();
@@ -1045,6 +1058,23 @@ agg_->keep_P_tentative = 1;
         ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec);
       }
     }
+
+#ifdef IFPACK_NODE_AWARE_CODE
+    if (mlpLabel_ != "not-set")
+    {
+      char tempLabel[80];
+      sprintf(tempLabel,"Amat0_%s.dat",mlpLabel_.c_str());
+      ML_Operator_Print_UsingGlobalOrdering(ml_->Amat+LevelID_[0],tempLabel,0,0);
+      sprintf(tempLabel,"Arowmat0_%s.dat",mlpLabel_.c_str());
+      try{EpetraExt::OperatorToMatlabFile(tempLabel,*RowMatrix_);}
+      catch(...) {cout << "*** ** * MLP: Problem during call to EpetraExt::OperatorToMatlabFile" << endl;}
+      sprintf(tempLabel,"Amat_%s",mlpLabel_.c_str());
+      ML_Operator_Print(ml_->Amat+LevelID_[0],tempLabel);
+      //std::ofstream outputfile(tempLabel);
+      //cout  << *RowMatrix_ << endl;
+      //ML_Operator_Print_UsingGlobalOrdering(ml_->Amat+LevelID_[0],"Aglob",0,0);
+    }
+#endif
 
     // ========================================= //
     // repartition of matrices                   //
@@ -1310,11 +1340,11 @@ agg_->keep_P_tentative = 1;
   }
 
   if( SolvingMaxwell_ == false ) {
-    ML_Aggregate_Set_ReqLocalCoarseSize( ml_, agg_, -1, ReqAggrePerProc);
+    ML_Aggregate_Set_ReqLocalCoarseSize( ml_->ML_num_levels, agg_, -1, ReqAggrePerProc);
   } else {
     // Jonathan, is it right ???
-    ML_Aggregate_Set_ReqLocalCoarseSize( ml_, agg_, -1, ReqAggrePerProc);
-    ML_Aggregate_Set_ReqLocalCoarseSize( ml_nodes_, agg_, -1, ReqAggrePerProc);
+    ML_Aggregate_Set_ReqLocalCoarseSize( ml_->ML_num_levels, agg_, -1, ReqAggrePerProc);
+    ML_Aggregate_Set_ReqLocalCoarseSize( ml_nodes_->ML_num_levels, agg_, -1, ReqAggrePerProc);
   }
   
   if( verbose_ ) {
@@ -3452,8 +3482,31 @@ ModifyEpetraMatrixColMap(const Epetra_RowMatrix &A,
       Acrs = const_cast<Epetra_CrsMatrix*>(Atmp);
       B = &(transform(*Acrs));
     }
-    else
+    else {
       B = const_cast<Epetra_RowMatrix *>(&A);
+      //Some classes may not implement the Importer method, e.g., Ifpack_LocalFilter
+      if (A.RowMatrixImporter() != 0) {
+        //Even if the matrix cannot be cast to an Epetra_CrsMatrix, we
+        //still test for missing column indices and warn if any are found.
+        const Epetra_BlockMap & DomainMap = A.RowMatrixImporter()->SourceMap();
+        const Epetra_Map & ColMap = A.RowMatrixColMap();
+        int NumCols = DomainMap.NumMyElements();
+        int Match = 0;
+        for( int i = 0; i < NumCols; ++i )
+          if( DomainMap.GID(i) != ColMap.GID(i) ) {
+            Match = 1;
+            break;
+          }
+        int MatchAll = 0;
+        A.Comm().SumAll( &Match, &MatchAll, 1 );
+        if( MatchAll ) {
+          if (verbose_ && !A.Comm().MyPID())
+            printf("WARNING: Matrix %s is missing local column indices, but is not an Epetra_CrsMatrix, so doing nothing.\n",matrixLabel);
+        }
+        else if (verbose_ && !A.Comm().MyPID())
+          printf("** Matrix is not an Epetra_CrsMatrix; column map is not missing any entries.\n");
+      } //if (A.RowMatrixImporter() != 0)
+    }
 
     if (verbose_ && !A.Comm().MyPID()) {
       if (B != &A)

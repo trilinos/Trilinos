@@ -314,6 +314,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("ML validate depth",0,"Internal option to control validation depth",PL,intParam);
   PL->set("ResetList",true); 
   setStringToIntegralParameter<int>("SetDefaults","not-set","Internal Option",tuple<string>("not-set","SA","DD","DD-ML","maxwell","NSSA","RefMaxwell"),PL);
+  setIntParameter("ML node id",-1,"Experimental option to identify the processor node (vis-a-vis core) id",PL,intParam);
 
   /* Unlisted Options that should probably be listed */
   setIntParameter("aggregation: aux: max levels",10,"Unlisted option",PL,intParam);

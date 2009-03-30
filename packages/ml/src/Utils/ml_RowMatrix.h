@@ -317,6 +317,9 @@ class RowMatrix : public virtual Epetra_RowMatrix {
     return(*DomainMap_);
   }
 
+  //!  Print the global matrix.  This uses a potentially artificial numbering.
+  int Print() const;
+
 private:
 
   //! Pointer to the ML_Operator structure that is wrapped.

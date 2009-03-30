@@ -81,6 +81,10 @@ int ML_Gen_Smoother_Self(ML *ml, int Overlap, int nl, int pre_or_post,
 }
 // ================================================ ====== ==== ==== == =
 
+#ifdef IFPACK_NODE_AWARE_CODE
+int ML_NODE_ID = -1;  //FIXME delete this
+#endif
+
 int ML_Self_Gen(ML *ml, int Overlap, int curr_level, 
                 Teuchos::ParameterList& List, const Epetra_Comm& Comm, 
                 void ** Self_Handle)
@@ -100,6 +104,9 @@ int ML_Self_Gen(ML *ml, int Overlap, int curr_level,
 
   List.set("zero starting solution", true);
   List.set("schwarz: compute condest", false);
+#ifdef IFPACK_NODE_AWARE_CODE
+  ML_NODE_ID = List.get("ML node id",-1);
+#endif
   Prec->SetParameters(List);
   ML_CHK_ERR(Prec->Initialize());
   ML_CHK_ERR(Prec->Compute());

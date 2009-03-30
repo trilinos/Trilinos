@@ -432,5 +432,12 @@ const Epetra_Import* ML_Epetra::RowMatrix::RowMatrixImporter() const
   return(Importer_);
 }
 
+//==============================================================================
+int ML_Epetra::RowMatrix::Print() const
+{
+   ML_Operator_Print_UsingGlobalOrdering(Op_,Label_,0,0);
+   return(0);
+}
+
 #endif /* HAVE_ML_EPETRA */
 

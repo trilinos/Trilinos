@@ -702,6 +702,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       Teuchos::ParameterList& SelfList = IfpackList.sublist("ML list");
       Teuchos::ParameterList& tmpList = List_.sublist("smoother: self list");
       SelfList.setParameters(tmpList);
+      IfpackList.set( "ML node id",List_.get("ML node id",-1) );
+      char procLabel[30];
+      sprintf(procLabel,"node id %d",List_.get("ML node id",-1));
+      SelfList.set("ML label",procLabel);
       SelfList.set("zero starting solution", false);  
       string xxx = SelfList.get("SetDefaults", "not-set");
       if (xxx != "not-set") {

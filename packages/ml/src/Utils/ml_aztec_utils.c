@@ -3273,7 +3273,7 @@ int MLAZ_Setup_MLandAggregate( int N_update, int num_PDE_eqns,
   ML_Aggregate_Set_DampingFactor( ag, Settings.smoothP_damping_factor ); 
   ML_Aggregate_Set_MaxCoarseSize(ag, Settings.max_coarse_size );
   ML_Aggregate_Set_Threshold( ag, Settings.threshold );
-  ML_Aggregate_Set_ReqLocalCoarseSize( ml, ag, -1,
+  ML_Aggregate_Set_ReqLocalCoarseSize( ml->ML_num_levels, ag, -1,
   				       Settings.req_aggre_per_proc);
 
   if( 5 < ML_Get_PrintLevel() && proc_config[AZ_node] == 0 ) {

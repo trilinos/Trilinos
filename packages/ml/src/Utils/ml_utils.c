@@ -2102,6 +2102,7 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
        if( MyPID == 0 ) {
          fprintf(fid,"%%N_global_rows = %d\n", NglobalRows );
          fprintf(fid,"%%N_global_cols = %d\n", NglobalCols );
+         fprintf(fid,"%%Number of processors = %d\n", NumProc );
          fprintf(fid,"%% To load this data into Matlab:\n");
          fprintf(fid,"%%    load(filename); A = spconvert(filename);\n");
          fprintf(fid,"%% This ordering may be different than the application's matrix ordering!\n\n");
@@ -2115,7 +2116,11 @@ int ML_Operator_Print_UsingGlobalOrdering( ML_Operator *matrix,
 		Nrows,
         matrix->outvec_leng,
         matrix->invec_leng );
-              
+       fprintf(fid,"%%\n");
+       for (i=0; i<length;i++)
+         fprintf(fid,"%%global_row_ordering[%d] = %d\n",i,global_row_ordering[i]);
+       fprintf(fid,"%%\n");
+
        for (i = 0 ; i < Nrows; i++) {
          ML_get_matrix_row(matrix, 1, &i, &allocated, &bindx, &val,
                  &row_length, 0);

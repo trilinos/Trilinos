@@ -684,16 +684,11 @@ int ML_Epetra_comm_wrapper(double vec[], void *data)
 
   if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode.
 
-//  Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(), vec); //ghosted
-//  Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(), vec); //loc only
-
   if( A->RowMatrixImporter() != 0 ) {
     Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(),
 			   vec); //ghosted
     Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(),
 			   vec); //loc only
-  
-//  assert(X_target.Import(X_source, *(A->RowMatrixImporter()),Insert)==0);
     X_target.Import(X_source, *(A->RowMatrixImporter()), Insert);
   }
   
@@ -708,16 +703,11 @@ int ML_Epetra_CrsMatrix_comm_wrapper(double vec[], void *data)
 
   if (A->Comm().NumProc()==1) return(1); // Nothing to do in serial mode.
 
-//  Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(), vec); //ghosted
-//  Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(), vec); //loc only
-
   if( A->RowMatrixImporter() != 0 ) {
     Epetra_Vector X_target(View, A->RowMatrixImporter()->TargetMap(),
 			   vec); //ghosted
     Epetra_Vector X_source(View, A->RowMatrixImporter()->SourceMap(),
 			   vec); //loc only
-  
-//  assert(X_target.Import(X_source, *(A->RowMatrixImporter()),Insert)==0);
     X_target.Import(X_source, *(A->RowMatrixImporter()), Insert);
   }
   
