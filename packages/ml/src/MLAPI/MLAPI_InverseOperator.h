@@ -82,7 +82,12 @@ public:
 
   //! Reshapes the object by setting the Operator and the specified type.
   void Reshape(const Operator& Op, const string Type,
-               Teuchos::ParameterList& List);
+               Teuchos::ParameterList& List,
+               Teuchos::ParameterList* pushlist = NULL);
+
+  //! Reshape with preconstructed smoother as Ifpack_Preconditioner
+  void Reshape(Ifpack_Preconditioner* prec, const Operator& Op, 
+               const bool ownership);
 
   // @}
   // @{ Get and Set methods.

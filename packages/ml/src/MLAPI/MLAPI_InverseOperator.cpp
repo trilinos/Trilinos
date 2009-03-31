@@ -73,8 +73,24 @@ void InverseOperator::Reshape(const Operator& Op, const string Type)
   Reshape(Op, Type, List);
 }
 
+void InverseOperator::Reshape(Ifpack_Preconditioner* prec, const Operator& Op, 
+                              const bool ownership)
+{
+  ResetTimer();
+  StackPush();
+
+  Op_ = Op;
+
+  RCPRowMatrix_ = Op.GetRCPRowMatrix();
+
+  RCPData_ = Teuchos::rcp(prec,ownership);
+
+  StackPop();
+  UpdateTime();
+}
+
 void InverseOperator::Reshape(const Operator& Op, const string Type,
-             Teuchos::ParameterList& List)
+             Teuchos::ParameterList& List, Teuchos::ParameterList* pushlist)
 {
   ResetTimer();
   StackPush();
@@ -89,14 +105,26 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
   int LOF_ilu     = List.get("smoother: ilu fill", 0);
   double LOF_ict  = List.get("smoother: ilut fill", 1.0);
   double LOF_ilut = List.get("smoother: ict fill", 1.0);
+  string reorder  = List.get("schwarz: reordering type","rcm");
 
   Teuchos::ParameterList IFPACKList;
+
+  // any parameters from the main list List are overwritten by the pushlist
   IFPACKList.set("relaxation: sweeps", NumSweeps);
   IFPACKList.set("relaxation: damping factor", Damping);
   IFPACKList.set("fact: level-of-fill", LOF_ilu);
   IFPACKList.set("fact: ict level-of-fill", LOF_ict);
   IFPACKList.set("fact: ilut level-of-fill", LOF_ilut);
   IFPACKList.set("relaxation: zero starting solution", false);
+  IFPACKList.set("schwarz: reordering type",reorder);
+  IFPACKList.set("fact: relative threshold",1.0);
+
+  // if present, the pushlist is assumed to be a preconstructed ifpack list
+  // that is copied straight to the ifpack list here
+  // entries in pushlist overwrite previous list entries
+  if (pushlist)
+    IFPACKList.setParameters(*pushlist);
+
 
   bool verbose = false; //(GetMyPID() == 0 && GetPrintLevel() > 5);
 
@@ -139,7 +167,9 @@ void InverseOperator::Reshape(const Operator& Op, const string Type,
         << LOF_ilu << endl;
       cout << endl;
     }
-    Prec = new Ifpack_ILU(RowMatrix());
+    
+    // use the Additive Schwarz class because it does reordering
+    Prec = new Ifpack_AdditiveSchwarz<Ifpack_ILU>(RowMatrix());
   }
   else if (Type == "ILUT") {
     if (verbose) {
