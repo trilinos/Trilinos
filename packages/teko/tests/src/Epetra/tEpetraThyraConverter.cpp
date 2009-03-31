@@ -198,7 +198,7 @@ bool tEpetraThyraConverter::test_blockThyraToEpetra(int verbosity,std::ostream &
 
    // create a vector
    const RCP<Thyra::MultiVectorBase<double> > tX = Thyra::createMembers<double>(prodVS,5);
-   Thyra::randomize<double>(-10.0,10.0,tX); 
+   Thyra::randomize<double>(-10.0,10.0,tX.ptr()); 
 
    const RCP<Epetra_MultiVector> eX = rcp(new Epetra_MultiVector(*map,5));
    PB::Epetra::blockThyraToEpetra(tX,*eX);
@@ -240,7 +240,7 @@ bool tEpetraThyraConverter::test_single_blockThyraToEpetra(int verbosity,std::os
 
    // create a vector
    const RCP<Thyra::MultiVectorBase<double> > tX = Thyra::createMembers<double>(vs,5);
-   Thyra::randomize<double>(-10.0,10.0,tX); 
+   Thyra::randomize<double>(-10.0,10.0,tX.ptr()); 
 
    const RCP<Epetra_MultiVector> eX = rcp(new Epetra_MultiVector(*map,5));
    PB::Epetra::blockThyraToEpetra(tX,*eX);

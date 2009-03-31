@@ -160,8 +160,8 @@ bool tBlockLowerTriInverseOp::test_alphabeta(int verbosity,std::ostream & os)
    RCP<Thyra::VectorBase<double> > src = Thyra::createMember(invA_->domain()); 
    RCP<Thyra::VectorBase<double> > dste = Thyra::createMember(invA_->range()); 
    
-   Thyra::randomize<double>(-10,10,src);
-   Thyra::randomize<double>(-10,10,dste);
+   Thyra::randomize<double>(-10,10,src.ptr());
+   Thyra::randomize<double>(-10,10,dste.ptr());
 
    RCP<Thyra::VectorBase<double> > dstn = dste->clone_v();
 
