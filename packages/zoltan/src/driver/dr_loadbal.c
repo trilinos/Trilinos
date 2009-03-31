@@ -27,6 +27,7 @@ double Timer_Callback_Time, Timer_Global_Callback_Time;
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 #include <sys/types.h>
 #include <unistd.h>
 

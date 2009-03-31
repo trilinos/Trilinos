@@ -34,6 +34,8 @@
 #include <stdio.h>
 #include <mpi.h>
 #include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 #include "zoltan.h"
 #include "dr_param_file.h"
 #include "dr_const.h"
