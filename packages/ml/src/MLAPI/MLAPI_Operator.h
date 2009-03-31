@@ -114,7 +114,7 @@ public:
     else
       cheap = false;
     RCPRowMatrix_      = Teuchos::rcp(new ML_Epetra::RowMatrix(Op,&(GetEpetra_Comm()), 
-                                                               cheap));
+                                                               false));
     RCPAuxOperatorBox_ = AuxOp;
 
     StackPop();
