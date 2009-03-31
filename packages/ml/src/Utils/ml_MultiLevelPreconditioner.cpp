@@ -813,6 +813,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   }
 
   mlpLabel_ = List_.get("ML label","not-set");
+/*
 #ifdef IFPACK_NODE_AWARE_CODE
   if (mlpLabel_ != "not-set") {
     char tempLabel[80];
@@ -821,6 +822,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
     catch(...) {cout << "*** ** * MLP: Problem during call to EpetraExt::OperatorToMatlabFile" << endl;}
   }
 #endif
+*/
 
   // avoid possible integer overflow in Epetra's global nnz count
   double localNnz = RowMatrix_->NumMyNonzeros();
@@ -1059,6 +1061,7 @@ agg_->keep_P_tentative = 1;
       }
     }
 
+/*
 #ifdef IFPACK_NODE_AWARE_CODE
     if (mlpLabel_ != "not-set")
     {
@@ -1075,6 +1078,7 @@ agg_->keep_P_tentative = 1;
       //ML_Operator_Print_UsingGlobalOrdering(ml_->Amat+LevelID_[0],"Aglob",0,0);
     }
 #endif
+*/
 
     // ========================================= //
     // repartition of matrices                   //
