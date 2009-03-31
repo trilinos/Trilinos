@@ -458,15 +458,8 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 
   Epetra_RowMatrix* MatrixPtr;
 
-#ifdef HAVE_MPI
-  Epetra_MpiComm *temp;
-  temp = new Epetra_MpiComm(MPI_COMM_SELF);
-#else
-  Epetra_SerialComm *temp;
-  temp = new Epetra_SerialComm();
-#endif
-
 # ifdef IFPACK_NODE_AWARE_CODE
+/*
   sleep(3);
   if (Comm().MyPID() == 0) cout << "Printing out ovArowmap" << endl;
   Comm().Barrier();
@@ -476,6 +469,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   Comm().Barrier();
   EpetraExt::BlockMapToMatrixMarketFile("ovAcolmap",OverlappingMatrix_->RowMatrixColMap());
   Comm().Barrier();
+*/
 /*
   EpetraExt::RowMatrixToMatlabFile("ovA",*OverlappingMatrix_);
   fprintf(stderr,"p %d n %d matrix file done\n",Comm().MyPID(),ML_NODE_ID);

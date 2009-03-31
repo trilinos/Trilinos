@@ -40,7 +40,7 @@
 #endif
 #include "Epetra_RowMatrix.h"
 #include "Epetra_IntVector.h"
-#include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Ifpack_OverlappingRowMatrix.h"
 class Epetra_Map;
 class Epetra_MultiVector;
@@ -61,7 +61,7 @@ class Epetra_BlockMap;
  \code
  #include "Ifpack_NodeFilter.h"
  ...
- Teuchos::RefCountPtr<Epetra_RowMatrix> A;             // fill the elements of A,
+ Teuchos::RCP<Epetra_RowMatrix> A;             // fill the elements of A,
  A->FillComplete();
 
  Ifpack_NodeFilter LocalA(A);
@@ -90,13 +90,13 @@ class Ifpack_NodeFilter : public virtual Epetra_RowMatrix {
 public:
   //@{ \name Constructor.
   //! Constructor
-  Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix, int nodeID);
-  //Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix,const Epetra_Comm *);
+  Ifpack_NodeFilter(const Teuchos::RCP<const Epetra_RowMatrix>& Matrix, int nodeID);
+  //Ifpack_NodeFilter(const Teuchos::RCP<const Epetra_RowMatrix>& Matrix,const Epetra_Comm *);
 
   //@}
   //@{ \name Destructor.
   //! Destructor
-  virtual ~Ifpack_NodeFilter();
+  ~Ifpack_NodeFilter(){};
   //@}
 
   //@{ \name Matrix data extraction routines
@@ -312,13 +312,13 @@ public:
   //! Returns the Epetra_Import object that contains the import operations for distributed operations.
   virtual const Epetra_Import * RowMatrixImporter() const
   {
-    return(Importer_);
+    return(&*Importer_);
   }
   //@}
 
-  virtual const Epetra_Import* Importer() const {return(Importer_);}
+  virtual const Epetra_Import* Importer() const {return(&*Importer_);}
 
-  virtual const Epetra_Export* Exporter() const {return(Exporter_);}
+  virtual const Epetra_Export* Exporter() const {return(&*Exporter_);}
 
   // following functions are required to derive Epetra_RowMatrix objects.
 
@@ -377,19 +377,19 @@ private:
   void UpdateExportVector(int NumVectors) const;
 
   //! Pointer to the matrix to be preconditioned.
-  Teuchos::RefCountPtr<const Epetra_RowMatrix> Matrix_;
+  Teuchos::RCP<const Epetra_RowMatrix> Matrix_;
 #ifdef HAVE_MPI
   //! Communicator containing this process only.
-  Teuchos::RefCountPtr<Epetra_MpiComm> SubComm_;
+  Teuchos::RCP<Epetra_MpiComm> SubComm_;
   MPI_Comm nodeMPIComm_;
 #else
   //! Communicator containing this process only.
-  Teuchos::RefCountPtr<Epetra_SerialComm> SubComm_;
+  Teuchos::RCP<Epetra_SerialComm> SubComm_;
 #endif
   //! Row, domain, and range map, based on SubComm_, containing the local rows only.
-  Teuchos::RefCountPtr<Epetra_Map> Map_;
+  Teuchos::RCP<Epetra_Map> Map_;
   //! Column map based on SubComm_, containing the local rows only.
-  Teuchos::RefCountPtr<Epetra_Map> colMap_;
+  Teuchos::RCP<Epetra_Map> colMap_;
   //! Number of rows in the local matrix.
   int NumMyRows_;
   //! Number of cols in the local matrix.
@@ -414,17 +414,15 @@ private:
   bool UseTranspose_;
   //! Label for \c this object.
   char Label_[80];
-  Teuchos::RefCountPtr<Epetra_Vector> Diagonal_;
+  Teuchos::RCP<Epetra_Vector> Diagonal_;
   double NormOne_;
   double NormInf_;
 
-  //const Epetra_IntVector *colToNodeMap_;
-  Teuchos::RefCountPtr<Epetra_IntVector> colToNodeMap_; //TODO delete this
-
-  mutable Epetra_MultiVector * ImportVector_;
-  mutable Epetra_MultiVector * ExportVector_;
-  Epetra_Import * Importer_;
-  Epetra_Export * Exporter_;
+  mutable Teuchos::RCP<Epetra_MultiVector> ImportVector_;
+  //mutable Teuchos::RCP<Epetra_MultiVector> ExportVector_;
+  mutable Epetra_MultiVector* ExportVector_;
+  Teuchos::RCP<Epetra_Import> Importer_;
+  Teuchos::RCP<Epetra_Export> Exporter_;
 
 };
 #endif //ifdef IFPACK_NODE_AWARE_CODE

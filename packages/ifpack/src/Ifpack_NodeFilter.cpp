@@ -43,11 +43,12 @@
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
 
+using namespace Teuchos;
+
 extern int ML_NODE_ID;
 
 //==============================================================================
-Ifpack_NodeFilter::Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix,int nodeID) :
-//, const Epetra_Comm * SubComm) :
+Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& Matrix,int nodeID) :
   Matrix_(Matrix),
   NumMyRows_(0),
   NumGlobalRows_(0),
@@ -58,18 +59,17 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_Row
   sprintf(Label_,"%s","Ifpack_NodeFilter");
 
   printf("------ --- - Entering Ifpack_NodeFilter::Ifpack_NodeFilter ctor\n"); fflush(stdout);
-  ImportVector_=0;
+  ImportVector_=null;
+  //ExportVector_=null;
   ExportVector_=0;
 
-//TODO do we really have to do all this casting business, or can we just use SubComm directly?!
 #ifdef HAVE_MPI
   const Epetra_MpiComm *pComm = dynamic_cast<const Epetra_MpiComm*>( &(Matrix->Comm()) );
   assert(pComm != NULL);
   MPI_Comm_split(pComm->Comm(),nodeID,pComm->MyPID(),&nodeMPIComm_);
-  //const Epetra_MpiComm *pComm = dynamic_cast<const Epetra_MpiComm *>(SubComm);
-  SubComm_ = Teuchos::rcp( new Epetra_MpiComm(nodeMPIComm_) );
+  SubComm_ = rcp( new Epetra_MpiComm(nodeMPIComm_) );
 #else
-  SubComm_ = Teuchos::rcp( new Epetra_SerialComm );
+  SubComm_ = rcp( new Epetra_SerialComm );
 #endif
 
   NumMyRows_ = Matrix->NumMyRows();
@@ -81,7 +81,7 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_Row
     const Epetra_Map &globRowMap = Matrix->RowMatrixRowMap();
     int *myGlobalElts =  globRowMap.MyGlobalElements();
     int numMyElts = globRowMap.NumMyElements();
-    Map_ = Teuchos::rcp( new Epetra_Map(-1,numMyElts,myGlobalElts,globRowMap.IndexBase(),*SubComm_) );
+    Map_ = rcp( new Epetra_Map(-1,numMyElts,myGlobalElts,globRowMap.IndexBase(),*SubComm_) );
   }
   catch(...) {
     printf("** * Ifpack_NodeFilter ctor: problem creating row map * **\n\n");
@@ -94,7 +94,7 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_Row
     const Epetra_Map &globColMap = Matrix->RowMatrixColMap();
     int *myGlobalElts =  globColMap.MyGlobalElements();
     int numMyElts = globColMap.NumMyElements();
-    colMap_ = Teuchos::rcp( new Epetra_Map(-1,numMyElts,myGlobalElts,globColMap.IndexBase(),*SubComm_) );
+    colMap_ = rcp( new Epetra_Map(-1,numMyElts,myGlobalElts,globColMap.IndexBase(),*SubComm_) );
   }
   catch(...) {
     printf("** * Ifpack_NodeFilter ctor: problem creating col map * **\n\n");
@@ -106,7 +106,7 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_Row
   NumEntries_.resize(NumMyRows_);
 
   // want to store the diagonal vector. FIXME: am I really useful?
-  Diagonal_ = Teuchos::rcp( new Epetra_Vector(*Map_) );
+  Diagonal_ = rcp( new Epetra_Vector(*Map_) );
   if (Diagonal_ == Teuchos::null) IFPACK_CHK_ERRV(-5);
 
   // store this for future access to ExtractMyRowCopy().
@@ -136,9 +136,6 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_Row
     IFPACK_CHK_ERRV(ExtractMyRowCopy(i,MaxNumEntries_,Nnz,&Values_[0],&Indices_[0]));
 
     for (int j = 0 ; j < Nnz ; ++j) {
-      //if ( (*colToNodeMap_)[ Indices_[j] ] > -1 ) NewNnz++;
-      //else printf("\n>>>>>>>>>row %d: colToNodeMap_[ %d ] = -1\n\n",i,Indices_[j]);
-      //if (Indices_[j] < NumRows_ ) ++NewNnz;   // old check
       NewNnz++;
       if (Indices_[j] == i) (*Diagonal_)[i] = Values_[j];
     }
@@ -157,17 +154,16 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_Row
   int gpid = Matrix->Comm().MyPID();
   int lpid = SubComm_->MyPID();
 
-  Exporter_ = 0;
-  Importer_ = 0;
+  Exporter_ = null;
+  Importer_ = null;
   // Check if non-trivial import/export operators
   if (!(RowMatrixRowMap().SameAs(OperatorRangeMap()))) {
-    try{Exporter_ = new Epetra_Export(RowMatrixRowMap(), OperatorRangeMap());}
+    try{Exporter_ = rcp(new Epetra_Export(RowMatrixRowMap(), OperatorRangeMap()));}
     catch(...) {
       printf("** * gpid %d: Ifpack_NodeFilter ctor: problem creating Exporter_ * **\n\n",gpid);
     }
-    printf("\n\n>>>>>>>>>>>>>>>>>>>>> export <<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
   }
-  if (gpid > 1) sleep(8);
+  //if (gpid > 1) sleep(8);
 /*
   if (gpid == 0)
     printf(">>> node 0 <<<\n");
@@ -192,30 +188,21 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const Teuchos::RefCountPtr<const Epetra_Row
 */
   if (!(*colMap_).SameAs(*Map_)) {
     //TODO change this to RCP
-    try{Importer_ = new Epetra_Import(*colMap_, *Map_);}
+    try{Importer_ = rcp(new Epetra_Import(*colMap_, *Map_));}
     catch(...) {
       printf("** * gpid %d: Ifpack_NodeFilter ctor: problem creating Importer_ * **\n\n",gpid);
     }
+/*
     if (lpid == 0)
     printf("=======================================\nIfpack_NodeFilter Importer_ on node %d\n=======================================\n",(gpid == 0 ? 0: 1)); fflush(stdout);
     cout << *Importer_ << endl;
     if (lpid == 0)
     printf("=======================================\nIfpack_NodeFilter colmap on node %d\n=======================================\n",(gpid == 0 ? 0: 1)); fflush(stdout);
     cout << *colMap_ << endl;
-    //printf("\n\n>>>>>>>>>>>>>>>>>>>>> import <<<<<<<<<<<<<<<<<<<<<<<<<\n\n");
+*/
   }
 
 } //Ifpack_NodeFilter() ctor
-
-//==============================================================================
-Ifpack_NodeFilter::~Ifpack_NodeFilter() {
-  if (Importer_!=0) delete Importer_;
-  Importer_=0;
-  if (Exporter_!=0) delete Exporter_;
-  Exporter_=0;
-};
-
-bool IFPACK_DOING_MATVEC=false;
 
 //==============================================================================
 int Ifpack_NodeFilter::
@@ -312,7 +299,8 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
     EPETRA_CHK_ERR(-1); // Need same number of vectors in each MV
   }
 
-  UpdateImportVector(NumVectors); // Make sure Import and Export Vectors are compatible
+  // Make sure Import and Export Vectors are compatible
+  UpdateImportVector(NumVectors);
   UpdateExportVector(NumVectors);
 
   double ** Xp = (double**) X.Pointers();
@@ -354,17 +342,8 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 //==============================================================================
 
 void Ifpack_NodeFilter::UpdateImportVector(int NumVectors) const {
-  if(Importer() != 0) {
-    if(ImportVector_ != 0) {
-      if(ImportVector_->NumVectors() != NumVectors) {
-     delete ImportVector_;
-     ImportVector_= 0;
-      }
-    }
-    if(ImportVector_ == 0)
-      ImportVector_ = new Epetra_MultiVector(Importer_->TargetMap(),NumVectors); // Create import vector if needed
-  }
-  return;
+  if(ImportVector_ == null || ImportVector_->NumVectors() != NumVectors)
+    ImportVector_ = rcp(new Epetra_MultiVector(Importer_->TargetMap(),NumVectors));
 }
 
 //=======================================================================================================
@@ -381,6 +360,10 @@ void Ifpack_NodeFilter::UpdateExportVector(int NumVectors) const {
       ExportVector_ = new Epetra_MultiVector(Exporter_->SourceMap(),NumVectors); // Create Export vector if needed
   }
   return;
+/*
+  if(ExportVector_ == null || ExportVector_->NumVectors() != NumVectors)
+    ExportVector_ = rcp(new Epetra_MultiVector(Exporter_->SourceMap(),NumVectors));
+*/
 }
 
 //=======================================================================================================

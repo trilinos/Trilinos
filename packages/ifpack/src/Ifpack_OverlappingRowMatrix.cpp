@@ -302,9 +302,7 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
       lengths[i]                    starting position for pid i's entries in ghosts, round, and owningpid
       lengths[i+1] - lengths[i]     #entries belonging to pid i in said vectors
     */
-    //Teuchos::RCP<int> cullList;
     int *cullList;
-    //Teuchos::RCP<int> wpList;  // winning pid list
     int ncull;
     int mypid = nodeComm->MyPID();
 
@@ -321,10 +319,6 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
       }
       int total = lengths[nodeComm->NumProc()];
 
-      //Teuchos::RCP<int> ghosts = Teuchos::rcp( new int[total] );
-      //Teuchos::RCP<int> round  = Teuchos::rcp(new int[total]);
-      //Teuchos::RCP<int> owningpid  = Teuchos::rcp(new int[total]);
-      //for (int i=0; i<total; i++) (&*ghosts)[i] = -9;
       int* ghosts = new int[total];
       for (int i=0; i<total; i++) ghosts[i] = -9;
       int *round  = new int[total];
@@ -332,17 +326,12 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
 
       for (int i=1; i<nodeComm->NumProc(); i++) {
         int count = lengths[i+1] - lengths[i];
-        //MPI_Recv( (&*ghosts)+lengths[i], count, MPI_INT, i, MPI_ANY_TAG, nodeComm->Comm(), &status);
-        //MPI_Recv( (&*round)+lengths[i], count, MPI_INT, i, MPI_ANY_TAG, nodeComm->Comm(), &status);
         MPI_Recv( ghosts+lengths[i], count, MPI_INT, i, MPI_ANY_TAG, nodeComm->Comm(), &status);
         MPI_Recv( round+lengths[i], count, MPI_INT, i, MPI_ANY_TAG, nodeComm->Comm(), &status);
       }
 
       // put in pid 0's info
       for (int i=0; i<lengths[1]; i++) {
-        //(&*ghosts)[i] = gids[i];
-        //(&*round)[i] = votes[i];
-        //(&*owningpid)[i] = 0;
         ghosts[i] = gids[i];
         round[i] = votes[i];
         owningpid[i] = 0;
@@ -351,26 +340,21 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
       // put in the pid associated with each ghost
       for (int j=1; j<nodeComm->NumProc(); j++) {
         for (int i=lengths[j]; i<lengths[j+1]; i++) {
-          //(&*owningpid)[i] = j;
           owningpid[i] = j;
         }
       }
 
       // sort everything based on the ghost gids
       int* roundpid[2];
-      //roundpid[0] = &*round; roundpid[1] = &*owningpid;
       roundpid[0] = round; roundpid[1] = owningpid;
       Epetra_Util epetraUtil;
-      //epetraUtil.Sort(true,total,&*ghosts,0,0,2,roundpid);
       epetraUtil.Sort(true,total,ghosts,0,0,2,roundpid);
 
       //set up arrays that get sent back to node buddies and that tell them what ghosts to cull
       int nlosers[nodeComm->NumProc()];
-      //Teuchos::RCP<int> losers[nodeComm->NumProc()];
       int* losers[nodeComm->NumProc()];
       for (int i=0; i<nodeComm->NumProc(); i++) {
         nlosers[i] = 0;
-        //losers[i] = Teuchos::rcp(new int[ lengths[i+1]-lengths[i] ]);
         losers[i] = new int[ lengths[i+1]-lengths[i] ];
       }
 
@@ -384,27 +368,26 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
                    // TODO to break ties randomly
 
       for (int i=1; i<total; i++) {
-        //if ((&*ghosts)[i] == (&*ghosts)[i-1]) {
         if (ghosts[i] == ghosts[i-1]) {
           int idx = i; // pid associated with idx is current "loser"
-          //if ((&*round)[i] > (&*round)[max]) {
           if (round[i] > round[max]) {
             idx = max;
             max=i;
           }
-          //int j = (&*owningpid)[idx];
           int j = owningpid[idx];
-          //(&*(losers[j]))[nlosers[j]++] = (&*ghosts)[idx];
           losers[j][nlosers[j]++] = ghosts[idx];
         } else {
           max=i;
         }
       } //for (int i=1; i<total; i++)
 
+      delete [] round;
+      delete [] ghosts;
+      delete [] owningpid;
+
       // send the arrays of ghost GIDs to be culled back to the respective node buddies
       for (int i=1; i<nodeComm->NumProc(); i++) {
         MPI_Send( nlosers+i, 1, MPI_INT, i, 8675, nodeComm->Comm());
-        //MPI_Send( &*(losers[i]), nlosers[i], MPI_INT, i, 8675, nodeComm->Comm());
         MPI_Send( losers[i], nlosers[i], MPI_INT, i, 8675, nodeComm->Comm());
       }
 
@@ -412,12 +395,12 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
       //Could we stick this info into gids and votes, since neither is being used anymore?
       //TODO Instead of using "losers" arrays, just use "cullList" as in the else clause
       ncull = nlosers[0];
-      //cullList = Teuchos::rcp(new int[ncull]);
       cullList = new int[ncull+1];
       for (int i=0; i<nlosers[0]; i++)
-        //(&*cullList)[i] = (&*(losers[0]))[i];
-        //(&*cullList)[i] = losers[0][i];
         cullList[i] = losers[0][i];
+
+      for (int i=0; i<nodeComm->NumProc(); i++)
+        delete [] losers[i];
 
     } else { //everyone but pid 0
 
@@ -430,8 +413,6 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
       // receive the ghost GIDs that should not be imported (subset of the list sent off just above)
       MPI_Status status;
       MPI_Recv( &ncull, 1, MPI_INT, 0, 8675, nodeComm->Comm(), &status);
-      //cullList = Teuchos::rcp(new int[ncull]);
-      //MPI_Recv( &*cullList, ncull, MPI_INT, 0, 8675, nodeComm->Comm(), &status);
       cullList = new int[ncull+1];
       MPI_Recv( cullList, ncull, MPI_INT, 0, 8675, nodeComm->Comm(), &status);
     }
@@ -448,7 +429,6 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
     catch(...) {
       printf("pid %d: In OverlappingRowMatrix ctr, problem removing ghost elt %d from ghostTable\n",
              Comm().MyPID(),cullList[i]);
-             //Comm().MyPID(),(&*cullList)[i]);
       fflush(stdout);
     }
     }//for
@@ -573,16 +553,6 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
     colList[nc+i] = colMapElements[i];
   // column map for the overlapped matrix (local + overlap)
   colMap_ = rcp( new Epetra_Map(-1, A().RowMatrixColMap().NumMyElements() + colMapElements.size(), &colList[0], 0, Comm()) );
-/*
-  // this seg faults
-  vector<int> colList( NumMyRowsA_ + colMapElements.size());
-  for (int i = 0 ; i < NumMyRowsA_; i++)
-    colList[i] = A().RowMatrixRowMap().GID(i);
-  for (int i = 0 ; i < (int)colMapElements.size() ; i++)
-    colList[NumMyRowsA_+i] = colMapElements[i];
-  // column map for the overlapped matrix (local + overlap)
-  colMap_ = rcp( new Epetra_Map(-1, A().RowMatrixColMap().NumMyElements() + colMapElements.size(), &colList[0], 0, Comm()) );
-*/
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //++++ start of sort
@@ -591,8 +561,8 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
   // different from that of Matrix.
   try {
     // build row map based on the local communicator.  We need this temporarily to build the column map.
-    //<Epetra_Map> nodeMap_ = rcp( new Epetra_Map(-1,NumMyRowsA_ + ghostElements.size(),&rowList[0],0,*nodeComm) );
-    Epetra_Map* nodeMap_ = new Epetra_Map(-1,NumMyRowsA_ + ghostElements.size(),&rowList[0],0,*nodeComm) ;
+    RCP<Epetra_Map> nodeMap_ = rcp( new Epetra_Map(-1,NumMyRowsA_ + ghostElements.size(),&rowList[0],0,*nodeComm) );
+    //Epetra_Map* nodeMap_ = new Epetra_Map(-1,NumMyRowsA_ + ghostElements.size(),&rowList[0],0,*nodeComm) ;
     const Epetra_Map &globColMap = *colMap_;
     int numMyElts = globColMap.NumMyElements();
 
@@ -610,12 +580,6 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
     tt[0] = &*myGlobalElts;
     Util.Sort(true, numMyElts, &*pidList, 0, (double**)0, 1, tt);
 
-/*
-    printf("~~~~~~~~\nlpid %d (node %d)\n~~~~~~~~\n",nodeComm->MyPID(),ML_NODE_ID); 
-    for (int i=0; i<numMyElts; i++) printf("   %d:  %d\n",(&*myGlobalElts)[i],(&*pidList)[i]);
-    fflush(stdout);
-*/
-
     // for each remote pid, sort the entries in ascending order
     // don't sort the local pid's entries
     int localStart=0;
@@ -627,12 +591,6 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
         Util.Sort(true, i-localStart, (&*myGlobalElts)+localStart, 0, 0, 0, 0);
       localStart = i;
     }
-
-/*
-    printf("!!!!!!!!\nlpid %d (node %d)\n!!!!!!!!\n",nodeComm->MyPID(),ML_NODE_ID); 
-    for (int i=0; i<numMyElts; i++) printf("   %d:  %d\n",(&*myGlobalElts)[i],(&*pidList)[i]);
-    fflush(stdout);
-*/
 
     // now move the local entries to the front of the list
     localStart=0;
@@ -668,14 +626,6 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
       (&*mySortedGlobalElts)[i] = (&*myGlobalElts)[i];
       (&*mySortedPidList)[i] = (&*pidList)[i];
     }
-
-/*
-    printf("@@@@@@@@\nlpid %d (node %d)\n@@@@@@@@\n",nodeComm->MyPID(),ML_NODE_ID); 
-    for (int i=0; i<numMyElts; i++) printf("   %d:  %d\n",(&*mySortedGlobalElts)[i],(&*mySortedPidList)[i]);
-    fflush(stdout);
-
-    sleep(2);
-*/
 
     //colMap_ = Teuchos::rcp( new Epetra_Map(-1,numMyElts,&*mySortedGlobalElts,globColMap.IndexBase(),*SubComm_) );
     colMap_ = Teuchos::rcp( new Epetra_Map(-1,numMyElts,&*mySortedGlobalElts,globColMap.IndexBase(),Comm()) );
@@ -749,10 +699,6 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
 
   // now build the map corresponding to all the external nodes
   // (with respect to A().RowMatrixRowMap().
-/*
-  printf("**************>> pid %d: ghostElements.size() = %d\n\n",Comm().MyPID(),ghostElements.size()); fflush(stdout);
-  sleep(1);
-*/
   ExtMap_ = Teuchos::rcp( new Epetra_Map(-1,ghostElements.size(), &ghostElements[0],0,Comm()) );
   ExtMatrix_ = Teuchos::rcp( new Epetra_CrsMatrix(Copy,*ExtMap_,*colMap_,0) ); 
 
@@ -775,20 +721,10 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
 
   // fix indices for overlapping matrix
   NumMyRowsB_ = B().NumMyRows();
-/*
-  printf("pid %d: \n\n------> NumMyRowsB_ = %d\n\n",Comm().MyPID(),NumMyRowsB_);
-  printf("pid %d: \n\n------> NumMyRowsA_ = %d\n\n",Comm().MyPID(),NumMyRowsA_);
-  fflush(stdout);
-  sleep(2);
-*/
   NumMyRows_ = NumMyRowsA_ + NumMyRowsB_;  //TODO is this wrong for a subdomain on >1 processor? // should be ok
   //NumMyCols_ = NumMyRows_;  //TODO is this wrong for a subdomain on >1 processor?  // YES!!!
   //NumMyCols_ = A().NumMyCols() + B().NumMyCols();
   NumMyCols_ = B().NumMyCols();
-/*
-  printf(">>>>>>>>> pid %d: NumMyRows_ = %d, NumMyCols_ = %d (%d + %d) <<<<<<<<<<<\n",
-         Comm().MyPID(), NumMyRows_,NumMyCols_, A().NumMyCols(), B().NumMyCols());
-*/
 
   /*FIXME*/ //somehow B's NumMyCols is the entire subdomain (local + overlap)
 
