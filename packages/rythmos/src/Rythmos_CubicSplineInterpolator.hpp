@@ -32,6 +32,7 @@
 #include "Rythmos_InterpolatorBase.hpp"
 #include "Teuchos_Ptr.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 
 namespace Rythmos {
@@ -101,6 +102,9 @@ public:
   /** \brief . */
   RCP<ParameterList> unsetParameterList();
 
+  /** \brief. */
+  RCP<const Teuchos::ParameterList> getValidParameters() const;
+
 private:
 
 
@@ -137,6 +141,7 @@ void computeCubicSplineCoeff(
     const Ptr<CubicSplineCoeff<Scalar> > & coeffPtr
     )
 {
+  using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   TEST_FOR_EXCEPTION( 
       (data.size() < 2), std::logic_error,
@@ -259,6 +264,7 @@ void evaluateCubicSpline(
     const Ptr<Thyra::VectorBase<Scalar> >& Spp = Teuchos::null
     )
 {
+  using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   // Assert preconditions:
   validateCubicSplineCoeff<Scalar>(coeff);
@@ -342,6 +348,7 @@ void CubicSplineInterpolator<Scalar>::interpolate(
   ) const
 {
   using Teuchos::as;
+  using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   TEST_FOR_EXCEPTION( nodesSet_ == false, std::logic_error,
@@ -472,14 +479,10 @@ void CubicSplineInterpolator<Scalar>::setParameterList(
   RCP<ParameterList> const& paramList
   )
 {
-  // 2007/12/06: rabartl: ToDo: Validate this parameter list!
+  TEST_FOR_EXCEPT(is_null(paramList));
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters());
   parameterList_ = paramList;
-  int outputLevel = parameterList_->get( "outputLevel", int(-1) );
-  outputLevel = std::min(std::max(outputLevel,-1),4);
-  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
-  // 2007/05/18: rabartl: ToDo: Replace with standard "Verbose Object"
-  // sublist! and validate the sublist!
-
+  Teuchos::readVerboseObjectSublist(&*parameterList_,this);
 }
 
 
@@ -500,6 +503,17 @@ CubicSplineInterpolator<Scalar>::unsetParameterList()
   return(temp_param_list);
 }
 
+template<class Scalar>
+RCP<const Teuchos::ParameterList> CubicSplineInterpolator<Scalar>::getValidParameters() const
+{
+  static RCP<Teuchos::ParameterList> validPL;
+  if (is_null(validPL)) {
+    RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    Teuchos::setupVerboseObjectSublist(&*pl);
+    validPL = pl;
+  }
+  return (validPL);
+}
 
 
 } // namespace Rythmos

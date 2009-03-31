@@ -35,6 +35,7 @@
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_DataStore.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
+#include "Rythmos_InterpolatorAcceptingObjectBase.hpp"
 #include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Rythmos_SingleResidualModelEvaluator.hpp"
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
@@ -58,7 +59,9 @@ namespace Rythmos {
  *
  */
 template<class Scalar>
-class ThetaStepper : virtual public SolverAcceptingStepperBase<Scalar>
+class ThetaStepper : 
+  virtual public SolverAcceptingStepperBase<Scalar>,
+  virtual public InterpolatorAcceptingObjectBase<Scalar>
 {
 public:
   
@@ -77,11 +80,23 @@ public:
     const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
     );
   
-  /** \brief . */
-  void setInterpolator(RCP<InterpolatorBase<Scalar> > interpolator);
+  /** \brief Redefined from InterpolatorAcceptingObjectBase */
+  //@{
   
   /** \brief . */
-  RCP<InterpolatorBase<Scalar> > unsetInterpolator();
+  void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator);
+
+  /** \brief . */
+  RCP<InterpolatorBase<Scalar> >
+    getNonconstInterpolator();
+
+  /** \brief . */
+  RCP<const InterpolatorBase<Scalar> >
+    getInterpolator() const;
+  
+  /** \brief . */
+  RCP<InterpolatorBase<Scalar> > unSetInterpolator();
+  //@}
 
   /** \brief . */
   void setTheta(const Scalar theta);
@@ -307,7 +322,7 @@ ThetaStepper<Scalar>::ThetaStepper(
 
 template<class Scalar>
 void ThetaStepper<Scalar>::setInterpolator(
-  RCP<InterpolatorBase<Scalar> > interpolator
+  const RCP<InterpolatorBase<Scalar> >& interpolator
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -317,10 +332,24 @@ void ThetaStepper<Scalar>::setInterpolator(
   isInitialized_ = false;
 }
 
+template<class Scalar>
+RCP<InterpolatorBase<Scalar> >
+  ThetaStepper<Scalar>::getNonconstInterpolator()
+{
+  return interpolator_;
+}
+
+template<class Scalar>
+RCP<const InterpolatorBase<Scalar> >
+  ThetaStepper<Scalar>::getInterpolator() const
+{
+  return interpolator_;
+}
+
 
 template<class Scalar>
 RCP<InterpolatorBase<Scalar> >
-ThetaStepper<Scalar>::unsetInterpolator()
+ThetaStepper<Scalar>::unSetInterpolator()
 {
   RCP<InterpolatorBase<Scalar> > temp_interpolator = interpolator_;
   interpolator_ = Teuchos::null;

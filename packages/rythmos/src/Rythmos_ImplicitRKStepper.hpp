@@ -33,7 +33,6 @@
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_StepperHelpers.hpp"
 #include "Rythmos_DataStore.hpp"
-#include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_SingleResidualModelEvaluator.hpp"
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
 #include "Rythmos_ImplicitRKModelEvaluator.hpp"
@@ -57,7 +56,8 @@ namespace Rythmos {
 
 /** \brief . */
 template<class Scalar>
-class ImplicitRKStepper : virtual public SolverAcceptingStepperBase<Scalar>
+class ImplicitRKStepper : 
+  virtual public SolverAcceptingStepperBase<Scalar>
 {
 public:
   
@@ -95,15 +95,9 @@ public:
   // internal RKBT detection to allow testing of 1-stage RKBTs as both fully
   // implicit RK and as DIRK methods.
   void setDirk(bool isDirk);
-  
-  /** \brief . */
-  void setInterpolator(RCP<InterpolatorBase<Scalar> > interpolator);
-  
-  /** \brief . */
-  RCP<InterpolatorBase<Scalar> > unsetInterpolator();
 
   //@}
-
+  
   /** \name Overridden from SolverAcceptingStepperBase */
   //@{
 
@@ -321,25 +315,6 @@ void ImplicitRKStepper<Scalar>::initialize(
   } 
 
 }
-
-
-template<class Scalar>
-void ImplicitRKStepper<Scalar>::setInterpolator(
-  RCP<InterpolatorBase<Scalar> > interpolator
-  )
-{
-  TEST_FOR_EXCEPT(true);
-}
-
-
-template<class Scalar>
-RCP<InterpolatorBase<Scalar> >
-ImplicitRKStepper<Scalar>::unsetInterpolator()
-{
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
-}
-
 
 // Overridden from SolverAcceptingStepperBase
 

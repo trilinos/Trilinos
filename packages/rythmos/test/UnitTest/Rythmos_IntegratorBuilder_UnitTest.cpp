@@ -39,7 +39,7 @@ namespace Rythmos {
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, construct ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-  TEST_EQUALITY_CONST( is_null(ib), false );
+  TEST_ASSERT( !is_null(ib) );
   TEST_NOTHROW( ib = Teuchos::null );
 }
 
@@ -64,6 +64,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, constructFoolish ) {
 
   RCP<FoolishErrWtVecCalc> fewvc;
   TEST_NOTHROW( fewvc = rcp(new FoolishErrWtVecCalc()) );
+
+  RCP<FoolishInterpolator> fInterp;
+  TEST_NOTHROW( fInterp = rcp(new FoolishInterpolator()) );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegratorFactory ) {
@@ -440,6 +443,80 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setErrWtVecCalcFactory_bad ) {
 #endif // TEUCHOS_DEBUG
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolatorFactory ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  ib->setInterpolatorFactory(
+      Teuchos::abstractFactoryStd< InterpolatorBase<double>, FoolishInterpolator >(),
+      "Foolish Interpolator"
+      );
+  ib->setInterpolatorFactory(
+      Teuchos::abstractFactoryStd< InterpolatorBase<double>, LinearInterpolator<double> >(),
+      "Other Interpolator"
+      );
+
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*ib->getValidParameters());
+  pl->sublist("Integrator Settings").sublist("Integrator Selection").set("Integrator Type","Default Integrator");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
+  pl->sublist("Stepper Settings").sublist("Interpolator Selection").set("Interpolator Type","Foolish Interpolator");
+  pl->sublist("Interpolation Buffer Settings").sublist("Interpolator Selection").set("Interpolator Type","Cubic Spline Interpolator");
+  ib->setParameterList(pl);
+  
+  // Model:
+  RCP<SinCosModel> model = sinCosModel(true);
+  // IC:
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  // Nonlinear Solver:
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
+
+  // Create Integrator
+  RCP<IntegratorBase<double> > integrator;
+
+  // Create Stepper
+  integrator = ib->create(model,ic,nlSolver);
+  RCP<const StepperBase<double> > stepper = integrator->getStepper();
+  RCP<const BackwardEulerStepper<double> > beStepper = 
+    Teuchos::rcp_dynamic_cast<const BackwardEulerStepper<double> >(stepper,true);
+  // First test that BackwardEuler Stepper got the Foolish Interpolator
+  RCP<const InterpolatorBase<double> > interp = beStepper->getInterpolator();
+  RCP<const FoolishInterpolator> fInterp =
+    Teuchos::rcp_dynamic_cast<const FoolishInterpolator>(interp,false);
+  TEST_ASSERT( !is_null(fInterp) );
+
+  // Second test that InterpolationBuffer got the Cubic Spline Interpolator
+  RCP<DefaultIntegrator<double> > dIntegrator = 
+    Teuchos::rcp_dynamic_cast<DefaultIntegrator<double> >(integrator,true);
+  RCP<const InterpolationBufferBase<double> > tInterp = dIntegrator->getTrailingInterpolationBuffer();
+  RCP<const InterpolationBuffer<double> > interpBuffer = 
+    Teuchos::rcp_dynamic_cast<const InterpolationBuffer<double> >(tInterp,true);
+  RCP<const InterpolatorBase<double> > interpolator = interpBuffer->getInterpolator();
+  RCP<const CubicSplineInterpolator<double> > cInterp = 
+    Teuchos::rcp_dynamic_cast<const CubicSplineInterpolator<double> >(interpolator,false);
+  TEST_ASSERT( !is_null(cInterp) );
+
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolatorFactory_bad ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+#ifdef TEUCHOS_DEBUG
+  TEST_THROW(
+      ib->setInterpolatorFactory(
+        Teuchos::abstractFactoryStd< InterpolatorBase<double>, FoolishInterpolator >(),
+        "Linear Interpolator"
+        ),
+      std::logic_error
+      );
+#else // TEUCHOS_DEBUG
+  TEST_NOTHROW(
+      ib->setInterpolatorFactory(
+        Teuchos::abstractFactoryStd< InterpolatorBase<double>, FoolishInterpolator >(),
+        "Linear Interpolator"
+        )
+      );
+  TEST_THROW( ib->getValidParameters(), std::logic_error );
+#endif // TEUCHOS_DEBUG
+}
+
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ExplicitRK ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
@@ -451,16 +528,16 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ExplicitRK ) {
   ib->setParameterList(pl);
   RCP<Thyra::NonlinearSolverBase<double> > nlSolver; // null
   RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
-  TEST_EQUALITY_CONST( is_null(integrator), false );
+  TEST_ASSERT( !is_null(integrator) );
   {
     RCP<const StepperBase<double> > stepper_out = integrator->getStepper();
-    TEST_EQUALITY_CONST( is_null(stepper_out), false );
+    TEST_ASSERT( !is_null(stepper_out) );
     RCP<const ExplicitRKStepper<double> > erkStepper = Teuchos::rcp_dynamic_cast<const ExplicitRKStepper<double> >(stepper_out,false);
-    TEST_EQUALITY_CONST( is_null(erkStepper), false );
+    TEST_ASSERT( !is_null(erkStepper) );
     RCP<const Thyra::ModelEvaluator<double> > model_out = stepper_out->getModel();
-    TEST_EQUALITY_CONST( is_null(model_out), false );
+    TEST_ASSERT( !is_null(model_out) );
     RCP<const SinCosModel> sinCosModel = Teuchos::rcp_dynamic_cast<const SinCosModel>(model_out,false);
-    TEST_EQUALITY_CONST( is_null(sinCosModel), false );
+    TEST_ASSERT( !is_null(sinCosModel) );
   }
 }
 
@@ -475,7 +552,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ForwardEuler ) {
   ib->setParameterList(pl);
   RCP<Thyra::NonlinearSolverBase<double> > nlSolver; // null
   RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
-  TEST_EQUALITY_CONST( is_null(integrator), false );
+  TEST_ASSERT( !is_null(integrator) );
   {
     RCP<const StepperBase<double> > stepper_out = integrator->getStepper();
     TEST_ASSERT( !is_null(stepper_out) );
@@ -495,20 +572,20 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitRK ) {
   ib->setParameterList(pl);
   RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
   RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
-  TEST_EQUALITY_CONST( is_null(integrator), false );
+  TEST_ASSERT( !is_null(integrator) );
   {
     RCP<const StepperBase<double> > stepper_out = integrator->getStepper();
-    TEST_EQUALITY_CONST( is_null(stepper_out), false );
+    TEST_ASSERT( !is_null(stepper_out) );
     RCP<const ImplicitRKStepper<double> > irkStepper = Teuchos::rcp_dynamic_cast<const ImplicitRKStepper<double> >(stepper_out,false);
-    TEST_EQUALITY_CONST( is_null(irkStepper), false );
+    TEST_ASSERT( !is_null(irkStepper) );
     RCP<const Thyra::ModelEvaluator<double> > model_out = stepper_out->getModel();
-    TEST_EQUALITY_CONST( is_null(model_out), false );
+    TEST_ASSERT( !is_null(model_out) );
     RCP<const SinCosModel> sinCosModel = Teuchos::rcp_dynamic_cast<const SinCosModel>(model_out,false);
-    TEST_EQUALITY_CONST( is_null(sinCosModel), false );
+    TEST_ASSERT( !is_null(sinCosModel) );
     RCP<const Thyra::NonlinearSolverBase<double> > nlSolver_out = irkStepper->getSolver();
-    TEST_EQUALITY_CONST( is_null(nlSolver_out), false );
+    TEST_ASSERT( !is_null(nlSolver_out) );
     RCP<const TimeStepNonlinearSolver<double> > tsnlSolver = Teuchos::rcp_dynamic_cast<const TimeStepNonlinearSolver<double> >(nlSolver_out, false);
-    TEST_EQUALITY_CONST( is_null(tsnlSolver), false );
+    TEST_ASSERT( !is_null(tsnlSolver) );
   }
 }
 
@@ -520,30 +597,32 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->setParameters(*(ib->getValidParameters()));
+    pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","Interpolation Buffer");
+    pl->sublist("Interpolation Buffer Settings").sublist("Interpolator Selection").set("Interpolator Type","Cubic Spline Interpolator");
     pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
     ib->setParameterList(pl);
     RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
-    TEST_EQUALITY_CONST( is_null(integrator), false );
+    TEST_ASSERT( !is_null(integrator) );
     
     // Stepper = Implicit BDF
     RCP<const StepperBase<double> > stepper_out = integrator->getStepper();
-    TEST_EQUALITY_CONST( is_null(stepper_out), false );
+    TEST_ASSERT( !is_null(stepper_out) );
     RCP<const ImplicitBDFStepper<double> > ibdfStepper = Teuchos::rcp_dynamic_cast<const ImplicitBDFStepper<double> >(stepper_out,false);
-    TEST_EQUALITY_CONST( is_null(ibdfStepper), false );
+    TEST_ASSERT( !is_null(ibdfStepper) );
     // Model = SinCosModel
     RCP<const Thyra::ModelEvaluator<double> > model_out = stepper_out->getModel();
-    TEST_EQUALITY_CONST( is_null(model_out), false );
+    TEST_ASSERT( !is_null(model_out) );
     RCP<const SinCosModel> sinCosModel = Teuchos::rcp_dynamic_cast<const SinCosModel>(model_out,false);
-    TEST_EQUALITY_CONST( is_null(sinCosModel), false );
+    TEST_ASSERT( !is_null(sinCosModel) );
     // Solver = TimeStepNonlinearSolver
     RCP<const Thyra::NonlinearSolverBase<double> > nlSolver_out = ibdfStepper->getSolver();
-    TEST_EQUALITY_CONST( is_null(nlSolver_out), false );
+    TEST_ASSERT( !is_null(nlSolver_out) );
     RCP<const TimeStepNonlinearSolver<double> > tsnlSolver = Teuchos::rcp_dynamic_cast<const TimeStepNonlinearSolver<double> >(nlSolver_out, false);
-    TEST_EQUALITY_CONST( is_null(tsnlSolver), false );
+    TEST_ASSERT( !is_null(tsnlSolver) );
     // Step Control = ImplicitBDFStepperStepControl
     RCP<const StepControlStrategyBase<double> > stepControl_out = ibdfStepper->getStepControlStrategy();
-    TEST_EQUALITY_CONST( is_null(stepControl_out), false );
+    TEST_ASSERT( !is_null(stepControl_out) );
     RCP<const ImplicitBDFStepperStepControl<double> > ibdfStepControl = Teuchos::rcp_dynamic_cast<const ImplicitBDFStepperStepControl<double> >(stepControl_out, false);
     TEST_ASSERT( !is_null(ibdfStepControl) );
     // ErrWtVecCalc = ImplicitBDFStepperErrWtVecCalc
@@ -553,17 +632,23 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     TEST_ASSERT( !is_null(myIBDFErrWtVecCalc) );
     // Integrator = DefaultIntegrator
     RCP<DefaultIntegrator<double> > defInt = Teuchos::rcp_dynamic_cast<DefaultIntegrator<double> >(integrator,false);
-    TEST_EQUALITY_CONST( is_null(defInt), false );
+    TEST_ASSERT( !is_null(defInt) );
     // Integration Control = SimpleIntegrationControlStrategy
     RCP<const IntegrationControlStrategyBase<double> > integrationControl_out = defInt->getIntegrationControlStrategy();
-    TEST_EQUALITY_CONST( is_null(integrationControl_out), false );
+    TEST_ASSERT( !is_null(integrationControl_out) );
     RCP<const SimpleIntegrationControlStrategy<double> > simpleIControl = Teuchos::rcp_dynamic_cast<const SimpleIntegrationControlStrategy<double> >(integrationControl_out, false);
-    TEST_EQUALITY_CONST( is_null(simpleIControl), false );
+    TEST_ASSERT( !is_null(simpleIControl) );
     // TrailingInterpolationBuffer = InterpolationBuffer
     RCP<const InterpolationBufferBase<double> > interpolationBuffer = defInt->getTrailingInterpolationBuffer();
-    TEST_EQUALITY_CONST( is_null(interpolationBuffer), false );
+    TEST_ASSERT( !is_null(interpolationBuffer) );
     RCP<const InterpolationBuffer<double> > defaultInterpolationBuffer = Teuchos::rcp_dynamic_cast<const InterpolationBuffer<double> >(interpolationBuffer, false);
-    TEST_EQUALITY_CONST( is_null(defaultInterpolationBuffer), false );
+    TEST_ASSERT( !is_null(defaultInterpolationBuffer) );
+    // Interpolator = CubicSplineInterpolator
+    RCP<const InterpolatorBase<double> > interp = defaultInterpolationBuffer->getInterpolator();
+    TEST_ASSERT( !is_null(interp) );
+    RCP<const CubicSplineInterpolator<double> > cInterp = 
+      Teuchos::rcp_dynamic_cast<const CubicSplineInterpolator<double> >(interp,false);
+    TEST_ASSERT( !is_null(cInterp) );
   }
   {
     // Test that we can set Integration Control Strategy to None.
@@ -577,13 +662,13 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     ib->setParameterList(pl);
     RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
-    TEST_EQUALITY_CONST( is_null(integrator), false );
+    TEST_ASSERT( !is_null(integrator) );
     // Integrator = DefaultIntegrator
     RCP<DefaultIntegrator<double> > defInt = Teuchos::rcp_dynamic_cast<DefaultIntegrator<double> >(integrator,false);
-    TEST_EQUALITY_CONST( is_null(defInt), false );
+    TEST_ASSERT( !is_null(defInt) );
     // Integration Control = None
     RCP<const IntegrationControlStrategyBase<double> > integrationControl_out = defInt->getIntegrationControlStrategy();
-    TEST_EQUALITY_CONST( is_null(integrationControl_out), true );
+    TEST_ASSERT( is_null(integrationControl_out) );
   }
   {
     // Test that we can set Step Control Strategy to None
@@ -597,15 +682,15 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     ib->setParameterList(pl);
     RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
-    TEST_EQUALITY_CONST( is_null(integrator), false );
+    TEST_ASSERT( !is_null(integrator) );
     // Stepper = Implicit BDF
     RCP<const StepperBase<double> > stepper_out = integrator->getStepper();
-    TEST_EQUALITY_CONST( is_null(stepper_out), false );
+    TEST_ASSERT( !is_null(stepper_out) );
     RCP<const ImplicitBDFStepper<double> > ibdfStepper = Teuchos::rcp_dynamic_cast<const ImplicitBDFStepper<double> >(stepper_out,false);
-    TEST_EQUALITY_CONST( is_null(ibdfStepper), false );
+    TEST_ASSERT( !is_null(ibdfStepper) );
     // Step Control = None
     RCP<const StepControlStrategyBase<double> > stepControl_out = ibdfStepper->getStepControlStrategy();
-    TEST_EQUALITY_CONST( is_null(stepControl_out), true );
+    TEST_ASSERT( is_null(stepControl_out) );
   }
   {
     // Test that we can set TrailingInterpolationBuffer to None
@@ -619,13 +704,41 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     ib->setParameterList(pl);
     RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
     RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
-    TEST_EQUALITY_CONST( is_null(integrator), false );
+    TEST_ASSERT( !is_null(integrator) );
     // Trailing Interpolation Buffer = null
     RCP<TrailingInterpolationBufferAcceptingIntegratorBase<double> > tibaIntegrator = 
       Teuchos::rcp_dynamic_cast<TrailingInterpolationBufferAcceptingIntegratorBase<double> >(integrator,false);
     TEST_ASSERT( !is_null(tibaIntegrator) );
     RCP<const InterpolationBufferBase<double> > trailingIB = tibaIntegrator->getTrailingInterpolationBuffer();
-    TEST_EQUALITY_CONST( is_null(trailingIB), true );
+    TEST_ASSERT( is_null(trailingIB) );
+  }
+  {
+    // Test that we can set the Interpolator to None
+    RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+    RCP<SinCosModel> model = sinCosModel(true);
+    Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->setParameters(*(ib->getValidParameters()));
+    pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
+    pl->sublist("Interpolation Buffer Settings").sublist("Interpolator Selection").set("Interpolator Type","None");
+    ib->setParameterList(pl);
+    RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
+    RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+    TEST_ASSERT( !is_null(integrator) );
+    // Trailing Interpolation Buffer = null
+    RCP<TrailingInterpolationBufferAcceptingIntegratorBase<double> > tibaIntegrator = 
+      Teuchos::rcp_dynamic_cast<TrailingInterpolationBufferAcceptingIntegratorBase<double> >(integrator,false);
+    TEST_ASSERT( !is_null(tibaIntegrator) );
+    RCP<const InterpolationBufferBase<double> > trailingIB = tibaIntegrator->getTrailingInterpolationBuffer();
+    TEST_ASSERT( !is_null(trailingIB) );
+    RCP<const InterpolationBuffer<double> > defaultIB = 
+      Teuchos::rcp_dynamic_cast<const InterpolationBuffer<double> >(trailingIB,false);
+    TEST_ASSERT( !is_null(defaultIB) );
+    RCP<const InterpolatorBase<double> > interp = defaultIB->getInterpolator();
+    TEST_ASSERT( !is_null(interp) ); // Default interpolator is created in this case
+    RCP<const LinearInterpolator<double> > lInterp = 
+      Teuchos::rcp_dynamic_cast<const LinearInterpolator<double> >(interp,false);
+    TEST_ASSERT( !is_null(lInterp) );
   }
 }
 
@@ -636,23 +749,28 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_BackwardEuler ) {
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*(ib->getValidParameters()));
   pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
+  pl->sublist("Stepper Settings").sublist("Interpolator Selection").set("Interpolator Type","Cubic Spline Interpolator");
   ib->setParameterList(pl);
   RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
   RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
-  TEST_EQUALITY_CONST( is_null(integrator), false );
+  TEST_ASSERT( !is_null(integrator) );
   {
     RCP<const StepperBase<double> > stepper_out = integrator->getStepper();
-    TEST_EQUALITY_CONST( is_null(stepper_out), false );
+    TEST_ASSERT( !is_null(stepper_out) );
     RCP<const BackwardEulerStepper<double> > beStepper = Teuchos::rcp_dynamic_cast<const BackwardEulerStepper<double> >(stepper_out,false);
-    TEST_EQUALITY_CONST( is_null(beStepper), false );
+    TEST_ASSERT( !is_null(beStepper) );
     RCP<const Thyra::ModelEvaluator<double> > model_out = stepper_out->getModel();
-    TEST_EQUALITY_CONST( is_null(model_out), false );
+    TEST_ASSERT( !is_null(model_out) );
     RCP<const SinCosModel> sinCosModel = Teuchos::rcp_dynamic_cast<const SinCosModel>(model_out,false);
-    TEST_EQUALITY_CONST( is_null(sinCosModel), false );
+    TEST_ASSERT( !is_null(sinCosModel) );
     RCP<const Thyra::NonlinearSolverBase<double> > nlSolver_out = beStepper->getSolver();
-    TEST_EQUALITY_CONST( is_null(nlSolver_out), false );
+    TEST_ASSERT( !is_null(nlSolver_out) );
     RCP<const TimeStepNonlinearSolver<double> > tsnlSolver = Teuchos::rcp_dynamic_cast<const TimeStepNonlinearSolver<double> >(nlSolver_out, false);
-    TEST_EQUALITY_CONST( is_null(tsnlSolver), false );
+    TEST_ASSERT( !is_null(tsnlSolver) );
+    RCP<const InterpolatorBase<double> > interp = beStepper->getInterpolator();
+    TEST_ASSERT( !is_null(interp) );
+    RCP<const CubicSplineInterpolator<double> > cInterp = Teuchos::rcp_dynamic_cast<const CubicSplineInterpolator<double> >(interp,false);
+    TEST_ASSERT( !is_null(cInterp) );
   }
 }
 
@@ -736,15 +854,15 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, getValidParameters ) {
         stepControlSettingsPL.sublist("Step Control Selection").disableRecursiveValidation();
         stepControlSettingsPL.sublist("Error Weight Vector Calculator Selection").disableRecursiveValidation();
       }
+      stepperSettingsPL.sublist("Interpolator Selection").disableRecursiveValidation();
       //stepperSettingsPL.sublist("Nonlinear Solver Selection").disableRecursiveValidation();
-      //stepperSettingsPL.sublist("Interpolator Selection").disableRecursiveValidation();
       //stepperSettingsPL.sublist("Runge-Kutta Stepper Butcher Tableau Selection").disableRecursiveValidation();
     }
     ParameterList& ibSettingsPL = validPL->sublist("Interpolation Buffer Settings");
     {
       ibSettingsPL.sublist("Trailing Interpolation Buffer Selection").disableRecursiveValidation();
       ibSettingsPL.sublist("Interpolation Buffer Appender Selection").disableRecursiveValidation();
-      //ibSettingsPL.sublist("Interpolator Selection").disableRecursiveValidation();
+      ibSettingsPL.sublist("Interpolator Selection").disableRecursiveValidation();
     }
     //ParameterList& observerSettingsPL = validPL->sublist("Integration Observer Settings");
     //{

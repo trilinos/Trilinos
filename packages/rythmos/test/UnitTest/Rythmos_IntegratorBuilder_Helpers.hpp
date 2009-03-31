@@ -38,6 +38,7 @@
 #include "Rythmos_InterpolationBufferBase.hpp"
 #include "Rythmos_InterpolationBufferAppenderBase.hpp"
 #include "Rythmos_ErrWtVecCalcBase.hpp"
+#include "Rythmos_InterpolatorBase.hpp"
 
 namespace Rythmos {
 
@@ -339,6 +340,7 @@ class FoolishInterpolationBufferAppender
 : virtual public InterpolationBufferAppenderBase<double>,
   virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
+  public:
   void append(
     const InterpolationBufferBase<double>& interpBuffSource,
     const TimeRange<double>& range,
@@ -358,6 +360,7 @@ class FoolishErrWtVecCalc
 : virtual public ErrWtVecCalcBase<double>,
   virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
+  public:
   void errWtVecSet(
        Thyra::VectorBase<double>* weight 
       ,const Thyra::VectorBase<double>& vector
@@ -372,6 +375,34 @@ class FoolishErrWtVecCalc
   {
     return Teuchos::parameterList();
   }
+};
+
+class FoolishInterpolator
+: virtual public InterpolatorBase<double>,
+  virtual public Teuchos::ParameterListAcceptorDefaultBase
+{
+  public:
+  void setNodes(
+    const RCP<const DataStore<double>::DataStoreVector_t> & nodes
+    )
+  { }
+  void interpolate(
+    const Array<double> &t_values,
+    DataStore<double>::DataStoreVector_t *data_out
+    ) const
+  { }
+  int order() const
+  { 
+    return 0;
+  }
+  // Overriden from ParameterListAcceptor
+  void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
+  { }
+  RCP<const Teuchos::ParameterList> getValidParameters() const
+  {
+    return Teuchos::parameterList();
+  }
+
 };
 
 } // namespace Rythmos 

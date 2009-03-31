@@ -31,6 +31,7 @@
 
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_DataStore.hpp"
+#include "Rythmos_InterpolatorAcceptingObjectBase.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Rythmos_SingleResidualModelEvaluator.hpp"
@@ -62,7 +63,9 @@ namespace Rythmos {
  * features, you should really use the <tt>ImplicitBDFStepper</tt> class.
  */
 template<class Scalar>
-class BackwardEulerStepper : virtual public SolverAcceptingStepperBase<Scalar>
+class BackwardEulerStepper : 
+  virtual public SolverAcceptingStepperBase<Scalar>,
+  virtual public InterpolatorAcceptingObjectBase<Scalar>
 {
 public:
   
@@ -80,12 +83,25 @@ public:
     const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
     const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
     );
+
+  //@}
+  
+  /** \name Overridden from InterpolatorAcceptingObjectBase */
+  //@{
   
   /** \brief . */
-  void setInterpolator(RCP<InterpolatorBase<Scalar> > interpolator);
+  void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator);
+
+  /** \brief . */
+  RCP<InterpolatorBase<Scalar> >
+    getNonconstInterpolator();
+
+  /** \brief . */
+  RCP<const InterpolatorBase<Scalar> >
+    getInterpolator() const;
   
   /** \brief . */
-  RCP<InterpolatorBase<Scalar> > unsetInterpolator();
+  RCP<InterpolatorBase<Scalar> > unSetInterpolator();
 
   //@}
 
@@ -298,10 +314,11 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper(
   setSolver(solver);
 }
 
+// Overridden from InterpolatorAcceptingObjectBase
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setInterpolator(
-  RCP<InterpolatorBase<Scalar> > interpolator
+  const RCP<InterpolatorBase<Scalar> >& interpolator
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -311,10 +328,23 @@ void BackwardEulerStepper<Scalar>::setInterpolator(
   isInitialized_ = false;
 }
 
+template<class Scalar>
+RCP<InterpolatorBase<Scalar> >
+  BackwardEulerStepper<Scalar>::getNonconstInterpolator()
+{
+  return interpolator_;
+}
+
+template<class Scalar>
+RCP<const InterpolatorBase<Scalar> >
+  BackwardEulerStepper<Scalar>::getInterpolator() const
+{
+  return interpolator_;
+}
 
 template<class Scalar>
 RCP<InterpolatorBase<Scalar> >
-BackwardEulerStepper<Scalar>::unsetInterpolator()
+BackwardEulerStepper<Scalar>::unSetInterpolator()
 {
   RCP<InterpolatorBase<Scalar> > temp_interpolator = interpolator_;
   interpolator_ = Teuchos::null;

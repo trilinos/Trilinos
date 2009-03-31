@@ -31,6 +31,7 @@
 
 #include "Rythmos_InterpolatorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace Rythmos {
 /** 
@@ -101,6 +102,9 @@ class HermiteInterpolator : virtual public InterpolatorBase<Scalar>
     /** \brief . */
     RCP<ParameterList> unsetParameterList();
 
+    /** \brief. */
+    RCP<const Teuchos::ParameterList> getValidParameters() const;
+
     void assertInterpolatePreconditions(
         const typename DataStore<Scalar>::DataStoreVector_t &data_in
         ,const Array<Scalar> &t_values
@@ -111,7 +115,7 @@ class HermiteInterpolator : virtual public InterpolatorBase<Scalar>
 
     RCP<const typename DataStore<Scalar>::DataStoreVector_t> nodes_;
 
-    RCP<ParameterList> parameterList;
+    RCP<ParameterList> parameterList_;
 
 };
 
@@ -290,24 +294,36 @@ void HermiteInterpolator<Scalar>::describe(
 template <class Scalar>
 void HermiteInterpolator<Scalar>::setParameterList(RCP<ParameterList> const& paramList)
 {
-  parameterList = paramList;
-  int outputLevel = parameterList->get( "outputLevel", int(-1) );
-  outputLevel = std::min(std::max(outputLevel,-1),4);
-  this->setVerbLevel(static_cast<Teuchos::EVerbosityLevel>(outputLevel));
+  TEST_FOR_EXCEPT(is_null(paramList));
+  paramList->validateParametersAndSetDefaults(*this->getValidParameters());
+  parameterList_ = paramList;
+  Teuchos::readVerboseObjectSublist(&*parameterList_,this);
 }
 
 template <class Scalar>
 RCP<ParameterList> HermiteInterpolator<Scalar>::getNonconstParameterList()
 {
-  return(parameterList);
+  return(parameterList_);
 }
 
 template <class Scalar>
 RCP<ParameterList> HermiteInterpolator<Scalar>::unsetParameterList()
 {
-  RCP<ParameterList> temp_param_list = parameterList;
-  parameterList = Teuchos::null;
+  RCP<ParameterList> temp_param_list = parameterList_;
+  parameterList_ = Teuchos::null;
   return(temp_param_list);
+}
+
+template<class Scalar>
+RCP<const Teuchos::ParameterList> HermiteInterpolator<Scalar>::getValidParameters() const
+{
+  static RCP<Teuchos::ParameterList> validPL;
+  if (is_null(validPL)) {
+    RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+    Teuchos::setupVerboseObjectSublist(&*pl);
+    validPL = pl;
+  }
+  return (validPL);
 }
 
 template<class Scalar>

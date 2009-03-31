@@ -40,6 +40,7 @@
 #include "Rythmos_InterpolationBufferBase.hpp"
 #include "Rythmos_InterpolationBufferAppenderBase.hpp"
 #include "Rythmos_ErrWtVecCalcBase.hpp"
+#include "Rythmos_InterpolatorBase.hpp"
 
 // Specific objects to seed the builder:
 #include "Rythmos_DefaultIntegrator.hpp"
@@ -49,6 +50,9 @@
 #include "Rythmos_PointwiseInterpolationBufferAppender.hpp"
 //#include "Rythmos_SmartInterpolationBufferAppender.hpp"
 #include "Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp"
+#include "Rythmos_LinearInterpolator.hpp"
+#include "Rythmos_HermiteInterpolator.hpp"
+#include "Rythmos_CubicSplineInterpolator.hpp"
 
 // Teuchos:
 #include "Teuchos_ObjectBuilder.hpp"
@@ -63,13 +67,17 @@ namespace {
 
   // Valid ParameterList names:
   static std::string integratorSettings_name = "Integrator Settings";
+  static std::string integratorSettings_docs = "These parameters are used directly in setting up the Integrator";
   static std::string integratorSelection_name = "Integrator Selection";
   static std::string integrationControlSelection_name = "Integration Control Selection";
+  static std::string integrationControlSelection_docs = "Note that some settings conflict between step control and integration control.  In general, the integration control decides which steps will be fixed or variable, not the stepper.  When the integration control decides to take variable steps, the step control is then responsible for choosing appropriate step-sizes.";
   static std::string stepperSettings_name = "Stepper Settings";
   static std::string stepperSelection_name = "Stepper Selection";
   static std::string stepControlSettings_name = "Step Control Settings";
+  static std::string stepControlSettings_docs = "Not all step control strategies are compatible with each stepper.  If the strategy has the name of a stepper in its name, then it only works with that stepper.";
   static std::string stepControlSelection_name = "Step Control Selection";
   static std::string errWtVecSelection_name = "Error Weight Vector Calculator Selection";
+  static std::string errWtVecSelection_docs = "Not all ErrWtVec calculators are compatible with each step control strategy.  If the calculator has the name of a stepper or another step control strategy in its name, then it only works with that step control strategy.";
   static std::string interpolationBufferSettings_name = "Interpolation Buffer Settings";
   static std::string interpolationBufferSelection_name = "Trailing Interpolation Buffer Selection";
   static std::string interpolationBufferAppenderSelection_name = "Interpolation Buffer Appender Selection";
@@ -77,6 +85,8 @@ namespace {
   static int finalTime_default = 1; // Should be Scalar(1.0)
   static std::string landOnFinalTime_name = "Land On Final Time";
   static bool landOnFinalTime_default = true;
+  static std::string interpolatorSelection_name = "Interpolator Selection";
+  static std::string stepperInterpolatorSelection_docs = "Note all Steppers accept an interpolator.  Currently, only the BackwardEuler stepper does.";
 
   // Builder names:
   static std::string integratorBuilder_name = "Rythmos::Integrator";
@@ -91,6 +101,8 @@ namespace {
   static std::string interpolationBufferAppenderBuilderType_name = "Interpolation Buffer Appender Type";
   static std::string errWtVecCalcBuilder_name = "Rythmos::ErrWtVecCalc";
   static std::string errWtVecCalcBuilderType_name = "Error Weight Vector Calculator Type";
+  static std::string interpolatorBuilder_name = "Rythmos::Interpolator";
+  static std::string interpolatorBuilderType_name = "Interpolator Type";
 
   // Specific object names:
   static std::string defaultIntegrator_name = "Default Integrator";
@@ -100,6 +112,9 @@ namespace {
   static std::string pointwiseInterpolationBufferAppender_name = "Pointwise Interpolation Buffer Appender";
 //  static std::string smartInterpolationBufferAppender_name = "Smart Interpolation Buffer Appender";
   static std::string implicitBDFStepperErrWtVecCalc_name = "Implicit BDF Stepper Error Weight Vector Calculator";
+  static std::string linearInterpolator_name = "Linear Interpolator";
+  static std::string hermiteInterpolator_name = "Hermite Interpolator";
+  static std::string cubicSplineInterpolator_name = "Cubic Spline Interpolator";
 
 } // namespace
 
@@ -157,6 +172,12 @@ public:
     const std::string &errWtVecCalcFactoryName
     );
   
+  /** \brief Set an Interpolator factory object. */
+  void setInterpolatorFactory(
+    const RCP<const Teuchos::AbstractFactory<InterpolatorBase<Scalar> > > &interpolatorFactory,
+    const std::string &interpolatorFactoryName
+    );
+  
   /** \brief . */
   RCP<IntegratorBase<Scalar> > create(
     const RCP<const Thyra::ModelEvaluator<Scalar> > model,
@@ -196,6 +217,7 @@ private:
   RCP<Teuchos::ObjectBuilder<InterpolationBufferBase<Scalar> > > interpolationBufferBuilder_;
   RCP<Teuchos::ObjectBuilder<InterpolationBufferAppenderBase<Scalar> > > interpolationBufferAppenderBuilder_;
   RCP<Teuchos::ObjectBuilder<ErrWtVecCalcBase<Scalar> > > errWtVecCalcBuilder_;
+  RCP<Teuchos::ObjectBuilder<InterpolatorBase<Scalar> > > interpolatorBuilder_;
 
   RCP<ParameterList> paramList_;
   mutable RCP<ParameterList> validPL_;
@@ -300,6 +322,16 @@ void IntegratorBuilder<Scalar>::setErrWtVecCalcFactory(
 }
 
 template<class Scalar>
+void IntegratorBuilder<Scalar>::setInterpolatorFactory(
+    const RCP<const Teuchos::AbstractFactory<InterpolatorBase<Scalar> > > &interpolatorFactory,
+    const std::string &interpolatorFactoryName
+    )
+{
+  interpolatorBuilder_->setObjectFactory(interpolatorFactory,interpolatorFactoryName);
+  validPL_ = Teuchos::null;
+}
+
+template<class Scalar>
 void IntegratorBuilder<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
@@ -317,7 +349,7 @@ IntegratorBuilder<Scalar>::getValidParameters() const
     RCP<ParameterList> pl = Teuchos::parameterList();
 
     // Integrator Settings
-    ParameterList& integratorSettingsPL = pl->sublist(integratorSettings_name);
+    ParameterList& integratorSettingsPL = pl->sublist(integratorSettings_name,false,integratorSettings_docs);
     {
       // Final Time
       integratorSettingsPL.set(finalTime_name,Teuchos::as<Scalar>(finalTime_default));
@@ -329,7 +361,7 @@ IntegratorBuilder<Scalar>::getValidParameters() const
       integratorSelectionPL.setParameters(*(integratorBuilder_->getValidParameters()));
     }
     // Integration Control Selection
-    ParameterList& integrationControlSelectionPL = pl->sublist(integrationControlSelection_name).disableRecursiveValidation();
+    ParameterList& integrationControlSelectionPL = pl->sublist(integrationControlSelection_name,false,integrationControlSelection_docs).disableRecursiveValidation();
     integrationControlSelectionPL.setParameters(*(integrationControlBuilder_->getValidParameters()));
     // Stepper Settings
     ParameterList& stepperSettingsPL = pl->sublist(stepperSettings_name);
@@ -338,17 +370,19 @@ IntegratorBuilder<Scalar>::getValidParameters() const
       ParameterList& stepperSelectionPL = stepperSettingsPL.sublist(stepperSelection_name).disableRecursiveValidation();
       stepperSelectionPL.setParameters(*(stepperBuilder_->getValidParameters()));
       // Step Control Settings
-      ParameterList& stepControlSettingsPL = stepperSettingsPL.sublist(stepControlSettings_name);
+      ParameterList& stepControlSettingsPL = stepperSettingsPL.sublist(stepControlSettings_name, false, stepControlSettings_docs);
       {
         // Step Control Selection
         ParameterList& stepControlSelectionPL = stepControlSettingsPL.sublist(stepControlSelection_name).disableRecursiveValidation();
         stepControlSelectionPL.setParameters(*(stepControlBuilder_->getValidParameters()));
         // ErrWtVec Selection
-        ParameterList& errWtVecSelectionPL = stepControlSettingsPL.sublist(errWtVecSelection_name).disableRecursiveValidation();
+        ParameterList& errWtVecSelectionPL = stepControlSettingsPL.sublist(errWtVecSelection_name,false,errWtVecSelection_docs).disableRecursiveValidation();
         errWtVecSelectionPL.setParameters(*(errWtVecCalcBuilder_->getValidParameters()));
       }
-      // Nonlinear Solver Selection
       // Interpolator Selection
+      ParameterList& interpolatorSelectionPL = stepperSettingsPL.sublist(interpolatorSelection_name,false,stepperInterpolatorSelection_docs).disableRecursiveValidation();
+      interpolatorSelectionPL.setParameters(*(interpolatorBuilder_->getValidParameters()));
+      // Nonlinear Solver Selection
       // RKBT Selection
     }
     ParameterList& interpolationBufferSettingsPL = pl->sublist(interpolationBufferSettings_name);
@@ -360,6 +394,8 @@ IntegratorBuilder<Scalar>::getValidParameters() const
       ParameterList& interpolationBufferAppenderSelectionPL = interpolationBufferSettingsPL.sublist(interpolationBufferAppenderSelection_name).disableRecursiveValidation();
       interpolationBufferAppenderSelectionPL.setParameters(*(interpolationBufferAppenderBuilder_->getValidParameters()));
       // Interpolator Selection
+      ParameterList& interpolatorSelectionPL = interpolationBufferSettingsPL.sublist(interpolatorSelection_name).disableRecursiveValidation();
+      interpolatorSelectionPL.setParameters(*(interpolatorBuilder_->getValidParameters()));
     }
     // Integration Observer Settings 
 
@@ -440,6 +476,17 @@ IntegratorBuilder<Scalar>::create(
     interpolationBufferBuilder_->setParameterList(interpolationBufferSelectionPL);
     RCP<InterpolationBufferBase<Scalar> > ib = interpolationBufferBuilder_->create();
     if (!is_null(ib)) {
+      // Check for an interpolator
+      RCP<InterpolatorAcceptingObjectBase<Scalar> > iaobIB = 
+        Teuchos::rcp_dynamic_cast<InterpolatorAcceptingObjectBase<Scalar> >(ib,false);
+      if (!is_null(iaobIB)) {
+        RCP<ParameterList> interpolatorSelectionPL = sublist(interpolationBufferSettingsPL,interpolatorSelection_name);
+        interpolatorBuilder_->setParameterList(interpolatorSelectionPL);
+        RCP<InterpolatorBase<Scalar> > interpolator = interpolatorBuilder_->create();
+        if (!is_null(interpolator)) {
+          iaobIB->setInterpolator(interpolator);
+        }
+      }
       tibaIntegrator->setTrailingInterpolationBuffer(ib);
     }
   }
@@ -483,6 +530,17 @@ IntegratorBuilder<Scalar>::create(
         }
       }
       scsaStepper->setStepControlStrategy(stepControl);
+    }
+  }
+  // Check for an Interpolator
+  RCP<InterpolatorAcceptingObjectBase<Scalar> > iaobStepper = 
+    Teuchos::rcp_dynamic_cast<InterpolatorAcceptingObjectBase<Scalar> >(stepper,false);
+  if (!is_null(iaobStepper)) {
+    RCP<ParameterList> interpolatorSelectionPL = sublist(stepperSettingsPL,interpolatorSelection_name);
+    interpolatorBuilder_->setParameterList(interpolatorSelectionPL);
+    RCP<InterpolatorBase<Scalar> > interpolator = interpolatorBuilder_->create();
+    if (!is_null(interpolator)) {
+      iaobStepper->setInterpolator(interpolator);
     }
   }
   // Set model on stepper
@@ -569,6 +627,23 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
   errWtVecCalcBuilder_->setObjectFactory(
       abstractFactoryStd< ErrWtVecCalcBase<Scalar>, ImplicitBDFStepperErrWtVecCalc<Scalar> >(),
       implicitBDFStepperErrWtVecCalc_name
+      );
+
+  // Interpolator
+  interpolatorBuilder_ = Teuchos::objectBuilder<InterpolatorBase<Scalar> >();
+  interpolatorBuilder_->setObjectName(interpolatorBuilder_name);
+  interpolatorBuilder_->setObjectTypeName(interpolatorBuilderType_name);
+  interpolatorBuilder_->setObjectFactory(
+      abstractFactoryStd< InterpolatorBase<Scalar>, LinearInterpolator<Scalar> >(),
+      linearInterpolator_name
+      );
+  interpolatorBuilder_->setObjectFactory(
+      abstractFactoryStd< InterpolatorBase<Scalar>, HermiteInterpolator<Scalar> >(),
+      hermiteInterpolator_name
+      );
+  interpolatorBuilder_->setObjectFactory(
+      abstractFactoryStd< InterpolatorBase<Scalar>, CubicSplineInterpolator<Scalar> >(),
+      cubicSplineInterpolator_name
       );
 
 }

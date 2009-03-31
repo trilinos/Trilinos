@@ -30,7 +30,7 @@
 #define Rythmos_INTERPOLATION_BUFFER_H
 
 #include "Rythmos_InterpolationBufferBase.hpp"
-#include "Rythmos_InterpolatorBase.hpp"
+#include "Rythmos_InterpolatorAcceptingObjectBase.hpp"
 #include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_DataStore.hpp"
@@ -91,7 +91,9 @@ namespace Rythmos {
 
 /** \brief concrete class for interpolation buffer functionality. */
 template<class Scalar> 
-class InterpolationBuffer : virtual public InterpolationBufferBase<Scalar>
+class InterpolationBuffer : 
+  virtual public InterpolationBufferBase<Scalar>,
+  virtual public InterpolatorAcceptingObjectBase<Scalar>
 {
 public:
 
@@ -107,11 +109,24 @@ public:
   /// Initialize the buffer:
   void initialize( const RCP<InterpolatorBase<Scalar> >& interpolator, int storage );
 
+  /** \brief Redefined from Rythmos::InterpolatorAcceptingObjectBase */
+  //@{
+  
   /// Set the interpolator for this buffer
   void setInterpolator(const RCP<InterpolatorBase<Scalar> >& interpolator);
-    
+  
+  /** \brief . */
+  RCP<InterpolatorBase<Scalar> >
+    getNonconstInterpolator();
+
+  /** \brief . */
+  RCP<const InterpolatorBase<Scalar> >
+    getInterpolator() const;
+  
   /// Unset the interpolator for this buffer
   RCP<InterpolatorBase<Scalar> > unSetInterpolator();
+
+  //@}
 
   /// Set the maximum storage of this buffer
   void setStorage( int storage );
@@ -283,6 +298,20 @@ void InterpolationBuffer<Scalar>::setInterpolator(
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
     *out << "interpolator = " << interpolator_->description() << std::endl;
   }
+}
+
+template<class Scalar>
+RCP<InterpolatorBase<Scalar> >
+  InterpolationBuffer<Scalar>::getNonconstInterpolator()
+{
+  return interpolator_;
+}
+
+template<class Scalar>
+RCP<const InterpolatorBase<Scalar> >
+  InterpolationBuffer<Scalar>::getInterpolator() const
+{
+  return interpolator_;
 }
 
 template<class Scalar>
