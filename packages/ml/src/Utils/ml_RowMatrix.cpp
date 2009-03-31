@@ -65,11 +65,10 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   // Also, I need to check that the map of the input vector
   // and of the output vector are consistent with what I have here
   RangeMap_ = new Epetra_Map(-1,NumMyRows_,0,Comm());
-  if (NumMyCols_ == NumMyRows_) // FIXME: not necessarily true for global values
-    DomainMap_ = RangeMap_;
-  else
-    DomainMap_ = new Epetra_Map(-1,NumMyCols_,0,Comm());
-
+//  if (NumMyCols_ == NumMyRows_) // FIXME: not necessarily true for global values
+//    DomainMap_ = RangeMap_;
+//  else
+      DomainMap_ = new Epetra_Map(-1,NumMyCols_,0,Comm());
   NumGlobalRows_ = RangeMap_->NumGlobalElements();
   NumGlobalCols_ = DomainMap_->NumGlobalElements();
 
