@@ -81,7 +81,8 @@ class EpetraObjectTestCase(unittest.TestCase):
 
     def testGetTracebackMode(self):
         "Test Epetra.Object GetTracebackMode method"
-        self.assertEqual(self.object.GetTracebackMode(), 1)
+        self.assertEqual(self.object.GetTracebackMode(),
+                         Epetra.DefaultTracebackMode)
 
     def testSetTracebackMode(self):
         "Test Epetra.Object SetTracebackMode method"

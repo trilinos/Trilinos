@@ -1251,7 +1251,9 @@ class EpetraSerialDenseSolverTestCase(unittest.TestCase):
         sds.Print(f)
         f.close()
         output = open(filename,"r").read()
-        self.assertEqual(len(output), 815)
+        if Epetra.FormatStdout: extra = 4
+        else:                   extra = 0
+        self.assertEqual(len(output), 811 + extra)
 
 ##########################################################################
 

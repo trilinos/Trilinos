@@ -100,6 +100,11 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 %feature("autodoc", "1");
 %feature("compactdefaultargs");
 
+// Configuration support
+%include "PyTrilinos_config.h"
+%rename(FormatStdout) Epetra_FormatStdout;
+%include "Epetra_ConfigDefs.h"
+
 // Include Epetra documentation
 %include "Epetra_dox.i"
 

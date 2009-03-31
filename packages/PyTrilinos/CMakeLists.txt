@@ -115,10 +115,10 @@ INCLUDE(${SWIG_USE_FILE})
 ADD_SUBDIRECTORY(src)
 
 # Add the test scripts
-PACKAGE_ADD_TEST_DIRECTORIES(test)
+PACKAGE_ADD_TEST_DIRECTORIES(test example)
 
 # Add the example scripts
-PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+#PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 # Execute the package postprocessing
 PACKAGE_POSTPROCESS()
