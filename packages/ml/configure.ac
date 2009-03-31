@@ -763,6 +763,7 @@ AC_CONFIG_FILES([
         test/Zoltan/Makefile
         test/Zoltan_hypergraph/Makefile
         test/ValidateParams/Makefile
+        test/BlockCheby/Makefile
         matlab/Makefile
                 ])
 

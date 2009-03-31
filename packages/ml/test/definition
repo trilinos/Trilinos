@@ -69,6 +69,13 @@ PACKAGE_NAME=ML
      COMM = SERIAL, MPI(1-4);
 }
 
+# These tests should only be run on 1 processor
+(FRAMEWORK, MLTests) {
+     DIRS = BlockCheby;
+     COMM = SERIAL, MPI(1);
+}
+
+
 #
 # 2d_Poisson group
 # Notice that this also runs in the nightly FRAMEWORK tests

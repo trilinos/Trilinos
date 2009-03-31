@@ -30,6 +30,7 @@ SUBDIRS = MultiLevelPreconditioner_NonSym    \
       Miscellaneous	                 \
       Zoltan                             \
       Zoltan_hypergraph                  \
+      BlockCheby                         \
       ValidateParams
 
 EXTRA_DIST = definition
