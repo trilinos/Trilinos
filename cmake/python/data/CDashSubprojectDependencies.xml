@@ -272,6 +272,9 @@
   <SubProject name="RBGen">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
     <EmailAddresses>
       <Email address="rbgen-regression@software.sandia.gov"/>
     </EmailAddresses>
