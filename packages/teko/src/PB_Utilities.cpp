@@ -3,12 +3,15 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_DefaultInverseLinearOp.hpp"
+#include "Thyra_DefaultZeroLinearOp.hpp"
 
 #include "Teuchos_Array.hpp"
 
 #include <cmath>
 
 namespace PB {
+
+using Teuchos::RCP;
 
 // distance function...not parallel...entirely internal to this cpp file
 inline double dist(int dim,double * coords,int row,int col)
@@ -141,6 +144,44 @@ void update(double alpha,const MultiVector & x,double beta,MultiVector & y)
 
    // compute linear combination
    Thyra::linear_combination<double>(scale,vec,beta,y.ptr());
+}
+
+//! Get the strictly upper triangular protion of the matrix
+BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo)
+{
+   int rows = blockRowCount(blo);
+
+   TEUCHOS_ASSERT(rows==blockColCount(blo));
+
+   RCP<const Thyra::ProductVectorSpaceBase<double> > range = blo->productRange();
+   RCP<const Thyra::ProductVectorSpaceBase<double> > domain = blo->productDomain();
+
+   // allocate new operator
+   BlockedLinearOp upper = createNewBlockedOp();
+ 
+   // build new operator 
+   upper->beginBlockFill(rows,rows);
+
+   for(int i=0;i<rows;i++) {
+      // put zero operators on the diagonal
+      // this gurantees the vector space of
+      // the new operator are fully defined
+      RCP<const Thyra::LinearOpBase<double> > zed 
+            = Thyra::zero<double>(range->getBlock(i),domain->getBlock(i));
+      upper->setBlock(i,i,zed);
+
+      for(int j=i+1;j<rows;j++) {
+         // get block i,j
+         LinearOp uij = blo->getBlock(i,j);
+
+         // stuff it in U
+         if(uij!=Teuchos::null)
+            upper->setBlock(i,j,uij);
+      }
+   }
+   upper->endBlockFill();
+
+   return upper;
 }
 
 }

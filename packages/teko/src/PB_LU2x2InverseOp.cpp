@@ -76,7 +76,8 @@ void LU2x2InverseOp::apply(const BlockedMultiVector & x, BlockedMultiVector & y,
    if(beta!=0) {
       update(alpha,uc,beta,u); // u = alpha * uc + beta * u
       update(alpha,pc,beta,p); // p = alpha * pc + beta * p
-   } else {  
+   } 
+   else if(alpha!=1.0) {  
       scale(alpha,u); // u = alpha * u
       scale(alpha,p); // p = alpha * p
    }

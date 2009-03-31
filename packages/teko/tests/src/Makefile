@@ -7,7 +7,9 @@ INCLUDE = -I$(TRILINOS_INCLUDE) -I$(PB_TESTS_INCLUDE) -I$(PB_INCLUDE)
 CPPFLAGS=-DHAVE_CONFIG_H $(THYRA_CXXFLAGS) $(DEBUG_FLAGS)
 
 OBJS = tLSCStablePreconditionerFactory.o \
-       tJacobi2x2PreconditionerFactory.o tBlockJacobiPreconditionerFactory.o \
+       tJacobi2x2PreconditionerFactory.o \
+       tBlockJacobiPreconditionerFactory.o \
+       tBlockUpperTriInverseOp.o \
        tLU2x2PreconditionerFactory.o
 
 PREC = $(OBJS:%.o=%._tmp)

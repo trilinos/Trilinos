@@ -6,6 +6,7 @@
 // Thyra includes
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
+#include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_ProductMultiVectorBase.hpp"
@@ -38,14 +39,10 @@ namespace PB {
 // void buildGraphLaplacian(int dim,double * x,double * y,double * z,const Epetra_CrsMatrix & stencil,Epetra_CrsMatrix & gl);
 void buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stencil,Epetra_CrsMatrix & gl);
 
-// Function that might be useful
-// multiply
-// add
-// buildInverse(InverseFactory,LinearOp) 
-
-
 // typedefs for increased simplicity
 typedef Teuchos::RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
+
+// ----------------------------------------------------------------------------
 
 //! @name MultiVector utilities
 //@{
@@ -59,14 +56,29 @@ inline MultiVector toMultiVector(BlockedMultiVector & bmv) { return bmv; }
 //! Convert to a MultiVector from a BlockedMultiVector
 inline const MultiVector toMultiVector(const BlockedMultiVector & bmv) { return bmv; }
 
+//! Convert to a BlockedMultiVector from a MultiVector
+inline const BlockedMultiVector toBlockedMultiVector(const MultiVector & bmv) 
+{ return Teuchos::rcp_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(bmv); }
+
+//! Get the column count in a block linear operator
+inline int blockCount(const BlockedMultiVector & bmv)
+{ return bmv->productSpace()->numBlocks(); }
+
 //! Get the <code>i</code>th block from a BlockedMultiVector object
 inline MultiVector getBlock(int i,const BlockedMultiVector & bmv)
 { return Teuchos::rcp_const_cast<Thyra::MultiVectorBase<double> >(bmv->getMultiVectorBlock(i)); }
 
+//! Performa deep copy of the vector
 inline MultiVector deepcopy(const MultiVector & v)
 { return v->clone_mv(); }
 
+//! Performa deep copy of the blocked vector
+inline BlockedMultiVector deepcopy(const BlockedMultiVector & v)
+{ return toBlockedMultiVector(v->clone_mv()); }
+
 //@}
+
+// ----------------------------------------------------------------------------
 
 //! @name LinearOp utilities
 //@{
@@ -74,10 +86,18 @@ typedef Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > BlockedLinea
 typedef Teuchos::RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
 //! Convert to a LinearOp from a BlockedLinearOp
-inline LinearOp toLinearOp(BlockedLinearOp & bmv) { return bmv; }
+inline LinearOp toLinearOp(BlockedLinearOp & blo) { return blo; }
 
 //! Convert to a LinearOp from a BlockedLinearOp
-inline const LinearOp toLinearOp(const BlockedLinearOp & bmv) { return bmv; }
+inline const LinearOp toLinearOp(const BlockedLinearOp & blo) { return blo; }
+
+//! Get the row count in a block linear operator
+inline int blockRowCount(const BlockedLinearOp & blo)
+{ return blo->productRange()->numBlocks(); }
+
+//! Get the column count in a block linear operator
+inline int blockColCount(const BlockedLinearOp & blo)
+{ return blo->productDomain()->numBlocks(); }
 
 //! Get the <code>i,j</code> block in a BlockedLinearOp object
 inline LinearOp getBlock(int i,int j,const BlockedLinearOp & blo)
@@ -86,6 +106,13 @@ inline LinearOp getBlock(int i,int j,const BlockedLinearOp & blo)
 //! Set the <code>i,j</code> block in a BlockedLinearOp object
 inline void setBlock(int i,int j,BlockedLinearOp & blo, const LinearOp & lo)
 { return blo->setBlock(i,j,lo); }
+
+//! Build a new blocked linear operator
+inline BlockedLinearOp createNewBlockedOp()
+{ return rcp(new Thyra::DefaultBlockedLinearOp<double>()); }
+
+//! Get the strictly upper triangular protion of the matrix
+BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo);
 
 //@}
 
@@ -134,11 +161,17 @@ void applyOp(const LinearOp & A,const MultiVector & x,MultiVector & y,double alp
   */
 void update(double alpha,const MultiVector & x,double beta,MultiVector & y);
 
+//! \brief Update for a BlockedMultiVector
+inline void update(double alpha,const BlockedMultiVector & x,double beta,BlockedMultiVector & y)
+{ MultiVector x_mv = toMultiVector(x); MultiVector y_mv = toMultiVector(y);
+  update(alpha,x_mv,beta,y_mv); }
+
 //! Scale a multivector by a constant
 inline void scale(const double alpha,MultiVector & x) { Thyra::scale<double>(alpha,x.ptr()); }
 
 //! Scale a multivector by a constant
-inline void scale(const double alpha,BlockedMultiVector & x) { scale(alpha,x); }
+inline void scale(const double alpha,BlockedMultiVector & x) 
+{  MultiVector x_mv = toMultiVector(x); scale(alpha,x_mv); }
 
 //@}
 

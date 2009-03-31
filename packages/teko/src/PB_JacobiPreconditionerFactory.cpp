@@ -18,7 +18,6 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearO
    int cols = blo->productDomain()->numBlocks();
  
    TEUCHOS_ASSERT(rows==cols);
-   // TEUCHOS_ASSERT(rows==invOpsStrategy_->numDiagonalBlocks());
 
    // get diagonal blocks
    std::vector<LinearOp> invDiag;

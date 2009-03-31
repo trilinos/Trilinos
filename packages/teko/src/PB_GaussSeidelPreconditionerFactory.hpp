@@ -1,14 +1,15 @@
-#ifndef __PB_JacobiPreconditionerFactory_hpp__
-#define __PB_JacobiPreconditionerFactory_hpp__
+#ifndef __PB_GaussSeidelPreconditionerFactory_hpp__
+#define __PB_GaussSeidelPreconditionerFactory_hpp__
 
 #include "Teuchos_RCP.hpp"
 
 #include "PB_BlockPreconditionerFactory.hpp"
 #include "PB_BlockInvDiagonalStrategy.hpp"
+#include "PB_Utilities.hpp"
 
 namespace PB {
 
-class JacobiPreconditionerFactory : public BlockPreconditionerFactory {
+class GaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
    public:
       //! @name Constructors.
       //@{
@@ -16,17 +17,17 @@ class JacobiPreconditionerFactory : public BlockPreconditionerFactory {
       /*! Construct a PreconditionerFactory assuming a specific block
           \f$2\times2\f$ matrix. This case is a simple one.
       */ 
-      JacobiPreconditionerFactory(const LinearOp & invD0,const LinearOp & invD1);
+      GaussSeidelPreconditionerFactory(const LinearOp & invD0,const LinearOp & invD1);
 
       /*! The most flexible JacobiPreconditionerFactory constructor.
           Pass in a generally defined BlockInvDiagonalStrategy to use the
           full generality of this class.
       */
-      JacobiPreconditionerFactory(const RCP<const BlockInvDiagonalStrategy> & strategy);
+      GaussSeidelPreconditionerFactory(const RCP<const BlockInvDiagonalStrategy> & strategy);
 
       //@}
 
-      /** \brief Create the Jacobi preconditioner operator.
+      /** \brief Create the Gauss-Seidel preconditioner operator.
         *
         * This method breaks apart the BlockLinearOp and builds a block
         * diagonal preconditioner. The inverse of the diagonals are specified

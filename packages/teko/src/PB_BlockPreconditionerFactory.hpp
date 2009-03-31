@@ -17,11 +17,6 @@ namespace PB {
 using Teuchos::RCP;
 using Teuchos::ParameterList;
 
-inline BlockedLinearOp createNewBlockedOp()
-{
-   return rcp(new Thyra::DefaultBlockedLinearOp<double>());
-}
-
 class BlockPreconditionerFactory 
    : public virtual Thyra::PreconditionerFactoryBase<double> {
    public:
