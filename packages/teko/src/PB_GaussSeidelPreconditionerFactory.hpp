@@ -9,21 +9,24 @@
 
 namespace PB {
 
+typedef enum {GS_UseLowerTriangle,GS_UseUpperTriangle} TriSolveType;
+
 class GaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
    public:
+  
       //! @name Constructors.
       //@{
 
       /*! Construct a PreconditionerFactory assuming a specific block
           \f$2\times2\f$ matrix. This case is a simple one.
       */ 
-      GaussSeidelPreconditionerFactory(const LinearOp & invD0,const LinearOp & invD1);
+      GaussSeidelPreconditionerFactory(TriSolveType solveType,const LinearOp & invD0,const LinearOp & invD1);
 
       /*! The most flexible JacobiPreconditionerFactory constructor.
           Pass in a generally defined BlockInvDiagonalStrategy to use the
           full generality of this class.
       */
-      GaussSeidelPreconditionerFactory(const RCP<const BlockInvDiagonalStrategy> & strategy);
+      GaussSeidelPreconditionerFactory(TriSolveType solveType,const RCP<const BlockInvDiagonalStrategy> & strategy);
 
       //@}
 
@@ -38,6 +41,7 @@ class GaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
    protected: 
       //! some members
       Teuchos::RCP<const BlockInvDiagonalStrategy> invOpsStrategy_;
+      TriSolveType solveType_;
 };
 
 } // end namespace PB

@@ -146,7 +146,7 @@ void update(double alpha,const MultiVector & x,double beta,MultiVector & y)
    Thyra::linear_combination<double>(scale,vec,beta,y.ptr());
 }
 
-//! Get the strictly upper triangular protion of the matrix
+//! Get the strictly upper triangular portion of the matrix
 BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo)
 {
    int rows = blockRowCount(blo);
@@ -182,6 +182,44 @@ BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo)
    upper->endBlockFill();
 
    return upper;
+}
+
+//! Get the strictly lower triangular portion of the matrix
+BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo)
+{
+   int rows = blockRowCount(blo);
+
+   TEUCHOS_ASSERT(rows==blockColCount(blo));
+
+   RCP<const Thyra::ProductVectorSpaceBase<double> > range = blo->productRange();
+   RCP<const Thyra::ProductVectorSpaceBase<double> > domain = blo->productDomain();
+
+   // allocate new operator
+   BlockedLinearOp lower = createNewBlockedOp();
+ 
+   // build new operator 
+   lower->beginBlockFill(rows,rows);
+
+   for(int i=0;i<rows;i++) {
+      // put zero operators on the diagonal
+      // this gurantees the vector space of
+      // the new operator are fully defined
+      RCP<const Thyra::LinearOpBase<double> > zed 
+            = Thyra::zero<double>(range->getBlock(i),domain->getBlock(i));
+      lower->setBlock(i,i,zed);
+
+      for(int j=0;j<i;j++) {
+         // get block i,j
+         LinearOp uij = blo->getBlock(i,j);
+
+         // stuff it in U
+         if(uij!=Teuchos::null)
+            lower->setBlock(i,j,uij);
+      }
+   }
+   lower->endBlockFill();
+
+   return lower;
 }
 
 }

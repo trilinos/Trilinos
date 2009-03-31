@@ -111,8 +111,11 @@ inline void setBlock(int i,int j,BlockedLinearOp & blo, const LinearOp & lo)
 inline BlockedLinearOp createNewBlockedOp()
 { return rcp(new Thyra::DefaultBlockedLinearOp<double>()); }
 
-//! Get the strictly upper triangular protion of the matrix
+//! Get the strictly upper triangular portion of the matrix
 BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo);
+
+//! Get the strictly lower triangular portion of the matrix
+BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo);
 
 //@}
 

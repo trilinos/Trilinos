@@ -22,6 +22,7 @@
 #include "src/tJacobi2x2PreconditionerFactory.hpp"
 #include "src/tBlockJacobiPreconditionerFactory.hpp"
 #include "src/tBlockUpperTriInverseOp.hpp"
+#include "src/tBlockLowerTriInverseOp.hpp"
 #include "src/Epetra/tEpetraLSCIntegrationTest.hpp"
 #include "src/Epetra/tEpetraOperatorWrapper.hpp"
 #include "src/Epetra/tStridedEpetraOperator.hpp"
@@ -76,6 +77,7 @@ int main(int argc,char * argv[])
    PB_ADD_UNIT_TEST(PB::Test::tJacobi2x2PreconditionerFactory,Jacobi2x2PreconditionerFactory);
    PB_ADD_UNIT_TEST(PB::Test::tBlockJacobiPreconditionerFactory,BlockJacobiPreconditionerFactory);
    PB_ADD_UNIT_TEST(PB::Test::tBlockUpperTriInverseOp,BlockUpperTriInverseOp);
+   PB_ADD_UNIT_TEST(PB::Test::tBlockLowerTriInverseOp,BlockLowerTriInverseOp);
    PB_ADD_UNIT_TEST(PB::Test::tEpetraOperatorWrapper,EpetraOperatorWrapper);
    PB_ADD_UNIT_TEST(PB::Test::tInterlacedEpetra,InterlacedEpetra);
    PB_ADD_UNIT_TEST(PB::Test::tEpetraThyraConverter,EpetraThyraConverter);

@@ -10,6 +10,7 @@ OBJS = tLSCStablePreconditionerFactory.o \
        tJacobi2x2PreconditionerFactory.o \
        tBlockJacobiPreconditionerFactory.o \
        tBlockUpperTriInverseOp.o \
+       tBlockLowerTriInverseOp.o \
        tLU2x2PreconditionerFactory.o
 
 PREC = $(OBJS:%.o=%._tmp)
