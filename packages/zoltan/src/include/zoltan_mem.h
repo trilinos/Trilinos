@@ -16,11 +16,7 @@
 #define __MEM_CONST_H
 
 
-#ifdef __STDC__
 #include <string.h>
-#else
-#include <strings.h>
-#endif  /* __STDC__ */
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
