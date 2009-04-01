@@ -28,6 +28,7 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
+  Stratimikos_ConfigDefs.hpp
   Stratimikos_DefaultLinearSolverBuilder.hpp
   Thyra_DefaultRealLinearSolverBuilder.hpp
   )
