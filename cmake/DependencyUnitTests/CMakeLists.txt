@@ -79,7 +79,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_EnableEpetraExt_EnableAllForwardPackages
   "-D Trilinos_ENABLE_EpetraExt:BOOL=ON -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON"
-  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils Tpetra EpetraExt Isorropia Thyra AztecOO Galeri Amesos Ifpack ML Belos Stratimikos 16"
+  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils Tpetra EpetraExt Isorropia Thyra AztecOO Galeri Amesos Ifpack ML Belos RBGen Stratimikos 17"
   )
 
 
@@ -100,7 +100,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   TrilinosDep_EnableEpetraExt_DisableAztecOO_EnableAllForwardPackages
   "-D Trilinos_ENABLE_EpetraExt:BOOL=ON -D Trilinos_ENABLE_AztecOO:BOOL=OFF -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON"
-  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils Tpetra EpetraExt Isorropia Thyra Galeri Amesos Ifpack ML Belos Stratimikos 15"
+  "Final set of enabled packages:  Teuchos Epetra Zoltan RTOp Triutils Tpetra EpetraExt Isorropia Thyra Galeri Amesos Ifpack ML Belos RBGen Stratimikos 16"
 
   )
 
