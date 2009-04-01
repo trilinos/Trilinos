@@ -714,9 +714,9 @@ ELEM_INFO *elem;
      */
     elem = mesh->elements + i;
 
-    srand48((long int)(elem->globalID * iteration));
+    srand((long int)(elem->globalID * iteration));
 
-    if (blankmine && (drand48() <= (double)blank_factor)){
+    if (blankmine && (((double)rand()/RAND_MAX) <= (double)blank_factor)){
       mesh->blank[i] = 1.0;
       mesh->blank_count++;
     }
@@ -734,8 +734,8 @@ ELEM_INFO *elem;
       }
       for (j=0; j<elem->nadj; j++){
         if (elem->adj_proc[j] != mesh->proc){
-          srand48((long int)(elem->adj[j] * iteration));
-          if (((elem->adj_proc[j] % 2) == (iteration % 2) ) && (drand48() <= (double)blank_factor)){
+          srand((long int)(elem->adj[j] * iteration));
+          if (((elem->adj_proc[j] % 2) == (iteration % 2) ) && (((double)rand()/RAND_MAX) <= (double)blank_factor)){
             elem->adj_blank[j] = 1.0;
           }
         }

@@ -52,9 +52,10 @@
     } \
  }
 
+#define MAX_PARAM_STRING_LEN 50
 struct zoltanParams_list_entry {
-  char *param;
-  char *value;
+  char param[MAX_PARAM_STRING_LEN+1];
+  char value[MAX_PARAM_STRING_LEN+1];
   struct zoltanParams_list_entry *next;
 };
 
@@ -155,8 +156,8 @@ void zoltanParams_hier_set_param(int level, char *param, char *value) {
   SAFE_MALLOC(newparam, struct zoltanParams_list_entry *,
 	      (long)sizeof(struct zoltanParams_list_entry));
 
-  newparam->param = strdup(param);
-  newparam->value = strdup(value);
+  strcpy(newparam->param, param);
+  strcpy(newparam->value, value);
   newparam->next = NULL;
   
   if (!zph[level]->first) {
