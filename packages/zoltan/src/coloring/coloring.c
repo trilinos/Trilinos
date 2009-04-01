@@ -28,6 +28,7 @@ extern "C" {
 #include "zz_util_const.h"
 #include "third_library_const.h"
 #include "all_allo_const.h"
+#include "zz_rand.h"
 
 #define COLORTAG     1001
 #define SNTAG        1002
@@ -409,8 +410,8 @@ static int D1coloring(
     if (!rand_key)
         MEMORY_ERROR;
     for(i=0; i<lastlno; i++) {
-        srand48(Zoltan_G2LHash_L2G(hash, i));
-        rand_key[i] = drand48()*100000000;
+        Zoltan_Srand(Zoltan_G2LHash_L2G(hash, i), NULL);
+        rand_key[i] = ((double)Zoltan_Rand(NULL)/(double) ZOLTAN_RAND_MAX)*100000000;
     }
     
     /* Color internal vertices and determine the visit order */
@@ -801,8 +802,8 @@ static int D2coloring(
     if (!rand_key)
         MEMORY_ERROR;
     for(i=0; i<lastlno; i++) {
-        srand48(Zoltan_G2LHash_L2G(hash, i));
-        rand_key[i] = drand48()*1000000;
+        Zoltan_Srand(Zoltan_G2LHash_L2G(hash, i), NULL);
+        rand_key[i] = ((double)Zoltan_Rand(NULL)/(double)ZOLTAN_RAND_MAX)*1000000;
     }   
 
     /* Color internal vertices and determine the visit order */
