@@ -39,6 +39,7 @@ APPEND_SET(HEADERS
   Phalanx_DataLayout_MDALayout_Def.hpp
   Phalanx_DataLayout_MDALayout.hpp
   Phalanx_DataLayout.hpp
+  Phalanx_DefaultWorksetName.hpp
   Phalanx_DoxygenDocumentation.hpp
   Phalanx_EvaluationContainer_Base_Def.hpp
   Phalanx_EvaluationContainer_Base.hpp
