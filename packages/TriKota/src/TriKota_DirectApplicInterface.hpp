@@ -1,7 +1,6 @@
 #ifndef TRIKOTA_DIRECTAPPLICINTERFACE
 #define TRIKOTA_DIRECTAPPLICINTERFACE
 
-#include "dakota_config.h"
 #include "DirectApplicInterface.H"
 #include "CommandLineHandler.H"
 #include "DakotaStrategy.H"
@@ -14,7 +13,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TestForException.hpp"
 
-
 /** \brief Interface class inherited from Dakota base class*/
 namespace TriKota {
 
@@ -24,7 +22,7 @@ public:
 
   // Constructor and destructor
 
-   DirectApplicInterface(const Dakota::ProblemDescDB& problem_db_,
+   DirectApplicInterface(Dakota::ProblemDescDB& problem_db_,
                          const Teuchos::RCP<EpetraExt::ModelEvaluator> App_);
 
   ~DirectApplicInterface() {};

@@ -40,7 +40,7 @@ int main(int argc, char* argv[])
 
   try {
 
-    *out << "\nStarting XOM_Dakota!" << endl;
+    *out << "\nStarting TriKota Example!" << endl;
     
     // Construct driver with default file names
     TriKota::Driver dakota;
@@ -54,10 +54,10 @@ int main(int argc, char* argv[])
     
     // Construct a concrete Dakota interface with an EpetraExt::ModelEvaluator
     Teuchos::RCP<TriKota::DirectApplicInterface> trikota_interface =
-      Teuchos::rcp(new TriKota::DirectApplicInterface(dakota.getProblemDescDB(), App));
+      Teuchos::rcp(new TriKota::DirectApplicInterface(dakota.getProblemDescDB(), App), false);
     
     // Run the requested Dakota strategy using this interface
-    dakota.run(trikota_interface);
+    dakota.run(trikota_interface.get());
 
     // Get the final solution and check it!
     Dakota::Variables finalVariables = dakota.getFinalSolution();
