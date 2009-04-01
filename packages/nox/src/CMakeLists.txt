@@ -42,6 +42,27 @@ APPEND_SET(SOURCES
   NOX_Abstract_Group.C
   )
 
+# Prerelease Code
+IF (${PACKAGE_NAME}_BUILD_PRERELEASE)
+  
+  APPEND_SET(HEADERS
+    NOX_Solver_TensorBasedTest.H
+    NOX_LineSearch_Tensor.H
+    NOX_Direction_Tensor.H
+    NOX_Direction_QuasiNewton.H
+    NOX_Direction_ModifiedNewton.H
+    )
+
+  APPEND_SET(SOURCES
+    NOX_Solver_TensorBasedTest.C
+    NOX_LineSearch_Tensor.C
+    NOX_Direction_Tensor.C
+    NOX_Direction_QuasiNewton.C
+    NOX_Direction_ModifiedNewton.C
+    )
+
+ENDIF()
+
 # Linesearch
 APPEND_SET(HEADERS
   NOX_LineSearch_Generic.H
