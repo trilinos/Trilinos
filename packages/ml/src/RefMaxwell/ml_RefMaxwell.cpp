@@ -123,7 +123,9 @@ ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMa
 #endif
   M0inv_Matrix_(&M0inv_Matrix),M1_Matrix_((Epetra_CrsMatrix*)&M1_Matrix),TMT_Matrix_(0),TMT_Agg_Matrix_(0),
   BCrows(0),numBCrows(0),HasOnlyDirichletNodes(false),Operator11_(0),EdgePC(0),NodePC(0),PreEdgeSmoother(0),PostEdgeSmoother(0),
-  aggregate_with_sigma(false),lump_m1(false),verbose_(false),very_verbose_(false)
+  aggregate_with_sigma(false),lump_m1(false),
+  use_local_nodal_solver(false),LocalNodalSolver(0),NodesToLocalNodes(0),LocalNodalMatrix(0),
+  verbose_(false),very_verbose_(false)
 {
   /* Set the Epetra Goodies */
   Comm_ = &(SM_Matrix_->Comm());
@@ -379,7 +381,21 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
   NumConstructions_++;
   ConstructionTime_+=t_time_curr-t_time_start;
 #endif  
-    
+
+  /* Local Nodal Stuff, if active */
+  use_local_nodal_solver = List_.get("refmaxwell: enable local nodal solver",false);
+  NodesToLocalNodes=List_.get("refmaxwell: global to local nodal transfer matrix",(Epetra_CrsMatrix*)0);
+  if(!NodesToLocalNodes) use_local_nodal_solver=false;
+  if(use_local_nodal_solver){
+    if(!Comm_->MyPID()) printf("RefMaxwell: Local Nodal Solver ENABLED\n");
+    // EXPERIMENTAL: Local nodal solver
+    ML_Epetra::ML_Epetra_PtAP(*TMT_Matrix_,*NodesToLocalNodes,LocalNodalMatrix,false);
+    Teuchos::ParameterList ListN=List_.get("refmaxwell: local nodal list",dummy);
+    if (ListN.name() == "refmaxwell: local nodal list") ListN.setName("refmaxwell: 11list");
+    SetDefaults("SA",ListN,0,0,false);
+    LocalNodalSolver=new MultiLevelPreconditioner(*LocalNodalMatrix,ListN);
+  }
+  
   IsComputePreconditionerOK_=true;
   return 0;
 }/*end ComputePreconditioner*/
@@ -408,6 +424,8 @@ int ML_Epetra::RefMaxwellPreconditioner::DestroyPreconditioner(){
   ML_Set_PrintLevel(output_level);  
   if(PreEdgeSmoother)  {delete PreEdgeSmoother; PreEdgeSmoother=0;}
   if(PostEdgeSmoother) {delete PostEdgeSmoother; PostEdgeSmoother=0;}
+  if(LocalNodalSolver) {delete LocalNodalSolver; LocalNodalSolver=0;}
+  if(LocalNodalMatrix) {delete LocalNodalMatrix; LocalNodalMatrix=0;} 
   ML_Set_PrintLevel(printl);  
   if(lump_m1) {delete M1_Matrix_; M1_Matrix_=0;}
 #ifdef ML_TIMING
@@ -533,7 +551,9 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PreList.set("coarse: damping factor",List.get("smoother: SGS damping factor",1.0));  
     PreList.set("PDE equations",1);
     PreList.set("max levels",1);    
-
+    PreList.set("smoother: Block Chebyshev number of blocks",List.get("smoother: Block Chebyshev number of blocks",-1));
+    PreList.set("smoother: Block Chebyshev block list",List.get("smoother: Block Chebyshev block list",(int*)0));
+    
     Teuchos::ParameterList PostList(PreList);
     PostList.setName("refmaxwell: edge postsmoother");
     PreList.set("coarse: pre or post","pre");
@@ -719,6 +739,20 @@ int  ML_Epetra::RefMaxwellPreconditioner::ApplyInverse_Implicit_Additive(const E
     MVOUT2(TempN2,"a-p22",c_iteration);//DEBUG  
 #endif
     if(very_verbose_) r3=cms_compute_residual(TMT_Matrix_,TempN1,TempN2);//DEBUG
+
+    /* EXPERIMENTAL: Local Nodal Stuff, if active */
+    if(use_local_nodal_solver){
+      const Epetra_Map& LocalMap=LocalNodalMatrix->DomainMap();
+      Epetra_MultiVector TempNL1(LocalMap,NumVectors,true);
+      Epetra_MultiVector TempNL2(LocalMap,NumVectors,true);
+      Epetra_MultiVector TempN3(*NodeMap_,NumVectors,true);
+      
+      NodesToLocalNodes->Multiply(true,TempN1,TempNL1);
+      LocalNodalSolver->ApplyInverse(TempNL1,TempNL2);
+      NodesToLocalNodes->Multiply(false,TempNL2,TempN3);
+      TempN2.Update(1.0,TempN3,1.0);
+    }/*end if*/
+
     D0_Matrix_->Multiply(false,TempN2,TempE1);
   }/*end if*/
     

@@ -412,7 +412,10 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   PL->set("refmaxwell: disable addon",false); 
   PL->set("refmaxwell: normalize prolongator",false);
   PL->set("refmaxwell: parallelize blocks",false);
-
+  PL->set("refmaxwell: local nodal list",dummy);
+  PL->set("refmaxwell: enable local nodal solver",false);
+  PL->set("refmaxwell: global to local nodal transfer matrix",(Epetra_CrsMatrix*)0);  
+  
   return PL;
 }
 
