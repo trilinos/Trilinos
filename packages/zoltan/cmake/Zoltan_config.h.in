@@ -20,3 +20,6 @@
 
 /* Define if want to build with octreepartitioning enabled */
 #cmakedefine HAVE_ZOLTAN_OCT
+
+/* Define if want to build with zlib enabled */
+#cmakedefine HAVE_GZIP

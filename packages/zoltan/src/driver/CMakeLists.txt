@@ -1,4 +1,3 @@
-
 INCLUDE(PackageAddExecutable)
 
 SET(COMMON_DRIVER_SRC
@@ -19,12 +18,21 @@ SET(COMMON_DRIVER_SRC
   dr_mm_readfile.c
   dr_mmio.c
   ${PACKAGE_SOURCE_DIR}/src/ch/ch_dist_graph.c
-  ${PACKAGE_SOURCE_DIR}/src/ch/ch_input_assign.c 
+  ${PACKAGE_SOURCE_DIR}/src/ch/ch_input_assign.c
   ${PACKAGE_SOURCE_DIR}/src/ch/ch_input_graph.c
   ${PACKAGE_SOURCE_DIR}/src/ch/ch_init_dist.c
   ${PACKAGE_SOURCE_DIR}/src/ch/ch_input_geom.c
   ${PACKAGE_SOURCE_DIR}/src/ch/ch_input_read.c
   )
+
+IF (${PACKAGE_NAME}_ENABLE_Zlib)
+
+  APPEND_SET(COMMON_DRIVER_SRC
+  dr_compress.c
+    )
+
+ENDIF()
+
 
 SET(COMMON_DRIVER_HDRS
   dr_compress_const.h
@@ -69,6 +77,7 @@ SET(ZCPPDRIVE_SOURCES
   dr_ddCPP.cpp
   dr_param_fileCPP.cpp
   )
+
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/src/ch)

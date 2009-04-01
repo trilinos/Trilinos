@@ -30,6 +30,7 @@ SET(Trilinos_TPLS_ENABLED
   ZoltanTpl      OFF
   y12m           OFF
   SuperLUDist    OFF
+  Zlib		 OFF
   )
 
 # NOTES:

@@ -21,7 +21,6 @@
 #include "dr_compress_const.h"
 #include "dr_util_const.h"
 
-
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
 extern "C" {
@@ -276,7 +275,8 @@ void ZOLTAN_FILE_rewind(ZOLTAN_FILE* file)
 {
   switch (file->type) {
   case STANDARD:
-    return (rewind(file->strm.fileunc));
+    rewind(file->strm.fileunc);
+    return;
 #ifdef ZOLTAN_GZIP
   case GZIP:
     gzrewind(file->strm.filegz);
