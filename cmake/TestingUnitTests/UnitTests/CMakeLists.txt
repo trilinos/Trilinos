@@ -168,7 +168,7 @@ FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC)
 
   # Used locally
   SET(EXEN SomeExec)
-  SET(PACKEXEN ${PACKAGE_NAME}_${EXEN})
+  SET(PACKEXEN ${PACKAGE_NAME}_${EXEN}.exe)
   SET(CMNDN ls)
 
   MESSAGE("***\n*** Add a single basic command with no arguments\n***")
@@ -185,9 +185,29 @@ FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC)
     1
     )
   UNITTEST_FILE_REGEX(
-    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_cmnd_1_args_2.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_cmnd_1_args_0.cmake"
     REGEX_STRINGS
       "TEST_CMND_0 ls"
+      "NUM_CMNDS 1"
+    )
+
+  MESSAGE("***\n*** Add a single package executable with no arguments\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_exec_1_args_0
+    TEST_0 EXEC ${EXEN}
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "./${PACKEXEN}"
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_exec_1_args_0.cmake"
+    REGEX_STRINGS
+      "TEST_CMND_0 ./${PACKEXEN}"
       "NUM_CMNDS 1"
     )
 
@@ -212,6 +232,26 @@ FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC)
       "CMAKE_MODULE_PATH"
       "DriveAdvancedTest"
       "DRIVE_ADVANCED_TEST"
+    )
+
+  MESSAGE("***\n*** Add a single package executable with three arguments\n***")
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_exec_1_args_3
+    TEST_0 EXEC ${EXEN} ARGS arg1 arg2 arg3
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "./${PACKEXEN} \"arg1\" \"arg2\" \"arg3\""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_exec_1_args_3.cmake"
+    REGEX_STRINGS
+      "TEST_CMND_0 ./${PACKEXEN} \"arg1\" \"arg2\" \"arg3\""
+      "NUM_CMNDS 1"
     )
 
   MESSAGE("***\n*** Add two basic commands with 1 and two arguments\n***")
@@ -349,4 +389,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(36)
+UNITTEST_FINAL_RESULT(44)

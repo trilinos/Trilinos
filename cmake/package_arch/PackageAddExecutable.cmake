@@ -7,16 +7,13 @@ INCLUDE(AppendSet)
 INCLUDE(ParseVariableArguments)
 
 
-SET(CMAKE_EXECUTABLE_SUFFIX ".exe")
-
-
 #
 # PACKAGE_ADD_EXECUTABLE(...): Function that adds a test/example executable.
 #
 # PACKAGE_ADD_EXECUTABLE(
 #   <execName>
-#   [ NOEXEPREFIX ]
 #   SOURCES <src1> <src2> ...
+#   [ NOEXEPREFIX ]
 #   [ DIRECTORY <dir> ]
 #   [ DEPLIBS <lib1> <lib2> ... ]
 #   [ COMM [serial] [mpi] ]

@@ -16,18 +16,19 @@ INCLUDE(PrintVar)
 # An advanced test is defined as:
 #
 #   PACKAGE_ADD_ADVANCED_TEST(
-#     <TestName>
-#     TEST_0 [ EXEC <execTarget> | CMND <cmndExec>] ...
-#     TEST_1 [ EXEC <execTarget> | CMND <cmndExec>] ...
+#     <testName>
+#     TEST_0 [EXEC <execTarget0> | CMND <cmndExec0>] ...
+#     [TEST_1 [EXEC <execTarget1> | CMND <cmndExec1>] ...]
 #     ...
-#     TEST_N [ EXEC <execTarget> | CMND <cmndExec>] ...
-#     [ COMM [serial] [mpi] ]
-#     [ OVERALL_NUM_MPI_PROCS <number> ]
-#     [ HOST ]
-#     [ XHOST ]
+#     [TEST_N [EXEC <execTargetN> | CMND <cmndExecN>] ...]
+#     [HOST <host1> <host2> ...]
+#     [XHOST <host1> <host2> ...]
+#     [COMM [serial] [mpi]]
+#     [OVERALL_NUM_PROCS]
+#     [FINAL_PASS_REGULAR_EXPRESSION <regex> | FINAL_FAIL_REGULAR_EXPRESSION <regex>]
 #     )
 #
-# Here 'TestName' is the name of the test (which will have ${PACKAGE_NAME}_
+# Here <testName> is the name of the test (which will have ${PACKAGE_NAME}_
 # appended) that will be used to name the output CMake script file as well as
 # the CTest test name passed into ADD_TEST(...).
 #
@@ -37,34 +38,62 @@ INCLUDE(PrintVar)
 # Each atomic test case is either a package-built executable or just a basic
 # command.  An atomic test or command takes the form:
 #
-#   TEST_i [EXEC <execTarget> | CMND <cmndExec>]
+#   TEST_i
+#      EXEC <execTarget> [NOEXEPREFIX] [NOEXESUFFIX] | CMND <cmndExec>
 #      ARGS <arg1> <arg2> ... <argn>
-#      [ NOEXEPREFIX ]
-#      [ NOEXESUFFIX ]
-#      [ OUTPUT_FILE <outputFile> ]
-#      [ NUM_MPI_PROCS <number> ]
-#      [ PASS_ANY
-#          | PASS_REGULAR_EXPRESSION <regex>
-#          | FAIL_REGULAR_EXPRESSION <regex>
-#          | STANDARD_PASS_OUTPUT ]
+#      [MESSAGE "<message>"]
+#      [WORKING_DIRECTORY <workingDir>]
+#      [OUTPUT_FILE <outputFile> [ECHO_OUTPUT_FILE]]
+#      [NUM_MPI_PROCS <number>]
+#      [PASS_ANY
+#        | PASS_REGULAR_EXPRESSION <regex>
+#        | PASS_REGULAR_EXPRESSION_ALL "<regex1>;<regex2>;...;<regexn>"
+#        | FAIL_REGULAR_EXPRESSION <regex>
+#        | STANDARD_PASS_OUTPUT
+#        ]
 #
 # Each test line is either package-built test executable or some general
-# command executable.  If it is a package executable, then you specify just
-# the executable target name as "EXEC <execTarget>".  The value <execTarget>
-# is same string that was passed in as the first argument to
-# PACKAGE_ADD_EXECUTABLE( <execTarget>...) used to define the executable.  If
-# this is an MPI build, then <execTarget> will be run with MPI using
-# NUM_MPI_PROCS <number>.  If the number of maximum MPI processes allowed is
-# less than this number of MPI processes, then the test will *not* be run.
-# When this is a general command, then the command is run as is without MPI.
-# If it is a general command, then it takes the form "CMND <cmndExec>".  In
-# this case, MPI will not be used to run the executable even when configured
-# in MPI mode (i.e. TPL_ENABLE_MPI=ON).
+# command executable:
 #
-# If "OUTPUT_FILE <outputFile>" is given, <outputFile> is the name of a file
-# that standard out will be captured into (relative to the current working
-# directory).  Capturing the output to a file allows a later command to read
-# the file and perform some type of test (e.g. like a diff or something).
+#   EXEC <execTarget>
+#
+#     If it is a package executable, then you specify just the executable
+#     target name as "EXEC <execTarget>".  The value <execTarget> is same
+#     string that was passed in as the first argument to
+#     PACKAGE_ADD_EXECUTABLE( <execTarget>...) used to define the executable.
+#     If this is an MPI build, then <execTarget> will be run with MPI using
+#     NUM_MPI_PROCS <number> or OVERALL_NUM_MPI_PROCS <number> (if
+#     NUM_MPI_PROCS is not set for this test case..  If the number of maximum
+#     MPI processes allowed is less than this number of MPI processes, then
+#     the test will *not* be run.  If NOEXEPREFIX is specified, then
+#     ${PACKAGE_NAME}_ will not be added the the beginning.  If NOEXESUFFIX is
+#     specified, then '.exe' will not be added to the end.
+#
+#   CMND <cmndExec>
+#
+#     If it is a general command, then it takes the form "CMND <cmndExec>".
+#     When this is a general command, then the command is run as is without
+#     MPI.  In this case, MPI will not be used to run the executable even when
+#     configured in MPI mode (i.e. TPL_ENABLE_MPI=ON).  Note that EXEC
+#     <execTarget> is basically equivalent to CMND <cmndExec> when NOEXEPREFIX
+#     and NOEXESUFFIX are specified.  In this case, you can pass in
+#     <execTarget> to any command you would like and it will get run with MPI
+#     in MPI mode just link any other command.
+#
+# Other miscellaneous arguments:
+#
+#   OUTPUT_FILE <outputFile>
+#
+#     If specified, <outputFile> is the name of a file that standard out will
+#     be captured into (relative to the current working directory).  Capturing
+#     the output to a file allows a later command to read the file and perform
+#     some type of test (e.g. like a diff or something).
+#
+#   ECHO_OUTPUT_FILE
+#
+#     If specified, then the contents of the file <outputFile> given in the
+#     OUTPUT_FILE argument will be echoed to the screen after the command has
+#     finished.
 #
 # By default, an atomic test line is assumed to pass if the executable returns
 # a non-zero value.  However, a test case can also be defined to pass based
@@ -85,8 +114,15 @@ INCLUDE(PrintVar)
 #
 #   FAIL_REGULAR_EXPRESSION <regex>
 #
-#     The test command 'i' will be assumed to fail if it matches the given
-#     regular expression.  Otherwise, it is assumed to pass.
+#     If specified, the test command 'i' will be assumed to fail if it matches
+#     the given regular expression.  Otherwise, it is assumed to pass.
+#
+#   STANDARD_PASS_OUTPUT
+#
+#     If specified, the test command 'i' will be assumed to pass if the string
+#     expression "Final Result: PASSED" is found in the ouptut for the test.
+#
+# ???
 #
 
 FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
@@ -176,7 +212,14 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
     # Write the command
 
     IF (PARSE_EXEC)
-      MESSAGE( FATAL_ERROR "EXEC not implmeneted yet!" )
+      LIST( LENGTH PARSE_EXEC PARSE_EXEC_LEN )
+      IF (NOT PARSE_EXEC_LEN EQUAL 1)
+        MESSAGE(SEND_ERROR "Error, TEST_${TEST_CMND_IDX} EXEC = '${PARSE_EXEC}'"
+          " must be a single name.  To add arguments use ARGS <arg1> <arg2> ...." )
+      ENDIF()
+      PACAKGE_ADD_TEST_GET_EXE_BINARY_NAME( "${PARSE_EXEC}"
+        ${PARSE_NOEXEPREFIX} ${PARSE_NOEXESUFFIX} EXE_BINARY_NAME )
+      SET( TEST_CMND_ARRAY "./${EXE_BINARY_NAME}" )
     ELSEIF (PARSE_CMND)
       LIST( LENGTH PARSE_CMND PARSE_CMND_LEN )
       IF (NOT PARSE_CMND_LEN EQUAL 1)

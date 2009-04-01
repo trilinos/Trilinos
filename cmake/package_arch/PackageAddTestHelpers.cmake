@@ -68,6 +68,25 @@ ENDFUNCTION()
 
 
 #
+# Get the full name of a package executable given its root name
+#
+
+FUNCTION(PACAKGE_ADD_TEST_GET_EXE_BINARY_NAME  EXE_NAME_IN
+  NOEXEPREFIX_IN  NOEXECSUFFIX_IN  EXE_BINARY_NAME_OUT
+  )
+  IF (NOT NOEXESUFFIX_IN)
+    SET(EXE_BINARY_NAME "${EXE_NAME_IN}${CMAKE_EXECUTABLE_SUFFIX}")
+  ELSE()
+    SET(EXE_BINARY_NAME "${EXE_NAME_IN}")
+  ENDIF()
+  IF(PACKAGE_NAME AND NOT NOEXEPREFIX_IN)
+    SET(EXE_BINARY_NAME ${PACKAGE_NAME}_${EXE_BINARY_NAME})
+  ENDIF()
+  SET(${EXE_BINARY_NAME_OUT} ${EXE_BINARY_NAME} PARENT_SCOPE)
+ENDFUNCTION()
+
+
+#
 # Generate the array of arguments for an MPI run
 #
 # NOTE: The extra test program arguments are passed through ${ARGN}.
