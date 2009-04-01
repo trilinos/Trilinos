@@ -58,7 +58,6 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
 {
   sprintf(Label_,"%s","Ifpack_NodeFilter");
 
-  printf("------ --- - Entering Ifpack_NodeFilter::Ifpack_NodeFilter ctor\n"); fflush(stdout);
   ImportVector_=null;
   //ExportVector_=null;
   ExportVector_=0;

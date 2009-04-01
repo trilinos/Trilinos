@@ -42,13 +42,14 @@
 #include "Teuchos_Array.hpp"
 #include "EpetraExt_OperatorOut.h"
 extern int ML_NODE_ID;
-using namespace Teuchos;
 #endif
+
+using namespace Teuchos;
 
 // ====================================================================== 
 // Constructor for the case of one core per subdomain
 Ifpack_OverlappingRowMatrix::
-Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
+Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
                             int OverlapLevel_in)  :
   Matrix_(Matrix_in),
   OverlapLevel_(OverlapLevel_in)
@@ -66,9 +67,9 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
   // construct the external matrix
   vector<int> ExtElements; 
 
-  Teuchos::RefCountPtr<Epetra_Map> TmpMap;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> TmpMatrix; 
-  Teuchos::RefCountPtr<Epetra_Import> TmpImporter;
+  RCP<Epetra_Map> TmpMap;
+  RCP<Epetra_CrsMatrix> TmpMatrix; 
+  RCP<Epetra_Import> TmpImporter;
 
   // importing rows corresponding to elements that are 
   // in ColMap, but not in RowMap 
@@ -104,11 +105,11 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
       } 
     } 
 
-    TmpMap = Teuchos::rcp( new Epetra_Map(-1,count, &list[0],0,Comm()) ); 
+    TmpMap = rcp( new Epetra_Map(-1,count, &list[0],0,Comm()) ); 
 
-    TmpMatrix = Teuchos::rcp( new Epetra_CrsMatrix(Copy,*TmpMap,0) ); 
+    TmpMatrix = rcp( new Epetra_CrsMatrix(Copy,*TmpMap,0) ); 
 
-    TmpImporter = Teuchos::rcp( new Epetra_Import(*TmpMap,A().RowMatrixRowMap()) ); 
+    TmpImporter = rcp( new Epetra_Import(*TmpMap,A().RowMatrixRowMap()) ); 
 
     TmpMatrix->Import(A(),*TmpImporter,Insert); 
     TmpMatrix->FillComplete(A().OperatorDomainMap(),*TmpMap); 
@@ -123,22 +124,22 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
   for (int i = 0 ; i < (int)ExtElements.size() ; ++i)
     list[i + NumMyRowsA_] = ExtElements[i];
 
-  Map_ = Teuchos::rcp( new Epetra_Map(-1, NumMyRowsA_ + ExtElements.size(),
+  Map_ = rcp( new Epetra_Map(-1, NumMyRowsA_ + ExtElements.size(),
 	  			      &list[0], 0, Comm()) );
 # ifdef IFPACK_NODE_AWARE_CODE
   colMap_ = Map_;
 # endif
   // now build the map corresponding to all the external nodes
   // (with respect to A().RowMatrixRowMap().
-  ExtMap_ = Teuchos::rcp( new Epetra_Map(-1,ExtElements.size(),
+  ExtMap_ = rcp( new Epetra_Map(-1,ExtElements.size(),
 					 &ExtElements[0],0,A().Comm()) );
-  ExtMatrix_ = Teuchos::rcp( new Epetra_CrsMatrix(Copy,*ExtMap_,*Map_,0) ); 
+  ExtMatrix_ = rcp( new Epetra_CrsMatrix(Copy,*ExtMap_,*Map_,0) ); 
 
-  ExtImporter_ = Teuchos::rcp( new Epetra_Import(*ExtMap_,A().RowMatrixRowMap()) ); 
+  ExtImporter_ = rcp( new Epetra_Import(*ExtMap_,A().RowMatrixRowMap()) ); 
   ExtMatrix_->Import(A(),*ExtImporter_,Insert); 
   ExtMatrix_->FillComplete(A().OperatorDomainMap(),*Map_);
 
-  Importer_ = Teuchos::rcp( new Epetra_Import(*Map_,A().RowMatrixRowMap()) );
+  Importer_ = rcp( new Epetra_Import(*Map_,A().RowMatrixRowMap()) );
 
   // fix indices for overlapping matrix
   NumMyRowsB_ = B().NumMyRows();
@@ -160,7 +161,7 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
 // ====================================================================== 
 // Constructor for the case of two or more cores per subdomain
 Ifpack_OverlappingRowMatrix::
-Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& Matrix_in,
+Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
                             int OverlapLevel_in, int nodeID)  :
   Matrix_(Matrix_in),
   OverlapLevel_(OverlapLevel_in)
@@ -210,9 +211,9 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
   // matrix's column map
   Teuchos::Hashtable<int,int> colMapTable = Teuchos::Hashtable<int,int>(3 * A().RowMatrixColMap().NumMyElements() );
 
-  Teuchos::RefCountPtr<Epetra_Map> TmpMap;
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> TmpMatrix; 
-  Teuchos::RefCountPtr<Epetra_Import> TmpImporter;
+  RCP<Epetra_Map> TmpMap;
+  RCP<Epetra_CrsMatrix> TmpMatrix; 
+  RCP<Epetra_Import> TmpImporter;
 
   // importing rows corresponding to elements that are 
   // in ColMap, but not in RowMap 
@@ -255,7 +256,7 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
     Epetra_IntVector colIdList( *ColMap );
     Epetra_IntVector rowIdList(*DomainMap);
     rowIdList.PutValue(nodeID);  
-    Teuchos::RCP<Epetra_Import> nodeIdImporter = Teuchos::rcp(new Epetra_Import( *ColMap, *DomainMap ));
+    Teuchos::RCP<Epetra_Import> nodeIdImporter = rcp(new Epetra_Import( *ColMap, *DomainMap ));
     colIdList.Import(rowIdList,*nodeIdImporter,Insert);
 
     int size = ColMap->NumMyElements() - RowMap->NumMyElements(); 
@@ -423,7 +424,7 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
     for (int i=0; i<ncull; i++) {
       //printf("pid %d: removing ghost GID %d\n",Comm().MyPID(),(&*cullList)[i]); fflush(stdout);
       //try{ghostTable.remove((&*cullList)[i]);}
-      printf("pid %d: removing ghost GID %d\n",Comm().MyPID(),cullList[i]); fflush(stdout);
+      //printf("pid %d: removing ghost GID %d\n",Comm().MyPID(),cullList[i]); fflush(stdout);
       try{ghostTable.remove(cullList[i]);}
 
     catch(...) {
@@ -450,11 +451,11 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
 
 #   endif //ifdef HAVE_MPI
 
-    TmpMap = Teuchos::rcp( new Epetra_Map(-1,count, &list[0],0,Comm()) ); // FIXME is this the right comm?
+    TmpMap = rcp( new Epetra_Map(-1,count, &list[0],0,Comm()) ); // FIXME is this the right comm?
 
-    TmpMatrix = Teuchos::rcp( new Epetra_CrsMatrix(Copy,*TmpMap,0) ); 
+    TmpMatrix = rcp( new Epetra_CrsMatrix(Copy,*TmpMap,0) ); 
 
-    TmpImporter = Teuchos::rcp( new Epetra_Import(*TmpMap,A().RowMatrixRowMap()) ); 
+    TmpImporter = rcp( new Epetra_Import(*TmpMap,A().RowMatrixRowMap()) ); 
 
     TmpMatrix->Import(A(),*TmpImporter,Insert); 
     TmpMatrix->FillComplete(A().OperatorDomainMap(),*TmpMap); 
@@ -468,7 +469,7 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
     ov_colIdList.PutValue(-1);
     Epetra_IntVector ov_rowIdList( TmpMatrix->RowMap() );
     ov_rowIdList.PutValue(nodeID);  
-    Teuchos::RCP<Epetra_Import> ov_nodeIdImporter = Teuchos::rcp(new Epetra_Import( TmpMatrix->ColMap(), TmpMatrix->RowMap()));
+    Teuchos::RCP<Epetra_Import> ov_nodeIdImporter = rcp(new Epetra_Import( TmpMatrix->ColMap(), TmpMatrix->RowMap()));
     ov_colIdList.Import(ov_rowIdList,*ov_nodeIdImporter,Insert);
 
     for (int i=0 ; i<ov_colIdList.MyLength(); i++) {
@@ -484,7 +485,7 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
     ov_colIdList.PutValue(-1);
     Epetra_IntVector ArowIdList( A().RowMatrixRowMap() );
     ArowIdList.PutValue(nodeID);
-    nodeIdImporter = Teuchos::rcp(new Epetra_Import( TmpMatrix->ColMap(), A().RowMatrixRowMap() ));
+    nodeIdImporter = rcp(new Epetra_Import( TmpMatrix->ColMap(), A().RowMatrixRowMap() ));
     ov_colIdList.Import(ArowIdList,*nodeIdImporter,Insert);
 
     for (int i=0 ; i<ov_colIdList.MyLength(); i++) {
@@ -537,7 +538,7 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
     rowList[i + NumMyRowsA_] = ghostElements[i];
 
   // row map for the overlapped matrix (local + overlap)
-  Map_ = Teuchos::rcp( new Epetra_Map(-1, NumMyRowsA_ + ghostElements.size(), &rowList[0], 0, Comm()) );
+  Map_ = rcp( new Epetra_Map(-1, NumMyRowsA_ + ghostElements.size(), &rowList[0], 0, Comm()) );
 
   // build the column map for the overlapping matrix
   //vector<int> colList(colMapElements.size());
@@ -554,21 +555,20 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
   // column map for the overlapped matrix (local + overlap)
   colMap_ = rcp( new Epetra_Map(-1, A().RowMatrixColMap().NumMyElements() + colMapElements.size(), &colList[0], 0, Comm()) );
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//++++ start of sort
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  //++++ start of sort
+  //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
   // build the column map, but don't use a copy constructor, b/c local communicator SubComm_ is
   // different from that of Matrix.
   try {
     // build row map based on the local communicator.  We need this temporarily to build the column map.
     RCP<Epetra_Map> nodeMap_ = rcp( new Epetra_Map(-1,NumMyRowsA_ + ghostElements.size(),&rowList[0],0,*nodeComm) );
     //Epetra_Map* nodeMap_ = new Epetra_Map(-1,NumMyRowsA_ + ghostElements.size(),&rowList[0],0,*nodeComm) ;
-    const Epetra_Map &globColMap = *colMap_;
-    int numMyElts = globColMap.NumMyElements();
+    int numMyElts = colMap_->NumMyElements();
 
-    Teuchos::RCP<int> myGlobalElts = Teuchos::rcp( new int[numMyElts] );
-    globColMap.MyGlobalElements(&*myGlobalElts);
-    Teuchos::RCP<int> pidList = Teuchos::rcp( new int[numMyElts] );
+    Teuchos::RCP<int> myGlobalElts = rcp( new int[numMyElts] );
+    colMap_->MyGlobalElements(&*myGlobalElts);
+    Teuchos::RCP<int> pidList = rcp( new int[numMyElts] );
     nodeMap_->RemoteIDList(numMyElts, &*myGlobalElts, &*pidList, 0);
 
    /* The column map *must* be sorted: first locals, then ghosts.
@@ -599,15 +599,15 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
     int localEnd=localStart;
     while (localEnd<numMyElts && (&*pidList)[localEnd] == nodeComm->MyPID()) localEnd++;
     assert(numMyElts!=0);
-    Teuchos::RCP<int> mySortedGlobalElts = Teuchos::rcp( new int[numMyElts] );
-    Teuchos::RCP<int> mySortedPidList = Teuchos::rcp( new int[numMyElts] );
+    Teuchos::RCP<int> mySortedGlobalElts = rcp( new int[numMyElts] );
+    //Teuchos::RCP<int> mySortedPidList = rcp( new int[numMyElts] );
+    RCP<int> mySortedPidList = rcp( new int[numMyElts] );
     int leng = localEnd - localStart;
     /* This is a little gotcha.  It appears that the ordering of the column map's local entries
        must be the same as that of the domain map's local entries.  See the comment in method
        MakeColMap() in Epetra_CrsGraph.cpp, line 1072. */
     int *rowGlobalElts =  nodeMap_->MyGlobalElements();
     int numRowElts = nodeMap_->NumMyElements();
-    //delete nodeMap_; FIXME causing a seg fault
     //printf("lpid %d: numRowElts = %d, leng = %d\n",Comm().MyPID(),numRowElts,leng); fflush(stdout);
     //assert(numRowElts==leng);
     for (int i=0; i<leng; i++) {
@@ -627,8 +627,9 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
       (&*mySortedPidList)[i] = (&*pidList)[i];
     }
 
-    //colMap_ = Teuchos::rcp( new Epetra_Map(-1,numMyElts,&*mySortedGlobalElts,globColMap.IndexBase(),*SubComm_) );
-    colMap_ = Teuchos::rcp( new Epetra_Map(-1,numMyElts,&*mySortedGlobalElts,globColMap.IndexBase(),Comm()) );
+    int indexBase = colMap_->IndexBase();
+    colMap_ = Teuchos::null;
+    colMap_ = rcp( new Epetra_Map(-1,numMyElts,&*mySortedGlobalElts,indexBase,Comm()) );
 
 /*
     if (SubComm_->MyPID()==0)
@@ -645,11 +646,11 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
     printf("** * Ifpack_OverlappingRowmatrix ctor: problem creating column map * **\n\n");
   }
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-//++++ end of sort
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+  //++++ end of sort
+  //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-  Teuchos::RCP<int> pidList = Teuchos::rcp( new int[colMapElements.size()] );
+  Teuchos::RCP<int> pidList = rcp( new int[colMapElements.size()] );
 
   Map_->RemoteIDList(colMapElements.size(), &colList[0], &*pidList, 0);
 
@@ -659,7 +660,7 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
   fflush(stdout);
 */
 
- /*
+/*
 
    FIXME
    Does the column map need to be sorted for the overlapping matrix?
@@ -699,10 +700,10 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
 
   // now build the map corresponding to all the external nodes
   // (with respect to A().RowMatrixRowMap().
-  ExtMap_ = Teuchos::rcp( new Epetra_Map(-1,ghostElements.size(), &ghostElements[0],0,Comm()) );
-  ExtMatrix_ = Teuchos::rcp( new Epetra_CrsMatrix(Copy,*ExtMap_,*colMap_,0) ); 
+  ExtMap_ = rcp( new Epetra_Map(-1,ghostElements.size(), &ghostElements[0],0,Comm()) );
+  ExtMatrix_ = rcp( new Epetra_CrsMatrix(Copy,*ExtMap_,*colMap_,0) ); 
 
-  ExtImporter_ = Teuchos::rcp( new Epetra_Import(*ExtMap_,A().RowMatrixRowMap()) ); 
+  ExtImporter_ = rcp( new Epetra_Import(*ExtMap_,A().RowMatrixRowMap()) ); 
   ExtMatrix_->Import(A(),*ExtImporter_,Insert); 
 
 /*
@@ -712,12 +713,11 @@ Ifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Epetra_RowMatrix>& 
                     
 */
 
-  //ExtMatrix_->FillComplete(A().OperatorDomainMap(),*colMap_); //FIXME wrong
   ExtMatrix_->FillComplete( *colMap_ , *Map_ ); //FIXME wrong
 
   // Note: B() = *ExtMatrix_ .
 
-  Importer_ = Teuchos::rcp( new Epetra_Import(*Map_,A().RowMatrixRowMap()) ); //FIXME is this right?!
+  Importer_ = rcp( new Epetra_Import(*Map_,A().RowMatrixRowMap()) ); //FIXME is this right?!
 
   // fix indices for overlapping matrix
   NumMyRowsB_ = B().NumMyRows();

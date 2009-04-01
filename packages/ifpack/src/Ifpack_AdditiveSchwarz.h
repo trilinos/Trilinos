@@ -641,9 +641,11 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
       int myNodeID;
       try{ myNodeID = List_.get("ML node id",-1);}
       catch(...){fprintf(stderr,"pid %d: no such entry (returned %d)\n",Comm().MyPID(),myNodeID);}
+/*
       cout << "pid " << Comm().MyPID()
            << ": calling Ifpack_OverlappingRowMatrix with myNodeID = "
            << myNodeID << ", OverlapLevel_ = " << OverlapLevel_ << endl;
+*/
       OverlappingMatrix_ = Teuchos::rcp( new Ifpack_OverlappingRowMatrix(Matrix_, OverlapLevel_, myNodeID) );
 #   else
       OverlappingMatrix_ =
@@ -656,15 +658,19 @@ int Ifpack_AdditiveSchwarz<T>::Initialize()
   }
 
 # ifdef IFPACK_NODE_AWARE_CODE
+/*
   sleep(1);
   Comm().Barrier();
+*/
 # endif
 
   IFPACK_CHK_ERR(Setup());
 
 # ifdef IFPACK_NODE_AWARE_CODE
+/*
   sleep(1);
   Comm().Barrier();
+*/
 #endif
 
   if (Inverse_ == Teuchos::null)
