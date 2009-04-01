@@ -36,7 +36,7 @@ using Teuchos::rcp_dynamic_cast;
 
 namespace {
 
-bool compareEpetraMVToThyra(const Epetra_MultiVector & eX,
+double compareEpetraMVToThyra(const Epetra_MultiVector & eX,
                             const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & tX,
                             int indexStart=-1,int indexEnd=-1);
 
@@ -67,7 +67,7 @@ const RCP<const Thyra::VectorSpaceBase<double> > buildCompositeSpace(const Epetr
    return uvpVS;
 }
 
-bool compareEpetraMVToThyra(const Epetra_MultiVector & eX,
+double compareEpetraMVToThyra(const Epetra_MultiVector & eX,
                             const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & tX,
                             int indexStart,int indexEnd)
 {
@@ -75,6 +75,8 @@ bool compareEpetraMVToThyra(const Epetra_MultiVector & eX,
       indexStart = 0;
       indexEnd = eX.GlobalLength();
    }
+
+   double maxerr = 0.0;
 
    // check the base case
    const RCP<const Thyra::ProductMultiVectorBase<double> > prodX
@@ -97,11 +99,17 @@ bool compareEpetraMVToThyra(const Epetra_MultiVector & eX,
          if(gid<indexStart || gid>=indexEnd) continue;
 
          // these values should be exactly equal
-         for(int j=0;j<vecs;j++)
-            result &= view(gid-indexStart,j) == eX[j][i];
+         for(int j=0;j<vecs;j++) {
+            bool local = view(gid-indexStart,j) == eX[j][i];
+            result &= local;
+            if(not local) { 
+               double diff = std::fabs(view(gid-indexStart,j) - eX[j][i]);
+               maxerr = maxerr > diff ? maxerr : diff;
+            }
+         }
       }
 
-      return result;
+      return maxerr;
    }
 
    const RCP<const Thyra::ProductVectorSpaceBase<double> > prodVS = prodX->productSpace(); 
@@ -112,13 +120,15 @@ bool compareEpetraMVToThyra(const Epetra_MultiVector & eX,
       int size = prodVS->getBlock(i)->dim();
 
       // run comparison routine on relavant values
-      result &= compareEpetraMVToThyra(eX,prodX->getMultiVectorBlock(i),indexStart,indexStart+size); 
+      double val = compareEpetraMVToThyra(eX,prodX->getMultiVectorBlock(i),indexStart,indexStart+size); 
 
       // shift starting index
       indexStart+= size;
+
+      maxerr = maxerr > val ? maxerr : val;
    }
 
-   return result;
+   return maxerr;
 }
 
 } // end namespace
@@ -204,13 +214,13 @@ bool tEpetraThyraConverter::test_blockThyraToEpetra(int verbosity,std::ostream &
    PB::Epetra::blockThyraToEpetra(tX,*eX);
 
    TEST_ASSERT(eX!=Teuchos::null,
-            "   tEpetraThyraConverter::test_blockThyraToEpetra: " << toString(status) 
+            "\n   tEpetraThyraConverter::test_blockThyraToEpetra: " << toString(status) 
          << ": blockThyraToEpetra returns not null");
 
-   bool result = compareEpetraMVToThyra(*eX,tX);
-   TEST_ASSERT(result,
-            "   tEpetraThyraConverter::test_blockThyraToEpetra: " << toString(status) 
-         << ": Epetra MV is compared to Thyra MV");
+   double result = compareEpetraMVToThyra(*eX,tX);
+   TEST_ASSERT(result==0.0,
+            "\n   tEpetraThyraConverter::test_blockThyraToEpetra: " << toString(status) 
+         << ": Epetra MV is compared to Thyra MV (maxdiff = " << result << ")");
 
    return allPassed;
 }
@@ -247,13 +257,13 @@ bool tEpetraThyraConverter::test_single_blockThyraToEpetra(int verbosity,std::os
 
 
    TEST_ASSERT(eX!=Teuchos::null,
-            "   tEpetraThyraConverter::test_single_blockThyraToEpetra: " << toString(status) 
+            "\n   tEpetraThyraConverter::test_single_blockThyraToEpetra: " << toString(status) 
          << ": blockThyraToEpetra returns not null");
 
-   bool result = compareEpetraMVToThyra(*eX,tX);
-   TEST_ASSERT(result,
-            "   tEpetraThyraConverter::test_single_blockThyraToEpetra: " << toString(status) 
-         << ": Epetra MV is compared to Thyra MV");
+   double result = compareEpetraMVToThyra(*eX,tX);
+   TEST_ASSERT(result==0.0,
+            "\n   tEpetraThyraConverter::test_single_blockThyraToEpetra: " << toString(status) 
+         << ": Epetra MV is compared to Thyra MV (maxdiff = " << result << ")");
 
    return allPassed;
 }
@@ -290,11 +300,10 @@ bool tEpetraThyraConverter::test_blockEpetraToThyra(int verbosity,std::ostream &
    const RCP<Thyra::MultiVectorBase<double> >  tX = Thyra::createMembers(prodVS,eX.NumVectors());
    PB::Epetra::blockEpetraToThyra(eX,tX.ptr());
 
-   bool result = true;
-   result &= compareEpetraMVToThyra(eX,tX);
-   TEST_ASSERT(result,
-            "   tEpetraThyraConverter::test_blockEpetraToThyra: " << toString(status) 
-         << ": Epetra MV is compared to Thyra MV");
+   double result = compareEpetraMVToThyra(eX,tX);
+   TEST_ASSERT(result==0.0,
+            "\n   tEpetraThyraConverter::test_blockEpetraToThyra: " << toString(status) 
+         << ": Epetra MV is compared to Thyra MV (maxdiff = " << result << ")");
 
    return allPassed;
 }
@@ -333,13 +342,13 @@ bool tEpetraThyraConverter::test_single_blockEpetraToThyra(int verbosity, std::o
    PB::Epetra::blockEpetraToThyra(eX,tX.ptr());
 
    TEST_ASSERT(tX!=Teuchos::null,
-            "   tEpetraThyraConverter::test_single_blockEpetraToThyra: " << toString(status) 
+            "\n   tEpetraThyraConverter::test_single_blockEpetraToThyra: " << toString(status) 
          << ": blockEpetraToThyra returns not null");
 
-   bool result = compareEpetraMVToThyra(eX,tX);
-   TEST_ASSERT(result,
-            "   tEpetraThyraConverter::test_single_blockEpetraToThyra: " << toString(status) 
-         << ": Epetra MV is compared to Thyra MV");
+   double result = compareEpetraMVToThyra(eX,tX);
+   TEST_ASSERT(result==0.0,
+            "\n   tEpetraThyraConverter::test_single_blockEpetraToThyra: " << toString(status) 
+         << ": Epetra MV is compared to Thyra MV (maxdiff = " << result << ")");
 
    return allPassed;
 }
