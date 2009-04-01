@@ -7,6 +7,7 @@
 #include "ml_common.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
+#include "Epetra_CrsMatrix.h"
 #include "ml_ValidateParameters.h"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
@@ -150,7 +151,9 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
 
 
   /* EXPERIMENTAL - Half-GS Smoothing */
-  PL->set("smoother: Gauss-Seidel efficient symmetric",false); 
+  PL->set("smoother: Gauss-Seidel efficient symmetric",false);
+  setIntParameter("smoother: Block Chebyshev number of blocks",-1,"Number of blocks to use with Block Chebyshev",PL,intParam);    
+  PL->set("smoother: Block Chebyshev block list",(int*)0);
   
   /* Coarse IFPACK Solvers - experimental */
   //PL->set("smoother: ifpack list",dummy);
@@ -208,15 +211,16 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Allocate List for Smoothing Options */
 # ifdef HAVE_PETSC
-  const int num_smoothers=25;
+  const int num_smoothers=26;
 # else
-  const int num_smoothers=24;
+  const int num_smoothers=25;
 # endif
   const char* smoother_strings[num_smoothers]={"Aztec","IFPACK","Jacobi",
    "ML symmetric Gauss-Seidel","symmetric Gauss-Seidel","ML Gauss-Seidel",
    "Gauss-Seidel","Chebyshev","MLS","Hiptmair","Amesos-KLU","Amesos-Superlu",
    "Amesos-UMFPACK","Amesos-Superludist","Amesos-MUMPS","user-defined",
-   "SuperLU","IFPACK-Chebyshev","self","do-nothing","IC","ICT","ILU","ILUT"
+   "SuperLU","IFPACK-Chebyshev","self","do-nothing","IC","ICT","ILU","ILUT",
+   "Block Chebyshev"
 #  ifdef HAVE_PETSC
    ,"petsc"
 #  endif
@@ -310,6 +314,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("ML validate depth",0,"Internal option to control validation depth",PL,intParam);
   PL->set("ResetList",true); 
   setStringToIntegralParameter<int>("SetDefaults","not-set","Internal Option",tuple<string>("not-set","SA","DD","DD-ML","maxwell","NSSA","RefMaxwell"),PL);
+  setIntParameter("ML node id",-1,"Experimental option to identify the processor node (vis-a-vis core) id",PL,intParam);
 
   /* Unlisted Options that should probably be listed */
   setIntParameter("aggregation: aux: max levels",10,"Unlisted option",PL,intParam);
@@ -341,6 +346,9 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setDoubleParameter("coarse: ifpack relative threshold",1.0,"Unlisted option",PL,dblParam);
   setDoubleParameter("coarse: ifpack absolute threshold",0.0,"Unlisted option",PL,dblParam);
 
+  /* EXPERIMENTAL - RefMaxwell block parallelization */
+  PL->set("partitioner: options",dummy);  
+  PL->sublist("partitioner: options").disableRecursiveValidation();
   return PL;
 }
 
@@ -404,6 +412,10 @@ Teuchos::ParameterList * ML_Epetra::GetValidRefMaxwellParameters(){
   PL->set("refmaxwell: disable addon",false); 
   PL->set("refmaxwell: normalize prolongator",false);
   PL->set("refmaxwell: parallelize blocks",false);
+  PL->set("refmaxwell: local nodal list",dummy);
+  PL->set("refmaxwell: enable local nodal solver",false);
+  PL->set("refmaxwell: global to local nodal transfer matrix",(Epetra_CrsMatrix*)0);  
+  
   return PL;
 }
 

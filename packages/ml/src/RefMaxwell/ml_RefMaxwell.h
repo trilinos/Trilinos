@@ -246,7 +246,13 @@ namespace ML_Epetra
    
     //! Mass lumping
     bool lump_m1;   
- 
+
+    // EXPERIMENTAL: Local nodal subsolver
+    bool use_local_nodal_solver;
+    MultiLevelPreconditioner *LocalNodalSolver;
+    const Epetra_CrsMatrix* NodesToLocalNodes;
+    Epetra_CrsMatrix* LocalNodalMatrix;
+    
     //! Domain Map
     const Epetra_Map* DomainMap_;
     //! Range Map

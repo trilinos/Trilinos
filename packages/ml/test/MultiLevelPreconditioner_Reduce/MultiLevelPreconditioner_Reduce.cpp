@@ -87,7 +87,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   Zlist1.set("Zoltan",Sublist1);
   
   /* Start Isorropia's Ninja Magic - Group #1 */
-  RefCountPtr<Isorropia::Epetra::Partitioner> partitioner1 =
+  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner1 =
     Isorropia::Epetra::create_partitioner(Arcp, Zlist1);
   Isorropia::Epetra::Redistributor rd1(partitioner1);
 
@@ -109,7 +109,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   Zlist2.set("Zoltan",Sublist2);
     
   /* Start Isorropia's Ninja Magic - Group #2 */
-  RefCountPtr<Isorropia::Epetra::Partitioner> partitioner2 =
+  Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner2 =
     Isorropia::Epetra::create_partitioner(Arcp, Zlist2);
   Isorropia::Epetra::Redistributor rd2(partitioner2);
 
