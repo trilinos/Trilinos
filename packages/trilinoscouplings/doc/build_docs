@@ -13,8 +13,3 @@ echo
 
 doxygen DoxyfileWeb
 
-echo
-echo "Generating doxygen browser documentation for all of trilinoscouplings ..."
-echo
-
-doxygen ../browser/doc/Doxyfile
