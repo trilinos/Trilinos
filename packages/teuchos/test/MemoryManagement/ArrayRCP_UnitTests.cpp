@@ -33,6 +33,14 @@ using Teuchos::getRawPtr;
 //
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, nullIterator, T )
+{
+  typedef ArrayRCP<T> iter_t;
+  ArrayRCP<T> arcp1 = Teuchos::NullIteratorTraits<iter_t>::getNull();
+  TEST_EQUALITY_CONST(arcp1, Teuchos::null); 
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, implicitConversions, T )
 {
 
@@ -290,6 +298,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
 
 
 #define UNIT_TEST_GROUP( T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, nullIterator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, implicitConversions, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, weakDelete, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, danglingArrayView, T ) \

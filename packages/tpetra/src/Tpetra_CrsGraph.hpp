@@ -1258,6 +1258,7 @@ namespace Tpetra
   void CrsGraph<LocalOrdinal,GlobalOrdinal>::makeIndicesLocal(const Map<LocalOrdinal,GlobalOrdinal> &domainMap, const Map<LocalOrdinal,GlobalOrdinal> &rangeMap)
   {
     using Teuchos::ArrayRCP;
+    using Teuchos::NullIteratorTraits;
     computeIndexState(); // Update index state by checking IndicesAreLocal/Global on all nodes
     TEST_FOR_EXCEPTION(indicesAreLocal() && indicesAreGlobal(), std::logic_error,
         Teuchos::typeName(*this) << "::makeIndicesLocal(): indices are marked as both global and local.");
@@ -1286,7 +1287,8 @@ namespace Tpetra
                   Teuchos::typeName(*this) << ": Internal error in fillComplete(). Please contact Tpetra team.");
 #endif
             }
-            graphData_->colGIndsPtrs_[r] = Teuchos::null;
+            graphData_->colGIndsPtrs_[r] =
+              NullIteratorTraits<typename ArrayRCP<GlobalOrdinal>::iterator>::getNull();
             ++r;
             sofar += numalloc;
           }
