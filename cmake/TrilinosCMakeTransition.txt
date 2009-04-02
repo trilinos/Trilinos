@@ -82,14 +82,11 @@ Package: Stokhos (Non-released)
 
 Package Transition Lead: Eric Phipps (etphipp@sandia.gov)
 
-Status: Has basic CMake support for libraries and a few tests and examples.
-However, this is categorized as Expermental Code (i.e. not even Secondary
-Stable Code) and therefore the package developers are solely responsible for
-testing the package and an Experimental package can not be released.
+Status: Camek transition is complete.
 
-Final Certification Date: [???]
+Final Certification Date: 04/02/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: Visual inspection of configuration files.
 
 -------------------------------------------------------------------------------
 
@@ -97,12 +94,11 @@ Package: Sacado
 
 Package Transition Lead: Eric Phipps (etphipp@sandia.gov)
 
-Status: Has mostly complete CMake support but there are some problem-some
-tests that still need to be converted.
+Status: CMake transition is complete.
 
-Final Certification Date: [???]
+Final Certification Date: 04/02/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: Visual inspection of configuration files.
 
 -------------------------------------------------------------------------------
 
@@ -473,7 +469,8 @@ Package: NOX (and therefore also LOCA)
 Package Transition Lead: Roger Pawlowski (rppawlo@sandia.gov)
 
 Status: Should have nearly complete CMake support.  Just a few loose ends to
-tie up.
+tie up.  LOCA is complete, except a configuration test for GGEV which may
+not even be necessary anymore.
 
 Final Certification Date: [???]
 
