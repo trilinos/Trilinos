@@ -35,6 +35,7 @@
 #include "Rythmos_RKButcherTableau.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
+#include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"

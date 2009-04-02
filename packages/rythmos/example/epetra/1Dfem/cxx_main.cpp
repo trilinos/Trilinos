@@ -209,7 +209,7 @@ int main(int argc, char *argv[])
       _nonlinearSolver->setParameterList(nonlinearSolverPL);
       nonlinearSolver = _nonlinearSolver;
       Teuchos::RCP<Teuchos::ParameterList> BDFparams = Teuchos::rcp(new Teuchos::ParameterList);
-      Teuchos::RCP<Teuchos::ParameterList> BDFStepControlPL = Teuchos::sublist(BDFparams, RythmosStepControlSettings_name);
+      Teuchos::RCP<Teuchos::ParameterList> BDFStepControlPL = Teuchos::sublist(BDFparams, "Step Control Settings");
       BDFStepControlPL->set( "stopTime", finalTime );
       BDFStepControlPL->set( "maxOrder", maxOrder );
       BDFStepControlPL->set( "relErrTol", reltol );

@@ -105,8 +105,12 @@ LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
 librythmos_a_DEPENDENCIES =
-am__objects_1 = Rythmos_Version.$(OBJEXT) \
-	Rythmos_RKButcherTableau.$(OBJEXT)
+am__objects_1 = Rythmos_BackwardEulerStepper.$(OBJEXT) \
+	Rythmos_ExplicitRKStepper.$(OBJEXT) \
+	Rythmos_ImplicitBDFStepper.$(OBJEXT) \
+	Rythmos_ImplicitBDFStepperStepControl.$(OBJEXT) \
+	Rythmos_ImplicitRKStepper.$(OBJEXT) \
+	Rythmos_RKButcherTableau.$(OBJEXT) Rythmos_Version.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
 am_librythmos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -250,6 +254,8 @@ top_srcdir = @top_srcdir@
 CORE_H = \
   $(srcdir)/Rythmos_AdjointModelEvaluator.hpp\
   $(srcdir)/Rythmos_BackwardEulerStepper.hpp\
+  $(srcdir)/Rythmos_BackwardEulerStepper_decl.hpp\
+  $(srcdir)/Rythmos_BackwardEulerStepper_def.hpp\
   $(srcdir)/Rythmos_BreakPointInformerBase.hpp\
   $(srcdir)/Rythmos_CompositeIntegratorObserver.hpp\
   $(srcdir)/Rythmos_ConfigDefs.h\
@@ -262,6 +268,8 @@ CORE_H = \
   $(srcdir)/Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcBase.hpp\
   $(srcdir)/Rythmos_ExplicitRKStepper.hpp\
+  $(srcdir)/Rythmos_ExplicitRKStepper_decl.hpp\
+  $(srcdir)/Rythmos_ExplicitRKStepper_def.hpp\
   $(srcdir)/Rythmos_ExplicitTaylorPolynomialStepper.hpp\
   $(srcdir)/Rythmos_ForwardEulerStepper.hpp\
   $(srcdir)/Rythmos_ForwardResponseSensitivityComputer.hpp\
@@ -271,12 +279,16 @@ CORE_H = \
   $(srcdir)/Rythmos_ForwardSensitivityStepper.hpp\
   $(srcdir)/Rythmos_HermiteInterpolator.hpp\
   $(srcdir)/Rythmos_ImplicitBDFStepper.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperDecl.hpp\
+  $(srcdir)/Rythmos_ImplicitBDFStepper_decl.hpp\
+  $(srcdir)/Rythmos_ImplicitBDFStepper_def.hpp\
   $(srcdir)/Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp\
   $(srcdir)/Rythmos_ImplicitBDFStepperStepControl.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperStepControlDecl.hpp\
+  $(srcdir)/Rythmos_ImplicitBDFStepperStepControl_decl.hpp\
+  $(srcdir)/Rythmos_ImplicitBDFStepperStepControl_def.hpp\
   $(srcdir)/Rythmos_ImplicitRKModelEvaluator.hpp\
   $(srcdir)/Rythmos_ImplicitRKStepper.hpp\
+  $(srcdir)/Rythmos_ImplicitRKStepper_decl.hpp\
+  $(srcdir)/Rythmos_ImplicitRKStepper_def.hpp\
   $(srcdir)/Rythmos_IntegrationControlStrategyAcceptingIntegratorBase.hpp\
   $(srcdir)/Rythmos_IntegrationControlStrategyBase.hpp\
   $(srcdir)/Rythmos_IntegrationObserverBase.hpp\
@@ -319,8 +331,13 @@ CORE_H = \
   $(srcdir)/Rythmos_Version.h
 
 CORE = \
-  $(srcdir)/Rythmos_Version.cpp\
-	$(srcdir)/Rythmos_RKButcherTableau.cpp
+  $(srcdir)/Rythmos_BackwardEulerStepper.cpp\
+  $(srcdir)/Rythmos_ExplicitRKStepper.cpp\
+	$(srcdir)/Rythmos_ImplicitBDFStepper.cpp\
+	$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp\
+  $(srcdir)/Rythmos_ImplicitRKStepper.cpp\
+	$(srcdir)/Rythmos_RKButcherTableau.cpp\
+  $(srcdir)/Rythmos_Version.cpp
 
 UTIL_H = 
 UTIL = 
@@ -510,6 +527,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_BackwardEulerStepper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ExplicitRKStepper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitBDFStepper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitBDFStepperStepControl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitRKStepper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_RKButcherTableau.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_Version.Po@am__quote@
 
@@ -527,19 +549,75 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-Rythmos_Version.o: $(srcdir)/Rythmos_Version.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_Version.o -MD -MP -MF $(DEPDIR)/Rythmos_Version.Tpo -c -o Rythmos_Version.o `test -f '$(srcdir)/Rythmos_Version.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_Version.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_Version.Tpo $(DEPDIR)/Rythmos_Version.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_Version.cpp' object='Rythmos_Version.o' libtool=no @AMDEPBACKSLASH@
+Rythmos_BackwardEulerStepper.o: $(srcdir)/Rythmos_BackwardEulerStepper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_BackwardEulerStepper.o -MD -MP -MF $(DEPDIR)/Rythmos_BackwardEulerStepper.Tpo -c -o Rythmos_BackwardEulerStepper.o `test -f '$(srcdir)/Rythmos_BackwardEulerStepper.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_BackwardEulerStepper.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_BackwardEulerStepper.Tpo $(DEPDIR)/Rythmos_BackwardEulerStepper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_BackwardEulerStepper.cpp' object='Rythmos_BackwardEulerStepper.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_Version.o `test -f '$(srcdir)/Rythmos_Version.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_Version.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_BackwardEulerStepper.o `test -f '$(srcdir)/Rythmos_BackwardEulerStepper.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_BackwardEulerStepper.cpp
 
-Rythmos_Version.obj: $(srcdir)/Rythmos_Version.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_Version.obj -MD -MP -MF $(DEPDIR)/Rythmos_Version.Tpo -c -o Rythmos_Version.obj `if test -f '$(srcdir)/Rythmos_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_Version.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_Version.Tpo $(DEPDIR)/Rythmos_Version.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_Version.cpp' object='Rythmos_Version.obj' libtool=no @AMDEPBACKSLASH@
+Rythmos_BackwardEulerStepper.obj: $(srcdir)/Rythmos_BackwardEulerStepper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_BackwardEulerStepper.obj -MD -MP -MF $(DEPDIR)/Rythmos_BackwardEulerStepper.Tpo -c -o Rythmos_BackwardEulerStepper.obj `if test -f '$(srcdir)/Rythmos_BackwardEulerStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_BackwardEulerStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_BackwardEulerStepper.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_BackwardEulerStepper.Tpo $(DEPDIR)/Rythmos_BackwardEulerStepper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_BackwardEulerStepper.cpp' object='Rythmos_BackwardEulerStepper.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_Version.obj `if test -f '$(srcdir)/Rythmos_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_Version.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_BackwardEulerStepper.obj `if test -f '$(srcdir)/Rythmos_BackwardEulerStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_BackwardEulerStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_BackwardEulerStepper.cpp'; fi`
+
+Rythmos_ExplicitRKStepper.o: $(srcdir)/Rythmos_ExplicitRKStepper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ExplicitRKStepper.o -MD -MP -MF $(DEPDIR)/Rythmos_ExplicitRKStepper.Tpo -c -o Rythmos_ExplicitRKStepper.o `test -f '$(srcdir)/Rythmos_ExplicitRKStepper.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ExplicitRKStepper.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_ExplicitRKStepper.Tpo $(DEPDIR)/Rythmos_ExplicitRKStepper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ExplicitRKStepper.cpp' object='Rythmos_ExplicitRKStepper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ExplicitRKStepper.o `test -f '$(srcdir)/Rythmos_ExplicitRKStepper.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ExplicitRKStepper.cpp
+
+Rythmos_ExplicitRKStepper.obj: $(srcdir)/Rythmos_ExplicitRKStepper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ExplicitRKStepper.obj -MD -MP -MF $(DEPDIR)/Rythmos_ExplicitRKStepper.Tpo -c -o Rythmos_ExplicitRKStepper.obj `if test -f '$(srcdir)/Rythmos_ExplicitRKStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ExplicitRKStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ExplicitRKStepper.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_ExplicitRKStepper.Tpo $(DEPDIR)/Rythmos_ExplicitRKStepper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ExplicitRKStepper.cpp' object='Rythmos_ExplicitRKStepper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ExplicitRKStepper.obj `if test -f '$(srcdir)/Rythmos_ExplicitRKStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ExplicitRKStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ExplicitRKStepper.cpp'; fi`
+
+Rythmos_ImplicitBDFStepper.o: $(srcdir)/Rythmos_ImplicitBDFStepper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ImplicitBDFStepper.o -MD -MP -MF $(DEPDIR)/Rythmos_ImplicitBDFStepper.Tpo -c -o Rythmos_ImplicitBDFStepper.o `test -f '$(srcdir)/Rythmos_ImplicitBDFStepper.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ImplicitBDFStepper.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_ImplicitBDFStepper.Tpo $(DEPDIR)/Rythmos_ImplicitBDFStepper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ImplicitBDFStepper.cpp' object='Rythmos_ImplicitBDFStepper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ImplicitBDFStepper.o `test -f '$(srcdir)/Rythmos_ImplicitBDFStepper.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ImplicitBDFStepper.cpp
+
+Rythmos_ImplicitBDFStepper.obj: $(srcdir)/Rythmos_ImplicitBDFStepper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ImplicitBDFStepper.obj -MD -MP -MF $(DEPDIR)/Rythmos_ImplicitBDFStepper.Tpo -c -o Rythmos_ImplicitBDFStepper.obj `if test -f '$(srcdir)/Rythmos_ImplicitBDFStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ImplicitBDFStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ImplicitBDFStepper.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_ImplicitBDFStepper.Tpo $(DEPDIR)/Rythmos_ImplicitBDFStepper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ImplicitBDFStepper.cpp' object='Rythmos_ImplicitBDFStepper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ImplicitBDFStepper.obj `if test -f '$(srcdir)/Rythmos_ImplicitBDFStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ImplicitBDFStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ImplicitBDFStepper.cpp'; fi`
+
+Rythmos_ImplicitBDFStepperStepControl.o: $(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ImplicitBDFStepperStepControl.o -MD -MP -MF $(DEPDIR)/Rythmos_ImplicitBDFStepperStepControl.Tpo -c -o Rythmos_ImplicitBDFStepperStepControl.o `test -f '$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_ImplicitBDFStepperStepControl.Tpo $(DEPDIR)/Rythmos_ImplicitBDFStepperStepControl.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp' object='Rythmos_ImplicitBDFStepperStepControl.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ImplicitBDFStepperStepControl.o `test -f '$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp
+
+Rythmos_ImplicitBDFStepperStepControl.obj: $(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ImplicitBDFStepperStepControl.obj -MD -MP -MF $(DEPDIR)/Rythmos_ImplicitBDFStepperStepControl.Tpo -c -o Rythmos_ImplicitBDFStepperStepControl.obj `if test -f '$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_ImplicitBDFStepperStepControl.Tpo $(DEPDIR)/Rythmos_ImplicitBDFStepperStepControl.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp' object='Rythmos_ImplicitBDFStepperStepControl.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ImplicitBDFStepperStepControl.obj `if test -f '$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp'; fi`
+
+Rythmos_ImplicitRKStepper.o: $(srcdir)/Rythmos_ImplicitRKStepper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ImplicitRKStepper.o -MD -MP -MF $(DEPDIR)/Rythmos_ImplicitRKStepper.Tpo -c -o Rythmos_ImplicitRKStepper.o `test -f '$(srcdir)/Rythmos_ImplicitRKStepper.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ImplicitRKStepper.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_ImplicitRKStepper.Tpo $(DEPDIR)/Rythmos_ImplicitRKStepper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ImplicitRKStepper.cpp' object='Rythmos_ImplicitRKStepper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ImplicitRKStepper.o `test -f '$(srcdir)/Rythmos_ImplicitRKStepper.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ImplicitRKStepper.cpp
+
+Rythmos_ImplicitRKStepper.obj: $(srcdir)/Rythmos_ImplicitRKStepper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ImplicitRKStepper.obj -MD -MP -MF $(DEPDIR)/Rythmos_ImplicitRKStepper.Tpo -c -o Rythmos_ImplicitRKStepper.obj `if test -f '$(srcdir)/Rythmos_ImplicitRKStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ImplicitRKStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ImplicitRKStepper.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_ImplicitRKStepper.Tpo $(DEPDIR)/Rythmos_ImplicitRKStepper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ImplicitRKStepper.cpp' object='Rythmos_ImplicitRKStepper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ImplicitRKStepper.obj `if test -f '$(srcdir)/Rythmos_ImplicitRKStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ImplicitRKStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ImplicitRKStepper.cpp'; fi`
 
 Rythmos_RKButcherTableau.o: $(srcdir)/Rythmos_RKButcherTableau.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_RKButcherTableau.o -MD -MP -MF $(DEPDIR)/Rythmos_RKButcherTableau.Tpo -c -o Rythmos_RKButcherTableau.o `test -f '$(srcdir)/Rythmos_RKButcherTableau.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_RKButcherTableau.cpp
@@ -554,6 +632,20 @@ Rythmos_RKButcherTableau.obj: $(srcdir)/Rythmos_RKButcherTableau.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_RKButcherTableau.cpp' object='Rythmos_RKButcherTableau.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_RKButcherTableau.obj `if test -f '$(srcdir)/Rythmos_RKButcherTableau.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_RKButcherTableau.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_RKButcherTableau.cpp'; fi`
+
+Rythmos_Version.o: $(srcdir)/Rythmos_Version.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_Version.o -MD -MP -MF $(DEPDIR)/Rythmos_Version.Tpo -c -o Rythmos_Version.o `test -f '$(srcdir)/Rythmos_Version.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_Version.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_Version.Tpo $(DEPDIR)/Rythmos_Version.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_Version.cpp' object='Rythmos_Version.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_Version.o `test -f '$(srcdir)/Rythmos_Version.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_Version.cpp
+
+Rythmos_Version.obj: $(srcdir)/Rythmos_Version.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_Version.obj -MD -MP -MF $(DEPDIR)/Rythmos_Version.Tpo -c -o Rythmos_Version.obj `if test -f '$(srcdir)/Rythmos_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_Version.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_Version.Tpo $(DEPDIR)/Rythmos_Version.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_Version.cpp' object='Rythmos_Version.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_Version.obj `if test -f '$(srcdir)/Rythmos_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_Version.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

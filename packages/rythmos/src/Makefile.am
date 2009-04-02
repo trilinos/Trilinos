@@ -43,6 +43,8 @@ all-local:
 CORE_H = \
   $(srcdir)/Rythmos_AdjointModelEvaluator.hpp\
   $(srcdir)/Rythmos_BackwardEulerStepper.hpp\
+  $(srcdir)/Rythmos_BackwardEulerStepper_decl.hpp\
+  $(srcdir)/Rythmos_BackwardEulerStepper_def.hpp\
   $(srcdir)/Rythmos_BreakPointInformerBase.hpp\
   $(srcdir)/Rythmos_CompositeIntegratorObserver.hpp\
   $(srcdir)/Rythmos_ConfigDefs.h\
@@ -55,6 +57,8 @@ CORE_H = \
   $(srcdir)/Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcBase.hpp\
   $(srcdir)/Rythmos_ExplicitRKStepper.hpp\
+  $(srcdir)/Rythmos_ExplicitRKStepper_decl.hpp\
+  $(srcdir)/Rythmos_ExplicitRKStepper_def.hpp\
   $(srcdir)/Rythmos_ExplicitTaylorPolynomialStepper.hpp\
   $(srcdir)/Rythmos_ForwardEulerStepper.hpp\
   $(srcdir)/Rythmos_ForwardResponseSensitivityComputer.hpp\
@@ -64,12 +68,16 @@ CORE_H = \
   $(srcdir)/Rythmos_ForwardSensitivityStepper.hpp\
   $(srcdir)/Rythmos_HermiteInterpolator.hpp\
   $(srcdir)/Rythmos_ImplicitBDFStepper.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperDecl.hpp\
+  $(srcdir)/Rythmos_ImplicitBDFStepper_decl.hpp\
+  $(srcdir)/Rythmos_ImplicitBDFStepper_def.hpp\
   $(srcdir)/Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp\
   $(srcdir)/Rythmos_ImplicitBDFStepperStepControl.hpp\
-  $(srcdir)/Rythmos_ImplicitBDFStepperStepControlDecl.hpp\
+  $(srcdir)/Rythmos_ImplicitBDFStepperStepControl_decl.hpp\
+  $(srcdir)/Rythmos_ImplicitBDFStepperStepControl_def.hpp\
   $(srcdir)/Rythmos_ImplicitRKModelEvaluator.hpp\
   $(srcdir)/Rythmos_ImplicitRKStepper.hpp\
+  $(srcdir)/Rythmos_ImplicitRKStepper_decl.hpp\
+  $(srcdir)/Rythmos_ImplicitRKStepper_def.hpp\
   $(srcdir)/Rythmos_IntegrationControlStrategyAcceptingIntegratorBase.hpp\
   $(srcdir)/Rythmos_IntegrationControlStrategyBase.hpp\
   $(srcdir)/Rythmos_IntegrationObserverBase.hpp\
@@ -113,8 +121,13 @@ CORE_H = \
 
 
 CORE = \
-  $(srcdir)/Rythmos_Version.cpp\
-	$(srcdir)/Rythmos_RKButcherTableau.cpp
+  $(srcdir)/Rythmos_BackwardEulerStepper.cpp\
+  $(srcdir)/Rythmos_ExplicitRKStepper.cpp\
+	$(srcdir)/Rythmos_ImplicitBDFStepper.cpp\
+	$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp\
+  $(srcdir)/Rythmos_ImplicitRKStepper.cpp\
+	$(srcdir)/Rythmos_RKButcherTableau.cpp\
+  $(srcdir)/Rythmos_Version.cpp
 
 UTIL_H =
 

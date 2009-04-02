@@ -15,3 +15,6 @@
 /* Define if we want Experimental features */
 #cmakedefine HAVE_RYTHMOS_EXPERIMENTAL
 
+/* Define if we want Explicit Instantiation */
+#cmakedefine HAVE_RYTHMOS_EXPLICIT_INSTANTIATION
+

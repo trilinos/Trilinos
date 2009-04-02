@@ -14,10 +14,18 @@ PACKAGE(Rythmos)
 #
 
 ADD_OPTION_AND_DEFINE( ${PACKAGE_NAME}_ENABLE_Experimental
-  HAVE_RYTHMOS_EXPERIMENTAL
-  "Enables Rythmos experimental features"
-  OFF
-  )
+    HAVE_RYTHMOS_EXPERIMENTAL
+    "Enables Rythmos experimental features"
+    OFF
+    )
+
+ADD_OPTION_AND_DEFINE( ${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION
+    HAVE_RYTHMOS_EXPLICIT_INSTANTIATION
+    "Turn on explicit instantiation for Rythmos."
+    ${Trilinos_ENABLE_EXPLICIT_INSTANTIATION}
+    )
+
+# Add RYTHMOS_DEBUG option
 
 #
 # GAASP options:

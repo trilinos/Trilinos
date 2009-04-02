@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
         RCP<Teuchos::ParameterList>
           BDFparams = Teuchos::parameterList();
         RCP<Teuchos::ParameterList> BDFStepControlPL =
-          Teuchos::sublist(BDFparams,RythmosStepControlSettings_name);
+          Teuchos::sublist(BDFparams,"Step Control Settings");
 
         BDFparams->sublist("VerboseObject").set(
           "Verbosity Level",
