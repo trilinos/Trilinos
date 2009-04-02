@@ -48,7 +48,7 @@ if BUILD_TEUCHOS
   SHARDS_EX1 = example_01
 endif
 
-noinst_PROGRAMS = $(SHARDS_EX1)
+noinst_PROGRAMS = $(SHARDS_EX1) example_02 example_03
 
 # Dependencies used when rebuilding examples without building everything from scratch.
 
@@ -63,3 +63,11 @@ example_01_DEPENDENCIES = \
 example_01_SOURCES = example_01.cpp
 example_01_LDADD = $(EXPORT_LIBS) $(TEUCHOS_LIBS)
 example_01_CXXFLAGS = -I$(srcdir) $(TEUCHOS_INCLUDES)
+
+example_02_SOURCES = example_02.cpp
+example_02_LDADD = $(EXPORT_LIBS) 
+example_02_CXXFLAGS = -I$(srcdir)
+
+example_03_SOURCES = example_03.cpp
+example_03_LDADD = $(EXPORT_LIBS) 
+example_03_CXXFLAGS = -I$(srcdir)

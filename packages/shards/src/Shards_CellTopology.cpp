@@ -499,10 +499,189 @@ void badCellTopologyKey( const unsigned dimension ,
   throw std::invalid_argument( msg.str() );
 }
 
+
 std::ostream & operator << ( std::ostream & os, const CellTopology & cell) {
   os << *cell.getTopology();
   return os;
 }
+
+
+
+void getTopologies(std::vector<shards::CellTopology>& topologies,
+                   const unsigned cellDim,
+                   const ECellType cellType,
+                   const ETopologyType topologyType){
+ 
+  if ( 4 < cellDim ) {
+    std::ostringstream msg ;
+    msg << "shards::CellTopology::getTopologies( ERROR: dim = "
+      << cellDim << " > 4 )" ;
+    throw std::invalid_argument( msg.str() );
+  }
+
+  // clear the vector  
+  topologies.resize(0);
+  
+  // 0-dimensional cells
+  if( (cellDim == 0) || (cellDim == 4) ) {
+    if( cellType == STANDARD_CELL || cellType == ALL_CELLS){
+      if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(getCellTopologyData<Node>() ); 
+      }
+      if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        // No such cells exist
+      }
+    }
+    if( cellType == NONSTANDARD_CELL || cellType == ALL_CELLS){
+      if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        // No such cells exist
+      }
+      if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        // No such cells exist
+      }
+    }
+  } // dim 0
+  
+  
+  // 1-dimensional cells
+  if((cellDim == 1) || (cellDim == 4)) {
+    
+    if( cellType == STANDARD_CELL || cellType == ALL_CELLS){
+      if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(shards::getCellTopologyData<shards::Line<2> >() ); 
+      }
+      if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(shards::getCellTopologyData<shards::Line<3> >() );     
+      }
+    }    
+    if( cellType == NONSTANDARD_CELL || cellType == ALL_CELLS){
+      if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(getCellTopologyData<Particle>() );     
+      }
+      if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        // No such cells exist
+      }
+    }
+  } // dim 1
+  
+  
+  // 2-dimensional cells
+  if((cellDim == 2) || (cellDim == 4)) {
+    if( cellType == STANDARD_CELL || cellType == ALL_CELLS){
+      if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(shards::getCellTopologyData<shards::Triangle<3> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Quadrilateral<4> >() );      
+      }
+      if (topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(shards::getCellTopologyData<shards::Triangle<4> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Triangle<6> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Quadrilateral<8> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Quadrilateral<9> >() );
+      }      
+    }
+    if( cellType == NONSTANDARD_CELL || cellType == ALL_CELLS){
+      if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(shards::getCellTopologyData<shards::ShellLine<2> >() );  
+        topologies.push_back(shards::getCellTopologyData<shards::Beam<2> >() );  
+        topologies.push_back(shards::getCellTopologyData<shards::Pentagon<5> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Hexagon<6> >() );
+      }
+      if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(shards::getCellTopologyData<shards::ShellLine<3> >() );  
+        topologies.push_back(shards::getCellTopologyData<shards::Beam<3> >() );  
+      }      
+    }
+  } // dim 2
+  
+  
+  if((cellDim == 3) || (cellDim == 4)) {
+    if( cellType == STANDARD_CELL || cellType == ALL_CELLS){
+      if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Hexahedron<8> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Pyramid<5> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Wedge<6> >() );
+      }
+      if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(shards::getCellTopologyData<shards::Tetrahedron<8> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Tetrahedron<10> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Hexahedron<20> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Hexahedron<27> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Pyramid<13> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Pyramid<14> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Wedge<15> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::Wedge<18> >() );
+      }      
+    }
+    if( cellType == NONSTANDARD_CELL || cellType == ALL_CELLS){
+      // Predefined Polyhedrons should  go here
+      if(topologyType == BASE_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(shards::getCellTopologyData<shards::ShellTriangle<3> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >() );        
+      }
+      if(topologyType == EXTENDED_TOPOLOGY || topologyType == ALL_TOPOLOGIES) {
+        topologies.push_back(shards::getCellTopologyData<shards::ShellTriangle<6> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::ShellQuadrilateral<8> >() );
+        topologies.push_back(shards::getCellTopologyData<shards::ShellQuadrilateral<9> >() );
+      }      
+    }
+  } // dim 3    
+} // getTopologies
+
+
+
+int isPredefinedCell(const CellTopology& cell) {
+  
+  switch(cell.getKey() ) {
+    case Node::key:
+    case Particle::key:
+    case Line<2>::key:
+    case Line<3>::key:
+    case ShellLine<2>::key:
+    case ShellLine<3>::key:
+    case Beam<2>::key:
+    case Beam<3>::key:
+      
+    case Triangle<3>::key:
+    case Triangle<4>::key:
+    case Triangle<6>::key:
+    case ShellTriangle<3>::key:
+    case ShellTriangle<6>::key:
+      
+    case Quadrilateral<4>::key:
+    case Quadrilateral<8>::key:
+    case Quadrilateral<9>::key:
+    case ShellQuadrilateral<4>::key:
+    case ShellQuadrilateral<8>::key:
+    case ShellQuadrilateral<9>::key:
+      
+    case Tetrahedron<4>::key:
+    case Tetrahedron<8>::key:
+    case Tetrahedron<10>::key:
+      
+    case Hexahedron<8>::key:
+    case Hexahedron<20>::key:
+    case Hexahedron<27>::key:
+      
+    case Pyramid<5>::key:
+    case Pyramid<13>::key:
+    case Pyramid<14>::key:
+      
+    case Wedge<6>::key:
+    case Wedge<15>::key:
+    case Wedge<18>::key:
+      
+    case Pentagon<5>::key:
+    case Hexagon<6>::key:
+      return 1;
+      break;
+      
+    default:
+      return 0;
+  }
+  
+}
+
 
 } // namespace shards
 

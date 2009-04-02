@@ -52,8 +52,77 @@ class CellTopologyPrivate ;
 /** \brief Overloaded << operator for CellTopologyData objects. */
 //std::ostream & operator << ( std::ostream & , const CellTopologyData & );
 
+
 /** \brief Overloaded << operator for CellTopology objects.  */
 std::ostream & operator << ( std::ostream & , const CellTopology & );
+
+
+/** \enum  Shards::ECellType
+    \brief Enumeration of cell types in Shards 
+  */
+enum ECellType {
+  ALL_CELLS = 0,
+  STANDARD_CELL,
+  NONSTANDARD_CELL
+};
+
+inline std::string ECellTypeToString(ECellType cellType) {
+  std::string retString;
+  switch(cellType){
+    case ALL_CELLS:         retString = "All";           break;
+    case STANDARD_CELL:     retString = "Standard";      break;
+    case NONSTANDARD_CELL:  retString = "Nonstandard";   break;
+    default:                retString = "Invalid Cell";
+  }
+  return retString;
+}
+
+
+/** \enum  Shards::ETopologyType
+    \brief Enumeration of topology types in Shards 
+  */
+enum ETopologyType {
+  ALL_TOPOLOGIES,
+  BASE_TOPOLOGY,
+  EXTENDED_TOPOLOGY
+};
+
+inline std::string ETopologyTypeToString(ETopologyType topologyType) {
+  std::string retString;
+  switch(topologyType){
+    case ALL_TOPOLOGIES:      retString = "All";            break;
+    case BASE_TOPOLOGY:       retString = "Base";           break;
+    case EXTENDED_TOPOLOGY:   retString = "Extended";       break;
+    default:                  retString = "Invalid Topology";
+  }
+  return retString;
+}
+
+
+/** \brief  Returns an std::vector with all cell topologies that meet the specified
+            selection flags.
+     
+    \param  topologies      [out]   - vector with all topologies that 
+    \param  cellDim         [in]    - cell dimension; 0, 1, 2, 3, or 4 (default = all dimensions)
+    \param  cellType        [in]    - cell type: default = ALL_CELLS  
+    \param  topologyType    [in]    - topology type: default = ALL_TOPOLOGIES
+  */
+void getTopologies(std::vector<shards::CellTopology>& topologies,
+                   const unsigned       cellDim   = 4,
+                   const ECellType      cellType      = ALL_CELLS,
+                   const ETopologyType  topologyType  = ALL_TOPOLOGIES);
+
+
+
+/** \brief  Checks if the cell topology is predefined in shards
+
+    \param  cell            [in]  - cell topology
+    \return 1   if the cell topology is defined in shards, 
+            0   if it is a custom, user-defined cell-topology
+*/
+int isPredefinedCell(const CellTopology &  cell);
+
+
 
 /*------------------------------------------------------------------------*/
 /** \class shards::CellTopology
