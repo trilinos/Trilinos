@@ -65,12 +65,13 @@ implicitRKStepper(
   const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-  RKButcherTableau<Scalar> irkbt
+  const RCP<const RKButcherTableauBase<Scalar> > &irkbt
   )
 {
+  TEUCHOS_ASSERT( !is_null(irkbt) );
   RCP<ImplicitRKStepper<Scalar> > stepper(new ImplicitRKStepper<Scalar>());
 
-  validateIRKButcherTableau(irkbt);
+  validateIRKButcherTableau(*irkbt);
   stepper->initialize( model, solver, irk_W_factory, irkbt );
   return stepper;
 }
@@ -95,21 +96,22 @@ void ImplicitRKStepper<Scalar>::initialize(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-  RKButcherTableau<Scalar> irkButcherTableau
+  const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
   )
 {
 
+  TEUCHOS_ASSERT( !is_null(irkButcherTableau) );
   // ToDo: Validate input
 
   this->setModel(model);
   this->setSolver(solver);
   irk_W_factory_ = irk_W_factory;
   irkButcherTableau_ = irkButcherTableau;
-  E_RKButcherTableauTypes rkType = determineRKBTType<Scalar>(irkButcherTableau);
+  E_RKButcherTableauTypes rkType = determineRKBTType<Scalar>(*irkButcherTableau);
   if (
          (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK) 
       || (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK) 
-      || (irkButcherTableau_.numStages() == 1)
+      || (irkButcherTableau_->numStages() == 1)
      ) 
   {
     isDirk_ = true;
@@ -301,7 +303,7 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
     RCP<DiagonalImplicitRKModelEvaluator<Scalar> > dirkModel_ = 
       Teuchos::rcp_dynamic_cast<DiagonalImplicitRKModelEvaluator<Scalar> >(irkModel_,true);
     dirkModel_->setTimeStepPoint( x_old_, t, current_dt );
-    int numStages = irkButcherTableau_.numStages();
+    int numStages = irkButcherTableau_->numStages();
     for (int stage=0 ; stage < numStages ; ++stage) {
       dirkModel_->setCurrentStage(stage);
       solver_->solve( &*(x_stage_bar_->getNonconstVectorBlock(stage)) );
@@ -315,7 +317,7 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   // Combine the stage derivatives with the Butcher tableau "b" vector to obtain the solution at the final time.
   // x_{k+1} = x_k + dt*sum_{i}^{p}(b_i*x_stage_bar_[i])
 
-  assembleIRKSolution( irkButcherTableau_.b(), current_dt, *x_old_, *x_stage_bar_,
+  assembleIRKSolution( irkButcherTableau_->b(), current_dt, *x_old_, *x_stage_bar_,
     outArg(*x_)
     );
 
@@ -333,7 +335,7 @@ const StepStatus<Scalar> ImplicitRKStepper<Scalar>::getStepStatus() const
   StepStatus<Scalar> stepStatus;
 
   stepStatus.stepSize = timeRange_.length();
-  stepStatus.order = irkButcherTableau_.order();
+  stepStatus.order = irkButcherTableau_->order();
   stepStatus.time = timeRange_.upper();
   stepStatus.solution = x_;
   return(stepStatus);
@@ -416,7 +418,7 @@ void ImplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
 template<class Scalar>
 int ImplicitRKStepper<Scalar>::getOrder() const
 {
-  return irkButcherTableau_.order();
+  return irkButcherTableau_->order();
 }
 
 
@@ -528,7 +530,7 @@ void ImplicitRKStepper<Scalar>::initialize_()
   x_old_ = x_->clone_v();
 
   // Validate the Butcher Tableau
-  validateIRKButcherTableau(irkButcherTableau_);
+  validateIRKButcherTableau(*irkButcherTableau_);
 
   // Set up the IRK mdoel
 
@@ -543,7 +545,7 @@ void ImplicitRKStepper<Scalar>::initialize_()
   solver_->setModel(irkModel_);
 
   // Set up the vector of stage derivatives ...
-  const int numStages = irkButcherTableau_.numStages();
+  const int numStages = irkButcherTableau_->numStages();
   RCP<const Thyra::ProductVectorSpaceBase<Scalar> > pvs = productVectorSpace(model_->get_x_space(),numStages);
   RCP<const Thyra::VectorSpaceBase<Scalar> > vs = rcp_dynamic_cast<const Thyra::VectorSpaceBase<Scalar> >(pvs,true);
   x_stage_bar_ = rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(createMember(vs),true);
@@ -556,13 +558,13 @@ void ImplicitRKStepper<Scalar>::initialize_()
 }
 
 template <class Scalar>
-void ImplicitRKStepper<Scalar>::setRKButcherTableau( RKButcherTableau<Scalar> rkButcherTableau )
+void ImplicitRKStepper<Scalar>::setRKButcherTableau( const RCP<const RKButcherTableauBase<Scalar> > &rkButcherTableau )
 {
   TEST_FOR_EXCEPT(true);
 }
 
 template <class Scalar>
-RKButcherTableau<Scalar> ImplicitRKStepper<Scalar>::getRKButcherTableau()
+RCP<const RKButcherTableauBase<Scalar> > ImplicitRKStepper<Scalar>::getRKButcherTableau()
 {
   return irkButcherTableau_;
 }
@@ -574,11 +576,11 @@ void ImplicitRKStepper<Scalar>::setDirk(bool isDirk)
       "Error!  Cannot change DIRK flag after internal initialization is completed\n"
       );
   if (isDirk == true) {
-    E_RKButcherTableauTypes rkType = determineRKBTType<Scalar>(irkButcherTableau_);
+    E_RKButcherTableauTypes rkType = determineRKBTType<Scalar>(*irkButcherTableau_);
     bool RKBT_is_DIRK = (
          (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK) 
       || (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK) 
-      || (irkButcherTableau_.numStages() == 1)
+      || (irkButcherTableau_->numStages() == 1)
       );
     TEST_FOR_EXCEPTION( !RKBT_is_DIRK, std::logic_error,
         "Error!  Cannot set DIRK flag on a non-DIRK RK Butcher Tableau\n"
@@ -606,7 +608,7 @@ void ImplicitRKStepper<Scalar>::setDirk(bool isDirk)
     const RCP<const Thyra::ModelEvaluator< SCALAR > > &model, \
     const RCP<Thyra::NonlinearSolverBase< SCALAR > >  &solver, \
     const RCP<Thyra::LinearOpWithSolveFactoryBase< SCALAR > > &irk_W_factory, \
-    RKButcherTableau< SCALAR > irkbt \
+    const RCP<const RKButcherTableauBase< SCALAR > > &irkbt \
       ); 
 
 } // namespace Rythmos

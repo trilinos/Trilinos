@@ -38,42 +38,36 @@ namespace Rythmos {
 template<class Scalar>
 Array<std::string> getIRKButcherTableauNames()
 {
-  Array<std::string> allRKTableauNames = getS_RKButcherTableauMethodNames();
-  Array<std::string> iRKTableauNames;
-
-  DefaultRKButcherTableauFactory<Scalar> rkbtFactory;
-  Teuchos::ParameterList pl;
-  pl.set("Selection Type", "Method by name");
-
-  int N = Teuchos::as<int>(allRKTableauNames.size());
-  for (int i=0 ; i<N ; ++i) {
-    pl.set("Method by name", allRKTableauNames[i]);
-    RKButcherTableau<Scalar> rkbt = rkbtFactory.create(pl);
-    if (determineRKBTType(rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_IRK) {
-      iRKTableauNames.push_back(allRKTableauNames[i]);
+  Array<std::string> implicitRKTableauNames;
+  RCP<DefaultRKButcherTableauFactory<Scalar> > rkbtFactory = rKButcherTableauFactory<Scalar>();
+  RCP<const ParameterList> validPL = rkbtFactory->getValidParameters();
+  Teuchos::ParameterList::ConstIterator plIt = validPL->begin();
+  for (;plIt != validPL->end() ; plIt++) {
+    std::string rkbt_name = validPL->name(plIt);
+    if (rkbt_name == "RKButcherTableau Type") { continue; }
+    RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory->create(rkbt_name);
+    if (determineRKBTType(*rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_IRK) {
+      implicitRKTableauNames.push_back(rkbt_name);
     }
   }
-  return iRKTableauNames;
+  return implicitRKTableauNames;
 }
 
 template<class Scalar>
 Array<std::string> getDIRKButcherTableauNames()
 {
-  Array<std::string> allRKTableauNames = getS_RKButcherTableauMethodNames();
   Array<std::string> dIRKTableauNames;
-
-  DefaultRKButcherTableauFactory<Scalar> rkbtFactory;
-  Teuchos::ParameterList pl;
-  pl.set("Selection Type", "Method by name");
-
-  int N = Teuchos::as<int>(allRKTableauNames.size());
-  for (int i=0 ; i<N ; ++i) {
-    pl.set("Method by name", allRKTableauNames[i]);
-    RKButcherTableau<Scalar> rkbt = rkbtFactory.create(pl);
-    if (    (determineRKBTType(rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK)
-         || (determineRKBTType(rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK)
-        ) {
-      dIRKTableauNames.push_back(allRKTableauNames[i]);
+  RCP<DefaultRKButcherTableauFactory<Scalar> > rkbtFactory = rKButcherTableauFactory<Scalar>();
+  RCP<const ParameterList> validPL = rkbtFactory->getValidParameters();
+  Teuchos::ParameterList::ConstIterator plIt = validPL->begin();
+  for (;plIt != validPL->end() ; plIt++) {
+    std::string rkbt_name = validPL->name(plIt);
+    if (rkbt_name == "RKButcherTableau Type") { continue; }
+    RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory->create(rkbt_name);
+    if (    (determineRKBTType(*rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK) 
+         || (determineRKBTType(*rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK) 
+         ) {
+      dIRKTableauNames.push_back(rkbt_name);
     }
   }
   return dIRKTableauNames;
@@ -97,10 +91,7 @@ class ImplicitRKStepperFactory : public virtual StepperFactoryBase<Scalar>
       // Get the model:
       RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
       // Get the RKBT:
-      Teuchos::ParameterList paramList;
-      paramList.set("Selection Type", "Method by name");
-      paramList.set("Method by name", implicitRKNames_[index_]);
-      RKButcherTableau<Scalar> rkbt = rkbtFactory_.create(paramList);
+      RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory_.create(implicitRKNames_[index_]);
       // Create the nonlinear solver
       RCP<Rythmos::TimeStepNonlinearSolver<double> >
         nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
@@ -147,10 +138,7 @@ class DiagonalImplicitRKStepperFactory : public virtual StepperFactoryBase<Scala
       // Get the model:
       RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
       // Get the RKBT:
-      Teuchos::ParameterList paramList;
-      paramList.set("Selection Type", "Method by name");
-      paramList.set("Method by name", implicitRKNames_[index_]);
-      RKButcherTableau<Scalar> rkbt = rkbtFactory_.create(paramList);
+      RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory_.create(implicitRKNames_[index_]);
       // Create the nonlinear solver
       RCP<Rythmos::TimeStepNonlinearSolver<double> >
         nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();

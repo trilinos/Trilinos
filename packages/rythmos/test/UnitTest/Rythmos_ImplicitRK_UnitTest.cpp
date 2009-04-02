@@ -76,7 +76,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, emptyCreate ) {
 TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, emptyInitialize ) {
   RCP<Thyra::ModelEvaluator<double> > daeModel;
   RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory;
-  RKButcherTableau<double> irkButcherTableau;
+  RCP<RKButcherTableauBase<double> > irkButcherTableau;
 
   ImplicitRKModelEvaluator<double> irkME;
   Thyra::ModelEvaluatorBase::InArgs<double> basePoint; 
@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, validInitialize ) {
     SerialDenseMatrix<int,double> A(numStages, numStages);
     SerialDenseVector<int,double> b(numStages);
     SerialDenseVector<int,double> c(numStages);
-    RKButcherTableau<double> irkButcherTableau(A,b,c,numStages);
+    RCP<RKButcherTableauBase<double> > irkButcherTableau = rKButcherTableau<double>(A,b,c,numStages);
 
     // initialize irk model evaluator
     RCP<ImplicitRKModelEvaluator<double> > irkME = 
@@ -203,7 +203,7 @@ RCP<ImplicitRKModelEvaluator<double> > getImplicitRKModelEvaluator(int numStages
   SerialDenseMatrix<int,double> A(numStages, numStages);
   SerialDenseVector<int,double> b(numStages);
   SerialDenseVector<int,double> c(numStages);
-  RKButcherTableau<double> irkButcherTableau(A,b,c,1);
+  RCP<RKButcherTableauBase<double> > irkButcherTableau = rKButcherTableau<double>(A,b,c,1);
 
   // Create an IRKModelEvaluator
   RCP<ImplicitRKModelEvaluator<double> > irkME = 
@@ -261,7 +261,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, evalModelOneStage ) {
   A(0,0) = 7.0;
   b(0) = 8.0;
   c(0) = 9.0;
-  RKButcherTableau<double> irkButcherTableau(A,b,c,1);
+  RCP<RKButcherTableauBase<double> > irkButcherTableau = rKButcherTableau<double>(A,b,c,1);
 
   // Create an IRKModelEvaluator
   RCP<ImplicitRKModelEvaluator<double> > irkME = 
@@ -416,7 +416,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IRKModelEvaluator, evalModelTwoStage ) {
   b(1) = 8.1;
   c(0) = 9.0;
   c(1) = 9.1;
-  RKButcherTableau<double> irkButcherTableau(A,b,c,2);
+  RCP<RKButcherTableauBase<double> > irkButcherTableau = rKButcherTableau<double>(A,b,c,2);
 
   // Create an IRKModelEvaluator
   RCP<ImplicitRKModelEvaluator<double> > irkME = 
@@ -663,7 +663,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, create ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, invalidRKBT ) {
   RCP<ImplicitRKStepper<double> > stepper = implicitRKStepper<double>();
-  RKButcherTableau<double> rkbt;
+  RCP<RKButcherTableauBase<double> > rkbt;
   TEST_THROW( stepper->setRKButcherTableau(rkbt), std::logic_error ); // empty RKBT
 }
 
@@ -721,7 +721,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, takeStep ) {
     getWFactory<double>(pl);
 
   // Create the IRK Butcher Tableau
-  RKButcherTableau<double> irkbt = createBackwardEuler_RKBT<double>();
+  RCP<RKButcherTableauBase<double> > irkbt = createRKBT<double>("Backward Euler");
   // Create the IRK Stepper
   RCP<ImplicitRKStepper<double> > irkStepper = 
     implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, irkbt );
@@ -763,7 +763,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, setDirk ) {
     getWFactory<double>();
   {
     // create stepper with DIRK tableau
-    RKButcherTableau<double> rkbt = createSDIRK5Stage4thOrder_RKBT<double>();
+    RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Singly Diagonal IRK 5 Stage 4th order");
     RCP<ImplicitRKStepper<double> > irkStepper = 
       implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, rkbt );
     RCP<Teuchos::ParameterList> stepperPL = Teuchos::parameterList();
@@ -782,7 +782,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, setDirk ) {
   }
   {
     // create same stepper with same DIRK tableau
-    RKButcherTableau<double> rkbt = createSDIRK5Stage4thOrder_RKBT<double>();
+    RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Singly Diagonal IRK 5 Stage 4th order");
     RCP<ImplicitRKStepper<double> > irkStepper = 
       implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, rkbt );
     RCP<Teuchos::ParameterList> stepperPL = Teuchos::parameterList();
@@ -797,11 +797,11 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, setDirk ) {
     RCP<const ProductVectorSpaceBase<double> > x_pspace = 
       Teuchos::rcp_dynamic_cast<const ProductVectorSpaceBase<double> >(x_space,false);
     TEST_EQUALITY_CONST( is_null(x_pspace), false );
-    TEST_EQUALITY( x_pspace->numBlocks(), rkbt.numStages() );
+    TEST_EQUALITY( x_pspace->numBlocks(), rkbt->numStages() );
   }
   {
     // create same stepper with same BE tableau
-    RKButcherTableau<double> rkbt = createBackwardEuler_RKBT<double>();
+    RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Backward Euler");
     RCP<ImplicitRKStepper<double> > irkStepper = 
       implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, rkbt );
     RCP<Teuchos::ParameterList> stepperPL = Teuchos::parameterList();
@@ -816,18 +816,18 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, setDirk ) {
     RCP<const ProductVectorSpaceBase<double> > x_pspace = 
       Teuchos::rcp_dynamic_cast<const ProductVectorSpaceBase<double> >(x_space,false);
     TEST_EQUALITY_CONST( is_null(x_pspace), false );
-    TEST_EQUALITY( x_pspace->numBlocks(), rkbt.numStages() );
+    TEST_EQUALITY( x_pspace->numBlocks(), rkbt->numStages() );
   }
   {
     // create stepper with fully dense RK Tableau
-    RKButcherTableau<double> rkbt = createImplicit2Stage4thOrderGauss_RKBT<double>();
+    RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 2 Stage 4th order Gauss");
     RCP<ImplicitRKStepper<double> > irkStepper = 
       implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, rkbt );
     TEST_THROW(irkStepper->setDirk(true), std::logic_error);
   }
   {
     // create sepper with any RKBT
-    RKButcherTableau<double> rkbt = createImplicit2Stage4thOrderGauss_RKBT<double>();
+    RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 2 Stage 4th order Gauss");
     RCP<ImplicitRKStepper<double> > irkStepper = 
       implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, rkbt );
     RCP<Teuchos::ParameterList> stepperPL = Teuchos::parameterList();
@@ -866,7 +866,7 @@ TEUCHOS_UNIT_TEST( Rythmos_DIRKModelEvaluator, emptyCreate ) {
 TEUCHOS_UNIT_TEST( Rythmos_DIRKModelEvaluator, emptyInitialize ) {
   RCP<Thyra::ModelEvaluator<double> > daeModel;
   RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory;
-  RKButcherTableau<double> irkButcherTableau;
+  RCP<RKButcherTableauBase<double> > irkButcherTableau;
 
   DiagonalImplicitRKModelEvaluator<double> dirkME;
   Thyra::ModelEvaluatorBase::InArgs<double> basePoint; 
@@ -907,7 +907,7 @@ TEUCHOS_UNIT_TEST( Rythmos_DIRKModelEvaluator, validInitialize ) {
     SerialDenseMatrix<int,double> A(numStages, numStages);
     SerialDenseVector<int,double> b(numStages);
     SerialDenseVector<int,double> c(numStages);
-    RKButcherTableau<double> irkButcherTableau(A,b,c,numStages);
+    RCP<RKButcherTableauBase<double> > irkButcherTableau = rKButcherTableau<double>(A,b,c,numStages);
 
     // initialize irk model evaluator
     RCP<DiagonalImplicitRKModelEvaluator<double> > irkME = 
@@ -958,7 +958,7 @@ RCP<DiagonalImplicitRKModelEvaluator<double> > getDiagonalImplicitRKModelEvaluat
   SerialDenseMatrix<int,double> A(numStages, numStages);
   SerialDenseVector<int,double> b(numStages);
   SerialDenseVector<int,double> c(numStages);
-  RKButcherTableau<double> irkButcherTableau(A,b,c,1);
+  RCP<RKButcherTableauBase<double> > irkButcherTableau = rKButcherTableau<double>(A,b,c,1);
 
   // Create an IRKModelEvaluator
   RCP<DiagonalImplicitRKModelEvaluator<double> > dirkME = 
@@ -1016,7 +1016,7 @@ TEUCHOS_UNIT_TEST( Rythmos_DIRKModelEvaluator, evalModelOneStage ) {
   A(0,0) = 7.0;
   b(0) = 8.0;
   c(0) = 9.0;
-  RKButcherTableau<double> irkButcherTableau(A,b,c,1);
+  RCP<RKButcherTableauBase<double> > irkButcherTableau = rKButcherTableau<double>(A,b,c,1);
 
   // Create an IRKModelEvaluator
   RCP<DiagonalImplicitRKModelEvaluator<double> > dirkME = 
@@ -1181,7 +1181,7 @@ TEUCHOS_UNIT_TEST( Rythmos_DIRKModelEvaluator, evalModelTwoStage ) {
   b(1) = 8.1;
   c(0) = 9.0;
   c(1) = 9.1;
-  RKButcherTableau<double> irkButcherTableau(A,b,c,2);
+  RCP<RKButcherTableauBase<double> > irkButcherTableau = rKButcherTableau<double>(A,b,c,2);
 
   // Create an IRKModelEvaluator
   RCP<DiagonalImplicitRKModelEvaluator<double> > dirkME = 
@@ -1443,7 +1443,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, DIRKtakeStep ) {
     Thyra::defaultSerialDenseLinearOpWithSolveFactory<double>();
 
   // Create the IRK Butcher Tableau
-  RKButcherTableau<double> irkbt = createBackwardEuler_RKBT<double>();
+  RCP<RKButcherTableauBase<double> > irkbt = createRKBT<double>("Backward Euler");
   // Create the IRK Stepper
   RCP<ImplicitRKStepper<double> > irkStepper = 
     implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, irkbt );

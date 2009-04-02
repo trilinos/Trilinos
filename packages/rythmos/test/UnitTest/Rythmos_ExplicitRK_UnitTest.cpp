@@ -70,16 +70,16 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, assertValidModel ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, setgetRKButcherTableau ) {
   RCP<SinCosModel> model = sinCosModel(false);
-  RKButcherTableau<double> rkbt = createExplicit4Stage4thOrder_RKBT<double>();
+  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Explicit 4 Stage");
   RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model,rkbt);
   TEST_EQUALITY_CONST( is_null(stepper), false );
-  RKButcherTableau<double> rkbt_out = stepper->getRKButcherTableau();
-  TEST_EQUALITY_CONST( rkbt == rkbt_out, true );
+  RCP<const RKButcherTableauBase<double> > rkbt_out = stepper->getRKButcherTableau();
+  TEST_EQUALITY_CONST( *rkbt == *rkbt_out, true );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, invalidRKBT ) {
   RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>();
-  RKButcherTableau<double> rkbt;
+  RCP<RKButcherTableauBase<double> > rkbt;
   TEST_THROW( stepper->setRKButcherTableau(rkbt), std::logic_error ); // empty RKBT
 }
 

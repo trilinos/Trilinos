@@ -108,12 +108,6 @@ private:
 };
 
 
-} // namespace Rythmos
-
-
-namespace Rythmos {
-
-
 // Nonmember constructor
 template<class Scalar>
 RCP<StepperBuilder<Scalar> > stepperBuilder()
@@ -128,6 +122,14 @@ StepperBuilder<Scalar>::StepperBuilder()
   this->initializeDefaults_();
 }
 
+// Nonmember helper function
+template<class Scalar>
+RCP<StepperBase<Scalar> > createStepper(const std::string &stepperName)
+{
+  RCP<StepperBuilder<Scalar> > sb = stepperBuilder<Scalar>();
+  RCP<StepperBase<Scalar> > stepper = sb->create(stepperName);
+  return stepper;
+}
 
 template<class Scalar>
 StepperBuilder<Scalar>::~StepperBuilder()

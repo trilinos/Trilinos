@@ -54,7 +54,8 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model 
     )
 {
-  RKButcherTableau<Scalar> rkbt = createExplicit4Stage4thOrder_RKBT<Scalar>();
+  //RCP<RKButcherTableauBase<Scalar> > rkbt = createRKBT<Scalar>("Explicit 4 Stage");
+  RCP<RKButcherTableauBase<Scalar> > rkbt = rcp(new Explicit4Stage4thOrder_RKBT<Scalar>());
   RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>(model,rkbt));
   return stepper;
 }
@@ -62,7 +63,7 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
 template<class Scalar>
 RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-    const RKButcherTableau<Scalar> rkbt 
+    const RCP<const RKButcherTableauBase<Scalar> > &rkbt 
     )
 {
   RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>(model,rkbt));
@@ -70,7 +71,10 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
 }
 
 template<class Scalar>
-ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model, RKButcherTableau<Scalar> rkbt)
+ExplicitRKStepper<Scalar>::ExplicitRKStepper(
+    const RCP<const Thyra::ModelEvaluator<Scalar> > &model, 
+    const RCP<const RKButcherTableauBase<Scalar> > &rkbt
+    )
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
@@ -78,6 +82,7 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper(const Teuchos::RCP<const Thyra::Mod
   t_ = ST::nan();
   t_old_ = ST::nan();
   dt_ = ST::nan();
+  erkButcherTableau_ = rKButcherTableau<Scalar>();
   numSteps_ = 0;
   haveInitialCondition_ = false;
   this->setModel(model);
@@ -92,14 +97,16 @@ ExplicitRKStepper<Scalar>::ExplicitRKStepper()
   t_ = ST::nan();
   t_old_ = ST::nan();
   dt_ = ST::nan();
+  erkButcherTableau_ = rKButcherTableau<Scalar>();
 }
 
 template<class Scalar>
-void ExplicitRKStepper<Scalar>::setRKButcherTableau(RKButcherTableau<Scalar> rkbt)
+void ExplicitRKStepper<Scalar>::setRKButcherTableau(const RCP<const RKButcherTableauBase<Scalar> > &rkbt)
 {
-  validateERKButcherTableau(rkbt);
-  int numStages_old = erkButcherTableau_.numStages();
-  int numStages_new = rkbt.numStages();
+  TEUCHOS_ASSERT( !is_null(rkbt) );
+  validateERKButcherTableau(*rkbt);
+  int numStages_old = erkButcherTableau_->numStages();
+  int numStages_new = rkbt->numStages();
   TEST_FOR_EXCEPTION( numStages_new == 0, std::logic_error,
       "Error!  The Runge-Kutta Butcher tableau has no stages!"
       );
@@ -114,7 +121,7 @@ void ExplicitRKStepper<Scalar>::setRKButcherTableau(RKButcherTableau<Scalar> rkb
 }
 
 template<class Scalar>
-RKButcherTableau<Scalar> ExplicitRKStepper<Scalar>::getRKButcherTableau() const
+RCP<const RKButcherTableauBase<Scalar> > ExplicitRKStepper<Scalar>::getRKButcherTableau() const
 {
   return erkButcherTableau_;
 }
@@ -146,7 +153,7 @@ template<class Scalar>
 Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
-  TEST_FOR_EXCEPTION( erkButcherTableau_.numStages() == 0, std::logic_error,
+  TEST_FOR_EXCEPTION( erkButcherTableau_->numStages() == 0, std::logic_error,
       "Error!  The Runge-Kutta Butcher Tableau has no stages!"
       );
   if ((flag == STEP_TYPE_VARIABLE) || (dt == ST::zero())) {
@@ -158,10 +165,10 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 
   dt_ = dt;
 
-  int stages = erkButcherTableau_.numStages();
-  Teuchos::SerialDenseMatrix<int,Scalar> A = erkButcherTableau_.A();
-  Teuchos::SerialDenseVector<int,Scalar> b = erkButcherTableau_.b();
-  Teuchos::SerialDenseVector<int,Scalar> c = erkButcherTableau_.c();
+  int stages = erkButcherTableau_->numStages();
+  Teuchos::SerialDenseMatrix<int,Scalar> A = erkButcherTableau_->A();
+  Teuchos::SerialDenseVector<int,Scalar> b = erkButcherTableau_->b();
+  Teuchos::SerialDenseVector<int,Scalar> c = erkButcherTableau_->c();
   // Compute stage solutions
   for (int s=0 ; s < stages ; ++s) {
     Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
@@ -198,13 +205,13 @@ const StepStatus<Scalar> ExplicitRKStepper<Scalar>::getStepStatus() const
     stepStatus.stepStatus = STEP_STATUS_UNINITIALIZED;
   } else if (numSteps_ == 0) {
     stepStatus.stepStatus = STEP_STATUS_UNKNOWN;
-    stepStatus.order = erkButcherTableau_.order();
+    stepStatus.order = erkButcherTableau_->order();
     stepStatus.time = t_;
     stepStatus.solution = solution_vector_;
   } else {
     stepStatus.stepStatus = STEP_STATUS_CONVERGED;
     stepStatus.stepSize = dt_;
-    stepStatus.order = erkButcherTableau_.order();
+    stepStatus.order = erkButcherTableau_->order();
     stepStatus.time = t_;
     stepStatus.solution = solution_vector_;
   }
@@ -223,7 +230,7 @@ void ExplicitRKStepper<Scalar>::describe(
      ) {
     out << this->description() << "::describe" << std::endl;
     out << "model = " << model_->description() << std::endl;
-    out << erkButcherTableau_.numStages() << " stage Explicit RK method" << std::endl;
+    out << erkButcherTableau_->numStages() << " stage Explicit RK method" << std::endl;
   } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)) {
     out << "solution_vector = " << std::endl;
     out << Teuchos::describe(*solution_vector_,verbLevel);
@@ -231,16 +238,16 @@ void ExplicitRKStepper<Scalar>::describe(
   } else if (static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_HIGH)) {
     out << "model = " << std::endl;
     out << Teuchos::describe(*model_,verbLevel);
-    int stages = erkButcherTableau_.numStages();
+    int stages = erkButcherTableau_->numStages();
     for (int i=0 ; i<stages ; ++i) {
       out << "k_vector[" << i << "] = " << std::endl;
       out << Teuchos::describe(*k_vector_[i],verbLevel);
     }
     out << "ktemp_vector = " << std::endl;
     out << Teuchos::describe(*ktemp_vector_,verbLevel);
-    out << "ERK Butcher Tableau A matrix: " << erkButcherTableau_.A() << std::endl;
-    out << "ERK Butcher Tableau b vector: " << erkButcherTableau_.b() << std::endl;
-    out << "ERK Butcher Tableau c vector: " << erkButcherTableau_.c() << std::endl;
+    out << "ERK Butcher Tableau A matrix: " << erkButcherTableau_->A() << std::endl;
+    out << "ERK Butcher Tableau b vector: " << erkButcherTableau_->b() << std::endl;
+    out << "ERK Butcher Tableau c vector: " << erkButcherTableau_->c() << std::endl;
     out << "t = " << t_ << std::endl;
   }
 }
@@ -331,7 +338,7 @@ void ExplicitRKStepper<Scalar>::removeNodes(Array<Scalar>& time_vec)
 template<class Scalar>
 int ExplicitRKStepper<Scalar>::getOrder() const
 {
-  return(erkButcherTableau_.order());
+  return(erkButcherTableau_->order());
 }
 
 template <class Scalar>
@@ -448,7 +455,7 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
   template RCP< ExplicitRKStepper< SCALAR > > \
   explicitRKStepper( \
     const RCP<const Thyra::ModelEvaluator< SCALAR > > &model, \
-    const RKButcherTableau< SCALAR > rkbt \
+    const RCP<const RKButcherTableauBase< SCALAR > > &rkbt \
       ); \
    
 } // namespace Rythmos

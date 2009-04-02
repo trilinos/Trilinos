@@ -39,19 +39,16 @@ using Thyra::ModelEvaluator;
 template<class Scalar>
 Array<std::string> getERKButcherTableauNames()
 {
-  Array<std::string> allRKTableauNames = getS_RKButcherTableauMethodNames();
   Array<std::string> explicitRKTableauNames;
-
-  DefaultRKButcherTableauFactory<Scalar> rkbtFactory;
-  Teuchos::ParameterList pl;
-  pl.set("Selection Type", "Method by name");
-
-  int N = Teuchos::as<int>(allRKTableauNames.size());
-  for (int i=0 ; i<N ; ++i) {
-    pl.set("Method by name", allRKTableauNames[i]);
-    RKButcherTableau<Scalar> rkbt = rkbtFactory.create(pl);
-    if (determineRKBTType(rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_ERK) {
-      explicitRKTableauNames.push_back(allRKTableauNames[i]);
+  RCP<DefaultRKButcherTableauFactory<Scalar> > rkbtFactory = rKButcherTableauFactory<Scalar>();
+  RCP<const ParameterList> validPL = rkbtFactory->getValidParameters();
+  Teuchos::ParameterList::ConstIterator plIt = validPL->begin();
+  for (;plIt != validPL->end() ; plIt++) {
+    std::string rkbt_name = validPL->name(plIt);
+    if (rkbt_name == "RKButcherTableau Type") { continue; }
+    RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory->create(rkbt_name);
+    if (determineRKBTType(*rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_ERK) {
+      explicitRKTableauNames.push_back(rkbt_name);
     }
   }
   return explicitRKTableauNames;
@@ -71,10 +68,7 @@ class ExplicitRKStepperFactory : public virtual StepperFactoryBase<Scalar>
     RCP<StepperBase<Scalar> > getStepper() const
     {
       RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
-      Teuchos::ParameterList paramList;
-      paramList.set("Selection Type", "Method by name");
-      paramList.set("Method by name", explicitRKNames_[index_]);
-      RKButcherTableau<Scalar> rkbt = rkbtFactory_.create(paramList);
+      RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory_.create(explicitRKNames_[index_]);
       RCP<ExplicitRKStepper<Scalar> > stepper = explicitRKStepper<Scalar>(model,rkbt);
       return(stepper);
     }

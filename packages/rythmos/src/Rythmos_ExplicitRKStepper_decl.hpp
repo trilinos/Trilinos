@@ -48,14 +48,14 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     ExplicitRKStepper();
     ExplicitRKStepper(
         const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-        RKButcherTableau<Scalar> rkbt
+        const RCP<const RKButcherTableauBase<Scalar> > &rkbt
         );
 
     /** \brief. */
-    void setRKButcherTableau(RKButcherTableau<Scalar> rkbt);
+    void setRKButcherTableau(const RCP<const RKButcherTableauBase<Scalar> > &rkbt);
 
     /** \brief. */
-    RKButcherTableau<Scalar> getRKButcherTableau() const;
+    RCP<const RKButcherTableauBase<Scalar> > getRKButcherTableau() const;
 
     /** \brief . */
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
@@ -137,7 +137,7 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
 
     Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
 
-    RKButcherTableau<Scalar> erkButcherTableau_;
+    RCP<const RKButcherTableauBase<Scalar> > erkButcherTableau_;
 
     Scalar t_;
     Scalar t_old_;
@@ -167,7 +167,7 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
 template<class Scalar>
 RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-    const RKButcherTableau<Scalar> rkbt 
+    const RCP<const RKButcherTableauBase<Scalar> > &rkbt 
     );
 
 } // namespace Rythmos

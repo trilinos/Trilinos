@@ -884,7 +884,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, printParams ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
   RCP<const ParameterList> pl = ib->getValidParameters();
   std::cout << "Valid Parameter List for IntegratorBase:" << std::endl;
-  pl->print(std::cout);
+  pl->print(std::cout,Teuchos::ParameterList::PrintOptions().showDoc(true).indent(4));
   TEST_ASSERT( false );
 }
 */

@@ -63,7 +63,7 @@ public:
     const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
     const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
     const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-    RKButcherTableau<Scalar> irkButcherTableau
+    const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
     );
 
   /** \brief . */
@@ -73,10 +73,10 @@ public:
   RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory();
   
   /** \brief . */
-  void setRKButcherTableau( RKButcherTableau<Scalar> rkButcherTableau );
+  void setRKButcherTableau( const RCP<const RKButcherTableauBase<Scalar> > &rkButcherTableau );
 
   /** \brief . */
-  RKButcherTableau<Scalar> getRKButcherTableau();
+  RCP<const RKButcherTableauBase<Scalar> > getRKButcherTableau();
 
   /** \brief . */
   // This function is mostly for testing purposes to explicitely over-ride the
@@ -219,7 +219,7 @@ private:
   TimeRange<Scalar> timeRange_;
 
   RCP<Thyra::ModelEvaluator<Scalar> > irkModel_;
-  RKButcherTableau<Scalar> irkButcherTableau_;
+  RCP<const RKButcherTableauBase<Scalar> > irkButcherTableau_;
 
   bool isDirk_; // Used for Diagonal Implicit RK 
 
@@ -248,7 +248,7 @@ implicitRKStepper(
   const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-  RKButcherTableau<Scalar> irkbt
+  const RCP<const RKButcherTableauBase<Scalar> > &irkbt
   );
 
 

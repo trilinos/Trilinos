@@ -53,10 +53,8 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, ExplicitRKStepper ) {
   // Stepper
   double finalTime = 1.0;
   RCP<SinCosModel> model = sinCosModel(false);
-  DefaultRKButcherTableauFactory<double> rkbtFactory;
-  RCP<ParameterList> rkbtPL = Teuchos::parameterList();
-  rkbtPL->set("Method by name","Forward Euler");
-  RKButcherTableau<double> rkbt = rkbtFactory.create(*rkbtPL);
+  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Forward Euler");
+  TEST_ASSERT( !is_null(rkbt) );
   RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model,rkbt);
   integrator->setStepper(stepper, finalTime);
 

@@ -66,7 +66,7 @@ public:
     const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
     const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &dirk_W_factory,
-    const RKButcherTableau<Scalar> &irkButcherTableau
+    const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
     );
 
   /** \brief . */
@@ -128,7 +128,7 @@ private:
   RCP<const Thyra::ModelEvaluator<Scalar> > daeModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > dirk_W_factory_;
-  RKButcherTableau<Scalar> dirkButcherTableau_;
+  RCP<const RKButcherTableauBase<Scalar> > dirkButcherTableau_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
@@ -158,7 +158,7 @@ diagonalImplicitRKModelEvaluator(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &dirk_W_factory,
-  const RKButcherTableau<Scalar> &irkButcherTableau
+  const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
   )
 {
   RCP<DiagonalImplicitRKModelEvaluator<Scalar> >
@@ -192,7 +192,7 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::initializeDIRKModel(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &dirk_W_factory,
-  const RKButcherTableau<Scalar> &irkButcherTableau
+  const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
   )
 {
   typedef ScalarTraits<Scalar> ST;
@@ -220,7 +220,7 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::initializeDIRKModel(
   dirk_W_factory_ = dirk_W_factory;
   dirkButcherTableau_ = irkButcherTableau;
 
-  const int numStages = dirkButcherTableau_.numStages();
+  const int numStages = dirkButcherTableau_->numStages();
 
   using Teuchos::rcp_dynamic_cast;
   stage_space_ = productVectorSpace(daeModel_->get_x_space(),numStages);
@@ -278,7 +278,7 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::setStageSolution(
       )
 {
   TEST_FOR_EXCEPT(stageNumber < 0);
-  TEST_FOR_EXCEPT(stageNumber >= dirkButcherTableau_.numStages());
+  TEST_FOR_EXCEPT(stageNumber >= dirkButcherTableau_->numStages());
   Thyra::V_V(&*(stage_derivatives_->getNonconstVectorBlock(stageNumber)),stage_solution);
 }
 
@@ -288,7 +288,7 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::setCurrentStage(
       )
 {
   TEST_FOR_EXCEPT(currentStage < 0);
-  TEST_FOR_EXCEPT(currentStage >= dirkButcherTableau_.numStages());
+  TEST_FOR_EXCEPT(currentStage >= dirkButcherTableau_->numStages());
   currentStage_ = currentStage;
 }
 
@@ -422,12 +422,12 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::evalModelImpl(
   
   // B.1) Setup the DAE's inArgs for stage f(currentStage_) ...
   V_V(&*(stage_derivatives_->getNonconstVectorBlock(currentStage_)),*x_in);
-  assembleIRKState( currentStage_, dirkButcherTableau_.A(), delta_t_, *x_old_, *stage_derivatives_, outArg(*x_i) );
+  assembleIRKState( currentStage_, dirkButcherTableau_->A(), delta_t_, *x_old_, *stage_derivatives_, outArg(*x_i) );
   daeInArgs.set_x( x_i );
   daeInArgs.set_x_dot( x_in );
-  daeInArgs.set_t( t_old_ + dirkButcherTableau_.c()(currentStage_) * delta_t_ );
+  daeInArgs.set_t( t_old_ + dirkButcherTableau_->c()(currentStage_) * delta_t_ );
   daeInArgs.set_alpha(ST::one());
-  daeInArgs.set_beta( delta_t_ * dirkButcherTableau_.A()(currentStage_,currentStage_) );
+  daeInArgs.set_beta( delta_t_ * dirkButcherTableau_->A()(currentStage_,currentStage_) );
 
   // B.2) Setup the DAE's outArgs for stage f(i) ...
   if (!is_null(f_out))

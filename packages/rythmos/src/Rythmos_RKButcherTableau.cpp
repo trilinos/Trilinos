@@ -27,49 +27,4 @@
 //@HEADER
 
 
-#include "Rythmos_RKButcherTableau.hpp"
-
-namespace Rythmos {
-
-  Teuchos::Array<std::string> getS_RKButcherTableauMethodNames()
-  {
-    Teuchos::Array<std::string> a;
-    a.push_back(RKBT_ForwardEuler_name());
-    a.push_back(RKBT_BackwardEuler_name());
-    a.push_back(Explicit4Stage_name());
-    a.push_back(Explicit3_8Rule_name());
-    a.push_back(Explicit2Stage2ndOrderRunge_name());
-    a.push_back(Explicit3Stage3rdOrderHeun_name());
-    a.push_back(Explicit3Stage3rdOrder_name());
-    a.push_back(Explicit4Stage3rdOrderRunge_name());
-    a.push_back(Implicit1Stage2ndOrderGauss_name());
-    a.push_back(Implicit2Stage4thOrderGauss_name());
-    a.push_back(Implicit3Stage6thOrderGauss_name());
-    a.push_back(Implicit1Stage1stOrderRadauA_name());
-    a.push_back(Implicit2Stage3rdOrderRadauA_name());
-    a.push_back(Implicit3Stage5thOrderRadauA_name());
-    a.push_back(Implicit1Stage1stOrderRadauB_name());
-    a.push_back(Implicit2Stage3rdOrderRadauB_name());
-    a.push_back(Implicit3Stage5thOrderRadauB_name());
-    a.push_back(Implicit2Stage2ndOrderLobattoA_name());
-    a.push_back(Implicit3Stage4thOrderLobattoA_name());
-    a.push_back(Implicit4Stage6thOrderLobattoA_name());
-    a.push_back(Implicit2Stage2ndOrderLobattoB_name());
-    a.push_back(Implicit3Stage4thOrderLobattoB_name());
-    a.push_back(Implicit4Stage6thOrderLobattoB_name());
-    a.push_back(Implicit2Stage2ndOrderLobattoC_name());
-    a.push_back(Implicit3Stage4thOrderLobattoC_name());
-    a.push_back(Implicit4Stage6thOrderLobattoC_name());
-    a.push_back(Implicit2Stage4thOrderHammerHollingsworth_name());
-    a.push_back(Implicit3Stage6thOrderKuntzmannButcher_name());
-    //a.push_back(Implicit4Stage8thOrderKuntzmannButcher_name()); // tscoffe 11/10/08 not passing convergence testing yet
-    a.push_back(DIRK2Stage3rdOrder_name());
-    a.push_back(SDIRK2Stage3rdOrder_name());
-    a.push_back(SDIRK5Stage5thOrder_name());
-    a.push_back(SDIRK5Stage4thOrder_name());
-    a.push_back(SDIRK3Stage4thOrder_name());
-    return a;
-  }
-   
-} // namespace Rythmos
 

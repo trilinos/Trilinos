@@ -66,7 +66,7 @@ public:
     const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
     const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-    const RKButcherTableau<Scalar> &irkButcherTableau
+    const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
     );
 
   /** \brief . */
@@ -117,7 +117,7 @@ private:
   RCP<const Thyra::ModelEvaluator<Scalar> > daeModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
   RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory_;
-  RKButcherTableau<Scalar> irkButcherTableau_;
+  RCP<const RKButcherTableauBase<Scalar> > irkButcherTableau_;
 
   Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar> outArgs_;
@@ -147,7 +147,7 @@ implicitRKModelEvaluator(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-  const RKButcherTableau<Scalar> &irkButcherTableau
+  const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
   )
 {
   RCP<ImplicitRKModelEvaluator<Scalar> >
@@ -180,7 +180,7 @@ void ImplicitRKModelEvaluator<Scalar>::initializeIRKModel(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &daeModel,
   const Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
   const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-  const RKButcherTableau<Scalar> &irkButcherTableau
+  const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
   )
 {
   // ToDo: Assert input arguments!
@@ -207,7 +207,7 @@ void ImplicitRKModelEvaluator<Scalar>::initializeIRKModel(
   irk_W_factory_ = irk_W_factory;
   irkButcherTableau_ = irkButcherTableau;
 
-  const int numStages = irkButcherTableau_.numStages();
+  const int numStages = irkButcherTableau_->numStages();
 
   x_bar_space_ = productVectorSpace(daeModel_->get_x_space(),numStages);
   f_bar_space_ = productVectorSpace(daeModel_->get_f_space(),numStages);
@@ -296,7 +296,7 @@ ImplicitRKModelEvaluator<Scalar>::create_W_op() const
       "Error, initializeIRKModel must be called first!\n"
       );
   // Create the block structure for W_op_bar right away!
-  const int numStages = irkButcherTableau_.numStages();
+  const int numStages = irkButcherTableau_->numStages();
   RCP<Thyra::PhysicallyBlockedLinearOpBase<Scalar> >
     W_op_bar = Thyra::defaultBlockedLinearOp<Scalar>();
   W_op_bar->beginBlockFill( f_bar_space_, x_bar_space_ );
@@ -398,22 +398,22 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
   const RCP<VB> x_i = createMember(daeModel_->get_x_space());
   daeInArgs.setArgs(basePoint_);
   
-  const int numStages = irkButcherTableau_.numStages();
+  const int numStages = irkButcherTableau_->numStages();
 
   for ( int i = 0; i < numStages; ++i ) {
 
     // B.1) Setup the DAE's inArgs for stage f(i) ...
-    assembleIRKState( i, irkButcherTableau_.A(), delta_t_, *x_old_, *x_bar, outArg(*x_i) );
+    assembleIRKState( i, irkButcherTableau_->A(), delta_t_, *x_old_, *x_bar, outArg(*x_i) );
     daeInArgs.set_x( x_i );
     daeInArgs.set_x_dot( x_bar->getVectorBlock(i) );
-    daeInArgs.set_t( t_old_ + irkButcherTableau_.c()(i) * delta_t_ );
+    daeInArgs.set_t( t_old_ + irkButcherTableau_->c()(i) * delta_t_ );
     Scalar alpha = ST::zero();
     if (i == 0) {
       alpha = ST::one();
     } else {
       alpha = ST::zero();
     }
-    Scalar beta = delta_t_ * irkButcherTableau_.A()(i,0);
+    Scalar beta = delta_t_ * irkButcherTableau_->A()(i,0);
     daeInArgs.set_alpha( alpha );
     daeInArgs.set_beta( beta );
 
@@ -438,7 +438,7 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
         } else {
           alpha = ST::zero();
         }
-        Scalar beta = delta_t_ * irkButcherTableau_.A()(i,j);
+        Scalar beta = delta_t_ * irkButcherTableau_->A()(i,j);
         daeInArgs.set_alpha( alpha );
         daeInArgs.set_beta( beta );
         daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,j));
