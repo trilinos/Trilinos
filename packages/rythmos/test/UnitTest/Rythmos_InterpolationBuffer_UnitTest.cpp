@@ -406,73 +406,73 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, addPoints_bad ) {
   time_vec.push_back(0.51);
   x_vec.push_back(createDefaultVector(2,15.0));
   xdot_vec.push_back(createDefaultVector(2,30.0));
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   // inside time range at beginning
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::out_of_range );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   // TODO:  What happens in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   time_vec[0] = 1.49;
   // inside time range at end
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::out_of_range );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   // TODO:  What happens in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   time_vec.clear();
   // time_vec.size() == 0
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::logic_error );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   // TODO:  What happens in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   time_vec.push_back(0.0);
   x_vec.clear();
   // x_vec.size() == 0
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::logic_error );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   // TODO:  What happens in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   x_vec.push_back(createDefaultVector(2,16.0));
   xdot_vec.clear();
   // xdot_vec.size() == 0
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::logic_error );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   // TODO:  What happens in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   xdot_vec.push_back(createDefaultVector(2,31.0));
   time_vec[0] = 0.5;
   // Replace first value
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::out_of_range );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   // TODO:  What happens in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   time_vec[0] = 1.5;
   // Replace last value
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::out_of_range );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   // TODO:  What happens in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   time_vec[0] = 2.0;
   x_vec[0] = Teuchos::null;
   // x_vec pointers are null
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::logic_error );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   // TODO:  What happens in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   x_vec[0] = createDefaultVector(2,17.0);
   xdot_vec[0] = Teuchos::null;
   // xdot_vec pointers are null
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::logic_error );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   // TODO:  What happens in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   xdot_vec[0] = createDefaultVector(2,32.0);
   RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->set("InterpolationBufferPolicy", "Static Policy");
@@ -490,18 +490,18 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, addPoints_bad ) {
   x_vec.push_back(createDefaultVector(2,18.0));
   xdot_vec.push_back(createDefaultVector(2,33.0));
   // addPoints with non-sorted time_vec
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::logic_error );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   // TODO:  What happens in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   time_vec[1] = 2.5;
   // addPoints with non-unique time_vec
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::logic_error );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   // TODO:  What happens in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   // Verify we can add this points with valid time_vec data.
   time_vec[1] = 2.75;
   TEST_NOTHROW( ib->addPoints(time_vec,x_vec,xdot_vec));
@@ -755,29 +755,29 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, getPoints ) {
       Array<RCP<const VectorBase<double> > > xdot_vec_out;
       Array<double> accuracy_vec_out;
       time_vec_out.push_back(9.0);
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
       TEST_THROW(
           ib->getPoints(time_vec_out, &x_vec_out, &xdot_vec_out, &accuracy_vec_out), 
           std::logic_error
           );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
       TEST_NOTHROW(
           ib->getPoints(time_vec_out, &x_vec_out, &xdot_vec_out, &accuracy_vec_out)
           );
       // TODO:  What do we get out in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
       time_vec_out[0] = 11.0;
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
       TEST_THROW(
           ib->getPoints(time_vec_out, &x_vec_out, &xdot_vec_out, &accuracy_vec_out), 
           std::logic_error
           );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
       TEST_NOTHROW(
           ib->getPoints(time_vec_out, &x_vec_out, &xdot_vec_out, &accuracy_vec_out)
           );
       // TODO:  What do we get out in this case?
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
       //   Case A.2.  asking for exact time, okay
       time_vec_out[0] = 10.0;
       TEST_NOTHROW(

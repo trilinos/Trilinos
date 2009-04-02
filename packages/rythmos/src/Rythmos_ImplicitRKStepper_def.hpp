@@ -210,7 +210,7 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
   RCP<const Thyra::VectorBase<Scalar> >
     x_init = initialCondition.get_x();
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_FOR_EXCEPTION(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"

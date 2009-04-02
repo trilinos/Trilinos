@@ -104,7 +104,7 @@ void BackwardEulerStepper<Scalar>::setInterpolator(
   const RCP<InterpolatorBase<Scalar> >& interpolator
   )
 {
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_FOR_EXCEPT(is_null(interpolator));
 #endif
   interpolator_ = interpolator;
@@ -279,7 +279,7 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
   RCP<const Thyra::VectorBase<Scalar> >
     x_init = initialCondition.get_x();
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_FOR_EXCEPTION(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
@@ -417,7 +417,7 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeTy
     *out << "\nt_ = " << t_ << std::endl;
   }
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
 
   if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
     *out << "\nChecking to make sure that solution and the interpolated solution are the same! ...\n";
@@ -467,7 +467,7 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeTy
   // 2007/07/25: rabartl: ToDo: Move the above test into a helper function so
   // that it can be used from lots of different places!
 
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 
   if ( !is_null(out) && as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
     *out
@@ -531,11 +531,11 @@ void BackwardEulerStepper<Scalar>::addPoints(
 
   initialize();
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_FOR_EXCEPTION(
     time_vec.size() == 0, std::logic_error,
     "Error, addPoints called with an empty time_vec array!\n");
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
@@ -593,7 +593,7 @@ void BackwardEulerStepper<Scalar>::getPoints(
   typename DataStore<Scalar>::DataStoreVector_t ds_nodes;
   typename DataStore<Scalar>::DataStoreVector_t ds_out;
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_FOR_EXCEPT(!haveInitialCondition_);
   TEST_FOR_EXCEPT( 0 == x_vec );
 #endif
@@ -618,7 +618,7 @@ void BackwardEulerStepper<Scalar>::getPoints(
     }
     DataStore<Scalar> ds_temp;
     Scalar dt = t_ - t_old_;
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     TEST_FOR_EXCEPT(
       !Thyra::testRelErr(
         "dt", dt, "dt_", dt_,
@@ -691,7 +691,7 @@ void BackwardEulerStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
   using Teuchos::as;
 
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_FOR_EXCEPT(!haveInitialCondition_);
 #endif
 

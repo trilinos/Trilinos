@@ -18,5 +18,5 @@
 /* Define if we want Explicit Instantiation */
 #cmakedefine HAVE_RYTHMOS_EXPLICIT_INSTANTIATION
 
-/* Define if we wnat Rythmos DEBUG turnd on */
+/* Define if we want Rythmos DEBUG turned on */
 #cmakedefine HAVE_RYTHMOS_DEBUG

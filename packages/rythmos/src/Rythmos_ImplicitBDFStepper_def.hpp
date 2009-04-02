@@ -804,7 +804,7 @@ void ImplicitBDFStepper<Scalar>::interpolateSolution_(
   typedef std::numeric_limits<Scalar> NL;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_FOR_EXCEPTION(
     !isInitialized_,std::logic_error,
     "Error, attempting to call interpolateSolution before initialization!\n");
@@ -1077,7 +1077,7 @@ void ImplicitBDFStepper<Scalar>::completeStep_()
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_FOR_EXCEPT(ST::isnaninf(hh_));
 #endif  
 

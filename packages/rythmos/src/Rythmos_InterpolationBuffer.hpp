@@ -330,7 +330,7 @@ void InterpolationBuffer<Scalar>::addPoints(
   ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec 
   )
 {
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   // Check preconditions
   assertTimePointsAreSorted(time_vec);
   int tsize = Teuchos::as<int>(time_vec.size());
@@ -357,7 +357,7 @@ void InterpolationBuffer<Scalar>::addPoints(
       );
   }
   assertNoTimePointsInsideCurrentTimeRange(*this,time_vec);
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::OSTab ostab(out,1,"IB::addPoints");
   if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
@@ -390,11 +390,11 @@ void InterpolationBuffer<Scalar>::addPoints(
         // Case:  all of new points are past end of existing points
         // Remove points from the beginning of data_vec, then add new points
         int num_extra_points = input_data_list.size()-(storage_limit_-data_vec_->size());
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
         TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error, 
             "Error!  Buffer policy is keep newest and input data size = " << input_data_list.size() << ", storage limit  = " << storage_limit_ << ", and data_vec size = " << data_vec_->size() << ".  Somehow number of points to delete = " << num_extra_points << " <= 0!"
             );
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
         typename DataStore<Scalar>::DataStoreVector_t::iterator 
           data_it = data_vec_->begin();
         for (int i=0 ; i < num_extra_points ; ++i) {
@@ -409,11 +409,11 @@ void InterpolationBuffer<Scalar>::addPoints(
         // Case:  all of new points are before beginning of existing points
         // Remove points from end of data_vec, then add new points
         int num_extra_points = input_data_list.size()-(storage_limit_-data_vec_->size());
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
         TEST_FOR_EXCEPTION( num_extra_points <= 0, std::logic_error, 
             "Error!  Buffer policy is keep newest and input data size = " << input_data_list.size() << ", storage limit  = " << storage_limit_ << ", and data_vec size = " << data_vec_->size() << ".  Somehow number of points to delete = " << num_extra_points << " <= 0!"
             );
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
         typename DataStore<Scalar>::DataStoreVector_t::iterator 
           data_it = data_vec_->end();
         for (int i=0 ; i < num_extra_points ; ++i) {
@@ -522,7 +522,7 @@ void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   int N = time_vec.size();
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   // Check preconditions:
   TimeRange<Scalar> range = this->getTimeRange();
   for (int i=0; i<N ; ++i) {
@@ -534,7 +534,7 @@ void InterpolationBuffer<Scalar>::removeNodes( Array<Scalar>& time_vec )
       range.lower() << "," << range.upper() << "]!\n"
       );
   }
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   RCP<Thyra::VectorBase<Scalar> > vec_temp;
   ScalarMag z = ST::zero();
   for (int i=0; i<N ; ++i) {

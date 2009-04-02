@@ -49,7 +49,7 @@ const char* toString( const StepSizeType stepSizeType )
       return "STEP_TYPE_FIXED";
     case STEP_TYPE_VARIABLE:
       return "STEP_TYPE_VARIABLE";
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     default:
       TEST_FOR_EXCEPT("Invalid enum value!");
 #endif
@@ -74,7 +74,7 @@ const char* toString(const EStepStatus stepStatus)
     case STEP_STATUS_UNINITIALIZED: return "STEP_STATUS_UNINITIALIZED";
     case STEP_STATUS_CONVERGED:     return "STEP_STATUS_CONVERGED";
     case STEP_STATUS_UNKNOWN:       return "STEP_STATUS_UNKNOWN";
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     default: TEST_FOR_EXCEPT(true);
 #endif
   }
@@ -98,7 +98,7 @@ const char* toString(const EStepLETStatus stepLETStatus)
     case STEP_LET_STATUS_PASSED:  return "STEP_LET_STATUS_PASSED";
     case STEP_LET_STATUS_FAILED:  return "STEP_LET_STATUS_FAILED";
     case STEP_LET_STATUS_UNKNOWN: return "STEP_LET_STATUS_UNKNOWN";
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     default: TEST_FOR_EXCEPT(true);
 #endif
   }
@@ -120,7 +120,7 @@ const char* toString(const EBreakPointType breakPointType)
   switch(breakPointType) {
     case BREAK_POINT_TYPE_HARD:  return "BREAK_POINT_TYPE_HARD";
     case BREAK_POINT_TYPE_SOFT:  return "BREAK_POINT_TYPE_SOFT";
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
     default: TEST_FOR_EXCEPT(true);
 #endif
   }

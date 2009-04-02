@@ -99,7 +99,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegratorFactory ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegratorFactory_bad ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( 
       ib->setIntegratorFactory(
         Teuchos::abstractFactoryStd< IntegratorBase<double>, FoolishIntegrator >(),
@@ -107,7 +107,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegratorFactory_bad ) {
         ),
       std::logic_error
       );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   TEST_NOTHROW( 
       ib->setIntegratorFactory(
         Teuchos::abstractFactoryStd< IntegratorBase<double>, FoolishIntegrator >(),
@@ -115,7 +115,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegratorFactory_bad ) {
         )
       );
   TEST_THROW( ib->getValidParameters(), std::logic_error );
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegrationControlFactory ) {
@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegrationControlFactory ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegrationControlFactory_bad ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( 
       ib->setIntegrationControlFactory(
         Teuchos::abstractFactoryStd< IntegrationControlStrategyBase<double>, FoolishIntegrationControlStrategy >(),
@@ -162,7 +162,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegrationControlFactory_bad )
         ),
       std::logic_error
       );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   TEST_NOTHROW( 
       ib->setIntegrationControlFactory(
         Teuchos::abstractFactoryStd< IntegrationControlStrategyBase<double>, FoolishIntegrationControlStrategy >(),
@@ -170,7 +170,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setIntegrationControlFactory_bad )
         )
       );
   TEST_THROW( ib->getValidParameters(), std::logic_error );
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setStepperBuilder ) {
@@ -246,7 +246,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setStepControlFactory ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setStepControlFactory_bad ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( 
       ib->setStepControlFactory(
         Teuchos::abstractFactoryStd< StepControlStrategyBase<double>, FoolishStepControlStrategy >(),
@@ -254,7 +254,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setStepControlFactory_bad ) {
         ),
       std::logic_error
       );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   TEST_NOTHROW( 
       ib->setStepControlFactory(
         Teuchos::abstractFactoryStd< StepControlStrategyBase<double>, FoolishStepControlStrategy >(),
@@ -262,7 +262,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setStepControlFactory_bad ) {
         )
       );
   TEST_THROW( ib->getValidParameters(), std::logic_error );
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferFactory ) {
@@ -303,7 +303,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferFactory ) {
 }
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferFactory_bad ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW( 
       ib->setInterpolationBufferFactory(
         Teuchos::abstractFactoryStd< InterpolationBufferBase<double>, FoolishInterpolationBuffer >(),
@@ -311,7 +311,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferFactory_bad 
         ),
       std::logic_error
       );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   TEST_NOTHROW(
       ib->setInterpolationBufferFactory(
         Teuchos::abstractFactoryStd< InterpolationBufferBase<double>, FoolishInterpolationBuffer >(),
@@ -319,7 +319,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferFactory_bad 
         )
       );
   TEST_THROW( ib->getValidParameters(), std::logic_error );
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferAppenderFactory ) {
@@ -361,7 +361,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferAppenderFact
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferAppenderFactory_bad ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW(
       ib->setInterpolationBufferAppenderFactory(
         Teuchos::abstractFactoryStd< InterpolationBufferAppenderBase<double>, FoolishInterpolationBufferAppender >(),
@@ -369,7 +369,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferAppenderFact
         ),
       std::logic_error
       );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   TEST_NOTHROW(
       ib->setInterpolationBufferAppenderFactory(
         Teuchos::abstractFactoryStd< InterpolationBufferAppenderBase<double>, FoolishInterpolationBufferAppender >(),
@@ -377,7 +377,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolationBufferAppenderFact
         )
       );
   TEST_THROW( ib->getValidParameters(), std::logic_error );
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setErrWtVecCalcFactory ) {
@@ -424,7 +424,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setErrWtVecCalcFactory ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setErrWtVecCalcFactory_bad ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW(
       ib->setErrWtVecCalcFactory(
         Teuchos::abstractFactoryStd< ErrWtVecCalcBase<double>, FoolishErrWtVecCalc >(),
@@ -432,7 +432,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setErrWtVecCalcFactory_bad ) {
         ),
       std::logic_error
       );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   TEST_NOTHROW(
       ib->setErrWtVecCalcFactory(
         Teuchos::abstractFactoryStd< ErrWtVecCalcBase<double>, FoolishErrWtVecCalc >(),
@@ -440,7 +440,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setErrWtVecCalcFactory_bad ) {
         )
       );
   TEST_THROW( ib->getValidParameters(), std::logic_error );
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolatorFactory ) {
@@ -498,7 +498,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolatorFactory ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolatorFactory_bad ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   TEST_THROW(
       ib->setInterpolatorFactory(
         Teuchos::abstractFactoryStd< InterpolatorBase<double>, FoolishInterpolator >(),
@@ -506,7 +506,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolatorFactory_bad ) {
         ),
       std::logic_error
       );
-#else // TEUCHOS_DEBUG
+#else // HAVE_RYTHMOS_DEBUG
   TEST_NOTHROW(
       ib->setInterpolatorFactory(
         Teuchos::abstractFactoryStd< InterpolatorBase<double>, FoolishInterpolator >(),
@@ -514,7 +514,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolatorFactory_bad ) {
         )
       );
   TEST_THROW( ib->getValidParameters(), std::logic_error );
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 }
 
 

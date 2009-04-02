@@ -150,9 +150,9 @@ void LinearInterpolator<Scalar>::interpolate(
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   assertBaseInterpolatePreconditions(*nodes_,t_values,data_out);
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   
   // Output info
   const RCP<FancyOStream> out = this->getOStream();

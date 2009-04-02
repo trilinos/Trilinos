@@ -109,9 +109,9 @@ private:
 
 
   RCP<const typename DataStore<Scalar>::DataStoreVector_t> nodes_;
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   RCP<typename DataStore<Scalar>::DataStoreVector_t> nodes_copy_;
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 
   mutable CubicSplineCoeff<Scalar> splineCoeff_;
   mutable bool splineCoeffComputed_;
@@ -151,9 +151,9 @@ void computeCubicSplineCoeff(
   Array<Scalar> t;
   Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > x_vec, xdot_vec;
   dataStoreVectorToVector<Scalar>( data, &t, &x_vec, &xdot_vec, NULL );
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   assertTimePointsAreSorted<Scalar>( t );
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   // 11/18/08 tscoffe:  Question:  Should I erase everything in coeffPtr or
   // re-use what I can?  For now, I'll erase and create new each time.
   CubicSplineCoeff<Scalar>& coeff = *coeffPtr;
@@ -330,7 +330,7 @@ void CubicSplineInterpolator<Scalar>::setNodes(
   nodes_ = nodesPtr;
   nodesSet_ = true;
   splineCoeffComputed_ = false;
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   const typename DataStore<Scalar>::DataStoreVector_t & nodes = *nodesPtr;
   // Copy nodes to internal data structure for verification upon calls to interpolate
   nodes_copy_ = Teuchos::rcp(new typename DataStore<Scalar>::DataStoreVector_t);
@@ -338,7 +338,7 @@ void CubicSplineInterpolator<Scalar>::setNodes(
   for (int i=0 ; i<Teuchos::as<int>(nodes.size()) ; ++i) {
     nodes_copy_->push_back(*nodes[i].clone());
   }
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
 }
 
 template<class Scalar>
@@ -354,12 +354,12 @@ void CubicSplineInterpolator<Scalar>::interpolate(
   TEST_FOR_EXCEPTION( nodesSet_ == false, std::logic_error,
       "Error!, setNodes must be called before interpolate"
       );
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
   // Check that our nodes_ have not changed between the call to setNodes and interpolate
   assertNodesUnChanged<Scalar>(*nodes_,*nodes_copy_);
   // Assert that the base interpolator preconditions are satisfied
   assertBaseInterpolatePreconditions(*nodes_,t_values,data_out);
-#endif // TEUCHOS_DEBUG
+#endif // HAVE_RYTHMOS_DEBUG
   
   // Output info
   const RCP<FancyOStream> out = this->getOStream();

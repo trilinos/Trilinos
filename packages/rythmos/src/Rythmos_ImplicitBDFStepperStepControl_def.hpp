@@ -288,7 +288,7 @@ void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<
       currentTimeStep = std::min(hh_, currentTimeStep);
     }
     // check for maximum step-size:
-#ifdef TEUCHOS_DEBUG
+#ifdef HAVE_RYTHMOS_DEBUG
       TEST_FOR_EXCEPT(ST::isnaninf(currentTimeStep));
 #endif
     Scalar rh = std::abs(currentTimeStep)*h_max_inv_; 
