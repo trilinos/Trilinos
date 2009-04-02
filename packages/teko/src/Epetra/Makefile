@@ -9,8 +9,6 @@ CPPFLAGS=-DHAVE_CONFIG_H $(THYRA_CXXFLAGS) $(DEBUG_FLAGS)
 OBJS = PB_EpetraHelpers.o \
        PB_EpetraInverseOpWrapper.o \
        PB_EpetraLSCHelpers.o \
-       PB_EpetraLSCStablePreconditioner.o \
-       PB_EpetraLSCStabilizedPreconditioner.o \
        PB_EpetraOperatorWrapper.o \
        PB_EpetraThyraConverter.o \
        PB_InterlacedEpetra.o \

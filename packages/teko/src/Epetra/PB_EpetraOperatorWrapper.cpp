@@ -208,6 +208,22 @@ EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp)
   return rtn;
 }
 
+int EpetraOperatorWrapper::GetBlockRowCount()
+{
+   const RCP<const Thyra::BlockedLinearOpBase<double> > blkOp 
+         = Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<double> >(getThyraOp());
+
+   return blkOp->productRange()->numBlocks();
+}
+
+int EpetraOperatorWrapper::GetBlockColCount()
+{
+   const RCP<const Thyra::BlockedLinearOpBase<double> > blkOp 
+         = Teuchos::rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<double> >(getThyraOp());
+
+   return blkOp->productDomain()->numBlocks();
+}
+
 
 } // namespace Epetra
 } // namespace PB

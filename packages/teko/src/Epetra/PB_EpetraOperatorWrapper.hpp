@@ -188,7 +188,7 @@ namespace Epetra {
     bool HasNormInf() const {return false;}
     
     /** */
-    const Epetra_Comm& Comm() const {return *comm_;}
+    const Epetra_Comm & Comm() const {return *comm_;}
 
     /** */
     const Epetra_Map& OperatorDomainMap() const {return *mapStrategy_->domainMap();}
@@ -196,12 +196,19 @@ namespace Epetra {
     /** */
     const Epetra_Map& OperatorRangeMap() const {return *mapStrategy_->rangeMap();}
 
-
+    //! Return the thyra operator associated with this wrapper
     const RCP<const Thyra::LinearOpBase<double> > getThyraOp() const 
     { return thyraOp_; }
 
+    //! Get the mapping strategy for this wrapper (translate between Thyra and Epetra)
     const RCP<const MappingStrategy> getMapStrategy() const 
     { return mapStrategy_; }
+
+    //! Get the number of block rows in this operator
+    virtual int GetBlockRowCount();
+  
+    //! Get the number of block columns in this operator
+    virtual int GetBlockColCount();
 
   protected:
     /** */
@@ -219,7 +226,6 @@ namespace Epetra {
 
     /** */
     RCP<const MappingStrategy> mapStrategy_;
-
 
     /** */
     RCP<const Thyra::LinearOpBase<double> > thyraOp_;

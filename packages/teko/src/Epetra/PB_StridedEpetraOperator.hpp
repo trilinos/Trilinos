@@ -20,8 +20,10 @@ namespace Epetra {
 
 class StridedEpetraOperator : public EpetraOperatorWrapper {
 public:
-   StridedEpetraOperator(int numVars,const Teuchos::RCP<Epetra_Operator> & content);
-   StridedEpetraOperator(const std::vector<int> & vars,const Teuchos::RCP<Epetra_Operator> & content);
+   StridedEpetraOperator(int numVars,const Teuchos::RCP<Epetra_Operator> & content,
+                         const std::string & label="<ANYM>");
+   StridedEpetraOperator(const std::vector<int> & vars,const Teuchos::RCP<Epetra_Operator> & content,
+                         const std::string & label="<ANYM>");
 
    virtual void SetContent(const std::vector<int> & vars,const Teuchos::RCP<Epetra_Operator> & content);
 
@@ -62,6 +64,8 @@ public:
 protected:
    // gooey center of this shell
    Teuchos::RCP<Epetra_Operator> fullContent_;
+
+   std::string label_;
 
    void BuildBlockedOperator();
 };

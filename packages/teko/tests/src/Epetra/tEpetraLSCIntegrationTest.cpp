@@ -17,7 +17,6 @@
 // PB-Package includes
 #include "Epetra/PB_EpetraHelpers.hpp"
 #include "Epetra/PB_EpetraLSCHelpers.hpp"
-#include "Epetra/PB_EpetraLSCStablePreconditioner.hpp"
 #include "Epetra/PB_EpetraBlockPreconditioner.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
 
@@ -182,7 +181,6 @@ bool tEpetraLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream &
                                                     epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(&*invS))),
                                                     PB::Epetra::thyraDiagOp(*invMass,invF->OperatorRangeMap())));
    const RCP<PB::Epetra::EpetraBlockPreconditioner> prec 
-      // = rcp(new PB::Epetra::EpetraLSCStablePreconditioner(&*sA_,&*invF,&*invS,&*invMass));
          = rcp(new PB::Epetra::EpetraBlockPreconditioner(precFact));
    prec->buildPreconditioner(*sA_);
 

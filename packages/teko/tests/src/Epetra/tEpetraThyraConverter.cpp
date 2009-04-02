@@ -281,7 +281,7 @@ bool tEpetraThyraConverter::test_blockEpetraToThyra(int verbosity,std::ostream &
    int myPID   = Comm.MyPID();
 
    // how big is this vector
-   int myElmts = 10;
+   int myElmts = 1000;
    int glElmts = myElmts*numProc;
 
    // build vector space

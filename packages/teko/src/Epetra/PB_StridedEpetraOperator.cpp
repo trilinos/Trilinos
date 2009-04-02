@@ -18,8 +18,9 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 
-StridedEpetraOperator::StridedEpetraOperator(int numVars,const Teuchos::RCP<Epetra_Operator> & content) 
-      : PB::Epetra::EpetraOperatorWrapper()
+StridedEpetraOperator::StridedEpetraOperator(int numVars,const Teuchos::RCP<Epetra_Operator> & content,
+                                             const std::string & label) 
+      : PB::Epetra::EpetraOperatorWrapper(), label_(label)
 {
    std::vector<int> vars;
    
@@ -29,8 +30,9 @@ StridedEpetraOperator::StridedEpetraOperator(int numVars,const Teuchos::RCP<Epet
    SetContent(vars,content);
 }
 
-StridedEpetraOperator::StridedEpetraOperator(const std::vector<int> & vars,const Teuchos::RCP<Epetra_Operator> & content) 
-      : PB::Epetra::EpetraOperatorWrapper()
+StridedEpetraOperator::StridedEpetraOperator(const std::vector<int> & vars,const Teuchos::RCP<Epetra_Operator> & content,
+                                             const std::string & label) 
+      : PB::Epetra::EpetraOperatorWrapper(), label_(label)
 {
    SetContent(vars,content);
 }
@@ -54,7 +56,7 @@ void StridedEpetraOperator::BuildBlockedOperator()
 
    // ask the strategy to build the Thyra operator for you
    const RCP<const Thyra::LinearOpBase<double> > A 
-         = rcp_dynamic_cast<const StridedMappingStrategy>(mapStrategy_)->buildBlockedThyraOp(crsContent);
+         = rcp_dynamic_cast<const StridedMappingStrategy>(mapStrategy_)->buildBlockedThyraOp(crsContent,label_);
 
    // set whatever is returned
    SetOperator(A,false);

@@ -23,7 +23,8 @@ namespace Epetra {
 //       map  - original Epetra_Map to be broken up
 //       comm - Epetra_Comm object related to the map
 //
-StridedMappingStrategy::StridedMappingStrategy(const std::vector<int> & vars,const RCP<const Epetra_Map> & map, const Epetra_Comm & comm)
+StridedMappingStrategy::StridedMappingStrategy(const std::vector<int> & vars,const RCP<const Epetra_Map> & map,
+                                               const Epetra_Comm & comm)
 {
    rangeMap_ = map;
    domainMap_ = map;
@@ -126,7 +127,7 @@ void StridedMappingStrategy::buildBlockTransferData(const std::vector<int> & var
 //             defined by this mapping strategy
 //
 const Teuchos::RCP<const Thyra::LinearOpBase<double> > 
-StridedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & crsContent) const
+StridedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & crsContent,const std::string & label) const
 {
    int dim = blockMaps_.size();
 
@@ -134,8 +135,14 @@ StridedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & 
 
    A->beginBlockFill(dim,dim);
    for(int i=0;i<dim;i++) {
-      for(int j=0;j<dim;j++)
-         A->setBlock(i,j,Thyra::epetraLinearOp(PB::Epetra::buildSubBlock(i,j,*crsContent,blockMaps_)));
+      for(int j=0;j<dim;j++) {
+         // label block correctly
+         std::stringstream ss;
+         ss << label << "_" << i << "," << j;
+
+         // build the blocks and place it the right location
+         A->setBlock(i,j,Thyra::epetraLinearOp(PB::Epetra::buildSubBlock(i,j,*crsContent,blockMaps_),ss.str()));
+      }
    } // end for i
    A->endBlockFill();
 
