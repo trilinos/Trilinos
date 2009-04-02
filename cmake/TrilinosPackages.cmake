@@ -22,7 +22,6 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   Epetra                epetra                         ""
   Zoltan                zoltan                         ""
   Shards                shards                         ""
-  Intrepid              intrepid                       OFF
   GlobiPack             globipack                      ""
   Triutils              triutils                       ""
   Tpetra                tpetra                         ""
@@ -37,6 +36,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   AztecOO               aztecoo                        ""
   Galeri                galeri                         ""
   Amesos                amesos                         ""
+  Intrepid              intrepid                       ""
   Ifpack                ifpack                         ""
   Komplex               komplex                        ""
   ML                    ml                             ""

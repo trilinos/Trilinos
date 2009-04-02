@@ -31,12 +31,6 @@
       <Email address="shards-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="Intrepid">
-    <Dependency name="Teuchos" type="LR"/>
-    <EmailAddresses>
-      <Email address="intrepid-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="GlobiPack">
     <Dependency name="Teuchos" type="LR"/>
     <EmailAddresses>
@@ -156,6 +150,20 @@
     <Dependency name="Galeri" type="TO"/>
     <EmailAddresses>
       <Email address="amesos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
+  <SubProject name="Intrepid">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="TO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Shards" type="LR"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="TO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="LO"/>
+    <Dependency name="Amesos" type="TO"/>
+    <EmailAddresses>
+      <Email address="intrepid-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Ifpack">

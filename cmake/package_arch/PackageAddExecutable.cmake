@@ -17,6 +17,7 @@ INCLUDE(ParseVariableArguments)
 #   [ DIRECTORY <dir> ]
 #   [ DEPLIBS <lib1> <lib2> ... ]
 #   [ COMM [serial] [mpi] ]
+#   [ ADD_DIR_TO_NAME ]
 #   
 #
 # 
@@ -33,7 +34,7 @@ FUNCTION(PACKAGE_ADD_EXECUTABLE EXE_NAME)
     #lists
     "SOURCES;DIRECTORY;DEPLIBS;COMM"
     #options
-    "NOEXEPREFIX"
+    "NOEXEPREFIX;ADD_DIR_TO_NAME"
     ${ARGN}
     )
 
@@ -48,6 +49,15 @@ FUNCTION(PACKAGE_ADD_EXECUTABLE EXE_NAME)
   
   SET (EXE_SOURCES)
   SET(EXE_BINARY_NAME ${EXE_NAME})
+  
+  #If requested create a modifier for the name that will be inserted between the package name 
+  #and the given name or exe_name for the test
+  IF(PARSE_ADD_DIR_TO_NAME)
+    SET(DIRECTORY_NAME "")
+    PACKAGE_CREATE_NAME_FROM_CURRENT_SOURCE_DIRECTORY(DIRECTORY_NAME)
+    SET(EXE_BINARY_NAME ${DIRECTORY_NAME}_${EXE_BINARY_NAME})
+  ENDIF()
+  
   IF(DEFINED PACKAGE_NAME AND NOT PARSE_NOEXEPREFIX)
     SET(EXE_BINARY_NAME ${PACKAGE_NAME}_${EXE_BINARY_NAME})
   ENDIF()

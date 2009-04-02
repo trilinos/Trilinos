@@ -20,6 +20,7 @@ INCLUDE(PackageAddTestHelpers)
 #   [ STANDARD_PASS_OUTPUT
 #     | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..." 
 #     | FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..." ]
+#   [ ADD_DIR_TO_NAME ]
 #   )
 #  
 # The arguments to the function are as followes:
@@ -128,6 +129,13 @@ INCLUDE(PackageAddTestHelpers)
 #     expressions <regex1>, <regex2> etc. match the output.  Otherwise, the
 #     test will pass.
 # 
+#   ADD_DIR_TO_NAME
+#     If specified the directory name that the test resides in will be added into
+#     the name of the test after any package name is added and before the given
+#     name of the test. the directory will have the package's base directory
+#     stripped off so only the unique part of the test directory will be used.
+#     All directory seperators will be changed into underscores.
+#
 
 FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
    
@@ -141,7 +149,7 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
      #lists
      "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;NAME;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION"
      #options
-     "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT"
+     "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;ADD_DIR_TO_NAME"
      ${ARGN}
      )
 
@@ -197,25 +205,25 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
   # C) Set the name and path of the binary that will be run
   #
 
-  PACAKGE_ADD_TEST_GET_EXE_BINARY_NAME( "${EXE_NAME}"
-    ${PARSE_NOEXEPREFIX} ${PARSE_NOEXESUFFIX} EXE_BINARY_NAME )
+  PACKAGE_ADD_TEST_GET_EXE_BINARY_NAME( "${EXE_NAME}"
+    ${PARSE_NOEXEPREFIX} ${PARSE_NOEXESUFFIX} ${PARSE_ADD_DIR_TO_NAME} EXE_BINARY_NAME )
   
-#  SET(EXE_BINARY_NAME "${EXE_NAME}")
-#  IF (NOT PARSE_NOEXESUFFIX)
-#    SET(EXE_BINARY_NAME "${EXE_NAME}${CMAKE_EXECUTABLE_SUFFIX}")
-#  ENDIF()
-#  IF(DEFINED PACKAGE_NAME AND NOT PARSE_NOEXEPREFIX)
-#    SET(EXE_BINARY_NAME ${PACKAGE_NAME}_${EXE_BINARY_NAME})
-#  ENDIF()
-
-  #MESSAGE("PACKAGE_ADD_TEST: ${EXE_NAME}: EXE_BINARY_NAME = ${EXE_BINARY_NAME}")
-
-  IF(PARSE_NAME)
-    SET(TEST_NAME "${PACKAGE_NAME}_${PARSE_NAME}")
-  ELSE()
-    SET(TEST_NAME "${PACKAGE_NAME}_${EXE_NAME}")  
+  #If requested create a modifier for the name that will be inserted between the package name 
+  #and the given name or exe_name for the test
+  SET(DIRECTORY_NAME "")
+  IF(PARSE_ADD_DIR_TO_NAME)
+    PACKAGE_CREATE_NAME_FROM_CURRENT_SOURCE_DIRECTORY(DIRECTORY_NAME)
+    SET(DIRECTORY_NAME "_${DIRECTORY_NAME}")
   ENDIF()
 
+  #MESSAGE("PACKAGE_ADD_TEST: ${EXE_NAME}: EXE_BINARY_NAME = ${EXE_BINARY_NAME}")
+  
+  IF(PARSE_NAME)
+    SET(TEST_NAME "${PACKAGE_NAME}${DIRECTORY_NAME}_${PARSE_NAME}")
+  ELSE()
+    SET(TEST_NAME "${PACKAGE_NAME}${DIRECTORY_NAME}_${EXE_NAME}")  
+  ENDIF()
+  
   IF(PARSE_DIRECTORY)
     SET(EXECUTABLE_PATH "${PARSE_DIRECTORY}/${EXE_BINARY_NAME}")
   ELSE()
