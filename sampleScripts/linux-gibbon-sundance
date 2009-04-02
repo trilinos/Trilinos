@@ -67,6 +67,10 @@ CHECK_STL=OFF
 # Whether to enable a paranoid level of compiler warnings. This can cause
 # problems with Python. Default: on. 
 PARANOID_COMPILER=ON
+# ----------------------------------------------------------------------------
+# Verbosity of configuration
+VERBOSE_CONFIGURE=OFF
+
 
 # ----------------------------------------------------------------------------
 # Set variables controlling which third-party libraries are available and
@@ -97,7 +101,7 @@ TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
 #
 # ---------------------------------------------------------------------------
 # Argument parsing logic.
-TEMP=`getopt -o x --long help,mpi,serial,shared,static,check-stl,debug,opt,exodus,no-exodus,g77,meros,lax,src:,data:,prefix:: -- "$@"`
+TEMP=`getopt -o x --long help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,lax,src:,data:,prefix:: -- "$@"`
 
 eval set -- "$TEMP"
 
@@ -105,6 +109,8 @@ while true ; do
   case "$1" in 
       --mpi) ENABLE_MPI=ON; shift ;;
       --serial) ENABLE_MPI=OFF; shift ;;
+      --dryrun) ECHO=echo; shift;;
+      --verbose) VERBOSE_CONFIGURE=ON; shift;;
       --shared) BUILD_SHARED=ON; shift;;
       --static) BUILD_SHARED=OFF; shift;;
       --check-stl) CHECK_STL=ON; shift;;
@@ -112,6 +118,7 @@ while true ; do
       --opt) BUILD_TYPE=RELEASE; shift;;
       --lax) PARANOID_COMPILER=OFF; shift;;
       --g77) FORTRAN_LIBS="-lg2c"; shift;;
+      --lib64) LIB_PATH="${COMPILER_ROOT}/lib;${COMPILER_ROOT}/lib64"; shift;;
       --exodus) HAVE_EXODUS=ON; shift;;
       --no-exodus) HAVE_EXODUS=OFF; shift;;
       --meros) ENABLE_MEROS=ON; shift;;
@@ -124,6 +131,8 @@ while true ; do
       --help)
             echo "Command-line arguments:"
             echo "--help           help"
+            echo "--dryrun         print the command that would be used"
+            echo "--verbose        enable verbose configuration (default: off)"
             echo "--mpi            enable MPI (default: on)"
             echo "--serial         turn off MPI"
             echo "--shared         build shared libraries (default: off)"
@@ -133,6 +142,7 @@ while true ; do
             echo "--opt            turn on optimized compilation (default: off)"
             echo "--lax            turn off paranoid compiler flags (necessary for python wrappers)"
             echo "--g77            use g77 instead of gfortran (default: off)"
+            echo "--lib64          include lib64 in search path (default: off)"
             echo "--exodus         enable ExodusII readers (requires ExodusII libraries. Default: on)"
             echo "--no-exodus      disable ExodusII readers"
             echo "--meros          enable Meros block preconditioners (default: off)"
@@ -153,11 +163,11 @@ done
 #
 # ---------------------------------------------------------------------------
 
-cmake \
+${ECHO} cmake \
 -D CMAKE_BUILD_TYPE:STRING=${BUILD_TYPE} \
--D CMAKE_SYSTEM_LIBRARY_PATH:FILEPATH="$LIB_PATH" \
--D CMAKE_SYSTEM_INCLUDE_PATH:FILEPATH="$INC_PATH" \
 -D BUILD_SHARED_LIBS:BOOL=${BUILD_SHARED} \
+-D CMAKE_SYSTEM_LIBRARY_PATH:FILEPATH="${LIB_PATH}" \
+-D CMAKE_SYSTEM_INCLUDE_PATH:FILEPATH="$INC_PATH" \
 -D TPL_ENABLE_ExodusII:BOOL=${HAVE_EXODUS} \
 -D TPL_ENABLE_MPI:BOOL=${ENABLE_MPI} \
 -D Trilinos_EXTRA_LINK_FLAGS:STRING=${FORTRAN_LIBS} \
@@ -166,6 +176,7 @@ cmake \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=${CHECK_STL} \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_Sundance:BOOL=ON \
+-D Trilinos_VERBOSE_CONFIGURE:BOOL=${VERBOSE_CONFIGURE} \
 -D Trilinos_ENABLE_Meros:BOOL=${ENABLE_MEROS} \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
 -D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \
