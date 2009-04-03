@@ -64,6 +64,7 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
   ExportVector_=0;
 
   ovA_ = dynamic_cast<const Ifpack_OverlappingRowMatrix*>(&*Matrix_);
+  assert(ovA_ != 0);
 
 #ifdef HAVE_MPI
   const Epetra_MpiComm *pComm = dynamic_cast<const Epetra_MpiComm*>( &(Matrix->Comm()) );
@@ -362,7 +363,7 @@ void Ifpack_NodeFilter::UpdateImportVector(int NumVectors) const {
       }
     }
     if(ImportVector_ == 0)
-      ImportVector_ = new Epetra_MultiVector(Importer_->SourceMap(),NumVectors); // Create Import vector if needed
+      ImportVector_ = new Epetra_MultiVector(Importer_->TargetMap(),NumVectors); // Create Import vector if needed
   }
   return;
 /*
