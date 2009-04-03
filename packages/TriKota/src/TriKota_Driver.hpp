@@ -9,6 +9,8 @@
 #include "DakotaStrategy.H"
 #include "DakotaModel.H"
 #include "DakotaInterface.H"
+#include "DirectApplicInterface.H"
+
 
 //Trilinos includes
 #include "Teuchos_RCP.hpp"

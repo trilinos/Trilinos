@@ -1,5 +1,5 @@
 #include <iostream>
-#include "TriKota_Driver.hpp"
+#include "TriKota_DirectApplicInterface.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
 using namespace Dakota;

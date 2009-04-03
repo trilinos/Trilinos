@@ -48,7 +48,7 @@ void TriKota::Driver::run(Dakota::DirectApplicInterface* appInterface)
   Interface& interface  = first_model.interface();
 
   // Pass a pointer to a Dakota::DirectApplicInterface
-  interface.assign_rep(appInterface.get(), false);
+  interface.assign_rep(appInterface, false);
 
   selected_strategy.run_strategy();
 }
