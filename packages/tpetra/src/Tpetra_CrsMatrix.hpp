@@ -35,7 +35,7 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CompileTimeAssert.hpp>
-#include "Tpetra_Operator.hpp"
+#include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
@@ -90,7 +90,7 @@ namespace Tpetra
    *
    */
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal>
-  class CrsMatrix : public Operator<Scalar,LocalOrdinal,GlobalOrdinal>
+  class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal>
   {
     public:
       //! @name Constructor/Destructor Methods
@@ -107,7 +107,7 @@ namespace Tpetra
 
       //@}
 
-      //! @name Methods implementing Tpetra::Operator
+      //! @name Methods implementing Operator
       //@{ 
 
       //! Returns the Map associated with the domain of this operator.
@@ -263,15 +263,17 @@ namespace Tpetra
       /*! Before fillComplete(), the results will not include entries submitted to another node and may contain duplicated entries.
        * \pre hasColMap() == true
        */
-      void extractMyRowCopy(LocalOrdinal localRow, 
-                           const Teuchos::ArrayView<LocalOrdinal> &indices, 
-                           const Teuchos::ArrayView<Scalar> &values) const;
+      void extractMyRowCopy(Teuchos_Ordinal localRow, 
+                            const Teuchos::ArrayView<LocalOrdinal> &indices, 
+                            const Teuchos::ArrayView<Scalar> &values,
+                            Teuchos_Ordinal &numEntries) const;
 
       //! Returns a copy of the specified (and locally owned) row, using global indices.
       /*! Before fillComplete(), the results will not include entries submitted to another node and may contain duplicated entries. */
       void extractGlobalRowCopy(GlobalOrdinal globalRow, 
-                            const Teuchos::ArrayView<GlobalOrdinal> &indices,
-                            const Teuchos::ArrayView<Scalar> &values) const;
+                                const Teuchos::ArrayView<GlobalOrdinal> &indices,
+                                const Teuchos::ArrayView<Scalar> &values,
+                                Teuchos_Ordinal &numEntries) const;
 
       //@}
 
@@ -558,34 +560,50 @@ namespace Tpetra
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::extractMyRowCopy(LocalOrdinal myRow, 
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::extractMyRowCopy(Teuchos_Ordinal myRow, 
                                                                      const Teuchos::ArrayView<LocalOrdinal> &indices, 
-                                                                     const Teuchos::ArrayView<Scalar>       &values) const
+                                                                     const Teuchos::ArrayView<Scalar>       &values,
+                                                                     Teuchos_Ordinal &numEntries) const
   {
-    Teuchos_Ordinal rownnz = numEntriesForMyRow(myRow);
+    numEntries = numEntriesForMyRow(myRow);
     TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(myRow) == false, std::runtime_error,
         Teuchos::typeName(*this) << "::extractMyRowCopy(myRow,...): specified row (==" << myRow << ") is not valid on this node.");
-    TEST_FOR_EXCEPTION(indices.size() < rownnz || values.size() < rownnz, std::runtime_error, 
+    TEST_FOR_EXCEPTION(indices.size() < numEntries || values.size() < numEntries, std::runtime_error, 
         Teuchos::typeName(*this) << "::extractMyRowCopy(myRow,indices,values): size of indices,values must be sufficient to store the specified row.");
-    graph_.extractMyRowCopy(myRow,indices);
-    std::copy( values_[myRow].begin(), values_[myRow].begin()+rownnz, values.begin() );
+#ifdef HAVE_TPETRA_DEBUG
+    Teuchos_Ordinal nnzagain;
+    graph_.extractMyRowCopy(myRow,indices,nnzagain);
+    TEST_FOR_EXCEPTION(nnzagain != numEntries, std::logic_error, 
+        Teuchos::typeName(*this) << "::extractMyRowCopy(): Internal logic error. Please contact Tpetra team.");
+#else
+    graph_.extractMyRowCopy(myRow,indices,numEntries);
+#endif
+    std::copy( values_[myRow].begin(), values_[myRow].begin()+numEntries, values.begin() );
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::extractGlobalRowCopy(GlobalOrdinal globalRow, 
                                                                       const Teuchos::ArrayView<GlobalOrdinal> &indices,
-                                                                      const Teuchos::ArrayView<Scalar>  &values) const
+                                                                      const Teuchos::ArrayView<Scalar>  &values,
+                                                                      Teuchos_Ordinal &numEntries) const
   {
     // Only locally owned rows can be queried, otherwise complain
     Teuchos_Ordinal myRow = getRowMap().getLocalIndex(globalRow);
     TEST_FOR_EXCEPTION(myRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
         Teuchos::typeName(*this) << "::extractGlobalRowCopy(globalRow,...): globalRow does not belong to this node.");
-    Teuchos_Ordinal rownnz = graph_.numAllocatedEntriesForMyRow(myRow);
+    numEntries = graph_.numAllocatedEntriesForMyRow(myRow);
     TEST_FOR_EXCEPTION(
-        indices.size() < rownnz || values.size() < rownnz, std::runtime_error, 
+        indices.size() < numEntries || values.size() < numEntries, std::runtime_error, 
         Teuchos::typeName(*this) << "::extractGlobalRowCopy(globalRow,indices,values): size of indices,values must be sufficient to store the specified row.");
-    graph_.extractGlobalRowCopy(globalRow,indices);
-    std::copy( values_[myRow].begin(), values_[myRow].begin()+rownnz, values.begin() );
+#ifdef HAVE_TPETRA_DEBUG
+    Teuchos_Ordinal nnzagain;
+    graph_.extractGlobalRowCopy(globalRow,indices,nnzagain);
+    TEST_FOR_EXCEPTION(nnzagain != numEntries, std::logic_error, 
+        Teuchos::typeName(*this) << "::extractMyRowCopy(): Internal logic error. Please contact Tpetra team.");
+#else
+    graph_.extractGlobalRowCopy(globalRow,indices,numEntries);
+#endif
+    std::copy( values_[myRow].begin(), values_[myRow].begin()+numEntries, values.begin() );
   }
 
 
@@ -791,13 +809,13 @@ namespace Tpetra
         {
           Teuchos::Array<GlobalOrdinal> indices(myMaxNumRowEntries());
           Teuchos::Array<Scalar>         values(myMaxNumRowEntries());
+          Teuchos_Ordinal rowSize;
           os << "% Number of rows on image " << myImageID << " = " << numLocalRows() << endl;
           for (Teuchos_Ordinal i=0; i < numLocalRows(); ++i)
           {
             GlobalOrdinal globalRow = getRowMap().getGlobalIndex(i);
-            Teuchos_Ordinal rowSize = getNumRowEntries(globalRow);
+            extractGlobalRowCopy(globalRow, indices(), values(), rowSize);
             if (rowSize > Teuchos::OrdinalTraits<Teuchos_Ordinal>::zero()) {
-              extractGlobalRowCopy(globalRow, indices(0,rowSize), values(0,rowSize));
               for (Teuchos_Ordinal j=0; j < rowSize; ++j) {
                 os << "Matrix(" << globalRow << ", " << indices[j] << ") = " << values[j] << endl;
               }
@@ -1288,6 +1306,14 @@ namespace Tpetra
     graph_.indicesAreSorted(true);
     return;
   }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  bool CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::lowerTriangular() const
+  { return graph_.lowerTriangular(); }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  bool CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::upperTriangular() const
+  { return graph_.upperTriangular(); }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::mergeRedundantEntries() 

@@ -61,6 +61,7 @@ namespace {
   using Teuchos::TRANS;
   using Teuchos::CONJ_TRANS;
   using Tpetra::CrsMatrix;
+  using Tpetra::RowMatrix;
   using Tpetra::INSERT;
   using Tpetra::Import;
   using std::string;
@@ -126,16 +127,20 @@ namespace {
     // create a random multivector
     MV mv1(map,1), mv2(map,2), mv3(map,3);
     // create the zero matrix
-    CrsMatrix<Scalar,Ordinal> zero(map,0);
-    // FINISH: add more tests here
-    TEST_THROW(zero.apply(mv1,mv1)            , std::runtime_error);
+    RCP<RowMatrix<Scalar,Ordinal> > zero;
+    {
+      RCP<CrsMatrix<Scalar,Ordinal> > zero_crs = rcp( new CrsMatrix<Scalar,Ordinal>(map,0) );
+      // FINISH: add more tests here
+      TEST_THROW(zero_crs->apply(mv1,mv1)            , std::runtime_error);
 #   if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
-       TEST_THROW(zero.insertGlobalValue(0,0,ST::one()), std::runtime_error);
+      TEST_THROW(zero_crs->insertGlobalValue(0,0,ST::one()), std::runtime_error);
 #   endif
-    zero.fillComplete();
-    TEST_THROW(zero.insertGlobalValue(0,0,ST::one()), std::runtime_error); // submit after fill
-    TEST_THROW(zero.apply(mv2,mv1)            , std::runtime_error); // MVs have different number of vectors
-    TEST_THROW(zero.apply(mv2,mv3)            , std::runtime_error); // MVs have different number of vectors
+      zero_crs->fillComplete();
+      TEST_THROW(zero_crs->insertGlobalValue(0,0,ST::one()), std::runtime_error); // submit after fill
+      zero = zero_crs;
+    }
+    TEST_THROW(zero->apply(mv2,mv1)            , std::runtime_error); // MVs have different number of vectors
+    TEST_THROW(zero->apply(mv2,mv3)            , std::runtime_error); // MVs have different number of vectors
   }
 
 
@@ -162,28 +167,32 @@ namespace {
     mvrand.random();
     // create the identity matrix
     Ordinal base = numLocal*myImageID;
-    CrsMatrix<Scalar,Ordinal> eye(map,1);
-    for (int i=0; i<numLocal; ++i) {
-      eye.insertGlobalValue(base+i,base+i,ST::one());
+    RCP<RowMatrix<Scalar,Ordinal> > eye;
+    {
+      RCP<CrsMatrix<Scalar,Ordinal> > eye_crs = rcp(new CrsMatrix<Scalar,Ordinal>(map,1));
+      for (int i=0; i<numLocal; ++i) {
+        eye_crs->insertGlobalValue(base+i,base+i,ST::one());
+      }
+      eye_crs->fillComplete();
+      eye = eye_crs;
     }
-    eye.fillComplete();
     // test the properties
-    TEST_EQUALITY(eye.numGlobalEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye.numMyEntries()      , numLocal);
-    TEST_EQUALITY(eye.numGlobalRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye.numLocalRows()          , numLocal);
-    TEST_EQUALITY(eye.numLocalCols()          , numLocal);
-    TEST_EQUALITY(eye.numGlobalDiagonals() , numImages*numLocal);
-    TEST_EQUALITY(eye.numMyDiagonals()     , numLocal);
-    TEST_EQUALITY(eye.globalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye.myMaxNumRowEntries()    , 1);
-    TEST_EQUALITY(eye.getIndexBase()          , 0);
-    TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getColMap())   , true);
-    TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getDomainMap()), true);
-    TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getRangeMap()) , true);
+    TEST_EQUALITY(eye->numGlobalEntries()  , numImages*numLocal);
+    TEST_EQUALITY(eye->numMyEntries()      , numLocal);
+    TEST_EQUALITY(eye->numGlobalRows()      , numImages*numLocal);
+    TEST_EQUALITY(eye->numLocalRows()          , numLocal);
+    TEST_EQUALITY(eye->numLocalCols()          , numLocal);
+    TEST_EQUALITY(eye->numGlobalDiagonals() , numImages*numLocal);
+    TEST_EQUALITY(eye->numMyDiagonals()     , numLocal);
+    TEST_EQUALITY(eye->globalMaxNumRowEntries(), 1);
+    TEST_EQUALITY(eye->myMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getIndexBase()          , 0);
+    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getColMap())   , true);
+    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getDomainMap()), true);
+    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getRangeMap()) , true);
     // test the action
     mvres.random();
-    eye.apply(mvrand,mvres);
+    eye->apply(mvrand,mvres);
     mvres.update(-ST::one(),mvrand,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     mvres.norm2(norms());
@@ -422,39 +431,43 @@ namespace {
     Map<Ordinal> rowmap(INVALID,tuple<Ordinal>(2*myImageID,2*myImageID+1),indexBase,comm);
     Map<Ordinal> rngmap(INVALID,tuple<Ordinal>(myImageID,numImages+myImageID),indexBase,comm);
     // create the tridiagonal matrix
-    CrsMatrix<Scalar,Ordinal> tri(rowmap,3);
-    Array<Scalar>  vals(3,ST::one());
-    if (myImageID == 0) {
-      Array<Ordinal> cols( tuple<Ordinal>(2*myImageID,2*myImageID+1,2*myImageID+2) );
-      tri.insertGlobalValues(2*myImageID  ,cols(0,2),vals(0,2));
-      tri.insertGlobalValues(2*myImageID+1,cols(0,3),vals(0,3));
+    RCP<RowMatrix<Scalar,Ordinal> > tri;
+    {
+      RCP<CrsMatrix<Scalar,Ordinal> > tri_crs = rcp(new CrsMatrix<Scalar,Ordinal>(rowmap,3) );
+      Array<Scalar>  vals(3,ST::one());
+      if (myImageID == 0) {
+        Array<Ordinal> cols( tuple<Ordinal>(2*myImageID,2*myImageID+1,2*myImageID+2) );
+        tri_crs->insertGlobalValues(2*myImageID  ,cols(0,2),vals(0,2));
+        tri_crs->insertGlobalValues(2*myImageID+1,cols(0,3),vals(0,3));
+      }
+      else if (myImageID == numImages-1) {        
+        Array<Ordinal> cols( tuple<Ordinal>(2*myImageID-1,2*myImageID,2*myImageID+1) );
+        tri_crs->insertGlobalValues(2*myImageID  ,cols(0,3),vals(0,3));
+        tri_crs->insertGlobalValues(2*myImageID+1,cols(1,2),vals(1,2));
+      }
+      else {
+        Array<Ordinal> cols( tuple<Ordinal>(2*myImageID-1,2*myImageID,2*myImageID+1,2*myImageID+2) );
+        tri_crs->insertGlobalValues(2*myImageID  ,cols(0,3),vals(0,3));
+        tri_crs->insertGlobalValues(2*myImageID+1,cols(1,3),vals(0,3));
+      }
+      // call fillComplete(), specifying domain and range maps and requiring custom importer and exporter
+      tri_crs->fillComplete(rowmap,rngmap);
+      tri = tri_crs;
     }
-    else if (myImageID == numImages-1) {        
-      Array<Ordinal> cols( tuple<Ordinal>(2*myImageID-1,2*myImageID,2*myImageID+1) );
-      tri.insertGlobalValues(2*myImageID  ,cols(0,3),vals(0,3));
-      tri.insertGlobalValues(2*myImageID+1,cols(1,2),vals(1,2));
-    }
-    else {
-      Array<Ordinal> cols( tuple<Ordinal>(2*myImageID-1,2*myImageID,2*myImageID+1,2*myImageID+2) );
-      tri.insertGlobalValues(2*myImageID  ,cols(0,3),vals(0,3));
-      tri.insertGlobalValues(2*myImageID+1,cols(1,3),vals(0,3));
-    }
-    // call fillComplete(), specifying domain and range maps and requiring custom importer and exporter
-    tri.fillComplete(rowmap,rngmap);
     // test the properties
-    TEST_EQUALITY(tri.numGlobalEntries()  , 6*numImages-2);          
-    TEST_EQUALITY(tri.numMyEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
-    TEST_EQUALITY(tri.numGlobalRows()      , 2*numImages);
-    TEST_EQUALITY(tri.numLocalRows()          , 2);
-    TEST_EQUALITY(tri.numLocalCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
-    TEST_EQUALITY(tri.numGlobalDiagonals() , 2*numImages);
-    TEST_EQUALITY(tri.numMyDiagonals()     , 2);
-    TEST_EQUALITY(tri.globalMaxNumRowEntries(), 3);
-    TEST_EQUALITY(tri.myMaxNumRowEntries()    , 3);
-    TEST_EQUALITY(tri.getIndexBase()          , 0);
-    TEST_EQUALITY_CONST(tri.getRowMap().isSameAs(rowmap), true);
-    TEST_EQUALITY_CONST(tri.getRangeMap().isSameAs(rngmap), true);
-    TEST_EQUALITY_CONST(tri.getDomainMap().isSameAs(rowmap), true);
+    TEST_EQUALITY(tri->numGlobalEntries()  , 6*numImages-2);          
+    TEST_EQUALITY(tri->numMyEntries()      , (myImageID > 0 && myImageID < numImages-1) ? 6 : 5);
+    TEST_EQUALITY(tri->numGlobalRows()      , 2*numImages);
+    TEST_EQUALITY(tri->numLocalRows()          , 2);
+    TEST_EQUALITY(tri->numLocalCols()          , (myImageID > 0 && myImageID < numImages-1) ? 4 : 3);
+    TEST_EQUALITY(tri->numGlobalDiagonals() , 2*numImages);
+    TEST_EQUALITY(tri->numMyDiagonals()     , 2);
+    TEST_EQUALITY(tri->globalMaxNumRowEntries(), 3);
+    TEST_EQUALITY(tri->myMaxNumRowEntries()    , 3);
+    TEST_EQUALITY(tri->getIndexBase()          , 0);
+    TEST_EQUALITY_CONST(tri->getRowMap().isSameAs(rowmap), true);
+    TEST_EQUALITY_CONST(tri->getRangeMap().isSameAs(rngmap), true);
+    TEST_EQUALITY_CONST(tri->getDomainMap().isSameAs(rowmap), true);
     // build the input and corresponding output multivectors
     MV mvin(rowmap,numVecs), mvout(rngmap,numVecs), mvexp(rngmap,numVecs);
     for (int j=0; j<numVecs; ++j) {
@@ -477,7 +490,7 @@ namespace {
     }
     // test the action
     mvout.random();
-    tri.apply(mvin,mvout);
+    tri->apply(mvin,mvout);
     mvout.update(-ST::one(),mvexp,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     mvout.norm2(norms());
@@ -507,30 +520,34 @@ namespace {
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.random();
     // create the identity matrix
-    CrsMatrix<Scalar,Ordinal> eye(map,1);
-    if (myImageID == 0) {
-      for (int i=0; i<map.getNumGlobalEntries(); ++i) {
-        eye.insertGlobalValue(i,i,ST::one());
+    RCP<RowMatrix<Scalar,Ordinal> > eye;
+    {
+      RCP<CrsMatrix<Scalar,Ordinal> > eye_crs = rcp(new CrsMatrix<Scalar,Ordinal>(map,1) );
+      if (myImageID == 0) {
+        for (int i=0; i<map.getNumGlobalEntries(); ++i) {
+          eye_crs->insertGlobalValue(i,i,ST::one());
+        }
       }
+      eye_crs->fillComplete();
+      eye = eye_crs;
     }
-    eye.fillComplete();
     // test the properties
-    TEST_EQUALITY(eye.numGlobalEntries()  , numImages*numLocal);
-    TEST_EQUALITY(eye.numMyEntries()      , numLocal);
-    TEST_EQUALITY(eye.numGlobalRows()      , numImages*numLocal);
-    TEST_EQUALITY(eye.numLocalRows()          , numLocal);
-    TEST_EQUALITY(eye.numLocalCols()          , numLocal);
-    TEST_EQUALITY(eye.numGlobalDiagonals() , numImages*numLocal);
-    TEST_EQUALITY(eye.numMyDiagonals()     , numLocal);
-    TEST_EQUALITY(eye.globalMaxNumRowEntries(), 1);
-    TEST_EQUALITY(eye.myMaxNumRowEntries()    , 1);
-    TEST_EQUALITY(eye.getIndexBase()          , 0);
-    TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getColMap())   , true);
-    TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getDomainMap()), true);
-    TEST_EQUALITY_CONST(eye.getRowMap().isSameAs(eye.getRangeMap()) , true);
+    TEST_EQUALITY(eye->numGlobalEntries()  , numImages*numLocal);
+    TEST_EQUALITY(eye->numMyEntries()      , numLocal);
+    TEST_EQUALITY(eye->numGlobalRows()      , numImages*numLocal);
+    TEST_EQUALITY(eye->numLocalRows()          , numLocal);
+    TEST_EQUALITY(eye->numLocalCols()          , numLocal);
+    TEST_EQUALITY(eye->numGlobalDiagonals() , numImages*numLocal);
+    TEST_EQUALITY(eye->numMyDiagonals()     , numLocal);
+    TEST_EQUALITY(eye->globalMaxNumRowEntries(), 1);
+    TEST_EQUALITY(eye->myMaxNumRowEntries()    , 1);
+    TEST_EQUALITY(eye->getIndexBase()          , 0);
+    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getColMap())   , true);
+    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getDomainMap()), true);
+    TEST_EQUALITY_CONST(eye->getRowMap().isSameAs(eye->getRangeMap()) , true);
     // test the action
     mvres.random();
-    eye.apply(mvrand,mvres);
+    eye->apply(mvrand,mvres);
     mvres.update(-ST::one(),mvrand,ST::one());
     Array<Mag> norms(numVecs), zeros(numVecs,MT::zero());
     mvres.norm2(norms());

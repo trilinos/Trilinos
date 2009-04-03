@@ -26,12 +26,13 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef TPETRA_CRSMATRIX_HPP
-#define TPETRA_CRSMATRIX_HPP
+#ifndef TPETRA_ROWMATRIX_HPP
+#define TPETRA_ROWMATRIX_HPP
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Operator.hpp"
+#include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
 #include "Tpetra_Export.hpp"
@@ -51,7 +52,7 @@ namespace Tpetra
       //@{ 
 
       // !Destructor.
-      virtual ~RowMatrix();
+      virtual ~RowMatrix() {};
 
       //@}
 
@@ -129,7 +130,7 @@ namespace Tpetra
 
       //! \brief Returns the number of local nonzero diagonal entries, based on global row/column index comparisons. 
       /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
-      virtual Teuchos_Ordinal numLocalDiagonals() const = 0;
+      virtual Teuchos_Ordinal numMyDiagonals() const = 0;
 
       //! \brief Returns the maximum number of nonzero entries across all rows/columns on all images. 
       /*! May not be called before fillComplete(), unless the matrix was constructed with a column map. */
@@ -153,15 +154,17 @@ namespace Tpetra
       /*! Before fillComplete(), the results will not include entries submitted to another node and may contain duplicated entries.
        * \pre hasColMap() == true
        */
-      virtual void getLocalRowCopy(LocalOrdinal localRow, 
-                                   const Teuchos::ArrayView<LocalOrdinal> &indices, 
-                                   const Teuchos::ArrayView<Scalar> &values) const  = 0;
+      virtual void extractMyRowCopy(Teuchos_Ordinal localRow, 
+                                    const Teuchos::ArrayView<LocalOrdinal> &indices, 
+                                    const Teuchos::ArrayView<Scalar> &values,
+                                    Teuchos_Ordinal &numEntries) const  = 0;
 
       //! Returns a copy of the specified (and locally owned) row, using global indices.
       /*! Before fillComplete(), the results will not include entries submitted to another node and may contain duplicated entries. */
-      virtual void getGlobalRowCopy(GlobalOrdinal globalRow, 
-                                    const Teuchos::ArrayView<GlobalOrdinal> &indices,
-                                    const Teuchos::ArrayView<Scalar> &values) const = 0;
+      virtual void extractGlobalRowCopy(GlobalOrdinal globalRow, 
+                                        const Teuchos::ArrayView<GlobalOrdinal> &indices,
+                                        const Teuchos::ArrayView<Scalar> &values,
+                                        Teuchos_Ordinal &numEntries) const = 0;
 
       //@}
 
