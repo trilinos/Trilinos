@@ -94,9 +94,7 @@ ENDIF(PyTrilinos_ENABLE_LOCA)
 
 # Print the enabled PyTrilinos packages
 MESSAGE(STATUS "Enabled ${PACKAGE_NAME} modules:")
-FOREACH(PACKAGE ${${PACKAGE_NAME}_PACKAGES})
-  MESSAGE(STATUS "    ${PACKAGE}")
-ENDFOREACH(PACKAGE ${${PACKAGE_NAME}_PACKAGES})
+MESSAGE(STATUS "    ${${PACKAGE_NAME}_PACKAGES}")
 
 # Python interpreter and header files are required
 FIND_PACKAGE(PythonInterp 2.2 REQUIRED)

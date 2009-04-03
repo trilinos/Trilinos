@@ -34,7 +34,7 @@ ${PACKAGE_NAME}: A python interface to selected Trilinos packages.  This
   installation of ${PACKAGE_NAME} was built with the following python-wrapped
   packages enabled:
 
-${${PACKAGE_NAME}_PACKAGES}
+${${PACKAGE_NAME}_LIST}
 """
 
 # We need symbol names to be recognized across PyTrilinos extension modules.  On
