@@ -347,14 +347,19 @@ namespace Tpetra {
     // call Distributor.createFromRecvs()
     // takes in remoteGIDs and remoteImageIDs_
     // returns exportLIDs_, exportImageIDs_ 
-    ImportData_->distributor_.createFromRecvs(remoteGIDs().getConst(), remoteImageIDs, ImportData_->exportLIDs_, ImportData_->exportImageIDs_);
-    // -- exportLIDs_ and exportImageIDs_ allocated by createFromRecvs (the former actually contains GIDs, but we convert below) --
+    Teuchos::ArrayRCP<GlobalOrdinal> exportGIDs;
+    ImportData_->distributor_.createFromRecvs(remoteGIDs().getConst(), remoteImageIDs, exportGIDs, ImportData_->exportImageIDs_);
+    // -- exportGIDs and exportImageIDs_ allocated by createFromRecvs (the former contains GIDs, we will convert to LIDs below) --
 
-    // convert exportLIDs_ from GIDs to their LIDs in 
-    for(typename Teuchos::ArrayRCP<LocalOrdinal>::const_iterator i = ImportData_->exportLIDs_.begin(); 
-        i != ImportData_->exportLIDs_.end(); ++i) 
+    // convert exportGIDs from GIDs to LIDs
+    if (exportGIDs != Teuchos::null) {
+      ImportData_->exportLIDs_ = Teuchos::arcp<LocalOrdinal>(exportGIDs.size());
+    }
+    typename Teuchos::ArrayRCP<LocalOrdinal>::const_iterator dst = ImportData_->exportLIDs_.begin();
+    typename Teuchos::ArrayRCP<GlobalOrdinal>::const_iterator src = exportGIDs.begin();
+    while (src != exportGIDs.end())
     {
-      *i = source.getLocalIndex(*i);
+      (*dst++) = source.getLocalIndex(*src++);
     }
   }
 

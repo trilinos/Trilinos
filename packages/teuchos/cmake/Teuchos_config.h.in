@@ -66,6 +66,9 @@
 /* Define if want to build teuchos-complex */
 #cmakedefine HAVE_TEUCHOS_COMPLEX
 
+/* Define if want to build teuchos-long-long */
+#cmakedefine HAVE_TEUCHOS_LONG_LONG
+
 /* Define if want to build teuchos-debug */
 #cmakedefine HAVE_TEUCHOS_DEBUG
 

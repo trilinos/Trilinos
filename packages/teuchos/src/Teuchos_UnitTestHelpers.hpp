@@ -77,7 +77,7 @@
 	void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE>::runUnitTestImpl( \
     Teuchos::FancyOStream &out, bool &success ) const \
 
-/** \brief Tempalte instantiation for a single templated type. */
+/** \brief Template instantiation for a single templated type. */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(TEST_GROUP, TEST_NAME, TYPE) \
   \
   template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE>; \
@@ -128,7 +128,7 @@
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_COMPLEX_DOUBLE(TEST_GROUP, TEST_NAME)
 
 
-/** \brief Basic unit test creation macro for templated code on one template parameter. */
+/** \brief Basic unit test creation macro for templated code on two template parameters. */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2) \
   template<class TYPE1, class TYPE2> \
   class TEST_GROUP##_##TEST_NAME##_UnitTest : public Teuchos::UnitTestBase \
@@ -150,12 +150,42 @@
 	void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2>::runUnitTestImpl( \
     Teuchos::FancyOStream &out, bool &success ) const \
 
-/** \brief Tempalte instantiation for a single templated type. */
+/** \brief Template instantiation for two templated types. */
 #define TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(TEST_GROUP, TEST_NAME, TYPE1, TYPE2) \
   \
   template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2 >; \
   TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2 > \
   instance_##TEST_GROUP##_##TYPE1##_##TYPE2##_##TEST_NAME##_UnitTest(#TYPE1,#TYPE2);
+
+/** \brief Basic unit test creation macro for templated code on three template parameters. */
+#define TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3) \
+  template<class TYPE1, class TYPE2, class TYPE3> \
+  class TEST_GROUP##_##TEST_NAME##_UnitTest : public Teuchos::UnitTestBase \
+	{ \
+  public: \
+    TEST_GROUP##_##TEST_NAME##_UnitTest( \
+      const std::string& type1Name, \
+      const std::string& type2Name, \
+      const std::string& type3Name \
+       ) \
+      :Teuchos::UnitTestBase( \
+         std::string(#TEST_GROUP)+"_"+type1Name+"_"+type2Name+"_"+type3Name, #TEST_NAME ) \
+    {} \
+    void runUnitTestImpl( Teuchos::FancyOStream &out, bool &success ) const; \
+    virtual std::string unitTestFile() const { return __FILE__; } \
+    virtual long int unitTestFileLineNumber() const { return __LINE__; } \
+  }; \
+  \
+  template<class TYPE1, class TYPE2, class TYPE3> \
+	void TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1,TYPE2,TYPE3>::runUnitTestImpl( \
+    Teuchos::FancyOStream &out, bool &success ) const \
+
+/** \brief Template instantiation for two templated types. */
+#define TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT(TEST_GROUP, TEST_NAME, TYPE1, TYPE2, TYPE3) \
+  \
+  template class TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2, TYPE3 >; \
+  TEST_GROUP##_##TEST_NAME##_UnitTest<TYPE1, TYPE2, TYPE3 > \
+  instance_##TEST_GROUP##_##TYPE1##_##TYPE2##_##TYPE3##_##TEST_NAME##_UnitTest(#TYPE1,#TYPE2,#TYPE3);
 
 
 /** \brief Run setup code statically in a translation unit.

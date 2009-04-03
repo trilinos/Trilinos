@@ -690,7 +690,7 @@ namespace Tpetra
 #   endif
       // do the export
       if (exporter != null) {
-        Y.putScalar(0.0);  // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
+        Y.putScalar(ST::zero());  // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
         Y.doExport(*exportMV_, *exporter, ADD); // Fill Y with Values from export vector
 #   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
         if (myImageID == 0) *out << "Output vector after export() using exporter..." << std::endl;
@@ -742,7 +742,7 @@ namespace Tpetra
       }
 #   endif
       if (importer != null) {
-        Y.putScalar(0.0); // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
+        Y.putScalar(ST::zero()); // Make sure target is zero: necessary because we are adding. may need adjusting for alpha,beta apply()
         Y.doExport(*importMV_,*importer,ADD);
 #   ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
         if (myImageID == 0) *out << "Output vector after export() using importer..." << std::endl;

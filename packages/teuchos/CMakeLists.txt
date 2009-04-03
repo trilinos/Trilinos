@@ -26,6 +26,13 @@ ADD_OPTION_AND_DEFINE(
   ON
   )
 
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_LONG_LONG
+  HAVE_TEUCHOS_LONG_LONG_INT
+  "Enable Teuchos features for long long data type."
+  OFF
+  )
+
 IF (${PACKAGE_NAME}_ENABLE_COMPLEX)
 
   INCLUDE(CheckCXXComplexBlasProblem)

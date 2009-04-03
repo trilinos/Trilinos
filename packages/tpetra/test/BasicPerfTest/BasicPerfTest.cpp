@@ -91,36 +91,37 @@ TEUCHOS_STATIC_SETUP()
 }
 
 
-template<class Ordinal>
-RCP<const Platform<Ordinal> > getDefaultPlatform()
+template<class Scalar>
+RCP<const Platform<Scalar> > getDefaultPlatform()
 {
   if (testMpi) {
-    return DefaultPlatform<Ordinal>::getPlatform();
+    return DefaultPlatform<Scalar>::getPlatform();
   }
-  return rcp(new Tpetra::SerialPlatform<Ordinal>());
+  return rcp(new Tpetra::SerialPlatform<Scalar>());
 }
 
 
-template <class Ordinal, class Scalar>
+template <class LO, class GO, class Scalar>
 void GenerateCrsProblem(int *xoff, int *yoff, int numRHS,
-            const Platform<Ordinal> &platform,
-            RCP<Map<Ordinal> > &map,
-            RCP<CrsMatrix<Scalar,Ordinal> > &A,
-            RCP<MultiVector<Scalar,Ordinal> > &b,
-            RCP<MultiVector<Scalar,Ordinal> > &bt,
-            RCP<MultiVector<Scalar,Ordinal> > &xexact,
+            const Platform<Scalar> &platform,
+            RCP<Map<LO,GO> > &map,
+            RCP<CrsMatrix<Scalar,LO,GO> > &A,
+            RCP<MultiVector<Scalar,LO,GO> > &b,
+            RCP<MultiVector<Scalar,LO,GO> > &bt,
+            RCP<MultiVector<Scalar,LO,GO> > &xexact,
             FancyOStream &out);
 
-template <class Ordinal>
-ArrayRCP<Ordinal> GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int myPID);
+template <class GO>
+ArrayRCP<GO> GenerateMyGlobalElements(int numNodesX, int numNodesY, int numProcsX, int myPID);
 
-template <class Ordinal, class Scalar>
-void runMatrixTests(RCP<CrsMatrix<Scalar,Ordinal> > A,  RCP<MultiVector<Scalar,Ordinal> > b, RCP<MultiVector<Scalar,Ordinal> > bt,
-                    RCP<MultiVector<Scalar,Ordinal> > xexact, FancyOStream &out);
+template <class LO, class GO, class Scalar>
+void runMatrixTests(RCP<CrsMatrix<Scalar,LO,GO> > A,  RCP<MultiVector<Scalar,LO,GO> > b, RCP<MultiVector<Scalar,LO,GO> > bt,
+                    RCP<MultiVector<Scalar,LO,GO> > xexact, FancyOStream &out);
 
-TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal, Scalar )
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BasicPerfTest, MatrixAndMultiVector, LO, GO, Scalar )
 {
-  RCP<const Platform<Ordinal> > platform = getDefaultPlatform<Ordinal>();
+  typedef ScalarTraits<Scalar> ST;
+  RCP<const Platform<Scalar> > platform = getDefaultPlatform<Scalar>();
   RCP<const Comm<int> > comm = platform->getComm();
   if (comm->getSize() != numProcsX*numProcsY) {
     out << "numProcsX*numProcsY must equal numProcs!" << endl;
@@ -163,8 +164,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal,
     // Generate a 25-point 2D Finite Difference matrix
     Xoff.resize(25);
     Yoff.resize(25);
-    Ordinal xi = 0, yi = 0;
-    Ordinal xo = -2, yo = -2;
+    Teuchos_Ordinal xi = 0, yi = 0;
+    int xo = -2, yo = -2;
     Xoff[xi++] = xo++;  Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++; Xoff[xi++] = xo++;
     Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
     xo = -2, yo++;
@@ -181,11 +182,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal,
     Yoff[yi++] = yo  ;  Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; Yoff[yi++] = yo  ; 
   }
 
-  RCP<Map<Ordinal> > map;
-  RCP<CrsMatrix<Scalar,Ordinal> > A;
-  RCP<MultiVector<Scalar,Ordinal> > b;
-  RCP<MultiVector<Scalar,Ordinal> > bt;
-  RCP<MultiVector<Scalar,Ordinal> > xexact;
+  RCP<Map<LO,GO> > map;
+  RCP<CrsMatrix<Scalar,LO,GO> > A;
+  RCP<MultiVector<Scalar,LO,GO> > b;
+  RCP<MultiVector<Scalar,LO,GO> > bt;
+  RCP<MultiVector<Scalar,LO,GO> > xexact;
   Array<Scalar> scavec;
   Array<typename ScalarTraits<Scalar>::magnitudeType> magvec;
 
@@ -215,8 +216,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal,
         bt = null;
         xexact = null;
 
-        MultiVector<Scalar,Ordinal> q(*map,nrhs);
-        MultiVector<Scalar,Ordinal> z(q), r(q);
+        MultiVector<Scalar,LO,GO> q(*map,nrhs);
+        MultiVector<Scalar,LO,GO> z(q), r(q);
 
         scavec.resize(nrhs);
         magvec.resize(nrhs);
@@ -244,7 +245,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal,
         // 10 updates
         timer.start(true);
         for( int i = 0; i < 10; ++i ) {
-          q.update(1.0, z, 1.0, r, 0.0);
+          q.update(ST::one(), z, ST::one(), r, ST::zero());
         }
         elapsed_time = timer.stop();
         flops = 10*map->getNumGlobalEntries()*nrhs;
@@ -279,50 +280,50 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( BasicPerfTest, MatrixAndMultiVector, Ordinal,
 // nrhs - Number of rhs to generate. (First interface produces vectors, so nrhs is not needed
 //
 // comm    (In) - an Epetra_Comm object describing the parallel machine (numProcs and my proc ID)
-// map    (Out) - Map<Ordinal> describing distribution of matrix and vectors/multivectors
-// A      (Out) - CrsMatrix<Scalar,Ordinal> constructed for nx by ny grid using prescribed stencil
+// map    (Out) - Map<LO,GO> describing distribution of matrix and vectors/multivectors
+// A      (Out) - CrsMatrix<Scalar,LO,GO> constructed for nx by ny grid using prescribed stencil
 //                Off-diagonal values are random between 0 and 1.  If diagonal is part of stencil,
 //                diagonal will be slightly diag dominant.
 // b      (Out) - Generated RHS.  Values satisfy b = A*xexact
 // bt     (Out) - Generated RHS.  Values satisfy b = A'*xexact
 // xexact (Out) - Generated exact solution to Ax = b and b' = A'xexact
 //
-template <class Ordinal, class Scalar>
+template <class LO, class GO, class Scalar>
 void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
-            const Platform<Ordinal> &platform, 
-            RCP<Map<Ordinal> > &map,
-            RCP<CrsMatrix<Scalar,Ordinal> > &A,
-            RCP<MultiVector<Scalar,Ordinal> > &b,
-            RCP<MultiVector<Scalar,Ordinal> > &bt,
-            RCP<MultiVector<Scalar,Ordinal> > &xexact,
+            const Platform<Scalar> &platform, 
+            RCP<Map<LO,GO> > &map,
+            RCP<CrsMatrix<Scalar,LO,GO> > &A,
+            RCP<MultiVector<Scalar,LO,GO> > &b,
+            RCP<MultiVector<Scalar,LO,GO> > &bt,
+            RCP<MultiVector<Scalar,LO,GO> > &xexact,
             FancyOStream &out)
 {
   Time timer("GenerateCrsProblem",false);
   RCP<const Comm<int> > comm = platform.getComm();
 
   // Determine my global IDs
-  ArrayRCP<Ordinal> myGlobalElements = GenerateMyGlobalElements<Ordinal>(numNodesX, numNodesY, numProcsX, comm->getRank());
+  ArrayRCP<GO> myGlobalElements = GenerateMyGlobalElements<GO>(numNodesX, numNodesY, numProcsX, comm->getRank());
 
   int numMyEquations = numNodesX*numNodesY;
 
-  map = rcp(new Map<Ordinal>(OrdinalTraits<Ordinal>::invalid(), myGlobalElements(), 0, comm)); // Create map with 2D block partitioning.
+  map = rcp(new Map<LO,GO>(OrdinalTraits<GO>::invalid(), myGlobalElements(), 0, comm)); // Create map with 2D block partitioning.
   myGlobalElements = null;
-  Ordinal numGlobalEquations = map->getNumGlobalEntries();
+  GO numGlobalEquations = map->getNumGlobalEntries();
 
-  A = rcp(new CrsMatrix<Scalar,Ordinal>(*map,numPoints));
+  A = rcp(new CrsMatrix<Scalar,LO,GO>(*map,numPoints));
 
-  Array<Ordinal> indices(numPoints);
+  Array<GO> indices(numPoints);
   Array<Scalar>   values(numPoints);
   Scalar dnumPoints = as<Scalar>(numPoints);
-  Ordinal nx = numNodesX*numProcsX;
+  GO nx = numNodesX*numProcsX;
 
   timer.start(true);
   for (int i=0; i<numMyEquations; i++) {
-    Ordinal rowID = map->getGlobalIndex(i);
+    GO rowID = map->getGlobalIndex(i);
     int numIndices = 0;
     for (int j=0; j<numPoints; j++) {
-      Ordinal colID = rowID + xoff[j] + nx*yoff[j]; // Compute column ID based on stencil offsets
-      if (colID>=OrdinalTraits<Ordinal>::zero() && colID<numGlobalEquations) {
+      GO colID = rowID + xoff[j] + nx*yoff[j]; // Compute column ID based on stencil offsets
+      if (colID>=OrdinalTraits<GO>::zero() && colID<numGlobalEquations) {
         indices[numIndices] = colID;
         Scalar value = -ScalarTraits<Scalar>::random();
         if (colID==rowID) {
@@ -345,14 +346,14 @@ void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
       << "Time to complete fill        = " << fillCompleteTime << endl;
 
   if (nrhs<=1) {  
-    b = rcp(new Vector<Scalar,Ordinal>(*map));
-    bt = rcp(new Vector<Scalar,Ordinal>(*map));
-    xexact = rcp(new Vector<Scalar,Ordinal>(*map));
+    b = rcp(new Vector<Scalar,LO,GO>(*map));
+    bt = rcp(new Vector<Scalar,LO,GO>(*map));
+    xexact = rcp(new Vector<Scalar,LO,GO>(*map));
   }
   else {
-    b = rcp(new MultiVector<Scalar,Ordinal>(*map, nrhs));
-    bt = rcp(new MultiVector<Scalar,Ordinal>(*map, nrhs));
-    xexact = rcp(new MultiVector<Scalar,Ordinal>(*map, nrhs));
+    b = rcp(new MultiVector<Scalar,LO,GO>(*map, nrhs));
+    bt = rcp(new MultiVector<Scalar,LO,GO>(*map, nrhs));
+    xexact = rcp(new MultiVector<Scalar,LO,GO>(*map, nrhs));
   }
 
   xexact->random(); // Fill xexact with random values
@@ -362,28 +363,29 @@ void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
   return;
 }
 
-template <class Ordinal>
-ArrayRCP<Ordinal> GenerateMyGlobalElements(int NumNodesX, int NumNodesY, int NumProcsX, int myPID)
+template <class GO>
+ArrayRCP<GO> GenerateMyGlobalElements(int NumNodesX, int NumNodesY, int NumProcsX, int myPID)
 {
-  ArrayRCP<Ordinal> myGEs = arcp<Ordinal>(NumNodesX*NumNodesY);
+  ArrayRCP<GO> myGEs = arcp<GO>(NumNodesX*NumNodesY);
   int myProcX = myPID%NumProcsX;
   int myProcY = myPID/NumProcsX;
   int curGID = myProcY*(NumProcsX*NumNodesX)*NumNodesY+myProcX*NumNodesX;
   for (int j=0; j<NumNodesY; j++) {
     for (int i=0; i<NumNodesX; i++) {
-      myGEs[j*NumNodesX+i] = as<Ordinal>(curGID+i);
+      myGEs[j*NumNodesX+i] = as<GO>(curGID+i);
     }
     curGID+=NumNodesX*NumProcsX;
   }
   return myGEs;
 }
 
-template <class Ordinal, class Scalar>
-void runMatrixTests(RCP<CrsMatrix<Scalar,Ordinal> > A,  RCP<MultiVector<Scalar,Ordinal> > b, RCP<MultiVector<Scalar,Ordinal> > bt,
-                    RCP<MultiVector<Scalar,Ordinal> > xexact, FancyOStream &out)
+template <class LO, class GO, class Scalar>
+void runMatrixTests(RCP<CrsMatrix<Scalar,LO,GO> > A,  RCP<MultiVector<Scalar,LO,GO> > b, RCP<MultiVector<Scalar,LO,GO> > bt,
+                    RCP<MultiVector<Scalar,LO,GO> > xexact, FancyOStream &out)
 {
-  MultiVector<Scalar,Ordinal> z(*b);
-  MultiVector<Scalar,Ordinal> r(*b);
+  typedef ScalarTraits<Scalar> ST;
+  MultiVector<Scalar,LO,GO> z(*b);
+  MultiVector<Scalar,LO,GO> r(*b);
   Array<typename ScalarTraits<Scalar>::magnitudeType> resvec(b->numVectors());
 
   Time timer("runMatrixTests");
@@ -398,10 +400,10 @@ void runMatrixTests(RCP<CrsMatrix<Scalar,Ordinal> > A,  RCP<MultiVector<Scalar,O
 
     // Compute residual
     if (TransA == CONJ_TRANS) {
-      r.update(-1.0, z, 1.0, *bt, 0.0); // r = bt - z
+      r.update(-ST::one(), z, ST::one(), *bt, ST::zero()); // r = bt - z
     }
     else {
-      r.update(-1.0, z, 1.0, *b, 0.0); // r = b - z
+      r.update(-ST::one(), z, ST::one(), *b, ST::zero()); // r = b - z
     }
     r.norm2(resvec());
 
@@ -416,41 +418,51 @@ void runMatrixTests(RCP<CrsMatrix<Scalar,Ordinal> > A,  RCP<MultiVector<Scalar,O
   //
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)\
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)\
      typedef std::complex<float> ComplexFloat; \
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, ComplexFloat)
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)\
+     UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexFloat)
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)\
      typedef std::complex<double> ComplexDouble; \
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, ComplexDouble)
+     UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexDouble)
 #else
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
 #endif
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( BasicPerfTest, MatrixAndMultiVector, ORDINAL, SCALAR )
+#define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( BasicPerfTest, MatrixAndMultiVector, LO, GO, SCALAR )
+
+#define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+    UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double)
+#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO ) \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO) \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, double)
      UNIT_TEST_GROUP_ORDINAL(int)
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, char)   \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int)    \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)  \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)  \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
+#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO ) \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, char)   \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, int)    \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, float)  \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, double) \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO) \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
+
      UNIT_TEST_GROUP_ORDINAL(int)
 
      typedef long int LongInt;
-     UNIT_TEST_GROUP_ORDINAL(LongInt)
+     UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
+#    ifdef HAVE_TEUCHOS_LONG_LONG_INT
+        typedef long long int LongLongInt;
+        UNIT_TEST_GROUP_ORDINAL_ORDINAL( int,LongLongInt)
+#    endif
+
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+
 }

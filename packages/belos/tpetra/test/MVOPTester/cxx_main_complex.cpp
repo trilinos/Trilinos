@@ -37,13 +37,6 @@ namespace {
   bool testMpi = true;
   double errorTolSlack = 1e+1;
 
-#define PRINT_VECTOR(v) \
-   { \
-     out << #v << ": "; \
-     copy(v.begin(), v.end(), ostream_iterator<Ordinal>(out," ")); \
-     out << endl; \
-   }
-
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -57,19 +50,19 @@ namespace {
         "Slack off of machine epsilon used to check test results" );
   }
 
-  template<class Ordinal>
-  RCP<const Platform<Ordinal> > getDefaultPlatform()
+  template<class Scalar>
+  RCP<const Platform<Scalar> > getDefaultPlatform()
   {
     if (testMpi) {
-      return DefaultPlatform<Ordinal>::getPlatform();
+      return DefaultPlatform<Scalar>::getPlatform();
     }
-    return rcp(new Tpetra::SerialPlatform<Ordinal>());
+    return rcp(new Tpetra::SerialPlatform<Scalar>());
   }
 
-  template<class Scalar, class Ordinal> 
-  RCP<CrsMatrix<Scalar,Ordinal> > constructTriDiagMatrix(const Map<Ordinal> &map) 
+  template<class Scalar, class O1, class O2>
+  RCP<CrsMatrix<Scalar,O1,O2> > constructDiagMatrix(const Map<O1,O2> &map) 
   {
-    RCP<CrsMatrix<Scalar,Ordinal> > op = rcp( new CrsMatrix<Scalar,Ordinal>(map,1) );
+    RCP<CrsMatrix<Scalar,O1,O2> > op = rcp( new CrsMatrix<Scalar,O1,O2>(map,1) );
     for (Teuchos_Ordinal i=0; i<map.getNumMyEntries(); ++i) {
       op->insertGlobalValue(map.getGlobalIndex(i),map.getGlobalIndex(i), ScalarTraits<Scalar>::one());
     }
@@ -82,20 +75,19 @@ namespace {
   // 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, MVTestDist, Ordinal, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, MVTestDist, O1, O2, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
-    const Ordinal dim = 500;
-    const Ordinal numVecs = 5;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    const O2 dim = 500;
+    const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
     RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
     // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const Platform<Scalar> & platform = *(getDefaultPlatform<Scalar>());
     // create a comm  
     RCP<const Comm<int> > comm = platform.getComm();
     // create a uniform contiguous map
-    Map<Ordinal> map(dim,ZERO,comm);
+    Map<O1,O2> map(dim,0,comm);
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Belos::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
@@ -106,20 +98,19 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, MVTestLocal, Ordinal, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, MVTestLocal, O1, O2, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
-    const Ordinal dim = 500;
-    const Ordinal numVecs = 5;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    const O2 dim = 500;
+    const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
     RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
     // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const Platform<Scalar> & platform = *(getDefaultPlatform<Scalar>());
     // create a comm  
     RCP<const Comm<int> > comm = platform.getComm();
     // create a uniform contiguous map
-    Map<Ordinal> map(dim,ZERO,comm,true);
+    Map<O1,O2> map(dim,0,comm,true);
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Belos::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
@@ -130,24 +121,22 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, OPTestLocal, Ordinal, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, OPTestLocal, O1, O2, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
-    typedef Tpetra::Operator<Scalar,Ordinal>    OP;
-    // const Ordinal dim = 500;
-    const Ordinal dim = 10;
-    const Ordinal numVecs = 5;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    typedef Tpetra::Operator<Scalar,O1,O2>    OP;
+    const O2 dim = 500;
+    const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
     RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
     // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const Platform<Scalar> & platform = *(getDefaultPlatform<Scalar>());
     // create a comm  
     RCP<const Comm<int> > comm = platform.getComm();
     // create a uniform contiguous map (local)
-    Map<Ordinal> map(dim,ZERO,comm,true);
+    Map<O1,O2> map(dim,0,comm,true);
     // create a CrsMatrix
-    RCP<OP> op = constructTriDiagMatrix<Scalar,Ordinal>(map);
+    RCP<OP> op = constructDiagMatrix<Scalar,O1,O2>(map);
     // create a multivector
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Belos::TestOperatorTraits<Scalar,MV,OP>(MyOM,mvec,op);
@@ -159,24 +148,22 @@ namespace {
   }
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, OPTestDist, Ordinal, Scalar )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, OPTestDist, O1, O2, Scalar )
   {
-    typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
-    typedef Tpetra::Operator<Scalar,Ordinal>    OP;
-    // const Ordinal dim = 500;
-    const Ordinal dim = 10;
-    const Ordinal numVecs = 5;
-    const Ordinal ZERO = OrdinalTraits<Ordinal>::zero();
+    typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    typedef Tpetra::Operator<Scalar,O1,O2>    OP;
+    const O2 dim = 500;
+    const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
     RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
     // create a platform  
-    const Platform<Ordinal> & platform = *(getDefaultPlatform<Ordinal>());
+    const Platform<Scalar> & platform = *(getDefaultPlatform<Scalar>());
     // create a comm  
     RCP<const Comm<int> > comm = platform.getComm();
     // create a uniform contiguous map
-    Map<Ordinal> map(dim,ZERO,comm);
+    Map<O1,O2> map(dim,0,comm);
     // create a CrsMatrix
-    RCP<OP> op = constructTriDiagMatrix<Scalar,Ordinal>(map);
+    RCP<OP> op = constructDiagMatrix<Scalar,O1,O2>(map);
     // create a multivector
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Belos::TestOperatorTraits<Scalar,MV,OP>(MyOM,mvec,op);
@@ -192,48 +179,54 @@ namespace {
   //
 
 #ifdef HAVE_TEUCHOS_COMPLEX
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)\
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2)\
      typedef std::complex<float> ComplexFloat; \
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, ComplexFloat)
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)\
+     UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, ComplexFloat)
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(O1, O2)\
      typedef std::complex<double> ComplexDouble; \
-     UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, ComplexDouble)
+     UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, ComplexDouble)
 #else
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL)
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2)
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(O1, O2)
 #endif
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, MVTestDist, ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, MVTestLocal, ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, OPTestDist, ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, OPTestLocal, ORDINAL, SCALAR )
+#define UNIT_TEST_GROUP_ORDINAL_SCALAR( O1, O2, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestDist, O1, O2, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestLocal, O1, O2, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestDist, O1, O2, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestLocal, O1, O2, SCALAR )
+
+#define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+    UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double)
+#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( O1, O2 ) \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2) \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, double)
+
      UNIT_TEST_GROUP_ORDINAL(int)
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-#    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
-     UNIT_TEST_GROUP_ORDINAL(int)
+#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( O1, O2 ) \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, float) \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, double) \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2) \
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(O1, O2)
 
      typedef short int ShortInt;
      UNIT_TEST_GROUP_ORDINAL(ShortInt)
+
+     UNIT_TEST_GROUP_ORDINAL(int)
+
      typedef long int LongInt;
-     UNIT_TEST_GROUP_ORDINAL(LongInt)
+     UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
 #    ifdef HAVE_TEUCHOS_LONG_LONG_INT
         typedef long long int LongLongInt;
-        UNIT_TEST_GROUP_ORDINAL(LongLongInt)
+        UNIT_TEST_GROUP_ORDINAL_ORDINAL( int,LongLongInt)
 #    endif
 
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
