@@ -79,12 +79,12 @@ IF(PyTrilinos_ENABLE_NOX)
   APPEND_SET(${PACKAGE_NAME}_PACKAGES NOX)
   APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.__init__)
   APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.Abstract)
-  APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.StatusTest)
-  APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.Solver)
-  IF(NOX_ENABLE_Epetra)
-    APPEND_SET(${PACKAGE_NAME}_MODULES NOX.Epetra.__init__)
-    APPEND_SET(${PACKAGE_NAME}_MODULES NOX.Epetra.Interface)
-  ENDIF(NOX_ENABLE_Epetra)
+  #APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.StatusTest)
+  #APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.Solver)
+  #IF(NOX_ENABLE_Epetra)
+  #  APPEND_SET(${PACKAGE_NAME}_MODULES NOX.Epetra.__init__)
+  #  APPEND_SET(${PACKAGE_NAME}_MODULES NOX.Epetra.Interface)
+  #ENDIF(NOX_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_NOX)
 
 IF(PyTrilinos_ENABLE_LOCA)
@@ -107,7 +107,13 @@ FIND_PACKAGE(NumPy 1.0 REQUIRED)
 
 # Simple wrapper interface generator (SWIG) is required
 FIND_PACKAGE(SWIG 1.3.29 REQUIRED)
-INCLUDE(${SWIG_USE_FILE})
+# ${SWIG_USE_FILE} is hard-coded to be the installed UseSWIG.cmake
+# file.  We want to include the local, modified version.
+#INCLUDE(${SWIG_USE_FILE})
+INCLUDE(UseSWIG)
+
+# Add the util directory, which contains the pkg_info.py script
+ADD_SUBDIRECTORY(util)
 
 # Add the src directory, which builds the pytrilinos library,
 # generates the wrapper code, builds the PyTrilinos python package and
