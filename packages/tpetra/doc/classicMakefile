@@ -3,7 +3,7 @@
 TARGET=html/index.html
 
 $(TARGET): ../src/*.hpp Doxyfile tpetra.* footer.html index.doc
-	doxygen
+	doxygen Doxyfile
 
 clean: 
 	rm -rf html latex man rtf

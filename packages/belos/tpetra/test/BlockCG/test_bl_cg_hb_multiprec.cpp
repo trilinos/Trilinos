@@ -365,10 +365,12 @@ int main(int argc, char *argv[])
 // #endif
 
   if (printX) {
-    if (mptestmypid==0) cout << "X (float): " << endl;
-    Xf->printValues(cout);
-    if (mptestmypid==0) cout << "X (double): " << endl;
-    Xd->printValues(cout);
+    // doesn't compie; fix
+    // RCP<FancyOStream> fos = Teuchos::getFancyOStream(rcp(&std::cout,false));
+    // if (mptestmypid==0) cout << "X (float): " << endl;
+    // Xf->describe(fos,Teuchos::VERB_EXTREME);
+    // if (mptestmypid==0) cout << "X (double): " << endl;
+    // Xd->describe(fos,Teuchos::VERB_EXTREME);
   }
 
   // test the relative error between Xf and Xd

@@ -313,14 +313,16 @@ namespace Tpetra {
 
     //@} 
 
-    //! @name I/O methods
-    //@{ 
+    //! @name Overridden from Describable 
+    //@{
 
-    //! Print method.
-    virtual void print(std::ostream &os) const;
-    virtual void printValues(std::ostream &os) const;
+    /** \brief Return a simple one-line description of this object. */
+    std::string description() const;
 
-    //@} 
+    /** \brief Print the object with some verbosity level to an FancyOStream object. */
+    void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+
+    //@}
 
 /*
     //! @name Expert-only unsupported methods

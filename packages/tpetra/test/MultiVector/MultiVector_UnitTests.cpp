@@ -58,6 +58,13 @@ namespace {
   using Teuchos::arrayView;
   using std::copy;
   using std::ostream_iterator;
+  using std::string;
+  using Teuchos::VERB_DEFAULT;
+  using Teuchos::VERB_NONE;
+  using Teuchos::VERB_LOW;
+  using Teuchos::VERB_MEDIUM;
+  using Teuchos::VERB_HIGH;
+  using Teuchos::VERB_EXTREME;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -170,6 +177,55 @@ namespace {
 
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, LabeledObject, LO, GO, Scalar )
+  {
+    typedef Tpetra::MultiVector<Scalar,LO,GO> MV;
+    const GO INVALID = OrdinalTraits<GO>::invalid();
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int myImageID = rank(*comm);
+    // create Map
+    Map<LO,GO> map(INVALID,3,0,comm);
+    // test labeling
+    const string lbl("mvecA");
+    MV mvecA(map,2);
+    string desc1 = mvecA.description();
+    if (myImageID==0) out << desc1 << endl;
+    mvecA.setObjectLabel(lbl);
+    string desc2 = mvecA.description();
+    if (myImageID==0) out << desc2 << endl;
+    if (myImageID==0) {
+      TEST_EQUALITY( mvecA.getObjectLabel(), lbl );
+    }
+    // test describing at different verbosity levels
+    if (myImageID==0) out << "Describing with verbosity VERB_DEFAULT..." << endl;
+    mvecA.describe(out);
+    comm->barrier();
+    comm->barrier();
+    if (myImageID==0) out << "Describing with verbosity VERB_NONE..." << endl;
+    mvecA.describe(out,VERB_NONE);
+    comm->barrier();
+    comm->barrier();
+    if (myImageID==0) out << "Describing with verbosity VERB_LOW..." << endl;
+    mvecA.describe(out,VERB_LOW);
+    comm->barrier();
+    comm->barrier();
+    if (myImageID==0) out << "Describing with verbosity VERB_MEDIUM..." << endl;
+    mvecA.describe(out,VERB_MEDIUM);
+    comm->barrier();
+    comm->barrier();
+    if (myImageID==0) out << "Describing with verbosity VERB_HIGH..." << endl;
+    mvecA.describe(out,VERB_HIGH);
+    comm->barrier();
+    comm->barrier();
+    if (myImageID==0) out << "Describing with verbosity VERB_EXTREME..." << endl;
+    mvecA.describe(out,VERB_EXTREME);
+    comm->barrier();
+    comm->barrier();
+  }
+
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, BadMultiply, Ordinal, Scalar )
   {
     typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
@@ -242,7 +298,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, Multiply, Ordinal, Scalar )
   {
     using Teuchos::View;
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
     // create a comm  
@@ -430,11 +486,11 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, OrthoDot, Ordinal, Scalar )
   {
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Scalar S0 = Teuchos::ScalarTraits<Scalar>::zero();
-    const Mag M0 = Teuchos::ScalarTraits<Mag>::zero();
+    const Scalar S0 = ScalarTraits<Scalar>::zero();
+    const Mag M0 = ScalarTraits<Mag>::zero();
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
@@ -457,7 +513,7 @@ namespace {
     MV mvec1(map,values(0,4),2,numVectors),
        mvec2(map,values(1,4),2,numVectors);
     Array<Scalar> dots1(numVectors), dots2(numVectors), zeros(numVectors);
-    std::fill(zeros.begin(),zeros.end(),Teuchos::ScalarTraits<Scalar>::zero());
+    std::fill(zeros.begin(),zeros.end(),ScalarTraits<Scalar>::zero());
     mvec1.dot(mvec2,dots1());
     mvec2.dot(mvec1,dots2());
     TEST_COMPARE_FLOATING_ARRAYS(dots1,dots2,M0);
@@ -469,10 +525,10 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, ZeroScaleUpdate, Ordinal, Scalar )
   {
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,Ordinal> MV;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Mag M0 = Teuchos::ScalarTraits<Mag>::zero();
+    const Mag M0 = ScalarTraits<Mag>::zero();
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
@@ -553,10 +609,10 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, ZeroScaleUpdate, Ordinal, Scalar )
   {
-    typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::Vector<Scalar,Ordinal> V;
     const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
-    const Mag M0 = Teuchos::ScalarTraits<Mag>::zero();
+    const Mag M0 = ScalarTraits<Mag>::zero();
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
@@ -1116,7 +1172,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, basic             , ORDINAL, SCALAR ) \
@@ -1137,7 +1193,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadCombinations   , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, BadMultiply       , ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, SingleVecNormalize, ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR ) 
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, LabeledObject     , ORDINAL, ORDINAL, SCALAR ) 
 
 
 #ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD

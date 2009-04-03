@@ -231,58 +231,6 @@ namespace Tpetra {
 
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>::print(std::ostream &os) const
-  {
-    using std::endl;
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap().getComm();
-    const int myImageID = comm->getRank();
-    const int numImages = comm->getSize();
-    for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-      if (myImageID == imageCtr) {
-        if (myImageID == 0) {
-          os << "Number of vectors: " << numVectors() << endl;
-          os << "Global length: " << globalLength() << endl;
-        }
-        os << "Local length: " << myLength() << endl;
-        os << "Local stride: " << stride() << endl;
-        os << "Constant stride: " << (constantStride() ? "true" : "false") << endl;
-      }
-      // Do a few global ops to give I/O a chance to complete
-      comm->barrier();
-      comm->barrier();
-      comm->barrier();
-    }
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>::printValues(std::ostream &os) const
-  {
-    using std::endl;
-    using std::setw;
-    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap().getComm();
-    const Map<LocalOrdinal,GlobalOrdinal> &map = this->getMap();
-    const int myImageID = comm->getRank();
-    const int numImages = comm->getSize();
-    for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
-      if (myImageID == imageCtr) {
-        for (int i=0; i<myLength(); ++i) {
-          os << setw(4) << map.getGlobalIndex(i) << "\t";
-          for (int j=0; j<numVectors(); ++j) {
-            os << setw(20) << MVData_->ptrs_[j][i] << " ";
-          }
-          os << endl;
-        }
-      }
-      // Do a few global ops to give I/O a chance to complete
-      comm->barrier();
-      comm->barrier();
-      comm->barrier();
-    }
-  }
-
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   bool MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>::checkSizes(const DistObject<Scalar,LocalOrdinal,GlobalOrdinal> &sourceObj, Teuchos_Ordinal &packetSize) 
   {
     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> &A = dynamic_cast<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>&>(sourceObj);
@@ -1497,6 +1445,70 @@ namespace Tpetra {
     const Scalar OneOverN = Teuchos::as<Scalar>(globalLength());
     for (pointer n = means.begin(); n != means.begin()+numVecs; ++n) {
       (*n) = (*n)*OneOverN;
+    }
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  std::string MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>::description() const
+  {
+    std::ostringstream oss;
+    oss << Teuchos::Describable::description();
+    oss << "{length="<<globalLength()
+        << ",numVectors="<<numVectors()
+        << "}";
+    return oss.str();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  void MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+  {
+    using std::endl;
+    using std::setw;
+    using Teuchos::VERB_DEFAULT;
+    using Teuchos::VERB_NONE;
+    using Teuchos::VERB_LOW;
+    using Teuchos::VERB_MEDIUM;
+    using Teuchos::VERB_HIGH;
+    using Teuchos::VERB_EXTREME;
+    Teuchos::EVerbosityLevel vl = verbLevel;
+    if (vl == VERB_DEFAULT) vl = VERB_LOW;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm = this->getMap().getComm();
+    const int myImageID = comm->getRank();
+    const int numImages = comm->getSize();
+    int width = 1;
+    for (int dec=10; dec<globalLength(); dec *= 10) {
+      ++width;
+    }
+    Teuchos::OSTab tab(out);
+    if (vl != VERB_NONE) {
+      // VERB_LOW and higher prints description()
+      if (myImageID == 0) out << this->description() << std::endl; 
+      for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
+        if (myImageID == imageCtr) {
+          if (vl != VERB_LOW) {
+            // VERB_MEDIUM and higher prints myLength()
+            out << "node " << setw(width) << myImageID << ": local length=" << myLength();
+            if (vl != VERB_MEDIUM) {
+              // VERB_HIGH and higher prints constantStride() and stride()
+              if (constantStride()) out << ", constant stride=" << stride() << endl;
+              else out << ", non-constant stride" << endl;
+              if (vl == VERB_EXTREME) {
+                // VERB_EXTREME prints values
+                for (Teuchos_Ordinal i=0; i<myLength(); ++i) {
+                  out << setw(width) << this->getMap().getGlobalIndex(i) << ": ";
+                  for (Teuchos_Ordinal j=0; j<numVectors(); ++j) {
+                    out << MVData_->ptrs_[j][i] << "  ";
+                  }
+                  out << endl;
+                }
+              }
+            }
+            else {
+              out << endl;
+            }
+          }
+        }
+      }
     }
   }
 
