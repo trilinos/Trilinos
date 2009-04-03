@@ -57,7 +57,10 @@ import re
 import sys
 
 # Local imports
-from MakefileVariables import *
+try:
+    from MakefileVariables import *
+except ImportError:
+    processMakefile = None
 
 ################################################################################
 
@@ -106,6 +109,7 @@ def main():
     parser  = OptionParser(usage=usage,version=version)
     parser.set_defaults(verbose = False,
                         outdir  = False,
+                        module  = False,
                         name    = False,
                         upper   = False,
                         lower   = False,
@@ -116,6 +120,8 @@ def main():
     #                  help="run in quiet mode [default]")
     parser.add_option("-o", "--outdir" , action="store_true" , dest="outdir" ,
                       help="Output the package in the form of a directory")
+    parser.add_option("-m", "--module"   , action="store_true" , dest="module"   ,
+                      help="Output the module name")
     parser.add_option("-n", "--name"   , action="store_true" , dest="name"   ,
                       help="Output the package capitalized name")
     parser.add_option("-u", "--upper"  , action="store_true" , dest="upper"  ,
@@ -142,6 +148,11 @@ def main():
             print os.path.join(*package[:-1])
         else:
             print "."
+
+    # Output for -m, --module option
+    elif options.module:
+        if package:
+            print package[-1]
 
     # Output for -n, --name option
     elif options.name:
@@ -171,7 +182,10 @@ def main():
             exportMakefile = os.path.join("..","..",parentPkgName,
                                           "Makefile.export."+parentPkgName)
             if os.path.isfile(exportMakefile):
-                vars = processMakefile(exportMakefile)
+                if processMakefile:
+                    vars = processMakefile(exportMakefile)
+                else:
+                    raise RuntimeError, "MakefileVariables module not available"
                 name = pkgName.upper() + "_INCLUDES"
                 if vars.has_key(name):
                     print vars[name]
