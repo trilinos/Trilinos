@@ -378,6 +378,7 @@ private:
 
   //! Pointer to the matrix to be preconditioned.
   Teuchos::RCP<const Epetra_RowMatrix> Matrix_;
+  const Ifpack_OverlappingRowMatrix* ovA_;
 #ifdef HAVE_MPI
   //! Communicator containing this process only.
   Teuchos::RCP<Epetra_MpiComm> SubComm_;
@@ -418,9 +419,10 @@ private:
   double NormOne_;
   double NormInf_;
 
-  mutable Teuchos::RCP<Epetra_MultiVector> ImportVector_;
+  //mutable Teuchos::RCP<Epetra_MultiVector> ImportVector_;
   //mutable Teuchos::RCP<Epetra_MultiVector> ExportVector_;
   mutable Epetra_MultiVector* ExportVector_;
+  mutable Epetra_MultiVector* ImportVector_;
   Teuchos::RCP<Epetra_Import> Importer_;
   Teuchos::RCP<Epetra_Export> Exporter_;
 

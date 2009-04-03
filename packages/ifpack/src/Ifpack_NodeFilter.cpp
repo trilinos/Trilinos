@@ -58,9 +58,12 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
 {
   sprintf(Label_,"%s","Ifpack_NodeFilter");
 
-  ImportVector_=null;
+  //ImportVector_=null;
   //ExportVector_=null;
+  ImportVector_=0;
   ExportVector_=0;
+
+  ovA_ = dynamic_cast<const Ifpack_OverlappingRowMatrix*>(&*Matrix_);
 
 #ifdef HAVE_MPI
   const Epetra_MpiComm *pComm = dynamic_cast<const Epetra_MpiComm*>( &(Matrix->Comm()) );
@@ -221,21 +224,31 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
   // This is because I need more space than that given by
   // the user (for the external nodes)
 
-  int GlobRow = Map_->GID(MyRow);
-  //TODO this is really bad to do here from a performance standpoint
-  const Ifpack_OverlappingRowMatrix *ovA = dynamic_cast<const Ifpack_OverlappingRowMatrix*>(&*Matrix_);
-  //int ierr = ovA->ExtractGlobalRowCopy(GlobRow,MaxNumEntriesA_,&NumEntries, Values,Indices);
-  int ierr = ovA->ExtractGlobalRowCopy(GlobRow,Length,NumEntries, Values,Indices);
-  assert(ierr==0);
+  int ierr;
+  if (ovA_) {
+    int GlobRow = Map_->GID(MyRow);
+    ierr = ovA_->ExtractGlobalRowCopy(GlobRow,Length,NumEntries, Values,Indices);
+    IFPACK_CHK_ERR(ierr);
 
-  // populate the user's vectors, add diagonal if not found
-
-  for (int j = 0 ; j < NumEntries ; ++j) {
-    // only local indices
-      //printf("   MyRow = %d,   Indices_[%d] = %d, Values_[%d] = %g\n",MyRow, j, Indices_[j], j, Values_[j]);
-      //fflush(stdout);
+    for (int j = 0 ; j < NumEntries ; ++j) {
       Indices[j] = colMap_->LID(Indices[j]);
       assert(Indices[j] != -1);
+    }
+
+  } else {
+    int Nnz;
+    ierr = Matrix_->ExtractMyRowCopy(MyRow,MaxNumEntriesA_,Nnz, &Values_[0],&Indices_[0]);
+    IFPACK_CHK_ERR(ierr);
+
+    NumEntries = 0;
+    for (int j = 0 ; j < Nnz ; ++j) {
+      // only local indices
+      if (Indices_[j] < NumMyRows_ ) {
+        Indices[NumEntries] = Indices_[j];
+        Values[NumEntries] = Values_[j];
+        ++NumEntries;
+      }
+    }
   }
     
   return(ierr);
@@ -341,8 +354,21 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 //==============================================================================
 
 void Ifpack_NodeFilter::UpdateImportVector(int NumVectors) const {
+  if(Importer() != 0) {
+    if(ImportVector_ != 0) {
+      if(ImportVector_->NumVectors() != NumVectors) {
+     delete ImportVector_;
+     ImportVector_= 0;
+      }
+    }
+    if(ImportVector_ == 0)
+      ImportVector_ = new Epetra_MultiVector(Importer_->SourceMap(),NumVectors); // Create Import vector if needed
+  }
+  return;
+/*
   if(ImportVector_ == null || ImportVector_->NumVectors() != NumVectors)
     ImportVector_ = rcp(new Epetra_MultiVector(Importer_->TargetMap(),NumVectors));
+*/
 }
 
 //=======================================================================================================

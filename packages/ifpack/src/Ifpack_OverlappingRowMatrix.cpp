@@ -205,11 +205,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 
   // ghostTable holds off-node GIDs that are connected to on-node rows and can potentially be this PID's overlap
   // TODO hopefully 3 times the # column entries is a reasonable table size
-  Teuchos::Hashtable<int,int> ghostTable = Teuchos::Hashtable<int,int>(3 * A().RowMatrixColMap().NumMyElements() );
+  Teuchos::Hashtable<int,int> ghostTable;
 
   // nbTable holds node buddy GIDs that are connected to current PID's rows, i.e., GIDs that should be in the overlapped
   // matrix's column map
-  Teuchos::Hashtable<int,int> colMapTable = Teuchos::Hashtable<int,int>(3 * A().RowMatrixColMap().NumMyElements() );
+  Teuchos::Hashtable<int,int> colMapTable;
 
   RCP<Epetra_Map> TmpMap;
   RCP<Epetra_CrsMatrix> TmpMatrix; 
@@ -251,6 +251,9 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
       DomainMap = &(A().OperatorDomainMap());
     }
 
+    ghostTable = Teuchos::Hashtable<int,int>(3 * A().RowMatrixColMap().NumMyElements() );
+    colMapTable = Teuchos::Hashtable<int,int>(3 * A().RowMatrixColMap().NumMyElements() );
+
     // For each column ID, determine the owning node (as opposed to core)
     // ID of the corresponding row.
     Epetra_IntVector colIdList( *ColMap );
@@ -267,7 +270,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     // This naturally does not include off-core rows that are on the same node as me, i.e., node buddy rows.
     for (int i = 0 ; i < ColMap->NumMyElements() ; ++i) {
       int GID = ColMap->GID(i); 
-      //colMapTable.put(GID,1);
       if ( colIdList[i] != nodeID )
       {
         int votes;
@@ -277,8 +279,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
           ghostTable.put(GID,votes);
         } else {
           ghostTable.put(GID,1);
-          //list[count] = GID; 
-          //++count; 
         }
       }
     } //for (int i = 0 ; i < ColMap->NumMyElements() ; ++i)
@@ -418,20 +418,17 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
       MPI_Recv( cullList, ncull, MPI_INT, 0, 8675, nodeComm->Comm(), &status);
     }
 
-    //TODO clean out hash table after each time through overlap loop
+    //TODO clean out hash table after each time through overlap loop   4/1/07 JJH done moved both hash tables to local scope
 
     // Remove from my row map all off-node ghosts that will be imported by a node buddy.
     for (int i=0; i<ncull; i++) {
-      //printf("pid %d: removing ghost GID %d\n",Comm().MyPID(),(&*cullList)[i]); fflush(stdout);
-      //try{ghostTable.remove((&*cullList)[i]);}
-      //printf("pid %d: removing ghost GID %d\n",Comm().MyPID(),cullList[i]); fflush(stdout);
       try{ghostTable.remove(cullList[i]);}
 
-    catch(...) {
-      printf("pid %d: In OverlappingRowMatrix ctr, problem removing ghost elt %d from ghostTable\n",
-             Comm().MyPID(),cullList[i]);
-      fflush(stdout);
-    }
+      catch(...) {
+        printf("pid %d: In OverlappingRowMatrix ctr, problem removing ghost elt %d from ghostTable\n",
+               Comm().MyPID(),cullList[i]);
+        fflush(stdout);
+      }
     }//for
 
     delete [] cullList;
@@ -446,12 +443,13 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
       ghostElements.push_back(gidsarray[i]);
       list[i] = gidsarray[i];  //FIXME this won't work for >1 level of overlap. list should only contain
                                //FIXME the *current* level of overlap, not *all* the overlap
+                               // JJH 4/1/09 this is ok -- list is local scope, so it can *only* have current level of overlap
       count++;
     }
 
 #   endif //ifdef HAVE_MPI
 
-    TmpMap = rcp( new Epetra_Map(-1,count, &list[0],0,Comm()) ); // FIXME is this the right comm?
+    TmpMap = rcp( new Epetra_Map(-1,count, &list[0],0,Comm()) );
 
     TmpMatrix = rcp( new Epetra_CrsMatrix(Copy,*TmpMap,0) ); 
 
@@ -495,7 +493,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
        }
     }
 
-//FIXME new stuff
     for (int i = 0 ; i < A().RowMatrixColMap().NumMyElements() ; ++i) {
       int GID = ColMap->GID(i); 
       // Remove any entries that are in A's original column map
@@ -507,7 +504,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
         }
       }
     }
-//FIXME new stuff
 
     gidsarray.clear(); votesarray.clear();
     colMapTable.arrayify(gidsarray,votesarray);
