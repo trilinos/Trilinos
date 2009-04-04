@@ -130,6 +130,18 @@ C) Configuring
   NOTE: Setting -D CMAKE_BUILD_TYPE:STRING=DEBUG will automatically set the
   default Trilinos_ENBLE_DEBUG=ON.
 
+(*) Enabling checked STL implementation:
+
+  To turn on the checked STL implementation set:
+
+    -D Trilinos_ENABLE_CHECKED_STL:BOOL=ON
+
+  NOTE: By default, this will set -D_GLIBCXX_DEBUG as a compile option for all
+  C++ code.
+
+  NOTE: This option is disabled by default because to enable it by default can
+  cause runtime segfaults when linked against code that was compiled without
+  -D_GLIBCXX_DEBUG set.
 
 (*) Overriding debug/release compiler options:
 
@@ -151,15 +163,6 @@ C) Configuring
 
   The user cache variable Trilinos_ENABLE_Fortran is used as a trigger in the
   Trilinos CMake build system to enable Fortran support or not.
-
-(*) Enabling checked STL implementation:
-
-  To turn on the checked STL implementation set:
-
-    -D Trilinos_ENABLE_CHECKED_STL:BOOL=ON
-
-  NOTE: By default, this will set -D_GLIBCXX_DEBUG as a compile option for all
-  C++ code.
 
 (*) Enable shadowing warnings for all Trilinos pacakges:
 
