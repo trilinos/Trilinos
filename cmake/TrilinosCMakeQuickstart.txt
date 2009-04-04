@@ -98,18 +98,38 @@ C) Configuring
   turned on.  Tests will not be enabled in packages that do not depend on
   <PACAKGE> in this case.  This speeds up and robustifies pre-checkin testing.
 
-(*) Configuring to build debug and release (optimized) versions:
+(*) Configuring to build debug and release (optimized) compiler flags:
 
   To build a debug version, pass into 'cmake':
 
     -D CMAKE_BUILD_TYPE:STRING=DEBUG
 
-  NOTE: The above will automatically set Trilinos_ENBLE_DEBUG=ON which will
-  turn on all debug checks in all packages by default.
+  This will result in default debug flags getting passed to the compiler.
 
   To build a release (optimized) version, pass into 'cmake':
 
     -D CMAKE_BUILD_TYPE:STRING=RELEASE
+
+  This will result in optimized flags getting passed to the compiler.
+
+(*) Enabling runtime debug checks:
+
+  To turn on optional runtime debug checking configure with:
+
+    -D Trilinos_ENABLE_DEBUG=ON
+
+  This will result in a number of ifdefs to be enabled that will perform a
+  number of runtime checks.  All of the debug checks in Trilinos will get
+  turned on by default by setting this option.  This option can be set
+  independent of CMAKE_BUILD_TYPE.
+
+  NOTE: The variable CMAKE_BUILD_TYPE controls what compiler options are
+  passed to the compiler options by default while Trilinos_ENABLE_DEBUG
+  controls what defines are set in config.h files.
+
+  NOTE: Setting -D CMAKE_BUILD_TYPE:STRING=DEBUG will automatically set the
+  default Trilinos_ENBLE_DEBUG=ON.
+
 
 (*) Overriding debug/release compiler options:
 
