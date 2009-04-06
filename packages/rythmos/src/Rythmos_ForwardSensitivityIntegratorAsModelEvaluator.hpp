@@ -39,6 +39,7 @@
 #include "Rythmos_ForwardSensitivityStepper.hpp"
 #include "Rythmos_ForwardResponseSensitivityComputer.hpp"
 #include "Rythmos_extractStateAndSens.hpp"
+#include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"

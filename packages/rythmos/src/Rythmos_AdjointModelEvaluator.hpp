@@ -33,6 +33,7 @@
 #include "Rythmos_IntegratorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp" // Interface
 #include "Thyra_StateFuncModelEvaluatorBase.hpp" // Implementation
+#include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultAdjointLinearOpWithSolve.hpp"
 #include "Teuchos_implicit_cast.hpp"

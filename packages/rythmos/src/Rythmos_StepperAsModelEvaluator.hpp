@@ -32,6 +32,7 @@
 
 
 #include "Thyra_ResponseOnlyModelEvaluatorBase.hpp"
+#include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_IntegratorBase.hpp"
