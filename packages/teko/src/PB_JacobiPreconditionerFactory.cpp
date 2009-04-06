@@ -12,7 +12,7 @@ JacobiPreconditionerFactory::JacobiPreconditionerFactory(const RCP<const BlockIn
          : invOpsStrategy_(strategy)
 { }
 
-LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blo) const
+LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const
 {
    int rows = blo->productRange()->numBlocks();
    int cols = blo->productDomain()->numBlocks();
@@ -21,7 +21,7 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearO
 
    // get diagonal blocks
    std::vector<LinearOp> invDiag;
-   invOpsStrategy_->getInvD(blo,invDiag);
+   invOpsStrategy_->getInvD(blo,state,invDiag);
    TEUCHOS_ASSERT(rows==invDiag.size());
 
    // create a blocked linear operator

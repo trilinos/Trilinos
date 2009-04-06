@@ -6,13 +6,37 @@ using namespace Thyra;
 
 namespace PB {
 
-LinearOp BlockPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo) const
+/////////////////////////////////////////////////////
+
+//! Set parameters from a parameter list and return with default values.
+void BlockPreconditionerState::setParameterList(const RCP<ParameterList> & paramList)
+{
+   paramList_ = paramList;
+}
+
+//! Get the parameter list that was set using setParameterList().
+RCP<ParameterList> BlockPreconditionerState::getNonconstParameterList()
+{
+   return paramList_;
+}
+
+//! Unset the parameter list that was set using setParameterList(). 
+RCP<ParameterList> BlockPreconditionerState::unsetParameterList()
+{
+   RCP<ParameterList> paramList = paramList_;
+   paramList_ = Teuchos::null;
+   return paramList;
+}
+
+/////////////////////////////////////////////////////
+
+LinearOp BlockPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,BlockPreconditionerState & state) const
 {
    // get the blocked linear operator
    RCP<LinearOpBase<double> > loA = Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(lo);
    BlockedLinearOp A = Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<double> >(loA);
 
-   return buildPreconditionerOperator(A);
+   return buildPreconditionerOperator(A,state);
 }
 
 //! is this operator compatiable with the preconditioner factory?
@@ -26,7 +50,11 @@ bool BlockPreconditionerFactory::isCompatible(const Thyra::LinearOpSourceBase<do
 //! create an instance of the preconditioner
 RCP<Thyra::PreconditionerBase<double> > BlockPreconditionerFactory::createPrec() const
 {
-   return rcp(new Thyra::DefaultPreconditioner<double>());
+   // build a preconditioner, give it some inital state
+   RCP<BlockPreconditioner> bp = rcp(new BlockPreconditioner());
+   bp->setStateObject(buildPreconditionerState());
+
+   return bp;
 }
 
 //! initialize a newly created preconditioner object
@@ -37,9 +65,12 @@ void BlockPreconditionerFactory::initializePrec(const RCP<const LinearOpSourceBa
    // get the blocked linear operator
    RCP<LinearOpBase<double> > loA = Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(ASrc->getOp());
    BlockedLinearOp A = Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<double> >(loA);
+
+   BlockPreconditioner * blkPrec = dynamic_cast<BlockPreconditioner *>(prec);
+   TEUCHOS_ASSERT(blkPrec!=0);
  
    // build the preconditioner
-   const RCP<const LinearOpBase<double> > M = buildPreconditionerOperator(A);
+   const RCP<const LinearOpBase<double> > M = buildPreconditionerOperator(A,*blkPrec->getStateObject());
 
    // must first cast that to be initialized
    DefaultPreconditioner<double> & dPrec = Teuchos::dyn_cast<DefaultPreconditioner<double> >(*prec);

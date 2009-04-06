@@ -35,7 +35,7 @@ Epetra_Operator * block2x2(const Epetra_Operator * sub00,const Epetra_Operator *
   */
 Epetra_Operator * mechanicalInverse(const Epetra_Operator * inverse);
 
-const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const Epetra_Vector & ev,const Epetra_Map & map);
+const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const Teuchos::RCP<const Epetra_Vector> & ev,const Epetra_Map & map);
 
 } // end namespace Epetra
 } // end namespace PB

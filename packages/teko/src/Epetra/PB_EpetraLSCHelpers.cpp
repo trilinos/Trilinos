@@ -43,7 +43,6 @@ void buildLSCOperators(const Epetra_Operator & in_A,const Epetra_RowMatrix & in_
       = rcp_dynamic_cast<const PB::Epetra::EpetraOperatorWrapper>(rcp(&in_A,false),true);
 
    std::vector<Teuchos::RCP<const Epetra_CrsMatrix> > blocks;
-   //std::pair<int,int> shape = thyraMatrixToCrsVector(wrapA->thyraOp_.constPtr(),true,blocks);
    std::pair<int,int> shape = thyraMatrixToCrsVector(wrapA->getThyraOp(),true,blocks);
 
    // this better be a 2x2 matrix!
@@ -61,7 +60,6 @@ void buildLSCOperators(const Epetra_Operator & in_A,Teuchos::RCP<const Epetra_Cr
       = rcp_dynamic_cast<const PB::Epetra::EpetraOperatorWrapper>(rcp(&in_A,false),true);
 
    std::vector<Teuchos::RCP<const Epetra_CrsMatrix> > blocks;
-   //std::pair<int,int> shape = thyraMatrixToCrsVector(wrapA->thyraOp_.constPtr(),true,blocks);
    std::pair<int,int> shape = thyraMatrixToCrsVector(wrapA->getThyraOp(),true,blocks);
 
    // this better be a 2x2 matrix!

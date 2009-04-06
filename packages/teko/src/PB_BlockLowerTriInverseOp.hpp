@@ -16,17 +16,16 @@ namespace PB {
   */
 class BlockLowerTriInverseOp : public BlockImplicitLinearOp {
 public:
-   /** @brief This constructor explicitly takes the parts of \f$ A \f$ required to
-     *        build the inverse operator.
+   /** \brief This constructor explicitly takes a lower triangular matrix
+     *        and inverse diagonal operators and builds a forward substitution operator.
      *
-     * This constructor explicitly takes the parts of \f$ A \f$ required to build
-     * the inverse operator. 
+     * This constructor explicitly takes a lower triangular matrix
+     * and inverse diagonal operators and builds a forward substitution operator.
      *
-     * @param[in] A The block \f$ 2 \times 2 \f$ \f$A\f$ operator.
-     * @param[in] invA00  An approximate inverse of \f$ A_{00} \f$.
-     * @param[in] invS  An approximate inverse of \f$ S = -A_{11} + A_{10} A_{00}^{-1} A_{01} \f$.
+     * @param[in] L Upper triangular matrix object
+     * @param[in] invDiag Vector containing the inverse of the diagonal blocks
      */
-   BlockLowerTriInverseOp(BlockedLinearOp & U,const std::vector<LinearOp> & invDiag);
+   BlockLowerTriInverseOp(BlockedLinearOp & L,const std::vector<LinearOp> & invDiag);
 
    //! @name Inherited methods from Thyra::LinearOpBase
    //@{

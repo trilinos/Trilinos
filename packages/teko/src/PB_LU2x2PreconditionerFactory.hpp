@@ -106,7 +106,7 @@ class LU2x2PreconditionerFactory : public BlockPreconditionerFactory {
         * LU preconditioner. This will require two applications of the inverse
         * of the (0,0) block and one application of the inverse Schur complement.
         */
-      LinearOp buildPreconditionerOperator(BlockedLinearOp & blo) const;
+      LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const;
  
    protected: 
       //! some members

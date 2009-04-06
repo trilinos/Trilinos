@@ -200,7 +200,8 @@ private:
    BlockReorderLeaf(); // hidden from users
 };
 
-//! \defgroup reordering \name Functions useful for reordering blocked operators and multivectors
+/** \defgroup reordering \name Functions useful for reordering blocked operators and multivectors
+  */
 //@{
 
 /** \brief Use the BlockReorderManager to change a flat square blocked operator

@@ -32,7 +32,7 @@ class JacobiPreconditionerFactory : public BlockPreconditionerFactory {
         * diagonal preconditioner. The inverse of the diagonals are specified
         * by the BlockInvDiagonalStrategy object.
         */
-      LinearOp buildPreconditionerOperator(BlockedLinearOp & blo) const;
+      LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const;
  
    protected: 
       //! some members

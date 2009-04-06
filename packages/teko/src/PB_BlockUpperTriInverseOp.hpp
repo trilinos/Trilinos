@@ -16,15 +16,14 @@ namespace PB {
   */
 class BlockUpperTriInverseOp : public BlockImplicitLinearOp {
 public:
-   /** @brief This constructor explicitly takes the parts of \f$ A \f$ required to
-     *        build the inverse operator.
+   /** \brief This constructor explicitly takes an upper triangular matrix
+     *        and inverse diagonal operators and builds a back substitution operator.
      *
-     * This constructor explicitly takes the parts of \f$ A \f$ required to build
-     * the inverse operator. 
+     * This constructor explicitly takes an upper triangular matrix
+     * and inverse diagonal operators and builds a back substitution operator.
      *
-     * @param[in] A The block \f$ 2 \times 2 \f$ \f$A\f$ operator.
-     * @param[in] invA00  An approximate inverse of \f$ A_{00} \f$.
-     * @param[in] invS  An approximate inverse of \f$ S = -A_{11} + A_{10} A_{00}^{-1} A_{01} \f$.
+     * @param[in] U Upper triangular matrix object
+     * @param[in] invDiag Vector containing the inverse of the diagonal blocks
      */
    BlockUpperTriInverseOp(BlockedLinearOp & U,const std::vector<LinearOp> & invDiag);
 

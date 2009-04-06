@@ -38,7 +38,7 @@ LSCPreconditionerFactory::LSCPreconditionerFactory(const RCP<const LSCStrategy> 
 ///////////////////////////////////////////////////////////////////////
 
 // initialize a newly created preconditioner object
-LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blockOp) const
+LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blockOp,BlockPreconditionerState & state) const
 {
    // extract sub-matrices from source operator 
    LinearOp F  = blockOp->getBlock(0,0);
@@ -46,12 +46,12 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    LinearOp Bt = blockOp->getBlock(0,1);
 
    // extract operators from strategy
-   LinearOp invF      = invOpsStrategy_->getInvF(blockOp);
-   LinearOp invBQBtmC = invOpsStrategy_->getInvBQBt(blockOp);
-   LinearOp invD      = invOpsStrategy_->getInvD(blockOp);
+   LinearOp invF      = invOpsStrategy_->getInvF(blockOp,state);
+   LinearOp invBQBtmC = invOpsStrategy_->getInvBQBt(blockOp,state);
+   LinearOp invD      = invOpsStrategy_->getInvD(blockOp,state);
 
    // if necessary build an identity mass matrix
-   LinearOp invMass   = invOpsStrategy_->getInvMass(blockOp);
+   LinearOp invMass   = invOpsStrategy_->getInvMass(blockOp,state);
    if(invMass==Teuchos::null)
       invMass = identity<double>(F->range());
 

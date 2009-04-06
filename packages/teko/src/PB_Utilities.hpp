@@ -13,7 +13,12 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
+#include "Thyra_DefaultMultipliedLinearOp.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+
 namespace PB {
+
+using Thyra::multiply;
 
 /** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
   *
@@ -147,6 +152,9 @@ BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo);
 //! Get the strictly lower triangular portion of the matrix
 BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo);
 
+//! Figure out if this operator is the zero operator (or null!)
+bool isZeroOp(const LinearOp op);
+
 //@}
 
 //! @name Functions for constructing and initializing solvers
@@ -205,6 +213,92 @@ inline void scale(const double alpha,MultiVector & x) { Thyra::scale<double>(alp
 //! Scale a multivector by a constant
 inline void scale(const double alpha,BlockedMultiVector & x) 
 {  MultiVector x_mv = toMultiVector(x); scale(alpha,x_mv); }
+
+//@}
+
+//! \name Epetra_Operator specific functions
+//@{
+
+/** \brief Get the diaonal of a linear operator
+  *
+  * Get the diagonal of a linear operator. Currently
+  * it is assumed that the underlying operator is
+  * an Epetra_RowMatrix.
+  *
+  * \param[in] op The operator whose diagonal is to be
+  *               extracted.
+  *
+  * \returns An diagonal operator.
+  */
+const LinearOp getDiagonalOp(const LinearOp & op);
+
+/** \brief Get the diagonal of a linear operator
+  *
+  * Get the diagonal of a linear operator, putting it
+  * in the first column of a multivector.
+  */
+const MultiVector getDiagonal(const LinearOp & op);
+
+/** \brief Get the diaonal of a linear operator
+  *
+  * Get the inverse of the diagonal of a linear operator.
+  * Currently it is assumed that the underlying operator is
+  * an Epetra_RowMatrix.
+  *
+  * \param[in] op The operator whose diagonal is to be
+  *               extracted and inverted
+  *
+  * \returns An diagonal operator.
+  */
+const LinearOp getInvDiagonalOp(const LinearOp & op);
+
+/** \brief Multiply three linear operators. 
+  *
+  * Multiply three linear operators. This currently assumes
+  * that the underlying implementation uses Epetra_CrsMatrix.
+  * The exception is that opm is allowed to be an diagonal matrix.
+  *
+  * \param[in] opl Left operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in] opm Middle operator (assumed to be a Epetra_CrsMatrix or a diagonal matrix)
+  * \param[in] opr Right operator (assumed to be a Epetra_CrsMatrix)
+  *
+  * \returns Matrix product with a Epetra_CrsMatrix implementation
+  */
+const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const LinearOp & opr);
+
+/** \brief Multiply two linear operators. 
+  *
+  * Multiply two linear operators. This currently assumes
+  * that the underlying implementation uses Epetra_CrsMatrix.
+  *
+  * \param[in] opl Left operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in] opr Right operator (assumed to be a Epetra_CrsMatrix)
+  *
+  * \returns Matrix product with a Epetra_CrsMatrix implementation
+  */
+const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr);
+
+/** \brief Add two linear operators. 
+  *
+  * Add two linear operators. This currently assumes
+  * that the underlying implementation uses Epetra_CrsMatrix.
+  *
+  * \param[in] opl Left operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in] opr Right operator (assumed to be a Epetra_CrsMatrix)
+  *
+  * \returns Matrix sum with a Epetra_CrsMatrix implementation
+  */
+const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr);
+
+/** \brief Take the first column of a multivector and build a
+  *        diagonal linear operator
+  */
+const LinearOp buildDiagonal(const MultiVector & v);
+
+/** \brief Using the first column of a multivector, take the elementwise build a
+  *        inverse and build the inverse diagonal operator.
+  */
+const LinearOp buildInvDiagonal(const MultiVector & v);
 
 //@}
 

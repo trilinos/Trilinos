@@ -11,7 +11,7 @@ InvFactoryDiagStrategy::InvFactoryDiagStrategy(InverseFactory & factory)
 /** returns an (approximate) inverse of the diagonal blocks of A
   * where A is closely related to the original source for invD0 and invD1
   */
-void InvFactoryDiagStrategy::getInvD(const BlockedLinearOp & A,std::vector<LinearOp> & invDiag) const
+void InvFactoryDiagStrategy::getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state,std::vector<LinearOp> & invDiag) const
 { 
    // loop over diagonals, build an inverse operator for each
    int diagCnt = A->productRange()->numBlocks();

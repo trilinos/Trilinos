@@ -21,10 +21,10 @@ LU2x2PreconditionerFactory::LU2x2PreconditionerFactory(const RCP<const LU2x2Stra
 ///////////////////////////////////////////////////////////////////////
 
 // initialize a newly created preconditioner object
-LinearOp LU2x2PreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & A) const
+LinearOp LU2x2PreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
-   LinearOp invA00 = invOpsStrategy_->getInvA00(A);
-   LinearOp invS   = invOpsStrategy_->getInvS(A);
+   LinearOp invA00 = invOpsStrategy_->getInvA00(A,state);
+   LinearOp invS   = invOpsStrategy_->getInvS(A,state);
 
    // build the SchurSolve LinearOp
    return createNewLU2x2InverseOp(A,invA00,invS);

@@ -11,6 +11,7 @@
 
 // PB includes
 #include "PB_Utilities.hpp"
+#include "PB_BlockPreconditionerFactory.hpp"
 
 namespace PB {
 
@@ -31,10 +32,9 @@ namespace PB {
 class BlockInvDiagonalStrategy {
 public:
    //! returns an (approximate) inverse of the diagonal blocks of A
-   virtual void getInvD(const BlockedLinearOp & A, std::vector<LinearOp> & invDiag) const = 0;
+   virtual void getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state,
+                        std::vector<LinearOp> & invDiag) const = 0;
 
-   // //! return the number of diagonal blocks in the matrix
-   // virtual int numDiagonalBlocks() const = 0;
 };
 
 /** This is a simple strategy for a [whatever]PreconditionerFactory
@@ -56,11 +56,9 @@ public:
    /** returns an (approximate) inverse of the diagonal blocks of A
      * where A is closely related to the original source for invD0 and invD1
      */
-   virtual void getInvD(const BlockedLinearOp & A, std::vector<LinearOp> & invDiag) const
+   virtual void getInvD(const BlockedLinearOp & A, BlockPreconditionerState & state,
+                        std::vector<LinearOp> & invDiag) const
    { invDiag.clear(); invDiag = invDiag_; }
-
-   // //! return the number of diagonal blocks in the matrix
-   // virtual int numDiagonalBlocks() const { return invDiag_.size(); }
 
 protected:
    // stored inverse operators
@@ -74,10 +72,8 @@ public:
    /** returns an (approximate) inverse of the diagonal blocks of A
      * where A is closely related to the original source for invD0 and invD1
      */
-   virtual void getInvD(const BlockedLinearOp & A, std::vector<LinearOp> & invDiag) const;
-
-   // //! return the number of diagonal blocks in the matrix
-   // virtual int numDiagonalBlocks() const { return invDiagFact_.size(); }
+   virtual void getInvD(const BlockedLinearOp & A, BlockPreconditionerState & state,
+                        std::vector<LinearOp> & invDiag) const;
 
 protected:
    // stored inverse operators

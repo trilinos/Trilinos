@@ -1,5 +1,8 @@
 #include "PB_EpetraBlockPreconditioner.hpp"
 
+// Thyra includes
+#include "Thyra_DefaultLinearOpSource.hpp"
+
 namespace PB {
 namespace Epetra {
 
@@ -38,7 +41,9 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A)
    SetMapStrategy(rcp(new InverseMappingStrategy(eow->getMapStrategy())));
    
    // actually build the preconditioner
-   RCP<const Thyra::LinearOpBase<double> > preconditioner = preconFactory_->buildPreconditionerOperator(thyraA);
+   RCP<Thyra::PreconditionerBase<double> > precObj = preconFactory_->createPrec();
+   preconFactory_->initializePrec(Thyra::defaultLinearOpSource(thyraA),&*precObj,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
+   RCP<const Thyra::LinearOpBase<double> > preconditioner = precObj->getUnspecifiedPrecOp();
 
    SetOperator(preconditioner,false);
 

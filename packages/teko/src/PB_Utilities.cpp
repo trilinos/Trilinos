@@ -1,16 +1,33 @@
 #include "PB_Utilities.hpp"
 
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_ZeroLinearOpBase.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_DefaultInverseLinearOp.hpp"
+#include "Thyra_DefaultDiagonalLinearOp.hpp"
+#include "Thyra_DefaultAddedLinearOp.hpp"
+#include "Thyra_EpetraExtDiagScaledMatProdTransformer.hpp"
+#include "Thyra_EpetraExtAddTransformer.hpp"
+#include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
 
 #include "Teuchos_Array.hpp"
+
+#include "Epetra_Vector.h"
+#include "Epetra_Map.h"
+
+#include "Epetra/PB_EpetraHelpers.hpp"
 
 #include <cmath>
 
 namespace PB {
 
+using Teuchos::rcp;
+using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 
 // distance function...not parallel...entirely internal to this cpp file
@@ -221,5 +238,176 @@ BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo)
 
    return lower;
 }
+
+//! Figure out if this operator is the zero operator (or null!)
+bool isZeroOp(const LinearOp op)
+{
+   // if operator is null...then its zero!
+   if(op==Teuchos::null) return true;
+
+   // try to cast it to a zero linear operator
+   const LinearOp test = rcp_dynamic_cast<const Thyra::ZeroLinearOpBase<double> >(op);
+
+   // if it works...then its zero...otherwise its null
+   return test!=Teuchos::null;
+}
+
+/** \brief Get the diaonal of a linear operator
+  *
+  * Get the diagonal of a linear operator. Currently
+  * it is assumed that the underlying operator is
+  * an Epetra_RowMatrix.
+  *
+  * \param[in] op The operator whose diagonal is to be
+  *               extracted.
+  *
+  * \returns An diagonal operator.
+  */
+const LinearOp getDiagonalOp(const LinearOp & op)
+{
+   // get Epetra_CrsMatrix
+   RCP<const Epetra_CrsMatrix> eOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*op));
+   TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::runtime_error,"getDiagonalOp requires an Epetra_CrsMatrix");
+
+   // extract diagonal
+   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eOp->OperatorRangeMap()));
+   eOp->ExtractDiagonalCopy(*diag);
+
+   // build Thyra diagonal operator
+   return PB::Epetra::thyraDiagOp(diag,eOp->OperatorRangeMap());
+}
+
+const MultiVector getDiagonal(const LinearOp & op)
+{
+   // get Epetra_CrsMatrix
+   RCP<const Epetra_CrsMatrix> eOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*op));
+   TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::runtime_error,"getDiagonalOp requires an Epetra_CrsMatrix");
+
+   // extract diagonal
+   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eOp->RowMap()));
+   eOp->ExtractDiagonalCopy(*diag);
+
+   return Thyra::create_Vector(diag,Thyra::create_VectorSpace(Teuchos::rcpFromRef(eOp->RowMap())));
+}
+
+/** \brief Get the diaonal of a linear operator
+  *
+  * Get the inverse of the diagonal of a linear operator.
+  * Currently it is assumed that the underlying operator is
+  * an Epetra_RowMatrix.
+  *
+  * \param[in] op The operator whose diagonal is to be
+  *               extracted and inverted
+  *
+  * \returns An diagonal operator.
+  */
+const LinearOp getInvDiagonalOp(const LinearOp & op)
+{
+   // get Epetra_CrsMatrix
+   RCP<const Epetra_CrsMatrix> eOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*op));
+   TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::runtime_error,"getDiagonalOp requires an Epetra_CrsMatrix");
+
+   // extract diagonal
+   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eOp->RowMap()));
+   eOp->ExtractDiagonalCopy(*diag);
+   diag->Reciprocal(*diag);
+
+   // build Thyra diagonal operator
+   return PB::Epetra::thyraDiagOp(diag,eOp->RowMap());
+}
+
+/** \brief Multiply three linear operators. 
+  *
+  * Multiply three linear operators. This currently assumes
+  * that the underlying implementation uses Epetra_CrsMatrix.
+  * The exception is that opm is allowed to be an diagonal matrix.
+  *
+  * \param[in] opl Left operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in] opm Middle operator (assumed to be a diagonal matrix)
+  * \param[in] opr Right operator (assumed to be a Epetra_CrsMatrix)
+  *
+  * \returns Matrix product with a Epetra_CrsMatrix implementation
+  */
+const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const LinearOp & opr)
+{
+   // build implicit multiply
+   const LinearOp implicitOp = Thyra::multiply(opl,opm,opr);
+
+   // build transformer
+   const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
+       Thyra::epetraExtDiagScaledMatProdTransformer();
+
+   // build operator and multiply
+   const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
+   prodTrans->transform(*implicitOp,explicitOp.ptr());
+
+   return explicitOp;
+}
+
+/** \brief Multiply two linear operators. 
+  *
+  * Multiply two linear operators. This currently assumes
+  * that the underlying implementation uses Epetra_CrsMatrix.
+  *
+  * \param[in] opl Left operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in] opr Right operator (assumed to be a Epetra_CrsMatrix)
+  *
+  * \returns Matrix product with a Epetra_CrsMatrix implementation
+  */
+const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
+{
+   // build implicit multiply
+   const LinearOp implicitOp = Thyra::multiply(opl,opr);
+ 
+   // build transformer
+   const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
+       Thyra::epetraExtDiagScaledMatProdTransformer();
+
+   // build operator and multiply
+   const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
+   prodTrans->transform(*implicitOp,explicitOp.ptr());
+
+   return explicitOp;
+}
+
+/** \brief Add two linear operators. 
+  *
+  * Add two linear operators. This currently assumes
+  * that the underlying implementation uses Epetra_CrsMatrix.
+  *
+  * \param[in] opl Left operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in] opr Right operator (assumed to be a Epetra_CrsMatrix)
+  *
+  * \returns Matrix sum with a Epetra_CrsMatrix implementation
+  */
+const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr)
+{
+   // build implicit multiply
+   const LinearOp implicitOp = Thyra::add(opl,opr);
+ 
+   // build transformer
+   const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
+       Thyra::epetraExtAddTransformer();
+
+   // build operator and multiply
+   const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
+   prodTrans->transform(*implicitOp,explicitOp.ptr());
+
+   return explicitOp;
+}
+
+const LinearOp buildDiagonal(const MultiVector & v)
+{
+   return Thyra::diagonal<double>(v->col(0));
+}
+
+const LinearOp buildInvDiagonal(const MultiVector & src)
+{
+   MultiVector dst = deepcopy(src); 
+   Thyra::reciprocal<double>(dst->col(0).ptr(),*src->col(0));
+
+   return Thyra::diagonal<double>(dst->col(0));
+}
+
 
 }

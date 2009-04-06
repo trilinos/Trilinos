@@ -40,21 +40,21 @@ namespace PB {
  */
 class LU2x2InverseOp : public BlockImplicitLinearOp {
 public:
-   /** @brief This constructor explicitly takes the parts of \f$ A \f$ required to
+   /** \brief This constructor explicitly takes the parts of \f$ A \f$ required to
      *        build the inverse operator.
      *
      * This constructor explicitly takes the parts of \f$ A \f$ required to build
      * the inverse operator. 
      *
-     * @param[in] A The block \f$ 2 \times 2 \f$ \f$A\f$ operator.
-     * @param[in] invA00  An approximate inverse of \f$ A_{00} \f$.
-     * @param[in] invS  An approximate inverse of \f$ S = -A_{11} + A_{10} A_{00}^{-1} A_{01} \f$.
+     * \param[in] A The block \f$ 2 \times 2 \f$ \f$A\f$ operator.
+     * \param[in] invA00  An approximate inverse of \f$ A_{00} \f$.
+     * \param[in] invS  An approximate inverse of \f$ S = -A_{11} + A_{10} A_{00}^{-1} A_{01} \f$.
      */
    LU2x2InverseOp(const BlockedLinearOp & A,
                        const LinearOp & invA00,
                        const LinearOp & invS);
 
-   //! @name Inherited methods from Thyra::LinearOpBase
+   //! \name Inherited methods from Thyra::LinearOpBase
    //@{
 
    /** @brief Range space of this operator */

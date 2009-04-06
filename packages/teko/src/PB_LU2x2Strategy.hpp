@@ -53,11 +53,11 @@ class LU2x2Strategy {
 public:
    /** returns an (approximate) inverse of \f$A_{00}\f$ */
    virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
-   getInvA00(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const = 0;
+   getInvA00(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A,BlockPreconditionerState & state) const = 0;
 
    /** returns an (approximate) inverse of \f$S = -A_{11} + A_{10} A_{00}^{-1} A_{01} */
    virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
-   getInvS(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const = 0;
+   getInvS(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A,BlockPreconditionerState & state) const = 0;
 };
 
 /** @brief A simple strategy for use with LU2x2PreconditionerFactory, that
@@ -87,12 +87,12 @@ public:
 
    /** returns a static (approximate) inverse of F */
    virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> > 
-   getInvA00(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const
+   getInvA00(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A,BlockPreconditionerState & state) const
    { return invA00_; }
 
    /** returns a static (approximate) inverse of S = -D + L*inv(F)*U */
    virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> > 
-   getInvS(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A) const
+   getInvS(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A,BlockPreconditionerState & state) const
    { return invS_; }
 
    //@}

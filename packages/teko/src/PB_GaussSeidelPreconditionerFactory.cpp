@@ -16,7 +16,7 @@ GaussSeidelPreconditionerFactory::GaussSeidelPreconditionerFactory(TriSolveType 
          : invOpsStrategy_(strategy), solveType_(solveType)
 { }
 
-LinearOp GaussSeidelPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blo) const
+LinearOp GaussSeidelPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const
 {
    int rows = blockRowCount(blo);
    int cols = blockColCount(blo);
@@ -25,7 +25,7 @@ LinearOp GaussSeidelPreconditionerFactory::buildPreconditionerOperator(BlockedLi
 
    // get diagonal blocks
    std::vector<LinearOp> invDiag;
-   invOpsStrategy_->getInvD(blo,invDiag);
+   invOpsStrategy_->getInvD(blo,state,invDiag);
    TEUCHOS_ASSERT(rows==invDiag.size());
 
    if(solveType_==GS_UseUpperTriangle) {
