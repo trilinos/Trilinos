@@ -12,7 +12,7 @@ ac_cv_cxx_complex_blas_problem_fixed,
  AC_TRY_RUN([
 #include  <complex>
 extern "C" { 
-std::complex<float> F77_BLAS_MANGLE(cdotc,CDOTC)(std::complex<float> x[], const int* n, const  std::complex<float> x[], const int* incx, const std::complex<float> y[], const int* incy); 
+std::complex<float> F77_BLAS_MANGLE(cdotc,CDOTC)(std::complex<float> *ret, const int* n, const  std::complex<float> x[], const int* incx, const std::complex<float> y[], const int* incy); 
 }
 int main() {
  const int NUM=2;

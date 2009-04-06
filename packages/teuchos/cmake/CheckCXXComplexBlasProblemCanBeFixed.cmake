@@ -12,7 +12,7 @@ FUNCTION(CHECK_CXX_COMPLEX_BLAS_PROBLEM_CAN_BE_FIXED VARNAME)
 
 extern \"C\" {
   std::complex<float> F77_BLAS_MANGLE(cdotc,CDOTC)(
-    std::complex<float> *x, const int* n, const  std::complex<float> x[],
+    std::complex<float> *ret, const int* n, const  std::complex<float> x[],
     const int* incx, const std::complex<float> y[], const int* incy); 
 }
 
