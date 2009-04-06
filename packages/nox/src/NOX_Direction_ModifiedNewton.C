@@ -1,7 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -40,8 +39,11 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Direction_ModifiedNewton.H" // class definition
 #include "NOX_Common.H"
+
+#ifdef WITH_PRERELEASE
+
+#include "NOX_Direction_ModifiedNewton.H" // class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"

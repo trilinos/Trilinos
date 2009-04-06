@@ -1,7 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -70,6 +69,9 @@
 */
 
 #include "NOX_Common.H"
+
+#ifdef WITH_PRERELEASE
+
 #include "NOX_LineSearch_Tensor.H"
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"

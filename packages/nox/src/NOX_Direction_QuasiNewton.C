@@ -1,5 +1,3 @@
-#ifdef WITH_PRERELEASE
-
 // $Id$ 
 // $Source$ 
 
@@ -42,6 +40,8 @@
 //@HEADER
 
 #include "NOX_Common.H"
+
+#ifdef WITH_PRERELEASE
 
 #include "NOX_Direction_QuasiNewton.H" 
 #include "NOX_Abstract_Vector.H"

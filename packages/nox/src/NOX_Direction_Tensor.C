@@ -1,7 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -39,7 +38,6 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-
 
 /*  Known Issues:
 **
@@ -101,6 +99,10 @@
 **    2:  Print vectors and matrices
 */
 
+#include "NOX_Common.H"
+
+#ifdef WITH_PRERELEASE
+
 #define DEBUG_LEVEL 1
 #undef CALCULATE_GRP_NEWTON
 #undef STORE_HESSENBERG
@@ -111,7 +113,6 @@
 #define PROTECT_CURVILINEAR_DESCENT
 
 #include "NOX_Direction_Tensor.H" // class definition
-#include "NOX_Common.H"
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Solver_Generic.H"

@@ -1,8 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
-
 //@HEADER
 // ************************************************************************
 // 
@@ -43,6 +41,10 @@
 
 #ifndef NOX_DIRECTION_MODIFIEDNEWTON_H
 #define NOX_DIRECTION_MODIFIEDNEWTON_H
+
+#include "NOX_Common.H"
+
+#ifdef WITH_PRERELEASE
 
 #include "NOX_Direction_Generic.H" // base class
 #include "Teuchos_ParameterList.hpp"	   // class data element 

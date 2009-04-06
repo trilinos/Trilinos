@@ -1,7 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -42,6 +41,10 @@
 
 #ifndef NOX_LINESEARCH_CURVILINEAR_H
 #define NOX_LINESEARCH_CURVILINEAR_H
+
+#include "NOX_Common.H"
+
+#ifdef WITH_PRERELEASE
 
 #include "NOX_LineSearch_Generic.H" // base class
 #include "NOX_LineSearch_Utils_Printing.H"  // class data member

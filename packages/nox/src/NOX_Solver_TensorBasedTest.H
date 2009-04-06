@@ -1,7 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -42,6 +41,10 @@
 
 #ifndef NOX_SOLVER_TENSORBASEDTEST_H
 #define NOX_SOLVER_TENSORBASEDTEST_H
+
+#include "NOX_Common.H"
+
+#ifdef WITH_PRERELEASE
 
 #include "NOX_Solver_Generic.H"	    // base class
 #include "NOX_Solver_PrePostOperator.H"	 // class data element

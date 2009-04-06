@@ -1,7 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -42,6 +41,10 @@
 
 #ifndef NOX_DIRECTION_TENSOR_H
 #define NOX_DIRECTION_TENSOR_H
+
+#include "NOX_Common.H"
+
+#ifdef WITH_PRERELEASE
 
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Direction_Utils_InexactNewton.H" // class data element

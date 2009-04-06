@@ -1,7 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
 //@HEADER
 // ************************************************************************
 // 
@@ -69,10 +68,13 @@
 **  Is this really true?
 */
 
+#include "NOX_Common.H"
+
+#ifdef WITH_PRERELEASE
+
 #include "NOX_Solver_TensorBasedTest.H"	// class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
-#include "NOX_Common.H"
 #include "Teuchos_ParameterList.hpp"
 #include "NOX_Utils.H"
 #include "NOX_GlobalData.H"
