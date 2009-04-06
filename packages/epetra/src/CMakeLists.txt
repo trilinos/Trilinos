@@ -150,12 +150,14 @@ SET(SOURCES ${SOURCES}
   Epetra_Vector.cpp
   )
 
-SET(FORTRAN_SOURCES
-  Epetra_dcrsmm.f
-  Epetra_dcrsmv.f
-  Epetra_dcrssm.f
-  Epetra_dcrssv.f
-  )
+IF(Trilinos_ENABLE_Fortran)
+  SET(SOURCES ${SOURCES}	
+    Epetra_dcrsmm.f
+    Epetra_dcrsmv.f
+    Epetra_dcrssm.f
+    Epetra_dcrssv.f
+    )	
+ENDIF()
 
 # Set addition headers and source based on package-specific 
 # configuration options
@@ -196,17 +198,8 @@ ENDIF()
 # C) Define the targets for package's library(s)
 #
 
-IF(Trilinos_ENABLE_Fortran)  
-  SET(EPETRA_FORTRAN_LIB epetra_fortran)  
-  PACKAGE_ADD_LIBRARY(
-    ${EPETRA_FORTRAN_LIB}
-    SOURCES ${FORTRAN_SOURCES}
-    )
-ENDIF()
-
 PACKAGE_ADD_LIBRARY(
   epetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS ${EPETRA_FORTRAN_LIB}
   )
