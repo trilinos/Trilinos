@@ -497,8 +497,8 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, getValidParameters) {
 TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, usedParameters) {
   const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
   ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
-  ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo B");
-  ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo C");
+  ob->setObjectFactory(abstractFactoryStd<Foo,FooB>(),"Foo B");
+  ob->setObjectFactory(abstractFactoryStd<Foo,FooC>(),"Foo C");
   {
     const RCP<ParameterList> pl = parameterList();
     ob->setParameterList(pl);
@@ -534,6 +534,92 @@ TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, usedParameters) {
     ob->unsetParameterList();
   }
 }  
+
+TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setDefaultObject_withOneUsePL ) {
+  const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
+  ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
+  ob->setObjectFactory(abstractFactoryStd<Foo,FooB>(),"Foo B");
+  ob->setObjectFactory(abstractFactoryStd<Foo,FooC>(),"Foo C");
+  {
+    const RCP<ParameterList> pl = parameterList();
+    ob->setParameterList(pl);
+    const RCP<Foo> foo = ob->create();
+    RCP<FooC> fooC = Teuchos::rcp_dynamic_cast<FooC>(foo,false);
+    TEST_ASSERT( !is_null(fooC) );
+  }
+  {
+    const RCP<ParameterList> pl = parameterList();
+    ob->setParameterList(pl);
+    ob->setDefaultObject("Foo A");
+    const RCP<Foo> foo = ob->create();
+    RCP<FooA> fooA = Teuchos::rcp_dynamic_cast<FooA>(foo,false);
+    TEST_ASSERT( !is_null(fooA) );
+  }
+  {
+    const RCP<ParameterList> pl = parameterList();
+    ob->setParameterList(pl);
+    ob->setDefaultObject("None");
+    const RCP<Foo> foo = ob->create();
+    TEST_ASSERT( is_null(foo) );
+  }
+  {
+#ifdef TEUCHOS_DEBUG
+    TEST_THROW(ob->setDefaultObject("Foo D"), std::logic_error);
+#else
+    ob->setDefaultObject("Foo D");
+    TEST_THROW(ob->getValidParameters(), std::logic_error);
+#endif // TEUCHOS_DEBUG
+  }
+}
+TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setDefaultObject_withMultipleUsePL ) {
+  const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
+  ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
+  ob->setObjectFactory(abstractFactoryStd<Foo,FooB>(),"Foo B");
+  ob->setObjectFactory(abstractFactoryStd<Foo,FooC>(),"Foo C");
+  const RCP<ParameterList> pl = parameterList();
+  ob->setParameterList(pl);
+  {
+    const RCP<Foo> foo = ob->create();
+    RCP<FooC> fooC = Teuchos::rcp_dynamic_cast<FooC>(foo,false);
+    TEST_ASSERT( !is_null(fooC) );
+    // Note:  At this point, pl contains "Foo Type = Foo C"
+    // And this pl was set on the ObjectBuilder, so defaultObject does no good.
+  }
+  {
+    ob->setDefaultObject("Foo A");
+    const RCP<Foo> foo = ob->create();
+    RCP<FooA> fooA = Teuchos::rcp_dynamic_cast<FooA>(foo,false);
+    TEST_ASSERT( is_null(fooA) );
+  }
+  {
+    ob->setDefaultObject("None");
+    const RCP<Foo> foo = ob->create();
+    TEST_ASSERT( !is_null(foo) );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Teuchos_ObjectBuilder, setDefaultObject_withoutPL ) {
+  const RCP<ObjectBuilder<Foo> > ob = objectBuilder<Foo>("Foo","Foo Type");
+  ob->setObjectFactory(abstractFactoryStd<Foo,FooA>(),"Foo A");
+  ob->setObjectFactory(abstractFactoryStd<Foo,FooB>(),"Foo B");
+  ob->setObjectFactory(abstractFactoryStd<Foo,FooC>(),"Foo C");
+  {
+    const RCP<Foo> foo = ob->create();
+    RCP<FooC> fooC = Teuchos::rcp_dynamic_cast<FooC>(foo,false);
+    TEST_ASSERT( !is_null(fooC) );
+  }
+  {
+    ob->setDefaultObject("Foo A");
+    const RCP<Foo> foo = ob->create();
+    RCP<FooA> fooA = Teuchos::rcp_dynamic_cast<FooA>(foo,false);
+    TEST_ASSERT( !is_null(fooA) );
+  }
+  {
+    ob->setDefaultObject("None");
+    const RCP<Foo> foo = ob->create();
+    TEST_ASSERT( is_null(foo) );
+  }
+}
 
 } // namespace Teuchos
 

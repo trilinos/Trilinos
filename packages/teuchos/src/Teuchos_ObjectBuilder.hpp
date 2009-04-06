@@ -85,6 +85,12 @@ public:
    */
   std::string getObjectName() const;
 
+  /** \brief Set the name of the desired object to be created when the
+   * parameter list does not specify which object you want and when create is
+   * called without arguments.
+   */
+  void setDefaultObject( const std::string &defaultObject_name );
+
   /** \brief . */
   RCP<ObjectType> create(
     const std::string &objectName = ""
@@ -129,7 +135,7 @@ private:
 
   Array<std::string> validObjectNames_;
   Array<object_fcty_t> objectArray_;
-  std::string defaultObject_;
+  std::string defaultObject_name_;
 
   // //////////////////////////////////////
   // Private member functions
@@ -189,7 +195,7 @@ void ObjectBuilder<ObjectType>::setObjectFactory(
   TEST_FOR_EXCEPT( objectName.length() == 0 );
   validObjectNames_.push_back(objectName);
   objectArray_.push_back(objectFactory);
-  defaultObject_ = objectName;
+  defaultObject_name_ = objectName;
   validParamList_ = null;
 #ifdef TEUCHOS_DEBUG
   this->getValidParameters();
@@ -212,7 +218,7 @@ ObjectBuilder<ObjectType>::getObjectName() const
     pl = parameterList();
     pl->setParameters(*this->getValidParameters());
   }
-  return objectValidator_->getStringValue(*pl, objectType_name_, defaultObject_);
+  return objectValidator_->getStringValue(*pl, objectType_name_, defaultObject_name_);
 }
 
 
@@ -271,8 +277,9 @@ ObjectBuilder<ObjectType>::getValidParameters() const
         validObjectNames_, objectType_name_
         )
       );
+    objectValidator_->validateString(defaultObject_name_,objectType_name_);
     validParamList->set(
-      objectType_name_, defaultObject_,
+      objectType_name_, defaultObject_name_,
       (std::string("Determines the type of " + object_name_ + " object that will be built.\n")
         + "The parameters for each " + objectType_name_ + " are specified in this sublist" 
         ).c_str(),
@@ -291,6 +298,21 @@ ObjectBuilder<ObjectType>::getValidParameters() const
   return validParamList_;
 }
 
+template<class ObjectType>
+void ObjectBuilder<ObjectType>::setDefaultObject(
+    const std::string &defaultObject_name
+    )
+{
+#ifdef TEUCHOS_DEBUG
+  if (is_null(validParamList_)) { // We need the objectValidator_
+    this->getValidParameters();
+  }
+  objectValidator_->validateString(defaultObject_name,objectType_name_);
+#endif // TEUCHOS_DEBUG
+  defaultObject_name_ = defaultObject_name;
+  // This is necessary to change the default in the valid parameter list 
+  validParamList_ = null; 
+}
 
 template<class ObjectType>
 RCP<ObjectType >
@@ -366,9 +388,9 @@ void ObjectBuilder<ObjectType>::initializeDefaults_()
   object_name_ = "Object";
   objectType_name_ = "Object Type";
 
-  defaultObject_ = "None";
+  defaultObject_name_ = "None";
   validObjectNames_.resize(0);
-  validObjectNames_.push_back(defaultObject_);
+  validObjectNames_.push_back(defaultObject_name_);
 
 }
 
