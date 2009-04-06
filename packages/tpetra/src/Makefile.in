@@ -345,8 +345,7 @@ COMP =
 
 # List locations of include files within Trilinos but outside of this package
 AM_CPPFLAGS = \
-	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src \
-	-I$(top_srcdir)/../kokkos/src -I$(top_builddir)/../kokkos/src
+	-I$(top_srcdir)/../teuchos/src -I$(top_builddir)/../teuchos/src
 
 
 # The following section can be duplicated for building multiple libraries -
