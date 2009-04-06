@@ -53,7 +53,7 @@ Prober::Prober(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 
 Prober::Prober(Teuchos::RCP<const Epetra_CrsMatrix> input_matrix,
                const Teuchos::ParameterList & paramlist,
-               bool compute_now):input_graph_(Teuchos::rcp<const Epetra_CrsGraph>(&input_matrix->Graph(),false)),List_(paramlist),colorer_(0),has_colored(false){
+               bool compute_now):input_graph_(Teuchos::rcp<const Epetra_CrsGraph>(&input_matrix->Graph(),false)),colorer_(0),List_(paramlist),has_colored(false){
   setList(paramlist);
   if(compute_now) color();
 }
