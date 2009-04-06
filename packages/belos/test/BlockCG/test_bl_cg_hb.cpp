@@ -49,6 +49,7 @@ int main(int argc, char *argv[]) {
   // Initialize MPI	
   MPI_Init(&argc,&argv); 	
   Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
+  (void)mpiFinalize;
 #endif
   //
   using Teuchos::RCP;
