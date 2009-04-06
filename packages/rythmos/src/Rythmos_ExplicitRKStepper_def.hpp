@@ -160,6 +160,11 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
   this->initialize_();
+#ifdef RYTHMOS_DEBUG
+    TEST_FOR_EXCEPTION( flag == STEP_TYPE_VARIABLE, std::logic_error,
+        "Error!  ExplicitRKStepper does not support variable time steps at this time."
+        );
+#endif // RYTHMOS_DEBUG
   if ((flag == STEP_TYPE_VARIABLE) || (dt == ST::zero())) {
     return(Scalar(-ST::one()));
   }

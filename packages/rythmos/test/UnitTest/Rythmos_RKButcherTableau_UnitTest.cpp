@@ -377,7 +377,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateERKButcherTableau ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createForwardEuler_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Forward Euler");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new ForwardEuler_RKBT<double>());
   TEST_EQUALITY_CONST( rkbt->numStages(), 1 );
   TEST_EQUALITY_CONST( rkbt->A()(0,0), 0.0 );
   TEST_EQUALITY_CONST( rkbt->b()(0), 1.0 );
@@ -386,7 +386,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createForwardEuler_RKBT ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createBackwardEuler_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Backward Euler");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new BackwardEuler_RKBT<double>());
   TEST_EQUALITY_CONST( rkbt->numStages(), 1 );
   TEST_EQUALITY_CONST( rkbt->A()(0,0), 1.0 );
   TEST_EQUALITY_CONST( rkbt->b()(0), 1.0 );
@@ -394,21 +394,21 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createBackwardEuler_RKBT ) {
   TEST_EQUALITY_CONST( rkbt->order(), 1 );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4Stage_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Explicit 4 Stage");
+TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4Stage4thOrder_RKBT ) {
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Explicit4Stage4thOrder_RKBT<double>());
   double tol = 1.0e-10;
   validateERKButcherTableau(*rkbt);
-  //validate4thOrderRKButcherTableau(rkbt);
+  //validate3rdOrderRKButcherTableau(rkbt);
   const Teuchos::SerialDenseMatrix<int,double> A = rkbt->A();
   const Teuchos::SerialDenseVector<int,double> b = rkbt->b();
   const Teuchos::SerialDenseVector<int,double> c = rkbt->c();
   TEST_EQUALITY_CONST( rkbt->numStages(), 4 );
-  TEST_FLOATING_EQUALITY( A(1,0), 0.5, tol );
-  TEST_FLOATING_EQUALITY( A(2,0), 0.0, tol );
-  TEST_FLOATING_EQUALITY( A(2,1), 0.5, tol );
-  TEST_FLOATING_EQUALITY( A(3,0), 0.0, tol );
-  TEST_FLOATING_EQUALITY( A(3,1), 0.0, tol );
-  TEST_FLOATING_EQUALITY( A(3,2), 1.0, tol );
+  TEST_FLOATING_EQUALITY( A(1,0),  0.5, tol );
+  TEST_FLOATING_EQUALITY( A(2,0),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(2,1),  0.5, tol );
+  TEST_FLOATING_EQUALITY( A(3,0),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(3,1),  0.0, tol );
+  TEST_FLOATING_EQUALITY( A(3,2),  1.0, tol );
   TEST_FLOATING_EQUALITY( b(0), 1.0/6.0, tol );
   TEST_FLOATING_EQUALITY( b(1), 1.0/3.0, tol );
   TEST_FLOATING_EQUALITY( b(2), 1.0/3.0, tol );
@@ -421,7 +421,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4Stage_RKBT ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3_8Rule_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Explicit 3/8 Rule");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Explicit3_8Rule_RKBT<double>());
   double tol = 1.0e-10;
   validateERKButcherTableau(*rkbt);
   //validate4thOrderRKButcherTableau(rkbt);
@@ -447,7 +447,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3_8Rule_RKBT ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit2Stage2ndOrderRunge_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Explicit 2 Stage 2nd order by Runge");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Explicit2Stage2ndOrderRunge_RKBT<double>());
   validateERKButcherTableau(*rkbt);
   //validate2ndOrderRKButcherTableau(rkbt);
   const Teuchos::SerialDenseMatrix<int,double> A = rkbt->A();
@@ -463,7 +463,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit2Stage2ndOrderRunge_R
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4Stage3rdOrderRunge_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Explicit 4 Stage 3rd order by Runge");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Explicit4Stage3rdOrderRunge_RKBT<double>());
   double tol = 1.0e-10;
   validateERKButcherTableau(*rkbt);
   //validate3rdOrderRKButcherTableau(rkbt);
@@ -489,7 +489,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4Stage3rdOrderRunge_R
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3Stage3rdOrderHeun_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Explicit 3 Stage 3rd order by Heun");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Explicit3Stage3rdOrderHeun_RKBT<double>());
   double tol = 1.0e-10;
   validateERKButcherTableau(*rkbt);
   //validate3rdOrderRKButcherTableau(rkbt);
@@ -510,7 +510,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3Stage3rdOrderHeun_RK
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3Stage3rdOrder_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Explicit 3 Stage 3rd order");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Explicit3Stage3rdOrder_RKBT<double>());
   double tol = 1.0e-10;
   validateERKButcherTableau(*rkbt);
   //validate3rdOrderRKButcherTableau(rkbt);
@@ -530,34 +530,8 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit3Stage3rdOrder_RKBT )
   TEST_EQUALITY_CONST( rkbt->order(), 3 );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createExplicit4Stage4thOrder_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Explicit 4 Stage");
-  double tol = 1.0e-10;
-  validateERKButcherTableau(*rkbt);
-  //validate3rdOrderRKButcherTableau(rkbt);
-  const Teuchos::SerialDenseMatrix<int,double> A = rkbt->A();
-  const Teuchos::SerialDenseVector<int,double> b = rkbt->b();
-  const Teuchos::SerialDenseVector<int,double> c = rkbt->c();
-  TEST_EQUALITY_CONST( rkbt->numStages(), 4 );
-  TEST_FLOATING_EQUALITY( A(1,0),  0.5, tol );
-  TEST_FLOATING_EQUALITY( A(2,0),  0.0, tol );
-  TEST_FLOATING_EQUALITY( A(2,1),  0.5, tol );
-  TEST_FLOATING_EQUALITY( A(3,0),  0.0, tol );
-  TEST_FLOATING_EQUALITY( A(3,1),  0.0, tol );
-  TEST_FLOATING_EQUALITY( A(3,2),  1.0, tol );
-  TEST_FLOATING_EQUALITY( b(0), 1.0/6.0, tol );
-  TEST_FLOATING_EQUALITY( b(1), 1.0/3.0, tol );
-  TEST_FLOATING_EQUALITY( b(2), 1.0/3.0, tol );
-  TEST_FLOATING_EQUALITY( b(3), 1.0/6.0, tol );
-  TEST_FLOATING_EQUALITY( c(0), 0.0, tol );
-  TEST_FLOATING_EQUALITY( c(1), 0.5, tol );
-  TEST_FLOATING_EQUALITY( c(2), 0.5, tol );
-  TEST_FLOATING_EQUALITY( c(3), 1.0, tol );
-  TEST_EQUALITY_CONST( rkbt->order(), 4 );
-}
-
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK2Stage3rdOrder_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Singly Diagonal IRK 2 Stage 3rd order");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new SDIRK2Stage3rdOrder_RKBT<double>());
   validateSDIRKButcherTableau(*rkbt);
   TEST_EQUALITY_CONST( rkbt->numStages(), 2 );
   const Teuchos::SerialDenseMatrix<int,double> A = rkbt->A();
@@ -577,7 +551,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK2Stage3rdOrder_RKBT ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createDIRK2Stage3rdOrder_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Diagonal IRK 2 Stage 3rd order");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new DIRK2Stage3rdOrder_RKBT<double>());
   validateDIRKButcherTableau(*rkbt);
   TEST_EQUALITY_CONST( rkbt->numStages(), 2 );
   const Teuchos::SerialDenseMatrix<int,double> A = rkbt->A();
@@ -597,7 +571,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createDIRK2Stage3rdOrder_RKBT ) {
 
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage4thOrderHammerHollingsworth_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 2 Stage 4th Order Hammer & Hollingsworth");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit2Stage4thOrderHammerHollingsworth_RKBT<double>());
   validateIRKButcherTableau(*rkbt);
   TEST_EQUALITY_CONST( rkbt->numStages(), 2 );
   const Teuchos::SerialDenseMatrix<int,double> A = rkbt->A();
@@ -616,7 +590,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage4thOrderHammerH
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage6thOrderKuntzmannButcher_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 3 Stage 6th Order Kuntzmann & Butcher");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit3Stage6thOrderKuntzmannButcher_RKBT<double>());
   double tol = 1.0e-10;
   validateIRKButcherTableau(*rkbt);
   TEST_EQUALITY_CONST( rkbt->numStages(), 3 );
@@ -644,7 +618,6 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage6thOrderKuntzma
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit4Stage8thOrderKuntzmannButcher_RKBT ) {
   // This RKBT doesn't pass convergence testing, so its excluded from the factory.
-  //RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 4 Stage 8th Order Kuntzmann & Butcher");
   RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit4Stage8thOrderKuntzmannButcher_RKBT<double>());
   double tol = 1.0e-10;
   validateIRKButcherTableau(*rkbt);
@@ -691,7 +664,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit4Stage8thOrderKuntzma
 
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit1Stage2ndOrderGauss_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 1 Stage 2nd order Gauss");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit1Stage2ndOrderGauss_RKBT<double>());
   validateIRKButcherTableau(*rkbt);
   TEST_EQUALITY_CONST( rkbt->numStages(), 1 );
   const Teuchos::SerialDenseMatrix<int,double> A = rkbt->A();
@@ -704,7 +677,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit1Stage2ndOrderGauss_R
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage4thOrderGauss_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 2 Stage 4th order Gauss");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit2Stage4thOrderGauss_RKBT<double>());
   double tol = 1.0e-10;
   validateIRKButcherTableau(*rkbt);
   TEST_EQUALITY_CONST( rkbt->numStages(), 2 );
@@ -723,7 +696,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage4thOrderGauss_R
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage6thOrderGauss_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 3 Stage 6th order Gauss");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit3Stage6thOrderGauss_RKBT<double>());
   double tol = 1.0e-10;
   validateIRKButcherTableau(*rkbt);
   TEST_EQUALITY_CONST( rkbt->numStages(), 3 );
@@ -749,7 +722,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage6thOrderGauss_R
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit1Stage1stOrderRadauA_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 1 Stage 1st order Radau left");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit1Stage1stOrderRadauA_RKBT<double>());
   TEST_EQUALITY_CONST( rkbt->numStages(), 1 );
   TEST_EQUALITY_CONST( rkbt->A()(0,0), 1.0 );
   TEST_EQUALITY_CONST( rkbt->b()(0), 1.0 );
@@ -758,7 +731,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit1Stage1stOrderRadauA_
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage3rdOrderRadauA_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 2 Stage 3rd order Radau left");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit2Stage3rdOrderRadauA_RKBT<double>());
   double tol = 1.0e-10;
   TEST_EQUALITY_CONST( rkbt->numStages(), 2 );
   TEST_FLOATING_EQUALITY( rkbt->A()(0,0), 0.25, tol );
@@ -773,7 +746,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage3rdOrderRadauA_
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage5thOrderRadauA_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 3 Stage 5th order Radau left");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit3Stage5thOrderRadauA_RKBT<double>());
   double tol = 1.0e-10;
   TEST_EQUALITY_CONST( rkbt->numStages(), 3 );
   TEST_FLOATING_EQUALITY( rkbt->A()(0,0), 1.0/9.0, tol );
@@ -795,7 +768,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage5thOrderRadauA_
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit1Stage1stOrderRadauB_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 1 Stage 1st order Radau right");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit1Stage1stOrderRadauB_RKBT<double>());
   TEST_EQUALITY_CONST( rkbt->numStages(), 1 );
   TEST_EQUALITY_CONST( rkbt->A()(0,0), 1.0 );
   TEST_EQUALITY_CONST( rkbt->b()(0), 1.0 );
@@ -804,7 +777,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit1Stage1stOrderRadauB_
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage3rdOrderRadauB_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 2 Stage 3rd order Radau right");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit2Stage3rdOrderRadauB_RKBT<double>());
   double tol = 1.0e-10;
   TEST_EQUALITY_CONST( rkbt->numStages(), 2 );
   TEST_FLOATING_EQUALITY( rkbt->A()(0,0), 5.0/12.0, tol );
@@ -819,7 +792,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage3rdOrderRadauB_
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage5thOrderRadauB_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 3 Stage 5th order Radau right");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit3Stage5thOrderRadauB_RKBT<double>());
   double tol = 1.0e-10;
   TEST_EQUALITY_CONST( rkbt->numStages(), 3 );
   TEST_FLOATING_EQUALITY( rkbt->A()(0,0), (88.0-7.0*sqrt(6.0))/360.0, tol );
@@ -841,7 +814,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage5thOrderRadauB_
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage2ndOrderLobattoA_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 2 Stage 2nd order Lobatto A");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit2Stage2ndOrderLobattoA_RKBT<double>());
   TEST_EQUALITY_CONST( rkbt->numStages(), 2 );
   TEST_EQUALITY_CONST( rkbt->A()(0,0), 0.0 );
   TEST_EQUALITY_CONST( rkbt->A()(0,1), 0.0 );
@@ -855,7 +828,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage2ndOrderLobatto
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage4thOrderLobattoA_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 3 Stage 4th order Lobatto A");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit3Stage4thOrderLobattoA_RKBT<double>());
   double tol = 1.0e-10;
   TEST_EQUALITY_CONST( rkbt->numStages(), 3 );
   TEST_FLOATING_EQUALITY( rkbt->A()(0,0), 0.0, tol );
@@ -877,7 +850,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage4thOrderLobatto
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit4Stage6thOrderLobattoA_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 4 Stage 6th order Lobatto A");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit4Stage6thOrderLobattoA_RKBT<double>());
   double tol = 1.0e-10;
   TEST_EQUALITY_CONST( rkbt->numStages(), 4 );
   TEST_FLOATING_EQUALITY( rkbt->A()(0,0), 0.0, tol );
@@ -908,7 +881,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit4Stage6thOrderLobatto
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage2ndOrderLobattoB_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 2 Stage 2nd order Lobatto B");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit2Stage2ndOrderLobattoB_RKBT<double>());
   TEST_EQUALITY_CONST( rkbt->numStages(), 2 );
   TEST_EQUALITY_CONST( rkbt->A()(0,0), 0.5 );
   TEST_EQUALITY_CONST( rkbt->A()(0,1), 0.0 );
@@ -922,7 +895,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage2ndOrderLobatto
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage4thOrderLobattoB_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 3 Stage 4th order Lobatto B"); 
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit3Stage4thOrderLobattoB_RKBT<double>());
   double tol = 1.0e-10;
   TEST_EQUALITY_CONST( rkbt->numStages(), 3 );
   TEST_FLOATING_EQUALITY( rkbt->A()(0,0), 1.0/6.0, tol );
@@ -944,7 +917,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage4thOrderLobatto
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit4Stage6thOrderLobattoB_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 4 Stage 6th order Lobatto B");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit4Stage6thOrderLobattoB_RKBT<double>());
   double tol = 1.0e-10;
   TEST_EQUALITY_CONST( rkbt->numStages(), 4 );
   TEST_FLOATING_EQUALITY( rkbt->A()(0,0), 1.0/12.0, tol );
@@ -975,7 +948,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit4Stage6thOrderLobatto
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage2ndOrderLobattoC_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 2 Stage 2nd order Lobatto C");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit2Stage2ndOrderLobattoC_RKBT<double>());
   TEST_EQUALITY_CONST( rkbt->numStages(), 2 );
   TEST_EQUALITY_CONST( rkbt->A()(0,0), 0.5 );
   TEST_EQUALITY_CONST( rkbt->A()(0,1), -0.5 );
@@ -989,7 +962,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit2Stage2ndOrderLobatto
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage4thOrderLobattoC_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 3 Stage 4th order Lobatto C");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit3Stage4thOrderLobattoC_RKBT<double>());
   double tol = 1.0e-10;
   TEST_EQUALITY_CONST( rkbt->numStages(), 3 );
   TEST_FLOATING_EQUALITY( rkbt->A()(0,0), 1.0/6.0, tol );
@@ -1011,7 +984,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit3Stage4thOrderLobatto
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit4Stage6thOrderLobattoC_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 4 Stage 6th order Lobatto C");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new Implicit4Stage6thOrderLobattoC_RKBT<double>());
   double tol = 1.0e-10;
   TEST_EQUALITY_CONST( rkbt->numStages(), 4 );
   TEST_FLOATING_EQUALITY( rkbt->A()(0,0), 1.0/12.0, tol );
@@ -1042,7 +1015,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createImplicit4Stage6thOrderLobatto
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK5Stage5thOrder_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Singly Diagonal IRK 5 Stage 5th order");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new SDIRK5Stage5thOrder_RKBT<double>());
   //TEST_THROW(validateSDIRKButcherTableau<double>(rkbt), std::logic_error );
   double tol = 1.0e-10;
   validateSDIRKButcherTableau(*rkbt);
@@ -1096,7 +1069,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK5Stage5thOrder_RKBT ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK5Stage4thOrder_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Singly Diagonal IRK 5 Stage 4th order");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new SDIRK5Stage4thOrder_RKBT<double>());
   double tol = 1.0e-10;
   validateSDIRKButcherTableau(*rkbt);
   TEST_EQUALITY_CONST( rkbt->numStages(), 5 );
@@ -1158,7 +1131,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK5Stage4thOrder_RKBT ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createSDIRK3Stage4thOrder_RKBT ) {
-  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Singly Diagonal IRK 3 Stage 4th order");
+  RCP<RKButcherTableauBase<double> > rkbt = rcp(new SDIRK3Stage4thOrder_RKBT<double>());
   //TEST_THROW(validateSDIRKButcherTableau<double>(rkbt), std::logic_error );
   double tol = 1.0e-10;
   validateSDIRKButcherTableau(*rkbt);
@@ -1292,22 +1265,23 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, validateSDIRKButcherTableau ) {
 //}
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, operatorEqualEqual ) {
+  RCP<RKButcherTableauBuilder<double> > rkbtB = rKButcherTableauBuilder<double>();
   {
-    RCP<RKButcherTableauBase<double> > rkbt_1 = createRKBT<double>("Explicit 4 Stage");
+    RCP<RKButcherTableauBase<double> > rkbt_1 = rkbtB->create("Explicit 4 Stage");
     {
-      RCP<RKButcherTableauBase<double> > rkbt_2 = createRKBT<double>("Explicit 4 Stage");
+      RCP<RKButcherTableauBase<double> > rkbt_2 = rkbtB->create("Explicit 4 Stage");
       TEST_EQUALITY_CONST( *rkbt_1 == *rkbt_2, true ); // same tableau
     }
     {
-      RCP<RKButcherTableauBase<double> > rkbt_2 = createRKBT<double>("Explicit 3/8 Rule");
+      RCP<RKButcherTableauBase<double> > rkbt_2 = rkbtB->create("Explicit 3/8 Rule");
       TEST_EQUALITY_CONST( *rkbt_1 == *rkbt_2, false ); // different values in A,b,c
     }
     {
-      RCP<RKButcherTableauBase<double> > rkbt_2 = createRKBT<double>("Backward Euler");
+      RCP<RKButcherTableauBase<double> > rkbt_2 = rkbtB->create("Backward Euler");
       TEST_EQUALITY_CONST( *rkbt_1 == *rkbt_2, false ); // different number of stages
     }
     {
-      RCP<RKButcherTableauBase<double> > rkbt_2 = createRKBT<double>("Implicit 3 Stage 6th order Gauss");
+      RCP<RKButcherTableauBase<double> > rkbt_2 = rkbtB->create("Implicit 3 Stage 6th order Gauss");
       TEST_EQUALITY_CONST( *rkbt_1 == *rkbt_2, false ); // different number of stages
     }
   }
@@ -1369,6 +1343,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, operatorEqualEqual ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, determineType ) {
+  RCP<RKButcherTableauBuilder<double> > rkbtB = rKButcherTableauBuilder<double>();
   { 
     //RCP<RKButcherTableauBase<double> > rkbt = rcp(new RKButcherTableau<double>());
     RCP<RKButcherTableauBase<double> > rkbt = rKButcherTableau<double>();
@@ -1376,27 +1351,27 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, determineType ) {
     TEST_EQUALITY_CONST( type, RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_INVALID );
   }
   {
-    RCP<RKButcherTableauBase<double> > rkbt  = createRKBT<double>("Explicit 4 Stage");
+    RCP<RKButcherTableauBase<double> > rkbt  = rkbtB->create("Explicit 4 Stage");
     E_RKButcherTableauTypes type = determineRKBTType(*rkbt);
     TEST_EQUALITY_CONST( type, RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_ERK );
   }
   {
-    RCP<RKButcherTableauBase<double> > rkbt  = createRKBT<double>("Forward Euler");
+    RCP<RKButcherTableauBase<double> > rkbt  = rkbtB->create("Forward Euler");
     E_RKButcherTableauTypes type = determineRKBTType(*rkbt);
     TEST_EQUALITY_CONST( type, RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_ERK );
   }
   {
-    RCP<RKButcherTableauBase<double> > rkbt  = createRKBT<double>("Backward Euler");
+    RCP<RKButcherTableauBase<double> > rkbt  = rkbtB->create("Backward Euler");
     E_RKButcherTableauTypes type = determineRKBTType(*rkbt);
     TEST_EQUALITY_CONST( type, RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_IRK );
   }
   {
-    RCP<RKButcherTableauBase<double> > rkbt  = createRKBT<double>("Implicit 2 Stage 4th order Gauss");
+    RCP<RKButcherTableauBase<double> > rkbt  = rkbtB->create("Implicit 2 Stage 4th order Gauss");
     E_RKButcherTableauTypes type = determineRKBTType(*rkbt);
     TEST_EQUALITY_CONST( type, RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_IRK );
   }
   {
-    RCP<RKButcherTableauBase<double> > rkbt  = createRKBT<double>("Singly Diagonal IRK 5 Stage 5th order");
+    RCP<RKButcherTableauBase<double> > rkbt  = rkbtB->create("Singly Diagonal IRK 5 Stage 5th order");
     E_RKButcherTableauTypes type = determineRKBTType(*rkbt);
     TEST_EQUALITY_CONST( type, RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK );
   }
@@ -1418,6 +1393,12 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, determineType ) {
     E_RKButcherTableauTypes type = determineRKBTType(*rkbt);
     TEST_EQUALITY_CONST( type, RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK );
   }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, createRKBT ) {
+  RCP<RKButcherTableauBase<double> > rkbtA = createRKBT<double>("Forward Euler");
+  RCP<ForwardEuler_RKBT<double> > rkbtB = Teuchos::rcp_dynamic_cast<ForwardEuler_RKBT<double> >(rkbtA,false);
+  TEST_ASSERT( !is_null(rkbtB) );
 }
 
 /*

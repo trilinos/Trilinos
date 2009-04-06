@@ -503,7 +503,6 @@ void ImplicitRKStepper<Scalar>::initialize_()
 
   TEST_FOR_EXCEPT(is_null(model_));
   TEST_FOR_EXCEPT(is_null(solver_));
-  TEST_FOR_EXCEPT(is_null(irk_W_factory_));
   TEST_FOR_EXCEPT(is_null(irkButcherTableau_));
 
   if (is_null(x_)) {
@@ -524,6 +523,7 @@ void ImplicitRKStepper<Scalar>::initialize_()
   // Set up the IRK mdoel
 
   if (!isDirk_) { // General Implicit RK 
+    TEST_FOR_EXCEPT(is_null(irk_W_factory_));
     irkModel_ = implicitRKModelEvaluator(
       model_,basePoint_,irk_W_factory_,irkButcherTableau_);
   } else { // Diagonal Implicit RK

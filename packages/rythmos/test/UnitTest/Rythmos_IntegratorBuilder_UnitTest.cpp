@@ -884,18 +884,119 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_BackwardEuler ) {
   }
 }
 
-/*
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_ERK ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<SinCosModel> model = sinCosModel(false);
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*(ib->getValidParameters()));
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Explicit RK");
+  pl->sublist("Stepper Settings").sublist("Runge Kutta Butcher Tableau Selection").set("Runge Kutta Butcher Tableau Type","Explicit 4 Stage");
+  pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
+  pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
+  // 04/6/09 tscoffe:  We need to fix the InterpolationBuffer to work with ERK!
+  pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","None");
+  ib->setParameterList(pl);
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver; // null
+  RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+  Teuchos::Array<double> time_vec;
+  time_vec.push_back(pl->sublist("Integrator Settings").get<double>("Final Time"));
+  integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
+  TEST_ASSERT( true ); 
 }
-TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_FE ) {
-}
+
+//TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_FE ) {
+//}
+
+/*
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_BE ) {
-}
-TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IRK ) {
-}
-TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IBDF ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<SinCosModel> model = sinCosModel(true);
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*(ib->getValidParameters()));
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
+  pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
+  pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
+  ib->setParameterList(pl);
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
+  RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+  Teuchos::Array<double> time_vec;
+  time_vec.push_back(pl->sublist("Integrator Settings").get<double>("Final Time"));
+  integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
+  TEST_ASSERT( true ); 
 }
 */
+
+/*
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_DIRK ) {
+  // DIRK/SDIRK w/o WFactory
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<ParameterList> modelPL = Teuchos::parameterList();
+  modelPL->sublist("Stratimikos").set("Linear Solver Type","AztecOO");
+  modelPL->sublist("Stratimikos").set("Preconditioner Type","None");
+  modelPL->sublist("DiagonalTransientModel").set("NumElements",2);
+  RCP<Thyra::ModelEvaluator<double> > model = getDiagonalModel<double>(modelPL);
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*(ib->getValidParameters()));
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit RK");
+  pl->sublist("Stepper Settings").sublist("Runge Kutta Butcher Tableau Selection").set("Runge Kutta Butcher Tableau Type","Singly Diagonal IRK 2 Stage 3rd order");
+  pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
+  pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
+  ib->setParameterList(pl);
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
+  RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+  Teuchos::Array<double> time_vec;
+  time_vec.push_back(pl->sublist("Integrator Settings").get<double>("Final Time"));
+  integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
+  TEST_ASSERT( true ); 
+}
+*/
+
+/*
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IRK ) {
+  // Dense RKBT w/ WFactory
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<ParameterList> modelPL = Teuchos::parameterList();
+  modelPL->sublist("Stratimikos").set("Linear Solver Type","AztecOO");
+  modelPL->sublist("Stratimikos").set("Preconditioner Type","None");
+  modelPL->sublist("DiagonalTransientModel").set("NumElements",2);
+  RCP<Thyra::ModelEvaluator<double> > model = getDiagonalModel<double>(modelPL);
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*(ib->getValidParameters()));
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit RK");
+  pl->sublist("Stepper Settings").sublist("Runge Kutta Butcher Tableau Selection").set("Runge Kutta Butcher Tableau Type","Implicit 3 Stage 6th order Gauss");
+  pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
+  pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
+  ib->setParameterList(pl);
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
+  ib->setWFactoryObject(getWFactory<double>(modelPL));
+  RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+  Teuchos::Array<double> time_vec;
+  time_vec.push_back(pl->sublist("Integrator Settings").get<double>("Final Time"));
+  integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
+  TEST_ASSERT( true ); 
+}
+*/
+
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IBDF ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<SinCosModel> model = sinCosModel(true);
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*(ib->getValidParameters()));
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
+  pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","None");
+  ib->setParameterList(pl);
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
+  RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+  Teuchos::Array<double> time_vec;
+  time_vec.push_back(pl->sublist("Integrator Settings").get<double>("Final Time"));
+  integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
+  TEST_ASSERT( true ); 
+}
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_invalid ) {
   {

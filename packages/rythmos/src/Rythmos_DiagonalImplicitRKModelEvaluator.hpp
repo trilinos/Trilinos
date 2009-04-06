@@ -213,7 +213,7 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::initializeDIRKModel(
       std::logic_error,
       "Error!  The basepoint input arguments are incompatible with the model evaluator vector space!"
       );
-  TEST_FOR_EXCEPT(is_null(dirk_W_factory));
+  //TEST_FOR_EXCEPT(is_null(dirk_W_factory));
 
   daeModel_ = daeModel;
   basePoint_ = basePoint;
