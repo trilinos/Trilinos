@@ -49,7 +49,7 @@ SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
   ThreadPool            ThreadPool                     ""
   Phalanx               phalanx                        ""
   Pamgen                pamgen                         ""
-  Phdmesh               phdmesh                        OFF
+  Phdmesh               phdmesh                        ""
   NOX                   nox                            ""
   Moertel               moertel                        ""
   TrilinosCouplings     trilinoscouplings              ""

@@ -131,8 +131,8 @@ Package: Intrepid (Non-released)
 
 Package Transition Lead: Denis Ridzal (dridzal@sandia.gov)
 
-Status: Not started yet.  This package may lag behind in the transition and
-that is fine with the developers.
+Status: Initial cmakification complete. The libraries and a few tests and examples
+have been converted.
 
 Final Certification Date: [???]
 
@@ -456,7 +456,7 @@ Package: Phdmesh
 
 Package Transition Lead: Carter Edwards (hcedwar@sandia.gov)
 
-Status: Not started yet.
+Status: Initial cmakification complete. Libraries and a test have been converted.
 
 Final Certification Date: [???]
 

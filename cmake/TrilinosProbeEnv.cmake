@@ -71,7 +71,7 @@ ELSE()
 ENDIF()
 
 # Check if we need the math library or not and find the right one
-IF (NOT NATIVE_MS_WINDOWS AND NOT TPL_ENABLE_MPI)
+IF (NOT NATIVE_MS_WINDOWS)
   INCLUDE(MathLibraryNeeded)
 ENDIF()
 
