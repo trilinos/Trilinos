@@ -41,6 +41,11 @@
 #include "Rythmos_InterpolationBufferAppenderBase.hpp"
 #include "Rythmos_ErrWtVecCalcBase.hpp"
 #include "Rythmos_InterpolatorBase.hpp"
+#include "Rythmos_RKButcherTableau.hpp"
+
+// Thyra classes:
+#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
+
 
 // Specific objects to seed the builder:
 #include "Rythmos_DefaultIntegrator.hpp"
@@ -73,6 +78,7 @@ namespace {
   static std::string integrationControlSelection_docs = "Note that some settings conflict between step control and integration control.  In general, the integration control decides which steps will be fixed or variable, not the stepper.  When the integration control decides to take variable steps, the step control is then responsible for choosing appropriate step-sizes.";
   static std::string stepperSettings_name = "Stepper Settings";
   static std::string stepperSelection_name = "Stepper Selection";
+  static std::string stepperSelection_docs = "Special note for Implicit RK Stepper:  If a fully implicit RK Butcher tableau is chosen, then the stepper will not be fully initialized unless a W factory object is set on the IntegratorBuilder through setWFactoryObject."; 
   static std::string stepControlSettings_name = "Step Control Settings";
   static std::string stepControlSettings_docs = "Not all step control strategies are compatible with each stepper.  If the strategy has the name of a stepper in its name, then it only works with that stepper.";
   static std::string stepControlSelection_name = "Step Control Selection";
@@ -87,6 +93,8 @@ namespace {
   static bool landOnFinalTime_default = true;
   static std::string interpolatorSelection_name = "Interpolator Selection";
   static std::string stepperInterpolatorSelection_docs = "Note all Steppers accept an interpolator.  Currently, only the BackwardEuler stepper does.";
+  static std::string rkButcherTableauSelection_name = "Runge Kutta Butcher Tableau Selection";
+  static std::string rkButcherTableauSelection_docs = "Only the Explicit RK Stepper and the Implicit RK Stepper accept an RK Butcher Tableau.";
 
   // Builder names:
   static std::string integratorBuilder_name = "Rythmos::Integrator";
@@ -107,7 +115,7 @@ namespace {
   // Specific object names:
   static std::string defaultIntegrator_name = "Default Integrator";
   static std::string simpleIntegrationControl_name = "Simple Integration Control Strategy";
-  static std::string implicitBDFStepControl_name = "Implicit BDF Step Control Strategy";
+  static std::string implicitBDFStepControl_name = "Implicit BDF Stepper Step Control Strategy";
   static std::string defaultInterpolationBuffer_name = "Interpolation Buffer";
   static std::string pointwiseInterpolationBufferAppender_name = "Pointwise Interpolation Buffer Appender";
 //  static std::string smartInterpolationBufferAppender_name = "Smart Interpolation Buffer Appender";
@@ -148,6 +156,11 @@ public:
     const RCP<StepperBuilder<Scalar> > &stepperBuilder
     );
 
+  /** \brief Set the RK Butcher Tableau Builder object. */
+  void setRKButcherTableauBuilder(
+      const RCP<RKButcherTableauBuilder<Scalar> > & rkbtBuilder
+      );
+
   /** \brief Set a new Step Control Strategy factory object. */
   void setStepControlFactory(
     const RCP<const Teuchos::AbstractFactory<StepControlStrategyBase<Scalar> > > &stepControlStrategyFactory,
@@ -178,6 +191,11 @@ public:
     const std::string &interpolatorFactoryName
     );
   
+  /** \brief Set a W factory object. */
+  void setWFactoryObject(
+      const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &wFactoryObject
+      );
+
   /** \brief . */
   RCP<IntegratorBase<Scalar> > create(
     const RCP<const Thyra::ModelEvaluator<Scalar> > model,
@@ -213,11 +231,14 @@ private:
   RCP<Teuchos::ObjectBuilder<IntegratorBase<Scalar> > > integratorBuilder_;
   RCP<Teuchos::ObjectBuilder<IntegrationControlStrategyBase<Scalar> > > integrationControlBuilder_;
   RCP<StepperBuilder<Scalar> > stepperBuilder_;
+  RCP<RKButcherTableauBuilder<Scalar> > rkbtBuilder_;
   RCP<Teuchos::ObjectBuilder<StepControlStrategyBase<Scalar> > > stepControlBuilder_;
   RCP<Teuchos::ObjectBuilder<InterpolationBufferBase<Scalar> > > interpolationBufferBuilder_;
   RCP<Teuchos::ObjectBuilder<InterpolationBufferAppenderBase<Scalar> > > interpolationBufferAppenderBuilder_;
   RCP<Teuchos::ObjectBuilder<ErrWtVecCalcBase<Scalar> > > errWtVecCalcBuilder_;
   RCP<Teuchos::ObjectBuilder<InterpolatorBase<Scalar> > > interpolatorBuilder_;
+
+  RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > wFactoryObject_;
 
   RCP<ParameterList> paramList_;
   mutable RCP<ParameterList> validPL_;
@@ -282,6 +303,16 @@ void IntegratorBuilder<Scalar>::setStepperBuilder(
 }
 
 template<class Scalar>
+void IntegratorBuilder<Scalar>::setRKButcherTableauBuilder(
+    const RCP<RKButcherTableauBuilder<Scalar> > & rkbtBuilder
+    )
+{
+  TEST_FOR_EXCEPT(is_null(rkbtBuilder));
+  rkbtBuilder_ = rkbtBuilder;
+  validPL_ = Teuchos::null;
+}
+
+template<class Scalar>
 void IntegratorBuilder<Scalar>::setStepControlFactory(
   const RCP<const Teuchos::AbstractFactory<StepControlStrategyBase<Scalar> > > &stepControlStrategyFactory,
   const std::string &stepControlName
@@ -329,6 +360,15 @@ void IntegratorBuilder<Scalar>::setInterpolatorFactory(
 {
   interpolatorBuilder_->setObjectFactory(interpolatorFactory,interpolatorFactoryName);
   validPL_ = Teuchos::null;
+}
+
+template<class Scalar>
+void IntegratorBuilder<Scalar>::setWFactoryObject(
+    const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &wFactoryObject
+    )
+{
+  TEUCHOS_ASSERT( !is_null(wFactoryObject) );
+  wFactoryObject_ = wFactoryObject;
 }
 
 template<class Scalar>
@@ -382,8 +422,10 @@ IntegratorBuilder<Scalar>::getValidParameters() const
       // Interpolator Selection
       ParameterList& interpolatorSelectionPL = stepperSettingsPL.sublist(interpolatorSelection_name,false,stepperInterpolatorSelection_docs).disableRecursiveValidation();
       interpolatorSelectionPL.setParameters(*(interpolatorBuilder_->getValidParameters()));
-      // Nonlinear Solver Selection
       // RKBT Selection
+      ParameterList& rkbtSelectionPL = stepperSettingsPL.sublist(rkButcherTableauSelection_name,false,rkButcherTableauSelection_docs).disableRecursiveValidation();
+      rkbtSelectionPL.setParameters(*(rkbtBuilder_->getValidParameters()));
+      // Nonlinear Solver Selection (TODO)
     }
     ParameterList& interpolationBufferSettingsPL = pl->sublist(interpolationBufferSettings_name);
     {
@@ -429,6 +471,7 @@ RCP<const ParameterList> IntegratorBuilder<Scalar>::getParameterList() const
 // 2.  If the stepper comes back null (done)
 // 3.  If model is null (done)
 // 4.  If the stepper is implicit and nlSolver is null (done)
+// 5.  If the stepper accepts an RKBT but "None" is selected (done)
 //
 // a.  Its okay if the integration control comes back null, the 
 //     IntegrationControlStrategyAcceptingIntegratorBase will deal with it
@@ -543,6 +586,27 @@ IntegratorBuilder<Scalar>::create(
       iaobStepper->setInterpolator(interpolator);
     }
   }
+  // Check for an RKBT Selection
+  RCP<RKButcherTableauAcceptingStepperBase<Scalar> > rkbtaStepper = 
+    Teuchos::rcp_dynamic_cast<RKButcherTableauAcceptingStepperBase<Scalar> >(stepper,false);
+  if (!is_null(rkbtaStepper)) {
+    RCP<ParameterList> rkButcherTableauSelectionPL = sublist(stepperSettingsPL,rkButcherTableauSelection_name);
+    rkbtBuilder_->setParameterList(rkButcherTableauSelectionPL);
+    RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtBuilder_->create();
+    TEST_FOR_EXCEPTION( is_null(rkbt), std::logic_error,
+        "Error!  IntegratorBuilder::create(...)  The Stepper accepts a RK Butcher Tableau, but none were specified!"
+        );
+    rkbtaStepper->setRKButcherTableau(rkbt);
+  }
+  // Check for a W Factory
+  RCP<ImplicitRKStepper<Scalar> > irkStepper = 
+    Teuchos::rcp_dynamic_cast<ImplicitRKStepper<Scalar> >(stepper,false);
+  if (!is_null(irkStepper)) {
+    if (!is_null(wFactoryObject_)) {
+      irkStepper->set_W_factory(wFactoryObject_);
+    }
+  }
+  // Check for Nonlinear Solver Selection (TODO)
   // Set model on stepper
   stepper->setModel(model);
   // Set initial condition on stepper
@@ -589,6 +653,9 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
   // Stepper Builder
   stepperBuilder_ = stepperBuilder<Scalar>();
 
+  // RKBT Builder
+  rkbtBuilder_ = rKButcherTableauBuilder<Scalar>();
+
   // Step Control Strategy
   stepControlBuilder_ = Teuchos::objectBuilder<StepControlStrategyBase<Scalar> >();
   stepControlBuilder_->setObjectName(stepControlBuilder_name);
@@ -597,6 +664,7 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< StepControlStrategyBase<Scalar>, ImplicitBDFStepperStepControl<Scalar> >(),
       implicitBDFStepControl_name
       );
+  stepControlBuilder_->setDefaultObject("None");
 
   // Trailing Interpolation Buffer 
   interpolationBufferBuilder_ = Teuchos::objectBuilder<InterpolationBufferBase<Scalar> >();
@@ -628,6 +696,7 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< ErrWtVecCalcBase<Scalar>, ImplicitBDFStepperErrWtVecCalc<Scalar> >(),
       implicitBDFStepperErrWtVecCalc_name
       );
+  errWtVecCalcBuilder_->setDefaultObject("None");
 
   // Interpolator
   interpolatorBuilder_ = Teuchos::objectBuilder<InterpolatorBase<Scalar> >();
@@ -645,6 +714,7 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< InterpolatorBase<Scalar>, CubicSplineInterpolator<Scalar> >(),
       cubicSplineInterpolator_name
       );
+  interpolatorBuilder_->setDefaultObject(linearInterpolator_name);
 
 }
 

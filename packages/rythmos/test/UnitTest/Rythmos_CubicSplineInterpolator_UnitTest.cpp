@@ -317,7 +317,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_computeCubicSplineCoeff)
   data_in->push_back(DataStore<double>(t3,x3,xdot3,accuracy3));
   coeff = rcp(new CubicSplineCoeff<double>);
   // non unique time values
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_THROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)), std::logic_error);
 #else 
   TEST_NOTHROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)) );
@@ -331,7 +331,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_computeCubicSplineCoeff)
     TEST_EQUALITY_CONST( ST::isnaninf(c_view[0]), true );
     TEST_EQUALITY_CONST( ST::isnaninf(d_view[0]), true );
   }
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
   data_in->pop_back();
 
@@ -346,7 +346,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_computeCubicSplineCoeff)
   data_in->push_back(DataStore<double>(t4,x4,xdot4,accuracy4));
   coeff = rcp(new CubicSplineCoeff<double>);
   // non sorted time values
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_THROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)), std::logic_error);
 #else
   TEST_NOTHROW( computeCubicSplineCoeff(*data_in,outArg(*coeff)) );
@@ -359,7 +359,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_computeCubicSplineCoeff)
     TEST_EQUALITY_CONST( c_view[0],  6.0 );
     TEST_EQUALITY_CONST( d_view[0],  4.0 );
   }
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
 }
 
@@ -431,16 +431,16 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_interpolate ) {
 
   t_values.push_back(0.5);
   // Not enough nodes to evaluate t=0.5
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
-#else // HAVE_RYTHMOS_DEBUG
+#else // RYTHMOS_DEBUG
   // In this case, we're not checking the preconditions, so we assume the point you asked for is the only point we have
   TEST_NOTHROW(csi->interpolate(t_values,&data_out));
   {
     Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
     TEST_EQUALITY_CONST( x_view[0], 0.0 );
   }
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
   double t1 = 1.0;
   RCP<Thyra::VectorBase<double> > x1 = createDefaultVector<double>(1,1.0);
@@ -517,32 +517,32 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, changedData ) {
   data_in->pop_back();
   //ECHO( "data_in = [(0,0), (1,1)]" );
   //ECHO( "Calling interpolate at t=0.5 after deleting last node, should throw" );
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
-#else // HAVE_RYTHMOS_DEBUG
+#else // RYTHMOS_DEBUG
   // spline coefficients did not change, so you get the same output
   TEST_NOTHROW(csi->interpolate(t_values,&data_out));
   {
     Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
     TEST_FLOATING_EQUALITY( x_view[0], t05value, tol );
   }
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
   // Change the value of the third point
   V_S(outArg(*x2),1.0);
   data_in->push_back(DataStore<double>(t2,x2,xdot2,accuracy2));
   //ECHO( "data_in = [(0,0), (1,1), (2,1)]" );
   //ECHO( "Calling interpolate at t=1.5 after adding different last node, should throw" );
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
-#else // HAVE_RYTHMOS_DEBUG
+#else // RYTHMOS_DEBUG
   // spline coefficients did not change, so you get the same output
   TEST_NOTHROW(csi->interpolate(t_values,&data_out));
   {
     Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
     TEST_FLOATING_EQUALITY( x_view[0], t05value, tol );
   }
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
 
   // Change the time-point of the third point
@@ -552,16 +552,16 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, changedData ) {
   data_in->push_back(DataStore<double>(t2,x2,xdot2,accuracy2));
   //ECHO( "data_in = [(0,0), (1,1), (2.5,1)]" );
   //ECHO( "Calling interpolate at t=1.5 after changing last node to t=2.5, should throw" );
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out),std::logic_error);
-#else // HAVE_RYTHMOS_DEBUG
+#else // RYTHMOS_DEBUG
   // spline coefficients did not change, so you get the same output
   TEST_NOTHROW(csi->interpolate(t_values,&data_out));
   {
     Thyra::ConstDetachedVectorView<double> x_view(*data_out[0].x);
     TEST_FLOATING_EQUALITY( x_view[0], t05value, tol );
   }
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
   // Add a fourth point:
   double t3 = 3.0;
@@ -573,28 +573,28 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, changedData ) {
 
   t_values[0] = 2.7;
   //ECHO( "Calling interpolate at t=2.7 after adding a fourth point, should throw" );
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out), std::logic_error);
-#else // HAVE_RYTHMOS_DEBUG
+#else // RYTHMOS_DEBUG
   // In this case, t_values[0]=2.7 is out of range for the original [0,2] range
   // that the spline coefficients were computed for.  So we should get an
   // out_of_range exception from the cubic spline interpolator.
   TEST_THROW(csi->interpolate(t_values,&data_out), std::out_of_range);
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
   // Delete the 1st point:
   data_in->erase(data_in->begin());
   //ECHO( "data_in = [(1,1), (2.5,1), (3,3)]" );
   t_values[0] = 0.5;
   //ECHO( "Calling interpolate at t=0.5 after deleting the first point, should throw" );
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_THROW(csi->interpolate(t_values,&data_out), std::logic_error);
-#else // HAVE_RYTHMOS_DEBUG
+#else // RYTHMOS_DEBUG
   // In this case, the InterpolationBuffer searches for an interval containing
   // this point and can't find any, so it returns no points.
   TEST_NOTHROW(csi->interpolate(t_values,&data_out));
   TEST_EQUALITY_CONST( data_out.size(), 0 );
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
 }
 

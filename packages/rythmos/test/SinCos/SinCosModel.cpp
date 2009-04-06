@@ -162,7 +162,7 @@ ModelEvaluatorBase::InArgs<double> SinCosModel::getExactSensSolution(int j, doub
   if (!acceptModelParams_) {
     return inArgs;
   }
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, np_ );
 #endif
   double exact_t = t;
@@ -422,7 +422,7 @@ RCP<const Thyra::VectorSpaceBase<double> > SinCosModel::get_p_space(int l) const
   if (!acceptModelParams_) {
     return Teuchos::null;
   }
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   return p_space_;
@@ -433,7 +433,7 @@ RCP<const Teuchos::Array<std::string> > SinCosModel::get_p_names(int l) const
   if (!acceptModelParams_) {
     return Teuchos::null;
   }
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   RCP<Teuchos::Array<std::string> > p_strings = 
@@ -446,7 +446,7 @@ RCP<const Teuchos::Array<std::string> > SinCosModel::get_p_names(int l) const
 
 RCP<const Thyra::VectorSpaceBase<double> > SinCosModel::get_g_space(int j) const
 {
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
 #endif
   return g_space_;

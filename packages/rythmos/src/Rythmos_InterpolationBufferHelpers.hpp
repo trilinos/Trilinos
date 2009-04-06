@@ -293,12 +293,12 @@ bool Rythmos::getCurrentPoints(
   const int numTotalTimePoints = time_vec.size();
 
   // Validate input
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_FOR_EXCEPT(nextTimePointIndex_inout==0);
   TEUCHOS_ASSERT( 0 <= *nextTimePointIndex_inout && *nextTimePointIndex_inout < numTotalTimePoints );
   TEUCHOS_ASSERT( x_vec == 0 || as<int>(x_vec->size()) == numTotalTimePoints );
   TEUCHOS_ASSERT( xdot_vec == 0 || as<int>(xdot_vec->size()) == numTotalTimePoints );
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
   int &nextTimePointIndex = *nextTimePointIndex_inout;
   const int initNextTimePointIndex = nextTimePointIndex;
@@ -313,9 +313,9 @@ bool Rythmos::getCurrentPoints(
     int i;
     for ( i = 0; i < numTotalTimePoints-nextTimePointIndex; ++i ) {
       const Scalar t = time_vec[nextTimePointIndex];
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
       TEUCHOS_ASSERT( t >= currentTimeRange.lower() );
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
       if ( currentTimeRange.isInRange(t) ) {
         ++nextTimePointIndex;
         current_time_vec.push_back(t);
@@ -324,7 +324,7 @@ bool Rythmos::getCurrentPoints(
         break;
       }
     }
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
     // Here I am just checking that the loop worked as expected with the data
     // in the current time range all comming first.
     TEUCHOS_ASSERT( nextTimePointIndex-initNextTimePointIndex == i );

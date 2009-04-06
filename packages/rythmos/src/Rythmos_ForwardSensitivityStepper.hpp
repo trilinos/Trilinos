@@ -879,7 +879,7 @@ void ForwardSensitivityStepper<Scalar>::getPoints(
 
   using Teuchos::as;
 
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_FOR_EXCEPT( as<int>(time_vec.size()) == 0 );
 #endif
 

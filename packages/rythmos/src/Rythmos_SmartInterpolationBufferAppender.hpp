@@ -85,9 +85,9 @@ void SmartInterpolationBufferAppender<Scalar>::append(
     );
   // 2007/12/05: rabartl: This code has not been tested so don't use this
   // until a test has been writen for this!
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   this->assertAppendPreconditions(interpBuffSource,range,*interpBuffSink);
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
   if (interpBuffSink->getOrder() >= interpBuffSource.getOrder()) {
     // The incoming interpolation buffer's order of interpolation is lower than
     // the base interpolation buffer's order of interpolation.  In this case,

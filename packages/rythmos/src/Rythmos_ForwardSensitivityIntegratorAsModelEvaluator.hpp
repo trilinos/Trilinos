@@ -415,7 +415,7 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::initialize(
   // A) Validate and set input
   //
 
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_FOR_EXCEPT(is_null(stateStepper));
   TEST_FOR_EXCEPT(is_null(stateIntegrator));
   TEST_FOR_EXCEPT(is_null(stateAndSensStepper));
@@ -427,7 +427,7 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::initialize(
   TEST_FOR_EXCEPT( as<int>(responseFuncBasePoints.size()) != numResponseTimes );
   // ToDo: Assert that all of the observation models have the same response
   // function spaces so that they can be added together!
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
   stateStepper_ = stateStepper;
   stateAndSensStepper_ = stateAndSensStepper;
@@ -534,9 +534,9 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::setParameterList(
   dumpSensitivities_ = paramList_->get(
     dumpSensitivities_name_, dumpSensitivities_default_);
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   paramList_->validateParameters(*getValidParameters());
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
 }
 
@@ -606,7 +606,7 @@ template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::get_p_space(int l) const
 {
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( l, 0, Np_ );
 #endif
   return p_space_[l];
@@ -617,7 +617,7 @@ template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >
 ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::get_g_space(int j) const
 {
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, Ng_ );
 #endif
   return g_space_[j];

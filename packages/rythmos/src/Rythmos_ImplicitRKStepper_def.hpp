@@ -72,7 +72,10 @@ implicitRKStepper(
   RCP<ImplicitRKStepper<Scalar> > stepper(new ImplicitRKStepper<Scalar>());
 
   validateIRKButcherTableau(*irkbt);
-  stepper->initialize( model, solver, irk_W_factory, irkbt );
+  stepper->setModel(model);
+  stepper->setSolver(solver);
+  stepper->set_W_factory(irk_W_factory);
+  stepper->setRKButcherTableau(irkbt);
   return stepper;
 }
 
@@ -92,31 +95,18 @@ ImplicitRKStepper<Scalar>::ImplicitRKStepper()
 
 
 template<class Scalar>
-void ImplicitRKStepper<Scalar>::initialize(
-  const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-  const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver,
-  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-  const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
+void ImplicitRKStepper<Scalar>::set_W_factory(
+  const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory
   )
 {
-
-  TEUCHOS_ASSERT( !is_null(irkButcherTableau) );
-  // ToDo: Validate input
-
-  this->setModel(model);
-  this->setSolver(solver);
+  TEUCHOS_ASSERT( !is_null(irk_W_factory) ); 
   irk_W_factory_ = irk_W_factory;
-  irkButcherTableau_ = irkButcherTableau;
-  E_RKButcherTableauTypes rkType = determineRKBTType<Scalar>(*irkButcherTableau);
-  if (
-         (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK) 
-      || (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK) 
-      || (irkButcherTableau_->numStages() == 1)
-     ) 
-  {
-    isDirk_ = true;
-  } 
+}
 
+template<class Scalar>
+RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > ImplicitRKStepper<Scalar>::get_W_factory() const
+{
+  return irk_W_factory_;
 }
 
 // Overridden from SolverAcceptingStepperBase
@@ -210,7 +200,7 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
   RCP<const Thyra::VectorBase<Scalar> >
     x_init = initialCondition.get_x();
 
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_FOR_EXCEPTION(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
@@ -514,6 +504,7 @@ void ImplicitRKStepper<Scalar>::initialize_()
   TEST_FOR_EXCEPT(is_null(model_));
   TEST_FOR_EXCEPT(is_null(solver_));
   TEST_FOR_EXCEPT(is_null(irk_W_factory_));
+  TEST_FOR_EXCEPT(is_null(irkButcherTableau_));
 
   if (is_null(x_)) {
     // If x has not been set then setInitialCondition(...) was not
@@ -529,8 +520,6 @@ void ImplicitRKStepper<Scalar>::initialize_()
 
   x_old_ = x_->clone_v();
 
-  // Validate the Butcher Tableau
-  validateIRKButcherTableau(*irkButcherTableau_);
 
   // Set up the IRK mdoel
 
@@ -560,11 +549,25 @@ void ImplicitRKStepper<Scalar>::initialize_()
 template <class Scalar>
 void ImplicitRKStepper<Scalar>::setRKButcherTableau( const RCP<const RKButcherTableauBase<Scalar> > &rkButcherTableau )
 {
-  TEST_FOR_EXCEPT(true);
+  TEST_FOR_EXCEPT( is_null(rkButcherTableau) );
+  TEST_FOR_EXCEPTION( isInitialized_, std::logic_error,
+      "Error!  The RK Butcher Tableau cannot be changed after internal initialization!"
+      );
+  validateIRKButcherTableau(*rkButcherTableau);
+  irkButcherTableau_ = rkButcherTableau;
+  E_RKButcherTableauTypes rkType = determineRKBTType<Scalar>(*irkButcherTableau_);
+  if (
+         (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK) 
+      || (rkType == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK) 
+      || (irkButcherTableau_->numStages() == 1)
+     ) 
+  {
+    isDirk_ = true;
+  } 
 }
 
 template <class Scalar>
-RCP<const RKButcherTableauBase<Scalar> > ImplicitRKStepper<Scalar>::getRKButcherTableau()
+RCP<const RKButcherTableauBase<Scalar> > ImplicitRKStepper<Scalar>::getRKButcherTableau() const
 {
   return irkButcherTableau_;
 }

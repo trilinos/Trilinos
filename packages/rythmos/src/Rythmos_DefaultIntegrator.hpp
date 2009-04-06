@@ -352,7 +352,7 @@ void DefaultIntegrator<Scalar>::setIntegrationControlStrategy(
   const RCP<IntegrationControlStrategyBase<Scalar> > &integrationControlStrategy
   )
 {
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_FOR_EXCEPT(is_null(integrationControlStrategy));
 #endif
   integrationControlStrategy_ = integrationControlStrategy;
@@ -378,7 +378,7 @@ void DefaultIntegrator<Scalar>::setIntegrationObserver(
   const RCP<IntegrationObserverBase<Scalar> > &integrationObserver
   )
 {
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_FOR_EXCEPT(is_null(integrationObserver));
 #endif
   integrationObserver_ = integrationObserver;

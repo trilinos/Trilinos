@@ -233,6 +233,8 @@ int main(int argc, char *argv[])
     RCP<Rythmos::StepperBase<double> > stepperSlave_ptr;
     if ( method_val == METHOD_ERK ) {
       stepper_ptr = Rythmos::explicitRKStepper<double>(model);
+      Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+      stepper_ptr->setInitialCondition(ic);
       RCP<Teuchos::ParameterList> ERKparams = Teuchos::parameterList();
       ERKparams->sublist("VerboseObject").set(
         "Verbosity Level",

@@ -596,7 +596,7 @@ void AdjointModelEvaluator<Scalar>::initialize() const
   MEB::InArgs<Scalar> fwdStateModelInArgs = fwdStateModel_->createInArgs();
   MEB::OutArgs<Scalar> fwdStateModelOutArgs = fwdStateModel_->createOutArgs();
 
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEUCHOS_ASSERT( fwdStateModelInArgs.supports(MEB::IN_ARG_x_dot) );
   TEUCHOS_ASSERT( fwdStateModelInArgs.supports(MEB::IN_ARG_x) );
   TEUCHOS_ASSERT( fwdStateModelInArgs.supports(MEB::IN_ARG_t) );

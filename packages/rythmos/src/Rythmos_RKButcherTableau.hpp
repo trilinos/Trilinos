@@ -218,7 +218,7 @@ class RKButcherTableauDefaultBase :
     { 
       if (is_null(validPL_)) {
         validPL_ = Teuchos::parameterList();
-        // Add longDescription_ to parameter list "somehow"
+        validPL_->set("Description","",this->getMyDescription());
         Teuchos::setupVerboseObjectSublist(&*validPL_);
       }
       return validPL_; 
@@ -2410,12 +2410,12 @@ E_RKButcherTableauTypes determineRKBTType(const RKButcherTableauBase<Scalar>& rk
 }
 
 template<class Scalar>
-class DefaultRKButcherTableauFactory :
+class RKButcherTableauBuilder :
   virtual public Teuchos::ParameterListAcceptor
 {
   public:
-    DefaultRKButcherTableauFactory();
-    virtual ~DefaultRKButcherTableauFactory() {}
+    RKButcherTableauBuilder();
+    virtual ~RKButcherTableauBuilder() {}
 
     void setRKButcherTableauFactory(
       const RCP<const Teuchos::AbstractFactory<RKButcherTableauBase<Scalar> > > &rkbtFactory,
@@ -2453,28 +2453,28 @@ class DefaultRKButcherTableauFactory :
 
 // Nonmember constructor
 template<class Scalar>
-RCP<DefaultRKButcherTableauFactory<Scalar> > rKButcherTableauFactory()
+RCP<RKButcherTableauBuilder<Scalar> > rKButcherTableauBuilder()
 {
-  RCP<DefaultRKButcherTableauFactory<Scalar> > rkbtfn = rcp(new DefaultRKButcherTableauFactory<Scalar>() );
+  RCP<RKButcherTableauBuilder<Scalar> > rkbtfn = rcp(new RKButcherTableauBuilder<Scalar>() );
   return rkbtfn;
 }
 // Nonmember helper function
 template<class Scalar>
 RCP<RKButcherTableauBase<Scalar> > createRKBT(const std::string& rkbt_name)
 {
-  RCP<DefaultRKButcherTableauFactory<Scalar> > rkbtfn = rKButcherTableauFactory<Scalar>();
+  RCP<RKButcherTableauBuilder<Scalar> > rkbtfn = rKButcherTableauBuilder<Scalar>();
   RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtfn->create(rkbt_name);
   return rkbt;
 }
 
 template<class Scalar>
-DefaultRKButcherTableauFactory<Scalar>::DefaultRKButcherTableauFactory()
+RKButcherTableauBuilder<Scalar>::RKButcherTableauBuilder()
 {
   this->initializeDefaults_();
 }
 
 template<class Scalar>
-void DefaultRKButcherTableauFactory<Scalar>::setRKButcherTableauFactory(
+void RKButcherTableauBuilder<Scalar>::setRKButcherTableauFactory(
     const RCP<const Teuchos::AbstractFactory<RKButcherTableauBase<Scalar> > > &rkbtFactory,
     const std::string &rkbtFactoryName
     )
@@ -2483,7 +2483,7 @@ void DefaultRKButcherTableauFactory<Scalar>::setRKButcherTableauFactory(
 }
 
 template<class Scalar>
-void DefaultRKButcherTableauFactory<Scalar>::setParameterList(
+void RKButcherTableauBuilder<Scalar>::setParameterList(
   RCP<Teuchos::ParameterList> const& paramList
   )
 {
@@ -2492,7 +2492,7 @@ void DefaultRKButcherTableauFactory<Scalar>::setParameterList(
 
 template<class Scalar>
 RCP<Teuchos::ParameterList>
-DefaultRKButcherTableauFactory<Scalar>::getNonconstParameterList()
+RKButcherTableauBuilder<Scalar>::getNonconstParameterList()
 {
   return builder_.getNonconstParameterList();
 }
@@ -2500,7 +2500,7 @@ DefaultRKButcherTableauFactory<Scalar>::getNonconstParameterList()
 
 template<class Scalar>
 RCP<Teuchos::ParameterList>
-DefaultRKButcherTableauFactory<Scalar>::unsetParameterList()
+RKButcherTableauBuilder<Scalar>::unsetParameterList()
 {
   return builder_.unsetParameterList();
 }
@@ -2508,7 +2508,7 @@ DefaultRKButcherTableauFactory<Scalar>::unsetParameterList()
 
 template<class Scalar>
 RCP<const Teuchos::ParameterList>
-DefaultRKButcherTableauFactory<Scalar>::getParameterList() const
+RKButcherTableauBuilder<Scalar>::getParameterList() const
 {
   return builder_.getParameterList();
 }
@@ -2516,14 +2516,14 @@ DefaultRKButcherTableauFactory<Scalar>::getParameterList() const
 
 template<class Scalar>
 RCP<const Teuchos::ParameterList>
-DefaultRKButcherTableauFactory<Scalar>::getValidParameters() const
+RKButcherTableauBuilder<Scalar>::getValidParameters() const
 {
   return builder_.getValidParameters();
 }
 
 template<class Scalar>
 RCP<RKButcherTableauBase<Scalar> >
-DefaultRKButcherTableauFactory<Scalar>::create(
+RKButcherTableauBuilder<Scalar>::create(
     const std::string &rkbt_name
     ) const
 {
@@ -2531,13 +2531,13 @@ DefaultRKButcherTableauFactory<Scalar>::create(
 }
 
 template<class Scalar>
-void DefaultRKButcherTableauFactory<Scalar>::initializeDefaults_()
+void RKButcherTableauBuilder<Scalar>::initializeDefaults_()
 {
 
   using Teuchos::abstractFactoryStd;
 
   builder_.setObjectName("Rythmos::RKButcherTableau");
-  builder_.setObjectTypeName("RKButcherTableau Type");
+  builder_.setObjectTypeName("Runge Kutta Butcher Tableau Type");
 
   //
   // RK Butcher Tableaus:
@@ -2713,6 +2713,8 @@ void DefaultRKButcherTableauFactory<Scalar>::initializeDefaults_()
       abstractFactoryStd< RKButcherTableauBase<Scalar>, SDIRK3Stage4thOrder_RKBT<Scalar> >(),
       SDIRK3Stage4thOrder_name()
       );
+
+  builder_.setDefaultObject("None");
 
 }
 

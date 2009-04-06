@@ -39,12 +39,12 @@ template<class Scalar>
 Array<std::string> getIRKButcherTableauNames()
 {
   Array<std::string> implicitRKTableauNames;
-  RCP<DefaultRKButcherTableauFactory<Scalar> > rkbtFactory = rKButcherTableauFactory<Scalar>();
+  RCP<RKButcherTableauBuilder<Scalar> > rkbtFactory = rKButcherTableauBuilder<Scalar>();
   RCP<const ParameterList> validPL = rkbtFactory->getValidParameters();
   Teuchos::ParameterList::ConstIterator plIt = validPL->begin();
   for (;plIt != validPL->end() ; plIt++) {
     std::string rkbt_name = validPL->name(plIt);
-    if (rkbt_name == "RKButcherTableau Type") { continue; }
+    if (rkbt_name == "Runge Kutta Butcher Tableau Type") { continue; }
     RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory->create(rkbt_name);
     if (determineRKBTType(*rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_IRK) {
       implicitRKTableauNames.push_back(rkbt_name);
@@ -57,12 +57,12 @@ template<class Scalar>
 Array<std::string> getDIRKButcherTableauNames()
 {
   Array<std::string> dIRKTableauNames;
-  RCP<DefaultRKButcherTableauFactory<Scalar> > rkbtFactory = rKButcherTableauFactory<Scalar>();
+  RCP<RKButcherTableauBuilder<Scalar> > rkbtFactory = rKButcherTableauBuilder<Scalar>();
   RCP<const ParameterList> validPL = rkbtFactory->getValidParameters();
   Teuchos::ParameterList::ConstIterator plIt = validPL->begin();
   for (;plIt != validPL->end() ; plIt++) {
     std::string rkbt_name = validPL->name(plIt);
-    if (rkbt_name == "RKButcherTableau Type") { continue; }
+    if (rkbt_name == "Runge Kutta Butcher Tableau Type") { continue; }
     RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory->create(rkbt_name);
     if (    (determineRKBTType(*rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_DIRK) 
          || (determineRKBTType(*rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_SDIRK) 
@@ -109,7 +109,7 @@ class ImplicitRKStepperFactory : public virtual StepperFactoryBase<Scalar>
     RCP<ModelFactoryBase<Scalar> > modelFactory_;
     int index_;
     Array<std::string> implicitRKNames_;
-    DefaultRKButcherTableauFactory<Scalar> rkbtFactory_;
+    RKButcherTableauBuilder<Scalar> rkbtFactory_;
 };
 template<class Scalar>
 RCP<ImplicitRKStepperFactory<Scalar> > implicitRKStepperFactory(RCP<ModelFactoryBase<Scalar> > modelFactory) 
@@ -151,7 +151,7 @@ class DiagonalImplicitRKStepperFactory : public virtual StepperFactoryBase<Scala
     RCP<ModelFactoryBase<Scalar> > modelFactory_;
     int index_;
     Array<std::string> implicitRKNames_;
-    DefaultRKButcherTableauFactory<Scalar> rkbtFactory_;
+    RKButcherTableauBuilder<Scalar> rkbtFactory_;
 };
 // non-member constructor
 template<class Scalar>

@@ -270,9 +270,9 @@ void TimeStepNonlinearSolver<Scalar>::setParameterList(
   throwOnLinearSolveFailure_ = get<bool>(
     *paramList_,ThrownOnLinearSolveFailure_name_);
   Teuchos::readVerboseObjectSublist(&*paramList_,this);
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   paramList_->validateParameters(*getValidParameters(),0);
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 }
 
 
@@ -400,7 +400,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
   typedef Thyra::LinearOpWithSolveBase<Scalar> LOWSB;
   typedef Teuchos::VerboseObjectTempState<LOWSB> VOTSLOWSB;
 
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_FOR_EXCEPT(0==x);
   THYRA_ASSERT_VEC_SPACES(
     "TimeStepNonlinearSolver<Scalar>::solve(...)",
@@ -644,7 +644,7 @@ TimeStepNonlinearSolver<Scalar>::get_nonconst_W(const bool forceUpToDate)
   if (is_null(J_))
     return Teuchos::null;
   if (forceUpToDate) {
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
     TEST_FOR_EXCEPT(is_null(current_x_));
 #endif
     Thyra::eval_f_W<Scalar>( *model_, *current_x_, 0, &*J_ );

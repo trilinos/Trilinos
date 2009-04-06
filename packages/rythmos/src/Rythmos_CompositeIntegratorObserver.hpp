@@ -121,7 +121,7 @@ void CompositeIntegratorObserver<Scalar>::addObserver(
   const RCP<IntegrationObserverBase<Scalar> > &observer
   )
 {
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_FOR_EXCEPT(is_null(observer));
 #endif
   observers_.push_back(observer);

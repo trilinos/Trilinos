@@ -29,7 +29,7 @@
 #ifndef Rythmos_ExplicitRK_STEPPER_DECL_H
 #define Rythmos_ExplicitRK_STEPPER_DECL_H
 
-#include "Rythmos_StepperBase.hpp"
+#include "Rythmos_RKButcherTableauAcceptingStepperBase.hpp"
 #include "Rythmos_RKButcherTableau.hpp"
 #include "Rythmos_Types.hpp"
 #include "Thyra_ModelEvaluator.hpp"
@@ -38,7 +38,7 @@ namespace Rythmos {
 
 /** \brief . */
 template<class Scalar>
-class ExplicitRKStepper : virtual public StepperBase<Scalar>
+class ExplicitRKStepper : virtual public RKButcherTableauAcceptingStepperBase<Scalar>
 {
   public:
     typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -46,16 +46,17 @@ class ExplicitRKStepper : virtual public StepperBase<Scalar>
     
     /** \brief . */
     ExplicitRKStepper();
-    ExplicitRKStepper(
-        const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model,
-        const RCP<const RKButcherTableauBase<Scalar> > &rkbt
-        );
+
+    /** \name Overridden from RKButcherTableauAcceptingStepperBase */
+    //@{
 
     /** \brief. */
     void setRKButcherTableau(const RCP<const RKButcherTableauBase<Scalar> > &rkbt);
 
     /** \brief. */
     RCP<const RKButcherTableauBase<Scalar> > getRKButcherTableau() const;
+
+    //@}
 
     /** \brief . */
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;

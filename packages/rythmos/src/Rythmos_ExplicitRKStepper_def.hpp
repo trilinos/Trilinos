@@ -54,9 +54,11 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model 
     )
 {
-  //RCP<RKButcherTableauBase<Scalar> > rkbt = createRKBT<Scalar>("Explicit 4 Stage");
-  RCP<RKButcherTableauBase<Scalar> > rkbt = rcp(new Explicit4Stage4thOrder_RKBT<Scalar>());
-  RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>(model,rkbt));
+  RCP<RKButcherTableauBase<Scalar> > rkbt = createRKBT<Scalar>("Explicit 4 Stage");
+  //RCP<RKButcherTableauBase<Scalar> > rkbt = rcp(new Explicit4Stage4thOrder_RKBT<Scalar>());
+  RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>());
+  stepper->setModel(model);
+  stepper->setRKButcherTableau(rkbt);
   return stepper;
 }
 
@@ -66,38 +68,24 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
     const RCP<const RKButcherTableauBase<Scalar> > &rkbt 
     )
 {
-  RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>(model,rkbt));
+  RCP<ExplicitRKStepper<Scalar> > stepper = rcp(new ExplicitRKStepper<Scalar>());
+  stepper->setModel(model);
+  stepper->setRKButcherTableau(rkbt);
   return stepper;
-}
-
-template<class Scalar>
-ExplicitRKStepper<Scalar>::ExplicitRKStepper(
-    const RCP<const Thyra::ModelEvaluator<Scalar> > &model, 
-    const RCP<const RKButcherTableauBase<Scalar> > &rkbt
-    )
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-  out->precision(15);
-
-  t_ = ST::nan();
-  t_old_ = ST::nan();
-  dt_ = ST::nan();
-  erkButcherTableau_ = rKButcherTableau<Scalar>();
-  numSteps_ = 0;
-  haveInitialCondition_ = false;
-  this->setModel(model);
-  this->setRKButcherTableau(rkbt);
-  initialize_();
 }
 
 template<class Scalar>
 ExplicitRKStepper<Scalar>::ExplicitRKStepper()
   : isInitialized_(false)
 {
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  out->precision(15);
   t_ = ST::nan();
   t_old_ = ST::nan();
   dt_ = ST::nan();
   erkButcherTableau_ = rKButcherTableau<Scalar>();
+  numSteps_ = 0;
+  haveInitialCondition_ = false;
 }
 
 template<class Scalar>
@@ -110,11 +98,13 @@ void ExplicitRKStepper<Scalar>::setRKButcherTableau(const RCP<const RKButcherTab
   TEST_FOR_EXCEPTION( numStages_new == 0, std::logic_error,
       "Error!  The Runge-Kutta Butcher tableau has no stages!"
       );
-  int numNewStages = numStages_new - numStages_old;
-  if ( numNewStages > 0 ) {
-    k_vector_.reserve(numStages_new);
-    for (int i=0 ; i<numNewStages ; ++i) {
-      k_vector_.push_back(Thyra::createMember(model_->get_f_space()));
+  if (!is_null(model_)) {
+    int numNewStages = numStages_new - numStages_old;
+    if ( numNewStages > 0 ) {
+      k_vector_.reserve(numStages_new);
+      for (int i=0 ; i<numNewStages ; ++i) {
+        k_vector_.push_back(Thyra::createMember(model_->get_f_space()));
+      }
     }
   }
   erkButcherTableau_ = rkbt;
@@ -129,10 +119,26 @@ RCP<const RKButcherTableauBase<Scalar> > ExplicitRKStepper<Scalar>::getRKButcher
 template<class Scalar>
 void ExplicitRKStepper<Scalar>::initialize_()
 {
-  haveInitialCondition_ = setDefaultInitialConditionFromNominalValues<Scalar>(
-    *model_, Teuchos::ptr(this) );
-  ktemp_vector_ = Thyra::createMember(model_->get_f_space());
-
+  if (!isInitialized_) {
+    TEUCHOS_ASSERT( !is_null(model_) );
+    TEUCHOS_ASSERT( !is_null(erkButcherTableau_) );
+    TEUCHOS_ASSERT( haveInitialCondition_ );
+    TEST_FOR_EXCEPTION( erkButcherTableau_->numStages() == 0, std::logic_error,
+        "Error!  The Runge-Kutta Butcher tableau has no stages!"
+        );
+    ktemp_vector_ = Thyra::createMember(model_->get_f_space());
+    // Initialize the stage vectors
+    int numStages = erkButcherTableau_->numStages();
+    k_vector_.reserve(numStages);
+    for (int i=0 ; i<numStages ; ++i) {
+      k_vector_.push_back(Thyra::createMember(model_->get_f_space()));
+    }
+  }
+#ifdef RYTHMOS_DEBUG
+  THYRA_ASSERT_VEC_SPACES(
+    "Rythmos::ExplicitRKStepper::initialize_(...)",
+    *solution_vector_->space(), *model_->get_x_space() );
+#endif // RYTHMOS_DEBUG
   isInitialized_ = true;
 }
 
@@ -145,17 +151,15 @@ ExplicitRKStepper<Scalar>::~ExplicitRKStepper()
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > ExplicitRKStepper<Scalar>::get_x_space() const
 {
-  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call get_x_space before initialization!\n");
-  return(solution_vector_->space());
+  TEUCHOS_ASSERT( !is_null(model_) );
+  return(model_->get_x_space());
 }
 
 template<class Scalar>
 Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
   typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
-  TEST_FOR_EXCEPTION( erkButcherTableau_->numStages() == 0, std::logic_error,
-      "Error!  The Runge-Kutta Butcher Tableau has no stages!"
-      );
+  this->initialize_();
   if ((flag == STEP_TYPE_VARIABLE) || (dt == ST::zero())) {
     return(Scalar(-ST::one()));
   }
@@ -280,6 +284,7 @@ void ExplicitRKStepper<Scalar>::getPoints(
   Array<ScalarMag>* accuracy_vec
   ) const
 {
+  TEUCHOS_ASSERT( haveInitialCondition_ );
   typedef Teuchos::ScalarTraits<Scalar> ST;
   if (x_vec != NULL) {
     x_vec->clear();
@@ -319,7 +324,7 @@ void ExplicitRKStepper<Scalar>::getPoints(
 template<class Scalar>
 void ExplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
-  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call getNodes before initialization!\n");
+  TEUCHOS_ASSERT( haveInitialCondition_ );
   if (time_vec != NULL) {
     time_vec->clear();
     time_vec->push_back(t_old_);
@@ -403,8 +408,6 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  TEST_FOR_EXCEPT( is_null(model_) );
-
   basePoint_ = initialCondition;
 
   // x
@@ -412,14 +415,11 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
   RCP<const Thyra::VectorBase<Scalar> >
     x_init = initialCondition.get_x();
 
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_FOR_EXCEPTION(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
     "then x can not be null!" );
-  THYRA_ASSERT_VEC_SPACES(
-    "Rythmos::ExplicitRKStepper::setInitialCondition(...)",
-    *x_init->space(), *model_->get_x_space() );
 #endif
 
   solution_vector_ = x_init->clone_v();

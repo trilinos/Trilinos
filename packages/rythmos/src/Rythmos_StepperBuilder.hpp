@@ -218,15 +218,20 @@ void StepperBuilder<Scalar>::initializeDefaults_()
   //
   // Steppers
   //
+  
+  builder_.setObjectFactory(
+      abstractFactoryStd< StepperBase<Scalar>, ForwardEulerStepper<Scalar> >(),
+      "Forward Euler"
+      );
+
+  builder_.setObjectFactory(
+      abstractFactoryStd< StepperBase<Scalar>, BackwardEulerStepper<Scalar> >(),
+      "Backward Euler"
+      );
 
   builder_.setObjectFactory(
       abstractFactoryStd< StepperBase<Scalar>, ImplicitBDFStepper<Scalar> >(),
       "Implicit BDF"
-      );
-
-  builder_.setObjectFactory(
-      abstractFactoryStd< StepperBase<Scalar>, ForwardEulerStepper<Scalar> >(),
-      "Forward Euler"
       );
 
   builder_.setObjectFactory(
@@ -244,20 +249,14 @@ void StepperBuilder<Scalar>::initializeDefaults_()
       "Explicit Taylor Polynomial"
       );
 
-  builder_.setObjectFactory(
-      abstractFactoryStd< StepperBase<Scalar>, BackwardEulerStepper<Scalar> >(),
-      "Backward Euler"
-      );
-
-  // Note: Above, the last Stepper object set will be the default unless we are
-  // on multiple processors!
-
 #ifdef Rythmos_HAVE_Experimental
   builder_.setObjectFactory(
       abstractFactoryStd< StepperBase<Scalar>, ThetaStepper<Scalar> >(),
       "Theta"
       );
 #endif // Rythmos_HAVE_Experimental
+
+  builder_.setDefaultObject("Backward Euler");
   
 }
 

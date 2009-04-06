@@ -40,12 +40,12 @@ template<class Scalar>
 Array<std::string> getERKButcherTableauNames()
 {
   Array<std::string> explicitRKTableauNames;
-  RCP<DefaultRKButcherTableauFactory<Scalar> > rkbtFactory = rKButcherTableauFactory<Scalar>();
+  RCP<RKButcherTableauBuilder<Scalar> > rkbtFactory = rKButcherTableauBuilder<Scalar>();
   RCP<const ParameterList> validPL = rkbtFactory->getValidParameters();
   Teuchos::ParameterList::ConstIterator plIt = validPL->begin();
   for (;plIt != validPL->end() ; plIt++) {
     std::string rkbt_name = validPL->name(plIt);
-    if (rkbt_name == "RKButcherTableau Type") { continue; }
+    if (rkbt_name == "Runge Kutta Butcher Tableau Type") { continue; }
     RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory->create(rkbt_name);
     if (determineRKBTType(*rkbt) == RYTHMOS_RK_BUTCHER_TABLEAU_TYPE_ERK) {
       explicitRKTableauNames.push_back(rkbt_name);
@@ -68,8 +68,10 @@ class ExplicitRKStepperFactory : public virtual StepperFactoryBase<Scalar>
     RCP<StepperBase<Scalar> > getStepper() const
     {
       RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
+      Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
       RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory_.create(explicitRKNames_[index_]);
       RCP<ExplicitRKStepper<Scalar> > stepper = explicitRKStepper<Scalar>(model,rkbt);
+      stepper->setInitialCondition(ic);
       return(stepper);
     }
     void setIndex(int index)
@@ -84,7 +86,7 @@ class ExplicitRKStepperFactory : public virtual StepperFactoryBase<Scalar>
     RCP<ModelFactoryBase<Scalar> > modelFactory_;
     int index_;
     Array<std::string> explicitRKNames_;
-    DefaultRKButcherTableauFactory<Scalar> rkbtFactory_;
+    RKButcherTableauBuilder<Scalar> rkbtFactory_;
 };
 // non-member constructor
 template<class Scalar>

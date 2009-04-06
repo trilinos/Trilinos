@@ -44,12 +44,12 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, setParameterList ) {
   // Test that StepperBuilder validates its parameter list
   pl->set("Hello","World"); // This changes the parameter list inside the builder.
   TEST_THROW(builder->setParameterList(pl), std::logic_error);
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef TEUCHOS_DEBUG
   // This throws because we changed the internal parameter list to an invalid one.
   TEST_THROW(builder = Teuchos::null, std::logic_error);  
-#else // HAVE_RYTHMOS_DEBUG
+#else // TEUCHOS_DEBUG
   TEST_NOTHROW(builder = Teuchos::null );
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // TEUCHOS_DEBUG
   builder = stepperBuilder<double>();
   pl = Teuchos::parameterList();
   pl->set("Hello","World"); 

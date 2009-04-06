@@ -288,9 +288,9 @@ void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<
       currentTimeStep = std::min(hh_, currentTimeStep);
     }
     // check for maximum step-size:
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
       TEST_FOR_EXCEPT(ST::isnaninf(currentTimeStep));
-#endif
+#endif // RYTHMOS_DEBUG
     Scalar rh = std::abs(currentTimeStep)*h_max_inv_; 
     if (rh>1.0) {
       currentTimeStep = currentTimeStep/rh;
@@ -921,31 +921,60 @@ ImplicitBDFStepperStepControl<Scalar>::getValidParameters() const
     RCP<Teuchos::ParameterList>
       pl = Teuchos::parameterList();
 
-    pl->set<int>   ( "minOrder",         1              );
-    pl->set<int>   ( "maxOrder",         5              );
+    pl->set<int>   ( "minOrder",         1,
+        "lower limit of order selection, guaranteed"
+        );
+    pl->set<int>   ( "maxOrder",         5,
+        "upper limit of order selection, does not guarantee this order"        
+        );
     pl->set<Scalar>( "relErrTol",        Scalar(1.0e-4) );
     pl->set<Scalar>( "absErrTol",        Scalar(1.0e-6) );
     pl->set<bool>  ( "constantStepSize", false          );
     pl->set<Scalar>( "stopTime",         Scalar(10.0)   );
 
     Teuchos::ParameterList
-      &magicNumberList = pl->sublist("magicNumbers");
+      &magicNumberList = pl->sublist("magicNumbers", 
+          false,
+          "These are knobs in the algorithm that have been set to reasonable values using lots of testing and heuristics and some theory."
+          );
     magicNumberList.set<Scalar>( "h0_safety",      Scalar(2.0)     );
     magicNumberList.set<Scalar>( "h0_max_factor",  Scalar(0.001)   );
-    magicNumberList.set<Scalar>( "h_phase0_incr",  Scalar(2.0)     );
+    magicNumberList.set<Scalar>( "h_phase0_incr",  Scalar(2.0),
+        "initial ramp-up in variable mode (stepSize multiplier) "     
+        );
     magicNumberList.set<Scalar>( "h_max_inv",      Scalar(0.0)     );
     magicNumberList.set<Scalar>( "Tkm1_Tk_safety", Scalar(2.0)     );
     magicNumberList.set<Scalar>( "Tkp1_Tk_safety", Scalar(0.5)     );
-    magicNumberList.set<Scalar>( "r_factor",       Scalar(0.9)     );
-    magicNumberList.set<Scalar>( "r_safety",       Scalar(2.0)     );
-    magicNumberList.set<Scalar>( "r_fudge",        Scalar(0.0001)  );
-    magicNumberList.set<Scalar>( "r_min",          Scalar(0.125)   );
-    magicNumberList.set<Scalar>( "r_max",          Scalar(0.9)     );
-    magicNumberList.set<Scalar>( "r_hincr_test",   Scalar(2.0)     );
-    magicNumberList.set<Scalar>( "r_hincr",        Scalar(2.0)     );
-    magicNumberList.set<int>   ( "max_LET_fail",   int(15)         );
-    magicNumberList.set<Scalar>( "minTimeStep",    Scalar(0.0)     );
-    magicNumberList.set<Scalar>( "maxTimeStep",    Scalar(10.0)    ); 
+    magicNumberList.set<Scalar>( "r_factor",       Scalar(0.9),
+        "used in rejectStep:  time step ratio multiplier"
+        );
+    magicNumberList.set<Scalar>( "r_safety",       Scalar(2.0),
+        "local error multiplier as part of time step ratio calculation"
+        );
+    magicNumberList.set<Scalar>( "r_fudge",        Scalar(0.0001),
+        "local error addition as part of time step ratio calculation"
+        );
+    magicNumberList.set<Scalar>( "r_min",          Scalar(0.125),
+        "used in rejectStep:  how much to cut step and lower bound for time step ratio"   
+        );
+    magicNumberList.set<Scalar>( "r_max",          Scalar(0.9),
+        "upper bound for time step ratio"
+        );
+    magicNumberList.set<Scalar>( "r_hincr_test",   Scalar(2.0),     
+        "used in completeStep:  if time step ratio > this then set time step ratio to r_hincr"
+        );
+    magicNumberList.set<Scalar>( "r_hincr",        Scalar(2.0),
+        "used in completeStep:  limit on time step ratio increases, not checked by r_max"
+        );
+    magicNumberList.set<int>   ( "max_LET_fail",   int(15),
+        "Max number of rejected steps"
+        );
+    magicNumberList.set<Scalar>( "minTimeStep",    Scalar(0.0),
+        "bound on smallest time step in variable mode."     
+        );
+    magicNumberList.set<Scalar>( "maxTimeStep",    Scalar(10.0),
+        "bound on largest time step in variable mode."    
+        ); 
 
     Teuchos::setupVerboseObjectSublist(&*pl);
 

@@ -610,7 +610,7 @@ void ForwardSensitivityModelEvaluator<Scalar>::initializePointState(
 
   typedef Thyra::ModelEvaluatorBase MEB;
 
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   TEST_FOR_EXCEPTION(
     is_null(stateModel_), std::logic_error,
     "Error, you must call intializeStructure(...) before you call initializeState(...)"

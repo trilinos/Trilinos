@@ -306,6 +306,7 @@ CORE_H = \
   $(srcdir)/Rythmos_PointwiseInterpolationBufferAppender.hpp\
   $(srcdir)/Rythmos_QuadratureBase.hpp\
   $(srcdir)/Rythmos_RKButcherTableau.hpp\
+  $(srcdir)/Rythmos_RKButcherTableauAcceptingStepperBase.hpp\
   $(srcdir)/Rythmos_ResponseAndFwdSensPoint.hpp\
   $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.hpp\
   $(srcdir)/Rythmos_SingleResidualModelEvaluator.hpp\

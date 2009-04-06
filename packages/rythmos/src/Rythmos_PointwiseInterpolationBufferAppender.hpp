@@ -109,9 +109,9 @@ void PointwiseInterpolationBufferAppender<Scalar>::append(
   const Ptr<InterpolationBufferBase<Scalar> > &interpBuffSink 
   ) 
 {
-#ifdef HAVE_RYTHMOS_DEBUG
+#ifdef RYTHMOS_DEBUG
   this->assertAppendPreconditions(interpBuffSource,range,*interpBuffSink);
-#endif // HAVE_RYTHMOS_DEBUG
+#endif // RYTHMOS_DEBUG
 
   Array<Scalar> time_vec_in;
   interpBuffSource.getNodes(&time_vec_in);

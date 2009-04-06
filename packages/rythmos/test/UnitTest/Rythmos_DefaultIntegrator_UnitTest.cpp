@@ -56,6 +56,10 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, ExplicitRKStepper ) {
   RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Forward Euler");
   TEST_ASSERT( !is_null(rkbt) );
   RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model,rkbt);
+  // Set initial condition on stepper
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  stepper->setInitialCondition(ic);
+  // Set stepper on integrator:
   integrator->setStepper(stepper, finalTime);
 
   // Trailing Interpolation Buffer

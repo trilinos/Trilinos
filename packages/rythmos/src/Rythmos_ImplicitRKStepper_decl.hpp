@@ -33,6 +33,7 @@
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_DataStore.hpp"
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
+#include "Rythmos_RKButcherTableauAcceptingStepperBase.hpp"
 #include "Rythmos_RKButcherTableau.hpp"
 
 #include "Thyra_ModelEvaluator.hpp"
@@ -45,7 +46,8 @@ namespace Rythmos {
 /** \brief . */
 template<class Scalar>
 class ImplicitRKStepper : 
-  virtual public SolverAcceptingStepperBase<Scalar>
+  virtual public SolverAcceptingStepperBase<Scalar>,
+  virtual public RKButcherTableauAcceptingStepperBase<Scalar>
 {
 public:
   
@@ -58,25 +60,21 @@ public:
   /** \brief . */
   ImplicitRKStepper();
   
-  /** \brief . */
-  void initialize(
-    const RCP<const Thyra::ModelEvaluator<Scalar> >  &model,
-    const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver,
-    const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory,
-    const RCP<const RKButcherTableauBase<Scalar> > &irkButcherTableau
-    );
+  void set_W_factory( const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &irk_W_factory );
 
   /** \brief . */
-  void set_W_factory( RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory);
-
-  /** \brief . */
-  RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory();
+  RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+  
+  /** \name Overridden from RKButcherTableauAcceptingStepperBase */
+  //@{
   
   /** \brief . */
   void setRKButcherTableau( const RCP<const RKButcherTableauBase<Scalar> > &rkButcherTableau );
 
   /** \brief . */
-  RCP<const RKButcherTableauBase<Scalar> > getRKButcherTableau();
+  RCP<const RKButcherTableauBase<Scalar> > getRKButcherTableau() const;
+
+  //@}
 
   /** \brief . */
   // This function is mostly for testing purposes to explicitely over-ride the
