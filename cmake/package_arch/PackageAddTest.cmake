@@ -6,21 +6,21 @@ INCLUDE(PackageAddTestHelpers)
 #
 # PACKAGE_ADD_TEST(
 #   <execName>
-#   [ NOEXEPREFIX ]
-#   [ NOEXESUFFIX ]
-#   [ NAME <testName> ]
-#   [ DIRECTORY <directory> ]
-#   [ ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ... ]
-#   [ COMM [serial] [mpi] ]
-#   [ NUM_MPI_PROCS <numProcs> ]
-#   [ HOST <host1> <host2> ... ]
-#   [ XHOST <host1> <host2> ... ]
-#   [ HOSTTYPE <hosttype1> <hosttype2> ... ]
-#   [ XHOSTTYPE <hosttype1> <hosttype2> ... ]
-#   [ STANDARD_PASS_OUTPUT
+#   [NOEXEPREFIX]
+#   [NOEXESUFFIX]
+#   [NAME <testName>]
+#   [DIRECTORY <directory>]
+#   [ADD_DIR_TO_NAME]
+#   [ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...]
+#   [COMM [serial] [mpi]]
+#   [NUM_MPI_PROCS <numProcs>]
+#   [HOST <host1> <host2> ...]
+#   [XHOST <host1> <host2> ...]
+#   [HOSTTYPE <hosttype1> <hosttype2> ...]
+#   [XHOSTTYPE <hosttype1> <hosttype2> ...]
+#   [STANDARD_PASS_OUTPUT
 #     | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..." 
-#     | FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..." ]
-#   [ ADD_DIR_TO_NAME ]
+#     | FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
 #   )
 #  
 # The arguments to the function are as followes:
@@ -61,6 +61,14 @@ INCLUDE(PackageAddTestHelpers)
 #
 #     If specified, then the executable is assumed to be in the directory
 #     given by relative <directory>.
+# 
+#   ADD_DIR_TO_NAME
+#
+#     If specified the directory name that the test resides in will be added into
+#     the name of the test after any package name is added and before the given
+#     name of the test. the directory will have the package's base directory
+#     stripped off so only the unique part of the test directory will be used.
+#     All directory seperators will be changed into underscores.
 #
 #   ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...
 #
@@ -128,13 +136,6 @@ INCLUDE(PackageAddTestHelpers)
 #     If specified, then a test will be assumed to fail if one of the regular
 #     expressions <regex1>, <regex2> etc. match the output.  Otherwise, the
 #     test will pass.
-# 
-#   ADD_DIR_TO_NAME
-#     If specified the directory name that the test resides in will be added into
-#     the name of the test after any package name is added and before the given
-#     name of the test. the directory will have the package's base directory
-#     stripped off so only the unique part of the test directory will be used.
-#     All directory seperators will be changed into underscores.
 #
 
 FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
@@ -231,7 +232,7 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
   ENDIF()
 
   IF (NOT IS_ABSOLUTE ${EXECUTABLE_PATH})
-    SET(EXECUTABLE_PATH "./${EXECUTABLE_PATH}")
+    SET(EXECUTABLE_PATH "${CMAKE_CURRENT_BINARY_DIR}/${EXE_BINARY_NAME}")
   ENDIF()
 
   #MESSAGE("PACKAGE_ADD_TEST: ${EXE_NAME}: EXECUTABLE_PATH = ${EXECUTABLE_PATH}")
@@ -252,135 +253,64 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
   #
 
   PACKAGE_PROCESS_COMM_ARGS(ADD_SERIAL_TEST  ADD_MPI_TEST  ${PARSE_COMM})
-  IF (NOT ADD_SERIAL_TEST AND NOT ADD_MPI_TEST)
-    RETURN()
-  ENDIF()
 
   #
-  # F) Get teh MPI options
+  # F) Get the MPI options
   #
     
-  IF(TPL_ENABLE_MPI)
-
-    SET(NUM_PROCS_USED ${MPI_EXEC_MAX_NUMPROCS})
-    IF(PARSE_NUM_MPI_PROCS)
-      IF(${PARSE_NUM_MPI_PROCS} MATCHES [0-9]+-[0-9]+)
-        STRING(REGEX REPLACE "([0-9]+)-([0-9]+)" "\\1" MIN_NP ${PARSE_NUM_MPI_PROCS} )
-        STRING(REGEX REPLACE "([0-9]+)-([0-9]+)" "\\2" MAX_NP ${PARSE_NUM_MPI_PROCS} )
-        IF(${MIN_NP} LESS ${MPI_EXEC_MAX_NUMPROCS} AND  ${MAX_NP} GREATER ${MPI_EXEC_MAX_NUMPROCS} )
-          SET(NUM_PROCS_USED ${MPI_EXEC_MAX_NUMPROCS})
-        ELSEIF(${MIN_NP} EQUAL ${MPI_EXEC_MAX_NUMPROCS})
-          SET(NUM_PROCS_USED ${MIN_NP})
-        ELSEIF(${MAX_NP} EQUAL ${MPI_EXEC_MAX_NUMPROCS})
-          SET(NUM_PROCS_USED ${MAX_NP})
-        ELSEIF(${MAX_NP} LESS ${MPI_EXEC_MAX_NUMPROCS})
-          SET(NUM_PROCS_USED ${MAX_NP})
-        ELSE()
-          # The number of available processor is outside the given range
-          # so the test should not be run.
-          RETURN()
-        ENDIF()
-      ELSEIF(${PARSE_NUM_MPI_PROCS} MATCHES [0-9]+,[0-9]+)
-        MESSAGE(SEND_ERROR "The test ${TEST_NAME} can not be added yet"
-          " because it we do not yet support the form of"
-          " NUM_MPI_PROCS=${PARSE_NUM_MPI_PROCS}") 
-      ELSE()
-        IF(${PARSE_NUM_MPI_PROCS} LESS ${MPI_EXEC_MAX_NUMPROCS})
-          SET(NUM_PROCS_USED ${PARSE_NUM_MPI_PROCS})
-        ELSE()
-          SET(NUM_PROCS_USED ${MPI_EXEC_MAX_NUMPROCS})
-        ENDIF()
-      ENDIF()
-    ENDIF()
-
+  PACKAGE_ADD_TEST_GET_NUM_PROCS_USED("${PARSE_NUM_MPI_PROCS}" NUM_PROCS_USED)
+  IF (NUM_PROCS_USED LESS 0)
+    SET(ADD_MPI_TEST FALSE)
   ENDIF()
-    
+
   #
   # G) Add the tests
   #
 
-  IF(ADD_MPI_TEST)
-
-    SET(TEST_NAME "${TEST_NAME}_MPI_${NUM_PROCS_USED}")
-    
-    SET(COUNTER 0)
-
-    FOREACH(PARSE_ARG ${PARSE_ARGS})
-
-      IF(${NUM_PARSE_ARGS} EQUAL 1)
-        SET(TEST_NAME_COUNTER "${TEST_NAME}")
-      ELSE()
-        SET(TEST_NAME_COUNTER "${TEST_NAME}_${COUNTER}")
-      ENDIF()
-      IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "TEST_NAME = ${TEST_NAME_COUNTER}")
-      ENDIF()
-
-      CONVERT_CMND_ARG_STRING_TO_ADD_TEST_ARG_ARRAY(${PARSE_ARG} INARGS)
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        PRINT_VAR(INARGS)
-      ENDIF()
-
-      PACAKGE_ADD_TEST_GET_MPI_CMND(MPI_CMND
-        "${EXECUTABLE_PATH}"  ${NUM_PROCS_USED}  ${INARGS})
-
-      PACKAGE_ADD_TEST_ADD_TEST( ${TEST_NAME_COUNTER} ${MPI_CMND} )
-      
-      PACKAGE_PRIVATE_ADD_TEST_SET_PASS_PROPERTY(${TEST_NAME_COUNTER})
-
-      IF (NOT PACKAGE_ADD_TEST_ADD_TEST_SKIP)
-        SET_PROPERTY(TEST ${TEST_NAME_COUNTER} APPEND PROPERTY
-          LABELS ${PACKAGE_NAME})
-        IF(PARSE_KEYWORDS)
-          SET_PROPERTY(TEST ${TEST_NAME_COUNTER} APPEND PROPERTY
-            LABELS ${PARSE_KEYWORDS})
-        ENDIF()
-      ENDIF()
-
-      MATH(EXPR COUNTER ${COUNTER}+1 )
-
-    ENDFOREACH()
-
+  IF (NOT ADD_SERIAL_TEST AND NOT ADD_MPI_TEST)
+    RETURN()
   ENDIF()
 
-  IF(ADD_SERIAL_TEST)
-
-    SET(COUNTER 0)
-
-    FOREACH(PARSE_ARG ${PARSE_ARGS})
-
-      IF(${NUM_PARSE_ARGS} EQUAL 1)
-        SET(TEST_NAME_COUNTER "${TEST_NAME}")
-      ELSE()
-        SET(TEST_NAME_COUNTER "${TEST_NAME}_${COUNTER}")
-      ENDIF()
-      IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "TEST_NAME = ${TEST_NAME_COUNTER}")
-      ENDIF()
-    
-      CONVERT_CMND_ARG_STRING_TO_ADD_TEST_ARG_ARRAY(${PARSE_ARG} INARGS)
-      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        PRINT_VAR(INARGS)
-      ENDIF()
-
-      PACKAGE_ADD_TEST_ADD_TEST( ${TEST_NAME_COUNTER} ${EXECUTABLE_PATH} ${INARGS})
-
-      PACKAGE_PRIVATE_ADD_TEST_SET_PASS_PROPERTY(${TEST_NAME_COUNTER})
-
-      IF (NOT PACKAGE_ADD_TEST_ADD_TEST_SKIP)
-        SET_PROPERTY(TEST ${TEST_NAME_COUNTER} APPEND PROPERTY
-          LABELS ${PACKAGE_NAME})
-        IF(PARSE_KEYWORDS)
-          SET_PROPERTY(TEST ${TEST_NAME_COUNTER} APPEND PROPERTY
-            LABELS ${PARSE_KEYWORDS})
-        ENDIF()
-      ENDIF()
-
-      MATH(EXPR COUNTER ${COUNTER}+1 )
-    
-    ENDFOREACH()
-
+  IF (TPL_ENABLE_MPI)
+    SET(TEST_NAME "${TEST_NAME}_MPI_${NUM_PROCS_USED}")
   ENDIF()
   
-ENDFUNCTION()
+  SET(COUNTER 0)
 
+  FOREACH(PARSE_ARG ${PARSE_ARGS})
+
+    IF(${NUM_PARSE_ARGS} EQUAL 1)
+      SET(TEST_NAME_COUNTER "${TEST_NAME}")
+    ELSE()
+      SET(TEST_NAME_COUNTER "${TEST_NAME}_${COUNTER}")
+    ENDIF()
+    IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE(STATUS "TEST_NAME = ${TEST_NAME_COUNTER}")
+    ENDIF()
+
+    CONVERT_CMND_ARG_STRING_TO_ADD_TEST_ARG_ARRAY(${PARSE_ARG} INARGS)
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      PRINT_VAR(INARGS)
+    ENDIF()
+
+    PACAKGE_ADD_TEST_GET_TEST_CMND_ARRAY( CMND_ARRAY
+      "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}"  ${INARGS})
+
+    PACKAGE_ADD_TEST_ADD_TEST( ${TEST_NAME_COUNTER} ${CMND_ARRAY} )
+    
+    PACKAGE_PRIVATE_ADD_TEST_SET_PASS_PROPERTY(${TEST_NAME_COUNTER})
+
+    IF (NOT PACKAGE_ADD_TEST_ADD_TEST_SKIP)
+      SET_PROPERTY(TEST ${TEST_NAME_COUNTER} APPEND PROPERTY
+        LABELS ${PACKAGE_NAME})
+      IF(PARSE_KEYWORDS)
+        SET_PROPERTY(TEST ${TEST_NAME_COUNTER} APPEND PROPERTY
+          LABELS ${PARSE_KEYWORDS})
+      ENDIF()
+    ENDIF()
+
+    MATH(EXPR COUNTER ${COUNTER}+1 )
+
+  ENDFOREACH()
+  
+ENDFUNCTION()

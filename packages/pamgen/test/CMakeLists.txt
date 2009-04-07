@@ -23,15 +23,16 @@ FUNCTION(PAMGEN_ADD_TEST  FILE_IDX_EXT)
 
   SET( RES_FILE run_test_script_${FILE_IDX_EXT}.res )
 
-  LIST( APPEND RES_FILES ${RES_FILE} )
+  SET( RES_FILES ${RES_FILES} ${RES_FILE} PARENT_SCOPE )
 
   SET( TMP_FILE ${CMAKE_CURRENT_BINARY_DIR}/temp_file_${FILE_IDX_EXT} )
 
   PACKAGE_ADD_ADVANCED_TEST(
     run_test_script_${FILE_IDX_EXT}
-    TEST_0 CMND ${CMAKE_CURRENT_BINARY_DIR}/pamgen_test_driver.exe
+    TEST_0 EXEC pamgen_test_driver NOEXEPREFIX
       ARGS ${ARGN}
       OUTPUT_FILE ${TMP_FILE}
+      NO_ECHO_OUTPUT
     TEST_1 CMND diff
       ARGS ${TMP_FILE} ${RES_FILE}
     COMM serial

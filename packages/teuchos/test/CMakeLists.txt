@@ -6,6 +6,7 @@ ADD_SUBDIRECTORIES(
   BLAS
   Comm
   Containers
+  CTestScriptsUnitTests
   DenseMatrix
   FancyOutputting
   LAPACK

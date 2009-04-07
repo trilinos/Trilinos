@@ -1,53 +1,36 @@
 
-INCLUDE(MultilineSet)
-INCLUDE(GenerateScriptFileTarget)
 
-FUNCTION(CREATE_DEPENCENCY_OUTPUT_TEST_CASE TEST_NAME TEST_PASS_COMMAND)
-
-  MULTILINE_SET(TEST_CMND
-    "#!/bin/bash\n"
-    "if [ ! -e ${TEST_NAME} ]\n"
-    "  then mkdir ${TEST_NAME}\n"
-    "fi\n"
-    "cd ${TEST_NAME}\n"
-    "echo $PWD\n"
-    "if [ -e CMakeCache.txt ]\n"
-    "  then rm CMakeCache.txt\n"
-    "fi\n"
-    "${CMAKE_COMMAND}"
-    "  -D Trilinos_PACKAGES_FILE:STRING=DependencyUnitTests/TrilinosPackagesForUnitTests"
-    "  -D Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON"
-    "  -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON"
-    "  -D Trilinos_DEPS_XML_OUTPUT_FILE:STRING=$PWD/TrilinosPackageDependencies.xml"
-    "  -D Trilinos_CDASH_DEPS_XML_OUTPUT_FILE:STRING=$PWD/CDashSubprojectDependencies.xml"
-    "  -D Trilinos_ENABLE_C:BOOL=OFF"
-    "  -D Trilinos_ENABLE_CXX:BOOL=OFF"
-    "  -D Trilinos_ENABLE_Fortran:BOOL=OFF"
-    "  ${TRILINOS_HOME_DIR}\n"
-    "${TEST_PASS_COMMAND}\n"
-    )
-  
-  SET(TEST_SCRIPT_FILE "${TEST_NAME}.sh")
-
-  GENERATE_SCRIPT_FILE_TARGET(${TEST_SCRIPT_FILE} ${TEST_CMND}
-    ${TRILINOS_HOME_DIR}/CMakeLists.txt
-    ${TRILINOS_HOME_DIR}/cmake/python/TrilinosDependencies.py
-    ${TRILINOS_HOME_DIR}/cmake/python/dump-package-dep-table.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
-    )
-  
-  ADD_TEST( ${TEST_NAME} ${TEST_SCRIPT_FILE} )
-
-ENDFUNCTION()
+INCLUDE(PackageAddAdvancedTest)
 
 
-CREATE_DEPENCENCY_OUTPUT_TEST_CASE(TrilinosOutputDep_XmlOutputTest
-  "diff -s ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependencies.gold.xml TrilinosPackageDependencies.xml" )
+IF (WIN23 AND NOT CYGWIN)
+  SET(DIFF_COMMAND_STUFF "${CMAKE_COMMAND}" ARGS -E compare_files)
+ELSE()
+  SET(DIFF_COMMAND_STUFF diff ARGS)
+ENDIF()
 
 
-CREATE_DEPENCENCY_OUTPUT_TEST_CASE(TrilinosOutputDep_HtmlOutputTest
-  "diff -s ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependenciesTable.gold.html TrilinosPackageDependenciesTable.html" )
-
-
-CREATE_DEPENCENCY_OUTPUT_TEST_CASE(TrilinosOutputDep_CDashXmlOutputTest
-  "diff -s ${CMAKE_CURRENT_SOURCE_DIR}/CDashSubprojectDependencies.gold.xml CDashSubprojectDependencies.xml" )
+PACKAGE_ADD_ADVANCED_TEST( TrilinosDep_XmlHtmlCDashOutputTest
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  TEST_0 CMND ${CMAKE_COMMAND}
+    ARGS
+      -D Trilinos_PACKAGES_FILE:STRING=DependencyUnitTests/TrilinosPackagesForUnitTests
+      -D Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON
+      -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+      -D Trilinos_DEPS_XML_OUTPUT_FILE:STRING=TrilinosPackageDependencies.xml
+      -D Trilinos_CDASH_DEPS_XML_OUTPUT_FILE:STRING=CDashSubprojectDependencies.xml
+      -D Trilinos_ENABLE_C:BOOL=OFF
+      -D Trilinos_ENABLE_CXX:BOOL=OFF
+      -D Trilinos_ENABLE_Fortran:BOOL=OFF
+      ${TRILINOS_HOME_DIR}
+    PASS_REGULAR_EXPRESSION "Shortcircuiting after dependency tracking ..."
+  TEST_1 CMND ${DIFF_COMMAND_STUFF}
+    ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependencies.gold.xml
+    TrilinosPackageDependencies.xml
+  TEST_2 CMND ${DIFF_COMMAND_STUFF}
+    ${CMAKE_CURRENT_SOURCE_DIR}/TrilinosPackageDependenciesTable.gold.html
+     TrilinosPackageDependenciesTable.html
+  TEST_3 CMND ${DIFF_COMMAND_STUFF}
+    ${CMAKE_CURRENT_SOURCE_DIR}/CDashSubprojectDependencies.gold.xml
+    CDashSubprojectDependencies.xml
+  )

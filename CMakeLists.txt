@@ -196,6 +196,9 @@ PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
   "\nFinal set of non-enabled TPLs" OFF TRUE)
 
 IF (Trilinos_DEPS_XML_OUTPUT_FILE)
+  IF (NOT IS_ABSOLUTE Trilinos_DEPS_XML_OUTPUT_FILE)
+    SET(Trilinos_DEPS_XML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${Trilinos_DEPS_XML_OUTPUT_FILE})
+  ENDIF()
   MESSAGE("" )
   MESSAGE("Dumping the XML dependencies file ${Trilinos_DEPS_XML_OUTPUT_FILE} ..." )
   MESSAGE("")

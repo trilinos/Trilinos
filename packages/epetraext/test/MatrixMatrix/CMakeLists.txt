@@ -20,5 +20,3 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(MatrixMatrixCopyFiles
   SOURCE_PREFIX "src_"
   EXEDEPS MatrixMatrix_test
   )
-
-  

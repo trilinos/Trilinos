@@ -90,26 +90,77 @@ FUNCTION(PACKAGE_ADD_TEST_GET_EXE_BINARY_NAME  EXE_NAME_IN
 ENDFUNCTION()
 
 
+
+#
+# Get the number of MPI processes to use
+#
+
+FUNCTION(PACKAGE_ADD_TEST_GET_NUM_PROCS_USED  NUM_MPI_PROCS_IN
+  NUM_MPI_PROCS_USED_OUT
+  )
+  IF (NOT DEFINED MPI_EXEC_MAX_NUMPROCS)
+    SET(MPI_EXEC_MAX_NUMPROCS 1)
+  ENDIF()
+  SET(NUM_PROCS_USED ${MPI_EXEC_MAX_NUMPROCS})
+  IF(NUM_MPI_PROCS_IN)
+    IF(${NUM_MPI_PROCS_IN} MATCHES [0-9]+-[0-9]+)
+      STRING(REGEX REPLACE "([0-9]+)-([0-9]+)" "\\1" MIN_NP ${NUM_MPI_PROCS_IN} )
+      STRING(REGEX REPLACE "([0-9]+)-([0-9]+)" "\\2" MAX_NP ${NUM_MPI_PROCS_IN} )
+      IF(${MIN_NP} LESS ${MPI_EXEC_MAX_NUMPROCS} AND  ${MAX_NP} GREATER ${MPI_EXEC_MAX_NUMPROCS} )
+        SET(NUM_PROCS_USED ${MPI_EXEC_MAX_NUMPROCS})
+      ELSEIF(${MIN_NP} EQUAL ${MPI_EXEC_MAX_NUMPROCS})
+        SET(NUM_PROCS_USED ${MIN_NP})
+      ELSEIF(${MAX_NP} EQUAL ${MPI_EXEC_MAX_NUMPROCS})
+        SET(NUM_PROCS_USED ${MAX_NP})
+      ELSEIF(${MAX_NP} LESS ${MPI_EXEC_MAX_NUMPROCS})
+        SET(NUM_PROCS_USED ${MAX_NP})
+      ELSE()
+        # The number of available processor is outside the given range
+        # so the test should not be run.
+        RETURN()
+      ENDIF()
+    ELSEIF(${NUM_MPI_PROCS_IN} MATCHES [0-9]+,[0-9]+)
+      MESSAGE(SEND_ERROR "The test ${TEST_NAME} can not be added yet"
+        " because it we do not yet support the form of"
+        " NUM_MPI_PROCS=${NUM_MPI_PROCS_IN}") 
+    ELSE()
+      IF(${NUM_MPI_PROCS_IN} LESS ${MPI_EXEC_MAX_NUMPROCS})
+        SET(NUM_PROCS_USED ${NUM_MPI_PROCS_IN})
+      ELSE()
+        SET(NUM_PROCS_USED -1)
+      ENDIF()
+    ENDIF()
+  ENDIF()
+  SET(${NUM_MPI_PROCS_USED_OUT} ${NUM_PROCS_USED} PARENT_SCOPE)
+ENDFUNCTION()
+
+
 #
 # Generate the array of arguments for an MPI run
 #
 # NOTE: The extra test program arguments are passed through ${ARGN}.
 #
 
-FUNCTION( PACAKGE_ADD_TEST_GET_MPI_CMND  MPI_CMND_ARRAY_VAR_NAME
+FUNCTION( PACAKGE_ADD_TEST_GET_TEST_CMND_ARRAY  CMND_ARRAY_OUT
   EXECUTABLE_PATH  NUM_PROCS_USED
   )
-
-  SET(${MPI_CMND_ARRAY_VAR_NAME}
-     "${MPI_EXEC}"
-     ${MPI_EXEC_PRE_NUMPROCS_FLAGS}
-     ${MPI_EXEC_NUMPROCS_FLAG} ${NUM_PROCS_USED}
-     ${MPI_EXEC_POST_NUMPROCS_FLAGS}
-     "${EXECUTABLE_PATH}"
-     ${ARGN}
-     PARENT_SCOPE
-     )
-
+  IF (TPL_ENABLE_MPI)
+    SET(${CMND_ARRAY_OUT}
+       "${MPI_EXEC}"
+       ${MPI_EXEC_PRE_NUMPROCS_FLAGS}
+       ${MPI_EXEC_NUMPROCS_FLAG} ${NUM_PROCS_USED}
+       ${MPI_EXEC_POST_NUMPROCS_FLAGS}
+       "${EXECUTABLE_PATH}"
+       ${ARGN}
+       PARENT_SCOPE
+       )
+   ELSE()
+    SET(${CMND_ARRAY_OUT}
+       "${EXECUTABLE_PATH}"
+       ${ARGN}
+       PARENT_SCOPE
+       )
+   ENDIF()
 ENDFUNCTION()
 
 
