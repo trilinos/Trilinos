@@ -1259,7 +1259,7 @@ XMLParser::parse()
 Consume the XMLInputStream to build an XMLObject. ";
 
 
-// File: namespace@11.xml
+// File: namespace@13.xml
 
 
 // File: namespace@2.xml
@@ -1281,6 +1281,12 @@ Nonmember constructor. ";
 %feature("docstring")  Teuchos::Exceptions::parameterList "RCP<ParameterList> Teuchos::parameterList(const ParameterList &source)
 
 Nonmember constructor. ";
+
+%feature("docstring")  Teuchos::Exceptions::printValidParameters "void Teuchos::printValidParameters(const ParameterListAcceptor
+&paramListAccpetor, std::ostream &out, const bool showDoc=true)
+
+Pretty print the valid parameters from a ParameterListAccpetor object.
+";
 
 %feature("docstring")
 Teuchos::Exceptions::throwScalarTraitsNanInfError "void
@@ -1406,6 +1412,12 @@ XML version of the parameter list specification. ";
 // File: Teuchos__ParameterListAcceptorDefaultBase_8hpp.xml
 
 
+// File: Teuchos__ParameterListAcceptorHelpers_8cpp.xml
+
+
+// File: Teuchos__ParameterListAcceptorHelpers_8hpp.xml
+
+
 // File: Teuchos__ParameterListExceptions_8hpp.xml
 
 
@@ -1416,11 +1428,11 @@ XML version of the parameter list specification. ";
 
 
 // File: Teuchos__ScalarTraits_8cpp.xml
-%feature("docstring")  returnFloatZero "float @11::returnFloatZero()
+%feature("docstring")  returnFloatZero "float @13::returnFloatZero()
 ";
 
 %feature("docstring")  returnDoubleZero "double
-@11::returnDoubleZero() ";
+@13::returnDoubleZero() ";
 
 
 // File: Teuchos__ScalarTraits_8hpp.xml

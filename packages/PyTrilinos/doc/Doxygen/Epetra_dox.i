@@ -551,7 +551,7 @@ Print method. ";
 /*  Additional methods required to support the Epetra_RowMatrix
 interface  */
 
-%feature("docstring")  Epetra_BasicRowMatrix::SetUseTranspose "virtual int Epetra_BasicRowMatrix::SetUseTranspose(bool UseTranspose)
+%feature("docstring")  Epetra_BasicRowMatrix::SetUseTranspose "virtual int Epetra_BasicRowMatrix::SetUseTranspose(bool use_transpose)
 
 If set true, transpose of this operator will be applied.
 
@@ -563,7 +563,7 @@ not support transpose use, this method should return a value of -1.
 Parameters:
 -----------
 
-UseTranspose:  (In) - If true, multiply by the transpose of operator,
+use_transpose:  (In) - If true, multiply by the transpose of operator,
 otherwise just use operator.
 
 Always returns 0. ";
@@ -16015,7 +16015,7 @@ Print service methods; defines behavior of ostream << operator. ";
 /*  Additional methods for support of Epetra_SerialDenseOperator
 interface  */
 
-%feature("docstring")  Epetra_SerialDenseSVD::SetUseTranspose "virtual int Epetra_SerialDenseSVD::SetUseTranspose(bool UseTranspose)
+%feature("docstring")  Epetra_SerialDenseSVD::SetUseTranspose "virtual int Epetra_SerialDenseSVD::SetUseTranspose(bool use_transpose)
 
 If set true, transpose of this operator will be applied.
 
@@ -16027,15 +16027,15 @@ not support transpose use, this method should return a value of -1.
 Parameters:
 -----------
 
-In:  UseTranspose -If true, multiply by the transpose of operator,
+In:  use_transpose -If true, multiply by the transpose of operator,
 otherwise just use operator.
 
 Integer error code, set to 0 if successful. Set to -1 if this
 implementation does not support transpose. ";
 
 %feature("docstring")  Epetra_SerialDenseSVD::Apply "virtual int
-Epetra_SerialDenseSVD::Apply(const Epetra_SerialDenseMatrix &X,
-Epetra_SerialDenseMatrix &Y)
+Epetra_SerialDenseSVD::Apply(const Epetra_SerialDenseMatrix &Xmat,
+Epetra_SerialDenseMatrix &Ymat)
 
 Returns the result of a Epetra_SerialDenseOperator applied to a
 Epetra_SerialDenseMatrix X in Y.
@@ -16051,7 +16051,7 @@ Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Epetra_SerialDenseSVD::ApplyInverse "virtual
 int Epetra_SerialDenseSVD::ApplyInverse(const Epetra_SerialDenseMatrix
-&X, Epetra_SerialDenseMatrix &Y)
+&Xmat, Epetra_SerialDenseMatrix &Ymat)
 
 Returns the result of a Epetra_SerialDenseOperator inverse applied to
 an Epetra_SerialDenseMatrix X in Y.

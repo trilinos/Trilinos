@@ -678,7 +678,7 @@ In:  - Tolerance used for each application of AztecOO solver. ";
 Destructor. ";
 
 %feature("docstring")  AztecOO_Operator::SetUseTranspose "int
-AztecOO_Operator::SetUseTranspose(bool UseTranspose)
+AztecOO_Operator::SetUseTranspose(bool use_transpose)
 
 If set true, transpose of this operator will be applied.
 
@@ -690,10 +690,11 @@ not support transpose use, this method should return a value of -1.
 Parameters:
 -----------
 
-In:  UseTranspose - If true, multiply by the transpose of operator,
+In:  use_transpose - If true, multiply by the transpose of operator,
 otherwise just use operator.
 
-WARNING:  - This method has no effect and returns -1 as error code. ";
+WARNING:  - This returns -1 if use_transpose is true, because tranpse
+is not supported. ";
 
 %feature("docstring")  AztecOO_Operator::Apply "int
 AztecOO_Operator::Apply(const Epetra_MultiVector &X,
@@ -1491,8 +1492,8 @@ Epetra matrices passed in by AztecOO. ";
 %feature("docstring")  AztecOO_Version "string AztecOO_Version() ";
 
 
-// File: dir_36932ca5b5e8a560fb9b5a4f6396c1ae.xml
+// File: dir_4dc5e7d6705411ebb2207ed00e1644b4.xml
 
 
-// File: dir_b1e1466d5345df6a7976eedbf0fe4b10.xml
+// File: dir_c12959d073c8d91317941666aec70eef.xml
 

@@ -538,9 +538,15 @@ Reshapes the object with default values. ";
 
 %feature("docstring")  MLAPI::InverseOperator::Reshape "void
 MLAPI::InverseOperator::Reshape(const Operator &Op, const string Type,
-Teuchos::ParameterList &List)
+Teuchos::ParameterList &List, Teuchos::ParameterList *pushlist=NULL)
 
 Reshapes the object by setting the Operator and the specified type. ";
+
+%feature("docstring")  MLAPI::InverseOperator::Reshape "void
+MLAPI::InverseOperator::Reshape(Ifpack_Preconditioner *prec, const
+Operator &Op, const bool ownership)
+
+Reshape with preconstructed smoother as Ifpack_Preconditioner. ";
 
 %feature("docstring")  MLAPI::InverseOperator::GetOperatorRangeSpace "const Space MLAPI::InverseOperator::GetOperatorRangeSpace() const
 
@@ -2150,14 +2156,14 @@ MLAPI::GetMatrixType() ";
 // File: MLAPI__Workspace_8h.xml
 
 
-// File: dir_0e9f01c83be8d07c2bf1af99aa407112.xml
+// File: dir_675942c6029ac094066b3b01798a20e5.xml
 
 
-// File: dir_c54ae8b9aa3f872ba570173b8c01ed01.xml
+// File: dir_cbc5cef1c09d94196b66e1045b0d879a.xml
 
 
-// File: dir_8a55833a12c700b91ca0b0e8e65bb2a2.xml
+// File: dir_5c2a07a4854ec895e04db044a77b08e2.xml
 
 
-// File: dir_aec5cb84616be818f8b091a7f4426ea3.xml
+// File: dir_c42f661d3164c34551290526b5f2c443.xml
 

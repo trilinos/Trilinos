@@ -6182,7 +6182,12 @@ operator<<. ";
 
 
 // File: classIfpack__OverlappingRowMatrix.xml
-%feature("docstring") Ifpack_OverlappingRowMatrix "";
+%feature("docstring") Ifpack_OverlappingRowMatrix "
+
+Ifpack_OverlappingRowMatrix: matrix with ghost rows, based on
+Epetra_RowMatrix.
+
+C++ includes: Ifpack_OverlappingRowMatrix.h ";
 
 %feature("docstring")
 Ifpack_OverlappingRowMatrix::Ifpack_OverlappingRowMatrix "Ifpack_OverlappingRowMatrix::Ifpack_OverlappingRowMatrix(const
@@ -8574,6 +8579,12 @@ int(*fkeep)(int, int, double, void *), void *other) ";
 
 
 // File: Ifpack__METISReordering_8h.xml
+
+
+// File: Ifpack__NodeFilter_8cpp.xml
+
+
+// File: Ifpack__NodeFilter_8h.xml
 
 
 // File: Ifpack__OverlapFactor_8cpp.xml

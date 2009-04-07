@@ -1740,7 +1740,7 @@ Amesos_Factory;
 
 Solver = Amesos_Factory.Create(\"Amesos_Mumps\", Problem);
 
-if( Solver == 0 ) cerr << \"library not available\" << endl;
+if( Solver == 0 ) std::cerr << \"library not available\" << std::endl;
 
 Problem.SetMatrix(&A);
 
@@ -3683,14 +3683,14 @@ Amesos_Time::ResetTimer(const int timerID=0)
 Resets the internally stored time object. ";
 
 %feature("docstring")  Amesos_Time::AddTime "int
-Amesos_Time::AddTime(const string what, int dataID, const int
+Amesos_Time::AddTime(const std::string what, int dataID, const int
 timerID=0)
 
 Adds to field what the time elapsed since last call to ResetTimer().
 ";
 
 %feature("docstring")  Amesos_Time::GetTime "double
-Amesos_Time::GetTime(const string what) const
+Amesos_Time::GetTime(const std::string what) const
 
 Gets the cumulative time using the string. ";
 
@@ -3715,7 +3715,8 @@ Heidi Thornquist, SNL 1437
 
 C++ includes: Amesos_Time.h ";
 
-%feature("docstring")  Amesos_Time_Data::Amesos_Time_Data "Amesos_Time_Data::Amesos_Time_Data(string timeName, double timeVal)
+%feature("docstring")  Amesos_Time_Data::Amesos_Time_Data "Amesos_Time_Data::Amesos_Time_Data(std::string timeName, double
+timeVal)
 
 Constructor. ";
 
@@ -3969,20 +3970,20 @@ Default destructor. ";
 %feature("docstring")  Amesos_Utils::ComputeTrueResidual "void
 Amesos_Utils::ComputeTrueResidual(const Epetra_RowMatrix &Matrix,
 const Epetra_MultiVector &X, const Epetra_MultiVector &B, const bool
-UseTranspose, const string prefix) const
+UseTranspose, const std::string prefix) const
 
 Computes the true residual, B - Matrix * X, and prints the results. ";
 
 %feature("docstring")  Amesos_Utils::ComputeVectorNorms "void
 Amesos_Utils::ComputeVectorNorms(const Epetra_MultiVector &X, const
-Epetra_MultiVector &B, const string prefix) const
+Epetra_MultiVector &B, const std::string prefix) const
 
 Computes the norms of X and B and print the results. ";
 
 %feature("docstring")  Amesos_Utils::PrintLine "void
 Amesos_Utils::PrintLine() const
 
-Prints line on cout. ";
+Prints line on std::cout. ";
 
 %feature("docstring")  Amesos_Utils::SetMaxProcesses "void
 Amesos_Utils::SetMaxProcesses(int &MaxProcesses, const
@@ -4000,9 +4001,6 @@ Epetra_RowMatrix &A) ";
 
 
 // File: namespaceSLU.xml
-
-
-// File: namespacestd.xml
 
 
 // File: namespaceTeuchos.xml
@@ -4051,11 +4049,11 @@ DeleteFunctor deleteFunctor) ";
 
 
 // File: Amesos__MC64_8cpp.xml
-%feature("docstring")  std::F77_FUNC "void F77_FUNC(mc64id,
-MC64ID)(int *) ";
+%feature("docstring")  F77_FUNC "void F77_FUNC(mc64id, MC64ID)(int *)
+";
 
-%feature("docstring")  std::F77_FUNC "void F77_FUNC(mc64ad,
-MC64AD)(int * ";
+%feature("docstring")  F77_FUNC "void F77_FUNC(mc64ad, MC64AD)(int *
+";
 
 
 // File: Amesos__MC64_8h.xml
@@ -4095,12 +4093,6 @@ int *, int *, int *, int *, double *, int *, int *, int *, int *, int
 
 
 // File: Amesos__Pardiso_8h.xml
-
-
-// File: Amesos__Pastix_8cpp.xml
-
-
-// File: Amesos__Pastix_8h.xml
 
 
 // File: Amesos__Reordering_8h.xml
@@ -4197,8 +4189,8 @@ taucs_supernodal_factor_free_ptr(taucs_ccs_matrix
 // File: Amesos__Utils_8h.xml
 
 
-// File: dir_9a32face10acae97c94b17c4df82c3c5.xml
+// File: dir_3b09264d69d076c0a3b5a8b401bfd1f8.xml
 
 
-// File: dir_6306eb3c557a9f16944e82355854f6dc.xml
+// File: dir_e562a79e1d7f66fb5a29a2640e5c2e71.xml
 
