@@ -897,11 +897,12 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 }
 
 // ======================================================================
+#ifndef IFPACK_NODE_AWARE_CODE
 Epetra_RowMatrix& Ifpack_OverlappingRowMatrix::B() const
 {
   return(*ExtMatrix_);
 }
-
+#endif
 // ======================================================================
 const Epetra_BlockMap& Ifpack_OverlappingRowMatrix::Map() const
 {

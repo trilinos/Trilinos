@@ -128,6 +128,17 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
   // - the total number of nonzeros
   // - the diagonal entries
 
+
+  // CMS: [A|B]-Local to Overlap-Local Column Indices
+  if(ovA_){
+    Ac_LIDMap_=new int[ovA_->A().NumMyCols()+1];
+    for(int i=0;i<ovA_->A().NumMyCols();i++) Ac_LIDMap_[i]=colMap_->LID(ovA_->A().RowMatrixColMap().GID(i));
+    Bc_LIDMap_=new int[ovA_->B().NumMyCols()+1];
+    for(int i=0;i<ovA_->B().NumMyCols();i++) Bc_LIDMap_[i]=colMap_->LID(ovA_->B().RowMatrixColMap().GID(i));
+  }
+  // end CMS
+
+
   // compute nonzeros (total and per-row), and store the
   // diagonal entries (already modified)
   int ActualMaxNumEntries = 0;
@@ -172,7 +183,7 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
     printf(">>> node 0 <<<\n");
   if (gpid == 2)
     printf(">>> node 1 <<<\n");
-  if (lpid == 0)
+  if (lpid == 0) 
     printf("=======================================\ntarget: RowMatrixColMap()\n====================================\n");
   cout << RowMatrixColMap() << endl;
   sleep(1);
@@ -189,6 +200,9 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
       printf("** * gpid %d: Ifpack_NodeFilter ctor: problem creating Importer_ * **\n\n",gpid);
     }
 */
+
+
+
   if (!(*colMap_).SameAs(*Map_)) {
     //TODO change this to RCP
     try{Importer_ = rcp(new Epetra_Import(*colMap_, *Map_));}
@@ -227,15 +241,19 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 
   int ierr;
   if (ovA_) {
-    int GlobRow = Map_->GID(MyRow);
-    ierr = ovA_->ExtractGlobalRowCopy(GlobRow,Length,NumEntries, Values,Indices);
-    IFPACK_CHK_ERR(ierr);
-
-    for (int j = 0 ; j < NumEntries ; ++j) {
-      Indices[j] = colMap_->LID(Indices[j]);
-      assert(Indices[j] != -1);
+    int LocRow=ovA_->A().RowMatrixRowMap().LID(Map_->GID(MyRow));      
+    if (LocRow != -1) { 
+      ierr=ovA_->A().ExtractMyRowCopy(LocRow,Length,NumEntries,Values,Indices);
+      for(int j=0;j<NumEntries;j++)
+	Indices[j]=Ac_LIDMap_[Indices[j]];
+      
     }
-
+    else {
+      LocRow=ovA_->B().RowMatrixRowMap().LID(Map_->GID(MyRow));      
+      ierr=ovA_->B().ExtractMyRowCopy(LocRow,Length,NumEntries,Values,Indices);
+      for(int j=0;j<NumEntries;j++)
+	Indices[j]=Bc_LIDMap_[Indices[j]];
+    }
   } else {
     int Nnz;
     ierr = Matrix_->ExtractMyRowCopy(MyRow,MaxNumEntriesA_,Nnz, &Values_[0],&Indices_[0]);
@@ -403,6 +421,7 @@ int Ifpack_NodeFilter::ApplyInverse(const Epetra_MultiVector& X,
 const Epetra_BlockMap& Ifpack_NodeFilter::Map() const
 {
   return(*Map_);
+
 }
 
 #endif //ifdef IFPACK_NODE_AWARE_CODE

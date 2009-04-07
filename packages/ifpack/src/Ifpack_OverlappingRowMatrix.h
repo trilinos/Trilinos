@@ -1,3 +1,4 @@
+
 /*@HEADER
 // ***********************************************************************
 //
@@ -337,14 +338,28 @@ int ImportMultiVector(const Epetra_MultiVector& X,
 int ExportMultiVector(const Epetra_MultiVector& OvX,
                       Epetra_MultiVector& X,
                       Epetra_CombineMode CM = Add);
-private:
+#ifdef IFPACK_NODE_AWARE_CODE
+  inline const Epetra_RowMatrix& A() const 
+  {
+    return(*Matrix_);
+  }
 
+  inline Epetra_CrsMatrix& B() const
+  {
+    return(*ExtMatrix_);
+  }
+#endif
+
+private: 
+#ifndef IFPACK_NODE_AWARE_CODE
   inline const Epetra_RowMatrix& A() const 
   {
     return(*Matrix_);
   }
 
   inline Epetra_RowMatrix& B() const;
+
+#endif
 
   int NumMyRows_;
   int NumMyCols_;
@@ -362,6 +377,7 @@ private:
   Teuchos::RefCountPtr<const Epetra_Map> Map_;
 # ifdef IFPACK_NODE_AWARE_CODE
   Teuchos::RefCountPtr<const Epetra_Map> colMap_;
+
 # endif
   Teuchos::RefCountPtr<const Epetra_Import> Importer_;
 

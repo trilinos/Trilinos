@@ -96,7 +96,10 @@ public:
   //@}
   //@{ \name Destructor.
   //! Destructor
-  ~Ifpack_NodeFilter(){};
+  ~Ifpack_NodeFilter(){
+    if(Ac_LIDMap_) delete [] Ac_LIDMap_;
+    if(Bc_LIDMap_) delete [] Bc_LIDMap_;
+  };
   //@}
 
   //@{ \name Matrix data extraction routines
@@ -357,7 +360,7 @@ public:
   const Epetra_Map & OperatorDomainMap() const 
   {
     return(*Map_);
-  }
+   }
 
   //! Returns the Epetra_Map object associated with the range of this operator.
   const Epetra_Map & OperatorRangeMap() const 
@@ -418,6 +421,10 @@ private:
   Teuchos::RCP<Epetra_Vector> Diagonal_;
   double NormOne_;
   double NormInf_;
+
+  //! Maps to speed LID-LID conversions
+  int* Ac_LIDMap_;
+  int* Bc_LIDMap_;
 
   //mutable Teuchos::RCP<Epetra_MultiVector> ImportVector_;
   //mutable Teuchos::RCP<Epetra_MultiVector> ExportVector_;
