@@ -4,6 +4,48 @@
 #                                                                             #
 ###############################################################################
 
+Release Update 9.0.3 April 7, 2009
+
+Change number.  Package(s) affected - description
+
+1. Zoltan - Added error statements when a method is request but its interface
+            is not compiled into Zoltan.
+
+2. Zoltan - Fixed array indices in Zoltan_Print_Key_Params.
+
+3. Zoltan - Added ability migrate when RETURN_LISTS=Partition Assignments.
+
+4. Anasazi - Removed a typedef that was causing problems on the Sun, added MV
+             printing.
+
+5. Zoltan - Moved all declarations to beginning of control block.
+
+6. Zoltan - Minor changes to satisfy -pedantic compiler flag.
+
+7. Zoltan - Bug 4299.  Always allocate part array, even when num_obj==0, as
+            ParMETIS checks it for NULL and aborts.
+
+8. Zoltan - Bug 4310.  Specify std namespace for free() method, some compilers
+            will complain if we don't.
+
+9. ML - Bug 4311.  Fixing array bounds read detected by Purify.
+
+10. Zoltan (example only) - Simplified RCB example.
+
+11. Anasazi - Added missing std:: qualifiers due to bug filed by user.
+
+12. Sacado - Bug 4348.  Fixed max/min overloads when arguments are expressions
+             of the same type.
+
+13. Framework level - Bug 4313.  Fixed an issue with make install-everything
+                      that prevent some files from being copied into the
+                      install directory.
+
+14. ML - Local Nodal / Block Chebyshev preconditioning updates. 
+
+15. EpetraExt - Fixing small bug in EpetraExt-Zoltan interface.
+
+------------------------------------------------------------------------------
 Release Update 9.0.2 January 8, 2009
 
 Change number.  Package(s) affected - description
