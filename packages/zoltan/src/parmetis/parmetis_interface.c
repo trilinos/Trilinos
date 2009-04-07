@@ -701,11 +701,11 @@ int Zoltan_ParMetis_Order(
 			&numflag, options, ord.rank, ord.sep_sizes, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
-  else {
+  else { /* Be careful : permutation parameters are in the opposite order */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
     options[0] = 0;  /* Use default options for METIS. */
     METIS_NodeND (&gr.num_obj, gr.xadj, gr.adjncy,
-		  &numflag, options, ord.rank, ord.iperm);
+		  &numflag, options, ord.iperm, ord.rank);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
   }
 #else /* PARMETIS_MAJOR_VERSION >= 3 */
