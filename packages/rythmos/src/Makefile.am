@@ -103,6 +103,8 @@ CORE_H = \
   $(srcdir)/Rythmos_RKButcherTableau.hpp\
   $(srcdir)/Rythmos_RKButcherTableauBase.hpp\
   $(srcdir)/Rythmos_RKButcherTableauBuilder.hpp\
+  $(srcdir)/Rythmos_RKButcherTableauBuilder_decl.hpp\
+  $(srcdir)/Rythmos_RKButcherTableauBuilder_def.hpp\
   $(srcdir)/Rythmos_RKButcherTableauHelpers.hpp\
   $(srcdir)/Rythmos_RKButcherTableauAcceptingStepperBase.hpp\
   $(srcdir)/Rythmos_ResponseAndFwdSensPoint.hpp\
@@ -139,7 +141,7 @@ CORE = \
   $(srcdir)/Rythmos_ImplicitRKStepper.cpp\
   $(srcdir)/Rythmos_IntegratorBuilder.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer.cpp\
-	$(srcdir)/Rythmos_RKButcherTableau.cpp\
+  $(srcdir)/Rythmos_RKButcherTableauBuilder.cpp\
   $(srcdir)/Rythmos_Version.cpp
 
 UTIL_H =

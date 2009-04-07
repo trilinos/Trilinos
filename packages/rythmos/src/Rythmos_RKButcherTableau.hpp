@@ -34,6 +34,7 @@
 #include "Rythmos_RKButcherTableauBase.hpp"
 
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_as.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -44,6 +45,8 @@
 #include "Thyra_ProductVectorBase.hpp"
 
 namespace Rythmos {
+
+  using Teuchos::as;
 
   inline const std::string RKBT_ForwardEuler_name() { return  "Forward Euler"; } // done
   inline const std::string RKBT_BackwardEuler_name() { return  "Backward Euler"; } // done
@@ -89,7 +92,6 @@ namespace Rythmos {
   inline const std::string SDIRK5Stage5thOrder_name() { return  "Singly Diagonal IRK 5 Stage 5th order"; } // done
   inline const std::string SDIRK5Stage4thOrder_name() { return  "Singly Diagonal IRK 5 Stage 4th order"; } // done
   inline const std::string SDIRK3Stage4thOrder_name() { return  "Singly Diagonal IRK 3 Stage 4th order"; } // done
-
 
 template<class Scalar>
 class RKButcherTableauDefaultBase :
@@ -677,6 +679,8 @@ class Explicit2Stage2ndOrderRunge_RKBT :
 };
 
 
+// 04/07/09 tscoffe:  I verified manually that the Convergence Testing passes
+// with gamma_default_ = -1.
 template<class Scalar>
 class SDIRK2Stage3rdOrder_RKBT :
   virtual public RKButcherTableauDefaultBase<Scalar>
@@ -689,11 +693,25 @@ class SDIRK2Stage3rdOrder_RKBT :
                   << "Solving Ordinary Differential Equations I:  Nonstiff Problems, 2nd Revised Edition\n"
                   << "E. Hairer, S. P. Norsett, and G. Wanner\n"
                   << "Table 7.2, pg 207\n"
-                  << "gamma = (3+sqrt(3))/6\n"
+                  << "gamma = (3+-sqrt(3))/6\n"
                   << "c = [  gamma     1-gamma  ]'\n"
                   << "A = [  gamma     0        ]\n"
                   << "    [ 1-2*gamma  gamma    ]\n"
                   << "b = [ 1/2        1/2      ]'" << std::endl;
+
+      this->setMyDescription(description.str());
+      gamma_coeff_default_ = 1;
+      gamma_coeff_ = gamma_coeff_default_;
+      this->setupData();
+
+      RCP<ParameterList> validPL = Teuchos::parameterList();
+      validPL->set("Description","",this->getMyDescription());
+      validPL->set<int>("gamma coefficient",gamma_coeff_default_,"gamma = (3+[gamma coefficient]*sqrt(3))/6, [gamma coefficient] = +-1");
+      Teuchos::setupVerboseObjectSublist(&*validPL);
+      this->setMyValidParameterList(validPL);
+    }
+    void setupData() 
+    {
       typedef ScalarTraits<Scalar> ST;
       int numStages = 2;
       Teuchos::SerialDenseMatrix<int,Scalar> A(numStages,numStages);
@@ -701,7 +719,7 @@ class SDIRK2Stage3rdOrder_RKBT :
       Teuchos::SerialDenseVector<int,Scalar> c(numStages);
       Scalar one = ST::one();
       Scalar zero = ST::zero();
-      Scalar gamma = Scalar( (3*one + sqrt(3*one))/(6*one) );
+      Scalar gamma = Scalar( (3*one + as<Scalar>(gamma_coeff_)*sqrt(3*one))/(6*one) );
       A(0,0) = gamma;
       A(0,1) = zero;
       A(1,0) = Scalar( one - 2*gamma );
@@ -711,12 +729,23 @@ class SDIRK2Stage3rdOrder_RKBT :
       c(0) = gamma;
       c(1) = Scalar( one - gamma );
 
-      this->setMyDescription(description.str());
       this->setMy_A(A);
       this->setMy_b(b);
       this->setMy_c(c);
       this->setMy_order(3);
     }
+    void setParameterList(RCP<Teuchos::ParameterList> const& paramList)
+    {
+      TEST_FOR_EXCEPT( is_null(paramList) );
+      paramList->validateParameters(*this->getValidParameters());
+      Teuchos::readVerboseObjectSublist(&*paramList,this);
+      gamma_coeff_ = paramList->get<int>("gamma coefficient",gamma_coeff_default_);
+      this->setupData();
+      this->setMyParamList(paramList);
+    }
+  private:
+    int gamma_coeff_default_;
+    int gamma_coeff_;
 };
 
 

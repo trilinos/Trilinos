@@ -45,6 +45,7 @@
 #include "../SinCos/SinCosModel.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Rythmos_UnitTestModels.hpp"
+#include "Rythmos_RKButcherTableau.hpp"
 
 namespace Rythmos {
 

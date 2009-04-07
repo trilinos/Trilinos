@@ -113,7 +113,8 @@ am__objects_1 = Rythmos_BackwardEulerStepper.$(OBJEXT) \
 	Rythmos_ImplicitRKStepper.$(OBJEXT) \
 	Rythmos_IntegratorBuilder.$(OBJEXT) \
 	Rythmos_InterpolationBuffer.$(OBJEXT) \
-	Rythmos_RKButcherTableau.$(OBJEXT) Rythmos_Version.$(OBJEXT)
+	Rythmos_RKButcherTableauBuilder.$(OBJEXT) \
+	Rythmos_Version.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
 am_librythmos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -317,6 +318,8 @@ CORE_H = \
   $(srcdir)/Rythmos_RKButcherTableau.hpp\
   $(srcdir)/Rythmos_RKButcherTableauBase.hpp\
   $(srcdir)/Rythmos_RKButcherTableauBuilder.hpp\
+  $(srcdir)/Rythmos_RKButcherTableauBuilder_decl.hpp\
+  $(srcdir)/Rythmos_RKButcherTableauBuilder_def.hpp\
   $(srcdir)/Rythmos_RKButcherTableauHelpers.hpp\
   $(srcdir)/Rythmos_RKButcherTableauAcceptingStepperBase.hpp\
   $(srcdir)/Rythmos_ResponseAndFwdSensPoint.hpp\
@@ -352,7 +355,7 @@ CORE = \
   $(srcdir)/Rythmos_ImplicitRKStepper.cpp\
   $(srcdir)/Rythmos_IntegratorBuilder.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer.cpp\
-	$(srcdir)/Rythmos_RKButcherTableau.cpp\
+  $(srcdir)/Rythmos_RKButcherTableauBuilder.cpp\
   $(srcdir)/Rythmos_Version.cpp
 
 UTIL_H = 
@@ -551,7 +554,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitRKStepper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_IntegratorBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_InterpolationBuffer.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_RKButcherTableau.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_RKButcherTableauBuilder.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_Version.Po@am__quote@
 
 .cpp.o:
@@ -680,19 +683,19 @@ Rythmos_InterpolationBuffer.obj: $(srcdir)/Rythmos_InterpolationBuffer.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_InterpolationBuffer.obj `if test -f '$(srcdir)/Rythmos_InterpolationBuffer.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_InterpolationBuffer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_InterpolationBuffer.cpp'; fi`
 
-Rythmos_RKButcherTableau.o: $(srcdir)/Rythmos_RKButcherTableau.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_RKButcherTableau.o -MD -MP -MF $(DEPDIR)/Rythmos_RKButcherTableau.Tpo -c -o Rythmos_RKButcherTableau.o `test -f '$(srcdir)/Rythmos_RKButcherTableau.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_RKButcherTableau.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_RKButcherTableau.Tpo $(DEPDIR)/Rythmos_RKButcherTableau.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_RKButcherTableau.cpp' object='Rythmos_RKButcherTableau.o' libtool=no @AMDEPBACKSLASH@
+Rythmos_RKButcherTableauBuilder.o: $(srcdir)/Rythmos_RKButcherTableauBuilder.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_RKButcherTableauBuilder.o -MD -MP -MF $(DEPDIR)/Rythmos_RKButcherTableauBuilder.Tpo -c -o Rythmos_RKButcherTableauBuilder.o `test -f '$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_RKButcherTableauBuilder.Tpo $(DEPDIR)/Rythmos_RKButcherTableauBuilder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp' object='Rythmos_RKButcherTableauBuilder.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_RKButcherTableau.o `test -f '$(srcdir)/Rythmos_RKButcherTableau.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_RKButcherTableau.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_RKButcherTableauBuilder.o `test -f '$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp
 
-Rythmos_RKButcherTableau.obj: $(srcdir)/Rythmos_RKButcherTableau.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_RKButcherTableau.obj -MD -MP -MF $(DEPDIR)/Rythmos_RKButcherTableau.Tpo -c -o Rythmos_RKButcherTableau.obj `if test -f '$(srcdir)/Rythmos_RKButcherTableau.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_RKButcherTableau.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_RKButcherTableau.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_RKButcherTableau.Tpo $(DEPDIR)/Rythmos_RKButcherTableau.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_RKButcherTableau.cpp' object='Rythmos_RKButcherTableau.obj' libtool=no @AMDEPBACKSLASH@
+Rythmos_RKButcherTableauBuilder.obj: $(srcdir)/Rythmos_RKButcherTableauBuilder.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_RKButcherTableauBuilder.obj -MD -MP -MF $(DEPDIR)/Rythmos_RKButcherTableauBuilder.Tpo -c -o Rythmos_RKButcherTableauBuilder.obj `if test -f '$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_RKButcherTableauBuilder.Tpo $(DEPDIR)/Rythmos_RKButcherTableauBuilder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp' object='Rythmos_RKButcherTableauBuilder.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_RKButcherTableau.obj `if test -f '$(srcdir)/Rythmos_RKButcherTableau.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_RKButcherTableau.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_RKButcherTableau.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_RKButcherTableauBuilder.obj `if test -f '$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_RKButcherTableauBuilder.cpp'; fi`
 
 Rythmos_Version.o: $(srcdir)/Rythmos_Version.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_Version.o -MD -MP -MF $(DEPDIR)/Rythmos_Version.Tpo -c -o Rythmos_Version.o `test -f '$(srcdir)/Rythmos_Version.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_Version.cpp
