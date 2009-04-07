@@ -2,8 +2,6 @@
 
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_ZeroLinearOpBase.hpp"
-#include "Thyra_DefaultLinearOpSource.hpp"
-#include "Thyra_DefaultInverseLinearOp.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_EpetraExtDiagScaledMatProdTransformer.hpp"
@@ -20,6 +18,7 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 
+// PB includes
 #include "Epetra/PB_EpetraHelpers.hpp"
 
 #include <cmath>
@@ -108,24 +107,6 @@ void buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stenci
    }
 
    gl.FillComplete();
-}
-
-//! Build an inverse operator using a factory and a linear operator
-LinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
-{
-   // build and initialize inverse linear op with solve
-   Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > invALOWS = factory->createOp();
-   factory->initializeOp(Thyra::defaultLinearOpSource(A),&*invALOWS,Thyra::SUPPORT_SOLVE_FORWARD_ONLY);
-   
-   return Thyra::inverse<double>(invALOWS);
-}
-
-/** Using a prebuilt linear operator, use factory to build an inverse operator
-  * given a new forward operator.
-  */
-void rebuildInverse(const InverseFactory & factory, const LinearOp & A, LinearOp & invA)
-{
-   TEUCHOS_ASSERT(false);
 }
 
 /** \brief Apply a linear operator to a multivector (think of this as a matrix

@@ -11,8 +11,6 @@
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_ProductMultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_LinearOpWithSolveFactoryBase.hpp"
-
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 
@@ -154,20 +152,6 @@ BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo);
 
 //! Figure out if this operator is the zero operator (or null!)
 bool isZeroOp(const LinearOp op);
-
-//@}
-
-//! @name Functions for constructing and initializing solvers
-//@{
-typedef Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > InverseFactory;
-
-//! Build an inverse operator using a factory and a linear operator
-LinearOp buildInverse(const InverseFactory & factory,const LinearOp & A);
-
-/** Using a prebuilt linear operator, use factory to build an inverse operator
-  * given a new forward operator.
-  */
-void rebuildInverse(const InverseFactory & factory, const LinearOp & A, LinearOp & invA);
 
 //@}
 

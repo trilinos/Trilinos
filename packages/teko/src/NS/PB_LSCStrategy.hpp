@@ -6,6 +6,7 @@
 #include "Thyra_LinearOpBase.hpp"
 
 #include "PB_Utilities.hpp"
+#include "PB_InverseFactory.hpp"
 #include "PB_BlockPreconditionerFactory.hpp"
 
 namespace PB {
@@ -73,8 +74,8 @@ class InvLSCStrategy : public LSCStrategy {
 public:
    //! \name Constructors
    //@{
-   InvLSCStrategy(InverseFactory & factory);
-   InvLSCStrategy(InverseFactory & factory,LinearOp & mass);
+   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory);
+   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass);
    //@}
 
    //! Functions inherited from LSCStrategy
@@ -96,7 +97,7 @@ public:
 
 protected:
    LinearOp massMatrix_;
-   InverseFactory invFactory_;
+   Teuchos::RCP<const InverseFactory> invFactory_;
 };
 
 } // end namespace NS

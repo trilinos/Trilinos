@@ -11,6 +11,7 @@
 
 // PB includes
 #include "PB_Utilities.hpp"
+#include "PB_InverseFactory.hpp"
 #include "PB_BlockPreconditionerFactory.hpp"
 
 namespace PB {
@@ -67,7 +68,7 @@ protected:
 
 class InvFactoryDiagStrategy : public BlockInvDiagonalStrategy {
 public:
-   InvFactoryDiagStrategy(InverseFactory & factory);
+   InvFactoryDiagStrategy(const Teuchos::RCP<const InverseFactory> & factory);
 
    /** returns an (approximate) inverse of the diagonal blocks of A
      * where A is closely related to the original source for invD0 and invD1
@@ -77,7 +78,7 @@ public:
 
 protected:
    // stored inverse operators
-   InverseFactory invDiagFact_;
+   Teuchos::RCP<const InverseFactory> invDiagFact_;
 
 private:
    InvFactoryDiagStrategy();

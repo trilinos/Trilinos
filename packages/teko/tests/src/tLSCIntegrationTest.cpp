@@ -1,4 +1,4 @@
-#include "tEpetraLSCIntegrationTest.hpp"
+#include "tLSCIntegrationTest.hpp"
 
 #include <string>
 
@@ -26,8 +26,13 @@
 #include "AztecOO.h"
 #include "AztecOO_Operator.h"
 
+// Stratimikos includes
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+
 // Test-rig
 #include "Test_Utils.hpp"
+
+#include "PB_InverseFactory.hpp"
 
 namespace PB {
 namespace Test {
@@ -36,7 +41,7 @@ using Teuchos::rcp;
 using Teuchos::RCP;
 using Thyra::epetraLinearOp;
 
-void tEpetraLSCIntegrationTest::initializeTest()
+void tLSCIntegrationTest::initializeTest()
 {
    tolerance_ = 1.0e-7;
 
@@ -45,25 +50,30 @@ void tEpetraLSCIntegrationTest::initializeTest()
    fullMap_ = rcp(new Epetra_Map(769+5890,0,*GetComm())); // map of pressure space
 }
 
-// construct a Epetra_Operator from an ML preconditioner
-const RCP<const Epetra_Operator> tEpetraLSCIntegrationTest::mlSolve(const RCP<const Epetra_RowMatrix> mat,int cycles)
+void tLSCIntegrationTest::solveList(Teuchos::ParameterList & paramList,int vcycles)
 {
-   // This is ripped directly from the ML user guide
-   Teuchos::ParameterList MLList;
+   paramList.set("Linear Solver Type","AztecOO");
+   paramList.sublist("Linear Solver Types")
+            .sublist("AztecOO").sublist("Forward Solve").set("Max Iterations",500);
+   paramList.sublist("Linear Solver Types")
+            .sublist("AztecOO").sublist("Forward Solve").set("Tolerance",1e-12);
+   paramList.sublist("Linear Solver Types")
+            .sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Aztec Solver","GMRES");
+   paramList.sublist("Linear Solver Types")
+            .sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Size of Krylov Subspace",500);
+   paramList.sublist("Linear Solver Types")
+            .sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Output Frequency",0);
+   paramList.set("Preconditioner Type","ML");
+   Teuchos::ParameterList & MLList = paramList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings");
 
    // set default values for smoothed aggregation in MLList
    ML_Epetra::SetDefaults("SA",MLList);
-
-   // overwrite with user’s defined parameters
    MLList.set("max levels",6);
-   MLList.set("cycle applications",cycles);
+   MLList.set("cycle applications",vcycles);
    MLList.set("coarse: type","Amesos-KLU");
-
-   // build preconditioner
-   return rcp(new ML_Epetra::MultiLevelPreconditioner(*mat, MLList, true));
 }
 
-void tEpetraLSCIntegrationTest::loadStableSystem()
+void tLSCIntegrationTest::loadStableSystem()
 {
    Epetra_CrsMatrix *F=0, *B=0, *Bt=0,*Qu=0;
 
@@ -114,13 +124,13 @@ void tEpetraLSCIntegrationTest::loadStableSystem()
    }
 }
 
-int tEpetraLSCIntegrationTest::runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun)
+int tLSCIntegrationTest::runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun)
 {
    bool allTests = true;
    bool status;
    int failcount = 0;
 
-   failstrm << "tEpetraLSCIntegrationTest";
+   failstrm << "tLSCIntegrationTest";
 
    status = test_withmassStable(verbosity,failstrm);
    allTests &= status;
@@ -136,52 +146,39 @@ int tEpetraLSCIntegrationTest::runTest(int verbosity,std::ostream & stdstrm,std:
 
    status = allTests;
    if(verbosity >= 10) {
-      PB_TEST_MSG(failstrm,0,"tEpetraLSCIntegrationTest...PASSED","tEpetraLSCIntegrationTest...FAILED");
+      PB_TEST_MSG(failstrm,0,"tLSCIntegrationTest...PASSED","tLSCIntegrationTest...FAILED");
    }
    else {// Normal Operating Procedures (NOP)
-      PB_TEST_MSG(failstrm,0,"...PASSED","tEpetraLSCIntegrationTest...FAILED");
+      PB_TEST_MSG(failstrm,0,"...PASSED","tLSCIntegrationTest...FAILED");
    }
 
    return failcount;
 }
 
-bool tEpetraLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream & os)
+bool tLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream & os)
 {
+   Teuchos::ParameterList paramList;
+   solveList(paramList,8);
+
+   RCP<const PB::InverseFactory> invFact = PB::invFactoryFromParamList(paramList,"ML");
+   TEUCHOS_ASSERT(invFact!=Teuchos::null);
+
    bool status = false;
    bool allPassed = true;
-
-   int vcycles = 8;
 
    // load everything
    loadStableSystem();
 
-   // if you get here you automatically pass!
+   // if you get here you automatically pass the first test
    if(verbosity>=10 ) {
-      os << std::endl << "   tEpetraLSCIntegrationTest::test_withmassStable: loading system ... " 
+      os << std::endl << "   tLSCIntegrationTest::test_withmassStable: loading system ... " 
          << toString(true) << std::endl;
    }
 
-   RCP<const Epetra_CrsMatrix> BBt;
-   RCP<const Epetra_Vector> aiD; // should be null!
-
-   PB::Epetra::buildLSCOperators(*sA_,*sQu_,BBt,aiD);
-
-   TEUCHOS_ASSERT(aiD==Teuchos::null);
-
-   const RCP<const Epetra_Operator> invF = mlSolve(sF_,vcycles);
-   const RCP<const Epetra_Operator> invS = mlSolve(BBt,vcycles);
-
-   // build inverse mass matrix
-   const RCP<Epetra_Vector> invMass = rcp(new Epetra_Vector(*velMap_));
-   TEST_FOR_EXCEPT(sQu_->ExtractDiagonalCopy(*invMass));
-   TEST_FOR_EXCEPT(invMass->Reciprocal(*invMass));
-
-   const RCP<PB::BlockPreconditionerFactory> precFact 
-         = rcp(new PB::NS::LSCPreconditionerFactory(epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(&*invF))),
-                                                    epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(&*invS))),
-                                                    PB::Epetra::thyraDiagOp(invMass,invF->OperatorRangeMap())));
-   const RCP<PB::Epetra::EpetraBlockPreconditioner> prec 
-         = rcp(new PB::Epetra::EpetraBlockPreconditioner(precFact));
+   LinearOp Qu = epetraLinearOp(sQu_);
+   const RCP<PB::NS::LSCStrategy> strategy = rcp(new PB::NS::InvLSCStrategy(invFact,Qu));
+   const RCP<PB::BlockPreconditionerFactory> precFact = rcp(new PB::NS::LSCPreconditionerFactory(strategy));
+   const RCP<PB::Epetra::EpetraBlockPreconditioner> prec = rcp(new PB::Epetra::EpetraBlockPreconditioner(precFact));
    prec->buildPreconditioner(*sA_);
 
    // B. Build solver and solve system
@@ -203,7 +200,7 @@ bool tEpetraLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream &
    // check iteration count
    status = (solver.NumIters()<=16);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tEpetraLSCIntegrationTest::test_withmassStable " << toString(status) 
+      os << std::endl << "   tLSCIntegrationTest::test_withmassStable " << toString(status) 
                       << ": # of iterations = " << solver.NumIters() << std::endl;
    }
    allPassed &= status;
@@ -215,16 +212,22 @@ bool tEpetraLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream &
    sExact_->Norm2(&exactnorm);
    status = ((relerr = errnorm/exactnorm) <= tolerance_);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tEpetraLSCIntegrationTest::test_withmassStable " << toString(status) 
-                      << ": error in solution = " << std::scientific << relerr << std::endl;
+      os << std::endl << "   tLSCIntegrationTest::test_withmassStable " << toString(status) 
+                      << ": error in solution = " << std::scientific << relerr << " <= " << tolerance_ << std::endl;
    }
    allPassed &= status;
 
    return allPassed;
 }
 
-bool tEpetraLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & os)
+bool tLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & os)
 {
+   Teuchos::ParameterList paramList;
+   solveList(paramList,8);
+
+   RCP<const PB::InverseFactory> invFact = PB::invFactoryFromParamList(paramList,"ML");
+   TEUCHOS_ASSERT(invFact!=Teuchos::null);
+
    bool status = false;
    bool allPassed = true;
 
@@ -235,25 +238,13 @@ bool tEpetraLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & o
 
    // if you get here you automatically pass!
    if(verbosity>=10 ) {
-      os << std::endl << "   tEpetraLSCIntegrationTest::test_nomassStable: loading system ... " 
+      os << std::endl << "   tLSCIntegrationTest::test_nomassStable: loading system ... " 
          << toString(true) << std::endl;
    }
 
-   RCP<const Epetra_CrsMatrix> BBt;
-   RCP<const Epetra_Vector> aiD; // should be null!
-
-   PB::Epetra::buildLSCOperators(*sA_,BBt,aiD);
-
-   TEUCHOS_ASSERT(aiD==Teuchos::null);
-
-   const RCP<const Epetra_Operator> invF = mlSolve(sF_,vcycles);
-   const RCP<const Epetra_Operator> invS = mlSolve(BBt,vcycles);
-
-   const RCP<PB::BlockPreconditionerFactory> precFact 
-         = rcp(new PB::NS::LSCPreconditionerFactory(epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(&*invF))),
-                                                    epetraLinearOp(rcp(PB::Epetra::mechanicalInverse(&*invS))),Teuchos::null));
-   const RCP<PB::Epetra::EpetraBlockPreconditioner> prec 
-         = rcp(new PB::Epetra::EpetraBlockPreconditioner(precFact));
+   const RCP<PB::NS::LSCStrategy> strategy = rcp(new PB::NS::InvLSCStrategy(invFact));
+   const RCP<PB::BlockPreconditionerFactory> precFact = rcp(new PB::NS::LSCPreconditionerFactory(strategy));
+   const RCP<PB::Epetra::EpetraBlockPreconditioner> prec = rcp(new PB::Epetra::EpetraBlockPreconditioner(precFact));
    prec->buildPreconditioner(*sA_);
 
    // B. Build solver and solve system
@@ -275,7 +266,7 @@ bool tEpetraLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & o
    // check iteration count
    status = (solver.NumIters()==43);
    if(not status || verbosity>=10 ) { 
-      os << std::endl << "   tEpetraLSCIntegrationTest::test_nomassStable " << toString(status) 
+      os << std::endl << "   tLSCIntegrationTest::test_nomassStable " << toString(status) 
                       << ": # of iterations = " << solver.NumIters() << std::endl;
    }
    allPassed &= status;
@@ -287,7 +278,7 @@ bool tEpetraLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & o
    sExact_->Norm2(&exactnorm);
    status = ((relerr = errnorm/exactnorm) <= tolerance_);
    if(not status || verbosity==10 ) { 
-      os << std::endl << "   tEpetraLSCIntegrationTest::test_nomassStable " << toString(status) 
+      os << std::endl << "   tLSCIntegrationTest::test_nomassStable " << toString(status) 
                       << ": error in solution = " << std::scientific << relerr << std::endl;
    }
    allPassed &= status;

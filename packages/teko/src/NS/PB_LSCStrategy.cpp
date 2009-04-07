@@ -33,11 +33,11 @@ StaticLSCStrategy::StaticLSCStrategy(const LinearOp & invF,
 //////////////////////////////////////////////
 
 // constructors
-InvLSCStrategy::InvLSCStrategy(InverseFactory & factory)
+InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory)
    : massMatrix_(Teuchos::null), invFactory_(factory)
 { }
 
-InvLSCStrategy::InvLSCStrategy(InverseFactory & factory,LinearOp & mass)
+InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass)
    : massMatrix_(mass), invFactory_(factory)
 { }
 
@@ -53,14 +53,14 @@ LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditione
    else 
       reinitializeState(A,lscState);
 
-   return buildInverse(invFactory_,lscState->BQBtmC_);
+   return buildInverse(*invFactory_,lscState->BQBtmC_);
 }
 
 LinearOp InvLSCStrategy::getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
    const LinearOp F  = getBlock(0,0,A);
  
-   return buildInverse(invFactory_,F);
+   return buildInverse(*invFactory_,F);
 }
 
 LinearOp InvLSCStrategy::getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state) const

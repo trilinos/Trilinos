@@ -2,7 +2,7 @@
 
 namespace PB {
 
-InvFactoryDiagStrategy::InvFactoryDiagStrategy(InverseFactory & factory)
+InvFactoryDiagStrategy::InvFactoryDiagStrategy(const Teuchos::RCP<const InverseFactory> & factory)
 {
    // only one factory to use!
    invDiagFact_ = factory;
@@ -16,7 +16,7 @@ void InvFactoryDiagStrategy::getInvD(const BlockedLinearOp & A,BlockPrecondition
    // loop over diagonals, build an inverse operator for each
    int diagCnt = A->productRange()->numBlocks();
    for(int i=0;i<diagCnt;i++) 
-      invDiag.push_back(buildInverse(invDiagFact_,getBlock(i,i,A)));
+      invDiag.push_back(buildInverse(*invDiagFact_,getBlock(i,i,A)));
 }
 
 } // end namespace PB

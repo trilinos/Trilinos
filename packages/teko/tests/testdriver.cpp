@@ -23,6 +23,7 @@
 #include "src/tBlockJacobiPreconditionerFactory.hpp"
 #include "src/tBlockUpperTriInverseOp.hpp"
 #include "src/tBlockLowerTriInverseOp.hpp"
+#include "src/tLSCIntegrationTest.hpp"
 #include "src/Epetra/tEpetraLSCIntegrationTest.hpp"
 #include "src/Epetra/tEpetraOperatorWrapper.hpp"
 #include "src/Epetra/tStridedEpetraOperator.hpp"
@@ -83,6 +84,7 @@ int main(int argc,char * argv[])
    PB_ADD_UNIT_TEST(PB::Test::tEpetraThyraConverter,EpetraThyraConverter);
 #endif
    if(not isfast) {
+      PB_ADD_UNIT_TEST(PB::Test::tLSCIntegrationTest,LSCIntegrationTest);
       PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
       PB_ADD_UNIT_TEST(PB::Test::tEpetraLSCIntegrationTest,EpetraLSCIntegrationTest);
    }
