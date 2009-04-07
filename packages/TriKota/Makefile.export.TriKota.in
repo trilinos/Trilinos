@@ -6,9 +6,20 @@ _TRIKOTA_INCLUDES = \
   -I@abs_top_builddir@/src \
   $(EPETRAEXT_INCLUDES)
 
-DAKOTA_LIBS=-ldakota -lpecos -llhs \
--levidence -lsurfpack -lconmin -lnpsol -lddace -lfsudace  -ljega -lcport -lopt \
--lnewmat -lncsuopt -lgsl -lquadrature -lcoliny -lcolin -lpebbl -lutilib -l3po  -lamplsolver
+#DAKOTA_LIBS=-ldakota -levidence -llhs -lsurfpack -lnpsol \
+#-lnlpql -lconmin -lddace -lfsudace -ljega -lcport -lopt -lnewmat     \
+#-lpsuade -lncsuopt -lgsl -lquadrature -lcoliny -lcolin -lpebbl -lutilib    \
+#-l3po -lamplsolver -lfl -lteuchos -lpecos -lappspack -lnappspack           \
+#-lconveyor -lshared -lcdd -lgslcblas -llhs -ldl
+
+DAKOTA_LIBS= \
+-ldakota     -lteuchos  -lpecos    -lfftw3  -llhs        \
+-levidence   -lsurfpack -lconmin   -lddace  -lfsudace    \
+-ljega       -lcport    -lnlpql    -lnpsol  -lopt        \
+-lpsuade     -lnewmat   -lncsuopt  -lgsl    -lquadrature \
+-lcoliny     -lcolin    -lpebbl    -lutilib -l3po        \
+-lnappspack  -lappspack -lconveyor -lshared -lcdd        \
+-lamplsolver -ldl       -lgslcblas
 
 _TRIKOTA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -ltrikota $(DAKOTA_LIBS) $(EPETRAEXT_LIBS) @LIBS@
 

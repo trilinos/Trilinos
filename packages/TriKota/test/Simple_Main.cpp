@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
 
     // Get the final solution and check it!
     Dakota::Variables finalVariables = dakota.getFinalSolution();
-    Dakota::RealVector finalValues = finalVariables.continuous_variables();
+    Dakota::RealDenseVector finalValues = finalVariables.continuous_variables();
     
     *out << "\nfinalValues =\n" << finalValues;
 
