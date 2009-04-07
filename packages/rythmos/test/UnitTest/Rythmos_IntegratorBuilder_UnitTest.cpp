@@ -464,6 +464,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, setInterpolatorFactory ) {
   pl->sublist("Integrator Settings").sublist("Integrator Selection").set("Integrator Type","Default Integrator");
   pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
   pl->sublist("Stepper Settings").sublist("Interpolator Selection").set("Interpolator Type","Foolish Interpolator");
+  pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","Interpolation Buffer");
   pl->sublist("Interpolation Buffer Settings").sublist("Interpolator Selection").set("Interpolator Type","Cubic Spline Interpolator");
   ib->setParameterList(pl);
   
@@ -705,6 +706,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->setParameters(*(ib->getValidParameters()));
+    pl->sublist("Integration Control Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
     pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","Interpolation Buffer");
     pl->sublist("Interpolation Buffer Settings").sublist("Interpolator Selection").set("Interpolator Type","Cubic Spline Interpolator");
     pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
@@ -830,6 +832,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitBDF ) {
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->setParameters(*(ib->getValidParameters()));
     pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
+    pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","Interpolation Buffer");
     pl->sublist("Interpolation Buffer Settings").sublist("Interpolator Selection").set("Interpolator Type","None");
     ib->setParameterList(pl);
     RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
@@ -892,6 +895,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_ERK ) {
   pl->setParameters(*(ib->getValidParameters()));
   pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Explicit RK");
   pl->sublist("Stepper Settings").sublist("Runge Kutta Butcher Tableau Selection").set("Runge Kutta Butcher Tableau Type","Explicit 4 Stage");
+  pl->sublist("Integration Control Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
   pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
   pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
   // 04/6/09 tscoffe:  We need to fix the InterpolationBuffer to work with ERK!

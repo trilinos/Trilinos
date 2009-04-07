@@ -649,6 +649,7 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< IntegrationControlStrategyBase<Scalar>, SimpleIntegrationControlStrategy<Scalar> >(),
       simpleIntegrationControl_name
       );
+  integrationControlBuilder_->setDefaultObject("None");
 
   // Stepper Builder
   stepperBuilder_ = stepperBuilder<Scalar>();
@@ -674,6 +675,7 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< InterpolationBufferBase<Scalar>, InterpolationBuffer<Scalar> >(),
       defaultInterpolationBuffer_name
       );
+  interpolationBufferBuilder_->setDefaultObject("None");
 
   // Interpolation Buffer Appender
   interpolationBufferAppenderBuilder_ = Teuchos::objectBuilder<InterpolationBufferAppenderBase<Scalar> >();
@@ -687,6 +689,7 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< InterpolationBufferAppenderBase<Scalar>, PointwiseInterpolationBufferAppender<Scalar> >(),
       pointwiseInterpolationBufferAppender_name
       );
+  interpolationBufferAppenderBuilder_->setDefaultObject("None");
 
   // ErrWtVecCalc
   errWtVecCalcBuilder_ = Teuchos::objectBuilder<ErrWtVecCalcBase<Scalar> >();
@@ -714,7 +717,7 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
       abstractFactoryStd< InterpolatorBase<Scalar>, CubicSplineInterpolator<Scalar> >(),
       cubicSplineInterpolator_name
       );
-  interpolatorBuilder_->setDefaultObject(linearInterpolator_name);
+  interpolatorBuilder_->setDefaultObject("None");
 
 }
 
