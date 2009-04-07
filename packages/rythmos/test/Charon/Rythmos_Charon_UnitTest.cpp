@@ -26,7 +26,6 @@
 // ***********************************************************************
 //@HEADER
 
-#ifdef HAVE_RYTHMOS_EXPERIMENTAL
 
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -36,4 +35,3 @@ int main( int argc, char* argv[] ) {
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv);
 }
 
-#endif // HAVE_RYTHMOS_EXPERIMENTAL

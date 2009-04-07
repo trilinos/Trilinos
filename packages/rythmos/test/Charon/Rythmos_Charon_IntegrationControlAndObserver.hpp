@@ -26,46 +26,57 @@
 // ***********************************************************************
 //@HEADER
 
-#ifdef HAVE_RYTHMOS_EXPERIMENTAL
-
 #include "Rythmos_Types.hpp"
+#include "Rythmos_IntegrationControlStrategyBase.hpp"
+#include "Rythmos_IntegrationObserverBase.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
+#include "Rythmos_ErrWtVecCalcBase.hpp"
+#include "Rythmos_StepControlInfo.hpp"
+#include "Rythmos_StepControlStrategyBase.hpp"
 
 namespace RythmosCharon {
+
+using Teuchos::RCP;
+
 
 class CharonIntegrationControlAndObserver
   : virtual public Rythmos::IntegrationControlStrategyBase<double>,
     virtual public Rythmos::IntegrationObserverBase<double>,
     virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
+  public:
   CharonIntegrationControlAndObserver() { }
   virtual ~CharonIntegrationControlAndObserver() { }
   // Overridden from Rythmos::IntegrationControlStrategyBase
-  RCP<IntegrationControlStrategyBase<double> > cloneIntegrationControlStrategy() const
+  RCP<Rythmos::IntegrationControlStrategyBase<double> > cloneIntegrationControlStrategy() const
   {
     return Teuchos::null;
   }
   void resetIntegrationControlStrategy(
-    const TimeRange<double> &integrationTimeDomain
+    const Rythmos::TimeRange<double> &integrationTimeDomain
     )
   { }
-  StepControlInfo<double> getNextStepControlInfo(
-    const StepperBase<double> &stepper,
-    const StepControlInfo<double> &stepCtrlInfoLast,
+  Rythmos::StepControlInfo<double> getNextStepControlInfo(
+    const Rythmos::StepperBase<double> &stepper,
+    const Rythmos::StepControlInfo<double> &stepCtrlInfoLast,
     const int timeStepIter
     )
-  { }
+  {
+    Rythmos::StepControlInfo<double> sci;
+    return sci;
+  }
   // Overridden from Rythmos::IntegrationObserverBase
-  RCP<IntegrationObserverBase<double> > cloneIntegrationObserver() const
+  RCP<Rythmos::IntegrationObserverBase<double> > cloneIntegrationObserver() const
   {
     return Teuchos::null;
   }
   void resetIntegrationObserver(
-    const TimeRange<double> &integrationTimeDomain
+    const Rythmos::TimeRange<double> &integrationTimeDomain
     )
   { }
   void observeCompletedTimeStep(
-    const StepperBase<double> &stepper,
-    const StepControlInfo<double> &stepCtrlInfo,
+    const Rythmos::StepperBase<double> &stepper,
+    const Rythmos::StepControlInfo<double> &stepCtrlInfo,
     const int timeStepIter
     )
   { }
@@ -82,8 +93,9 @@ class CharonImplicitBDFStepperErrWtVecCalc
   : virtual public Rythmos::ErrWtVecCalcBase<double>,
     virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
-  ImplicitBDFStepperErrWtVecCalc() { }
-  virtual ~ImplicitBDFStepperErrWtVecCalc() { }
+  public:
+  CharonImplicitBDFStepperErrWtVecCalc() { }
+  virtual ~CharonImplicitBDFStepperErrWtVecCalc() { }
   void errWtVecSet(
       Thyra::VectorBase<double>* weight, 
       const Thyra::VectorBase<double>& vector, 
@@ -100,52 +112,60 @@ class CharonImplicitBDFStepperErrWtVecCalc
   }
 };
 
+template<class Scalar>
 class CharonImplicitBDFStepperStepControl
-  : virtual public Rythmos::StepControlStrategyBase<double>,
-    virtual public Teuchos:ParameterListAcceptorDefaultBase
+  : virtual public Rythmos::StepControlStrategyBase<Scalar>,
+    virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
-  ImplicitBDFStepperStepControl() { }
-  virtual ~ImplicitBDFStepperStepControl() { }
-  void initialize(const StepperBase<double>& stepper)
+  public:
+  CharonImplicitBDFStepperStepControl() { }
+  virtual ~CharonImplicitBDFStepperStepControl() { }
+  void setErrWtVecCalc(const RCP<Rythmos::ErrWtVecCalcBase<Scalar> >& errWtVecCalc)
+  { }
+  RCP<const Rythmos::ErrWtVecCalcBase<Scalar> > getErrWtVecCalc() const
+  {
+    return Teuchos::null;
+  }
+  void initialize(const Rythmos::StepperBase<Scalar>& stepper)
   { }
   void setRequestedStepSize(
-      const StepperBase<double>& stepper
-      , const double& stepSize
-      , const StepSizeType& stepSizeType
+      const Rythmos::StepperBase<Scalar>& stepper
+      , const Scalar& stepSize
+      , const Rythmos::StepSizeType& stepSizeType
       )
   { }
   void nextStepSize(
-      const StepperBase<double>& stepper
-      , double* stepSize
-      , StepSizeType* stepSizeType
+      const Rythmos::StepperBase<Scalar>& stepper
+      , Scalar* stepSize
+      , Rythmos::StepSizeType* stepSizeType
       , int* order 
       )
   { }
   void setCorrection(
-      const StepperBase<double>& stepper
-      , const RCP<const Thyra::VectorBase<double> >& soln
-      , const RCP<const Thyra::VectorBase<double> >& ee
+      const Rythmos::StepperBase<Scalar>& stepper
+      , const RCP<const Thyra::VectorBase<Scalar> >& soln
+      , const RCP<const Thyra::VectorBase<Scalar> >& ee
       , int solveStatus
       )
   { }
   bool acceptStep(
-      const StepperBase<double>& stepper
-      ,double* LETValue
+      const Rythmos::StepperBase<Scalar>& stepper
+      ,Scalar* LETValue
       )
   { 
     return false;
   }
   void completeStep(
-      const StepperBase<double>& stepper
+      const Rythmos::StepperBase<Scalar>& stepper
       )
   { }
-  AttemptedStepStatusFlag rejectStep(
-      const StepperBase<double>& stepper
+  Rythmos::AttemptedStepStatusFlag rejectStep(
+      const Rythmos::StepperBase<Scalar>& stepper
       )
   { 
     return Rythmos::REP_ERR_FAIL;
   }
-  StepControlStrategyState getCurrentState()
+  Rythmos::StepControlStrategyState getCurrentState()
   {
     return Rythmos::UNINITIALIZED;
   }
@@ -153,13 +173,13 @@ class CharonImplicitBDFStepperStepControl
   { 
     return 0;
   }
-  void setStepControlData(const StepperBase<double>& stepper)
+  void setStepControlData(const Rythmos::StepperBase<Scalar>& stepper)
   { }
   bool supportsCloning() const
   { 
     return false;
   }
-  RCP<StepControlStrategyBase<double> > cloneStepControlStrategyAlgorithm() const
+  RCP<Rythmos::StepControlStrategyBase<Scalar> > cloneStepControlStrategyAlgorithm() const
   {
     return Teuchos::null;
   }
@@ -174,5 +194,4 @@ class CharonImplicitBDFStepperStepControl
 
 } // namespace RythmosCharon
 
-#endif // HAVE_RYTHMOS_EXPERIMENTAL
 
