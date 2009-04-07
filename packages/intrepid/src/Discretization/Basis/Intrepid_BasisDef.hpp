@@ -121,13 +121,15 @@ void getValues_HGRAD_Args(ArrayScalar &                outputValues,
 
   TEST_FOR_EXCEPTION( !(inputPoints.dimension(1) == spaceDim), std::invalid_argument,
                       ">>> ERROR: (Intrepid::getValues_HGRAD_Args) dim 1 (spatial dimension) of inputPoints array  does not match cell dimension");
+
   
   // Verify that all inputPoints are in the reference cell
   /*
-  TEST_FOR_EXCEPTION( !CellTools<Scalar>::checkPointSetInclusion(inputPoints, cellTopo), std::invalid_argument,
-                      ">>> ERROR: (Intrepid::getValues_HGRAD_Args) One or more points are outside the " 
-                      << cellTopo <<" reference cell");
+   TEST_FOR_EXCEPTION( !CellTools<Scalar>::checkPointSetInclusion(inputPoints, cellTopo), std::invalid_argument,
+                       ">>> ERROR: (Intrepid::getValues_HCURL_Args) One or more points are outside the " 
+                       << cellTopo <<" reference cell");
    */
+  
   
   // Verify that operatorType is admissible for HGRAD fields
   TEST_FOR_EXCEPTION( ( (spaceDim == 2) && (operatorType == OPERATOR_DIV) ), std::invalid_argument,
@@ -138,41 +140,48 @@ void getValues_HGRAD_Args(ArrayScalar &                outputValues,
                       ">>> ERROR: (Intrepid::getValues_HGRAD_Args) DIV and CURL are invalid operators for rank-0 (scalar) fields in 3D."); 
   
   
-  // Check rank of outputValues (OPERATOR_DIV is admissible in 1D) and its dim 2 when applicable
-  switch(operatorType) {
-    case OPERATOR_VALUE:
-    case OPERATOR_DIV:
-      TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument,
-                          ">>> ERROR: (Intrepid::getValues_HGRAD_Args) rank = 2 required for outputValues when operator is VALUE (or DIV in 1D).");
-      break;
-    case OPERATOR_GRAD:
-    case OPERATOR_CURL:
-    case OPERATOR_D1:
-      TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
-                          ">>> ERROR: (Intrepid::getValues_HGRAD_Args) rank = 3 required for outputValues when operator is not VALUE (or DIV in 1D).");
-      
-      TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim ),
-                          std::invalid_argument,
-                          ">>> ERROR: (Intrepid::getValues_HGRAD_Args) dim 2 of outputValues must equal cell dimension for operator GRAD, CURL and D1.");
-      break;
-    case OPERATOR_D2:
-    case OPERATOR_D3:
-    case OPERATOR_D4:
-    case OPERATOR_D5:
-    case OPERATOR_D6:
-    case OPERATOR_D7:
-    case OPERATOR_D8:
-    case OPERATOR_D9:
-    case OPERATOR_D10:
-      TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
-                          ">>> ERROR: (Intrepid::getValues_HGRAD_Args) rank = 3 required for outputValues when operator is not VALUE (or DIV in 1D).");
-      
-      TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == Intrepid::getDkCardinality(operatorType, spaceDim) ),
-                          std::invalid_argument,
-                          ">>> ERROR: (Intrepid::getValues_HGRAD_Args) dim 2 of outputValues must equal cardinality of the Dk multiset.");
-      break;
-    default:
-      TEST_FOR_EXCEPTION( (true), std::invalid_argument, ">>> ERROR: (Intrepid::getValues_HGRAD_Args) Invalid operator");
+  // Check rank of outputValues (all operators are admissible in 1D) and its dim 2 when operator is
+  // GRAD, CURL (only in 2D), or Dk.
+  
+  if(spaceDim == 1) {
+    TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument, 
+                        ">>> ERROR: (Intrepid::getValues_HGRAD_Args) rank = 2 required for outputValues in 1D.");
+  }
+  else if(spaceDim > 1) {
+    switch(operatorType){
+      case OPERATOR_VALUE:
+        TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument,
+                            ">>> ERROR: (Intrepid::getValues_HGRAD_Args) rank = 2 required for outputValues when operator = VALUE.");
+        break;
+      case OPERATOR_GRAD:
+      case OPERATOR_CURL:
+      case OPERATOR_D1:
+        TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+                            ">>> ERROR: (Intrepid::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
+        
+        TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == spaceDim ),
+                            std::invalid_argument,
+                            ">>> ERROR: (Intrepid::getValues_HGRAD_Args) dim 2 of outputValues must equal cell dimension when operator = GRAD, CURL (in 2D), or D1.");
+        break;
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10:
+        TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+                            ">>> ERROR: (Intrepid::getValues_HGRAD_Args) rank = 3 required for outputValues in 2D and 3D when operator = GRAD, CURL (in 2D), or Dk.");
+        
+        TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == Intrepid::getDkCardinality(operatorType, spaceDim) ),
+                            std::invalid_argument,
+                            ">>> ERROR: (Intrepid::getValues_HGRAD_Args) dim 2 of outputValues must equal cardinality of the Dk multiset.");
+        break;
+      default:
+        TEST_FOR_EXCEPTION( (true), std::invalid_argument, ">>> ERROR: (Intrepid::getValues_HGRAD_Args) Invalid operator");
+    }
   }
 
   
@@ -185,6 +194,8 @@ void getValues_HGRAD_Args(ArrayScalar &                outputValues,
                       std::invalid_argument,
                       ">>> ERROR: (Intrepid::getValues_HGRAD_Args) dim 0 (number of basis functions) of outputValues must equal basis cardinality.");
 }
+
+
 
 template<class Scalar, class ArrayScalar>
 void getValues_HCURL_Args(ArrayScalar &                outputValues,
@@ -212,12 +223,8 @@ void getValues_HCURL_Args(ArrayScalar &                outputValues,
    */
   
   // Verify that operatorType is admissible for HCURL fields
-  TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_DIV) ), std::invalid_argument,
-                      ">>> ERROR: (Intrepid::getValues_HCURL_Args) DIV is invalid operator for HCURL fields."); 
-  
-  TEST_FOR_EXCEPTION( ( ( (operatorType == OPERATOR_GRAD) ||
-                                   (operatorType == OPERATOR_D1) ) ), std::invalid_argument,
-                      ">>> ERROR: (Intrepid::getValues_HCURL_Args) GRAD and D1 are invalid operators for HCURL fields."); 
+  TEST_FOR_EXCEPTION( !( (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_CURL) ), std::invalid_argument,
+                      ">>> ERROR: (Intrepid::getValues_HCURL_Args) operator = VALUE or CURL required for HCURL fields."); 
   
   
   // Check rank of outputValues 
@@ -248,6 +255,8 @@ void getValues_HCURL_Args(ArrayScalar &                outputValues,
 
 }
 
+
+
 template<class Scalar, class ArrayScalar>
 void getValues_HDIV_Args(ArrayScalar &                outputValues,
                           const ArrayScalar &          inputPoints,
@@ -274,12 +283,8 @@ void getValues_HDIV_Args(ArrayScalar &                outputValues,
    */
   
   // Verify that operatorType is admissible for HDIV fields
-  TEST_FOR_EXCEPTION( ( (operatorType == OPERATOR_CURL) ), std::invalid_argument,
-                      ">>> ERROR: (Intrepid::getValues_HDIV_Args) CURL is invalid operator for HDIV fields."); 
-  
-  TEST_FOR_EXCEPTION( ( ( (operatorType == OPERATOR_GRAD) ||
-                                   (operatorType == OPERATOR_D1) ) ), std::invalid_argument,
-                      ">>> ERROR: (Intrepid::getValues_HDIV_Args) GRAD and D1 are invalid operators for HDIV fields."); 
+  TEST_FOR_EXCEPTION( !( (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_DIV) ), std::invalid_argument,
+                      ">>> ERROR: (Intrepid::getValues_HCURL_Args) operator = VALUE or DIV required for HDIV fields."); 
   
   
   // Check rank of outputValues 

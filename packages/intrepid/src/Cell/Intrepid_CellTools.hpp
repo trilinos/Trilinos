@@ -104,14 +104,50 @@ private:
   //============================================================================================//
   
   
+  /** \brief  Returns array with the coefficients of the parametrization maps for the edges or faces
+              of a reference cell topology. See CellTools<Scalar>::setSubcellParametrization and 
+              Section \ref sec_cell_topology_subcell_map more information about parametrization maps.
+   
+      \param  subcellDim        [in]  - dimension of subcell whose parametrization map is wanted
+      \param  subcellOrd        [in]  - ordinal, relative to parent cell of the subcell
+      \param  parentCell        [in]  - topology of the reference cell owning the subcell
+  
+      \return FieldContainer<double> with the coefficients of the parametrization map for the specified
+              subcell
+    */
   static const FieldContainer<double>& getSubcellParametrization(const int                   subcellDim, 
                                                                  const int                   subcellOrd, 
                                                                  const shards::CellTopology& parentCell);
   
   
   
-  /** \brief  Defines orientation-preserving parametrizations of edges and faces of cell topologies
-              with reference cells.
+  /** \brief  Defines orientation-preserving parametrizations of reference edges and faces of cell 
+              topologies with reference cells. 
+  
+              Given an edge {V0, V1} of some reference cell, its parametrization is a mapping from
+              [-1,1] onto the edge. Parametrization of triangular face {V0,V1,V2} is mapping from
+              the standard 2-simplex {(0,0,0), (1,0,0), (0,1,0)}, embedded in 3D onto the face. 
+              Parametrization of a quadrilateral face {V0,V1,V2,V3} is mapping from the standard 
+              2-cube {(-1,-1,0),(1,-1,0),(1,1,0),(-1,1,0)}, embedded in 3D, onto that face.  
+  
+              This method computes the coefficients of edge and face parametrization maps and stores
+              them in static arrays owned by CellTools<Scalar>::getSubcellParametrization method. 
+              All mappings are affine and orientation-preserving, i.e., they preserve the tangent
+              and normal directions implied by the vertex order of the edge or the face relative to
+              the reference cell:
+  
+      \li     the unit tangent (0,1) on [-1,1] is mapped to a unit tangent in direction of (V0,V1)
+              (the forward direction of the edge determined by its start and end vertices)
+  
+      \li     the unit normal (0,0,1) to the standard 2-simplex {(0,0,0),(1,0,0),(0,1,0)} and 
+              the standard 2-cube {(-1,-1,0),(1,-1,0),(1,1,0),(-1,1,0)} is mapped to the unit normal
+              on {V0,V1,V2} and {V0,V1,V2,V3}, determined according to the right-hand rule 
+              (see http://mathworld.wolfram.com/Right-HandRule.html for definition of right-hand rule
+               and Section \ref Section sec_cell_topology_subcell_map for further details).
+           
+      \param  subcellParametrization [out]  - array with the coefficients of the parametrization map
+      \param  subcellDim             [in]   - dimension of the subcells being parametrized (1 or 2)
+      \param  parentCell             [in]   - topology of the parent cell owning the subcells.
   */
   
   static void setSubcellParametrization(FieldContainer<double>&     subcellParametrization,
@@ -242,6 +278,8 @@ public:
         \param  nodes             [in]  - rank-3 array with dimensions (C,V,D) with the nodes of the cells
         \param  cellTopo          [in]  - cell topology of the cells stored in <var>nodes</var>
         \param  whichCell         [in]  - cell ordinal (for single cell Jacobian computation)
+      
+        \todo   Implement method for extended and non-standard (shell, beam, etc) topologies.
      */
     template<class ArrayScalar>
     static void setJacobian(ArrayScalar &                jacobian,
@@ -319,6 +357,8 @@ public:
         \param  nodes             [in]  - rank-3 array with dimensions (C,V,D) with the nodes of the cells
         \param  cellTopo          [in]  - cell topology of the cells stored in <var>nodes</var>
         \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map 
+      
+        \todo   Implement method for extended and non-standard (shell, beam, etc) topologies.
      */
     template<class ArrayScalar>
     static void mapToPhysicalFrame(ArrayScalar &                 physPoints,
@@ -623,17 +663,8 @@ public:
                                             const int                   subcellOrd,
                                             const shards::CellTopology& parentCell);
     
+
     
-    // isPredefinedCell
-    /** \brief  Checks if the cell topology is defined in shards
-        \param  cell              [in]  - cell topology
-        \return 1 if the cell topology is defined in shards, 
-                0 if it is a custom, user-defined cell-topology
-      */
-    static int isShardsCell(const shards::CellTopology &  cell);
-    
-    
-    // keep in CellTools
     /** \brief  Checks if the cell topology has reference cell
         \param  cell              [in]  - cell topology
         \return 1 if the cell topology has reference cell, 
@@ -642,21 +673,6 @@ public:
     static int hasReferenceCell(const shards::CellTopology &  cellTopo);
     
     
-    // add filters: space dimension, standard, non-standard (shell), extended
-    // getTopologies() -> all or getAllTopo
-    // getTopologies(dim) -> all of spec dimension get1DTopo, get2DTopo
-    // getTopo(dim, standard/non-standard)
-    // getTopo(dim=0, standard=true/non-standard, extended/basic=true)
-    /** \brief  Returns all cell topologies defined in Shards
-        \param  allTopologies     [out] - vector with all topologies
-      */
-    static void getShardsTopologies(std::vector<shards::CellTopology>& allTopologies);
-  
-    
-    
-    // is shell, is beam, etc?
-    // list of all shards cell topologies in vector<shards::CellTopology>
-    // also lists of all shells, beams, polygons in shards
     
     //============================================================================================//
     //                                                                                            //

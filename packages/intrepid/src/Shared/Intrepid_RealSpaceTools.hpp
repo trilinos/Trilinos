@@ -457,17 +457,17 @@ class RealSpaceTools {
     static void matvec(VecArray & matVecs, const MatArray & inMats, const VecArray & inVecs);
 
     
-    /* \brief Vector product using multidimensional arrays:\n
+    /** \brief Vector product using multidimensional arrays:\n
               <b><var>vecProd</var></b> = <b><var>inVecLeft</var></b> x <b><var>inVecRight</var></b>
       
                Vector multiplication of two "column" vectors stored in arrays (rank 1, 2, or 3)
                indexed by (D), (i0, D) or (i0, i1, D). 
       
-       \param vecProd   [in]  - vector product indexed by (D), (i0, D) or (i0, i1, D)
-       \param inLeft    [in]  - left vector argument indexed by (D), (i0, D) or (i0, i1, D)
-       \param inRight   [in]  - right vector argument indexed by (D), (i0, D) or (i0, i1, D)
+        \param vecProd   [in]  - vector product indexed by (D), (i0, D) or (i0, i1, D)
+        \param inLeft    [in]  - left vector argument indexed by (D), (i0, D) or (i0, i1, D)
+        \param inRight   [in]  - right vector argument indexed by (D), (i0, D) or (i0, i1, D)
       
-       \todo Need to decide on how to handle vecprod in 2D: is the result a vector, i.e., 
+        \todo Need to decide on how to handle vecprod in 2D: is the result a vector, i.e., 
       there's dimension D or a scalar?
       */
     template<class VecArrayOut, class VecArrayIn>

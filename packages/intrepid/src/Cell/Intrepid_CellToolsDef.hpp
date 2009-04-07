@@ -600,60 +600,6 @@ namespace Intrepid {
   
   
   
-  
-  template<class Scalar>
-  int CellTools<Scalar>::isShardsCell(const shards::CellTopology& cell) {
-    
-    switch(cell.getKey() ) {
-      case shards::Line<2>::key:
-      case shards::Line<3>::key:
-      case shards::ShellLine<2>::key:
-      case shards::ShellLine<3>::key:
-      case shards::Beam<2>::key:
-      case shards::Beam<3>::key:
-        
-      case shards::Triangle<3>::key:
-      case shards::Triangle<4>::key:
-      case shards::Triangle<6>::key:
-      case shards::ShellTriangle<3>::key:
-      case shards::ShellTriangle<6>::key:
-        
-      case shards::Quadrilateral<4>::key:
-      case shards::Quadrilateral<8>::key:
-      case shards::Quadrilateral<9>::key:
-      case shards::ShellQuadrilateral<4>::key:
-      case shards::ShellQuadrilateral<8>::key:
-      case shards::ShellQuadrilateral<9>::key:
-        
-      case shards::Tetrahedron<4>::key:
-      case shards::Tetrahedron<8>::key:
-      case shards::Tetrahedron<10>::key:
-        
-      case shards::Hexahedron<8>::key:
-      case shards::Hexahedron<20>::key:
-      case shards::Hexahedron<27>::key:
-        
-      case shards::Pyramid<5>::key:
-      case shards::Pyramid<13>::key:
-      case shards::Pyramid<14>::key:
-        
-      case shards::Wedge<6>::key:
-      case shards::Wedge<15>::key:
-      case shards::Wedge<18>::key:
-        
-      case shards::Pentagon<5>::key:
-      case shards::Hexagon<6>::key:
-        return 1;
-        break;
-        
-      default:
-        return 0;
-    }
-    
-  }
-
-  
-  
   template<class Scalar>
   int CellTools<Scalar>::hasReferenceCell(const shards::CellTopology& cell) {
     
@@ -700,62 +646,6 @@ namespace Intrepid {
         return 0;
     }
     return 0;
-  }
-  
-  
-  
-  template<class Scalar>
-  void CellTools<Scalar>::getShardsTopologies(std::vector<shards::CellTopology>& allTopologies) {
-    
-    allTopologies.resize(31); 
-    
-    // Line, shell line and beam topologies
-    allTopologies[0]  = shards::getCellTopologyData<shards::Line<2> >();
-    allTopologies[1]  = shards::getCellTopologyData<shards::Line<3> >();
-    allTopologies[2]  = shards::getCellTopologyData<shards::ShellLine<2> >();
-    allTopologies[3]  = shards::getCellTopologyData<shards::ShellLine<3> >();
-    allTopologies[4]  = shards::getCellTopologyData<shards::Beam<2> >();
-    allTopologies[5]  = shards::getCellTopologyData<shards::Beam<3> >();
-    
-    // Triangle topologies
-    allTopologies[6]  = shards::getCellTopologyData<shards::Triangle<3> >();
-    allTopologies[7]  = shards::getCellTopologyData<shards::Triangle<4> >();
-    allTopologies[8]  = shards::getCellTopologyData<shards::Triangle<6> >();
-    allTopologies[9]  = shards::getCellTopologyData<shards::ShellTriangle<3> >();
-    allTopologies[10] = shards::getCellTopologyData<shards::ShellTriangle<6> >();
-    
-    // Quadrilaterals topologies
-    allTopologies[11]  = shards::getCellTopologyData<shards::Quadrilateral<4> >();
-    allTopologies[12]  = shards::getCellTopologyData<shards::Quadrilateral<8> >();
-    allTopologies[13]  = shards::getCellTopologyData<shards::Quadrilateral<9> >();
-    allTopologies[14]  = shards::getCellTopologyData<shards::ShellQuadrilateral<4> >();
-    allTopologies[15]  = shards::getCellTopologyData<shards::ShellQuadrilateral<8> >();
-    allTopologies[16]  = shards::getCellTopologyData<shards::ShellQuadrilateral<9> >();
-    
-    // Tetrahedron topologies
-    allTopologies[17]  = shards::getCellTopologyData<shards::Tetrahedron<4> >();
-    allTopologies[18]  = shards::getCellTopologyData<shards::Tetrahedron<8> >();
-    allTopologies[19]  = shards::getCellTopologyData<shards::Tetrahedron<10> >();
-    
-    // Hexahedron topologies
-    allTopologies[20]  = shards::getCellTopologyData<shards::Hexahedron<8> >();
-    allTopologies[21]  = shards::getCellTopologyData<shards::Hexahedron<20> >();
-    allTopologies[22]  = shards::getCellTopologyData<shards::Hexahedron<27> >();
-    
-    // Pyramid topologies
-    allTopologies[23]  = shards::getCellTopologyData<shards::Pyramid<5> >();
-    allTopologies[24]  = shards::getCellTopologyData<shards::Pyramid<13> >();
-    allTopologies[25]  = shards::getCellTopologyData<shards::Pyramid<14> >();
-    
-    // Wedge topologies
-    allTopologies[26]  = shards::getCellTopologyData<shards::Wedge<6> >();
-    allTopologies[27]  = shards::getCellTopologyData<shards::Wedge<15> >();
-    allTopologies[28]  = shards::getCellTopologyData<shards::Wedge<18> >();
-    
-        // Polygon topologies
-    allTopologies[29]  = shards::getCellTopologyData<shards::Pentagon<5> >();
-    allTopologies[30]  = shards::getCellTopologyData<shards::Hexagon<6> >();
-    
   }
   
   //============================================================================================//

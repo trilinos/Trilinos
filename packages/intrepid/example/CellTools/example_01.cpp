@@ -69,17 +69,87 @@ int main(int argc, char *argv[]) {
   typedef shards::CellTopology    CellTopology;
   
   
-  std::vector<CellTopology> allShardsTopologies;
-  CellTools::getShardsTopologies(allShardsTopologies);
-  
-  std::cout << " Number of Shards cell topologies = " << allShardsTopologies.size() << "\n";
-  
-  for(unsigned i = 0; i < allShardsTopologies.size(); i++){
-    std::cout << allShardsTopologies[i] << "\n"; 
-  }
-  
-  
+  // Vector to hold cell topologies
+  std::vector<CellTopology> shardsTopologies;
 
+  
+  // All 2D cell topologies in Shards:
+  int cellDim = 2;
+  shards::getTopologies(shardsTopologies, cellDim);
+  std::cout << "Number of all " << cellDim 
+    << "D Shards cell topologies = " << shardsTopologies.size() << "\n\n";
+  
+  for(unsigned i = 0; i < shardsTopologies.size(); i++){
+    std::cout << shardsTopologies[i].getName() << "\n"; 
+  }
+  std::cout <<"\n";
+
+  
+  // All standard 2D cell topologies in Shards:
+  shards::getTopologies(shardsTopologies, cellDim, 
+                        shards::STANDARD_CELL);
+  std::cout << "Number of all " 
+    << cellDim << "D standard Shards cell topologies = " << shardsTopologies.size() << "\n\n";
+  
+  for(unsigned i = 0; i < shardsTopologies.size(); i++){
+    std::cout << shardsTopologies[i].getName() << "\n"; 
+  }
+  std::cout <<"\n";
+  
+  
+  // All standard 2D cells with base topologies in Shards:
+  shards::getTopologies(shardsTopologies, cellDim, 
+                        shards::STANDARD_CELL, 
+                        shards::BASE_TOPOLOGY);
+  std::cout << "Number of all " << cellDim 
+    << "D standard Shards cells with base topologies = " << shardsTopologies.size() << "\n\n";
+  
+  for(unsigned i = 0; i < shardsTopologies.size(); i++){
+    std::cout << shardsTopologies[i].getName() << "\n"; 
+  }
+  std::cout <<"\n";
+  
+  
+  // All standard 2D cells with extended topologies in Shards:
+  shards::getTopologies(shardsTopologies, cellDim, 
+                        shards::STANDARD_CELL, 
+                        shards::EXTENDED_TOPOLOGY);
+  std::cout << "Number of all " << cellDim 
+    << "D standard Shards cells with extended topologies = " << shardsTopologies.size() << "\n\n";
+  
+  for(unsigned i = 0; i < shardsTopologies.size(); i++){
+    std::cout << shardsTopologies[i].getName() << "\n"; 
+  }
+  std::cout <<"\n";
+
+  
+  // All non-standard 2D cells with base topologies in Shards:
+  shards::getTopologies(shardsTopologies, cellDim, 
+                        shards::NONSTANDARD_CELL, 
+                        shards::BASE_TOPOLOGY);
+  std::cout << "Number of all " << cellDim 
+    << "D non-standard Shards cells with base topologies = " << shardsTopologies.size() << "\n\n";
+  
+  for(unsigned i = 0; i < shardsTopologies.size(); i++){
+    std::cout << shardsTopologies[i].getName() << "\n"; 
+  }
+  std::cout <<"\n";
+  
+ 
+  // All non-standard 2D cells with extended topologies in Shards:
+  shards::getTopologies(shardsTopologies, cellDim, 
+                        shards::NONSTANDARD_CELL, 
+                        shards::EXTENDED_TOPOLOGY);
+  std::cout << "Number of all " << cellDim 
+    << "D non-standard Shards cells with extended topologies = " << shardsTopologies.size() << "\n\n";
+  
+  for(unsigned i = 0; i < shardsTopologies.size(); i++){
+    std::cout << shardsTopologies[i].getName() << "\n"; 
+  }
+  std::cout <<"\n";
+  
+  
+  
 cout \
 << "===============================================================================\n"\
 << "| EXAMPLE 2: Using CellTools to get Jacobian, Jacobian inverse & Jacobian det |\n"\

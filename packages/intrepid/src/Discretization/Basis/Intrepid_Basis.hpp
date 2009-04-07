@@ -66,6 +66,10 @@ namespace Intrepid {
             initializeTags() to fill <var>ordinalToTag_</var> and <var>tagToOrdinal_</var>. Because  
             tag data is basis specific, every concrete basis class requires its own implementation
             of initializeTags(). 
+  
+  \todo     restore test for inclusion of reference points in their resective reference cells in 
+            getValues_HGRAD_Args, getValues_CURL_Args, getValues_DIV_Args
+  
  */
 template<class Scalar, class ArrayScalar>
 class Basis {

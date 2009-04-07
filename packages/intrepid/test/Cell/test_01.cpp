@@ -95,6 +95,8 @@ int main(int argc, char *argv[]) {
     << "|                                                                             |\n" \
     << "|     1) Edge parametrizations                                                |\n" \
     << "|     2) Face parametrizations                                                |\n" \
+    << "|     3) Edge tangents                                                        |\n" \
+    << "|     4) Face tangents and normals                                            |\n" \
     << "|                                                                             |\n" \
     << "|  Questions? Contact  Pavel Bochev (pbboche@sandia.gov) or                   |\n" \
     << "|                      Denis Ridzal (dridzal@sandia.gov).                     |\n" \
@@ -130,7 +132,7 @@ int main(int argc, char *argv[]) {
   
   // Pull all available topologies from Shards
   std::vector<shards::CellTopology> allTopologies;
-  CellTools::getShardsTopologies(allTopologies);
+  shards::getTopologies(allTopologies);
   
   
   // Set to 1 for edge and 2 for face tests
@@ -184,6 +186,43 @@ int main(int argc, char *argv[]) {
                                     outStream);
       }
     }
+    
+    
+    /***********************************************************************************************
+      *
+      * Common for test 3 and 4
+      *
+      **********************************************************************************************/
+    
+
+    
+    *outStream \
+      << "\n"
+      << "===============================================================================\n"\
+      << "| Test 3: edge tangents:                                                      |\n"\
+      << "===============================================================================\n\n";
+    // This test loops over all topologies, creates a set of cell nodes for that topology and then tests tangents
+    
+    
+    std::vector<shards::CellTopology>::iterator cti;
+    
+    
+    for(cti = allTopologies.begin(); cti !=allTopologies.end(); ++cti){
+      int cellDim = (*cti).getDimension();
+      int vCount = (*cti).getVertexCount();
+      FieldContainer<double> cellVertices(vCount, cellDim);
+      
+      // now fill with vertices, perturb and compute tangents!
+      
+    }
+    
+    
+    *outStream \
+      << "\n"
+      << "===============================================================================\n"\
+      << "| Test 4: face normals:                                                      |\n"\
+      << "===============================================================================\n\n";
+    
     
     
   }// try
