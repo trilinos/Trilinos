@@ -31,6 +31,8 @@
 
 #include "Rythmos_ExplicitRKStepper_decl.hpp"
 
+#include "Rythmos_RKButcherTableauHelpers.hpp"
+#include "Rythmos_RKButcherTableauBuilder.hpp"
 #include "Rythmos_StepperHelpers.hpp"
 #include "Rythmos_LinearInterpolator.hpp"
 #include "Rythmos_InterpolatorBaseHelpers.hpp"

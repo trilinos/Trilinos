@@ -27,57 +27,26 @@
 //@HEADER
 
 #include "Rythmos_Types.hpp"
-#include "Rythmos_IntegrationControlStrategyBase.hpp"
-#include "Rythmos_IntegrationObserverBase.hpp"
+#include "Rythmos_ErrWtVecCalcBase.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
-#include "Rythmos_StepControlInfo.hpp"
-
 
 namespace RythmosCharon {
 
 using Teuchos::RCP;
 
-
-class CharonIntegrationControlAndObserver
-  : virtual public Rythmos::IntegrationControlStrategyBase<double>,
-    virtual public Rythmos::IntegrationObserverBase<double>,
+class CharonImplicitBDFStepperErrWtVecCalc
+  : virtual public Rythmos::ErrWtVecCalcBase<double>,
     virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
   public:
-  CharonIntegrationControlAndObserver() { }
-  virtual ~CharonIntegrationControlAndObserver() { }
-  // Overridden from Rythmos::IntegrationControlStrategyBase
-  RCP<Rythmos::IntegrationControlStrategyBase<double> > cloneIntegrationControlStrategy() const
-  {
-    return Teuchos::null;
-  }
-  void resetIntegrationControlStrategy(
-    const Rythmos::TimeRange<double> &integrationTimeDomain
-    )
-  { }
-  Rythmos::StepControlInfo<double> getNextStepControlInfo(
-    const Rythmos::StepperBase<double> &stepper,
-    const Rythmos::StepControlInfo<double> &stepCtrlInfoLast,
-    const int timeStepIter
-    )
-  {
-    Rythmos::StepControlInfo<double> sci;
-    return sci;
-  }
-  // Overridden from Rythmos::IntegrationObserverBase
-  RCP<Rythmos::IntegrationObserverBase<double> > cloneIntegrationObserver() const
-  {
-    return Teuchos::null;
-  }
-  void resetIntegrationObserver(
-    const Rythmos::TimeRange<double> &integrationTimeDomain
-    )
-  { }
-  void observeCompletedTimeStep(
-    const Rythmos::StepperBase<double> &stepper,
-    const Rythmos::StepControlInfo<double> &stepCtrlInfo,
-    const int timeStepIter
-    )
+  CharonImplicitBDFStepperErrWtVecCalc() { }
+  virtual ~CharonImplicitBDFStepperErrWtVecCalc() { }
+  void errWtVecSet(
+      Thyra::VectorBase<double>* weight, 
+      const Thyra::VectorBase<double>& vector, 
+      double relTol, 
+      double absTol
+      ) const
   { }
   // Overridden from Teuchos::ParameterListAcceptorDefaultBase
   void setParameterList( RCP<Teuchos::ParameterList> const& paramList )
@@ -87,6 +56,7 @@ class CharonIntegrationControlAndObserver
     return Teuchos::parameterList();
   }
 };
+
 
 } // namespace RythmosCharon
 

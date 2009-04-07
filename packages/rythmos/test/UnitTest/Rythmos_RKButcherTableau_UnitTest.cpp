@@ -30,6 +30,8 @@
 
 #include "Rythmos_Types.hpp"
 #include "Rythmos_RKButcherTableau.hpp"
+#include "Rythmos_RKButcherTableauHelpers.hpp"
+#include "Rythmos_RKButcherTableauBuilder.hpp"
 #include "Rythmos_UnitTestHelpers.hpp"
 
 namespace Rythmos {

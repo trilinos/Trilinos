@@ -59,6 +59,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_VerbosityLevelCommandLineProcessorHelpers.hpp"

@@ -51,6 +51,8 @@ CORE_H = \
 	$(srcdir)/Rythmos_CubicSplineInterpolator.hpp\
   $(srcdir)/Rythmos_DataStore.hpp\
   $(srcdir)/Rythmos_DefaultIntegrator.hpp\
+  $(srcdir)/Rythmos_DefaultIntegrator_def.hpp\
+  $(srcdir)/Rythmos_DefaultIntegrator_decl.hpp\
 	$(srcdir)/Rythmos_DiagonalImplicitRKModelEvaluator.hpp\
 	$(srcdir)/Rythmos_ErrorEstimateBase.hpp\
 	$(srcdir)/Rythmos_ErrorEstimatorBase.hpp\
@@ -83,7 +85,11 @@ CORE_H = \
   $(srcdir)/Rythmos_IntegrationObserverBase.hpp\
   $(srcdir)/Rythmos_IntegratorBase.hpp\
   $(srcdir)/Rythmos_IntegratorBuilder.hpp\
+  $(srcdir)/Rythmos_IntegratorBuilder_decl.hpp\
+  $(srcdir)/Rythmos_IntegratorBuilder_def.hpp\
   $(srcdir)/Rythmos_InterpolationBuffer.hpp\
+  $(srcdir)/Rythmos_InterpolationBuffer_def.hpp\
+  $(srcdir)/Rythmos_InterpolationBuffer_decl.hpp\
   $(srcdir)/Rythmos_InterpolationBufferAppenderAcceptingIntegratorBase.hpp\
   $(srcdir)/Rythmos_InterpolationBufferAppenderBase.hpp\
   $(srcdir)/Rythmos_InterpolationBufferBase.hpp\
@@ -95,6 +101,9 @@ CORE_H = \
   $(srcdir)/Rythmos_PointwiseInterpolationBufferAppender.hpp\
   $(srcdir)/Rythmos_QuadratureBase.hpp\
   $(srcdir)/Rythmos_RKButcherTableau.hpp\
+  $(srcdir)/Rythmos_RKButcherTableauBase.hpp\
+  $(srcdir)/Rythmos_RKButcherTableauBuilder.hpp\
+  $(srcdir)/Rythmos_RKButcherTableauHelpers.hpp\
   $(srcdir)/Rythmos_RKButcherTableauAcceptingStepperBase.hpp\
   $(srcdir)/Rythmos_ResponseAndFwdSensPoint.hpp\
   $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.hpp\
@@ -123,10 +132,13 @@ CORE_H = \
 
 CORE = \
   $(srcdir)/Rythmos_BackwardEulerStepper.cpp\
+  $(srcdir)/Rythmos_DefaultIntegrator.cpp\
   $(srcdir)/Rythmos_ExplicitRKStepper.cpp\
 	$(srcdir)/Rythmos_ImplicitBDFStepper.cpp\
 	$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp\
   $(srcdir)/Rythmos_ImplicitRKStepper.cpp\
+  $(srcdir)/Rythmos_IntegratorBuilder.cpp\
+  $(srcdir)/Rythmos_InterpolationBuffer.cpp\
 	$(srcdir)/Rythmos_RKButcherTableau.cpp\
   $(srcdir)/Rythmos_Version.cpp
 

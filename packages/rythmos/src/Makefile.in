@@ -106,10 +106,13 @@ AR = ar
 ARFLAGS = cru
 librythmos_a_DEPENDENCIES =
 am__objects_1 = Rythmos_BackwardEulerStepper.$(OBJEXT) \
+	Rythmos_DefaultIntegrator.$(OBJEXT) \
 	Rythmos_ExplicitRKStepper.$(OBJEXT) \
 	Rythmos_ImplicitBDFStepper.$(OBJEXT) \
 	Rythmos_ImplicitBDFStepperStepControl.$(OBJEXT) \
 	Rythmos_ImplicitRKStepper.$(OBJEXT) \
+	Rythmos_IntegratorBuilder.$(OBJEXT) \
+	Rythmos_InterpolationBuffer.$(OBJEXT) \
 	Rythmos_RKButcherTableau.$(OBJEXT) Rythmos_Version.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
@@ -262,6 +265,8 @@ CORE_H = \
 	$(srcdir)/Rythmos_CubicSplineInterpolator.hpp\
   $(srcdir)/Rythmos_DataStore.hpp\
   $(srcdir)/Rythmos_DefaultIntegrator.hpp\
+  $(srcdir)/Rythmos_DefaultIntegrator_def.hpp\
+  $(srcdir)/Rythmos_DefaultIntegrator_decl.hpp\
 	$(srcdir)/Rythmos_DiagonalImplicitRKModelEvaluator.hpp\
 	$(srcdir)/Rythmos_ErrorEstimateBase.hpp\
 	$(srcdir)/Rythmos_ErrorEstimatorBase.hpp\
@@ -294,7 +299,11 @@ CORE_H = \
   $(srcdir)/Rythmos_IntegrationObserverBase.hpp\
   $(srcdir)/Rythmos_IntegratorBase.hpp\
   $(srcdir)/Rythmos_IntegratorBuilder.hpp\
+  $(srcdir)/Rythmos_IntegratorBuilder_decl.hpp\
+  $(srcdir)/Rythmos_IntegratorBuilder_def.hpp\
   $(srcdir)/Rythmos_InterpolationBuffer.hpp\
+  $(srcdir)/Rythmos_InterpolationBuffer_def.hpp\
+  $(srcdir)/Rythmos_InterpolationBuffer_decl.hpp\
   $(srcdir)/Rythmos_InterpolationBufferAppenderAcceptingIntegratorBase.hpp\
   $(srcdir)/Rythmos_InterpolationBufferAppenderBase.hpp\
   $(srcdir)/Rythmos_InterpolationBufferBase.hpp\
@@ -306,6 +315,9 @@ CORE_H = \
   $(srcdir)/Rythmos_PointwiseInterpolationBufferAppender.hpp\
   $(srcdir)/Rythmos_QuadratureBase.hpp\
   $(srcdir)/Rythmos_RKButcherTableau.hpp\
+  $(srcdir)/Rythmos_RKButcherTableauBase.hpp\
+  $(srcdir)/Rythmos_RKButcherTableauBuilder.hpp\
+  $(srcdir)/Rythmos_RKButcherTableauHelpers.hpp\
   $(srcdir)/Rythmos_RKButcherTableauAcceptingStepperBase.hpp\
   $(srcdir)/Rythmos_ResponseAndFwdSensPoint.hpp\
   $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.hpp\
@@ -333,10 +345,13 @@ CORE_H = \
 
 CORE = \
   $(srcdir)/Rythmos_BackwardEulerStepper.cpp\
+  $(srcdir)/Rythmos_DefaultIntegrator.cpp\
   $(srcdir)/Rythmos_ExplicitRKStepper.cpp\
 	$(srcdir)/Rythmos_ImplicitBDFStepper.cpp\
 	$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp\
   $(srcdir)/Rythmos_ImplicitRKStepper.cpp\
+  $(srcdir)/Rythmos_IntegratorBuilder.cpp\
+  $(srcdir)/Rythmos_InterpolationBuffer.cpp\
 	$(srcdir)/Rythmos_RKButcherTableau.cpp\
   $(srcdir)/Rythmos_Version.cpp
 
@@ -529,10 +544,13 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_BackwardEulerStepper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_DefaultIntegrator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ExplicitRKStepper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitBDFStepper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitBDFStepperStepControl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ImplicitRKStepper.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_IntegratorBuilder.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_InterpolationBuffer.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_RKButcherTableau.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_Version.Po@am__quote@
 
@@ -563,6 +581,20 @@ Rythmos_BackwardEulerStepper.obj: $(srcdir)/Rythmos_BackwardEulerStepper.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_BackwardEulerStepper.cpp' object='Rythmos_BackwardEulerStepper.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_BackwardEulerStepper.obj `if test -f '$(srcdir)/Rythmos_BackwardEulerStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_BackwardEulerStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_BackwardEulerStepper.cpp'; fi`
+
+Rythmos_DefaultIntegrator.o: $(srcdir)/Rythmos_DefaultIntegrator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_DefaultIntegrator.o -MD -MP -MF $(DEPDIR)/Rythmos_DefaultIntegrator.Tpo -c -o Rythmos_DefaultIntegrator.o `test -f '$(srcdir)/Rythmos_DefaultIntegrator.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_DefaultIntegrator.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_DefaultIntegrator.Tpo $(DEPDIR)/Rythmos_DefaultIntegrator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_DefaultIntegrator.cpp' object='Rythmos_DefaultIntegrator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_DefaultIntegrator.o `test -f '$(srcdir)/Rythmos_DefaultIntegrator.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_DefaultIntegrator.cpp
+
+Rythmos_DefaultIntegrator.obj: $(srcdir)/Rythmos_DefaultIntegrator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_DefaultIntegrator.obj -MD -MP -MF $(DEPDIR)/Rythmos_DefaultIntegrator.Tpo -c -o Rythmos_DefaultIntegrator.obj `if test -f '$(srcdir)/Rythmos_DefaultIntegrator.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_DefaultIntegrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_DefaultIntegrator.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_DefaultIntegrator.Tpo $(DEPDIR)/Rythmos_DefaultIntegrator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_DefaultIntegrator.cpp' object='Rythmos_DefaultIntegrator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_DefaultIntegrator.obj `if test -f '$(srcdir)/Rythmos_DefaultIntegrator.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_DefaultIntegrator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_DefaultIntegrator.cpp'; fi`
 
 Rythmos_ExplicitRKStepper.o: $(srcdir)/Rythmos_ExplicitRKStepper.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ExplicitRKStepper.o -MD -MP -MF $(DEPDIR)/Rythmos_ExplicitRKStepper.Tpo -c -o Rythmos_ExplicitRKStepper.o `test -f '$(srcdir)/Rythmos_ExplicitRKStepper.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ExplicitRKStepper.cpp
@@ -619,6 +651,34 @@ Rythmos_ImplicitRKStepper.obj: $(srcdir)/Rythmos_ImplicitRKStepper.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ImplicitRKStepper.cpp' object='Rythmos_ImplicitRKStepper.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ImplicitRKStepper.obj `if test -f '$(srcdir)/Rythmos_ImplicitRKStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ImplicitRKStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ImplicitRKStepper.cpp'; fi`
+
+Rythmos_IntegratorBuilder.o: $(srcdir)/Rythmos_IntegratorBuilder.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_IntegratorBuilder.o -MD -MP -MF $(DEPDIR)/Rythmos_IntegratorBuilder.Tpo -c -o Rythmos_IntegratorBuilder.o `test -f '$(srcdir)/Rythmos_IntegratorBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_IntegratorBuilder.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_IntegratorBuilder.Tpo $(DEPDIR)/Rythmos_IntegratorBuilder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_IntegratorBuilder.cpp' object='Rythmos_IntegratorBuilder.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_IntegratorBuilder.o `test -f '$(srcdir)/Rythmos_IntegratorBuilder.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_IntegratorBuilder.cpp
+
+Rythmos_IntegratorBuilder.obj: $(srcdir)/Rythmos_IntegratorBuilder.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_IntegratorBuilder.obj -MD -MP -MF $(DEPDIR)/Rythmos_IntegratorBuilder.Tpo -c -o Rythmos_IntegratorBuilder.obj `if test -f '$(srcdir)/Rythmos_IntegratorBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_IntegratorBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_IntegratorBuilder.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_IntegratorBuilder.Tpo $(DEPDIR)/Rythmos_IntegratorBuilder.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_IntegratorBuilder.cpp' object='Rythmos_IntegratorBuilder.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_IntegratorBuilder.obj `if test -f '$(srcdir)/Rythmos_IntegratorBuilder.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_IntegratorBuilder.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_IntegratorBuilder.cpp'; fi`
+
+Rythmos_InterpolationBuffer.o: $(srcdir)/Rythmos_InterpolationBuffer.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_InterpolationBuffer.o -MD -MP -MF $(DEPDIR)/Rythmos_InterpolationBuffer.Tpo -c -o Rythmos_InterpolationBuffer.o `test -f '$(srcdir)/Rythmos_InterpolationBuffer.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_InterpolationBuffer.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_InterpolationBuffer.Tpo $(DEPDIR)/Rythmos_InterpolationBuffer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_InterpolationBuffer.cpp' object='Rythmos_InterpolationBuffer.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_InterpolationBuffer.o `test -f '$(srcdir)/Rythmos_InterpolationBuffer.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_InterpolationBuffer.cpp
+
+Rythmos_InterpolationBuffer.obj: $(srcdir)/Rythmos_InterpolationBuffer.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_InterpolationBuffer.obj -MD -MP -MF $(DEPDIR)/Rythmos_InterpolationBuffer.Tpo -c -o Rythmos_InterpolationBuffer.obj `if test -f '$(srcdir)/Rythmos_InterpolationBuffer.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_InterpolationBuffer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_InterpolationBuffer.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_InterpolationBuffer.Tpo $(DEPDIR)/Rythmos_InterpolationBuffer.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_InterpolationBuffer.cpp' object='Rythmos_InterpolationBuffer.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_InterpolationBuffer.obj `if test -f '$(srcdir)/Rythmos_InterpolationBuffer.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_InterpolationBuffer.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_InterpolationBuffer.cpp'; fi`
 
 Rythmos_RKButcherTableau.o: $(srcdir)/Rythmos_RKButcherTableau.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_RKButcherTableau.o -MD -MP -MF $(DEPDIR)/Rythmos_RKButcherTableau.Tpo -c -o Rythmos_RKButcherTableau.o `test -f '$(srcdir)/Rythmos_RKButcherTableau.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_RKButcherTableau.cpp

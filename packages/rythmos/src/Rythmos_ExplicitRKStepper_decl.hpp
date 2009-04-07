@@ -30,7 +30,7 @@
 #define Rythmos_ExplicitRK_STEPPER_DECL_H
 
 #include "Rythmos_RKButcherTableauAcceptingStepperBase.hpp"
-#include "Rythmos_RKButcherTableau.hpp"
+#include "Rythmos_RKButcherTableauBase.hpp"
 #include "Rythmos_Types.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 

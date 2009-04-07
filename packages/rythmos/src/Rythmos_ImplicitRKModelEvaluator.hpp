@@ -32,7 +32,7 @@
 
 
 #include "Rythmos_Types.hpp"
-#include "Rythmos_RKButcherTableau.hpp"
+#include "Rythmos_RKButcherTableauHelpers.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"

@@ -34,7 +34,7 @@
 #include "Rythmos_DataStore.hpp"
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
 #include "Rythmos_RKButcherTableauAcceptingStepperBase.hpp"
-#include "Rythmos_RKButcherTableau.hpp"
+#include "Rythmos_RKButcherTableauBase.hpp"
 
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_ProductVectorBase.hpp"

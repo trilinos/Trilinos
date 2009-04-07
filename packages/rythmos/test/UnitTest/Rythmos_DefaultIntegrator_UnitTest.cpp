@@ -32,6 +32,7 @@
 #include "Rythmos_UnitTestHelpers.hpp"
 
 #include "Rythmos_ExplicitRKStepper.hpp"
+#include "Rythmos_RKButcherTableauBuilder.hpp"
 
 #include "../SinCos/SinCosModel.hpp"
 

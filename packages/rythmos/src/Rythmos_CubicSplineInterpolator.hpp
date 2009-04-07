@@ -30,6 +30,7 @@
 #define Rythmos_CUBIC_SPLINE_INTERPOLATOR_H
 
 #include "Rythmos_InterpolatorBase.hpp"
+#include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Teuchos_Ptr.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"

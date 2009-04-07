@@ -32,6 +32,7 @@
 #include "Rythmos_UnitTestHelpers.hpp"
 
 #include "Rythmos_ExplicitRKStepper.hpp"
+#include "Rythmos_RKButcherTableauBuilder.hpp"
 
 #include "../SinCos/SinCosModel.hpp"
 
@@ -123,15 +124,12 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, invalidTakeStep ) {
   stepper->setRKButcherTableau(createRKBT<double>("Explicit 4 Stage"));
   double dt;
 #ifdef RYTHMOS_DEBUG
-  TEST_THROW(stepper->takeStep(0.1,STEP_TYPE_VARIABLE), std::logic_error);
+  TEST_THROW(dt = stepper->takeStep(0.1,STEP_TYPE_VARIABLE), std::logic_error);
 #else
   dt = stepper->takeStep(0.1,STEP_TYPE_VARIABLE);
   TEST_EQUALITY_CONST( dt, -1.0 );
 #endif // RYTHMOS_DEBUG
 }
-
-// 12/17/08 tscoffe:  I need a model evaluator _without_ a nominal values to
-// test the initialization behavior of the ERK stepper (and the ImplicitBDF stepper).
 
 } // namespace Rythmos
 

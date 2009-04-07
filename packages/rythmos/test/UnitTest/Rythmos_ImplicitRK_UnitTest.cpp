@@ -31,6 +31,8 @@
 #include "Rythmos_Types.hpp"
 #include "Rythmos_UnitTestHelpers.hpp"
 #include "Rythmos_ImplicitRKStepper.hpp"
+#include "Rythmos_RKButcherTableau.hpp"
+#include "Rythmos_RKButcherTableauBuilder.hpp"
 #include "Rythmos_SingleResidualModelEvaluator.hpp"
 #include "Rythmos_ImplicitRKModelEvaluator.hpp"
 #include "Rythmos_DiagonalImplicitRKModelEvaluator.hpp"

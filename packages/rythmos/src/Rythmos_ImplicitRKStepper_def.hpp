@@ -35,6 +35,7 @@
 #include "Rythmos_SingleResidualModelEvaluator.hpp"
 #include "Rythmos_ImplicitRKModelEvaluator.hpp"
 #include "Rythmos_DiagonalImplicitRKModelEvaluator.hpp"
+#include "Rythmos_RKButcherTableauHelpers.hpp"
 
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"

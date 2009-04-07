@@ -34,6 +34,7 @@
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Rythmos_IntegrationControlStrategyBase.hpp"
 #include "Rythmos_StepControlStrategyBase.hpp"
+#include "Rythmos_StepControlInfo.hpp"
 #include "Rythmos_StepperBase.hpp"
 #include "Rythmos_InterpolationBufferBase.hpp"
 #include "Rythmos_InterpolationBufferAppenderBase.hpp"

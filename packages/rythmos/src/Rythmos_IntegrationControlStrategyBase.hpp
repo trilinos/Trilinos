@@ -2,14 +2,15 @@
 #ifndef RYTHMOS_INTEGRATION_CONTROL_STRATEGY_BASE_HPP
 #define RYTHMOS_INTEGRATION_CONTROL_STRATEGY_BASE_HPP
 
-#include "Rythmos_StepControlInfo.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_ParameterListAcceptor.hpp"
 
 namespace Rythmos {
 
 
 // Forwards
+template<class Scalar> class StepControlInfo;
 template<class Scalar> class TimeRange;
 template<class Scalar> class StepperBase;
 

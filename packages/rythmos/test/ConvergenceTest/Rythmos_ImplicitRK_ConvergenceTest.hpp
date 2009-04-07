@@ -31,6 +31,8 @@
 #include "Rythmos_Types.hpp"
 #include "Rythmos_ConvergenceTestHelpers.hpp"
 #include "Rythmos_ImplicitRKStepper.hpp"
+#include "Rythmos_RKButcherTableauBuilder.hpp"
+#include "Rythmos_RKButcherTableauHelpers.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
 namespace Rythmos {

@@ -229,7 +229,8 @@ void Rythmos::assertNoTimePointsInsideCurrentTimeRange(
       TEST_FOR_EXCEPTION(
         currentTimeRange.isInRange(time_vec[i]), std::out_of_range,
         "Error, time_vec["<<i<<"] = " << time_vec[i] << " is in TimeRange of " 
-        << interpBuffer.description() << "!"
+        << interpBuffer.description() << " = ["
+        << currentTimeRange.lower() << "," << currentTimeRange.upper() << "]!"
         );
     }
   }

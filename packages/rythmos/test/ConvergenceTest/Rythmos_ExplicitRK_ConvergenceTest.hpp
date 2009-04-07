@@ -31,6 +31,8 @@
 #include "Rythmos_Types.hpp"
 #include "Rythmos_ConvergenceTestHelpers.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
+#include "Rythmos_RKButcherTableauBuilder.hpp"
+#include "Rythmos_RKButcherTableauHelpers.hpp"
 
 namespace Rythmos {
 

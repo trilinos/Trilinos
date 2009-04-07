@@ -36,6 +36,7 @@
 #include "Rythmos_DefaultIntegrator.hpp"
 #include "Rythmos_SimpleIntegrationControlStrategy.hpp"
 #include "Rythmos_StepperAsModelEvaluator.hpp"
+#include "Rythmos_RKButcherTableauBuilder.hpp"
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Thyra_DirectionalFiniteDiffCalculator.hpp"

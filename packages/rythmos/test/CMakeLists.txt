@@ -4,7 +4,7 @@ INCLUDE(AddSubdirectories)
 # Add specific test executables
 #
 
-ADD_SUBDIRECTORIES(UnitTest ConvergenceTest)
+ADD_SUBDIRECTORIES(UnitTest ConvergenceTest Charon)
 
 ASSERT_DEFINED( ${PACKAGE_NAME}_ENABLE_Experimental )
 IF ( ${PACKAGE_NAME}_ENABLE_Experimental )

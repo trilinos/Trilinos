@@ -32,6 +32,16 @@
 
 #include "Rythmos_IntegratorBuilder.hpp"
 #include "Rythmos_IntegratorBuilder_Helpers.hpp"
+#include "Rythmos_DefaultIntegrator.hpp"
+#include "Rythmos_SimpleIntegrationControlStrategy.hpp"
+#include "Rythmos_IntegrationControlStrategyAcceptingIntegratorBase.hpp"
+#include "Rythmos_ImplicitBDFStepperStepControl.hpp"
+#include "Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp"
+#include "Rythmos_InterpolationBuffer.hpp"
+#include "Rythmos_PointwiseInterpolationBufferAppender.hpp"
+#include "Rythmos_LinearInterpolator.hpp"
+#include "Rythmos_HermiteInterpolator.hpp"
+#include "Rythmos_CubicSplineInterpolator.hpp"
 #include "../SinCos/SinCosModel.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Rythmos_UnitTestModels.hpp"
@@ -985,14 +995,13 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IRK ) {
 }
 */
 
-TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IBDF ) {
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IBDF_minimal ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
   RCP<SinCosModel> model = sinCosModel(true);
   Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*(ib->getValidParameters()));
   pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
-  pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","None");
   ib->setParameterList(pl);
   RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
   RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
@@ -1001,6 +1010,28 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IBDF ) {
   integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
   TEST_ASSERT( true ); 
 }
+
+/*
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IBDF_all ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<SinCosModel> model = sinCosModel(true);
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*(ib->getValidParameters()));
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
+  pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","Interpolation Buffer");
+  pl->sublist("Interpolation Buffer Settings").sublist("Interpolator Selection").set("Interpolator Type","Hermite Interpolator");
+  //pl->sublist("Interpolation Buffer Settings").sublist("Interpolator Selection").set("Interpolator Type","Linear Interpolator");
+  //pl->sublist("Interpolation Buffer Settings").sublist("Interpolator Selection").set("Interpolator Type","Cubic Spline Interpolator");
+  ib->setParameterList(pl);
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
+  RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+  Teuchos::Array<double> time_vec;
+  time_vec.push_back(pl->sublist("Integrator Settings").get<double>("Final Time"));
+  integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
+  TEST_ASSERT( true ); 
+}
+*/
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_invalid ) {
   {

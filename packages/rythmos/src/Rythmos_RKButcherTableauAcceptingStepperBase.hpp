@@ -32,7 +32,7 @@
 
 
 #include "Rythmos_StepperBase.hpp"
-#include "Rythmos_RKButcherTableau.hpp"
+#include "Rythmos_RKButcherTableauBase.hpp"
 
 namespace Rythmos {
 
