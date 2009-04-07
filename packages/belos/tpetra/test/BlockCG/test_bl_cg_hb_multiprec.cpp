@@ -71,6 +71,7 @@ using std::cout;
 using std::string;
 using std::setw;
 using std::vector;
+using Teuchos::tuple;
 
 bool proc_verbose = false, reduce_tol, precond = true, dumpdata = false;
 RCP<Map<int> > vmap;
@@ -100,8 +101,8 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
     const int *rptr = rowind;
     for (int c=0; c<dim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        A->insertGlobalValue(*rptr-1,c,*fptr);
-        A->insertGlobalValue(c,*rptr-1,*fptr);
+        A->insertGlobalValues(*rptr-1,tuple(c),tuple<Scalar>(*fptr));
+        A->insertGlobalValues(c,tuple(*rptr-1),tuple<Scalar>(*fptr));
         ++rptr;
         ++fptr;
       }

@@ -165,7 +165,7 @@ int main(int argc, char *argv[])
     const int *rptr = rowind;
     for (int c=0; c<dim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        K->insertGlobalValue(*rptr++ - 1,c,ST(dptr[0],dptr[1]));
+        K->insertGlobalValues(*rptr++ - 1,tuple(c),tuple(ST(dptr[0],dptr[1])));
         dptr += 2;
       }
     }

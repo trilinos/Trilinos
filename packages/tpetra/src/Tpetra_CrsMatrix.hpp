@@ -89,7 +89,7 @@ namespace Tpetra
    * indices using local numbering, the latter using global numbering.
    *
    */
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal>
+  template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal>
   class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal>
   {
     public:
@@ -101,6 +101,9 @@ namespace Tpetra
 
       //! Constructor specifying the number of non-zeros for each row.
       CrsMatrix(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Teuchos::ArrayView<Teuchos_Ordinal> &NNZPerRowToAlloc);
+
+      //! Constructor specifying a pre-constructed graph.
+      CrsMatrix(const CrsGraph<LocalOrdinal,GlobalOrdinal> &graph);
 
       // !Destructor.
       virtual ~CrsMatrix();
@@ -216,16 +219,24 @@ namespace Tpetra
       //! @name Data Entry Methods
       //@{ 
 
-      //! Submit multiple entries, using global IDs.
+      //! Submit matrix entries, using global IDs.
       /*! All index values must be in the global space. */
       void insertGlobalValues(GlobalOrdinal globalRow, 
                          const Teuchos::ArrayView<const GlobalOrdinal> &cols,
                          const Teuchos::ArrayView<const Scalar>        &vals);
 
-
-      //! Submit a single entry, using global IDs.
+      //! Replace matrix entries, using global IDs.
       /*! All index values must be in the global space. */
-      void insertGlobalValue(GlobalOrdinal globalRow, GlobalOrdinal globalCol, Scalar value);
+      void replaceGlobalValues(GlobalOrdinal globalRow, 
+                         const Teuchos::ArrayView<const GlobalOrdinal> &cols,
+                         const Teuchos::ArrayView<const Scalar>        &vals);
+
+      //! Sum into multiple entries, using global IDs.
+      /*! All index values must be in the global space. */
+      void sumIntoGlobalValues(GlobalOrdinal globalRow, 
+                         const Teuchos::ArrayView<const GlobalOrdinal> &cols,
+                         const Teuchos::ArrayView<const Scalar>        &vals);
+
 
       //! Set all matrix entries equal to scalarThis.
       void setAllToScalar(const Scalar &alpha);
@@ -308,6 +319,8 @@ namespace Tpetra
       void GeneralMhM(typename MV::const_double_pointer X, typename MV::double_pointer Y, Teuchos_Ordinal numVectors) const;
 
       CrsGraph<LocalOrdinal,GlobalOrdinal> graph_;
+      bool staticGraph_;
+      bool constructedWithFilledGraph_;
       bool fillComplete_;
 
       // values
@@ -337,6 +350,8 @@ namespace Tpetra
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::CrsMatrix(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, Teuchos_Ordinal maxNNZPerRow)
   : graph_(rowMap,maxNNZPerRow)
+  , staticGraph_(false)
+  , constructedWithFilledGraph_(false)
   , fillComplete_(false)
   , values_(rowMap.getNumMyEntries())
   , contigValues_(Teuchos::null)
@@ -352,6 +367,8 @@ namespace Tpetra
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::CrsMatrix(const Map<LocalOrdinal,GlobalOrdinal> &rowMap, const Teuchos::ArrayView<Teuchos_Ordinal> &NNZPerRowToAlloc)
   : graph_(rowMap,NNZPerRowToAlloc)
+  , staticGraph_(false)
+  , constructedWithFilledGraph_(false)
   , fillComplete_(false)
   , values_(rowMap.getNumMyEntries())
   , contigValues_(Teuchos::null)
@@ -362,6 +379,23 @@ namespace Tpetra
     TEST_FOR_EXCEPTION(NNZPerRowToAlloc.size() != rowMap.getNumMyEntries(), std::runtime_error,
         Teuchos::typeName(*this) << "::CrsMatrix(rowMap,NNZPerRowToAlloc): NNZPerRowToAlloc must have as many entries as specified by rowMap for this node.");
     allocateValues();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::CrsMatrix(const CrsGraph<LocalOrdinal,GlobalOrdinal> &graph)
+  : graph_(graph)
+  , staticGraph_(true)
+  , fillComplete_(false)
+  , values_(graph.numGlobalRows())
+  , contigValues_(Teuchos::null)
+  , valuesPtrs_(0)
+  , importMV_(Teuchos::null)
+  , exportMV_(Teuchos::null)
+  {
+    // we won't prohibit the case where the graph is not yet filled, but we will check below to ensure that the
+    // graph isn't filled between now and when fillComplete() is called on this matrix
+    constructedWithFilledGraph_ = graph_.isFillComplete();
+    TEST_FOR_EXCEPT(true);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
@@ -500,14 +534,8 @@ namespace Tpetra
                       toAdd = indices.size(),
                    rowAlloc = graph_.numAllocatedEntriesForMyRow(myRow);
       if (rowNNZ+toAdd > rowAlloc) {
-#       if defined(THROW_TPETRA_EFFICIENCY_WARNINGS) || defined(PRINT_TPETRA_EFFICIENCY_WARNINGS)
-          std::string err = Teuchos::typeName(*this) + "::insertGlobalValues(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.";
-#         if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
-            TEST_FOR_EXCEPTION(true, std::runtime_error, err);
-#         else
-            std::cerr << err << std::endl;
-#         endif
-#       endif
+        TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
+            "::insertGlobalValues(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
         // assumption: the number allocated for each row is stored in the graph.
         // increase the allocation, copy old entries to new storage
         rowAlloc = rowNNZ+toAdd;
@@ -533,16 +561,19 @@ namespace Tpetra
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::insertGlobalValue(GlobalOrdinal globalRow, GlobalOrdinal globalCol, Scalar value)
-  { insertGlobalValues(globalRow,Teuchos::arrayView(&globalCol,1),Teuchos::arrayView(&value,1)); }
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::replaceGlobalValues(GlobalOrdinal globalRow, 
+                         const Teuchos::ArrayView<const GlobalOrdinal> &indices,
+                         const Teuchos::ArrayView<const Scalar>  &values)
+  {
+    TEST_FOR_EXCEPT(true);
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::setAllToScalar(const Scalar &alpha)
-  { 
-    TEST_FOR_EXCEPT(isStorageOptimized());
-    for (Teuchos_Ordinal r=0; r<numLocalRows(); ++r) {
-      std::fill(values_[r].begin(), values_[r].begin()+numEntriesForMyRow(r), alpha);
-    }
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::sumIntoGlobalValues(GlobalOrdinal globalRow, 
+                         const Teuchos::ArrayView<const GlobalOrdinal> &indices,
+                         const Teuchos::ArrayView<const Scalar>  &values)
+  {
+    TEST_FOR_EXCEPT(true);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
@@ -645,14 +676,8 @@ namespace Tpetra
     typename MV::const_double_pointer Xdata = X.extractConstView2D();
     typename MV::double_pointer       Ydata = Y.extractView2D();
     if (&X==&Y && importer==null && exporter==null) {
-#     if defined(THROW_TPETRA_EFFICIENCY_WARNINGS) || defined(PRINT_TPETRA_EFFICIENCY_WARNINGS)
-      std::string err = Teuchos::typeName(*this) + "::apply(X,Y): If X and Y are the same, it necessitates a temporary copy of X, which is inefficient.";
-#     if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
-      TEST_FOR_EXCEPTION(true, std::runtime_error, err);
-#     else
-      std::cerr << err << std::endl;
-#     endif
-#     endif
+      TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
+          "::apply(X,Y): If X and Y are the same, it necessitates a temporary copy of X, which is inefficient.");
       // generate a copy of X 
       Xcopy = Teuchos::rcp(new MV(X));
       Xdata = Xcopy->extractConstView2D();
@@ -845,7 +870,16 @@ namespace Tpetra
     }
 
     if (graph_.isFillComplete()) {
-      if (!isStaticGraph() && !isFillComplete()) {
+      // if the graph is filled, it should be because 
+      // - it was given at construction, already filled
+      // - it was filled on a previous call to fillComplete()
+      // if neither, it means that the graph has been filled by the user.
+      // this means that a graph passed at construction has been filled in the interim.
+      // in this case, indices have been sorted and merged, so that we are no longer able
+      // to sort or merge the associated values. nothing we can do here.
+      if ((constructedWithFilledGraph_ || isFillComplete()) == false) {
+        TPETRA_ABUSE_WARNING(true,std::runtime_error,
+            "::fillComplete(): fillComplete() has been called on graph since matrix was constructed.");
         return;
       }
     }
@@ -903,6 +937,7 @@ namespace Tpetra
     using std::list;
     using std::pair;
     using std::make_pair;
+    using Teuchos::tuple;
     typedef typename std::map<GlobalOrdinal,std::list<pair<GlobalOrdinal,Scalar> > >::const_iterator NLITER;
     int numImages = getComm()->getSize();
     int myImageID = getComm()->getRank();
@@ -1109,7 +1144,7 @@ namespace Tpetra
     //       it also requires restoring the data, which may make it not worth the trouble.
     for (typename Array<CrsIJV<GlobalOrdinal,Scalar> >::const_iterator ijv = IJVRecvBuffer.begin(); ijv != IJVRecvBuffer.end(); ++ijv)
     {
-      insertGlobalValue(ijv->i, ijv->j, ijv->v);
+      insertGlobalValues(ijv->i, tuple(ijv->j), tuple(ijv->v));
     }
 
     // WHEW! THAT WAS TIRING!
@@ -1277,7 +1312,7 @@ namespace Tpetra
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
   bool CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::isStaticGraph() const
-  { return false; }
+  { return staticGraph_; }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
   const RowGraph<LocalOrdinal,GlobalOrdinal> &
@@ -1303,7 +1338,7 @@ namespace Tpetra
         sort2(inds.begin(), inds.end(), vals);
       }
     }
-    graph_.indicesAreSorted(true);
+    graph_.indicesAreSorted(true);  // we just sorted them
     return;
   }
 
@@ -1323,6 +1358,7 @@ namespace Tpetra
     TEST_FOR_EXCEPTION(graph_.indicesAreSorted() == false, std::runtime_error,
         Teuchos::typeName(*this) << "::mergeRedundantEntries() cannot be called before indices are sorted.\n"
         << "Likely interal logic error. Please contact Tpetra team.");
+    if (graph_.noRedundancies()) return;
     for (Teuchos_Ordinal r=0; r<numLocalRows(); ++r) 
     {
       Teuchos_Ordinal rnnz = numEntriesForMyRow(r);

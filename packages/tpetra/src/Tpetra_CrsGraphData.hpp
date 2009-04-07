@@ -92,6 +92,7 @@ namespace Tpetra {
     bool indicesAreLocal_;
     bool indicesAreGlobal_;
     bool indicesAreSorted_;
+    bool noRedundancies_;
     bool indicesAreAllocated_;
     bool haveGlobalConstants_;
   };
@@ -128,6 +129,7 @@ namespace Tpetra {
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   , indicesAreSorted_(false)
+  , noRedundancies_(false)
   , indicesAreAllocated_(false)
   , haveGlobalConstants_(false)
   {}
@@ -164,6 +166,7 @@ namespace Tpetra {
   , indicesAreLocal_(false)
   , indicesAreGlobal_(false)
   , indicesAreSorted_(false)
+  , noRedundancies_(false)
   , indicesAreAllocated_(false)
   , haveGlobalConstants_(false)
   {}

@@ -56,6 +56,7 @@ using Tpetra::Map;
 using std::endl;
 using std::cout;
 using std::vector;
+using Teuchos::tuple;
 
 int main(int argc, char *argv[]) {
 
@@ -160,8 +161,8 @@ int main(int argc, char *argv[]) {
     const int *rptr = rowind;
     for (int c=0; c<dim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-        A->insertGlobalValue(*rptr-1,c,*dptr);
-        A->insertGlobalValue(c,*rptr-1,*dptr);
+        A->insertGlobalValues(*rptr-1,tuple(c),tuple(*dptr));
+        A->insertGlobalValues(c,tuple(*rptr-1),tuple(*dptr));
         ++rptr;
         ++dptr;
       }

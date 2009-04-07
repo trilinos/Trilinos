@@ -786,8 +786,8 @@ namespace Tpetra {
     // 
     // however, if they do not provide an efficient pattern, we will warn them 
     // if one of
-    //    THROW_TPETRA_EFFICIENCY_WARNINGS 
-    //    PRINT_TPETRA_EFFICIENCY_WARNINGS 
+    //    HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS 
+    //    HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS 
     // is on.
     //
     // if the data is contiguous, then we can post the sends in situ
@@ -831,19 +831,12 @@ namespace Tpetra {
       }
     }
 
-#   if defined(THROW_TPETRA_EFFICIENCY_WARNINGS) || defined(PRINT_TPETRA_EFFICIENCY_WARNINGS)
+#   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
     {
       int global_needSendBuff;
       Teuchos::reduceAll(*comm_,Teuchos::REDUCE_SUM,needSendBuff,&global_needSendBuff);
-      std::string err;
-      err += Teuchos::typeName(*this) + "::createFromSends(): Grouping export IDs together leads to improved performance.";
-#   if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
-      TEST_FOR_EXCEPTION(global_needSendBuff != 0, std::runtime_error, err);
-#   else // print warning
-      if (global_needSendBuff) {
-        std::cerr << err << std::endl;
-      }
-#   endif
+      TPETRA_EFFICIENCY_WARNING(global_needSendBuff,std::runtime_error,
+          "::createFromSends(): Grouping export IDs together leads to improved performance.");
     }
 #   endif
 

@@ -61,6 +61,7 @@ namespace {
   using Teuchos::TRANS;
   using Teuchos::CONJ_TRANS;
   using Tpetra::CrsMatrix;
+  using Tpetra::CrsGraph;
   using Tpetra::RowMatrix;
   using Tpetra::INSERT;
   using Tpetra::Import;
@@ -132,15 +133,73 @@ namespace {
       RCP<CrsMatrix<Scalar,Ordinal> > zero_crs = rcp( new CrsMatrix<Scalar,Ordinal>(map,0) );
       // FINISH: add more tests here
       TEST_THROW(zero_crs->apply(mv1,mv1)            , std::runtime_error);
-#   if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
-      TEST_THROW(zero_crs->insertGlobalValue(0,0,ST::one()), std::runtime_error);
+#   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS)
+      TEST_THROW(zero_crs->insertGlobalValues(0,tuple<Ordinal>(0),tuple<Scalar>(ST::one())), std::runtime_error);
 #   endif
+      TEST_EQUALITY_CONST( zero_crs->isStaticGraph(), false );
       zero_crs->fillComplete();
-      TEST_THROW(zero_crs->insertGlobalValue(0,0,ST::one()), std::runtime_error); // submit after fill
+      TEST_THROW(zero_crs->insertGlobalValues(0,tuple<Ordinal>(0),tuple<Scalar>(ST::one())), std::runtime_error); // submit after fill
       zero = zero_crs;
     }
     TEST_THROW(zero->apply(mv2,mv1)            , std::runtime_error); // MVs have different number of vectors
     TEST_THROW(zero->apply(mv2,mv3)            , std::runtime_error); // MVs have different number of vectors
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, WithGraph, Ordinal, Scalar )
+  {
+    typedef ScalarTraits<Scalar> ST;
+    typedef MultiVector<Scalar,Ordinal> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const Ordinal INVALID = OrdinalTraits<Ordinal>::invalid();
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = size(*comm);
+    // create a Map
+    const Ordinal numLocal = 10;
+    Map<Ordinal> map(INVALID,numLocal,0,comm);
+    // create a tridiagonal graph
+    CrsGraph<Ordinal> graph(map,3,true);
+    for (Teuchos_Ordinal r=map.getMinGlobalIndex(); r<map.getMaxGlobalIndex(); ++r) 
+    {
+      if (r == map.getMinAllGlobalIndex()) {
+        graph.insertGlobalIndices(r,tuple(r,r+1));
+      }
+      else if (r == map.getMaxAllGlobalIndex()) {
+        graph.insertGlobalIndices(r,tuple(r-1,r));
+      }
+      else {
+        graph.insertGlobalIndices(r,tuple(r-1,r,r+1));
+      }
+    }
+    graph.fillComplete();
+    // create a matrix using the graph
+    CrsMatrix<Scalar,Ordinal> matrix(graph);
+    TEST_EQUALITY_CONST( matrix.isStaticGraph(), true );
+    // insert throws exception
+    TEST_THROW( matrix.insertGlobalValues(map.getMinGlobalIndex(),tuple<Ordinal>(map.getMinGlobalIndex()),tuple<Scalar>(ST::one())), std::runtime_error );
+    // suminto and replace are allowed
+    for (Ordinal r=map.getMinGlobalIndex(); r<map.getMaxGlobalIndex(); ++r) 
+    {
+      if (r == map.getMinAllGlobalIndex()) {
+        matrix.replaceGlobalValues(r, tuple(r,r+1), tuple(ST::one(),ST::one()) );
+      }
+      else if (r == map.getMaxAllGlobalIndex()) {
+        matrix.replaceGlobalValues(r, tuple(r-1,r), tuple(ST::one(),ST::one()) );
+      }
+      else {
+        matrix.replaceGlobalValues(r, tuple(r-1,r,r+1), tuple(ST::one(),ST::one(),ST::one()) );
+      }
+    }
+    for (Ordinal r=map.getMinGlobalIndex(); r<map.getMaxGlobalIndex(); ++r) 
+    {
+      matrix.sumIntoGlobalValues(r, tuple(r), tuple(ST::one()) );
+    }
+    matrix.fillComplete();
+    TEST_EQUALITY( matrix.numGlobalDiagonals(), numImages );
+    TEST_EQUALITY( matrix.numGlobalEntries(), 3*numImages*numLocal - 2 );
   }
 
 
@@ -171,8 +230,9 @@ namespace {
     {
       RCP<CrsMatrix<Scalar,Ordinal> > eye_crs = rcp(new CrsMatrix<Scalar,Ordinal>(map,1));
       for (int i=0; i<numLocal; ++i) {
-        eye_crs->insertGlobalValue(base+i,base+i,ST::one());
+        eye_crs->insertGlobalValues(base+i,tuple<Ordinal>(base+i),tuple<Scalar>(ST::one()));
       }
+      TEST_EQUALITY_CONST( eye_crs->isStaticGraph(), false );
       eye_crs->fillComplete();
       eye = eye_crs;
     }
@@ -254,10 +314,11 @@ namespace {
     CrsMatrix<Scalar,Ordinal> A(rowmap,P);
     for (int i=0; i<M; ++i) {
       for (int j=0; j<P; ++j) {
-        A.insertGlobalValue( M*myImageID+i, j, as<Scalar>(M*myImageID+i + j*M*N) );
+        A.insertGlobalValues( M*myImageID+i, tuple<Ordinal>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
       }
     }
     // call fillComplete()
+    TEST_EQUALITY_CONST( A.isStaticGraph(), false );
     A.fillComplete(lclmap,rowmap);
     // build the input multivector X
     MV X(lclmap,numVecs);
@@ -347,10 +408,11 @@ namespace {
     CrsMatrix<Scalar,Ordinal> A(rowmap,P);
     for (int i=0; i<M; ++i) {
       for (int j=0; j<P; ++j) {
-        A.insertGlobalValue( M*myImageID+i, j, as<Scalar>(M*myImageID+i + j*M*N) );
+        A.insertGlobalValues( M*myImageID+i, tuple<Ordinal>(j), tuple<Scalar>(M*myImageID+i + j*M*N) );
       }
     }
     // call fillComplete()
+    TEST_EQUALITY_CONST( A.isStaticGraph(), false );
     A.fillComplete(lclmap,rowmap);
     out << "A: " << endl << A << endl;
     // build the input multivector X
@@ -525,7 +587,7 @@ namespace {
       RCP<CrsMatrix<Scalar,Ordinal> > eye_crs = rcp(new CrsMatrix<Scalar,Ordinal>(map,1) );
       if (myImageID == 0) {
         for (int i=0; i<map.getNumGlobalEntries(); ++i) {
-          eye_crs->insertGlobalValue(i,i,ST::one());
+          eye_crs->insertGlobalValues(i,tuple<Ordinal>(i),tuple<Scalar>(ST::one()));
         }
       }
       eye_crs->fillComplete();
@@ -774,7 +836,7 @@ namespace {
       const int *rptr = rowind;
       for (int c=0; c<dim; ++c) {
         for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          A_crs.insertGlobalValue(*rptr-1,c,Scalar(dptr[0],dptr[1]));
+          A_crs.insertGlobalValues(*rptr-1,tuple<Ordinal>(c),tuple<Scalar>(Scalar(dptr[0],dptr[1])));
           A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,Scalar(dptr[0],dptr[1]));
           ++rptr;
           dptr += 2;
@@ -868,7 +930,7 @@ namespace {
       const int *rptr = rowind;
       for (int c=0; c<dim; ++c) {
         for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          A_crs.insertGlobalValue(*rptr-1,c,Scalar(dptr[0],dptr[1]));
+          A_crs.insertGlobalValues(*rptr-1,tuple<Ordinal>(c),tuple<Scalar>(Scalar(dptr[0],dptr[1])));
           ++rptr;
           dptr += 2;
         }
@@ -970,7 +1032,7 @@ namespace {
       const int *rptr = rowind;
       for (int c=0; c<dim; ++c) {
         for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          A_crs.insertGlobalValue(*rptr-1,c,as<Scalar>(*dptr));
+          A_crs.insertGlobalValues(*rptr-1,tuple<Ordinal>(c),tuple<Scalar>(*dptr));
           A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,as<Scalar>(*dptr));
           ++rptr;
           ++dptr;
@@ -1012,7 +1074,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, BadGID, Ordinal, Scalar )
   {
-    // what happens when we call CrsMatrix::insertGlobalValue() for a row that isn't on the Map?
+    // what happens when we call CrsMatrix::insertGlobalValues() for a row that isn't on the Map?
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,Ordinal> MV;
     typedef typename ST::magnitudeType Mag;
@@ -1032,7 +1094,7 @@ namespace {
       CrsMatrix<Scalar,Ordinal> A(map,1);
       // add an entry off the map: row too high
       // this will only be off the map for the last node, for the others it will induce communication
-      A.insertGlobalValue(map.getMaxGlobalIndex()+1,map.getIndexBase(),ST::one());
+      A.insertGlobalValues(map.getMaxGlobalIndex()+1,tuple<Ordinal>(map.getIndexBase()),tuple<Scalar>(ST::one()));
       TEST_THROW(A.fillComplete(), std::runtime_error);
     }
     {
@@ -1041,7 +1103,7 @@ namespace {
       // add an entry off the map: row too high
       // this will only be off the map for the last node, for the others there is nothing
       if (myImageID == numImages-1) {
-        A.insertGlobalValue(map.getMaxAllGlobalIndex()+1,map.getIndexBase(),ST::one());
+        A.insertGlobalValues(map.getMaxAllGlobalIndex()+1,tuple<Ordinal>(map.getIndexBase()),tuple<Scalar>(ST::one()));
       }
       TEST_THROW(A.fillComplete(), std::runtime_error);
     }
@@ -1113,7 +1175,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, TheEyeOfTruth, ORDINAL, SCALAR ) \
@@ -1126,6 +1188,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, DomainRange, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, NonSquare, ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, Transpose, ORDINAL, SCALAR ) \
+      /*TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, WithGraph, ORDINAL, SCALAR )*/ \
       TRIUTILS_USING_TESTS(ORDINAL, SCALAR)
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD

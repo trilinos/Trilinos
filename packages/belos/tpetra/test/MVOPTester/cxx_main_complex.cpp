@@ -33,6 +33,7 @@ namespace {
   using Teuchos::CONJ_TRANS;
   using Belos::OutputManager;
   using Belos::Warnings;
+  using Teuchos::tuple;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -64,7 +65,7 @@ namespace {
   {
     RCP<CrsMatrix<Scalar,O1,O2> > op = rcp( new CrsMatrix<Scalar,O1,O2>(map,1) );
     for (Teuchos_Ordinal i=0; i<map.getNumMyEntries(); ++i) {
-      op->insertGlobalValue(map.getGlobalIndex(i),map.getGlobalIndex(i), ScalarTraits<Scalar>::one());
+      op->insertGlobalValues(map.getGlobalIndex(i),tuple(map.getGlobalIndex(i)), tuple(ScalarTraits<Scalar>::one()));
     }
     op->fillComplete();
     return op;

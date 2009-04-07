@@ -33,9 +33,35 @@
 #include <iterator>
 #include <Teuchos_Utils.hpp>
 #include <Teuchos_TestForException.hpp>
-#include <Teuchos_ArrayView.hpp>
 
-namespace Tpetra {
+// handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
+#if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
+#define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)                                 \
+{                                                                                                     \
+  std::string err = Teuchos::typeName(*this) + msg;                                                   \
+  if (TPETRA_PRINTS_EFFICIENCY_WARNINGS && (throw_exception_test)) {                                  \
+    std::cerr << err << std::endl;                                                                    \
+  }                                                                                                   \
+  TEST_FOR_EXCEPTION(TPETRA_THROWS_EFFICIENCY_WARNINGS && (throw_exception_test), Exception, err);    \
+}
+#else
+#define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)
+#endif
+
+// handle an abuse warning, according to HAVE_TPETRA_THROW_ABUSE_WARNINGS and HAVE_TPETRA_PRINT_ABUSE_WARNINGS
+#if defined(HAVE_TPETRA_THROW_ABUSE_WARNINGS) || defined(HAVE_TPETRA_PRINT_ABUSE_WARNINGS)
+#define TPETRA_ABUSE_WARNING(throw_exception_test,Exception,msg)                               \
+{                                                                                              \
+  std::string err = Teuchos::typeName(*this) + msg;                                            \
+  if (TPETRA_PRINTS_ABUSE_WARNINGS && (throw_exception_test)) {                                \
+    std::cerr << err << std::endl;                                                             \
+  }                                                                                            \
+  TEST_FOR_EXCEPTION(TPETRA_THROWS_ABUSE_WARNINGS && (throw_exception_test), Exception, err);  \
+}
+#else
+#define TPETRA_ABUSE_WARNING(throw_exception_test,Exception,msg)
+#endif
+
 
 // shared test for exception
 // just like Teuchos TEST_FOR_EXCEPTION, but with the assurance 
@@ -63,6 +89,7 @@ namespace Tpetra {
 }
 #endif
 
+namespace Tpetra {
 
   /*! 
     \file Tpetra_Util.hpp

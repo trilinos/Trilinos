@@ -313,6 +313,7 @@ namespace Tpetra
       void sortIndices();
       void removeRedundantIndices();
       void makeImportExport();
+      bool noRedundancies() const;
       bool indicesAreSorted() const;
       void indicesAreSorted(bool sorted);
       bool indicesAreAllocated() const;
@@ -452,6 +453,7 @@ namespace Tpetra
     graphData_->rowNumToAlloc_.clear();
     graphData_->indicesAreAllocated_ = true;    
   }
+
 
   template <class LocalOrdinal, class GlobalOrdinal>
   void CrsGraph<LocalOrdinal,GlobalOrdinal>::initNumAlloc(const Teuchos::ArrayView<Teuchos_Ordinal> &NumEntriesPerRowToAlloc)
@@ -824,7 +826,9 @@ namespace Tpetra
 #endif
     }
     graphData_->indicesAreSorted_ = false;
+    graphData_->noRedundancies_ = false;
     graphData_->haveGlobalConstants_ = false;
+
     // insert the indices into the graph
     LocalOrdinal lrow = getRowMap().getLocalIndex(grow);
     if (lrow != OrdinalTraits<LocalOrdinal>::invalid()) {
@@ -835,14 +839,8 @@ namespace Tpetra
       if (rowNE+toAdd > rowNA) {
         TEST_FOR_EXCEPTION(isStaticProfile(), std::runtime_error,
             Teuchos::typeName(*this) << "::insertGlobalIndices(): new indices exceed statically allocated graph structure.");
-#       if defined(THROW_TPETRA_EFFICIENCY_WARNINGS) || defined(PRINT_TPETRA_EFFICIENCY_WARNINGS)
-          std::string err = Teuchos::typeName(*this) + "::insertGlobalIndices(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.";
-#         if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
-            TEST_FOR_EXCEPTION(true, std::runtime_error, err);
-#         else
-            std::cerr << err << std::endl;
-#         endif
-#       endif
+        TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
+            "::insertGlobalIndices(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
         // increase allocation to necessary amount, copy previous data, reassign ArrayRCP
         ArrayView<const GlobalOrdinal> curInds;
         extractGlobalRowConstView(grow,curInds);
@@ -908,6 +906,7 @@ namespace Tpetra
         Teuchos::typeName(*this) << "::insertMyIndices(lrow,...): lrow is not valid for this node.");
 
     graphData_->indicesAreSorted_ = false;
+    graphData_->noRedundancies_ = false;
     graphData_->haveGlobalConstants_ = false;
 
     // add to allocated space
@@ -915,16 +914,10 @@ namespace Tpetra
                     rowNA = RNumAlloc(lrow),
                     toAdd = indices.size();
     if (rowNE+toAdd > rowNA) {
-        TEST_FOR_EXCEPTION(isStaticProfile()==true, std::runtime_error,
-            Teuchos::typeName(*this) << "::insertMyIndices(): new indices exceed statically allocated graph structure.");
-#     if defined(THROW_TPETRA_EFFICIENCY_WARNINGS) || defined(PRINT_TPETRA_EFFICIENCY_WARNINGS)
-        std::string err = Teuchos::typeName(*this) + "::insertGlobalIndices(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.";
-#       if defined(THROW_TPETRA_EFFICIENCY_WARNINGS)
-          TEST_FOR_EXCEPTION(true, std::runtime_error, err);
-#       else
-          std::cerr << err << std::endl;
-#       endif
-#     endif
+      TEST_FOR_EXCEPTION(isStaticProfile()==true, std::runtime_error,
+          Teuchos::typeName(*this) << "::insertMyIndices(): new indices exceed statically allocated graph structure.");
+      TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
+          "::insertGlobalIndices(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
       // increase allocation to necessary amount, copy previous data, reassign ArrayRCP
       ArrayView<const LocalOrdinal> curInds;
       extractMyRowConstView(lrow,curInds);
@@ -960,6 +953,10 @@ namespace Tpetra
   template <class LocalOrdinal, class GlobalOrdinal>
   bool CrsGraph<LocalOrdinal,GlobalOrdinal>::indicesAreSorted() const
   { return graphData_->indicesAreSorted_; }
+
+  template <class LocalOrdinal, class GlobalOrdinal>
+  bool CrsGraph<LocalOrdinal,GlobalOrdinal>::noRedundancies() const
+  { return graphData_->noRedundancies_; }
 
   template <class LocalOrdinal, class GlobalOrdinal>
   void CrsGraph<LocalOrdinal,GlobalOrdinal>::indicesAreSorted(bool sorted) 
@@ -1498,6 +1495,7 @@ namespace Tpetra
     TEST_FOR_EXCEPT(indicesAreGlobal()==true);    // this should be called only after makeIndicesLocal()
     TEST_FOR_EXCEPT(indicesAreSorted()==false);   // this should be called only after sortIndices()
     TEST_FOR_EXCEPT(isStorageOptimized()==true);  // assumptions about available data structures
+    if (noRedundancies()) return;
     const Teuchos_Ordinal nlrs = numLocalRows();
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalEntries = getRowMap().getMyGlobalEntries();
     // reset all local quantities

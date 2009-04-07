@@ -110,22 +110,22 @@ int main(int argc, char *argv[])
 
   // create map
   Map<int> map(dim,0,comm);
-  RCP<CrsMatrix<ST,int> > K = rcp(new CrsMatrix<ST,int>(map,3));
+  RCP<CrsMatrix<ST,int> > K = rcp(new CrsMatrix<ST,int>(map,4));
   int base = MyPID*ROWS_PER_PROC;
   if (MyPID != NumImages-1) {
     for (int i=0; i<ROWS_PER_PROC; ++i) {
-      K->insertGlobalValue(base+i  ,base+i  , 2);
-      K->insertGlobalValue(base+i  ,base+i+1,-1);
-      K->insertGlobalValue(base+i+1,base+i  ,-1);
-      K->insertGlobalValue(base+i+1,base+i+1, 2);
+      K->insertGlobalValues(base+i  ,tuple(base+i  ),tuple<ST>( 2));
+      K->insertGlobalValues(base+i  ,tuple(base+i+1),tuple<ST>(-1));
+      K->insertGlobalValues(base+i+1,tuple(base+i  ),tuple<ST>(-1));
+      K->insertGlobalValues(base+i+1,tuple(base+i+1),tuple<ST>( 2));
     }
   }
   else {
     for (int i=0; i<ROWS_PER_PROC-1; ++i) {
-      K->insertGlobalValue(base+i  ,base+i  , 2);
-      K->insertGlobalValue(base+i  ,base+i+1,-1);
-      K->insertGlobalValue(base+i+1,base+i  ,-1);
-      K->insertGlobalValue(base+i+1,base+i+1, 2);
+      K->insertGlobalValues(base+i  ,tuple(base+i  ),tuple<ST>( 2));
+      K->insertGlobalValues(base+i  ,tuple(base+i+1),tuple<ST>(-1));
+      K->insertGlobalValues(base+i+1,tuple(base+i  ),tuple<ST>(-1));
+      K->insertGlobalValues(base+i+1,tuple(base+i+1),tuple<ST>( 2));
     }
   }
   K->fillComplete();

@@ -10,6 +10,7 @@
 namespace {
 
   using Teuchos::as;
+  using Teuchos::tuple;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -65,7 +66,7 @@ namespace {
   {
     RCP<CrsMatrix<Scalar,O1,O2> > op = rcp( new CrsMatrix<Scalar,O1,O2>(map,1) );
     for (Teuchos_Ordinal i=0; i<map.getNumMyEntries(); ++i) {
-      op->insertGlobalValue(map.getGlobalIndex(i),map.getGlobalIndex(i), ScalarTraits<Scalar>::one());
+      op->insertGlobalValues(map.getGlobalIndex(i),tuple(map.getGlobalIndex(i)), tuple(ScalarTraits<Scalar>::one()));
     }
     op->fillComplete();
     return op;

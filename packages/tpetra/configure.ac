@@ -39,9 +39,11 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
+#  #np# - package name, version number, and e-mail address below
 AC_INIT(tpetra, 1.2, maherou@sandia.gov)
 
 # Hello World!
+#  #np# - package name below
 echo "----------------------------------------"
 echo "Running Tpetra Configure Script"
 echo "----------------------------------------"
@@ -50,20 +52,21 @@ echo "----------------------------------------"
 # directory with --srcdir.  Any file in that directory will do,
 # preferably one that is unlikely to be removed or renamed.
 
+# #np# - file name below
 AC_CONFIG_SRCDIR([src/Tpetra_Version.cpp])
 
 # Specify directory for auxillary build tools (e.g., install-sh,
 # config.sub, config.guess) and M4 files.
 
 AC_CONFIG_AUX_DIR(config)
-
+#  #np# - Change file names in next line 
 # Configure should create src/Tpetra_config.h from src/Tpetra_config.h.in
 
 AM_CONFIG_HEADER(src/Tpetra_config.h:src/Tpetra_config.h.in)
 
 # Allow users to specify their own "install" command.  If none is specified,
 # the default is install-sh found in the config subdirectory.
-                                                                                
+
 AC_ARG_WITH(install,
  [AC_HELP_STRING([--with-install=INSTALL_PROGRAM],
  [Use the installation program INSTALL_PROGRAM rather the default that is provided.  For example --with-install="/path/install -p"])],
@@ -73,7 +76,7 @@ AC_ARG_WITH(install,
    INSTALL_SCRIPT=$withval
    INSTALL_DATA="$withval -m 644"
  ],)
-                                                                                
+
 # AM_MAINTAINER_MODE turns off maintainer-only makefile targets by
 # default, and changes configure to understand a
 # --enable-maintainer-mode option. --enable-maintainer-mode turns the
@@ -91,10 +94,11 @@ AC_CANONICAL_TARGET
 
 # Use automake
 
-# Specify required version of automake.
+# Specify required version of automake
 AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 
 # Specify required version of autoconf.
+
 AC_PREREQ(2.61)
 
 # ------------------------------------------------------------------------
@@ -103,13 +107,15 @@ AC_PREREQ(2.61)
 
 TAC_ARG_CONFIG_MPI
 
+#  #np# - can eliminate compiler checks below if your package does not use the
+#         language corresponding to the check
+
 # ------------------------------------------------------------------------
 # Checks for programs
 # ------------------------------------------------------------------------
 
 AC_PROG_CC(cc gcc)
 AC_PROG_CXX(CC g++ c++ cxx)
-#AC_PROG_F77(f77 g77 gfortran f90 xlf90 f95)
 AC_PROG_RANLIB
 
 # ------------------------------------------------------------------------
@@ -118,7 +124,6 @@ AC_PROG_RANLIB
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
-#TAC_ARG_WITH_FLAGS(fflags, FFLAGS)
 TAC_ARG_WITH_LIBS
 TAC_ARG_WITH_FLAGS(ldflags, LDFLAGS)
 
@@ -133,73 +138,26 @@ TAC_ARG_WITH_AR
 # ------------------------------------------------------------------------
 TAC_ARG_CHECK_MPI
 
-#NOTE: This section still needs to be updated for Tpetra, it is still 
-# code from Epetra (via new_package)
 # ------------------------------------------------------------------------
-# Checks for header files - used in Tpetra_ConfigDefs.hpp
+# Checks for Makefile.export related systems
+# ------------------------------------------------------------------------
+TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
+
+#  #np# - Customize the checks for headers needed in package being added.
+# ------------------------------------------------------------------------
+# Checks for header files - used in Teuchos_ConfigDefs.hpp
 # ------------------------------------------------------------------------
 
-AC_CHECK_HEADERS([cstdlib stdlib.h], [break],)
-AC_CHECK_HEADERS([cstdio stdio.h], [break],)
-AC_CHECK_HEADERS([cassert assert.h], [break],)
-AC_CHECK_HEADERS([cmath math.h], [break],)
-AC_CHECK_HEADERS([iomanip iomanip.h], [break],)
-AC_CHECK_HEADERS([iostream iostream.h], [break],)
-AC_CHECK_HEADERS([string string.h], [break],)
-AC_CHECK_HEADERS([map map.h], [break],)
-AC_CHECK_HEADERS([vector vector.h], [break],)
-AC_CHECK_HEADERS([algorithm algo.h algorithm.h], [break],)
-AC_CHECK_HEADERS([numeric algo.h], [break],)
-
-if test "X$ac_cv_header_cstdlib" != "Xyes" && test "X$ac_cv_header_stdlib_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdlib or stdlib.h.  Tpetra requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_cstdio" != "Xyes" && test "X$ac_cv_header_stdio_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cstdio or stdio.h.  Tpetra requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_cassert" != "Xyes" && test "X$ac_cv_header_assert_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cassert or assert.h.  Tpetra requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_cmath" != "Xyes" && test "X$ac_cv_header_math_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find cmath or math.h.  Tpetra requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_iomanip" != "Xyes" && test "X$ac_cv_header_iomanip_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find iomanip or iomanip.h.  Tpetra requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_iostream" != "Xyes" && test "X$ac_cv_header_iostream_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find iostream or iostream.h.  Tpetra requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_string" != "Xyes" && test "X$ac_cv_header_string_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find string or string.h.  Tpetra requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_map" != "Xyes" && test "X$ac_cv_header_map_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find map or map.h.  Tpetra requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_vector" != "Xyes" && test "X$ac_cv_header_vector_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find vector or vector.h.  Tpetra requires at least one or the other.]])
-fi
-
-if test "X$ac_cv_header_algorithm" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes" && test "X$ac_cv_header_algorithm_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find algorithm, algo.h, or algorithm.h.  Tpetra requires at least one of these.]])
-fi
-
-if test "X$ac_cv_header_numeric" != "Xyes" && test "X$ac_cv_header_algo_h" != "Xyes"; then
-  AC_MSG_ERROR([[Cannot find numeric or algo.h.  Tpetra requires at least one or the other.]])
-fi
+AC_CHECK_HEADERS(
+ [cstdlib cstdio cassert cmath iomanip iostream string map vector algorithm numeric],,
+  AC_MSG_ERROR([[Cannot find standard header (see above).]])
+)
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_C_INLINE
 
 # ------------------------------------------------------------------------
-# Checks for compiler characteristics - Epetra_ConfigDefs.h uses these, 
+# Checks for compiler characteristics - Tpetra_ConfigDefs.h uses these, 
 # so it makes sense to leave them in - see PORTABILITY in this directory
 # ------------------------------------------------------------------------
 AC_CXX_NAMESPACES
@@ -210,19 +168,20 @@ AC_CXX_MUTABLE
 # These are pretty obscure
 # ---------------------------------------------------------------------
 AC_CXX_NEW_FOR_SCOPING
-AC_CXX_STD_SPRINTF
+#AC_CXX_STD_SPRINTF
 AC_CXX_STD_NEW_COUNT_SYNTAX
-
-# ------------------------------------------------------------------------
-# Checks for Makefile.export related systems
-# ------------------------------------------------------------------------
-TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 
 # ------------------------------------------------------------------------
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_FEATURE(tbb, [Enable use of Intel's Thread Building Blocks library], TPETRA_TBB, no)
+# TAC_ARG_ENABLE_FEATURE(tbb, [Enable use of Intel's Thread Building Blocks library], TPETRA_TBB, no)
+TAC_ARG_ENABLE_FEATURE_SUB( tpetra, throw_warnings, [Enable exception throwing for a number of warnings in Tpetra], TPETRA_THROW_WARNINGS, no)
+TAC_ARG_ENABLE_FEATURE_SUB( tpetra, print_warnings, [Enable printing of a number of warnings in Tpetra],            TPETRA_PRINT_WARNINGS, no)
+TAC_ARG_ENABLE_FEATURE_SUB(tpetra, throw_efficiency_warnings, [Enable exception throwing for Tpetra efficiency warnings.], TPETRA_THROW_EFFICIENCY_WARNINGS, "$ac_cv_use_tpetra_throw_warnings")
+TAC_ARG_ENABLE_FEATURE_SUB(tpetra, print_efficiency_warnings, [Enable printing of Tpetra efficiency warnings.],            TPETRA_PRINT_EFFICIENCY_WARNINGS, "$ac_cv_use_tpetra_print_warnings")
+TAC_ARG_ENABLE_FEATURE_SUB(tpetra, throw_abuse_warnings, [Enable exception throwing for potential Tpetra abuse warnings.], TPETRA_THROW_ABUSE_WARNINGS, "$ac_cv_use_tpetra_throw_warnings")
+TAC_ARG_ENABLE_FEATURE_SUB(tpetra, print_abuse_warnings, [Enable printing of potential Tpetra abuse warnings.],            TPETRA_PRINT_ABUSE_WARNINGS, "$ac_cv_use_tpetra_print_warnings")
 
 # ------------------------------------------------------------------------
 # Checks if tests should be built

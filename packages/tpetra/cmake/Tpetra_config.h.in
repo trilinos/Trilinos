@@ -7,8 +7,26 @@
 #cmakedefine HAVE_TPETRA_TRIUTILS
 
 /* Define if want to build tbb */
-#cmakedefine HAVE_TPETRA_TBB
+// #cmakedefine HAVE_TPETRA_TBB
 
 /* Define if want to build teuchos-debug */
 #cmakedefine HAVE_TPETRA_DEBUG
+
+/* Define if want to build tpetra-throw_warnings */
+#cmakedefine HAVE_TPETRA_THROW_WARNINGS
+
+/* Define if want to build tpetra-print_warnings */
+#cmakedefine HAVE_TPETRA_PRINT_WARNINGS
+
+/* Define if want to build tpetra-throw_efficiency_warnings */
+#cmakedefine HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
+
+/* Define if want to build tpetra-print_efficiency_warnings */
+#cmakedefine HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
+
+/* Define if want to build tpetra-throw_abuse_warnings */
+#cmakedefine HAVE_TPETRA_THROW_ABUSE_WARNINGS
+
+/* Define if want to build tpetra-print_abuse_warnings */
+#cmakedefine HAVE_TPETRA_PRINT_ABUSE_WARNINGS
 

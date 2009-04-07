@@ -7,7 +7,7 @@
 #include <Teuchos_Array.hpp>
 
 // FINISH: test handling of null export in createFromSends
-// FINISH: test efficiency warnings if THROW_TPETRA_EFFICIENCY_WARNINGS for non-contig 
+// FINISH: test efficiency warnings if HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS for non-contig 
 
 namespace {
 

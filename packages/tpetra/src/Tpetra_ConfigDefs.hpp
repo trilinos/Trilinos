@@ -68,4 +68,29 @@
 #include <Tpetra_config.h>
 #include <Teuchos_ConfigDefs.hpp>
 
+// these make some of the macros in Tpetra_Util.hpp much easier to describe
+#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
+  #define TPETRA_THROWS_EFFICIENCY_WARNINGS 1
+#else
+  #define TPETRA_THROWS_EFFICIENCY_WARNINGS 0
+#endif
+
+#ifdef HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
+  #define TPETRA_PRINTS_EFFICIENCY_WARNINGS 1
+#else
+  #define TPETRA_PRINTS_EFFICIENCY_WARNINGS 0
+#endif
+
+#ifdef HAVE_TPETRA_THROW_ABUSE_WARNINGS
+  #define TPETRA_THROWS_ABUSE_WARNINGS 1
+#else
+  #define TPETRA_THROWS_ABUSE_WARNINGS 0
+#endif
+
+#ifdef HAVE_TPETRA_PRINT_ABUSE_WARNINGS
+  #define TPETRA_PRINTS_ABUSE_WARNINGS 1
+#else
+  #define TPETRA_PRINTS_ABUSE_WARNINGS 0
+#endif
+
 #endif // TPETRA_CONFIGDEFS_HPP

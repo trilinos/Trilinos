@@ -68,7 +68,7 @@ namespace {
       STMAX = std::max( STMAX, graph.numEntriesForMyRow(STR) ); \
     } \
     TEST_EQUALITY( graph.myMaxNumRowEntries(), STMAX ); \
-    GO STGMAX; \
+    Teuchos_Ordinal STGMAX; \
     reduceAll( *STCOMM, Teuchos::REDUCE_MAX, STMAX, &STGMAX ); \
     TEST_EQUALITY( graph.globalMaxNumRowEntries(), STGMAX ); \
   }
@@ -289,9 +289,14 @@ namespace {
       trigraph.fillComplete();
       // check that inserting entries throws
       {
-        Array<LO> zero(0);
-        TEST_THROW( trigraph.insertMyIndices(0,zero()), std::runtime_error );
-        TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
+        {
+          Array<LO> zero(0);
+          TEST_THROW( trigraph.insertMyIndices(0,zero()), std::runtime_error );
+        }
+        {
+          Array<GO> zero(0);
+          TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
+        }
       }
       // check for throws and no-throws/values
       TEST_THROW( trigraph.extractGlobalRowConstView(myrowind,GView    ), std::runtime_error );
@@ -505,9 +510,9 @@ namespace {
         grows[0] = (numImages+myImageID-1) % numImages;   // my left neighbor
         grows[1] = (numImages+myImageID  ) % numImages;   // myself
         grows[2] = (numImages+myImageID+1) % numImages;   // my right neighbor
-        ngraph.insertGlobalIndices(grows[0],arrayView(&myImageID,1)); // ^^^^^^^^^^^^^^^^^^^^^^^
-        ngraph.insertGlobalIndices(grows[1],arrayView(&myImageID,1)); // add me to the graph for my neighbors
-        ngraph.insertGlobalIndices(grows[2],arrayView(&myImageID,1)); // vvvvvvvvvvvvvvvvvvvvvvv
+        ngraph.insertGlobalIndices(grows[0],tuple<GO>(myImageID)); // ^^^^^^^^^^^^^^^^^^^^^^^
+        ngraph.insertGlobalIndices(grows[1],tuple<GO>(myImageID)); // add me to the graph for my neighbors
+        ngraph.insertGlobalIndices(grows[2],tuple<GO>(myImageID)); // vvvvvvvvvvvvvvvvvvvvvvv
         // before globalAssemble(), there should be a single local entry on parallel runs, three on serial runs
         ArrayView<const GO> myrow_gbl;
         ngraph.extractGlobalRowConstView(myrowind,myrow_gbl);
@@ -515,7 +520,7 @@ namespace {
         ngraph.globalAssemble();    // after globalAssemble(), storage should be maxed out
         TEST_EQUALITY( ngraph.numEntriesForMyRow(0), ngraph.numAllocatedEntriesForMyRow(0) );
         if (StaticProfile) {
-          TEST_THROW( ngraph.insertGlobalIndices(myImageID,arrayView(&myImageID,1)), std::runtime_error );  // adding an addition entry under static allocation should fail
+          TEST_THROW( ngraph.insertGlobalIndices(myImageID,tuple<GO>(myImageID)), std::runtime_error );  // adding an addition entry under static allocation should fail
         }
         ngraph.fillComplete();
         // after fillComplete(), there should be entries for me and my neighbors on my row
@@ -559,7 +564,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_LO_GO( LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyGraph, LO, GO ) \
