@@ -39,6 +39,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_RowMatrix.h"
+#include "Epetra_CrsMatrix.h"
 #include "Epetra_IntVector.h"
 #include "Teuchos_RCP.hpp"
 #include "Ifpack_OverlappingRowMatrix.h"
@@ -425,7 +426,12 @@ private:
   //! Maps to speed LID-LID conversions
   int* Ac_LIDMap_;
   int* Bc_LIDMap_;
+  int* Ar_LIDMap_;
+  int* Br_LIDMap_;
 
+  //! CrsMatrix pointe,r if needed
+  const Epetra_CrsMatrix* Acrs_;
+  
   //mutable Teuchos::RCP<Epetra_MultiVector> ImportVector_;
   //mutable Teuchos::RCP<Epetra_MultiVector> ExportVector_;
   mutable Epetra_MultiVector* ExportVector_;

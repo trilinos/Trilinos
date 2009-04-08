@@ -66,6 +66,8 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
   ovA_ = dynamic_cast<const Ifpack_OverlappingRowMatrix*>(&*Matrix_);
   assert(ovA_ != 0);
 
+  Acrs_=dynamic_cast<const Epetra_CrsMatrix*>(&ovA_->A());
+  
 #ifdef HAVE_MPI
   const Epetra_MpiComm *pComm = dynamic_cast<const Epetra_MpiComm*>( &(Matrix->Comm()) );
   assert(pComm != NULL);
@@ -132,9 +134,15 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
   // CMS: [A|B]-Local to Overlap-Local Column Indices
   if(ovA_){
     Ac_LIDMap_=new int[ovA_->A().NumMyCols()+1];
-    for(int i=0;i<ovA_->A().NumMyCols();i++) Ac_LIDMap_[i]=colMap_->LID(ovA_->A().RowMatrixColMap().GID(i));
+    for(int i=0;i<ovA_->A().NumMyCols();i++) Ac_LIDMap_[i]=colMap_->LID(ovA_->A().RowMatrixColMap().GID(i));    
     Bc_LIDMap_=new int[ovA_->B().NumMyCols()+1];
     for(int i=0;i<ovA_->B().NumMyCols();i++) Bc_LIDMap_[i]=colMap_->LID(ovA_->B().RowMatrixColMap().GID(i));
+
+    Ar_LIDMap_=new int[ovA_->A().NumMyRows()+1];
+    for(int i=0;i<ovA_->A().NumMyRows();i++) Ar_LIDMap_[i]=Map_->LID(ovA_->A().RowMatrixRowMap().GID(i));    
+    Br_LIDMap_=new int[ovA_->B().NumMyRows()+1];
+    for(int i=0;i<ovA_->B().NumMyRows();i++) Br_LIDMap_[i]=Map_->LID(ovA_->B().RowMatrixRowMap().GID(i));
+
   }
   // end CMS
 
@@ -350,16 +358,51 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   }
 
   // Do actual computation
-  for(int i = 0; i < NumMyRows_; i++) {
-    EPETRA_CHK_ERR(ExtractMyRowCopy(i, MaxNumEntries(), NumEntries, &Values_[0], &Indices_[0]));
+  assert(ovA_!=0);
+  double *MyValues;
+  int *MyIndices;
+
+  if(Acrs_){
+    // A rows - CrsMatrix Case
+    for(int i=0;i<Acrs_->NumMyRows();i++) {
+      Acrs_->ExtractMyRowView(i,NumEntries,MyValues,MyIndices);
+      int LocRow=Ar_LIDMap_[i];
+      for (int k=0; k<NumVectors; k++) {
+        double sum = 0.0;
+        for(int j = 0; j < NumEntries; j++)
+        sum += MyValues[j]*Xp[k][Ac_LIDMap_[MyIndices[j]]];          
+        Yp[k][LocRow] = sum;
+      }
+    }
+  }
+  else{
+    // A rows - RowMatrix Case
+    MyValues=&Values_[0];
+    MyIndices=&Indices_[0];
+    for(int i=0;i<Acrs_->NumMyRows();i++) {
+      Acrs_->ExtractMyRowCopy(i,MaxNumEntries_,NumEntries,MyValues,MyIndices);
+      int LocRow=Ar_LIDMap_[i];
+      for (int k=0; k<NumVectors; k++) {
+        double sum = 0.0;
+        for(int j = 0; j < NumEntries; j++)
+        sum += MyValues[j]*Xp[k][Ac_LIDMap_[MyIndices[j]]];          
+        Yp[k][LocRow] = sum;
+      }
+    }
+  }
+
+  // B rows, always CrsMatrix
+  for(int i=0;i<ovA_->B().NumMyRows();i++) {
+    ovA_->B().ExtractMyRowView(i,NumEntries,MyValues,MyIndices);
+    int LocRow=Br_LIDMap_[i];
     for (int k=0; k<NumVectors; k++) {
       double sum = 0.0;
       for(int j = 0; j < NumEntries; j++)
-        sum += Values_[j]*Xp[k][Indices_[j]];
-      Yp[k][i] = sum;
+        sum += MyValues[j]*Xp[k][Bc_LIDMap_[MyIndices[j]]];          
+      Yp[k][LocRow] = sum;
     }
-  }
-  
+  }    
+
   if (Exporter()!=0) {
     Y.PutScalar(0.0);  // Make sure target is zero
     Y.Export(*ExportVector_, *Exporter(), Add); // Fill Y with Values from export vector
