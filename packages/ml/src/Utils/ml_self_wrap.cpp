@@ -91,15 +91,21 @@ int ML_Self_Gen(ML *ml, int Overlap, int curr_level,
 {
 
   ML_Operator *Ke = &(ml->Amat[curr_level]);
-
-  // creates the wrapper from ML_Operator to Epetra_RowMatrix
-  // (ML_Epetra::RowMatrix). This is a cheap conversion
-  RowMatrix* Self_Matrix = new RowMatrix(Ke, &Comm);
-  assert (Self_Matrix != 0);
-
   Ifpack_Preconditioner* Prec;
 
-  Prec = new Ifpack_AdditiveSchwarz<Ifpack_ML>(Self_Matrix, Overlap);
+  // If we have an underlying Epetra_CrsMatrix, send that to Ifpack...
+  if(Ke && Ke->getrow && Ke->getrow->func_ptr==ML_Epetra_CrsMatrix_getrow){
+    Epetra_CrsMatrix *Acrs=(Epetra_CrsMatrix *) ML_Get_MyGetrowData(Ke);
+    Prec = new Ifpack_AdditiveSchwarz<Ifpack_ML>(Acrs, Overlap);
+  }
+  else{
+    // Else, create the wrapper from ML_Operator to Epetra_RowMatrix
+    // (ML_Epetra::RowMatrix). This is a cheap conversion
+    RowMatrix* Self_Matrix = new RowMatrix(Ke, &Comm);
+    assert (Self_Matrix != 0);
+    Prec = new Ifpack_AdditiveSchwarz<Ifpack_ML>(Self_Matrix, Overlap);
+  }
+
   assert (Prec != 0);
 
   List.set("zero starting solution", true);
@@ -141,7 +147,11 @@ void ML_Self_Destroy(void * Self_Handle)
   if (ML_Get_PrintLevel() > 8)
     cout << *Prec;
 
-  delete &(Prec->Matrix());
+  const Epetra_CrsMatrix *Temp=dynamic_cast<const Epetra_CrsMatrix*>(&Prec->Matrix());
+  if(!Temp)
+    delete &(Prec->Matrix());
+  // Note: Don't delete CrsMatrices, because we don't create those...
+  
   delete Prec;
 
 } /* ML_Self_Destroy */
