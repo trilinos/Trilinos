@@ -59,10 +59,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
   TrilinosCouplings_ConfigDefs.h
+  TrilinosCouplings_Version.h
   )
 
 APPEND_SET(SOURCES
-  TrilinosCouplings_Version.h
+  dummy.cpp
   )
 
 IF(HAVE_TRILINOSCOUPLINGS_ML)
