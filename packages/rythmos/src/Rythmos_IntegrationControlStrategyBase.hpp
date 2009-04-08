@@ -2,6 +2,7 @@
 #ifndef RYTHMOS_INTEGRATION_CONTROL_STRATEGY_BASE_HPP
 #define RYTHMOS_INTEGRATION_CONTROL_STRATEGY_BASE_HPP
 
+#include "Rythmos_Types.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
