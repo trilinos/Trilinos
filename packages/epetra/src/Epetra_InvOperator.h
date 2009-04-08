@@ -71,11 +71,11 @@ class Epetra_InvOperator: public virtual Epetra_Operator {
 	does not support transpose use, this method should return a value of -1.
       
     \param In
-	   UseTranspose - If true, multiply by the transpose of operator, otherwise just use operator.
+	   UseTranspose_in - If true, multiply by the transpose of operator, otherwise just use operator.
 
     \warning - This method has no effect and returns -1 as error code.
   */
-  int SetUseTranspose(bool UseTranspose){EPETRA_CHK_ERR(operator_->SetUseTranspose(UseTranspose)); return(0);}
+  int SetUseTranspose(bool UseTranspose_in){EPETRA_CHK_ERR(operator_->SetUseTranspose(UseTranspose_in)); return(0);}
   //@}
   
   //! @name Mathematical functions
