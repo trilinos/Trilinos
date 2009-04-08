@@ -183,7 +183,7 @@ private:
   const Epetra_LinearProblem* Problem_;
 
   //! Quick access pointers to the internal timing data.
-  int MtxConvTime_, MtxRefactTime_, VecRefactTime_;
+  int MtxConvTime_, MtxRedistTime_, VecRedistTime_;
   int SymFactTime_, NumFactTime_, SolveTime_;
 
   // Data for PARDISO
