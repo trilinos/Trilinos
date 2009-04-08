@@ -116,7 +116,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src example test epetra thyra tpetra
+DIST_SUBDIRS = src test epetra thyra tpetra
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -258,7 +258,7 @@ EXTRA_DIST = bootstrap \
        epetra/util/ModeLaplace/CMakeLists.txt epetra/util/CMakeLists.txt \
        CMakeLists.txt cmake/AnasaziConfig.cmake.in \
        cmake/Anasazi_config.h.in test/CMakeLists.txt \
-       src/CMakeLists.txt example/CMakeLists.txt
+       src/CMakeLists.txt epetra/example/CMakeLists.txt
 
 
 #
@@ -281,11 +281,10 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 #defined, so that the tests and examples are included in the distribution
 #tarball.
 @SUB_TEST_TRUE@TEST_SUBDIR = test
-@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
 @BUILD_ANASAZI_THYRA_TRUE@THYRA_SUBDIR = thyra
 @BUILD_ANASAZI_EPETRA_TRUE@EPETRA_SUBDIR = epetra
 @BUILD_ANASAZI_TPETRA_TRUE@TPETRA_SUBDIR = tpetra
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(EPETRA_SUBDIR) $(THYRA_SUBDIR) $(TPETRA_SUBDIR) 
+SUBDIRS = src $(TEST_SUBDIR) $(EPETRA_SUBDIR) $(THYRA_SUBDIR) $(TPETRA_SUBDIR) 
 TRILINOS_HOME_DIR = @abs_top_srcdir@/../..
 TRILINOS_BUILD_DIR = @abs_top_builddir@/../..
 @HAVE_MPI_FALSE@ANASAZI_CHECK_COMM = serial
@@ -736,8 +735,7 @@ all-local:
 @BUILD_EXAMPLES_TRUE@	@echo ""
 @BUILD_EXAMPLES_TRUE@	@echo "Now building anasazi examples."
 @BUILD_EXAMPLES_TRUE@	@echo ""
-@BUILD_EXAMPLES_TRUE@	cd $(abs_top_builddir)/example && $(MAKE) && \
-@BUILD_EXAMPLES_TRUE@			cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/example && $(MAKE) && \
+@BUILD_EXAMPLES_TRUE@	cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/example && $(MAKE) && \
 @BUILD_EXAMPLES_TRUE@			cd $(abs_top_builddir)/thyra/example && $(MAKE)
 #cd $(abs_top_builddir)/tpetra/example && $(MAKE)
 @BUILD_EXAMPLES_TRUE@	@echo ""
@@ -745,8 +743,7 @@ all-local:
 @BUILD_EXAMPLES_TRUE@	@echo ""
 
 @BUILD_EXAMPLES_TRUE@install-examples:
-@BUILD_EXAMPLES_TRUE@	cd $(abs_top_builddir)/example && $(MAKE) install && \
-@BUILD_EXAMPLES_TRUE@			cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/example && $(MAKE) install && \
+@BUILD_EXAMPLES_TRUE@	cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/example && $(MAKE) install && \
 @BUILD_EXAMPLES_TRUE@			cd $(abs_top_builddir)/thyra/example && $(MAKE) install
 #cd $(abs_top_builddir)/tpetra/example && $(MAKE) install
 @BUILD_EXAMPLES_FALSE@examples:
@@ -762,8 +759,7 @@ clean-tests:
 			cd $(abs_top_builddir)/tpetra/test && $(MAKE) clean
 
 clean-examples:
-	cd $(abs_top_builddir)/example && $(MAKE) clean && \
-			cd $(abs_top_builddir)/epetra/util && $(MAKE) clean && cd $(abs_top_builddir)/epetra/example && $(MAKE) clean && \
+	cd $(abs_top_builddir)/epetra/util && $(MAKE) clean && cd $(abs_top_builddir)/epetra/example && $(MAKE) clean && \
 			cd $(abs_top_builddir)/thyra/example && $(MAKE) clean
 #cd $(abs_top_builddir)/tpetra/example && $(MAKE) clean
 

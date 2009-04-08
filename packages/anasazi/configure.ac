@@ -467,7 +467,6 @@ AC_CONFIG_FILES([
 		test/scripts/daily/Makefile
 		test/scripts/daily/serial/Makefile
 		test/scripts/daily/mpi/Makefile
-		example/Makefile
 		epetra/Makefile
 		epetra/src/Makefile
 		epetra/util/Makefile

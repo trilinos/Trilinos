@@ -62,7 +62,7 @@ EXTRA_DIST = bootstrap \
        epetra/util/ModeLaplace/CMakeLists.txt epetra/util/CMakeLists.txt \
        CMakeLists.txt cmake/AnasaziConfig.cmake.in \
        cmake/Anasazi_config.h.in test/CMakeLists.txt \
-       src/CMakeLists.txt example/CMakeLists.txt
+       src/CMakeLists.txt epetra/example/CMakeLists.txt
 
 #
 #       I believe that by switching to AUX_DIR(../../config) one 
@@ -103,10 +103,6 @@ if SUB_TEST
 TEST_SUBDIR=test
 endif
 
-if SUB_EXAMPLE
-EXAMPLE_SUBDIR=example
-endif
-
 if BUILD_TESTS
 tests:
 	@echo ""
@@ -129,8 +125,7 @@ examples:
 	@echo ""
 	@echo "Now building anasazi examples."
 	@echo ""
-	cd $(abs_top_builddir)/example && $(MAKE) && \
-			cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/example && $(MAKE) && \
+	cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/example && $(MAKE) && \
 			cd $(abs_top_builddir)/thyra/example && $(MAKE)
 #cd $(abs_top_builddir)/tpetra/example && $(MAKE)
 	@echo ""
@@ -138,8 +133,7 @@ examples:
 	@echo ""
 
 install-examples:
-	cd $(abs_top_builddir)/example && $(MAKE) install && \
-			cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/example && $(MAKE) install && \
+	cd $(abs_top_builddir)/epetra/util && $(MAKE) && cd $(abs_top_builddir)/epetra/example && $(MAKE) install && \
 			cd $(abs_top_builddir)/thyra/example && $(MAKE) install
 #cd $(abs_top_builddir)/tpetra/example && $(MAKE) install
 else
@@ -157,8 +151,7 @@ clean-tests:
 			cd $(abs_top_builddir)/tpetra/test && $(MAKE) clean
 
 clean-examples:
-	cd $(abs_top_builddir)/example && $(MAKE) clean && \
-			cd $(abs_top_builddir)/epetra/util && $(MAKE) clean && cd $(abs_top_builddir)/epetra/example && $(MAKE) clean && \
+	cd $(abs_top_builddir)/epetra/util && $(MAKE) clean && cd $(abs_top_builddir)/epetra/example && $(MAKE) clean && \
 			cd $(abs_top_builddir)/thyra/example && $(MAKE) clean
 #cd $(abs_top_builddir)/tpetra/example && $(MAKE) clean
 
@@ -183,7 +176,7 @@ if BUILD_ANASAZI_TPETRA
 TPETRA_SUBDIR = tpetra
 endif
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR) $(EPETRA_SUBDIR) $(THYRA_SUBDIR) $(TPETRA_SUBDIR) 
+SUBDIRS = src $(TEST_SUBDIR) $(EPETRA_SUBDIR) $(THYRA_SUBDIR) $(TPETRA_SUBDIR) 
 
 ## #######################################################################
 ## The below targets allow you to use the new
