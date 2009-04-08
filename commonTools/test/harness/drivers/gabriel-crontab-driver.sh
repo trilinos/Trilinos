@@ -29,8 +29,8 @@ SKIP_CHARON=$1; shift
 if [ "$SKIP_CHARON" != "skip_charon" ]; then
 
   # Charon + Trilinos Integration tests
-  /mnt/disk2/rabartl/Charon.nightly-tests-4/Utils/prj-management/asc-level-2-milestone/charon-tridev-nightly-tests-on-gabriel.sh \
-    &> /mnt/disk2/rabartl/Charon.nightly-tests-4/charon-tridev-nightly-tests-on-gabriel.out
+  #/mnt/disk2/rabartl/Charon.nightly-tests-4/Utils/prj-management/asc-level-2-milestone/charon-tridev-nightly-tests-on-gabriel.sh \
+  #  &> /mnt/disk2/rabartl/Charon.nightly-tests-4/charon-tridev-nightly-tests-on-gabriel.out
 
 fi
 
