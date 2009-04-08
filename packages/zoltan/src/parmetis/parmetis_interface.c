@@ -50,9 +50,7 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
 				 ZOLTAN_Third_Graph *gr,
 				 ZOLTAN_Third_Part *prt);
 
-#if PARMETIS_MAJOR_VERSION >= 3
 static  int pmv3method( char *alg);
-#endif
 
 int mylog2(int x)
 {
@@ -132,11 +130,7 @@ int Zoltan_ParMetis(
   ZOLTAN_TRACE_ENTER(zz, yo);
 
     /* Check for outdated/unsupported ParMetis versions. */
-#if (PARMETIS_MAJOR_VERSION < 3)
-  if (zz->Proc == 0)
-    ZOLTAN_PRINT_WARN(zz->Proc, __func__, "ParMetis 2.0 is obsolete. Zoltan currently works with this version, but please upgrade to ParMetis 3.1 (or later) soon.");
-  ierr = ZOLTAN_WARN;
-#elif (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
+#if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
   if (zz->Proc == 0)
     ZOLTAN_PRINT_WARN(zz->Proc, __func__, "ParMetis 3.0 is no longer supported by Zoltan. Please upgrade to ParMetis 3.1 (or later).");
   ierr = ZOLTAN_WARN;
@@ -197,13 +191,11 @@ int Zoltan_ParMetis(
   }
 
 
-#if (PARMETIS_MAJOR_VERSION >= 3)
   /* Get object sizes if requested */
   if (options[PMV3_OPT_USE_OBJ_SIZE] &&
       (zz->Get_Obj_Size || zz->Get_Obj_Size_Multi) &&
       (!strcmp(alg, "ADAPTIVEREPART") || gr.final_output))
     gr.showMoveVol = 1;
-#endif /* (PARMETIS_MAJOR_VERSION >= 3)  */
 
 
   /* Get a time here */
@@ -247,7 +239,6 @@ int Zoltan_ParMetis(
 
   /* Now we can call ParMetis */
 
-#if PARMETIS_MAJOR_VERSION >= 3
   /* First check for ParMetis 3 routines */
   if (strcmp(alg, "PARTKWAY") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
@@ -280,57 +271,6 @@ int Zoltan_ParMetis(
     ParMETIS_V3_RefineKway (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
 			    &wgtflag, &numflag, &ncon, &num_part, prt.part_sizes, imb_tols,
 			    options, &edgecut, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else
-#endif  /* PARMETIS_MAJOR_VERSION >= 3 */
-  /* Check for ParMetis 2.0 routines */
-  if (strcmp(alg, "PARTKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
-    ParMETIS_PartKway (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts, &wgtflag,
-		       &numflag, &num_part, options, &edgecut, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else if (strcmp(alg, "PARTGEOMKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
-    ParMETIS_PartGeomKway (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts, &wgtflag,
-			   &numflag, &geo->ndims, geo->xyz, &num_part, options, &edgecut,
-			   prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else if (strcmp(alg, "PARTGEOM") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
-    ParMETIS_PartGeom (gr.vtxdist, &geo->ndims, geo->xyz, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else if (strcmp(alg, "REPARTLDIFFUSION") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
-    ParMETIS_RepartLDiffusion (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts, &wgtflag,
-			       &numflag, options, &edgecut, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else if (strcmp(alg, "REPARTGDIFFUSION") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
-    ParMETIS_RepartGDiffusion (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts, &wgtflag,
-			       &numflag, options, &edgecut, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else if (strcmp(alg, "REPARTREMAP") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
-    ParMETIS_RepartRemap (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts, &wgtflag,
-			  &numflag, options, &edgecut, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else if (strcmp(alg, "REPARTMLREMAP") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
-    ParMETIS_RepartMLRemap (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts, &wgtflag,
-			    &numflag, options, &edgecut, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else if (strcmp(alg, "REFINEKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
-    ParMETIS_RefineKway (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts, &wgtflag,
-			 &numflag, options, &edgecut, prt.part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else {
@@ -453,25 +393,17 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
 	strcpy(alg, "PARTKWAY");
       }
       else if (!strcasecmp(zz->LB.Approach, "repartition")){
-#if PARMETIS_MAJOR_VERSION >= 3
 	strcpy(alg, "ADAPTIVEREPART");
 	*pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
                           100 gives similar partition quality to GDiffusion */
-#else /* PARMETIS_MAJOR_VERSION >= 3 */
-	strcpy(alg, "REPARTGDIFFUSION");
-#endif
       }
       else if (!strcasecmp(zz->LB.Approach, "refine")){
 	strcpy(alg, "REFINEKWAY");
       }
       else { /* If no LB_APPROACH is set, use repartition */
-#if PARMETIS_MAJOR_VERSION >= 3
 	strcpy(alg, "ADAPTIVEREPART");
 	*pmv3_itr = 100.; /* Ratio of inter-proc comm. time to data redist. time;
                           100 gives similar partition quality to GDiffusion */
-#else /*PARMETIS_MAJOR_VERSION >= 3 */
-	strcpy(alg, "REPARTGDIFFUSION");
-#endif
       }
     }
     else {
@@ -496,7 +428,6 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
 
     /* Copy option values to ParMetis options array */
 
-#if PARMETIS_MAJOR_VERSION >= 3
     /* In this version of Zoltan, processors and partitions are coupled. */
     /* This will likely change in future releases, and then the options  */
     /* value should change to DISCOUPLED.                                */
@@ -510,21 +441,12 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
       if (ord == NULL)
 	*itr = (float)*pmv3_itr;
     }
-    else
-#endif
-    {
-      /* ParMetis 2.0 options */
-      options[OPTION_IPART] = coarse_alg;
-      options[OPTION_FOLDF] = fold;
-      options[OPTION_DBGLVL] = output_level;
-    }
 
     /* If ordering, use ordering method instead of load-balancing method */
     if (ord && ord->order_opt && ord->order_opt->method){
       strcpy(alg, ord->order_opt->method);
     }
 
-#if PARMETIS_MAJOR_VERSION >= 3
     if ((zz->Num_Proc == 1) &&
         (!strcmp(alg, "ADAPTIVEREPART") ||
          !strcmp(alg, "REPARTLDIFFUSION") ||
@@ -539,7 +461,6 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
       ZOLTAN_PRINT_ERROR(zz->Proc, __func__, str);
       return (ZOLTAN_FATAL);
     }
-#endif
 
     return(ZOLTAN_OK);
 }
@@ -547,7 +468,6 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
 
 
 
-#if (PARMETIS_MAJOR_VERSION >= 3)
 static int pmv3method( char *alg)
   {
     /* Check if alg is a supported ParMetis 3.0 method */
@@ -558,7 +478,6 @@ static int pmv3method( char *alg)
 	    || (!strcmp(alg, "NODEND"))
             );
   }
-#endif
 
 
 /***************************************************************************
@@ -694,7 +613,6 @@ int Zoltan_ParMetis_Order(
   /* Get a time here */
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
-#if PARMETIS_MAJOR_VERSION >= 3
   if (gr.graph_type==GLOBAL_GRAPH){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
     ParMETIS_V3_NodeND (gr.vtxdist, gr.xadj, gr.adjncy,
@@ -708,21 +626,6 @@ int Zoltan_ParMetis_Order(
 		  &numflag, options, ord.iperm, ord.rank);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
   }
-#else /* PARMETIS_MAJOR_VERSION >= 3 */
-  if (gr.graph_type==GLOBAL_GRAPH){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 2 library");
-    ParMETIS_NodeND (gr.vtxdist, gr.xadj, gr.adjncy,
-        &numflag, options, ord.rank, ord.sep_sizes, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else {
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
-    options[0] = 0;  /* Use default options for METIS. */
-    METIS_NodeND (&gr.num_obj, gr.xadj, gr.adjncy,
-		  &numflag, options, ord.part, ord.iperm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
-  }
-#endif /* PARMETIS_MAJOR_VERSION >= 3 */
 
   /* Get a time here */
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
