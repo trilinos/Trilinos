@@ -1028,8 +1028,8 @@ namespace {
     if (myImageID == 0) {
       // Root fills the CrsMatrix and the MV A_mv_AllOnRoot
       // HB format is compressed column. CrsMatrix is compressed row. Convert.
-      const double *dptr = dvals;
-      const int *rptr = rowind;
+      double *dptr = dvals;
+      int *rptr = rowind;
       for (int c=0; c<dim; ++c) {
         for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
           A_crs.insertGlobalValues(*rptr-1,tuple<Ordinal>(c),tuple<Scalar>(*dptr));
