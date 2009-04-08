@@ -27,8 +27,8 @@
 // ************************************************************************
 //@HEADER
 //
-//  This test uses the MVOPTester.hpp functions to test the Anasazi adapters
-//  to Epetra and Thyra.
+//  This example uses the MVOPTester.hpp functions to test the Anasazi adapters
+//  to Epetra.
 //
 
 #include "Epetra_Map.h"
@@ -48,12 +48,6 @@
 #include "AnasaziEpetraAdapter.hpp"
 #include "AnasaziBasicOutputManager.hpp"
 
-#ifdef HAVE_EPETRA_THYRA
-#include "AnasaziThyraAdapter.hpp"
-#include "Thyra_EpetraThyraWrappers.hpp"
-#include "Thyra_EpetraLinearOp.hpp"
-#endif
-
 int main(int argc, char *argv[])
 {
   int i;
@@ -70,8 +64,8 @@ int main(int argc, char *argv[])
 #endif
 
    // number of global elements
-  const int dim = 100;
-  const int blockSize = 5;
+  int dim = 100;
+  int blockSize = 5;
 
   bool verbose = false;
   if (argc>1) {
@@ -79,23 +73,6 @@ int main(int argc, char *argv[])
       verbose = true;
     }
   }
-
-  // Create an output manager to handle the I/O from the solver
-  Teuchos::RCP<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
-  if (verbose) {
-    MyOM->setVerbosity( Anasazi::Warnings );
-  }
-
-#ifndef HAVE_EPETRA_THYRA
-  MyOM->stream(Anasazi::Warnings) 
-    << "Please configure Anasazi with:" << endl
-    << "--enable-epetra-thyra" << endl
-    << "--enable-anasazi-thyra" << endl;
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-  return -1;
-#endif
 
   // Construct a Map that puts approximately the same number of 
   // equations on each processor.
@@ -153,44 +130,49 @@ int main(int argc, char *argv[])
     ierr = A->InsertGlobalValues(MyGlobalElements[i],1,&two,&MyGlobalElements[i]);
     assert(ierr==0);
   }
-
+   
   // Finish building the epetra matrix A
   ierr = A->FillComplete();
   assert(ierr==0);
 
-#ifdef HAVE_EPETRA_THYRA
-  typedef Thyra::MultiVectorBase<double> TMVB;
-  typedef Thyra::LinearOpBase<double>    TLOB;
+  // Create an Anasazi::EpetraSymOp from this Epetra_CrsMatrix
+  Teuchos::RCP<Anasazi::EpetraSymOp> op = Teuchos::rcp(new Anasazi::EpetraSymOp(A));
 
-  // first, create a Thyra::VectorSpaceBase from an Epetra_Map using the Epetra-Thyra wrappers
-  Teuchos::RCP<const Thyra::VectorSpaceBase<double> > space = Thyra::create_VectorSpace(Map);
+  // Issue several useful typedefs;
+  typedef Anasazi::MultiVec<double> EMV;
+  typedef Anasazi::Operator<double> EOP;
 
-  // then, create a Thyra::MultiVectorBase from the Thyra::VectorSpaceBase using Thyra creational functions
-  Teuchos::RCP<Thyra::MultiVectorBase<double> > thyra_ivec = Thyra::createMembers(space,blockSize);
+  // Create an Epetra_MultiVector for an initial vector to start the solver.
+  // Note that this needs to have the same number of columns as the blocksize.
+  Teuchos::RCP<Anasazi::EpetraMultiVec> ivec = Teuchos::rcp( new Anasazi::EpetraMultiVec(*Map, blockSize) );
+  ivec->Random();
 
-  // then, create a Thyra::LinearOpBase from the Epetra_CrsMatrix using the Epetra-Thyra wrappers
-  Teuchos::RCP<const Thyra::LinearOpBase<double> > thyra_op = Thyra::epetraLinearOp(A);
+  // Create an output manager to handle the I/O from the solver
+  Teuchos::RCP<Anasazi::OutputManager<double> > MyOM = Teuchos::rcp( new Anasazi::BasicOutputManager<double>() );
+  if (verbose) {
+    MyOM->setVerbosity( Anasazi::Warnings );
+  }
 
-  // test the Thyra multivector adapter
-  ierr = Anasazi::TestMultiVecTraits<double,TMVB>(MyOM,thyra_ivec);
-  gerr |= ierr;
+  // test the Epetra adapter multivector
+  ierr = Anasazi::TestMultiVecTraits<double,EMV>(MyOM,ivec);
+  gerr &= ierr;
   if (ierr) {
-    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter PASSED TestMultiVecTraits()" << endl;
+    MyOM->print(Anasazi::Warnings,"*** EpetraAdapter PASSED TestMultiVecTraits()\n");
   }
   else {
-    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestMultiVecTraits() ***" << endl << endl;
+    MyOM->print(Anasazi::Warnings,"*** EpetraAdapter FAILED TestMultiVecTraits() ***\n\n");
   }
 
-  // test the Thyra operator adapter
-  ierr = Anasazi::TestOperatorTraits<double,TMVB,TLOB>(MyOM,thyra_ivec,thyra_op);
-  gerr |= ierr;
+  // test the Epetra adapter operator 
+  ierr = Anasazi::TestOperatorTraits<double,EMV,EOP>(MyOM,ivec,op);
+  gerr &= ierr;
   if (ierr) {
-    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter PASSED TestOperatorTraits()" << endl;
+    MyOM->print(Anasazi::Warnings,"*** EpetraAdapter PASSED TestOperatorTraits()\n");
   }
   else {
-    MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestOperatorTraits() ***" << endl << endl;
+    MyOM->print(Anasazi::Warnings,"*** EpetraAdapter FAILED TestOperatorTraits() ***\n\n");
   }
-#endif
+
 
 #ifdef HAVE_MPI
   MPI_Finalize();

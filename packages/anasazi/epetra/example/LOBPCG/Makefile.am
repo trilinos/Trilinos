@@ -44,10 +44,8 @@ if BUILD_EPETRAEXT
 ANASAZI_LOBPCG_EX_FILE = LOBPCGEpetraExFile
 endif
 
-if BUILD_AMESOS
 if BUILD_IFPACK
 ANASAZI_LOBPCG_EX_GEN_PREC_IFPACK = LOBPCGEpetraExGenPrecIfpack
-endif
 endif
 
 noinst_PROGRAMS = LOBPCGEpetraEx LOBPCGEpetraExSimple LOBPCGEpetraExGen $(ANASAZI_LOBPCG_EX_FILE) $(ANASAZI_LOBPCG_EX_GEN_PREC_IFPACK)
@@ -115,8 +113,7 @@ LOBPCGEpetraExGenPrecIfpack_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../amesos/src/libamesos.a
+	$(top_builddir)/../teuchos/src/libteuchos.a
 
 LOBPCGEpetraExGenPrecIfpack_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/epetra/util/ModeLaplace
 

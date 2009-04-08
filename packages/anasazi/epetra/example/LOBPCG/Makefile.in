@@ -94,7 +94,8 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_EPETRAEXT_TRUE@am__EXEEXT_1 = LOBPCGEpetraExFile$(EXEEXT)
-@BUILD_AMESOS_TRUE@@BUILD_IFPACK_TRUE@am__EXEEXT_2 = LOBPCGEpetraExGenPrecIfpack$(EXEEXT)
+@BUILD_IFPACK_TRUE@am__EXEEXT_2 =  \
+@BUILD_IFPACK_TRUE@	LOBPCGEpetraExGenPrecIfpack$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_LOBPCGEpetraEx_OBJECTS = LOBPCGEpetraEx-LOBPCGEpetraEx.$(OBJEXT)
 LOBPCGEpetraEx_OBJECTS = $(am_LOBPCGEpetraEx_OBJECTS)
@@ -274,7 +275,7 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)  
 @BUILD_EPETRAEXT_TRUE@ANASAZI_LOBPCG_EX_FILE = LOBPCGEpetraExFile
-@BUILD_AMESOS_TRUE@@BUILD_IFPACK_TRUE@ANASAZI_LOBPCG_EX_GEN_PREC_IFPACK = LOBPCGEpetraExGenPrecIfpack
+@BUILD_IFPACK_TRUE@ANASAZI_LOBPCG_EX_GEN_PREC_IFPACK = LOBPCGEpetraExGenPrecIfpack
 LOBPCGEpetraEx_SOURCES = $(srcdir)/LOBPCGEpetraEx.cpp
 LOBPCGEpetraExSimple_SOURCES = $(srcdir)/LOBPCGEpetraExSimple.cpp
 LOBPCGEpetraExGen_SOURCES = $(srcdir)/LOBPCGEpetraExGen.cpp
@@ -334,8 +335,7 @@ LOBPCGEpetraExGenPrecIfpack_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../amesos/src/libamesos.a
+	$(top_builddir)/../teuchos/src/libteuchos.a
 
 LOBPCGEpetraExGenPrecIfpack_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/epetra/util/ModeLaplace
 

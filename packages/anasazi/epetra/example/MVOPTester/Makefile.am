@@ -30,11 +30,9 @@ MVOPTesterEx_SOURCES = $(srcdir)/MVOPTesterEx.cpp
 MVOPTesterEx_DEPENDENCIES = \
         $(top_builddir)/src/libanasazi.a \
         $(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../thyra/src/libthyra.a \
         $(top_builddir)/../teuchos/src/libteuchos.a 
 
 MVOPTesterEx_CXXFLAGS = \
-			-I$(top_srcdir)/thyra/src \
 			-I$(top_srcdir)/src \
 			-I$(top_srcdir)/epetra/util/ModeLaplace
 

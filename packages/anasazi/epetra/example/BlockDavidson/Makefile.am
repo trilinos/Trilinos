@@ -47,10 +47,8 @@ if BUILD_EPETRAEXT
 ANASAZI_BD_EX_FILE = BlockDavidsonEpetraExFile
 endif
 
-if BUILD_AMESOS
 if BUILD_IFPACK
 ANASAZI_BD_EX_GEN_PREC_IFPACK = BlockDavidsonEpetraExGenPrecIfpack
-endif
 endif
 
 noinst_PROGRAMS = BlockDavidsonEpetraEx BlockDavidsonEpetraExGen $(ANASAZI_BD_EX_FILE) $(ANASAZI_BD_EX_GEN_PREC_IFPACK)
@@ -107,8 +105,7 @@ BlockDavidsonEpetraExGenPrecIfpack_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../amesos/src/libamesos.a
+	$(top_builddir)/../teuchos/src/libteuchos.a
 
 BlockDavidsonEpetraExGenPrecIfpack_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/epetra/util/ModeLaplace
 

@@ -98,7 +98,7 @@ CONFIG_HEADER = $(top_builddir)/src/Anasazi_config.h
 CONFIG_CLEAN_FILES =
 @BUILD_EPETRAEXT_TRUE@am__EXEEXT_1 =  \
 @BUILD_EPETRAEXT_TRUE@	BlockDavidsonEpetraExFile$(EXEEXT)
-@BUILD_AMESOS_TRUE@@BUILD_IFPACK_TRUE@am__EXEEXT_2 = BlockDavidsonEpetraExGenPrecIfpack$(EXEEXT)
+@BUILD_IFPACK_TRUE@am__EXEEXT_2 = BlockDavidsonEpetraExGenPrecIfpack$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_BlockDavidsonEpetraEx_OBJECTS =  \
 	BlockDavidsonEpetraEx-BlockDavidsonEpetraEx.$(OBJEXT)
@@ -279,7 +279,7 @@ top_srcdir = @top_srcdir@
 @USING_GNUMAKE_TRUE@EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(ANASAZI_TEST_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INC_PATH)
 @BUILD_EPETRAEXT_TRUE@ANASAZI_BD_EX_FILE = BlockDavidsonEpetraExFile
-@BUILD_AMESOS_TRUE@@BUILD_IFPACK_TRUE@ANASAZI_BD_EX_GEN_PREC_IFPACK = BlockDavidsonEpetraExGenPrecIfpack
+@BUILD_IFPACK_TRUE@ANASAZI_BD_EX_GEN_PREC_IFPACK = BlockDavidsonEpetraExGenPrecIfpack
 BlockDavidsonEpetraEx_SOURCES = $(srcdir)/BlockDavidsonEpetraEx.cpp
 BlockDavidsonEpetraExGen_SOURCES = $(srcdir)/BlockDavidsonEpetraExGen.cpp
 BlockDavidsonEpetraExFile_SOURCES = $(srcdir)/BlockDavidsonEpetraExFile.cpp
@@ -329,8 +329,7 @@ BlockDavidsonEpetraExGenPrecIfpack_DEPENDENCIES = \
 	$(top_builddir)/src/libanasazi.a \
 	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
 	$(top_builddir)/../epetra/src/libepetra.a \
-	$(top_builddir)/../teuchos/src/libteuchos.a \
-	$(top_builddir)/../amesos/src/libamesos.a
+	$(top_builddir)/../teuchos/src/libteuchos.a
 
 BlockDavidsonEpetraExGenPrecIfpack_CXXFLAGS = -I$(top_srcdir)/src -I$(top_srcdir)/epetra/util/ModeLaplace
 
