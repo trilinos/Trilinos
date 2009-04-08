@@ -1,2 +1,2 @@
 ADD_SUBDIRECTORY(ml/NonlinML)
-#ADD_SUBDIRECTORY(epetraext)
+ADD_SUBDIRECTORY(epetraext)
