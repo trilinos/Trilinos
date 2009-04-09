@@ -174,4 +174,32 @@
       <Email address="stokhos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Sacado">
+    <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Stokhos" type="LO"/>
+    <EmailAddresses>
+      <Email address="sacado-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
+  <SubProject name="Phalanx">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="TO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="ITO"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="AztecOO" type="ITO"/>
+    <Dependency name="Amesos" type="ITO"/>
+    <Dependency name="Ifpack" type="TO"/>
+    <Dependency name="Belos" type="TO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="LR"/>
+    <EmailAddresses>
+      <Email address="phalanx-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
 </Project>

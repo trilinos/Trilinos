@@ -1,6 +1,6 @@
 
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6.3)
 
 
 #
@@ -52,51 +52,7 @@ FIND_PACKAGE(PythonInterp)
 
 
 #
-# B) Define the list of all Trilinos packages and TPLs
-#
-
-# B.1) Packages
-
-IF (NOT Trilinos_PACKAGES_FILE)
-  SET(Trilinos_PACKAGES_FILE "TrilinosPackages")
-ENDIF()
-# NOTE: Above, I am not using a cache variable because I don't want
-# the general user to even see this option!
-
-MESSAGE("")
-MESSAGE("Reading the list of packages from ${Trilinos_PACKAGES_FILE}.cmake ... ")
-MESSAGE("")
-
-INCLUDE(${Trilinos_PACKAGES_FILE})
-
-PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
-
-# B.2) TPLs
-
-IF (NOT Trilinos_TPLS_FILE)
-  SET(Trilinos_TPLS_FILE "TrilinosTPLs")
-ENDIF()
-# NOTE: Above, I am not using a cache variable because I don't want
-# the general user to even see this option!
-
-MESSAGE("")
-MESSAGE("Reading the list of TPLs from ${Trilinos_TPLS_FILE}.cmake ... ")
-MESSAGE("")
-
-INCLUDE(${Trilinos_TPLS_FILE})
-
-PACKAGE_ARCH_PROCESS_TPLS_LISTS()
-
-
-#
-# C) Process the package and TPL dependencies
-#
-
-PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
-
-
-#
-# D) Set up user options and global variables that will be used throughout
+# B) Set up user options and global variables that will be used throughout
 #
 
 MESSAGE("")
@@ -140,8 +96,7 @@ ADVANCED_SET(Trilinos_DEPS_XML_OUTPUT_FILE
   "${Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT}"
   CACHE STRING
   "Output XML file containing Trilinos dependenices used by tools (if not empty)." )
-# 2009/01/19: rabartl: Above: This file outputs just fine on MS
-# Windows using MS Visual Studio but it causes the entire file to
+# 2009/01/19: rabartl: Above: This file outputs just fine on MS# Windows using MS Visual Studio but it causes the entire file to
 # diff.  There must be something wrong with a newlines or something
 # that is causing this.  If people are going to be doing real
 # development work on MS Windows with MS Visual Studio, then we need
@@ -169,6 +124,46 @@ ADVANCED_SET(Trilinos_DEPS_HTML_OUTPUT_FILE
   "${Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT}"
   CACHE STRING
   "HTML Trilinos dependenices file that will be written to (if not empty)." )
+
+
+#
+# C) Define the list of all Trilinos packages and TPLs
+#
+
+# C.1) Packages
+
+IF (NOT Trilinos_PACKAGES_FILE) # Allow testing override
+  SET(Trilinos_PACKAGES_FILE "TrilinosPackages")
+ENDIF()
+
+MESSAGE("")
+MESSAGE("Reading the list of packages from ${Trilinos_PACKAGES_FILE}.cmake ... ")
+MESSAGE("")
+
+INCLUDE(${Trilinos_PACKAGES_FILE})
+
+PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
+
+# C.2) TPLs
+
+IF (NOT Trilinos_TPLS_FILE) # Allow testing override
+  SET(Trilinos_TPLS_FILE "TrilinosTPLs")
+ENDIF()
+
+MESSAGE("")
+MESSAGE("Reading the list of TPLs from ${Trilinos_TPLS_FILE}.cmake ... ")
+MESSAGE("")
+
+INCLUDE(${Trilinos_TPLS_FILE})
+
+PACKAGE_ARCH_PROCESS_TPLS_LISTS()
+
+
+#
+# D) Process the package and TPL dependencies
+#
+
+PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
 
 
 #

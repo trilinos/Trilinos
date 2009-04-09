@@ -16,8 +16,23 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
 
 
-SET( CMAKE_MODULE_PATH "${CTEST_SCRIPT_DIRECTORY}/../utils" )
+# Get the base diretory for the Trilinos source.  We only assume that the
+# CTest script that is being called is under Trilinos/cmake.
+STRING(REGEX MATCH "(.+/Trilinos)/cmake" TRILINOS_CMAKE_DIR
+  "${CTEST_SCRIPT_DIRECTORY}" )
+MESSAGE("TRILINOS_CMAKE_DIR = ${TRILINOS_CMAKE_DIR}")
+
+SET( CMAKE_MODULE_PATH
+   "${TRILINOS_CMAKE_DIR}"
+   "${TRILINOS_CMAKE_DIR}/utils"
+   "${TRILINOS_CMAKE_DIR}/package_arch"
+   )
+
+#MESSAGE("CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
+
+INCLUDE(PrintVar)
 INCLUDE(AssertDefined)
+INCLUDE(PackageArchProcessPackagesAndDirsLists)
 
 
 #
@@ -80,60 +95,10 @@ SITE_NAME(CTEST_SITE_DEFAULT)
 
 MACRO(TRILINOS_CTEST_DRIVER)
 
-    SET( CTEST_SOURCE_NAME Trilinos )
-  
-  #
-  # Get the list of Trilinos packages to do the tests on
-  #
-  
-  SET( Trilinos_PACKAGES_DEFAULT
-    Teuchos
-    RTOp
-    Kokkos
-    Epetra
-    Zoltan
-    Shards
-    GlobiPack
-    Triutils
-    Tpetra
-    EpetraExt
-    Stokhos
-    Sacado
-    Thyra
-    OptiPack
-    Isorropia
-    Pliris
-    Claps
-    AztecOO
-    Galeri
-    Amesos
-    Ifpack
-    Komplex
-    ML
-    Belos
-    Stratimikos
-    Meros
-    FEI
-    RBGen
-    Anasazi
-    ThreadPool
-    Phalanx
-    NOX
-    Moertel
-    TrilinosCouplings
-    Rythmos
-    MOOCHO
-    Sundance
-    Didasko
-    )
-  # ToDo: Read this list from TrilinosPackages.cmake
-
   #
   # Variables that can be set by the platform-specific code and reset
   # from the environment
   #
-
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_PACKAGES "${Trilinos_PACKAGES_DEFAULT}" )
   
   SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
   
@@ -173,12 +138,64 @@ MACRO(TRILINOS_CTEST_DRIVER)
   
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
 
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF )
+
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_ADDITIONAL_PACKAGES "" )
+
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_EXCLUDE_PACKAGES "" )
+  
+  #
+  # Get the list of Trilinos packages to do the tests on
+  #
+
+  INCLUDE(TrilinosPackages)
+  #PRINT_VAR(Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS)
+
+  # Save the list of packages that might have been already sset
+  SET( Trilinos_PACKAGES_SAVED ${Trilinos_PACKAGES})
+
+  SET(PROJECT_NAME Trilinos)
+
+  PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
+
+  SET(Trilinos_PACKAGES_DEFAULT)
+
+  FOREACH(PACKAGE ${Trilinos_PACKAGES})
+
+    LIST(FIND Trilinos_EXCLUDE_PACKAGES ${PACKAGE} EXCLUDE_IDX)
+
+    LIST(FIND Trilinos_ADDITIONAL_PACKAGES ${PACKAGE} ADDITIONAL_IDX)
+
+
+
+    IF (EXCLUDE_IDX GREATER -1)
+      # Exclude the package!
+    ELSEIF (ADDITIONAL_IDX GREATER -1)
+      LIST(APPEND Trilinos_PACKAGES_DEFAULT ${PACKAGE})
+    ELSEIF (Trilinos_ENABLE_${PACKAGE} STREQUAL "")
+      PACKAGE_ARCH_IMPLICIT_PACKAGE_ENABLE_IS_ALLOWED(
+        ${PACKAGE} IMPLICIT_PACKAGE_ENABLE_ALLOWED)
+      IF (IMPLICIT_PACKAGE_ENABLE_ALLOWED)
+        LIST(APPEND Trilinos_PACKAGES_DEFAULT ${PACKAGE})
+      ENDIF()
+    ENDIF()
+
+  ENDFOREACH()
+
+  # Reset the list of packages
+  SET( Trilinos_PACKAGES ${Trilinos_PACKAGES_SAVED} )
+
+  # Get the final list of packages from the environment
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_PACKAGES "${Trilinos_PACKAGES_DEFAULT}" )
+
   #
   # Setup and create the base dashboard directory if it is not created yet.
   #
   # NOTE: This is only used in general testing dashbaoard mode, not in local
   # testing mode.
   #
+
+  SET( CTEST_SOURCE_NAME Trilinos )
   
   IF (CTEST_DASHBOARD_ROOT)
     SET( CTEST_BINARY_NAME BUILD )

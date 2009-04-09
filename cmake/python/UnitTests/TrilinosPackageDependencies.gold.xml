@@ -179,4 +179,24 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
+  <Package name="Sacado" dir="sacado">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Stokhos,Epetra,EpetraExt"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="ADOLC,CppUnit"/>
+  </Package>
+  <Package name="Phalanx" dir="phalanx">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Sacado"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Belos,Epetra,Ifpack"/>
+    <LIB_REQUIRED_DEP_TPLS value="Boost"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="TVMET"/>
+  </Package>
 </PackageDependencies>

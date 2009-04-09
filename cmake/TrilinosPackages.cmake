@@ -1,67 +1,99 @@
+
 #
-# Define the Trilinos package names, directories, and default
-# enables/disables
+# Define the Trilinos package names, directories, and classification.
+#
+# Package classifications are:
+#
+#   PS: Primary Stable Package
+#
+#     Primary Stable Packages have at least some Primary Stable Code which is
+#     expected to be fully tested before every checkin.  The default enable
+#     for PS packages is empty "" which allows the PS package to be enabled
+#     implicitly based on other criteria.  The option
+#     Trilinos_ENABLE_ALL_PACKAGES=ON will cause all PS packages to be enabled
+#     unless they are explicitly disabled.
+#
+#   SS: Secondary Stable Package
+#
+#     Secondary Stable Packages have no PS code or they would be classified as
+#     PS packages.  A package must be classified as SS if it has a required
+#     dependency on another SS package or SS TPL.  A package may also be
+#     declared SS to avoid requiring it to be tested before every checkin.
+#     For example, a package that does not provide any significant
+#     functionally like Didasko is classified as a SS package even through it
+#     could be classified as PS just based on its required package and TPL
+#     dependencies.  SS packages will have their default enables set to empty
+#     "".  This allows them to be enabled implicilty.  When
+#     Trilinos_ENABLE_ALL_PACKAGES=ON but
+#     Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF, the SS packages will not be
+#     enabled.  However, when Trilinos_ENABLE_ALL_PACKAGES=ON and
+#     Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON, then SS packages will be
+#     enabled if they are not explicitly disabled.  Packages that are SS but
+#     not PS must be disabled in precheckin testing.  However, SS packages are
+#     tested by the nightly testing process.
+#
+#   EX: Experimental Package
+#
+#     Experimental packages are those packages that contain no PS or SS
+#     code. The default enable for EX packages is always OFF which requires
+#     that they be explicitly enabled in order to be turned on. EX packages
+#     must be disabled in precheckin testring and are not tested as part of
+#     the nightly testing process.  However, package developers of EX pacakges
+#     are encouraged to set up their own nightly testing for ther EX packages.
+
 #
 # NOTE: These packages must be listed in strictly assending order in
 # terms of package dependencies.  If you get the order wrong, then an
 # error message will be printed.
 #
-# NOTE: Packages that are not CMakeified yet or are experimental and
-# should not be build by default should be marked with OFF instead of
-# empty "" in the third 'ENABLES' column.  All packages that are
-# marked with the empty enable "" are left to be enabled or disabled
-# based on whatever logic the user or the scripts want to use.  Note
-# that the user can explicitly override any enable value by setting
-# the value in the cache.
 
-
-SET(Trilinos_PACKAGES_AND_DIRS_AND_ENABLES
-  Teuchos               teuchos                        ""
-  RTOp                  rtop                           ""
-  Kokkos                kokkos                         ""
-  Epetra                epetra                         ""
-  Zoltan                zoltan                         ""
-  Shards                shards                         ""
-  GlobiPack             globipack                      ""
-  Triutils              triutils                       ""
-  Tpetra                tpetra                         ""
-  EpetraExt             epetraext                      ""
-  Stokhos               stokhos                        OFF
-  Sacado                sacado                         ""
-  Thyra                 thyra                          ""
-  OptiPack              optipack                       ""
-  Isorropia             isorropia                      ""
-  Pliris                pliris                         ""
-  Claps                 claps                          ""
-  AztecOO               aztecoo                        ""
-  Galeri                galeri                         ""
-  Amesos                amesos                         ""
-  Intrepid              intrepid                       ""
-  Ifpack                ifpack                         ""
-  Komplex               komplex                        ""
-  ML                    ml                             ""
-  Belos                 belos                          ""
-  Stratimikos           stratimikos                    ""
-  Meros                 meros                          ""
-  FEI                   fei                            ""
-  RBGen                 rbgen                          ""
-  Anasazi               anasazi                        ""
-  ThreadPool            ThreadPool                     ""
-  Phalanx               phalanx                        ""
-  Pamgen                pamgen                         ""
-  Phdmesh               phdmesh                        ""
-  NOX                   nox                            ""
-  Moertel               moertel                        ""
-  TrilinosCouplings     trilinoscouplings              ""
-  Rythmos               rythmos                        ""
-  MOOCHO                moocho                         ""
-  Aristos               aristos                        OFF
-  Sundance              Sundance                       ""
-  TriKota               TriKota                        OFF
-  CTrilinos             CTrilinos                      OFF
-  ForTrilinos           ForTrilinos                    OFF
-  PyTrilinos            PyTrilinos                     OFF
-  WebTrilinos           WebTrilinos                    OFF
-  Didasko               didasko                        ""
-  NewPackage            new_package                    OFF
+SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+  Teuchos               teuchos                        PS
+  RTOp                  rtop                           PS
+  Kokkos                kokkos                         PS
+  Epetra                epetra                         PS
+  Zoltan                zoltan                         PS
+  Shards                shards                         PS
+  GlobiPack             globipack                      PS
+  Triutils              triutils                       PS
+  Tpetra                tpetra                         PS
+  EpetraExt             epetraext                      PS
+  Stokhos               stokhos                        SS
+  Sacado                sacado                         PS
+  Thyra                 thyra                          PS
+  OptiPack              optipack                       PS
+  Isorropia             isorropia                      PS
+  Pliris                pliris                         PS
+  Claps                 claps                          SS
+  AztecOO               aztecoo                        PS
+  Galeri                galeri                         PS
+  Amesos                amesos                         PS
+  Intrepid              intrepid                       PS
+  Ifpack                ifpack                         PS
+  Komplex               komplex                        PS
+  ML                    ml                             PS
+  Belos                 belos                          PS
+  Stratimikos           stratimikos                    PS
+  Meros                 meros                          PS
+  FEI                   fei                            PS
+  RBGen                 rbgen                          PS
+  Anasazi               anasazi                        PS
+  ThreadPool            ThreadPool                     PS
+  Phalanx               phalanx                        SS
+  Pamgen                pamgen                         PS
+  Phdmesh               phdmesh                        PS
+  NOX                   nox                            PS
+  Moertel               moertel                        PS
+  TrilinosCouplings     trilinoscouplings              PS
+  Rythmos               rythmos                        PS
+  MOOCHO                moocho                         PS
+  Aristos               aristos                        EX
+  Sundance              Sundance                       PS
+  TriKota               TriKota                        EX
+  CTrilinos             CTrilinos                      EX
+  ForTrilinos           ForTrilinos                    EX
+  PyTrilinos            PyTrilinos                     SS
+  WebTrilinos           WebTrilinos                    EX # Should be SS
+  Didasko               didasko                        SS
+  NewPackage            new_package                    EX # Should be SS
   )

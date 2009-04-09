@@ -31,15 +31,7 @@ Here are the steps for CMakeifying a Trilinos package:
 Add the package name PACKAGE_NAME and the package directory name PACKAGE_DIR
 to the list of supported Trilinos packages in the file
 Trilinos/cmake/TrilinosPackages.cmake in the variable
-Trilinos_PACKAGES_AND_DIRS_AND_ENABLES.
-
-If the package is considered Primary Stable Code, you can make the default
-enable field empty "".  This will allow the package to be automatically
-enabled based on other enabled packages.  However, if the package is
-Experimental code, the default enable must be OFF.  If the package is
-Secondary Stable Code, the default package enable might be empty "" or OFF
-depending on situration.  Talk with Ross Bartlett and/or Brent Perschbacher
-about these issues.
+Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS.
 
 NOTE: You have to list the packages in strictly increasing order of
 dependencies.  Don't worry, if you get the order wrong, you will find this out
@@ -63,9 +55,9 @@ can also turn on shadowing warnings with 'ENABLE_SHADOWING_WARNINGS' and mark
 the package as being 'CLEANED' (which elevates warnings to errors).  See
 packages/teuchos/CMakeLists.txt for an example.
 
-NOTE: If the name you pass into PACKAGE(...) is not the same as you
-specified in the Trilinos_PACKAGES_AND_DIRS_AND_ENABLES variable
-mentioned above, then you will get an error message telling you this.
+NOTE: If the name you pass into PACKAGE(...) is not the same as you specified
+in the Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS variable mentioned
+above, then you will get an error message telling you this.
 
 Modify this CMakeLists.txt file to pull in ADD_SUBDIRECTORY(...) calls to
 include other CMakeLists.txt files for the libraries and the tests/examples
