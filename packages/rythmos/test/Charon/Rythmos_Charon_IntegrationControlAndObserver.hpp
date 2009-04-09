@@ -26,7 +26,16 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Rythmos_Types.hpp"
+#ifndef RYTHMOS_CHARON_INTEGRATION_CONTROL_AND_OBSERVER_HPP
+#define RYTHMOS_CHARON_INTEGRATION_CONTROL_AND_OBSERVER_HPP
+
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Rythmos_StepControlInfo.hpp"
+#include "Rythmos_StepperSupportTypes.hpp"
+#include "Rythmos_IntegrationControlStrategyBase.hpp"
+#include "Rythmos_IntegrationObserverBase.hpp"
+
 #include "Rythmos_IntegrationControlStrategyBase.hpp"
 #include "Rythmos_IntegrationObserverBase.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
@@ -35,8 +44,6 @@
 
 namespace RythmosCharon {
 
-using Teuchos::RCP;
-
 
 class CharonIntegrationControlAndObserver
   : virtual public Rythmos::IntegrationControlStrategyBase<double>,
@@ -44,50 +51,34 @@ class CharonIntegrationControlAndObserver
     virtual public Teuchos::ParameterListAcceptorDefaultBase
 {
   public:
-  CharonIntegrationControlAndObserver() { }
-  virtual ~CharonIntegrationControlAndObserver() { }
+  CharonIntegrationControlAndObserver();
+  virtual ~CharonIntegrationControlAndObserver();
   // Overridden from Rythmos::IntegrationControlStrategyBase
-  RCP<Rythmos::IntegrationControlStrategyBase<double> > cloneIntegrationControlStrategy() const
-  {
-    return Teuchos::null;
-  }
+  Teuchos::RCP<Rythmos::IntegrationControlStrategyBase<double> > cloneIntegrationControlStrategy() const;
   void resetIntegrationControlStrategy(
     const Rythmos::TimeRange<double> &integrationTimeDomain
-    )
-  { }
+    );
   Rythmos::StepControlInfo<double> getNextStepControlInfo(
     const Rythmos::StepperBase<double> &stepper,
     const Rythmos::StepControlInfo<double> &stepCtrlInfoLast,
     const int timeStepIter
-    )
-  {
-    Rythmos::StepControlInfo<double> sci;
-    return sci;
-  }
+    );
   // Overridden from Rythmos::IntegrationObserverBase
-  RCP<Rythmos::IntegrationObserverBase<double> > cloneIntegrationObserver() const
-  {
-    return Teuchos::null;
-  }
+  Teuchos::RCP<Rythmos::IntegrationObserverBase<double> > cloneIntegrationObserver() const;
   void resetIntegrationObserver(
     const Rythmos::TimeRange<double> &integrationTimeDomain
-    )
-  { }
+    );
   void observeCompletedTimeStep(
     const Rythmos::StepperBase<double> &stepper,
     const Rythmos::StepControlInfo<double> &stepCtrlInfo,
     const int timeStepIter
-    )
-  { }
+    );
   // Overridden from Teuchos::ParameterListAcceptorDefaultBase
-  void setParameterList( RCP<Teuchos::ParameterList> const& paramList )
-  { }
-  RCP<const Teuchos::ParameterList> getValidParameters() const
-  {
-    return Teuchos::parameterList();
-  }
+  void setParameterList( Teuchos::RCP<Teuchos::ParameterList> const& paramList );
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 };
 
 } // namespace RythmosCharon
 
+#endif // RYTHMOS_CHARON_INTEGRATION_CONTROL_AND_OBSERVER_HPP
 

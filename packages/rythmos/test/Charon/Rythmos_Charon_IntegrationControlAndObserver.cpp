@@ -26,208 +26,65 @@
 // ***********************************************************************
 //@HEADER
 
-
-#include "Teuchos_UnitTestHarness.hpp"
-
-#include "Rythmos_Types.hpp"
-#include "Rythmos_UnitTestHelpers.hpp"
-
 #include "Rythmos_Charon_IntegrationControlAndObserver.hpp"
-#include "Rythmos_Charon_ImplicitBDFStepperErrWtVecCalc.hpp"
-#include "Rythmos_Charon_ImplicitBDFStepperStepControl.hpp"
-#include "Rythmos_ImplicitBDFStepper.hpp"
-#include "Rythmos_BackwardEulerStepper.hpp"
-#include "Rythmos_ImplicitBDFStepperErrWtVecCalc.hpp"
-#include "Rythmos_ImplicitBDFStepperStepControl.hpp"
-#include "Rythmos_IntegratorBase.hpp"
-#include "../SinCos/SinCosModel.hpp"
-#include "Rythmos_TimeStepNonlinearSolver.hpp"
-#include "Rythmos_DefaultIntegrator.hpp"
-#include "Rythmos_SimpleIntegrationControlStrategy.hpp"
+#include "Rythmos_Charon_Solver.hpp"
+#include "Rythmos_StepperBase.hpp"
+#include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Assert.hpp"
+#include "Teuchos_as.hpp"
 
-#include "Thyra_ModelEvaluator.hpp"
 
 namespace RythmosCharon {
 
-using Teuchos::is_null;
 
-TEUCHOS_UNIT_TEST( Rythmos_Charon, create ) {
-  RCP<CharonIntegrationControlAndObserver> icao = Teuchos::rcp(new CharonIntegrationControlAndObserver());
-  TEST_ASSERT( !is_null(icao) );
-
-  RCP<CharonImplicitBDFStepperErrWtVecCalc> ibsewvc = Teuchos::rcp(new CharonImplicitBDFStepperErrWtVecCalc());
-  TEST_ASSERT( !is_null(ibsewvc) );
-
-  RCP<CharonImplicitBDFStepperStepControl<double> > ibssc = Teuchos::rcp(new CharonImplicitBDFStepperStepControl<double>());
-  TEST_ASSERT( !is_null(ibssc) );
+CharonIntegrationControlAndObserver::CharonIntegrationControlAndObserver() { }
+CharonIntegrationControlAndObserver::~CharonIntegrationControlAndObserver() { }
+// Overridden from Rythmos::IntegrationControlStrategyBase
+Teuchos::RCP<Rythmos::IntegrationControlStrategyBase<double> > CharonIntegrationControlAndObserver::cloneIntegrationControlStrategy() const
+{
+  return Teuchos::null;
 }
-
-
-TEUCHOS_UNIT_TEST( Rythmos_Charon, ImplicitBDF_RythmosControl ) {
-  RCP<Rythmos::ImplicitBDFStepper<double> > stepper;
-  stepper = Rythmos::implicitBDFStepper<double>();
-
-  RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-
-  RCP<Rythmos::ImplicitBDFStepperErrWtVecCalc<double> > errWtVecCalc = 
-    Teuchos::rcp(new Rythmos::ImplicitBDFStepperErrWtVecCalc<double> ());
-  errWtVecCalc->setParameterList(pl);
-  RCP<Rythmos::ImplicitBDFStepperStepControl<double> > stepControl = 
-    Teuchos::rcp(new Rythmos::ImplicitBDFStepperStepControl<double> ());
-  stepControl->setErrWtVecCalc(errWtVecCalc);
-  stepControl->setParameterList(pl);
-  stepper->setStepControlStrategy(stepControl);
-  TEST_ASSERT( !is_null(stepper) );
+void CharonIntegrationControlAndObserver::resetIntegrationControlStrategy(
+  const Rythmos::TimeRange<double> &integrationTimeDomain
+  )
+{ }
+Rythmos::StepControlInfo<double> CharonIntegrationControlAndObserver::getNextStepControlInfo(
+  const Rythmos::StepperBase<double> &stepper,
+  const Rythmos::StepControlInfo<double> &stepCtrlInfoLast,
+  const int timeStepIter
+  )
+{
+  Rythmos::StepControlInfo<double> sci;
+  return sci;
 }
-
-TEUCHOS_UNIT_TEST( Rythmos_Charon, ImplicitBDF_CharonControl ) {
-  RCP<Rythmos::ImplicitBDFStepper<double> > stepper;
-  stepper = Rythmos::implicitBDFStepper<double>();
-
-  RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-
-  RCP<RythmosCharon::CharonImplicitBDFStepperErrWtVecCalc> errWtVecCalc = 
-    Teuchos::rcp(new RythmosCharon::CharonImplicitBDFStepperErrWtVecCalc());
-  errWtVecCalc->setParameterList(pl);
-  RCP<RythmosCharon::CharonImplicitBDFStepperStepControl<double> > stepControl = 
-    Teuchos::rcp(new RythmosCharon::CharonImplicitBDFStepperStepControl<double>());
-  stepControl->setErrWtVecCalc(errWtVecCalc);
-  stepControl->setParameterList(pl);
-  stepper->setStepControlStrategy(stepControl);
-  TEST_ASSERT( !is_null(stepper) );
+// Overridden from Rythmos::IntegrationObserverBase
+Teuchos::RCP<Rythmos::IntegrationObserverBase<double> > CharonIntegrationControlAndObserver::cloneIntegrationObserver() const
+{
+  return Teuchos::null;
 }
-
-TEUCHOS_UNIT_TEST( Rythmos_Charon, BackwardEuler ) {
-  RCP<Rythmos::BackwardEulerStepper<double> > stepper;
-  stepper = Rythmos::backwardEulerStepper<double>();
-  RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  stepper->setParameterList(pl);
-  TEST_ASSERT( !is_null(stepper) );
-}
-
-TEUCHOS_UNIT_TEST( Rythmos_Charon, integrator_BE ) {
-  RCP<RythmosCharon::CharonIntegrationControlAndObserver> controlAndObserver = 
-    Teuchos::rcp(new RythmosCharon::CharonIntegrationControlAndObserver());
-  RCP<Rythmos::IntegratorBase<double> > integrator;
-  {
-    RCP<Rythmos::DefaultIntegrator<double> > dInt = 
-      Rythmos::defaultIntegrator<double>(
-          controlAndObserver,
-          controlAndObserver
-          );
-    RCP<Rythmos::SimpleIntegrationControlStrategy<double> > intCont = 
-      Rythmos::simpleIntegrationControlStrategy<double>();
-    RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("Take Variable Steps",false);
-    pl->set("Fixed dt",0.1);
-    intCont->setParameterList(pl);
-    dInt->setIntegrationControlStrategy(intCont);
-    integrator = dInt;
-  }
-  RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->sublist("VerboseObject").set("Verbosity Level","none");
-  integrator->setParameterList(pl);
-  //integrator->setOStream(out);
-  //integrator->setVerbLevel(Teuchos::VERB_MEDIUM);
-  // Model
-  RCP<Thyra::ModelEvaluator<double> > model;
-  model = Rythmos::sinCosModel(true);
-  // Solver
-  RCP<Thyra::NonlinearSolverBase<double> > nlSolver;
-  nlSolver = Rythmos::timeStepNonlinearSolver<double>();
-  // IC
-  Thyra::ModelEvaluatorBase::InArgs<double> ic;
-  ic = model->getNominalValues();
-  // Stepper
-  RCP<Rythmos::StepperBase<double> > stepper;
-  {
-    RCP<Rythmos::BackwardEulerStepper<double> > beStepper = Rythmos::backwardEulerStepper<double>();
-    beStepper->setModel(model);
-    beStepper->setSolver(nlSolver);
-    beStepper->setInitialCondition(ic);
-    RCP<Teuchos::ParameterList> bePL = Teuchos::parameterList();
-    beStepper->setParameterList(bePL);
-    stepper = beStepper;
-  }
-
-  double finalTime = 1.0;
-  integrator->setStepper(stepper,finalTime);
-  integrator->getFwdPoints(
-      Teuchos::tuple<double>(finalTime),
-      0, // x_vec
-      0, // xdot_vec
-      0  // accuracy_vec
-      );
-  TEST_ASSERT( !is_null(integrator) );
-}
-
-TEUCHOS_UNIT_TEST( Rythmos_Charon, integrator_IBDF ) {
-  RCP<RythmosCharon::CharonIntegrationControlAndObserver> controlAndObserver = 
-    Teuchos::rcp(new RythmosCharon::CharonIntegrationControlAndObserver());;
-  RCP<Rythmos::IntegratorBase<double> > integrator; 
-  {
-    RCP<Rythmos::DefaultIntegrator<double> > dInt = 
-      Rythmos::defaultIntegrator<double>(
-          controlAndObserver,
-          controlAndObserver
-          );
-    RCP<Rythmos::SimpleIntegrationControlStrategy<double> > intCont = 
-      Rythmos::simpleIntegrationControlStrategy<double>();
-    RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-    pl->set("Take Variable Steps",false);
-    pl->set("Fixed dt",0.1);
-    intCont->setParameterList(pl);
-    dInt->setIntegrationControlStrategy(intCont);
-    integrator = dInt;
-  }
-  RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  pl->sublist("VerboseObject").set("Verbosity Level","none");
-  integrator->setParameterList(pl);
-  //integrator->setOStream(out);
-  //integrator->setVerbLevel(Teuchos::VERB_MEDIUM);
-  // Model
-  RCP<Thyra::ModelEvaluator<double> > model;
-  model = Rythmos::sinCosModel(true);
-  // Solver
-  RCP<Thyra::NonlinearSolverBase<double> > nlSolver;
-  nlSolver = Rythmos::timeStepNonlinearSolver<double>();
-  // IC
-  Thyra::ModelEvaluatorBase::InArgs<double> ic;
-  ic = model->getNominalValues();
-  // Stepper
-  RCP<Rythmos::StepperBase<double> > stepper;
-  {
-    RCP<Rythmos::ImplicitBDFStepper<double> > ibdfStepper = Rythmos::implicitBDFStepper<double>();
-    RCP<Teuchos::ParameterList> errWtPL = Teuchos::parameterList();
-    RCP<Rythmos::ImplicitBDFStepperErrWtVecCalc<double> > errWtVecCalc = 
-      Teuchos::rcp(new Rythmos::ImplicitBDFStepperErrWtVecCalc<double> ());
-    errWtVecCalc->setParameterList(errWtPL);
-    RCP<Teuchos::ParameterList> stepContPL = Teuchos::parameterList();
-    RCP<Rythmos::ImplicitBDFStepperStepControl<double> > stepControl = 
-      Teuchos::rcp(new Rythmos::ImplicitBDFStepperStepControl<double>());
-    stepControl->setErrWtVecCalc(errWtVecCalc);
-    stepControl->setParameterList(stepContPL);
-    ibdfStepper->setStepControlStrategy(stepControl);
-    ibdfStepper->setModel(model);
-    ibdfStepper->setSolver(nlSolver);
-    ibdfStepper->setInitialCondition(ic);
-    RCP<Teuchos::ParameterList> ibdfPL = Teuchos::parameterList();
-    ibdfStepper->setParameterList(ibdfPL);
-    stepper = ibdfStepper;
-  }
-
-  double finalTime = 1.0;
-  integrator->setStepper(stepper,finalTime);
-  integrator->getFwdPoints(
-      Teuchos::tuple<double>(finalTime),
-      0, // x_vec
-      0, // xdot_vec
-      0  // accuracy_vec
-      );
-  TEST_ASSERT( !is_null(integrator) );
+void CharonIntegrationControlAndObserver::resetIntegrationObserver(
+  const Rythmos::TimeRange<double> &integrationTimeDomain
+  )
+{ }
+void CharonIntegrationControlAndObserver::observeCompletedTimeStep(
+  const Rythmos::StepperBase<double> &stepper,
+  const Rythmos::StepControlInfo<double> &stepCtrlInfo,
+  const int timeStepIter
+  )
+{ }
+// Overridden from Teuchos::ParameterListAcceptorDefaultBase
+void CharonIntegrationControlAndObserver::setParameterList( Teuchos::RCP<Teuchos::ParameterList> const& paramList )
+{ }
+Teuchos::RCP<const Teuchos::ParameterList> CharonIntegrationControlAndObserver::getValidParameters() const
+{
+  return Teuchos::parameterList();
 }
 
 } // namespace RythmosCharon
-
 
 

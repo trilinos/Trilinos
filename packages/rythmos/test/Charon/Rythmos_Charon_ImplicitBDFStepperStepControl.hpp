@@ -26,95 +26,117 @@
 // ***********************************************************************
 //@HEADER
 
-#include "Rythmos_Types.hpp"
-#include "Rythmos_StepControlStrategyBase.hpp"
-#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
-//#include "Rythmos_ErrWtVecCalcBase.hpp"
+#ifndef RYTHMOS_CHARON_IMPLICIT_BDF_STEPPER_STEP_CONTROL_HPP
+#define RYTHMOS_CHARON_IMPLICIT_BDF_STEPPER_STEP_CONTROL_HPP
+
+#include "Rythmos_Charon_ImplicitBDFStepperStepControlDecl.hpp"
+#include "Rythmos_Charon_ImplicitBDFStepperErrWtVecCalc.hpp"
+#include "Rythmos_ImplicitBDFStepper.hpp"
 
 namespace RythmosCharon {
 
-using Teuchos::RCP;
-
 template<class Scalar>
-class CharonImplicitBDFStepperStepControl
-  : virtual public Rythmos::StepControlStrategyBase<Scalar>,
-    virtual public Teuchos::ParameterListAcceptorDefaultBase
+CharonImplicitBDFStepperStepControl<Scalar>::CharonImplicitBDFStepperStepControl() { }
+template<class Scalar>
+CharonImplicitBDFStepperStepControl<Scalar>::~CharonImplicitBDFStepperStepControl() { }
+template<class Scalar>
+void CharonImplicitBDFStepperStepControl<Scalar>::setErrWtVecCalc(const Teuchos::RCP<Rythmos::ErrWtVecCalcBase<Scalar> >& errWtVecCalc)
+{ }
+template<class Scalar>
+Teuchos::RCP<const Rythmos::ErrWtVecCalcBase<Scalar> > CharonImplicitBDFStepperStepControl<Scalar>::getErrWtVecCalc() const
 {
-  public:
-  CharonImplicitBDFStepperStepControl() { }
-  virtual ~CharonImplicitBDFStepperStepControl() { }
-  void setErrWtVecCalc(const RCP<Rythmos::ErrWtVecCalcBase<Scalar> >& errWtVecCalc)
-  { }
-  RCP<const Rythmos::ErrWtVecCalcBase<Scalar> > getErrWtVecCalc() const
-  {
-    return Teuchos::null;
-  }
-  void initialize(const Rythmos::StepperBase<Scalar>& stepper)
-  { }
-  void setRequestedStepSize(
-      const Rythmos::StepperBase<Scalar>& stepper
-      , const Scalar& stepSize
-      , const Rythmos::StepSizeType& stepSizeType
-      )
-  { }
-  void nextStepSize(
-      const Rythmos::StepperBase<Scalar>& stepper
-      , Scalar* stepSize
-      , Rythmos::StepSizeType* stepSizeType
-      , int* order 
-      )
-  { }
-  void setCorrection(
-      const Rythmos::StepperBase<Scalar>& stepper
-      , const RCP<const Thyra::VectorBase<Scalar> >& soln
-      , const RCP<const Thyra::VectorBase<Scalar> >& ee
-      , int solveStatus
-      )
-  { }
-  bool acceptStep(
-      const Rythmos::StepperBase<Scalar>& stepper
-      ,Scalar* LETValue
-      )
-  { 
-    return false;
-  }
-  void completeStep(
-      const Rythmos::StepperBase<Scalar>& stepper
-      )
-  { }
-  Rythmos::AttemptedStepStatusFlag rejectStep(
-      const Rythmos::StepperBase<Scalar>& stepper
-      )
-  { 
-    return Rythmos::REP_ERR_FAIL;
-  }
-  Rythmos::StepControlStrategyState getCurrentState()
-  {
-    return Rythmos::UNINITIALIZED;
-  }
-  int getMaxOrder() const
-  { 
-    return 0;
-  }
-  void setStepControlData(const Rythmos::StepperBase<Scalar>& stepper)
-  { }
-  bool supportsCloning() const
-  { 
-    return false;
-  }
-  RCP<Rythmos::StepControlStrategyBase<Scalar> > cloneStepControlStrategyAlgorithm() const
-  {
-    return Teuchos::null;
-  }
-  // Overridden from Teuchos::ParameterListAcceptorDefaultBase
-  void setParameterList( RCP<Teuchos::ParameterList> const& paramList )
-  { }
-  RCP<const Teuchos::ParameterList> getValidParameters() const
-  {
-    return Teuchos::parameterList();
-  }
-};
+  return Teuchos::null;
+}
+template<class Scalar>
+void CharonImplicitBDFStepperStepControl<Scalar>::initialize(const Rythmos::StepperBase<Scalar>& stepper)
+{ }
+template<class Scalar>
+void CharonImplicitBDFStepperStepControl<Scalar>::setRequestedStepSize(
+    const Rythmos::StepperBase<Scalar>& stepper
+    , const Scalar& stepSize
+    , const Rythmos::StepSizeType& stepSizeType
+    )
+{ }
+template<class Scalar>
+void CharonImplicitBDFStepperStepControl<Scalar>::nextStepSize(
+    const Rythmos::StepperBase<Scalar>& stepper
+    , Scalar* stepSize
+    , Rythmos::StepSizeType* stepSizeType
+    , int* order 
+    )
+{ }
+template<class Scalar>
+void CharonImplicitBDFStepperStepControl<Scalar>::setCorrection(
+    const Rythmos::StepperBase<Scalar>& stepper
+    , const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& soln
+    , const Teuchos::RCP<const Thyra::VectorBase<Scalar> >& ee
+    , int solveStatus
+    )
+{ }
+template<class Scalar>
+bool CharonImplicitBDFStepperStepControl<Scalar>::acceptStep(
+    const Rythmos::StepperBase<Scalar>& stepper
+    ,Scalar* LETValue
+    )
+{ 
+  return false;
+}
+template<class Scalar>
+void CharonImplicitBDFStepperStepControl<Scalar>::completeStep(
+    const Rythmos::StepperBase<Scalar>& stepper
+    )
+{ }
+template<class Scalar>
+Rythmos::AttemptedStepStatusFlag CharonImplicitBDFStepperStepControl<Scalar>::rejectStep(
+    const Rythmos::StepperBase<Scalar>& stepper
+    )
+{ 
+  return Rythmos::REP_ERR_FAIL;
+}
+template<class Scalar>
+Rythmos::StepControlStrategyState CharonImplicitBDFStepperStepControl<Scalar>::getCurrentState()
+{
+  return Rythmos::UNINITIALIZED;
+}
+template<class Scalar>
+int CharonImplicitBDFStepperStepControl<Scalar>::getMaxOrder() const
+{ 
+  return 0;
+}
+template<class Scalar>
+void CharonImplicitBDFStepperStepControl<Scalar>::setStepControlData(const Rythmos::StepperBase<Scalar>& stepper)
+{ }
+template<class Scalar>
+bool CharonImplicitBDFStepperStepControl<Scalar>::supportsCloning() const
+{ 
+  return false;
+}
+template<class Scalar>
+Teuchos::RCP<Rythmos::StepControlStrategyBase<Scalar> > CharonImplicitBDFStepperStepControl<Scalar>::cloneStepControlStrategyAlgorithm() const
+{
+  return Teuchos::null;
+}
+// Overridden from Teuchos::ParameterListAcceptor
+template<class Scalar>
+void CharonImplicitBDFStepperStepControl<Scalar>::setParameterList( Teuchos::RCP<Teuchos::ParameterList> const& paramList )
+{ }
+template<class Scalar>
+Teuchos::RCP<Teuchos::ParameterList> CharonImplicitBDFStepperStepControl<Scalar>::getNonconstParameterList()
+{ 
+  return Teuchos::parameterList();
+}
+template<class Scalar>
+Teuchos::RCP<Teuchos::ParameterList> CharonImplicitBDFStepperStepControl<Scalar>::unsetParameterList()
+{
+  return Teuchos::parameterList();
+}
+template<class Scalar>
+Teuchos::RCP<const Teuchos::ParameterList> CharonImplicitBDFStepperStepControl<Scalar>::getValidParameters() const
+{
+  return Teuchos::parameterList();
+}
 
 } // namespace RythmosCharon
 
+#endif // RYTHMOS_CHARON_IMPLICIT_BDF_STEPPER_STEP_CONTROL_HPP
 

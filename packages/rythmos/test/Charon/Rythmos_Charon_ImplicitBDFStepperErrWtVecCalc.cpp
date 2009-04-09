@@ -26,37 +26,41 @@
 // ***********************************************************************
 //@HEADER
 
-#ifndef RYTHMOS_CHARON_IMPLICIT_BDF_ERR_WT_VEC_CALC_BASE_HPP
-#define RYTHMOS_CHARON_IMPLICIT_BDF_ERR_WT_VEC_CALC_BASE_HPP
-
+#include "Rythmos_Charon_ImplicitBDFStepperErrWtVecCalc.hpp"
 #include "Rythmos_ErrWtVecCalcBase.hpp"
-#include "Teuchos_RCP.hpp"
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 namespace RythmosCharon {
 
-class CharonImplicitBDFStepperErrWtVecCalc
-  : virtual public Rythmos::ErrWtVecCalcBase<double>
+CharonImplicitBDFStepperErrWtVecCalc::
+
+CharonImplicitBDFStepperErrWtVecCalc::CharonImplicitBDFStepperErrWtVecCalc() { }
+CharonImplicitBDFStepperErrWtVecCalc::~CharonImplicitBDFStepperErrWtVecCalc() { }
+void CharonImplicitBDFStepperErrWtVecCalc::errWtVecSet(
+    Thyra::VectorBase<double>* weight, 
+    const Thyra::VectorBase<double>& vector, 
+    double relTol, 
+    double absTol
+    ) const
+{ }
+// Overridden from Teuchos::ParameterListAcceptor
+void CharonImplicitBDFStepperErrWtVecCalc::setParameterList( Teuchos::RCP<Teuchos::ParameterList> const& paramList )
+{ }
+Teuchos::RCP<Teuchos::ParameterList> CharonImplicitBDFStepperErrWtVecCalc::getNonconstParameterList()
+{ 
+  return Teuchos::parameterList();
+}
+Teuchos::RCP<Teuchos::ParameterList> CharonImplicitBDFStepperErrWtVecCalc::unsetParameterList()
 {
-  public:
-  CharonImplicitBDFStepperErrWtVecCalc();
-  virtual ~CharonImplicitBDFStepperErrWtVecCalc();
-  void errWtVecSet(
-      Thyra::VectorBase<double>* weight, 
-      const Thyra::VectorBase<double>& vector, 
-      double relTol, 
-      double absTol
-      ) const;
-  // Overridden from Teuchos::ParameterListAcceptor
-  void setParameterList( Teuchos::RCP<Teuchos::ParameterList> const& paramList );
-  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-  Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-  private:
-    Teuchos::RCP<Teuchos::ParameterList> paramList_;
-};
+  return Teuchos::parameterList();
+}
+Teuchos::RCP<const Teuchos::ParameterList> CharonImplicitBDFStepperErrWtVecCalc::getValidParameters() const
+{
+  return Teuchos::parameterList();
+}
 
 
 } // namespace RythmosCharon
 
-#endif // RYTHMOS_CHARON_IMPLICIT_BDF_ERR_WT_VEC_CALC_BASE_HPP
 
