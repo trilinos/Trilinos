@@ -190,7 +190,7 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
       }
     }
     ScalarMag ts = t_ + c(s)*dt;
-    Thyra::eval_f<Scalar>(*model_,*ktemp_vector_,ts,&*k_vector_[s]);
+    eval_model_explicit<Scalar>(*model_,basePoint_,*ktemp_vector_,ts,Teuchos::outArg(*k_vector_[s]));
     Thyra::Vt_S(&*k_vector_[s],dt); // k_s = k_s*dt
   } 
   // Sum for solution:

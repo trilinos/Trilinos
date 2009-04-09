@@ -31,6 +31,8 @@
 #include "Rythmos_StepperHelpers.hpp"
 #include "Rythmos_StepperBuilder.hpp"
 #include "../SinCos/SinCosModel.hpp"
+#include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_ModelEvaluator.hpp"
 
 namespace Rythmos {
 
@@ -67,6 +69,66 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperHelpers, assertValidModel ) {
 
 // setDefaultInitialConditionFromNominalValues
 // restart
+
+TEUCHOS_UNIT_TEST( Rythmos_StepperHelpers, eval_model_explicit ) {
+  RCP<Thyra::ModelEvaluator<double> > model;
+  {
+    RCP<SinCosModel> scModel = sinCosModel(false);
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->set("Accept model parameters",true);
+    scModel->setParameterList(pl);
+    model = scModel;
+  }
+  Thyra::ModelEvaluatorBase::InArgs<double> basePoint = model->getNominalValues();
+  {
+    // Base Point values:
+    // time 
+    double t_ic = 1.5;
+    // x
+    RCP<VectorBase<double> > x_ic = Thyra::createMember(*model->get_x_space());
+    {
+      Thyra::DetachedVectorView<double> x_ic_view( *x_ic );
+      x_ic_view[0] = 5.0;
+      x_ic_view[1] = 6.0;
+    }
+    // Parameter 0
+    RCP<VectorBase<double> > p_ic = Thyra::createMember(*model->get_p_space(0));
+    {
+      Thyra::DetachedVectorView<double> p_ic_view( *p_ic );
+      p_ic_view[0] = 2.0; // a
+      p_ic_view[1] = 3.0; // f
+      p_ic_view[2] = 4.0; // L
+    }
+    basePoint.set_t(t_ic);
+    basePoint.set_x(x_ic);
+    basePoint.set_p(0,p_ic);
+  }
+  // Evaluation with eval_model_explicit
+  double t = 2.0;
+  RCP<VectorBase<double> > x = Thyra::createMember(*model->get_x_space());
+  {
+    Thyra::DetachedVectorView<double> x_view( *x );
+    x_view[0] = 7.0;
+    x_view[1] = 8.0;
+  }
+  RCP<VectorBase<double> > f_out = Thyra::createMember(*model->get_f_space());
+  eval_model_explicit<double>(*model,basePoint,*x,t,Teuchos::outArg(*f_out));
+  // Verify that our new t and x were used
+  // Verify that the parameters in the basePoint were used rather than the defaults.
+  // I can't test t with this model because it doesn't use it (TODO)
+  double a = 2.0;
+  double f = 3.0;
+  double L = 4.0;
+  double x0 = 7.0;
+  double x1 = 8.0;
+  double tol = 1.0e-10;
+  {
+    Thyra::ConstDetachedVectorView<double> f_out_view( *f_out );
+    TEST_EQUALITY( f_out_view[0], x1 );
+    TEST_FLOATING_EQUALITY( f_out_view[1], (f/L)*(f/L)*(a-x0), tol );
+  }
+}
+
 
 } // namespace Rythmos 
 

@@ -3,9 +3,11 @@
 #define RYTHMOS_STEPPER_HELPERS_HPP
 
 
+#include "Rythmos_Types.hpp"
 #include "Rythmos_StepperBase.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Thyra_AssertOp.hpp"
+#include "Thyra_ModelEvaluator.hpp"
 
 
 namespace Rythmos {
@@ -132,6 +134,29 @@ void restart( StepperBase<Scalar> *stepper )
   // reset the stepper to think that it is starting over again (which it is).
   stepper->setInitialCondition(initialCondition);
 }
+
+template<class Scalar>
+void eval_model_explicit(
+    const Thyra::ModelEvaluator<Scalar> &model,
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
+    const VectorBase<Scalar>& x_in,
+    const Scalar& t_in,
+    const Ptr<VectorBase<Scalar> >& f_out
+    )
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs = model.createOutArgs();
+  inArgs.setArgs(basePoint);
+  inArgs.set_x(Teuchos::rcp(&x_in,false));
+  if (inArgs.supports(MEB::IN_ARG_t)) {
+    inArgs.set_t(t_in);
+  }
+  outArgs.set_f(Teuchos::rcp(&*f_out,false));
+  model.evalModel(inArgs,outArgs);
+}
+
+
 
 } // namespace Rythmos
 

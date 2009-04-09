@@ -131,5 +131,51 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, invalidTakeStep ) {
 #endif // RYTHMOS_DEBUG
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, basePoint ) {
+  RCP<SinCosModel> model = sinCosModel(false);
+  {
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->set("Accept model parameters",true);
+    model->setParameterList(pl);
+  }
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  // t_ic
+  double t_ic = 1.0; // not used
+  // x_ic
+  RCP<VectorBase<double> > x_ic = Thyra::createMember(*model->get_x_space());
+  {
+    Thyra::DetachedVectorView<double> x_ic_view( *x_ic );
+    x_ic_view[0] = 5.0;
+    x_ic_view[1] = 6.0;
+  }
+  // parameter 0 ic
+  RCP<VectorBase<double> > p_ic = Thyra::createMember(*model->get_p_space(0));
+  {
+    Thyra::DetachedVectorView<double> p_ic_view( *p_ic );
+    p_ic_view[0] = 2.0; // a
+    p_ic_view[1] = 3.0; // f 
+    p_ic_view[2] = 4.0; // L
+  }
+  ic.set_p(0,p_ic); 
+  ic.set_x(x_ic);
+  ic.set_t(t_ic);
+  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>();
+  stepper->setModel(model);
+  stepper->setInitialCondition(ic);
+  stepper->setRKButcherTableau(createRKBT<double>("Forward Euler"));
+  double dt = 0.2;
+  double dt_taken;
+  dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
+  TEST_EQUALITY_CONST( dt_taken, 0.2 );
+  const StepStatus<double> status = stepper->getStepStatus();
+  TEST_ASSERT( !is_null(status.solution) );
+  double tol = 1.0e-10;
+  {
+    Thyra::ConstDetachedVectorView<double> x_new_view( *(status.solution) );
+    TEST_FLOATING_EQUALITY( x_new_view[0], 5.0 + 0.2*(6.0), tol );
+    TEST_FLOATING_EQUALITY( x_new_view[1], 6.0 + 0.2*( (3.0/4.0)*(3.0/4.0)*(2.0-5.0) ), tol );
+  }
+}
+
 } // namespace Rythmos
 
