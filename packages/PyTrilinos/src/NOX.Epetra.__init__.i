@@ -95,6 +95,9 @@ NOX.Epetra provides the following user-level classes:
 #include "NOX_Epetra_MatrixFree.H"
 #include "NOX_Epetra_Scaling.H"
 #include "NOX_Epetra_LinearSystem.H"
+#undef HAVE_STDINT_H
+#undef HAVE_INTTYPES_H
+#undef HAVE_SYS_TIME_H
 #include "NOX_Epetra_LinearSystem_AztecOO.H"
 
 // Local includes
@@ -241,13 +244,15 @@ using namespace NOX::Epetra;
 }
 
 // Epetra imports
-%import "Epetra_SrcDistObject.h"
-%import "Epetra_Operator.h"
-%import "Epetra_RowMatrix.h"
+// %import "Epetra_SrcDistObject.h"
+// %import "Epetra_Operator.h"
+// %import "Epetra_RowMatrix.h"
+%import "Epetra.i"
 
 // NOX imports
-%import "NOX_Abstract_Group.H"
-%import "NOX_Abstract_Vector.H"
+//%import "NOX_Abstract_Group.H"
+//%import "NOX_Abstract_Vector.H"
+%import "NOX.Abstract.i"
 
 // NOX::Epetra::Interface imports
 %import "NOX.Epetra.Interface.i"

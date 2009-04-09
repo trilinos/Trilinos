@@ -103,6 +103,14 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 // Configuration support
 %include "PyTrilinos_config.h"
 %rename(FormatStdout) Epetra_FormatStdout;
+%warnfilter(315) std::sprintf;
+%warnfilter(315) std::rand;
+%warnfilter(315) std::istream;
+%warnfilter(315) std::ostream;
+%warnfilter(315) std::cerr;
+%warnfilter(315) std::cout;
+%warnfilter(315) std::endl;
+%warnfilter(315) std::flush;
 %include "Epetra_ConfigDefs.h"
 
 // Include Epetra documentation
