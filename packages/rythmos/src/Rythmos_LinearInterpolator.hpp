@@ -174,6 +174,9 @@ void LinearInterpolator<Scalar>::interpolate(
 
   // Return immediatly if not time points are requested ...
   if (t_values.size() == 0) {
+    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+      *out << "Returning because no time points were requested" << std::endl;
+    }
     return;
   }
 
@@ -182,31 +185,52 @@ void LinearInterpolator<Scalar>::interpolate(
     // (*nodes_)[0].time so we can just pass it out
     DataStore<Scalar> DS((*nodes_)[0]);
     data_out->push_back(DS);
+    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+      *out << "Only a single node is in the buffer, so preconditions assert that this must be the point requested" << std::endl;
+    }
   }
   else { // (*nodes_).size() >= 2
+    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+      *out << "More than two nodes, looping through the intervals looking for points to interpolate" << std::endl;
+    }
     int n = 0; // index into t_values
     // Loop through all of the time interpolation points in the buffer and
     // satisfiy all of the requested time points that you find.  NOTE: The
     // loop will be existed once all of the time points are satisified (see
     // return below).
     for (int i=0 ; i < as<int>((*nodes_).size())-1; ++i) {
+      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+        *out << "Looking for interval containing: t_values["<<n<<"] = " << t_values[n] << std::endl;
+      }
       const Scalar& ti = (*nodes_)[i].time;
       const Scalar& tip1 = (*nodes_)[i+1].time;
       const Scalar  h = tip1-ti;
       const TimeRange<Scalar> range_i(ti,tip1);
-      // For the interploation range of [ti,tip1], satisify all of the
+      // For the interpolation range of [ti,tip1], satisify all of the
       // requested points in this range.
       while ( range_i.isInRange(t_values[n]) ) {
         // First we check for exact node matches:
         if (compareTimeValues(t_values[n],ti)==0) {
           DataStore<Scalar> DS((*nodes_)[i]);
           data_out->push_back(DS);
+          if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+            *out << "Found an exact node match (on left), shallow copying." << std::endl;
+            *out << "Found t_values["<<n<<"] = " << t_values[n] << " on boundary of interval ["<<ti<<","<<tip1<<"]" << std::endl;
+          }
         }
         else if (compareTimeValues(t_values[n],tip1)==0) {
           DataStore<Scalar> DS((*nodes_)[i+1]);
           data_out->push_back(DS);
+          if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+            *out << "Found an exact node match (on right), shallow copying." << std::endl;
+            *out << "Found t_values["<<n<<"] = " << t_values[n] << " on boundary of interval ["<<ti<<","<<tip1<<"]" << std::endl;
+          }
         }
         else {
+          if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+            *out << "Interpolating a point (creating a new vector)..." << std::endl;
+            *out << "Found t_values["<<n<<"] = " << t_values[n] << " in interior of interval ["<<ti<<","<<tip1<<"]" << std::endl;
+          }
           // interpolate this point
           //
           // x(t) = (t-ti)/(tip1-ti) * xip1 + (1-(t-ti)/(tip1-ti)) * xi

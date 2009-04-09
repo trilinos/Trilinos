@@ -247,6 +247,7 @@ void Rythmos::selectPointsInTimeRange(
   points_out->clear();
   int Nt = Teuchos::as<int>(points_in.size());
   for (int i=0; i < Nt ; ++i) {
+//    if (isInRange_oc(range,points_in[i])) {
     if (range.isInRange(points_in[i])) {
       points_out->push_back(points_in[i]);
     }

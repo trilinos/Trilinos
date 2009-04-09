@@ -56,6 +56,7 @@ Rythmos_UnitTest_SOURCES =\
 	$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
 	$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp\
+	$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp\
 	$(srcdir)/Rythmos_Quadrature_UnitTest.cpp\
   $(srcdir)/Rythmos_RKButcherTableau_UnitTest.cpp\
   $(srcdir)/../SinCos/SinCosModel.cpp\
@@ -63,6 +64,7 @@ Rythmos_UnitTest_SOURCES =\
   $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp\
   $(srcdir)/Rythmos_StepperBuilder_UnitTest.cpp\
   $(srcdir)/Rythmos_StepperHelpers_UnitTest.cpp\
+  $(srcdir)/Rythmos_StepperValidator_UnitTest.cpp\
   $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTestHelpers.cpp

@@ -112,6 +112,13 @@ public:
    */
   virtual Teuchos::RCP<const StepperBase<Scalar> > getStepper() const =0;
 
+  /** \brief Get the current stepper that is set.
+   *
+   * \returns This function can return <tt>returnVal==null</tt> which case
+   * <tt>*this</tt> is in an uninitialized state.
+   */
+  virtual Teuchos::RCP<StepperBase<Scalar> > getNonconstStepper() const =0;
+
   /** \brief Remove the stepper and set <tt>*this</tt> to an unitilaized
    * state.
    *

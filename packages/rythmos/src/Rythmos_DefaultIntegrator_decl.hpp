@@ -139,6 +139,9 @@ public:
   /** \brief . */
   RCP<const StepperBase<Scalar> > getStepper() const;
 
+  /** \brief . */
+  RCP<StepperBase<Scalar> > getNonconstStepper() const;
+
   /** \name Overridden from TrailingInterpolationBufferAcceptingIntegratorBase */
   //@{
   

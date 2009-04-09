@@ -32,6 +32,7 @@
 #include "Rythmos_InterpolationBufferAppenderBase.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Rythmos_InterpolationBufferHelpers.hpp"
 
 
 namespace Rythmos {

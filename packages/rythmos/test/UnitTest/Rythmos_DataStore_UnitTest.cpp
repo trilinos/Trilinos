@@ -272,6 +272,41 @@ TEUCHOS_UNIT_TEST( Rythmos_DataStore, clone ) {
 
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, shallowCopy ) {
+  double t = 1.0;
+  RCP<VectorBase<double> > x = createDefaultVector(2,1.0);
+  RCP<VectorBase<double> > xdot = createDefaultVector(2,2.0);
+  double accuracy = 0.0;
+  DataStore<double> DS(t,x,xdot,accuracy);
+  DataStore<double> newDS(DS);
+  {
+    RCP<const VectorBase<double> > newX = newDS.x;
+    RCP<VectorBase<double> > newXclone = newX->clone_v();
+    TEST_ASSERT( !is_null(newXclone) );
+    TEST_EQUALITY( DS.x.get(), newDS.x.get() );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_DataStore, dataStoreVectorToVector_more ) {
+  double time = 1.0;
+  RCP<VectorBase<double> > x = createDefaultVector(2,1.0);
+  RCP<VectorBase<double> > xdot = createDefaultVector(2,2.0);
+  double accuracy = 0.0;
+  DataStore<double> DS(time,x,xdot,accuracy);
+  DataStore<double>::DataStoreVector_t data_out;
+  data_out.push_back(DS);
+  Array<double> time_vec;
+  Array<RCP<const VectorBase<double> > > x_vec;
+  Array<RCP<const VectorBase<double> > > xdot_vec;
+  Array<double> accuracy_vec;
+  dataStoreVectorToVector<double>(data_out,&time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+  TEST_EQUALITY( time_vec[0], time );
+  TEST_EQUALITY( x_vec[0].get(), x.get() );
+  TEST_EQUALITY( xdot_vec[0].get(), xdot.get() );
+  TEST_EQUALITY( accuracy_vec[0], accuracy );
+  RCP<VectorBase<double> > newX = x_vec[0]->clone_v();
+  TEST_ASSERT( !is_null(newX) );
+}
 
 } // namespace Rythmos
 

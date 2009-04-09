@@ -81,6 +81,9 @@ public:
     const RCP<StepperBuilder<Scalar> > &stepperBuilder
     );
 
+  /** \brief Get the Stepper Builder object. */
+  RCP<const StepperBuilder<Scalar> > getStepperBuilder();
+
   /** \brief Set the RK Butcher Tableau Builder object. */
   void setRKButcherTableauBuilder(
       const RCP<RKButcherTableauBuilder<Scalar> > & rkbtBuilder

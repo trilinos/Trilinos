@@ -33,6 +33,7 @@
 #include "Rythmos_InterpolationBuffer.hpp"
 #include "Rythmos_HermiteInterpolator.hpp"
 #include "Thyra_DetachedVectorView.hpp"
+#include "Rythmos_LinearInterpolator.hpp"
 
 namespace Rythmos {
 
@@ -912,6 +913,124 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, description ) {
 //  RCP<InterpolationBuffer<double> > ib = interpolationBuffer<double>();
 //}
 
+TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, add_get_points_1 ) {
+  RCP<InterpolationBuffer<double> > ib = interpolationBuffer<double>();
+  double t = 1.0;
+  RCP<VectorBase<double> > x = createDefaultVector(2,1.0);
+  RCP<VectorBase<double> > xdot = createDefaultVector(2,1.0);
+  {
+    Array<double> time_vec;
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    time_vec.push_back(t);
+    x_vec.push_back(x);
+    xdot_vec.push_back(xdot);
+    ib->addPoints(time_vec,x_vec,xdot_vec);
+  }
+
+  {
+    Array<double> time_vec;
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+    time_vec.push_back(t);
+    ib->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+    //TEST_EQUALITY( x_vec[0].get(), x.get() );
+    //TEST_EQUALITY( xdot_vec[0].get(), xdot.get() );
+    RCP<const VectorBase<double> > x = x_vec[0];
+    RCP<VectorBase<double> > y = x->clone_v();
+    TEST_ASSERT( !is_null(y) );
+  }
+}
+TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, add_get_points_2 ) {
+  RCP<InterpolationBuffer<double> > ib = interpolationBuffer<double>();
+  double t1 = 0.0;
+  RCP<VectorBase<double> > x1 = createDefaultVector(2,1.0);
+  RCP<VectorBase<double> > xdot1 = createDefaultVector(2,2.0);
+  double t2 = 1.0;
+  RCP<VectorBase<double> > x2 = createDefaultVector(2,3.0);
+  RCP<VectorBase<double> > xdot2 = createDefaultVector(2,4.0);
+  {
+    Array<double> time_vec;
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    time_vec.push_back(t1);
+    time_vec.push_back(t2);
+    x_vec.push_back(x1);
+    x_vec.push_back(x2);
+    xdot_vec.push_back(xdot1);
+    xdot_vec.push_back(xdot2);
+    ib->addPoints(time_vec,x_vec,xdot_vec);
+  }
+
+  {
+    Array<double> time_vec;
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+    time_vec.push_back(t1);
+    time_vec.push_back(t2);
+    ib->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+    RCP<VectorBase<double> > y = x_vec[0]->clone_v();
+    TEST_ASSERT( !is_null(y) );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, add_get_points_linearInterp ) {
+  int N = 2;
+  Teuchos::Array<double> time_vec;
+  RCP<InterpolationBuffer<double> > ib = interpolationBuffer<double>();
+  ib->setStorage(N);
+//  ib->setVerbLevel(Teuchos::VERB_EXTREME);
+  RCP<LinearInterpolator<double> > interp = linearInterpolator<double>();
+  //RCP<HermiteInterpolator<double> > interp = hermiteInterpolator<double>();
+//  interp->setVerbLevel(Teuchos::VERB_EXTREME);
+  ib->setInterpolator(interp);
+  Array<RCP<const VectorBase<double> > > x_vec;
+  Array<RCP<const VectorBase<double> > > xdot_vec;
+  int dim = 2;
+  for (int i=0 ; i<N ; ++i) {
+    time_vec.push_back(0.0+1.0*i);
+    x_vec.push_back(createDefaultVector(dim,1.0+1.0*i)); 
+    xdot_vec.push_back(createDefaultVector(dim,3.0+1.0*i)); 
+  }
+//  out << "Before adding to ib:" << std::endl;
+//  for (int i=0 ; i < as<int>(x_vec.size()) ; ++i) {
+//    out << "time_vec["<<i<<"] = " << time_vec[i] << std::endl;
+//    out << "x_vec["<<i<<"] = " << std::endl;
+//    out << Teuchos::describe(*x_vec[i],Teuchos::VERB_EXTREME);
+//    out << "xdot_vec["<<i<<"] = " << std::endl;
+//    out << Teuchos::describe(*xdot_vec[i],Teuchos::VERB_EXTREME);
+//  }
+  ib->addPoints(time_vec,x_vec,xdot_vec);
+  
+  Array<double> accuracy_vec;
+  ib->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+  TEST_EQUALITY_CONST( x_vec.size(), 2 );
+  TEST_ASSERT( !is_null(x_vec[0]) );
+  TEST_ASSERT( !is_null(x_vec[1]) );
+  TEST_ASSERT( !is_null(xdot_vec[0]) );
+  TEST_ASSERT( !is_null(xdot_vec[1]) );
+
+  // THE FOLLOWING LINE CAUSES A SEGFAULT!
+  //RCP<VectorBase<double> > v1 = x_vec[0]->clone_v();
+  //TEST_ASSERT( !is_null(v1) );
+  
+//  RCP<const Thyra::VectorSpaceBase<double> > space = x_vec[0]->space();
+//  TEST_ASSERT( !is_null(space) );
+//  RCP<VectorBase<double> > v2 = Thyra::createMember(*space);
+//  TEST_ASSERT( !is_null(v2) );
+
+//  TEST_ASSERT( !is_null(v) );
+//  out << "After getting from ib:" << std::endl;
+//  for (int i=0 ; i < as<int>(x_vec.size()) ; ++i) {
+//    out << "time_vec["<<i<<"] = " << time_vec[i] << std::endl;
+//    out << "x_vec["<<i<<"] = " << std::endl;
+//    out << Teuchos::describe(*x_vec[i],Teuchos::VERB_EXTREME);
+//    out << "xdot_vec["<<i<<"] = " << std::endl;
+//    out << Teuchos::describe(*xdot_vec[i],Teuchos::VERB_EXTREME);
+//  }
+}
 
 } // namespace Rythmos
 

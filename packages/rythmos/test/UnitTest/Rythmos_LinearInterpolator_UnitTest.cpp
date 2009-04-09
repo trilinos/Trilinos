@@ -95,6 +95,28 @@ TEUCHOS_UNIT_TEST( Rythmos_LinearInterpolator, interpolate ) {
   }
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_LinearInterpolator, boundary_interpolate ) {
+  RCP<DataStore<double>::DataStoreVector_t> data_in = rcp( new DataStore<double>::DataStoreVector_t );;
+  int N = 2;
+  for (int i=0 ; i<N ; ++i) {
+    double time = 0.0 + 1.0*i;
+    RCP<VectorBase<double> > x = createDefaultVector(2,1.0+1.0*i);
+    RCP<VectorBase<double> > xdot = createDefaultVector(2,10.0+1.0*i);
+    double accuracy = 0.0;
+    data_in->push_back(DataStore<double>(time,x,xdot,accuracy));
+  }
+  RCP<LinearInterpolator<double> > li = linearInterpolator<double>();
+  Array<double> t_values;
+  t_values.push_back(0.0);
+  t_values.push_back(1.0);
+  DataStore<double>::DataStoreVector_t data_out;
+  interpolate<double>(*li, data_in, t_values, &data_out);
+  for (int i=0 ; i<N ; ++i) {
+    TEST_EQUALITY( (*data_in)[i].time, data_out[i].time );
+    TEST_EQUALITY( (*data_in)[i].x.get(), data_out[i].x.get() );
+    TEST_EQUALITY( (*data_in)[i].xdot.get(), data_out[i].xdot.get() );
+  }
+}
 
 } // namespace Rythmos
 

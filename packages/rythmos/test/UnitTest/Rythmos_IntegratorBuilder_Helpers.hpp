@@ -60,7 +60,11 @@ class FoolishIntegrator :
   { }
   Teuchos::RCP<const StepperBase<double> > getStepper() const
   { 
-    RCP<StepperBase<double> > stepper; return stepper; 
+    return Teuchos::null;
+  }
+  Teuchos::RCP<StepperBase<double> > getNonconstStepper() const
+  {
+    return Teuchos::null;
   }
   RCP<StepperBase<double> > unSetStepper() 
   { 

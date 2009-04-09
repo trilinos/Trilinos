@@ -106,12 +106,14 @@ am_Rythmos_UnitTest_OBJECTS =  \
 	Rythmos_IntegratorBuilder_UnitTest.$(OBJEXT) \
 	Rythmos_InterpolationBuffer_UnitTest.$(OBJEXT) \
 	Rythmos_LinearInterpolator_UnitTest.$(OBJEXT) \
+	Rythmos_PointwiseInterpolationBufferAppender_UnitTest.$(OBJEXT) \
 	Rythmos_Quadrature_UnitTest.$(OBJEXT) \
 	Rythmos_RKButcherTableau_UnitTest.$(OBJEXT) \
 	SinCosModel.$(OBJEXT) PolynomialModel.$(OBJEXT) \
 	Rythmos_SinCosModel_UnitTest.$(OBJEXT) \
 	Rythmos_StepperBuilder_UnitTest.$(OBJEXT) \
 	Rythmos_StepperHelpers_UnitTest.$(OBJEXT) \
+	Rythmos_StepperValidator_UnitTest.$(OBJEXT) \
 	Rythmos_TimeRange_UnitTest.$(OBJEXT) \
 	Rythmos_UnitTest.$(OBJEXT) Rythmos_UnitTestHelpers.$(OBJEXT)
 Rythmos_UnitTest_OBJECTS = $(am_Rythmos_UnitTest_OBJECTS)
@@ -273,6 +275,7 @@ Rythmos_UnitTest_SOURCES = \
 	$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
 	$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp\
+	$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp\
 	$(srcdir)/Rythmos_Quadrature_UnitTest.cpp\
   $(srcdir)/Rythmos_RKButcherTableau_UnitTest.cpp\
   $(srcdir)/../SinCos/SinCosModel.cpp\
@@ -280,6 +283,7 @@ Rythmos_UnitTest_SOURCES = \
   $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp\
   $(srcdir)/Rythmos_StepperBuilder_UnitTest.cpp\
   $(srcdir)/Rythmos_StepperHelpers_UnitTest.cpp\
+  $(srcdir)/Rythmos_StepperValidator_UnitTest.cpp\
   $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTestHelpers.cpp
@@ -381,11 +385,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_IntegratorBuilder_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_InterpolationBuffer_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_LinearInterpolator_UnitTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_Quadrature_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_RKButcherTableau_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_SinCosModel_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_StepperBuilder_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_StepperHelpers_UnitTest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_StepperValidator_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_TimeRange_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_UnitTestHelpers.Po@am__quote@
@@ -587,6 +593,20 @@ Rythmos_LinearInterpolator_UnitTest.obj: $(srcdir)/Rythmos_LinearInterpolator_Un
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_LinearInterpolator_UnitTest.obj `if test -f '$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp'; fi`
 
+Rythmos_PointwiseInterpolationBufferAppender_UnitTest.o: $(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_PointwiseInterpolationBufferAppender_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.Tpo -c -o Rythmos_PointwiseInterpolationBufferAppender_UnitTest.o `test -f '$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.Tpo $(DEPDIR)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp' object='Rythmos_PointwiseInterpolationBufferAppender_UnitTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_PointwiseInterpolationBufferAppender_UnitTest.o `test -f '$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp
+
+Rythmos_PointwiseInterpolationBufferAppender_UnitTest.obj: $(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_PointwiseInterpolationBufferAppender_UnitTest.obj -MD -MP -MF $(DEPDIR)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.Tpo -c -o Rythmos_PointwiseInterpolationBufferAppender_UnitTest.obj `if test -f '$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.Tpo $(DEPDIR)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp' object='Rythmos_PointwiseInterpolationBufferAppender_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_PointwiseInterpolationBufferAppender_UnitTest.obj `if test -f '$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp'; fi`
+
 Rythmos_Quadrature_UnitTest.o: $(srcdir)/Rythmos_Quadrature_UnitTest.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_Quadrature_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_Quadrature_UnitTest.Tpo -c -o Rythmos_Quadrature_UnitTest.o `test -f '$(srcdir)/Rythmos_Quadrature_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_Quadrature_UnitTest.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_Quadrature_UnitTest.Tpo $(DEPDIR)/Rythmos_Quadrature_UnitTest.Po
@@ -684,6 +704,20 @@ Rythmos_StepperHelpers_UnitTest.obj: $(srcdir)/Rythmos_StepperHelpers_UnitTest.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_StepperHelpers_UnitTest.cpp' object='Rythmos_StepperHelpers_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_StepperHelpers_UnitTest.obj `if test -f '$(srcdir)/Rythmos_StepperHelpers_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_StepperHelpers_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_StepperHelpers_UnitTest.cpp'; fi`
+
+Rythmos_StepperValidator_UnitTest.o: $(srcdir)/Rythmos_StepperValidator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_StepperValidator_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_StepperValidator_UnitTest.Tpo -c -o Rythmos_StepperValidator_UnitTest.o `test -f '$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_StepperValidator_UnitTest.Tpo $(DEPDIR)/Rythmos_StepperValidator_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp' object='Rythmos_StepperValidator_UnitTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_StepperValidator_UnitTest.o `test -f '$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp
+
+Rythmos_StepperValidator_UnitTest.obj: $(srcdir)/Rythmos_StepperValidator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_StepperValidator_UnitTest.obj -MD -MP -MF $(DEPDIR)/Rythmos_StepperValidator_UnitTest.Tpo -c -o Rythmos_StepperValidator_UnitTest.obj `if test -f '$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_StepperValidator_UnitTest.Tpo $(DEPDIR)/Rythmos_StepperValidator_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp' object='Rythmos_StepperValidator_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_StepperValidator_UnitTest.obj `if test -f '$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_StepperValidator_UnitTest.cpp'; fi`
 
 Rythmos_TimeRange_UnitTest.o: $(srcdir)/Rythmos_TimeRange_UnitTest.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_TimeRange_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_TimeRange_UnitTest.Tpo -c -o Rythmos_TimeRange_UnitTest.o `test -f '$(srcdir)/Rythmos_TimeRange_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_TimeRange_UnitTest.cpp

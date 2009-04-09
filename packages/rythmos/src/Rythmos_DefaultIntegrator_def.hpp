@@ -320,6 +320,13 @@ RCP<const StepperBase<Scalar> > DefaultIntegrator<Scalar>::getStepper() const
 
 
 template<class Scalar>
+RCP<StepperBase<Scalar> > DefaultIntegrator<Scalar>::getNonconstStepper() const
+{
+  return(stepper_);
+}
+
+
+template<class Scalar>
 void DefaultIntegrator<Scalar>::setTrailingInterpolationBuffer(
   const RCP<InterpolationBufferBase<Scalar> > &trailingInterpBuffer
   )
@@ -747,7 +754,7 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
       *out << stepCtrlInfo;
     }
 
-    // Append the trailing interploation buffer (if defined)
+    // Append the trailing interpolation buffer (if defined)
     if (!is_null(trailingInterpBuffer_)) {
       interpBufferAppender_->append(*stepper_,currStepperTimeRange,
         trailingInterpBuffer_.ptr() );

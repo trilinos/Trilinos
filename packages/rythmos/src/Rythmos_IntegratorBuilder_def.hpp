@@ -163,6 +163,12 @@ void IntegratorBuilder<Scalar>::setStepperBuilder(
 }
 
 template<class Scalar>
+RCP<const StepperBuilder<Scalar> > IntegratorBuilder<Scalar>::getStepperBuilder()
+{
+  return stepperBuilder_;
+}
+
+template<class Scalar>
 void IntegratorBuilder<Scalar>::setRKButcherTableauBuilder(
     const RCP<RKButcherTableauBuilder<Scalar> > & rkbtBuilder
     )
