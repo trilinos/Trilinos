@@ -2,16 +2,16 @@
 INCLUDE(PackageAddExecutableAndTest)
 
 # This example is segfaulting, so I have not enabled it. JJH 4/7/2009
-#ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Isorropia)
-#IF (${PACKAGE_NAME}_ENABLE_Isorropia)
-#
-#  PACKAGE_ADD_EXECUTABLE_AND_TEST(
-#    EpetraExt_Isorropia_LPTrans_Ex
-#    SOURCES EpetraExt_Isorropia_LPTrans_Ex.cpp
-#    COMM mpi
-#  )
-#
-#ENDIF()
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Isorropia)
+IF (${PACKAGE_NAME}_ENABLE_Isorropia)
+
+  PACKAGE_ADD_EXECUTABLE(
+    EpetraExt_Isorropia_LPTrans_Ex
+    SOURCES EpetraExt_Isorropia_LPTrans_Ex.cpp
+    COMM mpi
+  )
+
+ENDIF()
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
 IF (${PACKAGE_NAME}_ENABLE_Amesos)

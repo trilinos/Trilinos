@@ -101,7 +101,8 @@ int main(int argc, char** argv) {
 
   // Create the new linear problem and perform the balanced partitioning.
   // NOTE:  The balanced linear system will be in tProblem after fwd() is called.
-  Teuchos::RCP<Epetra_LinearProblem> tProblem = Teuchos::rcp( &((*LPTrans)( problem )) );
+  //        It is not necessary for the RCP to manage the transformed problem.
+  Teuchos::RCP<Epetra_LinearProblem> tProblem = Teuchos::rcp( &((*LPTrans)( problem )), false );
   LPTrans->fwd();
 
   int graphrows1 = crsmatrix->NumMyRows();
@@ -116,19 +117,8 @@ int main(int argc, char** argv) {
 
     std::cout << "proc " << p << ": input matrix local rows: " << graphrows1
        << ", local NNZ: " << graphnnz1 << std::endl;
-  }
-
-  for(p=0; p<numProcs; ++p) {
-    MPI_Barrier(MPI_COMM_WORLD);
-
-    if (p != localProc) continue;
-
     std::cout << "proc " << p << ": balanced matrix local rows: "
        << bal_graph_rows << ", local NNZ: " << bal_graph_nnz << std::endl;
-  }
-
-  if (localProc == 0) {
-    std::cout << std::endl;
   }
 
   MPI_Finalize();
