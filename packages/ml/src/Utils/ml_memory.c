@@ -814,6 +814,7 @@ char * ML_memory_check(char *fmt, ... )
 
 #ifdef ML_TFLOP
    /* Memory statistics for Red Storm.  FYI, heap_info returns bytes. */
+#ifndef NO_HEAPINFO
    heap_info(&fragments, &ultotal_free, &ullargest_free, &ultotal_used);  
 #ifdef ML_MPI
    MPI_Comm_rank(MPI_COMM_WORLD,&mypid);
@@ -822,6 +823,11 @@ char * ML_memory_check(char *fmt, ... )
    largest_free= (int) (ullargest_free / (1024*1024));
    total_used = (int) (ultotal_used / (1024*1024));
    sprintf(method,"Using heap_info()");
+#else
+   total_free=0;
+   largest_free=0;
+   total_used=0;
+#endif
 #else
    /*
       Memory statistics for all other platforms, via the system call mallinfo()
@@ -1066,10 +1072,16 @@ int ML_MaxMemorySize()
 #endif 
   
 #ifdef ML_TFLOP 
+#ifndef NO_HEAPINFO
   heap_info(&fragments, &ultotal_free, &ullargest_free, &ultotal_used);  
   total_free=(int) (ultotal_free / 1024);
   largest_free= (int) (ullargest_free / 1024);
   total_used = (int) (ultotal_used /1024);
+#else
+  total_free=0;
+  largest_free=0;
+  total_used=0;
+#endif
 #else
   /* use system call to get memory used information */ 
   
