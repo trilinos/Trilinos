@@ -2,7 +2,7 @@
 ##############################################################################
 # Zoltan Library for Parallel Applications                                   #
 # Copyright (c) 2000,2001,2002, Sandia National Laboratories.                #
-# For more info, see the README file in the top-level Zoltan directory.      # 
+# For more info, see the README file in the top-level Zoltan directory.      #
 ##############################################################################
 ##############################################################################
 # CVS File Information
@@ -12,12 +12,12 @@
 #    $Revision$
 ##############################################################################
 #
-# This C-shell script runs all the test examples 
+# This C-shell script runs all the test examples
 # and compares the results against pre-computed results.
 #
-# Usage: test_zoltan [-arch arch-type] [-cmd command] 
+# Usage: test_zoltan [-arch arch-type] [-cmd command]
 #
-# where arch-type is one of {generic, solaris, gcc, gcc64, linux, linux64, 
+# where arch-type is one of {generic, solaris, gcc, gcc64, linux, linux64,
 # tflop, cplant, dec, sgi32, sgi64}.
 # Alternatively, give a run command with the -cmd option.
 #
@@ -26,7 +26,7 @@
 set ch_name  = (simple nograph vwgt ewgt bug degenerate degenerateAA onedbug grid20x19 hammond)
 set ch_nproc = (4 4 3 4 3 6 6 3 5 8) # no. of procs
 
-# Nemesis problems to run  
+# Nemesis problems to run
 set nem_name = (ti_4k)
 set nem_nproc = (9) # no. of procs
 set nem_pdisk = (2) # parallel disk info
@@ -70,7 +70,7 @@ set old_interface = $?ZOLTAN_OLD_INTERFACE
 set no_hier = $?ZOLTAN_NO_HIER
 set yes_drum = $?ZOLTAN_YES_DRUM
 
-# Parse command-line options. 
+# Parse command-line options.
 # These options will override the environment variables.
 
 while ( $#argv )
@@ -120,45 +120,45 @@ while ( $#argv )
   else if ( "$1" == "-old_interface" ) then
      @ old_interface = 1
   else if ( "$1" == "-logfile" || "$1" == "-log" ) then
-  
+
     if ( $#argv < 2 ) then
       echo "Error: No argument for $1"
       goto usage
     endif
-    
+
     shift argv
     set logfile = "$1"
-    
+
   else if ( "$1" == "-arch" ) then
-  
+
     if ( $#argv < 2 ) then
       echo "Error: No argument for -arch"
       goto usage
     endif
-    
+
     shift argv
     set arch = "$1"
-    
+
   else if ( "$1" == "-cmd" ) then
     if ( $#argv < 2 ) then
       echo "Error: No argument for -cmd"
       goto usage
     endif
-    
+
     shift argv
     set run = "$1"
-  
+
   else if ( "$1" == "-exe" ) then
     if ( $#argv < 2 ) then
       echo "Error: No argument for -exe"
       goto usage
     endif
-    
+
     shift argv
     set zdrive = "$1"
-  
+
   endif
-  
+
   shift argv
 
 end # while ( $#argv )
@@ -167,7 +167,7 @@ set ch_methods = ( )
 if ( $yes_serial ) then
   set ch_nproc = (1 1 1 1 1 1 1 1 1 1 1) # no. of procs
 
-  set ch_methods = ($ch_methods patoh.felix patoh.vwgt phg.felix phg.vwgt)   
+  set ch_methods = ($ch_methods patoh.felix patoh.vwgt phg.felix phg.vwgt)
   set ch_name  = ($ch_name serial )
   set ch_nproc = ($ch_nproc 1 )
 endif
@@ -279,27 +279,27 @@ endif
 if ( $old_interface) then
    set no_reftree = 1
 endif
-  
+
 
 # Find the right zdrive to run
 @ found = 0
 if ( $yes_fortran ) then
-# Using F90 
+# Using F90
   if (! $?zdrive ) then
     set zdrive = zfdrive
   endif
   if ( $?arch ) then
-    set zdrives = ( $zdrive ../src/Obj_${arch}/zfdrive )
+    set zdrives = ( $zdrive `pwd`/../src/Obj_${arch}/zfdrive )
   else
     set zdrives = $zdrive
   endif
 else if ( $yes_cpp ) then
-# Using C++ 
+# Using C++
   if (! $?zdrive ) then
     set zdrive = zCPPdrive
   endif
   if ( $?arch ) then
-    set zdrives = ( $zdrive ../src/Obj_${arch}/zCPPdrive )
+    set zdrives = ( $zdrive `pwd`/../src/Obj_${arch}/zCPPdrive )
   else
     set zdrives = $zdrive
   endif
@@ -309,7 +309,7 @@ else
     set zdrive = zdrive
   endif
   if ( $?arch ) then
-    set zdrives = ( $zdrive ../src/Obj_${arch}/zdrive )
+    set zdrives = ( $zdrive `pwd`/../src/Obj_${arch}/zdrive )
   else
     set zdrives = $zdrive
   endif
@@ -330,7 +330,7 @@ endif
 # Initially, only the most basic methods are active
 if (! $yes_serial) then
   set ch_methods = ( $ch_methods block block-partless block-partmore \
-                     random random-partless random-partmore)
+		     random random-partless random-partmore)
 endif
 set nem_methods = ( )
 if (! $yes_fortran && ! $yes_serial) then
@@ -341,22 +341,10 @@ endif
 if ( $no_parmetis ) then
   @ pmversion = 0
 else
-  # Scan ParMETIS header file for version info
-  set pmfile = `sed -n 's/^.* \([^ ]*parmetis\.h\).*/\1/p' ../src/Obj_${arch}/parmetis_interface.d`
-  set majorversion = `grep MAJOR_VERSION $pmfile[1]`
-  if ( $status ) then
-    @ pmversion = 2
-  else
-    @ pmversion = $majorversion[3]
-  endif
-endif 
+    @ pmversion = 3
+endif
 
 echo "ParMETIS version is $pmversion"
-
-# Check for Jostle
-if ( $yes_jostle ) then
-  set ch_methods = ( $ch_methods jostle jostle-diffusion )
-endif
 
 # Methods to try
 if ( $yes_fortran ) then
@@ -406,37 +394,37 @@ if ( $yes_fortran ) then
   if (! $no_hier) then
     if (! $yes_serial) then
       set ch_methods = ( $ch_methods hier-parmetis2-hsfc hier-parmetis2-rcb \
-        hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
-        hier-rcb4-hsfc hier-rcb4-parmetis hier-rcb2-parmetis )
+	hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
+	hier-rcb4-hsfc hier-rcb4-parmetis hier-rcb2-parmetis )
     endif
   endif
   if (! $no_parmetis) then
     if ( $pmversion == 2) then
       set ch_methods = ( $ch_methods partkway partgeom diffusion )
-    else # $pmversion > 2 
+    else # $pmversion > 2
       set ch_methods = ( $ch_methods partkway-v$pmversion \
-        partgeom-v$pmversion diffusion-v$pmversion \
-        partgeomkway-v$pmversion adaptive-v$pmversion )
+	partgeom-v$pmversion diffusion-v$pmversion \
+	partgeomkway-v$pmversion adaptive-v$pmversion )
       if (! $old_interface) then
-        set ch_methods = ( $ch_methods \
-          partkway-partless-v$pmversion partkway-partmore-v$pmversion \
-          partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
-          partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
-          adaptive-partlocal1-v$pmversion \
-          adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
-          adaptive-partlocal5-v$pmversion )
-          if (! $yes_serial) then
-            # These tests do not run correctly in serial, due to assumption
-            # in ParMETIS that at least two processors are used.
-            set ch_methods = ( $ch_methods \
-              partkway-v$pmversion.addobjwgt \
-              adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
-              adaptive-partlocal2-v$pmversion )
-          endif
-        if (! $no_order) then
-          set ch_methods = ( $ch_methods order-metis-v$pmversion  \
-            order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
-        endif
+	set ch_methods = ( $ch_methods \
+	  partkway-partless-v$pmversion partkway-partmore-v$pmversion \
+	  partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
+	  partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
+	  adaptive-partlocal1-v$pmversion \
+	  adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
+	  adaptive-partlocal5-v$pmversion )
+	  if (! $yes_serial) then
+	    # These tests do not run correctly in serial, due to assumption
+	    # in ParMETIS that at least two processors are used.
+	    set ch_methods = ( $ch_methods \
+	      partkway-v$pmversion.addobjwgt \
+	      adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+	      adaptive-partlocal2-v$pmversion )
+	  endif
+	if (! $no_order) then
+	  set ch_methods = ( $ch_methods order-metis-v$pmversion  \
+	    order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
+	endif
       endif
     endif
   endif
@@ -481,7 +469,7 @@ else
       set ch_methods = ( $ch_methods rcb-comparable rcb-norm2 rcb-norm3)
       set ch_methods = ( $ch_methods rcb-comparable-ts rcb-norm2-ts rcb-norm3-ts)
       if (! $yes_serial) then
-        set ch_methods = ( $ch_methods rcb-1D rcb-2D)
+	set ch_methods = ( $ch_methods rcb-1D rcb-2D)
       endif
 
     endif
@@ -527,7 +515,7 @@ else
       set ch_methods = ( $ch_methods rib-avg rib-avg-ts )
       set ch_methods = ( $ch_methods rib-partlocal1-avg rib-partlocal1-avg-ts )
       if (! $yes_serial) then
-        set ch_methods = ( $ch_methods rib-1D rib-2D)
+	set ch_methods = ( $ch_methods rib-1D rib-2D)
       endif
     endif
     set nem_methods = ( $nem_methods rib rib-ts )
@@ -549,9 +537,9 @@ else
       set ch_methods = ( $ch_methods hsfc-partlocal1 hsfc-partlocal2 )
       set ch_methods = ( $ch_methods hsfc-partlocal3 hsfc-partlocal4 )
       if (! $yes_serial) then
-        set ch_methods = ( $ch_methods hsfc-1D hsfc-2D)
-        # These tests assume six or more processors are used.
-        set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
+	set ch_methods = ( $ch_methods hsfc-1D hsfc-2D)
+	# These tests assume six or more processors are used.
+	set ch_methods = ( $ch_methods hsfc-partlocal6 hsfc-partlocal7 )
       endif
     endif
     set nem_methods = ( $nem_methods hsfc )
@@ -559,7 +547,7 @@ else
       set nem_methods = ( $nem_methods hsfc-partless hsfc-partmore )
       set nem_methods = ( $nem_methods hsfc-partlocal1 hsfc-partlocal2 )
       set nem_methods = ( $nem_methods hsfc-partlocal3 hsfc-partlocal4 )
-      set nem_methods = ( $nem_methods hsfc-partlocal6 hsfc-partlocal7 )    
+      set nem_methods = ( $nem_methods hsfc-partlocal6 hsfc-partlocal7 )
     endif
   endif
   if (! $no_oct) then
@@ -579,40 +567,40 @@ else
       set nem_methods = ( $nem_methods partkway partgeom diffusion )
     else # $pmversion > 2
       set ch_methods = ( $ch_methods partkway-v$pmversion \
-        partkway-oneproc-v$pmversion partkway-cyclic-v$pmversion \
-        partgeom-v$pmversion diffusion-v$pmversion \
-        partgeomkway-v$pmversion adaptive-v$pmversion )
+	partkway-oneproc-v$pmversion partkway-cyclic-v$pmversion \
+	partgeom-v$pmversion diffusion-v$pmversion \
+	partgeomkway-v$pmversion adaptive-v$pmversion )
       set nem_methods = ( $nem_methods partkway-v$pmversion \
-        partgeomkway-v$pmversion adaptive-v$pmversion )
+	partgeomkway-v$pmversion adaptive-v$pmversion )
       if (! $old_interface) then
-        set ch_methods = ( $ch_methods \
-          partkway-partless-v$pmversion partkway-partmore-v$pmversion \
-          partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
-          partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
-          adaptive-partlocal1-v$pmversion \
-          adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
-          adaptive-partlocal5-v$pmversion )
-        if (! $yes_serial) then
-          # These tests do not run correctly in serial, due to assumption
-          # in ParMETIS that at least two processors are used.
-          set ch_methods = ( $ch_methods \
-            partkway-v$pmversion.addobjwgt \
-            adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
-            adaptive-partlocal2-v$pmversion )
-        endif
-        set ch_methods = ( $ch_methods graph-parmetis graph-parmetis-partition)
-        set ch_methods = ( $ch_methods graph-parmetis-refine graph-parmetis-repartition)
-        set nem_methods = ( $nem_methods \
-          partkway-partless-v$pmversion partkway-partmore-v$pmversion \
-          partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
-          partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
-          adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
-          adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
-          adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion )
-        if (! $no_order) then
-          set ch_methods = ( $ch_methods order-metis-v$pmversion  \
-            order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
-        endif
+	set ch_methods = ( $ch_methods \
+	  partkway-partless-v$pmversion partkway-partmore-v$pmversion \
+	  partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
+	  partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
+	  adaptive-partlocal1-v$pmversion \
+	  adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion \
+	  adaptive-partlocal5-v$pmversion )
+	if (! $yes_serial) then
+	  # These tests do not run correctly in serial, due to assumption
+	  # in ParMETIS that at least two processors are used.
+	  set ch_methods = ( $ch_methods \
+	    partkway-v$pmversion.addobjwgt \
+	    adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+	    adaptive-partlocal2-v$pmversion )
+	endif
+	set ch_methods = ( $ch_methods graph-parmetis graph-parmetis-partition)
+	set ch_methods = ( $ch_methods graph-parmetis-refine graph-parmetis-repartition)
+	set nem_methods = ( $nem_methods \
+	  partkway-partless-v$pmversion partkway-partmore-v$pmversion \
+	  partkway-partlocal1-v$pmversion partkway-partlocal2-v$pmversion \
+	  partkway-partlocal3-v$pmversion partkway-partlocal4-v$pmversion \
+	  adaptive-partless-v$pmversion adaptive-partmore-v$pmversion \
+	  adaptive-partlocal1-v$pmversion adaptive-partlocal2-v$pmversion \
+	  adaptive-partlocal3-v$pmversion adaptive-partlocal4-v$pmversion )
+	if (! $no_order) then
+	  set ch_methods = ( $ch_methods order-metis-v$pmversion  \
+	    order-parmetis-v$pmversion partkway-order-metis-v$pmversion )
+	endif
       endif
     endif
   endif
@@ -632,16 +620,16 @@ else
     if (! $old_interface) then
       set ch_methods = ( $ch_methods phg phg-oneproc phg.addobjwgt )
       set ch_methods = ( $ch_methods graph graph-partition \
-                                     graph-refine graph-repartition)
+				     graph-refine graph-repartition)
     endif
   endif
   if (! $no_hier) then
     if (! $yes_serial) then
       set ch_methods = ( $ch_methods hier-parmetis2-hsfc hier-parmetis2-rcb \
-        hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
-        hier-rcb4-hsfc hier-rcb4-parmetis hier-rcb2-parmetis )
+	hier-parmetis2-rcb2-hsfc hier-parmetis4-hsfc hier-parmetis4-rcb \
+	hier-rcb4-hsfc hier-rcb4-parmetis hier-rcb2-parmetis )
       set nem_methods = ( $nem_methods hier-parmetis3-hsfc hier-parmetis3-rcb \
-        hier-rcb3-hsfc hier-rcb3-parmetis )
+	hier-rcb3-hsfc hier-rcb3-parmetis )
     endif
   endif
   if ( $yes_drum ) then
@@ -675,21 +663,21 @@ if (! $no_chaco ) then
     @ np = $ch_nproc[1]
     echo "Running test case ${ch_name[1]} on ${ch_nproc[1]} procs" | tee -a ../$logfile
 
-    # Check output directories 
+    # Check output directories
     if (! -d $outdir ) mkdir $outdir
     if (! -d $answers ) then
       echo "Warning: Answer directory missing in ch_${ch_name[1]}" | tee -a ../$logfile
     endif
 
-    # Save generic input file 
+    # Save generic input file
     if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
 
     # Add special test cases for some multiweight problems
     if ((${ch_name[1]} == "vwgt2") || (${ch_name[1]} == "hammond2")) then
        if ($pmversion > 2) then
-          set methods = ( partkway-imbal-v$pmversion )
+	  set methods = ( partkway-imbal-v$pmversion )
        else
-          set methods = ( )
+	  set methods = ( )
        endif
        set methods = ( $ch_methods $methods )
     else
@@ -712,84 +700,84 @@ if (! $no_chaco ) then
 
       if (! $skip ) then
 
-        # Check input file
-        if (-e zdrive.inp.${mtd} ) then
-          /bin/cp zdrive.inp.${mtd} zdrive.inp
-          if (-e ${outdir}/${ch_name[1]}.$mtd.$np.0 ) then
-            /bin/rm ${outdir}/${ch_name[1]}.$mtd.$np.*
-          endif
+	# Check input file
+	if (-e zdrive.inp.${mtd} ) then
+	  /bin/cp zdrive.inp.${mtd} zdrive.inp
+	  if (-e ${outdir}/${ch_name[1]}.$mtd.$np.0 ) then
+	    /bin/rm ${outdir}/${ch_name[1]}.$mtd.$np.*
+	  endif
 
-          #  Delete old drop files, if any.
-          if (-e ${outdir}/${ch_name[1]}.$mtd.drops.$np.0 ) then
-            /bin/rm ${outdir}/${ch_name[1]}.$mtd.drops.$np.*
-          endif
-          if (-e ${ch_name[1]}.drops.$np.0 ) then
-            /bin/rm ${ch_name[1]}.drops.$np.*
-          endif
+	  #  Delete old drop files, if any.
+	  if (-e ${outdir}/${ch_name[1]}.$mtd.drops.$np.0 ) then
+	    /bin/rm ${outdir}/${ch_name[1]}.$mtd.drops.$np.*
+	  endif
+	  if (-e ${ch_name[1]}.drops.$np.0 ) then
+	    /bin/rm ${ch_name[1]}.drops.$np.*
+	  endif
 
-          # Run the driver
-          if (! $?run ) then
-            # serial case
-            ../$zdrive
-          else
-            ${run} ${np} ../$zdrive
-          endif
-          sleep 1 # Make sure all processes have time to write to disk
-    
-          # Save and compare output files 
-          @ i = 0
-          while ( $i < $np )
-            /bin/mv ${ch_name[1]}.$out_tag.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
-            if (-e ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix ) then
-       	      set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix
-            else
-              set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i
-            endif
-            diff -ciw ${outdir}/${ch_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
-            if ( $status ) then 
-              @ fail = 1
-            endif
+	  # Run the driver
+	  if (! $?run ) then
+	    # serial case
+	    $zdrive
+	  else
+	    ${run} ${np} $zdrive
+	  endif
+	  sleep 1 # Make sure all processes have time to write to disk
 
-            # If drop files were created, test them. 
-            if (-e ${ch_name[1]}.drops.$np.$i ) then
-              @ droptest = 1
-              /bin/mv ${ch_name[1]}.drops.$np.$i  ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i
-              if (-e ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix ) then
-       	        set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix
-              else
-                set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i
-              endif
-              diff -ciw ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
-              if ( $status ) then 
-                @ dropfail = 1
-              endif
-            endif
+	  # Save and compare output files
+	  @ i = 0
+	  while ( $i < $np )
+	    /bin/mv ${ch_name[1]}.$out_tag.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
+	    if (-e ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix ) then
+	      set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix
+	    else
+	      set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i
+	    endif
+	    diff -ciw ${outdir}/${ch_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
+	    if ( $status ) then
+	      @ fail = 1
+	    endif
 
-            @ i = $i + 1
-          end
-    
-          # Report success or failure 
-          if ( $fail ) then
-            @ nfailed = $nfailed + 1
-            echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
-          else
-            echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$logfile 
-          endif
-  
-          # Report failure of drop tests, if any.
-          if ( $droptest ) then
-            if ( $dropfail ) then
-              @ ndropfailed = $ndropfailed + 1
-              echo "Test problem ${ch_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
-            else
-              echo "Test problem ${ch_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile
-            endif
-          endif
+	    # If drop files were created, test them.
+	    if (-e ${ch_name[1]}.drops.$np.$i ) then
+	      @ droptest = 1
+	      /bin/mv ${ch_name[1]}.drops.$np.$i  ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i
+	      if (-e ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix ) then
+		set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix
+	      else
+		set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i
+	      endif
+	      diff -ciw ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
+	      if ( $status ) then
+		@ dropfail = 1
+	      endif
+	    endif
 
-        else # no such input file 
-          echo "Warning: No input file ${ch_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$logfile
-        endif
-  
+	    @ i = $i + 1
+	  end
+
+	  # Report success or failure
+	  if ( $fail ) then
+	    @ nfailed = $nfailed + 1
+	    echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+	  else
+	    echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$logfile
+	  endif
+
+	  # Report failure of drop tests, if any.
+	  if ( $droptest ) then
+	    if ( $dropfail ) then
+	      @ ndropfailed = $ndropfailed + 1
+	      echo "Test problem ${ch_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
+	    else
+	      echo "Test problem ${ch_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile
+	    endif
+	  endif
+
+	else # no such input file
+	  echo "Warning: No input file ${ch_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$logfile
+	endif
+
 
       endif # !skip
 
@@ -803,7 +791,7 @@ if (! $no_chaco ) then
     shift ch_nproc
     cd ..
   end
-  
+
   # Print failure summary
   echo " " | tee -a $logfile
   if ( $nfailed == 0 ) then
@@ -833,13 +821,13 @@ if ( $yes_nemesis ) then
     @ np = $nem_nproc[1]
     echo "Running test case ${nem_name[1]} on ${nem_nproc[1]} procs" | tee -a ../$logfile
 
-    # Check output directories 
+    # Check output directories
     if (! -d $outdir ) mkdir $outdir
     if (! -d $answers ) then
       echo "Warning: Answer directory missing in nem_${nem_name[1]}" | tee -a ../$logfile
     endif
 
-    # Save input file 
+    # Save input file
     if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
 
     # Loop over all methods
@@ -853,77 +841,77 @@ if ( $yes_nemesis ) then
 
       if (! $skip ) then
 
-        # Check input file
-        if (-e zdrive.inp.${mtd} ) then
-          /bin/cp zdrive.inp.${mtd} zdrive.inp
-          /bin/rm ${outdir}/${nem_name[1]}.$mtd.$np.*
-          /bin/rm ${outdir}/${nem_name[1]}.$mtd.drops.$np.*
-    
-          # Run the driver
-          $run $np ../$zdrive
-    
-          # Save and compare output files 
-          @ i = 0
-          @ pdirno = 1 # parallel subdirectory number
-          while ( $i < $np )
-            if ( $pdirno < 10 ) then
-               set pdir = pio_0${pdirno}
-            else
-               set pdir = pio_${pdirno}
-            endif
-            /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.out.$np.$i  ${outdir}/${nem_name[1]}.$mtd.$np.$i
-            if (-e ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix ) then
-       	      set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix
-            else
-              set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i
-            endif
-            diff -ciw ${outdir}/${nem_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
-            if ( $status ) then 
-              @ fail = 1
-            endif
+	# Check input file
+	if (-e zdrive.inp.${mtd} ) then
+	  /bin/cp zdrive.inp.${mtd} zdrive.inp
+	  /bin/rm ${outdir}/${nem_name[1]}.$mtd.$np.*
+	  /bin/rm ${outdir}/${nem_name[1]}.$mtd.drops.$np.*
 
-            if (-e ${pdir}/${nem_name[1]}-m${np}-r.par.drops.$np.$i ) then
-              @ droptest = 1
-              /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.drops.$np.$i  ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i
-              if (-e ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$suffix ) then
-      	        set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$suffix
-              else
-                set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i
-              endif
-              diff -ciw ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
-              if ( $status ) then 
-                @ dropfail = 1
-              endif
-            endif
+	  # Run the driver
+	  $run $np ../$zdrive
 
-            @ i = $i + 1
-            @ pdirno = $pdirno + 1
-            if ($pdirno > $nem_pdisk[1]) then
-               @ pdirno = 1
-            endif
-          end
-      
-          # Report success or failure 
-          if ( $fail ) then
-            @ nfailed = $nfailed + 1
-            echo "Test problem ${nem_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
-          else
-            echo "Test problem ${nem_name[1]} with method ${mtd} OK" | tee -a ../$logfile 
-          endif
-  
-          if ( $droptest ) then
-            if ( $dropfail ) then
-              @ ndropfailed = $ndropfailed + 1
-              echo "Test problem ${nem_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
-            else
-              echo "Test problem ${nem_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile 
-            endif
-          endif
+	  # Save and compare output files
+	  @ i = 0
+	  @ pdirno = 1 # parallel subdirectory number
+	  while ( $i < $np )
+	    if ( $pdirno < 10 ) then
+	       set pdir = pio_0${pdirno}
+	    else
+	       set pdir = pio_${pdirno}
+	    endif
+	    /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.out.$np.$i  ${outdir}/${nem_name[1]}.$mtd.$np.$i
+	    if (-e ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix ) then
+	      set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix
+	    else
+	      set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i
+	    endif
+	    diff -ciw ${outdir}/${nem_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
+	    if ( $status ) then
+	      @ fail = 1
+	    endif
 
-        else # no such input file
-          echo "Warning: No input file ${nem_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$logfile
-        endif
-  
+	    if (-e ${pdir}/${nem_name[1]}-m${np}-r.par.drops.$np.$i ) then
+	      @ droptest = 1
+	      /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.drops.$np.$i  ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i
+	      if (-e ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$suffix ) then
+		set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i.$suffix
+	      else
+		set answerfile = ${answers}/${nem_name[1]}.$mtd.drops.$np.$i
+	      endif
+	      diff -ciw ${outdir}/${nem_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
+	      if ( $status ) then
+		@ dropfail = 1
+	      endif
+	    endif
+
+	    @ i = $i + 1
+	    @ pdirno = $pdirno + 1
+	    if ($pdirno > $nem_pdisk[1]) then
+	       @ pdirno = 1
+	    endif
+	  end
+
+	  # Report success or failure
+	  if ( $fail ) then
+	    @ nfailed = $nfailed + 1
+	    echo "Test problem ${nem_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+	  else
+	    echo "Test problem ${nem_name[1]} with method ${mtd} OK" | tee -a ../$logfile
+	  endif
+
+	  if ( $droptest ) then
+	    if ( $dropfail ) then
+	      @ ndropfailed = $ndropfailed + 1
+	      echo "Test problem ${nem_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
+	    else
+	      echo "Test problem ${nem_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile
+	    endif
+	  endif
+
+	else # no such input file
+	  echo "Warning: No input file ${nem_name[1]}/zdrive.inp.${mtd}, skipping..." | tee -a ../$logfile
+	endif
+
       endif # !skip
 
     end # foreach method
@@ -937,7 +925,7 @@ if ( $yes_nemesis ) then
     shift nem_pdisk
     cd ..
   end
-  
+
   # Print failure summary
   echo " " | tee -a $logfile
   if ( $nfailed == 0 ) then
@@ -1059,33 +1047,33 @@ if (! $no_hg) then
 
     if ( $np > 0 ) then
       echo "Running test case ${hg_name[1]} on $np procs" | tee -a ../$logfile
-  
-      # Check output directories 
+
+      # Check output directories
       if (! -d $outdir ) mkdir $outdir
       if (! -d $answers ) then
-        echo "Warning: Answer directory missing in hg_${hg_name[1]}" | tee -a ../$logfile
+	echo "Warning: Answer directory missing in hg_${hg_name[1]}" | tee -a ../$logfile
       endif
-  
-      # Save generic input file 
+
+      # Save generic input file
       if (-e zdrive.inp ) /bin/mv zdrive.inp zdrive.inp.bak
-  
+
       # Loop over all methods
       foreach mtd ( $hg_methods )
-        # Clear fail flag
-        @ fail = 0
-  
-        # Run zdrive and check the output against stored answer
-  
-        if (-e zdrive.inp.${mtd} ) then
+	# Clear fail flag
+	@ fail = 0
+
+	# Run zdrive and check the output against stored answer
+
+	if (-e zdrive.inp.${mtd} ) then
 	  find ${outdir} -type f -name "${hg_name[1]}.$mtd.$np.*" -exec rm '{}' \;
 	  /bin/mv -f zdrive.inp zdrive.old
-          /bin/cp zdrive.inp.${mtd} zdrive.inp
-          setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd}"
-  
-          # Run the driver
-          $run $np ../$zdrive
-      
-          # Save and compare output files 
+	  /bin/cp zdrive.inp.${mtd} zdrive.inp
+	  setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd}"
+
+	  # Run the driver
+	  $run $np $zdrive
+
+	  # Save and compare output files
 
 	  # wait up to 30 sec for files (will poll up to 30 sec for ALL output files)
 	  @ poll = 30
@@ -1094,8 +1082,8 @@ if (! $no_hg) then
 	  #   which creates output files like foo.out.11.08 instead of foo.out.11.8
 	  @ procnos = $np - 1
 	  set fw=`echo -n $procnos | wc -c`  # log10 (procs-1)
-          @ i = 0
-          while ( $i < $np )
+	  @ i = 0
+	  while ( $i < $np )
 	    set awkarg='BEGIN {printf "%0'"$fw"'d", '"$i"'}'
 	    set field=`awk "$awkarg"` < /dev/null
 	    set outfile=${hg_name[1]}.$mtd.$np.$field
@@ -1108,30 +1096,30 @@ if (! $no_hg) then
 	      end
 	    endif
 
-            /bin/mv ${hg_name[1]}.$out_tag.$np.$field  ${outdir}/${outfile}
-            if (-e ${answers}/${outfile}.$suffix ) then
-       	      set answerfile = ${answers}/${outfile}.$suffix
-            else
-              set answerfile = ${answers}/${outfile}
-            endif
-            diff -ciw ${outdir}/${outfile} $answerfile >> ../$logfile
-            if ( $status ) then 
-              @ fail = 1
-            endif
+	    /bin/mv ${hg_name[1]}.$out_tag.$np.$field  ${outdir}/${outfile}
+	    if (-e ${answers}/${outfile}.$suffix ) then
+	      set answerfile = ${answers}/${outfile}.$suffix
+	    else
+	      set answerfile = ${answers}/${outfile}
+	    endif
+	    diff -ciw ${outdir}/${outfile} $answerfile >> ../$logfile
+	    if ( $status ) then
+	      @ fail = 1
+	    endif
 
-            @ i = $i + 1
-          end
+	    @ i = $i + 1
+	  end
 
-          # Report success or failure 
-          if ( $fail ) then
-            @ nfailed = $nfailed + 1
-            echo "Test problem ${hg_name[1]}/${mtd} FAILED" | tee -a ../$logfile
-          else
-            echo "Test problem ${hg_name[1]}/${mtd} OK" | tee -a ../$logfile 
-          endif
-        endif   # if method exists
+	  # Report success or failure
+	  if ( $fail ) then
+	    @ nfailed = $nfailed + 1
+	    echo "Test problem ${hg_name[1]}/${mtd} FAILED" | tee -a ../$logfile
+	  else
+	    echo "Test problem ${hg_name[1]}/${mtd} OK" | tee -a ../$logfile
+	  endif
+	endif   # if method exists
       end # next method
-  
+
       # Restore zdrive.inp
       if (-e zdrive.inp.bak ) /bin/mv zdrive.inp.bak zdrive.inp
 
@@ -1142,7 +1130,7 @@ if (! $no_hg) then
     shift hg_nproc
     cd ..
   end # next name
-  
+
   # Print failure summary
   echo " " | tee -a $logfile
   if ( $nfailed == 0 ) then
@@ -1178,7 +1166,7 @@ usage:
   echo "   -no_scotch"
   echo "   -no_reftree"
   echo "   -no_order"
-  echo "   -no_color" 
+  echo "   -no_color"
   echo "   -no_chaco"
   echo "   -no_hg"
   echo "   -no_hier"
@@ -1190,4 +1178,3 @@ usage:
   echo "   -old_interface"
   echo "The default is to run all methods (except Jostle) and file formats."
   exit -1
-
