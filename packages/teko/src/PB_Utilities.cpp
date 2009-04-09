@@ -9,6 +9,8 @@
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
+#include "Thyra_DefaultProductMultiVector.hpp"
+#include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -390,5 +392,24 @@ const LinearOp buildInvDiagonal(const MultiVector & src)
    return Thyra::diagonal<double>(dst->col(0));
 }
 
+//! build a BlockedMultiVector from a vector of MultiVectors
+BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvv)
+{
+   Teuchos::Array<MultiVector> mvA;
+   Teuchos::Array<VectorSpace> vsA;
+
+   // build arrays of multi vectors and vector spaces
+   std::vector<MultiVector>::const_iterator itr;
+   for(itr=mvv.begin();itr!=mvv.end();++itr) {
+      mvA.push_back(*itr);
+      vsA.push_back((*itr)->range());
+   }
+
+   // construct the product vector space
+   const RCP<const Thyra::DefaultProductVectorSpace<double> > vs
+         = Thyra::productVectorSpace<double>(vsA);
+
+   return Thyra::defaultProductMultiVector<double>(vs,mvA);
+}
 
 }

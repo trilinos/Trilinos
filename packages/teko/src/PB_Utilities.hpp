@@ -109,6 +109,9 @@ inline MultiVector deepcopy(const MultiVector & v)
 inline BlockedMultiVector deepcopy(const BlockedMultiVector & v)
 { return toBlockedMultiVector(v->clone_mv()); }
 
+//! build a BlockedMultiVector from a vector of MultiVectors
+BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvs);
+
 //@}
 
 // ----------------------------------------------------------------------------
