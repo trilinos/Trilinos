@@ -1032,8 +1032,9 @@ namespace {
       int *rptr = rowind;
       for (int c=0; c<dim; ++c) {
         for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-          A_crs.insertGlobalValues(*rptr-1,tuple<Ordinal>(c),tuple<Scalar>(*dptr));
-          A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,as<Scalar>(*dptr));
+          Scalar s = as<Scalar>(*dptr);
+          A_crs.insertGlobalValues(*rptr-1,tuple<Ordinal>(c),tuple(s));
+          A_mv_AllOnRoot.replaceGlobalValue(*rptr-1,c,s);
           ++rptr;
           ++dptr;
         }
@@ -1199,7 +1200,6 @@ namespace {
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, char)   \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int)    \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)  \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
