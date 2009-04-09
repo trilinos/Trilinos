@@ -1541,6 +1541,11 @@ Optional Packages:
   --with-incdirs          additional directories containing include files:
                           will prepend to search here for includes, use -Idir
                           format
+  --with-blas-mangling    BLAS mangling choices: lowercaseUnderscore,
+                          lowercaseNoUnderscore, uppercaseUnderscore,
+                          uppercaseNoUnderscore, detect. Only used when
+                          --with-blas= option is also used. (default is
+                          detect)
   --with-blas=<lib>       use BLAS library <lib>
   --with-lapack=<lib>     use LAPACK library <lib>
   --with-trilinosdatadir  Set TrilinosData directory (default is
@@ -9468,6 +9473,17 @@ if test "X$ac_cv_use_amesos_tests" != "Xno" || test "X$ac_cv_use_amesos_examples
 
 
 
+# Check whether --with-blas-mangling was given.
+if test "${with_blas_mangling+set}" = set; then
+  withval=$with_blas_mangling; tac_with_blas_mangling=$withval
+else
+  tac_with_blas_mangling=detect
+fi
+
+
+
+
+
 
 tac_blas_ok=no
 
@@ -9491,6 +9507,161 @@ LIBS="$LIBS $FLIBS"
 if test $tac_blas_ok = no; then
 if test "x$BLAS_LIBS" != x; then
 	save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
+# If the mangling check was not run in configure, detect mangling
+ if test "x$tac_with_blas_mangling" = x; then
+  tac_with_blas_mangling=detect
+ fi
+# If a blas mangling was specified, only try that mangling (note the mangling
+# option is only considered when the --with-blas= option is also used.)
+ if test "$tac_with_blas_mangling" != detect; then
+  case $tac_with_blas_mangling in
+        lowercaseUnderscore) dgemm=dgemm_
+                             ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) name ## _
+_ACEOF
+
+                             ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+                             ac_cv_use_blas_mangling=lowercaseUnderscore
+                             ;;
+        lowercaseNoUnderscore) dgemm=dgemm
+                               ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) name
+_ACEOF
+
+                               ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+                               ac_cv_use_blas_mangling=lowercaseNoUnderscore
+                               ;;
+        uppercaseNoUnderscore) dgemm=DGEMM
+                               ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) NAME
+_ACEOF
+
+                               ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+                               ac_cv_use_blas_mangling=uppercaseNoUnderscore
+                               ;;
+        uppercaseUnderscore) dgemm=DGEMM_
+                             ac_ext=f
+ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
+ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_f77_compiler_gnu
+
+
+cat >>confdefs.h <<\_ACEOF
+#define F77_BLAS_MANGLE(name,NAME) NAME ## _
+_ACEOF
+
+                             ac_ext=cpp
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+                             ac_cv_use_blas_mangling=uppercaseUnderscore
+                             ;;
+  esac
+  if test "x$dgemm" = x ; then
+   # Invalid name mangling specified
+    { { echo "$as_me:$LINENO: error: Invalid BLAS mangling specified ($tac_with_blas_mangling).  Choices are: lowercaseUnderscore, lowercaseNoUnderscore, uppercaseNoUnderscore, uppercaseUnderscore, and detect, which is the default." >&5
+echo "$as_me: error: Invalid BLAS mangling specified ($tac_with_blas_mangling).  Choices are: lowercaseUnderscore, lowercaseNoUnderscore, uppercaseNoUnderscore, uppercaseUnderscore, and detect, which is the default." >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+  # Try the specified BLAS mangling with the specified BLAS library
+  { echo "$as_me:$LINENO: checking for $dgemm in $BLAS_LIBS" >&5
+echo $ECHO_N "checking for $dgemm in $BLAS_LIBS... $ECHO_C" >&6; }
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char $dgemm ();
+#ifdef F77_DUMMY_MAIN
+
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int F77_DUMMY_MAIN() { return 1; }
+
+#endif
+int
+main ()
+{
+return $dgemm ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext &&
+       $as_test_x conftest$ac_exeext; then
+  tac_blas_ok=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	user_spec_blas_failed=yes
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+  { echo "$as_me:$LINENO: result: $tac_blas_ok" >&5
+echo "${ECHO_T}$tac_blas_ok" >&6; }
+  else # no specified BLAS mangling, figure it out
 
 	{ echo "$as_me:$LINENO: checking for dgemm_ in $BLAS_LIBS" >&5
 echo $ECHO_N "checking for dgemm_ in $BLAS_LIBS... $ECHO_C" >&6; }
@@ -9825,9 +9996,9 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
         LIBS="$save_LIBS"
 
+ fi
 fi
 fi
-
 # If the user specified a blas library that could not be used we will
 # halt the search process rather than risk finding a blas library that
 # the user did not specify.

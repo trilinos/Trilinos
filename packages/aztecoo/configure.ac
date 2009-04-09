@@ -373,6 +373,8 @@ AC_SEARCH_LIBS(pow,[m],,AC_MSG_ERROR(Cannot find math library))
 
 AC_CHECK_FUNCS([floor pow sqrt strchr uname])
 
+TAC_ARG_WITH_SUB(blas,mangling,[BLAS mangling choices: lowercaseUnderscore, lowercaseNoUnderscore, uppercaseUnderscore, uppercaseNoUnderscore, detect.  Only used when --with-blas= option is also used.],detect)
+
 # find or choose to supply valid blas and lapack libraries
   TAC_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
 

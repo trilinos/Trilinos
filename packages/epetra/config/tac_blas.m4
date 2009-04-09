@@ -65,6 +65,48 @@ LIBS="$LIBS $FLIBS"
 if test $tac_blas_ok = no; then
 if test "x$BLAS_LIBS" != x; then
 	save_LIBS="$LIBS"; LIBS="$BLAS_LIBS $LIBS"
+# If the mangling check was not run in configure, detect mangling
+ if test "x$tac_with_blas_mangling" = x; then
+  tac_with_blas_mangling=detect
+ fi
+# If a blas mangling was specified, only try that mangling (note the mangling
+# option is only considered when the --with-blas= option is also used.)
+ if test "$tac_with_blas_mangling" != detect; then
+  case $tac_with_blas_mangling in
+        lowercaseUnderscore) dgemm=dgemm_ 
+                             AC_LANG_PUSH(Fortran 77)
+                             AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [name ## _], [Define the Fortran name mangling to be used for the BLAS])
+                             AC_LANG_POP(Fortran 77)
+                             ac_cv_use_blas_mangling=lowercaseUnderscore
+                             ;;
+        lowercaseNoUnderscore) dgemm=dgemm 
+                               AC_LANG_PUSH(Fortran 77)
+                               AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [name], [Define the Fortran name mangling to be used for the BLAS])
+                               AC_LANG_POP(Fortran 77)
+                               ac_cv_use_blas_mangling=lowercaseNoUnderscore
+                               ;;
+        uppercaseNoUnderscore) dgemm=DGEMM 
+                               AC_LANG_PUSH(Fortran 77)
+                               AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [NAME], [Define the Fortran name mangling to be used for the BLAS])
+                               AC_LANG_POP(Fortran 77)
+                               ac_cv_use_blas_mangling=uppercaseNoUnderscore
+                               ;;
+        uppercaseUnderscore) dgemm=DGEMM_
+                             AC_LANG_PUSH(Fortran 77)
+                             AC_DEFINE([F77_BLAS_MANGLE(name,NAME)], [NAME ## _], [Define the Fortran name mangling to be used for the BLAS])
+                             AC_LANG_POP(Fortran 77)
+                             ac_cv_use_blas_mangling=uppercaseUnderscore
+                             ;;
+  esac
+  if test "x$dgemm" = x ; then
+   # Invalid name mangling specified
+    AC_MSG_ERROR([Invalid BLAS mangling specified ($tac_with_blas_mangling).  Choices are: lowercaseUnderscore, lowercaseNoUnderscore, uppercaseNoUnderscore, uppercaseUnderscore, and detect, which is the default.])
+  fi
+  # Try the specified BLAS mangling with the specified BLAS library
+  AC_MSG_CHECKING([for $dgemm in $BLAS_LIBS])
+  AC_TRY_LINK_FUNC($dgemm, [tac_blas_ok=yes], [user_spec_blas_failed=yes])
+  AC_MSG_RESULT($tac_blas_ok)
+  else # no specified BLAS mangling, figure it out 
 
 	AC_MSG_CHECKING([for dgemm_ in $BLAS_LIBS])
 	AC_TRY_LINK_FUNC(dgemm_, [tac_blas_ok=yes])
@@ -111,9 +153,9 @@ if test "x$BLAS_LIBS" != x; then
 
         LIBS="$save_LIBS"
 
+ fi
 fi
-fi
-
+fi 
 # If the user specified a blas library that could not be used we will
 # halt the search process rather than risk finding a blas library that
 # the user did not specify.

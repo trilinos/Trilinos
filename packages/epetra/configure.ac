@@ -287,6 +287,8 @@ AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 
 # find or choose to supply valid blas and lapack libraries
 
+  TAC_ARG_WITH_SUB(blas,mangling,[BLAS mangling choices: lowercaseUnderscore, lowercaseNoUnderscore, uppercaseUnderscore, uppercaseNoUnderscore, detect.  Only used when --with-blas= option is also used.],detect)
+
   TAC_BLAS([], [AC_MSG_ERROR([[Cannot find blas library, specify a path using --with-ldflags=-I<DIR> (ex. --with-ldflags=-I/usr/path/lib) or a specific library using --with-blas=DIR/LIB (for example --with-blas=/usr/path/lib/libcxml.a)]])])
   TAC_LAPACK([], [AC_MSG_ERROR([[Cannot find lapack library, specify a path using --with-ldflags=-I<DIR> (ex. --with-dlflags=-I/usr/path/lib) or a specific library using --with-lapack=DIR/LIB (ex. --with-lapack=/usr/path/lib/libcxml.a)]])])
 
