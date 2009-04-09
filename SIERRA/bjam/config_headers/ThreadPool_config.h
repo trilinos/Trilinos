@@ -23,7 +23,7 @@
 /* #undef HAVE_NEW_PACKAGE_TESTS */
 
 /* Define if you have POSIX threads libraries and header files. */
-#define HAVE_PTHREAD 1
+/* #define HAVE_PTHREAD 1 */
 
 /* Define to 1 if you have the <stdint.h> header file. */
 /* #define HAVE_STDINT_H 1 */
