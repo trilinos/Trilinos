@@ -173,9 +173,9 @@ Package Transition Lead: Chris Baker (cgbaker@sandia.gov)
 
 Status: All tests are built and run under CMake system.
 
-Final Certification Date: [???]
+Final Certification Date: 4/9/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests run and pass on autotools as well as CMake.
 
 -------------------------------------------------------------------------------
 
