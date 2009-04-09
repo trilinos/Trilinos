@@ -155,7 +155,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   double EdgeSubSmRelThreshold=0., NodeSubSmRelThreshold=0.;
   double EdgeSubSmAbsThreshold=0., NodeSubSmAbsThreshold=0.;
 
-  if (SolvingMaxwell_ == true) {
+  if (AMGSolver_ == ML_MAXWELL) {
     if (Comm().NumProc() == 1) EdgeSubSmOmega = 1.0;
     else                       EdgeSubSmOmega = ML_DDEFAULT;
     EdgeSubSmOmega = List_.get("subsmoother: damping factor",EdgeSubSmOmega);
@@ -780,7 +780,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       // supported subsmoothers:                              //
       //   Chebyshev, SGS, Ifpack incomplete factorizations   //
       // ==================================================== //
-      if (SolvingMaxwell_ == false) {
+      if (AMGSolver_ != ML_MAXWELL) {
         if (Comm().MyPID() == 0) {
           cerr << ErrorMsg_ << "Hiptmair smoothing is only supported" << endl;
           cerr << ErrorMsg_ << "for solving eddy current equations." << endl;

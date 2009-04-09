@@ -161,6 +161,15 @@ namespace ML_Epetra
   int ReadXML(const string &FileName, Teuchos::ParameterList &List,
                    const Epetra_Comm &Comm);
 
+  //! Enumerated type indicating the type of AMG solver to be used.
+
+  enum AMGType {
+
+  ML_SA_FAMILY,         /*< Smoothed aggregation solver including EMIN,NSA */
+  ML_MAXWELL,           /*< Old Maxwell solver */
+  ML_COMPOSITE          /*< Composite AMG: block diagonal prolongator */
+  };
+
 /*!
  
    \brief MultiLevelPreconditioner: a class to define black-box multilevel preconditioners using aggregation methods.
@@ -406,6 +415,15 @@ public:
   
   int ComputePreconditioner(const bool CheckFiltering = false);
 
+  //! Computes an empty multilevel hierarchy ignoring any aggregation specific information.
+  /*! Computes an empty multilevel hierarchy ignoring any aggregation specific information
+      that might be in the user defined parameters (as specified in the input ParameterList), 
+      or takes default values otherwise.  Allocated data can be freed used DestroyPreconditioner(),
+      or by the destructor.
+  */
+  int ComputeEmptyMLHierarchy();
+
+
   //! Recomputed the preconditioner (not implemented for Maxwell).
   int ReComputePreconditioner();
 
@@ -538,11 +556,6 @@ public:
       return(0);
   }
 
-  bool SolvingMaxwell() const
-  {
-    return SolvingMaxwell_;
-  }
-
   //! Returns a pointer to the internally stored agg pointer
   const ML_Aggregate* GetML_Aggregate() const 
   {
@@ -627,6 +640,9 @@ private:
                                    EpetraExt::CrsMatrix_SolverMap &transform,
                                    const char* matrixName );
 #endif
+  //! Destroys Preconditioner if it not needed anymore. This includes some 'filtering' checks.
+
+  int ConditionallyDestroyPreconditioner(const bool CheckPreconditioner);
 
   //! Sets prolongator smoother parameters.
   int SetSmoothingDamping();
@@ -667,6 +683,10 @@ private:
   //! ML communicator, convenient to have separately from ml_,
   //  ml_nodes_, one or all of which may be null.
   ML_Comm* ml_comm_;
+
+  //! indicates the type of AMG solver to be used: ML_SA_FAMILY, ML_MAXWELL, ML_COMPOSITE
+  AMGType AMGSolver_;
+
   //! ML_Aggregate, contains aggregate information
   ML_Aggregate* agg_;
   //! Label for this object

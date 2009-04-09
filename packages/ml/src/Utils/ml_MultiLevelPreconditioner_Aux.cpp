@@ -502,7 +502,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetupCoordinates()
       break;
 
     case 1:
-      if (SolvingMaxwell_) {
+      if (AMGSolver_ == ML_MAXWELL) {
         ml_ptr = ml_nodes_;
         in_x_coord = List_.get("node: x-coordinates", (double *)0);
         in_y_coord = List_.get("node: y-coordinates", (double *)0);

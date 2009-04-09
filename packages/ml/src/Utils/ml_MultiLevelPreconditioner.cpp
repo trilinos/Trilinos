@@ -381,7 +381,7 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
 
   // set Maxwell here.
   // NOTE: RowMatrix_ and EdgeMatrix_ pointer to the same Epetra_RowMatrix
-  SolvingMaxwell_ = true;
+  AMGSolver_ = ML_MAXWELL;
   NodeMatrix_ = & NodeMatrix;
   TMatrix_ = & TMatrix;
   EdgeMatrix_ = & EdgeMatrix;
@@ -429,7 +429,7 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & CurlCurlMatrix,
 
   ML_CHK_ERRV(Initialize());
 
-  SolvingMaxwell_ = true;
+  AMGSolver_ = ML_MAXWELL;
   EdgeMatrix_ = RowMatrix_;
   CurlCurlMatrix_ = & CurlCurlMatrix;
   MassMatrix_ = & MassMatrix;
@@ -502,7 +502,7 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
 
   // set Maxwell here.
   // NOTE: RowMatrix_ and EdgeMatrix_ pointer to the same Epetra_RowMatrix
-  SolvingMaxwell_ = true;
+  AMGSolver_ = ML_MAXWELL;
   NodeMatrix_ = NodeMatrix;
   CreatedNodeMatrix_ = true;
   TMatrix_ = TMatrix;
@@ -586,8 +586,9 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   (*SmootherOptions_)[AZ_overlap] = 0;
 #endif
 
+  // By default we assume that a smoothed aggregation-like method is being used.
+  AMGSolver_ = ML_SA_FAMILY;
   // Maxwell stuff is off by default
-  SolvingMaxwell_ = false;
   NodeMatrix_ = 0;
   CreatedNodeMatrix_ = false;
   ML_Kn_ = 0;
@@ -636,6 +637,41 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   RateOfConvergence_ = -1.0;
 
   return 0;
+}
+int ML_Epetra::MultiLevelPreconditioner::
+ConditionallyDestroyPreconditioner(const bool CheckPreconditioner)
+{
+  // ==============================================================  //
+  // check whether the old filtering is still ok for the new matrix. //
+  // This corresponds to ml_MultiLevelPreconditioner_Filtering.cpp   //
+  // where there is code to determine if an old preconditioner is    //
+  // still performing acceptably.
+  // ==============================================================  //
+
+  if (CheckPreconditioner == true && RateOfConvergence_ != -1.0) {
+
+    // If the previous preconditioner was computed with option
+    // "reuse: enable" == true, we know the rate of convergence
+    // with the previous matrix (and this preconditioner. Now, 
+    // we recompute this ratio, and compare it with the previous one.
+    // This requires an AztecOO object to be defined (ML must have been
+    // configured with --enable-aztecoo)
+
+    if (CheckPreconditionerKrylov() == false) {
+      ML_CHK_ERR(DestroyPreconditioner());
+    }
+    else                                       
+      return 0;
+    
+  } else if (CheckPreconditioner == false && 
+             IsComputePreconditionerOK_ == true) {
+  
+    // get rid of what done before 
+    ML_CHK_ERR(DestroyPreconditioner());
+    
+  } // nothing else is left
+
+  return(1);
 }
 
 // ================================================ ====== ==== ==== == =
@@ -764,7 +800,7 @@ ComputePreconditioner(const bool CheckPreconditioner)
   
   string IsIncreasing = List_.get("increasing or decreasing", "increasing");
 
-  if( SolvingMaxwell_ == true ) IsIncreasing = "decreasing";
+  if (AMGSolver_ == ML_MAXWELL) IsIncreasing = "decreasing";
 
   int FinestLevel;
 
@@ -889,7 +925,7 @@ agg_->keep_agg_information = 1;
 agg_->keep_P_tentative = 1;
 #endif
 
-  if( SolvingMaxwell_ == false ) {
+  if (AMGSolver_ != ML_MAXWELL) {
 
     // ====================================================================== //
     // create hierarchy for classical equations (all but Maxwell)             //
@@ -1111,7 +1147,7 @@ agg_->keep_P_tentative = 1;
 
     // ====================================================================== //
     // create hierarchy for Maxwell. Need to define ml_ and ml_nodes_         //
-    // The only way to activate SolvingMaxwell_ == true is through the        //
+    // The only way to activate AMGSolver_ == ML_MAXWELL is through the       //
     // constructor for Maxwell. I suppose that the matrices are called not    //
     // Matrix_, but moreover NodeMatrix_ and EdgeMatrix_.                     //
     // ====================================================================== //
@@ -1265,13 +1301,13 @@ agg_->keep_P_tentative = 1;
         ML_EXIT(-1);
       }
     } //if (ShouldRepartition)
-  } //if( SolvingMaxwell_ ...
+  } // if (AMGSolver_ == ML_MAXWELL)
 
   // ====================================================================== //
   // visualize aggregate shape and other statistics.                        //
   // ====================================================================== //
   
-  if (SolvingMaxwell_)
+  if (AMGSolver_ == ML_MAXWELL)
     ML_Aggregate_VizAndStats_Setup(ml_nodes_);
   ML_Aggregate_VizAndStats_Setup(ml_);
 
@@ -1343,7 +1379,7 @@ agg_->keep_P_tentative = 1;
     ReqAggrePerProc = List_.get("aggregation: next-level aggregates per process", ReqAggrePerProc);
   }
 
-  if( SolvingMaxwell_ == false ) {
+  if (AMGSolver_ != ML_MAXWELL) {
     ML_Aggregate_Set_ReqLocalCoarseSize( ml_->ML_num_levels, agg_, -1, ReqAggrePerProc);
   } else {
     // Jonathan, is it right ???
@@ -1362,7 +1398,7 @@ agg_->keep_P_tentative = 1;
   // (although, this can be quite expensive for the finest levels)          //
   // ====================================================================== //
      
-  if (SolvingMaxwell_ == false) {
+  if (AMGSolver_ != ML_MAXWELL) {
     bool UseSymmetrize = List_.get("aggregation: symmetrize", false);
     if (UseSymmetrize == true) ML_Set_Symmetrize(ml_, ML_YES);
     else                       ML_Set_Symmetrize(ml_, ML_NO);  
@@ -1398,7 +1434,7 @@ agg_->keep_P_tentative = 1;
   // restriction smoother. Only for non-Maxwell.                            //
   // ====================================================================== //
 
-  if( SolvingMaxwell_ == false ) {
+  if (AMGSolver_ != ML_MAXWELL) {
     if (!List_.get("energy minimization: enable", false))
       ML_CHK_ERR(SetSmoothingDamping());
   }
@@ -1410,7 +1446,7 @@ agg_->keep_P_tentative = 1;
   // set null space                                                         //
   // ====================================================================== //
 
-  if( SolvingMaxwell_ == false )
+  if (AMGSolver_ != ML_MAXWELL)
     ML_CHK_ERR(SetNullSpace());
   
   OutputList_.set("time: initial phase", InitialTime.ElapsedTime() 
@@ -1429,7 +1465,7 @@ agg_->keep_P_tentative = 1;
   else
     Direction = ML_DECREASING;
 
-  if (SolvingMaxwell_ == false) {
+  if (AMGSolver_ != ML_MAXWELL) {
 
     bool CreateFakeProblem = false;
     
@@ -1498,7 +1534,7 @@ agg_->keep_P_tentative = 1;
       std::cout << PrintMsg_ << "Time to build the hierarchy = " 
            << Time.ElapsedTime() << " (s)" << std::endl;
     
-  } // if (SolvingMaxwell_ == false)
+  } // if (AMGSolver_ != ML_MAXWELL)
   else {
 
 #ifdef HAVE_ML_EPETRAEXT
@@ -1570,7 +1606,7 @@ agg_->keep_P_tentative = 1;
     sprintf(comment,"printed by MultiLevelPreconditioner, %d processors",
             Comm().NumProc());
 
-    if (SolvingMaxwell_) {
+    if (AMGSolver_ == ML_MAXWELL) {
       sprintf(FileName2,"ml-matrix-%s.mm","edge");
       EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *RowMatrix_, 
                               "Maxwell -- edge finite element matrix",
@@ -1657,7 +1693,7 @@ agg_->keep_P_tentative = 1;
   // Recompute complexities                                                 //
   // ====================================================================== //
 
-  if (!SolvingMaxwell_) {
+  if (AMGSolver_ != ML_MAXWELL) {
 
     double RowComplexity = 0.0, RowZero = 0.0;
     double NnzComplexity = 0.0, NnzZero = 0.0;
@@ -1730,7 +1766,7 @@ agg_->keep_P_tentative = 1;
   
   CreateLabel();
   
-//  if( SolvingMaxwell_ == false ) rst: Not sure why this was here?
+//  if( AMGSolver_ != ML_MAXWELL )  rst: Not sure why this was here?
     SetPreconditioner();
 
   IsComputePreconditionerOK_ = true;
@@ -1812,6 +1848,1107 @@ agg_->keep_P_tentative = 1;
  return(0);
 }
 
+
+// ================================================ ====== ==== ==== == =
+
+int ML_Epetra::MultiLevelPreconditioner::
+ComputeEmptyMLHierarchy()
+{
+const bool CheckPreconditioner = false;
+ try {
+
+   if (ConditionallyDestroyPreconditioner(CheckPreconditioner) == 0) return 0;
+printf("HERE WE ARE\n");
+
+  // ======================== //
+  // build the preconditioner //
+  // ======================== //
+
+  Epetra_Time Time(Comm());
+  Epetra_Time InitialTime(Comm());
+  {
+    int NumCompute = OutputList_.get("number of construction phases", 0);
+    OutputList_.set("number of construction phases", ++NumCompute);
+  }
+  
+#ifdef HAVE_ML_AZTECOO
+#ifdef HAVE_MPI
+  const Epetra_MpiComm * MpiComm = dynamic_cast<const Epetra_MpiComm*>(&Comm());
+  if (!MpiComm)
+  {
+     std::cerr << "dynamic_cast of Comm() failed\n";
+     exit( EXIT_FAILURE );
+  }
+  AZ_set_proc_config(ProcConfig_,MpiComm->Comm());
+#else
+  AZ_set_proc_config(ProcConfig_,AZ_NOT_MPI);
+#endif
+#endif
+
+  if (List_.name() == "ANONYMOUS") List_.setName("ML preconditioner");
+
+  // check for an XML input file and validate again if necessary
+  std::string XMLFileName = List_.get("XML input file","ml_ParameterList.xml");
+  if (List_.get("read XML", false)) {
+    ReadXML(XMLFileName,List_,Comm());
+  } //if (List_.get("read XML", false))
+
+  if (List_.get("ML debug mode", false)) ML_BreakForDebugger(*Comm_);
+  int ProcID;
+  if ((ProcID = List_.get("ML print initial list",-2)) > -2)
+    if ((Comm().MyPID() == ProcID || ProcID == -1)) PrintList();
+  // 'ML output' replaces just 'output' but for backward compatibility
+  // we still allow just 'output' if 'ML output' is not set.
+  int OutputLevel = List_.get("ML output", -47);  
+  if (OutputLevel == -47) OutputLevel = List_.get("output", 0);  
+  ML_Set_PrintLevel(OutputLevel);
+
+  verbose_             = ( (5 < ML_Get_PrintLevel()) && (Comm().MyPID() == 0) );
+  FirstApplication_    = true;
+  PrintMsg_            = List_.get("output prefix",PrintMsg_);
+  NumLevels_           = List_.get("max levels",10);  
+  MaxLevels_           = NumLevels_;
+  AnalyzeMemory_       = List_.get("analyze memory", false);  
+  CycleApplications_   = List_.get("cycle applications", 1);  
+  ZeroStartingSolution_= List_.get("zero starting solution", true);  
+  string IsIncreasing  = List_.get("increasing or decreasing", "increasing");
+  if (List_.get("low memory usage", false)) ML_Enable_LowMemory();
+  else ML_Disable_LowMemory();
+
+  if (Label_) delete[] Label_;
+  Label_ = new char[80];
+
+  const Epetra_VbrMatrix* VbrMatrix;
+  VbrMatrix = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
+  if (VbrMatrix == 0) {
+    NumPDEEqns_ = List_.get("PDE equations", 1);
+  }
+  else {
+    int NumBlockRows = VbrMatrix->RowMap().NumGlobalElements();
+    int NumRows = VbrMatrix->RowMap().NumGlobalPoints();
+    if( NumRows % NumBlockRows ) {
+      cerr << "# rows must be a multiple of # block rows ("
+       << NumRows << "," << NumBlockRows << ")" << endl;
+      exit( EXIT_FAILURE );
+    }
+    NumPDEEqns_ = NumRows/NumBlockRows;
+  }
+
+
+  int call1 = 0, call2 = 0; 
+#ifdef ML_MALLOC
+  int call1_malloc = 0, call2_malloc = 0;
+#endif
+  if( AnalyzeMemory_ ) {
+    memory_[ML_MEM_INITIAL] = ML_MaxMemorySize();
+    call1 = memory_[ML_MEM_INITIAL];
+#ifdef ML_MALLOC
+    call1_malloc = ML_MaxAllocatableSize();
+    memory_[ML_MEM_INITIAL_MALLOC] = call1_malloc;
+    if (verbose_) std::cout << "Memory : max allocatable block = " << call1_malloc << " Mbytes" << std::endl;
+#endif
+  }
+
+
+  // compute how to traverse levels (increasing of descreasing)
+  // By default, use ML_INCREASING.
+  
+
+  if( verbose_ ) ML_print_line("-",78);
+
+  // rst: put this in a subroutine!!!!
+
+  int FinestLevel;
+  int MaxCreationLevels = NumLevels_;
+
+  LevelID_.resize(NumLevels_);
+  if( IsIncreasing == "increasing" ) {
+    FinestLevel = 0;
+    for( int i=0 ; i<NumLevels_ ; ++i ) LevelID_[i] = FinestLevel+i;
+  } else {
+    FinestLevel = NumLevels_-1;
+    for( int i=0 ; i<NumLevels_ ; ++i ) LevelID_[i] = FinestLevel-i;
+  }
+//  if( IsIncreasing == "decreasing" )  MaxCreationLevels = FinestLevel+1;   rst: doesn't look like we need
+
+  // check no levels are negative
+  for (int i = 0 ; i < NumLevels_ ; ++i)
+    if (LevelID_[i] < 0) {
+      cerr << ErrorMsg_ << "Level " << i << " has a negative ID" << endl;
+      ML_EXIT(EXIT_FAILURE);
+    }
+
+  // Creates new master list in which level-specific smoother,
+  // level-specific aggregation, and coarse options are now in
+  // sublists.
+  ParameterList newList;
+  ML_CreateSublists(List_,newList,NumLevels_);
+  List_ = newList;
+  // Validate Parameter List
+  int depth=List_.get("ML validate depth",5);
+  if(List_.get("ML validate parameter list",true)
+     && !ValidateMLPParameters(List_,depth))
+  {
+    if (Comm_->MyPID() == 0)
+      cout<<"ERROR: ML's Teuchos::ParameterList contains an incorrect parameter!\n"<<endl;
+      cout << endl << "** IMPORTANT **" << endl << endl;
+      cout << "ML internally copies your parameter list, and modifies the copy like so:" << endl
+           << "   1) Level-specific smoother and aggregation options are placed in sublists" << endl
+           << "      called \"smoother: list (level XX)\" and \"aggregation: list (level XX)\"," << endl
+           << "      respectively." << endl
+           << "   2) Coarse options are placed in a sublist called \"coarse: list\"." << endl
+           << "   3) In \"coarse: list\", any option that started with \"coarse:\" now starts" << endl
+           << "      with \"smoother:\"."
+           << endl << endl;
+#   ifdef HAVE_MPI
+    MPI_Finalize();
+#   endif
+    exit(EXIT_FAILURE);
+  }
+
+  mlpLabel_ = List_.get("ML label","not-set");
+
+  // avoid possible integer overflow in Epetra's global nnz count
+  double localNnz = RowMatrix_->NumMyNonzeros();
+  double globalNnz=0;
+  Comm().SumAll(&localNnz,&globalNnz,1);
+
+  if (verbose_) {
+    std::cout << PrintMsg_ << "*** " << std::endl;
+    cout << PrintMsg_ << "*** ML_Epetra::MultiLevelPreconditioner";
+    if (mlpLabel_ != "not-set")
+      cout << " [" << mlpLabel_ << "]";
+    cout << endl << PrintMsg_ << "***" << endl;
+    cout << PrintMsg_ << "Matrix has " << RowMatrix_->NumGlobalRows()
+     << " rows and " << globalNnz
+         << " nonzeros, distributed over " << Comm().NumProc() << " process(es)" << endl;
+    {
+      const Epetra_CrsMatrix * dummy = dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
+      if( dummy ) cout << "The linear system matrix is an Epetra_CrsMatrix" << endl;
+    }    
+    {
+      const Epetra_VbrMatrix * dummy = dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
+      if( dummy ) cout << "The linear system matrix is an Epetra_VbrMatrix" << endl;
+    }
+    
+    if( List_.isParameter("default values") ){
+      cout << PrintMsg_ << "Default values for `" << List_.get("default values", "DD") << "'" << endl;
+    }
+    cout << PrintMsg_ << "Maximum number of levels = " << NumLevels_ << endl;
+    if( IsIncreasing == "increasing" ) cout << PrintMsg_ << "Using increasing levels. ";
+    else                               cout << PrintMsg_ << "Using decreasing levels. ";
+    cout << "Finest level  = " << LevelID_[0];
+    cout << ", coarsest level = " << LevelID_[NumLevels_-1] << endl;
+    cout << "Number of applications of the ML cycle = " << CycleApplications_ << endl; 
+    cout << "Number of PDE equations = " << NumPDEEqns_ << endl;
+  }
+
+  
+  
+  ML_Aggregate_Create(&agg_);
+  ML_Aggregate_Set_MaxLevels(agg_, MaxCreationLevels);
+  ML_Comm_Create(&ml_comm_);
+
+  if( AMGSolver_ == ML_MAXWELL ) IsIncreasing = "decreasing";
+  if( AMGSolver_ != ML_MAXWELL ) {
+
+    // ====================================================================== //
+    // create hierarchy for classical equations (all but Maxwell)             //
+    // ====================================================================== //
+
+    // tell ML to keep the tentative prolongator
+    // in the case ReComputePreconditioner() or auxiliary matrix
+    // are used.
+    ML_Aggregate_Set_Reuse(agg_);
+    agg_->keep_agg_information = 1;
+
+    if (agg_->aggr_info != NULL) {
+      for (int i = 0 ; i < MaxLevels_ ; ++i)
+        agg_->aggr_info[i] = NULL;
+    }
+
+    ML_Create(&ml_,MaxCreationLevels);
+    ml_->comm->ML_nprocs = Comm().NumProc();
+    ml_->comm->ML_mypid = Comm().MyPID();
+#ifdef ML_MPI
+    const Epetra_MpiComm* C2 = dynamic_cast<const Epetra_MpiComm*>(&Comm());
+    ml_->comm->USR_comm = C2->Comm();
+#endif
+    ml_->output_level = OutputLevel;
+
+    
+    
+
+#ifdef HAVE_ML_EPETRAEXT
+    RowMatrix_ = ModifyEpetraMatrixColMap(*RowMatrix_,RowMatrixColMapTrans_,
+                                          "Main linear system");
+#endif
+    int NumMyRows;
+    NumMyRows = RowMatrix_->NumMyRows();
+    int N_ghost = RowMatrix_->NumMyCols() - NumMyRows;
+    
+    if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
+    
+    const Epetra_VbrMatrix *Avbr =
+              dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
+    const Epetra_CrsMatrix *Acrs =
+              dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
+    if (Avbr)
+    {
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) Avbr);
+      ml_->Amat[LevelID_[0]].type = ML_TYPE_VBR_MATRIX;
+    }
+    else if (Acrs)
+    {
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) Acrs);
+      ml_->Amat[LevelID_[0]].type = ML_TYPE_CRS_MATRIX;
+    }
+    else
+    {
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows,(void *) RowMatrix_);
+      ml_->Amat[LevelID_[0]].type = ML_TYPE_ROW_MATRIX;
+    }
+    // set the number of nonzeros
+    ml_->Amat[LevelID_[0]].N_nonzeros = RowMatrix_->NumMyNonzeros();
+
+    // ============ //
+    // fix diagonal //
+    // ============ //
+
+    if (false) // ?? MS ?? what the hell I did here?
+    {
+      std::cout << "Setting diagonal..." << std::endl;
+      double* diagonal = (double*)ML_allocate(sizeof(double) * NumMyRows);
+      Epetra_Vector Diagonal(View, RowMatrix_->RowMatrixRowMap(), diagonal);
+      RowMatrix_->ExtractDiagonalCopy(Diagonal);
+
+      ML_Operator_Set_Diag(&(ml_->Amat[LevelID_[0]]), NumMyRows, diagonal);
+    }
+
+    ML_Epetra::FilterType FT;
+    FT = List_.get("filter: type", ML_Epetra::ML_NO_FILTER);
+
+    double* Mask = 0;
+    Mask = List_.get("filter: mask", Mask);
+
+    if (FT != ML_Epetra::ML_NO_FILTER) {
+      if (verbose_) {
+        std::cout << std::endl;
+        std::cout << PrintMsg_ << "Using filtering, type = ";
+        switch (FT) {
+        case ML_NO_FILTER:
+          // cannot be
+          std::cout << "ML_NO_FILTER" << std::endl;
+          break;
+        case ML_EQN_FILTER:
+          std::cout << "ML_EQN_FILTER" << std::endl;
+          break;
+        case ML_THREE_BLOCKS_FILTER:
+          std::cout << "ML_THREE_BLOCKS_FILTER" << std::endl;
+          break;
+        case ML_TWO_BLOCKS_FILTER:
+          std::cout << "ML_TWO_BLOCKS_FILTER" << std::endl;
+          break;
+        case ML_MASK_FILTER:
+          std::cout << "ML_MASK_FILTER" << std::endl;
+          break;
+        }
+
+        std::cout << PrintMsg_ << "Threshold = "
+          << List_.get("filter: absolute threshold", 0.0) 
+          << " (absolute), "
+          << List_.get("filter: relative threshold", 1.0) 
+          << " (relative)" << std::endl;
+
+        if (FT == ML_TWO_BLOCKS_FILTER || FT == ML_THREE_BLOCKS_FILTER) {
+          std::cout << PrintMsg_ << "Dividers = "
+               << List_.get("filter: first divider", 0)
+               << " (first), " 
+               << List_.get("filter: second divider", 0)
+               << " (second), " << std::endl;
+        }
+
+        if (FT == ML_MASK_FILTER) {
+          std::cout << "Mask is as follows:" << std::endl;
+          for (int i = 0 ; i < NumPDEEqns_ ; ++i) {
+            for (int j = 0 ; j < NumPDEEqns_ ; ++j) {
+              if (Mask[i * NumPDEEqns_ + j] == 1)
+                std::cout << " * ";
+              else
+                std::cout << " . ";
+            }
+            std::cout << std::endl;
+          }
+        }
+        std::cout << std::endl;
+
+      }
+      List_.set("filter: equations", NumPDEEqns_);
+
+      ML_Set_Filter(List_);
+      // FIXME // not so sure that ML_Epetra_matvec_Filter is not
+      // FIXME // more appropriate
+      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_getrow_Filter,
+                            ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
+    
+      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec_Filter);
+
+    }
+    else {
+      if (Avbr) {
+        // check that the number of PDEs is constant
+        if( Avbr->NumMyRows() % Avbr->NumMyBlockRows() != 0 ){
+          std::cerr << "Error : NumPDEEqns does not seem to be constant" << std::endl;
+          ML_CHK_ERR(-1);
+        }
+        ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_VbrMatrix_getrow,
+                              ML_Epetra_VbrMatrix_comm_wrapper,
+                              NumMyRows+N_ghost);
+
+        ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_VbrMatrix_matvec);
+      }
+      else if (Acrs) {
+        ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_CrsMatrix_getrow,
+                              ML_Epetra_CrsMatrix_comm_wrapper,
+                              NumMyRows+N_ghost);
+
+        ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_CrsMatrix_matvec);
+      }
+      else {
+        ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_RowMatrix_getrow,
+                              ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
+
+        ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec);
+      }
+    }
+
+    // ========================================= //
+    // repartition of matrices                   //
+    // ========================================= //
+    
+    if (List_.get("repartition: enable",0))
+    {
+      ML_Repartition_Activate(ml_);
+
+      std::string Repartitioner = List_.get("repartition: partitioner","Zoltan");
+
+      double minmax = List_.get("repartition: max min ratio", 1.3);
+      ML_Repartition_Set_LargestMinMaxRatio(ml_,minmax);
+      int minperproc = List_.get("repartition: min per proc", 512);
+      ML_Repartition_Set_MinPerProc(ml_,minperproc);
+      ML_Repartition_Set_PutOnSingleProc(ml_,
+                    List_.get("repartition: put on single proc", 5000));
+
+      if (Repartitioner == "Zoltan") {
+        ML_Repartition_Set_Partitioner(ml_,ML_USEZOLTAN);
+        int NumDimensions = List_.get("repartition: Zoltan dimensions", 0);
+        ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
+      }
+      else if (Repartitioner == "ParMETIS") {
+        ML_Repartition_Set_Partitioner(ml_,ML_USEPARMETIS);
+      }
+    }
+
+  } else {
+
+    // ====================================================================== //
+    // create hierarchy for Maxwell. Need to define ml_ and ml_nodes_         //
+    // The only way to activate AMGSolver_ == ML_MAXWELL is through the       //
+    // constructor for Maxwell. I suppose that the matrices are called not    //
+    // Matrix_, but moreover NodeMatrix_ and EdgeMatrix_.                     //
+    // ====================================================================== //
+
+    if( verbose_ ) std::cout << PrintMsg_ << "Solving Maxwell Equations..." << std::endl;
+
+    int NumMyRows, N_ghost;
+    
+    // create hierarchy for edges
+
+    ML_Create(&ml_,MaxCreationLevels);
+    ML_Set_Label(ml_, "edges");
+    int Direction;
+    if (IsIncreasing == "increasing")
+      Direction = ML_INCREASING;
+    else
+      Direction = ML_DECREASING;
+    ML_Set_LevelID(ml_,Direction);
+
+    ml_->output_level = OutputLevel;
+    
+    // if curl-curl and mass matrix were given separately, add them
+    if (CurlCurlMatrix_) {
+#ifdef HAVE_ML_EPETRAEXT
+      CurlCurlMatrix_ = ModifyEpetraMatrixColMap(*CurlCurlMatrix_,
+                                                CurlCurlMatrixColMapTrans_,
+                                                "(curl,curl)");
+      MassMatrix_ = ModifyEpetraMatrixColMap(*MassMatrix_,
+                                             MassMatrixColMapTrans_,"mass");
+#endif
+      Epetra_RowMatrix *cc = const_cast<Epetra_RowMatrix*>(CurlCurlMatrix_);
+      Epetra_RowMatrix *mm = const_cast<Epetra_RowMatrix*>(MassMatrix_);
+      RowMatrix_ = Epetra_MatrixAdd(cc,mm,1.0);
+      CreatedEdgeMatrix_ = true;
+    }
+
+#ifdef HAVE_ML_EPETRAEXT
+    EdgeMatrix_ = ModifyEpetraMatrixColMap(*RowMatrix_,
+                                           RowMatrixColMapTrans_,
+                                           "edge element matrix");
+    /* Handle the Nodal matrix for Hiptmair, if we're using UseNodMatrixForSmoother */
+    if(UseNodeMatrixForSmoother_){
+      NodeMatrix_= ModifyEpetraMatrixColMap(*NodeMatrix_,TtATMatrixColMapTrans_,"node matrix");
+      Epetra_CrsMatrix * TtATCrsMatrix_ = dynamic_cast<Epetra_CrsMatrix*>((Epetra_RowMatrix*)NodeMatrix_);
+      TtATMatrixML_ = ML_Operator_Create(ml_comm_);
+      if(TtATCrsMatrix_) ML_Operator_WrapEpetraCrsMatrix(TtATCrsMatrix_,TtATMatrixML_,verbose_);
+      else ML_Operator_WrapEpetraMatrix((Epetra_RowMatrix*)NodeMatrix_,TtATMatrixML_);
+    }
+
+    
+#endif
+    RowMatrix_ = EdgeMatrix_;
+    NumMyRows = EdgeMatrix_->NumMyRows();
+    N_ghost   = EdgeMatrix_->NumMyCols() - NumMyRows;
+    
+    if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
+    
+    const Epetra_CrsMatrix *Acrs = dynamic_cast<const Epetra_CrsMatrix*>(EdgeMatrix_);
+
+    if (Acrs != 0) {
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows,
+                      (void *) (const_cast<Epetra_CrsMatrix*>(Acrs)));
+      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_CrsMatrix_getrow,
+              ML_Epetra_CrsMatrix_comm_wrapper, NumMyRows+N_ghost);
+      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_CrsMatrix_matvec);
+      ml_->Amat[LevelID_[0]].type = ML_TYPE_CRS_MATRIX;
+    }
+    else {
+      ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows,NumMyRows,(void *) EdgeMatrix_);
+      ML_Set_Amatrix_Getrow(ml_, LevelID_[0], ML_Epetra_getrow,
+              ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
+      ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec);
+      ml_->Amat[LevelID_[0]].type = ML_TYPE_ROW_MATRIX;
+    }
+
+    // create hierarchy for nodes
+    
+    ML_Create(&ml_nodes_,MaxCreationLevels);
+    ML_Set_Label(ml_nodes_, "nodes");
+#ifdef HAVE_ML_EPETRAEXT
+    NodeMatrix_ = ModifyEpetraMatrixColMap(*NodeMatrix_,
+                                           NodeMatrixColMapTrans_,"Node");
+#endif
+    NumMyRows = NodeMatrix_->NumMyRows();
+    N_ghost   = NodeMatrix_->NumMyCols() - NumMyRows;
+    
+    if (N_ghost < 0) N_ghost = 0;  // A->NumMyCols() = 0 for an empty matrix
+
+    Acrs = dynamic_cast<const Epetra_CrsMatrix*>(NodeMatrix_);
+
+    if (Acrs != 0) {
+      ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows,NumMyRows,
+                      (void *) (const_cast<Epetra_CrsMatrix*>(Acrs)));
+      ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], ML_Epetra_CrsMatrix_getrow,
+                ML_Epetra_CrsMatrix_comm_wrapper, NumMyRows+N_ghost);
+      ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], ML_Epetra_CrsMatrix_matvec);
+      ml_nodes_->Amat[LevelID_[0]].type = ML_TYPE_CRS_MATRIX;
+    }
+    else {
+      ML_Init_Amatrix(ml_nodes_,LevelID_[0],NumMyRows, NumMyRows,
+                      (void *) NodeMatrix_);
+      ML_Set_Amatrix_Getrow(ml_nodes_, LevelID_[0], ML_Epetra_getrow,
+                ML_Epetra_comm_wrapper, NumMyRows+N_ghost);
+      ML_Set_Amatrix_Matvec(ml_nodes_, LevelID_[0], ML_Epetra_matvec);
+      ml_nodes_->Amat[LevelID_[0]].type = ML_TYPE_ROW_MATRIX;
+    }
+    ml_nodes_->Amat[LevelID_[0]].N_nonzeros = NodeMatrix_->NumMyNonzeros();
+
+    // check whether coarse grid operators should be repartitioned among
+    // processors
+    int ShouldRepartition = List_.get("repartition: enable",0);
+
+    if (ShouldRepartition) {
+
+      std::string Repartitioner = List_.get("repartition: partitioner","Zoltan");
+
+      ML_Repartition_Activate(ml_);
+      ML_Repartition_Activate(ml_nodes_);
+
+      double minmax = List_.get("repartition: node max min ratio", 1.3);
+      ML_Repartition_Set_LargestMinMaxRatio(ml_nodes_,minmax);
+      int minperproc = List_.get("repartition: node min per proc", 170);
+      ML_Repartition_Set_MinPerProc(ml_nodes_,minperproc);
+
+      minmax = List_.get("repartition: max min ratio", 1.3);
+      ML_Repartition_Set_LargestMinMaxRatio(ml_,minmax);
+      minperproc = List_.get("repartition: min per proc", 512);
+      ML_Repartition_Set_MinPerProc(ml_,minperproc);
+
+      if (Repartitioner == "Zoltan") {
+
+        int NumDimensions = List_.get("repartition: Zoltan dimensions", 0);
+        ML_Aggregate_Set_Dimensions(agg_, NumDimensions);
+
+        ML_Repartition_Set_Partitioner(ml_nodes_,ML_USEZOLTAN);
+
+        //FIXME JJH this would be a bug if increasing is ever supported
+        ML_Repartition_Set_Partitioner(ml_,ML_USEZOLTAN);
+      }
+      else if (Repartitioner == "ParMETIS")
+        ML_Repartition_Set_Partitioner(ml_,ML_USEPARMETIS);
+      else if (Repartitioner == "Jostle")
+        ML_Repartition_Set_Partitioner(ml_,ML_USEJOSTLE);
+      else {
+        if (Comm().MyPID() == 0) {
+          std::cerr << ErrorMsg_ << "Unrecognized partitioner `"
+               << Repartitioner << "'" << std::endl;
+          std::cerr << ErrorMsg_ << "It should be: " << std::endl;
+          std::cerr << ErrorMsg_ << "<Zoltan> / <ParMETIS>" << std::endl;
+        }
+        ML_EXIT(-1);
+      }
+    } //if (ShouldRepartition)
+    // The only way to activate AMGSolver_ == ML_MAXWELL is through the       //
+    ML_Aggregate_VizAndStats_Setup(ml_nodes_);
+  } //if( AMGSolver_ == ML_MAXWELL ...
+
+  ML_Aggregate_VizAndStats_Setup(ml_);
+
+  // ====================================================================== //
+  // If present, fix the finest-level coordinates in the hierarchy          //
+  // ====================================================================== //
+  
+  ML_CHK_ERR(SetupCoordinates());
+
+  // ====================================================================== //
+  // Additional stuff for Zoltan repartitioning                             //
+  // ====================================================================== //    
+  if(List_.get("repartition: enable",0)) {
+    std::string Repartitioner = List_.get("repartition: partitioner","Zoltan");
+    if(Repartitioner=="Zoltan"){
+     int zoltan_estimated_its=List_.get("repartition: estimated iterations",40);
+     bool zoltan_timers=List_.get("repartition: output timings",false);
+     string zoltan_type=List_.get("repartition: Zoltan type","RCB");
+     int smoother_steps = List_.get("smoother: sweeps", 2);
+     if (List_.get("smoother: pre or post","post") == "pre or post") smoother_steps*=2;
+
+     int int_zoltan_type=ML_ZOLTAN_TYPE_RCB;
+     if(zoltan_type=="RCB")                  int_zoltan_type = ML_ZOLTAN_TYPE_RCB;
+     else if(zoltan_type=="hypergraph")      int_zoltan_type = ML_ZOLTAN_TYPE_HYPERGRAPH; 
+     else if(zoltan_type=="fast hypergraph") int_zoltan_type = ML_ZOLTAN_TYPE_FAST_HYPERGRAPH;        
+     for(int i=0;i<ml_->ML_num_levels;i++){
+       ML_Aggregate_Viz_Stats * grid_info =(ML_Aggregate_Viz_Stats *)ml_->Grid[i].Grid;
+       grid_info->zoltan_type          = int_zoltan_type;
+       grid_info->zoltan_estimated_its = zoltan_estimated_its;
+       grid_info->zoltan_timers        = (int)zoltan_timers;
+       grid_info->smoothing_steps      = smoother_steps;
+     }      
+    }    
+  }
+
+  
+  // ====================================================================== //
+  // pick up coarsening strategy. METIS and ParMETIS requires additional    //
+  // lines, as we have to set the number of aggregates                      //
+  // ====================================================================== //
+
+  SetAggregation();
+
+  // ====================================================================== //
+  // minor settings                                                         //
+  // ====================================================================== //
+
+  double AggressiveFactor = .5;
+  AggressiveFactor = List_.get("aggregation: aggressive", AggressiveFactor);
+  ML_Aggregate_Set_Phase3AggregateCreationAggressiveness(agg_,AggressiveFactor);
+
+  double Threshold = 0.0;
+  Threshold = List_.get("aggregation: threshold", Threshold);
+  ML_Aggregate_Set_Threshold(agg_,Threshold);
+   
+  int MaxCoarseSize = 128;
+  if (List_.isSublist("coarse: list")) {
+    ParameterList &coarseList = List_.sublist("coarse: list");
+    MaxCoarseSize = coarseList.get("smoother: max size", MaxCoarseSize);
+  }
+  ML_Aggregate_Set_MaxCoarseSize(agg_, MaxCoarseSize );
+
+  int ReqAggrePerProc = 128;
+  // FIXME: delete me???
+  // compatibility with an older version
+  if( List_.isParameter("aggregation: req aggregates per process") ) 
+    ReqAggrePerProc = List_.get("aggregation: req aggregates per proces", ReqAggrePerProc);
+  else {
+    ReqAggrePerProc = List_.get("aggregation: next-level aggregates per process", ReqAggrePerProc);
+  }
+
+  if( AMGSolver_ != ML_MAXWELL) {
+    ML_Aggregate_Set_ReqLocalCoarseSize( ml_->ML_num_levels, agg_, -1, ReqAggrePerProc);
+  } else {
+    // Jonathan, is it right ???
+    ML_Aggregate_Set_ReqLocalCoarseSize( ml_->ML_num_levels, agg_, -1, ReqAggrePerProc);
+    ML_Aggregate_Set_ReqLocalCoarseSize( ml_nodes_->ML_num_levels, agg_, -1, ReqAggrePerProc);
+  }
+  if( verbose_ ) {
+    std::cout << PrintMsg_ << "Aggregation threshold = " << Threshold << std::endl;
+    std::cout << PrintMsg_ << "Max coarse size = " << MaxCoarseSize << std::endl;
+    
+  }
+
+  // ====================================================================== //
+  // one can use dropping on a symmetrized matrix                           //
+  // (although, this can be quite expensive for the finest levels)          //
+  // ====================================================================== //
+     
+  // rst: I believe this is specific to smoothed aggregation
+  if (AMGSolver_ != ML_MAXWELL) {
+    bool UseSymmetrize = List_.get("aggregation: symmetrize", false);
+    if (UseSymmetrize == true) ML_Set_Symmetrize(ml_, ML_YES);
+    else                       ML_Set_Symmetrize(ml_, ML_NO);  
+  }
+
+  // ====================================================================== //
+  // Define the scheme for computing the spectral radius of the matrix.     //
+  // ====================================================================== //
+
+  std::string str = List_.get("eigen-analysis: type","power-method");
+  
+  if( verbose_ ) std::cout << PrintMsg_ << "Using `" << str << "' scheme for eigen-computations" << std::endl;
+  
+  if( str == "cg" )                ML_Set_SpectralNormScheme_Calc(ml_);
+  else if( str == "Anorm" )        ML_Set_SpectralNormScheme_Anorm(ml_);
+  else if( str == "Anasazi" )      ML_Set_SpectralNormScheme_Anasazi(ml_);
+  else if( str == "power-method" ) ML_Set_SpectralNormScheme_PowerMethod(ml_);
+  else {
+    if( Comm().MyPID() == 0 ) {
+      std::cerr << ErrorMsg_ << "parameter `eigen-analysis: type' has an incorrect value"
+       << "(" << str << ")" << std::endl;
+      std::cerr << ErrorMsg_ << "It should be: " << std::endl
+       << ErrorMsg_ << "<cg> / <Anorm> / <Anasazi> / <power-method>" << std::endl;
+    }
+    ML_EXIT(-10); // wrong input parameter
+  }
+  int NumEigenIts = List_.get("eigen-analysis: iterations",10);  
+  ML_Set_SpectralNorm_Iterations(ml_, NumEigenIts);
+
+
+  // ====================================================================== //
+  // Define scheme to determine damping parameter in prolongator and        //
+  // restriction smoother. Only for non-Maxwell.                            //
+  // ====================================================================== //
+
+  if (AMGSolver_ != ML_MAXWELL) {
+    if (!List_.get("energy minimization: enable", false))
+      ML_CHK_ERR(SetSmoothingDamping());
+  }
+  else 
+    // FIXME check this!!!!! 4/29/05
+    ML_Aggregate_Set_DampingFactor( agg_, 0.0);
+
+  // ====================================================================== //
+  // set null space                                                         //
+  // ====================================================================== //
+
+  if (AMGSolver_ != ML_MAXWELL)
+    ML_CHK_ERR(SetNullSpace());
+  
+  OutputList_.set("time: initial phase", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: initial phase", 0.0));
+  InitialTime.ResetStartTime();
+
+  // ====================================================================== //
+  // Build hierarchy using smoothed aggregation.                            //
+  // Then, retrieve parameters for each level. Default values are given by   //
+  // entries in parameter list without (level %d)                           //
+  // ====================================================================== //
+
+  int Direction;
+  if (IsIncreasing == "increasing")
+    Direction = ML_INCREASING;
+  else
+    Direction = ML_DECREASING;
+
+  if (AMGSolver_ != ML_MAXWELL) {
+
+    bool CreateFakeProblem = false;
+    
+    if (!CreateFakeProblem && List_.get("aggregation: aux: enable", false))
+    {
+      double Threshold   = List_.get("aggregation: aux: threshold", 0.0);
+      int MaxAuxLevels   = List_.get("aggregation: aux: max levels", 10);
+      ml_->Amat[LevelID_[0]].aux_data->threshold = Threshold;
+      ml_->Amat[LevelID_[0]].aux_data->enable = 1;
+      ml_->Amat[LevelID_[0]].aux_data->max_level = MaxAuxLevels;
+      ml_->Amat[LevelID_[0]].num_PDEs = NumPDEEqns_;
+    }
+
+    Time.ResetStartTime();
+
+    // Added on Jan-06
+    if (List_.get("aggregation: use tentative restriction", false))
+    {
+      agg_->minimizing_energy = -1;
+    }
+
+    // Added on Feb-28
+    if (List_.get("aggregation: block scaling", false) && NumPDEEqns_ != 1) // Not advertised in manual
+    {
+      if (verbose_) 
+        std::cout << PrintMsg_ << "Using block scaling for D^{-1}A" << std::endl;
+      agg_->block_scaled_SA = 1;
+    }
+    else
+      agg_->block_scaled_SA = 0;
+
+    // energy minimization
+    if (List_.get("energy minimization: enable", false))
+    {
+      if (verbose_)
+      {
+        std::cout << std::endl;
+        std::cout << "Warning: Option `energy minimization' is safer when used with" << std::endl;
+        std::cout << "Warning: Uncoupled aggregation scheme. Other aggregation schemes" << std::endl;
+        std::cout << "Warning: may crash the code." << std::endl;
+        std::cout << "Warning: Remember also use block scaling for std::vector problem" << std::endl;
+        std::cout << "Warning: by setting `aggregation: block scaling' = true" << std::endl;
+        std::cout << "Warning: Parallel block scaling may crash..." << std::endl;
+        std::cout << "Warning: Usually, the `2' norm gives the best results, but" << std::endl;
+        std::cout << "Warning: sometimes `1' can perform nicely as well." << std::endl;
+        std::cout << std::endl;
+      }
+      agg_->minimizing_energy = List_.get("energy minimization: type", 2);
+
+      agg_->minimizing_energy_droptol = List_.get("energy minimization: droptol", 0.0);
+      if (List_.get("energy minimization: cheap", false)) {
+         agg_->cheap_minimizing_energy = 1;
+         if ( (verbose_) && (agg_->minimizing_energy != 2)) {
+            std::cout << std::endl;
+            std::cout << "Warning: Option `energy minimization: cheap' has no effect when the type is not 2." << std::endl;
+         }
+      }
+    }
+
+    profileIterations_ = List_.get("profile: operator iterations", 0);
+    ML_Operator_Profile_SetIterations(profileIterations_);
+    NumLevels_ = 
+      ML_Gen_MultiLevelHierarchy_UsingAggregation(ml_, LevelID_[0], Direction, agg_);
+
+    if (verbose_)
+      std::cout << PrintMsg_ << "Time to build the hierarchy = " 
+           << Time.ElapsedTime() << " (s)" << std::endl;
+    
+  } // if (AMGSolver_ != ML_MAXWELL) 
+  else {
+
+#ifdef HAVE_ML_EPETRAEXT
+    TMatrix_ = ModifyEpetraMatrixColMap(*TMatrix_,
+                                        TMatrixColMapTrans_,"Gradient");
+#endif
+    Apply_BCsToGradient( *EdgeMatrix_, *TMatrix_);
+
+    if (CurlCurlMatrix_ != 0) CheckNullSpace();
+
+    if( TMatrixML_ == 0 ) {
+      // convert TMatrix to ML_Operator
+      TMatrixML_ = ML_Operator_Create(ml_->comm);
+      ML_Operator_WrapEpetraMatrix(const_cast<Epetra_RowMatrix*>(TMatrix_),
+                                   TMatrixML_);
+    }
+
+    TMatrixTransposeML_ = ML_Operator_Create(ml_->comm);
+    ML_Operator_Transpose_byrow(TMatrixML_,TMatrixTransposeML_);
+
+    double EdgeDampingFactor =
+              List_.get("aggregation: damping factor",ML_DDEFAULT);
+    double enrichBeta = List_.get("aggregation: enrich beta",0.0);
+
+    double PeDropThreshold = List_.get("aggregation: edge prolongator drop threshold",ML_DDEFAULT);
+
+    profileIterations_ = List_.get("profile: operator iterations", 0);
+    ML_Operator_Profile_SetIterations(profileIterations_);
+
+    // Set up arrays for holding the curl-curl and mass matrices separately.
+    typedef ML_Operator* pML_Operator;  // to avoid compiler warning
+    CurlCurlMatrix_array = new pML_Operator[NumLevels_];
+    for (int i=0; i< NumLevels_; i++) CurlCurlMatrix_array[i] = NULL;
+    if (CurlCurlMatrix_) {
+      CurlCurlMatrix_array[LevelID_[0]] = ML_Operator_Create(ml_->comm);
+      ML_Operator_WrapEpetraMatrix(
+                            const_cast<Epetra_RowMatrix*>(CurlCurlMatrix_),
+                            CurlCurlMatrix_array[LevelID_[0]] );
+    }
+    MassMatrix_array = new pML_Operator[NumLevels_];
+    for (int i=0; i< NumLevels_; i++) MassMatrix_array[i] = NULL;
+    if (MassMatrix_) {
+      MassMatrix_array[LevelID_[0]] = ML_Operator_Create(ml_->comm);
+      ML_Operator_WrapEpetraMatrix( const_cast<Epetra_RowMatrix*>(MassMatrix_),
+                                  MassMatrix_array[LevelID_[0]] );
+    }
+
+    NumLevels_ = ML_Gen_MGHierarchy_UsingReitzinger(ml_,&ml_nodes_,
+                            LevelID_[0], Direction,agg_,
+                            CurlCurlMatrix_array,
+                            MassMatrix_array,
+                            TMatrixML_,TMatrixTransposeML_, 
+                            &Tmat_array,&Tmat_trans_array, 
+                            EdgeDampingFactor,
+                            enrichBeta, PeDropThreshold);
+
+  }
+
+#ifdef HAVE_ML_EPETRAEXT
+  // ============================================================== //
+  // dump matrix in matrix market format using EpetraExt            //
+  // ============================================================== //
+  
+  if (List_.get("dump matrix: enable", false)) {
+    std::string FileName = List_.get("dump matrix: file name", "ml-matrix.mm");
+    char FileName2[80];
+    static int count = 0;
+    char comment[80];
+    sprintf(comment,"printed by MultiLevelPreconditioner, %d processors",
+            Comm().NumProc());
+
+    if (AMGSolver_ == ML_MAXWELL) {
+      sprintf(FileName2,"ml-matrix-%s.mm","edge");
+      EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *RowMatrix_, 
+                              "Maxwell -- edge finite element matrix",
+                              comment);
+      sprintf(FileName2,"ml-matrix-%s.mm","curlcurl");
+      if (CurlCurlMatrix_)
+        EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *CurlCurlMatrix_, 
+                                "Maxwell -- (curl,curl) matrix",
+                                comment);
+      sprintf(FileName2,"ml-matrix-%s.mm","mass");
+      if (MassMatrix_)
+        EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *MassMatrix_, 
+                                "Maxwell -- mass matrix",
+                                comment);
+      sprintf(FileName2,"ml-matrix-%s.mm","gradient");
+      EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *TMatrix_, 
+                                "Maxwell -- gradient matrix",
+                                comment);
+      sprintf(FileName2,"ml-matrix-%s.mm","node");
+      EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *NodeMatrix_, 
+                                "Maxwell -- auxiliary nodal FE matrix",
+                                comment);
+    }
+    else {
+      if (FileName == "auto-count")
+        sprintf(FileName2,"ml-matrix-%d.mm",count++);
+      else
+        sprintf(FileName2,"%s",FileName.c_str());
+  
+      if (verbose_)
+        std::cout << PrintMsg_ << "Print matrix on file `" << FileName2
+             << "'..." << std::endl;
+      EpetraExt::RowMatrixToMatrixMarketFile(FileName2, *RowMatrix_, 
+                     "Epetra_RowMatrix", comment);
+    }
+  }
+#endif
+
+  {
+    int NL2 = OutputList_.get("max number of levels", 0);
+    OutputList_.set("max number of levels", NL2+NumLevels_);
+  }
+  
+  if( AnalyzeMemory_ ) {
+    call2 = ML_MaxMemorySize();
+    memory_[ML_MEM_HIERARCHY] = call2-call1;
+    call1 = call2;
+#ifdef ML_MALLOC
+    call2_malloc = ML_MaxAllocatableSize();
+    if (verbose_) std::cout << "Memory : max allocatable block = " << call2_malloc << " Mbytes" << std::endl;    
+    memory_[ML_MEM_HIERARCHY_MALLOC] = call1_malloc-call2_malloc;
+    call1_malloc = call2_malloc;
+#endif
+  }
+  
+  if( verbose_ ) std::cout << PrintMsg_ << "Number of actual levels : " << NumLevels_ << std::endl;
+
+  OutputList_.set("time: hierarchy", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: hierarchy", 0.0));
+  InitialTime.ResetStartTime();
+
+  // ====================================================================== //
+  // Generate all smoothers and coarse grid solver.                         //
+  // ====================================================================== //
+
+  ML_CHK_ERR(SetSmoothers());
+  InitialTime.ResetStartTime();
+
+  if (AnalyzeMemory_) {
+    call2 = ML_MaxMemorySize();
+    memory_[ML_MEM_SMOOTHER] = call2 - call1;
+    call1 = call2;
+#ifdef ML_MALLOC
+    call2_malloc = ML_MaxAllocatableSize();
+    if (verbose_) std::cout << "Memory : max allocatable block = " << call2_malloc << " Mbytes" << std::endl;        
+    memory_[ML_MEM_SMOOTHER_MALLOC] = call1_malloc - call2_malloc;
+    call1_malloc = call2_malloc;
+#endif
+  }
+  
+  ownership_ = false;
+
+  // ====================================================================== //
+  // Recompute complexities                                                 //
+  // ====================================================================== //
+
+  if (AMGSolver_ != ML_MAXWELL) {
+
+    double RowComplexity = 0.0, RowZero = 0.0;
+    double NnzComplexity = 0.0, NnzZero = 0.0;
+
+    for (int i = 0 ; i < NumLevels_ ; ++i) 
+    {
+      double local[2];
+      double global[2];
+      local[0] = ml_->Amat[LevelID_[i]].invec_leng;
+      local[1] = ml_->Amat[LevelID_[i]].N_nonzeros;
+      Comm().SumAll(local,global,2);
+      if (i == 0) {
+        RowZero = global[0];
+        NnzZero = global[1];
+      }
+      RowComplexity += global[0];
+      NnzComplexity += global[1];
+    }
+    if (verbose_) 
+    {
+      std::cout << PrintMsg_ << std::endl;
+      std::cout << PrintMsg_ << "sum n_i   / n_finest   = " << RowComplexity / RowZero << std::endl;
+      std::cout << PrintMsg_ << "sum nnz_i / nnz_finest = " << NnzComplexity / NnzZero << std::endl;
+    }
+  }
+
+  // ====================================================================== //
+  // Specific   preconditioners                                             //
+  // NOTE: the two-level DD preconditioners are kind of experimental!       //
+  // I suppose that the user knows what he/she is doing.... No real checks  //
+  // are performed. Note also that the coarse solver is somehow supposed to //
+  // be implemented as a post smoother (FIXME)                              //
+  // ====================================================================== //
+
+  if (AnalyzeMemory_) {
+    call2 = ML_MaxMemorySize();
+    memory_[ML_MEM_COARSE] = call2 - call1;
+    call1 = call2;
+#ifdef ML_MALLOC
+    call2_malloc = ML_MaxAllocatableSize();
+    if (verbose_) std::cout << "Memory : max allocatable block = " << call2_malloc << " Mbytes" << std::endl;        
+    memory_[ML_MEM_COARSE_MALLOC] = call1_malloc - call2_malloc;
+    call1_malloc = call2_malloc;
+#endif
+  }
+  
+  ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);
+
+  // ====================================================================== //
+  // Use of filtering functions, here called `filtering: enable'            //
+  // If this option is true, the code detects the non-converging modes of   //
+  // I - ML^{-1}A (where ML is the preconditioner we have just built), and  //
+  // creates a new V cycle to be added to the preconditioner. This part is  //
+  // equivalent to the GGB files of Haim Waisman (files ml_struct.c and     //
+  // ml_ggb.c, in the Main subdirectory).                                   //
+  // ====================================================================== //
+
+  ML_CHK_ERR(SetFiltering());
+  
+  // ====================================================================== //
+  // One may decide to print out the entire hierarchy (to be analyzed in    //
+  // MATLAB, for instance).                                                 //
+  // ====================================================================== //
+  bool PrintHierarchy = List_.get("print hierarchy", false);
+  if ( PrintHierarchy == true ) Print();
+
+  // ====================================================================== //
+  // Other minor settings                                                   //
+  // ====================================================================== //
+  
+  CreateLabel();
+  
+//  if (AMGSolver_ != ML_MAXWELL)  rst: Not sure why this was here?
+    SetPreconditioner();
+
+  IsComputePreconditionerOK_ = true;
+  
+  // ====================================================================== //
+  // Compute the rate of convergence (for reuse preconditioners)            //
+  // ====================================================================== //
+
+  if( List_.get("reuse: enable", false) == true ) 
+    CheckPreconditionerKrylov();
+  
+  if (AnalyzeMemory_) {
+    memory_[ML_MEM_FINAL] = ML_MaxMemorySize();
+    memory_[ML_MEM_TOT1] = memory_[ML_MEM_FINAL] - memory_[ML_MEM_INITIAL];
+#ifdef ML_MALLOC
+    memory_[ML_MEM_FINAL_MALLOC] = ML_MaxAllocatableSize();
+    memory_[ML_MEM_TOT1_MALLOC] = memory_[ML_MEM_INITIAL_MALLOC] - memory_[ML_MEM_FINAL_MALLOC];
+#endif
+  }
+  
+  // print unused parameters
+  if (List_.isParameter("print unused")) {
+    ProcID = List_.get("print unused",-2);
+    if ((Comm().MyPID() == ProcID || ProcID == -1) && verbose_) PrintUnused();
+  }
+  if ((ProcID = List_.get("ML print final list",-2)) > -2) {
+    if ((Comm().MyPID() == ProcID || ProcID == -1)) PrintList();
+  }
+
+  // ===================================================================== //
+  // compute the coordinates for each level (that is, the center of        //
+  // gravity, as no mesh is really available for coarser levels)           //
+  // ===================================================================== //
+ 
+  OutputList_.set("time: final setup", InitialTime.ElapsedTime() 
+                  + OutputList_.get("time: final setup", 0.0));
+  InitialTime.ResetStartTime();
+
+  if (ML_Get_PrintLevel() == 10 && Comm().MyPID() == 0) {
+    std::cout << std::endl;
+    std::cout << "Cumulative timing for construction so far: " << std::endl;
+    std::cout << PrintMsg_ << "- for initial setup   = " 
+         << OutputList_.get("time: initial phase", 0.0) << " (s)" << std::endl;
+    std::cout << PrintMsg_ << "- for hierarchy setup = " 
+         << OutputList_.get("time: hierarchy", 0.0) << " (s)" << std::endl;
+    std::cout << PrintMsg_ << "- for smoothers setup = "
+         << OutputList_.get("time: smoothers setup", 0.0) << " (s)" << std::endl;
+    std::cout << PrintMsg_ << "- for coarse setup    = "
+         << OutputList_.get("time: coarse solver setup", 0.0) << " (s)" << std::endl;
+    std::cout << PrintMsg_ << "- for final setup     = " 
+         << OutputList_.get("time: final setup", 0.0) << " (s)" << std::endl;
+  }
+
+  /* ------------------- that's all folks --------------------------------- */
+
+  if( verbose_ )
+    ML_print_line("-",78);
+
+  ConstructionTime_ += Time.ElapsedTime();
+  OutputList_.set("time: construction", ConstructionTime_);
+  ++NumConstructions_;
+
+  VisualizeAggregates();
+ } 
+ catch(...)
+ {
+   if (Comm().MyPID() == 0) {
+     fprintf(stderr,"\n*********************************************************\n");
+     fprintf(stderr,"ML failed to compute the multigrid preconditioner. The\n");
+     fprintf(stderr,"most common problem is an incorrect  data type in ML's\n");
+     fprintf(stderr,"parameter list (e.g. 'int' instead of 'bool').\n\n");
+     fprintf(stderr,"Note: List.set(\"ML print initial list\",X) might help\nfigure out the bad one on pid X.\n");
+     fprintf(stderr,"*********************************************************\n\n");
+   }
+
+   ML_CHK_ERR(-1);
+ }
+  
+ return(0);
+}
 // ================================================ ====== ==== ==== == =
 
 int ML_Epetra::MultiLevelPreconditioner::
@@ -1820,7 +2957,7 @@ ReComputePreconditioner()
 
  try{
 
-  if (SolvingMaxwell_ == true)
+  if (AMGSolver_ == ML_MAXWELL) 
     ML_CHK_ERR(-1);
 
   if (IsPreconditionerComputed() == false)
@@ -1960,7 +3097,7 @@ Print(const char *whichHierarchy)
     
   ML* mlptr;
   char auxSuffix[100];
-  if ( (strcmp(whichHierarchy,"main") != 0) && SolvingMaxwell_) {
+  if ( (strcmp(whichHierarchy,"main") != 0) && (AMGSolver_ == ML_MAXWELL) ) {
     mlptr = ml_nodes_;
     strncpy(auxSuffix,whichHierarchy,80);
   }
@@ -1994,7 +3131,7 @@ Print(const char *whichHierarchy)
   }
   
   // Tmat (one for each level)
-  if (SolvingMaxwell_)
+  if (AMGSolver_ == ML_MAXWELL)
     for( int i=0 ; i<NumLevels_ ; ++i ) {
       sprintf(name,"Tmat_%d", LevelID_[i]);
       ML_Operator_Print_UsingGlobalOrdering(Tmat_array[LevelID_[i]], name,
@@ -2088,7 +3225,7 @@ int ML_Epetra::MultiLevelPreconditioner::CreateLabel()
     }
   }
 
-  if( SolvingMaxwell_ == false ) 
+  if (AMGSolver_ != ML_MAXWELL)
     sprintf(Label_, "ML (L=%d, %s, %s)", 
      ml_->ML_num_actual_levels, finest, coarsest);
   else
@@ -2392,7 +3529,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
 
   } else if( CoarseSolution == "Hiptmair" ) {
                                                                                 
-      if (SolvingMaxwell_ == false) {
+      if (AMGSolver_ != ML_MAXWELL) {
         if (Comm().MyPID() == 0) {
           std::cerr << ErrorMsg_ << "Hiptmair smoothing is only supported" << std::endl;
           std::cerr << ErrorMsg_ << "for solving eddy current equations." << std::endl;
@@ -3150,7 +4287,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothingDampingClassic()
 {
   
   double DampingFactor = 1.333;
-  if( SolvingMaxwell_ ) DampingFactor = 0.0;
+  if (AMGSolver_ == ML_MAXWELL) DampingFactor = 0.0;
 
   DampingFactor = List_.get("aggregation: damping factor", 
                 DampingFactor);

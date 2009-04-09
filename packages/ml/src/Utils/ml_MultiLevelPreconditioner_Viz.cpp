@@ -216,7 +216,7 @@ Visualize(bool VizAggre, bool VizPreSmoother,
   }
 
   int ieqn             = List_.get("viz: equation to plot", -1);
-  if (SolvingMaxwell_) ieqn = -1;
+  if (AMGSolver_ == ML_MAXWELL) ieqn = -1;
   if( ieqn >= NumPDEEqns_ ) ieqn = 0;
   bool PrintStarting   = List_.get("viz: print starting solution", false);
 
