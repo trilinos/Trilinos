@@ -56,8 +56,8 @@ script in the example subdirectory of the PyTrilinos package:
 "
 %enddef
 
-%module(package="PyTrilinos.NOX",
-	autodoc = "1",
+%module(package   = "PyTrilinos.NOX",
+	autodoc   = "1",
 	docstring = %nox_docstring) __init__
 
 %{

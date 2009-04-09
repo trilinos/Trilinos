@@ -33,9 +33,13 @@ MACRO(SWIG_MODULE_INITIALIZE name language)
     MESSAGE(FATAL_ERROR "SWIG Error: Language \"${language}\" not found")
   ENDIF("x${SWIG_MODULE_${name}_LANGUAGE}x" MATCHES "^xUNKNOWNx$")
 
-  SET(SWIG_MODULE_${name}_REAL_NAME "${name}")
+  IF(SWIG_MODULE_${name}_MODULE)
+    SET(SWIG_MODULE_${name}_REAL_NAME "${SWIG_MODULE_${name}_MODULE}")
+  ELSE(SWIG_MODULE_${name}_MODULE)
+    SET(SWIG_MODULE_${name}_REAL_NAME "${name}")
+  ENDIF(SWIG_MODULE_${name}_MODULE)
   IF("x${SWIG_MODULE_${name}_LANGUAGE}x" MATCHES "^xPYTHONx$")
-    SET(SWIG_MODULE_${name}_REAL_NAME "_${name}")
+    SET(SWIG_MODULE_${name}_REAL_NAME "_${SWIG_MODULE_${name}_REAL_NAME}")
   ENDIF("x${SWIG_MODULE_${name}_LANGUAGE}x" MATCHES "^xPYTHONx$")
   IF("x${SWIG_MODULE_${name}_LANGUAGE}x" MATCHES "^xPERLx$")
     SET(SWIG_MODULE_${name}_EXTRA_FLAGS "-shadow")
@@ -43,10 +47,32 @@ MACRO(SWIG_MODULE_INITIALIZE name language)
 ENDMACRO(SWIG_MODULE_INITIALIZE)
 
 #
+# For a given swig interface file, determine the module name and the
+# list of parent packages from the SWIG %module directive.
+#
+MACRO(SWIG_MODULE_GET_OUTDIR_AND_MODULE name swigfile)
+  FILE(READ "${swigfile}" swig_contents)
+  STRING(REGEX MATCH "%module *(\\([^\\)]*\\))? +[A-Za-z0-9_]+"
+    swig_module_match "${swig_contents}")
+  IF(swig_module_match)
+    STRING(REGEX REPLACE "%module *\\(([^\\)]*)\\)" "\\1"
+      swig_module_options ${swig_module_match})
+    IF(swig_module_options)
+      STRING(REGEX REPLACE "package *= *\"([^\"]*).*" "\\1"
+	swig_package ${swig_module_options})
+      IF(swig_package)
+	STRING(REPLACE "." "/" SWIG_MODULE_${name}_OUTDIR ${swig_package})
+      ENDIF(swig_module_options)
+    ENDIF(swig_package)
+    STRING(REGEX REPLACE "%module *(\\([^\\)]*\\))? +([A-Za-z0-9_]+)" "\\2"
+      SWIG_MODULE_${name}_MODULE ${swig_module_match})
+  ENDIF(swig_module_match)
+ENDMACRO(SWIG_MODULE_GET_OUTDIR_AND_MODULE)
+
+#
 # For a given language, input file, and output file, determine extra files that
 # will be generated. This is internal swig macro.
 #
-
 MACRO(SWIG_GET_EXTRA_OUTPUT_FILES language outfiles generatedpath infile)
   GET_SOURCE_FILE_PROPERTY(SWIG_GET_EXTRA_OUTPUT_FILES_module_basename
     ${infile} SWIG_MODULE_NAME)
@@ -102,12 +128,17 @@ MACRO(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile)
     SET(swig_generated_file_fullname
       "${swig_generated_file_fullname}/${swig_source_file_relative_path}")
   ENDIF(swig_source_file_relative_path)
-  # If CMAKE_SWIG_OUTDIR was specified then pass it to -outdir
-  IF(CMAKE_SWIG_OUTDIR)
-    SET(swig_outdir ${CMAKE_SWIG_OUTDIR})
-  ELSE(CMAKE_SWIG_OUTDIR)
-    SET(swig_outdir ${CMAKE_CURRENT_BINARY_DIR})
-  ENDIF(CMAKE_SWIG_OUTDIR)
+  # If SWIG_MODULE_${name}_OUTDIR or CMAKE_SWIG_OUTDIR was specified
+  # then pass it to -outdir
+  IF(SWIG_MODULE_${name}_OUTDIR)
+    SET(swig_outdir ${SWIG_MODULE_${name}_OUTDIR})
+  ELSE(SWIG_MODULE_${name}_OUTDIR)
+    IF(CMAKE_SWIG_OUTDIR)
+      SET(swig_outdir ${CMAKE_SWIG_OUTDIR})
+    ELSE(CMAKE_SWIG_OUTDIR)
+      SET(swig_outdir ${CMAKE_CURRENT_BINARY_DIR})
+    ENDIF(CMAKE_SWIG_OUTDIR)
+  ENDIF(SWIG_MODULE_${name}_OUTDIR)
   SWIG_GET_EXTRA_OUTPUT_FILES(${SWIG_MODULE_${name}_LANGUAGE}
     swig_extra_generated_files
     "${swig_outdir}"
@@ -168,7 +199,7 @@ ENDMACRO(SWIG_ADD_SOURCE_TO_MODULE)
 # Create Swig module
 #
 MACRO(SWIG_ADD_MODULE name language)
-  SWIG_MODULE_INITIALIZE(${name} ${language})
+  # Obtain the *.i and other sources
   SET(swig_dot_i_sources)
   SET(swig_other_sources)
   FOREACH(it ${ARGN})
@@ -178,6 +209,12 @@ MACRO(SWIG_ADD_MODULE name language)
       SET(swig_other_sources ${swig_other_sources} "${it}")
     ENDIF(${it} MATCHES ".*\\.i$")
   ENDFOREACH(it)
+  # Get the output directory and module name for each *.i file
+  FOREACH(it ${swig_dot_i_sources})
+    SWIG_MODULE_GET_OUTDIR_AND_MODULE(${name} ${it})
+  ENDFOREACH(it)
+
+  SWIG_MODULE_INITIALIZE(${name} ${language})
 
   SET(swig_generated_sources)
   FOREACH(it ${swig_dot_i_sources})
@@ -187,22 +224,23 @@ MACRO(SWIG_ADD_MODULE name language)
   GET_DIRECTORY_PROPERTY(swig_extra_clean_files ADDITIONAL_MAKE_CLEAN_FILES)
   SET_DIRECTORY_PROPERTIES(PROPERTIES
     ADDITIONAL_MAKE_CLEAN_FILES "${swig_extra_clean_files};${swig_generated_sources}")
-  ADD_LIBRARY(${SWIG_MODULE_${name}_REAL_NAME}
+  ADD_LIBRARY(${name}
     MODULE
     ${swig_generated_sources}
     ${swig_other_sources})
-  SET_TARGET_PROPERTIES(${SWIG_MODULE_${name}_REAL_NAME}
+  SET_TARGET_PROPERTIES(${name}
     PROPERTIES PREFIX "")
+  IF(SWIG_MODULE_${name}_OUTDIR)
+    SET_TARGET_PROPERTIES(${name} PROPERTIES
+      LIBRARY_OUTPUT_DIRECTORY ${SWIG_MODULE_${name}_OUTDIR})
+  ENDIF(SWIG_MODULE_${name}_OUTDIR)
+  SET_TARGET_PROPERTIES(${name} PROPERTIES
+    OUTPUT_NAME ${SWIG_MODULE_${name}_REAL_NAME})
 ENDMACRO(SWIG_ADD_MODULE)
 
 #
 # Like TARGET_LINK_LIBRARIES but for swig modules
 #
 MACRO(SWIG_LINK_LIBRARIES name)
-  IF(SWIG_MODULE_${name}_REAL_NAME)
-    TARGET_LINK_LIBRARIES(${SWIG_MODULE_${name}_REAL_NAME} ${ARGN})
-  ELSE(SWIG_MODULE_${name}_REAL_NAME)
-    MESSAGE(SEND_ERROR "Cannot find Swig library \"${name}\".")
-  ENDIF(SWIG_MODULE_${name}_REAL_NAME)
+  TARGET_LINK_LIBRARIES(${name} ${ARGN})
 ENDMACRO(SWIG_LINK_LIBRARIES name)
-
