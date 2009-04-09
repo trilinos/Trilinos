@@ -40,12 +40,6 @@ USA
 
 #include <Isorropia_EpetraZoltanLib.hpp>
 
-/*This is no longer true
-#ifndef HAVE_MPI
-#error "Isorropia_Zoltan requires MPI."
-#endif
-*/
-
 #ifdef HAVE_EPETRA
 #include <Epetra_Comm.h>
 #include <Epetra_Map.h>
@@ -570,14 +564,17 @@ color(Teuchos::ParameterList& zoltanParamList,
 
   //Generate Load Balance
   int  num_gid_entries, num_lid_entries;
-  ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
+
+  /* Note : this works because epetra ordinal type is int */
+  ZOLTAN_ID_PTR import_global_ids = new ZOLTAN_ID_TYPE[num_obj_];
+  ZOLTAN_ID_PTR import_local_ids = new ZOLTAN_ID_TYPE[num_obj_];
 
   properties.resize(num_obj_);
   int err = zz_->Color(num_gid_entries, num_lid_entries, num_obj_,
  		       import_global_ids, import_local_ids, &properties[0]);
 
   if (err != ZOLTAN_OK){
-    throw Isorropia::Exception("Error computing partitioning with Zoltan");
+    throw Isorropia::Exception("Error computing coloring with Zoltan");
     return -1;
   }
 
@@ -595,14 +592,19 @@ order(Teuchos::ParameterList& zoltanParamList,
 
   //Generate Load Balance
   int num_gid_entries, num_lid_entries;
-  ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
+  /* Note : this works because epetra ordinal type is int */
+  ZOLTAN_ID_PTR import_global_ids = new ZOLTAN_ID_TYPE[num_obj_];
+  ZOLTAN_ID_PTR import_local_ids = new ZOLTAN_ID_TYPE[num_obj_];
 
   properties.resize(num_obj_);
   int err = zz_->Order(num_gid_entries, num_lid_entries, num_obj_,
 		       import_global_ids, import_local_ids, &properties[0], NULL);
 
+  delete[] import_local_ids;
+  delete[] import_global_ids;
+
   if (err != ZOLTAN_OK){
-    throw Isorropia::Exception("Error computing partitioning with Zoltan");
+    throw Isorropia::Exception("Error computing ordering with Zoltan");
     return -1;
   }
 
