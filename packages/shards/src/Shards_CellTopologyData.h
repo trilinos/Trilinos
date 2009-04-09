@@ -153,6 +153,14 @@ struct CellTopologyData {
 /** \brief  Self-typedef */
 typedef struct CellTopologyData  CellTopologyData ;
 
+/** \brief  Map a cell->face->edge ordinal to the cell->edge ordinal.
+ *          Return -1 for erroneous input.
+ */
+extern
+int mapCellFaceEdge( const CellTopologyData * cell_topology ,
+                     unsigned face_ordinal ,
+                     unsigned face_edge_ordinal );
+
 /** \} */
 
 #if defined( __cplusplus )

@@ -530,15 +530,21 @@ int find_permutation( const CellTopologyData & top ,
   const int np = top.permutation_count ;
   int p = 0 ;
   for ( ; p < np ; ++p ) {
+    const unsigned * const perm_node = top.permutation[p].node ;
     int j = 0 ;
-    for ( ; j < nn ; ++j ) {
-      const int jp = top.permutation[p].node[j] ;
-      if ( actual_node[jp] != expected_node[j] ) break ;
-    }
+    for ( ; j < nn && actual_node[ perm_node[j] ] == expected_node[j] ; ++j );
     if ( nn == j ) break ;
   }
   if ( np == p ) p = -1 ;
   return p ;
+}
+
+template< typename id_type >
+int find_permutation( const CellTopology & top ,
+                      const id_type * const expected_node ,
+                      const id_type * const actual_node )
+{
+  return find_permutation( * top.getTopology() , expected_node , actual_node );
 }
 
 /*------------------------------------------------------------------------*/

@@ -39,6 +39,7 @@ APPEND_SET(HEADERS
 # CORE
 APPEND_SET(SOURCES
   Shards_Array.cpp
+  Shards_CellTopologyData.c
   Shards_CellTopology.cpp
   Shards_BasicTopologies.cpp
   )
