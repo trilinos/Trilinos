@@ -41,7 +41,9 @@
 #include "Rythmos_ExplicitRKStepper.hpp"
 #include "Rythmos_ImplicitRKStepper.hpp"
 #include "Rythmos_ExplicitTaylorPolynomialStepper.hpp"
-
+#ifdef HAVE_RYTHMOS_EXPERIMENTAL
+#include "Rythmos_ThetaStepper.hpp"
+#endif // HAVE_RYTHMOS_EXPERIMENTAL
 
 namespace Rythmos {
 
@@ -249,12 +251,12 @@ void StepperBuilder<Scalar>::initializeDefaults_()
       "Explicit Taylor Polynomial"
       );
 
-#ifdef Rythmos_HAVE_Experimental
+#ifdef HAVE_RYTHMOS_EXPERIMENTAL
   builder_.setObjectFactory(
       abstractFactoryStd< StepperBase<Scalar>, ThetaStepper<Scalar> >(),
       "Theta"
       );
-#endif // Rythmos_HAVE_Experimental
+#endif // HAVE_RYTHMOS_EXPERIMENTAL
 
   builder_.setDefaultObject("Backward Euler");
   

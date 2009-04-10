@@ -1,3 +1,8 @@
 <ParameterList>
-  <Parameter name="Coeff a" type="int" value="-10"/>
+  <Parameter name="Coeff a" type="double" value="0.0"/>
+  <Parameter name="Coeff f" type="double" value="1.0"/>
+  <Parameter name="Coeff L" type="double" value="1.0"/>
+  <Parameter name="IC x_0"  type="double" value="0.0"/>
+  <Parameter name="IC x_1"  type="double" value="1.0"/>
+  <Parameter name="IC t_0"  type="double" value="0.0"/>
 </ParameterList>

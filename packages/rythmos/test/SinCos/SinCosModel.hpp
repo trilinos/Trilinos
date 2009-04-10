@@ -50,19 +50,28 @@ namespace Rythmos {
    * 
    * with a few enhancements.
    * We start with the exact solution to the differential equation as:
+   *
    * x0(t) = a + b*sin((f/L)*t+phi)
    * x1(t) =   b*(f/L)*cos((f/L)*t+phi)
+   *
    * Then the form of the model is:
+   *
    * d/dt x0(t) = x1(t)
    * d/dt x1(t) = (f/L)*(f/L)*(a-x0(t)) [a=0,f=1,L=1]
+   *
    * With Initial conditions:
+   *
    * x0(t0) = gamma0 [0.0]
    * x1(t0) = gamma1 [1.0]
+   *
    * We can use gamma0 and gamma1 to solve for phi and b:
+   *
    * phi = atan(((f/L)/gamma1)*(gamma0-a))-(f/L)*t0 [0.0]
    * b = gamma1/((f/L)*cos((f/L)*t0+phi)) [1.0]
+   *
    * Therefore this model has three model parameters and two initial conditions
    * which effect the exact solution as above.
+   *
    * p = (a, f, L)
    *
    * \dot{x}=F(x,t,p)

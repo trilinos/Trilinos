@@ -16,5 +16,5 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(MatrixMatrixCopyFiles
-  DEST_FILES modelParams.xml
+  DEST_FILES modelParams.xml implicitEulerParams.xml
   )
