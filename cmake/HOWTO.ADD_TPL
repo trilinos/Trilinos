@@ -25,9 +25,6 @@ TPLs to appear on the link line.  Header file include directories for later
 TPLs will also appear before those of earlier TPLs.  This is important, for
 example, for ParMETIS and Scotch.
 
-NOTE: The default enable for the TPL should be 'OFF' since, by definition,
-this TPL can not be used by primary stable code.
-
 NOTE: The user cache variable TPL_ENABLE_<TPLNAME> will automatically be
 defined by the framework-level CMake code.  This variable allows users to
 enable and disable specific TPLs across all of Trilinos.  Individual package
