@@ -11,10 +11,14 @@ IF(Teuchos_ENABLE_COMPLEX)
     IRTR_complex_lap_test
     SOURCES cxx_main_complex_lap.cpp
     ARGS 
-      "--verbose --hefty --fakeM --sort=SR, --verbose --skinny --noM --sort=SR"
-      "--verbose --hefty --fakeM --sort=SR, --verbose --skinny --noM --sort=SR"
-      "--verbose --hefty --fakeM --sort=LR, --verbose --skinny --noM --sort=LR" 
-      "--verbose --hefty --fakeM --sort=LR, --verbose --skinny --noM --sort=LR"
+      "--verbose --hefty --fakeM --sort=SR"
+      "--verbose --skinny --noM --sort=SR"
+      "--verbose --hefty --fakeM --sort=SR"
+      "--verbose --skinny --noM --sort=SR"
+      "--verbose --hefty --fakeM --sort=LR"
+      "--verbose --skinny --noM --sort=LR" 
+      "--verbose --hefty --fakeM --sort=LR"
+      "--verbose --skinny --noM --sort=LR"
     COMM serial mpi
     STANDARD_PASS_OUTPUT
     )
