@@ -51,12 +51,12 @@ struct IndexList {};
 /** \brief  Access member of compile-time list of indices. <br>
  *          Defines <b> enum { value = Jth member }; </b> 
  */
-template< class List , unsigned J > struct IndexListAt {};
+template< class List , int J > struct IndexListAt {};
 
 /** \brief  Find member of compile-time list of indices. <br>
  *          Defines <b> enum { value = index of member equal to J }; </b> 
  */
-template< class List , unsigned J > struct IndexListFind ;
+template< class List , int J > struct IndexListFind ;
 
 /** \brief  Length of list.
  *          Defines <b> enum { value }; </b>
@@ -125,7 +125,7 @@ SHARDS_INDEX_LIST_AT_SPECIALIZATION( 31 , I31 )
 
 //----------------------------------------------------------------------
 
-template< class List , unsigned J >
+template< class List , int J >
 struct IndexListFind { enum { value = -1 }; };
 
 #define SHARDS_INDEX_LIST_FIND_SPECIALIZATION( J , K )	\
