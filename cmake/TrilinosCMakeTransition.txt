@@ -340,7 +340,8 @@ Package: Belos
 
 Package Transition Lead: Heidi Thornquist (hkthorn@sandia.gov)
 
-Status: Basic support for library and all Epetra tests, but few examples.
+Status: Builds and runs all tests with cmake/ctest.  This includes library support
+    for all Epetra examples/tests and Tpetra examples/tests.
 
 Final Certification Date: [???]
 
@@ -392,7 +393,8 @@ Package: RBGen
 
 Package Transition Lead: Heidi Thornquist (hkthorn@sandia.gov)
 
-Status: Basic libraries and several tests and examples
+Status: Builds and runs all tests with cmake/ctest.  This includes library support
+    for all Epetra examples/tests/drivers.
 
 Final Certification Date: [???]
 
@@ -404,9 +406,11 @@ Package: Anasazi
 
 Package Transition Lead: Heidi Thornquist (hkthorn@sandia.gov)
 
-Status: Basic support for library and all Epetra tests, but few examples.
+Status: Builds and runs all tests with cmake/ctest.  This includes library support
+    for all Epetra examples/tests, Thyra examples/tests, and Tpetra
+    examples/tests.
 
-Final Certification Date: [???]
+Final Certification Date: 
 
 Final Certification Evidence: [???]
 
