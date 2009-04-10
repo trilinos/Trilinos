@@ -123,11 +123,13 @@ void test_cell()
   test_all_subcell< Traits , 2 , Subcell_2::count > testd2( top );
   test_all_subcell< Traits , 3 , Subcell_3::count > testd3( top );
 
-  for ( unsigned i = 0 ; i < cell_data->subcell_count[2] ; ++i ) {
-    const CellTopologyData * const face_top =
-      cell_data->subcell[2][i].topology ;
-    for ( unsigned j = 0 ; j < face_top->subcell_count[1] ; ++i ) {
-      REQUIRE( 0 <= mapCellFaceEdge( cell_data , i , j ) );
+  if ( 3 == cell_data->dimension ) {
+    for ( unsigned i = 0 ; i < cell_data->subcell_count[2] ; ++i ) {
+      const CellTopologyData * const face_top =
+        cell_data->subcell[2][i].topology ;
+      for ( unsigned j = 0 ; j < face_top->subcell_count[1] ; ++j ) {
+        REQUIRE( 0 <= mapCellFaceEdge( cell_data , i , j ) );
+      }
     }
   }
 }
