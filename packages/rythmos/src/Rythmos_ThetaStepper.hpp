@@ -53,8 +53,6 @@
 
 
 namespace {
-  const std::string RythmosStepControlSettings_name = "Step Control Settings";
-
   const std::string ThetaStepperType_name = "Theta Stepper Type";
   const std::string ThetaStepperType_name_default = "Implicit Euler";
 }

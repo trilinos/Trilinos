@@ -33,10 +33,6 @@
 #include "Rythmos_StepperHelpers.hpp"
 #include "Rythmos_ImplicitBDFStepperStepControl.hpp"
 
-namespace {
-  const std::string RythmosStepControlSettings_name = "Step Control Settings";
-}
-
 namespace Rythmos {
 
 // ////////////////////////////

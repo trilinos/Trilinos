@@ -40,6 +40,9 @@
 
 namespace Rythmos {
 
+namespace {
+  const std::string RythmosStepControlSettings_name = "Step Control Settings";
+}
 
 /** \brief Base class for defining stepper functionality.
  *
