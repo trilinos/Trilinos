@@ -59,6 +59,9 @@ SHARDS_CPP = \
 	$(srcdir)/Shards_CellTopology.cpp \
 	$(srcdir)/Shards_BasicTopologies.cpp
 
+SHARDS_C = \
+	$(srcdir)/Shards_CellTopologyData.c
+
 # ------------------------------------------------------------------------
 # Includes for required and optional library dependencies
 # ------------------------------------------------------------------------
@@ -82,7 +85,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 SHARDS_LIB = libshards.a
 
 #np# replace new_package with the name of the package being autotool'ed here
-libshards_a_SOURCES = $(SHARDS_CPP)
+libshards_a_SOURCES = $(SHARDS_CPP) $(SHARDS_C)
 
 #np# replace new_package with the name of the package being autotool'ed here
 EXTRA_libshards_a_SOURCES =

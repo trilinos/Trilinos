@@ -103,11 +103,16 @@ ARFLAGS = cru
 libshards_a_DEPENDENCIES =
 am__objects_1 = Shards_Array.$(OBJEXT) Shards_CellTopology.$(OBJEXT) \
 	Shards_BasicTopologies.$(OBJEXT)
-am_libshards_a_OBJECTS = $(am__objects_1)
+am__objects_2 = Shards_CellTopologyData.$(OBJEXT)
+am_libshards_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libshards_a_OBJECTS = $(am_libshards_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
+COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
+	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -259,6 +264,9 @@ SHARDS_CPP = \
 	$(srcdir)/Shards_CellTopology.cpp \
 	$(srcdir)/Shards_BasicTopologies.cpp
 
+SHARDS_C = \
+	$(srcdir)/Shards_CellTopologyData.c
+
 @USING_GNUMAKE_FALSE@EXPORT_INCLUDES = $(SHARDS_INCLUDES)
 @USING_GNUMAKE_TRUE@EXPORT_INCLUDES = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(SHARDS_INCLUDES))
 AM_CPPFLAGS = $(EXPORT_INCLUDES)
@@ -273,7 +281,7 @@ AM_CPPFLAGS = $(EXPORT_INCLUDES)
 SHARDS_LIB = libshards.a
 
 #np# replace new_package with the name of the package being autotool'ed here
-libshards_a_SOURCES = $(SHARDS_CPP)
+libshards_a_SOURCES = $(SHARDS_CPP) $(SHARDS_C)
 
 #np# replace new_package with the name of the package being autotool'ed here
 EXTRA_libshards_a_SOURCES = 
@@ -339,7 +347,7 @@ all: Shards_config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .cpp .o .obj
+.SUFFIXES: .c .cpp .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -429,6 +437,35 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Shards_Array.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Shards_BasicTopologies.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Shards_CellTopology.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Shards_CellTopologyData.Po@am__quote@
+
+.c.o:
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+
+.c.obj:
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+
+Shards_CellTopologyData.o: $(srcdir)/Shards_CellTopologyData.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT Shards_CellTopologyData.o -MD -MP -MF $(DEPDIR)/Shards_CellTopologyData.Tpo -c -o Shards_CellTopologyData.o `test -f '$(srcdir)/Shards_CellTopologyData.c' || echo '$(srcdir)/'`$(srcdir)/Shards_CellTopologyData.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/Shards_CellTopologyData.Tpo $(DEPDIR)/Shards_CellTopologyData.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Shards_CellTopologyData.c' object='Shards_CellTopologyData.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o Shards_CellTopologyData.o `test -f '$(srcdir)/Shards_CellTopologyData.c' || echo '$(srcdir)/'`$(srcdir)/Shards_CellTopologyData.c
+
+Shards_CellTopologyData.obj: $(srcdir)/Shards_CellTopologyData.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT Shards_CellTopologyData.obj -MD -MP -MF $(DEPDIR)/Shards_CellTopologyData.Tpo -c -o Shards_CellTopologyData.obj `if test -f '$(srcdir)/Shards_CellTopologyData.c'; then $(CYGPATH_W) '$(srcdir)/Shards_CellTopologyData.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Shards_CellTopologyData.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/Shards_CellTopologyData.Tpo $(DEPDIR)/Shards_CellTopologyData.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/Shards_CellTopologyData.c' object='Shards_CellTopologyData.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o Shards_CellTopologyData.obj `if test -f '$(srcdir)/Shards_CellTopologyData.c'; then $(CYGPATH_W) '$(srcdir)/Shards_CellTopologyData.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Shards_CellTopologyData.c'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
