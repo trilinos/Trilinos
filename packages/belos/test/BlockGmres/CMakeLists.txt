@@ -46,8 +46,8 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     EXEDEPS bl_gmres_diag
     )
 
-  ASSERT_DEFINED(Trilinos_ENABLE_Ifpack)
-  IF(Trilinos_ENABLE_Ifpack)
+  ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
+  IF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       bl_pgmres_hb
@@ -75,7 +75,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       STANDARD_PASS_OUTPUT 
       )
 
-  ENDIF(Trilinos_ENABLE_Ifpack)
+  ENDIF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
   ASSERT_DEFINED(Teuchos_ENABLE_COMPLEX)
   IF(Teuchos_ENABLE_COMPLEX)

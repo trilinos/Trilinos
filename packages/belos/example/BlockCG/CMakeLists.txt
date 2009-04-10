@@ -7,41 +7,35 @@ ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_EpetraExt)
 IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     
   PACKAGE_ADD_EXECUTABLE(
-    BlockGmres_Epetra_File_Ex
-    SOURCES BlockGmresEpetraExFile.cpp
+    BlockCG_Epetra_File_Ex
+    SOURCES BlockCGEpetraExFile.cpp
     COMM serial mpi
     )
 
   PACKAGE_ADD_EXECUTABLE(
-    PseudoBlockGmres_Epetra_File_Ex
-    SOURCES PseudoBlockGmresEpetraExFile.cpp
+    PseudoBlockCG_Epetra_File_Ex
+    SOURCES PseudoBlockCGEpetraExFile.cpp
     COMM serial mpi
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyExampleBlockGmresFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/example/BlockGmres
-    SOURCE_FILES orsirr1.hb
-    EXEDEPS BlockGmres_Epetra_File_Ex
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyExampleBlockCGFiles
+    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/example/BlockCG
+    SOURCE_FILES bcsstk14.hb
+    EXEDEPS BlockCG_Epetra_File_Ex
     )
 
   ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Ifpack)
   IF(${PACKAGE_NAME}_ENABLE_Ifpack)
 
     PACKAGE_ADD_EXECUTABLE(
-      BlockPrecGmres_Epetra_File_Ex
-      SOURCES BlockPrecGmresEpetraExFile.cpp
+      BlockPrecCG_Epetra_File_Ex
+      SOURCES BlockPrecCGEpetraExFile.cpp
       COMM serial mpi
       )
 
     PACKAGE_ADD_EXECUTABLE(
-      PseudoBlockPrecGmres_Epetra_File_Ex
-      SOURCES PseudoBlockPrecGmresEpetraExFile.cpp
-      COMM serial mpi
-      )
-
-    PACKAGE_ADD_EXECUTABLE(
-      BlockFlexPrecGmres_Epetra_File_Ex
-      SOURCES BlockFlexGmresEpetraExFile.cpp
+      PseudoBlockPrecCG_Epetra_File_Ex
+      SOURCES PseudoBlockPrecCGEpetraExFile.cpp
       COMM serial mpi
       )
 

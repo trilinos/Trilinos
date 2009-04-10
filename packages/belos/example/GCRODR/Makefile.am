@@ -29,9 +29,9 @@ Dummy$(EXEEXT): $(srcdir)/Dummy
 
 Dummy_SOURCES = Dummy
 
-gcrodr_hb_SOURCES = $(srcdir)/test_gcrodr_hb.cpp $(srcdir)/createEpetraProblem.cpp
+gcrodr_hb_SOURCES = $(srcdir)/GCRODREpetraExFile.cpp $(srcdir)/createEpetraProblem.cpp
 
-prec_gcrodr_hb_SOURCES = $(srcdir)/test_prec_gcrodr_hb.cpp $(srcdir)/createEpetraProblem.cpp
+prec_gcrodr_hb_SOURCES = $(srcdir)/PrecGCRODREpetraExFile.cpp $(srcdir)/createEpetraProblem.cpp
 
 gcrodr_hb_DEPENDENCIES = \
 			$(top_builddir)/../epetra/src/libepetra.a \
