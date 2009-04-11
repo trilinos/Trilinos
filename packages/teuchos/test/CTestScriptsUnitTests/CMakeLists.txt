@@ -49,6 +49,25 @@ PACKAGE_ADD_ADVANCED_TEST(
   )
 
 PACKAGE_ADD_ADVANCED_TEST(
+  CTestScripts_cmnd_1_args_1_pass_any_test_0
+  TEST_0 EXEC GenericDriver ARGS --return-val=7
+    PASS_ANY
+  FINAL_PASS_REGULAR_EXPRESSION "TEST_0: Pass criteria = Pass Any"
+  )
+
+PACKAGE_ADD_ADVANCED_TEST(
+  CTestScripts_cmnd_1_args_1_pass_any_overall
+  TEST_0 EXEC GenericDriver ARGS --return-val=7
+    PASS_ANY
+  )
+
+PACKAGE_ADD_ADVANCED_TEST(
+  CTestScripts_cmnd_1_args_1_standard_pass_output
+  TEST_0 EXEC GenericDriver ARGS --return-val=7
+    STANDARD_PASS_OUTPUT
+  )
+
+PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_pass_regular_expression_all
   TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test\n\nThis is not the best test" --return-val=5
     OUTPUT_FILE outputFile.out
@@ -148,4 +167,15 @@ PACKAGE_ADD_ADVANCED_TEST(
     OUTPUT_FILE console.out
   TEST_1 CMND "${CMAKE_COMMAND}" ARGS -E copy console.out console.gold.out
   TEST_2 CMND ${DIFF_COMMAND_STUFF} console.out console.gold.out
+  )
+
+PACKAGE_ADD_ADVANCED_TEST(
+  CTestScripts_cmnd_3_args_1_overall_working_directory_working_directory
+  OVERALL_WORKING_DIRECTORY TEST_NAME
+  TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!"
+    OUTPUT_FILE console.out
+    WORKING_DIRECTORY GenericDriver
+  TEST_1 CMND "${CMAKE_COMMAND}" ARGS -E copy ../GenericDriver/console.out console.gold.out
+    WORKING_DIRECTORY Gold
+  TEST_2 CMND ${DIFF_COMMAND_STUFF} GenericDriver/console.out Gold/console.gold.out
   )

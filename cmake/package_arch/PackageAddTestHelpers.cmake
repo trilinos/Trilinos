@@ -124,10 +124,10 @@ FUNCTION(PACKAGE_ADD_TEST_GET_NUM_PROCS_USED  NUM_MPI_PROCS_IN
         " because it we do not yet support the form of"
         " NUM_MPI_PROCS=${NUM_MPI_PROCS_IN}") 
     ELSE()
-      IF(${NUM_MPI_PROCS_IN} LESS ${MPI_EXEC_MAX_NUMPROCS})
-        SET(NUM_PROCS_USED ${NUM_MPI_PROCS_IN})
-      ELSE()
+      IF(${NUM_MPI_PROCS_IN} GREATER ${MPI_EXEC_MAX_NUMPROCS})
         SET(NUM_PROCS_USED -1)
+      ELSE()
+        SET(NUM_PROCS_USED ${NUM_MPI_PROCS_IN})
       ENDIF()
     ENDIF()
   ENDIF()
