@@ -6,59 +6,47 @@ TODOs for the Trilinos/CMake System
 Active items:
 -------------
 
-(*) [Ross] Get new CTest/CDash driver working:
-- Automatically read in the list of packages and deal correctly with
-Primary and Secondary Stable enables (see below)
+(*) [Ross and Brent] Automated CTest/CDash testing:
 
-(*) [Ross] Rework the files TrilinosPackages.cmake and TrilinosTPLs.cmake to
-list the type of package/TPL in terms of PS (Primary Stable), SS (Secondary
-Stable), and EX (Experimental).  Then rework the logic that reads in these
-lists and sets the default enable.  Define a variable called
-Trilinos_ENABLE_SECONDARY_STABLE_CODE which is default OFF but when it is set
-ON it will allow secondary stable code to be default enabled.  When
-Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF, then all SS packages will be
-disabled by default (i.e. default enable is OFF) and must be explicitly
-enabled by the user.  When Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON, then SS
-packages will be allowed to be turned on implicitly (i.e. default enable is
-"").  This will facilitate automatic testing.  Basically, I want to make it
-that you have to list the type of package/tpl and then I will check to make
-sure they are consistent.  For example, if the TPL Boost is listed as SS but
-Phalanx is listed as PS then this will be an error because Phalanx has a
-required dependence on Boost and therefore must also be SS.  The same goes for
-EX TPLs and packages.  This will allow me to make all TPLs have a default
-empty "" enable.  In this way, I can change the way that
-<PACKAGE>_ENABLE_<TPL>=ON works in that it will only turn on a TPL if it has
-an empty enable.  This way, if the user makes a TPL disabled then it will
-override all enables and this will be printed out.  This will make the
-behavior consistent with how the package enables work.  To round things out,
-we need an option TPL_ENABLE_ALL_TPLS that will be set to OFF by default but
-when set to ON will enable all PS TPLs and when
-Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON will also enable all SS TPLs.
-Therefore, by setting Trilinos_ENABLE_ALL_PACKAGES=ON, TPL_ENABLE_ALL_TPLS=ON,
-Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON and this will make sure that you
-capture all of the SS code and make sure that you test correctly.  Note that
-packages enables should then key off of Trilinos_ENABLE_SECONDARY_STABLE_CODE
-to turn on by default those parts of their package that they don't consider PS
-code but are SS.  For example, EpetraExt_BUILD_GRAPH_REORDERINGS should
-default to ON if Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON.
+- [Ross] Add Primary Stable Code versions of serial and build builds
 
-(*) [Ross and Brent] Get a Windows CSRI machine set up to build Trilinos Dev
-with CMake and run nightly tests.
+- [Ross and Brent] Move platform-specific testing scripts into
+Trilinos/cmake/ctest/drivers/COMPUTER_NAME.  This will make it cleaner to add
+more test machines.
+
+- [Ross] Add automated support for turning on SS TPLs when building
+
+- [Brent] Get a Windows CSRI machine set up to build Trilinos Dev with CMake
+and run nightly tests.
+
 
 
 Backlog:
 --------
+
+(*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG and
+MPI_OPT build directory and enable only "Primary Stable" code.  This will need
+a minimal configuration script to pull in only the basic info needed in order
+to find compilers, MPI, BLAS, and LAPACK and nothing else.
+
+(*) [???] Add the option TPL_ENABLE_ALL_TPLS that will be set to OFF by
+default but when set to ON will enable all PS TPLs and when
+Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON will also enable all SS TPLs.
+Therefore, by setting Trilinos_ENABLE_ALL_PACKAGES=ON, TPL_ENABLE_ALL_TPLS=ON,
+and Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON and this will make sure that you
+capture all of the SS code and make sure that you test correctly.
+
+(*) [???] Update all SS optional enables in Trilinos to have a default value
+based on Trilinos_ENABLE_SECONDARY_STABLE_CODE to turn on by default those
+parts of their package that they don't consider PS code but are SS.  For
+example, EpetraExt_BUILD_GRAPH_REORDERINGS should default to ON if
+Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON.
 
 (*) [???] Resolve the runtime MPI errors on godel: Perhaps we should just
 rebuild and reinstall MPI on godel.
 
 (*) [???] Go back over packages and add remaining TPL support and configure
 options.
-
-(*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG and
-MPI_OPT build directory and enable only "Primary Stable" code.  This will need
-a minimal configuration script to pull in only the basic info needed in order
-to find compilers, MPI, BLAS, and LAPACK and nothing else.
 
 (*) [???] Add a global 'libs' target to rebuild only libraries so that we can
 skip unecessary relinking when shared libraries are used.  This target can be
