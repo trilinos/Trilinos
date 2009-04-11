@@ -41,8 +41,7 @@ InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factor
    : massMatrix_(mass), invFactory_(factory)
 { }
 
-// functions inherited from LSCStrategy
-LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
@@ -52,6 +51,14 @@ LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditione
       initializeState(A,lscState);
    else 
       reinitializeState(A,lscState);
+}
+
+// functions inherited from LSCStrategy
+LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
+{
+   LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
+   TEUCHOS_ASSERT(lscState!=0);
+   TEUCHOS_ASSERT(lscState->isInitialized())
 
    return buildInverse(*invFactory_,lscState->BQBtmC_);
 }
@@ -67,13 +74,8 @@ LinearOp InvLSCStrategy::getInvD(const BlockedLinearOp & A,BlockPreconditionerSt
 {
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
+   TEUCHOS_ASSERT(lscState->isInitialized())
 
-   // if neccessary save state information
-   if(not lscState->isInitialized())
-      initializeState(A,lscState);
-   else 
-      reinitializeState(A,lscState);
- 
    return lscState->aiD_;
 }
 
@@ -81,6 +83,7 @@ LinearOp InvLSCStrategy::getInvMass(const BlockedLinearOp & A,BlockPreconditione
 {
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
+   TEUCHOS_ASSERT(lscState->isInitialized())
 
    return lscState->invMass_;
 }
@@ -99,6 +102,7 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
       state->BQBt_ = explicitMultiply(B,Bt);  
    }
 
+   // now we can just reintialize
    state->setInitialized(true);
 
    // do some real work
@@ -114,13 +118,6 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
 
    bool isStabilized = (not isZeroOp(C));
 
-   // compute gamma
-   LinearOp iQuF;
-   if(state->invMass_!=Teuchos::null) 
-      iQuF = multiply(state->invMass_,F);
-   else
-      iQuF = F;
-
    // if this is a stable discretization...we are done!
    if(not isStabilized) {
       state->BQBtmC_ = state->BQBt_;
@@ -131,23 +128,32 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
       return;
    }
 
+   // compute gamma
+   LinearOp iQuF;
+   if(state->invMass_!=Teuchos::null) 
+      iQuF = multiply(state->invMass_,F);
+   else
+      iQuF = F;
+
    // do 6 power iterations to compute spectral radius: EHSST2007 Eq. 4.28
-   state->gamma_ = std::abs(PB::computeSpectralRad(iQuF,5e-2,false,5))/3.0; 
+   state->gamma_ = std::fabs(PB::computeSpectralRad(iQuF,5e-2,false,5))/3.0; 
 
    // compute alpha scaled inv(D): EHSST2007 Eq. 4.29
    const LinearOp invDiagF = getInvDiagonalOp(F);
    const LinearOp B_idF_Bt = explicitMultiply(B,invDiagF,Bt);
 
    MultiVector vec_D = getDiagonal(B_idF_Bt);
-   update(1.0,getDiagonal(C),1.0,vec_D); // vec_D = diag(B*inv(diag(F))*Bt)+diag(C)
-   const LinearOp invD = buildInvDiagonal(vec_D);
+   update(-1.0,getDiagonal(C),1.0,vec_D); // vec_D = diag(B*inv(diag(F))*Bt)-diag(C)
+   const LinearOp invD = buildInvDiagonal(vec_D,"inv(D)");
 
    const LinearOp BidFBtidD = multiply<double>(B_idF_Bt,invD);
-   state->alpha_ = 1.0/std::abs(PB::computeSpectralRad(BidFBtidD,5e-2,false,5));
+   state->alpha_ = 1.0/std::fabs(PB::computeSpectralRad(BidFBtidD,5e-2,false,5));
    state->aiD_ = Thyra::scale(state->alpha_,invD);
 
+   std::cout << "gamma = " << state->gamma_ << ", alpha = " << state->alpha_ << std::endl;
+
    // now build B*Q*Bt-gamma*C
-   state->BQBtmC_ = explicitMultiply(state->BQBt_,scale(-state->gamma_,C));
+   state->BQBtmC_ = explicitAdd(state->BQBt_,scale(-state->gamma_,C));
 }
 
 } // end namespace NS

@@ -76,11 +76,15 @@ Epetra_Operator * mechanicalInverse(const Epetra_Operator * inverse)
    return new EpetraExt::ProductOperator(1,opAr,epetraOpsTransp,epetraOpsApplyMode);
 }
 
-const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const RCP<const Epetra_Vector> & ev,const Epetra_Map & map)
+const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const RCP<const Epetra_Vector> & ev,const Epetra_Map & map,
+                                                                   const std::string & lbl)
 {
    const RCP<const Thyra::VectorBase<double> > thyraVec  // need a Thyra::VectorBase object
          = Thyra::create_Vector(ev,Thyra::create_VectorSpace(rcpFromRef(map)));
-   return Teuchos::rcp(new Thyra::DefaultDiagonalLinearOp<double>(thyraVec));
+   Teuchos::RCP<Thyra::LinearOpBase<double> > op 
+         = Teuchos::rcp(new Thyra::DefaultDiagonalLinearOp<double>(thyraVec));
+   op->setObjectLabel(lbl);
+   return op;
 }
 
 } // end namespace Epetra

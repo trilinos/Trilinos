@@ -257,7 +257,7 @@ const LinearOp getDiagonalOp(const LinearOp & op)
    eOp->ExtractDiagonalCopy(*diag);
 
    // build Thyra diagonal operator
-   return PB::Epetra::thyraDiagOp(diag,eOp->OperatorRangeMap());
+   return PB::Epetra::thyraDiagOp(diag,eOp->OperatorRangeMap(),"diag( " + op->getObjectLabel() + " )");
 }
 
 const MultiVector getDiagonal(const LinearOp & op)
@@ -296,7 +296,7 @@ const LinearOp getInvDiagonalOp(const LinearOp & op)
    diag->Reciprocal(*diag);
 
    // build Thyra diagonal operator
-   return PB::Epetra::thyraDiagOp(diag,eOp->RowMap());
+   return PB::Epetra::thyraDiagOp(diag,eOp->RowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
 }
 
 /** \brief Multiply three linear operators. 
@@ -323,6 +323,9 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const 
    // build operator and multiply
    const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
    prodTrans->transform(*implicitOp,explicitOp.ptr());
+   explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
+                                     " * " + opm->getObjectLabel() +
+                                     " * " + opr->getObjectLabel() + " )");
 
    return explicitOp;
 }
@@ -349,6 +352,8 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
    // build operator and multiply
    const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
    prodTrans->transform(*implicitOp,explicitOp.ptr());
+   explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
+                                     " * " + opr->getObjectLabel() + " )");
 
    return explicitOp;
 }
@@ -375,21 +380,27 @@ const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr)
    // build operator and multiply
    const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
    prodTrans->transform(*implicitOp,explicitOp.ptr());
+   explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
+                                     " + " + opr->getObjectLabel() + " )");
 
    return explicitOp;
 }
 
-const LinearOp buildDiagonal(const MultiVector & v)
+const LinearOp buildDiagonal(const MultiVector & src,const std::string & lbl)
 {
-   return Thyra::diagonal<double>(v->col(0));
+   RCP<Thyra::VectorBase<double> > dst = Thyra::createMember(src->range()); 
+   Thyra::copy(*src->col(0),dst.ptr());
+   
+   return Thyra::diagonal<double>(dst,lbl);
 }
 
-const LinearOp buildInvDiagonal(const MultiVector & src)
+const LinearOp buildInvDiagonal(const MultiVector & src,const std::string & lbl)
 {
-   MultiVector dst = deepcopy(src); 
-   Thyra::reciprocal<double>(dst->col(0).ptr(),*src->col(0));
+   const RCP<const Thyra::VectorBase<double> > srcV = src->col(0);
+   RCP<Thyra::VectorBase<double> > dst = Thyra::createMember(srcV->range()); 
+   Thyra::reciprocal<double>(dst.ptr(),*srcV);
 
-   return Thyra::diagonal<double>(dst->col(0));
+   return Thyra::diagonal<double>(dst,lbl);
 }
 
 //! build a BlockedMultiVector from a vector of MultiVectors

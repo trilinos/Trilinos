@@ -6,6 +6,8 @@
 #include "Thyra_DefaultZeroLinearOp.hpp"
 
 #include "PB_LU2x2InverseOp.hpp"
+#include "PB_Utilities.hpp"
+#include "PB_BlockUpperTriInverseOp.hpp"
 
 namespace PB {
 namespace NS {
@@ -45,6 +47,9 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    LinearOp B  = blockOp->getBlock(1,0);
    LinearOp Bt = blockOp->getBlock(0,1);
 
+   // build what is neccessary for the state object
+   invOpsStrategy_->buildState(blockOp,state);
+
    // extract operators from strategy
    LinearOp invF      = invOpsStrategy_->getInvF(blockOp,state);
    LinearOp invBQBtmC = invOpsStrategy_->getInvBQBt(blockOp,state);
@@ -60,17 +65,28 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    // first construct middle operator: M = B * inv(Mass) * F * inv(Mass) * Bt
    LinearOp M = 
       //          (B * inv(Mass) ) * F * (inv(Mass) * Bt)
-      multiply( multiply(B,invMass), F , multiply(invMass,Bt),"inv(Mass)*F*inv(Mass)");
+      multiply( multiply(B,invMass), F , multiply(invMass,Bt));
       
    // now construct a linear operator schur complement
    LinearOp invPschur; 
    if(invD!=Teuchos::null)
-      invPschur = add(multiply(invBQBtmC, M , invBQBtmC,"inv(B*Bt)*(B*F*Bt)*inv(B*Bt)"),invD);
+      invPschur = add(multiply(invBQBtmC, M , invBQBtmC), invD);
    else
-      invPschur = multiply(invBQBtmC, M , invBQBtmC,"inv(B*Bt)*(B*F*Bt)*inv(B*Bt)");
+      invPschur = multiply(invBQBtmC, M , invBQBtmC);
+
+   // build diagonal operations
+   std::vector<LinearOp> invDiag(2);
+   invDiag[0] = invF;
+   invDiag[1] = invPschur;
+
+   // get upper triangular matrix
+   BlockedLinearOp U = getUpperTriBlocks(blockOp); 
+
+   // build the preconditioner operator
+   return createNewBlockUpperTriInverseOp(U,invDiag);
 
    // build a preconditioner operator using the parent classes utility function
-   return createNewLU2x2InverseOp(blockOp,invF,invPschur);
+   // return createNewLU2x2InverseOp(blockOp,invF,invPschur);
 }
 
 } // end namespace NS

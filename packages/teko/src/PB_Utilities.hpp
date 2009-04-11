@@ -280,12 +280,12 @@ const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr);
 /** \brief Take the first column of a multivector and build a
   *        diagonal linear operator
   */
-const LinearOp buildDiagonal(const MultiVector & v);
+const LinearOp buildDiagonal(const MultiVector & v,const std::string & lbl="ANYM");
 
 /** \brief Using the first column of a multivector, take the elementwise build a
   *        inverse and build the inverse diagonal operator.
   */
-const LinearOp buildInvDiagonal(const MultiVector & v);
+const LinearOp buildInvDiagonal(const MultiVector & v,const std::string & lbl="ANYM");
 
 //@}
 

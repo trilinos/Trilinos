@@ -17,6 +17,8 @@ class LSCPrecondState; // forward declration
 // simple strategy for driving LSCPreconditionerFactory
 class LSCStrategy {
 public:
+   virtual void buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+
    virtual LinearOp getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
 
    virtual LinearOp getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
@@ -40,6 +42,8 @@ public:
    StaticLSCStrategy(const LinearOp & invF,
                      const LinearOp & invBQBtmC,
                      const LinearOp & invMass);
+
+   virtual void buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const {}
 
    virtual LinearOp getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const
    { return invF_; }
@@ -80,6 +84,8 @@ public:
 
    //! Functions inherited from LSCStrategy
    //@{
+   virtual void buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const;
+
    virtual LinearOp getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const;
 
    virtual LinearOp getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const;
