@@ -37,6 +37,9 @@
 /* Define if want to build with thyra enabled */
 #define HAVE_RYTHMOS_THYRA_EPETRAEXT 1
 
+/* Define if want to build with experimental rythmos code enabled */
+#define HAVE_RYTHMOS_EXPERIMENTAL 1
+
 /* Define to the address where bug reports for this package should be sent. */
 #define PACKAGE_BUGREPORT "tscoffe@sandia.gov"
 
