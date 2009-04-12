@@ -10,5 +10,15 @@ ADD_SUBDIRECTORY(MultiLevelPreconditioner_NonSym)
 ADD_SUBDIRECTORY(MultiLevelPreconditioner_Restart)
 ADD_SUBDIRECTORY(MultiLevelPreconditioner_Sym)
 ADD_SUBDIRECTORY(SelfSmoother)
-ADD_SUBDIRECTORY(ValidateParams)
-ADD_SUBDIRECTORY(Zoltan)
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Zoltan ${PACKAGE_NAME}_ENABLE_Galeri)
+
+IF (${PACKAGE_NAME}_ENABLE_Galeri)
+
+  ADD_SUBDIRECTORY(ValidateParams)
+
+  IF (${PACKAGE_NAME}_ENABLE_Zoltan)
+    ADD_SUBDIRECTORY(Zoltan)
+  ENDIF()
+
+ENDIF()
