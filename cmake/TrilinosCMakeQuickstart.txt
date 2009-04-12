@@ -472,7 +472,7 @@ C) Configuring
 
   Configure time errors are shown in the file:
 
-      $BUILD_BASE_DIR/CMakeFiles/CMakeError.log.
+      $BUILD_BASE_DIR/CMakeFiles/CMakeError.log
 
 
 D) Building
