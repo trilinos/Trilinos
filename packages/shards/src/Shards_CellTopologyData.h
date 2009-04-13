@@ -35,6 +35,10 @@ extern "C" {
  *  \{
  */
 
+struct CellTopologyData ;
+struct CellTopologyData_Subcell ;
+struct CellTopologyData_Permutation ;
+
 /** \brief A simple 'C' struct of cell topology attributes.
  *
  *  The topology may be extended such that the number of nodes
@@ -86,29 +90,13 @@ struct CellTopologyData {
   /** \brief Number of subcells of each dimension. */
   unsigned subcell_count[4] ;
 
-  /** \brief Subcell information.
-   *
-   *  - required: 0 <= Dim <= 3
-   *  - required: 0 <= Ord <= subcell_count[Dim]
-   *  - required: 0 <= J   <  subcell[Dim][Ord]->subcell_count[0]
-   *  - subcell[Dim][Ord].topology
-   *  - subcell[Dim][Ord].node[J]
-   */
-  struct Subcell {
-    /** \brief Subcell topology */
-    const struct CellTopologyData * topology ;
-  
-    /** \brief Subcell indexing of \f$ {Cell}^{0} \f$ with respect to parent cell. */
-    const unsigned * node ;
-  };
-
   /** \brief  Array of subcells of each dimension
    *
    *  The length of each subcell array is subcell_count[Dim]
    *  - <b> subcell[Dim][Ord].topology </b> topology of the subcell
    *  - <b> subcell[Dim][Ord].node[I]  </b> node ordinal of the subcell's node I
    */
-  const struct Subcell * subcell[4] ;
+  const struct CellTopologyData_Subcell * subcell[4] ;
 
   /** \brief  Array of side subcells of length side_count
    *
@@ -116,7 +104,7 @@ struct CellTopologyData {
    *  - <b> side[Ord].topology </b> topology of the side
    *  - <b> side[Ord].node[I]  </b> node ordinal of the side's node I
    */
-  const struct Subcell * side ;
+  const struct CellTopologyData_Subcell * side ;
 
   /** \brief  Array of edges subcells of length edge_count
    *
@@ -124,7 +112,7 @@ struct CellTopologyData {
    *  - <b> edge[Ord].topology </b> topology of the edge
    *  - <b> edge[Ord].node[I]  </b> node ordinal of the edge's node I
    */
-  const struct Subcell * edge ;
+  const struct CellTopologyData_Subcell * edge ;
 
   /** \brief  Array of node permutations.
    *
@@ -142,16 +130,49 @@ struct CellTopologyData {
    *
    *  The permutation map for P == 0 is required to be identity. 
    */
-  struct Permutation {
-    const unsigned * node ;
-  };
+  const struct CellTopologyData_Permutation * permutation ;
+  const struct CellTopologyData_Permutation * permutation_inverse ;
+};
 
-  const struct Permutation * permutation ;
-  const struct Permutation * permutation_inverse ;
+/** \brief Subcell information.
+ *
+ *  - required: 0 <= Dim <= 3
+ *  - required: 0 <= Ord <= subcell_count[Dim]
+ *  - required: 0 <= J   <  subcell[Dim][Ord]->subcell_count[0]
+ *  - subcell[Dim][Ord].topology
+ *  - subcell[Dim][Ord].node[J]
+ */
+struct CellTopologyData_Subcell {
+  /** \brief Subcell topology */
+  const struct CellTopologyData * topology ;
+
+  /** \brief Subcell indexing of \f$ {Cell}^{0} \f$
+   *         with respect to parent cell. */
+  const unsigned * node ;
 };
 
 /** \brief  Self-typedef */
 typedef struct CellTopologyData  CellTopologyData ;
+
+/** \brief  Array of node permutations.
+ *
+ *  - required: 0 <= P < permutation_count
+ *  - required: 0 <= I < node_count
+ *
+ *  Let ParentCell be dimension D and SubCell be dimension dim < D. 
+ *  Let SubCell be connected as subcell Ord with permutation P. 
+ * 
+ *  Then <b> ParentCell.node(K) == SubCell.node(I) </b> where: 
+ *  -  SubCellTopology == ParentCellTopology->subcell[dim][Ord].topology
+ *  -  K  = ParentCellTopology->subcell[dim][Ord].node[IP]
+ *  -  IP = SubCellTopology->permutation[P].node[I]
+ *  -  I  = SubCellTopology->permutation_inverse[P].node[IP]
+ *
+ *  The permutation map for P == 0 is required to be identity. 
+ */
+struct CellTopologyData_Permutation {
+  const unsigned * node ;
+};
 
 /** \brief  Map a cell->face->edge ordinal to the cell->edge ordinal.
  *          Return -1 for erroneous input.

@@ -34,7 +34,7 @@
 
 namespace shards {
 
-typedef CellTopologyData::Subcell Subcell ;
+typedef CellTopologyData_Subcell Subcell ;
 
 class CellTopologyPrivate {
 public:

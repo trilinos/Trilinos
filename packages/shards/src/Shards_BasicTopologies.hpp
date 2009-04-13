@@ -1128,7 +1128,7 @@ const unsigned * index_identity_array();
            nodesList[i].topology is CellTopologyData corresponding to a node
            nodesList[i].node     is ptr to index_identity_array + i 
 */
-const CellTopologyData::Subcell * subcell_nodes_array();
+const struct CellTopologyData_Subcell * subcell_nodes_array();
 
 /** \brief Outputs raw cell topology data.
 */

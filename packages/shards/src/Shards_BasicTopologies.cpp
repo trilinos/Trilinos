@@ -26,8 +26,8 @@
 #include <Shards_BasicTopologies.hpp>
 
 extern "C" {
-typedef CellTopologyData::Subcell      Subcell ;
-typedef CellTopologyData::Permutation  Permutation ;
+typedef struct CellTopologyData_Subcell      Subcell ;
+typedef struct CellTopologyData_Permutation  Permutation ;
 }
 
 namespace shards {
