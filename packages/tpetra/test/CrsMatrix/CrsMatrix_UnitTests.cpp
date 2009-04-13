@@ -1177,9 +1177,6 @@ namespace {
          UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO) \
          UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)
 
-     typedef long int ShortInt;
-     UNIT_TEST_GROUP_ORDINAL_ORDINAL( ShortInt, int )
-
      UNIT_TEST_GROUP_ORDINAL(int)
 
      typedef long int LongInt;
