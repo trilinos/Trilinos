@@ -163,7 +163,7 @@ namespace {
     Map<Ordinal> map(INVALID,numLocal,indexBase,comm);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     // too small an ArrayView (less than 4 values) is met with an exception, if debugging is on
     TEST_THROW(MV mvec(map,values(0,3),2,numVecs), std::runtime_error);
     // it could also be too small for the given LDA: 
@@ -434,7 +434,7 @@ namespace {
     arrOfarr[1] = values(2,2);
     // arrOfarr.size() == 0
     TEST_THROW(MV mvec(map2,emptyArr(),0), std::runtime_error);
-#ifdef TPETRA_DEBUG
+#ifdef HAVE_TPETRA_DEBUG
     // individual ArrayViews could be too small
     TEST_THROW(MV mvec(map3,arrOfarr(),2), std::runtime_error);
 #endif

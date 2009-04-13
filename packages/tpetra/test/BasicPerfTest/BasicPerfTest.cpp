@@ -441,8 +441,8 @@ void runMatrixTests(RCP<CrsMatrix<Scalar,LO,GO> > A,  RCP<MultiVector<Scalar,LO,
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 #    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( LO, GO ) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, double)
+         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT( LO, GO ) \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, double)
      UNIT_TEST_GROUP_ORDINAL(int)
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
@@ -460,7 +460,7 @@ void runMatrixTests(RCP<CrsMatrix<Scalar,LO,GO> > A,  RCP<MultiVector<Scalar,LO,
      UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
 #    ifdef HAVE_TEUCHOS_LONG_LONG_INT
         typedef long long int LongLongInt;
-        UNIT_TEST_GROUP_ORDINAL_ORDINAL( int,LongLongInt)
+        UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongLongInt )
 #    endif
 
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD

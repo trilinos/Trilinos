@@ -16,9 +16,6 @@
 #include <iohb.h>
 #endif
 
-// FINISH: add tests where:
-//            node has local rows, some with no graph entries
-//            node has local rows, none with graph entries
 
 namespace {
 

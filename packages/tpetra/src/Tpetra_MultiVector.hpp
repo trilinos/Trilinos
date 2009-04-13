@@ -185,7 +185,8 @@ namespace Tpetra {
           "Tpetra::MultiVector::MultiVector(map,ArrayOfPtrs): ArrayOfPtrs[" << j << "].size() (== " << ArrayOfPtrs[j].size() << 
           ") is not equal to myLength() (== " << myLength());
 #endif
-        std::copy(ArrayOfPtrs[j].begin(),ArrayOfPtrs[j].begin()+myLen,(*this)[j]);
+        typename Teuchos::ArrayView<const Scalar>::iterator src = ArrayOfPtrs[j].begin();
+        std::copy(src,src+myLen,(*this)[j]);
       }
     }
   }

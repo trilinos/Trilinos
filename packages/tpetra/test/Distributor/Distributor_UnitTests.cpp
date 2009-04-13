@@ -117,6 +117,7 @@ namespace {
 
 
   ////
+#ifndef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
   TEUCHOS_UNIT_TEST( Distributor, createFromSendsMixedContig)
   {
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -189,6 +190,7 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
+#endif
 
 
   ////
@@ -381,6 +383,7 @@ namespace {
 
 
   ////
+#ifndef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
   TEUCHOS_UNIT_TEST( Distributor, createFromSendsNonContig)
   {
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -435,6 +438,7 @@ namespace {
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
+#endif
 
 
   ////
