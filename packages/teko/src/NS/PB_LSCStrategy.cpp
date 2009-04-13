@@ -7,6 +7,9 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 
+#include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_MultiVectorOut.h"
+
 // PB includes
 #include "PB_Helpers.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
@@ -98,9 +101,6 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
       state->invMass_ = getInvDiagonalOp(massMatrix_);
       state->BQBt_ = explicitMultiply(B,state->invMass_,Bt);  
    }
-   else {
-      state->BQBt_ = explicitMultiply(B,Bt);  
-   }
 
    // now we can just reintialize
    state->setInitialized(true);
@@ -117,6 +117,12 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    const LinearOp C  = getBlock(1,1,A);
 
    bool isStabilized = (not isZeroOp(C));
+
+   if(massMatrix_==Teuchos::null) {
+      std::cout << "using diagonal of F" << std::endl;
+      state->invMass_ = getInvDiagonalOp(F);
+      state->BQBt_ = explicitMultiply(B,Bt);  
+   }
 
    // if this is a stable discretization...we are done!
    if(not isStabilized) {
@@ -136,7 +142,7 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
       iQuF = F;
 
    // do 6 power iterations to compute spectral radius: EHSST2007 Eq. 4.28
-   state->gamma_ = std::fabs(PB::computeSpectralRad(iQuF,5e-2,false,5))/3.0; 
+   state->gamma_ = std::fabs(PB::computeSpectralRad(iQuF,5e-2,false,eigSolveParam_))/3.0; 
 
    // compute alpha scaled inv(D): EHSST2007 Eq. 4.29
    const LinearOp invDiagF = getInvDiagonalOp(F);
@@ -147,13 +153,22 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    const LinearOp invD = buildInvDiagonal(vec_D,"inv(D)");
 
    const LinearOp BidFBtidD = multiply<double>(B_idF_Bt,invD);
-   state->alpha_ = 1.0/std::fabs(PB::computeSpectralRad(BidFBtidD,5e-2,false,5));
+   double num = std::fabs(PB::computeSpectralRad(BidFBtidD,5e-2,false,eigSolveParam_));
+   state->alpha_ = 1.0/num;
    state->aiD_ = Thyra::scale(state->alpha_,invD);
-
-   std::cout << "gamma = " << state->gamma_ << ", alpha = " << state->alpha_ << std::endl;
 
    // now build B*Q*Bt-gamma*C
    state->BQBtmC_ = explicitAdd(state->BQBt_,scale(-state->gamma_,C));
+
+/*
+   std::cout << "Try me = " << num << std::endl;
+   std::cout << "gamma = " << state->gamma_ << ", alpha = " << state->alpha_ << std::endl;
+
+   EpetraExt::RowMatrixToMatrixMarketFile("BQBt.mm",
+                           *Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(Thyra::get_Epetra_Operator(*state->BQBtmC_)));
+   EpetraExt::MultiVectorToMatrixMarketFile("dvec.mm",
+                           *Thyra::get_Epetra_MultiVector(Thyra::get_Epetra_Operator(*state->BQBtmC_)->OperatorRangeMap(),vec_D));
+*/
 }
 
 } // end namespace NS

@@ -20,6 +20,10 @@ namespace Test {
 // prints a vector, with string "s" as the name
 void Print(std::ostream & os,const std::string & s,const Teuchos::RCP<const Thyra::VectorBase<double> > & v);
 
+// prints a vector, with string "s" as the name
+inline std::string Print(const std::string & s,const Teuchos::RCP<const Thyra::VectorBase<double> > & v)
+{ std::stringstream ss; Print(ss,s,v); return ss.str(); }
+
 // builds a single vector of the identity matrix
 Teuchos::RCP<Thyra::VectorBase<double> > BuildIVector(int j,const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & vs);
 

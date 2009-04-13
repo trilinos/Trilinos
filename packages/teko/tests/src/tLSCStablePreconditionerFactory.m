@@ -5,17 +5,23 @@ D = [ 5 0 ; 0 6 ];
 
 iS = inv(D*G)*(D*F*G)*inv(D*G);
 
-iL = eye(4);
-iD = zeros(4);
+%iL = eye(4);
+%iD = zeros(4);
+%iU = eye(4);
+
+%iD(1:2,1:2) = inv(F);
+%iD(3:4,3:4) = -iS;
+
+%iU(1:2,3:4) = -inv(F)*G;
+%iL(3:4,1:2) = -D*inv(F);
+%
+%iAa = iU*iD*iL;
+
 iU = eye(4);
-
-iD(1:2,1:2) = inv(F);
-iD(3:4,3:4) = -iS;
-
-iU(1:2,3:4) = -inv(F)*G;
-iL(3:4,1:2) = -D*inv(F);
-
-iAa = iU*iD*iL;
+iU(1:2,1:2) = inv(F);
+iU(1:2,3:4) = inv(F)*G*iS;
+iU(3:4,3:4) = -iS;
+iAa = iU;
 
 v = [0 1 1 3]';
 (iAa*v)'
@@ -46,17 +52,23 @@ A(3:4,1:2) = D;
 iBQBt = inv(D*iM*G);
 iS = iBQBt*(D*iM*F*iM*G)*iBQBt;
 
-iL = eye(4);
-iD = zeros(4);
+% iL = eye(4);
+% iD = zeros(4);
+% iU = eye(4);
+% 
+% iD(1:2,1:2) = inv(F);
+% iD(3:4,3:4) = -iS;
+% 
+% iU(1:2,3:4) = -inv(F)*G;
+% iL(3:4,1:2) = -D*inv(F);
+% 
+% iAa = iU*iD*iL;
+
 iU = eye(4);
-
-iD(1:2,1:2) = inv(F);
-iD(3:4,3:4) = -iS;
-
-iU(1:2,3:4) = -inv(F)*G;
-iL(3:4,1:2) = -D*inv(F);
-
-iAa = iU*iD*iL;
+iU(1:2,1:2) = inv(F);
+iU(1:2,3:4) = inv(F)*G*iS;
+iU(3:4,3:4) = -iS;
+iAa = iU;
 
 v = [0 1 1 3]';
 (iAa*v)'

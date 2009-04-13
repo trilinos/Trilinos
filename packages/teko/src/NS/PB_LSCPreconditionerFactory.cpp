@@ -77,16 +77,13 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    // build diagonal operations
    std::vector<LinearOp> invDiag(2);
    invDiag[0] = invF;
-   invDiag[1] = invPschur;
+   invDiag[1] = Thyra::scale(-1.0,invPschur);
 
    // get upper triangular matrix
    BlockedLinearOp U = getUpperTriBlocks(blockOp); 
 
    // build the preconditioner operator
    return createNewBlockUpperTriInverseOp(U,invDiag);
-
-   // build a preconditioner operator using the parent classes utility function
-   // return createNewLU2x2InverseOp(blockOp,invF,invPschur);
 }
 
 } // end namespace NS

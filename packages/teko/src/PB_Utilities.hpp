@@ -121,6 +121,13 @@ BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvs)
 typedef Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > BlockedLinearOp;
 typedef Teuchos::RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
+//! Converse a LinearOp to a BlockedLinearOp
+inline BlockedLinearOp toBlockedLinearOp(const LinearOp clo)
+{
+   Teuchos::RCP<Thyra::LinearOpBase<double> > lo = Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(clo);
+   return Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<double> > (lo);
+}
+
 //! Convert to a LinearOp from a BlockedLinearOp
 inline LinearOp toLinearOp(BlockedLinearOp & blo) { return blo; }
 

@@ -96,14 +96,18 @@ public:
    //@}
 
    //! Initialize the state object using this blocked linear operator
-   void initializeState(const BlockedLinearOp & A,LSCPrecondState * state) const;
+   virtual void initializeState(const BlockedLinearOp & A,LSCPrecondState * state) const;
 
    //! Initialize the state object using this blocked linear operator
-   void reinitializeState(const BlockedLinearOp & A,LSCPrecondState * state) const;
+   virtual void reinitializeState(const BlockedLinearOp & A,LSCPrecondState * state) const;
+
+   virtual void setEigSolveParam(int sz) { eigSolveParam_ = sz; }
+   virtual int getEigSolveParam() { return eigSolveParam_; }
 
 protected:
    LinearOp massMatrix_;
    Teuchos::RCP<const InverseFactory> invFactory_;
+   int eigSolveParam_;
 };
 
 } // end namespace NS
