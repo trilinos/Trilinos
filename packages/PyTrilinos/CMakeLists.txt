@@ -110,9 +110,6 @@ FIND_PACKAGE(SWIG 1.3.29 REQUIRED)
 #INCLUDE(${SWIG_USE_FILE})
 INCLUDE(UseSWIG)
 
-# Add the util directory, which contains the pkg_info.py script
-ADD_SUBDIRECTORY(util)
-
 # Add the src directory, which builds the pytrilinos library,
 # generates the wrapper code, builds the PyTrilinos python package and
 # compiles the PyTrilinos extension modules

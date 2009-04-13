@@ -53,6 +53,13 @@ LOCA and Epetra.
 // Teuchos includes
 #include "Teuchos_PythonParameter.h"
 
+// Epetra includes
+#include "Epetra_ConfigDefs.h"
+#include "Epetra_Object.h"
+#include "Epetra_Operator.h"
+#include "Epetra_InvOperator.h"
+#include "Epetra_basicRowMatrix.h"
+#include "Epetra_JadMatrix.h"
 
 // Local includes
 #include "NumPyImporter.h"
