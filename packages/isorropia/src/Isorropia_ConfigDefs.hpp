@@ -77,13 +77,13 @@ USA
 #include <time.h>
 #endif
 
-
+#ifndef __deprecated
 #if (__GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 #define __deprecated  __attribute__((__deprecated__))
 #else
 #define __deprecated
 #endif /* __GNUC__ */
-
+#endif /* __deprecated */
 
 #endif //_Isorropia_ConfigDefs_hpp_
 

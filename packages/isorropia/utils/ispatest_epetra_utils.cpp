@@ -509,7 +509,7 @@ int printMultiVector(const Epetra_MultiVector mv, std::ostream &os, const char *
   
   // Print out multivector info
 
-  double *v, x, y, z;
+  double *v, x=0, y=0, z=0;
   int stride, stride2;
   newmv->ExtractView(&v, &stride);
   stride2 = 2 * stride;
