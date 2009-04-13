@@ -141,6 +141,15 @@ RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
 }
 
 
+template<class T>
+REFCOUNTPTR_INLINE
+template<class T2>
+void RCP<T>::reset(T2* p, bool has_ownership_in)
+{
+  *this = rcp(p, has_ownership_in);
+}
+
+
 // Object query and access functions
 
 

@@ -56,6 +56,16 @@ TEUCHOS_UNIT_TEST( RCP, getOptionalEmbeddedObj_default )
 }
 
 
+TEUCHOS_UNIT_TEST( RCP, reset )
+{
+  RCP<A> a_rcp = rcp(new A);
+  C* c_rawp = new C;
+  a_rcp.reset(c_rawp);
+  A* a_rawp = c_rawp;
+  TEST_EQUALITY( a_rcp.getRawPtr(), a_rawp );
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
 {
 

@@ -459,7 +459,7 @@ public:
    * but only through a type-specific non-member constructor function or at
    * least through the general non-member <tt>rcp()</tt> function.
    */
-  explicit RCP( T* p, bool has_ownership = false );
+  explicit RCP( T* p, bool has_ownership = true );
 
   /** \brief Construct from a raw pointer and a custom deallocator.
    * occur.
@@ -554,6 +554,19 @@ public:
    * Provides the "strong guarantee" in a debug build!
    */
   RCP<T>& operator=(const RCP<T>& r_ptr);
+
+  /** \brief Reset the raw pointer with default ownership to delete.
+   *
+   * Equivalent to calling:
+   
+   \code
+
+     r_rcp = rcp(p)
+
+   \endcode
+   */
+  template<class T2>
+  void reset(T2* p, bool has_ownership = true);
 
   //@}
 
