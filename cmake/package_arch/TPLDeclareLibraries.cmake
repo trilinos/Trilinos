@@ -43,7 +43,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("TPL_DECLARE_LIBRARIES: ${TPL_NAME}")
     PRINT_VAR(PARSE_REQUIRED_HEADERS)
-   PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
+    PRINT_VAR(PARSE_REQUIRED_LIBS_NAMES)
   ENDIF()
 
   #
@@ -206,11 +206,58 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
   ENDIF()
 
   # Include directories
-
+  
   IF (PARSE_REQUIRED_HEADERS)
 
     IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
+    
+      FOREACH(INCLUDE_FILE_SET ${PARSE_REQUIRED_HEADERS})
+        IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+          PRINT_VAR(INCLUDE_FILE_SET)
+        ENDIF()
+        
+        SET(INCLUDE_FILE_LIST ${INCLUDE_FILE_SET})
+        SEPARATE_ARGUMENTS(INCLUDE_FILE_LIST)
+        
+        SET(INCLUDE_PATHS)
+        
+        FOREACH(INCLUDE_FILE ${INCLUDE_FILE_LIST})
+          IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+            PRINT_VAR(INCLUDE_FILE)
+          ENDIF()
+          
+          SET_NOTFOUND(_${TPL_NAME}_${INCLUDE_FILE}_PATH)
+          FIND_PATH( _${TPL_NAME}_${INCLUDE_FILE}_PATH
+            NAMES ${INCLUDE_FILE}
+            PATHS ${${TPL_NAME}_INCLUDE_DIRS}
+            NO_DEFAULT_PATH)
+          FIND_PATH( _${TPL_NAME}_${INCLUDE_FILE}_PATH
+            NAMES ${INCLUDE_FILE} )
+          MARK_AS_ADVANCED(_${TPL_NAME}_${INCLUDE_FILE}_PATH)
+          
+          IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+            PRINT_VAR(_${TPL_NAME}_${INCLUDE_FILE}_PATH)
+          ENDIF()
+          
+          IF(_${TPL_NAME}_${INCLUDE_FILE}_PATH)
+            MESSAGE(STATUS "  Found ${TPL_NAME} TPL header: ${_${TPL_NAME}_${INCLUDE_FILE}_PATH}")
+            SET(INCLUDE_FILE_SET_PATH ${_${TPL_NAME}_${INCLUDE_FILE}_PATH})
+            BREAK()
+          ENDIF()
+        ENDFOREACH()
+        
+        IF(NOT INCLUDE_FILE_SET_PATH)
+          MULTILINE_SET(ERRMSG
+            "Warning: Could not find a header in the set \"${INCLUDE_FILE_SET}\" for"
+            " the TPL ${TPL_NAME}!  Please manually set"
+            " ${TPL_NAME}_INCLUDE_DIRS and or just"
+            " TPL_${TPL_NAME}_INCLUDE_DIRS to point to the ${TPL_NAME} includes!")
+        ENDIF()
+        
+        APPEND_SET(INCLUDES_FOUND ${INCLUDE_FILE_SET_PATH})
 
+      ENDFOREACH()
+    
       MULTILINE_SET(DOCSTR
         "List of semi-colon separated paths to append to the compile invocations"
         " to find the headers for the TPL ${TPL_NAME}.  This is the final variable"
@@ -218,16 +265,10 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
         " is used to look for the given headers first but is just a suggestion."
         " This variable, however, is the final value and will not be touched."
         )
+      
+      ADVANCED_SET(TPL_${TPL_NAME}_INCLUDE_DIRS ${INCLUDES_FOUND}
+        CACHE PATH ${DOCSTR})
   
-      SET_NOTFOUND(TPL_${TPL_NAME}_INCLUDE_DIRS)
-      FIND_PATH( TPL_${TPL_NAME}_INCLUDE_DIRS NAMES
-        NAMES ${PARSE_REQUIRED_HEADERS}
-        PATHS ${${TPL_NAME}_INCLUDE_DIRS} NO_DEFAULT_PATH
-        DOC ${DOCSTR} )
-      FIND_PATH( TPL_${TPL_NAME}_INCLUDE_DIRS NAMES
-        NAMES ${PARSE_REQUIRED_HEADERS} )
-      MARK_AS_ADVANCED(TPL_${TPL_NAME}_LIBRARIES)
-   
       IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
         MULTILINE_SET(ERRMSG
           "Error, could not find the ${TPL_NAME} headers include directory!"
@@ -240,11 +281,6 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
       IF (TPL_${TPL_NAME}_INCLUDE_DIRS)
         MESSAGE(STATUS "  Found ${TPL_NAME} TPL header path: ${TPL_${TPL_NAME}_INCLUDE_DIRS}")
       ENDIF()
-  
-      # 2008/12/02: rabartl: ToDo: Above: Put in a check to see that all of the
-      # headers that have been specified have indeed been found!  This needs to support
-      # possible multiple directories.
-  
     ELSE()
 
       # TPL_${TPL_NAME}_INCLUDE_DIRS is already in the cache so leave it alone!

@@ -61,7 +61,10 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   ZoltanTpl      TS
   y12m           SS
   SuperLUDist    SS
+  SuperLU        SS
   Zlib		 SS
+  UMFPACK        SS
+  MUMPS          SS
   )
 
 # NOTES:
@@ -69,3 +72,4 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
 # (*) ParMETIS must be listed after Scotch because the
 #     ParMETIS include directories must come before the
 #     Scotch include directories.
+#

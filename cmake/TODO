@@ -84,9 +84,6 @@ tests and examples of the set of initially enabled packages will be enabled.
 add test to CMAKE_CUSTOM_MEMCHECK_IGNORE that gets written to
 CTestCustomer.ctest.
 
-(*) [???] Change the macro TPL_DELCARE_LIBRARIES(...) to validate that all
-pased in header files are found (This was requested by Roger P.).
-
 (*) [???] Set the variable CPACK_SOURCE_IGNORE_FILES to ignore groups of files
 (and hopefully directories) that you don't want to add to the source
 distribution tarball!  We need to be able to set these at the global level as
