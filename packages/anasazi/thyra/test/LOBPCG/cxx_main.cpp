@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
 #endif
   MyPID = Comm.MyPID();
 
-  bool testFailed;
+  bool testFailed = false;
   bool verbose = false;
   bool debug = false;
   std::string filename("mhd1280b.cua");
@@ -230,7 +230,6 @@ int main(int argc, char *argv[])
 
     // Solve the problem to the specified tolerances or length
     Anasazi::ReturnType returnCode = MySolverMan.solve();
-    testFailed = false;
     if (returnCode != Anasazi::Converged) {
       testFailed = true;
     }
