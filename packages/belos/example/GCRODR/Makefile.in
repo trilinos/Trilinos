@@ -71,7 +71,7 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_Dummy_OBJECTS =
 Dummy_OBJECTS = $(am_Dummy_OBJECTS)
 Dummy_LDADD = $(LDADD)
-am_gcrodr_hb_OBJECTS = gcrodr_hb-test_gcrodr_hb.$(OBJEXT) \
+am_gcrodr_hb_OBJECTS = gcrodr_hb-GCRODREpetraExFile.$(OBJEXT) \
 	gcrodr_hb-createEpetraProblem.$(OBJEXT)
 gcrodr_hb_OBJECTS = $(am_gcrodr_hb_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -81,7 +81,7 @@ am__DEPENDENCIES_1 =
 gcrodr_hb_LINK = $(CXXLD) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_prec_gcrodr_hb_OBJECTS =  \
-	prec_gcrodr_hb-test_prec_gcrodr_hb.$(OBJEXT) \
+	prec_gcrodr_hb-PrecGCRODREpetraExFile.$(OBJEXT) \
 	prec_gcrodr_hb-createEpetraProblem.$(OBJEXT)
 prec_gcrodr_hb_OBJECTS = $(am_prec_gcrodr_hb_OBJECTS)
 prec_gcrodr_hb_LINK = $(CXXLD) $(prec_gcrodr_hb_CXXFLAGS) $(CXXFLAGS) \
@@ -226,8 +226,8 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 @BUILD_IFPACK_TRUE@@BUILD_TRIUTILS_TRUE@BELOS_GCRODR_IFPACK_EX = prec_gcrodr_hb 
 @BUILD_TRIUTILS_TRUE@BELOS_GCRODR_NOPREC_EX = gcrodr_hb Dummy 
 Dummy_SOURCES = Dummy
-gcrodr_hb_SOURCES = $(srcdir)/test_gcrodr_hb.cpp $(srcdir)/createEpetraProblem.cpp
-prec_gcrodr_hb_SOURCES = $(srcdir)/test_prec_gcrodr_hb.cpp $(srcdir)/createEpetraProblem.cpp
+gcrodr_hb_SOURCES = $(srcdir)/GCRODREpetraExFile.cpp $(srcdir)/createEpetraProblem.cpp
+prec_gcrodr_hb_SOURCES = $(srcdir)/PrecGCRODREpetraExFile.cpp $(srcdir)/createEpetraProblem.cpp
 gcrodr_hb_DEPENDENCIES = \
 			$(top_builddir)/../epetra/src/libepetra.a \
 			$(top_builddir)/../teuchos/src/libteuchos.a
@@ -293,10 +293,10 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcrodr_hb-GCRODREpetraExFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcrodr_hb-createEpetraProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gcrodr_hb-test_gcrodr_hb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prec_gcrodr_hb-PrecGCRODREpetraExFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prec_gcrodr_hb-createEpetraProblem.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/prec_gcrodr_hb-test_prec_gcrodr_hb.Po@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -312,19 +312,19 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
-gcrodr_hb-test_gcrodr_hb.o: $(srcdir)/test_gcrodr_hb.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -MT gcrodr_hb-test_gcrodr_hb.o -MD -MP -MF $(DEPDIR)/gcrodr_hb-test_gcrodr_hb.Tpo -c -o gcrodr_hb-test_gcrodr_hb.o `test -f '$(srcdir)/test_gcrodr_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_gcrodr_hb.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/gcrodr_hb-test_gcrodr_hb.Tpo $(DEPDIR)/gcrodr_hb-test_gcrodr_hb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_gcrodr_hb.cpp' object='gcrodr_hb-test_gcrodr_hb.o' libtool=no @AMDEPBACKSLASH@
+gcrodr_hb-GCRODREpetraExFile.o: $(srcdir)/GCRODREpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -MT gcrodr_hb-GCRODREpetraExFile.o -MD -MP -MF $(DEPDIR)/gcrodr_hb-GCRODREpetraExFile.Tpo -c -o gcrodr_hb-GCRODREpetraExFile.o `test -f '$(srcdir)/GCRODREpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/GCRODREpetraExFile.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/gcrodr_hb-GCRODREpetraExFile.Tpo $(DEPDIR)/gcrodr_hb-GCRODREpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/GCRODREpetraExFile.cpp' object='gcrodr_hb-GCRODREpetraExFile.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -c -o gcrodr_hb-test_gcrodr_hb.o `test -f '$(srcdir)/test_gcrodr_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_gcrodr_hb.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -c -o gcrodr_hb-GCRODREpetraExFile.o `test -f '$(srcdir)/GCRODREpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/GCRODREpetraExFile.cpp
 
-gcrodr_hb-test_gcrodr_hb.obj: $(srcdir)/test_gcrodr_hb.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -MT gcrodr_hb-test_gcrodr_hb.obj -MD -MP -MF $(DEPDIR)/gcrodr_hb-test_gcrodr_hb.Tpo -c -o gcrodr_hb-test_gcrodr_hb.obj `if test -f '$(srcdir)/test_gcrodr_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_gcrodr_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_gcrodr_hb.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/gcrodr_hb-test_gcrodr_hb.Tpo $(DEPDIR)/gcrodr_hb-test_gcrodr_hb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_gcrodr_hb.cpp' object='gcrodr_hb-test_gcrodr_hb.obj' libtool=no @AMDEPBACKSLASH@
+gcrodr_hb-GCRODREpetraExFile.obj: $(srcdir)/GCRODREpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -MT gcrodr_hb-GCRODREpetraExFile.obj -MD -MP -MF $(DEPDIR)/gcrodr_hb-GCRODREpetraExFile.Tpo -c -o gcrodr_hb-GCRODREpetraExFile.obj `if test -f '$(srcdir)/GCRODREpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/GCRODREpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/GCRODREpetraExFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/gcrodr_hb-GCRODREpetraExFile.Tpo $(DEPDIR)/gcrodr_hb-GCRODREpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/GCRODREpetraExFile.cpp' object='gcrodr_hb-GCRODREpetraExFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -c -o gcrodr_hb-test_gcrodr_hb.obj `if test -f '$(srcdir)/test_gcrodr_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_gcrodr_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_gcrodr_hb.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -c -o gcrodr_hb-GCRODREpetraExFile.obj `if test -f '$(srcdir)/GCRODREpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/GCRODREpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/GCRODREpetraExFile.cpp'; fi`
 
 gcrodr_hb-createEpetraProblem.o: $(srcdir)/createEpetraProblem.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -MT gcrodr_hb-createEpetraProblem.o -MD -MP -MF $(DEPDIR)/gcrodr_hb-createEpetraProblem.Tpo -c -o gcrodr_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
@@ -340,19 +340,19 @@ gcrodr_hb-createEpetraProblem.obj: $(srcdir)/createEpetraProblem.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -c -o gcrodr_hb-createEpetraProblem.obj `if test -f '$(srcdir)/createEpetraProblem.cpp'; then $(CYGPATH_W) '$(srcdir)/createEpetraProblem.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/createEpetraProblem.cpp'; fi`
 
-prec_gcrodr_hb-test_prec_gcrodr_hb.o: $(srcdir)/test_prec_gcrodr_hb.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prec_gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -MT prec_gcrodr_hb-test_prec_gcrodr_hb.o -MD -MP -MF $(DEPDIR)/prec_gcrodr_hb-test_prec_gcrodr_hb.Tpo -c -o prec_gcrodr_hb-test_prec_gcrodr_hb.o `test -f '$(srcdir)/test_prec_gcrodr_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_prec_gcrodr_hb.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/prec_gcrodr_hb-test_prec_gcrodr_hb.Tpo $(DEPDIR)/prec_gcrodr_hb-test_prec_gcrodr_hb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_prec_gcrodr_hb.cpp' object='prec_gcrodr_hb-test_prec_gcrodr_hb.o' libtool=no @AMDEPBACKSLASH@
+prec_gcrodr_hb-PrecGCRODREpetraExFile.o: $(srcdir)/PrecGCRODREpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prec_gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -MT prec_gcrodr_hb-PrecGCRODREpetraExFile.o -MD -MP -MF $(DEPDIR)/prec_gcrodr_hb-PrecGCRODREpetraExFile.Tpo -c -o prec_gcrodr_hb-PrecGCRODREpetraExFile.o `test -f '$(srcdir)/PrecGCRODREpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/PrecGCRODREpetraExFile.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/prec_gcrodr_hb-PrecGCRODREpetraExFile.Tpo $(DEPDIR)/prec_gcrodr_hb-PrecGCRODREpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PrecGCRODREpetraExFile.cpp' object='prec_gcrodr_hb-PrecGCRODREpetraExFile.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prec_gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -c -o prec_gcrodr_hb-test_prec_gcrodr_hb.o `test -f '$(srcdir)/test_prec_gcrodr_hb.cpp' || echo '$(srcdir)/'`$(srcdir)/test_prec_gcrodr_hb.cpp
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prec_gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -c -o prec_gcrodr_hb-PrecGCRODREpetraExFile.o `test -f '$(srcdir)/PrecGCRODREpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/PrecGCRODREpetraExFile.cpp
 
-prec_gcrodr_hb-test_prec_gcrodr_hb.obj: $(srcdir)/test_prec_gcrodr_hb.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prec_gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -MT prec_gcrodr_hb-test_prec_gcrodr_hb.obj -MD -MP -MF $(DEPDIR)/prec_gcrodr_hb-test_prec_gcrodr_hb.Tpo -c -o prec_gcrodr_hb-test_prec_gcrodr_hb.obj `if test -f '$(srcdir)/test_prec_gcrodr_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_prec_gcrodr_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_prec_gcrodr_hb.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/prec_gcrodr_hb-test_prec_gcrodr_hb.Tpo $(DEPDIR)/prec_gcrodr_hb-test_prec_gcrodr_hb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/test_prec_gcrodr_hb.cpp' object='prec_gcrodr_hb-test_prec_gcrodr_hb.obj' libtool=no @AMDEPBACKSLASH@
+prec_gcrodr_hb-PrecGCRODREpetraExFile.obj: $(srcdir)/PrecGCRODREpetraExFile.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prec_gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -MT prec_gcrodr_hb-PrecGCRODREpetraExFile.obj -MD -MP -MF $(DEPDIR)/prec_gcrodr_hb-PrecGCRODREpetraExFile.Tpo -c -o prec_gcrodr_hb-PrecGCRODREpetraExFile.obj `if test -f '$(srcdir)/PrecGCRODREpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/PrecGCRODREpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PrecGCRODREpetraExFile.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/prec_gcrodr_hb-PrecGCRODREpetraExFile.Tpo $(DEPDIR)/prec_gcrodr_hb-PrecGCRODREpetraExFile.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/PrecGCRODREpetraExFile.cpp' object='prec_gcrodr_hb-PrecGCRODREpetraExFile.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prec_gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -c -o prec_gcrodr_hb-test_prec_gcrodr_hb.obj `if test -f '$(srcdir)/test_prec_gcrodr_hb.cpp'; then $(CYGPATH_W) '$(srcdir)/test_prec_gcrodr_hb.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/test_prec_gcrodr_hb.cpp'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prec_gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -c -o prec_gcrodr_hb-PrecGCRODREpetraExFile.obj `if test -f '$(srcdir)/PrecGCRODREpetraExFile.cpp'; then $(CYGPATH_W) '$(srcdir)/PrecGCRODREpetraExFile.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/PrecGCRODREpetraExFile.cpp'; fi`
 
 prec_gcrodr_hb-createEpetraProblem.o: $(srcdir)/createEpetraProblem.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(prec_gcrodr_hb_CXXFLAGS) $(CXXFLAGS) -MT prec_gcrodr_hb-createEpetraProblem.o -MD -MP -MF $(DEPDIR)/prec_gcrodr_hb-createEpetraProblem.Tpo -c -o prec_gcrodr_hb-createEpetraProblem.o `test -f '$(srcdir)/createEpetraProblem.cpp' || echo '$(srcdir)/'`$(srcdir)/createEpetraProblem.cpp
