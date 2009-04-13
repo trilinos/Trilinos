@@ -611,11 +611,14 @@ Package: PyTrilinos
 Package Transition Lead: Bill Spotz (wfspotz@sandia.gov)
 
 Status: Build is complete for packages that do not utilize nested
-namespaces (everything except NOX and LOCA).  NOX and LOCA wrappers
-may require consultation with Kitware.  Backward compatibility with
-the autotools build system has been maintained.  Tests and examples
-have not been implemented yet.  In theory they should be easy, but
-they may be so easy that cmake doesn't really account for my use case.
+namespaces.  For those that do untilize namespaces (NOX and LOCA), NOX
+has been implemented, but there is still a module import issue.  LOCA
+has not been implemented yet, but the major hurdles were overcome when
+NOX was implemented.  Backward compatibility with the autotools build
+system has been maintained.  Tests and examples have been
+implemented.  53 of 62 tests pass.  Two failures are related to the
+NOX problem above, one to Teuchos/expat and the rest are ML segfaults
+that I have not yet tracked down.
 
 Final Certification Date: [???]
 
