@@ -211,7 +211,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
   # Some platform-independnet setup
   #
   
-  INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../CTestConfig.cmake")
+  INCLUDE("${TRILINOS_CMAKE_DIR}/../CTestConfig.cmake")
   SET(CMAKE_CACHE_CLEAN_FILE "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
   SET(CTEST_NOTES_FILES "${CTEST_NOTES_FILES};${CMAKE_CACHE_CLEAN_FILE}")
   SET(CTEST_USE_LAUNCHERS 1)
@@ -277,7 +277,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
   PRINT_VAR(CTEST_DROP_SITE)
   IF (CTEST_DO_SUBMIT)
     CTEST_SUBMIT( FILES
-      "${CTEST_SCRIPT_DIRECTORY}/../python/data/CDashSubprojectDependencies.xml"
+      "${TRILINOS_CMAKE_DIR}/python/data/CDashSubprojectDependencies.xml"
       RETURN_VALUE SUBMIT_RETURN_VAL
       )
     MESSAGE("\nSubmitted subproject dependencies: Return='${SUBMIT_RETURN_VAL}'")
@@ -350,7 +350,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
 
     MESSAGE("Generating the file CMakeCache.clean.txt ...")
     EXECUTE_PROCESS( COMMAND
-      ${CTEST_SCRIPT_DIRECTORY}/makeCMakeCacheFile.sh ${CTEST_BINARY_DIRECTORY} )
+      ${TRILINOS_CMAKE_DIR}/ctest/makeCMakeCacheFile.sh ${CTEST_BINARY_DIRECTORY} )
     IF (NOT EXISTS "${CTEST_BINARY_DIRECTORY}/CMakeCache.clean.txt")
       MESSAGE("Error, the file '${CMAKE_CACHE_CLEAN_FILE}' does not exist!")
     ENDIF()
@@ -364,7 +364,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
       # load target properties and test keywords
       CTEST_READ_CUSTOM_FILES(BUILD "${CTEST_BINARY_DIRECTORY}")
       # Overridde from this file!
-      INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../CTestConfig.cmake")
+      INCLUDE("${TRILINOS_CMAKE_DIR}/../CTestConfig.cmake")
     ENDIF()
   
     # Submit configure results and the notes to the dashboard 
