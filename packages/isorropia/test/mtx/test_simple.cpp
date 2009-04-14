@@ -50,31 +50,31 @@
 // This is what simple.mtx looks like.  25 rows, 25 cols, 105 non-zeroes.
 //
 //  0123456789012345678901234
-// 0xx   x                   0 
+// 0xx   x                   0
 // 1xxx   x                  1
-// 2 xxx   x                 2 
-// 3  xxx   x                3 
-// 4   xx    x               4 
-// 5x    xx   x              5 
+// 2 xxx   x                 2
+// 3  xxx   x                3
+// 4   xx    x               4
+// 5x    xx   x              5
 // 6 x   xxx   x             6
-// 7  x   xxx   x            7 
-// 8   x   xxx   x           8 
-// 9    x   xx    x          9 
-// 0     x    xx   x         0 
+// 7  x   xxx   x            7
+// 8   x   xxx   x           8
+// 9    x   xx    x          9
+// 0     x    xx   x         0
 // 1      x   xxx   x        1
-// 2       x   xxx   x       2 
-// 3        x   xxx   x      3 
-// 4         x   xx    x     4 
-// 5          x    xx   x    5 
+// 2       x   xxx   x       2
+// 3        x   xxx   x      3
+// 4         x   xx    x     4
+// 5          x    xx   x    5
 // 6           x   xxx   x   6
-// 7            x   xxx   x  7 
-// 8             x   xxx   x 8 
-// 9              x   xx    x9 
-// 0               x    xx   0 
+// 7            x   xxx   x  7
+// 8             x   xxx   x 8
+// 9              x   xx    x9
+// 0               x    xx   0
 // 1                x   xxx  1
-// 2                 x   xxx 2 
-// 3                  x   xxx3 
-// 4                   x   xx4 
+// 2                 x   xxx 2
+// 3                  x   xxx3
+// 4                   x   xx4
 //  0123456789012345678901234
 //
 // If run with --f={filename} a matrix market file other than simple.mtx
@@ -118,7 +118,7 @@
 #define NO_APPLICATION_SUPPLIED_WEIGHTS    3
 
 #define EPETRA_CRSGRAPH               1
-#define EPETRA_CRSMATRIX              2  
+#define EPETRA_CRSMATRIX              2
 
 static int tmp=0;
 
@@ -145,8 +145,8 @@ static int tmp=0;
   }                       \
   return 1;
 
-static void test_type(int numPartitions, int partitioningType, int vertexWeightType, 
-          int edgeWeightType, int objectType)
+static void test_type(int numPartitions, int partitioningType, int vertexWeightType,
+	  int edgeWeightType, int objectType)
 {
   std::cout << "TEST: ";
   if (partitioningType == NO_ZOLTAN)
@@ -160,32 +160,32 @@ static void test_type(int numPartitions, int partitioningType, int vertexWeightT
     std::cout << "created equal vertex (row) weights, ";
   else if (vertexWeightType == SUPPLY_UNEQUAL_WEIGHTS)
     std::cout << "created unequal vertex (row) weights, ";
-  else 
+  else
     if (partitioningType == NO_ZOLTAN){
       std::cout << std::endl << "      ";
       std::cout << "did not supply row weights, default is number of row nonzeros,";
     }
     else
       std::cout << "did not supply vertex (row) weights, ";
-  
+
   if (partitioningType != NO_ZOLTAN){
     std::cout << std::endl << "      ";
-  
+
     if (partitioningType == GRAPH_PARTITIONING){
       if (edgeWeightType == SUPPLY_EQUAL_WEIGHTS)
-        std::cout << "created equal edge weights, ";
+	std::cout << "created equal edge weights, ";
       else if (edgeWeightType == SUPPLY_UNEQUAL_WEIGHTS)
-        std::cout << "created unequal edge weights, ";
-      else 
-        std::cout << "did not supply edge weights, ";
+	std::cout << "created unequal edge weights, ";
+      else
+	std::cout << "did not supply edge weights, ";
     }
     else{
       if (edgeWeightType == SUPPLY_EQUAL_WEIGHTS)
-        std::cout << "created equal hyperedge (column) weights, ";
+	std::cout << "created equal hyperedge (column) weights, ";
       else if (edgeWeightType == SUPPLY_UNEQUAL_WEIGHTS)
-        std::cout << "created unequal hyperedge (column) weights,";
-      else 
-        std::cout << "did not supply hyperedge (column) weights, ";
+	std::cout << "created unequal hyperedge (column) weights,";
+      else
+	std::cout << "did not supply hyperedge (column) weights, ";
     }
   }
   else{
@@ -206,23 +206,23 @@ static void test_type(int numPartitions, int partitioningType, int vertexWeightT
 }
 
 static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
-          bool verbose,           // display the graph before & after
-          bool contract,          // set global number of partitions to 1/2 num procs
-          int partitioningType,   // hypergraph or graph partitioning, or simple
-          int vertexWeightType,   // use vertex weights?
-          int edgeWeightType,     // use edge/hyperedge weights?
-          int objectType)         // use isorropia's CrsMatrix or CrsGraph
+	  bool verbose,           // display the graph before & after
+	  bool contract,          // set global number of partitions to 1/2 num procs
+	  int partitioningType,   // hypergraph or graph partitioning, or simple
+	  int vertexWeightType,   // use vertex weights?
+	  int edgeWeightType,     // use edge/hyperedge weights?
+	  int objectType)         // use isorropia's CrsMatrix or CrsGraph
 {
-  int rc=0, fail = 0;  
+  int rc=0, fail = 0;
 #ifdef HAVE_EPETRAEXT
   int localProc = 0;
-  int numProcs = 1;
   double balance1, balance2, cutn1, cutn2, cutl1, cutl2;
   double balance3, cutn3, cutl3;
-  double cutWgt1, cutWgt2, cutWgt3;; 
+  double cutWgt1, cutWgt2, cutWgt3;;
   int numCuts1, numCuts2, numCuts3, valid;
   int numPartitions = 0;
   int keepDenseEdges = 0;
+  int numProcs = 1;
 
 #ifdef HAVE_MPI
   const Epetra_MpiComm &Comm = dynamic_cast<const Epetra_MpiComm &>(matrix->Comm());
@@ -253,12 +253,12 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     if (numPartitions > numRows)
       numPartitions = numRows;
 
-    if (numPartitions > 0){ 
+    if (numPartitions > 0){
       if (localProc < numPartitions){
-        myShare = 1.0 / numPartitions;
+	myShare = 1.0 / numPartitions;
       }
       else{
-        myShare = 0.0;
+	myShare = 0.0;
       }
     }
     else{
@@ -283,47 +283,47 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   Teuchos::RCP<Epetra_Vector> vptr;
 
-  Teuchos::RCP<Epetra_CrsMatrix> eptr; 
+  Teuchos::RCP<Epetra_CrsMatrix> eptr;
 
-  Teuchos::RCP<Epetra_Vector> hyperEdgeWeights; 
+  Teuchos::RCP<Epetra_Vector> hyperEdgeWeights;
 
 
   if (edgeWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS){
 
-    if (partitioningType == GRAPH_PARTITIONING){   
-  
+    if (partitioningType == GRAPH_PARTITIONING){
+
       // Create graph edge weights.
-    
+
       eptr = Teuchos::rcp(new Epetra_CrsMatrix(*matrix));
-    
+
       if (vertexWeightType == SUPPLY_EQUAL_WEIGHTS){
-        eptr->PutScalar(1.0);   // set all nonzeros to 1.0
+	eptr->PutScalar(1.0);   // set all nonzeros to 1.0
       }
       else{
-        int nrows = eptr->NumMyRows();
-        int maxRowSize = eptr->MaxNumEntries();
-        double *newVal = NULL;
-        if (maxRowSize > 0){
-          newVal = new double [maxRowSize];
-          for (int j=0; j<maxRowSize; j++){
-            newVal[j] = localProc + 1 + j;
-          }
-        }
-        int numEntries;
-        int *idx;
-        double *val;
-        for (int i=0; i<nrows; i++){
-          rc = eptr->ExtractMyRowView(i, numEntries, val, idx);
-          for (int j=0; j<numEntries; j++){
-            val[j] = newVal[j];
-          }
-        }
-        if (newVal) delete [] newVal;
+	int nrows = eptr->NumMyRows();
+	int maxRowSize = eptr->MaxNumEntries();
+	double *newVal = NULL;
+	if (maxRowSize > 0){
+	  newVal = new double [maxRowSize];
+	  for (int j=0; j<maxRowSize; j++){
+	    newVal[j] = localProc + 1 + j;
+	  }
+	}
+	int numEntries;
+	int *idx;
+	double *val;
+	for (int i=0; i<nrows; i++){
+	  rc = eptr->ExtractMyRowView(i, numEntries, val, idx);
+	  for (int j=0; j<numEntries; j++){
+	    val[j] = newVal[j];
+	  }
+	}
+	if (newVal) delete [] newVal;
       }
-    
+
       eptr->FillComplete(matrix->DomainMap(), matrix->RangeMap());
       eptr->OptimizeStorage();
-    
+
       costs->setGraphEdgeWeights(eptr);
     }
     else if (partitioningType == HYPERGRAPH_PARTITIONING){
@@ -335,114 +335,114 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       // to the value of the PHG_EDGE_WEIGHT_OPERATION parameter.  The default
       // for this parameter is to use the maximum edge weight provided by any
       // process for a given hyperedge.)
-    
+
       Epetra_Map hyperEdgeMap(matrix->NumGlobalCols(), matrix->IndexBase(), Comm);
       hyperEdgeWeights = Teuchos::rcp(new Epetra_Vector(hyperEdgeMap));
-    
+
       int *edgeGIDs = NULL;
       double *weights = NULL;
       int numHEweights = hyperEdgeMap.NumMyElements();
 
       if (numHEweights){
-        edgeGIDs = new int [numHEweights];
-        weights = new double [numHEweights];
+	edgeGIDs = new int [numHEweights];
+	weights = new double [numHEweights];
 
-        if (edgeWeightType == SUPPLY_EQUAL_WEIGHTS){
-          for (int i=0; i<numHEweights; i++){
-            edgeGIDs[i] = hyperEdgeMap.GID(i);
-            weights[i] = 1.0;
-          }
-        }
-        else{
-          int hiVolumeStart = matrix->NumGlobalCols() / 3;
-          int hiVolumeEnd = hiVolumeStart * 2;
-          for (int i=0; i<numHEweights; i++){
-            edgeGIDs[i] = hyperEdgeMap.GID(i);
-            if ((edgeGIDs[i] < hiVolumeStart) || (edgeGIDs[i] >= hiVolumeEnd)){
-              weights[i] = 1.0;
-            }
-            else{
-  	      weights[i] = 3.0;
+	if (edgeWeightType == SUPPLY_EQUAL_WEIGHTS){
+	  for (int i=0; i<numHEweights; i++){
+	    edgeGIDs[i] = hyperEdgeMap.GID(i);
+	    weights[i] = 1.0;
+	  }
+	}
+	else{
+	  int hiVolumeStart = matrix->NumGlobalCols() / 3;
+	  int hiVolumeEnd = hiVolumeStart * 2;
+	  for (int i=0; i<numHEweights; i++){
+	    edgeGIDs[i] = hyperEdgeMap.GID(i);
+	    if ((edgeGIDs[i] < hiVolumeStart) || (edgeGIDs[i] >= hiVolumeEnd)){
+	      weights[i] = 1.0;
 	    }
-          }
-        }
-        hyperEdgeWeights->ReplaceGlobalValues(numHEweights, weights, edgeGIDs);
+	    else{
+	      weights[i] = 3.0;
+	    }
+	  }
+	}
+	hyperEdgeWeights->ReplaceGlobalValues(numHEweights, weights, edgeGIDs);
       }
 
       if (weights){
-        delete [] weights;
-        delete [] edgeGIDs;
+	delete [] weights;
+	delete [] edgeGIDs;
       }
 
       costs->setHypergraphEdgeWeights(hyperEdgeWeights);
     }
   }
-  
+
   if ((vertexWeightType != NO_APPLICATION_SUPPLIED_WEIGHTS) ||
       (partitioningType == NO_ZOLTAN)){
-  
+
     const Epetra_Map &rowmap = matrix->RowMap();
     int nrows = rowmap.NumMyElements();
     double *val = NULL;
-  
+
     if (nrows){
       val = new double [nrows];
 
       if (vertexWeightType == SUPPLY_EQUAL_WEIGHTS){
-        for (int i=0; i<nrows; i++){
-          val[i] = 1.0;
-        }
+	for (int i=0; i<nrows; i++){
+	  val[i] = 1.0;
+	}
       }
       else if (vertexWeightType == SUPPLY_UNEQUAL_WEIGHTS){
-        for (int i=0; i<nrows; i++){
-          val[i] = 1.0 + ((localProc+1) / 2);
-        }
+	for (int i=0; i<nrows; i++){
+	  val[i] = 1.0 + ((localProc+1) / 2);
+	}
       }
       else{
-        // partitioningType is NO_ZOLTAN
-        //
-        // Isorropia will use row weights equal to the count of
-        // non zeros in the row when doing its own row balancing.
-        // We need to create that weight vector for the compute_*_metric
-        // calls even though we don't give it to create_partition().
+	// partitioningType is NO_ZOLTAN
+	//
+	// Isorropia will use row weights equal to the count of
+	// non zeros in the row when doing its own row balancing.
+	// We need to create that weight vector for the compute_*_metric
+	// calls even though we don't give it to create_partition().
 
-        for (int i=0; i<nrows; i++){
-          val[i] = matrix->NumMyEntries(i);
-        }
+	for (int i=0; i<nrows; i++){
+	  val[i] = matrix->NumMyEntries(i);
+	}
       }
     }
-  
+
     vptr = Teuchos::rcp(new Epetra_Vector(Copy, rowmap, val));
-  
+
     if (val) delete [] val;
-  
+
     costs->setVertexWeights(vptr);
   }
 
   // Calculate partition quality metrics before calling Zoltan
 
   if (partitioningType == HYPERGRAPH_PARTITIONING){
-   
+
     rc = ispatest::compute_hypergraph_metrics(matrix->Graph(), *costs,
-             myShare, balance1, cutn1, cutl1);
+	     myShare, balance1, cutn1, cutl1);
 
     if (contract){
       // balance wrt target of balancing weight over *all* procs
       rc = ispatest::compute_hypergraph_metrics(matrix->Graph(), *costs,
-             myShareBefore, balance3, cutn3, cutl3);
+	     myShareBefore, balance3, cutn3, cutl3);
     }
   }
   else{
-    rc = ispatest::compute_graph_metrics(matrix->Graph(), *costs, 
-             myShare, balance1, numCuts1, cutWgt1, cutn1, cutl1);
+    rc = ispatest::compute_graph_metrics(matrix->Graph(), *costs,
+	     myShare, balance1, numCuts1, cutWgt1, cutn1, cutl1);
     if (contract){
       // balance wrt target of balancing weight over *all* procs
-      rc = ispatest::compute_graph_metrics(matrix->Graph(), *costs, 
-             myShareBefore, balance3, numCuts3, cutWgt3, cutn3, cutl3);
+      rc = ispatest::compute_graph_metrics(matrix->Graph(), *costs,
+	     myShareBefore, balance3, numCuts3, cutWgt3, cutn3, cutl3);
     }
   }
 
-  if (rc){ 
+  if (rc){
     ERRORRETURN((localProc==0), "Error in computing partitioning metrics")
   }
 
@@ -470,7 +470,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
     //sublist.set("DEBUG_LEVEL", "1"); // Zoltan will print out parameters
     //sublist.set("DEBUG_LEVEL", "5");   // proc 0 will trace Zoltan calls
     //sublist.set("DEBUG_MEMORY", "2");  // Zoltan will trace alloc & free
-  
+
     if (partitioningType == GRAPH_PARTITIONING){
       sublist.set("LB_METHOD", "GRAPH");
       sublist.set("GRAPH_PACKAGE", "PHG");
@@ -489,7 +489,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   }
 #else
   if (partitioningType != NO_ZOLTAN){
-    ERRORRETURN((localProc==0), 
+    ERRORRETURN((localProc==0),
       "Zoltan partitioning required but Zoltan not available.")
   }
 #endif
@@ -503,8 +503,8 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
     if (objectType == EPETRA_CRSGRAPH){
       // Test the Epetra_CrsGraph interface of Isorropia
-      Teuchos::RCP<const Epetra_CrsGraph> graph = 
-        Teuchos::rcp(new Epetra_CrsGraph(matrix->Graph()));
+      Teuchos::RCP<const Epetra_CrsGraph> graph =
+	Teuchos::rcp(new Epetra_CrsGraph(matrix->Graph()));
       partitioner = Isorropia::Epetra::create_partitioner(graph, params);
     }
     else{
@@ -518,8 +518,8 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
     if (objectType == EPETRA_CRSGRAPH){
       // Test the Epetra_CrsGraph interface of Isorropia
-      Teuchos::RCP<const Epetra_CrsGraph> graph = 
-        Teuchos::rcp(new Epetra_CrsGraph(matrix->Graph()));
+      Teuchos::RCP<const Epetra_CrsGraph> graph =
+	Teuchos::rcp(new Epetra_CrsGraph(matrix->Graph()));
       partitioner = Isorropia::Epetra::create_partitioner(graph, costs, params);
     }
     else{
@@ -559,14 +559,14 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   if (partitioningType == HYPERGRAPH_PARTITIONING){
     rc = ispatest::compute_hypergraph_metrics(newMatrix->Graph(), *costs,
-             myShare, balance2, cutn2, cutl2);
+	     myShare, balance2, cutn2, cutl2);
   }
   else{
-    rc = ispatest::compute_graph_metrics(newMatrix->Graph(), *costs, 
-             myShare, balance2, numCuts2, cutWgt2, cutn2, cutl2);
+    rc = ispatest::compute_graph_metrics(newMatrix->Graph(), *costs,
+	     myShare, balance2, numCuts2, cutWgt2, cutn2, cutl2);
 
   }
-  if (rc){ 
+  if (rc){
     ERRORRETURN((localProc==0), "Error in computing partitioning metrics after rebalancing")
   }
 
@@ -590,22 +590,22 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   if (localProc==0) std::cout << std::endl;
 
   std::string why;
-  
+
   if (partitioningType == GRAPH_PARTITIONING){
     fail = (cutWgt2 > cutWgt1);
     why = "New weighted edge cuts are worse";
-  
+
     if (localProc == 0){
       std::cout << "Before partitioning: Balance " << balance1 ;
       std::cout << " cutn " << cutn1 ;
       std::cout << " cutl " << cutl1 ;
 
       if (contract){
-        std::cout << "  (wrt balancing over " << numPartitions << " partitions)" << std::endl;
-        std::cout << "Before partitioning: Balance " << balance3 ;
-        std::cout << " cutn " << cutn3 ;
-        std::cout << " cutl " << cutl3 ;
-        std::cout << "  (wrt balancing over " << numProcs << " partitions)" ;
+	std::cout << "  (wrt balancing over " << numPartitions << " partitions)" << std::endl;
+	std::cout << "Before partitioning: Balance " << balance3 ;
+	std::cout << " cutn " << cutn3 ;
+	std::cout << " cutl " << cutl3 ;
+	std::cout << "  (wrt balancing over " << numProcs << " partitions)" ;
       }
       std::cout << std::endl;
 
@@ -629,17 +629,17 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
       fail = (cutl2 > cutl1);         // Zoltan hypergraph partitioning
       why = "New cutl is worse";
     }
-  
+
     if (localProc == 0){
       std::cout << "Before partitioning: Balance " << balance1 ;
       std::cout << " cutn " << cutn1 ;
       std::cout << " cutl " << cutl1 ;
       if (contract){
-        std::cout << "  (wrt balancing over " << numPartitions << " partitions)" << std::endl;
-        std::cout << "Before partitioning: Balance " << balance3 ;
-        std::cout << " cutn " << cutn3 ;
-        std::cout << " cutl " << cutl3 ;
-        std::cout << "  (wrt balancing over " << numProcs << " partitions)" ;
+	std::cout << "  (wrt balancing over " << numPartitions << " partitions)" << std::endl;
+	std::cout << "Before partitioning: Balance " << balance3 ;
+	std::cout << " cutn " << cutn3 ;
+	std::cout << " cutl " << cutl3 ;
+	std::cout << "  (wrt balancing over " << numProcs << " partitions)" ;
       }
       std::cout << std::endl;
       std::cout << "After partitioning: Balance " << balance2 ;
@@ -671,7 +671,7 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
 #else
   std::<< "test_simple : currently can only test "
-         << "with Epetra and EpetraExt enabled." << std::endl;
+	 << "with Epetra and EpetraExt enabled." << std::endl;
   fail =  1;
 #endif
 
@@ -680,13 +680,13 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
 int main(int argc, char** argv) {
 
-  int rc=0, fail = 0;  
+  int rc=0, fail = 0;
 #ifdef HAVE_EPETRAEXT
   bool verbose = false;
-  int numProcs = 1;
   int localProc = 0;
 
 #ifdef HAVE_MPI
+  int numProcs;
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
@@ -709,12 +709,12 @@ int main(int argc, char** argv) {
   std::string *inputFile = new std::string("simple.mtx");
   bool runAll = false;
 
-  clp.setOption( "f", inputFile, 
-                "Name of input matrix market file");
-  clp.setOption( "run-all", "abort", &runAll, 
-                "Don't abort if one test fails, run all of them.");
-  clp.setOption( "v", "q", &verbose, 
-                "Display matrix before and after partitioning.");
+  clp.setOption( "f", inputFile,
+		"Name of input matrix market file");
+  clp.setOption( "run-all", "abort", &runAll,
+		"Don't abort if one test fails, run all of them.");
+  clp.setOption( "v", "q", &verbose,
+		"Display matrix before and after partitioning.");
 
   Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return =
     clp.parse(argc,argv);
@@ -731,7 +731,7 @@ int main(int argc, char** argv) {
 #endif
     return 1;
   }
-  
+
   const char *fname = inputFile->c_str();
 
   // Read in the matrix market file and distribute its rows across the
@@ -767,12 +767,12 @@ int main(int argc, char** argv) {
 
 #ifdef SHORT_TEST
   fail = run_test(testm,
-             verbose, 
-             true,                   // make #partitions < #processes
-             HYPERGRAPH_PARTITIONING,
-             SUPPLY_UNEQUAL_WEIGHTS,
-             SUPPLY_EQUAL_WEIGHTS,
-             EPETRA_CRSMATRIX);
+	     verbose,
+	     true,                   // make #partitions < #processes
+	     HYPERGRAPH_PARTITIONING,
+	     SUPPLY_UNEQUAL_WEIGHTS,
+	     SUPPLY_EQUAL_WEIGHTS,
+	     EPETRA_CRSMATRIX);
 
     CHECK_FAILED();
     goto Report;
@@ -781,149 +781,149 @@ int main(int argc, char** argv) {
   if (square){
 #ifdef HAVE_ISORROPIA_ZOLTAN
     fail = run_test(testm,
-               verbose,            // draw graph before and after partitioning
-               false,                   // do not make #partitions < #processes
-               GRAPH_PARTITIONING,      // do graph partitioning
-               SUPPLY_EQUAL_WEIGHTS,    // supply vertex weights, all the same
-               SUPPLY_EQUAL_WEIGHTS,    // supply edge weights, all the same
-               EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
+	       verbose,            // draw graph before and after partitioning
+	       false,                   // do not make #partitions < #processes
+	       GRAPH_PARTITIONING,      // do graph partitioning
+	       SUPPLY_EQUAL_WEIGHTS,    // supply vertex weights, all the same
+	       SUPPLY_EQUAL_WEIGHTS,    // supply edge weights, all the same
+	       EPETRA_CRSMATRIX);       // use the Epetra_CrsMatrix interface
 
-    CHECK_FAILED();
-    
-    fail = run_test(testm,
-               verbose,
-               false,
-               GRAPH_PARTITIONING, 
-               SUPPLY_UNEQUAL_WEIGHTS,
-               SUPPLY_EQUAL_WEIGHTS,
-               EPETRA_CRSMATRIX);
-  
-    CHECK_FAILED();
-  
-    fail = run_test(testm,
-               verbose,
-               true,               // make #partitions < #processes
-               GRAPH_PARTITIONING,
-               SUPPLY_EQUAL_WEIGHTS,
-               SUPPLY_EQUAL_WEIGHTS,
-               EPETRA_CRSGRAPH);
-  
     CHECK_FAILED();
 
     fail = run_test(testm,
-               verbose,
-               false,
-               GRAPH_PARTITIONING,
-               NO_APPLICATION_SUPPLIED_WEIGHTS,
-               NO_APPLICATION_SUPPLIED_WEIGHTS,
-               EPETRA_CRSGRAPH);
+	       verbose,
+	       false,
+	       GRAPH_PARTITIONING,
+	       SUPPLY_UNEQUAL_WEIGHTS,
+	       SUPPLY_EQUAL_WEIGHTS,
+	       EPETRA_CRSMATRIX);
+
+    CHECK_FAILED();
+
+    fail = run_test(testm,
+	       verbose,
+	       true,               // make #partitions < #processes
+	       GRAPH_PARTITIONING,
+	       SUPPLY_EQUAL_WEIGHTS,
+	       SUPPLY_EQUAL_WEIGHTS,
+	       EPETRA_CRSGRAPH);
+
+    CHECK_FAILED();
+
+    fail = run_test(testm,
+	       verbose,
+	       false,
+	       GRAPH_PARTITIONING,
+	       NO_APPLICATION_SUPPLIED_WEIGHTS,
+	       NO_APPLICATION_SUPPLIED_WEIGHTS,
+	       EPETRA_CRSGRAPH);
 
     CHECK_FAILED();
 
 #endif
 
     fail = run_test(testm,
-               verbose,
-               false,
-               NO_ZOLTAN, 
-               SUPPLY_UNEQUAL_WEIGHTS,
-               SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-               EPETRA_CRSMATRIX);
-  
-    CHECK_FAILED();
-  
-    fail = run_test(testm,
-               verbose,
-               false,
-               NO_ZOLTAN,
-               SUPPLY_EQUAL_WEIGHTS,
-               SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-               EPETRA_CRSGRAPH);
-  
+	       verbose,
+	       false,
+	       NO_ZOLTAN,
+	       SUPPLY_UNEQUAL_WEIGHTS,
+	       SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
+	       EPETRA_CRSMATRIX);
+
     CHECK_FAILED();
 
     fail = run_test(testm,
-               verbose,
-               false,
-               NO_ZOLTAN,
-               NO_APPLICATION_SUPPLIED_WEIGHTS,
-               SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-               EPETRA_CRSGRAPH);
-  
+	       verbose,
+	       false,
+	       NO_ZOLTAN,
+	       SUPPLY_EQUAL_WEIGHTS,
+	       SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
+	       EPETRA_CRSGRAPH);
+
+    CHECK_FAILED();
+
+    fail = run_test(testm,
+	       verbose,
+	       false,
+	       NO_ZOLTAN,
+	       NO_APPLICATION_SUPPLIED_WEIGHTS,
+	       SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
+	       EPETRA_CRSGRAPH);
+
     CHECK_FAILED();
   } // end if square
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
 
   fail = run_test(testm,
-             verbose, 
-             false,
-             HYPERGRAPH_PARTITIONING,
-             SUPPLY_EQUAL_WEIGHTS,
-             SUPPLY_EQUAL_WEIGHTS,
-             EPETRA_CRSMATRIX);
+	     verbose,
+	     false,
+	     HYPERGRAPH_PARTITIONING,
+	     SUPPLY_EQUAL_WEIGHTS,
+	     SUPPLY_EQUAL_WEIGHTS,
+	     EPETRA_CRSMATRIX);
 
   CHECK_FAILED();
 
   fail = run_test(testm,
-             verbose,
-             false,
-             HYPERGRAPH_PARTITIONING,
-             SUPPLY_EQUAL_WEIGHTS,
-             SUPPLY_UNEQUAL_WEIGHTS,
-             EPETRA_CRSGRAPH);
+	     verbose,
+	     false,
+	     HYPERGRAPH_PARTITIONING,
+	     SUPPLY_EQUAL_WEIGHTS,
+	     SUPPLY_UNEQUAL_WEIGHTS,
+	     EPETRA_CRSGRAPH);
 
   CHECK_FAILED();
 
   fail = run_test(testm,
-             verbose, 
-             true,                   // make #partitions < #processes
-             HYPERGRAPH_PARTITIONING,
-             SUPPLY_UNEQUAL_WEIGHTS,
-             SUPPLY_EQUAL_WEIGHTS,
-             EPETRA_CRSMATRIX);
+	     verbose,
+	     true,                   // make #partitions < #processes
+	     HYPERGRAPH_PARTITIONING,
+	     SUPPLY_UNEQUAL_WEIGHTS,
+	     SUPPLY_EQUAL_WEIGHTS,
+	     EPETRA_CRSMATRIX);
 
   CHECK_FAILED();
 
   fail = run_test(testm,
-             verbose,
-             false,
-             HYPERGRAPH_PARTITIONING,
-             NO_APPLICATION_SUPPLIED_WEIGHTS,
-             NO_APPLICATION_SUPPLIED_WEIGHTS,
-             EPETRA_CRSGRAPH);
+	     verbose,
+	     false,
+	     HYPERGRAPH_PARTITIONING,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
+	     EPETRA_CRSGRAPH);
 
   CHECK_FAILED();
 #endif
 
   // Default row weight is number of non zeros in the row
   fail = run_test(testm,
-             verbose,
-             false,
-             NO_ZOLTAN,
-             NO_APPLICATION_SUPPLIED_WEIGHTS,
-             SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-             EPETRA_CRSGRAPH);
+	     verbose,
+	     false,
+	     NO_ZOLTAN,
+	     NO_APPLICATION_SUPPLIED_WEIGHTS,
+	     SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
+	     EPETRA_CRSGRAPH);
 
   CHECK_FAILED();
 
   fail = run_test(testm,
-             verbose,
-             false,
-             NO_ZOLTAN,
-             SUPPLY_EQUAL_WEIGHTS,
-             SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-             EPETRA_CRSGRAPH);
+	     verbose,
+	     false,
+	     NO_ZOLTAN,
+	     SUPPLY_EQUAL_WEIGHTS,
+	     SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
+	     EPETRA_CRSGRAPH);
 
   CHECK_FAILED();
 
   fail = run_test(testm,
-             verbose,
-             false,
-             NO_ZOLTAN,
-             SUPPLY_UNEQUAL_WEIGHTS,
-             SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
-             EPETRA_CRSGRAPH);
+	     verbose,
+	     false,
+	     NO_ZOLTAN,
+	     SUPPLY_UNEQUAL_WEIGHTS,
+	     SUPPLY_EQUAL_WEIGHTS,       // edge weights ignored if NO_ZOLTAN
+	     EPETRA_CRSGRAPH);
 
   CHECK_FAILED();
 #endif // SHORT_TEST
@@ -944,12 +944,12 @@ Report:
   if (localProc == 0){
     if (failures){
       if (failures > 1)
-        std::cout << std::endl << failures << " FAILURES" << std::endl;
+	std::cout << std::endl << failures << " FAILURES" << std::endl;
       else
-        std::cout << std::endl << "1 FAILURE" << std::endl;
- 
+	std::cout << std::endl << "1 FAILURE" << std::endl;
+
       if (!runAll){
-        std::cout << 
+	std::cout <<
        "(Use option --run-all if you do not want this test to abort on failure)" << std::endl;
       }
 

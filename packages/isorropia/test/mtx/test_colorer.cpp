@@ -112,8 +112,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   const Epetra_MpiComm &Comm = dynamic_cast<const Epetra_MpiComm &>(matrix->Comm());
   localProc = Comm.MyPID();
   numProcs = Comm.NumProc();
-#else
-  const Epetra_SerialComm &Comm = dynamic_cast<const Epetra_SerialComm &>(matrix->Comm());
 #endif
 
   int numRows = matrix->NumGlobalRows();
@@ -251,9 +249,9 @@ int main(int argc, char** argv) {
   int localProc = 0;
   int failures = 0;
   bool verbose = false;
-  int numProcs = 1;
 
 #ifdef HAVE_MPI
+  int numProcs;
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
