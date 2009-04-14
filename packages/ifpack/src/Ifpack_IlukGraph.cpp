@@ -254,18 +254,22 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
       EPETRA_CHK_ERR(L_Graph_->ExtractMyRowCopy(i, LenL, LenL, &CurrentRow[0]));      // Get L Indices
       CurrentRow[LenL] = i;                                     // Put in Diagonal
       //EPETRA_CHK_ERR(U_Graph_->ExtractMyRowCopy(i, LenU, LenU, CurrentRow+LenL+1)); // Get U Indices
-      int ierr1 = U_Graph_->ExtractMyRowCopy(i, LenU, LenU, &CurrentRow[LenL+1]); // Get U Indices
+      int ierr1 = 0;
+      if (LenU) {
+        // Get U Indices
+        ierr1 = U_Graph_->ExtractMyRowCopy(i, LenU, LenU, &CurrentRow[LenL+1]);
+      }
       if (ierr1!=0) {
-	cout << "ierr1 = "<< ierr1 << endl;
-	cout << "i = " << i << endl;
-	cout << "NumMyBlockRows_ = " << U_Graph_->NumMyBlockRows() << endl;
+        cout << "ierr1 = "<< ierr1 << endl;
+        cout << "i = " << i << endl;
+        cout << "NumMyBlockRows_ = " << U_Graph_->NumMyBlockRows() << endl;
       }
       
       // Construct linked list for current row
       
       for (j=0; j<Len-1; j++) {
-	LinkList[CurrentRow[j]] = CurrentRow[j+1];
-	CurrentLevel[CurrentRow[j]] = 0;
+        LinkList[CurrentRow[j]] = CurrentRow[j+1];
+        CurrentLevel[CurrentRow[j]] = 0;
       }
       
       LinkList[CurrentRow[Len-1]] = NumMyBlockRows_;
