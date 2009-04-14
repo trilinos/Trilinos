@@ -42,6 +42,12 @@ parts of their package that they don't consider PS code but are SS.  For
 example, EpetraExt_BUILD_GRAPH_REORDERINGS should default to ON if
 Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON.
 
+(*) [???] Write a module that will print out the compiler version.  This is
+important for the nightly testing output.  A suggested was given on the
+cmake@cmake.org list which was "If you look through the FindBoost.cmake file
+that comes with CMake around line 535 you may be able to pull out that code
+which does a pretty decent job of determining compiler versions".
+
 (*) [???] Resolve the runtime MPI errors on godel: Perhaps we should just
 rebuild and reinstall MPI on godel.
 
