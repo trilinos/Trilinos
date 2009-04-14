@@ -35,6 +35,7 @@
 #include "Thyra_DefaultSpmdMultiVectorDecl.hpp"
 #include "Thyra_SpmdMultiVectorBase.hpp"
 #include "Thyra_DefaultSpmdVector.hpp"
+#include "Teuchos_Assert.hpp"
 
 namespace Thyra {
 
@@ -136,10 +137,12 @@ void DefaultSpmdMultiVector<Scalar>::initialize(
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(spmdRangeSpace.get()==NULL);
-  TEST_FOR_EXCEPT(domainSpace.get()==NULL);
-  TEST_FOR_EXCEPT(spmdRangeSpace->dim() && localValues.get()==NULL);
-  TEST_FOR_EXCEPT(leadingDim < spmdRangeSpace->localSubDim());
+  TEUCHOS_ASSERT(!is_null(spmdRangeSpace));
+  TEUCHOS_ASSERT(!is_null(domainSpace));
+  if (spmdRangeSpace->dim()) {
+    TEUCHOS_ASSERT(!is_null(localValues));
+  }
+  TEUCHOS_ASSERT_INEQUALITY(leadingDim, >=, spmdRangeSpace->localSubDim());
 #endif
   spmdRangeSpace_ = spmdRangeSpace;
   domainSpace_ = domainSpace;

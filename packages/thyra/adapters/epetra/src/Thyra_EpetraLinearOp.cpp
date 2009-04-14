@@ -365,6 +365,7 @@ void EpetraLinearOp::euclideanApply(
   //
   // Set the operator mode
   //
+
   /* We need to save the transpose state here, and then reset it after 
    * application. The reason for this is that if we later apply the 
    * operator outside Thyra (in Aztec, for instance), it will remember
@@ -428,12 +429,10 @@ void EpetraLinearOp::euclideanApply(
         assign( Y_inout, 0.0 );
       }
       // T = M * X
-      Epetra_MultiVector T(
-        ( real_M_trans == NOTRANS
-          ? op_->OperatorRangeMap() : op_->OperatorDomainMap() ),
-        numCols,
-        false
-        );
+      Epetra_MultiVector T(op_->OperatorRangeMap(), numCols, false);
+      // NOTE: Above, op_->OperatorRange() will be right for either
+      // non-transpose or transpose because we have already set the
+      // UseTranspose flag correctly.
       if( applyAs_ == EPETRA_OP_APPLY_APPLY ) {
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
         TEUCHOS_FUNC_TIME_MONITOR(
@@ -474,6 +473,9 @@ void EpetraLinearOp::euclideanApply(
 
   // Reset the transpose state
   op_->SetUseTranspose(oldState);
+
+  // 2009/04/14: ToDo: This will not reset the transpose flag correctly if an
+  // exception is thrown!
 
 }
 

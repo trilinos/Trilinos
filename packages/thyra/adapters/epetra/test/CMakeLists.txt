@@ -1,6 +1,7 @@
 INCLUDE(PackageAddExecutableAndTest)
 
 ADD_SUBDIRECTORY(EpetraOperatorWrapper)
+ADD_SUBDIRECTORY(UnitTests)
 
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
