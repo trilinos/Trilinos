@@ -222,6 +222,46 @@ BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo)
    return lower;
 }
 
+/** \brief Build a zero operator mimicing the block structure
+  *        of the passed in matrix.
+  *
+  * Build a zero operator mimicing the block structure
+  * of the passed in matrix. Currently this function assumes
+  * that the operator is "block" square.
+  *
+  * \param[in] blo Blocked operator with desired structure.
+  *
+  * \returns A zero operator with the same block structure as
+  *          the argument <code>blo</code>.
+  */ 
+BlockedLinearOp zeroBlockedOp(const BlockedLinearOp & blo)
+{
+   int rows = blockRowCount(blo);
+
+   TEUCHOS_ASSERT(rows==blockColCount(blo)); // assert that matrix is square
+
+   RCP<const Thyra::ProductVectorSpaceBase<double> > range = blo->productRange();
+   RCP<const Thyra::ProductVectorSpaceBase<double> > domain = blo->productDomain();
+
+   // allocate new operator
+   BlockedLinearOp zeroOp = createNewBlockedOp();
+ 
+   // build new operator 
+   zeroOp->beginBlockFill(rows,rows);
+
+   for(int i=0;i<rows;i++) {
+      // put zero operators on the diagonal
+      // this gurantees the vector space of
+      // the new operator are fully defined
+      RCP<const Thyra::LinearOpBase<double> > zed 
+            = Thyra::zero<double>(range->getBlock(i),domain->getBlock(i));
+      zeroOp->setBlock(i,i,zed);
+   }
+   zeroOp->endBlockFill();
+
+   return zeroOp;
+}
+
 //! Figure out if this operator is the zero operator (or null!)
 bool isZeroOp(const LinearOp op)
 {

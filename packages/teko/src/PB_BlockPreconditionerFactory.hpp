@@ -52,9 +52,21 @@ public:
    RCP<ParameterList> unsetParameterList();
  
    //@}
+
+   //! Set the vector associated with this operator (think nonlinear system)
+   virtual void setSourceVector(const PB::BlockedMultiVector & srcVec)
+   { srcVector_ = srcVec; }
+
+   //! Set the vector associated with this operator (think nonlinear system)
+   virtual const PB::BlockedMultiVector getSourceVector() const
+   { return srcVector_; }
+
 protected:
    //! for ParameterListAcceptor
    RCP<ParameterList>          paramList_;
+
+   //! Store a source vector
+   PB::BlockedMultiVector srcVector_;
 };
 
 class BlockPreconditioner : public DefaultPreconditioner<double> {
@@ -74,6 +86,11 @@ public:
    BlockPreconditioner(const RCP<const LinearOpBase<double> > & unspecifiedPrecOp)
       : DefaultPreconditioner<double>(unspecifiedPrecOp) {}
    //@}
+
+   //! Set the vector associated with this operator (think nonlinear system)
+   virtual void setSourceVector(const RCP<Thyra::MultiVectorBase<double> > & srcVec)
+   { if(srcVec!=Teuchos::null) state_->setSourceVector(PB::toBlockedMultiVector(srcVec));
+     else                      state_->setSourceVector(Teuchos::null); }
 
    //! Set the state object associated with this preconditioner
    virtual void setStateObject(const RCP<BlockPreconditionerState> & state)
@@ -144,6 +161,18 @@ public:
 
    //! create an instance of the preconditioner
    RCP<Thyra::PreconditionerBase<double> > createPrec() const;
+
+   /** \brief initialize a newly created preconditioner object
+     *
+     * Initialize a newly created preconditioner object. For use with
+     * nonlinear solvers.
+     *
+     * \param[in] solnVec Vector associated with this linear operator.
+     */
+   void initializePrec(const RCP<const Thyra::LinearOpSourceBase<double> > & fwdOpSrc,
+                       const RCP<const Thyra::MultiVectorBase<double> > & solnVec,
+                       Thyra::PreconditionerBase<double> * precOp,
+                       const Thyra::ESupportSolveUse supportSolveUse) const;
 
    //! initialize a newly created preconditioner object
    void initializePrec(const RCP<const Thyra::LinearOpSourceBase<double> > & fwdOpSrc,

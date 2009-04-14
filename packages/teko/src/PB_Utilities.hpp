@@ -13,6 +13,7 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_DefaultIdentityLinearOp.hpp"
 
 namespace PB {
 
@@ -159,6 +160,20 @@ BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo);
 
 //! Get the strictly lower triangular portion of the matrix
 BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo);
+
+/** \brief Build a zero operator mimicing the block structure
+  *        of the passed in matrix.
+  *
+  * Build a zero operator mimicing the block structure
+  * of the passed in matrix. Currently this function assumes
+  * that the operator is "block" square.
+  *
+  * \param[in] blo Blocked operator with desired structure.
+  *
+  * \returns A zero operator with the same block structure as
+  *          the argument <code>blo</code>.
+  */ 
+BlockedLinearOp zeroBlockedOp(const BlockedLinearOp & blo);
 
 //! Figure out if this operator is the zero operator (or null!)
 bool isZeroOp(const LinearOp op);

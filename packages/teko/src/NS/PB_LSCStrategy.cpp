@@ -37,11 +37,11 @@ StaticLSCStrategy::StaticLSCStrategy(const LinearOp & invF,
 
 // constructors
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory)
-   : massMatrix_(Teuchos::null), invFactory_(factory)
+   : massMatrix_(Teuchos::null), invFactory_(factory), eigSolveParam_(5)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass)
-   : massMatrix_(mass), invFactory_(factory)
+   : massMatrix_(mass), invFactory_(factory), eigSolveParam_(5)
 { }
 
 void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const

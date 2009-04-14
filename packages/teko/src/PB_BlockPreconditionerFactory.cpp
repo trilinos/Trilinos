@@ -77,11 +77,25 @@ void BlockPreconditionerFactory::initializePrec(const RCP<const LinearOpSourceBa
    dPrec.initializeUnspecified(M);
 }
 
+//! initialize a newly created preconditioner object
+void BlockPreconditionerFactory::initializePrec(const RCP<const LinearOpSourceBase<double> > & ASrc,
+                                                const RCP<const Thyra::MultiVectorBase<double> > & solnVec,
+                                                PreconditionerBase<double> * prec,
+                                                const ESupportSolveUse supportSolveUse) const
+{
+   BlockPreconditioner * blkPrec = dynamic_cast<BlockPreconditioner *>(prec);
+   blkPrec->setSourceVector(Teuchos::rcp_const_cast<Thyra::MultiVectorBase<double> >(solnVec));
+
+   initializePrec(ASrc,prec,supportSolveUse);
+}
+
 //! wipe clean a already initialized preconditioner object
 void BlockPreconditionerFactory::uninitializePrec(PreconditionerBase<double> * prec, 
                       RCP<const LinearOpSourceBase<double> > * fwdOpSrc,
                       ESupportSolveUse *supportSolveUse) const
 {
+   BlockPreconditioner * blkPrec = dynamic_cast<BlockPreconditioner *>(prec);
+
    // what do I do here?
    TEST_FOR_EXCEPT_MSG(true,"\"BlockPreconditionerFactory::uninitializePrec not implemented\"");
 }
