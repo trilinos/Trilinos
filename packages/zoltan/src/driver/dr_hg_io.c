@@ -179,17 +179,8 @@ int read_hypergraph_file(
 	return 0;
     }
 
-    if (pio_info->file_comp == GZIP)
-      sprintf(filename, "%s.gz", filename);
-
-    do {
       fp = ZOLTAN_FILE_open(filename, "r", pio_info->file_comp);
       file_error = (fp == NULL);
-
-      if (file_error == 0) break;
-      if (!strcmp(filename, pio_info->pexo_fname)) break;
-      sprintf(filename, "%s", pio_info->pexo_fname);
-    } while(1);
   }
 
 
@@ -255,9 +246,6 @@ int read_hypergraph_file(
 
    sprintf(filename, "%s.graph", pio_info->pexo_fname);
 
-   if (pio_info->file_comp == GZIP)
-      sprintf(filename, "%s.gz", filename);
-
    fp = ZOLTAN_FILE_open(filename, "r", pio_info->file_comp);
    file_error =
 #ifndef ZOLTAN_COMPRESS
@@ -277,12 +265,12 @@ int read_hypergraph_file(
 	return 0;
       }
     }
+   else
+     ch_nvtxs = nvtxs;
 
 
     /* If coordinate file is available, read it. */
-    sprintf(filename, "%s.coords", pio_info->pexo_fname);
-   if (pio_info->file_comp == GZIP)
-      sprintf(filename, "%s.gz", filename);
+   sprintf(filename, "%s.coords", pio_info->pexo_fname);
 
    fp = ZOLTAN_FILE_open(filename, "r", pio_info->file_comp);
    file_error =
@@ -302,15 +290,15 @@ int read_hypergraph_file(
       }
     }
  }
-#endif
+#else /* KDDKDD */
+  ch_nvtxs = nvtxs;
+#endif /* KDDKDD */
+
 
   {
      /* Read Chaco assignment file, if requested */
    if (pio_info->init_dist_type == INITIAL_FILE) {
      sprintf(filename, "%s.assign", pio_info->pexo_fname);
-
-   if (pio_info->file_comp == GZIP)
-      sprintf(filename, "%s.gz", filename);
 
    fp = ZOLTAN_FILE_open(filename, "r", pio_info->file_comp);
 

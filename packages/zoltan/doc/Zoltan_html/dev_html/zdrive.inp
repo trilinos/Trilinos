@@ -45,7 +45,6 @@
 #	rcb - Reverse Coordinate Bisection
 #	octpart - Octree/Space Filling Curve
 #	parmetis - ParMETIS graph partitioning
-#	jostle - Jostle graph partitioning
 #	reftree - Refinement tree partitioning
 #	
 #-----------------------------------------------------------------------------
@@ -151,6 +150,13 @@ Zoltan Parameters	= RCB_REUSE=0
 #  initial_procs = {n}
 #     This has the same meaning that it has for Chaco files.  The initial
 #     vertices, pins and weights are all provided by only {n} processes.
+#
+#  objects = {val}             how the file is viewed (define the vertices)
+#
+#    rows    - Vertices are the row of the matrix
+#    columns (default) - Vertices are the columns of the matrix
+#    nonzeros - Vertices are the nonzeros of the matrix
+# NOTE:  matrixmarket+ driver only support "columns"
 
 # NOTE:  The Fortran90 driver zfdrive does not read NemesisI files.
 # NOTE:  The Fortran90 driver zfdrive does not accept any Chaco options.
@@ -168,9 +174,12 @@ File Type		= NemesisI
 # This line indicates which compression is used for the file. The current
 # compression supported for this line are:
 #	uncompressed	- No compression
-#	gzip		- input file is gzipped. The name would be postfixed by
+#	gzip		- input file is gzipped. The name should be postfixed by
 #                         the ".gz" extension. example: foo.mtx.gz for original
 #                         file foo in matrix market format.
+
+# NOTE: however, if the corresponding compressed file is not found, the driver try
+# to open the file with the "usual" name.
 Compression = uncompressed
 
 #+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++

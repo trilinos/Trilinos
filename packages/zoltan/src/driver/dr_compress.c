@@ -27,6 +27,8 @@ extern "C" {
 #endif
 
 #define BUFF_SIZE 3*1024*1024
+#define FILE_NAME_SIZE 256
+#define EXTENSION_SIZE 4
 
 #ifndef __USE_ISOC99
 int vfscanf(FILE * stream, const char * format,
@@ -40,7 +42,9 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
 {
   ZOLTAN_FILE* file;
   char truemode[10];
-  int error = 0;
+  char filename[FILE_NAME_SIZE+EXTENSION_SIZE];
+  int error = 1;
+  int i;
 
   file = (ZOLTAN_FILE*) malloc(sizeof(ZOLTAN_FILE));
   if (file == NULL) return (NULL);
@@ -56,28 +60,60 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
       strcpy(truemode, mode);
   }
 
-  switch (type) {
-  case STANDARD:
-    file->strm.fileunc = fopen(path, mode);
-    error = (file->strm.fileunc == NULL);
-    break;
+  strncpy (filename, path, FILE_NAME_SIZE);
+  for (i=0; (error != 0) && (i <2) ; ++i) {
+
+    if (i == 0) { /* Try the classical compressed version */
+      char append[4];
+      switch (type) {
 #ifdef ZOLTAN_GZIP
-  case GZIP:
-    file->strm.filegz = gzopen(path, truemode);
-    error = (file->strm.filegz == NULL);
-    break;
+      case GZIP:
+	strncpy (append, ".gz", EXTENSION_SIZE);
+	break;
 #endif
 #ifdef ZOLTAN_BZ2
-  case BZIP2:
-    file->strm.filebz2 = BZ2_bzopen(path, truemode);
-    break;
+      case BZIP2:
+	strncpy (append, ".bz2", EXTENSION_SIZE);
+	break;
 #endif
 #ifdef ZOLTAN_LZMA
-  case LZMA:
-    break;
+      case LZMA:
+	strncpy (append, ".lz", EXTENSION_SIZE);
+	break;
 #endif
-  default:
-    break;
+      default:
+	append[0] = '\0';
+	break;
+      }
+      strncat(filename, append, FILE_NAME_SIZE + EXTENSION_SIZE);
+    }
+    else
+      strncpy(filename, path, FILE_NAME_SIZE);
+
+    switch (type) {
+    case STANDARD:
+      file->strm.fileunc = fopen(filename, mode);
+      error = (file->strm.fileunc == NULL);
+      break;
+#ifdef ZOLTAN_GZIP
+    case GZIP:
+      file->strm.filegz = gzopen(filename, truemode);
+      error = (file->strm.filegz == NULL);
+      break;
+#endif
+#ifdef ZOLTAN_BZ2
+    case BZIP2:
+      file->strm.filebz2 = BZ2_bzopen(filename, truemode);
+      error = (file->strm.filebz2 == NULL);
+      break;
+#endif
+#ifdef ZOLTAN_LZMA
+    case LZMA:
+      break;
+#endif
+    default:
+      break;
+    }
   }
 
   if (error) {
@@ -96,21 +132,6 @@ ZOLTAN_FILE* ZOLTAN_FILE_open(const char *path, const char *mode, const ZOLTAN_F
   return (file);
 }
 
-
-/* int ZOLTAN_FILE_puts(char *s, ZOLTAN_FILE file) */
-/* { */
-/*   switch (file.type) { */
-/*   case STANDARD: */
-/*     return (fputs(s, file.fileunc)); */
-/* #ifdef ZOLTAN_GZIP */
-/*   case GZIP: */
-/*     return (gzputs(s, file.filegz)); */
-/* #endif */
-/*   default: */
-/*     break; */
-/*   } */
-/*   return (0); */
-/* } */
 
 int ZOLTAN_FILE_read(char* ptr, size_t size, size_t nitems, ZOLTAN_FILE *file)
 {

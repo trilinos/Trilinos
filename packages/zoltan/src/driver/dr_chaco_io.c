@@ -77,8 +77,6 @@ int read_chaco_file(int Proc,
 
     /* Open and read the Chaco graph file. */
     sprintf(chaco_fname, "%s.graph", pio_info->pexo_fname);
-    if (pio_info->file_comp == GZIP)
-      sprintf(chaco_fname, "%s.gz", chaco_fname);
 
     fp = ZOLTAN_FILE_open(chaco_fname, "r", pio_info->file_comp);
     file_error = (fp == NULL);
@@ -103,8 +101,6 @@ int read_chaco_file(int Proc,
 
     /* Read Chaco geometry file, if provided. */
     sprintf(chaco_fname, "%s.coords", pio_info->pexo_fname);
-    if (pio_info->file_comp == GZIP)
-      sprintf(chaco_fname, "%s.gz", chaco_fname);
 
     fp = ZOLTAN_FILE_open(chaco_fname, "r", pio_info->file_comp);
     if (fp == NULL) {
