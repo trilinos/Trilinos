@@ -183,6 +183,12 @@ echo
 time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_mpi_debug_memcheck_godel.out
 
+echo
+echo "Kill remaining 'memcheck' processes: `date`"
+echo
+
+killall -s 9 memcheck
+
 fi
 
 
