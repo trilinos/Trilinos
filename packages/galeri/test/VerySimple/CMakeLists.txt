@@ -5,6 +5,6 @@ INCLUDE(PackageAddExecutableAndTest)
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   VerySimple
   SOURCES cxx_main.cpp
-  ARGS 
+  ARGS -v
   COMM serial
   )

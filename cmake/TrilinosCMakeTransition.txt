@@ -276,11 +276,13 @@ Package: Galeri (Orphaned Package)
 
 Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
-Status: Basic libraries and several tests and examples
+Status: Completed
 
-Final Certification Date: [???]
+Final Certification Date: 4/14/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests running under autotools are now being run
+  under cmake and produce the same answers. All tests being built under auto tools
+  are being built under cmake as well.
 
 -------------------------------------------------------------------------------
 
