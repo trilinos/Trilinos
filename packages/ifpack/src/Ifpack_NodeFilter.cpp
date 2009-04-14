@@ -359,18 +359,19 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 
   // Do actual computation
   assert(ovA_!=0);
+  int *MyRows;
   double *MyValues;
   int *MyIndices;
 
   if(Acrs_){
+    IFPACK_CHK_ERR(Acrs_->ExtractCrsDataPointers(MyRows,MyIndices,MyValues));
     // A rows - CrsMatrix Case
     for(int i=0;i<Acrs_->NumMyRows();i++) {
-      Acrs_->ExtractMyRowView(i,NumEntries,MyValues,MyIndices);
       int LocRow=Ar_LIDMap_[i];
-      for (int k=0; k<NumVectors; k++) {
+      for (int k=0; k<NumVectors; k++) { //FIXME optimization, check for NumVectors=1
         double sum = 0.0;
-        for(int j = 0; j < NumEntries; j++)
-        sum += MyValues[j]*Xp[k][Ac_LIDMap_[MyIndices[j]]];          
+        for(int j = MyRows[i]; j < MyRows[i+1]; j++)
+          sum += MyValues[j]*Xp[k][Ac_LIDMap_[MyIndices[j]]];          
         Yp[k][LocRow] = sum;
       }
     }
@@ -379,8 +380,8 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
     // A rows - RowMatrix Case
     MyValues=&Values_[0];
     MyIndices=&Indices_[0];
-    for(int i=0;i<Acrs_->NumMyRows();i++) {
-      Acrs_->ExtractMyRowCopy(i,MaxNumEntries_,NumEntries,MyValues,MyIndices);
+    for(int i=0;i<ovA_->A().NumMyRows();i++) {
+      ovA_->A().ExtractMyRowCopy(i,MaxNumEntries_,NumEntries,MyValues,MyIndices);
       int LocRow=Ar_LIDMap_[i];
       for (int k=0; k<NumVectors; k++) {
         double sum = 0.0;
@@ -392,16 +393,16 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   }
 
   // B rows, always CrsMatrix
+  IFPACK_CHK_ERR(ovA_->B().ExtractCrsDataPointers(MyRows,MyIndices,MyValues));
   for(int i=0;i<ovA_->B().NumMyRows();i++) {
-    ovA_->B().ExtractMyRowView(i,NumEntries,MyValues,MyIndices);
     int LocRow=Br_LIDMap_[i];
-    for (int k=0; k<NumVectors; k++) {
+    for (int k=0; k<NumVectors; k++) { //FIXME optimization, check for NumVectors=1
       double sum = 0.0;
-      for(int j = 0; j < NumEntries; j++)
+      for(int j = MyRows[i]; j < MyRows[i+1]; j++)
         sum += MyValues[j]*Xp[k][Bc_LIDMap_[MyIndices[j]]];          
       Yp[k][LocRow] = sum;
     }
-  }    
+  }
 
   if (Exporter()!=0) {
     Y.PutScalar(0.0);  // Make sure target is zero
