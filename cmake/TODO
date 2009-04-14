@@ -20,7 +20,6 @@ more test machines.
 and run nightly tests.
 
 
-
 Backlog:
 --------
 
@@ -41,6 +40,16 @@ based on Trilinos_ENABLE_SECONDARY_STABLE_CODE to turn on by default those
 parts of their package that they don't consider PS code but are SS.  For
 example, EpetraExt_BUILD_GRAPH_REORDERINGS should default to ON if
 Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON.
+
+(*) [???] Revise how the Trilinos framework dependency files and unit tests
+are handled.  Right now, CMake will create the dependency files and define the
+unit tests by default for every configure.  This is overkill and makes
+frequent configures take longer than they should.  Instead, we should consider
+turning off dependency unit testing by default.  Then, we can turn on the
+generation of the dependency files and enable the dependency unit tests when
+doing pre-checkin testing.  Also, we need to add a 'TrilinosFramework' build
+case (i.e. label) that will run all of the dependency unit tests.  This will
+then be reported on the CDash dashboard so we can track it.
 
 (*) [???] Write a module that will print out the compiler version.  This is
 important for the nightly testing output.  A suggested was given on the
