@@ -30,6 +30,7 @@
 
 #include "Rythmos_StepperValidator.hpp"
 #include "Rythmos_IntegratorBuilder.hpp"
+#include "Rythmos_UnitTestModels.hpp"
 
 namespace Rythmos {
 
@@ -38,7 +39,7 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, create ) {
   TEST_ASSERT( !is_null(sv) );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, validateERK ) {
+TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ExplicitRK ) {
   RCP<StepperValidator<double> > sv = stepperValidator<double>();
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
   RCP<ParameterList> pl = Teuchos::parameterList();
@@ -46,8 +47,98 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, validateERK ) {
   pl->sublist("Stepper Settings").sublist("Runge Kutta Butcher Tableau Selection").set("Runge Kutta Butcher Tableau Type","Forward Euler");
   ib->setParameterList(pl);
   sv->setIntegratorBuilder(ib);
+
+  sv->validateStepper();
+  TEST_ASSERT( true );
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, BackwardEuler ) {
+  RCP<StepperValidator<double> > sv = stepperValidator<double>();
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
+  ib->setParameterList(pl);
+  sv->setIntegratorBuilder(ib);
+  
+  sv->validateStepper();
+  TEST_ASSERT( true );
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ImplicitRK ) {
+  RCP<StepperValidator<double> > sv = stepperValidator<double>();
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  {
+    // Stepper Settings
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit RK");
+    pl->sublist("Stepper Settings").sublist("Runge Kutta Butcher Tableau Selection").set("Runge Kutta Butcher Tableau Type","Backward Euler");
+    ib->setParameterList(pl);
+  }
+  {
+    // W Factory
+    RCP<ParameterList> wPL = Teuchos::parameterList();
+    sublist(wPL,"Stratimikos");
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory = getWFactory<double>(wPL);
+    ib->setWFactoryObject(irk_W_factory);
+  }
+  sv->setIntegratorBuilder(ib);
+
+  sv->validateStepper();
+  TEST_ASSERT( true );
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ImplicitBDF ) {
+  RCP<StepperValidator<double> > sv = stepperValidator<double>();
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  {
+    // Stepper Settings
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit BDF");
+    ib->setParameterList(pl);
+  }
+  sv->setIntegratorBuilder(ib);
+
+  sv->validateStepper();
+  TEST_ASSERT( true );
+}
+
+/*
+TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ExplicitTaylorPolynomial ) {
+  RCP<StepperValidator<double> > sv = stepperValidator<double>();
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Explicit Taylor Polynomial");
+  ib->setParameterList(pl);
+  sv->setIntegratorBuilder(ib);
   TEST_NOTHROW( sv->validateStepper() );
 }
+*/
+
+TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ForwardEuler ) {
+  RCP<StepperValidator<double> > sv = stepperValidator<double>();
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Forward Euler");
+  ib->setParameterList(pl);
+  sv->setIntegratorBuilder(ib);
+
+  sv->validateStepper();
+  TEST_ASSERT( true );
+}
+
+#ifdef HAVE_RYTHMOS_EXPERIMENTAL
+TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, Theta ) {
+  RCP<StepperValidator<double> > sv = stepperValidator<double>();
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Theta");
+  ib->setParameterList(pl);
+  sv->setIntegratorBuilder(ib);
+
+  sv->validateStepper();
+  TEST_ASSERT( true );
+}
+#endif // HAVE_RYTHMOS_EXPERIMENTAL
 
 } // namespace Rythmos 
 

@@ -43,6 +43,8 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
+#include "Rythmos_TimeStepNonlinearSolver.hpp"
 
 
 
@@ -115,8 +117,11 @@ private:
       const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition,
       const RCP<Thyra::NonlinearSolverBase<Scalar> > nlSolver
       ) const;
+  bool isImplicitStepper_() const;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getSomeIC_(const Thyra::ModelEvaluator<Scalar>& model, bool isImplicit) const;
 
   void validateIC_() const;
+  void validateStates_() const;
 
   // Private member data:
   RCP<IntegratorBuilder<Scalar> > integratorBuilder_;
@@ -148,7 +153,7 @@ public:
 
   virtual ~StepperValidatorMockModel();
 
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> getPassedInArgs() const;
+  RCP<const std::vector<Thyra::ModelEvaluatorBase::InArgs<Scalar> > > getPassedInArgs() const;
 
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
@@ -206,7 +211,7 @@ private:
   
   void initialize_();
 
-  mutable Thyra::ModelEvaluatorBase::InArgs<Scalar> passedInArgs_;
+  mutable RCP<std::vector<Thyra::ModelEvaluatorBase::InArgs<Scalar> > > passedInArgs_;
   bool isImplicit_;
   bool isInitialized_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> inArgs_;
@@ -259,6 +264,7 @@ StepperValidatorMockModel<Scalar>::StepperValidatorMockModel()
   f_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(dim_);
   // Create p_space 
   p_space_ = Thyra::defaultSpmdVectorSpace<Scalar>(np_);
+  passedInArgs_ = rcp(new std::vector<Thyra::ModelEvaluatorBase::InArgs<Scalar> >);
   this->initialize_();
 }
 
@@ -270,41 +276,40 @@ template<class Scalar>
 void StepperValidatorMockModel<Scalar>::initialize_()
 {
   if (!isInitialized_) {
+    // Set up prototypical InArgs
+    Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
+    inArgs.setModelEvalDescription(this->description());
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_t );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x );
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_beta );
+    inArgs.set_Np(1); 
     if (isImplicit_) {
-      TEST_FOR_EXCEPT(true);
-    } 
-    else {
-      // Set up prototypical InArgs
-      Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> inArgs;
-      inArgs.setModelEvalDescription(this->description());
-      inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_t );
-      inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x );
-      inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_beta );
-      inArgs.set_Np(1); 
-      inArgs_ = inArgs;
-      // Set up prototypical OutArgs
-      Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
-      outArgs.setModelEvalDescription(this->description());
-      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_f );
-      outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_W_op );
-      outArgs.set_Np_Ng(Np_,Ng_);
-      outArgs_ = outArgs;
-      // Set up nominal values
-      nominalValues_ = inArgs_;
-      nominalValues_.set_t(Scalar(1.0));
-      const RCP<VectorBase<Scalar> > x_ic = Thyra::createMember(x_space_);
-      Thyra::V_S(Teuchos::outArg(*x_ic),Scalar(2.0));
-      nominalValues_.set_x(x_ic);
-      const RCP<VectorBase<Scalar> > p_ic = Thyra::createMember(p_space_);
-      Thyra::V_S(Teuchos::outArg(*p_ic),Scalar(3.0));
-      nominalValues_.set_p(0,p_ic);
+      inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x_dot );
+      inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_alpha );
     }
+    inArgs_ = inArgs;
+    // Set up prototypical OutArgs
+    Thyra::ModelEvaluatorBase::OutArgsSetup<Scalar> outArgs;
+    outArgs.setModelEvalDescription(this->description());
+    outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_f );
+    outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_W_op );
+    outArgs.set_Np_Ng(Np_,Ng_);
+    outArgs_ = outArgs;
+    // Set up nominal values
+    nominalValues_ = inArgs_;
+    nominalValues_.set_t(Scalar(1.0));
+    const RCP<VectorBase<Scalar> > x_ic = Thyra::createMember(x_space_);
+    Thyra::V_S(Teuchos::outArg(*x_ic),Scalar(2.0));
+    nominalValues_.set_x(x_ic);
+    const RCP<VectorBase<Scalar> > p_ic = Thyra::createMember(p_space_);
+    Thyra::V_S(Teuchos::outArg(*p_ic),Scalar(3.0));
+    nominalValues_.set_p(0,p_ic);
     isInitialized_ = true;
   }
 }
 
 template<class Scalar>
-Thyra::ModelEvaluatorBase::InArgs<Scalar> StepperValidatorMockModel<Scalar>::getPassedInArgs() const
+RCP<const std::vector<Thyra::ModelEvaluatorBase::InArgs<Scalar> > > StepperValidatorMockModel<Scalar>::getPassedInArgs() const
 {
   return passedInArgs_;
 }
@@ -329,19 +334,43 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar> StepperValidatorMockModel<Scalar>::get
 template<class Scalar>
 RCP<Thyra::LinearOpWithSolveBase<Scalar> > StepperValidatorMockModel<Scalar>::create_W() const
 {
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = this->get_W_factory();
+  RCP<Thyra::LinearOpBase<Scalar> > matrix = this->create_W_op();
+  {
+    // 01/20/09 tscoffe:  This is a total hack to provide a full rank matrix to
+    // linearOpWithSolve because it ends up factoring the matrix during
+    // initialization, which it really shouldn't do, or I'm doing something
+    // wrong here.   The net effect is that I get exceptions thrown in
+    // optimized mode due to the matrix being rank deficient unless I do this.
+    RCP<Thyra::MultiVectorBase<Scalar> > multivec = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<Scalar> >(matrix,true);
+    {
+      RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(x_space_);
+      {
+        Thyra::DetachedVectorView<Scalar> vec_view( *vec );
+        vec_view[0] = 1.0;
+      }
+      V_V(&*(multivec->col(0)),*vec);
+    }
+  }
+  RCP<Thyra::LinearOpWithSolveBase<Scalar> > W = 
+    Thyra::linearOpWithSolve<Scalar>(
+      *W_factory,
+      matrix
+      );
+  return W;
 }
 template<class Scalar>
 RCP<Thyra::LinearOpBase<Scalar> > StepperValidatorMockModel<Scalar>::create_W_op() const
 {
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  RCP<Thyra::MultiVectorBase<Scalar> > matrix = Thyra::createMembers(x_space_, dim_);
+  return(matrix);
 }
 template<class Scalar>
 RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > StepperValidatorMockModel<Scalar>::get_W_factory() const
 {
-  return Teuchos::null;
+  RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory = 
+    Thyra::defaultSerialDenseLinearOpWithSolveFactory<Scalar>();
+  return W_factory;
 }
 template<class Scalar>
 Thyra::ModelEvaluatorBase::InArgs<Scalar> StepperValidatorMockModel<Scalar>::createInArgs() const
@@ -377,6 +406,7 @@ void StepperValidatorMockModel<Scalar>::setParameterList(RCP<ParameterList> cons
   bool test_isImplicit = paramList->get("Is Implicit",false);
   if (test_isImplicit != isImplicit_) {
     isImplicit_ = test_isImplicit;
+    isInitialized_ = false;
     this->initialize_();
   }
   setMyParamList(paramList);
@@ -406,7 +436,11 @@ void StepperValidatorMockModel<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
-  passedInArgs_ = inArgs;
+  passedInArgs_->push_back(inArgs);
+  // Fill f with zeros.
+  RCP<VectorBase<Scalar> > f_out = outArgs.get_f();
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  Thyra::V_S(Teuchos::outArg(*f_out),ST::zero());
 }
 
 
@@ -449,8 +483,10 @@ template<class Scalar>
   //   uninitialized => getTimeRange == invalidTimeRange
   //   initialized, but no step => getTimeRange.length() == 0, [t_ic,t_ic]
   //   initialized, step taken => getTimeRange.length() > 0
+  //this->validateStates_();
   // Verify that getPoints(t_ic) returns the IC after initialization
   // Verify that getPoints(t_ic) returns the IC correctly after the first step
+  // Verify that getPoints(t) returns the same vectors as getStepStatus
 }
 
 template<class Scalar>
@@ -508,35 +544,35 @@ RCP<StepperBase<Scalar> > StepperValidator<Scalar>::getStepper_(
   return stepper;
 }
 
+template<class Scalar>
+bool StepperValidator<Scalar>::isImplicitStepper_() const
+{
+  RCP<const StepperBuilder<Scalar> > sb = integratorBuilder_->getStepperBuilder();
+  RCP<StepperBase<Scalar> > stepper = sb->create(stepperName_);
+  return stepper->isImplicit();
+}
 
 template<class Scalar>
-void StepperValidator<Scalar>::validateIC_() const
+Thyra::ModelEvaluatorBase::InArgs<Scalar> StepperValidator<Scalar>::getSomeIC_(
+    const Thyra::ModelEvaluator<Scalar>& model, bool isImplicit
+    ) const
 {
-  // Determine if the stepper is implicit or not:
-  bool isImplicit;
-  {
-    RCP<const StepperBuilder<Scalar> > sb = integratorBuilder_->getStepperBuilder();
-    RCP<StepperBase<Scalar> > stepper = sb->create(stepperName_);
-    isImplicit = stepper->isImplicit();
-  }
-  RCP<StepperValidatorMockModel<Scalar> > model = 
-    stepperValidatorMockModel<Scalar>(isImplicit);
-  // Set up initial condition:
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = model->createInArgs();
+  // Set up some initial condition:
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = model.createInArgs();
   {
     // Explicit InArgs items:
     // time
     Scalar time = Scalar(0.1);
     stepper_ic.set_t(time);
     // x
-    RCP<VectorBase<Scalar> > x_ic = Thyra::createMember(*(model->get_x_space()));
+    RCP<VectorBase<Scalar> > x_ic = Thyra::createMember(*(model.get_x_space()));
     {
       Thyra::DetachedVectorView<Scalar> x_ic_view( *x_ic );
       x_ic_view[0] = Scalar(10.0);
     }
     stepper_ic.set_x(x_ic);
     // parameter 
-    RCP<VectorBase<Scalar> > p_ic = Thyra::createMember(*(model->get_p_space(0)));
+    RCP<VectorBase<Scalar> > p_ic = Thyra::createMember(*(model.get_p_space(0)));
     {
       Thyra::DetachedVectorView<Scalar> p_ic_view( *p_ic );
       p_ic_view[0] = Scalar(11.0);
@@ -544,13 +580,31 @@ void StepperValidator<Scalar>::validateIC_() const
     stepper_ic.set_p(0,p_ic);
   }
   if (isImplicit) {
-    TEST_FOR_EXCEPT(true);
     // Set x_dot, alpha, beta, etc. on stepper_ic
+    RCP<VectorBase<Scalar> > xdot_ic = Thyra::createMember(*(model.get_x_space()));
+    {
+      Thyra::DetachedVectorView<Scalar> xdot_ic_view( *xdot_ic );
+      xdot_ic_view[0] = Scalar(12.0);
+    }
+    stepper_ic.set_x_dot(xdot_ic);
   }
+  return stepper_ic;
+}
+
+
+template<class Scalar>
+void StepperValidator<Scalar>::validateIC_() const
+{
+  // Determine if the stepper is implicit or not:
+  bool isImplicit = this->isImplicitStepper_();
+  RCP<StepperValidatorMockModel<Scalar> > model = 
+    stepperValidatorMockModel<Scalar>(isImplicit);
+  // Set up some initial condition:
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = this->getSomeIC_(*model,isImplicit);
+  // Create nonlinear solver (if needed)
   RCP<Thyra::NonlinearSolverBase<Scalar> > nlSolver;
   if (isImplicit) {
-    TEST_FOR_EXCEPT(true);
-    // Set up Nonlinear Solver
+    nlSolver = Rythmos::timeStepNonlinearSolver<Scalar>();
   }
   RCP<StepperBase<Scalar> > stepper = this->getStepper_(model,stepper_ic,nlSolver);
   Scalar dt = Scalar(0.1);
@@ -559,18 +613,19 @@ void StepperValidator<Scalar>::validateIC_() const
   dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
   // Verify that the parameter got set on the model by asking the model for the
   // inArgs passed to it through evalModel
-  Thyra::ModelEvaluatorBase::InArgs<Scalar> passedInArgs = model->getPassedInArgs();
-  TEST_FOR_EXCEPTION( passedInArgs.get_t() != stepper_ic.get_t(), std::logic_error,
+  RCP<const std::vector<Thyra::ModelEvaluatorBase::InArgs<Scalar> > > passedInArgs_ptr = model->getPassedInArgs();
+  const std::vector<Thyra::ModelEvaluatorBase::InArgs<Scalar> >& passedInArgs = *passedInArgs_ptr;
+  bool valid_t = false;
+  // Technically this will fail for any Runge Kutta Butcher Tableau where c(0) != 0 and c(s) != 1, where s = # of stages.
+  if ( (passedInArgs[0].get_t() == stepper_ic.get_t()   )   || 
+       (passedInArgs[0].get_t() == stepper_ic.get_t()+dt) )    {
+    valid_t = true;
+  }
+  TEST_FOR_EXCEPTION( !valid_t, std::logic_error,
       "Error!  StepperValidator::validateIC:  Time did not get correctly set on the model through StepperBase::setInitialCondition!"
       );
-  RCP<const VectorBase<Scalar> > x_out = passedInArgs.get_x();
-  {
-    Thyra::ConstDetachedVectorView<Scalar> x_out_view( *x_out );
-    TEST_FOR_EXCEPTION( x_out_view[0] != Scalar(10.0), std::logic_error,
-        "Error!  StepperValidator::validateIC:  X did not get set correctly on the model through StepperBase::setInitialCondition!"
-        );
-  }
-  RCP<const VectorBase<Scalar> > p_out = passedInArgs.get_p(0);
+  // If a stepper uses a predictor, then the x passed into the model will not be the same as the IC, so we can't check it.
+  RCP<const VectorBase<Scalar> > p_out = passedInArgs[0].get_p(0);
   {
     Thyra::ConstDetachedVectorView<Scalar> p_out_view( *p_out );
     TEST_FOR_EXCEPTION( p_out_view[0] != Scalar(11.0), std::logic_error,
@@ -578,8 +633,74 @@ void StepperValidator<Scalar>::validateIC_() const
         );
   }
   if (isImplicit) {
-    TEST_FOR_EXCEPT(true);
-    // Test that x_dot, alpha, beta got passed to the model
+    // Each time integration method will approximate xdot according to its own algorithm, so we can't really test it here.
+  }
+}
+
+template<class Scalar>
+void StepperValidator<Scalar>::validateStates_() const
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  RCP<const StepperBuilder<Scalar> > sb = integratorBuilder_->getStepperBuilder();
+  RCP<StepperBase<Scalar> > stepper = sb->create(stepperName_);
+  {
+    // Uninitialized Stepper:
+    TimeRange<Scalar> tr = stepper->getTimeRange();
+    TEST_FOR_EXCEPTION( tr.isValid(), std::logic_error,
+        "Error!  StepperValidator::validateStates:  Uninitialized stepper returned a valid time range!"
+        );
+    const StepStatus<Scalar> ss = stepper->getStepStatus();
+    TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNINITIALIZED, std::logic_error,
+        "Error!  StepperValidator::validateStates:  Uninitialized stepper returned a valid step status!"
+        );
+  }
+  bool isImplicit = stepper->isImplicit();
+  RCP<StepperValidatorMockModel<Scalar> > model = 
+    stepperValidatorMockModel<Scalar>(isImplicit);
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = this->getSomeIC_(*model,isImplicit);
+  stepper->setInitialCondition(stepper_ic);
+  {
+    // Has initial condition:
+    TimeRange<Scalar> tr = stepper->getTimeRange();
+    TEST_FOR_EXCEPTION( tr.length() != ST::zero(), std::logic_error,
+        "Error!  StepperValidator::validateStates:  Stepper with initial condition returned a non zero time range!"
+        );
+    const StepStatus<Scalar> ss = stepper->getStepStatus();
+    TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNKNOWN, std::logic_error,
+        "Error!  StepperValidator::validateStates:  Stepper with initial condition did not return STEP_STATUS_UNKNOWN!"
+        );
+  }
+  stepper->setModel(model);
+  if (isImplicit) {
+    RCP<SolverAcceptingStepperBase<Scalar> > saStepper = 
+      Teuchos::rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(stepper,true);
+    RCP<Thyra::NonlinearSolverBase<Scalar> > nlSolver = timeStepNonlinearSolver<Scalar>();
+    saStepper->setSolver(nlSolver);
+  }
+  {
+    // Still has initial condition:
+    TimeRange<Scalar> tr = stepper->getTimeRange();
+    TEST_FOR_EXCEPTION( tr.length() != ST::zero(), std::logic_error,
+        "Error!  StepperValidator::validateStates:  Fully initialized stepper returned a non zero time range!"
+        );
+    const StepStatus<Scalar> ss = stepper->getStepStatus();
+    TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_UNKNOWN, std::logic_error,
+        "Error!  StepperValidator::validateStates:  Fully initialized stepper, prior to taking a step, did not return STEP_STATUS_UNKNOWN!"
+        );
+  }
+  Scalar dt = Scalar(0.1);
+  Scalar dt_taken = ST::nan();
+  dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
+  {
+    // Taken Step:
+    TimeRange<Scalar> tr = stepper->getTimeRange();
+    TEST_FOR_EXCEPTION( tr.length() == ST::zero(), std::logic_error,
+        "Error!  StepperValidator::validateStates:  Stepper returned a zero time range after taking a step!"
+        );
+    const StepStatus<Scalar> ss = stepper->getStepStatus();
+    TEST_FOR_EXCEPTION( ss.stepStatus != STEP_STATUS_CONVERGED, std::logic_error,
+        "Error!  StepperValidator::validateStates:  Stepper did not return converged step status after taking a step!"
+        );
   }
 }
 

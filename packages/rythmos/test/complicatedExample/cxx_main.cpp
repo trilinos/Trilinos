@@ -245,7 +245,9 @@ int main(int argc, char *argv[])
       step_method_val = STEP_TYPE_FIXED;
     }
     else if (method_val == METHOD_FE) {
-      stepper_ptr = rcp(new Rythmos::ForwardEulerStepper<double>(model));
+      stepper_ptr = Rythmos::forwardEulerStepper<double>(model);
+      Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+      stepper_ptr->setInitialCondition(ic);
       RCP<Teuchos::ParameterList> FEparams = Teuchos::parameterList();
       FEparams->sublist("VerboseObject").set(
         "Verbosity Level",

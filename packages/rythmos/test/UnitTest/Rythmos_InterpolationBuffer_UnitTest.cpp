@@ -935,8 +935,6 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, add_get_points_1 ) {
     Array<double> accuracy_vec;
     time_vec.push_back(t);
     ib->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
-    //TEST_EQUALITY( x_vec[0].get(), x.get() );
-    //TEST_EQUALITY( xdot_vec[0].get(), xdot.get() );
     RCP<const VectorBase<double> > x = x_vec[0];
     RCP<VectorBase<double> > y = x->clone_v();
     TEST_ASSERT( !is_null(y) );

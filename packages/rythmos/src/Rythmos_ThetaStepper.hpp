@@ -85,6 +85,8 @@ public:
 
   /** \brief . */
   ThetaStepper();
+
+  bool isImplicit() const;
   
   /** \brief Redefined from InterpolatorAcceptingObjectBase */
   //@{
@@ -297,6 +299,12 @@ ThetaStepper<Scalar>::ThetaStepper()
    thetaStepperType_(INVALID_THETA_STEPPER_TYPE),
    theta_(-1.0)
 {}
+
+template<class Scalar>
+bool ThetaStepper<Scalar>::isImplicit() const
+{
+  return true;
+}
 
 
 template<class Scalar>

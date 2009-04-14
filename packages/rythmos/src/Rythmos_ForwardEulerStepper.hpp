@@ -50,7 +50,6 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     
     /** \brief . */
     ForwardEulerStepper();
-    ForwardEulerStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
 
     /** \brief . */
     void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
@@ -137,11 +136,16 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
 
   private:
 
-    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model_;
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > solution_vector_;
-    Teuchos::RCP<Thyra::VectorBase<Scalar> > residual_vector_;
+    RCP<const Thyra::ModelEvaluator<Scalar> > model_;
+    RCP<Thyra::VectorBase<Scalar> > solution_vector_;
+    RCP<Thyra::VectorBase<Scalar> > residual_vector_;
     Scalar t_;
     Scalar dt_;
+    Scalar t_old_;
+    RCP<Thyra::VectorBase<Scalar> > solution_vector_old_;
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
+    int numSteps_;
+    bool haveInitialCondition_;
 
     Teuchos::RCP<Teuchos::ParameterList> parameterList_;
     bool isInitialized_;
@@ -159,27 +163,35 @@ RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper()
   return stepper;
 }
 
+// Nonmember constructor
 template<class Scalar>
-ForwardEulerStepper<Scalar>::ForwardEulerStepper(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model)
-  : isInitialized_(false)
+RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper(const RCP<const Thyra::ModelEvaluator<Scalar> > &model)
 {
-  this->setModel(model);
-  initialize_();
+  RCP<ForwardEulerStepper<Scalar> > stepper = forwardEulerStepper<Scalar>();
+  stepper->setModel(model);
+  return stepper;
+}
+
+template<class Scalar>
+ForwardEulerStepper<Scalar>::ForwardEulerStepper()
+  : numSteps_(0),haveInitialCondition_(false),isInitialized_(false)
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  t_old_ = ST::nan();
+  t_ = ST::nan();
+  dt_ = ST::zero();
 }
 
 template<class Scalar>
 void ForwardEulerStepper<Scalar>::initialize_()
 {
-  t_ = ST::zero();
-  solution_vector_ = model_->getNominalValues().get_x()->clone_v();
-  residual_vector_ = Thyra::createMember(model_->get_f_space());
-  isInitialized_ = true;
-}
-
-template<class Scalar>
-ForwardEulerStepper<Scalar>::ForwardEulerStepper()
-  : isInitialized_(false)
-{
+  if (!isInitialized_) {
+    TEST_FOR_EXCEPTION( is_null(model_), std::logic_error,
+       "Error!  Please set a model on the stepper.\n" 
+       );
+    residual_vector_ = Thyra::createMember(model_->get_f_space());
+    isInitialized_ = true;
+  }
 }
 
 template<class Scalar>
@@ -190,36 +202,33 @@ ForwardEulerStepper<Scalar>::~ForwardEulerStepper()
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> > ForwardEulerStepper<Scalar>::get_x_space() const
 {
-  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,"Error, attempting to call get_x_space before initialization!\n");
+  TEST_FOR_EXCEPTION(!haveInitialCondition_,std::logic_error,"Error, attempting to call get_x_space before setting an initial condition!\n");
   return(solution_vector_->space());
 }
 
 template<class Scalar>
 Scalar ForwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
+  TEST_FOR_EXCEPTION( !haveInitialCondition_, std::logic_error,
+     "Error!  Attempting to call takeStep before setting an initial condition!\n" 
+     );
+  this->initialize_();
   if (flag == STEP_TYPE_VARIABLE) { 
     // print something out about this method not supporting automatic variable step-size
     typedef Teuchos::ScalarTraits<Scalar> ST;
     return(-ST::one());
   }
-/*
-  Thyra::ModelEvaluatorBase::InArgs<Scalar>   inArgs  = model_->createInArgs();
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>  outArgs = model_->createOutArgs();
+  //Thyra::eval_f<Scalar>(*model_,*solution_vector_,t_+dt,&*residual_vector_);
+  eval_model_explicit<Scalar>(*model_,basePoint_,*solution_vector_,t_+dt,Teuchos::outArg(*residual_vector_));
 
-  inArgs.set_x(solution_vector_);
-  inArgs.set_t(t_+dt);
-
-  outArgs.set_f(residual_vector_);
-
-  model_->evalModel(inArgs,outArgs);
-*/
-  Thyra::eval_f<Scalar>(*model_,*solution_vector_,t_+dt,&*residual_vector_);
-
+  // solution_vector_old_ = solution_vector_
+  Thyra::V_V(Teuchos::outArg(*solution_vector_old_),*solution_vector_);
   // solution_vector = solution_vector + dt*residual_vector
   Thyra::Vp_StV(&*solution_vector_,dt,*residual_vector_); 
+  t_old_ = t_;
   t_ += dt;
-
   dt_ = dt;
+  numSteps_++;
 
   return(dt);
 }
@@ -230,12 +239,24 @@ const StepStatus<Scalar> ForwardEulerStepper<Scalar>::getStepStatus() const
   typedef Teuchos::ScalarTraits<Scalar> ST;
   StepStatus<Scalar> stepStatus;
 
-  stepStatus.stepSize = dt_; 
-  stepStatus.order = 1;
-  stepStatus.time = t_;
-  stepStatus.stepLETValue = Scalar(-ST::one()); 
-  stepStatus.solution = solution_vector_;
-  stepStatus.residual = residual_vector_;
+  if (!haveInitialCondition_) {
+    stepStatus.stepStatus = STEP_STATUS_UNINITIALIZED;
+  } 
+  else if (numSteps_ == 0) {
+    stepStatus.stepStatus = STEP_STATUS_UNKNOWN;
+    stepStatus.order = this->getOrder();
+    stepStatus.time = t_;
+    stepStatus.solution = solution_vector_;
+  } 
+  else {
+    stepStatus.stepStatus = STEP_STATUS_CONVERGED;
+    stepStatus.stepSize = dt_; 
+    stepStatus.order = this->getOrder();
+    stepStatus.time = t_;
+    stepStatus.stepLETValue = Scalar(-ST::one()); 
+    stepStatus.solution = solution_vector_;
+    stepStatus.residual = residual_vector_;
+  }
 
   return(stepStatus);
 }
@@ -290,13 +311,51 @@ void ForwardEulerStepper<Scalar>::getPoints(
     ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,Array<ScalarMag>* accuracy_vec) const
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, getPoints is not implemented for ForwardEulerStepper.\n");
+  TEUCHOS_ASSERT( haveInitialCondition_ );
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  if (x_vec != NULL) {
+    x_vec->clear();
+  }
+  if (xdot_vec != NULL) {
+    xdot_vec->clear();
+  }
+  if (accuracy_vec != NULL) {
+    accuracy_vec->clear();
+  }
+  typename Array<Scalar>::const_iterator time_it = time_vec.begin();
+  RCP<Thyra::VectorBase<Scalar> > tmpVec;
+  for (; time_it != time_vec.end() ; time_it++) {
+    Scalar t = *time_it;
+    if (compareTimeValues(t,t_old_)==0) {
+      tmpVec = solution_vector_old_;
+    } else if (compareTimeValues(t,t_)==0) {
+      tmpVec = solution_vector_;
+    } else {
+      TEST_FOR_EXCEPTION(true,std::logic_error,"Error, ForwardEulerStepper::getPoints only supports time values on the boundaries!\n");
+    }
+    if (!Teuchos::is_null(tmpVec)) {
+      if (x_vec != NULL) {
+        x_vec->push_back(tmpVec->clone_v());
+      }
+      if (xdot_vec != NULL) {
+        xdot_vec->push_back(Teuchos::null);
+      }
+      if (accuracy_vec != NULL) {
+        accuracy_vec->push_back(ST::zero());
+      }
+      tmpVec = Teuchos::null;
+    }
+  }
 }
 
 template<class Scalar>
 TimeRange<Scalar> ForwardEulerStepper<Scalar>::getTimeRange() const
 {
-  return invalidTimeRange<Scalar>();
+  if (!haveInitialCondition_) {
+    return(invalidTimeRange<Scalar>());
+  } else {
+    return(TimeRange<Scalar>(t_old_,t_));
+  }
 }
 
 template<class Scalar>
@@ -374,6 +433,12 @@ void ForwardEulerStepper<Scalar>::setInitialCondition(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
     )
 {
+  basePoint_ = initialCondition;
+  t_ = initialCondition.get_t();
+  t_old_ = t_;
+  solution_vector_ = initialCondition.get_x()->clone_v();
+  solution_vector_old_ = solution_vector_->clone_v();
+  haveInitialCondition_ = true;
 }
 
 } // namespace Rythmos

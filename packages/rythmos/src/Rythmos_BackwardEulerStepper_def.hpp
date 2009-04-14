@@ -219,6 +219,11 @@ BackwardEulerStepper<Scalar>::cloneStepperAlgorithm() const
   return stepper;
 }
 
+template<class Scalar>
+bool BackwardEulerStepper<Scalar>::isImplicit() const
+{
+  return true;
+}
 
 template<class Scalar>
 void BackwardEulerStepper<Scalar>::setModel(
@@ -418,6 +423,7 @@ Scalar BackwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeTy
   }
 
 #ifdef RYTHMOS_DEBUG
+  // 04/14/09 tscoffe: This code should be moved to StepperValidator
 
   if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
     *out << "\nChecking to make sure that solution and the interpolated solution are the same! ...\n";
@@ -862,7 +868,7 @@ void BackwardEulerStepper<Scalar>::initialize()
   if ( is_null(interpolator_) ) {
     // If an interpolator has not been explicitly set, then just create
     // a default linear interpolator.
-    interpolator_ = Teuchos::rcp(new LinearInterpolator<Scalar> );
+    interpolator_ = linearInterpolator<Scalar>();
     // 2007/05/18: rabartl: ToDo: Replace this with a Hermete interplator
     // when it is implementated!
   }

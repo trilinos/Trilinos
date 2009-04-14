@@ -656,14 +656,13 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ExplicitRK ) {
   }
 }
 
-/*
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ForwardEuler ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
   RCP<SinCosModel> model = sinCosModel(false);
   Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*(ib->getValidParameters()));
-  pl->sublist("Stepper").set("Stepper Type","Forward Euler");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Forward Euler");
   ib->setParameterList(pl);
   RCP<Thyra::NonlinearSolverBase<double> > nlSolver; // null
   RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
@@ -675,7 +674,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ForwardEuler ) {
     TEST_ASSERT( !is_null(feStepper) );
   }
 }
-*/
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, create_ImplicitRK ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
@@ -920,10 +918,27 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_ERK ) {
   TEST_ASSERT( true ); 
 }
 
-//TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_FE ) {
-//}
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_FE ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<SinCosModel> model = sinCosModel(false);
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*(ib->getValidParameters()));
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Forward Euler");
+  pl->sublist("Integration Control Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
+  pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
+  pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
+  // 04/6/09 tscoffe:  We need to fix the InterpolationBuffer to work with FE!
+  pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","None");
+  ib->setParameterList(pl);
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver; // null
+  RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+  Teuchos::Array<double> time_vec;
+  time_vec.push_back(pl->sublist("Integrator Settings").get<double>("Final Time"));
+  integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
+  TEST_ASSERT( true ); 
+}
 
-/*
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_BE ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
   RCP<SinCosModel> model = sinCosModel(true);
@@ -931,6 +946,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_BE ) {
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*(ib->getValidParameters()));
   pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
+  pl->sublist("Integration Control Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
   pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
   pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
   ib->setParameterList(pl);
@@ -941,9 +957,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_BE ) {
   integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
   TEST_ASSERT( true ); 
 }
-*/
 
-/*
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_DIRK ) {
   // DIRK/SDIRK w/o WFactory
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
@@ -956,7 +970,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_DIRK ) {
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*(ib->getValidParameters()));
   pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit RK");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").sublist("Implicit RK").sublist("VerboseObject").set("Verbosity Level","none");
   pl->sublist("Stepper Settings").sublist("Runge Kutta Butcher Tableau Selection").set("Runge Kutta Butcher Tableau Type","Singly Diagonal IRK 2 Stage 3rd order");
+  pl->sublist("Integration Control Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
   pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
   pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
   ib->setParameterList(pl);
@@ -967,9 +983,7 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_DIRK ) {
   integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
   TEST_ASSERT( true ); 
 }
-*/
 
-/*
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IRK ) {
   // Dense RKBT w/ WFactory
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
@@ -982,7 +996,9 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IRK ) {
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->setParameters(*(ib->getValidParameters()));
   pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit RK");
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").sublist("Implicit RK").sublist("VerboseObject").set("Verbosity Level","none");
   pl->sublist("Stepper Settings").sublist("Runge Kutta Butcher Tableau Selection").set("Runge Kutta Butcher Tableau Type","Implicit 3 Stage 6th order Gauss");
+  pl->sublist("Integration Control Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
   pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
   pl->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
   ib->setParameterList(pl);
@@ -994,7 +1010,6 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IRK ) {
   integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
   TEST_ASSERT( true ); 
 }
-*/
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_IBDF_minimal ) {
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();

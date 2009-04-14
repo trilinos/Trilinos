@@ -127,6 +127,9 @@ public:
   RCP<StepperBase<Scalar> > cloneStepperAlgorithm() const;
 
   /** \brief . */
+  bool isImplicit() const;
+
+  /** \brief . */
   void setModel(const RCP<const Thyra::ModelEvaluator<Scalar> > &model);
   
   /** \brief . */

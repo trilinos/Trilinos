@@ -46,7 +46,9 @@ class ForwardEulerStepperFactory : public virtual StepperFactoryBase<Scalar>
     RCP<StepperBase<Scalar> > getStepper() const 
     { 
       RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
-      RCP<ForwardEulerStepper<Scalar> > stepper = Teuchos::rcp(new ForwardEulerStepper<Scalar>(model));
+      RCP<ForwardEulerStepper<Scalar> > stepper = forwardEulerStepper<Scalar>(model);
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> ic = model->getNominalValues();
+      stepper->setInitialCondition(ic);
       return stepper;
     }
   private:

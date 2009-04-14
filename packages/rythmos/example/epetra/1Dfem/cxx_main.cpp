@@ -184,7 +184,7 @@ int main(int argc, char *argv[])
       stepper_ptr = Rythmos::explicitRKStepper<double>(model);
       method = "Explicit Runge-Kutta of order 4";
     } else if (method_val == METHOD_FE) {
-      stepper_ptr = Teuchos::rcp(new Rythmos::ForwardEulerStepper<double>(model));
+      stepper_ptr = Rythmos::forwardEulerStepper<double>(model);
       method = "Forward Euler";
     } else if (method_val == METHOD_BE) {
       Teuchos::RCP<Thyra::NonlinearSolverBase<double> >
