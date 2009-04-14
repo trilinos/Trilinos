@@ -1,11 +1,12 @@
 #!/bin/bash
 
+CTEST_EXE=/home/rabartl/install/bin/ctest
+BASEDIR=/home/rabartl/PROJECTS/dashboards/Trilinos.base
+DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/godel
+
 # Source the 
 cd $HOME
 source .bash_profile
-
-#CTEST_EXE=/usr/local/bin/ctest
-CTEST_EXE=/home/rabartl/install/bin/ctest
 
 if [ "$_DAYOFWEEK" == "" ] ; then
   _DAYOFWEEK=`date +%A`
@@ -43,8 +44,6 @@ echo
 echo "Checking out just the skeleton cmake/ctest code: `date`"
 echo
 
-BASEDIR=/home/rabartl/PROJECTS/dashboards/Trilinos.base
-
 cd $BASEDIR
 cvs -q -d :ext:software:/space/CVS co Trilinos/cmake Trilinos/CTestConfig.cmake
 
@@ -59,74 +58,67 @@ echo
 echo "Running weekday tests ..."
 echo
 
-#echo
-#echo "Doing dependency checking-only build: `date`"
-#echo
-#
-#time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_package_deps_godel.cmake -VV \
-#  &> $BASEDIR/ctest_linux_nightly_package_deps_godel.out
-
 echo
 echo "Doing serial performance build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_performance_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_performance_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_performance_godel.out
 
 echo
 echo "Doing mpi optimized build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_optimized_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_optimized_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_mpi_optimized_godel.out
 
 echo
 echo "Doing serial debug build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_debug_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_debug_godel.out
 
 echo
 echo "Doing mpi optimized shared library build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_optimized_shared_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_mpi_optimized_shared_godel.out
 
 echo
 echo "Doing serial optimized implicit instantiation build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_opt_impl_instant_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_opt_impl_instant_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_opt_impl_instant_godel.out
 
 echo
 echo "Doing mpi debug build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_debug_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_mpi_debug_godel.out
 
 echo
 echo "Doing mpi optimized zoltan c-only build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_opt_zoltan_c_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_opt_zoltan_c_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_mpi_opt_zoltan_c_godel.out
 
 echo
 echo "Doing serial debug intel build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_icpc_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_debug_icpc_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_debug_icpc_godel.out
 
 echo
 echo "Doing serial release intel build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_release_icpc_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_release_icpc_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_release_icpc_godel.out
 
 fi
@@ -146,14 +138,14 @@ echo
 echo "Doing serial debug coverage build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_coverage_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_debug_coverage_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_debug_coverage_godel.out
 
 echo
 echo "Doing mpi debug coverage build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_coverage_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_debug_coverage_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_mpi_debug_coverage_godel.out
 
 fi
@@ -173,14 +165,14 @@ echo
 echo "Doing serial debug memcheck build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_serial_debug_memcheck_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_debug_memcheck_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_serial_debug_memcheck_godel.out
 
 echo
 echo "Doing mpi debug memcheck build: `date`"
 echo
 
-time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake -VV \
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake -VV \
   &> $BASEDIR/ctest_linux_nightly_mpi_debug_memcheck_godel.out
 
 echo

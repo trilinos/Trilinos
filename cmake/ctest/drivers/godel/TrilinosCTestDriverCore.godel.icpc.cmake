@@ -1,5 +1,5 @@
   
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../TrilinosCTestDriverCore.cmake")
 
 #
 # Platform/compiler specific options for godel using gcc
@@ -8,7 +8,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.cmake")
 MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   # Base of Trilinos/cmake/ctest then BUILD_DIR_NAME
-  SET( CTEST_DASHBOARD_ROOT "${CTEST_SCRIPT_DIRECTORY}/../../../${BUILD_DIR_NAME}" )
+  SET( CTEST_DASHBOARD_ROOT "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
 
   SET( CTEST_NOTES_FILES "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
   
