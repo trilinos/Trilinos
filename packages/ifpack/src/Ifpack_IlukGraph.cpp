@@ -350,7 +350,6 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
 	LevelsRowU[0] = CurrentLevel[Next];
 	Next = LinkList[Next];
       }
-       
 
       // Upper
 
