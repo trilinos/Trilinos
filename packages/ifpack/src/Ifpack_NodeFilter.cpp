@@ -67,6 +67,9 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
   assert(ovA_ != 0);
 
   Acrs_=dynamic_cast<const Epetra_CrsMatrix*>(&ovA_->A());
+
+  NumMyRowsA_ = ovA_->A().NumMyRows();
+  NumMyRowsB_ = ovA_->B().NumMyRows();
   
 #ifdef HAVE_MPI
   const Epetra_MpiComm *pComm = dynamic_cast<const Epetra_MpiComm*>( &(Matrix->Comm()) );
@@ -364,15 +367,27 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
   int *MyIndices;
 
   if(Acrs_){
-    IFPACK_CHK_ERR(Acrs_->ExtractCrsDataPointers(MyRows,MyIndices,MyValues));
     // A rows - CrsMatrix Case
-    for(int i=0;i<Acrs_->NumMyRows();i++) {
-      int LocRow=Ar_LIDMap_[i];
-      for (int k=0; k<NumVectors; k++) { //FIXME optimization, check for NumVectors=1
+    IFPACK_CHK_ERR(Acrs_->ExtractCrsDataPointers(MyRows,MyIndices,MyValues));
+    //special case NumVectors==1
+    if (NumVectors==1) {
+      for(int i=0;i<NumMyRowsA_;i++) {
+        int LocRow=Ar_LIDMap_[i];
         double sum = 0.0;
         for(int j = MyRows[i]; j < MyRows[i+1]; j++)
-          sum += MyValues[j]*Xp[k][Ac_LIDMap_[MyIndices[j]]];          
-        Yp[k][LocRow] = sum;
+          sum += MyValues[j]*Xp[0][Ac_LIDMap_[MyIndices[j]]];          
+        Yp[0][LocRow] = sum;
+      }
+    }
+    else {
+      for(int i=0;i<NumMyRowsA_;i++) {
+        int LocRow=Ar_LIDMap_[i];
+        for (int k=0; k<NumVectors; k++) {
+          double sum = 0.0;
+          for(int j = MyRows[i]; j < MyRows[i+1]; j++)
+            sum += MyValues[j]*Xp[k][Ac_LIDMap_[MyIndices[j]]];          
+          Yp[k][LocRow] = sum;
+        }
       }
     }
   }
@@ -380,7 +395,7 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
     // A rows - RowMatrix Case
     MyValues=&Values_[0];
     MyIndices=&Indices_[0];
-    for(int i=0;i<ovA_->A().NumMyRows();i++) {
+    for(int i=0;i<NumMyRowsA_;i++) {
       ovA_->A().ExtractMyRowCopy(i,MaxNumEntries_,NumEntries,MyValues,MyIndices);
       int LocRow=Ar_LIDMap_[i];
       for (int k=0; k<NumVectors; k++) {
@@ -394,13 +409,24 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
 
   // B rows, always CrsMatrix
   IFPACK_CHK_ERR(ovA_->B().ExtractCrsDataPointers(MyRows,MyIndices,MyValues));
-  for(int i=0;i<ovA_->B().NumMyRows();i++) {
-    int LocRow=Br_LIDMap_[i];
-    for (int k=0; k<NumVectors; k++) { //FIXME optimization, check for NumVectors=1
+  //special case NumVectors==1
+  if (NumVectors==1) {
+    for(int i=0;i<NumMyRowsB_;i++) {
+      int LocRow=Br_LIDMap_[i];
       double sum = 0.0;
       for(int j = MyRows[i]; j < MyRows[i+1]; j++)
-        sum += MyValues[j]*Xp[k][Bc_LIDMap_[MyIndices[j]]];          
-      Yp[k][LocRow] = sum;
+        sum += MyValues[j]*Xp[0][Bc_LIDMap_[MyIndices[j]]];          
+      Yp[0][LocRow] = sum;
+    }
+  } else {
+    for(int i=0;i<NumMyRowsB_;i++) {
+      int LocRow=Br_LIDMap_[i];
+      for (int k=0; k<NumVectors; k++) { //FIXME optimization, check for NumVectors=1
+        double sum = 0.0;
+        for(int j = MyRows[i]; j < MyRows[i+1]; j++)
+          sum += MyValues[j]*Xp[k][Bc_LIDMap_[MyIndices[j]]];          
+        Yp[k][LocRow] = sum;
+      }
     }
   }
 

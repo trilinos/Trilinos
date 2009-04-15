@@ -429,8 +429,11 @@ private:
   int* Ar_LIDMap_;
   int* Br_LIDMap_;
 
-  //! CrsMatrix pointe,r if needed
+  //! CrsMatrix pointer, if needed
   const Epetra_CrsMatrix* Acrs_;
+
+  int NumMyRowsA_;
+  int NumMyRowsB_;
   
   //mutable Teuchos::RCP<Epetra_MultiVector> ImportVector_;
   //mutable Teuchos::RCP<Epetra_MultiVector> ExportVector_;
