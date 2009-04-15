@@ -421,8 +421,6 @@ public:
       or takes default values otherwise.  Allocated data can be freed used DestroyPreconditioner(),
       or by the destructor.
   */
-  int ComputeEmptyMLHierarchy();
-
 
   //! Recomputed the preconditioner (not implemented for Maxwell).
   int ReComputePreconditioner();
@@ -643,6 +641,26 @@ private:
   //! Destroys Preconditioner if it not needed anymore. This includes some 'filtering' checks.
 
   int ConditionallyDestroyPreconditioner(const bool CheckPreconditioner);
+
+  //! Set the finest level matrix in the MG hierarchy
+
+  int SetFinestLevelMatrix();
+
+  //! Set pointers indicating correspondence between array entries and MG levels
+
+  int SetLevelIds(int Direction);
+
+  //! Set eigenvalue scheme to be used by ML for spectral radius 
+
+  int SetEigenScheme();
+
+  //! Dump various output matrices for debugging
+
+  int MatrixDumper();
+
+  //! Recompute complexities and print them.
+
+  int ComputeAndPrintComplexities();
 
   //! Sets prolongator smoother parameters.
   int SetSmoothingDamping();
