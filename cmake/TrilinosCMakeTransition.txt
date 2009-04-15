@@ -57,11 +57,17 @@ Package: Kokkos
 
 Package Transition Lead: Jim Willenbring (jmwille@sandia.gov)
 
-Status: Has basic CMake support for libraries and a few tests and examples
+Status: Completed, as far as what is in autotools is supported
 
-Final Certification Date: [???]
+Final Certification Date: 04/15/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests built under autotools have been cmakified
+  and give the same answers. The Oski library support is not available though
+  the experimental code and option is hooked up. The experimental tests do not
+  compile due to the lack of the Oski library. There is no mention of this library
+  in the autotools system as far as I can find. An autotools build for experimental
+  had the same issues and no complaints about not finding the library when configuring
+  - bmpersc
 
 -------------------------------------------------------------------------------
 

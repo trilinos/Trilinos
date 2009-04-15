@@ -1,5 +1,7 @@
 EXTRA_ARGS=$@
 
+rm -f CMakeCache.txt
+
 cmake \
 -D CMAKE_BUILD_TYPE:STRING=DEBUG \
 -D CMAKE_CXX_COMPILER:FILEPATH=g++ \
