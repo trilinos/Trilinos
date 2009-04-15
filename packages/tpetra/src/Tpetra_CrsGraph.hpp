@@ -318,6 +318,8 @@ namespace Tpetra
       void indicesAreSorted(bool sorted);
       bool indicesAreAllocated() const;
       void staticAssertions();
+      Teuchos_Ordinal findMyIndex(Teuchos_Ordinal row, LocalOrdinal ind) const;
+      Teuchos_Ordinal findGlobalIndex(Teuchos_Ordinal row, GlobalOrdinal ind) const;
       inline Teuchos_Ordinal RNNZ(Teuchos_Ordinal row) const;
       inline Teuchos_Ordinal RNumAlloc(Teuchos_Ordinal row) const;
       inline typename Teuchos::ArrayRCP<const LocalOrdinal>::iterator getLptr(Teuchos_Ordinal row) const;
@@ -886,11 +888,9 @@ namespace Tpetra
     using Teuchos::ArrayView;
     using Teuchos::ArrayRCP;
     TEST_FOR_EXCEPTION(indicesAreGlobal() == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::insertGlobalIndices(): graph already contains local indices.");
-    TEST_FOR_EXCEPTION(isFillComplete() == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::insertGlobalIndices(): graph fill already complete; cannot insert new entries.");
+        Teuchos::typeName(*this) << "::insertMyIndices(): graph already contains local indices.");
     TEST_FOR_EXCEPTION(isStorageOptimized() == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::insertGlobalIndices(): graph storage is already optimized; cannot insert new entires.");
+        Teuchos::typeName(*this) << "::insertMyIndices(): graph storage is already optimized; cannot insert new entires.");
     TEST_FOR_EXCEPTION(hasColMap() == false, std::runtime_error,
         Teuchos::typeName(*this) << "::insertMyIndices(): requires a predefined column map.");
     if (indicesAreAllocated() == false) {
@@ -898,7 +898,7 @@ namespace Tpetra
       allocateIndices(local);
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION(indicesAreAllocated() == false, std::logic_error, 
-          Teuchos::typeName(*this) << "::insertGlobalIndices(): Internal logic error. Please contact Tpetra team.");
+          Teuchos::typeName(*this) << "::insertMyIndices(): Internal logic error. Please contact Tpetra team.");
 #endif
     }
     // insert the indices into the graph
@@ -917,7 +917,7 @@ namespace Tpetra
       TEST_FOR_EXCEPTION(isStaticProfile()==true, std::runtime_error,
           Teuchos::typeName(*this) << "::insertMyIndices(): new indices exceed statically allocated graph structure.");
       TPETRA_EFFICIENCY_WARNING(true,std::runtime_error,
-          "::insertGlobalIndices(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
+          "::insertMyIndices(): Pre-allocated space has been exceeded, requiring new allocation. To improve efficiency, suggest larger allocation.");
       // increase allocation to necessary amount, copy previous data, reassign ArrayRCP
       ArrayView<const LocalOrdinal> curInds;
       extractMyRowConstView(lrow,curInds);
@@ -1210,8 +1210,6 @@ namespace Tpetra
   {
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
-    TEST_FOR_EXCEPTION(isFillComplete() == true, std::runtime_error,
-      Teuchos::typeName(*this) << "::fillComplete(): fillComplete() has already been called.");
 
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalEntries = graphData_->rowMap_.getMyGlobalEntries();
     graphData_->domainMap_ = domainMap;
@@ -1654,7 +1652,7 @@ namespace Tpetra
   typename Teuchos::ArrayRCP<const LocalOrdinal>::iterator 
   CrsGraph<LocalOrdinal,GlobalOrdinal>::getLptr(Teuchos_Ordinal row) const
   {
-    if (isStaticProfile() || isFillComplete()) {
+    if (isStaticProfile() || isStorageOptimized()) {
       return graphData_->colLIndsPtrs_[row];
     }
     else {
@@ -1666,7 +1664,7 @@ namespace Tpetra
   typename Teuchos::ArrayRCP<LocalOrdinal>::iterator 
   CrsGraph<LocalOrdinal,GlobalOrdinal>::getLptr(Teuchos_Ordinal row)
   {
-    if (isStaticProfile() || isFillComplete()) {
+    if (isStaticProfile() || isStorageOptimized()) {
       return graphData_->colLIndsPtrs_[row];
     }
     else {
@@ -1678,7 +1676,7 @@ namespace Tpetra
   typename Teuchos::ArrayRCP<const GlobalOrdinal>::iterator 
   CrsGraph<LocalOrdinal,GlobalOrdinal>::getGptr(Teuchos_Ordinal row) const
   {
-    if (isStaticProfile() || isFillComplete()) {
+    if (isStaticProfile() || isStorageOptimized()) {
       return graphData_->colGIndsPtrs_[row];
     }
     else {
@@ -1690,12 +1688,65 @@ namespace Tpetra
   typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator 
   CrsGraph<LocalOrdinal,GlobalOrdinal>::getGptr(Teuchos_Ordinal row) 
   {
-    if (isStaticProfile() || isFillComplete()) {
+    if (isStaticProfile() || isStorageOptimized()) {
       return graphData_->colGIndsPtrs_[row];
     }
     else {
       return graphData_->colGInds_[row].begin();
     }
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal>
+  Teuchos_Ordinal 
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::findMyIndex(Teuchos_Ordinal row, LocalOrdinal ind) const
+  {
+    typedef typename Teuchos::ArrayRCP<const LocalOrdinal>::iterator IT;
+    bool found = true;
+    IT rptr, locptr;
+    rptr = getLptr(row);
+    Teuchos_Ordinal nE = RNNZ(row);
+    if (indicesAreSorted()) {
+      // binary search
+      std::pair<IT,IT> p = std::equal_range(rptr,rptr+nE,ind);
+      if (p.first == p.second) found = false;
+      else locptr = p.first;
+    }
+    else {
+      // direct search
+      locptr = std::find(rptr,rptr+nE,ind);
+      if (locptr == rptr+nE) found = false;
+    }
+    if (!found) {
+      return Teuchos::OrdinalTraits<Teuchos_Ordinal>::invalid();
+    }
+    return (locptr - rptr);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal>
+  Teuchos_Ordinal 
+  CrsGraph<LocalOrdinal,GlobalOrdinal>::findGlobalIndex(Teuchos_Ordinal row, GlobalOrdinal ind) const
+  {
+    typedef typename Teuchos::ArrayRCP<const GlobalOrdinal>::iterator IT;
+    bool found = true;
+    IT rptr, locptr;
+    rptr = getGptr(row);
+    Teuchos_Ordinal nE = RNNZ(row);
+    if (indicesAreSorted()) {
+      // binary search
+      std::pair<IT,IT> p = std::equal_range(rptr,rptr+nE,ind);
+      if (p.first == p.second) found = false;
+      else locptr = p.first;
+    }
+    else {
+      // direct search
+      locptr = std::find(rptr,rptr+nE,ind);
+      if (locptr == rptr+nE) found = false;
+    }
+    if (!found) {
+      return Teuchos::OrdinalTraits<Teuchos_Ordinal>::invalid();
+    }
+    return (locptr - rptr);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal>

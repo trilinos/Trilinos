@@ -286,14 +286,8 @@ namespace {
       trigraph.fillComplete();
       // check that inserting entries throws
       {
-        {
-          Array<LO> zero(0);
-          TEST_THROW( trigraph.insertMyIndices(0,zero()), std::runtime_error );
-        }
-        {
-          Array<GO> zero(0);
-          TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
-        }
+        Array<GO> zero(0);
+        TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );
       }
       // check for throws and no-throws/values
       TEST_THROW( trigraph.extractGlobalRowConstView(myrowind,GView    ), std::runtime_error );
