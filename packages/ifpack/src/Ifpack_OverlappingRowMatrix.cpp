@@ -264,9 +264,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 */
 
   //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
   t1 = MPI_Wtime(); 
   fprintf(stderr,"[node %d]: time for initialization %2.3e\n", nodeID, t1-t0);
   t0=t1;
+#endif
   //FIXME timing
 
   // ghostTable holds off-node GIDs that are connected to on-node rows and can potentially be this PID's overlap
@@ -281,9 +283,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   Teuchos::Hashtable<int,int> ghostTable(3 * A().RowMatrixColMap().NumMyElements() );
   Teuchos::Hashtable<int,int> colMapTable(3 * A().RowMatrixColMap().NumMyElements() );
 
+#ifdef IFPACK_OVA_TIME_BUILD
   t1 = MPI_Wtime();
   fprintf(stderr,"[node %d]: overlap hash table allocs %2.3e\n", nodeID, t1-t0);
   t0=t1;
+#endif
 
   /* ** ************************************************************************** ** */
   /* ** ********************** start of main overlap loop ************************ ** */
@@ -301,9 +305,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
       DomainMap = &(A().OperatorDomainMap());
     }
 
+#ifdef IFPACK_OVA_TIME_BUILD
     t1 = MPI_Wtime();
     fprintf(stderr,"[node %d]: overlap pointer pulls %2.3e\n", nodeID, t1-t0);
     t0=t1;
+#endif
     
     //ghostTable = Ifpack::HashTable(3 * A().RowMatrixColMap().NumMyElements() );
     //colMapTable = Ifpack::HashTable(3 * A().RowMatrixColMap().NumMyElements() );
@@ -316,9 +322,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     rowIdList.PutValue(nodeID);  
     Teuchos::RCP<Epetra_Import> nodeIdImporter = rcp(new Epetra_Import( *ColMap, *DomainMap ));
 
+#ifdef IFPACK_OVA_TIME_BUILD
     t1 = MPI_Wtime();
     fprintf(stderr,"[node %d]: overlap intvector/importer allocs %2.3e\n", nodeID, t1-t0);
     t0=t1;
+#endif
     
     colIdList.Import(rowIdList,*nodeIdImporter,Insert);
     
@@ -326,9 +334,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     vector<int> list(size); 
     int count = 0; 
 
+#ifdef IFPACK_OVA_TIME_BUILD
     t1 = MPI_Wtime();
     fprintf(stderr,"[node %d]: overlap col/row ID imports %2.3e\n", nodeID, t1-t0);
     t0=t1;
+#endif
 
     
     // define the set of off-node rows that are in ColMap but not in RowMap
@@ -373,9 +383,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     int mypid = nodeComm->MyPID();
 
     //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
     t1 = MPI_Wtime();
     fprintf(stderr,"[node %d]: overlap before culling %2.3e\n", nodeID, t1-t0);
     t0=t1;
+#endif
     //FIXME timing
 
 
@@ -521,9 +533,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     }
 
     //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
     t1 = MPI_Wtime();
     fprintf(stderr,"[node %d]: overlap duplicate removal %2.3e\n", nodeID, t1-t0);
     t0=t1;
+#endif
     //FIXME timing
 
 #   endif //ifdef HAVE_MPI
@@ -538,9 +552,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     TmpMatrix->FillComplete(A().OperatorDomainMap(),*TmpMap); 
 
     //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
     t1 = MPI_Wtime();
     fprintf(stderr,"[node %d]: overlap TmpMatrix fillcomplete %2.3e\n", nodeID, t1-t0);
     t0=t1;
+#endif
     //FIXME timing
 
 
@@ -597,9 +613,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
       colMapElements.push_back(gidsarray[i]);
 
     //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
     t1 = MPI_Wtime();
     fprintf(stderr,"[node %d]: overlap 2 imports to fix up colmap %2.3e\n", nodeID, t1-t0);
     t0=t1;
+#endif
     //FIXME timing
 
 
@@ -645,9 +663,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   colMap_ = rcp( new Epetra_Map(-1, A().RowMatrixColMap().NumMyElements() + colMapElements.size(), &colList[0], 0, Comm()) );
 
   //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
   t1 = MPI_Wtime();
   fprintf(stderr,"[node %d]: time to init B() col/row maps %2.3e\n", nodeID, t1-t0);
   t0=t1;
+#endif
   //FIXME timing
 
 
@@ -726,9 +746,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     }
 
     //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
     t1 = MPI_Wtime();
     fprintf(stderr,"[node %d]: time to sort col map arrays (cp=1) %2.3e\n", nodeID, t1-t0);
     t0=t1;
+#endif
     //FIXME timing
 
     int indexBase = colMap_->IndexBase();
@@ -755,9 +777,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
   //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
   t1 = MPI_Wtime();
   fprintf(stderr,"[node %d]: time to sort col map arrays (cp=2) %2.3e\n", nodeID, t1-t0);
   t0=t1;
+#endif
   //FIXME timing
 
 
@@ -818,8 +842,10 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   ExtMatrix_->Import(A(),*ExtImporter_,Insert); 
 
   //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
   t1 = MPI_Wtime();
   fprintf(stderr,"[node %d]: time to import and setup ExtMap_ %2.3e\n", nodeID, t1-t0);
+#endif
   t0=t1;
   //FIXME timing
 
@@ -834,9 +860,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   ExtMatrix_->FillComplete( *colMap_ , *Map_ ); //FIXME wrong
 
   //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
   t1 = MPI_Wtime();
   fprintf(stderr,"[node %d]: time to FillComplete B() %2.3e\n", nodeID, t1-t0);
   t0=t1;
+#endif
   //FIXME timing
 
 
@@ -888,9 +916,11 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 # endif
 
   //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
   t1 = MPI_Wtime();
   fprintf(stderr,"[node %d]: time for final calcs %2.3e\n", nodeID, t1-t0);
   fprintf(stderr,"[node %d]: total IORM ctor time %2.3e\n", nodeID, t1-true_t0);
+#endif
   //FIXME timing
 
 
