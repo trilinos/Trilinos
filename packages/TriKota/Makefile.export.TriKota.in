@@ -19,7 +19,7 @@ DAKOTA_LIBS= \
 -lpsuade     -lnewmat   -lncsuopt  -lgsl    -lquadrature \
 -lcoliny     -lcolin    -lpebbl    -lutilib -l3po        \
 -lnappspack  -lappspack -lconveyor -lshared -lcdd        \
--lamplsolver -ldl       -lgslcblas
+-lamplsolver -ldl
 
 _TRIKOTA_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -ltrikota $(DAKOTA_LIBS) $(EPETRAEXT_LIBS) @LIBS@
 
