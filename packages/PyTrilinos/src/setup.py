@@ -108,6 +108,15 @@ __all__ = %s
 __version__ = '%s'
 def version():
     return 'Trilinos version: %s\\nPyTrilinos version: ' + __version__
+
+#
+# In order to handle the nested namespaces properly, the import of NOX and its
+# sub-modules needs to be handled at this level.
+if ('NOX' in __all__):
+    import NOX
+    if (NOX.Have_Epetra):
+        import NOX.Epetra
+
 """ % (str(pyTrilinosModules), pyTrilinosVersion, trilinosVersion)
         open(filename,"w").write(content)
 

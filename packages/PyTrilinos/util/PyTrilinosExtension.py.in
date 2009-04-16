@@ -92,6 +92,8 @@ def makePyTrilinosExtensions(moduleName):
         define_macros.append(("HAVE_TEUCHOS","1"))
     if vars["ENABLE_EPETRA"] == "true":
         define_macros.append(("HAVE_EPETRA","1"))
+    if vars["ENABLE_NOX_EPETRA"] == "true":
+        define_macros.append(("HAVE_NOX_EPETRA", "1"))
     if vars["ENABLE_ML"] == "true":
         define_macros.append(("MLAPI_LC","1"))
 

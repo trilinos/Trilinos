@@ -72,3 +72,12 @@ ${${PACKAGE_NAME}_ALL}
 __version__ = '${${PACKAGE_NAME}_VERSION}'
 def version():
     return 'Trilinos version: ${Trilinos_VERSION}\n${PACKAGE_NAME} version: ' + __version__
+
+#
+# In order to handle the nested namespaces properly, the import of NOX and its
+# sub-modules needs to be handled at this level.
+if ('NOX' in __all__):
+    import NOX
+    if (NOX.Have_Epetra):
+        import NOX.Epetra
+

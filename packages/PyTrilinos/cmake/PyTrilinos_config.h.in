@@ -6,6 +6,9 @@
 /* Define if Epetra is enabled */
 #cmakedefine HAVE_EPETRA
 
+/* Define if Epetra namespace is enabled within NOX */
+#cmakedefine HAVE_NOX_EPETRA
+
 /* Define ML options */
 #define MLAPI_LC
 /* #define MLAPI_CHECK */

@@ -108,6 +108,11 @@ using std::string;
 ///////////////////////////////////
 // Komplex configuration support //
 ///////////////////////////////////
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_NAME
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
 %include "Komplex_config.h"
 %rename(Version) Komplex_Version;
 %include "Komplex_Version.h"

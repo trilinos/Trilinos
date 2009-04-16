@@ -107,6 +107,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 @HAVE_PYTRILINOS_EPETRA_TRUE@am__append_3 = -DHAVE_EPETRA
 @HAVE_PYTRILINOS_EPETRAEXT_HDF5_TRUE@@HAVE_PYTRILINOS_EPETRAEXT_TRUE@am__append_4 = -DHAVE_EPETRAEXT_HDF5
 @HAVE_PYTRILINOS_ML_TRUE@am__append_5 = -DMLAPI_LC
+@HAVE_PYTRILINOS_NOX_TRUE@am__append_6 = -DHAVE_NOX_EPETRA
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
@@ -375,7 +376,7 @@ CLEANFILES = $(DEPDIR)/*.Pi $(PROXIES) $(WRAPPERS) $(DIR_HDRS)
 # Define the SWIGCOMPILE macro
 SWIG_INC = -I$(top_srcdir)/doc/Doxygen `python $(top_builddir)/util/pkg_info.py -i $<`
 SWIG_OPTS = $(am__append_1) $(am__append_2) $(am__append_3) \
-	$(am__append_4) $(am__append_5)
+	$(am__append_4) $(am__append_5) $(am__append_6)
 SWIG_OUTDIR = -outdir `python $(top_builddir)/util/pkg_info.py -o $<`
 SWIGCOMPILE = $(SWIG) $(SWIG_PYTHON_OPT) $(SWIG_INC) $(SWIG_OPTS) $(SWIG_OUTDIR)
 @HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_INTERFACES = Teuchos.i

@@ -38,8 +38,8 @@ def fromPyTrilinosImport(name, fromBuild=False):
     myDir,myName = os.path.split(__file__)
     libDir = "lib.%s-%s" % (get_platform(), sys.version[0:3])
     autoDir = os.path.normpath(os.path.join(myDir, "..", "src", "build",
-                                            libDir, "PyTrilinos"))
-    cmakeDir = os.path.normpath(os.path.join(myDir, "..", "src", "PyTrilinos"))
+                                            libDir))
+    cmakeDir = os.path.normpath(os.path.join(myDir, "..", "src"))
     if os.path.isdir(autoDir):
         buildDir = autoDir
     else:
@@ -48,9 +48,6 @@ def fromPyTrilinosImport(name, fromBuild=False):
     # Update the sys.path list of search paths
     if buildDir not in sys.path:
         sys.path.insert(1, buildDir)
-    buildDir = os.path.split(buildDir)[0]
-    if buildDir not in sys.path:
-        sys.path.insert(2, buildDir)
 
     # Import the top-level PyTrilinos package from the build directory
     try:
@@ -60,12 +57,19 @@ def fromPyTrilinosImport(name, fromBuild=False):
         modFile = result[0]
         if modFile: modFile.close()
 
-    # Import the requested module from the PyTrilinos package
-    try:
-        result = imp.find_module(name, PyTrilinos.__path__)
-        module = imp.load_module(name, *result)
-    finally:
-        modFile = result[0]
-        if (modFile): modFile.close()
+    # Import the requested module from the PyTrilinos package (note: NOX and
+    # LOCA are special because they have nested namespaces controlled by
+    # PyTrilinos/__init__.py).
+    if name == "NOX":
+        module = PyTrilinos.NOX
+    elif name == "LOCA":
+        module = PyTrilinos.LOCA
+    else:
+        try:
+            result = imp.find_module(name, PyTrilinos.__path__)
+            module = imp.load_module(name, *result)
+        finally:
+            modFile = result[0]
+            if (modFile): modFile.close()
 
     return module

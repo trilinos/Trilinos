@@ -64,30 +64,15 @@ script in the example subdirectory of the PyTrilinos package:
 // System includes
 #include <sstream>
 
+// PyTrilinos configuration
+#include "PyTrilinos_config.h"
+
 // Teuchos include
 #include "Teuchos_PythonParameter.h"
 
 // NOX includes
 #include "NOX_Version.H"
 #include "NOX_Utils.H"
-#include "NOX_Abstract_Group.H"
-#include "NOX_Abstract_PrePostOperator.H"
-#include "NOX_Abstract_MultiVector.H"
-#include "NOX_Abstract_Vector.H"
-#include "NOX_Solver_Generic.H"
-#include "NOX_Solver_LineSearchBased.H"
-#include "NOX_Solver_TrustRegionBased.H"
-#include "NOX_Solver_InexactTrustRegionBased.H"
-#include "NOX_Solver_TensorBased.H"
-#include "NOX_Solver_Factory.H"
-#include "NOX_StatusTest_Generic.H"
-#include "NOX_StatusTest_Combo.H"
-#include "NOX_StatusTest_NormF.H"
-#include "NOX_StatusTest_NormUpdate.H"
-#include "NOX_StatusTest_NormWRMS.H"
-#include "NOX_StatusTest_MaxIters.H"
-#include "NOX_StatusTest_Stagnation.H"
-#include "NOX_StatusTest_FiniteValue.H"
 
 // Local includes
 #include "NumPyImporter.h"
@@ -120,6 +105,16 @@ sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
 // Note: Teuchos.i turns off warnings for nested classes, so we do not
 // have to do it again.
 
+//////////////////////////////////////
+// PyTrilinos configuration support //
+//////////////////////////////////////
+%include "PyTrilinos_config.h"
+#ifdef HAVE_NOX_EPETRA
+%constant bool Have_Epetra = true;
+#else
+%constant bool Have_Epetra = false;
+#endif
+
 /////////////////////////
 // NOX Version support //
 /////////////////////////
@@ -138,16 +133,21 @@ __version__ = version().split()[2]
 %include "NOX_Utils.H"
 
 // NOX namespace imports
-%import "NOX.Abstract.i"
-%import "NOX.Solver.i"
-%import "NOX.StatusTest.i"
-
-// Python code for the NOX module
 %pythoncode
 %{
-try:
-    import Epetra
-except ImportError, e:
-    if str(e) != "No module named Epetra":
-        print e
+# Abstract, Solver, and StatusTest namespaces
+__all__ = ['Abstract', 'Solver', 'StatusTest']
+import Abstract
+import Solver
+import StatusTest
 %}
+
+// NOX.Epetra namespace
+#ifdef HAVE_NOX_EPETRA
+%pythoncode
+%{
+
+# Epetra namespace
+__all__.append('Epetra')
+%}
+#endif
