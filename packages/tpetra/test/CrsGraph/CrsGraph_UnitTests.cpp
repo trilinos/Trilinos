@@ -284,7 +284,7 @@ namespace {
         TEST_THROW( trigraph.insertGlobalIndices(myrowind,arrayView(&myrowind,1)), std::runtime_error );
       }
       trigraph.fillComplete();
-      // check that inserting entries throws
+      // check that inserting global entries throws (inserting local entries is still allowed)
       {
         Array<GO> zero(0);
         TEST_THROW( trigraph.insertGlobalIndices(0,zero()), std::runtime_error );

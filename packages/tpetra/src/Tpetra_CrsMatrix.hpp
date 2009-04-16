@@ -30,9 +30,9 @@
 #define TPETRA_CRSMATRIX_HPP
 
 // FINISH: start using valuesPtrs_, support for static allocation
-// FINISH: add extractMyRowView() and extractGlobalRowView() methods, const and non-const
 
 #include <Teuchos_SerialDenseMatrix.hpp>
+#include <Teuchos_getRawPtr.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -283,7 +283,7 @@ namespace Tpetra
 
       // @}
 
-      //! @name Data Access Methods
+      //! @name Extraction Methods
       // @{ 
 
       //! \brief Get a copy of the diagonal entries owned by this node, with local row idices.
@@ -306,6 +306,69 @@ namespace Tpetra
                                 const Teuchos::ArrayView<GlobalOrdinal> &indices,
                                 const Teuchos::ArrayView<Scalar> &values,
                                 Teuchos_Ordinal &numEntries) const;
+
+      //! Get a non-persisting view of the elements in a specified global row of the matrix.
+      /*!
+        \param GlobalRow - (In) Global row from which to retrieve matrix entries.
+        \param Indices - (Out) Indices for the global row.
+        \param Values - (Out) Values for the global row.
+
+         Note: If \c GlobalRow does not belong to this node, then \c indices is unchanged and \c NumIndices is 
+         returned as Teuchos::OrdinalTraits<Teuchos_Ordinal>::invalid().
+
+        \pre indicesAreLocal()==false
+       */
+      void extractGlobalRowView(GlobalOrdinal GlobalRow, 
+                                Teuchos::ArrayView<GlobalOrdinal> &indices, 
+                                Teuchos::ArrayView<Scalar> &values);
+
+      //! Get a view of the elements in a specified local row of the graph.
+      /*!
+        \param LocalRow - (In) Local row from which to retrieve matrix entries.
+        \param Indices - (Out) Indices for the local row.
+        \param Values - (Out) Values for the local row.
+
+         Note: If \c LocalRow is not valid for this node, then \c indices is unchanged and \c NumIndices is 
+         returned as Teuchos::OrdinalTraits<Teuchos_Ordinal>::invalid().
+
+        \pre indicesAreLocal()==true
+       */
+      void extractMyRowView(LocalOrdinal LocalRow, 
+                                Teuchos::ArrayView<LocalOrdinal> &indices, 
+                                Teuchos::ArrayView<Scalar> &values);
+
+      //! Get a non-persisting view of the elements in a specified global row of the graph.
+      /*!
+        \param GlobalRow - (In) Global row from which to retrieve matrix entries.
+        \param Indices - (Out) Indices for the global row.
+        \param Values - (Out) Values for the global row.
+
+         Note: If \c GlobalRow does not belong to this node, then \c indices is unchanged and \c NumIndices is 
+         returned as Teuchos::OrdinalTraits<Teuchos_Ordinal>::invalid().
+
+        \pre indicesAreLocal()==false
+       */
+      void extractGlobalRowConstView(GlobalOrdinal GlobalRow, 
+                                     Teuchos::ArrayView<const GlobalOrdinal> &indices,
+                                     Teuchos::ArrayView<const Scalar> &values) const;
+
+      //! Get a view of the elements in a specified local row of the graph.
+      /*!
+        \param LocalRow - (In) Local row from which to retrieve matrix entries.
+        \param Indices - (Out) Indices for the local row.
+        \param Values - (Out) Values for the local row.
+
+         Note: If \c LocalRow is not valid for this node, then \c indices is unchanged and \c NumIndices is 
+         returned as Teuchos::OrdinalTraits<Teuchos_Ordinal>::invalid().
+
+        \pre indicesAreLocal()==true
+       */
+      void extractMyRowConstView(LocalOrdinal LocalRow, 
+                                 Teuchos::ArrayView<const LocalOrdinal> &indices,
+                                 Teuchos::ArrayView<const Scalar> &values) const;
+
+      //! Returns the CrsGraph associated with this matrix. 
+      const CrsGraph<LocalOrdinal,GlobalOrdinal> &getCrsGraph() const;
 
       //@}
 
@@ -530,7 +593,11 @@ namespace Tpetra
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   Teuchos_Ordinal CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::numEntriesForMyRow(LocalOrdinal localRow) const
-  { return graph_.numEntriesForMyRow(localRow); }
+  { 
+    using Teuchos::OrdinalTraits;
+    if (!getRowMap().isMyLocalIndex(localRow)) return OrdinalTraits<Teuchos_Ordinal>::invalid();
+    return graph_.RNNZ(localRow);
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   GlobalOrdinal CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::globalMaxNumRowEntries() const
@@ -799,6 +866,7 @@ namespace Tpetra
     }
   }
 
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::extractMyRowCopy(Teuchos_Ordinal myRow, 
                                                                      const Teuchos::ArrayView<LocalOrdinal> &indices, 
@@ -821,6 +889,7 @@ namespace Tpetra
     std::copy( values_[myRow].begin(), values_[myRow].begin()+numEntries, values.begin() );
   }
 
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::extractGlobalRowCopy(GlobalOrdinal globalRow, 
                                                                       const Teuchos::ArrayView<GlobalOrdinal> &indices,
@@ -831,7 +900,7 @@ namespace Tpetra
     Teuchos_Ordinal myRow = getRowMap().getLocalIndex(globalRow);
     TEST_FOR_EXCEPTION(myRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
         Teuchos::typeName(*this) << "::extractGlobalRowCopy(globalRow,...): globalRow does not belong to this node.");
-    numEntries = graph_.numAllocatedEntriesForMyRow(myRow);
+    numEntries = numEntriesForMyRow(myRow);
     TEST_FOR_EXCEPTION(
         indices.size() < numEntries || values.size() < numEntries, std::runtime_error, 
         Teuchos::typeName(*this) << "::extractGlobalRowCopy(globalRow,indices,values): size of indices,values must be sufficient to store the specified row.");
@@ -844,6 +913,112 @@ namespace Tpetra
     graph_.extractGlobalRowCopy(globalRow,indices,numEntries);
 #endif
     std::copy( values_[myRow].begin(), values_[myRow].begin()+numEntries, values.begin() );
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::extractGlobalRowView(GlobalOrdinal GlobalRow, 
+                                Teuchos::ArrayView<GlobalOrdinal> &indices, 
+                                Teuchos::ArrayView<Scalar> &values)
+  {
+    TEST_FOR_EXCEPTION(indicesAreLocal() == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::extractGlobalRowView(): global indices do not exist.");
+    Teuchos_Ordinal lrow = getRowMap().getLocalIndex(GlobalRow);
+    TEST_FOR_EXCEPTION(lrow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
+        Teuchos::typeName(*this) << "::extractGlobalRowView(GlobalRow,...): GlobalRow (== " << GlobalRow << ") does not belong to this node.");
+    Teuchos_Ordinal rnnz = numEntriesForMyRow(lrow);
+    graph_.extractGlobalRowView(GlobalRow,indices);
+    if (rnnz == 0) {
+      values = Teuchos::ArrayView<Scalar>(Teuchos::null);
+    }
+    else {
+      //if (isStorageOptimized() == true || isStaticProfile() == true) {
+      //  values = Teuchos::arrayView<Scalar>(Teuchos::getRawPtr(valuesPtrs_[lrow]),rnnz);
+      //}
+      //else {
+        values = values_[lrow](0,rnnz);
+      //}
+    }
+    return;
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::extractMyRowView(LocalOrdinal LocalRow, 
+                                Teuchos::ArrayView<LocalOrdinal> &indices, 
+                                Teuchos::ArrayView<Scalar> &values)
+  {
+    TEST_FOR_EXCEPTION(indicesAreGlobal() == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::extractMyRowView(): local indices do not exist.");
+    TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(LocalRow) == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::extractMyRowView(LocalRow,...): LocalRow (== " << LocalRow << ") is not valid on this node.");
+    Teuchos_Ordinal rnnz = numEntriesForMyRow(LocalRow);
+    graph_.extractMyRowView(LocalRow,indices);
+    if (rnnz == 0) {
+      values = Teuchos::ArrayView<Scalar>(Teuchos::null);
+    }
+    else {
+      //if (isStorageOptimized() == true || isStaticProfile() == true) {
+      //  values = Teuchos::arrayView<Scalar>(Teuchos::getRawPtr(valuesPtrs_[LocalRow]),rnnz);
+      //}
+      //else {
+        values = values_[LocalRow](0,rnnz);
+      //}
+    }
+    return;
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::extractGlobalRowConstView(GlobalOrdinal GlobalRow, 
+                                     Teuchos::ArrayView<const GlobalOrdinal> &indices,
+                                     Teuchos::ArrayView<const Scalar> &values) const
+  {
+    TEST_FOR_EXCEPTION(indicesAreLocal() == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::extractGlobalRowView(): global indices do not exist.");
+    Teuchos_Ordinal lrow = getRowMap().getLocalIndex(GlobalRow);
+    TEST_FOR_EXCEPTION(lrow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error,
+        Teuchos::typeName(*this) << "::extractGlobalRowView(GlobalRow,...): GlobalRow (== " << GlobalRow << ") does not belong to this node.");
+    Teuchos_Ordinal rnnz = numEntriesForMyRow(lrow);
+    graph_.extractGlobalRowConstView(GlobalRow,indices);
+    if (rnnz == 0) {
+      values = Teuchos::ArrayView<Scalar>(Teuchos::null);
+    }
+    else {
+      //if (isStorageOptimized() == true || isStaticProfile() == true) {
+      //  values = Teuchos::arrayView<Scalar>(Teuchos::getRawPtr(valuesPtrs_[lrow]),rnnz);
+      //}
+      //else {
+        values = values_[lrow](0,rnnz);
+      //}
+    }
+    return;
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::extractMyRowConstView(LocalOrdinal LocalRow, 
+                                 Teuchos::ArrayView<const LocalOrdinal> &indices,
+                                 Teuchos::ArrayView<const Scalar> &values) const
+  {
+    TEST_FOR_EXCEPTION(indicesAreGlobal() == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::extractMyRowView(): local indices do not exist.");
+    TEST_FOR_EXCEPTION(getRowMap().isMyLocalIndex(LocalRow) == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::extractMyRowView(LocalRow,...): LocalRow (== " << LocalRow << ") is not valid on this node.");
+    Teuchos_Ordinal rnnz = numEntriesForMyRow(LocalRow);
+    graph_.extractMyRowConstView(LocalRow,indices);
+    if (rnnz == 0) {
+      values = Teuchos::ArrayView<Scalar>(Teuchos::null);
+    }
+    else {
+      //if (isStorageOptimized() == true || isStaticProfile() == true) {
+      //  values = Teuchos::arrayView<Scalar>(Teuchos::getRawPtr(valuesPtrs_[LocalRow]),rnnz);
+      //}
+      //else {
+        values = values_[LocalRow](0,rnnz);
+      //}
+    }
+    return;
   }
 
 
@@ -1534,6 +1709,11 @@ namespace Tpetra
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
   const RowGraph<LocalOrdinal,GlobalOrdinal> &
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::getGraph() const
+  { return graph_; }
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  const CrsGraph<LocalOrdinal,GlobalOrdinal> &
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::getCrsGraph() const
   { return graph_; }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal>

@@ -39,7 +39,6 @@ namespace {
 
   using Teuchos::as;
   using Teuchos::RCP;
-  using Teuchos::ArrayRCP;
   using Teuchos::rcp;
   using Tpetra::Map;
   using Tpetra::DefaultPlatform;
@@ -71,6 +70,28 @@ namespace {
   bool testMpi = true;
   double errorTolSlack = 1e+1;
   string filedir;
+
+#define ARRAYVIEW_TO_ARRAY(Type, arr, av) \
+  { \
+    ArrayView<Type> av2 = av; \
+    arr.resize(av2.size()); \
+    arr.assign(av2.begin(),av2.end()); \
+  }
+
+#define STD_TESTS(matrix) \
+  { \
+    RCP<const Comm<int> > STCOMM = matrix.getComm(); \
+    ArrayView<const GO> STMYGIDS = matrix.getRowMap().getMyGlobalEntries(); \
+    Teuchos_Ordinal STMAX = 0; \
+    for (Teuchos_Ordinal STR=0; STR<matrix.numLocalRows(); ++STR) { \
+      TEST_EQUALITY( matrix.numEntriesForMyRow(STR), matrix.numEntriesForGlobalRow( STMYGIDS[STR] ) ); \
+      STMAX = std::max( STMAX, matrix.numEntriesForMyRow(STR) ); \
+    } \
+    TEST_EQUALITY( matrix.myMaxNumRowEntries(), STMAX ); \
+    Teuchos_Ordinal STGMAX; \
+    reduceAll( *STCOMM, Teuchos::REDUCE_MAX, STMAX, &STGMAX ); \
+    TEST_EQUALITY( matrix.globalMaxNumRowEntries(), STGMAX ); \
+  }
 
 
   TEUCHOS_STATIC_SETUP()
@@ -123,7 +144,6 @@ namespace {
     RCP<RowMatrix<Scalar,LO,GO> > zero;
     {
       RCP<CrsMatrix<Scalar,LO,GO> > zero_crs = rcp( new CrsMatrix<Scalar,LO,GO>(map,0) );
-      // FINISH: add more tests here
       TEST_THROW(zero_crs->apply(mv1,mv1)            , std::runtime_error);
 #   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS)
       TEST_THROW(zero_crs->insertGlobalValues(map.getMinGlobalIndex(),tuple<GO>(0),tuple<Scalar>(ST::one())), std::runtime_error);
@@ -287,16 +307,108 @@ namespace {
       TEST_EQUALITY( matrix.numGlobalEntries(), numLocal*numImages );
       TEST_EQUALITY( matrix.numMyEntries(), numLocal );
       for (LO r=0; r<numLocal; ++r) {
-        Teuchos_Ordinal ne;
-        Array<LO> icopy(1);
-        Array<Scalar> vcopy(1);
-        TEST_NOTHROW( matrix.extractMyRowCopy(r,icopy(),vcopy(),ne) );
-        TEST_EQUALITY_CONST( ne , 1 );
-        if (ne == 1) {
-          TEST_EQUALITY_CONST( icopy[0], r );
-          TEST_EQUALITY_CONST( vcopy[0], as<Scalar>(3.0) );
-        }
+        ArrayView<const LO> inds;
+        ArrayView<const Scalar> vals;
+        TEST_NOTHROW( matrix.extractMyRowConstView(r,inds,vals) );
+        TEST_COMPARE_ARRAYS( inds, tuple<LO>(r) );
+        TEST_COMPARE_ARRAYS( vals, tuple<Scalar>(as<Scalar>(3.0)) );
       }
+    }
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrix, CopiesAndViews, LO, GO, Scalar )
+  {
+    // test that an exception is thrown when we exceed statically allocated memory
+    typedef ScalarTraits<Scalar> ST;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const GO INVALID = OrdinalTraits<GO>::invalid();
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = size(*comm);
+    const int myImageID = rank(*comm);
+    if (numImages < 2) return;
+    // create a Map, one row per processor
+    const Teuchos_Ordinal indexBase = 0;
+    const Teuchos_Ordinal numLocal = 1;
+    Map<LO,GO> rmap(INVALID,numLocal,indexBase,comm);
+    GO myrowind = rmap.getGlobalIndex(0);
+    // specify the column map to control ordering
+    // construct tridiagonal graph
+    Array<GO> ginds;
+    Array<LO> linds;
+    if (myImageID==0) {
+      ARRAYVIEW_TO_ARRAY( GO, ginds, tuple(myrowind,myrowind+1) );
+      ARRAYVIEW_TO_ARRAY( LO, linds, tuple(0,1) );
+    }
+    else if (myImageID==numImages-1) {
+      ARRAYVIEW_TO_ARRAY( GO, ginds , tuple(myrowind-1,myrowind) );
+      ARRAYVIEW_TO_ARRAY( LO, linds , tuple(0,1) );
+    }
+    else {
+      ARRAYVIEW_TO_ARRAY( GO, ginds , tuple(myrowind-1,myrowind,myrowind+1) );
+      ARRAYVIEW_TO_ARRAY( LO, linds , tuple(0,1,2) );
+    }
+    Array<Scalar> vals(ginds.size(),ST::one());
+    Map<LO,GO> cmap(INVALID,ginds(),0,comm);
+    for (int T=0; T<2; ++T) {
+      bool StaticProfile = (T & 1) == 1;
+      // bool OptimizeStorage = (T & 2) == 2;
+      CrsMatrix<Scalar,LO,GO> matrix(rmap,cmap, ginds.size(),StaticProfile);   // only allocate as much room as necessary
+      Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
+      ArrayView<const GO> CGView; ArrayView<const LO> CLView; ArrayView<const Scalar> CSView;
+      ArrayView<GO> GView; ArrayView<LO> LView; ArrayView<Scalar> SView;
+      Teuchos_Ordinal numentries;
+      // at this point, the graph has not allocated data as global or local, so we can do views/copies for either local or global
+      matrix.extractMyRowCopy(0,LCopy,SCopy,numentries);
+      matrix.extractMyRowView(0,LView,SView);
+      matrix.extractMyRowConstView(0,CLView,CSView);
+      matrix.extractGlobalRowCopy(myrowind,GCopy,SCopy,numentries);
+      matrix.extractGlobalRowView(myrowind,GView,SView);
+      matrix.extractGlobalRowConstView(myrowind,CGView,CSView);
+      // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
+      for (Teuchos_Ordinal j=0; j<(Teuchos_Ordinal)ginds.size(); ++j) {
+        matrix.insertGlobalValues(myrowind,ginds(j,1),tuple(ST::one()));
+      }
+      TEST_EQUALITY( matrix.numEntriesForMyRow(0), matrix.getCrsGraph().numAllocatedEntriesForMyRow(0) ); // test that we only allocated as much room as necessary
+      // if static graph, insert one additional entry on my row and verify that an exception is thrown
+      if (StaticProfile) {
+        TEST_THROW( matrix.insertGlobalValues(myrowind,arrayView(&myrowind,1),tuple(ST::one())), std::runtime_error );
+      }
+      matrix.fillComplete();
+      // check that inserting global entries throws (inserting local entries is still allowed)
+      {
+        Array<GO> zero(0); Array<Scalar> vzero(0);
+        TEST_THROW( matrix.insertGlobalValues(0,zero,vzero), std::runtime_error );
+      }
+      // check for throws and no-throws/values
+      TEST_THROW( matrix.extractGlobalRowView(myrowind,GView,SView), std::runtime_error );
+      TEST_THROW( matrix.extractGlobalRowConstView(myrowind,CGView,CSView), std::runtime_error );
+      TEST_THROW( matrix.extractMyRowCopy(    0       ,LCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
+      TEST_THROW( matrix.extractGlobalRowCopy(myrowind,GCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
+      //
+      TEST_NOTHROW( matrix.extractMyRowView(0,LView,SView) );
+      TEST_NOTHROW( matrix.extractMyRowConstView(0,CLView,CSView) );
+      TEST_COMPARE_ARRAYS( LView, CLView );
+      TEST_COMPARE_ARRAYS( SView, CSView );
+      TEST_COMPARE_ARRAYS( CLView, linds );
+      TEST_COMPARE_ARRAYS( CSView, vals  );
+      //
+      TEST_NOTHROW( matrix.extractMyRowCopy(0,LCopy,SCopy,numentries) );
+      TEST_COMPARE_ARRAYS( LCopy(0,numentries), linds );
+      TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
+      //
+      TEST_NOTHROW( matrix.extractGlobalRowCopy(myrowind,GCopy,SCopy,numentries) );
+      TEST_COMPARE_ARRAYS( GCopy(0,numentries), ginds );
+      TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
+      // 
+      STD_TESTS(matrix);
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
@@ -1273,6 +1385,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, WithGraph, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR ) \
       TRIUTILS_USING_TESTS( LO, GO, SCALAR )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
