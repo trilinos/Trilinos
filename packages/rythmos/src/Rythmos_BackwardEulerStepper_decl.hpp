@@ -244,6 +244,7 @@ private:
   // //////////////////////////
   // Private member functions
 
+  void defaultInitializeAll_();
   void initialize();
 
 };

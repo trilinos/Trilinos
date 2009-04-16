@@ -110,7 +110,10 @@ RCP<LinearInterpolator<Scalar> > linearInterpolator()
 
 template<class Scalar>
 LinearInterpolator<Scalar>::LinearInterpolator()
-{}
+{
+  nodes_ = Teuchos::null;
+  parameterList_ = Teuchos::null;
+}
 
 
 template<class Scalar>

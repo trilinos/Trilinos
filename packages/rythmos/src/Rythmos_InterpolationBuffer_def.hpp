@@ -91,9 +91,19 @@ RCP<InterpolationBuffer<Scalar> > interpolationBuffer(
 template<class Scalar>
 InterpolationBuffer<Scalar>::InterpolationBuffer()
 {
+  this->defaultInitializeAll_();
   initialize(Teuchos::null,0);
 }
 
+template<class Scalar>
+void InterpolationBuffer<Scalar>::defaultInitializeAll_()
+{
+  interpolator_ = Teuchos::null;
+  storage_limit_ = -1;
+  data_vec_ = Teuchos::null;
+  paramList_ = Teuchos::null;
+  policy_ = BUFFER_POLICY_INVALID;
+}
 
 template<class Scalar>
 RCP<const Thyra::VectorSpaceBase<Scalar> >

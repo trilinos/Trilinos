@@ -52,7 +52,7 @@ RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper() {
 template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper()
 {
-  defaultInitializeAllData_();
+  this->defaultInitializeAll_();
   haveInitialCondition_ = false;
   isInitialized_=false;
 }
@@ -65,7 +65,7 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   ,RCP<Teuchos::ParameterList> &parameterList
   )
 {
-  defaultInitializeAllData_();
+  this->defaultInitializeAll_();
   this->setParameterList(parameterList);
   // Now we instantiate the model and the solver
   setModel(model);
@@ -81,7 +81,7 @@ ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   ,const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
 {
-  defaultInitializeAllData_();
+  this->defaultInitializeAll_();
   // Now we instantiate the model and the solver
   setModel(model);
   setSolver(solver);
@@ -708,7 +708,7 @@ void ImplicitBDFStepper<Scalar>::describe(
 // initialization list.
 
 template<class Scalar>
-void ImplicitBDFStepper<Scalar>::defaultInitializeAllData_()
+void ImplicitBDFStepper<Scalar>::defaultInitializeAll_()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   const Scalar nan = ST::nan(), one = ST::one(), zero = ST::zero();

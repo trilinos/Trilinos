@@ -284,7 +284,7 @@ private:
   // Private member functions
   //
 
-  void defaultInitializeAllData_();
+  void defaultInitializeAll_();
   void getInitialCondition_();
   void obtainPredictor_();
   void interpolateSolution_(

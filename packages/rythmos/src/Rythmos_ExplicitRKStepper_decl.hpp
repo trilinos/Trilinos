@@ -152,6 +152,7 @@ class ExplicitRKStepper : virtual public RKButcherTableauAcceptingStepperBase<Sc
     bool haveInitialCondition_;
 
     // Private member functions:
+    void defaultInitializeAll_();
     void initialize_();
 
 };

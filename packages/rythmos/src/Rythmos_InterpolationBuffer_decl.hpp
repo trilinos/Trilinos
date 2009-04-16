@@ -154,6 +154,10 @@ private:
 
   IBPolicy policy_;
 
+
+  // Private member functions:
+  void defaultInitializeAll_();
+
 };
 
 // Nonmember constructor

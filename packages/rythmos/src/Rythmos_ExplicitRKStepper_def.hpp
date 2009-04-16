@@ -79,15 +79,30 @@ RCP<ExplicitRKStepper<Scalar> > explicitRKStepper(
 
 template<class Scalar>
 ExplicitRKStepper<Scalar>::ExplicitRKStepper()
-  : isInitialized_(false)
 {
+  this->defaultInitializeAll_();
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   out->precision(15);
+  erkButcherTableau_ = rKButcherTableau<Scalar>();
+  numSteps_ = 0;
+}
+
+template<class Scalar>
+void ExplicitRKStepper<Scalar>::defaultInitializeAll_()
+{
+  model_ = Teuchos::null;
+  solution_vector_ = Teuchos::null;
+  solution_vector_old_ = Teuchos::null;
+  //k_vector_;
+  ktemp_vector_ = Teuchos::null;
+  //basePoint_;
+  erkButcherTableau_ = Teuchos::null;
   t_ = ST::nan();
   t_old_ = ST::nan();
   dt_ = ST::nan();
-  erkButcherTableau_ = rKButcherTableau<Scalar>();
-  numSteps_ = 0;
+  numSteps_ = -1;
+  parameterList_ = Teuchos::null;
+  isInitialized_ = false;
   haveInitialCondition_ = false;
 }
 

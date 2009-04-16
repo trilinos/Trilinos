@@ -92,6 +92,7 @@ class ImplicitRKStepperFactory : public virtual StepperFactoryBase<Scalar>
     { 
       // Get the model:
       RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
+      Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
       // Get the RKBT:
       RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory_.create(implicitRKNames_[index_]);
       // Create the nonlinear solver
@@ -100,6 +101,7 @@ class ImplicitRKStepperFactory : public virtual StepperFactoryBase<Scalar>
       // Create the W_factory
       RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory = modelFactory_->get_W_factory();
       RCP<ImplicitRKStepper<Scalar> > stepper = implicitRKStepper<Scalar>(model,nonlinearSolver,irk_W_factory, rkbt);
+      stepper->setInitialCondition(ic);
       // Set verbosity on Stepper:
       RCP<Teuchos::ParameterList> stepperPL = Teuchos::parameterList();
       RCP<Teuchos::ParameterList> stepperVOPL = Teuchos::sublist(stepperPL,"VerboseObject");
@@ -139,6 +141,7 @@ class DiagonalImplicitRKStepperFactory : public virtual StepperFactoryBase<Scala
     { 
       // Get the model:
       RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
+      Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
       // Get the RKBT:
       RCP<RKButcherTableauBase<Scalar> > rkbt = rkbtFactory_.create(implicitRKNames_[index_]);
       // Create the nonlinear solver
@@ -147,6 +150,7 @@ class DiagonalImplicitRKStepperFactory : public virtual StepperFactoryBase<Scala
       // Create the W_factory
       RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > irk_W_factory = modelFactory_->get_W_factory();
       RCP<ImplicitRKStepper<Scalar> > stepper = implicitRKStepper<Scalar>(model,nonlinearSolver,irk_W_factory, rkbt);
+      stepper->setInitialCondition(ic);
       return(stepper);
     }
   private:

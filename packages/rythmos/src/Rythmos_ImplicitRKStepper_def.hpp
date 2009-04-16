@@ -35,6 +35,7 @@
 #include "Rythmos_SingleResidualModelEvaluator.hpp"
 #include "Rythmos_ImplicitRKModelEvaluator.hpp"
 #include "Rythmos_DiagonalImplicitRKModelEvaluator.hpp"
+#include "Rythmos_RKButcherTableau.hpp"
 #include "Rythmos_RKButcherTableauHelpers.hpp"
 
 #include "Thyra_ModelEvaluatorHelpers.hpp"
@@ -69,10 +70,8 @@ implicitRKStepper(
   const RCP<const RKButcherTableauBase<Scalar> > &irkbt
   )
 {
-  TEUCHOS_ASSERT( !is_null(irkbt) );
   RCP<ImplicitRKStepper<Scalar> > stepper(new ImplicitRKStepper<Scalar>());
 
-  validateIRKButcherTableau(*irkbt);
   stepper->setModel(model);
   stepper->setSolver(solver);
   stepper->set_W_factory(irk_W_factory);
@@ -90,10 +89,32 @@ implicitRKStepper(
 
 template<class Scalar>
 ImplicitRKStepper<Scalar>::ImplicitRKStepper()
-  : isInitialized_(false),
-    isDirk_(false)
-{}
+{
+  this->defaultInitializeAll_();
+  irkButcherTableau_ = rKButcherTableau<Scalar>();
+  numSteps_ = 0;
+}
 
+template<class Scalar>
+void ImplicitRKStepper<Scalar>::defaultInitializeAll_()
+{
+  isInitialized_ = false;
+  model_ = Teuchos::null;
+  solver_ = Teuchos::null;
+  irk_W_factory_ = Teuchos::null;
+  paramList_ = Teuchos::null;
+  //basePoint_;
+  x_ = Teuchos::null;
+  x_old_ = Teuchos::null;
+  x_dot_ = Teuchos::null;
+  //timeRange_;
+  irkModel_ = Teuchos::null;
+  irkButcherTableau_ = Teuchos::null;
+  isDirk_ = false;
+  numSteps_ = -1;
+  haveInitialCondition_ = false;
+  x_stage_bar_ = Teuchos::null;
+}
 
 template<class Scalar>
 void ImplicitRKStepper<Scalar>::set_W_factory(
@@ -192,8 +213,6 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
   typedef ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  TEST_FOR_EXCEPT( is_null(model_) );
-
   basePoint_ = initialCondition;
 
   // x
@@ -206,16 +225,13 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
     "then x can not be null!" );
-  THYRA_ASSERT_VEC_SPACES(
-    "Rythmos::ImplicitRKStepper::setInitialCondition(...)",
-    *x_init->space(), *model_->get_x_space() );
 #endif
 
   x_ = x_init->clone_v();
 
   // x_dot
 
-  x_dot_ = createMember(model_->get_x_space());
+  x_dot_ = createMember(x_->space());
 
   RCP<const Thyra::VectorBase<Scalar> >
     x_dot_init = initialCondition.get_x_dot();
@@ -235,6 +251,8 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
       );
 
   timeRange_ = timeRange(t,t);
+
+  haveInitialCondition_ = true;
 
 }
 
@@ -314,6 +332,7 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
   // Update time range
   timeRange_ = timeRange(t,t+current_dt);
+  numSteps_++;
 
   return current_dt;
 
@@ -325,6 +344,17 @@ const StepStatus<Scalar> ImplicitRKStepper<Scalar>::getStepStatus() const
 {
   StepStatus<Scalar> stepStatus;
 
+  if (!isInitialized_) {
+    stepStatus.stepStatus = STEP_STATUS_UNINITIALIZED;
+    stepStatus.message = "This stepper is uninitialized.";
+    return stepStatus;
+  } 
+  if (numSteps_ > 0) {
+    stepStatus.stepStatus = STEP_STATUS_CONVERGED;
+  } 
+  else {
+    stepStatus.stepStatus = STEP_STATUS_UNKNOWN;
+  }
   stepStatus.stepSize = timeRange_.length();
   stepStatus.order = irkButcherTableau_->order();
   stepStatus.time = timeRange_.upper();
@@ -504,14 +534,14 @@ void ImplicitRKStepper<Scalar>::initialize_()
 
   TEST_FOR_EXCEPT(is_null(model_));
   TEST_FOR_EXCEPT(is_null(solver_));
-  TEST_FOR_EXCEPT(is_null(irkButcherTableau_));
+  TEST_FOR_EXCEPT(irkButcherTableau_->numStages() == 0);
+  TEUCHOS_ASSERT(haveInitialCondition_);
 
-  if (is_null(x_)) {
-    // If x has not been set then setInitialCondition(...) was not
-    // called by the client so the model had better have the 
-    // initial condition!
-    this->setInitialCondition(model_->getNominalValues());
-  }
+#ifdef RYTHMOS_DEBUG
+  THYRA_ASSERT_VEC_SPACES(
+    "Rythmos::ImplicitRKStepper::initialize_(...)",
+    *x_->space(), *model_->get_x_space() );
+#endif
 
   if (is_null(x_dot_)) {
     x_dot_ = createMember(model_->get_x_space());
@@ -550,7 +580,7 @@ void ImplicitRKStepper<Scalar>::initialize_()
 template <class Scalar>
 void ImplicitRKStepper<Scalar>::setRKButcherTableau( const RCP<const RKButcherTableauBase<Scalar> > &rkButcherTableau )
 {
-  TEST_FOR_EXCEPT( is_null(rkButcherTableau) );
+  TEUCHOS_ASSERT( !is_null(rkButcherTableau) );
   TEST_FOR_EXCEPTION( isInitialized_, std::logic_error,
       "Error!  The RK Butcher Tableau cannot be changed after internal initialization!"
       );

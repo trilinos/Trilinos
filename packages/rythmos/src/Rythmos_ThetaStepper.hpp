@@ -254,6 +254,7 @@ private:
   // //////////////////////////
   // Private member functions
 
+  void defaultInitializeAll_();
   void initialize_();
   void obtainPredictor_();
 };
@@ -289,16 +290,45 @@ thetaStepper(
 
 template<class Scalar>
 ThetaStepper<Scalar>::ThetaStepper()
-  :isInitialized_(false),
-   haveInitialCondition_(false),
-   t_(-1.0),
-   t_old_(0.0),
-   dt_(0.0),
-   dt_old_(0.0),
-   numSteps_(0),
-   thetaStepperType_(INVALID_THETA_STEPPER_TYPE),
-   theta_(-1.0)
-{}
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  this->defaultInitializeAll_();
+  Scalar zero = ST::zero();
+  t_ = -ST::one();
+  t_old_ = zero;
+  dt_ = zero;
+  dt_old_ = zero;
+  numSteps_ = 0;
+  theta_ = -ST::one();
+}
+
+template<class Scalar>
+void ThetaStepper<Scalar>::defaultInitializeAll_()
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  isInitialized_ = false;
+  haveInitialCondition_ = false;
+  model_ = Teuchos::null;
+  solver_ = Teuchos::null;
+  //basePoint_;
+  x_ = Teuchos::null;
+  x_old_ = Teuchos::null;
+  x_pre_ = Teuchos::null;
+  x_dot_ = Teuchos::null;
+  x_dot_old_ = Teuchos::null;
+  x_dot_really_old_ = Teuchos::null;
+  x_dot_base_ = Teuchos::null;
+  t_ = ST::nan();
+  t_old_ = ST::nan();
+  dt_ = ST::nan();
+  dt_old_ = ST::nan();
+  numSteps_ = -1;
+  thetaStepperType_ = INVALID_THETA_STEPPER_TYPE;
+  theta_ = ST::nan();
+  neModel_ = Teuchos::null;
+  parameterList_ = Teuchos::null;
+  interpolator_ = Teuchos::null;
+}
 
 template<class Scalar>
 bool ThetaStepper<Scalar>::isImplicit() const
@@ -446,7 +476,6 @@ void ThetaStepper<Scalar>::setInitialCondition(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  TEST_FOR_EXCEPT( is_null(model_) );
 
   basePoint_ = initialCondition;
 
@@ -460,16 +489,13 @@ void ThetaStepper<Scalar>::setInitialCondition(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
     "then x can not be null!" );
-  THYRA_ASSERT_VEC_SPACES(
-    "Rythmos::ThetaStepper::setInitialCondition(...)",
-    *x_init->space(), *model_->get_x_space() );
-#endif
+#endif // RYTHMOS_DEBUG
 
   x_ = x_init->clone_v();
 
   // x_dot
 
-  x_dot_ = createMember(model_->get_x_space());
+  x_dot_ = createMember(x_->space());
 
   RCP<const Thyra::VectorBase<Scalar> >
     x_dot_init = initialCondition.get_x_dot();
@@ -1106,6 +1132,12 @@ void ThetaStepper<Scalar>::initialize_()
   TEST_FOR_EXCEPT(is_null(model_));
   TEST_FOR_EXCEPT(is_null(solver_));
   TEST_FOR_EXCEPT(!haveInitialCondition_);
+
+#ifdef RYTHMOS_DEBUG
+  THYRA_ASSERT_VEC_SPACES(
+    "Rythmos::ThetaStepper::setInitialCondition(...)",
+    *x_->space(), *model_->get_x_space() );
+#endif // RYTHMOS_DEBUG
 
   if ( is_null(interpolator_) ) {
     // If an interpolator has not been explicitly set, then just create

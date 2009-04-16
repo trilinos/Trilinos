@@ -72,13 +72,12 @@ backwardEulerStepper()
 
 template<class Scalar>
 BackwardEulerStepper<Scalar>::BackwardEulerStepper()
-  :isInitialized_(false),
-   haveInitialCondition_(false),
-   t_(-1.0),
-   t_old_(0.0),
-   dt_(0.0),
-   numSteps_(0)
-{}
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  this->defaultInitializeAll_();
+  numSteps_ = 0;
+  dt_ = ST::zero();
+}
 
 
 template<class Scalar>
@@ -86,15 +85,35 @@ BackwardEulerStepper<Scalar>::BackwardEulerStepper(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
   const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
   )
-  :isInitialized_(false),
-   haveInitialCondition_(false),
-   t_(-1.0),
-   t_old_(0.0),
-   dt_(0.0),
-   numSteps_(0)
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  this->defaultInitializeAll_();
+  dt_ = ST::zero();
+  numSteps_ = 0;
   setModel(model);
   setSolver(solver);
+}
+
+template<class Scalar>
+void BackwardEulerStepper<Scalar>::defaultInitializeAll_()
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  isInitialized_ = false;
+  haveInitialCondition_ = false;
+  model_ = Teuchos::null;
+  solver_ = Teuchos::null;
+  scaled_x_old_ = Teuchos::null;
+  x_dot_old_ = Teuchos::null;
+  // basePoint_;
+  x_ = Teuchos::null;
+  x_dot_ = Teuchos::null;
+  t_ = ST::nan();
+  t_old_ = ST::nan();
+  dt_ = ST::nan();
+  numSteps_ = -1;
+  RCP<Rythmos::SingleResidualModelEvaluator<Scalar> >  neModel_ = Teuchos::null;
+  RCP<Teuchos::ParameterList> parameterList_ = Teuchos::null;
+  RCP<InterpolatorBase<Scalar> > interpolator_ = Teuchos::null;
 }
 
 // Overridden from InterpolatorAcceptingObjectBase
@@ -275,8 +294,6 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
 
-  TEST_FOR_EXCEPT( is_null(model_) );
-
   basePoint_ = initialCondition;
 
   // x
@@ -289,24 +306,23 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
     "then x can not be null!" );
-  THYRA_ASSERT_VEC_SPACES(
-    "Rythmos::BackwardEulerStepper::setInitialCondition(...)",
-    *x_init->space(), *model_->get_x_space() );
 #endif
 
   x_ = x_init->clone_v();
 
   // x_dot
 
-  x_dot_ = createMember(model_->get_x_space());
+  x_dot_ = createMember(x_->space());
 
   RCP<const Thyra::VectorBase<Scalar> >
     x_dot_init = initialCondition.get_x_dot();
 
-  if (!is_null(x_dot_init))
+  if (!is_null(x_dot_init)) {
     assign(&*x_dot_,*x_dot_init);
-  else
+  }
+  else {
     assign(&*x_dot_,ST::zero());
+  }
   
   // t
   
@@ -864,6 +880,12 @@ void BackwardEulerStepper<Scalar>::initialize()
   TEST_FOR_EXCEPT(is_null(model_));
   TEST_FOR_EXCEPT(is_null(solver_));
   TEST_FOR_EXCEPT(!haveInitialCondition_);
+
+#ifdef RYTHMOS_DEBUG
+  THYRA_ASSERT_VEC_SPACES(
+    "Rythmos::BackwardEulerStepper::initialize(...)",
+    *x_->space(), *model_->get_x_space() );
+#endif // RYTHMOS_DEBUG
 
   if ( is_null(interpolator_) ) {
     // If an interpolator has not been explicitly set, then just create

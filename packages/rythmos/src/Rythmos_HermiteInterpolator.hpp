@@ -123,6 +123,8 @@ class HermiteInterpolator : virtual public InterpolatorBase<Scalar>
 template<class Scalar>
 HermiteInterpolator<Scalar>::HermiteInterpolator()
 {
+  nodes_ = Teuchos::null;
+  parameterList_ = Teuchos::null;
 }
 
 template<class Scalar>

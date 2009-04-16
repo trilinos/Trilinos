@@ -221,12 +221,17 @@ private:
 
   bool isDirk_; // Used for Diagonal Implicit RK 
 
+  int numSteps_;
+
+  bool haveInitialCondition_;
+
   // Cache
   RCP<Thyra::ProductVectorBase<Scalar> > x_stage_bar_;
 
   // //////////////////////////
   // Private member functions
 
+  void defaultInitializeAll_();
   void initialize_();
 
 };

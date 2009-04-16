@@ -759,6 +759,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, takeStep ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, setDirk ) {
   RCP<Thyra::ModelEvaluator<double> > model = getDiagonalModel<double>();
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
   RCP<Rythmos::TimeStepNonlinearSolver<double> >
     nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
   RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory =
@@ -768,6 +769,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, setDirk ) {
     RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Singly Diagonal IRK 5 Stage 4th order");
     RCP<ImplicitRKStepper<double> > irkStepper = 
       implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, rkbt );
+    irkStepper->setInitialCondition(ic);
     RCP<Teuchos::ParameterList> stepperPL = Teuchos::parameterList();
     RCP<Teuchos::ParameterList> stepperVOPL = Teuchos::sublist(stepperPL,"VerboseObject");
     stepperVOPL->set("Verbosity Level","none");
@@ -787,6 +789,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, setDirk ) {
     RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Singly Diagonal IRK 5 Stage 4th order");
     RCP<ImplicitRKStepper<double> > irkStepper = 
       implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, rkbt );
+    irkStepper->setInitialCondition(ic);
     RCP<Teuchos::ParameterList> stepperPL = Teuchos::parameterList();
     RCP<Teuchos::ParameterList> stepperVOPL = Teuchos::sublist(stepperPL,"VerboseObject");
     stepperVOPL->set("Verbosity Level","none");
@@ -806,6 +809,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, setDirk ) {
     RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Backward Euler");
     RCP<ImplicitRKStepper<double> > irkStepper = 
       implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, rkbt );
+    irkStepper->setInitialCondition(ic);
     RCP<Teuchos::ParameterList> stepperPL = Teuchos::parameterList();
     RCP<Teuchos::ParameterList> stepperVOPL = Teuchos::sublist(stepperPL,"VerboseObject");
     stepperVOPL->set("Verbosity Level","none");
@@ -825,6 +829,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, setDirk ) {
     RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 2 Stage 4th order Gauss");
     RCP<ImplicitRKStepper<double> > irkStepper = 
       implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, rkbt );
+    irkStepper->setInitialCondition(ic);
     TEST_THROW(irkStepper->setDirk(true), std::logic_error);
   }
   {
@@ -832,6 +837,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, setDirk ) {
     RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 2 Stage 4th order Gauss");
     RCP<ImplicitRKStepper<double> > irkStepper = 
       implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, rkbt );
+    irkStepper->setInitialCondition(ic);
     RCP<Teuchos::ParameterList> stepperPL = Teuchos::parameterList();
     RCP<Teuchos::ParameterList> stepperVOPL = Teuchos::sublist(stepperPL,"VerboseObject");
     stepperVOPL->set("Verbosity Level","none");

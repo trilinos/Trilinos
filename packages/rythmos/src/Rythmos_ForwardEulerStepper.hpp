@@ -151,6 +151,7 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     bool isInitialized_;
 
     // Private member functions:
+    void defaultInitializAll_();
     void initialize_();
 
 };
@@ -174,12 +175,29 @@ RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper(const RCP<const Thyra::Mod
 
 template<class Scalar>
 ForwardEulerStepper<Scalar>::ForwardEulerStepper()
-  : numSteps_(0),haveInitialCondition_(false),isInitialized_(false)
+{
+  this->defaultInitializAll_();
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  dt_ = ST::zero();
+  numSteps_ = 0;
+}
+
+template<class Scalar>
+void ForwardEulerStepper<Scalar>::defaultInitializAll_()
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  t_old_ = ST::nan();
+  model_ = Teuchos::null;
+  solution_vector_ = Teuchos::null;
+  residual_vector_ = Teuchos::null;
   t_ = ST::nan();
-  dt_ = ST::zero();
+  dt_ = ST::nan();
+  t_old_ = ST::nan();
+  solution_vector_old_ = Teuchos::null;
+  //basePoint_;
+  numSteps_ = -1;
+  haveInitialCondition_ = false;
+  parameterList_ = Teuchos::null;
+  isInitialized_ = false;
 }
 
 template<class Scalar>
