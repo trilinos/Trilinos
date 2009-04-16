@@ -26,6 +26,15 @@ configure options.
 Backlog:
 --------
 
+(*) [???] Get PyTrilinos updated:
+- Enable BUILD_SHARED=ON if Trilinos_ENABLE_PyTrilinos=ON if BUILD_SHARED is
+not already set
+- Report an error if Trilinos_ENABLE_PyTrilinos=ON but BUILD_SHARED=OFF and
+fail the configure step.
+- Enable testing for PyTrilinos on godel by setting
+PYTHONPATH=/home/wfspotz/lib64/python2.4/site-packages on the environment.
+You can also set this as a CMake varaible I think.
+
 (*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG and
 MPI_OPT build directory and enable only "Primary Stable" code.  This will need
 a minimal configuration script to pull in only the basic info needed in order
