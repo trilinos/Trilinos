@@ -537,7 +537,8 @@ Package: MOOCHO
 
 Package Transition Lead: Roscoe Bartlett (rabartl@sandia.gov)
 
-Status: Basic libraries and a few tests and examples
+Status: All of the primary stable code (libraries and tests/examples) are
+added.  I still need to add back support for MA28 but I can do that next.
 
 Final Certification Date: [???]
 

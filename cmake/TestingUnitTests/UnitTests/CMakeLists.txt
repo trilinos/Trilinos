@@ -71,6 +71,17 @@ FUNCTION(UNITEST_PACKAGE_ADD_TEST_BASIC)
     "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;--arg1=\"'bob' and 'cats'\""
     )
 
+  MESSAGE("Add two tests with different postfixes and arguments")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN}
+    POSTFIX_AND_ARGS_0 pf_arg1 arg1
+    POSTFIX_AND_ARGS_1 pf_arg23 arg2 arg3
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_pf_arg1;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1;${PACKEXEN}_pf_arg23;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg2;arg3"
+    )
+
   MESSAGE("Add an executable with no prefix")
   GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
   PACKAGE_ADD_TEST( ${EXEN} NOEXEPREFIX ARGS arg1 )
@@ -93,6 +104,22 @@ FUNCTION(UNITEST_PACKAGE_ADD_TEST_BASIC)
   UNITTEST_COMPARE_CONST(
     PACKAGE_ADD_TEST_ADD_TEST_INPUT
     "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${EXEN};arg1"
+    )
+
+  MESSAGE("Add a test with a different name from the executable")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} NAME SomeOtherName ARGS arg1 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKAGE_NAME}_SomeOtherName;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1"
+    )
+
+  MESSAGE("Add a test with with a postfix appended to the executable name")
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
+  PACKAGE_ADD_TEST( ${EXEN} NAME_POSTFIX somePostfix ARGS arg1 )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN}_somePostfix;${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe;arg1"
     )
 
 ENDFUNCTION()
@@ -471,4 +498,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(54)
+UNITTEST_FINAL_RESULT(57)

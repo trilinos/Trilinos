@@ -8,10 +8,12 @@ INCLUDE(PackageAddTestHelpers)
 #   <execName>
 #   [NOEXEPREFIX]
 #   [NOEXESUFFIX]
-#   [NAME <testName>]
+#   [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
 #   [DIRECTORY <directory>]
 #   [ADD_DIR_TO_NAME]
-#   [ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...]
+#   [ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...
+#     | POSTFIX_AND_ARGS_0 <postfix> <arg1> <arg2> ...
+#       POSTFIX_AND_ARGS_1 ... ]
 #   [COMM [serial] [mpi]]
 #   [NUM_MPI_PROCS <numProcs>]
 #   [HOST <host1> <host2> ...]
@@ -57,6 +59,12 @@ INCLUDE(PackageAddTestHelpers)
 #     Otherwise, you can not do this because CTest requires all test names to
 #     be globally unique in a single project.
 #
+#   NAME_POSTFIX <testNamePostfix>
+#
+#     If specified, gives a postfix that will be added to the name of the
+#     executable in order build the name of the test.  If NAME argument is
+#     given it will be selected over the NAME_POSTFIX.
+#
 #   DIRECTORY <directory>
 #
 #     If specified, then the executable is assumed to be in the directory
@@ -78,6 +86,24 @@ INCLUDE(PackageAddTestHelpers)
 #     In this way, many different tests can be added for a single executable
 #     in a single call to this function.  Each of these separate tests will be
 #     named ${PACKAGE_NAME}_<testName>_xy where xy = 00, 01, 02, and so on.
+#
+#   POSTFIX_AND_ARGS_<IDX> <postfix> <arg1> <arg2> ...
+#
+#     If specified, gives a sequence of sets of test postfix names and
+#     arguments lists for defining different tests.  For example, a set of
+#     three different tests with argument lists can be specified as:
+#     
+#       POSTIFX_AND_ARGS_0 postfix1 --arg1 --arg2="dummy"
+#       POSTIFX_AND_ARGS_1 postfix2  --arg2="fly"
+#       POSTIFX_AND_ARGS_3 postfix3  --arg2="bags"
+#
+#     This will create three different test cases with the postfix names
+#     'postfix1', 'postfix2', and 'postfix3'.  The indexes must be consecutive
+#     starting a 0 and going up to (currently) 19.  The main advantages of
+#     using these arguments instead of just 'ARGS' are that you can give
+#     meaningful name to each test case and you can specify multiple arguments
+#     without having to quote them and you can allow long argument lists to
+#     span multiple lines.
 #
 #   COMM [serial] [mpi]
 #
@@ -144,11 +170,20 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
   # A) Parse the input arguments
   #
 
+  # Allow for a maximum of 20 (0 through 19) postfix and argument blocks
+  SET(MAX_NUM_POSTFIX_AND_ARGS_IDX 19)
+
+  SET(POSTFIX_AND_ARGS_LIST "")
+  FOREACH( POSTFIX_AND_ARGS_IDX RANGE ${MAX_NUM_POSTFIX_AND_ARGS_IDX})
+    LIST( APPEND POSTFIX_AND_ARGS_LIST POSTFIX_AND_ARGS_${POSTFIX_AND_ARGS_IDX} )
+  ENDFOREACH()
+  #PRINT_VAR(POSTFIX_AND_ARGS_LIST)
+
   PARSE_ARGUMENTS(
      #prefix
      PARSE
      #lists
-     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;NAME;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION"
+     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION"
      #options
      "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;ADD_DIR_TO_NAME"
      ${ARGN}
@@ -156,7 +191,11 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
 
   IF (PARSE_ARGS)
     LIST(LENGTH PARSE_ARGS NUM_PARSE_ARGS)
+  ELSEIF (PARSE_POSTFIX_AND_ARGS_0)
+    # We will use this list instead
   ELSE()
+    # Niether 'ARGS' nor 'POSTFIX_AND_ARGS' was selected so just assume one
+    # empty arg
     SET(PARSE_ARGS " ")
     SET(NUM_PARSE_ARGS 1)
   ENDIF()
@@ -219,8 +258,10 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
 
   #MESSAGE("PACKAGE_ADD_TEST: ${EXE_NAME}: EXE_BINARY_NAME = ${EXE_BINARY_NAME}")
   
-  IF(PARSE_NAME)
+  IF (PARSE_NAME)
     SET(TEST_NAME "${PACKAGE_NAME}${DIRECTORY_NAME}_${PARSE_NAME}")
+  ELSEIF (PARSE_NAME_POSTFIX)
+    SET(TEST_NAME "${PACKAGE_NAME}${DIRECTORY_NAME}_${EXE_NAME}_${PARSE_NAME_POSTFIX}")  
   ELSE()
     SET(TEST_NAME "${PACKAGE_NAME}${DIRECTORY_NAME}_${EXE_NAME}")  
   ENDIF()
@@ -274,43 +315,71 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
   IF (TPL_ENABLE_MPI)
     SET(TEST_NAME "${TEST_NAME}_MPI_${NUM_PROCS_USED}")
   ENDIF()
+
+  IF (PARSE_ARGS)
+
+    # G.1) Add tests with simple lists of arguments
   
-  SET(COUNTER 0)
-
-  FOREACH(PARSE_ARG ${PARSE_ARGS})
-
-    IF(${NUM_PARSE_ARGS} EQUAL 1)
-      SET(TEST_NAME_COUNTER "${TEST_NAME}")
-    ELSE()
-      SET(TEST_NAME_COUNTER "${TEST_NAME}_${COUNTER}")
-    ENDIF()
-    IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE(STATUS "TEST_NAME = ${TEST_NAME_COUNTER}")
-    ENDIF()
-
-    CONVERT_CMND_ARG_STRING_TO_ADD_TEST_ARG_ARRAY(${PARSE_ARG} INARGS)
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      PRINT_VAR(INARGS)
-    ENDIF()
-
-    PACAKGE_ADD_TEST_GET_TEST_CMND_ARRAY( CMND_ARRAY
-      "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}"  ${INARGS})
-
-    PACKAGE_ADD_TEST_ADD_TEST( ${TEST_NAME_COUNTER} ${CMND_ARRAY} )
-    
-    PACKAGE_PRIVATE_ADD_TEST_SET_PASS_PROPERTY(${TEST_NAME_COUNTER})
-
-    IF (NOT PACKAGE_ADD_TEST_ADD_TEST_SKIP)
-      SET_PROPERTY(TEST ${TEST_NAME_COUNTER} APPEND PROPERTY
-        LABELS ${PACKAGE_NAME})
-      IF(PARSE_KEYWORDS)
-        SET_PROPERTY(TEST ${TEST_NAME_COUNTER} APPEND PROPERTY
-          LABELS ${PARSE_KEYWORDS})
+    SET(COUNTER 0)
+  
+    FOREACH(PARSE_ARG ${PARSE_ARGS})
+  
+      IF(${NUM_PARSE_ARGS} EQUAL 1)
+        SET(TEST_NAME_INSTANCE "${TEST_NAME}")
+      ELSE()
+        SET(TEST_NAME_INSTANCE "${TEST_NAME}_${COUNTER}")
       ENDIF()
-    ENDIF()
+      IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        MESSAGE(STATUS "TEST_NAME = ${TEST_NAME_INSTANCE}")
+      ENDIF()
+  
+      CONVERT_CMND_ARG_STRING_TO_ADD_TEST_ARG_ARRAY(${PARSE_ARG} INARGS)
+      IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        PRINT_VAR(INARGS)
+      ENDIF()
+  
+      PACAKGE_ADD_TEST_GET_TEST_CMND_ARRAY( CMND_ARRAY
+        "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}"  ${INARGS} )
+  
+      PACKAGE_ADD_TEST_ADD_TEST( ${TEST_NAME_INSTANCE} ${CMND_ARRAY} )
+      
+      PACKAGE_PRIVATE_ADD_TEST_POST_PROCESS_ADDED_TEST(${TEST_NAME_INSTANCE})
+  
+      MATH(EXPR COUNTER ${COUNTER}+1 )
+  
+    ENDFOREACH()
 
-    MATH(EXPR COUNTER ${COUNTER}+1 )
+  ELSEIF (PARSE_POSTFIX_AND_ARGS_0)
 
-  ENDFOREACH()
+    # G.2) Add tests with different postfixes for each set of arguments
+
+    FOREACH( POSTFIX_AND_ARGS_IDX RANGE ${MAX_NUM_POSTFIX_AND_ARGS_IDX})
+
+      IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+        PRINT_VAR(PARSE_POSTFIX_AND_ARGS_${POSTFIX_AND_ARGS_IDX})
+      ENDIF()
+
+      IF (NOT PARSE_POSTFIX_AND_ARGS_${POSTFIX_AND_ARGS_IDX})
+        BREAK()
+      ENDIF()
+
+      SET( POSTFIX_AND_ARGS ${PARSE_POSTFIX_AND_ARGS_${POSTFIX_AND_ARGS_IDX}} )
+
+      LIST( GET  POSTFIX_AND_ARGS  0  POSTFIX )
+      LIST( REMOVE_AT  POSTFIX_AND_ARGS  0 ) # Just jut args!
+
+      SET(TEST_NAME_INSTANCE "${TEST_NAME}_${POSTFIX}")
+  
+      PACAKGE_ADD_TEST_GET_TEST_CMND_ARRAY( CMND_ARRAY
+        "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}"  ${POSTFIX_AND_ARGS} )
+  
+      PACKAGE_ADD_TEST_ADD_TEST( ${TEST_NAME_INSTANCE} ${CMND_ARRAY} )
+      
+      PACKAGE_PRIVATE_ADD_TEST_POST_PROCESS_ADDED_TEST(${TEST_NAME_INSTANCE})
+
+
+    ENDFOREACH()
+
+  ENDIF()
   
 ENDFUNCTION()

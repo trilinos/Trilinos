@@ -10,14 +10,15 @@ Active items:
 
 - [Ross] Add Primary Stable Code versions of serial and build builds
 
-- [Ross and Brent] Move platform-specific testing scripts into
-Trilinos/cmake/ctest/drivers/COMPUTER_NAME.  This will make it cleaner to add
-more test machines.
-
 - [Ross] Add automated support for turning on SS TPLs when building
 
 - [Brent] Get a Windows CSRI machine set up to build Trilinos Dev with CMake
 and run nightly tests.
+
+- [Ross] Add variable Trilinos_EXCLUDE_TESTS_REGEX that can be set to exclude
+specific tests from being run.  You can pass in this REGEX to CTEST_TEST(...) 
+with the EXCLUDE option.  We need the ability to disable particular tests on
+specific machines for specific build cases.
 
 (*) [Everyone] Go back over packages and add remaining TPL support and
 configure options.
@@ -127,9 +128,6 @@ an internal cache variables and then reset them at the package level.
 (*) [???] Change all source files to be globbed and use internal ifdefs to
 control what gets built.  This will make it easier to maintain the BJAM build
 system.  I have done this for MOOCHO and it is great.
-
-(*) [???] Add POSTFIX argument to PACKAGE_ADD_[EXECUTABLE_AND_]TEST(...) to
-avoid duplicating the exec name in NAME.
 
 (*) [???] Upgrade Trilinos/CMakeLists.txt and dump-package-dep-table.py add an
 option to only show dependencies for enabled packages.  Actually, this could

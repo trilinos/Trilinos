@@ -2,8 +2,8 @@
 INCLUDE(PackageAddTestHelpers)
 
 
-# Allow for a maximum of 10 (0 through 9) test commands
-SET(PACKAGE_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX 9)
+# Allow for a maximum of 20 (0 through 19) test commands
+SET(PACKAGE_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX 19)
 
 
 #

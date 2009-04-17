@@ -22,6 +22,24 @@ PACKAGE_ADD_ADVANCED_TEST(
   TEST_0 EXEC GenericDriver
   )
 
+PACKAGE_ADD_TEST( GenericDriver
+  NAME CTestScripts_simple_pass_regex
+  ARGS "--print-msg=\"This is a crazy test!\" --return-val=1"
+  PASS_REGULAR_EXPRESSION "[^=]This is a crazy test"
+  )
+
+PACKAGE_ADD_TEST( GenericDriver
+  NAME CTestScripts_simple_posfix_and_args_1
+  POSTFIX_AND_ARGS_0 test1 --print-msg="This is a crazy test!" --return-val=1
+  PASS_REGULAR_EXPRESSION "[^=]This is a crazy test"
+  )
+
+PACKAGE_ADD_TEST( GenericDriver
+  NAME CTestScripts_simple_posfix_and_args_2
+  POSTFIX_AND_ARGS_0 test1 --print-msg="This is a crazy test!"
+  POSTFIX_AND_ARGS_1 test2 --print-msg="This is a silly test!"
+  )
+
 PACKAGE_ADD_ADVANCED_TEST(
   CTestScripts_cmnd_1_args_1_print_msg
   TEST_0 EXEC GenericDriver ARGS --print-msg="This is a crazy test!" --return-val=1

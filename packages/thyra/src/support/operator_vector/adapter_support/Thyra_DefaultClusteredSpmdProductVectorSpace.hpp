@@ -37,6 +37,7 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_SpmdVectorSpaceUtilities.hpp"
 #include "Teuchos_implicit_cast.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 namespace Thyra {
 
@@ -95,7 +96,7 @@ void DefaultClusteredSpmdProductVectorSpace<Scalar>::initialize(
   {
     const Index num = 2;
     Index buff[num] = { clusterOffset_, globalDim_ };
-    broadcast(*intraClusterComm_,clusterRootRank_,num,&buff[0]);
+    Teuchos::broadcast<Index>(*intraClusterComm_, clusterRootRank_, num, &buff[0]);
     clusterOffset_ = buff[0];
     globalDim_     = buff[1];
   }

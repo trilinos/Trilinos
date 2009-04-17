@@ -6,13 +6,13 @@ INCLUDE(Join)
 FUNCTION(DELETE_CREATE_WORKING_DIRECTORY  WORKING_DIR_IN)
   IF (EXISTS "${WORKING_DIR_IN}")
     MESSAGE("Removing existing working directory"
-      " '${WORKING_DIR_IN}' ...\n")
+      " '${WORKING_DIR_IN}'\n")
     IF (NOT SHOW_COMMANDS_ONLY)
       FILE(REMOVE_RECURSE "${WORKING_DIR_IN}")
     ENDIF()
   ENDIF()
   MESSAGE("Creating new working directory"
-    " '${WORKING_DIR_IN}' ...\n")
+    " '${WORKING_DIR_IN}'\n")
   IF (NOT SHOW_COMMANDS_ONLY)
     FILE(MAKE_DIRECTORY "${WORKING_DIR_IN}")
   ENDIF()
@@ -52,7 +52,7 @@ FUNCTION(DRIVE_ADVANCED_TEST)
       APPEND_STRING_VAR( TEST_NAMES_STR ", TEST_${CMND_IDX}" )
     ENDIF()
   ENDFOREACH()
-  MESSAGE("Running test commands: ${TEST_NAMES_STR} ...") 
+  MESSAGE("Running test commands: ${TEST_NAMES_STR}") 
 
   SET(OVERALL_TEST_PASSED TRUE)
   
@@ -73,7 +73,7 @@ FUNCTION(DRIVE_ADVANCED_TEST)
     ENDIF()
 
     JOIN( TEST_CMND_STR " " TRUE ${TEST_${CMND_IDX}_CMND} )
-    MESSAGE("Running: ${TEST_CMND_STR} ...\n")
+    MESSAGE("Running: ${TEST_CMND_STR}\n")
     SET(EXEC_CMND COMMAND ${TEST_${CMND_IDX}_CMND})
 
     SET(WORKING_DIR_SET)
@@ -84,7 +84,7 @@ FUNCTION(DRIVE_ADVANCED_TEST)
     ENDIF()
 
     IF (WORKING_DIR_SET)
-      MESSAGE("  Running in working directory \"${WORKING_DIR_SET}\" ...\n")
+      MESSAGE("  Running in working directory \"${WORKING_DIR_SET}\"\n")
       SET(EXEC_CMND ${EXEC_CMND}
         WORKING_DIRECTORY "${WORKING_DIR_SET}"
         )
@@ -99,7 +99,7 @@ FUNCTION(DRIVE_ADVANCED_TEST)
       ELSE()
         SET(OUTPUT_FILE_USED "${TEST_${CMND_IDX}_OUTPUT_FILE}")
       ENDIF()
-      MESSAGE("  Writing output to file \"${OUTPUT_FILE_USED}\" ...\n")
+      MESSAGE("  Writing output to file \"${OUTPUT_FILE_USED}\"\n")
       SET(EXEC_CMND ${EXEC_CMND}
         OUTPUT_FILE "${OUTPUT_FILE_USED}"
         )

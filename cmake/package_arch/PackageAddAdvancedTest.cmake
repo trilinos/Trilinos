@@ -223,7 +223,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
   # comands we will have
   #
 
-  # Allow for a maximum of 10 (0 through 9) test commands
+  # Allow for a maximum of 20 (0 through 19) test commands
   SET(MAX_NUM_TEST_CMND_IDX ${PACKAGE_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX})
 
   SET(TEST_IDX_LIST "")
