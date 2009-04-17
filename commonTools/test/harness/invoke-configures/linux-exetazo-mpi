@@ -9,8 +9,8 @@ FFLAGS="-O3 -fPIC" \
 --with-mpi-compilers=/usr/alt/bin \
 --cache-file=config.cache \
 --disable-default-packages \
---with-libs="-L/home/jmwille/lib/UMFPACK/Lib -lumfpack -L/home/jmwille/lib/AMD/Lib -lamd -L/home/jmwille/lib/SuperLU_3.0 -lsuperlu_3.0 -L/home/jmwille/lib/SuperLU_DIST_2.0 -lsuperlu_dist_2.0 -L/home/jmwille/TrilinosTestHarness/Trilinos3PL/tarballs/DSCPACK1.0/DSC_LIB -ldscdbl -L/home/jmwille/TrilinosTestHarness/Trilinos3PL/tarballs/metis-4.0 -lmetis -L/home/jmwille/lib/scalapack-1.8.0 -lscalapack -L/usr/alt/lib -ltaucs" \
---with-incdirs="-I/home/jmwille/lib/UMFPACK/Include -I/home/jmwille/lib/AMD/Include -I/home/jmwille/lib/UFconfig -I/home/jmwille/lib/SuperLU_3.0/SRC -I/home/jmwille/lib/SuperLU_DIST_2.0/SRC -I/home/jmwille/TrilinosTestHarness/Trilinos3PL/tarballs/DSCPACK1.0/DSC_LIB -I/home/jmwille/TrilinosTestHarness/Trilinos3PL/tarballs/metis-4.0/Lib -I/usr/alt/include" \
+--with-libs="-L/home/jmwille/lib/UMFPACK/Lib -lumfpack -L/home/jmwille/lib/AMD/Lib -lamd -L/home/jmwille/lib/SuperLU_3.0 -lsuperlu_3.0 -L/home/jmwille/lib/SuperLU_DIST_2.0 -lsuperlu_dist_2.0 -L/home/jmwille/TrilinosTestHarness/Trilinos3PL/tarballs/DSCPACK1.0/DSC_LIB -ldscdbl -L/home/jmwille/TrilinosTestHarness/Trilinos3PL/tarballs/metis-4.0 -lmetis -L/home/jmwille/install/lib -ldmumps -lpord -L/home/jmwille/install/scalapack-1.8.0/lib -lscalapack -lblacs -lblacsF77 -lblacs -L/usr/alt/lib -ltaucs -L/home/jmwille/install/oski-1.0.1h/lib" \
+--with-incdirs="-I/home/jmwille/lib/UMFPACK/Include -I/home/jmwille/lib/AMD/Include -I/home/jmwille/lib/UFconfig -I/home/jmwille/lib/SuperLU_3.0/SRC -I/home/jmwille/lib/SuperLU_DIST_2.0/SRC -I/home/jmwille/TrilinosTestHarness/Trilinos3PL/tarballs/DSCPACK1.0/DSC_LIB -I/home/jmwille/TrilinosTestHarness/Trilinos3PL/tarballs/metis-4.0/Lib -I/usr/alt/include -I/home/jmwille/install/oski-1.0.1h/include" \
 --with-trilinosdatadir=/home/jmwille/TrilinosTestHarness/TrilinosData \
 --enable-amesos \
 --enable-amesos-umfpack \
@@ -20,15 +20,16 @@ FFLAGS="-O3 -fPIC" \
 --enable-amesos-superludist \
 --enable-amesos-taucs \
 --enable-amesos-tests \
---disable-amesos-mumps \
+--enable-amesos-mumps \
 --disable-amesos-mumps_mpi_c2f \
---disable-amesos-scalapack \
+--enable-amesos-scalapack \
 --enable-anasazi \
 --enable-aztecoo \
 --enable-belos \
 --enable-claps \
 --enable-didasko \
 --enable-epetra \
+--with-oski \
 --enable-epetra-abc \
 --enable-epetraext \
 --enable-epetraext-inout \
