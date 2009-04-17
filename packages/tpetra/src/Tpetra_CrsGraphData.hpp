@@ -64,15 +64,15 @@ namespace Tpetra {
     Map<LocalOrdinal,GlobalOrdinal> rangeMap_, domainMap_;
     GlobalOrdinal     numGlobalEntries_, numGlobalDiags_, globalMaxNumRowEntries_;
     Teuchos_Ordinal    numLocalEntries_,  numLocalDiags_,  localMaxNumEntries_;
-    Teuchos::Array<LocalOrdinal> rowNumToAlloc_; // exists only if indices are not allocated
+    Teuchos::ArrayRCP<LocalOrdinal> rowNumToAlloc_; // exists only if indices are not allocated
 
     //
     // Unoptimized structure
     // these are allocated if storage is not optimized or allocation is not static
     //
-    Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > colGInds_;    // allocated only if indices are global
-    Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> >  colLInds_;    // allocated only if indices are local
-    Teuchos::Array<LocalOrdinal> rowNumEntries_;
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > colGInds_;    // allocated only if indices are global
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> >  colLInds_;    // allocated only if indices are local
+    Teuchos::ArrayRCP<LocalOrdinal> rowNumEntries_;
 
     //
     // Optimized structure
@@ -86,8 +86,8 @@ namespace Tpetra {
        In a debug build, it is an ArrayRCP, which does bounds checking. in an optimized
        build, it is a C pointer. colIndsPtrs is allocated to numLocalRows()+1; the span of the jth row begins with
        colIndsPtrs[j] and ends before colIndsPtrs[j+1] */
-    Teuchos::Array<typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator> colGIndsPtrs_;  // allocated only if indicesAreGlobal()
-    Teuchos::Array<typename Teuchos::ArrayRCP<LocalOrdinal >::iterator> colLIndsPtrs_;  // allocated only if indicesAreLocal()
+    Teuchos::ArrayRCP<typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator> colGIndsPtrs_;  // allocated only if indicesAreGlobal()
+    Teuchos::ArrayRCP<typename Teuchos::ArrayRCP<LocalOrdinal >::iterator> colLIndsPtrs_;  // allocated only if indicesAreLocal()
 
     // these are RCPs because they are optional
     // importer is needed if DomainMap is not sameas ColumnMap
@@ -122,15 +122,13 @@ namespace Tpetra {
   , numLocalEntries_(0)
   , numLocalDiags_(0)
   , localMaxNumEntries_(0)
-  , rowNumToAlloc_(rowMap.getNumMyEntries(),0)
-  , colGInds_(0)
-  , colLInds_(0)
-  , rowNumEntries_(rowMap.getNumMyEntries(),0)
+  , colGInds_()
+  , colLInds_()
   , totalNumAllocated_(0)
   , contigColGInds_(Teuchos::null)
   , contigColLInds_(Teuchos::null)
-  , colGIndsPtrs_(0)
-  , colLIndsPtrs_(0)
+  , colGIndsPtrs_()
+  , colLIndsPtrs_()
   , importer_(Teuchos::null)
   , exporter_(Teuchos::null)
   , fillComplete_(false)
@@ -145,7 +143,14 @@ namespace Tpetra {
   , noRedundancies_(false)
   , indicesAreAllocated_(false)
   , haveGlobalConstants_(false)
-  {}
+  {
+    if (rowMap.getNumMyEntries() > 0) {
+      rowNumToAlloc_ = Teuchos::arcp<LocalOrdinal>(rowMap.getNumMyEntries());
+      rowNumEntries_ = Teuchos::arcp<LocalOrdinal>(rowMap.getNumMyEntries());
+      std::fill(rowNumToAlloc_.begin(),rowNumToAlloc_.end(),0);
+      std::fill(rowNumEntries_.begin(),rowNumEntries_.end(),0);
+    }
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal> 
   CrsGraphData<LocalOrdinal,GlobalOrdinal>::CrsGraphData(const Map<LocalOrdinal,GlobalOrdinal> & rowMap, const Map<LocalOrdinal,GlobalOrdinal> & colMap)
@@ -160,15 +165,13 @@ namespace Tpetra {
   , numLocalEntries_(0)
   , numLocalDiags_(0)
   , localMaxNumEntries_(0)
-  , rowNumToAlloc_(rowMap.getNumMyEntries(),0)
-  , colGInds_(0)
-  , colLInds_(0)
-  , rowNumEntries_(rowMap.getNumMyEntries(),0)
+  , colGInds_()
+  , colLInds_()
   , totalNumAllocated_(0)
   , contigColGInds_(Teuchos::null)
   , contigColLInds_(Teuchos::null)
-  , colGIndsPtrs_(0)
-  , colLIndsPtrs_(0)
+  , colGIndsPtrs_()
+  , colLIndsPtrs_()
   , importer_(Teuchos::null)
   , exporter_(Teuchos::null)
   , fillComplete_(false)
@@ -183,7 +186,14 @@ namespace Tpetra {
   , noRedundancies_(false)
   , indicesAreAllocated_(false)
   , haveGlobalConstants_(false)
-  {}
+  {
+    if (rowMap.getNumMyEntries() > 0) {
+      rowNumToAlloc_ = Teuchos::arcp<LocalOrdinal>(rowMap.getNumMyEntries());
+      rowNumEntries_ = Teuchos::arcp<LocalOrdinal>(rowMap.getNumMyEntries());
+      std::fill(rowNumToAlloc_.begin(),rowNumToAlloc_.end(),0);
+      std::fill(rowNumEntries_.begin(),rowNumEntries_.end(),0);
+    }
+  }
 
   template <class LocalOrdinal, class GlobalOrdinal> 
   CrsGraphData<LocalOrdinal,GlobalOrdinal>::~CrsGraphData() 

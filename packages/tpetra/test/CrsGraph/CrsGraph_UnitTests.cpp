@@ -262,9 +262,9 @@ namespace {
     Array<LO> linds(ginds.size());
     for (unsigned int i=0; i<linds.size(); ++i) linds[i] = i;
     Map<LO,GO> cmap(INVALID,ginds,0,comm);
-    for (int T=0; T<2; ++T) {
-      bool StaticProfile = (T & 1) == 1;
-      // bool OptimizeStorage = (T & 2) == 2;
+    for (int T=0; T<4; ++T) {
+      bool StaticProfile   = (T & 1) == 1;
+      bool OptimizeStorage = (T & 2) == 2;
       GRAPH trigraph(rmap,cmap, ginds.size(),StaticProfile);   // only allocate as much room as necessary
       Array<GO> GCopy(4); Array<LO> LCopy(4);
       ArrayView<const GO> GView; ArrayView<const LO> LView;
@@ -283,7 +283,7 @@ namespace {
       if (StaticProfile) {
         TEST_THROW( trigraph.insertGlobalIndices(myrowind,arrayView(&myrowind,1)), std::runtime_error );
       }
-      trigraph.fillComplete();
+      trigraph.fillComplete(OptimizeStorage);
       // check that inserting global entries throws (inserting local entries is still allowed)
       {
         Array<GO> zero(0);
@@ -354,7 +354,7 @@ namespace {
     RCP<RowGraph<LO,GO> > zero;
     {
       RCP<CrsGraph<LO,GO> > zero_crs = rcp(new CrsGraph<LO,GO>(map,0));
-      zero_crs->fillComplete();
+      zero_crs->fillComplete(true);
       zero = zero_crs;
     }
     Map<LO,GO> cmap = zero->getColMap();
@@ -393,9 +393,9 @@ namespace {
     const Teuchos_Ordinal numLocal = 3;
     Map<LO,GO> map(INVALID,numLocal,indexBase,comm);
     GO mymiddle = map.getGlobalIndex(1);  // get my middle row
-    for (int T=0; T<2; ++T) {
+    for (int T=0; T<4; ++T) {
       bool StaticProfile = (T & 1) == 1;
-      // bool OptimizeStorage = (T & 2) == 2;
+      bool OptimizeStorage = (T & 2) == 2;
       {
         // create a diagonal graph, where only my middle row has an entry
         // let node i contribute to row i+1, where node the last node contributes to row 0
@@ -413,7 +413,7 @@ namespace {
           TEST_THROW( ddgraph.insertGlobalIndices(mymiddle  ,arrayView(&mymiddle,1)), std::runtime_error );
           TEST_THROW( ddgraph.insertGlobalIndices(mymiddle+1,arrayView(&mymiddle,1)), std::runtime_error );
         }
-        ddgraph.fillComplete();
+        ddgraph.fillComplete(OptimizeStorage);
         // after fillComplete(), there should be a single entry on my middle, corresponding to the diagonal, none on the others
         ArrayView<const LO> myrow_lcl;
         TEST_EQUALITY_CONST( ddgraph.numEntriesForMyRow(0), 0 );
@@ -453,9 +453,9 @@ namespace {
     const Teuchos_Ordinal numLocal = 1;
     Map<LO,GO> map(INVALID,numLocal,indexBase,comm);
     GO myrowind = map.getGlobalIndex(0);
-    for (int T=0; T<2; ++T) {
-      bool StaticProfile = (T & 1) == 1;
-      // bool OptimizeStorage = (T & 2) == 2;
+    for (int T=0; T<4; ++T) {
+      bool StaticProfile   = (T & 1) == 1;
+      bool OptimizeStorage = (T & 2) == 2;
       {
         // create a diagonal graph, where the graph entries are contributed by a single off-node contribution, no filtering
         // let node i contribute to row i+1, where node the last node contributes to row 0
@@ -475,7 +475,7 @@ namespace {
         if (StaticProfile) { // no room for more
           TEST_THROW( diaggraph.insertGlobalIndices(myrowind,arrayView(&myrowind,1)), std::runtime_error );
         }
-        diaggraph.fillComplete();
+        diaggraph.fillComplete(OptimizeStorage);
         // after fillComplete(), there should be a single entry on my row, corresponding to the diagonal
         ArrayView<const LO> myrow_lcl;
         diaggraph.extractMyRowConstView(0,myrow_lcl);
@@ -513,7 +513,7 @@ namespace {
         if (StaticProfile) {
           TEST_THROW( ngraph.insertGlobalIndices(myImageID,tuple<GO>(myImageID)), std::runtime_error );  // adding an addition entry under static allocation should fail
         }
-        ngraph.fillComplete();
+        ngraph.fillComplete(OptimizeStorage);
         // after fillComplete(), there should be entries for me and my neighbors on my row
         ArrayView<const LO> myrow_lcl;
         ngraph.extractMyRowConstView(0,myrow_lcl);

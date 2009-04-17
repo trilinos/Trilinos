@@ -29,8 +29,6 @@
 #ifndef TPETRA_CRSGRAPH_HPP
 #define TPETRA_CRSGRAPH_HPP
 
-// FINISH: implement optimizeStorage()
-
 // TODO: filter column indices first in insertMyIndices()
 // TODO: filter column indices first in insertGlobalIndices()
 
@@ -38,6 +36,7 @@
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_getRawPtr.hpp>
+#include <Teuchos_NullIteratorTraits.hpp>
 
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_CrsGraphData.hpp"
@@ -96,14 +95,14 @@ namespace Tpetra
           Off-node entries are distributed, repeated entries are summed, and global indices are transformed to local indices.
           If \c OptimizeStorage is true, then optimizeStorage() is called as well.
        */ 
-      void fillComplete(const Map<LocalOrdinal,GlobalOrdinal> &domainMap, const Map<LocalOrdinal,GlobalOrdinal> &rangeMap, bool OptimizeStorage=false);
+      void fillComplete(const Map<LocalOrdinal,GlobalOrdinal> &domainMap, const Map<LocalOrdinal,GlobalOrdinal> &rangeMap, bool OptimizeStorage=true);
 
       /*! \brief Signal that data entry is complete. 
           Off-node entries are distributed, repeated entries are summed, and global indices are transformed to local indices.
           If \c OptimizeStorage is true, then optimizeStorage() is called as well.
           \note This method calls fillComplete( getRowMap(), getRowMap(), OptimizeStorage ).
        */
-      void fillComplete(bool OptimizeStorage=false);
+      void fillComplete(bool OptimizeStorage=true);
 
       //! \brief Communicate non-local contributions to other nodes.
       void globalAssemble();
@@ -402,67 +401,77 @@ namespace Tpetra
     }
     graphData_->indicesAreLocal_  =  local;
     graphData_->indicesAreGlobal_ = !local;
-    if (isStaticProfile()) {
-      typename Teuchos::Array<LocalOrdinal>::iterator    
-        ntaptr = graphData_->rowNumToAlloc_.begin(),
-        ntaend = graphData_->rowNumToAlloc_.end();
-      Teuchos_Ordinal sofar = 0, r = 0;
-      if (local) {
-        graphData_->colLIndsPtrs_.resize(numLocalRows()+1);
-        if (totalAllocation()) {
-          graphData_->contigColLInds_ = Teuchos::arcp<LocalOrdinal>(totalAllocation());
-          while (ntaptr != ntaend) {
-            graphData_->colLIndsPtrs_[r++] = graphData_->contigColLInds_.persistingView(sofar,*ntaptr).begin();
-            sofar += (*ntaptr++);
+    if (numLocalRows() > 0) {
+      if (isStaticProfile()) {
+        typename Teuchos::ArrayRCP<LocalOrdinal>::iterator    
+            ntaptr = graphData_->rowNumToAlloc_.begin(),
+            ntaend = graphData_->rowNumToAlloc_.end();
+        Teuchos_Ordinal sofar = 0, r = 0;
+        if (local) {
+          graphData_->colLIndsPtrs_ = Teuchos::arcp<typename Teuchos::ArrayRCP<LocalOrdinal>::iterator>(numLocalRows()+1);
+          if (totalAllocation()) {
+            graphData_->contigColLInds_ = Teuchos::arcp<LocalOrdinal>(totalAllocation());
+            while (ntaptr != ntaend) {
+              graphData_->colLIndsPtrs_[r++] = graphData_->contigColLInds_.persistingView(sofar,*ntaptr).begin();
+              sofar += (*ntaptr++);
+            }
+            graphData_->colLIndsPtrs_[r] = graphData_->contigColLInds_.end();
           }
-          graphData_->colLIndsPtrs_[r] = graphData_->contigColLInds_.end();
+          else {
+            std::fill(graphData_->colLIndsPtrs_.begin(),graphData_->colLIndsPtrs_.end(),
+                      Teuchos::NullIteratorTraits<typename Teuchos::ArrayRCP<LocalOrdinal>::iterator>::getNull());
+          }
         }
+        else {
+          graphData_->colGIndsPtrs_ = Teuchos::arcp<typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator>(numLocalRows()+1);
+          if (totalAllocation()) {
+            graphData_->contigColGInds_ = Teuchos::arcp<GlobalOrdinal>(totalAllocation());
+            while (ntaptr != ntaend) {
+              graphData_->colGIndsPtrs_[r++] = graphData_->contigColGInds_.persistingView(sofar,*ntaptr).begin();
+              sofar += (*ntaptr++);
+            }
+            graphData_->colGIndsPtrs_[r] = graphData_->contigColGInds_.end();
+          }
+          else {
+            std::fill(graphData_->colGIndsPtrs_.begin(),graphData_->colGIndsPtrs_.end(),
+                      Teuchos::NullIteratorTraits<typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator>::getNull());
+          }
+        }
+#ifdef HAVE_TPETRA_DEBUG
+        TEST_FOR_EXCEPTION(sofar != totalAllocation(), std::logic_error, 
+            Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
+#endif
       }
       else {
-        graphData_->colGIndsPtrs_.resize(numLocalRows()+1);
-        if (totalAllocation()) {
-          graphData_->contigColGInds_ = Teuchos::arcp<GlobalOrdinal>(totalAllocation());
-          while (ntaptr != ntaend) {
-            graphData_->colGIndsPtrs_[r++] = graphData_->contigColGInds_.persistingView(sofar,*ntaptr).begin();
-            sofar += (*ntaptr++);
-          }
-          graphData_->colGIndsPtrs_[r] = graphData_->contigColGInds_.end();
-        }
-      }
-#ifdef HAVE_TPETRA_DEBUG
-      TEST_FOR_EXCEPTION(sofar != totalAllocation(), std::logic_error, 
-          Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
-#endif
-    }
-    else {
-      if (local)  // allocate local indices in graphData_->colLInds_
-      {
-        typename Teuchos::Array<LocalOrdinal>::iterator 
-          ntaptr = graphData_->rowNumToAlloc_.begin(),
-          ntaend = graphData_->rowNumToAlloc_.end();
-        graphData_->colLInds_.resize(numLocalRows());
-        typename Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> >::iterator rinds  = graphData_->colLInds_.begin();
-        for (; ntaptr != ntaend; ++ntaptr, ++rinds) {
-          if (*ntaptr > 0) {
-            (*rinds) = Teuchos::arcp<LocalOrdinal>(*ntaptr);
+        if (local)  // allocate local indices in graphData_->colLInds_
+        {
+          typename Teuchos::ArrayRCP<LocalOrdinal>::iterator 
+              ntaptr = graphData_->rowNumToAlloc_.begin(),
+              ntaend = graphData_->rowNumToAlloc_.end();
+          graphData_->colLInds_ = Teuchos::arcp<Teuchos::ArrayRCP<LocalOrdinal> >(numLocalRows());
+          typename Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> >::iterator rinds  = graphData_->colLInds_.begin();
+          for (; ntaptr != ntaend; ++ntaptr, ++rinds) {
+            if (*ntaptr > 0) {
+              (*rinds) = Teuchos::arcp<LocalOrdinal>(*ntaptr);
+            }
           }
         }
-      }
-      else        // allocate global indices in graphData_->colGInds_
-      {
-        typename Teuchos::Array<LocalOrdinal>::iterator 
-          ntaptr = graphData_->rowNumToAlloc_.begin(),
-          ntaend = graphData_->rowNumToAlloc_.end();
-        graphData_->colGInds_.resize(numLocalRows());
-        typename Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> >::iterator rinds  = graphData_->colGInds_.begin();
-        for (; ntaptr != ntaend; ++ntaptr, ++rinds) {
-          if (*ntaptr > 0) {
-            (*rinds) = Teuchos::arcp<GlobalOrdinal>(*ntaptr);
+        else        // allocate global indices in graphData_->colGInds_
+        {
+          typename Teuchos::ArrayRCP<LocalOrdinal>::iterator 
+              ntaptr = graphData_->rowNumToAlloc_.begin(),
+              ntaend = graphData_->rowNumToAlloc_.end();
+          graphData_->colGInds_ = Teuchos::arcp<Teuchos::ArrayRCP<GlobalOrdinal> >(numLocalRows());
+          typename Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> >::iterator rinds  = graphData_->colGInds_.begin();
+          for (; ntaptr != ntaend; ++ntaptr, ++rinds) {
+            if (*ntaptr > 0) {
+              (*rinds) = Teuchos::arcp<GlobalOrdinal>(*ntaptr);
+            }
           }
         }
       }
     }
-    graphData_->rowNumToAlloc_.clear();
+    graphData_->rowNumToAlloc_ = Teuchos::null;
     graphData_->indicesAreAllocated_ = true;    
   }
 
@@ -472,7 +481,7 @@ namespace Tpetra
   {
     typename Teuchos::ArrayView<Teuchos_Ordinal>::iterator nnz    = NumEntriesPerRowToAlloc.begin(),
                                                            nnzend = NumEntriesPerRowToAlloc.end();
-    typename Teuchos::Array<LocalOrdinal>::iterator ralloc = graphData_->rowNumToAlloc_.begin();
+    typename Teuchos::ArrayRCP<LocalOrdinal>::iterator ralloc = graphData_->rowNumToAlloc_.begin();
     graphData_->totalNumAllocated_ = 0;
     for (; nnz != nnzend; ++nnz, ++ralloc) {
       if (*nnz > 0) {
@@ -988,7 +997,73 @@ namespace Tpetra
   template <class LocalOrdinal, class GlobalOrdinal>
   void CrsGraph<LocalOrdinal,GlobalOrdinal>::optimizeStorage()
   {
-    TEST_FOR_EXCEPT(true);
+    // optimizeStorage will perform two functions:
+    // 1) create a single allocation of memory
+    // 2) pack data in that allocation
+    // if isStaticProfile() == true, then 1) has already been done
+    if (isStorageOptimized() == true) return;
+    TEST_FOR_EXCEPTION(isFillComplete() == false || indicesAreSorted() == false || noRedundancies() == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::optimizeStorage(): fillComplete() must be called before optimizeStorage().");
+
+    // 1) allocate single memory block
+    const Teuchos_Ordinal nlrs = numLocalRows();
+    if (nlrs > 0) {
+      if (isStaticProfile() == false) {
+        // need to allocate storage, create pointers, copy data, and delete old data
+        const Teuchos_Ordinal nE = numMyEntries();
+        graphData_->colLIndsPtrs_ = Teuchos::arcp<typename Teuchos::ArrayRCP<LocalOrdinal>::iterator>(numLocalRows()+1);
+        if (nE > 0) {
+          graphData_->contigColLInds_ = Teuchos::arcp<LocalOrdinal>(nE);
+          Teuchos_Ordinal sofar = 0;
+          for (Teuchos_Ordinal r=0; r<nlrs; ++r) {
+            Teuchos_Ordinal rne = graphData_->rowNumEntries_[r];
+            graphData_->colLIndsPtrs_[r] = graphData_->contigColLInds_.persistingView(sofar,rne).begin();
+            std::copy(graphData_->colLInds_[r].begin(),graphData_->colLInds_[r].begin()+rne,graphData_->colLIndsPtrs_[r]);
+            graphData_->colLInds_[r] = Teuchos::null;
+            sofar += rne;
+          }
+          graphData_->colLIndsPtrs_[nlrs] = graphData_->contigColLInds_.end();
+        }
+        else {
+          std::fill(graphData_->colLIndsPtrs_.begin(),graphData_->colLIndsPtrs_.end(),
+                    Teuchos::NullIteratorTraits<typename Teuchos::ArrayRCP<LocalOrdinal>::iterator>::getNull());
+        }
+        graphData_->colLInds_ = Teuchos::null;
+      }
+      else {
+        // storage is already allocated and pointers are set; just need to pack
+        // need to change pointers and move data
+        // remember, these aren't just pointers, but also bounds-checked 
+        const Teuchos_Ordinal nE = numMyEntries();
+        if (nE > 0) {
+          Teuchos_Ordinal sofar = 0;
+          typename Teuchos::ArrayRCP<LocalOrdinal>::iterator newptr, oldptr;
+          for (Teuchos_Ordinal r=0; r<nlrs; ++r) {
+            Teuchos_Ordinal rne = graphData_->rowNumEntries_[r];
+            newptr = graphData_->contigColLInds_.persistingView(sofar,rne).begin();
+            oldptr = graphData_->colLIndsPtrs_[r];
+            if (newptr != oldptr) {
+              for (Teuchos_Ordinal j=0; j<rne; ++j) {
+                newptr[j] = oldptr[j];
+              }
+              graphData_->colLIndsPtrs_[r] = newptr;
+            }
+            sofar += rne;
+          }
+          graphData_->colLIndsPtrs_[nlrs] = graphData_->contigColLInds_.persistingView(sofar,0).begin();
+        }
+      }
+    }
+    graphData_->rowNumEntries_ = Teuchos::null;
+    graphData_->totalNumAllocated_ = numMyEntries();
+    graphData_->storageOptimized_ = true;
+#ifdef HAVE_TPETRA_DEBUG 
+    // check that we only have the data structures that we need
+    TEST_FOR_EXCEPTION( graphData_->rowNumEntries_ != Teuchos::null, std::logic_error,
+        Teuchos::typeName(*this) << "::optimizeStorage(): Internal logic error. Please contact Tpetra team.");
+    TEST_FOR_EXCEPTION( graphData_->colLInds_ != Teuchos::null, std::logic_error,
+        Teuchos::typeName(*this) << "::optimizeStorage(): Internal logic error. Please contact Tpetra team.");
+#endif
   }
 
 
@@ -1258,6 +1333,17 @@ namespace Tpetra
     // mark transformation as successfully completed
     graphData_->fillComplete_ = true;
 
+#ifdef HAVE_TPETRA_DEBUG 
+    // check that we only have the data structures that we need
+    TEST_FOR_EXCEPTION( graphData_->contigColGInds_ != Teuchos::null, std::logic_error,
+        Teuchos::typeName(*this) << "::fillComplete(): Internal logic error. Please contact Tpetra team.");
+    TEST_FOR_EXCEPTION( graphData_->colGInds_ != Teuchos::null, std::logic_error,
+        Teuchos::typeName(*this) << "::fillComplete(): Internal logic error. Please contact Tpetra team.");
+    TEST_FOR_EXCEPTION( indicesAreAllocated() && graphData_->rowNumToAlloc_ != Teuchos::null, std::logic_error,
+        Teuchos::typeName(*this) << "::fillComplete(): Internal logic error. Please contact Tpetra team.");
+    TEST_FOR_EXCEPTION( graphData_->colGIndsPtrs_ != Teuchos::null, std::logic_error,
+        Teuchos::typeName(*this) << "::fillComplete(): Internal logic error. Please contact Tpetra team.");
+#endif
     if (OptimizeStorage) optimizeStorage();
   }
 
@@ -1278,10 +1364,10 @@ namespace Tpetra
     // Transform indices to local index space
     const Teuchos_Ordinal nlrs = numLocalRows();
 
-    if (indicesAreGlobal() && indicesAreAllocated()) {
+    if (indicesAreGlobal() && indicesAreAllocated() && nlrs > 0) {
       // allocate data for local indices
       if (isStaticProfile()) {
-        graphData_->colLIndsPtrs_.resize(numLocalRows()+1);
+        graphData_->colLIndsPtrs_ = Teuchos::arcp<typename Teuchos::ArrayRCP<LocalOrdinal>::iterator>(numLocalRows()+1);
         if (graphData_->contigColGInds_ != Teuchos::null) {
           graphData_->contigColLInds_ = Teuchos::arcp_reinterpret_cast<LocalOrdinal>(graphData_->contigColGInds_);
           Teuchos_Ordinal sofar = 0, r = 0;
@@ -1297,8 +1383,7 @@ namespace Tpetra
                   Teuchos::typeName(*this) << ": Internal error in fillComplete(). Please contact Tpetra team.");
 #endif
             }
-            graphData_->colGIndsPtrs_[r] =
-              NullIteratorTraits<typename ArrayRCP<GlobalOrdinal>::iterator>::getNull();
+            graphData_->colGIndsPtrs_[r] = NullIteratorTraits<typename ArrayRCP<GlobalOrdinal>::iterator>::getNull();
             ++r;
             sofar += numalloc;
           }
@@ -1308,11 +1393,15 @@ namespace Tpetra
               Teuchos::typeName(*this) << "::makeIndicesLocal(): Internal logic error. Please contact Tpetra team.");
 #endif
         }
-        graphData_->colGIndsPtrs_.clear();
+        else {
+          std::fill(graphData_->colLIndsPtrs_.begin(),graphData_->colLIndsPtrs_.end(),
+                    Teuchos::NullIteratorTraits<typename Teuchos::ArrayRCP<LocalOrdinal>::iterator>::getNull());
+        }
+        graphData_->colGIndsPtrs_ = Teuchos::null;
         graphData_->contigColGInds_ = Teuchos::null;
       }
       else {
-        graphData_->colLInds_.resize(nlrs);
+        graphData_->colLInds_ = Teuchos::arcp<Teuchos::ArrayRCP<LocalOrdinal> >(numLocalRows());
         for (Teuchos_Ordinal r=0; r < nlrs; ++r)
         {
           graphData_->colLInds_[r] = Teuchos::arcp_reinterpret_cast<LocalOrdinal>(graphData_->colGInds_[r]);
@@ -1330,6 +1419,7 @@ namespace Tpetra
           }
           graphData_->colGInds_[r] = Teuchos::null;   // data is owned by colLInds_[r] now
         }
+        graphData_->colGInds_ = Teuchos::null;
       }
     }
     graphData_->indicesAreLocal_  = true;
@@ -1553,6 +1643,7 @@ namespace Tpetra
         graphData_->numLocalEntries_ += graphData_->rowNumEntries_[r];
       }
     }
+    graphData_->noRedundancies_ = true;
   }
 
   /////////////////////////////////////////////////////////////////////////////
