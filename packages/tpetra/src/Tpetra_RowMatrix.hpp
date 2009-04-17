@@ -154,7 +154,7 @@ namespace Tpetra
       /*! Before fillComplete(), the results will not include entries submitted to another node and may contain duplicated entries.
        * \pre hasColMap() == true
        */
-      virtual void extractMyRowCopy(Teuchos_Ordinal localRow, 
+      virtual void extractMyRowCopy(LocalOrdinal localRow, 
                                     const Teuchos::ArrayView<LocalOrdinal> &indices, 
                                     const Teuchos::ArrayView<Scalar> &values,
                                     Teuchos_Ordinal &numEntries) const  = 0;

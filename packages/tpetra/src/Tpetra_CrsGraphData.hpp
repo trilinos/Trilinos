@@ -64,19 +64,31 @@ namespace Tpetra {
     Map<LocalOrdinal,GlobalOrdinal> rangeMap_, domainMap_;
     GlobalOrdinal     numGlobalEntries_, numGlobalDiags_, globalMaxNumRowEntries_;
     Teuchos_Ordinal    numLocalEntries_,  numLocalDiags_,  localMaxNumEntries_;
-    // structures used before optimizeStorage()
-    Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > colGInds_;                      // allocated only if indices are global and fill is not complete
-    Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> >  colLInds_;                      // allocated only if indices are local and storage is not optimized
-    Teuchos::Array<LocalOrdinal> rowNumEntries_, rowNumToAlloc_;                      // allocated only if storage is not optimized
-    // structure used after optimizeStorage() or for static profle
-    Teuchos::ArrayRCP<GlobalOrdinal> contigColGInds_;                                 // allocated if storage is optimized and indices are global
-    Teuchos::ArrayRCP<LocalOrdinal> contigColLInds_;                                  // allocated if storage is optimized and indices are local
-    /* colIndsPtrs_[j] is always the begin() iterator from an ArrayView of the source or contigColInds_
-       of the appropriate length. in a debug build, it is an ArrayRCP, which does bounds checking. in an optimized
-       build, it is a C pointer. colIndsPtrs_ is allocated to numLocalRows()+1; the span of the jth row begins with
-       colIndsPtrs_[j] and ends before colIndsPtrs_[j+1] */
-    Teuchos::Array<typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator> colGIndsPtrs_;  // allocated if indicesAreGlobal() and storage is optimized
-    Teuchos::Array<typename Teuchos::ArrayRCP<LocalOrdinal >::iterator> colLIndsPtrs_;  // allocated if indicesAreLocal() and storage is optimized
+    Teuchos::Array<LocalOrdinal> rowNumToAlloc_; // exists only if indices are not allocated
+
+    //
+    // Unoptimized structure
+    // these are allocated if storage is not optimized or allocation is not static
+    //
+    Teuchos::Array<Teuchos::ArrayRCP<GlobalOrdinal> > colGInds_;    // allocated only if indices are global
+    Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> >  colLInds_;    // allocated only if indices are local
+    Teuchos::Array<LocalOrdinal> rowNumEntries_;
+
+    //
+    // Optimized structure
+    // structure used if allocation is static or after optimizeStorage()
+    //
+    Teuchos_Ordinal totalNumAllocated_;
+    Teuchos::ArrayRCP<GlobalOrdinal> contigColGInds_;     // allocated only if indices are global
+    Teuchos::ArrayRCP<LocalOrdinal>  contigColLInds_;     // allocated only if indices are local
+    /* colIndsPtrs[j] is the begin() iterator from an ArrayView of 
+       contigColInds_ corresponding to the proper row, of the appropriate length.
+       In a debug build, it is an ArrayRCP, which does bounds checking. in an optimized
+       build, it is a C pointer. colIndsPtrs is allocated to numLocalRows()+1; the span of the jth row begins with
+       colIndsPtrs[j] and ends before colIndsPtrs[j+1] */
+    Teuchos::Array<typename Teuchos::ArrayRCP<GlobalOrdinal>::iterator> colGIndsPtrs_;  // allocated only if indicesAreGlobal()
+    Teuchos::Array<typename Teuchos::ArrayRCP<LocalOrdinal >::iterator> colLIndsPtrs_;  // allocated only if indicesAreLocal()
+
     // these are RCPs because they are optional
     // importer is needed if DomainMap is not sameas ColumnMap
     Teuchos::RCP<Import<LocalOrdinal,GlobalOrdinal> > importer_;
@@ -110,10 +122,11 @@ namespace Tpetra {
   , numLocalEntries_(0)
   , numLocalDiags_(0)
   , localMaxNumEntries_(0)
+  , rowNumToAlloc_(rowMap.getNumMyEntries(),0)
   , colGInds_(0)
   , colLInds_(0)
   , rowNumEntries_(rowMap.getNumMyEntries(),0)
-  , rowNumToAlloc_(rowMap.getNumMyEntries(),0)
+  , totalNumAllocated_(0)
   , contigColGInds_(Teuchos::null)
   , contigColLInds_(Teuchos::null)
   , colGIndsPtrs_(0)
@@ -147,10 +160,11 @@ namespace Tpetra {
   , numLocalEntries_(0)
   , numLocalDiags_(0)
   , localMaxNumEntries_(0)
+  , rowNumToAlloc_(rowMap.getNumMyEntries(),0)
   , colGInds_(0)
   , colLInds_(0)
   , rowNumEntries_(rowMap.getNumMyEntries(),0)
-  , rowNumToAlloc_(rowMap.getNumMyEntries(),0)
+  , totalNumAllocated_(0)
   , contigColGInds_(Teuchos::null)
   , contigColLInds_(Teuchos::null)
   , colGIndsPtrs_(0)

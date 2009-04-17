@@ -168,7 +168,7 @@ namespace Tpetra
 
         \pre indicesAreLocal()==true
        */
-      virtual void extractMyRowCopy(Teuchos_Ordinal LocalRow, Teuchos::ArrayView<LocalOrdinal> indices, Teuchos_Ordinal& NumIndices) const = 0;
+      virtual void extractMyRowCopy(LocalOrdinal LocalRow, Teuchos::ArrayView<LocalOrdinal> indices, Teuchos_Ordinal& NumIndices) const = 0;
 
       //! Get a non-persisting view of the elements in a specified global row of the graph.
       /*!
