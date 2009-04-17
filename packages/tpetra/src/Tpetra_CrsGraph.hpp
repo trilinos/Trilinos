@@ -1011,7 +1011,7 @@ namespace Tpetra
       if (isStaticProfile() == false) {
         // need to allocate storage, create pointers, copy data, and delete old data
         const Teuchos_Ordinal nE = numMyEntries();
-        graphData_->colLIndsPtrs_ = Teuchos::arcp<typename Teuchos::ArrayRCP<LocalOrdinal>::iterator>(numLocalRows()+1);
+        graphData_->colLIndsPtrs_ = Teuchos::arcp<typename Teuchos::ArrayRCP<LocalOrdinal>::iterator>(nlrs+1);
         if (nE > 0) {
           graphData_->contigColLInds_ = Teuchos::arcp<LocalOrdinal>(nE);
           Teuchos_Ordinal sofar = 0;

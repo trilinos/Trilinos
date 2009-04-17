@@ -29,8 +29,6 @@
 #ifndef TPETRA_CRSMATRIX_HPP
 #define TPETRA_CRSMATRIX_HPP
 
-// FINISH: implement optimizeStorage(), after CrsGraph::optimizeStorage()
-
 // TODO: add support for alpha,beta term coefficients: Y = alpha*A*X + beta*Y
 // TODO: row-wise insertion of entries in globalAssemble()
 
@@ -272,14 +270,14 @@ namespace Tpetra
           Off-node entries are distributed, repeated entries are summed, and global indices are transformed to local indices.
           If \c OptimizeStorage is true, then optimizeStorage() is called as well.
        */ 
-      void fillComplete(const Map<LocalOrdinal,GlobalOrdinal> &domainMap, const Map<LocalOrdinal,GlobalOrdinal> &rangeMap, bool OptimizeStorage=false);
+      void fillComplete(const Map<LocalOrdinal,GlobalOrdinal> &domainMap, const Map<LocalOrdinal,GlobalOrdinal> &rangeMap, bool OptimizeStorage=true);
 
       /*! \brief Signal that data entry is complete. 
           Off-node entries are distributed, repeated entries are summed, and global indices are transformed to local indices.
           If \c OptimizeStorage is true, then optimizeStorage() is called as well.
           \note This method calls fillComplete( getRowMap(), getRowMap() ).
        */
-      void fillComplete(bool OptimizeStorage=false);
+      void fillComplete(bool OptimizeStorage=true);
 
       //! \brief Re-allocate the data into contiguous storage.
       void optimizeStorage();
@@ -412,14 +410,14 @@ namespace Tpetra
       bool storageOptimized_;
 
       //
-      // Optimized structure
-      // structure used if allocation is static or after optimizeStorage()
+      // Unoptimized structure
+      // These are allocated if storage is not optimized or allocation is not static
       //
-      Teuchos::Array<Teuchos::ArrayRCP<Scalar> > values_;
+      Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > values_;
 
       //
       // Optimized structure
-      // structure used if allocation is static or after optimizeStorage()
+      // Structure used if allocation is static or after optimizeStorage()
       //
       Teuchos::ArrayRCP<Scalar> contigValues_;
       /* valuesPtrs[j] is the begin() iterator from an ArrayView of 
@@ -427,7 +425,7 @@ namespace Tpetra
          In a debug build, it is an ArrayRCP, which does bounds checking. in an optimized
          build, it is a C pointer. valuesPtrs is allocated to numLocalRows()+1; the span of the jth row begins with
          valuesPtrs[j] and ends before valuesPtrs[j+1] */
-      Teuchos::Array<typename Teuchos::ArrayRCP<Scalar>::iterator> valuesPtrs_;
+      Teuchos::ArrayRCP<typename Teuchos::ArrayRCP<Scalar>::iterator> valuesPtrs_;
 
       // multivectors used for import/export dest/source in apply()
       mutable Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> > importMV_, exportMV_;
@@ -449,9 +447,7 @@ namespace Tpetra
   , constructedWithFilledGraph_(false)
   , fillComplete_(false)
   , storageOptimized_(false)
-  , values_(rowMap.getNumMyEntries())
   , contigValues_(Teuchos::null)
-  , valuesPtrs_(0)
   , importMV_(Teuchos::null)
   , exportMV_(Teuchos::null)
   {
@@ -467,9 +463,7 @@ namespace Tpetra
   , constructedWithFilledGraph_(false)
   , fillComplete_(false)
   , storageOptimized_(false)
-  , values_(rowMap.getNumMyEntries())
   , contigValues_(Teuchos::null)
-  , valuesPtrs_(0)
   , importMV_(Teuchos::null)
   , exportMV_(Teuchos::null)
   {
@@ -485,9 +479,7 @@ namespace Tpetra
   , constructedWithFilledGraph_(false)
   , fillComplete_(false)
   , storageOptimized_(false)
-  , values_(rowMap.getNumMyEntries())
   , contigValues_(Teuchos::null)
-  , valuesPtrs_(0)
   , importMV_(Teuchos::null)
   , exportMV_(Teuchos::null)
   {
@@ -503,9 +495,7 @@ namespace Tpetra
   , constructedWithFilledGraph_(false)
   , fillComplete_(false)
   , storageOptimized_(false)
-  , values_(rowMap.getNumMyEntries())
   , contigValues_(Teuchos::null)
-  , valuesPtrs_(0)
   , importMV_(Teuchos::null)
   , exportMV_(Teuchos::null)
   {
@@ -520,9 +510,7 @@ namespace Tpetra
   , staticGraph_(true)
   , fillComplete_(false)
   , storageOptimized_(false)
-  , values_(graph.numGlobalRows())
   , contigValues_(Teuchos::null)
-  , valuesPtrs_(0)
   , importMV_(Teuchos::null)
   , exportMV_(Teuchos::null)
   {
@@ -536,29 +524,36 @@ namespace Tpetra
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::allocateValues() 
   {
     Teuchos_Ordinal numlocal = getRowMap().getNumMyEntries();
-    if (graph_.isStaticProfile()) {
-      const Teuchos_Ordinal nta = graph_.totalAllocation();
-      Teuchos_Ordinal sofar = 0;
-      valuesPtrs_.resize(numlocal+1);
-      if (nta) {
-        contigValues_ = Teuchos::arcp<Scalar>(nta);
+    if (numlocal > 0) {
+      if (graph_.isStaticProfile()) {
+        const Teuchos_Ordinal nta = graph_.totalAllocation();
+        Teuchos_Ordinal sofar = 0;
+        valuesPtrs_ = Teuchos::arcp<typename Teuchos::ArrayRCP<Scalar>::iterator>(numlocal+1);
+        if (nta) {
+          contigValues_ = Teuchos::arcp<Scalar>(nta);
+          for (Teuchos_Ordinal r=0; r<numlocal; ++r) {
+            Teuchos_Ordinal ntarow = graph_.numAllocatedEntriesForMyRow(r);
+            valuesPtrs_[r] = contigValues_.persistingView(sofar,ntarow).begin();
+            sofar += ntarow;
+          }
+          valuesPtrs_[numlocal] = contigValues_.end();
+#ifdef HAVE_TPETRA_DEBUG
+          TEST_FOR_EXCEPTION(sofar != nta, std::logic_error,
+              Teuchos::typeName(*this) << "::allocateValues(): Internal logic error. Please contact Tpetra team.");
+#endif
+        }
+        else {
+          std::fill(valuesPtrs_.begin(),valuesPtrs_.end(),
+                    Teuchos::NullIteratorTraits<typename Teuchos::ArrayRCP<Scalar>::iterator>::getNull());
+        }
+      }
+      else {
+        values_ = Teuchos::arcp< Teuchos::ArrayRCP<Scalar> >(numlocal);
         for (Teuchos_Ordinal r=0; r<numlocal; ++r) {
           Teuchos_Ordinal ntarow = graph_.numAllocatedEntriesForMyRow(r);
-          valuesPtrs_[r] = contigValues_.persistingView(sofar,ntarow).begin();
-          sofar += ntarow;
-        }
-        valuesPtrs_[numlocal] = contigValues_.end();
-#ifdef HAVE_TPETRA_DEBUG
-        TEST_FOR_EXCEPTION(sofar != nta, std::logic_error,
-            Teuchos::typeName(*this) << "::allocateValues(): Internal logic error. Please contact Tpetra team.");
-#endif
-      }
-    }
-    else {
-      for (Teuchos_Ordinal r=0; r<numlocal; ++r) {
-        Teuchos_Ordinal ntarow = graph_.numAllocatedEntriesForMyRow(r);
-        if (ntarow > 0) {
-          values_[r] = Teuchos::arcp<Scalar>(ntarow);
+          if (ntarow > 0) {
+            values_[r] = Teuchos::arcp<Scalar>(ntarow);
+          }
         }
       }
     }
@@ -1342,7 +1337,69 @@ namespace Tpetra
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal>::optimizeStorage()
   {
-    TEST_FOR_EXCEPT(true);
+    // optimizeStorage will perform two functions:
+    // 1) create a single allocation of memory
+    // 2) pack data in that allocation
+    // if isStaticProfile() == true, then 1) has already been done
+    if (isStorageOptimized() == true) return;
+    TEST_FOR_EXCEPTION(isFillComplete() == false || graph_.indicesAreSorted() == false || graph_.noRedundancies() == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::optimizeStorage(): fillComplete() must be called before optimizeStorage().");
+    
+    // 1) allocate single memory block
+    const Teuchos_Ordinal nlrs = numLocalRows();
+    if (nlrs > 0) {
+      if (graph_.isStaticProfile() == false) {
+        // need to allocate storage, create pointers, copy data, and delete old data
+        const Teuchos_Ordinal nE = numMyEntries();
+        valuesPtrs_ = Teuchos::arcp<typename Teuchos::ArrayRCP<Scalar>::iterator>(nlrs+1);
+        if (nE > 0) {
+          contigValues_ = Teuchos::arcp<Scalar>(nE);
+          Teuchos_Ordinal sofar = 0;
+          for (Teuchos_Ordinal r=0; r<nlrs; ++r) {
+            Teuchos_Ordinal rne = graph_.RNNZ(r);
+            valuesPtrs_[r] = contigValues_.persistingView(sofar,rne).begin();
+            std::copy(values_[r].begin(),values_[r].begin()+rne,valuesPtrs_[r]);
+            values_[r] = Teuchos::null;
+            sofar += rne;
+          }
+          valuesPtrs_[nlrs] = contigValues_.end();
+        }
+        else {
+          std::fill(valuesPtrs_.begin(),valuesPtrs_.end(),
+                    Teuchos::NullIteratorTraits<typename Teuchos::ArrayRCP<Scalar>::iterator>::getNull());
+        }
+        values_ = Teuchos::null;
+      }
+      else {
+        // storage is already allocated and pointers are set; just need to pack
+        // need to change pointers and move data
+        // remember, these aren't just pointers, but also bounds-checked 
+        const Teuchos_Ordinal nE = numMyEntries();
+        if (nE > 0) {
+          Teuchos_Ordinal sofar = 0;
+          typename Teuchos::ArrayRCP<Scalar>::iterator newptr, oldptr;
+          for (Teuchos_Ordinal r=0; r<nlrs; ++r) {
+            Teuchos_Ordinal rne = graph_.RNNZ(r);
+            newptr = contigValues_.persistingView(sofar,rne).begin();
+            oldptr = valuesPtrs_[r];
+            if (newptr != oldptr) {
+              for (Teuchos_Ordinal j=0; j<rne; ++j) {
+                newptr[j] = oldptr[j];
+              }
+              valuesPtrs_[r] = newptr;
+            }
+            sofar += rne;
+          }
+          valuesPtrs_[nlrs] = contigValues_.persistingView(sofar,0).begin();
+        }
+      }
+    }
+    storageOptimized_ = true;
+#ifdef HAVE_TPETRA_DEBUG
+    // check that we only have the data structures that we need
+    TEST_FOR_EXCEPTION( values_ != Teuchos::null, std::logic_error,
+        Teuchos::typeName(*this) << "::optimizeStorage(): Internal logic error. Please contact Tpetra team.");
+#endif
   }
 
 

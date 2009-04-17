@@ -17,6 +17,8 @@
 #include <iohb.h>
 #endif
 
+// TODO: add test where some nodes have zero rows
+
 namespace Teuchos {
   template <>
     ScalarTraits<int>::magnitudeType
@@ -292,15 +294,17 @@ namespace {
       }
       // fill complete adds them
       TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
-      TEST_NOTHROW( matrix.fillComplete() );
+      TEST_NOTHROW( matrix.fillComplete(false) );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
+      TEST_EQUALITY_CONST( matrix.isStorageOptimized(), false );
       // now there is room for more
       for (LO r=0; r<numLocal; ++r) 
       {
         TEST_NOTHROW( matrix.insertMyValues(r,tuple(r),tuple(ST::one())) );
       }
-      TEST_NOTHROW( matrix.fillComplete() );
+      TEST_NOTHROW( matrix.fillComplete(true) );
       TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
+      TEST_EQUALITY_CONST( matrix.isStorageOptimized(), true );
       // test that matrix is 3*I
       TEST_EQUALITY( matrix.numGlobalDiagonals(), numLocal*numImages );
       TEST_EQUALITY( matrix.numMyDiagonals(), numLocal );
@@ -357,9 +361,9 @@ namespace {
     }
     Array<Scalar> vals(ginds.size(),ST::one());
     Map<LO,GO> cmap(INVALID,ginds(),0,comm);
-    for (int T=0; T<2; ++T) {
+    for (int T=0; T<4; ++T) {
       bool StaticProfile = (T & 1) == 1;
-      // bool OptimizeStorage = (T & 2) == 2;
+      bool OptimizeStorage = (T & 2) == 2;
       CrsMatrix<Scalar,LO,GO> matrix(rmap,cmap, ginds.size(),StaticProfile);   // only allocate as much room as necessary
       Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
       ArrayView<const GO> CGView; ArrayView<const LO> CLView; ArrayView<const Scalar> CSView;
@@ -381,7 +385,7 @@ namespace {
       if (StaticProfile) {
         TEST_THROW( matrix.insertGlobalValues(myrowind,arrayView(&myrowind,1),tuple(ST::one())), std::runtime_error );
       }
-      matrix.fillComplete();
+      matrix.fillComplete(OptimizeStorage);
       // check that inserting global entries throws (inserting local entries is still allowed)
       {
         Array<GO> zero(0); Array<Scalar> vzero(0);

@@ -68,7 +68,7 @@ namespace Tpetra {
 
     //
     // Unoptimized structure
-    // these are allocated if storage is not optimized or allocation is not static
+    // These are allocated if storage is not optimized or allocation is not static
     //
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > colGInds_;    // allocated only if indices are global
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> >  colLInds_;    // allocated only if indices are local
@@ -76,7 +76,7 @@ namespace Tpetra {
 
     //
     // Optimized structure
-    // structure used if allocation is static or after optimizeStorage()
+    // Structure used if allocation is static or after optimizeStorage()
     //
     Teuchos_Ordinal totalNumAllocated_;
     Teuchos::ArrayRCP<GlobalOrdinal> contigColGInds_;     // allocated only if indices are global
