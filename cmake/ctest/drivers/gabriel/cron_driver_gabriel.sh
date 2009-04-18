@@ -31,6 +31,13 @@ time ${CTEST_EXE} -S $BASEDIR/Trilinos/cmake/ctest/drivers/gabriel/ctest_linux_n
 
 
 echo
+echo "Kill any remaining 'orted' processes: `date`"
+echo
+
+killall -s 9 orted
+
+
+echo
 echo "Doing serial debug build: `date`"
 echo
 
