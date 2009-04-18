@@ -20,6 +20,8 @@ specific tests from being run.  You can pass in this REGEX to CTEST_TEST(...)
 with the EXCLUDE option.  We need the ability to disable particular tests on
 specific machines for specific build cases.
 
+- [Ross] Add testing for MOOCHO with MA28 on gabriel or godel
+
 (*) [Everyone] Go back over packages and add remaining TPL support and
 configure options.
 

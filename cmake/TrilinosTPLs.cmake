@@ -65,6 +65,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   Zlib		 SS
   UMFPACK        SS
   MUMPS          SS
+  MA28           TS
   )
 
 # NOTES:

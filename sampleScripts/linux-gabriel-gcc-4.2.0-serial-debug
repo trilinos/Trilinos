@@ -6,6 +6,7 @@ cmake \
 -D CMAKE_CXX_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/g++ \
 -D CMAKE_C_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gcc \
 -D CMAKE_Forgtran_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gfortran \
+-D TPL_MA28_LIBRARIES=/home/rabartl/PROJECTS/Trilinos.base/BUILDS/GCC-3.4.6/SERIAL_DEBUG/MoochoExtern/HSL/libHSL.a \
 -D DART_TESTING_TIMEOUT:STRING=600 \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_CHECKED_STL:BOOL=ON \

@@ -540,9 +540,16 @@ Package Transition Lead: Roscoe Bartlett (rabartl@sandia.gov)
 Status: All of the primary stable code (libraries and tests/examples) are
 added.  I still need to add back support for MA28 but I can do that next.
 
-Final Certification Date: [???]
+Final Certification Date: 2009/04/17
 
-Final Certification Evidence: [???]
+Final Certification Evidence: I carefully went through the file
+moocho/test/defintion and added every test that was there.  That file was kind
+of a mess and was running a few exact same tests twise.  I also found out that
+the perl test harness was not even running with all of the command-line
+arguments and so was not even right.  I also added MPI(1) versions of every
+serial-only test that I could to maximize the coverage for an MPI build.  I
+have not performed coverage testing yet but I am very confident that I have
+added all of the tests and more as was in the autotools/perl system.
 
 -------------------------------------------------------------------------------
 
