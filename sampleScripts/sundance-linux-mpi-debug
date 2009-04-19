@@ -17,6 +17,7 @@ CXXFLAGS="-g -O0 -Wall" \
 --with-libs="-lumfpack -lamd" \
 --disable-default-packages \
 --enable-sundance \
+--enable-python \
 --with-sundance-exodus \
 --enable-sundance-tests \
 --enable-sundance-examples \
