@@ -6,28 +6,29 @@ TODOs for the Trilinos/CMake System
 Active items:
 -------------
 
-(*) [Ross and Brent] Automated CTest/CDash testing:
-
-- [Ross] Add Primary Stable Code versions of serial and build builds
-
-- [Ross] Add automated support for turning on SS TPLs when building
-
-- [Brent] Get a Windows CSRI machine set up to build Trilinos Dev with CMake
+(*) [Brent] Get a Windows CSRI machine set up to build Trilinos Dev with CMake
 and run nightly tests.
-
-- [Ross] Add variable Trilinos_EXCLUDE_TESTS_REGEX that can be set to exclude
-specific tests from being run.  You can pass in this REGEX to CTEST_TEST(...) 
-with the EXCLUDE option.  We need the ability to disable particular tests on
-specific machines for specific build cases.
-
-- [Ross] Add testing for MOOCHO with MA28 on gabriel or godel
 
 (*) [Everyone] Go back over packages and add remaining TPL support and
 configure options.
 
+(*) [Everyone] Go back over packages and add remaining tests and examples.
+
 
 Backlog:
 --------
+
+(*) [???] Improving nightly testing:
+- Add the compiler name and version (set manually) to the CDash build name
+- Standarize testing of primary and secondary stable code
+- Add automated support for turning on SS TPLs when building (TPL_ENABLE_ALL)
+- Add variable Trilinos_EXCLUDE_TESTS_REGEX that can be set to exclude
+specific tests from being run.  You can pass in this REGEX to CTEST_TEST(...) 
+with the EXCLUDE option.  We need the ability to disable particular tests on
+specific machines for specific build cases.
+- Add testing for MOOCHO with MA28 on gabriel or godel
+- Add a no-Fortran build
+- Add a build with Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF
 
 (*) [???] Get PyTrilinos updated:
 - Enable BUILD_SHARED=ON if Trilinos_ENABLE_PyTrilinos=ON if BUILD_SHARED is
