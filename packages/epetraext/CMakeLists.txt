@@ -27,6 +27,16 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_EXPERIMENTAL
   "Enable experimental features"
   OFF )
 
+# Experimental and Graph reordering require amd package
+IF(${PACKAGE_NAME}_BUILD_EXPERIMENTAL)
+  IF(${PACKAGE_NAME}_BUILD_GRAPH_REORDERINGS)
+    IF(NOT ${PACKAGE_NAME}_ENABLE_AMD AND NOT ${PACKAGE_NAME}_ENABLE_UMFPACK) 
+      MESSAGE(FATAL_ERROR "You have enabled ${PACKAGE_NAME}_BUILD_GRAPH_REORDERINGS and ${PACKAGE_NAME}_BUILD_EXPERIMENTAL options in EpetraExt.  This requires the amd library.  You must enable either the UMFPACK TPL or the AMD TPL to bring in the required library.")
+    ENDIF()
+  ENDIF()
+ENDIF()
+   
+
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_BUILD_BTF
   HAVE_BTF
   "Enable BTF functionality"
