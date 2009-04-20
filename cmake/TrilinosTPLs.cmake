@@ -66,6 +66,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   UMFPACK        SS
   MUMPS          SS
   MA28           TS
+  AMD            TS
   )
 
 # NOTES:
