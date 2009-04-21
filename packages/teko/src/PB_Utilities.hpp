@@ -13,11 +13,14 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
+#include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 
 namespace PB {
 
 using Thyra::multiply;
+using Thyra::scale;
+using Thyra::add;
 
 /** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
   *

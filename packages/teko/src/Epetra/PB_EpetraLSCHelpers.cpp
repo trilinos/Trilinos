@@ -287,6 +287,46 @@ std::pair<int,int> thyraMatrixToCrsVector(const RCP<const Thyra::LinearOpBase<do
    return shape;
 }
 
+/** \brief Build a vector of the dirchlet row indicies. 
+  *
+  * Build a vector of the dirchlet row indicies. That is, record the global
+  * index of any row that is all zeros except for $1$ on the diagonal.
+  *
+  * \param[in] mat Matrix to be examined
+  * \param[in,out] indicies Output list of indicies corresponding to dirchlet rows.
+  */
+void identityRowIndicies(const Epetra_CrsMatrix & mat,std::vector<int> & outIndicies)
+{
+   const Epetra_Map & rowMap = mat.RowMap();
+   int maxSz = mat.GlobalMaxNumEntries();
+   double values[maxSz];
+   int indicies[maxSz];
+
+   // loop over elements owned by this processor
+   for(int i=0;i<rowMap.NumMyElements();i++) {
+      bool rowIsIdentity = true;
+      int sz = 0;
+      int rowGID = rowMap.GID(i);
+      mat.ExtractGlobalRowCopy(rowGID,maxSz,sz,values,indicies);
+
+      // loop over the columns of this row
+      for(int j=0;j<sz;j++) {
+         int colGID = indicies[j];
+
+         // look at row entries
+         if(colGID==rowGID) rowIsIdentity &= values[j]==1.0;
+         else               rowIsIdentity &= values[j]==0.0;
+
+         // not a dirchlet row...quit
+         if(not rowIsIdentity)
+            break;
+      }
+
+      // save a row that is dirchlet
+      if(rowIsIdentity)
+         outIndicies.push_back(rowGID);
+   }
+}
 
 } // end namespace Epetra
 } // end namespace PB

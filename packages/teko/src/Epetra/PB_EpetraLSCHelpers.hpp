@@ -138,6 +138,17 @@ inline void buildLSCOperators(const Epetra_CrsMatrix & F, const Epetra_CrsMatrix
 std::pair<int,int> thyraMatrixToCrsVector(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A,bool failOnNonZero,
                                           std::vector<Teuchos::RCP<const Epetra_CrsMatrix> > & blocks);
 
+
+/** \brief Build a vector of the dirchlet row indicies. 
+  *
+  * Build a vector of the dirchlet row indicies. That is, record the global
+  * index of any row that is all zeros except for $1$ on the diagonal.
+  *
+  * \param[in] mat Matrix to be examined
+  * \param[in,out] indicies Output list of indicies corresponding to dirchlet rows.
+  */
+void identityRowIndicies(const Epetra_CrsMatrix & mat,std::vector<int> & indicies);
+
 } // end namespace Epetra
 } // end namespace PB
 

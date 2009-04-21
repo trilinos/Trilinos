@@ -60,11 +60,14 @@ LinearOp SIMPLEPreconditionerFactory
    setBlock(0,1,U,Thyra::multiply(H,Bt));
 
    invDiag[0] = Thyra::identity(invF->range());
-   invDiag[1] = Thyra::scale(1.0/alpha_,Thyra::identity(invS->range()));
+   invDiag[1] = Thyra::scale(alpha_,Thyra::identity(invS->range()));
    LinearOp invU = createNewBlockUpperTriInverseOp(L,invDiag);
 
    // return implicit product operator
-   return Thyra::multiply(invU,invL);
+   std::stringstream ss;
+   ss << "SIMPLE Preconditioner: ( inv(F) = " << invF->description()
+      << ", inv(S) = " << invS->description() << " )";
+   return Thyra::multiply(invU,invL,ss.str());
 }
 
 } // end namespace NS
