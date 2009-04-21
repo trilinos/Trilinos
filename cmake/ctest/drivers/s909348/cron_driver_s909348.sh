@@ -8,7 +8,7 @@ source .bash_profile
 #get the date for use in log files
 DATE=`date "+%m-%d-%Y"`
 
-CTEST_EXE=/Users/bmpersc/bin/cmake/bin/ctest
+CTEST_EXE=/Users/bmpersc/bin/ctest
 
 echo
 echo "Starting nightly Trilinos testing on s909348: `date`"
