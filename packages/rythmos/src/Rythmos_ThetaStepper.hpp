@@ -243,6 +243,7 @@ private:
 
   ThetaStepperType thetaStepperType_;
   Scalar theta_;
+  int predictor_corrector_begin_after_step_;
 
   RCP<Rythmos::SingleResidualModelEvaluator<Scalar> >  neModel_;
 
@@ -328,6 +329,7 @@ void ThetaStepper<Scalar>::defaultInitializeAll_()
   neModel_ = Teuchos::null;
   parameterList_ = Teuchos::null;
   interpolator_ = Teuchos::null;
+  predictor_corrector_begin_after_step_ = -1;
 }
 
 template<class Scalar>
@@ -476,7 +478,6 @@ void ThetaStepper<Scalar>::setInitialCondition(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
 
-
   basePoint_ = initialCondition;
 
   // x
@@ -489,7 +490,7 @@ void ThetaStepper<Scalar>::setInitialCondition(
     is_null(x_init), std::logic_error,
     "Error, if the client passes in an intial condition to setInitialCondition(...),\n"
     "then x can not be null!" );
-#endif // RYTHMOS_DEBUG
+#endif
 
   x_ = x_init->clone_v();
 
@@ -505,11 +506,6 @@ void ThetaStepper<Scalar>::setInitialCondition(
   else
     assign(&*x_dot_,ST::zero());
 
-  // x_dot_old is undefined at initial time, 
-  // so we set it to zero
-  //x_dot_old_ = createMember(model_->get_x_space());
-  //assign(&*x_dot_old_,ST::zero());
-  
   // t
   
   t_ = initialCondition.get_t();
@@ -533,6 +529,10 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
   initialize_();
 
+  // DEBUG
+  //this->setOverridingVerbLevel(Teuchos::VERB_EXTREME);
+  //this->setVerbLevel(Teuchos::VERB_EXTREME);
+
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"TS::takeStep");
@@ -545,6 +545,17 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   }
 
   dt_ = dt;
+  V_StV( &*x_old_, Scalar(ST::one()), *x_ );
+  V_StV( &*x_dot_really_old_, Scalar(ST::one()), *x_dot_old_ );
+  V_StV( &*x_dot_old_,        Scalar(ST::one()), *x_dot_ );
+
+  if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
+    *out << "\nSetting dt_ and old data ..." << std::endl;
+    *out << "\ndt_ = " << dt_;
+    *out << "\nx_old_ = " << *x_old_;
+    *out << "\nx_dot_old_ = " << *x_dot_old_;
+    *out << "\nx_dot_really_old_ = " << *x_dot_really_old_;
+  }
 
   if ((stepSizeType == STEP_TYPE_VARIABLE) || (dt == ST::zero())) {
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) )
@@ -564,19 +575,25 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   //
   //   substitute:
   // 
-  //   x_dot = ( 1/(theta*dt) )*x + ( -1/(theta*dt) )*x_old + ( (1-theta)/theta )*x_dot_old
+  //   x_dot = ( 1/(theta*dt) )*x + ( -1/(theta*dt) )*x_old + ( -(1-theta)/theta )*x_dot_old
   //   
   //   f( x_dot, x, t ) = 0
   //
 
+  const double theta = (numSteps_+1>=predictor_corrector_begin_after_step_) ? theta_ : 1.0;
+
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
     *out << "\nSetting x_dot_base_ ..." << std::endl;
+    *out << "\ntheta = " << theta;
     *out << "\nx_ = " << *x_;
     *out << "\nx_dot_old_ = " << *x_dot_old_;
   }
 
-  const Scalar x_coeff = Scalar(-ST::one()/(theta_*dt)); 
-  const Scalar x_dot_old_coeff = Scalar( (ST::one()-theta_)/theta_);
+  const Scalar coeff_x_dot = Scalar(ST::one()/(theta*dt)); 
+  const Scalar coeff_x = ST::one();
+
+  const Scalar x_coeff = Scalar(-coeff_x_dot);
+  const Scalar x_dot_old_coeff = Scalar( -(ST::one()-theta)/theta);
 
   V_StV( &*x_dot_base_, x_coeff, *x_ );
   Vp_StV( &*x_dot_base_, x_dot_old_coeff, *x_dot_old_);
@@ -588,15 +605,16 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   if(!neModel_.get()) {
     neModel_ = Teuchos::rcp(new Rythmos::SingleResidualModelEvaluator<Scalar>());
   }
+
   neModel_->initializeSingleResidualModel(
     model_, 
     basePoint_,
-    Scalar(ST::one()/(theta_*dt)), // coeff_x_dot
+    coeff_x_dot,
     x_dot_base_,
-    ST::one(), // coeff_x
+    coeff_x,
     Teuchos::null, // x_base
     t_+dt, // t_base
-    Teuchos::null // x_bar_init
+    x_pre_ //Teuchos::null // x_bar_init
     );
   if( solver_->getModel().get() != neModel_.get() ) {
     solver_->setModel(neModel_);
@@ -610,7 +628,7 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_LOW) ) {
     *out << "\nSolving the implicit theta-stepper timestep equation"
-	 << " with theta = " << theta_ << "\n";
+	 << " with theta = " << theta << "\n";
   }
 
   Thyra::SolveStatus<Scalar>
@@ -630,16 +648,14 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   // false if appropriate
 
   //
-  // Update the step
+  // Update the step data
   //
 
-  assign( &*x_dot_really_old_, *x_dot_old_ );
-  assign( &*x_dot_old_, *x_dot_ );
+  // x_dot = ( 1/(theta*dt) )*x + ( -1/(theta*dt) )*x_old + ( -(1-theta)/theta )*x_dot_old
 
-  // x_dot = ( 1/(theta*dt) )*x + ( -1/(theta*dt) )*x_old + ( (1-theta)/theta )*x_dot_old
-  //       = ( 1/(theta*dt) )*x + x_dot_base_
-  V_StV( &*x_dot_, Scalar(ST::one()/(theta_*dt)), *x_ );
-  Vp_StV( &*x_dot_, Scalar(ST::one()), *x_dot_base_ );
+  V_StV(  &*x_dot_, Scalar( ST::one()/(theta*dt)), *x_ );
+  Vp_StV( &*x_dot_, Scalar(-ST::one()/(theta*dt)), *x_old_ );
+  Vp_StV( &*x_dot_, Scalar( -(ST::one()-theta)/theta), *x_dot_old_ );
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
     *out << "\nUpdating x_dot_ ...\n";
@@ -649,8 +665,6 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   t_old_ = t_;
   dt_old_ = dt;
   t_ += dt;
-
-  assign( &*x_old_, *x_ );
 
   numSteps_++;
 
@@ -854,6 +868,7 @@ void ThetaStepper<Scalar>::getPoints(
     }
     *out << "I can interpolate in the interval [" << t_old_ << "," << t_ << "]." << std::endl;
   }
+
   if (t_old_ != t_) {
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
       *out << "Passing two points to interpolator:  " << t_old_ << " and " << t_ << std::endl;
@@ -870,11 +885,8 @@ void ThetaStepper<Scalar>::getPoints(
         )
       );
 #endif
-    RCP<Thyra::VectorBase<Scalar> >
-      x_temp = x_dot_base_->clone_v();
-    Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));  // undo the scaling
     ds_temp.time = t_old_;
-    ds_temp.x = x_temp;
+    ds_temp.x = x_old_;
     ds_temp.xdot = x_dot_old_;
     ds_temp.accuracy = ScalarMag(dt);
     ds_nodes.push_back(ds_temp);
@@ -901,9 +913,16 @@ void ThetaStepper<Scalar>::getPoints(
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "Passing out the interpolated values:" << std::endl;
     for (int i=0; i<Teuchos::as<int>(time_out.size()) ; ++i) {
-      *out << "time[" << i << "] = " << time_out[i] << std::endl;
-      *out << "x_vec[" << i << "] = " << std::endl;
-      (*x_vec)[i]->describe(*out,Teuchos::VERB_EXTREME);
+      if (x_vec) {
+        if ( (*x_vec)[i] == Teuchos::null) {
+          *out << "x_vec[" << i << "] = Teuchos::null" << std::endl;
+	}
+	else {
+	  *out << "time[" << i << "] = " << time_out[i] << std::endl;
+	  *out << "x_vec[" << i << "] = " << std::endl;
+	  (*x_vec)[i]->describe(*out,Teuchos::VERB_EXTREME);
+	}
+      }
       if (xdot_vec) {
         if ( (*xdot_vec)[i] == Teuchos::null) {
           *out << "xdot_vec[" << i << "] = Teuchos::null" << std::endl;
@@ -1149,15 +1168,15 @@ void ThetaStepper<Scalar>::initialize_()
 
   if (is_null(x_pre_))
     x_pre_ = createMember(model_->get_x_space());
+  assign(&*x_pre_,ST::zero());
 
   if (is_null(x_old_))
     x_old_ = createMember(model_->get_x_space());
+  assign(&*x_old_,ST::zero());
 
   if (is_null(x_dot_base_))
     x_dot_base_ = createMember(model_->get_x_space());
-
-  //if (is_null(x_dot_))
-  //  x_dot_ = createMember(model_->get_x_space());
+  assign(&*x_dot_base_,ST::zero());
 
   if (is_null(x_dot_old_))
     x_dot_old_ = createMember(model_->get_x_space());
@@ -1171,6 +1190,17 @@ void ThetaStepper<Scalar>::initialize_()
   // since these will be initialized after each step
 
   dt_old_ = 0.0;
+
+  if (thetaStepperType_ == ImplicitEuler)
+  {
+    theta_ = 1.0;
+    predictor_corrector_begin_after_step_ = 2;
+  }
+  else
+  {
+    theta_ = 0.5;
+    predictor_corrector_begin_after_step_ = 3;
+  }
 
   isInitialized_ = true;
 
@@ -1192,60 +1222,57 @@ void ThetaStepper<Scalar>::obtainPredictor_()
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "Obtaining predictor..." << std::endl;
   }
+
+  // TODO: define default predictor order
+  const int default_predictor_order = thetaStepperType_ + 1;
+  const int max_predictor_order_at_this_timestep = std::max(0, numSteps_);
+
+  const int predictor_order = std::min(default_predictor_order, max_predictor_order_at_this_timestep);
+
+  switch (predictor_order) 
+  {
+    case 0:
+      V_StV(&*x_pre_, Scalar(ST::one()), *x_old_);
+      break;
+    case 1:
+    {
+      V_StV(&*x_pre_, Scalar(ST::one()), *x_old_);
+
+      TEST_FOR_EXCEPT (dt_ <= 0.0);
+
+      Vp_StV(&*x_pre_, dt_, *x_dot_old_);
+    }
+    break;
+    case 2:
+    {
+      V_StV(&*x_pre_, Scalar(ST::one()), *x_old_);
+
+      TEST_FOR_EXCEPT (dt_ <= 0.0);
+      TEST_FOR_EXCEPT (dt_old_ <= 0.0);
+
+      const Scalar coeff_x_dot_old = (0.5 * dt_) * (2.0 + dt_/dt_old_);
+      const Scalar coeff_x_dot_really_old = - (0.5 * dt_) * (dt_/dt_old_);
+      
+      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
+	*out << "x_dot_old_ = " << *x_dot_old_ << std::endl;
+	*out << "x_dot_really_old_ = " << *x_dot_really_old_ << std::endl;
+      }
+      
+      Vp_StV( &*x_pre_, coeff_x_dot_old, *x_dot_old_);
+      Vp_StV( &*x_pre_, coeff_x_dot_really_old, *x_dot_really_old_);
+    }
+    break;
+    default:
+      TEST_FOR_EXCEPTION(true, std::logic_error,
+			 "Invalid predictor order " << predictor_order << ". Valid values are 0, 1, and 2.");
+  }
   
-  // evaluate predictor
-  if (   (thetaStepperType_ == ImplicitEuler) ||
-       ( (thetaStepperType_ == Trapezoid) && (numSteps_<=1)) ) {    
-
-    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-      *out << "Using first order predictor..." << std::endl;
-    }
-
-    theta_ = 1.0;
-
-    if (numSteps_==0) {
-      assign(&*x_old_,*x_);
-      assign(&*x_dot_old_,ST::zero());
-    }
-
-    //  x_pre_ = x_old_ + dt_ * x_dot_old_
-
-    V_StV( &*x_pre_, Scalar(ST::one()), *x_old_ );
-    Vp_StV( &*x_pre_, dt_, *x_dot_old_);
-  }
-  else {
-
-    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-      *out << "Using second order predictor..." << std::endl;
-    }
-
-    theta_ = 0.5;
-
-    //  x_pre = 
-
-    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-      *out << "x_old_ = " << *x_old_ << std::endl;
-      *out << "dt_old_ = " << dt_old_ << std::endl;
-    }
-
-    V_StV( &*x_pre_, Scalar(ST::one()), *x_old_ );
-    TEST_FOR_EXCEPT (dt_old_ <= 0.0);
-
-    const Scalar coeff_x_dot_old = (0.5 * dt_) * (2.0 + dt_/dt_old_);
-    const Scalar coeff_x_dot_really_old = - (0.5 * dt_) * (dt_/dt_old_);
-
-    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
-      *out << "x_dot_old_ = " << *x_dot_old_ << std::endl;
-      *out << "x_dot_really_old_ = " << *x_dot_really_old_ << std::endl;
-    }
-
-    Vp_StV( &*x_pre_, coeff_x_dot_old, *x_dot_old_);
-    Vp_StV( &*x_pre_, coeff_x_dot_really_old, *x_dot_really_old_);
-  }
-
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
     *out << "x_pre_ = " << *x_pre_ << std::endl;
   }
+
+  // copy to current solution
+  //V_StV(&*x_, Scalar(ST::one()), *x_pre_);
 }
 
 } // namespace Rythmos
