@@ -179,3 +179,19 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     STANDARD_PASS_OUTPUT
     )
 
+#PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#    GlobalErrorEstimator_UnitTest
+#    SOURCES Rythmos_GlobalErrorEstimator_UnitTest.cpp Rythmos_UnitTest.cpp
+#    DEPLIBS rythmos_test_models
+#    COMM serial
+#    STANDARD_PASS_OUTPUT
+#    )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Thyra_UnitTest
+    SOURCES Rythmos_Thyra_UnitTest.cpp Rythmos_UnitTest.cpp
+    DEPLIBS rythmos_test_models
+    COMM serial
+    STANDARD_PASS_OUTPUT
+    )
+

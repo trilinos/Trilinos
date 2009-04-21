@@ -42,6 +42,7 @@ EXTRA_DIST =\
 	$(srcdir)/../SinCos/SinCosModel.hpp \
 	$(srcdir)/../PolynomialModel/PolynomialModel.hpp
 
+#  $(srcdir)/Rythmos_GlobalErrorEstimator_UnitTest.cpp\
 Rythmos_UnitTest_SOURCES =\
   $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
 	$(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp\
@@ -66,6 +67,7 @@ Rythmos_UnitTest_SOURCES =\
   $(srcdir)/Rythmos_StepperHelpers_UnitTest.cpp\
   $(srcdir)/Rythmos_StepperValidator_UnitTest.cpp\
   $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
+  $(srcdir)/Rythmos_Thyra_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTest.cpp\
 	$(srcdir)/Rythmos_UnitTestHelpers.cpp
 Rythmos_UnitTest_DEPENDENCIES = $(common_dependencies)
