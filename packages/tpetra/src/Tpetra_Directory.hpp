@@ -67,17 +67,6 @@ namespace Tpetra {
     }
   }
 
-  /*
-  template<class LocalOrdinal, class GlobalOrdinal>
-  Directory<LocalOrdinal,GlobalOrdinal>::Directory(const Directory<LocalOrdinal,GlobalOrdinal> & directory)
-    : map_(directory.map_) 
-    , comm_(directory.comm_)
-    , allMinGIDs_(directory.allMinGIDs_)
-    , nodeIDs_(directory.nodeIDs_)
-    , LIDs_(directory.LIDs_)
-  {}
-  */
-
   template<class LocalOrdinal, class GlobalOrdinal>
   Directory<LocalOrdinal,GlobalOrdinal>::~Directory() {}
 
@@ -158,6 +147,7 @@ namespace Tpetra {
         int image = -1;
         GlobalOrdinal GID = *gid;
         // Guess uniform distribution and start a little above it
+        // TODO: replace by a binary search
         int curimg = TEUCHOS_MIN((int)(GID / TEUCHOS_MAX(nOverP, 1)) + 2, numImages - 1);
         bool found = false;
         while (curimg >= 0 && curimg < numImages) {
@@ -230,7 +220,8 @@ namespace Tpetra {
         {
           *ptr++ = *gidptr;
           curLID = directoryMap_->getLocalIndex(*gidptr);
-          assert(curLID != LINVALID); // Internal error
+          TEST_FOR_EXCEPTION(curLID == LINVALID, std::logic_error,
+              Teuchos::typeName(*this) << "::getEntries(): Internal logic error. Please contact Tpetra team.");
           *ptr++ = as<GlobalOrdinal>(nodeIDs_[as<Teuchos_Ordinal>(curLID)]);
           if (computeLIDs) {
             *ptr++ = as<GlobalOrdinal>(LIDs_[as<Teuchos_Ordinal>(curLID)]);
@@ -295,7 +286,7 @@ namespace Tpetra {
     std::vector<int> sendImageIDs(numMyEntries);
     Teuchos::ArrayView<const GlobalOrdinal> myGlobalEntries = map_.getMyGlobalEntries();
     // a "true" return here indicates that one of myGlobalEntries (from map_) is not on the map directoryMap_, indicating that 
-    // it lies outside of the range [minAllGID,maxAllGID] (from map_). this means something is wrong with map_, something wrong with Map.
+    // it lies outside of the range [minAllGID,maxAllGID] (from map_). this means something is wrong with map_.
     TEST_FOR_EXCEPTION( directoryMap_->getRemoteIndexList(myGlobalEntries, sendImageIDs) == true, std::logic_error,
         Teuchos::typeName(*this) << "::generateDirectory(): logic error. Please contact Tpetra team.");
 

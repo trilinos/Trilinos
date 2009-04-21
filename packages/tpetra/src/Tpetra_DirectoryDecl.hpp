@@ -39,10 +39,10 @@ namespace Tpetra {
   
   /*! For Map objects, a Directory object must be created to allow referencing
       of non-local elements. Tpetra::Directory produces and contains a uniform linear
-      Map and a list of nodeIDs allowing non-local elements to be accessed
-      by dereferencing throught the Directory.
+      Map, allowing the directory to be distributed across all nodes.
       
-      This class currently has one constructor, taking a Map object.
+      This class has a single constructor, accepting the Map object for which the directory 
+      is created.
   */
 
   template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal>
@@ -52,11 +52,11 @@ namespace Tpetra {
     //! @name Constructors/Destructor.
     //@{ 
     
-    //! constructor
+    //! Constructor
     Directory(const Map<LocalOrdinal,GlobalOrdinal> & map);
     
  public:
-    //! destructor.
+    //! Destructor.
     ~Directory();
     
     //@}
@@ -64,38 +64,40 @@ namespace Tpetra {
     //! @name Query methods.
     //@{ 
     
-    //! getDirectoryEntries : Returns node info for non-local Map entries
+    //! \brief Returns node info for non-local Map entries.
     /*! Given a list of global IDs, this function returns the corresponding list of
       owning node IDs.
 
-      \param In
-      globalIDs - List of global IDs to look up.
+      \param globalIDs [in] List of global IDs to look up.
 
-      \param Out
-      nodeIDs - On return, contains node IDs for the global IDs in question. 
+      \param nodeIDs [out] On return, contains node IDs for the global IDs in question. 
       -1 corresponds to global entries not present in the directory.
 
-      \returns \c true signifies at least one specified global entry was not present in the directory.
+      \returns \c true signifies at least one specified global entry was not present in the directory; 
+               \c false signifies that all specified global entries were present in the directory.
+
+      \note If <tt>nodeIDs.size() != globalIDs.size()</tt>, then a \c std::runtime_error exception is thrown.
     */
     bool getDirectoryEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
                              const Teuchos::ArrayView<int> &nodeIDs) const;
     
-    //! getDirectoryEntries : Returns node info for non-local Map entries
+    //! \brief Returns node info for non-local Map entries.
     /*! Given a list of global IDs, this function returns the corresponding list of
       owning node IDs and local IDs.
 
-      \param In
-      globalIDs - List of global IDs to look up.
+      \param globalIDs [in] List of global IDs to look up.
 
-      \param Out
-      nodeIDs - On return, contains node IDs for the global IDs in question. 
+      \param nodeIDs [out] On return, contains node IDs for the global IDs in question. 
       -1 corresponds to global entries not present in the directory.
 
-      \param Out
-      localIDs - On return contains the local ID of the global on the owning node. 
+      \param localIDs [out] On return contains the local ID of the global on the owning node. 
       Teuchos::OrdinalTraits<LocalOrdinal>::invalid() corresponds to global entries not present in the directory.
 
       \returns \c true signifies at least one specified global entry was not present in the directory.
+               \c false signifies that all specified global entries were present in the directory.
+
+      \note If <tt>nodeIDs.size() != globalIDs.size()</tt> or 
+               <tt>localIDs.size() != globalIDs.size()</tt>, then a \c std::runtime_error exception is thrown.
     */
     bool getDirectoryEntries(const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs, 
                              const Teuchos::ArrayView<int> &nodeIDs, 

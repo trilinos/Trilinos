@@ -1,8 +1,11 @@
 #include "Teuchos_UnitTestHarness.hpp"
 
+#include <Teuchos_as.hpp>
+#include <Teuchos_Array.hpp>
+#include <Teuchos_Tuple.hpp>
+
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
-#include "Teuchos_as.hpp"
 #include "Tpetra_Directory.hpp"
 
 namespace {
@@ -14,9 +17,9 @@ namespace {
   using Tpetra::Directory;
   using Tpetra::DefaultPlatform;
   using Tpetra::Platform;
-  using std::vector;
+  using Teuchos::Array;
+  using Teuchos::tuple;
   using std::sort;
-  using Teuchos::arrayViewFromVector;
   using Teuchos::broadcast;
   using Teuchos::OrdinalTraits;
   using Teuchos::Comm;
@@ -54,10 +57,36 @@ namespace {
   // 
 
   // test with a uniform, contiguous map of constant size
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, BadSize, LO, GO )
+  {
+    typedef Map<LO,GO> M;
+    typedef Directory<LO,GO> D;
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a uniform map
+    const GO numEntries = 2;
+    M map(numEntries,0,comm);
+    // create a directory
+    D dir(map);
+    
+    Array<int> imageIDs(2);
+    Array<LO> localIDs(2);
+    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1)), std::runtime_error );
+    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1), localIDs(0,1)), std::runtime_error );
+    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,2), localIDs(0,1)), std::runtime_error );
+    TEST_THROW( dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs(0,1), localIDs(0,2)), std::runtime_error );
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+  // test with a uniform, contiguous map of constant size
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, SmallUniformContig, LO, GO )
   {
     typedef Map<LO,GO> M;
     typedef Directory<LO,GO> D;
+    const LO LINV = OrdinalTraits<LO>::invalid();
     // create a comm  
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a uniform map
@@ -65,30 +94,40 @@ namespace {
     M map(numEntries,0,comm);
     // create a directory
     D dir(map);
-
-    // all GIDs
-    const vector<GO> allGIDs(1,0);    // all GIDs (i.e., 0) are located on node 0
-    const vector<int> expectedImageIDs(1,0); 
-    const vector<LO> expectedLIDs(1,0);
-
     {
-      vector<int> imageIDs(numEntries);              
-      dir.getDirectoryEntries(allGIDs,imageIDs);
-      TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
+      bool invalid;
+      Array<int> imageIDs(numEntries);
+      Array<LO>  localIDs(numEntries); 
+      invalid = dir.getDirectoryEntries(tuple<GO>(0),imageIDs);
+      TEST_EQUALITY_CONST( invalid, false );
+      TEST_COMPARE_ARRAYS( tuple<int>(0), imageIDs );
+      invalid = dir.getDirectoryEntries(tuple<GO>(0),imageIDs,localIDs);
+      TEST_EQUALITY_CONST( invalid, false );
+      TEST_COMPARE_ARRAYS( tuple<int>(0), imageIDs );
+      TEST_COMPARE_ARRAYS( tuple<LO>(0), localIDs );
     }
-
     {
-      vector<int> imageIDs(numEntries);
-      vector<LO> localIDs(numEntries); 
-      dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
-      TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-      TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
+      bool invalid;
+      Array<int> imageIDs(numEntries+1);
+      Array<LO>  localIDs(numEntries+1);
+      invalid = dir.getDirectoryEntries(tuple<GO>(0,1), imageIDs);
+      TEST_EQUALITY_CONST( invalid, true );
+      TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
+      invalid = dir.getDirectoryEntries(tuple<GO>(0,1),imageIDs,localIDs);
+      TEST_EQUALITY_CONST( invalid, true );
+      TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
+      TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
     }
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
   // test with a uniform, contiguous map
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, UniformContig, LO, GO )
   {
+    const LO LINV = OrdinalTraits<LO>::invalid();
     typedef Map<LO,GO> M;
     typedef Directory<LO,GO> D;
     // create a comm  
@@ -100,15 +139,13 @@ namespace {
     M map(numEntries,0,comm);
     // create a directory
     D dir(map);
-
     // all GIDs
-    vector<GO> allGIDs;
-    allGIDs.reserve(numEntries);
+    Array<GO> allGIDs(numEntries);
     for (GO gid = 0; gid < numEntries; ++gid) {
-      allGIDs.push_back(gid);
+      allGIDs[gid] = gid;
     }
-    vector<int> expectedImageIDs;
-    vector<LO> expectedLIDs;
+    Array<int> expectedImageIDs;
+    Array<LO>  expectedLIDs;
     // expected image IDs and LIDs
     expectedImageIDs.reserve(numEntries);
     expectedLIDs.reserve(numEntries);
@@ -124,26 +161,41 @@ namespace {
         --remLeft;
       }
     }
-
     {
-      vector<int> imageIDs(numEntries);                         
-      dir.getDirectoryEntries(allGIDs,imageIDs);
+      bool invalid;
+      Array<int> imageIDs(numEntries);
+      Array<LO> localIDs(numEntries);
+      invalid = dir.getDirectoryEntries(allGIDs,imageIDs);
+      TEST_EQUALITY_CONST( invalid, false );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-    }
-
-    {
-      vector<int> imageIDs(numEntries);
-      vector<LO> localIDs(numEntries);
-      dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      invalid = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      TEST_EQUALITY_CONST( invalid, false );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
+    {
+      bool invalid;
+      Array<int> imageIDs(2);
+      Array<LO> localIDs(2);
+      invalid = dir.getDirectoryEntries( tuple<GO>(0,numEntries),imageIDs);
+      TEST_EQUALITY_CONST( invalid, true );
+      TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
+      invalid = dir.getDirectoryEntries( tuple<GO>(0,numEntries),imageIDs,localIDs);
+      TEST_EQUALITY_CONST( invalid, true );
+      TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
+      TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
+    }
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
   // test with a small contiguous map
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, SmallContig, LO, GO )
   {
+    const LO LINV = OrdinalTraits<LO>::invalid();
     typedef Map<LO,GO> M;
     typedef Directory<LO,GO> D;
     // create a comm  
@@ -151,20 +203,20 @@ namespace {
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     const GO numEntries = as<GO>(numImages+1);
-    // the last image gets two entries, others get none
+    // the last image gets two entries, others get one
     const LO numMyEntries = (myImageID == numImages-1 ? 2 : 1);
     M map(numEntries,numMyEntries,0,comm);
     // create a directory
     D dir(map);
-
     // all GIDs
-    vector<GO> allGIDs;
+    Array<GO> allGIDs;
     allGIDs.reserve(numEntries);
-    for (GO gid = 0; gid < numEntries; ++gid) {
+    for (GO gid = 0; gid < numEntries; ++gid) 
+    {
       allGIDs.push_back(gid);
     }
-    vector<int> expectedImageIDs;
-    vector<LO> expectedLIDs;
+    Array<int> expectedImageIDs;
+    Array<LO> expectedLIDs;
     // expected image IDs and LIDs
     expectedImageIDs.reserve(numEntries);
     expectedLIDs.reserve(numEntries);
@@ -176,26 +228,41 @@ namespace {
         expectedLIDs.push_back(1);
       }
     }
-
     {
-      vector<int> imageIDs(numEntries);                           
-      dir.getDirectoryEntries(allGIDs,imageIDs);
+      bool invalid;
+      Array<int> imageIDs(numEntries);
+      Array<LO> localIDs(numEntries); 
+      invalid = dir.getDirectoryEntries(allGIDs,imageIDs);
+      TEST_EQUALITY_CONST( invalid, false );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-    }
-
-    {
-      vector<int> imageIDs(numEntries);
-      vector<LO> localIDs(numEntries); 
-      dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      invalid = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      TEST_EQUALITY_CONST( invalid, false );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
+    {
+      bool invalid;
+      Array<int> imageIDs(2);
+      Array<LO> localIDs(2); 
+      invalid = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs);
+      TEST_EQUALITY_CONST( invalid, true );
+      TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
+      invalid = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs,localIDs);
+      TEST_EQUALITY_CONST( invalid, true );
+      TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
+      TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
+    }
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
   // test with a contiguous map
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, Contig, LO, GO )
   {
+    const LO LINV = OrdinalTraits<LO>::invalid();
     typedef Map<LO,GO> M;
     typedef Directory<LO,GO> D;
     // create a comm  
@@ -209,15 +276,13 @@ namespace {
     M map(numEntries,numMyEntries,0,comm);
     // create a directory
     D dir(map);
-
     // all GIDs
-    vector<GO> allGIDs;
-    allGIDs.reserve(numEntries);
+    Array<GO> allGIDs(numEntries);
     for (GO gid = 0; gid < numEntries; ++gid) {
-      allGIDs.push_back(gid);
+      allGIDs[gid] = gid;
     }
-    vector<int> expectedImageIDs;
-    vector<LO> expectedLIDs;
+    Array<int> expectedImageIDs;
+    Array<LO> expectedLIDs;
     // expected image IDs and LIDs
     expectedImageIDs.reserve(numEntries);
     expectedLIDs.reserve(numEntries);
@@ -227,26 +292,41 @@ namespace {
         expectedLIDs.push_back(as<LO>(num));
       }
     }
-
     {
-      vector<int> imageIDs(numEntries);                           
-      dir.getDirectoryEntries(allGIDs,imageIDs);
+      bool invalid;
+      Array<int> imageIDs(numEntries);                           
+      Array<LO> localIDs(numEntries); 
+      invalid = dir.getDirectoryEntries(allGIDs,imageIDs);
+      TEST_EQUALITY_CONST( invalid, false );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-    }
-
-    {
-      vector<int> imageIDs(numEntries);
-      vector<LO> localIDs(numEntries); 
-      dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      invalid = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      TEST_EQUALITY_CONST( invalid, false );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
+    {
+      bool invalid;
+      Array<int> imageIDs(2);                           
+      Array<LO> localIDs(2); 
+      invalid = dir.getDirectoryEntries( tuple<GO>(0,numEntries) ,imageIDs);
+      TEST_EQUALITY_CONST( invalid, true );
+      TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
+      invalid = dir.getDirectoryEntries( tuple<GO>(0,numEntries) ,imageIDs,localIDs);
+      TEST_EQUALITY_CONST( invalid, true );
+      TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
+      TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
+    }
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
   // test with a non-contiguous map
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Directory, NonContig, LO, GO )
   {
+    const LO LINV = OrdinalTraits<LO>::invalid();
     typedef Map<LO,GO> M;
     typedef Directory<LO,GO> D;
     // create a comm  
@@ -256,22 +336,17 @@ namespace {
     // number of entries is 3*numImages
     // we will stripe the GIDs across images
     const GO numEntries = as<GO>(3*numImages);
-    vector<GO> myGIDs(3);
-    myGIDs[0] = as<GO>(myImageID);
-    myGIDs[1] = as<GO>(myImageID + numImages);
-    myGIDs[2] = as<GO>(myImageID + numImages*2);
-    M map(numEntries,myGIDs,0,comm);
+    M map(numEntries, tuple<GO>(myImageID, myImageID+numImages, myImageID+2*numImages) ,0,comm);
     // create a directory
     D dir(map);
-
     // all GIDs
-    vector<GO> allGIDs;
+    Array<GO> allGIDs;
     allGIDs.reserve(numEntries);
     for (GO gid = 0; gid < numEntries; ++gid) {
       allGIDs.push_back(gid);
     }
-    vector<int> expectedImageIDs;
-    vector<LO> expectedLIDs;
+    Array<int> expectedImageIDs;
+    Array<LO> expectedLIDs;
     // expected image IDs and LIDs
     expectedImageIDs.reserve(numEntries);
     expectedLIDs.reserve(numEntries);
@@ -281,20 +356,34 @@ namespace {
         expectedLIDs.push_back(i);
       }
     }
-
     {
-      vector<int> imageIDs(numEntries);                           
-      dir.getDirectoryEntries(allGIDs,imageIDs);
+      bool invalid;
+      Array<int> imageIDs(numEntries);                           
+      Array<LO> localIDs(numEntries); 
+      invalid = dir.getDirectoryEntries(allGIDs,imageIDs);
+      TEST_EQUALITY_CONST( invalid, false );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
-    }
-
-    {
-      vector<int> imageIDs(numEntries);
-      vector<LO> localIDs(numEntries); 
-      dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      invalid = dir.getDirectoryEntries(allGIDs,imageIDs,localIDs);
+      TEST_EQUALITY_CONST( invalid, false );
       TEST_COMPARE_ARRAYS( expectedImageIDs, imageIDs );
       TEST_COMPARE_ARRAYS( expectedLIDs, localIDs );
     }
+    {
+      bool invalid;
+      Array<int> imageIDs(2);                           
+      Array<LO> localIDs(2); 
+      invalid = dir.getDirectoryEntries(tuple<GO>(0,numEntries), imageIDs);
+      TEST_EQUALITY_CONST( invalid, true );
+      TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
+      invalid = dir.getDirectoryEntries(tuple<GO>(0,numEntries),imageIDs,localIDs);
+      TEST_EQUALITY_CONST( invalid, true );
+      TEST_COMPARE_ARRAYS( tuple<int>(0,-1), imageIDs );
+      TEST_COMPARE_ARRAYS( tuple<LO>(0,LINV), localIDs );
+    }
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
@@ -306,27 +395,20 @@ namespace {
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
 #   define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, SmallUniformContig, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, UniformContig, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, SmallContig, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Contig, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, NonContig, LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, NonContig, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, BadSize, LO, GO )
+
+# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
     UNIT_TEST_GROUP_ORDINAL( char , int )
     UNIT_TEST_GROUP_ORDINAL( int , int )
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#   define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, SmallUniformContig, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, UniformContig, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, SmallContig, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, Contig, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Directory, NonContig, LO, GO )
 
     UNIT_TEST_GROUP_ORDINAL(char , int)
     UNIT_TEST_GROUP_ORDINAL(int , int)
