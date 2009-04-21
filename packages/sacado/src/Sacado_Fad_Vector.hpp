@@ -113,12 +113,12 @@ namespace Sacado {
      * are stored in contiguous memory.  To preserve this structure, many
      * vector operations aren't supported (like resizing).
      */
-    template <typename OrdinalType, typename ValueType, typename ScalarType >
-    class Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> > {
+    template <typename OrdinalType, typename ValueType>
+    class Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> > {
     public:
 
       //! Synonym for Fad type
-      typedef Sacado::Fad::DVFad<ValueType,ScalarType> FadType;
+      typedef Sacado::Fad::DVFad<ValueType> FadType;
 
       //! Constructor 
       Vector(OrdinalType vec_size, OrdinalType deriv_size, 

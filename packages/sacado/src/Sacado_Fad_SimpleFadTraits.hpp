@@ -56,88 +56,87 @@
 // Forward declarations
 namespace Sacado {
   namespace Fad {
-    template <typename T1, typename T2> class SimpleFad;
+    template <typename T> class SimpleFad;
   }
 }
 
 namespace Sacado {
 
   //! Specialization of %Promote to SimpleFad types
-  template <typename ValueT, typename ScalarT>
-  struct Promote< Fad::SimpleFad<ValueT,ScalarT>, Fad::SimpleFad<ValueT,ScalarT> > {
-    typedef Fad::SimpleFad<ValueT,ScalarT> type;
+  template <typename ValueT>
+  struct Promote< Fad::SimpleFad<ValueT>, Fad::SimpleFad<ValueT> > {
+    typedef Fad::SimpleFad<ValueT> type;
   };
 
   //! Specialization of %Promote to SimpleFad types
-  template <typename ValueT, typename ScalarT, typename R>
-  struct Promote< Fad::SimpleFad<ValueT,ScalarT>, R > {
-    typedef typename ValueType< Fad::SimpleFad<ValueT,ScalarT> >::type value_type_l;
+  template <typename ValueT, typename R>
+  struct Promote< Fad::SimpleFad<ValueT>, R > {
+    typedef typename ValueType< Fad::SimpleFad<ValueT> >::type value_type_l;
     typedef typename ValueType<R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Fad::SimpleFad<value_type,ScalarT> type;
+    typedef Fad::SimpleFad<value_type> type;
   };
 
   //! Specialization of %Promote to SimpleFad types
-  template <typename L, typename ValueT, typename ScalarT>
-  struct Promote< L, Fad::SimpleFad<ValueT, ScalarT> > {
+  template <typename L, typename ValueT>
+  struct Promote< L, Fad::SimpleFad<ValueT> > {
   public:
 
     typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< Fad::SimpleFad<ValueT,ScalarT> >::type value_type_r;
+    typedef typename ValueType< Fad::SimpleFad<ValueT> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Fad::SimpleFad<value_type,ScalarT> type;
+    typedef Fad::SimpleFad<value_type> type;
   };
 
   //! Specialization of %ScalarType to SimpleFad types
-  template <typename ValueT, typename ScalarT>
-  struct ScalarType< Fad::SimpleFad<ValueT,ScalarT> > {
-    typedef ScalarT type;
+  template <typename ValueT>
+  struct ScalarType< Fad::SimpleFad<ValueT> > {
+    typedef typename Fad::SimpleFad<ValueT>::ScalarT type;
   };
 
   //! Specialization of %ValueType to SimpleFad types
-  template <typename ValueT, typename ScalarT>
-  struct ValueType< Fad::SimpleFad<ValueT,ScalarT> > {
+  template <typename ValueT>
+  struct ValueType< Fad::SimpleFad<ValueT> > {
     typedef ValueT type;
   };
 
   //! Specialization of %IsADType to SimpleFad types
-  template <typename ValueT, typename ScalarT>
-  struct IsADType< Fad::SimpleFad<ValueT,ScalarT> > {
+  template <typename ValueT>
+  struct IsADType< Fad::SimpleFad<ValueT> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to SimpleFad types
-  template <typename ValueT, typename ScalarT>
-  struct IsScalarType< Fad::SimpleFad<ValueT,ScalarT> > {
+  template <typename ValueT>
+  struct IsScalarType< Fad::SimpleFad<ValueT> > {
     static const bool value = false;
   };
 
   //! Specialization of %Value to SimpleFad types
-  template <typename ValueT, typename ScalarT>
-  struct Value< Fad::SimpleFad<ValueT,ScalarT> > {
-    typedef typename ValueType< Fad::SimpleFad<ValueT,ScalarT> >::type value_type;
-    static const value_type& eval(const Fad::SimpleFad<ValueT,ScalarT>& x) { 
+  template <typename ValueT>
+  struct Value< Fad::SimpleFad<ValueT> > {
+    typedef typename ValueType< Fad::SimpleFad<ValueT> >::type value_type;
+    static const value_type& eval(const Fad::SimpleFad<ValueT>& x) { 
       return x.val(); }
   };
 
   //! Specialization of %ScalarValue to SimpleFad types
-  template <typename ValueT, typename ScalarT>
-  struct ScalarValue< Fad::SimpleFad<ValueT,ScalarT> > {
-    typedef typename ValueType< Fad::SimpleFad<ValueT,ScalarT> >::type value_type;
-    typedef typename ScalarType< Fad::SimpleFad<ValueT,ScalarT> >::type scalar_type;
-    static const scalar_type& eval(const Fad::SimpleFad<ValueT,ScalarT>& x) { 
+  template <typename ValueT>
+  struct ScalarValue< Fad::SimpleFad<ValueT> > {
+    typedef typename ValueType< Fad::SimpleFad<ValueT> >::type value_type;
+    typedef typename ScalarType< Fad::SimpleFad<ValueT> >::type scalar_type;
+    static const scalar_type& eval(const Fad::SimpleFad<ValueT>& x) { 
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
   //! Specialization of %StringName to SimpleFad types
-  template <typename ValueT, typename ScalarT>
-  struct StringName< Fad::SimpleFad<ValueT,ScalarT> > {
+  template <typename ValueT>
+  struct StringName< Fad::SimpleFad<ValueT> > {
     static std::string eval() { 
       return std::string("Sacado::Fad::SimpleFad< ") + 
-	StringName<ValueT>::eval() + ", " + 
-	StringName<ScalarT>::eval() + " >"; }
+	StringName<ValueT>::eval() + " >"; }
   };
 
 } // namespace Sacado
@@ -151,35 +150,33 @@ namespace Sacado {
 namespace Teuchos {
 
   //! Specialization of %Teuchos::PromotionTraits to SimpleFad types
-  template <typename ValueT, typename ScalarT>
-  struct PromotionTraits< Sacado::Fad::SimpleFad<ValueT,ScalarT>, 
-			  Sacado::Fad::SimpleFad<ValueT,ScalarT> > {
-    typedef typename Sacado::Promote< Sacado::Fad::SimpleFad<ValueT,ScalarT>,
-				      Sacado::Fad::SimpleFad<ValueT,ScalarT> >::type
+  template <typename ValueT>
+  struct PromotionTraits< Sacado::Fad::SimpleFad<ValueT>, 
+			  Sacado::Fad::SimpleFad<ValueT> > {
+    typedef typename Sacado::Promote< Sacado::Fad::SimpleFad<ValueT>,
+				      Sacado::Fad::SimpleFad<ValueT> >::type
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to SimpleFad types
-  template <typename ValueT, typename ScalarT, typename R>
-  struct PromotionTraits< Sacado::Fad::SimpleFad<ValueT,ScalarT>, R > {
-    typedef typename Sacado::Promote< Sacado::Fad::SimpleFad<ValueT,ScalarT>,
-				      R >::type 
+  template <typename ValueT, typename R>
+  struct PromotionTraits< Sacado::Fad::SimpleFad<ValueT>, R > {
+    typedef typename Sacado::Promote< Sacado::Fad::SimpleFad<ValueT>, R >::type 
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to SimpleFad types
-  template <typename L, typename ValueT, typename ScalarT>
-  struct PromotionTraits< L, Sacado::Fad::SimpleFad<ValueT, ScalarT> > {
+  template <typename L, typename ValueT>
+  struct PromotionTraits< L, Sacado::Fad::SimpleFad<ValueT> > {
   public:
-    typedef typename Sacado::Promote< L, 
-				      Sacado::Fad::SimpleFad<ValueT,ScalarT> >::type 
+    typedef typename Sacado::Promote< L, Sacado::Fad::SimpleFad<ValueT> >::type 
     promote;
   };
 
   //! Specializtion of Teuchos::ScalarTraits
-  template <typename ValueT, typename ScalarT>
-  struct ScalarTraits< Sacado::Fad::SimpleFad<ValueT,ScalarT> > :
-    public Sacado::Fad::ScalarTraitsImp< Sacado::Fad::SimpleFad<ValueT,ScalarT> >
+  template <typename ValueT>
+  struct ScalarTraits< Sacado::Fad::SimpleFad<ValueT> > :
+    public Sacado::Fad::ScalarTraitsImp< Sacado::Fad::SimpleFad<ValueT> >
   {};
 }
 #endif // HAVE_SACADO_TEUCHOS

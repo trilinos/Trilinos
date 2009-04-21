@@ -31,173 +31,10 @@
 
 #include "Sacado_ConfigDefs.h"
 
-template <typename ValueT, typename ScalarT> 
-inline Sacado::Fad::SimpleFad<ValueT,ScalarT>& 
-Sacado::Fad::SimpleFad<ValueT,ScalarT>::
-operator += (const Sacado::Fad::SimpleFad<ValueT,ScalarT>& x)
-{
-  int xsz = x.size(), sz = this->size();
-
-#ifdef SACADO_DEBUG
-  if ((xsz != sz) && (xsz != 0) && (sz != 0))
-    throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-  if (xsz) {
-    if (sz) {
-      if (x.hasFastAccess())
-	for (int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) += x.fastAccessDx(i);
-      else
-	for (int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) += x.dx(i);
-    }
-    else {
-      this->resize(xsz);
-      if (x.hasFastAccess())
-	for (int i=0; i<xsz; ++i)
-	  this->fastAccessDx(i) = x.fastAccessDx(i);
-      else
-	for (int i=0; i<xsz; ++i)
-	  this->fastAccessDx(i) = x.dx(i);
-    }
-  }
-
-  this->val() += x.val();
-
-  return *this;
-}
-
-template <typename ValueT, typename ScalarT> 
-inline Sacado::Fad::SimpleFad<ValueT,ScalarT>& 
-Sacado::Fad::SimpleFad<ValueT,ScalarT>::
-operator -= (const Sacado::Fad::SimpleFad<ValueT,ScalarT>& x)
-{
-  int xsz = x.size(), sz = this->size();
-
-#ifdef SACADO_DEBUG
-  if ((xsz != sz) && (xsz != 0) && (sz != 0))
-    throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-  if (xsz) {
-    if (sz) {
-      if (x.hasFastAccess())
-	for(int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) -= x.fastAccessDx(i);
-      else
-	for (int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) -= x.dx(i);
-    }
-    else {
-      this->resize(xsz);
-      if (x.hasFastAccess())
-	for(int i=0; i<xsz; ++i)
-	  this->fastAccessDx(i) = -x.fastAccessDx(i);
-      else
-	for (int i=0; i<xsz; ++i)
-	  this->fastAccessDx(i) = -x.dx(i);
-    }
-  }
-
-  this->val() -= x.val();
-
-
-  return *this;
-}
-
-template <typename ValueT, typename ScalarT> 
-inline Sacado::Fad::SimpleFad<ValueT,ScalarT>& 
-Sacado::Fad::SimpleFad<ValueT,ScalarT>::
-operator *= (const Sacado::Fad::SimpleFad<ValueT,ScalarT>& x)
-{
-  int xsz = x.size(), sz = this->size();
-  ValueT xval = x.val();
-
-#ifdef SACADO_DEBUG
-  if ((xsz != sz) && (xsz != 0) && (sz != 0))
-    throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-  if (xsz) {
-    if (sz) {
-      if (x.hasFastAccess())
-	for(int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) = this->val() * x.fastAccessDx(i) + this->fastAccessDx(i) * xval;
-      else
-	for (int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) = this->val() * x.dx(i) + this->fastAccessDx(i) * xval;
-    }
-    else {
-      this->resize(xsz);
-      if (x.hasFastAccess())
-	for(int i=0; i<xsz; ++i)
-	  this->fastAccessDx(i) = this->val() * x.fastAccessDx(i);
-      else
-	for (int i=0; i<xsz; ++i)
-	  this->fastAccessDx(i) = this->val() * x.dx(i);
-    }
-  }
-  else {
-    if (sz) {
-      for (int i=0; i<sz; ++i)
-	this->fastAccessDx(i) *= xval;
-    }
-  }
-
-  this->val() *= xval;
-
-  return *this;
-}
-
-template <typename ValueT, typename ScalarT>
-inline Sacado::Fad::SimpleFad<ValueT,ScalarT>& 
-Sacado::Fad::SimpleFad<ValueT,ScalarT>::
-operator /= (const Sacado::Fad::SimpleFad<ValueT,ScalarT>& x)
-{
-  int xsz = x.size(), sz = this->size();
-  ValueT xval = x.val();
-
-#ifdef SACADO_DEBUG
-  if ((xsz != sz) && (xsz != 0) && (sz != 0))
-    throw "Fad Error:  Attempt to assign with incompatible sizes";
-#endif
-
-  if (xsz) {
-    if (sz) {
-      if (x.hasFastAccess())
-	for(int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - this->val()*x.fastAccessDx(i) )/ (xval*xval);
-      else
-	for (int i=0; i<sz; ++i)
-	  this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - this->val()*x.dx(i) )/ (xval*xval);
-    }
-    else {
-      this->resize(xsz);
-      if (x.hasFastAccess())
-	for(int i=0; i<xsz; ++i)
-	  this->fastAccessDx(i) = - this->val()*x.fastAccessDx(i) / (xval*xval);
-      else
-	for (int i=0; i<xsz; ++i)
-	  this->fastAccessDx(i) = -this->val() * x.dx(i) / (xval*xval);
-    }
-  }
-  else {
-    if (sz) {
-      for (int i=0; i<sz; ++i)
-	this->fastAccessDx(i) /= xval;
-    }
-  }
-
-  this->val() /= xval;
-
-  return *this;
-}
-
 template <typename ValueT> 
-inline Sacado::Fad::SimpleFad<ValueT,ValueT>& 
-Sacado::Fad::SimpleFad<ValueT,ValueT>::
-operator += (const Sacado::Fad::SimpleFad<ValueT,ValueT>& x)
+inline Sacado::Fad::SimpleFad<ValueT>& 
+Sacado::Fad::SimpleFad<ValueT>::
+operator += (const Sacado::Fad::SimpleFad<ValueT>& x)
 {
   int xsz = x.size(), sz = this->size();
 
@@ -232,9 +69,9 @@ operator += (const Sacado::Fad::SimpleFad<ValueT,ValueT>& x)
 }
 
 template <typename ValueT> 
-inline Sacado::Fad::SimpleFad<ValueT,ValueT>& 
-Sacado::Fad::SimpleFad<ValueT,ValueT>::
-operator -= (const Sacado::Fad::SimpleFad<ValueT,ValueT>& x)
+inline Sacado::Fad::SimpleFad<ValueT>& 
+Sacado::Fad::SimpleFad<ValueT>::
+operator -= (const Sacado::Fad::SimpleFad<ValueT>& x)
 {
   int xsz = x.size(), sz = this->size();
 
@@ -270,9 +107,9 @@ operator -= (const Sacado::Fad::SimpleFad<ValueT,ValueT>& x)
 }
 
 template <typename ValueT> 
-inline Sacado::Fad::SimpleFad<ValueT,ValueT>& 
-Sacado::Fad::SimpleFad<ValueT,ValueT>::
-operator *= (const Sacado::Fad::SimpleFad<ValueT,ValueT>& x)
+inline Sacado::Fad::SimpleFad<ValueT>& 
+Sacado::Fad::SimpleFad<ValueT>::
+operator *= (const Sacado::Fad::SimpleFad<ValueT>& x)
 {
   int xsz = x.size(), sz = this->size();
   ValueT xval = x.val();
@@ -314,9 +151,9 @@ operator *= (const Sacado::Fad::SimpleFad<ValueT,ValueT>& x)
 }
 
 template <typename ValueT>
-inline Sacado::Fad::SimpleFad<ValueT,ValueT>& 
-Sacado::Fad::SimpleFad<ValueT,ValueT>::
-operator /= (const Sacado::Fad::SimpleFad<ValueT,ValueT>& x)
+inline Sacado::Fad::SimpleFad<ValueT>& 
+Sacado::Fad::SimpleFad<ValueT>::
+operator /= (const Sacado::Fad::SimpleFad<ValueT>& x)
 {
   int xsz = x.size(), sz = this->size();
   ValueT xval = x.val();

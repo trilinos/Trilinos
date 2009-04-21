@@ -31,8 +31,8 @@
 
 #include "Sacado_DynamicArrayTraits.hpp"
 
-template <typename OrdinalType, typename ValueType, typename ScalarType>
-Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >::
+template <typename OrdinalType, typename ValueType>
+Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >::
 Vector(OrdinalType vec_size, OrdinalType deriv_sz, 
        VectorDerivOrientation orient) :
   deriv_size_(deriv_sz), orient_(orient), stride_(1), vec_(vec_size)
@@ -56,9 +56,9 @@ Vector(OrdinalType vec_size, OrdinalType deriv_sz,
   }
 }
 
-template <typename OrdinalType, typename ValueType, typename ScalarType>
-Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >::
-Vector(const Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >& fv) :
+template <typename OrdinalType, typename ValueType>
+Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >::
+Vector(const Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >& fv) :
   deriv_size_(fv.deriv_size_), orient_(fv.orient_), stride_(fv.stride_), 
   vec_(fv.size())
 {
@@ -84,8 +84,8 @@ Vector(const Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,Scal
   }
 }
 
-template <typename OrdinalType, typename ValueType, typename ScalarType>
-Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >::
+template <typename OrdinalType, typename ValueType>
+Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >::
 ~Vector()
 {
   // Here we must destroy the value and derivative arrays
@@ -99,18 +99,18 @@ Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >::
   }
 }
 
-template <typename OrdinalType, typename ValueType, typename ScalarType>
-Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >&
-Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >::
-operator=(const Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >& fv) 
+template <typename OrdinalType, typename ValueType>
+Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >&
+Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >::
+operator=(const Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >& fv) 
 { 
   vec_ = fv.vec_; 
   return *this; 
 }
 
-template <typename OrdinalType, typename ValueType, typename ScalarType>
+template <typename OrdinalType, typename ValueType>
 ValueType* 
-Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >::
+Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >::
 vals() 
 { 
   if (vec_.size() == 0)
@@ -118,9 +118,9 @@ vals()
   return &(vec_[0].val()); 
 }
 
-template <typename OrdinalType, typename ValueType, typename ScalarType>
+template <typename OrdinalType, typename ValueType>
 const ValueType* 
-Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >::
+Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >::
 vals() const 
 { 
   if (vec_.size() == 0)
@@ -128,9 +128,9 @@ vals() const
   return &(vec_[0].val()); 
 }
 
-template <typename OrdinalType, typename ValueType, typename ScalarType>
+template <typename OrdinalType, typename ValueType>
 ValueType* 
-Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >::
+Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >::
 dx() 
 { 
   if (vec_.size() == 0 || deriv_size_ == 0)
@@ -138,9 +138,9 @@ dx()
   return &(vec_[0].fastAccessDx(0)); 
 }
 
-template <typename OrdinalType, typename ValueType, typename ScalarType>
+template <typename OrdinalType, typename ValueType>
 const ValueType* 
-Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType,ScalarType> >::
+Sacado::Fad::Vector< OrdinalType, Sacado::Fad::DVFad<ValueType> >::
 dx() const 
 { 
   if (vec_.size() == 0 || deriv_size_ == 0)

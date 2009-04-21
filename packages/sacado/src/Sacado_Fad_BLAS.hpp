@@ -765,32 +765,31 @@ namespace Sacado {
 // Here we provide partial specializations for Teuchos::BLAS for each Fad type
 #define TEUCHOS_BLAS_FAD_SPEC(FADTYPE)					\
 namespace Teuchos {							\
-  template <typename OrdinalType, typename ValueT, typename ScalarT>	\
-  class BLAS< OrdinalType, FADTYPE<ValueT,ScalarT> > :			\
-    public Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,ScalarT> > {	\
+  template <typename OrdinalType, typename ValueT>			\
+  class BLAS< OrdinalType, FADTYPE<ValueT> > :				\
+    public Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT> > {		\
   public:								\
     BLAS(bool use_default_impl = true,	bool use_dynamic = true,	\
 	 OrdinalType static_workspace_size = 0) :			\
-      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,ScalarT> >(	\
+      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT> >(		\
 	use_default_impl, use_dynamic,static_workspace_size) {}		\
     BLAS(const BLAS& x) :						\
-      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,ScalarT> >(x) {}	\
+      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT> >(x) {}		\
     virtual ~BLAS() {}							\
   };									\
 }
 #define TEUCHOS_BLAS_SFAD_SPEC(FADTYPE)					\
 namespace Teuchos {							\
-  template <typename OrdinalType, typename ValueT, int Num,		\
-	    typename ScalarT>						\
-  class BLAS< OrdinalType, FADTYPE<ValueT,Num,ScalarT> > :		\
-    public Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,Num,ScalarT> > { \
+  template <typename OrdinalType, typename ValueT, int Num>		\
+  class BLAS< OrdinalType, FADTYPE<ValueT,Num> > :			\
+    public Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,Num> > {	\
   public:								\
     BLAS(bool use_default_impl = true,	bool use_dynamic = true,	\
 	 OrdinalType static_workspace_size = 0) :			\
-      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,Num,ScalarT> >(	\
+      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,Num> >(		\
 	use_default_impl, use_dynamic, static_workspace_size) {}	\
     BLAS(const BLAS& x) :						\
-      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,Num,ScalarT> >(x) {} \
+      Sacado::Fad::BLAS< OrdinalType, FADTYPE<ValueT,Num> >(x) {}	\
     virtual ~BLAS() {}							\
   };									\
 }

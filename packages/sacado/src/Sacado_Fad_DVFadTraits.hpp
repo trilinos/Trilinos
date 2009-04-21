@@ -56,88 +56,87 @@
 // Forward declarations
 namespace Sacado {
   namespace Fad {
-    template <typename T1, typename T2> class DVFad;
+    template <typename T> class DVFad;
   }
 }
 
 namespace Sacado {
 
   //! Specialization of %Promote to DVFad types
-  template <typename ValueT, typename ScalarT>
-  struct Promote< Fad::DVFad<ValueT,ScalarT>, Fad::DVFad<ValueT,ScalarT> > {
-    typedef Fad::DVFad<ValueT,ScalarT> type;
+  template <typename ValueT>
+  struct Promote< Fad::DVFad<ValueT>, Fad::DVFad<ValueT> > {
+    typedef Fad::DVFad<ValueT> type;
   };
 
   //! Specialization of %Promote to DVFad types
-  template <typename ValueT, typename ScalarT, typename R>
-  struct Promote< Fad::DVFad<ValueT,ScalarT>, R > {
-    typedef typename ValueType< Fad::DVFad<ValueT,ScalarT> >::type value_type_l;
+  template <typename ValueT, typename R>
+  struct Promote< Fad::DVFad<ValueT>, R > {
+    typedef typename ValueType< Fad::DVFad<ValueT> >::type value_type_l;
     typedef typename ValueType<R>::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Fad::DVFad<value_type,ScalarT> type;
+    typedef Fad::DVFad<value_type> type;
   };
 
   //! Specialization of %Promote to DVFad types
-  template <typename L, typename ValueT, typename ScalarT>
-  struct Promote< L, Fad::DVFad<ValueT, ScalarT> > {
+  template <typename L, typename ValueT>
+  struct Promote< L, Fad::DVFad<ValueT> > {
   public:
 
     typedef typename ValueType<L>::type value_type_l;
-    typedef typename ValueType< Fad::DVFad<ValueT,ScalarT> >::type value_type_r;
+    typedef typename ValueType< Fad::DVFad<ValueT> >::type value_type_r;
     typedef typename Promote<value_type_l,value_type_r>::type value_type;
 
-    typedef Fad::DVFad<value_type,ScalarT> type;
+    typedef Fad::DVFad<value_type> type;
   };
 
   //! Specialization of %ScalarType to DVFad types
-  template <typename ValueT, typename ScalarT>
-  struct ScalarType< Fad::DVFad<ValueT,ScalarT> > {
-    typedef ScalarT type;
+  template <typename ValueT>
+  struct ScalarType< Fad::DVFad<ValueT> > {
+    typedef typename Fad::DVFad<ValueT>::ScalarT type;
   };
 
   //! Specialization of %ValueType to DVFad types
-  template <typename ValueT, typename ScalarT>
-  struct ValueType< Fad::DVFad<ValueT,ScalarT> > {
+  template <typename ValueT>
+  struct ValueType< Fad::DVFad<ValueT> > {
     typedef ValueT type;
   };
 
   //! Specialization of %IsADType to DVFad types
-  template <typename ValueT, typename ScalarT>
-  struct IsADType< Fad::DVFad<ValueT,ScalarT> > {
+  template <typename ValueT>
+  struct IsADType< Fad::DVFad<ValueT> > {
     static const bool value = true;
   };
 
   //! Specialization of %IsADType to DVFad types
-  template <typename ValueT, typename ScalarT>
-  struct IsScalarType< Fad::DVFad<ValueT,ScalarT> > {
+  template <typename ValueT>
+  struct IsScalarType< Fad::DVFad<ValueT> > {
     static const bool value = false;
   };
 
   //! Specialization of %Value to DVFad types
-  template <typename ValueT, typename ScalarT>
-  struct Value< Fad::DVFad<ValueT,ScalarT> > {
-    typedef typename ValueType< Fad::DVFad<ValueT,ScalarT> >::type value_type;
-    static const value_type& eval(const Fad::DVFad<ValueT,ScalarT>& x) { 
+  template <typename ValueT>
+  struct Value< Fad::DVFad<ValueT> > {
+    typedef typename ValueType< Fad::DVFad<ValueT> >::type value_type;
+    static const value_type& eval(const Fad::DVFad<ValueT>& x) { 
       return x.val(); }
   };
 
   //! Specialization of %ScalarValue to DVFad types
-  template <typename ValueT, typename ScalarT>
-  struct ScalarValue< Fad::DVFad<ValueT,ScalarT> > {
-    typedef typename ValueType< Fad::DVFad<ValueT,ScalarT> >::type value_type;
-    typedef typename ScalarType< Fad::DVFad<ValueT,ScalarT> >::type scalar_type;
-    static const scalar_type& eval(const Fad::DVFad<ValueT,ScalarT>& x) { 
+  template <typename ValueT>
+  struct ScalarValue< Fad::DVFad<ValueT> > {
+    typedef typename ValueType< Fad::DVFad<ValueT> >::type value_type;
+    typedef typename ScalarType< Fad::DVFad<ValueT> >::type scalar_type;
+    static const scalar_type& eval(const Fad::DVFad<ValueT>& x) { 
       return ScalarValue<value_type>::eval(x.val()); }
   };
 
   //! Specialization of %StringName to DVFad types
-  template <typename ValueT, typename ScalarT>
-  struct StringName< Fad::DVFad<ValueT,ScalarT> > {
+  template <typename ValueT>
+  struct StringName< Fad::DVFad<ValueT> > {
     static std::string eval() { 
       return std::string("Sacado::Fad::DVFad< ") + 
-	StringName<ValueT>::eval() + ", " + 
-	StringName<ScalarT>::eval() + " >"; }
+	StringName<ValueT>::eval() + " >"; }
   };
 
 } // namespace Sacado
@@ -151,35 +150,33 @@ namespace Sacado {
 namespace Teuchos {
 
   //! Specialization of %Teuchos::PromotionTraits to DVFad types
-  template <typename ValueT, typename ScalarT>
-  struct PromotionTraits< Sacado::Fad::DVFad<ValueT,ScalarT>, 
-			  Sacado::Fad::DVFad<ValueT,ScalarT> > {
-    typedef typename Sacado::Promote< Sacado::Fad::DVFad<ValueT,ScalarT>,
-				      Sacado::Fad::DVFad<ValueT,ScalarT> >::type
+  template <typename ValueT>
+  struct PromotionTraits< Sacado::Fad::DVFad<ValueT>, 
+			  Sacado::Fad::DVFad<ValueT> > {
+    typedef typename Sacado::Promote< Sacado::Fad::DVFad<ValueT>,
+				      Sacado::Fad::DVFad<ValueT> >::type
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to DVFad types
-  template <typename ValueT, typename ScalarT, typename R>
-  struct PromotionTraits< Sacado::Fad::DVFad<ValueT,ScalarT>, R > {
-    typedef typename Sacado::Promote< Sacado::Fad::DVFad<ValueT,ScalarT>,
-				      R >::type 
+  template <typename ValueT, typename R>
+  struct PromotionTraits< Sacado::Fad::DVFad<ValueT>, R > {
+    typedef typename Sacado::Promote< Sacado::Fad::DVFad<ValueT>, R >::type 
     promote;
   };
 
   //! Specialization of %Teuchos::PromotionTraits to DVFad types
-  template <typename L, typename ValueT, typename ScalarT>
-  struct PromotionTraits< L, Sacado::Fad::DVFad<ValueT, ScalarT> > {
+  template <typename L, typename ValueT>
+  struct PromotionTraits< L, Sacado::Fad::DVFad<ValueT> > {
   public:
-    typedef typename Sacado::Promote< L, 
-				      Sacado::Fad::DVFad<ValueT,ScalarT> >::type 
+    typedef typename Sacado::Promote< L, Sacado::Fad::DVFad<ValueT> >::type 
     promote;
   };
 
   //! Specializtion of Teuchos::ScalarTraits
-  template <typename ValueT, typename ScalarT>
-  struct ScalarTraits< Sacado::Fad::DVFad<ValueT,ScalarT> > :
-    public Sacado::Fad::ScalarTraitsImp< Sacado::Fad::DVFad<ValueT,ScalarT> >
+  template <typename ValueT>
+  struct ScalarTraits< Sacado::Fad::DVFad<ValueT> > :
+    public Sacado::Fad::ScalarTraitsImp< Sacado::Fad::DVFad<ValueT> >
   {};
 }
 #endif // HAVE_SACADO_TEUCHOS

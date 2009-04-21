@@ -110,6 +110,7 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/Sacado_ConfigDefs.h $(srcdir)/Sacado_Version.hpp \
 	$(srcdir)/Sacado_Traits.hpp $(srcdir)/Sacado.hpp \
 	$(srcdir)/Sacado_MathFunctions.hpp $(srcdir)/Sacado_cmath.hpp \
+	$(srcdir)/Sacado_dummy_arg.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadExpr.hpp \
@@ -273,7 +274,8 @@ DIST_SOURCES = $(am__libsacado_a_SOURCES_DIST) \
 am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/Sacado_Version.hpp $(srcdir)/Sacado_Traits.hpp \
 	$(srcdir)/Sacado.hpp $(srcdir)/Sacado_MathFunctions.hpp \
-	$(srcdir)/Sacado_cmath.hpp $(srcdir)/Sacado_Fad_GeneralFad.hpp \
+	$(srcdir)/Sacado_cmath.hpp $(srcdir)/Sacado_dummy_arg.hpp \
+	$(srcdir)/Sacado_Fad_GeneralFad.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadImp.hpp \
 	$(srcdir)/Sacado_Fad_GeneralFadExpr.hpp \
 	$(srcdir)/Sacado_Fad_ExpressionTraits.hpp \
@@ -719,6 +721,7 @@ SACADO_H = \
 	$(srcdir)/Sacado.hpp \
 	$(srcdir)/Sacado_MathFunctions.hpp \
 	$(srcdir)/Sacado_cmath.hpp \
+	$(srcdir)/Sacado_dummy_arg.hpp \
 	$(SACADO_FAD_H) \
 	$(SACADO_ELRFAD_H) \
 	$(SACADO_LFAD_H) \

@@ -235,6 +235,7 @@ SACADO_H = \
 	$(srcdir)/Sacado.hpp \
 	$(srcdir)/Sacado_MathFunctions.hpp \
 	$(srcdir)/Sacado_cmath.hpp \
+	$(srcdir)/Sacado_dummy_arg.hpp \
 	$(SACADO_FAD_H) \
 	$(SACADO_ELRFAD_H) \
 	$(SACADO_LFAD_H) \

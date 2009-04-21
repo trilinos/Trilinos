@@ -45,12 +45,11 @@ namespace Sacado {
     //! Implementation for Teuchos::ScalarTraits for all Fad types
     template <typename FadType>
     struct ScalarTraitsImp {
-      typedef typename Sacado::ScalarType<FadType>::type ScalarT;
       typedef typename Sacado::ValueType<FadType>::type ValueT;
 
-      typedef typename mpl::apply<FadType,typename Teuchos::ScalarTraits<ValueT>::magnitudeType,typename Teuchos::ScalarTraits<ScalarT>::magnitudeType>::type magnitudeType;
-      typedef typename mpl::apply<FadType,typename Teuchos::ScalarTraits<ValueT>::halfPrecision,typename Teuchos::ScalarTraits<ScalarT>::halfPrecision>::type halfPrecision;
-      typedef typename mpl::apply<FadType,typename Teuchos::ScalarTraits<ValueT>::doublePrecision,typename Teuchos::ScalarTraits<ScalarT>::doublePrecision>::type doublePrecision;
+      typedef typename mpl::apply<FadType,typename Teuchos::ScalarTraits<ValueT>::magnitudeType>::type magnitudeType;
+      typedef typename mpl::apply<FadType,typename Teuchos::ScalarTraits<ValueT>::halfPrecision>::type halfPrecision;
+      typedef typename mpl::apply<FadType,typename Teuchos::ScalarTraits<ValueT>::doublePrecision>::type doublePrecision;
 
       static const bool isComplex = Teuchos::ScalarTraits<ValueT>::isComplex;
       static const bool isOrdinal = Teuchos::ScalarTraits<ValueT>::isOrdinal;

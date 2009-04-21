@@ -57,6 +57,7 @@
 #include "Sacado_Fad_SFadTraits.hpp"
 #include "Sacado_Fad_Expression.hpp"
 #include "Sacado_StaticArrayTraits.hpp"
+#include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
@@ -259,28 +260,20 @@ namespace Sacado {
      * memory allocation, and is appropriate for whenever the number
      * of derivative components is known at compile time.  The size
      * of the derivative array is fixed by the template parameter \c Num.  
-     *
-     * The class is templated on two types, \c ValueT and \c ScalarT.  Type
-     * \c ValueT is the type for values the derivative class holds, while
-     * type \c ScalarT is the type of basic scalars in the code being
-     * differentiated (usually \c doubles).  When computing first derivatives, 
-     * these two types are generally the same,  However when computing
-     * higher derivatives, \c ValueT may be SFad<double> while \c ScalarT will
-     * still be \c double.  Usually \c ScalarT does not need to be explicitly
-     * specified since it can be deduced from \c ValueT through the template
-     * metafunction ScalarType.
      */
-    template <typename ValueT, int Num,
-	      typename ScalarT = typename ScalarType<ValueT>::type >
+    template <typename ValueT, int Num>
     class SFad : 
       public Expr< SFadExprTag<ValueT,Num > > {
 
     public:
 
+      //! Typename of scalar's (which may be different from ValueT)
+      typedef typename ScalarType<ValueT>::type ScalarT;
+
       //! Turn SFad into a meta-function class usable with mpl::apply
-      template <typename T, typename U = typename ScalarType<T>::type> 
+      template <typename T> 
       struct apply {
-	typedef SFad<T,Num,U> type;
+	typedef SFad<T,Num> type;
       };
 
       /*!
@@ -304,9 +297,10 @@ namespace Sacado {
 
       //! Constructor with supplied value \c x of type ScalarT
       /*!
-       * Initializes value to \c ValueT(x) and derivative array is empty
+       * Initializes value to \c ValueT(x) and derivative array is empty.
+       * Creates a dummy overload when ValueT and ScalarT are the same type.
        */
-      SFad(const ScalarT& x) : 
+      SFad(const typename dummy<ValueT,ScalarT>::type& x) : 
 	Expr< SFadExprTag< ValueT,Num > >(ValueT(x)) {}
 
       //! Constructor with size \c sz and value \c x
@@ -345,94 +339,11 @@ namespace Sacado {
       }
 
       //! Assignment operator with constant right-hand-side
-      SFad& operator=(const ScalarT& v) {
+      /*!
+       * Creates a dummy overload when ValueT and ScalarT are the same type.
+       */
+      SFad& operator=(const typename dummy<ValueT,ScalarT>::type& v) {
 	Expr< SFadExprTag< ValueT,Num > >::operator=(ValueT(v));
-	return *this;
-      }
-
-      //! Assignment operator with DFad right-hand-side
-      SFad& operator=(const SFad& x) {
-	Expr< SFadExprTag< ValueT,Num > >::operator=(static_cast<const Expr< SFadExprTag< ValueT,Num > >&>(x));
-	return *this;
-      }
-
-      //! Assignment operator with any expression right-hand-side
-      template <typename S> SFad& operator=(const Expr<S>& x) 
-      {
-	Expr< SFadExprTag< ValueT,Num > >::operator=(x);
-	return *this;
-      }
-
-    }; // class SFad<ValueT,Num,ScalarT>
-
-    //! Forward-mode AD class using static memory allocation
-    /*!
-     * This is the specialization of SFad<ValueT,ScalarT> for when
-     * \c ValueT and \c ScalarT are the same type.  It removes an extra
-     * constructor that would be duplicated in this case.
-     */
-    template <typename ValueT, int Num>
-    class SFad<ValueT,Num,ValueT> : 
-      public Expr< SFadExprTag<ValueT,Num >  >{
-
-    public:
-
-      //! Turn SFad into a meta-function class usable with mpl::apply
-      template <typename T, typename U = typename ScalarType<T>::type> 
-      struct apply {
-	typedef SFad<T,Num,U> type;
-      };
-
-      /*!
-       * @name Initialization methods
-       */
-      //@{
-
-      //! Default constructor.
-      /*!
-       * Initializes value to 0 and derivative array is empty
-       */
-      SFad() : Expr< SFadExprTag< ValueT,Num > >() {}
-
-      //! Constructor with supplied value \c x
-      /*!
-       * Initializes value to \c x and derivative array is empty
-       */
-      SFad(const ValueT & x) : 
-	Expr< SFadExprTag< ValueT,Num > >(x) {}
-
-      //! Constructor with size \c sz and value \c x
-      /*!
-       * Initializes value to \c x and derivative array 0 of length \c sz
-       */
-      SFad(const int sz, const ValueT & x) : 
-	Expr< SFadExprTag< ValueT,Num > >(sz,x) {}
-
-      //! Constructor with size \c sz, index \c i, and value \c x
-      /*!
-       * Initializes value to \c x and derivative array of length \c sz
-       * as row \c i of the identity matrix, i.e., sets derivative component
-       * \c i to 1 and all other's to zero.
-       */
-      SFad(const int sz, const int i, const ValueT & x) : 
-	Expr< SFadExprTag< ValueT,Num > >(sz,i,x) {}
-
-      //! Copy constructor
-      SFad(const SFad& x) : 
-	Expr< SFadExprTag< ValueT,Num > >(x) {}
-
-      //! Copy constructor from any Expression object
-      template <typename S> SFad(const Expr<S>& x) : 
-	Expr< SFadExprTag< ValueT,Num > >(x) {}
-
-      //@}
-
-      //! Destructor
-      ~SFad() {}
-
-      //! Assignment operator with constant right-hand-side
-      SFad& operator=(const ValueT& v) {
-	Expr< SFadExprTag< ValueT,Num > >::operator=(v);
 	return *this;
       }
 
