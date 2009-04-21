@@ -53,7 +53,10 @@ namespace Sacado {
      * derivative using forward-mode AD.
      */
     template <typename ValT, typename LogT>
-    class LogicalSparseImp {
+    class LogicalSparseImp : 
+      public Fad::DynamicStorage<ValT,LogT> {
+
+      typedef Fad::DynamicStorage<ValT,LogT> Storage;
 
     public:
 
@@ -69,19 +72,19 @@ namespace Sacado {
       //@{
 
       //! Default constructor
-      LogicalSparseImp() : s_(value_type(0)) {}
+      LogicalSparseImp() : Storage(value_type(0)) {}
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      LogicalSparseImp(const value_type & x) : s_(x) {}
+      LogicalSparseImp(const value_type & x) : Storage(x) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      LogicalSparseImp(const int sz, const value_type & x) : s_(sz, x) {}
+      LogicalSparseImp(const int sz, const value_type & x) : Storage(sz, x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -90,13 +93,13 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       LogicalSparseImp(const int sz, const int i, const value_type & x) : 
-	s_(sz, x) { 
-	s_.dx_[i]=logical_type(1); 
+	Storage(sz, x) { 
+	this->fastAccessDx(i)=logical_type(1); 
       }
 
       //! Copy constructor
       LogicalSparseImp(const LogicalSparseImp& x) : 
-	s_(x.s_) {}
+	Storage(x) {}
 
       //! Copy constructor from any Expression object
       template <typename S> LogicalSparseImp(const Expr<S>& x);
@@ -113,30 +116,6 @@ namespace Sacado {
        */
       void diff(const int ith, const int n);
 
-      //! Resize derivative array to length \c sz
-      /*!
-       * This method does not (re)initialize the derivative components, so any
-       * previous values may be lost.  Also any pointers to derivative
-       * components may be invalid.
-       */
-      void resize(int sz) { s_.resize(sz); }
-
-      //! Zero out the derivative array
-      void zero() { s_.zero(); }
-
-      //@}
-
-      /*!
-       * @name Value accessor methods
-       */
-      //@{
-
-      //! Returns value
-      const value_type& val() const { return s_.val_;}
-
-      //! Returns value
-      value_type& val() { return s_.val_;}
-
       //@}
 
       /*!
@@ -144,33 +123,17 @@ namespace Sacado {
        */
       //@{
 
-      //! Returns number of derivative components
-      int size() const { return s_.size();}
-
       //! Returns true if derivative array is not empty
-      bool hasFastAccess() const { return s_.size()!=0;}
+      bool hasFastAccess() const { return this->size()!=0;}
 
       //! Returns true if derivative array is empty
-      bool isPassive() const { return s_.size()!=0;}
+      bool isPassive() const { return this->size()!=0;}
       
       //! Set whether variable is constant
       void setIsConstant(bool is_const) { 
-	if (is_const && s_.size()!=0)
-	  s_.resize(0);
+	if (is_const && this->size()!=0)
+	  this->resize(0);
       }
-
-      //! Returns derivative array
-      const logical_type* dx() const { return &(s_.dx_[0]);}
-
-      //! Returns derivative component \c i with bounds checking
-      logical_type dx(int i) const { 
-	return s_.size() ? s_.dx_[i] : logical_type(0); }
-    
-      //! Returns derivative component \c i without bounds checking
-      logical_type& fastAccessDx(int i) { return s_.dx_[i];}
-
-      //! Returns derivative component \c i without bounds checking
-      const logical_type& fastAccessDx(int i) const { return s_.dx_[i];}
     
       //@}
 
@@ -226,11 +189,6 @@ namespace Sacado {
       LogicalSparseImp& operator /= (const Expr<S>& x);
 
       //@}
-
-    protected:
-
-      //! Value & Sparsity
-      Fad::DynamicStorage<value_type,logical_type> s_;
 
     }; // class LogicalSparseImp
 

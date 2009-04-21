@@ -68,9 +68,6 @@ SACADO_FAD_H = \
 	$(srcdir)/Sacado_Fad_DVFadTraits.hpp \
 	$(srcdir)/Sacado_Fad_Vector.hpp \
 	$(srcdir)/Sacado_Fad_VectorImp.hpp \
-	$(srcdir)/Sacado_Fad_GeneralVFad.hpp \
-	$(srcdir)/Sacado_Fad_GeneralVFadExpr.hpp \
-	$(srcdir)/Sacado_Fad_GeneralVFadImp.hpp \
 	$(srcdir)/Sacado_Fad_VectorDynamicStorage.hpp \
 	$(srcdir)/Sacado_Fad_SimpleFad.hpp \
 	$(srcdir)/Sacado_Fad_SimpleFadImp.hpp \

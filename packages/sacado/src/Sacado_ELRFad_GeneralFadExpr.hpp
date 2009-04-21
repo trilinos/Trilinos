@@ -103,19 +103,19 @@ namespace Sacado {
 
       //! Return tangent component \c i of arguments
       void getTangents(int i, T dots[]) const { 
-	if (i<this->s_.size())
-	  dots[0] = this->s_.dx_[i];
+	if (i<this->size())
+	  dots[0] = this->fastAccessDx(i);
 	else
 	  dots[0] = 0.0;
       }
 
       //! Return whether argument is active
       template <int Arg>
-      bool isActive() const { return this->s_.size() > 0; }
+      bool isActive() const { return this->size() > 0; }
 
       //! Return tangent component \c i of argument \c Arg
       template <int Arg>
-      T getTangent(int i) const { return this->s_.dx_[i]; }
+      T getTangent(int i) const { return this->fastAccessDx(i); }
 
     }; // class Expr<GeneralFad>
     

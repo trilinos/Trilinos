@@ -50,9 +50,6 @@ SET(HEADERS ${HEADERS}
   Sacado_Fad_DVFadTraits.hpp
   Sacado_Fad_Vector.hpp
   Sacado_Fad_VectorImp.hpp
-  Sacado_Fad_GeneralVFad.hpp
-  Sacado_Fad_GeneralVFadExpr.hpp
-  Sacado_Fad_GeneralVFadImp.hpp
   Sacado_Fad_VectorDynamicStorage.hpp
   Sacado_Fad_SimpleFad.hpp
   Sacado_Fad_SimpleFadImp.hpp

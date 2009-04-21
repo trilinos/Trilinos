@@ -56,25 +56,25 @@
 template <typename T, typename Storage> 
 template <typename S> 
 inline Sacado::CacheFad::GeneralFad<T,Storage>::GeneralFad(const Expr<S>& x) :
-  s_(T(0.))
+  Storage(T(0.))
 {
   int sz = x.size();
 
   T xval = x.val(); 
 
-  if (sz != s_.size()) 
-    s_.resize(sz);
+  if (sz != this->size()) 
+    this->resize(sz);
 
   if (sz) {
     if (x.hasFastAccess())
       for(int i=0; i<sz; ++i) 
-	s_.dx_[i] = x.fastAccessDx(i);
+	this->fastAccessDx(i) = x.fastAccessDx(i);
     else
       for(int i=0; i<sz; ++i) 
-	s_.dx_[i] = x.dx(i);
+	this->fastAccessDx(i) = x.dx(i);
   }
 
-  s_.val_ = xval;
+  this->val() = xval;
 }
 
 
@@ -82,11 +82,11 @@ template <typename T, typename Storage>
 inline void 
 Sacado::CacheFad::GeneralFad<T,Storage>::diff(const int ith, const int n) 
 { 
-  if (s_.size() == 0) 
-    s_.resize(n);
+  if (this->size() == 0) 
+    this->resize(n);
 
-  s_.zero();
-  s_.dx_[ith] = T(1.);
+  this->zero();
+  this->fastAccessDx(ith) = T(1.);
 
 }
 
@@ -94,11 +94,11 @@ template <typename T, typename Storage>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator=(const T& v) 
 {
-  s_.val_ = v;
+  this->val() = v;
 
-  if (s_.size()) {
-    s_.zero();    // We need to zero out the array for future resizes
-    s_.resize(0);
+  if (this->size()) {
+    this->zero();    // We need to zero out the array for future resizes
+    this->resize(0);
   }
 
   return *this;
@@ -110,7 +110,7 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator=(
 			     const Sacado::CacheFad::GeneralFad<T,Storage>& x) 
 {
   // Copy val_ and dx_
-  s_.operator=(x.s_);
+  Storage::operator=(x);
   
   return *this;
 }
@@ -124,19 +124,19 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator=(const Expr<S>& x)
 
   T xval = x.val();
 
-  if (sz != s_.size()) 
-    s_.resize(sz);
+  if (sz != this->size()) 
+    this->resize(sz);
 
   if (sz) {
     if (x.hasFastAccess())
       for(int i=0; i<sz; ++i)
-	s_.dx_[i] = x.fastAccessDx(i);
+	this->fastAccessDx(i) = x.fastAccessDx(i);
     else
       for(int i=0; i<sz; ++i)
-	s_.dx_[i] = x.dx(i);
+	this->fastAccessDx(i) = x.dx(i);
   }
   
-  s_.val_ = xval;
+  this->val() = xval;
   
   return *this;
 }
@@ -145,7 +145,7 @@ template <typename T, typename Storage>
 inline  Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator += (const T& v)
 {
-  s_.val_ += v;
+  this->val() += v;
 
   return *this;
 }
@@ -154,7 +154,7 @@ template <typename T, typename Storage>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator -= (const T& v)
 {
-  s_.val_ -= v;
+  this->val() -= v;
 
   return *this;
 }
@@ -163,11 +163,11 @@ template <typename T, typename Storage>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator *= (const T& v)
 {
-  int sz = s_.size();
+  int sz = this->size();
 
-  s_.val_ *= v;
+  this->val() *= v;
   for (int i=0; i<sz; ++i)
-    s_.dx_[i] *= v;
+    this->fastAccessDx(i) *= v;
 
   return *this;
 }
@@ -176,11 +176,11 @@ template <typename T, typename Storage>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator /= (const T& v)
 {
-  int sz = s_.size();
+  int sz = this->size();
 
-  s_.val_ /= v;
+  this->val() /= v;
   for (int i=0; i<sz; ++i)
-    s_.dx_[i] /= v;
+    this->fastAccessDx(i) /= v;
 
   return *this;
 }
@@ -190,7 +190,7 @@ template <typename S>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator += (const Sacado::CacheFad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = s_.size();
+  int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
@@ -203,23 +203,23 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator += (const Sacado::CacheFad::Ex
     if (sz) {
       if (x.hasFastAccess())
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] += x.fastAccessDx(i);
+	  this->fastAccessDx(i) += x.fastAccessDx(i);
       else
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] += x.dx(i);
+	  this->fastAccessDx(i) += x.dx(i);
     }
     else {
-      s_.resize(xsz);
+      this->resize(xsz);
       if (x.hasFastAccess())
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.fastAccessDx(i);
+	  this->fastAccessDx(i) = x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.dx(i);
+	  this->fastAccessDx(i) = x.dx(i);
     }
   }
 
-  s_.val_ += xval;
+  this->val() += xval;
 
   return *this;
 }
@@ -229,7 +229,7 @@ template <typename S>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator -= (const Sacado::CacheFad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = s_.size();
+  int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
@@ -242,23 +242,23 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator -= (const Sacado::CacheFad::Ex
     if (sz) {
       if (x.hasFastAccess())
 	for(int i=0; i<sz; ++i)
-	  s_.dx_[i] -= x.fastAccessDx(i);
+	  this->fastAccessDx(i) -= x.fastAccessDx(i);
       else
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] -= x.dx(i);
+	  this->fastAccessDx(i) -= x.dx(i);
     }
     else {
-      s_.resize(xsz);
+      this->resize(xsz);
       if (x.hasFastAccess())
 	for(int i=0; i<xsz; ++i)
-	  s_.dx_[i] = -x.fastAccessDx(i);
+	  this->fastAccessDx(i) = -x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = -x.dx(i);
+	  this->fastAccessDx(i) = -x.dx(i);
     }
   }
 
-  s_.val_ -= xval;
+  this->val() -= xval;
 
 
   return *this;
@@ -269,7 +269,7 @@ template <typename S>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator *= (const Sacado::CacheFad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = s_.size();
+  int xsz = x.size(), sz = this->size();
   T xval = x.val();
 
 #ifdef SACADO_DEBUG
@@ -281,29 +281,29 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator *= (const Sacado::CacheFad::Ex
     if (sz) {
       if (x.hasFastAccess())
 	for(int i=0; i<sz; ++i)
-	  s_.dx_[i] = s_.val_ * x.fastAccessDx(i) + s_.dx_[i] * xval;
+	  this->fastAccessDx(i) = this->val() * x.fastAccessDx(i) + this->fastAccessDx(i) * xval;
       else
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] = s_.val_ * x.dx(i) + s_.dx_[i] * xval;
+	  this->fastAccessDx(i) = this->val() * x.dx(i) + this->fastAccessDx(i) * xval;
     }
     else {
-      s_.resize(xsz);
+      this->resize(xsz);
       if (x.hasFastAccess())
 	for(int i=0; i<xsz; ++i)
-	  s_.dx_[i] = s_.val_ * x.fastAccessDx(i);
+	  this->fastAccessDx(i) = this->val() * x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = s_.val_ * x.dx(i);
+	  this->fastAccessDx(i) = this->val() * x.dx(i);
     }
   }
   else {
     if (sz) {
       for (int i=0; i<sz; ++i)
-	s_.dx_[i] *= xval;
+	this->fastAccessDx(i) *= xval;
     }
   }
 
-  s_.val_ *= xval;
+  this->val() *= xval;
 
   return *this;
 }
@@ -313,7 +313,7 @@ template <typename S>
 inline Sacado::CacheFad::GeneralFad<T,Storage>& 
 Sacado::CacheFad::GeneralFad<T,Storage>::operator /= (const Sacado::CacheFad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = s_.size();
+  int xsz = x.size(), sz = this->size();
   T xval = x.val();
 
 #ifdef SACADO_DEBUG
@@ -325,29 +325,29 @@ Sacado::CacheFad::GeneralFad<T,Storage>::operator /= (const Sacado::CacheFad::Ex
     if (sz) {
       if (x.hasFastAccess())
 	for(int i=0; i<sz; ++i)
-	  s_.dx_[i] = ( s_.dx_[i]*xval - s_.val_*x.fastAccessDx(i) )/ (xval*xval);
+	  this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - this->val()*x.fastAccessDx(i) )/ (xval*xval);
       else
 	for (int i=0; i<sz; ++i)
-	  s_.dx_[i] = ( s_.dx_[i]*xval - s_.val_*x.dx(i) )/ (xval*xval);
+	  this->fastAccessDx(i) = ( this->fastAccessDx(i)*xval - this->val()*x.dx(i) )/ (xval*xval);
     }
     else {
-      s_.resize(xsz);
+      this->resize(xsz);
       if (x.hasFastAccess())
 	for(int i=0; i<xsz; ++i)
-	  s_.dx_[i] = - s_.val_*x.fastAccessDx(i) / (xval*xval);
+	  this->fastAccessDx(i) = - this->val()*x.fastAccessDx(i) / (xval*xval);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = -s_.val_ * x.dx(i) / (xval*xval);
+	  this->fastAccessDx(i) = -this->val() * x.dx(i) / (xval*xval);
     }
   }
   else {
     if (sz) {
       for (int i=0; i<sz; ++i)
-	s_.dx_[i] /= xval;
+	this->fastAccessDx(i) /= xval;
     }
   }
 
-  s_.val_ /= xval;
+  this->val() /= xval;
 
   return *this;
 }

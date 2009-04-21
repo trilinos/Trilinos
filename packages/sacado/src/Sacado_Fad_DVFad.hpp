@@ -32,7 +32,7 @@
 #ifndef SACADO_FAD_DVFAD_HPP
 #define SACADO_FAD_DVFAD_HPP
 
-#include "Sacado_Fad_GeneralVFadExpr.hpp"
+#include "Sacado_Fad_GeneralFadExpr.hpp"
 #include "Sacado_Fad_VectorDynamicStorage.hpp"
 #include "Sacado_Fad_DVFadTraits.hpp"
 
@@ -63,7 +63,7 @@ namespace Sacado {
     template <typename ValueT, 
 	      typename ScalarT = typename ScalarType<ValueT>::type >
     class DVFad : 
-      public Expr< GeneralVFad<ValueT,VectorDynamicStorage<ValueT> > > {
+      public Expr< GeneralFad<ValueT,VectorDynamicStorage<ValueT> > > {
 
     public:
 
@@ -83,28 +83,28 @@ namespace Sacado {
        * Initializes value to 0 and derivative array is empty
        */
       DVFad() : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >() {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >() {}
 
       //! Constructor with supplied value \c x of type ValueT
       /*!
        * Initializes value to \c x and derivative array is empty
        */
       DVFad(const ValueT& x) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
 
       //! Constructor with supplied value \c x of type ScalarT
       /*!
        * Initializes value to \c ValueT(x) and derivative array is empty
        */
       DVFad(const ScalarT& x) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(ValueT(x)) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(ValueT(x)) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       DVFad(const int sz, const ValueT& x) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,x) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -113,7 +113,7 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       DVFad(const int sz, const int i, const ValueT & x) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,i,x) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,i,x) {}
 
       //! Constructor with supplied memory
       /*!
@@ -121,7 +121,7 @@ namespace Sacado {
        * to\c dx.  Derivative array is zero'd out if \c zero_out is true.
        */
       DVFad(const int sz, ValueT* x, ValueT* dx, bool zero_out = false) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,x,dx,zero_out) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,x,dx,zero_out) {}
 
       //! Constructor with supplied memory and index \c i
       /*!
@@ -130,15 +130,15 @@ namespace Sacado {
        * i.e., sets derivative component \c i to 1 and all other's to zero.
        */
       DVFad(const int sz, const int i, ValueT* x, ValueT* dx) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,i,x,dx) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,i,x,dx) {}
 
       //! Copy constructor
       DVFad(const DVFad& x) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
 
       //! Copy constructor from any Expression object
       template <typename S> DVFad(const Expr<S>& x) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
 
       //@}
 
@@ -147,26 +147,26 @@ namespace Sacado {
 
       //! Assignment operator with constant right-hand-side
       DVFad& operator=(const ValueT& v) {
-	GeneralVFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(v);
+	GeneralFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(v);
 	return *this;
       }
 
       //! Assignment operator with constant right-hand-side
       DVFad& operator=(const ScalarT& v) {
-	GeneralVFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(ValueT(v));
+	GeneralFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(ValueT(v));
 	return *this;
       }
 
       //! Assignment operator with DVFad right-hand-side
       DVFad& operator=(const DVFad& x) {
-	GeneralVFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(static_cast<const GeneralVFad< ValueT,VectorDynamicStorage<ValueT> >&>(x));
+	GeneralFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(static_cast<const GeneralFad< ValueT,VectorDynamicStorage<ValueT> >&>(x));
 	return *this;
       }
 
       //! Assignment operator with any expression right-hand-side
       template <typename S> DVFad& operator=(const Expr<S>& x) 
       {
-	GeneralVFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(x);
+	GeneralFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(x);
 	return *this;
       }
 	
@@ -183,7 +183,7 @@ namespace Sacado {
      */
     template <typename ValueT>
     class DVFad<ValueT,ValueT> : 
-      public Expr< GeneralVFad<ValueT,VectorDynamicStorage<ValueT> > > {
+      public Expr< GeneralFad<ValueT,VectorDynamicStorage<ValueT> > > {
 
     public:
 
@@ -203,21 +203,21 @@ namespace Sacado {
        * Initializes value to 0 and derivative array is empty
        */
       DVFad() : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >() {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >() {}
 
       //! Constructor with supplied value \c x of type ValueT
       /*!
        * Initializes value to \c x and derivative array is empty
        */
       DVFad(const ValueT& x) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
       DVFad(const int sz, const ValueT& x) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,x) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -226,7 +226,7 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       DVFad(const int sz, const int i, const ValueT& x) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,i,x) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,i,x) {}
 
       //! Constructor with supplied memory
       /*!
@@ -234,7 +234,7 @@ namespace Sacado {
        * to\c dx.  Derivative array is zero'd out if \c zero_out is true.
        */
       DVFad(const int sz, ValueT* x, ValueT* dx, bool zero_out = false) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,x,dx,zero_out) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,x,dx,zero_out) {}
 
       //! Constructor with supplied memory and index \c i
       /*!
@@ -243,15 +243,15 @@ namespace Sacado {
        * i.e., sets derivative component \c i to 1 and all other's to zero.
        */
       DVFad(const int sz, const int i, ValueT* x, ValueT* dx) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,i,x,dx) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(sz,i,x,dx) {}
 
       //! Copy constructor
       DVFad(const DVFad& x) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
 
       //! Copy constructor from any Expression object
       template <typename S> DVFad(const Expr<S>& x) : 
-	Expr< GeneralVFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
+	Expr< GeneralFad< ValueT,VectorDynamicStorage<ValueT> > >(x) {}
 
       //@}
 
@@ -260,20 +260,20 @@ namespace Sacado {
 
       //! Assignment operator with constant right-hand-side
       DVFad& operator=(const ValueT& v) {
-	GeneralVFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(v);
+	GeneralFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(v);
 	return *this;
       }
 
       //! Assignment operator with DVFad right-hand-side
       DVFad& operator=(const DVFad& x) {
-	GeneralVFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(static_cast<const GeneralVFad< ValueT,VectorDynamicStorage<ValueT> >&>(x));
+	GeneralFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(static_cast<const GeneralFad< ValueT,VectorDynamicStorage<ValueT> >&>(x));
 	return *this;
       }
 
       //! Assignment operator with any expression right-hand-side
       template <typename S> DVFad& operator=(const Expr<S>& x) 
       {
-	GeneralVFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(x);
+	GeneralFad< ValueT,VectorDynamicStorage<ValueT> >::operator=(x);
 	return *this;
       }
 

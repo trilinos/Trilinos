@@ -57,23 +57,23 @@ template <typename ValT, typename LogT>
 template <typename S> 
 inline Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 LogicalSparseImp(const Expr<S>& x) :
-  s_(value_type(0))
+  Storage(value_type(0))
 {
   int sz = x.size();
 
-  if (sz != s_.size()) 
-    s_.resize(sz);
+  if (sz != this->size()) 
+    this->resize(sz);
 
   if (sz) {
     if (x.hasFastAccess())
       for(int i=0; i<sz; ++i) 
-	s_.dx_[i] = x.fastAccessDx(i);
+	this->fastAccessDx(i) = x.fastAccessDx(i);
     else
       for(int i=0; i<sz; ++i) 
-	s_.dx_[i] = x.dx(i);
+	this->fastAccessDx(i) = x.dx(i);
   }
 
-  s_.val_ = x.val();
+  this->val() = x.val();
 }
 
 
@@ -82,11 +82,11 @@ inline void
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 diff(const int ith, const int n) 
 { 
-  if (s_.size() == 0) 
-    s_.resize(n);
+  if (this->size() == 0) 
+    this->resize(n);
 
-  s_.zero();
-  s_.dx_[ith] = logical_type(1);
+  this->zero();
+  this->fastAccessDx(ith) = logical_type(1);
 
 }
 
@@ -95,11 +95,11 @@ inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 operator=(const ValT& v) 
 {
-  s_.val_ = v;
+  this->val() = v;
 
-  if (s_.size()) {
-    s_.zero();    // We need to zero out the array for future resizes
-    s_.resize(0);
+  if (this->size()) {
+    this->zero();    // We need to zero out the array for future resizes
+    this->resize(0);
   }
 
   return *this;
@@ -111,7 +111,7 @@ Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 operator=(const Sacado::LFad::LogicalSparseImp<ValT,LogT>& x) 
 {
   // Copy value & dx_
-  s_.operator=(x.s_);
+  Storage::operator=(x);
   
   return *this;
 }
@@ -124,19 +124,19 @@ operator=(const Expr<S>& x)
 {
   int sz = x.size();
 
-  if (sz != s_.size()) 
-    s_.resize(sz);
+  if (sz != this->size()) 
+    this->resize(sz);
 
   if (sz) {
     if (x.hasFastAccess())
       for(int i=0; i<sz; ++i)
-	s_.dx_[i] = x.fastAccessDx(i);
+	this->fastAccessDx(i) = x.fastAccessDx(i);
     else
       for(int i=0; i<sz; ++i)
-	s_.dx_[i] = x.dx(i);
+	this->fastAccessDx(i) = x.dx(i);
   }
   
-  s_.val_ = x.val();
+  this->val() = x.val();
   
   return *this;
 }
@@ -146,7 +146,7 @@ inline  Sacado::LFad::LogicalSparseImp<ValT,LogT>&
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 operator += (const ValT& v)
 {
-  s_.val_ += v;
+  this->val() += v;
 
   return *this;
 }
@@ -156,7 +156,7 @@ inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 operator -= (const ValT& v)
 {
-  s_.val_ -= v;
+  this->val() -= v;
 
   return *this;
 }
@@ -166,7 +166,7 @@ inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 operator *= (const ValT& v)
 {
-  s_.val_ *= v;
+  this->val() *= v;
 
   return *this;
 }
@@ -176,7 +176,7 @@ inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 operator /= (const ValT& v)
 {
-  s_.val_ /= v;
+  this->val() /= v;
   
   return *this;
 }
@@ -187,7 +187,7 @@ inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 operator += (const Sacado::LFad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = s_.size();
+  int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
@@ -198,23 +198,23 @@ operator += (const Sacado::LFad::Expr<S>& x)
     if (sz) {
       if (x.hasFastAccess())
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
+	  this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = s_.dx_[i] || x.dx(i);
+	  this->fastAccessDx(i) = this->fastAccessDx(i) || x.dx(i);
     }
     else {
-      s_.resize(xsz);
+      this->resize(xsz);
       if (x.hasFastAccess())
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.fastAccessDx(i);
+	  this->fastAccessDx(i) = x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.dx(i);
+	  this->fastAccessDx(i) = x.dx(i);
     }
   }
 
-  s_.val_ += x.val();
+  this->val() += x.val();
 
   return *this;
 }
@@ -225,7 +225,7 @@ inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 operator -= (const Sacado::LFad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = s_.size();
+  int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
@@ -236,23 +236,23 @@ operator -= (const Sacado::LFad::Expr<S>& x)
     if (sz) {
       if (x.hasFastAccess())
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
+	  this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = s_.dx_[i] || x.dx(i);
+	  this->fastAccessDx(i) = this->fastAccessDx(i) || x.dx(i);
     }
     else {
-      s_.resize(xsz);
+      this->resize(xsz);
       if (x.hasFastAccess())
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.fastAccessDx(i);
+	  this->fastAccessDx(i) = x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.dx(i);
+	  this->fastAccessDx(i) = x.dx(i);
     }
   }
 
-  s_.val_ -= x.val();
+  this->val() -= x.val();
 
 
   return *this;
@@ -264,7 +264,7 @@ inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 operator *= (const Sacado::LFad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = s_.size();
+  int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
@@ -275,23 +275,23 @@ operator *= (const Sacado::LFad::Expr<S>& x)
     if (sz) {
       if (x.hasFastAccess())
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
+	  this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = s_.dx_[i] || x.dx(i);
+	  this->fastAccessDx(i) = this->fastAccessDx(i) || x.dx(i);
     }
     else {
-      s_.resize(xsz);
+      this->resize(xsz);
       if (x.hasFastAccess())
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.fastAccessDx(i);
+	  this->fastAccessDx(i) = x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.dx(i);
+	  this->fastAccessDx(i) = x.dx(i);
     }
   }
 
-  s_.val_ *= x.val();
+  this->val() *= x.val();
 
   return *this;
 }
@@ -302,7 +302,7 @@ inline Sacado::LFad::LogicalSparseImp<ValT,LogT>&
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 operator /= (const Sacado::LFad::Expr<S>& x)
 {
-  int xsz = x.size(), sz = s_.size();
+  int xsz = x.size(), sz = this->size();
 
 #ifdef SACADO_DEBUG
   if ((xsz != sz) && (xsz != 0) && (sz != 0))
@@ -313,23 +313,23 @@ operator /= (const Sacado::LFad::Expr<S>& x)
     if (sz) {
       if (x.hasFastAccess())
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = s_.dx_[i] || x.fastAccessDx(i);
+	  this->fastAccessDx(i) = this->fastAccessDx(i) || x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = s_.dx_[i] || x.dx(i);
+	  this->fastAccessDx(i) = this->fastAccessDx(i) || x.dx(i);
     }
     else {
-      s_.resize(xsz);
+      this->resize(xsz);
       if (x.hasFastAccess())
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.fastAccessDx(i);
+	  this->fastAccessDx(i) = x.fastAccessDx(i);
       else
 	for (int i=0; i<xsz; ++i)
-	  s_.dx_[i] = x.dx(i);
+	  this->fastAccessDx(i) = x.dx(i);
     }
   }
 
-  s_.val_ /= x.val();
+  this->val() /= x.val();
 
   return *this;
 }

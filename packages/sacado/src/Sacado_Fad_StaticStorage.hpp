@@ -103,7 +103,25 @@ namespace Sacado {
       //! Zero out derivative array
       void zero() { ss_array<T>::zero(dx_, sz_); }
 
-    public:
+      //! Returns value
+      const T& val() const { return val_; }
+
+      //! Returns value
+      T& val() { return val_; }
+
+      //! Returns derivative array
+      const T* dx() const { return dx_;}
+
+      //! Returns derivative component \c i with bounds checking
+      T dx(int i) const { return sz_ ? dx_[i] : T(0.); }
+    
+      //! Returns derivative component \c i without bounds checking
+      T& fastAccessDx(int i) { return dx_[i];}
+
+      //! Returns derivative component \c i without bounds checking
+      const T& fastAccessDx(int i) const { return dx_[i];}
+
+    private:
 
       //! Value
       T val_;

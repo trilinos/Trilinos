@@ -68,7 +68,7 @@ namespace Sacado {
      * templates.
      */
     template <typename T, typename Storage> 
-    class GeneralFad {
+    class GeneralFad : public Storage {
 
     public:
 
@@ -81,19 +81,19 @@ namespace Sacado {
       //@{
 
       //! Default constructor
-      GeneralFad() : s_(T(0.)) {}
+      GeneralFad() : Storage(T(0.)) {}
 
       //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      GeneralFad(const T & x) : s_(x) {}
+      GeneralFad(const T & x) : Storage(x) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      GeneralFad(const int sz, const T & x) : s_(sz, x) {}
+      GeneralFad(const int sz, const T & x) : Storage(sz, x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -102,13 +102,13 @@ namespace Sacado {
        * \c i to 1 and all other's to zero.
        */
       GeneralFad(const int sz, const int i, const T & x) : 
-	s_(sz, x) { 
-	s_.dx_[i]=1.; 
+	Storage(sz, x) { 
+	this->fastAccessDx(i)=1.; 
       }
 
       //! Copy constructor
       GeneralFad(const GeneralFad& x) : 
-	s_(x.s_) {}
+	Storage(x) {}
 
       //! Copy constructor from any Expression object
       template <typename S> GeneralFad(const Expr<S>& x);
@@ -125,30 +125,6 @@ namespace Sacado {
        */
       void diff(const int ith, const int n);
 
-      //! Resize derivative array to length \c sz
-      /*!
-       * This method does not (re)initialize the derivative components, so any
-       * previous values may be lost.  Also any pointers to derivative
-       * components may be invalid.
-       */
-      void resize(int sz) { s_.resize(sz); }
-
-      //! Zero out the derivative array
-      void zero() { s_.zero(); }
-
-      //@}
-
-      /*!
-       * @name Value accessor methods
-       */
-      //@{
-
-      //! Returns value
-      const T& val() const { return s_.val_;}
-
-      //! Returns value
-      T& val() { return s_.val_;}
-
       //@}
 
       /*!
@@ -156,39 +132,23 @@ namespace Sacado {
        */
       //@{
 
-      //! Returns number of derivative components
-      int size() const { return s_.size();}
-
       /*! 
        * \brief Returns number of derivative components that can be stored 
        * without reallocation
        */
-      int availableSize() const { return s_.length(); }
+      int availableSize() const { return this->length(); }
 
       //! Returns true if derivative array is not empty
-      bool hasFastAccess() const { return s_.size()!=0;}
+      bool hasFastAccess() const { return this->size()!=0;}
 
       //! Returns true if derivative array is empty
-      bool isPassive() const { return s_.size()!=0;}
+      bool isPassive() const { return this->size()!=0;}
       
       //! Set whether variable is constant
       void setIsConstant(bool is_const) { 
-	if (is_const && s_.size()!=0)
-	  s_.resize(0);
+	if (is_const && this->size()!=0)
+	  this->resize(0);
       }
-
-      //! Returns derivative array
-      const T* dx() const { return &(s_.dx_[0]);}
-
-      //! Returns derivative component \c i with bounds checking
-      T dx(int i) const { 
-	return s_.size() ? s_.dx_[i] : T(0.); }
-    
-      //! Returns derivative component \c i without bounds checking
-      T& fastAccessDx(int i) { return s_.dx_[i];}
-
-      //! Returns derivative component \c i without bounds checking
-      const T& fastAccessDx(int i) const { return s_.dx_[i];}
     
       //@}
 
@@ -246,9 +206,6 @@ namespace Sacado {
       //@}
 
     protected:
-
-      //! Value & Derivatives
-      Storage s_;
 
       // Functor for mpl::for_each to compute the local accumulation
       // of a tangent derivative

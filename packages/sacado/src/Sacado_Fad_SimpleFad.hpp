@@ -121,8 +121,8 @@ namespace Sacado {
       //! Tangent copy constructor
       SimpleFad(const SimpleFad& x, const ValueT& v, const ValueT& partial) :
 	GeneralFad< ValueT,DynamicStorage<ValueT> >(x.size(), v) {
-	for (int i=0; i<this->s_.sz_; i++)
-	  this->s_.dx_[i] = x.s_.dx_[i]*partial;
+	for (int i=0; i<this->size(); i++)
+	  this->fastAccessDx(i) = x.fastAccessDx(i)*partial;
       }
 
       //@}
@@ -225,8 +225,8 @@ namespace Sacado {
       //! Tangent copy constructor
       SimpleFad(const SimpleFad& x, const ValueT& v, const ValueT& partial) :
 	GeneralFad< ValueT,DynamicStorage<ValueT> >(x.size(), v) {
-	for (int i=0; i<this->s_.sz_; i++)
-	  this->s_.dx_[i] = x.s_.dx_[i]*partial;
+	for (int i=0; i<this->size(); i++)
+	  this->fastAccessDx(i) = x.fastAccessDx(i)*partial;
       }
 
       //@}

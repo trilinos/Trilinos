@@ -147,11 +147,29 @@ namespace Sacado {
 	dx_ = dx;
       }
 
+      //! Returns value
+      const T& val() const { return *val_; }
+
+      //! Returns value
+      T& val() { return *val_; }
+
+      //! Returns derivative array
+      const S* dx() const { return dx_;}
+
+      //! Returns derivative component \c i with bounds checking
+      S dx(int i) const { return sz_ ? dx_[i*stride_] : T(0.); }
+    
+      //! Returns derivative component \c i without bounds checking
+      S& fastAccessDx(int i) { return dx_[i*stride_];}
+
+      //! Returns derivative component \c i without bounds checking
+      const S& fastAccessDx(int i) const { return dx_[i*stride_];}
+
     private:
 
       T v_;
 
-    public:
+    private:
 
       //! Do we own the val/dx storage
       bool owns_mem;
