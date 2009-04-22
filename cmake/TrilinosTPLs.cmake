@@ -67,6 +67,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   MUMPS          SS
   MA28           TS
   AMD            TS
+  PETSC          SS
   )
 
 # NOTES:
