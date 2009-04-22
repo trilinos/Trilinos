@@ -836,22 +836,22 @@ void ML_globalcsr2localcsr(ML_Operator *imatrix, int max_per_proc)
 
 
 /******************************************************************************/
-/* Create a map between local variables on this processor and a unique
- * global number where local variables on different processors which
- * correspond to the same global variable have the same unique global number.
+/* Convert an ML CSR matrix with global column numbering to one with local
+ * column numbering.
  *
  * Parameters
  * ==========
- *   N_local       On input, number of local variables assigned to this node.
+ *   imatrix       -On input, matrix with global column numbering.
  *
- *   map           On output, map[k] is the unique global id of the kth local
- *                 variable. Note: if the kth local variable on processor P0
- *                 corresponds to the jth local variable on processor P1, then
- *                 map[k] on P0 is equal to map[j] on P1.
+ *   omatrix       -On input, empty sparse matrix.
+ *                 -On output, matrix corresponding to imatrix but with local
+                    column numbering.
  *
- *   comm_info     On input, communcation information (see ml_rap.h) which
- *                 indicates which local variables are sent to other processors
- *                 and where received information is stored locally.
+ *   max_per_proc  -On input, the maximum number of local variables on any one
+ *                  processor.
+ *
+ * Comments:   This is typically called after a matrix/matrix multiply. This
+ *             function eliminates storage of any zero entries.
  ******************************************************************************/
 
 #define ML_FUNCTION_NAME "ML_back_to_csrlocal"
@@ -868,6 +868,8 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    int mypid = imatrix->comm->ML_mypid;
 
    comm  = imatrix->comm;
+   /* Range of allowable global row numbering for this processor. */
+   /* Note that this is a fixed size over all processors.         */
    lower = max_per_proc*comm->ML_mypid;
    upper = lower + max_per_proc;
 
@@ -882,6 +884,8 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
 
    }
 
+   /* Get all column indices in local rows that correspond */
+   /* to off processor rows, sort, and make unique.        */
    Nexternal = 0;
    for (i = 0 ; i < imatrix->getrow->Nrows; i++) {
       ML_get_matrix_row(imatrix, 1, &i, &allocated, &bindx, &val,
@@ -927,6 +931,9 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
    }
    Nexternal = count;
 
+   /* Now replace the column id global numbering with local local numbering.  */
+   /* The getrow appends column/(nonzero)value info to bindx/val, and next_nz */
+   /* tracks the size of the arrays.                                          */
    rowptr[0] = 0;
    next_nz   = 0;
    for (i = 0 ; i < imatrix->getrow->Nrows; i++) {
@@ -947,14 +954,14 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
             /* else col = j + imatrix->getrow->Nrows; */
             else col = j + imatrix->invec_leng;
          }
-	 /* rst: changing this to weed out any zero values */
-	 /* in the final matrix that is created. A long    */
-	 /* time ago ... we used to do this. I'm not sure  */
-	 /* if there is a reason that we stopped weeding   */
-	 /* out zeros.                                     */
-	 if (dtemp != 0.) {
-	   bindx[next_nz] = col; val[next_nz++] = dtemp;
-	 }
+         /* rst: changing this to weed out any zero values */
+         /* in the final matrix that is created. A long    */
+         /* time ago ... we used to do this. I'm not sure  */
+         /* if there is a reason that we stopped weeding   */
+         /* out zeros.                                     */
+         if (dtemp != 0.) {
+           bindx[next_nz] = col; val[next_nz++] = dtemp;
+         }
       }
       rowptr[i+1] = next_nz;
    }
@@ -988,22 +995,22 @@ void ML_back_to_csrlocal(ML_Operator *imatrix, ML_Operator *omatrix,
 #endif
 
 /******************************************************************************/
-/* Create a map between local variables on this processor and a unique
- * global number where local variables on different processors which
- * correspond to the same global variable have the same unique global number.
+/* Convert an ML matrix with global column numbering to one with local
+ * column numbering.
  *
  * Parameters
  * ==========
- *   N_local       On input, number of local variables assigned to this node.
- * 
- *   map           On output, map[k] is the unique global id of the kth local
- *                 variable. Note: if the kth local variable on processor P0
- *                 corresponds to the jth local variable on processor P1, then
- *                 map[k] on P0 is equal to map[j] on P1.
- *   
- *   comm_info     On input, communcation information (see ml_rap.h) which
- *                 indicates which local variables are sent to other processors
- *                 and where received information is stored locally.
+ *   imatrix       -On input, matrix with global column numbering.
+ *
+ *   omatrix       -On input, empty sparse matrix.
+ *                 -On output, matrix corresponding to imatrix but with local
+                    column numbering.
+ *
+ *   max_per_proc  -On input, the maximum number of local variables on any one
+ *                  processor.
+ *
+ * Comments:   This is typically called after a matrix/matrix multiply. This
+ *             function eliminates storage of any zero entries.
  ******************************************************************************/
 
 #define ML_FUNCTION_NAME "ML_back_to_local"
