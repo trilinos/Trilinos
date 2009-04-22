@@ -33,6 +33,7 @@
 #include "../SinCos/SinCosModel.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_ModelEvaluator.hpp"
+#include "Rythmos_UnitTestHelpers.hpp"
 
 namespace Rythmos {
 
@@ -129,6 +130,433 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperHelpers, eval_model_explicit ) {
   }
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_StepperHelpers, defaultGetPoints ) {
+  using Teuchos::constOptInArg;
+  using Teuchos::null;
+  using Teuchos::ptr;
+  double t_old = 1.0;
+  RCP<VectorBase<double> > x_old = createDefaultVector(1,2.0);
+  RCP<VectorBase<double> > xdot_old = createDefaultVector(1,3.0);
+  double t = 2.0;
+  RCP<VectorBase<double> > x = createDefaultVector(1,4.0);
+  RCP<VectorBase<double> > xdot = createDefaultVector(1,5.0);
+
+  Array<double> time_vec;
+  time_vec.push_back(t_old);
+  Array<RCP<const VectorBase<double> > > x_vec;
+  Array<RCP<const VectorBase<double> > > xdot_vec;
+  Array<double> accuracy_vec;
+
+  Teuchos::outArg(*x_old);
+  // Get the first point
+  defaultGetPoints<double>(
+      t_old, constOptInArg(*x_old), constOptInArg(*xdot_old),
+      t, constOptInArg(*x), constOptInArg(*xdot),
+      time_vec, ptr(&x_vec), ptr(&xdot_vec), ptr(&accuracy_vec),
+      null
+      );
+  TEST_ASSERT( x_vec.length() == 1 );
+  TEST_ASSERT( xdot_vec.length() == 1 );
+  TEST_ASSERT( accuracy_vec.length() == 1 );
+  TEST_ASSERT( x_vec[0].get() != x_old.get() );
+  TEST_ASSERT( xdot_vec[0].get() != xdot_old.get() );
+  {
+    Thyra::ConstDetachedVectorView<double> x_view( x_vec[0] );
+    Thyra::ConstDetachedVectorView<double> xdot_view( xdot_vec[0] );
+    TEST_EQUALITY_CONST( x_view[0], 2.0 );
+    TEST_EQUALITY_CONST( xdot_view[0], 3.0 );
+    TEST_EQUALITY_CONST( accuracy_vec[0], 0.0 );
+  }
+  // Get the second point
+  time_vec.clear();
+  time_vec.push_back(t);
+  defaultGetPoints<double>(
+      t_old, constOptInArg(*x_old), constOptInArg(*xdot_old),
+      t, constOptInArg(*x), constOptInArg(*xdot),
+      time_vec, ptr(&x_vec), ptr(&xdot_vec), ptr(&accuracy_vec),
+      null
+      );
+  TEST_ASSERT( x_vec.length() == 1 );
+  TEST_ASSERT( xdot_vec.length() == 1 );
+  TEST_ASSERT( accuracy_vec.length() == 1 );
+  TEST_ASSERT( x_vec[0].get() != x.get() );
+  TEST_ASSERT( xdot_vec[0].get() != xdot.get() );
+  {
+    Thyra::ConstDetachedVectorView<double> x_view( x_vec[0] );
+    Thyra::ConstDetachedVectorView<double> xdot_view( xdot_vec[0] );
+    TEST_EQUALITY_CONST( x_view[0], 4.0 );
+    TEST_EQUALITY_CONST( xdot_view[0], 5.0 );
+    TEST_EQUALITY_CONST( accuracy_vec[0], 0.0 );
+  }
+  // Get both points
+  time_vec.clear();
+  time_vec.push_back(t_old);
+  time_vec.push_back(t);
+  defaultGetPoints<double>(
+      t_old, constOptInArg(*x_old), constOptInArg(*xdot_old),
+      t, constOptInArg(*x), constOptInArg(*xdot),
+      time_vec, ptr(&x_vec), ptr(&xdot_vec), ptr(&accuracy_vec),
+      null
+      );
+  TEST_ASSERT( x_vec.length() == 2 );
+  TEST_ASSERT( xdot_vec.length() == 2 );
+  TEST_ASSERT( accuracy_vec.length() == 2 );
+  TEST_ASSERT( x_vec[0].get() != x_old.get() );
+  TEST_ASSERT( xdot_vec[0].get() != xdot_old.get() );
+  TEST_ASSERT( x_vec[1].get() != x.get() );
+  TEST_ASSERT( xdot_vec[1].get() != xdot.get() );
+  {
+    Thyra::ConstDetachedVectorView<double> x_view_0( x_vec[0] );
+    Thyra::ConstDetachedVectorView<double> xdot_view_0( xdot_vec[0] );
+    Thyra::ConstDetachedVectorView<double> x_view_1( x_vec[1] );
+    Thyra::ConstDetachedVectorView<double> xdot_view_1( xdot_vec[1] );
+    TEST_EQUALITY_CONST( x_view_0[0], 2.0 );
+    TEST_EQUALITY_CONST( xdot_view_0[0], 3.0 );
+    TEST_EQUALITY_CONST( x_view_1[0], 4.0 );
+    TEST_EQUALITY_CONST( xdot_view_1[0], 5.0 );
+    TEST_EQUALITY_CONST( accuracy_vec[0], 0.0 );
+    TEST_EQUALITY_CONST( accuracy_vec[1], 0.0 );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_StepperHelpers, defaultGetPoints_EdgeCases ) {
+  using Teuchos::constOptInArg;
+  using Teuchos::null;
+  {
+    // t_old > t : throw
+    double t_old = 2.0;
+    RCP<VectorBase<double> > x_old;
+    RCP<VectorBase<double> > xdot_old;
+    RCP<VectorBase<double> > x;
+    RCP<VectorBase<double> > xdot;
+    double t = 1.0;
+    Array<double> time_vec;
+    time_vec.push_back(t);
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+    TEST_THROW(
+      defaultGetPoints<double>(
+          t_old,null,null,
+          t,null,null,
+          time_vec,ptr(&x_vec),ptr(&xdot_vec),ptr(&accuracy_vec),
+          null
+          ),
+      std::logic_error
+      );
+  }
+  // t_old == t : uses x_old,xdot_old TODO
+  //
+  // x_old = null : okay TODO
+  // x = null : okay TODO
+  // xdot_old = null : okay TODO
+  // xdot = null : okay TODO
+  // 
+  // time_vec = empty : okay TODO
+  {
+    double t_old = 1.0;
+    RCP<VectorBase<double> > x_old;
+    RCP<VectorBase<double> > xdot_old;
+    double t = 2.0;
+    RCP<VectorBase<double> > x;
+    RCP<VectorBase<double> > x_dot;
+    Array<double> time_vec;
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+    TEST_NOTHROW(
+      defaultGetPoints<double>(
+          t_old,null,null,
+          t,null,null,
+          time_vec,ptr(&x_vec),ptr(&xdot_vec),ptr(&accuracy_vec),
+          null
+          )
+      );
+  }
+  {
+    // time_vec = unsorted : throw
+    double t_old = 1.0;
+    RCP<VectorBase<double> > x_old;
+    RCP<VectorBase<double> > xdot_old;
+    double t = 2.0;
+    RCP<VectorBase<double> > x;
+    RCP<VectorBase<double> > x_dot;
+    Array<double> time_vec;
+    time_vec.push_back(t);
+    time_vec.push_back(t_old);
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+    TEST_THROW(
+      defaultGetPoints<double>(
+          t_old,null,null,
+          t,null,null,
+          time_vec,ptr(&x_vec),ptr(&xdot_vec),ptr(&accuracy_vec),
+          null
+          ),
+      std::logic_error
+      );
+  }
+  {
+    // x_vec = null : okay
+    // xdot_vec = null : okay
+    // accuracy_vec = null : okay
+    double t_old = 1.0;
+    RCP<VectorBase<double> > x_old = createDefaultVector(1,2.0);
+    RCP<VectorBase<double> > xdot_old = createDefaultVector(1,3.0);
+    double t = 2.0;
+    RCP<VectorBase<double> > x = createDefaultVector(1,4.0);
+    RCP<VectorBase<double> > xdot = createDefaultVector(1,5.0);
+    Array<double> time_vec;
+    time_vec.push_back(t_old);
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+    TEST_NOTHROW(
+        defaultGetPoints<double>(
+          t_old,constOptInArg(*x_old),constOptInArg(*xdot_old),
+          t,constOptInArg(*x),constOptInArg(*xdot),
+          time_vec,null,null,null,
+          null
+          )
+        );
+    TEST_NOTHROW(
+        defaultGetPoints<double>(
+          t_old,constOptInArg(*x_old),constOptInArg(*xdot_old),
+          t,constOptInArg(*x),constOptInArg(*xdot),
+          time_vec,ptr(&x_vec),null,null,
+          null
+          )
+        );
+    TEST_NOTHROW(
+        defaultGetPoints<double>(
+          t_old,constOptInArg(*x_old),constOptInArg(*xdot_old),
+          t,constOptInArg(*x),constOptInArg(*xdot),
+          time_vec,null,ptr(&xdot_vec),null,
+          null
+          )
+        );
+    TEST_NOTHROW(
+        defaultGetPoints<double>(
+          t_old,constOptInArg(*x_old),constOptInArg(*xdot_old),
+          t,constOptInArg(*x),constOptInArg(*xdot),
+          time_vec,null,null,ptr(&accuracy_vec),
+          null
+          )
+        );
+  }
+  {
+    // time_vec contains points before t_old  : throw
+    double t_old = 1.0;
+    RCP<VectorBase<double> > x_old;
+    RCP<VectorBase<double> > xdot_old;
+    double t = 2.0;
+    RCP<VectorBase<double> > x;
+    RCP<VectorBase<double> > x_dot;
+    Array<double> time_vec;
+    time_vec.push_back(0.0);
+    time_vec.push_back(1.0);
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+    TEST_THROW(
+      defaultGetPoints<double>(
+          t_old,null,null,
+          t,null,null,
+          time_vec,ptr(&x_vec),ptr(&xdot_vec),ptr(&accuracy_vec),
+          null
+          ),
+      std::logic_error
+      );
+    // time_vec contains points after t : throw
+    time_vec.clear();
+    time_vec.push_back(2.0);
+    time_vec.push_back(3.0);
+    TEST_THROW(
+      defaultGetPoints<double>(
+          t_old,null,null,
+          t,null,null,
+          time_vec,ptr(&x_vec),ptr(&xdot_vec),ptr(&accuracy_vec),
+          null
+          ),
+      std::logic_error
+      );
+    // time_vec contains points in (t_old,t) : throw
+    time_vec.clear();
+    time_vec.push_back(1.0);
+    time_vec.push_back(1.5);
+    time_vec.push_back(2.0);
+    TEST_THROW(
+      defaultGetPoints<double>(
+          t_old,null,null,
+          t,null,null,
+          time_vec,ptr(&x_vec),ptr(&xdot_vec),ptr(&accuracy_vec),
+          null
+          ),
+      std::logic_error
+      );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_StepperHelpers, defaultGetPoints_interpolator ) {
+  using Teuchos::outArg;
+  using Teuchos::constOptInArg;
+  using Teuchos::ptr;
+  double t_old = 1.0;
+  RCP<VectorBase<double> > x_old = createDefaultVector(1,2.0);
+  RCP<VectorBase<double> > xdot_old = createDefaultVector(1,3.0);
+  double t = 2.0;
+  RCP<VectorBase<double> > x = createDefaultVector(1,4.0);
+  RCP<VectorBase<double> > xdot = createDefaultVector(1,5.0);
+
+  Array<double> time_vec;
+  time_vec.push_back(t_old);
+  time_vec.push_back(1.5);
+  time_vec.push_back(t);
+  Array<RCP<const VectorBase<double> > > x_vec;
+  Array<RCP<const VectorBase<double> > > xdot_vec;
+  Array<double> accuracy_vec;
+
+  RCP<InterpolatorBase<double> > interp = linearInterpolator<double>();
+
+  // Get the boundaries plus an interior point
+  defaultGetPoints<double>(
+      t_old, constOptInArg(*x_old), constOptInArg(*xdot_old),
+      t, constOptInArg(*x), constOptInArg(*xdot),
+      time_vec, ptr(&x_vec), ptr(&xdot_vec), ptr(&accuracy_vec),
+      outArg(*interp)
+      );
+  TEST_ASSERT( x_vec.length() == 3 );
+  TEST_ASSERT( xdot_vec.length() == 3 );
+  TEST_ASSERT( accuracy_vec.length() == 3 );
+  {
+    Thyra::ConstDetachedVectorView<double> x_view( x_vec[0] );
+    Thyra::ConstDetachedVectorView<double> xdot_view( xdot_vec[0] );
+    TEST_EQUALITY_CONST( x_view[0], 2.0 );
+    TEST_EQUALITY_CONST( xdot_view[0], 3.0 );
+    TEST_EQUALITY_CONST( accuracy_vec[0], 0.0 );
+  }
+  {
+    Thyra::ConstDetachedVectorView<double> x_view( x_vec[1] );
+    Thyra::ConstDetachedVectorView<double> xdot_view( xdot_vec[1] );
+    TEST_EQUALITY_CONST( x_view[0], 3.0 );
+    TEST_EQUALITY_CONST( xdot_view[0], 4.0 );
+    TEST_EQUALITY_CONST( accuracy_vec[1], 1.0 );
+  }
+  {
+    Thyra::ConstDetachedVectorView<double> x_view( x_vec[2] );
+    Thyra::ConstDetachedVectorView<double> xdot_view( xdot_vec[2] );
+    TEST_EQUALITY_CONST( x_view[0], 4.0 );
+    TEST_EQUALITY_CONST( xdot_view[0], 5.0 );
+    TEST_EQUALITY_CONST( accuracy_vec[2], 0.0 );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_StepperHelpers, defaultGetPoints_interpolator_EdgeCases ) {
+  using Teuchos::outArg;
+  using Teuchos::constOptInArg;
+  using Teuchos::null;
+  using Teuchos::ptr;
+  {
+    // xdot = null
+    double t_old = 1.0;
+    RCP<VectorBase<double> > x_old = createDefaultVector(1,2.0);
+    RCP<VectorBase<double> > xdot_old; 
+    double t = 2.0;
+    RCP<VectorBase<double> > x = createDefaultVector(1,4.0);
+    RCP<VectorBase<double> > xdot;
+
+    Array<double> time_vec;
+    time_vec.push_back(1.5);
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+
+    RCP<InterpolatorBase<double> > interp = linearInterpolator<double>();
+
+    // Get the boundaries plus an interior point
+    defaultGetPoints<double>(
+        t_old, constOptInArg(*x_old), null,
+        t, constOptInArg(*x), null,
+        time_vec, ptr(&x_vec), ptr(&xdot_vec), ptr(&accuracy_vec),
+        outArg(*interp)
+        );
+    TEST_ASSERT( x_vec.length() == 1 );
+    TEST_ASSERT( xdot_vec.length() == 1 );
+    TEST_ASSERT( accuracy_vec.length() == 1 );
+    TEST_ASSERT( is_null(xdot_vec[0]) );
+    {
+      Thyra::ConstDetachedVectorView<double> x_view( x_vec[0] );
+      TEST_EQUALITY_CONST( x_view[0], 3.0 );
+      TEST_EQUALITY_CONST( accuracy_vec[0], 1.0 );
+    }
+  }
+  {
+    // x = null
+    double t_old = 1.0;
+    RCP<VectorBase<double> > x_old;
+    RCP<VectorBase<double> > xdot_old = createDefaultVector(1,3.0);
+    double t = 2.0;
+    RCP<VectorBase<double> > x;
+    RCP<VectorBase<double> > xdot = createDefaultVector(1,5.0);
+
+    Array<double> time_vec;
+    time_vec.push_back(1.5);
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+
+    RCP<InterpolatorBase<double> > interp = linearInterpolator<double>();
+
+    // Get the boundaries plus an interior point
+    defaultGetPoints<double>(
+        t_old, null, constOptInArg(*xdot_old),
+        t, null, constOptInArg(*xdot),
+        time_vec, ptr(&x_vec), ptr(&xdot_vec), ptr(&accuracy_vec),
+        outArg(*interp)
+        );
+    TEST_ASSERT( x_vec.length() == 1 );
+    TEST_ASSERT( xdot_vec.length() == 1 );
+    TEST_ASSERT( accuracy_vec.length() == 1 );
+    TEST_ASSERT( is_null(x_vec[0]) );
+    {
+      Thyra::ConstDetachedVectorView<double> xdot_view( xdot_vec[0] );
+      TEST_EQUALITY_CONST( xdot_view[0], 4.0 );
+      TEST_EQUALITY_CONST( accuracy_vec[0], 1.0 );
+    }
+  }
+  {
+    // x = null and xdot = null
+    double t_old = 1.0;
+    RCP<VectorBase<double> > x_old;
+    RCP<VectorBase<double> > xdot_old;
+    double t = 2.0;
+    RCP<VectorBase<double> > x;
+    RCP<VectorBase<double> > xdot;
+
+    Array<double> time_vec;
+    time_vec.push_back(1.5);
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+
+    RCP<InterpolatorBase<double> > interp = linearInterpolator<double>();
+
+    // Get the boundaries plus an interior point
+    defaultGetPoints<double>(
+        t_old, null, null,
+        t, null, null,
+        time_vec, ptr(&x_vec), ptr(&xdot_vec), ptr(&accuracy_vec),
+        outArg(*interp)
+        );
+    TEST_ASSERT( x_vec.length() == 1 );
+    TEST_ASSERT( xdot_vec.length() == 1 );
+    TEST_ASSERT( accuracy_vec.length() == 1 );
+    TEST_ASSERT( is_null(x_vec[0]) );
+    TEST_ASSERT( is_null(xdot_vec[0]) );
+    TEST_EQUALITY_CONST( accuracy_vec[0], 1.0 );
+  }
+}
 
 } // namespace Rythmos 
 

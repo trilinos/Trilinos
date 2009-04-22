@@ -252,6 +252,9 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
 
   timeRange_ = timeRange(t,t);
 
+  // x_old
+  x_old_ = x_->clone_v();
+
   haveInitialCondition_ = true;
 
 }
@@ -399,33 +402,30 @@ void ImplicitRKStepper<Scalar>::getPoints(
   ,Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
   ,Array<ScalarMag>* accuracy_vec) const
 {
-
-  if (x_vec)
-    x_vec->resize( time_vec.size() );
-  if (xdot_vec)
-    xdot_vec->resize( time_vec.size() );
-  if (accuracy_vec)
-    accuracy_vec->resize( time_vec.size() );
-
-  // This is a temp hack!
-  if (time_vec.size() == 1 && compareTimeValues(timeRange_.upper(),time_vec[0])==0 ) {
-    if (x_vec) {
-      (*x_vec)[0] = x_;
-    }
-    TEST_FOR_EXCEPT( 0 != xdot_vec ); // Can't handle xdot yet!
-
-    return; // We are done!
-  }
-
-  TEST_FOR_EXCEPT(true); // ToDo: Implement the final version!
-
+  using Teuchos::constOptInArg;
+  using Teuchos::null;
+  TEUCHOS_ASSERT(haveInitialCondition_);
+  defaultGetPoints<Scalar>(
+      timeRange_.lower(),constOptInArg(*x_old_),null,
+      timeRange_.upper(),constOptInArg(*x_),null,
+      time_vec,ptr(x_vec),ptr(xdot_vec),ptr(accuracy_vec),
+      null
+      );
+  // 04/17/09 tscoffe:  Currently, we don't have x_dot to pass out (TODO)
 }
 
 
 template<class Scalar>
 void ImplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
-  TEST_FOR_EXCEPT(true);
+  TEUCHOS_ASSERT(haveInitialCondition_);
+  if (time_vec != NULL) {
+    time_vec->clear();
+    time_vec->push_back(timeRange_.lower());
+    if (numSteps_ > 0) {
+      time_vec->push_back(timeRange_.upper());
+    }
+  }
 }
 
 
@@ -542,13 +542,6 @@ void ImplicitRKStepper<Scalar>::initialize_()
     "Rythmos::ImplicitRKStepper::initialize_(...)",
     *x_->space(), *model_->get_x_space() );
 #endif
-
-  if (is_null(x_dot_)) {
-    x_dot_ = createMember(model_->get_x_space());
-    V_S(&*x_dot_,ScalarTraits<Scalar>::zero());
-  }
-
-  x_old_ = x_->clone_v();
 
 
   // Set up the IRK mdoel

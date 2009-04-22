@@ -34,11 +34,6 @@
 
 namespace Rythmos {
 
-TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, create ) {
-  RCP<StepperValidator<double> > sv = stepperValidator<double>();
-  TEST_ASSERT( !is_null(sv) );
-}
-
 TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ExplicitRK ) {
   RCP<StepperValidator<double> > sv = stepperValidator<double>();
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();

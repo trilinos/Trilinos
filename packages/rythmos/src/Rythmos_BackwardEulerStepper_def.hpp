@@ -265,14 +265,14 @@ void BackwardEulerStepper<Scalar>::setModel(
 
   // Wipe out x.  This will either be set thorugh setInitialCondition(...) or
   // it will be taken from the model's nominal vlaues!
-  x_ = Teuchos::null;
-  scaled_x_old_ = Teuchos::null;
-  x_dot_ = Teuchos::null;
-  x_dot_old_ = Teuchos::null;
+//  x_ = Teuchos::null;
+//  scaled_x_old_ = Teuchos::null;
+//  x_dot_ = Teuchos::null;
+//  x_dot_old_ = Teuchos::null;
 
-  isInitialized_ = false;
-  haveInitialCondition_ = setDefaultInitialConditionFromNominalValues<Scalar>(
-    *model_, Teuchos::ptr(this) );
+//  isInitialized_ = false;
+//  haveInitialCondition_ = setDefaultInitialConditionFromNominalValues<Scalar>(
+//    *model_, Teuchos::ptr(this) );
   
 }
 
@@ -312,15 +312,14 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
 
   // x_dot
 
-  x_dot_ = createMember(x_->space());
-
   RCP<const Thyra::VectorBase<Scalar> >
     x_dot_init = initialCondition.get_x_dot();
 
   if (!is_null(x_dot_init)) {
-    assign(&*x_dot_,*x_dot_init);
+    x_dot_ = x_dot_init->clone_v();
   }
   else {
+    x_dot_ = createMember(x_->space());
     assign(&*x_dot_,ST::zero());
   }
   
@@ -329,6 +328,15 @@ void BackwardEulerStepper<Scalar>::setInitialCondition(
   t_ = initialCondition.get_t();
 
   t_old_ = t_;
+
+  // x_old 
+
+  scaled_x_old_ = x_->clone_v();
+
+  // x_dot_old
+  
+  x_dot_old_ = x_dot_->clone_v();
+
 
   haveInitialCondition_ = true;
 
@@ -607,7 +615,26 @@ void BackwardEulerStepper<Scalar>::getPoints(
   Array<ScalarMag>* accuracy_vec
   ) const
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  using Teuchos::constOptInArg;
+  using Teuchos::ptr;
+#ifdef RYTHMOS_DEBUG
+  TEUCHOS_ASSERT(haveInitialCondition_);
+#endif // RYTHMOS_DEBUG
+  RCP<Thyra::VectorBase<Scalar> > x_temp = x_;
+  if (compareTimeValues(t_old_,t_)!=0) {
+    Scalar dt = t_ - t_old_;
+    x_temp = scaled_x_old_->clone_v();
+    Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));  // undo the scaling
+  }
+  defaultGetPoints<Scalar>(
+      t_old_, constOptInArg(*x_temp), constOptInArg(*x_dot_old_),
+      t_, constOptInArg(*x_), constOptInArg(*x_dot_),
+      time_vec, ptr(x_vec), ptr(xdot_vec), ptr(accuracy_vec),
+      ptr(interpolator_.get())
+      );
 
+  /*
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
@@ -703,6 +730,7 @@ void BackwardEulerStepper<Scalar>::getPoints(
       << "Leaving " << Teuchos::TypeNameTraits<BackwardEulerStepper<Scalar> >::name()
       << "::getPoints(...) ...\n"; 
   }
+  */
 
 }
 
@@ -894,18 +922,6 @@ void BackwardEulerStepper<Scalar>::initialize()
     // 2007/05/18: rabartl: ToDo: Replace this with a Hermete interplator
     // when it is implementated!
   }
-
-  if (is_null(scaled_x_old_))
-    scaled_x_old_ = createMember(model_->get_x_space());
-
-  if (is_null(x_dot_))
-    x_dot_ = createMember(model_->get_x_space());
-
-  if (is_null(x_dot_old_))
-    x_dot_old_ = createMember(model_->get_x_space());
-
-  // Note: above, we don't need to actually initialize x_dot or x_dot_old
-  // since these will be initialized after each step
 
   isInitialized_ = true;
 

@@ -496,21 +496,44 @@ void ThetaStepper<Scalar>::setInitialCondition(
 
   // x_dot
 
-  x_dot_ = createMember(x_->space());
-
   RCP<const Thyra::VectorBase<Scalar> >
     x_dot_init = initialCondition.get_x_dot();
 
-  if (!is_null(x_dot_init))
-    assign(&*x_dot_,*x_dot_init);
-  else
+  if (!is_null(x_dot_init)) {
+    x_dot_ = x_dot_init->clone_v();
+  }
+  else {
+    x_dot_ = createMember(x_->space());
     assign(&*x_dot_,ST::zero());
+  }
 
   // t
   
   t_ = initialCondition.get_t();
 
   t_old_ = t_;
+
+  dt_old_ = 0.0;
+
+  // x pre
+  
+  x_pre_ = x_->clone_v();
+
+  // x old
+
+  x_old_ = x_->clone_v();
+
+  // x dot base
+
+  x_dot_base_ = x_->clone_v();
+
+  // x dot old
+
+  x_dot_old_ = x_dot_->clone_v();
+
+  // x dot really old
+
+  x_dot_really_old_ = x_dot_->clone_v();
 
   haveInitialCondition_ = true;
 
@@ -841,7 +864,26 @@ void ThetaStepper<Scalar>::getPoints(
   Array<ScalarMag>* accuracy_vec
   ) const
 {
+  using Teuchos::constOptInArg;
+  using Teuchos::ptr;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
 
+  TEUCHOS_ASSERT(haveInitialCondition_);
+
+  RCP<Thyra::VectorBase<Scalar> > x_temp = x_;
+  if (compareTimeValues(t_old_,t_)!=0) {
+    Scalar dt = t_ - t_old_;
+    x_temp = x_dot_base_->clone_v();
+    Thyra::Vt_S(&*x_temp,Scalar(-ST::one()*dt));  // undo the scaling
+  }
+  defaultGetPoints<Scalar>(
+      t_old_, constOptInArg(*x_temp), constOptInArg(*x_dot_old_),
+      t_, constOptInArg(*x_), constOptInArg(*x_dot_),
+      time_vec, ptr(x_vec), ptr(xdot_vec), ptr(accuracy_vec),
+      ptr(interpolator_.get())
+      );
+
+  /*
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
@@ -942,6 +984,7 @@ void ThetaStepper<Scalar>::getPoints(
       << "Leaving " << Teuchos::TypeNameTraits<ThetaStepper<Scalar> >::name()
       << "::getPoints(...) ...\n"; 
   }
+  */
 
 }
 
@@ -1165,31 +1208,6 @@ void ThetaStepper<Scalar>::initialize_()
     // 2007/05/18: rabartl: ToDo: Replace this with a Hermete interplator
     // when it is implementated!
   }
-
-  if (is_null(x_pre_))
-    x_pre_ = createMember(model_->get_x_space());
-  assign(&*x_pre_,ST::zero());
-
-  if (is_null(x_old_))
-    x_old_ = createMember(model_->get_x_space());
-  assign(&*x_old_,ST::zero());
-
-  if (is_null(x_dot_base_))
-    x_dot_base_ = createMember(model_->get_x_space());
-  assign(&*x_dot_base_,ST::zero());
-
-  if (is_null(x_dot_old_))
-    x_dot_old_ = createMember(model_->get_x_space());
-  assign(&*x_dot_old_,ST::zero());
-
-  if (is_null(x_dot_really_old_))
-    x_dot_really_old_ = createMember(model_->get_x_space());
-  assign(&*x_dot_really_old_,ST::zero());
-
-  // Note: above, we don't need to actually initialize x_dot
-  // since these will be initialized after each step
-
-  dt_old_ = 0.0;
 
   if (thetaStepperType_ == ImplicitEuler)
   {

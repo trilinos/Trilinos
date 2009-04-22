@@ -117,6 +117,52 @@ TEUCHOS_UNIT_TEST( Rythmos_LinearInterpolator, boundary_interpolate ) {
     TEST_EQUALITY( (*data_in)[i].xdot.get(), data_out[i].xdot.get() );
   }
 }
+TEUCHOS_UNIT_TEST( Rythmos_LinearInterpolator, interpolate_then_clone ) {
+  // 04/20/09 tscoffe:  Based on the interpolator use in StepperHelpers:defaultGetPoints(...)
+  double t_old = 1.0;
+  RCP<VectorBase<double> > x_old = createDefaultVector(1,2.0);
+  RCP<VectorBase<double> > xdot_old = createDefaultVector(1,3.0);
+  double t = 2.0;
+  RCP<VectorBase<double> > x = createDefaultVector(1,4.0);
+  RCP<VectorBase<double> > xdot = createDefaultVector(1,5.0);
+  DataStore<double>::DataStoreVector_t ds_nodes;
+  DataStore<double>::DataStoreVector_t ds_out;
+  {
+    // t_old
+    DataStore<double> ds;
+    ds.time = t_old;
+    ds.x = rcp(x_old.get(),false);
+    ds.xdot = rcp(xdot_old.get(),false);
+    ds_nodes.push_back(ds);
+  }
+  {
+    // t
+    DataStore<double> ds;
+    ds.time = t;
+    ds.x = rcp(x.get(),false);
+    ds.xdot = rcp(xdot.get(),false);
+    ds_nodes.push_back(ds);
+  }
+  Array<double> time_vec_in;
+  time_vec_in.push_back(1.5);
+  RCP<InterpolatorBase<double> > interpolator = linearInterpolator<double>();
+  interpolate<double>(*interpolator,rcp(&ds_nodes,false),time_vec_in,&ds_out);
+  Array<double> time_vec_out;
+  Array<RCP<const VectorBase<double> > > x_vec_out;
+  Array<RCP<const VectorBase<double> > > xdot_vec_out;
+  Array<Teuchos::ScalarTraits<double>::magnitudeType> accuracy_vec_out;
+  dataStoreVectorToVector(ds_out,&time_vec_out,&x_vec_out,&xdot_vec_out,&accuracy_vec_out);
+  TEST_ASSERT( time_vec_out.length()==1 );
+  RCP<VectorBase<double> > tmpVec = x_vec_out[0]->clone_v();
+  RCP<VectorBase<double> > tmpVecDot = xdot_vec_out[0]->clone_v();
+  {
+    Thyra::ConstDetachedVectorView<double> x_view( tmpVec );
+    Thyra::ConstDetachedVectorView<double> xdot_view( tmpVecDot );
+    TEST_EQUALITY_CONST( x_view[0], 3.0 );
+    TEST_EQUALITY_CONST( xdot_view[0], 4.0 );
+    TEST_EQUALITY_CONST( accuracy_vec_out[0], 1.0 );
+  }
+}
 
 } // namespace Rythmos
 

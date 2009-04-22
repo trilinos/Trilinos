@@ -91,6 +91,11 @@ TEUCHOS_UNIT_TEST( Rythmos_TimeRange, cc ) {
   TEST_EQUALITY_CONST( isInRange_cc(tr, 1.25), true );
   TEST_EQUALITY_CONST( isInRange_cc(tr, 2.0), true );
   TEST_EQUALITY_CONST( isInRange_cc(tr, 3.45), true );
+  TimeRange_cc<double> tr_cc(tr);
+  TEST_EQUALITY_CONST( tr_cc.isInRange(1.25), true );
+  TEST_EQUALITY_CONST( tr_cc.isInRange(2.0), true );
+  TEST_EQUALITY_CONST( tr_cc.isInRange(3.45), true );
+
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_TimeRange, oc ) {
@@ -98,6 +103,10 @@ TEUCHOS_UNIT_TEST( Rythmos_TimeRange, oc ) {
   TEST_EQUALITY_CONST( isInRange_oc(tr, 1.25), false );
   TEST_EQUALITY_CONST( isInRange_oc(tr, 2.0), true );
   TEST_EQUALITY_CONST( isInRange_oc(tr, 3.45), true );
+  TimeRange_oc<double> tr_oc(tr);
+  TEST_EQUALITY_CONST( tr_oc.isInRange(1.25), false );
+  TEST_EQUALITY_CONST( tr_oc.isInRange(2.0), true );
+  TEST_EQUALITY_CONST( tr_oc.isInRange(3.45), true );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_TimeRange, co ) {
@@ -105,6 +114,10 @@ TEUCHOS_UNIT_TEST( Rythmos_TimeRange, co ) {
   TEST_EQUALITY_CONST( isInRange_co(tr, 1.25), true );
   TEST_EQUALITY_CONST( isInRange_co(tr, 2.0), true );
   TEST_EQUALITY_CONST( isInRange_co(tr, 3.45), false );
+  TimeRange_co<double> tr_co(tr);
+  TEST_EQUALITY_CONST( tr_co.isInRange(1.25), true );
+  TEST_EQUALITY_CONST( tr_co.isInRange(2.0), true );
+  TEST_EQUALITY_CONST( tr_co.isInRange(3.45), false );
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_TimeRange, oo ) {
@@ -112,6 +125,68 @@ TEUCHOS_UNIT_TEST( Rythmos_TimeRange, oo ) {
   TEST_EQUALITY_CONST( isInRange_oo(tr, 1.25), false );
   TEST_EQUALITY_CONST( isInRange_oo(tr, 2.0), true );
   TEST_EQUALITY_CONST( isInRange_oo(tr, 3.45), false );
+  TimeRange_oo<double> tr_oo(tr);
+  TEST_EQUALITY_CONST( tr_oo.isInRange(1.25), false );
+  TEST_EQUALITY_CONST( tr_oo.isInRange(2.0), true );
+  TEST_EQUALITY_CONST( tr_oo.isInRange(3.45), false );
+}
+
+/*
+TEUCHOS_UNIT_TEST( Rythmos_TimeRange, relativeMagnitude ) {
+  TimeRange<double> tr(0,1.0e+10);
+  double time = 0.0;
+  double eps = std::numeric_limits<double>::epsilon();
+  time = eps;
+  TEST_ASSERT( tr.isInRange(time) );
+  time = 1.0e+10-eps;
+  TEST_ASSERT( tr.isInRange(time) );
+}
+*/
+
+TEUCHOS_UNIT_TEST( Rythmos_TimeRange, compareTimeValues_trivial ) {
+  double t1 = 1.0;
+  double t2 = 2.0;
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2), -1 );
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t2,t1), +1 );
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t1),  0 );
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_TimeRange, compareTimeValues_resolution ) {
+  double eps = std::numeric_limits<double>::epsilon();
+  double t1 = 0.0;
+  double t2 = t1+eps;
+  // Since t1 = 0.0, and the relative magnitude of the comparison is based on t1,
+  // it is effectively removed from the comparison and it becomes a straight
+  // comparison of floating point values.
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2), -1 );
+  t2 = t1-eps;
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2), +1 );
+  t2 = t1;
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2),  0 );
+  // Now t1 = 1.0, and the relative magnitude of the comparison is based on t1,
+  // the comparison cannot measure any differences that are less than 10*eps.
+  t1 = 1.0;
+  t2 = t1+9*eps;
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2),  0 );
+  t2 = t1-9*eps;
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2),  0 );
+  t2 = t1;
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2),  0 );
+  t2 = t1+11*eps;
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2), -1 );
+  t2 = t1-11*eps;
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2), +1 );
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_TimeRange, compareTimeValues_zero ) {
+  double eps = std::numeric_limits<double>::epsilon();
+  double t1 = 0.0;
+  double t2 = eps;
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2), -1 );
+  t2 = -eps;
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2), +1 );
+  t2 = 0.0;
+  TEST_EQUALITY_CONST( compareTimeValues<double>(t1,t2),  0 );
 }
 
 } // namespace Rythmos

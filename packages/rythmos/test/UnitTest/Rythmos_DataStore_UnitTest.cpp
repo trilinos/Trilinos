@@ -308,6 +308,7 @@ TEUCHOS_UNIT_TEST( Rythmos_DataStore, dataStoreVectorToVector_more ) {
   TEST_ASSERT( !is_null(newX) );
 }
 
+
 } // namespace Rythmos
 
 

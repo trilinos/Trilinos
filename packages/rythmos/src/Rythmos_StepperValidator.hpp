@@ -123,6 +123,7 @@ private:
 
   void validateIC_() const;
   void validateStates_() const;
+  void validateGetIC_() const;
 
   // Private member data:
   RCP<IntegratorBuilder<Scalar> > integratorBuilder_;
@@ -509,14 +510,18 @@ template<class Scalar>
   }
   // Verify that the stepper passes parameters to the model in evalModel:
   this->validateIC_();
+
   // Verify that the stepper states are correct 
   //   uninitialized => getTimeRange == invalidTimeRange
   //   initialized, but no step => getTimeRange.length() == 0, [t_ic,t_ic]
   //   initialized, step taken => getTimeRange.length() > 0
   this->validateStates_();
-  // Verify that getPoints(t_ic) returns the IC after initialization
-  // Verify that getPoints(t_ic) returns the IC correctly after the first step
+
+  // Verify that getPoints(t_ic) returns the IC after initialization and after the first step
+  this->validateGetIC_();
+
   // Verify that getPoints(t) returns the same vectors as getStepStatus
+  // TODO
 }
 
 template<class Scalar>
@@ -624,6 +629,7 @@ Thyra::ModelEvaluatorBase::InArgs<Scalar> StepperValidator<Scalar>::getSomeIC_(
 template<class Scalar>
 void StepperValidator<Scalar>::validateIC_() const
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   // Determine if the stepper is implicit or not:
   bool isImplicit = this->isImplicitStepper_();
   RCP<StepperValidatorMockModel<Scalar> > model = 
@@ -637,7 +643,6 @@ void StepperValidator<Scalar>::validateIC_() const
   }
   RCP<StepperBase<Scalar> > stepper = this->getStepper_(model,stepper_ic,nlSolver);
   Scalar dt = Scalar(0.1);
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   Scalar dt_taken = ST::nan();
   dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
   // Verify that the parameter got set on the model by asking the model for the
@@ -733,6 +738,71 @@ void StepperValidator<Scalar>::validateStates_() const
         );
   }
 }
+
+template<class Scalar>
+void StepperValidator<Scalar>::validateGetIC_() const
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ScalarTraits<Scalar>::magnitudeType ScalarMag;
+  // Determine if the stepper is implicit or not:
+  bool isImplicit = this->isImplicitStepper_();
+  RCP<StepperValidatorMockModel<Scalar> > model = 
+    stepperValidatorMockModel<Scalar>(isImplicit);
+  // Set up some initial condition:
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = this->getSomeIC_(*model);
+  // Create nonlinear solver (if needed)
+  RCP<Thyra::NonlinearSolverBase<Scalar> > nlSolver;
+  if (isImplicit) {
+    nlSolver = Rythmos::timeStepNonlinearSolver<Scalar>();
+  }
+  RCP<StepperBase<Scalar> > stepper = this->getStepper_(model,stepper_ic,nlSolver);
+  // Verify we can get the IC through getPoints prior to taking a step:
+  {
+    Array<Scalar> time_vec;
+    Array<RCP<const VectorBase<Scalar> > > x_vec;
+    Array<RCP<const VectorBase<Scalar> > > xdot_vec;
+    Array<ScalarMag> accuracy_vec;
+    time_vec.push_back(stepper_ic.get_t());
+    stepper->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+    {
+      Thyra::ConstDetachedVectorView<Scalar> x_view( *x_vec[0] );
+      TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(x_view[0],Scalar(10.0)) != 0, std::logic_error,
+          "Error!  StepperValidator::validateGetIC:  Stepper did not return the initial condition for X through getPoints prior to taking a step!"
+          );
+    }
+    if (isImplicit && !is_null(xdot_vec[0])) {
+      Thyra::ConstDetachedVectorView<Scalar> xdot_view( *xdot_vec[0] );
+      TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(xdot_view[0],Scalar(12.0)) != 0, std::logic_error,
+          "Error!  StepperValidator::validateGetIC:  Stepper did not return the initial condition for XDOT through getPoints prior to taking a step!"
+          );
+    }
+  }
+  // Verify we can get the IC through getPoints after taking a step:
+  {
+    Scalar dt = Scalar(0.1);
+    Scalar dt_taken = ST::nan();
+    dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
+    Array<Scalar> time_vec;
+    Array<RCP<const VectorBase<Scalar> > > x_vec;
+    Array<RCP<const VectorBase<Scalar> > > xdot_vec;
+    Array<ScalarMag> accuracy_vec;
+    time_vec.push_back(stepper_ic.get_t());
+    stepper->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+    {
+      Thyra::ConstDetachedVectorView<Scalar> x_view( *x_vec[0] );
+      TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(x_view[0],Scalar(10.0)) != 0, std::logic_error,
+          "Error!  StepperValidator::validateGetIC:  Stepper did not return the initial condition for X through getPoints after taking a step!"
+          );
+    }
+    if (isImplicit && !is_null(xdot_vec[0])) {
+      Thyra::ConstDetachedVectorView<Scalar> xdot_view( *xdot_vec[0] );
+      TEST_FOR_EXCEPTION( compareTimeValues<Scalar>(xdot_view[0],Scalar(12.0)) != 0, std::logic_error,
+          "Error!  StepperValidator::validateGetIC:  Stepper did not return the initial condition for XDOT through getPoints after taking a step!"
+          );
+    }
+  }
+}
+
 
 } // namespace Rythmos
 

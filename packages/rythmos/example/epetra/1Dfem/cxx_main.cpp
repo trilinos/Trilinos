@@ -176,6 +176,7 @@ int main(int argc, char *argv[])
       epetraModel = Teuchos::rcp(new ExampleApplication1Dfem(epetra_comm_ptr_,params));
     Teuchos::RCP<Thyra::ModelEvaluator<double> >
       model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel,W_factory));
+    Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
 
     // Create Stepper object depending on command-line input
     std::string method;
@@ -221,6 +222,7 @@ int main(int argc, char *argv[])
       TEST_FOR_EXCEPT(true);
     }
     Rythmos::StepperBase<double> &stepper = *stepper_ptr;
+    stepper.setInitialCondition(model_ic);
 
     Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
     if (outputLevel >= 3)

@@ -34,6 +34,7 @@
 namespace Rythmos {
 
 #ifdef RYTHMOS_BROKEN_TEST
+// BUG 4388
 TEUCHOS_UNIT_TEST( Rythmos_Thyra, clone_v_detail ) {
   Teuchos::RCP<Thyra::VectorBase<double> > x0; 
   int dim = 1;

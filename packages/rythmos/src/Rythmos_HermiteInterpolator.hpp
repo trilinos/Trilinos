@@ -339,7 +339,11 @@ void HermiteInterpolator<Scalar>::assertInterpolatePreconditions(
   assertBaseInterpolatePreconditions(data_in,t_values,data_out);
   for (int i=0; i<Teuchos::as<int>(data_in.size()) ; ++i) {
     TEST_FOR_EXCEPTION(
-        data_in[i].xdot == Teuchos::null, std::logic_error,
+        is_null(data_in[i].x), std::logic_error,
+        "Error, data_in[" << i << "].x == Teuchos::null.\n"
+        );
+    TEST_FOR_EXCEPTION(
+        is_null(data_in[i].xdot), std::logic_error,
         "Error, data_in[" << i << "].xdot == Teuchos::null.\n"
         );
   }

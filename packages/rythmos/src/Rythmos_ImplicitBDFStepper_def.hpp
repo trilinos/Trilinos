@@ -226,12 +226,22 @@ void ImplicitBDFStepper<Scalar>::setInitialCondition(
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
-  TEST_FOR_EXCEPT(initialCondition.get_x()==Teuchos::null);
-  TEST_FOR_EXCEPT(initialCondition.get_x_dot()==Teuchos::null);
+  TEST_FOR_EXCEPT(is_null(initialCondition.get_x()));
+  TEST_FOR_EXCEPT(is_null(initialCondition.get_x_dot()));
   basePoint_ = initialCondition;
   xn0_ = initialCondition.get_x()->clone_v();
   xpn0_ = initialCondition.get_x_dot()->clone_v(); 
   time_ = initialCondition.get_t();
+  // Generate vectors for use in calculations
+  x_dot_base_ = createMember(xpn0_->space());
+  V_S(&*x_dot_base_,ST::zero());
+  ee_ = createMember(xn0_->space());
+  V_S(&*ee_,ST::zero());
+  // x history
+  xHistory_.clear();
+  xHistory_.push_back(xn0_->clone_v());
+  xHistory_.push_back(xpn0_->clone_v());
+
   haveInitialCondition_ = true;
   if (isInitialized_) {
     initialize_();
@@ -491,8 +501,24 @@ void ImplicitBDFStepper<Scalar>::getPoints(
   ,Array<ScalarMag>* accuracy_vec) const
 {
   using Teuchos::as;
+  using Teuchos::constOptInArg;
+  using Teuchos::null;
+  using Teuchos::ptr;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
+
+  TEUCHOS_ASSERT(haveInitialCondition_);
+  if ( (time_vec.length() == 1) &&
+       (compareTimeValues<Scalar>(time_vec[0],time_)==0) ) {
+    defaultGetPoints<Scalar>(
+        time_, constOptInArg(*xn0_), constOptInArg(*xpn0_),
+        time_, constOptInArg(*xn0_), constOptInArg(*xpn0_),
+        time_vec, ptr(x_vec), ptr(xdot_vec), ptr(accuracy_vec),
+        null
+        );
+    return;
+  }
+  TEUCHOS_ASSERT(isInitialized_);
 #ifdef ENABLE_RYTHMOS_TIMERS
   TEUCHOS_FUNC_TIME_MONITOR("Rythmos::ImplicitBDFStepper::getPoints");
 #endif
@@ -734,22 +760,6 @@ void ImplicitBDFStepper<Scalar>::defaultInitializeAll_()
 
 
 template<class Scalar>
-void ImplicitBDFStepper<Scalar>::getInitialCondition_()
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  if (!haveInitialCondition_) {
-    TEST_FOR_EXCEPT(model_->getNominalValues().get_x()==Teuchos::null);
-    TEST_FOR_EXCEPT(model_->getNominalValues().get_x_dot()==Teuchos::null);
-    basePoint_ = model_->getNominalValues();
-    xn0_ = basePoint_.get_x()->clone_v();
-    xpn0_ = basePoint_.get_x_dot()->clone_v(); 
-    time_ = basePoint_.get_t();
-    haveInitialCondition_ = true;
-  }
-}
-
-
-template<class Scalar>
 void ImplicitBDFStepper<Scalar>::obtainPredictor_()
 {
 
@@ -838,8 +848,9 @@ void ImplicitBDFStepper<Scalar>::interpolateSolution_(
   }
 
   // Set approximate accuracy
-  if (accuracy_ptr)
+  if (accuracy_ptr) {
     *accuracy_ptr = pow(usedStep_,kord);
+  }
   
 }
 
@@ -973,11 +984,7 @@ void ImplicitBDFStepper<Scalar>::initialize_()
 
   TEST_FOR_EXCEPT(model_ == Teuchos::null);
   TEST_FOR_EXCEPT(solver_ == Teuchos::null);
-
-  // 08/30/07 tscoffe:
-  // This must be done before stepControl_->initialize() in order for
-  // stepControl_ to get a valid TimeRange from the stepper.
-  this->getInitialCondition_();
+  TEUCHOS_ASSERT(haveInitialCondition_);
 
   // Initialize Parameter List if none provided.
   if (parameterList_ == Teuchos::null) {
@@ -1038,20 +1045,10 @@ void ImplicitBDFStepper<Scalar>::initialize_()
     *out << "numberOfSteps_ = " << numberOfSteps_ << std::endl;
   }
 
-  // Generate vectors for use in calculations
-  RCP<const Thyra::VectorSpaceBase<Scalar> > 
-    x_space = model_->get_x_space();
-  RCP<const Thyra::VectorSpaceBase<Scalar> > 
-    f_space = model_->get_f_space();
-  x_dot_base_ = createMember(x_space);
-  ee_ = createMember(x_space);
-  // x history
-  xHistory_.clear();
-  xHistory_.push_back(xn0_->clone_v());
-  xHistory_.push_back(xpn0_->clone_v());
+  // setInitialCondition initialized xHistory with xn0, xpn0.  Now we add the rest of the vectors.
   // Store maxOrder_+1 vectors
   for (int i=2 ; i<=maxOrder_ ; ++i) {
-    xHistory_.push_back(createMember(x_space)); 
+    xHistory_.push_back(createMember(xn0_->space())); 
     V_S(&*xHistory_[i],zero);
   }
 

@@ -233,10 +233,10 @@ void InterpolationBuffer<Scalar>::addPoints(
       x_vec[i] == Teuchos::null, std::logic_error,
       "Error, x_vec[" << i << "] == null!\n"
       );
-    TEST_FOR_EXCEPTION(
-      xdot_vec[i] == Teuchos::null, std::logic_error,
-      "Error, xdot_vec[" << i << "] == null!\n"
-      );
+//    TEST_FOR_EXCEPTION(
+//      xdot_vec[i] == Teuchos::null, std::logic_error,
+//      "Error, xdot_vec[" << i << "] == null!\n"
+//      );
   }
   assertNoTimePointsInsideCurrentTimeRange(*this,time_vec);
 #endif // RYTHMOS_DEBUG
@@ -254,8 +254,10 @@ void InterpolationBuffer<Scalar>::addPoints(
     }
     *out << "xdot_vec = " << std::endl;
     for (unsigned int i=0 ; i<xdot_vec.size() ; ++i) {
-      *out << "xdot_vec[" << i << "] = " << std::endl;
-      xdot_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
+      if (!is_null(xdot_vec[i])) {
+        *out << "xdot_vec[" << i << "] = " << std::endl;
+        xdot_vec[i]->describe(*out,Teuchos::VERB_EXTREME);
+      }
     }
   }
   typename DataStore<Scalar>::DataStoreList_t input_data_list;

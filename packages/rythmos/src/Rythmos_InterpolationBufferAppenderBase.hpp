@@ -100,32 +100,43 @@ protected:
 template<class Scalar>
 void InterpolationBufferAppenderBase<Scalar>::assertAppendPreconditions(
   const InterpolationBufferBase<Scalar>& interpBuffSource, 
-  const TimeRange<Scalar>& range,
+  const TimeRange<Scalar>& appendRange,
   const InterpolationBufferBase<Scalar>& interpBuffSink
   ) const
 {
   // If the time range of interpBuffSink is invalid, then its just empty
   if (interpBuffSink.getTimeRange().isValid()) {
+    // Allow the appendRange to sit completely outside the sink range (04/22/09 tscoffe)
+    // appendRange overlaps at lower end of sink range:
     TEST_FOR_EXCEPTION(
-      ( compareTimeValues(range.lower(),interpBuffSink.getTimeRange().upper()) != 0 &&
-        compareTimeValues(range.upper(),interpBuffSink.getTimeRange().lower()) != 0    ),
-      std::logic_error, 
-      "Error, import range = [" << range.lower() << "," << range.upper() << "] is not an append nor a prepend "
+        ( compareTimeValues(appendRange.lower(),interpBuffSink.getTimeRange().lower()) < 0 &&
+          compareTimeValues(appendRange.upper(),interpBuffSink.getTimeRange().lower()) > 0 ),
+        std::logic_error,
+      "Error, import range = [" << appendRange.lower() << "," << appendRange.upper() << "] is not a prepend "
+      "of the base range = [" << interpBuffSink.getTimeRange().lower() << "," << interpBuffSink.getTimeRange().upper() << "] "
+      "interpolation buffer.\n"
+      );
+    // appendRange overlaps at upper end of sink range:
+    TEST_FOR_EXCEPTION(
+        ( compareTimeValues(appendRange.lower(),interpBuffSink.getTimeRange().upper()) < 0 &&
+          compareTimeValues(appendRange.upper(),interpBuffSink.getTimeRange().upper()) > 0 ),
+        std::logic_error,
+      "Error, import range = [" << appendRange.lower() << "," << appendRange.upper() << "] is not an append "
       "of the base range = [" << interpBuffSink.getTimeRange().lower() << "," << interpBuffSink.getTimeRange().upper() << "] "
       "interpolation buffer.\n"
       );
   }
   TEST_FOR_EXCEPTION(
-    compareTimeValues(range.lower(),interpBuffSource.getTimeRange().lower())<0,
+    compareTimeValues(appendRange.lower(),interpBuffSource.getTimeRange().lower())<0,
     std::logic_error,
-    "Error, append range's lower bound = " << range.lower() << " does not sit inside incoming"
+    "Error, append range's lower bound = " << appendRange.lower() << " does not sit inside incoming"
     " interpolation buffer's time range = "
     "[" << interpBuffSource.getTimeRange().lower() << "," << interpBuffSource.getTimeRange().upper() << "].\n"
     );
   TEST_FOR_EXCEPTION(
-    compareTimeValues(interpBuffSource.getTimeRange().upper(),range.upper())<0,
+    compareTimeValues(interpBuffSource.getTimeRange().upper(),appendRange.upper())<0,
     std::logic_error,
-    "Error, append range's upper bound = " << range.upper() << "does not sit inside incoming"
+    "Error, append range's upper bound = " << appendRange.upper() << "does not sit inside incoming"
     " interpolation buffer's time range = "
     "[" << interpBuffSource.getTimeRange().lower() << "," << interpBuffSource.getTimeRange().upper() << "].\n"
     );

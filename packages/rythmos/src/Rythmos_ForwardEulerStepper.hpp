@@ -330,40 +330,14 @@ void ForwardEulerStepper<Scalar>::getPoints(
     ,Array<ScalarMag>* accuracy_vec) const
 {
   TEUCHOS_ASSERT( haveInitialCondition_ );
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  if (x_vec != NULL) {
-    x_vec->clear();
-  }
-  if (xdot_vec != NULL) {
-    xdot_vec->clear();
-  }
-  if (accuracy_vec != NULL) {
-    accuracy_vec->clear();
-  }
-  typename Array<Scalar>::const_iterator time_it = time_vec.begin();
-  RCP<Thyra::VectorBase<Scalar> > tmpVec;
-  for (; time_it != time_vec.end() ; time_it++) {
-    Scalar t = *time_it;
-    if (compareTimeValues(t,t_old_)==0) {
-      tmpVec = solution_vector_old_;
-    } else if (compareTimeValues(t,t_)==0) {
-      tmpVec = solution_vector_;
-    } else {
-      TEST_FOR_EXCEPTION(true,std::logic_error,"Error, ForwardEulerStepper::getPoints only supports time values on the boundaries!\n");
-    }
-    if (!Teuchos::is_null(tmpVec)) {
-      if (x_vec != NULL) {
-        x_vec->push_back(tmpVec->clone_v());
-      }
-      if (xdot_vec != NULL) {
-        xdot_vec->push_back(Teuchos::null);
-      }
-      if (accuracy_vec != NULL) {
-        accuracy_vec->push_back(ST::zero());
-      }
-      tmpVec = Teuchos::null;
-    }
-  }
+  using Teuchos::constOptInArg;
+  using Teuchos::null;
+  defaultGetPoints<Scalar>(
+      t_old_,constOptInArg(*solution_vector_old_),null,
+      t_,constOptInArg(*solution_vector_),null,
+      time_vec,ptr(x_vec),ptr(xdot_vec),ptr(accuracy_vec),
+      null
+      );
 }
 
 template<class Scalar>

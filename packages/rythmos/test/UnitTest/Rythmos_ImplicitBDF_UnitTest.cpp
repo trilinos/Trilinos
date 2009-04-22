@@ -43,6 +43,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, minOrder ) {
   sublist(modelParamList,Stratimikos_name);
   sublist(modelParamList,DiagonalTransientModel_name);
   RCP<Thyra::ModelEvaluator<double> > model = getDiagonalModel<double>(modelParamList);
+  Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
   // Solver
   RCP<TimeStepNonlinearSolver<double> > nlSolver = timeStepNonlinearSolver<double>();
   std::vector<StepSizeType> stepTypeVec(2);
@@ -64,6 +65,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, minOrder ) {
       // Stepper
       RCP<ImplicitBDFStepper<double> > stepper = rcp(new ImplicitBDFStepper<double>(model,nlSolver,stepperParamList));
       TEST_EQUALITY_CONST( Teuchos::is_null(stepper), false );
+      stepper->setInitialCondition(model_ic);
 
       for (int order=1 ; order<=minOrder ; ++order) {
         step = stepper->takeStep(1.0,stepType);

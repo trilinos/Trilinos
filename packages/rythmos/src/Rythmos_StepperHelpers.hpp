@@ -8,6 +8,9 @@
 #include "Teuchos_Assert.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Thyra_ModelEvaluator.hpp"
+#include "Rythmos_InterpolationBufferHelpers.hpp"
+#include "Rythmos_InterpolatorBase.hpp"
+#include "Rythmos_InterpolatorBaseHelpers.hpp"
 
 
 namespace Rythmos {
@@ -156,6 +159,110 @@ void eval_model_explicit(
   model.evalModel(inArgs,outArgs);
 }
 
+
+// This function simply returns the boundary points if they're asked for.  Otherwise it throws.
+template<class Scalar>
+void defaultGetPoints(
+    const Scalar& t_old, // required inArg
+    const Ptr<const VectorBase<Scalar> >& x_old, // optional inArg
+    const Ptr<const VectorBase<Scalar> >& xdot_old, // optional inArg
+    const Scalar& t, // required inArg
+    const Ptr<const VectorBase<Scalar> >& x, // optional inArg
+    const Ptr<const VectorBase<Scalar> >& xdot, // optional inArg
+    const Array<Scalar>& time_vec, // required inArg
+    const Ptr<Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > >& x_vec, // optional outArg
+    const Ptr<Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > > >& xdot_vec, // optional outArg
+    const Ptr<Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> >& accuracy_vec, // optional outArg
+    const Ptr<InterpolatorBase<Scalar> > interpolator // optional inArg (note:  not const)
+    ) 
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  assertTimePointsAreSorted(time_vec);
+  TimeRange<Scalar> tr(t_old,t);
+  TEUCHOS_ASSERT( tr.isValid() );
+  if (!is_null(x_vec)) {
+    x_vec->clear();
+  }
+  if (!is_null(xdot_vec)) {
+    xdot_vec->clear();
+  }
+  if (!is_null(accuracy_vec)) {
+    accuracy_vec->clear();
+  }
+  typename Array<Scalar>::const_iterator time_it = time_vec.begin();
+  RCP<const VectorBase<Scalar> > tmpVec;
+  RCP<const VectorBase<Scalar> > tmpVecDot;
+  for (; time_it != time_vec.end() ; time_it++) {
+    Scalar time = *time_it;
+    TEUCHOS_ASSERT( tr.isInRange(time) );
+    Scalar accuracy = ST::zero();
+    if (compareTimeValues(time,t_old)==0) {
+      if (!is_null(x_old)) {
+        tmpVec = x_old->clone_v();
+      }
+      if (!is_null(xdot_old)) {
+        tmpVecDot = xdot_old->clone_v();
+      }
+    } else if (compareTimeValues(time,t)==0) {
+      if (!is_null(x)) {
+        tmpVec = x->clone_v();
+      }
+      if (!is_null(xdot)) {
+        tmpVecDot = xdot->clone_v();
+      }
+    } else {
+      TEST_FOR_EXCEPTION(
+          is_null(interpolator), std::logic_error,
+          "Error, getPoints:  This stepper only supports time values on the boundaries!\n"
+          );
+      // At this point, we know time != t_old, time != t, interpolator != null, 
+      // and time in [t_old,t], therefore, time in (t_old,t).  
+      // t_old != t at this point because otherwise it would have been caught above.
+      // Now use the interpolator to pass out the interior points
+      typename DataStore<Scalar>::DataStoreVector_t ds_nodes;
+      typename DataStore<Scalar>::DataStoreVector_t ds_out;
+      {
+        // t_old
+        DataStore<Scalar> ds;
+        ds.time = t_old;
+        ds.x = rcp(x_old.get(),false);
+        ds.xdot = rcp(xdot_old.get(),false);
+        ds_nodes.push_back(ds);
+      }
+      {
+        // t
+        DataStore<Scalar> ds;
+        ds.time = t;
+        ds.x = rcp(x.get(),false);
+        ds.xdot = rcp(xdot.get(),false);
+        ds_nodes.push_back(ds);
+      }
+      Array<Scalar> time_vec_in;
+      time_vec_in.push_back(time);
+      interpolate<Scalar>(*interpolator,rcp(&ds_nodes,false),time_vec_in,&ds_out);
+      Array<Scalar> time_vec_out;
+      Array<RCP<const VectorBase<Scalar> > > x_vec_out;
+      Array<RCP<const VectorBase<Scalar> > > xdot_vec_out;
+      Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> accuracy_vec_out;
+      dataStoreVectorToVector(ds_out,&time_vec_out,&x_vec_out,&xdot_vec_out,&accuracy_vec_out);
+      TEUCHOS_ASSERT( time_vec_out.length()==1 );
+      tmpVec = x_vec_out[0];
+      tmpVecDot = xdot_vec_out[0];
+      accuracy = accuracy_vec_out[0];
+    }
+    if (!is_null(x_vec)) {
+      x_vec->push_back(tmpVec);
+    }
+    if (!is_null(xdot_vec)) {
+      xdot_vec->push_back(tmpVecDot);
+    }
+    if (!is_null(accuracy_vec)) {
+      accuracy_vec->push_back(accuracy);
+    }
+    tmpVec = Teuchos::null;
+    tmpVecDot = Teuchos::null;
+  }
+}
 
 
 } // namespace Rythmos

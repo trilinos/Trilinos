@@ -468,16 +468,13 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, addPoints_bad ) {
 #endif // RYTHMOS_DEBUG
   x_vec[0] = createDefaultVector(2,17.0);
   xdot_vec[0] = Teuchos::null;
-  // xdot_vec pointers are null
-#ifdef RYTHMOS_DEBUG
-  TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::logic_error );
-#else // RYTHMOS_DEBUG
-  // TODO:  What happens in this case?
-#endif // RYTHMOS_DEBUG
+  // xdot_vec pointers are null (this is okay)
+  ib->addPoints(time_vec,x_vec,xdot_vec);
+  time_vec[0] = 2.1;
   xdot_vec[0] = createDefaultVector(2,32.0);
   RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   pl->set("InterpolationBufferPolicy", "Static Policy");
-  pl->set("StorageLimit",N);
+  pl->set("StorageLimit",N+1);
   ib->setParameterList(pl);
   // Exceed storage due to IBPolicy == static 
   TEST_THROW( ib->addPoints(time_vec,x_vec,xdot_vec), std::logic_error );
@@ -974,61 +971,33 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, add_get_points_2 ) {
   }
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, add_get_points_linearInterp ) {
-  int N = 2;
-  Teuchos::Array<double> time_vec;
-  RCP<InterpolationBuffer<double> > ib = interpolationBuffer<double>();
-  ib->setStorage(N);
-//  ib->setVerbLevel(Teuchos::VERB_EXTREME);
-  RCP<LinearInterpolator<double> > interp = linearInterpolator<double>();
-  //RCP<HermiteInterpolator<double> > interp = hermiteInterpolator<double>();
-//  interp->setVerbLevel(Teuchos::VERB_EXTREME);
-  ib->setInterpolator(interp);
-  Array<RCP<const VectorBase<double> > > x_vec;
-  Array<RCP<const VectorBase<double> > > xdot_vec;
-  int dim = 2;
-  for (int i=0 ; i<N ; ++i) {
-    time_vec.push_back(0.0+1.0*i);
-    x_vec.push_back(createDefaultVector(dim,1.0+1.0*i)); 
-    xdot_vec.push_back(createDefaultVector(dim,3.0+1.0*i)); 
+#ifdef RYTHMOS_BROKEN_TEST
+// BUG 4388
+TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, add_to_empty ) {
+  RCP<InterpolationBuffer<double> > ibSource = interpolationBuffer<double>();
+  int dim = 1;
+  {
+    Teuchos::Array<double> time_vec;
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    time_vec.push_back(0.0);
+    x_vec.push_back(createDefaultVector(dim,1.0)); 
+    xdot_vec.push_back(createDefaultVector(dim,2.0)); 
+    ibSource->addPoints(time_vec,x_vec,xdot_vec);
   }
-//  out << "Before adding to ib:" << std::endl;
-//  for (int i=0 ; i < as<int>(x_vec.size()) ; ++i) {
-//    out << "time_vec["<<i<<"] = " << time_vec[i] << std::endl;
-//    out << "x_vec["<<i<<"] = " << std::endl;
-//    out << Teuchos::describe(*x_vec[i],Teuchos::VERB_EXTREME);
-//    out << "xdot_vec["<<i<<"] = " << std::endl;
-//    out << Teuchos::describe(*xdot_vec[i],Teuchos::VERB_EXTREME);
-//  }
-  ib->addPoints(time_vec,x_vec,xdot_vec);
-  
-  Array<double> accuracy_vec;
-  ib->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
-  TEST_EQUALITY_CONST( x_vec.size(), 2 );
-  TEST_ASSERT( !is_null(x_vec[0]) );
-  TEST_ASSERT( !is_null(x_vec[1]) );
-  TEST_ASSERT( !is_null(xdot_vec[0]) );
-  TEST_ASSERT( !is_null(xdot_vec[1]) );
-
-  // THE FOLLOWING LINE CAUSES A SEGFAULT!
-  //RCP<VectorBase<double> > v1 = x_vec[0]->clone_v();
-  //TEST_ASSERT( !is_null(v1) );
-  
-//  RCP<const Thyra::VectorSpaceBase<double> > space = x_vec[0]->space();
-//  TEST_ASSERT( !is_null(space) );
-//  RCP<VectorBase<double> > v2 = Thyra::createMember(*space);
-//  TEST_ASSERT( !is_null(v2) );
-
-//  TEST_ASSERT( !is_null(v) );
-//  out << "After getting from ib:" << std::endl;
-//  for (int i=0 ; i < as<int>(x_vec.size()) ; ++i) {
-//    out << "time_vec["<<i<<"] = " << time_vec[i] << std::endl;
-//    out << "x_vec["<<i<<"] = " << std::endl;
-//    out << Teuchos::describe(*x_vec[i],Teuchos::VERB_EXTREME);
-//    out << "xdot_vec["<<i<<"] = " << std::endl;
-//    out << Teuchos::describe(*xdot_vec[i],Teuchos::VERB_EXTREME);
-//  }
+  {
+    Array<double> time_vec_out;
+    time_vec_out.push_back(0.0);
+    Array<RCP<const Thyra::VectorBase<double> > > x_vec_out;
+    Array<RCP<const Thyra::VectorBase<double> > > xdot_vec_out;
+    Array<double> accuracy_vec_out;
+    ibSource->getPoints(time_vec_out, &x_vec_out, &xdot_vec_out, &accuracy_vec_out);
+    TEST_ASSERT( x_vec_out.length() == 1 );
+    RCP<VectorBase<double> > xnew = x_vec_out[0]->clone_v();
+    TEST_ASSERT(!is_null(xnew));
+  }
 }
+#endif // RYTHMOS_BROKEN_TEST
 
 } // namespace Rythmos
 

@@ -68,7 +68,7 @@ void assertBaseInterpolatePreconditions(
       "Error, data_in.size() == 1, but t_values.size() > 1!\n"
       );
     TEST_FOR_EXCEPTION(
-      t_values[0]!=data_in[0].time, std::logic_error,
+      compareTimeValues(t_values[0],data_in[0].time)!=0, std::logic_error,
       "Error, data_in.size) == 1, but t_values[0] = " << 
       t_values[0] << " != " << data_in[0].time << " = data_in[0].time!\n"
       );
@@ -85,12 +85,6 @@ void assertBaseInterpolatePreconditions(
     data_out == 0, std::logic_error,
     "Error, data_out = NULL!\n"
     );
-  for (int i=0; i<Teuchos::as<int>(data_in.size()) ; ++i) {
-    TEST_FOR_EXCEPTION(
-      data_in[i].x == Teuchos::null, std::logic_error,
-      "Error, data_in[" << i << "].x == Teuchos::null.\n"
-      );
-  }
 }
 
 template<class Scalar>

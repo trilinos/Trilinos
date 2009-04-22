@@ -48,12 +48,14 @@ class BackwardEulerStepperFactory : public virtual StepperFactoryBase<Scalar>
     RCP<StepperBase<Scalar> > getStepper() const 
     { 
       RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
+      Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
       RCP<Rythmos::TimeStepNonlinearSolver<Scalar> >
         nonlinearSolver = Rythmos::timeStepNonlinearSolver<Scalar>();
       RCP<ParameterList> nonlinearSolverPL = Teuchos::parameterList();
       nonlinearSolverPL->get("Default Tol",1.0e-9); // Set default if not set
       nonlinearSolver->setParameterList(nonlinearSolverPL);
       RCP<BackwardEulerStepper<Scalar> > stepper = Teuchos::rcp(new BackwardEulerStepper<Scalar>(model,nonlinearSolver));
+      stepper->setInitialCondition(model_ic);
       return stepper;
     }
   private:

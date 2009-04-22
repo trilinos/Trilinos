@@ -93,6 +93,11 @@ public:
     : lower_(lower), upper_(upper)
     {
     }
+  /** \brief Copy constructor. */
+  TimeRange( const TimeRange<TimeType>& tr )
+    : lower_(tr.lower()), upper_(tr.upper())
+    {
+    }
   /** \brief . */
   bool isValid() const { return (lower_ <= upper_); }
   /** \brief . */
@@ -102,11 +107,11 @@ public:
   /** \brief . */
   TimeType length() const { return (upper_ - lower_); }
   /** \brief . */
-  bool isInRange ( const TimeType &t ) const
+  virtual bool isInRange ( const TimeType &t ) const
     {
       return (
-        compareTimeValues(lower_,t) <= 0
-        && compareTimeValues(upper_,t) >= 0
+        compareTimeValues(t,lower_) >= 0
+        && compareTimeValues(t,upper_) <= 0
         );
     }
   /** \brief . */
@@ -124,7 +129,6 @@ private:
   TimeType lower_;
   TimeType upper_;
 };
-
 
 /** \brief Nonmember constructor.
  *
@@ -179,8 +183,8 @@ template<class TimeType>
 bool isInRange_cc(const TimeRange<TimeType> &tr, const TimeType &p)
 {
   return (
-    compareTimeValues(tr.lower(),p) <= 0
-    && compareTimeValues(tr.upper(),p) >= 0
+    compareTimeValues(p,tr.lower()) >= 0
+    && compareTimeValues(p,tr.upper()) <= 0
     );
 }
 
@@ -195,8 +199,8 @@ template<class TimeType>
 bool isInRange_oc(const TimeRange<TimeType> &tr, const TimeType &p)
 {
   return (
-    compareTimeValues(tr.lower(),p) < 0
-    && compareTimeValues(tr.upper(),p) >= 0
+    compareTimeValues(p,tr.lower()) > 0
+    && compareTimeValues(p,tr.upper()) <= 0
     );
 }
 
@@ -211,8 +215,8 @@ template<class TimeType>
 bool isInRange_co(const TimeRange<TimeType> &tr, const TimeType &p)
 {
   return (
-    compareTimeValues(tr.lower(),p) <= 0
-    && compareTimeValues(tr.upper(),p) > 0
+    compareTimeValues(p,tr.lower()) >= 0
+    && compareTimeValues(p,tr.upper()) < 0
     );
 }
 
@@ -227,10 +231,82 @@ template<class TimeType>
 bool isInRange_oo(const TimeRange<TimeType> &tr, const TimeType &p)
 {
   return (
-    compareTimeValues(tr.lower(),p) < 0
-    && compareTimeValues(tr.upper(),p) > 0
+    compareTimeValues(p,tr.lower()) > 0
+    && compareTimeValues(p,tr.upper()) < 0
     );
 }
+
+template<class TimeType>
+class TimeRange_cc : virtual public TimeRange<TimeType> 
+{
+public:
+  TimeRange_cc(const TimeRange<TimeType>& tr)
+    :TimeRange<TimeType>(tr)
+    {
+    }
+  TimeRange_cc( const TimeType &lower, const TimeType &upper )
+    :TimeRange<TimeType>(lower,upper) 
+    {
+    }
+  bool isInRange ( const TimeType &t ) const
+    {
+      return ( isInRange_cc<TimeType>(*this,t) );
+    }
+};
+
+template<class TimeType>
+class TimeRange_co : virtual public TimeRange<TimeType> 
+{
+public:
+  TimeRange_co(const TimeRange<TimeType>& tr)
+    :TimeRange<TimeType>(tr)
+    {
+    }
+  TimeRange_co( const TimeType &lower, const TimeType &upper )
+    :TimeRange<TimeType>(lower,upper) 
+    {
+    }
+  bool isInRange ( const TimeType &t ) const
+    {
+      return ( isInRange_co<TimeType>(*this,t) );
+    }
+};
+
+template<class TimeType>
+class TimeRange_oo : virtual public TimeRange<TimeType> 
+{
+public:
+  TimeRange_oo(const TimeRange<TimeType>& tr)
+    :TimeRange<TimeType>(tr)
+    {
+    }
+  TimeRange_oo( const TimeType &lower, const TimeType &upper )
+    :TimeRange<TimeType>(lower,upper) 
+    {
+    }
+  bool isInRange ( const TimeType &t ) const
+    {
+      return ( isInRange_oo<TimeType>(*this,t) );
+    }
+};
+
+template<class TimeType>
+class TimeRange_oc : virtual public TimeRange<TimeType> 
+{
+public:
+  TimeRange_oc(const TimeRange<TimeType>& tr)
+    :TimeRange<TimeType>(tr)
+    {
+    }
+  TimeRange_oc( const TimeType &lower, const TimeType &upper )
+    :TimeRange<TimeType>(lower,upper) 
+    {
+    }
+  bool isInRange ( const TimeType &t ) const
+    {
+      return ( isInRange_oc<TimeType>(*this,t) );
+    }
+};
 
 
 } // namespace Rythmos

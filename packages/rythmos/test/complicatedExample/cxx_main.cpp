@@ -222,10 +222,12 @@ int main(int argc, char *argv[])
       epetraModel = rcp(new ExampleApplication(epetra_comm_ptr_, params));
     RCP<Thyra::ModelEvaluator<double> >
       model = rcp(new Thyra::EpetraModelEvaluator(epetraModel,W_factory));
+    Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
     RCP<ExampleApplication>
       epetraModelSlave = rcp(new ExampleApplication(epetra_comm_ptr_, params));
     RCP<Thyra::ModelEvaluator<double> >
       modelSlave = rcp(new Thyra::EpetraModelEvaluator(epetraModelSlave,W_factory));
+    Thyra::ModelEvaluatorBase::InArgs<double> modelSlave_ic = modelSlave->getNominalValues();
 
     // Create Stepper object depending on command-line input
     std::string method;
@@ -233,8 +235,7 @@ int main(int argc, char *argv[])
     RCP<Rythmos::StepperBase<double> > stepperSlave_ptr;
     if ( method_val == METHOD_ERK ) {
       stepper_ptr = Rythmos::explicitRKStepper<double>(model);
-      Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
-      stepper_ptr->setInitialCondition(ic);
+      stepper_ptr->setInitialCondition(model_ic);
       RCP<Teuchos::ParameterList> ERKparams = Teuchos::parameterList();
       ERKparams->sublist("VerboseObject").set(
         "Verbosity Level",
@@ -246,8 +247,7 @@ int main(int argc, char *argv[])
     }
     else if (method_val == METHOD_FE) {
       stepper_ptr = Rythmos::forwardEulerStepper<double>(model);
-      Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
-      stepper_ptr->setInitialCondition(ic);
+      stepper_ptr->setInitialCondition(model_ic);
       RCP<Teuchos::ParameterList> FEparams = Teuchos::parameterList();
       FEparams->sublist("VerboseObject").set(
         "Verbosity Level",
@@ -283,6 +283,7 @@ int main(int argc, char *argv[])
           Teuchos::getVerbosityLevelParameterValueName(verbLevel)
           );
         stepper_ptr->setParameterList(BEparams);
+        stepper_ptr->setInitialCondition(model_ic);
         method = "Backward Euler";
         step_method_val = STEP_TYPE_FIXED;
       } 
@@ -306,9 +307,13 @@ int main(int argc, char *argv[])
         BDFStepControlPL->set( "relErrTol", reltol );
         BDFStepControlPL->set( "absErrTol", abstol );
         stepper_ptr = rcp(
-          new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
+          new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams)
+          );
+        stepper_ptr->setInitialCondition(model_ic);
         stepperSlave_ptr = rcp(
-          new Rythmos::ImplicitBDFStepper<double>(modelSlave,nonlinearSolverSlave,BDFparams));
+          new Rythmos::ImplicitBDFStepper<double>(modelSlave,nonlinearSolverSlave,BDFparams)
+          );
+        stepperSlave_ptr->setInitialCondition(modelSlave_ic);
         method = "Implicit BDF";
         // step_method_val setting is left alone in this case
       }
@@ -317,8 +322,9 @@ int main(int argc, char *argv[])
       TEST_FOR_EXCEPT(true);
     }
     Rythmos::StepperBase<double> &stepper = *stepper_ptr;
-    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) )
+    if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
       stepper.describe(*out,verbLevel);
+    }
 
     int numSteps = 0;
     double t0 = 0.0;

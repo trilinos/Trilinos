@@ -31,6 +31,7 @@
 
 #include "Teuchos_DefaultComm.hpp"
 
+#include "Rythmos_Types.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
@@ -47,6 +48,18 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > createDefaultVectorSpace(int
     Thyra::defaultSpmdVectorSpace<Scalar>(comm, length, -1);
   return(vs); 
 }
+
+// This function returns a vector initialized with a value.
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar> > createDefaultVector(
+    const RCP<const Thyra::VectorSpaceBase<Scalar> >& vs, 
+    Scalar value
+    ) {
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(vs);
+  Thyra::V_S(&*vec,value);
+  return(vec);
+}
+
 
 // This function returns a vector initialized with a value.
 template<class Scalar>

@@ -98,9 +98,9 @@ void assertNoTimePointsInsideCurrentTimeRange(
  */
 template<class TimeType>
 void selectPointsInTimeRange(
-  Array<TimeType>* points_out, 
   const Array<TimeType>& points_in,
-  const TimeRange<TimeType>& range 
+  const TimeRange<TimeType>& range,
+  const Ptr<Array<TimeType> >& points_out 
   );
 
 
@@ -239,16 +239,14 @@ void Rythmos::assertNoTimePointsInsideCurrentTimeRange(
 
 template<class TimeType>
 void Rythmos::selectPointsInTimeRange(
-    Array<TimeType>* points_out, 
     const Array<TimeType>& points_in,
-    const TimeRange<TimeType>& range 
+    const TimeRange<TimeType>& range,
+    const Ptr<Array<TimeType> >& points_out 
     )
 {
   points_out->clear();
   int Nt = Teuchos::as<int>(points_in.size());
   for (int i=0; i < Nt ; ++i) {
-    // 04/14/09 tscoffe: This block of code is broken and needs a refactor.
-    //if (isInRange_oc(range,points_in[i])) {
     if (range.isInRange(points_in[i])) {
       points_out->push_back(points_in[i]);
     }

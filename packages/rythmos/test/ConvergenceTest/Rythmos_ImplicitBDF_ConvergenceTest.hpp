@@ -50,6 +50,7 @@ class ImplicitBDFStepperFactory : public virtual StepperFactoryBase<Scalar>
     RCP<StepperBase<Scalar> > getStepper() const 
     { 
       RCP<ModelEvaluator<Scalar> > model = modelFactory_->getModel();
+      Thyra::ModelEvaluatorBase::InArgs<Scalar> model_ic = model->getNominalValues();
       RCP<Rythmos::TimeStepNonlinearSolver<Scalar> >
         nonlinearSolver = Rythmos::timeStepNonlinearSolver<Scalar>();
       RCP<ParameterList> nonlinearSolverPL = Teuchos::parameterList();
@@ -63,6 +64,7 @@ class ImplicitBDFStepperFactory : public virtual StepperFactoryBase<Scalar>
       Teuchos::ParameterList& stepControlVOPL = stepControlPL.sublist("VerboseObject");
       stepControlVOPL.set("Verbosity Level","none");
       stepper->setParameterList(bdfPL);
+      stepper->setInitialCondition(model_ic);
       return stepper;
     }
   private:

@@ -106,27 +106,68 @@ pointwiseInterpolationBufferAppender()
 template<class Scalar>
 void PointwiseInterpolationBufferAppender<Scalar>::append(
   const InterpolationBufferBase<Scalar>& interpBuffSource, 
-  const TimeRange<Scalar>& range,
+  const TimeRange<Scalar>& appendRange,
   const Ptr<InterpolationBufferBase<Scalar> > &interpBuffSink 
   ) 
 {
+  TEUCHOS_ASSERT( !is_null(interpBuffSink) );
 #ifdef RYTHMOS_DEBUG
-  this->assertAppendPreconditions(interpBuffSource,range,*interpBuffSink);
+  this->assertAppendPreconditions(interpBuffSource,appendRange,*interpBuffSink);
 #endif // RYTHMOS_DEBUG
+
+  RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"PointwiseInterpolationBufferAppender::append");
+  if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "Interpolation Buffer source range = [" << interpBuffSource.getTimeRange().lower() << "," <<
+      interpBuffSource.getTimeRange().upper() << "]" << std::endl;
+    *out << "Append range = [" << appendRange.lower() << "," << appendRange.upper() << "]" << std::endl;
+    *out << "Interpolation Buffer sink range = [" << interpBuffSink->getTimeRange().lower() << "," <<
+      interpBuffSink->getTimeRange().upper() << "]" << std::endl;
+  }
+  // Set up appendRange correctly to be either (] or [):
+  RCP<const TimeRange<Scalar> > correctedAppendRange = Teuchos::rcp(&appendRange,false);
+  if (compareTimeValues<Scalar>(interpBuffSink->getTimeRange().upper(),appendRange.lower()) == 0) {
+    // adding to end of buffer 
+    correctedAppendRange = Teuchos::rcp(new TimeRange_oc<Scalar>(appendRange));
+    if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
+      *out << "Corrected append range = (" << correctedAppendRange->lower() << "," << 
+        correctedAppendRange->upper() << "]" << std::endl;
+    }
+  } 
+  else if (compareTimeValues<Scalar>(interpBuffSink->getTimeRange().lower(),appendRange.upper()) == 0) {
+    // adding to beginning of buffer
+    correctedAppendRange = Teuchos::rcp(new TimeRange_co<Scalar>(appendRange));
+    if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
+      *out << "Corrected append range = [" << correctedAppendRange->lower() << "," << 
+        correctedAppendRange->upper() << ")" << std::endl;
+    }
+  }
 
   Array<Scalar> time_vec_in;
   interpBuffSource.getNodes(&time_vec_in);
 
   Array<Scalar> time_vec;
-  selectPointsInTimeRange(&time_vec,time_vec_in,range);
-  // 2007/12/05: rabrtl: ToDo: Make the output argument last!
+  selectPointsInTimeRange(time_vec_in,*correctedAppendRange,Teuchos::outArg(time_vec));
+  if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "Selected points for appending to sink buffer: " << time_vec << std::endl;
+  }
 
   Array<RCP<const Thyra::VectorBase<Scalar> > > x_vec;
   Array<RCP<const Thyra::VectorBase<Scalar> > > xdot_vec;
   Array<ScalarMag> accuracy_vec;
   interpBuffSource.getPoints(time_vec, &x_vec, &xdot_vec, &accuracy_vec);
 
+  if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "Sink buffer range before addPoints = [" << interpBuffSink->getTimeRange().lower() << "," <<
+      interpBuffSink->getTimeRange().upper() << "]" << std::endl;
+  }
+
   interpBuffSink->addPoints(time_vec, x_vec, xdot_vec);
+
+  if ( Teuchos::as<int>(this->getVerbLevel()) >= Teuchos::as<int>(Teuchos::VERB_HIGH) ) {
+    *out << "Sink buffer range after addPoints = [" << interpBuffSink->getTimeRange().lower() << "," <<
+      interpBuffSink->getTimeRange().upper() << "]" << std::endl;
+  }
 
 }
 
