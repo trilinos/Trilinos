@@ -94,8 +94,7 @@ class TestCompare : public NOX::TestCompare
 
   TestCompare(std::ostream& outputStream, const NOX::Utils& utilities);
 
-  virtual ~TestCompare()
-  { };
+  virtual ~TestCompare() {}
 
   // Method to compute a matrix from an operator acting on unit Cartesian vect// spanning the space of problem dofs
 

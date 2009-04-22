@@ -1,8 +1,6 @@
 // $Id$ 
 // $Source$ 
 
-#ifdef WITH_PRERELEASE
-
 //@HEADER
 // ************************************************************************
 // 
@@ -181,6 +179,9 @@
 
 */
 
+#include "NOX_Common.H"
+
+#ifdef WITH_PRERELEASE
 
 #include "NOX.H"
 #include "NOX_Random.H"
