@@ -320,12 +320,12 @@ Package: Komplex
 
 Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
-Status: Basic libraries and a single test.  However, the transition should be
-complete.
+Status: Complete, in that all tests that the autotools actually builds are built
+  and run. With the addition of one test so that there would be at least one test.
 
-Final Certification Date: [???]
+Final Certification Date: 4/15/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests and files built by autotools are built.
 
 -------------------------------------------------------------------------------
 
@@ -661,11 +661,15 @@ Package: Didasko
 
 Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
-Status: Basic CMakeification is finished
+Status: Complete with the exception of the epetraext example. It requires A
+  version of zoltan that is not the version that is in Trilinos. This will
+  have to be researched more and probably envolves fixing things in epetraext.
 
-Final Certification Date: [???]
+Final Certification Date: 4/22/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All examples are producing the same results as auto
+ tools builds (including the epetraext example which exits with a message about
+ needing specific options to be enabled in both)
 
 -------------------------------------------------------------------------------
 
