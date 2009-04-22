@@ -51,8 +51,9 @@ int MatrixFreePreconditioner(void*,Vec,Vec);
 
 // Constructor - creates the Petsc objects (maps and vectors) 
 FiniteDifference::FiniteDifference(SNES* snes_, void* ctx_) :
+  ctx(ctx_),
   snes(snes_),
-  ctx(ctx_)
+  matStruct(SAME_NONZERO_PATTERN)
 { }
 
 // Destructor
@@ -97,7 +98,7 @@ bool FiniteDifference::evaluate(FillType f,
 
   // Begin Jacobian fill
   if((flag == MATRIX_ONLY) || (flag == ALL)) {
-    ierr = FormJacobian(*snes, *soln, A, A, matStruct, ctx);CHKERRQ(ierr);
+    ierr = FormJacobian(*snes, *soln, A, A, &matStruct, ctx);CHKERRQ(ierr);
   } 
 
   return true;
@@ -265,8 +266,6 @@ int FormJacobian(SNES snes,Vec x,Mat *jac,Mat *B,MatStructure*flag,void *ctx)
   ierr = MatAssemblyBegin(*jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
   ierr = DAVecRestoreArray(da,x,&xx);CHKERRQ(ierr);
   ierr = MatAssemblyEnd(*jac,MAT_FINAL_ASSEMBLY);CHKERRQ(ierr);
-
-  *flag = SAME_NONZERO_PATTERN;
 
   return 0;
 }

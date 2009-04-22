@@ -44,7 +44,8 @@
 
 using namespace NOX::Petsc;
 
-SharedJacobian::SharedJacobian(Mat& j)
+SharedJacobian::SharedJacobian(Mat& j) :
+  owner(NULL)
 {
   jacobian = &j;
 }

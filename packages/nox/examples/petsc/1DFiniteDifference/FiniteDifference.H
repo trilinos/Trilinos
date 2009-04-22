@@ -83,7 +83,7 @@ private:
 
   void *ctx;   // user-defined context optionally used in fill
   SNES *snes;  // A nonlinear solver object needed to respect fill interfaces
-  MatStructure *matStruct; 
+  MatStructure matStruct; 
 
   FillType flag;
   Vec *initialSolution;
