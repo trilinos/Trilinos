@@ -18,6 +18,7 @@ namespace {
 using Teuchos::as;
 using Teuchos::null;
 using Teuchos::RCP;
+using Teuchos::get_extra_data;
 using Thyra::VectorSpaceBase;
 using Thyra::VectorBase;
 using Thyra::MultiVectorBase;
@@ -55,7 +56,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, defaultConstruct,
 {
 
   ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
-    Teuchos::rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>));
+    Thyra::defaultSpmdVectorSpace<Scalar>());
   TEST_EQUALITY(vs->getComm(), null);
   TEST_EQUALITY(vs->localOffset(), as<Ordinal>(-1));
   TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(-1));
@@ -238,6 +239,51 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, parallelFullExtract,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
   parallelFullExtract)
+
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, dangling_vs,
+  Scalar )
+{
+  RCP<const Thyra::VectorSpaceBase<Scalar> > vs = 
+    defaultSpmdVectorSpace<Scalar>(g_localDim);
+  const int globalDim = vs->dim();
+  RCP<VectorBase<Scalar> > x1 = createMember(vs);
+  {
+    // x1 owns a false RCP to vs
+    TEST_EQUALITY_CONST( x1->space().has_ownership(), true );
+    // RCP<> for x1 owns a true RCP to vs
+    const std::string label = "VectorSpaceBase";
+    RCP<const VectorSpaceBase<Scalar> > extra_data_x1 = 
+      get_extra_data<RCP<const VectorSpaceBase<Scalar> >, VectorBase<Scalar> >(x1, label);
+    TEST_EQUALITY_CONST( extra_data_x1.has_ownership(), true );
+  }
+  RCP<Thyra::VectorBase<Scalar> > x0 = x1->clone_v();
+  {
+    // x0 owns a false RCP to vs
+    TEST_EQUALITY_CONST( x0->space().has_ownership(), true );
+    // RCP<> for x0 owns a true RCP to a _DIFFERENT_ VectorSpaceBase
+    // object because the one used to clone x1 is a false RCP, so the
+    // VectorSpaceBase was cloned and that is the one that was set on the RCP.
+    std::string label = "VectorSpaceBase";
+    RCP<const VectorSpaceBase<Scalar> > extra_data_x0 = 
+      get_extra_data<RCP<const
+      VectorSpaceBase<Scalar> >, VectorBase<Scalar> >(x0, label );
+    TEST_EQUALITY_CONST( extra_data_x0.has_ownership(), true );
+    TEST_EQUALITY( extra_data_x0.ptr(), vs.ptr() );
+  }
+  vs = null; // vs still around because x1's RCP owns it
+  x1 = null; // vs deleted
+  {
+    RCP<const VectorSpaceBase<Scalar> > vs_old = x0->space();
+    TEST_EQUALITY_CONST( vs_old->dim(), globalDim );
+  }
+  
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
+  dangling_vs)
+
 
 
 } // namespace

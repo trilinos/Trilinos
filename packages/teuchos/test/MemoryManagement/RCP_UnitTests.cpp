@@ -1,7 +1,12 @@
-#include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_getConst.hpp"
+#ifdef HAVE_TEUCHOS_BOOST
+#  include "Teuchos_RCPBoostSharedPtrConversions.hpp"
+#endif
+
 #include "TestClasses.hpp"
+
+#include "Teuchos_UnitTestHarness.hpp"
 
 
 namespace {
@@ -64,6 +69,35 @@ TEUCHOS_UNIT_TEST( RCP, reset )
   A* a_rawp = c_rawp;
   TEST_EQUALITY( a_rcp.getRawPtr(), a_rawp );
 }
+
+
+TEUCHOS_UNIT_TEST( RCP, nonnull )
+{
+  ECHO(RCP<A> a_rcp = rcp(new A));
+  TEST_EQUALITY_CONST(is_null(a_rcp), false);
+  TEST_EQUALITY_CONST(nonnull(a_rcp), true);
+  ECHO(a_rcp = null);
+  TEST_EQUALITY_CONST(is_null(a_rcp), true);
+  TEST_EQUALITY_CONST(nonnull(a_rcp), false);
+}
+
+
+#ifdef HAVE_TEUCHOS_BOOST
+
+
+TEUCHOS_UNIT_TEST( shared_ptr, nonnull )
+{
+  using boost::shared_ptr;
+  ECHO(shared_ptr<A> a_sptr(new A));
+  TEST_EQUALITY_CONST(is_null(a_sptr), false);
+  TEST_EQUALITY_CONST(nonnull(a_sptr), true);
+  ECHO(a_sptr = shared_ptr<A>());
+  TEST_EQUALITY_CONST(is_null(a_sptr), true);
+  TEST_EQUALITY_CONST(nonnull(a_sptr), false);
+}
+
+
+#endif // HAVE_TEUCHOS_BOOST
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
@@ -188,6 +222,37 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
   TEST_THROW( rcp_weak2.ptr(), DanglingReferenceError );
   TEST_THROW( rcp_weak2.release(), DanglingReferenceError );
 #endif // TEUCHOS_DEBUG
+
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, weak_strong )
+{
+
+  ECHO(RCP<A> rcp1(rcp(new A)));
+  TEST_EQUALITY_CONST( rcp1.strength(), RCP_STRONG );
+
+  ECHO(RCP<A> rcp2 = rcp1.create_weak());
+
+  TEST_EQUALITY_CONST( rcp2.strength(), RCP_WEAK );
+  TEST_EQUALITY_CONST( rcp1.strong_count(), 1 );
+  TEST_EQUALITY_CONST( rcp1.weak_count(), 1 );
+  TEST_EQUALITY_CONST( rcp2.strong_count(), 1 );
+  TEST_EQUALITY_CONST( rcp2.weak_count(), 1 );
+
+  ECHO(RCP<A> rcp3 = rcp2.create_strong());
+
+  TEST_EQUALITY_CONST( rcp3.strength(), RCP_STRONG );
+  TEST_EQUALITY_CONST( rcp1.strong_count(), 2 );
+  TEST_EQUALITY_CONST( rcp1.weak_count(), 1 );
+  TEST_EQUALITY_CONST( rcp2.strong_count(), 2 );
+  TEST_EQUALITY_CONST( rcp2.weak_count(), 1 );
+
+  // This will make the underlying object A gets deleted!
+  ECHO(rcp1 = null);
+  ECHO(rcp3 = null);
+
+  ECHO(rcp2 = null); // Should make the underlying node go away
 
 }
 

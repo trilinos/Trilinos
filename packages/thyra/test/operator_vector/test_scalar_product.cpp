@@ -74,8 +74,8 @@ bool run_scalar_product_tests(
   bool success = true, result;
 
   RCP<Thyra::DefaultSpmdVectorSpace<Scalar> >
-    domain = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(n/2)),
-    range  = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(n));
+    domain = Thyra::defaultSpmdVectorSpace<Scalar>(n/2),
+    range  = Thyra::defaultSpmdVectorSpace<Scalar>(n);
 
   RCP<Thyra::DefaultSpmdMultiVector<Scalar> >
     op_coeff = rcp(new Thyra::DefaultSpmdMultiVector<Scalar>(range,domain)),

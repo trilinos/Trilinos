@@ -239,7 +239,7 @@ int main( int argc, char* argv[] )
       epetra_vs = Thyra::create_VectorSpace(epetra_map);
       // Non-Epetra vector space
       if(verbose) *out << "\nCreating Thyra::DefaultSpmdVectorSpace ...\n";
-      non_epetra_vs = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(local_dim));
+      non_epetra_vs = Thyra::defaultSpmdVectorSpace<Scalar>(local_dim);
 #ifdef RTOp_USE_MPI
     }
 #endif // end create vector spacdes [Doxygen looks for this!]

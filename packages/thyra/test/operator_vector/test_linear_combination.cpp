@@ -58,8 +58,8 @@ bool runTests(int n, Teuchos::RCP<Teuchos::FancyOStream>& out)
   /* ------- test on a monolithic space ------------ */
   
   *out << "======= Testing on a monolithic vector space ======" << std::endl;
-  VectorSpace<Scalar> space 
-    = new DefaultSpmdVectorSpace<Scalar>(DefaultComm<Index>::getComm(),n,-1);
+  VectorSpace<Scalar> space(
+    Thyra::defaultSpmdVectorSpace<Scalar>(DefaultComm<Index>::getComm(),n,-1));
   
   TestSpecifier<Scalar> spec(true, epsErr, epsWarn);
   

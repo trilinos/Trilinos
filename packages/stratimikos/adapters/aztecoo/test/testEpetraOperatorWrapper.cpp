@@ -187,8 +187,8 @@ LinearOperator<double> makeOp()
   for (unsigned int br=0; br<rangeSpaceSizes.size(); br++)
     {
       int n = rangeSpaceSizes[br];
-      rangeBlocks[br] 
-        = new DefaultSpmdVectorSpace<double>(DefaultComm<Index>::getComm(),n,-1);
+      rangeBlocks[br] = defaultSpmdVectorSpace<double>(
+        DefaultComm<Index>::getComm(),n,-1);
       
       blocks[br].resize(domainSpaceSizes.size());
       

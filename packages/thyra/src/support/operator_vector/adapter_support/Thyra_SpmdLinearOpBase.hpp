@@ -124,8 +124,8 @@ void SpmdLinearOpBase<Scalar>::setLocalDimensions(
   TEST_FOR_EXCEPT( localDimDomain <= 0 );
 #endif
   Teuchos::RCP<const DefaultSpmdVectorSpace<Scalar> >
-    range  = Teuchos::rcp(new DefaultSpmdVectorSpace<Scalar>(comm,localDimRange,-1)),
-    domain = Teuchos::rcp(new DefaultSpmdVectorSpace<Scalar>(comm,localDimDomain,-1));
+    range  = defaultSpmdVectorSpace<Scalar>(comm,localDimRange,-1),
+    domain = defaultSpmdVectorSpace<Scalar>(comm,localDimDomain,-1);
   range_  = range;
   domain_ = domain;
   sp_range_  = range;

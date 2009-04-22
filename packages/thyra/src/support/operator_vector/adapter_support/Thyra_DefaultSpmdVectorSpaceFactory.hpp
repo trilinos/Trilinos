@@ -46,7 +46,7 @@ template<class Scalar>
 Teuchos::RCP<const VectorSpaceBase<Scalar> >
 DefaultSpmdVectorSpaceFactory<Scalar>::createVecSpc(int dim) const
 {
-  return Teuchos::rcp(new DefaultSpmdVectorSpace<Scalar>(comm_,dim,dim));
+  return defaultSpmdVectorSpace<Scalar>(comm_,dim,dim);
 }
 
 } // end namespace Thyra

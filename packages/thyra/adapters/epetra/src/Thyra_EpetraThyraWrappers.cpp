@@ -101,14 +101,9 @@ Thyra::create_VectorSpace(
     comm = create_Comm(Teuchos::rcp(&epetra_map->Comm(),false)).assert_not_null();
   Teuchos::set_extra_data( epetra_map, "epetra_map", Teuchos::inOutArg(comm) );
   const Index localSubDim = epetra_map->NumMyElements();
-  RCP<DefaultSpmdVectorSpace<double> >
-    vs = Teuchos::rcp(
-      new DefaultSpmdVectorSpace<double>(
-        comm,
-        localSubDim,
-        epetra_map->NumGlobalElements()
-        )
-      );
+  RCP<DefaultSpmdVectorSpace<double> > vs =
+    defaultSpmdVectorSpace<double>(
+      comm, localSubDim, epetra_map->NumGlobalElements());
 #ifndef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     vs->dim() != epetra_map->NumGlobalElements(), std::logic_error

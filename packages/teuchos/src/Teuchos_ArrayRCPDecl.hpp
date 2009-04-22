@@ -560,7 +560,7 @@ public:
    */
   T* release();
 
-  /** \brief Create a new weak RCP object from another RCP object.
+  /** \brief Create a new weak RCP object from another (strong) RCP object.
    *
    * ToDo: Explain this!
    *
@@ -577,6 +577,24 @@ public:
    * </ul>
    */
   ArrayRCP<T> create_weak() const;
+
+  /** \brief Create a new strong RCP object from another (weak) RCP object.
+   *
+   * ToDo: Explain this!
+   *
+   * <b>Preconditons:</b> <ul>
+   * <li> <tt>returnVal.is_valid_ptr()==true</tt>
+   * </ul>
+   *
+   * <b>Postconditons:</b> <ul>
+   * <li> <tt>returnVal.get() == this->get()</tt>
+   * <li> <tt>returnVal.strong_count() == this->strong_count()+1</tt>
+   * <li> <tt>returnVal.weak_count() == this->weak_count()</tt>
+   * <li> <tt>returnVal.strength() == RCP_STRONG</tt>
+   * <li> <tt>returnVal.has_ownership() == this->has_ownership()</tt>
+   * </ul>
+   */
+  ArrayRCP<T> create_strong() const;
 
   /** \brief Returns true if the smart pointers share the same underlying reference-counted object.
    *
@@ -851,6 +869,14 @@ RCP<const std::vector<T> > get_std_vector( const ArrayRCP<const T> &ptr );
  */
 template<class T>
 bool is_null( const ArrayRCP<T> &p );
+
+
+/** \brief Returns true if <tt>p.get()!=NULL</tt>.
+ *
+ * \relates ArrayRCP
+ */
+template<class T>
+bool nonnull( const ArrayRCP<T> &p );
 
 
 /** \brief Returns true if <tt>p.get()==NULL</tt>.

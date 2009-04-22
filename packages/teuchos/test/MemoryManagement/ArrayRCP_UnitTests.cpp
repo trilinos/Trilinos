@@ -317,6 +317,47 @@ UNIT_TEST_GROUP(float)
 //
 
 
+TEUCHOS_UNIT_TEST( ArrayRCP, nonnull )
+{
+  ECHO(ArrayRCP<int> a_arcp = arcp<int>(10));
+  TEST_EQUALITY_CONST(is_null(a_arcp), false);
+  TEST_EQUALITY_CONST(nonnull(a_arcp), true);
+  ECHO(a_arcp = null);
+  TEST_EQUALITY_CONST(is_null(a_arcp), true);
+  TEST_EQUALITY_CONST(nonnull(a_arcp), false);
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, weak_strong )
+{
+
+  ECHO(ArrayRCP<int> arcp1 = arcp<int>(10));
+  TEST_EQUALITY_CONST( arcp1.strength(), RCP_STRONG );
+
+  ECHO(ArrayRCP<int> arcp2 = arcp1.create_weak());
+
+  TEST_EQUALITY_CONST( arcp2.strength(), RCP_WEAK );
+  TEST_EQUALITY_CONST( arcp1.strong_count(), 1 );
+  TEST_EQUALITY_CONST( arcp1.weak_count(), 1 );
+  TEST_EQUALITY_CONST( arcp2.strong_count(), 1 );
+  TEST_EQUALITY_CONST( arcp2.weak_count(), 1 );
+
+  ECHO(ArrayRCP<int> arcp3 = arcp2.create_strong());
+
+  TEST_EQUALITY_CONST( arcp3.strength(), RCP_STRONG );
+  TEST_EQUALITY_CONST( arcp1.strong_count(), 2 );
+  TEST_EQUALITY_CONST( arcp1.weak_count(), 1 );
+  TEST_EQUALITY_CONST( arcp2.strong_count(), 2 );
+  TEST_EQUALITY_CONST( arcp2.weak_count(), 1 );
+
+  // This will make the underlying object A gets deleted!
+  ECHO(arcp1 = null);
+  ECHO(arcp3 = null);
+
+  ECHO(arcp2 = null); // Should make the underlying node go away
+
+}
+
 
 TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_null )
 {

@@ -316,7 +316,7 @@ Ptr<const T> constPtr( T& arg )
 }
 
 
-/** \brief Returns if is null or not.
+/** \brief Returns true if <tt>p.get()==NULL</tt>.
  *
  * \relates Ptr
  */
@@ -324,6 +324,17 @@ template<class T> inline
 bool is_null( const Ptr<T> &p )
 {
   return p.get() == 0;
+}
+
+
+/** \brief Returns true if <tt>p.get()!=NULL</tt>
+ *
+ * \relates Ptr
+ */
+template<class T> inline
+bool nonnull( const Ptr<T> &p )
+{
+  return p.get() != 0;
 }
 
 

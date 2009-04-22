@@ -53,11 +53,12 @@ bool run_product_space_tests(
   using Thyra::relErr;
   using Teuchos::OSTab;
   using Teuchos::rcp;
+  using Teuchos::RCP;
 
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType    ScalarMag;
 
-  Teuchos::RCP<Teuchos::FancyOStream>
+  RCP<Teuchos::FancyOStream>
     out = Teuchos::fancyOStream(rcp(out_arg,false));
 
   if(out.get()) *out << "\n*** Entering run_product_space_tests<"<<ST::name()<<">(...) ...\n";
@@ -71,13 +72,13 @@ bool run_product_space_tests(
   vectorSpaceTester.show_all_tests(showAllTests);
   vectorSpaceTester.dump_all(dumpAll);
 
-  Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >
+  Teuchos::Array<RCP<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
-  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
+  const RCP<const Teuchos::Comm<Thyra::Index> >
     comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
   const int numProcs = size(*comm);
-  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-    spaceBlock = Teuchos::rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(comm,n,-1));
+  RCP<const Thyra::VectorSpaceBase<Scalar> >
+    spaceBlock = Thyra::defaultSpmdVectorSpace<Scalar>(comm,n,-1);
   for( int i = 0; i < numBlocks; ++i )
     vecSpaces[i] = spaceBlock;
   
@@ -109,7 +110,7 @@ bool run_product_space_tests(
   
   if(out.get()) *out << "\nB) Testing a nested product space of product vector spaces called pps ...\n";
 
-  Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >
+  Teuchos::Array<RCP<const Thyra::VectorSpaceBase<Scalar> > >
     blockVecSpaces(numBlocks);
   for( int i = 0; i < numBlocks; ++i )
     blockVecSpaces[i] = Teuchos::rcp(&ps,false);
@@ -133,14 +134,15 @@ bool run_product_space_tests(
     
     if(out.get()) *out << "\nCreating a serial vector space ss with numBlocks*n=" << numBlocks*n << " vector elements ...\n";
     
-    Thyra::DefaultSpmdVectorSpace<Scalar> ss(numBlocks*n);
+    const RCP<const Thyra::VectorSpaceBase<Scalar> > ss
+      = Thyra::defaultSpmdVectorSpace<Scalar>(numBlocks*n);
     
     if(out.get()) *out << "\nTesting the serial space ss ...\n";
-    result = vectorSpaceTester.check(ss,out.get());
+    result = vectorSpaceTester.check(*ss, out.get());
     if(!result) success = false;
     
     if(out.get()) *out << "\nCreating product vectors; pv1, pv2 ...\n";
-    Teuchos::RCP<Thyra::VectorBase<Scalar> >
+    RCP<Thyra::VectorBase<Scalar> >
       pv1 = createMember(ps),
       pv2 = createMember(ps);
     
@@ -151,7 +153,7 @@ bool run_product_space_tests(
     Thyra::assign( &*pv2, three );
     
     if(out.get()) *out << "\nCreating serial vectors; sv1, sv2 ...\n";
-    Teuchos::RCP<Thyra::VectorBase<Scalar> >
+    RCP<Thyra::VectorBase<Scalar> >
       sv1 = createMember(ss),
       sv2 = createMember(ss);
     
@@ -201,13 +203,14 @@ bool run_product_space_tests(
 int main( int argc, char* argv[] ) {
 
   using Teuchos::CommandLineProcessor;
+  using Teuchos::RCP;
 
   bool success = true;
   bool verbose = true;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  Teuchos::RCP<Teuchos::FancyOStream>
+  RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   try {

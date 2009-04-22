@@ -290,6 +290,15 @@ RCP<T> RCP<T>::create_weak() const
 
 
 template<class T>
+inline
+RCP<T> RCP<T>::create_strong() const
+{
+  debug_assert_valid_ptr();
+  return RCP<T>(ptr_, node_.create_strong());
+}
+
+
+template<class T>
 REFCOUNTPTR_INLINE
 template <class T2>
 bool RCP<T>::shares_resource(const RCP<T2>& r_ptr) const
@@ -457,6 +466,14 @@ REFCOUNTPTR_INLINE
 bool Teuchos::is_null( const RCP<T> &p )
 {
   return p.is_null();
+}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+bool Teuchos::nonnull( const RCP<T> &p )
+{
+  return !p.is_null();
 }
 
 

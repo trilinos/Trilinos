@@ -543,6 +543,15 @@ public:
       return RCPNodeHandle();
     }
   /** \brief . */
+  RCPNodeHandle create_strong() const
+    {
+      if (node_) {
+        node_->incr_count(RCP_STRONG);
+        return RCPNodeHandle(node_, RCP_STRONG);
+      }
+      return RCPNodeHandle();
+    }
+  /** \brief . */
   RCPNode* node_ptr() const
     {
       return node_;

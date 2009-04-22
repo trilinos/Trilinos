@@ -46,7 +46,11 @@ namespace Thyra
   class VectorSpace : public Teuchos::ConstHandle<VectorSpaceBase<Scalar> >
   {
   public:
+
     TEUCHOS_CONST_HANDLE_CTORS(VectorSpace<Scalar>, VectorSpaceBase<Scalar>);
+
+    /** \brief Assign to an RCP<VectorSpaceBase<Scalar> >. */
+    VectorSpace<Scalar>& operator=(const RCP<VectorSpaceBase<Scalar> >& vs);
 
     /** \brief Create a new element of this std::vector space. */
     Vector<Scalar>  createMember() const ;

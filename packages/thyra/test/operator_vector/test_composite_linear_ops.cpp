@@ -95,8 +95,8 @@ bool run_composite_linear_ops_tests(
   symLinearOpTester.symmetry_error_tol(STM::squareroot(error_tol));
 
   RCP<const Thyra::VectorSpaceBase<Scalar> > space;
-  if(useSpmd) space = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(comm,n,-1));
-  else       space = rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(n));
+  if(useSpmd) space = Thyra::defaultSpmdVectorSpace<Scalar>(comm,n,-1);
+  else space = Thyra::defaultSpmdVectorSpace<Scalar>(n);
   if(out.get()) *out << "\nUsing a basic vector space described as " << describe(*space,verbLevel) << " ...\n";
   
   if(out.get()) *out << "\nCreating random n x (n/2) multi-vector origA ...\n";

@@ -137,8 +137,8 @@ bool runTest(Teuchos::RCP<Teuchos::FancyOStream>& out)
   for (unsigned int br=0; br<rangeSpaceSizes.size(); br++)
     {
       int n = rangeSpaceSizes[br];
-      rangeBlocks[br] 
-        = new DefaultSpmdVectorSpace<Scalar>(DefaultComm<Index>::getComm(),n,-1);
+      rangeBlocks[br] = Thyra::defaultSpmdVectorSpace<Scalar>(
+        DefaultComm<Index>::getComm(), n, -1);
       
       blocks[br].resize(domainSpaceSizes.size());
       

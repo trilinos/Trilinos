@@ -129,8 +129,10 @@ VectorDefaultBase<Scalar>::domain() const
           <<">::domain() called!\n";
 #endif
   if(!domain_.get())
-    const_cast<VectorDefaultBase<Scalar>*>(this)->domain_
-      = Teuchos::rcp(new DefaultSpmdVectorSpace<Scalar>(1));
+    const_cast<VectorDefaultBase<Scalar>*>(this)->domain_ =
+      defaultSpmdVectorSpace<Scalar>(1);
+  // 2009/04/21: rabartl: ToDo: Remove this illegal dependence on code from
+  // adapter_support!
   return domain_;
 }
 

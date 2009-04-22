@@ -63,20 +63,9 @@ public:
 
   /** @name Constructors and initializers */
   //@{
- 
-  /** \brief Construct to uninitialized (see postconditions from
-   * <tt>uninitialize()</tt>)
-   */
-  DefaultSpmdVectorSpace();
 
-  /** \brief Calls <tt>initialize()</tt> to construct a serial space. */
-  DefaultSpmdVectorSpace( const Index dim );
-
-  /** \brief Calls <tt>initialize()</tt> to construct an SPMD space. */
-  DefaultSpmdVectorSpace(
-    const RCP<const Teuchos::Comm<Index> > &comm,
-    const Index localSubDim, const Index globalDim
-    );
+  /** \brief Create with weak ownership to self. */
+  static RCP<DefaultSpmdVectorSpace<Scalar> > create();
 
   /** \brief Initialize a serial space.
    *
@@ -219,8 +208,27 @@ private:
   Index localSubDim_;
   int numProc_;
   int procRank_;
+  RCP<DefaultSpmdVectorSpace<Scalar> > weakSelfPtr_;
+
+  // /////////////////////////////////////
+  // Private member functions
+ 
+  DefaultSpmdVectorSpace();
+
  
 }; // end class DefaultSpmdVectorSpace
+
+
+/** \brief Nonmember consturctor that creats an uninitialized vector space.
+ *
+ * \relates DefaultSpmdVectorSpace
+ */
+template<class Scalar>
+RCP<DefaultSpmdVectorSpace<Scalar> >
+defaultSpmdVectorSpace()
+{
+  return DefaultSpmdVectorSpace<Scalar>::create();
+}
 
 
 /** \brief Nonmember consturctor that creats a serial vector space.
@@ -231,8 +239,9 @@ template<class Scalar>
 RCP<DefaultSpmdVectorSpace<Scalar> >
 defaultSpmdVectorSpace( const Index dim )
 {
-  RCP<DefaultSpmdVectorSpace<Scalar> >
-    vs(new DefaultSpmdVectorSpace<Scalar>(dim));
+  RCP<DefaultSpmdVectorSpace<Scalar> > vs =
+    DefaultSpmdVectorSpace<Scalar>::create();
+  vs->initialize(dim);
   return vs;
 }
 
@@ -249,12 +258,12 @@ defaultSpmdVectorSpace(
   const Index localSubDim, const Index globalDim
   )
 {
-  return Teuchos::rcp(
-    new DefaultSpmdVectorSpace<Scalar>(
-      comm, localSubDim, globalDim
-      )
-    );
+  RCP<DefaultSpmdVectorSpace<Scalar> > vs =
+    DefaultSpmdVectorSpace<Scalar>::create();
+  vs->initialize(comm, localSubDim, globalDim);
+  return vs;
 }
+
 
 } // end namespace Thyra
 

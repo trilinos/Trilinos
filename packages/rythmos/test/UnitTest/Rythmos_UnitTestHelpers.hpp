@@ -44,7 +44,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > createDefaultVectorSpace(int
   const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
     comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
   Teuchos::RCP<const Thyra::DefaultSpmdVectorSpace<Scalar> > vs = 
-    Teuchos::rcp(new const Thyra::DefaultSpmdVectorSpace<Scalar>(comm,length,-1) );
+    hyra::defaultSpmdVectorSpace<Scalar>(comm, length, -1);
   return(vs); 
 }
 

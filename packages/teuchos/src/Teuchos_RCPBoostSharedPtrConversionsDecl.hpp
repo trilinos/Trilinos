@@ -32,7 +32,9 @@
 #include "Teuchos_RCPDecl.hpp"
 #include "boost/shared_ptr.hpp"
 
+
 namespace Teuchos {
+
 
 /** \defgroup Teuchos_RCPBoostSharedPtrConversions_grp Conversion utilities for going between Teuchos::RCP and boost::shared_ptr.
 
@@ -49,6 +51,7 @@ pointer types:
 
 */
 //@{
+
 
 /** \brief <tt>Teuchos::RCP</tt> Deallocator class that wraps a
  * <tt>boost::shared_ptr</tt> */
@@ -68,6 +71,7 @@ private:
   mutable boost::shared_ptr<T> sptr_;
   DeallocBoostSharedPtr(); // Not defined and not to be called!
 };
+
 
 /** \brief <tt>boost::shared_ptr</tt> deleter class that wraps a
  * <tt>Teuchos::RCP</tt>.
@@ -91,6 +95,7 @@ private:
   RCPDeleter(); // Not defined and not to be called!
 };
 
+
 /** \brief Conversion function that takes in a <tt>boost::shared_ptr</tt>
  * object and spits out a <tt>Teuchos::RCP</tt> object.
  *
@@ -101,6 +106,7 @@ private:
  */
 template<class T>
 RCP<T> rcp( const boost::shared_ptr<T> &sptr );
+
 
 /** \brief Conversion function that takes in a <tt>Teuchos::RCP</tt>
  * object and spits out a <tt>boost::shared_ptr</tt> object.
@@ -114,8 +120,39 @@ RCP<T> rcp( const boost::shared_ptr<T> &sptr );
 template<class T>
 boost::shared_ptr<T> shared_pointer( const RCP<T> &rcp );
 
+
 //@}
 
+
 } // namespace Teuchos
+
+
+namespace boost {
+
+
+/** \brief Returns true if <tt>p.get()==NULL</tt>.
+ *
+ * \ingroup Teuchos_RCPBoostSharedPtrConversions_grp
+ */
+template<class T> inline
+bool is_null( const boost::shared_ptr<T> &p )
+{
+  return p.get() == 0;
+}
+
+
+/** \brief Returns true if <tt>p.get()!=NULL</tt>.
+ *
+ * \ingroup Teuchos_RCPBoostSharedPtrConversions_grp
+ */
+template<class T> inline
+bool nonnull( const boost::shared_ptr<T> &p )
+{
+  return p.get() != 0;
+}
+
+
+} // namespace boost
+
 
 #endif	// TEUCHOS_RCP_SHAREDPTR_CONVERSIONS_DECL_HPP

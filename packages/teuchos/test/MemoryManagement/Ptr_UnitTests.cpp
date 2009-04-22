@@ -20,6 +20,18 @@ using Teuchos::RCP_WEAK;
 using Teuchos::RCP_STRENGTH_INVALID;
 
 
+TEUCHOS_UNIT_TEST( Ptr, nonnull )
+{
+  ECHO(A a);
+  ECHO(Ptr<A> a_ptr = ptrFromRef(a));
+  TEST_EQUALITY_CONST(is_null(a_ptr), false);
+  TEST_EQUALITY_CONST(nonnull(a_ptr), true);
+  ECHO(a_ptr = null);
+  TEST_EQUALITY_CONST(is_null(a_ptr), true);
+  TEST_EQUALITY_CONST(nonnull(a_ptr), false);
+}
+
+
 TEUCHOS_UNIT_TEST( Ptr, rcpFromPtr_weakRef )
 {
   ECHO(RCP<A> a_rcp = rcp(new A));

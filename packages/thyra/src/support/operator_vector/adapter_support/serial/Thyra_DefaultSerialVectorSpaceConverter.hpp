@@ -41,7 +41,7 @@ DefaultSerialVectorSpaceConverter<ScalarFrom,ScalarTo>::createVectorSpaceTo(
   const VectorSpaceBase<ScalarFrom>  &vecSpc
   ) const
 {
-  return Teuchos::rcp(new DefaultSpmdVectorSpace<ScalarTo>(vecSpc.dim()));
+  return defaultSpmdVectorSpace<ScalarTo>(vecSpc.dim());
 }
 
 template<class ScalarFrom, class ScalarTo>
@@ -50,7 +50,7 @@ DefaultSerialVectorSpaceConverter<ScalarFrom,ScalarTo>::createVectorSpaceFrom(
   const VectorSpaceBase<ScalarTo>  &vecSpc
   ) const
 {
-  return Teuchos::rcp(new DefaultSpmdVectorSpace<ScalarFrom>(vecSpc.dim()));
+  return defaultSpmdVectorSpace<ScalarFrom>(vecSpc.dim());
 }
 
 } // namespace Thyra

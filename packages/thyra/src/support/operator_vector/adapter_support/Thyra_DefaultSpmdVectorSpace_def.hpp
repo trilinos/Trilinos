@@ -40,32 +40,12 @@ namespace Thyra {
 
 
 template<class Scalar>
-DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace()
-  :localSubDim_(-1), numProc_(-1), procRank_(-1)
-{
-  // The base classes should automatically default initialize to a safe
-  // uninitialized state.
-}
-
-
-template<class Scalar>
-DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
-  const Index dim_in
-  )
-  :localSubDim_(-1), numProc_(-1), procRank_(-1)
-{
-  initialize(dim_in);
-}
-
-
-template<class Scalar>
-DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
-  const RCP<const Teuchos::Comm<Index> > &comm_in
-  ,const Index localSubDim_in, const Index globalDim_in
-  )
-  :localSubDim_(0), numProc_(0), procRank_(0)
-{
-  initialize(comm_in, localSubDim_in, globalDim_in);
+RCP<DefaultSpmdVectorSpace<Scalar> >
+DefaultSpmdVectorSpace<Scalar>::create()
+{ 
+  const RCP<DefaultSpmdVectorSpace<Scalar> > vs(new DefaultSpmdVectorSpace<Scalar>);
+  vs->weakSelfPtr_ = vs.create_weak();
+  return vs;
 }
 
 
@@ -121,7 +101,7 @@ DefaultSpmdVectorSpace<Scalar>::createMember() const
     values = Teuchos::arcp<Scalar>(localSubDim_);
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
-      Teuchos::rcp(this,false),
+      weakSelfPtr_.create_strong(),
       values,
       1 // stride
       )
@@ -135,8 +115,8 @@ DefaultSpmdVectorSpace<Scalar>::createMembers(int numMembers) const
 {
   return Teuchos::rcp(
     new DefaultSpmdMultiVector<Scalar>(
-      Teuchos::rcp(this,false)
-      ,Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
+      weakSelfPtr_.create_strong(),
+      Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
         this->smallVecSpcFcty()->createVecSpc(numMembers),true
         )
       )
@@ -155,7 +135,7 @@ DefaultSpmdVectorSpace<Scalar>::createMemberView(
 #endif
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
-      Teuchos::rcp(this,false),
+      weakSelfPtr_.create_strong(),
       Teuchos::arcp(raw_v.values().get(),0,raw_v.subDim(),false),
       raw_v.stride()
       )
@@ -174,7 +154,7 @@ DefaultSpmdVectorSpace<Scalar>::createMemberView(
 #endif
   return Teuchos::rcp(
     new DefaultSpmdVector<Scalar>(
-      Teuchos::rcp(this,false),
+      weakSelfPtr_.create_strong(),
       Teuchos::arcp(const_cast<Scalar*>(raw_v.values().get()),0,raw_v.subDim(),false),
       raw_v.stride()
       )
@@ -193,7 +173,7 @@ DefaultSpmdVectorSpace<Scalar>::createMembersView(
 #endif
   return Teuchos::rcp(
     new DefaultSpmdMultiVector<Scalar>(
-      Teuchos::rcp(this,false),
+      weakSelfPtr_.create_strong(),
       Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
         this->smallVecSpcFcty()->createVecSpc(raw_mv.numSubCols()),true),
       Teuchos::arcp(raw_mv.values().get(),0,raw_mv.leadingDim()*raw_mv.numSubCols(),false),
@@ -214,7 +194,7 @@ DefaultSpmdVectorSpace<Scalar>::createMembersView(
 #endif
   return Teuchos::rcp(
     new DefaultSpmdMultiVector<Scalar>(
-      Teuchos::rcp(this,false),
+      weakSelfPtr_.create_strong(),
       Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
         this->smallVecSpcFcty()->createVecSpc(raw_mv.numSubCols()),true),
       Teuchos::arcp(
@@ -241,9 +221,7 @@ template<class Scalar>
 RCP< const VectorSpaceBase<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::clone() const
 {
-  return Teuchos::rcp(
-    new DefaultSpmdVectorSpace<Scalar>(comm_,localSubDim_,this->dim())
-    );
+  return defaultSpmdVectorSpace<Scalar>(comm_,localSubDim_,this->dim());
 }
 
 
@@ -262,6 +240,18 @@ template<class Scalar>
 Index DefaultSpmdVectorSpace<Scalar>::localSubDim() const
 {
   return localSubDim_;
+}
+
+
+// private
+
+
+template<class Scalar>
+DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace()
+  :localSubDim_(-1), numProc_(-1), procRank_(-1)
+{
+  // The base classes should automatically default initialize to a safe
+  // uninitialized state.
 }
 
 

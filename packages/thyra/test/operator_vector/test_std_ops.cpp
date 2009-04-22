@@ -72,16 +72,18 @@ bool run_std_ops_tests(
   bool success = true;
 
   if(out.get()) *out << "\nCreating a serial vector space svs with n="<<n<<" vector elements ...\n";
-  //const DefaultSerialVectorSpace<Scalar>  svs(n);
+
   const RCP<const Teuchos::Comm<Index> >
     comm = Teuchos::DefaultComm<Index>::getComm();
-  const DefaultSpmdVectorSpace<Scalar>  svs(comm,n,-1);
+
+  const RCP<Thyra::VectorSpaceBase<Scalar> > svs =
+    Thyra::defaultSpmdVectorSpace<Scalar>(comm,n,-1);
 
   if(out.get()) *out << "\nTesting standard vector ops with svs ...\n";
-  if(!vectorStdOpsTester.checkStdOps(svs,OSTab(out).get(),dumpAll)) success = false;
+  if(!vectorStdOpsTester.checkStdOps(*svs, OSTab(out).get(), dumpAll)) success = false;
 
   if(out.get()) *out << "\nTesting standard multi-vector ops with svs ...\n";
-  if(!multiVectorStdOpsTester.checkStdOps(svs,OSTab(out).get(),dumpAll)) success = false;
+  if(!multiVectorStdOpsTester.checkStdOps(*svs, OSTab(out).get(), dumpAll)) success = false;
 
   const int numBlocks = 3;
 
@@ -90,8 +92,7 @@ bool run_std_ops_tests(
   Teuchos::Array<Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> >
-    spaceBlock = Teuchos::rcp(new Thyra::DefaultSpmdVectorSpace<Scalar>(comm,n,-1));
-    //spaceBlock = Teuchos::rcp(new Thyra::DefaultSerialVectorSpace<Scalar>(n));
+    spaceBlock = Thyra::defaultSpmdVectorSpace<Scalar>(comm,n,-1);
   for( int i = 0; i < numBlocks; ++i )
     vecSpaces[i] = spaceBlock;
 

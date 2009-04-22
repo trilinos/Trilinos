@@ -57,8 +57,7 @@ bool runVectorTests(int n, Teuchos::RCP<Teuchos::FancyOStream>& out)
   /* ------- test on a monolithic space ------------ */
   
   *out << "======= Testing on a monolithic vector space ======" << std::endl;
-  VectorSpace<Scalar> space 
-    = new DefaultSpmdVectorSpace<Scalar>(comm,n,-1);
+  VectorSpace<Scalar> space(defaultSpmdVectorSpace<Scalar>(comm,n,-1));
   
   VectorOpTester<Scalar> tester(comm, space, out, 
                                 TestSpecifier<Scalar>(true, epsErr, epsWarn));

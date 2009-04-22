@@ -104,11 +104,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, weakPtr_basic_1, T )
   TEST_EQUALITY_CONST( nodeRef1.weak_count(), 1 );
   TEST_EQUALITY_CONST( nodeRef2.strong_count(), 1 );
   TEST_EQUALITY_CONST( nodeRef2.weak_count(), 1 );
+
+  ECHO(RCPNodeHandle nodeRef3 = nodeRef2.create_strong());
+
+  TEST_EQUALITY_CONST( nodeRef3.strength(), RCP_STRONG );
+  TEST_EQUALITY_CONST( nodeRef1.strong_count(), 2 );
+  TEST_EQUALITY_CONST( nodeRef1.weak_count(), 1 );
+  TEST_EQUALITY_CONST( nodeRef2.strong_count(), 2 );
+  TEST_EQUALITY_CONST( nodeRef2.weak_count(), 1 );
   
   MockRCP<T> mockRCP;
   ECHO(nodeRef2.debug_assert_valid_ptr(mockRCP)); // Should not throw!
 
-  ECHO(nodeRef1 = null); // This will make the underlying object T get deleted!
+  // This will make the underlying object T get deleted!
+  ECHO(nodeRef1 = null);
+  ECHO(nodeRef3 = null);
 
   TEST_EQUALITY_CONST( nodeRef1.node_ptr()==0, true );
   TEST_EQUALITY_CONST( nodeRef1.is_node_null(), true );

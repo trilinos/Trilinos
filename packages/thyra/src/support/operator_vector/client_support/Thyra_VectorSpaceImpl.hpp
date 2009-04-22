@@ -39,6 +39,15 @@ namespace Thyra
 {
   using namespace Teuchos;
   using std::ostream;
+
+  //========================================================================
+  template <class Scalar> inline
+  VectorSpace<Scalar>&
+  VectorSpace<Scalar>::operator=(const RCP<VectorSpaceBase<Scalar> >& vs)
+  {
+    this->setRcp(vs);
+    return *this;
+  }
  
   //========================================================================
   template <class Scalar> inline
