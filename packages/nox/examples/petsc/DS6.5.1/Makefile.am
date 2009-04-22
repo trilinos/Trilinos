@@ -36,7 +36,7 @@
 include $(top_builddir)/Makefile.export.nox
 
 if BUILD_PETSC_EXAMPLES
-include ${PETSC_DIR}/bmake/common/base
+include ${PETSC_DIR}/conf/variables
 endif
 
 if USING_GNUMAKE
@@ -65,6 +65,4 @@ example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
 example_CXXFLAGS = $(PETSC_CXXFLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src-petsc
 
-example_LDADD = -L$(top_builddir)/src -L$(top_builddir)/src-petsc \
-                -lnoxpetsc ${PETSC_LIB} -lnox -lteuchos
-
+example_LDADD = $(EXAMPLE_LIBS) $(PETSC_LIB)

@@ -97,6 +97,10 @@ am_example_OBJECTS = example-Example.$(OBJEXT) \
 	example-DennisSchnabel.$(OBJEXT) \
 	example-Problem_Interface.$(OBJEXT)
 example_OBJECTS = $(am_example_OBJECTS)
+am__DEPENDENCIES_1 =
+@USING_GNUMAKE_TRUE@am__DEPENDENCIES_2 = $(shell $(am__DEPENDENCIES_1) \
+@USING_GNUMAKE_TRUE@	$(top_srcdir)/config/strip_dup_libs.pl \
+@USING_GNUMAKE_TRUE@	$(NOX_LIBS))
 example_LINK = $(CXXLD) $(example_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -270,9 +274,7 @@ example_DEPENDENCIES = $(top_builddir)/src/libnox.a \
 example_CXXFLAGS = $(PETSC_CXXFLAGS) \
 	-I$(top_srcdir)/src -I$(top_srcdir)/src-petsc
 
-example_LDADD = -L$(top_builddir)/src -L$(top_builddir)/src-petsc \
-                -lnoxpetsc ${PETSC_LIB} -lnox -lteuchos
-
+example_LDADD = $(EXAMPLE_LIBS) $(PETSC_LIB)
 all: all-am
 
 .SUFFIXES:
@@ -557,7 +559,7 @@ uninstall-am:
 # Include NOX export makefile
 include $(top_builddir)/Makefile.export.nox
 
-@BUILD_PETSC_EXAMPLES_TRUE@include ${PETSC_DIR}/bmake/common/base
+@BUILD_PETSC_EXAMPLES_TRUE@include ${PETSC_DIR}/conf/variables
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

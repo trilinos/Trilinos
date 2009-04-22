@@ -746,8 +746,8 @@ AC_DEFUN([PETSC_INCLUDE_CHECK],
   AC_MSG_CHECKING(for $1 include directory)
   if test -n "${$1_INC}" && test -f ${$1_INC}/$2; then
     AC_MSG_RESULT([${$1_INC}])
-  elif test -f ${PETSC_DIR}/bmake/${PETSC_ARCH}/$2; then
-    $1_INC=${PETSC_DIR}/bmake/${PETSC_ARCH}
+  elif test -f ${PETSC_DIR}/${PETSC_ARCH}/include/$2; then
+    $1_INC=${PETSC_DIR}/${PETSC_ARCH}/include
     AC_MSG_RESULT([${$1_INC}])
   elif test -f ${PETSC_DIR}/bmake/common/$2; then
     $1_INC=${PETSC_DIR}/bmake/common
@@ -768,13 +768,12 @@ AC_DEFUN([PETSC_INCLUDE_CHECK],
 if test X${ADDON_petsc} = Xyes; then
 
   PETSC_INCLUDE_CHECK(petsc,petsc.h)
-  PETSC_INCLUDE_CHECK(petsccommon,base)
   PETSC_INCLUDE_CHECK(petscbmake,petscconf.h)
   if test "X${HAVE_PKG_MPI}" = "Xno"; then
     PETSC_INCLUDE_CHECK(mpiuni,mpi.h)
   fi
 
-  PETSC_CXXFLAGS="-I${petsc_INC} -I${petsccommon_INC} -I${petscbmake_INC}"
+  PETSC_CXXFLAGS="-I${petsc_INC} -I${petscbmake_INC}"
   if test "X${HAVE_PKG_MPI}" = "Xno"; then
     PETSC_CXXFLAGS=" ${PETSC_CXXFLAGS} -I${mpiuni_INC}"
   fi
@@ -804,8 +803,8 @@ AC_DEFUN([PETSC_LIB_CHECK],
   if test -n "${$1_LIBDIR}" && test -f ${$1_LIBDIR}/lib$1.a; then
     LDFLAGS="-L${$1_LIBDIR} ${LDFLAGS}"
     AC_MSG_RESULT(yes)
-  elif test -f ${PETSC_DIR}/lib/${PETSC_ARCH}/lib$1.a; then
-    LDFLAGS="-L${PETSC_DIR}/lib/${PETSC_ARCH} ${LDFLAGS}"
+  elif test -f ${PETSC_DIR}/${PETSC_ARCH}/lib/lib$1.a; then
+    LDFLAGS="-L${PETSC_DIR}/${PETSC_ARCH}/lib ${LDFLAGS}"
     AC_MSG_RESULT(yes)
   else
     AC_MSG_RESULT(no)
