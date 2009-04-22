@@ -480,13 +480,12 @@ Package: NOX (and therefore also LOCA)
 
 Package Transition Lead: Roger Pawlowski (rppawlo@sandia.gov)
 
-Status: CMake support is complete except for the petsc support.
-LOCA is complete, except a configuration test for GGEV which may not
-even be necessary anymore.
+Status: NOX is complete.  LOCA is complete, except a configuration
+test for GGEV which may not even be necessary anymore.
 
-Final Certification Date: [???]
+Final Certification Date: 04/22/2009
 
-Final Certification Evidence: All tests are converted and match auto tools results.
+Final Certification Evidence: All tests are converted and match auto tools results.  In fact we have better coverage junder cmake since all examples are now under nightly testing.  This is not the case for autotools.
 
 -------------------------------------------------------------------------------
 
