@@ -111,6 +111,14 @@ COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA
     " otherwise defaults to OFF"
   )
 
+# PETSc
+COMBINED_OPTION( NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC
+  DEP_OPTIONS_NAMES NOX_ENABLE_PETSC
+  DOCSTR "Enables support for PETSc implementation of Abstract Group and"
+    " Vector classes.  Defaults to ON if NOX_ENABLE_PETSC is"
+    " enabled, otherwise defaults to OFF."
+  )
+
 ###################################################
 ###################################################
 
@@ -126,7 +134,7 @@ ADD_SUBDIRECTORY(src-lapack)
 ADD_SUBDIRECTORY(src-epetra)
 #ADD_SUBDIRECTORY(src-belos)
 ADD_SUBDIRECTORY(src-thyra)
-#ADD_SUBDIRECTORY(src-petsc)
+ADD_SUBDIRECTORY(src-petsc)
 ADD_SUBDIRECTORY(src-loca)
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)

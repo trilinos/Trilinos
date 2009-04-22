@@ -1971,7 +1971,7 @@ A user can build a set of status tests from an independent parameter list using 
 At present, %NOX supports a concrete implementation of the
 <b>NOX::Abstract::Group</b> and <b>NOX::Abstract::Vector</b> using
 PETSc data structures in the namespace NOX::Petsc.  The current
-implementation has been tested against PETSc 2.1.6.
+implementation has been tested against PETSc 3.0.0-p5.
 
 \section build_nox_petsc_library Building the Library
 
@@ -1979,7 +1979,7 @@ To compile the %NOX/PETSc library \c libnoxpetsc.a, use the following
 configuration sequence:
 
 \verbatim
-setenv PETSC_DIR ${HOME}/petsc-2.1.6
+setenv PETSC_DIR ${HOME}/petsc-3.0.0-p5
 setenv PETSC_ARCH linux
 configure --enable-nox-petsc
 \endverbatim
@@ -1995,7 +1995,7 @@ configure --enable-nox-petsc
 A third option is to specify \c PETSC_DIR and \c PETSC_ARCH as arguments
 to the configure script, eg
 \verbatim
-configure --enable-nox-petsc PETSC_DIR=${HOME}/petsc-2.1.6 PETSC_ARCH=linux
+configure --enable-nox-petsc PETSC_DIR=${HOME}/petsc-3.0.0-p5 PETSC_ARCH=linux
 \endverbatim
 
 
