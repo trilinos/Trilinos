@@ -127,9 +127,9 @@ Package Transition Lead: Roger Pawlowski (rppawlo@sandia.gov)
 
 Status: Has basic CMake support and some tests and examples.
 
-Final Certification Date: [???]
+Final Certification Date: 04/22/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests are converted and match auto tools results.
 
 -------------------------------------------------------------------------------
 
@@ -443,9 +443,9 @@ Package Transition Lead: Roger Pawlowski (rppawlo@sandia.gov)
 
 Status: Should have complete CMake support.
 
-Final Certification Date: [???]
+Final Certification Date: 04/22/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests are converted and match auto tools results.
 
 -------------------------------------------------------------------------------
 
@@ -480,13 +480,13 @@ Package: NOX (and therefore also LOCA)
 
 Package Transition Lead: Roger Pawlowski (rppawlo@sandia.gov)
 
-Status: Should have nearly complete CMake support.  Just a few loose ends to
-tie up.  LOCA is complete, except a configuration test for GGEV which may
-not even be necessary anymore.
+Status: CMake support is complete except for the petsc support.
+LOCA is complete, except a configuration test for GGEV which may not
+even be necessary anymore.
 
 Final Certification Date: [???]
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests are converted and match auto tools results.
 
 -------------------------------------------------------------------------------
 
