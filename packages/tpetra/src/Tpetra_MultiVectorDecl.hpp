@@ -313,7 +313,7 @@ namespace Tpetra {
 
     //@} 
 
-    //! @name Overridden from Describable 
+    //! @name Overridden from Teuchos::Describable 
     //@{
 
     /** \brief Return a simple one-line description of this object. */

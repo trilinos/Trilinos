@@ -1377,7 +1377,7 @@ namespace {
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TheEyeOfTruth, LO, GO, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TheEyeOfTruthDistAlloc, LO, GO, SCALAR ) \
+      /*TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, TheEyeOfTruthDistAlloc, LO, GO, SCALAR )*/ \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, ZeroMatrix   , LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, BadCalls     , LO, GO, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsMatrix, SimpleEigTest, LO, GO, SCALAR ) \
