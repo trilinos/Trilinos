@@ -661,7 +661,7 @@ static int pmatching_ipm (ZZ *zz,
   int candidate_index = 0, first_candidate_index = 0;
   int pref = 0, num_matches_considered = 0;
   double ipsum = 0.;
-  struct phg_timer_indices *timer = zz->LB.Data_Structure;
+  struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   char *yo = "pmatching_ipm";
   
    
@@ -1329,7 +1329,7 @@ static int pmatching_agg_ipm (ZZ *zz,
   int VtxDim = (hg->VtxWeightDim>0) ? hg->VtxWeightDim : 1;
   int pref = 0;
   int replycnt;
-  struct phg_timer_indices *timer = zz->LB.Data_Structure;
+  struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   char *yo = "pmatching_agg_ipm";
   KVHash hash;
   

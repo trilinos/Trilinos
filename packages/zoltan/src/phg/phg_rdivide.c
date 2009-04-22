@@ -70,12 +70,11 @@ int Zoltan_PHG_rdivide(
   float  *bisec_part_sizes=NULL;   /* Target partition sizes; dimension is 2*hg->VtxWeightDim  
                                         because we are doing bisection */
   int part_dim = hg->VtxWeightDim ? hg->VtxWeightDim : 1;
-  struct phg_timer_indices *timer = zz->LB.Data_Structure;
+  struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   int do_timing = (hgp->use_timers > 1);
   int detail_timing = (hgp->use_timers > 3);
 
-  SET_MIN_NODE((int*)zz->LB.Tree, father, lo);
-  SET_MAX_NODE((int*)zz->LB.Tree, father, hi);
+  Zoltan_PHG_Tree_Set(zz, father, lo, hi);
 
   if (!gnVtx) { /* UVC: no vertex; no need for recursion!? */
       if (level>0)
@@ -221,8 +220,7 @@ int Zoltan_PHG_rdivide(
           if (part[i]==0)
               final[hg->vmap[i]] = lo;
       /* No recursion for the tree */
-      SET_MIN_NODE((int*)zz->LB.Tree, 2*father, lo);
-      SET_MAX_NODE((int*)zz->LB.Tree, 2*father, lo);
+      Zoltan_PHG_Tree_Set(zz, 2*father, lo, lo);
   }
 
   if (hi>mid+1) { /* only split if we need it */
@@ -242,8 +240,7 @@ int Zoltan_PHG_rdivide(
           if (part[i]==1)
               final[hg->vmap[i]] = hi;
       /* No recursion for the tree */
-      SET_MIN_NODE((int*)zz->LB.Tree, 2*father+1, hi);
-      SET_MAX_NODE((int*)zz->LB.Tree, 2*father+1, hi);
+      Zoltan_PHG_Tree_Set(zz, 2*father+1, hi, hi);
   }
 
   

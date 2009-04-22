@@ -116,7 +116,7 @@ float *bestvals = NULL;        /* Best cut values found so far */
 int worst, new_cand;
 float bal, cut, worst_cut;
 int fine_timing = (hgp->use_timers > 2);
-struct phg_timer_indices *timer = zz->LB.Data_Structure;
+struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
 int local_coarse_part = hgp->LocalCoarsePartition;
 
 /* Number of iterations to try coarse partitioning on each proc. */

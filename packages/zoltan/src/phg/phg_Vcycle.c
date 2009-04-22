@@ -210,7 +210,7 @@ int Zoltan_PHG_Partition (
   int fine_timing = (hgp->use_timers > 2);
   int vcycle_timing = (hgp->use_timers > 4 && hgp->ProRedL == 0);
   short refine = 0;
-  struct phg_timer_indices *timer = zz->LB.Data_Structure;
+  struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
     

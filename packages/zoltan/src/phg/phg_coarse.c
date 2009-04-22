@@ -169,7 +169,7 @@ int Zoltan_PHG_Coarsening
   struct Zoltan_Comm_Obj *plan=NULL;
 
 
-  struct phg_timer_indices *timer = zz->LB.Data_Structure;
+  struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   int time_details = (hgp->use_timers > 3);
 
   if (time_details) {

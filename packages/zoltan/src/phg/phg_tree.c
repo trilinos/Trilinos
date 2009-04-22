@@ -22,15 +22,128 @@ extern "C" {
 #include "phg.h"
 #include <limits.h>
 
+typedef struct Zoltan_PHG_LB_Data_ {
+  struct phg_timer_indices * timers;
+  Zoltan_PHG_Tree * tree;
+} Zoltan_PHG_LB_Data;
+
+#define SET_MIN_NODE(ptr, offset, val) (ptr)[2*(offset)]=-(val)
+#define SET_MAX_NODE(ptr, offset, val) (ptr)[2*(offset)+1]=(val)
+
+/* Internal use only */
+void* Zoltan_PHG_LB_Data_alloc();
+int Zoltan_PHG_Timers_copy(ZZ* zz, struct phg_timer_indices* ftimers);
+int Zoltan_PHG_Tree_copy(ZZ* zz, Zoltan_PHG_Tree* ftimers);
+int Zoltan_PHG_Tree_init(Zoltan_PHG_Tree* ftimers);
+
+
+void*
+Zoltan_PHG_LB_Data_alloc()
+{
+  Zoltan_PHG_LB_Data * ptr;
+
+  ptr = (Zoltan_PHG_LB_Data*) ZOLTAN_MALLOC(sizeof(Zoltan_PHG_LB_Data));
+  if (ptr == NULL)
+    return NULL;
+
+  ptr->timers = NULL;
+  ptr->tree = NULL;
+  return (ptr);
+}
+
+struct phg_timer_indices *
+Zoltan_PHG_LB_Data_timers(ZZ const * zz)
+{
+  Zoltan_PHG_LB_Data* ptr = (Zoltan_PHG_LB_Data*)zz->LB.Data_Structure;
+
+  if (!ptr) return NULL;
+  return (ptr->timers);
+}
+
+Zoltan_PHG_Tree *
+Zoltan_PHG_LB_Data_tree(ZZ const * zz)
+{
+  Zoltan_PHG_LB_Data* ptr = (Zoltan_PHG_LB_Data*)zz->LB.Data_Structure;
+  if (!ptr) return NULL;
+  return (ptr->tree);
+}
+
+void
+Zoltan_PHG_LB_Data_free_timers(ZZ* zz)
+{
+  Zoltan_PHG_LB_Data * ptr = zz->LB.Data_Structure;
+  if (ptr == NULL)
+    return;
+  ZOLTAN_FREE(&(ptr->timers));
+}
+
+void
+Zoltan_PHG_LB_Data_free_tree(ZZ* zz)
+{
+  Zoltan_PHG_LB_Data * ptr = zz->LB.Data_Structure;
+  if ((ptr == NULL) || (ptr->tree == NULL))
+    return;
+  ptr->tree->array += 2;
+  ZOLTAN_FREE(&(ptr->tree->array));
+  ZOLTAN_FREE(&(ptr->tree));
+}
+
+/*****************************************************************************/
+
+void Zoltan_PHG_Free_Structure(ZZ *zz)
+{
+  /* frees all data associated with LB.Data_Structure for hypergraphs */
+
+  Zoltan_PHG_LB_Data_free_timers(zz);
+  Zoltan_PHG_LB_Data_free_tree(zz);
+  ZOLTAN_FREE(&(zz->LB.Data_Structure));
+}
+
+/*****************************************************************************/
+
+int Zoltan_PHG_Copy_Structure(ZZ *to, ZZ const *from)
+{
+  /* Copies all data associated with LB.Data_Structure for hypergraphs */
+  /* For now, that is just timing indices */
+  if (from->LB.Data_Structure) {
+    int ierr = ZOLTAN_OK;
+
+    Zoltan_PHG_Free_Structure(to);
+    ierr = Zoltan_PHG_Timers_copy(to, Zoltan_PHG_LB_Data_timers(from));
+    if (ierr != ZOLTAN_OK)
+      return (ierr);
+    ierr = Zoltan_PHG_Tree_copy(to, Zoltan_PHG_LB_Data_tree(from));
+
+  }
+  return ZOLTAN_OK;
+}
+
+
+
   /* The tree is a list of couple (-min, max) but only declare as an array of int */
 
 /* Create tree structure */
 int
-Zoltan_PHG_create_tree(int **ptr, int part_number, int* tree_size)
+Zoltan_PHG_Tree_create(int part_number, ZZ* zz)
 {
   int part2; /* Power of 2 parts */
-  int i;
+  Zoltan_PHG_Tree *tree;
+  Zoltan_PHG_LB_Data * ptr = zz->LB.Data_Structure;
 
+  if (ptr == NULL) {
+    ptr = Zoltan_PHG_LB_Data_alloc();
+    zz->LB.Data_Structure = (void*)ptr;
+  }
+  if (ptr == NULL)
+    return (ZOLTAN_MEMERR);
+
+  if (ptr->tree != NULL) {
+    Zoltan_PHG_LB_Data_free_tree(zz);
+  }
+
+  tree = ptr->tree = (Zoltan_PHG_Tree*) ZOLTAN_MALLOC(sizeof(Zoltan_PHG_Tree));
+  if (ptr->tree == NULL)
+    return (ZOLTAN_MEMERR);
   if (part_number == 0)
     return ZOLTAN_OK;
 
@@ -46,39 +159,176 @@ Zoltan_PHG_create_tree(int **ptr, int part_number, int* tree_size)
 
   part2++;
 
-  *tree_size = 2*part2-1;
-  *ptr = (int*) ZOLTAN_MALLOC(sizeof(int)*2*(*tree_size));
-  if (*ptr == NULL)
+  tree->size = 2*part2-1;
+  return (Zoltan_PHG_Tree_init(tree));
+}
+
+int
+Zoltan_PHG_Tree_init(Zoltan_PHG_Tree* tree)
+{
+  int i;
+
+  tree->array = (int*) ZOLTAN_MALLOC(sizeof(int)*2*(tree->size));
+  if (tree->array == NULL)
     return ZOLTAN_MEMERR;
   /* TRICK: we store -low, thus we can use MPI_MAX for low and high */
-  for (i = 0 ; i < *tree_size ; ++i) {
-    SET_MIN_NODE(*ptr, i, *tree_size + 1);
-    SET_MAX_NODE(*ptr, i, -1);
+  for (i = 0 ; i < tree->size ; ++i) {
+    SET_MIN_NODE(tree->array, i, tree->size + 1);
+    SET_MAX_NODE(tree->array, i, -1);
   }
 
-  *ptr -=2; /* Begin at offset 1 */
+  *(tree->array -=2); /* Begin at offset 1 */
 
   return ZOLTAN_OK;
+}
+
+int
+Zoltan_PHG_Tree_copy(ZZ* zz, Zoltan_PHG_Tree* ftree)
+{
+  int ierr;
+  Zoltan_PHG_LB_Data * ptr = zz->LB.Data_Structure;
+  Zoltan_PHG_Tree *ttree;
+
+  Zoltan_PHG_LB_Data_free_tree(zz);
+
+  if (ftree == NULL)
+    return (ZOLTAN_OK);
+
+  ttree = ptr->tree = (Zoltan_PHG_Tree*) ZOLTAN_MALLOC(sizeof(Zoltan_PHG_Tree));
+  if (ptr->tree == NULL)
+    return (ZOLTAN_MEMERR);
+
+  ttree->size = ftree->size;
+  ierr = Zoltan_PHG_Tree_init(ttree);
+
+  if (ierr != ZOLTAN_OK)
+    return (ierr);
+  memcpy (ttree->array+2, ftree->array+2, 2*ttree->size*sizeof(int));
+  return (ZOLTAN_OK);
 }
 
 
 /* Build a centralized tree */
 int
-Zoltan_PHG_centralize_tree(ZZ *zz, int p, int tree_size)
+Zoltan_PHG_Tree_centralize(ZZ *zz)
 {
+  Zoltan_PHG_Tree* tree;
+
+  tree = Zoltan_PHG_LB_Data_tree(zz);
+  if (tree == NULL)
+    return ZOLTAN_OK;
   /* TRICK: we store -low, thus we can use MPI_MAX for low and high */
 #ifdef MPI_IN_PLACE
-  MPI_Allreduce(MPI_IN_PLACE, zz->LB.Tree + 2, 2*tree_size, MPI_INT, MPI_MAX, zz->Communicator);
+  MPI_Allreduce(MPI_IN_PLACE, tree->array + 2, 2*tree->size, MPI_INT, MPI_MAX, zz->Communicator);
 #else /* MPI_IN_PLACE */
   int *tmp_tree;
-  tmp_tree = (int *) ZOLTAN_MALLOC(sizeof(int)*2*tree_size);
+  tmp_tree = (int *) ZOLTAN_MALLOC(sizeof(int)*2*tree->size);
   if (tmp_tree == NULL)
     return ZOLTAN_MEMERR;
-  memcpy (tmp_tree, zz->LB.Tree + 2, 2*tree_size*sizeof(int));
-  MPI_Allreduce(zz->LB.Tree + 2, tmp_tree, 2*tree_size, MPI_INT, MPI_MAX, zz->Communicator);
+  memcpy (tmp_tree, tree->array 2, 2*tree->size*sizeof(int));
+  MPI_Allreduce(tree->array + 2, tmp_tree, 2*tree->size, MPI_INT, MPI_MAX, zz->Communicator);
   ZOLTAN_FREE(&tmp_tree);
 #endif /* MPI_IN_PLACE */
   return ZOLTAN_OK;
+}
+
+void
+Zoltan_PHG_Tree_Set(ZZ* zz, int father, int lo, int hi)
+{
+  Zoltan_PHG_Tree* tree;
+
+  tree = Zoltan_PHG_LB_Data_tree(zz);
+  if (tree == NULL)
+    return;
+  SET_MIN_NODE(tree->array, father, lo);
+  SET_MAX_NODE(tree->array, father, hi);
+}
+
+int
+Zoltan_PHG_Timers_copy(ZZ* zz, struct phg_timer_indices* ftimers)
+{
+  int ierr;
+  struct phg_timer_indices *ttimer;
+
+  Zoltan_PHG_LB_Data_free_timers(zz);
+  if (ftimers == NULL)
+    return (ZOLTAN_OK);
+  ierr = Zoltan_PHG_Timers_init(zz);
+  if (ierr != ZOLTAN_OK)
+    return (ierr);
+  ttimer = Zoltan_PHG_LB_Data_timers(zz);
+  memcpy(ttimer, ftimers, sizeof(struct phg_timer_indices));
+  return (ZOLTAN_OK);
+}
+
+
+/*****************************************************************************/
+int
+Zoltan_PHG_Timers_init(ZZ* zz)
+{
+  int i;
+  int lenght;
+  struct phg_timer_indices *timer;
+
+  Zoltan_PHG_LB_Data* ptr = (Zoltan_PHG_LB_Data*)zz->LB.Data_Structure;
+
+  if (!ptr) {
+    ptr = Zoltan_PHG_LB_Data_alloc();
+    zz->LB.Data_Structure = (void*)ptr;
+  }
+  if (!ptr)
+    return (ZOLTAN_MEMERR);
+
+  if (ptr->timers == NULL)
+    ptr->timers = (struct phg_timer_indices*) ZOLTAN_MALLOC(sizeof(struct phg_timer_indices));
+
+  timer= ptr->timers;
+  if (!timer)
+    return (ZOLTAN_MEMERR);
+
+  lenght = sizeof(struct phg_timer_indices)/sizeof(int);
+
+  for (i=0 ; i < lenght ; ++i)
+    ((int*)timer)[i] = -1;
+
+  return (ZOLTAN_OK);
+/*   timer->all = */
+/*   timer->build = */
+/*   timer->setupvmap = */
+/*   timer->parkway = */
+/*   timer->patoh = */
+/*   timer->retlist = */
+/*   timer->finaloutput = */
+/*   timer->match = */
+/*   timer->coarse = */
+/*   timer->refine = */
+/*   timer->coarsepart = */
+/*   timer->project = */
+/*   timer->procred = */
+/*   timer->vcycle = */
+/*   timer->comerge = */
+/*   timer->coshuffle = */
+/*   timer->coremove = */
+/*   timer->cotheend = */
+/*   timer->rdrdivide = */
+/*   timer->rdbefore = */
+/*   timer->rdafter = */
+/*   timer->rdsplit = */
+/*   timer->rdredist = */
+/*   timer->rdsend = */
+/*   timer->rdwait = */
+/*   timer->rfrefine = */
+/*   timer->rfpins = */
+/*   timer->rfiso = */
+/*   timer->rfgain = */
+/*   timer->rfheap = */
+/*   timer->rfpass = */
+/*   timer->rfroll = */
+/*   timer->rfnonroot = */
+/*   timer->cpart = */
+/*   timer->cpgather = */
+/*   timer->cprefine = -1; */
+/*   for (i = 0; i < 7; i++) timer->matchstage[i] = -1; */
 }
 
 /******************************************************************************/

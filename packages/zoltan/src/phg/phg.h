@@ -20,7 +20,7 @@
 #include "phg_const.h"
 #include "phg_util.h"
 #include "phg_hypergraph.h"
-
+#include "phg_tree.h"
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -164,50 +164,6 @@ typedef struct PHGPartParamsStruct PHGPartParams;
 #define PHG_DEBUG_PRINT 3
 #define PHG_DEBUG_PLOT 4
 
-
-/*********************************************************/
-/* Structure for storing timer indices from call to call */
-/*********************************************************/
-struct phg_timer_indices {
-  int all;  /* All of Zoltan_PHG; this timer includes other timers and their
-               synchronization time, so it will be high. */
-  int build;  /* hypergraph build time */
-  int setupvmap;
-  int parkway;  /* ParKway time */
-  int patoh;  /* PaToH time */
-  int retlist;  /* Building return lists time */
-  int finaloutput;  /* printing final output time */
-  int match;   /* Matching time */
-  int coarse;  /* Coarsening time */
-  int refine; /* Refinement time */
-  int coarsepart;  /* Coarse partitioning time */
-  int project;    /* Project coarse-to-fine */
-  int procred;    /* Processor reduction */
-  int vcycle;    /* Vcycle time */
-  int comerge;   /* Part of coarsening */
-  int coshuffle;   /* Part of coarsening */
-  int coremove;   /* Part of coarsening */
-  int cotheend;   /* Part of coarsening */
-  int matchstage[7];  /* Matching stages */
-  int rdrdivide;  /* Rdivide time. */
-  int rdbefore;   /* Part of Rdivide */
-  int rdafter;    /* Part of Rdivide */
-  int rdsplit;    /* Part of Rdivide */
-  int rdredist;    /* Part of Rdivide */
-  int rdsend;    /* Part of Rdivide */
-  int rdwait;    /* Part of Rdivide */
-  int rfrefine;    /* Refinement time */
-  int rfpins;   /* Part of Refinement */
-  int rfiso;   /* Part of Refinement */
-  int rfgain;   /* Part of Refinement */
-  int rfheap;   /* Part of Refinement */
-  int rfpass;   /* Part of Refinement */
-  int rfroll;   /* Part of Refinement */
-  int rfnonroot;   /* Part of Refinement */
-  int cpart;   /* Coarse partitioning time */
-  int cpgather;   /* Part of Coarse Partitioning */
-  int cprefine;   /* Part of Coarse Partitioning */
-};
 
 /**********************/
 /* Matching functions */

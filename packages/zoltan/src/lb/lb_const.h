@@ -170,9 +170,6 @@ struct Zoltan_LB_Struct {
   void *Data_Structure;           /*  Data structure used by the load
                                       balancer; cast by the method routines
                                       to the appropriate data type.          */
-  /* TODO: move Tree in Data_Structure with timers */
-  int *Tree;                      /*  Temporary not in Data_Structure because
-				      it's already the place for timers      */
   ZOLTAN_LB_FREE_DATA_FN *Free_Structure;
                                   /*  Pointer to function that frees the
                                       Data_Structure memory.                 */

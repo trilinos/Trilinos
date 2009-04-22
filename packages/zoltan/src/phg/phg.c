@@ -118,7 +118,6 @@ static PARAM_VARS PHG_params[] = {
 
 /* prototypes for static functions: */
 
-static void initialize_timer_indices(struct phg_timer_indices *);
 static int Zoltan_PHG_Output_Parts(ZZ*, ZHG*, Partition);
 static int Zoltan_PHG_Return_Lists(ZZ*, ZHG*, int*, ZOLTAN_ID_PTR*, 
   ZOLTAN_ID_PTR*, int**, int**);
@@ -303,12 +302,10 @@ int **exp_to_part )         /* list of partitions to which exported objs
     goto End;
 
   if (hgp.use_timers) {
-    if (!zz->LB.Data_Structure)  {
-      zz->LB.Data_Structure = (struct phg_timer_indices *) 
-                               ZOLTAN_MALLOC(sizeof(struct phg_timer_indices));
-      initialize_timer_indices((struct phg_timer_indices *)zz->LB.Data_Structure);
+    if (!Zoltan_PHG_LB_Data_timers(zz))  {
+      Zoltan_PHG_Timers_init(zz);
     }
-    timer = zz->LB.Data_Structure;
+    timer = Zoltan_PHG_LB_Data_timers(zz);
     if (timer->all < 0) 
       timer->all = Zoltan_Timer_Init(zz->ZTime, 1, "Zoltan_PHG");
   }
@@ -410,9 +407,8 @@ int **exp_to_part )         /* list of partitions to which exported objs
       ZOLTAN_TIMER_STOP(zz->ZTime, timer->patoh, zz->Communicator);
   }      
   else { /* it must be PHG  */
-    int tree_size = 0;
     /* Create tree structure */
-    Zoltan_PHG_create_tree(&zz->LB.Tree, p, &tree_size);
+    Zoltan_PHG_Tree_create(p, zz);
 
     /* UVC: if it is bisection anyways; no need to create vmap etc; 
        rdivide is going to call Zoltan_PHG_Partition anyways... */
@@ -475,12 +471,9 @@ int **exp_to_part )         /* list of partitions to which exported objs
 #endif      
     }
     /* Build a centralized tree */
-    Zoltan_PHG_centralize_tree(zz, p, tree_size);
+    Zoltan_PHG_Tree_centralize(zz);
 
-    /* TODO: remove the free */
-    zz->LB.Tree += 2;
-    ZOLTAN_FREE(&(zz->LB.Tree));
-
+    Zoltan_PHG_LB_Data_free_tree(zz);
   }
 
   if (!strcasecmp(hgp.hgraph_method, "REPARTITION")) {
@@ -679,34 +672,6 @@ void Zoltan_PHG_Free_Hypergraph_Data(ZHG *zoltan_hg)
   }
 }
 
-/*****************************************************************************/
-
-void Zoltan_PHG_Free_Structure(ZZ *zz)
-{
-  /* frees all data associated with LB.Data_Structure for hypergraphs */
-  /* For now, that is just timing indices */
-  ZOLTAN_FREE (&zz->LB.Data_Structure);
-}
-
-/*****************************************************************************/
-
-int Zoltan_PHG_Copy_Structure(ZZ *to, ZZ const *from)
-{
-  /* Copies all data associated with LB.Data_Structure for hypergraphs */
-  /* For now, that is just timing indices */
-  if (from->LB.Data_Structure) {
-    struct phg_timer_indices *tt, *ff;
-    ZOLTAN_FREE (&(to->LB.Data_Structure));
-    tt = to->LB.Data_Structure = (struct phg_timer_indices *) 
-                             ZOLTAN_MALLOC(sizeof(struct phg_timer_indices));
-    ff = (struct phg_timer_indices *) from->LB.Data_Structure;
-    if (to->LB.Data_Structure) 
-      *tt = *ff;
-    else 
-      return ZOLTAN_MEMERR;
-  }
-  return ZOLTAN_OK;
-}
 
     
 /*****************************************************************************/
@@ -1296,49 +1261,6 @@ int ierr = ZOLTAN_OK;
 End:
 
   return ierr;
-}
-
-/*****************************************************************************/
-static void initialize_timer_indices(struct phg_timer_indices *timer)
-{
-int i;
-  timer->all = 
-  timer->build = 
-  timer->setupvmap =
-  timer->parkway =  
-  timer->patoh =  
-  timer->retlist =  
-  timer->finaloutput =  
-  timer->match =   
-  timer->coarse =  
-  timer->refine = 
-  timer->coarsepart =  
-  timer->project =    
-  timer->procred =    
-  timer->vcycle =    
-  timer->comerge =   
-  timer->coshuffle =   
-  timer->coremove =   
-  timer->cotheend =   
-  timer->rdrdivide =  
-  timer->rdbefore =   
-  timer->rdafter =    
-  timer->rdsplit =    
-  timer->rdredist =    
-  timer->rdsend =    
-  timer->rdwait =    
-  timer->rfrefine =    
-  timer->rfpins =   
-  timer->rfiso =   
-  timer->rfgain =   
-  timer->rfheap =   
-  timer->rfpass =   
-  timer->rfroll =   
-  timer->rfnonroot =   
-  timer->cpart =   
-  timer->cpgather =   
-  timer->cprefine = -1;
-  for (i = 0; i < 7; i++) timer->matchstage[i] = -1;
 }
 
 #ifdef __cplusplus

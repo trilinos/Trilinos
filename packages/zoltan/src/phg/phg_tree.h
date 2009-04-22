@@ -3,6 +3,7 @@
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
  * For more info, see the README file in the top-level Zoltan directory.     *
  *****************************************************************************/
+/* TODO: This file has to be renamed */
 /*****************************************************************************
  * CVS File Information :
  *    $RCSfile$
@@ -20,20 +21,87 @@
 extern "C" {
 #endif
 
-#define SET_MIN_NODE(ptr, offset, val) (ptr)[2*(offset)]=-(val)
-#define SET_MAX_NODE(ptr, offset, val) (ptr)[2*(offset)+1]=(val)
+/*********************************************************/
+/* Structure for storing bisection tree for phg          */
+/*********************************************************/
+typedef struct Zoltan_PHG_Tree_ {
+  int size;
+  int * array;
+} Zoltan_PHG_Tree;
 
-/* Create tree structure */
+/*********************************************************/
+/* Structure for storing timer indices from call to call */
+/*********************************************************/
+struct phg_timer_indices {
+  int all;  /* All of Zoltan_PHG; this timer includes other timers and their
+               synchronization time, so it will be high. */
+  int build;  /* hypergraph build time */
+  int setupvmap;
+  int parkway;  /* ParKway time */
+  int patoh;  /* PaToH time */
+  int retlist;  /* Building return lists time */
+  int finaloutput;  /* printing final output time */
+  int match;   /* Matching time */
+  int coarse;  /* Coarsening time */
+  int refine; /* Refinement time */
+  int coarsepart;  /* Coarse partitioning time */
+  int project;    /* Project coarse-to-fine */
+  int procred;    /* Processor reduction */
+  int vcycle;    /* Vcycle time */
+  int comerge;   /* Part of coarsening */
+  int coshuffle;   /* Part of coarsening */
+  int coremove;   /* Part of coarsening */
+  int cotheend;   /* Part of coarsening */
+  int matchstage[7];  /* Matching stages */
+  int rdrdivide;  /* Rdivide time. */
+  int rdbefore;   /* Part of Rdivide */
+  int rdafter;    /* Part of Rdivide */
+  int rdsplit;    /* Part of Rdivide */
+  int rdredist;    /* Part of Rdivide */
+  int rdsend;    /* Part of Rdivide */
+  int rdwait;    /* Part of Rdivide */
+  int rfrefine;    /* Refinement time */
+  int rfpins;   /* Part of Refinement */
+  int rfiso;   /* Part of Refinement */
+  int rfgain;   /* Part of Refinement */
+  int rfheap;   /* Part of Refinement */
+  int rfpass;   /* Part of Refinement */
+  int rfroll;   /* Part of Refinement */
+  int rfnonroot;   /* Part of Refinement */
+  int cpart;   /* Coarse partitioning time */
+  int cpgather;   /* Part of Coarse Partitioning */
+  int cprefine;   /* Part of Coarse Partitioning */
+};
+
+struct phg_timer_indices *
+Zoltan_PHG_LB_Data_timers(ZZ const * zz);
+
+Zoltan_PHG_Tree *
+Zoltan_PHG_LB_Data_tree(ZZ const * zz);
+
+void
+Zoltan_PHG_LB_Data_free_timers(ZZ* zz);
+
+void
+Zoltan_PHG_LB_Data_free_tree(ZZ* zz);
+
+/* Build a centralized tree */
 int
-Zoltan_PHG_create_tree(int **ptr, int part_number, int* tree_size);
+Zoltan_PHG_Tree_centralize(ZZ *zz);
 
 int
-Zoltan_PHG_centralize_tree(ZZ *zz, int p, int tree_size);
+Zoltan_PHG_Tree_create(int part_number, ZZ* zz);
+
+void
+Zoltan_PHG_Tree_Set(ZZ* zz, int father, int lo, int hi);
+
+int
+Zoltan_PHG_Timers_init(ZZ* zz);
 
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
 
-#endif   /* __ZOLTAN_PHG_COMM_H */
+#endif   /* __ZOLTAN_PHG_TREE_H */
 

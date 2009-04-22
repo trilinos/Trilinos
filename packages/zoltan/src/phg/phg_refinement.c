@@ -530,7 +530,7 @@ static int refine_fm2 (ZZ *zz,
     PHGComm *hgc=hg->comm;
     int rootRank;
     
-    struct phg_timer_indices *timer = zz->LB.Data_Structure;
+    struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
     int do_timing = (hgp->use_timers > 2);
     int detail_timing = (hgp->use_timers > 3);
 
