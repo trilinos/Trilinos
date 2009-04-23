@@ -740,16 +740,20 @@ void BackwardEulerStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
   using Teuchos::as;
 
-
-#ifdef RYTHMOS_DEBUG
-  TEST_FOR_EXCEPT(!haveInitialCondition_);
-#endif
+  TEUCHOS_ASSERT( time_vec != NULL );
 
   time_vec->clear();
+
+  if (!haveInitialCondition_) {
+    return;
+  }
+
   time_vec->push_back(t_old_);
+
   if (numSteps_ > 0) {
     time_vec->push_back(t_);
   }
+
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   Teuchos::OSTab ostab(out,1,"BES::getNodes");

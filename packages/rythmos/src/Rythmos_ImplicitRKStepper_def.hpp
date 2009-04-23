@@ -418,13 +418,14 @@ void ImplicitRKStepper<Scalar>::getPoints(
 template<class Scalar>
 void ImplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
-  TEUCHOS_ASSERT(haveInitialCondition_);
-  if (time_vec != NULL) {
-    time_vec->clear();
-    time_vec->push_back(timeRange_.lower());
-    if (numSteps_ > 0) {
-      time_vec->push_back(timeRange_.upper());
-    }
+  TEUCHOS_ASSERT( time_vec != NULL );
+  time_vec->clear();
+  if (!haveInitialCondition_) {
+    return;
+  }
+  time_vec->push_back(timeRange_.lower());
+  if (numSteps_ > 0) {
+    time_vec->push_back(timeRange_.upper());
   }
 }
 

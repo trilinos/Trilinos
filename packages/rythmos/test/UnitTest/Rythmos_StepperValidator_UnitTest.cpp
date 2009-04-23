@@ -97,7 +97,6 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ImplicitBDF ) {
   TEST_ASSERT( true );
 }
 
-/*
 TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ExplicitTaylorPolynomial ) {
   RCP<StepperValidator<double> > sv = stepperValidator<double>();
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
@@ -105,9 +104,10 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ExplicitTaylorPolynomial ) {
   pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Explicit Taylor Polynomial");
   ib->setParameterList(pl);
   sv->setIntegratorBuilder(ib);
-  TEST_NOTHROW( sv->validateStepper() );
+
+  sv->validateStepper();
+  TEST_ASSERT( true );
 }
-*/
 
 TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ForwardEuler ) {
   RCP<StepperValidator<double> > sv = stepperValidator<double>();

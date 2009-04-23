@@ -45,21 +45,22 @@ namespace Rythmos {
 //  TEST_ASSERT( !is_null(gee) );
 //}
 
-#ifdef RYTHMOS_BROKEN_TEST
 TEUCHOS_UNIT_TEST( Rythmos_GlobalErrorEstimator, SinCos ) {
   // Forward Solve, storing data in linear interpolation buffer
+  int storageLimit = 100;
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
   {
     RCP<ParameterList> ibPL = Teuchos::parameterList();
     ibPL->sublist("Integrator Settings").sublist("Integrator Selection").set("Integrator Type","Default Integrator");
     ibPL->sublist("Integrator Settings").set("Final Time",1.0);
-    ibPL->sublist("Integration Control Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
-    ibPL->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
-    ibPL->sublist("Integration Control Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
+    ibPL->sublist("Integration Control Strategy Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
+    ibPL->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
+    ibPL->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
 
     ibPL->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Implicit RK");
     ibPL->sublist("Stepper Settings").sublist("Runge Kutta Butcher Tableau Selection").set("Runge Kutta Butcher Tableau Type","Backward Euler");
     ibPL->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","Interpolation Buffer");
+    ibPL->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").sublist("Interpolation Buffer").set("StorageLimit",storageLimit);
     ibPL->sublist("Interpolation Buffer Settings").sublist("Interpolator Selection").set("Interpolator Type","Linear Interpolator");
     ib->setParameterList(ibPL);
   }
@@ -72,11 +73,12 @@ TEUCHOS_UNIT_TEST( Rythmos_GlobalErrorEstimator, SinCos ) {
     time_vec.push_back(1.0);
     fwdIntegrator->getFwdPoints(time_vec,NULL,NULL,NULL);
   }
-  // Copy InterpolationBuffer data into Cubic Spline interpolation buffer
+  // Copy InterpolationBuffer data into Cubic Spline interpolation buffer for use in Adjoint Solve
   RCP<InterpolationBufferBase<double> > fwdCubicSplineInterpBuffer;
   {
     RCP<PointwiseInterpolationBufferAppender<double> > piba = pointwiseInterpolationBufferAppender<double>();
     RCP<InterpolationBuffer<double> > sinkInterpBuffer = interpolationBuffer<double>();
+    sinkInterpBuffer->setStorage(storageLimit);
     RCP<CubicSplineInterpolator<double> > csi = cubicSplineInterpolator<double>();
     sinkInterpBuffer->setInterpolator(csi);
     RCP<const InterpolationBufferBase<double> > sourceInterpBuffer;
@@ -88,13 +90,16 @@ TEUCHOS_UNIT_TEST( Rythmos_GlobalErrorEstimator, SinCos ) {
     TimeRange<double> tr = sourceInterpBuffer->getTimeRange();
     piba->append(*sourceInterpBuffer, tr, Teuchos::outArg(*sinkInterpBuffer));
     fwdCubicSplineInterpBuffer = sinkInterpBuffer;
+
+    TimeRange<double> sourceRange = sourceInterpBuffer->getTimeRange();
+    TimeRange<double> sinkRange = sinkInterpBuffer->getTimeRange();
+    TEST_EQUALITY( sourceRange.lower(), sinkRange.lower() );
+    TEST_EQUALITY( sourceRange.upper(), sinkRange.upper() );
   }
-  TEST_ASSERT(true);
   // Adjoint Solve, reading forward solve data from Cubic Spline interpolation buffer
-  // Initial conditions for adjoint:
+    // Initial conditions for adjoint:
   // Compute error estimate
 }
-#endif // RYTHMOS_BROKEN_TEST
 
 } // namespace Rythmos 
 

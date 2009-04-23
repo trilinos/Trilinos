@@ -181,6 +181,11 @@ namespace Rythmos {
     /** \brief . */
     Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
     getModel() const;
+
+    /** \brief . */
+    void setInitialCondition(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+      );
     
     //! Take a time step of magnitude \c dt
     Scalar takeStep(Scalar dt, StepSizeType flag);
@@ -247,6 +252,9 @@ namespace Rythmos {
 
     private:
 
+    //! Default initialize all data 
+    void defaultInitializAll_();
+
     //! Computes a local Taylor series solution to the ODE
     void computeTaylorSeriesSolution_();
 
@@ -265,8 +273,14 @@ namespace Rythmos {
     //! Current solution vector
     Teuchos::RCP<Thyra::VectorBase<Scalar> > x_vector_;
 
+    //! Previous solution vector
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > x_vector_old_;
+
     //! Vector store approximation to \f$dx/dt\f$
     Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_vector_;
+
+    //! Previous Vector store approximation to \f$dx/dt\f$
+    Teuchos::RCP<Thyra::VectorBase<Scalar> > x_dot_vector_old_;
 
     //! Vector store ODE residual
     Teuchos::RCP<Thyra::VectorBase<Scalar> > f_vector_;
@@ -276,6 +290,15 @@ namespace Rythmos {
 
     //! Polynomial for f
     Teuchos::RCP<Teuchos::Polynomial<Thyra::VectorBase<Scalar> > > f_poly_;
+
+    //! Base point set by setInitialCondition
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
+
+    //! Initial Condition Flag
+    bool haveInitialCondition_;
+
+    //! Number of steps taken
+    int numSteps_;
 
     //! Current time
     Scalar t_;
@@ -332,11 +355,40 @@ namespace Rythmos {
   template<class Scalar>
   ExplicitTaylorPolynomialStepper<Scalar>::ExplicitTaylorPolynomialStepper()
   {
+    this->defaultInitializAll_();
+    numSteps_ = 0;
   }
 
   template<class Scalar>
   ExplicitTaylorPolynomialStepper<Scalar>::~ExplicitTaylorPolynomialStepper()
   {
+  }
+
+  template<class Scalar>
+  void ExplicitTaylorPolynomialStepper<Scalar>::defaultInitializAll_()
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    Scalar nan = ST::nan();
+    model_ = Teuchos::null;
+    parameterList_ = Teuchos::null;
+    x_vector_ = Teuchos::null;
+    x_vector_old_ = Teuchos::null;
+    x_dot_vector_ = Teuchos::null;
+    x_dot_vector_old_ = Teuchos::null;
+    f_vector_ = Teuchos::null;
+    x_poly_ = Teuchos::null;
+    f_poly_ = Teuchos::null;
+    haveInitialCondition_ = false;
+    numSteps_ = -1;
+    t_ = nan;
+    dt_ = nan;
+    t_initial_ = nan;;
+    t_final_ = nan;;
+    local_error_tolerance_ = nan;;
+    min_step_size_ = nan;;
+    max_step_size_ = nan;;
+    degree_ = 0;
+    linc_ = nan;
   }
 
   template<class Scalar>
@@ -348,8 +400,6 @@ namespace Rythmos {
     assertValidModel( *this, *model );
     
     model_ = model;
-    x_vector_ = model_->getNominalValues().get_x()->clone_v();
-    x_dot_vector_ = Thyra::createMember(model_->get_x_space());
     f_vector_ = Thyra::createMember(model_->get_f_space());
   }
 
@@ -362,22 +412,49 @@ namespace Rythmos {
   }
 
   template<class Scalar>
+  void ExplicitTaylorPolynomialStepper<Scalar>::setInitialCondition(
+      const Thyra::ModelEvaluatorBase::InArgs<Scalar> &initialCondition
+      )
+  {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    typedef Thyra::ModelEvaluatorBase MEB;
+    basePoint_ = initialCondition;
+    if (initialCondition.supports(MEB::IN_ARG_t)) {
+      t_ = initialCondition.get_t();
+    } else {
+      t_ = ST::zero();
+    }
+    dt_ = ST::zero();
+    x_vector_ = initialCondition.get_x()->clone_v();
+    x_dot_vector_ = x_vector_->clone_v();
+    x_vector_old_ = x_vector_->clone_v();
+    x_dot_vector_old_ = x_dot_vector_->clone_v();
+    haveInitialCondition_ = true;
+  }
+
+  template<class Scalar>
   Scalar 
   ExplicitTaylorPolynomialStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   {
-    if (x_poly_ == Teuchos::null)
-      x_poly_ = 
-	Teuchos::rcp(new Teuchos::Polynomial<
-		     Thyra::VectorBase<Scalar> >(0,*x_vector_,degree_));
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    TEUCHOS_ASSERT( haveInitialCondition_ );
+    TEUCHOS_ASSERT( !is_null(model_) );
+    TEUCHOS_ASSERT( !is_null(parameterList_) ); // parameters are nan otherwise
 
-    if (f_poly_ == Teuchos::null)
-      f_poly_ = 
-	Teuchos::rcp(new Teuchos::Polynomial<
-		     Thyra::VectorBase<Scalar> >(0, *f_vector_, degree_));
+    V_V(outArg(*x_vector_old_),*x_vector_); // x_vector_old = x_vector
+    V_V(outArg(*x_dot_vector_old_),*x_dot_vector_); // x_dot_vector_old = x_dot_vector
+
+    if (x_poly_ == Teuchos::null) {
+      x_poly_ = Teuchos::rcp(new Teuchos::Polynomial<Thyra::VectorBase<Scalar> >(0,*x_vector_,degree_));
+    }
+
+    if (f_poly_ == Teuchos::null) {
+      f_poly_ = Teuchos::rcp(new Teuchos::Polynomial<Thyra::VectorBase<Scalar> >(0, *f_vector_, degree_));
+    }
     if (flag == STEP_TYPE_VARIABLE) {
       // If t_ > t_final_, we're done
       if (t_ > t_final_) {
-        dt_ = Teuchos::ScalarTraits<Scalar>::zero();
+        dt_ = ST::zero();
         return dt_;
       }
 
@@ -408,10 +485,10 @@ namespace Rythmos {
         x_poly_->evaluate(dt, x_vector_.get(), x_dot_vector_.get());
 
         // compute f( x(t_+dt), t_+dt )
-        Thyra::eval_f(*model_, *x_vector_, t_+dt, f_vector_.get());
+        eval_model_explicit<Scalar>(*model_,basePoint_,*x_vector_,t_+dt,Teuchos::outArg(*f_vector_));
 
         // compute || xdot(t_+dt) - f( x(t_+dt), t_+dt ) ||
-        Thyra::Vp_StV(x_dot_vector_.get(), -Teuchos::ScalarTraits<Scalar>::one(),
+        Thyra::Vp_StV(x_dot_vector_.get(), -ST::one(),
           *f_vector_);
         local_error = norm_inf(*x_dot_vector_);
 
@@ -430,6 +507,8 @@ namespace Rythmos {
 
       // Increment t_
       t_ += dt;
+
+      numSteps_++;
 
       dt_ = dt;
 
@@ -462,6 +541,8 @@ namespace Rythmos {
       // Increment t_
       t_ += dt;
 
+      numSteps_++;
+
       dt_ = dt;
 
       return dt;
@@ -476,13 +557,29 @@ namespace Rythmos {
     typedef Teuchos::ScalarTraits<Scalar> ST;
     StepStatus<Scalar> stepStatus;
 
-    stepStatus.stepSize = dt_;
-    stepStatus.order = this->getOrder();
-    stepStatus.time = t_;
-    stepStatus.solution = x_vector_;
-    stepStatus.solutionDot = x_dot_vector_;
-    stepStatus.residual = f_vector_;
-
+    if (!haveInitialCondition_) {
+      stepStatus.stepStatus = STEP_STATUS_UNINITIALIZED;
+    } 
+    else if (numSteps_ == 0) {
+      stepStatus.stepStatus = STEP_STATUS_UNKNOWN;
+      stepStatus.stepSize = dt_;
+      stepStatus.order = this->getOrder();
+      stepStatus.time = t_;
+      stepStatus.solution = x_vector_;
+      stepStatus.solutionDot = x_dot_vector_;
+      if (!is_null(model_)) {
+        stepStatus.residual = f_vector_;
+      }
+    } 
+    else  {
+      stepStatus.stepStatus = STEP_STATUS_CONVERGED;
+      stepStatus.stepSize = dt_;
+      stepStatus.order = this->getOrder();
+      stepStatus.time = t_;
+      stepStatus.solution = x_vector_;
+      stepStatus.solutionDot = x_dot_vector_;
+      stepStatus.residual = f_vector_;
+    }
     return(stepStatus);
   }
 
@@ -492,7 +589,7 @@ namespace Rythmos {
     typedef Teuchos::ScalarTraits<Scalar> ST;
 
     TEST_FOR_EXCEPT(is_null(paramList));
-    paramList->validateParameters(*this->getValidParameters(),0);
+    paramList->validateParameters(*this->getValidParameters());
     parameterList_ = paramList;
     Teuchos::readVerboseObjectSublist(&*parameterList_,this);
 
@@ -616,19 +713,40 @@ namespace Rythmos {
     ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
     ,Array<ScalarMag>* accuracy_vec) const
   {
-    TEST_FOR_EXCEPTION(true,std::logic_error,"Error, getPoints is not implemented for the ExplicitTaylorPolynomialStepper.\n");
+    TEUCHOS_ASSERT( haveInitialCondition_ );
+    using Teuchos::constOptInArg;
+    using Teuchos::null;
+    defaultGetPoints<Scalar>(
+        t_-dt_,constOptInArg(*x_vector_old_),constOptInArg(*x_dot_vector_old_),
+        t_,constOptInArg(*x_vector_),constOptInArg(*x_dot_vector_),
+        time_vec,ptr(x_vec),ptr(xdot_vec),ptr(accuracy_vec),
+        null
+        );
   }
 
   template<class Scalar>
   TimeRange<Scalar> ExplicitTaylorPolynomialStepper<Scalar>::getTimeRange() const
   {
-    return invalidTimeRange<Scalar>();
+    if (!haveInitialCondition_) {
+      return invalidTimeRange<Scalar>();
+    } else {
+      return(TimeRange<Scalar>(t_-dt_,t_));
+    }
   }
 
   template<class Scalar>
-  void ExplicitTaylorPolynomialStepper<Scalar>::getNodes(Array<Scalar>* time_list) const
+  void ExplicitTaylorPolynomialStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
   {
-    TEST_FOR_EXCEPTION(true,std::logic_error,"Error, getNodes is not implemented for the ExplicitTaylorPolynomialStepper.\n");
+    TEUCHOS_ASSERT( time_vec != NULL );
+    time_vec->clear();
+    if (!haveInitialCondition_) {
+      return; 
+    } else {
+      time_vec->push_back(t_);
+    }
+    if (numSteps_ > 0) {
+      time_vec->push_back(t_-dt_);
+    }
   }
 
   template<class Scalar>
@@ -664,7 +782,7 @@ namespace Rythmos {
     for (unsigned int k=1; k<=degree_; k++) {
 
       // compute [f] = f([x])
-      Thyra::eval_f_poly(*model_, *x_poly_, t_, f_poly_.get());
+      eval_model_explicit_poly(*model_, basePoint_, *x_poly_, t_, Teuchos::outArg(*f_poly_));
 
       x_poly_->setDegree(k);
       f_poly_->setDegree(k);
@@ -695,7 +813,11 @@ namespace Rythmos {
   template<class Scalar>
   RCP<const Thyra::VectorSpaceBase<Scalar> > ExplicitTaylorPolynomialStepper<Scalar>::get_x_space() const
   {
-    return(x_vector_->space());
+    if (haveInitialCondition_) {
+      return(x_vector_->space());
+    } else {
+      return Teuchos::null;
+    }
   }
 
 } // namespace Rythmos

@@ -353,7 +353,16 @@ TimeRange<Scalar> ForwardEulerStepper<Scalar>::getTimeRange() const
 template<class Scalar>
 void ForwardEulerStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
-  TEST_FOR_EXCEPTION(true,std::logic_error,"Error, getNodes is not implemented for ForwardEulerStepper.\n");
+  TEUCHOS_ASSERT( time_vec != NULL );
+  time_vec->clear();
+  if (!haveInitialCondition_) {
+    return; 
+  } else {
+    time_vec->push_back(t_old_);
+  }
+  if (numSteps_ > 0) {
+    time_vec->push_back(t_);
+  }
 }
 
 template<class Scalar>

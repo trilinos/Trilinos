@@ -143,7 +143,7 @@ void eval_model_explicit(
     const Thyra::ModelEvaluator<Scalar> &model,
     Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
     const VectorBase<Scalar>& x_in,
-    const Scalar& t_in,
+    const typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t_in,
     const Ptr<VectorBase<Scalar> >& f_out
     )
 {
@@ -156,6 +156,28 @@ void eval_model_explicit(
     inArgs.set_t(t_in);
   }
   outArgs.set_f(Teuchos::rcp(&*f_out,false));
+  model.evalModel(inArgs,outArgs);
+}
+
+template<class Scalar>
+void eval_model_explicit_poly(
+    const Thyra::ModelEvaluator<Scalar> &model,
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> &basePoint,
+    const Teuchos::Polynomial< VectorBase<Scalar> > &x_poly,
+    const typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t,
+    const Ptr<Teuchos::Polynomial<VectorBase<Scalar> > >& f_poly
+    )
+{
+  typedef Thyra::ModelEvaluatorBase MEB;
+  MEB::InArgs<Scalar> inArgs = model.createInArgs();
+  MEB::OutArgs<Scalar> outArgs = model.createOutArgs();
+  inArgs.setArgs(basePoint);
+  inArgs.set_x_poly(Teuchos::rcp(&x_poly,false));
+  if (inArgs.supports(MEB::IN_ARG_t)) {
+    inArgs.set_t(t);
+  }
+  outArgs.set_f_poly(Teuchos::rcp(&*f_poly,false));
+
   model.evalModel(inArgs,outArgs);
 }
 

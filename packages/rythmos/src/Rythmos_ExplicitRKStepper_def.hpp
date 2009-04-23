@@ -321,13 +321,14 @@ void ExplicitRKStepper<Scalar>::getPoints(
 template<class Scalar>
 void ExplicitRKStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
-  TEUCHOS_ASSERT( haveInitialCondition_ );
-  if (time_vec != NULL) {
-    time_vec->clear();
-    time_vec->push_back(t_old_);
-    if (t_ != t_old_) {
-      time_vec->push_back(t_);
-    }
+  TEUCHOS_ASSERT( time_vec != NULL );
+  time_vec->clear();
+  if (!haveInitialCondition_) {
+    return;
+  }
+  time_vec->push_back(t_old_);
+  if (t_ != t_old_) {
+    time_vec->push_back(t_);
   }
 }
 

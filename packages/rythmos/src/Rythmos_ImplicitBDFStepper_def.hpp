@@ -572,8 +572,11 @@ void ImplicitBDFStepper<Scalar>::getPoints(
 template<class Scalar>
 void ImplicitBDFStepper<Scalar>::getNodes(Array<Scalar>* time_vec) const
 {
-  TEST_FOR_EXCEPTION(!isInitialized_,std::logic_error,
-    "Error, attempting to call getNodes before initialization!\n");
+  TEUCHOS_ASSERT( time_vec != NULL );
+  time_vec->clear();
+  if (!haveInitialCondition_) {
+    return;
+  }
   if (numberOfSteps_ > 0) {
     time_vec->push_back(time_-usedStep_);
   }

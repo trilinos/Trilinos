@@ -46,6 +46,7 @@
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 
+#include "Teuchos_StandardCatchMacros.hpp"
 
 
 namespace Rythmos {
@@ -121,9 +122,14 @@ private:
   bool isImplicitStepper_() const;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> getSomeIC_(const Thyra::ModelEvaluator<Scalar>& model) const;
 
+  // Validate that parameters set through setInitialCondition actually get set on the model when evalModel is called.
   void validateIC_() const;
+  // Validate that getTimeRange and getStepStatus return the correct states of initialization.
   void validateStates_() const;
+  // Validate that we can get the initial condition through getPoints after setInitialCondition has been set and after the first step.
   void validateGetIC_() const;
+  // Validate that the stepper supports getNodes, which is used by the Trailing Interpolation Buffer feature of the Integrator.
+  void validateGetNodes_() const;
 
   // Private member data:
   RCP<IntegratorBuilder<Scalar> > integratorBuilder_;
@@ -303,6 +309,8 @@ void StepperValidatorMockModel<Scalar>::initialize_()
     inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_t );
     inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x );
     inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_beta );
+    // For ExplicitTaylorPolynomialStepper
+    inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x_poly );
     inArgs.set_Np(1); 
     if (isImplicit_) {
       inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x_dot );
@@ -314,6 +322,8 @@ void StepperValidatorMockModel<Scalar>::initialize_()
     outArgs.setModelEvalDescription(this->description());
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_f );
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_W_op );
+    // For ExplicitTaylorPolynomialStepper
+    outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_f_poly );
     outArgs.set_Np_Ng(Np_,Ng_);
     outArgs_ = outArgs;
     // Set up nominal values
@@ -457,11 +467,20 @@ void StepperValidatorMockModel<Scalar>::evalModelImpl(
   const Thyra::ModelEvaluatorBase::OutArgs<Scalar> &outArgs
   ) const
 {
+  typedef Teuchos::ScalarTraits<Scalar> ST;
   passedInArgs_->push_back(inArgs);
   // Fill f with zeros.
   RCP<VectorBase<Scalar> > f_out = outArgs.get_f();
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  Thyra::V_S(Teuchos::outArg(*f_out),ST::zero());
+  if (!is_null(f_out)) {
+    Thyra::V_S(Teuchos::outArg(*f_out),ST::zero());
+  }
+  if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_f_poly)) {
+    RCP<Teuchos::Polynomial<VectorBase<Scalar> > > f_poly_out = outArgs.get_f_poly();
+    if (!is_null(f_poly_out)) {
+      //Thyra::V_S(Teuchos::outArg(*f_poly_out),ST::zero());
+    }
+  }
+
 }
 
 
@@ -508,20 +527,56 @@ template<class Scalar>
     const Teuchos::ParameterList& stepperSelectionPL = pl->sublist("Stepper Settings").sublist("Stepper Selection");
     stepperName_ = stepperSelectionPL.get<std::string>("Stepper Type");
   }
+  bool verbose = true;
+  Array<bool> success_array;
+  bool local_success = true;
+
   // Verify that the stepper passes parameters to the model in evalModel:
-  this->validateIC_();
+  local_success = true;
+  try {
+    this->validateIC_();
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,local_success);
+  success_array.push_back(local_success);
 
   // Verify that the stepper states are correct 
   //   uninitialized => getTimeRange == invalidTimeRange
   //   initialized, but no step => getTimeRange.length() == 0, [t_ic,t_ic]
   //   initialized, step taken => getTimeRange.length() > 0
-  this->validateStates_();
+  local_success = true;
+  try {
+    this->validateStates_();
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,local_success);
+  success_array.push_back(local_success);
 
   // Verify that getPoints(t_ic) returns the IC after initialization and after the first step
-  this->validateGetIC_();
+  local_success = true;
+  try {
+    this->validateGetIC_();
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,local_success);
+  success_array.push_back(local_success);
+
+  // Validate that the stepper supports getNodes, which is used by the Trailing Interpolation Buffer feature of the Integrator.
+  local_success = true;
+  try {
+    this->validateGetNodes_();
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose,std::cerr,local_success);
+  success_array.push_back(local_success);
 
   // Verify that getPoints(t) returns the same vectors as getStepStatus
   // TODO
+
+  bool global_success = true;
+  for (int i=0 ; i < Teuchos::as<int>(success_array.size()) ; ++i) {
+    global_success = global_success && success_array[i];
+  }
+
+  TEST_FOR_EXCEPTION( !global_success, std::logic_error,
+      "Error!  StepperValidator:  The stepper " << stepperName_ << " did not pass stepper validation."
+      );
 }
 
 template<class Scalar>
@@ -660,6 +715,9 @@ void StepperValidator<Scalar>::validateIC_() const
       );
   // If a stepper uses a predictor, then the x passed into the model will not be the same as the IC, so we can't check it.
   RCP<const VectorBase<Scalar> > p_out = passedInArgs[0].get_p(0);
+  TEST_FOR_EXCEPTION( is_null(p_out), std::logic_error,
+      "Error!  StepperValidator::validateIC:  Parameter 0 did not get set on the model through StepperBase::setInitialCondition!"
+      );
   {
     Thyra::ConstDetachedVectorView<Scalar> p_out_view( *p_out );
     TEST_FOR_EXCEPTION( p_out_view[0] != Scalar(11.0), std::logic_error,
@@ -803,6 +861,58 @@ void StepperValidator<Scalar>::validateGetIC_() const
   }
 }
 
+template<class Scalar>
+void StepperValidator<Scalar>::validateGetNodes_() const
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  // Create uninitialized stepper and verify we get no nodes back
+  {
+    RCP<const StepperBuilder<Scalar> > sb = integratorBuilder_->getStepperBuilder();
+    RCP<StepperBase<Scalar> > stepper = sb->create(stepperName_);
+    Array<Scalar> nodes;
+    stepper->getNodes(&nodes);
+    TEST_FOR_EXCEPTION( nodes.size() != 0, std::logic_error,
+        "Error!  StepperValidator::validateGetNodes:  Uninitialized stepper returned non-empty node list!"
+        );
+  }
+  // Create fully initialize stepper and verify we get back one node for IC
+  bool isImplicit = this->isImplicitStepper_();
+  RCP<StepperValidatorMockModel<Scalar> > model = 
+    stepperValidatorMockModel<Scalar>(isImplicit);
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> stepper_ic = this->getSomeIC_(*model);
+  RCP<Thyra::NonlinearSolverBase<Scalar> > nlSolver;
+  if (isImplicit) {
+    nlSolver = Rythmos::timeStepNonlinearSolver<Scalar>();
+  }
+  RCP<StepperBase<Scalar> > stepper = this->getStepper_(model,stepper_ic,nlSolver);
+  {
+    Array<Scalar> nodes;
+    stepper->getNodes(&nodes);
+    TEST_FOR_EXCEPTION( nodes.size() == 0, std::logic_error,
+        "Error!  StepperValidator::validateGetNodes:  Initialized stepper returned empty node list!"
+        );
+    TEST_FOR_EXCEPTION( nodes.size() > 1, std::logic_error,
+        "Error!  StepperValidator::validateGetNodes:  Initialized stepper returned node list with more than one node!"
+        );
+  }
+  // Take a step with the stepper and verify we get back two nodes
+  Scalar dt = Scalar(0.1);
+  Scalar dt_taken = ST::nan();
+  dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
+  {
+    Array<Scalar> nodes;
+    stepper->getNodes(&nodes);
+    TEST_FOR_EXCEPTION( nodes.size() == 0, std::logic_error,
+        "Error!  StepperValidator::validateGetNodes:  After taking a step, stepper returned empty node list!"
+        );
+    TEST_FOR_EXCEPTION( nodes.size() == 1, std::logic_error,
+        "Error!  StepperValidator::validateGetNodes:  After taking a step, stepper returned node list with only one node!"
+        );
+    TEST_FOR_EXCEPTION( nodes.size() > 2, std::logic_error,
+        "Error!  StepperValidator::validateGetNodes:  After taking a step, stepper returned node list with more than two nodes!"
+        );
+  }
+}
 
 } // namespace Rythmos
 

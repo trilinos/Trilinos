@@ -172,6 +172,7 @@ int main(int argc, char *argv[])
     Teuchos::RCP<Thyra::ModelEvaluator<double> >
       model = Teuchos::rcp(new Thyra::EpetraModelEvaluator(epetraModel,
 							   W_factory));
+    Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
 
     // Create Stepper object depending on command-line input
     std::string method;
@@ -196,6 +197,7 @@ int main(int argc, char *argv[])
       TEST_FOR_EXCEPT(true);
     }
     Rythmos::StepperBase<double> &stepper = *stepper_ptr;
+    stepper.setInitialCondition(model_ic);
 
     double t = initialTime;
     double dt;
