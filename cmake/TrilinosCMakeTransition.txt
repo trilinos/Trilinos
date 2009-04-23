@@ -243,7 +243,7 @@ Package: Pliris
 
 Package Transition Lead: Joseph D. Kotulski (jdkotul@sandia.gov)
 
-Status:  Not started but will begin the transition shortly.
+Status:  Initial Cmakification done. Library and a test.
 
 Final Certification Date: [???]
 
@@ -660,7 +660,7 @@ Package: Didasko
 
 Package Transition Lead: Brent Perschbacher (bmpersc@sandia.gov)
 
-Status: Complete with the exception of the epetraext example. It requires A
+Status: Complete with the exception of the epetraext examples. It requires a
   version of zoltan that is not the version that is in Trilinos. This will
   have to be researched more and probably envolves fixing things in epetraext.
 
