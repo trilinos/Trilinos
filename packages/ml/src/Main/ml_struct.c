@@ -2666,7 +2666,8 @@ int ML_fixCoarseMtx(
 
     if (numDeadNodDof < 1) return 0;
 
-    fprintf(stderr,"[II] fixing the coarse-level matrix dead dofs\n");
+    if (ML_Get_PrintLevel() > 9)
+      fprintf(stderr,"[II] fixing the coarse-level matrix dead dofs\n");
 
 #ifdef MB_CHATTY
     fprintf(stderr,"[DD] fixCoarse: nLocRows=%7d nf=%3d\n", nLocRows, nf);
