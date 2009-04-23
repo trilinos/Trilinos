@@ -1946,6 +1946,8 @@ int agg_offset, vertex_offset;
 	  }
       }
       else {
+        if ( mypid == 0 &&  ML_Get_PrintLevel() > 9 )
+          printf("ML_Aggregate_CoarsenMETIS: aggregate too small for QR, using identity for prologator\n");
 	/* We have a small aggregate such that the QR factorization can not */
 	/* be performed. Instead let us copy the null space from the fine   */
         /* into the coarse grid nullspace and put the identity for the      */

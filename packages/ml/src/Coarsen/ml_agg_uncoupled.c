@@ -200,8 +200,10 @@ int ML_Aggregate_CoarsenUncoupled(ML_Aggregate *ml_ag,
    for ( i = 0; i < Nrows; i++ ) 
    {
      int itmp = nz_cnt;
-     getrowfunc((ML_Operator *) getrowdata,1,&i,maxnnz_per_row,col_ind,col_val, &m);
-     if ( m > maxnnz_per_row ) printf("Aggregation WARNING (1)\n");
+     int allocated_space = maxnnz_per_row;
+     ML_get_matrix_row( (ML_Operator *)getrowdata, 1, &i, &allocated_space, &col_ind,
+                        &col_val, &m, 0);
+     if ( m > maxnnz_per_row ) Amatrix->max_nz_per_row = m;
 
      for (j = 0; j < m; j++) 
      {
