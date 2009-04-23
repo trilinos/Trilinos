@@ -11,3 +11,17 @@ IF(Shards_ENABLE_Teuchos)
     )
 
 ENDIF()
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  example_02
+  SOURCES example_02.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  example_03
+  SOURCES example_03.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
