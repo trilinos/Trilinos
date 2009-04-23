@@ -155,7 +155,7 @@ void printSelectTopologies(const std::vector<CellTopology>&   topologies,
   if( topologies.size() == 33 ) {
     std::cout << "cells and ";
   }
-  else {
+  else if ( ! topologies.empty() ) {
     std::cout << topologies[0].getDimension() << "D cells and ";
  
   }

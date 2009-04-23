@@ -50,107 +50,142 @@ private:
   std::vector<Scalar> m_storage ;
 
   typedef
-    ArrayHelp<Scalar,Order,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
+    array_traits::Helper<Scalar,Order,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
       help_type ;
 
   typedef
     Array<Scalar,Order,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
       BaseType ;
 
-  void assign()
-    {
-      const typename BaseType::size_type n = BaseType::size();
-      m_storage.resize( n );
-      BaseType::m_ptr = n ? & m_storage[0] : NULL ;
-    }
-
   ArrayVector( const ArrayVector & );
   ArrayVector & operator = ( const ArrayVector & );
 
+  Scalar * get_ptr() { return m_storage.empty() ? NULL : & m_storage[0] ; }
+
 public:
+
+  typedef array_traits::int_t size_type ;
+
   ArrayVector()
     : m_storage()
   {}
 
   ~ArrayVector() {}
 
-  void resize( const unsigned * const dims )
-    { help_type::assign( BaseType::m_stride , dims ); assign(); }
+  void resize( const size_type * const dims )
+    {
+      help_type::assign( BaseType::m_stride , dims );
+      const typename BaseType::size_type n = BaseType::size();
+      m_storage.resize( n );
+      BaseType::m_ptr = get_ptr();
+    }
   
-  void resize( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 , const unsigned n4 ,
-               const unsigned n5 , const unsigned n6 ,
-               const unsigned n7 , const unsigned n8 )
-    { help_type::assign(BaseType::m_stride,n1,n2,n3,n4,n5,n6,n7,n8); assign(); }
+  void resize( const size_type n1 , const size_type n2 ,
+               const size_type n3 , const size_type n4 ,
+               const size_type n5 , const size_type n6 ,
+               const size_type n7 , const size_type n8 )
+    {
+      array_traits::CheckRank<8,BaseType::Rank>::ok();
+      m_storage.resize( n1 * n2 * n3 * n4 * n5 * n6 * n7 * n8 );
+      BaseType::assign( get_ptr() ,n1,n2,n3,n4,n5,n6,n7,n8);
+    }
 
-  void resize( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 , const unsigned n4 ,
-               const unsigned n5 , const unsigned n6 ,
-               const unsigned n7 )
-    { help_type::assign(BaseType::m_stride,n1,n2,n3,n4,n5,n6,n7); assign(); }
+  void resize( const size_type n1 , const size_type n2 ,
+               const size_type n3 , const size_type n4 ,
+               const size_type n5 , const size_type n6 ,
+               const size_type n7 )
+    {
+      array_traits::CheckRank<7,BaseType::Rank>::ok();
+      m_storage.resize( n1 * n2 * n3 * n4 * n5 * n6 * n7 );
+      BaseType::assign( get_ptr(),n1,n2,n3,n4,n5,n6,n7);
+    }
 
-  void resize( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 , const unsigned n4 ,
-               const unsigned n5 , const unsigned n6 )
-    { help_type::assign(BaseType::m_stride,n1,n2,n3,n4,n5,n6); assign(); }
+  void resize( const size_type n1 , const size_type n2 ,
+               const size_type n3 , const size_type n4 ,
+               const size_type n5 , const size_type n6 )
+    {
+      array_traits::CheckRank<6,BaseType::Rank>::ok();
+      m_storage.resize( n1 * n2 * n3 * n4 * n5 * n6 );
+      BaseType::assign( get_ptr(),n1,n2,n3,n4,n5,n6);
+    }
 
-  void resize( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 , const unsigned n4 ,
-               const unsigned n5 )
-    { help_type::assign(BaseType::m_stride,n1,n2,n3,n4,n5); assign(); }
+  void resize( const size_type n1 , const size_type n2 ,
+               const size_type n3 , const size_type n4 ,
+               const size_type n5 )
+    {
+      array_traits::CheckRank<5,BaseType::Rank>::ok();
+      m_storage.resize( n1 * n2 * n3 * n4 * n5 );
+      BaseType::assign( get_ptr(),n1,n2,n3,n4,n5);
+    }
 
-  void resize( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 , const unsigned n4 )
-    { help_type::assign(BaseType::m_stride,n1,n2,n3,n4); assign(); }
+  void resize( const size_type n1 , const size_type n2 ,
+               const size_type n3 , const size_type n4 )
+    {
+      array_traits::CheckRank<4,BaseType::Rank>::ok();
+      m_storage.resize( n1 * n2 * n3 * n4 );
+      BaseType::assign( get_ptr(),n1,n2,n3,n4);
+    }
 
-  void resize( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 )
-    { help_type::assign(BaseType::m_stride,n1,n2,n3); assign(); }
+  void resize( const size_type n1 , const size_type n2 ,
+               const size_type n3 )
+    {
+      array_traits::CheckRank<3,BaseType::Rank>::ok();
+      m_storage.resize( n1 * n2 * n3 );
+      BaseType::assign( get_ptr(),n1,n2,n3);
+    }
 
-  void resize( const unsigned n1 , const unsigned n2 )
-    { help_type::assign(BaseType::m_stride,n1,n2); assign(); }
+  void resize( const size_type n1 , const size_type n2 )
+    {
+      array_traits::CheckRank<2,BaseType::Rank>::ok();
+      m_storage.resize( n1 * n2 );
+      BaseType::assign( get_ptr(),n1,n2);
+    }
 
-  void resize( const unsigned n1 )
-    { help_type::assign(BaseType::m_stride,n1); assign(); }
+  void resize( const size_type n1 )
+    {
+      array_traits::CheckRank<1,BaseType::Rank>::ok();
+      m_storage.resize( n1 );
+      BaseType::assign( get_ptr(),n1);
+    }
 
 
-  ArrayVector( const unsigned * const dims )
+  ArrayVector( const size_type * const dims )
     : BaseType(), m_storage() { resize( dims ); }
 
-  ArrayVector( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 , const unsigned n4 ,
-               const unsigned n5 , const unsigned n6 ,
-               const unsigned n7 , const unsigned n8 )
+  ArrayVector( const size_type n1 , const size_type n2 ,
+               const size_type n3 , const size_type n4 ,
+               const size_type n5 , const size_type n6 ,
+               const size_type n7 , const size_type n8 )
     : BaseType(), m_storage() { resize(n1,n2,n3,n4,n5,n6,n7,n8); }
 
-  ArrayVector( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 , const unsigned n4 ,
-               const unsigned n5 , const unsigned n6 ,
-               const unsigned n7 )
+  ArrayVector( const size_type n1 , const size_type n2 ,
+               const size_type n3 , const size_type n4 ,
+               const size_type n5 , const size_type n6 ,
+               const size_type n7 )
     : BaseType(), m_storage() { resize(n1,n2,n3,n4,n5,n6,n7); }
 
-  ArrayVector( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 , const unsigned n4 ,
-               const unsigned n5 , const unsigned n6 )
+  ArrayVector( const size_type n1 , const size_type n2 ,
+               const size_type n3 , const size_type n4 ,
+               const size_type n5 , const size_type n6 )
     : BaseType(), m_storage() { resize(n1,n2,n3,n4,n5,n6); }
 
-  ArrayVector( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 , const unsigned n4 ,
-               const unsigned n5 )
+  ArrayVector( const size_type n1 , const size_type n2 ,
+               const size_type n3 , const size_type n4 ,
+               const size_type n5 )
     : BaseType(), m_storage() { resize(n1,n2,n3,n4,n5); }
 
-  ArrayVector( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 , const unsigned n4 )
+  ArrayVector( const size_type n1 , const size_type n2 ,
+               const size_type n3 , const size_type n4 )
     : BaseType(), m_storage() { resize(n1,n2,n3,n4); }
 
-  ArrayVector( const unsigned n1 , const unsigned n2 ,
-               const unsigned n3 )
+  ArrayVector( const size_type n1 , const size_type n2 ,
+               const size_type n3 )
     : BaseType(), m_storage() { resize(n1,n2,n3); }
 
-  ArrayVector( const unsigned n1 , const unsigned n2 )
+  ArrayVector( const size_type n1 , const size_type n2 )
     : BaseType(), m_storage() { resize(n1,n2); }
 
-  ArrayVector( const unsigned n1 )
+  ArrayVector( const size_type n1 )
     : BaseType(), m_storage() { resize(n1); }
 
 };

@@ -510,7 +510,8 @@ std::ostream & operator << ( std::ostream & os, const CellTopology & cell) {
 void getTopologies(std::vector<shards::CellTopology>& topologies,
                    const unsigned cellDim,
                    const ECellType cellType,
-                   const ETopologyType topologyType){
+                   const ETopologyType topologyType)
+{
  
   if ( 4 < cellDim ) {
     std::ostringstream msg ;
@@ -630,7 +631,8 @@ void getTopologies(std::vector<shards::CellTopology>& topologies,
 
 
 
-int isPredefinedCell(const CellTopology& cell) {
+int isPredefinedCell(const CellTopology& cell)
+{
   
   switch(cell.getKey() ) {
     case Node::key:

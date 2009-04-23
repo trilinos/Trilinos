@@ -51,37 +51,37 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION( TagD )
 
 using namespace shards ;
 
-void myfortranfunc( const Array<double,FortranOrder> xf )
+void myfortranfunc( const Array<double,FortranOrder> & xf )
 {
   std::cout << "myfortranfunc( Array<double,FortranOrder" ;
 
   if ( xf.rank() && NULL != xf.tag(0) ) {
-    for ( unsigned i = 0 ; i < xf.rank() ; ++i ) {
+    for ( int i = 0 ; i < xf.rank() ; ++i ) {
       std::cout << "," << xf.tag(i)->name();
     }
   }
 
   std::cout << ">( " ;
   std::cout << (void*) xf.contiguous_data();
-  for ( unsigned i = 0 ; i < xf.rank() ; ++i ) {
+  for ( int i = 0 ; i < xf.rank() ; ++i ) {
     std::cout << " , " << xf.dimension(i);
   }
   std::cout << " ) )" << std::endl ;
 }
 
-void mynaturalfunc( const Array<double,NaturalOrder> xf )
+void mynaturalfunc( const Array<double,NaturalOrder> & xf )
 {
   std::cout << "mynaturalfunc( Array<double,NaturalOrder" ;
 
   if ( xf.rank() && NULL != xf.tag(0) ) {
-    for ( unsigned i = 0 ; i < xf.rank() ; ++i ) {
+    for ( int i = 0 ; i < xf.rank() ; ++i ) {
       std::cout << "," << xf.tag(i)->name();
     }
   }
 
   std::cout << ">( " ;
   std::cout << (void*) xf.contiguous_data();
-  for ( unsigned i = 0 ; i < xf.rank() ; ++i ) {
+  for ( int i = 0 ; i < xf.rank() ; ++i ) {
     std::cout << " , " << xf.dimension(i);
   }
   std::cout << " ) )" << std::endl ;
@@ -319,16 +319,16 @@ void local_test_array()
   {
   AF8::ReverseType rf8( af8 );
 
-  unsigned count = 0 ;
+  int count = 0 ;
 
-  for ( unsigned i7 = 0 ; i7 < af8.dimension<7>() ; ++i7 ) {
-    for ( unsigned i6 = 0 ; i6 < af8.dimension<6>() ; ++i6 ) {
-      for ( unsigned i5 = 0 ; i5 < af8.dimension<5>() ; ++i5 ) {
-        for ( unsigned i4 = 0 ; i4 < af8.dimension<4>() ; ++i4 ) {
-          for ( unsigned i3 = 0 ; i3 < af8.dimension<3>() ; ++i3 ) {
-            for ( unsigned i2 = 0 ; i2 < af8.dimension<2>() ; ++i2 ) {
-              for ( unsigned i1 = 0 ; i1 < af8.dimension<1>() ; ++i1 ) {
-                for ( unsigned i0 = 0 ; i0 < af8.dimension<0>() ; ++i0 ) {
+  for ( int i7 = 0 ; i7 < af8.dimension<7>() ; ++i7 ) {
+    for ( int i6 = 0 ; i6 < af8.dimension<6>() ; ++i6 ) {
+      for ( int i5 = 0 ; i5 < af8.dimension<5>() ; ++i5 ) {
+        for ( int i4 = 0 ; i4 < af8.dimension<4>() ; ++i4 ) {
+          for ( int i3 = 0 ; i3 < af8.dimension<3>() ; ++i3 ) {
+            for ( int i2 = 0 ; i2 < af8.dimension<2>() ; ++i2 ) {
+              for ( int i1 = 0 ; i1 < af8.dimension<1>() ; ++i1 ) {
+                for ( int i0 = 0 ; i0 < af8.dimension<0>() ; ++i0 ) {
                   ++count ;
                   if ( & af8(i0,i1,i2,i3,i4,i5,i6,i7) !=
                        & rf8(i7,i6,i5,i4,i3,i2,i1,i0) ) {
@@ -352,15 +352,15 @@ void local_test_array()
   {
   AF7::ReverseType rf7( af7 );
 
-  unsigned count = 0 ;
+  int count = 0 ;
 
-  for ( unsigned i6 = 0 ; i6 < af7.dimension<6>() ; ++i6 ) {
-    for ( unsigned i5 = 0 ; i5 < af7.dimension<5>() ; ++i5 ) {
-      for ( unsigned i4 = 0 ; i4 < af7.dimension<4>() ; ++i4 ) {
-        for ( unsigned i3 = 0 ; i3 < af7.dimension<3>() ; ++i3 ) {
-          for ( unsigned i2 = 0 ; i2 < af7.dimension<2>() ; ++i2 ) {
-            for ( unsigned i1 = 0 ; i1 < af7.dimension<1>() ; ++i1 ) {
-              for ( unsigned i0 = 0 ; i0 < af7.dimension<0>() ; ++i0 ) {
+  for ( int i6 = 0 ; i6 < af7.dimension<6>() ; ++i6 ) {
+    for ( int i5 = 0 ; i5 < af7.dimension<5>() ; ++i5 ) {
+      for ( int i4 = 0 ; i4 < af7.dimension<4>() ; ++i4 ) {
+        for ( int i3 = 0 ; i3 < af7.dimension<3>() ; ++i3 ) {
+          for ( int i2 = 0 ; i2 < af7.dimension<2>() ; ++i2 ) {
+            for ( int i1 = 0 ; i1 < af7.dimension<1>() ; ++i1 ) {
+              for ( int i0 = 0 ; i0 < af7.dimension<0>() ; ++i0 ) {
                 ++count ;
                 if ( & af7(i0,i1,i2,i3,i4,i5,i6) !=
                      & rf7(i6,i5,i4,i3,i2,i1,i0) ) {
@@ -384,14 +384,14 @@ void local_test_array()
   {
   AF6::ReverseType rf6( af6 );
 
-  unsigned count = 0 ;
+  int count = 0 ;
 
-  for ( unsigned i5 = 0 ; i5 < af6.dimension<5>() ; ++i5 ) {
-    for ( unsigned i4 = 0 ; i4 < af6.dimension<4>() ; ++i4 ) {
-      for ( unsigned i3 = 0 ; i3 < af6.dimension<3>() ; ++i3 ) {
-        for ( unsigned i2 = 0 ; i2 < af6.dimension<2>() ; ++i2 ) {
-          for ( unsigned i1 = 0 ; i1 < af6.dimension<1>() ; ++i1 ) {
-            for ( unsigned i0 = 0 ; i0 < af6.dimension<0>() ; ++i0 ) {
+  for ( int i5 = 0 ; i5 < af6.dimension<5>() ; ++i5 ) {
+    for ( int i4 = 0 ; i4 < af6.dimension<4>() ; ++i4 ) {
+      for ( int i3 = 0 ; i3 < af6.dimension<3>() ; ++i3 ) {
+        for ( int i2 = 0 ; i2 < af6.dimension<2>() ; ++i2 ) {
+          for ( int i1 = 0 ; i1 < af6.dimension<1>() ; ++i1 ) {
+            for ( int i0 = 0 ; i0 < af6.dimension<0>() ; ++i0 ) {
               ++count ;
               if ( & af6(i0,i1,i2,i3,i4,i5) !=
                    & rf6(i5,i4,i3,i2,i1,i0) ) {
@@ -414,13 +414,13 @@ void local_test_array()
   {
   AF5::ReverseType rf5( af5 );
 
-  unsigned count = 0 ;
+  int count = 0 ;
 
-  for ( unsigned i4 = 0 ; i4 < af5.dimension<4>() ; ++i4 ) {
-    for ( unsigned i3 = 0 ; i3 < af5.dimension<3>() ; ++i3 ) {
-      for ( unsigned i2 = 0 ; i2 < af5.dimension<2>() ; ++i2 ) {
-        for ( unsigned i1 = 0 ; i1 < af5.dimension<1>() ; ++i1 ) {
-          for ( unsigned i0 = 0 ; i0 < af5.dimension<0>() ; ++i0 ) {
+  for ( int i4 = 0 ; i4 < af5.dimension<4>() ; ++i4 ) {
+    for ( int i3 = 0 ; i3 < af5.dimension<3>() ; ++i3 ) {
+      for ( int i2 = 0 ; i2 < af5.dimension<2>() ; ++i2 ) {
+        for ( int i1 = 0 ; i1 < af5.dimension<1>() ; ++i1 ) {
+          for ( int i0 = 0 ; i0 < af5.dimension<0>() ; ++i0 ) {
             ++count ;
             if ( & af5(i0,i1,i2,i3,i4) !=
                  & rf5(i4,i3,i2,i1,i0) ) {
@@ -442,12 +442,12 @@ void local_test_array()
   {
   AF4::ReverseType rf4( af4 );
 
-  unsigned count = 0 ;
+  int count = 0 ;
 
-  for ( unsigned i3 = 0 ; i3 < af4.dimension<3>() ; ++i3 ) {
-    for ( unsigned i2 = 0 ; i2 < af4.dimension<2>() ; ++i2 ) {
-      for ( unsigned i1 = 0 ; i1 < af4.dimension<1>() ; ++i1 ) {
-        for ( unsigned i0 = 0 ; i0 < af4.dimension<0>() ; ++i0 ) {
+  for ( int i3 = 0 ; i3 < af4.dimension<3>() ; ++i3 ) {
+    for ( int i2 = 0 ; i2 < af4.dimension<2>() ; ++i2 ) {
+      for ( int i1 = 0 ; i1 < af4.dimension<1>() ; ++i1 ) {
+        for ( int i0 = 0 ; i0 < af4.dimension<0>() ; ++i0 ) {
           ++count ;
           if ( & af4(i0,i1,i2,i3) !=
                & rf4(i3,i2,i1,i0) ) {
@@ -468,11 +468,11 @@ void local_test_array()
   {
   AF3::ReverseType rf3( af3 );
 
-  unsigned count = 0 ;
+  int count = 0 ;
 
-  for ( unsigned i2 = 0 ; i2 < af3.dimension<2>() ; ++i2 ) {
-    for ( unsigned i1 = 0 ; i1 < af3.dimension<1>() ; ++i1 ) {
-      for ( unsigned i0 = 0 ; i0 < af3.dimension<0>() ; ++i0 ) {
+  for ( int i2 = 0 ; i2 < af3.dimension<2>() ; ++i2 ) {
+    for ( int i1 = 0 ; i1 < af3.dimension<1>() ; ++i1 ) {
+      for ( int i0 = 0 ; i0 < af3.dimension<0>() ; ++i0 ) {
         ++count ;
         if ( & af3(i0,i1,i2) !=
              & rf3(i2,i1,i0) ) {
@@ -492,10 +492,10 @@ void local_test_array()
   {
   AF2::ReverseType rf2( af2 );
 
-  unsigned count = 0 ;
+  int count = 0 ;
 
-  for ( unsigned i1 = 0 ; i1 < af2.dimension<1>() ; ++i1 ) {
-    for ( unsigned i0 = 0 ; i0 < af2.dimension<0>() ; ++i0 ) {
+  for ( int i1 = 0 ; i1 < af2.dimension<1>() ; ++i1 ) {
+    for ( int i0 = 0 ; i0 < af2.dimension<0>() ; ++i0 ) {
       ++count ;
       if ( & af2(i0,i1) !=
            & rf2(i1,i0) ) {
@@ -514,9 +514,9 @@ void local_test_array()
   {
   AF1::ReverseType rf1( af1 );
 
-  unsigned count = 0 ;
+  int count = 0 ;
 
-  for ( unsigned i0 = 0 ; i0 < af1.dimension<0>() ; ++i0 ) {
+  for ( int i0 = 0 ; i0 < af1.dimension<0>() ; ++i0 ) {
     ++count ;
     if ( & af1(i0) != & rf1(i0) ) {
       throw std::runtime_error(std::string("Failed index check"));
