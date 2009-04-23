@@ -34,6 +34,7 @@
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Rythmos_UnitTestHelpers.hpp"
+#include "Rythmos_LinearInterpolator.hpp"
 
 namespace Rythmos {
 
