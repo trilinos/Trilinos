@@ -108,7 +108,8 @@ class Array ;
  *  { static const MyTag my_tag ; return my_tag ; }
  *  </PRE>
  */
-struct ArrayDimTag {
+class ArrayDimTag {
+public:
 
   /** \brief Name of the tag, typically the name of the derived class. */
   virtual const char * name() const = 0 ;
@@ -140,7 +141,8 @@ private:
  *  \brief  An anonymous array dimension tag,
  *          which is NOT the recommended usage.
  */
-struct ArrayDimension : public ArrayDimTag {
+class ArrayDimension : public ArrayDimTag {
+public:
 
   const char * name() const ;
 
@@ -158,7 +160,7 @@ private:
  *  \param ADT  name of the tag.
  */
 #define SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( ADT ) \
-  struct ADT : shards::ArrayDimTag { \
+  class ADT : public shards::ArrayDimTag { \
   public: \
     const char * name() const ; \
     static const ADT & tag(); \

@@ -73,40 +73,46 @@ namespace {
 template< class IList >
 const unsigned * index_list( const IList & )
 {
+
+#define VALUE( I )  ( IndexListAt< IList , I >::value < 0 ? ~0u : \
+                      (unsigned) IndexListAt< IList , I >::value )
+
   static const unsigned self[] = {
-    IndexListAt< IList ,  0 >::value ,
-    IndexListAt< IList ,  1 >::value ,
-    IndexListAt< IList ,  2 >::value ,
-    IndexListAt< IList ,  3 >::value ,
-    IndexListAt< IList ,  4 >::value ,
-    IndexListAt< IList ,  5 >::value ,
-    IndexListAt< IList ,  6 >::value ,
-    IndexListAt< IList ,  7 >::value ,
-    IndexListAt< IList ,  8 >::value ,
-    IndexListAt< IList ,  9 >::value ,
-    IndexListAt< IList , 10 >::value ,
-    IndexListAt< IList , 11 >::value ,
-    IndexListAt< IList , 12 >::value ,
-    IndexListAt< IList , 13 >::value ,
-    IndexListAt< IList , 14 >::value ,
-    IndexListAt< IList , 15 >::value ,
-    IndexListAt< IList , 16 >::value ,
-    IndexListAt< IList , 17 >::value ,
-    IndexListAt< IList , 18 >::value ,
-    IndexListAt< IList , 19 >::value ,
-    IndexListAt< IList , 20 >::value ,
-    IndexListAt< IList , 21 >::value ,
-    IndexListAt< IList , 22 >::value ,
-    IndexListAt< IList , 23 >::value ,
-    IndexListAt< IList , 24 >::value ,
-    IndexListAt< IList , 25 >::value ,
-    IndexListAt< IList , 26 >::value ,
-    IndexListAt< IList , 27 >::value ,
-    IndexListAt< IList , 28 >::value ,
-    IndexListAt< IList , 29 >::value ,
-    IndexListAt< IList , 30 >::value ,
-    IndexListAt< IList , 31 >::value
+    VALUE(  0 ) ,
+    VALUE(  1 ) ,
+    VALUE(  2 ) ,
+    VALUE(  3 ) ,
+    VALUE(  4 ) ,
+    VALUE(  5 ) ,
+    VALUE(  6 ) ,
+    VALUE(  7 ) ,
+    VALUE(  8 ) ,
+    VALUE(  9 ) ,
+    VALUE( 10 ) ,
+    VALUE( 11 ) ,
+    VALUE( 12 ) ,
+    VALUE( 13 ) ,
+    VALUE( 14 ) ,
+    VALUE( 15 ) ,
+    VALUE( 16 ) ,
+    VALUE( 17 ) ,
+    VALUE( 18 ) ,
+    VALUE( 19 ) ,
+    VALUE( 20 ) ,
+    VALUE( 21 ) ,
+    VALUE( 22 ) ,
+    VALUE( 23 ) ,
+    VALUE( 24 ) ,
+    VALUE( 25 ) ,
+    VALUE( 26 ) ,
+    VALUE( 27 ) ,
+    VALUE( 28 ) ,
+    VALUE( 29 ) ,
+    VALUE( 30 ) ,
+    VALUE( 31 )
   };
+
+#undef VALUE
 
   return self ;
 }
