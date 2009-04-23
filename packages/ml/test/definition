@@ -71,6 +71,7 @@ PACKAGE_NAME=ML
 
 # These tests should only be run on 1 processor
 (FRAMEWORK, MLTests) {
+     DESCEND_DIRS = YES;
      DIRS = BlockCheby;
      COMM = SERIAL, MPI(1);
 }
