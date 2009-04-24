@@ -32,6 +32,7 @@
 #include "Thyra_DefaultSpmdVector.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
@@ -48,6 +49,39 @@
 #endif
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
+
+//
+// Helpers
+//
+
+
+namespace {
+
+
+Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
+unwrapSingleProductVectorSpace(
+  const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > &vs_in
+  )
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp_dynamic_cast;
+  using Thyra::ProductVectorSpaceBase;
+  const RCP<const ProductVectorSpaceBase<double> > pvs =
+    rcp_dynamic_cast<const ProductVectorSpaceBase<double> >(vs_in);
+  if (nonnull(pvs)) {
+    TEUCHOS_ASSERT_EQUALITY( pvs->numBlocks(), 1 );
+    return pvs->getBlock(0);
+  }
+  return vs_in;
+}
+
+
+} // namespace
+
+
+//
+// Implementations of user function
+//
 
 
 Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
@@ -207,12 +241,16 @@ Thyra::create_MultiVector(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(range_in.get()==NULL);
 #endif
-  RCP<const SpmdVectorSpaceBase<double> >
-    range = rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
-      range_in,true);
-  RCP<const ScalarProdVectorSpaceBase<double> >
-    domain = rcp_dynamic_cast<const ScalarProdVectorSpaceBase<double> >(
-      domain_in,true);
+  const RCP<const SpmdVectorSpaceBase<double> > range =
+    Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
+      unwrapSingleProductVectorSpace(range_in),
+      true
+      );
+  RCP<const ScalarProdVectorSpaceBase<double> > domain =
+    Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<double> >(
+      unwrapSingleProductVectorSpace(domain_in),
+      true
+      );
   if (!epetra_mv.get() )
     return Teuchos::null;
   if ( is_null(domain) ) {
@@ -255,12 +293,16 @@ Thyra::create_MultiVector(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(range_in.get()==NULL);
 #endif
-  RCP<const SpmdVectorSpaceBase<double> >
-    range = Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
-      range_in,true);
-  RCP<const ScalarProdVectorSpaceBase<double> >
-    domain = Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<double> >(
-      domain_in,true);
+  const RCP<const SpmdVectorSpaceBase<double> > range =
+    Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
+      unwrapSingleProductVectorSpace(range_in),
+      true
+      );
+  RCP<const ScalarProdVectorSpaceBase<double> > domain =
+    Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<double> >(
+      unwrapSingleProductVectorSpace(domain_in),
+      true
+      );
   if (!epetra_mv.get())
     return Teuchos::null;
   if ( is_null(domain) ) {
