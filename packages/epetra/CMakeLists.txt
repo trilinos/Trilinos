@@ -10,6 +10,26 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ABC
   "Enable array bounds checking on Epetra objects."
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_FORMAT_IO
+  HAVE_FORMAT_IO
+  "Enable format IO capability."
+  OFF )
+
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_WARNING_MESSAGES
+  HAVE_WARNING_MESSAGES
+  "Enable building with warning messages."
+  OFF )
+
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_FATAL_MESSAGES
+  HAVE_FATAL_MESSAGES
+  "Enable printing of fatal error messages."
+  OFF )
+
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_THREADS
+  HAVE_THREADS
+  "Enable threading support."
+  OFF )
+
 ADD_SUBDIRECTORY(src)
 
 PACKAGE_ADD_TEST_DIRECTORIES(test)
