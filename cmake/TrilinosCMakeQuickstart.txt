@@ -564,12 +564,17 @@ E) Testing with CTest
 
 (*) Runing memory checking:
 
-  Running memory tets for just a single package:
+  To run the memory tets for just a single package, from the *base* build
+  directory, run :
 
     $ ctest -R '^Epetra_' -T memcheck
 
   (see the detailed output in
   ./Testing/Temporary/LastDynamicAnalysis_DATE_TIME.log)
+
+  NOTE: If you try to run memory tests from any subdirectories, that does not
+  seem to work.  You have to run them from the base build directory and then
+  use -R '^<PACKAGE>_' with ctest in order to run your packages tests.
 
 (*) Testing using 'make test'
 

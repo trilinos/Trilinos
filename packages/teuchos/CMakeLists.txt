@@ -37,7 +37,7 @@ ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ABC
   HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   "Enable Teuchos features for array bounds checking."
-  OFF
+  ${Trilinos_ENABLE_DEBUG}
   )
 
 IF (${PACKAGE_NAME}_ENABLE_COMPLEX)
