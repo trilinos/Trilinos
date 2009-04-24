@@ -77,6 +77,10 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
     ADVANCED_SET(${TPL_NAME}_LIBRARY_NAMES ${PARSE_REQUIRED_LIBS_NAMES} 
       CACHE STRING ${DOCSTR})
 
+    # Let the user override what the names of the libraries which might
+    # actually mean that no libraies are searched for.
+    SET(PARSE_REQUIRED_LIBS_NAMES ${${TPL_NAME}_LIBRARY_NAMES})
+
   ELSE()
 
     SET(${TPL_NAME}_LIBRARY_DIRS) # Just to ignore below!
@@ -112,6 +116,10 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
     # Libraries
   
     IF (NOT TPL_${TPL_NAME}_LIBRARIES)
+
+      IF (${TPL_NAME}_LIBRARY_DIRS)
+        MESSAGE(STATUS "  ${TPL_NAME}_LIBRARY_DIRS='${${TPL_NAME}_LIBRARY_DIRS}'")
+      ENDIF()
   
       SET(LIBRARIES_FOUND)
   
@@ -127,10 +135,8 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
         SET(LIBNAME_SET_LIB)
   
         FOREACH(LIBNAME ${LIBNAME_LIST})
-  
-          IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-            PRINT_VAR(LIBNAME)
-          ENDIF()
+
+          MESSAGE(STATUS "  Searching for library '${LIBNAME}' ...")
     
           IF (${TPL_NAME}_LIBRARY_DIRS)
             SET(PATHS_ARG PATHS ${${TPL_NAME}_LIBRARY_DIRS})
@@ -151,7 +157,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
           ENDIF()
     
           IF (_${TPL_NAME}_${LIBNAME}_LIBRARY)
-            MESSAGE(STATUS "  Found ${TPL_NAME} TPL library: ${_${TPL_NAME}_${LIBNAME}_LIBRARY}")
+            MESSAGE(STATUS "    Found ${TPL_NAME} TPL library: ${_${TPL_NAME}_${LIBNAME}_LIBRARY}")
             SET(LIBNAME_SET_LIB ${_${TPL_NAME}_${LIBNAME}_LIBRARY})
             BREAK()
           ENDIF()
