@@ -569,12 +569,11 @@ Package: Sundance
 
 Package Transition Lead: Kevin Long (kevin.long@ttu.edu)
 
-Status: All C++ libraries and tests converted. The C++ examples haven't been done
-yet. The python wrappers haven't been converted yet. 
+Status: All C++ libraries and tests converted. 
 
-Final Certification Date: [???]
+Final Certification Date: [24 Apr 2009]
 
-Final Certification Evidence: [???]
+Final Certification Evidence: [Tests are passing, with the exception of a checked STL problem and several random errors on Darwin. As these are unelated to cmake, I consider the cmake transition to be completed.]
 
 -------------------------------------------------------------------------------
 
