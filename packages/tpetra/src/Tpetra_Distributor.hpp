@@ -77,14 +77,19 @@ namespace Tpetra {
         Return the number of IDs being sent to me.
 
       \param exportNodeIDs [in]
-             List of nodes that will get the exported data. Node IDs less than zero
-             are ignored; their placement corresponds to null sends in any
-             future exports. A node ID greater than or equal to the number of nodes will 
+             List of nodes that will get the exported data. 
+             A node ID greater than or equal to the number of nodes will 
              result in a \c std::runtime_error on all nodes.
+             Node IDs less than zero
+             are ignored; their placement corresponds to null sends in any
+             future exports. That is, if <tt>exportNodeIDs[0] == -1</tt>, then 
+             the corresponding position in the export array is ignored during a call to
+             doPosts() or doPostsAndWaits() is skipped.
+             For this reason, a negative entry is sufficient to break contiguity.
 
       \param numImports [out]
              Number of imports this node will be receiving.
-       
+
     */
     void createFromSends(const Teuchos::ArrayView<const int> &exportNodeIDs,
                                Teuchos_Ordinal &numImports);
@@ -836,11 +841,11 @@ namespace Tpetra {
     Teuchos_Ordinal numActive = 0;
     char needSendBuff = 0;
 
-    char badID = 0;
+    int badID = -1;
     for (int i = 0; i < numExports_; ++i) {
       int exportID = exportNodeIDs[i];
       if (exportID >= numImages) {
-        badID = 1;
+        badID = myImageID;
         break;
       }
       else if (exportID >= 0) {
@@ -859,10 +864,10 @@ namespace Tpetra {
       }
     }
     {
-      char global_badID;
-      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,badID,&global_badID);
-      TEST_FOR_EXCEPTION(global_badID,std::runtime_error,
-          Teuchos::typeName(*this) << "::createFromSends(): at least one node listed a bad node id.");
+      int gbl_badID;
+      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,badID,&gbl_badID);
+      TEST_FOR_EXCEPTION(gbl_badID >= 0, std::runtime_error,
+          Teuchos::typeName(*this) << "::createFromSends(): bad node id listed on node " << gbl_badID << ".");
     }
 
 #   if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
@@ -895,11 +900,11 @@ namespace Tpetra {
         if (starts[i]) ++numSends_;
       }
 
-      // not only do we not need these, but empty indicesTo is also a flag for
-      // later
+      // not only do we not need these, but we must clear it, as empty status of indicesTo 
+      // is a flag used later
       indicesTo_.resize(0);
-      // size these to numSends_; note, at the moment, numSends_ includes sends
-      // to myself; set their values to zeros
+      // size these to numSends_; note, at the moment, numSends_ includes self sends
+      // set their values to zeros
       imagesTo_.assign(numSends_,0);
       startsTo_.assign(numSends_,0);
       lengthsTo_.assign(numSends_,0);
@@ -911,10 +916,10 @@ namespace Tpetra {
       {
         Teuchos_Ordinal index = 0, nodeIndex = 0;
         for (Teuchos_Ordinal i = 0; i < numSends_; ++i) {
-          startsTo_[i] = index;
           while (exportNodeIDs[nodeIndex] < 0) {
             ++nodeIndex; // skip all negative node IDs
           }
+          startsTo_[i] = nodeIndex;
           int imageID = exportNodeIDs[nodeIndex];
           imagesTo_[i] = imageID;
           index     += starts[imageID];
@@ -926,13 +931,11 @@ namespace Tpetra {
         }
 #endif
       }
-
       // sort the startsTo and image IDs together, in ascending order, according
       // to image IDs
       if (numSends_ > 0) {
         sort2(imagesTo_.begin(), imagesTo_.end(), startsTo_.begin());
       }
-
       // compute the maximum send length
       maxSendLength_ = 0;
       for (int i = 0; i < numSends_; ++i) {
@@ -1058,6 +1061,16 @@ namespace Tpetra {
             Teuchos::ArrayRCP<Ordinal> &exportGIDs, 
             Teuchos::ArrayRCP<int> &exportNodeIDs)
   {
+    {
+      const int myImageID = comm_->getRank();
+      int err_node = (remoteIDs.size() != remoteImageIDs.size()) ? myImageID : -1;
+      int gbl_err;
+      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,err_node,&gbl_err);
+      TEST_FOR_EXCEPTION(gbl_err != -1, std::runtime_error,
+          Teuchos::typeName(*this) 
+          << "::createFromRecvs(): lists of remote IDs and remote node IDs must have the same size (error on node " 
+          << gbl_err << ").");
+    }
     computeSends(remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);
     Teuchos_Ordinal testNumRemoteIDs; // dummy
     createFromSends(exportNodeIDs(), testNumRemoteIDs);

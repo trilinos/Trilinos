@@ -6,10 +6,8 @@
 #include "Tpetra_Distributor.hpp"
 #include <Teuchos_Array.hpp>
 
-// FINISH: test handling of null export in createFromSends
-// FINISH: test efficiency warnings if HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS for non-contig 
-// FINISH: test that createFromRecvs() with bad (too high) node ID is met with exception on all nodes (even if bad node happens only on one)
-// FINISH: test for createFromRecvs(), that negatives in remoteNodeIDs are met by negatives in exportNodeIDs
+// FINISH: test for createFromRecvs(), that negatives in remoteNodeIDs are met by negatives in exportNodeIDs, and that the placement is 
+//         is preserved. need to understand the semantics of negatives in the node list.
 
 namespace {
 
@@ -118,8 +116,9 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+
   ////
-  TEUCHOS_UNIT_TEST( Distributor, badExportID)
+  TEUCHOS_UNIT_TEST( Distributor, badArgsFromSends)
   {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
@@ -127,9 +126,15 @@ namespace {
     // for the last node, this results in an invalid node id, which should throw an exception on 
     // every node
     Teuchos_Ordinal numImports = 0;
-    // create from contiguous sends
-    Distributor distributor(comm);
-    TEST_THROW( distributor.createFromSends( tuple<int>(myImageID+1), numImports), std::runtime_error );
+    // create from sends with bad node IDs
+    {
+      Distributor distributor(comm);
+      TEST_THROW( distributor.createFromSends( tuple<int>(myImageID+1), numImports), std::runtime_error );
+    }
+    {
+      Distributor distributor(comm);
+      TEST_THROW( distributor.createFromSends( tuple<int>(0,myImageID+1,0), numImports), std::runtime_error );
+    }
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
@@ -138,18 +143,14 @@ namespace {
 
 
   ////
-#ifndef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
   TEUCHOS_UNIT_TEST( Distributor, createFromSendsMixedContig)
   {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-
     if (numImages < 2) return;
-
     // even is black, odd is red
     bool even = ((myImageID % 2) == 0);
-
     // two exports to each image, including myself
     // on even imageIDs, send data contig
     // on odd imageIDs, send data non-contig
@@ -164,19 +165,20 @@ namespace {
       }
     }
     else {
-      // fill exportImageIDs with {0,0, 1,1, 2,2, ... numImages-1,numImages-1}
-      for(int i = 0; i < numImages; ++i) {
+      // fill exportImageIDs with {0,1,2,...,numImages-1, 0,1,2,...,numImages-1}
+      for (int i = 0; i < numImages; ++i) {
         exportImageIDs.push_back(i);
       }
-      for(int i = 0; i < numImages; ++i) {
+      for (int i = 0; i < numImages; ++i) {
         exportImageIDs.push_back(i);
       }
     }
-
     // create from sends, contiguous and non-contiguous
     Distributor distributor(comm);
-    distributor.createFromSends(exportImageIDs, numImports);
-
+#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
+    TEST_THROW( distributor.createFromSends(exportImageIDs, numImports), std::runtime_error );
+#else
+    TEST_NOTHROW( distributor.createFromSends(exportImageIDs, numImports) );
     // tests
     TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(2*numImages));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
@@ -199,13 +201,12 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
-
+#endif
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-#endif
 
 
   ////
@@ -214,14 +215,11 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-
     if (numImages < 3) return;
-
     // partition world into red/black (according to imageID even/odd)
     // even is black, odd is red
     bool black = ((myImageID % 2) == 0);
     Teuchos_Ordinal numInMyPartition = 0;
-
     Teuchos_Ordinal numImports = 0;
     // fill exportImageIDs with all images from partition
     Array<int> exportImageIDs(0);
@@ -239,11 +237,9 @@ namespace {
         numInMyPartition++;
       }
     }
-
     // create from contiguous sends
     Distributor distributor(comm);
     distributor.createFromSends(exportImageIDs, numImports);
-
     // tests
     TEST_EQUALITY(numImports, numInMyPartition);
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
@@ -266,7 +262,6 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   as<Teuchos_Ordinal>(1) );
       }
     }
-
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
@@ -280,9 +275,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-
     if (numImages < 2) return;
-
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
     Teuchos_Ordinal numImports = 0;
@@ -296,11 +289,9 @@ namespace {
     for (int i = myImageID+1; i < numImages; ++i) {
       exportImageIDs.push_back(i);
     }
-
     // create from contiguous sends
     Distributor distributor(comm);
     distributor.createFromSends(exportImageIDs, numImports);
-
     // tests
     TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(numImages-1));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), false);
@@ -323,7 +314,6 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   1);
       }
     }
-
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
@@ -336,9 +326,7 @@ namespace {
   {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-
     if (numImages < 3) return;
-
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
     Teuchos_Ordinal numImports = 0;
@@ -359,11 +347,9 @@ namespace {
       exportImageIDs.push_back(i);
       exportImageIDs.push_back(i);
     }
-
     // create from contiguous sends
     Distributor distributor(comm);
     distributor.createFromSends(exportImageIDs, numImports);
-
     // tests
     TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(3*numImages));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
@@ -386,7 +372,6 @@ namespace {
         TEST_EQUALITY_CONST(lenTo[i],   3);
       }
     }
-
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
@@ -395,38 +380,44 @@ namespace {
 
 
   ////
-#ifndef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
   TEUCHOS_UNIT_TEST( Distributor, createFromSendsNonContig)
   {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
 
-    if (numImages < 2) return;
-
     // send data to each image, including myself
     // the consequence is that each image will send to every other images
     Teuchos_Ordinal numImports = 0;
+    // put some -1s in there
     // fill exportImageIDs with {0, 1, 2, ... numImages-1,
+    //                           -1,
     //                           0, 1, 2, ... numImages-1}
     Array<int> exportImageIDs(0);
     exportImageIDs.reserve(2*numImages);
     for(int i=0; i < numImages; ++i) {
       exportImageIDs.push_back(i);
     }
+    exportImageIDs.push_back(-1);
     for(int i=0; i < numImages; ++i) {
       exportImageIDs.push_back(i);
     }
-
     // create from non-contiguous sends
     Distributor distributor(comm);
+#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
+    TEST_THROW( distributor.createFromSends(exportImageIDs, numImports), std::runtime_error );
+#else
     distributor.createFromSends(exportImageIDs, numImports);
-
     // tests
     TEST_EQUALITY(numImports, as<Teuchos_Ordinal>(2*numImages));
     TEST_EQUALITY_CONST(distributor.getSelfMessage(), true);
     TEST_EQUALITY(distributor.getNumSends(), as<Teuchos_Ordinal>(numImages-1));
     TEST_EQUALITY(distributor.getNumReceives(), as<Teuchos_Ordinal>(numImages-1));
-    TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 2);
+    if (numImages == 1) {
+      TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 0);
+    }
+    else {
+      TEST_EQUALITY_CONST(distributor.getMaxSendLength(), 2);
+    }
     TEST_EQUALITY(distributor.getTotalReceiveLength(), as<Teuchos_Ordinal>(2*numImages));
     {
       ArrayView<const int> imgFrom(distributor.getImagesFrom());
@@ -443,47 +434,67 @@ namespace {
         TEST_EQUALITY_CONST( lenTo[i],   2);
       }
     }
-
+#endif
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
-#endif
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, doPosts1, Packet )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, doPostsContig, Packet )
   {
     typedef Teuchos::ScalarTraits<Packet>   PT;
-
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
-
     // send data to each image, including myself
     const Teuchos_Ordinal numExportIDs = numImages; 
     Teuchos_Ordinal numRemoteIDs = 0;
-    // fill exportImageIDs with {0, 1, 2, ... numImages-1}
+    // fill exportImageIDs with {0, -1, 1, -1, 2, -1, ... numImages-1}
+    // on root node only, interlace node IDs with invalid nodes, corresponding to untouched data in import/export buffers
     Array<int> exportImageIDs; 
-    exportImageIDs.reserve(numExportIDs);
-    for(int i=0; i < numExportIDs; ++i) {
-      exportImageIDs.push_back(i);
+    if (myImageID == 0) {
+      exportImageIDs.reserve(2*numExportIDs-1);
+      exportImageIDs.push_back(0);
+      for(int i=1; i < numExportIDs; ++i) {
+        exportImageIDs.push_back(-1);
+        exportImageIDs.push_back(i);
+      }
+    } 
+    else { 
+      exportImageIDs.reserve(numExportIDs);
+      for(int i=0; i < numExportIDs; ++i) {
+        exportImageIDs.push_back(i);
+      }
     }
     Distributor distributor(comm);
     distributor.createFromSends(exportImageIDs, numRemoteIDs);
-
+    TEST_EQUALITY(numRemoteIDs, numImages);
     // generate global random data set: each image sends 1 packet to each image
     // we need numImages*numImages "unique" values (we don't want redundant data allowing false positives)
+    // root node generates all values, sends them to the others.
     Array<Packet> exports(numImages*numImages);
-    for (int i=0; i<numImages*numImages; i++) {
+    if (myImageID == 0) {
+      for (int i=0; i<numImages*numImages; i++) {
         exports[i] = PT::random();
+      }
     }
     // broadcast
     broadcast(*comm,0,exports());
-
     // pick a subset of entries to post
-    Array<Packet> myExports(exports.begin()+myImageID*numImages,exports.begin()+(myImageID+1)*numImages);
+    Array<Packet> myExports(0);
+    if (myImageID == 0) {
+      myExports.resize(2*numImages-1,0);
+      for (int i=0; i<numImages; ++i) {
+        myExports[2*i] = exports[i];
+      }
+    }
+    else {
+      myExports.resize(numImages);
+      std::copy(exports.begin()+myImageID*numImages, exports.begin()+(myImageID+1)*numImages, myExports.begin() );
+    }
     // do posts, one Packet to each image
     Array<Packet> imports(1*distributor.getTotalReceiveLength());
     distributor.doPostsAndWaits(myExports().getConst(), 1, imports());
@@ -509,7 +520,6 @@ namespace {
     }
     // check the values 
     TEST_COMPARE_ARRAYS(expectedImports,imports);
-
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
@@ -518,15 +528,149 @@ namespace {
 
 
   ////
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromReceives, Ordinal )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, doPostsNonContig, Packet )
+  {
+    typedef Teuchos::ScalarTraits<Packet>   PT;
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    // send data to each image, including myself
+    Teuchos_Ordinal numRemoteIDs = 0;
+    // exportImageIDs = {0, 1, 2, ..., numImages-1, 0, 1, 2, ..., numImages-1}
+    //
+    // on root node only, put some invalid nodes in the middle, corresponding to untouched data in import/export buffers
+    // like so:
+    // exportImageIDs = {0, 1, 2, ..., numImages-1, -1, -1, 0, 1, 2, ..., numImages-1}
+    Array<int> exportImageIDs; 
+    if (myImageID == 0) {
+      exportImageIDs.reserve(2*numImages+2);
+      for(int i=0; i < numImages; ++i) {
+        exportImageIDs.push_back(i);
+      }
+      exportImageIDs.push_back(-1);
+      exportImageIDs.push_back(-1);
+      for(int i=0; i < numImages; ++i) {
+        exportImageIDs.push_back(i);
+      }
+    } 
+    else { 
+      exportImageIDs.reserve(2*numImages);
+      for(int i=0; i < numImages; ++i) {
+        exportImageIDs.push_back(i);
+      }
+      for(int i=0; i < numImages; ++i) {
+        exportImageIDs.push_back(i);
+      }
+    }
+    Distributor distributor(comm);
+#ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
+    TEST_THROW( distributor.createFromSends(exportImageIDs, numRemoteIDs), std::runtime_error );
+#else
+    distributor.createFromSends(exportImageIDs, numRemoteIDs);
+    TEST_EQUALITY(numRemoteIDs, 2*numImages);
+    // generate global random data set: each image sends 2 packets to each image
+    // we need 2*numImages*numImages "unique" values (we don't want redundant data allowing false positives)
+    // root node generates all values, sends them to the others.
+    Array<Packet> exports(numImages*2*numImages);
+    if (myImageID == 0) {
+      for (int i=0; i<2*numImages*numImages; ++i) {
+        exports[i] = PT::random();
+      }
+    }
+    // broadcast
+    broadcast(*comm,0,exports());
+    // pick a subset of entries to post
+    Array<Packet> myExports(0);
+    if (myImageID == 0) {
+      myExports.resize(2*numImages+2,PT::zero());
+      for (int i=0; i<numImages; ++i) {
+        myExports[i] = exports[i];
+      }
+      for (int i=0; i<numImages; ++i) {
+        myExports[numImages+2+i] = exports[numImages+i];
+      }
+    }
+    else {
+      myExports.resize(2*numImages,PT::zero());
+      std::copy(exports.begin()+myImageID*2*numImages, exports.begin()+(myImageID+1)*2*numImages, myExports.begin() );
+    }
+    // do posts, one Packet to each image
+    Array<Packet> imports(1*distributor.getTotalReceiveLength());
+    distributor.doPostsAndWaits(myExports().getConst(), 1, imports());
+    // imports[i] came from image i. it was element "myImageID" in his "myExports" vector. 
+    // it corresponds to element i*numImages+myImageID in the global export vector
+    // make a copy of the corresponding entries in the global vector, then compare these against the 
+    // entries that I received
+    Array<Packet> expectedImports(2*numImages,PT::zero());
+    {
+      typename Array<Packet>::iterator eI = expectedImports.begin(), 
+                                        E = exports.begin()+myImageID;
+      for (int i=0; i<numImages; ++i) {
+        (*eI++) = *E;
+        E += numImages;
+        (*eI++) = *E;
+        E += numImages;
+      }
+    }
+    // check the values 
+    TEST_COMPARE_ARRAYS(expectedImports,imports);
+#endif
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, badArgsFromRecvs, Ordinal )
+  {
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int myImageID = comm->getRank();
+    // each node i sends to node i+1
+    // for the last node, this results in an invalid node id, which should throw an exception on 
+    // every node
+    // create from recvs with bad node IDs
+    {
+      Distributor distributor(comm);
+      ArrayRCP<Ordinal> exportIDs;
+      ArrayRCP<int> exportNodeIDs;
+      TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0), tuple<int>(myImageID+1), exportIDs, exportNodeIDs), std::runtime_error );
+    }
+    {
+      Distributor distributor(comm);
+      ArrayRCP<Ordinal> exportIDs;
+      ArrayRCP<int> exportNodeIDs;
+      TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0,0,0), tuple<int>(0,myImageID+1,0), exportIDs, exportNodeIDs), std::runtime_error );
+    }
+    // create from recvs with conflicting sizes, but otherwise valid entries
+    {
+      Distributor distributor(comm);
+      ArrayRCP<Ordinal> exportIDs;
+      ArrayRCP<int> exportNodeIDs;
+      TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0), tuple<int>(0,0), exportIDs, exportNodeIDs), std::runtime_error );
+    }
+    {
+      Distributor distributor(comm);
+      ArrayRCP<Ordinal> exportIDs;
+      ArrayRCP<int> exportNodeIDs;
+      TEST_THROW( distributor.createFromRecvs<Ordinal>( tuple<Ordinal>(0,0), tuple<int>(0), exportIDs, exportNodeIDs), std::runtime_error );
+    }
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Distributor, createFromRecvs, Ordinal )
   {
     typedef Teuchos::OrdinalTraits<Ordinal> OT;
-
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     const int myImageID = comm->getRank();
     const int length = numImages;
-
     // fill remoteImageIDs with {0, 1, 2, ... length-1}
     // we'll receive one GID from every image
     // 
@@ -542,21 +686,17 @@ namespace {
       importImageIDs.push_back(i);
       importGIDs.push_back( as<Ordinal>(generateValue(i, myImageID)) );
     }
-
     Distributor distributor(comm);
     ArrayRCP<int> exportImageIDs;
     ArrayRCP<Ordinal> exportGIDs;
     distributor.createFromRecvs<Ordinal>(importGIDs, importImageIDs, exportGIDs, exportImageIDs);
-    
     TEST_EQUALITY(exportGIDs.size(), exportImageIDs.size());  // should *always* be the case
-
     Array<Ordinal> expectedGIDs;
     for (int i=0; i < length; ++i) {
       expectedGIDs.push_back( as<Ordinal>(generateValue(myImageID,i)) );
     }
     TEST_COMPARE_ARRAYS(importImageIDs, exportImageIDs);             
     TEST_COMPARE_ARRAYS(expectedGIDs, exportGIDs);
-
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
     reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
@@ -570,20 +710,23 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromReceives, ORDINAL )
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, createFromRecvs, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, badArgsFromRecvs, ORDINAL )
 
 # ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, doPosts1, double )
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_COMPLEX_FLOAT( Distributor, doPosts1 )
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, doPostsContig,    double )
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Distributor, doPostsNonContig,    double )
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_COMPLEX_FLOAT( Distributor, doPostsContig )
     UNIT_TEST_GROUP_ORDINAL(int)
 
 # else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( Distributor, doPosts1 )
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( Distributor, doPostsContig )
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( Distributor, doPostsNonContig )
 
     typedef short int ShortInt;
     UNIT_TEST_GROUP_ORDINAL(ShortInt)
