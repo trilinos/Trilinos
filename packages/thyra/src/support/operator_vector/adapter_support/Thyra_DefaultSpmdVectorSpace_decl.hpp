@@ -133,8 +133,8 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<const Teuchos::Comm<Index> > &comm
-    ,const Index localSubDim, const Index globalDim
+    const RCP<const Teuchos::Comm<Index> > &comm,
+    const Index localSubDim, const Index globalDim
     );
 
   /** \brief Set to an uninitialized state.
@@ -215,6 +215,23 @@ private:
  
   DefaultSpmdVectorSpace();
 
+public:
+
+  /** \name Deprecated */
+  //@{
+
+  /** \brief Deprecated. */
+  DefaultSpmdVectorSpace(
+    const Index dim
+    );
+
+  /** \brief Deprecated. */
+  DefaultSpmdVectorSpace(
+    const RCP<const Teuchos::Comm<Index> > &comm,
+    const Index localSubDim, const Index globalDim
+    );
+
+  //@}
  
 }; // end class DefaultSpmdVectorSpace
 

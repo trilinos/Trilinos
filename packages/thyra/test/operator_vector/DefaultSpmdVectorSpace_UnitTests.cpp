@@ -199,6 +199,44 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
 //  parallelConstructEmptyProc )
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, deprecatedSerialConstruct,
+  Scalar )
+{
+
+  ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    rcp( new DefaultSpmdVectorSpace<Scalar>(g_localDim)));
+  TEST_EQUALITY(vs->getComm(), null);
+  TEST_EQUALITY(vs->localOffset(), as<Ordinal>(0));
+  TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));
+  TEST_EQUALITY(vs->mapCode(), as<Ordinal>(g_localDim));
+  TEST_EQUALITY(vs->dim(), as<Ordinal>(g_localDim));
+  ECHO(const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs));
+  TEST_ASSERT(vs->isCompatible(*v->space()));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
+  deprecatedSerialConstruct )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, deprecatedParallelConstruct,
+  Scalar )
+{
+  ECHO(const RCP<const Teuchos::Comm<Ordinal> > comm =
+    Teuchos::DefaultComm<Teuchos_Ordinal>::getComm());
+  ECHO(RCP<const DefaultSpmdVectorSpace<Scalar> > vs =
+    rcp(new DefaultSpmdVectorSpace<Scalar>(comm, g_localDim, -1)));
+  TEST_EQUALITY(vs->getComm(), comm);
+  TEST_EQUALITY(vs->localOffset(), as<Ordinal>(comm->getRank()*g_localDim));
+  TEST_EQUALITY(vs->localSubDim(), as<Ordinal>(g_localDim));
+  TEST_EQUALITY(vs->dim(), as<Ordinal>(comm->getSize()*g_localDim));
+  ECHO(const RCP<VectorBase<Scalar> > v = createMember<Scalar>(vs));
+  TEST_ASSERT(vs->isCompatible(*v->space()));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdVectorSpace,
+  deprecatedParallelConstruct )
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, parallelFullExtract,
   Scalar )
 {
