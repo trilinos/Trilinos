@@ -86,7 +86,7 @@ public:
   //@{ \name Additional methods required to support the Epetra_Operator interface.
 
   //! Get a pointer to the Problem.
-  const Epetra_LinearProblem* GetProblem() const { return(Problem_); };
+  const Epetra_LinearProblem* GetProblem() const { return(Problem_); }
 
   //! Returns true if PARDISO can handle this matrix shape 
   /*! Returns true if the matrix shape is one that PARDISO can
@@ -99,16 +99,16 @@ public:
     If SetUseTranspose() is set to true, 
     \f$A^T X = B\f$ is computed.
   */  
-  int SetUseTranspose(bool UseTranspose) {UseTranspose_ = UseTranspose; return(0);};
+  int SetUseTranspose(bool UseTranspose) { UseTranspose_ = UseTranspose; return(0); }
 
   //! Returns the current UseTranspose setting.
-  bool UseTranspose() const {return(UseTranspose_);};
+  bool UseTranspose() const { return(UseTranspose_); }
 
   //! Returns a pointer to the Epetra_Comm communicator associated with this matrix.
-  const Epetra_Comm& Comm() const {return(GetProblem()->GetOperator()->Comm());};
+  const Epetra_Comm& Comm() const { return(GetProblem()->GetOperator()->Comm()); }
 
   //! Set parameters from the input parameters list, returns 0 if successful.
-  int SetParameters( Teuchos::ParameterList &ParameterList);
+  int SetParameters( Teuchos::ParameterList &ParameterList );
 
   //! Returns the number of symbolic factorizations performed by this object.
   int NumSymbolicFact() const { return( Amesos_Status::NumSymbolicFact_ ); }

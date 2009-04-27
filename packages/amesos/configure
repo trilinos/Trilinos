@@ -1487,6 +1487,9 @@ Optional Features:
   --enable-amesos-pardiso Enable Amesos interface support for the
                           double-precision version of PARDISO (default is
                           no)
+  --enable-amesos-pardiso_mkl
+                          Enable support for the Intel MKL version of PARDISO.
+                          Requires --enable-pardiso. (default is no)
   --enable-amesos-paraklete
                           Enable Amesos interface support for the
                           double-precision version of PARAKLETE (default is
@@ -16064,6 +16067,32 @@ echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_AMESOS_PARDISO
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+
+
+# Check whether --enable-amesos-pardiso_mkl was given.
+if test "${enable_amesos_pardiso_mkl+set}" = set; then
+  enableval=$enable_amesos_pardiso_mkl; ac_cv_use_amesos_pardiso_mkl=$enableval
+else
+  ac_cv_use_amesos_pardiso_mkl=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use amesos-pardiso_mkl" >&5
+echo $ECHO_N "checking whether to use amesos-pardiso_mkl... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_amesos_pardiso_mkl" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_AMESOS_PARDISO_MKL
 _ACEOF
 
 else

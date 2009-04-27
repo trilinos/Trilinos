@@ -33,6 +33,13 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Util.h"
 
+#ifdef HAVE_AMESOS_PARDISO_MKL
+
+#include "mkl_pardiso.h"
+#define F77_PARDISO PARDISO
+
+#else
+
 #define F77_PARDISOINIT F77_FUNC(pardisoinit, PARDISOINIT)
 #define F77_PARDISO F77_FUNC(pardiso, PARDISO)
 
@@ -44,8 +51,9 @@ extern "C" int F77_PARDISO
     (void *, int *, int *, int *, int *, int *, 
      double *, int *, int *, int *, int *, int *, 
      int *, double *, double *, int *);
+#endif
 
-#define IPARM(I) iparm_[(I) - 1]
+#define IPARM(i) iparm_[i-1]
 
 using namespace Teuchos;
 
@@ -65,22 +73,39 @@ Amesos_Pardiso::Amesos_Pardiso(const Epetra_LinearProblem &prob) :
   nrhs_(1),
   pardiso_initialized_(false)
 {
-  // Sets all parameters (many unused) to zero
-  for (int i = 1 ; i < 64 ; ++i)
-    IPARM(i) = 0; 
+  for (int i = 0; i < 64; i++) {
+    iparm_[i] = 0;
+  }
+  iparm_[0] = 1; /* No solver default */
+  iparm_[1] = 2; /* Fill-in reordering from METIS */
+  /* Numbers of processors, value of OMP_NUM_THREADS */
+  iparm_[2] = 1;
+  iparm_[3] = 0; /* No iterative-direct algorithm */
+  iparm_[4] = 0; /* No user fill-in reducing permutation */
+  iparm_[5] = 0; /* Write solution into x */
+  iparm_[6] = 0; /* Not in use */
+  iparm_[7] = 0; /* Max numbers of iterative refinement steps */
+  iparm_[8] = 0; /* Not in use */
+  iparm_[9] = 13; /* Perturb the pivot elements with 1E-13 */
+  iparm_[10] = 1; /* Use nonsymmetric permutation and scaling MPS */
+  iparm_[11] = 0; /* Not in use */
+  iparm_[12] = 0; /* Not in use */
+  iparm_[13] = 0; /* Output: Number of perturbed pivots */
+  iparm_[14] = 0; /* Not in use */
+  iparm_[15] = 0; /* Not in use */
+  iparm_[16] = 0; /* Not in use */
+  iparm_[17] = -1; /* Output: Number of nonzeros in the factor LU */
+  iparm_[18] = -1; /* Output: Mflops for LU factorization */
+  iparm_[19] = 0; /* Output: Numbers of CG Iterations */
+ // iparm_[21] = 1; /* Pivoting for undefinite symmetric matrices */
 
-  // setting parameters from manual's default
-  IPARM(1) = 0; // use default values
-  IPARM(2) = 2; // Fill-in reduction reordering
-  IPARM(3) = 1; // Number of processors
-  IPARM(4) = 0; // Preconditioned CGS
-  IPARM(6) = 0; // write solution on X
-  IPARM(8) = 0; // number of iterative refinement steps
-  IPARM(10) = 8; // pivot perturbation
-  IPARM(11) = 1; // MPS scaling of the unsymmetric reordering
-  IPARM(18) = -1; // number of nonzeros in factor
-  IPARM(19) = 0; // MFlops of factorization
-  IPARM(21) = 1; // pivoting for undefinite symmetric matrices
+  /* -------------------------------------------------------------------- */
+  /* .. Initialize the internal solver memory pointer. This is only */
+  /* necessary for the FIRST call of the PARDISO solver. */
+  /* -------------------------------------------------------------------- */
+  for (int i = 0; i < 64; i++) {
+    pt_[i] = 0;
+  }
 }
 
 //=============================================================================
@@ -211,34 +236,34 @@ int Amesos_Pardiso::SetParameters( Teuchos::ParameterList &ParameterList)
     //  thing I found to debug print statements - KSS
 
     if (PardisoList.isParameter("IPARM(1)"))
-      IPARM(1) = PardisoList.get<int>("IPARM(1)");
+      iparm_[0] = PardisoList.get<int>("IPARM(1)");
 
     if (PardisoList.isParameter("IPARM(2)"))
-      IPARM(2) = PardisoList.get<int>("IPARM(2)");
+      iparm_[1] = PardisoList.get<int>("IPARM(2)");
 
     if (PardisoList.isParameter("IPARM(3)"))
-      IPARM(3) = PardisoList.get<int>("IPARM(3)");
+      iparm_[2] = PardisoList.get<int>("IPARM(3)");
 
     if (PardisoList.isParameter("IPARM(4)"))
-      IPARM(4) = PardisoList.get<int>("IPARM(4)");
+      iparm_[3] = PardisoList.get<int>("IPARM(4)");
 
     if (PardisoList.isParameter("IPARM(8)"))
-      IPARM(8) = PardisoList.get<int>("IPARM(8)");
+      iparm_[7] = PardisoList.get<int>("IPARM(8)");
 
     if (PardisoList.isParameter("IPARM(10)"))
-      IPARM(10) = PardisoList.get<int>("IPARM(10)");
+      iparm_[9] = PardisoList.get<int>("IPARM(10)");
 
     if (PardisoList.isParameter("IPARM(11)"))
-      IPARM(11) = PardisoList.get<int>("IPARM(11)");
+      iparm_[10] = PardisoList.get<int>("IPARM(11)");
 
     if (PardisoList.isParameter("IPARM(18)"))
-      IPARM(18) = PardisoList.get<int>("IPARM(18)");
+      iparm_[17] = PardisoList.get<int>("IPARM(18)");
 
     if (PardisoList.isParameter("IPARM(19)"))
-      IPARM(19) = PardisoList.get<int>("IPARM(19)");
+      iparm_[18] = PardisoList.get<int>("IPARM(19)");
 
     if (PardisoList.isParameter("IPARM(21)"))
-      IPARM(21) = PardisoList.get<int>("IPARM(21)");
+      iparm_[20] = PardisoList.get<int>("IPARM(21)");
   }
   
   return 0;
@@ -261,21 +286,16 @@ int Amesos_Pardiso::PerformSymbolicFactorization()
     // The number of processors is specified by IPARM(2), in the      //
     // Pardiso sublist.                                               //
     // ============================================================== //
-
+#ifndef HAVE_AMESOS_PARDISO_MKL
     F77_PARDISOINIT(pt_,  &mtype_, iparm_);
+#endif
     pardiso_initialized_ = true; 
-    /*
+
+    int num_procs = 1;
     char* var = getenv("OMP_NUM_THREADS");
     if(var != NULL)
       sscanf( var, "%d", &num_procs );
-    else {
-      std::cerr << "Please set the environment OMP_NUM_THREADS to either" << std::endl;
-      std::cerr << "1 or the number of OMP processes you want to use" << std::endl;
-      AMESOS_CHK_ERR(-1);
-    }
-
-    iparm_[2]  = num_procs;
-    */
+    IPARM(3) = num_procs;
 
     maxfct_ = 1;         /* Maximum number of numerical factorizations.  */
     mnum_   = 1;         /* Which factorization to use. */

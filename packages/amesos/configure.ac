@@ -435,6 +435,9 @@ TAC_ARG_ENABLE_FEATURE_SUB( amesos, old_mumps, [Enable support for versions of M
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, pardiso, [Enable Amesos interface support for the double-precision version of PARDISO], 
 		AMESOS_PARDISO, no)
 
+TAC_ARG_ENABLE_FEATURE_SUB( amesos, pardiso_mkl, [Enable support for the Intel MKL version of PARDISO.  Requires --enable-pardiso.],
+		AMESOS_PARDISO_MKL, no)
+
 TAC_ARG_ENABLE_FEATURE_SUB( amesos, paraklete, [Enable Amesos interface support for the double-precision version of PARAKLETE], 
 		AMESOS_PARAKLETE, no)
 
