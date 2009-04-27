@@ -49,7 +49,11 @@ CORE_H = \
   $(srcdir)/Rythmos_CompositeIntegratorObserver.hpp\
   $(srcdir)/Rythmos_ConfigDefs.h\
 	$(srcdir)/Rythmos_CubicSplineInterpolator.hpp\
+	$(srcdir)/Rythmos_CubicSplineInterpolator_decl.hpp\
+	$(srcdir)/Rythmos_CubicSplineInterpolator_def.hpp\
   $(srcdir)/Rythmos_DataStore.hpp\
+  $(srcdir)/Rythmos_DataStore_decl.hpp\
+  $(srcdir)/Rythmos_DataStore_def.hpp\
   $(srcdir)/Rythmos_DefaultIntegrator.hpp\
   $(srcdir)/Rythmos_DefaultIntegrator_def.hpp\
   $(srcdir)/Rythmos_DefaultIntegrator_decl.hpp\
@@ -58,17 +62,22 @@ CORE_H = \
 	$(srcdir)/Rythmos_ErrorEstimatorBase.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcAcceptingStepControlStrategyBase.hpp\
   $(srcdir)/Rythmos_ErrWtVecCalcBase.hpp\
+  $(srcdir)/Rythmos_ExplicitInstantiationHelpers.hpp\
   $(srcdir)/Rythmos_ExplicitRKStepper.hpp\
   $(srcdir)/Rythmos_ExplicitRKStepper_decl.hpp\
   $(srcdir)/Rythmos_ExplicitRKStepper_def.hpp\
   $(srcdir)/Rythmos_ExplicitTaylorPolynomialStepper.hpp\
   $(srcdir)/Rythmos_ForwardEulerStepper.hpp\
+  $(srcdir)/Rythmos_ForwardEulerStepper_decl.hpp\
+  $(srcdir)/Rythmos_ForwardEulerStepper_def.hpp\
   $(srcdir)/Rythmos_ForwardResponseSensitivityComputer.hpp\
   $(srcdir)/Rythmos_ForwardResponseSensitivityComputerObserver.hpp\
   $(srcdir)/Rythmos_ForwardSensitivityIntegratorAsModelEvaluator.hpp\
   $(srcdir)/Rythmos_ForwardSensitivityModelEvaluator.hpp\
   $(srcdir)/Rythmos_ForwardSensitivityStepper.hpp\
   $(srcdir)/Rythmos_HermiteInterpolator.hpp\
+  $(srcdir)/Rythmos_HermiteInterpolator_decl.hpp\
+  $(srcdir)/Rythmos_HermiteInterpolator_def.hpp\
   $(srcdir)/Rythmos_ImplicitBDFStepper.hpp\
   $(srcdir)/Rythmos_ImplicitBDFStepper_decl.hpp\
   $(srcdir)/Rythmos_ImplicitBDFStepper_def.hpp\
@@ -98,6 +107,8 @@ CORE_H = \
   $(srcdir)/Rythmos_InterpolatorBase.hpp\
   $(srcdir)/Rythmos_InterpolatorBaseHelpers.hpp\
   $(srcdir)/Rythmos_LinearInterpolator.hpp\
+  $(srcdir)/Rythmos_LinearInterpolator_decl.hpp\
+  $(srcdir)/Rythmos_LinearInterpolator_def.hpp\
   $(srcdir)/Rythmos_PointwiseInterpolationBufferAppender.hpp\
   $(srcdir)/Rythmos_QuadratureBase.hpp\
   $(srcdir)/Rythmos_RKButcherTableau.hpp\
@@ -109,6 +120,8 @@ CORE_H = \
   $(srcdir)/Rythmos_RKButcherTableauAcceptingStepperBase.hpp\
   $(srcdir)/Rythmos_ResponseAndFwdSensPoint.hpp\
   $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.hpp\
+  $(srcdir)/Rythmos_SimpleIntegrationControlStrategy_decl.hpp\
+  $(srcdir)/Rythmos_SimpleIntegrationControlStrategy_def.hpp\
   $(srcdir)/Rythmos_SingleResidualModelEvaluator.hpp\
   $(srcdir)/Rythmos_SingleResidualModelEvaluatorBase.hpp\
   $(srcdir)/Rythmos_SmartInterpolationBufferAppender.hpp\
@@ -119,14 +132,22 @@ CORE_H = \
   $(srcdir)/Rythmos_StepControlStrategyBase.hpp\
   $(srcdir)/Rythmos_StepperAsModelEvaluator.hpp\
   $(srcdir)/Rythmos_StepperBase.hpp\
+  $(srcdir)/Rythmos_StepperBase_decl.hpp\
+  $(srcdir)/Rythmos_StepperBase_def.hpp\
   $(srcdir)/Rythmos_StepperBuilder.hpp\
   $(srcdir)/Rythmos_StepperHelpers.hpp\
+  $(srcdir)/Rythmos_StepperHelpers_decl.hpp\
+  $(srcdir)/Rythmos_StepperHelpers_def.hpp\
   $(srcdir)/Rythmos_StepperSupportTypes.hpp\
   $(srcdir)/Rythmos_StepperValidator.hpp\
   $(srcdir)/Rythmos_ThetaStepper.hpp\
   $(srcdir)/Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp\
   $(srcdir)/Rythmos_TimeRange.hpp\
+  $(srcdir)/Rythmos_TimeRange_decl.hpp\
+  $(srcdir)/Rythmos_TimeRange_def.hpp\
   $(srcdir)/Rythmos_TimeStepNonlinearSolver.hpp\
+  $(srcdir)/Rythmos_TimeStepNonlinearSolver_decl.hpp\
+  $(srcdir)/Rythmos_TimeStepNonlinearSolver_def.hpp\
   $(srcdir)/Rythmos_TrailingInterpolationBufferAcceptingIntegratorBase.hpp\
   $(srcdir)/Rythmos_Types.hpp\
   $(srcdir)/Rythmos_extractStateAndSens.hpp\
@@ -135,14 +156,24 @@ CORE_H = \
 
 CORE = \
   $(srcdir)/Rythmos_BackwardEulerStepper.cpp\
+	$(srcdir)/Rythmos_CubicSplineInterpolator.cpp\
+  $(srcdir)/Rythmos_DataStore.cpp\
   $(srcdir)/Rythmos_DefaultIntegrator.cpp\
   $(srcdir)/Rythmos_ExplicitRKStepper.cpp\
+  $(srcdir)/Rythmos_ForwardEulerStepper.cpp\
+  $(srcdir)/Rythmos_HermiteInterpolator.cpp\
 	$(srcdir)/Rythmos_ImplicitBDFStepper.cpp\
 	$(srcdir)/Rythmos_ImplicitBDFStepperStepControl.cpp\
   $(srcdir)/Rythmos_ImplicitRKStepper.cpp\
   $(srcdir)/Rythmos_IntegratorBuilder.cpp\
   $(srcdir)/Rythmos_InterpolationBuffer.cpp\
+  $(srcdir)/Rythmos_LinearInterpolator.cpp\
   $(srcdir)/Rythmos_RKButcherTableauBuilder.cpp\
+  $(srcdir)/Rythmos_SimpleIntegrationControlStrategy.cpp\
+  $(srcdir)/Rythmos_StepperBase.cpp\
+  $(srcdir)/Rythmos_StepperHelpers.cpp\
+  $(srcdir)/Rythmos_TimeRange.cpp\
+  $(srcdir)/Rythmos_TimeStepNonlinearSolver.cpp\
   $(srcdir)/Rythmos_Version.cpp
 
 UTIL_H =

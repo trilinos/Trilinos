@@ -26,50 +26,12 @@
 // ***********************************************************************
 //@HEADER
 
+#ifndef Rythmos_EXPLICIT_INSTANTIATION_HELPERS_HPP
+#define Rythmos_EXPLICIT_INSTANTIATION_HELPERS_HPP
 
-#ifndef RYTHMOS_INTERPOLATOR_ACCEPTING_OBJECT_BASE_HPP
-#define RYTHMOS_INTERPOLATOR_ACCEPTING_OBJECT_BASE_HPP
+#include "Teuchos_ExplicitInstantiationHelpers.hpp"
 
+#define RYTHMOS_MACRO_TEMPLATE_INSTANT_SCALAR_TYPES(MACRONAME) \
+  TEUCHOS_MACRO_TEMPLATE_INSTANT_DOUBLE(MACRONAME)
 
-#include "Rythmos_Types.hpp"
-#include "Rythmos_InterpolatorBase.hpp"
-
-namespace Rythmos {
-
-/** \brief Mix-in interface for objects that accept an interpolator object.
- *
- * ToDo: Finish documentation!
- */
-
-template<class Scalar>
-class InterpolatorAcceptingObjectBase 
-{
-public:
-
-  /** \brief . */
-  virtual ~InterpolatorAcceptingObjectBase() {}
-
-  /** \brief . */
-  virtual void setInterpolator(
-    const RCP<InterpolatorBase<Scalar> > &interpolator
-    ) = 0;
-
-  /** \brief . */
-  virtual RCP<InterpolatorBase<Scalar> >
-    getNonconstInterpolator() = 0;
-
-  /** \brief . */
-  virtual RCP<const InterpolatorBase<Scalar> >
-    getInterpolator() const = 0;
-
-  /** \brief . */
-  virtual RCP<InterpolatorBase<Scalar> >
-    unSetInterpolator() = 0;
-
-};
-
-
-} // namespace Rythmos
-
-
-#endif // RYTHMOS_INTERPOLATOR_ACCEPTING_OBJECT_BASE_HPP
+#endif // Rythmos_EXPLICIT_INSTANTIATION_HELPERS_HPP

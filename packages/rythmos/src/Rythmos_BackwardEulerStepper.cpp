@@ -3,11 +3,11 @@
 #ifdef HAVE_RYTHMOS_EXPLICIT_INSTANTIATION
 
 #include "Rythmos_BackwardEulerStepper_def.hpp"
-#include "Teuchos_ExplicitInstantiationHelpers.hpp"
+#include "Rythmos_ExplicitInstantiationHelpers.hpp"
 
 namespace Rythmos {
 
-TEUCHOS_MACRO_TEMPLATE_INSTANT_DOUBLE(RYTHMOS_BACKWARD_EULER_STEPPER_INSTANT) 
+RYTHMOS_MACRO_TEMPLATE_INSTANT_SCALAR_TYPES(RYTHMOS_BACKWARD_EULER_STEPPER_INSTANT) 
 
 } // namespace Rythmos
 

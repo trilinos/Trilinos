@@ -170,6 +170,7 @@ template<class Scalar>
 class ModelFactoryBase
 {
   public:
+    virtual ~ModelFactoryBase() {}
     virtual RCP<ModelEvaluator<Scalar> > getModel() const =0;
     virtual RCP<LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const =0;
 };
@@ -204,6 +205,7 @@ template<class Scalar>
 class ExactSolutionObjectBase
 {
   public:
+    virtual ~ExactSolutionObjectBase() {}
     virtual RCP<const VectorBase<Scalar> > getExactSolution(Scalar t) const =0;
 };
 
@@ -285,6 +287,7 @@ template<class Scalar>
 class StepperFactoryBase
 {
   public:
+    virtual ~StepperFactoryBase() {}
     virtual RCP<StepperBase<Scalar> > getStepper() const =0;
 };
 
