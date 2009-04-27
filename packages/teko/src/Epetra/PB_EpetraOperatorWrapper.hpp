@@ -2,9 +2,6 @@
 #define __PB_EpetraOperatorWrapper_hpp__
 
 #include "Thyra_LinearOpBase.hpp"
-#include "Thyra_VectorImpl.hpp" // need for LinOpDecl
-#include "Thyra_VectorSpaceImpl.hpp" // need for LinOpDecl
-#include "Thyra_LinearOperatorImpl.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
@@ -215,7 +212,8 @@ namespace Epetra {
     EpetraOperatorWrapper();
 
     /** */
-    RCP<Epetra_Comm> getEpetraComm(const Thyra::ConstLinearOperator<double>& thyraOp) const;
+    //RCP<Epetra_Comm> getEpetraComm(const Thyra::ConstLinearOperator<double>& thyraOp) const;
+    RCP<Epetra_Comm> getEpetraComm(const Thyra::LinearOpBase<double> & inOp) const;
 
     /** */
     void SetOperator(const RCP<const Thyra::LinearOpBase<double> > & thyraOp,bool buildMap=true);

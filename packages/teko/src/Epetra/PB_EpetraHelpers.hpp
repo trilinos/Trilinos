@@ -14,6 +14,7 @@
 
 // Thyra includes
 #include "Thyra_VectorBase.hpp"
+#include "Thyra_DefaultSpmdMultiVector.hpp"
 
 namespace PB {
 
@@ -34,6 +35,18 @@ Epetra_Operator * block2x2(const Epetra_Operator * sub00,const Epetra_Operator *
   * <em>*** The calling user is responsible for deleting the resulting Epetra_Operator! ***</em>
   */
 Epetra_Operator * mechanicalInverse(const Epetra_Operator * inverse);
+
+/** \brief Fill a Thyra vector with the contents of an epetra vector. This prevents the
+  *
+  * Fill a Thyra vector with the contents of an epetra vector. This prevents the need
+  * to reallocate memory using a create_MultiVector routine. It also allows an aritrary
+  * Thyra vector to be filled.
+  *
+  * \param[in,out] spmdMV Multi-vector to be filled.
+  * \param[in]     mv     Epetra multi-vector to be used in filling the Thyra vector.
+  */    
+void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::DefaultSpmdMultiVector<double> > & spmdMV,
+                                Teuchos::RCP<Epetra_MultiVector> & epetraMV);
 
 const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const Teuchos::RCP<const Epetra_Vector> & ev,const Epetra_Map & map,const std::string & lbl="ANYM");
 

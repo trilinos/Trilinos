@@ -69,7 +69,7 @@ private:
    BlockLowerTriInverseOp(const BlockLowerTriInverseOp &);
 };
 
-inline LinearOp createNewBlockLowerTriInverseOp(BlockedLinearOp & U,const std::vector<LinearOp> & invDiag)
+inline LinearOp createBlockLowerTriInverseOp(BlockedLinearOp & U,const std::vector<LinearOp> & invDiag)
 {
    return Teuchos::rcp(new BlockLowerTriInverseOp(U,invDiag));
 }

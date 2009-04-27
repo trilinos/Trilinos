@@ -97,7 +97,7 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
       // only row is a leaf node
       const BlockReorderLeaf & rowLeaf = dynamic_cast<const BlockReorderLeaf &>(rowMgr);
 
-      PB::BlockedLinearOp reBlkOp = PB::createNewBlockedOp();
+      PB::BlockedLinearOp reBlkOp = PB::createBlockedOp();
 
       // operator will be rowSz by colSz
       reBlkOp->beginBlockFill(1,colSz);   
@@ -118,7 +118,7 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
       // only row is a leaf node
       const BlockReorderLeaf & colLeaf = dynamic_cast<const BlockReorderLeaf &>(colMgr);
 
-      PB::BlockedLinearOp reBlkOp = PB::createNewBlockedOp();
+      PB::BlockedLinearOp reBlkOp = PB::createBlockedOp();
 
       // operator will be rowSz by colSz
       reBlkOp->beginBlockFill(rowSz,1);   
@@ -136,7 +136,7 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
       return reBlkOp;
    }
    else {
-      PB::BlockedLinearOp reBlkOp = PB::createNewBlockedOp();
+      PB::BlockedLinearOp reBlkOp = PB::createBlockedOp();
   
       // this is the general case
       TEUCHOS_ASSERT(rowSz>0);
@@ -226,25 +226,38 @@ buildReorderedMultiVector(const BlockReorderManager & mgr,
    }
 }
 
-/** \brief Convert a reordered multivector into a flat multivector.
-  *
-  * Convert a reordered multivector into a flat multivector.
+/** Helper function to assist with the non-constant
+  * version of buildFlatMultiVector.
   */
-Teuchos::RCP<Thyra::MultiVectorBase<double> >
-buildFlatMultiVector(const BlockReorderManager & mgr,
-                     const Teuchos::RCP<Thyra::ProductMultiVectorBase<double> > & blkVec)
+void buildNonconstFlatMultiVector(const BlockReorderManager & mgr,
+                                  const RCP<Thyra::MultiVectorBase<double> > & blkVec,
+                                  Array<RCP<Thyra::MultiVectorBase<double> > > & multivecs,
+                                  Array<RCP<const Thyra::VectorSpaceBase<double> > > & vecspaces)
 {
-   using Teuchos::rcp_const_cast;
+   typedef RCP<const BlockReorderManager> BRMptr;
 
-   // give vector const so that the right function is called
-   const Teuchos::RCP<const Thyra::ProductMultiVectorBase<double> > blkVecConst
-      = rcp_const_cast<const Thyra::ProductMultiVectorBase<double> >(blkVec);
+   int sz = mgr.GetNumBlocks();
+
+   if(sz==0) {
+      // its a  leaf nodes
+      const BlockReorderLeaf & leaf = dynamic_cast<const BlockReorderLeaf &>(mgr);
+      int index = leaf.GetIndex();
+
+      // simply return entry in matrix
+      multivecs[index] = blkVec;
+      vecspaces[index] = blkVec->range();
+   } 
+   else {
+      const RCP<Thyra::ProductMultiVectorBase<double> > prodMV
+            = rcp_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(blkVec);
+ 
+      // get flattened elements from each child
+      for(int i=0;i<sz;i++) {
+         const RCP<Thyra::MultiVectorBase<double> > mv = prodMV->getNonconstMultiVectorBlock(i);
+         buildNonconstFlatMultiVector(*mgr.GetBlock(i),mv,multivecs,vecspaces);
+      }
+   }
    
-   // its not really const, so take it away
-   const Teuchos::RCP<Thyra::MultiVectorBase<double> > result
-         = rcp_const_cast<Thyra::MultiVectorBase<double> >(buildFlatMultiVector(mgr,blkVecConst));
-
-   return result;
 }
 
 /** Helper function to assist with the function
@@ -274,11 +287,35 @@ void buildFlatMultiVector(const BlockReorderManager & mgr,
  
       // get flattened elements from each child
       for(int i=0;i<sz;i++) {
-      RCP<const Thyra::MultiVectorBase<double> > mv = prodMV->getMultiVectorBlock(i);
+         RCP<const Thyra::MultiVectorBase<double> > mv = prodMV->getMultiVectorBlock(i);
          buildFlatMultiVector(*mgr.GetBlock(i),mv,multivecs,vecspaces);
       }
    }
    
+}
+
+/** \brief Convert a reordered multivector into a flat multivector.
+  *
+  * Convert a reordered multivector into a flat multivector.
+  */
+Teuchos::RCP<Thyra::MultiVectorBase<double> >
+buildFlatMultiVector(const BlockReorderManager & mgr,
+                     const Teuchos::RCP<Thyra::ProductMultiVectorBase<double> > & blkVec)
+{
+   int numBlocks = mgr.LargestIndex()+1;
+ 
+   Array<RCP<Thyra::MultiVectorBase<double> > > multivecs(numBlocks);
+   Array<RCP<const Thyra::VectorSpaceBase<double> > > vecspaces(numBlocks);
+
+   // flatten everything into a vector first
+   buildNonconstFlatMultiVector(mgr,blkVec,multivecs,vecspaces);
+
+   // build a vector space
+   const RCP<Thyra::DefaultProductVectorSpace<double> > vs 
+         = Thyra::productVectorSpace<double>(vecspaces);
+
+   // build the vector
+   return Thyra::defaultProductMultiVector<double>(vs,multivecs);
 }
 
 /** \brief Convert a reordered multivector into a flat multivector.

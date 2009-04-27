@@ -98,7 +98,7 @@ private:
    LU2x2InverseOp(const LU2x2InverseOp &);
 };
 
-inline LinearOp createNewLU2x2InverseOp(BlockedLinearOp & A,LinearOp & invA00,LinearOp & invS)
+inline LinearOp createLU2x2InverseOp(BlockedLinearOp & A,LinearOp & invA00,LinearOp & invS)
 {
    return Teuchos::rcp(new LU2x2InverseOp(A,invA00,invS));
 }

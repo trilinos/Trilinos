@@ -5,6 +5,8 @@
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
+#include "Thyra_DefaultZeroLinearOp.hpp"
+#include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
@@ -85,6 +87,41 @@ const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const RCP<con
          = Teuchos::rcp(new Thyra::DefaultDiagonalLinearOp<double>(thyraVec));
    op->setObjectLabel(lbl);
    return op;
+}
+
+/** \brief Fill a Thyra vector with the contents of an epetra vector. This prevents the
+  *
+  * Fill a Thyra vector with the contents of an epetra vector. This prevents the need
+  * to reallocate memory using a create_MultiVector routine. It also allows an aritrary
+  * Thyra vector to be filled.
+  *
+  * \param[in,out] spmdMV Multi-vector to be filled.
+  * \param[in]     mv     Epetra multi-vector to be used in filling the Thyra vector.
+  */    
+void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::DefaultSpmdMultiVector<double> > & spmdMV,
+                                Teuchos::RCP<Epetra_MultiVector> & epetraMV)
+{
+   // first get desired range and domain
+   const RCP<const Thyra::SpmdVectorSpaceBase<double> > range  = spmdMV->spmdSpace();
+   const RCP<const Thyra::ScalarProdVectorSpaceBase<double> > domain 
+         = rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(spmdMV->domain());
+
+   TEUCHOS_ASSERT(domain->dim()==epetraMV->NumVectors());
+
+   // New local view of raw data
+   double *localValues; int leadingDim;
+   if(epetraMV->ConstantStride() )
+      epetraMV->ExtractView( &localValues, &leadingDim );
+   else
+      TEST_FOR_EXCEPT(true); // ToDo: Implement views of non-contiguous mult-vectors!
+
+   // Build the MultiVector
+   spmdMV->initialize(range, domain,
+                     Teuchos::arcp(localValues,0,leadingDim*epetraMV->NumVectors(),false),
+                     leadingDim);
+
+   // make sure the Epetra_MultiVector doesn't disappear prematurely
+   Teuchos::set_extra_data<RCP<Epetra_MultiVector> >(epetraMV,"Epetra_MultiVector",Teuchos::outArg(spmdMV));
 }
 
 } // end namespace Epetra

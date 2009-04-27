@@ -32,13 +32,13 @@ LinearOp GaussSeidelPreconditionerFactory::buildPreconditionerOperator(BlockedLi
       // create a blocked linear operator
       BlockedLinearOp U = getUpperTriBlocks(blo);
 
-      return createNewBlockUpperTriInverseOp(U,invDiag);
+      return createBlockUpperTriInverseOp(U,invDiag);
    } 
    else if(solveType_==GS_UseLowerTriangle) {
       // create a blocked linear operator
       BlockedLinearOp L = getLowerTriBlocks(blo);
 
-      return createNewBlockLowerTriInverseOp(L,invDiag);
+      return createBlockLowerTriInverseOp(L,invDiag);
    }
 
    TEUCHOS_ASSERT(false); // we should never make it here!

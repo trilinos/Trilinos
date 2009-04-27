@@ -40,6 +40,10 @@
 #endif
 #include "Thyra_EpetraThyraWrappers.hpp"
 
+#include "Thyra_LinearOperatorDecl.hpp"
+#include "Thyra_BlockedLinearOpBase.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
+
 #include "PB_EpetraHelpers.hpp"
 #include "PB_EpetraThyraConverter.hpp"
 #include "Teuchos_Ptr.hpp"
@@ -109,7 +113,7 @@ void EpetraOperatorWrapper::SetOperator(const RCP<const LinearOpBase<double> > &
 {
    useTranspose_ = false;
    thyraOp_ = thyraOp;
-   comm_ = getEpetraComm(thyraOp);
+   comm_ = getEpetraComm(*thyraOp);
    label_ = thyraOp_->description();
    if(mapStrategy_==Teuchos::null && buildMap)
       mapStrategy_ = Teuchos::rcp(new DefaultMappingStrategy(thyraOp,*comm_));
@@ -164,8 +168,10 @@ int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X,
 
 
 RCP<Epetra_Comm> 
-EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp) const
+EpetraOperatorWrapper::getEpetraComm(const Thyra::LinearOpBase<double>& inOp) const
 {
+  const Thyra::ConstLinearOperator<double> thyraOp = rcpFromRef(inOp); 
+
   RCP<Epetra_Comm> rtn;
   VectorSpace<double> vs = thyraOp.domain().getBlock(0);
 

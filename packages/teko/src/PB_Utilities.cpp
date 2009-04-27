@@ -157,7 +157,7 @@ BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo)
    RCP<const Thyra::ProductVectorSpaceBase<double> > domain = blo->productDomain();
 
    // allocate new operator
-   BlockedLinearOp upper = createNewBlockedOp();
+   BlockedLinearOp upper = createBlockedOp();
  
    // build new operator 
    upper->beginBlockFill(rows,rows);
@@ -195,7 +195,7 @@ BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo)
    RCP<const Thyra::ProductVectorSpaceBase<double> > domain = blo->productDomain();
 
    // allocate new operator
-   BlockedLinearOp lower = createNewBlockedOp();
+   BlockedLinearOp lower = createBlockedOp();
  
    // build new operator 
    lower->beginBlockFill(rows,rows);
@@ -244,7 +244,7 @@ BlockedLinearOp zeroBlockedOp(const BlockedLinearOp & blo)
    RCP<const Thyra::ProductVectorSpaceBase<double> > domain = blo->productDomain();
 
    // allocate new operator
-   BlockedLinearOp zeroOp = createNewBlockedOp();
+   BlockedLinearOp zeroOp = createBlockedOp();
  
    // build new operator 
    zeroOp->beginBlockFill(rows,rows);

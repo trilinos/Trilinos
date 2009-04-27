@@ -9,7 +9,10 @@
 
 #include "Thyra_LinearOpBase.hpp"
 
+// PB includes
+#include "PB_BlockedReordering.hpp"
 #include "Epetra/PB_EpetraOperatorWrapper.hpp"
+#include "Epetra/PB_StridedMappingStrategy.hpp"
 
 // NOX includes
 #include "NOX.H"
@@ -38,6 +41,14 @@ public:
 
    const Teuchos::RCP<const Epetra_Operator> GetBlock(int i,int j) const;
 
+   /** Use a reorder manager to block this operator as desired.
+     * Multiple calls to the function reorder only the underlying object. 
+     */
+   void Reorder(const BlockReorderManager & brm);
+
+   //! Remove any reordering on this object
+   void RemoveReording();
+
    // functions overloading Epetra_Operator
    ////////////////////////////////////////////////
 
@@ -64,6 +75,9 @@ public:
 protected:
    // gooey center of this shell
    Teuchos::RCP<Epetra_Operator> fullContent_;
+   Teuchos::RCP<StridedMappingStrategy> stridedMapping_;
+   Teuchos::RCP<const Thyra::LinearOpBase<double> > stridedOperator_;
+   Teuchos::RCP<const BlockReorderManager> reorderManager_;
 
    std::string label_;
 

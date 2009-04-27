@@ -70,7 +70,21 @@ int tStridedEpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
    allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"vector_constr\" ... PASSED","   \"vector_constr\" ... FAILED");
    failcount += status ? 0 : 1;
+   totalrun++; 
+
+   status = test_reorder(verbosity,failstrm,false);
+   allTests &= status;
+   PB_TEST_MSG(stdstrm,1,"   \"reorder(flat reorder)\" ... PASSED","   \"reorder(flat reorder)\" ... FAILED");
+   failcount += status ? 0 : 1;
    totalrun++;
+
+#if 0
+   status = test_reorder(verbosity,failstrm,true);
+   allTests &= status;
+   PB_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder)\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
+   failcount += status ? 0 : 1;
+   totalrun++;
+#endif
 
    status = allTests;
    if(verbosity >= 10) {
@@ -205,6 +219,93 @@ bool tStridedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
       << "sanity checked - " << max << " >= " << min);
    TEST_ASSERT(max<=tolerance_,
          "   tStridedEpetraOperator::test_vector_constr: " << toString(status) << ": "
+      << "testing tolerance over many matrix vector multiplies ( " << max << " <= "
+      << tolerance_ << " )");
+
+   return allPassed;
+}
+
+bool tStridedEpetraOperator::test_reorder(int verbosity,std::ostream & os,bool total)
+{
+   bool status = false;
+   bool allPassed = true;
+
+   const Epetra_Comm & comm = *GetComm();
+
+   std::string tstr = total ? "(composite reorder)" : "(flat reorder)";
+
+   TEST_MSG("\n   tStridedEpetraOperator::test_reorder" << tstr << ": "
+         << "Running on " << comm.NumProc() << " processors");
+
+   // pick 
+   int nx = 3 * 25 * comm.NumProc();
+   int ny = 3 * 50 * comm.NumProc();
+
+   // create a big matrix to play with
+   // note: this matrix is not really strided
+   //       however, I just need a nontrivial
+   //       matrix to play with
+   Trilinos_Util::CrsMatrixGallery FGallery("recirc_2d",comm);
+   FGallery.Set("nx",nx);
+   FGallery.Set("ny",ny);
+   RCP<Epetra_CrsMatrix> A = rcp(FGallery.GetMatrix(),false);
+
+   int width = 3;
+   Epetra_MultiVector x(A->OperatorDomainMap(),width);
+   Epetra_MultiVector yf(A->OperatorRangeMap(),width);
+   Epetra_MultiVector yr(A->OperatorRangeMap(),width);
+
+   PB::Epetra::StridedEpetraOperator flatShell(3,A,"Af");
+   PB::Epetra::StridedEpetraOperator reorderShell(3,A,"Ar");
+ 
+   PB::BlockReorderManager brm;
+   if(total) {
+      brm.SetNumBlocks(2);
+      brm.SetBlock(0,1);
+      brm.GetBlock(1)->SetNumBlocks(2);
+      brm.GetBlock(1)->SetBlock(0,0);
+      brm.GetBlock(1)->SetBlock(1,2);
+   }
+   else {
+      brm.SetNumBlocks(3);
+      brm.SetBlock(0,1);
+      brm.SetBlock(1,0);
+      brm.SetBlock(2,2);
+   }
+   reorderShell.Reorder(brm);
+   TEST_MSG("\n   tStridedEpetraOperator::test_reorder" << tstr << ": patern = " << brm.toString());
+
+   TEST_MSG("\n   tStridedEpetraOperator::test_reorder" << tstr << ":\n");
+   TEST_MSG("\n      " << Teuchos::describe(*reorderShell.getThyraOp(), Teuchos::VERB_HIGH)  << std::endl);
+
+   // test the operator against a lot of random vectors
+   int numtests = 100;
+   double max = 0.0;
+   double min = 1.0;
+   for(int i=0;i<numtests;i++) {
+      double norm[width];
+      x.Random();
+
+      flatShell.Apply(x,yf);
+      reorderShell.Apply(x,yr);
+
+      yf.Norm2(norm);
+      yr.Norm2(norm);
+
+      Epetra_MultiVector e(yf);
+      e.Update(-1.0,yr,1.0);
+      e.Norm2(norm);
+
+      for(int j=0;j<width;j++) {
+         max = max>norm[j] ? max : norm[j];
+         min = min<norm[j] ? min : norm[j];
+      }
+   }
+   TEST_ASSERT(max>=min,
+         "   tStridedEpetraOperator::test_reorder" << tstr << ": " << toString(status) << ": "
+      << "sanity checked - " << max << " >= " << min);
+   TEST_ASSERT(max<=tolerance_,
+         "   tStridedEpetraOperator::test_reorder" << tstr << ": "<< toString(status) << ": "
       << "testing tolerance over many matrix vector multiplies ( " << max << " <= "
       << tolerance_ << " )");
 

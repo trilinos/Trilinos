@@ -1,10 +1,13 @@
 #include "Epetra/PB_StridedMappingStrategy.hpp"
 #include "Epetra/PB_InterlacedEpetra.hpp"
+#include "Epetra/PB_EpetraHelpers.hpp"
 
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
+#include "Thyra_DefaultSpmdMultiVector.hpp"
+#include "Thyra_DefaultBlockedLinearOp.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -48,7 +51,6 @@ void StridedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
    int count = X.NumVectors(); 
 
    std::vector<RCP<Epetra_MultiVector> > subX;
-   std::vector<RCP<const Epetra_MultiVector> > subY;
 
    // allocate vectors to copy into
    PB::Epetra::buildSubVectors(blockMaps_,subX,count);
@@ -57,14 +59,23 @@ void StridedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
    PB::Epetra::one2many(subX,X,blockImport_);
 
    // convert subX to an array of multi vectors
-   Teuchos::Array<RCP<const Thyra::MultiVectorBase<double> > > thyra_subX;
-   for(int i=0;i<blockMaps_.size();i++)
-      thyra_subX.push_back(Thyra::create_MultiVector(subX[i],Thyra::productVectorSpaceBase(eow.getThyraOp()->domain())->getBlock(i)));
+   Teuchos::Array<RCP<Thyra::MultiVectorBase<double> > > thyra_subX;
+   Teuchos::Ptr<Thyra::ProductMultiVectorBase<double> > prod_X
+         = Teuchos::ptr_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(thyra_X);
+   for(int i=0;i<blockMaps_.size();i++) {
+      //thyra_subX.push_back(Thyra::create_MultiVector(subX[i],Thyra::productVectorSpaceBase(thyra_X->range())->getBlock(i)));
+
+      RCP<Thyra::DefaultSpmdMultiVector<double> > vec 
+            = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(prod_X->getNonconstMultiVectorBlock(i)); 
+      fillDefaultSpmdMultiVector(vec,subX[i]);
+   }
   
+   /*
    // build product multivector
    const RCP<const Thyra::DefaultProductVectorSpace<double> > pvs 
-         = rcp_dynamic_cast<const Thyra::DefaultProductVectorSpace<double> >(eow.getThyraOp()->domain());
+         = rcp_dynamic_cast<const Thyra::DefaultProductVectorSpace<double> >(thyra_X->range());
    Teuchos::ptr_dynamic_cast<Thyra::DefaultProductMultiVector<double> >(thyra_X)->initialize(pvs,thyra_subX);
+   */
 }
 
 // Virtual function defined in MappingStrategy.  This copies

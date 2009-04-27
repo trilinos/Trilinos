@@ -38,8 +38,8 @@ LinearOp SIMPLEPreconditionerFactory
    const LinearOp H = getInvDiagonalOp(F);
 
    // build approximate Schur complement: hatS = -C + B*H*Bt
-   const LinearOp hatS = explicitAdd(Thyra::scale(-1.0,C), 
-                                             explicitMultiply(B,H,Bt));
+   const LinearOp hatS = explicitAdd(scale(-1.0,C), 
+                                     explicitMultiply(B,H,Bt));
 
    // build inverses for F and the approximate Schur complement
    const LinearOp invF = buildInverse(*inverse_,F);
@@ -52,22 +52,22 @@ LinearOp SIMPLEPreconditionerFactory
    setBlock(1,0,L,B);
 
    invDiag[0] = invF;
-   invDiag[1] = Thyra::scale(-1.0,invS);
-   LinearOp invL = createNewBlockLowerTriInverseOp(L,invDiag);
+   invDiag[1] = scale(-1.0,invS);
+   LinearOp invL = createBlockLowerTriInverseOp(L,invDiag);
 
    // build upper triangular matrix
    BlockedLinearOp U = zeroBlockedOp(blockOp);
-   setBlock(0,1,U,Thyra::multiply(H,Bt));
+   setBlock(0,1,U,multiply(H,Bt));
 
-   invDiag[0] = Thyra::identity(invF->range());
-   invDiag[1] = Thyra::scale(alpha_,Thyra::identity(invS->range()));
-   LinearOp invU = createNewBlockUpperTriInverseOp(L,invDiag);
+   invDiag[0] = identity(rangeSpace(invF));
+   invDiag[1] = scale(alpha_,identity(rangeSpace(invS)));
+   LinearOp invU = createBlockUpperTriInverseOp(L,invDiag);
 
    // return implicit product operator
    std::stringstream ss;
    ss << "SIMPLE Preconditioner: ( inv(F) = " << invF->description()
       << ", inv(S) = " << invS->description() << " )";
-   return Thyra::multiply(invU,invL,ss.str());
+   return multiply(invU,invL,ss.str());
 }
 
 } // end namespace NS

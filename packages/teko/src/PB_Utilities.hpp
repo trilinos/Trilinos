@@ -21,6 +21,7 @@ namespace PB {
 using Thyra::multiply;
 using Thyra::scale;
 using Thyra::add;
+using Thyra::identity;
 
 /** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
   *
@@ -125,6 +126,14 @@ BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvs)
 typedef Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > BlockedLinearOp;
 typedef Teuchos::RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
+//! Get the range space of a linear operator
+inline VectorSpace rangeSpace(const LinearOp & lo)
+{ return lo->range(); }
+
+//! Get the domain space of a linear operator
+inline VectorSpace domainSpace(const LinearOp & lo)
+{ return lo->domain(); }
+
 //! Converse a LinearOp to a BlockedLinearOp
 inline BlockedLinearOp toBlockedLinearOp(const LinearOp clo)
 {
@@ -155,7 +164,7 @@ inline void setBlock(int i,int j,BlockedLinearOp & blo, const LinearOp & lo)
 { return blo->setBlock(i,j,lo); }
 
 //! Build a new blocked linear operator
-inline BlockedLinearOp createNewBlockedOp()
+inline BlockedLinearOp createBlockedOp()
 { return rcp(new Thyra::DefaultBlockedLinearOp<double>()); }
 
 //! Get the strictly upper triangular portion of the matrix

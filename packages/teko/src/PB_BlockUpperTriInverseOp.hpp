@@ -69,7 +69,7 @@ private:
    BlockUpperTriInverseOp(const BlockUpperTriInverseOp &);
 };
 
-inline LinearOp createNewBlockUpperTriInverseOp(BlockedLinearOp & U,const std::vector<LinearOp> & invDiag)
+inline LinearOp createBlockUpperTriInverseOp(BlockedLinearOp & U,const std::vector<LinearOp> & invDiag)
 {
    return Teuchos::rcp(new BlockUpperTriInverseOp(U,invDiag));
 }

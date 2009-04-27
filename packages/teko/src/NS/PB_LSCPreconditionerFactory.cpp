@@ -83,7 +83,7 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    BlockedLinearOp U = getUpperTriBlocks(blockOp); 
 
    // build the preconditioner operator
-   return createNewBlockUpperTriInverseOp(U,invDiag);
+   return createBlockUpperTriInverseOp(U,invDiag);
 }
 
 } // end namespace NS

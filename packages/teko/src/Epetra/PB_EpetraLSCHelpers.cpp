@@ -6,6 +6,9 @@
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
+#include "Thyra_BlockedLinearOpBase.hpp"
+#include "Thyra_ZeroLinearOpBase.hpp"
 
 // Epetra includes
 #include "Epetra_Vector.h"
@@ -20,6 +23,7 @@
 
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::rcpFromRef;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::null;
 
@@ -275,7 +279,7 @@ std::pair<int,int> thyraMatrixToCrsVector(const RCP<const Thyra::LinearOpBase<do
       }
       else { 
          // this is not an Epetra_Operator => it should be Thyra::zero
-         rcp_dynamic_cast<const ZeroLinearOpBase<double> >(*itr);
+         rcp_dynamic_cast<const Thyra::ZeroLinearOpBase<double> >(*itr);
          
          // if we get this far...this is a zero operator
          eCrsOp = Teuchos::null;

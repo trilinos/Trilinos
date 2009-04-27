@@ -26,6 +26,7 @@ public:
 
    bool test_numvars_constr(int verbosity,std::ostream & os);
    bool test_vector_constr(int verbosity,std::ostream & os);
+   bool test_reorder(int verbosity,std::ostream & os,bool total);
 
 protected:
    double tolerance_;

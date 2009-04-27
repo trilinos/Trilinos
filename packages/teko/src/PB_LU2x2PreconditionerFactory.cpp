@@ -27,7 +27,7 @@ LinearOp LU2x2PreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp
    LinearOp invS   = invOpsStrategy_->getInvS(A,state);
 
    // build the SchurSolve LinearOp
-   return createNewLU2x2InverseOp(A,invA00,invS);
+   return createLU2x2InverseOp(A,invA00,invS);
 }
 
 } // end namespace PB

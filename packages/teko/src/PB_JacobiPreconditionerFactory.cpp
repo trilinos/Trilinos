@@ -25,7 +25,7 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearO
    TEUCHOS_ASSERT(rows==invDiag.size());
 
    // create a blocked linear operator
-   BlockedLinearOp precond = createNewBlockedOp();
+   BlockedLinearOp precond = createBlockedOp();
 
    // start filling the blocked operator
    precond->beginBlockFill(rows,rows); // this is assuming the matrix is square

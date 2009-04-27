@@ -155,7 +155,7 @@ bool tBlockLowerTriInverseOp::test_alphabeta(int verbosity,std::ostream & os)
    double diff;
 
    BlockedLinearOp U = getLowerTriBlocks(A_);
-   LinearOp invTri = createNewBlockLowerTriInverseOp(U,invDiag_);
+   LinearOp invTri = createBlockLowerTriInverseOp(U,invDiag_);
 
    RCP<Thyra::VectorBase<double> > src = Thyra::createMember(invA_->domain()); 
    RCP<Thyra::VectorBase<double> > dste = Thyra::createMember(invA_->range()); 
@@ -190,7 +190,7 @@ bool tBlockLowerTriInverseOp::test_apply(int verbosity,std::ostream & os)
    bool allPassed = true;
 
    RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > U = getLowerTriBlocks(A_);
-   RCP<const Thyra::LinearOpBase<double> > invTri = createNewBlockLowerTriInverseOp(U,invDiag_);
+   RCP<const Thyra::LinearOpBase<double> > invTri = createBlockLowerTriInverseOp(U,invDiag_);
 
    Thyra::LinearOpTester<double> tester;
    tester.show_all_tests(true);
