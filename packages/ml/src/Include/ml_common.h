@@ -180,6 +180,12 @@
 #  endif
 #endif
 
+#ifdef HAVE_ML_PARMETIS
+#  ifndef HAVE_ML_METIS
+#    define HAVE_ML_METIS
+#  endif
+#endif
+
 #endif /*ifndef TRILINOS_NO_CONFIG_H*/
 
 #endif

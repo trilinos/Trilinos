@@ -422,9 +422,7 @@ TAC_ARG_WITH_PACKAGE(ml_superlu_dist, [(Deprecated in favor of --enable-ml-ameso
 #
 TAC_ARG_WITH_PACKAGE(ml_metis, [Enable METIS support.  METIS can be used to create aggregates using graph-decomposition algorithsm. Note 1: METIS is a third party library.  As such, configure assumes that it has already been built.  Note 2: You must also specify the location of headers and libraries like, for instance: configure --with-libs="<other libraries> -lmetis" --with-ldflags="-L<METIS-library-path>" and --with-incdirs="<METIS-include-path>".], ML_METIS, no)
 #
-TAC_ARG_WITH_PACKAGE(ml_parmetis2x, [Enable ParMETIS support, version 2.x. See notes for --with-ml_metis.], ML_PARMETIS_2x, no) 
-#
-TAC_ARG_WITH_PACKAGE(ml_parmetis3x, [Enable ParMETIS support, version 3.x. See notes for --with-ml_metis.], ML_PARMETIS_3x, no) 
+TAC_ARG_WITH_PACKAGE(ml_parmetis, [Enable ParMETIS support. See notes for --with-ml_metis.], ML_PARMETIS, no) 
 #
 TAC_ARG_WITH_PACKAGE(ml_arpack, [Enable ARPACK support. See notes for --with-ml_metis.], ML_ARPACK, no) 
 #

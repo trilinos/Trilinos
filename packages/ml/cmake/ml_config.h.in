@@ -95,10 +95,7 @@
 /* Define if want to build with ml_parasails enabled */
 #cmakedefine HAVE_ML_PARASAILS
 
-/* Define if want to build with ml_parmetis2x enabled */
-#cmakedefine HAVE_ML_PARMETIS_2x
-
-/* Define if want to build with ml_parmetis3x enabled */
+/* Define if want to build with ml_parmetis enabled */
 #cmakedefine HAVE_ML_PARMETIS
 
 /* Define if want to build with ml_parpack enabled */

@@ -1693,7 +1693,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
               int UseImplicitTranspose, ML_Partitioner which_partitioner)
 {
  int mypid, nprocs, Nglobal, i, j, the_length;
-#if !defined(HAVE_ML_PARMETIS_2x) && !defined(HAVE_ML_PARMETIS_3x) && !defined(HAVE_ML_ZOLTAN) && !defined(HAVE_ML_JOSTLE)
+#if !defined(HAVE_ML_PARMETIS) && !defined(HAVE_ML_ZOLTAN) && !defined(HAVE_ML_JOSTLE)
  int oldj, *the_list = NULL, offset, Nnonzero, oldNnonzero, *itemp = NULL;
   double * d2vec;
 #endif
@@ -1711,7 +1711,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
  double *dvec, *values = NULL;
  USR_REQ *request = NULL; 
  ML_Comm *comm;
-#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) || defined(HAVE_ML_ZOLTAN) || defined(HAVE_ML_JOSTLE)
+#if defined(HAVE_ML_PARMETIS) || defined(HAVE_ML_ZOLTAN) || defined(HAVE_ML_JOSTLE)
  int *block_list; 
 #endif
 
@@ -1723,7 +1723,7 @@ int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
   Nglobal = mat->invec_leng;
   ML_gsum_scalar_int(&Nglobal, &i, comm);
 
-#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) || defined(HAVE_ML_ZOLTAN) || defined(HAVE_ML_JOSTLE)
+#if defined(HAVE_ML_PARMETIS) || defined(HAVE_ML_ZOLTAN) || defined(HAVE_ML_JOSTLE)
    block_list = (int *) ML_allocate(1 + mat->outvec_leng*sizeof(int));
    if (block_list == NULL)
       pr_error("ML_repartition_matrix: out of space\n");

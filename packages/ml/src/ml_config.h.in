@@ -141,11 +141,8 @@
 /* Define if want to build with ml_parasails enabled */
 #undef HAVE_ML_PARASAILS
 
-/* Define if want to build with ml_parmetis2x enabled */
-#undef HAVE_ML_PARMETIS_2x
-
-/* Define if want to build with ml_parmetis3x enabled */
-#undef HAVE_ML_PARMETIS_3x
+/* Define if want to build with ml_parmetis enabled */
+#undef HAVE_ML_PARMETIS
 
 /* Define if want to build with ml_parpack enabled */
 #undef HAVE_ML_PARPACK

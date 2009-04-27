@@ -444,7 +444,7 @@ extern "C" {
 #include "jostle.h"
 #endif
 
-#ifdef HAVE_ML_PARMETIS_3x
+#ifdef HAVE_ML_PARMETIS
 #include "parmetis.h"
 #endif
 
@@ -462,10 +462,10 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   double *val = NULL; 
   int    offset = -1;
 
-#if defined(HAVE_ML_METIS) || defined(HAVE_ML_PARMETIS_3x) || defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_JOSTLE) 
+#if defined(HAVE_ML_METIS) || defined(HAVE_ML_PARMETIS) || defined(HAVE_ML_JOSTLE) 
   int     Cstyle = 0, dummy = -1;
 #endif
-#ifdef HAVE_ML_PARMETIS_3x
+#ifdef HAVE_ML_PARMETIS
   idxtype ncon = 1;
   float  itr = 1000., ubvec = 1.05;
 #endif
@@ -477,7 +477,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
   USR_REQ *request = NULL; 
   char str[80];
 #endif
-#if defined(HAVE_ML_METIS) || defined(HAVE_ML_PARMETIS_3x) || defined(HAVE_ML_PARMETIS_2x)
+#if defined(HAVE_ML_METIS) || defined(HAVE_ML_PARMETIS)
   int     options[5]={0,3,1,1,0};
   int     weightflag = 0;
 #endif
@@ -514,7 +514,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     return 1;
   }
 #endif
-#if !(defined(HAVE_ML_PARMETIS_2x)||defined(HAVE_ML_PARMETIS_3x))
+#if !defined(HAVE_ML_PARMETIS)
   if ( which_partitioner == ML_USEPARMETIS ) {
     if (myid == 0) 
       printf("ML_partitionBlocksNodes: Parmetis is not linked\n");
@@ -752,7 +752,7 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
     
     for (ii = 0; ii < n; ii++) pnode_part[ii] = matrix->comm->ML_mypid;
 
-#ifdef HAVE_ML_PARMETIS_3x
+#ifdef HAVE_ML_PARMETIS
     node_wt = (idxtype *) ML_allocate( (Nrows+1) * sizeof(idxtype) );
     for (j = 0; j < Nrows; j++) {
       node_wt[j] = xadj[j+1] - xadj[j] + 1;
@@ -766,13 +766,6 @@ int ML_Operator_BlockPartition(ML_Operator *matrix, int n, int *nblks,
 				&Cstyle, &ncon, nblks, NULL, &ubvec, 
 				&itr, options, &dummy, pnode_part,
 				&(matrix->comm->USR_comm));
-#endif
-#ifdef HAVE_ML_PARMETIS_2x
-    if (matrix->comm->ML_mypid == 0 && ML_Get_PrintLevel() > 4)
-      printf("Repartitioning using ParMETIS2x\n");
-    ParMETIS_PartKway( vtxdist,xadj,adjncy, NULL, NULL, &weightflag,
-		       &Cstyle, nblks, options, &dummy, pnode_part,
-		       &(matrix->comm->USR_comm));
 #endif
     break;
 

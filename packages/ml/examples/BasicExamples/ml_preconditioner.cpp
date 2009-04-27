@@ -140,7 +140,8 @@ int main(int argc, char *argv[])
   MLList.set("increasing or decreasing","increasing");
 
   // use Uncoupled scheme to create the aggregate
-  MLList.set("aggregation: type", "Uncoupled");
+  //MLList.set("aggregation: type", "Uncoupled");
+  MLList.set("aggregation: type", "ParMETIS");
 
   // smoother is Chebyshev. Example file 
   // `ml/examples/TwoLevelDD/ml_2level_DD.cpp' shows how to use

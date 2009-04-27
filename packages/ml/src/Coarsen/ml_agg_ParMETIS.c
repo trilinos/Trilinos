@@ -93,7 +93,7 @@ extern void ML_DestroyQ(void);
 /* done is parmetis has not been linked (with mpi enabled).               */
 /* ********************************************************************** */
 
-#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
+#if defined(HAVE_ML_PARMETIS)
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -474,7 +474,7 @@ int ML_DecomposeGraph_with_ParMETIS( ML_Operator *Amatrix,
   int *wgtflag=NULL, numflag, *options=NULL, edgecut;
   idxtype *xadj=NULL, *adjncy=NULL;
 #if defined(ML_MPI)
-#if defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x)
+#if defined(HAVE_ML_PARMETIS)
   idxtype *vwgt=NULL, *adjwgt=NULL;
 #endif
 #endif
@@ -731,11 +731,7 @@ CPU-intensive, but it is safe. The case of N_parts = 1 is treated separately.
       for( i=0 ; i<Nrows ; i++ ) part[i] = -7;
       skip_check = 0; 
 
-#if defined(HAVE_ML_PARMETIS_2x) && defined(ML_MPI)
-      ParMETIS_PartKway(vtxdist, xadj, adjncy, vwgt, adjwgt,
-			wgtflag, &numflag, &N_parts,
-			options, &edgecut, part, &ParMETISComm);
-#elif defined(HAVE_ML_PARMETIS_3x)  && defined(ML_MPI)
+#if defined(HAVE_ML_PARMETIS)  && defined(ML_MPI)
       /* never tested right now... */
       ParMETIS_V3_PartKway (vtxdist, xadj, adjncy, vwgt, adjwgt,
 			    wgtflag, &numflag, &ncon, &N_parts, tpwgts,

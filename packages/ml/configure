@@ -1594,9 +1594,7 @@ Optional Packages:
                           --with-ldflags="-L<METIS-library-path>" and
                           --with-incdirs="<METIS-include-path>". (default is
                           no)
-  --with-ml_parmetis2x    Enable ParMETIS support, version 2.x. See notes for
-                          --with-ml_metis. (default is no)
-  --with-ml_parmetis3x    Enable ParMETIS support, version 3.x. See notes for
+  --with-ml_parmetis      Enable ParMETIS support. See notes for
                           --with-ml_metis. (default is no)
   --with-ml_arpack        Enable ARPACK support. See notes for
                           --with-ml_metis. (default is no)
@@ -8667,50 +8665,23 @@ fi
 #
 
 
-# Check whether --with-ml_parmetis2x was given.
-if test "${with_ml_parmetis2x+set}" = set; then
-  withval=$with_ml_parmetis2x; ac_cv_use_ml_parmetis2x=$withval
+# Check whether --with-ml_parmetis was given.
+if test "${with_ml_parmetis+set}" = set; then
+  withval=$with_ml_parmetis; ac_cv_use_ml_parmetis=$withval
 else
-  ac_cv_use_ml_parmetis2x=no
+  ac_cv_use_ml_parmetis=no
 fi
 
 
-{ echo "$as_me:$LINENO: checking whether to use ml_parmetis2x" >&5
-echo $ECHO_N "checking whether to use ml_parmetis2x... $ECHO_C" >&6; }
+{ echo "$as_me:$LINENO: checking whether to use ml_parmetis" >&5
+echo $ECHO_N "checking whether to use ml_parmetis... $ECHO_C" >&6; }
 
-if test "X$ac_cv_use_ml_parmetis2x" != "Xno"; then
+if test "X$ac_cv_use_ml_parmetis" != "Xno"; then
   { echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_PARMETIS_2x
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-#
-
-
-# Check whether --with-ml_parmetis3x was given.
-if test "${with_ml_parmetis3x+set}" = set; then
-  withval=$with_ml_parmetis3x; ac_cv_use_ml_parmetis3x=$withval
-else
-  ac_cv_use_ml_parmetis3x=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to use ml_parmetis3x" >&5
-echo $ECHO_N "checking whether to use ml_parmetis3x... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_ml_parmetis3x" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ML_PARMETIS_3x
+#define HAVE_ML_PARMETIS
 _ACEOF
 
 else

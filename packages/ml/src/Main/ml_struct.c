@@ -85,10 +85,7 @@ int ML_Create(ML **ml_ptr, int Nlevels)
 
 comm = (*ml_ptr)->comm;
 if (!ml_defines_have_printed && ML_Get_PrintLevel() > 0) {
-#ifdef HAVE_ML_PARMETIS_2x
-  if (comm->ML_mypid == 0) printf("USing ParMETIS 2.x\n");
-#endif
-#ifdef HAVE_ML_PARMETIS_3x
+#ifdef HAVE_ML_PARMETIS
   if (comm->ML_mypid == 0) printf("USing ParMETIS 3.x\n");
 #endif
 #ifdef ML_NOTALWAYS_LOWEST

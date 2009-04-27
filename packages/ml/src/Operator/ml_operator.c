@@ -195,7 +195,7 @@ int ML_Operator_Clean( ML_Operator *mat)
    }
 #endif
 #if defined(ML_FLOPS) || defined(ML_TIMING_DETAILED)
-#if ! ( defined(HAVE_ML_PARMETIS_2x) || defined(HAVE_ML_PARMETIS_3x) )
+#if !defined(HAVE_ML_PARMETIS)
    if  (mat->label != NULL)
    {
      if (mat->apply_time != 0.0)
