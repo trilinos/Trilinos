@@ -231,11 +231,13 @@ Package: Isorropia
 
 Package Transition Lead: Cedric Chevalier (ccheval)
 
-Status: Basic libraries and several tests and examples
+Status: All code and tests compile (without any warning) and pass.
+Dependancies are correctly handle.
 
-Final Certification Date: [???]
+Final Certification Date: 2009/04/27
 
-Final Certification Evidence: [???]
+Final Certification Evidence: See Trilinos/packages/isorropia and nightly
+tests.
 
 -------------------------------------------------------------------------------
 
