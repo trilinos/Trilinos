@@ -332,7 +332,6 @@
     </EmailAddresses>
   </SubProject>
   <SubProject name="Phdmesh">
-    <Dependency name="ThreadPool" type="LR"/>
     <EmailAddresses>
       <Email address="phdmesh-regression@software.sandia.gov"/>
     </EmailAddresses>

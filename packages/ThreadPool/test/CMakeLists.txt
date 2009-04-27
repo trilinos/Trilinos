@@ -5,7 +5,6 @@ PACKAGE_ADD_EXECUTABLE(
   test_tpi_c
   COMM serial
   SOURCES test_main.c test_c_dnax.c test_tpi_unit.c
-  DEPLIBS pthread
   DIRECTORY .
   )
 
@@ -13,7 +12,6 @@ PACKAGE_ADD_EXECUTABLE(
   test_tpi_cpp
   COMM serial
   SOURCES test_tpi.cpp
-  DEPLIBS pthread
   DIRECTORY .
   )
 
@@ -21,7 +19,6 @@ PACKAGE_ADD_EXECUTABLE(
   test_tpi_sum
   COMM serial mpi
   SOURCES test_mpi_sum.c
-  DEPLIBS pthread m
   DIRECTORY .
   )
 
