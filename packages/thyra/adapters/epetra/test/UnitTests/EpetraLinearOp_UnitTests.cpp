@@ -61,27 +61,55 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
   RCP<const Thyra::LinearOpBase<double> > A22 = Thyra::epetraLinearOp(getEpetraMatrix(2,2,8));
   
   out << "Sub operators built" << std::endl;
-  
-  // build composite operator
-  RCP<const LinearOpBase<double> > A = block2x2<double>(
-    block2x2<double>(A00, A01, A10, A11),   block2x1<double>(A02,A12),
-    block1x2<double>(A20, A21),             A22
-    );
-  
-  out << "Composite operator built" << std::endl;
-  
-  // build vectors for use in apply
-  RCP<MultiVectorBase<double> > x = createMembers<double>(A->domain(), 3);
-  RCP<MultiVectorBase<double> > y = createMembers<double>(A->range(), 3);
-  
-  Thyra::randomize(-1.0,1.0,x.ptr().get());
 
-  out << "A = \n" << describe(*A, Teuchos::VERB_HIGH) << std::endl;
-  out << "x = \n" << describe(*x, Teuchos::VERB_HIGH) << std::endl;
-  out << "y = \n" << describe(*y, Teuchos::VERB_HIGH) << std::endl;
-  
-  // perform a matrix vector multiply
-  A->apply(Thyra::NONCONJ_ELE,*x,&*y);
+  {
+     // build composite operator
+     RCP<const LinearOpBase<double> > A = block2x2<double>(
+       block2x2<double>(A00, A01, A10, A11),   block2x1<double>(A02,A12),
+       block1x2<double>(A20, A21),             A22
+       );
+   
+     out << "First composite operator built" << std::endl;
+     
+     // build vectors for use in apply
+     RCP<MultiVectorBase<double> > x = createMembers<double>(A->domain(), 3);
+     RCP<MultiVectorBase<double> > y = createMembers<double>(A->range(), 3);
+     
+     Thyra::randomize(-1.0,1.0,x.ptr().get());
+   
+     out << "A = \n" << describe(*A, Teuchos::VERB_HIGH) << std::endl;
+     out << "x = \n" << describe(*x, Teuchos::VERB_HIGH) << std::endl;
+     out << "y = \n" << describe(*y, Teuchos::VERB_HIGH) << std::endl;
+     
+     // perform a matrix vector multiply
+     A->apply(Thyra::NONCONJ_ELE,*x,&*y);
+
+     out << "First composite operator completed" << std::endl;
+  }
+/*
+  {
+     RCP<const LinearOpBase<double> > A = block2x2<double>(
+       A11, block1x2<double>(A10,A12),block2x1<double>(A01,A21),
+       block2x2<double>(A00,A02,A20,A22));
+     
+     out << "Second composite operator built" << std::endl;
+     
+     // build vectors for use in apply
+     RCP<MultiVectorBase<double> > x = createMembers<double>(A->domain(), 3);
+     RCP<MultiVectorBase<double> > y = createMembers<double>(A->range(), 3);
+     
+     Thyra::randomize(-1.0,1.0,x.ptr().get());
+   
+     out << "A = \n" << describe(*A, Teuchos::VERB_HIGH) << std::endl;
+     out << "x = \n" << describe(*x, Teuchos::VERB_HIGH) << std::endl;
+     out << "y = \n" << describe(*y, Teuchos::VERB_HIGH) << std::endl;
+     
+     // perform a matrix vector multiply
+     A->apply(Thyra::NONCONJ_ELE,*x,&*y);
+
+     out << "Second composite operator completed" << std::endl;
+  }
+*/
 
   out << "Test complete" << std::endl;
 
