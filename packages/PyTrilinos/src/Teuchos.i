@@ -157,6 +157,7 @@ using Teuchos::RCP;
 //Teuchos imports
 %import "Teuchos_TypeNameTraits.hpp"
 %import "Teuchos_NullIteratorTraits.hpp"
+%rename(reset_ptr) Teuchos::RCP::reset;
 %import "Teuchos_RCPDecl.hpp"
 
 // Teuchos includes
