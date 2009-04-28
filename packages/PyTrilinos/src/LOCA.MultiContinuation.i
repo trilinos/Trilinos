@@ -42,7 +42,8 @@
 #include "LOCA_MultiContinuation_NaturalGroup.H"
 
 // Local includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 
 // Namespace flattening
 using Teuchos::RCP;

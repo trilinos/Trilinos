@@ -81,7 +81,8 @@ in addition to the following factory function:
 #include "NOX_Solver_Factory.H"
 
 // Local includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 
 // Namespace flattening
 using Teuchos::RCP;

@@ -75,7 +75,8 @@ script in the example subdirectory of the PyTrilinos package:
 #include "NOX_Utils.H"
 
 // Local includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 %}
 
 // General ignore directives
@@ -91,9 +92,9 @@ script in the example subdirectory of the PyTrilinos package:
 // SWIG library includes
 %include "stl.i"
 
-// Trilinos interface file imports.
-// The Teuchos.py file that this %import will try to import in python
-// will be one directory up from this python module.  So we need to
+// Trilinos interface file imports.  The Teuchos.py file that this
+// %import will try to import in python will be one directory up from
+// this python module.  So for earlier versions of SWIG, we need to
 // add the parent directory to the search path.
 %pythoncode
 {

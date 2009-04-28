@@ -88,7 +88,8 @@ package:
 
 // Configuration includes
 #include "PyTrilinos_config.h"
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 
 // Teuchos includes
 #ifdef HAVE_TEUCHOS

@@ -37,7 +37,8 @@
 #include "LOCA_BorderedSystem_AbstractGroup.H"
 
 // Local includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 
 // Namespace flattening
 using Teuchos::RCP;

@@ -62,7 +62,8 @@ LOCA and Epetra.
 #include "Epetra_JadMatrix.h"
 
 // Local includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 #include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"

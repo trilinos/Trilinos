@@ -43,7 +43,8 @@
 #include "LOCA_TurningPoint_MinimallyAugmented_FiniteDifferenceGroup.H"
 
 // Local includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 
 // Namespace flattening
 using Teuchos::RCP;

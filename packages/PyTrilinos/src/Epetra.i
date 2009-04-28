@@ -93,7 +93,8 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 #include "Epetra_ConfigDefs.h"
 
 // Import the numpy interface
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 %}
 
 // Global swig features

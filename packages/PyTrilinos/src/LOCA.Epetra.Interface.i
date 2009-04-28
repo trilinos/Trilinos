@@ -45,7 +45,8 @@ the Trilinos package LOCA:
 
 %{
 // NumPy includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 
 // Teuchos includes
 #include "Teuchos_PythonParameter.h"

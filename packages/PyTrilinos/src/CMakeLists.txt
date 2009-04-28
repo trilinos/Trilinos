@@ -1,3 +1,30 @@
+# @HEADER
+# ************************************************************************
+#
+#                PyTrilinos: Python Interface to Trilinos
+#                   Copyright (2009) Sandia Corporation
+#
+# Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+# license for use of this work by or on behalf of the U.S. Government.
+#
+# This library is free software; you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as
+# published by the Free Software Foundation; either version 2.1 of the
+# License, or (at your option) any later version.
+#
+# This library is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with this library; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# USA
+# Questions? Contact Bill Spotz (wfspotz@sandia.gov)
+#
+# ************************************************************************
+# @HEADER
 
 INCLUDE(PackageLibraryMacros)
 
@@ -50,13 +77,14 @@ SET(HEADERS ${HEADERS}
 #
 # Core PyTrilinos headers and sources
 APPEND_SET(HEADERS
+  NumPyImporter.h
   PythonException.h
   FILEstream.h
-  NumPyImporter.h
   numpy_include.h
   )
 
 APPEND_SET(SOURCES
+  NumPyImporter.cpp
   PythonException.cpp
   FILEstream.cpp
   )
@@ -151,20 +179,28 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
   SET_SOURCE_FILES_PROPERTIES(${MODULE}.i PROPERTIES
     CPLUSPLUS ON
     )
+  # Determine the swig module output directory, name and unique target name
+  SWIG_MODULE_GET_OUTDIR_AND_MODULE(${MODULE}.i MODULE_OUTDIR MODULE_NAME)
+  IF(TARGET ${MODULE_NAME})
+    SET(PyTrilinos_TARGET_NAME ${MODULE_NODOT})
+  ELSE(TARGET ${MODULE_NAME})
+    SET(PyTrilinos_TARGET_NAME ${MODULE_NAME})
+  ENDIF(TARGET ${MODULE_NAME})
   # Add the SWIG module
-  SWIG_ADD_MODULE(${MODULE_NODOT} python ${MODULE}.i)
-  SWIG_LINK_LIBRARIES(${MODULE_NODOT} pytrilinos)
+  SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME} python "${MODULE_OUTDIR}"
+    "${MODULE_NAME}" ${MODULE}.i)
+  SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} pytrilinos)
   # Choosing the Trilinos libraries to link against requires a little bit
   # of logic
-  IF("${SWIG_MODULE_${MODULE_NODOT}_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
+  IF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
     SET(TRILINOS_LIBS ${NOXEPETRA_LIBRARIES})
-  ELSEIF("${SWIG_MODULE_${MODULE_NODOT}_OUTDIR}" MATCHES "PyTrilinos/NOX")
+  ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX")
     SET(TRILINOS_LIBS ${NOX_LIBRARIES})
-  ELSE("${SWIG_MODULE_${MODULE_NODOT}_OUTDIR}")
+  ELSE("${MODULE_OUTDIR}")
     SET(TRILINOS_LIBS ${${MODULE_UPPER}_LIBRARIES})
-  ENDIF("${SWIG_MODULE_${MODULE_NODOT}_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
-  SWIG_LINK_LIBRARIES(${MODULE_NODOT} ${TRILINOS_LIBS})
-  SET_TARGET_PROPERTIES(${MODULE_NODOT} PROPERTIES
+  ENDIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX/Epetra")
+  SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} ${TRILINOS_LIBS})
+  SET_TARGET_PROPERTIES(${PyTrilinos_TARGET_NAME} PROPERTIES
     LINK_FLAGS "${EXTRA_LINK_ARGS}"
     )
 ENDFOREACH(MODULE ${PyTrilinos_MODULES})

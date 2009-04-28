@@ -133,7 +133,8 @@ exAmesos_Factory.py.
 #endif
 
 // Local includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 #ifdef HAVE_EPETRA
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"

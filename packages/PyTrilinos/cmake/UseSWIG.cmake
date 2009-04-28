@@ -1,21 +1,46 @@
 # - SWIG module for CMake
-# Defines the following macros:
-#   SWIG_ADD_MODULE(name language [ files ])
-#     - Define swig module with given name and specified language
-#   SWIG_LINK_LIBRARIES(name [ libraries ])
-#     - Link libraries to swig module
-# All other macros are for internal use only.
-# To get the actual name of the swig module,
-# use: ${SWIG_MODULE_name_REAL_NAME}.
-# Set Source files properties such as CPLUSPLUS and SWIG_FLAGS to specify
-# special behavior of SWIG. Also global CMAKE_SWIG_FLAGS can be used to add
-# special flags to all swig calls.
-# Another special variable is CMAKE_SWIG_OUTDIR, it allows one to specify 
-# where to write all the swig generated module (swig -outdir option)
-# The name-specific variable SWIG_MODULE_<name>_EXTRA_DEPS may be used
-# to specify extra dependencies for the generated modules.
 
-SET(SWIG_CXX_EXTENSION "cxx")
+# This is a re-worked replacement for the default UseSWIG.cmake
+# provided in the installation.  This version can read a SWIG
+# interface file and parse the
+#
+#     %module (package = ...) <module_name>
+#
+# directive.  The way it is intended to be used is to call
+#
+#     SWIG_MODULE_GET_OUTDIR_AND_MODULE(SWIGFILE OUTDIR MODULE)
+#
+# where SWIGFILE is a SWIG interface file name.  SWIGFILE will be
+# parsed and the variable ${OUTDIR} will be filled with the directory
+# path obtained from the "package" option of the %module directive.
+# For example, if package="Package.Submodule", then ${OUTDIR} will be
+# set to "Package/Submodule".  The variable ${MODULE} will be filled
+# with whatever <module_name> is.
+#
+# The user then calls
+#
+#     SWIG_ADD_MODULE(NAME LANGUAGE OUTDIR MODULE [SOURCE1 ...])
+#
+# where NAME is a unique target name.  If possible, this should match
+# the MODULE name.  However, in cases where the MODULE name is not
+# unique (for example Package/__init__ and Package/Submodule/__init__
+# have the same module name __init__), then NAME and MODULE should be
+# different.  LANGUAGE should be a supported SWIG target language,
+# OUTDIR and MODULE are typically obtained from
+# SWIG_MODULE_GET_OUTDIR_AND_MODULE(...), and SOURCE1, etc., are the
+# SWIG interface file and any additional required source files.
+#
+# This also defines the following macro:
+#
+#   SWIG_LINK_LIBRARIES(NAME [LIBRARY1 ...])
+#
+# Where NAME is the target name provided in SWIG_ADD_MODULE() and
+# LIBRARY1, etc., are the libraries the module is required to link to.
+
+# Re-worked by Bill Spotz, Sandia National Laboratories, March and
+# April, 2009.
+
+SET(SWIG_CXX_EXTENSION "cpp")
 SET(SWIG_EXTRA_LIBRARIES "")
 
 SET(SWIG_PYTHON_EXTRA_FILE_EXTENSION "py")
@@ -50,7 +75,9 @@ ENDMACRO(SWIG_MODULE_INITIALIZE)
 # For a given swig interface file, determine the module name and the
 # list of parent packages from the SWIG %module directive.
 #
-MACRO(SWIG_MODULE_GET_OUTDIR_AND_MODULE name swigfile)
+MACRO(SWIG_MODULE_GET_OUTDIR_AND_MODULE swigfile outdir module)
+  SET(${outdir} "")
+  SET(${module} "")
   FILE(READ "${swigfile}" swig_contents)
   STRING(REGEX MATCH "%module *(\\([^\\)]*\\))? +[A-Za-z0-9_]+"
     swig_module_match "${swig_contents}")
@@ -61,11 +88,11 @@ MACRO(SWIG_MODULE_GET_OUTDIR_AND_MODULE name swigfile)
       STRING(REGEX REPLACE "package *= *\"([^\"]*).*" "\\1"
 	swig_package ${swig_module_options})
       IF(swig_package)
-	STRING(REPLACE "." "/" SWIG_MODULE_${name}_OUTDIR ${swig_package})
+	STRING(REPLACE "." "/" ${outdir} ${swig_package})
       ENDIF(swig_package)
     ENDIF(swig_module_options)
     STRING(REGEX REPLACE "%module *(\\([^\\)]*\\))? +([A-Za-z0-9_]+)" "\\2"
-      SWIG_MODULE_${name}_MODULE ${swig_module_match})
+      ${module} ${swig_module_match})
   ENDIF(swig_module_match)
 ENDMACRO(SWIG_MODULE_GET_OUTDIR_AND_MODULE)
 
@@ -158,8 +185,6 @@ MACRO(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile)
       "${swig_generated_file_fullname}.c")
   ENDIF(swig_source_file_cplusplus)
 
-  #MESSAGE("Full path to source file: ${swig_source_file_fullname}")
-  #MESSAGE("Full path to the output file: ${swig_generated_file_fullname}")
   GET_DIRECTORY_PROPERTY(cmake_include_directories INCLUDE_DIRECTORIES)
   SET(swig_include_dirs)
   FOREACH(it ${cmake_include_directories})
@@ -198,7 +223,7 @@ ENDMACRO(SWIG_ADD_SOURCE_TO_MODULE)
 #
 # Create Swig module
 #
-MACRO(SWIG_ADD_MODULE name language)
+MACRO(SWIG_ADD_MODULE name language outdir module)
   # Obtain the *.i and other sources
   SET(swig_dot_i_sources)
   SET(swig_other_sources)
@@ -209,18 +234,16 @@ MACRO(SWIG_ADD_MODULE name language)
       SET(swig_other_sources ${swig_other_sources} "${it}")
     ENDIF(${it} MATCHES ".*\\.i$")
   ENDFOREACH(it)
-  # Get the output directory and module name for each *.i file
-  FOREACH(it ${swig_dot_i_sources})
-    SWIG_MODULE_GET_OUTDIR_AND_MODULE(${name} ${it})
-  ENDFOREACH(it)
 
   SWIG_MODULE_INITIALIZE(${name} ${language})
 
   SET(swig_generated_sources)
+  SET(CMAKE_SWIG_OUTDIR "${outdir}")
   FOREACH(it ${swig_dot_i_sources})
     SWIG_ADD_SOURCE_TO_MODULE(${name} swig_generated_source ${it})
     SET(swig_generated_sources ${swig_generated_sources} "${swig_generated_source}")
   ENDFOREACH(it)
+  SET(CMAKE_SWIG_OUTDIR "")
   GET_DIRECTORY_PROPERTY(swig_extra_clean_files ADDITIONAL_MAKE_CLEAN_FILES)
   SET_DIRECTORY_PROPERTIES(PROPERTIES
     ADDITIONAL_MAKE_CLEAN_FILES "${swig_extra_clean_files};${swig_generated_sources}")
@@ -230,12 +253,12 @@ MACRO(SWIG_ADD_MODULE name language)
     ${swig_other_sources})
   SET_TARGET_PROPERTIES(${name}
     PROPERTIES PREFIX "")
-  IF(SWIG_MODULE_${name}_OUTDIR)
+  IF(NOT "${outdir}" STREQUAL "")
     SET_TARGET_PROPERTIES(${name} PROPERTIES
-      LIBRARY_OUTPUT_DIRECTORY ${SWIG_MODULE_${name}_OUTDIR})
-  ENDIF(SWIG_MODULE_${name}_OUTDIR)
+      LIBRARY_OUTPUT_DIRECTORY ${outdir})
+  ENDIF(NOT "${outdir}" STREQUAL "")
   SET_TARGET_PROPERTIES(${name} PROPERTIES
-    OUTPUT_NAME ${SWIG_MODULE_${name}_REAL_NAME})
+    OUTPUT_NAME _${module})
 ENDMACRO(SWIG_ADD_MODULE)
 
 #

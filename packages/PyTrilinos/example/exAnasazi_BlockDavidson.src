@@ -150,7 +150,7 @@ if __name__ == "__main__":
    if iAmRoot:
       print
       if failures == 0:
-         print "End result: TEST PASSED"
+         print "End Result: TEST PASSED"
       else:
          print "Eigensolution errors are too large"
-         print "End result: TEST FAILED"
+         print "End Result: TEST FAILED"

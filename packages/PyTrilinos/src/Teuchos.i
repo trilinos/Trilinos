@@ -92,7 +92,8 @@ ParameterList will accept a python dictionary.
 #include "Teuchos_Time.hpp"
 
 // Local includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 
 // Namespace flattening
 using std::string;

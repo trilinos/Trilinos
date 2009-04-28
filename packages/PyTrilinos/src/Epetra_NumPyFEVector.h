@@ -31,6 +31,7 @@
 
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
+//#include "NumPyImporter.h"
 
 #include "PythonException.h"
 #include "Epetra_SerialComm.h"

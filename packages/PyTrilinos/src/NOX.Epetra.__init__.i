@@ -101,7 +101,8 @@ NOX.Epetra provides the following user-level classes:
 #include "NOX_Epetra_LinearSystem_AztecOO.H"
 
 // Local includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 #include "Epetra_NumPyIntVector.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
@@ -243,15 +244,20 @@ using namespace NOX::Epetra;
   $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
 }
 
-// Epetra imports
-// %import "Epetra_SrcDistObject.h"
-// %import "Epetra_Operator.h"
-// %import "Epetra_RowMatrix.h"
-%import "Epetra.i"
+// Epetra includes.  This is a potential source of problems.  The
+// simple thing to do is to add an "%import 'Epetra.i'" here.  If I do
+// that, strange things start to happen: other, seemingly unrelated
+// wrappers start to seg fault.  I don't have a good explanation for
+// it.  By %include-ing the following, I bypass inserting an "import
+// PyTrilinos.Epetra" into the resulting .py file (because Epetra_*.i
+// files do not have a %module directive).  This seems to provide the
+// functionality I need without causing whatever confusion is at risk
+// here.
+%include "Epetra_Base.i"
+%include "Epetra_Maps.i"
+%include "Epetra_Operators.i"
 
 // NOX imports
-//%import "NOX_Abstract_Group.H"
-//%import "NOX_Abstract_Vector.H"
 %import "NOX.Abstract.i"
 
 // NOX::Epetra::Interface imports

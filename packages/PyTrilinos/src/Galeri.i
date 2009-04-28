@@ -94,7 +94,8 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_FEVbrMatrix.h"
 
 // Epetra Python utility code
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 #include "Epetra_NumPyMultiVector.h"
 #include "Epetra_NumPyVector.h"
 #include "Epetra_NumPyFEVector.h"

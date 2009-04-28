@@ -75,9 +75,10 @@ def version():
 
 #
 # In order to handle the nested namespaces properly, the import of NOX and its
-# sub-modules needs to be handled at this level.
+# sub-modules needs to be handled at this level.  If we tried to put the import
+# statement in NOX/__init__.py, we can't fill the PyTrilinos.NOX namespace
+# completely before we need to use it.
 if ('NOX' in __all__):
     import NOX
     if (NOX.Have_Epetra):
         import NOX.Epetra
-

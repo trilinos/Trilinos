@@ -55,7 +55,8 @@ NOX.Epetra.Interface provides the following user-level classes:
 
 %{
 // NumPy includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 
 // Teuchos includes
 #include "Teuchos_PythonParameter.h"

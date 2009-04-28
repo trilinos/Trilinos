@@ -68,7 +68,8 @@
 #include "NOX_StatusTest_FiniteValue.H"
 
 // Local includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 %}
 
 // Ignore/renames

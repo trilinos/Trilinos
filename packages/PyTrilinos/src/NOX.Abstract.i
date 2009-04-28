@@ -65,7 +65,8 @@ NOX.Abstract provides the following user-level classes:
 #include "NOX_Abstract_Vector.H"
 
 // Local includes
-#include "NumPyImporter.h"
+#define NO_IMPORT_ARRAY
+#include "numpy_include.h"
 %}
 
 // Standard exception handling

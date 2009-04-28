@@ -26,33 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef NUMPYIMPORTER_H
-#define NUMPYIMPORTER_H
-
-#include "numpy_include.h"
-
-// Singleton class that ensures that the numpy (macro) function
-// import_array() gets called once and only once.
-
-class NumPyImporter
-{
-protected:
-  // These are protected instead of private to keep compilers happy.
-  ~NumPyImporter() { }
-  NumPyImporter() {import_array();}
-
-private:
-  NumPyImporter(const NumPyImporter & a_ref);
-  const NumPyImporter & operator = (const NumPyImporter & a_rhs);
-
-private:
-  // The singleton, i.e. the only instance of this object is this
-  // attribute
-  static NumPyImporter m_singleton;
-  
-};
+#include "NumPyImporter.h"
 
 // Static initialization
-//NumPyImporter NumPyImporter::m_singleton;
-
-#endif // NUMPYIMPORTER_H
+NumPyImporter NumPyImporter::m_singleton;
