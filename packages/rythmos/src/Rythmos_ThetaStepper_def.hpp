@@ -393,7 +393,7 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   const Scalar x_coeff = Scalar(-coeff_x_dot);
   const Scalar x_dot_old_coeff = Scalar( -(ST::one()-theta)/theta);
 
-  V_StV( &*x_dot_base_, x_coeff, *x_ );
+  V_StV( &*x_dot_base_, x_coeff, *x_old_ );
   Vp_StV( &*x_dot_base_, x_dot_old_coeff, *x_dot_old_);
 
   if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
@@ -412,7 +412,7 @@ Scalar ThetaStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
     coeff_x,
     Teuchos::null, // x_base
     t_+dt, // t_base
-    x_pre_ //Teuchos::null // x_bar_init
+    Teuchos::null // x_bar_init
     );
   if( solver_->getModel().get() != neModel_.get() ) {
     solver_->setModel(neModel_);
@@ -1073,7 +1073,7 @@ void ThetaStepper<Scalar>::obtainPredictor_()
   }
 
   // copy to current solution
-  //V_StV(&*x_, Scalar(ST::one()), *x_pre_);
+  V_StV(&*x_, Scalar(ST::one()), *x_pre_);
 }
 
 // 
