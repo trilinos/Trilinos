@@ -487,7 +487,10 @@ test for GGEV which may not even be necessary anymore.
 
 Final Certification Date: 04/22/2009
 
-Final Certification Evidence: All tests are converted and match auto tools results.  In fact we have better coverage junder cmake since all examples are now under nightly testing.  This is not the case for autotools.
+Final Certification Evidence: All tests are converted and match auto
+tools results.  In fact we have better coverage under cmake since all
+examples are now under nightly testing.  This is not the case for
+autotools.
 
 -------------------------------------------------------------------------------
 
@@ -626,15 +629,11 @@ Package: PyTrilinos
 
 Package Transition Lead: Bill Spotz (wfspotz@sandia.gov)
 
-Status: Build is complete for packages that do not utilize nested
-namespaces.  For those that do untilize namespaces (NOX and LOCA), NOX
-has been implemented, but there is still a module import issue.  LOCA
-has not been implemented yet, but the major hurdles were overcome when
-NOX was implemented.  Backward compatibility with the autotools build
-system has been maintained.  Tests and examples have been
-implemented.  53 of 62 tests pass.  Two failures are related to the
-NOX problem above, one to Teuchos/expat and the rest are ML segfaults
-that I have not yet tracked down.
+Status: Build is complete for all packages except LOCA.  Currently,
+LOCA fails to build as a shared library.  Backward compatibility with
+the autotools build system has been maintained.  Tests and examples
+have been implemented.  61 of 62 tests pass.  The failure is due to a
+Teuchos/expat support issue.
 
 Final Certification Date: [???]
 
