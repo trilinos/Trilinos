@@ -69,7 +69,7 @@ INCLUDE_DIRECTORIES(${NumPy_INCLUDE_DIR})
 #
 # Copy the pyfragments.swg file to the build directory
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/pyfragments.swg.in
-  ${CMAKE_BINARY_DIR}/pyfragments.swg)
+  ${CMAKE_CURRENT_BINARY_DIR}/pyfragments.swg)
 
 #
 # Initialize the headers and sources
