@@ -265,9 +265,7 @@ int main(int argc, char *argv[]) {
   MLList.set("coarse: type","Jacobi");     // not recommended
   puts("Warning: Iterative coarse grid solve");
 #endif
-  //
-  //ML_Epetra::MultiLevelPreconditioner* Prec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
-  //
+  
   RCP<Epetra_Operator> Prec = rcp(  new ML_Epetra::MultiLevelPreconditioner(*A, MLList) );
   assert(Prec != Teuchos::null);
 
@@ -312,7 +310,6 @@ int main(int argc, char *argv[]) {
   bool set = problem->setProblem();
   if (set == false) {
     if (proc_verbose)
-      delete &Prec; // destroy the preconditioner
       std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
     return -1;
   }
@@ -344,7 +341,6 @@ int main(int argc, char *argv[]) {
       set = problem->setProblem(LHS,RHS);
       if (set == false) {
         if (proc_verbose)
-          delete &Prec; // destroy the preconditioner
           std::cout << std::endl << "ERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
         return -1;
       }
@@ -379,7 +375,6 @@ int main(int argc, char *argv[]) {
     }
     if (ret!=Belos::Converged || badRes) {
       if (proc_verbose)
-        delete &Prec; // destroy the preconditioner
         std::cout << "End Result: TEST FAILED" << std::endl;
 
       return -1;
@@ -389,7 +384,6 @@ int main(int argc, char *argv[]) {
   // Default return value
   //
   if (proc_verbose)
-    delete &Prec; // destroy the preconditioner
     std::cout << "End Result: TEST PASSED" << std::endl;
 
   return 0;
