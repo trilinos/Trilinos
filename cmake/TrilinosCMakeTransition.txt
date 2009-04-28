@@ -353,9 +353,10 @@ Package Transition Lead: Heidi Thornquist (hkthorn@sandia.gov)
 Status: Builds and runs all tests with cmake/ctest.  This includes library support
     for all Epetra examples/tests and Tpetra examples/tests.
 
-Final Certification Date: [???]
+Final Certification Date:  4/28/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests and files built by autotools are built by cmake,
+and possibly more.
 
 -------------------------------------------------------------------------------
 
@@ -406,9 +407,9 @@ Package Transition Lead: Heidi Thornquist (hkthorn@sandia.gov)
 Status: Builds and runs all tests with cmake/ctest.  This includes library support
     for all Epetra examples/tests/drivers.
 
-Final Certification Date: [???]
+Final Certification Date: 4/28/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All files and drivers built by autotools are built by cmake.
 
 -------------------------------------------------------------------------------
 
@@ -420,9 +421,10 @@ Status: Builds and runs all tests with cmake/ctest.  This includes library suppo
     for all Epetra examples/tests, Thyra examples/tests, and Tpetra
     examples/tests.
 
-Final Certification Date: 
+Final Certification Date: 4/28/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: more tests are being built/run with cmake than with 
+autotools
 
 -------------------------------------------------------------------------------
 
