@@ -37,6 +37,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
         "--trace-children=yes --gen-suppressions=all --suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_godel_openmpi_1.2.7.txt  ${CTEST_MEMORYCHECK_COMMAND_OPTIONS}" )
+
+    SET_DEFAULT(COMPILER_VERSION "GCC-3.4.6")
   
   ELSE()
   
@@ -46,6 +48,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DCMAKE_C_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gcc"
       "-DCMAKE_Forgtran_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gfortran"
       )
+
+    SET_DEFAULT(COMPILER_VERSION "GCC-4.1.2")
   
   ENDIF()
 

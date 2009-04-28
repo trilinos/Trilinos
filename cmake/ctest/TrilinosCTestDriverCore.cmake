@@ -84,69 +84,16 @@ EXECUTE_PROCESS(
 SITE_NAME(CTEST_SITE_DEFAULT)
 
 
-
 #
-# This is the core extended ctest driver script code that is platform
-# independent.  This script drives the testing process by doing an update and
-# then configuring and building the packages one at a time.
+# Select the list of packages
 #
-# ToDo: Finish Documentation!
+# OUTPUT: Sets Trilnos_DEFAULT_PACKAGES
+#
+# NOTE: This macro is used to cean up the main TRILINOS_CTEST_DRIVER()
+# macro.
 #
 
-MACRO(TRILINOS_CTEST_DRIVER)
-
-  #
-  # Variables that can be set by the platform-specific code and reset
-  # from the environment
-  #
-  
-  SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
-  
-  SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
-
-  # You almost never need to override this from the ENV
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
-
-  SET_DEFAULT_AND_FROM_ENV( BUILD_TYPE NONE )
- 
-  SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_NAME
-    "${HOST_TYPE}-${CTEST_TEST_TYPE}-${BUILD_DIR_NAME}" )
- 
-  SET_DEFAULT_AND_FROM_ENV( CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE )
- 
-  SET_DEFAULT_AND_FROM_ENV( CTEST_WIPE_CACHE TRUE )
-
-  SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR "Unix Makefiles")
-  
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_UPDATES TRUE )
-
-  SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_FLAGS "-j2")
-
-  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "-q -z3")
-  
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_BUILD TRUE )
-  
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
-  
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
-
-  SET_DEFAULT_AND_FROM_ENV( CTEST_COVERAGE_COMMAND gcov )
-  
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
-
-  SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND valgrind )
-  
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
-
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF )
-
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_ADDITIONAL_PACKAGES "" )
-
-  SET_DEFAULT_AND_FROM_ENV( Trilinos_EXCLUDE_PACKAGES "" )
-  
-  #
-  # Get the list of Trilinos packages to do the tests on
-  #
+MACRO(SELECT_DEFAULT_TRILINOS_PACKAGES)
 
   INCLUDE(TrilinosPackages)
   #PRINT_VAR(Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS)
@@ -180,10 +127,94 @@ MACRO(TRILINOS_CTEST_DRIVER)
 
   ENDFOREACH()
 
+  PRINT_VAR(Trilinos_PACKAGES_DEFAULT)
+
   # Reset the list of packages
   SET( Trilinos_PACKAGES ${Trilinos_PACKAGES_SAVED} )
 
-  # Get the final list of packages from the environment
+ENDMACRO()
+
+
+#
+# This is the core extended ctest driver script code that is platform
+# independent.  This script drives the testing process by doing an update and
+# then configuring and building the packages one at a time.
+#
+# ToDo: Finish Documentation!
+#
+
+MACRO(TRILINOS_CTEST_DRIVER)
+
+  #
+  # Variables that can be set by the platform-specific code and reset
+  # from the environment
+  #
+  
+  # The type of test (e.g. Nightly, Experimental, Continuous)
+  SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
+  
+  # The name of the site in the dashboard (almost never need to override this)
+  SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
+
+  # The root of the dasbhoard (almost never need to override this)
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
+
+  # The build type (e.g. DEBUG, RELEASE, NONE)
+  SET_DEFAULT_AND_FROM_ENV( BUILD_TYPE NONE )
+
+  # Set the default compiler version
+  SET_DEFAULT_AND_FROM_ENV(COMPILER_VERSION UNKNOWN)
+
+  # The name of the build that appears in the dashbaord 
+  SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_NAME
+    "${HOST_TYPE}-${COMPILER_VERSION}-${BUILD_DIR_NAME}" )
+ 
+  # Remove the entire build directory if it exists or not
+  SET_DEFAULT_AND_FROM_ENV( CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE )
+ 
+  # Remove an existing CMakeCache.txt file or not
+  SET_DEFAULT_AND_FROM_ENV( CTEST_WIPE_CACHE TRUE )
+
+  SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR "Unix Makefiles")
+  
+  # Do the CVS updates or not
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_UPDATES TRUE )
+
+  # Flags used when doing a CVS update
+  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "-q -z3")
+
+  # Flags passed to 'make'
+  SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_FLAGS "-j2")
+  
+  # Do the build or use an existing build
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_BUILD TRUE )
+  
+  # Do the tests or not (Note: must be true for coverage testing)
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
+  
+  # Do coverage testing or not
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
+
+  # Command to run to get coverage results
+  SET_DEFAULT_AND_FROM_ENV( CTEST_COVERAGE_COMMAND gcov )
+  
+  # Do memory testing (i.e. valgrind) or not
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
+
+  # Command used to perform the memory testing (i.e. valgrind)
+  SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND valgrind )
+  
+  # Submit the results to the dashboard or not
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
+
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF )
+
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_ADDITIONAL_PACKAGES "" )
+
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_EXCLUDE_PACKAGES "" )
+
+  SELECT_DEFAULT_TRILINOS_PACKAGES()
+
   SET_DEFAULT_AND_FROM_ENV( Trilinos_PACKAGES "${Trilinos_PACKAGES_DEFAULT}" )
 
   #
