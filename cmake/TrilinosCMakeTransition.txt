@@ -44,12 +44,17 @@ Package: RTOp
 
 Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
 
-Status: Should be completely finished but a careful final certification should
-be done.
+Status: All libraries, tests, examples and configure options are converted
+over.  This is a pretty simple package so this is not hard.
 
-Final Certification Date: [???]
+Final Certification Date: 04/28/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: I carefully looked over the test defined in
+rtop/test/definition.  That file defines 19 tests.  I then manually matched
+these up with the various CMakeLists.txt files where these tests are build and
+the CTest tests defined from.  I ran the serial and MPI tests and I get 19
+tests run from each.  I did not verify every single argument in every single
+test output but I trust the CMake system after a lot of experience.
 
 -------------------------------------------------------------------------------
 
