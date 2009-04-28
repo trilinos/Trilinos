@@ -306,6 +306,17 @@ depend
 You need to remember to use the ADD_SUBDIRECTORY(...) and related commands to
 add tests and examples after the libraries within a pacakge.
 
+7.c) More advanced tests can be added with PACKAGE_ADD_ADVANCED_TEST(...)
+
+If you need to add a test that needs to run an executable more than once and
+perform different checks on output files then you can use the CMake function
+PACKAGE_ADD_ADVANCED_TEST(...) to add the test.  This function is documented
+in the file PackageAddAdvancedTest.cmake and examples can be found in:
+
+  packages/teuchos/test/CTestScriptsUnitTests/CMakeLists.txt
+  packages/ml/test/ValidateParams/CMakeLists.txt
+  packages/moocho/thyra/example/NLPThyraEpetraModelEval4DOpt/CMakeLists.txt
+
 
 8) Configure, build, and test
 

@@ -9,21 +9,21 @@ Last Updated: 2009/03/27
 A) Getting set up to use CMake
 ------------------------------
 
-(*) Installing CMake from local source
+(*) Installing CMake from local source [Recommended for Trilinos developers]
 
-    $ $TRILINOS_HOME/cmake/python/install-cmake.phy --install-dir=INSTALL_BASE_DIR
+    $ $TRILINOS_HOME/cmake/python/install-cmake.py --install-dir=INSTALL_BASE_DIR
 
   This will result in cmake and related CMake tools being installed in
   INSTALL_BASE_DIR/bin.
 
   Getting help:
 
-    $ $TRILINOS_HOME/cmake/python/install-cmake.phy --help
+    $ $TRILINOS_HOME/cmake/python/install-cmake.py --help
 
   NOTE: you will want to read the help message about how to use sudo to
   install in a privileged location.
 
-(*) Installing binary release of CMake
+(*) Installing binary release of CMake [Recommended for Trilinos users]
 
   Download and install the binary from:
 
