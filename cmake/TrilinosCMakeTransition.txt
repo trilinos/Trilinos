@@ -343,11 +343,19 @@ Package Transition Lead: Jonathan Hu (jhu@sandia.gov)
 Status: Basic libraries.  All examples that run under the current test
 harness.  Most of the tests that run under the current test harness.  The
 tests that are missing are those that require CompareTestOutput, which
-compares output to a "gold-copy" output file.
+compares output to a "gold-copy" output file.  Ross has put this capability
+in, but I haven't finished this off.
 
-Final Certification Date: [???]
+I've also added support for Zoltan as a TPL.  This was necessary until Alegra
+(and maybe other Sandia apps?) switch to using Zoltan as a Trilinos package.
 
-Final Certification Evidence: [???]
+One big item that still needs to be done is fixing some nonstandard code that
+breaks native Windows builds.
+
+Final Certification Date: 4/29/2009
+
+Final Certification Evidence: Almost all tests that were running under the old
+test harness are in cdash and passing.  There are still some warnings.
 
 -------------------------------------------------------------------------------
 
@@ -524,11 +532,12 @@ Package: TrilinosCouplings
 
 Package Transition Lead: Jonathan Hu (jhu@sandia.gov)
 
-Status: Basic libraries and a single test.
+Status: Basic libraries and examples are done.  Heidi got the epetraext
+examples working.
 
-Final Certification Date: [???]
+Final Certification Date: 4/29/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence:  Local builds and cdash builds.
 
 -------------------------------------------------------------------------------
 
