@@ -93,7 +93,7 @@
 {
   /* Given a PyObject, return a string describing its type.
    */
-  char* pytype_string(PyObject* py_obj) {
+  const char* pytype_string(PyObject* py_obj) {
     if (py_obj == NULL          ) return "C NULL value";
     if (py_obj == Py_None       ) return "Python None" ;
     if (PyCallable_Check(py_obj)) return "callable"    ;
@@ -112,16 +112,17 @@
 
   /* Given a NumPy typecode, return a string describing the type.
    */
-  char* typecode_string(int typecode) {
-    static char* type_names[25] = {"bool", "byte", "unsigned byte",
-				   "short", "unsigned short", "int",
-				   "unsigned int", "long", "unsigned long",
-				   "long long", "unsigned long long",
-				   "float", "double", "long double",
-				   "complex float", "complex double",
-				   "complex long double", "object",
-				   "string", "unicode", "void", "ntypes",
-				   "notype", "char", "unknown"};
+  const char* typecode_string(int typecode) {
+    static const char* type_names[25] = {"bool", "byte", "unsigned byte",
+					 "short", "unsigned short", "int",
+					 "unsigned int", "long",
+					 "unsigned long", "long long",
+					 "unsigned long long", "float",
+					 "double", "long double",
+					 "complex float", "complex double",
+					 "complex long double", "object",
+					 "string", "unicode", "void", "ntypes",
+					 "notype", "char", "unknown"};
     return typecode < 24 ? type_names[typecode] : type_names[24];
   }
 
@@ -155,8 +156,8 @@
     }
     else if is_array(input)
     {
-      char* desired_type = typecode_string(typecode);
-      char* actual_type  = typecode_string(array_type(input));
+      const char* desired_type = typecode_string(typecode);
+      const char* actual_type  = typecode_string(array_type(input));
       PyErr_Format(PyExc_TypeError, 
 		   "Array of type '%s' required.  Array of type '%s' given", 
 		   desired_type, actual_type);
@@ -164,8 +165,8 @@
     }
     else
     {
-      char * desired_type = typecode_string(typecode);
-      char * actual_type  = pytype_string(input);
+      const char * desired_type = typecode_string(typecode);
+      const char * actual_type  = pytype_string(input);
       PyErr_Format(PyExc_TypeError, 
 		   "Array of type '%s' required.  A '%s' was given", 
 		   desired_type, actual_type);
@@ -1029,7 +1030,7 @@
   npy_intp dims[1];
   if (!PyInt_Check($input))
   {
-    char* typestring = pytype_string($input);
+    const char* typestring = pytype_string($input);
     PyErr_Format(PyExc_TypeError, 
 		 "Int dimension expected.  '%s' given.", 
 		 typestring);
@@ -1056,7 +1057,7 @@
   npy_intp dims[1];
   if (!PyInt_Check($input))
   {
-    char* typestring = pytype_string($input);
+    const char* typestring = pytype_string($input);
     PyErr_Format(PyExc_TypeError, 
 		 "Int dimension expected.  '%s' given.", 
 		 typestring);
