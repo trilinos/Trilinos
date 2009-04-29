@@ -48,6 +48,11 @@ template< int  I0 = -1 , int  I1 = -1 , int  I2 = -1 , int  I3 = -1 ,
           int I28 = -1 , int I29 = -1 , int I30 = -1 , int I31 = -1 >
 struct IndexList {};
 
+/** \brief  Length of list.
+ *          Defines <b> enum { value }; </b>
+ */
+template< class List > struct IndexListLength {};
+
 /** \brief  Access member of compile-time list of indices. <br>
  *          Defines <b> enum { value = Jth member }; </b> 
  */
@@ -56,12 +61,8 @@ template< class List , int J > struct IndexListAt {};
 /** \brief  Find member of compile-time list of indices. <br>
  *          Defines <b> enum { value = index of member equal to J }; </b> 
  */
-template< class List , int J > struct IndexListFind ;
-
-/** \brief  Length of list.
- *          Defines <b> enum { value }; </b>
- */
-template< class List > struct IndexListLength {};
+template< class List , int J , bool OK = 0 <= J >
+struct IndexListFind ;
 
 /** \brief  Inverse of list containing [0..N].
  *          Defines <b> typedef IndexList<...> type ; </b>
@@ -69,6 +70,36 @@ template< class List > struct IndexListLength {};
 template< class List > struct IndexListInverse {};
 
 #ifndef DOXYGEN_COMPILE
+
+//----------------------------------------------------------------------
+
+template<>
+struct IndexListLength< IndexList<> > { enum { value = 0 }; };
+
+template< int  I0 , int  I1 , int  I2 , int  I3 ,
+          int  I4 , int  I5 , int  I6 , int  I7 ,
+          int  I8 , int  I9 , int I10 , int I11 ,
+          int I12 , int I13 , int I14 , int I15 ,
+          int I16 , int I17 , int I18 , int I19 ,
+          int I20 , int I21 , int I22 , int I23 ,
+          int I24 , int I25 , int I26 , int I27 ,
+          int I28 , int I29 , int I30 , int I31 >
+struct IndexListLength<
+  IndexList<  I0 ,  I1 ,  I2 ,  I3 ,  I4 ,  I5 ,  I6 ,  I7 ,
+              I8 ,  I9 , I10 , I11 , I12 , I13 , I14 , I15 ,
+             I16 , I17 , I18 , I19 , I20 , I21 , I22 , I23 ,
+             I24 , I25 , I26 , I27 , I28 , I29 , I30 , I31 > >
+{
+private:
+  typedef IndexList<        I1 ,  I2 ,  I3 ,  I4 ,  I5 ,  I6 ,  I7 ,
+                      I8 ,  I9 , I10 , I11 , I12 , I13 , I14 , I15 ,
+                     I16 , I17 , I18 , I19 , I20 , I21 , I22 , I23 ,
+                     I24 , I25 , I26 , I27 , I28 , I29 , I30 , I31 , -1 >
+    shift_type ;
+
+public:
+  enum { value = 1 + IndexListLength< shift_type >::value };
+};
 
 //----------------------------------------------------------------------
 
@@ -125,7 +156,7 @@ SHARDS_INDEX_LIST_AT_SPECIALIZATION( 31 , I31 )
 
 //----------------------------------------------------------------------
 
-template< class List , int J >
+template< class List , int J , bool OK >
 struct IndexListFind { enum { value = -1 }; };
 
 #define SHARDS_INDEX_LIST_FIND_SPECIALIZATION( J , K )	\
@@ -141,7 +172,7 @@ struct IndexListFind<	\
   IndexList< I0 ,  I1 ,  I2 ,  I3 ,  I4 ,  I5 ,  I6 ,  I7 ,	\
              I8 ,  I9 , I10 , I11 , I12 , I13 , I14 , I15 ,	\
             I16 , I17 , I18 , I19 , I20 , I21 , I22 , I23 ,	\
-            I24 , I25 , I26 , I27 , I28 , I29 , I30 , I31 > , K >	\
+            I24 , I25 , I26 , I27 , I28 , I29 , I30 , I31 > , K , true >	\
 { enum { value = J }; };
 
 SHARDS_INDEX_LIST_FIND_SPECIALIZATION(  0 ,  I0 )
@@ -181,36 +212,6 @@ SHARDS_INDEX_LIST_FIND_SPECIALIZATION( 31 , I31 )
 
 //----------------------------------------------------------------------
 
-template<>
-struct IndexListLength< IndexList<> > { enum { value = 0 }; };
-
-template< int  I0 , int  I1 , int  I2 , int  I3 ,
-          int  I4 , int  I5 , int  I6 , int  I7 ,
-          int  I8 , int  I9 , int I10 , int I11 ,
-          int I12 , int I13 , int I14 , int I15 ,
-          int I16 , int I17 , int I18 , int I19 ,
-          int I20 , int I21 , int I22 , int I23 ,
-          int I24 , int I25 , int I26 , int I27 ,
-          int I28 , int I29 , int I30 , int I31 >
-struct IndexListLength<
-  IndexList<  I0 ,  I1 ,  I2 ,  I3 ,  I4 ,  I5 ,  I6 ,  I7 ,
-              I8 ,  I9 , I10 , I11 , I12 , I13 , I14 , I15 ,
-             I16 , I17 , I18 , I19 , I20 , I21 , I22 , I23 ,
-             I24 , I25 , I26 , I27 , I28 , I29 , I30 , I31 > >
-{
-private:
-  typedef IndexList<        I1 ,  I2 ,  I3 ,  I4 ,  I5 ,  I6 ,  I7 ,
-                      I8 ,  I9 , I10 , I11 , I12 , I13 , I14 , I15 ,
-                     I16 , I17 , I18 , I19 , I20 , I21 , I22 , I23 ,
-                     I24 , I25 , I26 , I27 , I28 , I29 , I30 , I31 , -1 >
-    shift_type ;
-
-public:
-  enum { value = 1 + IndexListLength< shift_type >::value };
-};
-
-//----------------------------------------------------------------------
-
 template< int  I0 , int  I1 , int  I2 , int  I3 ,
           int  I4 , int  I5 , int  I6 , int  I7 ,
           int  I8 , int  I9 , int I10 , int I11 ,
@@ -235,44 +236,38 @@ private:
 
 public:
 
-#define TYPE_LIST_SPECIALIZATION_INVERSE( J )	\
-  ( J < length ? IndexListFind< list , J >::value : -1 )
-
-  typedef IndexList< TYPE_LIST_SPECIALIZATION_INVERSE(  0 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE(  1 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE(  2 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE(  3 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE(  4 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE(  5 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE(  6 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE(  7 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE(  8 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE(  9 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 10 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 11 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 12 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 13 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 14 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 15 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 16 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 17 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 18 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 19 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 20 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 21 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 22 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 23 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 24 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 25 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 26 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 27 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 28 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 29 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 30 ) ,
-                     TYPE_LIST_SPECIALIZATION_INVERSE( 31 ) > type ;
-
-#undef TYPE_LIST_SPECIALIZATION_INVERSE
-
+  typedef IndexList< IndexListFind< list ,  0 ,  0 < length >::value ,
+                     IndexListFind< list ,  1 ,  1 < length >::value ,
+                     IndexListFind< list ,  2 ,  2 < length >::value ,
+                     IndexListFind< list ,  3 ,  3 < length >::value ,
+                     IndexListFind< list ,  4 ,  4 < length >::value ,
+                     IndexListFind< list ,  5 ,  5 < length >::value ,
+                     IndexListFind< list ,  6 ,  6 < length >::value ,
+                     IndexListFind< list ,  7 ,  7 < length >::value ,
+                     IndexListFind< list ,  8 ,  8 < length >::value ,
+                     IndexListFind< list ,  9 ,  9 < length >::value ,
+                     IndexListFind< list , 10 , 10 < length >::value ,
+                     IndexListFind< list , 11 , 11 < length >::value ,
+                     IndexListFind< list , 12 , 12 < length >::value ,
+                     IndexListFind< list , 13 , 13 < length >::value ,
+                     IndexListFind< list , 14 , 14 < length >::value ,
+                     IndexListFind< list , 15 , 15 < length >::value ,
+                     IndexListFind< list , 16 , 16 < length >::value ,
+                     IndexListFind< list , 17 , 17 < length >::value ,
+                     IndexListFind< list , 18 , 18 < length >::value ,
+                     IndexListFind< list , 19 , 19 < length >::value ,
+                     IndexListFind< list , 20 , 20 < length >::value ,
+                     IndexListFind< list , 21 , 21 < length >::value ,
+                     IndexListFind< list , 22 , 22 < length >::value ,
+                     IndexListFind< list , 23 , 23 < length >::value ,
+                     IndexListFind< list , 24 , 24 < length >::value ,
+                     IndexListFind< list , 25 , 25 < length >::value ,
+                     IndexListFind< list , 26 , 26 < length >::value ,
+                     IndexListFind< list , 27 , 27 < length >::value ,
+                     IndexListFind< list , 28 , 28 < length >::value ,
+                     IndexListFind< list , 29 , 29 < length >::value ,
+                     IndexListFind< list , 30 , 30 < length >::value ,
+                     IndexListFind< list , 31 , 31 < length >::value > type ;
 };
 
 #endif /* DOXYGEN_COMPILE */
