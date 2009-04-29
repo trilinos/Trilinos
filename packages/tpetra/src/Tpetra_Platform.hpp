@@ -36,8 +36,7 @@
 
 namespace Tpetra {
 
-  //! Tpetra::Platform: The Tpetra Platform Abstract Base Class
-
+  //! \brief The Tpetra platform abstract base class.
   template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
   class Platform : public Teuchos::Describable {
   public:

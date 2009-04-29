@@ -43,7 +43,7 @@
 
 namespace Tpetra {
 
-  //! Tpetra::DistObject: A class for constructing and using dense multi-vectors, vectors and matrices in parallel.
+  //! A base class for distributed objects that support import and export operations.
 
   /*! The DistObject is a base class for all Tpetra distributed global objects.  It provides the basic
       mechanisms and interface specifications for importing and exporting operations using Tpetra::Import and

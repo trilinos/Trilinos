@@ -35,7 +35,7 @@
 
 namespace Tpetra {
 
-  //! Tpetra::Directory
+  //! A class used for efficienctly accessing global node/index information from a Map.
   
   /*! For Map objects, a Directory object must be created to allow referencing
       of non-local elements. Tpetra::Directory produces and contains a uniform linear

@@ -45,7 +45,7 @@
 
 namespace Tpetra {
 
-  //! Tpetra::Distributor:  The Tpetra Gather/Scatter Setup Class.
+  //! \brief The Tpetra gather/scatter setup class.
   /*! The Distributor class is an interface that encapsulates the general
         information and services needed for other Tpetra classes to perform gather/scatter
         operations on a parallel computer.

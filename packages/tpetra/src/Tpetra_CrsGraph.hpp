@@ -49,7 +49,7 @@ namespace Tpetra
   template <class S, class LO, class GO>
   class CrsMatrix;
 
-  //! CrsGraph
+  //! \brief A class for constructing and using sparse compressed index graphs with row access.
   template<class LocalOrdinal, class GlobalOrdinal=LocalOrdinal>
   class CrsGraph : public RowGraph<LocalOrdinal,GlobalOrdinal>
   {

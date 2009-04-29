@@ -34,7 +34,7 @@
 
 namespace Tpetra {
 
-	//! Tpetra::SerialPlatform: Serial Implementation of the Platform class.
+	//! \brief A implementation of the Platform class for serial platforms.
 	template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
 	class SerialPlatform : public virtual Platform<Scalar, LocalOrdinal, GlobalOrdinal> 
   {

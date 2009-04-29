@@ -33,8 +33,7 @@
 
 namespace Tpetra {
 
-  //! Tpetra::Vector: A class for constructing and using distributed vectors.
-
+  //! \brief A class for constructing and using dense, distributors vectors.
   template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal>
   class Vector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> {
 

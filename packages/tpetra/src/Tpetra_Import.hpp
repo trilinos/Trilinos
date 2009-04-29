@@ -42,7 +42,7 @@
 
 namespace Tpetra {
 
-  //! Tpetra::Import: This class builds an import object for efficiently importing off-processor entries.
+  //! This class builds an object containing information necesary for efficiently importing off-processor entries.
 
   /*! Import is used to construct a communication plan that can be called repeatedly by computational
       classes such the Tpetra CisMatrix and Vector classes to efficiently import entries from other

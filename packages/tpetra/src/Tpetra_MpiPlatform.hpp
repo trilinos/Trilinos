@@ -34,7 +34,7 @@
 
 namespace Tpetra {
 
-  //! Tpetra::MpiPlatform: MPI Implementation of the Platform class.
+	//! \brief A implementation of the Platform class for MPI-based platforms.
 	template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
   class MpiPlatform : public virtual Platform<Scalar, LocalOrdinal, GlobalOrdinal> 
   {

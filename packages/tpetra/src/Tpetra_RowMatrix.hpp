@@ -41,9 +41,7 @@
 
 namespace Tpetra 
 {
-  //! Tpetra::RowMatrix: A pure virtual interface for row matrices.
-  /*!
-   */
+  //! \brief A pure virtual interface for row-partitioned matrices.
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal>
   class RowMatrix : public Operator<Scalar,LocalOrdinal,GlobalOrdinal>
   {

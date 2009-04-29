@@ -79,7 +79,7 @@ namespace std {
 
 namespace Tpetra 
 {
-  //! Tpetra::CrsMatrix: A class for constructing and using sparse compressed index matrices and row access.
+  //! \brief A class for constructing and using sparse compressed index matrices with row access.
   /*!
    * This class allows the construction of sparse matrices with row-access. 
    * Method insertGlobalValues() can be used to set both locally

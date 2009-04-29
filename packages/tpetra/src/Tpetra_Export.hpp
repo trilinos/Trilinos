@@ -42,7 +42,7 @@
 
 namespace Tpetra {
 
-  //! Tpetra::Export: This class builds an export object for efficiently exporting entries off-processor.
+  //! This class builds an object containing information necesary for efficiently exporting entries off-processor.
 
   /*! Export is used to construct a communication plan that can be called repeatedly by computational
       classes such the Tpetra CisMatrix and Vector classes to efficiently export entries to other

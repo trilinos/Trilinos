@@ -37,8 +37,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal> class MapData;
 
-  //! Tpetra::Map
-
+  //! A class for partitioning distributed objects.
   template<typename LocalOrdinal, class GlobalOrdinal=LocalOrdinal>
   class Map : public Teuchos::Describable {
 

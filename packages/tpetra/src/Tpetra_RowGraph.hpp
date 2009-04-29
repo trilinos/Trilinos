@@ -38,7 +38,7 @@
 namespace Tpetra 
 {
   
-  //! RowGraph
+  //! \brief A pure virtual interface for row-partitioned graphs.
   template<class LocalOrdinal, class GlobalOrdinal=LocalOrdinal>
   class RowGraph : public Teuchos::Describable
   {

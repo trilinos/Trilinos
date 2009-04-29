@@ -35,8 +35,8 @@
 
 namespace Tpetra {
 
-  /** \brief Abstract interface for linear operators that accept Tpetra
-   * MultiVectors.
+  /** \brief Abstract interface for linear operators accepting %Tpetra
+   * MultiVector objects.
    */
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal>
 	class Operator : public Teuchos::Describable {
@@ -51,7 +51,7 @@ namespace Tpetra {
 		//! Returns the Map associated with the range of this operator.
 		virtual const Map<LocalOrdinal,GlobalOrdinal> & getRangeMap() const = 0;
 
-    //! Computes the matrix-vector multiplication y = Ax.
+    //! Computes the operator-multivector multiplication \f$Y = A X\f$.
 		virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> &X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
 
     //@}
