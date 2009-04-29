@@ -70,6 +70,10 @@ MPI_OPT build directory and enable only "Primary Stable" code.  This will need
 a minimal configuration script to pull in only the basic info needed in order
 to find compilers, MPI, BLAS, and LAPACK and nothing else.
 
+(*) [???] Add the GCC option -Wextra to the list of defautl strong warning
+options.  Many of these options may already be covered by -ansi -pedantic but
+we just need to check this before adding this.
+
 (*) [???] Add the option TPL_ENABLE_ALL_TPLS that will be set to OFF by
 default but when set to ON will enable all PS TPLs and when
 Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON will also enable all SS TPLs.

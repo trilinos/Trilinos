@@ -29,7 +29,7 @@ MACRO(PACKAGE_ARCH_DEFINE_STANDARD_COMPILE_FLAGS_VARS  ENABLE_SHADOWING_WARNINGS
 
   MULTILINE_SET(C_STRONG_COMPILE_WARNING_FLAGS
     " -ansi" # Check for C89 or C++98 standard code
-    " -pedantic" # Adds more strick checking to remove non-ANSI GNU extensions
+    " -pedantic" # Adds more static checking to remove non-ANSI GNU extensions
     " -Wall " # Enable a bunch of default warnings
     " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG, etc.
     )
