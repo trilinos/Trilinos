@@ -46,7 +46,7 @@ PROJECT_NAME           = EpetraExt
 INPUT                  =  index.doc ../src ../example/model_evaluator
 
 #EXAMPLE_PATH           = ../example ../example/matlab/cxx_main.cpp matlab.README
-EXAMPLE_PATH           = ../../aztecoo/example/AztecOO_MatlabInput/cxx_main.cpp ../example/petsc/petsc.cpp
+EXAMPLE_PATH           = ../../aztecoo/example/AztecOO_MatlabInput/cxx_main.cpp ../../trilinoscouplings/examples/epetraext/EpetraExt_petsc.cpp
 
 TAGFILES               = ../../common/tag_files/epetra.tag=../../../epetra/doc/html
 
