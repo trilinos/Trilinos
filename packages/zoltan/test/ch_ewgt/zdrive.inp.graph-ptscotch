@@ -1,0 +1,5 @@
+Decomposition Method 	= graph
+zoltan parameters	= graph_package=scotch
+File Type		= Chaco
+File Name		= ewgt
+Parallel Disk Info	= number=0
