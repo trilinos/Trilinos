@@ -95,7 +95,9 @@ RCP<LinearProblem<Scalar,MultiVector<Scalar,int>,Operator<Scalar,int> > > buildP
     for (int c=0; c<mptestdim; ++c) {
       for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
         A->insertGlobalValues(*rptr-1,tuple(c),tuple<Scalar>(*dptr));
-        A->insertGlobalValues(c,tuple(*rptr-1),tuple<Scalar>(*dptr));
+        if (c != *rptr -1) {
+          A->insertGlobalValues(c,tuple(*rptr-1),tuple<Scalar>(*dptr));
+        }
         ++rptr;
         ++dptr;
       }
