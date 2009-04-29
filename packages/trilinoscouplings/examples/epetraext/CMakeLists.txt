@@ -1,7 +1,6 @@
 
 INCLUDE(PackageAddExecutableAndTest)
 
-# This example is segfaulting, so I have not enabled it. JJH 4/7/2009
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Isorropia)
 IF (${PACKAGE_NAME}_ENABLE_Isorropia)
 
@@ -28,4 +27,12 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos)
     COMM serial
   )
 
+ENDIF()
+
+ASSERT_DEFINED(EpetraExt_ENABLE_PETSC)
+IF(EpetraExt_ENABLE_PETSC)
+PACKAGE_ADD_EXECUTABLE(
+  petsc
+  SOURCES EpetraExt_petsc.cpp
+  )
 ENDIF()

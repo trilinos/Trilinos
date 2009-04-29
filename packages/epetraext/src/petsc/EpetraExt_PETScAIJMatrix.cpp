@@ -54,7 +54,9 @@ Epetra_PETScAIJMatrix::Epetra_PETScAIJMatrix(Mat Amat)
     NormOne_(-1.0)
 {
 #ifdef HAVE_MPI
-  Comm_ = new Epetra_MpiComm(Amat->comm);
+  MPI_Comm comm;
+  PetscObjectGetComm( (PetscObject)Amat, &comm);
+  Comm_ = new Epetra_MpiComm(comm);
 #else
   Comm_ = new Epetra_SerialComm();
 #endif  
@@ -84,7 +86,7 @@ Epetra_PETScAIJMatrix::Epetra_PETScAIJMatrix(Mat Amat)
   NumMyCols_ = numLocalCols; //numLocalCols is the total # of unique columns in the local matrix (the diagonal block)
   //TODO what happens if some columns are empty?
   if (mt == PETSC_MPI_AIJ)
-    NumMyCols_ += aij->B->cmap.n;
+    NumMyCols_ += aij->B->cmap->n;
   MatInfo info;
   ierr = MatGetInfo(Amat,MAT_LOCAL,&info);
   if (ierr) {
@@ -115,7 +117,8 @@ Epetra_PETScAIJMatrix::Epetra_PETScAIJMatrix(Mat Amat)
     sprintf(errMsg,"EpetraExt_PETScAIJMatrix.cpp, line %d, MatGetInfo() returned error code %d",__LINE__,ierr);
     throw Comm_->ReportError(errMsg,-1);
   }
-  NumGlobalRows_ = (info.rows_global);
+  int tmp;
+  ierr = MatGetSize(Amat,&NumGlobalRows_,&tmp);
 
   DomainMap_ = new Epetra_Map(NumGlobalRows_, NumMyRows_, MyGlobalElements, 0, *Comm_);
 
@@ -189,11 +192,11 @@ int Epetra_PETScAIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntrie
       found by the global-to-local map colmap.  colmap is either an array or
       hash table, the latter being the case when PETSC_USE_CTABLE is defined.
     */
-    int offset = Amat_->cmap.n-1; //offset for non-local column indices
+    int offset = Amat_->cmap->n-1; //offset for non-local column indices
 
     for (int i=0; i<nz; i++) {
-      if (gcols[i] >= Amat_->cmap.rstart && gcols[i] < Amat_->cmap.rend) {
-        lcols[i] = gcols[i] - Amat_->cmap.rstart;
+      if (gcols[i] >= Amat_->cmap->rstart && gcols[i] < Amat_->cmap->rend) {
+        lcols[i] = gcols[i] - Amat_->cmap->rstart;
       } else {
 #       ifdef PETSC_USE_CTABLE
         ierr = PetscTableFind(aij->colmap,gcols[i]+1,lcols+i);CHKERRQ(ierr);
@@ -277,43 +280,18 @@ int Epetra_PETScAIJMatrix::Multiply(bool TransA,
     ImportVector_->ExtractView(&xptrs);
   }
 
-  Vec petscDiag;
   double *vals=0;
   int length;
   Vec petscX, petscY;
-/* new */
-//VecCreateMPIWithArray(MPI_Comm comm,PetscInt n,PetscInt N,const PetscScalar array[],Vec *vv)
-/* new */
-/*
-  int ierr = VecCreate(Comm_->Comm(),&petscX);CHKERRQ(ierr);
-  ierr = VecCreate(Comm_->Comm(),&petscY);CHKERRQ(ierr);
-  ierr = VecSetSizes(petscX,X.MyLength(),X.GlobalLength()); CHKERRQ(ierr);
-  ierr = VecSetSizes(petscY,Y.MyLength(),Y.GlobalLength()); CHKERRQ(ierr);
-#ifdef HAVE_MPI
-  VecSetType(petscX,VECMPI);
-  VecSetType(petscY,VECMPI);
-#else
-  VecSetType(petscX,VECSEQ);
-  VecSetType(petscY,VECSEQ);
-#endif
-  int *localIndices = new int[X.MyLength()];
-  for (int i=0; i<X.MyLength(); i++) localIndices[i] = i;
-*/
   int ierr;
   for (int i=0; i<NumVectors; i++) {
 #   ifdef HAVE_MPI
     ierr=VecCreateMPIWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptrs[i],&petscX); CHKERRQ(ierr);
     ierr=VecCreateMPIWithArray(Comm_->Comm(),Y.MyLength(),Y.GlobalLength(),yptrs[i],&petscY); CHKERRQ(ierr);
-#   else //FIXME  I suspect this will bomb in serial (i.e., w/o MPI
+#   else //FIXME  untested
     ierr=VecCreateSeqWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptrs[i],&petscX); CHKERRQ(ierr);
     ierr=VecCreateSeqWithArray(Comm_->Comm(),Y.MyLength(),Y.GlobalLength(),yptrs[i],&petscY); CHKERRQ(ierr);
 #   endif
-/*
-    ierr = VecSetValuesLocal(petscX,X.MyLength(),localIndices,xptrs[i],INSERT_VALUES);CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(petscX); VecAssemblyEnd(petscX);CHKERRQ(ierr);
-    ierr = VecSetValuesLocal(petscY,Y.MyLength(),localIndices,yptrs[i],INSERT_VALUES);CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(petscY); VecAssemblyEnd(petscY);CHKERRQ(ierr);
-*/
 
     ierr = MatMult(Amat_,petscX,petscY);CHKERRQ(ierr);
 
@@ -463,7 +441,7 @@ int Epetra_PETScAIJMatrix::LeftScale(const Epetra_Vector& X) {
   Vec petscX;
 # ifdef HAVE_MPI
   int ierr=VecCreateMPIWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
-# else //FIXME  I suspect this will bomb in serial (i.e., w/o MPI)
+# else //FIXME  untested
   int ierr=VecCreateSeqWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
 # endif
 
@@ -483,7 +461,7 @@ int Epetra_PETScAIJMatrix::RightScale(const Epetra_Vector& X) {
   Vec petscX;
 # ifdef HAVE_MPI
   int ierr=VecCreateMPIWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
-# else //FIXME  I suspect this will bomb in serial (i.e., w/o MPI)
+# else //FIXME  untested
   int ierr=VecCreateSeqWithArray(Comm_->Comm(),X.MyLength(),X.GlobalLength(),xptr,&petscX); CHKERRQ(ierr);
 # endif
 

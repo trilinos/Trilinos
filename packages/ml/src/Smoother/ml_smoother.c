@@ -8134,9 +8134,9 @@ int ML_Smoother_Petsc(ML_Smoother *sm, int inlen, double x[], int outlen,
 # ifdef HAVE_MPI
   ierr=VecCreateMPIWithArray(comm->USR_comm,inlen,PETSC_DECIDE,x2,&petscX); CHKERRQ(ierr);
   ierr=VecCreateMPIWithArray(comm->USR_comm,outlen,PETSC_DECIDE,rhs,&petscB); CHKERRQ(ierr);
-# else /*FIXME  I suspect this will bomb in serial (i.e., w/o MPI) */
-  ierr=VecCreateSeqWithArray(comm->USR_comm,inlen,inlen,x2,&petscX); CHKERRQ(ierr);
-  ierr=VecCreateSeqWithArray(comm->USR_comm,outlen,outlen,rhs,&petscB); CHKERRQ(ierr);
+# else /*FIXME  this is untested */
+  ierr=VecCreateSeqWithArray(comm->USR_comm,inlen,x2,&petscX); CHKERRQ(ierr);
+  ierr=VecCreateSeqWithArray(comm->USR_comm,outlen,rhs,&petscB); CHKERRQ(ierr);
 # endif
 
   petscKSP = (ML_PetscKSP) sm->smoother->data;

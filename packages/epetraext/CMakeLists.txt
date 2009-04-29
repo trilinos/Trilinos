@@ -88,7 +88,7 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USING_PETSC
   "Enable Epetra/PETSc adapters"
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USING_HTF5
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USING_HDF5
   HAVE_EPETRAEXT_HDF5
   "Enable EpetraExt interface support for HDF5. This interface requires an already installed HDF5 library\; the include, the library path and the library name must be specified as well."
   OFF )

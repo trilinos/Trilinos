@@ -383,7 +383,7 @@ class Epetra_PETScAIJMatrix: public Epetra_Object, public Epetra_CompObject, pub
     int PetscRowStart_;
     int PetscRowEnd_;
     enum petscMatrixType {PETSC_SEQ_AIJ, PETSC_MPI_AIJ};
-    MatType MatType_;         //really const char*
+    const MatType MatType_;         //really const char*
     mutable double NormInf_;
     mutable double NormOne_;
 
