@@ -92,16 +92,7 @@ script in the example subdirectory of the PyTrilinos package:
 // SWIG library includes
 %include "stl.i"
 
-// Trilinos interface file imports.  The Teuchos.py file that this
-// %import will try to import in python will be one directory up from
-// this python module.  So for earlier versions of SWIG, we need to
-// add the parent directory to the search path.
-%pythoncode
-{
-import os.path, sys
-currentDir,dummy = os.path.split(__file__)
-sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
-}
+// Trilinos interface import
 %import "Teuchos.i"
 // Note: Teuchos.i turns off warnings for nested classes, so we do not
 // have to do it again.

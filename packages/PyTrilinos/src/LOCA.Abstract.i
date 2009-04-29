@@ -85,13 +85,6 @@ of the Trilinos package LOCA:
 %ignore *::operator=;
 %ignore *::operator[];
 
-%pythoncode
-{
-import os.path, sys
-currentDir,dummy = os.path.split(__file__)
-sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
-}
-
 // Trilinos module imports
 %import "Teuchos.i"
 

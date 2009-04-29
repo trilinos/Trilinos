@@ -50,14 +50,6 @@ using Teuchos::RCP;
 // Ignore/renames
 %ignore *::operator=;
 
-%pythoncode
-{
-import os.path, sys
-currentDir,dummy = os.path.split(__file__)
-sys.path.append(os.path.normpath(os.path.join(currentDir,"../..")))
-import PyTrilinos.NOX
-}
-
 // Trilinos module imports
 %import "Teuchos.i"
 %import "NOX.Abstract.i"

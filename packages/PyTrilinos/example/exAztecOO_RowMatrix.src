@@ -246,7 +246,7 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
             # notation in the comment above works for newer versions of numpy.
 
         except Exception, e:
-            print e
+            print "Laplace1D_Matrix.Multiply error:", e
             return -1
 
         return 0

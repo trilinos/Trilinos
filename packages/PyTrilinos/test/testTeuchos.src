@@ -54,7 +54,7 @@ options,args = parser.parse_args()
 # we want to be able to control whether we import from the build directory or
 # from a system-installed version of PyTrilinos.
 from testutil import fromPyTrilinosImport
-Teuchos = fromPyTrilinosImport('Teuchos', options.testharness)
+Teuchos = fromPyTrilinosImport('Teuchos', options.testharness, globals(), locals())
 
 ####################################################################
 

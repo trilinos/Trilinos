@@ -169,7 +169,7 @@ class Laplace1D_Operator(Epetra.Operator):
             # works for newer versions of numpy.
 
         except Exception, e:
-            print e
+            print "Laplace1D_Operator.Apply error:", e
             return -1
 
         return 0

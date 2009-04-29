@@ -122,16 +122,6 @@ using Teuchos::rcp;
 // Trilinos interface support
 %import "Teuchos.i"
 
-// add the parent directory to the search path.
-%pythoncode
-{
-import os.path, sys
-currentDir,dummy = os.path.split(__file__)
-sys.path.append(os.path.normpath(os.path.join(currentDir,"..")))
-import PyTrilinos
-import PyTrilinos.LOCA
-}
-
 %import "NOX.Abstract.i"
 %import "NOX.Epetra.__init__.i"
 

@@ -167,7 +167,7 @@ using namespace NOX::Epetra;
 // SWIG library includes
 %include "stl.i"
 
-// Trilinos interface support
+// Trilinos interface import
 %import "Teuchos.i"
 
 // Support for Teuchos::RCPs
@@ -257,7 +257,7 @@ using namespace NOX::Epetra;
 %include "Epetra_Maps.i"
 %include "Epetra_Operators.i"
 
-// NOX imports
+// NOX import
 %import "NOX.Abstract.i"
 
 // NOX::Epetra::Interface imports
