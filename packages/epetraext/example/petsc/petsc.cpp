@@ -1,5 +1,6 @@
 #include "ml_config.h"
-#if defined(HAVE_PETSC) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO)
+#include "EpetraExt_config.h"
+#if defined(HAVE_PETSC) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS) && defined(HAVE_ML_AZTECOO) && defined(HAVE_MPI)
 #include "petscksp.h"
 #include "EpetraExt_PETScAIJMatrix.h"
 #include "Epetra_Vector.h"
@@ -55,7 +56,8 @@ int main(int argc,char **args)
   PetscErrorCode ierr;
   PetscTruth     flg;
   PetscScalar    v,one = 1.0,neg_one = -1.0;
-  PetscInt rank;
+  PetscInt rank=0;
+  MPI_Comm comm;
 
   PetscInitialize(&argc,&args,(char *)0,help);
   ierr = PetscOptionsGetInt(PETSC_NULL,"-m",&m,PETSC_NULL);CHKERRQ(ierr);
@@ -66,8 +68,8 @@ int main(int argc,char **args)
   ierr = MatSetType(A, MATAIJ);CHKERRQ(ierr);
   ierr = MatSetFromOptions(A);CHKERRQ(ierr);
   ierr = MatMPIAIJSetPreallocation(A,5,PETSC_NULL,5,PETSC_NULL);CHKERRQ(ierr);
-  ierr = MatSeqAIJSetPreallocation(A,5,PETSC_NULL);CHKERRQ(ierr);
-  ierr = MPI_Comm_rank(A->comm,&rank);CHKERRQ(ierr);
+  PetscObjectGetComm( (PetscObject)A, &comm);
+  ierr = MPI_Comm_rank(comm,&rank);CHKERRQ(ierr);
   if (!rank) printf("Matrix has %d (%dx%d) rows\n",m*n,m,n);
 
   ierr = MatGetOwnershipRange(A,&Istart,&Iend);CHKERRQ(ierr);
@@ -153,7 +155,7 @@ int main(int argc,char **args)
   */
   ierr = PetscOptionsHasName(PETSC_NULL,"-petsc_smoother",&flg);CHKERRQ(ierr);
   if (flg) {
-    ierr = KSPCreate(A->comm,&kspSmoother);CHKERRQ(ierr);
+    ierr = KSPCreate(comm,&kspSmoother);CHKERRQ(ierr);
     ierr = KSPSetOperators(kspSmoother,A,A,SAME_NONZERO_PATTERN);CHKERRQ(ierr);
     ierr = KSPSetType(kspSmoother,KSPRICHARDSON);CHKERRQ(ierr);
     ierr = KSPSetTolerances(kspSmoother, 1e-12, 1e-50, 1e7,1);
