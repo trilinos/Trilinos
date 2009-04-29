@@ -51,6 +51,16 @@ ENDMACRO()
 
 MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
 
+  ADVANCED_SET( ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE
+    ON  #NOTE: Change this to 'OFF' in a release branch!
+    CACHE BOOL
+    "Determines if a variety of development mode checks are turned on by default or not." )
+
+  ADVANCED_SET( ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES
+    ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE
+    CACHE BOOL
+    "Determines if asserts are performed on missing packages or not." )
+
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF CACHE BOOL
     "Allow secondary stable packages and code to be implicitly enabled." )
 

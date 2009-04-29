@@ -42,6 +42,7 @@ with the EXCLUDE option.  We need the ability to disable particular tests on
 specific machines for specific build cases.
 - Add testing for MOOCHO with MA28 on gabriel or godel
 - Add a no-Fortran build
+- Add an explicit MPI compiler, headers and library build
 - Add a build with Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF
 
 (*) [???] Address TPL intra-dependencies: The current TPL handling system only
