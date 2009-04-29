@@ -403,8 +403,8 @@ if ( $yes_fortran ) then
       set ch_methods = ( $ch_methods partkway partgeom diffusion )
     else # $pmversion > 2
       set ch_methods = ( $ch_methods partkway-v$pmversion \
-	partgeom-v$pmversion diffusion-v$pmversion \
-	partgeomkway-v$pmversion adaptive-v$pmversion )
+	partgeom-v$pmversion \
+	partgeomkway-v$pmversion adaptive-v$pmversion )     #diffusion-v$pmversion
       if (! $old_interface) then
 	set ch_methods = ( $ch_methods \
 	  partkway-partless-v$pmversion partkway-partmore-v$pmversion \
@@ -568,8 +568,8 @@ else
     else # $pmversion > 2
       set ch_methods = ( $ch_methods partkway-v$pmversion \
 	partkway-oneproc-v$pmversion partkway-cyclic-v$pmversion \
-	partgeom-v$pmversion diffusion-v$pmversion \
-	partgeomkway-v$pmversion adaptive-v$pmversion )
+	partgeom-v$pmversion  \
+	partgeomkway-v$pmversion adaptive-v$pmversion ) #diffusion-v$pmversion
       set nem_methods = ( $nem_methods partkway-v$pmversion \
 	partgeomkway-v$pmversion adaptive-v$pmversion )
       if (! $old_interface) then
