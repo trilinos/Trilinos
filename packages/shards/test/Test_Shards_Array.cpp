@@ -24,6 +24,7 @@
 #define SHARDS_ARRAY_BOUNDS_CHECKING
 
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <Shards_Array.hpp>
 #include <Shards_ArrayVector.hpp>
@@ -566,6 +567,64 @@ void local_test_array_vector()
   myfortranfunc( avf8 );
 }
 
+//----------------------------------------------------------------------
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Cell)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Cell)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Point)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Point)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Dim)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Dim)
+
+void local_test_array_truncate()
+{
+  const int num_cells = 5;
+  const int num_points = 4;
+  const int num_dim = 3;
+  const int offset_cell = 2 ;
+  const int size = num_cells*num_points*num_dim;
+  double* mem = new double[size];
+
+  for (int i=0; i < size; ++i) {
+    mem[i] = static_cast<double>(i);
+  }
+
+  Array<double,NaturalOrder,Cell,Point,Dim> a(mem,num_cells,num_points,num_dim);
+  Array<double,NaturalOrder,     Point,Dim> b = a.truncate(offset_cell);
+
+  for (int c=0; c < num_cells; ++c) {
+    for (int pt=0; pt < num_points; ++pt) {
+      for (int dim=0; dim < num_dim; ++ dim) {
+        const int offset = dim + num_dim * ( pt + num_points * c );
+        const int value  = static_cast<int>( a(c,pt,dim) );
+        if ( a.contiguous_data() + offset != & a(c,pt,dim) ||
+             offset != value ) {
+          std::ostringstream msg ;
+          msg << "Array offset test failed: required = " << offset ;
+          msg << " != " << value << " = value" ;
+          throw std::runtime_error( msg.str() );
+        }
+      }
+    }
+  }
+   
+  const ptrdiff_t truncate_offset = b.contiguous_data() - a.contiguous_data();
+  const ptrdiff_t required_offset = num_dim * num_points * offset_cell ;
+
+  if ( truncate_offset != required_offset ) {
+    std::ostringstream msg ;
+    msg << "Array Truncate test failed: required = " << required_offset ;
+    msg << " != " << truncate_offset << " = truncate_offset" ;
+    throw std::runtime_error( msg.str() );
+  }
+
+  delete [] mem;
+}
+
+//----------------------------------------------------------------------
+
 }
 
 void test_shards_array()
@@ -574,6 +633,7 @@ void test_shards_array()
 
   try {
     local_test_array();
+    local_test_array_truncate();
     local_test_array_vector();
     std::cout << method << "\n" << "End Result: TEST PASSED" << std::endl ;
   }

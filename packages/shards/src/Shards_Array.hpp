@@ -3257,7 +3257,7 @@ protected:
         Copy<8>( m_stride , rhs.m_stride );
         Copy<8>( m_tag , rhs.m_tag );
         m_rank = rhs.m_rank - 1 ;
-        m_ptr  = rhs.m_ptr + m_stride[ m_rank ] * i ;
+        m_ptr  = rhs.m_ptr + ( m_rank ? m_stride[ m_rank - 1 ] * i : i );
         m_stride[ m_rank ] = 0 ;
         m_tag[ m_rank ] = 0 ;
       }
@@ -3415,7 +3415,7 @@ public:
 
   //----------------------------------
   /** \brief Pointer to contiguous block of member data. */
-  value_type * contiguous_data() const { return m_array.contiguous(); }
+  value_type * contiguous_data() const { return m_array.contiguous_data(); }
 
   /** \brief Access member via offset into contiguous block. */
   template< typename itype >
