@@ -34,39 +34,39 @@ namespace Thyra {
 
 const Amesos::ESolverType Amesos::solverTypeValues[Amesos::numSolverTypes] =
 {
-  LAPACK
+  Amesos::LAPACK
 #ifdef HAVE_AMESOS_KLU
-  ,KLU
+  ,Amesos::KLU
 #endif
 #ifdef HAVE_AMESOS_UMFPACK
-  ,UMFPACK
+  ,Amesos::UMFPACK
 #endif
 #ifdef HAVE_AMESOS_SUPERLU
-  ,SUPERLU
+  ,Amesos::SUPERLU
 #endif
 #ifdef HAVE_AMESOS_SUPERLUDIST
-  ,SUPERLUDIST
+  ,Amesos::SUPERLUDIST
 #endif
 #ifdef HAVE_AMESOS_TAUCS
-  ,TAUCS
+  ,Amesos::TAUCS
 #endif
 #ifdef HAVE_AMESOS_PARDISO
-  ,PARDISO
+  ,Amesos::PARDISO
 #endif
 #ifdef HAVE_AMESOS_PASTIX
-  ,PASTIX
+  ,Amesos::PASTIX
 #endif
 #ifdef HAVE_AMESOS_PARAKLETE
-  ,PARAKLETE
+  ,Amesos::PARAKLETE
 #endif
 #ifdef HAVE_AMESOS_MUMPS
-  ,MUMPS
+  ,Amesos::MUMPS
 #endif
 #ifdef HAVE_AMESOS_SCALAPACK
-  ,SCALAPACK
+  ,Amesos::SCALAPACK
 #endif
 #ifdef HAVE_AMESOS_DSCPACK
-  ,DSCPACK
+  ,Amesos::DSCPACK
 #endif
 };
 
@@ -155,8 +155,8 @@ Amesos::solverTypeNameToEnumMap(
 
 const Amesos::ERefactorizationPolicy Amesos::refactorizationPolicyValues[Amesos::numRefactorizationPolices] =
 {
-  REPIVOT_ON_REFACTORIZATION
-  ,NO_PIVOT_ON_REFACTORIZATION
+  Amesos::REPIVOT_ON_REFACTORIZATION
+  ,Amesos::NO_PIVOT_ON_REFACTORIZATION
 };
 
 const char* Amesos::refactorizationPolicyNames[Amesos::numRefactorizationPolices] =
