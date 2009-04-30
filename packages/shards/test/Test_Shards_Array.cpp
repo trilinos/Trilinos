@@ -169,6 +169,48 @@ void local_test_array()
 
   //--------------------------------
 
+  std::vector<int> dim ;
+  af6.dimensions( dim );
+
+  if ( dim.size() != 6u || dim[0] != 2 ||
+                           dim[1] != 3 ||
+                           dim[2] != 4 ||
+                           dim[3] != 5 ||
+                           dim[4] != 6 ||
+                           dim[5] != 7 ) {
+    std::ostringstream msg ;
+    msg << "Array<Fortran> dimension(vector) test failed" << std::endl
+        << "  dim.size() = " << dim.size() << " vs. 6" << std::endl
+        << "  dim[0]     = " << dim[0] << " vs. 2" << std::endl
+        << "  dim[1]     = " << dim[1] << " vs. 3" << std::endl
+        << "  dim[2]     = " << dim[2] << " vs. 4" << std::endl
+        << "  dim[3]     = " << dim[3] << " vs. 5" << std::endl
+        << "  dim[4]     = " << dim[4] << " vs. 6" << std::endl
+        << "  dim[5]     = " << dim[5] << " vs. 7" << std::endl ;
+    throw std::runtime_error( msg.str() );
+  }
+
+  an6.dimensions( dim );
+  if ( dim.size() != 6u || dim[0] != 2 ||
+                           dim[1] != 3 ||
+                           dim[2] != 4 ||
+                           dim[3] != 5 ||
+                           dim[4] != 6 ||
+                           dim[5] != 7 ) {
+    std::ostringstream msg ;
+    msg << "Array<Natural> dimension(vector) test failed" << std::endl
+        << "  dim.size() = " << dim.size() << " vs. 6" << std::endl
+        << "  dim[0]     = " << dim[0] << " vs. 2" << std::endl
+        << "  dim[1]     = " << dim[1] << " vs. 3" << std::endl
+        << "  dim[2]     = " << dim[2] << " vs. 4" << std::endl
+        << "  dim[3]     = " << dim[3] << " vs. 5" << std::endl
+        << "  dim[4]     = " << dim[4] << " vs. 6" << std::endl
+        << "  dim[5]     = " << dim[5] << " vs. 7" << std::endl ;
+    throw std::runtime_error( msg.str() );
+  }
+
+  //--------------------------------
+
   ArrayAppend< Array<double,FortranOrder,TagA,TagB,TagC> , TagD >::type
     aaf4( af4 );
 
