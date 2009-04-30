@@ -78,8 +78,8 @@ class InvLSCStrategy : public LSCStrategy {
 public:
    //! \name Constructors
    //@{
-   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory);
-   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass);
+   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,bool rzn=false);
+   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass,bool rzn=false);
    //@}
 
    //! Functions inherited from LSCStrategy
@@ -108,6 +108,7 @@ protected:
    LinearOp massMatrix_;
    Teuchos::RCP<const InverseFactory> invFactory_;
    int eigSolveParam_;
+   bool rowZeroingNeeded_;
 };
 
 } // end namespace NS

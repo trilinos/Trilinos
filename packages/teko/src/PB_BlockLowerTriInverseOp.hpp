@@ -74,6 +74,14 @@ inline LinearOp createBlockLowerTriInverseOp(BlockedLinearOp & U,const std::vect
    return Teuchos::rcp(new BlockLowerTriInverseOp(U,invDiag));
 }
 
+inline LinearOp createBlockLowerTriInverseOp(BlockedLinearOp & L,const std::vector<LinearOp> & invDiag,const std::string & str)
+{
+   Teuchos::RCP<Thyra::LinearOpBase<double> > result = Teuchos::rcp(new BlockLowerTriInverseOp(L,invDiag));
+   result->setObjectLabel(str);
+
+   return result;
+}
+
 } // end namespace PB
 
 #endif	

@@ -144,10 +144,84 @@ std::pair<int,int> thyraMatrixToCrsVector(const Teuchos::RCP<const Thyra::Linear
   * Build a vector of the dirchlet row indicies. That is, record the global
   * index of any row that is all zeros except for $1$ on the diagonal.
   *
+  * \param[in]     rowMap   Map specifying which global indicies this process examines 
   * \param[in] mat Matrix to be examined
   * \param[in,out] indicies Output list of indicies corresponding to dirchlet rows.
   */
-void identityRowIndicies(const Epetra_CrsMatrix & mat,std::vector<int> & indicies);
+void identityRowIndicies(const Epetra_Map & rowMap, const Epetra_CrsMatrix & mat,std::vector<int> & outIndicies);
+
+/** \brief Zero out the value of a vector on the specified
+  *        set of global indicies.
+  *
+  * Zero out the value of a vector on the specified set of global
+  * indicies. The indicies here are assumed to belong to the calling
+  * process (i.e. zeroIndicies $\in$ mv.Map()).
+  *
+  * \param[in,out] mv           Vector whose entries will be zeroed
+  * \param[in]     zeroIndicies Indicies local to this process that need to be zeroed
+  */
+void zeroMultiVectorRowIndicies(Epetra_MultiVector & mv,const std::vector<int> & zeroIndicies);
+
+/** A class that zeros out chosen rows of a matrix-vector
+  * product.
+  */
+class ZeroedOperator : public Epetra_Operator {
+public:
+   /** \brief Constructor for a ZeroedOperator.
+     *
+     * Build a ZeroedOperator based on a particular Epetra_Operator and
+     * a set of indicies to zero out. These indicies must be local to this
+     * processor as specified by RowMap().
+     *
+     * \param[in] zeroIndicies Set of indices to zero out (must be local).
+     * \param[in] op           Underlying epetra operator to use.
+     */
+   ZeroedOperator(const std::vector<int> & zeroIndicies,const Teuchos::RCP<const Epetra_Operator> & op);
+
+   //! \name Functions required by Epetra_Operator
+   //@{  
+
+   //! Do nothing destructor
+   virtual ~ZeroedOperator() {}
+
+   //! Can't transpose a ZeroedOperator
+   int SetUseTranspose(bool UseTranspose) { return -1;}
+
+   //! Perform a matrix-vector product with certain rows zeroed out
+   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+   //! Can't call ApplyInverse on a zeroed operator
+   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
+   { return -1; }
+
+   //!
+   double NormInf() const { return -1.0; }
+
+   //!
+   const char* Label() const 
+   {return ("zeroed( "+std::string(epetraOp_->Label())+" )").c_str(); }
+
+   //!
+   bool UseTranspose() const {return false;}
+
+   //!
+   bool HasNormInf() const {return false;}
+   
+   //!
+   const Epetra_Comm & Comm() const {return epetraOp_->Comm(); }
+
+   //!
+   const Epetra_Map& OperatorDomainMap() const {return epetraOp_->OperatorDomainMap(); }
+
+   //!
+   const Epetra_Map& OperatorRangeMap() const {return epetraOp_->OperatorRangeMap(); }
+
+   //@}
+
+protected:
+   const Teuchos::RCP<const Epetra_Operator> epetraOp_;
+   std::vector<int> zeroIndicies_;
+};
 
 } // end namespace Epetra
 } // end namespace PB

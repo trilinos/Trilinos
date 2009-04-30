@@ -42,6 +42,18 @@ inline double dist(int dim,double * coords,int row,int col)
    return std::sqrt(value);
 }
 
+// distance function...not parallel...entirely internal to this cpp file
+inline double dist(double * x,double * y,double * z,int stride,int row,int col)
+{
+   double value = 0.0;
+   if(x!=0) value += std::pow(x[stride*row]-x[stride*col],2.0);
+   if(y!=0) value += std::pow(y[stride*row]-y[stride*col],2.0);
+   if(z!=0) value += std::pow(z[stride*row]-z[stride*col],2.0);
+
+   // the distance between the two
+   return std::sqrt(value);
+}
+
 /** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
   *
   * This function builds a graph Laplacian given a (locally complete)
@@ -57,21 +69,22 @@ inline double dist(int dim,double * coords,int row,int col)
   *                        coordinate beginning at <code>coords[i*dim]</code>.
   * \param[in]     stencil The stencil matrix used to describe the connectivity
   *                        of the graph Laplacian matrix.
-  * \param[in,out] gl      The graph Laplacian matrix to be filled according
-  *                        to the <code>stencil</code> matrix.
   *
-  * \pre Assumes the <code>gl</code> argument is constructed to have a row map
-  *      equivalent in size to <code>stencil</code>
+  * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
   */
-void buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stencil,Epetra_CrsMatrix & gl)
+RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stencil)
 {
+   // allocate a new matrix with storage for the laplacian...in case of diagonals add one extra storage
+   RCP<Epetra_CrsMatrix> gl = rcp(new Epetra_CrsMatrix(Copy,stencil.RowMap(),stencil.ColMap(),
+                                                       stencil.MaxNumEntries()+1),true);
+
    // allocate an additional value for the diagonal, if neccessary
    double rowData[stencil.GlobalMaxNumEntries()+1];
    int rowInd[stencil.GlobalMaxNumEntries()+1];
 
    // loop over all the rows
-   for(int j=0;j<gl.NumMyRows();j++) {
-      int row = gl.GRID(j);
+   for(int j=0;j<gl->NumMyRows();j++) {
+      int row = gl->GRID(j);
       double diagValue = 0.0;
       int diagInd = -1;
       int rowSz = 0;
@@ -82,6 +95,10 @@ void buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stenci
       // loop over elements of row
       for(int i=0;i<rowSz;i++) {
          int col = rowInd[i];
+
+         // is this a 0 entry masquerading as some thing else?
+         double value = rowData[i];
+         if(value==0) continue;
 
          // for nondiagonal entries
          if(row!=col) {
@@ -105,10 +122,92 @@ void buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stenci
       }
 
       // insert row data into graph Laplacian matrix
-      gl.InsertGlobalValues(row,rowSz,rowData,rowInd);
+      TEST_FOR_EXCEPT(gl->InsertGlobalValues(row,rowSz,rowData,rowInd));
    }
 
-   gl.FillComplete();
+   gl->FillComplete();
+
+   return gl;
+}
+
+/** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
+  *
+  * This function builds a graph Laplacian given a (locally complete)
+  * vector of coordinates and a stencil Epetra_CrsMatrix (could this be
+  * a graph of Epetra_RowMatrix instead?). The resulting matrix will have
+  * the negative of the inverse distance on off diagonals. And the sum
+  * of the positive inverse distance of the off diagonals on the diagonal.
+  * If there are no off diagonal entries in the stencil, the diagonal is
+  * set to 0.
+  *
+  * \param[in]     x       A vector containing the x-coordinates, with the <code>i</code>-th
+  *                        coordinate beginning at <code>coords[i*stride]</code>.
+  * \param[in]     y       A vector containing the y-coordinates, with the <code>i</code>-th
+  *                        coordinate beginning at <code>coords[i*stride]</code>.
+  * \param[in]     z       A vector containing the z-coordinates, with the <code>i</code>-th
+  *                        coordinate beginning at <code>coords[i*stride]</code>.
+  * \param[in]     stride  Stride between entries in the (x,y,z) coordinate array
+  * \param[in]     stencil The stencil matrix used to describe the connectivity
+  *                        of the graph Laplacian matrix.
+  *
+  * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
+  */
+RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int stride,const Epetra_CrsMatrix & stencil)
+{
+   // allocate a new matrix with storage for the laplacian...in case of diagonals add one extra storage
+   RCP<Epetra_CrsMatrix> gl = rcp(new Epetra_CrsMatrix(Copy,stencil.RowMap(),stencil.ColMap(),
+                                                       stencil.MaxNumEntries()+1),true);
+
+   // allocate an additional value for the diagonal, if neccessary
+   double rowData[stencil.GlobalMaxNumEntries()+1];
+   int rowInd[stencil.GlobalMaxNumEntries()+1];
+
+   // loop over all the rows
+   for(int j=0;j<gl->NumMyRows();j++) {
+      int row = gl->GRID(j);
+      double diagValue = 0.0;
+      int diagInd = -1;
+      int rowSz = 0;
+
+      // extract a copy of this row...put it in rowData, rowIndicies
+      stencil.ExtractGlobalRowCopy(row,stencil.MaxNumEntries(),rowSz,rowData,rowInd);
+ 
+      // loop over elements of row
+      for(int i=0;i<rowSz;i++) {
+         int col = rowInd[i];
+
+         // is this a 0 entry masquerading as some thing else?
+         double value = rowData[i];
+         if(value==0) continue;
+
+         // for nondiagonal entries
+         if(row!=col) {
+            double d = dist(x,y,z,stride,row,col);
+            rowData[i] = -1.0/d;
+            diagValue += rowData[i];
+         }
+         else 
+            diagInd = i;
+      }
+    
+      // handle diagonal entry
+      if(diagInd<0) { // diagonal not in row
+         rowData[rowSz] = -diagValue;
+         rowInd[rowSz] = row;
+         rowSz++;
+      }
+      else { // diagonal in row
+         rowData[diagInd] = -diagValue;
+         rowInd[diagInd] = row;
+      }
+
+      // insert row data into graph Laplacian matrix
+      TEST_FOR_EXCEPT(gl->InsertGlobalValues(row,rowSz,rowData,rowInd));
+   }
+
+   gl->FillComplete();
+
+   return gl;
 }
 
 /** \brief Apply a linear operator to a multivector (think of this as a matrix

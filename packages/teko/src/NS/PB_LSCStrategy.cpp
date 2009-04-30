@@ -3,6 +3,7 @@
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
 
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
@@ -14,6 +15,9 @@
 #include "PB_Helpers.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
 #include "Epetra/PB_EpetraHelpers.hpp"
+#include "Epetra/PB_EpetraLSCHelpers.hpp"
+
+using Teuchos::rcp_dynamic_cast;
 
 namespace PB {
 namespace NS {
@@ -36,12 +40,12 @@ StaticLSCStrategy::StaticLSCStrategy(const LinearOp & invF,
 //////////////////////////////////////////////
 
 // constructors
-InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory)
-   : massMatrix_(Teuchos::null), invFactory_(factory), eigSolveParam_(5)
+InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,bool rzn)
+   : massMatrix_(Teuchos::null), invFactory_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
 { }
 
-InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass)
-   : massMatrix_(mass), invFactory_(factory), eigSolveParam_(5)
+InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass,bool rzn)
+   : massMatrix_(mass), invFactory_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
 { }
 
 void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const
@@ -134,12 +138,31 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
       return;
    }
 
+   // for Epetra_CrsMatrix...zero out certain rows: this ensures spectral radius is correct
+   LinearOp modF = F;
+   const RCP<const Epetra_Operator> epF = Thyra::get_Epetra_Operator(*F);
+   if(epF!=Teuchos::null && rowZeroingNeeded_) {
+      // try to get a CRS matrix
+      const RCP<const Epetra_CrsMatrix> crsF = rcp_dynamic_cast<const Epetra_CrsMatrix>(epF);
+
+      // if it is a CRS matrix get rows that need to be zeroed
+      if(crsF!=Teuchos::null) {
+         std::vector<int> zeroIndicies;
+          
+         // get rows in need of zeroing
+         PB::Epetra::identityRowIndicies(crsF->RowMap(), *crsF,zeroIndicies);
+
+         // build an operator that zeros those rows
+         modF = Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(zeroIndicies,crsF)));
+      }
+   }
+
    // compute gamma
    LinearOp iQuF;
    if(state->invMass_!=Teuchos::null) 
-      iQuF = multiply(state->invMass_,F);
+      iQuF = multiply(state->invMass_,modF);
    else
-      iQuF = F;
+      iQuF = modF;
 
    // do 6 power iterations to compute spectral radius: EHSST2007 Eq. 4.28
    state->gamma_ = std::fabs(PB::computeSpectralRad(iQuF,5e-2,false,eigSolveParam_))/3.0; 

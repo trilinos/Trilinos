@@ -38,16 +38,12 @@ using Thyra::identity;
   *                        coordinate beginning at <code>coords[i*dim]</code>.
   * \param[in]     stencil The stencil matrix used to describe the connectivity
   *                        of the graph Laplacian matrix.
-  * \param[in,out] gl      The graph Laplacian matrix to be filled according
-  *                        to the <code>stencil</code> matrix.
   *
-  * \pre Assumes the <code>gl</code> argument is constructed to have a row map
-  *      equivalent in size to <code>stencil</code>
+  * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
   */
-void buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stencil,Epetra_CrsMatrix & gl);
+Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stencil);
 
 
-#if 0
 /** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
   *
   * This function builds a graph Laplacian given a (locally complete)
@@ -58,24 +54,19 @@ void buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stenci
   * If there are no off diagonal entries in the stencil, the diagonal is
   * set to 0.
   *
-  * \param[in]     dim     Number of physical dimensions (2D or 3D?).
-  * \param[in]     x  
-  * \param[in]     y  
-  * \param[in]     z  
+  * \param[in]     x       A vector containing the x-coordinates, with the <code>i</code>-th
+  *                        coordinate beginning at <code>coords[i*stride]</code>.
+  * \param[in]     y       A vector containing the y-coordinates, with the <code>i</code>-th
+  *                        coordinate beginning at <code>coords[i*stride]</code>.
+  * \param[in]     z       A vector containing the z-coordinates, with the <code>i</code>-th
+  *                        coordinate beginning at <code>coords[i*stride]</code>.
+  * \param[in]     stride  Stride between entries in the (x,y,z) coordinate array
   * \param[in]     stencil The stencil matrix used to describe the connectivity
   *                        of the graph Laplacian matrix.
-  * \param[in,out] gl      The graph Laplacian matrix to be filled according
-  *                        to the <code>stencil</code> matrix.
-  * \param[in]     stridex  
-  * \param[in]     stridey  
-  * \param[in]     stridez  
   *
-  * \pre Assumes the <code>gl</code> argument is constructed to have a row map
-  *      equivalent in size to <code>stencil</code>
+  * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
   */
-void buildGraphLaplacian(int dim,double * x,double * y,double * z,const Epetra_CrsMatrix & stencil,Epetra_CrsMatrix & gl,
-                         int stridex=1,int stridey=1,int stridez=1);
-#endif
+Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int stride,const Epetra_CrsMatrix & stencil);
 
 // typedefs for increased simplicity
 typedef Teuchos::RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;

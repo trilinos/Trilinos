@@ -16,6 +16,9 @@ subdirs:
 linecount:
 	find ./src -name \*.h -or -name \*.cpp -or -name *.hpp | xargs wc -l
 
+total-linecount:
+	find . -name \*.h -or -name \*.cpp -or -name *.hpp | xargs wc -l
+
 doc:
 	$(DOXYGEN) doxygen.cfg
 

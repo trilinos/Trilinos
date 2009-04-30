@@ -296,12 +296,12 @@ std::pair<int,int> thyraMatrixToCrsVector(const RCP<const Thyra::LinearOpBase<do
   * Build a vector of the dirchlet row indicies. That is, record the global
   * index of any row that is all zeros except for $1$ on the diagonal.
   *
-  * \param[in] mat Matrix to be examined
+  * \param[in]     rowMap   Map specifying which global indicies this process examines 
+  * \param[in]     mat      Matrix to be examined
   * \param[in,out] indicies Output list of indicies corresponding to dirchlet rows.
   */
-void identityRowIndicies(const Epetra_CrsMatrix & mat,std::vector<int> & outIndicies)
+void identityRowIndicies(const Epetra_Map & rowMap, const Epetra_CrsMatrix & mat,std::vector<int> & outIndicies)
 {
-   const Epetra_Map & rowMap = mat.RowMap();
    int maxSz = mat.GlobalMaxNumEntries();
    double values[maxSz];
    int indicies[maxSz];
@@ -330,6 +330,55 @@ void identityRowIndicies(const Epetra_CrsMatrix & mat,std::vector<int> & outIndi
       if(rowIsIdentity)
          outIndicies.push_back(rowGID);
    }
+}
+
+/** \brief Zero out the value of a vector on the specified
+  *        set of global indicies.
+  *
+  * Zero out the value of a vector on the specified set of global
+  * indicies. The indicies here are assumed to belong to the calling
+  * process (i.e. zeroIndicies $\in$ mv.Map()).
+  *
+  * \param[in,out] mv           Vector whose entries will be zeroed
+  * \param[in]     zeroIndicies Indicies local to this process that need to be zeroed
+  */
+void zeroMultiVectorRowIndicies(Epetra_MultiVector & mv,const std::vector<int> & zeroIndicies)
+{
+   int colCnt = mv.NumVectors();
+   std::vector<int>::const_iterator itr;
+ 
+   // loop over the indicies to zero
+   for(itr=zeroIndicies.begin();itr!=zeroIndicies.end();++itr) {
+ 
+      // loop over columns
+      for(int j=0;j<colCnt;j++)
+         mv.ReplaceGlobalValue(*itr,j,0.0);
+   }
+}
+
+/** \brief Constructor for a ZeroedOperator.
+  *
+  * Build a ZeroedOperator based on a particular Epetra_Operator and
+  * a set of indicies to zero out. These indicies must be local to this
+  * processor as specified by RowMap().
+  *
+  * \param[in] zeroIndicies Set of indices to zero out (must be local).
+  * \param[in] op           Underlying epetra operator to use.
+  */
+ZeroedOperator::ZeroedOperator(const std::vector<int> & zeroIndicies,
+                               const Teuchos::RCP<const Epetra_Operator> & op)
+   : zeroIndicies_(zeroIndicies), epetraOp_(op)
+{ }
+
+//! Perform a matrix-vector product with certain rows zeroed out
+int ZeroedOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
+   int result = epetraOp_->Apply(X,Y);
+
+   // zero a few of the rows
+   zeroMultiVectorRowIndicies(Y,zeroIndicies_);
+
+   return result;
 }
 
 } // end namespace Epetra

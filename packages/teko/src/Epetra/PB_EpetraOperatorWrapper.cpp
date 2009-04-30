@@ -43,6 +43,7 @@
 #include "Thyra_LinearOperatorDecl.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
+#include "Thyra_LinearOperatorImpl.hpp"
 
 #include "PB_EpetraHelpers.hpp"
 #include "PB_EpetraThyraConverter.hpp"

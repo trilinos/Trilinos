@@ -82,8 +82,15 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    // get upper triangular matrix
    BlockedLinearOp U = getUpperTriBlocks(blockOp); 
 
+
+   // label the preconditioner
+   std::stringstream ss;
+   ss << "LSC Preconditioner " << (invD!=Teuchos::null ? "(stabilized)" : "(stable)" ) 
+      << ": ( inv(F) = " << invF->description()
+      << ", inv(BQBt) = " << invBQBtmC->description() << " )";
+
    // build the preconditioner operator
-   return createBlockUpperTriInverseOp(U,invDiag);
+   return createBlockUpperTriInverseOp(U,invDiag,ss.str());
 }
 
 } // end namespace NS

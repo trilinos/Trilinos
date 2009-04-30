@@ -29,7 +29,7 @@ void ReorderedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
    RCP<Thyra::MultiVectorBase<double> > flat_X = buildFlatMultiVector(reorderManager_,prod_X);
 
    // now use the underlying mapping strategy to copy the flat vector 
-   mapStrategy_->copyEpetraIntoThyra(X,flat_X,eow);
+   mapStrategy_->copyEpetraIntoThyra(X,flat_X.ptr(),eow);
 }
 
 void ReorderedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyra_Y,
