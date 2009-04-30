@@ -126,7 +126,7 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     "Determines if a variety of development mode checks are turned on by default or not." )
 
   ADVANCED_SET( ${PROJECT_NAME}_ASSERT_MISSING_PACKAGES
-    ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE
+    ${${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE}
     CACHE BOOL
     "Determines if asserts are performed on missing packages or not." )
 
