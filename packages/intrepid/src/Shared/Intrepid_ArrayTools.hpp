@@ -431,14 +431,17 @@ namespace Intrepid {
         \param  leftFields      [in] - Left input array.
         \param  rightFields     [in] - Right input array.
         \param  compEngine      [in] - Computational engine.
+        \param  sumInto         [in] - If TRUE, sum into given output array,
+                                       otherwise overwrite it. Default: FALSE. 
     */
     template<class Scalar, class ArrayOutFields, class ArrayInFieldsLeft, class ArrayInFieldsRight>
     static void contractFieldFieldScalar(ArrayOutFields &            outputFields,
                                          const ArrayInFieldsLeft &   leftFields,
                                          const ArrayInFieldsRight &  rightFields,
-                                         const ECompEngine           compEngine);
-    
-    
+                                         const ECompEngine           compEngine,
+                                         const bool                  sumInto = false);
+
+
     /** \brief Contracts the "point" and "space" dimensions P and D1 of two rank-4
                containers with dimensions (C,L,P,D1) and (C,R,P,D1), and returns the
                result in a rank-3 container with dimensions (C,L,R).
@@ -457,12 +460,15 @@ namespace Intrepid {
         \param  leftFields      [in] - Left input array.
         \param  rightFields     [in] - Right input array.
         \param  compEngine      [in] - Computational engine.
+        \param  sumInto         [in] - If TRUE, sum into given output array,
+                                       otherwise overwrite it. Default: FALSE. 
     */
     template<class Scalar, class ArrayOutFields, class ArrayInFieldsLeft, class ArrayInFieldsRight>
     static void contractFieldFieldVector(ArrayOutFields &            outputFields,
                                          const ArrayInFieldsLeft &   leftFields,
                                          const ArrayInFieldsRight &  rightFields,
-                                         const ECompEngine           compEngine);
+                                         const ECompEngine           compEngine,
+                                         const bool                  sumInto = false);
 
     
     /** \brief Contracts the "point" and "space" dimensions P, D1, and D2 of two rank-5
@@ -484,12 +490,15 @@ namespace Intrepid {
         \param  leftFields      [in] - Left input array.
         \param  rightFields     [in] - Right input array.
         \param  compEngine      [in] - Computational engine.
+        \param  sumInto         [in] - If TRUE, sum into given output array,
+                                       otherwise overwrite it. Default: FALSE. 
     */
     template<class Scalar, class ArrayOutFields, class ArrayInFieldsLeft, class ArrayInFieldsRight>
     static void contractFieldFieldTensor(ArrayOutFields &            outputFields,
                                          const ArrayInFieldsLeft &   leftFields,
                                          const ArrayInFieldsRight &  rightFields,
-                                         const ECompEngine           compEngine);
+                                         const ECompEngine           compEngine,
+                                         const bool                  sumInto = false);
     
     
     /** \brief Contracts the "point" dimensions P of a rank-3 containers and
@@ -507,12 +516,15 @@ namespace Intrepid {
         \param  inputData       [in] - Data array.
         \param  inputFields     [in] - Input fields array.
         \param  compEngine      [in] - Computational engine.
+        \param  sumInto         [in] - If TRUE, sum into given output array,
+                                       otherwise overwrite it. Default: FALSE. 
     */
     template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
     static void contractDataFieldScalar(ArrayOutFields &       outputFields,
                                         const ArrayInData &    inputData,
                                         const ArrayInFields &  inputFields,
-                                        const ECompEngine      compEngine);
+                                        const ECompEngine      compEngine,
+                                        const bool             sumInto = false);
 
 
     /** \brief Contracts the "point" and "space" dimensions P and D of a rank-4 container and
@@ -531,12 +543,15 @@ namespace Intrepid {
         \param  inputData       [in] - Data array.
         \param  inputFields     [in] - Input fields array.
         \param  compEngine      [in] - Computational engine.
+        \param  sumInto         [in] - If TRUE, sum into given output array,
+                                       otherwise overwrite it. Default: FALSE. 
     */
     template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
     static void contractDataFieldVector(ArrayOutFields &       outputFields,
                                         const ArrayInData &    inputData,
                                         const ArrayInFields &  inputFields,
-                                        const ECompEngine      compEngine);
+                                        const ECompEngine      compEngine,
+                                        const bool             sumInto = false);
 
     
     /** \brief Contracts the "point" and "space" dimensions P, D1 and D2 of a rank-5 container and
@@ -556,12 +571,15 @@ namespace Intrepid {
         \param  inputData       [in] - Data array.
         \param  inputFields     [in] - Input fields array.
         \param  compEngine      [in] - Computational engine.
+        \param  sumInto         [in] - If TRUE, sum into given output array,
+                                       otherwise overwrite it. Default: FALSE. 
     */
     template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
-    static void contractDataFieldTensor(ArrayOutFields &        outputFields,
-                                        const ArrayInData &     inputData,
-                                        const ArrayInFields &   inputFields,
-                                        const ECompEngine       compEngine);
+    static void contractDataFieldTensor(ArrayOutFields &       outputFields,
+                                        const ArrayInData &    inputData,
+                                        const ArrayInFields &  inputFields,
+                                        const ECompEngine      compEngine,
+                                        const bool             sumInto = false);
 
 
     /** \brief Contracts the "point" dimensions P of rank-2 containers
@@ -577,12 +595,15 @@ namespace Intrepid {
         \param  inputDataLeft   [in] - Left data input array.
         \param  inputDataRight  [in] - Right data input array.
         \param  compEngine      [in] - Computational engine.
+        \param  sumInto         [in] - If TRUE, sum into given output array,
+                                       otherwise overwrite it. Default: FALSE. 
     */
     template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
     static void contractDataDataScalar(ArrayOutData &            outputData,
                                        const ArrayInDataLeft &   inputDataLeft,
                                        const ArrayInDataRight &  inputDataRight,
-                                       const ECompEngine         compEngine);
+                                       const ECompEngine         compEngine,
+                                       const bool                sumInto = false);
 
 
     /** \brief Contracts the "point" and "space" dimensions P and D of rank-3 containers
@@ -598,12 +619,15 @@ namespace Intrepid {
         \param  inputDataLeft   [in] - Left data input array.
         \param  inputDataRight  [in] - Right data input array.
         \param  compEngine      [in] - Computational engine.
+        \param  sumInto         [in] - If TRUE, sum into given output array,
+                                       otherwise overwrite it. Default: FALSE. 
     */
     template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
     static void contractDataDataVector(ArrayOutData &            outputData,
                                        const ArrayInDataLeft &   inputDataLeft,
                                        const ArrayInDataRight &  inputDataRight,
-                                       const ECompEngine         compEngine);
+                                       const ECompEngine         compEngine,
+                                       const bool                sumInto = false);
 
 
     /** \brief Contracts the "point" and "space" dimensions P, D1 and D2 of rank-4 containers
@@ -620,12 +644,15 @@ namespace Intrepid {
         \param  inputDataLeft   [in] - Left data input array.
         \param  inputDataRight  [in] - Right data input array.
         \param  compEngine      [in] - Computational engine.
+        \param  sumInto         [in] - If TRUE, sum into given output array,
+                                       otherwise overwrite it. Default: FALSE. 
     */
     template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
     static void contractDataDataTensor(ArrayOutData &            outputData,
                                        const ArrayInDataLeft &   inputDataLeft,
                                        const ArrayInDataRight &  inputDataRight,
-                                       const ECompEngine         compEngine);
+                                       const ECompEngine         compEngine,
+                                       const bool                sumInto = false);
 
 
     /** \brief There are two use cases:
@@ -654,11 +681,14 @@ namespace Intrepid {
         \param  outputFields   [out] - Output (product) fields array.
         \param  inputData       [in] - Data (multiplying) array.
         \param  inputFields     [in] - Input (being multiplied) fields array.
+        \param  reciprocal      [in] - If TRUE, <b>divides</b> input fields by the data
+                                       (instead of multiplying). Default: FALSE.
     */
     template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
     static void scalarMultiplyDataField(ArrayOutFields &     outputFields,
                                         const ArrayInData &  inputData,
-                                        ArrayInFields &      inputFields);
+                                        ArrayInFields &      inputFields,
+                                        const bool           reciprocal = false);
 
 
     /** \brief There are two use cases:
@@ -686,76 +716,14 @@ namespace Intrepid {
         \param  outputData      [out] - Output data array.
         \param  inputDataLeft    [in] - Left (multiplying) data array.
         \param  inputDataRight   [in] - Right (being multiplied) data array.
+        \param  reciprocal       [in] - If TRUE, <b>divides</b> input fields by the data
+                                        (instead of multiplying). Default: FALSE.
     */
     template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
     static void scalarMultiplyDataData(ArrayOutData &           outputData,
                                        const ArrayInDataLeft &  inputDataLeft,
-                                       ArrayInDataRight &       inputDataRight);
-
-
-    /** \brief There are two use cases:
-               (1) divides a rank-3, 4, or 5 container \a <b>inputFields</b> with dimensions (C,F,P),
-               (C,F,P,D1) or (C,F,P,D1,D2), representing the values of a set of scalar, vector or
-               tensor fields, by the values in a rank-2 container \a <b>inputData</b> indexed by (C,P),
-               representing the values of scalar data, OR
-               (2) divides a rank-2, 3, or 4 container \a <b>inputFields</b> with dimensions (F,P),
-               (F,P,D1) or (F,P,D1,D2), representing the values of a scalar, vector or a
-               tensor field, by the values in a rank-2 container \a <b>inputData</b> indexed by (C,P),
-               representing the values of scalar data;
-               the output value container \a <b>outputFields</b> is indexed by (C,F,P), (C,F,P,D1) or
-               (C,F,P,D1,D2), regardless of which of the two use cases is considered.
-
-        \code
-          C  - num. integration domains               
-          F  - num. fields                            
-          P  - num. integration points                
-          D1 - first spatial (tensor) dimension index 
-          D2 - second spatial (tensor) dimension index
-        \endcode
-
-        \note   The argument <var><b>inputFields</b></var> can be changed!
-                This enables in-place division.
-
-        \param  outputFields   [out] - Output (quotient) fields array.
-        \param  inputData       [in] - Data (divisor) array. 
-        \param  inputFields     [in] - Input (dividend) fields array.
-    */
-    template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
-    static void scalarDivideDataField(ArrayOutFields &     outputFields,
-                                      const ArrayInData &  inputData,
-                                      ArrayInFields &      inputFields);
-
-
-    /** \brief There are two use cases:
-               (1) divides a rank-3, 4, or 5 container \a <b>inputDataRight</b> with dimensions (C,P),
-               (C,P,D1) or (C,P,D1,D2), representing the values of a set of scalar, vector
-               or tensor data, by the values in a rank-2 container \a <b>inputDataLeft</b> indexed by (C,P),
-               representing the values of scalar data, OR
-               (2) divides a rank-2, 3, or 4 container \a <b>inputDataRight</b> with dimensions (P),
-               (P,D1) or (P,D1,D2), representing the values of scalar, vector or
-               tensor data, by the values in a rank-2 container \a <b>inputDataLeft</b> indexed by (C,P),
-               representing the values of scalar data;
-               the output value container \a <b>outputData</b> is indexed by (C,P), (C,P,D1) or (C,P,D1,D2),
-               regardless of which of the two use cases is considered.
-
-        \code
-          C  - num. integration domains               
-          P  - num. integration points                
-          D1 - first spatial (tensor) dimension index 
-          D2 - second spatial (tensor) dimension index
-        \endcode
-
-        \note   The argument <var><b>inputDataRight</b></var> can be changed!
-                This enables in-place multiplication.
-
-        \param  outputData      [out] - Output (quotient) data array.
-        \param  inputDataLeft    [in] - Left (divisor) data array.
-        \param  inputDataRight   [in] - Right (dividend) data array.
-    */
-    template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
-    static void scalarDivideDataData(ArrayOutData &           outputData,
-                                     const ArrayInDataLeft &  inputDataLeft,
-                                     ArrayInDataRight &       inputDataRight);
+                                       ArrayInDataRight &       inputDataRight,
+                                       const bool               reciprocal = false);
 
 
     /** \brief There are two use cases:
@@ -1042,18 +1010,82 @@ namespace Intrepid {
                                       const ArrayInDataLeft &   inputDataLeft,
                                       const ArrayInDataRight &  inputDataRight);
 
+
+    /** \brief Replicates a rank-2, 3, or 4 container with dimensions (F,P),
+               (F,P,D1) or (F,P,D1,D2), representing the values of a scalar, vector or a
+               tensor field, into an output value container of size (C,F,P),
+               (C,F,P,D1) or (C,F,P,D1,D2).
+
+        \code
+          C  - num. integration domains               
+          F  - num. fields                            
+          P  - num. integration points                
+          D1 - first spatial (tensor) dimension index 
+          D2 - second spatial (tensor) dimension index
+        \endcode
+
+        \param  outputFields   [out] - Output fields array.
+        \param  inputFields     [in] - Input fields array.
+    */
+    template<class Scalar, class ArrayOutFields, class ArrayInFields>
+    static void cloneFields(ArrayOutFields &       outputFields,
+                            const ArrayInFields &  inputFields);
+
+
+    /** \brief Multiplies a rank-2, 3, or 4 container with dimensions (F,P),
+               (F,P,D1) or (F,P,D1,D2), representing the values of a scalar, vector or a
+               tensor field, F-componentwise with a scalar container indexed by (C,F),
+               and stores the result in an output value container of size (C,F,P),
+               (C,F,P,D1) or (C,F,P,D1,D2).
+
+        \code
+          C  - num. integration domains               
+          F  - num. fields                            
+          P  - num. integration points                
+          D1 - first spatial (tensor) dimension index 
+          D2 - second spatial (tensor) dimension index
+        \endcode
+
+        \param  outputFields   [out] - Output fields array.
+        \param  inputFactors    [in] - Input field factors array.
+        \param  inputFields     [in] - Input fields array.
+    */
+    template<class Scalar, class ArrayOutFields, class ArrayInFactors, class ArrayInFields>
+    static void cloneScaleFields(ArrayOutFields &        outputFields,
+                                 const ArrayInFactors &  inputFactors,
+                                 const ArrayInFields &   inputFields);
+
+
+    /** \brief Multiplies, in place, a rank-2, 3, or 4 container with dimensions (C,F,P),
+               (C,F,P,D1) or (C,F,P,D1,D2), representing the values of a scalar, vector or a
+               tensor field, F-componentwise with a scalar container indexed by (C,F).
+
+        \code
+          C  - num. integration domains               
+          F  - num. fields                            
+          P  - num. integration points                
+          D1 - first spatial (tensor) dimension index 
+          D2 - second spatial (tensor) dimension index
+        \endcode
+
+        \param  inoutFields    [in/out] - Input / output fields array.
+        \param  inputFactors       [in] - Scaling field factors array.
+    */
+    template<class Scalar, class ArrayInOutFields, class ArrayInFactors>
+    static void scaleFields(ArrayInOutFields &      inoutFields,
+                            const ArrayInFactors &  inputFactors);
+
+
   }; // end class ArrayTools
 
 } // end namespace Intrepid
 
 // include templated definitions
 #include <Intrepid_ArrayToolsDef.hpp>
+#include <Intrepid_ArrayToolsDefContractions.hpp>
 #include <Intrepid_ArrayToolsDefScalar.hpp>
 #include <Intrepid_ArrayToolsDefDot.hpp>
 #include <Intrepid_ArrayToolsDefTensor.hpp>
+#include <Intrepid_ArrayToolsDefCloneScale.hpp>
 
 #endif
-
-
-
-

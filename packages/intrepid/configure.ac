@@ -380,6 +380,7 @@ AC_CONFIG_FILES([
   test/Discretization/FunctionSpaceTools/Makefile
   test/Discretization/Basis/Makefile
   test/Discretization/Basis/HGRAD_HEX_C1_FEM/Makefile
+  test/Discretization/Basis/HGRAD_LINE_Cn_FEM_JACOBI/Makefile
   test/Discretization/Basis/HGRAD_QUAD_C1_FEM/Makefile
   test/Discretization/Basis/HGRAD_TET_C1_FEM/Makefile
   test/Discretization/Basis/HGRAD_TRI_C1_FEM/Makefile

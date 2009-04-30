@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
   int errorFlag = 0;
 #ifdef HAVE_INTREPID_DEBUG
   int beginThrowNumber = TestForException_getThrowNumber();
-  int endThrowNumber = beginThrowNumber + 8;
+  int endThrowNumber = beginThrowNumber + 5;
 #endif
 
   typedef FunctionSpaceTools fst; 
@@ -107,26 +107,45 @@ int main(int argc, char *argv[]) {
 #ifdef HAVE_INTREPID_DEBUG
     *outStream << "\n >>>>> TESTING computeMeasure:\n";
     FieldContainer<double> a_2(2);
-    FieldContainer<double> a_3(3);
-    FieldContainer<double> a_2_1(2, 1);
     FieldContainer<double> a_2_2(2, 2);
-    FieldContainer<double> a_2_3(2, 3);
-    FieldContainer<double> a_3_2(3, 2);
+    FieldContainer<double> a_2_2_3(2, 2, 3);
+    FieldContainer<double> a_2_2_3_3(2, 2, 3, 3);
     FieldContainer<double> a_2_2_2(2, 2, 2);
-    INTREPID_TEST_COMMAND( fst::computeMeasure<double>(a_2_2, a_2_2, a_2_2) );
+    FieldContainer<double> a_2_2_2_3(2, 2, 2, 3);
+    FieldContainer<double> a_2_2_2_3_3(2, 2, 2, 3, 3);
+    FieldContainer<double> a_2_2_2_2(2, 2, 2, 2);
     INTREPID_TEST_COMMAND( fst::computeMeasure<double>(a_2_2, a_2, a_2) );
-    INTREPID_TEST_COMMAND( fst::computeMeasure<double>(a_2_2_2, a_2, a_2_2) );
-    INTREPID_TEST_COMMAND( fst::computeMeasure<double>(a_2_2, a_2, a_2_3) );
-    INTREPID_TEST_COMMAND( fst::computeMeasure<double>(a_2_2, a_2, a_3_2) );
-    INTREPID_TEST_COMMAND( fst::computeMeasure<double>(a_2_2, a_3, a_2_3) );
-    INTREPID_TEST_COMMAND( fst::computeMeasure<double>(a_2_3, a_3, a_2_3) );
-    INTREPID_TEST_COMMAND( fst::computeMeasure<double>(a_2_3, a_3, a_2_1) );
+    INTREPID_TEST_COMMAND( fst::computeMeasure<double>(a_2_2, a_2_2, a_2) );
 
     *outStream << "\n >>>>> TESTING integrate:\n";
-    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2_2, a_2_3, a_2_3, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2_2_2_2, a_2_2_2, a_2_2_2, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2, a_2_2, a_2_2, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2, a_2_2_3, a_2_2_3, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2, a_2_2_3_3, a_2_2_3_3, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2_2, a_2_2, a_2_2_2, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2_2, a_2_2_3, a_2_2_2_3, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2_2, a_2_2_3_3, a_2_2_2_3_3, COMP_CPP) );
     INTREPID_TEST_COMMAND( fst::integrate<double>(a_2_2_2, a_2_2_2, a_2_2_2, COMP_CPP) );
-    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2_2, a_2_3, a_2, COMP_CPP) );
-    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2_2, a_2_2_2, a_2_2, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2_2_2, a_2_2_2_3, a_2_2_2_3, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::integrate<double>(a_2_2_2, a_2_2_2_3_3, a_2_2_2_3_3, COMP_CPP) );
+
+    *outStream << "\n >>>>> TESTING operatorIntegral:\n";
+    INTREPID_TEST_COMMAND( fst::operatorIntegral<double>(a_2_2_2, a_2_2, a_2_2_2, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::operatorIntegral<double>(a_2_2_2, a_2_2_2, a_2_2_2, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::operatorIntegral<double>(a_2_2_2, a_2_2_2_3, a_2_2_2_3, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::operatorIntegral<double>(a_2_2_2, a_2_2_2_3_3, a_2_2_2_3_3, COMP_CPP) );
+
+    *outStream << "\n >>>>> TESTING functionalIntegral:\n";
+    INTREPID_TEST_COMMAND( fst::functionalIntegral<double>(a_2_2, a_2_2_2_3_3, a_2_2_2, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::functionalIntegral<double>(a_2_2, a_2_2, a_2_2_2, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::functionalIntegral<double>(a_2_2, a_2_2_3, a_2_2_2_3, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::functionalIntegral<double>(a_2_2, a_2_2_3_3, a_2_2_2_3_3, COMP_CPP) );
+
+    *outStream << "\n >>>>> TESTING dataIntegral:\n";
+    INTREPID_TEST_COMMAND( fst::dataIntegral<double>(a_2, a_2, a_2_2_2, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::dataIntegral<double>(a_2, a_2_2, a_2_2, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::dataIntegral<double>(a_2, a_2_2_3, a_2_2_3, COMP_CPP) );
+    INTREPID_TEST_COMMAND( fst::dataIntegral<double>(a_2, a_2_2_3_3, a_2_2_3_3, COMP_CPP) );
 #endif
   }
   catch (std::logic_error err) {
@@ -223,7 +242,7 @@ int main(int argc, char *argv[]) {
       CellTools<double>::setJacobianDet(jacobian_det, jacobian);
 
       // compute weighted measure
-      fst::computeMeasure<double>(weighted_measure, cub_weights, jacobian_det);
+      fst::computeMeasure<double>(weighted_measure, jacobian_det, cub_weights);
 
       // Computing stiffness matrices:
       // tabulate gradients of basis functions at (reference) cubature points

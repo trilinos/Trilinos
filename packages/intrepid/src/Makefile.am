@@ -44,6 +44,11 @@ INTREPID_ALL_H = \
 
 INTREPID_SHARED_H = \
   $(srcdir)/Shared/Intrepid_ArrayToolsDef.hpp \
+  $(srcdir)/Shared/Intrepid_ArrayToolsDefCloneScale.hpp \
+  $(srcdir)/Shared/Intrepid_ArrayToolsDefContractions.hpp \
+  $(srcdir)/Shared/Intrepid_ArrayToolsDefDot.hpp \
+  $(srcdir)/Shared/Intrepid_ArrayToolsDefScalar.hpp \
+  $(srcdir)/Shared/Intrepid_ArrayToolsDefTensor.hpp \
   $(srcdir)/Shared/Intrepid_ArrayTools.hpp \
   $(srcdir)/Shared/Intrepid_FieldContainerDef.hpp \
   $(srcdir)/Shared/Intrepid_FieldContainer.hpp \
@@ -81,6 +86,8 @@ INTREPID_DISCRETIZATION_H = \
   $(srcdir)/Discretization/Basis/Intrepid_Basis.hpp \
   $(srcdir)/Discretization/Basis/Intrepid_HGRAD_HEX_C1_FEM.hpp \
   $(srcdir)/Discretization/Basis/Intrepid_HGRAD_HEX_C1_FEMDef.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp \
+  $(srcdir)/Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEM_JACOBIDef.hpp \
   $(srcdir)/Discretization/Basis/Intrepid_HGRAD_QUAD_C1_FEM.hpp \
   $(srcdir)/Discretization/Basis/Intrepid_HGRAD_QUAD_C1_FEMDef.hpp \
   $(srcdir)/Discretization/Basis/Intrepid_HGRAD_TET_C1_FEM.hpp \

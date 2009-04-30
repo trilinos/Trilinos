@@ -156,91 +156,118 @@ void FunctionSpaceTools::multiplyMeasure(ArrayTypeOut             & outVals,
 }
 
 
-template<class Scalar, class ArrayTypeOut, class ArrayTypeInLeft, class ArrayTypeInRight>
-void FunctionSpaceTools::integrate(ArrayTypeOut            & outputValues,
-                                   const ArrayTypeInLeft   & leftValues,
-                                   const ArrayTypeInRight  & rightValues,
-                                   const ECompEngine         compEngine) {
+template<class Scalar, class ArrayOut, class ArrayInLeft, class ArrayInRight>
+void FunctionSpaceTools::integrate(ArrayOut            & outputValues,
+                                   const ArrayInLeft   & leftValues,
+                                   const ArrayInRight  & rightValues,
+                                   const ECompEngine     compEngine,
+                                   const bool            sumInto) {
+  int outRank = outputValues.rank();
 
-  int lRank = leftValues.rank();
-
-  if (lRank == rightValues.rank()) {
-    switch (lRank) {
-      case 3: 
-        ArrayTools::contractScalar<Scalar>(outputValues, leftValues, rightValues, compEngine);
-      break;  
-      case 4: 
-        ArrayTools::contractVector<Scalar>(outputValues, leftValues, rightValues, compEngine);
-      break;  
-      case 5: 
-        ArrayTools::contractTensor<Scalar>(outputValues, leftValues, rightValues, compEngine);
-      break;
-      default:
-        TEST_FOR_EXCEPTION( ((lRank != 3) && (lRank != 4) && (lRank != 5)), std::invalid_argument,
-                            ">>> ERROR (FunctionSpaceTools::integrate): Left input container must have rank 3, 4 or 5.");
-    }
+  switch (outRank) {
+    case 1: 
+      dataIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine);
+    break;  
+    case 2: 
+      functionalIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine);
+    break;  
+    case 3: 
+      operatorIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine);
+    break;
+    default:
+      TEST_FOR_EXCEPTION( ((outRank != 1) && (outRank != 2) && (outRank != 3)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::integrate): Output container must have rank 1, 2 or 3.");
   }
-  else {
-    switch (lRank) {
-      case 3: 
-        ArrayTools::contractScalarData<Scalar>(outputValues, leftValues, rightValues, compEngine);
-      break;  
-      case 4: 
-        ArrayTools::contractVectorData<Scalar>(outputValues, leftValues, rightValues, compEngine);
-      break;  
-      case 5: 
-        ArrayTools::contractTensorData<Scalar>(outputValues, leftValues, rightValues, compEngine);
-      break;
-      default:
-        TEST_FOR_EXCEPTION( ((lRank != 3) && (lRank != 4) && (lRank != 5)), std::invalid_argument,
-                            ">>> ERROR (FunctionSpaceTools::integrate): Left input container must have rank 3, 4 or 5.");
-    }
-  }
-
 }
 
 
-template<class Scalar, class ArrayTypeOut, class ArrayTypeWeights, class ArrayTypeDet>
-void FunctionSpaceTools::computeMeasure(ArrayTypeOut             & outVals,
-                                        const ArrayTypeWeights   & inWeights,
-                                        const ArrayTypeDet       & inDet) {
+template<class Scalar, class ArrayOutFields, class ArrayInFieldsLeft, class ArrayInFieldsRight>
+void FunctionSpaceTools::operatorIntegral(ArrayOutFields &            outputFields,
+                                          const ArrayInFieldsLeft &   leftFields,
+                                          const ArrayInFieldsRight &  rightFields,
+                                          const ECompEngine           compEngine,
+                                          const bool                  sumInto) {
+  int lRank = leftFields.rank();
+
+  switch (lRank) {
+    case 3: 
+      ArrayTools::contractFieldFieldScalar<Scalar>(outputFields, leftFields, rightFields, compEngine, sumInto);
+    break;  
+    case 4: 
+      ArrayTools::contractFieldFieldVector<Scalar>(outputFields, leftFields, rightFields, compEngine, sumInto);
+    break;  
+    case 5: 
+      ArrayTools::contractFieldFieldTensor<Scalar>(outputFields, leftFields, rightFields, compEngine, sumInto);
+    break;
+    default:
+      TEST_FOR_EXCEPTION( ((lRank != 3) && (lRank != 4) && (lRank != 5)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::operatorIntegral): Left fields input container must have rank 3, 4 or 5.");
+  }
+}
+
+
+template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
+void FunctionSpaceTools::functionalIntegral(ArrayOutFields &       outputFields,
+                                            const ArrayInData &    inputData,
+                                            const ArrayInFields &  inputFields,
+                                            const ECompEngine      compEngine,
+                                            const bool             sumInto) {
+  int dRank = inputData.rank();
+
+  switch (dRank) {
+    case 2: 
+      ArrayTools::contractDataFieldScalar<Scalar>(outputFields, inputData, inputFields, compEngine, sumInto);
+    break;  
+    case 3: 
+      ArrayTools::contractDataFieldVector<Scalar>(outputFields, inputData, inputFields, compEngine, sumInto);
+    break;  
+    case 4: 
+      ArrayTools::contractDataFieldTensor<Scalar>(outputFields, inputData, inputFields, compEngine, sumInto);
+    break;
+    default:
+      TEST_FOR_EXCEPTION( ((dRank != 2) && (dRank != 3) && (dRank != 4)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::functionalIntegral): Data input container must have rank 2, 3 or 4.");
+  }
+}
+
+
+template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+void FunctionSpaceTools::dataIntegral(ArrayOutData &            outputData,
+                                      const ArrayInDataLeft &   inputDataLeft,
+                                      const ArrayInDataRight &  inputDataRight,
+                                      const ECompEngine         compEngine,
+                                      const bool                sumInto) {
+  int lRank = inputDataLeft.rank();
+
+  switch (lRank) {
+    case 2: 
+      ArrayTools::contractDataDataScalar<Scalar>(outputData, inputDataLeft, inputDataRight, compEngine, sumInto);
+    break;  
+    case 3: 
+      ArrayTools::contractDataDataVector<Scalar>(outputData, inputDataLeft, inputDataRight, compEngine, sumInto);
+    break;  
+    case 4: 
+      ArrayTools::contractDataDataTensor<Scalar>(outputData, inputDataLeft, inputDataRight, compEngine, sumInto);
+    break;
+    default:
+      TEST_FOR_EXCEPTION( ((lRank != 2) && (lRank != 3) && (lRank != 4)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::dataIntegral): Left data input container must have rank 2, 3 or 4.");
+  }
+}
+
+
+template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
+inline void FunctionSpaceTools::computeMeasure(ArrayOut             & outVals,
+                                               const ArrayDet       & inDet,
+                                               const ArrayWeights   & inWeights) {
 
 #ifdef HAVE_INTREPID_DEBUG
-  TEST_FOR_EXCEPTION( (inWeights.rank() != 1), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::computeMeasure): Input weights container must have rank 1.");
   TEST_FOR_EXCEPTION( (inDet.rank() != 2), std::invalid_argument,
                       ">>> ERROR (FunctionSpaceTools::computeMeasure): Input determinants container must have rank 2.");
-  TEST_FOR_EXCEPTION( (outVals.rank() != inDet.rank()), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::computeMeasure): Weighted measures and determinants arrays must have the same rank.");
-  TEST_FOR_EXCEPTION( ( (inDet.dimension(1) != inWeights.dimension(0)) && (inDet.dimension(1) != 1) ), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::computeMeasure): First dimension of the determinants container and zeroth dimension of the weights container (number of integration points) must agree or first determinants dimension must be 1!");
-  TEST_FOR_EXCEPTION( (outVals.dimension(0) != inDet.dimension(0)), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::computeMeasure): Zeroth dimensions of weighted measures and determinants arrays (number of integration domains) must agree.");
-  TEST_FOR_EXCEPTION( (outVals.dimension(1) != inWeights.dimension(0)), std::invalid_argument,
-                      ">>> ERROR (FunctionSpaceTools::computeMeasure): First dimension of weighted measures array and zeroth dimension of weights array (number of integration points) must agree.");
 #endif
 
-  int numCells         = inDet.dimension(0);
-  int numWeightPoints  = inWeights.dimension(0);
-  int numDetPoints     = inDet.dimension(1);
-
-  if (numDetPoints > 1) {
-    for(int cl = 0; cl < numCells; cl++) {
-      for(int pt = 0; pt < numWeightPoints; pt++) {
-        outVals(cl, pt) = std::abs(inDet(cl, pt))*inWeights(pt);
-      } // P-loop
-    } // C-loop
-  }
-  else {
-    for(int cl = 0; cl < numCells; cl++) {
-      for(int pt = 0; pt < numWeightPoints; pt++) {
-        outVals(cl, pt) = std::abs(inDet(cl, 0))*inWeights(pt);
-      } // P-loop
-    } // C-loop
-  }
+  ArrayTools::scalarMultiplyDataData<Scalar>(outVals, inDet, inWeights);
 
 } // computeMeasure
-
-
 
 } // end namespace Intrepid

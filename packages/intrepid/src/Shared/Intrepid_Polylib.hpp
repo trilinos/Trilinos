@@ -189,7 +189,7 @@ namespace Intrepid {
     \li Exact for polynomials of order \a 2np-1 or less
     */
     template<class Scalar>
-    static void   zwgj (Scalar *, Scalar *, const int , const Scalar, const Scalar);
+    static void   zwgj   (Scalar *z, Scalar *w, const int np, const Scalar alpha, const Scalar beta);
 
 
     /** \brief  Gauss-Radau-Jacobi zeros and weights with end point at \a z=-1.
@@ -200,7 +200,7 @@ namespace Intrepid {
     \li  Exact for polynomials of order \a 2np-2 or less
     */
     template<class Scalar>
-    static void   zwgrjm  (Scalar *, Scalar *, const int , const Scalar, const Scalar);
+    static void   zwgrjm (Scalar *z, Scalar *w, const int np, const Scalar alpha, const Scalar beta);
 
 
     /** \brief  Gauss-Radau-Jacobi zeros and weights with end point at \a z=1
@@ -211,7 +211,7 @@ namespace Intrepid {
     \li Exact for polynomials of order \a 2np-2 or less
     */
     template<class Scalar>
-    static void   zwgrjp  (Scalar *, Scalar *, const int , const Scalar, const Scalar);
+    static void   zwgrjp (Scalar *z, Scalar *w, const int np, const Scalar alpha, const Scalar beta);
 
 
     /** \brief  Gauss-Lobatto-Jacobi zeros and weights with end point at \a z=-1,\a 1
@@ -222,7 +222,7 @@ namespace Intrepid {
     \li Exact for polynomials of order \a 2np-3 or less
     */
     template<class Scalar>
-    static void   zwglj   (Scalar *, Scalar *, const int , const Scalar, const Scalar);
+    static void   zwglj  (Scalar *z, Scalar *w, const int np, const Scalar alpha, const Scalar beta);
 
 
 
@@ -231,49 +231,49 @@ namespace Intrepid {
     /** \brief Compute the Derivative Matrix and its transpose associated
                with the Gauss-Jacobi zeros.
 
-    \li Compute the derivative matrix associated with the n_th order Lagrangian
+    \li Compute the derivative matrix \a D associated with the n_th order Lagrangian
         interpolants through the \a np Gauss-Jacobi points \a z such that \n
         \f$  \frac{du}{dz}(z[i]) =  \sum_{j=0}^{np-1} D[i*np+j] u(z[j]) \f$
 
     */
     template<class Scalar>
-    static void   Dgj     (Scalar *, const Scalar *, const int, const Scalar, const Scalar);
+    static void   Dgj    (Scalar *D,  const Scalar *z, const int np, const Scalar alpha, const Scalar beta);
 
 
     /** \brief Compute the Derivative Matrix and its transpose associated
                with the Gauss-Radau-Jacobi zeros with a zero at \a z=-1.
 
-    \li Compute the derivative matrix associated with the n_th
+    \li Compute the derivative matrix \a D associated with the n_th
         order Lagrangian interpolants through the \a np Gauss-Radau-Jacobi
         points \a z such that \n \f$ \frac{du}{dz}(z[i]) =
         \sum_{j=0}^{np-1} D[i*np+j] u(z[j]) \f$
     */
     template<class Scalar>
-    static void   Dgrjm   (Scalar *, const Scalar *, const int, const Scalar, const Scalar);
+    static void   Dgrjm  (Scalar *D, const Scalar *z, const int np, const Scalar alpha, const Scalar beta);
 
 
     /** \brief Compute the Derivative Matrix  associated with the
                Gauss-Radau-Jacobi zeros with a zero at \a z=1.
 
-    \li Compute the derivative matrix associated with the n_th
+    \li Compute the derivative matrix \a D associated with the n_th
         order Lagrangian interpolants through the \a np Gauss-Radau-Jacobi
         points \a z such that \n \f$ \frac{du}{dz}(z[i]) =
         \sum_{j=0}^{np-1} D[i*np+j] u(z[j]) \f$
     */
     template<class Scalar>
-    static void   Dgrjp   (Scalar *, const Scalar *, const int, const Scalar, const Scalar);
+    static void   Dgrjp  (Scalar *D, const Scalar *z, const int np, const Scalar alpha, const Scalar beta);
 
 
     /** \brief Compute the Derivative Matrix associated with the
                Gauss-Lobatto-Jacobi zeros.
 
-    \li Compute the derivative matrix associated with the n_th
+    \li Compute the derivative matrix \a D associated with the n_th
         order Lagrange interpolants through the \a np
         Gauss-Lobatto-Jacobi points \a z such that \n \f$
         \frac{du}{dz}(z[i]) = \sum_{j=0}^{np-1} D[i*np+j] u(z[j]) \f$
     */
     template<class Scalar>
-    static void   Dglj    (Scalar *,const Scalar *, const int, const Scalar, const Scalar);
+    static void   Dglj   (Scalar *D, const Scalar *z, const int np, const Scalar alpha, const Scalar beta);
 
 
 
@@ -299,8 +299,8 @@ namespace Intrepid {
         \f$
     */
     template<class Scalar>
-    static Scalar hgj     (const int, const Scalar, const Scalar *,
-                           const int, const Scalar, const Scalar);
+    static Scalar hgj     (const int i, const Scalar z, const Scalar *zgj,
+                           const int np, const Scalar alpha, const Scalar beta);
 
 
     /** \brief Compute the value of the \a i th Lagrangian interpolant through the
@@ -323,8 +323,8 @@ namespace Intrepid {
     \end{array}   \f$
     */
     template<class Scalar>
-    static Scalar hgrjm   (const int, const Scalar, const Scalar *,
-                           const int, const Scalar, const Scalar);
+    static Scalar hgrjm   (const int i, const Scalar z, const Scalar *zgrj,
+                           const int np, const Scalar alpha, const Scalar beta);
 
 
     /** \brief Compute the value of the \a i th Lagrangian interpolant through the
@@ -347,12 +347,12 @@ namespace Intrepid {
     \end{array}   \f$
     */
     template<class Scalar>
-    static Scalar hgrjp   (const int, const Scalar, const Scalar *,
-                           const int, const Scalar, const Scalar);
+    static Scalar hgrjp   (const int i, const Scalar z, const Scalar *zgrj,
+                           const int np, const Scalar alpha, const Scalar beta);
 
 
     /** \brief Compute the value of the \a i th Lagrangian interpolant through the
-               \a np Gauss-Lobatto-Jacobi points \a zgrj at the arbitrary location
+               \a np Gauss-Lobatto-Jacobi points \a zglj at the arbitrary location
                \a z.
 
     \li \f$ -1 \leq z \leq 1 \f$
@@ -371,8 +371,8 @@ namespace Intrepid {
     \end{array}   \f$
     */
     template<class Scalar>
-    static Scalar hglj    (const int, const Scalar, const Scalar *,
-                           const int, const Scalar, const Scalar);
+    static Scalar hglj    (const int i, const Scalar z, const Scalar *zglj,
+                           const int np, const Scalar alpha, const Scalar beta);
 
 
 
@@ -383,14 +383,14 @@ namespace Intrepid {
 
     \li Computes the one-dimensional interpolation matrix, \a im, to
     interpolate a function from at Gauss-Jacobi distribution of \a nz
-    zeros \a zgrj to an arbitrary distribution of \a mz points \a zm, i.e.\n
+    zeros \a zgj to an arbitrary distribution of \a mz points \a zm, i.e.\n
     \f$
     u(zm[i]) = \sum_{j=0}^{nz-1} im[i*nz+j] \ u(zgj[j])
     \f$
     */
     template<class Scalar>
-    static void  Imgj  (Scalar*, const Scalar*, const Scalar*, const int, const int, 
-                        const Scalar, const Scalar);
+    static void  Imgj  (Scalar *im, const Scalar *zgj, const Scalar *zm, const int nz,
+                        const int mz, const Scalar alpha, const Scalar beta);
 
 
     /** \brief Interpolation Operator from Gauss-Radau-Jacobi points
@@ -401,11 +401,11 @@ namespace Intrepid {
     \a nz zeros \a zgrj (where \a zgrj[0]=-1) to an arbitrary
     distribution of \a mz points \a zm, i.e.
     \n
-    \f$ u(zm[i]) =    \sum_{j=0}^{nz-1} im[i*nz+j] \ u(zgj[j]) \f$
+    \f$ u(zm[i]) =    \sum_{j=0}^{nz-1} im[i*nz+j] \ u(zgrj[j]) \f$
     */
     template<class Scalar>
-    static void  Imgrjm(Scalar*, const Scalar*, const Scalar*, const int, const int,
-                        const Scalar, const Scalar);
+    static void  Imgrjm(Scalar *im, const Scalar *zgrj, const Scalar *zm, const int nz,
+                        const int mz, const Scalar alpha, const Scalar beta);
 
 
     /** \brief Interpolation Operator from Gauss-Radau-Jacobi points
@@ -416,11 +416,11 @@ namespace Intrepid {
     \a nz zeros \a zgrj (where \a zgrj[nz-1]=1) to an arbitrary
     distribution of \a mz points \a zm, i.e.
     \n
-    \f$ u(zm[i]) =    \sum_{j=0}^{nz-1} im[i*nz+j] \ u(zgj[j]) \f$
+    \f$ u(zm[i]) =    \sum_{j=0}^{nz-1} im[i*nz+j] \ u(zgrj[j]) \f$
     */
     template<class Scalar>
-    static void  Imgrjp(Scalar*, const Scalar*, const Scalar*, const int, const int, 
-                        const Scalar, const Scalar);
+    static void  Imgrjp(Scalar *im, const Scalar *zgrj, const Scalar *zm, const int nz,
+                        const int mz, const Scalar alpha, const Scalar beta);
 
 
     /** \brief Interpolation Operator from Gauss-Lobatto-Jacobi points
@@ -428,14 +428,14 @@ namespace Intrepid {
 
     \li Computes the one-dimensional interpolation matrix, \a im, to
     interpolate a function from at Gauss-Lobatto-Jacobi distribution of
-    \a nz zeros \a zgrj (where \a zgrj[0]=-1) to an arbitrary
+    \a nz zeros \a zglj (where \a zglj[0]=-1 , \a  zglj[nz-1]=1) to an arbitrary
     distribution of \a mz points \a zm, i.e.
     \n
-    \f$ u(zm[i]) =    \sum_{j=0}^{nz-1} im[i*nz+j] \ u(zgj[j]) \f$
+    \f$ u(zm[i]) =    \sum_{j=0}^{nz-1} im[i*nz+j] \ u(zglj[j]) \f$
     */
     template<class Scalar>
-    static void  Imglj (Scalar*, const Scalar*, const Scalar*, const int, const int, 
-                        const Scalar, const Scalar);
+    static void  Imglj (Scalar *im, const Scalar *zglj, const Scalar *zm, const int nz,
+                        const int mz, const Scalar alpha, const Scalar beta);
 
 
     /* Polynomial functions */
@@ -445,11 +445,11 @@ namespace Intrepid {
                \frac{d}{dz} P^{\alpha,\beta}_n(z) \f$.
 
         \li This function returns the vectors \a poly_in and \a poly_d
-        containing the value of the \f$ n^th \f$ order Jacobi polynomial
+        containing the value of the \a n-th order Jacobi polynomial
         \f$ P^{\alpha,\beta}_n(z) \alpha > -1, \beta > -1 \f$ and its
         derivative at the \a np points in \a z[i]
 
-        - If \a poly_in = NULL then only calculate derivatice
+        - If \a poly_in = NULL then only calculate derivative
 
         - If \a polyd   = NULL then only calculate polynomial
 
@@ -480,14 +480,14 @@ namespace Intrepid {
         - Note the derivative from this routine is only valid for -1 < \a z < 1.
     */
     template<class Scalar>
-    static void jacobfd (const int, const Scalar *, Scalar *, Scalar *, const int , 
-                         const Scalar, const Scalar);
+    static void jacobfd (const int np, const Scalar *z, Scalar *poly_in, Scalar *polyd,
+                         const int n, const Scalar alpha, const Scalar beta);
 
 
     /** \brief Calculate the  derivative of Jacobi polynomials
 
     \li Generates a vector \a poly of values of the derivative of the
-    \a n th order Jacobi polynomial \f$ P^(\alpha,\beta)_n(z)\f$ at the
+    \a n-th order Jacobi polynomial \f$ P^(\alpha,\beta)_n(z)\f$ at the
     \a np points \a z.
 
     \li To do this we have used the relation
@@ -498,8 +498,8 @@ namespace Intrepid {
     \li This formulation is valid for \f$ -1 \leq z \leq 1 \f$
     */
     template<class Scalar>
-    static void jacobd  (const int, const Scalar *, Scalar *,  const int , 
-                         const Scalar, const Scalar);
+    static void jacobd  (const int np, const Scalar *z, Scalar *polyd, const int n,
+                         const Scalar alpha, const Scalar beta);
 
 
 
@@ -512,7 +512,7 @@ namespace Intrepid {
     and uses polynomial deflation in a Newton iteration
     */
     template<class Scalar>
-    static void   Jacobz   (const int n, Scalar *z, const Scalar alpha, const Scalar beta);
+    static void   Jacobz (const int n, Scalar *z, const Scalar alpha, const Scalar beta);
 
 
     /** \brief Zero determination through the eigenvalues of a tridiagonal
@@ -568,17 +568,17 @@ namespace Intrepid {
     static void   TriQL    (const int n, Scalar *d, Scalar *e);
 
 
-    /** \brief Calculate the Gamma function , \f$ \Gamma(n)\f$, for integer
-               values and halves.
+    /** \brief Calculate the Gamma function , \f$ \Gamma(x)\f$, for integer
+               values \a x and halves.
 
-    Determine the value of \f$\Gamma(n)\f$ using:
+    Determine the value of \f$\Gamma(x)\f$ using:
 
-    \f$ \Gamma(n) = (n-1)!  \mbox{ or  }  \Gamma(n+1/2) = (n-1/2)\Gamma(n-1/2)\f$
+    \f$ \Gamma(x) = (x-1)!  \mbox{ or  }  \Gamma(x+1/2) = (x-1/2)\Gamma(x-1/2)\f$
 
-    where \f$ \Gamma(1/2) = \sqrt(\pi)\f$
+    where \f$ \Gamma(1/2) = \sqrt{\pi}\f$
     */
     template<class Scalar>
-    static Scalar gammaF (const Scalar);
+    static Scalar gammaF (const Scalar x);
 
 
   }; // class IntrepidPolylib

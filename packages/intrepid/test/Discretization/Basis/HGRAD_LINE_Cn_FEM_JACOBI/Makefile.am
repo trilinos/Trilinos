@@ -28,29 +28,30 @@
 # @HEADER
 
 
-# The following line helps the test harness recover from build errors.
+# Tests
 
-all-local:
+include $(top_builddir)/Makefile.export.intrepid
 
-DISABLED =
+if USING_GNUMAKE
+EXPORT_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(INTREPID_TEST_LIBS))
+EXPORT_INC_PATH = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_incl_paths.pl $(INTREPID_TEST_INCLUDES))
+else
+EXPORT_LIBS = $(INTREPID_TEST_LIBS)
+EXPORT_INC_PATH = $(INTREPID_TEST_INCLUDES)
+endif
 
-## #######################################################################
-## Subdirectories.
-## #######################################################################
-#
-SUBDIRS = \
-  HGRAD_HEX_C1_FEM \
-  HGRAD_QUAD_C1_FEM \
-  HGRAD_TET_C1_FEM \
-  HGRAD_TRI_C1_FEM \
-  HGRAD_WEDGE_C1_FEM \
-  HGRAD_LINE_Cn_FEM_JACOBI \
-  HCURL_HEX_I1_FEM \
-  HCURL_TET_I1_FEM \
-  HCURL_WEDGE_I1_FEM \
-  HDIV_HEX_I1_FEM \
-  HDIV_TET_I1_FEM \
-  HDIV_WEDGE_I1_FEM
+AM_CPPFLAGS = $(EXPORT_INC_PATH)
 
-EXTRA_DIST = 
+EXEEXT = .exe
 
+noinst_PROGRAMS = test_01
+
+# Dependencies used when rebuilding examples without building everything from scratch.
+
+test_01_DEPENDENCIES = \
+	$(top_builddir)/src/libintrepid.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+test_01_SOURCES = test_01.cpp
+test_01_LDADD = $(EXPORT_LIBS) 
+test_01_CXXFLAGS = -I$(srcdir)
