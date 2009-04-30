@@ -36,10 +36,14 @@
 #include "Intrepid_FieldContainer.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+
 
 using namespace Intrepid;
 
 int main(int argc, char *argv[]) {
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   
   // This little trick lets us print to cout  only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;

@@ -27,8 +27,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file test_01.cpp
-\brief  Unit test for the ArrayTools class.
+/** \file test_05.cpp
+\brief  Unit test for the clone / scale operations of the ArrayTools class.
 \author Created by P. Bochev and D. Ridzal.
 */
 
@@ -38,6 +38,7 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 using namespace std;
 using namespace Intrepid;
@@ -56,6 +57,8 @@ using namespace Intrepid;
 
 
 int main(int argc, char *argv[]) {
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.

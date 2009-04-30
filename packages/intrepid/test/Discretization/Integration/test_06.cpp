@@ -39,6 +39,7 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 using namespace Intrepid;
 
@@ -104,6 +105,8 @@ void computeIntegral(Teuchos::Array<double>& testIntFixDeg, shards::CellTopology
 
 
 int main(int argc, char *argv[]) {
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.

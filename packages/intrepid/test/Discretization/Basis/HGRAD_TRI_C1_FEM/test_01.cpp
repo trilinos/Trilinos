@@ -37,6 +37,7 @@
 #include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 using namespace std;
 using namespace Intrepid;
@@ -55,6 +56,8 @@ using namespace Intrepid;
   };                                                                                                                       \
 }
 int main(int argc, char *argv[]) {
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
