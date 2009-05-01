@@ -317,26 +317,6 @@ int main(int argc, char *argv[]) {
     }
     fclose(f);
 
-    
-
- // Check values
-
-/*
-   std::cout << "nodeCoord = \n";
-   std::cout << nodeCoord; 
-
-   std::cout << "edgeToNode = \n";
-   std::cout << edgeToNode;
-
-   std::cout << "elemToNode = \n";
-   std::cout << elemToNode; 
-  
-   std::cout << "elemToEdge = \n";
-   std::cout << elemToEdge; 
-
-   std::cout << "mu = \n";
-   std::cout << muVal; 
-*/
 
 // **************************** INCIDENCE MATRIX **************************************
 
@@ -468,7 +448,7 @@ int main(int argc, char *argv[]) {
       fst::HGRADtransformVALUE<double>(hexGValsTransformed, hexGVals);
       
      // compute weighted measure
-      fst::computeMeasure<double>(weightedMeasure, cubWeights, hexJacobDet);
+      fst::computeMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
 
       // combine mu value with weighted measure
       for (int nC = 0; nC < numCells; nC++){
