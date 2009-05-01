@@ -1,0 +1,4 @@
+ADD_SUBDIRECTORY(ArrayTools)
+ADD_SUBDIRECTORY(FieldContainer)
+ADD_SUBDIRECTORY(IntrepidPolylib)
+ADD_SUBDIRECTORY(RealSpaceTools)

@@ -51,6 +51,11 @@ APPEND_SET(HEADERS
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Shared)
 APPEND_SET(HEADERS
   Shared/Intrepid_ArrayToolsDef.hpp
+  Shared/Intrepid_ArrayToolsDefCloneScale.hpp
+  Shared/Intrepid_ArrayToolsDefContractions.hpp
+  Shared/Intrepid_ArrayToolsDefDot.hpp
+  Shared/Intrepid_ArrayToolsDefScalar.hpp
+  Shared/Intrepid_ArrayToolsDefTensor.hpp
   Shared/Intrepid_ArrayTools.hpp
   Shared/Intrepid_FieldContainerDef.hpp
   Shared/Intrepid_FieldContainer.hpp
@@ -96,6 +101,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_Basis.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_C1_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_C1_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp
+  Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEM_JACOBIDef.hpp
   Discretization/Basis/Intrepid_HGRAD_QUAD_C1_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_QUAD_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_TET_C1_FEM.hpp

@@ -1,0 +1,10 @@
+INCLUDE(PackageAddExecutableAndTest)
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  Test_01
+  SOURCES test_01.cpp
+  ARGS PrintItAll
+  COMM serial
+  PASS_REGULAR_EXPRESSION "TEST PASSED"
+  ADD_DIR_TO_NAME
+  )
