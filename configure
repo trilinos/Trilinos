@@ -4463,6 +4463,7 @@ fi
 
 
 if test "X$ac_cv_use_shards" != "Xno" ||
+	test "X$ac_cv_use_phalanx" != "Xno" ||
 	test "X$ac_cv_use_intrepid" != "Xno"; then
   subdirs="$subdirs packages/shards"
 

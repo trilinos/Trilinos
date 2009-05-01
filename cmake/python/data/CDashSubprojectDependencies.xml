@@ -313,6 +313,7 @@
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Shards" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="ILO"/>
@@ -320,6 +321,7 @@
     <Dependency name="Sacado" type="LR"/>
     <Dependency name="AztecOO" type="ITO"/>
     <Dependency name="Amesos" type="ITO"/>
+    <Dependency name="Intrepid" type="TO"/>
     <Dependency name="Ifpack" type="TO"/>
     <Dependency name="Belos" type="TO"/>
     <EmailAddresses>

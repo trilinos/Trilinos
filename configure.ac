@@ -480,6 +480,7 @@ fi
 AM_CONDITIONAL(BUILD_INTREPID, test "X$BUILD_INTREPID" != "Xno")
 
 if test "X$ac_cv_use_shards" != "Xno" ||
+	test "X$ac_cv_use_phalanx" != "Xno" ||
 	test "X$ac_cv_use_intrepid" != "Xno"; then
   AC_CONFIG_SUBDIRS([packages/shards])
   BUILD_SHARDS=yes
