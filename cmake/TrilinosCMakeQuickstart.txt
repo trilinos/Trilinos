@@ -204,7 +204,7 @@ C) Configuring (Makefile Generator)
     *not* arbitrary linker flags.  To pass in extra linker flags that are not
     libraries, use the built-in CMake variable CMAKE_EXE_LINKER_FLAGS instead.
   
-  e) Overriding all (string warnings and debug/release) compiler options:
+  e) Overriding all (strong warnings and debug/release) compiler options:
   
     To override all compiler options, including both strong warning options
     and debug/release options, configure with:
