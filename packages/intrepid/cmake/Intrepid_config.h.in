@@ -1,11 +1,5 @@
 /* src/Intrepid_config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define to 1 if you have the <cstdio> header file. */
-#cmakedefine HAVE_CSTDIO @INTREPID_CSTDIO@
-
-/* Define to 1 if you have the <cstdlib> header file. */
-#cmakedefine HAVE_CSTDLIB @INTREPID_CSTDLIB@
-
 /* Define if want to build with intrepid enabled */
 #cmakedefine HAVE_INTREPID_AMESOS
 
@@ -21,29 +15,5 @@
 /* Define if want to build with intrepid enabled */
 #cmakedefine HAVE_INTREPID_EPETRAEXT
 
-/* Define if want to build intrepid-examples */
-#cmakedefine HAVE_INTREPID_EXAMPLES
-
 /* Define if want to build with intrepid enabled */
 #cmakedefine HAVE_INTREPID_SACADO
-
-/* Define to 1 if you have the <inttypes.h> header file. */
-#cmakedefine HAVE_INTTYPES_H
-
-/* Define to 1 if you have the <iomanip> header file. */
-#cmakedefine HAVE_IOMANIP @INTREPID_IOMANIP@
-
-/* Define to 1 if you have the <iostream> header file. */
-#cmakedefine HAVE_IOSTREAM @INTREPID_IOSTREAM@
-
-/* Define to 1 if you have the <sstream> header file. */
-#cmakedefine HAVE_SSTREAM @INTREPID_SSTREAM@
-
-/* define if we want to use MPI */
-#cmakedefine HAVE_MPI
-
-/* Define to 1 if you have the <string> header file. */
-#cmakedefine HAVE_STRING @INTREPID_STRING@
-
-/* Define to 1 if you have the <unistd.h> header file. */
-#cmakedefine HAVE_UNISTD_H
