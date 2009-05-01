@@ -57,12 +57,13 @@ class AmesosBTFGlobal_LinearProblem: public SameTypeTransform<Epetra_LinearProbl
   ~AmesosBTFGlobal_LinearProblem();
 
   AmesosBTFGlobal_LinearProblem( double thresh = 0.0, const std::string& balanceType="linear",
-			         bool upperTri = false, bool verbose = false )
+			         bool upperTri = false, bool verbose = false, bool debug = false )
   : numBlocks_(0),
     analysisDone_(false),
     threshold_(thresh),
     upperTri_(upperTri),
     verbose_(verbose),
+    debug_(debug),
     balance_(balanceType)
   {}
     
@@ -102,7 +103,7 @@ class AmesosBTFGlobal_LinearProblem: public SameTypeTransform<Epetra_LinearProbl
 
   const double threshold_;
 
-  const bool upperTri_, verbose_;
+  const bool upperTri_, verbose_, debug_;
 
   std::string balance_;
 

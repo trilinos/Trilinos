@@ -54,11 +54,12 @@ class AmesosBTF_CrsMatrix : public SameTypeTransform<Epetra_CrsMatrix> {
   ~AmesosBTF_CrsMatrix();
 
   AmesosBTF_CrsMatrix( double thres = 0.0, bool upperTri = false,
-                 bool verbose = false )
+                 bool verbose = false, bool debug = false )
   : numBlocks_(0), 
     threshold_(thres),
     upperTri_(upperTri),
-    verbose_(verbose)
+    verbose_(verbose),
+    debug_(debug)
   {}
 
   NewTypeRef operator()( OriginalTypeRef orig );
@@ -88,7 +89,7 @@ class AmesosBTF_CrsMatrix : public SameTypeTransform<Epetra_CrsMatrix> {
 
   const double threshold_;
 
-  const bool upperTri_, verbose_;
+  const bool upperTri_, verbose_, debug_;
 
 };
 

@@ -71,7 +71,7 @@ operator()( OriginalTypeRef orig )
   int n = orig.NumMyRows();
   int nnz = orig.NumMyNonzeros();
   
-  if( verbose_ )
+  if( debug_ )
   {
     cout << "Orig Matrix:\n";
     cout << orig << endl;
@@ -101,7 +101,7 @@ operator()( OriginalTypeRef orig )
   nnz = ia[n];
   strippedGraph.FillComplete();
   
-  if( verbose_ )
+  if( debug_ )
   {
     cout << "Stripped Graph\n";
     cout << strippedGraph;
@@ -110,7 +110,7 @@ operator()( OriginalTypeRef orig )
   // Compute the BTF permutation only on the processor that has the graph.
   if ( matProc == myPID ) {
     
-    if( verbose_ )
+    if( debug_ )
       {
 	cout << "-----------------------------------------\n";
 	cout << "CRS Format Graph (stripped) \n";
@@ -173,7 +173,7 @@ operator()( OriginalTypeRef orig )
 	}
     }
     
-    if( verbose_ ) {
+    if( debug_ ) {
       cout << "-----------------------------------------\n";
       cout << "BTF Output (n = " << n << ")\n";
       cout << "-----------------------------------------\n";
@@ -213,7 +213,7 @@ operator()( OriginalTypeRef orig )
   NewRowMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, n, &newRangeElements[0], OldRowMap.IndexBase(), OldRowMap.Comm() ) );
   NewColMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, n, &newDomainElements[0], OldColMap.IndexBase(), OldColMap.Comm() ) );
 
-  if( verbose_ )
+  if( debug_ )
   {
     cout << "New Row Map\n";
     cout << *NewRowMap_ << endl;
@@ -227,7 +227,7 @@ operator()( OriginalTypeRef orig )
   NewGraph_->Import( strippedGraph, *Importer_, Insert );
   NewGraph_->FillComplete();
 
-  if( verbose_ )
+  if( debug_ )
   {
     cout << "NewGraph\n";
     cout << *NewGraph_;
@@ -237,7 +237,7 @@ operator()( OriginalTypeRef orig )
   NewMatrix_->Import( orig, *Importer_, Insert );
   NewMatrix_->FillComplete();
 
-  if( verbose_ )
+  if( debug_ )
   {
     cout << "New CrsMatrix\n";
     cout << *NewMatrix_ << endl;

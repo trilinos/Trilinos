@@ -109,7 +109,7 @@ operator()( OriginalTypeRef orig )
     serialMatrix = OldMatrix_;
   }
 
-  if( verbose_ )
+  if( debug_ )
   {
     cout << "Original (serial) Matrix:\n";
     cout << *serialMatrix << endl;
@@ -128,7 +128,7 @@ operator()( OriginalTypeRef orig )
   reIdxTrans->fwd();
   
   // Compute and apply BTF to the serial CrsMatrix and has been filtered by the threshold
-  EpetraExt::AmesosBTF_CrsMatrix BTFTrans( threshold_, upperTri_, verbose_ );
+  EpetraExt::AmesosBTF_CrsMatrix BTFTrans( threshold_, upperTri_, verbose_, debug_ );
   Epetra_CrsMatrix newSerialMatrixBTF = BTFTrans( newSerialMatrix );
   
   rowPerm_ = BTFTrans.RowPerm();
@@ -163,7 +163,7 @@ operator()( OriginalTypeRef orig )
   newSerialMatrixT.Import( newSerialMatrix, *(BTFTrans.Importer()), Insert );
   newSerialMatrixT.FillComplete();
   
-  if( verbose_ )
+  if( debug_ )
   {
     cout << "Original (serial) Matrix permuted via BTF:\n";
     cout << newSerialMatrixT << endl;
@@ -199,7 +199,8 @@ operator()( OriginalTypeRef orig )
     // Right now we do not explicitly build the column map and assume the BTF permutation is symmetric!
     //NewColMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, nGlobal, &colPerm_[0], 0, OldMatrix_->Comm() ) );
     
-    std::cout << "Processor " << myPID << " has " << numMyBalancedRows << " rows." << std::endl;    
+    if ( verbose_ ) 
+      std::cout << "Processor " << myPID << " has " << numMyBalancedRows << " rows." << std::endl;    
     //balancedMap = Teuchos::rcp( new Epetra_Map( nGlobal, numMyBalancedRows, 0, serialMatrix->Comm() ) );
   }
   else if (balance_ == "isorropia") {
@@ -209,7 +210,7 @@ operator()( OriginalTypeRef orig )
     Teuchos::RCP<Epetra_CrsGraph> blkGraph;
     EpetraExt::BlockAdjacencyGraph adjGraph;
     blkGraph = adjGraph.compute( const_cast<Epetra_CrsGraph&>(tNewSerialMatrixT.Graph()), 
-							numBlocks_, blockPtr_, weight);
+							numBlocks_, blockPtr_, weight, verbose_);
     Epetra_Vector rowWeights( View, blkGraph->Map(), &weight[0] );
     
     // Call Isorropia to rebalance this graph.
@@ -234,7 +235,8 @@ operator()( OriginalTypeRef orig )
     //NewColMap_ = Teuchos::rcp( new Epetra_Map( nGlobal, nGlobal, &colPerm_[0], 0, OldMatrix_->Comm() ) );
     //balancedMap = Teuchos::rcp( new Epetra_Map( nGlobal, myElements, &myGlobalElements[0], 0, serialMatrix->Comm() ) );
 
-    std::cout << "Processor " << myPID << " has " << myElements << " rows." << std::endl;
+    if ( verbose_ ) 
+      std::cout << "Processor " << myPID << " has " << myElements << " rows." << std::endl;
   }
   
   // Use New Domain and Range Maps to Generate Importer
@@ -242,7 +244,7 @@ operator()( OriginalTypeRef orig )
   Epetra_Map OldRowMap = OldMatrix_->RowMap();
   Epetra_Map OldColMap = OldMatrix_->ColMap();
   
-  if( verbose_ )
+  if( debug_ )
   {
     cout << "New Row Map\n";
     cout << *NewRowMap_ << endl;
@@ -259,7 +261,7 @@ operator()( OriginalTypeRef orig )
   NewGraph_->Import( OldMatrix_->Graph(), *Importer_, Insert );
   NewGraph_->FillComplete();
 
-  if( verbose_ )
+  if( debug_ )
   {
     cout << "NewGraph\n";
     cout << *NewGraph_;
@@ -276,7 +278,7 @@ operator()( OriginalTypeRef orig )
   NewRHS_ = Teuchos::rcp( new Epetra_MultiVector( *NewRowMap_, OldRHS_->NumVectors() ) );
   NewRHS_->Import( *OldRHS_, *Importer_, Insert );
 
-  if( verbose_ )
+  if( debug_ )
   {
     cout << "New Matrix\n";
     cout << *NewMatrix_ << endl;
