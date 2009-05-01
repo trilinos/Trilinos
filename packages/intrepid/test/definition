@@ -22,7 +22,8 @@ PACKAGE_NAME=Intrepid
            Discretization/Basis/HGRAD_TRI_C1_FEM,
            Discretization/Basis/HGRAD_WEDGE_C1_FEM,
            Discretization/FunctionSpaceTools,
-           Discretization/Integration;
+           Discretization/Integration,
+           Cell;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;
@@ -47,7 +48,8 @@ PACKAGE_NAME=Intrepid
            Discretization/Basis/HGRAD_TRI_C1_FEM,
            Discretization/Basis/HGRAD_WEDGE_C1_FEM,
            Discretization/FunctionSpaceTools,
-           Discretization/Integration;
+           Discretization/Integration,
+           Cell;
     ARGS = PrintItAll;
     DESCEND_DIRS = YES;
     EXIT-STATUS = STRING-COMPARISON;

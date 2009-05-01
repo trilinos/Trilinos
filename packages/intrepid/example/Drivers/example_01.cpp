@@ -57,6 +57,7 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -69,6 +70,9 @@ using namespace Intrepid;
 using namespace shards;
 
 int main(int argc, char *argv[]) {
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
    //Check number of arguments
     TEST_FOR_EXCEPTION( ( argc < 13 ),
                       std::invalid_argument,

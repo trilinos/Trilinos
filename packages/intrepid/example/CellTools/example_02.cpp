@@ -37,6 +37,7 @@
 #include "Intrepid_CellTools.hpp"
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 #include "Shards_CellTopology.hpp"
 
@@ -47,6 +48,8 @@ using namespace Intrepid;
 using namespace shards;
 
 int main(int argc, char *argv[]) {
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   typedef CellTools<double>       CellTools;
   typedef shards::CellTopology    CellTopology;

@@ -34,11 +34,15 @@
 
 #include "Intrepid_FieldContainer.hpp"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 using namespace std;
 using namespace Intrepid;
 
 int main(int argc, char *argv[]) {
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+
   std::cout \
   << "===============================================================================\n" \
   << "|                                                                             |\n" \

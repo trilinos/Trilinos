@@ -35,8 +35,8 @@
 #include "Intrepid_CellTools.hpp"
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
-
 #include "Shards_CellTopology.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 /** \brief  Evaluation of a 3D vector field in physical coordinate frame
     \param  v1, v2, v3    [out] - vector mfield evaluated at the argument point
@@ -49,6 +49,8 @@ using namespace std;
 using namespace Intrepid;
 
 int main(int argc, char *argv[]) {
+
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
   typedef CellTools<double>       CellTools;
   typedef RealSpaceTools<double>  RealSpaceTools;
