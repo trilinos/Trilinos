@@ -41,15 +41,15 @@
 */
 PHX_EVALUATOR_CLASS(Equations)
 
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint> temp;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint> vel;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint,Dim> grad_temp;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint,Dim> grad_vel;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> residual_temp;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> residual_vel;
+  PHX::MDField<ScalarT,Cell,QuadPoint> temp;
+  PHX::MDField<ScalarT,Cell,QuadPoint> vel;
+  PHX::MDField<ScalarT,Cell,QuadPoint,Dim> grad_temp;
+  PHX::MDField<ScalarT,Cell,QuadPoint,Dim> grad_vel;
+  PHX::MDField<ScalarT,Cell,Node> residual_temp;
+  PHX::MDField<ScalarT,Cell,Node> residual_vel;
   
-  std::size_t num_qp;
-  std::size_t num_dim;
+  int num_qp;
+  int num_dim;
 
 PHX_EVALUATOR_CLASS_END
 

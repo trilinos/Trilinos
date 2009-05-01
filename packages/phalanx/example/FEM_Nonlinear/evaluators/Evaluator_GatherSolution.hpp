@@ -77,7 +77,7 @@ private:
 
   typedef typename PHX::MyTraits::Residual::ScalarT ScalarT;
 
-  std::vector< PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> > val;
+  std::vector< PHX::MDField<ScalarT,Cell,Node> > val;
  
   Teuchos::RCP<Epetra_Vector> x;
 
@@ -104,7 +104,7 @@ private:
 
   typedef typename PHX::MyTraits::Jacobian::ScalarT ScalarT;
 
-  std::vector< PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> > val;
+  std::vector< PHX::MDField<ScalarT,Cell,Node> > val;
  
   Teuchos::RCP<Epetra_Vector> x;
 

@@ -320,6 +320,8 @@ TRILINOS_HEADER(teuchos,Teuchos_config.h,src)
 TRILINOS_HEADER(teuchos,Teuchos_Flops.hpp,src)
 TRILINOS_HEADER(sacado,Sacado_config.h,src)
 TRILINOS_HEADER(sacado,Sacado_mpl_at.hpp,src/mpl)
+TRILINOS_HEADER(shards,Shards_config.h,src)
+TRILINOS_HEADER(shards,Shards_Array.hpp,src)
 
 ## Require the Boost MPL Library headers only (don't need a check 
 ## for the actual library).

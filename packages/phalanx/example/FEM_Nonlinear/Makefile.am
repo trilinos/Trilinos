@@ -95,6 +95,8 @@ example_fem_nonlinear_LDADD = $(EXAMPLE_LIBS)
 
 example_element_linear_2D_SOURCES = \
 	$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp \
+	$(srcdir)/Dimension.hpp \
+	$(srcdir)/Dimension.cpp \
 	$(srcdir)/Element_Linear2D.hpp \
 	$(srcdir)/Element_Linear2D.cpp \
 	$(srcdir)/MeshBuilder.hpp \

@@ -35,7 +35,7 @@
 #include "Phalanx_ConfigDefs.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Dimension.hpp"
-#include "Phalanx_Array.hpp"
+#include "Shards_Array.hpp"
 
 class MyCell {
   
@@ -45,12 +45,12 @@ public:
   
   virtual ~MyCell() {}
   
-  PHX::Array<double,PHX::NaturalOrder,Node,Dim>& getNodeCoordinates();
+  shards::Array<double,shards::NaturalOrder,Node,Dim>& getNodeCoordinates();
   
-  PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node>& 
+  shards::Array<double,shards::NaturalOrder,QuadPoint,Node>& 
   getBasisFunctions();
   
-  PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim>& 
+  shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
   getBasisFunctionGradients();
   
   std::size_t localIndex();
@@ -67,11 +67,11 @@ private:
   
   Teuchos::ArrayRCP<double> m_grad_phi_mem;
 
-  PHX::Array<double,PHX::NaturalOrder,Node,Dim> m_coords;
+  shards::Array<double,shards::NaturalOrder,Node,Dim> m_coords;
   
-  PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node> m_phi;
+  shards::Array<double,shards::NaturalOrder,QuadPoint,Node> m_phi;
 
-  PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim> m_grad_phi;
+  shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim> m_grad_phi;
 
 };
 

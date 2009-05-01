@@ -75,33 +75,31 @@ PHX_POST_REGISTRATION_SETUP(Equations,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Equations,workset)
 { 
-  using PHX::Array;
-  
-  for (std::size_t i=0; i < residual_temp.size(); ++i)
+  for (int i=0; i < residual_temp.size(); ++i)
     residual_temp[i] = 0.0;
 
-  for (std::size_t i=0; i < residual_vel.size(); ++i)
+  for (int i=0; i < residual_vel.size(); ++i)
     residual_vel[i] = 0.0;
 
   std::vector<Element_Linear2D>::iterator element = workset.begin;
   
   for (std::size_t cell = 0; cell < workset.num_cells; ++cell,++element) {
     
-    const PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node>& phi = 
+    const shards::Array<double,shards::NaturalOrder,QuadPoint,Node>& phi = 
       element->basisFunctions();
 
-    const PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim>& grad_phi = 
-      element->basisFunctionGradientsRealSpace();
+    const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
+      grad_phi = element->basisFunctionGradientsRealSpace();
 
-    const PHX::Array<double,PHX::NaturalOrder,QuadPoint>& det_jac = 
+    const shards::Array<double,shards::NaturalOrder,QuadPoint>& det_jac = 
       element->detJacobian();
 
-    const PHX::Array<double,PHX::NaturalOrder,QuadPoint>& weights = 
+    const shards::Array<double,shards::NaturalOrder,QuadPoint>& weights = 
       element->quadratureWeights();
 
-    for (std::size_t node = 0; node < element->numNodes(); ++node) {
+    for (int node = 0; node < element->numNodes(); ++node) {
       
-      for (std::size_t qp = 0; qp < num_qp; ++qp) {
+      for (int qp = 0; qp < num_qp; ++qp) {
 
 	residual_temp(cell,node) += det_jac(qp) * weights(qp) *
 	  ( grad_phi(qp,node,0) * grad_temp(cell,qp,0) 

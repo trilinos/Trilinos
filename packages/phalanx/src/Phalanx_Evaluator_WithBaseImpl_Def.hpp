@@ -80,11 +80,11 @@ addEvaluatedField(const PHX::Field<DataT>& f)
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addEvaluatedField(const PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,
+addEvaluatedField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
 		  Tag4,Tag5,Tag6,Tag7>& f)
 { 
   this->addEvaluatedField(f.fieldTag());
@@ -114,11 +114,11 @@ addDependentField(const PHX::Field<DataT>& v)
 
 //**********************************************************************
 template<typename Traits>
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7>
 void PHX::EvaluatorWithBaseImpl<Traits>::
-addDependentField(const PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,
+addDependentField(const PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,
 		  Tag4,Tag5,Tag6,Tag7>& f)
 {
   this->addDependentField(f.fieldTag());

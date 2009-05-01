@@ -48,21 +48,21 @@ MyCell::MyCell() :
 }
 
 //**********************************************************************
-PHX::Array<double,PHX::NaturalOrder,Node,Dim>& 
+shards::Array<double,shards::NaturalOrder,Node,Dim>& 
 MyCell::getNodeCoordinates()
 {
   return m_coords;
 }
 
 //**********************************************************************
-PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node>& 
+shards::Array<double,shards::NaturalOrder,QuadPoint,Node>& 
 MyCell::getBasisFunctions()
 {
   return m_phi;
 }
 
 //**********************************************************************
-PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim>& 
+shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
 MyCell::getBasisFunctionGradients()
 {
   return m_grad_phi;

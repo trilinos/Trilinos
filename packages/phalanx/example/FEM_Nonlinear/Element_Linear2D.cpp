@@ -33,9 +33,9 @@
 #include "Element_Linear2D.hpp"
 
 //**********************************************************************
-Element_Linear2D::Element_Linear2D(std::vector<unsigned> global_node_ids,
-				   std::size_t global_element_index,
-				   std::size_t local_element_index,
+Element_Linear2D::Element_Linear2D(std::vector<size_type> global_node_ids,
+				   size_type global_element_index,
+				   size_type local_element_index,
 				   std::vector<double> x_node_coords,
 				   std::vector<double> y_node_coords) :
   m_global_element_index(global_element_index),
@@ -84,19 +84,20 @@ Element_Linear2D::Element_Linear2D(std::vector<unsigned> global_node_ids,
   m_weights[2] = 1.0;
   m_weights[3] = 1.0;
 
-  for (std::size_t qp=0; qp < this->numQuadraturePoints(); ++qp) {
+  for (size_type qp=0; qp < this->numQuadraturePoints(); ++qp) {
     // Phi
-    PHX::Array<double,PHX::NaturalOrder,Node> phi_qp = m_phi.truncate(qp);
+    shards::Array<double,shards::NaturalOrder,Node> phi_qp = 
+      m_phi.truncate(qp);
     evaluatePhi(chi[qp], eta[qp], phi_qp);
     
     // Grad Phi in local element coordinates
-    PHX::Array<double,PHX::NaturalOrder,Node,Dim> grad_phi_qp = 
+    shards::Array<double,shards::NaturalOrder,Node,Dim> grad_phi_qp = 
       m_grad_phi.truncate(qp);
     evaluateGradPhi(chi[qp], eta[qp], grad_phi_qp);
     
     // Determinant of Jacobian and basis function gradients in 
     // real space
-    PHX::Array<double,PHX::NaturalOrder,Node,Dim> grad_phi_xy_qp = 
+    shards::Array<double,shards::NaturalOrder,Node,Dim> grad_phi_xy_qp = 
       m_grad_phi_xy.truncate(qp);
     evaluateDetJacobianAndGradients(chi[qp], eta[qp], m_det_jacobian(qp),
 				    grad_phi_qp, grad_phi_xy_qp);
@@ -143,91 +144,93 @@ Element_Linear2D& Element_Linear2D::operator=(const Element_Linear2D& right)
 }
 
 //**********************************************************************
-std::size_t Element_Linear2D::numQuadraturePoints() const
+Element_Linear2D::size_type Element_Linear2D::numQuadraturePoints() const
 {
   return 4;
 }
 
 //**********************************************************************
-std::size_t Element_Linear2D::numNodes() const
+Element_Linear2D::size_type Element_Linear2D::numNodes() const
 {
   return 4;
 }
 
 //**********************************************************************
-const std::vector<unsigned>& Element_Linear2D::globalNodeIds() const
+const std::vector<Element_Linear2D::size_type>& 
+Element_Linear2D::globalNodeIds() const
 {
   return m_global_node_ids;
 }
 
 //**********************************************************************
-unsigned Element_Linear2D::globalNodeId(std::size_t local_node_index) const
+Element_Linear2D::size_type Element_Linear2D::
+globalNodeId(size_type local_node_index) const
 {
   return m_global_node_ids[local_node_index];
 }
 
 //**********************************************************************
-std::size_t Element_Linear2D::globalElementIndex() const
+Element_Linear2D::size_type Element_Linear2D::globalElementIndex() const
 {
   return m_global_element_index;
 }
 
 //**********************************************************************
-std::size_t Element_Linear2D::localElementIndex() const
+Element_Linear2D::size_type Element_Linear2D::localElementIndex() const
 {
   return m_local_element_index;
 }
 
 //**********************************************************************
-bool Element_Linear2D::ownsNode(std::size_t local_node_index) const
+bool Element_Linear2D::ownsNode(size_type local_node_index) const
 {
   return m_owns_node[local_node_index];
 }
 
 //**********************************************************************
 void 
-Element_Linear2D::setOwnsNode(std::size_t local_node_index, bool owns_node)
+Element_Linear2D::setOwnsNode(size_type local_node_index, bool owns_node)
 {
   m_owns_node[local_node_index] = owns_node;
 }
 
 //**********************************************************************
-const PHX::Array<double,PHX::NaturalOrder,Node,Dim>& 
+const shards::Array<double,shards::NaturalOrder,Node,Dim>& 
 Element_Linear2D::nodeCoordinates() const
 {
   return m_coords;
 }
 
 //**********************************************************************
-const PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node>& 
+const shards::Array<double,shards::NaturalOrder,QuadPoint,Node>& 
 Element_Linear2D::basisFunctions() const
 {
   return m_phi;
 }
 
 //**********************************************************************
-const PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim>& 
+const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
 Element_Linear2D::basisFunctionGradientsLocalSpace() const
 {
   return m_grad_phi;
 }
 
 //**********************************************************************
-const PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim>& 
+const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
 Element_Linear2D::basisFunctionGradientsRealSpace() const
 {
   return m_grad_phi_xy;
 }
 
 //**********************************************************************
-const PHX::Array<double,PHX::NaturalOrder,QuadPoint>& 
+const shards::Array<double,shards::NaturalOrder,QuadPoint>& 
 Element_Linear2D::detJacobian() const
 {
   return m_det_jacobian;
 }
 
 //**********************************************************************
-const PHX::Array<double,PHX::NaturalOrder,QuadPoint>& 
+const shards::Array<double,shards::NaturalOrder,QuadPoint>& 
 Element_Linear2D::quadratureWeights() const
 {
   return m_weights;
@@ -235,7 +238,7 @@ Element_Linear2D::quadratureWeights() const
 
 //**********************************************************************
 void Element_Linear2D::evaluatePhi(double chi, double eta, 
-			   PHX::Array<double,PHX::NaturalOrder,Node>& phi)
+		    shards::Array<double,shards::NaturalOrder,Node>& phi)
 {
   phi(0) = 0.25 * (1.0 - chi) * (1 - eta);
   phi(1) = 0.25 * (1.0 + chi) * (1 - eta);
@@ -245,7 +248,7 @@ void Element_Linear2D::evaluatePhi(double chi, double eta,
 
 //**********************************************************************
 void Element_Linear2D::evaluateGradPhi(double chi, double eta,
-		  PHX::Array<double,PHX::NaturalOrder,Node,Dim>& grad_phi)
+	   shards::Array<double,shards::NaturalOrder,Node,Dim>& grad_phi)
 {
   grad_phi(0,0) = -0.25 * (1 - eta);
   grad_phi(0,1) = -0.25 * (1 - chi);
@@ -263,8 +266,8 @@ void Element_Linear2D::evaluateGradPhi(double chi, double eta,
 //**********************************************************************
 void Element_Linear2D::
 evaluateDetJacobianAndGradients(double chi, double eta, double& det_jac,
-	       const PHX::Array<double,PHX::NaturalOrder,Node,Dim>& grad_phi,
-	       PHX::Array<double,PHX::NaturalOrder,Node,Dim>& grad_phi_xy)
+	const shards::Array<double,shards::NaturalOrder,Node,Dim>& grad_phi,
+	shards::Array<double,shards::NaturalOrder,Node,Dim>& grad_phi_xy)
 {
   double
   dx_dchi = 0.25 * ( ( m_coords(1,0) - m_coords(0,0) ) * (1.0 - eta) +
@@ -290,7 +293,7 @@ evaluateDetJacobianAndGradients(double chi, double eta, double& det_jac,
 
   double inv_det_jac = 1.0 / det_jac;
 
-  for (std::size_t node = 0; node < this->numNodes(); ++node) {
+  for (size_type node = 0; node < this->numNodes(); ++node) {
 
     grad_phi_xy(node,0) = inv_det_jac * 
       (dy_deta * grad_phi(node, 0) - dy_dchi * grad_phi(node, 1));
@@ -306,16 +309,16 @@ void Element_Linear2D::print(std::ostream& os) const
   os << "Element: gid = " << m_global_element_index << ", lid = " 
      << m_local_element_index << std::endl;
   os << "  coords: " << std::endl;
-  for (std::size_t i=0; i < this->numNodes(); ++i)
+  for (size_type i=0; i < this->numNodes(); ++i)
     os << "    node[" << i << "]: gid = " << m_global_node_ids[i] 
        << "  coords =  (" << m_coords(i,0) << "," << m_coords(i,1) 
        << "), owns = " << m_owns_node[i] << std::endl;
 
   if (false) {
     os << "\n  m_grad_phi_xy(QP,Node,Dim):" << std::endl;
-    for (std::size_t qp=0; qp < this->numQuadraturePoints(); ++qp)
-      for (std::size_t node=0; node < this->numNodes(); ++node)
-	for (std::size_t dim=0; dim < 2; ++dim) {
+    for (size_type qp=0; qp < this->numQuadraturePoints(); ++qp)
+      for (size_type node=0; node < this->numNodes(); ++node)
+	for (size_type dim=0; dim < 2; ++dim) {
 	  os << "    m_grad_phi_xy(" << qp << "," << node << "," << dim
 	     << ") = " << m_grad_phi_xy(qp,node,dim) << std::endl;
 	}

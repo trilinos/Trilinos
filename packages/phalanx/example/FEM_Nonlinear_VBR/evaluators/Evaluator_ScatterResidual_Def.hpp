@@ -54,7 +54,7 @@ ScatterResidual(const Teuchos::ParameterList& p)
   
   val.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> mdf(names[eq],dl);
+    PHX::MDField<ScalarT,Cell,Node> mdf(names[eq],dl);
     val[eq] = mdf;
     this->addDependentField(val[eq]);
   }
@@ -86,7 +86,7 @@ evaluateFields(typename Traits::EvalData workset)
   std::size_t cell = 0;
   for (; element != workset.end; ++element,++cell) {
     
-    for (std::size_t node = 0; node < num_nodes; node++) {
+    for (int node = 0; node < num_nodes; node++) {
       unsigned node_GID = element->globalNodeId(node);
       //int firstDOF = f->Map().LID(node_GID * num_eq);
       int firstDOF = f->Map().LID(node_GID) * num_eq;
@@ -121,7 +121,7 @@ ScatterResidual(const Teuchos::ParameterList& p)
       
   val.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> mdf(names[eq],dl);
+    PHX::MDField<ScalarT,Cell,Node> mdf(names[eq],dl);
     val[eq] = mdf;
     this->addDependentField(val[eq]);
   }
@@ -156,8 +156,8 @@ evaluateFields(typename Traits::EvalData workset)
     // Sum element residual and Jacobian into global residual, Jacobian
     // Loop over nodes in element
     int row, col;
-    unsigned int lrow, lcol;
-    for (unsigned int node_row = 0; node_row < num_nodes; node_row++) {
+    int lrow, lcol;
+    for (int node_row = 0; node_row < num_nodes; node_row++) {
       
       int row_dim;
       int num_block_entries;
@@ -168,7 +168,7 @@ evaluateFields(typename Traits::EvalData workset)
 	Jac->ExtractEntryView(matrices[i]);
 
       // Loop over equations per node
-      for (unsigned int eq_row = 0; eq_row < num_eq; eq_row++) {
+      for (int eq_row = 0; eq_row < num_eq; eq_row++) {
 	
 	lrow = num_eq * node_row + eq_row;
 	
@@ -188,10 +188,10 @@ evaluateFields(typename Traits::EvalData workset)
 	if (val[eq_row](cell,node_row).hasFastAccess()) {
 	  
 	  // Loop over nodes in element
-	  for (unsigned int node_col=0; node_col<num_nodes; node_col++){
+	  for (int node_col=0; node_col<num_nodes; node_col++){
 	    
 	    // Loop over equations per node
-	    for (unsigned int eq_col=0; eq_col<num_eq; eq_col++) {
+	    for (int eq_col=0; eq_col<num_eq; eq_col++) {
 	      lcol = num_eq * node_col + eq_col;
 	      
 	      // Global column

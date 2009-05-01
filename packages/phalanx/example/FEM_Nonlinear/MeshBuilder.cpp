@@ -82,7 +82,7 @@ MeshBuilder::MeshBuilder(const Teuchos::RCP<Epetra_Comm>& comm,
   double dy = m_length_y / static_cast<double>(num_elements_y);
 
   // Create elements
-  std::vector<unsigned> global_node_ids(4);
+  std::vector<int> global_node_ids(4);
   std::vector<double> x_coords(4);
   std::vector<double> y_coords(4);
   int global_element_id = starting_global_element_id;

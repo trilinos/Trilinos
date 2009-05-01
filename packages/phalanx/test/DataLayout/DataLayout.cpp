@@ -41,26 +41,26 @@
 #include "Phalanx_DataLayout.hpp"
 #include "Phalanx_DataLayout_FlatLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
-#include "Phalanx_Array.hpp"
+#include "Shards_Array.hpp"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-struct Spatial : public PHX::ArrayDimTag {
+struct Spatial : public shards::ArrayDimTag {
   const char * name() const ;
   static const Spatial & tag();
 };
 
-struct Quadrature : public PHX::ArrayDimTag {
+struct Quadrature : public shards::ArrayDimTag {
   const char * name() const ;
   static const Quadrature & tag();
 };
 
-struct Node : public PHX::ArrayDimTag {
+struct Node : public shards::ArrayDimTag {
   const char * name() const ;
   static const Node & tag();
 };
 
-struct Cell : public PHX::ArrayDimTag {
+struct Cell : public shards::ArrayDimTag {
   const char * name() const ;
   static const Cell & tag();
 };

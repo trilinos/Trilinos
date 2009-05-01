@@ -34,29 +34,30 @@
 
 #include <algorithm>
 #include <sstream>
+#include <vector>
 #include "Teuchos_TestForException.hpp"
 #include "Phalanx_Print_Utilities.hpp"
 
 //**********************************************************************
 #ifdef PHX_DEBUG
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-const std::string PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::m_field_tag_error_msg = 
+const std::string PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::m_field_tag_error_msg = 
   "Error - PHX::MDField::fieldTag() - No tag has been set!";
 
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-const std::string PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::m_field_data_error_msg = 
+const std::string PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::m_field_data_error_msg = 
   "Error - PHX::MDField::operator[] - No data has been set!  Please call getFieldData(this) on all PHX::MDField objects in providers!";
 #endif
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
   m_tag(name,t)
 #ifdef PHX_DEBUG
@@ -66,10 +67,10 @@ MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
 { }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 MDField(const PHX::Tag<DataT>& v) :
   m_tag(v)
 #ifdef PHX_DEBUG
@@ -79,10 +80,10 @@ MDField(const PHX::Tag<DataT>& v) :
 { }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 MDField() :
   m_tag("???", Teuchos::null)
 #ifdef PHX_DEBUG
@@ -92,20 +93,20 @@ MDField() :
 { }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 ~MDField()
 { }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
 const PHX::FieldTag& 
-PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 fieldTag() const
 { 
 #ifdef PHX_DEBUG
@@ -115,11 +116,11 @@ fieldTag() const
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4, size_type index5, size_type index6,
 	   size_type index7, size_type index8)
@@ -131,11 +132,11 @@ operator()(size_type index1, size_type index2, size_type index3,
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4, size_type index5, size_type index6,
 	   size_type index7)
@@ -147,11 +148,11 @@ operator()(size_type index1, size_type index2, size_type index3,
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4, size_type index5, size_type index6)
 { 
@@ -162,11 +163,11 @@ operator()(size_type index1, size_type index2, size_type index3,
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4, size_type index5)
 { 
@@ -177,11 +178,11 @@ operator()(size_type index1, size_type index2, size_type index3,
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4)
 { 
@@ -192,11 +193,11 @@ operator()(size_type index1, size_type index2, size_type index3,
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3)
 { 
 #ifdef PHX_DEBUG
@@ -206,11 +207,11 @@ operator()(size_type index1, size_type index2, size_type index3)
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2)
 { 
 #ifdef PHX_DEBUG
@@ -220,11 +221,11 @@ operator()(size_type index1, size_type index2)
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1)
 { 
 #ifdef PHX_DEBUG
@@ -234,11 +235,11 @@ operator()(size_type index1)
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator[](size_type index)
 { 
 #ifdef PHX_DEBUG
@@ -248,11 +249,11 @@ operator[](size_type index)
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-const DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4, size_type index5, size_type index6,
 	   size_type index7, size_type index8) const
@@ -264,11 +265,11 @@ operator()(size_type index1, size_type index2, size_type index3,
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-const DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4, size_type index5, size_type index6,
 	   size_type index7) const
@@ -280,11 +281,11 @@ operator()(size_type index1, size_type index2, size_type index3,
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-const DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4, size_type index5, size_type index6) const
 { 
@@ -295,11 +296,11 @@ operator()(size_type index1, size_type index2, size_type index3,
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-const DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4, size_type index5) const
 { 
@@ -310,11 +311,11 @@ operator()(size_type index1, size_type index2, size_type index3,
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-const DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3, 
 	   size_type index4) const
 { 
@@ -325,11 +326,11 @@ operator()(size_type index1, size_type index2, size_type index3,
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-const DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2, size_type index3) const
 { 
 #ifdef PHX_DEBUG
@@ -339,11 +340,11 @@ operator()(size_type index1, size_type index2, size_type index3) const
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-const DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1, size_type index2) const
 { 
 #ifdef PHX_DEBUG
@@ -353,11 +354,11 @@ operator()(size_type index1, size_type index2) const
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-const DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator()(size_type index1) const
 { 
 #ifdef PHX_DEBUG
@@ -367,11 +368,11 @@ operator()(size_type index1) const
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-const DataT& PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+const DataT& PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 operator[](size_type index) const
 { 
 #ifdef PHX_DEBUG
@@ -381,12 +382,12 @@ operator[](size_type index) const
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-typename PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type 
-PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type 
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 rank() const
 { 
 #ifdef PHX_DEBUG
@@ -397,12 +398,12 @@ rank() const
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-typename PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type 
-PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type 
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 dimension(size_type ord) const
 { 
 #ifdef PHX_DEBUG
@@ -413,27 +414,33 @@ dimension(size_type ord) const
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-void PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+void PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 dimensions(std::vector<size_type>& dims)
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
   TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
 #endif
-  m_field_data.dimensions(dims);
+  
+  dims.resize(m_field_data.rank());
+  for ( size_type i = 0 ; i <  m_field_data.rank(); ++i ) 
+	dims[i] = m_field_data.dimension(i);
+  
+  // Doesn't work with shards????
+  //m_field_data.template dimensions<size_type>(dims);
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 inline
-typename PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type 
-PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size() const
+typename PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size_type 
+PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size() const
 { 
 #ifdef PHX_DEBUG
   TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
@@ -442,10 +449,10 @@ PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::size() const
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-void PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+void PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 setFieldTag(const PHX::Tag<DataT>& v)
 {  
 #ifdef PHX_DEBUG
@@ -455,10 +462,10 @@ setFieldTag(const PHX::Tag<DataT>& v)
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-void PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+void PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 setFieldData(const Teuchos::ArrayRCP<DataT>& d)
 { 
 #ifdef PHX_DEBUG
@@ -474,12 +481,9 @@ setFieldData(const Teuchos::ArrayRCP<DataT>& d)
   std::vector<size_type> array_dim;
   size_type num_cells = d.size() / m_tag.dataLayout().size();
 
-  if (Order == PHX::NaturalOrder)
-    array_dim.push_back(num_cells);
+  array_dim.push_back(num_cells);
   for (std::size_t i = 0; i < data_layout_dim.size(); ++i)
     array_dim.push_back(data_layout_dim[i]);
-  if (Order == PHX::FortranOrder)
-    array_dim.push_back(num_cells);
 
   TEST_FOR_EXCEPTION(array_dim.size() != (data_layout_dim.size() + 1), 
 		     std::logic_error, 
@@ -498,7 +502,7 @@ setFieldData(const Teuchos::ArrayRCP<DataT>& d)
   }
 
   typename 
-    PHX::Array<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> 
+    shards::Array<DataT,shards::NaturalOrder,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> 
     array(d.get(), &array_dim[0]);
   
   m_field_data = array;
@@ -506,10 +510,10 @@ setFieldData(const Teuchos::ArrayRCP<DataT>& d)
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
-void PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
+void PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>::
 print(std::ostream& os,	bool printValues) const
 {
 
@@ -551,18 +555,18 @@ print(std::ostream& os,	bool printValues) const
 
   if (printValues) {
     os << std::endl;
-    for (std::size_t i = 0; i < m_field_data.size(); ++i)
+    for (typename array_type::size_type i = 0; i < m_field_data.size(); ++i)
       os << "value[" << i << "] = " << m_field_data[i] << std::endl;
   }
 
 }
 
 //**********************************************************************
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	 typename Tag0,typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4,typename Tag5, typename Tag6, typename Tag7>
 std::ostream& PHX::operator<<(std::ostream& os, 
-			      const PHX::MDField<DataT,Order,Tag0,Tag1,
+			      const PHX::MDField<DataT,Tag0,Tag1,
 			      Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>& f)
 {
   f.print(os, false);

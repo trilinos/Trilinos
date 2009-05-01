@@ -27,8 +27,6 @@ APPEND_SET(HEADERS
   Phalanx.hpp
   Phalanx_Allocator_Contiguous.hpp
   Phalanx_Allocator_New.hpp
-  Phalanx_ArrayPrivate.hpp
-  Phalanx_Array.hpp
   Phalanx_ConfigDefs.hpp
   Phalanx_DataContainer_Base_Def.hpp
   Phalanx_DataContainer_Base.hpp
@@ -72,7 +70,6 @@ APPEND_SET(HEADERS
   Phalanx_MDField_Def.hpp
   Phalanx_MDField.hpp
   Phalanx_Print_Utilities.hpp
-  Phalanx_SimpleArrayOps.hpp
   Phalanx_TemplateIterator.hpp
   Phalanx_TemplateManager_Def.hpp
   Phalanx_TemplateManager.hpp
@@ -82,7 +79,6 @@ APPEND_SET(HEADERS
   ) 
 
 APPEND_SET(SOURCES
-  Phalanx_ArrayPrivate.cpp
   Phalanx_DataLayout_FlatLayout.cpp
   Phalanx_DataLayout.cpp
   Phalanx_FieldTag.cpp

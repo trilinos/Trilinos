@@ -57,9 +57,9 @@ private:
   
   typedef typename EvalT::ScalarT ScalarT;
 
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> source;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> density;
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> temp;
+  PHX::MDField<ScalarT,Cell,Point> source;
+  PHX::MDField<ScalarT,Cell,Point> density;
+  PHX::MDField<ScalarT,Cell,Point> temp;
 
   std::size_t data_layout_size;
 };

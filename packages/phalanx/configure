@@ -8384,6 +8384,330 @@ echo "$as_me: error: Cannot find sacado include directory containing Sacado_mpl_
   fi
 
 
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Shards_config.h"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../shards/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Shards_config.h"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../shards/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../shards/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../shards/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Shards_config.h"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../shards/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../shards/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file Shards_config.h, part of the shards package."
+    echo "Try --with-incdir=\"-I<dir1> -I<dir2>\""
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find shards include directory containing Shards_config.h" >&5
+echo "$as_me: error: Cannot find shards include directory containing Shards_config.h" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
+  save_CPPFLAGS=$CPPFLAGS
+  done=no
+
+  # First try the directories we already have
+  CPPFLAGS="$save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Shards_Array.hpp"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  done=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+  CPPFLAGS=$save_CPPFLAGS
+
+  # Next try the Trilinos build dir
+  if test $done = no; then
+    CPPFLAGS="-I../shards/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Shards_Array.hpp"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_builddir)/../shards/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I../shards/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  # Next try the Trilinos source dir
+  if test $done = no && test -n "$srcdir"; then
+    CPPFLAGS="-I$srcdir/../shards/src $save_CPPFLAGS $ABS_TRILINOS_CPPFLAGS"
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+#undef PACKAGE
+#undef PACKAGE_NAME
+#undef PACKAGE_BUGREPORT
+#undef PACKAGE_STRING
+#undef PACKAGE_TARNAME
+#undef PACKAGE_VERSION
+#undef VERSION
+#include "Shards_Array.hpp"
+
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval "echo \"\$as_me:$LINENO: $ac_try_echo\"") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_cxx_preproc_warn_flag$ac_cxx_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+   done=yes
+      REL_TRILINOS_CPPFLAGS="-I\$(top_srcdir)/../shards/src ${REL_TRILINOS_CPPFLAGS}"
+      ABS_TRILINOS_CPPFLAGS="-I$srcdir/../shards/src ${ABS_TRILINOS_CPPFLAGS}"
+
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f conftest.err conftest.$ac_ext
+    CPPFLAGS=$save_CPPFLAGS
+  fi
+
+  if test $done = no; then
+    echo "------"
+    echo "Cannot preprocess the include file Shards_Array.hpp, part of the shards package."
+    echo "Try --with-incdir=\"-I<dir1> -I<dir2>\""
+    echo "------"
+    { { echo "$as_me:$LINENO: error: Cannot find shards include directory containing Shards_Array.hpp" >&5
+echo "$as_me: error: Cannot find shards include directory containing Shards_Array.hpp" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+
+
 ## Require the Boost MPL Library headers only (don't need a check
 ## for the actual library).
 

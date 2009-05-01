@@ -55,7 +55,7 @@ LinearObjectFactory::LinearObjectFactory(const MeshBuilder& mb,
 
     // Map
     for (cell = cells.begin(); cell != cells.end(); ++cell) {
-      for (std::size_t node = 0; node < cell->numNodes(); ++node) {
+      for (int node = 0; node < cell->numNodes(); ++node) {
 	for (int eq = 0; eq < m_num_eq; ++eq) {
 	  
 	  int index = cell->globalNodeId(node) * m_num_eq + eq;
@@ -116,11 +116,11 @@ LinearObjectFactory::LinearObjectFactory(const MeshBuilder& mb,
     for (cell = cells.begin(); cell != cells.end(); ++cell) {
             
       std::vector<int> col_indices(0);
-      for (std::size_t node = 0; node < cell->numNodes(); ++node)
+      for (int node = 0; node < cell->numNodes(); ++node)
 	for (int eq = 0; eq < m_num_eq; ++eq)
 	  col_indices.push_back(cell->globalNodeId(node) * m_num_eq + eq);
       
-      for (std::size_t node = 0; node < cell->numNodes(); ++node) {
+      for (int node = 0; node < cell->numNodes(); ++node) {
 	for (int eq = 0; eq < m_num_eq; ++eq) {
 
 	  int global_row = cell->globalNodeId(node) * m_num_eq + eq;

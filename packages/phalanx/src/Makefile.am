@@ -45,8 +45,6 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx.hpp \
 	$(srcdir)/Phalanx_Allocator_Contiguous.hpp \
 	$(srcdir)/Phalanx_Allocator_New.hpp \
-	$(srcdir)/Phalanx_ArrayPrivate.hpp \
-	$(srcdir)/Phalanx_Array.hpp \
 	$(srcdir)/Phalanx_ConfigDefs.hpp \
 	$(srcdir)/Phalanx_DataContainer_Base_Def.hpp \
 	$(srcdir)/Phalanx_DataContainer_Base.hpp \
@@ -90,7 +88,6 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_MDField_Def.hpp \
 	$(srcdir)/Phalanx_MDField.hpp \
 	$(srcdir)/Phalanx_Print_Utilities.hpp \
-	$(srcdir)/Phalanx_SimpleArrayOps.hpp \
 	$(srcdir)/Phalanx_TemplateIterator.hpp \
 	$(srcdir)/Phalanx_TemplateManager_Def.hpp \
 	$(srcdir)/Phalanx_TemplateManager.hpp \
@@ -99,7 +96,6 @@ PHALANX_HPP = \
 	$(srcdir)/Phalanx_Version.hpp
 
 PHALANX_CPP = \
-	$(srcdir)/Phalanx_ArrayPrivate.cpp \
 	$(srcdir)/Phalanx_DataLayout_FlatLayout.cpp \
 	$(srcdir)/Phalanx_DataLayout.cpp \
 	$(srcdir)/Phalanx_FieldTag.cpp

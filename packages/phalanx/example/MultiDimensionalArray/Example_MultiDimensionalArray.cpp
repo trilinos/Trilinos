@@ -250,10 +250,10 @@ int main(int argc, char *argv[])
 	local_source_at_qp(num_local_cells * qp_scalar->size());
 
       // Fields we require
-      MDField<double,NaturalOrder,Cell,QuadPoint,Dim> energy_flux(energy_flux_tag);
-      MDField<double,NaturalOrder,Cell,QuadPoint> source(source_tag);
-      fm.getFieldData<double,MyTraits::Residual,NaturalOrder,Cell,QuadPoint,Dim>(energy_flux);
-      fm.getFieldData<double,MyTraits::Residual,NaturalOrder,Cell,QuadPoint>(source);
+      MDField<double,Cell,QuadPoint,Dim> energy_flux(energy_flux_tag);
+      MDField<double,Cell,QuadPoint> source(source_tag);
+      fm.getFieldData<double,MyTraits::Residual,Cell,QuadPoint,Dim>(energy_flux);
+      fm.getFieldData<double,MyTraits::Residual,Cell,QuadPoint>(source);
 
       RCP<Time> eval_time = TimeMonitor::getNewTimer("Evaluation Time");
 
@@ -265,11 +265,11 @@ int main(int argc, char *argv[])
 	  fm.evaluateFields<MyTraits::Residual>(worksets[i]);
 	  
 	  // Use values: in this example, move values into local arrays
-	  for (std::size_t j = 0; j < energy_flux.size(); ++j) {
+	  for (int j = 0; j < energy_flux.size(); ++j) {
 	    std::size_t index = worksets[i].local_offset + j;
 	    local_energy_flux_at_qp[index] =  energy_flux[j];
 	  }
-	  for (std::size_t j = 0; j < source.size(); ++j) {
+	  for (int j = 0; j < source.size(); ++j) {
 	    std::size_t index = worksets[i].local_offset + j;
 	    local_source_at_qp[index] =  source[j];
 	  }

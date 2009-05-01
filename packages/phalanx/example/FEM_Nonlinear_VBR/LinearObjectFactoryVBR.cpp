@@ -55,7 +55,7 @@ LinearObjectFactoryVBR::LinearObjectFactoryVBR(const MeshBuilder& mb,
 
     // Map
     for (cell = cells.begin(); cell != cells.end(); ++cell) {
-      for (std::size_t node = 0; node < cell->numNodes(); ++node) {
+      for (int node = 0; node < cell->numNodes(); ++node) {
 	  
 	int index = cell->globalNodeId(node);
 
@@ -114,8 +114,8 @@ LinearObjectFactoryVBR::LinearObjectFactoryVBR(const MeshBuilder& mb,
     std::vector<Element_Linear2D>::iterator cell = cells.begin();
     for (cell = cells.begin(); cell != cells.end(); ++cell) {
 
-      for (std::size_t row = 0; row < cell->numNodes(); ++row) {
-	for (std::size_t col = 0; col < cell->numNodes(); ++col) {
+      for (int row = 0; row < cell->numNodes(); ++row) {
+	for (int col = 0; col < cell->numNodes(); ++col) {
 	  int global_row = cell->globalNodeId(row);
 	  int global_col = cell->globalNodeId(col);
 	  m_overlapped_graph->InsertGlobalIndices(global_row, 1, &global_col);

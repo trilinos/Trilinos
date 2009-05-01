@@ -56,7 +56,7 @@ PHX_POST_REGISTRATION_SETUP(FEInterpolation,fm)
   this->utils.setFieldData(val_grad_qp,fm);
 
   // Get dimensions of MDArray
-  typename std::vector< typename PHX::template MDField<ScalarT,PHX::NaturalOrder,Cell,Node>::size_type > dims;
+  typename std::vector< typename PHX::template MDField<ScalarT,Cell,Node>::size_type > dims;
   val_node.dimensions(dims);
   num_nodes = dims[1];
 
@@ -68,7 +68,7 @@ PHX_POST_REGISTRATION_SETUP(FEInterpolation,fm)
 //**********************************************************************
 PHX_EVALUATE_FIELDS(FEInterpolation,cell_data)
 { 
-  using namespace PHX;
+  using namespace shards;
 
   std::vector<Element_Linear2D>::iterator cell_it = cell_data.begin;
 

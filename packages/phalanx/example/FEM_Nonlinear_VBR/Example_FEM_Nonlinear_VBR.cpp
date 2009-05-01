@@ -313,11 +313,11 @@ int main(int argc, char *argv[])
 	
     for (std::vector<Element_Linear2D>::iterator cell = cells.begin(); 
 	 cell != cells.end(); ++cell) {
-      for (std::size_t row = 0; row < cell->numNodes(); ++row) {
+      for (int row = 0; row < cell->numNodes(); ++row) {
 	
 	int local_row = overlapped_jac->Map().LID(cell->globalNodeId(row));
 	
-	for (std::size_t col = 0; col < cell->numNodes(); ++col) {
+	for (int col = 0; col < cell->numNodes(); ++col) {
 	  int local_col = overlapped_jac->Map().LID(cell->globalNodeId(col));
 	  overlapped_jac->BeginReplaceMyValues(local_row, 1, &local_col);
 	  overlapped_jac->SubmitBlockEntry(block_matrix);
@@ -677,10 +677,10 @@ int main(int argc, char *argv[])
       for (std::vector<Element_Linear2D>::iterator cell = cells->begin();
 	   cell != cells->end(); ++cell) {
 	
-	const PHX::Array<double,PHX::NaturalOrder,Node,Dim>& coords = 
+	const shards::Array<double,shards::NaturalOrder,Node,Dim>& coords = 
 	  cell->nodeCoordinates();
 
-	for (std::size_t node=0; node < cell->numNodes(); ++node) {
+	for (int node=0; node < cell->numNodes(); ++node) {
 	  coordinates[cell->globalNodeId(node)].resize(dim);
 	  coordinates[cell->globalNodeId(node)][0] = coords(node,0);
 	  coordinates[cell->globalNodeId(node)][1] = coords(node,1);

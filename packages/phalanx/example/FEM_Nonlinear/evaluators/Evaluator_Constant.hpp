@@ -41,7 +41,7 @@ PHX_EVALUATOR_CLASS(Constant)
 
   ScalarT value;
 
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> constant;
+  PHX::MDField<ScalarT,Cell,Point> constant;
 
 PHX_EVALUATOR_CLASS_END
 

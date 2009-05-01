@@ -513,7 +513,7 @@ int main(int argc, char *argv[])
 //     for (std::vector<Element_Linear2D>::iterator cell = cells.begin(); 
 // 	 cell != cells.end(); ++cell) {
 
-//       const PHX::Array<double,PHX::NaturalOrder,Node,Dim>& coords = 
+//       const PHX::Array<double,Node,Dim>& coords = 
 // 	cell->nodeCoordinates();
       
 //       for (std::size_t node = 0; node < cell->numNodes(); ++node) {
@@ -666,10 +666,10 @@ int main(int argc, char *argv[])
       for (std::vector<Element_Linear2D>::iterator cell = cells->begin();
 	   cell != cells->end(); ++cell) {
 	
-	const PHX::Array<double,PHX::NaturalOrder,Node,Dim>& coords = 
+	const shards::Array<double,shards::NaturalOrder,Node,Dim>& coords = 
 	  cell->nodeCoordinates();
 
-	for (std::size_t node=0; node < cell->numNodes(); ++node) {
+	for (int node=0; node < cell->numNodes(); ++node) {
 	  coordinates[cell->globalNodeId(node)].resize(dim);
 	  coordinates[cell->globalNodeId(node)][0] = coords(node,0);
 	  coordinates[cell->globalNodeId(node)][1] = coords(node,1);

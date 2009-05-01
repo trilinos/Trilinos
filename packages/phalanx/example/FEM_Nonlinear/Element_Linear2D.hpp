@@ -35,7 +35,7 @@
 #include "Phalanx_ConfigDefs.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 #include "Dimension.hpp"
-#include "Phalanx_Array.hpp"
+#include "Shards_Array.hpp"
 
 
 /** \brief 2D Linear Lagrangian Finite Element
@@ -83,11 +83,13 @@ class Element_Linear2D {
   
 public:
 
+  typedef int size_type;
+
   Element_Linear2D() {}
   
-  Element_Linear2D(std::vector<unsigned> global_node_ids,
-		   std::size_t global_element_index,
-		   std::size_t local_element_index,
+  Element_Linear2D(std::vector<size_type> global_node_ids,
+		   size_type global_element_index,
+		   size_type local_element_index,
 		   std::vector<double> x_node_coords,
 		   std::vector<double> y_node_coords);
   
@@ -95,52 +97,52 @@ public:
   
   Element_Linear2D& operator=(const Element_Linear2D& right);
 
-  std::size_t numQuadraturePoints() const;
+  size_type numQuadraturePoints() const;
 
-  std::size_t numNodes() const;
+  size_type numNodes() const;
 
   //! Returns a vector of global ids for all nodes
-  const std::vector<unsigned>& globalNodeIds() const;
+  const std::vector<size_type>& globalNodeIds() const;
 
   //! Returns the global node id, given the local node index
-  unsigned globalNodeId(std::size_t local_node_index) const;
+  size_type globalNodeId(size_type local_node_index) const;
 
   //! Returns the global index for this element
-  std::size_t globalElementIndex() const;
+  size_type globalElementIndex() const;
 
   //! Returns the local processor index for this element
-  std::size_t localElementIndex() const;
+  size_type localElementIndex() const;
 
   //! Returns true if the node is owned by the calling process
-  bool ownsNode(std::size_t local_node_index) const;
+  bool ownsNode(size_type local_node_index) const;
 
   //! Set to true if this node is owned by calling process
-  void setOwnsNode(std::size_t local_node_index, bool owns_node=true);
+  void setOwnsNode(size_type local_node_index, bool owns_node=true);
 
   //! Returns nodal coordinates
-  const PHX::Array<double,PHX::NaturalOrder,Node,Dim>& 
+  const shards::Array<double,shards::NaturalOrder,Node,Dim>& 
   nodeCoordinates() const;
   
   //! Returns values of basis functions at the quadrature points
-  const PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node>& 
+  const shards::Array<double,shards::NaturalOrder,QuadPoint,Node>& 
   basisFunctions() const;
   
   //! Returns gradient of basis functions at the quadrature points
   //! in local element coordinate system, d_phi/d_chi and d_phi/d_eta
-  const PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim>& 
+  const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
   basisFunctionGradientsLocalSpace() const;
   
   //! Returns gradient of basis functions at the quadrature points
   //! in real coordinate system, d_phi/d_x and d_phi/d_y
-  const PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim>& 
+  const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
   basisFunctionGradientsRealSpace() const;
   
   //! Returns determinant of jacobian transform values at quadrature points
-  const PHX::Array<double,PHX::NaturalOrder,QuadPoint>& 
+  const shards::Array<double,shards::NaturalOrder,QuadPoint>& 
   detJacobian() const;
 
   //! Returns jacobian transform values at the quadrature points
-  const PHX::Array<double,PHX::NaturalOrder,QuadPoint>& 
+  const shards::Array<double,shards::NaturalOrder,QuadPoint>& 
   quadratureWeights() const;  
   
   void print(std::ostream& os) const;
@@ -148,22 +150,22 @@ public:
 private:
 
   void evaluatePhi(double chi, double eta, 
-		   PHX::Array<double,PHX::NaturalOrder,Node>& phi);
+		   shards::Array<double,shards::NaturalOrder,Node>& phi);
 
   void evaluateGradPhi(double chi, double eta, 
-		    PHX::Array<double,PHX::NaturalOrder,Node,Dim>& grad_phi);
+		    shards::Array<double,shards::NaturalOrder,Node,Dim>& grad_phi);
 
   void evaluateDetJacobianAndGradients(double chi, double eta, double& det_jac,
-	         const PHX::Array<double,PHX::NaturalOrder,Node,Dim>& grad_phi,
-	         PHX::Array<double,PHX::NaturalOrder,Node,Dim>& grad_phi_xy);
+	         const shards::Array<double,shards::NaturalOrder,Node,Dim>& grad_phi,
+	         shards::Array<double,shards::NaturalOrder,Node,Dim>& grad_phi_xy);
   
 private:
   
-  std::size_t m_global_element_index;
+  size_type m_global_element_index;
 
-  std::size_t m_local_element_index;
+  size_type m_local_element_index;
 
-  std::vector<unsigned> m_global_node_ids;
+  std::vector<size_type> m_global_node_ids;
 
   std::vector<bool> m_owns_node;
 
@@ -179,17 +181,17 @@ private:
 
   Teuchos::ArrayRCP<double> m_weights_mem;
 
-  PHX::Array<double,PHX::NaturalOrder,Node,Dim> m_coords;
+  shards::Array<double,shards::NaturalOrder,Node,Dim> m_coords;
   
-  PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node> m_phi;
+  shards::Array<double,shards::NaturalOrder,QuadPoint,Node> m_phi;
 
-  PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim> m_grad_phi;
+  shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim> m_grad_phi;
 
-  PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim> m_grad_phi_xy;
+  shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim> m_grad_phi_xy;
 
-  PHX::Array<double,PHX::NaturalOrder,QuadPoint> m_det_jacobian;
+  shards::Array<double,shards::NaturalOrder,QuadPoint> m_det_jacobian;
 
-  PHX::Array<double,PHX::NaturalOrder,QuadPoint> m_weights;
+  shards::Array<double,shards::NaturalOrder,QuadPoint> m_weights;
 
 };
 

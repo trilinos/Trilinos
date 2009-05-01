@@ -81,12 +81,12 @@ private:
 
   Teuchos::RCP<PHX::FieldTag> scatter_operation;
 
-  std::vector< PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> > val;
+  std::vector< PHX::MDField<ScalarT,Cell,Node> > val;
  
   Teuchos::RCP<Epetra_Vector> f;
 
-  std::size_t num_nodes;
-  std::size_t num_eq;
+  int num_nodes;
+  int num_eq;
 };
 
 // **************************************************************
@@ -111,13 +111,13 @@ private:
 
   Teuchos::RCP<PHX::FieldTag> scatter_operation;
 
-  std::vector< PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> > val;
+  std::vector< PHX::MDField<ScalarT,Cell,Node> > val;
  
   Teuchos::RCP<Epetra_Vector> f;
   Teuchos::RCP<Epetra_CrsMatrix> Jac;
 
-  std::size_t num_nodes;
-  std::size_t num_eq;
+  int num_nodes;
+  int num_eq;
 };
 
 // **************************************************************

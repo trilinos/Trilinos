@@ -38,7 +38,7 @@
 // Inefficient vector/tensor objects
 #include "Special_AlgebraicTypes.hpp"
 
-#include "Phalanx_Array.hpp"
+#include "Shards_Array.hpp"
 
 // TVMET - efficient expression template vector/tensor objects
 #ifdef HAVE_PHALANX_TVMET
@@ -46,12 +46,12 @@
 #include "tvmet/Matrix.h"
 #endif
 
-struct Point : public PHX::ArrayDimTag {
+struct Point : public shards::ArrayDimTag {
   const char * name() const ;
   static const Point& tag();
 };
 
-struct Dim : public PHX::ArrayDimTag {
+struct Dim : public shards::ArrayDimTag {
   const char * name() const ;
   static const Dim& tag();
 };
@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
 
   using namespace std;
   using namespace Teuchos;
-  using namespace PHX;
+  using namespace shards;
 
   const int num_samples = 3;
   const int num_loops = 5000;
@@ -107,9 +107,9 @@ int main(int argc, char* argv[])
 
   // 3. MultiDimensional Array Support
   double* mda_array = new double[num_vectors * size * 3];
-  PHX::Array<double,NaturalOrder,Point,Dim> mda_a(mda_array,size,3);
-  PHX::Array<double,NaturalOrder,Point,Dim> mda_b(&mda_array[size*3],size,3);
-  PHX::Array<double,NaturalOrder,Point,Dim> mda_c(&mda_array[2*size*3],size,3);
+  shards::Array<double,NaturalOrder,Point,Dim> mda_a(mda_array,size,3);
+  shards::Array<double,NaturalOrder,Point,Dim> mda_b(&mda_array[size*3],size,3);
+  shards::Array<double,NaturalOrder,Point,Dim> mda_c(&mda_array[2*size*3],size,3);
 
   // 4. Raw vector support
   double* raw_array = new double[num_vectors * size * 3];

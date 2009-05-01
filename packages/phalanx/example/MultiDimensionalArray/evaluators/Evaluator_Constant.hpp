@@ -58,7 +58,7 @@ private:
 
   ScalarT value;
 
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Point> constant;
+  PHX::MDField<ScalarT,Cell,Point> constant;
 
   //! Not neede for problem, but included for some unit testing
   std::size_t dummy_workset_size;

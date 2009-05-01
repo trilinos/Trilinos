@@ -56,7 +56,7 @@ namespace PHX{
 
   public:
 
-    typedef unsigned size_type;
+    typedef int size_type;
 
     DataLayout() {}
 

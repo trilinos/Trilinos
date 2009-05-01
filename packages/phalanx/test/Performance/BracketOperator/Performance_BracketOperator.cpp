@@ -55,7 +55,7 @@
 
 */
 
-struct Point : public PHX::ArrayDimTag {
+struct Point : public shards::ArrayDimTag {
   const char * name() const ;
   static const Point& tag();
 };
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
       
       ArrayRCP<double> mda_density = arcp<double>(size);
       RCP<DataLayout> mddl = rcp(new MDALayout<Point>(size));
-      MDField<double,NaturalOrder,Point,Point> mddensity("density", mddl);
+      MDField<double,Point,Point> mddensity("density", mddl);
       mddensity.setFieldData(mda_density);
       
       for (int i=0; i < size; ++i) {

@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
       yc[2] = 1.0;
       yc[3] = 1.0;
 
-      vector<unsigned> gid(4);
+      vector<int> gid(4);
       gid[0] = 0;
       gid[1] = 1;
       gid[2] = 2;
@@ -78,7 +78,7 @@ int main(int argc, char *argv[])
       
       // Integrate the area to test jacobian transform
       double area = 0.0;
-      for (std::size_t qp=0; qp < e.numQuadraturePoints(); ++qp) {
+      for (int qp=0; qp < e.numQuadraturePoints(); ++qp) {
 	area += e.quadratureWeights()[qp] * e.detJacobian()[qp];
 	cout << "|J| = " << e.detJacobian()[qp] << endl;
 	
@@ -107,7 +107,7 @@ int main(int argc, char *argv[])
       yc[2] =  1.0;
       yc[3] =  1.0;
       
-      vector<unsigned> gid(4);
+      vector<int> gid(4);
       gid[0] = 0;
       gid[1] = 1;
       gid[2] = 2;
@@ -123,15 +123,15 @@ int main(int argc, char *argv[])
       u[2] = 2.0;
       u[3] = 0.0;
       
-      const PHX::Array<double,PHX::NaturalOrder,QuadPoint,Node,Dim>& dphi = 
-	e.basisFunctionGradientsRealSpace();
+      const shards::Array<double,shards::NaturalOrder,QuadPoint,Node,Dim>& 
+	dphi = e.basisFunctionGradientsRealSpace();
       
-      for (std::size_t qp=0; qp < e.numQuadraturePoints(); ++qp) {
+      for (int qp=0; qp < e.numQuadraturePoints(); ++qp) {
 	
 	double dudx = 0.0;
 	double dudy = 0.0;
 	
-	for (std::size_t node=0; node < e.numNodes(); ++node) {
+	for (int node=0; node < e.numNodes(); ++node) {
 	  dudx += u[node] * dphi(qp,node,0);
 	  dudy += u[node] * dphi(qp,node,1);
 	}
@@ -151,12 +151,12 @@ int main(int argc, char *argv[])
       u[1] = 0.0;
       u[2] = 2.0;
       u[3] = 2.0;
-      for (std::size_t qp=0; qp < e.numQuadraturePoints(); ++qp) {
+      for (int qp=0; qp < e.numQuadraturePoints(); ++qp) {
 	
 	double dudx = 0.0;
 	double dudy = 0.0;
 	
-	for (std::size_t node=0; node < e.numNodes(); ++node) {
+	for (int node=0; node < e.numNodes(); ++node) {
 	  dudx += u[node] * dphi(qp,node,0);
 	  dudy += u[node] * dphi(qp,node,1);
 	}
@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
       double area = 0.0;
       for (std::vector<Element_Linear2D>::iterator cell = cells.begin();
 	   cell != cells.end(); ++cell) {
-	for (std::size_t qp = 0; qp < cell->numQuadraturePoints(); ++qp) {
+	for (int qp = 0; qp < cell->numQuadraturePoints(); ++qp) {
 	  area += 
 	    cell->quadratureWeights()[qp] * cell->detJacobian()[qp];
 	}

@@ -90,8 +90,8 @@ CONFIG_HEADER = $(top_builddir)/src/Phalanx_config.hpp
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am_example_element_linear_2D_OBJECTS =  \
-	Example_Element_Linear_2D.$(OBJEXT) Element_Linear2D.$(OBJEXT) \
-	MeshBuilder.$(OBJEXT)
+	Example_Element_Linear_2D.$(OBJEXT) Dimension.$(OBJEXT) \
+	Element_Linear2D.$(OBJEXT) MeshBuilder.$(OBJEXT)
 example_element_linear_2D_OBJECTS =  \
 	$(am_example_element_linear_2D_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -283,6 +283,8 @@ example_fem_nonlinear_DEPENDENCIES = \
 example_fem_nonlinear_LDADD = $(EXAMPLE_LIBS)
 example_element_linear_2D_SOURCES = \
 	$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp \
+	$(srcdir)/Dimension.hpp \
+	$(srcdir)/Dimension.cpp \
 	$(srcdir)/Element_Linear2D.hpp \
 	$(srcdir)/Element_Linear2D.cpp \
 	$(srcdir)/MeshBuilder.hpp \
@@ -380,6 +382,20 @@ Example_Element_Linear_2D.obj: $(srcdir)/auxiliary_tests/Example_Element_Linear_
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Example_Element_Linear_2D.obj `if test -f '$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp'; then $(CYGPATH_W) '$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/auxiliary_tests/Example_Element_Linear_2D.cpp'; fi`
 
+Dimension.o: $(srcdir)/Dimension.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Dimension.o -MD -MP -MF $(DEPDIR)/Dimension.Tpo -c -o Dimension.o `test -f '$(srcdir)/Dimension.cpp' || echo '$(srcdir)/'`$(srcdir)/Dimension.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Dimension.Tpo $(DEPDIR)/Dimension.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Dimension.cpp' object='Dimension.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Dimension.o `test -f '$(srcdir)/Dimension.cpp' || echo '$(srcdir)/'`$(srcdir)/Dimension.cpp
+
+Dimension.obj: $(srcdir)/Dimension.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Dimension.obj -MD -MP -MF $(DEPDIR)/Dimension.Tpo -c -o Dimension.obj `if test -f '$(srcdir)/Dimension.cpp'; then $(CYGPATH_W) '$(srcdir)/Dimension.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Dimension.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Dimension.Tpo $(DEPDIR)/Dimension.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Dimension.cpp' object='Dimension.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Dimension.obj `if test -f '$(srcdir)/Dimension.cpp'; then $(CYGPATH_W) '$(srcdir)/Dimension.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Dimension.cpp'; fi`
+
 Element_Linear2D.o: $(srcdir)/Element_Linear2D.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Element_Linear2D.o -MD -MP -MF $(DEPDIR)/Element_Linear2D.Tpo -c -o Element_Linear2D.o `test -f '$(srcdir)/Element_Linear2D.cpp' || echo '$(srcdir)/'`$(srcdir)/Element_Linear2D.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Element_Linear2D.Tpo $(DEPDIR)/Element_Linear2D.Po
@@ -435,20 +451,6 @@ Traits.obj: $(srcdir)/Traits.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Traits.cpp' object='Traits.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Traits.obj `if test -f '$(srcdir)/Traits.cpp'; then $(CYGPATH_W) '$(srcdir)/Traits.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Traits.cpp'; fi`
-
-Dimension.o: $(srcdir)/Dimension.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Dimension.o -MD -MP -MF $(DEPDIR)/Dimension.Tpo -c -o Dimension.o `test -f '$(srcdir)/Dimension.cpp' || echo '$(srcdir)/'`$(srcdir)/Dimension.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Dimension.Tpo $(DEPDIR)/Dimension.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Dimension.cpp' object='Dimension.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Dimension.o `test -f '$(srcdir)/Dimension.cpp' || echo '$(srcdir)/'`$(srcdir)/Dimension.cpp
-
-Dimension.obj: $(srcdir)/Dimension.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Dimension.obj -MD -MP -MF $(DEPDIR)/Dimension.Tpo -c -o Dimension.obj `if test -f '$(srcdir)/Dimension.cpp'; then $(CYGPATH_W) '$(srcdir)/Dimension.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Dimension.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Dimension.Tpo $(DEPDIR)/Dimension.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Dimension.cpp' object='Dimension.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Dimension.obj `if test -f '$(srcdir)/Dimension.cpp'; then $(CYGPATH_W) '$(srcdir)/Dimension.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Dimension.cpp'; fi`
 
 LinearObjectFactory.o: $(srcdir)/LinearObjectFactory.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LinearObjectFactory.o -MD -MP -MF $(DEPDIR)/LinearObjectFactory.Tpo -c -o LinearObjectFactory.o `test -f '$(srcdir)/LinearObjectFactory.cpp' || echo '$(srcdir)/'`$(srcdir)/LinearObjectFactory.cpp

@@ -60,13 +60,13 @@ private:
   typedef typename EvalT::ScalarT ScalarT;
 
   //! Values at nodes
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> val_node;
+  PHX::MDField<ScalarT,Cell,Node> val_node;
 
   //! Values at quadrature points
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint> val_qp;
+  PHX::MDField<ScalarT,Cell,QuadPoint> val_qp;
 
   //! Gradient values at quadrature points
-  PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,QuadPoint,Dim> val_grad_qp;
+  PHX::MDField<ScalarT,Cell,QuadPoint,Dim> val_grad_qp;
   
   std::size_t num_nodes;
   std::size_t num_qp;

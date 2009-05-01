@@ -96,7 +96,7 @@ int main(int argc, char *argv[])
     
     double domain_length = 1.0;
     double dx = domain_length / static_cast<double>(num_local_cells);
-    std::vector<unsigned> global_id(4);
+    std::vector<int> global_id(4);
     global_id[0] = 0;
     global_id[1] = 2;
     global_id[2] = 3;
@@ -195,8 +195,8 @@ int main(int argc, char *argv[])
 
       std::vector<Element_Linear2D>::iterator e = cells.begin();
       for (; e != cells.end(); ++e) {
-	for (std::size_t row = 0; row < e->numNodes(); ++row) {
-	  for (std::size_t col = 0; col < e->numNodes(); ++col) {
+	for (int row = 0; row < e->numNodes(); ++row) {
+	  for (int col = 0; col < e->numNodes(); ++col) {
 	    int global_row = e->globalNodeId(row);
 	    int global_col = e->globalNodeId(col);
 	    graph.InsertGlobalIndices(global_row, 1, &global_col);
@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 
       e = cells.begin();
       for (; e != cells.end(); ++e) {
-	for (std::size_t row = 0; row < e->numNodes(); ++row) {
+	for (int row = 0; row < e->numNodes(); ++row) {
 	  
 	  int global_row = e->globalNodeId(row);
 	  
@@ -229,7 +229,7 @@ int main(int argc, char *argv[])
 	  diag_block_matrix(1,0) = util.RandomDouble();
 	  diag_block_matrix(1,1) = 100.0*util.RandomDouble();
 	  
-	  for (std::size_t col = 0; col < e->numNodes(); ++col) {
+	  for (int col = 0; col < e->numNodes(); ++col) {
 	    int global_col = e->globalNodeId(col);
 	    Jac_vbr->BeginReplaceMyValues(global_row, 1, &global_col);
 	    if (global_row==global_col) 

@@ -37,34 +37,33 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-#include "Phalanx_Array.hpp"
-
 // From test/Utilities directory
 #include "Traits.hpp"
 
+typedef PHX::MDField<double>::size_type size_type;
 
 // Dimension tags for this problem
-struct Dim : public PHX::ArrayDimTag {
+struct Dim : public shards::ArrayDimTag {
   const char * name() const ;
   static const Dim& tag();
 };
 
-struct Quadrature : public PHX::ArrayDimTag {
+struct Quadrature : public shards::ArrayDimTag {
   const char * name() const ;
   static const Quadrature& tag();
 };
 
-struct Node : public PHX::ArrayDimTag {
+struct Node : public shards::ArrayDimTag {
   const char * name() const ;
   static const Node& tag();
 };
 
-struct Cell : public PHX::ArrayDimTag {
+struct Cell : public shards::ArrayDimTag {
   const char * name() const ;
   static const Cell& tag();
 };
 
-struct Point : public PHX::ArrayDimTag {
+struct Point : public shards::ArrayDimTag {
   const char * name() const ;
   static const Point& tag();
 };
@@ -97,7 +96,7 @@ const Point & Point::tag()
 template<typename T>
 void assign(T& y, const T& x)
 {
-  for (std::size_t i=0; i < x.size(); ++i) {
+  for (size_type i=0; i < x.size(); ++i) {
     y[i] = x[i];
 
     // The following line should cause compilation failure if const is
@@ -123,7 +122,7 @@ int main(int argc, char *argv[])
     // *********************************************************************
     {
 
-      typedef MDField<double,NaturalOrder,Cell,Node>::size_type size_type;
+      typedef MDField<double,Cell,Node>::size_type size_type;
 
       // Dummy data layouts
       RCP<DataLayout> node_scalar = rcp(new MDALayout<Node>(4));
@@ -140,20 +139,20 @@ int main(int argc, char *argv[])
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // Ctors
       cout << "Testing ctor with FieldTag...";
-      MDField<double,NaturalOrder,Cell,Node> a(nodal_density);
-      MDField<double,NaturalOrder,Cell,Quadrature,Dim> b(grad_qp_density);
+      MDField<double,Cell,Node> a(nodal_density);
+      MDField<double,Cell,Quadrature,Dim> b(grad_qp_density);
       cout << "passed!" << endl;
       
       cout << "Testing ctor with individual data...";
-      MDField<MyTraits::FadType,NaturalOrder,Cell,Node> 
+      MDField<MyTraits::FadType,Cell,Node> 
 	c("density", node_scalar);
-      MDField<MyTraits::FadType,NaturalOrder,Cell,Quadrature,Dim> 
+      MDField<MyTraits::FadType,Cell,Quadrature,Dim> 
 	d("density", quad_vector);
       cout << "passed!" << endl;
       
       cout << "Testing empty ctor...";
-      MDField<double,NaturalOrder,Cell,Point> e;
-      MDField<MyTraits::FadType,NaturalOrder,Cell,Point,Dim> f;
+      MDField<double,Cell,Point> e;
+      MDField<MyTraits::FadType,Cell,Point,Dim> f;
       cout << "passed!" << endl;
       
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -187,7 +186,7 @@ int main(int argc, char *argv[])
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // setFieldData()
       cout << "Testing setFieldData()...";
-      std::size_t num_cells = 100;
+      size_type num_cells = 100;
       ArrayRCP<double> a_mem = 
 	arcp<double>(a.fieldTag().dataLayout().size() * num_cells);
       ArrayRCP<double> b_mem = 
@@ -290,13 +289,13 @@ int main(int argc, char *argv[])
       RCP<DataLayout> d7 = 
 	rcp(new MDALayout<Dim,Dim,Dim,Dim,Dim,Dim,Dim>(1,2,3,4,5,6,7));
 
-      MDField<double,NaturalOrder,Cell,Dim> f1("Test1",d1);
-      MDField<double,NaturalOrder,Cell,Dim,Dim> f2("Test7",d2);
-      MDField<double,NaturalOrder,Cell,Dim,Dim,Dim> f3("Test7",d3);
-      MDField<double,NaturalOrder,Cell,Dim,Dim,Dim,Dim> f4("Test7",d4);
-      MDField<double,NaturalOrder,Cell,Dim,Dim,Dim,Dim,Dim> f5("Test7",d5);
-      MDField<double,NaturalOrder,Cell,Dim,Dim,Dim,Dim,Dim,Dim> f6("Test7",d6);
-      MDField<double,NaturalOrder,Cell,Dim,Dim,Dim,Dim,Dim,Dim,Dim> f7("Test7",d7);
+      MDField<double,Cell,Dim> f1("Test1",d1);
+      MDField<double,Cell,Dim,Dim> f2("Test7",d2);
+      MDField<double,Cell,Dim,Dim,Dim> f3("Test7",d3);
+      MDField<double,Cell,Dim,Dim,Dim,Dim> f4("Test7",d4);
+      MDField<double,Cell,Dim,Dim,Dim,Dim,Dim> f5("Test7",d5);
+      MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim> f6("Test7",d6);
+      MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim,Dim> f7("Test7",d7);
 
       ArrayRCP<double> mem1 = arcp<double>(num_cells * d1->size());
       ArrayRCP<double> mem2 = arcp<double>(num_cells * d2->size());
@@ -338,17 +337,17 @@ int main(int argc, char *argv[])
       // operator[]
       cout << "Testing operator[]() accessor...";
       
-      for (std::size_t i = 0; i < a.size(); ++i)
+      for (size_type i = 0; i < a.size(); ++i)
 	a[i] = 5.0;
-      for (std::size_t i = 0; i < b.size(); ++i)
+      for (size_type i = 0; i < b.size(); ++i)
 	b[i] = 5.0;
-      for (std::size_t i = 0; i < c.size(); ++i)
+      for (size_type i = 0; i < c.size(); ++i)
 	c[i] = 5.0;
-      for (std::size_t i = 0; i < d.size(); ++i)
+      for (size_type i = 0; i < d.size(); ++i)
 	d[i] = MyTraits::FadType(5.0);
-      for (std::size_t i = 0; i < e.size(); ++i)
+      for (size_type i = 0; i < e.size(); ++i)
 	e[i] = 5.0;
-      for (std::size_t i = 0; i < f.size(); ++i)
+      for (size_type i = 0; i < f.size(); ++i)
 	f[i] = MyTraits::FadType(5.0);
 
       cout << "passed!" << endl;

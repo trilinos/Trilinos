@@ -1,7 +1,7 @@
 #!/usr/bin/tcsh
 cmake -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
       -D Trilinos_ENABLE_Teuchos:BOOL=ON \
-      -D Trilinos_ENABLE_Shards:BOOL=OFF \
+      -D Trilinos_ENABLE_Shards:BOOL=ON \
       -D Trilinos_ENABLE_Sacado:BOOL=ON \
       -D Trilinos_ENABLE_Epetra:BOOL=ON \
       -D Trilinos_ENABLE_Ifpack:BOOL=ON \

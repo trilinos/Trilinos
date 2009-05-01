@@ -54,7 +54,7 @@ ScatterResidual(const Teuchos::ParameterList& p)
   
   val.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> mdf(names[eq],dl);
+    PHX::MDField<ScalarT,Cell,Node> mdf(names[eq],dl);
     val[eq] = mdf;
     this->addDependentField(val[eq]);
   }
@@ -86,8 +86,8 @@ evaluateFields(typename Traits::EvalData workset)
   std::size_t cell = 0;
   for (; element != workset.end; ++element,++cell) {
     
-    for (std::size_t node = 0; node < num_nodes; node++) {
-      unsigned node_GID = element->globalNodeId(node);
+    for (int node = 0; node < num_nodes; node++) {
+      int node_GID = element->globalNodeId(node);
       int firstDOF = f->Map().LID(node_GID * num_eq);
       for (std::size_t eq = 0; eq < val.size(); eq++) {
 	(*f)[firstDOF + eq] += (val[eq])(cell,node);
@@ -121,7 +121,7 @@ ScatterResidual(const Teuchos::ParameterList& p)
   
   val.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> mdf(names[eq],dl);
+    PHX::MDField<ScalarT,Cell,Node> mdf(names[eq],dl);
     val[eq] = mdf;
     this->addDependentField(val[eq]);
   }
@@ -155,13 +155,13 @@ evaluateFields(typename Traits::EvalData workset)
     
     // Sum element residual and Jacobian into global residual, Jacobian
     // Loop over nodes in element
-    for (unsigned int node = 0; node < num_nodes; node++) {
+    for (int node = 0; node < num_nodes; node++) {
       
-      unsigned node_GID = element->globalNodeId(node);
+      int node_GID = element->globalNodeId(node);
       int firstDOF = Jac->RowMap().LID(node_GID * num_eq);
 
       // Loop over equations per node
-      for (unsigned int eq = 0; eq < num_eq; eq++) {
+      for (int eq = 0; eq < num_eq; eq++) {
 	
 	int row = firstDOF + eq;
 	
@@ -175,11 +175,11 @@ evaluateFields(typename Traits::EvalData workset)
 	  
 	  // Loop over nodes in element
 	  int firstcol = -1;
-	  for (unsigned int node_col=0; node_col<num_nodes; node_col++){
+	  for (int node_col=0; node_col<num_nodes; node_col++){
 	    firstcol =  Jac->RowMap().LID(element->globalNodeId(node_col) * num_eq);
 	    
 	    // Loop over equations per node
-	    for (unsigned int eq_col=0; eq_col<num_eq; eq_col++) {
+	    for (int eq_col=0; eq_col<num_eq; eq_col++) {
 	      
               int lcol = num_eq * node_col + eq_col;
 	      int col = firstcol + eq_col;

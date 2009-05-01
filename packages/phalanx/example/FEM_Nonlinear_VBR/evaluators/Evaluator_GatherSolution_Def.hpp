@@ -50,7 +50,7 @@ GatherSolution(const Teuchos::ParameterList& p)
 
   val.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> f(names[eq],dl);
+    PHX::MDField<ScalarT,Cell,Node> f(names[eq],dl);
     val[eq] = f;
     this->addEvaluatedField(val[eq]);
   }
@@ -81,7 +81,7 @@ evaluateFields(typename Traits::EvalData workset)
   for (; element != workset.end; ++element,++cell) {
     
     for (std::size_t node = 0; node < num_nodes; node++) {
-      unsigned node_GID = element->globalNodeId(node);
+      int node_GID = element->globalNodeId(node);
       //int firstDOF = x->Map().LID(node_GID * num_eq);
       int firstDOF = x->Map().LID(node_GID) * num_eq;
       for (std::size_t eq = 0; eq < val.size(); eq++)
@@ -110,7 +110,7 @@ GatherSolution(const Teuchos::ParameterList& p)
 
   val.resize(names.size());
   for (std::size_t eq = 0; eq < names.size(); ++eq) {
-    PHX::MDField<ScalarT,PHX::NaturalOrder,Cell,Node> f(names[eq],dl);
+    PHX::MDField<ScalarT,Cell,Node> f(names[eq],dl);
     val[eq] = f;
     this->addEvaluatedField(val[eq]);
   }
@@ -142,7 +142,7 @@ evaluateFields(typename Traits::EvalData workset)
   for (; element != workset.end; ++element,++cell) {
     
     for (std::size_t node = 0; node < num_nodes; node++) {
-      unsigned node_GID = element->globalNodeId(node);
+      int node_GID = element->globalNodeId(node);
       int firstDOF = x->Map().LID(node_GID) * num_eq;
 
       for (std::size_t eq = 0; eq < val.size(); eq++) {

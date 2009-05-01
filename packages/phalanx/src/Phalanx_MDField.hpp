@@ -35,12 +35,12 @@
 #include <iostream>
 #include <string>
 #include "Teuchos_ArrayRCP.hpp"
-#include "Phalanx_Array.hpp"
+#include "Shards_Array.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 
 namespace PHX {
 
-  template<typename DataT, PHX::ArrayOrder Order,
+  template<typename DataT,
 	   typename Tag0 = void, typename Tag1 = void, typename Tag2 = void, 
 	   typename Tag3 = void, typename Tag4 = void, typename Tag5 = void,
 	   typename Tag6 = void, typename Tag7 = void>
@@ -50,7 +50,7 @@ namespace PHX {
 
     typedef DataT value_type;
 
-    typedef typename PHX::Array<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> array_type;
+    typedef typename shards::Array<DataT,shards::NaturalOrder,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> array_type;
     
     typedef typename array_type::size_type size_type;
 
@@ -150,11 +150,11 @@ namespace PHX {
 
   };
   
-template<typename DataT, PHX::ArrayOrder Order,
+template<typename DataT,
 	   typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	   typename Tag4, typename Tag5, typename Tag6, typename Tag7>
   std::ostream& operator<<(std::ostream& os, 
-			   const PHX::MDField<DataT, Order, Tag0, Tag1, 
+			   const PHX::MDField<DataT, Tag0, Tag1, 
 			   Tag2, Tag3, Tag4, Tag5, Tag6, Tag7>& h);
   
 } 

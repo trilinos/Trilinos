@@ -71,12 +71,12 @@ getFieldData(PHX::Field<DataT>& f)
     
 // **************************************************************
 template<typename Traits>
-template<typename DataT, typename EvalT, PHX::ArrayOrder Order,
+template<typename DataT, typename EvalT,
 	 typename Tag0, typename Tag1, typename Tag2, typename Tag3,
 	 typename Tag4, typename Tag5, typename Tag6, typename Tag7> 
 inline
 void PHX::FieldManager<Traits>::
-getFieldData(PHX::MDField<DataT,Order,Tag0,Tag1,Tag2,Tag3,Tag4,
+getFieldData(PHX::MDField<DataT,Tag0,Tag1,Tag2,Tag3,Tag4,
 	     Tag5,Tag6,Tag7>& f)
 {
   f.setFieldData(m_eval_containers.template 

@@ -54,6 +54,8 @@ IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack)
   
   SET(example_element_linear_2D_SOURCES
     auxiliary_tests/Example_Element_Linear_2D.cpp
+    Dimension.hpp
+    Dimension.cpp
     Element_Linear2D.hpp
     Element_Linear2D.cpp
     MeshBuilder.hpp
