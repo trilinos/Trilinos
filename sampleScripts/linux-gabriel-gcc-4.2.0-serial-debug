@@ -5,7 +5,6 @@ cmake \
 -D MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind \
 -D CMAKE_CXX_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/g++ \
 -D CMAKE_C_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gcc \
--D CMAKE_Forgtran_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gfortran \
 -D MA28_LIBRARY_NAMES:STRING=HSL \
 -D MA28_LIBRARY_DIRS:PATH=/home/rabartl/PROJECTS/Trilinos.base/BUILDS/GCC-3.4.6/SERIAL_DEBUG/MoochoExtern/HSL \
 -D DART_TESTING_TIMEOUT:STRING=600 \
@@ -17,5 +16,5 @@ $EXTRA_ARGS \
 ../../../../Trilinos
 
 #-D TPL_ENABLE_Boost:BOOL=ON \
-
-#-D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+#-D CMAKE_Fortran_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gfortran \
+#-D CMAKE_Fortran_FLAGS:STRING="-m64 -g" \

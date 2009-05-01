@@ -56,7 +56,7 @@ FUNCTION(FORTRAN_MANGLING)
         FILE(MAKE_DIRECTORY ${_fcmangledir_case})
 
         TRY_COMPILE(_fcmngl ${_fcmangledir_case} ${_fcmakelists} fmangle
-          CMAKE_FLAGS "-DMANGLE_FLAGS:STRING=-DFC_FN_${cdef};-DFC_FN_${udef}"
+          CMAKE_FLAGS "-DMANGLE_FLAGS:STRING=-DFC_FN_${cdef};-DFC_FN_${udef} ${CMAKE_Fortran_FLAGS}"
           OUTPUT_VARIABLE _fcmngl_output
           )
         IF (Trilinos_VERBOSE_CONFIGURE)
