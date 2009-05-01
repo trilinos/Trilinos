@@ -5,16 +5,6 @@ INCLUDE(PackageLibraryMacros)
 # A) Package-specific configuration options
 #
 
-#These headers should always be available so defining them to one
-#since the framework provided define is "TRUE" which is interpreted
-#as a variable that doesn't exist inside the header files.
-SET(INTREPID_CSTDIO   1)
-SET(INTREPID_CSTDLIB  1)
-SET(INTREPID_IOSTREAM 1)
-SET(INTREPID_STRING   1)
-SET(INTREPID_SSTREAM  1)
-SET(INTREPID_IOMANIP  1)
-
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
