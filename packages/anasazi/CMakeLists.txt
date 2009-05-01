@@ -6,7 +6,10 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS CLEANED )
+PACKAGE( Anasazi ENABLE_SHADOWING_WARNINGS )
+
+# 2009/05/01: rabartl: I have removed 'CLEANED' from above from now because it
+# fails to compile with gcc 3.4.6 (see bug 4395).
 
 #
 # B) Set up package-specific options
