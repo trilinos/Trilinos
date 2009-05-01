@@ -90,6 +90,11 @@ namespace Tpetra
    * extractMyRowCopy() or extractGlobalRowCopy(). The former returns the column
    * indices using local numbering, the latter using global numbering.
    *
+   * This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal. 
+   * The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
+   * type, if omitted, defaults to the \c LocalOrdinal type.
+   * The class utilizes CrsGraph object which has the same local and global ordinal types.
+   *
    */
   template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal>
   class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal>

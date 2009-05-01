@@ -42,20 +42,18 @@
 
 namespace Tpetra {
 
-  //! This class builds an object containing information necesary for efficiently importing off-processor entries.
-
+  //! \brief This class builds an object containing information necesary for efficiently importing off-processor entries.
   /*! Import is used to construct a communication plan that can be called repeatedly by computational
-      classes such the Tpetra CisMatrix and Vector classes to efficiently import entries from other
-      images. An importer is used when we start out with a uniquely-owned distribution,
-      and want to distribute that into a multiple-ownership distribution.
+      classes to efficiently import entries from other nodes.
+      For example, an exporter is used when we start out with a multiple-ownership distribution,
+      and we want to merge that into a uniquely-owned distribution.
 
-      This class currently has one constructor, taking two Map objects.
-      The first Map specifies the distribution we have now. The second 
-      Map specifies the distribution we want to have after importing.
+      This class currently has one constructor, taking two Map objects
+      specifying the distributions of the distributed objects on which the Export class will operate.
 
-      NOTE: Behavior is undefined if the source Map is not uniquely-owned.
+      This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
+      The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
   */
-
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal>
   class Import: public Teuchos::Describable {
 

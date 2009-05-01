@@ -43,6 +43,10 @@ namespace Tpetra {
       
       This class has a single constructor, accepting the Map object for which the directory 
       is created.
+
+      This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
+      The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
+      type, if omitted, defaults to the \c LocalOrdinal type.
   */
 
   template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal>

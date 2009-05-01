@@ -35,10 +35,13 @@
 
 namespace Tpetra {
 
-  /** \brief Abstract interface for linear operators accepting %Tpetra
-   * MultiVector objects.
+  //! \brief Abstract interface for linear operators accepting Tpetra MultiVector objects.
+  /*!
+     This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal. 
+     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
+     type, if omitted, defaults to the \c LocalOrdinal type.
    */
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal=LocalOrdinal>
+  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
 	class Operator : public Teuchos::Describable {
 	public:
 

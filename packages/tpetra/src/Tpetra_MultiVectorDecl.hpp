@@ -52,6 +52,11 @@ namespace Tpetra {
 #endif
 
   //! \brief A class for constructing and using dense, distributors multivectors.
+  /*!
+     This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal. 
+     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
+     type, if omitted, defaults to the \c LocalOrdinal type.
+   */
   template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal>
   class MultiVector : public DistObject<Scalar,LocalOrdinal,GlobalOrdinal> {
 

@@ -35,6 +35,11 @@
 namespace Tpetra {
 
 	//! \brief A implementation of the Platform class for serial platforms.
+  /*!
+     This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal. 
+     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
+     type, if omitted, defaults to the \c LocalOrdinal type.
+   */
 	template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
 	class SerialPlatform : public virtual Platform<Scalar, LocalOrdinal, GlobalOrdinal> 
   {

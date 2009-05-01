@@ -1,99 +1,96 @@
-/*! \mainpage Trilinos/Tpetra: Templated Linear Algebra Services Package.
-\htmlonly
-\endhtmlonly
+/*! 
+    \mainpage Trilinos/Tpetra: Templated Linear Algebra Services Package
 
-\section intro Introduction
+   \section tpetra_intro Introduction to Tpetra
+
 Tpetra is an attempt at applying generic algorithm techniques to the
 serial and parallel linear algebra libraries of Epetra.  It is hoped that
 Tpetra will complement Epetra by providing an alternative foundation 
 for future Trilinos solvers.  The lessons learned and discoveries made 
 while creating Tpetra are also being applied to improving their Epetra cousins.
 
-Tpetra provides the same functionality as Epetra: the fundamental construction routines 
-and services functions that are required for serial and parallel linear algebra libraries. 
-Unlike Epetra, Tpetra makes extensive use of templates and the Standard Template Library (STL). 
-This provides numerous benefits, including the ability to template the Ordinal and Scalar fields 
-on any well-defined types, and automatic resource allocation. 
+Tpetra provides the same functionality as Epetra: the fundamental construction
+routines and services functions that are required for serial and parallel
+linear algebra libraries.  Unlike Epetra, Tpetra makes extensive use of
+templates and the Standard Template Library (STL).  This provides numerous
+benefits, including the ability to template the ordinal and scalar fields on
+any well-defined types, and the use of automatic resource allocation. 
 
-\section startup Overview of Tpetra.
+Tpetra captures a significant subset of the functionality present in the Epetra
+package. Functionality not included is either a consequence of different design
+motivations or of Tpetra's status as a work in progress.
+
+\section startup Overview of Tpetra
 
 \subsection types Templated Types in Tpetra
 
-All classes in Tpetra utilize templates, which allows the user to specify any type they want.
+All of all classes in Tpetra utilize templates, which allows the user to
+specify any type they want. In some cases, the choice of data type allows
+increased functionality. For example, 64-bit ordinals allow for problem sizes
+to break the 2 billion element barrier present in Epetra, whereas complex
+scalar types allow the native description and solution of complex-valued
+problems.
 
-<ol>
-<li> PacketType: The most generic type. A PacketType is any built-in type, struct, or class
-     that can be communicated between nodes. Generally this is the same as the ScalarType.
+Most of the classes in Tpetra are templated according to the data types which constitute the class. 
+These are the following:
+    - \c Scalar: A \c Scalar is the data structure used for storing values.
+       This is the type most likely to be changed by many users. The most common use cases are \c float,
+       \c double, <tt>complex<float></tt> and <tt>complex<double></tt>. However, any data type can be
+       used so long as it implements Teuchos::ScalarTraits and supports the necessary arithmetic operations, such 
+       as addition, subtraction, division and multiplication.
+    - \c LocalOrdinal: A \c LocalOrdinal is used to store indices representing local IDs. The standard use case,
+      as well as the default for most classes, is \c int. Any type can be used that implements Teuchos::OrdinalTraits
+      and supports the necessary arithmetic. The purpose of template local and global ordinals as two (possibly)
+      different types is for efficiency purposes. For example, the indices of a completed CrsGraph contain objects
+      of type \c LocalOrdinal. If the specific application allows it, using smaller local ordinals requires 
+      less storage and potentially higher rates of computation.
+    - \c GlobalOrdinal: A \c GlobalOrdinal is used to store indices representing global IDs and to describe 
+      global properties of a distributed object (e.g., global number of non-zeros in a sparse matrix, global number
+      of rows in a vector.) The \c GlobalOrdinal therefore dictates the maximum size of a distributed object.
 
-<li> OrdinalType: The next-most generic type. An OrdinalType is primarily used for ordering,
-     such as labeling the indices in a matrix or vector. This is typically int or long int.
-
-<li> ScalarType: The least generic type. A ScalarType is the data structure used for storing values.
-     This is typically double, float, complex<double> or complex<float>.
-</ol>
-
-The flexibility of Tpetra comes from the fact that the above-mentioned examples are not the only
-possibilities. As long as they implement a few basic operations and traits, any class can be used 
-as a PacketType, OrdinalType, or ScalarType. You could, for example, use radians as an OrdinalType, 
-or use 3x3 matrices as a ScalarType.
-
-More information can be found in the documentation for Tpetra::PacketTraits, Teuchos::OrdinalTraits, 
-and Teuchos::ScalarTraits.
+The Tpetra::Distributor class is unique in that it is not templated instantiated on any templated types. However, 
+the class includes some templated member functions. The Tpetra::Distributor::createFromRecvs() method is templated on the 
+ordinal type used to encode IDs, while Tpetra::Distributor::doPosts() and the other post methods are templated 
+on the \c Packet, the data type being communicated by a particular invocation of the Tpetra::Distributor.
 
 \subsection formulations Tpetra Classes
 
-Tpetra contains a number of classes.  They can be categorized as follows:
+Tpetra contains a number of classes. The primary parallel classes, employed by most users, are:
 
-<ul> 
+ - Communication classes: Tpetra::Platform and Teuchos::Comm <br>
+     - Comm provides collective operations among nodes. The abstraction of the communication allows
+       Tpetra objects to be coded to a generic communicator, which may be specified by the user 
+       as one of a number of available communicators (e.g., Teuchos::MpiComm, Teuchos::SerialComm).
+       Teuchos::Comm is analogous to Epetra_Comm.
+     - Tpetra::Platform contains specific information about the parallel machine we are using. 
+       Currently, Tpetra::Platform exists to provide a communicator object. It is anticipated that 
+       future versions of Tpetra will utilize Tpetra::Platform to collect other information about the node 
+       on which the computations are being executed. Current implementations are Tpetra::SerialPlatform 
+       and Tpetra::MpiPlatform. Future work will provide platforms specific to multi-core nodes, such as 
+       homogenous multicore CPUs and GPUs.
 
-<li> Primary parallel user classes.  These are typically the most important classes for most users.
+ -  Map class: Tpetra::Map <br>
+     Contain information used to distribute vectors, matrices and other objects. This class is analogous
+     to the class Epetra_Map.
 
-<ol>
+ -  Distributed vector class: Tpetra::MultiVector, Tpetra::Vector <br>
+     Provides vector services such as scaling, norms, and dot products. 
 
-<li> Communication classes: Tpetra::Platform, Tpetra::Comm, and Tpetra::Distributor - 
-     Platform contains specific information about the parallel machine we are using. 
-     Comm provides collective operations, and Distributor provides point-to-point communication. 
-     Currently only supports serial operation, but an MPI version is in development.
+ -  Distributed sparse matrix classes: Tpetra::RowMatrix, Tpetra::CrsMatrix <br>
+     Tpetra::RowMatrix is a abstract interface for row-distributed sparse matrices. Tpetra::CrsMatrix is a 
+     specific implementation of Tpetra::RowMatrix, utilizing compressed row storage format. Both of these
+     classes derive from Tpetra::Operator, the base class for linear operators.
 
-<li> Mapping classes: Tpetra::ElementSpace, Tpetra::BlockElementSpace and Tpetra::VectorSpace - 
-     Contain information used to distribute vectors, matrices and other objects.
-
-<li> Vector class: Tpetra::Vector - Provides vector services such as 
-     scaling, norms, and dot products. Is also used in conjunction with Tpetra::CrsMatrix
-     for matrix-vector computations.
-
-<li> Sparse matrix class: Tpetra::CrsMatrix - Compressed Index Space Matrix. Can be either
-     row-oriented or column-oriented. 
-
-<li> Import/Export classes:  Tpetra::Import and Tpetra::Export - Constructed from two
-     ElementSpace objects.  Allows efficient transfer of objects built using one mapping 
+ - Import/Export classes:  Tpetra::Import and Tpetra::Export <br>
+     Allows efficient transfer of objects built using one mapping 
      to a new object with a new mapping.  Supports local and global permutations,
-     overlapping Schwarz operations and many other data movement algorithms.
+     overlapping Schwarz operations and many other data movement operations.
 
 </ol>
-
-<li> Utility classes. 
-
-<ol>
-
-<li> Distributed directory class:  Tpetra::Directory - Allows construction of a distributed directory.
-     Once constructed, a directory allows one to access randomly distributed objects in an efficient, scalable
-     manner.  This class is intended for support of general ElementSpace and BlockElementSpace objects, but is 
-     useful in other settings as well.
-
-<li> Traits class:  Tpetra::PacketTraits - Much like Teuchos's ScalarTraits and OrdinalTraits. It provides
-     information needed to transfer data on a parallel machine, such as the amount of memory needed to represent
-     a variable of a given type.
-     
-
-</ol>
-</ul>
-     
 
 \subsection trilinos Trilinos and Tpetra
 
-Tpetra can be used as a stand-alone package.  However, in the future it will also provides the foundation for
-Trilinos.  Trilinos is a collection of solver packages, such as AztecOO and TSF.  But as Tpetra is not yet completed, 
-it is suggested that for the time being, Epetra be used in conjunction with other Trilinos packages instead.
+Tpetra can be used mostly as a stand-alone package, with an explicit dependence only on Teuchos. There are adapters allowing the 
+use of Tpetra operators and multivectors in both the Belos linear solver package and the Anasazi eigensolver package.
 
 */

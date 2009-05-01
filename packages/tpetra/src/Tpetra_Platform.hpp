@@ -37,6 +37,11 @@
 namespace Tpetra {
 
   //! \brief The Tpetra platform abstract base class.
+  /*!
+     This class is templated on \c Scalar, \c LocalOrdinal and \c GlobalOrdinal. 
+     The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
+     type, if omitted, defaults to the \c LocalOrdinal type.
+   */
   template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
   class Platform : public Teuchos::Describable {
   public:

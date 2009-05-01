@@ -30,8 +30,8 @@
 
 namespace Tpetra {
 
-	std::string Tpetra_Version() { 
-		return("Tpetra Version 1.2 - 09/25/2008"); 
+	std::string Tpetra_Version() {
+		return("Tpetra Version 1.3 - 05/01/2008"); 
 	}
 
 } // namespace Tpetra
