@@ -3,41 +3,49 @@
 ------------------------------------------------------------------------------
 
 
-Last Updated: 2009/03/27
+Last Updated: 2009/05/01
+
 
 
 A) Getting set up to use CMake
 ------------------------------
 
-(*) Installing CMake from local source [Recommended for Trilinos developers]
+
+(*) Installing a binary release of CMake [Recommended for Trilinos users]:
+
+  Download and install the binary (currently version 2.6.3 is required) from:
+
+    http://www.cmake.org/cmake/resources/software.html
+
+
+(*) Installing CMake from source [Recommended for Trilinos developers]:
+
+  If you have access to the Trilinos CVS repository, then install CMake with:
 
     $ $TRILINOS_HOME/cmake/python/install-cmake.py --install-dir=INSTALL_BASE_DIR
 
   This will result in cmake and related CMake tools being installed in
   INSTALL_BASE_DIR/bin.
 
-  Getting help:
+  Getting help for installing CMake with this script:
 
     $ $TRILINOS_HOME/cmake/python/install-cmake.py --help
 
   NOTE: you will want to read the help message about how to use sudo to
-  install in a privileged location.
+  install in a privileged location (like the default /usr/local/bin).
 
-(*) Installing binary release of CMake [Recommended for Trilinos users]
-
-  Download and install the binary from:
-
-    http://www.cmake.org/cmake/resources/software.html
 
 
 B) Getting Help
------------------
+---------------
 
-(*) Finding CMake help at the website
+
+(*) Finding CMake help at the website:
 
     http://www.cmake.org
 
-(*) Building CMake help locally
+
+(*) Building CMake help locally:
 
   $ cmake --help-full cmake.help.html
 
@@ -45,12 +53,23 @@ B) Getting Help
 
 
 
-C) Configuring
----------------
+C) Configuring (Makefile Generator)
+-----------------------------------
 
-(*) Configuring Trilinos to build
 
-  a) [Recommended] Create a 'do-configure' scripts like:
+(*) Setting up a build directory:
+
+    $ mkdir SOME_BUILD_DIR
+    $ cd SOME_BUILD_DIR
+
+  NOTE: You can create a build directory from any location you would like.  It
+  can be a sub-directory of the Trilinos base source directory or anywhere
+  else.
+
+
+(*) Basic configuration of Trilinos:
+
+  a) [Recommended] Create a 'do-configure' script like:
 
         EXTRA_ARGS=$@
         
@@ -62,10 +81,10 @@ C) Configuring
           $EXTRA_ARGS \
           ${TRILINOS_HOME}
 
-      where PACKAGE is Epetra, AztecOO, etc. and TRILINOS_HOME is set
-      to the Trilinos source base directory.
+      where PACKAGE is Epetra, AztecOO, etc. and TRILINOS_HOME is set to the
+      Trilinos source base directory (or your can just give it explicitly).
 
-      and then run it as:
+      You can then run the script as:
 
         $ ./do-configure [OTHER_OPTIONS]
 
@@ -75,84 +94,148 @@ C) Configuring
 
     $ ccmake $TRILINOS_HOME
 
-(*) Configuring a package(s) along with all of the packages it can use:
 
+(*) Selecting the list of packages to enable:
+
+  a) Configuring a package(s) along with all of the packages it can use:
+  
+      $ ./do-configure \
+         -D Trilinos_ENABLE_<PACKAGE>:BOOL=ON \
+         -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+         -D Trilinos_ENABLE_TESTS:BOOL=ON
+  
+    NOTE: This set of arguments allows a user to turn on <PACKAGE> as well as
+    all packages that <PACKAGE> can use.  However, tests and examples will
+    only be turned on for <PACKAGE> (or any other packages specifically
+    enabled).
+  
+  b) Configuring Trilinos to test all effects of changing a given package(s):
+  
     $ ./do-configure \
        -D Trilinos_ENABLE_<PACKAGE>:BOOL=ON \
-       -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+       -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON \
        -D Trilinos_ENABLE_TESTS:BOOL=ON
+  
+    NOTE: The above set of arguments will result in package <PACKAGE> and all
+    packages that depend on <PACKAGE> to be enabled and have all of their
+    tests turned on.  Tests will not be enabled in packages that do not depend
+    on <PACKAGE> in this case.  This speeds up and robustifies pre-checkin
+    testing.
+  
+  c) Configuring Trilinos to build all packages with all tests and examples:
+  
+      $ ./do-configure \
+         -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+         -D Trilinos_ENABLE_TESTS:BOOL=ON
+  
+    NOTE: Specific packages can be disabled with
+    Trilinos_ENABLE_PACKAGE:BOOL=OFF.
+  
+    NOTE: All examples are enabled by default when setting
+    Trilinos_ENABLE_TESTS:BOOL=ON.
 
-  NOTE: This set of arguments allows a user to turn on <PACKAGE> as well as all
-  packages that <PACKAGE> can use.  However, tests and examples will only be turned
-  on for <PACKAGE> (or any other packages specifically enabled).
 
-(*) Configuring Trilinos to test all effects of changing a given package(s):
+(*) Selecting compiler and linker options:
 
-  $ ./do-configure \
-     -D Trilinos_ENABLE_<PACAKGE>:BOOL=ON \
-     -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACAKGES:BOOL=ON \
-     -D Trilinos_ENABLE_TESTS:BOOL=ON
+  a) Configuring to build with default debug or release compiler flags:
+  
+    To build a debug version, pass into 'cmake':
+  
+      -D CMAKE_BUILD_TYPE:STRING=DEBUG
+  
+    This will result in default debug flags getting passed to the compiler.
+  
+    To build a release (optimized) version, pass into 'cmake':
+  
+      -D CMAKE_BUILD_TYPE:STRING=RELEASE
+  
+    This will result in optimized flags getting passed to the compiler.
+  
+  b) Adding arbitrary compiler flags but keeping other default flags:
 
-  NOTE: The above set of arguments will result in package <PACAKGE> and all
-  packages that depend on <PACAKGE> to be enabled and have all of their tests
-  turned on.  Tests will not be enabled in packages that do not depend on
-  <PACAKGE> in this case.  This speeds up and robustifies pre-checkin testing.
+    To append arbitrary compiler flags, configure with:
 
-(*) Configuring to build debug and release (optimized) compiler flags:
+      -DCMAKE_<COMPILER>_FLAGS:STRING="<EXTRA_COMPILER_OPTIONS>"
 
-  To build a debug version, pass into 'cmake':
+    where <COMPILER> = C, CXX, Fortran and <EXTRA_COMPILER_OPTIONS> are your
+    extra compiler options like "-DSOME_MACRO_TO_DEFINE -funroll-loops".
 
-    -D CMAKE_BUILD_TYPE:STRING=DEBUG
+    NOTE: Compiler options set with CMAKE_<COMPILER>_FLAGS will *not* override
+    the set debug or release options which come after on the compile line.
+    Therefore, this approach should only be used for options that will not get
+    overridden by the internally-set debug or release compiler options.
+    However, setting CMAKE_<COMPILER>_FLAGS will work well for adding extra
+    compiler defines for example.
 
-  This will result in default debug flags getting passed to the compiler.
+    NOTE: Any options that you set through the cache varible
+    CMAKE_<COMPILER>_FLAGS_<BUILD_TYPE> (where <BUILD_TYPE> = DEBUG or
+    RELEASE) will get overridden in the code so don't every try to set
+    CMAKE_<COMPILER>_FLAGS_<BUILD_TYPE>.
+  
+  c) Overriding debug/release compiler options:
+  
+    To pass in compiler options that override the default debug or release
+    options use:
+  
+      -D CMAKE_BUILD_TYPE:STRING=NONE \
+      -D CMAKE_C_FLAGS:STRING="-04 --funrool-loops" \
+      -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions"
+  
+    where LANGUAGE = C, CXX, Fortran, etc.
 
-  To build a release (optimized) version, pass into 'cmake':
+    NOTE: Using CMAKE_BUILD_TYPE:STRING=NONE allows you to take complete
+    control over what debug or release compiler optimizations or related
+    options are passed to the compiler.
+  
+  d) Appending arbitrary link flags to every executable:
+  
+    In order to append any set of arbitrary link flags to your executables use:
+  
+      -D Trilinos_EXTRA_LINK_FLAGS:STRING="$EXTRA_LINK_FLAGS"
+  
+    Above, you can pass any type of library and they will always be the last
+    libraries listed, even after all of the TPL.
+  
+    NOTE: This is how you must set extra libraries like Fortran libraries and
+    MPI libraries (when using raw compilers).  Please only use this variable
+    as a last resort.
 
-    -D CMAKE_BUILD_TYPE:STRING=RELEASE
+    NOTE: You must only pass in libraries in Trilinos_EXTRA_LINK_FLAGS and
+    *not* arbitrary linker flags.  To pass in extra linker flags that are not
+    libraries, use the built-in CMake variable CMAKE_EXE_LINKER_FLAGS instead.
+  
+  e) Overriding all (string warnings and debug/release) compiler options:
+  
+    To override all compiler options, including both strong warning options
+    and debug/release options, configure with:
+  
+      -D CMAKE_BUILD_TYPE:STRING=NONE \
+      -D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS:BOOL=OFF \
+      -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=OFF \
+      -D CMAKE_C_FLAGS:STRING="-04 --funrool-loops" \
+      -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
 
-  This will result in optimized flags getting passed to the compiler.
+  f) Enable shadowing warnings for all Trilinos packages:
+  
+    To enable shadowing warnings for all Trilinos packages (that don't already
+    have them), add the following option to the cmake configure command:
+  
+      -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=ON
+  
+    NOTE: You can *not* turn off shadowing warnings for all packages with this
+    option.  If Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF, shadowing warnings
+    in packages that have them explicitly enabled will still have them turned
+    on.  To turn off shadowing warnings for all Trilinos packages you must
+    turn off all strong warning options.  However, this is not recommended.
+  
+  g) Removing warnings as errors for CLEANED packages:
+  
+    To remove the -Werror flag (or some other flag that is set) from being
+    applied to compile CLEANED packages like Teuchos, set the following when
+    configuring:
+  
+      -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=""
 
-(*) Enabling runtime debug checks:
-
-  To turn on optional runtime debug checking configure with:
-
-    -D Trilinos_ENABLE_DEBUG=ON
-
-  This will result in a number of ifdefs to be enabled that will perform a
-  number of runtime checks.  All of the debug checks in Trilinos will get
-  turned on by default by setting this option.  This option can be set
-  independent of CMAKE_BUILD_TYPE.
-
-  NOTE: The variable CMAKE_BUILD_TYPE controls what compiler options are
-  passed to the compiler options by default while Trilinos_ENABLE_DEBUG
-  controls what defines are set in config.h files.
-
-  NOTE: Setting -D CMAKE_BUILD_TYPE:STRING=DEBUG will automatically set the
-  default Trilinos_ENBLE_DEBUG=ON.
-
-(*) Enabling checked STL implementation:
-
-  To turn on the checked STL implementation set:
-
-    -D Trilinos_ENABLE_CHECKED_STL:BOOL=ON
-
-  NOTE: By default, this will set -D_GLIBCXX_DEBUG as a compile option for all
-  C++ code.
-
-  NOTE: This option is disabled by default because to enable it by default can
-  cause runtime segfaults when linked against code that was compiled without
-  -D_GLIBCXX_DEBUG set.
-
-(*) Overriding debug/release compiler options:
-
-  To pass in compiler options that override the default debug or release
-  options use:
-
-    -D CMAKE_BUILD_TYPE:STRING=NONE \
-    -D CMAKE_C_FLAGS:STRING="-04 --funrool-loops" \
-    -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions"
-
-  where LANGUAGE = C, CXX, Fortran, etc.
 
 (*) Disabling the Fortran compiler and all Fortran code:
 
@@ -164,50 +247,46 @@ C) Configuring
   The user cache variable Trilinos_ENABLE_Fortran is used as a trigger in the
   Trilinos CMake build system to enable Fortran support or not.
 
-(*) Enable shadowing warnings for all Trilinos pacakges:
+  NOTE: The fortran compiler will be disabled automatically by default on
+  systems like MS Windows.
 
-  To enable shadowing warnings for all Trilinos packages (that don't already
-  have them) enabled add the following option to cmake configure:
+  NOTE: Macs do not come with a compatible Fortran compiler by default so you
+  must turn off Fortran if you don't have a compatible Fortran compiler.
 
-    -D Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=ON
 
-  NOTE: You can not turn off shadowing warnings for all packages with this
-  option.  If Trilinos_ENABLE_SHADOW_WARNINGS:BOOL=OFF, shadowing warnings in
-  packages that have them explicitly enabled will still have them turned on.
-  To turn off shadowing warnings for all Trilinos packages you must turn off
-  all strong warning options.  However, this is not recommended.
+(*) Enabling runtime debug checking:
+  
+  a) Enabling Trilinos ifdefed runtime debug checking:
+  
+    To turn on optional ifdefed runtime debug checking, configure with:
+  
+      -D Trilinos_ENABLE_DEBUG=ON
+  
+    This will result in a number of ifdefs to be enabled that will perform a
+    number of runtime checks.  Nearly all of the debug checks in Trilinos will
+    get turned on by default by setting this option.  This option can be set
+    independent of CMAKE_BUILD_TYPE.
+  
+    NOTE: The variable CMAKE_BUILD_TYPE controls what compiler options are
+    passed to the compiler by default while Trilinos_ENABLE_DEBUG controls
+    what defines are set in config.h files that control ifdefed debug checks.
+  
+    NOTE: Setting -DCMAKE_BUILD_TYPE:STRING=DEBUG will automatically set the
+    default Trilinos_ENABLE_DEBUG=ON.
+  
+  b) Enabling checked STL implementation:
+  
+    To turn on the checked STL implementation set:
+  
+      -D Trilinos_ENABLE_CHECKED_STL:BOOL=ON
+  
+    NOTE: By default, this will set -D_GLIBCXX_DEBUG as a compile option for
+    all C++ code.  This only works with GCC currently.
+  
+    NOTE: This option is disabled by default because to enable it by default
+    can cause runtime segfaults when linked against code that was compiled
+    without -D_GLIBCXX_DEBUG set.
 
-(*) Overriding all compiler options
-
-  To override all compiler options, including both strong warning options and
-  debug/release options use:
-
-    -D CMAKE_BUILD_TYPE:STRING=NONE \
-    -D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS:BOOL=OFF \
-    -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=OFF \
-    -D CMAKE_C_FLAGS:STRING="-04 --funrool-loops" \
-    -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
-
-(*) Removing warnings as errors for CLEANED packages:
-
-  To remove the -Werror flag (or some other flag that is set) from
-  being applied to compile CLEANED packages like Teuchos, set the
-  following:
-
-    -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=""
-
-(*) Appending arbitrary link flags to every executable:
-
-  In order to append any set of arbitrary link flags to your executables use:
-
-    -D Trilinos_EXTRA_LINK_FLAGS:STRING="$EXTRA_LINK_FLAGS"
-
-  Above, you can pass any type of library or other linker flags in and they
-  will always be the last libraries listed, even after all of the TPL.
-
-  NOTE: This is how you must set extra libraries like fortran libraries and
-  MPI libraries (when using raw compilers).  Please only use this variable as
-  a last resort.
 
 (*) Configuring Trilinos for MPI support:
 
@@ -248,7 +327,7 @@ C) Configuring
         If this is an absolute path, then this will be used as
         CMAKE_[C,CXX,Fortran]_COMPILER to compile and link code.
 
-  b) Confiugring build using raw compilers and flags/libraries:
+  b) Configuring to build using raw compilers and flags/libraries:
 
     While using the MPI compiler wrappers as described above is the preferred
     way to enable support for MPI, you can also just use the raw compilers and
@@ -326,6 +405,7 @@ C) Configuring
         Other command-line arguments that must come *after* the num-proces
         argument.  The default is empty "".
 
+
 (*) Enabling shared libraries:
 
     -D BUILD_SHARED_LIBS:BOOL=ON
@@ -334,17 +414,6 @@ C) Configuring
   all systems (i.e. *.so on Unix/Linux systems, *.dylib on Mac OS X,
   and *.dll on Windows systems).
 
-(*) Configuring Trilinos to build all packages with all tests and examples:
-
-    $ ./do-configure \
-       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
-       -D Trilinos_ENABLE_TESTS:BOOL=ON
-
-  NOTE: Specific packages can be disabled with
-  Trilinos_ENABLE_PACKAGE:BOOL=OFF.
-
-  NOTE: All examples are enabled by default when setting
-  Trilinos_ENABLE_TESTS:BOOL=ON.
 
 (*) Enabling support for optional Third-Party Libraries (TPLs):
 
@@ -381,12 +450,12 @@ C) Configuring
 
   NOTE: The variables TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES
   are what are directly used by the CMake build infrastructure.  These
-  variables are normally set by the varaibles <TPLNAME>_INCLUDE_DIRS,
+  variables are normally set by the variables <TPLNAME>_INCLUDE_DIRS,
   <TPLNAME>_LIBRARY_NAMES, and <TPLNAME>_LIBRARY_DIRS using find commands but
   you can always override these and directly by setting the (FILEPATH) cache
-  varibles TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES.  This gives
+  variables TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES.  This gives
   the user complete and direct control in specifying exactly what is used in
-  the build process.  The other varibles that start with <TPLNAME>_ are just a
+  the build process.  The other variables that start with <TPLNAME>_ are just a
   convenience to make it easier to specify the location of the libraries.
 
   Optional package-specific support for a TPL can be turned off by passing
@@ -405,6 +474,7 @@ C) Configuring
   That will result in setting TPL_ENABLE_<TPLNAME>=ON internally (but not set
   in the cache) if TPL_ENABLE_<TPLNAME>=OFF is not already set.
 
+
 (*) Getting verbose output from configure:
 
     $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON
@@ -412,9 +482,11 @@ C) Configuring
   NOTE: This produces a *lot* of output but can be very useful when debugging
   configuration problems
 
+
 (*) Getting verbose output from the makefile
 
     $ ./do_configure -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
+
 
 (*) Getting very verbose output from configure
 
@@ -422,14 +494,16 @@ C) Configuring
 
   NOTE: This will print a complete stack trace to see exactly where you are
 
+
 (*) Disabling framework level dependency tests
 
-    -D Trilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF
+    -D Trilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF
 
   NOTE: Above will disable the Trilinos framework-level dependency unit tests
-  which have names ike TrilinosDep_* and TrilinosOutputDep_*.  You should turn
+  which have names like TrilinosDep_* and TrilinosOutputDep_*.  You should turn
   these off, for example, when you are doing a dynamic analysis (i.e. memcheck
   with valgrind) test.
+
 
 (*) Enabling support for coverage testing:
 
@@ -437,36 +511,42 @@ C) Configuring
 
   NOTE: The above will set the compile and link options -fprofile-arcs
   -ftest-coverage when the compiler is GNU.
+
+(*) Viewing configure options and documentation:
   
-(*) Viewing available configure-time options with documentation
+  a) Viewing available configure-time options with documentation
+  
+    $ cd $BUILD_DIR
+    $ rm CMakeCache.txt
+    $ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+      $TRILINOS_HOME
+  
+    NOTE: You can also just look at the text file CMakeCache.txt after any
+    configure which gets created in the build directory which has all of the
+    cache variables and documentation.
+  
+  
+  b) Viewing available configure-time options without documentation
+  
+    $ cd $BUILD_DIR
+    $ rm CMakeCache.txt
+    $ cmake -LA SAME_AS_ABOVE $TRILINOS_HOME
+  
+  
+  c) Viewing current values of cache variables
+  
+      $ cmake -LA $TRILINOS_HOME
+  
+    or just examine and grep the file CMakeCache.txt.
 
-  $ cd $BUILD_DIR
-  $ rm CMakeCache.txt
-  $ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
-    $TRILINOS_HOME
-
-  NOTE: You can also just look at the text file CMakeCache.txt after any
-  configure which gets created in the build directory which has all of the
-  cache variables and documentation.
-
-(*) Viewing available configure-time options without documentation
-
-  $ cd $BUILD_DIR
-  $ rm CMakeCache.txt
-  $ cmake -LA SAME_AS_ABOVE $TRILINOS_HOME
-
-(*) Viewing current values of cache variables
-
-    $ cmake -LA $TRILINOS_HOME
-
-  or just examine and grep the file CMakeCache.txt.
-
+  
 (*) Reconfiguring from scratch
+  
+      $ rm CMakeCache.txt ; ./do-configure
+  
+    NOTE: Removing the CMakeCache.txt file is often needed when removing
+    variables from the configure line.
 
-    $ rm CMakeCache ; ./do-configure
-
-  NOTE: Removing the CMakeCache.txt file is often needed when removing
-  variables from the configure line.
 
 (*) Viewing configure errors
 
@@ -475,31 +555,37 @@ C) Configuring
       $BUILD_BASE_DIR/CMakeFiles/CMakeError.log
 
 
-D) Building
------------
+
+D) Building (Makefile generator)
+--------------------------------
 
 (*) Building all targets:
 
-    $ make
+     $ make [-jN]
+
+   (where N is the number of processes to use)
+
 
 (*) Discovering what targets are available to build after configuration:
 
-    $ make help
+     $ make help
+
 
 (*) See all of the targets to build for a package:
 
-    $ make help | grep <PACKAGE>_
+     $ make help | grep <PACKAGE>_
 
   (where PACKAGE = Teuchos, Epetra, NOX, etc.)
 
   or:
 
-    $ cd packages/<PACKAGE>
-    $ make help
+     $ cd packages/<PACKAGE>
+     $ make help
+
 
 (*) Building all of the targets for a package:
 
-    $ make <PACKAGE>_all
+     $ make <PACKAGE>_all
 
   (where PACKAGE = Teuchos, Epetra, NOX, etc.)
 
@@ -507,12 +593,14 @@ D) Building
 
     $ cd packages/<PACKAGE>
     $ make
+
 
 (*) Building all of the libraries for a package:
 
     $ make <PACKAGE>_libs
 
   (where PACKAGE = Teuchos, Epetra, NOX, etc.)
+
 
 (*) Building a single object file:
 
@@ -523,11 +611,17 @@ D) Building
 
   Build the source file:
 
-    $ make WHATEVER_WAS_RETURNED_ABOVE
+    $ rm WHATEVER_WAS_RETURNED_ABOVE ; make WHATEVER_WAS_RETURNED_ABOVE
+
+
+  NOTE: CMake does not seem to correctly address dependencies when building
+  just object files so you need to always delete the object file first to make
+  sure that it gets rebuild correctly.
 
 
 E) Testing with CTest
 ---------------------
+
 
 (*) [Recommended] Testing using 'ctest'
 
@@ -535,12 +629,13 @@ E) Testing with CTest
 
   (see output in Testing/Temporary/LastTest.log)
 
-  NOTE: The -W argument is only supported in the CVS version of CMake
-  obtained as explained above.
+  NOTE: The -W argument is only supported in the CVS version of CMake obtained
+  as explained above.
 
-  See detailed test otuput with:
+  See detailed test output with:
 
     $ ctest -VV
+
 
 (*) Only running tests for a single package
 
@@ -553,21 +648,25 @@ E) Testing with CTest
 
   or:
 
-    $ cd packages/<PACAKGE>
+    $ cd packages/<PACKAGE>
     $ ctest -W 100
+
 
 (*) Running a single test with full output to the console:
 
-    $ ctest -R FULL_TEST_NAME -VV
+    $ ctest -R ^FULL_TEST_NAME$ -VV
 
-  (i.e. FULL_TEST_NAME = Teuchos_Comm_test, Epetra_MultiVector_test, etc. )
+  (e.g. FULL_TEST_NAME = Teuchos_Comm_test, Epetra_MultiVector_test, etc. )
 
-(*) Runing memory checking:
 
-  To run the memory tets for just a single package, from the *base* build
-  directory, run :
+(*) Running memory checking:
 
-    $ ctest -R '^Epetra_' -T memcheck
+  To run the memory tests for just a single package, from the *base* build
+  directory, run:
+
+    $ ctest -R '^<PACKAGE>_' -T memcheck
+
+  (where PACKAGE = Epetra, NOX etc.).
 
   (see the detailed output in
   ./Testing/Temporary/LastDynamicAnalysis_DATE_TIME.log)
@@ -576,20 +675,27 @@ E) Testing with CTest
   seem to work.  You have to run them from the base build directory and then
   use -R '^<PACKAGE>_' with ctest in order to run your packages tests.
 
+
 (*) Testing using 'make test'
 
     $ make test
 
-  NOTE: This is equivalent to just running 'ctest'.
+  NOTE: This is equivalent to just running 'ctest' without any arguments.
+
 
 
 F) Installing
----------------
+-------------
+
 
 (*) Setting the install prefix at configure time
 
     $ ./do-configure \
       -D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/mpi/opt
+
+  NOTE: The script 'do-configure' is just a simple shell script that calls
+  CMake as shown above.
+
 
 (*) Installing after configuration
 
@@ -597,13 +703,16 @@ F) Installing
 
     (will build all of the targets needed before the install)
 
+
 (*) Uninstall
 
     $ make uninstall
 
 
+
 G) Packaging
----------------
+------------
+
 
 (*) Creating a tarball of the source tree:
 
@@ -612,5 +721,8 @@ G) Packaging
    NOTE: The above command will tar up *everything* in the source tree (except
    for files explicitly excluded in the CMakeLists.txt files) so make sure
    that you start with a totally clean source tree before you do this.  Or,
-   you could build doxygen documentation first and then tar up Trilinos and
-   that would give you the source with doxygen documentation.
+   you could build Doxygen documentation first and then tar up Trilinos and
+   that would give you the source with Doxygen documentation.
+
+   NOTE: You can control what gets put into the tarball by setting the cache
+   variable CPACK_SOURCE_IGNORE_FILES when configuring with CMake.
