@@ -184,13 +184,17 @@ int main(int argc, char** argv) {
 
   delete D;
 
-  err = time_matrix_matrix_multiply(Comm, verbose);
+  if (err == 0) {
+    err = time_matrix_matrix_multiply(Comm, verbose);
+  }
 
 #ifdef EPETRA_MPI
+  int global_err = err;
+  MPI_Allreduce(&err, &global_err, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   MPI_Finalize();
 #endif
 
-  return(err);
+  return(global_err);
 }
 
 int test_find_rows(Epetra_Comm& Comm)
@@ -477,6 +481,12 @@ int run_test(Epetra_Comm& Comm,
   if (err != 0) {
     std::cout << "read_matrix C returned err=="<<err<<std::endl;
     return(-1);
+  }
+
+  err = EpetraExt::MatrixMatrix::Multiply(*A, transA, *B, transB, *C);
+  if (err != 0) {
+    std::cout << "err "<<err<<" from MatrixMatrix::Multiply"<<std::endl;
+    return(err);
   }
 
   EpetraExt::MatrixMatrix::Add(*C, false, -1.0, *C_check, 1.0);

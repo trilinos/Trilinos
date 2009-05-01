@@ -1200,6 +1200,9 @@ int MatrixMatrix::Multiply(const Epetra_CrsMatrix& A,
     }
   }
 
+  //Pre-zero the result matrix:
+  C.PutScalar(0.0);
+
   //Now call the appropriate method to perform the actual multiplication.
 
   CrsWrapper_Epetra_CrsMatrix ecrsmat(C);
@@ -1283,6 +1286,7 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
 
   int NumMyRows = B.NumMyRows();
   int Row, err;
+  int ierr = 0;
 
   if( scalarA )
   {
@@ -1313,11 +1317,13 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
 
       if( B.Filled() ) {//Sum In Values
         err = B.SumIntoGlobalValues( Row, A_NumEntries, A_Values, A_Indices );
-        assert( err == 0 );
+        assert( err >= 0 );
+        if (err > 0) ierr = err;
       }
       else {
         err = B.InsertGlobalValues( Row, A_NumEntries, A_Values, A_Indices );
         assert( err == 0 || err == 1 || err == 3 );
+        if (err > 0) ierr = err;
       }
     }
   }
@@ -1330,7 +1336,7 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
 
   if( Atrans ) delete Atrans;
 
-  return(0);
+  return(ierr);
 }
 
 } // namespace EpetraExt
