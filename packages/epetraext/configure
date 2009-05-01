@@ -11695,7 +11695,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 # Output files
 # ------------------------------------------------------------------------
 ##
-ac_config_files="$ac_config_files Makefile Makefile.export.epetraext src/Makefile test/BTF/Makefile test/Composite/Makefile test/Makefile test/MapColoring/Makefile test/Matlab/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/SymmRCM/Makefile test/Transpose/Makefile test/View/Makefile test/Zoltan/Makefile test/inout/Makefile example/Makefile example/inout/Makefile example/zoltan/Makefile example/matlab/Makefile example/MapColoring/Makefile example/petsc/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.epetraext src/Makefile test/BTF/Makefile test/Composite/Makefile test/Makefile test/MapColoring/Makefile test/Matlab/Makefile test/MatrixMatrix/Makefile test/Overlap/Makefile test/Permutation/Makefile test/SingletonFilter/Makefile test/SymmRCM/Makefile test/Transpose/Makefile test/View/Makefile test/Zoltan/Makefile test/inout/Makefile example/Makefile example/inout/Makefile example/zoltan/Makefile example/matlab/Makefile example/MapColoring/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -12523,7 +12523,6 @@ do
     "example/zoltan/Makefile") CONFIG_FILES="$CONFIG_FILES example/zoltan/Makefile" ;;
     "example/matlab/Makefile") CONFIG_FILES="$CONFIG_FILES example/matlab/Makefile" ;;
     "example/MapColoring/Makefile") CONFIG_FILES="$CONFIG_FILES example/MapColoring/Makefile" ;;
-    "example/petsc/Makefile") CONFIG_FILES="$CONFIG_FILES example/petsc/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
