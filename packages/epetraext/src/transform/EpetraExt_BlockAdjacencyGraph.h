@@ -69,7 +69,7 @@ public:
       on the block adjacency graph that can be used to balance the original graph \c B.
       Right now, that weighting is just the number of rows in each block.
    */
-  Teuchos::RCP<Epetra_CrsGraph> compute( Epetra_CrsGraph& B, int nbrr, std::vector<int>&r, std::vector<double>& weights);
+   Teuchos::RCP<Epetra_CrsGraph> compute( Epetra_CrsGraph& B, int nbrr, std::vector<int>&r, std::vector<double>& weights, bool verbose = false);
 
 private:
 

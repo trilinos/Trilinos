@@ -26,7 +26,7 @@
 // ***********************************************************************
 //@HEADER
   
- #include <EpetraExt_BlockAdjacencyGraph.h>
+#include <EpetraExt_BlockAdjacencyGraph.h>
 
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_CrsGraph.h>
@@ -43,17 +43,38 @@ namespace EpetraExt {
     return(*((int *) a) - *((int *) b));
   }
 
-/*
- * Compute the block connectivity graph of an Epetra_CrsGraph.
- * Given a sparse graph B, and a partition of the rows and
- * columns of B,  r(0:nbrr),
- * 0 = r(0) < r(1) < .. < r(nbrr) = B->n,
- * return the graph of the corresponding nbrr x nbrr matrix.
- * Weights has dimension nbrr and is determined here too.
- *
- */
+  int ceil31log2(int n)
+  { // Given 1 <= n < 2^31, find l such that 2^(l-1) < n <= 2^(l)
+   int l=0, m = 1;
+   while( n > m & l < 31 )
+   {
+      m = 2*m;
+      ++l;
+   }
+   return(l);
+  }
+//  Purpose: Compute the block connectivity graph of a matrix.
+//  An nrr by nrr sparse matrix admits a (Dulmage-Mendelsohn)
+//  permutation to block triangular form with nbrr blocks.
+//  Abstractly, the block triangular form corresponds to a partition
+//  of the set of integers {0,...,n-1} into nbrr disjoint sets.
+//  The graph of the sparse matrix, with nrr vertices, may be compressed
+//  into the graph of the blocks, a graph with nbrr vertices, that is
+//  called here the block connectivity graph.
+//     The partition of the rows and columns of B is represented by
+//  r(0:nbrr),  0 = r(0) < r(1) < .. < r(nbrr) = nrr, 
+//  The graph (Mp,Mj) of the nbrr x nbrr matrix is represened by
+//  a sparse matrix in sparse coordinate format.
+//  Mp: row indices, dimension determined here (nzM).
+//  Mj: column indices, dimension determined here (nzM).
+//  The integer vector, weights, of block sizes  (dimension nbrr) is also
+//  computed here.  
+//     The case of nbrr proportional to nrr is critical.  One must
+//  efficiently look up the column indices of B in the partition.
+//  This is done here using a binary search tree, so that the
+//  look up cost is nzB*log2(nbrr).  
 
-  Teuchos::RCP<Epetra_CrsGraph> BlockAdjacencyGraph::compute( Epetra_CrsGraph& B, int nbrr, std::vector<int>&r, std::vector<double>& weights)
+  Teuchos::RCP<Epetra_CrsGraph> BlockAdjacencyGraph::compute( Epetra_CrsGraph& B, int nbrr, std::vector<int>&r, std::vector<double>& weights, bool verbose)
   {
     // Check if the graph is on one processor.
     int myMatProc = -1, matProc = -1;
@@ -68,7 +89,8 @@ namespace EpetraExt {
     if( matProc == -1)
       { cout << "FAIL for Global!  All CrsGraph entries must be on one processor!\n"; abort(); }
     
-    int i= 0, j = 0, k, l = 0, p, pm, q = -1, ns, log2nbrr = 20;
+    int i= 0, j = 0, k, l = 0, p, pm, q = -1, ns;
+    int tree_height;
     int error = -1;    /* error detected, possibly a problem with the input */
     int nrr;           /* number of rows in B */
     int nzM = 0;       /* number of edges in graph */
@@ -77,12 +99,14 @@ namespace EpetraExt {
     int* bstree = 0;   /* binary search tree */
     std::vector<int> Mi, Mj, Mnum(nbrr+1,0);
     nrr = B.NumMyRows();
-    if ( matProc == myPID )
-      std::printf(" nrr = %d      nbrr = %d\n",nrr, nbrr);
+    if ( matProc == myPID && verbose )
+      std::printf(" Matrix Size = %d      Number of Blocks = %d\n",nrr, nbrr);
     else
       nrr = -1;     /* Prevent processor from doing any computations */
     bstree = csr_bst(nbrr);  /* 0 : nbrr-1 */
+    tree_height = ceil31log2(nbrr) + 1;
     error = -1;
+
     l = 0; j = 0; m = 0;
     for( i = 0; i < nrr; i++ ){
       if( i >= r[l+1] ){
@@ -97,6 +121,11 @@ namespace EpetraExt {
      m = EPETRA_MAX(m,j) ;   /* nonzeros in block row */
 
     colstack = (int*) malloc( EPETRA_MAX(m,1) * sizeof(int) );
+    // The compressed graph is actually computed twice,
+    // due to concerns about memory limitations.  First, 
+    // without memory allocation, just nzM is computed.  
+    // Next Mj is allocated. Then, the second time, the
+    // arrays are actually populated.
     nzM = 0; q = -1; l = 0;
     int * indices;
     int numEntries;
@@ -122,18 +151,19 @@ namespace EpetraExt {
 	      if( r[bstree[p]+1] <= j) p = 2*p+2;
 	    }
 	    ++ns;
-	    if( p > nbrr || ns > 20 ) {
+	    if( p > nbrr || ns > tree_height ) {
 	      error = j;
 	      std::printf("error: p %d  nbrr %d  ns %d %d\n",p,nbrr,ns,j); break;
 	    }
 	  }
 	  colstack[++q] = bstree[p];
 	}
-	if( error >-1 ){ std::printf("%d\n",error); break; }
+	//if( error >-1 ){ std::printf("%d\n",error); break; }
+        // p > nbrr is a fatal error that is ignored
       }
     }
     
-    if ( matProc == myPID )
+    if ( matProc == myPID && verbose )
       std::printf("nzM =  %d \n", nzM );
     Mi.resize( nzM );
     Mj.resize( nzM );
@@ -168,14 +198,9 @@ namespace EpetraExt {
 	      if( r[bstree[p]+1] <= j) p = 2*p+2;
 	    }
 	    ++ns;
-	    if( p > nbrr || ns > 14 ) {
-	      error = j;
-	      std::printf("error: p %d  nbrr %d  ns %d %d\n",p,nbrr,ns,j); break;
-	    }
 	  }
 	  colstack[++q] = bstree[p];
 	}
-	if( error >-1 ){ std::printf("%d\n",error); break; }
       }
     }
     if ( bstree ) free ( bstree );
