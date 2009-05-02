@@ -78,7 +78,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   FEI                   fei                            PS
   RBGen                 rbgen                          PS
   Anasazi               anasazi                        PS
-  ThreadPool            ThreadPool                     PS
+  ThreadPool            ThreadPool                     SS # Depends on Ptheads TPL
   Phalanx               phalanx                        SS
   Pamgen                pamgen                         PS
   Phdmesh               phdmesh                        PS
