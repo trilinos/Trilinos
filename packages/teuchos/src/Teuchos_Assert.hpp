@@ -47,6 +47,13 @@
  *
  * \note <tt>The std::exception</tt> thrown is <tt>std::out_of_range</tt>.
  *
+ * WARNING: This assert will evaluate <tt>index</tt>,
+ * <tt>lower_inclusive</tt>, and <tt>upper_inclusive</tt> more than once if
+ * there is a failure which will cause the side-effect of an additional
+ * evaluation.  This is needed because the return types of these values are
+ * unknown.  Therefore, only pass in arguments that are objects or function
+ * calls that have not side-effects!
+ *
  * \ingroup TestForException_grp
  */
 #define TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( index, lower_inclusive, upper_exclusive ) \
@@ -64,6 +71,12 @@
  *
  * \note The <tt>std::exception</tt> thrown is <tt>std::out_of_range</tt>.
  *
+ * WARNING: This assert will evaluate <tt>val1</tt> and <tt>val2</tt> more
+ * than once if there is a failure which will cause the side-effect of an
+ * additional evaluation.  This is needed because the return types of
+ * <tt>val1</tt> and <tt>val2</tt> are unknown.  Therefore, only pass in
+ * arguments that are objects or function calls that have not side-effects!
+ *
  * \ingroup TestForException_grp
  */
 #define TEUCHOS_ASSERT_EQUALITY( val1, val2 ) \
@@ -78,6 +91,12 @@
  * satisified and if not then throws a good exception message.
  *
  * \note The <tt>std::exception</tt> thrown is <tt>std::out_of_range</tt>.
+ *
+ * WARNING: This assert will evaluate <tt>val1</tt> and <tt>val2</tt> more
+ * than once if there is a failure which will cause the side-effect of an
+ * additional evaluation.  This is needed because the return types of
+ * <tt>val1</tt> and <tt>val2</tt> are unknown.  Therefore, only pass in
+ * arguments that are objects or function calls that have not side-effects!
  *
  * \ingroup TestForException_grp
  */

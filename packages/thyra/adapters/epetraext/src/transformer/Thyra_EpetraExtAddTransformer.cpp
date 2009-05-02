@@ -135,8 +135,17 @@ void EpetraExtAddTransformer::transform(
    // Problem is I can't find a copy of CrsMatrices that doesn't call FillComplete.
    // I want this sum operation to allow new entries into the sparse matrix
    // not to be resricted to the sparsity pattern of A or B
-   TEST_FOR_EXCEPT(EpetraExt::MatrixMatrix::Add(*epetra_A,A_transp==CONJTRANS,A_scalar,*epetra_op,0.0)); // epetra_op = A_scalar*A
-   TEST_FOR_EXCEPT(EpetraExt::MatrixMatrix::Add(*epetra_B,A_transp==CONJTRANS,B_scalar,*epetra_op,1.0)); // epetra_op += B_Scalar*B
+
+   // epetra_op = A_scalar*A
+   const int add_epetra_A_err = EpetraExt::MatrixMatrix::Add(
+     *epetra_A, A_transp==CONJTRANS, A_scalar, *epetra_op, 0.0 );
+   TEUCHOS_ASSERT_EQUALITY( add_epetra_A_err, 0 );
+
+   // epetra_op += B_Scalar*B
+   const int add_epetra_B_err = EpetraExt::MatrixMatrix::Add(
+     *epetra_B, A_transp==CONJTRANS, B_scalar, *epetra_op, 1.0 );
+   TEUCHOS_ASSERT_EQUALITY( add_epetra_B_err, 0 );
+
    epetra_op->FillComplete(op_inout_col_map,op_inout_row_map);
 
    // set output operator to use newly create epetra_op
