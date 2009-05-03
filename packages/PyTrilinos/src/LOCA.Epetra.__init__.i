@@ -58,8 +58,9 @@ LOCA and Epetra.
 #include "Epetra_Object.h"
 #include "Epetra_Operator.h"
 #include "Epetra_InvOperator.h"
-#include "Epetra_basicRowMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
 #include "Epetra_JadMatrix.h"
+#include "Epetra_FEVbrMatrix.h"
 
 // Local includes
 #define NO_IMPORT_ARRAY
