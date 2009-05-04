@@ -34,8 +34,8 @@ int ML_Smoother_Ifpack(ML_Smoother *sm,int inlen,double x[],int outlen,
     n = sm->my_level->Amat->invec_leng;
     assert (n == sm->my_level->Amat->outvec_leng);
 
-    rhs2 = (double*) malloc(sizeof(double) * (n + 1));
-    x2 = (double*) malloc(sizeof(double) * (n + 1));
+    rhs2 = (double*) ML_allocate(sizeof(double) * (n + 1));
+    x2   = (double*) ML_allocate(sizeof(double) * (n + 1));
 
     ML_Operator_Apply(sm->my_level->Amat, n, x, n, rhs2);
     DCOPY_F77(&n, x, &one_int, x2, &one_int);
