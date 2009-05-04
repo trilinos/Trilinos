@@ -111,6 +111,8 @@ class Array ;
 class ArrayDimTag {
 public:
 
+  typedef array_traits::int_t size_type ;
+
   /** \brief Name of the tag, typically the name of the derived class. */
   virtual const char * name() const = 0 ;
 
@@ -118,15 +120,15 @@ public:
    *
    *          Default to converting <b> index </b> to a string.
    */
-  virtual std::string to_string( array_traits::int_t dimension ,
-                                 array_traits::int_t index ) const ;
+  virtual std::string to_string( size_type dimension ,
+                                 size_type index ) const ;
 
   /** \brief Given a dimension and input strige produce an index.
    *
    *          Default to converting <b> label </b> to an integer.
    */
-  virtual array_traits::int_t to_index( array_traits::int_t dimension ,
-                                        const std::string & label ) const ; 
+  virtual size_type to_index( size_type dimension ,
+                              const std::string & label ) const ; 
  
 protected:
   virtual ~ArrayDimTag();
@@ -183,24 +185,6 @@ private:
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-/** \brief  Return the total number of members from the array stride */
-array_traits::int_t array_stride_size(
-  const array_traits::int_t  rank ,
-  const array_traits::int_t * const stride );
-
-/** \brief  Generate natural dimension from array stride */
-void array_stride_to_natural_dimensions(
-  const array_traits::int_t   rank ,
-  const array_traits::int_t * const stride ,
-        array_traits::int_t * const dim );
-
-/** \brief  Generate natural indices from array stride */
-void array_stride_to_natural_indices(
-  const array_traits::int_t   rank ,
-  const array_traits::int_t * const stride ,
-  const array_traits::int_t   offset ,
-        array_traits::int_t * const indices );
-
 /** \} */
 
 } // namespace shards
@@ -213,6 +197,56 @@ void array_stride_to_natural_indices(
 
 namespace shards {
 namespace array_traits {
+
+//----------------------------------------------------------------------
+/** \brief  Return the total number of members from the array stride */
+template< typename iType >
+inline
+iType stride_size(
+  const iType & rank ,
+  const iType * const stride )
+{ return 0 < rank ? stride[ rank - 1 ] : 0 ; }
+
+/** \brief  Generate natural dimension from array stride */
+template< typename iType >
+inline
+void stride_to_natural_dimensions(
+  const iType   rank ,
+  const iType * const stride ,
+        iType * const dim )
+{
+  iType n = 1 ;
+  for ( iType i = 0 ; i < rank ; ++i )
+    { dim[(rank-1)-i] = stride[i] / n ; n = stride[i] ; }
+}
+
+/** \brief  Generate natural indices from array stride */
+template< typename iType >
+inline
+void stride_to_natural_indices(
+  const iType   rank ,
+  const iType * const stride ,
+        iType   offset ,
+        iType * const indices )
+{
+  for ( iType i = 0 ; i < rank ; ++i ) {
+    offset -= indices[(rank-1)-i] = offset % stride[i] ;
+  }
+}
+
+/** \brief  Generate array stride from natural dimensions */
+template< typename iType >
+inline
+void stride_from_natural_dimensions( 
+  const iType rank ,
+        iType * const stride ,
+  const iType * const dim )
+{
+  iType n = 1 ;
+  for ( iType i = 0 ; i < rank ; ++i ) { stride[i] = n *= dim[(rank-1)-i]; }
+}
+
+//----------------------------------------------------------------------
 
 void throw_bad_conversion( const int_t lhs_rank ,
                            const ArrayDimTag * const lhs_tags[] ,
@@ -368,22 +402,27 @@ template< ArrayOrder , int_t Rank , int_t Ordinal = 0 > struct StrideDim ;
 template< int_t Rank , int_t Ordinal >
 struct StrideDim<RankZero,Rank,Ordinal> {
 
-  static int_t dimension( const int_t * )
+  template< typename iType >
+  static iType dimension( const iType * )
     { return 0 ; }
 
-  static int_t dimension( const int_t * , int_t )
+  template< typename iType >
+  static iType dimension( const iType * , iType )
     { return 0 ; }
 };
 
 template< int_t Rank >
 struct StrideDim<FortranOrder,Rank,0> {
-  static int_t dimension( const int_t * stride )
+
+  template< typename iType >
+  static iType dimension( const iType * stride )
     {
       array_traits::CheckRange<0,Rank>::ok();
       return stride[0];
     }
 
-  static int_t dimension( const int_t * stride , int_t ordinal )
+  template< typename iType >
+  static iType dimension( const iType * stride , iType ordinal )
     {
       array_traits::check_range(ordinal,Rank);
       return ordinal ? stride[ordinal] / stride[ordinal-1] : stride[0] ;
@@ -392,13 +431,16 @@ struct StrideDim<FortranOrder,Rank,0> {
 
 template< int_t Rank >
 struct StrideDim<NaturalOrder,Rank,0> {
-  static int_t dimension( const int_t * stride )
+
+  template< typename iType >
+  static iType dimension( const iType * stride )
     {
       array_traits::CheckRange<0,Rank>::ok();
       return stride[0];
     }
 
-  static int_t dimension( const int_t * stride , int_t ordinal )
+  template< typename iType >
+  static iType dimension( const iType * stride , iType ordinal )
     {
       array_traits::check_range(ordinal,Rank);
       ordinal = ( Rank - 1 ) - ordinal ;
@@ -408,7 +450,9 @@ struct StrideDim<NaturalOrder,Rank,0> {
 
 template< int_t Rank , int_t Ordinal >
 struct StrideDim<FortranOrder,Rank,Ordinal> {
-  static int_t dimension( const int_t * stride )
+
+  template< typename iType >
+  static iType dimension( const iType * stride )
     {
       array_traits::CheckRange<Ordinal,Rank>::ok();
       return stride[Ordinal] / stride[Ordinal-1];
@@ -417,7 +461,9 @@ struct StrideDim<FortranOrder,Rank,Ordinal> {
 
 template< int_t Rank , int_t Ordinal >
 struct StrideDim<NaturalOrder,Rank,Ordinal> {
-  static int_t dimension( const int_t * stride )
+
+  template< typename iType >
+  static iType dimension( const iType * stride )
     {
       enum { I = ( Rank - 1 ) - Ordinal };
       array_traits::CheckRange<Ordinal,Rank>::ok();
@@ -431,12 +477,13 @@ template< ArrayOrder > struct Offset ;
 
 template<>
 struct Offset<FortranOrder> {
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 , const itype & i4 ,
-                   const itype & i5 , const itype & i6 ,
-                   const itype & i7 , const itype & i8 )
+
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 , const iType & i4 ,
+                   const iType & i5 , const iType & i6 ,
+                   const iType & i7 , const iType & i8 )
   {
     SHARDS_ARRAY_CHECK(check_indices(false,8,stride,i1,i2,i3,i4,i5,i6,i7,i8));
     return i1             + i2 * stride[0] +
@@ -445,12 +492,12 @@ struct Offset<FortranOrder> {
            i7 * stride[5] + i8 * stride[6] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 , const itype & i4 ,
-                   const itype & i5 , const itype & i6 ,
-                   const itype & i7 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 , const iType & i4 ,
+                   const iType & i5 , const iType & i6 ,
+                   const iType & i7 )
   {
     SHARDS_ARRAY_CHECK(check_indices(false,7,stride,i1,i2,i3,i4,i5,i6,i7));
     return i1             + i2 * stride[0] +
@@ -459,11 +506,11 @@ struct Offset<FortranOrder> {
            i7 * stride[5] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 , const itype & i4 ,
-                   const itype & i5 , const itype & i6 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 , const iType & i4 ,
+                   const iType & i5 , const iType & i6 )
   {
     SHARDS_ARRAY_CHECK(check_indices(false,6,stride,i1,i2,i3,i4,i5,i6));
     return i1             + i2 * stride[0] +
@@ -471,11 +518,11 @@ struct Offset<FortranOrder> {
            i5 * stride[3] + i6 * stride[4] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 , const itype & i4 ,
-                   const itype & i5 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 , const iType & i4 ,
+                   const iType & i5 )
   {
     SHARDS_ARRAY_CHECK(check_indices(false,5,stride,i1,i2,i3,i4,i5));
     return i1             + i2 * stride[0] +
@@ -483,36 +530,36 @@ struct Offset<FortranOrder> {
            i5 * stride[3] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 , const itype & i4 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 , const iType & i4 )
   {
     SHARDS_ARRAY_CHECK(check_indices(false,4,stride,i1,i2,i3,i4));
     return i1             + i2 * stride[0] +
            i3 * stride[1] + i4 * stride[2] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 )
   {
     SHARDS_ARRAY_CHECK(check_indices(false,3,stride,i1,i2,i3));
     return i1 + i2 * stride[0] + i3 * stride[1] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 )
   {
     SHARDS_ARRAY_CHECK(check_indices(false,2,stride,i1,i2));
     return i1 + i2 * stride[0] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const SHARDS_ARRAY_CHECK( stride ) ,
-                   const itype & i1 )
+  template< typename iType >
+  static iType op( const iType * const SHARDS_ARRAY_CHECK( stride ) ,
+                   const iType & i1 )
   {
     SHARDS_ARRAY_CHECK(check_indices(false,1,stride,i1));
     return i1 ;
@@ -524,12 +571,12 @@ struct Offset<FortranOrder> {
 template<>
 struct Offset<NaturalOrder> {
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 , const itype & i4 ,
-                   const itype & i5 , const itype & i6 ,
-                   const itype & i7 , const itype & i8 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 , const iType & i4 ,
+                   const iType & i5 , const iType & i6 ,
+                   const iType & i7 , const iType & i8 )
   {
     SHARDS_ARRAY_CHECK(check_indices(true,8,stride,i1,i2,i3,i4,i5,i6,i7,i8));
     return i8             + i7 * stride[0] +
@@ -538,12 +585,12 @@ struct Offset<NaturalOrder> {
            i2 * stride[5] + i1 * stride[6] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 , const itype & i4 ,
-                   const itype & i5 , const itype & i6 ,
-                   const itype & i7 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 , const iType & i4 ,
+                   const iType & i5 , const iType & i6 ,
+                   const iType & i7 )
   {
     SHARDS_ARRAY_CHECK(check_indices(true,7,stride,i1,i2,i3,i4,i5,i6,i7));
     return i7             + i6 * stride[0] +
@@ -552,11 +599,11 @@ struct Offset<NaturalOrder> {
            i1 * stride[5] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 , const itype & i4 ,
-                   const itype & i5 , const itype & i6 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 , const iType & i4 ,
+                   const iType & i5 , const iType & i6 )
   {
     SHARDS_ARRAY_CHECK(check_indices(true,6,stride,i1,i2,i3,i4,i5,i6));
     return i6             + i5 * stride[0] +
@@ -564,11 +611,11 @@ struct Offset<NaturalOrder> {
            i2 * stride[3] + i1 * stride[4] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 , const itype & i4 ,
-                   const itype & i5 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 , const iType & i4 ,
+                   const iType & i5 )
   {
     SHARDS_ARRAY_CHECK(check_indices(true,5,stride,i1,i2,i3,i4,i5));
     return i5             + i4 * stride[0] +
@@ -576,36 +623,36 @@ struct Offset<NaturalOrder> {
            i1 * stride[3] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 , const itype & i4 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 , const iType & i4 )
   {
     SHARDS_ARRAY_CHECK(check_indices(true,4,stride,i1,i2,i3,i4));
     return i4             + i3 * stride[0] +
            i2 * stride[1] + i1 * stride[2] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 ,
-                   const itype & i3 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 ,
+                   const iType & i3 )
   {
     SHARDS_ARRAY_CHECK(check_indices(true,3,stride,i1,i2,i3));
     return i3 + i2 * stride[0] + i1 * stride[1] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const stride ,
-                   const itype & i1 , const itype & i2 )
+  template< typename iType >
+  static iType op( const iType * const stride ,
+                   const iType & i1 , const iType & i2 )
   {
     SHARDS_ARRAY_CHECK(check_indices(true,2,stride,i1,i2));
     return i2 + i1 * stride[0] ;
   }
 
-  template< typename itype >
-  static int_t op( const int_t * const SHARDS_ARRAY_CHECK( stride ) ,
-                   const itype & i1 )
+  template< typename iType >
+  static iType op( const iType * const SHARDS_ARRAY_CHECK( stride ) ,
+                   const iType & i1 )
   {
     SHARDS_ARRAY_CHECK(check_indices(true,1,stride,i1));
     return i1 ;
@@ -663,7 +710,8 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
       tags[7] = & Tag1::tag();
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
         stride[7] = Tag1::Size * (
         stride[6] = Tag2::Size * (
@@ -675,8 +723,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag8::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 )
     {
         stride[7] = n1 * (
         stride[6] = Tag2::Size * (
@@ -688,9 +737,10 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag8::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 )
     {
         stride[7] = n1 * (
         stride[6] = n2 * (
@@ -702,10 +752,11 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag8::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 )
     {
         stride[7] = n1 * (
         stride[6] = n2 * (
@@ -717,11 +768,12 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag8::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 )
     {
         stride[7] = n1 * (
         stride[6] = n2 * (
@@ -733,12 +785,13 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag8::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 )
     {
         stride[7] = n1 * (
         stride[6] = n2 * (
@@ -750,13 +803,14 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag8::Size  )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 )
     {
         stride[7] = n1 * (
         stride[6] = n2 * (
@@ -768,14 +822,15 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag8::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 )
     {
         stride[7] = n1 * (
         stride[6] = n2 * (
@@ -787,15 +842,16 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag8::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 ,
-                      const int_t & n8 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 ,
+                      const iType & n8 )
     {
         stride[7] = n1 * (
         stride[6] = n2 * (
@@ -807,8 +863,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = n8 )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
         stride[7] = dims[0] * (
         stride[6] = dims[1] * (
@@ -861,7 +918,8 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
       tags[7] = & Tag8::tag();
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
         stride[7] = Tag8::Size * (
         stride[6] = Tag7::Size * (
@@ -873,8 +931,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag1::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n8 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n8 )
     {
         stride[7] = n8 * (
         stride[6] = Tag7::Size * (
@@ -886,9 +945,10 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag1::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n7 ,
-                      const int_t & n8 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n7 ,
+                      const iType & n8 )
     {
         stride[7] = n8 * (
         stride[6] = n7 * (
@@ -900,10 +960,11 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag1::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n6 ,
-                      const int_t & n7 ,
-                      const int_t & n8 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n6 ,
+                      const iType & n7 ,
+                      const iType & n8 )
     {
         stride[7] = n8 * (
         stride[6] = n7 * (
@@ -915,11 +976,12 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag1::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 ,
-                      const int_t & n8 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 ,
+                      const iType & n8 )
     {
         stride[7] = n8 * (
         stride[6] = n7 * (
@@ -931,12 +993,13 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag1::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 ,
-                      const int_t & n8 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 ,
+                      const iType & n8 )
     {
         stride[7] = n8 * (
         stride[6] = n7 * (
@@ -948,13 +1011,14 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag1::Size  )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 ,
-                      const int_t & n8 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 ,
+                      const iType & n8 )
     {
         stride[7] = n8 * (
         stride[6] = n7 * (
@@ -966,14 +1030,15 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag1::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 ,
-                      const int_t & n8 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 ,
+                      const iType & n8 )
     {
         stride[7] = n8 * (
         stride[6] = n7 * (
@@ -985,15 +1050,16 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = Tag1::Size )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 ,
-                      const int_t & n8 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 ,
+                      const iType & n8 )
     {
         stride[7] = n8 * (
         stride[6] = n7 * (
@@ -1005,8 +1071,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
         stride[0] = n1 )))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
         stride[7] = dims[7] * (
         stride[6] = dims[6] * (
@@ -1075,7 +1142,8 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = Tag1::Size * (
@@ -1087,8 +1155,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag7::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 )
     {
       stride[7] = 0 ;
       stride[6] = n1 * (
@@ -1100,9 +1169,10 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag7::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 )
     {
       stride[7] = 0 ;
       stride[6] = n1 * (
@@ -1114,10 +1184,11 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag7::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 )
     {
       stride[7] = 0 ;
       stride[6] = n1 * (
@@ -1129,11 +1200,12 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag7::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 )
     {
       stride[7] = 0 ;
       stride[6] = n1 * (
@@ -1145,12 +1217,13 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag7::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 )
     {
       stride[7] = 0 ;
       stride[6] = n1 * (
@@ -1162,13 +1235,14 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag7::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 )
     {
       stride[7] = 0 ;
       stride[6] = n1 * (
@@ -1180,14 +1254,15 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag7::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 )
     {
       stride[7] = 0 ;
       stride[6] = n1 * (
@@ -1199,8 +1274,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = n7 ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = dims[0] * (
@@ -1266,7 +1342,8 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = Tag7::Size * (
@@ -1278,8 +1355,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag1::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n7 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n7 )
     {
       stride[7] = 0 ;
       stride[6] = n7 * (
@@ -1291,9 +1369,10 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag1::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n6 ,
-                      const int_t & n7 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n6 ,
+                      const iType & n7 )
     {
       stride[7] = 0 ;
       stride[6] = n7 * (
@@ -1305,10 +1384,11 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag1::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 )
     {
       stride[7] = 0 ;
       stride[6] = n7 * (
@@ -1320,11 +1400,12 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag1::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 )
     {
       stride[7] = 0 ;
       stride[6] = n7 * (
@@ -1336,12 +1417,13 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag1::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 )
     {
       stride[7] = 0 ;
       stride[6] = n7 * (
@@ -1353,13 +1435,14 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag1::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 )
     {
       stride[7] = 0 ;
       stride[6] = n7 * (
@@ -1371,14 +1454,15 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = Tag1::Size ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 ,
-                      const int_t & n7 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 ,
+                      const iType & n7 )
     {
       stride[7] = 0 ;
       stride[6] = n7 * (
@@ -1390,8 +1474,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
       stride[0] = n1 ))))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = dims[6] * (
@@ -1459,7 +1544,8 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1471,8 +1557,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag6::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1484,9 +1571,10 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag6::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1498,10 +1586,11 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag6::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1513,11 +1602,12 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag6::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1529,12 +1619,13 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag6::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1546,13 +1637,14 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag6::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1564,8 +1656,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = n6 )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1630,7 +1723,8 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1642,8 +1736,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag1::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n6 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n6 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1655,9 +1750,10 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag1::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n5 ,
-                      const int_t & n6 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n5 ,
+                      const iType & n6 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1669,10 +1765,11 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag1::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1684,11 +1781,12 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag1::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1700,12 +1798,13 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag1::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1717,13 +1816,14 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = Tag1::Size )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 ,
-                      const int_t & n6 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 ,
+                      const iType & n6 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1735,8 +1835,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
       stride[0] = n1 )))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1802,7 +1903,8 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1814,8 +1916,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = Tag5::Size ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1827,9 +1930,10 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = Tag5::Size ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1841,10 +1945,11 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = Tag5::Size ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1856,11 +1961,12 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = Tag5::Size ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1872,12 +1978,13 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = Tag5::Size ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1889,8 +1996,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = n5 ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1931,7 +2039,7 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
 
   enum { Rank = 5 };
 
-  static bool assign( int_t rank , const ArrayDimTag * tags[] )
+  static bool verify( int_t rank , const ArrayDimTag * tags[] )
     {
       return rank == Rank &&
              tags[0] == & Tag1::tag() &&
@@ -1953,7 +2061,8 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1965,8 +2074,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = Tag1::Size ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n5 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n5 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1978,9 +2088,10 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = Tag1::Size ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n4 ,
-                      const int_t & n5 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n4 ,
+                      const iType & n5 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -1992,10 +2103,11 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = Tag1::Size ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2007,11 +2119,12 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = Tag1::Size ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2023,12 +2136,13 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = Tag1::Size ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 ,
-                      const int_t & n5 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 ,
+                      const iType & n5 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2040,8 +2154,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
       stride[0] = n1 ))));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2105,7 +2220,8 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2117,8 +2233,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       stride[0] = Tag4::Size )));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2130,9 +2247,10 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       stride[0] = Tag4::Size )));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2144,10 +2262,11 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       stride[0] = Tag4::Size )));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2159,11 +2278,12 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       stride[0] = Tag4::Size )));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2175,8 +2295,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       stride[0] = n4 )));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2237,7 +2358,8 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2249,8 +2371,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       stride[0] = Tag1::Size )));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n4 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n4 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2262,9 +2385,10 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       stride[0] = Tag1::Size )));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n3 ,
-                      const int_t & n4 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n3 ,
+                      const iType & n4 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2276,10 +2400,11 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       stride[0] = Tag1::Size )));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2291,11 +2416,12 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       stride[0] = Tag1::Size )));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 ,
-                      const int_t & n4 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 ,
+                      const iType & n4 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2307,8 +2433,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
       stride[0] = n1 )));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2371,7 +2498,8 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2383,8 +2511,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
       stride[0] = Tag3::Size ));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2396,9 +2525,10 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
       stride[0] = Tag3::Size ));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2410,10 +2540,11 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
       stride[0] = Tag3::Size ));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2425,8 +2556,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
       stride[0] = n3 ));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2486,7 +2618,8 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2498,8 +2631,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
       stride[0] = Tag1::Size ));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n3 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n3 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2511,9 +2645,10 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
       stride[0] = Tag1::Size ));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n2 ,
-                      const int_t & n3 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n2 ,
+                      const iType & n3 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2525,10 +2660,11 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
       stride[0] = Tag1::Size ));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 ,
-                      const int_t & n3 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 ,
+                      const iType & n3 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2540,8 +2676,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
       stride[0] = n1 ));
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2603,7 +2740,8 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,void,void,void,void,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2615,8 +2753,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,void,void,void,void,void,void>
       stride[0] = Tag2::Size );
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2628,9 +2767,10 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,void,void,void,void,void,void>
       stride[0] = Tag2::Size );
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2642,8 +2782,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,void,void,void,void,void,void>
       stride[0] = n2 );
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2702,7 +2843,8 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,void,void,void,void,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2714,8 +2856,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,void,void,void,void,void,void>
       stride[0] = Tag1::Size );
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n2 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n2 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2727,9 +2870,10 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,void,void,void,void,void,void>
       stride[0] = Tag1::Size );
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 ,
-                      const int_t & n2 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 ,
+                      const iType & n2 )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2741,8 +2885,9 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,void,void,void,void,void,void>
       stride[0] = n1 );
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = 0 ;
       stride[6] = 0 ;
@@ -2800,7 +2945,8 @@ struct Helper<Scalar,NaturalOrder,Tag1,void,void,void,void,void,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = NULL ;
       stride[6] = NULL ;
@@ -2812,8 +2958,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,void,void,void,void,void,void,void>
       stride[0] = Tag1::Size ;
     }
 
-  static void assign( int_t * stride ,
-                      const int_t & n1 )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType & n1 )
     {
       stride[7] = NULL ;
       stride[6] = NULL ;
@@ -2825,8 +2972,9 @@ struct Helper<Scalar,NaturalOrder,Tag1,void,void,void,void,void,void,void>
       stride[0] = n1 ;
     }
 
-  static void assign( int_t * stride ,
-                      const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride ,
+                      const iType * const dims )
     {
       stride[7] = NULL ;
       stride[6] = NULL ;
@@ -2881,7 +3029,8 @@ struct Helper<Scalar,FortranOrder,Tag1,void,void,void,void,void,void,void>
       tags[7] = NULL ;
     }
 
-  static void assign( int_t * stride )
+  template< typename iType >
+  static void assign( iType * stride )
     {
       stride[7] = NULL ;
       stride[6] = NULL ;
@@ -2893,7 +3042,8 @@ struct Helper<Scalar,FortranOrder,Tag1,void,void,void,void,void,void,void>
       stride[0] = Tag1::Size ;
     }
 
-  static void assign( int_t * stride , const int_t & n1 )
+  template< typename iType >
+  static void assign( iType * stride , const iType & n1 )
     {
       stride[7] = NULL ;
       stride[6] = NULL ;
@@ -2905,7 +3055,8 @@ struct Helper<Scalar,FortranOrder,Tag1,void,void,void,void,void,void,void>
       stride[0] = n1 ;
     }
 
-  static void assign( int_t * stride , const int_t * const dims )
+  template< typename iType >
+  static void assign( iType * stride , const iType * const dims )
     {
       stride[7] = NULL ;
       stride[6] = NULL ;
@@ -2943,7 +3094,8 @@ struct Helper<Scalar,RankZero,void,void,void,void,void,void,void,void>
 
   enum { Rank = 0 };
 
-  static void assign( int_t * ) {}
+  template< typename iType >
+  static void assign( iType * ) {}
 };
 
 //----------------------------------------------------------------------
@@ -3076,8 +3228,8 @@ public:
     }
 
   /** \brief  Dimension of all ordinate. */
-  template< typename itype >
-  void dimensions( std::vector<itype> & n )
+  template< typename iType >
+  void dimensions( std::vector<iType> & n )
     {
       n.resize( m_rank );
       for ( size_type i = 0 ; i < m_rank ; ++i ) { n[i] = dimension(i); }
@@ -3095,16 +3247,16 @@ public:
   /** \brief  Generate a subarray view of the array with the slowest
    *          striding ordinate offset by <b> i </b> and removed.
    */
-  template< typename itype >
-  Array truncate( const itype & i ) const
+  template< typename iType >
+  Array truncate( const iType & i ) const
     { return Array( *this , i ); }
 
   /** \brief Pointer to contiguous block of member data. */
   value_type * contiguous_data() const { return m_ptr ; }
 
   /** \brief Access member via full ordering of members. */
-  template< typename itype >
-  value_type & operator[]( const itype & i ) const
+  template< typename iType >
+  value_type & operator[]( const iType & i ) const
     {
       SHARDS_ARRAY_CHECK( array_traits::check_range(i,size()) );
       return m_ptr[ i ];
@@ -3112,69 +3264,69 @@ public:
 
   //----------------------------------
   /** \brief Access member via Rank 8 multi-index */
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 , const itype & i4 ,
-                           const itype & i5 , const itype & i6 ,
-                           const itype & i7 , const itype & i8 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 , const iType & i4 ,
+                           const iType & i5 , const iType & i6 ,
+                           const iType & i7 , const iType & i8 ) const
     {
       SHARDS_ARRAY_CHECK( array_traits::check_rank( m_rank , 8 ) );
       return m_ptr[ Offset::op(m_stride,i1,i2,i3,i4,i5,i6,i7,i8) ];
     }
 
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 , const itype & i4 ,
-                           const itype & i5 , const itype & i6 ,
-                           const itype & i7 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 , const iType & i4 ,
+                           const iType & i5 , const iType & i6 ,
+                           const iType & i7 ) const
     {
       SHARDS_ARRAY_CHECK( array_traits::check_rank( m_rank , 7 ) );
       return m_ptr[ Offset::op(m_stride,i1,i2,i3,i4,i5,i6,i7) ];
     }
 
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 , const itype & i4 ,
-                           const itype & i5 , const itype & i6 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 , const iType & i4 ,
+                           const iType & i5 , const iType & i6 ) const
     {
       SHARDS_ARRAY_CHECK( array_traits::check_rank( m_rank , 6 ) );
       return m_ptr[ Offset::op(m_stride,i1,i2,i3,i4,i5,i6) ];
     }
 
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 , const itype & i4 ,
-                           const itype & i5 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 , const iType & i4 ,
+                           const iType & i5 ) const
     {
       SHARDS_ARRAY_CHECK( array_traits::check_rank( m_rank , 5 ) );
       return m_ptr[ Offset::op(m_stride,i1,i2,i3,i4,i5) ];
     }
 
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 , const itype & i4 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 , const iType & i4 ) const
     {
       SHARDS_ARRAY_CHECK( array_traits::check_rank( m_rank , 4 ) );
       return m_ptr[ Offset::op(m_stride,i1,i2,i3,i4) ];
     }
 
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 ) const
     {
       SHARDS_ARRAY_CHECK( array_traits::check_rank( m_rank , 3 ) );
       return m_ptr[ Offset::op(m_stride,i1,i2,i3) ];
     }
 
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ) const
     {
       SHARDS_ARRAY_CHECK( array_traits::check_rank( m_rank , 2 ) );
       return m_ptr[ Offset::op(m_stride,i1,i2) ];
     }
 
-  template< typename itype >
-  value_type & operator()( const itype & i1 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 ) const
     {
       SHARDS_ARRAY_CHECK( array_traits::check_rank( m_rank , 1 ) );
       return m_ptr[ Offset::op(m_stride,i1) ];
@@ -3388,9 +3540,9 @@ public:
     }
 
   /** \brief  Dimensions of all ordinates. */
-  template< typename itype >
-  void dimensions( std::vector<itype> & n )
-    { m_array.dimensions<itype>( n ); }
+  template< typename iType >
+  void dimensions( std::vector<iType> & n )
+    { m_array.dimensions<iType>( n ); }
 
   /** \brief  Total number of member data items. */
   size_type size() const { return m_array.m_stride[ Rank - 1 ]; }
@@ -3410,8 +3562,8 @@ public:
    *          slowest striding ordinate offset by <b> i </b>
    *          and removed.
    */
-  template< typename itype >
-  TruncateType truncate( const itype & i ) const
+  template< typename iType >
+  TruncateType truncate( const iType & i ) const
     { return TruncateType( m_array , i ); }
 
   //----------------------------------
@@ -3419,81 +3571,81 @@ public:
   value_type * contiguous_data() const { return m_array.contiguous_data(); }
 
   /** \brief Access member via offset into contiguous block. */
-  template< typename itype >
-  value_type & operator[]( const itype & i ) const
+  template< typename iType >
+  value_type & operator[]( const iType & i ) const
     { return m_array[i]; }
 
   /** \brief Access member of a Rank 8 array */
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 , const itype & i4 ,
-                           const itype & i5 , const itype & i6 ,
-                           const itype & i7 , const itype & i8 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 , const iType & i4 ,
+                           const iType & i5 , const iType & i6 ,
+                           const iType & i7 , const iType & i8 ) const
     {
       array_traits::CheckRank<8,Rank>::ok();
       return m_array(i1,i2,i3,i4,i5,i6,i7,i8);
     }
 
   /** \brief Access member of a Rank 7 array */
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 , const itype & i4 ,
-                           const itype & i5 , const itype & i6 ,
-                           const itype & i7 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 , const iType & i4 ,
+                           const iType & i5 , const iType & i6 ,
+                           const iType & i7 ) const
     {
       array_traits::CheckRank<7,Rank>::ok();
       return m_array(i1,i2,i3,i4,i5,i6,i7);
     }
 
   /** \brief Access member of a Rank 6 array */
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 , const itype & i4 ,
-                           const itype & i5 , const itype & i6 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 , const iType & i4 ,
+                           const iType & i5 , const iType & i6 ) const
     {
       array_traits::CheckRank<6,Rank>::ok();
       return m_array(i1,i2,i3,i4,i5,i6);
     }
 
   /** \brief Access member of a Rank 5 array */
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 , const itype & i4 ,
-                           const itype & i5 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 , const iType & i4 ,
+                           const iType & i5 ) const
     {
       array_traits::CheckRank<5,Rank>::ok();
       return m_array(i1,i2,i3,i4,i5);
     }
 
   /** \brief Access member of a Rank 4 array */
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 , const itype & i4 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 , const iType & i4 ) const
     {
       array_traits::CheckRank<4,Rank>::ok();
       return m_array(i1,i2,i3,i4);
     }
 
   /** \brief Access member of a Rank 3 array */
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ,
-                           const itype & i3 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ,
+                           const iType & i3 ) const
     {
       array_traits::CheckRank<3,Rank>::ok();
       return m_array(i1,i2,i3);
     }
 
   /** \brief Access member of a Rank 2 array */
-  template< typename itype >
-  value_type & operator()( const itype & i1 , const itype & i2 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 , const iType & i2 ) const
     {
       array_traits::CheckRank<2,Rank>::ok();
       return m_array(i1,i2);
     }
 
   /** \brief Access member of a Rank 1 array */
-  template< typename itype >
-  value_type & operator()( const itype & i1 ) const
+  template< typename iType >
+  value_type & operator()( const iType & i1 ) const
     {
       array_traits::CheckRank<1,Rank>::ok();
       return m_array(i1);

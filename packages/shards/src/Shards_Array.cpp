@@ -35,8 +35,8 @@ namespace shards {
 
 ArrayDimTag::~ArrayDimTag() {}
 
-std::string ArrayDimTag::to_string( array_traits::int_t n ,
-                                    array_traits::int_t i ) const
+std::string ArrayDimTag::to_string( ArrayDimTag::size_type n ,
+                                    ArrayDimTag::size_type i ) const
 {
   array_traits::check_range( i , n );
   std::ostringstream s ;
@@ -44,8 +44,8 @@ std::string ArrayDimTag::to_string( array_traits::int_t n ,
   return s.str();
 }
 
-array_traits::int_t
-ArrayDimTag::to_index( array_traits::int_t n , const std::string & s ) const
+ArrayDimTag::size_type
+ArrayDimTag::to_index( ArrayDimTag::size_type n , const std::string & s ) const
 {
   const int i = atoi( s.c_str() );
   array_traits::check_range( i , n );
@@ -64,49 +64,7 @@ const ArrayDimension & ArrayDimension::tag()
 
 //----------------------------------------------------------------------
 
-void array_stride_from_natural_dimensions(
-  const array_traits::int_t rank ,
-        array_traits::int_t * const stride ,
-  const array_traits::int_t * const dim )
-{
-  array_traits::int_t n = 1 ;
-  for ( array_traits::int_t i = 0 ; i < rank ; ++i )
-    { stride[i] = n *= dim[(rank-1)-i]; }
-}
-
-array_traits::int_t array_stride_size(
-  const array_traits::int_t  rank ,
-  const array_traits::int_t * const stride )
-{ return 0 < rank ? stride[ rank - 1 ] : 0 ; }
-
-void array_stride_to_natural_dimensions(
-  const array_traits::int_t   rank ,
-  const array_traits::int_t  * const stride ,
-        array_traits::int_t * const dim )
-{
-  if ( 0 < rank ) {
-    dim[ rank - 1 ] = stride[0] ;
-    for ( array_traits::int_t i = 1 ; i < rank ; ++i ) {
-      dim[ ( rank - 1 ) - i ] = stride[i] / stride[i-1] ;
-    }
-  }
-}
-
-void array_stride_to_natural_indices(
-  const array_traits::int_t   rank ,
-  const array_traits::int_t  * const stride ,
-  const array_traits::int_t    offset ,
-        array_traits::int_t * const indices )
-{
-  if ( 0 < rank ) {
-    array_traits::int_t tmp = offset ;
-    for ( array_traits::int_t i = rank - 1 ; 0 < i ; ) {
-      indices[ ( rank - 1 ) - i ] = tmp / stride[i-1] ;
-      tmp %= stride[i-1] ;
-    }
-    indices[ rank - 1 ] = tmp ;
-  }
-}
+namespace array_traits {
 
 //----------------------------------------------------------------------
 
@@ -150,8 +108,6 @@ void array_stride_to_fortran_indices(
 }
 
 //----------------------------------------------------------------------
-
-namespace array_traits {
 
 void init_dim(
          int_t dst_stride[] ,

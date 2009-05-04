@@ -627,6 +627,7 @@ void local_test_array_truncate()
   const int num_dim = 3;
   const int offset_cell = 2 ;
   const int size = num_cells*num_points*num_dim;
+  int stride[3] , dims[3] , indices[3] ;
   double* mem = new double[size];
 
   for (int i=0; i < size; ++i) {
@@ -636,11 +637,31 @@ void local_test_array_truncate()
   Array<double,NaturalOrder,Cell,Point,Dim> a(mem,num_cells,num_points,num_dim);
   Array<double,NaturalOrder,     Point,Dim> b = a.truncate(offset_cell);
 
+  dims[0] = num_cells ;
+  dims[1] = num_points ;
+  dims[2] = num_dim ;
+  array_traits::stride_from_natural_dimensions( 3 , stride , dims );
+  dims[0] = 0 ;
+  dims[1] = 0 ;
+  dims[2] = 0 ;
+  array_traits::stride_to_natural_dimensions( 3 , stride , dims );
+
+  if ( num_cells != dims[0] || num_points != dims[1] || num_dim != dims[2] ) {
+    throw std::runtime_error( std::string("Array stride test failed") );
+  }
+
   for (int c=0; c < num_cells; ++c) {
     for (int pt=0; pt < num_points; ++pt) {
       for (int dim=0; dim < num_dim; ++ dim) {
         const int offset = dim + num_dim * ( pt + num_points * c );
         const int value  = static_cast<int>( a(c,pt,dim) );
+
+        array_traits::stride_to_natural_indices( 3, stride, offset, indices );
+
+        if ( c != indices[0] || pt != indices[1] || dim != dims[2] ) {
+          throw std::runtime_error( std::string("Array indices test failed") );
+        }
+
         if ( a.contiguous_data() + offset != & a(c,pt,dim) ||
              offset != value ) {
           std::ostringstream msg ;
