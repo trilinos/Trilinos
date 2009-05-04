@@ -49,7 +49,8 @@
 #include "Epetra_MapColoring.h"
 
 // Epetra python exception
-static PyObject * PyExc_EpetraError = PyErr_NewException("Epetra.Error",NULL,NULL);
+char epetraError[13] = "Epetra.Error";
+static PyObject * PyExc_EpetraError = PyErr_NewException(epetraError,NULL,NULL);
 %}
 
 // NumPy support

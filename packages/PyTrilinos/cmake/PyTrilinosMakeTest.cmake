@@ -14,6 +14,7 @@ MACRO(PyTrilinos_MAKE_TEST TEST_NAME)
     NAME ${TEST_NAME}
     ARGS "${TEST_NAME}.py --testharness"
     STANDARD_PASS_OUTPUT
+    ${ARGN}
     )
 
 ENDMACRO(PyTrilinos_MAKE_TEST TEST_NAME)

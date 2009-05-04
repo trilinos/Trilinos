@@ -29,7 +29,9 @@ ENDIF(PyTrilinos_ENABLE_TriUtils)
 IF(PyTrilinos_ENABLE_EpetraExt)
   IF(PyTrilinos_ENABLE_Epetra)
     PyTrilinos_MAKE_TEST(exEpetraExt_IO_MatrixMarket)
-    PyTrilinos_MAKE_TEST(exEpetraExt_IO_XML         )
+    # Until expat is integrated as an official TPL, the following
+    # example script is doomed to failure
+    #PyTrilinos_MAKE_TEST(exEpetraExt_IO_XML         )
     PyTrilinos_MAKE_TEST(exEpetraExt_MatrixMatrix   )
   ENDIF(PyTrilinos_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
@@ -39,9 +41,11 @@ IF(PyTrilinos_ENABLE_AztecOO)
     IF(PyTrilinos_ENABLE_Galeri)
       PyTrilinos_MAKE_TEST(exAztecOO)
     ENDIF(PyTrilinos_ENABLE_Galeri)
+    PyTrilinos_MAKE_TEST(exAztecOO_Operator
+      XHOST godel.sandia.gov)
+    PyTrilinos_MAKE_TEST(exAztecOO_RowMatrix
+      XHOST godel.sandia.gov)
     PyTrilinos_MAKE_TEST(exAztecOO_BasicRowMatrix)
-    PyTrilinos_MAKE_TEST(exAztecOO_Operator      )
-    PyTrilinos_MAKE_TEST(exAztecOO_RowMatrix     )
   ENDIF(PyTrilinos_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_AztecOO)
 

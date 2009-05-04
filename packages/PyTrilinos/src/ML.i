@@ -563,7 +563,9 @@ MultiVector::Delete;
 						 (void*)self->GetValues(v));
     if (!array) throw PythonException();
     // Call the __setitem__ method
-    PyObject * result = PyObject_CallMethod(array, "__setitem__", "OO", index, value);
+    char methodName[12] = "__setitem__";
+    char format[3]      = "OO";
+    PyObject * result = PyObject_CallMethod(array, methodName, format, index, value);
     if (!result) throw PythonException();
     // Cleanup and return
     Py_DECREF(array);
@@ -589,7 +591,9 @@ MultiVector::Delete;
 						 (void*)self->GetValues(v));
     if (!array) throw PythonException();
     // Call the __getitem__ method
-    PyObject * result = PyObject_CallMethod(array, "__getitem__", "O", index);
+    char methodName[12] = "__getitem__";
+    char format[2]      = "O";
+    PyObject * result = PyObject_CallMethod(array, methodName, format, index);
     if (!result) throw PythonException();
     // Cleanup and return
     Py_DECREF(array);
