@@ -334,7 +334,7 @@ static void print()
 
 #include <iomanip>
 template<class T>
-static void print(char* str, T val)
+static void print(const char str[], T val)
 {
   cout.width(30); cout.setf(ios::left);
   cout << str;
@@ -342,7 +342,7 @@ static void print(char* str, T val)
 }
 
 template<class T>
-static void print(char* str, T val, double percentage)
+static void print(const char str[], T val, double percentage)
 {
   cout.width(30); cout.setf(ios::left);
   cout << str;
@@ -352,7 +352,7 @@ static void print(char* str, T val, double percentage)
   cout << " ( " << percentage << " %)" << endl;
 }
 template<class T>
-static void print(char* str, T one, T two, T three, bool equal = true)
+static void print(const char str[], T one, T two, T three, bool equal = true)
 {
   cout.width(30); cout.setf(ios::left);
   cout << str;
@@ -578,8 +578,8 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap,
 
   if (verbose) {
     print();
-    print<char*>("", "min", "avg", "max", false);
-    print<char*>("", "===", "===", "===", false);
+    print<const char*>("", "min", "avg", "max", false);
+    print<const char*>("", "===", "===", "===", false);
   }
 
   MyMax = -DBL_MAX;
