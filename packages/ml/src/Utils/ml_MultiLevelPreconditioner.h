@@ -253,6 +253,15 @@ public:
 			   const Teuchos::ParameterList& List,
 			   const bool ComputePrec = true);
   
+  //! Constructs a MultiLevelPreconditioner which is actually a composite AMG hierarchy using an array of ML_Operator's and an array of parameter lists.
+  
+  MultiLevelPreconditioner(ML_Operator *Operator, 
+                           const Teuchos::ParameterList& List,
+                           Epetra_RowMatrix **DiagOperators,
+			   Teuchos::ParameterList *DiagLists,
+                           int NBlocks = 1,
+			   const bool ComputePrec = true);
+  
   //! \brief MultiLevelPreconditioner constructor for Maxwell's equations.
   /*! Takes the stiffness and mass terms of the matrix combined. 
 
@@ -715,6 +724,16 @@ private:
 
   //! pointer to linear system matrix
   const Epetra_RowMatrix* RowMatrix_;
+
+  //! AfineML_ points to the original ML operator passed in to the block
+  //  matrix/composite version of the constructor.
+  ML_Operator *AfineML_;
+
+  //! Multigrid hierarchies applied to submatrices and used in a composite
+  //  form to define the overall AMG hierarchy 
+
+  ML_Epetra::MultiLevelPreconditioner **SubMatMLPrec_;
+
   //! specifies whether a hierarchy already exists or not.
   bool IsComputePreconditionerOK_;
   
@@ -775,10 +794,24 @@ private:
 
   //@}
 
+  //@{ \name Composite AMG variables
+
+  //! Number of blocks making up composite operator
+
+  int NBlocks_;
+
+  //! Array of Diagonal Operators
+ 
+  Epetra_RowMatrix **DiagOperators_;
+
+  //! Array of Parameter lists for diagonal operators
+ 
+  Teuchos::ParameterList *DiagLists_;
+
+  //@}
+
   //@{ \name Maxwell variables
 
-  //! true if Maxwell equations are used
-  bool SolvingMaxwell_;
   //! Main matrix for Maxwell
   const Epetra_RowMatrix* EdgeMatrix_;
   //! stiffness and mass matrices
@@ -841,6 +874,7 @@ private:
   
   // other stuff for old ML's compatibility
   Epetra_CrsMatrix* RowMatrixAllocated_;
+  bool  AllocatedRowMatrix_; // used for composite constructor only
 
   bool AnalyzeMemory_;
   

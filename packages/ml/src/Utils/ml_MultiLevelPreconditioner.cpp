@@ -37,6 +37,7 @@
 
 #include "ml_common.h"
 #include "ml_include.h"
+#include "ml_RowMatrix.h"
 
 #ifdef IFPACK_NODE_AWARE_CODE
 extern int ML_NODE_ID; //FIXME
@@ -110,19 +111,26 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
          << "*** destroying ML_Epetra::MultiLevelPreconditioner [" 
          << mlpLabel_ << "]" << endl
          << "***" << endl;
+
+  if (SubMatMLPrec_ != NULL) {
+    for (int i = 0; i < NBlocks_ ; i++) delete SubMatMLPrec_[i];
+    ML_free(SubMatMLPrec_);
+  }
   
   ML_Aggregate_VizAndStats_Clean(ml_);
   if (ml_nodes_ != 0) ML_Aggregate_VizAndStats_Clean(ml_nodes_);
 
-  // destroy aggregate information
-  if ((agg_)->aggr_info != NULL) {
-    for (int i = 0 ; i < NumLevels_ ; ++i) {
-      if ((agg_)->aggr_info[i] != NULL) 
-        ML_memory_free((void **)&((agg_)->aggr_info[i]));
-    } 
-  }
   // destroy main objects
-  if (agg_ != 0) { ML_Aggregate_Destroy(&agg_); agg_ = 0; }
+  if (agg_ != 0) { 
+    // destroy aggregate information
+    if ((agg_)->aggr_info != NULL) {
+      for (int i = 0 ; i < NumLevels_ ; ++i) {
+        if ((agg_)->aggr_info[i] != NULL) 
+          ML_memory_free((void **)&((agg_)->aggr_info[i]));
+      } 
+    }
+    ML_Aggregate_Destroy(&agg_); agg_ = 0; 
+  }
 
   if (TMatrixML_ != 0) {
     ML_Operator_Destroy(&TMatrixML_);
@@ -281,6 +289,10 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
     delete RowMatrixAllocated_; 
     RowMatrixAllocated_ = 0; 
   }
+  if (AllocatedRowMatrix_) {
+    delete RowMatrix_; 
+    RowMatrixAllocated_ = 0; 
+  }
 
   // filtering stuff
 
@@ -296,15 +308,6 @@ int ML_Epetra::MultiLevelPreconditioner::DestroyPreconditioner()
   
   IsComputePreconditionerOK_ = false;
 
-#ifdef ML_MEM_CHECK
-  // print out allocated memory. It should be zero.
-  if( Comm().MyPID() == 0 ) 
-    std::cout << PrintMsg_ << "Calling ML_Print_it()..." << std::endl
-         << PrintMsg_ << "no memory should be allocated by the ML preconditioner" 
-     << " at this point." << std::endl;
-  ML_print_it();
-#endif
-
   return 0;
 }
 
@@ -314,7 +317,8 @@ ML_Epetra::MultiLevelPreconditioner::
 MultiLevelPreconditioner(const Epetra_RowMatrix & RowMatrix,
              const bool ComputePrec) :
   RowMatrix_(&RowMatrix),
-  RowMatrixAllocated_(0)
+  RowMatrixAllocated_(0),
+  AllocatedRowMatrix_(false)
 {
 
   ParameterList NewList;
@@ -334,12 +338,49 @@ ML_Epetra::MultiLevelPreconditioner::
 MultiLevelPreconditioner( const Epetra_RowMatrix & RowMatrix,
              const ParameterList & List, const bool ComputePrec) :
   RowMatrix_(&RowMatrix),
-  RowMatrixAllocated_(0)
+  RowMatrixAllocated_(0),
+  AllocatedRowMatrix_(false)
 {
 
   List_ = List;
 
   ML_CHK_ERRV(Initialize());
+
+  // construct hierarchy
+  if (ComputePrec == true) 
+    ML_CHK_ERRV(ComputePreconditioner());
+}
+
+// ================================================ ====== ==== ==== == =
+ML_Epetra::MultiLevelPreconditioner::
+MultiLevelPreconditioner(ML_Operator * Operator,
+             const ParameterList & List, Epetra_RowMatrix **DiagOperators,
+             Teuchos::ParameterList *DiagLists, int NBlocks,
+             const bool ComputePrec) :
+  DiagOperators_(DiagOperators),
+  DiagLists_(DiagLists),
+  RowMatrixAllocated_(0),
+  AllocatedRowMatrix_(true)
+{
+
+  // need to wrap an Epetra_RowMatrix around Operator.
+  // This is quite not the best approach for small matrices
+
+  int MaxNumNonzeros;
+  double CPUTime;
+  
+  if (NBlocks != 0) Comm_ = &(DiagOperators[0]->Comm());
+  else Comm_ = NULL;
+
+  // matrix must be freed by destructor. 
+
+  RowMatrix_ = new ML_Epetra::RowMatrix(Operator,Comm_);
+  NBlocks_ = NBlocks;
+  List_ = List;
+
+  ML_CHK_ERRV(Initialize());
+  AMGSolver_ = ML_COMPOSITE;
+  AfineML_ = Operator;
 
   // construct hierarchy
   if (ComputePrec == true) 
@@ -361,7 +402,8 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & EdgeMatrix,
              const bool ComputePrec,
              const bool UseNodeMatrixForSmoother):
   RowMatrix_(&EdgeMatrix),
-  RowMatrixAllocated_(0)
+  RowMatrixAllocated_(0),
+  AllocatedRowMatrix_(false)
 {
 
   // some sanity checks
@@ -408,7 +450,8 @@ MultiLevelPreconditioner(const Epetra_RowMatrix & CurlCurlMatrix,
                          const Epetra_RowMatrix & NodeMatrix,
                          const ParameterList & List,
                          const bool ComputePrec) :
-  RowMatrixAllocated_(0)
+  RowMatrixAllocated_(0),
+  AllocatedRowMatrix_(false)
 {
 
   // Check compatibility of CurlCurl and  TMatrix.
@@ -460,7 +503,8 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
                          const ParameterList & List,
                          const bool ComputePrec):
   RowMatrix_(&EdgeMatrix),
-  RowMatrixAllocated_(0)
+  RowMatrixAllocated_(0),
+  AllocatedRowMatrix_(false)
 {
   ML_Comm *ml_comm;
   ML_Operator *loc_ML_Kn;
@@ -523,7 +567,8 @@ MultiLevelPreconditioner(const Epetra_MsrMatrix & EdgeMatrix,
 // FIXME: should I be deleted??
 ML_Epetra::MultiLevelPreconditioner::
 MultiLevelPreconditioner(ML_Operator * Operator,
-             const ParameterList & List, const bool ComputePrec)
+             const ParameterList & List, const bool ComputePrec):
+  AllocatedRowMatrix_(false)
 {
 
   // need to wrap an Epetra_RowMatrix around Operator.
@@ -560,6 +605,8 @@ int ML_Epetra::MultiLevelPreconditioner::Initialize()
   Comm_ = &(RowMatrix_->Comm());
   DomainMap_ = &(RowMatrix_->OperatorDomainMap());
   RangeMap_ = &(RowMatrix_->OperatorRangeMap());
+  AfineML_ = 0;
+  SubMatMLPrec_ = 0;
 
   verbose_ = false;
   MaxLevels_ = 20;
@@ -852,7 +899,20 @@ int ML_Epetra::MultiLevelPreconditioner::SetFinestLevelMatrix()
               dynamic_cast<const Epetra_VbrMatrix *>(RowMatrix_);
     const Epetra_CrsMatrix *Acrs =
               dynamic_cast<const Epetra_CrsMatrix *>(RowMatrix_);
-    if (Avbr) {
+    if (AMGSolver_ == ML_COMPOSITE) {
+       struct MLBlkMat *widget = NULL;
+       widget = (struct MLBlkMat *) AfineML_->data;
+
+       ML_CommInfoOP_Clone(&(ml_->Amat[LevelID_[0]].getrow->pre_comm),
+                           AfineML_->getrow->pre_comm);
+       ML_Operator_Set_ApplyFuncData(&(ml_->Amat[LevelID_[0]]), widget->invec,
+                                     widget->outvec, widget, widget->outvec,
+                                     ML_Operator_BlkMatMatvec,0);
+       ML_Operator_Set_Getrow(&(ml_->Amat[LevelID_[0]]), widget->outvec,
+                              ML_Operator_BlkMatGetrow);
+      ml_->Amat[LevelID_[0]].type = -666;
+    }
+    else if (Avbr) {
       ML_Init_Amatrix(ml_,LevelID_[0],NumMyRows, NumMyRows, (void *) Avbr);
       ml_->Amat[LevelID_[0]].type = ML_TYPE_VBR_MATRIX;
     }
@@ -878,7 +938,10 @@ int ML_Epetra::MultiLevelPreconditioner::SetFinestLevelMatrix()
       ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Epetra_matvec_Filter);
     }
     else {
-      if (Avbr) {
+      if (AMGSolver_ == ML_COMPOSITE) {
+        ML_Set_Amatrix_Matvec(ml_, LevelID_[0], ML_Operator_BlkMatMatvec);
+      }
+      else if (Avbr) {
         // check that the number of PDEs is constant
         if( Avbr->NumMyRows() % Avbr->NumMyBlockRows() != 0 ){
           std::cerr << "Error : NumPDEEqns does not seem to be constant" << std::endl;
@@ -1319,6 +1382,93 @@ ComputePreconditioner(const bool CheckPreconditioner)
   Time.ResetStartTime();
 
 
+  if (AMGSolver_ == ML_COMPOSITE) {
+
+     // Create MG hierarchies for individual operators 
+ 
+    SubMatMLPrec_=(ML_Epetra::MultiLevelPreconditioner **) ML_allocate(NBlocks_*
+                                 sizeof(ML_Epetra::MultiLevelPreconditioner *));
+
+    for (int i = 0; i < NBlocks_ ; i++) {
+      SubMatMLPrec_[i] = new ML_Epetra::MultiLevelPreconditioner(
+                                          *DiagOperators_[i], DiagLists_[i]);
+     }
+
+     // Get the ml pointers, the finest level grids and compute the 
+     // maximum actual number of levels from the ml structures
+
+     int ActualLevels = 0;
+     void *tptr;
+     ML *mlptr;
+     int *CurrentLevel = NULL;
+     CurrentLevel = (int *) ML_allocate(sizeof(int)*NBlocks_);
+     for (int i = 0; i < NBlocks_; i++) {
+        tptr = (void *) SubMatMLPrec_[i]->GetML();
+        mlptr  = (ML *) tptr;
+        CurrentLevel[i] =  mlptr->ML_finest_level;
+        if ( mlptr->ML_num_actual_levels > ActualLevels)
+          ActualLevels = mlptr->ML_num_actual_levels;
+     }
+
+     /********************************************************************/
+     /* Build composite Rmat and Pmat operators by pulling out grid      */
+     /* transfers from individual hierarchies and inserting them within  */
+     /* the block matrices that define the composite AMG grid transfers  */
+     /********************************************************************/
+
+     ML_Operator *Rmat,*Pmat;
+     ml_->ML_finest_level = LevelID_[0];
+     for (int i = 0; i < ActualLevels-1; i++) {
+         // NOTE: ML by default builds weird transpose operators in parallel 
+         //       for the restriction operator. ML's matmat mult should work
+         //       we these ... but no one else will. My guess is that we
+         //       should probably make an option for ML to compute standard
+         //       matrices for restriction when we are doing this composite
+         //       thing so that everyone can play with them.
+
+         ML_Operator_BlkMatInit(&(ml_->Rmat[LevelID_[i]]), ml_comm_, NBlocks_, 
+                                     NBlocks_, ML_DESTROY_SHALLOW);
+         ML_Operator_BlkMatInit(&(ml_->Pmat[LevelID_[i+1]]), ml_comm_, NBlocks_,
+                                     NBlocks_, ML_DESTROY_SHALLOW);
+
+         for (int j=0; j < NBlocks_; j++) {
+            tptr = (void *) SubMatMLPrec_[j]->GetML();
+            mlptr = (ML *) tptr;
+            if (i < mlptr->ML_num_levels) {
+               Rmat = &(mlptr->Rmat[CurrentLevel[j]]);
+               if (Rmat->to != NULL) {
+                  CurrentLevel[j] = Rmat->to->levelnum;
+                  Pmat = &(mlptr->Pmat[CurrentLevel[j]]);
+               }
+               else Pmat = NULL;
+            }
+            else { Rmat = NULL; Pmat = NULL; }
+            if (Rmat != NULL) 
+              ML_Operator_BlkMatInsert(&(ml_->Rmat[LevelID_[i]]),Rmat,j,j);
+            if (Pmat != NULL) 
+              ML_Operator_BlkMatInsert(&(ml_->Pmat[LevelID_[i+1]]),Pmat,j,j);
+         }
+         ML_Operator_BlkMatFinalize(&(ml_->Rmat[LevelID_[i]]));
+         ML_Operator_BlkMatFinalize(&(ml_->Pmat[LevelID_[i+1]]));
+         ML_Operator_Set_1Levels(&(ml_->Pmat[LevelID_[i+1]]),
+                        &(ml_->SingleLevel[LevelID_[i+1]]),
+                        &(ml_->SingleLevel[LevelID_[i]]));
+         ML_Operator_Set_1Levels(&(ml_->Rmat[LevelID_[i]]),
+                        &(ml_->SingleLevel[LevelID_[i]]),
+                        &(ml_->SingleLevel[LevelID_[i+1]]));
+     }
+     // Now build coarse discretization operators. Right now this is not
+     // super efficient in that sometimes the diagonal blocks have already
+     // been computed in the submatrix hiearchies ... and now we are going 
+     // to recompute  them. 
+     for (int i = 1; i < ActualLevels; i++) {
+        ML_Blkrap(&(ml_->Rmat[LevelID_[i-1]]),&(ml_->Amat[LevelID_[i-1]]),
+                  &(ml_->Pmat[LevelID_[i]]),&(ml_->Amat[LevelID_[i]]),
+                  ML_CSR_MATRIX);
+     }
+     NumLevels_ = ActualLevels;
+     if (CurrentLevel != NULL) ML_free(CurrentLevel);
+  }
   if (AMGSolver_ == ML_SA_FAMILY) {
     // ==================================================================== //
     // Build smoothed aggregation hierarchy                                 //
