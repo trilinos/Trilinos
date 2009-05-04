@@ -11,10 +11,10 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     COMM serial mpi
     )
 
-  PACKAGE_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockGMRES_hb_DoubleFloat_CopyFiles
-    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/tpetra/test/BlockCG
-    SOURCE_FILES bcsstk17.rsa bcsstk18.rsa
-    EXEDEPS Tpetra_BlockGMRES_hb_DoubleFloat_test
-    )
+#  PACKAGE_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockGMRES_hb_DoubleFloat_CopyFiles
+#    SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/belos/tpetra/test/BlockCG
+#    SOURCE_FILES bcsstk17.rsa bcsstk18.rsa
+#    EXEDEPS Tpetra_BlockGMRES_hb_DoubleFloat_test
+#    )
 
 ENDIF()
