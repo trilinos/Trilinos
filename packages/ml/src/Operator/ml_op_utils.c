@@ -2818,3 +2818,797 @@ char* ML_Operator_IdentifyDirichletRows(ML_Operator *A)
   return A->DirichletRows;
 
 } /*ML_Operator_IdentifyDirichletRows()*/
+
+/******************************************************/
+/* Create an empty block matrix. This matirx will     */
+/* be populated with ML_Operator_BlkMatInsert() and   */
+/* then processed with ML_Operator_BlkMatFinalize()   */
+/*                                                    */
+/* Input:                                             */
+/*      NBlockRows     number of blocks rows in matrix*/
+/*                                                    */
+/*      NBlockCols     number of blocks columns       */
+/*                                                    */
+/*      destroy_level  indicates whether subblock     */
+/*                     destructors are invoked when   */
+/*                     from BlkMat's destructor.      */
+/*                                                    */
+/*                     ML_DESTROY_SHALLOW             */
+/*                     ML_CLEAN_EVERYTHING            */
+/*                     ML_DESTROY_EVERYTHING          */
+/*                                                    */
+/* Output:                                            */
+/*      BlkMat         Empty block matrix of dimension*/
+/*                         NBlockRows x NBlockCols    */
+/*                                                    */
+/******************************************************/
+int  ML_Operator_BlkMatInit(ML_Operator *BlkMat, ML_Comm *comm,
+       int NBlockRows, int NBlockCols, int destroy_level)
+{
+  struct  MLBlkMat  *widget;
+  int     i;
+
+
+  /* fill data structure */ 
+
+  ML_Operator_Clean(BlkMat);
+  ML_Operator_Init(BlkMat,comm);
+
+  widget = (struct MLBlkMat *) ML_allocate(sizeof(struct MLBlkMat));
+  widget->final_called = 0;
+  widget->NBlockRows   = NBlockRows;
+  widget->NBlockCols   = NBlockCols;
+  widget->RowStart     = (int *) ML_allocate(sizeof(int)*(NBlockRows+1));
+  widget->ColStart     = (int *) ML_allocate(sizeof(int)*(NBlockCols+1));
+  for (i=0; i <= NBlockRows; i++) widget->RowStart[i] = -1;
+  for (i=0; i <= NBlockCols; i++) widget->ColStart[i] = -1;
+  widget->matrix     = (ML_Operator **) ML_allocate((NBlockRows*NBlockCols+1)*
+                                                  sizeof(ML_Operator *));
+  widget->matdata    = (ML_BlkMatData **) ML_allocate((NBlockRows*NBlockCols+1)*
+                                           sizeof(ML_BlkMatData *));
+
+  for (i = 0; i < NBlockRows*NBlockCols; i++) { 
+     widget->matrix[i] = NULL;
+     widget->matdata[i] = NULL;
+  }
+  widget->destroy_level = destroy_level;
+
+
+  BlkMat->data_destroy = ML_Operator_BlkMatDestroy;
+ 
+  ML_Operator_Set_ApplyFuncData(BlkMat, 0, 0,
+                                widget, 0,
+                                ML_Operator_BlkMatMatvec,0);
+  return(0);
+}
+
+
+/***************************************************************/
+/* Insert Entry into the (Row,Col)th position of BlkMat. It is */
+/* assummed that ML_Operator_BlkMatInit(BlkMat) has been       */
+/* invoked but not ML_Operator_BlkMatFinalize(BlkMat).         */
+/***************************************************************/
+int ML_Operator_BlkMatInsert(ML_Operator *BlkMat, ML_Operator *Entry,
+                        int Row, int Col)
+{
+  struct  MLBlkMat  *widget;
+  int i;
+
+  widget = (struct MLBlkMat *) BlkMat->data;
+
+      
+  if (widget == NULL) pr_error("ML_Operator_BlkMatInsert: empty data field\n");
+  if (widget->final_called) pr_error("ML_Operator_BlkMatInsert: finalize already invoked\n");
+  if (   Row < 0    ) pr_error("ML_Operator_BlkMatInsert: Row index < 0\n"); 
+  if (   Col < 0    ) pr_error("ML_Operator_BlkMatInsert: Col index < 0\n");
+  if (Row >= widget->NBlockRows) pr_error("ML_Operator_BlkMatInsert: Row index too large\n");
+  if (Col >= widget->NBlockCols) pr_error("ML_Operator_BlkMatInsert: Col index too large\n");
+  i = Row+Col*widget->NBlockRows;
+  if (widget->matrix[i] != NULL) pr_error("ML_Operator_BlkMatInsert: matrix entry already assigned\n");
+  widget->matrix[i] = Entry;
+  widget->matdata[i] = (ML_BlkMatData *) ML_allocate(
+                                           sizeof(ML_BlkMatData));
+  return(0);
+}
+
+/***************************************************************/
+/* Extract an entry from the (Row,Col)th position of BlkMat. It*/
+/* is assummed that ML_Operator_BlkMatInit(BlkMat) and         */
+/* ML_Operator_BlkMatFinalize(BlkMat) have been invoked.       */
+/***************************************************************/
+ML_Operator *ML_Operator_BlkMatExtract(ML_Operator *BlkMat, int Row, int Col)
+{
+  struct  MLBlkMat  *widget;
+  int i;
+  ML_Operator *Entry;
+
+  widget = (struct MLBlkMat *) BlkMat->data;
+
+      
+  if (widget == NULL) pr_error("ML_Operator_BlkMatExtract: empty data field\n");
+  if (widget->final_called==0) pr_error("ML_Operator_BlkMatExtract: finalize not invoked\n");
+  if (   Row < 0    ) pr_error("ML_Operator_BlkMatExtract: Row index < 0\n"); 
+  if (   Col < 0    ) pr_error("ML_Operator_BlkMatExtract: Col index < 0\n");
+  if (Row >= widget->NBlockRows) pr_error("ML_Operator_BlkMatExtract: Row index too large\n");
+  if (Col >= widget->NBlockCols) pr_error("ML_Operator_BlkMatExtract: Col index too large\n");
+  i = Row+Col*widget->NBlockRows;
+  return(widget->matrix[i]);
+}
+
+
+/*************************************************************/
+/* Finish the block matrix definition. At this point it is   */
+/* assumed that ML_Operator_BlkMatInit() has been invoked    */
+/* and that the matrix has been populated via the function   */
+/* ML_Operator_BlkMatInsert(). To complete the definition of */
+/* the matrix we need to figure out the row/column           */
+/* dimensions of the matrix. The main thing, however, that   */
+/* must be computed is a ML_ComminfoOp structure and a       */
+/* renumbering of indiviual rows within subblocks so that    */
+/* they correspond to a proper numbering in the total system.*/
+/* This is complicated by the presence of ghost nodes and the*/
+/* fact that ML has no notion of global numbering. Thus, this*/
+/* function first assigns a global numbering and then uses   */
+/* this global numbering to populate the ML_ComminfoOp       */
+/* structure and renumber ghost columns.                     */
+int  ML_Operator_BlkMatFinalize(ML_Operator *BlkMat)
+{
+  struct MLBlkMat *widget;
+  ML_BlkMatData   *SubData;
+  ML_CommInfoOP        *getrow_comm;
+  ML_Operator          *SubMat;
+  USR_REQ              *request;
+
+  int NBlkRows, NBlkCols, *RowStart, *ColStart, *LocalId, *MaxCols;
+  int MasterGhostIndex=0, *MasterGhostGid;
+  int NneighTotal, type, *NrcvFromProc, *NSndToProc, *MyNeighbors, **SendIds;
+  int ColOffset = 0, *GhostCopy, *Indices, *Offsets;
+  int NNonGhosts, NGhosts, *OwnProc;
+  int i,j,k,kk, count, *ibuf;
+  int    *GlobalId;
+  double *dGlobalId; /* ML_exchange_bdry() only works with doubles */
+                     /* so this is need temporarily.               */
+
+
+  widget = (struct MLBlkMat *) BlkMat->data;
+  if (widget == NULL) return(1);
+  if (widget->matrix == NULL) return(1);
+
+
+  NBlkRows = widget->NBlockRows;
+  NBlkCols = widget->NBlockCols;
+  RowStart = widget->RowStart;
+  ColStart = widget->ColStart;
+
+  /* Check that all sub-block dimensions are consistent. That is        */
+  /*                                                                    */
+  /*  1) forall i,k  SubBlk(i,j)->invec_leng =  SubBlk(k,j)->invec_leng */
+  /*                                                                    */
+  /*  2) forall j,k SubBlk(i,j)->outvec_leng = SubBlk(i,k)->outvec_leng */
+  /*                                                                    */
+  /* Additionally, determine the starting local indices for each        */
+  /* SubBlk(i,j) and store them in (RowStart[i],ColStart[j]).           */
+  /*                                                                    */
+  /* This is done by first putting the block dimensions in (RowStart[i],*/
+  /* ColStart[j]) and then converting them to offsets.                  */
+
+
+  for (i =0; i < NBlkRows; i++) {
+     for (j =0; j < NBlkCols; j++) {
+        SubMat = widget->matrix[i+j*NBlkRows];
+        if (SubMat != NULL) {
+           if (RowStart[i] == -1) RowStart[i] = SubMat->outvec_leng;
+           else {
+              if (RowStart[i] != SubMat->outvec_leng) {
+                 printf("ML_Operator_BlkMatFinalize(%d): The (%d,%d)th\n",BlkMat->comm->ML_mypid,i,j);
+                 printf("block has %d rows as opposed to %d rows from\n",
+                        SubMat->outvec_leng, RowStart[i]);
+                 printf("an earlier block.\n");
+                 exit(1);
+              }
+           }
+           if (ColStart[j] == -1) ColStart[j] = SubMat->invec_leng;
+           else {
+              if (ColStart[j] != SubMat->invec_leng) {
+                 printf("ML_Operator_BlkMatFinalize(%d): The (%d,%d)th\n",BlkMat->comm->ML_mypid,i,j);
+                 printf("block has %d cols as opposed to %d cols from\n",
+                        SubMat->invec_leng, ColStart[j]);
+                 printf("an earlier block.\n");
+                 exit(1);
+              }
+           }
+        }
+     }
+  }
+  for (i =0; i < NBlkRows; i++) 
+     if (RowStart[i] == -1) RowStart[i] = 0;
+
+  for (j =0; j < NBlkCols; j++) 
+     if (ColStart[j] == -1) ColStart[j] = 0;
+
+  k = RowStart[0];
+  RowStart[0] = 0;
+  for (i =0; i < NBlkRows; i++) {
+     kk = RowStart[i+1];
+     RowStart[i+1] = RowStart[i] + k;
+     k = kk;
+  }
+    
+  k = ColStart[0];
+  ColStart[0] = 0;
+  for (j =0; j < NBlkCols; j++) {
+     kk = ColStart[j+1];
+     ColStart[j+1] = ColStart[j] + k;
+     k = kk;
+  }
+
+  widget->outvec = RowStart[NBlkRows];
+  widget->invec = ColStart[NBlkCols];
+  widget->final_called = 1;
+
+  /*********************************************************/
+  /* Count the total number of possible nonghosts, ghosts, */
+  /* and neighboring processors in all submatrices.        */
+  /*********************************************************/
+
+  NneighTotal = 0;
+  NGhosts     = 0;
+  NNonGhosts  = 0;
+  for (j = 0; j < NBlkCols; j++) {
+    for (i = 0; i < NBlkRows; i++) {
+      SubMat  = widget->matrix[i+j*NBlkRows];
+      if (SubMat != NULL) {
+          NNonGhosts += SubMat->invec_leng;
+          if (SubMat->getrow->pre_comm != NULL) {
+             NneighTotal += ML_CommInfoOP_Get_Nneighbors(SubMat->getrow->pre_comm);
+             NGhosts += ML_CommInfoOP_Compute_TotalRcvLength(SubMat->getrow->pre_comm);
+          }
+      }
+    }
+  }
+       
+  /***************************************************************************/
+  /* 1) Assign global ids to each subblock:                                  */
+  /*                                                                         */
+  /*   global id = k + ML_mypid*MaxCols[j] + ColOffset                       */
+  /*                                                                         */
+  /*   where                                                                 */
+  /*     MaxCols[j] is the maximum # of point columns in the jth block column*/
+  /*     ML_mypid is the processor id.                                       */
+  /*     ColOffset is sum of MaxCols(0:j-1)*Nprocs                           */
+  /*     k is the local index.                                               */
+  /*                                                                         */
+  /* 2) Communicate so that ghost dofs also have global ids available.       */ 
+  /*                                                                         */
+  /* 3) Build list (MasterGhostGid) holding all the ghost global ids for all */
+  /*    the blocks as well as OwnProc which records the owning processor.    */
+  /*                                                                         */
+  /***************************************************************************/
+
+
+  MasterGhostGid    = (int *) ML_allocate(sizeof(int)*(NGhosts+1));
+  OwnProc           = (int *) ML_allocate(sizeof(int)*(NGhosts+1));
+  Offsets = (int *) ML_allocate(sizeof(int)*(NBlkCols+1));
+  MaxCols = (int *) ML_allocate(sizeof(int)*(NBlkCols+1));
+
+  for (j = 0; j < NBlkCols; j++) {
+    MaxCols[j] = ML_gmax_int(ColStart[j+1]-ColStart[j], BlkMat->comm);
+    for (i = 0; i < NBlkRows; i++) {
+      SubMat  = widget->matrix[i+j*NBlkRows];
+      SubData = widget->matdata[i+j*NBlkRows];
+      if (SubMat != NULL) {
+         if (SubMat->getrow->pre_comm == NULL) 
+           SubMat->getrow->pre_comm = ML_CommInfoOP_Create();
+
+
+         dGlobalId= (double *) ML_allocate(sizeof(double)*(1+SubMat->invec_leng+
+                                   SubMat->getrow->pre_comm->total_rcv_length));
+         GlobalId= (int *) ML_allocate(sizeof(int)*(1+SubMat->invec_leng +
+                                   SubMat->getrow->pre_comm->total_rcv_length));
+         SubData->GlobalId = GlobalId;
+         for (k = 0; k < SubMat->invec_leng; k++) {
+           GlobalId[k] = k + BlkMat->comm->ML_mypid*MaxCols[j] + ColOffset;
+           dGlobalId[k]= (double) GlobalId[k];
+         }
+         if (SubMat->getrow->pre_comm != NULL) 
+            ML_exchange_bdry(dGlobalId, SubMat->getrow->pre_comm, SubMat->invec_leng, 
+                             SubMat->comm, ML_OVERWRITE,NULL);
+         for (k = 0; k < SubMat->getrow->pre_comm->total_rcv_length; k++) {
+           GlobalId[k+SubMat->invec_leng] = (int) dGlobalId[k+SubMat->invec_leng];
+           OwnProc[MasterGhostIndex] = (GlobalId[k+SubMat->invec_leng] - ColOffset)/MaxCols[j];
+           MasterGhostGid[MasterGhostIndex++] = GlobalId[k+SubMat->invec_leng];
+         }
+         ML_free(dGlobalId);
+      }
+    }
+    Offsets[j] = ColOffset;
+    ColOffset += (MaxCols[j]*BlkMat->comm->ML_nprocs);
+  }
+  Offsets[NBlkCols] = ColOffset;
+
+  /*********************************************************/
+  /* Sort and remove duplicates from MasterGhostGid.       */
+  /* Note: MasterGhostGid is a little messy because we     */
+  /*       actually have 2 arrays (MasterGhostGid,OwnProc) */
+  /*       We first sort on OwnProc to force contiguous    */
+  /*       ordering of ghost nodes from the same processor */
+  /*       (which is an ML requirement). We then sort      */
+  /*       within a processor group so that these GIDs     */
+  /*       are in order. Finally, we remove duplicates     */
+  /*       but we can't use ML_rm_duplicates() because we  */
+  /*       have to update both MasterGhostGid & OwnProc.   */
+  /*********************************************************/
+
+  ML_az_sort(OwnProc,MasterGhostIndex,MasterGhostGid,NULL);
+
+  k = 0;  kk = 1;
+  for (kk = 1; kk < MasterGhostIndex; kk++) {
+    if (OwnProc[kk-1] != OwnProc[kk]) {
+      ML_az_sort(&(MasterGhostGid[k]),kk-k,&(OwnProc[k]),NULL);
+      k = kk;
+    }
+    else if (kk == MasterGhostIndex-1) {
+      ML_az_sort(&(MasterGhostGid[k]),kk-k+1,&(OwnProc[k]),NULL);
+      k = kk;
+    }
+  }
+  
+  /* remove duplicates */
+  kk = 0;
+  for (k = 1; k < MasterGhostIndex; k++) {
+    if (MasterGhostGid[kk] != MasterGhostGid[k]) {
+      kk++;
+      MasterGhostGid[kk] = MasterGhostGid[k];
+      OwnProc[kk] = OwnProc[k];
+    }
+  }
+  if (MasterGhostIndex != 0) kk++;
+  MasterGhostIndex = kk;
+
+
+  /***************************************************/
+  /* Make a copy of ghost gids and then sort         */
+  /* This sorted list will be used when identifying  */
+  /* local ids for ghost nodes.                      */
+  /***************************************************/
+
+  GhostCopy = (int *) ML_allocate(sizeof(int)*(MasterGhostIndex+1));
+  Indices   = (int *) ML_allocate(sizeof(int)*(MasterGhostIndex+1));
+  for (kk = 0; kk < MasterGhostIndex; kk++) {
+    GhostCopy[kk] = MasterGhostGid[kk];
+    Indices[kk] = kk;
+  }
+  ML_az_sort(GhostCopy,MasterGhostIndex,Indices,NULL);
+
+
+  /************************************************************************/
+  /* Compute the local id for each ghost global id by searching GhostCopy */
+  /************************************************************************/
+
+  for (j = 0; j < NBlkCols; j++) {
+    for (i = 0; i < NBlkRows; i++) {
+      SubMat   = widget->matrix[i+j*NBlkRows];
+      SubData  = widget->matdata[i+j*NBlkRows];
+      if (SubMat != NULL) {
+         LocalId = (int *)  ML_allocate(sizeof(int)*(1+
+                                   SubMat->getrow->pre_comm->total_rcv_length));
+         SubData->LocalId = LocalId;
+         GlobalId = SubData->GlobalId;
+         for (k = 0; k < SubMat->getrow->pre_comm->total_rcv_length;k++) {
+            kk = ML_find_index( GlobalId[k+SubMat->invec_leng], GhostCopy, MasterGhostIndex);
+            if (kk == -1) {
+               printf("ML_Operator_BlkMatFinalize: Global Id got lost?\n");
+               exit(1);
+            }
+            else LocalId[k] = Indices[kk]+widget->invec;
+         }
+      }
+    }
+  }
+  ML_free(Indices);
+  ML_free(GhostCopy);
+
+  /*********************************************************/
+  /* Store neighboring procs, sort, and rm duplicates.     */
+  /* Finally, set the neighbors in an ML_CommInfoOP object */
+  /*********************************************************/
+
+  MyNeighbors = (int *) ML_allocate(sizeof(int)*(NneighTotal+1));
+
+  count = 0;
+  for (j=0; j < NBlkCols; j++) {
+     for (i=0; i < NBlkRows; i++) {
+        SubMat = widget->matrix[i+j*NBlkRows];
+        if ( (SubMat != NULL) && (SubMat->getrow->pre_comm != NULL)) {
+           getrow_comm = SubMat->getrow->pre_comm;
+           ibuf = ML_CommInfoOP_Get_neighbors(getrow_comm);
+           for (kk = 0; kk < ML_CommInfoOP_Get_Nneighbors(getrow_comm); kk++) {
+              MyNeighbors[count++] = ibuf[kk];
+           }
+           ML_free(ibuf);
+        }
+     }
+  }
+  ML_az_sort(MyNeighbors,NneighTotal,NULL,NULL);
+  ML_rm_duplicates(MyNeighbors, &NneighTotal);
+
+  ML_CommInfoOP_Set_neighbors(&(BlkMat->getrow->pre_comm), NneighTotal, 
+                   MyNeighbors, ML_OVERWRITE, NULL, 0);
+
+
+  /*******************************************************************/
+  /* Count the number of items that we receive from each processor   */
+  /* Send this number to the corresponding neighbors so that now     */
+  /* each processor knows how much data it needs to send and receive */
+  /* with each neigbhors.                                            */
+  /*******************************************************************/
+
+  NrcvFromProc = (int      *) ML_allocate(sizeof(int    )*(NneighTotal+1));
+  NSndToProc   = (int      *) ML_allocate(sizeof(int    )*(NneighTotal+1));
+  request      = (USR_REQ  *) ML_allocate(sizeof(USR_REQ)*(NneighTotal+1));
+
+  for (kk = 0; kk < NneighTotal; kk++) NrcvFromProc[kk] = 0;
+  kk = 0; 
+  for (k = 0; k < NneighTotal; k++) {
+    while ( (kk < MasterGhostIndex) && (OwnProc[kk] == MyNeighbors[k])) {
+       NrcvFromProc[k]++;
+       kk++;
+    }
+  }
+  ML_free(OwnProc);
+
+  type = 6234;
+
+  for (i = 0; i < NneighTotal; i++)   /*** post receives ***/
+    BlkMat->comm->USR_irecvbytes((void *) &(NSndToProc[i]), sizeof(int),
+                &(MyNeighbors[i]), &type, BlkMat->comm->USR_comm, request+i);
+  for (i = 0; i < NneighTotal; i++)   /*** send data *******/ 
+    BlkMat->comm->USR_sendbytes((void *) &(NrcvFromProc[i]), sizeof(int), 
+                MyNeighbors[i], type, BlkMat->comm->USR_comm);
+  for (i = 0; i < NneighTotal; i++)  /*** recv data ********/ 
+    BlkMat->comm->USR_cheapwaitbytes((void *) &(NSndToProc[i]), sizeof(int),
+                &(MyNeighbors[i]), &type, BlkMat->comm->USR_comm, request+i);
+
+  /*******************************************************************/
+  /* Send the GIDs corresponding to ghost nodes so that now each     */
+  /* processor knows the GIDs of nodes it must send to each neighbor.*/
+  /*******************************************************************/
+
+  SendIds = (int **) ML_allocate(sizeof(int *)*(NneighTotal+1));
+  for (kk = 0; kk < NneighTotal; kk++)
+     SendIds[kk] = (int *) ML_allocate(sizeof(int)*(NSndToProc[kk]+1));
+
+  type = 5123;
+  for (i = 0; i < NneighTotal; i++)    /*** post receives ***/
+    BlkMat->comm->USR_irecvbytes((void *) SendIds[i], (unsigned int)
+              (sizeof(int)*NSndToProc[i]),&(MyNeighbors[i]),
+              &type,BlkMat->comm->USR_comm, request+i);
+  kk = 0;
+  for (i = 0; i < NneighTotal; i++) { /*** send data *******/ 
+    BlkMat->comm->USR_sendbytes((void *) &(MasterGhostGid[kk]),
+                sizeof(int)*NrcvFromProc[i], MyNeighbors[i],
+                type, BlkMat->comm->USR_comm);
+    kk += NrcvFromProc[i];
+  }
+  for (i = 0; i < NneighTotal; i++)  /*** recv data *******/ 
+    BlkMat->comm->USR_cheapwaitbytes((void *) SendIds[i], (unsigned int)
+              (sizeof(int)*NSndToProc[i]),&(MyNeighbors[i]),
+              &type, BlkMat->comm->USR_comm, request+i);
+
+  ML_free(request);
+  ML_free(MasterGhostGid);
+
+  /*************************************************************/
+  /* Convert global ids back to local ids and set the exchange */
+  /* information in BlkMat->getrow->pre_comm. Recall from the  */
+  /* above comment that                                        */
+  /*                                                           */
+  /*   global id = k + ML_mypid*MaxCols[j] + ColOffset         */
+  /*************************************************************/
+
+  count = widget->invec;
+  for (kk = 0; kk < NneighTotal; kk++) {
+    for (k = 0; k < NSndToProc[kk]; k++) {
+      i = 0; 
+      while ( SendIds[kk][k]  >= Offsets[i])  i++; /* linear search */
+      SendIds[kk][k] = SendIds[kk][k] - BlkMat->comm->ML_mypid*MaxCols[i-1] +
+                                      ColStart[i-1] - Offsets[i-1];
+    }
+    ibuf = (int *) ML_allocate(sizeof(int)*(NrcvFromProc[kk]+1));
+    for (k = 0; k < NrcvFromProc[kk]; k++) ibuf[k] = count++;
+    ML_CommInfoOP_Set_exch_info(BlkMat->getrow->pre_comm, MyNeighbors[kk],
+                       NrcvFromProc[kk], ibuf, NSndToProc[kk], SendIds[kk]);
+    ML_free(ibuf);
+    ML_free(SendIds[kk]);
+  }
+  ML_free(SendIds);
+  ML_free(NSndToProc);
+  ML_free(NrcvFromProc);
+  ML_free(MyNeighbors);
+  ML_free(MaxCols);
+  ML_free(Offsets);
+
+
+  BlkMat->data = NULL;  /* ML_Operator_Set_ApplyFuncData() destroys  */
+                        /* BlkMat->data before setting it to widget  */
+                        /* In this case, BlkMat->data already points */
+                        /* to widget which should not be destroyed   */
+
+  ML_Operator_Set_ApplyFuncData(BlkMat, widget->invec, widget->outvec,
+                                widget, widget->outvec,
+                                ML_Operator_BlkMatMatvec,0);
+
+  ML_Operator_Set_Getrow(BlkMat, widget->outvec, ML_Operator_BlkMatGetrow);
+
+
+}
+
+
+/*******************************************************/
+/* Data specific destructor for a block dense matrix   */
+/* created via ML_Operator_BlkMatInit() and            */
+/* ML_Operator_BlkMatFinalize()                        */
+/*                                                     */
+/* NOTE: widget->destroy_level indicates what part of  */
+/* widget->matrix is freed.                            */
+/*                                                     */
+/*    ML_DESTROY_SHALLOW :   free(matrix)              */
+/*                                                     */
+/*    ML_DESTROY_EVERYTHING: destroy(matrix[i]);free(matrix)*/
+/*                                                     */
+/*    ML_CLEAN_EVERYTHING: clean(matrix);free(matrix)  */
+/*                                                     */
+/*******************************************************/
+void  ML_Operator_BlkMatDestroy(void *data)
+{
+  struct  MLBlkMat  *widget;
+  int i;
+
+  widget = (struct MLBlkMat *) data;
+  if (widget != NULL) {
+    for (i = 0; i < widget->NBlockRows*widget->NBlockCols; i++) {
+      if ( widget->matdata[i] != NULL) {
+        ML_free(widget->matdata[i]->LocalId); 
+        ML_free(widget->matdata[i]->GlobalId); 
+        ML_free(widget->matdata[i]); 
+      }
+    }
+    if (widget->destroy_level == ML_DESTROY_EVERYTHING) {
+      for (i = 0; i < widget->NBlockRows*widget->NBlockCols; i++) {
+        ML_Operator_Destroy( &(widget->matrix[i]) );
+      }
+    }
+    else if (widget->destroy_level == ML_CLEAN_EVERYTHING) {
+      for (i = 0; i < widget->NBlockRows*widget->NBlockCols; i++) {
+        ML_Operator_Clean( widget->matrix[i] );
+      }
+    }
+    else if (widget->destroy_level != ML_DESTROY_SHALLOW ) {
+      printf("ML_Operator_BlkMatDestroy: Unknown destroy option?\n");
+    }
+    ML_free(widget->matdata);
+    ML_free(widget->matrix);
+    ML_free(widget->RowStart);
+    ML_free(widget->ColStart);
+    ML_free(widget);
+  }
+}
+
+/**************************************************************/
+/* Matvec corresponding to a block matrix created via         */
+/* ML_Operator_BlkMatInit() and ML_Operator_BlkMatFinalize(). */
+/**************************************************************/
+int ML_Operator_BlkMatMatvec(ML_Operator *BlkMat, int ilen,
+        double p[], int olen, double ap[])
+{
+  struct MLBlkMat *widget;
+  ML_Operator **matrix;
+  double *temp, *ptr;
+  ML_Operator *SubMat;
+  int NBlkRows, NBlkCols, i, j, k, *RowStart, *ColStart;
+
+
+  widget = (struct MLBlkMat *) BlkMat->data;
+  temp = (double *) ML_allocate(sizeof(double)*(BlkMat->outvec_leng+1));
+  for (i = 0; i < BlkMat->outvec_leng; i++) ap[i] = 0.;
+
+  NBlkRows = widget->NBlockRows;
+  NBlkCols = widget->NBlockCols;
+  RowStart = widget->RowStart;
+  ColStart = widget->ColStart;
+  matrix   = widget->matrix;
+
+  for (i =0; i < NBlkRows; i++) {
+     for (j =0; j < NBlkCols; j++) {
+        SubMat = matrix[i+j*NBlkRows];
+        if (SubMat != NULL) {
+           ML_Operator_Apply(SubMat, SubMat->invec_leng,
+            &(p[ColStart[j]]), SubMat->outvec_leng, temp);
+           ptr = &(ap[RowStart[i]]);
+           for (k = 0; k < SubMat->outvec_leng; k++) 
+              ptr[k] += temp[k];
+        }
+
+     }
+  }
+  ML_free(temp);
+  return(0);
+}
+
+/**************************************************************/
+/* Getrow corresponding to a block matrix created via         */
+/* ML_Operator_BlkMatInit() and ML_Operator_BlkMatFinalize(). */
+/***************************************************************/
+int ML_Operator_BlkMatGetrow(ML_Operator *BlkMat, int N_requested_rows,
+   int requested_rows[], int allocated_space, int columns[],
+   double values[], int row_lengths[])
+{
+  struct MLBlkMat *widget;
+  ML_Operator *SubMat, **matrix;
+  ML_BlkMatData   **matdata;
+  int NBlkRows, NBlkCols, *RowStart, *ColStart;
+  int BlockRow, row, *LocalId, i, j, k, SubInvecLeng;
+
+  widget = (struct MLBlkMat *) BlkMat->data;
+  NBlkRows = widget->NBlockRows;
+  NBlkCols = widget->NBlockCols;
+  RowStart = widget->RowStart;
+  ColStart = widget->ColStart;
+  matrix   = widget->matrix;
+  matdata  = widget->matdata;
+
+  /***************************************************/
+  /* This is kind of a slow linear search. Shouldn't */
+  /* matter if we have small block systems.          */
+  /***************************************************/
+
+  BlockRow = 0;
+  while ( *requested_rows >= RowStart[BlockRow+1]) BlockRow++;
+
+  row = *requested_rows - RowStart[BlockRow];
+  k   = 0;
+  for (j =0; j < NBlkCols; j++) {
+     SubMat = matrix[BlockRow+j*NBlkRows];
+     if (SubMat != NULL) {
+        LocalId = matdata[BlockRow+j*NBlkRows]->LocalId;
+
+        SubInvecLeng = SubMat->invec_leng;
+        i = ML_Operator_Getrow(SubMat, 1, &row, allocated_space-k, 
+                  &(columns[k]), &( values[k]), row_lengths);
+        if (i != 1) return(0);
+        /******************************************************/
+        /* convert the local ids (both nonghost and ghost)    */
+        /* within a block to local ids for the large system.  */
+        /******************************************************/
+        for (i = 0; i < *row_lengths ; i++) {
+           if (columns[k+i] <  SubInvecLeng) columns[k+i] += ColStart[j];
+           else columns[k+i] = LocalId[columns[k+i]-SubInvecLeng];
+        }
+        k += (*row_lengths);
+     }
+  }
+  *row_lengths = k;
+  return(1);
+}
+
+/*******************************************************************/
+/* Like ML_rap but for block matrices. Form the explicit product   */
+/* Rmat*Amat*Pmat and store the answer in Result.  Basically, we   */
+/* invoke ML_rap() on the individual block matrices to get the     */
+/* multiplication done. Currently, this function ASSUMES that both */
+/* Rmat and Pmat are  block diagonal.                              */
+/*                                                                 */
+/* Note: there are cases where certain diagonal subblock have      */
+/*       probably already been computed. It would be nice to add   */
+/*       a capability so that these ones could be skipped. This    */
+/*       would require some ability to keep track of what needs to */
+/*       be destroyed when the destructor is eventually invoked.   */
+/*******************************************************************/
+
+
+int ML_Blkrap(ML_Operator *Rmat, ML_Operator *Amat, ML_Operator *Pmat, 
+              ML_Operator *Result, int matrix_type)
+{
+  struct MLBlkMat    *Rwidget, *Pwidget, *Awidget;
+  int    RNBlkRows,ANBlkRows,PNBlkRows,RNBlkCols,ANBlkCols,PNBlkCols;
+  ML_Operator *RSubMat, *ASubMat, *PSubMat, *SubMat; 
+  ML_Operator **Rmatrix, **Amatrix, **Pmatrix;
+  int         i, j;
+
+
+  /* Get all the block matrix information */
+
+  Rwidget   = (struct MLBlkMat *) Rmat->data;
+  RNBlkRows = Rwidget->NBlockRows;
+  RNBlkCols = Rwidget->NBlockCols;
+  Rmatrix   = Rwidget->matrix;
+
+  Pwidget   = (struct MLBlkMat *) Pmat->data;
+  PNBlkRows = Pwidget->NBlockRows;
+  PNBlkCols = Pwidget->NBlockCols;
+  Pmatrix   = Pwidget->matrix;
+
+  Awidget   = (struct MLBlkMat *) Amat->data;
+  ANBlkRows = Awidget->NBlockRows;
+  ANBlkCols = Awidget->NBlockCols;
+  Amatrix   = Awidget->matrix;
+
+  if (RNBlkCols != ANBlkRows) {
+    printf("Error ML_BlkRAP: Incompatible matrices. R must have the same\n");
+    printf("                 number of block columns as A has block rows.\n");
+    return 1;
+  }
+  if (PNBlkRows != ANBlkCols) {
+    printf("Error ML_BlkRAP: Incompatible matrices. P must have the same\n");
+    printf("                 number of block rows as A has block columns.\n");
+    return 1;
+  }
+
+  /* Only matmat mult for block diagonal R and P are currently */
+  /* implemented so we better check that this is what we have. */
+
+  for (i =0; i < RNBlkRows; i++) {
+     for (j =0; j < RNBlkCols; j++) {
+        if ( (i != j) && (Rmatrix[i+j*RNBlkRows] != NULL)) {
+          printf("Error ML_BlkRAP: R must be block diagonal\n");
+          return 1;
+        }
+     }
+  }
+
+  for (i =0; i < PNBlkRows; i++) {
+     for (j =0; j < PNBlkCols; j++) {
+        if ( (i != j) && (Pmatrix[i+j*PNBlkRows] != NULL)) {
+          printf("Error ML_BlkRAP: P must be block diagonal\n");
+          return 1;
+        }
+     }
+  }
+
+  ML_Operator_BlkMatInit(Result, Rmat->comm, RNBlkRows, PNBlkCols, ML_DESTROY_EVERYTHING);
+
+  for (i =0; i < RNBlkRows; i++) {
+     RSubMat = Rmatrix[i+i*RNBlkRows];
+     for (j =0; j < PNBlkCols; j++) {
+       PSubMat = Pmatrix[j+j*PNBlkRows];
+       ASubMat = Amatrix[i+j*ANBlkRows];
+       if ( (RSubMat != NULL) && (ASubMat != NULL) && (PSubMat != NULL)) {
+         SubMat = ML_Operator_Create(Rmat->comm);
+         ML_rap(RSubMat, ASubMat, PSubMat, SubMat, matrix_type);
+         ML_Operator_BlkMatInsert(Result, SubMat, i, j);
+       }
+     }
+  }
+  ML_Operator_BlkMatFinalize(Result);
+
+  return 0;
+}
+/*****************************************************************/
+/* Take Matrix and project it from level 'FromLevel' to the next */
+/* coarser level using the multigrid transfers associated with   */
+/* BlockLocation in mlptr.                                       */
+/*                                                               */
+/* Note: Right now ProjectMe() only does things corresponding to */
+/* to the block diagonal. It would be pretty easy to change this */
+/* for off-diagonals which would require a BlockRowLocation and  */
+/* a BlockColLocation. I'm not sure if this is really needed?    */
+/*****************************************************************/
+ML_Operator *ProjectMe(ML *mlptr, int BlockLocation, int FromLevel, 
+                       ML_Operator *Matrix,int matrix_type)
+{
+  ML_Operator *Answer, *CompR, *CompP, *Rmat, *Pmat;
+  /* Get composite R and P */
+
+  CompR = &(mlptr->Rmat[FromLevel]);
+  CompP = CompR->to->Pmat;
+
+  /* Now get the blks we want */
+
+  Rmat = ML_Operator_BlkMatExtract(CompR, BlockLocation, BlockLocation);
+  Pmat = ML_Operator_BlkMatExtract(CompP, BlockLocation, BlockLocation);
+  Answer = ML_Operator_Create(Rmat->comm);
+  ML_rap(Rmat, Matrix, Pmat, Answer, matrix_type);
+
+  return(Answer);
+}
+

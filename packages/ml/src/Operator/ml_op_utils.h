@@ -15,6 +15,49 @@
 
 #include "ml_common.h"
 
+/************************************************************************/
+/*       Structures used to implement block matrices where             */
+/*       matrix[i+j*NBlockRows] is the (i,j)th block and NULL          */
+/*       entries are interpreted as blocks of zeros.                   */
+/***********************************************************************/
+
+#define ML_DESTROY_EVERYTHING  2  /* destroy everything including      */
+                                  /* entries in matrix                 */
+                                  /* array  when destructor is invoked */
+#define ML_DESTROY_SHALLOW     3  /* destroy everything but entries in */
+                                  /* matrix                            */
+#define ML_CLEAN_EVERYTHING    4  /* destroy everything but entries in */
+                                  /* matrix which are instead cleaned. */
+
+typedef struct ML_BlkMatData_Struct ML_BlkMatData;
+
+/* Used to record local and global ids associated with each block matrix*/
+struct ML_BlkMatData_Struct {
+   int *GlobalId;
+   int *LocalId;
+};
+
+struct MLBlkMat {
+   int NBlockRows;        /* number of block rows in matrix               */
+   int NBlockCols;        /* number of block cols in matrix               */
+   int *RowStart;         /* RowStart[i] is row # of 1st row in blk row i */
+   int *ColStart;         /* ColStart[i] is col # of 1st col in blk col i */
+   int NGhost;            /* total number of ghosts associated with a     */
+                          /* matvec on the entire matrix.                 */
+   int invec;             /* total number of assigned columns             */
+   int outvec;            /* total number of assigned rows                */
+   ML_Operator **matrix;  /* matrix[i+j*NBlockRows] is (i,j)th block.     */
+   ML_BlkMatData **matdata;/*matdata[i+j*NBlockRows] gives data for  */
+                          /* (i,j)th block.                               */
+   int destroy_level;     /* indicates whether *matrix should be          */
+                          /* destroyed and/or matrix[k]'s should be       */
+                          /* destroyed/clean when destructor invoked.     */
+   int final_called;      /* indicates if ML_Operator_BlkMatFinalize()    */
+                          /* has been invoked or not.                     */
+};
+
+
+
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C" {
@@ -71,6 +114,30 @@ extern void ML_Operator_Profile_SetIterations(int numits);
 extern int ML_Operator_Profile_GetIterations();
 extern int ML_Operator_Get_Nnz(ML_Operator *A);
 extern char* ML_Operator_IdentifyDirichletRows(ML_Operator *A);
+
+extern int  ML_Operator_BlkMatInit(ML_Operator *BlkMat, ML_Comm *comm,
+       int NBlockRows, int NBlockCols, int destroy_level);
+
+extern void  ML_Operator_BlkMatDestroy(void *data);
+
+extern int ML_Operator_BlkMatInsert(ML_Operator *BlkMat, ML_Operator *Entry,
+                        int Row, int Col);
+
+extern ML_Operator *ML_Operator_BlkMatExtract(ML_Operator *BlkMat,
+                        int Row, int Col);
+extern int  ML_Operator_BlkMatFinalize(ML_Operator *BlkMat);
+
+extern int ML_Operator_BlkMatMatvec(ML_Operator *BlkMat, int ilen,
+        double p[], int olen, double ap[]);
+
+extern int ML_Operator_BlkMatGetrow(ML_Operator *Amat, int N_requested_rows,
+   int requested_rows[], int allocated_space, int columns[],
+   double values[], int row_lengths[]);
+
+extern int ML_Blkrap(ML_Operator *Rmat, ML_Operator *Amat, ML_Operator *Pmat,
+              ML_Operator *Result, int matrix_type);
+
+extern ML_Operator *ProjectMe(ML *mlptr, int BlockLocation, int FromLevel, ML_Operator *Matrix, int matrix_type);
 
 #ifndef ML_CPP
 #ifdef __cplusplus
