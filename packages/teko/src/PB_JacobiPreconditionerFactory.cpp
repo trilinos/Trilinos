@@ -26,16 +26,23 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearO
 
    // create a blocked linear operator
    BlockedLinearOp precond = createBlockedOp();
+   std::stringstream ss;
+   ss << "Jacobi Preconditioner ( ";
 
    // start filling the blocked operator
    precond->beginBlockFill(rows,rows); // this is assuming the matrix is square
 
    // build blocked diagonal matrix
-   for(int i=0;i<rows;i++)
+   for(int i=0;i<rows;i++) {
+      ss << " op" << i << " = " << invDiag[i]->description() << ", ";
       precond->setBlock(i,i,invDiag[i]);
+   }
+   ss << " )";
    
    precond->endBlockFill();
    // done filling the blocked operator
+
+   precond->setObjectLabel(ss.str());
    
    return precond; 
 }

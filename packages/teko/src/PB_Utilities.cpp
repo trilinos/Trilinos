@@ -356,7 +356,7 @@ BlockedLinearOp zeroBlockedOp(const BlockedLinearOp & blo)
             = Thyra::zero<double>(range->getBlock(i),domain->getBlock(i));
       zeroOp->setBlock(i,i,zed);
    }
-   zeroOp->endBlockFill();
+//   zeroOp->endBlockFill();
 
    return zeroOp;
 }

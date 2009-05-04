@@ -4,15 +4,19 @@
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
 
 #include "PB_LU2x2InverseOp.hpp"
 #include "PB_Utilities.hpp"
 #include "PB_BlockUpperTriInverseOp.hpp"
 
+#include "EpetraExt_RowMatrixOut.h"
+
 namespace PB {
 namespace NS {
 
 using Teuchos::rcp;
+using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 
 using Thyra::multiply;
@@ -82,7 +86,6 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    // get upper triangular matrix
    BlockedLinearOp U = getUpperTriBlocks(blockOp); 
 
-
    // label the preconditioner
    std::stringstream ss;
    ss << "LSC Preconditioner " << (invD!=Teuchos::null ? "(stabilized)" : "(stable)" ) 
@@ -90,7 +93,8 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
       << ", inv(BQBt) = " << invBQBtmC->description() << " )";
 
    // build the preconditioner operator
-   return createBlockUpperTriInverseOp(U,invDiag,ss.str());
+   //return createBlockUpperTriInverseOp(U,invDiag,ss.str());
+   return createBlockUpperTriInverseOp(U,invDiag,"LSC");
 }
 
 } // end namespace NS

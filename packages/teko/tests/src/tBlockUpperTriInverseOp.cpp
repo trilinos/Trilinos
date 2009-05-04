@@ -183,6 +183,14 @@ bool tBlockUpperTriInverseOp::test_alphabeta(int verbosity,std::ostream & os)
           std::endl << "   tBlockUpperTriInverseOp::test_apply " << toString(status)
                     << ": alpha/beta apply operation failed (relerr=" << diff << " <= " << tolerance_ << ")" );
 
+   applyOp(invA_,src,dste_mv);
+   applyOp(invTri,src,dstn_mv);
+
+   diff = PB::Test::Difference(dste,dstn)/Thyra::norm_2(*dste);
+   TEST_ASSERT(diff<=tolerance_,
+          std::endl << "   tBlockUpperTriInverseOp::test_apply " << toString(status)
+                    << ": apply operation (relerr=" << diff << " <= " << tolerance_ << ")" );
+
    return allPassed;
 }
 

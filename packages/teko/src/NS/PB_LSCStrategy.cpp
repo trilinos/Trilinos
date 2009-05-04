@@ -46,7 +46,12 @@ InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factor
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass,bool rzn)
    : massMatrix_(mass), invFactory_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-{ }
+{ 
+/*
+   EpetraExt::RowMatrixToMatrixMarketFile("mass.mm",
+                           *Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(Thyra::get_Epetra_Operator(*massMatrix_)));
+*/
+}
 
 void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
@@ -125,7 +130,7 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    if(massMatrix_==Teuchos::null) {
       std::cout << "using diagonal of F" << std::endl;
       state->invMass_ = getInvDiagonalOp(F);
-      state->BQBt_ = explicitMultiply(B,Bt);  
+      state->BQBt_ = explicitMultiply(B,state->invMass_,Bt);  
    }
 
    // if this is a stable discretization...we are done!
@@ -182,16 +187,6 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
 
    // now build B*Q*Bt-gamma*C
    state->BQBtmC_ = explicitAdd(state->BQBt_,scale(-state->gamma_,C));
-
-/*
-   std::cout << "Try me = " << num << std::endl;
-   std::cout << "gamma = " << state->gamma_ << ", alpha = " << state->alpha_ << std::endl;
-
-   EpetraExt::RowMatrixToMatrixMarketFile("BQBt.mm",
-                           *Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(Thyra::get_Epetra_Operator(*state->BQBtmC_)));
-   EpetraExt::MultiVectorToMatrixMarketFile("dvec.mm",
-                           *Thyra::get_Epetra_MultiVector(Thyra::get_Epetra_Operator(*state->BQBtmC_)->OperatorRangeMap(),vec_D));
-*/
 }
 
 } // end namespace NS

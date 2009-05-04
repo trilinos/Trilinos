@@ -55,18 +55,15 @@ void BlockLowerTriInverseOp::apply(const BlockedMultiVector & src, BlockedMultiV
 
    // extract the blocks componets from
    // the source and destination vectors
-   std::vector<MultiVector> srcVec;
    std::vector<MultiVector> dstVec;
    std::vector<MultiVector> scrapVec;
    for(int b=0;b<blocks;b++) {
-      srcVec.push_back(getBlock(b,src));
       dstVec.push_back(getBlock(b,dstCopy));
       scrapVec.push_back(getBlock(b,scrap));
    }
 
-   // run back-substituion: run over each column
-   //    From Heath pg. 66
-   //for(int b=blocks-1;b>=0;b--) {
+   // run forward-substituion: run over each column
+   //    From Heath pg. 65
    for(int b=0;b<blocks;b++) {
       applyOp(invDiag_[b], scrapVec[b], dstVec[b]);
 
@@ -83,7 +80,7 @@ void BlockLowerTriInverseOp::apply(const BlockedMultiVector & src, BlockedMultiV
    if(beta!=0)
       update(alpha,dstCopy,beta,dst); // dst = alpha * dstCopy + beta * dst
    else if(alpha!=1.0)
-      scale(alpha,dst); // dsdt = alpha * dst
+      scale(alpha,dst); // dst = alpha * dst
 }
 
 void BlockLowerTriInverseOp::describe(Teuchos::FancyOStream & out_arg,
