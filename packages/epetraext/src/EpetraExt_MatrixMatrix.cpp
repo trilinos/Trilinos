@@ -1318,12 +1318,12 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
       if( B.Filled() ) {//Sum In Values
         err = B.SumIntoGlobalValues( Row, A_NumEntries, A_Values, A_Indices );
         assert( err >= 0 );
-        if (err > 0) ierr = err;
+        if (err < 0) ierr = err;
       }
       else {
         err = B.InsertGlobalValues( Row, A_NumEntries, A_Values, A_Indices );
         assert( err == 0 || err == 1 || err == 3 );
-        if (err > 0) ierr = err;
+        if (err < 0) ierr = err;
       }
     }
   }

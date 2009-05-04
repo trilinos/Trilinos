@@ -187,8 +187,9 @@ int main(int argc, char** argv) {
   if (err == 0) {
     err = time_matrix_matrix_multiply(Comm, verbose);
   }
-  
+
   int global_err = err;
+
 #ifdef EPETRA_MPI
   MPI_Allreduce(&err, &global_err, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
   MPI_Finalize();
