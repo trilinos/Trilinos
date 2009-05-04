@@ -18,6 +18,7 @@ PACKAGE_ADD_ADVANCED_TEST( TrilinosDep_XmlHtmlCDashOutputTest
       -D Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING:BOOL=ON
       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON
       -D Trilinos_DEPS_XML_OUTPUT_FILE:STRING=TrilinosPackageDependencies.xml
+      -D Trilinos_DEPS_HTML_OUTPUT_FILE:STRING=TrilinosPackageDependenciesTable.html
       -D Trilinos_CDASH_DEPS_XML_OUTPUT_FILE:STRING=CDashSubprojectDependencies.xml
       -D Trilinos_ENABLE_C:BOOL=OFF
       -D Trilinos_ENABLE_CXX:BOOL=OFF

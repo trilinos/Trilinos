@@ -17,4 +17,6 @@ $EXTRA_ARGS \
 
 #-D TPL_ENABLE_Boost:BOOL=ON \
 #-D CMAKE_Fortran_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gfortran \
+#-D CMAKE_CXX_FLAGS:STRING="-m64 -g" \
+#-D CMAKE_C_FLAGS:STRING="-m64 -g" \
 #-D CMAKE_Fortran_FLAGS:STRING="-m64 -g" \

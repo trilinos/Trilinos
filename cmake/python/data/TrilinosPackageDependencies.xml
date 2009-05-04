@@ -95,7 +95,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="ZoltanTpl"/>
+    <LIB_OPTIONAL_DEP_TPLS value="ZoltanTpl,UMFPACK,AMD,PETSC"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
@@ -195,7 +195,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Triutils,Galeri"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="SuperLUDist,ParMETIS"/>
+    <LIB_OPTIONAL_DEP_TPLS value="SuperLUDist,ParMETIS,UMFPACK,SuperLU,MUMPS"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
@@ -235,7 +235,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI,METIS,ParMETIS,ZoltanTpl"/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI,METIS,ParMETIS,ZoltanTpl,PETSC"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="METIS,ParMETIS,ZoltanTpl"/>
   </Package>
@@ -304,16 +304,16 @@
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_REQUIRED_DEP_TPLS value="Pthread"/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="Phalanx" dir="phalanx">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Sacado"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards,Sacado"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Belos,Epetra,Ifpack"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Belos,Epetra,Ifpack,Intrepid"/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -330,12 +330,12 @@
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="Phdmesh" dir="phdmesh">
-    <LIB_REQUIRED_DEP_PACKAGES value="ThreadPool"/>
+    <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="Pthread"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
@@ -345,7 +345,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Stratimikos"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="MF"/>
+    <LIB_OPTIONAL_DEP_TPLS value="MF,PETSC,LAPACK,BLAS"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
@@ -385,7 +385,7 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="EpetraExt,Stratimikos,Rythmos"/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI"/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI,MA28"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
@@ -400,7 +400,7 @@
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="Sundance" dir="Sundance">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Thyra,Amesos,AztecOO,Ifpack,ML,Anasazi,NOX"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Thyra,Amesos,AztecOO,Ifpack,ML,Anasazi,NOX,Intrepid"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="MOOCHO"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -467,7 +467,7 @@
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="ZoltanTpl"/>
   </Package>
   <Package name="NewPackage" dir="new_package">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
