@@ -7,6 +7,15 @@
 Trilinos Website: http://trilinos.sandia.gov
 
 -------------------------------------------------------------------------------
+CMake build system
+-------------------------------------------------------------------------------
+
+- See <trilinos_base_directory>/cmake/TrilinosCMakeQuickstart.txt for
+  information about installing Trilinos with the CMake build system.
+
+-------------------------------------------------------------------------------
+Autotools build system (Trilinos 9.0.X and earlier)
+-------------------------------------------------------------------------------
 
 - Note that a simple "configure ; make ; make install" will typically not
   provide the set of features you want from Trilinos. In particular, no
