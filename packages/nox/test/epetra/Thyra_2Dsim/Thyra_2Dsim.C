@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
   double x00 = 0.0;
   double x01 = 1.0;
   Teuchos::RCP<EpetraExt::ModelEvaluator> epetraModel = 
-    rcp(new EpetraModelEval2DSim(Teuchos::rcp(&Comm,false),
+    Teuchos::rcp(new EpetraModelEval2DSim(Teuchos::rcp(&Comm,false),
 				 d,p0,p1,x00,x01));
 
   // Create the linear solver type with Stratimikos

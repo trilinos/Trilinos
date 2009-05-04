@@ -18,6 +18,7 @@ namespace {
 using Teuchos::as;
 using Teuchos::null;
 using Teuchos::RCP;
+using Teuchos::rcp;
 using Teuchos::get_extra_data;
 using Thyra::VectorSpaceBase;
 using Thyra::VectorBase;

@@ -159,7 +159,7 @@ void DefaultStateEliminationModelEvaluator<Scalar>::initialize(
   TEST_FOR_EXCEPT(!stateSolver.get());
   stateSolver_ = stateSolver;
   x_guess_solu_ = Teuchos::null; // We will get the guess at the last possible moment!
-  wrappedThyraModel_ = rcp(
+  wrappedThyraModel_ = Teuchos::rcp(
     new DefaultNominalBoundsOverrideModelEvaluator<Scalar>(
       Teuchos::rcp_const_cast<ModelEvaluator<Scalar> >(thyraModel)
       ,Teuchos::null

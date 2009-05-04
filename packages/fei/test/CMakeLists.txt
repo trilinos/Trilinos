@@ -6,7 +6,10 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../base/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../base/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../support-Trilinos)
 
-ADD_SUBDIRECTORY(remEssBCs)
+#ADD_SUBDIRECTORY(remEssBCs)
+
+# 2009/05/03: rabartl: Above, commented out because there is no
+# CMakeLists.txt file in that directory
 
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/../../teuchos/src)

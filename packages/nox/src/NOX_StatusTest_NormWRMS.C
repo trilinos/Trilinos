@@ -98,7 +98,7 @@ NormWRMS::~NormWRMS()
 }
 
 StatusType NormWRMS::
-checkStatus(const Solver::Generic& problem, 
+checkStatus(const NOX::Solver::Generic& problem, 
 	    NOX::StatusTest::CheckType checkType)
 {
   if (checkType == NOX::StatusTest::None) {

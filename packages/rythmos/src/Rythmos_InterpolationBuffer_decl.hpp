@@ -160,12 +160,21 @@ private:
 
 };
 
-// Nonmember constructor
+
+/** \brief Nonmember constructor.
+ *
+ * \relates InterpolationBuffer.
+ */
 template<class Scalar>
 RCP<InterpolationBuffer<Scalar> > interpolationBuffer( 
   const RCP<InterpolatorBase<Scalar> >& interpolator = Teuchos::null,
   int storage = 0 
-  );
+  )
+{
+  RCP<InterpolationBuffer<Scalar> > ib = rcp(new InterpolationBuffer<Scalar>());
+  ib->initialize(interpolator, storage);
+  return ib;
+}
 
 
 } // namespace Rythmos

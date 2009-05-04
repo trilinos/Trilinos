@@ -72,18 +72,6 @@ namespace {
 
 namespace Rythmos {
 
-// Nonmember constructor
-template<class Scalar>
-RCP<InterpolationBuffer<Scalar> > interpolationBuffer( 
-  const RCP<InterpolatorBase<Scalar> >& interpolator = Teuchos::null,
-  int storage = 0 
-  )
-{
-  RCP<InterpolationBuffer<Scalar> > ib = rcp(new InterpolationBuffer<Scalar>());
-  ib->initialize(interpolator, storage);
-  return ib;
-}
-
 // ////////////////////////////
 // Defintions
 
@@ -560,8 +548,8 @@ IBPolicy InterpolationBuffer<Scalar>::getIBPolicy()
   template class InterpolationBuffer< SCALAR >; \
   \
   template RCP<InterpolationBuffer< SCALAR > > interpolationBuffer(  \
-    const RCP<InterpolatorBase< SCALAR > >& interpolator = Teuchos::null, \
-    int storage = 0  \
+    const RCP<InterpolatorBase< SCALAR > >& interpolator, \
+    int storage  \
     ); 
 
 } // namespace Rythmos

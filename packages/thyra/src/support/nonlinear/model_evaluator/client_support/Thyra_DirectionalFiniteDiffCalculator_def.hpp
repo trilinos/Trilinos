@@ -166,7 +166,7 @@ const RCP<
   >
 >
 DirectionalFiniteDiffCalculator<Scalar>::fdMethodValidator
-= rcp(
+= Teuchos::rcp(
   new Teuchos::StringToIntegralParameterEntryValidator<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDMethodType>(
     Teuchos::tuple<std::string>(
       "order-one"
@@ -215,7 +215,7 @@ const RCP<
     >
   >
 DirectionalFiniteDiffCalculator<Scalar>::fdStepSelectTypeValidator
-= rcp(
+= Teuchos::rcp(
   new Teuchos::StringToIntegralParameterEntryValidator<Thyra::DirectionalFiniteDiffCalculatorTypes::EFDStepSelectType>(
     Teuchos::tuple<std::string>(
       "Absolute"
