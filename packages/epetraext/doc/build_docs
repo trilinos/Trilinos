@@ -14,12 +14,6 @@ echo
 doxygen DoxyfileWeb
 
 echo
-echo "Generating epetraext/thyra doxygen documentation ..."
-echo
-
-doxygen ../thyra/doc/Doxyfile
-
-echo
 echo "Generating doxygen browser documentation for all of epetraext ..."
 echo
 
