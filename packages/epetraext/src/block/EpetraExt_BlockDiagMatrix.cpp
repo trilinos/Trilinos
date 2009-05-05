@@ -185,14 +185,17 @@ int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_
   //NTS: MultiVector's MyLength and [] Operators are  "points" level operators
   //not a "block/element" level operators.
 
+  const int *vlist=DataMap_->FirstPointInElementList();
+  const int *xlist=Map().FirstPointInElementList();
 
   if(ApplyMode_==AM_MULTIPLY || ApplyMode_==AM_INVERT){
     // Multiply & Invert mode have the same apply
     int NumBlocks=NumMyBlocks();
     for(int i=0;i<NumBlocks;i++){
       int Nb=BlockSize(i);
-      int vidx0=DataMap_->FirstPointInElement(i);
-      int xidx0=Map().FirstPointInElement(i);
+      int vidx0=vlist[i];
+      int xidx0=xlist[i];
+
       if(Nb==1) {
         // Optimize for size = 1
         Y[0][xidx0]=Values_[vidx0]*X[0][xidx0];
@@ -215,8 +218,8 @@ int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_
     int NumBlocks=NumMyBlocks();
     for(int i=0;i<NumBlocks;i++){
       int Nb=BlockSize(i);
-      int vidx0=DataMap_->FirstPointInElement(i);
-      int xidx0=Map().FirstPointInElement(i);
+      int vidx0=vlist[i];
+      int xidx0=xlist[i];      
       if(Nb==1) {
         // Optimize for size = 1 - use the inverse
         Y[0][xidx0]=Values_[vidx0]*X[0][xidx0];
