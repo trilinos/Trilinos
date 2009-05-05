@@ -221,7 +221,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 TEST_LIBS = $(ML_EXTRA_LIBS)     $(ML_LIBS)
 TEST_INCLUDES = $(ML_EXTRA_INCLUDES) $(ML_INCLUDES)
-EXTRA_DIST = samplemat.dat.gz blockids.dat.gz
+EXTRA_DIST = samplemat.dat.gz blockids.dat.gz localids_in_blocks.dat.gz
 BlockCheby_SOURCES = $(srcdir)/BlockCheby.cpp
 BlockCheby_DEPENDENCIES = $(top_builddir)/src/libml.a
 BlockCheby_CXXFLAGS = ${TEST_INCLUDES}
@@ -487,6 +487,7 @@ include $(top_builddir)/Makefile.export.ml
 #copy these files over to the build area
 GetNecessaryFiles$(EXEEXT): $(GetNecessaryFiles_SOURCES)
 	@if test ! -e ./blockids.dat; then cp -f $(srcdir)/blockids.dat.gz .; gunzip -f ./blockids.dat.gz ; fi
+	@if test ! -e ./localids_in_blocks.dat; then cp -f $(srcdir)/local_ids_in_blocks.dat.gz .; gunzip -f ./localids_in_blocks.dat.gz ; fi
 	@if test ! -e ./samplemat.dat; then cp -f $(srcdir)/samplemat.dat.gz .; gunzip -f samplemat.dat.gz ; fi
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

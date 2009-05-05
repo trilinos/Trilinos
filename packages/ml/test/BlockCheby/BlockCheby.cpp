@@ -24,6 +24,7 @@
 #include "ml_utils.h"
 #include "EpetraExt_CrsMatrixIn.h"
 #include "EpetraExt_VectorIn.h"
+#include "EpetraExt_MultiVectorIn.h"
 
 using namespace Teuchos;
 
@@ -74,9 +75,9 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, 1);
+  solver.SetAztecOption(AZ_output, 10);
   
-  solver.Iterate(300, 1e-10);
+  solver.Iterate(1000, 1e-100);
   
   delete MLPrec;
   
@@ -127,7 +128,6 @@ int main(int argc, char *argv[]) {
 #endif
   
   // initialize the random number generator
-
   int ml_one = 1;
   ML_srandom1(&ml_one);
   // ===================== //
@@ -140,10 +140,9 @@ int main(int argc, char *argv[]) {
   EpetraExt::MatlabFileToCrsMatrix("samplemat.dat",Comm,BadMatrix);
   const Epetra_Map *Map=&BadMatrix->RowMap();
 
-  // Read in the block ids - only works in serial
+  // Read in the block GLOBAL ids
   Epetra_Vector* d_blockids;
   int rv=EpetraExt::MatrixMarketFileToVector("blockids.dat",*Map,d_blockids);
-  fprintf(stderr,"rv= %d\n",rv);
   i_blockids=new int[d_blockids->MyLength()];
   numblocks=-1;
   for(int i=0;i<d_blockids->MyLength();i++){
@@ -151,7 +150,7 @@ int main(int argc, char *argv[]) {
     numblocks=MAX(numblocks,i_blockids[i]);
   }
   numblocks++;
-  
+
   BadMatrix->FillComplete();  BadMatrix->OptimizeStorage();
   int N=BadMatrix->RowMatrixRowMap().NumMyElements();
   
@@ -168,8 +167,9 @@ int main(int argc, char *argv[]) {
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
   char mystring[80];
 
+#ifdef OLD
   // ====================== //
-  // Cheby 
+  // ML Cheby 
   // ====================== //
   if (Comm.MyPID() == 0) PrintLine();
   ML_Epetra::SetDefaults("SA",MLList);
@@ -182,39 +182,152 @@ int main(int argc, char *argv[]) {
   TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
                                TotalErrorResidual, TotalErrorExactSol);
 
+  // These tests only work in serial due to how the block id's are written.
+  if(Comm.NumProc()==1){
+    // ====================== //
+    // ML Block Cheby (Trivial)
+    // ====================== //
+    if (Comm.MyPID() == 0) PrintLine(); 
+    ML_Epetra::SetDefaults("SA",MLList); 
+    MLList.set("smoother: type","Block Chebyshev");
+    MLList.set("smoother: Block Chebyshev number of blocks",N);
+    MLList.set("smoother: Block Chebyshev block list",trivial_blockids);
+    MLList.set("coarse: type","Amesos-KLU");  
+    MLList.set("max levels",2);
+    MLList.set("ML output",10);  
+    MLList.set("smoother: polynomial order",2);
+    strcpy(mystring,"ML Block Cheby (Trivial)");
+    TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
+                                 TotalErrorResidual, TotalErrorExactSol);
+  
+  
+    // ====================== //
+    // ML Block Cheby (Smart)
+    // ====================== //  
+    if (Comm.MyPID() == 0) PrintLine();
+    ML_Epetra::SetDefaults("SA",MLList);  
+    MLList.set("smoother: type","Block Chebyshev");
+    MLList.set("smoother: Block Chebyshev number of blocks",numblocks);
+    MLList.set("smoother: Block Chebyshev block list",i_blockids);    
+    MLList.set("coarse: type","Amesos-KLU");  
+    MLList.set("max levels",2);
+    MLList.set("ML output",10);  
+    MLList.set("smoother: polynomial order",2);
+    strcpy(mystring,"ML Block Cheby (Smart)");
+    TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
+                                 TotalErrorResidual, TotalErrorExactSol);
+  }
+#endif
+  
+#if defined(HAVE_ML_IFPACK)
+#ifdef OLD
+  // ====================== //
+  // IFPACK Cheby 
+  // ====================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type","IFPACK-Chebyshev");
+  MLList.set("coarse: type","Amesos-KLU");    
+  MLList.set("max levels",2);
+  MLList.set("ML output",10);
+  MLList.set("smoother: polynomial order",2);  
+  strcpy(mystring,"IFPACK Cheby");
+  TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
+                               TotalErrorResidual, TotalErrorExactSol);
+#endif
 
   // ====================== //
-  // Block Cheby (Trivial)
-  // ====================== //
-  if (Comm.MyPID() == 0) PrintLine(); 
-  ML_Epetra::SetDefaults("SA",MLList); 
-  MLList.set("smoother: type","Block Chebyshev");
-  MLList.set("smoother: Block Chebyshev number of blocks",N);
-  MLList.set("smoother: Block Chebyshev block list",trivial_blockids);
-  MLList.set("coarse: type","Amesos-KLU");  
-  MLList.set("max levels",2);
-  MLList.set("ML output",10);  
-  MLList.set("smoother: polynomial order",2);
-  strcpy(mystring,"Block Cheby (Trivial)");
-  TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
-                               TotalErrorResidual, TotalErrorExactSol);
-  
-  
-  // ====================== //
-  // Block Cheby (Smart)
+  // IFPACK Block Cheby (Trivial)
   // ====================== //  
+  int NumBlocks=Map->NumMyElements();
+  int *BlockStarts=new int[NumBlocks+1];
+  int *Blockids=new int [NumBlocks];
+#ifdef OLD
+  for(int i=0;i<NumBlocks;i++){
+    BlockStarts[i]=i;
+    Blockids[i]=Map->GID(i);
+  }
+  BlockStarts[NumBlocks]=NumBlocks;
   if (Comm.MyPID() == 0) PrintLine();
-  ML_Epetra::SetDefaults("SA",MLList);  
-  MLList.set("smoother: type","Block Chebyshev");
-  MLList.set("smoother: Block Chebyshev number of blocks",numblocks);
-  MLList.set("smoother: Block Chebyshev block list",i_blockids);    
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type","IFPACK-Block Chebyshev");
+  MLList.set("smoother: Block Chebyshev number of blocks",NumBlocks);
+  MLList.set("smoother: Block Chebyshev block starts",&BlockStarts[0]);
+  MLList.set("smoother: Block Chebyshev block list",&Blockids[0]);    
   MLList.set("coarse: type","Amesos-KLU");  
   MLList.set("max levels",2);
   MLList.set("ML output",10);  
   MLList.set("smoother: polynomial order",2);
-  strcpy(mystring,"Block Cheby (Smart)");
+  strcpy(mystring,"IFPACK Block Cheby (Trivial)");
   TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
                                TotalErrorResidual, TotalErrorExactSol);
+#endif
+  delete [] BlockStarts; delete [] Blockids;
+
+  
+  // ====================== //
+  // IFPACK Block Cheby (Smart)
+  // ====================== //
+  // Figure out how many blocks we actually have and build a map...
+  Epetra_Map* IfpackMap;
+  int g_NumBlocks=-1,g_MaxSize=-1;
+  if(Comm.MyPID() == 0){
+    const int lineLength = 1025;
+    char line[lineLength];
+
+    FILE * f=fopen("localids_in_blocks.dat","r");
+    assert(f!=0);
+
+    // Next, strip off header lines (which start with "%")
+    do {
+      if(fgets(line, lineLength,f)==0) return(-4);
+    } while (line[0] == '%');
+
+    // Grab the number we actually care about
+    sscanf(line, "%d %d", &g_NumBlocks, &g_MaxSize);
+    fclose(f);
+  }
+  Comm.Broadcast(&g_NumBlocks,1,0);
+  Comm.Broadcast(&g_MaxSize,1,0);
+  Epetra_Map BlockMap(g_NumBlocks,0,Comm);   
+  Epetra_MultiVector *blockids_disk=0;
+  rv=EpetraExt::MatrixMarketFileToMultiVector("localids_in_blocks.dat",BlockMap,blockids_disk);
+
+  // Put all the block info into the right place
+  NumBlocks=BlockMap.NumMyElements();
+  BlockStarts=new int[NumBlocks+1];
+  Blockids= new int[g_MaxSize*NumBlocks];
+  // NTS: Blockids_ is overallocated because I don't want to write a counting loop
+  int i,cidx;
+  for(i=0,cidx=0;i<NumBlocks;i++){
+    BlockStarts[i]=cidx;
+    Blockids[cidx]=(int)(*blockids_disk)[0][i];cidx++;
+    if((*blockids_disk)[1][i] > 1e-2){
+      Blockids[cidx]=(int)(*blockids_disk)[1][i];cidx++;
+    }    
+  }
+  BlockStarts[NumBlocks]=cidx;
+  
+  
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type","IFPACK-Block Chebyshev");
+  MLList.set("smoother: Block Chebyshev number of blocks",NumBlocks);
+  MLList.set("smoother: Block Chebyshev block starts",&BlockStarts[0]);
+  MLList.set("smoother: Block Chebyshev block list",&Blockids[0]);    
+  MLList.set("coarse: type","Amesos-KLU");  
+  MLList.set("max levels",2);
+  MLList.set("ML output",10);  
+  MLList.set("smoother: polynomial order",2);
+  strcpy(mystring,"IFPACK Block Cheby (Smart)");
+  TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
+                               TotalErrorResidual, TotalErrorExactSol);
+  
+  delete blockids_disk; delete [] BlockStarts; delete [] Blockids;
+#endif
+  
+
+
   
   // ===================== //
   // print out total error //
@@ -231,7 +344,7 @@ int main(int argc, char *argv[]) {
   delete [] trivial_blockids;
   delete BadMatrix;
   delete d_blockids;
-  if (TotalErrorResidual > 1e-6) {
+  if (TotalErrorResidual > 1e-5) {
     cerr << "Error: `BlockCheby.exe' failed!" << endl;
     exit(EXIT_FAILURE);
   }

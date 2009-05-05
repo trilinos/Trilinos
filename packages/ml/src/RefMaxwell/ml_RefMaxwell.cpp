@@ -553,6 +553,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PreList.set("max levels",1);    
     PreList.set("smoother: Block Chebyshev number of blocks",List.get("smoother: Block Chebyshev number of blocks",-1));
     PreList.set("smoother: Block Chebyshev block list",List.get("smoother: Block Chebyshev block list",(int*)0));
+    PreList.set("smoother: Block Chebyshev block starts",List.get("smoother: Block Chebyshev block starts",(int*)0));
     
     Teuchos::ParameterList PostList(PreList);
     PostList.setName("refmaxwell: edge postsmoother");

@@ -153,6 +153,7 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
   /* EXPERIMENTAL - Half-GS Smoothing */
   PL->set("smoother: Gauss-Seidel efficient symmetric",false);
   setIntParameter("smoother: Block Chebyshev number of blocks",-1,"Number of blocks to use with Block Chebyshev",PL,intParam);    
+  PL->set("smoother: Block Chebyshev block starts",(int*)0);
   PL->set("smoother: Block Chebyshev block list",(int*)0);
   
   /* Coarse IFPACK Solvers - experimental */
@@ -211,16 +212,16 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 
   /* Allocate List for Smoothing Options */
 # ifdef HAVE_PETSC
-  const int num_smoothers=26;
+  const int num_smoothers=27;
 # else
-  const int num_smoothers=25;
+  const int num_smoothers=26;
 # endif
   const char* smoother_strings[num_smoothers]={"Aztec","IFPACK","Jacobi",
    "ML symmetric Gauss-Seidel","symmetric Gauss-Seidel","ML Gauss-Seidel",
    "Gauss-Seidel","Chebyshev","MLS","Hiptmair","Amesos-KLU","Amesos-Superlu",
    "Amesos-UMFPACK","Amesos-Superludist","Amesos-MUMPS","user-defined",
    "SuperLU","IFPACK-Chebyshev","self","do-nothing","IC","ICT","ILU","ILUT",
-   "Block Chebyshev"
+   "Block Chebyshev","IFPACK-Block Chebyshev"
 #  ifdef HAVE_PETSC
    ,"petsc"
 #  endif

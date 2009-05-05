@@ -21,6 +21,7 @@
 #include "ml_RowMatrix.h"
 // IFPACK factory class
 #include "Ifpack.h"
+#include "Ifpack_Chebyshev.h"
 
 using namespace ML_Epetra;
 
@@ -148,16 +149,21 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
   Ifpack Factory;
   Ifpack_Preconditioner* Prec;
 
-  // create the preconditioner 
+  // create the preconditioner
   Prec = Factory.Create(Type, Ifpack_Matrix, Overlap);
-  assert (Prec != 0);
-
   Prec->SetParameters(List);
-  ML_CHK_ERR(Prec->Initialize());
   ML_CHK_ERR(Prec->Compute());
-
+  
   *Ifpack_Handle = (void *)Prec;
 
+  // Grab the lambda's if needed
+  if(!strcmp(Type,"Chebyshev")){
+    Ifpack_Chebyshev* C=dynamic_cast<Ifpack_Chebyshev*>(Prec);
+    assert(C);
+    ml->Amat[curr_level].lambda_min=C->GetLambdaMin();
+    ml->Amat[curr_level].lambda_max=C->GetLambdaMax();
+  }
+  
   return 0;
   
 } /* ML_Ifpack_Gen */
