@@ -77,7 +77,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 10);
   
-  solver.Iterate(1000, 1e-100);
+  solver.Iterate(200, 1e-10);
   
   delete MLPrec;
   
