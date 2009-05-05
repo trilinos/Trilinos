@@ -73,46 +73,40 @@ namespace {
 template< class IList >
 const unsigned * index_list( const IList & )
 {
-
-#define VALUE( I )  ( IndexListAt< IList , I >::value < 0 ? ~0u : \
-                      (unsigned) IndexListAt< IList , I >::value )
-
   static const unsigned self[] = {
-    VALUE(  0 ) ,
-    VALUE(  1 ) ,
-    VALUE(  2 ) ,
-    VALUE(  3 ) ,
-    VALUE(  4 ) ,
-    VALUE(  5 ) ,
-    VALUE(  6 ) ,
-    VALUE(  7 ) ,
-    VALUE(  8 ) ,
-    VALUE(  9 ) ,
-    VALUE( 10 ) ,
-    VALUE( 11 ) ,
-    VALUE( 12 ) ,
-    VALUE( 13 ) ,
-    VALUE( 14 ) ,
-    VALUE( 15 ) ,
-    VALUE( 16 ) ,
-    VALUE( 17 ) ,
-    VALUE( 18 ) ,
-    VALUE( 19 ) ,
-    VALUE( 20 ) ,
-    VALUE( 21 ) ,
-    VALUE( 22 ) ,
-    VALUE( 23 ) ,
-    VALUE( 24 ) ,
-    VALUE( 25 ) ,
-    VALUE( 26 ) ,
-    VALUE( 27 ) ,
-    VALUE( 28 ) ,
-    VALUE( 29 ) ,
-    VALUE( 30 ) ,
-    VALUE( 31 )
+    IndexListAt< IList ,  0 >::value ,
+    IndexListAt< IList ,  1 >::value ,
+    IndexListAt< IList ,  2 >::value ,
+    IndexListAt< IList ,  3 >::value ,
+    IndexListAt< IList ,  4 >::value ,
+    IndexListAt< IList ,  5 >::value ,
+    IndexListAt< IList ,  6 >::value ,
+    IndexListAt< IList ,  7 >::value ,
+    IndexListAt< IList ,  8 >::value ,
+    IndexListAt< IList ,  9 >::value ,
+    IndexListAt< IList , 10 >::value ,
+    IndexListAt< IList , 11 >::value ,
+    IndexListAt< IList , 12 >::value ,
+    IndexListAt< IList , 13 >::value ,
+    IndexListAt< IList , 14 >::value ,
+    IndexListAt< IList , 15 >::value ,
+    IndexListAt< IList , 16 >::value ,
+    IndexListAt< IList , 17 >::value ,
+    IndexListAt< IList , 18 >::value ,
+    IndexListAt< IList , 19 >::value ,
+    IndexListAt< IList , 20 >::value ,
+    IndexListAt< IList , 21 >::value ,
+    IndexListAt< IList , 22 >::value ,
+    IndexListAt< IList , 23 >::value ,
+    IndexListAt< IList , 24 >::value ,
+    IndexListAt< IList , 25 >::value ,
+    IndexListAt< IList , 26 >::value ,
+    IndexListAt< IList , 27 >::value ,
+    IndexListAt< IList , 28 >::value ,
+    IndexListAt< IList , 29 >::value ,
+    IndexListAt< IList , 30 >::value ,
+    IndexListAt< IList , 31 >::value
   };
-
-#undef VALUE
 
   return self ;
 }
@@ -149,37 +143,41 @@ struct SubcellArray {
 
 //----------------------------------------------------------------------
 
-template< class IList , unsigned N >
+template< class IList , class PList, unsigned N >
 struct PermutationValue ;
 
-template< class IList >
-struct PermutationValue<IList,0>
+template< class IList , class PList>
+struct PermutationValue<IList,PList,0>
 { static void assign( Permutation * , Permutation * ) {} };
 
-template< class IList , unsigned N >
+template< class IList , class PList, unsigned N >
 struct PermutationValue {
   static void assign( Permutation * forward , Permutation * inverse )
     {
       enum { I = N - 1 };
       typedef typename TypeListAt<IList,I>::type ForwardType ;
+      enum { polarity = IndexListAt<PList,I>::value };
       typedef typename IndexListInverse< ForwardType >::type InverseType ;
-      PermutationValue<IList,I>::assign( forward , inverse );
+      PermutationValue<IList,PList,I>::assign( forward , inverse );
       forward[I].node = index_list( ForwardType() );
+      forward[I].polarity = polarity;
       inverse[I].node = index_list( InverseType() );
+      inverse[I].polarity = polarity;
     }
 };
 
-template< class IList , unsigned NPerm = TypeListLength< IList >::value >
+template< class IList , class PList,
+          unsigned NPerm = TypeListLength< IList >::value >
 struct PermutationArray ;
 
-template< class IList >
-struct PermutationArray< IList , 0 > {
+template< class IList , class PList>
+struct PermutationArray< IList , PList, 0 > {
   Permutation * forward ;
   Permutation * inverse ;
   PermutationArray() : forward(NULL), inverse(NULL) {}
 };
 
-template< class IList , unsigned NPerm >
+template< class IList , class PList, unsigned NPerm >
 struct PermutationArray {
 
   enum { N = NPerm };
@@ -188,7 +186,7 @@ struct PermutationArray {
   Permutation inverse[ N ];
 
   PermutationArray()
-    { PermutationValue< IList , N >::assign( forward , inverse ); }
+  { PermutationValue< IList , PList, N >::assign( forward , inverse ); }
 };
   
 //----------------------------------------------------------------------
@@ -261,19 +259,20 @@ template< unsigned Number_Vertex ,
           unsigned Number_Node ,
           class    EdgeList ,
           class    EdgeMaps ,
-          class    PermutationMaps >
+          class    PermutationMaps ,
+          class    PermutationPolarity >
 struct Descriptor<
   CellTopologyTraits< 2 , Number_Vertex , Number_Node ,
                       EdgeList , EdgeMaps , TypeListEnd , TypeListEnd ,
-                      PermutationMaps > >
+                      PermutationMaps, PermutationPolarity > >
 {
   typedef CellTopologyTraits< 2 , Number_Vertex , Number_Node ,
                               EdgeList , EdgeMaps ,
                               TypeListEnd , TypeListEnd ,
-                              PermutationMaps > Traits ;
+                              PermutationMaps, PermutationPolarity > Traits ;
   
   typedef SubcellArray< EdgeList , EdgeMaps > EdgeArray ;
-  typedef PermutationArray< PermutationMaps > PermArray ;
+  typedef PermutationArray< PermutationMaps, PermutationPolarity> PermArray ;
 
   EdgeArray edges ;
   PermArray perm ;
@@ -321,19 +320,19 @@ struct Descriptor<
 };
 
 template< unsigned Number_Node , unsigned Number_Vertex ,
-          class PermutationMaps >
+          class PermutationMaps , class PermutationPolarity >
 struct Descriptor<
   CellTopologyTraits< 1 , Number_Vertex , Number_Node ,
                       TypeListEnd , TypeListEnd ,
                       TypeListEnd , TypeListEnd ,
-                      PermutationMaps > >
+                      PermutationMaps, PermutationPolarity > >
 {
   typedef CellTopologyTraits< 1 , Number_Vertex , Number_Node ,
                               TypeListEnd , TypeListEnd ,
                               TypeListEnd , TypeListEnd ,
-                              PermutationMaps > Traits ;
+                              PermutationMaps, PermutationPolarity > Traits ;
   
-  typedef PermutationArray< PermutationMaps > PermArray ;
+  typedef PermutationArray< PermutationMaps, PermutationPolarity > PermArray ;
 
   PermArray perm ;
 

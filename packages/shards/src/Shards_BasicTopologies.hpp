@@ -33,7 +33,7 @@ namespace shards {
  */
 
 //----------------------------------------------------------------------
- 
+
 /** \brief Topological traits: Dimension = 0, Vertices = 0, Nodes = 0. */
 struct Node : public CellTopologyTraits<0,0,0>
 {
@@ -359,18 +359,24 @@ typedef IndexList< 1 , 0 , 2 > LineNodeMapReversed ;
 typedef MakeTypeList< LineNodeMapIdentity , LineNodeMapReversed >::type
   LineNodePermutation ;
 
+typedef IndexList< CELL_PERMUTATION_POLARITY_POSITIVE,
+                   CELL_PERMUTATION_POLARITY_NEGATIVE >
+  LineNodePermutationPolarity;
+
 template<> struct Line<2> : public
   CellTopologyTraits< 1 , 2 , 2 ,
-                     TypeListEnd, TypeListEnd,
-                     TypeListEnd, TypeListEnd,
-                     LineNodePermutation >
+                      TypeListEnd, TypeListEnd,
+                      TypeListEnd, TypeListEnd,
+                      LineNodePermutation,
+                      LineNodePermutationPolarity >
 { typedef Line<2> base ; };
 
 template<> struct Line<3> : public
   CellTopologyTraits< 1 , 2 , 3 ,
-                     TypeListEnd, TypeListEnd,
-                     TypeListEnd, TypeListEnd,
-                     LineNodePermutation >
+                      TypeListEnd, TypeListEnd,
+                      TypeListEnd, TypeListEnd,
+                      LineNodePermutation,
+                      LineNodePermutationPolarity >
 { typedef Line<2> base ; };
 
 // Beam is a line with one edge:
@@ -412,19 +418,28 @@ template<> struct ShellLine<3> : public
 //----------------------------------------------------------------------
 // Topologies for Rank-2 cells.
 
-// A permutation should either be the identity or reversed.
-// Simple (non-reversed) rotations should not happen in practice.
-
 typedef IndexList< 0, 1, 2,  3, 4, 5 > TriangleNodeMapIdentity ;
+typedef IndexList< 2, 0, 1,  5, 3, 4 > TriangleNodeMapPositive1 ;
+typedef IndexList< 1, 2, 0,  4, 5, 3 > TriangleNodeMapPositive2 ;
 typedef IndexList< 0, 2, 1,  5, 4, 3 > TriangleNodeMapReversed0 ;
 typedef IndexList< 2, 1, 0,  4, 3, 5 > TriangleNodeMapReversed1 ;
 typedef IndexList< 1, 0, 2,  3, 5, 4 > TriangleNodeMapReversed2 ;
 
-typedef MakeTypeList< TriangleNodeMapIdentity ,
+typedef MakeTypeList< TriangleNodeMapIdentity , 
+                      TriangleNodeMapPositive1 , 
+                      TriangleNodeMapPositive2 , 
                       TriangleNodeMapReversed0 , 
                       TriangleNodeMapReversed1 , 
                       TriangleNodeMapReversed2 >::type
   TriangleNodePermutation ;
+
+typedef IndexList< CELL_PERMUTATION_POLARITY_POSITIVE,
+                   CELL_PERMUTATION_POLARITY_POSITIVE,
+                   CELL_PERMUTATION_POLARITY_POSITIVE,
+                   CELL_PERMUTATION_POLARITY_NEGATIVE,
+                   CELL_PERMUTATION_POLARITY_NEGATIVE,
+                   CELL_PERMUTATION_POLARITY_NEGATIVE >
+  TriangleNodePermutationPolarity;
 
 typedef MakeTypeList< IndexList< 0 , 1 , 3 > ,
                       IndexList< 1 , 2 , 4 > ,
@@ -433,43 +448,58 @@ typedef MakeTypeList< IndexList< 0 , 1 , 3 > ,
 
 template<> struct Triangle<3> : public
   CellTopologyTraits< 2 , 3 , 3 ,
-                            MakeTypeList< Line<2>  ,
-                                          Line<2>  ,
-                                          Line<2>  >::type ,
-                            TriangleEdgeNodeMap ,
-                            TypeListEnd , TypeListEnd ,
-                            TriangleNodePermutation >
+                      MakeTypeList< Line<2>  ,
+                                    Line<2>  ,
+                                    Line<2>  >::type ,
+                      TriangleEdgeNodeMap ,
+                      TypeListEnd , TypeListEnd ,
+                      TriangleNodePermutation ,
+                      TriangleNodePermutationPolarity >
 { typedef Triangle<3> base ; };
 
 template<> struct Triangle<6> : public
   CellTopologyTraits< 2 , 3 , 6 ,
-                            MakeTypeList< Line<3>  ,
-                                          Line<3>  ,
-                                          Line<3>  >::type ,
-                            TriangleEdgeNodeMap ,
-                            TypeListEnd , TypeListEnd ,
-                            TriangleNodePermutation >
+                      MakeTypeList< Line<3>  ,
+                                    Line<3>  ,
+                                    Line<3>  >::type ,
+                      TriangleEdgeNodeMap ,
+                      TypeListEnd , TypeListEnd ,
+                      TriangleNodePermutation ,
+                      TriangleNodePermutationPolarity >
 { typedef Triangle<3> base ; };
 
 typedef IndexList< 0, 1, 2,  3 > Triangle4_NodeMapIdentity ;
+typedef IndexList< 2, 0, 1,  3 > Triangle4_NodeMapPositive1 ;
+typedef IndexList< 1, 2, 0,  3 > Triangle4_NodeMapPositive2 ;
 typedef IndexList< 0, 2, 1,  3 > Triangle4_NodeMapReversed0 ;
 typedef IndexList< 2, 1, 0,  3 > Triangle4_NodeMapReversed1 ;
 typedef IndexList< 1, 0, 2,  3 > Triangle4_NodeMapReversed2 ;
 
 typedef MakeTypeList< Triangle4_NodeMapIdentity ,
+                      Triangle4_NodeMapPositive1 , 
+                      Triangle4_NodeMapPositive2 , 
                       Triangle4_NodeMapReversed0 , 
                       Triangle4_NodeMapReversed1 , 
                       Triangle4_NodeMapReversed2 >::type
   Triangle4_NodePermutation ;
 
+typedef IndexList< CELL_PERMUTATION_POLARITY_POSITIVE,
+                   CELL_PERMUTATION_POLARITY_POSITIVE,
+                   CELL_PERMUTATION_POLARITY_POSITIVE,
+                   CELL_PERMUTATION_POLARITY_NEGATIVE,
+                   CELL_PERMUTATION_POLARITY_NEGATIVE,
+                   CELL_PERMUTATION_POLARITY_NEGATIVE >
+  Triangle4_NodePermutationPolarity;
+
 template<> struct Triangle<4> : public
   CellTopologyTraits< 2 , 3 , 4 ,
-                            MakeTypeList< Line<2>  ,
-                                          Line<2>  ,
-                                          Line<2>  >::type ,
-                            TriangleEdgeNodeMap ,
-                            TypeListEnd , TypeListEnd ,
-                            Triangle4_NodePermutation >
+                      MakeTypeList< Line<2>  ,
+                                    Line<2>  ,
+                                    Line<2>  >::type ,
+                      TriangleEdgeNodeMap ,
+                      TypeListEnd , TypeListEnd ,
+                      Triangle4_NodePermutation ,
+                      Triangle4_NodePermutationPolarity >
 { typedef Triangle<3> base ; };
 
 //------------------------------------------------------------------------
@@ -506,17 +536,33 @@ template<> struct ShellTriangle<6> : public
 // Simple (non-reversed) rotations should not happen in practice.
 
 typedef IndexList< 0, 1, 2, 3,  4, 5, 6, 7,  8 > QuadrilateralNodeMapIdentity ;
+typedef IndexList< 3, 0, 1, 2,  7, 4, 5, 6,  8 > QuadrilateralNodeMapPositive1 ;
+typedef IndexList< 2, 3, 0, 1,  6, 7, 4, 5,  8 > QuadrilateralNodeMapPositive2 ;
+typedef IndexList< 1, 2, 3, 0,  5, 6, 7, 4,  8 > QuadrilateralNodeMapPositive3 ;
 typedef IndexList< 0, 3, 2, 1,  7, 6, 5, 4,  8 > QuadrilateralNodeMapReversed0 ;
 typedef IndexList< 3, 2, 1, 0,  6, 5, 4, 7,  8 > QuadrilateralNodeMapReversed1 ;
 typedef IndexList< 2, 1, 0, 3,  5, 4, 7, 6,  8 > QuadrilateralNodeMapReversed2 ;
 typedef IndexList< 1, 0, 3, 2,  4, 7, 6, 5,  8 > QuadrilateralNodeMapReversed3 ;
 
 typedef MakeTypeList< QuadrilateralNodeMapIdentity ,
+                      QuadrilateralNodeMapPositive1 ,
+                      QuadrilateralNodeMapPositive2 ,
+                      QuadrilateralNodeMapPositive3 ,
                       QuadrilateralNodeMapReversed0 ,
                       QuadrilateralNodeMapReversed1 ,
                       QuadrilateralNodeMapReversed2 ,
                       QuadrilateralNodeMapReversed3 >::type
   QuadrilateralNodePermutation ;
+
+typedef IndexList< CELL_PERMUTATION_POLARITY_POSITIVE,
+                   CELL_PERMUTATION_POLARITY_POSITIVE,
+                   CELL_PERMUTATION_POLARITY_POSITIVE,
+                   CELL_PERMUTATION_POLARITY_POSITIVE,
+                   CELL_PERMUTATION_POLARITY_NEGATIVE,
+                   CELL_PERMUTATION_POLARITY_NEGATIVE,
+                   CELL_PERMUTATION_POLARITY_NEGATIVE,
+                   CELL_PERMUTATION_POLARITY_NEGATIVE >
+  QuadrilateralNodePermutationPolarity;
 
 typedef MakeTypeList< IndexList< 0 , 1 ,  4 > ,
                       IndexList< 1 , 2 ,  5 > ,
@@ -532,7 +578,8 @@ template<> struct Quadrilateral<4> : public
                                           Line<2>  >::type ,
                             QuadrilateralEdgeNodeMap ,
                             TypeListEnd , TypeListEnd ,
-                            QuadrilateralNodePermutation >
+                            QuadrilateralNodePermutation ,
+                            QuadrilateralNodePermutationPolarity >
 { typedef Quadrilateral<4> base ; };
 
 template<> struct Quadrilateral<8> : public
@@ -543,7 +590,8 @@ template<> struct Quadrilateral<8> : public
                                           Line<3>  >::type ,
                             QuadrilateralEdgeNodeMap ,
                             TypeListEnd , TypeListEnd ,
-                            QuadrilateralNodePermutation >
+                            QuadrilateralNodePermutation ,
+                            QuadrilateralNodePermutationPolarity >
 { typedef Quadrilateral<4> base ; };
 
 template<> struct Quadrilateral<9> : public
@@ -554,7 +602,8 @@ template<> struct Quadrilateral<9> : public
                                           Line<3>  >::type ,
                             QuadrilateralEdgeNodeMap ,
                             TypeListEnd , TypeListEnd ,
-                            QuadrilateralNodePermutation >
+                            QuadrilateralNodePermutation ,
+                            QuadrilateralNodePermutationPolarity >
 { typedef Quadrilateral<4> base ; };
 
 //----------------------------------------------------------------------

@@ -630,9 +630,7 @@ void getTopologies(std::vector<shards::CellTopology>& topologies,
 } // getTopologies
 
 
-
-int isPredefinedCell(const CellTopology& cell)
-{
+int isPredefinedCell(const CellTopology& cell) {
   
   switch(cell.getKey() ) {
     case Node::key:

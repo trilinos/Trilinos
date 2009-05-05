@@ -53,7 +53,6 @@ void test_subcell( const shards::CellTopology & parent )
   REQUIRE( SubcellTraits::node_count   == parent.getNodeCount(Dim,Ord) )
   REQUIRE( SubcellTraits::edge_count   == parent.getEdgeCount(Dim,Ord) )
   REQUIRE( SubcellTraits::vertex_count == parent.getVertexCount(Dim,Ord) )
-  REQUIRE( SubcellTraits::vertex_count == parent.getVertexCount(Dim,Ord) )
 }
 
 
@@ -140,8 +139,8 @@ void test_permutation( const unsigned p )
   const CellTopologyData * const cell_data =
     shards::getCellTopologyData< Traits >();
 
-  int node_base[ Traits::node_count ];
-  int node_perm[ Traits::node_count ];
+  int node_expected[ Traits::node_count ];
+  int node_permuted[ Traits::node_count ];
 
 std::cout << "Test " << cell_data->name << " perm " << p << " of " << Traits::permutation_count << " = {" ;
 std::cout.flush();
@@ -149,31 +148,40 @@ std::cout.flush();
   REQUIRE( p < Traits::permutation_count );
 
   for ( unsigned i = 0 ; i < Traits::node_count ; ++i ) {
-    node_base[i] = ( i + 1 ) * 100 ;
+    node_expected[i] = ( i + 1 ) * 100 ;
   }
 
   for ( unsigned i = 0 ; i < Traits::node_count ; ++i ) {
     const unsigned ip = cell_data->permutation[p].node[i];
 
-std::cout << " " << ip ;
-std::cout.flush();
+    std::cout << " " << ip ;
+    std::cout.flush();
 
     REQUIRE( ip < Traits::node_count );
 
-    node_perm[i] = node_base[ ip ];
+    node_permuted[i] = node_expected[ ip ];
   }
 
-std::cout << " }" << std::endl ;
-std::cout.flush();
+  std::cout << " } inverse {" ;
+
+  for ( unsigned i = 0 ; i < Traits::node_count ; ++i ) {
+    const unsigned ip = cell_data->permutation_inverse[p].node[i];
+
+    std::cout << " " << ip ;
+    std::cout.flush();
+  }
+
+  std::cout << " }" << std::endl ;
+  std::cout.flush();
 
   for ( unsigned i = 0 ; i < Traits::node_count ; ++i ) {
     const unsigned ip = cell_data->permutation_inverse[p].node[i];
     REQUIRE( ip < Traits::node_count );
-    REQUIRE( node_base[ip] == node_perm[i] );
+    REQUIRE( node_permuted[ip] == node_expected[i] );
   }
 
   const int find_p =
-    shards::find_permutation( * cell_data , node_base , node_perm );
+    shards::findPermutation( * cell_data , node_expected , node_permuted );
 
   REQUIRE( (int) p == find_p );
 }
@@ -184,7 +192,6 @@ void local_test_cell_topology()
   test_cell< shards::Particle >();
 
   test_cell< shards::Line<2> >();
-  test_cell< shards::Line<3> >();
   test_cell< shards::ShellLine<2> >();
   test_cell< shards::ShellLine<3> >();
   test_cell< shards::Beam<2> >();
@@ -222,18 +229,28 @@ void local_test_cell_topology()
 
   for ( unsigned i = 0 ; i < 2 ; ++i ) {
     test_permutation< shards::Line<2> >( i );
+  }
+  for ( unsigned i = 0 ; i < 2 ; ++i ) {
     test_permutation< shards::Line<3> >( i );
   }
 
-  for ( unsigned i = 0 ; i < 4 ; ++i ) {
+  for ( unsigned i = 0 ; i < 6 ; ++i ) {
     test_permutation< shards::Triangle<3> >( i );
+  }
+  for ( unsigned i = 0 ; i < 6 ; ++i ) {
     test_permutation< shards::Triangle<6> >( i );
+  }
+  for ( unsigned i = 0 ; i < 6 ; ++i ) {
     test_permutation< shards::Triangle<4> >( i );
   }
 
-  for ( unsigned i = 0 ; i < 5 ; ++i ) {
+  for ( unsigned i = 0 ; i < 8 ; ++i ) {
     test_permutation< shards::Quadrilateral<4> >( i );
+  }
+  for ( unsigned i = 0 ; i < 8 ; ++i ) {
     test_permutation< shards::Quadrilateral<8> >( i );
+  }
+  for ( unsigned i = 0 ; i < 8 ; ++i ) {
     test_permutation< shards::Quadrilateral<9> >( i );
   }
 }

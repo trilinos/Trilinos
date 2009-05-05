@@ -420,6 +420,17 @@ public:
       return m_cell->permutation[permutation_ord].node[node_ord];
     }
   
+  /** \brief  Permutation of a cell's node ordinals.
+   *  \param  permutation_ordinal [in]
+   *  \param  node_ordinal        [in]
+   */
+  unsigned getNodePermutationPolarity( const unsigned permutation_ord ) const
+    {
+      SHARDS_REQUIRE(requireCell());
+      SHARDS_REQUIRE(requireNodePermutation(permutation_ord,0));
+      return m_cell->permutation[permutation_ord].polarity;
+    }
+  
   /** \brief  Inverse permutation of a cell's node ordinals.
    *  \param  permutation_ordinal [in]
    *  \param  node_ordinal        [in]
@@ -519,32 +530,36 @@ public:
 }; // class CellTopology
 
 /*------------------------------------------------------------------------*/
-/* \brief  Find the permutation from the expected nodes to the actual nodes */
-
+/* \brief  Find the permutation from the expected nodes to the actual nodes,
+ *
+ *  Find permutation 'p' such that:
+ *    actual_node[j] == expected_node[ top.permutation[p].node[j] ]
+ *  for all vertices.
+ */
 template< typename id_type >
-int find_permutation( const CellTopologyData & top ,
-                      const id_type * const expected_node ,
-                      const id_type * const actual_node )
+int findPermutation( const CellTopologyData & top ,
+                     const id_type * const expected_node ,
+                     const id_type * const actual_node )
 {
-  const int nn = top.node_count ;
+  const int nv = top.vertex_count ;
   const int np = top.permutation_count ;
   int p = 0 ;
   for ( ; p < np ; ++p ) {
     const unsigned * const perm_node = top.permutation[p].node ;
     int j = 0 ;
-    for ( ; j < nn && actual_node[ perm_node[j] ] == expected_node[j] ; ++j );
-    if ( nn == j ) break ;
+    for ( ; j < nv && actual_node[j] == expected_node[ perm_node[j] ] ; ++j );
+    if ( nv == j ) break ;
   }
   if ( np == p ) p = -1 ;
   return p ;
 }
 
 template< typename id_type >
-int find_permutation( const CellTopology & top ,
-                      const id_type * const expected_node ,
-                      const id_type * const actual_node )
+int findPermutation( const CellTopology & top ,
+                     const id_type * const expected_node ,
+                     const id_type * const actual_node )
 {
-  return find_permutation( * top.getTopology() , expected_node , actual_node );
+  return findPermutation( * top.getTopology() , expected_node , actual_node );
 }
 
 /*------------------------------------------------------------------------*/

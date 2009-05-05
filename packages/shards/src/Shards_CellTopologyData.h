@@ -35,6 +35,8 @@ extern "C" {
  *  \{
  */
 
+/*----------------------------------------------------------------------*/
+ 
 struct CellTopologyData ;
 struct CellTopologyData_Subcell ;
 struct CellTopologyData_Permutation ;
@@ -172,6 +174,14 @@ typedef struct CellTopologyData  CellTopologyData ;
  */
 struct CellTopologyData_Permutation {
   const unsigned * node ;
+  unsigned         polarity ;
+};
+
+/** \brief  Values for the CellTopologyData_Permutation polarity */
+enum {
+  CELL_PERMUTATION_POLARITY_IRRELEVANT = 0 ,
+  CELL_PERMUTATION_POLARITY_POSITIVE   = 1 ,
+  CELL_PERMUTATION_POLARITY_NEGATIVE   = 2
 };
 
 /** \brief  Map a cell->face->edge ordinal to the cell->edge ordinal.
