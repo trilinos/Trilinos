@@ -692,7 +692,6 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         IFPACKList.set("chebyshev: use block mode",true);
         IFPACKList.set("chebyshev: block list",PermuteList);
         IFPACKList.set("chebyshev: eigenvalue max iterations",this_A->spectral_radius_max_iters);
-        printf("this_A->spectral_radius_max_iters =%d\n",this_A->spectral_radius_max_iters);
       }
       else {
         // Regular Chebyshev needs an eigenvalue estimate
