@@ -77,7 +77,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 10);
   
-  solver.Iterate(200, 1e-10);
+  solver.Iterate(10i, 1e-10);
   
   delete MLPrec;
   
@@ -167,7 +167,6 @@ int main(int argc, char *argv[]) {
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
   char mystring[80];
 
-#ifdef OLD
   // ====================== //
   // ML Cheby 
   // ====================== //
@@ -217,10 +216,8 @@ int main(int argc, char *argv[]) {
     TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
                                  TotalErrorResidual, TotalErrorExactSol);
   }
-#endif
   
 #if defined(HAVE_ML_IFPACK)
-#ifdef OLD
   // ====================== //
   // IFPACK Cheby 
   // ====================== //
@@ -234,7 +231,6 @@ int main(int argc, char *argv[]) {
   strcpy(mystring,"IFPACK Cheby");
   TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
                                TotalErrorResidual, TotalErrorExactSol);
-#endif
 
   // ====================== //
   // IFPACK Block Cheby (Trivial)
@@ -242,7 +238,6 @@ int main(int argc, char *argv[]) {
   int NumBlocks=Map->NumMyElements();
   int *BlockStarts=new int[NumBlocks+1];
   int *Blockids=new int [NumBlocks];
-#ifdef OLD
   for(int i=0;i<NumBlocks;i++){
     BlockStarts[i]=i;
     Blockids[i]=Map->GID(i);
@@ -261,7 +256,6 @@ int main(int argc, char *argv[]) {
   strcpy(mystring,"IFPACK Block Cheby (Trivial)");
   TestMultiLevelPreconditioner(mystring, MLList, BadProblem,
                                TotalErrorResidual, TotalErrorExactSol);
-#endif
   delete [] BlockStarts; delete [] Blockids;
 
   
