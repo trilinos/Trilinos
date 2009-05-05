@@ -186,6 +186,8 @@ am__libepetraext_a_SOURCES_DIST =  \
 	$(srcdir)/block/EpetraExt_BlockUtility.cpp \
 	$(srcdir)/block/EpetraExt_MultiPointModelEvaluator.cpp \
 	$(srcdir)/block/EpetraExt_MultiSerialComm.cpp \
+	$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp \
+	$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp \
 	$(srcdir)/block/EpetraExt_MultiMpiComm.cpp \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.cpp \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.cpp \
@@ -267,7 +269,9 @@ am__objects_19 = EpetraExt_BlockCrsMatrix.$(OBJEXT) \
 	EpetraExt_BlockVector.$(OBJEXT) \
 	EpetraExt_BlockUtility.$(OBJEXT) \
 	EpetraExt_MultiPointModelEvaluator.$(OBJEXT) \
-	EpetraExt_MultiSerialComm.$(OBJEXT)
+	EpetraExt_MultiSerialComm.$(OBJEXT) \
+	EpetraExt_BlockDiagMatrix.$(OBJEXT) \
+	EpetraExt_PointToBlockDiagPermute.$(OBJEXT)
 am__objects_20 = EpetraExt_MultiMpiComm.$(OBJEXT)
 @HAVE_MPI_TRUE@am__objects_21 = $(am__objects_20)
 @BUILD_BLOCK_TRUE@am__objects_22 = $(am__objects_19) $(am__objects_21)
@@ -369,6 +373,8 @@ am__include_HEADERS_DIST = $(srcdir)/EpetraExt_ConfigDefs.h \
 	$(srcdir)/block/EpetraExt_MultiComm.h \
 	$(srcdir)/block/EpetraExt_MultiPointModelEvaluator.h \
 	$(srcdir)/block/EpetraExt_MultiSerialComm.h \
+	$(srcdir)/block/EpetraExt_BlockDiagMatrix.h \
+	$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.h \
 	$(srcdir)/block/EpetraExt_MultiMpiComm.h \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluator.h \
 	$(srcdir)/model_evaluator/EpetraExt_ModelEvaluatorScalingTools.h \
@@ -778,7 +784,9 @@ EXTRA_BLOCK_H = \
     $(srcdir)/block/EpetraExt_BlockUtility.h \
     $(srcdir)/block/EpetraExt_MultiComm.h \
     $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.h \
-    $(srcdir)/block/EpetraExt_MultiSerialComm.h
+    $(srcdir)/block/EpetraExt_MultiSerialComm.h \
+    $(srcdir)/block/EpetraExt_BlockDiagMatrix.h \
+    $(srcdir)/block/EpetraExt_PointToBlockDiagPermute.h
 
 EXTRA_BLOCK = \
     $(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp \
@@ -786,7 +794,9 @@ EXTRA_BLOCK = \
     $(srcdir)/block/EpetraExt_BlockVector.cpp \
     $(srcdir)/block/EpetraExt_BlockUtility.cpp \
     $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.cpp \
-    $(srcdir)/block/EpetraExt_MultiSerialComm.cpp
+    $(srcdir)/block/EpetraExt_MultiSerialComm.cpp \
+    $(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp \
+    $(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp
 
 EXTRA_BLOCK_MPI_H = \
     $(srcdir)/block/EpetraExt_MultiMpiComm.h
@@ -1031,6 +1041,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BTF_LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockAdjacencyGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockCrsMatrix.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockDiagMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockJacobi_LinearProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockMapIn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_BlockMapOut.Po@am__quote@
@@ -1059,6 +1070,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Overlap_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PETScAIJMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_Permutation.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PointToBlockDiagPermute.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_ProductOperator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PutBlockMap.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_PutMultiVector.Po@am__quote@
@@ -2033,6 +2045,34 @@ EpetraExt_MultiSerialComm.obj: $(srcdir)/block/EpetraExt_MultiSerialComm.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_MultiSerialComm.cpp' object='EpetraExt_MultiSerialComm.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_MultiSerialComm.obj `if test -f '$(srcdir)/block/EpetraExt_MultiSerialComm.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_MultiSerialComm.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_MultiSerialComm.cpp'; fi`
+
+EpetraExt_BlockDiagMatrix.o: $(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_BlockDiagMatrix.o -MD -MP -MF $(DEPDIR)/EpetraExt_BlockDiagMatrix.Tpo -c -o EpetraExt_BlockDiagMatrix.o `test -f '$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_BlockDiagMatrix.Tpo $(DEPDIR)/EpetraExt_BlockDiagMatrix.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp' object='EpetraExt_BlockDiagMatrix.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockDiagMatrix.o `test -f '$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp
+
+EpetraExt_BlockDiagMatrix.obj: $(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_BlockDiagMatrix.obj -MD -MP -MF $(DEPDIR)/EpetraExt_BlockDiagMatrix.Tpo -c -o EpetraExt_BlockDiagMatrix.obj `if test -f '$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_BlockDiagMatrix.Tpo $(DEPDIR)/EpetraExt_BlockDiagMatrix.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp' object='EpetraExt_BlockDiagMatrix.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_BlockDiagMatrix.obj `if test -f '$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp'; fi`
+
+EpetraExt_PointToBlockDiagPermute.o: $(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_PointToBlockDiagPermute.o -MD -MP -MF $(DEPDIR)/EpetraExt_PointToBlockDiagPermute.Tpo -c -o EpetraExt_PointToBlockDiagPermute.o `test -f '$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_PointToBlockDiagPermute.Tpo $(DEPDIR)/EpetraExt_PointToBlockDiagPermute.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp' object='EpetraExt_PointToBlockDiagPermute.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_PointToBlockDiagPermute.o `test -f '$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp
+
+EpetraExt_PointToBlockDiagPermute.obj: $(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_PointToBlockDiagPermute.obj -MD -MP -MF $(DEPDIR)/EpetraExt_PointToBlockDiagPermute.Tpo -c -o EpetraExt_PointToBlockDiagPermute.obj `if test -f '$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/EpetraExt_PointToBlockDiagPermute.Tpo $(DEPDIR)/EpetraExt_PointToBlockDiagPermute.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp' object='EpetraExt_PointToBlockDiagPermute.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_PointToBlockDiagPermute.obj `if test -f '$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp'; then $(CYGPATH_W) '$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp'; fi`
 
 EpetraExt_MultiMpiComm.o: $(srcdir)/block/EpetraExt_MultiMpiComm.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT EpetraExt_MultiMpiComm.o -MD -MP -MF $(DEPDIR)/EpetraExt_MultiMpiComm.Tpo -c -o EpetraExt_MultiMpiComm.o `test -f '$(srcdir)/block/EpetraExt_MultiMpiComm.cpp' || echo '$(srcdir)/'`$(srcdir)/block/EpetraExt_MultiMpiComm.cpp

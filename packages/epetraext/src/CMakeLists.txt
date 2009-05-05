@@ -321,6 +321,8 @@ IF (${PACKAGE_NAME}_BUILD_BLOCK)
     block/EpetraExt_MultiComm.h
     block/EpetraExt_MultiPointModelEvaluator.h
     block/EpetraExt_MultiSerialComm.h
+    block/EpetraExt_BlockDiagMatrix.h
+    block/EpetraExt_PointToBlockDiagPermute.h
     )
   
   SET(SOURCES ${SOURCES}
@@ -330,6 +332,8 @@ IF (${PACKAGE_NAME}_BUILD_BLOCK)
     block/EpetraExt_BlockUtility.cpp
     block/EpetraExt_MultiPointModelEvaluator.cpp
     block/EpetraExt_MultiSerialComm.cpp
+    block/EpetraExt_BlockDiagMatrix.cpp
+    block/EpetraExt_PointToBlockDiagPermute.cpp
     )
   
   IF(TPL_ENABLE_MPI)

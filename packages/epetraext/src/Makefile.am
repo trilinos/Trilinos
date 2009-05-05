@@ -381,7 +381,9 @@ EXTRA_BLOCK_H = \
     $(srcdir)/block/EpetraExt_BlockUtility.h \
     $(srcdir)/block/EpetraExt_MultiComm.h \
     $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.h \
-    $(srcdir)/block/EpetraExt_MultiSerialComm.h
+    $(srcdir)/block/EpetraExt_MultiSerialComm.h \
+    $(srcdir)/block/EpetraExt_BlockDiagMatrix.h \
+    $(srcdir)/block/EpetraExt_PointToBlockDiagPermute.h
 
 EXTRA_BLOCK = \
     $(srcdir)/block/EpetraExt_BlockCrsMatrix.cpp \
@@ -389,7 +391,9 @@ EXTRA_BLOCK = \
     $(srcdir)/block/EpetraExt_BlockVector.cpp \
     $(srcdir)/block/EpetraExt_BlockUtility.cpp \
     $(srcdir)/block/EpetraExt_MultiPointModelEvaluator.cpp \
-    $(srcdir)/block/EpetraExt_MultiSerialComm.cpp
+    $(srcdir)/block/EpetraExt_MultiSerialComm.cpp \
+    $(srcdir)/block/EpetraExt_BlockDiagMatrix.cpp \
+    $(srcdir)/block/EpetraExt_PointToBlockDiagPermute.cpp
 
 EXTRA_BLOCK_MPI_H = \
     $(srcdir)/block/EpetraExt_MultiMpiComm.h
