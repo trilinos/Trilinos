@@ -102,8 +102,8 @@ int EpetraExt_BlockDiagMatrix::DoCopy(const EpetraExt_BlockDiagMatrix& Source){
 
   int MaxData=Source.NumData();
 
-  for(int i=0;i<MaxData;i++)                             Values_[i]=Source.Values_[i];
-  for(int i=0;i<Source.NumMyUnknowns();i++)               Pivots_[i]=Source.Pivots_[i];
+  for(int i=0;i<MaxData;i++)                 Values_[i]=Source.Values_[i];
+  for(int i=0;i<Source.NumMyUnknowns();i++)  Pivots_[i]=Source.Pivots_[i];
 
   List_=Source.List_;
   ApplyMode_=Source.ApplyMode_;
