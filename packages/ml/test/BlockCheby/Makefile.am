@@ -24,5 +24,5 @@ GetNecessaryFiles_SOURCES= $(top_srcdir)/test/BlockCheby
 #copy these files over to the build area
 GetNecessaryFiles$(EXEEXT): $(GetNecessaryFiles_SOURCES)
 	@if test ! -e ./blockids.dat; then cp -f $(srcdir)/blockids.dat.gz .; gunzip -f ./blockids.dat.gz ; fi
-	@if test ! -e ./localids_in_blocks.dat; then cp -f $(srcdir)/local_ids_in_blocks.dat.gz .; gunzip -f ./localids_in_blocks.dat.gz ; fi
+	@if test ! -e ./localids_in_blocks.dat; then cp -f $(srcdir)/localids_in_blocks.dat.gz .; gunzip -f ./localids_in_blocks.dat.gz ; fi
 	@if test ! -e ./samplemat.dat; then cp -f $(srcdir)/samplemat.dat.gz .; gunzip -f samplemat.dat.gz ; fi
