@@ -50,7 +50,7 @@ EpetraExt_BlockDiagMatrix::EpetraExt_BlockDiagMatrix(const EpetraExt_BlockDiagMa
 // Allocate
 void EpetraExt_BlockDiagMatrix::Allocate(){
 
-  int i,DataSize=0,NumBlocks=NumMyBlocks();
+  int DataSize=0, NumBlocks=NumMyBlocks();
   Pivots_=new int[NumMyUnknowns()];
   int *ElementSize=new int[NumBlocks];
   
@@ -100,7 +100,6 @@ int EpetraExt_BlockDiagMatrix::DoCopy(const EpetraExt_BlockDiagMatrix& Source){
   if(!Map().SameAs(Source.Map()) || !DataMap_->SameAs(*Source.DataMap_))
     throw ReportError("Maps of DistBlockMatrices incompatible in assignment",-1);
 
-  int NumBlocks=Source.NumMyBlocks();
   int MaxData=Source.NumData();
 
   for(int i=0;i<MaxData;i++)                             Values_[i]=Source.Values_[i];
@@ -109,6 +108,8 @@ int EpetraExt_BlockDiagMatrix::DoCopy(const EpetraExt_BlockDiagMatrix& Source){
   List_=Source.List_;
   ApplyMode_=Source.ApplyMode_;
   HasComputed_=Source.HasComputed_;
+
+  return 0;
 }
 
 
@@ -149,7 +150,7 @@ int EpetraExt_BlockDiagMatrix::Compute(){
     if(ApplyMode_==AM_INVERT){
       // Invert - Use the factorization and invert the blocks in-place
       int lwork=3*DataMap_->MaxMyElementSize();
-      double work[lwork];
+      std::vector<double> work(lwork);
       for(int i=0;i<NumBlocks;i++){
         int Nb=BlockSize(i);
         if(Nb==1 || Nb==2){
