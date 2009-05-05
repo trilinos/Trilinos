@@ -12,5 +12,6 @@ ADD_SUBDIRECTORIES(
   Relaxation
   SetParameters
   TestAll
+  BlockCheby
   #UseTranspose
   )

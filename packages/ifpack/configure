@@ -8149,7 +8149,7 @@ fi
 #		example/Makefile
 #		example/ifpack_hb/Makefile
 
-ac_config_files="$ac_config_files Makefile Makefile.export.ifpack src/Makefile example/Makefile test/Makefile test/PreconditionerFactory/Makefile test/TestAll/Makefile test/IlukGraph/Makefile test/SetParameters/Makefile test/Relaxation/Makefile test/Container/Makefile test/OverlappingRowMatrix/Makefile test/CompareWithAztecOO/Makefile test/ILU/Makefile test/IC/Makefile test/UseTranspose/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.ifpack src/Makefile example/Makefile test/Makefile test/PreconditionerFactory/Makefile test/TestAll/Makefile test/IlukGraph/Makefile test/SetParameters/Makefile test/Relaxation/Makefile test/Container/Makefile test/OverlappingRowMatrix/Makefile test/CompareWithAztecOO/Makefile test/ILU/Makefile test/IC/Makefile test/BlockCheby/Makefile test/UseTranspose/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8865,6 +8865,7 @@ do
     "test/CompareWithAztecOO/Makefile") CONFIG_FILES="$CONFIG_FILES test/CompareWithAztecOO/Makefile" ;;
     "test/ILU/Makefile") CONFIG_FILES="$CONFIG_FILES test/ILU/Makefile" ;;
     "test/IC/Makefile") CONFIG_FILES="$CONFIG_FILES test/IC/Makefile" ;;
+    "test/BlockCheby/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockCheby/Makefile" ;;
     "test/UseTranspose/Makefile") CONFIG_FILES="$CONFIG_FILES test/UseTranspose/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

@@ -15,6 +15,7 @@ PACKAGE_NAME=Ifpack
            PreconditionerFactory,
 	   Relaxation,
 	   SetParameters,
+	   BlockCheby,
            TestAll;
     ARGS = -v;
     COMM = SERIAL, MPI(1-4);

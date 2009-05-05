@@ -47,6 +47,10 @@ class Epetra_Vector;
 class Epetra_Operator;
 class Epetra_RowMatrix;
 
+#ifdef HAVE_IFPACK_EPETRAEXT
+class EpetraExt_PointToBlockDiagPermute;
+#endif
+
 //! Ifpack_Chebyshev: class for preconditioning with Chebyshev polynomials in Ifpack
 
 /*!
@@ -201,6 +205,12 @@ public:
   //! Computes the preconditioners.
   virtual int Compute();
 
+  //! Returns an approximation to the largest eigenvalue.
+  virtual double GetLambdaMax(){return LambdaMax_;}
+
+  //! Contains an approximation to the smallest eigenvalue.
+  virtual double GetLambdaMin(){return LambdaMin_;}
+  
   //@}
  
   //@{ \name Miscellaneous
@@ -300,7 +310,16 @@ public:
                 const Epetra_Vector& InvPointDiagonal, 
                 const int MaximumIterations, 
                 double& lambda_min, double& lambda_max);
-
+  
+#ifdef HAVE_IFPACK_EPETRAEXT
+  //! Uses AztecOO's CG to estimate lambda_min and lambda_max.
+  // WARNING: This only works in Block Mode.
+  int CG(const int MaximumIterations, 
+         double& lambda_min, double& lambda_max);
+  //! Simple power method to compute lambda_max.
+  // WARNING: This only works in Block Mode.
+  int PowerMethod(const int MaximumIterations,double& lambda_max);
+#endif
 private:
   
   // @}
@@ -354,6 +373,8 @@ private:
   //! Contains the ratio such that [LambdaMax_ / EigRatio_, LambdaMax_]
   //! is the interval of interest for the Chebyshev polynomial.
   double EigRatio_;
+  //! Max number of iterations to use in eigenvalue estimation (if automatic).
+  int EigMaxIters_;  
   //! Contains the label of this object.
   string Label_;
   //! Contains an approximation to the smallest eigenvalue.
@@ -379,12 +400,21 @@ private:
   Teuchos::RefCountPtr<const Epetra_RowMatrix> Matrix_;
   //! Contains the inverse of diagonal elements of \c Matrix.
   mutable Teuchos::RefCountPtr<Epetra_Vector> InvDiagonal_;
+  //! Use Block Preconditioning
+  bool UseBlockMode_;
+#ifdef HAVE_IFPACK_EPETRAEXT
+  //! Max/Min Ration for autocomputing eigenvalues
+  Teuchos::ParameterList BlockList_;
+  Teuchos::RefCountPtr<EpetraExt_PointToBlockDiagPermute> InvBlockDiagonal_;
+#endif
+
   //! If \c true, the Operator_ is an Epetra_RowMatrix.
   bool IsRowMatrix_;
   //! Time object to track timing.
   Teuchos::RefCountPtr<Epetra_Time> Time_;
   //! If \c true, the starting solution is always the zero vector.
   bool ZeroStartingSolution_;
+
   // @}
 
 };

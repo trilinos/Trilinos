@@ -44,6 +44,14 @@
 #include "AztecOO.h"
 #endif
 
+#ifdef HAVE_IFPACK_EPETRAEXT
+#include "Epetra_CrsMatrix.h"
+#include "EpetraExt_PointToBlockDiagPermute.h"
+#endif
+
+
+#define ABS(x) ((x)>0?(x):-(x))
+
 //==============================================================================
 // NOTE: any change to the default values should be committed to the other
 //       constructor as well.
@@ -73,6 +81,7 @@ Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0),
   Operator_(Teuchos::rcp(Operator,false)),
+  UseBlockMode_(false),  
   IsRowMatrix_(false), 
   ZeroStartingSolution_(true)
 {
@@ -104,6 +113,7 @@ Ifpack_Chebyshev(const Epetra_RowMatrix* Operator) :
   Condest_(-1.0),
   ComputeCondest_(false),
   EigRatio_(30.0),
+  EigMaxIters_(10),
   Label_(),
   LambdaMin_(0.0),
   LambdaMax_(100.0),
@@ -114,6 +124,7 @@ Ifpack_Chebyshev(const Epetra_RowMatrix* Operator) :
   NumGlobalNonzeros_(0),
   Operator_(Teuchos::rcp(Operator,false)),
   Matrix_(Teuchos::rcp(Operator,false)),
+  UseBlockMode_(false),
   IsRowMatrix_(true), 
   ZeroStartingSolution_(true)
 {
@@ -134,7 +145,28 @@ int Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList& List)
 
   Epetra_Vector* ID     = List.get("chebyshev: operator inv diagonal", 
                                    (Epetra_Vector*)0);
+  EigMaxIters_          = List.get("chebyshev: eigenvalue max iterations",EigMaxIters_);
 
+#ifdef HAVE_IFPACK_EPETRAEXT
+  // This is *always* false if EpetraExt isn't enabled
+  UseBlockMode_         = List.get("chebyshev: use block mode",UseBlockMode_);
+  if(!List.isParameter("chebyshev: block list")) UseBlockMode_=false;
+  else{
+    BlockList_          = List.get("chebyshev: block list",BlockList_);
+
+    // Since we know we're doing a matrix inverse, clobber the block list
+    // w/"invert" if it's set to multiply      
+    Teuchos::ParameterList Blist;
+    Blist=BlockList_.get("blockdiagmatrix: list",Blist);
+    string dummy("invert");
+    string ApplyMode=Blist.get("apply mode",dummy);
+    if(ApplyMode==string("multiply")){
+      Blist.set("apply mode","invert");
+      BlockList_.set("blockdiagmatrix: list",Blist);
+    }    
+  }  
+#endif
+  
   if (ID != 0) 
   {
     InvDiagonal_ = Teuchos::rcp( new Epetra_Vector(*ID) );
@@ -233,8 +265,37 @@ int Ifpack_Chebyshev::Compute()
 
   if (PolyDegree_ <= 0)
     IFPACK_CHK_ERR(-2); // at least one application
+
+#ifdef HAVE_IFPACK_EPETRAEXT
+  // Check to see if we can run in block mode
+  if(IsRowMatrix_ && InvDiagonal_ == Teuchos::null && UseBlockMode_){
+    const Epetra_CrsMatrix *CrsMatrix=dynamic_cast<const Epetra_CrsMatrix*>(&*Matrix_);
+    
+    // If we don't have CrsMatrix, we can't use the block preconditioner
+    if(!CrsMatrix) UseBlockMode_=false;    
+    else{
+      int ierr;
+      InvBlockDiagonal_=Teuchos::rcp(new EpetraExt_PointToBlockDiagPermute(*CrsMatrix));
+      if(InvBlockDiagonal_==Teuchos::null) IFPACK_CHK_ERR(-6);
+
+      ierr=InvBlockDiagonal_->SetParameters(BlockList_);
+      if(ierr) IFPACK_CHK_ERR(-7);
+
+      ierr=InvBlockDiagonal_->Compute();
+      if(ierr) IFPACK_CHK_ERR(-8);
+    }
+
+    // Automatically Compute Eigenvalues
+    double lambda_max=0;
+    PowerMethod(EigMaxIters_,lambda_max);
+    LambdaMax_=lambda_max;
+    // Test for Exact Preconditioned case
+    if(ABS(LambdaMax_-1) < 1e-6) LambdaMax_=LambdaMin_=1.0;
+    else LambdaMin_=LambdaMax_/EigRatio_;
+  }    
+#endif
   
-  if (IsRowMatrix_ && InvDiagonal_ == Teuchos::null)
+  if (IsRowMatrix_ && InvDiagonal_ == Teuchos::null && !UseBlockMode_)
   {
     InvDiagonal_ = Teuchos::rcp( new Epetra_Vector(Matrix().Map()) );
 
@@ -346,6 +407,7 @@ void Ifpack_Chebyshev::SetLabel()
 int Ifpack_Chebyshev::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
+  
   if (!IsComputed())
     IFPACK_CHK_ERR(-3);
 
@@ -371,9 +433,19 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   Xcopy->ExtractView(&xPtr);
   Y.ExtractView(&yPtr);
 
+#ifdef HAVE_IFPACK_EPETRAEXT
+  const EpetraExt_PointToBlockDiagPermute& IBD=*(&*InvBlockDiagonal_);
+#endif
+  
+
   //--- Do a quick solve when the matrix is identity
-  double *invDiag = InvDiagonal_->Values();
+  double *invDiag=0;
+  if(!UseBlockMode_) invDiag=InvDiagonal_->Values();
   if ((LambdaMin_ == 1.0) && (LambdaMax_ == LambdaMin_)) {
+#ifdef HAVE_IFPACK_EPETRAEXT
+    if(UseBlockMode_) IBD.ApplyInverse(*Xcopy,Y);
+    else
+#endif
     if (nVec == 1) {
       double *yPointer = yPtr[0], *xPointer = xPtr[0];
       for (int i = 0; i < len; ++i)
@@ -402,7 +474,10 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   // In ML_Cheby, V corresponds to pAux and W to dk
   Epetra_MultiVector V(X);
   Epetra_MultiVector W(X);
-
+#ifdef HAVE_IFPACK_EPETRAEXT
+  Epetra_MultiVector Temp(X);
+#endif
+  
   double *vPointer = V.Values(), *wPointer = W.Values();
 
   double oneOverTheta = 1.0/theta;
@@ -413,6 +488,13 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   if (ZeroStartingSolution_ == false) {
     Operator_->Apply(Y, V);
     // Compute W = invDiag * ( X - V )/ Theta
+#ifdef HAVE_IFPACK_EPETRAEXT    
+    if(UseBlockMode_) {
+      Temp.Update(oneOverTheta,X,-oneOverTheta,V,0.0);
+      IBD.ApplyInverse(Temp,W);
+    }
+    else
+#endif
     if (nVec == 1) {
       double *xPointer = xPtr[0];
       for (i = 0; i < len; ++i)
@@ -433,10 +515,19 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   }
   else {
     // Compute W = invDiag * X / Theta
+#ifdef HAVE_IFPACK_EPETRAEXT    
+    if(UseBlockMode_) {
+      IBD.ApplyInverse(X,W);
+      W.Scale(oneOverTheta);
+      Y.Update(1.0, W, 0.0);      
+    }
+    else
+#endif
     if (nVec == 1) {
       double *xPointer = xPtr[0];
-      for (i = 0; i < len; ++i)
+      for (i = 0; i < len; ++i){
         wPointer[i] = invDiag[i] * xPointer[i] * oneOverTheta;
+      }
       memcpy(yPtr[0], wPointer, len*sizeof(double));
     }
     else {
@@ -452,7 +543,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
         memcpy(yPtr[k], wPointer + k*len, len*sizeof(double));
     } // if (nVec == 1)
   } // if (ZeroStartingSolution_ == false)
-
+  
   //--- Apply the polynomial
   double rhok = 1.0/s1, rhokp1;
   double dtemp1, dtemp2;
@@ -468,8 +559,21 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       // Compute W = dtemp1 * W
       W.Scale(dtemp1);
       // Compute W = W + dtemp2 * invDiag * ( X - V )
+#ifdef HAVE_IFPACK_EPETRAEXT    
+    if(UseBlockMode_) {
+      //NTS: We can clobber V since it will be reset in the Apply
+      V.Update(dtemp2,X,-dtemp2);
+      IBD.ApplyInverse(V,Temp);
+      W.Update(1.0,Temp,1.0);
+    }
+    else{
+#endif
       for (i = 0; i < len; ++i)
         wPointer[i] += dtemp2* invDiag[i] * (xPointer[i] - vPointer[i]);
+#ifdef HAVE_IFPACK_EPETRAEXT
+    }
+#endif
+
       // Update the vector Y
       Y.Update(1.0, W, 1.0);
     } // for (k = 0; k < degreeMinusOne; ++k)
@@ -484,6 +588,15 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       // Compute W = dtemp1 * W
       W.Scale(dtemp1);
       // Compute W = W + dtemp2 * invDiag * ( X - V )
+#ifdef HAVE_IFPACK_EPETRAEXT    
+    if(UseBlockMode_) {
+      //We can clobber V since it will be reset in the Apply
+      V.Update(dtemp2,X,-dtemp2);
+      IBD.ApplyInverse(V,Temp);
+      W.Update(1.0,Temp,1.0);
+    }
+    else{
+#endif
       for (i = 0; i < len; ++i) {
         double coeff = invDiag[i]*dtemp2;
         double *wi = wPointer + i, *vi = vPointer + i;
@@ -492,13 +605,16 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
           wi = wi + len; vi = vi + len;
         }
       }
+#ifdef HAVE_IFPACK_EPETRAEXT
+    }
+#endif      
       // Update the vector Y
       Y.Update(1.0, W, 1.0);
     } // for (k = 0; k < degreeMinusOne; ++k)
   } // if (nVec == 1)
 
+  
   // Flops are updated in each of the following. 
-
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();
   return(0);
@@ -575,3 +691,79 @@ CG(const Epetra_Operator& Operator,
 #endif
 }
 
+//==============================================================================
+#ifdef HAVE_IFPACK_EPETRAEXT
+int Ifpack_Chebyshev::
+PowerMethod(const int MaximumIterations,  double& lambda_max)
+{
+
+  if(!UseBlockMode_) IFPACK_CHK_ERR(-1);
+  // this is a simple power method
+  lambda_max = 0.0;
+  double RQ_top, RQ_bottom, norm;
+  Epetra_Vector x(Operator_->OperatorDomainMap());
+  Epetra_Vector y(Operator_->OperatorRangeMap());
+  Epetra_Vector z(Operator_->OperatorRangeMap());
+  x.Random();
+  x.Norm2(&norm);
+  if (norm == 0.0) IFPACK_CHK_ERR(-1);
+
+  x.Scale(1.0 / norm);
+
+  for (int iter = 0; iter < MaximumIterations; ++iter)
+  {
+    Operator_->Apply(x, z);
+    InvBlockDiagonal_->ApplyInverse(z,y);
+    IFPACK_CHK_ERR(y.Dot(x, &RQ_top));
+    IFPACK_CHK_ERR(x.Dot(x, &RQ_bottom));
+    lambda_max = RQ_top / RQ_bottom;
+    IFPACK_CHK_ERR(y.Norm2(&norm));
+    if (norm == 0.0) IFPACK_CHK_ERR(-1);
+    IFPACK_CHK_ERR(x.Update(1.0 / norm, y, 0.0));
+  }
+
+  return(0);
+}
+#endif
+
+//==============================================================================
+#ifdef HAVE_IFPACK_EPETRAEXT
+int Ifpack_Chebyshev::
+CG(const int MaximumIterations, 
+   double& lambda_min, double& lambda_max)
+{
+  IFPACK_CHK_ERR(-1);// NTS: This always seems to yield errors in AztecOO, ergo,
+                     // I turned it off.
+
+  if(!UseBlockMode_) IFPACK_CHK_ERR(-1);
+  
+#ifdef HAVE_IFPACK_AZTECOO
+  Epetra_Vector x(Operator_->OperatorDomainMap());
+  Epetra_Vector y(Operator_->OperatorRangeMap());
+  x.Random();
+  y.PutScalar(0.0);
+  const Epetra_CrsMatrix *tmp=dynamic_cast<const Epetra_CrsMatrix*>(&*Matrix_);
+  Epetra_LinearProblem LP(const_cast<Epetra_RowMatrix*>(&*Matrix_), &x, &y);
+
+  
+  AztecOO solver(LP);
+  solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
+  solver.SetAztecOption(AZ_output, AZ_none);
+
+  solver.SetPrecOperator(&*InvBlockDiagonal_);
+  solver.Iterate(MaximumIterations, 1e-10);
+
+  const double* status = solver.GetAztecStatus();
+
+  lambda_min = status[AZ_lambda_min];
+  lambda_max = status[AZ_lambda_max];
+  
+  return(0);
+#else
+  cout << "You need to configure IFPACK with support for AztecOO" << endl;
+  cout << "to use the CG estimator. This may require --enable-aztecoo" << endl;
+  cout << "in your configure script." << endl;
+  IFPACK_CHK_ERR(-1);
+#endif
+}
+#endif
