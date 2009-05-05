@@ -166,13 +166,13 @@ void FunctionSpaceTools::integrate(ArrayOut            & outputValues,
 
   switch (outRank) {
     case 1: 
-      dataIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine);
+      dataIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine, sumInto);
     break;  
     case 2: 
-      functionalIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine);
+      functionalIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine, sumInto);
     break;  
     case 3: 
-      operatorIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine);
+      operatorIntegral<Scalar>(outputValues, leftValues, rightValues, compEngine, sumInto);
     break;
     default:
       TEST_FOR_EXCEPTION( ((outRank != 1) && (outRank != 2) && (outRank != 3)), std::invalid_argument,
