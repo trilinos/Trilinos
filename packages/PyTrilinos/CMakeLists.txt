@@ -148,7 +148,7 @@ FIND_PACKAGE(PythonInclude REQUIRED)
 FIND_PACKAGE(NumPy 1.0 REQUIRED)
 
 # Simple wrapper interface generator (SWIG) is required
-FIND_PACKAGE(SWIG 1.3.37 REQUIRED)
+FIND_PACKAGE(SWIG 1.3.38 REQUIRED)
 # ${SWIG_USE_FILE} is hard-coded to be the installed UseSWIG.cmake
 # file.  We want to include the local, modified version.
 INCLUDE(UseSWIG)
@@ -159,10 +159,10 @@ INCLUDE(UseSWIG)
 ADD_SUBDIRECTORY(src)
 
 # Add the test scripts
-PACKAGE_ADD_TEST_DIRECTORIES(test example)
+PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 # Add the example scripts
-#PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
 
 # Execute the package postprocessing
 PACKAGE_POSTPROCESS()
