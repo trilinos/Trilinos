@@ -478,8 +478,8 @@ template< ArrayOrder > struct Offset ;
 template<>
 struct Offset<FortranOrder> {
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 , const iType & i4 ,
                    const iType & i5 , const iType & i6 ,
@@ -492,8 +492,8 @@ struct Offset<FortranOrder> {
            i7 * stride[5] + i8 * stride[6] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 , const iType & i4 ,
                    const iType & i5 , const iType & i6 ,
@@ -506,8 +506,8 @@ struct Offset<FortranOrder> {
            i7 * stride[5] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 , const iType & i4 ,
                    const iType & i5 , const iType & i6 )
@@ -518,8 +518,8 @@ struct Offset<FortranOrder> {
            i5 * stride[3] + i6 * stride[4] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 , const iType & i4 ,
                    const iType & i5 )
@@ -530,8 +530,8 @@ struct Offset<FortranOrder> {
            i5 * stride[3] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 , const iType & i4 )
   {
@@ -540,8 +540,8 @@ struct Offset<FortranOrder> {
            i3 * stride[1] + i4 * stride[2] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 )
   {
@@ -549,16 +549,16 @@ struct Offset<FortranOrder> {
     return i1 + i2 * stride[0] + i3 * stride[1] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 )
   {
     SHARDS_ARRAY_CHECK(check_indices(false,2,stride,i1,i2));
     return i1 + i2 * stride[0] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const SHARDS_ARRAY_CHECK( stride ) ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const SHARDS_ARRAY_CHECK( stride ) ,
                    const iType & i1 )
   {
     SHARDS_ARRAY_CHECK(check_indices(false,1,stride,i1));
@@ -571,8 +571,8 @@ struct Offset<FortranOrder> {
 template<>
 struct Offset<NaturalOrder> {
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 , const iType & i4 ,
                    const iType & i5 , const iType & i6 ,
@@ -585,8 +585,8 @@ struct Offset<NaturalOrder> {
            i2 * stride[5] + i1 * stride[6] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 , const iType & i4 ,
                    const iType & i5 , const iType & i6 ,
@@ -599,8 +599,8 @@ struct Offset<NaturalOrder> {
            i1 * stride[5] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 , const iType & i4 ,
                    const iType & i5 , const iType & i6 )
@@ -611,8 +611,8 @@ struct Offset<NaturalOrder> {
            i2 * stride[3] + i1 * stride[4] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 , const iType & i4 ,
                    const iType & i5 )
@@ -623,8 +623,8 @@ struct Offset<NaturalOrder> {
            i1 * stride[3] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 , const iType & i4 )
   {
@@ -633,8 +633,8 @@ struct Offset<NaturalOrder> {
            i2 * stride[1] + i1 * stride[2] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 ,
                    const iType & i3 )
   {
@@ -642,16 +642,16 @@ struct Offset<NaturalOrder> {
     return i3 + i2 * stride[0] + i1 * stride[1] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const stride ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const stride ,
                    const iType & i1 , const iType & i2 )
   {
     SHARDS_ARRAY_CHECK(check_indices(true,2,stride,i1,i2));
     return i2 + i1 * stride[0] ;
   }
 
-  template< typename iType >
-  static iType op( const iType * const SHARDS_ARRAY_CHECK( stride ) ,
+  template< typename isType , typename iType >
+  static iType op( const isType * const SHARDS_ARRAY_CHECK( stride ) ,
                    const iType & i1 )
   {
     SHARDS_ARRAY_CHECK(check_indices(true,1,stride,i1));

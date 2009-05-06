@@ -358,6 +358,34 @@ void local_test_array()
   }
 
   //------------------------------
+  // Test flexibility of indexing type.
+
+  {
+    int i = 1 ;
+    af8( i , i , i , i , i , i , i , i );
+  }
+  {
+    long int i = 1 ;
+    af8( i , i , i , i , i , i , i , i );
+  }
+  {
+    unsigned i = 1 ;
+    af8( i , i , i , i , i , i , i , i );
+  }
+  {
+    long unsigned i = 1 ;
+    af8( i , i , i , i , i , i , i , i );
+  }
+  {
+    std::size_t i = 1 ;
+    af8( i , i , i , i , i , i , i , i );
+  }
+  {
+    std::ptrdiff_t i = 1 ;
+    af8( i , i , i , i , i , i , i , i );
+  }
+
+  //------------------------------
 
   {
   AF8::ReverseType rf8( af8 );
