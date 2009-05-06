@@ -304,8 +304,8 @@ public:
   bool compare(
     const LinearOpBase<Scalar> &op1,
     const LinearOpBase<Scalar> &op2,
-    MultiVectorRandomizerBase<Scalar> *domainRandomizer,
-    Teuchos::FancyOStream *out
+    const Ptr<MultiVectorRandomizerBase<Scalar> > &domainRandomizer,
+    const Ptr<Teuchos::FancyOStream> &out_arg
     ) const;
  
   /** \brief Calls
@@ -314,7 +314,7 @@ public:
   bool compare(
     const LinearOpBase<Scalar> &op1,
     const LinearOpBase<Scalar> &op2,
-    Teuchos::FancyOStream *out
+    const Ptr<Teuchos::FancyOStream> &out_arg
     ) const;
 
   /** \brief Deprecated. */
@@ -339,6 +339,28 @@ public:
     ) const
     {
       return check(op, Teuchos::ptr(out));
+    }
+
+  /** \brief Deprecated. */
+  bool compare(
+    const LinearOpBase<Scalar> &op1,
+    const LinearOpBase<Scalar> &op2,
+    MultiVectorRandomizerBase<Scalar> *domainRandomizer,
+    Teuchos::FancyOStream *out_arg
+    ) const
+    {
+      using Teuchos::ptr;
+      return compare(op1, op2, ptr(domainRandomizer), ptr(out_arg));
+    }
+ 
+  /** \brief Deprecated. */
+  bool compare(
+    const LinearOpBase<Scalar> &op1,
+    const LinearOpBase<Scalar> &op2,
+    Teuchos::FancyOStream *out_arg
+    ) const
+    {
+      return compare(op1, op2, Teuchos::ptr(out_arg));
     }
 
   //@}

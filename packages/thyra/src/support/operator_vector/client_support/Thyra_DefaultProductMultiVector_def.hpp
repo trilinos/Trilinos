@@ -659,8 +659,8 @@ void DefaultProductMultiVector<Scalar>::initializeImpl(
   // thrown, then *this will be left in the original state as before the
   // function was called)!
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( is_null(productSpace_in) );
-  TEST_FOR_EXCEPT( multiVecs.size() != productSpace_in->numBlocks() );
+  TEUCHOS_ASSERT(nonnull(productSpace_in));
+  TEUCHOS_ASSERT_EQUALITY(multiVecs.size(), productSpace_in->numBlocks());
 #endif // TEUCHOS_DEBUG
   const RCP<const VectorSpaceBase<Scalar> >
     theDomain = multiVecs[0]->domain();
@@ -708,6 +708,135 @@ void DefaultProductMultiVector<Scalar>::validateColIndex(const int j) const
 
 
 } // namespace Thyra
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::DefaultProductMultiVector<Scalar> >
+Thyra::defaultProductMultiVector()
+{
+  return Teuchos::rcp(new DefaultProductMultiVector<Scalar>);
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::DefaultProductMultiVector<Scalar> >
+Thyra::defaultProductMultiVector(
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const int numMembers
+  )
+{
+  RCP<DefaultProductMultiVector<Scalar> > pmv = defaultProductMultiVector<Scalar>();
+  pmv->initialize(productSpace, numMembers);
+  return pmv;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::DefaultProductMultiVector<Scalar> >
+Thyra::defaultProductMultiVector(
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
+  )
+{
+  const RCP<DefaultProductMultiVector<Scalar> > pmv =
+    defaultProductMultiVector<Scalar>();
+  pmv->initialize(productSpace, multiVecs);
+  return pmv;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::DefaultProductMultiVector<Scalar> >
+Thyra::defaultProductMultiVector(
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs
+  )
+{
+  const RCP<DefaultProductMultiVector<Scalar> > pmv =
+    defaultProductMultiVector<Scalar>();
+  pmv->initialize(productSpace, multiVecs);
+  return pmv;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::ProductMultiVectorBase<Scalar> >
+Thyra::castOrCreateSingleBlockProductMultiVector(
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const RCP<const MultiVectorBase<Scalar> > &mv
+  )
+{
+  const RCP<const ProductMultiVectorBase<Scalar> > pmv =
+    Teuchos::rcp_dynamic_cast<const ProductMultiVectorBase<Scalar> >(mv);
+  if (nonnull(pmv))
+    return pmv;
+  return defaultProductMultiVector<Scalar>(productSpace, Teuchos::tuple(mv)());
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::ProductMultiVectorBase<Scalar> >
+Thyra::nonconstCastOrCreateSingleBlockProductMultiVector(
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const RCP<MultiVectorBase<Scalar> > &mv
+  )
+{
+  const RCP<ProductMultiVectorBase<Scalar> > pmv =
+    Teuchos::rcp_dynamic_cast<ProductMultiVectorBase<Scalar> >(mv);
+  if (nonnull(pmv))
+    return pmv;
+  return defaultProductMultiVector<Scalar>(productSpace, Teuchos::tuple(mv)());
+}
+
+
+//
+// Explicit instantiation macro
+//
+// Must be expanded from within the Thyra namespace!
+//
+
+
+#define THYRA_DEFAULT_PRODUCT_MULTI_VECTOR_INSTANT(SCALAR) \
+  \
+  template class DefaultProductMultiVector<SCALAR >; \
+  \
+  template RCP<DefaultProductMultiVector<SCALAR > >  \
+  defaultProductMultiVector();  \
+    \
+    \
+  template RCP<DefaultProductMultiVector<SCALAR > >  \
+  defaultProductMultiVector(  \
+    const RCP<const DefaultProductVectorSpace<SCALAR > > &productSpace,  \
+    const int numMembers  \
+    );  \
+    \
+    \
+  template RCP<DefaultProductMultiVector<SCALAR > >  \
+  defaultProductMultiVector(  \
+    const RCP<const DefaultProductVectorSpace<SCALAR > > &productSpace,  \
+    const ArrayView<const RCP<MultiVectorBase<SCALAR > > > &multiVecs  \
+    );  \
+    \
+    \
+  template RCP<DefaultProductMultiVector<SCALAR > >  \
+  defaultProductMultiVector(  \
+    const RCP<const DefaultProductVectorSpace<SCALAR > > &productSpace,  \
+    const ArrayView<const RCP<const MultiVectorBase<SCALAR > > > &multiVecs  \
+    );  \
+    \
+    \
+  template RCP<const ProductMultiVectorBase<SCALAR > >  \
+  castOrCreateSingleBlockProductMultiVector(  \
+    const RCP<const DefaultProductVectorSpace<SCALAR > > &productSpace, \
+    const RCP<const MultiVectorBase<SCALAR > > &mv  \
+    );  \
+    \
+    \
+  template RCP<ProductMultiVectorBase<SCALAR > >  \
+  nonconstCastOrCreateSingleBlockProductMultiVector(  \
+    const RCP<const DefaultProductVectorSpace<SCALAR > > &productSpace, \
+    const RCP<MultiVectorBase<SCALAR > > &mv  \
+    );
 
 
 #endif // THYRA_DEFAULT_PRODUCT_MULTI_VECTOR_DEF_HPP

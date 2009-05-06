@@ -28,10 +28,13 @@
 #ifndef THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
 #define THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP
 
+
 #include "Thyra_MultiVectorRandomizerBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Univeral <tt>MultiVectorRandomizerBase</tt> subclass that is
  * compatible with all <tt>MultiVectorBase</tt> objects.
@@ -57,14 +60,29 @@ public:
   
 };
 
+
+/** \brief Nonmember constructor.
+ *
+ * \relates UniversalMultiVectorRandomizer
+ */
+template<class Scalar>
+RCP<UniversalMultiVectorRandomizer<Scalar> >
+universalMultiVectorRandomizer()
+{
+  return Teuchos::rcp(new UniversalMultiVectorRandomizer<Scalar>());
+}
+
+
 // //////////////////////////////
 // Definitions
+
 
 template<class Scalar>
 bool UniversalMultiVectorRandomizer<Scalar>::isCompatible( const VectorSpaceBase<Scalar> &space ) const
 {
   return true;
 }
+
 
 template<class Scalar>
 void UniversalMultiVectorRandomizer<Scalar>::randomize( MultiVectorBase<Scalar> *mv )
@@ -73,6 +91,8 @@ void UniversalMultiVectorRandomizer<Scalar>::randomize( MultiVectorBase<Scalar> 
   Thyra::randomize(Scalar(-ST::one()),Scalar(+ST::one()),mv);
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_UNIVERSAL_MULTI_VECTOR_RANDOMIZER_HPP

@@ -33,7 +33,7 @@
 #include "Thyra_VectorSpaceImpl.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_LinearCombinationImpl.hpp"
-#include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Teuchos_as.hpp"
 

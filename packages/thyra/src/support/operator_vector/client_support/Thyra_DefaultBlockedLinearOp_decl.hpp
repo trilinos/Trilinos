@@ -43,6 +43,9 @@
 namespace Thyra {
 
 
+template<class Scalar> class DefaultProductVectorSpace;
+
+
 /** \brief Concrete composite <tt>LinearOpBase</tt> subclass that creates
  * single linear operator object out of a set of constituent <tt>LinearOpBase</tt>
  * blocks.
@@ -227,6 +230,8 @@ private:
 
   Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > productRange_;
   Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > productDomain_;
+  Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > defaultProductRange_;
+  Teuchos::RCP<const DefaultProductVectorSpace<Scalar> > defaultProductDomain_;
   int numRowBlocks_; // M
   int numColBlocks_; // N
  
@@ -251,6 +256,7 @@ private:
     const int i, const int j,
     const Teuchos::RCP<LinearOpType> &block
     );
+  void adjustBlockSpaces();
 
   // Not defined and not to be called
   DefaultBlockedLinearOp(const DefaultBlockedLinearOp&);
@@ -265,6 +271,18 @@ private:
  */
 template<class Scalar>
 RCP<DefaultBlockedLinearOp<Scalar> > defaultBlockedLinearOp();
+
+
+/** \brief Form an implicit block 1x1 linear operator <tt>[ A00 ]</tt>.
+ *
+ * \relates DefaultBlockedLinearOp
+ */
+template<class Scalar>
+Teuchos::RCP<const LinearOpBase<Scalar> >
+block1x1(
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &A00,
+  const std::string &label = ""
+  );
 
 
 /** \brief Form an implicit block 1x2 linear operator <tt>[ A00, A01 ]</tt>.
@@ -304,6 +322,18 @@ block2x2(
   const Teuchos::RCP<const LinearOpBase<Scalar> > &A01,
   const Teuchos::RCP<const LinearOpBase<Scalar> > &A10,
   const Teuchos::RCP<const LinearOpBase<Scalar> > &A11,
+  const std::string &label = ""
+  );
+
+
+/** \brief Form an implicit block 1x1 linear operator <tt>[ A00 ]</tt>.
+ *
+ * \relates DefaultBlockedLinearOp
+ */
+template<class Scalar>
+Teuchos::RCP<LinearOpBase<Scalar> >
+nonconstBlock1x1(
+  const Teuchos::RCP<LinearOpBase<Scalar> > &A00,
   const std::string &label = ""
   );
 

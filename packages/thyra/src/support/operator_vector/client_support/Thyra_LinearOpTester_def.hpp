@@ -248,19 +248,19 @@ bool LinearOpTester<Scalar>::check(
 */
   }
   else {
-    *out << endl << "describe op:\n" << Teuchos::describe(op,Teuchos::VERB_LOW);
+    *out << endl << "describe op: " << Teuchos::describe(op, Teuchos::VERB_LOW);
   }
 
   RCP< MultiVectorRandomizerBase<Scalar> >  rRand;
   if (!is_null(rangeRandomizer))
     rRand = rcpFromPtr(rangeRandomizer);
   else
-    rRand = rcp(new UniversalMultiVectorRandomizer<Scalar>());
+    rRand = universalMultiVectorRandomizer<Scalar>();
   RCP< MultiVectorRandomizerBase<Scalar> > dRand;
   if (!is_null(domainRandomizer))
     dRand = rcpFromPtr(domainRandomizer);
   else
-    dRand = rcp(new UniversalMultiVectorRandomizer<Scalar>());
+    dRand = universalMultiVectorRandomizer<Scalar>();
   
   *out << endl << "Checking the domain and range spaces ... ";
 
@@ -384,8 +384,7 @@ bool LinearOpTester<Scalar>::check(
          << " Checking the linear properties of the adjoint operator ... ";
 
     std::ostringstream ossStore;
-    RCP<FancyOStream> oss =
-      rcp(new FancyOStream(rcpFromRef(ossStore)));
+    const RCP<FancyOStream> oss = Teuchos::fancyOStream(rcpFromRef(ossStore));
     ossStore.copyfmt(*out);
     bool these_results = true;
 
@@ -476,8 +475,7 @@ bool LinearOpTester<Scalar>::check(
          << " Checking the agreement of the adjoint and forward operators ... ";
 
     std::ostringstream ossStore;
-    RCP<FancyOStream> oss =
-      rcp(new FancyOStream(rcpFromRef(ossStore)));
+    const RCP<FancyOStream> oss = Teuchos::fancyOStream(rcpFromRef(ossStore));
     ossStore.copyfmt(*out);
     bool these_results = true;
     
@@ -600,15 +598,15 @@ bool LinearOpTester<Scalar>::check(
 
 template<class Scalar>
 bool LinearOpTester<Scalar>::compare(
-  const LinearOpBase<Scalar>  &op1
-  ,const LinearOpBase<Scalar> &op2
-  ,MultiVectorRandomizerBase<Scalar>      *domainRandomizer
-  ,Teuchos::FancyOStream                        *out_arg
+  const LinearOpBase<Scalar> &op1,
+  const LinearOpBase<Scalar> &op2,
+  const Ptr<MultiVectorRandomizerBase<Scalar> > &domainRandomizer,
+  const Ptr<Teuchos::FancyOStream> &out_arg
   ) const
 {
 
   using std::endl;
-  using Teuchos::arrayArg;
+  using Teuchos::rcpFromPtr;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar>  RST;
@@ -616,7 +614,7 @@ bool LinearOpTester<Scalar>::compare(
   bool success = true, result;
   const int loc_num_rhs = this->num_rhs();
   const Scalar  r_half = Scalar(0.5)*RST::one();
-  RCP<FancyOStream> out = Teuchos::rcp(out_arg,false);
+  const RCP<FancyOStream> out = rcpFromPtr(out_arg);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
 
   OSTab tab(out,1,"THYRA");
@@ -634,9 +632,9 @@ bool LinearOpTester<Scalar>::compare(
       *out << endl << "describe op2: " << op2.description() << endl;
   }
 
-  RCP< MultiVectorRandomizerBase<Scalar> > dRand;
-  if(domainRandomizer)  dRand = Teuchos::rcp(domainRandomizer,false);
-  else                  dRand = Teuchos::rcp(new UniversalMultiVectorRandomizer<Scalar>());
+  RCP<MultiVectorRandomizerBase<Scalar> > dRand;
+  if (nonnull(domainRandomizer)) dRand = rcpFromPtr(domainRandomizer);
+  else dRand = universalMultiVectorRandomizer<Scalar>();
 
   RCP<const VectorSpaceBase<Scalar> >  range  = op1.range();
   RCP<const VectorSpaceBase<Scalar> > domain = op1.domain();
@@ -646,7 +644,7 @@ bool LinearOpTester<Scalar>::compare(
   {
 
     std::ostringstream ossStore;
-    RCP<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    RCP<FancyOStream> oss = Teuchos::fancyOStream(Teuchos::rcp(&ossStore,false));
     if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
@@ -674,7 +672,7 @@ bool LinearOpTester<Scalar>::compare(
   {
 
     std::ostringstream ossStore;
-    RCP<FancyOStream> oss = Teuchos::rcp(new FancyOStream(Teuchos::rcp(&ossStore,false)));
+    RCP<FancyOStream> oss = Teuchos::fancyOStream(Teuchos::rcpFromRef(ossStore));
     if(out.get()) ossStore.copyfmt(*out);
     bool these_results = true;
 
@@ -744,12 +742,12 @@ bool LinearOpTester<Scalar>::compare(
 
 template<class Scalar>
 bool LinearOpTester<Scalar>::compare(
-  const LinearOpBase<Scalar>  &op1
-  ,const LinearOpBase<Scalar> &op2
-  ,Teuchos::FancyOStream                        *out
+  const LinearOpBase<Scalar> &op1,
+  const LinearOpBase<Scalar> &op2,
+  const Ptr<Teuchos::FancyOStream> &out_arg
   ) const
 {
-  return compare(op1,op2,NULL,out);
+  return compare(op1, op2, Teuchos::null, out_arg);
 }
 
 

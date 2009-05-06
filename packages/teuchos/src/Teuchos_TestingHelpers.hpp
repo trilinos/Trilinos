@@ -43,6 +43,13 @@
 namespace Teuchos {
 
 
+/** \brief Update the success bool flag.
+ *
+ * \ingroup teuchos_testing_grp
+ */
+inline void updateSuccess(const bool result, bool &success);
+
+
 /** \brief Return "passed" for "failed".
  *
  * \ingroup teuchos_testing_grp
@@ -418,6 +425,13 @@ bool compareFloatingArrays(
 //
 // Implementations
 //
+
+
+inline
+void Teuchos::updateSuccess(const bool result, bool &success)
+{
+  if (!result) success = false;
+}
 
 
 inline

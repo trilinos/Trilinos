@@ -33,6 +33,7 @@
 
 #include "Rythmos_Types.hpp"
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
+#include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_DefaultBlockedTriangularLinearOpWithSolveFactory.hpp" // Default implementation

@@ -115,10 +115,12 @@ template<class Scalar>
 inline
 RCP<ProductVectorSpaceBase<Scalar> >
 nonconstProductVectorSpaceBase(
-  const RCP<VectorSpaceBase<Scalar> > &v
+  const RCP<VectorSpaceBase<Scalar> > &v,
+  const bool forceSuccess = true
   )
 {
-  return Teuchos::rcp_dynamic_cast<ProductVectorSpaceBase<Scalar> >(v, true);
+  return Teuchos::rcp_dynamic_cast<ProductVectorSpaceBase<Scalar> >(
+    v, forceSuccess);
 }
 
 
@@ -131,40 +133,44 @@ template<class Scalar>
 inline
 RCP<const ProductVectorSpaceBase<Scalar> >
 productVectorSpaceBase(
-  const RCP<const VectorSpaceBase<Scalar> > &v
+  const RCP<const VectorSpaceBase<Scalar> > &v,
+  const bool forceSuccess = true
   )
 {
-  return Teuchos::rcp_dynamic_cast<const ProductVectorSpaceBase<Scalar> >(v, true);
+  return Teuchos::rcp_dynamic_cast<const ProductVectorSpaceBase<Scalar> >(
+    v, forceSuccess);
 }
 
 
-//
-// Non-template non-member inline functions
-//
+/** \brief Inline overload of nonconstProductVectorSpaceBase<Scalar>(..) for
+ * double.
+ *
+ * \relates ProductVectorSpaceBase
+ */
+inline
+RCP<ProductVectorSpaceBase<double> >
+nonconstProductVectorSpaceBase(
+  const RCP<VectorSpaceBase<double> > &vs,
+  const bool forceSuccess = true
+  )
+{
+  return nonconstProductVectorSpaceBase<double>(vs, forceSuccess);
+}
 
 
-#define THYRA_PRODUCT_VECTOR_SPACE_BASE_NONMEMBER_INLINE_FUNCS(SCALAR) \
-   \
-  inline \
-  RCP<ProductVectorSpaceBase<SCALAR > > \
-  nonconstProductVectorSpaceBase( \
-    const RCP<VectorSpaceBase<SCALAR > > &vs \
-    ) \
-  { \
-    return nonconstProductVectorSpaceBase<SCALAR >(vs); \
-  } \
- \
-  inline \
-  RCP<const ProductVectorSpaceBase<SCALAR > > \
-  productVectorSpaceBase( \
-    const RCP<const VectorSpaceBase<SCALAR > > &vs \
-    ) \
-  { \
-    return productVectorSpaceBase<SCALAR >(vs); \
-  }
-
-
-THYRA_PRODUCT_VECTOR_SPACE_BASE_NONMEMBER_INLINE_FUNCS(double)
+/** \brief Inline overload of productVectorSpaceBase<Scalar>(..) for double.
+ *
+ * \relates ProductVectorSpaceBase
+ */
+inline
+RCP<const ProductVectorSpaceBase<double> >
+productVectorSpaceBase(
+  const RCP<const VectorSpaceBase<double> > &vs,
+  const bool forceSuccess = true
+  )
+{
+  return productVectorSpaceBase<double>(vs, forceSuccess);
+}
 
 
 } // namespace Thyra

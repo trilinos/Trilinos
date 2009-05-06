@@ -2,6 +2,7 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "EpetraThyraAdaptersTestHelpers.hpp"
 
 #include "Teuchos_UnitTestHarness.hpp"
@@ -75,7 +76,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
      RCP<MultiVectorBase<double> > x = createMembers<double>(A->domain(), 3);
      RCP<MultiVectorBase<double> > y = createMembers<double>(A->range(), 3);
      
-     Thyra::randomize(-1.0,1.0,x.ptr().get());
+     Thyra::randomize(-1.0, 1.0, x.ptr());
    
      out << "A = \n" << describe(*A, Teuchos::VERB_HIGH) << std::endl;
      out << "x = \n" << describe(*x, Teuchos::VERB_HIGH) << std::endl;
@@ -86,7 +87,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
 
      out << "First composite operator completed" << std::endl;
   }
-/*
+
   {
      RCP<const LinearOpBase<double> > A = block2x2<double>(
        A11, block1x2<double>(A10,A12),block2x1<double>(A01,A21),
@@ -98,7 +99,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
      RCP<MultiVectorBase<double> > x = createMembers<double>(A->domain(), 3);
      RCP<MultiVectorBase<double> > y = createMembers<double>(A->range(), 3);
      
-     Thyra::randomize(-1.0,1.0,x.ptr().get());
+     Thyra::randomize(-1.0, 1.0, x.ptr());
    
      out << "A = \n" << describe(*A, Teuchos::VERB_HIGH) << std::endl;
      out << "x = \n" << describe(*x, Teuchos::VERB_HIGH) << std::endl;
@@ -109,7 +110,6 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
 
      out << "Second composite operator completed" << std::endl;
   }
-*/
 
   out << "Test complete" << std::endl;
 

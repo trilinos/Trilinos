@@ -289,12 +289,8 @@ private:
  * \relates DefaultProductMultiVector
  */
 template<class Scalar>
-inline
 RCP<DefaultProductMultiVector<Scalar> >
-defaultProductMultiVector()
-{
-  return Teuchos::rcp(new DefaultProductMultiVector<Scalar>);
-}
+defaultProductMultiVector();
 
 
 /** \brief Nonmember constructor.
@@ -302,17 +298,11 @@ defaultProductMultiVector()
  * \relates DefaultProductMultiVector
  */
 template<class Scalar>
-inline
 RCP<DefaultProductMultiVector<Scalar> >
 defaultProductMultiVector(
   const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
   const int numMembers
-  )
-{
-  RCP<DefaultProductMultiVector<Scalar> > pmv = defaultProductMultiVector<Scalar>();
-  pmv->initialize(productSpace, numMembers);
-  return pmv;
-}
+  );
 
 
 /** \brief Nonmember constructor.
@@ -324,12 +314,7 @@ RCP<DefaultProductMultiVector<Scalar> >
 defaultProductMultiVector(
   const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
   const ArrayView<const RCP<MultiVectorBase<Scalar> > > &multiVecs
-  )
-{
-  RCP<DefaultProductMultiVector<Scalar> > pmv = defaultProductMultiVector<Scalar>();
-  pmv->initialize(productSpace, multiVecs);
-  return pmv;
-}
+  );
 
 
 /** \brief Nonmember constructor.
@@ -341,12 +326,35 @@ RCP<DefaultProductMultiVector<Scalar> >
 defaultProductMultiVector(
   const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
   const ArrayView<const RCP<const MultiVectorBase<Scalar> > > &multiVecs
-  )
-{
-  RCP<DefaultProductMultiVector<Scalar> > pmv = defaultProductMultiVector<Scalar>();
-  pmv->initialize(productSpace, multiVecs);
-  return pmv;
-}
+  );
+
+
+/** \brief Dynamic cast to a const product multi-vector or create a new
+ * product multi-vector with one component if the input multi-vector is not a
+ * product vector.
+ *
+ * \relates DefaultProductMultiVector
+ */
+template<class Scalar>
+RCP<const ProductMultiVectorBase<Scalar> >
+castOrCreateSingleBlockProductMultiVector(
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const RCP<const MultiVectorBase<Scalar> > &mv
+  );
+
+
+/** \brief Dynamic cast to a const product multi-vector or create a new
+ * product multi-vector with one component if the input multi-vector is not a
+ * product vector.
+ *
+ * \relates DefaultProductMultiVector
+ */
+template<class Scalar>
+RCP<ProductMultiVectorBase<Scalar> >
+nonconstCastOrCreateSingleBlockProductMultiVector( 
+  const RCP<const DefaultProductVectorSpace<Scalar> > &productSpace,
+  const RCP<MultiVectorBase<Scalar> > &mv
+  );
 
 
 // /////////////////////////
