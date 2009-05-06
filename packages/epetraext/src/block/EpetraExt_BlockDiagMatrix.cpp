@@ -188,12 +188,13 @@ int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_
 
   const int *vlist=DataMap_->FirstPointInElementList();
   const int *xlist=Map().FirstPointInElementList();
-
+  const int *blocksize=Map().ElementSizeList();
+  
   if(ApplyMode_==AM_MULTIPLY || ApplyMode_==AM_INVERT){
     // Multiply & Invert mode have the same apply
     int NumBlocks=NumMyBlocks();
     for(int i=0;i<NumBlocks;i++){
-      int Nb=BlockSize(i);
+      int Nb=blocksize[i];
       int vidx0=vlist[i];
       int xidx0=xlist[i];
 
@@ -218,7 +219,7 @@ int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_
     // Factorization mode has a different apply
     int NumBlocks=NumMyBlocks();
     for(int i=0;i<NumBlocks;i++){
-      int Nb=BlockSize(i);
+      int Nb=blocksize[i];
       int vidx0=vlist[i];
       int xidx0=xlist[i];      
       if(Nb==1) {
