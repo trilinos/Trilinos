@@ -77,7 +77,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 10);
   
-  solver.Iterate(10i, 1e-10);
+  solver.Iterate(1000, 1e-10);
   
   delete MLPrec;
   
@@ -175,6 +175,7 @@ int main(int argc, char *argv[]) {
   MLList.set("smoother: type","Chebyshev");
   MLList.set("coarse: type","Amesos-KLU");    
   MLList.set("max levels",2);
+  MLList.set("aggregation: threshold",.02);
   MLList.set("ML output",10);
   MLList.set("smoother: polynomial order",2);  
   strcpy(mystring,"Cheby");
