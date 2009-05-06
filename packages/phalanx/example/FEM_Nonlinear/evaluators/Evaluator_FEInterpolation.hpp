@@ -52,9 +52,9 @@ PHX_EVALUATOR_CLASS(FEInterpolation)
   //! Gradient values at quadrature points
   PHX::MDField<ScalarT,Cell,QuadPoint,Dim> val_grad_qp;
   
-  std::size_t num_nodes;
-  std::size_t num_qp;
-  std::size_t num_dim;
+  int num_nodes;
+  int num_qp;
+  int num_dim;
 
 PHX_EVALUATOR_CLASS_END
 

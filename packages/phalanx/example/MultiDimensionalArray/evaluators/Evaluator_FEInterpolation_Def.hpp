@@ -89,19 +89,19 @@ evaluateFields(typename Traits::EvalData cell_data)
       cell_it->getBasisFunctionGradients();
 
     // Loop over quad points of cell
-    for (std::size_t qp = 0; qp < num_qp; ++qp) {
+    for (int qp = 0; qp < num_qp; ++qp) {
       
       val_qp(cell,qp) = 0.0;
 
-      for (std::size_t dim = 0; dim < num_dim; ++dim)
+      for (int dim = 0; dim < num_dim; ++dim)
 	val_grad_qp(cell,qp,dim) = 0.0;
 
       // Sum nodal contributions to qp
-      for (std::size_t node = 0; node < num_nodes; ++node) {
+      for (int node = 0; node < num_nodes; ++node) {
 
 	val_qp(cell,qp) += phi(qp,node) * val_node(cell,node);
 	
-	for (std::size_t dim = 0; dim < num_dim; ++dim)
+	for (int dim = 0; dim < num_dim; ++dim)
 	  val_grad_qp(cell,qp,dim) += 
 	    grad_phi(qp,node,dim) * val_node(cell,node);
        
