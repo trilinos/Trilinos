@@ -49,6 +49,7 @@
 
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Teuchos               teuchos                        PS
+  ThreadPool            ThreadPool                     SS # Depends on Ptheads TPL
   RTOp                  rtop                           PS
   Kokkos                kokkos                         PS
   Epetra                epetra                         PS
@@ -78,7 +79,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   FEI                   fei                            PS
   RBGen                 rbgen                          PS
   Anasazi               anasazi                        PS
-  ThreadPool            ThreadPool                     SS # Depends on Ptheads TPL
   Phalanx               phalanx                        SS
   Pamgen                pamgen                         PS
   Phdmesh               phdmesh                        PS
