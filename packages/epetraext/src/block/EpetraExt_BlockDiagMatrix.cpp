@@ -2,6 +2,7 @@
 #include "Epetra_MultiVector.h"
 #include "Epetra_Comm.h"
 #include "Epetra_LAPACK.h"
+#include "Epetra_Distributor.h"
 
 #define AM_MULTIPLY 0
 #define AM_INVERT   1
