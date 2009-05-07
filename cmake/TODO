@@ -10,16 +10,10 @@ Active items:
 and run nightly tests.
 
 (*) [Everyone] Clean up existing failures:
-- [Brent] Didasko: Fix Zoltan issue ...
 - [Brent] PyTrilnos: Get building and running on Darwin or ask Bill Spotz to
 do it ... File a bug report ...
-- [Brent] Phdmesh and pthreads library on linux
-- [Brent] Phalanx and Boost on Darwin
-- [Brent] Komplex shared library failure ... File bug report and disabled in
-shared library build
 - [Brent] File bug report for EpetraEx failure ...
 - [Brent] File bug report for Sundance failure (look for existing bug) ...
-- [Brent] File bug report for Anaszi build failure ...
 - [Brent] Create overall CMake transition bug and block it with these bugs
 (that way we will not forget) ...
 
@@ -45,6 +39,11 @@ specific machines for specific build cases.
 - Add an explicit MPI compiler, headers and library build
 - Add a build with Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF
 
+(*) [???] Turn on shared libraries by default on Mac and Linux: Switching to
+shared libraries by default will save on disk space and could speed up
+pre-checkin testing when only libraries need to be rebuilt and rerun the
+tests.
+
 (*) [???] Address TPL intra-dependencies: The current TPL handling system only
 implicitly addresses intra-TPL dependencies.  For example, if you enable PETSc
 you also need BLAS and LAPACK.  However, the TPL system does not really know
@@ -59,19 +58,19 @@ robust.
 
 (*) [???] Get PyTrilinos updated:
 - Enable BUILD_SHARED=ON if Trilinos_ENABLE_PyTrilinos=ON if BUILD_SHARED is
-not already set
+not already set.
 - Report an error if Trilinos_ENABLE_PyTrilinos=ON but BUILD_SHARED=OFF and
 fail the configure step.
 - Enable testing for PyTrilinos on godel by setting
 PYTHONPATH=/home/wfspotz/lib64/python2.4/site-packages on the environment.
 You can also set this as a CMake varaible I think.
 
-(*) [???] Write pre-checkin tool that will configure a SERIAL_DEBUG and
-MPI_OPT build directory and enable only "Primary Stable" code.  This will need
-a minimal configuration script to pull in only the basic info needed in order
-to find compilers, MPI, BLAS, and LAPACK and nothing else.
+(*) [???] Write pre-checkin tool that will configure an MPI_DEBUG and
+SERIAL_RELEASE build directory and enable only "Primary Stable" code.  This
+will need a minimal configuration script to pull in only the basic info needed
+in order to find compilers, MPI, BLAS, and LAPACK and nothing else.
 
-(*) [???] Add the GCC option -Wextra to the list of defautl strong warning
+(*) [???] Add the GCC option -Wextra to the list of default strong warning
 options.  Many of these options may already be covered by -ansi -pedantic but
 we just need to check this before adding this.
 
@@ -109,11 +108,12 @@ subdirectories.  I will also have to put in an option PRESERVE as an argument
 to [OVERALL_WORKING_DIRECTORY <overallWorkingDir> [PRESERVE]] to
 PACAKGE_ADD_ADVANCED_TEST(...) that will keep the top-level working directory.
 
-(*) [???] Write a module that will print out the compiler version.  This is
-important for the nightly testing output.  A suggestion was given on the
-cmake@cmake.org list which was "If you look through the FindBoost.cmake file
-that comes with CMake around line 535 you may be able to pull out that code
-which does a pretty decent job of determining compiler versions".
+(*) [???] Write a module that will determine and print out the compiler
+version.  This is important for the nightly testing output.  A suggestion was
+given on the cmake@cmake.org list which was "If you look through the
+FindBoost.cmake file that comes with CMake around line 535 you may be able to
+pull out that code which does a pretty decent job of determining compiler
+versions".
 
 (*) [???] Resolve the runtime MPI errors on godel: Perhaps we should just
 rebuild and reinstall MPI on godel.
@@ -129,13 +129,6 @@ new build directory against this.  It would be good to install a
 PACKAGEConfig.cmake file for each package that could then be used to specify
 what to build against.  We could also consider makefile fragments instead and
 just kill two birds with one stone.
-
-(*) [???] Add installation testing for the autotools installed libraries.
-This will be done in the same way as with the CMake built and installed
-libraries and headers instead we will use the autotools system to build and
-install the libraries and headers instead.  The CMake build system would be
-used to configure and build the tests and examples against the installed
-libraries and headers.
 
 (*) [???] Revise the behavior of Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON so
 that it only enables packages needed for the initial set of enabled packages.
@@ -198,3 +191,10 @@ automatically to exclude all such files.
 
 Tentative:
 ----------
+
+(*) [???] Add installation testing for the autotools installed libraries.
+This will be done in the same way as with the CMake built and installed
+libraries and headers instead we will use the autotools system to build and
+install the libraries and headers instead.  The CMake build system would be
+used to configure and build the tests and examples against the installed
+libraries and headers.
