@@ -10,6 +10,9 @@
 #cmakedefine HAVE_NEMESIS_EXODUS
 
 /* Define if want to build with parmetis enabled */
+#cmakedefine HAVE_METIS
+
+/* Define if want to build with parmetis enabled */
 #cmakedefine HAVE_PARMETIS
 
 /* Define if want to build with patoh enabled */

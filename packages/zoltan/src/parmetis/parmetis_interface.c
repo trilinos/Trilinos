@@ -116,8 +116,10 @@ int Zoltan_ParMetis(
   int wgtflag;
   int   numflag = 0;
   int num_part = zz->LB.Num_Global_Parts;/* passed to Jostle/ParMETIS. Don't */
+#ifdef HAVE_MPI
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
   /* change our zz struct.                  */
+#endif /* HAVE_MPI */
 
 
 #ifndef ZOLTAN_PARMETIS
@@ -129,13 +131,14 @@ int Zoltan_ParMetis(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+#ifdef HAVE_PARMETIS
     /* Check for outdated/unsupported ParMetis versions. */
 #if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
   if (zz->Proc == 0)
     ZOLTAN_PRINT_WARN(zz->Proc, __func__, "ParMetis 3.0 is no longer supported by Zoltan. Please upgrade to ParMetis 3.1 (or later).");
   ierr = ZOLTAN_WARN;
 #endif
-
+#endif /* HAVE_PARMETIS */
 
   Zoltan_Third_Init(&gr, &prt, &vsp, &part,
 		    imp_gids, imp_lids, imp_procs, imp_to_part,
@@ -162,6 +165,21 @@ int Zoltan_ParMetis(
     }
   }
 
+#ifdef HAVE_MPI
+  gr.graph_type = - GLOBAL_GRAPH;
+  /* Select type of graph, negative because we impose them */
+  /* TODO: add a parameter to select the type, shared with Scotch */
+/*   if (strcmp (graph_type, "GLOBAL") != 0) { */
+/*     gr.graph_type = - LOCAL_GRAPH; */
+/*     if (zz->Num_Proc > 1) { */
+/*       ZOLTAN_PRINT_ERROR(zz->Proc, __func__, "Distributed graph: cannot call METIS, switching to ParMetis"); */
+/*       gr.graph_type = - GLOBAL_GRAPH; */
+/*       retval = ZOLTAN_WARN; */
+/*     } */
+/*   } */
+#else
+  gr.graph_type = - LOCAL_GRAPH;
+#endif /* HAVE_MPI */
 
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 
@@ -239,6 +257,8 @@ int Zoltan_ParMetis(
 
   /* Now we can call ParMetis */
 
+#ifdef HAVE_PARMETIS
+  if (gr.graph_type != LOCAL_GRAPH) { /* May be GLOBAL or NO GRAPH */
   /* First check for ParMetis 3 routines */
   if (strcmp(alg, "PARTKWAY") == 0){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
@@ -279,6 +299,28 @@ int Zoltan_ParMetis(
     sprintf(msg, "Unknown ParMetis algorithm %s.", alg);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
   }
+  }
+  else
+#endif /* HAVE_PARMETIS */
+#ifdef HAVE_METIS
+    /* TODO: I don't know how to set balance ! */
+  if (gr.graph_type == LOCAL_GRAPH) {
+    /* Check for Metis routines */
+  if (strcmp(alg, "PARTKWAY") == 0){
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS 4 library");
+    METIS_WPartGraphKway (gr.vtxdist+1, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts, &wgtflag,
+			  &numflag, &num_part, prt.part_sizes, options, &edgecut, prt.part);
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
+  }
+  else {
+    /* Sanity check: This should never happen! */
+    char msg[256];
+    sprintf(msg, "Unknown Metis algorithm %s.", alg);
+    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
+  }
+  }
+#endif /* HAVE_METIS */
+
 
   /* Get a time here */
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
@@ -502,7 +544,9 @@ int Zoltan_ParMetis_Order(
   ZOLTAN_Output_Order ord;
   ZOLTAN_Third_Graph gr;
 
+#ifdef HAVE_MPI
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
+#endif /* HAVE_MPI */
   int numflag = 0;
   int timer_p = 0;
   int get_times = 0;
@@ -551,12 +595,13 @@ int Zoltan_ParMetis_Order(
 
   /* Check what ordering type is requested */
   if (order_opt){
+    gr.graph_type = - GLOBAL_GRAPH;
+
+#ifdef HAVE_MPI
     if (strcmp(order_opt->order_type, "LOCAL") == 0)
+#endif /* HAVE_MPI */
       gr.graph_type = - LOCAL_GRAPH;
-    else if (strcmp(order_opt->order_type, "GLOBAL") == 0)
-      gr.graph_type =  - GLOBAL_GRAPH;
-    else
-      gr.graph_type = - NO_GRAPH;
+
   }
   gr.get_data = 1;
 
@@ -613,19 +658,25 @@ int Zoltan_ParMetis_Order(
   /* Get a time here */
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
+#ifdef HAVE_PARMETIS
   if (gr.graph_type==GLOBAL_GRAPH){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
     ParMETIS_V3_NodeND (gr.vtxdist, gr.xadj, gr.adjncy,
 			&numflag, options, ord.rank, ord.sep_sizes, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
-  else { /* Be careful : permutation parameters are in the opposite order */
+  else
+#endif /* HAVE_PARMETIS */
+#if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
+ if (gr.graph_type == LOCAL_GRAPH) { /* Be careful : permutation parameters are in the opposite order */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
     options[0] = 0;  /* Use default options for METIS. */
+    order_opt->return_args = RETURN_RANK|RETURN_IPERM; /* We provide directly all the permutations */
     METIS_NodeND (&gr.num_obj, gr.xadj, gr.adjncy,
 		  &numflag, options, ord.iperm, ord.rank);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
   }
+#endif /* HAVE_METIS */
 
   /* Get a time here */
   if (get_times) times[2] = Zoltan_Time(zz->Timer);

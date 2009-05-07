@@ -91,16 +91,17 @@ int Zoltan_Scotch_Order(
   SCOTCH_Strat        stradat;
   SCOTCH_Dgraph       grafdat;
   SCOTCH_Graph        cgrafdat;
+#ifdef HAVE_MPI
   SCOTCH_Dordering    ordedat;
-
   /* The following are used to convert elimination tree in Zoltan format */
   indextype          *tree;
   indextype          *size;
   indextype          *children;
   indextype           leafnum;
-  int numbloc;
   indextype           start;
   int root = -1;
+#endif /* HAVE_MPI */
+  int numbloc;
 
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
   int timer_p = 0;

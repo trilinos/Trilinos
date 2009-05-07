@@ -25,19 +25,27 @@ extern "C" {
 #endif
 
 
+#ifdef HAVE_PARMETIS
 /* Include ParMetis header files if necessary.
  * These include files must be available in the include path set in the
  * Zoltan configuration file.
  */
 #include <parmetis.h>
+#endif /* HAVE_PARMETIS */
 
+#ifdef HAVE_METIS
+#include <metis.h>
+#else
+#ifdef HAVE_PARMETIS
 /* We use one METIS function that is not in parmetis.h */
 extern void METIS_NodeND(int *, idxtype *, idxtype *, int *, int *, idxtype *, idxtype *);
+#endif /* HAVE_PARMETIS */
+#endif /* HAVE_METIS */
 
 /* Guess the version number of ParMetis if not defined */
 /* PARMETIS_MAJOR_VERSION is only defined in version 3.0 and higher */
 #if (!defined(PARMETIS_MAJOR_VERSION))
-#define PARMETIS_MAJOR_VERSION 2
+#define PARMETIS_MAJOR_VERSION 0
 #define PARMETIS_MINOR_VERSION 0
 #endif
 

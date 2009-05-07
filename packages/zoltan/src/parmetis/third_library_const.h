@@ -22,6 +22,10 @@ extern "C" {
 
 #include "zoltan_util.h"
 
+#ifdef indextype
+#undef indextype
+#endif
+
 /* Include ParMetis and/or Scotch header files if necessary.
  * These include files must be available in the include path set in the
  * Zoltan configuration file.
@@ -31,6 +35,14 @@ extern "C" {
 #define indextype idxtype
 #define weighttype idxtype
 #endif /* ZOLTAN_PARMETIS */
+
+#ifdef ZOLTAN_METIS
+#include <metis.h>
+#ifndef indextype
+#define indextype idxtype
+#define weighttype idxtype
+#endif
+#endif /* ZOLTAN_METIS */
 
 #ifdef ZOLTAN_SCOTCH
 #include <ptscotch.h>
