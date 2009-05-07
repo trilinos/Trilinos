@@ -4,26 +4,27 @@ INCLUDE(PackageAddTestHelpers)
 #
 # Add a test or a set of tests for a single executable.
 #
-# PACKAGE_ADD_TEST(
-#   <execName>
-#   [NOEXEPREFIX]
-#   [NOEXESUFFIX]
-#   [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
-#   [DIRECTORY <directory>]
-#   [ADD_DIR_TO_NAME]
-#   [ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...
-#     | POSTFIX_AND_ARGS_0 <postfix> <arg1> <arg2> ...
-#       POSTFIX_AND_ARGS_1 ... ]
-#   [COMM [serial] [mpi]]
-#   [NUM_MPI_PROCS <numProcs>]
-#   [HOST <host1> <host2> ...]
-#   [XHOST <host1> <host2> ...]
-#   [HOSTTYPE <hosttype1> <hosttype2> ...]
-#   [XHOSTTYPE <hosttype1> <hosttype2> ...]
-#   [STANDARD_PASS_OUTPUT
-#     | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..." 
-#     | FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
-#   )
+#   PACKAGE_ADD_TEST(
+#     <execName>
+#     [NOEXEPREFIX]
+#     [NOEXESUFFIX]
+#     [NAME <testName> | NAME_POSTFIX <testNamePostfix>]
+#     [DIRECTORY <directory>]
+#     [ADD_DIR_TO_NAME]
+#     [ARGS "<arg1> <arg2> ..." "<arg3> <arg4> ..." ...
+#       | POSTFIX_AND_ARGS_0 <postfix> <arg1> <arg2> ...
+#         POSTFIX_AND_ARGS_1 ... ]
+#     [KEYWORDS <keyword1> <keyword2> ...]
+#     [COMM [serial] [mpi]]
+#     [NUM_MPI_PROCS <numProcs>]
+#     [HOST <host1> <host2> ...]
+#     [XHOST <host1> <host2> ...]
+#     [HOSTTYPE <hosttype1> <hosttype2> ...]
+#     [XHOSTTYPE <hosttype1> <hosttype2> ...]
+#     [STANDARD_PASS_OUTPUT
+#       | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..." 
+#       | FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
+#     )
 #  
 # The arguments to the function are as followes:
 #
@@ -104,6 +105,11 @@ INCLUDE(PackageAddTestHelpers)
 #     meaningful name to each test case and you can specify multiple arguments
 #     without having to quote them and you can allow long argument lists to
 #     span multiple lines.
+#
+#   KEYWORDS <keyword1> <keyword2> ...
+#
+#     If specified, gives a list of keywords added to a test.  These keywords
+#     can then be used to select tests to be run with 'ctest'.
 #
 #   COMM [serial] [mpi]
 #

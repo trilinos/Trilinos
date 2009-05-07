@@ -23,10 +23,11 @@ INCLUDE(PrintVar)
 #     [TEST_N [EXEC <execTargetN> | CMND <cmndExecN>] ...]
 #     [OVERALL_WORKING_DIRECTORY <overallWorkingDir>]
 #     [FAIL_FAST]
-#     [HOST <host1> <host2> ...]
-#     [XHOST <host1> <host2> ...]
+#     [KEYWORDS <keyword1> <keyword2> ...]
 #     [COMM [serial] [mpi]]
 #     [OVERALL_NUM_MPI_PROCS <overallNumProcs>]
+#     [HOST <host1> <host2> ...]
+#     [XHOST <host1> <host2> ...]
 #     [FINAL_PASS_REGULAR_EXPRESSION <regex> | FINAL_FAIL_REGULAR_EXPRESSION <regex>]
 #     )
 #
@@ -75,6 +76,11 @@ INCLUDE(PrintVar)
 #     before the test runs, it will be deleted and created again.  Therefore,
 #     if you want to preserve the contents of this directory between test runs
 #     you need to copy it somewhere else.
+#
+#   KEYWORDS <keyword1> <keyword2> ...
+#
+#     If specified, gives a list of keywords added to a test.  These keywords
+#     can then be used to select tests to be run with 'ctest'.
 #
 #   FAIL_FAST
 #
@@ -236,7 +242,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
      #prefix
      PARSE
      #lists
-     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;COMM;OVERALL_NUM_MPI_PROCS;FINAL_PASS_REGULAR_EXPRESSION;FINAL_FAIL_REGULAR_EXPRESSION"
+     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;FINAL_PASS_REGULAR_EXPRESSION;FINAL_FAIL_REGULAR_EXPRESSION"
      #options
      "FAIL_FAST"
      ${ARGN}
@@ -498,6 +504,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
       ${CMAKE_COMMAND} -P "${TEST_SCRIPT_FILE}"
       )
 
+    PACKAGE_PRIVATE_ADD_TEST_ADD_LABEL_AND_KEYWORDS(${TEST_NAME})
 
     IF (PARSE_FINAL_PASS_REGULAR_EXPRESSION)
       SET_TESTS_PROPERTIES( ${TEST_NAME} PROPERTIES
