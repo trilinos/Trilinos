@@ -256,6 +256,10 @@ int main( int argc, char *argv[] ) {
 
   ierr += TestOneMatrix( name1,  name2,  name3, Comm, verbose );
 
-  return ( ierr ) ; 
-}
+#ifdef EPETRA_MPI
+  ierr += MPI_Finalize();
+#endif
 
+  return ( ierr ) ; 
+
+}
