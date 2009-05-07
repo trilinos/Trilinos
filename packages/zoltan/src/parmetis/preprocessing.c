@@ -97,6 +97,7 @@ int Zoltan_Preprocess_Graph(
 )
 {
   static char *yo = "Zoltan_Preprocess_Graph";
+
   int ierr;
   float *float_vwgt, *float_ewgts;
   char msg[256];
@@ -311,6 +312,7 @@ Zoltan_Preprocess_Add_Weight (ZZ *zz,
 			      ZOLTAN_Third_Part  * prt,
 			      char * add_obj_weight)
 {
+  static char * yo = "Zoltan_Preprocess_Add_Weight";
   /* Add a vertex weight? */
   int add_type = 0;
   weighttype  *vwgt_new;
@@ -328,7 +330,7 @@ Zoltan_Preprocess_Add_Weight (ZZ *zz,
     add_type = 2;
   }
   else {
-    ZOLTAN_PRINT_WARN(zz->Proc, __func__, "Invalid parameter value for ADD_OBJ_WEIGHT!\n");
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Invalid parameter value for ADD_OBJ_WEIGHT!\n");
     ierr = ZOLTAN_WARN;
     add_type = 0;
   }
@@ -369,6 +371,7 @@ Zoltan_Preprocess_Scale_Weights (ZOLTAN_Third_Graph *gr, float *flt_wgt, weightt
 				 int number, int ndim, int mode, ZZ* zz,
 				 char * name, int offset)
 {
+  static char * yo = "Zoltan_Preprocess_Scale_Weights";
   int ierr = ZOLTAN_OK;
   int i99;
   int k;
@@ -421,6 +424,7 @@ Zoltan_Preprocess_Extract_Geom (ZZ *zz,
 				ZOLTAN_Third_Graph *gr,
 				ZOLTAN_Third_Geom *geo)
 {
+  static char * yo = "Zoltan_Preprocess_Extract_Geom";
   int ierr;
   double *geom_vec;
   int i;
@@ -455,7 +459,7 @@ Zoltan_Preprocess_Extract_Vsize (ZZ *zz,
 				 ZOLTAN_Third_Graph *gr,
 				 ZOLTAN_Third_Vsize *vsp)
 {
-
+  static char * yo = "Zoltan_Preprocess_Extract_Vsize";
   int num_gid_entries = zz->Num_GID;
   int num_lid_entries = zz->Num_LID;
   int ierr= ZOLTAN_OK;
@@ -507,6 +511,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
 				 ZOLTAN_Third_Geom *geo,
 				 ZOLTAN_Third_Vsize *vsp)
 {
+  static char * yo = "Zoltan_Preprocess_Scatter_Graph";
   int ierr = ZOLTAN_OK;
   int tmp;
 
@@ -536,7 +541,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
    */
   if (gr->scatter && (gr->graph_type == LOCAL_GRAPH)){
     gr->scatter = 0;
-    ZOLTAN_PRINT_WARN(zz->Proc, __func__, "Setting scatter_graph=0 since the graph"
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "Setting scatter_graph=0 since the graph"
       " is local on each proc");
     ierr = ZOLTAN_WARN;
   }

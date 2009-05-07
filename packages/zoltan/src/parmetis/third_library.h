@@ -29,10 +29,10 @@ extern "C" {
 
 /* Macro for error handling */
 #define ZOLTAN_PARMETIS_ERROR(error,str) {ierr = error ; \
- ZOLTAN_PRINT_ERROR(zz->Proc, __func__, str) ; goto End ;}
+ ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto End ;}
 
 #define ZOLTAN_THIRD_ERROR(error,str) { \
- ZOLTAN_PRINT_ERROR(zz->Proc, __func__ , str) ; return(error) ;}
+ ZOLTAN_PRINT_ERROR(zz->Proc, yo , str) ; return(error) ;}
 
 
 /* Structure that defines a graph for third party libraries like ParMetis. */

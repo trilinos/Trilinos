@@ -56,6 +56,8 @@ int Zoltan_Graph(
                            assigned. */
 )
 {
+  static char* yo = "Zoltan_Graph";
+
 char *defaultMethod= "PHG";
 char package[MAX_PARAM_STRING_LEN];
 int rc;
@@ -71,7 +73,7 @@ int rc;
                          imp_procs, imp_to_part,
                          num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
 #else
-    ZOLTAN_PRINT_ERROR(zz->Proc, __func__,
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                        "ParMETIS partitioning was requested but "
                        "Zoltan was compiled without ParMETIS.\n");
     rc = ZOLTAN_FATAL;
@@ -83,7 +85,7 @@ int rc;
                          imp_procs, imp_to_part,
                          num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
 #else
-    ZOLTAN_PRINT_ERROR(zz->Proc, __func__,
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                        "Scotch partitioning was requested but "
                        "Zoltan was compiled without Scotch.\n");
     rc = ZOLTAN_FATAL;
@@ -100,7 +102,7 @@ int rc;
                          num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
   }
   else{
-    ZOLTAN_PRINT_ERROR(zz->Proc, __func__, 
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                        "Invalid value for GRAPH_PACKAGE parameter\n");
     rc = ZOLTAN_FATAL;
   }

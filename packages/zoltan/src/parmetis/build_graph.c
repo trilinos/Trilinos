@@ -87,8 +87,7 @@ int Zoltan_Build_Graph(
   int gid_size = num_gid_entries * sizeof(ZOLTAN_ID_TYPE);
   char msg[256];
 
-
-  char *yo = "Zoltan_Build_Graph";
+  static char *yo = "Zoltan_Build_Graph";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -581,7 +580,7 @@ int Zoltan_Get_Num_Edges_Per_Obj(
  * Returns number of edges per object in array edges_per_obj.
  * Computes max edges per obj and total edges per obj.
  */
-char *yo = "Zoltan_Get_Num_Edges_Per_Obj";
+  static char *yo = "Zoltan_Get_Num_Edges_Per_Obj";
 int ierr = ZOLTAN_OK;
 int i;
 int nedges;
@@ -706,7 +705,7 @@ static int process_edge_list(
  * This routine has lots of side effects; it is a subroutine only
  * to support both single-object and multi-object edge list callbacks.
  */
-char *yo = "process_edge_list";
+static char *yo = "process_edge_list";
 int j, k;
 int tmp, flag;
 struct Edge_Info *ptr;

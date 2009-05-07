@@ -123,7 +123,7 @@ int Zoltan_ParMetis(
 
 
 #ifndef ZOLTAN_PARMETIS
-  ZOLTAN_PRINT_ERROR(zz->Proc, __func__,
+  ZOLTAN_PRINT_ERROR(zz->Proc, yo,
 		     "ParMetis requested but not compiled into library.");
   return ZOLTAN_FATAL;
 
@@ -135,7 +135,7 @@ int Zoltan_ParMetis(
     /* Check for outdated/unsupported ParMetis versions. */
 #if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
   if (zz->Proc == 0)
-    ZOLTAN_PRINT_WARN(zz->Proc, __func__, "ParMetis 3.0 is no longer supported by Zoltan. Please upgrade to ParMetis 3.1 (or later).");
+    ZOLTAN_PRINT_WARN(zz->Proc, yo, "ParMetis 3.0 is no longer supported by Zoltan. Please upgrade to ParMetis 3.1 (or later).");
   ierr = ZOLTAN_WARN;
 #endif
 #endif /* HAVE_PARMETIS */
@@ -156,7 +156,7 @@ int Zoltan_ParMetis(
     /* Avoid fatal crash by setting scatter to level 2 or higher. */
     gr.scatter_min = 2;
     if (geo == NULL) {
-      ZOLTAN_PRINT_ERROR (zz->Proc, __func__, "Out of memory.");
+      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Out of memory.");
       return (ZOLTAN_MEMERR);
     }
     if (strcmp(alg, "PARTGEOM") == 0) {
@@ -172,7 +172,7 @@ int Zoltan_ParMetis(
 /*   if (strcmp (graph_type, "GLOBAL") != 0) { */
 /*     gr.graph_type = - LOCAL_GRAPH; */
 /*     if (zz->Num_Proc > 1) { */
-/*       ZOLTAN_PRINT_ERROR(zz->Proc, __func__, "Distributed graph: cannot call METIS, switching to ParMetis"); */
+/*       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Distributed graph: cannot call METIS, switching to ParMetis"); */
 /*       gr.graph_type = - GLOBAL_GRAPH; */
 /*       retval = ZOLTAN_WARN; */
 /*     } */
@@ -412,6 +412,8 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
 		      float* itr, double *pmv3_itr,
 		      ZOLTAN_Output_Order *ord)
 {
+  static char * yo = "Zoltan_Parmetis_Parse";
+
   int  i;
   int output_level, seed, coarse_alg, fold, use_obj_size;
 
@@ -500,7 +502,7 @@ Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg,
       char str[256];
       sprintf(str, "ParMETIS method %s fails on one processor due to a bug"
                    " in ParMETIS v3.x; please select another method.", alg);
-      ZOLTAN_PRINT_ERROR(zz->Proc, __func__, str);
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, str);
       return (ZOLTAN_FATAL);
     }
 

@@ -31,7 +31,7 @@ extern "C" {
 
 /* Macro for error handling */
 #define ZOLTAN_PARMETIS_ERROR(error,str) {ierr = error ; \
- ZOLTAN_PRINT_ERROR(zz->Proc, __func__, str) ; goto End ;}
+ ZOLTAN_PRINT_ERROR(zz->Proc, yo, str) ; goto End ;}
 
 
 /* Data structures used in ParMetis interface routines */

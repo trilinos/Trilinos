@@ -68,6 +68,8 @@ int Zoltan_Postprocess_Graph(
 {
   int ierr = ZOLTAN_OK;
 
+  static char * yo = "Zoltan_Postprocess_Graph";
+
   if (gr->scatter > 0) {                    /* Graph has been scattered */
     indextype *rank = NULL;
 
@@ -108,6 +110,8 @@ Zoltan_Postprocess_UnScatter_Graph (ZZ *zz,
 				    ZOLTAN_Third_Part *prt,
 				    indextype **rank)
 {
+  static char * yo = "Zoltan_Postprocess_UnScatter_Graph";
+
   int ierr = ZOLTAN_FATAL;
   indextype *src;
   indextype *dst;
@@ -209,6 +213,8 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 			      ZOLTAN_ID_PTR      global_ids,
 			      ZOLTAN_ID_PTR      local_ids)
 {
+  static char * yo = "Zoltan_Postprocess_Partition";
+
   int ierr = ZOLTAN_OK;
   int i, j, nsend;
   int *newproc;

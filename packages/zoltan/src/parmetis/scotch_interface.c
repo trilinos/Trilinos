@@ -701,6 +701,7 @@ int Zoltan_Scotch(
 
 static int Zoltan_Scotch_Bind_Param(ZZ* zz, char *alg, char *graph_type, char **strat)
 {
+  static char * yo = "Zoltan_Scotch_Bind_Param";
   char stratsmall[MAX_PARAM_STRING_LEN+1];
   char stratfilename[MAX_PARAM_STRING_LEN+1];
 
