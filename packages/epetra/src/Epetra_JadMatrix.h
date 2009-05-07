@@ -133,7 +133,7 @@ class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
       if (CurEntry>=NumMyNonzeros_) EPETRA_CHK_ERR(-1); 
       Value = &Values_[CurEntry];
       ColIndex = Indices_[CurEntry];
-      for (int j=0; j<NumJaggedDiagonals_; j++) if (CurEntry<IndexOffset_[j+1]) RowIndex = RowPerm_[CurEntry-IndexOffset_[j]];
+      for (int j=0; j<NumJaggedDiagonals_; j++) if (CurEntry<IndexOffset_[j+1]) {RowIndex = RowPerm_[CurEntry-IndexOffset_[j]]; break;}
       return(0);
     }
 
