@@ -200,6 +200,69 @@ ThetaStepper<Scalar>::getSolver() const
  
 
 template<class Scalar>
+bool ThetaStepper<Scalar>::supportsCloning() const
+{
+  return true;
+}
+
+template<class Scalar>
+RCP<StepperBase<Scalar> >
+ThetaStepper<Scalar>::cloneStepperAlgorithm() const
+{
+  RCP<ThetaStepper<Scalar> >
+    stepper = Teuchos::rcp(new ThetaStepper<Scalar>);
+  stepper->isInitialized_ = isInitialized_;
+  stepper->model_ = model_; // Model is stateless so shallow copy is okay!
+
+  if (!is_null(solver_))
+    stepper->solver_ = solver_->cloneNonlinearSolver().assert_not_null();
+
+  stepper->basePoint_ = basePoint_;
+
+  if (!is_null(x_))
+    stepper->x_ = x_->clone_v().assert_not_null();
+  if (!is_null(x_old_))
+    stepper->x_old_ = x_old_->clone_v().assert_not_null();
+  if (!is_null(x_pre_))
+    stepper->x_pre_ = x_pre_->clone_v().assert_not_null();
+
+  if (!is_null(x_dot_))
+    stepper->x_dot_ = x_dot_->clone_v().assert_not_null();
+  if (!is_null(x_dot_old_))
+    stepper->x_dot_old_ = x_dot_old_->clone_v().assert_not_null();
+  if (!is_null(x_dot_really_old_))
+    stepper->x_dot_really_old_ = x_dot_really_old_->clone_v().assert_not_null();
+  if (!is_null(x_dot_base_))
+    stepper->x_dot_base_ = x_dot_base_->clone_v().assert_not_null();
+
+  stepper->t_ = t_;
+  stepper->t_old_ = t_old_;
+
+  stepper->dt_ = dt_;
+  stepper->dt_old_ = dt_old_;
+
+  stepper->numSteps_ = numSteps_;
+
+  stepper->thetaStepperType_ = thetaStepperType_;
+  stepper->theta_ = theta_;
+  stepper->predictor_corrector_begin_after_step_ = predictor_corrector_begin_after_step_;
+  stepper->default_predictor_order_ = default_predictor_order_;
+
+  if (!is_null(neModel_))
+    stepper->neModel_
+    = Teuchos::rcp(new Rythmos::SingleResidualModelEvaluator<Scalar>);
+
+  if (!is_null(parameterList_))
+    stepper->parameterList_ = parameterList(*parameterList_);
+
+  if (!is_null(interpolator_))
+    stepper->interpolator_
+      = interpolator_->cloneInterpolator().assert_not_null(); // ToDo: Implement cloneInterpolator()
+
+  return stepper;
+}
+
+template<class Scalar>
 void ThetaStepper<Scalar>::setModel(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &model
   )

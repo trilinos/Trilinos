@@ -410,13 +410,13 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::initialize(
   typedef Thyra::ModelEvaluatorBase MEB;
   namespace FSIAMET = ForwardSensitivityIntegratorAsModelEvaluatorTypes;
 
-  const int numResponseTimes = responseTimes.size();
-
   //
   // A) Validate and set input
   //
 
 #ifdef RYTHMOS_DEBUG
+  const int numResponseTimes = responseTimes.size();
+
   TEST_FOR_EXCEPT(is_null(stateStepper));
   TEST_FOR_EXCEPT(is_null(stateIntegrator));
   TEST_FOR_EXCEPT(is_null(stateAndSensStepper));
@@ -693,8 +693,6 @@ void ForwardSensitivityIntegratorAsModelEvaluator<Scalar>::evalModelImpl(
 
   const RCP<const Thyra::ModelEvaluator<Scalar> >
     stateModel = stateStepper_->getModel();
-  
-  const int np = responseFuncs_[0]->get_p_space(p_index_)->dim();
   
   //
   // A) Process OutArgs first to see what functions we will be computing
