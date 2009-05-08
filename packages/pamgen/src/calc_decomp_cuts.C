@@ -13,24 +13,24 @@
 namespace PAMGEN_NEVADA {
 
 
-int dom_decomp_2d(const int Nx, const int Ny,
-		  const int Np, int *pNGx, int *pNGy){
+long long dom_decomp_2d(const long long Nx, const long long Ny,
+		  const long long Np, long long *pNGx, long long *pNGy){
 
-  int rx, ry, I, rxs, rx_min, rx_max;
-  int rx0 = 1;
-  int ry0 = 1;
-  int I0 = 1;
-  int init = 1;
-  div_t dv;
+  long long rx, ry, I, rxs, rx_min, rx_max;
+  long long rx0 = 1;
+  long long ry0 = 1;
+  long long I0 = 1;
+  long long init = 1;
+  lldiv_t dv;
 
   /* Compute the ideal decomposition, truncated to an integer, which
      minimizes the amount of communication. */
-  rxs = (int)sqrt((double)(Nx*Np)/(double)Ny);
+  rxs = (long long)sqrt((double)(Nx*Np)/(double)Ny);
 
   /* Constrain the decomposition */
   rx_max = Nx < Np ? Nx : Np; /* Require ry >= 1 and rx <= Nx */
   if(Ny < Np){ /* Require rx >= 1 and ry <= Ny */
-    dv = div(Np, Ny);
+    dv = lldiv(Np, Ny);
     /* rx_min = the smallest integer >= Np/Ny */
     rx_min = dv.quot + (dv.rem > 0 ? 1 : 0);
   }
@@ -44,7 +44,7 @@ int dom_decomp_2d(const int Nx, const int Ny,
 
   /* Search down for a factor of Np */
   for(rx=rxs; rx>=rx_min; rx--){
-    dv = div(Np,rx);
+    dv = lldiv(Np,rx);
     if(dv.rem == 0){
       rx0 = rx;
       ry0 = dv.quot;
@@ -56,7 +56,7 @@ int dom_decomp_2d(const int Nx, const int Ny,
 
   /* Search up for a factor of Np */
   for(rx=rxs+1; rx<=rx_max; rx++){
-    dv = div(Np,rx);
+    dv = lldiv(Np,rx);
     if(dv.rem == 0){
       ry = dv.quot;
       I = (rx - 1)*Ny + (ry - 1)*Nx;
@@ -86,24 +86,24 @@ int dom_decomp_2d(const int Nx, const int Ny,
 /* ========================================================================== */
 
 
-int dom_decomp_3d(const int Nx, const int Ny, const int Nz,
-		  const int Np, int *pNGx, int *pNGy, int *pNGz){
+long long dom_decomp_3d(const long long Nx, const long long Ny, const long long Nz,
+		  const long long Np, long long *pNGx, long long *pNGy, long long *pNGz){
 
-  div_t dv;
-  int rx_min, rx_max, rx, ry, rz, I;
-  int rx0 = 1;
-  int ry0 = 1;
-  int rz0 = 1;
-  int I0 = 1;
-  int init=1;
-  int err, t, Npt;
+  lldiv_t dv;
+  long long rx_min, rx_max, rx, ry, rz, I;
+  long long rx0 = 1;
+  long long ry0 = 1;
+  long long rz0 = 1;
+  long long I0 = 1;
+  long long init=1;
+  long long err, t, Npt;
 
   /* Constrain the decomposition */
   rx_max = Nx < Np ? Nx : Np; /* Require ry >= 1, rz >= 1 and rx <= Nx */
   /* Compute a global minimum constraint on rx. */
   t = (Ny < Np ? Ny : Np)*(Nz < Np ? Nz : Np); /* t = Max(ry)*Max(rz) */
   if(t < Np){ /* Require rx >= 1, ry <= Ny and rz <= Nz */
-    dv = div(Np, t);
+    dv = lldiv(Np, t);
     /* rx_min = the smallest integer >= Np/t */
     rx_min = dv.quot + (dv.rem > 0 ? 1 : 0);
   }
@@ -112,7 +112,7 @@ int dom_decomp_3d(const int Nx, const int Ny, const int Nz,
   /* printf("rx_min = %d, rx_max = %d\n",rx_min, rx_max); */
 
   for(rx = rx_min; rx <= rx_max; rx++){
-    dv = div(Np, rx);
+    dv = lldiv(Np, rx);
     if(dv.rem == 0){
       Npt = dv.quot; /* Np for transverse (y,z) decomposition */
 
@@ -155,17 +155,17 @@ int dom_decomp_3d(const int Nx, const int Ny, const int Nz,
 
 namespace PAMGEN_NEVADA {
 
-int dom_decomp_2d_serial(const int Nx, const int Ny,
-			 const int Np, int *pNGx, int *pNGy){
+long long dom_decomp_2d_serial(const long long Nx, const long long Ny,
+			 const long long Np, long long *pNGx, long long *pNGy){
 
-  div_t dv;
-  int rx, rx_min, rx_max, ry, I;
-  int rx0, ry0, I0, init=1;
+  lldiv_t dv;
+  long long rx, rx_min, rx_max, ry, I;
+  long long rx0, ry0, I0, init=1;
 
   /* Constrain the decomposition */
   rx_max = Nx < Np ? Nx : Np; /* Require ry >= 1 and rx <= Nx */
   if(Ny < Np){ /* Require rx >= 1 and ry <= Ny */
-    dv = div(Np, Ny);
+    dv = lldiv(Np, Ny);
     /* rx_min = the smallest integer >= Np/Ny */
     rx_min = dv.quot + (dv.rem > 0 ? 1 : 0);
   }
@@ -174,7 +174,7 @@ int dom_decomp_2d_serial(const int Nx, const int Ny,
   /* printf("rx_min = %d, rx_max = %d\n",rx_min, rx_max); */
 
   for(rx = rx_min; rx <= rx_max; rx++){
-    dv = div(Np, rx);
+    dv = lldiv(Np, rx);
     if(dv.rem == 0){
       ry = dv.quot;
 
@@ -206,20 +206,20 @@ int dom_decomp_2d_serial(const int Nx, const int Ny,
 /* ========================================================================== */
 
 
-int dom_decomp_3d_serial(const int Nx, const int Ny, const int Nz,
-			 const int Np, int *pNGx, int *pNGy, int *pNGz){
+long long dom_decomp_3d_serial(const long long Nx, const long long Ny, const long long Nz,
+			 const long long Np, long long *pNGx, long long *pNGy, long long *pNGz){
 
-  div_t dv;
-  int rx, rx_min, rx_max, ry, ry_min, ry_max, rz, I;
-  int rx0, ry0, rz0, I0, init=1;
-  int t, Npt;
+  lldiv_t dv;
+  long long rx, rx_min, rx_max, ry, ry_min, ry_max, rz, I;
+  long long rx0, ry0, rz0, I0, init=1;
+  long long t, Npt;
 
   /* Constrain the decomposition */
   rx_max = Nx < Np ? Nx : Np; /* Require ry >= 1, rz >= 1 and rx <= Nx */
   /* Compute a global minimum constraint on rx. */
   t = (Ny < Np ? Ny : Np)*(Nz < Np ? Nz : Np); /* t = Max(ry)*Max(rz) */
   if(t < Np){ /* Require rx >= 1, ry <= Ny and rz <= Nz */
-    dv = div(Np, t);
+    dv = lldiv(Np, t);
     /* rx_min = the smallest integer >= Np/t */
     rx_min = dv.quot + (dv.rem > 0 ? 1 : 0);
   }
@@ -228,12 +228,12 @@ int dom_decomp_3d_serial(const int Nx, const int Ny, const int Nz,
   /* printf("rx_min = %d, rx_max = %d\n",rx_min, rx_max); */
 
   for(rx = rx_min; rx <= rx_max; rx++){
-    dv = div(Np, rx);
+    dv = lldiv(Np, rx);
     if(dv.rem == 0){
       Npt = dv.quot; /* Np for transverse (y,z) decomposition */
       ry_max = Ny < Npt ? Ny : Npt; /* Require rz >= 1 and ry <= Ny */
       if(Nz < Npt){ /* Require ry >= 1 and rz <= Nz */
-	dv = div(Npt, Nz);
+	dv = lldiv(Npt, Nz);
 	/* ry_min = the smallest integer >= Npt/Nz */
 	ry_min = dv.quot + (dv.rem > 0 ? 1 : 0);
       }
@@ -245,7 +245,7 @@ int dom_decomp_3d_serial(const int Nx, const int Ny, const int Nz,
 	continue; /* No solution exists which satisfies the constraints */
 
       for(ry = ry_min; ry <= ry_max; ry++){
-	dv = div(Npt, ry);
+	dv = lldiv(Npt, ry);
 	if(dv.rem == 0){
 	  rz = dv.quot;
 
@@ -280,11 +280,11 @@ int dom_decomp_3d_serial(const int Nx, const int Ny, const int Nz,
 /* ========================================================================== */
 
 
-int main(void){
+long long main(void){
 
-  int Nx=512, Ny=1024, Nz = 256, Np = 8, NGx, NGy, NGz, Np_max;
-  int rx,ry,rz,I;
-  int err1, err2;
+  long long Nx=512, Ny=1024, Nz = 256, Np = 8, NGx, NGy, NGz, Np_max;
+  long long rx,ry,rz,I;
+  long long err1, err2;
 
 #if 0
   for(Np = 1; Np <= 2048; Np++){

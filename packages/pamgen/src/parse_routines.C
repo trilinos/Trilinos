@@ -70,14 +70,72 @@ namespace PAMGEN_NEVADA {
                      MAX_PARAM };
 
 
-static int sdimension;
-static int * parse_error_count = NULL;
+static long long sdimension;
+static long long * parse_error_count = NULL;
+
+
+  //This takes an integer and returns it in an English representation
+std::string EnglishNumber(long long the_number) {
+  // set up our core numbers from which other numbers can be constructed
+  const long long numbers[] = {0,1,2,3,4,5,6,7,8,9,
+			 10,11,12,13,14,15,16,17,18,19,20,30,40,50,60,70,80,90,
+			 100,1000,1000000,1000000000,1000000000000};
+  
+  const std::string english[] = {"zero", "one", "two", "three", "four", "five", "six",
+				 "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen",
+				 "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+				 "thirty", "fourty", "fifty", "sixty", "seventy", "eighty", "ninety",
+				 "hundred", "thousand", "million","billion","quatrillion"};
+  
+  // count of core numbers (size of above arrays)
+  const int count = 33;
+  
+  // two strings, one holding our number so far, and another temp.
+  std::string returnString = "";
+  std::string temp;
+  
+  if(the_number < 0) {
+    the_number = -the_number;
+    returnString = "negative";
+  }
+  
+  // simply return the number if it already exists in the array above
+  for(int i = 0; i < count; i++) {
+    if(the_number == numbers[i]) {
+      if(returnString.size()) // this is a negative number, so add qualifier
+        return returnString + " " + english[i];
+        
+      return english[i]; // positive number, just return it
+    }
+  }
+  
+  // otherwise we have to contruct it
+  for(int i = count - 1; i > 0; i--) {
+    if(the_number >= numbers[i]) {
+      temp = english[i];
+      
+      // e.g. if n = 5000, then we have "thousand" + n/1000 which equals 5 so,
+      //      "five" + " " + "thousand"
+      if(the_number >= 100)
+        temp = EnglishNumber(the_number / numbers[i]) + " " + temp;
+        
+      if(returnString.size() > 0) returnString = returnString + " ";
+      returnString = returnString + temp; // add this number to our existing number
+
+      // remove this number from n, to complete construction of the number
+      the_number = the_number - (long long)(the_number / numbers[i]) * numbers[i];
+    }
+  }
+  
+  return returnString;
+}
 
 /****************************************************************************/
 Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,  
 				     std::stringstream & input_stream,
-				     int & sparse_error_count,
-				     int incoming_dim)
+				     long long & sparse_error_count,
+				     long long incoming_dim,
+				     long long max_int)
 /****************************************************************************/
 {
   // makes this a noop if an Inline_Mesh_Desc has alread been created.
@@ -106,7 +164,7 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
 
   if(!Inline_Mesh_Desc::static_storage)return Inline_Mesh_Desc::static_storage;
 
-  int error_code = Inline_Mesh_Desc::static_storage->Check_Block_BC_Sets();
+  long long error_code = Inline_Mesh_Desc::static_storage->Check_Block_BC_Sets();
   if(error_code){
     (*parse_error_count) ++;
     Inline_Mesh_Desc::echo_stream << "SETUP ERROR IN CHECK_BLOCK_BC_SETS " << Inline_Mesh_Desc::static_storage->getErrorString() << std::endl;
@@ -135,7 +193,11 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
     
     Inline_Mesh_Desc::static_storage->calculateSize(total_el_count,total_node_count,total_edge_count);
     
-    error_code = Inline_Mesh_Desc::static_storage->reportSize(total_el_count,total_node_count,total_edge_count,Inline_Mesh_Desc::static_storage->error_stream);
+    error_code = Inline_Mesh_Desc::static_storage->reportSize(total_el_count,
+							      total_node_count,
+							      total_edge_count,
+							      Inline_Mesh_Desc::static_storage->error_stream,
+							      max_int);
     if(error_code){
       (*parse_error_count)++;
       Inline_Mesh_Desc::echo_stream << "SIZING ERROR " << Inline_Mesh_Desc::static_storage->getErrorString();
@@ -144,10 +206,13 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
     {
       Inline_Mesh_Desc::static_storage->info_stream << "Inline mesh specification requested: \n";
       Inline_Mesh_Desc::static_storage->info_stream << "\t" << total_el_count;
+//       Inline_Mesh_Desc::static_storage->info_stream << "\t" << EnglishNumber(total_el_count);
       Inline_Mesh_Desc::static_storage->info_stream << " Elements \n";
       Inline_Mesh_Desc::static_storage->info_stream << "\t" << total_node_count;
+//       Inline_Mesh_Desc::static_storage->info_stream << "\t" << EnglishNumber(total_node_count);
       Inline_Mesh_Desc::static_storage->info_stream << " Nodes and\n ";
       Inline_Mesh_Desc::static_storage->info_stream << "\t" << total_edge_count;
+//       Inline_Mesh_Desc::static_storage->info_stream << "\t" << EnglishNumber(total_edge_count);
       Inline_Mesh_Desc::static_storage->info_stream << " Edges.\n";
     }
 }
@@ -179,8 +244,8 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
   // then only a default set of keywords is parsed:
 
   Token token;
-  int block_index = 0;
-  int cubit_axis = 0;
+  long long block_index = 0;
+  long long cubit_axis = 0;
   {
     
     token = token_stream->Shift();
@@ -299,7 +364,7 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
     {"NOCUTSK", P_NOCUTSK, Get_Real_Token},
   };
 
-  int N = sizeof(parameter_table)/sizeof(Keyword);
+  long long N = sizeof(parameter_table)/sizeof(Keyword);
 
   qsort(parameter_table,
         N,
@@ -334,7 +399,7 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
                          match,
                          (Keyword const *) parameter_table,
                          N );
-    int param_id = match->argument;
+    long long param_id = match->argument;
 
     switch(param_id){
     case P_GMIN:{
@@ -431,9 +496,9 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       Inline_Mesh_Desc::static_storage->last_size[cubit_axis] = new Real[Inline_Mesh_Desc::static_storage->inline_bz];
 
       if(Inline_Mesh_Desc::static_storage->interval[cubit_axis])delete Inline_Mesh_Desc::static_storage->interval[cubit_axis];
-      Inline_Mesh_Desc::static_storage->interval[cubit_axis] = new int[Inline_Mesh_Desc::static_storage->inline_bz];
+      Inline_Mesh_Desc::static_storage->interval[cubit_axis] = new long long[Inline_Mesh_Desc::static_storage->inline_bz];
 
-      for(int i = 0; i < Inline_Mesh_Desc::static_storage->inline_bz; i ++){
+      for(long long i = 0; i < Inline_Mesh_Desc::static_storage->inline_bz; i ++){
 	Inline_Mesh_Desc::static_storage->block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::static_storage->c_block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::static_storage->first_size[cubit_axis][i] = 0.;
@@ -459,9 +524,9 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       Inline_Mesh_Desc::static_storage->last_size[cubit_axis] = new Real[Inline_Mesh_Desc::static_storage->inline_bx];
 
       if(Inline_Mesh_Desc::static_storage->interval[cubit_axis])delete Inline_Mesh_Desc::static_storage->interval[cubit_axis];
-      Inline_Mesh_Desc::static_storage->interval[cubit_axis] = new int[Inline_Mesh_Desc::static_storage->inline_bx];
+      Inline_Mesh_Desc::static_storage->interval[cubit_axis] = new long long[Inline_Mesh_Desc::static_storage->inline_bx];
 
-      for(int i = 0; i < Inline_Mesh_Desc::static_storage->inline_bx; i ++){
+      for(long long i = 0; i < Inline_Mesh_Desc::static_storage->inline_bx; i ++){
 	Inline_Mesh_Desc::static_storage->block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::static_storage->c_block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::static_storage->first_size[cubit_axis][i] = 0.;
@@ -487,8 +552,8 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       Inline_Mesh_Desc::static_storage->last_size[cubit_axis] = new Real[Inline_Mesh_Desc::static_storage->inline_by];
 
       if(Inline_Mesh_Desc::static_storage->interval[cubit_axis])delete Inline_Mesh_Desc::static_storage->interval[cubit_axis];
-      Inline_Mesh_Desc::static_storage->interval[cubit_axis] = new int[Inline_Mesh_Desc::static_storage->inline_by];
-      for(int i = 0; i < Inline_Mesh_Desc::static_storage->inline_by; i ++){
+      Inline_Mesh_Desc::static_storage->interval[cubit_axis] = new long long[Inline_Mesh_Desc::static_storage->inline_by];
+      for(long long i = 0; i < Inline_Mesh_Desc::static_storage->inline_by; i ++){
 	Inline_Mesh_Desc::static_storage->block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::static_storage->c_block_dist[cubit_axis][i] = 0.;
 	Inline_Mesh_Desc::static_storage->first_size[cubit_axis][i] = 0.;
@@ -610,7 +675,7 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
 
       token = token_stream->Shift();
       type_token  = token.As_String();
-      int the_id = (int)token_stream->Parse_Integer();
+      long long the_id = (long long)token_stream->Parse_Integer();
       if(the_id <=0){
 	std::stringstream ss;
 	ss << "Nodeset ids must be positive " << the_id;
@@ -685,13 +750,13 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
 
       token = token_stream->Shift();
       type_token  = token.As_String();
-      int the_id = (int)token_stream->Parse_Integer();
+      long long the_id = (long long)token_stream->Parse_Integer();
       if(the_id <=0){
 	std::stringstream ss;
 	ss << "Nodeset ids must be positive " << the_id;
 	token_stream->Semantics_Error(ss.str());   
       }
-      uint the_block = (uint)token_stream->Parse_Integer();
+      long long the_block = (long long) token_stream->Parse_Integer();
 
       Topo_Loc the_loc = NUM_TOPO_CONNECTIONS;
       // case insensitive string compare
@@ -752,7 +817,7 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       const char* type_token;
       token = token_stream->Shift();
       type_token  = token.As_String();
-      int the_id = (int)token_stream->Parse_Integer();
+      long long the_id = (long long)token_stream->Parse_Integer();
       if(the_id <=0){
 	std::stringstream ss;
 	ss << "Sideset ids must be positive " << the_id;
@@ -808,13 +873,13 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       const char* type_token;
       token = token_stream->Shift();
       type_token  = token.As_String();
-      int the_id = (int)token_stream->Parse_Integer();
+      long long the_id = (long long)token_stream->Parse_Integer();
       if(the_id <=0){
 	std::stringstream ss;
 	ss << "Sideset ids must be positive " << the_id;
 	token_stream->Semantics_Error(ss.str());   
       }
-      uint the_block = (uint)token_stream->Parse_Integer();
+      long long the_block = (long long) token_stream->Parse_Integer();
 
       Topo_Loc the_loc = NUM_TOPO_CONNECTIONS;
       // case insensitive string compare
@@ -886,7 +951,7 @@ Token Parse_User_Defined_Element_Density(Token_Stream *token_stream, int)
   // END
   
   //get the variable that the function will affect
-  int function_index = 0;
+  long long function_index = 0;
   Token token = token_stream->Shift();
   std::string direction = token.As_String();
   if(token == "I" || token == "X" || token == "R"){

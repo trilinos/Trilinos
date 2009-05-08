@@ -8,16 +8,16 @@
 #include <cstring>
 
 /****************************************************************************/
-ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh_Desc* imd,int rank, int num_procs)
+ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh_Desc* imd,long long rank, long long num_procs)
 /****************************************************************************/
 {
   imd->my_rank = rank;
   imd->num_processors = num_procs;
 
-  int num_nodes_per_element = 8;
+  long long num_nodes_per_element = 8;
   Element_Type the_element_type = HEX8;
-  int num_nodes_per_face = 4;
-  int dim = imd->dimension;
+  long long num_nodes_per_face = 4;
+  long long dim = imd->dimension;
   if(dim == 3){}
   else if(dim == 2){
     num_nodes_per_element = 4;
@@ -32,9 +32,9 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
   //Pre-Process BC's
   // set up nnx/nny/nnz for calculating bc loop limits
-  int nnx = imd->nelx_tot+1;
-  int nny = imd->nely_tot+1;
-  int nnz = 1;
+  long long nnx = imd->nelx_tot+1;
+  long long nny = imd->nely_tot+1;
+  long long nnz = 1;
   if(dim == 3){
     nnz = imd->nelz_tot+1;
   }
@@ -61,18 +61,18 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   // 'global' ordering in the entire i,j,k domain. 
 
   //make up list of global elements on processor
-  std::list <int> global_el_ids;
-  int error_code = 0;
+  std::list <long long> global_el_ids;
+  long long error_code = 0;
   PAMGEN_NEVADA::Partition * my_part = imd->Decompose(global_el_ids,error_code);
   if(error_code){return NULL;}
 
   // reads in all the serial component of the mesh specification
   // including the maps
-  std::vector <int> element_vector;
-  std::vector <int> global_node_vector;
-  std::list <int> global_node_list;
-  std::map <int, int> global_node_map;//maps global node id to local ordinal
-  std::map <int, int> global_element_map;//maps global node id to local ordinal
+  std::vector <long long> element_vector;
+  std::vector <long long> global_node_vector;
+  std::list <long long> global_node_list;
+  std::map <long long, long long> global_node_map;//maps global node id to local ordinal
+  std::map <long long, long long> global_element_map;//maps global node id to local ordinal
 
   imd->Build_Global_Lists(global_el_ids,
                      element_vector,
@@ -119,7 +119,7 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
                         global_node_map,
                         global_element_map);
 
-  int err_code = imd->Calc_Coord_Vectors();
+  long long err_code = imd->Calc_Coord_Vectors();
   if(err_code){return NULL;}
 
   imd->Populate_Coords(nemesis_db->Coord(),   
@@ -137,8 +137,8 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
 
   std::list < PG_BC_Specification *> ::iterator setit;
-  int nsct = 0;
-  int the_num_side_set_nodes = 0;
+  long long nsct = 0;
+  long long the_num_side_set_nodes = 0;
   for(setit = imd->sideset_list.begin(); setit != imd->sideset_list.end();setit++,nsct ++){
     nemesis_db->Specify_Side_Set_Information(nsct,//the index
 					    (*setit)->id,//the id
@@ -172,7 +172,7 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 			     global_node_map);
   if(!imd->getErrorString().empty()){return NULL;}
   //CONNECTIVITY
-  for(int i = 0;i <nemesis_db->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);i++ ){
+  for(long long i = 0;i <nemesis_db->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);i++ ){
     nemesis_db->Specify_Block_Information(i,//index
                                          i+1,//id
                                          imd->element_block_lists[i].size(),//number of elements
@@ -188,21 +188,21 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
 
   std::string *el_types = nemesis_db->getMSPSA(ms_lt::Mesh_Specification::ELEMENT_TYPES);
-  for(int bct = 0; bct < nemesis_db->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);bct ++ ){
+  for(long long bct = 0; bct < nemesis_db->getMSI(ms_lt::Mesh_Specification::NUM_BLOCKS);bct ++ ){
     el_types[bct] = "QUAD";
     if(dim==3){
       el_types[bct] = "HEX";
     }
   }
 
-  int * the_map = nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_ORDER_MAP);
-  int * global_element_numbers = nemesis_db->getMSP(ms_lt::Mesh_Specification::GLOBAL_ELEMENT_NUMBERS);
+  long long * the_map = nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_ORDER_MAP);
+  long long * global_element_numbers = nemesis_db->getMSP(ms_lt::Mesh_Specification::GLOBAL_ELEMENT_NUMBERS);
   imd->Populate_Map_and_Global_Element_List(the_map, 
 				       global_element_numbers);
 
   //   Read_Global_Numbers();
-  int * global_node_numbers = nemesis_db->getMSP(ms_lt::Mesh_Specification::GLOBAL_NODE_NUMBERS);
-  for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
+  long long * global_node_numbers = nemesis_db->getMSP(ms_lt::Mesh_Specification::GLOBAL_NODE_NUMBERS);
+  for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
     global_node_numbers[gnv] = global_node_vector[gnv]+1;
   }
   //   Read_Global_Info();
@@ -216,15 +216,15 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 			       imd->my_rank);
 
 
-  int* elem_blk_ids_global =    nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_IDS_GLOBAL);//Elem_Blk_Ids_Global();
-  for(int bct = 0; bct <  imd->numBlocks();bct++)elem_blk_ids_global[bct] = bct+1;// add 1 for block index
+  long long* elem_blk_ids_global =    nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_IDS_GLOBAL);//Elem_Blk_Ids_Global();
+  for(long long bct = 0; bct <  imd->numBlocks();bct++)elem_blk_ids_global[bct] = bct+1;// add 1 for block index
 
-  int* elem_blk_cnts_global =   nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_CNTS_GLOBAL);
+  long long* elem_blk_cnts_global =   nemesis_db->getMSP(ms_lt::Mesh_Specification::ELEM_BLK_CNTS_GLOBAL);
   imd->getGlobal_Element_Block_Totals(elem_blk_cnts_global);
 
-  int* ns_ids_global =          nemesis_db->getMSP(ms_lt::Mesh_Specification::NS_IDS_GLOBAL);
-  int* ns_cnts_global =         nemesis_db->getMSP(ms_lt::Mesh_Specification::NS_CNTS_GLOBAL);
-  int* ns_df_cnts_global =      nemesis_db->getMSP(ms_lt::Mesh_Specification::NS_DF_CNTS_GLOBAL);
+  long long* ns_ids_global =          nemesis_db->getMSP(ms_lt::Mesh_Specification::NS_IDS_GLOBAL);
+  long long* ns_cnts_global =         nemesis_db->getMSP(ms_lt::Mesh_Specification::NS_CNTS_GLOBAL);
+  long long* ns_df_cnts_global =      nemesis_db->getMSP(ms_lt::Mesh_Specification::NS_DF_CNTS_GLOBAL);
   nsct = 0;
 
   for(setit = imd->nodeset_list.begin(); setit != imd->nodeset_list.end();setit++,nsct ++){
@@ -235,9 +235,9 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   }
 
 
-  int* ss_ids_global =          nemesis_db->getMSP(ms_lt::Mesh_Specification::SS_IDS_GLOBAL);
-  int* ss_cnts_global =         nemesis_db->getMSP(ms_lt::Mesh_Specification::SS_CNTS_GLOBAL);
-  int* ss_df_cnts_global =      nemesis_db->getMSP(ms_lt::Mesh_Specification::SS_DF_CNTS_GLOBAL);
+  long long* ss_ids_global =          nemesis_db->getMSP(ms_lt::Mesh_Specification::SS_IDS_GLOBAL);
+  long long* ss_cnts_global =         nemesis_db->getMSP(ms_lt::Mesh_Specification::SS_CNTS_GLOBAL);
+  long long* ss_df_cnts_global =      nemesis_db->getMSP(ms_lt::Mesh_Specification::SS_DF_CNTS_GLOBAL);
   nsct = 0;
   for(setit = imd->sideset_list.begin(); setit != imd->sideset_list.end();setit++,nsct ++){
     ss_ids_global[nsct]=(*setit)->id;
@@ -246,16 +246,16 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
     ss_df_cnts_global[nsct] = 0;
   }
   //Declare containers for par info Calculation
-  std::list <int> internal_node_list;
-  std::list < int > border_nodes_list;
-  std::list <int> internal_element_list;
-  std::list < int > border_elements_list;
-  std::list <int> node_proc_id_list;
-  std::list <int> element_proc_id_list;
-  std::vector <int> node_neighbor_vector;
-  std::list <int> * boundary_node_list = NULL;
-  std::vector <int> element_neighbor_vector;
-  std::list <std::pair <int ,Topo_Loc > > *boundary_element_list = NULL;
+  std::list <long long> internal_node_list;
+  std::list < long long > border_nodes_list;
+  std::list <long long> internal_element_list;
+  std::list < long long > border_elements_list;
+  std::list <long long> node_proc_id_list;
+  std::list <long long> element_proc_id_list;
+  std::vector <long long> node_neighbor_vector;
+  std::list <long long> * boundary_node_list = NULL;
+  std::vector <long long> element_neighbor_vector;
+  std::list <std::pair <long long ,Topo_Loc > > *boundary_element_list = NULL;
 
   imd->Calc_Parallel_Info(element_vector,
 			  global_node_vector,

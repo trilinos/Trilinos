@@ -118,7 +118,8 @@ am__objects_4 = Bessel_I.$(OBJEXT) Block.$(OBJEXT) \
 	NormalBlock.$(OBJEXT) Operator.$(OBJEXT) Registrar.$(OBJEXT) \
 	Tokenizer.$(OBJEXT) WhileBlock.$(OBJEXT) common.$(OBJEXT)
 am__objects_5 = im_ex_c_interface.$(OBJEXT) \
-	im_ne_c_interface.$(OBJEXT) mesh_specification.$(OBJEXT)
+	im_ex_c_interface_l.$(OBJEXT) im_ne_c_interface.$(OBJEXT) \
+	im_ne_c_interface_l.$(OBJEXT) mesh_specification.$(OBJEXT)
 am__objects_6 =
 @HAVE_MPI_TRUE@am__objects_7 = $(am__objects_6)
 am_libpamgen_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -322,9 +323,11 @@ PARSER = $(srcdir)/../parser/InputBlock.C \
 	$(srcdir)/../parser/token_value.h 
 
 MS_LT = $(srcdir)/../mesh_spec_lt/im_ex_c_interface.C \
+	$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C \
 	$(srcdir)/../mesh_spec_lt/im_exodusII.h \
 	$(srcdir)/../mesh_spec_lt/im_exodusII_ext.h \
 	$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C \
+	$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h \
 	$(srcdir)/../mesh_spec_lt/mesh_specification.C \
 	$(srcdir)/../mesh_spec_lt/mesh_specification.h
@@ -633,7 +636,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fudges.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/geometry_transform.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/im_ex_c_interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/im_ex_c_interface_l.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/im_ne_c_interface.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/im_ne_c_interface_l.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inline_mesh_desc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inline_mesh_driver_lt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/legacy_inline_mesh_desc.Po@am__quote@
@@ -1138,6 +1143,20 @@ im_ex_c_interface.obj: $(srcdir)/../mesh_spec_lt/im_ex_c_interface.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o im_ex_c_interface.obj `if test -f '$(srcdir)/../mesh_spec_lt/im_ex_c_interface.C'; then $(CYGPATH_W) '$(srcdir)/../mesh_spec_lt/im_ex_c_interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../mesh_spec_lt/im_ex_c_interface.C'; fi`
 
+im_ex_c_interface_l.o: $(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT im_ex_c_interface_l.o -MD -MP -MF $(DEPDIR)/im_ex_c_interface_l.Tpo -c -o im_ex_c_interface_l.o `test -f '$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C' || echo '$(srcdir)/'`$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/im_ex_c_interface_l.Tpo $(DEPDIR)/im_ex_c_interface_l.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C' object='im_ex_c_interface_l.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o im_ex_c_interface_l.o `test -f '$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C' || echo '$(srcdir)/'`$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C
+
+im_ex_c_interface_l.obj: $(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT im_ex_c_interface_l.obj -MD -MP -MF $(DEPDIR)/im_ex_c_interface_l.Tpo -c -o im_ex_c_interface_l.obj `if test -f '$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C'; then $(CYGPATH_W) '$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/im_ex_c_interface_l.Tpo $(DEPDIR)/im_ex_c_interface_l.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C' object='im_ex_c_interface_l.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o im_ex_c_interface_l.obj `if test -f '$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C'; then $(CYGPATH_W) '$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C'; fi`
+
 im_ne_c_interface.o: $(srcdir)/../mesh_spec_lt/im_ne_c_interface.C
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT im_ne_c_interface.o -MD -MP -MF $(DEPDIR)/im_ne_c_interface.Tpo -c -o im_ne_c_interface.o `test -f '$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C' || echo '$(srcdir)/'`$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/im_ne_c_interface.Tpo $(DEPDIR)/im_ne_c_interface.Po
@@ -1151,6 +1170,20 @@ im_ne_c_interface.obj: $(srcdir)/../mesh_spec_lt/im_ne_c_interface.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C' object='im_ne_c_interface.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o im_ne_c_interface.obj `if test -f '$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C'; then $(CYGPATH_W) '$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C'; fi`
+
+im_ne_c_interface_l.o: $(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT im_ne_c_interface_l.o -MD -MP -MF $(DEPDIR)/im_ne_c_interface_l.Tpo -c -o im_ne_c_interface_l.o `test -f '$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C' || echo '$(srcdir)/'`$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/im_ne_c_interface_l.Tpo $(DEPDIR)/im_ne_c_interface_l.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C' object='im_ne_c_interface_l.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o im_ne_c_interface_l.o `test -f '$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C' || echo '$(srcdir)/'`$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C
+
+im_ne_c_interface_l.obj: $(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT im_ne_c_interface_l.obj -MD -MP -MF $(DEPDIR)/im_ne_c_interface_l.Tpo -c -o im_ne_c_interface_l.obj `if test -f '$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C'; then $(CYGPATH_W) '$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/im_ne_c_interface_l.Tpo $(DEPDIR)/im_ne_c_interface_l.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C' object='im_ne_c_interface_l.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o im_ne_c_interface_l.obj `if test -f '$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C'; then $(CYGPATH_W) '$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C'; fi`
 
 mesh_specification.o: $(srcdir)/../mesh_spec_lt/mesh_specification.C
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT mesh_specification.o -MD -MP -MF $(DEPDIR)/mesh_specification.Tpo -c -o mesh_specification.o `test -f '$(srcdir)/../mesh_spec_lt/mesh_specification.C' || echo '$(srcdir)/'`$(srcdir)/../mesh_spec_lt/mesh_specification.C

@@ -100,14 +100,18 @@ APPEND_SET(SOURCES
 
 APPEND_SET(HEADERS
   ../mesh_spec_lt/im_exodusII.h
+  ../mesh_spec_lt/im_exodusII_l.h
   ../mesh_spec_lt/im_exodusII_ext.h
   ../mesh_spec_lt/im_ne_nemesisI.h
+  ../mesh_spec_lt/im_ne_nemesisI_l.h
   ../mesh_spec_lt/mesh_specification.h
   )
 
 APPEND_SET(SOURCES
   ../mesh_spec_lt/im_ex_c_interface.C
+  ../mesh_spec_lt/im_ex_c_interface_l.C
   ../mesh_spec_lt/im_ne_c_interface.C
+  ../mesh_spec_lt/im_ne_c_interface_l.C
   ../mesh_spec_lt/mesh_specification.C
   )
 

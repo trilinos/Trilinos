@@ -6,18 +6,18 @@
 // LoopLimits
 namespace PAMGEN_NEVADA {
 struct LoopLimits {
-  int is;  // Start of i-loop
-  int ie;  // End   of i-loop
-  int il;  // Last i-iterate for WorkSet's
-  int js;
-  int je;
-  int jl;
-  int ks;
-  int ke;
-  int kl;
-  int jstride;  // j-stride size
-  int kstride;  // k-stride size for the array
-  int total;   // Total array count for strip-mining
+  long long is;  // Start of i-loop
+  long long ie;  // End   of i-loop
+  long long il;  // Last i-iterate for WorkSet's
+  long long js;
+  long long je;
+  long long jl;
+  long long ks;
+  long long ke;
+  long long kl;
+  long long jstride;  // j-stride size
+  long long kstride;  // k-stride size for the array
+  long long total;   // Total array count for strip-mining
 
   LoopLimits():
   is(0),

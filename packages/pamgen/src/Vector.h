@@ -26,7 +26,7 @@ struct Vector
                 /**** Access functions ****/
     const Real * operator() (void) const { return &x; }
           Real * operator() (void)       { return &x; }
-    Real * operator() (int i) { return (   (Real *) & x)+i;}
+    Real * operator() (long long i) { return (   (Real *) & x)+i;}
     Real& X() { return x;} 
     Real& Y() { return y;}
     const Real& X() const { return x;} 

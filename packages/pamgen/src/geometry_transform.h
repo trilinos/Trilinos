@@ -10,7 +10,7 @@ public:
 			   std::stringstream & error_stream);
   ~Geometry_Transform();
   void Display_Class(std::ostream&, const std::string &indent);
-  void Operate(double* coords, int num_nodes,int dim);
+  void Operate(double* coords, long long num_nodes,long long dim);
 
   
 private:

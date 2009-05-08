@@ -57,15 +57,15 @@ void Legacy_Inline_Mesh_Desc::calculateSize(long long & total_el_count,
 
 
 /*****************************************************************************/
-int Legacy_Inline_Mesh_Desc::Set_Up()
+long long Legacy_Inline_Mesh_Desc::Set_Up()
 /*****************************************************************************/
 {
-  a_inline_nx = new int [inline_bx];
-  a_inline_ny = new int [inline_by];
-  a_inline_nz = new int [inline_bz];
-  c_inline_nx = new int [inline_bx+1];
-  c_inline_ny = new int [inline_by+1];
-  c_inline_nz = new int [inline_bz+1];
+  a_inline_nx = new  long long [inline_bx];
+  a_inline_ny = new  long long [inline_by];
+  a_inline_nz = new  long long [inline_bz];
+  c_inline_nx = new  long long [inline_bx+1];
+  c_inline_ny = new  long long [inline_by+1];
+  c_inline_nz = new  long long [inline_bz+1];
 
   c_block_dist[0] = new double[inline_bx + 1];
   c_block_dist[1] = new double[inline_by + 1];
@@ -76,7 +76,7 @@ int Legacy_Inline_Mesh_Desc::Set_Up()
   block_dist[2] = new double[inline_bz];
 
 
-  for(int i = 0; i < inline_bx; i ++){
+  for(long long i = 0; i < inline_bx; i ++){
     a_inline_nx[i] = inline_nx;
     c_inline_nx[i] = 0;
     nelx_tot += a_inline_nx[i];
@@ -88,7 +88,7 @@ int Legacy_Inline_Mesh_Desc::Set_Up()
   c_inline_nx[inline_bx] = c_inline_nx[inline_bx - 1]+a_inline_nx[inline_bx - 1];
   c_block_dist[0][inline_bx] = c_block_dist[0][inline_bx - 1]+block_dist[0][inline_bx - 1];
 
-  for(int i = 0; i < inline_by; i ++){
+  for(long long i = 0; i < inline_by; i ++){
     a_inline_ny[i] = inline_ny;
     c_inline_ny[i] = 0;
     nely_tot += a_inline_ny[i];
@@ -101,7 +101,7 @@ int Legacy_Inline_Mesh_Desc::Set_Up()
   c_block_dist[1][inline_by] = c_block_dist[1][inline_by - 1]+block_dist[1][inline_by - 1];
 
 
-  for(int i = 0; i < inline_bz; i ++){
+  for(long long i = 0; i < inline_bz; i ++){
     a_inline_nz[i] = inline_nz;
     c_inline_nz[i] = 0;
     nelz_tot += a_inline_nz[i];
@@ -113,13 +113,13 @@ int Legacy_Inline_Mesh_Desc::Set_Up()
   c_inline_nz[inline_bz] = c_inline_nz[inline_bz-1]+a_inline_nz[inline_bz-1];
   c_block_dist[2][inline_bz] = c_block_dist[2][inline_bz - 1]+block_dist[2][inline_bz - 1];
 
-  cum_block_totals = new int[inline_bx*inline_by*inline_bz];
-  els_in_block = new int[inline_bx*inline_by*inline_bz];
+  cum_block_totals = new long long[inline_bx*inline_by*inline_bz];
+  els_in_block = new long long[inline_bx*inline_by*inline_bz];
 
-  int bl_ct = 0;
-  for(int k = 0; k < inline_bz; k ++){
-    for(int j = 0; j < inline_by; j ++){
-      for(int i = 0; i < inline_bx; i ++){
+   long long bl_ct = 0;
+  for(long long k = 0; k < inline_bz; k ++){
+    for(long long j = 0; j < inline_by; j ++){
+      for(long long i = 0; i < inline_bx; i ++){
         els_in_block[bl_ct] = a_inline_nx[i]*a_inline_ny[j]*a_inline_nz[k];
         cum_block_totals[bl_ct]=0;
         if(bl_ct){
@@ -134,19 +134,19 @@ int Legacy_Inline_Mesh_Desc::Set_Up()
 
 
 /****************************************************************************/
-int Legacy_Inline_Mesh_Desc::Calc_Coord_Vectors()
+long long Legacy_Inline_Mesh_Desc::Calc_Coord_Vectors()
 /****************************************************************************/
 {
-  int nnx = nelx_tot+1;
-  int nny = nely_tot+1;
+   long long nnx = nelx_tot+1;
+   long long nny = nely_tot+1;
   double xdelta = inline_gmaxx-inline_gminx;
   double ydelta = inline_gmaxy-inline_gminy;
   Icoors = new double[nnx];
   Jcoors = new double[nny];
 
-  int nct = 0;
-  for(int i = 0; i < inline_bx; i ++){
-    for(int j = 0; j < a_inline_nx[i]; j ++){
+   long long nct = 0;
+  for(long long i = 0; i < inline_bx; i ++){
+    for(long long j = 0; j < a_inline_nx[i]; j ++){
       Icoors[nct] = c_block_dist[0][i]+j*block_dist[0][i]/(double)a_inline_nx[i];
       Icoors[nct+1] = c_block_dist[0][i]+(j+1)*block_dist[0][i]/(double)a_inline_nx[i];
       nct ++;
@@ -154,22 +154,22 @@ int Legacy_Inline_Mesh_Desc::Calc_Coord_Vectors()
   }
 
   nct = 0;
-  for(int i = 0; i < inline_by; i ++){
-    for(int j = 0; j < a_inline_ny[i]; j ++){
+  for(long long i = 0; i < inline_by; i ++){
+    for(long long j = 0; j < a_inline_ny[i]; j ++){
       Jcoors[nct] = c_block_dist[1][i]+j*block_dist[1][i]/(double)a_inline_ny[i];
       Jcoors[nct+1] = c_block_dist[1][i]+(j+1)*block_dist[1][i]/(double)a_inline_ny[i];
       nct ++;
     }
   }
 
-  //   for(int i = 0; i < nnx; i++)Icoors[i] = inline_gminx+(double)i*dx;
-  //   for(int i = 0; i < nny; i++)Jcoors[i] = inline_gminy+(double)i*dy;
+  //   for(long long i = 0; i < nnx; i++)Icoors[i] = inline_gminx+(double)i*dx;
+  //   for(long long i = 0; i < nny; i++)Jcoors[i] = inline_gminy+(double)i*dy;
   if(Element_Density_Functions[0])Element_Density_Functions[0]->Integrate(inline_gminx,inline_gmaxx, error_stream);
   if(!error_stream.str().empty()){return 1;}
   if(Element_Density_Functions[1])Element_Density_Functions[1]->Integrate(inline_gminy,inline_gmaxy, error_stream);
   if(!error_stream.str().empty()){return 1;}
   if(Element_Density_Functions[0]){
-    for(int ict = 0; ict < nnx; ict ++){
+    for(long long ict = 0; ict < nnx; ict ++){
       double factor = (Icoors[ict]-inline_gminx)/xdelta;
       double interpolant =  Element_Density_Functions[0]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
       double new_coord = inline_gminx+interpolant*xdelta;
@@ -177,7 +177,7 @@ int Legacy_Inline_Mesh_Desc::Calc_Coord_Vectors()
     }
   }
   if(Element_Density_Functions[1]){
-    for(int ict = 0; ict < nny; ict ++){
+    for(long long ict = 0; ict < nny; ict ++){
       double factor = (Jcoors[ict]-inline_gminy)/ydelta;
       double interpolant =  Element_Density_Functions[1]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
       double new_coord = inline_gminy+interpolant*ydelta;
@@ -185,24 +185,24 @@ int Legacy_Inline_Mesh_Desc::Calc_Coord_Vectors()
     }
   }
   if(dimension == 3){
-  int nnz = nelz_tot+1;
+   long long nnz = nelz_tot+1;
   double zdelta = inline_gmaxz-inline_gminz;
   Kcoors = new double[nnz];
 
   nct = 0;
   for(int i = 0; i < inline_bz; i ++){
-    for(int j = 0; j < a_inline_nz[i]; j ++){
+    for(long long j = 0; j < a_inline_nz[i]; j ++){
       Kcoors[nct] = c_block_dist[2][i]+j*block_dist[2][i]/(double)a_inline_nz[i];
       Kcoors[nct+1] = c_block_dist[2][i]+(j+1)*block_dist[2][i]/(double)a_inline_nz[i];
       nct ++;
     }
   }
 
-  //   for(int i = 0; i < nnz; i++)Kcoors[i] = inline_gminz+(double)i*dz;
+  //   for(long long i = 0; i < nnz; i++)Kcoors[i] = inline_gminz+(double)i*dz;
   if(Element_Density_Functions[2])Element_Density_Functions[2]->Integrate(inline_gminz,inline_gmaxz,error_stream);
   if(!error_stream.str().empty()){return 1;}
   if(Element_Density_Functions[2]){
-    for(int ict = 0; ict < nnz; ict ++){
+    for(long long ict = 0; ict < nnz; ict ++){
       double factor = (Kcoors[ict]-inline_gminz)/zdelta;
       double interpolant =  Element_Density_Functions[2]->Interpolate(factor, error_stream);if(!error_stream.str().empty())return 1;
       double new_coord = inline_gminz+interpolant*zdelta;
@@ -215,20 +215,20 @@ int Legacy_Inline_Mesh_Desc::Calc_Coord_Vectors()
 
 /****************************************************************************/
 void Cylindrical_Inline_Mesh_Desc::Populate_Coords(double * coords,   
-				    std::vector<int> & global_node_vector,                             
-				    std::map <int, int> & global_node_map,
-				    int num_nodes)
+				    std::vector<long long> & global_node_vector,                             
+				    std::map <long long, long long> & global_node_map,
+				     long long num_nodes)
 
 /****************************************************************************/
 {
   if(dimension == 3){
   double deg_to_rad = M_PI/180.0;
-    for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
-      int the_node = global_node_vector[gnv];
-      int global_k = the_node/knstride;
-      int global_j = (the_node-global_k*knstride)/jnstride;
-      int global_i = the_node - global_k*knstride-global_j*jnstride;
-      int the_local_node = get_map_entry(global_node_map,the_node);
+    for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+       long long the_node = global_node_vector[gnv];
+       long long global_k = the_node/knstride;
+       long long global_j = (the_node-global_k*knstride)/jnstride;
+       long long global_i = the_node - global_k*knstride-global_j*jnstride;
+       long long the_local_node = get_map_entry(global_node_map,the_node);
       coords[the_local_node+0*num_nodes]= Icoors[global_i]*cos(Jcoors[global_j]*deg_to_rad);
       coords[the_local_node+1*num_nodes]= Icoors[global_i]*sin(Jcoors[global_j]*deg_to_rad);
       coords[the_local_node+2*num_nodes]= Kcoors[global_k];
@@ -238,20 +238,20 @@ void Cylindrical_Inline_Mesh_Desc::Populate_Coords(double * coords,
 
 /****************************************************************************/
 void Spherical_Inline_Mesh_Desc::Populate_Coords(double * coords,   
-				    std::vector<int> & global_node_vector,                             
-				    std::map <int, int> & global_node_map,
-				    int num_nodes)
+				    std::vector<long long> & global_node_vector,                             
+				    std::map <long long, long long> & global_node_map,
+				     long long num_nodes)
 
 /****************************************************************************/
 {
   double deg_to_rad = M_PI/180.0;
 
-  for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
-    int the_node = global_node_vector[gnv];
-    int global_k = the_node/knstride;
-    int global_j = (the_node-global_k*knstride)/jnstride;
-    int global_i = the_node - global_k*knstride-global_j*jnstride;
-    int the_local_node = get_map_entry(global_node_map,the_node);
+  for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+     long long the_node = global_node_vector[gnv];
+     long long global_k = the_node/knstride;
+     long long global_j = (the_node-global_k*knstride)/jnstride;
+     long long global_i = the_node - global_k*knstride-global_j*jnstride;
+     long long the_local_node = get_map_entry(global_node_map,the_node);
     
     if(dimension == 2){
     coords[the_local_node+0*num_nodes]= Icoors[global_i]*cos(Jcoors[global_j]*deg_to_rad);
@@ -267,18 +267,18 @@ void Spherical_Inline_Mesh_Desc::Populate_Coords(double * coords,
 
 /****************************************************************************/
 void Cartesian_Inline_Mesh_Desc::Populate_Coords(double * coords,   
-				    std::vector<int> & global_node_vector,                             
-				    std::map <int, int> & global_node_map,
-				    int num_nodes)
+				    std::vector<long long> & global_node_vector,                             
+				    std::map <long long, long long> & global_node_map,
+				     long long num_nodes)
 
 /****************************************************************************/
 {
-  for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
-    int the_node = global_node_vector[gnv];
-    int global_k = the_node/knstride;
-    int global_j = (the_node-global_k*knstride)/jnstride;
-    int global_i = the_node - global_k*knstride-global_j*jnstride;
-    int the_local_node = get_map_entry(global_node_map,the_node);
+  for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+     long long the_node = global_node_vector[gnv];
+     long long global_k = the_node/knstride;
+     long long global_j = (the_node-global_k*knstride)/jnstride;
+     long long global_i = the_node - global_k*knstride-global_j*jnstride;
+     long long the_local_node = get_map_entry(global_node_map,the_node);
     coords[the_local_node+0*num_nodes] = Icoors[global_i];
     coords[the_local_node+1*num_nodes] = Jcoors[global_j];
   if(dimension == 3){

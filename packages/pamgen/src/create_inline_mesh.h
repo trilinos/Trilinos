@@ -6,24 +6,25 @@ extern "C"
 {
 #endif
 
-  int Delete_Pamgen_Mesh();
+  long long Delete_Pamgen_Mesh();
 
-  int Create_Pamgen_Mesh(const char * file_char_array, 
-			 int dimension,
-			 int rank,
-			 int num_procs);
+  long long Create_Pamgen_Mesh(const char * file_char_array, 
+			       long long dimension,
+			       long long rank,
+			       long long num_procs,
+			       long long int_max);
 
   char * getPamgenEchoStream(char *);
-  int getPamgenEchoStreamSize();
+  long long getPamgenEchoStreamSize();
 
   char * getPamgenErrorStream(char *);
-  int getPamgenErrorStreamSize();
+  long long getPamgenErrorStreamSize();
 
   char * getPamgenWarningStream(char *);
-  int getPamgenWarningStreamSize();
+  long long getPamgenWarningStreamSize();
 
   char * getPamgenInfoStream(char *);
-  int getPamgenInfoStreamSize();
+  long long getPamgenInfoStreamSize();
     
 #define ERROR_FREE_CREATION 0
 #define ERROR_CREATING_IMD 1

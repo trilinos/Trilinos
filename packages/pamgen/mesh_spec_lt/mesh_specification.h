@@ -122,17 +122,17 @@ class Mesh_Specification
     NUM_NBR_PROCS,
     NUM_MSIA};
 
-  int getMSI(MSIA ind){return msia[ind];}
-  void setMSI(MSIA ind,int the_int){msia[ind] = the_int;}
+  long long getMSI(MSIA ind){return msia[ind];}
+  void setMSI(MSIA ind,long long the_int){msia[ind] = the_int;}
 
-        int * getMSP(MSPA ind)       {return mspa[ind];}
-  const int * getMSP(MSPA ind) const {return mspa[ind];}
+        long long * getMSP(MSPA ind)       {return mspa[ind];}
+  const long long  * getMSP(MSPA ind) const {return mspa[ind];}
 
         std::string * getMSPSA(MSPSA ind)       {return mspsa[ind];}
   const std::string * getMSPSA(MSPSA ind) const {return mspsa[ind];}
 
-        int * const * getMSPP(MSPPA ind)       {return msppa[ind];}
-  const int * const * getMSPP(MSPPA ind) const {return msppa[ind];}
+        long long * const * getMSPP(MSPPA ind)       {return msppa[ind];}
+  const long long  * const * getMSPP(MSPPA ind) const {return msppa[ind];}
 
         double * const * getMSPPD(MSPPDA ind)       {return msppda[ind];}
   const double * const * getMSPPD(MSPPDA ind) const {return msppda[ind];}
@@ -140,7 +140,7 @@ class Mesh_Specification
   static Mesh_Specification * static_storage;
 
   Mesh_Specification();
-  Mesh_Specification(int pid){
+  Mesh_Specification( long long pid){
     Zero_Set();
     msia[PROC_ID] = pid;}
   virtual ~Mesh_Specification();
@@ -181,11 +181,11 @@ class Mesh_Specification
 
     bool Are_Warnings_Suppressed()                  const;
 
-    void Parallel_Data_Size(int,int,int,int,int,int,int);
+    void Parallel_Data_Size(long long,long long,long long,long long,long long,long long,long long);
     void Allocate_Locational_Data();
     void Allocate_LoadBal_Data();
     void Allocate_Global_Data();
-    void Global_Data_Size( int, int, int, int, int, int, int);
+    void Global_Data_Size( long long, long long, long long, long long, long long, long long, long long);
     void Allocate_Parallel_Data();
     void Free_Parallel_Data();
     void Free_Locational_Data();
@@ -194,47 +194,47 @@ class Mesh_Specification
 // Definition functions
 
     void Specify_Global_Information(const std::string &title,
-                                    int dimensionality,
-                                    int number_of_nodes,
-                                    int number_of_elements,
-                                    int number_of_element_blocks,
-                                    int number_of_node_sets,
-                                    int number_of_side_sets,
-                                    int number_of_qa_records,
-                                    int number_of_info_records);
+                                    long long dimensionality,
+                                    long long number_of_nodes,
+                                    long long number_of_elements,
+                                    long long number_of_element_blocks,
+                                    long long number_of_node_sets,
+                                    long long number_of_side_sets,
+                                    long long number_of_qa_records,
+                                    long long number_of_info_records);
       // Specifies the overall dimensions of the mesh, and allocates
       // storage for next level of information. 
     
-    void Specify_Block_Information(int index,
-                                   int block_id,
-                                   int number_of_block_elements,
-                                   int number_of_nodes_per_element,
-                                   int number_of_element_attributes,
+    void Specify_Block_Information(long long index,
+                                   long long block_id,
+                                   long long number_of_block_elements,
+                                   long long number_of_nodes_per_element,
+                                   long long number_of_element_attributes,
                                    Element_Type block_element_type);
       // Specifies the dimensions of a particular element block, and
       // allocates storage for the next level of information for the block.
     
 
     
-    void Specify_Node_Set_Information(int index,
-                                      int node_set_id,
-                                      int number_of_nodes_in_node_set,
-                                      int number_of_df_in_node_set);
+    void Specify_Node_Set_Information(long long index,
+                                      long long node_set_id,
+                                      long long number_of_nodes_in_node_set,
+                                      long long number_of_df_in_node_set);
       // Specifies the dimensions of a particular node set, and allocates
       // storage for the next level of information for the node set.
     
-    void Specify_Side_Set_Information(int index,
-                                      int side_set_id,
-                                      int number_of_faces_in_side_set,
-                                      int number_of_nodes_in_side_set,
-                                      int number_of_df_in_side_set);
+    void Specify_Side_Set_Information(long long index,
+                                      long long side_set_id,
+                                      long long number_of_faces_in_side_set,
+                                      long long number_of_nodes_in_side_set,
+                                      long long number_of_df_in_side_set);
       // Specifies the dimensions of a particular side set, and allocates
       // storage for the next level of information for the side set.
     
-    void Resize_Info_Store(int number_of_info_records);
+    void Resize_Info_Store(long long number_of_info_records);
       // Increase the number of information records.
 
-    void Suppress_Warnings(int);
+    void Suppress_Warnings(long long);
 
 
     void Free_NonTransient_Storage();
@@ -265,9 +265,9 @@ class Mesh_Specification
 
     //Arrays for storing ints pointers,
     // automatically sized by the enums
-    int msia[NUM_MSIA];
-    int * mspa[NUM_MSPA];
-    int * * msppa[NUM_MSPPA];
+    long long msia[NUM_MSIA];
+    long long * mspa[NUM_MSPA];
+    long long * * msppa[NUM_MSPPA];
     double * * msppda[NUM_MSPPDA];
     std::string * mspsa[NUM_MSPSA];
   private:

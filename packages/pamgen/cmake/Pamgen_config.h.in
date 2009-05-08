@@ -15,3 +15,6 @@
 /* Define if want to build tests */
 #cmakedefine HAVE_TESTS
 
+/* Define if want to build tests */
+#cmakedefine HAVE_PAMGEN_NEMESIS
+

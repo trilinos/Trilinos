@@ -2,10 +2,10 @@
 #define calc_decomp_cutsH
 namespace PAMGEN_NEVADA {
 
-int dom_decomp_2d(const int Nx, const int Ny,
-		  const int Np, int *pNGx, int *pNGy);
+long long dom_decomp_2d(const long long Nx, const long long Ny,
+		  const long long Np, long long *pNGx, long long *pNGy);
 
-int dom_decomp_3d(const int Nx, const int Ny, const int Nz,
-		  const int Np, int *pNGx, int *pNGy, int *pNGz);
+long long dom_decomp_3d(const long long Nx, const long long Ny, const long long Nz,
+		  const long long Np, long long *pNGx, long long *pNGy, long long *pNGz);
 }
 #endif

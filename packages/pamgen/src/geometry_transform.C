@@ -44,7 +44,7 @@ Geometry_Transform::~Geometry_Transform()
 
 
 /*****************************************************************************/
-void Geometry_Transform::Operate(double * coords, int num_nodes,int dim)
+void Geometry_Transform::Operate(double * coords, long long num_nodes,long long dim)
 /*****************************************************************************/
 {
 
@@ -56,7 +56,7 @@ void Geometry_Transform::Operate(double * coords, int num_nodes,int dim)
   double * povar2 = &ovar2;
   double * povar3 = &ovar3;
   
-  for(int i = 0; i < num_nodes; i ++){
+  for(long long i = 0; i < num_nodes; i ++){
     *pivar1 = coords[i];
     *povar1 = coords[i];
     *pivar2 = coords[i+num_nodes];

@@ -19,17 +19,17 @@ public:
   bool real_element;
   bool periodic_minj;
   bool periodic_maxj;
-  int visits;
-  int global_id;
-  std::list < std::pair < int , Topo_Loc > > conn_connections;
-  std::list <int>proc_neighbors;
+  long long visits;
+  long long global_id;
+  std::list < std::pair < long long , Topo_Loc > > conn_connections;
+  std::list <long long>proc_neighbors;
 };
 
 
 class Partition{
 public:
   
-  Partition(int ls, int is, int js, int ks, int le, int ie, int je, int ke, InlineDecompositionType idt,int rcuts[]){
+  Partition(long long ls, long long is, long long js, long long ks, long long le, long long ie, long long je, long long ke, InlineDecompositionType idt,long long rcuts[]){
     high = NULL;
     low = NULL;
     lows[0] = is;
@@ -42,7 +42,7 @@ public:
     highs[2] = ke;
     highs[3] = le;
 
-    for(int i = 0; i < 3; i ++)remaining_cuts[i] = rcuts[i];
+    for(long long i = 0; i < 3; i ++)remaining_cuts[i] = rcuts[i];
 
     centroid = (((double)(ks+ke))/2.0)*(((double)(ks+ke))/2.0) + (((double)(js+je))/2.0)*(((double)(js+je))/2.0) + (((double)(is+ie))/2.0)*(((double)(is+ie))/2.0);
     numels =(ie-is)*(je-js)*(ke-ks);
@@ -54,7 +54,7 @@ public:
     inline_decomposition_type = idt;
   };
 
-  Partition(int is, int js, int ks, int ie, int je, int ke, InlineDecompositionType idt,int rcuts[]){
+  Partition(long long is, long long js, long long ks, long long ie, long long je, long long ke, InlineDecompositionType idt,long long rcuts[]){
     high = NULL;
     low = NULL;
     lows[0] = is;
@@ -67,7 +67,7 @@ public:
     highs[2] = ke;
     highs[3] = 1;
 
-    for(int i = 0; i < 3; i ++)remaining_cuts[i] = rcuts[i];
+    for(long long i = 0; i < 3; i ++)remaining_cuts[i] = rcuts[i];
 
     centroid = (((double)(ks+ke))/2.0)*(((double)(ks+ke))/2.0) + (((double)(js+je))/2.0)*(((double)(js+je))/2.0) + (((double)(is+ie))/2.0)*(((double)(is+ie))/2.0);
     numels =(ie-is)*(je-js)*(ke-ks);
@@ -93,22 +93,22 @@ public:
 
   InlineDecompositionType inline_decomposition_type;
 
-  static int partition_count;
+  static long long partition_count;
 
-  void Processor_Partition(std::vector  < Partition *> & ,int inc_nels []);
+  void Processor_Partition(std::vector  < Partition *> & ,long long inc_nels []);
 
-  int Element_Proc(int []);
+  long long Element_Proc(long long []);
   Partition * high;
   Partition * low;
-  int split_direction;
-  int split_value;
-  int lows[4];
-  int highs[4];
-  int remaining_cuts[3];
+  long long split_direction;
+  long long split_value;
+  long long lows[4];
+  long long highs[4];
+  long long remaining_cuts[3];
   double centroid;
-  int numels;
-  int proc_id;
-  int unique_id;
+  long long numels;
+  long long proc_id;
+  long long unique_id;
 
   void print();
 };

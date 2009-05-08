@@ -41,7 +41,7 @@ bool part_compare_centroid(const Partition *a, const Partition *b) {
 Inline_Mesh_Desc::~Inline_Mesh_Desc()
 /*****************************************************************************/
 {
-  for(int i = 0; i < 3; i ++){
+  for(long long i = 0; i < 3; i ++){
     if(block_dist[i])delete []  block_dist[i];
     if(c_block_dist[i])delete []  c_block_dist[i];
     if(first_size[i])delete  [] first_size[i];
@@ -93,36 +93,37 @@ Inline_Mesh_Desc::~Inline_Mesh_Desc()
 }
 
 /****************************************************************************/
-int Inline_Mesh_Desc::reportSize(const long long & total_el_count, 
-				  const long long & total_node_count, 
-				  const long long & total_edge_count,
-				  std::stringstream & es)
+long long Inline_Mesh_Desc::reportSize(const long long & total_el_count, 
+				       const long long & total_node_count, 
+				       const long long & total_edge_count,
+				       std::stringstream & es,
+				       long long max_int)
 /****************************************************************************/
 {
-  int status = 0;
-  if(total_el_count > INT_MAX){
+  long long status = 0;
+  if(total_el_count > max_int){
     es << "Terminating from Inline_Mesh_Desc, ";
     es << total_el_count ;
     es << " elements requested, max ";
-    es << INT_MAX;
+    es << max_int;
     es << " elements permitted.";
     status = 1;
   }
 
-  if(total_node_count > INT_MAX){
+  if(total_node_count > max_int){
     es << "Terminating from Inline_Mesh_Desc,";
     es << total_node_count ;
     es << " nodes requested, max ";
-    es << INT_MAX;
+    es << max_int;
     es << " nodes permitted.";
     status = 1;
   }
 
-  if(total_edge_count > INT_MAX){
+  if(total_edge_count > max_int){
     es << "Terminating from Inline_Mesh_Desc,";
     es << total_edge_count ;
     es << " edges requested, max ";
-    es << INT_MAX;
+    es << max_int;
     es << " edges permitted.";
     status = 1;
   }
@@ -133,10 +134,10 @@ int Inline_Mesh_Desc::reportSize(const long long & total_el_count,
 //! behaviour of always returning an entry for every [] operator
 //! query.
 /****************************************************************************/
-int Inline_Mesh_Desc::get_map_entry(std::map < int, int > & the_map, const int & key)
+long long Inline_Mesh_Desc::get_map_entry(std::map < long long, long long > & the_map, const long long & key)
 /****************************************************************************/
 {
-  std::map <int, int > ::iterator foo;
+  std::map <long long, long long > ::iterator foo;
   foo = the_map.find(key);
   if(foo == the_map.end()){
     error_stream << "Looking for but not finding key entry " << key << "\n";
@@ -145,13 +146,13 @@ int Inline_Mesh_Desc::get_map_entry(std::map < int, int > & the_map, const int &
 }
 
 /****************************************************************************/
-int Inline_Mesh_Desc::get_block_index(int ordinal_val, 
-				   int count ,
-				   int * cumulative)//c_inline_nz);
+long long Inline_Mesh_Desc::get_block_index(long long ordinal_val, 
+				   long long count ,
+				   long long * cumulative)//c_inline_nz);
 /****************************************************************************/
 
 {
-  int i = 0;
+  long long i = 0;
   while(i < count-1){
     if(ordinal_val >= cumulative[i] && ordinal_val < cumulative[i+1])return i;
     i ++;
@@ -163,25 +164,25 @@ int Inline_Mesh_Desc::get_block_index(int ordinal_val,
 //! Queries which processor an element lies on.
 //! Calls the recursive Partition::Element_Proc function.
 /****************************************************************************/
-int Inline_Mesh_Desc::Element_Proc(int global_element_id)
+long long Inline_Mesh_Desc::Element_Proc(long long global_element_id)
 /****************************************************************************/
 {
-  unsigned proc = 0;
+  long long proc = 0;
   if(inline_decomposition_type == SEQUENTIAL){
-    int total = kestride * nelz_tot;
-    int num_per_proc = total/num_processors;
+    long long total = kestride * nelz_tot;
+    long long num_per_proc = total/num_processors;
     proc = global_element_id/num_per_proc;
     if(proc >= num_processors)proc = num_processors-1;
   }
   else if(inline_decomposition_type == RANDOM){
     SRANDOM(global_element_id);
-    int rand_num = RANDOM();
+    long long rand_num = RANDOM();
     proc = rand_num%num_processors;
   }
   else if((inline_decomposition_type == BISECTION) || (inline_decomposition_type == PROCESSOR_LAYOUT)){
-    int l,i,j,k;
+    long long l,i,j,k;
     get_l_i_j_k_from_element_number(global_element_id,l,i,j,k);
-    int ginds[4];
+    long long ginds[4];
     ginds[0] = i;
     ginds[1] = j;
     ginds[2] = k;
@@ -199,7 +200,7 @@ int Inline_Mesh_Desc::Element_Proc(int global_element_id)
 //! Zoltan could be used for this. The elements on the processor are
 //! packed into the stl list.
 /****************************************************************************/
-Partition * Inline_Mesh_Desc::Decompose(std::list <int> & global_el_ids,int & err_code)
+Partition * Inline_Mesh_Desc::Decompose(std::list <long long> & global_el_ids,long long & err_code)
 /****************************************************************************/
 {
   //Recursive Bisection decomposition
@@ -232,7 +233,7 @@ Partition * Inline_Mesh_Desc::Decompose(std::list <int> & global_el_ids,int & er
 
 if(inline_decomposition_type == PROCESSOR_LAYOUT){
 
-  int remaining_cuts[3];
+  long long remaining_cuts[3];
   remaining_cuts[0] = inline_nprocs[0];
   remaining_cuts[1] = inline_nprocs[1];
   remaining_cuts[2] = inline_nprocs[2];
@@ -242,7 +243,7 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
   sorted_partition_list.push_back(base_partition);
   Partition* biggest;
 
-  if(num_processors != (unsigned)inline_nprocs[0]*inline_nprocs[1]*inline_nprocs[2]){
+  if(num_processors != (long long)inline_nprocs[0]*inline_nprocs[1]*inline_nprocs[2]){
     error_stream << "Inline_Mesh_Desc::Decompose "
 		 << "The specified inline processor layout " 
 		 << inline_nprocs[0] << " X " 
@@ -305,8 +306,8 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
   else if (inline_decomposition_type == BISECTION){
 
     //SETUP for bisection
-  int remaining_cuts[3];
-  int decomp_result = 0;
+  long long remaining_cuts[3];
+  long long decomp_result = 0;
   if(dimension == 3){
     decomp_result = dom_decomp_3d(nelx_tot,nely_tot,nelz_tot,num_processors,&(inc_nels[0]),&(inc_nels[1]),&(inc_nels[2]));
   }
@@ -368,24 +369,24 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     }
   }
   else if(inline_decomposition_type == RANDOM){
-    int total = kestride * nelz_tot;
-    for(int i = 0; i < total; i ++){
+    long long total = kestride * nelz_tot;
+    for(long long i = 0; i < total; i ++){
       SRANDOM(i);
-      int rand_num = RANDOM();
-      int proc = rand_num%num_processors;
+      long long rand_num = RANDOM();
+      long long proc = rand_num%num_processors;
       if(proc == (int)my_rank)global_el_ids.push_back(i);
     }
     return base_partition;
   }
   else if(inline_decomposition_type == SEQUENTIAL){
-    int total = kestride * nelz_tot;
-    int num_per_proc = total/num_processors;
-    int remainder = total - num_per_proc*num_processors;
-    int my_start = my_rank * num_per_proc;
-    int my_end = my_start + num_per_proc;
+    long long total = kestride * nelz_tot;
+    long long num_per_proc = total/num_processors;
+    long long remainder = total - num_per_proc*num_processors;
+    long long my_start = my_rank * num_per_proc;
+    long long my_end = my_start + num_per_proc;
     if(my_rank == num_processors-1)my_end +=remainder;
 
-    for(int mtotal = my_start; mtotal < my_end; mtotal ++){
+    for(long long mtotal = my_start; mtotal < my_end; mtotal ++){
       global_el_ids.push_back(mtotal);
     }
     return base_partition;
@@ -396,7 +397,7 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
 
   //Assign proc id numbers to the centroid sorted list entries
   std::vector < Partition * > :: iterator citer;
-  unsigned proc_cnt = 0;
+  long long proc_cnt = 0;
   Partition *my_part = NULL;
   for(citer = sorted_partition_list.begin();citer != sorted_partition_list.end();citer ++,proc_cnt++){
     (*citer)->proc_id = proc_cnt;
@@ -405,10 +406,10 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
 
   //Then loop over the elements for the current processor and push them into
   //the global el_ids list
-  for(int k = my_part->lows[2]; k < my_part->highs[2]; k++){
-    for(int j = my_part->lows[1]; j < my_part->highs[1]; j++){
-      for(int i = my_part->lows[0]; i < my_part->highs[0]; i++){
-        int elnum = iestride*i+jestride*j+kestride*k;
+  for(long long k = my_part->lows[2]; k < my_part->highs[2]; k++){
+    for(long long j = my_part->lows[1]; j < my_part->highs[1]; j++){
+      for(long long i = my_part->lows[0]; i < my_part->highs[0]; i++){
+        long long elnum = iestride*i+jestride*j+kestride*k;
         global_el_ids.push_back(elnum);
       }
     }
@@ -422,42 +423,42 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
 
 //! A utility function to build up required bookkeeping objects.
 /****************************************************************************/
-void Inline_Mesh_Desc::Build_Global_Lists(std::list <int> & element_list,
-                                       std::vector <int> & element_vector,
-                                       std::list <int> & global_node_list,
-                                       std::vector <int> & global_node_vector,
-                                       std::map <int, int> & global_node_map,
-                                       std::map <int, int> & global_element_map)
+void Inline_Mesh_Desc::Build_Global_Lists(std::list <long long> & element_list,
+                                       std::vector <long long> & element_vector,
+                                       std::list <long long> & global_node_list,
+                                       std::vector <long long> & global_node_vector,
+                                       std::map <long long, long long> & global_node_map,
+                                       std::map <long long, long long> & global_element_map)
 /****************************************************************************/
 {
   if( Debug_Location()) 
     std::cout << "Inline_Mesh_Desc::Build_Global_Lists()" << std::endl;
 
-  for(std::list <int>::iterator the_it = element_list.begin();the_it != element_list.end();the_it++){
+  for(std::list <long long>::iterator the_it = element_list.begin();the_it != element_list.end();the_it++){
     element_vector.push_back(*the_it);
   }
-  element_block_lists = new std::vector <int> [numBlocks()];
+  element_block_lists = new std::vector <long long> [numBlocks()];
 
-  std::list <int> ::iterator lit;
+  std::list <long long> ::iterator lit;
   for(lit = element_list.begin();lit != element_list.end();lit ++){
-    int the_element = *lit;
+    long long the_element = *lit;
     // These are the indices of the element in the entire domain
-    int global_k = the_element/(kestride);
-    int global_j = (the_element - global_k*(kestride))/(jestride);
-    int global_i = the_element - global_k*(kestride)-global_j*(jestride);
+    long long global_k = the_element/(kestride);
+    long long global_j = (the_element - global_k*(kestride))/(jestride);
+    long long global_i = the_element - global_k*(kestride)-global_j*(jestride);
 
     // these are the indices of the block in which the element resides
-    //       int block_k = global_k/(inline_nz);
-    //       int block_j = global_j/(inline_ny);
-    //       int block_i = global_i/(inline_nx);
-    int block_k = get_block_index(global_k,inline_bz,c_inline_nz);
-    int block_j = get_block_index(global_j,inline_by,c_inline_ny);
-    int block_i = get_block_index(global_i,inline_bx,c_inline_nx);
+    //       long long block_k = global_k/(inline_nz);
+    //       long long block_j = global_j/(inline_ny);
+    //       long long block_i = global_i/(inline_nx);
+    long long block_k = get_block_index(global_k,inline_bz,c_inline_nz);
+    long long block_j = get_block_index(global_j,inline_by,c_inline_ny);
+    long long block_i = get_block_index(global_i,inline_bx,c_inline_nx);
 
     // This is the ordinal number of the block the element resides in
-    int local_block = block_i + block_j*(inline_bx)+ block_k*(blockKstride());
+    long long local_block = block_i + block_j*(inline_bx)+ block_k*(blockKstride());
     element_block_lists[local_block].push_back(the_element);
-    int nn;
+    long long nn;
 
     if(periodic_j && (block_j == (inline_by-1)) && (global_j == (nely_tot-1))){
       if(dimension == 2){
@@ -503,8 +504,8 @@ void Inline_Mesh_Desc::Build_Global_Lists(std::list <int> & element_list,
 
 
   // Create the global_node_map
-  std::list <int> ::iterator nit;
-  int total = 0;
+  std::list <long long> ::iterator nit;
+  long long total = 0;
   for(nit = global_node_list.begin();nit != global_node_list.end();nit ++,total++){
     global_node_vector.push_back(*nit);
     global_node_map[*nit] = total;
@@ -512,10 +513,10 @@ void Inline_Mesh_Desc::Build_Global_Lists(std::list <int> & element_list,
 
 
   // Create the global_element_map
-  int total_element_count = 0;
-  for(int bct = 0; bct < numBlocks();bct ++ ){
-    for(unsigned elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
-      int the_el = element_block_lists[bct][elct];
+  long long total_element_count = 0;
+  for(long long bct = 0; bct < numBlocks();bct ++ ){
+    for(long long elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
+      long long the_el = element_block_lists[bct][elct];
       global_element_map[the_el] = total_element_count;
     }
   }
@@ -525,54 +526,54 @@ void Inline_Mesh_Desc::Build_Global_Lists(std::list <int> & element_list,
 }
 
 /****************************************************************************/
-void Inline_Mesh_Desc::Populate_Nodeset_Info(int * const * node_set_nodes,
-					     std::map <int, int> & global_node_map)
+void Inline_Mesh_Desc::Populate_Nodeset_Info(long long * const * node_set_nodes,
+					     std::map <long long, long long> & global_node_map)
 /****************************************************************************/
 {
   std::list < PG_BC_Specification *> ::iterator setit;
-  int nsct = 0;
+  long long nsct = 0;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++,nsct ++){
-    int * the_nodes = node_set_nodes[nsct];
-    for(unsigned elct = 0; elct < nodeset_vectors[nsct].size();elct++){
+    long long * the_nodes = node_set_nodes[nsct];
+    for(long long elct = 0; elct < nodeset_vectors[nsct].size();elct++){
       the_nodes[elct] = get_map_entry(global_node_map,nodeset_vectors[nsct][elct])+1;// add one for exodus convention
     }
   }
 }
 
 /****************************************************************************/
-int Inline_Mesh_Desc::Populate_Sideset_Info(std::map <int, int> & global_element_map,
-					  std::map <int, int> & global_node_map,
-					  int * const * side_set_elements,
-					  int * const * side_set_faces,
-					  int * const * side_set_nodes,
-					  int * const * side_set_node_counter)
+long long Inline_Mesh_Desc::Populate_Sideset_Info(std::map <long long, long long> & global_element_map,
+					  std::map <long long, long long> & global_node_map,
+					  long long * const * side_set_elements,
+					  long long * const * side_set_faces,
+					  long long * const * side_set_nodes,
+					  long long * const * side_set_node_counter)
 /****************************************************************************/
 {
-  int num_nodes_per_face = 2;
+  long long num_nodes_per_face = 2;
   if(dimension == 3){
     num_nodes_per_face = 4;
   }
 
-  int nsct = 0;
+  long long nsct = 0;
    std::list < PG_BC_Specification *> ::iterator setit;
 
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++,nsct ++){
 
-    int * the_elements = side_set_elements[nsct];
-    int * the_faces = side_set_faces[nsct];
-    int * the_nodes = side_set_nodes[nsct];
-    int * the_node_counter = side_set_node_counter[nsct];
+    long long * the_elements = side_set_elements[nsct];
+    long long * the_faces = side_set_faces[nsct];
+    long long * the_nodes = side_set_nodes[nsct];
+    long long * the_node_counter = side_set_node_counter[nsct];
 
     Topo_Loc the_location = (*setit)->location;
     //Sidesets allowed only on faces of block, not on edges or corners
 
 
-    for(unsigned elct = 0; elct < sideset_vectors[nsct].size();elct ++){
-      int the_element = sideset_vectors[nsct][elct].first;
+    for(long long elct = 0; elct < sideset_vectors[nsct].size();elct ++){
+      long long the_element = sideset_vectors[nsct][elct].first;
       // These are the indices of the element in the entire domain
-      int gl_k = the_element/(kestride);
-      int gl_j = (the_element-gl_k*(kestride))/(jestride);
-      int gl_i = the_element - gl_k*(kestride)-gl_j*(jestride);
+      long long gl_k = the_element/(kestride);
+      long long gl_j = (the_element-gl_k*(kestride))/(jestride);
+      long long gl_i = the_element - gl_k*(kestride)-gl_j*(jestride);
 
       //The result of the calculation is the id of the element in the block as found in the connectivity array
       the_elements[elct] = get_map_entry(global_element_map,the_element)+1;
@@ -585,7 +586,7 @@ int Inline_Mesh_Desc::Populate_Sideset_Info(std::map <int, int> & global_element
       //calculated the node index using the nodal stride values for the entire mesh and the indices
 
       // adjust for periodicity in j 
-      int glj_plus1 = gl_j + 1;
+      long long glj_plus1 = gl_j + 1;
       if(periodic_j){
         if(glj_plus1 == nely_tot){
           glj_plus1 = 0;
@@ -684,12 +685,12 @@ int Inline_Mesh_Desc::Populate_Sideset_Info(std::map <int, int> & global_element
 
 
 /****************************************************************************/
-void Inline_Mesh_Desc::Populate_Connectivity(int * const * conn_array,                                         
-					  std::map <int, int> & global_node_map
+void Inline_Mesh_Desc::Populate_Connectivity(long long * const * conn_array,                                         
+					  std::map <long long, long long> & global_node_map
 )
 /****************************************************************************/
 {
-  int num_nodes_per_element = 4;
+  long long num_nodes_per_element = 4;
   if(dimension == 3){
     num_nodes_per_element = 8;
   }
@@ -697,17 +698,17 @@ void Inline_Mesh_Desc::Populate_Connectivity(int * const * conn_array,
   //To calculate connectivity for a given element in a given block.
   //It is necessary to calculate the global element indices in i,j,k
   //that identify that element in the global space.
-  int total_element_count = 0;
-  for(int bct = 0; bct < numBlocks(); bct ++ ){
-    int * conn = conn_array[bct];
+  long long total_element_count = 0;
+  for(long long bct = 0; bct < numBlocks(); bct ++ ){
+    long long * conn = conn_array[bct];
     //build connectivity for each element
     //nodes are numbered 1-tot_num_nodes+1 across all blocks
     //incrementing i fastest
-    for(unsigned elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
-      int the_el = element_block_lists[bct][elct];
-      int Kg = the_el/(nelx_tot*nely_tot);
-      int Jg = (the_el - Kg*nelx_tot*nely_tot)/(nelx_tot);
-      int Ig = the_el  - Kg*nelx_tot*nely_tot - Jg*nelx_tot;
+    for(long long elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
+      long long the_el = element_block_lists[bct][elct];
+      long long Kg = the_el/(nelx_tot*nely_tot);
+      long long Jg = (the_el - Kg*nelx_tot*nely_tot)/(nelx_tot);
+      long long Ig = the_el  - Kg*nelx_tot*nely_tot - Jg*nelx_tot;
 
       if(periodic_j){
         conn[elct*num_nodes_per_element + 0] = get_map_entry(global_node_map,(Ig+0)*instride + (Jg+0)*jnstride+(Kg+0)*knstride)+1;
@@ -716,8 +717,8 @@ void Inline_Mesh_Desc::Populate_Connectivity(int * const * conn_array,
 	  conn[elct*num_nodes_per_element + 0 + 4] = get_map_entry(global_node_map,(Ig+0)*instride + (Jg+0)*jnstride+(Kg+1)*knstride)+1;
 	  conn[elct*num_nodes_per_element + 1 + 4] = get_map_entry(global_node_map,(Ig+1)*instride + (Jg+0)*jnstride+(Kg+1)*knstride)+1;
 	}
-        int Kblock = bct/(blockKstride());
-        int Jblock = (bct-Kblock*blockKstride())/inline_bx;
+        long long Kblock = bct/(blockKstride());
+        long long Jblock = (bct-Kblock*blockKstride())/inline_bx;
         //last j block
         if((Jblock == (inline_by-1)) && (Jg == (nely_tot-1))){
           // last element in j direction in block
@@ -754,36 +755,36 @@ void Inline_Mesh_Desc::Populate_Connectivity(int * const * conn_array,
 }
 
 /****************************************************************************/
-void Inline_Mesh_Desc::Populate_Map_and_Global_Element_List(int * the_map, 
-							 int * global_element_numbers)
+void Inline_Mesh_Desc::Populate_Map_and_Global_Element_List(long long * the_map, 
+							 long long * global_element_numbers)
 /****************************************************************************/
 {
-  int total_count = 0;
-  for(int bct = 0; bct < numBlocks();bct ++ ){
-    for(unsigned ect = 0; ect < element_block_lists[bct].size();ect ++){
-      int the_el = element_block_lists[bct][ect];
+  long long total_count = 0;
+  for(long long bct = 0; bct < numBlocks();bct ++ ){
+    for(long long ect = 0; ect < element_block_lists[bct].size();ect ++){
+      long long the_el = element_block_lists[bct][ect];
       //global element indices
-      int Kg = the_el/kestride;
-      int Jg = (the_el - Kg*kestride)/(jestride);
-      int Ig = the_el  - Kg*kestride - Jg*jestride;
+      long long Kg = the_el/kestride;
+      long long Jg = (the_el - Kg*kestride)/(jestride);
+      long long Ig = the_el  - Kg*kestride - Jg*jestride;
 
-      int Kbg = get_block_index(Kg,inline_bz,c_inline_nz);
-      int Jbg = get_block_index(Jg,inline_by,c_inline_ny);
-      int Ibg = get_block_index(Ig,inline_bx,c_inline_nx);
+      long long Kbg = get_block_index(Kg,inline_bz,c_inline_nz);
+      long long Jbg = get_block_index(Jg,inline_by,c_inline_ny);
+      long long Ibg = get_block_index(Ig,inline_bx,c_inline_nx);
 
 
       //ordinal of the block
-      int the_block = Ibg + Jbg*inline_bx + Kbg*blockKstride();
+      long long the_block = Ibg + Jbg*inline_bx + Kbg*blockKstride();
 
       //indices inside the block
-      int Kblock = Kg-c_inline_nz[Kbg];
-      int Jblock = Jg-c_inline_ny[Jbg];
-      int Iblock = Ig-c_inline_nx[Ibg];
+      long long Kblock = Kg-c_inline_nz[Kbg];
+      long long Jblock = Jg-c_inline_ny[Jbg];
+      long long Iblock = Ig-c_inline_nx[Ibg];
 
 
       //product
-      //       int elid = the_block*inline_nx*inline_ny*inline_nz + Iblock + Jblock*inline_nx + Kblock*inline_nx*inline_ny;
-      int elid = cum_block_totals[the_block] +
+      //       long long elid = the_block*inline_nx*inline_ny*inline_nz + Iblock + Jblock*inline_nx + Kblock*inline_nx*inline_ny;
+      long long elid = cum_block_totals[the_block] +
         Iblock + Jblock*a_inline_nx[Ibg] + Kblock*a_inline_nx[Ibg]*a_inline_ny[Jbg];
 
       the_map[total_count] = elid + 1;
@@ -794,7 +795,7 @@ void Inline_Mesh_Desc::Populate_Map_and_Global_Element_List(int * the_map,
 }
 
 /****************************************************************************/
-int Inline_Mesh_Desc::Check_Spans()
+long long Inline_Mesh_Desc::Check_Spans()
 /****************************************************************************/
 {
   if((inline_gmaxx - inline_gminx) <= 0.){
@@ -816,14 +817,14 @@ int Inline_Mesh_Desc::Check_Spans()
 }
 
 /****************************************************************************/
-int Inline_Mesh_Desc::Check_Block_BC_Sets()
+long long Inline_Mesh_Desc::Check_Block_BC_Sets()
 /****************************************************************************/
 {
   std::list < PG_BC_Specification * > ::iterator setit;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++){
     if((*setit)->block_boundary_set){
-      int bid = (*setit)->block_id;
-      int bmax = numBlocks();
+      long long bid = (*setit)->block_id;
+      long long bmax = numBlocks();
       if (bid < 1 || bid > bmax){
         error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
         error_stream << bid ;
@@ -836,8 +837,8 @@ int Inline_Mesh_Desc::Check_Block_BC_Sets()
   }
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++){
     if((*setit)->block_boundary_set){
-      int bid = (*setit)->block_id;
-      int bmax = numBlocks();
+      long long bid = (*setit)->block_id;
+      long long bmax = numBlocks();
       if (bid < 1 || bid > bmax){
         error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
         error_stream << bid ;
@@ -852,9 +853,9 @@ int Inline_Mesh_Desc::Check_Block_BC_Sets()
 }
 
 /****************************************************************************/
-void Inline_Mesh_Desc::Size_BC_Sets(int nnx, 
-				 int nny, 
-				 int nnz)
+void Inline_Mesh_Desc::Size_BC_Sets(long long nnx, 
+				 long long nny, 
+				 long long nnz)
 /****************************************************************************/
 {
   //Nodesets
@@ -862,10 +863,10 @@ void Inline_Mesh_Desc::Size_BC_Sets(int nnx,
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++){
     Topo_Loc the_location = (*setit)->location;
     if((*setit)->block_boundary_set){
-      int bid = (*setit)->block_id-1;
-      int kind = bid/(inline_bx*inline_by);
-      int jind = (bid-kind*(inline_bx * inline_by))/inline_bx;
-      int iind = bid - jind *(inline_bx) - kind*(inline_bx * inline_by);
+      long long bid = (*setit)->block_id-1;
+      long long kind = bid/(inline_bx*inline_by);
+      long long jind = (bid-kind*(inline_bx * inline_by))/inline_bx;
+      long long iind = bid - jind *(inline_bx) - kind*(inline_bx * inline_by);
       
       (*setit)->limits = getLimits(the_location,
 				   c_inline_nx[iind],c_inline_nx[iind+1]+1,
@@ -887,10 +888,10 @@ void Inline_Mesh_Desc::Size_BC_Sets(int nnx,
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++){
     Topo_Loc the_location = (*setit)->location;
     if((*setit)->block_boundary_set){
-      int bid = (*setit)->block_id-1;
-      int kind = bid/(inline_bx*inline_by);
-      int jind = (bid-kind*(inline_bx * inline_by))/inline_bx;
-      int iind = bid - jind *(inline_bx) - kind*(inline_bx * inline_by);
+      long long bid = (*setit)->block_id-1;
+      long long kind = bid/(inline_bx*inline_by);
+      long long jind = (bid-kind*(inline_bx * inline_by))/inline_bx;
+      long long iind = bid - jind *(inline_bx) - kind*(inline_bx * inline_by);
       (*setit)->limits = getLimits(the_location,
                                    c_inline_nx[iind],c_inline_nx[iind+1],
                                    c_inline_ny[jind],c_inline_ny[jind+1],
@@ -911,19 +912,19 @@ void Inline_Mesh_Desc::Size_BC_Sets(int nnx,
 
 /******************************************************************************/
 LoopLimits Inline_Mesh_Desc::getLimits( Topo_Loc the_set_location,
-				     int sx, int nx, 
-				     int sy, int ny, 
-				     int sz, int nz, 
-				     int irange, int jrange)
+				     long long sx, long long nx, 
+				     long long sy, long long ny, 
+				     long long sz, long long nz, 
+				     long long irange, long long jrange)
 /******************************************************************************/
 {
   LoopLimits ll;
-  int istart = sx;
-  int iend = nx;
-  int jstart = sy;
-  int jend = ny;
-  int kstart = sz;
-  int kend = nz;
+  long long istart = sx;
+  long long iend = nx;
+  long long jstart = sy;
+  long long jend = ny;
+  long long kstart = sz;
+  long long kend = nz;
 
   switch(the_set_location) {
   case ALL_NODES:{
@@ -1145,8 +1146,8 @@ void Inline_Mesh_Desc::ZeroSet()
   c_block_dist = new double * [3];
   first_size = new double * [3];
   last_size = new double * [3];
-  interval = new int * [3];
-  for(int i = 0; i < 3; i ++){
+  interval = new long long * [3];
+  for(long long i = 0; i < 3; i ++){
     block_dist[i] = NULL;
     c_block_dist[i] = NULL;
     first_size[i] = NULL;
@@ -1183,26 +1184,26 @@ void Inline_Mesh_Desc::ZeroSet()
 void Inline_Mesh_Desc::Display_Class(std::ostream& s, const std::string &indent)
 /*****************************************************************************/
 {
-  for(int i = 0; i < dimension; i++){
+  for(long long i = 0; i < dimension; i++){
     if(Element_Density_Functions[i])Element_Density_Functions[i]->Display_Class(s,indent);
   }
 }
 
 /*****************************************************************************/
-void Inline_Mesh_Desc::Populate_Border_Nodes_Elements( int * internal_elements,
-						       int * internal_nodes,
-						       int * border_elements,
-						       int * border_nodes,
-						       std::list   <int> & internal_node_list,	
-						       std::list   <int> & border_nodes_list,
-						       std::list   <int> & internal_element_list,
-						       std::list   <int> & border_elements_list,
-						       std::map <int, int> & global_node_map,
-						       std::map <int, int> & global_element_map)
+void Inline_Mesh_Desc::Populate_Border_Nodes_Elements( long long * internal_elements,
+						       long long * internal_nodes,
+						       long long * border_elements,
+						       long long * border_nodes,
+						       std::list   <long long> & internal_node_list,	
+						       std::list   <long long> & border_nodes_list,
+						       std::list   <long long> & internal_element_list,
+						       std::list   <long long> & border_elements_list,
+						       std::map <long long, long long> & global_node_map,
+						       std::map <long long, long long> & global_element_map)
 /*****************************************************************************/
 {
-  std::list <int> :: iterator eit;
-  int the_count = 0;
+  std::list <long long> :: iterator eit;
+  long long the_count = 0;
   for(eit = internal_element_list.begin();eit != internal_element_list.end();eit ++,the_count++)
     internal_elements[the_count]= get_map_entry(global_element_map,(*eit))+1;
   the_count = 0;
@@ -1218,56 +1219,56 @@ void Inline_Mesh_Desc::Populate_Border_Nodes_Elements( int * internal_elements,
 
 
 /*****************************************************************************/
-void Inline_Mesh_Desc::Populate_Cmap( int * node_cmap_node_cnts,
-				      int * node_cmap_ids,
-				      int * elem_cmap_elem_cnts,
-				      int * elem_cmap_ids,
-				      std::vector <int> & node_neighbor_vector,
-				      std::vector <int> & element_neighbor_vector,
-				      std::list <int>  * & boundary_node_list,                   
-				      std::list < std::pair <int ,Topo_Loc > > * & boundary_element_list)
+void Inline_Mesh_Desc::Populate_Cmap( long long * node_cmap_node_cnts,
+				      long long * node_cmap_ids,
+				      long long * elem_cmap_elem_cnts,
+				      long long * elem_cmap_ids,
+				      std::vector <long long> & node_neighbor_vector,
+				      std::vector <long long> & element_neighbor_vector,
+				      std::list <long long>  * & boundary_node_list,                   
+				      std::list < std::pair <long long ,Topo_Loc > > * & boundary_element_list)
 /*****************************************************************************/
 {
-  for(unsigned i = 0; i < node_neighbor_vector.size();i++){
+  for(long long i = 0; i < node_neighbor_vector.size();i++){
     node_cmap_node_cnts[i] = boundary_node_list[i].size();
     node_cmap_ids[i] = node_neighbor_vector[i];
   }
-  for(unsigned i = 0; i < element_neighbor_vector.size();i++){
+  for(long long i = 0; i < element_neighbor_vector.size();i++){
     elem_cmap_elem_cnts[i] = boundary_element_list[i].size();
     elem_cmap_ids[i] = element_neighbor_vector[i];
   }
 }
 
 /*****************************************************************************/
-void Inline_Mesh_Desc::Populate_Parallel_Info( int* const * comm_node_ids ,
-					       int* const * comm_node_proc_ids,
-					       int* const * comm_elem_ids,
-					       int* const * comm_side_ids,
-					       int* const * comm_elem_proc_ids,
-					       std::vector <int> & node_neighbor_vector,
-					       std::vector <int> & element_neighbor_vector,		
-					       std::list <int>  * & boundary_node_list,
-					       std::map <int, int> & global_node_map,
-					       std::list <std::pair <int ,Topo_Loc > > * & boundary_element_list,
-					       std::map <int, int> & global_element_map)
+void Inline_Mesh_Desc::Populate_Parallel_Info( long long * const * comm_node_ids ,
+					       long long * const * comm_node_proc_ids,
+					       long long * const * comm_elem_ids,
+					       long long * const * comm_side_ids,
+					       long long * const * comm_elem_proc_ids,
+					       std::vector <long long> & node_neighbor_vector,
+					       std::vector <long long> & element_neighbor_vector,		
+					       std::list <long long>  * & boundary_node_list,
+					       std::map <long long, long long> & global_node_map,
+					       std::list <std::pair <long long ,Topo_Loc > > * & boundary_element_list,
+					       std::map <long long, long long> & global_element_map)
 /*****************************************************************************/
 {
-  for(unsigned i = 0; i < node_neighbor_vector.size();i++){
-    int * comm_nodes = comm_node_ids[i];
-    int * comm_node_procs = comm_node_proc_ids[i];
-    std::list <int> :: iterator nlit;
-    int nct = 0;
+  for(long long i = 0; i < node_neighbor_vector.size();i++){
+    long long * comm_nodes = comm_node_ids[i];
+    long long * comm_node_procs = comm_node_proc_ids[i];
+    std::list <long long> :: iterator nlit;
+    long long nct = 0;
     for(nlit = boundary_node_list[i].begin();nlit != boundary_node_list[i].end();nlit++,nct ++){
       comm_nodes[nct] = get_map_entry(global_node_map,(*nlit))+1;
       comm_node_procs[nct] = node_neighbor_vector[i];// is this right?
     }
   }
-  for(unsigned i = 0; i < element_neighbor_vector.size();i++){
-    int * comm_elements = comm_elem_ids[i];
-    int * comm_sides = comm_side_ids[i];
-    int * comm_elem_procs = comm_elem_proc_ids[i];
-    std::list < std::pair <int ,Topo_Loc > > :: iterator nlit;
-    int nct = 0;
+  for(long long i = 0; i < element_neighbor_vector.size();i++){
+    long long * comm_elements = comm_elem_ids[i];
+    long long * comm_sides = comm_side_ids[i];
+    long long * comm_elem_procs = comm_elem_proc_ids[i];
+    std::list < std::pair <long long ,Topo_Loc > > :: iterator nlit;
+    long long nct = 0;
     for(nlit = boundary_element_list[i].begin();nlit != boundary_element_list[i].end();nlit++,nct ++){
       comm_elements[nct] = get_map_entry(global_element_map,(*nlit).first)+1;//foo bar
       comm_sides[nct] = topo_loc_to_exo_face[(*nlit).second];
@@ -1298,16 +1299,16 @@ void Inline_Mesh_Desc::setStrides()
 
 //! A utility function to build up required bookkeeping objects.
 /****************************************************************************/
-void Inline_Mesh_Desc::get_l_i_j_k_from_element_number(int el,
-								     int & l,
-								     int & i,
-								     int & j,
-								     int & k)
+void Inline_Mesh_Desc::get_l_i_j_k_from_element_number(long long el,
+								     long long & l,
+								     long long & i,
+								     long long & j,
+								     long long & k)
 /****************************************************************************/
 {
   l = 0;
   k = el/kestride;
-  int remainder = el-k*kestride;
+  long long remainder = el-k*kestride;
   
   j = (remainder)/(jestride);
   i = remainder - j*(jestride);
@@ -1316,24 +1317,24 @@ void Inline_Mesh_Desc::get_l_i_j_k_from_element_number(int el,
 
 //! A utility function to build up required bookkeeping objects.
 /****************************************************************************/
-void Inline_Mesh_Desc::get_l_i_j_k_from_node_number(int nn,
-								 int & l,
-								 int & i,
-								 int & j,
-								 int & k)
+void Inline_Mesh_Desc::get_l_i_j_k_from_node_number(long long nn,
+								 long long & l,
+								 long long & i,
+								 long long & j,
+								 long long & k)
 /****************************************************************************/
 {
   k = nn/knstride;
-  int remainder = nn - k*knstride;  
+  long long remainder = nn - k*knstride;  
   j = remainder / (nelx_tot+1);
   i = remainder - j*(nelx_tot+1);
 }
 
 /****************************************************************************/
-int Inline_Mesh_Desc::get_element_number_from_l_i_j_k( int  l,
-						       int  i,
-						       int  j,
-						       int  k)
+long long Inline_Mesh_Desc::get_element_number_from_l_i_j_k( long long  l,
+						       long long  i,
+						       long long  j,
+						       long long  k)
 /****************************************************************************/
 {
   //adding bounds checking to deal with neighbor calcultion
@@ -1353,7 +1354,7 @@ int Inline_Mesh_Desc::get_element_number_from_l_i_j_k( int  l,
   if(i<0)return -1;
   if(i >= nelx_tot)return -1;
 
-  int elno;
+  long long elno;
   elno = k*kestride;
   elno += j*jestride;
   elno += i;
@@ -1362,16 +1363,16 @@ int Inline_Mesh_Desc::get_element_number_from_l_i_j_k( int  l,
 }
 
 /****************************************************************************/
-int Inline_Mesh_Desc::get_node_number_from_l_i_j_k( int  l,
-								 int  i,
-								 int  j,
-								 int  k)
+long long Inline_Mesh_Desc::get_node_number_from_l_i_j_k( long long  l,
+								 long long  i,
+								 long long  j,
+								 long long  k)
   /****************************************************************************/
 {
   if(periodic_j){
     if( j == nely_tot)j = 0;
   }
-  int nno = k*knstride;
+  long long nno = k*knstride;
   nno += j*jnstride;
   nno += i;
   return nno;
@@ -1379,11 +1380,11 @@ int Inline_Mesh_Desc::get_node_number_from_l_i_j_k( int  l,
 
 
 /****************************************************************************/
-int Inline_Mesh_Desc::get_neighbor(Topo_Loc tl,
-				   int ll, 
-				   int li, 
-				   int lj, 
-				   int lk)
+long long Inline_Mesh_Desc::get_neighbor(Topo_Loc tl,
+				   long long ll, 
+				   long long li, 
+				   long long lj, 
+				   long long lk)
 /****************************************************************************/
 {
   switch(tl) {
@@ -1474,11 +1475,11 @@ int Inline_Mesh_Desc::get_neighbor(Topo_Loc tl,
 
 /****************************************************************************/
 void Inline_Mesh_Desc::get_face_nodes(Topo_Loc tl,
-				      int global_element_id,
-				      int the_nodes[])
+				      long long global_element_id,
+				      long long the_nodes[])
 /****************************************************************************/
 {
-  int gl_l,gl_i,gl_j,gl_k;
+  long long gl_l,gl_i,gl_j,gl_k;
   get_l_i_j_k_from_element_number(global_element_id,gl_l,gl_i,gl_j,gl_k);
   switch(tl) {
     
@@ -1665,26 +1666,26 @@ void Inline_Mesh_Desc::get_face_nodes(Topo_Loc tl,
 
 /****************************************************************************/
 void Inline_Mesh_Desc::Calc_Parallel_Info(                                          
-					  std::vector <int> & element_vector,
-					  std::vector<int> & global_node_vector,   
-					  std::map <int, int> & global_node_map,                          
-					  std::list   <int> & internal_node_list,	
-					  std::list   <int> & border_nodes_list,
-					  std::list   <int> & internal_element_list,
-					  std::list   <int> & border_elements_list,
-					  std::list   <int> & node_proc_id_list,
-					  std::list   <int> & element_proc_id_list,
-					  std::vector <int> & node_neighbor_vector,
-					  std::list <int> * &  boundary_node_list,
-					  std::vector <int> & element_neighbor_vector,
-					  std::list <std::pair <int ,Topo_Loc > > * & boundary_element_list)
+					  std::vector <long long> & element_vector,
+					  std::vector<long long> & global_node_vector,   
+					  std::map <long long, long long> & global_node_map,                          
+					  std::list   <long long> & internal_node_list,	
+					  std::list   <long long> & border_nodes_list,
+					  std::list   <long long> & internal_element_list,
+					  std::list   <long long> & border_elements_list,
+					  std::list   <long long> & node_proc_id_list,
+					  std::list   <long long> & element_proc_id_list,
+					  std::vector <long long> & node_neighbor_vector,
+					  std::list <long long> * &  boundary_node_list,
+					  std::vector <long long> & element_neighbor_vector,
+					  std::list <std::pair <long long ,Topo_Loc > > * & boundary_element_list)
   /****************************************************************************/
 {
 
   Tel *el_array = NULL;
   if(element_vector.size()>0){
     el_array = new Tel[element_vector.size()];
-    for(unsigned gev = 0; gev < element_vector.size(); gev ++){
+    for(long long gev = 0; gev < element_vector.size(); gev ++){
       el_array[gev].global_id = element_vector[gev];
       el_array[gev].real_element = true;
     }
@@ -1693,7 +1694,7 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
   if(global_node_vector.size()>0){
     node_array = new Tel[global_node_vector.size()];
     
-    for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
+    for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
       node_array[gnv].global_id = global_node_vector[gnv];
     }
   }
@@ -1708,9 +1709,9 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
 
   // walk all local elements
 
-  int nfn = 2;
-  int nfaces = 4;
-  int nen = 1;
+  long long nfn = 2;
+  long long nfaces = 4;
+  long long nen = 1;
   
   if(dimension == 3){
     nfn = 4;
@@ -1721,26 +1722,26 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
 
 
 
-  for(unsigned gev = 0; gev < element_vector.size(); gev ++){
-    int face_nodes_array[4];
-    int my_id = el_array[gev].global_id;
-    int ll,li,lj,lk;
+  for(long long gev = 0; gev < element_vector.size(); gev ++){
+    long long face_nodes_array[4];
+    long long my_id = el_array[gev].global_id;
+    long long ll,li,lj,lk;
     get_l_i_j_k_from_element_number(my_id,ll,li,lj,lk);
     el_array[gev].visits ++;
     
-    for(int face_count = 0; face_count < nfaces; face_count ++){
+    for(long long face_count = 0; face_count < nfaces; face_count ++){
       Topo_Loc tl = (Topo_Loc)face_count;
-      int neighbor = get_neighbor(tl,ll,li,lj,lk);
+      long long neighbor = get_neighbor(tl,ll,li,lj,lk);
       if(neighbor >= 0){
-	unsigned neighbor_proc_id = Element_Proc(neighbor);
+	long long neighbor_proc_id = Element_Proc(neighbor);
 	if(neighbor_proc_id != my_rank){
-	  std::pair < int,Topo_Loc> conn_pair(neighbor_proc_id,tl);
+	  std::pair < long long,Topo_Loc> conn_pair(neighbor_proc_id,tl);
 	  el_array[gev].conn_connections.push_back(conn_pair);
 
 	  el_array[gev].visits ++;
 	  get_face_nodes(tl,my_id,face_nodes_array);
      
-	  for(int fnc = 0; fnc < nfn; fnc ++){
+	  for(long long fnc = 0; fnc < nfn; fnc ++){
 	    node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].visits ++;
 	    node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].proc_neighbors.push_back(neighbor_proc_id);
 	  }
@@ -1750,21 +1751,21 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
 
 
     // need to do edges and vertex neighbors for nodes
-    int edge_start = EDGE4;
-    int edge_end = EDGE8;
+    long long edge_start = EDGE4;
+    long long edge_end = EDGE8;
     if(dimension == 3){
       edge_start = EDGE0;
       edge_end = VERTEX0;
     }
-    for(int edge_count = edge_start; edge_count < edge_end; edge_count ++){
+    for(long long edge_count = edge_start; edge_count < edge_end; edge_count ++){
       Topo_Loc tl = (Topo_Loc)edge_count;
-      int neighbor = get_neighbor(tl,ll,li,lj,lk);
+      long long neighbor = get_neighbor(tl,ll,li,lj,lk);
       if(neighbor >= 0){
-	unsigned neighbor_proc_id = Element_Proc(neighbor);
+	long long neighbor_proc_id = Element_Proc(neighbor);
 	if(neighbor_proc_id != my_rank){
 	  get_face_nodes(tl,my_id,face_nodes_array);
 	  
-	  for(int fnc = 0; fnc < nen; fnc ++){
+	  for(long long fnc = 0; fnc < nen; fnc ++){
 	    node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].visits ++;
 	    node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].proc_neighbors.push_back(neighbor_proc_id);
 	  }
@@ -1773,14 +1774,14 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
     }
     if(dimension == 3){
       // need to do vertices and vertex neighbors for nodes
-      for(int vertex_count = EDGE11; vertex_count < NUM_TOPO_CONNECTIONS; vertex_count ++){
+      for(long long vertex_count = EDGE11; vertex_count < NUM_TOPO_CONNECTIONS; vertex_count ++){
 	Topo_Loc tl = (Topo_Loc)vertex_count;
-	int neighbor = get_neighbor(tl,ll,li,lj,lk);
+	long long neighbor = get_neighbor(tl,ll,li,lj,lk);
 	if(neighbor >= 0){
-	  unsigned neighbor_proc_id = Element_Proc(neighbor);
+	  long long neighbor_proc_id = Element_Proc(neighbor);
 	  if(neighbor_proc_id != my_rank){
 	    get_face_nodes(tl,my_id,face_nodes_array);
-	    for(int fnc = 0; fnc < 1; fnc ++){
+	    for(long long fnc = 0; fnc < 1; fnc ++){
 	      node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].visits ++;
 	      node_array[get_map_entry(global_node_map,face_nodes_array[fnc])].proc_neighbors.push_back(neighbor_proc_id);
 	    }
@@ -1790,10 +1791,10 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
     }
   }
 
-  for(unsigned i = 0; i < element_vector.size();i ++){
+  for(long long i = 0; i < element_vector.size();i ++){
     if(el_array[i].visits > 1){
       // loop over all conn_connections
-      std::list < std::pair < int , Topo_Loc > > ::iterator conit;
+      std::list < std::pair < long long , Topo_Loc > > ::iterator conit;
       for(conit  = el_array[i].conn_connections.begin();
           conit != el_array[i].conn_connections.end();
           conit ++){
@@ -1806,12 +1807,12 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
   element_proc_id_list.unique();
 
   if(element_proc_id_list.size()){
-    boundary_element_list = new std::list < std::pair <int ,Topo_Loc > > [element_proc_id_list.size()];
+    boundary_element_list = new std::list < std::pair <long long ,Topo_Loc > > [element_proc_id_list.size()];
   }
 
-  std::map <int,int> element_neighbor_proc_map; //key is proc_id value is ordinal
-  std::list <int> ::iterator listit;
-  int the_count = 0;
+  std::map <long long,long long> element_neighbor_proc_map; //key is proc_id value is ordinal
+  std::list <long long> ::iterator listit;
+  long long the_count = 0;
   for(listit = element_proc_id_list.begin(); listit != element_proc_id_list.end(); listit++,the_count ++){
     element_neighbor_proc_map[*listit] = the_count;
     element_neighbor_vector.push_back(*listit);
@@ -1819,8 +1820,8 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
 
   // now populate the maps
 
-  for(unsigned i = 0; i < element_vector.size();i ++){
-    int the_element = element_vector[i];
+  for(long long i = 0; i < element_vector.size();i ++){
+    long long the_element = element_vector[i];
     if(el_array[i].visits == 1){
       internal_element_list.push_back(the_element);
     }
@@ -1828,13 +1829,13 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
       // loop over all conn_connections
       
       border_elements_list.push_back(the_element);
-      std::list < std::pair < int , Topo_Loc > > ::iterator conit;
+      std::list < std::pair < long long , Topo_Loc > > ::iterator conit;
       for(conit  = el_array[i].conn_connections.begin();
           conit != el_array[i].conn_connections.end();
           conit ++){
 	
-        int index = get_map_entry(element_neighbor_proc_map,(*conit).first);
-        boundary_element_list[index].push_back( std::pair <int ,Topo_Loc >(the_element,(*conit).second));
+        long long index = get_map_entry(element_neighbor_proc_map,(*conit).first);
+        boundary_element_list[index].push_back( std::pair <long long ,Topo_Loc >(the_element,(*conit).second));
       }
     }
   }
@@ -1843,10 +1844,10 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
   border_elements_list.unique();
 
 
-  for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
+  for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
     if(node_array[gnv].visits > 0){
       // loop over all conn_connections
-      std::list < int > ::iterator conit;
+      std::list < long long > ::iterator conit;
       for(conit  = node_array[gnv].proc_neighbors.begin();
 	  conit != node_array[gnv].proc_neighbors.end();
 	  conit ++){
@@ -1858,8 +1859,8 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
   node_proc_id_list.sort();
   node_proc_id_list.unique();
 
-  std::map <int,int> node_neighbor_proc_map; //key is proc_id value is ordinal
-  std::list <int> ::iterator nlistit;
+  std::map <long long,long long> node_neighbor_proc_map; //key is proc_id value is ordinal
+  std::list <long long> ::iterator nlistit;
   the_count = 0;
   for(nlistit = node_proc_id_list.begin(); nlistit != node_proc_id_list.end(); nlistit++,the_count ++){
     node_neighbor_proc_map[*nlistit] = the_count;
@@ -1867,32 +1868,32 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
   }
 
   if(node_proc_id_list.size()){
-    boundary_node_list = new std::list <int> [node_proc_id_list.size()];
+    boundary_node_list = new std::list <long long> [node_proc_id_list.size()];
   }
 
 
 
   //node array needs global_id!!!!
-  for(unsigned i = 0;i < global_node_vector.size();i ++){
+  for(long long i = 0;i < global_node_vector.size();i ++){
     if(node_array[i].visits == 0){
-      int the_node = node_array[i].global_id;
+      long long the_node = node_array[i].global_id;
       internal_node_list.push_back(the_node);
     }
     else if(node_array[i].visits > 0){
-      int the_node = node_array[i].global_id;
+      long long the_node = node_array[i].global_id;
       // loop over all conn_connections
-      std::list < int > ::iterator conit;
+      std::list < long long > ::iterator conit;
       for(conit  = node_array[i].proc_neighbors.begin();
 	  conit != node_array[i].proc_neighbors.end();
 	  conit ++){
-	int index = get_map_entry(node_neighbor_proc_map,(*conit));
+	long long index = get_map_entry(node_neighbor_proc_map,(*conit));
 	boundary_node_list[index].push_back(the_node);
 	border_nodes_list.push_back(the_node);
       }
     }
   }
   // sort the boundary_node_list
-  for(unsigned i = 0; i < node_proc_id_list.size();i++){
+  for(long long i = 0; i < node_proc_id_list.size();i++){
     boundary_node_list[i].sort();
     boundary_node_list[i].unique();    
   }
@@ -1911,11 +1912,11 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
 //! Reads in/creates the serial component of the unstructured mesh in parallel
 /****************************************************************************/
 void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
-                                          std::vector <int> & element_vector,
-                                          std::list <int> & global_node_list,
-                                          std::vector<int> & global_node_vector,
-                                          std::map <int, int> & global_node_map,
-                                          std::map <int, int> & global_element_map)
+                                          std::vector <long long> & element_vector,
+                                          std::list <long long> & global_node_list,
+                                          std::vector<long long> & global_node_vector,
+                                          std::map <long long, long long> & global_node_map,
+                                          std::map <long long, long long> & global_element_map)
 /****************************************************************************/
 {
   //NODESETS
@@ -1924,20 +1925,20 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
   // The loop limits are the index bounds that allow traversal of the nodes of interest.
   //DMHMOD
 
-  if(nodeset_list.size() > 0)nodeset_vectors = new std::vector <int> [nodeset_list.size()];
+  if(nodeset_list.size() > 0)nodeset_vectors = new std::vector <long long> [nodeset_list.size()];
 
   std::list < PG_BC_Specification *> ::iterator setit;
-  int nsct = 0;
+  long long nsct = 0;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++,nsct ++){
     LoopLimits ll = (*setit)->limits;
-    std::list < int > nodes_vector;
+    std::list < long long > nodes_vector;
 
     // SET_INTERSECT
-    std::list < int > tnodes_vector;
-    std::list < int > tglobal_nodes_vector;
+    std::list < long long > tnodes_vector;
+    std::list < long long > tglobal_nodes_vector;
 
 
-    for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
+    for(long long the_nct = 0; the_nct < global_node_vector.size();the_nct++){
       tglobal_nodes_vector.push_back(global_node_vector[the_nct]);
     }
 
@@ -1945,20 +1946,20 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
     tglobal_nodes_vector.unique();
 
     if(dimension == 3){
-      for ( int _nk_ = ll.ks; _nk_ < ll.ke; _nk_ ++){ 
-	for ( int _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
-	  for ( int _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++){ 
-	    int global_node_id = get_node_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
+      for ( long long _nk_ = ll.ks; _nk_ < ll.ke; _nk_ ++){ 
+	for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
+	  for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++){ 
+	    long long global_node_id = get_node_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
 	    tnodes_vector.push_back(global_node_id);
 	  }
 	}
       }
     }
     else{
-      int _nk_ = 0;
-      for ( int _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
- 	for ( int _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++){ 
-	  int global_node_id = get_node_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
+      long long _nk_ = 0;
+      for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
+ 	for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++){ 
+	  long long global_node_id = get_node_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
 	  tnodes_vector.push_back(global_node_id);
 	}
       }
@@ -1976,9 +1977,9 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
     nodes_vector.sort();
     nodes_vector.unique();
 
-    std::list < int > :: iterator nit;
+    std::list < long long > :: iterator nit;
     for(nit = nodes_vector.begin(); nit != nodes_vector.end(); nit ++){
-      for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
+      for(long long the_nct = 0; the_nct < global_node_vector.size();the_nct++){
         if((*nit) == global_node_vector[the_nct])nodeset_vectors[nsct].push_back((*nit));
       }
     }
@@ -2007,7 +2008,7 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
   //  These values are combined to calculate the index of the element that corresponds
   // to numbering the elements sequentially within blocks. 
   nsct = 0;
-  if(sideset_list.size() > 0)sideset_vectors = new std::vector < std::pair <int ,Topo_Loc > > [sideset_list.size()];  
+  if(sideset_list.size() > 0)sideset_vectors = new std::vector < std::pair <long long ,Topo_Loc > > [sideset_list.size()];  
 
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++,nsct ++){
      Topo_Loc the_location = (*setit)->location;
@@ -2016,13 +2017,13 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
     LoopLimits ll = (*setit)->limits;
 
     if(dimension == 3){
-      for ( int _nk_ = ll.ks; _nk_ < ll.ke; _nk_ ++){ 
-	for ( int _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
-	  for ( int _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
-	    int elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-	    unsigned the_proc_id = Element_Proc(elnumber);
+      for ( long long _nk_ = ll.ks; _nk_ < ll.ke; _nk_ ++){ 
+	for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
+	  for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
+	    long long elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
+	    long long the_proc_id = Element_Proc(elnumber);
 	    if(the_proc_id == my_rank){// add only if on this proc	  
-	      std::pair <int ,Topo_Loc > el_loc_pair(elnumber,the_location);
+	      std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
 	      sideset_vectors[nsct].push_back(el_loc_pair);
 	    }
 	  }
@@ -2030,13 +2031,13 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
       }
     }
     else{
-      int _nk_ = 0;
-      for ( int _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
-	for ( int _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
-	  int elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-	  unsigned the_proc_id = Element_Proc(elnumber);
+      long long _nk_ = 0;
+      for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
+	for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
+	  long long elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
+	  long long the_proc_id = Element_Proc(elnumber);
 	  if(the_proc_id == my_rank){// add only if on this proc	  
-	    std::pair <int ,Topo_Loc > el_loc_pair(elnumber,the_location);
+	    std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
 	    sideset_vectors[nsct].push_back(el_loc_pair);
 	  }
 	}
@@ -2047,13 +2048,13 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
 }
 
 /****************************************************************************/
-void Inline_Mesh_Desc::getGlobal_Element_Block_Totals(int * totals_array)
+void Inline_Mesh_Desc::getGlobal_Element_Block_Totals(long long * totals_array)
 /****************************************************************************/
 {
-  for(int bct = 0; bct < numBlocks();bct ++ ){
-    int kind = bct/blockKstride();
-    int jind = (bct - kind * blockKstride())/inline_bx;
-    int iind = bct - jind * inline_bx - kind * blockKstride();
+  for(long long bct = 0; bct < numBlocks();bct ++ ){
+    long long kind = bct/blockKstride();
+    long long jind = (bct - kind * blockKstride())/inline_bx;
+    long long iind = bct - jind * inline_bx - kind * blockKstride();
     totals_array[bct] = a_inline_nx[iind]*a_inline_ny[jind]*a_inline_nz[kind];
   } 
 }
@@ -2062,7 +2063,7 @@ void Inline_Mesh_Desc::getGlobal_Element_Block_Totals(int * totals_array)
 //! Queries which processor an element lies on.
 //! Calls the recursive Partition::Element_Proc function.
 /****************************************************************************/
-void Inline_Mesh_Desc::Customize_Coords(double * coords, int num_nodes,int dim)
+void Inline_Mesh_Desc::Customize_Coords(double * coords, long long num_nodes,long long dim)
 /****************************************************************************/
 {
   if(!Geometry_Transform_Function)return;

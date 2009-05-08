@@ -35,14 +35,14 @@ bool Mesh_Specification::Are_Warnings_Suppressed() const
 }
 
 /*****************************************************************************/
-void Mesh_Specification::Suppress_Warnings(int logical)
+void Mesh_Specification::Suppress_Warnings(long long logical)
 /*****************************************************************************/
 {
   suppress_warnings=logical;
 }
 
 /*****************************************************************************/
-void Mesh_Specification::Resize_Info_Store(int value)
+void Mesh_Specification::Resize_Info_Store(long long value)
 /*****************************************************************************/
 //  Resize the space for info records so more information
 //    can be appended to the database
@@ -66,14 +66,14 @@ void Mesh_Specification::Resize_Info_Store(int value)
 
 /*****************************************************************************/
 void Mesh_Specification::Specify_Global_Information(const std::string &titl,
-                                                    int dimen,
-                                                    int n_nodes,
-                                                    int n_elements,
-                                                    int n_blocks,
-                                                    int num_ns,
-                                                    int num_ss,
-                                                    int num_qa,
-                                                    int num_info)
+                                                    long long dimen,
+                                                    long long n_nodes,
+                                                    long long n_elements,
+                                                    long long n_blocks,
+                                                    long long num_ns,
+                                                    long long num_ss,
+                                                    long long num_qa,
+                                                    long long num_info)
 /*****************************************************************************/
 {
   int i;
@@ -93,24 +93,24 @@ void Mesh_Specification::Specify_Global_Information(const std::string &titl,
     coord = new double[msia[NUM_NODES] * msia[DIM]];
   
   if (msia[NUM_ELEMENTS])
-    mspa[ELEM_ORDER_MAP] = new int[msia[NUM_ELEMENTS]];
+    mspa[ELEM_ORDER_MAP] = new long long[msia[NUM_ELEMENTS]];
 
   if (msia[NUM_BLOCKS] > 0)
   {
-    mspa[BLOCK_ID]                 = new int[msia[NUM_BLOCKS]];
-    mspa[ELEMENTS_IN_BLOCK]                 = new int[msia[NUM_BLOCKS]];
-    mspa[NODES_PER_ELEMENT]        = new int[msia[NUM_BLOCKS]];
-    mspa[ELEMENT_ATTRIBUTES]       = new int[msia[NUM_BLOCKS]];
+    mspa[BLOCK_ID]                 = new long long[msia[NUM_BLOCKS]];
+    mspa[ELEMENTS_IN_BLOCK]                 = new long long[msia[NUM_BLOCKS]];
+    mspa[NODES_PER_ELEMENT]        = new long long[msia[NUM_BLOCKS]];
+    mspa[ELEMENT_ATTRIBUTES]       = new long long[msia[NUM_BLOCKS]];
     block_element_type       = new Element_Type[msia[NUM_BLOCKS]];
     mspsa[ELEMENT_TYPES]            = new std::string[msia[NUM_BLOCKS]];
 
-    msppa[ELMT_NODE_LINKAGE]        = new int*[msia[NUM_BLOCKS]];
+    msppa[ELMT_NODE_LINKAGE]        = new long long*[msia[NUM_BLOCKS]];
     msppda[ATTRIBUTES]               = new double*[msia[NUM_BLOCKS]];
   }
 
 // set indexes double dimensioned arrays to NULL
 
-  for (int b = 0; b < msia[NUM_BLOCKS]; ++b)
+  for (long long b = 0; b < msia[NUM_BLOCKS]; ++b)
   {
     mspa[BLOCK_ID][b]           = 0;
     mspa[ELEMENTS_IN_BLOCK][b]           = 0;
@@ -124,11 +124,11 @@ void Mesh_Specification::Specify_Global_Information(const std::string &titl,
 
   if (msia[NUM_NODE_SETS] > 0)
   {
-    mspa[NODE_SET_ID]              = new int[msia[NUM_NODE_SETS]];
-    mspa[NUM_NODES_IN_NODE_SET]    = new int[msia[NUM_NODE_SETS]];
-    mspa[NUM_DF_IN_NODE_SET]       = new int[msia[NUM_NODE_SETS]];
+    mspa[NODE_SET_ID]              = new long long[msia[NUM_NODE_SETS]];
+    mspa[NUM_NODES_IN_NODE_SET]    = new long long[msia[NUM_NODE_SETS]];
+    mspa[NUM_DF_IN_NODE_SET]       = new long long[msia[NUM_NODE_SETS]];
 
-    msppa[NODE_SET_NODES]           = new int*[msia[NUM_NODE_SETS]];
+    msppa[NODE_SET_NODES]           = new long long*[msia[NUM_NODE_SETS]];
     msppda[NODE_SET_DF]              = new double*[msia[NUM_NODE_SETS]];
   
     for(i = 0; i < msia[NUM_NODE_SETS]; i++) {
@@ -142,15 +142,15 @@ void Mesh_Specification::Specify_Global_Information(const std::string &titl,
 
   if (msia[NUM_SIDE_SETS] > 0)
   {
-    mspa[SIDE_SET_ID]              = new int[msia[NUM_SIDE_SETS]];
-    mspa[NUM_ELEMENTS_IN_SIDE_SET] = new int[msia[NUM_SIDE_SETS]];
-    mspa[NUM_NODES_IN_SIDE_SET]    = new int[msia[NUM_SIDE_SETS]];
-    mspa[NUM_DF_IN_SIDE_SET]       = new int[msia[NUM_SIDE_SETS]];
+    mspa[SIDE_SET_ID]              = new long long[msia[NUM_SIDE_SETS]];
+    mspa[NUM_ELEMENTS_IN_SIDE_SET] = new long long[msia[NUM_SIDE_SETS]];
+    mspa[NUM_NODES_IN_SIDE_SET]    = new long long[msia[NUM_SIDE_SETS]];
+    mspa[NUM_DF_IN_SIDE_SET]       = new long long[msia[NUM_SIDE_SETS]];
   
-    msppa[SIDE_SET_ELEMENTS]        = new int*[msia[NUM_SIDE_SETS]];
-    msppa[SIDE_SET_NODE_COUNTER]    = new int*[msia[NUM_SIDE_SETS]];
-    msppa[SIDE_SET_FACES]           = new int*[msia[NUM_SIDE_SETS]];
-    msppa[SIDE_SET_NODES]           = new int*[msia[NUM_SIDE_SETS]];
+    msppa[SIDE_SET_ELEMENTS]        = new long long*[msia[NUM_SIDE_SETS]];
+    msppa[SIDE_SET_NODE_COUNTER]    = new long long*[msia[NUM_SIDE_SETS]];
+    msppa[SIDE_SET_FACES]           = new long long*[msia[NUM_SIDE_SETS]];
+    msppa[SIDE_SET_NODES]           = new long long*[msia[NUM_SIDE_SETS]];
     msppda[SIDE_SET_DF]              = new double*[msia[NUM_SIDE_SETS]];
 
     for (i = 0; i < msia[NUM_SIDE_SETS]; ++i)
@@ -167,8 +167,8 @@ void Mesh_Specification::Specify_Global_Information(const std::string &titl,
     }
   }
  
-  if (msia[NUM_ELEMENTS] > 0) mspa[GLOBAL_ELEMENT_NUMBERS]  = new int[msia[NUM_ELEMENTS]];
-  if (msia[NUM_NODES] > 0)    mspa[GLOBAL_NODE_NUMBERS]     = new int[msia[NUM_NODES]];
+  if (msia[NUM_ELEMENTS] > 0) mspa[GLOBAL_ELEMENT_NUMBERS]  = new long long[msia[NUM_ELEMENTS]];
+  if (msia[NUM_NODES] > 0)    mspa[GLOBAL_NODE_NUMBERS]     = new long long[msia[NUM_NODES]];
 
   mspsa[COORDINATE_NAMES] = new std::string[msia[DIM]];
 
@@ -184,11 +184,11 @@ void Mesh_Specification::Specify_Global_Information(const std::string &titl,
 
 
 /*****************************************************************************/
-void Mesh_Specification::Specify_Block_Information(int b,
-                          int id,
-                          int number_of_block_elements,
-                          int number_of_nodes_per_element,
-                          int number_of_element_attributes,
+void Mesh_Specification::Specify_Block_Information(long long b,
+                          long long id,
+                          long long number_of_block_elements,
+                          long long number_of_nodes_per_element,
+                          long long number_of_element_attributes,
                           Element_Type type)
 /*****************************************************************************/
 {
@@ -206,17 +206,17 @@ void Mesh_Specification::Specify_Block_Information(int b,
   mspa[ELEMENT_ATTRIBUTES][b] = number_of_element_attributes;
   block_element_type[b] = type;
   
-  msppa[ELMT_NODE_LINKAGE][b]  = new int[mspa[ELEMENTS_IN_BLOCK][b]*mspa[NODES_PER_ELEMENT][b]];
+  msppa[ELMT_NODE_LINKAGE][b]  = new long long[mspa[ELEMENTS_IN_BLOCK][b]*mspa[NODES_PER_ELEMENT][b]];
   msppda[ATTRIBUTES][b]         = new double[mspa[ELEMENTS_IN_BLOCK][b]*mspa[ELEMENT_ATTRIBUTES][b]];
 }
 
 
 /*****************************************************************************/
 void Mesh_Specification::
-Specify_Node_Set_Information(int i,
-                             int id,
-                             int number_of_nodes_in_node_set,
-                             int number_of_df_in_node_set)
+Specify_Node_Set_Information(long long i,
+                             long long id,
+                             long long number_of_nodes_in_node_set,
+                             long long number_of_df_in_node_set)
 /*****************************************************************************/
 {
   assert(mspa[NODE_SET_ID]);
@@ -228,17 +228,17 @@ Specify_Node_Set_Information(int i,
   mspa[NODE_SET_ID][i]           = id;
   mspa[NUM_NODES_IN_NODE_SET][i] = number_of_nodes_in_node_set;
   mspa[NUM_DF_IN_NODE_SET][i]    = number_of_df_in_node_set;
-  msppa[NODE_SET_NODES][i]        = new int[number_of_nodes_in_node_set];
+  msppa[NODE_SET_NODES][i]        = new long long[number_of_nodes_in_node_set];
   msppda[NODE_SET_DF][i]           = new double[number_of_df_in_node_set];
 }
 
 /*****************************************************************************/
 void Mesh_Specification::
-Specify_Side_Set_Information(int i,
-                             int id,
-                             int number_of_faces_in_side_set,
-                             int number_of_nodes_in_side_set,
-                             int number_of_df_in_side_set)
+Specify_Side_Set_Information(long long i,
+                             long long id,
+                             long long number_of_faces_in_side_set,
+                             long long number_of_nodes_in_side_set,
+                             long long number_of_df_in_side_set)
 /*****************************************************************************/
 {
   assert(mspa[SIDE_SET_ID]);
@@ -255,10 +255,10 @@ Specify_Side_Set_Information(int i,
   mspa[NUM_ELEMENTS_IN_SIDE_SET][i] = number_of_faces_in_side_set;
   mspa[NUM_NODES_IN_SIDE_SET][i]    = number_of_nodes_in_side_set;
   mspa[NUM_DF_IN_SIDE_SET][i]       = number_of_df_in_side_set;
-  msppa[SIDE_SET_ELEMENTS][i]        = new int[number_of_faces_in_side_set];
-  msppa[SIDE_SET_NODE_COUNTER][i]    = new int[number_of_faces_in_side_set];
-  msppa[SIDE_SET_FACES][i]           = new int[number_of_faces_in_side_set];
-  msppa[SIDE_SET_NODES][i]           = new int[number_of_nodes_in_side_set];
+  msppa[SIDE_SET_ELEMENTS][i]        = new long long[number_of_faces_in_side_set];
+  msppa[SIDE_SET_NODE_COUNTER][i]    = new long long[number_of_faces_in_side_set];
+  msppa[SIDE_SET_FACES][i]           = new long long[number_of_faces_in_side_set];
+  msppa[SIDE_SET_NODES][i]           = new long long[number_of_nodes_in_side_set];
   msppda[SIDE_SET_DF][i]              = new double[number_of_df_in_side_set];
 }
 
@@ -267,10 +267,10 @@ void Mesh_Specification::Free_NonTransient_Storage()
 /*****************************************************************************/
 //  Frees all storage except that which contains data required for an EXODUS
 //  time step dump.  The data items retained are:
-//      int *mspa[BLOCK_ID];
-//      int *mspa[ELEMENTS_IN_BLOCK];
+//      long long *mspa[BLOCK_ID];
+//      long long *mspa[ELEMENTS_IN_BLOCK];
 {
-  int i, b;
+  long long i, b;
 
   delete[] coord;
   delete[] mspa[ELEM_ORDER_MAP];
@@ -403,11 +403,11 @@ void Mesh_Specification::Zero_Set()
 // Set the mesh object to correspond to the empty mesh.
 {
 
-  for(int i = 0; i < NUM_MSIA;i ++)msia[i] = 0;
-  for(int i = 0; i < NUM_MSPA;i ++)mspa[i] = NULL;
-  for(int i = 0; i < NUM_MSPPA;i ++)msppa[i] = NULL;
-  for(int i = 0; i < NUM_MSPPDA;i ++)msppda[i] = NULL;
-  for(int i = 0; i < NUM_MSPSA;i ++)mspsa[i] = NULL;
+  for(long long i = 0; i < NUM_MSIA;i ++)msia[i] = 0;
+  for(long long i = 0; i < NUM_MSPA;i ++)mspa[i] = NULL;
+  for(long long i = 0; i < NUM_MSPPA;i ++)msppa[i] = NULL;
+  for(long long i = 0; i < NUM_MSPPDA;i ++)msppda[i] = NULL;
+  for(long long i = 0; i < NUM_MSPSA;i ++)mspsa[i] = NULL;
 
   coord                    = NULL;
   qa_strings               = NULL;
@@ -428,13 +428,13 @@ void Mesh_Specification::Free()
 }
 
 /*****************************************************************************/
-void Mesh_Specification::Parallel_Data_Size(int i_num_internal_nodes,
-				  int i_num_border_nodes, 
-				  int i_num_external_nodes,
-				  int i_num_internal_elems, 
-				  int i_num_border_elems,
-				  int i_num_node_comm_maps,
-				  int i_num_elem_comm_maps)
+void Mesh_Specification::Parallel_Data_Size(long long i_num_internal_nodes,
+				  long long i_num_border_nodes, 
+				  long long i_num_external_nodes,
+				  long long i_num_internal_elems, 
+				  long long i_num_border_elems,
+				  long long i_num_node_comm_maps,
+				  long long i_num_elem_comm_maps)
 /*****************************************************************************/
 {
   msia[NUM_INTERNAL_NODES] = i_num_internal_nodes;
@@ -453,12 +453,12 @@ void Mesh_Specification::Parallel_Data_Size(int i_num_internal_nodes,
 void Mesh_Specification::Allocate_Locational_Data()
 /*****************************************************************************/
 {
-  if(msia[NUM_INTERNAL_ELEMS]) mspa[INTERNAL_ELEMENTS] = new int[msia[NUM_INTERNAL_ELEMS]];
-  if(msia[NUM_BORDER_ELEMS])   mspa[BORDER_ELEMENTS]   = new int[msia[NUM_BORDER_ELEMS]];
+  if(msia[NUM_INTERNAL_ELEMS]) mspa[INTERNAL_ELEMENTS] = new long long[msia[NUM_INTERNAL_ELEMS]];
+  if(msia[NUM_BORDER_ELEMS])   mspa[BORDER_ELEMENTS]   = new long long[msia[NUM_BORDER_ELEMS]];
  
-  if(msia[NUM_INTERNAL_NODES]) mspa[INTERNAL_NODES]    = new int[msia[NUM_INTERNAL_NODES]];
-  if(msia[NUM_BORDER_NODES])   mspa[BORDER_NODES]      = new int[msia[NUM_BORDER_NODES]];
-  if(msia[NUM_EXTERNAL_NODES]) mspa[EXTERNAL_NODES]    = new int[msia[NUM_EXTERNAL_NODES]];
+  if(msia[NUM_INTERNAL_NODES]) mspa[INTERNAL_NODES]    = new long long[msia[NUM_INTERNAL_NODES]];
+  if(msia[NUM_BORDER_NODES])   mspa[BORDER_NODES]      = new long long[msia[NUM_BORDER_NODES]];
+  if(msia[NUM_EXTERNAL_NODES]) mspa[EXTERNAL_NODES]    = new long long[msia[NUM_EXTERNAL_NODES]];
 }
 
 /*****************************************************************************/
@@ -478,18 +478,18 @@ void Mesh_Specification::Allocate_LoadBal_Data()
 /*****************************************************************************/
 {
   if(msia[NUM_NODE_COMM_MAPS]) {
-    mspa[NODE_CMAP_NODE_CNTS]  = new int[msia[NUM_NODE_COMM_MAPS]];
-    mspa[NODE_CMAP_IDS]        = new int[msia[NUM_NODE_COMM_MAPS]];
-    msppa[COMM_NODE_IDS]        = new int*[msia[NUM_NODE_COMM_MAPS]];
-    msppa[COMM_NODE_PROC_IDS]   = new int*[msia[NUM_NODE_COMM_MAPS]];
+    mspa[NODE_CMAP_NODE_CNTS]  = new long long[msia[NUM_NODE_COMM_MAPS]];
+    mspa[NODE_CMAP_IDS]        = new long long[msia[NUM_NODE_COMM_MAPS]];
+    msppa[COMM_NODE_IDS]        = new long long*[msia[NUM_NODE_COMM_MAPS]];
+    msppa[COMM_NODE_PROC_IDS]   = new long long*[msia[NUM_NODE_COMM_MAPS]];
   }
 
   if(msia[NUM_ELEM_COMM_MAPS]) {
-    mspa[ELEM_CMAP_ELEM_CNTS]  = new int[msia[NUM_ELEM_COMM_MAPS]];
-    mspa[ELEM_CMAP_IDS]        = new int[msia[NUM_ELEM_COMM_MAPS]];
-    msppa[COMM_ELEM_IDS]        = new int*[msia[NUM_ELEM_COMM_MAPS]];
-    msppa[COMM_SIDE_IDS]        = new int*[msia[NUM_ELEM_COMM_MAPS]];
-    msppa[COMM_ELEM_PROC_IDS]   = new int*[msia[NUM_ELEM_COMM_MAPS]];
+    mspa[ELEM_CMAP_ELEM_CNTS]  = new long long[msia[NUM_ELEM_COMM_MAPS]];
+    mspa[ELEM_CMAP_IDS]        = new long long[msia[NUM_ELEM_COMM_MAPS]];
+    msppa[COMM_ELEM_IDS]        = new long long*[msia[NUM_ELEM_COMM_MAPS]];
+    msppa[COMM_SIDE_IDS]        = new long long*[msia[NUM_ELEM_COMM_MAPS]];
+    msppa[COMM_ELEM_PROC_IDS]   = new long long*[msia[NUM_ELEM_COMM_MAPS]];
   }
 }
   
@@ -498,24 +498,24 @@ void Mesh_Specification::Allocate_Global_Data()
 /*****************************************************************************/
 {
   if( msia[NUM_ELM_BLKS_GLOBAL] ){
-    mspa[ELEM_BLK_IDS_GLOBAL] = new int[msia[NUM_ELM_BLKS_GLOBAL]];
-    mspa[ELEM_BLK_CNTS_GLOBAL] = new int[msia[NUM_ELM_BLKS_GLOBAL]];
+    mspa[ELEM_BLK_IDS_GLOBAL] = new long long[msia[NUM_ELM_BLKS_GLOBAL]];
+    mspa[ELEM_BLK_CNTS_GLOBAL] = new long long[msia[NUM_ELM_BLKS_GLOBAL]];
   }
   if( msia[NUM_NODE_SETS_GLOBAL] ){
-    mspa[NS_IDS_GLOBAL] = new int[msia[NUM_NODE_SETS_GLOBAL]];
-    mspa[NS_CNTS_GLOBAL] = new int[msia[NUM_NODE_SETS_GLOBAL]];
-    mspa[NS_DF_CNTS_GLOBAL] = new int[msia[NUM_NODE_SETS_GLOBAL]];
-    for(int i = 0; i < msia[NUM_NODE_SETS_GLOBAL]; i++){
+    mspa[NS_IDS_GLOBAL] = new long long[msia[NUM_NODE_SETS_GLOBAL]];
+    mspa[NS_CNTS_GLOBAL] = new long long[msia[NUM_NODE_SETS_GLOBAL]];
+    mspa[NS_DF_CNTS_GLOBAL] = new long long[msia[NUM_NODE_SETS_GLOBAL]];
+    for(long long i = 0; i < msia[NUM_NODE_SETS_GLOBAL]; i++){
       mspa[NS_IDS_GLOBAL][i] = 0;
       mspa[NS_DF_CNTS_GLOBAL][i] = 0;
       mspa[NS_DF_CNTS_GLOBAL][i] = 0;
     }  
   }
   if( msia[NUM_SIDE_SETS_GLOBAL] ){
-    mspa[SS_IDS_GLOBAL] = new int[msia[NUM_SIDE_SETS_GLOBAL]];
-    mspa[SS_CNTS_GLOBAL] = new int[msia[NUM_SIDE_SETS_GLOBAL]];
-    mspa[SS_DF_CNTS_GLOBAL] = new int[msia[NUM_SIDE_SETS_GLOBAL]];
-    for(int i = 0; i < msia[NUM_SIDE_SETS_GLOBAL];i ++){
+    mspa[SS_IDS_GLOBAL] = new long long[msia[NUM_SIDE_SETS_GLOBAL]];
+    mspa[SS_CNTS_GLOBAL] = new long long[msia[NUM_SIDE_SETS_GLOBAL]];
+    mspa[SS_DF_CNTS_GLOBAL] = new long long[msia[NUM_SIDE_SETS_GLOBAL]];
+    for(long long i = 0; i < msia[NUM_SIDE_SETS_GLOBAL];i ++){
       mspa[SS_IDS_GLOBAL][i] = 0;
       mspa[SS_CNTS_GLOBAL][i] = 0;
       mspa[SS_DF_CNTS_GLOBAL][i] = 0;
@@ -545,10 +545,10 @@ void Mesh_Specification::Free_Global_Data()
 
 //DMH the Rank here is redundant...
 /*****************************************************************************/
-void Mesh_Specification::Global_Data_Size( int Num_Nodes_Global, int Num_Elems_Global,
-                                  int Num_Elem_Blks, int Num_Node_Sets,
-                                  int Num_Side_Sets, int Num_Total_Procs,
-				  int Rank) 
+void Mesh_Specification::Global_Data_Size( long long Num_Nodes_Global, long long Num_Elems_Global,
+                                  long long Num_Elem_Blks, long long Num_Node_Sets,
+                                  long long Num_Side_Sets, long long Num_Total_Procs,
+				  long long Rank) 
 /*****************************************************************************/
 {
   msia[NUM_NODES_GLOBAL] = Num_Nodes_Global;
@@ -569,20 +569,20 @@ void Mesh_Specification::Global_Data_Size( int Num_Nodes_Global, int Num_Elems_G
 void Mesh_Specification::Allocate_Parallel_Data()
 /*****************************************************************************/
 {
-  register int i;
+  register long long i;
 
   for(i = 0; i < msia[NUM_NODE_COMM_MAPS]; i++) {
     if(mspa[NODE_CMAP_NODE_CNTS][i]) {
-      msppa[COMM_NODE_IDS][i] = new int[mspa[NODE_CMAP_NODE_CNTS][i]];
-      msppa[COMM_NODE_PROC_IDS][i] = new int[mspa[NODE_CMAP_NODE_CNTS][i]];
+      msppa[COMM_NODE_IDS][i] = new long long[mspa[NODE_CMAP_NODE_CNTS][i]];
+      msppa[COMM_NODE_PROC_IDS][i] = new long long[mspa[NODE_CMAP_NODE_CNTS][i]];
     }
   }
    
   for(i = 0; i < msia[NUM_ELEM_COMM_MAPS]; i++) {
     if(mspa[ELEM_CMAP_ELEM_CNTS][i]) {
-      msppa[COMM_ELEM_IDS][i] = new int[mspa[ELEM_CMAP_ELEM_CNTS][i]];
-      msppa[COMM_SIDE_IDS][i] = new int[mspa[ELEM_CMAP_ELEM_CNTS][i]];
-      msppa[COMM_ELEM_PROC_IDS][i] = new int[mspa[ELEM_CMAP_ELEM_CNTS][i]];
+      msppa[COMM_ELEM_IDS][i] = new long long[mspa[ELEM_CMAP_ELEM_CNTS][i]];
+      msppa[COMM_SIDE_IDS][i] = new long long[mspa[ELEM_CMAP_ELEM_CNTS][i]];
+      msppa[COMM_ELEM_PROC_IDS][i] = new long long[mspa[ELEM_CMAP_ELEM_CNTS][i]];
     }
   }
    
@@ -593,7 +593,7 @@ void Mesh_Specification::Allocate_Parallel_Data()
 void Mesh_Specification::Free_Parallel_Data()
 /*****************************************************************************/
 {
-  register int i;
+  register long long i;
 
   for(i = 0; i < msia[NUM_NODE_COMM_MAPS]; i++) {
     if(mspa[NODE_CMAP_NODE_CNTS][i]) {

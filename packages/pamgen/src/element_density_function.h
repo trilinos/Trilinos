@@ -24,7 +24,7 @@ private:
   std::string                     application_direction;
   PG_RuntimeCompiler::Function  _function;
   double * running_sum;
-  static const int running_sum_length = 10000;
+  static const long long running_sum_length = 10000;
   bool integrated; // has this been integrated
   double integral_total;//Total integration sum
   double max_eval;//maximum finction evaluates to during integration

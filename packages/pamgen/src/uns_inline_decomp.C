@@ -11,7 +11,7 @@ namespace PAMGEN_NEVADA {
 //! Recursive function to find the id of the processor on which 
 //! the element in question resides.
 /****************************************************************************/
-  int Partition::Element_Proc(int Ginds[])
+  long long Partition::Element_Proc(long long Ginds[])
   /****************************************************************************/
   {
     if(high == NULL)return proc_id;
@@ -29,26 +29,26 @@ namespace PAMGEN_NEVADA {
   {
   }
 }
-int PAMGEN_NEVADA::Partition::partition_count = 0;
+long long PAMGEN_NEVADA::Partition::partition_count = 0;
 
 namespace PAMGEN_NEVADA {
   
   //! Bisects the a partition and adds the results to the_list.
   /****************************************************************************/
   void   Partition::Processor_Partition(std::vector < Partition * > & the_list,
-					int inc_nels[])
+					long long inc_nels[])
   /****************************************************************************/
   {
     // the following should never happen
     assert(high == NULL);
     assert(low  == NULL);
-    int l_lows[3];
-    int h_lows[3];
-    int h_highs[3];
-    int l_highs[3];
-    int dels[3];
+    long long l_lows[3];
+    long long h_lows[3];
+    long long h_highs[3];
+    long long l_highs[3];
+    long long dels[3];
     //assign same highs and lows initially and calculate ranges
-    for(int i = 0 ; i < 3; i ++){
+    for(long long i = 0 ; i < 3; i ++){
       dels[i] = highs[i]-lows[i];
       l_lows[i] = lows[i];
       h_lows[i] = lows[i];
@@ -66,7 +66,7 @@ namespace PAMGEN_NEVADA {
     
     assert(dels[split_direction]>1);
     //The following prevents remainder building up on last cut.
-    int local_split_size = inc_nels[split_direction];
+    long long local_split_size = inc_nels[split_direction];
     
     if((dels[split_direction]%remaining_cuts[split_direction]) >= 1)local_split_size ++;
     

@@ -97,9 +97,11 @@ PARSER = $(srcdir)/../parser/InputBlock.C \
 	$(srcdir)/../parser/token_value.h 
 
 MS_LT = $(srcdir)/../mesh_spec_lt/im_ex_c_interface.C \
+	$(srcdir)/../mesh_spec_lt/im_ex_c_interface_l.C \
 	$(srcdir)/../mesh_spec_lt/im_exodusII.h \
 	$(srcdir)/../mesh_spec_lt/im_exodusII_ext.h \
 	$(srcdir)/../mesh_spec_lt/im_ne_c_interface.C \
+	$(srcdir)/../mesh_spec_lt/im_ne_c_interface_l.C \
 	$(srcdir)/../mesh_spec_lt/im_ne_nemesisI.h \
 	$(srcdir)/../mesh_spec_lt/mesh_specification.C \
 	$(srcdir)/../mesh_spec_lt/mesh_specification.h

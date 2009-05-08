@@ -54,113 +54,113 @@ class Radial_Trisection_Inline_Mesh_Desc : public Radial_Inline_Mesh_Desc
 {
 public:
   
-  Radial_Trisection_Inline_Mesh_Desc(int dim){dimension = dim;};
+  Radial_Trisection_Inline_Mesh_Desc(long long dim){dimension = dim;};
   
   virtual ~Radial_Trisection_Inline_Mesh_Desc(){
     if(tri_block_cum_nn)delete []  tri_block_cum_nn;
   };
   
-  virtual int Set_Up();
+  virtual long long Set_Up();
   virtual void calculateSize(long long & total_el_count, 
 			     long long & total_node_count, 
 			     long long & total_edge_count);
   virtual void setStrides();
   virtual void Calc_Intervals();
-  virtual int Calc_Coord_Vectors();
+  virtual long long Calc_Coord_Vectors();
 
-  virtual int numBlocks(){return((inline_bx-1)*inline_by+1)*inline_bz;}
-  virtual int blockKstride(){return(inline_bx-1)*inline_by+1;}
+  virtual long long numBlocks(){return((inline_bx-1)*inline_by+1)*inline_bz;}
+  virtual long long blockKstride(){return(inline_bx-1)*inline_by+1;}
 
-  virtual int GlobalNumElements();
+  virtual long long GlobalNumElements();
 
 
   Vector calc_coords_periodic_trisect_blocks(double total_theta,
-					     int nl,
-					     int ni, 
-					     int nj, 
-					     int nk,
+					     long long nl,
+					     long long ni, 
+					     long long nj, 
+					     long long nk,
 					     Quad_Patch ** quads);
 
   virtual void Populate_Coords(Real * coords,   
-		       std::vector<int> & global_node_vector, 
-		       std::map <int, int> & global_node_map,
-		       int num_nodes);
+		       std::vector<long long> & global_node_vector, 
+		       std::map <long long, long long> & global_node_map,
+		       long long num_nodes);
 
-  LoopLimits get_tri_block_limits(int l, Topo_Loc tl, Topo_Loc & ntl, int nodeset_plus_1);
+  LoopLimits get_tri_block_limits(long long l, Topo_Loc tl, Topo_Loc & ntl, long long nodeset_plus_1);
 
-  int GetBlockBasedGlobalID(int the_el,int bct);
+  long long GetBlockBasedGlobalID(long long the_el,long long bct);
 
-  virtual void getGlobal_Element_Block_Totals(int *);
+  virtual void getGlobal_Element_Block_Totals(long long *);
 
-  virtual int Populate_Sideset_Info(std::map <int, int> & global_element_map,
-			     std::map <int, int> & global_node_map,
-			     int * const * side_set_elements,
-			     int * const * side_set_faces,
-			     int * const * side_set_nodes,
-			     int * const * side_set_node_counter);
+  virtual long long Populate_Sideset_Info(std::map <long long, long long> & global_element_map,
+			     std::map <long long, long long> & global_node_map,
+			     long long * const * side_set_elements,
+			     long long * const * side_set_faces,
+			     long long * const * side_set_nodes,
+			     long long * const * side_set_node_counter);
 
-  virtual Partition * Decompose(std::list <int> & global_el_ids,int & err_codes);
+  virtual Partition * Decompose(std::list <long long> & global_el_ids,long long & err_codes);
 
-  virtual void Build_Global_Lists(std::list <int> & element_list, 
-			  std::vector <int> & element_vector,
-			  std::list <int> & global_node_list,
-			  std::vector <int> & global_node_vector,
-			  std::map <int, int> & global_node_map,
-			  std::map <int, int> & global_element_map);
+  virtual void Build_Global_Lists(std::list <long long> & element_list, 
+			  std::vector <long long> & element_vector,
+			  std::list <long long> & global_node_list,
+			  std::vector <long long> & global_node_vector,
+			  std::map <long long, long long> & global_node_map,
+			  std::map <long long, long long> & global_element_map);
 
   virtual void Calc_Serial_Component(Partition * my_part,
-			     std::vector <int> & element_vector,
-			     std::list <int> & global_node_list,
-			     std::vector<int> & global_node_vector,
-			     std::map <int, int> & global_node_map,
-			     std::map <int, int> & global_element_map);
+			     std::vector <long long> & element_vector,
+			     std::list <long long> & global_node_list,
+			     std::vector<long long> & global_node_vector,
+			     std::map <long long, long long> & global_node_map,
+			     std::map <long long, long long> & global_element_map);
 
 virtual  void Calc_Parallel_Info(
-			 std::vector <int> & element_vector,
-			 std::vector<int> & global_node_vector,
-			 std::map <int, int> & global_node_map,                             
-			 std::list <int> & internal_node_list,
-			 std::list <int> & border_nodes_list,
-			 std::list <int> & internal_element_list,
-			 std::list <int> & border_elements_list,
-			 std::list <int> & node_proc_id_list,
-			 std::list <int> & element_proc_id_list,
-			 std::vector <int> & node_neighbor_vector,
-			 std::list <int>  * & boundary_node_list,
-			 std::vector <int> & element_neighbor_vector,
-			 std::list <std::pair <int ,Topo_Loc > > * & boundary_element_list);
+			 std::vector <long long> & element_vector,
+			 std::vector<long long> & global_node_vector,
+			 std::map <long long, long long> & global_node_map,                             
+			 std::list <long long> & internal_node_list,
+			 std::list <long long> & border_nodes_list,
+			 std::list <long long> & internal_element_list,
+			 std::list <long long> & border_elements_list,
+			 std::list <long long> & node_proc_id_list,
+			 std::list <long long> & element_proc_id_list,
+			 std::vector <long long> & node_neighbor_vector,
+			 std::list <long long>  * & boundary_node_list,
+			 std::vector <long long> & element_neighbor_vector,
+			 std::list <std::pair <long long ,Topo_Loc > > * & boundary_element_list);
 
-  virtual void Populate_Connectivity(int * const * conn_array, 
-				     std::map <int, int> & global_node_map);
+  virtual void Populate_Connectivity(long long * const * conn_array, 
+				     std::map <long long, long long> & global_node_map);
 
-  virtual void Populate_Map_and_Global_Element_List(int * map, int * gel);
+  virtual void Populate_Map_and_Global_Element_List(long long * map, long long * gel);
 
-  virtual int Rename_Block_BC_Sets();
+  virtual long long Rename_Block_BC_Sets();
 
-  virtual void get_l_i_j_k_from_element_number(int el,
-				       int & l,
-				       int & i,
-				       int & j,
-				       int & k);
+  virtual void get_l_i_j_k_from_element_number(long long el,
+				       long long & l,
+				       long long & i,
+				       long long & j,
+				       long long & k);
 
-  virtual void get_l_i_j_k_from_node_number(int nn,
-			     int & l,
-			     int & i,
-			     int & j,
-			     int & k);
+  virtual void get_l_i_j_k_from_node_number(long long nn,
+			     long long & l,
+			     long long & i,
+			     long long & j,
+			     long long & k);
 
-  virtual int get_element_number_from_l_i_j_k(int l, int i, int j, int k);
-  virtual int get_node_number_from_l_i_j_k(int l, int i, int j, int k);
+  virtual long long get_element_number_from_l_i_j_k(long long l, long long i, long long j, long long k);
+  virtual long long get_node_number_from_l_i_j_k(long long l, long long i, long long j, long long k);
   
-  void get_l_and_remainder_from_elno(int el, int & l, int & remainder);
-  void get_l_and_remainder_from_node_number(int el, int & l, int & remainder);
+  void get_l_and_remainder_from_elno(long long el, long long & l, long long & remainder);
+  void get_l_and_remainder_from_node_number(long long el, long long & l, long long & remainder);
 
-  virtual int Element_Proc(int);
+  virtual long long Element_Proc(long long);
     
-  int * tri_block_cum_nn;
-  int nn_center;
-  int div;
-  int mod;
+  long long * tri_block_cum_nn;
+  long long nn_center;
+  long long div;
+  long long mod;
 };
 
 }//end namespace

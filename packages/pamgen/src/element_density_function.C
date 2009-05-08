@@ -35,10 +35,10 @@ void Element_Density_Function::Display_Class(std::ostream& s, const std::string 
   double gdelta = delta_var/(double)(X_POINTS-1);
   double ydelta = (max_eval - min_eval)/(double)(Y_POINTS-1);
 
-  for(int ict = 0; ict < X_POINTS; ict ++){
+  for(long long ict = 0; ict < X_POINTS; ict ++){
     input_var = min_eval_range + (double)(ict)*gdelta;
     _function.execute();
-    for(int jct = 0; jct < Y_POINTS; jct ++){
+    for(long long jct = 0; jct < Y_POINTS; jct ++){
       if((output_var >= (min_eval-ydelta/2.0 + ydelta*(double)jct)) 
          && (output_var <=  (min_eval + ydelta/2.0 + ydelta*(double)jct))){
         gchars[ict][jct] = '*';
@@ -49,7 +49,7 @@ void Element_Density_Function::Display_Class(std::ostream& s, const std::string 
     }
   }
 
-  for(int jct = Y_POINTS-1; jct >= 0; jct --){  
+  for(long long jct = Y_POINTS-1; jct >= 0; jct --){  
     input_var = min_eval_range + (double)(jct)*gdelta;
     _function.execute();
     char char_array[10];
@@ -58,7 +58,7 @@ void Element_Density_Function::Display_Class(std::ostream& s, const std::string 
     sprintf(char_array,"%6.2e",var);
     
     s <<  char_array  << "\t|";
-    for(int ict = 0; ict < X_POINTS; ict ++){
+    for(long long ict = 0; ict < X_POINTS; ict ++){
       s << gchars[ict][jct];
     }
     s << std::endl;
@@ -103,7 +103,7 @@ void Element_Density_Function::Integrate(double start_var, double end_var,std::s
   min_eval_range = start_var;
   max_eval_range = end_var;
 
-  int num_points = running_sum_length + 1;
+  long long num_points = running_sum_length + 1;
   running_sum = new double[num_points];
   double input_var = 0.;
   double * ivp = & input_var;
@@ -123,7 +123,7 @@ void Element_Density_Function::Integrate(double start_var, double end_var,std::s
   min_eval = max_eval = output_var;
 
   // cumulative trapezoidal rule integration
-  for(int i = 1; i < num_points; i ++){
+  for(long long i = 1; i < num_points; i ++){
 
     input_var = min_eval_range + (double)(i-1)*delta;
     _function.execute();
@@ -150,7 +150,7 @@ void Element_Density_Function::Integrate(double start_var, double end_var,std::s
     running_sum[i] = integral_total/2.0;
   }
   integral_total = integral_total/2.0;
-  for(int i = 0; i < num_points; i ++){
+  for(long long i = 0; i < num_points; i ++){
     running_sum[i]/=integral_total;
   }
 }
@@ -160,8 +160,8 @@ void Element_Density_Function::Integrate(double start_var, double end_var,std::s
 double Element_Density_Function::Interpolate(double incoming_var, std::stringstream & es)
 /*****************************************************************************/
 {
-  int num_points = running_sum_length + 1;
-  for(int i = 0; i < num_points; i ++){
+  long long num_points = running_sum_length + 1;
+  for(long long i = 0; i < num_points; i ++){
     if(running_sum[i] == incoming_var)return (double)i/(double)running_sum_length; 
     if(running_sum[i+1] == incoming_var)return (double)(i+1)/(double)running_sum_length; 
     if(incoming_var > running_sum[i] && incoming_var < running_sum[i+1]){
