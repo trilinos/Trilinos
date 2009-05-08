@@ -470,14 +470,14 @@ Package: Pamgen
 
 Package Transition Lead: David Hensinger (dmhensi@sandia.gov)
 
-Status: Has basic CMake support for libraries but there are a bunch of unix
-shell scripts that need to be converted over.  An extended CTest macros and
-script wrapper system needs to be created that would allow all of these tests
-to be stated in CMake form.
+Status: Thanks to the patient and very competent assistance of Brent Pershbaker
+all tests have been moved over to ctest. The library and test executables 
+are building with cmake. Additional functionality and support for the external
+libraies Nemesis and Exodus have been added.
 
-Final Certification Date: [???]
+Final Certification Date: 05/08/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: Tests converted to ctest and are identical to autotests
 
 -------------------------------------------------------------------------------
 
