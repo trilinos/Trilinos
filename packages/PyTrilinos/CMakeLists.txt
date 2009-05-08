@@ -32,6 +32,10 @@ INCLUDE(PackageMacros)
 # Set the package name
 PACKAGE(PyTrilinos DISABLE_STRONG_WARNINGS)
 
+IF(NOT BUILD_SHARED_LIBS)
+  MESSAGE(FATAL_ERROR "PyTrilinos can only be built with shared libraries. Building of shared libraries is currently set to OFF. To enable shared libraries please set the cache variable \"BUILD_SHARED_LIBS\" to ON")
+ENDIF()
+
 # Set the package version number
 SET(${PACKAGE_NAME}_VERSION 4.2d)
 
