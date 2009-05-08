@@ -54,11 +54,11 @@ FUNCTION(PAMGEN_ADD_TEST_L  FILE_IDX_EXT)
 
   SET( RES_FILES ${RES_FILES} ${RES_FILE} PARENT_SCOPE )
 
-  SET( TMP_FILE ${CMAKE_CURRENT_BINARY_DIR}/temp_file_${FILE_IDX_EXT} )
+  SET( TMP_FILE ${CMAKE_CURRENT_BINARY_DIR}/temp_file_l_${FILE_IDX_EXT} )
 
   PACKAGE_ADD_ADVANCED_TEST(
     run_test_script_l_${FILE_IDX_EXT}
-    TEST_0 EXEC pamgen_test_driver NOEXEPREFIX
+    TEST_0 EXEC pamgen_test_driver_l NOEXEPREFIX
       ARGS ${ARGN}
       OUTPUT_FILE ${TMP_FILE}
       NO_ECHO_OUTPUT
@@ -73,6 +73,8 @@ ENDFUNCTION()
 #
 # Define the tests
 #
+
+PAMGEN_ADD_TEST_L( 01 -f lbrick.txt -r 9999 -n 10000 -d 3 )
 
 PAMGEN_ADD_TEST( 01 -f mesh.txt -r 1 -n 3 -d 3 )
 PAMGEN_ADD_TEST( 02 -f mesh.txt -r 2 -n 3 -d 3 )
@@ -124,6 +126,6 @@ PAMGEN_ADD_TEST( 44 -f ur.txt -r 0 -n 1 -d 3)
 #
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
-  SOURCE_FILES geom_warp2d.txt uded.txt ur.txt  report17.txt report16.txt report15.txt report14.txt report13.txt report12.txt report11.txt report9.txt report10.txt report7.txt report8.txt report6.txt report4.txt report5.txt report3.txt report2.txt report1.txt geom_warp.txt ui2d.txt ui.txt mesh.txt brick.txt tri.txt tri_proc.txt 2dtri.txt 2dtribis.txt hbrick.txt 3dbj.txt trisect_multi_theta.txt trisect_multi_theta_2d.txt ${RES_FILES}
+  SOURCE_FILES geom_warp2d.txt uded.txt ur.txt  report17.txt report16.txt report15.txt report14.txt report13.txt report12.txt report11.txt report9.txt report10.txt report7.txt report8.txt report6.txt report4.txt report5.txt report3.txt report2.txt report1.txt geom_warp.txt ui2d.txt ui.txt mesh.txt lbrick.txt brick.txt tri.txt tri_proc.txt 2dtri.txt 2dtribis.txt hbrick.txt 3dbj.txt trisect_multi_theta.txt trisect_multi_theta_2d.txt ${RES_FILES}
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_files
   )
