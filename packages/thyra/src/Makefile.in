@@ -308,7 +308,7 @@ SUPPORT_OPERATOR_VECTOR_CLIENT_SUPPORT_H = \
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultAddedLinearOp.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultAddedLinearOpDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultBlockedLinearOp.hpp\
-  $(srcdir)/support/operator_vector/client_support/Thyra_DefaultBlockedLinearOpDecl.hpp\
+  $(srcdir)/support/operator_vector/client_support/Thyra_DefaultBlockedLinearOp_decl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultColumnwiseMultiVector.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultColumnwiseMultiVectorDecl.hpp\
   $(srcdir)/support/operator_vector/client_support/Thyra_DefaultDiagonalLinearOp.hpp\
