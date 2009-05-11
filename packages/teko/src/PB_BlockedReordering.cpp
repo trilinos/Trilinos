@@ -59,7 +59,7 @@ int BlockReorderManager::LargestIndex() const
 {
    int max = 0;
    for(int i=0;i<children_.size();i++) {
-      // siff if current child is larger 
+      // see if current child is larger 
       if(children_[i]!=Teuchos::null) {
          int subMax = children_[i]->LargestIndex();
          max = max > subMax ? max : subMax;

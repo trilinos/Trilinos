@@ -6,15 +6,16 @@
 // Thyra includes
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
-#include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_ProductMultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
+#include "Thyra_DefaultZeroLinearOp.hpp"
 
 namespace PB {
 
@@ -22,6 +23,10 @@ using Thyra::multiply;
 using Thyra::scale;
 using Thyra::add;
 using Thyra::identity;
+using Thyra::zero; // make it to take one argument (square matrix)
+using Thyra::block2x2;
+using Thyra::block2x1;
+using Thyra::block1x2;
 
 /** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
   *

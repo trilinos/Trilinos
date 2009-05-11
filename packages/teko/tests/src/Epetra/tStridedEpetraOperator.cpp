@@ -60,6 +60,7 @@ int tStridedEpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
 
    failstrm << "tStridedEpetraOperator";
 
+/*
    status = test_numvars_constr(verbosity,failstrm);
    allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"numvars_constr\" ... PASSED","   \"numvars_constr\" ... FAILED");
@@ -71,20 +72,27 @@ int tStridedEpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
    PB_TEST_MSG(stdstrm,1,"   \"vector_constr\" ... PASSED","   \"vector_constr\" ... FAILED");
    failcount += status ? 0 : 1;
    totalrun++; 
+*/
 
-   status = test_reorder(verbosity,failstrm,false);
+   status = test_reorder(verbosity,failstrm,0);
    allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"reorder(flat reorder)\" ... PASSED","   \"reorder(flat reorder)\" ... FAILED");
    failcount += status ? 0 : 1;
    totalrun++;
 
-#if 0
-   status = test_reorder(verbosity,failstrm,true);
+   status = test_reorder(verbosity,failstrm,1);
    allTests &= status;
-   PB_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder)\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
+   PB_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 1 
+                      << ")\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
    failcount += status ? 0 : 1;
    totalrun++;
-#endif
+
+   status = test_reorder(verbosity,failstrm,2);
+   allTests &= status;
+   PB_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 2 
+                      << ")\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
+   failcount += status ? 0 : 1;
+   totalrun++;
 
    status = allTests;
    if(verbosity >= 10) {
@@ -225,7 +233,7 @@ bool tStridedEpetraOperator::test_vector_constr(int verbosity,std::ostream & os)
    return allPassed;
 }
 
-bool tStridedEpetraOperator::test_reorder(int verbosity,std::ostream & os,bool total)
+bool tStridedEpetraOperator::test_reorder(int verbosity,std::ostream & os,int total)
 {
    bool status = false;
    bool allPassed = true;
@@ -259,18 +267,27 @@ bool tStridedEpetraOperator::test_reorder(int verbosity,std::ostream & os,bool t
    PB::Epetra::StridedEpetraOperator reorderShell(3,A,"Ar");
  
    PB::BlockReorderManager brm;
-   if(total) {
+   switch (total) {
+   case 0:
+      brm.SetNumBlocks(3);
+      brm.SetBlock(0,1);
+      brm.SetBlock(1,0);
+      brm.SetBlock(2,2);
+      break;
+   case 1:
       brm.SetNumBlocks(2);
       brm.SetBlock(0,1);
       brm.GetBlock(1)->SetNumBlocks(2);
       brm.GetBlock(1)->SetBlock(0,0);
       brm.GetBlock(1)->SetBlock(1,2);
-   }
-   else {
-      brm.SetNumBlocks(3);
-      brm.SetBlock(0,1);
-      brm.SetBlock(1,0);
-      brm.SetBlock(2,2);
+      break;
+   case 2:
+      brm.SetNumBlocks(2);
+      brm.GetBlock(0)->SetNumBlocks(2);
+      brm.GetBlock(0)->SetBlock(0,0);
+      brm.GetBlock(0)->SetBlock(1,2);
+      brm.SetBlock(1,1);
+      break;
    }
    reorderShell.Reorder(brm);
    TEST_MSG("\n   tStridedEpetraOperator::test_reorder" << tstr << ": patern = " << brm.toString());

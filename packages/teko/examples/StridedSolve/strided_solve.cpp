@@ -80,10 +80,19 @@ int main(int argc,char * argv[])
    #else
       Epetra_SerialComm Comm;
    #endif
+
+
+   std::string solveName = "Amesos";
+   if(argc>1)
+      solveName = argv[1];
+
+   std::cout << "Using \"" << solveName << "\" for approximate solve" << std::endl;
  
    // get process information
    int numProc = Comm.NumProc();
    int myPID   = Comm.MyPID();
+
+   std::cout << "MPI_PID = " << myPID << ", UNIX_PID = " << getpid() << std::endl;
 
    // output garbage
    *out << "Approaching Barrier: proc = " << numProc << ", pid = " << myPID << std::endl;
@@ -110,8 +119,8 @@ int main(int argc,char * argv[])
    PB::Epetra::StridedEpetraOperator sA(vec,A);
 
    double alpha = 0.9;
-   RCP<const PB::InverseFactory> inverse = PB::invFactoryFromParamList(*paramList,"Amesos");
-#if 0
+   RCP<const PB::InverseFactory> inverse = PB::invFactoryFromParamList(*paramList,solveName);
+#if 1
    RCP<PB::BlockPreconditionerFactory> precFact 
          = rcp(new PB::NS::SIMPLEPreconditionerFactory(inverse,alpha));
 #else
@@ -119,12 +128,16 @@ int main(int argc,char * argv[])
    RCP<PB::BlockPreconditionerFactory> precFact = rcp(new PB::NS::LSCPreconditionerFactory(precStrat));
 #endif
 
+   std::cout << "Preconditioner factory built" << std::endl;
    PB::Epetra::EpetraBlockPreconditioner prec(precFact);
    prec.buildPreconditioner(sA);
+
+   std::cout << "Preconditioner built" << std::endl;
 
    Epetra_LinearProblem problem(&*A,&*x,&*b);
 
    // build solver
+   std::cout << "Setting solver parameters" << std::endl;
    AztecOO::AztecOO solver(problem);
    solver.SetAztecOption(AZ_solver,AZ_gmres);
    solver.SetAztecOption(AZ_precond,AZ_none);
@@ -132,6 +145,7 @@ int main(int argc,char * argv[])
    solver.SetAztecOption(AZ_output,10);
    solver.SetPrecOperator(&prec);
 
+   std::cout << "Solving" << std::endl;
    solver.Iterate(1000,1e-5);
 
    return 0;

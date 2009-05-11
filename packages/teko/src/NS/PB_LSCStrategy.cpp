@@ -128,7 +128,6 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    bool isStabilized = (not isZeroOp(C));
 
    if(massMatrix_==Teuchos::null) {
-      std::cout << "using diagonal of F" << std::endl;
       state->invMass_ = getInvDiagonalOp(F);
       state->BQBt_ = explicitMultiply(B,state->invMass_,Bt);  
    }

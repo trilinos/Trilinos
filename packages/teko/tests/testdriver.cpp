@@ -91,8 +91,9 @@ int main(int argc,char * argv[])
       PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
       PB_ADD_UNIT_TEST(PB::Test::tEpetraLSCIntegrationTest,EpetraLSCIntegrationTest);
    }
+#else
+   PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
 #endif
-//   PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
 
    bool status = PB::Test::UnitTest::RunTests(verbosity,*termout,*failout);
 

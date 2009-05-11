@@ -174,15 +174,33 @@ EpetraOperatorWrapper::getEpetraComm(const Thyra::LinearOpBase<double>& inOp) co
   const Thyra::ConstLinearOperator<double> thyraOp = rcpFromRef(inOp); 
 
   RCP<Epetra_Comm> rtn;
-  VectorSpace<double> vs = thyraOp.domain().getBlock(0);
+  // VectorSpace<double> vs = thyraOp.domain().getBlock(0);
+  RCP<const VectorSpaceBase<double> > vs = thyraOp.domain().getBlock(0).constPtr();
 
-  RCP<const SpmdVectorSpaceBase<double> > spmd 
-    = rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(vs.constPtr());
+  // search for an SpmdVectorSpaceBase object
+  RCP<const SpmdVectorSpaceBase<double> > spmd;
+  RCP<const VectorSpaceBase<double> > current = vs;
+  while(current!=Teuchos::null) {
+     // try to cast to a product vector space first
+     RCP<const ProductVectorSpaceBase<double> > prod
+           = rcp_dynamic_cast<const ProductVectorSpaceBase<double> >(current);
 
-  TEST_FOR_EXCEPTION(!isSPMD(vs), std::runtime_error, 
+     // figure out what type it is
+     if(prod==Teuchos::null) {
+        // hopfully this is a SPMD vector space
+        spmd = rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(current);
+
+        break;
+     }
+     else {
+        // get first convenient vector space
+        current = prod->getBlock(0);
+     }
+  }
+
+  TEST_FOR_EXCEPTION(spmd==Teuchos::null, std::runtime_error, 
                      "EpetraOperatorWrapper requires std::vector space "
                      "blocks to be SPMD std::vector spaces");
-
 
   const SerialComm<int>* serialComm 
     = dynamic_cast<const SerialComm<int>*>(spmd->getComm().get());

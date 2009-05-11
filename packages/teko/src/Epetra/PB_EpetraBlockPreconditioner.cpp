@@ -43,6 +43,7 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A)
    // actually build the preconditioner
    RCP<Thyra::PreconditionerBase<double> > precObj = preconFactory_->createPrec();
    preconFactory_->initializePrec(Thyra::defaultLinearOpSource(thyraA),&*precObj,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
+
    RCP<const Thyra::LinearOpBase<double> > preconditioner = precObj->getUnspecifiedPrecOp();
 
    SetOperator(preconditioner,false);

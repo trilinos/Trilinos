@@ -65,10 +65,11 @@ LinearOp SIMPLEPreconditionerFactory
    invDiag[1] = scale(alpha_,identity(rangeSpace(invS)));
    LinearOp invU = createBlockUpperTriInverseOp(U,invDiag);
 
-   // return implicit product operator
-   std::stringstream ss;
+   // std::stringstream ss;
    // ss << "SIMPLE Preconditioner: ( inv(F) = " << invF->description()
    //    << ", inv(S) = " << invS->description() << " )";
+
+   // return implicit product operator
    return multiply(invU,invL,"SIMPLE");
 }
 
