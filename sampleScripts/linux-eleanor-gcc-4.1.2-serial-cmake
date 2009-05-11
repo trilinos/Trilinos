@@ -2,7 +2,7 @@
 # cmake script for building ML serial on Linux 64 bit workstations with the Intel blas/lapack (aka mkl)
 #
 # I suggest that you put the following line in your .cshrc file:
-#   source /usr/local/intel/mkl/10.0.3.020/tools/environment/mklvarsem64t.sh
+#   source /usr/local/intel/mkl/10.0.3.020/tools/environment/mklvarsem64t.csh
 # You can then remove "-L${MKLROOT}/lib/em64t" from TPL_BLAS_LIBRARIES and TPL_LAPACK_LIBRARIES.
 #
 source /usr/local/intel/mkl/10.0.3.020/tools/environment/mklvarsem64t.sh
