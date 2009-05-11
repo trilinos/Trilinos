@@ -5,6 +5,7 @@
 #include "Epetra_Export.h"
 #include "Epetra_Comm.h"
 
+#include <stdio.h>
 #include <fstream>
 
 #define MAX(x,y) ((x)>(y)?(x):(y))
