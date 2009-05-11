@@ -1,6 +1,11 @@
 #!/bin/sh
 # cmake script for building ML with MPI on Linux 64 bit workstations with the Intel blas/lapack (aka mkl)
-source /usr/local/intel/mkl/10.0.3.020/tools/environment/mklvarsem64t.sh
+#
+# Note: you must put the following line in your .cshrc file:
+#   source /usr/local/intel/mkl/10.0.3.020/tools/environment/mklvarsem64t.csh
+# Otherwise, you may see link failures and/or run-time errors like
+# "error while loading shared libraries: libmkl_intel_lp64.so".
+#
 export TRILINOS_HOME=/home/jhu/Trilinos/development-clean/Trilinos
 EXTRA_ARGS=$@
 
