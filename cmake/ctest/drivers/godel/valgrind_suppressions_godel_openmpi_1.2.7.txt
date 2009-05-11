@@ -58,3 +58,76 @@
    fun:PMPI_Init
    fun:main
 }
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   fun:mca_oob_tcp_msg_send_handler
+   fun:mca_oob_tcp_peer_send
+   fun:mca_oob_tcp_send_nb
+   fun:orte_iof_svc_sub_forward
+   fun:orte_iof_svc_proxy_recv
+   fun:mca_oob_tcp_msg_recv_complete
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/openmpi/mca_oob_tcp.so
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/libopen-rte.so.0.0.0
+   fun:opal_event_base_loop
+   fun:opal_progress
+   obj:/usr/lib64/openmpi/1.2.7-gcc/bin/orterun
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   fun:mca_oob_tcp_msg_send_handler
+   fun:mca_oob_tcp_peer_send
+   fun:mca_oob_tcp_send_nb
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/libopen-rte.so.0.0.0
+   fun:opal_event_base_loop
+   fun:opal_progress
+   fun:mca_oob_tcp_msg_wait
+   fun:mca_oob_tcp_recv
+   fun:mca_oob_recv_packed
+   fun:orte_gpr_proxy_exec_compound_cmd
+   fun:orte_odls_base_report_spawn
+}
+
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   fun:mca_oob_tcp_msg_send_handler
+   fun:mca_oob_tcp_peer_send
+   fun:mca_oob_tcp_send_nb
+   fun:orte_iof_svc_sub_forward
+   fun:orte_iof_svc_proxy_recv
+   fun:mca_oob_tcp_msg_recv_complete
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/openmpi/mca_oob_tcp.so
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/libopen-rte.so.0.0.0
+   fun:opal_event_base_loop
+   fun:opal_progress
+   obj:/usr/lib64/openmpi/1.2.7-gcc/bin/orterun
+}
+
+{
+   <insert a suppression name here>
+   Memcheck:Param
+   writev(vector[...])
+   fun:writev
+   fun:mca_oob_tcp_msg_send_handler
+   fun:mca_oob_tcp_peer_send
+   fun:mca_oob_tcp_send_nb
+   obj:/usr/lib64/openmpi/1.2.7-gcc/lib/libopen-rte.so.0.0.0
+   fun:opal_event_base_loop
+   fun:opal_progress
+   fun:mca_oob_tcp_msg_wait
+   fun:mca_oob_tcp_recv
+   fun:mca_oob_recv_packed
+   fun:orte_gpr_proxy_exec_compound_cmd
+   fun:orte_odls_base_report_spawn
+}
