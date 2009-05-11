@@ -19,8 +19,6 @@
 #include <stdexcept>
 #include <string>
 
-namespace GAASP {
-
 using std::exp;
 using std::cos;
 using std::sin;
@@ -474,7 +472,5 @@ void nrel::stats::Random::normal00 ()
 	klotz1_1.xbuff[i+1] = t2 * r2;
     }
 }
-
-} // namespace GAASP
 
 //--- end of file ---

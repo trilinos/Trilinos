@@ -25,6 +25,8 @@
 
 #include <limits>
 #include "GErrorEstimate.h"
+#include "Spline.h"
+#include "Projections.h"
 
 namespace GAASP {
 using std::numeric_limits;

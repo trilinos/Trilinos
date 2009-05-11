@@ -765,6 +765,12 @@ ENABLE_RYTHMOS_GAASP_TRUE
 ENABLE_RYTHMOS_GAASP_FALSE
 ENABLE_RYTHMOS_GAASP_INTERNAL_TRUE
 ENABLE_RYTHMOS_GAASP_INTERNAL_FALSE
+HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_TRUE
+HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_FALSE
+RYTHMOS_DEBUG_TRUE
+RYTHMOS_DEBUG_FALSE
+HAVE_RYTHMOS_EXPERIMENTAL_TRUE
+HAVE_RYTHMOS_EXPERIMENTAL_FALSE
 BUILD_EXAMPLES_TRUE
 BUILD_EXAMPLES_FALSE
 BUILD_TESTS_TRUE
@@ -1433,6 +1439,13 @@ Optional Features:
                           (default is no)
   --enable-rythmos-gaaspinternal
                           Build internal GAASP TPL library (default is yes)
+  --enable-rythmos-explicit_instantiation
+                          Build Rythmos with explicit instantiation (default
+                          is no, )
+  --enable-rythmos-debug  Build Rythmos with debug code (default is no, )
+  --enable-rythmos-experimental
+                          Build Rythmos with experimental code (default is
+                          no, )
 
   --enable-rythmos-examples
                           Make Rythmos examples buildable with 'make examples'
@@ -8198,6 +8211,109 @@ fi
 
 
 
+# Check whether --enable-rythmos-explicit_instantiation was given.
+if test "${enable_rythmos_explicit_instantiation+set}" = set; then
+  enableval=$enable_rythmos_explicit_instantiation; ac_cv_use_rythmos_explicit_instantiation=$enableval
+else
+  ac_cv_use_rythmos_explicit_instantiation=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use rythmos-explicit_instantiation" >&5
+echo $ECHO_N "checking whether to use rythmos-explicit_instantiation... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_rythmos_explicit_instantiation" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RYTHMOS_EXPLICIT_INSTANTIATION
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_rythmos_explicit_instantiation" != "Xno"; then
+  HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_TRUE=
+  HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_FALSE='#'
+else
+  HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_TRUE='#'
+  HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_FALSE=
+fi
+
+
+
+# Check whether --enable-rythmos-debug was given.
+if test "${enable_rythmos_debug+set}" = set; then
+  enableval=$enable_rythmos_debug; ac_cv_use_rythmos_debug=$enableval
+else
+  ac_cv_use_rythmos_debug=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use rythmos-debug" >&5
+echo $ECHO_N "checking whether to use rythmos-debug... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_rythmos_debug" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RYTHMOS_DEBUG
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_rythmos_debug" != "Xno"; then
+  RYTHMOS_DEBUG_TRUE=
+  RYTHMOS_DEBUG_FALSE='#'
+else
+  RYTHMOS_DEBUG_TRUE='#'
+  RYTHMOS_DEBUG_FALSE=
+fi
+
+
+
+# Check whether --enable-rythmos-experimental was given.
+if test "${enable_rythmos_experimental+set}" = set; then
+  enableval=$enable_rythmos_experimental; ac_cv_use_rythmos_experimental=$enableval
+else
+  ac_cv_use_rythmos_experimental=no
+fi
+
+
+{ echo "$as_me:$LINENO: checking whether to use rythmos-experimental" >&5
+echo $ECHO_N "checking whether to use rythmos-experimental... $ECHO_C" >&6; }
+
+if test "X$ac_cv_use_rythmos_experimental" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_RYTHMOS_EXPERIMENTAL
+_ACEOF
+
+else
+  { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+
+ if test "X$ac_cv_use_rythmos_experimental" != "Xno"; then
+  HAVE_RYTHMOS_EXPERIMENTAL_TRUE=
+  HAVE_RYTHMOS_EXPERIMENTAL_FALSE='#'
+else
+  HAVE_RYTHMOS_EXPERIMENTAL_TRUE='#'
+  HAVE_RYTHMOS_EXPERIMENTAL_FALSE=
+fi
+
+
+
+
 # ------------------------------------------------------------------------
 # RYTHMOS interface libraries (uses config/tac_arg_enable_rythmos_interface.m4)
 # ------------------------------------------------------------------------
@@ -8693,7 +8809,7 @@ fi
 # Output files
 # ------------------------------------------------------------------------
 
-ac_config_files="$ac_config_files Makefile Makefile.export.rythmos example/Makefile example/diagonalTransient/Makefile example/epetra/1Dfem/Makefile example/epetra/Makefile example/timeDiscretizedBackwardEuler/Makefile src/Makefile adapters/Makefile adapters/gaasp/Makefile adapters/gaasp/src/Makefile adapters/gaasp/test/Makefile adapters/gaasp/example/Makefile adapters/gaasp/tpl_src/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile test/Makefile test/UnitTest/Makefile test/ConvergenceTest/Makefile test/complicatedExample/Makefile test/simpleAdjoint/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.rythmos example/Makefile example/diagonalTransient/Makefile example/epetra/1Dfem/Makefile example/epetra/Makefile example/timeDiscretizedBackwardEuler/Makefile src/Makefile adapters/Makefile adapters/gaasp/Makefile adapters/gaasp/src/Makefile adapters/gaasp/test/Makefile adapters/gaasp/example/Makefile adapters/gaasp/tpl_src/Makefile test/ExplicitTaylorPolynomialStepper/Makefile test/ExplicitTaylorPolynomialStepper/VanDerPolOscillator/Makefile test/Makefile test/UnitTest/Makefile test/ConvergenceTest/Makefile test/complicatedExample/Makefile test/simpleAdjoint/Makefile test/ThetaStepper/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8971,6 +9087,27 @@ if test -z "${ENABLE_RYTHMOS_GAASP_INTERNAL_TRUE}" && test -z "${ENABLE_RYTHMOS_
   { { echo "$as_me:$LINENO: error: conditional \"ENABLE_RYTHMOS_GAASP_INTERNAL\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"ENABLE_RYTHMOS_GAASP_INTERNAL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_TRUE}" && test -z "${HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_RYTHMOS_EXPLICIT_INSTANTIATION\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_RYTHMOS_EXPLICIT_INSTANTIATION\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${RYTHMOS_DEBUG_TRUE}" && test -z "${RYTHMOS_DEBUG_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"RYTHMOS_DEBUG\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"RYTHMOS_DEBUG\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_RYTHMOS_EXPERIMENTAL_TRUE}" && test -z "${HAVE_RYTHMOS_EXPERIMENTAL_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_RYTHMOS_EXPERIMENTAL\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_RYTHMOS_EXPERIMENTAL\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9513,6 +9650,7 @@ do
     "test/ConvergenceTest/Makefile") CONFIG_FILES="$CONFIG_FILES test/ConvergenceTest/Makefile" ;;
     "test/complicatedExample/Makefile") CONFIG_FILES="$CONFIG_FILES test/complicatedExample/Makefile" ;;
     "test/simpleAdjoint/Makefile") CONFIG_FILES="$CONFIG_FILES test/simpleAdjoint/Makefile" ;;
+    "test/ThetaStepper/Makefile") CONFIG_FILES="$CONFIG_FILES test/ThetaStepper/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
@@ -9766,6 +9904,12 @@ ENABLE_RYTHMOS_GAASP_TRUE!$ENABLE_RYTHMOS_GAASP_TRUE$ac_delim
 ENABLE_RYTHMOS_GAASP_FALSE!$ENABLE_RYTHMOS_GAASP_FALSE$ac_delim
 ENABLE_RYTHMOS_GAASP_INTERNAL_TRUE!$ENABLE_RYTHMOS_GAASP_INTERNAL_TRUE$ac_delim
 ENABLE_RYTHMOS_GAASP_INTERNAL_FALSE!$ENABLE_RYTHMOS_GAASP_INTERNAL_FALSE$ac_delim
+HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_TRUE!$HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_TRUE$ac_delim
+HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_FALSE!$HAVE_RYTHMOS_EXPLICIT_INSTANTIATION_FALSE$ac_delim
+RYTHMOS_DEBUG_TRUE!$RYTHMOS_DEBUG_TRUE$ac_delim
+RYTHMOS_DEBUG_FALSE!$RYTHMOS_DEBUG_FALSE$ac_delim
+HAVE_RYTHMOS_EXPERIMENTAL_TRUE!$HAVE_RYTHMOS_EXPERIMENTAL_TRUE$ac_delim
+HAVE_RYTHMOS_EXPERIMENTAL_FALSE!$HAVE_RYTHMOS_EXPERIMENTAL_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
 BUILD_EXAMPLES_FALSE!$BUILD_EXAMPLES_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
@@ -9779,7 +9923,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 64; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 70; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

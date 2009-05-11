@@ -66,11 +66,20 @@
 /* Define if want to build with rythmos enabled */
 #undef HAVE_RYTHMOS_AZTECOO
 
+/* Define if want to build rythmos-debug */
+#undef HAVE_RYTHMOS_DEBUG
+
 /* Define if want to build with rythmos enabled */
 #undef HAVE_RYTHMOS_EPETRAEXT
 
 /* Define if want to build rythmos-examples */
 #undef HAVE_RYTHMOS_EXAMPLES
+
+/* Define if want to build rythmos-experimental */
+#undef HAVE_RYTHMOS_EXPERIMENTAL
+
+/* Define if want to build rythmos-explicit_instantiation */
+#undef HAVE_RYTHMOS_EXPLICIT_INSTANTIATION
 
 /* Define if want to build rythmos-gaasp */
 #undef HAVE_RYTHMOS_GAASP

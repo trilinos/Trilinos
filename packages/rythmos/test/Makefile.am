@@ -37,8 +37,13 @@ all-local:
 #np# in a subdirectory of this directory, use the Makefile.am located in
 #np# test1/ rather than this file.
 
-SUBDIRS = ExplicitTaylorPolynomialStepper\
-          complicatedExample\
+if HAVE_RYTHMOS_EXPERIMENTAL
+RYTHMOS_EXPERIMENTAL_TESTS = ThetaStepper
+endif # HAVE_RYTHMOS_EXPERIMENTAL
+
+SUBDIRS = $(RYTHMOS_EXPERIMENTAL_TESTS) \
+					ExplicitTaylorPolynomialStepper\
+          complicatedExample \
           UnitTest \
 					ConvergenceTest \
           simpleAdjoint 

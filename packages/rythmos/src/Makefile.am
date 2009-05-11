@@ -141,6 +141,8 @@ CORE_H = \
   $(srcdir)/Rythmos_StepperSupportTypes.hpp\
   $(srcdir)/Rythmos_StepperValidator.hpp\
   $(srcdir)/Rythmos_ThetaStepper.hpp\
+  $(srcdir)/Rythmos_ThetaStepper_decl.hpp\
+  $(srcdir)/Rythmos_ThetaStepper_def.hpp\
   $(srcdir)/Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp\
   $(srcdir)/Rythmos_TimeRange.hpp\
   $(srcdir)/Rythmos_TimeRange_decl.hpp\
@@ -174,6 +176,7 @@ CORE = \
   $(srcdir)/Rythmos_StepperHelpers.cpp\
   $(srcdir)/Rythmos_TimeRange.cpp\
   $(srcdir)/Rythmos_TimeStepNonlinearSolver.cpp\
+  $(srcdir)/Rythmos_ThetaStepper.cpp\
   $(srcdir)/Rythmos_Version.cpp
 
 UTIL_H =

@@ -123,7 +123,7 @@ am__objects_1 = Rythmos_BackwardEulerStepper.$(OBJEXT) \
 	Rythmos_StepperBase.$(OBJEXT) Rythmos_StepperHelpers.$(OBJEXT) \
 	Rythmos_TimeRange.$(OBJEXT) \
 	Rythmos_TimeStepNonlinearSolver.$(OBJEXT) \
-	Rythmos_Version.$(OBJEXT)
+	Rythmos_ThetaStepper.$(OBJEXT) Rythmos_Version.$(OBJEXT)
 am__objects_2 =
 @HAVE_MPI_TRUE@am__objects_3 = $(am__objects_2)
 am_librythmos_a_OBJECTS = $(am__objects_1) $(am__objects_2) \
@@ -365,6 +365,8 @@ CORE_H = \
   $(srcdir)/Rythmos_StepperSupportTypes.hpp\
   $(srcdir)/Rythmos_StepperValidator.hpp\
   $(srcdir)/Rythmos_ThetaStepper.hpp\
+  $(srcdir)/Rythmos_ThetaStepper_decl.hpp\
+  $(srcdir)/Rythmos_ThetaStepper_def.hpp\
   $(srcdir)/Rythmos_TimeDiscretizedBackwardEulerModelEvaluator.hpp\
   $(srcdir)/Rythmos_TimeRange.hpp\
   $(srcdir)/Rythmos_TimeRange_decl.hpp\
@@ -397,6 +399,7 @@ CORE = \
   $(srcdir)/Rythmos_StepperHelpers.cpp\
   $(srcdir)/Rythmos_TimeRange.cpp\
   $(srcdir)/Rythmos_TimeStepNonlinearSolver.cpp\
+  $(srcdir)/Rythmos_ThetaStepper.cpp\
   $(srcdir)/Rythmos_Version.cpp
 
 UTIL_H = 
@@ -604,6 +607,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_SimpleIntegrationControlStrategy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_StepperBase.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_StepperHelpers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ThetaStepper.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_TimeRange.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_TimeStepNonlinearSolver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_Version.Po@am__quote@
@@ -887,6 +891,20 @@ Rythmos_TimeStepNonlinearSolver.obj: $(srcdir)/Rythmos_TimeStepNonlinearSolver.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_TimeStepNonlinearSolver.cpp' object='Rythmos_TimeStepNonlinearSolver.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_TimeStepNonlinearSolver.obj `if test -f '$(srcdir)/Rythmos_TimeStepNonlinearSolver.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_TimeStepNonlinearSolver.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_TimeStepNonlinearSolver.cpp'; fi`
+
+Rythmos_ThetaStepper.o: $(srcdir)/Rythmos_ThetaStepper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ThetaStepper.o -MD -MP -MF $(DEPDIR)/Rythmos_ThetaStepper.Tpo -c -o Rythmos_ThetaStepper.o `test -f '$(srcdir)/Rythmos_ThetaStepper.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ThetaStepper.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_ThetaStepper.Tpo $(DEPDIR)/Rythmos_ThetaStepper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ThetaStepper.cpp' object='Rythmos_ThetaStepper.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ThetaStepper.o `test -f '$(srcdir)/Rythmos_ThetaStepper.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ThetaStepper.cpp
+
+Rythmos_ThetaStepper.obj: $(srcdir)/Rythmos_ThetaStepper.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ThetaStepper.obj -MD -MP -MF $(DEPDIR)/Rythmos_ThetaStepper.Tpo -c -o Rythmos_ThetaStepper.obj `if test -f '$(srcdir)/Rythmos_ThetaStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ThetaStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ThetaStepper.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_ThetaStepper.Tpo $(DEPDIR)/Rythmos_ThetaStepper.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_ThetaStepper.cpp' object='Rythmos_ThetaStepper.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_ThetaStepper.obj `if test -f '$(srcdir)/Rythmos_ThetaStepper.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_ThetaStepper.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_ThetaStepper.cpp'; fi`
 
 Rythmos_Version.o: $(srcdir)/Rythmos_Version.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_Version.o -MD -MP -MF $(DEPDIR)/Rythmos_Version.Tpo -c -o Rythmos_Version.o `test -f '$(srcdir)/Rythmos_Version.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_Version.cpp

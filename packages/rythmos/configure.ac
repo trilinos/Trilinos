@@ -287,6 +287,16 @@ AM_CONDITIONAL(ENABLE_RYTHMOS_GAASP, [test "X$ac_cv_use_rythmos_gaasp" != "Xno"]
 TAC_ARG_ENABLE_FEATURE_SUB( rythmos, gaaspinternal, [Build internal GAASP TPL library], RYTHMOS_GAASP_INTERNAL, yes)
 AM_CONDITIONAL(ENABLE_RYTHMOS_GAASP_INTERNAL, [test "X$ac_cv_use_rythmos_gaaspinternal" != "Xno"])
 
+TAC_ARG_ENABLE_FEATURE_SUB( rythmos, explicit_instantiation, [Build Rythmos with explicit instantiation], RYTHMOS_EXPLICIT_INSTANTIATION, no )
+AM_CONDITIONAL(HAVE_RYTHMOS_EXPLICIT_INSTANTIATION, [test "X$ac_cv_use_rythmos_explicit_instantiation" != "Xno"])
+
+TAC_ARG_ENABLE_FEATURE_SUB( rythmos, debug, [Build Rythmos with debug code], RYTHMOS_DEBUG, no )
+AM_CONDITIONAL(RYTHMOS_DEBUG, [test "X$ac_cv_use_rythmos_debug" != "Xno"])
+
+TAC_ARG_ENABLE_FEATURE_SUB( rythmos, experimental, [Build Rythmos with experimental code], RYTHMOS_EXPERIMENTAL, no )
+AM_CONDITIONAL(HAVE_RYTHMOS_EXPERIMENTAL, [test "X$ac_cv_use_rythmos_experimental" != "Xno"])
+
+
 
 # ------------------------------------------------------------------------
 # RYTHMOS interface libraries (uses config/tac_arg_enable_rythmos_interface.m4)
@@ -508,6 +518,7 @@ AC_CONFIG_FILES([
 		test/ConvergenceTest/Makefile
 		test/complicatedExample/Makefile
 		test/simpleAdjoint/Makefile
+		test/ThetaStepper/Makefile
 		])
 
 AC_OUTPUT()

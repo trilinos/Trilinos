@@ -94,6 +94,7 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS)
 am_Rythmos_UnitTest_OBJECTS =  \
 	EpetraExt_DiagonalTransientModel.$(OBJEXT) \
+	Rythmos_AdjointModelEvaluator_UnitTest.$(OBJEXT) \
 	Rythmos_ConvergenceTestHelpers_UnitTest.$(OBJEXT) \
 	Rythmos_CubicSplineInterpolator_UnitTest.$(OBJEXT) \
 	Rythmos_DataStore_UnitTest.$(OBJEXT) \
@@ -265,6 +266,7 @@ EXTRA_DIST = \
 
 Rythmos_UnitTest_SOURCES = \
   $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
+	$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp\
 	$(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp\
 	$(srcdir)/Rythmos_CubicSplineInterpolator_UnitTest.cpp\
   $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
@@ -377,6 +379,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/EpetraExt_DiagonalTransientModel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/PolynomialModel.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_AdjointModelEvaluator_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_ConvergenceTestHelpers_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_CubicSplineInterpolator_UnitTest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Rythmos_DataStore_UnitTest.Po@am__quote@
@@ -430,6 +433,20 @@ EpetraExt_DiagonalTransientModel.obj: $(top_srcdir)/../epetraext/example/model_e
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp' object='EpetraExt_DiagonalTransientModel.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o EpetraExt_DiagonalTransientModel.obj `if test -f '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; then $(CYGPATH_W) '$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp'; fi`
+
+Rythmos_AdjointModelEvaluator_UnitTest.o: $(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_AdjointModelEvaluator_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_AdjointModelEvaluator_UnitTest.Tpo -c -o Rythmos_AdjointModelEvaluator_UnitTest.o `test -f '$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_AdjointModelEvaluator_UnitTest.Tpo $(DEPDIR)/Rythmos_AdjointModelEvaluator_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp' object='Rythmos_AdjointModelEvaluator_UnitTest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_AdjointModelEvaluator_UnitTest.o `test -f '$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp
+
+Rythmos_AdjointModelEvaluator_UnitTest.obj: $(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_AdjointModelEvaluator_UnitTest.obj -MD -MP -MF $(DEPDIR)/Rythmos_AdjointModelEvaluator_UnitTest.Tpo -c -o Rythmos_AdjointModelEvaluator_UnitTest.obj `if test -f '$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Rythmos_AdjointModelEvaluator_UnitTest.Tpo $(DEPDIR)/Rythmos_AdjointModelEvaluator_UnitTest.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp' object='Rythmos_AdjointModelEvaluator_UnitTest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Rythmos_AdjointModelEvaluator_UnitTest.obj `if test -f '$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp'; then $(CYGPATH_W) '$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp'; fi`
 
 Rythmos_ConvergenceTestHelpers_UnitTest.o: $(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Rythmos_ConvergenceTestHelpers_UnitTest.o -MD -MP -MF $(DEPDIR)/Rythmos_ConvergenceTestHelpers_UnitTest.Tpo -c -o Rythmos_ConvergenceTestHelpers_UnitTest.o `test -f '$(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp' || echo '$(srcdir)/'`$(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp

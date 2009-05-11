@@ -740,3 +740,11 @@ TESTS = ConvergenceTest/Rythmos_ImplicitRK_ConvergenceTest.exe;
     COMM = SERIAL, MPI(1);
     EXIT-STATUS = STRING-COMPARISON;
 }
+
+# Theta Stepper test
+# CTEST Rythmos_ThetaStepper_UnitTest
+(FRAMEWORK,INSTALL) {
+    TESTS = ThetaStepper/Rythmos_ThetaStepper_UnitTest.exe;
+    COMM = SERIAL, MPI(1);
+    EXIT-STATUS = STRING-COMPARISON;
+}

@@ -29,6 +29,7 @@
 #ifndef Rythmos_THETA_STEPPER_DEF_H
 #define Rythmos_THETA_STEPPER_DEF_H
 
+#include "Rythmos_ConfigDefs.h"
 #ifdef HAVE_RYTHMOS_EXPERIMENTAL
 
 #include "Rythmos_ThetaStepper_decl.hpp"

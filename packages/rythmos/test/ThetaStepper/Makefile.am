@@ -28,51 +28,39 @@
 
 EXEEXT = .exe
 
+#all-local: $(THETA_STEPPER_XML_FILES)
+#	@echo ""
+#	@echo "rythmos/test/Rythmos_ThetaStepper_UnitTest built successfully."
+#	@echo ""
 
-bin_PROGRAMS = Rythmos_UnitTest
+
+bin_PROGRAMS = Rythmos_ThetaStepper_UnitTest
 
 #
 # Actual programs
 #
 
-EXTRA_DIST =\
-  $(srcdir)/Rythmos_UnitTestHelpers.hpp \
-	$(srcdir)/Rythmos_UnitTestModels.hpp \
-	$(srcdir)/Rythmos_IntegratorBuilder_Helpers.hpp \
-	$(srcdir)/../SinCos/SinCosModel.hpp \
-	$(srcdir)/../PolynomialModel/PolynomialModel.hpp
+#EXTRA_DIST =\
+#  $(srcdir)/_modelParams.xml\
+#	$(srcdir)/_implicitEulerParams.xml
 
-Rythmos_UnitTest_SOURCES =\
-  $(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransient/EpetraExt_DiagonalTransientModel.cpp\
-	$(srcdir)/Rythmos_AdjointModelEvaluator_UnitTest.cpp\
-	$(srcdir)/Rythmos_ConvergenceTestHelpers_UnitTest.cpp\
-	$(srcdir)/Rythmos_CubicSplineInterpolator_UnitTest.cpp\
-  $(srcdir)/Rythmos_DataStore_UnitTest.cpp\
-  $(srcdir)/Rythmos_DefaultIntegrator_UnitTest.cpp\
-  $(srcdir)/Rythmos_ExplicitRK_UnitTest.cpp\
-  $(srcdir)/Rythmos_ForwardSensitivity_UnitTest.cpp\
-  $(srcdir)/Rythmos_GlobalErrorEstimator_UnitTest.cpp\
-	$(srcdir)/Rythmos_HermiteInterpolator_UnitTest.cpp\
-  $(srcdir)/Rythmos_ImplicitBDF_UnitTest.cpp\
-  $(srcdir)/Rythmos_ImplicitRK_UnitTest.cpp\
-	$(srcdir)/Rythmos_IntegratorBuilder_UnitTest.cpp\
-  $(srcdir)/Rythmos_InterpolationBuffer_UnitTest.cpp\
-	$(srcdir)/Rythmos_LinearInterpolator_UnitTest.cpp\
-	$(srcdir)/Rythmos_PointwiseInterpolationBufferAppender_UnitTest.cpp\
-	$(srcdir)/Rythmos_Quadrature_UnitTest.cpp\
-  $(srcdir)/Rythmos_RKButcherTableau_UnitTest.cpp\
+Rythmos_ThetaStepper_UnitTest_SOURCES =\
+	$(srcdir)/Rythmos_ThetaStepper_Main.cpp\
+	$(srcdir)/Rythmos_ThetaStepper_UnitTest.cpp\
   $(srcdir)/../SinCos/SinCosModel.cpp\
-  $(srcdir)/../PolynomialModel/PolynomialModel.cpp\
-  $(srcdir)/Rythmos_SinCosModel_UnitTest.cpp\
-  $(srcdir)/Rythmos_StepperBuilder_UnitTest.cpp\
-  $(srcdir)/Rythmos_StepperHelpers_UnitTest.cpp\
-  $(srcdir)/Rythmos_StepperValidator_UnitTest.cpp\
-  $(srcdir)/Rythmos_TimeRange_UnitTest.cpp\
-  $(srcdir)/Rythmos_Thyra_UnitTest.cpp\
-	$(srcdir)/Rythmos_UnitTest.cpp\
-	$(srcdir)/Rythmos_UnitTestHelpers.cpp
-Rythmos_UnitTest_DEPENDENCIES = $(common_dependencies)
-Rythmos_UnitTest_LDADD = $(common_ldadd)
+  $(srcdir)/../UnitTest/Rythmos_UnitTestHelpers.cpp
+Rythmos_ThetaStepper_UnitTest_DEPENDENCIES = $(common_dependencies)
+Rythmos_ThetaStepper_UnitTest_LDADD = $(common_ldadd)
+
+#
+# XML Files
+#
+#THETA_STEPPER_XML_FILES = modelParams.xml implicitEulerParams.xml
+#modelParams.xml: $(srcdir)/_modelParams.xml
+#  cp $(srcdir)/_modelParams.xml modelParams.xml
+#implicitEulerParams.xml: $(srcdir)/_implicitEulerParams.xml
+#  cp $(srcdir)/_implicitEulerParams.xml implicitEulerParams.xml
+
 
 #
 # Common stuff
@@ -94,7 +82,7 @@ EXPORT_INCLUDES = $(_EXPORT_INCLUDES)
 EXPORT_LIBS = $(_EXPORT_LIBS)
 endif
 
-AM_CPPFLAGS = $(EXPORT_INCLUDES)
+AM_CPPFLAGS = $(EXPORT_INCLUDES) -I$(top_srcdir)/test/UnitTest
 
 common_ldadd = $(EXPORT_LIBS)
 
@@ -102,3 +90,4 @@ CPPFLAGS += -I$(top_srcdir)/../epetraext/example/model_evaluator/DiagonalTransie
 
 # This is already added part of RYTHMOS_LIBS and therefore automake does not need to add this again!
 LIBS =
+

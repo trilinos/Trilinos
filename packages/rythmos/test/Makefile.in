@@ -102,7 +102,8 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
+DIST_SUBDIRS = ThetaStepper ExplicitTaylorPolynomialStepper \
+	complicatedExample UnitTest ConvergenceTest simpleAdjoint
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -222,8 +223,10 @@ top_srcdir = @top_srcdir@
 #np# For packages whose tests are located in this directory, rather than
 #np# in a subdirectory of this directory, use the Makefile.am located in
 #np# test1/ rather than this file.
-SUBDIRS = ExplicitTaylorPolynomialStepper\
-          complicatedExample\
+@HAVE_RYTHMOS_EXPERIMENTAL_TRUE@RYTHMOS_EXPERIMENTAL_TESTS = ThetaStepper
+SUBDIRS = $(RYTHMOS_EXPERIMENTAL_TESTS) \
+					ExplicitTaylorPolynomialStepper\
+          complicatedExample \
           UnitTest \
 					ConvergenceTest \
           simpleAdjoint 

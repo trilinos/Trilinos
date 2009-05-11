@@ -8,7 +8,7 @@ FILE(GLOB SOURCES *.cpp)
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   test_gaasp_adapters
   SOURCES ${SOURCES}
-  DEPLIBS rythmos_test_models
+  DEPLIBS rythmos_test_models 
   COMM serial
   STANDARD_PASS_OUTPUT
   )

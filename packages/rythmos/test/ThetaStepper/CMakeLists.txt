@@ -15,6 +15,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-PACKAGE_COPY_FILES_TO_BINARY_DIR(MatrixMatrixCopyFiles
+PACKAGE_COPY_FILES_TO_BINARY_DIR(Test_ThetaStepper_CopyFiles
   DEST_FILES modelParams.xml implicitEulerParams.xml
+  EXEDEPS ThetaStepper_UnitTest
   )

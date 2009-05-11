@@ -446,8 +446,8 @@ RCP<const Teuchos::ParameterList> CubicSplineInterpolator<Scalar>::getValidParam
       unsigned int j,  \
       const  SCALAR & t, \
       const Ptr<Thyra::VectorBase< SCALAR > >& S, \
-      const Ptr<Thyra::VectorBase< SCALAR > >& Sp = Teuchos::null,  \
-      const Ptr<Thyra::VectorBase< SCALAR > >& Spp = Teuchos::null \
+      const Ptr<Thyra::VectorBase< SCALAR > >& Sp,  \
+      const Ptr<Thyra::VectorBase< SCALAR > >& Spp \
       ); 
 
 

@@ -5,9 +5,6 @@ INCLUDE(PackageLibraryMacros)
 # A) Package-specific configuration options
 #
 
-ASSERT_DEFINED(Teuchos_ENABLE_Boost)
-SET(HAVE_RYTHMOS_TEUCHOS_BOOST ${Teuchos_ENABLE_Boost})
-
 PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 #
@@ -78,6 +75,22 @@ IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
     )
 
 ENDIF()
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_GAASP)
+IF (${PACKAGE_NAME}_ENABLE_GAASP)
+  INCLUDE_DIRECTORIES( 
+    ${PACKAGE_SOURCE_DIR}/adapters/gaasp/example
+    )
+  
+  APPEND_SET(HEADERS
+    ${PACKAGE_SOURCE_DIR}/adapters/gaasp/example/LorenzModel.hpp
+    )
+  
+  APPEND_SET(SOURCES
+    ${PACKAGE_SOURCE_DIR}/adapters/gaasp/example/LorenzModel.cpp
+    )
+
+ENDIF()  
 
 PACKAGE_ADD_LIBRARY(
   rythmos_test_models
