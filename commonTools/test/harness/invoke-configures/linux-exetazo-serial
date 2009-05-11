@@ -17,7 +17,7 @@ FFLAGS="-O3 -fPIC" \
 --enable-aztecoo \
 --enable-belos \
 --enable-claps \
---enable-ctrilinos \
+--disable-ctrilinos \
 --enable-didasko \
 --enable-epetra \
 --enable-epetra-abc \
@@ -58,6 +58,7 @@ FFLAGS="-O3 -fPIC" \
 --enable-shards \
 --enable-stokhos \
 --enable-sundance \
+--disable-sundance-examples \
 --enable-teuchos \
 --enable-teuchos-abc \
 --enable-teuchos-complex \
