@@ -176,26 +176,46 @@ template<class Scalar>
 bool DefaultProductVectorSpace<Scalar>::isCompatible(
   const VectorSpaceBase<Scalar>& vecSpc ) const
 {
-  // Check for in-core
+
+  using Teuchos::ptrFromRef;
+  using Teuchos::ptr_dynamic_cast;
+
+  const int nBlocks = this->numBlocks();
+
+  // Check for product vector interface
+  const Ptr<const ProductVectorSpaceBase<Scalar> > pvsb =
+    ptr_dynamic_cast<const ProductVectorSpaceBase<Scalar> >(ptrFromRef(vecSpc));
+
+  if (nonnull(pvsb)) {
+    // Validate that constituent vector spaces are compatible
+    if( nBlocks != pvsb->numBlocks() )
+      return false;
+    for( int i = 0; i < nBlocks; ++i ) {
+      if( !this->getBlock(i)->isCompatible(*pvsb->getBlock(i)) )
+        return false;
+    }
+    return true;
+  }
+
+  // Check for a single vector single vector space
+  if (nBlocks == 1) {
+    return this->getBlock(0)->isCompatible(vecSpc);
+  }
+
+  // Check for in-core views
   if (this->hasInCoreView(Range1D(), VIEW_TYPE_DETACHED, STRIDE_TYPE_NONUNIT)
     && vecSpc.hasInCoreView() && ( this->dim() == vecSpc.dim() ) )
   {
     return true;
   }
-  // Check for product vector interface
-  const ProductVectorSpaceBase<Scalar> *pvsb =
-    dynamic_cast<const ProductVectorSpaceBase<Scalar>*>(&vecSpc);
-  if( !pvsb )
-    return false;
-  // Validate that constituent vector spaces are compatible
-  const int nBlocks = this->numBlocks(); 
-  if( nBlocks != pvsb->numBlocks() )
-    return false;
-  for( int i = 0; i < nBlocks; ++i ) {
-    if( !this->getBlock(i)->isCompatible(*pvsb->getBlock(i)) )
-      return false;
-  }
-  return true;
+  // 2009/05/11: rabartl: ToDo: Remove this!
+
+
+
+  // If we get here, the RHS is not a product vector spacde and/or this is not
+  // a single block VS so we can assume the spaces are *not* compatible!
+  return false;
+
 }
 
 

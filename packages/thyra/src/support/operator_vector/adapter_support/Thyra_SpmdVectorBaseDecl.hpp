@@ -31,7 +31,7 @@
 
 
 #include "Thyra_VectorDefaultBaseDecl.hpp"
-#include "Thyra_SpmdVectorSpaceDefaultBaseDecl.hpp"
+#include "Thyra_SpmdVectorSpaceDefaultBase_decl.hpp"
 
 
 //#define THYRA_SPMD_VECTOR_BASE_DUMP

@@ -302,6 +302,7 @@ void DefaultProductVector<Scalar>::applyOpImpl(
 
   //using Teuchos::Workspace;
   using Teuchos::ptr_dynamic_cast;
+  using Teuchos::describe;
   using Teuchos::null;
 
   //Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
@@ -331,18 +332,18 @@ void DefaultProductVector<Scalar>::applyOpImpl(
     test_failed = !this->space()->isCompatible(*vecs[k]->space());
     TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
-      ,"DefaultProductVector::applyOp(...): Error vecs["<<k<<"]->space() "
-      <<"of type \'"<<typeName(*vecs[k]->space())<<"\' is not compatible with this "
-      <<"\'VectorSpaceBlocked\' vector space!"
+      ,"DefaultProductVector::applyOp(...): Error vecs["<<k<<"]->space() = "
+      <<vecs[k]->space()->description()<<"\' is not compatible with this "
+      <<"vector space = "<<this->space()->description()<<"!"
       );
   }
   for(int k = 0; k < num_targ_vecs; ++k) {
     test_failed = !this->space()->isCompatible(*targ_vecs[k]->space());
     TEST_FOR_EXCEPTION(
       test_failed, Exceptions::IncompatibleVectorSpaces
-      ,"DefaultProductVector::applyOp(...): Error targ_vecs["<<k<<"]->space() "
-      <<"of type \'"<<typeName(*vecs[k]->space())<<"\' is not compatible with this "
-      <<"\'VectorSpaceBlocked\' vector space!"
+      ,"DefaultProductVector::applyOp(...): Error targ_vecs["<<k<<"]->space() = "
+      <<targ_vecs[k]->space()->description()<<"\' is not compatible with this "
+      <<"vector space = "<<this->space()->description()<<"!"
       );
   }
 #endif

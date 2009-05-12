@@ -104,8 +104,8 @@ int main(int argc, char *argv[])
 
       LinearOperator<double> A = makeOp();
 
-      Vector<double> ans = A.range().createMember();
-      Thyra::randomize(-1.0, 1.0, ans.ptr().get());
+      Vector<double> ans = A.domain().createMember();
+      Thyra::randomize(-1.0, 1.0, ans.ptr().ptr());
 
       Vector<double> b = A*ans;
 

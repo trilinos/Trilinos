@@ -3,6 +3,8 @@
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DetachedSpmdVectorView.hpp"
 #include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -33,6 +35,10 @@ using Thyra::ConstDetachedVectorView;
 using Thyra::DetachedVectorView;
 using Thyra::ConstDetachedSpmdVectorView;
 using Thyra::DetachedSpmdVectorView;
+using Thyra::V_S;
+using Thyra::V_V;
+using Thyra::assign;
+using Thyra::sum;
 typedef Thyra::Ordinal Ordinal;
 
 
@@ -195,6 +201,72 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVectorSpace, dynamicCast_fail,
 }
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
   dynamicCast_fail )
+
+
+//
+// Test that a product vector space with one embedded space is compatiable
+// with that single space and visa versa.
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVectorSpace, singleBlockCompatibility,
+  Scalar )
+{
+
+  using Teuchos::describe;
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef typename ST::magnitudeType ScalarMag;
+  typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+
+  const RCP<const VectorSpaceBase<Scalar> >
+    vs = defaultSpmdVectorSpace<Scalar>(g_localDim),
+    pvs = productVectorSpace<Scalar>(tuple(vs)());
+
+  out << "vs=" << describe(*vs);
+  out << "pvs=" << describe(*pvs);
+
+  TEST_ASSERT(pvs->isCompatible(*vs));
+  TEST_ASSERT(vs->isCompatible(*pvs));
+
+  const ScalarMag dim_scalar = vs->dim();
+
+  const RCP<VectorBase<Scalar> >
+    v1 = createMember(vs),
+    pv1 = createMember(pvs);
+
+  out << "Test that you can copy from single vector to product vector (1) ...\n";
+  const Scalar val1 = 2.0;
+  V_S(v1.ptr(), val1);
+  V_V(pv1.ptr(), *v1);
+  TEST_FLOATING_EQUALITY( sum(*pv1), as<Scalar>(dim_scalar * val1),
+    as<ScalarMag>(SMT::eps() / dim_scalar * 1e+2) );
+
+  out << "Test that you can copy from product vector (1) to single vector ...\n";
+  const Scalar val2 = 3.0;
+  V_S(pv1.ptr(), val2);
+  V_V(v1.ptr(), *pv1);
+  TEST_FLOATING_EQUALITY( sum(*v1), as<Scalar>(dim_scalar * val2),
+    as<ScalarMag>(SMT::eps() / dim_scalar * 1e+2) );
+
+  const RCP<MultiVectorBase<Scalar> >
+    mv1 = createMembers(vs, 1),
+    pmv1 = createMembers(pvs, 1);
+
+  out << "Test that you can copy from single multi-vector to product multi-vector (1) ...\n";
+  assign(mv1.ptr(), val1);
+  assign(pmv1.ptr(), *mv1);
+  TEST_FLOATING_EQUALITY( sum(*pmv1->col(0)), as<Scalar>(dim_scalar * val1),
+    as<ScalarMag>(SMT::eps() / dim_scalar * 1e+2) );
+
+  out << "Test that you can copy from product multi-vector (1) to single multi-vector ...\n";
+  assign(pmv1.ptr(), val2);
+  assign(mv1.ptr(), *pmv1);
+  TEST_FLOATING_EQUALITY( sum(*mv1->col(0)), as<Scalar>(dim_scalar * val2),
+    as<ScalarMag>(SMT::eps() / dim_scalar * 1e+2) );
+
+}
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
+  singleBlockCompatibility )
 
 
 } // namespace

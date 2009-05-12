@@ -31,8 +31,9 @@
 #define THYRA_DEFAULT_SPMD_VECTOR_SPACE_DECL_HPP
 
 
+#include "Thyra_SpmdVectorSpaceDefaultBase_decl.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Teuchos_Handleable.hpp"
-#include "Thyra_SpmdVectorSpaceDefaultBaseDecl.hpp"
 
 
 namespace Thyra {
