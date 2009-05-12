@@ -183,4 +183,20 @@ RCP<const InverseFactory> invFactoryFromParamList(const Teuchos::ParameterList &
    return  Teuchos::null;;
 }
 
+/** \brief Get a valid parameter list for the inverse factory class.
+  *
+  * Get a valid parameter list for the inverse factory class. This will
+  * specify the set of parameters for each possible "inverse".
+  *
+  * \returns A parameter list is returned that is suitable to be passed
+  *          to <code>invFactoryFromParamList</code>.
+  */
+Teuchos::RCP<const Teuchos::ParameterList> invFactoryValidParameters()
+{
+   Stratimikos::DefaultLinearSolverBuilder strat;
+ 
+   // extract valid parameter list from Stratimikos
+   return strat.getValidParameters();
+}
+
 } // end namespace PB

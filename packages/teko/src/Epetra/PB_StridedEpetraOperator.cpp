@@ -2,6 +2,8 @@
 #include "Epetra/PB_StridedMappingStrategy.hpp"
 #include "Epetra/PB_ReorderedMappingStrategy.hpp"
 
+#include "Teuchos_VerboseObject.hpp"
+
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -89,6 +91,7 @@ void StridedEpetraOperator::Reorder(const BlockReorderManager & brm)
    RCP<const MappingStrategy> reorderMapping = rcp(new ReorderedMappingStrategy(*reorderManager_,stridedMapping_));
    RCP<const Thyra::BlockedLinearOpBase<double> > blockOp
          = rcp_dynamic_cast<const Thyra::BlockedLinearOpBase<double> >(stridedOperator_);
+
    RCP<const Thyra::LinearOpBase<double> > A = buildReorderedLinearOp(*reorderManager_,blockOp);
 
    // set them as working values

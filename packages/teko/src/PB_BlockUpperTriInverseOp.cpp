@@ -47,7 +47,7 @@ BlockUpperTriInverseOp::BlockUpperTriInverseOp(BlockedLinearOp & U,const std::ve
   * @param[in]     alpha (default=1)
   * @param[in]     beta  (default=0)
   */
-void BlockUpperTriInverseOp::apply(const BlockedMultiVector & src, BlockedMultiVector & dst,
+void BlockUpperTriInverseOp::implicitApply(const BlockedMultiVector & src, BlockedMultiVector & dst,
            const double alpha, const double beta) const
 {
    int blocks = blockCount(src);

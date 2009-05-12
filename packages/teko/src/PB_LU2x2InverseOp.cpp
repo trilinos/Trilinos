@@ -34,7 +34,7 @@ LU2x2InverseOp::LU2x2InverseOp(const BlockedLinearOp & A,
       // "productVectorSpace" did not yield to me quick enough
 }
 
-void LU2x2InverseOp::apply(const BlockedMultiVector & x, BlockedMultiVector & y,
+void LU2x2InverseOp::implicitApply(const BlockedMultiVector & x, BlockedMultiVector & y,
                                 const double alpha, const double beta) const
 {
    // get src blocks

@@ -5,9 +5,12 @@ LDDIR = -L$(TRILINOS_LIB) -L$(PB_LIBDIR) -L/home/eccyr/Utils/EcUtils++/lib
 LDLIB = -lpb -lecutils++ $(TRILINOS_LIBRARIES)
 CPPFLAGS=-DHAVE_CONFIG_H $(DEBUG_FLAGS)
 
-OBJS = ExamplePreconditionerFactory.o
+OBJS = 
 
-all: $(OBJS)
+all: $(OBJS) example-driver
+
+example-driver: example-driver.cpp
+	$(CC) $(INCLUDE) $(CPPFLAGS) example-driver.cpp $(LDDIR) -o $@ $(LDLIB)
 
 $(OBJS): %.o : %.cpp
 	$(CC) -c $(INCLUDE) $(CPPFLAGS) $< -o $@

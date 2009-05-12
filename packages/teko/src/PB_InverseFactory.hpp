@@ -37,8 +37,8 @@ public:
      * Pass in an already constructed inverse operator. Update
      * the inverse operator based on the new source operator.
      *
-     * \params[in]     source Source operator to be inverted.
-     * \params[in,out] dest   Pre constructed inverse operator to be
+     * \param[in]     source Source operator to be inverted.
+     * \param[in,out] dest   Pre constructed inverse operator to be
      *                        rebuilt using the <code>source</code>
      *                        object.
      */
@@ -82,8 +82,8 @@ public:
      * Pass in an already constructed inverse operator. Update
      * the inverse operator based on the new source operator.
      *
-     * \params[in]     source Source operator to be inverted.
-     * \params[in,out] dest   Pre constructed inverse operator to be
+     * \param[in]     source Source operator to be inverted.
+     * \param[in,out] dest   Pre constructed inverse operator to be
      *                        rebuilt using the <code>source</code>
      *                        object.
      */
@@ -139,8 +139,8 @@ public:
      * the associated PreconditionerBase object as "prec" as extra
      * data in the RCP.
      *
-     * \params[in]     source Source operator to be inverted.
-     * \params[in,out] dest   Pre constructed inverse operator to be
+     * \param[in]     source Source operator to be inverted.
+     * \param[in,out] dest   Pre constructed inverse operator to be
      *                        rebuilt using the <code>source</code>
      *                        object.
      */
@@ -178,6 +178,16 @@ void rebuildInverse(const InverseFactory & factory, const LinearOp & A, LinearOp
   * \returns An inverse factory using the specified inverse operation.
   */
 Teuchos::RCP<const InverseFactory> invFactoryFromParamList(const Teuchos::ParameterList & list,const std::string & type);
+
+/** \brief Get a valid parameter list for the inverse factory class.
+  *
+  * Get a valid parameter list for the inverse factory class. This will
+  * specify the set of parameters for each possible "inverse".
+  *
+  * \returns A parameter list is returned that is suitable to be passed
+  *          to <code>invFactoryFromParamList</code>.
+  */
+Teuchos::RCP<const Teuchos::ParameterList> invFactoryValidParameters();
 
 //@}
 

@@ -3,6 +3,8 @@
 #include "PB_BlockedReordering.hpp"
 #include "PB_Utilities.hpp"
 
+#include "Teuchos_VerboseObject.hpp"
+
 #include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 
@@ -91,7 +93,9 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
       const BlockReorderLeaf & colLeaf = dynamic_cast<const BlockReorderLeaf &>(colMgr);
 
       // simply return entry in matrix
-      return blkOp->getBlock(rowLeaf.GetIndex(),colLeaf.GetIndex());
+      PB::LinearOp linOp = blkOp->getBlock(rowLeaf.GetIndex(),colLeaf.GetIndex());
+
+      return linOp;
    }
    else if(rowSz==0) {
       // only row is a leaf node

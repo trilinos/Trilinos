@@ -30,7 +30,7 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearO
    ss << "Jacobi Preconditioner ( ";
 
    // start filling the blocked operator
-   precond->beginBlockFill(rows,rows); // this is assuming the matrix is square
+   beginBlockFill(precond,rows,rows); // this is assuming the matrix is square
 
    // build blocked diagonal matrix
    for(int i=0;i<rows;i++) {
@@ -39,7 +39,7 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearO
    }
    ss << " )";
    
-   precond->endBlockFill();
+   endBlockFill(precond);
    // done filling the blocked operator
 
    precond->setObjectLabel(ss.str());

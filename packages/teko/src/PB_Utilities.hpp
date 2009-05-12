@@ -122,6 +122,10 @@ BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvs)
 typedef Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > BlockedLinearOp;
 typedef Teuchos::RCP<const Thyra::LinearOpBase<double> > LinearOp;
 
+//! Build a square zero operator from a single vector space
+inline LinearOp zero(const VectorSpace & vs)
+{ return Thyra::zero<double>(vs,vs); }
+
 //! Get the range space of a linear operator
 inline VectorSpace rangeSpace(const LinearOp & lo)
 { return lo->range(); }
@@ -130,8 +134,15 @@ inline VectorSpace rangeSpace(const LinearOp & lo)
 inline VectorSpace domainSpace(const LinearOp & lo)
 { return lo->domain(); }
 
-//! Converse a LinearOp to a BlockedLinearOp
-inline BlockedLinearOp toBlockedLinearOp(const LinearOp clo)
+//! Converts a LinearOp to a BlockedLinearOp
+inline BlockedLinearOp toBlockedLinearOp(LinearOp & clo)
+{
+   Teuchos::RCP<Thyra::LinearOpBase<double> > lo = Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(clo);
+   return Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<double> > (lo);
+}
+
+//! Converts a LinearOp to a BlockedLinearOp
+inline const BlockedLinearOp toBlockedLinearOp(const LinearOp & clo)
 {
    Teuchos::RCP<Thyra::LinearOpBase<double> > lo = Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(clo);
    return Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<double> > (lo);
@@ -163,6 +174,36 @@ inline void setBlock(int i,int j,BlockedLinearOp & blo, const LinearOp & lo)
 inline BlockedLinearOp createBlockedOp()
 { return rcp(new Thyra::DefaultBlockedLinearOp<double>()); }
 
+/** \brief Let the blocked operator know that you are going to 
+  *        set the sub blocks.
+  *
+  * Let the blocked operator know that you are going to 
+  * set the sub blocks. This is a simple wrapper around the
+  * member function of the same name in Thyra.
+  *
+  * \param[in,out] blo Blocked operator to have its fill stage activated
+  * \param[in]  rowCnt Number of block rows in this operator
+  * \param[in]  colCnt Number of block columns in this operator
+  */
+inline void beginBlockFill(BlockedLinearOp & blo,int rowCnt,int colCnt)
+{ blo->beginBlockFill(rowCnt,colCnt); }
+
+/** \brief Let the blocked operator know that you are going to 
+  *        set the sub blocks.
+  *
+  * Let the blocked operator know that you are going to 
+  * set the sub blocks. This is a simple wrapper around the
+  * member function of the same name in Thyra.
+  *
+  * \param[in,out] blo Blocked operator to have its fill stage activated
+  */
+inline void beginBlockFill(BlockedLinearOp & blo)
+{ blo->beginBlockFill(); }
+
+//! Notify the blocked operator that the fill stage is completed.
+inline void endBlockFill(BlockedLinearOp & blo)
+{ blo->endBlockFill(); }
+
 //! Get the strictly upper triangular portion of the matrix
 BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo);
 
@@ -174,13 +215,20 @@ BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo);
   *
   * Build a zero operator mimicing the block structure
   * of the passed in matrix. Currently this function assumes
-  * that the operator is "block" square.
+  * that the operator is "block" square. Also, this function
+  * calls <code>beginBlockFill</code> but does not call
+  * <code>endBlockFill</code>.  This is so that the user
+  * can fill the matrix as they wish once created.
   *
   * \param[in] blo Blocked operator with desired structure.
   *
   * \returns A zero operator with the same block structure as
   *          the argument <code>blo</code>.
-  */ 
+  *
+  * \note The caller is responsible for calling
+  *       <code>endBlockFill</code> on the returned blocked
+  *       operator.
+  */
 BlockedLinearOp zeroBlockedOp(const BlockedLinearOp & blo);
 
 //! Figure out if this operator is the zero operator (or null!)
@@ -199,6 +247,9 @@ bool isZeroOp(const LinearOp op);
   *     
   *    \f$ y = \alpha A x + \beta y \f$
   *
+  * It is required that the range space of <code>A</code> is compatible with <code>y</code> and the domain space
+  * of <code>A</code> is compatible with <code>x</code>.
+  *
   * \param[in]     A
   * \param[in]     x
   * \param[in,out] y
@@ -207,6 +258,28 @@ bool isZeroOp(const LinearOp op);
   *
   */
 void applyOp(const LinearOp & A,const MultiVector & x,MultiVector & y,double alpha=1.0,double beta=0.0);
+
+/** \brief Apply a linear operator to a blocked multivector (think of this as a matrix
+  *        vector multiply).
+  *
+  * Apply a linear operator to a blocked multivector. This also permits arbitrary scaling
+  * and addition of the result. This function gives
+  *     
+  *    \f$ y = \alpha A x + \beta y \f$
+  *
+  * It is required that the range space of <code>A</code> is compatible with <code>y</code> and the domain space
+  * of <code>A</code> is compatible with <code>x</code>.
+  *
+  * \param[in]     A
+  * \param[in]     x
+  * \param[in,out] y
+  * \param[in]     alpha
+  * \param[in]     beta
+  *
+  */
+inline void applyOp(const LinearOp & A,const BlockedMultiVector & x,BlockedMultiVector & y,double alpha=1.0,double beta=0.0)
+{ const MultiVector x_mv = toMultiVector(x); MultiVector y_mv = toMultiVector(y);
+  applyOp(A,x_mv,y_mv,alpha,beta); }
 
 /** \brief Update the <code>y</code> vector so that \f$y = \alpha x+\beta y\f$
   *

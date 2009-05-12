@@ -326,12 +326,19 @@ BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo)
   *
   * Build a zero operator mimicing the block structure
   * of the passed in matrix. Currently this function assumes
-  * that the operator is "block" square.
+  * that the operator is "block" square. Also, this function
+  * calls <code>beginBlockFill</code> but does not call
+  * <code>endBlockFill</code>.  This is so that the user
+  * can fill the matrix as they wish once created.
   *
   * \param[in] blo Blocked operator with desired structure.
   *
   * \returns A zero operator with the same block structure as
   *          the argument <code>blo</code>.
+  *
+  * \notes The caller is responsible for calling 
+  *        <code>endBlockFill</code> on the returned blocked
+  *        operator.
   */ 
 BlockedLinearOp zeroBlockedOp(const BlockedLinearOp & blo)
 {
@@ -356,7 +363,6 @@ BlockedLinearOp zeroBlockedOp(const BlockedLinearOp & blo)
             = Thyra::zero<double>(range->getBlock(i),domain->getBlock(i));
       zeroOp->setBlock(i,i,zed);
    }
-//   zeroOp->endBlockFill();
 
    return zeroOp;
 }

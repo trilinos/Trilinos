@@ -55,7 +55,7 @@ public:
    virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
    getInvA00(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A,BlockPreconditionerState & state) const = 0;
 
-   /** returns an (approximate) inverse of \f$S = -A_{11} + A_{10} A_{00}^{-1} A_{01} */
+   /** returns an (approximate) inverse of \f$S = -A_{11} + A_{10} A_{00}^{-1} A_{01}\f$ */
    virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
    getInvS(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A,BlockPreconditionerState & state) const = 0;
 };

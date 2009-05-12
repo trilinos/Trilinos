@@ -27,7 +27,7 @@ public:
      * @param[in]     alpha (default=1)
      * @param[in]     beta  (default=0)
      */
-   virtual void apply(const BlockedMultiVector & x, BlockedMultiVector & y,
+   virtual void implicitApply(const BlockedMultiVector & x, BlockedMultiVector & y,
               const double alpha = 1.0, const double beta = 0.0) const = 0;
 
    //! Functions required by Thyra::LinearOpBase 

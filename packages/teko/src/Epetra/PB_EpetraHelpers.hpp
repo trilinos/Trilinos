@@ -42,8 +42,8 @@ Epetra_Operator * mechanicalInverse(const Epetra_Operator * inverse);
   * to reallocate memory using a create_MultiVector routine. It also allows an aritrary
   * Thyra vector to be filled.
   *
-  * \param[in,out] spmdMV Multi-vector to be filled.
-  * \param[in]     mv     Epetra multi-vector to be used in filling the Thyra vector.
+  * \param[in,out] spmdMV   Multi-vector to be filled.
+  * \param[in]     epetraMV Epetra multi-vector to be used in filling the Thyra vector.
   */    
 void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::DefaultSpmdMultiVector<double> > & spmdMV,
                                 Teuchos::RCP<Epetra_MultiVector> & epetraMV);

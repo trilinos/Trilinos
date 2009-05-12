@@ -167,7 +167,10 @@ public:
      * Initialize a newly created preconditioner object. For use with
      * nonlinear solvers.
      *
+     * \param[in] fwdOpSrc Forward operator to be preconditioned
      * \param[in] solnVec Vector associated with this linear operator.
+     * \param[in,out] precOp Return location for the preconditioner
+     * \param[in] supportSolveUse Thyra information (?)
      */
    void initializePrec(const RCP<const Thyra::LinearOpSourceBase<double> > & fwdOpSrc,
                        const RCP<const Thyra::MultiVectorBase<double> > & solnVec,

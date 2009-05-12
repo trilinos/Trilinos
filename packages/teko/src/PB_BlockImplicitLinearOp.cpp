@@ -25,7 +25,7 @@ void BlockImplicitLinearOp::apply(const Thyra::EConj conj,
    BlockedMultiVector destY = rcp_dynamic_cast<ProductMultiVectorBase<double> >(rcpFromRef(*y));
 
    // call apply
-   apply(srcX,destY,alpha,beta);
+   implicitApply(srcX,destY,alpha,beta);
 }
  
 } // end namespace PB

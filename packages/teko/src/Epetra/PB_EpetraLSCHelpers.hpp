@@ -146,7 +146,7 @@ std::pair<int,int> thyraMatrixToCrsVector(const Teuchos::RCP<const Thyra::Linear
   *
   * \param[in]     rowMap   Map specifying which global indicies this process examines 
   * \param[in] mat Matrix to be examined
-  * \param[in,out] indicies Output list of indicies corresponding to dirchlet rows.
+  * \param[in,out] outIndicies Output list of indicies corresponding to dirchlet rows.
   */
 void identityRowIndicies(const Epetra_Map & rowMap, const Epetra_CrsMatrix & mat,std::vector<int> & outIndicies);
 
@@ -155,7 +155,7 @@ void identityRowIndicies(const Epetra_Map & rowMap, const Epetra_CrsMatrix & mat
   *
   * Zero out the value of a vector on the specified set of global
   * indicies. The indicies here are assumed to belong to the calling
-  * process (i.e. zeroIndicies $\in$ mv.Map()).
+  * process (i.e. zeroIndicies \f$\in\f$ mv.Map()).
   *
   * \param[in,out] mv           Vector whose entries will be zeroed
   * \param[in]     zeroIndicies Indicies local to this process that need to be zeroed

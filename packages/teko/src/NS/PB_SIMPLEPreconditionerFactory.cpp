@@ -50,7 +50,7 @@ LinearOp SIMPLEPreconditionerFactory
    // build lower triangular inverse matrix
    BlockedLinearOp L = zeroBlockedOp(blockOp);
    setBlock(1,0,L,B);
-   L->endBlockFill();
+   endBlockFill(L);
 
    invDiag[0] = invF;
    invDiag[1] = scale(-1.0,invS);
@@ -59,7 +59,7 @@ LinearOp SIMPLEPreconditionerFactory
    // build upper triangular matrix
    BlockedLinearOp U = zeroBlockedOp(blockOp);
    setBlock(0,1,U,scale(1.0/alpha_,multiply(H,Bt)));
-   U->endBlockFill();
+   endBlockFill(U);
 
    invDiag[0] = identity(rangeSpace(invF));
    invDiag[1] = scale(alpha_,identity(rangeSpace(invS)));

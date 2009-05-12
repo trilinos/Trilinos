@@ -37,7 +37,7 @@ BlockLowerTriInverseOp::BlockLowerTriInverseOp(BlockedLinearOp & L,const std::ve
   * @param[in]     alpha (default=1)
   * @param[in]     beta  (default=0)
   */
-void BlockLowerTriInverseOp::apply(const BlockedMultiVector & src, BlockedMultiVector & dst,
+void BlockLowerTriInverseOp::implicitApply(const BlockedMultiVector & src, BlockedMultiVector & dst,
            const double alpha, const double beta) const
 {
    int blocks = blockCount(src);
