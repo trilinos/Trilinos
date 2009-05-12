@@ -63,7 +63,7 @@ not already set.
 fail the configure step.
 - Enable testing for PyTrilinos on godel by setting
 PYTHONPATH=/home/wfspotz/lib64/python2.4/site-packages on the environment.
-You can also set this as a CMake varaible I think.
+You can also set this as a CMake variable I think.
 
 (*) [???] Write pre-checkin tool that will configure an MPI_DEBUG and
 SERIAL_RELEASE build directory and enable only "Primary Stable" code.  This
