@@ -106,9 +106,9 @@ int main(int argc,char * argv[])
    Epetra_Vector * ptrx = 0;
 
    std::cout << "Reading matrix market file" << std::endl;
-   EpetraExt::MatrixMarketFileToCrsMatrix("./jac_test.mm",map,map,map,ptrA);
-   EpetraExt::MatrixMarketFileToVector("./rhs_test.mm",map,ptrf);
-   EpetraExt::MatrixMarketFileToVector("./lhs_test.mm",map,ptrx);
+   EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac_test.mm",map,map,map,ptrA);
+   EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",map,ptrf);
+   EpetraExt::MatrixMarketFileToVector("../data/nslhs_test.mm",map,ptrx);
 
    RCP<Epetra_CrsMatrix> A = rcp(ptrA);
    RCP<Epetra_Vector> b = rcp(ptrf);
