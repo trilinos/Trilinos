@@ -575,4 +575,438 @@ std::ostream& PHX::operator<<(std::ostream& os,
 
 //**********************************************************************
 
+
+
+
+//**********************************************************************
+//**********************************************************************
+// Runtime Version
+//**********************************************************************
+//**********************************************************************
+
+
+
+
+//**********************************************************************
+template<typename DataT>
+PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+MDField(const std::string& name, const Teuchos::RCP<PHX::DataLayout>& t) :
+  m_tag(name,t)
+#ifdef PHX_DEBUG
+  , m_tag_set(true),
+  m_data_set(false)
+#endif
+{ }
+
+//**********************************************************************
+template<typename DataT>
+PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+MDField(const PHX::Tag<DataT>& v) :
+  m_tag(v)
+#ifdef PHX_DEBUG
+  ,m_tag_set(true),
+  m_data_set(false)
+#endif
+{ }
+
+//**********************************************************************
+template<typename DataT>
+PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+MDField() :
+  m_tag("???", Teuchos::null)
+#ifdef PHX_DEBUG
+  ,m_tag_set(false),
+  m_data_set(false)
+#endif
+{ }
+
+//**********************************************************************
+template<typename DataT>
+PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+~MDField()
+{ }
+
+//**********************************************************************
+template<typename DataT>
+inline
+const PHX::FieldTag& 
+PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+fieldTag() const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+#endif
+  return m_tag;
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3, 
+	   size_type index4, size_type index5, size_type index6,
+	   size_type index7, size_type index8)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3,index4,index5,index6,index7,index8);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3, 
+	   size_type index4, size_type index5, size_type index6,
+	   size_type index7)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3,index4,index5,index6,index7);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3, 
+	   size_type index4, size_type index5, size_type index6)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3,index4,index5,index6);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3, 
+	   size_type index4, size_type index5)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3,index4,index5);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3, 
+	   size_type index4)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3,index4);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator[](size_type index)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data[index];
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3, 
+	   size_type index4, size_type index5, size_type index6,
+	   size_type index7, size_type index8) const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3,index4,index5,index6,index7,index8);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3, 
+	   size_type index4, size_type index5, size_type index6,
+	   size_type index7) const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3,index4,index5,index6,index7);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3, 
+	   size_type index4, size_type index5, size_type index6) const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3,index4,index5,index6);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3, 
+	   size_type index4, size_type index5) const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3,index4,index5);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3, 
+	   size_type index4) const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3,index4);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2, size_type index3) const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2,index3);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1, size_type index2) const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1,index2);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator()(size_type index1) const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data(index1);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+const DataT& PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+operator[](size_type index) const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data[index];
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+typename PHX::MDField<DataT,void,void,void,void,void,void,void,void>::size_type 
+PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+rank() const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data.rank();
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+typename PHX::MDField<DataT,void,void,void,void,void,void,void,void>::size_type 
+PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+dimension(size_type ord) const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data.dimension(ord);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+void PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+dimensions(std::vector<size_type>& dims)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_data_error_msg);
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  
+  dims.resize(m_field_data.rank());
+  for ( size_type i = 0 ; i <  m_field_data.rank(); ++i ) 
+	dims[i] = m_field_data.dimension(i);
+  
+  // Doesn't work with shards????
+  //m_field_data.template dimensions<size_type>(dims);
+}
+
+//**********************************************************************
+template<typename DataT>
+inline
+typename PHX::MDField<DataT,void,void,void,void,void,void,void,void>::size_type 
+PHX::MDField<DataT,void,void,void,void,void,void,void,void>::size() const
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_data_set, std::logic_error, m_field_data_error_msg);
+#endif
+  return m_field_data.size();
+}
+
+//**********************************************************************
+template<typename DataT>
+void PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+setFieldTag(const PHX::Tag<DataT>& v)
+{  
+#ifdef PHX_DEBUG
+  m_tag_set = true;
+#endif
+  m_tag = v;
+}
+
+//**********************************************************************
+template<typename DataT>
+void PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+setFieldData(const Teuchos::ArrayRCP<DataT>& d)
+{ 
+#ifdef PHX_DEBUG
+  TEST_FOR_EXCEPTION(!m_tag_set, std::logic_error, m_field_tag_error_msg);
+  m_data_set = true;
+#endif
+
+  m_array_rcp = d;
+
+  std::vector<size_type> data_layout_dim;
+  m_tag.dataLayout().dimensions(data_layout_dim);
+
+  std::vector<size_type> array_dim;
+  size_type num_cells = d.size() / m_tag.dataLayout().size();
+
+  array_dim.push_back(num_cells);
+  for (std::size_t i = 0; i < data_layout_dim.size(); ++i)
+    array_dim.push_back(data_layout_dim[i]);
+
+  Teuchos::ArrayRCP<shards::ArrayDimTag*> dim_tags = 
+    Teuchos::arcp<shards::ArrayDimTag*>(array_dim.size());
+
+  typename 
+    shards::Array<DataT,shards::NaturalOrder,void,void,void,void,void,void,void,void> 
+    array(d.get(), (int) array_dim.size(), &array_dim[0], dim_tags.get());
+  
+  m_field_data = array;
+
+}
+
+//**********************************************************************
+template<typename DataT>
+void PHX::MDField<DataT,void,void,void,void,void,void,void,void>::
+print(std::ostream& os,	bool printValues) const
+{
+
+  os << "MDField(";
+  for (size_type i=0; i < m_field_data.rank(); ++i) {
+    if (i > 0)
+      os << ",";
+    os << m_field_data.dimension(i);
+  }
+  os << "): ";
+  
+  os << m_tag;
+
+  if (printValues) {
+    os << std::endl;
+    for (typename array_type::size_type i = 0; i < m_field_data.size(); ++i)
+      os << "value[" << i << "] = " << m_field_data[i] << std::endl;
+  }
+
+}
+
+//**********************************************************************
+template<typename DataT>
+std::ostream& PHX::operator<<(std::ostream& os, 
+			      const PHX::MDField<DataT,void,void,
+			      void,void,void,void,void,void>& f)
+{
+  f.print(os, false);
+  return os;
+}
+
+//**********************************************************************
+
+
 #endif

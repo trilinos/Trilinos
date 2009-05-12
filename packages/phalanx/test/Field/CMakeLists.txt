@@ -24,6 +24,15 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   PASS_REGULAR_EXPRESSION "Test passed!"
   )
 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  mdfield_runtime
+  SOURCES MDField_Runtime.cpp
+  DEPLIBS phalanx_test_utilities
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "Test passed!"
+  )
+
 # Will add this test in a later commit
 
 #ASSERT_DEFINED(Phalanx_ENABLE_Intrepid)
