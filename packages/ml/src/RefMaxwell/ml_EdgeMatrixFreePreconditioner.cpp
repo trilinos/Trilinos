@@ -124,10 +124,8 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   
   int SmootherSweeps = List_.get("smoother: sweeps (level 0)", 0);
   MaxLevels = List_.get("max levels",10); 
-  print_hierarchy= List_.get("print hierarchy",false);  
-  
+  print_hierarchy= List_.get("print hierarchy",false);    
   num_cycles  = List_.get("cycle applications",1);
-  //  ML_Set_PrintLevel(OutputLevel);
 
   /* Sanity Checking*/
   int OperatorDomainPoints =  OperatorDomainMap().NumGlobalPoints();
@@ -146,35 +144,29 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   }/*end if*/
   
   /* Do the eigenvalue estimation for Chebyshev */
-  if(SmootherSweeps) {
-    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Doing Smoother Setup\n");
+  if(SmootherSweeps) 
     ML_CHK_ERR(SetupSmoother());
-  }/*end if*/
 
 
   if(MaxLevels > 0) {  
     /* Build the Nullspace */
-    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Building Nullspace\n");
     Epetra_MultiVector *nullspace=BuildNullspace();
     if(!nullspace) ML_CHK_ERR(-1);
     if(print_hierarchy) MVOUT(*nullspace,"nullspace.dat");
     
     /* Build the prolongator */
-    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Building Prolongator\n");
     ML_CHK_ERR(BuildProlongator(*nullspace));
     
     /* DEBUG: Output matrices */
     if(print_hierarchy) Epetra_CrsMatrix_Print(*Prolongator_,"prolongator.dat");
     
     /* Form the coarse matrix */
-    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Building Coarse Matrix\n");
     ML_CHK_ERR(FormCoarseMatrix());
 
     /* DEBUG: Output matrices */
     if(print_hierarchy) Epetra_CrsMatrix_Print(*CoarseMatrix,"coarsemat.dat");
     
     /* Setup Preconditioner on Coarse Matrix */
-    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Building Coarse Precond\n");
     CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,ListCoarse);
     if(!CoarsePC) ML_CHK_ERR(-2);
   
@@ -203,7 +195,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
   string EigenType_ = List_.get("eigen-analysis: type", "cg");
   double boost = List_.get("eigen-analysis: boost for lambda max", 1.0);
 
-
   if(print_hierarchy) MVOUT(*InvDiagonal_,"inv_diagonal.dat");
   
   /* Do the eigenvalue estimation*/
@@ -219,12 +210,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
 
   double alpha = List_.get("chebyshev: alpha",30.0001);
   lambda_min=lambda_max / alpha;
-
-#ifndef NO_OUTPUT
-  FILE *f=fopen("lambda_max.dat","w");
-  fprintf(f,"%22.16e\n",lambda_max);
-  fclose(f);
-#endif
   
   /* Setup the Smoother's List*/
   IFPACKList.set("chebyshev: min eigenvalue", lambda_min);
@@ -233,8 +218,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
   IFPACKList.set("chebyshev: operator inv diagonal", InvDiagonal_);
   IFPACKList.set("chebyshev: degree", PolynomialDegree);
   IFPACKList.set("chebyshev: zero starting solution",false);
-
-  if(verbose_ && !Comm_->MyPID()) printf("Chebyshev Smoother: lmin/lmax %6.4e/%6.4e\n",lambda_min,lambda_max);//DEBUG
 
   //NTS: Need to create two of these lists, one to use in the first iteration
   // (with zero starting solution set to true) and another to use when it's set
@@ -270,7 +253,6 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
     cerr<<"Error: Coordinates not defined.  This is *necessary* for the EdgeMatrixFreePreconditioner.\n";
     return 0;
   }/*end if*/
-  if(verbose_ && !Comm_->MyPID()) printf("BuildNullspace: Pulling %d vectors\n",dim);
 
   /* Normalize */
   double d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), xcoord, xcoord, ml_comm_));
@@ -323,7 +305,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
                                   ML_Aggregate_Get_OptimalNumberOfNodesPerAggregate());
 
   /* Setup the Aggregation */
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: Building aggregates\n");
   ML_Aggregate_Struct * MLAggr;
   ML_Aggregate_Create(&MLAggr);
   ML_Aggregate_Set_MaxLevels(MLAggr, 2);
@@ -370,19 +351,15 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   
   /* Create wrapper to do abs(T) */
   // NTS: Assume D0 has already been reindexed by now.
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: abs(T) prewrap\n");
   ML_Operator* AbsD0_ML = ML_Operator_Create(ml_comm_);
   ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)D0_Matrix_,AbsD0_ML,verbose_));    
   ML_Operator_Set_Getrow(AbsD0_ML,AbsD0_ML->outvec_leng,CSR_getrow_ones);
-
   
   /* Form abs(T) * P_n */
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: Building abs(T) * P_n\n");
   ML_Operator* AbsD0P = ML_Operator_Create(ml_comm_);   
   ML_2matmult(AbsD0_ML,P,AbsD0P, ML_CSR_MATRIX);
   
   /* Wrap P_n into Epetra-land */
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: Wrapping to PSparse\n");
   Epetra_CrsMatrix *Psparse;
   Epetra_CrsMatrix_Wrap_ML_Operator(AbsD0P,*Comm_,*EdgeRangeMap_,&Psparse,Copy,0);
   
@@ -400,7 +377,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   CoarseMap_=new Epetra_Map(-1,NumAggregates*dim,0,*Comm_);
   
   /* Allocate the Prolongator_ */
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: Building Prolongator\n");
   Prolongator_=new Epetra_CrsMatrix(Copy,*EdgeRangeMap_,0);
   int ne1, *idx1, *idx2;
   idx2=new int [dim*AbsD0P->max_nz_per_row];
@@ -428,7 +404,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   
   
   /* FillComplete / OptimizeStorage for Prolongator*/
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: Optimizing Prolongator\n");
   Prolongator_->FillComplete(*CoarseMap_,*EdgeRangeMap_);
   Prolongator_->OptimizeStorage();
 
@@ -446,7 +421,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 #endif
   
   /* Cleanup */
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: BuildProlongator Cleanup\n");  
   ML_qr_fix_Destroy();
   ML_Aggregate_Destroy(&MLAggr);
   ML_Operator_Destroy(&TMT_ML);
@@ -475,11 +449,9 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   ML_Operator *P= ML_Operator_Create(ml_comm_);
 
   /* Build ML_Operator version of Prolongator_, Restriction Operator */
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: Prolongator Prewrap\n");
   ML_CHK_ERR(ML_Operator_WrapEpetraCrsMatrix(Prolongator_,P,verbose_));
   P->num_rigid=P->num_PDEs=dim;
   
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: Prolongator Transpose\n");
   //NTS: ML_CHK_ERR won't work on this: it returns 1
   ML_Operator_Transpose_byrow(P, R);
 #else
@@ -491,7 +463,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   const ML_RefMaxwell_11_Operator *Op11 = dynamic_cast<const ML_RefMaxwell_11_Operator*>(Operator_);
 #ifndef ENABLE_FAST_PTAP
   if(disable_addon && Op11){
-    if(verbose_ && !Comm_->MyPID()) printf("EMFP: AP (*without* addon)\n");
+    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Running *without* addon\n");
     ML_Operator *SM_ML = ML_Operator_Create(ml_comm_);
     Temp_ML = ML_Operator_Create(ml_comm_);
     ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)&(((ML_RefMaxwell_11_Operator *)Op11)->SM_Matrix()),SM_ML,verbose_);
@@ -504,7 +476,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
     Op11->PtAP(*Prolongator_,ml_comm_,&CoarseMat_ML);
 #else
     /* Do the A*P */
-    if(verbose_ && !Comm_->MyPID()) printf("EMFP: AP\n");
+    if(verbose_ && !Comm_->MyPID()) printf("EMFP: Running with addon\n");
     ML_CHK_ERR(Operator_->MatrixMatrix_Multiply(*Prolongator_,ml_comm_,&Temp_ML));  
   }
 #endif
@@ -517,7 +489,6 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 
 
   /* Do R * AP */
-  if(verbose_ && !Comm_->MyPID()) printf("EMFP: RAP\n");
   R->num_rigid=R->num_PDEs=dim;
   ML_2matmult_block(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
 #endif
@@ -535,19 +506,6 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   Epetra_CrsMatrix_Print(*CoarseMatrix,"coarsemat0.dat");
 #endif
   
-#ifdef KDD_DEBUG
-  EpetraExt::BlockMapToMatrixMarketFile("coarsemat0_map.dat",CoarseMatrix->RowMap());
-  EpetraExt::RowMatrixToMatrixMarketFile("coarsemat0.dat",*CoarseMatrix);
-
-  ofstream opl("coarsemat0_params.dat");
-  Teuchos::ParameterList dummy, ListCoarse;
-  ListCoarse=List_.get("edge matrix free: coarse",dummy);
-  Teuchos::XMLParameterListWriter XMLR;
-  opl << XMLR.toXML(ListCoarse);
-#endif
-
-
-
   /* Cleanup */
 #ifndef ENABLE_FAST_PTAP
   ML_Operator_Destroy(&P);
