@@ -444,7 +444,8 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_H = \
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorBase.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorBaseDecl.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceDefaultBase.hpp\
-  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceDefaultBaseDecl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceDefaultBase_decl.hpp\
+  $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceDefaultBase_def.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_SpmdVectorSpaceUtilities.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_apply_op_helper.hpp\
   $(srcdir)/support/operator_vector/adapter_support/Thyra_apply_op_helper_decl.hpp
