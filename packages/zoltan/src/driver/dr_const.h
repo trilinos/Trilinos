@@ -70,6 +70,10 @@ extern "C" {
 #define ZOLTAN_PARMETIS
 #endif
 
+#ifdef HAVE_METIS
+#define ZOLTAN_METIS
+#endif
+
 #ifdef HAVE_SCOTCH
 #define ZOLTAN_SCOTCH
 #endif

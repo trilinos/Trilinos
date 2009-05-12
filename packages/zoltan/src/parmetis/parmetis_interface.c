@@ -118,7 +118,7 @@ int Zoltan_ParMetis(
   int num_part = zz->LB.Num_Global_Parts;/* passed to Jostle/ParMETIS. Don't */
 #ifdef HAVE_MPI
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
-  /* change our zz struct.                  */
+                                   /* change our zz struct.                  */
 #endif /* HAVE_MPI */
 
 
@@ -131,14 +131,14 @@ int Zoltan_ParMetis(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-#ifdef HAVE_PARMETIS
+#ifdef ZOLTAN_PARMETIS
     /* Check for outdated/unsupported ParMetis versions. */
 #if (PARMETIS_MAJOR_VERSION == 3) && (PARMETIS_MINOR_VERSION == 0)
   if (zz->Proc == 0)
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "ParMetis 3.0 is no longer supported by Zoltan. Please upgrade to ParMetis 3.1 (or later).");
   ierr = ZOLTAN_WARN;
 #endif
-#endif /* HAVE_PARMETIS */
+#endif /* ZOLTAN_PARMETIS */
 
   Zoltan_Third_Init(&gr, &prt, &vsp, &part,
 		    imp_gids, imp_lids, imp_procs, imp_to_part,
@@ -208,7 +208,6 @@ int Zoltan_ParMetis(
     return (ierr);
   }
 
-
   /* Get object sizes if requested */
   if (options[PMV3_OPT_USE_OBJ_SIZE] &&
       (zz->Get_Obj_Size || zz->Get_Obj_Size_Multi) &&
@@ -232,7 +231,7 @@ int Zoltan_ParMetis(
     for (i=0; i<num_part; i++){
       int j;
 
-      printf("Debug: Size(s) for partition %1d = ", i);
+      printf("Debug: Size(s) for part %1d = ", i);
       for (j=0; j<ncon; j++)
 	printf("%f ", prt.part_sizes[i*ncon+j]);
       printf("\n");
@@ -242,8 +241,10 @@ int Zoltan_ParMetis(
   /* if (strcmp(alg, "ADAPTIVEREPART") == 0) */
   for (i = 0; i < num_part*ncon; i++)
     if (prt.part_sizes[i] == 0) 
-      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Zero-sized partition(s) requested! "
-			    "ParMETIS 3.x will likely fail. Please use a different method, or remove the zero-sized partitions from the problem.");
+      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Zero-sized part(s) requested! "
+			    "ParMETIS 3.x will likely fail. Please use a "
+                            "different method, or remove the zero-sized "
+                            "parts from the problem.");
 
 
   /* Set Imbalance Tolerance for each weight component. */
@@ -257,39 +258,42 @@ int Zoltan_ParMetis(
 
   /* Now we can call ParMetis */
 
-#ifdef HAVE_PARMETIS
+#ifdef ZOLTAN_PARMETIS
   if (gr.graph_type != LOCAL_GRAPH) { /* May be GLOBAL or NO GRAPH */
   /* First check for ParMetis 3 routines */
   if (strcmp(alg, "PARTKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library:  PartKway");
     ParMETIS_V3_PartKway (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
 			  &wgtflag, &numflag, &ncon, &num_part, prt.part_sizes,
 			  imb_tols, options, &edgecut, prt.part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOMKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
-    ParMETIS_V3_PartGeomKway (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts, &wgtflag,
-			      &numflag, &geo->ndims, geo->xyz, &ncon, &num_part, prt.part_sizes,
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library:  PartGeomKWay");
+    ParMETIS_V3_PartGeomKway (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
+                              &wgtflag, &numflag, &geo->ndims, geo->xyz, &ncon,
+                              &num_part, prt.part_sizes,
 			      imb_tols, options, &edgecut, prt.part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "PARTGEOM") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library:  PartGeom");
     ParMETIS_V3_PartGeom (gr.vtxdist, &geo->ndims, geo->xyz, prt.part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "ADAPTIVEREPART") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
-    ParMETIS_V3_AdaptiveRepart (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, vsp.vsize, gr.ewgts,
-				&wgtflag, &numflag, &ncon, &num_part, prt.part_sizes, imb_tols,
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library:  AdaptiveRepart");
+    ParMETIS_V3_AdaptiveRepart (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,
+                                vsp.vsize, gr.ewgts, &wgtflag, &numflag, &ncon,
+                                &num_part, prt.part_sizes, imb_tols,
 				&itr, options, &edgecut, prt.part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else if (strcmp(alg, "REFINEKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library:  RefineKWay");
     ParMETIS_V3_RefineKway (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
-			    &wgtflag, &numflag, &ncon, &num_part, prt.part_sizes, imb_tols,
+			    &wgtflag, &numflag, &ncon, &num_part,
+                            prt.part_sizes, imb_tols,
 			    options, &edgecut, prt.part, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
@@ -301,8 +305,8 @@ int Zoltan_ParMetis(
   }
   }
   else
-#endif /* HAVE_PARMETIS */
-#ifdef HAVE_METIS
+#endif /* ZOLTAN_PARMETIS */
+#ifdef ZOLTAN_METIS
     /* TODO: I don't know how to set balance ! */
   if (gr.graph_type == LOCAL_GRAPH) {
     /* Check for Metis routines */
@@ -319,7 +323,7 @@ int Zoltan_ParMetis(
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
   }
   }
-#endif /* HAVE_METIS */
+#endif /* ZOLTAN_METIS */
 
 
   /* Get a time here */
@@ -372,7 +376,7 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
     if (gsum < 10000) {
       char str[256];
       sprintf(str, "Total objects %d < 10000 causes ParMETIS 3.0 PARTKWAY "
-	      "to ignore partition sizes; uniform partition sizes will be "
+	      "to ignore part sizes; uniform part sizes will be "
 	      "produced. Please try a different load-balancing method.\n",
 	      gsum);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, str);
@@ -384,7 +388,7 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
       if (prt->part[i] > maxpart) maxpart = prt->part[i];
     MPI_Allreduce(&maxpart, &gmax, 1, MPI_INT, MPI_MAX, zz->Communicator);
     if (gmax >= prt->num_part) {
-      sprintf(msg, "Partition number %1d >= number of partitions %1d.\n"
+      sprintf(msg, "Part number %1d >= number of parts %1d.\n"
 	      "ParMETIS 3.0 with %s will fail, please upgrade to 3.1 or later.",
 	      gmax, prt->num_part, alg);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
@@ -660,7 +664,7 @@ int Zoltan_ParMetis_Order(
   /* Get a time here */
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
-#ifdef HAVE_PARMETIS
+#ifdef ZOLTAN_PARMETIS
   if (gr.graph_type==GLOBAL_GRAPH){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
     ParMETIS_V3_NodeND (gr.vtxdist, gr.xadj, gr.adjncy,
@@ -668,8 +672,8 @@ int Zoltan_ParMetis_Order(
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
   }
   else
-#endif /* HAVE_PARMETIS */
-#if defined(HAVE_METIS) || defined(HAVE_PARMETIS)
+#endif /* ZOLTAN_PARMETIS */
+#if defined(ZOLTAN_METIS) || defined(ZOLTAN_PARMETIS)
  if (gr.graph_type == LOCAL_GRAPH) { /* Be careful : permutation parameters are in the opposite order */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
     options[0] = 0;  /* Use default options for METIS. */
@@ -678,7 +682,7 @@ int Zoltan_ParMetis_Order(
 		  &numflag, options, ord.iperm, ord.rank);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
   }
-#endif /* HAVE_METIS */
+#endif /* ZOLTAN_METIS */
 
   /* Get a time here */
   if (get_times) times[2] = Zoltan_Time(zz->Timer);

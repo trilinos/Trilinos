@@ -19,7 +19,7 @@ extern "C" {
 #include "zz_const.h"
 #include "zz_util_const.h"
 
-/* Routines to handle mapping of partitions to processors. */
+/* Routines to handle mapping of parts to processors. */
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -32,10 +32,10 @@ static int Zoltan_LB_Build_ProcDist(ZZ *);
 
 int Zoltan_LB_Part_To_Proc(ZZ *zz, int part, ZOLTAN_ID_PTR gid)
 {
-/* Routine that maps partitions to processors.
- * If a partition is entirely within a processor, that processor's rank is
+/* Routine that maps parts to processors.
+ * If a part is entirely within a processor, that processor's rank is
  * returned.
- * If a partition is spread across several processors, find the range of its
+ * If a part is spread across several processors, find the range of its
  * processors.  
  * If a gid is not given (gid == NULL) return the lowest-numbered processor
  * in the range.  (RCB and RIB depend upon this feature.)
@@ -72,9 +72,9 @@ char msg[256];
        * to prevent data movement for exported items.  */
       proc = zz->Proc;
     else {
-      /* Map the gid to a processor within range for the partition.
+      /* Map the gid to a processor within range for the part.
        * Use Zoltan_Hash to attempt to evenly distribute the gids to
-       * processors holding the partition. */
+       * processors holding the part. */
       if (gid != NULL) 
         hash_value = Zoltan_Hash(gid, zz->Num_GID, num_procs_for_part);
       else {
@@ -84,7 +84,7 @@ char msg[256];
     }
   }
   else {
-    sprintf(msg, "Invalid partition number: %d", part);
+    sprintf(msg, "Invalid part number: %d", part);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     proc = -1;
   }
@@ -99,13 +99,13 @@ char msg[256];
 int Zoltan_LB_Proc_To_Part(
   ZZ *zz, 
   int proc,       /* Input: processor number */
-  int *nparts,    /* Output: Number of partitions on processor proc (>= 0) */
-  int *fpart      /* Output: Partition number of first partition on proc. */
+  int *nparts,    /* Output: Number of parts on processor proc (>= 0) */
+  int *fpart      /* Output: Part number of first part on proc. */
 )
 {
-/* Routine that returns the number of partitions and the partition number
- * of the lowest-numbered partition on a given processor.
- * If there are no partitions on a processor, nparts = 0 and fpart = -1.
+/* Routine that returns the number of parts and the part number
+ * of the lowest-numbered part on a given processor.
+ * If there are no parts on a processor, nparts = 0 and fpart = -1.
  */
 char *yo = "Zoltan_LB_Proc_To_Part";
 int *partdist = zz->LB.PartDist;
@@ -160,9 +160,9 @@ static int Zoltan_LB_Build_ProcDist(
 )
 {
 /* Routine that computes the inverse of array LB.PartDist.
- * Builds array LB.ProcDist that maps processors to partitions.
- * Entry i of LB.ProcDist is the lowest partition number on processor i. 
- * If processor i has no partitions, ProcDist[i] = -1.
+ * Builds array LB.ProcDist that maps processors to parts.
+ * Entry i of LB.ProcDist is the lowest part number on processor i. 
+ * If processor i has no parts, ProcDist[i] = -1.
  */
 char *yo = "Zoltan_LB_Build_ProcDist";
 int ierr = ZOLTAN_OK;
@@ -181,15 +181,15 @@ int i, j;
 
     for (j = 0, i = 0; i < zz->Num_Proc; i++) {
       if (partdist[j] == i) {
-        /* Partition j is on processor i */
+        /* Part j is on processor i */
         procdist[i] = j;
         while (partdist[j] == i) j++;
       }
       else if (!zz->LB.Single_Proc_Per_Part)
-        /* processor i has continuation of previous processor's partition */
+        /* processor i has continuation of previous processor's part */
         procdist[i] = procdist[i-1];
       else
-        /* processor i has no partitions */
+        /* processor i has no parts */
         procdist[i] = -1;
     }
     procdist[zz->Num_Proc] = zz->LB.Num_Global_Parts;
