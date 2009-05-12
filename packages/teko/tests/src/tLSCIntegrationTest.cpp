@@ -264,7 +264,7 @@ bool tLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & os)
    solver.Iterate(1000,1e-8);
 
    // check iteration count
-   status = (solver.NumIters()==43);
+   status = (solver.NumIters()<=43);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tLSCIntegrationTest::test_nomassStable " << toString(status) 
                       << ": # of iterations = " << solver.NumIters() << " != " << 43 << std::endl;

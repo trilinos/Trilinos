@@ -60,7 +60,6 @@ int tStridedEpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
 
    failstrm << "tStridedEpetraOperator";
 
-/*
    status = test_numvars_constr(verbosity,failstrm);
    allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"numvars_constr\" ... PASSED","   \"numvars_constr\" ... FAILED");
@@ -72,7 +71,6 @@ int tStridedEpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
    PB_TEST_MSG(stdstrm,1,"   \"vector_constr\" ... PASSED","   \"vector_constr\" ... FAILED");
    failcount += status ? 0 : 1;
    totalrun++; 
-*/
 
    status = test_reorder(verbosity,failstrm,0);
    allTests &= status;
@@ -296,7 +294,7 @@ bool tStridedEpetraOperator::test_reorder(int verbosity,std::ostream & os,int to
    TEST_MSG("\n      " << Teuchos::describe(*reorderShell.getThyraOp(), Teuchos::VERB_HIGH)  << std::endl);
 
    // test the operator against a lot of random vectors
-   int numtests = 100;
+   int numtests = 10;
    double max = 0.0;
    double min = 1.0;
    for(int i=0;i<numtests;i++) {

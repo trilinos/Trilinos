@@ -8,6 +8,7 @@
 
 // Thyra includes
 #include "Thyra_DefaultProductVectorSpace.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_SpmdMultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"

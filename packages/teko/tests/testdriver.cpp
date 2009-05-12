@@ -74,7 +74,6 @@ int main(int argc,char * argv[])
    termout->setOutputToRootOnly(0);
    failout->setOutputToRootOnly(0);
 
-#if 1
    PB_ADD_UNIT_TEST(PB::Test::tLU2x2PreconditionerFactory,LU2x2PreconditionerFactory);
    PB_ADD_UNIT_TEST(PB::Test::tLSCStablePreconditionerFactory,LSCStablePreconditionerFactory);
    PB_ADD_UNIT_TEST(PB::Test::tLSCStabilized,LSCStabilized);
@@ -91,9 +90,6 @@ int main(int argc,char * argv[])
       PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
       PB_ADD_UNIT_TEST(PB::Test::tEpetraLSCIntegrationTest,EpetraLSCIntegrationTest);
    }
-#else
-   PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
-#endif
 
    bool status = PB::Test::UnitTest::RunTests(verbosity,*termout,*failout);
 
