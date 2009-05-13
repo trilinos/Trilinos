@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 #include "zz_const.h"
+#include "zz_util_const.h"
 #include "phg_tree.h"
 #include "phg.h"
 #include <limits.h>
@@ -29,6 +30,9 @@ typedef struct Zoltan_PHG_LB_Data_ {
 
 #define SET_MIN_NODE(ptr, offset, val) (ptr)[2*(offset)]=-(val)
 #define SET_MAX_NODE(ptr, offset, val) (ptr)[2*(offset)+1]=(val)
+#define IS_EMPTY(interval) ((interval)[1] == -1)
+#define IS_INCLUDED(interval1,interval2) ((((interval2)[1] <= (interval1)[1]))&&((interval2)[1] <= (interval1)[1]))
+
 
 /* Internal use only */
 void* Zoltan_PHG_LB_Data_alloc();
@@ -163,6 +167,16 @@ Zoltan_PHG_Tree_create(int part_number, ZZ* zz)
   return (Zoltan_PHG_Tree_init(tree));
 }
 
+
+Zoltan_PHG_Tree *
+get_tree(ZZ* zz)
+{
+  Zoltan_PHG_LB_Data * ptr = zz->LB.Data_Structure;
+
+  return (ptr->tree);
+}
+
+
 int
 Zoltan_PHG_Tree_init(Zoltan_PHG_Tree* tree)
 {
@@ -217,18 +231,10 @@ Zoltan_PHG_Tree_centralize(ZZ *zz)
   tree = Zoltan_PHG_LB_Data_tree(zz);
   if (tree == NULL)
     return ZOLTAN_OK;
+
+  Zoltan_AllReduceInPlace(tree->array + 2, 2*tree->size , MPI_INT, MPI_MAX, zz->Communicator);
+
   /* TRICK: we store -low, thus we can use MPI_MAX for low and high */
-#ifdef MPI_IN_PLACE
-  MPI_Allreduce(MPI_IN_PLACE, tree->array + 2, 2*tree->size, MPI_INT, MPI_MAX, zz->Communicator);
-#else /* MPI_IN_PLACE */
-  int *tmp_tree;
-  tmp_tree = (int *) ZOLTAN_MALLOC(sizeof(int)*2*tree->size);
-  if (tmp_tree == NULL)
-    return ZOLTAN_MEMERR;
-  memcpy (tmp_tree, tree->array + 2, 2*tree->size*sizeof(int));
-  MPI_Allreduce(tree->array + 2, tmp_tree, 2*tree->size, MPI_INT, MPI_MAX, zz->Communicator);
-  ZOLTAN_FREE(&tmp_tree);
-#endif /* MPI_IN_PLACE */
   return ZOLTAN_OK;
 }
 
@@ -243,6 +249,63 @@ Zoltan_PHG_Tree_Set(ZZ* zz, int father, int lo, int hi)
   SET_MIN_NODE(tree->array, father, lo);
   SET_MAX_NODE(tree->array, father, hi);
 }
+
+
+int
+find_interval_in_tree(Zoltan_PHG_Tree *tree, int *interval)
+{
+  int node = 1;
+  int tree_size;
+
+  if (IS_EMPTY(interval))
+    return (-1);
+
+  tree_size = get_tree_size(tree);
+  if (-interval[0] == interval[1]) /* a leaf */
+    return (interval[1]+(tree_size+1)/2);
+
+  while (2*node <= tree_size) {
+    if (!(IS_INCLUDED(&(tree->array[2*node]), interval))) {
+      return (node/2);
+    }
+    node *= 2;
+    if (-interval[0] > tree->array[2*node+1]) /* We need to search in the highest interval */
+      node ++;
+  }
+
+  return (node/2);
+}
+
+static int
+numerote(Zoltan_PHG_Tree *tree, int node, int part, int *partnumber)
+{
+  int partnum = part;
+  if (2*node <= get_tree_size(tree)) { /* Not a leaf */
+    partnum = numerote(tree, 2*node, part, partnumber);
+    partnum = numerote(tree, 2*node+1, partnum, partnumber);
+  }
+  partnumber[node] = partnum;
+
+  if (!IS_EMPTY(&(tree->array[2*node])))
+    partnum++;
+  return (partnum);
+}
+
+int *
+compute_part_number(Zoltan_PHG_Tree *tree)
+{
+  int *partnumber;
+  int tree_size;
+
+  tree_size = get_tree_size(tree);
+  partnumber = (int*)ZOLTAN_CALLOC(tree_size, sizeof(int));
+  partnumber -= 1;
+  numerote(tree, 1, 0, partnumber);
+
+  return (partnumber);
+}
+
+
 
 int
 Zoltan_PHG_Timers_copy(ZZ* zz, struct phg_timer_indices* ftimers)

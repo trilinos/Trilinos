@@ -95,6 +95,23 @@ Zoltan_PHG_Tree_create(int part_number, ZZ* zz);
 void
 Zoltan_PHG_Tree_Set(ZZ* zz, int father, int lo, int hi);
 
+
+Zoltan_PHG_Tree *
+get_tree(ZZ* zz);
+
+int
+get_tree_size(Zoltan_PHG_Tree * tree);
+
+#define get_tree_size(tree) ((tree)->size)
+
+/* Find interval (int [2]) in tree. Return the position of the smallest node
+   that contains this interval, or -1 if none is found */
+int
+find_interval_in_tree(Zoltan_PHG_Tree *tree, int *interval);
+
+int*
+compute_part_number(Zoltan_PHG_Tree *tree);
+
 int
 Zoltan_PHG_Timers_init(ZZ* zz);
 

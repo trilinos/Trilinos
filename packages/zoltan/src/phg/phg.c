@@ -287,6 +287,7 @@ int **exp_to_part )         /* list of partitions to which exported objs
   int err = ZOLTAN_OK, p=0;
   struct phg_timer_indices *timer = NULL; 
   int do_timing = 0;
+  int * rowpart = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -416,8 +417,8 @@ int **exp_to_part )         /* list of partitions to which exported objs
       /* This processor is part of the 2D data distribution; it should
          participate in partitioning. */
 
-        
-      if (hgp.kway || zz->LB.Num_Global_Parts == 2) {
+      /* TODO : Construct a fake tree when there are only two parts */
+      if (hgp.kway) { /* || zz->LB.Num_Global_Parts == 2) { */
         /* call main V cycle routine */
         err = Zoltan_PHG_Partition(zz, hg, p,
                                    hgp.part_sizes, parts, &hgp);
@@ -470,8 +471,12 @@ int **exp_to_part )         /* list of partitions to which exported objs
       findAndSaveLeftAloneVertices(zz, hg, p, parts, &hgp);
 #endif      
     }
+
+#ifdef CEDRIC_2D_PARTITIONS
     /* Build a centralized tree */
     Zoltan_PHG_Tree_centralize(zz);
+    rowpart = Zoltan_PHG_2ways_hyperedge_partition (zz, hg, parts, get_tree(zz));
+#endif /* CEDRIC_2D_PARTITIONS */
 
     Zoltan_PHG_LB_Data_free_tree(zz);
   }

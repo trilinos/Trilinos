@@ -35,6 +35,8 @@ void Zoltan_Transform_Box(double *lo, double *hi, double (*m)[3], int *a,
   int d, int ndims);
 void Zoltan_Transform_Box_Points(double *lo, double *hi, double (*m)[3], 
   int *a, int d, int ndims, double (*v)[3]);
+int Zoltan_AllReduceInPlace(void *, int , MPI_Datatype , MPI_Op , MPI_Comm );
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

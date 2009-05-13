@@ -364,6 +364,7 @@ APPEND_SET(SOURCES
   phg/phg_scale.c
   phg/phg_serialpartition.c
   phg/phg_tree.c
+  phg/phg_two_ways.c
   phg/phg_util.c
   phg/phg_Vcycle.c
   )

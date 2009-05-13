@@ -170,6 +170,8 @@ int Zoltan_PHG_rdivide(
     
   /* if only two parts total, record results and exit */
   if (lo + 1 == hi)  {
+    Zoltan_PHG_Tree_Set(zz, 2*father, lo, lo);
+    Zoltan_PHG_Tree_Set(zz, 2*father+1, hi, hi);
     for (i = 0; i < hg->nVtx; ++i)
       final[hg->vmap[i]] = ((part[i] == 0) ? lo : hi);
     ZOLTAN_FREE (&part);
