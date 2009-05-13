@@ -2,25 +2,25 @@
 INCLUDE(PackageAddTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
+# Copy all zdrive.inp* files to executable directory.
+FILE(GLOB ZDRIVE_INP RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} zdrive.inp.*)
 
 PACKAGE_ADD_TEST(
   ../../src/driver/zdrive
   NOEXEPREFIX
-  NAME zdrive_ch_simple_rcb
+  NAME ch_simple_rcb
   ARGS zdrive.inp.rcb
   COMM serial mpi
   NUM_MPI_PROCS 4
   FAIL_REGULAR_EXPRESSION "fatal: "
   )
-# 2008/11/18: rabartl: ToDo: Above, we are *not* running the MPI test because
-# it fails.  We need to talk with the Zoltan developers about this!
 
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_ParMETIS)
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
   PACKAGE_ADD_TEST(
     ../../src/driver/zdrive
     NOEXEPREFIX
-    NAME zdrive_ch_simple_partkway-v3
+    NAME ch_simple_partkway-v3
     ARGS zdrive.inp.partkway-v3
     COMM serial mpi
     NUM_MPI_PROCS 4
@@ -31,10 +31,9 @@ ENDIF()
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveChSimpleCopyFiles
   SOURCE_FILES
-    zdrive.inp.partkway-v3
     simple.graph
     simple.coords
-    zdrive.inp.rcb
+    ${ZDRIVE_INP}
   EXEDEPS zdrive
   NOEXEPREFIX
   )
