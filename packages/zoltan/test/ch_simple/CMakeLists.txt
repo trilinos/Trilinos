@@ -9,7 +9,7 @@ PACKAGE_ADD_TEST(
   NAME zdrive_ch_simple_rcb
   ARGS zdrive.inp.rcb
   COMM serial mpi
-  NUM_MPI_PROCS 1
+  NUM_MPI_PROCS 4
   FAIL_REGULAR_EXPRESSION "fatal: "
   )
 # 2008/11/18: rabartl: ToDo: Above, we are *not* running the MPI test because
@@ -23,7 +23,7 @@ IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
     NAME zdrive_ch_simple_partkway-v3
     ARGS zdrive.inp.partkway-v3
     COMM serial mpi
-    NUM_MPI_PROCS 1
+    NUM_MPI_PROCS 4
     FAIL_REGULAR_EXPRESSION "fatal: "
     )
 ENDIF()
@@ -33,6 +33,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveChSimpleCopyFiles
   SOURCE_FILES
     zdrive.inp.partkway-v3
     simple.graph
+    simple.coords
     zdrive.inp.rcb
   EXEDEPS zdrive
   NOEXEPREFIX
