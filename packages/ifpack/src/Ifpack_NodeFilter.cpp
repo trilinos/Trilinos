@@ -42,10 +42,13 @@
 #include "Epetra_Import.h"
 #include "Epetra_Export.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_BLAS_wrappers.h"
 
 using namespace Teuchos;
 
 extern int ML_NODE_ID;
+
+#define OLD_AND_BUSTED
 
 //==============================================================================
 Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& Matrix,int nodeID) :
@@ -64,12 +67,16 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
   ExportVector_=0;
 
   ovA_ = dynamic_cast<const Ifpack_OverlappingRowMatrix*>(&*Matrix_);
-  assert(ovA_ != 0);
+  //assert(ovA_ != 0);
 
-  Acrs_=dynamic_cast<const Epetra_CrsMatrix*>(&ovA_->A());
-
-  NumMyRowsA_ = ovA_->A().NumMyRows();
-  NumMyRowsB_ = ovA_->B().NumMyRows();
+  if (ovA_) {
+    Acrs_=dynamic_cast<const Epetra_CrsMatrix*>(&ovA_->A());
+    NumMyRowsA_ = ovA_->A().NumMyRows();
+    NumMyRowsB_ = ovA_->B().NumMyRows();
+  } else {
+    NumMyRowsA_ = Matrix->NumMyRows();
+    NumMyRowsB_ = 0;
+  }
   
 #ifdef HAVE_MPI
   const Epetra_MpiComm *pComm = dynamic_cast<const Epetra_MpiComm*>( &(Matrix->Comm()) );
@@ -134,6 +141,12 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
   // - the diagonal entries
 
 
+  Ac_LIDMap_ = 0;
+  Bc_LIDMap_ = 0;
+  Ar_LIDMap_ = 0;
+  Br_LIDMap_ = 0;
+  tempX_ = 0;
+  tempY_ = 0;
   // CMS: [A|B]-Local to Overlap-Local Column Indices
   if(ovA_){
     Ac_LIDMap_=new int[ovA_->A().NumMyCols()+1];
@@ -146,6 +159,15 @@ Ifpack_NodeFilter::Ifpack_NodeFilter(const RefCountPtr<const Epetra_RowMatrix>& 
     Br_LIDMap_=new int[ovA_->B().NumMyRows()+1];
     for(int i=0;i<ovA_->B().NumMyRows();i++) Br_LIDMap_[i]=Map_->LID(ovA_->B().RowMatrixRowMap().GID(i));
 
+
+#ifndef OLD_AND_BUSTED
+    NumMyColsA_=ovA_->A().NumMyCols();
+    tempX_=new double[NumMyColsA_];
+    tempY_=new double[NumMyRowsA_];     
+#else
+    tempX_=0;
+    tempY_=0;
+#endif
   }
   // end CMS
 
@@ -371,6 +393,8 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
     IFPACK_CHK_ERR(Acrs_->ExtractCrsDataPointers(MyRows,MyIndices,MyValues));
     //special case NumVectors==1
     if (NumVectors==1) {
+#ifdef OLD_AND_BUSTED
+
       for(int i=0;i<NumMyRowsA_;i++) {
         int LocRow=Ar_LIDMap_[i];
         double sum = 0.0;
@@ -378,6 +402,21 @@ int Ifpack_NodeFilter::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y)
           sum += MyValues[j]*Xp[0][Ac_LIDMap_[MyIndices[j]]];          
         Yp[0][LocRow] = sum;
       }
+#else      
+      int izero=0;
+      for(int i=0;i<NumMyColsA_;i++) tempX_[i]=Xp[0][Ac_LIDMap_[i]];
+      EPETRA_DCRSMV_F77(&izero,&NumMyRowsA_,&NumMyRowsA_,MyValues,MyIndices,MyRows,tempX_,tempY_);
+
+      /*      for(int i=0;i<NumMyRowsA_;i++) {
+        double sum = 0.0;
+        for(int j = MyRows[i]; j < MyRows[i+1]; j++)
+          sum += MyValues[j]*tempX_[MyIndices[j]];
+        tempY_[i] = sum;
+        }*/
+      
+      for(int i=0;i<NumMyRowsA_;i++) Yp[0][Ar_LIDMap_[i]]=tempY_[i];    
+#endif
+
     }
     else {
       for(int i=0;i<NumMyRowsA_;i++) {

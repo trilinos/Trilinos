@@ -346,6 +346,11 @@ protected:
   //! Pointers to the overlapping matrix.
   Teuchos::RefCountPtr<Ifpack_OverlappingRowMatrix> OverlappingMatrix_;
   //! Localized version of Matrix_ or OverlappingMatrix_.
+/*
+  //TODO if we choose to expose the node aware code, i.e., no ifdefs,
+  //TODO then we should switch to this definition.
+  Teuchos::RefCountPtr<Epetra_RowMatrix> LocalizedMatrix_;
+*/
 # ifdef IFPACK_NODE_AWARE_CODE
   Teuchos::RefCountPtr<Ifpack_NodeFilter> LocalizedMatrix_;
 # else
@@ -405,6 +410,11 @@ protected:
   Teuchos::RefCountPtr<Epetra_Time> Time_;
   //! Pointer to the local solver.
   Teuchos::RefCountPtr<T> Inverse_;
+  //! Vectors used in overlap solve.
+# ifdef IFPACK_NODE_AWARE_CODE
+  mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlappingX;
+  mutable Teuchos::RefCountPtr<Epetra_MultiVector> OverlappingY;
+#endif
 
 }; // class Ifpack_AdditiveSchwarz<T>
 
@@ -845,12 +855,24 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
   // process overlap, may need to create vectors and import data
   if (IsOverlapping()) {
+#   ifdef IFPACK_NODE_AWARE_CODE
+    if (OverlappingX == Teuchos::null) {
+      OverlappingX = Teuchos::rcp( new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
+                                   X.NumVectors()) );
+      if (OverlappingX == Teuchos::null) IFPACK_CHK_ERR(-5);
+    } else assert(OverlappingX->NumVectors() == X.NumVectors());
+    if (OverlappingY == Teuchos::null) {
+      OverlappingY = Teuchos::rcp( new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
+                                     Y.NumVectors()) );
+      if (OverlappingY == Teuchos::null) IFPACK_CHK_ERR(-5);
+    } else assert(OverlappingY->NumVectors() == Y.NumVectors());
+#else
     OverlappingX = Teuchos::rcp( new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
 							X.NumVectors()) );
     OverlappingY = Teuchos::rcp( new Epetra_MultiVector(OverlappingMatrix_->RowMatrixRowMap(),
 							Y.NumVectors()) );
     if (OverlappingY == Teuchos::null) IFPACK_CHK_ERR(-5);
-
+#   endif
     OverlappingY->PutScalar(0.0);
     OverlappingX->PutScalar(0.0);
     IFPACK_CHK_ERR(OverlappingMatrix_->ImportMultiVector(X,*OverlappingX,Insert));

@@ -100,6 +100,11 @@ public:
   ~Ifpack_NodeFilter(){
     if(Ac_LIDMap_) delete [] Ac_LIDMap_;
     if(Bc_LIDMap_) delete [] Bc_LIDMap_;
+    if(Ar_LIDMap_) delete [] Ar_LIDMap_;
+    if(Br_LIDMap_) delete [] Br_LIDMap_;
+    if(tempX_) delete [] tempX_;
+    if(tempY_) delete [] tempY_;
+
   };
   //@}
 
@@ -433,6 +438,8 @@ private:
   const Epetra_CrsMatrix* Acrs_;
 
   int NumMyRowsA_;
+  int NumMyColsA_;
+  double *tempX_,*tempY_;
   int NumMyRowsB_;
   
   //mutable Teuchos::RCP<Epetra_MultiVector> ImportVector_;
