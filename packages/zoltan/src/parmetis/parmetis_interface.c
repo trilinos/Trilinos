@@ -116,10 +116,10 @@ int Zoltan_ParMetis(
   int wgtflag;
   int   numflag = 0;
   int num_part = zz->LB.Num_Global_Parts;/* passed to Jostle/ParMETIS. Don't */
-#ifdef HAVE_MPI
+#ifdef ZOLTAN_MPI4TPL
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
                                    /* change our zz struct.                  */
-#endif /* HAVE_MPI */
+#endif /* ZOLTAN_MPI4TPL */
 
 
 #ifndef ZOLTAN_PARMETIS
@@ -165,7 +165,7 @@ int Zoltan_ParMetis(
     }
   }
 
-#ifdef HAVE_MPI
+#ifdef ZOLTAN_MPI4TPL
   gr.graph_type = - GLOBAL_GRAPH;
   /* Select type of graph, negative because we impose them */
   /* TODO: add a parameter to select the type, shared with Scotch */
@@ -179,7 +179,7 @@ int Zoltan_ParMetis(
 /*   } */
 #else
   gr.graph_type = - LOCAL_GRAPH;
-#endif /* HAVE_MPI */
+#endif /* ZOLTAN_MPI4TPL */
 
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 
@@ -550,9 +550,9 @@ int Zoltan_ParMetis_Order(
   ZOLTAN_Output_Order ord;
   ZOLTAN_Third_Graph gr;
 
-#ifdef HAVE_MPI
+#ifdef ZOLTAN_MPI4TPL
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
-#endif /* HAVE_MPI */
+#endif /* ZOLTAN_MPI4TPL */
   int numflag = 0;
   int timer_p = 0;
   int get_times = 0;
@@ -603,9 +603,9 @@ int Zoltan_ParMetis_Order(
   if (order_opt){
     gr.graph_type = - GLOBAL_GRAPH;
 
-#ifdef HAVE_MPI
+#ifdef ZOLTAN_MPI4TPL
     if (strcmp(order_opt->order_type, "LOCAL") == 0)
-#endif /* HAVE_MPI */
+#endif /* ZOLTAN_MPI4TPL */
       gr.graph_type = - LOCAL_GRAPH;
 
   }

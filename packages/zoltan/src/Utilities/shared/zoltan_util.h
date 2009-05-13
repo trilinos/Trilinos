@@ -92,6 +92,10 @@ extern "C" {
 
 #endif /* TRILINOS_NO_CONFIG_H */
 
+#ifndef NO_MPI_TPL
+#define ZOLTAN_MPI4TPL
+#endif
+
 #define ZOLTAN_HIER
 /*****************************************************************************/
 /* 

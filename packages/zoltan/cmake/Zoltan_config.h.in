@@ -21,6 +21,11 @@
 /* Define if want to build with scotch enabled */
 #cmakedefine HAVE_SCOTCH
 
+/* Define if DON'T want support for MPI TPL */
+#ifndef HAVE_MPI
+#define NO_MPI_TPL
+#endif
+
 /* Define if want to build with octreepartitioning enabled */
 #cmakedefine HAVE_ZOLTAN_OCT
 
