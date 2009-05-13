@@ -80,12 +80,12 @@ static int getObjectSizes(ZZ *zz, ZHG *zhg);
     
 /*****************************************************************************/
 int Zoltan_PHG_Build_Hypergraph(
-  ZZ *zz,                            /* Input : Zoltan data structure */
-  ZHG **zoltan_hg,                   /* Output: Hypergraph to be allocated and built.*/
-  Partition *input_parts,            /* Output: Initial partition assignments for
-                                         vtxs (in 2D distribution); length = 
-                                         zoltan_hg->HG->nVtx.  */
-  PHGPartParams *hgp                 /* Input : Parameters for PHG partitioning.*/
+  ZZ *zz,                     /* Input : Zoltan data structure */
+  ZHG **zoltan_hg,            /* Output: Hypergraph to be allocated and built.*/
+  Partition *input_parts,     /* Output: Initial partition assignments for
+                                 vtxs (in 2D distribution); length = 
+                                 zoltan_hg->HG->nVtx.  */
+  PHGPartParams *hgp          /* Input : Parameters for PHG partitioning.*/
 )
 {
 /* allocates and builds hypergraph data structure using callback routines */ 
@@ -671,6 +671,12 @@ int nRepartEdge = 0, nRepartVtx = 0;
       myObjs.vtx_gno[i] =  gtotal[zz->Proc]+i;
     }
   }
+
+#ifdef CHECK_FOR_CEDRIC
+for (i = 0; i < myObjs.size; i++) 
+  printf("%d CEDRIC VTX GID %d VTX GNO %d\n",
+         zz->Proc, global_ids[i], myObjs.vtx_gno[i]);
+#endif /* CHECK_FOR_CEDRIC */
 
   /***********************************************************************/
   /* Get hyperedge information from application through query functions. */
@@ -1406,6 +1412,12 @@ int nRepartEdge = 0, nRepartVtx = 0;
     /* Assign global numbers to edges. */
     for (i = 0; i < nEdge; i++)
       egno[i] = gtotal[zz->Proc] + i;
+
+#ifdef CHECK_FOR_CEDRIC
+for (i = 0; i < nEdge; i++) 
+  printf("%d CEDRIC EDGE GID %d  EDGE GNO %d\n", 
+         zz->Proc, myHshEdges.edgeGID[i*num_gid_entries], egno[i]);
+#endif /* CHECK_FOR_CEDRIC */
   }
   ZOLTAN_FREE(&gtotal);
 
