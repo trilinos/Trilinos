@@ -72,6 +72,9 @@ extern "C" {
 
 #ifdef HAVE_SCOTCH
 #define ZOLTAN_SCOTCH
+#  ifdef HAVE_MPI
+#  define ZOLTAN_PTSCOTCH
+#  endif
 #endif
 
 #ifdef HAVE_PATOH
@@ -90,11 +93,18 @@ extern "C" {
 #define ZOLTAN_OCT
 #endif
 
+#else /* TRILINOS_NO_CONFIG_H */
+
+  /* With the manual build system we support only Parallel Version of Scotch */
+
+#ifdef ZOLTAN_SCOTCH
+#define ZOLTAN_PTSCOTCH
+#endif
+
 #endif /* TRILINOS_NO_CONFIG_H */
 
-#ifndef NO_MPI_TPL
-#define ZOLTAN_MPI4TPL
-#endif
+
+
 
 #define ZOLTAN_HIER
 /*****************************************************************************/

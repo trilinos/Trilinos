@@ -45,7 +45,11 @@ extern "C" {
 #endif /* ZOLTAN_METIS */
 
 #ifdef ZOLTAN_SCOTCH
+#ifndef  ZOLTAN_PTSCOTCH
+#include <scotch.h>
+#else
 #include <ptscotch.h>
+#endif
 #ifndef indextype
 #define indextype SCOTCH_Num
 #define weighttype SCOTCH_Num

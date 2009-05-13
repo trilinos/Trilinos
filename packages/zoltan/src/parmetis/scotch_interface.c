@@ -27,9 +27,9 @@ extern "C" {
 #include "third_library.h"
 #include "scotch_interface.h"
 
-#ifndef ZOLTAN_MPI4TPL
+#ifndef ZOLTAN_PTSCOTCH
 #define Scotch_Dgraph Scotch_Graph
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
 
   /**********  parameters structure for Scotch methods **********/
 static PARAM_VARS Scotch_params[] = {
@@ -57,7 +57,9 @@ static int compar_int (const void * a, const void * b)
 static int
 Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
 			  MPI_Comm             comm,
+#ifdef ZOLTAN_PTSCOTCH
 			  SCOTCH_Dgraph *      dgrafptr,
+#endif
 			  SCOTCH_Graph *       cgrafptr,
 			  SCOTCH_Strat *       stratptr);
 
@@ -89,9 +91,9 @@ int Zoltan_Scotch_Order(
   ZOLTAN_Output_Order ord;
   ZOLTAN_Third_Graph gr;
   SCOTCH_Strat        stradat;
-  SCOTCH_Dgraph       grafdat;
   SCOTCH_Graph        cgrafdat;
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
+  SCOTCH_Dgraph       grafdat;
   SCOTCH_Dordering    ordedat;
   /* The following are used to convert elimination tree in Zoltan format */
   indextype          *tree;
@@ -100,7 +102,7 @@ int Zoltan_Scotch_Order(
   indextype           leafnum;
   indextype           start;
   int root = -1;
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
   int numbloc;
 
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
@@ -163,10 +165,10 @@ int Zoltan_Scotch_Order(
   if (order_opt){
     if (strcmp(order_opt->order_type, "LOCAL") == 0)
       gr.graph_type = - LOCAL_GRAPH;
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
     else if (strcmp(order_opt->order_type, "GLOBAL") == 0)
       gr.graph_type =  - GLOBAL_GRAPH;
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
     else
       gr.graph_type = - NO_GRAPH;
   }
@@ -188,21 +190,25 @@ int Zoltan_Scotch_Order(
   ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, NULL);
 
 
-  if (Zoltan_Scotch_Build_Graph(&gr, comm, &grafdat, &cgrafdat, &stradat) != ZOLTAN_OK) {
+  if (Zoltan_Scotch_Build_Graph(&gr, comm,
+#ifdef ZOLTAN_PTSCOTCH
+ &grafdat,
+#endif
+ &cgrafdat, &stradat) != ZOLTAN_OK) {
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch Graph");
   }
 
   if (strat != NULL) {
     if (
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
 	((gr.graph_type==GLOBAL_GRAPH) && (SCOTCH_stratDgraphOrder (&stradat, strat)) != 0) ||
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
 	(SCOTCH_stratGraphOrder (&stradat, strat) != 0)) {
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
       if (gr.graph_type == GLOBAL_GRAPH) SCOTCH_dgraphExit(&grafdat);
       else
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
 	SCOTCH_graphExit(&cgrafdat);
       Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
       return (ZOLTAN_FATAL);
@@ -236,24 +242,24 @@ int Zoltan_Scotch_Order(
     }
   }
 
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
   if ((gr.graph_type==GLOBAL_GRAPH) && (SCOTCH_dgraphOrderInit (&grafdat, &ordedat) != 0)) {
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch graph.");
   }
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
 
   /* Get a time here */
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
   if (gr.graph_type==GLOBAL_GRAPH){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the PT-Scotch library");
     ierr = SCOTCH_dgraphOrderCompute (&grafdat, &ordedat, &stradat);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the PT-Scotch library");
   }
   else
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
     {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the Scotch library");
     ierr = SCOTCH_graphOrder (&cgrafdat,  &stradat, ord.rank, ord.iperm,
@@ -294,7 +300,7 @@ int Zoltan_Scotch_Order(
     }
 
   }
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
   else{
     /* Compute permutation */
     if (SCOTCH_dgraphOrderPerm (&grafdat, &ordedat, ord.rank) != 0) {
@@ -375,20 +381,20 @@ int Zoltan_Scotch_Order(
     ZOLTAN_FREE(&size);
     ZOLTAN_FREE(&children);
   }
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
 
   ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
 
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
   if (gr.graph_type==GLOBAL_GRAPH) {
     SCOTCH_dgraphOrderExit (&grafdat, &ordedat);
     SCOTCH_dgraphExit (&grafdat);
   }
   else
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
   {
     SCOTCH_graphExit (&cgrafdat);
   }
@@ -484,7 +490,9 @@ int Zoltan_Scotch(
   ZOLTAN_ID_PTR local_ids = NULL;
 
   SCOTCH_Strat        stradat;
+#ifdef ZOLTAN_PTSCOTCH
   SCOTCH_Dgraph       grafdat;
+#endif
   SCOTCH_Graph        cgrafdat;
   SCOTCH_Arch         archdat;
 
@@ -535,7 +543,7 @@ int Zoltan_Scotch(
     times[0] = Zoltan_Time(zz->Timer);
   }
 
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
   gr.graph_type = - GLOBAL_GRAPH;
   /* Fix type of graph, negative because we impose them */
   if (strcmp (graph_type, "GLOBAL") != 0) {
@@ -548,7 +556,7 @@ int Zoltan_Scotch(
   }
 #else
   gr.graph_type = - LOCAL_GRAPH;
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
 
   /* TODO : take care about multidimensional weights */
   ierr = Zoltan_Preprocess_Graph(zz, &global_ids, &local_ids,  &gr, geo, &prt, &vsp);
@@ -561,7 +569,11 @@ int Zoltan_Scotch(
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Scotch cannot deal with more than 1 weight.");
   }
 
-  if (Zoltan_Scotch_Build_Graph(&gr, comm, &grafdat, &cgrafdat, &stradat) != ZOLTAN_OK) {
+  if (Zoltan_Scotch_Build_Graph(&gr, comm,
+#ifdef ZOLTAN_PTSCOTCH
+ &grafdat,
+#endif
+ &cgrafdat, &stradat) != ZOLTAN_OK) {
     Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch graph.");
   }
@@ -589,14 +601,14 @@ int Zoltan_Scotch(
 
   if (strat != NULL) {
     if (
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
 	((gr.graph_type==GLOBAL_GRAPH) && (SCOTCH_stratDgraphMap (&stradat, strat)) != 0) ||
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
 	(SCOTCH_stratGraphMap (&stradat, strat) != 0)) {
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
       if (gr.graph_type == GLOBAL_GRAPH) SCOTCH_dgraphExit(&grafdat);
       else
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
 	SCOTCH_graphExit(&cgrafdat);
       Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
       return (ZOLTAN_FATAL);
@@ -605,11 +617,11 @@ int Zoltan_Scotch(
 
 
   /* Compute size we want for each part */
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
   if (gr.graph_type == GLOBAL_GRAPH)
     SCOTCH_dgraphSize (&grafdat, NULL, &velosum, NULL, NULL);
   else
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
     SCOTCH_graphStat (&cgrafdat, NULL, NULL, &velosum, NULL, NULL,
 		      NULL, NULL, NULL, NULL,
 		      NULL, NULL, NULL, NULL, NULL);
@@ -623,7 +635,7 @@ int Zoltan_Scotch(
   SCOTCH_archCmpltw(&archdat, num_part, goal_sizes);
 
   /* Really Call PT-Scotch or Scotch) */
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
   if (gr.graph_type == GLOBAL_GRAPH) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the PT-Scotch library");
     if (SCOTCH_dgraphMap(&grafdat, &archdat, &stradat, prt.part) != 0) {
@@ -636,7 +648,7 @@ int Zoltan_Scotch(
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the PT-Scotch library");
   }
   else
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
  {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the Scotch library");
     if (SCOTCH_graphMap(&cgrafdat, &archdat, &stradat, prt.part) != 0) {
@@ -652,12 +664,12 @@ int Zoltan_Scotch(
   /* Get a time here */
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
 
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
   if (gr.graph_type == GLOBAL_GRAPH) {
     SCOTCH_dgraphExit(&grafdat);
   }
   else
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
   {
     SCOTCH_graphExit(&cgrafdat);
   }
@@ -796,14 +808,16 @@ char *val)                      /* value of variable */
 static int
 Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
 			  MPI_Comm             comm,
+#ifdef ZOLTAN_PTSCOTCH
 			  SCOTCH_Dgraph *      dgrafptr,
+#endif
 			  SCOTCH_Graph *       cgrafptr,
 			  SCOTCH_Strat *       stratptr)
 {
   int edgelocnbr;
 
   edgelocnbr =  gr->xadj[gr->num_obj];
-#ifdef ZOLTAN_MPI4TPL
+#ifdef ZOLTAN_PTSCOTCH
   if (gr->graph_type==GLOBAL_GRAPH){
     if (SCOTCH_dgraphInit (dgrafptr, comm) != 0) {
       return (ZOLTAN_FATAL);
@@ -816,7 +830,7 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
     }
   }
   else
-#endif /* ZOLTAN_MPI4TPL */
+#endif /* ZOLTAN_PTSCOTCH */
   {/* gr->graph_type==GLOBAL_GRAPH */
     if (SCOTCH_graphInit (cgrafptr) != 0) {
       return (ZOLTAN_FATAL);
