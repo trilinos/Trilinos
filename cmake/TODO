@@ -6,8 +6,8 @@ TODOs for the Trilinos/CMake System
 Active items:
 -------------
 
-(*) [Brent] Get a Windows CSRI machine set up to build Trilinos Dev with CMake
-and run nightly tests.
+(*) [Brent] Get a Windows machine set up to build Trilinos Dev with CMake and
+run nightly tests.
 
 (*) [Everyone] Clean up existing failures:
 - [Brent] PyTrilnos: Get building and running on Darwin or ask Bill Spotz to
@@ -27,7 +27,12 @@ Backlog:
 --------
 
 (*) [???] Improving nightly testing:
-- Add the compiler name and version (set manually) to the CDash build name
+- Implement a script to inform a group of people when a build on a test
+machine if finished
+- Implement a system of safeguards to make sure that nightly tests end when
+they should.  For exmaple, you could check to see if the builds finished by 8
+AM in the morning and if they have not, send out an email to
+trilinos-framework@sandia.gov
 - Standarize testing of primary and secondary stable code
 - Add automated support for turning on SS TPLs when building (TPL_ENABLE_ALL)
 - Add variable Trilinos_EXCLUDE_TESTS_REGEX that can be set to exclude
@@ -36,7 +41,7 @@ with the EXCLUDE option.  We need the ability to disable particular tests on
 specific machines for specific build cases.
 - Add testing for MOOCHO with MA28 on gabriel or godel
 - Add a no-Fortran build
-- Add an explicit MPI compiler, headers and library build
+- Add an explicit MPI compiler, headers, and library build
 - Add a build with Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF
 
 (*) [???] Turn on shared libraries by default on Mac and Linux: Switching to
