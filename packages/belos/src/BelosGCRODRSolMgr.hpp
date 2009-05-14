@@ -39,7 +39,6 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 
-#include "BelosBlockGmresIter.hpp"
 #include "BelosGCRODRIter.hpp"
 #include "BelosBlockFGmresIter.hpp"
 #include "BelosDGKSOrthoManager.hpp"
@@ -80,9 +79,10 @@ namespace Belos {
    * This exception is thrown from the GCRODRSolMgr::solve() method.
    *
    */
-  class GCRODRSolMgrLinearProblemFailure : public BelosError {public:
-    GCRODRSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
+  class GCRODRSolMgrLinearProblemFailure : public BelosError {
+    public:
+      GCRODRSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg) {}
+  };
   
   /** \brief GCRODRSolMgrOrthoFailure is thrown when the orthogonalization manager is
    * unable to generate orthonormal columns from the initial basis vectors.
@@ -90,9 +90,10 @@ namespace Belos {
    * This exception is thrown from the GCRODRSolMgr::solve() method.
    *
    */
-  class GCRODRSolMgrOrthoFailure : public BelosError {public:
-    GCRODRSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
+  class GCRODRSolMgrOrthoFailure : public BelosError {
+    public:
+      GCRODRSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg) {}
+  };
   
   /** \brief GCRODRSolMgrLAPACKFailure is thrown when a nonzero value is retuned
    * from an LAPACK call.
@@ -100,9 +101,10 @@ namespace Belos {
    * This exception is thrown from the GCRODRSolMgr::solve() method.
    *
    */
-  class GCRODRSolMgrLAPACKFailure : public BelosError {public:
-    GCRODRSolMgrLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
+  class GCRODRSolMgrLAPACKFailure : public BelosError {
+    public:
+      GCRODRSolMgrLAPACKFailure(const std::string& what_arg) : BelosError(what_arg) {}
+  };
 
   /** \brief GCRODRSolMgrRecyclingFailure is thrown when any problem occurs in using/creating
    * the recycling subspace.
@@ -110,12 +112,12 @@ namespace Belos {
    * This exception is thrown from the GCRODRSolMgr::solve() method.
    *
    */
-  class GCRODRSolMgrRecyclingFailure : public BelosError {public:
-    GCRODRSolMgrRecyclingFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
+  class GCRODRSolMgrRecyclingFailure : public BelosError {
+    public:
+      GCRODRSolMgrRecyclingFailure(const std::string& what_arg) : BelosError(what_arg) {}
+  };
 
   //@}
-
 
   template<class ScalarType, class MV, class OP>
   class GCRODRSolMgr : public SolverManager<ScalarType,MV,OP> {
@@ -151,8 +153,7 @@ namespace Belos {
      *   - "Verbosity" - a sum of MsgType specifying the verbosity. Default: Belos::Errors
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8.
      */
-    GCRODRSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-		      const Teuchos::RCP<Teuchos::ParameterList> &pl );
+    GCRODRSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem, const Teuchos::RCP<Teuchos::ParameterList> &pl );
     
     //! Destructor.
     virtual ~GCRODRSolMgr() {};
@@ -173,7 +174,9 @@ namespace Belos {
 
     /*! \brief Get a parameter list containing the current parameters for this object.
      */
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { 
+      return params_; 
+    }
  
     /*! \brief Return the timers for this object. 
      *
@@ -199,7 +202,9 @@ namespace Belos {
     //@{
    
     //! Set the linear problem that needs to be solved. 
-    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { problem_ = problem; }
+    void setProblem( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem ) { 
+      problem_ = problem; 
+    }
    
     //! Set the parameters the solver manager should use to solve the linear problem. 
     void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
@@ -212,15 +217,17 @@ namespace Belos {
      *  solver manager that the solver should prepare for the next call to solve by resetting certain elements
      *  of the iterative solver strategy.
      */
-    void reset( const ResetType type ) { if ((type & Belos::Problem) && !Teuchos::is_null(problem_)) problem_->setProblem(); }
+    void reset( const ResetType type ) { 
+      if ((type & Belos::Problem) && !Teuchos::is_null(problem_))  
+        problem_->setProblem();
+    }
     //@}
  
     //! @name Solver application methods
     //@{ 
     
     /*! \brief This method performs possibly repeated calls to the underlying linear solver's iterate() routine
-     * until the problem has been solved (as decided by the solver manager) or the solver manager decides to 
-     * quit.
+     * until the problem has been solved (as decided by the solver manager) or the solver manager decides to quit
      *
      * This method calls GCRODRIter::iterate(), which will return either because a specially constructed status test evaluates to 
      * ::Passed or an exception is thrown.
@@ -248,6 +255,12 @@ namespace Belos {
     //@}
     
   private:
+
+    // Called by all constructors; Contains init instructions common to all constructors
+    void init();
+
+    // Initialize solver state storage
+    void initializeStateStorage();
 
     //  Computes harmonic eigenpairs of projected matrix created during the priming solve.
     //  HH is the projected problem from the initial cycle of Gmres, it is (at least) of dimension m+1 x m.
@@ -281,9 +294,11 @@ namespace Belos {
       } else if (scaleType == "None") {
 	return Belos::None;
       } else 
-	TEST_FOR_EXCEPTION( true ,std::logic_error,
-			    "Belos::GCRODRSolMgr(): Invalid residual scaling type.");
+	TEST_FOR_EXCEPTION( true ,std::logic_error,"Belos::GCRODRSolMgr(): Invalid residual scaling type.");
     }
+
+    // Lapack interface
+    Teuchos::LAPACK<int,ScalarType> lapack;
 
     // Linear problem.
     Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
@@ -323,12 +338,42 @@ namespace Belos {
     // Current solver values.
     MagnitudeType convtol_, orthoKappa_;
     int maxRestarts_, maxIters_, numIters_;
-    int numBlocks_, recycledBlocks_, verbosity_, outputFreq_;
+    int verbosity_, outputFreq_;
     std::string orthoType_; 
     std::string impResScale_, expResScale_;
 
-    // Recycled subspace and its image.
-    Teuchos::RCP<MV> U_, C_, r_;
+    /////////////////////////////////////////////////////////////////////////
+    // Solver State Storage
+    /////////////////////////////////////////////////////////////////////////
+    // 
+    // The number of blocks and recycle blocks (m and k, respectively)
+    int numBlocks_, recycledBlocks_;
+    // Current size of recycled subspace 
+    int keff;
+    //
+    // Residual vector
+    Teuchos::RCP<MV> r_;
+    //
+    // Search space
+    Teuchos::RCP<MV> V_;
+    //
+    // Recycled subspace and its image
+    Teuchos::RCP<MV> U_, C_;
+    //
+    // Updated recycle space and its image
+    Teuchos::RCP<MV> U1_, C1_;
+    //
+    // Storage used in constructing harmonic Ritz values/vectors
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H2_;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H_;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B_;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PP_;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > HP_;
+    std::vector<ScalarType> tau_;
+    std::vector<ScalarType> work_;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > R_;
+    std::vector<int> ipiv_;
+    /////////////////////////////////////////////////////////////////////////
 
     // Timers.
     std::string label_;
@@ -347,13 +392,13 @@ template<class ScalarType, class MV, class OP>
 const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType GCRODRSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 20;
+const int GCRODRSolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 100;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
+const int GCRODRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 5000;
 
 template<class ScalarType, class MV, class OP>
-const int GCRODRSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 300;
+const int GCRODRSolMgr<ScalarType,MV,OP>::numBlocks_default_ = 50;
 
 template<class ScalarType, class MV, class OP>
 const int GCRODRSolMgr<ScalarType,MV,OP>::recycledBlocks_default_ = 5;
@@ -382,53 +427,61 @@ const Teuchos::RCP<ostream> GCRODRSolMgr<ScalarType,MV,OP>::outputStream_default
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
-GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr() :
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
-  orthoKappa_(orthoKappa_default_),
-  maxRestarts_(maxRestarts_default_),
-  maxIters_(maxIters_default_),
-  numBlocks_(numBlocks_default_),
-  recycledBlocks_(recycledBlocks_default_),
-  verbosity_(verbosity_default_),
-  outputFreq_(outputFreq_default_),
-  orthoType_(orthoType_default_),
-  impResScale_(impResScale_default_),
-  expResScale_(expResScale_default_),
-  label_(label_default_),
-  isSet_(false)
-{}
+GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr() {
+  init();
+}
 
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
 GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr( 
 					     const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-					     const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
-  problem_(problem),
-  outputStream_(outputStream_default_),
-  convtol_(convtol_default_),
-  orthoKappa_(orthoKappa_default_),
-  maxRestarts_(maxRestarts_default_),
-  maxIters_(maxIters_default_),
-  numBlocks_(numBlocks_default_),
-  recycledBlocks_(recycledBlocks_default_),
-  verbosity_(verbosity_default_),
-  outputFreq_(outputFreq_default_),
-  orthoType_(orthoType_default_),
-  impResScale_(impResScale_default_),
-  expResScale_(expResScale_default_),
-  label_(label_default_),
-  isSet_(false)
-{
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+					     const Teuchos::RCP<Teuchos::ParameterList> &pl ) {
 
-  if (!is_null(pl)) {
-    // Set the parameters using the list that was passed in.
+  // initialize local pointers to null and local vars to default values
+  init();
+
+  TEST_FOR_EXCEPTION(problem == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  problem_ = problem;
+
+  // set the parameters using the list that was passed in.
+  if (!is_null(pl))
     setParameters( pl );  
-  }
 }
 
+// Common instructions executed in all constructors
+template<class ScalarType, class MV, class OP>
+void GCRODRSolMgr<ScalarType,MV,OP>::init() {
+  outputStream_ = outputStream_default_;
+  convtol_ = convtol_default_;
+  orthoKappa_ = orthoKappa_default_;
+  maxRestarts_ = maxRestarts_default_;
+  maxIters_ = maxIters_default_;
+  numBlocks_ = numBlocks_default_;
+  recycledBlocks_ = recycledBlocks_default_;
+  verbosity_ = verbosity_default_;
+  outputFreq_ = outputFreq_default_;
+  orthoType_ = orthoType_default_;
+  impResScale_ = impResScale_default_;
+  expResScale_ = expResScale_default_;
+  label_ = label_default_;
+  isSet_ = false;
+  numBlocks_ = 0;
+  recycledBlocks_ = 0;
+  keff = 0;
+  r_ = Teuchos::null;
+  V_ = Teuchos::null;
+  U_ = Teuchos::null; 
+  C_ = Teuchos::null;
+  U1_ = Teuchos::null;
+  C1_ = Teuchos::null;
+  PP_ = Teuchos::null;
+  HP_ = Teuchos::null;
+  H2_ = Teuchos::null;
+  R_ = Teuchos::null;
+  H_ = Teuchos::null;
+  B_ = Teuchos::null;
+}
 
 template<class ScalarType, class MV, class OP>
 void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params )
@@ -710,9 +763,8 @@ void GCRODRSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos::
 
     
 template<class ScalarType, class MV, class OP>
-Teuchos::RCP<const Teuchos::ParameterList>
-GCRODRSolMgr<ScalarType,MV,OP>::getValidParameters() const
-{
+Teuchos::RCP<const Teuchos::ParameterList> GCRODRSolMgr<ScalarType,MV,OP>::getValidParameters() const {
+
   static Teuchos::RCP<const Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
     Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
@@ -755,6 +807,135 @@ GCRODRSolMgr<ScalarType,MV,OP>::getValidParameters() const
     validPL = pl;
   }
   return validPL;
+
+}
+
+// initializeStateStorage
+template<class ScalarType, class MV, class OP>
+void GCRODRSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
+
+    ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+
+    // Check if there is any multivector to clone from.
+    Teuchos::RCP<const MV> rhsMV = problem_->getRHS();
+    if (rhsMV == Teuchos::null) {
+      // Nothing to do
+      return;
+    }
+    else {
+
+      // Initialize the state storage
+      TEST_FOR_EXCEPTION(numBlocks_ > MVT::GetVecLength(*rhsMV),std::invalid_argument,
+                         "Belos::GCRODRSolMgr::initializeStateStorage(): Cannot generate a Krylov basis with dimension larger the operator!");
+
+      // If the subspace has not been initialized before, generate it using the RHS from lp_.
+      if (U_ == Teuchos::null) {
+        U_ = MVT::Clone( *rhsMV, recycledBlocks_+1 );
+      }
+      else {
+        // Generate U_ by cloning itself ONLY if more space is needed.
+        if (MVT::GetNumberVecs(*U_) < recycledBlocks_+1) {
+          Teuchos::RCP<const MV> tmp = U_;
+          U_ = MVT::Clone( *tmp, recycledBlocks_+1 );
+        }
+      }
+
+      // If the subspace has not been initialized before, generate it using the RHS from lp_.
+      if (C_ == Teuchos::null) {
+        C_ = MVT::Clone( *rhsMV, recycledBlocks_+1 );
+      }
+      else {
+        // Generate C_ by cloning itself ONLY if more space is needed.
+        if (MVT::GetNumberVecs(*C_) < recycledBlocks_+1) {
+          Teuchos::RCP<const MV> tmp = C_;
+          C_ = MVT::Clone( *tmp, recycledBlocks_+1 );
+        }
+      }
+
+      // If the subspace has not been initialized before, generate it using the RHS from lp_.
+      if (V_ == Teuchos::null) {
+        V_ = MVT::Clone( *rhsMV, numBlocks_+1 );
+      }
+      else {
+        // Generate V_ by cloning itself ONLY if more space is needed.
+        if (MVT::GetNumberVecs(*V_) < numBlocks_+1) {
+          Teuchos::RCP<const MV> tmp = V_;
+          V_ = MVT::Clone( *tmp, numBlocks_+1 );
+        }
+      }
+
+      // If the subspace has not been initialized before, generate it using the RHS from lp_.
+      if (U1_ == Teuchos::null) {
+        U1_ = MVT::Clone( *rhsMV, recycledBlocks_+1 );
+      }
+      else {
+        // Generate U1_ by cloning itself ONLY if more space is needed.
+        if (MVT::GetNumberVecs(*U1_) < recycledBlocks_+1) {
+          Teuchos::RCP<const MV> tmp = U1_;
+          U1_ = MVT::Clone( *tmp, recycledBlocks_+1 );
+        }
+      }
+
+      // If the subspace has not been initialized before, generate it using the RHS from lp_.
+      if (C1_ == Teuchos::null) {
+        C1_ = MVT::Clone( *rhsMV, recycledBlocks_+1 );
+      }
+      else {
+        // Generate C1_ by cloning itself ONLY if more space is needed.
+        if (MVT::GetNumberVecs(*U1_) < recycledBlocks_+1) {
+          Teuchos::RCP<const MV> tmp = C1_;
+          C1_ = MVT::Clone( *tmp, recycledBlocks_+1 );
+        }
+      }
+
+      // Generate r_ only if it doesn't exist
+      if (r_ == Teuchos::null)
+        r_ = MVT::Clone( *rhsMV, 1 );
+
+      // Size of tau_ will change during computation, so just be sure it starts with appropriate size
+      tau_.resize(recycledBlocks_+1);
+
+      // Size of work_ will change during computation, so just be sure it starts with appropriate size
+      work_.resize(recycledBlocks_+1);
+
+      // Size of ipiv_ will change during computation, so just be sure it starts with appropriate size
+      ipiv_.resize(recycledBlocks_+1);
+
+      // Generate H2_ only if it doesn't exist, otherwise resize it.
+      if (H2_ == Teuchos::null)
+        H2_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_+recycledBlocks_+2, numBlocks_+recycledBlocks_+1 ) );
+      else {
+        if ( (H2_->numRows() != numBlocks_+recycledBlocks_+2) || (H2_->numCols() != numBlocks_+recycledBlocks_+1) )
+          H2_->reshape( numBlocks_+recycledBlocks_+2, numBlocks_+recycledBlocks_+1 );
+      }
+      H2_->putScalar(zero);
+
+      // Generate R_ only if it doesn't exist, otherwise resize it.
+      if (R_ == Teuchos::null)
+        R_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( recycledBlocks_+1, recycledBlocks_+1 ) );
+      else {
+        if ( (R_->numRows() != recycledBlocks_+1) || (R_->numCols() != recycledBlocks_+1) )
+          R_->reshape( recycledBlocks_+1, recycledBlocks_+1 );
+      }
+      R_->putScalar(zero);
+
+      // Generate PP_ only if it doesn't exist, otherwise resize it.
+      if (PP_ == Teuchos::null)
+        PP_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_+recycledBlocks_+2, recycledBlocks_+1 ) );
+      else {
+        if ( (PP_->numRows() != numBlocks_+recycledBlocks_+2) || (PP_->numCols() != recycledBlocks_+1) )
+          PP_->reshape( numBlocks_+recycledBlocks_+2, recycledBlocks_+1 );
+      }
+
+      // Generate HP_ only if it doesn't exist, otherwise resize it.
+      if (HP_ == Teuchos::null)
+        HP_ = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( numBlocks_+recycledBlocks_+2, numBlocks_+recycledBlocks_+1 ) );
+      else {
+        if ( (HP_->numRows() != numBlocks_+recycledBlocks_+2) || (HP_->numCols() != numBlocks_+recycledBlocks_+1) )
+          HP_->reshape( numBlocks_+recycledBlocks_+2, numBlocks_+recycledBlocks_+1 );
+      }
+
+    } // end else
 }
 
   
@@ -767,16 +948,13 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   // then didn't set any parameters using setParameters().
   if (!isSet_) { setParameters( params_ ); }
 
-  Teuchos::BLAS<int,ScalarType> blas;
-  Teuchos::LAPACK<int,ScalarType> lapack;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+  std::vector<int> index(numBlocks_+1);
   
-  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,GCRODRSolMgrLinearProblemFailure,
-                     "Belos::GCRODRSolMgr::solve(): Linear problem is not a valid object.");
+  TEST_FOR_EXCEPTION(problem_ == Teuchos::null,GCRODRSolMgrLinearProblemFailure, "Belos::GCRODRSolMgr::solve(): Linear problem is not a valid object.");
 
-  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),GCRODRSolMgrLinearProblemFailure,
-                     "Belos::GCRODRSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
+  TEST_FOR_EXCEPTION(!problem_->isProblemSet(),GCRODRSolMgrLinearProblemFailure,"Belos::GCRODRSolMgr::solve(): Linear problem is not ready, setProblem() has not been called.");
 
   // Create indices for the linear systems to be solved.
   int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
@@ -785,12 +963,6 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
   // Inform the linear problem of the current linear system to solve.
   problem_->setLSIndex( currIdx );
-
-  //! Dimension of current recycled subspace, if one exists.
-  int keff = 0;
-  if (U_ != Teuchos::null) {
-    keff = MVT::GetNumberVecs( *U_ );
-  }
 
   // Check the number of blocks and change them is necessary.
   int dim = MVT::GetVecLength( *(problem_->getRHS()) );  
@@ -804,6 +976,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
   // Assume convergence is achieved, then let any failed convergence set this to false.
   bool isConverged = true;	
+
+  // Initialize storage for all state variables
+  initializeStateStorage();
 
   //////////////////////////////////////////////////////////////////////////////////////
   // Parameter list
@@ -839,50 +1014,57 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
 	printer_->stream(Debug) << " Now solving RHS index " << currIdx[0] << " using recycled subspace of dimension " << keff << std::endl << std::endl;
 	// Compute image of U_ under the new operator
-	std::vector<int> index(keff);
-	for (int i=0; i<keff; ++i) { index[i] = i; }
-	Teuchos::RCP<MV> Ckeff = MVT::CloneView( *C_, index );
-	Teuchos::RCP<MV> Ukeff = MVT::CloneView( *U_, index );
-	problem_->apply( *Ukeff, *Ckeff );
+	index.resize(keff);
+	for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
+	Teuchos::RCP<MV> Ctmp  = MVT::CloneView( *C_, index );
+	Teuchos::RCP<MV> Utmp  = MVT::CloneView( *U_, index );
+	Teuchos::RCP<MV> U1tmp = MVT::CloneView( *U1_, index );
+	problem_->apply( *Utmp, *Ctmp );
 
 	// Orthogonalize this block
 	// Get a matrix to hold the orthonormalization coefficients.
-	Teuchos::SerialDenseMatrix<int,ScalarType> R(keff,keff);
-	int rank = ortho_->normalize(*Ckeff, Teuchos::rcp(&R,false));
-	
+        Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff, keff ); 
+	int rank = ortho_->normalize(*Ctmp, Teuchos::rcp(&Rtmp,false));
 	// Throw an error if we could not orthogonalize this block
-	TEST_FOR_EXCEPTION(rank != keff,GCRODRSolMgrOrthoFailure,
-			   "Belos::GCRODRSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
+	TEST_FOR_EXCEPTION(rank != keff,GCRODRSolMgrOrthoFailure,"Belos::GCRODRSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
 	
 	// U_ = U_*R^{-1}	
 	// First, compute LU factorization of R
 	int info = 0;
-	std::vector<int> ipiv(R.numRows());
-	lapack.GETRF(R.numRows(),R.numCols(),R.values(),R.numRows(),&ipiv[0],&info);
-	TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			   "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+        ipiv_.resize(Rtmp.numRows());
+	lapack.GETRF(Rtmp.numRows(),Rtmp.numCols(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&info);
+	TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 	
 	// Now, form inv(R)
-	int lwork = R.numRows();
-	std::vector<ScalarType> work(lwork);
-	lapack.GETRI(R.numRows(),R.values(),R.numRows(),&ipiv[0],&work[0],lwork,&info);
-	TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			   "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
+	int lwork = Rtmp.numRows();
+        work_.resize(lwork);
+	lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
+	TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
 	
-	Teuchos::RCP<MV> tempU = MVT::Clone( *U_, keff );
-	MVT::MvTimesMatAddMv( one, *U_, R, zero, *tempU );
-	U_ = tempU;
+        // U_ = U1_; (via a swap)
+	MVT::MvTimesMatAddMv( one, *Utmp, Rtmp, zero, *U1tmp );
+        Teuchos::RCP<MV> Uswap;
+        Uswap = U_;
+	U_ = U1_;
+        U1_ = Uswap;
+        Uswap = Teuchos::null;
+
+        // Must reinitialize after swap
+	index.resize(keff);
+	for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
+	Ctmp  = MVT::CloneView( *C_, index );
+	Utmp  = MVT::CloneView( *U_, index );
 
 	// Compute C_'*r_
 	Teuchos::SerialDenseMatrix<int,ScalarType> Ctr(keff,1);
 	problem_->computeCurrPrecResVec( &*r_ );
-	MVT::MvTransMv( one, *C_, *r_, Ctr );
+	MVT::MvTransMv( one, *Ctmp, *r_, Ctr );
 
 	// Update solution ( x += U_*C_'*r_ )
-	MVT::MvTimesMatAddMv( one, *U_, Ctr, one, *problem_->getCurrLHSVec() );
+	MVT::MvTimesMatAddMv( one, *Utmp, Ctr, one, *problem_->getCurrLHSVec() );
 	
 	// Update residual norm ( r -= C_*C_'*r_ )	
-	MVT::MvTimesMatAddMv( -one, *C_, Ctr, one, *r_ );
+	MVT::MvTimesMatAddMv( -one, *Ctmp, Ctr, one, *r_ );
 
         // We recycled space from previous call
         prime_iterations = 0;
@@ -896,41 +1078,35 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	Teuchos::ParameterList primeList;
 	
 	// Tell the block solver that the block size is one.
-	primeList.set("Block Size",1);
-	primeList.set("Num Blocks",numBlocks_);
-	primeList.set("Keep Hessenberg", true);
-	primeList.set("Initialize Hessenberg", true);
+        primeList.set("Num Blocks",numBlocks_);
+        primeList.set("Recycled Blocks",0);
 	
-	//  Create Gmres iteration object to perform one cycle of Gmres.
-	Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > gmres_iter;
-	gmres_iter = Teuchos::rcp( new BlockGmresIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,primeList) );
+	//  Create GCRODR iterator object to perform one cycle of GMRES.
+	Teuchos::RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_prime_iter;
+	gcrodr_prime_iter = Teuchos::rcp( new GCRODRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,primeList) );
 	
 	// Create the first block in the current Krylov basis (residual).
-	if (r_ == Teuchos::null)
-	  r_ = MVT::Clone( *(problem_->getRHS()), 1 );
 	problem_->computeCurrPrecResVec( &*r_ );
-	Teuchos::RCP<MV> V_0 = MVT::CloneCopy( *r_ );
+        index.resize( 1 ); index[0] = 0;
+	Teuchos::RCP<MV> v0 =  MVT::CloneView( *V_,  index );
+	MVT::SetBlock(*r_,index,*v0); // V(:,0) = r
 
-	// Get a matrix to hold the orthonormalization coefficients.
-	Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 = 
-	  rcp( new Teuchos::SerialDenseVector<int,ScalarType>(1) );
-	
-	// Orthonormalize the new V_0
-	int rank = ortho_->normalize( *V_0, z_0 );
-	TEST_FOR_EXCEPTION(rank != 1,GCRODRSolMgrOrthoFailure,
-			   "Belos::GCRODRSolMgr::solve(): Failed to compute initial block of orthonormal vectors for priming solve.");
-	
 	// Set the new state and initialize the solver.
-	GmresIterationState<ScalarType,MV> newstate;
-	newstate.V = V_0;
-	newstate.z = z_0;
+	GCRODRIterState<ScalarType,MV> newstate;
+        index.resize( numBlocks_+1 );
+        for (int ii=0; ii<(numBlocks_+1); ++ii) { index[ii] = ii; }
+        newstate.V  = MVT::CloneView( *V_,  index );
+	newstate.U = Teuchos::null;
+	newstate.C = Teuchos::null;
+        newstate.H = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, recycledBlocks_+1, recycledBlocks_+1 ) );
+	newstate.B = Teuchos::null;
 	newstate.curDim = 0;
-	gmres_iter->initializeGmres(newstate);
+	gcrodr_prime_iter->initialize(newstate);
 	
-	// Perform one cycle of Gmres iteration
+	// Perform one cycle of GMRES
 	bool primeConverged = false;
 	try {
-	  gmres_iter->iterate();
+	  gcrodr_prime_iter->iterate();
 
 	  // Check convergence first
 	  if ( convTest_->getStatus() == Passed ) {
@@ -938,32 +1114,31 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    primeConverged = true;
 	  }
 	}
-	catch (const GmresIterationOrthoFailure &e) {
+	catch (const GCRODRIterOrthoFailure &e) {
 	  // Try to recover the most recent least-squares solution
-	  gmres_iter->updateLSQR( gmres_iter->getCurSubspaceDim() );
+	  gcrodr_prime_iter->updateLSQR( gcrodr_prime_iter->getCurSubspaceDim() );
 	  
 	  // Check to see if the most recent least-squares solution yielded convergence.
-	  sTest_->checkStatus( &*gmres_iter );
+	  sTest_->checkStatus( &*gcrodr_prime_iter );
 	  if (convTest_->getStatus() == Passed)
 	    primeConverged = true;
 	}
 	catch (const std::exception &e) {
 	  printer_->stream(Errors) << "Error! Caught exception in GCRODRIter::iterate() at iteration " 
-				   << gmres_iter->getNumIters() << endl 
+				   << gcrodr_prime_iter->getNumIters() << endl 
 				   << e.what() << endl;
 	  throw;
 	}
-
         // Record number of iterations in generating initial recycle spacec
-        prime_iterations = gmres_iter->getNumIters();
+        prime_iterations = gcrodr_prime_iter->getNumIters();
            
 	// Update the linear problem.
-	Teuchos::RCP<MV> update = gmres_iter->getCurrentUpdate();
+	Teuchos::RCP<MV> update = gcrodr_prime_iter->getCurrentUpdate();
 	problem_->updateSolution( update, true );
 
 	// Get the state.
-	GmresIterationState<ScalarType,MV> oldState = gmres_iter->getState();
-	int p = oldState.curDim;
+	newstate = gcrodr_prime_iter->getState();
+	int p = newstate.curDim;
 
 	// Compute harmonic Ritz vectors 
 	// NOTE:  The storage for the harmonic Ritz vectors (PP) is made one column larger 
@@ -972,98 +1147,82 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	//        too early, move on to the next linear system and try to generate a subspace again.
 	if (recycledBlocks_ < p+1) {
 	  int info = 0;
-	  Teuchos::SerialDenseMatrix<int,ScalarType> PP( p, recycledBlocks_+1 );  
-	  keff = getHarmonicVecs1( p, *oldState.H, PP );
-	  // We can generate a subspace to recycle and we know its size, so intialize U_ and C_;
-	  if (U_ == Teuchos::null) {
-	    U_ = MVT::Clone( *problem_->getRHS(), keff );
-	  }
-	  else {
-	    if (MVT::GetNumberVecs( *U_ ) < keff) {
-	      U_ = MVT::Clone( *problem_->getRHS(), keff );
-	    }
-	  }
-	  if (C_ == Teuchos::null) {
-	    C_ = MVT::Clone( *problem_->getRHS(), keff );
-	  }
-	  else {
-	    if (MVT::GetNumberVecs( *C_ ) < keff) {
-	      C_ = MVT::Clone( *problem_->getRHS(), keff );
-	    }
-	  }	  
+          Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PPtmp = rcp (new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, p, recycledBlocks_+1 ) );
+          // getHarmonicVecs1 assumes PP has recycledBlocks_+1 columns available
+	  keff = getHarmonicVecs1( p, *newstate.H, *PPtmp );
+          // Hereafter, only keff columns of PP are needed
+          PPtmp = rcp (new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, p, keff ) );
+          // Now get views into C, U, V
+          index.resize(keff);
+          for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
+          Teuchos::RCP<MV> Ctmp  = MVT::CloneView( *C_, index );
+          Teuchos::RCP<MV> Utmp  = MVT::CloneView( *U_, index );
+          Teuchos::RCP<MV> U1tmp = MVT::CloneView( *U1_, index );
+	  index.resize(p);
+          for (int ii=0; ii < p; ++ii) { index[ii] = ii; }
+	  Teuchos::RCP<const MV> Vtmp = MVT::CloneView( *V_, index );
 
 	  // Form U (the subspace to recycle)
-          // U = oldState.V(:,1:p) * PP;
-	  std::vector<int> index( p );
-          for (int i=0; i < p; ++i) { index[i] = i; }
-	  Teuchos::RCP<const MV> Vp = MVT::CloneView( *oldState.V, index );
-          index.resize(keff);  // keff <= p
-	  Teuchos::RCP<MV> Up = MVT::CloneView( *U_, index );
-	  const Teuchos::SerialDenseMatrix<int,ScalarType> PPview( Teuchos::View, PP, p, keff );
-          MVT::MvTimesMatAddMv( one, *Vp, PPview, zero, *Up );
-	  Vp = null;
+          // U = newstate.V(:,1:p) * PP;
+          MVT::MvTimesMatAddMv( one, *Vtmp, *PPtmp, zero, *U1tmp );
 
 	  // Form orthonormalized C and adjust U so that C = A*U
-	  // [Q, R] = qr(H*P);
-	  const Teuchos::SerialDenseMatrix<int,ScalarType> Hview( Teuchos::View, *oldState.H, p+1, p );
-	  Teuchos::SerialDenseMatrix<int,ScalarType> HP( p+1, keff );
-	  HP.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, Hview, PPview, zero );
 
-	  // Workspace size query for QR factorization of HP (the worksize will be placed in tau[0])
+	  // First, compute [Q, R] = qr(H*P);
+
+          // Step #1: Form HP = H*P
+	  Teuchos::SerialDenseMatrix<int,ScalarType> Htmp( Teuchos::View, *H2_, p+1, p, recycledBlocks_+1,recycledBlocks_+1);
+	  Teuchos::SerialDenseMatrix<int,ScalarType> HPtmp( Teuchos::View, *HP_, p+1, keff );
+	  HPtmp.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, Htmp, *PPtmp, zero );
+
+	  // Step #1.5: Perform workspace size query for QR factorization of HP (the worksize will be placed in work_[0])
           int lwork = -1;
-	  std::vector<ScalarType> tau(keff);
-          lapack.GEQRF(HP.numRows(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
-		       &tau[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			     "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+          tau_.resize(keff);
+          lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
 
-          lwork = (int)tau[0];
-	  std::vector<ScalarType> work(lwork);
-          lapack.GEQRF(HP.numRows(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
-		       &work[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			     "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+          // Step #2: Compute QR factorization of HP
+          lwork = (int)work_[0];
+          work_.resize(lwork);
+          lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
 
-          // Explicitly construct Q and R factors 
+          // Step #3: Explicitly construct Q and R factors 
 	  // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
-	  Teuchos::SerialDenseMatrix<int,ScalarType> R( Teuchos::Copy, HP, keff, keff );
-          for(int i=1;i<keff;i++) { for(int j=0;j<i;j++) R(i,j) = zero; }
-          lapack.ORGQR(HP.numRows(),HP.numCols(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
-		       &work[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			     "Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+          Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff, keff );
+          for(int ii=0;ii<keff;ii++) { for(int jj=ii;jj<keff;jj++) Rtmp(ii,jj) = HPtmp(ii,jj); }
+          lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+
+          // Now we have [Q,R] = qr(H*P)
 
 	  // Now compute C = V(:,1:p+1) * Q 
 	  index.resize( p+1 );
-          for (int i=0; i < p+1; ++i) { index[i] = i; }
-	  Vp = MVT::CloneView( *oldState.V, index );
-          index.resize(keff);  // keff <= p
-          for (int i=0; i < keff; ++i) { index[i] = i; }
-	  Teuchos::RCP<MV> Cp = MVT::CloneView( *C_, index );
-          MVT::MvTimesMatAddMv( one, *Vp, HP, zero, *Cp );
-	  Vp = null;
-          Cp = null;
+          for (int ii=0; ii < (p+1); ++ii) { index[ii] = ii; }
+	  Vtmp = MVT::CloneView( *V_, index ); // need new view into V (p+1 vectors now; needed p above)
+          MVT::MvTimesMatAddMv( one, *Vtmp, HPtmp, zero, *Ctmp );
 	  	  
-	  // Finally, compute U_ = U_*R^{-1}	
-	  // First, compute LU factorization of R
-	  std::vector<int> ipiv(R.numRows());
-	  lapack.GETRF(R.numRows(),R.numCols(),R.values(),R.numRows(),&ipiv[0],&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			     "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+	  // Finally, compute U = U*R^{-1}. 
+          // This unfortuntely requires me to form R^{-1} explicitly and execute U = U * R^{-1}, as 
+          // backsolve capabilities don't exist in the Belos::MultiVec class
+
+	  // Step #1: First, compute LU factorization of R
+	  ipiv_.resize(Rtmp.numRows());
+	  lapack.GETRF(Rtmp.numRows(),Rtmp.numCols(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&info);
+	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 	  
-	  // Now, form inv(R)
-	  lwork = R.numRows();
-	  work.resize(lwork);
-	  lapack.GETRI(R.numRows(),R.values(),R.numRows(),&ipiv[0],&work[0],lwork,&info);
-	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			     "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
+	  // Step #2: Form inv(R)
+	  lwork = Rtmp.numRows();
+	  work_.resize(lwork);
+	  lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
+	  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
 	  
-	  Teuchos::RCP<MV> tempU = MVT::Clone( *U_, keff );
-	  MVT::MvTimesMatAddMv( one, *Up, R, zero, *tempU );
-	  U_ = tempU;
+          // Step #3: Let U = U * R^{-1}
+	  MVT::MvTimesMatAddMv( one, *U1tmp, Rtmp, zero, *Utmp );
 
 	  printer_->stream(Debug) << " Generated recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
-	}
+
+	}  // if (recycledBlocks_ < p+1)
 
         // Return to outer loop if the priming solve converged, set the next linear system.
 	if (primeConverged) {
@@ -1098,33 +1257,39 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       outputTest_->resetNumCalls();
 
       // Compute the residual after the priming solve, it will be the first block in the current Krylov basis.
-      if (r_ == Teuchos::null)
-	r_ = MVT::Clone( *(problem_->getRHS()), 1 );
       problem_->computeCurrPrecResVec( &*r_ );
+      index.resize( 1 ); index[0] = 0;
+      Teuchos::RCP<MV> v0 =  MVT::CloneView( *V_,  index );
+      MVT::SetBlock(*r_,index,*v0); // V(:,0) = r
 
-      // Get a matrix to hold the orthonormalization coefficients.
-      Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > z_0 = 
-        rcp( new Teuchos::SerialDenseVector<int,ScalarType>(1) );
-      
-      // Orthonormalize the new r_
-      int rank = ortho_->normalize( *r_, z_0 );
-      TEST_FOR_EXCEPTION(rank != 1,GCRODRSolMgrOrthoFailure,
-			 "Belos::GCRODRSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
-      
       // Set the new state and initialize the solver.
       GCRODRIterState<ScalarType,MV> newstate;
-      newstate.V = r_;
-      newstate.z = z_0;
-      newstate.U = U_;
-      newstate.C = C_;
+      index.resize( numBlocks_+1 );
+      for (int ii=0; ii<(numBlocks_+1); ++ii) { index[ii] = ii; }
+      newstate.V  = MVT::CloneView( *V_,  index );
+      index.resize( keff );
+      for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
+      newstate.C  = MVT::CloneView( *C_,  index );
+      newstate.U  = MVT::CloneView( *U_,  index );
+      newstate.B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_,         keff, numBlocks_,    0, keff ) );
+      newstate.H = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, keff, keff ) );
       newstate.curDim = 0;
       gcrodr_iter->initialize(newstate);
+
+      // variables needed for inner loop
       int numRestarts = 0;
+      std::vector<MagnitudeType> d(keff);
+      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H2tmp;
+      Teuchos::RCP<MV> Utmp;
+      Teuchos::RCP<MV> Ctmp;
+      Teuchos::RCP<MV> U1tmp;
+      Teuchos::RCP<MV> C1tmp;
+      Teuchos::RCP<MV> Vtmp;
+      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PPtmp;
       while(1) {
 	
 	// tell gcrodr_iter to iterate
 	try {
-          printf("********** Calling iterate...\n");
 	  gcrodr_iter->iterate();
 	  
 	  ////////////////////////////////////////////////////////////////////////////////////
@@ -1164,116 +1329,119 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
             problem_->updateSolution( update, true );
 
             // Take the norm of the recycled vectors
-            std::vector<MagnitudeType> d(keff);
-            MVT::MvNorm( *U_, d );
+            index.resize(keff);
+            for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
+            Teuchos::RCP<MV> Utmp  = MVT::CloneView( *U_, index );
+            d.resize(keff);
+            MVT::MvNorm( *Utmp, d );
             for (int i=0; i<keff; ++i) {
 	      d[i] = one / d[i];
 	    }
-	    MVT::MvScale( *U_, d );
+	    MVT::MvScale( *Utmp, d );
           
-            // Construct the full block upper Hessenberg matrix
-            Teuchos::SerialDenseMatrix<int,ScalarType> H2(p+keff+1, p+keff);
+            // Get view into current "full" upper Hessnburg matrix
+            H2tmp = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, p+keff+1, p+keff ) );
 
-            // Insert D into the leading keff block of H2
+            // Insert D into the leading keff x keff  block of H2
             for (int i=0; i<keff; ++i) {
-              H2(i,i) = d[i];
+              (*H2tmp)(i,i) = d[i];
             }
             
-	    // Insert B into the upper right-hand keff by p block of H2
-	    Teuchos::SerialDenseMatrix<int,ScalarType> H2temp(Teuchos::View, H2, keff, p, 0, keff);
-            H2temp.assign(*oldState.B);
-
-            // Insert H into the lower p+1 by p block of H2
-            Teuchos::SerialDenseMatrix<int,ScalarType> H2temp2(Teuchos::View, H2, p+1, p, keff, keff);
-            H2temp2.assign(*oldState.H);
-
             // Compute the harmoic Ritz pairs for the generalized eigenproblem
-	    Teuchos::SerialDenseMatrix<int,ScalarType> PP( p+keff, recycledBlocks_+1 );  
-	    int keff_new = getHarmonicVecs2( keff, p, H2, oldState.V, PP );
+            // getHarmonicVecs2 assumes PP has recycledBlocks_+1 columns available
+            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, p+keff, recycledBlocks_+1 ) );
+	    int keff_new = getHarmonicVecs2( keff, p, *H2tmp, oldState.V, *PPtmp );
+
 	    printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff_new << std::endl << std::endl;
 
 	    // Code to form new U, C
 	    // U = [U V(:,1:p)] * P; (in two steps)
-	    
+
 	    // U(:,1:keff) = matmul(U(:,1:keff_old),PP(1:keff_old,1:keff)) (step 1)
-	    Teuchos::RCP<MV> tempU = MVT::Clone( *U_, keff_new );
-	    Teuchos::SerialDenseMatrix<int,ScalarType> tempPP( Teuchos::View, PP, keff, keff_new );
-	    MVT::MvTimesMatAddMv( one, *U_, tempPP, zero, *tempU );
+            index.resize( keff );
+            for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
+            Utmp  = MVT::CloneView( *U_,  index );
+            index.resize( keff_new );
+            for (int ii=0; ii<keff_new; ++ii) { index[ii] = ii; }
+            U1tmp  = MVT::CloneView( *U1_,  index );
+            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, keff, keff_new ) );
+	    MVT::MvTimesMatAddMv( one, *Utmp, *PPtmp, zero, *U1tmp );
 
 	    // U(:,1:keff) = U(:,1:keff) + matmul(V(:,1:m-k),PP(keff_old+1:m-k+keff_old,1:keff)) (step 2)
-	    std::vector<int> index(p);
-	    for (int i=0; i < p; i++) { index[i] = i; }
-	    Teuchos::RCP<const MV> Vp = MVT::CloneView( *oldState.V, index );
-	    Teuchos::SerialDenseMatrix<int,ScalarType> tempPP2( Teuchos::View, PP, p, keff_new, keff );
-	    MVT::MvTimesMatAddMv( one, *Vp, tempPP2, one, *tempU );
+	    index.resize(p);
+	    for (int ii=0; ii < p; ii++) { index[ii] = ii; }
+	    Vtmp = MVT::CloneView( *V_, index );
+            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, p, keff_new, keff ) );
+	    MVT::MvTimesMatAddMv( one, *Vtmp, *PPtmp, one, *U1tmp );
 	   
 	    // Form HP = H*P
-            Teuchos::SerialDenseMatrix<int,ScalarType> tempPP3( Teuchos::View, PP, p+keff, keff_new );
-	    Teuchos::SerialDenseMatrix<int,ScalarType> HP(H2.numRows(),tempPP3.numCols());
-	    HP.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,H2,tempPP3,zero);
+            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, p+keff, keff_new ) );
+            Teuchos::SerialDenseMatrix<int,ScalarType> HPtmp( Teuchos::View, *HP_, p+keff+1, keff_new );
+	    HPtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*H2tmp,*PPtmp,zero);
 
-	    // Workspace size query for QR factorization of HP (the worksize will be placed in tau[0])
+	    // Workspace size query for QR factorization of HP (the worksize will be placed in work_[0])
 	    int info = 0, lwork = -1;
-	    std::vector<ScalarType> tau(keff_new);
-	    lapack.GEQRF(HP.numRows(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
-			 &tau[0],lwork,&info);
-	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			       "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+	    tau_.resize(keff_new);
+	    lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+	    TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
 	    
-	    lwork = (int)tau[0];
-	    std::vector<ScalarType> work(lwork);
-	    lapack.GEQRF(HP.numRows(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
-			 &work[0],lwork,&info);
-	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			       "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+	    lwork = (int)work_[0];
+	    work_.resize(lwork);
+	    lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+	    TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
 
 	    // Explicitly construct Q and R factors 
 	    // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
-	    Teuchos::SerialDenseMatrix<int,ScalarType> R( Teuchos::Copy, HP, keff_new, keff_new );
-            for(int i=1;i<keff_new;i++) { for(int j=0;j<i;j++) R(i,j) = zero; }
-	    lapack.ORGQR(HP.numRows(),HP.numCols(),HP.numCols(),HP.values(),HP.numRows(),&tau[0],
-			 &work[0],lwork,&info);
-	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			       "Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+            Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff_new, keff_new );
+            for(int i=0;i<keff_new;i++) { for(int j=i;j<keff_new;j++) Rtmp(i,j) = HPtmp(i,j); }
+	    lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+	    TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
 
 	    // Form orthonormalized C and adjust U accordingly so that C = A*U	    
 	    // C = [C V] * Q;
 
 	    // C(:,1:keff) = matmul(C(:,1:keff_old),QQ(1:keff_old,1:keff))
+	    index.resize(keff);
+	    for (int i=0; i < keff; i++) { index[i] = i; }
+            Ctmp  = MVT::CloneView( *C_,  index );
 	    index.resize(keff_new);
 	    for (int i=0; i < keff_new; i++) { index[i] = i; }
-	    Teuchos::RCP<MV> tempC = MVT::Clone( *C_, keff_new );
-	    Teuchos::SerialDenseMatrix<int,ScalarType> tempQ( Teuchos::View, HP, keff, keff_new );
-	    MVT::MvTimesMatAddMv( one, *C_, tempQ, zero, *tempC );
+            C1tmp  = MVT::CloneView( *C1_,  index );
+            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *HP_, keff, keff_new ) );
+	    MVT::MvTimesMatAddMv( one, *Ctmp, *PPtmp, zero, *C1tmp );
 
-	    // Now compute C = V(:,1:p+1) * Q 
+	    // Now compute C += V(:,1:p+1) * Q 
 	    index.resize( p+1 );
 	    for (int i=0; i < p+1; ++i) { index[i] = i; }
-	    Vp = MVT::CloneView( *oldState.V, index );
-	    Teuchos::SerialDenseMatrix<int,ScalarType> tempQ2( Teuchos::View, HP, p+1, keff_new, keff );
-	    MVT::MvTimesMatAddMv( one, *Vp, tempQ2, one, *tempC );
-            C_ = tempC;	    
+	    Vtmp = MVT::CloneView( *V_, index );
+            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *HP_, p+1, keff_new, keff, 0 ) );
+	    MVT::MvTimesMatAddMv( one, *Vtmp, *PPtmp, one, *C1tmp );
+
+            // C_ = C1_; (via a swap)
+            Teuchos::RCP<MV> Cswap;
+            Cswap = C_;
+            C_ = C1_;
+            C1_ = Cswap;
+            Cswap = Teuchos::null;
 
 	    // Finally, compute U_ = U_*R^{-1}	
 	    // First, compute LU factorization of R
-	    std::vector<int> ipiv(R.numRows());
-	    lapack.GETRF(R.numRows(),R.numCols(),R.values(),R.numRows(),&ipiv[0],&info);
-	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			       "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+            ipiv_.resize(Rtmp.numRows());
+	    lapack.GETRF(Rtmp.numRows(),Rtmp.numCols(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&info);
+	    TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 	    
 	    // Now, form inv(R)
-	    lwork = R.numRows();
-	    work.resize(lwork);
-	    lapack.GETRI(R.numRows(),R.values(),R.numRows(),&ipiv[0],&work[0],lwork,&info);
-	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-			       "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
+	    lwork = Rtmp.numRows();
+	    work_.resize(lwork);
+	    lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
+	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
 	  
-	    if (keff != keff_new) {
-	      U_ = MVT::Clone( *problem_->getRHS(), keff_new );
-	    }
-	    MVT::MvTimesMatAddMv( one, *tempU, R, zero, *U_ );
+	    index.resize(keff_new);
+	    for (int i=0; i < keff_new; i++) { index[i] = i; }
+            Utmp  = MVT::CloneView( *U_,  index );
+	    MVT::MvTimesMatAddMv( one, *U1tmp, Rtmp, zero, *Utmp );
 
-            // NOTE:  If we have hit the maximum number of restarts then QUIT! 
+            // NOTE:  If we have hit the maximum number of restarts then quit
 	    if ( numRestarts >= maxRestarts_ ) {
 	      isConverged = false;
 	      break; // break from while(1){gcrodr_iter->iterate()}
@@ -1282,29 +1450,34 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    
 	    printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << std::endl << std::endl;
 
-	    // Compute the restart vector.
-	    if (r_ == Teuchos::null)
-	      r_ = MVT::Clone( *(problem_->getRHS()), 1 );
-	    problem_->computeCurrPrecResVec( &*r_ );
-	    
-	    // Orthonormalize the new r_, z_0 already exists
-	    rank = ortho_->normalize( *r_, z_0 );
-	    TEST_FOR_EXCEPTION(rank != 1,GCRODRSolMgrOrthoFailure,
-			       "Belos::GCRODRSolMgr::solve(): Failed to compute initial block of orthonormal vectors after restart.");
+            // Create the restart vector (first block in the current Krylov basis)
+            problem_->computeCurrPrecResVec( &*r_ );
+            index.resize( 1 ); index[0] = 0;
+            Teuchos::RCP<MV> v0 =  MVT::CloneView( *V_,  index );
+            MVT::SetBlock(*r_,index,*v0); // V(:,0) = r
 	    
 	    // Set the current number of recycled blocks and subspace dimension with the GCRO-DR iteration.
-	    keff = keff_new;
-	    gcrodr_iter->setSize( keff, numBlocks_ );
+            if (keff != keff_new) {
+  	      keff = keff_new;
+	      gcrodr_iter->setSize( keff, numBlocks_ );
+              Teuchos::SerialDenseMatrix<int,ScalarType> b1( Teuchos::View, *H2_, recycledBlocks_+2, 1, 0, recycledBlocks_ );
+              b1.putScalar(zero);
+            }
 
 	    // Set the new state and initialize the solver.
 	    GCRODRIterState<ScalarType,MV> restartState;
-	    restartState.V = r_;
-	    restartState.z = z_0;
-	    restartState.U = U_;
-	    restartState.C = C_;
-	    restartState.curDim = 0;
-	    gcrodr_iter->initialize(restartState);
-	    
+            index.resize( numBlocks_+1 );
+            for (int ii=0; ii<(numBlocks_+1); ++ii) { index[ii] = ii; }
+            restartState.V  = MVT::CloneView( *V_,  index );
+            index.resize( keff );
+            for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
+            restartState.U  = MVT::CloneView( *U_,  index );
+            restartState.C  = MVT::CloneView( *C_,  index );
+            restartState.B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, keff,         numBlocks_,    0, keff ) );
+            restartState.H = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, keff, keff ) );
+            restartState.curDim = 0;
+            gcrodr_iter->initialize(restartState);
+
 	  } // end of restarting
 	  
 	  ////////////////////////////////////////////////////////////////////////////////////
@@ -1315,8 +1488,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	  ////////////////////////////////////////////////////////////////////////////////////
 	  
 	  else {
-	    TEST_FOR_EXCEPTION(true,std::logic_error,
-			       "Belos::GCRODRSolMgr::solve(): Invalid return from GCRODRIter::iterate().");
+	    TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::GCRODRSolMgr::solve(): Invalid return from GCRODRIter::iterate().");
 	  }
 	}
         catch (const GCRODRIterOrthoFailure &e) {
@@ -1376,26 +1548,21 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   return Converged; // return from GCRODRSolMgr::solve() 
 }
 
-
 //  Compute the harmonic eigenpairs of the projected, dense system.
 template<class ScalarType, class MV, class OP>
 int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m, 
 						     const Teuchos::SerialDenseMatrix<int,ScalarType>& HH, 
-						     Teuchos::SerialDenseMatrix<int,ScalarType>& PP)
-{
+						     Teuchos::SerialDenseMatrix<int,ScalarType>& PP) {
   int i, j;
   bool xtraVec = false;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
-  // The LAPACK interface
-  Teuchos::LAPACK<int,ScalarType> lapack;
-  
   // Real and imaginary eigenvalue components
   std::vector<MagnitudeType> wr(m), wi(m);
 
-  // Real and imaginary (right) eigenvectors
-  Teuchos::SerialDenseMatrix<int,ScalarType> vr(m,m);
+  // Real and imaginary (right) eigenvectors; Don't zero out matrix when constructing
+  Teuchos::SerialDenseMatrix<int,ScalarType> vr(m,m,false);
 
   // Magnitude of harmonic Ritz values
   std::vector<MagnitudeType> w(m);
@@ -1415,15 +1582,13 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
   Teuchos::SerialDenseVector<int, ScalarType> e_m( m );
   e_m[m-1] = one;
   lapack.GESV(m, 1, HHt.values(), HHt.stride(), &iperm[0], e_m.values(), e_m.stride(), &info);
-  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-		     "Belos::GCRODRSolMgr::solve(): LAPACK GESV failed to compute a solution.");
+  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK GESV failed to compute a solution.");
 
   // Compute H_m + d*H_m^{-H}*e_m*e_m^H
   ScalarType d = HH(m, m-1) * HH(m, m-1);
   Teuchos::SerialDenseMatrix<int, ScalarType> harmHH( HH );
-  for( i=0; i<m; ++i ) {
+  for( i=0; i<m; ++i )
     harmHH(i, m-1) += d * e_m[i];
-  }
 
   // Revise to do query for optimal workspace first
   // Create simple storage for the left eigenvectors, which we don't care about.
@@ -1431,13 +1596,11 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
   ScalarType* vl = 0;
   lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
 	      vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &info);
-  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-		     "Belos::GCRODRSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");
+  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");
 
   // Construct magnitude of each harmonic Ritz value
-  for( i=0; i<m; ++i ) {
+  for( i=0; i<m; ++i )
     w[i] = Teuchos::ScalarTraits<ScalarType>::squareroot( wr[i]*wr[i] + wi[i]*wi[i] );
-  }
 
   // Construct magnitude of each harmonic Ritz value
   this->sort(w, m, iperm);
@@ -1486,8 +1649,7 @@ template<class ScalarType, class MV, class OP>
 int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m, 
 						     const Teuchos::SerialDenseMatrix<int,ScalarType>& HH, 
 						     const Teuchos::RCP<const MV>& VV,
-						     Teuchos::SerialDenseMatrix<int,ScalarType>& PP)
-{
+						     Teuchos::SerialDenseMatrix<int,ScalarType>& PP) {
   int i, j;
   int m2 = HH.numCols();
   bool xtraVec = false;
@@ -1495,25 +1657,22 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
   std::vector<int> index;
   
-  // The LAPACK interface
-  Teuchos::LAPACK<int,ScalarType> lapack;
-  
   // Real and imaginary eigenvalue components
   std::vector<ScalarType> wr(m2), wi(m2);
 
   // Magnitude of harmonic Ritz values
   std::vector<MagnitudeType> w(m2);
 
-  // Real and imaginary (right) eigenvectors
-  Teuchos::SerialDenseMatrix<int,ScalarType> vr(m2,m2);
+  // Real and imaginary (right) eigenvectors; Don't zero out matrix when constructing
+  Teuchos::SerialDenseMatrix<int,ScalarType> vr(m2,m2,false);
 
   // Sorted order of harmonic Ritz values
   std::vector<int> iperm(m2);
 
   // Form matrices for generalized eigenproblem
   
-  // B = H2' * H2;
-  Teuchos::SerialDenseMatrix<int,ScalarType> B(m2,m2);
+  // B = H2' * H2; Don't zero out matrix when constructing
+  Teuchos::SerialDenseMatrix<int,ScalarType> B(m2,m2,false);
   B.multiply(Teuchos::TRANS,Teuchos::NO_TRANS,one,HH,HH,zero);
   
   // A_tmp = | C'*U        0 |
@@ -1521,15 +1680,19 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   Teuchos::SerialDenseMatrix<int,ScalarType> A_tmp( keff+m+1, keff+m );
 
   // A_tmp(1:keff,1:keff) = C' * U;
+  index.resize(keff);
+  for (int i=0; i<keff; ++i) { index[i] = i; }
+  Teuchos::RCP<MV> Ctmp  = MVT::CloneView( *C_, index );
+  Teuchos::RCP<MV> Utmp  = MVT::CloneView( *U_, index );
   Teuchos::SerialDenseMatrix<int,ScalarType> A11( Teuchos::View, A_tmp, keff, keff );
-  MVT::MvTransMv( one, *C_, *U_, A11 );
+  MVT::MvTransMv( one, *Ctmp, *Utmp, A11 );
 
   // A_tmp(keff+1:m-k+keff+1,1:keff) = V' * U;
   Teuchos::SerialDenseMatrix<int,ScalarType> A21( Teuchos::View, A_tmp, m+1, keff, keff );
   index.resize(m+1);
   for (i=0; i < m+1; i++) { index[i] = i; }
   Teuchos::RCP<const MV> Vp = MVT::CloneView( *VV, index );
-  MVT::MvTransMv( one, *Vp, *U_, A21 );
+  MVT::MvTransMv( one, *Vp, *Utmp, A21 );
 
   // A_tmp(keff+1:m-k+keff,keff+1:m-k+keff) = eye(m-k);
   for( i=keff; i<keff+m; i++ ) {
@@ -1545,7 +1708,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   //                   ALPHAR, ALPHAI, BETA, VL, LDVL, VR, LDVR, ILO,
   //                   IHI, LSCALE, RSCALE, ABNRM, BBNRM, RCONDE,
   //                   RCONDV, WORK, LWORK, IWORK, BWORK, INFO )
-  // MLP : 'SCALING' in DGGEVX generates incorrect eigenvalues. Therefore, only permuting (for now)
+  // MLP: 'SCALING' in DGGEVX generates incorrect eigenvalues. Therefore, only permuting
   char balanc='P', jobvl='N', jobvr='V', sense='N';	
   int ld = A.numRows();
   int lwork = 6*ld;
@@ -1562,8 +1725,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   lapack.GGEVX(balanc, jobvl, jobvr, sense, ld, A.values(), ld, B.values(), ld, &wr[0], &wi[0], 
                &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0], 
                &abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &iwork[0], bwork, &info);
-  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,
-		     "Belos::GCRODRSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
+  TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
   
   // Construct magnitude of each harmonic Ritz value
   // NOTE : Forming alpha/beta *should* be okay here, given assumptions on construction of matrix pencil above
@@ -1616,8 +1778,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
 
 // This method sorts list of n floating-point numbers and return permutation vector
 template<class ScalarType, class MV, class OP>
-void GCRODRSolMgr<ScalarType,MV,OP>::sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm)
-{
+void GCRODRSolMgr<ScalarType,MV,OP>::sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm) {
   int l, r, j, i, flag;
   int    RR2;
   double dRR, dK;
@@ -1683,13 +1844,14 @@ void GCRODRSolMgr<ScalarType,MV,OP>::sort(std::vector<ScalarType>& dlist, int n,
 
 //  This method requires the solver manager to return a string that describes itself.
 template<class ScalarType, class MV, class OP>
-std::string GCRODRSolMgr<ScalarType,MV,OP>::description() const
-{
+std::string GCRODRSolMgr<ScalarType,MV,OP>::description() const {
   std::ostringstream oss;
   oss << "Belos::GCRODRSolMgr<...,"<<Teuchos::ScalarTraits<ScalarType>::name()<<">";
   oss << "{";
   oss << "Ortho Type='"<<orthoType_;
-  oss << ", Num Blocks=" <<numBlocks_<< ", Max Restarts=" << maxRestarts_;
+  oss << ", Num Blocks=" <<numBlocks_;
+  oss << ", Num Recycle Blocks=" << recycledBlocks_;
+  oss << ", Max Restarts=" << maxRestarts_;
   oss << "}";
   return oss.str();
 }
