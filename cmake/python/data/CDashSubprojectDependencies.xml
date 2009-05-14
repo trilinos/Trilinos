@@ -67,6 +67,10 @@
   </SubProject>
   <SubProject name="Stokhos">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LR"/>
     <EmailAddresses>
       <Email address="stokhos-regression@software.sandia.gov"/>
     </EmailAddresses>
