@@ -540,7 +540,7 @@ AM_CPPFLAGS = $(TEST_INCLUDES)
 
 1DfemTensorBased_LDADD = $(TEST_LIBS)
 1DfemLinesearch_SOURCES = \
-	                 $(srcdir)/1DfemInterface.H \
+                         $(srcdir)/1DfemInterface.H \
                          $(srcdir)/1DfemInterface.C \
                          $(srcdir)/1DfemLinesearch.C
 

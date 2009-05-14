@@ -1,0 +1,19 @@
+strategy,
+        single_method #graphics
+method,
+        nond_polynomial_chaos
+           #expansion_order = 9
+           quadrature_order    = 6
+variables,
+        uniform_uncertain      = 4
+           uuv_lower_bounds   = -1.0 -1.0 -1.0 -1.0
+           uuv_upper_bounds   = 1.0 1.0 1.0 1.0
+           uuv_descriptor     = 'a' 'a' 'a' 'a'
+interface,
+        system
+           analysis_driver = './pce.exe'
+responses,
+        num_response_functions = 1
+        no_gradients
+        no_hessians
+

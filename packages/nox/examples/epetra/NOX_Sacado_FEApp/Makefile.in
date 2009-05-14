@@ -150,13 +150,14 @@ am__objects_9 = FEApp_BrusselatorProblem.$(OBJEXT) \
 	FEApp_ProblemFactory.$(OBJEXT)
 am__objects_10 = FEApp_Mesh.$(OBJEXT)
 am__objects_11 = FEApp_InitPostOps.$(OBJEXT) \
-	FEApp_GlobalFill.$(OBJEXT)
+	FEApp_GlobalFill.$(OBJEXT) \
+	FEApp_SGGaussQuadResidualGlobalFill.$(OBJEXT) \
+	FEApp_SGGaussQuadJacobianGlobalFill.$(OBJEXT)
 am__objects_12 = FEApp_CZeroDiscretization.$(OBJEXT) \
 	FEApp_BlockDiscretization.$(OBJEXT) \
 	FEApp_DiscretizationFactory.$(OBJEXT)
 am__objects_13 = FEApp_Application.$(OBJEXT) \
-	FEApp_ModelEvaluator.$(OBJEXT) FEApp_SGMatrixFreeOp.$(OBJEXT) \
-	FEApp_SGMeanPrecOp.$(OBJEXT)
+	FEApp_ModelEvaluator.$(OBJEXT)
 am__objects_14 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
 	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
@@ -346,6 +347,7 @@ SOURCE_H = \
 	$(FEAPP_PATH)/FEApp_QuadraticSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_CubicSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_ExponentialSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_MultiVariateExponentialSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.hpp \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactoryImpl.hpp
 
@@ -409,11 +411,15 @@ FILL_H = \
 	$(FEAPP_PATH)/FEApp_AbstractInitPostOp.hpp \
 	$(FEAPP_PATH)/FEApp_InitPostOps.hpp \
 	$(FEAPP_PATH)/FEApp_GlobalFill.hpp \
-	$(FEAPP_PATH)/FEApp_GlobalFillImpl.hpp
+	$(FEAPP_PATH)/FEApp_GlobalFillImpl.hpp \
+	$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.hpp \
+	$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.hpp
 
 FILL = \
 	$(FEAPP_PATH)/FEApp_InitPostOps.cpp \
-	$(FEAPP_PATH)/FEApp_GlobalFill.cpp
+	$(FEAPP_PATH)/FEApp_GlobalFill.cpp \
+	$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp \
+	$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp
 
 DISC_H = \
 	$(FEAPP_PATH)/FEApp_AbstractDiscretization.hpp \
@@ -428,15 +434,11 @@ DISC = \
 
 APP_H = \
 	$(FEAPP_PATH)/FEApp_Application.hpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp \
-	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.hpp \
-	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.hpp
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp 
 
 APP = \
 	$(FEAPP_PATH)/FEApp_Application.cpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp \
-	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp \
-	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp 
 
 FEAPP_H = \
 	$(ELEMENT_H) \
@@ -465,13 +467,13 @@ FEAPP = \
 	$(APP)
 
 @BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@noinst_LIBRARIES = libfeapp.a
-AM_CPPFLAGS = -I$(FEAPP_PATH) $(NOX_INCLUDES) $(SACADO_INCLUDES)
+AM_CPPFLAGS = -I$(FEAPP_PATH) $(LOCA_INCLUDES) $(SACADO_INCLUDES)
 libfeapp_a_SOURCES = $(FEAPP_H) $(FEAPP)
 @USE_ALTERNATE_AR_FALSE@libfeapp_a_AR = $(AR) cru
 @USE_ALTERNATE_AR_TRUE@libfeapp_a_AR = $(ALTERNATE_AR)
 brusselator_SOURCES = $(srcdir)/brusselator.C 
 brusselator_DEPENDENCIES = $(builddir)/libfeapp.a
-brusselator_LDADD = -L$(builddir) -lfeapp $(NOX_LIBS) $(SACADO_LIBS)
+brusselator_LDADD = -L$(builddir) -lfeapp $(LOCA_LIBS) $(SACADO_LIBS)
 all: all-am
 
 .SUFFIXES:
@@ -545,8 +547,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ModelEvaluator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_ProblemFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_QuadratureFactory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGMatrixFreeOp.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGMeanPrecOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGGaussQuadJacobianGlobalFill.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGGaussQuadResidualGlobalFill.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SourceFunctionFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator.Po@am__quote@
 
@@ -788,6 +790,34 @@ FEApp_GlobalFill.obj: $(FEAPP_PATH)/FEApp_GlobalFill.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_GlobalFill.obj `if test -f '$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_GlobalFill.cpp'; fi`
 
+FEApp_SGGaussQuadResidualGlobalFill.o: $(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGGaussQuadResidualGlobalFill.o -MD -MP -MF $(DEPDIR)/FEApp_SGGaussQuadResidualGlobalFill.Tpo -c -o FEApp_SGGaussQuadResidualGlobalFill.o `test -f '$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGGaussQuadResidualGlobalFill.Tpo $(DEPDIR)/FEApp_SGGaussQuadResidualGlobalFill.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp' object='FEApp_SGGaussQuadResidualGlobalFill.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGGaussQuadResidualGlobalFill.o `test -f '$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp
+
+FEApp_SGGaussQuadResidualGlobalFill.obj: $(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGGaussQuadResidualGlobalFill.obj -MD -MP -MF $(DEPDIR)/FEApp_SGGaussQuadResidualGlobalFill.Tpo -c -o FEApp_SGGaussQuadResidualGlobalFill.obj `if test -f '$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGGaussQuadResidualGlobalFill.Tpo $(DEPDIR)/FEApp_SGGaussQuadResidualGlobalFill.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp' object='FEApp_SGGaussQuadResidualGlobalFill.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGGaussQuadResidualGlobalFill.obj `if test -f '$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp'; fi`
+
+FEApp_SGGaussQuadJacobianGlobalFill.o: $(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGGaussQuadJacobianGlobalFill.o -MD -MP -MF $(DEPDIR)/FEApp_SGGaussQuadJacobianGlobalFill.Tpo -c -o FEApp_SGGaussQuadJacobianGlobalFill.o `test -f '$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGGaussQuadJacobianGlobalFill.Tpo $(DEPDIR)/FEApp_SGGaussQuadJacobianGlobalFill.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp' object='FEApp_SGGaussQuadJacobianGlobalFill.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGGaussQuadJacobianGlobalFill.o `test -f '$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp
+
+FEApp_SGGaussQuadJacobianGlobalFill.obj: $(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGGaussQuadJacobianGlobalFill.obj -MD -MP -MF $(DEPDIR)/FEApp_SGGaussQuadJacobianGlobalFill.Tpo -c -o FEApp_SGGaussQuadJacobianGlobalFill.obj `if test -f '$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGGaussQuadJacobianGlobalFill.Tpo $(DEPDIR)/FEApp_SGGaussQuadJacobianGlobalFill.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp' object='FEApp_SGGaussQuadJacobianGlobalFill.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGGaussQuadJacobianGlobalFill.obj `if test -f '$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp'; fi`
+
 FEApp_CZeroDiscretization.o: $(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_CZeroDiscretization.o -MD -MP -MF $(DEPDIR)/FEApp_CZeroDiscretization.Tpo -c -o FEApp_CZeroDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_CZeroDiscretization.Tpo $(DEPDIR)/FEApp_CZeroDiscretization.Po
@@ -857,34 +887,6 @@ FEApp_ModelEvaluator.obj: $(FEAPP_PATH)/FEApp_ModelEvaluator.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp' object='FEApp_ModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ModelEvaluator.obj `if test -f '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp'; fi`
-
-FEApp_SGMatrixFreeOp.o: $(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMatrixFreeOp.o -MD -MP -MF $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo -c -o FEApp_SGMatrixFreeOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo $(DEPDIR)/FEApp_SGMatrixFreeOp.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' object='FEApp_SGMatrixFreeOp.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMatrixFreeOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
-
-FEApp_SGMatrixFreeOp.obj: $(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMatrixFreeOp.obj -MD -MP -MF $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo -c -o FEApp_SGMatrixFreeOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMatrixFreeOp.Tpo $(DEPDIR)/FEApp_SGMatrixFreeOp.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp' object='FEApp_SGMatrixFreeOp.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMatrixFreeOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp'; fi`
-
-FEApp_SGMeanPrecOp.o: $(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMeanPrecOp.o -MD -MP -MF $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo -c -o FEApp_SGMeanPrecOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo $(DEPDIR)/FEApp_SGMeanPrecOp.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' object='FEApp_SGMeanPrecOp.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMeanPrecOp.o `test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
-
-FEApp_SGMeanPrecOp.obj: $(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SGMeanPrecOp.obj -MD -MP -MF $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo -c -o FEApp_SGMeanPrecOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SGMeanPrecOp.Tpo $(DEPDIR)/FEApp_SGMeanPrecOp.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp' object='FEApp_SGMeanPrecOp.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SGMeanPrecOp.obj `if test -f '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp'; fi`
 
 brusselator.o: $(srcdir)/brusselator.C
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT brusselator.o -MD -MP -MF $(DEPDIR)/brusselator.Tpo -c -o brusselator.o `test -f '$(srcdir)/brusselator.C' || echo '$(srcdir)/'`$(srcdir)/brusselator.C
@@ -1096,6 +1098,8 @@ uninstall-am:
 
 # Include export Makefiles for correct paths
 include $(top_builddir)/Makefile.export.nox
+
+# We are explicitly not building pce.C in the autotools system, only CMake
 
 @BUILD_EPETRA_EXAMPLES_TRUE@@BUILD_NOX_EPETRAEXT_SUPPORT_TRUE@@ENABLE_LOCA_SACADO_TRUE@include $(top_builddir)/../sacado/Makefile.export.sacado
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

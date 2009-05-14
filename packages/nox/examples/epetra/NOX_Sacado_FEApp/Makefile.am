@@ -42,6 +42,8 @@ include $(top_builddir)/Makefile.export.nox
 
 EXEEXT = .exe
 
+# We are explicitly not building pce.C in the autotools system, only CMake
+
 if BUILD_EPETRA_EXAMPLES
 if ENABLE_LOCA_SACADO
 if BUILD_NOX_EPETRAEXT_SUPPORT
@@ -52,7 +54,7 @@ endif
 endif
 endif
 
-AM_CPPFLAGS = -I$(FEAPP_PATH) $(NOX_INCLUDES) $(SACADO_INCLUDES)
+AM_CPPFLAGS = -I$(FEAPP_PATH) $(LOCA_INCLUDES) $(SACADO_INCLUDES)
 
 libfeapp_a_SOURCES = $(FEAPP_H) $(FEAPP)
 
@@ -66,4 +68,4 @@ brusselator_SOURCES = $(srcdir)/brusselator.C
 
 brusselator_DEPENDENCIES = $(builddir)/libfeapp.a
 
-brusselator_LDADD = -L$(builddir) -lfeapp $(NOX_LIBS) $(SACADO_LIBS)
+brusselator_LDADD = -L$(builddir) -lfeapp $(LOCA_LIBS) $(SACADO_LIBS)
