@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     bool verbose = false;
     if (argc>1) 
       if (argv[1][0]=='-' && argv[1][1]=='v') 
-	verbose = true;
+        verbose = true;
     
     // Create mesh
     vector<double> x(nelem+1);
@@ -168,17 +168,17 @@ int main(int argc, char *argv[]) {
     printParams.set("Output Processor", 0);
     if (verbose)
       printParams.set("Output Information", 
-		      NOX::Utils::OuterIteration + 
-		      NOX::Utils::OuterIterationStatusTest + 
-		      NOX::Utils::InnerIteration +
-// 		      NOX::Utils::Details + 
-// 		      NOX::Utils::LinearSolverDetails +
-		      NOX::Utils::StepperIteration + 
-		      NOX::Utils::StepperDetails +
-		      NOX::Utils::StepperParameters + 
-		      NOX::Utils::TestDetails + 
-		      NOX::Utils::Warning + 
-		      NOX::Utils::Error);
+                      NOX::Utils::OuterIteration + 
+                      NOX::Utils::OuterIterationStatusTest + 
+                      NOX::Utils::InnerIteration +
+//                       NOX::Utils::Details + 
+//                       NOX::Utils::LinearSolverDetails +
+                      NOX::Utils::StepperIteration + 
+                      NOX::Utils::StepperDetails +
+                      NOX::Utils::StepperParameters + 
+                      NOX::Utils::TestDetails + 
+                      NOX::Utils::Warning + 
+                      NOX::Utils::Error);
     else
       printParams.set("Output Information", NOX::Utils::Error);
 
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
     // Create LOCA interface
     Teuchos::RefCountPtr<LOCA::Epetra::ModelEvaluatorInterface> interface =
       Teuchos::rcp(new LOCA::Epetra::ModelEvaluatorInterface(globalData,
-							     model));
+                                                             model));
 
     // Get LOCA parameter vector
     LOCA::ParameterVector pVector = interface->getLOCAParameterVector();
@@ -234,13 +234,13 @@ int main(int argc, char *argv[]) {
     Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
     Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
-							lsParams,
-							iReq, iJac, A, nox_u));
+                                                        lsParams,
+                                                        iReq, iJac, A, nox_u));
 
     // Create the Group
     Teuchos::RefCountPtr<LOCA::Epetra::Group> grp =
       Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams, iReq, 
-					   nox_u, linsys, pVector)); 
+                                           nox_u, linsys, pVector)); 
     grp->setDerivUtils(interface);
 
     // Create the Solver convergence test
@@ -261,8 +261,8 @@ int main(int argc, char *argv[]) {
 
     if (status != LOCA::Abstract::Iterator::Finished) {
       if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
-	globalData->locaUtils->out() 
-	  << "Stepper failed to converge!" << std::endl;
+        globalData->locaUtils->out() 
+          << "Stepper failed to converge!" << std::endl;
     }
 
     // Get the final solution from the stepper
@@ -274,8 +274,8 @@ int main(int argc, char *argv[]) {
     // Output the parameter list
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
       globalData->locaUtils->out() 
-	<< std::endl << "Final Parameters" << std::endl
-	<< "****************" << std::endl;
+        << std::endl << "Final Parameters" << std::endl
+        << "****************" << std::endl;
       stepper.getList()->print(globalData->locaUtils->out());
       globalData->locaUtils->out() << std::endl;
     }
@@ -286,9 +286,9 @@ int main(int argc, char *argv[]) {
   
     if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
       globalData->locaUtils->out() 
-	<< std::endl 
-	<< "***** Checking solution statistics *****" 
-	<< std::endl;
+        << std::endl 
+        << "***** Checking solution statistics *****" 
+        << std::endl;
 
     // Check number of steps
     int numSteps = stepper.getStepNumber();
@@ -301,22 +301,22 @@ int main(int argc, char *argv[]) {
     int numFailedSteps = stepper.getNumFailedSteps();
     int numFailedSteps_expected = 0;
     ierr += testCompare.testValue(numFailedSteps, numFailedSteps_expected, 0.0,
-				  "number of failed continuation steps",
-				  NOX::TestCompare::Absolute);
+                                  "number of failed continuation steps",
+                                  NOX::TestCompare::Absolute);
 
     // Check final value of continuation parameter
     double right_bc_final = finalGroup->getParam("Constant Node BC 2");
     double right_bc_expected = 0.05;
     ierr += testCompare.testValue(right_bc_final, right_bc_expected, 1.0e-14,
-				  "final value of continuation parameter", 
-				  NOX::TestCompare::Relative);
+                                  "final value of continuation parameter", 
+                                  NOX::TestCompare::Relative);
  
     // Check norm of solution
     double norm_x = finalSolution.norm();
     double norm_x_expected = 25.00498021;
     ierr += testCompare.testValue(norm_x, norm_x_expected, 1.0e-7,
-				  "norm of final solution",
-				  NOX::TestCompare::Relative);
+                                  "norm of final solution",
+                                  NOX::TestCompare::Relative);
 
     LOCA::destroyGlobalData(globalData);
 
