@@ -28,18 +28,6 @@
 
 #cmakedefine EPETRA_ADDRESS64BIT
 
-/* Define to 1 if you have the <cassert> header file. */
-#cmakedefine HAVE_CASSERT
-
-/* Define to 1 if you have the <cmath> header file. */
-#cmakedefine HAVE_CMATH
-
-/* Define to 1 if you have the <cstdio> header file. */
-#cmakedefine HAVE_CSTDIO
-
-/* Define to 1 if you have the <cstdlib> header file. */
-#cmakedefine HAVE_CSTDLIB
-
 /* Define if want to build epetra-abc */
 #cmakedefine HAVE_EPETRA_ARRAY_BOUNDS_CHECK
 
@@ -73,18 +61,6 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine HAVE_INTTYPES_H
 
-/* Define to 1 if you have the <iomanip> header file. */
-#cmakedefine HAVE_IOMANIP
-
-/* Define to 1 if you have the <iomanip.h> header file. */
-#cmakedefine HAVE_IOMANIP_H
-
-/* Define to 1 if you have the <iostream> header file. */
-#cmakedefine HAVE_IOSTREAM
-
-/* Define to 1 if you have the <iostream.h> header file. */
-#cmakedefine HAVE_IOSTREAM_H
-
 /* Define if you have LAPACK library. */
 #cmakedefine HAVE_LAPACK
 
@@ -105,21 +81,6 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #cmakedefine HAVE_STDINT_H
-
-/* Define to 1 if you have the <stdio.h> header file. */
-#cmakedefine HAVE_STDIO_H
-
-/* Define to 1 if you have the <stdlib.h> header file. */
-#cmakedefine HAVE_STDLIB_H
-
-/* Define to 1 if you have the <string> header file. */
-#cmakedefine HAVE_STRING
-
-/* Define to 1 if you have the <strings.h> header file. */
-#cmakedefine HAVE_STRINGS_H
-
-/* Define to 1 if you have the <string.h> header file. */
-#cmakedefine HAVE_STRING_H
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #cmakedefine HAVE_SYS_STAT_H

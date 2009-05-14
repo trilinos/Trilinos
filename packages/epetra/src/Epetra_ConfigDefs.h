@@ -92,71 +92,35 @@ const double Epetra_Underflow = 2.23E-308;
 #endif
 #endif
 
-#ifdef HAVE_CSTDLIB
 #include <cstdlib>
-#endif
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
 
-#ifdef HAVE_CSTDIO
 #include <cstdio>
 using std::sprintf;
-#endif
-#ifdef HAVE_STDIO_H
-#include <stdio.h>
-#endif
 
-#ifdef HAVE_CASSERT
 #include <cassert>
-#else
-#include <assert.h>
-#endif
 
-#ifdef HAVE_STRING
 #include <cstring>
 #include <string>
-#endif
-#ifdef HAVE_STRING_H
-#include <string.h>
-#endif
 
-#ifdef HAVE_IOSTREAM
 #include <iostream>
-#else
-#include <iostream.h>
-#endif
 
 #ifdef HAVE_SSTREAM
 #include <sstream>
 #endif
 
-#ifdef HAVE_CMATH
 #include <cmath>
 using std::rand;
-#endif
-#ifdef HAVE_MATH_H
-#include <math.h>
-#endif
 
-#ifdef HAVE_IOMANIP
 #include <iomanip>
-#else
-#include <iomanip.h>
-#endif
 
-#ifdef HAVE_STRING
 using std::string;
-#endif
 
-#ifdef HAVE_IOSTREAM
 using std::istream;
 using std::ostream;
 using std::cerr;
 using std::cout;
 using std::endl;
 using std::flush;
-#endif
 
 /*-----------------------------------------------------------------------
   Must refine the following up to #else TRILINOS_NO_CONFIG_H is defined
