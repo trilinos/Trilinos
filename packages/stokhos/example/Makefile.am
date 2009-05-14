@@ -39,7 +39,13 @@ generate-sample-output.pl : generate-sample-output.pl.stub
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = hermite_example product_basis_example dakota_pce
+if ENABLE_STOKHOS_QUADRATURE
+
+QUAD_EXAMPLES = product_basis_example exp_example
+
+endif
+
+noinst_PROGRAMS = hermite_example dakota_pce dakota_exp $(QUAD_EXAMPLES)
 
 AM_CPPFLAGS = $(STOKHOS_INCLUDES)
 
@@ -54,5 +60,13 @@ product_basis_example_LDADD = $(hermite_example_LDADD)
 dakota_pce_SOURCES = $(srcdir)/dakota_pce.cpp
 dakota_pce_DEPENDENCIES = $(hermite_example_DEPENDENCIES)
 dakota_pce_LDADD = $(hermite_example_LDADD)
+
+exp_example_SOURCES = $(srcdir)/exp_example.cpp
+exp_example_DEPENDENCIES = $(hermite_example_DEPENDENCIES)
+exp_example_LDADD = $(hermite_example_LDADD)
+
+dakota_exp_SOURCES = $(srcdir)/dakota_exp.cpp
+dakota_exp_DEPENDENCIES = $(hermite_example_DEPENDENCIES)
+dakota_exp_LDADD = $(hermite_example_LDADD)
 
 SUBDIRS = 

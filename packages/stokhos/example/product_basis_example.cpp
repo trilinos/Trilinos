@@ -40,91 +40,51 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Stokhos_OrthogPolyExpansion.hpp"
-#include "Stokhos_TayOrthogPolyExpansion.hpp"
-#include "Stokhos_HermiteEBasis.hpp"
-#include "Stokhos_HermiteEBasis2.hpp"
-#include "Stokhos_HermiteBasis.hpp"
-#include "Stokhos_UnitHermiteBasis.hpp"
-#include "Stokhos_LegendreBasis.hpp"
-#include "Stokhos_CompletePolynomialBasis.hpp"
-
-typedef Stokhos::HermiteEBasis2<double> basis_type;
-//typedef Stokhos::LegendreBasis<double> basis_type;
+#include "Stokhos.hpp"
 
 int main(int argc, char **argv)
 {
   try {
-    const unsigned int d = 1;
-    const unsigned int p = 4;
-    std::vector< Teuchos::RCP<const Stokhos::OrthogPolyBasis<double> > > bases(d); 
-    std::vector<double> deriv_coeffs(d);
-    for (unsigned int i=0; i<d; i++) {
-      bases[i] = Teuchos::rcp(new basis_type(p));
-      deriv_coeffs[i] = 1.0;
+    const int d = 3;
+    const int p = 5;
+    std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+    for (int i=0; i<d; i++) {
+      bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p));
     }
-    Teuchos::RCP< Stokhos::CompletePolynomialBasis<double> > basis = 
-      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<double>(bases,
-								deriv_coeffs));
-//     Teuchos::RCP<basis_type> basis = Teuchos::rcp(new basis_type(p));
-    std::cout << *basis << std::endl;
-    Stokhos::OrthogPolyExpansion<double> he(basis);
-    unsigned int sz = basis->size();
-    Stokhos::OrthogPolyApprox<double> u(sz),v(sz),w(sz),x(sz);
-    u.term(*basis, 0,0) = 1.0;
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+    Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
+        Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+    Stokhos::QuadOrthogPolyExpansion<int,double> expn(basis, quad);
+    int sz = basis->size();
+    Stokhos::OrthogPolyApprox<int,double> u(sz),v(sz),w(sz);
+    u.term2(*basis, 0,0) = 1.0;
 
-    u.term(*basis, 1,0) = 0.4;
-    u.term(*basis, 2,0) = 0.06;
-    u.term(*basis, 3,0) = 0.002;
-
-//     u.term(*basis, 0,1) = 0.4;
-//     u.term(*basis, 0,2) = 0.06;
-//     u.term(*basis, 0,3) = 0.002;
-
-//     u.term(*basis, 0,0) = 0.5;
-//     u.term(*basis, 1,0) = 0.05;
-//     u.term(*basis, 0,1) = 0.05;
-
-    std::cout << "u = " << std::endl;
+    for (int i=0; i<d; i++) {
+      u.term2(*basis, i,1) = 0.4 / d;
+      u.term2(*basis, i,2) = 0.06 / d;
+      u.term2(*basis, i,3) = 0.002 / d;
+    }
     u.print(*basis, std::cout);
 
-//     he.exp(v,u);
-//     he.exp(w,v);
-//     he.log(x,v);
-    he.log(v,u);
+    expn.log(v,u);
+    expn.times(w,v,v);
+    expn.plusEqual(w,1.0);
+    expn.divide(v,1.0,w);
 
-//     he.times(w,v,v);
-//     he.plusEqual(w,1.0);
-//     he.divide(v,1.0,w);
-//     he.sinh(w,v);
-
-    Stokhos::OrthogPolyApprox<double> du(sz),dv(sz);
-
-//     he.derivative(du,u);
-//     he.derivative(dv,v);
-//     he.times(w,v,du);
-
-    std::cout.precision(12);
-    std::cout << "v = " << std::endl;
+    std::cout.precision(16);
     v.print(*basis, std::cout);
 
-//     std::cout << "w = " << std::endl;
-//     w.print(*basis, std::cout);
+    double mean = v[0];
+    double std_dev = 0.0;
+    const std::vector<double> nrm2 = basis->norm_squared();
+    for (int i=1; i<basis->size(); i++)
+      std_dev += v[i]*v[i]*nrm2[i];
+    std_dev = std::sqrt(std_dev);
 
-//     std::cout << "x = " << std::endl;
-//     x.print(*basis, std::cout);
+    std::cout << "Mean =      " << mean << std::endl;
+    std::cout << "Std. Dev. = " << std_dev << std::endl;
 
-//     std::cout.precision(12);
-//     std::cout << "du = " << std::endl;
-//     du.print(*basis, std::cout);
-
-//     std::cout.precision(12);
-//     std::cout << "dv = " << std::endl;
-//     dv.print(*basis, std::cout);
-
-//     std::cout.precision(12);
-//     std::cout << "v*du = " << std::endl;
-//     w.print(*basis, std::cout);
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

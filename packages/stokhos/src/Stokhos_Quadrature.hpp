@@ -28,58 +28,45 @@
 // ***********************************************************************
 // @HEADER
 
-extern "C" {
-  void ncijk_(int*, int*);
-  void triple_(int*, int*, int*, int*, double*);
-  void psinorm_(int*, double*);
-}
+#ifndef STOKHOS_QUADRATURE
+#define STOKHOS_QUADRATURE
 
-template <typename BasisT>
-Stokhos::TayTripleProduct<BasisT>::
-TayTripleProduct()
-{
-}
+#include <vector>
 
-template <typename BasisT>
-Stokhos::TayTripleProduct<BasisT>::
-~TayTripleProduct()
-{
-}
+namespace Stokhos {
 
-template <typename BasisT>
-unsigned int
-Stokhos::TayTripleProduct<BasisT>::
-num_values(unsigned int k) const
-{
-  int kk = k;
-  int n;
-  ncijk_(&kk, &n);
-  return n;
-}
+  template <typename ordinal_type, typename value_type>
+  class Quadrature {
+  public:
 
-template <typename BasisT>
-void
-Stokhos::TayTripleProduct<BasisT>::
-triple_value(unsigned int k, unsigned int l, 
-	     unsigned int& i, unsigned int& j, 
-	     typename Stokhos::TayTripleProduct<BasisT>::value_type& c) const
-{
-  int kk = k;
-  int ll = l+1;
-  int ii, jj;
-  triple_(&kk, &ll, &ii, &jj, &c);
-  i = ii;
-  j = jj;
-}
+    //! Constructor
+    Quadrature() {}
 
-template <typename BasisT>
-typename Stokhos::TayTripleProduct<BasisT>::value_type
-Stokhos::TayTripleProduct<BasisT>::
-norm_squared(unsigned int i) const
-{
-  int ii = i;
-  double nrm;
-  psinorm_(&ii, &nrm);
-  return nrm;
-}
+    //! Destructor
+    virtual ~Quadrature() {}
 
+    //! Get quadrature points
+    virtual const std::vector< std::vector<value_type> >& 
+    getQuadPoints() const = 0;
+
+    //! Get quadrature weights
+    virtual const std::vector<value_type>& 
+    getQuadWeights() const = 0;
+
+    //! Get values of basis at quadrature points
+    virtual const std::vector< std::vector<value_type> > & 
+    getBasisAtQuadPoints() const = 0;
+
+  private:
+
+    // Prohibit copying
+    Quadrature(const Quadrature&);
+
+    // Prohibit Assignment
+    Quadrature& operator=(const Quadrature& b);
+
+  }; // class Quadrature
+
+} // namespace Stokhos
+
+#endif // STOKHOS_QUADRATURE

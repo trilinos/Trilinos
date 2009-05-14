@@ -38,7 +38,7 @@
 
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
-AC_INIT(stokhos, 1.5d, YourName@sandia.gov)
+AC_INIT(stokhos, 1.0d, etphipp@sandia.gov)
 
 # Hello World!
 echo "----------------------------------------"
@@ -90,6 +90,12 @@ AM_INIT_AUTOMAKE(1.10 no-define tar-ustar)
 # Specify required version of autoconf.
 AC_PREREQ(2.61)
 
+# ------------------------------------------------------------------------
+# Check if Fortran is enabled or not
+# ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_OPTION(fortran, [enable Fortran support], FORTRAN_SUPPORT, yes)
+AM_CONDITIONAL(FORTRAN_ENABLED, [test "X$ac_cv_use_fortran" != "Xno"])
 # ------------------------------------------------------------------------
 # Check to see if MPI enabled and if any special configuration done
 # ------------------------------------------------------------------------
@@ -214,6 +220,52 @@ AC_SEARCH_LIBS(sqrt,[m],,AC_MSG_ERROR(Cannot find math library))
 fi
 # end of the list of libraries that don't need to be checked for if
 # tests and examples are disabled.
+
+#Read in the path to the Dakota installation
+AC_ARG_WITH(dakota,
+AC_HELP_STRING([--with-dakota=PATH],[Specify the base path of an installed version of Dakota.  .  (ex --with-dakota=/home/user/Dakota)]),
+ac_cv_use_dakota=$withval, ac_cv_use_dakota=no)
+
+AC_MSG_CHECKING(if we are using Dakota)
+
+if test "X$ac_cv_use_dakota" != "Xno"; then
+  AC_MSG_RESULT(yes: $ac_cv_use_dakota)
+  dakota_installdir=$ac_cv_use_dakota
+  AC_DEFINE([HAVE_STOKHOS_DAKOTA],,[Define if Dakota is enabled])
+else
+  AC_MSG_RESULT(no)
+  DAKOTA_DIR=none
+fi
+
+AM_CONDITIONAL(HAVE_STOKHOS_DAKOTA, test "X$ac_cv_use_dakota" != "Xno")
+AC_SUBST(dakota_installdir)
+
+#Read in the path to the Fortran UQTK installation
+AC_ARG_WITH(fortran-uqtk,
+	    AC_HELP_STRING([--with-fortran-uqtk=PATH],
+			   [Enable support for Fortran UQTK library, optionally providing the installed library path (e.g., --with-fortran-uqtk=/home/user/fluq_dist/lib/lnx86).  Default is no.]),
+	    [ac_cv_use_fortran_uqtk=$withval], 
+	    [ac_cv_use_fortran_uqtk=no])
+
+AC_MSG_CHECKING([if we are using Fortran UQTK])
+if test "X$ac_cv_use_fortran_uqtk" != "Xno"; then
+  AC_MSG_RESULT([yes: $ac_cv_use_fortran_uqtk])
+  fortan_uqtk_installdir=$ac_cv_use_fortran_uqtk
+  AC_DEFINE([HAVE_STOKHOS_FORUQTK],,[Define if Fortran UQTK is enabled])
+else
+  AC_MSG_RESULT([no])
+fi
+AM_CONDITIONAL(HAVE_STOKHOS_FORUQTK, test "X$ac_cv_use_fortran_uqtk" != "Xno")
+AC_SUBST(fortan_uqtk_installdir)
+
+AC_ARG_WITH(fortran-uqtk-libs,
+            [AC_HELP_STRING([--with-fortran-uqtk-libs=LIBS],
+            [Fortan UQTK libraries (e.g., "-luqgen -ldvode-clean -ltiming -lcvode -lgh -lslatec -llapack -lblas ")])],
+            [fortran_uqtk_libs=${withval}],
+            [fortran_uqtk_libs="-luqgen -ldvode-clean -ltiming -lcvode -lgh -lslatec -llapack -lblas"])
+AC_SUBST(fortran_uqtk_libs)
+
+AM_CONDITIONAL(ENABLE_STOKHOS_QUADRATURE, test "X$ac_cv_use_dakota" != "Xno" -o "X$ac_cv_use_fortran_uqtk" != "Xno")
 
 # ------------------------------------------------------------------------
 # Checks for linker characteristics

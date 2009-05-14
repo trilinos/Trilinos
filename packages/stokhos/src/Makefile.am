@@ -45,37 +45,45 @@ all-local:
 STOKHOS_H = \
 	$(srcdir)/Stokhos_ConfigDefs.h \
 	$(srcdir)/Stokhos_Version.hpp \
+	$(srcdir)/Stokhos_gaussq.h \
 	$(srcdir)/Stokhos_DynamicArrayTraits.hpp \
 	$(srcdir)/Stokhos_Polynomial.hpp \
 	$(srcdir)/Stokhos_PolynomialImp.hpp \
-	$(srcdir)/Stokhos_OrthogPolyBasis.hpp \
-	$(srcdir)/Stokhos_OrthogPolyBasisBase.hpp \
-	$(srcdir)/Stokhos_OrthogPolyBasisBaseImp.hpp \
+	$(srcdir)/Stokhos_OneDOrthogPolyBasis.hpp \
+	$(srcdir)/Stokhos_OneDOrthogPolyBasisBase.hpp \
+	$(srcdir)/Stokhos_OneDOrthogPolyBasisBaseImp.hpp \
 	$(srcdir)/Stokhos_HermiteBasis.hpp \
 	$(srcdir)/Stokhos_HermiteBasisImp.hpp \
-	$(srcdir)/Stokhos_HermiteEBasis.hpp \
-	$(srcdir)/Stokhos_HermiteEBasisImp.hpp \
-	$(srcdir)/Stokhos_HermiteEBasis2.hpp \
-	$(srcdir)/Stokhos_HermiteEBasis2Imp.hpp \
-	$(srcdir)/Stokhos_HermiteUnitBasis.hpp \
-	$(srcdir)/Stokhos_HermiteUnitBasisImp.hpp \
 	$(srcdir)/Stokhos_LegendreBasis.hpp \
 	$(srcdir)/Stokhos_LegendreBasisImp.hpp \
+	$(srcdir)/Stokhos_OrthogPolyBasis.hpp \
 	$(srcdir)/Stokhos_CompletePolynomialBasis.hpp \
 	$(srcdir)/Stokhos_CompletePolynomialBasisImp.hpp \
-	$(srcdir)/Stokhos_TripleProduct.hpp \
-	$(srcdir)/Stokhos_TripleProductImp.hpp \
-	$(srcdir)/Stokhos_TayTripleProduct.hpp \
-	$(srcdir)/Stokhos_TayTripleProductImp.hpp \
+	$(srcdir)/Stokhos_Sparse3Tensor.hpp \
+	$(srcdir)/Stokhos_Sparse3TensorImp.hpp \
+	$(srcdir)/Stokhos_Dense3Tensor.hpp \
+	$(srcdir)/Stokhos_Dense3TensorImp.hpp \
+	$(srcdir)/Stokhos_Quadrature.hpp \
+	$(srcdir)/Stokhos_TensorProductQuadrature.hpp \
+	$(srcdir)/Stokhos_TensorProductQuadratureImp.hpp \
+	$(srcdir)/Stokhos_SparseGridQuadrature.hpp \
+	$(srcdir)/Stokhos_SparseGridQuadratureImp.hpp \
 	$(srcdir)/Stokhos_OrthogPolyApprox.hpp \
 	$(srcdir)/Stokhos_OrthogPolyApproxImp.hpp \
 	$(srcdir)/Stokhos_OrthogPolyExpansion.hpp \
-	$(srcdir)/Stokhos_OrthogPolyExpansionImp.hpp \
-	$(srcdir)/Stokhos_TayOrthogPolyExpansion.hpp \
-	$(srcdir)/Stokhos_TayOrthogPolyExpansionImp.hpp
+	$(srcdir)/Stokhos_QuadOrthogPolyExpansion.hpp \
+	$(srcdir)/Stokhos_QuadOrthogPolyExpansionImp.hpp \
+	$(srcdir)/Stokhos_DerivOrthogPolyExpansion.hpp \
+	$(srcdir)/Stokhos_DerivOrthogPolyExpansionImp.hpp \
+	$(srcdir)/Stokhos_ForUQTKOrthogPolyExpansion.hpp \
+	$(srcdir)/Stokhos_ForUQTKOrthogPolyExpansionImp.hpp \
+	$(srcdir)/Stokhos_MatrixFreeEpetraOp.hpp \
+	$(srcdir)/Stokhos_MeanEpetraOp.hpp
 
 STOKHOS = \
-	$(srcdir)/Stokhos_Version.cpp 
+	$(srcdir)/Stokhos_Version.cpp \
+	$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp \
+	$(srcdir)/Stokhos_MeanEpetraOp.cpp
 
 # Add packages that this package is dependent on
 include $(top_builddir)/Makefile.export.stokhos
@@ -83,6 +91,8 @@ include $(top_builddir)/Makefile.export.stokhos
 # ------------------------------------------------------------------------
 # Stokhos library specifications
 # ------------------------------------------------------------------------
+
+AM_CPPFLAGS = $(STOKHOS_INCLUDES)
 
 STOKHOS_LIB = libstokhos.a
 

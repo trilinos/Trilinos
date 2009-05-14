@@ -31,32 +31,48 @@
 #ifndef STOKHOS_LEGENDREBASIS_HPP
 #define STOKHOS_LEGENDREBASIS_HPP
 
-#include "Stokhos_OrthogPolyBasisBase.hpp"
+#include "Stokhos_OneDOrthogPolyBasisBase.hpp"
 
 namespace Stokhos {
 
-  template <typename T>
-  class LegendreBasis : public OrthogPolyBasisBase<T> {
+  template <typename ordinal_type, typename value_type>
+  class LegendreBasis : 
+    public OneDOrthogPolyBasisBase<ordinal_type, value_type> {
   public:
 
-    //! Typename of values
-    typedef typename OrthogPolyBasisBase<T>::value_type value_type;
-
     //! Constructor
-    LegendreBasis(unsigned int p);
+    LegendreBasis(ordinal_type p);
 
     //! Destructor
     ~LegendreBasis();
 
     //! Project a polynomial into this basis
-    void projectPoly(const Polynomial<T>& poly, std::vector<T>& coeffs) const;
+    void projectPoly(const Polynomial<value_type>& poly, 
+		     std::vector<value_type>& coeffs) const;
 
     //! Project derivative of basis polynomial into this basis
-    void projectDerivative(unsigned int i, std::vector<T>& coeffs) const;
+    void projectDerivative(ordinal_type i, 
+			   std::vector<value_type>& coeffs) const;
 
     //! Evaluate basis polynomials at given point
-    virtual void evaluateBases(const std::vector<T>& point,
-			    std::vector<T>& basis_pts) const;
+    virtual void evaluateBases(const value_type& point,
+                               std::vector<value_type>& basis_pts) const;
+
+    //! Get Gauss quadrature points, weights, and values of basis at points
+    virtual void 
+    getQuadPoints(ordinal_type quad_order,
+		  std::vector<value_type>& points,
+		  std::vector<value_type>& weights,
+		  std::vector< std::vector<value_type> >& values) const;
+
+    //! Get sparse grid rule number
+    virtual ordinal_type getRule() const { return 1; }
+
+    //! Get quadrature weight factor
+    virtual value_type getQuadWeightFactor() const { return 0.5; }
+
+    //! Get quadrature point factor
+    virtual value_type getQuadPointFactor() const { return 1.0; }
 
   private:
 
@@ -69,7 +85,7 @@ namespace Stokhos {
   protected:
 
     //! Derivative coefficients
-    std::vector< std::vector<T> > deriv_coeffs;
+    std::vector< std::vector<value_type> > deriv_coeffs;
 
   }; // class LegendreBasis
 

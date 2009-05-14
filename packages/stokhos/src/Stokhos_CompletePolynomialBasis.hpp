@@ -32,79 +32,81 @@
 #define STOKHOS_COMPLETEPOLYNOMIALBASIS_HPP
 
 #include <vector>
+
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+
 #include "Stokhos_OrthogPolyBasis.hpp"
-#include "Stokhos_TripleProduct.hpp"
+#include "Stokhos_OneDOrthogPolyBasis.hpp"
 
 namespace Stokhos {
 
-  template <typename T>
-  class CompletePolynomialBasis : public OrthogPolyBasis<T> {
+  template <typename ordinal_type, typename value_type>
+  class CompletePolynomialBasis : 
+    public OrthogPolyBasis<ordinal_type,value_type> {
   public:
 
-    //! Typename of values
-    typedef typename OrthogPolyBasis<T>::value_type value_type;
-
     //! Constructor
-    CompletePolynomialBasis(
-	   const std::vector< Teuchos::RCP<const OrthogPolyBasis<T> > >& bases,
-	   const std::vector<T>& deriv_coeffs);
+    CompletePolynomialBasis(const std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& bases,
+			    const value_type& sparse_tol = 1.0e-12,
+			    const Teuchos::RCP< std::vector<value_type> >& deriv_coeffs = Teuchos::null);
 
     //! Destructor
-    ~CompletePolynomialBasis();
+    virtual ~CompletePolynomialBasis();
 
     //! Return order of basis
-    unsigned int order() const;
+    ordinal_type order() const;
 
     //! Return dimension of basis
-    unsigned int dimension() const;
+    ordinal_type dimension() const;
 
     //! Return total size of basis
-    virtual unsigned int size() const;
+    virtual ordinal_type size() const;
 
     //! Compute norm squared of each basis element
-    virtual const std::vector<T>& norm_squared() const;
+    virtual const std::vector<value_type>& norm_squared() const;
 
-    //! Project a polynomial into this basis
-    virtual void projectPoly(const Polynomial<T>& poly, 
-			     std::vector<T>& coeffs) const;
+    //! Compute norm squared of ith element
+    virtual const value_type& norm_squared(ordinal_type i) const;
 
-    //! Project product of two basis polynomials into this basis
-    virtual void projectProduct(unsigned int i, unsigned int j,
-				std::vector<T>& coeffs) const;
+    //! Compute triple product tensor
+    virtual Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > getTripleProductTensor() const;
+
+    //! Compute derivative triple product tensor
+    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getDerivTripleProductTensor() const;
+
+    //! Compute derivative double product tensor
+    virtual Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > getDerivDoubleProductTensor() const;
+
+    //! Project product of basis polynomials i and j onto this basis
+    virtual void projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) const;
 
     //! Project derivative of basis polynomial into this basis
-    /*!
-     * Derivative here is defined to be:
-     * D = a_1D_1 + ... + a_d D_d
-     * Where a_1,...,a_d are the values in \c deriv_coeffs supplied in the
-     * constructor.  All a_1,...,a_d should be non-zero.
-     */
-    virtual void projectDerivative(unsigned int i, 
-				   std::vector<T>& coeffs) const;
-
-    //! Write polynomial in standard basis
-    virtual Polynomial<T> toStandardBasis(const T coeffs[], 
-					  unsigned int n) const;
+    virtual void projectDerivative(ordinal_type i, 
+                                   std::vector<value_type>& coeffs) const;
 
     //! Evaluate basis polynomial at zero
-    virtual T evaluateZero(unsigned int i) const;
+    virtual value_type evaluateZero(ordinal_type i) const;
 
     //! Evaluate basis polynomials at given point
-    virtual void evaluateBases(const std::vector<T>& point,
-			       std::vector<T>& basis_pts) const;
+    virtual const std::vector<value_type>& 
+    evaluateBases(const std::vector<value_type>& point) const;
+
     //! Print basis
     virtual void print(std::ostream& os) const;
 
     //! Get term
-    virtual std::vector<unsigned int> getTerm(unsigned int i) const;
+    virtual std::vector<ordinal_type> getTerm(ordinal_type i) const;
 
     //! Get index
-    virtual unsigned int 
-    getIndex(const std::vector<unsigned int>& term) const;
+    virtual ordinal_type 
+    getIndex(const std::vector<ordinal_type>& term) const;
 
     //! Return name of basis
     virtual const std::string& getName() const;
+
+    //! Return coordinate bases
+    const std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& getCoordinateBases() const;
 
   protected:
 
@@ -115,7 +117,7 @@ namespace Stokhos {
     /*!
      * Returns (order+dim)!/(order!*dim!)
      */
-    unsigned int compute_num_terms(unsigned int dim, unsigned int order) const;
+    ordinal_type compute_num_terms(ordinal_type dim, ordinal_type order) const;
 
     /*!
      * \brief Compute the 2-D array of basis terms which maps a basis index
@@ -127,7 +129,7 @@ namespace Stokhos {
      * \brief Compute basis index given the orders for each basis
      * dimension.
      */
-    unsigned int compute_index(const std::vector<unsigned int>& terms) const;
+    ordinal_type compute_index(const std::vector<ordinal_type>& terms) const;
 
   private:
 
@@ -143,28 +145,49 @@ namespace Stokhos {
     std::string name;
 
     //! Total order of basis
-    unsigned int p;
+    ordinal_type p;
 
     //! Total dimension of basis
-    unsigned int d;
+    ordinal_type d;
 
     //! Total size of basis
-    unsigned int sz;
+    ordinal_type sz;
 
     //! Array of bases
-    std::vector< Teuchos::RCP<const OrthogPolyBasis<T> > > bases;
+    std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > > bases;
+
+    //! Tolerance for computing sparse Cijk
+    value_type sparse_tol;
 
     //! Coefficients for derivative
-    std::vector<T> deriv_coeffs;
+    Teuchos::RCP< std::vector<value_type> > deriv_coeffs;
 
     //! Norms
-    std::vector<T> norms;
+    std::vector<value_type> norms;
 
     //! 2-D array of basis terms
-    std::vector< std::vector<unsigned int> > terms;
+    std::vector< std::vector<ordinal_type> > terms;
 
     //! Array of Triple products for computing product projections
-    std::vector< Teuchos::RCP<TripleProduct< OrthogPolyBasis<T> > > > Cijk;
+    std::vector< Teuchos::RCP<const Dense3Tensor<ordinal_type,value_type> > > Cijk_1d;
+
+    //! Array of double products for computing derivative projections
+    std::vector< Teuchos::RCP<const Teuchos::SerialDenseMatrix<ordinal_type,value_type> > > Bij_1d;
+
+    //! Triple product 3 tensor
+    mutable Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk;
+
+    //! Derivative triple product 3 tensor
+    mutable Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > Dijk;
+
+    //! Derivative double product 2 tensor
+    mutable Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > Bij;
+
+    //! Array to hold basis evaluations
+    mutable std::vector<value_type> basis_pts;
+
+    //! Temporary array used in basis evaluation
+    mutable std::vector< std::vector<value_type> > basis_eval_tmp;
 
   }; // class CompletePolynomialBasis
 

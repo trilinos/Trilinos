@@ -40,35 +40,32 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Stokhos_OrthogPolyExpansion.hpp"
-#include "Stokhos_HermiteEBasis.hpp"
-
-typedef Stokhos::HermiteEBasis<double> basis_type;
+#include "Stokhos.hpp"
 
 int main(int argc, char **argv)
 {
   try {
-    const unsigned int d = 7;
-    Teuchos::RCP<basis_type> basis = 
-      Teuchos::rcp(new basis_type(d));
-    Stokhos::OrthogPolyExpansion<double> he(basis);
-    Stokhos::OrthogPolyApprox<double> u(d+1),v(d+1),w(d+1);
+    const int d = 7;
+    std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
+    bases[0] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(d));
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+    Stokhos::DerivOrthogPolyExpansion<int,double> expn(basis);
+    Stokhos::OrthogPolyApprox<int,double> u(d+1),v(d+1),w(d+1);
     u[0] = 1.0;
     u[1] = 0.4;
     u[2] = 0.06;
     u[3] = 0.002;
 
-    he.log(v,u);
-    he.times(w,v,v);
-    he.plusEqual(w,1.0);
-    he.divide(v,1.0,w);
-    he.sinh(w,v);
+    expn.log(v,u);
+    expn.times(w,v,v);
+    expn.plusEqual(w,1.0);
+    expn.divide(v,1.0,w);
+    expn.sinh(w,v);
 
-    std::cout << "u (hermite basis) = " << u << std::endl;
+    std::cout << "u (orthogonal basis) = " << u << std::endl;
     std::cout.precision(12);
-    std::cout << "w (hermite basis) = " << w << std::endl;
-    std::cout << "w (standard basis) = " << w.toStandardBasis(*basis) 
-	      << std::endl;
+    std::cout << "w (orthogonal basis) = " << w << std::endl;
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

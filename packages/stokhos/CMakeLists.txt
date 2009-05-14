@@ -12,6 +12,16 @@ PACKAGE(Stokhos)
 # B) Set up package-specific options
 #
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
+  STOKHOS_DEBUG
+  "Enable debug code in sacado"
+  ${Trilinos_ENABLE_DEBUG} )
+
+SET(Stokhos_ENABLE_Quadrature FALSE)
+IF(TPL_ENABLE_Dakota OR TPL_ENABLE_ForUQTK)
+  SET(Stokhos_ENABLE_Quadrature TRUE)
+ENDIF()
+
 #
 # C) Add the libraries, tests, and examples
 #

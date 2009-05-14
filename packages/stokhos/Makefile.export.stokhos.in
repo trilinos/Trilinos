@@ -29,13 +29,25 @@
 # @HEADER
 
 include @abs_top_builddir@/../teuchos/Makefile.export.teuchos
+include @abs_top_builddir@/../epetra/Makefile.export.epetra
+include @abs_top_builddir@/../epetraext/Makefile.export.epetraext
+
+## Optional Dependency on Dakota
+@HAVE_STOKHOS_DAKOTA_TRUE@DAKOTA_INCLUDES = -DHAVE_DAKOTA -I@dakota_installdir@/include -I@dakota_installdir@/include/pecos
+#@HAVE_STOKHOS_DAKOTA_TRUE@DAKOTA_LIBS = -L@dakota_installdir@/lib -ldakota -lteuchos -lpecos -lfftw3 -llhs -levidence -lsurfpack -lconmin -lddace -ldot -lfsudace  -ljega -lcport -lnlpql -lnpsol -lopt -lpsuade -lnewmat  -lncsuopt -lgsl -lquadrature -lcoliny -lcolin -lpebbl -lutilib -l3po -lnappspack -lappspack -lconveyor -lshared -lcdd -lamplsolver -llhs
+@HAVE_STOKHOS_DAKOTA_TRUE@DAKOTA_LIBS = -L@dakota_installdir@/lib -ldakota -lteuchos -lpecos -lfftw3 -llhs -levidence -lsurfpack -lconmin -lddace -ldot -lfsudace  -ljega -lnlpql -lnpsol -lopt -lpsuade -lnewmat  -lncsuopt -lgsl -lquadrature -lcoliny -lcolin -lpebbl -lutilib -l3po -lnappspack -lappspack -lconveyor -lshared -lcdd -lamplsolver -llhs
+
+@HAVE_STOKHOS_FORUQTK_TRUE@FOR_UQTK_LIBS = -L@fortan_uqtk_installdir@ @fortran_uqtk_libs@
 
 _STOKHOS_INCLUDES = \
 	-I@abs_top_srcdir@/src \
 	-I@abs_top_builddir@/src \
-	$(TEUCHOS_INCLUDES)
+	$(TEUCHOS_INCLUDES) \
+	$(EPETRA_INCLUDES) \
+	$(EPETRAEXT_INCLUDES) \
+	$(DAKOTA_INCLUDES)
 
-_STOKHOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lstokhos $(TEUCHOS_LIBS)
+_STOKHOS_LIBS = @LDFLAGS@ -L@abs_top_builddir@/src -lstokhos $(EPETRAEXT_LIBS) $(EPETRA_LIBS) $(TEUCHOS_LIBS) $(DAKOTA_LIBS) $(FOR_UQTK_LIBS)
 
 @USING_GNUMAKE_TRUE@STOKHOS_INCLUDES  = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_incl_paths.pl $(_STOKHOS_INCLUDES))
 @USING_GNUMAKE_TRUE@STOKHOS_LIBS      = $(shell @PERL_EXE@ @abs_top_srcdir@/config/strip_dup_libs.pl $(_STOKHOS_LIBS))

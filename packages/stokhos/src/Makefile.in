@@ -73,6 +73,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_enable_option.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
@@ -98,7 +99,9 @@ LIBRARIES = $(lib_LIBRARIES)
 AR = ar
 ARFLAGS = cru
 libstokhos_a_DEPENDENCIES =
-am__objects_1 = Stokhos_Version.$(OBJEXT)
+am__objects_1 = Stokhos_Version.$(OBJEXT) \
+	Stokhos_MatrixFreeEpetraOp.$(OBJEXT) \
+	Stokhos_MeanEpetraOp.$(OBJEXT)
 am__objects_2 =
 am_libstokhos_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libstokhos_a_OBJECTS = $(am_libstokhos_a_OBJECTS)
@@ -200,11 +203,14 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
+dakota_installdir = @dakota_installdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
+fortan_uqtk_installdir = @fortan_uqtk_installdir@
+fortran_uqtk_libs = @fortran_uqtk_libs@
 host = @host@
 host_alias = @host_alias@
 host_cpu = @host_cpu@
@@ -246,42 +252,51 @@ top_srcdir = @top_srcdir@
 STOKHOS_H = \
 	$(srcdir)/Stokhos_ConfigDefs.h \
 	$(srcdir)/Stokhos_Version.hpp \
+	$(srcdir)/Stokhos_gaussq.h \
 	$(srcdir)/Stokhos_DynamicArrayTraits.hpp \
 	$(srcdir)/Stokhos_Polynomial.hpp \
 	$(srcdir)/Stokhos_PolynomialImp.hpp \
-	$(srcdir)/Stokhos_OrthogPolyBasis.hpp \
-	$(srcdir)/Stokhos_OrthogPolyBasisBase.hpp \
-	$(srcdir)/Stokhos_OrthogPolyBasisBaseImp.hpp \
+	$(srcdir)/Stokhos_OneDOrthogPolyBasis.hpp \
+	$(srcdir)/Stokhos_OneDOrthogPolyBasisBase.hpp \
+	$(srcdir)/Stokhos_OneDOrthogPolyBasisBaseImp.hpp \
 	$(srcdir)/Stokhos_HermiteBasis.hpp \
 	$(srcdir)/Stokhos_HermiteBasisImp.hpp \
-	$(srcdir)/Stokhos_HermiteEBasis.hpp \
-	$(srcdir)/Stokhos_HermiteEBasisImp.hpp \
-	$(srcdir)/Stokhos_HermiteEBasis2.hpp \
-	$(srcdir)/Stokhos_HermiteEBasis2Imp.hpp \
-	$(srcdir)/Stokhos_HermiteUnitBasis.hpp \
-	$(srcdir)/Stokhos_HermiteUnitBasisImp.hpp \
 	$(srcdir)/Stokhos_LegendreBasis.hpp \
 	$(srcdir)/Stokhos_LegendreBasisImp.hpp \
+	$(srcdir)/Stokhos_OrthogPolyBasis.hpp \
 	$(srcdir)/Stokhos_CompletePolynomialBasis.hpp \
 	$(srcdir)/Stokhos_CompletePolynomialBasisImp.hpp \
-	$(srcdir)/Stokhos_TripleProduct.hpp \
-	$(srcdir)/Stokhos_TripleProductImp.hpp \
-	$(srcdir)/Stokhos_TayTripleProduct.hpp \
-	$(srcdir)/Stokhos_TayTripleProductImp.hpp \
+	$(srcdir)/Stokhos_Sparse3Tensor.hpp \
+	$(srcdir)/Stokhos_Sparse3TensorImp.hpp \
+	$(srcdir)/Stokhos_Dense3Tensor.hpp \
+	$(srcdir)/Stokhos_Dense3TensorImp.hpp \
+	$(srcdir)/Stokhos_Quadrature.hpp \
+	$(srcdir)/Stokhos_TensorProductQuadrature.hpp \
+	$(srcdir)/Stokhos_TensorProductQuadratureImp.hpp \
+	$(srcdir)/Stokhos_SparseGridQuadrature.hpp \
+	$(srcdir)/Stokhos_SparseGridQuadratureImp.hpp \
 	$(srcdir)/Stokhos_OrthogPolyApprox.hpp \
 	$(srcdir)/Stokhos_OrthogPolyApproxImp.hpp \
 	$(srcdir)/Stokhos_OrthogPolyExpansion.hpp \
-	$(srcdir)/Stokhos_OrthogPolyExpansionImp.hpp \
-	$(srcdir)/Stokhos_TayOrthogPolyExpansion.hpp \
-	$(srcdir)/Stokhos_TayOrthogPolyExpansionImp.hpp
+	$(srcdir)/Stokhos_QuadOrthogPolyExpansion.hpp \
+	$(srcdir)/Stokhos_QuadOrthogPolyExpansionImp.hpp \
+	$(srcdir)/Stokhos_DerivOrthogPolyExpansion.hpp \
+	$(srcdir)/Stokhos_DerivOrthogPolyExpansionImp.hpp \
+	$(srcdir)/Stokhos_ForUQTKOrthogPolyExpansion.hpp \
+	$(srcdir)/Stokhos_ForUQTKOrthogPolyExpansionImp.hpp \
+	$(srcdir)/Stokhos_MatrixFreeEpetraOp.hpp \
+	$(srcdir)/Stokhos_MeanEpetraOp.hpp
 
 STOKHOS = \
-	$(srcdir)/Stokhos_Version.cpp 
+	$(srcdir)/Stokhos_Version.cpp \
+	$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp \
+	$(srcdir)/Stokhos_MeanEpetraOp.cpp
 
 
 # ------------------------------------------------------------------------
 # Stokhos library specifications
 # ------------------------------------------------------------------------
+AM_CPPFLAGS = $(STOKHOS_INCLUDES)
 STOKHOS_LIB = libstokhos.a
 libstokhos_a_SOURCES = $(STOKHOS) $(STOKHOS_H)
 EXTRA_libstokhos_a_SOURCES = 
@@ -426,6 +441,8 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_MatrixFreeEpetraOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_MeanEpetraOp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_Version.Po@am__quote@
 
 .cpp.o:
@@ -455,6 +472,34 @@ Stokhos_Version.obj: $(srcdir)/Stokhos_Version.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stokhos_Version.cpp' object='Stokhos_Version.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stokhos_Version.obj `if test -f '$(srcdir)/Stokhos_Version.cpp'; then $(CYGPATH_W) '$(srcdir)/Stokhos_Version.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stokhos_Version.cpp'; fi`
+
+Stokhos_MatrixFreeEpetraOp.o: $(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Stokhos_MatrixFreeEpetraOp.o -MD -MP -MF $(DEPDIR)/Stokhos_MatrixFreeEpetraOp.Tpo -c -o Stokhos_MatrixFreeEpetraOp.o `test -f '$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp' || echo '$(srcdir)/'`$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Stokhos_MatrixFreeEpetraOp.Tpo $(DEPDIR)/Stokhos_MatrixFreeEpetraOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp' object='Stokhos_MatrixFreeEpetraOp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stokhos_MatrixFreeEpetraOp.o `test -f '$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp' || echo '$(srcdir)/'`$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp
+
+Stokhos_MatrixFreeEpetraOp.obj: $(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Stokhos_MatrixFreeEpetraOp.obj -MD -MP -MF $(DEPDIR)/Stokhos_MatrixFreeEpetraOp.Tpo -c -o Stokhos_MatrixFreeEpetraOp.obj `if test -f '$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp'; then $(CYGPATH_W) '$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Stokhos_MatrixFreeEpetraOp.Tpo $(DEPDIR)/Stokhos_MatrixFreeEpetraOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp' object='Stokhos_MatrixFreeEpetraOp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stokhos_MatrixFreeEpetraOp.obj `if test -f '$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp'; then $(CYGPATH_W) '$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp'; fi`
+
+Stokhos_MeanEpetraOp.o: $(srcdir)/Stokhos_MeanEpetraOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Stokhos_MeanEpetraOp.o -MD -MP -MF $(DEPDIR)/Stokhos_MeanEpetraOp.Tpo -c -o Stokhos_MeanEpetraOp.o `test -f '$(srcdir)/Stokhos_MeanEpetraOp.cpp' || echo '$(srcdir)/'`$(srcdir)/Stokhos_MeanEpetraOp.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Stokhos_MeanEpetraOp.Tpo $(DEPDIR)/Stokhos_MeanEpetraOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stokhos_MeanEpetraOp.cpp' object='Stokhos_MeanEpetraOp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stokhos_MeanEpetraOp.o `test -f '$(srcdir)/Stokhos_MeanEpetraOp.cpp' || echo '$(srcdir)/'`$(srcdir)/Stokhos_MeanEpetraOp.cpp
+
+Stokhos_MeanEpetraOp.obj: $(srcdir)/Stokhos_MeanEpetraOp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Stokhos_MeanEpetraOp.obj -MD -MP -MF $(DEPDIR)/Stokhos_MeanEpetraOp.Tpo -c -o Stokhos_MeanEpetraOp.obj `if test -f '$(srcdir)/Stokhos_MeanEpetraOp.cpp'; then $(CYGPATH_W) '$(srcdir)/Stokhos_MeanEpetraOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stokhos_MeanEpetraOp.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Stokhos_MeanEpetraOp.Tpo $(DEPDIR)/Stokhos_MeanEpetraOp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stokhos_MeanEpetraOp.cpp' object='Stokhos_MeanEpetraOp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stokhos_MeanEpetraOp.obj `if test -f '$(srcdir)/Stokhos_MeanEpetraOp.cpp'; then $(CYGPATH_W) '$(srcdir)/Stokhos_MeanEpetraOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stokhos_MeanEpetraOp.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

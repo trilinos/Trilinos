@@ -28,49 +28,77 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_TAYTRIPLEPRODUCT_HPP
-#define STOKHOS_TAYTRIPLEPRODUCT_HPP
+#ifndef STOKHOS_DENSE3TENSOR_HPP
+#define STOKHOS_DENSE3TENSOR_HPP
+
+#include <ostream>
+
+#include "Teuchos_Array.hpp"
 
 namespace Stokhos {
 
-  //! 3-tensor that stores C_{ijk} = < \Psi_i \Psi_j \Psi_k >
-  template <typename BasisT>
-  class TayTripleProduct {
+  /*! 
+   * \brief Data structure storing a dense 3-tensor C(i,j,k).
+   */
+  template <typename ordinal_type, typename value_type>
+  class Dense3Tensor {
   public:
-
-    typedef BasisT basis_type;
-    
-    typedef typename BasisT::value_type value_type;
     
     //! Constructor
-    TayTripleProduct();
+    Dense3Tensor(ordinal_type sz);
     
     //! Destructor
-    ~TayTripleProduct();
+    ~Dense3Tensor();
 
-    //! Return number of non-zero's in Cijk for a given k
-    unsigned int num_values(unsigned int k) const;
+    //! Return size
+    ordinal_type size() const;
       
     //! Get value (i,j,k)
-    void triple_value(unsigned int k, unsigned int l, 
-		      unsigned int& i, unsigned int& j, value_type& c) const;
+    const value_type& operator() (ordinal_type i, ordinal_type j, 
+				  ordinal_type k) const;
+
+    //! Get value (i,j,k)
+    value_type& operator() (ordinal_type i, ordinal_type j, ordinal_type k);
+
+    //! Return number of non-zero's in Cijk for a given k
+    ordinal_type num_values(ordinal_type k) const;
+      
+    //! Get value (i,j,k) using sparse access
+    void value(ordinal_type k, ordinal_type l, ordinal_type& i, ordinal_type& j,
+	       value_type& c) const;
     
-    //! Get norm-squared
-    value_type norm_squared(unsigned int i) const;
+    //! Print tensor
+    void print(std::ostream& os) const;
 
   private:
 
     // Prohibit copying
-    TayTripleProduct(const TayTripleProduct&);
+    Dense3Tensor(const Dense3Tensor&);
 
     // Prohibit Assignment
-    TayTripleProduct& operator=(const TayTripleProduct& b);
+    Dense3Tensor& operator=(const Dense3Tensor& b);
+    
+  protected:
 
-  }; // class Triple Product
+    //! Size of each dimension
+    ordinal_type l;
+    
+    //! Dense tensor array
+    Teuchos::Array<value_type> Cijk_values;
+
+  }; // class Dense3Tensor
+
+  template <typename ordinal_type, typename value_type>
+  std::ostream& 
+  operator << (std::ostream& os, 
+	       const Dense3Tensor<ordinal_type, value_type>& Cijk) {
+    Cijk.print(os);
+    return os;
+  }
 
 } // namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_TayTripleProductImp.hpp"
+#include "Stokhos_Dense3TensorImp.hpp"
 
-#endif // STOKHOS_TAYTRIPLEPRODUCT_HPP
+#endif // STOKHOS_DENSE3TENSOR_HPP

@@ -28,45 +28,29 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_UNITHERMITEBASIS_HPP
-#define STOKHOS_UNITHERMITEBASIS_HPP
+#ifndef STOKHOS_HPP
+#define STOKHOS_HPP
 
-#include "Stokhos_OrthogPolyBasisBase.hpp"
+// Version string
+#include "Stokhos_Version.hpp"
 
-namespace Stokhos {
+// Bases
+#include "Stokhos_LegendreBasis.hpp"
+#include "Stokhos_HermiteBasis.hpp"
+#include "Stokhos_CompletePolynomialBasis.hpp"
 
-  template <typename T>
-  class UnitHermiteBasis : public OrthogPolyBasisBase<T> {
-  public:
-    
-    //! Typename of values
-    typedef typename OrthogPolyBasisBase<T>::value_type value_type;
-    
-    //! Constructor
-    UnitHermiteBasis(unsigned int p);
-    
-    //! Destructor
-    ~UnitHermiteBasis();
-    
-    //! Project a polynomial into this basis
-    void projectPoly(const Polynomial<T>& poly, std::vector<T>& coeffs) const;
+// Expansion methods
+#include "Stokhos_OrthogPolyApprox.hpp"
+#include "Stokhos_QuadOrthogPolyExpansion.hpp"
+#include "Stokhos_DerivOrthogPolyExpansion.hpp"
+#include "Stokhos_ForUQTKOrthogPolyExpansion.hpp"
 
-    //! Project derivative of basis polynomial into this basis
-    void projectDerivative(unsigned int i, std::vector<T>& coeffs) const;
+// Quadrature methods
+#include "Stokhos_TensorProductQuadrature.hpp"
+#include "Stokhos_SparseGridQuadrature.hpp"
 
-  private:
+// Tensors
+#include "Stokhos_Sparse3Tensor.hpp"
+#include "Stokhos_Dense3Tensor.hpp"
 
-    // Prohibit copying
-    UnitHermiteBasis(const UnitHermiteBasis&);
-
-    // Prohibit Assignment
-    UnitHermiteBasis& operator=(const UnitHermiteBasis& b);
-    
-  }; // class UnitHermiteBasis
-
-} // Namespace Stokhos
-
-// Include template definitions
-#include "Stokhos_UnitHermiteBasisImp.hpp"
-
-#endif
+#endif // STOKHOS_HPP 

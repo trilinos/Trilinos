@@ -28,45 +28,18 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HERMITEEBASIS_HPP
-#define STOKHOS_HERMITEEBASIS_HPP
+#include "Teuchos_ConfigDefs.hpp"
 
-#include "Stokhos_OrthogPolyBasisBase.hpp"
+#define GAUSSQ_F77 F77_FUNC(gaussq,GAUSSQ)
 
-namespace Stokhos {
-
-  template <typename T>
-  class HermiteEBasis : public OrthogPolyBasisBase<T> {
-  public:
-    
-    //! Typename of values
-    typedef typename OrthogPolyBasisBase<T>::value_type value_type;
-    
-    //! Constructor
-    HermiteEBasis(unsigned int p);
-    
-    //! Destructor
-    ~HermiteEBasis();
-    
-    //! Project a polynomial into this basis
-    void projectPoly(const Polynomial<T>& poly, std::vector<T>& coeffs) const;
-
-    //! Project derivative of basis polynomial into this basis
-    void projectDerivative(unsigned int i, std::vector<T>& coeffs) const;
-
-  private:
-
-    // Prohibit copying
-    HermiteEBasis(const HermiteEBasis&);
-
-    // Prohibit Assignment
-    HermiteEBasis& operator=(const HermiteEBasis& b);
-    
-  }; // class HermiteEBasis
-
-} // Namespace Stokhos
-
-// Include template definitions
-#include "Stokhos_HermiteEBasisImp.hpp"
-
+#ifdef __cplusplus
+extern "C" {
 #endif
+
+extern void GAUSSQ_F77(int *kind, int *n, double *alpha, double *beta,
+		       int *kpts, double *endpts, double *b, double *x, double *w);
+
+#ifdef __cplusplus
+}
+#endif
+

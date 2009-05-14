@@ -28,56 +28,63 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_ORTHOGPOLYBASISBASE_HPP
-#define STOKHOS_ORTHOGPOLYBASISBASE_HPP
+#ifndef STOKHOS_ONEDORTHOGPOLYBASISBASE_HPP
+#define STOKHOS_ONEDORTHOGPOLYBASISBASE_HPP
 
 #include <string>
 #include <vector>
-#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_OneDOrthogPolyBasis.hpp"
 
 namespace Stokhos {
 
-  template <typename T>
-  class OrthogPolyBasisBase : public OrthogPolyBasis<T> {
+  template <typename ordinal_type, typename value_type>
+  class OneDOrthogPolyBasisBase : 
+    public OneDOrthogPolyBasis<ordinal_type, value_type> {
   public:
 
-    //! Typename of values
-    typedef typename OrthogPolyBasis<T>::value_type value_type;
-
     //! Destructor
-    ~OrthogPolyBasisBase();
+    ~OneDOrthogPolyBasisBase();
 
     //! Return order of basis
-    virtual unsigned int order() const;
+    virtual ordinal_type order() const;
 
     //! Return dimension of basis
-    virtual unsigned int dimension() const;
+    virtual ordinal_type dimension() const;
 
     //! Return total size of basis
-    virtual unsigned int size() const;
+    virtual ordinal_type size() const;
 
     //! Compute norm squared of each basis element
-    virtual const std::vector<T>& norm_squared() const;
+    virtual const std::vector<value_type>& norm_squared() const;
+
+    //! Compute norm squared of ith element
+    virtual const value_type& norm_squared(ordinal_type i) const;
+
+    //! Compute triple product tensor
+    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getTripleProductTensor() const;
+
+    //! Compute derivative double product tensor
+    virtual Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > getDerivDoubleProductTensor() const;
 
     //! Project product of two basis polynomials into this basis
-    virtual void projectProduct(unsigned int i, unsigned int j,
-				std::vector<T>& coeffs) const;
+    virtual void projectProduct(ordinal_type i, ordinal_type j,
+                                std::vector<value_type>& coeffs) const;
 
     //! Write polynomial in standard basis
-    virtual Polynomial<T> toStandardBasis(const T coeffs[], 
-					  unsigned int n) const;
+    virtual Polynomial<value_type> toStandardBasis(const value_type coeffs[], 
+						   ordinal_type n) const;
 
     //! Evaluate basis polynomial at zero
-    virtual T evaluateZero(unsigned int i) const;
+    virtual value_type evaluateZero(ordinal_type i) const;
 
     virtual void print(std::ostream& os) const;
 
     //! Get term
-    virtual std::vector<unsigned int> getTerm(unsigned int i) const;
+    virtual std::vector<ordinal_type> getTerm(ordinal_type i) const;
 
     //! Get index
-    virtual unsigned int 
-    getIndex(const std::vector<unsigned int>& term) const;
+    virtual ordinal_type 
+    getIndex(const std::vector<ordinal_type>& term) const;
 
     //! Return name of basis
     virtual const std::string& getName() const;
@@ -85,15 +92,15 @@ namespace Stokhos {
   protected:
 
     //! Constructor
-    OrthogPolyBasisBase(const std::string& name, unsigned int p);
+    OneDOrthogPolyBasisBase(const std::string& name, ordinal_type p);
 
   private:
 
     // Prohibit copying
-    OrthogPolyBasisBase(const OrthogPolyBasisBase&);
+    OneDOrthogPolyBasisBase(const OneDOrthogPolyBasisBase&);
 
     // Prohibit Assignment
-    OrthogPolyBasisBase& operator=(const OrthogPolyBasisBase& b);
+    OneDOrthogPolyBasisBase& operator=(const OneDOrthogPolyBasisBase& b);
     
   protected:
 
@@ -101,22 +108,28 @@ namespace Stokhos {
     std::string name;
 
     //! Order of basis
-    unsigned int p;
+    ordinal_type p;
 
     //! Basis polynomials
-    std::vector< Polynomial<T> > basis;
+    std::vector< Polynomial<value_type> > basis;
 
     //! double-sized basis polynomials for accurately projecting products
-    std::vector< Polynomial<T> > double_basis;
+    std::vector< Polynomial<value_type> > double_basis;
 
     //! Norms
-    std::vector<T> norms;
+    std::vector<value_type> norms;
+
+    //! Triple product tensor
+    mutable Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > Cijk;
+
+    //! Deriv double product tensor
+    mutable Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > Bij;
 
   }; // class OrthogPolyBasisBase
 
 } // Namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_OrthogPolyBasisBaseImp.hpp"
+#include "Stokhos_OneDOrthogPolyBasisBaseImp.hpp"
 
 #endif

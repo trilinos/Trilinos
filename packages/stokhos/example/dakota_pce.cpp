@@ -3,9 +3,7 @@
 #include <iomanip>
 #include <cmath>
 
-#include "Stokhos_OrthogPolyExpansion.hpp"
-#include "Stokhos_HermiteEBasis2.hpp"
-#include "Stokhos_CompletePolynomialBasis.hpp"
+#include "Stokhos.hpp"
 
 int main(int argc, char *argv[]) {
   std::vector<double> x;
@@ -29,31 +27,28 @@ int main(int argc, char *argv[]) {
   }
   input_file.close();
 
-  typedef Stokhos::HermiteEBasis2<double> basis_type;
-  int p = 1;
-  std::vector< Teuchos::RCP<const Stokhos::OrthogPolyBasis<double> > > bases(nvar); 
-  std::vector<double> deriv_coeffs(nvar);
+  typedef Stokhos::HermiteBasis<int,double> basis_type;
+  int p = 4;
+  std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(nvar); 
   for (int i=0; i<nvar; i++) {
     bases[i] = Teuchos::rcp(new basis_type(p));
-    deriv_coeffs[i] = 1.0;
   }
-  Teuchos::RCP< Stokhos::CompletePolynomialBasis<double> > basis = 
-    Teuchos::rcp(new Stokhos::CompletePolynomialBasis<double>(bases,
-							      deriv_coeffs));
-  Stokhos::OrthogPolyExpansion<double> he(basis);
-  unsigned int sz = basis->size();
-  Stokhos::OrthogPolyApprox<double> u(sz);
-  u[0] = 0.5;
-  if (sz >= 1)
-    u[1] = 0.05;
-  if (sz >= 2)
-    u[2] = 0.05;
+  Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+    Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+  int sz = basis->size();
+  Stokhos::OrthogPolyApprox<int,double> u(sz);
+
+  u[0] = 1.0;
+  u[1] = 0.4;
+  u[2] = 0.06;
+  u[3] = 0.002;
 
   double uu = u.evaluate(*basis,x);
-  double v = std::exp(std::exp(uu));
+  double v = std::log(uu);
+  v = 1.0 / (v*v + 1.0);
 
   std::ofstream output_file(output_filename.c_str());
-  output_file.precision(15);
+  output_file.precision(16);
   output_file.setf(std::ios::scientific);
   output_file << v << " " << v << std::endl;
   output_file.close();

@@ -28,49 +28,61 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_HERMITEEBASIS2_HPP
-#define STOKHOS_HERMITEEBASIS2_HPP
+#ifndef STOKHOS_TENSORPRODUCTQUADRATURE
+#define STOKHOS_TENSORPRODUCTQUADRATURE
 
-#include "Stokhos_OrthogPolyBasisBase.hpp"
+#include "Stokhos_Quadrature.hpp"
+#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Teuchos_RCP.hpp"
 
 namespace Stokhos {
 
-  template <typename T>
-  class HermiteEBasis2 : public OrthogPolyBasisBase<T> {
+  template <typename ordinal_type, typename value_type>
+  class TensorProductQuadrature : public Quadrature<ordinal_type,value_type> {
   public:
-    
-    //! Typename of values
-    typedef typename OrthogPolyBasisBase<T>::value_type value_type;
-    
+
     //! Constructor
-    HermiteEBasis2(unsigned int p);
-    
+    TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& product_basis);
+
     //! Destructor
-    ~HermiteEBasis2();
-    
-    //! Project a polynomial into this basis
-    void projectPoly(const Polynomial<T>& poly, std::vector<T>& coeffs) const;
+    virtual ~TensorProductQuadrature() {}
 
-    //! Project derivative of basis polynomial into this basis
-    void projectDerivative(unsigned int i, std::vector<T>& coeffs) const;
+    //! Get quadrature points
+    virtual const std::vector< std::vector<value_type> >& 
+    getQuadPoints() const;
 
-    //! Evaluate basis polynomials at given point
-    virtual void evaluateBases(const std::vector<T>& point,
-			    std::vector<T>& basis_pts) const;
+    //! Get quadrature weights
+    virtual const std::vector<value_type>& 
+    getQuadWeights() const;
+
+    //! Get values of basis at quadrature points
+    virtual const std::vector< std::vector<value_type> > & 
+    getBasisAtQuadPoints() const;
 
   private:
 
     // Prohibit copying
-    HermiteEBasis2(const HermiteEBasis2&);
+    TensorProductQuadrature(const TensorProductQuadrature&);
 
     // Prohibit Assignment
-    HermiteEBasis2& operator=(const HermiteEBasis2& b);
-    
-  }; // class HermiteEBasis2
+    TensorProductQuadrature& operator=(const TensorProductQuadrature& b);
 
-} // Namespace Stokhos
+  protected:
+
+    //! Quadrature points
+    std::vector< std::vector<value_type> > quad_points;
+
+    //! Quadrature weights
+    std::vector<value_type> quad_weights;
+
+    //! Quadrature values
+    std::vector< std::vector<value_type> >  quad_values;
+
+  }; // class TensorProductQuadrature
+
+} // namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_HermiteEBasis2Imp.hpp"
+#include "Stokhos_TensorProductQuadratureImp.hpp"
 
-#endif
+#endif // STOKHOS_TENSORPRODUCTQUADRATURE

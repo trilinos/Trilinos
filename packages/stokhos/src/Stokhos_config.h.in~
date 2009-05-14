@@ -21,6 +21,9 @@
 /* Define if you want to build export makefiles. */
 #undef HAVE_EXPORT_MAKEFILES
 
+/* Define if want to build with fortran enabled */
+#undef HAVE_FORTRAN_SUPPORT
+
 /* Define if you are using gnumake - this will shorten your link lines. */
 #undef HAVE_GNUMAKE
 
@@ -42,14 +45,26 @@
 /* define if we want to use MPI */
 #undef HAVE_MPI
 
+/* Define to 1 if you have the <new> header file. */
+#undef HAVE_NEW
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
+/* Define if Dakota is enabled */
+#undef HAVE_STOKHOS_DAKOTA
+
 /* Define if want to build stokhos-examples */
 #undef HAVE_STOKHOS_EXAMPLES
+
+/* Define if Fortran UQTK is enabled */
+#undef HAVE_STOKHOS_FORUQTK
+
+/* Define if Fortran GAUSSQ is enabled */
+#undef HAVE_STOKHOS_GAUSSQ
 
 /* Define if want to build stokhos-tests */
 #undef HAVE_STOKHOS_TESTS

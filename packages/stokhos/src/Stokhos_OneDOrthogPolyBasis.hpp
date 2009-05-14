@@ -28,27 +28,26 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_ORTHOGPOLYBASIS_HPP
-#define STOKHOS_ORTHOGPOLYBASIS_HPP
+#ifndef STOKHOS_ONEDORTHOGPOLYBASIS_HPP
+#define STOKHOS_ONEDORTHOGPOLYBASIS_HPP
 
 #include <ostream>
 #include <string>
-#include "Stokhos_Sparse3Tensor.hpp"
+#include "Stokhos_Polynomial.hpp"
 #include "Stokhos_Dense3Tensor.hpp"
-#include "Stokhos_OneDOrthogPolyBasis.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
 namespace Stokhos {
 
   template <typename ordinal_type, typename value_type>
-  class OrthogPolyBasis {
+  class OneDOrthogPolyBasis {
   public:
 
     //! Constructor
-    OrthogPolyBasis() {};
+    OneDOrthogPolyBasis() {};
 
     //! Destructor
-    virtual ~OrthogPolyBasis() {};
+    virtual ~OneDOrthogPolyBasis() {};
 
     //! Return order of basis
     virtual ordinal_type order() const = 0;
@@ -66,62 +65,74 @@ namespace Stokhos {
     virtual const value_type& norm_squared(ordinal_type i) const = 0;
 
     //! Compute triple product tensor
-    virtual Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > getTripleProductTensor() const = 0;
-
-    //! Compute derivative triple product tensor
-    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getDerivTripleProductTensor() const = 0;
+    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getTripleProductTensor() const = 0;
 
     //! Compute derivative double product tensor
     virtual Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > getDerivDoubleProductTensor() const = 0;
 
-    //! Project product of basis polynomials i and j onto this basis
-    virtual void projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) const = 0;
-    
+    //! Project a polynomial into this basis
+    virtual void projectPoly(const Polynomial<value_type>& poly, 
+                             std::vector<value_type>& coeffs) const = 0;
+
+    //! Project product of two basis polynomials into this basis
+    virtual void projectProduct(ordinal_type i, ordinal_type j,
+                                std::vector<value_type>& coeffs) const = 0;
+
     //! Project derivative of basis polynomial into this basis
     virtual void projectDerivative(ordinal_type i, 
                                    std::vector<value_type>& coeffs) const = 0;
+
+    //! Write polynomial in standard basis
+    virtual Polynomial<value_type> toStandardBasis(const value_type coeffs[], 
+                                          ordinal_type n) const = 0;
 
     //! Evaluate basis polynomial at zero
     virtual value_type evaluateZero(ordinal_type i) const = 0;
 
     //! Evaluate basis polynomials at given point
-    virtual const std::vector<value_type>& 
-    evaluateBases(const std::vector<value_type>& point) const = 0;
+    virtual void evaluateBases(const value_type& point,
+                               std::vector<value_type>& basis_pts) const = 0;
 
     //! Print basis
     virtual void print(std::ostream& os) const = 0;
 
-    //! Get term
-    virtual std::vector<ordinal_type> getTerm(ordinal_type i) const = 0;
-
-    //! Get index
-    virtual ordinal_type 
-    getIndex(const std::vector<ordinal_type>& term) const = 0;
-
     //! Return name of basis
     virtual const std::string& getName() const = 0;
 
-    //! Return coordinate bases
-    virtual const std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& getCoordinateBases() const = 0;
+    //! Get Gauss quadrature points, weights, and values of basis at points
+    virtual void 
+    getQuadPoints(ordinal_type quad_order,
+		  std::vector<value_type>& points,
+		  std::vector<value_type>& weights,
+		  std::vector< std::vector<value_type> >& values) const = 0;
+
+    //! Get sparse grid rule number
+    virtual ordinal_type getRule() const = 0;
+
+    //! Get quadrature weight factor
+    virtual value_type getQuadWeightFactor() const = 0;
+
+    //! Get quadrature point factor
+    virtual value_type getQuadPointFactor() const = 0;
 
   private:
 
     // Prohibit copying
-    OrthogPolyBasis(const OrthogPolyBasis&);
+    OneDOrthogPolyBasis(const OneDOrthogPolyBasis&);
 
     // Prohibit Assignment
-    OrthogPolyBasis& operator=(const OrthogPolyBasis& b);
+    OneDOrthogPolyBasis& operator=(const OneDOrthogPolyBasis& b);
 
   }; // class OrthogPolyBasis
 
   template <typename ordinal_type, typename value_type> 
-  std::ostream& operator << (std::ostream& os, 
-			     const OrthogPolyBasis<ordinal_type, value_type>& b)
-  {
+  std::ostream& 
+  operator << (std::ostream& os, 
+	       const OneDOrthogPolyBasis<ordinal_type, value_type>& b) {
     b.print(os);
     return os;
   }
 
 } // Namespace Stokhos
 
-#endif // STOKHOS_ORTHOGPOLYBASIS
+#endif

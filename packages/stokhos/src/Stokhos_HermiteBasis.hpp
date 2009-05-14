@@ -31,28 +31,50 @@
 #ifndef STOKHOS_HERMITEBASIS_HPP
 #define STOKHOS_HERMITEBASIS_HPP
 
-#include "Stokhos_OrthogPolyBasisBase.hpp"
+#include "Stokhos_OneDOrthogPolyBasisBase.hpp"
 
 namespace Stokhos {
 
-  template <typename T>
-  class HermiteBasis : public OrthogPolyBasisBase<T> {
+  template <typename ordinal_type, typename value_type>
+  class HermiteBasis : 
+    public OneDOrthogPolyBasisBase<ordinal_type, value_type> {
   public:
-
-    //! Typename of values
-    typedef typename OrthogPolyBasisBase<T>::value_type value_type;
-
+    
     //! Constructor
-    HermiteBasis(unsigned int p);
-
+    HermiteBasis(ordinal_type p);
+    
     //! Destructor
     ~HermiteBasis();
-
+    
     //! Project a polynomial into this basis
-    void projectPoly(const Polynomial<T>& poly, std::vector<T>& coeffs) const;
+    void projectPoly(const Polynomial<value_type>& poly, 
+		     std::vector<value_type>& coeffs) const;
 
     //! Project derivative of basis polynomial into this basis
-    void projectDerivative(unsigned int i, std::vector<T>& coeffs) const;
+    void projectDerivative(ordinal_type i, 
+			   std::vector<value_type>& coeffs) const;
+
+    //! Evaluate basis polynomials at given point
+    virtual void evaluateBases(const value_type& point,
+                               std::vector<value_type>& basis_pts) const;
+
+    //! Get Gauss quadrature points, weights, and values of basis at points
+    virtual void 
+    getQuadPoints(ordinal_type quad_order,
+		  std::vector<value_type>& points,
+		  std::vector<value_type>& weights,
+		  std::vector< std::vector<value_type> >& values) const;
+
+    //! Get sparse grid rule number
+    virtual ordinal_type getRule() const { return 5; }
+
+    //! Get quadrature weight factor
+    virtual value_type getQuadWeightFactor() const { 
+      return 0.5/std::sqrt(std::atan(1.0)); // 1/sqrt(pi)
+    }
+
+    //! Get quadrature point factor
+    virtual value_type getQuadPointFactor() const { return std::sqrt(2.0); }
 
   private:
 
@@ -61,7 +83,7 @@ namespace Stokhos {
 
     // Prohibit Assignment
     HermiteBasis& operator=(const HermiteBasis& b);
-
+    
   }; // class HermiteBasis
 
 } // Namespace Stokhos

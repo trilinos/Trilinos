@@ -29,10 +29,10 @@
 // ***********************************************************************
 // @HEADER
 
-// hermite_example
+// product_basis_example
 //
 //  usage: 
-//     hermite_example
+//     product_example
 //
 //  output:  
 //     prints the Hermite Polynomial Chaos Expansion of a simple function
@@ -40,52 +40,54 @@
 #include <iostream>
 #include <iomanip>
 
-#include "Stokhos_OrthogPolyExpansion.hpp"
-#include "Stokhos_HermiteEBasis.hpp"
-#include "Stokhos_HermiteEBasis2.hpp"
-#include "Stokhos_HermiteBasis.hpp"
-#include "Stokhos_UnitHermiteBasis.hpp"
-#include "Stokhos_LegendreBasis.hpp"
-
-typedef Stokhos::HermiteEBasis2<double> basis_type;
-//typedef Stokhos::LegendreBasis<double> basis_type;
+#include "Stokhos.hpp"
 
 int main(int argc, char **argv)
 {
   try {
-    const unsigned int d = 2;
-    Teuchos::RCP<basis_type> basis = 
-      Teuchos::rcp(new basis_type(d));
-    std::cout << *basis << std::endl;
-    Stokhos::OrthogPolyExpansion<double> he(basis);
-    Stokhos::OrthogPolyApprox<double> u(d+1),v(d+1),w(d+1),x(d+1);
-//     u[0] = 1.0;
-//     u[1] = 0.4;
-//     u[2] = 0.06;
-//     u[3] = 0.002;
-    u[0] = 0.5;
-    u[1] = 0.05;
+    const int pmax = 10;
+    std::vector<double> sd(pmax+1);
+    std::vector<double> me(pmax+1);
+    for (int p=0; p<=pmax; p++) {
+      std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
+      bases[0] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(p));
+      Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+        Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+      Stokhos::DerivOrthogPolyExpansion<int,double> expn(basis);
+      Stokhos::OrthogPolyApprox<int,double> u(p+1),v(p+1),w(p+1);
+      u[0] = 1.0;
+      if (p >= 1)
+        u[1] = 0.4;
+      if (p >= 2)
+        u[2] = 0.06;
+      if (p >= 3)
+        u[3] = 0.002;
+      
+      expn.log(v,u);
+      expn.times(w,v,v);
+      expn.plusEqual(w,1.0);
+      expn.divide(v,1.0,w);
+      expn.sinh(w,v);
+      
+      std::cout.precision(16);
+      std::cout << "w = " << w << std::endl;
 
-    he.exp(v,u);
-    he.exp(w,v);
-    he.log(x,v);
+      double mean = w[0];
+      double std_dev = 0.0;
+      const std::vector<double> nrm2 = basis->norm_squared();
+      for (int i=1; i<basis->size(); i++)
+        std_dev += w[i]*w[i]*nrm2[i];
+      std_dev = std::sqrt(std_dev);
 
-    std::cout.precision(12);
-    std::cout << "v = " << v << std::endl;
-    std::cout << "w = " << w << std::endl;
-    std::cout << "x = " << x << std::endl;
+      std::cout << "Mean =      " << mean << std::endl;
+      std::cout << "Std. Dev. = " << std_dev << std::endl;
 
-//     he.log(v,u);
-//     he.times(w,v,v);
-//     he.plusEqual(w,1.0);
-//     he.divide(v,1.0,w);
-//     he.sinh(w,v);
+      me[p] = mean;
+      sd[p] = std_dev;
+    }
 
-//     std::cout << "u (hermite basis) = " << u << std::endl;
-//     std::cout.precision(12);
-//     std::cout << "w (hermite basis) = " << w << std::endl;
-//     std::cout << "w (standard basis) = " << w.toStandardBasis(*basis) 
-// 	      << std::endl;
+    for (int p=0; p<=pmax; p++)
+      std::cout << me[p] << "  " << sd[p] << std::endl;
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;

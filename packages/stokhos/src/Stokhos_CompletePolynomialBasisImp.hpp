@@ -28,17 +28,17 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_TestForException.hpp"
-
-template <typename T>
-Stokhos::CompletePolynomialBasis<T>::
+template <typename ordinal_type, typename value_type>
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 CompletePolynomialBasis(
-	const std::vector< Teuchos::RCP<const OrthogPolyBasis<T> > >& bases_,
-	const std::vector<T>& deriv_coeffs_) :
+	const std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type, value_type> > >& bases_,
+	const value_type& sparse_tol_,
+	const Teuchos::RCP< std::vector<value_type> >& deriv_coeffs_) :
   p(0),
   d(0),
   sz(0),
   bases(bases_),
+  sparse_tol(sparse_tol_),
   deriv_coeffs(deriv_coeffs_),
   norms(),
   terms()
@@ -47,114 +47,207 @@ CompletePolynomialBasis(
   d = bases.size();
 
   // Compute total order
-  for (unsigned int i=0; i<bases.size(); i++)
+  for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size()); i++)
     if (bases[i]->order() > p)
       p = bases[i]->order();
 
   // Compute basis terms
   compute_terms();
 
-  // Create triple products
-  Cijk.resize(bases.size());
-  for (unsigned int i=0; i<bases.size(); i++)
-    Cijk[i] = Teuchos::rcp(new TripleProduct< OrthogPolyBasis<T> >(bases[i]));
-  
+  // Create products
+  Cijk_1d.resize(bases.size());
+  Bij_1d.resize(bases.size());
+  for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size()); i++) {
+    Cijk_1d[i] = bases[i]->getTripleProductTensor();
+    Bij_1d[i] = bases[i]->getDerivDoubleProductTensor();
+  }
+    
   // Compute norms
   norms.resize(sz);
-  T nrm;
-  for (unsigned int k=0; k<sz; k++) {
-    nrm = T(1.0);
-    for (unsigned int i=0; i<bases.size(); i++)
-      nrm = nrm * Cijk[i]->norm_squared(terms[k][i]);
+  value_type nrm;
+  for (ordinal_type k=0; k<sz; k++) {
+    nrm = value_type(1.0);
+    for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size()); i++)
+      nrm = nrm * bases[i]->norm_squared(terms[k][i]);
     norms[k] = nrm;
   }
 
   // Create name
   name = "Complete polynomial basis (";
-  for (unsigned int i=0; i<bases.size()-1; i++)
+  for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size())-1; i++)
     name += bases[i]->getName() + ", ";
   name += bases[bases.size()-1]->getName() + ")";
+
+  // Allocate array for basis evaluation
+  basis_pts.resize(sz);
+  basis_eval_tmp.resize(bases.size());
+  for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
+    basis_eval_tmp[j].resize(bases[j]->order()+1);
+
+  // Set up deriv_coeffs
+  if (deriv_coeffs == Teuchos::null) {
+    deriv_coeffs = Teuchos::rcp(new std::vector<value_type>(bases.size()));
+    for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
+      (*deriv_coeffs)[j] = value_type(1.0);
+  }
 }
 
-template <typename T>
-Stokhos::CompletePolynomialBasis<T>::
+template <typename ordinal_type, typename value_type>
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 ~CompletePolynomialBasis()
 {
 }
 
-template <typename T>
-unsigned int
-Stokhos::CompletePolynomialBasis<T>::
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 order() const
 {
   return p;
 }
 
-template <typename T>
-unsigned int
-Stokhos::CompletePolynomialBasis<T>::
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 dimension() const
 {
   return d;
 }
 
-template <typename T>
-unsigned int
-Stokhos::CompletePolynomialBasis<T>::
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 size() const
 {
   return sz;
 }
 
-template <typename T>
-const std::vector<T>&
-Stokhos::CompletePolynomialBasis<T>::
+template <typename ordinal_type, typename value_type>
+const std::vector<value_type>&
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 norm_squared() const
 {
   return norms;
 }
 
-template <typename T>
-void
-Stokhos::CompletePolynomialBasis<T>::
-projectPoly(const Polynomial<T>& poly, std::vector<T>& coeffs) const
+template <typename ordinal_type, typename value_type>
+const value_type&
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+norm_squared(ordinal_type i) const
 {
-  TEST_FOR_EXCEPTION(true, std::logic_error, "Stokhos::CompletePolynomialBasis<T>::projectPoly is not implemented! (for good reason, it is very expensive!)");
+  return norms[i];
 }
 
-template <typename T>
-void
-Stokhos::CompletePolynomialBasis<T>::
-projectProduct(unsigned int i, unsigned int j, std::vector<T>& coeffs) const
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+getTripleProductTensor() const
 {
-  for (unsigned int k=0; k<sz; k++) {
-    T c = T(1.0);
-    for (unsigned int l=0; l<bases.size(); l++) {
-      c *= Cijk[l]->triple_value(terms[i][l],terms[j][l],terms[k][l]);
-      //Cijk[l]->norm_squared(terms[k][l]);
+  // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
+  if (Cijk == Teuchos::null) {
+    Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
+    std::vector<value_type> a(2*sz);
+    for (ordinal_type i=0; i<sz; i++) {
+      for (ordinal_type j=0; j<sz; j++) {
+	projectProduct(i, j, a);
+	for (ordinal_type k=0; k<sz; k++) {
+	  if (std::abs(a[k]) > sparse_tol) {
+	    Cijk->add_term(i,j,k,a[k]);
+	  }
+	}
+      }
+    }
+  }
+
+  return Cijk;
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> >
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+getDerivTripleProductTensor() const
+{
+  // Compute Dijk = < \Psi_i \Psi_j \Psi_k' >
+  if (Dijk == Teuchos::null) {
+
+    // Compute Cijk & Bij
+    getTripleProductTensor();
+    getDerivDoubleProductTensor();
+
+    Dijk = Teuchos::rcp(new Dense3Tensor<ordinal_type, value_type>(sz));
+    for (ordinal_type i=0; i<sz; i++)
+      for (ordinal_type j=0; j<sz; j++)
+	for (ordinal_type k=0; k<sz; k++)
+	  (*Dijk)(i,j,k) = value_type(0.0);
+
+    ordinal_type i,j;
+    value_type c;
+    for (ordinal_type k=0; k<sz; k++) {
+      for (ordinal_type m=0; m<sz; m++) {
+	ordinal_type n = Cijk->num_values(m);
+	for (ordinal_type l=0; l<n; l++) {
+	  Cijk->value(m,l,i,j,c);
+	  (*Dijk)(i,j,k) += (*Bij)(m,k)*c/norms[m];
+	}
+      }
+    }
+  }
+
+  return Dijk;
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> >
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+getDerivDoubleProductTensor() const
+{
+  // Compute Bij = < \Psi_i \Psi_j' >
+  if (Bij == Teuchos::null) {
+    Bij = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type>(sz,sz));
+    for (ordinal_type i=0; i<sz; i++) {
+      std::vector<value_type> b(sz);
+      projectDerivative(i, b);
+      for (ordinal_type j=0; j<sz; j++)
+	(*Bij)(i,j) = b[j]*norms[j];
+    }
+  }
+
+  return Bij;
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) const
+{
+  for (ordinal_type k=0; k<sz; k++) {
+    value_type c = value_type(1.0);
+    for (ordinal_type l=0; l<static_cast<ordinal_type>(bases.size()); l++) {
+      c *= (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
+      //bases[l]->norm_squared(terms[k][l]);
     }
     coeffs[k] = c;
   }
 }
 
-// template <typename T>
+// template <typename ordinal_type, typename value_type>
 // void
-// Stokhos::CompletePolynomialBasis<T>::
-// projectDerivative(unsigned int i, std::vector<T>& coeffs) const
+// Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+// projectDerivative(ordinal_type i, std::vector<value_type>& coeffs) const
 // {
 //   // Initialize
-//   for (unsigned int j=0; j<coeffs.size(); j++)
-//     coeffs[j] = T(0.0);
+//   for (ordinal_type j=0; j<coeffs.size(); j++)
+//     coeffs[j] = value_type(0.0);
 
 //   // Project derivative of each basis polynomial for term i
-//   std::vector<T> bases_coeffs(p+1);
-//   std::vector<unsigned int> term(d);
-//   unsigned int index;
-//   for (unsigned int j=0; j<d; j++) {
+//   std::vector<value_type> bases_coeffs(p+1);
+//   std::vector<ordinal_type> term(d);
+//   ordinal_type index;
+//   for (ordinal_type j=0; j<d; j++) {
 //     bases[j]->projectDerivative(terms[i][j],bases_coeffs);
 
 //     term = terms[i];
-//     for (unsigned int k=0; k<terms[i][j]; k++) {
+//     for (ordinal_type k=0; k<terms[i][j]; k++) {
 //       term[j] = k;
 //       index = compute_index(term);
 //       coeffs[index] += deriv_coeffs[j]*bases_coeffs[k];
@@ -162,127 +255,123 @@ projectProduct(unsigned int i, unsigned int j, std::vector<T>& coeffs) const
 //   }
 // }
 
-template <typename T>
+template <typename ordinal_type, typename value_type>
 void
-Stokhos::CompletePolynomialBasis<T>::
-projectDerivative(unsigned int i, std::vector<T>& coeffs) const
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+projectDerivative(ordinal_type i, std::vector<value_type>& coeffs) const
 {
   // Initialize
-  for (unsigned int j=0; j<coeffs.size(); j++)
-    coeffs[j] = T(0.0);
+  for (ordinal_type j=0; j<static_cast<ordinal_type>(coeffs.size()); j++)
+    coeffs[j] = value_type(0.0);
 
-  for (unsigned int k=0; k<sz; k++) {
-    T t = T(1.0);
-    for (unsigned int j=0; j<d; j++) {
+  for (ordinal_type k=0; k<sz; k++) {
+    value_type t = value_type(1.0);
+    for (ordinal_type j=0; j<d; j++) {
       bool is_zero = false;
-      for (unsigned int l=0; l<d; l++) {
+      for (ordinal_type l=0; l<d; l++) {
 	if (l != j && terms[i][l] != terms[k][l])
 	  is_zero = true;
 	if (l != j)
-	  t *= Cijk[l]->norm_squared(terms[k][l]);
+	  t *= bases[l]->norm_squared(terms[k][l]);
       }
       if (!is_zero)
-	coeffs[k] += 
-	  t*deriv_coeffs[j]*Cijk[j]->double_deriv(terms[k][j],terms[i][j]);
+        coeffs[k] += 
+          t*(*deriv_coeffs)[j]*(*Bij_1d[j])(terms[k][j],terms[i][j]);
     }
     coeffs[k] /= norms[k];
   }
 }
 
-template <typename T>
-Stokhos::Polynomial<T>
-Stokhos::CompletePolynomialBasis<T>::
-toStandardBasis(const T coeffs[], unsigned int n) const
-{
-  TEST_FOR_EXCEPTION(true, std::logic_error, "Stokhos::CompletePolynomialBasis<T>::toStandardBasis is not implemented! (for good reason, it is very expensive!)");
-
-  return Polynomial<T>(sz);
-}
-
-template <typename T>
-T
-Stokhos::CompletePolynomialBasis<T>::
-evaluateZero(unsigned int i) const
+template <typename ordinal_type, typename value_type>
+value_type
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+evaluateZero(ordinal_type i) const
 {
   // z = psi_{i_1}(0) * ... * psi_{i_d}(0) where i_1,...,i_d are the basis
   // terms for coefficient i
-  T z = T(1.0);
-  for (unsigned int j=0; j<bases.size(); j++)
+  value_type z = value_type(1.0);
+  for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
     z = z * bases[j]->evaluateZero(terms[i][j]);
 
   return z;
 }
 
-template <typename T>
-void
-Stokhos::CompletePolynomialBasis<T>::
-evaluateBases(const std::vector<T>& point, std::vector<T>& basis_pts) const
+template <typename ordinal_type, typename value_type>
+const std::vector<value_type>&
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+evaluateBases(const std::vector<value_type>& point) const
 {
-  std::vector< std::vector<T> > tmp(bases.size());
-  for (unsigned int j=0; j<bases.size(); j++) {
-    std::vector<T> pt(1);
-    pt[0] = point[j];
-    tmp[j].resize(bases[j]->order()+1);
-    bases[j]->evaluateBases(pt, tmp[j]);
-  }
+  for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
+    bases[j]->evaluateBases(point[j], basis_eval_tmp[j]);
 
-  for (unsigned int i=0; i<sz; i++) {
-    T t = T(1.0);
-    for (unsigned int j=0; j<bases.size(); j++)
-      t *= tmp[j][terms[i][j]];
+  // Only evaluate basis upto number of terms included in basis_pts
+  for (ordinal_type i=0; i<sz; i++) {
+    value_type t = value_type(1.0);
+    for (ordinal_type j=0; j<static_cast<ordinal_type>(bases.size()); j++)
+      t *= basis_eval_tmp[j][terms[i][j]];
     basis_pts[i] = t;
   }
+
+  return basis_pts;
 }
 
-template <typename T>
+template <typename ordinal_type, typename value_type>
 void
-Stokhos::CompletePolynomialBasis<T>::
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 print(std::ostream& os) const
 {
   os << "Complete basis of order " << p << ", dimension " << d 
      << ", and size " << sz << ".  Component bases:\n";
-  for (unsigned int i=0; i<bases.size(); i++)
+  for (ordinal_type i=0; i<static_cast<ordinal_type>(bases.size()); i++)
     os << *bases[i];
   os << "Basis vector norms (squared):\n\t";
-  for (unsigned int i=0; i<norms.size(); i++)
+  for (ordinal_type i=0; i<static_cast<ordinal_type>(norms.size()); i++)
     os << norms[i] << " ";
   os << "\n";
 }
 
-template <typename T>
-std::vector<unsigned int>
-Stokhos::CompletePolynomialBasis<T>::
-getTerm(unsigned int i) const
+template <typename ordinal_type, typename value_type>
+std::vector<ordinal_type>
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+getTerm(ordinal_type i) const
 {
   return terms[i];
 }
 
-template <typename T>
-unsigned int
-Stokhos::CompletePolynomialBasis<T>::
-getIndex(const std::vector<unsigned int>& term) const
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+getIndex(const std::vector<ordinal_type>& term) const
 {
   return compute_index(term);
 }
 
-template <typename T>
+template <typename ordinal_type, typename value_type>
 const std::string&
-Stokhos::CompletePolynomialBasis<T>::
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 getName() const
 {
   return name;
 }
 
-template <typename T>
-unsigned int
-Stokhos::CompletePolynomialBasis<T>::
-compute_num_terms(unsigned int dim, unsigned int ord) const
+template <typename ordinal_type, typename value_type>
+const std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<ordinal_type, value_type> > >&
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+getCoordinateBases() const
 {
-  unsigned int num = 1;
+  return bases;
+}
+
+template <typename ordinal_type, typename value_type>
+ordinal_type
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+compute_num_terms(ordinal_type dim, ordinal_type ord) const
+{
+  ordinal_type num = 1;
   
   // Use the formula (p+d)!/(p!d!) = (d+p)...(d+1)/p!
   if (dim >= ord) {
-    for (unsigned int i=1; i<=ord; i++) {
+    for (ordinal_type i=1; i<=ord; i++) {
       num *= dim+i;
       num /= i;
     }
@@ -290,7 +379,7 @@ compute_num_terms(unsigned int dim, unsigned int ord) const
 
   // Use the formula (p+d)!/(p!d!) = (p+d)...(p+1)/d!
   else {
-    for (unsigned int i=1; i<=dim; i++) {
+    for (ordinal_type i=1; i<=dim; i++) {
       num *= ord+i;
       num /= i;
     }
@@ -299,9 +388,9 @@ compute_num_terms(unsigned int dim, unsigned int ord) const
   return num;
 }
 
-template <typename T>
+template <typename ordinal_type, typename value_type>
 void
-Stokhos::CompletePolynomialBasis<T>::
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 compute_terms()
 {
   // The approach here for ordering the terms is inductive on the total
@@ -342,9 +431,9 @@ compute_terms()
 
   // Allocate storage and initialize
   terms.resize(sz);
-  for (unsigned int i=0; i<sz; i++) {
+  for (ordinal_type i=0; i<sz; i++) {
     terms[i].resize(d);
-    for (unsigned int j=0; j<d; j++)
+    for (ordinal_type j=0; j<d; j++)
       terms[i][j] = 0;
   }
 
@@ -353,31 +442,31 @@ compute_terms()
 
   // The array "cnt" stores the number of terms we need to increment for each
   // dimension.  
-  std::vector<unsigned int> cnt(d);
+  std::vector<ordinal_type> cnt(d);
 
   // Set order 1 terms
-  for (unsigned int j=0; j<d; j++) {
+  for (ordinal_type j=0; j<d; j++) {
     terms[j+1][j] = 1;
     cnt[j] = d-j;
   }
 
   // Stores index of previous order block
-  unsigned int prev = 1;
+  ordinal_type prev = 1;
 
   // Stores index of the term we are working on
-  unsigned int cur = d+1;
+  ordinal_type cur = d+1;
 
   // Loop over orders
-  for (unsigned int k=2; k<=p; k++) {
+  for (ordinal_type k=2; k<=p; k++) {
 
     // Loop over dimensions
-    for (unsigned int j=0; j<d; j++) {
+    for (ordinal_type j=0; j<d; j++) {
 
       // Increment orders of cnt[j] terms for dimension j
-      for (unsigned int i=0; i<cnt[j]; i++) {
-	terms[cur] = terms[prev+i];
-	++terms[cur][j];
-	++cur;
+      for (ordinal_type i=0; i<cnt[j]; i++) {
+        terms[cur] = terms[prev+i];
+        ++terms[cur][j];
+        ++cur;
       }
 
       // Move forward the index of the previous order block.  If we aren't
@@ -385,26 +474,26 @@ compute_terms()
       // cnt[j]-cnt[j+1].  If we are at the last dimension, we just increment
       // by 1
       if (j < d-1)
-	prev += cnt[j]-cnt[j+1];
+        prev += cnt[j]-cnt[j+1];
       else
-	++prev;
+        ++prev;
     }
 
     // Compute the number of terms we must increment for the new order
     // For each dimension j, this is just number plus the sum of the number 
     // of terms for the remaining d-j dimensions
-    for (unsigned int j=0; j<d; j++)
-      for (unsigned int i=j+1; i<d; i++)
-	cnt[j] += cnt[i];
+    for (ordinal_type j=0; j<d; j++)
+      for (ordinal_type i=j+1; i<d; i++)
+        cnt[j] += cnt[i];
 
   }
   
 }
 
-template <typename T>
-unsigned int 
-Stokhos::CompletePolynomialBasis<T>::
-compute_index(const std::vector<unsigned int>& term) const
+template <typename ordinal_type, typename value_type>
+ordinal_type 
+Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
+compute_index(const std::vector<ordinal_type>& term) const
 {
   // The approach here for computing the index is essentially recursive
   // on the number of dimensions.  Given the basis orders for each dimenion
@@ -418,9 +507,9 @@ compute_index(const std::vector<unsigned int>& term) const
   // For efficiency, we actually work from the last dimension to the first
   // to reduce the number of operations to compute the total order.
 
-  unsigned int index = 0;
+  ordinal_type index = 0;
   int dim = term.size();
-  unsigned int ord = 0;
+  ordinal_type ord = 0;
   for (int i=dim-1; i>=0; i--) {
 
     // compute order

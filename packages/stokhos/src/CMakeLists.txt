@@ -25,38 +25,46 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 SET(HEADERS ${HEADERS}
   Stokhos_ConfigDefs.h
   Stokhos_Version.hpp
+  Stokhos_gaussq.h
   Stokhos_DynamicArrayTraits.hpp
   Stokhos_Polynomial.hpp
   Stokhos_PolynomialImp.hpp
-  Stokhos_OrthogPolyBasis.hpp
-  Stokhos_OrthogPolyBasisBase.hpp
-  Stokhos_OrthogPolyBasisBaseImp.hpp
+  Stokhos_OneDOrthogPolyBasis.hpp
+  Stokhos_OneDOrthogPolyBasisBase.hpp
+  Stokhos_OneDOrthogPolyBasisBaseImp.hpp
   Stokhos_HermiteBasis.hpp
   Stokhos_HermiteBasisImp.hpp
-  Stokhos_HermiteEBasis.hpp
-  Stokhos_HermiteEBasisImp.hpp
-  Stokhos_HermiteEBasis2.hpp
-  Stokhos_HermiteEBasis2Imp.hpp
-  Stokhos_HermiteUnitBasis.hpp
-  Stokhos_HermiteUnitBasisImp.hpp
   Stokhos_LegendreBasis.hpp
   Stokhos_LegendreBasisImp.hpp
+  Stokhos_OrthogPolyBasis.hpp
   Stokhos_CompletePolynomialBasis.hpp
   Stokhos_CompletePolynomialBasisImp.hpp
-  Stokhos_TripleProduct.hpp
-  Stokhos_TripleProductImp.hpp
-  Stokhos_TayTripleProduct.hpp
-  Stokhos_TayTripleProductImp.hpp
+  Stokhos_Sparse3Tensor.hpp
+  Stokhos_Sparse3TensorImp.hpp
+  Stokhos_Dense3Tensor.hpp
+  Stokhos_Dense3TensorImp.hpp
+  Stokhos_Quadrature.hpp
+  Stokhos_TensorProductQuadrature.hpp
+  Stokhos_TensorProductQuadratureImp.hpp
+  Stokhos_SparseGridQuadrature.hpp
+  Stokhos_SparseGridQuadratureImp.hpp
   Stokhos_OrthogPolyApprox.hpp
   Stokhos_OrthogPolyApproxImp.hpp
   Stokhos_OrthogPolyExpansion.hpp
-  Stokhos_OrthogPolyExpansionImp.hpp
-  Stokhos_TayOrthogPolyExpansion.hpp
-  Stokhos_TayOrthogPolyExpansionImp.hpp
+  Stokhos_QuadOrthogPolyExpansion.hpp
+  Stokhos_QuadOrthogPolyExpansionImp.hpp
+  Stokhos_DerivOrthogPolyExpansion.hpp
+  Stokhos_DerivOrthogPolyExpansionImp.hpp
+  Stokhos_ForUQTKOrthogPolyExpansion.hpp
+  Stokhos_ForUQTKOrthogPolyExpansionImp.hpp
+  Stokhos_MatrixFreeEpetraOp.hpp
+  Stokhos_MeanEpetraOp.hpp
   )
 
 SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
+  Stokhos_MatrixFreeEpetraOp.cpp
+  Stokhos_MeanEpetraOp.cpp
   )
 
 #

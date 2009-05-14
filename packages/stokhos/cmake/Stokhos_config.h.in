@@ -1,7 +1,7 @@
 /* src/Stokhos_config.h.in.  Generated from configure.ac by autoheader.  */
 
 /* define if we want to use MPI */
-#undef HAVE_MPI
+#cmakedefine HAVE_MPI
 
 /* Define if want to build stokhos-examples */
 #cmakedefine HAVE_STOKHOS_EXAMPLES
@@ -11,3 +11,9 @@
 
 /* Define to enable extra debugging checks */
 #cmakedefine STOKHOS_DEBUG
+
+/* Define if Dakota is enabled */
+#cmakedefine HAVE_STOKHOS_DAKOTA
+
+/* Define if Fortran UQTK is enabled */
+#cmakedefine HAVE_STOKHOS_FORUQTK

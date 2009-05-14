@@ -61,8 +61,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-noinst_PROGRAMS = hermite_example$(EXEEXT) \
-	product_basis_example$(EXEEXT) dakota_pce$(EXEEXT)
+noinst_PROGRAMS = hermite_example$(EXEEXT) dakota_pce$(EXEEXT) \
+	dakota_exp$(EXEEXT) $(am__EXEEXT_1)
 subdir = example
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/generate-sample-output.pl.stub.in
@@ -72,6 +72,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_export-makefiles.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
+	$(top_srcdir)/config/tac_arg_enable_option.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
 	$(top_srcdir)/config/tac_arg_with_incdirs.m4 \
@@ -84,10 +85,16 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/Stokhos_config.h
 CONFIG_CLEAN_FILES = generate-sample-output.pl.stub
+@ENABLE_STOKHOS_QUADRATURE_TRUE@am__EXEEXT_1 = product_basis_example$(EXEEXT) \
+@ENABLE_STOKHOS_QUADRATURE_TRUE@	exp_example$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
+am_dakota_exp_OBJECTS = dakota_exp.$(OBJEXT)
+dakota_exp_OBJECTS = $(am_dakota_exp_OBJECTS)
+am__DEPENDENCIES_1 =
 am_dakota_pce_OBJECTS = dakota_pce.$(OBJEXT)
 dakota_pce_OBJECTS = $(am_dakota_pce_OBJECTS)
-am__DEPENDENCIES_1 =
+am_exp_example_OBJECTS = exp_example.$(OBJEXT)
+exp_example_OBJECTS = $(am_exp_example_OBJECTS)
 am_hermite_example_OBJECTS = hermite_example.$(OBJEXT)
 hermite_example_OBJECTS = $(am_hermite_example_OBJECTS)
 am_product_basis_example_OBJECTS = product_basis_example.$(OBJEXT)
@@ -100,9 +107,11 @@ CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
-SOURCES = $(dakota_pce_SOURCES) $(hermite_example_SOURCES) \
+SOURCES = $(dakota_exp_SOURCES) $(dakota_pce_SOURCES) \
+	$(exp_example_SOURCES) $(hermite_example_SOURCES) \
 	$(product_basis_example_SOURCES)
-DIST_SOURCES = $(dakota_pce_SOURCES) $(hermite_example_SOURCES) \
+DIST_SOURCES = $(dakota_exp_SOURCES) $(dakota_pce_SOURCES) \
+	$(exp_example_SOURCES) $(hermite_example_SOURCES) \
 	$(product_basis_example_SOURCES)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
@@ -195,11 +204,14 @@ build_cpu = @build_cpu@
 build_os = @build_os@
 build_vendor = @build_vendor@
 builddir = @builddir@
+dakota_installdir = @dakota_installdir@
 datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
+fortan_uqtk_installdir = @fortan_uqtk_installdir@
+fortran_uqtk_libs = @fortran_uqtk_libs@
 host = @host@
 host_alias = @host_alias@
 host_cpu = @host_cpu@
@@ -231,6 +243,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
+@ENABLE_STOKHOS_QUADRATURE_TRUE@QUAD_EXAMPLES = product_basis_example exp_example
 AM_CPPFLAGS = $(STOKHOS_INCLUDES)
 hermite_example_SOURCES = $(srcdir)/hermite_example.cpp
 hermite_example_DEPENDENCIES = $(top_builddir)/src/libstokhos.a 
@@ -241,6 +254,12 @@ product_basis_example_LDADD = $(hermite_example_LDADD)
 dakota_pce_SOURCES = $(srcdir)/dakota_pce.cpp
 dakota_pce_DEPENDENCIES = $(hermite_example_DEPENDENCIES)
 dakota_pce_LDADD = $(hermite_example_LDADD)
+exp_example_SOURCES = $(srcdir)/exp_example.cpp
+exp_example_DEPENDENCIES = $(hermite_example_DEPENDENCIES)
+exp_example_LDADD = $(hermite_example_LDADD)
+dakota_exp_SOURCES = $(srcdir)/dakota_exp.cpp
+dakota_exp_DEPENDENCIES = $(hermite_example_DEPENDENCIES)
+dakota_exp_LDADD = $(hermite_example_LDADD)
 SUBDIRS = 
 all: all-recursive
 
@@ -280,9 +299,15 @@ generate-sample-output.pl.stub: $(top_builddir)/config.status $(srcdir)/generate
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+dakota_exp$(EXEEXT): $(dakota_exp_OBJECTS) $(dakota_exp_DEPENDENCIES) 
+	@rm -f dakota_exp$(EXEEXT)
+	$(CXXLINK) $(dakota_exp_OBJECTS) $(dakota_exp_LDADD) $(LIBS)
 dakota_pce$(EXEEXT): $(dakota_pce_OBJECTS) $(dakota_pce_DEPENDENCIES) 
 	@rm -f dakota_pce$(EXEEXT)
 	$(CXXLINK) $(dakota_pce_OBJECTS) $(dakota_pce_LDADD) $(LIBS)
+exp_example$(EXEEXT): $(exp_example_OBJECTS) $(exp_example_DEPENDENCIES) 
+	@rm -f exp_example$(EXEEXT)
+	$(CXXLINK) $(exp_example_OBJECTS) $(exp_example_LDADD) $(LIBS)
 hermite_example$(EXEEXT): $(hermite_example_OBJECTS) $(hermite_example_DEPENDENCIES) 
 	@rm -f hermite_example$(EXEEXT)
 	$(CXXLINK) $(hermite_example_OBJECTS) $(hermite_example_LDADD) $(LIBS)
@@ -296,7 +321,9 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dakota_exp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dakota_pce.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/exp_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hermite_example.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/product_basis_example.Po@am__quote@
 
@@ -314,6 +341,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXXCOMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
+dakota_exp.o: $(srcdir)/dakota_exp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT dakota_exp.o -MD -MP -MF $(DEPDIR)/dakota_exp.Tpo -c -o dakota_exp.o `test -f '$(srcdir)/dakota_exp.cpp' || echo '$(srcdir)/'`$(srcdir)/dakota_exp.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/dakota_exp.Tpo $(DEPDIR)/dakota_exp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/dakota_exp.cpp' object='dakota_exp.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o dakota_exp.o `test -f '$(srcdir)/dakota_exp.cpp' || echo '$(srcdir)/'`$(srcdir)/dakota_exp.cpp
+
+dakota_exp.obj: $(srcdir)/dakota_exp.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT dakota_exp.obj -MD -MP -MF $(DEPDIR)/dakota_exp.Tpo -c -o dakota_exp.obj `if test -f '$(srcdir)/dakota_exp.cpp'; then $(CYGPATH_W) '$(srcdir)/dakota_exp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dakota_exp.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/dakota_exp.Tpo $(DEPDIR)/dakota_exp.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/dakota_exp.cpp' object='dakota_exp.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o dakota_exp.obj `if test -f '$(srcdir)/dakota_exp.cpp'; then $(CYGPATH_W) '$(srcdir)/dakota_exp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dakota_exp.cpp'; fi`
+
 dakota_pce.o: $(srcdir)/dakota_pce.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT dakota_pce.o -MD -MP -MF $(DEPDIR)/dakota_pce.Tpo -c -o dakota_pce.o `test -f '$(srcdir)/dakota_pce.cpp' || echo '$(srcdir)/'`$(srcdir)/dakota_pce.cpp
 @am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/dakota_pce.Tpo $(DEPDIR)/dakota_pce.Po
@@ -327,6 +368,20 @@ dakota_pce.obj: $(srcdir)/dakota_pce.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/dakota_pce.cpp' object='dakota_pce.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o dakota_pce.obj `if test -f '$(srcdir)/dakota_pce.cpp'; then $(CYGPATH_W) '$(srcdir)/dakota_pce.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/dakota_pce.cpp'; fi`
+
+exp_example.o: $(srcdir)/exp_example.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT exp_example.o -MD -MP -MF $(DEPDIR)/exp_example.Tpo -c -o exp_example.o `test -f '$(srcdir)/exp_example.cpp' || echo '$(srcdir)/'`$(srcdir)/exp_example.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/exp_example.Tpo $(DEPDIR)/exp_example.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/exp_example.cpp' object='exp_example.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o exp_example.o `test -f '$(srcdir)/exp_example.cpp' || echo '$(srcdir)/'`$(srcdir)/exp_example.cpp
+
+exp_example.obj: $(srcdir)/exp_example.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT exp_example.obj -MD -MP -MF $(DEPDIR)/exp_example.Tpo -c -o exp_example.obj `if test -f '$(srcdir)/exp_example.cpp'; then $(CYGPATH_W) '$(srcdir)/exp_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/exp_example.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/exp_example.Tpo $(DEPDIR)/exp_example.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/exp_example.cpp' object='exp_example.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o exp_example.obj `if test -f '$(srcdir)/exp_example.cpp'; then $(CYGPATH_W) '$(srcdir)/exp_example.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/exp_example.cpp'; fi`
 
 hermite_example.o: $(srcdir)/hermite_example.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT hermite_example.o -MD -MP -MF $(DEPDIR)/hermite_example.Tpo -c -o hermite_example.o `test -f '$(srcdir)/hermite_example.cpp' || echo '$(srcdir)/'`$(srcdir)/hermite_example.cpp

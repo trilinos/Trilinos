@@ -1,0 +1,148 @@
+// $Id$ 
+// $Source$ 
+// @HEADER
+// ***********************************************************************
+// 
+//                           Sacado Package
+//                 Copyright (2006) Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
+// (etphipp@sandia.gov).
+// 
+// ***********************************************************************
+// @HEADER
+
+// hermite_example
+//
+//  usage: 
+//     hermite_example
+//
+//  output:  
+//     prints the Hermite Polynomial Chaos Expansion of a simple function
+
+#include <iostream>
+#include <iomanip>
+
+#include "Stokhos.hpp"
+
+typedef Stokhos::LegendreBasis<int,double> basis_type;
+
+// This example compares various PCE methods for computing moments of
+//
+// u = exp(x1 + ... + xd)
+//
+// where x1, ..., xd are uniform random variables on [-1,1].  The methods
+// are compared to computing the "true" value via very high-order quadrature.
+// Because of the structure of the exponential, the moments can easily
+// be computed in one dimension.
+
+// Computes first and second moments of a PCE
+void pce_moments(const Stokhos::OrthogPolyApprox<int,double>& pce,
+                 const Stokhos::OrthogPolyBasis<int,double>& basis,
+                 double& mean, double& std_dev) {
+  mean = pce[0];
+  std_dev = 0.0;
+  const std::vector<double> nrm2 = basis.norm_squared();
+  for (int i=1; i<basis.size(); i++)
+    std_dev += pce[i]*pce[i]*nrm2[i];
+  std_dev = std::sqrt(std_dev);
+}
+
+int main(int argc, char **argv)
+{
+  try {
+
+    // Compute "true" 1-D mean, std. dev using quadrature
+    const unsigned int true_quad_order = 200;
+    basis_type tmp_basis(1);
+    std::vector<double> true_quad_points, true_quad_weights;
+    std::vector< std::vector<double> > true_quad_values;
+    tmp_basis.getQuadPoints(true_quad_order, true_quad_points, 
+			    true_quad_weights, true_quad_values);
+    double mean_1d = 0.0;
+    double sd_1d = 0.0;
+    for (unsigned int qp=0; qp<true_quad_points.size(); qp++) {
+      double t = std::exp(true_quad_points[qp]);
+      mean_1d += t*true_quad_weights[qp];
+      sd_1d += t*t*true_quad_weights[qp];
+    }
+
+    const unsigned int dmin = 1;
+    const unsigned int dmax = 4;
+    const unsigned int pmin = 1;
+    const unsigned int pmax = 5;
+
+    // Loop over dimensions
+    for (unsigned int d=dmin; d<=dmax; d++) {
+
+      // compute "true" values
+      double true_mean = std::pow(mean_1d,static_cast<double>(d));
+      double true_sd = std::pow(sd_1d,static_cast<double>(d)) - 
+	true_mean*true_mean;
+      true_sd = std::sqrt(true_sd);
+      std::cout.precision(12);
+      std::cout << "true mean = " << true_mean << "\t true std. dev. = "
+                << true_sd << std::endl;
+
+      std::vector< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+
+      // Loop over orders
+      for (unsigned int p=pmin; p<=pmax; p++) {
+
+	// Create product basis
+        for (unsigned int i=0; i<d; i++)
+          bases[i] = Teuchos::rcp(new basis_type(p));
+	Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+	  Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+
+	// Create approximation
+	int sz = basis->size();
+	Stokhos::OrthogPolyApprox<int,double> x(sz), u_quad(sz);
+	for (unsigned int i=0; i<d; i++) {
+	  x.term2(*basis, i,1) = 1.0;
+	}
+
+	// Tensor product quadrature
+	Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
+	  Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+
+	// Quadrature expansion
+	Stokhos::QuadOrthogPolyExpansion<int,double> quad_exp(basis, quad);
+
+	// Compute PCE via quadrature expansion
+	quad_exp.exp(u_quad,x);
+	double mean_quad, sd_quad;
+	pce_moments(u_quad,*basis,mean_quad,sd_quad);
+        
+	std::cout.precision(4);
+	std::cout.setf(std::ios::scientific);
+	std::cout << "d = " << d << " p = " << p
+		  << " sz = " << sz
+		  << "\tmean err = " 
+		  << std::fabs(true_mean-mean_quad) << "\tstd. dev. err = "
+		  << std::fabs(true_sd-sd_quad) << std::endl;
+      }
+      
+    }
+  }
+  catch (std::exception& e) {
+    std::cout << e.what() << std::endl;
+  }
+}
