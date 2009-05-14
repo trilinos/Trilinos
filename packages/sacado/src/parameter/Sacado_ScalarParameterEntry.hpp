@@ -113,7 +113,7 @@ namespace Sacado {
      * Default implementation should work in most cases.
      */
     virtual double getRealValue() const {
-      return Sacado::Value<ScalarT>::eval(this->getValue()); 
+      return Sacado::ScalarValue<ScalarT>::eval(this->getValue()); 
     }
 
     //! Print entry

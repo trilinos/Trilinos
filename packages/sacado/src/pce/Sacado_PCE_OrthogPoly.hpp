@@ -32,6 +32,8 @@
 #ifndef SACADO_PCE_ORTHOGPOLY_HPP
 #define SACADO_PCE_ORTHOGPOLY_HPP
 
+#include "Sacado_ConfigDefs.h"
+
 #ifdef HAVE_SACADO_STOKHOS
 
 #include "Teuchos_RCP.hpp"
@@ -39,7 +41,6 @@
 #include "Sacado_Handle.hpp"
 
 #include "Stokhos_OrthogPolyExpansion.hpp"
-#include "Stokhos_TayOrthogPolyExpansion.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 
 #include <cmath>
@@ -69,12 +70,14 @@ namespace Sacado {
       //! Typename of values
       typedef T value_type;
 
+      //! Typename of ordinals
+      typedef int ordinal_type;
+
       //! Basis type
-      typedef Stokhos::OrthogPolyBasis<T> basis_type;
+      typedef Stokhos::OrthogPolyBasis<ordinal_type,T> basis_type;
 
       //! Expansion type
-      //typedef Stokhos::TayOrthogPolyExpansion<T> expansion_type;
-      typedef Stokhos::OrthogPolyExpansion<T> expansion_type;
+      typedef Stokhos::OrthogPolyExpansion<ordinal_type,T> expansion_type;
 
       //! Default constructor
       OrthogPoly();
@@ -89,13 +92,13 @@ namespace Sacado {
       /*!
        * Initializes first coeffienct to \c x and of a polynomial of size \c sz
        */
-      OrthogPoly(unsigned int sz, const value_type& x);
+      OrthogPoly(ordinal_type sz, const value_type& x);
 
       //! Constructor with size \c sz
       /*!
        * Initializes all components to zero
        */
-      OrthogPoly(unsigned int sz);
+      OrthogPoly(ordinal_type sz);
 
       //! Copy constructor
       OrthogPoly(const OrthogPoly& x);
@@ -107,13 +110,13 @@ namespace Sacado {
       /*!
        * Coefficients are preserved.
        */
-      void resize(unsigned int sz);
+      void resize(ordinal_type sz);
 
       //! Reserve space for polynomial of size \c sz
       /*!
        * Coefficients are preserved.
        */
-      void reserve(unsigned int sz);
+      void reserve(ordinal_type sz);
 
       //! Prepare polynomial for writing 
       /*!
@@ -138,6 +141,10 @@ namespace Sacado {
 
       //! Evaluate polynomial approximation at a point
       value_type evaluate(const std::vector<value_type>& point) const;
+
+      //! Evaluate polynomial approximation at a point with given basis values
+      value_type evaluate(const std::vector<value_type>& point,
+                          const std::vector<value_type>& bvals) const;
 
       /*!
        * @name Assignment operators
@@ -171,10 +178,10 @@ namespace Sacado {
       //@{
 
       //! Returns size of polynomial
-      unsigned int size() const { return th->size();}
+      ordinal_type size() const { return th->size();}
 
       //! Returns true if polynomial has size >= sz
-      bool hasFastAccess(unsigned int sz) const { return th->size()>=sz;}
+      bool hasFastAccess(ordinal_type sz) const { return th->size()>=sz;}
 
       //! Returns Hermite coefficient array
       const value_type* coeff() const { return th->coeff();}
@@ -183,14 +190,14 @@ namespace Sacado {
       value_type* coeff() { return th->coeff();}
 
       //! Returns degree \c i term with bounds checking
-      value_type coeff(unsigned int i) const { 
+      value_type coeff(ordinal_type i) const { 
 	value_type tmp= i<th->size() ? (*th)[i]:value_type(0.); return tmp;}
     
       //! Returns degree \c i term without bounds checking
-      value_type& fastAccessCoeff(unsigned int i) { return (*th)[i];}
+      value_type& fastAccessCoeff(ordinal_type i) { return (*th)[i];}
 
       //! Returns degree \c i term without bounds checking
-      value_type fastAccessCoeff(unsigned int i) const { return (*th)[i];}
+      value_type fastAccessCoeff(ordinal_type i) const { return (*th)[i];}
     
       //@}
 
@@ -232,11 +239,11 @@ namespace Sacado {
       //@}
 
       //! Get underlying Hermite polynomial
-      const Stokhos::OrthogPolyApprox<value_type>& getOrthogPolyApprox() const 
+      const Stokhos::OrthogPolyApprox<int,value_type>& getOrthogPolyApprox() const 
       { return *th; }
 
       //! Get underlying Hermite polynomial
-      Stokhos::OrthogPolyApprox<value_type>& getOrthogPolyApprox() { 
+      Stokhos::OrthogPolyApprox<int,value_type>& getOrthogPolyApprox() { 
 	return *th; }
 
     public:
@@ -246,7 +253,7 @@ namespace Sacado {
 
     protected:
 
-      Sacado::Handle< Stokhos::OrthogPolyApprox<value_type> > th;
+      Sacado::Handle< Stokhos::OrthogPolyApprox<int,value_type> > th;
 
     }; // class Hermite
 

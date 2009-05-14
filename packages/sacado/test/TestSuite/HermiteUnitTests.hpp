@@ -36,10 +36,10 @@
 #include "Sacado.hpp"
 #include "Sacado_Random.hpp"
 #include "Sacado_PCE_OrthogPoly.hpp"
-#include "Stokhos_HermiteEBasis.hpp"
+#include "Stokhos.hpp"
 
-typedef Stokhos::HermiteEBasis<double> basis_type;
-typedef Sacado::PCE::OrthogPoly<double>::expansion_type exp_type;
+typedef Stokhos::HermiteBasis<int,double> basis_type;
+typedef Stokhos::DerivOrthogPolyExpansion<int,double> exp_type;
 typedef Sacado::PCE::OrthogPoly<double> pce_type;
 
 // Cppunit includes

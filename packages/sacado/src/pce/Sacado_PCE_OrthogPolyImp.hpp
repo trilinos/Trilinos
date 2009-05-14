@@ -42,28 +42,28 @@ OrthogPoly<T>::expansion = Teuchos::null;
 template <typename T> 
 OrthogPoly<T>::
 OrthogPoly() :
-  th(new Stokhos::OrthogPolyApprox<value_type>)
+  th(new Stokhos::OrthogPolyApprox<int,value_type>)
 {
 }
 
 template <typename T> 
 OrthogPoly<T>::
 OrthogPoly(const typename OrthogPoly<T>::value_type& x) :
-  th(new Stokhos::OrthogPolyApprox<value_type>(x))
+  th(new Stokhos::OrthogPolyApprox<int,value_type>(x))
 {
 }
 
 template <typename T> 
 OrthogPoly<T>::
-OrthogPoly(unsigned int sz, const typename OrthogPoly<T>::value_type& x) :
-  th(new Stokhos::OrthogPolyApprox<value_type>(sz, x))
+OrthogPoly(ordinal_type sz, const typename OrthogPoly<T>::value_type& x) :
+  th(new Stokhos::OrthogPolyApprox<int,value_type>(sz, x))
 {
 }
 
 template <typename T> 
 OrthogPoly<T>::
-OrthogPoly(unsigned int sz) :
-  th(new Stokhos::OrthogPolyApprox<value_type>(sz))
+OrthogPoly(ordinal_type sz) :
+  th(new Stokhos::OrthogPolyApprox<int,value_type>(sz))
 {
 }
 
@@ -83,7 +83,7 @@ OrthogPoly<T>::
 template <typename T> 
 void
 OrthogPoly<T>::
-resize(unsigned int sz)
+resize(ordinal_type sz)
 {
   th->resize(sz);
 }
@@ -91,7 +91,7 @@ resize(unsigned int sz)
 template <typename T> 
 void
 OrthogPoly<T>::
-reserve(unsigned int sz)
+reserve(ordinal_type sz)
 {
   th->reserve(sz);
 }
@@ -117,7 +117,17 @@ typename OrthogPoly<T>::value_type
 OrthogPoly<T>::
 evaluate(const std::vector<typename OrthogPoly<T>::value_type>& point) const
 {
-  return th->evaluate(expansion->getBasis(), point);
+
+  return th->evaluate(*(expansion->getBasis()), point);
+}
+
+template <typename T> 
+typename OrthogPoly<T>::value_type
+OrthogPoly<T>::
+evaluate(const std::vector<typename OrthogPoly<T>::value_type>& point,
+         const std::vector<typename OrthogPoly<T>::value_type>& bvals) const
+{
+  return th->evaluate(*(expansion->getBasis()), point, bvals);
 }
 
 template <typename T> 
@@ -249,9 +259,10 @@ OrthogPoly<T>
 operator+(const OrthogPoly<T>& a, 
 	  const OrthogPoly<T>& b)
 {
-  unsigned int da = a.size();
-  unsigned int db = b.size();
-  unsigned int dc = da > db ? da : db;
+  typedef typename OrthogPoly<T>::ordinal_type ordinal_type;
+  ordinal_type da = a.size();
+  ordinal_type db = b.size();
+  ordinal_type dc = da > db ? da : db;
   OrthogPoly<T> c(dc);
   OrthogPoly<T>::expansion->plus(c.getOrthogPolyApprox(), 
 				      a.getOrthogPolyApprox(), 
@@ -287,9 +298,10 @@ OrthogPoly<T>
 operator-(const OrthogPoly<T>& a, 
 	  const OrthogPoly<T>& b)
 {
-  unsigned int da = a.size();
-  unsigned int db = b.size();
-  unsigned int dc = da > db ? da : db;
+  typedef typename OrthogPoly<T>::ordinal_type ordinal_type;
+  ordinal_type da = a.size();
+  ordinal_type db = b.size();
+  ordinal_type dc = da > db ? da : db;
   OrthogPoly<T> c(dc);
   OrthogPoly<T>::expansion->minus(c.getOrthogPolyApprox(), 
 				 a.getOrthogPolyApprox(),
@@ -325,9 +337,10 @@ OrthogPoly<T>
 operator*(const OrthogPoly<T>& a, 
 	  const OrthogPoly<T>& b)
 {
-  unsigned int da = a.size();
-  unsigned int db = b.size();
-  unsigned int dc = da > db ? da : db;
+  typedef typename OrthogPoly<T>::ordinal_type ordinal_type;
+  ordinal_type da = a.size();
+  ordinal_type db = b.size();
+  ordinal_type dc = da > db ? da : db;
   OrthogPoly<T> c(dc);
   OrthogPoly<T>::expansion->times(c.getOrthogPolyApprox(), 
 				 a.getOrthogPolyApprox(), 
@@ -363,9 +376,10 @@ OrthogPoly<T>
 operator/(const OrthogPoly<T>& a, 
 	  const OrthogPoly<T>& b)
 {
-  unsigned int da = a.size();
-  unsigned int db = b.size();
-  unsigned int dc = da > db ? da : db;
+  typedef typename OrthogPoly<T>::ordinal_type ordinal_type;
+  ordinal_type da = a.size();
+  ordinal_type db = b.size();
+  ordinal_type dc = da > db ? da : db;
   OrthogPoly<T> c(dc);
   OrthogPoly<T>::expansion->divide(c.getOrthogPolyApprox(), 
 				  a.getOrthogPolyApprox(), 
@@ -441,9 +455,10 @@ OrthogPoly<T>
 pow(const OrthogPoly<T>& a,
     const OrthogPoly<T>& b)
 {
-  unsigned int da = a.size();
-  unsigned int db = b.size();
-  unsigned int dc = da > db ? da : db;
+  typedef typename OrthogPoly<T>::ordinal_type ordinal_type;
+  ordinal_type da = a.size();
+  ordinal_type db = b.size();
+  ordinal_type dc = da > db ? da : db;
   OrthogPoly<T> c(dc);
   OrthogPoly<T>::expansion->pow(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox(), 
@@ -619,9 +634,10 @@ OrthogPoly<T>
 max(const OrthogPoly<T>& a,
     const OrthogPoly<T>& b)
 {
-  unsigned int da = a.size();
-  unsigned int db = b.size();
-  unsigned int dc = da > db ? da : db;
+  typedef typename OrthogPoly<T>::ordinal_type ordinal_type;
+  ordinal_type da = a.size();
+  ordinal_type db = b.size();
+  ordinal_type dc = da > db ? da : db;
   OrthogPoly<T> c(dc);
   OrthogPoly<T>::expansion->max(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox(), 
@@ -656,9 +672,10 @@ OrthogPoly<T>
 min(const OrthogPoly<T>& a,
     const OrthogPoly<T>& b)
 {
-  unsigned int da = a.size();
-  unsigned int db = b.size();
-  unsigned int dc = da > db ? da : db;
+  typedef typename OrthogPoly<T>::ordinal_type ordinal_type;
+  ordinal_type da = a.size();
+  ordinal_type db = b.size();
+  ordinal_type dc = da > db ? da : db;
   OrthogPoly<T> c(dc);
   OrthogPoly<T>::expansion->min(c.getOrthogPolyApprox(), 
 			       a.getOrthogPolyApprox(), 
@@ -837,9 +854,11 @@ template <typename T>
 std::ostream& 
 operator << (std::ostream& os, const OrthogPoly<T>& a)
 {
+  typedef typename OrthogPoly<T>::ordinal_type ordinal_type;
+
   os << "[ ";
       
-  for (unsigned int i=0; i<a.size(); i++) {
+  for (ordinal_type i=0; i<a.size(); i++) {
     os << a.coeff(i) << " ";
   }
 

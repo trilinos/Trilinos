@@ -445,6 +445,7 @@ SOURCE_H = \
 	$(FEAPP_PATH)/FEApp_QuadraticSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_CubicSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_ExponentialSourceFunction.hpp \
+	$(FEAPP_PATH)/FEApp_MultiVariateExponentialSourceFunction.hpp \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactory.hpp \
 	$(FEAPP_PATH)/FEApp_SourceFunctionFactoryImpl.hpp
 
@@ -508,11 +509,15 @@ FILL_H = \
 	$(FEAPP_PATH)/FEApp_AbstractInitPostOp.hpp \
 	$(FEAPP_PATH)/FEApp_InitPostOps.hpp \
 	$(FEAPP_PATH)/FEApp_GlobalFill.hpp \
-	$(FEAPP_PATH)/FEApp_GlobalFillImpl.hpp
+	$(FEAPP_PATH)/FEApp_GlobalFillImpl.hpp \
+	$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.hpp \
+	$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.hpp
 
 FILL = \
 	$(FEAPP_PATH)/FEApp_InitPostOps.cpp \
-	$(FEAPP_PATH)/FEApp_GlobalFill.cpp
+	$(FEAPP_PATH)/FEApp_GlobalFill.cpp \
+	$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp \
+	$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp
 
 DISC_H = \
 	$(FEAPP_PATH)/FEApp_AbstractDiscretization.hpp \
@@ -527,15 +532,11 @@ DISC = \
 
 APP_H = \
 	$(FEAPP_PATH)/FEApp_Application.hpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp \
-	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.hpp \
-	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.hpp
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp 
 
 APP = \
 	$(FEAPP_PATH)/FEApp_Application.cpp \
-	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp \
-	$(FEAPP_PATH)/FEApp_SGMatrixFreeOp.cpp \
-	$(FEAPP_PATH)/FEApp_SGMeanPrecOp.cpp
+	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp 
 
 FEAPP_H = \
 	$(ELEMENT_H) \
