@@ -104,7 +104,7 @@ void FunctionSpaceTools::HDIVtransformDIV(ArrayTypeOut        & outVals,
                                           const ArrayTypeSign & fieldSigns,
                                           const ArrayTypeIn   & inVals) {
 
-  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, outVals);
+  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, inVals);
   ArrayTools::scaleValues<Scalar>(outVals, fieldSigns);
 
 }
@@ -115,7 +115,7 @@ void FunctionSpaceTools::HVOLtransformVALUE(ArrayTypeOut        & outVals,
                                             const ArrayTypeDet  & jacobianDet,
                                             const ArrayTypeIn   & inVals) {
 
-  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, outVals);
+  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, inVals);
 
 }
 
