@@ -17,6 +17,9 @@
 #include "Epetra_Time.h"
 #include "ml_ifpack.h"
 #include "ml_ifpack_wrap.h"
+#ifdef rst_dump
+#include "ml_Ifpack_ML.h"
+#endif
 // converter from ML_Operator to Epetra_RowMatrix (only wraps)
 #include "ml_RowMatrix.h"
 // IFPACK factory class
@@ -182,8 +185,12 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
 
 int ML_Ifpack_Solve(void * Ifpack_Handle, double * x, double * rhs )
 {
+#ifdef rst_dump
+   static int stupid_count = 0;
+#endif
 
   Ifpack_Preconditioner* Prec = (Ifpack_Preconditioner *)Ifpack_Handle;
+
 
 #ifdef ML_DUMP_IFPACK_FACTORS
   Ifpack_AdditiveSchwarz<Ifpack_IC> *asic = dynamic_cast<Ifpack_AdditiveSchwarz<Ifpack_IC>*>(Prec);
@@ -205,9 +212,20 @@ int ML_Ifpack_Solve(void * Ifpack_Handle, double * x, double * rhs )
     const Epetra_CrsMatrix &L = ilu->L();
     const Epetra_Vector &D = ilu->D();
     const Epetra_CrsMatrix &U = ilu->U();
+#ifdef rst_dump
+    stupid_count++;
+    if ((L.RowMatrixRowMap().Comm().MyPID() == 0) && (stupid_count < 6)) {
+        Ifpack_ML* MLAndIfpack = (Ifpack_ML *)Ifpack_Handle;
+        printf("ILU factors: Nnz(ILU) = %d, Nnz(ILU)/Nnz(A) = %f\n",
+               L.NumGlobalNonzeros()+U.NumGlobalNonzeros()-L.NumGlobalRows(),
+               ((double)(L.NumGlobalNonzeros()+U.NumGlobalNonzeros()-L.NumGlobalRows()))/
+               ((double) MLAndIfpack->Matrix().NumGlobalNonzeros()));
+    }
+#else
     EpetraExt::RowMatrixToMatlabFile("ILU_Lfactor",L);
     EpetraExt::VectorToMatlabFile("ILU_Dfactor",D);
     EpetraExt::RowMatrixToMatlabFile("ILU_Ufactor",U);
+#endif
   } else if (asict != 0) {
     const Ifpack_ICT *ict = asict->Inverse();
     const Epetra_CrsMatrix &H = ict->H();
@@ -221,10 +239,12 @@ int ML_Ifpack_Solve(void * Ifpack_Handle, double * x, double * rhs )
   } else {
     if (Prec->Comm().MyPID() == 0) printf("dynamic cast failed!\n");
   }
+#ifndef rst_dump
 # ifdef HAVE_MPI
   MPI_Finalize();
 # endif
   exit(1);
+#endif
 #endif //ifdef ML_DUMP_IFPACK_FACTORS
 
   Epetra_Vector Erhs(View, Prec->OperatorRangeMap(), rhs);
