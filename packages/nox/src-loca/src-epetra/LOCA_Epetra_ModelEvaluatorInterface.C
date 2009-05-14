@@ -172,6 +172,8 @@ computePreconditioner(const Epetra_Vector& x,
   // Create outargs
   EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
   EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval_f;
+  eval_f.reset(Teuchos::null, 
+               EpetraExt::ModelEvaluator::EVAL_TYPE_VERY_APPROX_DERIV);
   outargs.set_f(eval_f);
   outargs.set_W(Teuchos::rcp(&M, false));
 
