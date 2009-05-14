@@ -136,9 +136,9 @@ int main(int argc, char *argv[]) {
     aList.set("Cayley Zero", -0.1);
     aList.set("Sorting Order", "CA");
     aList.set("Verbosity",  
-	      Anasazi::Errors + 
-	      Anasazi::Warnings +
-	      Anasazi::FinalSummary);        // Verbosity
+              Anasazi::Errors + 
+              Anasazi::Warnings +
+              Anasazi::FinalSummary);        // Verbosity
 #else
     stepperList.set("Compute Eigenvalues",false);
 #endif
@@ -167,17 +167,17 @@ int main(int argc, char *argv[]) {
     printParams.set("Output Precision", 3);
     printParams.set("Output Processor", 0);
     printParams.set("Output Information", 
-		    NOX::Utils::OuterIteration + 
-		    NOX::Utils::OuterIterationStatusTest + 
-		    NOX::Utils::InnerIteration +
-		    NOX::Utils::Parameters + 
-		    NOX::Utils::Details + 
-		    NOX::Utils::LinearSolverDetails +
-		    NOX::Utils::StepperIteration + 
-		    NOX::Utils::StepperDetails +
+                    NOX::Utils::OuterIteration + 
+                    NOX::Utils::OuterIterationStatusTest + 
+                    NOX::Utils::InnerIteration +
+                    NOX::Utils::Parameters + 
+                    NOX::Utils::Details + 
+                    NOX::Utils::LinearSolverDetails +
+                    NOX::Utils::StepperIteration + 
+                    NOX::Utils::StepperDetails +
                     NOX::Utils::StepperParameters +
-		    NOX::Utils::Warning + 
-		    NOX::Utils::Error);
+                    NOX::Utils::Warning + 
+                    NOX::Utils::Error);
 
     // Create printing utilities
     NOX::Utils utils(printParams);
@@ -228,24 +228,24 @@ int main(int argc, char *argv[]) {
     Teuchos::RefCountPtr<NOX::Epetra::Interface::Jacobian> iJac = interface;
     Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> linsys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
-							lsParams,
-							iReq, iJac, A, nox_u));
+                                                        lsParams,
+                                                        iReq, iJac, A, nox_u));
 
     // Create shifted Linear System & time dependent interface
     // These are necessary for Cayley transformations
     // Here we use the same matrix to store J and J+M
     Teuchos::RefCountPtr<NOX::Epetra::LinearSystemAztecOO> shiftedLinSys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
-							lsParams,
-							iReq, iJac, A, nox_u));
+                                                        lsParams,
+                                                        iReq, iJac, A, nox_u));
     Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent> iTime =
       interface;
 
     // Create the Group
     Teuchos::RefCountPtr<LOCA::Epetra::Group> grp =
       Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams, iTime, 
-					   nox_u, linsys, shiftedLinSys,
-					   pVector)); 
+                                           nox_u, linsys, shiftedLinSys,
+                                           pVector)); 
     grp->setDerivUtils(interface);
 
     // Create the Solver convergence test
@@ -269,15 +269,15 @@ int main(int argc, char *argv[]) {
       globalData->locaUtils->out() << "All tests passed" << endl;
     else {
       if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
-	globalData->locaUtils->out() 
-	  << "Stepper failed to converge!" << std::endl;
+        globalData->locaUtils->out() 
+          << "Stepper failed to converge!" << std::endl;
     }
 
     // Output the parameter list
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
       globalData->locaUtils->out() 
-	<< std::endl << "Final Parameters" << std::endl
-	<< "****************" << std::endl;
+        << std::endl << "Final Parameters" << std::endl
+        << "****************" << std::endl;
       stepper.getList()->print(globalData->locaUtils->out());
       globalData->locaUtils->out() << std::endl;
     }
