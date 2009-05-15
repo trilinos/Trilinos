@@ -2846,11 +2846,19 @@ and should include appropriate factors for the permeability ($\mu$).
 The matrix $\mathcal{M}_1$ is used only for the edge space, meaning
 that it does not include the conductivity ($\sigma$).
 
+\subsubsection{Coarse nullspaces}
+RefMaxwell will automatically calculate the nullspace for the coarse edge
+problem from the discrete gradient matrix $T$ and nodal coordinates.
+For periodic problems, however, this calculation will not be correct
+(since the nodes on the periodic boundary are really in two places at
+the same time).  In this case, the user can specify nullspace options
+(using the standard syntax) as part of {\tt refmaxwell: 11list}.
+
 \subsubsection{Smoother options}
 Unlike the Maxwell solver, it is not particularly advantageous to use
 the so-called Hiptmair hybrid smoother with RefMaxwell.  A more
 traditional smoother, such as Chebyshev (in parallel) or Gauss-Seidel
-(in serial should be used).
+(in serial) should be used.
 
 \subsubsection{Setting parameter options}
 RefMaxwell uses a nested parameter list in order to logically separate
