@@ -82,7 +82,7 @@ protected:
 
 
 int main(int argc, char *argv[]) {
-  unsigned int nelem = 10000;
+  unsigned int nelem = 100;
   double h = 1.0/nelem;
   double alpha = 1.0;
   double leftBC = 0.0;
