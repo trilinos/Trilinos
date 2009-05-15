@@ -169,8 +169,10 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 {
 
   //FIXME timing
+#ifdef IFPACK_OVA_TIME_BUILD
   double t0 = MPI_Wtime();
   double t1, true_t0=t0;
+#endif
   //FIXME timing
 
   // should not be here if no overlap
@@ -249,7 +251,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   const Epetra_Map *ColMap; 
   const Epetra_Map *DomainMap;
 
-  int mypid = Comm().MyPID();
+  //int mypid = Comm().MyPID();
 
   // TODO Count #connections from nodes I own to each ghost node
 
@@ -373,14 +375,9 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     */
 
 #   ifdef HAVE_MPI  //FIXME What if we build in serial?!  This file will likely not compile.
-    int lengths[nodeComm->NumProc()+1];
-    /*
-      lengths[i]                    starting position for pid i's entries in ghosts, round, and owningpid
-      lengths[i+1] - lengths[i]     #entries belonging to pid i in said vectors
-    */
     int *cullList;
     int ncull;
-    int mypid = nodeComm->MyPID();
+    //int mypid = nodeComm->MyPID();
 
     //FIXME timing
 #ifdef IFPACK_OVA_TIME_BUILD
@@ -395,6 +392,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     {
       // Figure out how much pid 0 is to receive
       MPI_Status status;
+      int *lengths = new int[nodeComm->NumProc()+1];
       lengths[0] = 0;
       lengths[1] = ghostTable.size();
       for (int i=1; i<nodeComm->NumProc(); i++) {
@@ -436,8 +434,8 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
       epetraUtil.Sort(true,total,ghosts,0,0,2,roundpid);
 
       //set up arrays that get sent back to node buddies and that tell them what ghosts to cull
-      int nlosers[nodeComm->NumProc()];
-      int* losers[nodeComm->NumProc()];
+      int *nlosers = new int[nodeComm->NumProc()];
+      int** losers = new int*[nodeComm->NumProc()];
       for (int i=0; i<nodeComm->NumProc(); i++) {
         nlosers[i] = 0;
         losers[i] = new int[ lengths[i+1]-lengths[i] ];
@@ -486,6 +484,10 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 
       for (int i=0; i<nodeComm->NumProc(); i++)
         delete [] losers[i];
+
+      delete [] lengths;
+      delete [] losers;
+      delete [] nlosers;
 
     } else { //everyone but pid 0
 
@@ -725,7 +727,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
        must be the same as that of the domain map's local entries.  See the comment in method
        MakeColMap() in Epetra_CrsGraph.cpp, line 1072. */
     int *rowGlobalElts =  nodeMap_->MyGlobalElements();
-    int numRowElts = nodeMap_->NumMyElements();
+    //int numRowElts = nodeMap_->NumMyElements();
     //printf("lpid %d: numRowElts = %d, leng = %d\n",Comm().MyPID(),numRowElts,leng); fflush(stdout);
     //assert(numRowElts==leng);
     for (int i=0; i<leng; i++) {
@@ -785,16 +787,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   //FIXME timing
 
 
-  Teuchos::RCP<int> pidList = rcp( new int[colMapElements.size()] );
-
-  Map_->RemoteIDList(colMapElements.size(), &colList[0], &*pidList, 0);
-
-/*
-  printf("++++++++\ngpid %d\n++++++++\n",Comm().MyPID()); 
-  for (int i=0; i<colMapElements.size(); i++) printf("   %d:  %d\n",colList[i],(&*pidList)[i]);
-  fflush(stdout);
-*/
-
 /*
 
    FIXME
@@ -845,8 +837,8 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 #ifdef IFPACK_OVA_TIME_BUILD
   t1 = MPI_Wtime();
   fprintf(stderr,"[node %d]: time to import and setup ExtMap_ %2.3e\n", nodeID, t1-t0);
-#endif
   t0=t1;
+#endif
   //FIXME timing
 
 
