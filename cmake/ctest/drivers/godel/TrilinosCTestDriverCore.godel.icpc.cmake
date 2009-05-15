@@ -40,6 +40,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DCMAKE_C_COMPILER:FILEPATH=/opt/intel/cc/10.1.015/bin/icc"
       "-DCMAKE_CXX_COMPILER:FILEPATH=/opt/intel/cc/10.1.015/bin/icpc"
       "-DCMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77"
+      "-DCMAKE_CXX_FLAGS:STRING=-diag-disable 597"
       "-DCMAKE_LIBRARY_PATH:PATH=/usr/lib64"
       )
   
