@@ -34,7 +34,7 @@
 namespace {
 
 
-const int getFieldWidth(const Teuchos::TabularOutputter::EFieldType fieldType,
+int getFieldWidth(const Teuchos::TabularOutputter::EFieldType fieldType,
   const int prec)
 {
   typedef Teuchos::TabularOutputter TO;

@@ -10,7 +10,7 @@ cmake \
 -D CMAKE_C_COMPILER:FILEPATH=/opt/intel/cc/10.1.015/bin/icc \
 -D CMAKE_CXX_COMPILER:FILEPATH=/opt/intel/cc/10.1.015/bin/icpc \
 -D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77 \
--D CMAKE_CXX_FLAGS:STRING="-fexceptions" \
+-D CMAKE_CXX_FLAGS:STRING="-diag-disable 597" \
 -D MEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind \
 -D DART_TESTING_TIMEOUT:STRING=600 \
 -D CMAKE_LIBRARY_PATH:PATH=/usr/lib64 \

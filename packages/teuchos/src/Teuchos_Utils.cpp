@@ -51,7 +51,7 @@ std::string Utils::trimWhiteSpace( const std::string& str )
     );
   // Above, if only whitespace is found, then first_non_white==len on
   // termination of the loop!
-  size_type last_non_white = 0;
+  int last_non_white = 0;
   for(
     last_non_white = len-1 ;
     isWhiteSpace(str[last_non_white]) && last_non_white >= 0;
