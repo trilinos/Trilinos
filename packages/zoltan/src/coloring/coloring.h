@@ -24,6 +24,11 @@ extern "C" {
 #include "zz_util_const.h"
 #include "coloring_const.h"
 
+/* Metis also has a swap */
+#ifdef SWAP
+#undef SWAP
+#endif
+
 #define SWAP(a,b) tmp=(a);(a)=(b);(b)=tmp;
 
 /* Macros for error handling */

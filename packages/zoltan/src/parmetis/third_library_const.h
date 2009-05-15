@@ -34,9 +34,18 @@ extern "C" {
 #include <parmetis.h>
 #define indextype idxtype
 #define weighttype idxtype
+  /* TODO: See if we can have parmetis and metis at the same time */
+#ifdef ZOLTAN_METIS
+#undef ZOLTAN_METIS
+#endif
 #endif /* ZOLTAN_PARMETIS */
 
 #ifdef ZOLTAN_METIS
+  /* TODO : to a cleaner way to include both */
+#ifdef ZOLTAN_PARMETIS
+/* indxtype already defined */
+#define idxtype dummy_indxtype
+#endif
 #include <metis.h>
 #ifndef indextype
 #define indextype idxtype
