@@ -46,16 +46,19 @@ SET(SOURCES)
 
 INCLUDE_DIRECTORIES( 
   ${PACKAGE_SOURCE_DIR}/test/SinCos
+  ${PACKAGE_SOURCE_DIR}/test/VanderPol
   ${PACKAGE_SOURCE_DIR}/test/PolynomialModel
   )
 
 APPEND_SET(HEADERS
   ${PACKAGE_SOURCE_DIR}/test/SinCos/SinCosModel.hpp
+  ${PACKAGE_SOURCE_DIR}/test/VanderPol/VanderPolModel.hpp
   ${PACKAGE_SOURCE_DIR}/test/PolynomialModel/PolynomialModel.hpp
   )
 
 APPEND_SET(SOURCES
   ${PACKAGE_SOURCE_DIR}/test/SinCos/SinCosModel.cpp
+  ${PACKAGE_SOURCE_DIR}/test/VanderPol/VanderPolModel.cpp
   ${PACKAGE_SOURCE_DIR}/test/PolynomialModel/PolynomialModel.cpp
   )
 

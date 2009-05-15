@@ -442,6 +442,15 @@ void AdjointModelEvaluator<Scalar>::evalModelImpl(
   RCP<DSALO> W_bar_op;
   if (outArgs_bar.supports(MEB::OUT_ARG_W_op))
     W_bar_op = rcp_dynamic_cast<DSALO>(outArgs_bar.get_W_op(), true);
+
+  if (dumpAll) {
+    if (!is_null(W_bar)) {
+      *out << "\nW_bar = " << describe(*W_bar, Teuchos::VERB_EXTREME);
+    }
+    if (!is_null(W_bar_op)) {
+      *out << "\nW_bar_op = " << describe(*W_bar_op, Teuchos::VERB_EXTREME);
+    }
+  }
   
   //
   // C) Evaluate the needed quantities from the underlying forward Model
@@ -479,7 +488,6 @@ void AdjointModelEvaluator<Scalar>::evalModelImpl(
       W_bar_adj_op = W_bar_adj;
     }
     else if (!is_null(W_bar_op)) {
-      TEST_FOR_EXCEPT_MSG(true, "ToDo: Unit test this code!");
       // If we have W_bar_op, the W_bar_adj_op was already created in
       // this->create_W_op()
       W_bar_adj_op = W_bar_op->getNonconstOp();
@@ -500,7 +508,7 @@ void AdjointModelEvaluator<Scalar>::evalModelImpl(
       fwdOutArgs.set_W(W_bar_adj);
     }
     else if (!is_null(W_bar_adj_op)) {
-      fwdOutArgs.set_W_op(W_bar_adj);
+      fwdOutArgs.set_W_op(W_bar_adj_op);
     }
     
     // Set alpha and beta on OutArgs object
@@ -535,6 +543,9 @@ void AdjointModelEvaluator<Scalar>::evalModelImpl(
     fwdInArgs.set_alpha(ST::one());
     fwdInArgs.set_beta(ST::zero());
     fwdStateModel_->evalModel( fwdInArgs, fwdOutArgs );
+    if (dumpAll) {
+      *out << "\nd_f_d_x_dot_op = " << describe(*d_f_d_x_dot_op, Teuchos::VERB_EXTREME);
+    }
   }
 
   //
@@ -569,6 +580,15 @@ void AdjointModelEvaluator<Scalar>::evalModelImpl(
     if (dumpAll)
       *out << "\nf_bar = " << describe(*f_bar, Teuchos::VERB_EXTREME);
 
+  }
+
+  if (dumpAll) {
+    if (!is_null(W_bar)) {
+      *out << "\nW_bar = " << describe(*W_bar, Teuchos::VERB_EXTREME);
+    }
+    if (!is_null(W_bar_op)) {
+      *out << "\nW_bar_op = " << describe(*W_bar_op, Teuchos::VERB_EXTREME);
+    }
   }
 
 

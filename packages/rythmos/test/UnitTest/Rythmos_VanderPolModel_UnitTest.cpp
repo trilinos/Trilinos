@@ -28,23 +28,27 @@
 
 #include "Teuchos_UnitTestHarness.hpp"
 
+#include "../VanderPol/VanderPolModel.hpp"
 #include "../SinCos/SinCosModel.hpp"
 
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
 
+#include "Rythmos_TimeStepNonlinearSolver.hpp"
+#include "Rythmos_IntegratorBuilder.hpp"
+
 namespace Rythmos {
 
 typedef ModelEvaluatorBase MEB;
 using Teuchos::as;
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, setImplicitFlag ) {
+/*
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, setImplicitFlag ) {
   {
-    RCP<SinCosModel> explicit_model = rcp(new SinCosModel);
+    RCP<VanderPolModel> explicit_model = vanderPolModel(false);
     MEB::InArgs<double> explicit_model_ic;
     TEST_THROW( explicit_model_ic = explicit_model->getNominalValues(), std::logic_error );
-    explicit_model->setImplicitFlag(false);
     explicit_model_ic = explicit_model->getNominalValues();
     TEST_EQUALITY_CONST( explicit_model_ic.supports(MEB::IN_ARG_t), true );
     TEST_EQUALITY_CONST( explicit_model_ic.supports(MEB::IN_ARG_x), true );
@@ -53,10 +57,9 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, setImplicitFlag ) {
     TEST_EQUALITY_CONST( explicit_model_ic.supports(MEB::IN_ARG_beta), true );
   }
   {
-    RCP<SinCosModel> implicit_model = rcp(new SinCosModel);
+    RCP<VanderPolModel> implicit_model = vanderPolModel(true);
     MEB::InArgs<double> implicit_model_ic;
     TEST_THROW( implicit_model_ic = implicit_model->getNominalValues(), std::logic_error );
-    implicit_model->setImplicitFlag(true);
     implicit_model_ic = implicit_model->getNominalValues();
     TEST_EQUALITY_CONST( implicit_model_ic.supports(MEB::IN_ARG_t), true );
     TEST_EQUALITY_CONST( implicit_model_ic.supports(MEB::IN_ARG_x), true );
@@ -67,10 +70,10 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, setImplicitFlag ) {
 }
 
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, nominalValues ) {
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, nominalValues ) {
   double tol = 1.0e-10;
   {
-    RCP<SinCosModel> explicit_model = sinCosModel(false);
+    RCP<VanderPolModel> explicit_model = vanderPolModel(false);
     MEB::InArgs<double> explicit_ic = explicit_model->getNominalValues();
     TEST_EQUALITY_CONST( explicit_ic.supports(MEB::IN_ARG_t), true );
     TEST_EQUALITY_CONST( explicit_ic.supports(MEB::IN_ARG_x), true );
@@ -86,7 +89,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, nominalValues ) {
   }
 
   {
-    RCP<SinCosModel> explicit_model = sinCosModel();
+    RCP<VanderPolModel> explicit_model = vanderPolModel();
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->set("Implicit model formulation",false);
     pl->set("Accept model parameters",true);
@@ -116,7 +119,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, nominalValues ) {
   }
   
   {
-    RCP<SinCosModel> model = sinCosModel();
+    RCP<VanderPolModel> model = vanderPolModel();
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->set("Implicit model formulation",false);
     pl->set("Provide nominal values",false);
@@ -135,7 +138,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, nominalValues ) {
   }
 
   {
-    RCP<SinCosModel> implicit_model = sinCosModel(true);
+    RCP<VanderPolModel> implicit_model = vanderPolModel(true);
     MEB::InArgs<double> implicit_ic = implicit_model->getNominalValues();
     TEST_EQUALITY_CONST( implicit_ic.supports(MEB::IN_ARG_t), true);
     TEST_EQUALITY_CONST( implicit_ic.supports(MEB::IN_ARG_x), true );
@@ -155,7 +158,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, nominalValues ) {
   }
 
   {
-    RCP<SinCosModel> model = sinCosModel();
+    RCP<VanderPolModel> model = vanderPolModel();
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->set("Implicit model formulation", true);
     pl->set("Provide nominal values",false);
@@ -178,8 +181,8 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, nominalValues ) {
   }
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, p_names ) {
-  RCP<SinCosModel> model = sinCosModel();
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, p_names ) {
+  RCP<VanderPolModel> model = vanderPolModel();
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->set("Accept model parameters", true);
   model->setParameterList(pl);
@@ -194,9 +197,9 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, p_names ) {
   TEST_EQUALITY_CONST( (*p_names)[2], "Model Coefficient:  L" );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, spaces ) {
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, spaces ) {
   {
-    RCP<SinCosModel> explicit_model = sinCosModel(false);
+    RCP<VanderPolModel> explicit_model = vanderPolModel(false);
     RCP<const Thyra::VectorSpaceBase<double> > x_space = explicit_model->get_x_space();
     TEST_EQUALITY_CONST( x_space->dim(), 2 );
     RCP<const Thyra::VectorSpaceBase<double> > f_space = explicit_model->get_f_space();
@@ -220,7 +223,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, spaces ) {
   {
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->set("Implicit model formulation",true);
-    RCP<SinCosModel> implicit_model = sinCosModel(true);
+    RCP<VanderPolModel> implicit_model = vanderPolModel(true);
     RCP<const Thyra::VectorSpaceBase<double> > x_space = implicit_model->get_x_space();
     TEST_EQUALITY_CONST( x_space->dim(), 2 );
     RCP<const Thyra::VectorSpaceBase<double> > f_space = implicit_model->get_f_space();
@@ -242,8 +245,8 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, spaces ) {
   }
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, create_W_op ) {
-  RCP<SinCosModel> explicit_model = sinCosModel(false);
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, create_W_op ) {
+  RCP<VanderPolModel> explicit_model = vanderPolModel(false);
   RCP<Thyra::LinearOpBase<double> > W_op = explicit_model->create_W_op();
   RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_op,false);
   TEST_EQUALITY_CONST( Teuchos::is_null(matrix), false );
@@ -251,17 +254,17 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, create_W_op ) {
   TEST_EQUALITY_CONST( matrix->range()->dim(), 2 );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, get_W_factory ) {
-  RCP<SinCosModel> explicit_model = sinCosModel(false);
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, get_W_factory ) {
+  RCP<VanderPolModel> explicit_model = vanderPolModel(false);
   RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > W_factory = explicit_model->get_W_factory();
   RCP<const Thyra::DefaultSerialDenseLinearOpWithSolveFactory<double> > myFactory =
     Teuchos::rcp_dynamic_cast<const Thyra::DefaultSerialDenseLinearOpWithSolveFactory<double> >(W_factory,false);
   TEST_EQUALITY_CONST( Teuchos::is_null(myFactory), false );
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, createInArgs ) {
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, createInArgs ) {
   {
-    RCP<SinCosModel> explicit_model = sinCosModel(false);
+    RCP<VanderPolModel> explicit_model = vanderPolModel(false);
     MEB::InArgs<double> inArgs = explicit_model->createInArgs();
     TEST_EQUALITY_CONST( inArgs.supports(MEB::IN_ARG_t), true );
     TEST_EQUALITY_CONST( inArgs.supports(MEB::IN_ARG_x), true );
@@ -270,7 +273,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, createInArgs ) {
     TEST_EQUALITY_CONST( inArgs.supports(MEB::IN_ARG_beta), true );
   }
   {
-    RCP<SinCosModel> implicit_model = sinCosModel(true);
+    RCP<VanderPolModel> implicit_model = vanderPolModel(true);
     MEB::InArgs<double> inArgs = implicit_model->createInArgs();
     TEST_EQUALITY_CONST( inArgs.supports(MEB::IN_ARG_t), true );
     TEST_EQUALITY_CONST( inArgs.supports(MEB::IN_ARG_x), true );
@@ -280,15 +283,15 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, createInArgs ) {
   }
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, createOutArgs ) {
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, createOutArgs ) {
   {
-    RCP<SinCosModel> explicit_model = sinCosModel(false);
+    RCP<VanderPolModel> explicit_model = vanderPolModel(false);
     MEB::OutArgs<double> outArgs = explicit_model->createOutArgs();
     TEST_EQUALITY_CONST( outArgs.supports(MEB::OUT_ARG_f), true );
     TEST_EQUALITY_CONST( outArgs.supports(MEB::OUT_ARG_W_op), true );
   }
   {
-    RCP<SinCosModel> explicit_model = sinCosModel(true);
+    RCP<VanderPolModel> explicit_model = vanderPolModel(true);
     MEB::OutArgs<double> outArgs = explicit_model->createOutArgs();
     TEST_EQUALITY_CONST( outArgs.supports(MEB::OUT_ARG_f), true );
     TEST_EQUALITY_CONST( outArgs.supports(MEB::OUT_ARG_W_op), true );
@@ -296,7 +299,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, createOutArgs ) {
 
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSolution ) {
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, exactSolution ) {
   std::vector<double> t_values;
   int N = 10;
   double t = 25;
@@ -322,7 +325,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSolution ) {
   pl->set("IC x_1", x1);
   pl->set("IC t_0", t0);
   {
-    RCP<SinCosModel> explicit_model = sinCosModel();
+    RCP<VanderPolModel> explicit_model = vanderPolModel();
     pl->set("Implicit model formulation", false);
     explicit_model->setParameterList(pl);
     MEB::InArgs<double> exact_sol = explicit_model->getExactSolution(0.0);
@@ -341,7 +344,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSolution ) {
     }
   }
   {
-    RCP<SinCosModel> implicit_model = sinCosModel();
+    RCP<VanderPolModel> implicit_model = vanderPolModel();
     pl->set("Implicit model formulation", true);
     implicit_model->setParameterList(pl);
     MEB::InArgs<double> exact_sol2 = implicit_model->getExactSolution(0.0);
@@ -365,15 +368,15 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSolution ) {
   }
 }
 
-/* x_0(t) = a + b*sin((f/L)*t+phi)
- * x_1(t) = b*(f/L)*cos((f/L)*t+phi)
- *
- * xdot_0(t) = b*(f/L)*cos((f/L)*t+phi)
- * xdot_1(t) = -b*(f/L)^2*sin((f/L)*t+phi)
- *
- * p = (a,f,L)
- */
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSensSolution ) {
+// x_0(t) = a + b*sin((f/L)*t+phi)
+// x_1(t) = b*(f/L)*cos((f/L)*t+phi)
+//
+// xdot_0(t) = b*(f/L)*cos((f/L)*t+phi)
+// xdot_1(t) = -b*(f/L)^2*sin((f/L)*t+phi)
+//
+// p = (a,f,L)
+//
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, exactSensSolution ) {
   std::vector<double> t_values;
   int N = 10;
   {
@@ -402,7 +405,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSensSolution ) {
   pl->set("IC x_1", x1);
   pl->set("IC t_0", t0);
   {
-    RCP<SinCosModel> explicit_model = sinCosModel();
+    RCP<VanderPolModel> explicit_model = vanderPolModel();
     pl->set("Implicit model formulation", false);
     explicit_model->setParameterList(pl);
     for (int i=0 ; i < as<int>(t_values.size()); ++i) {
@@ -424,7 +427,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSensSolution ) {
     }
   }
   {
-    RCP<SinCosModel> implicit_model = sinCosModel();
+    RCP<VanderPolModel> implicit_model = vanderPolModel();
     pl->set("Implicit model formulation", true);
     implicit_model->setParameterList(pl);
     for (int i=0 ; i < as<int>(t_values.size()); ++i) {
@@ -456,7 +459,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, exactSensSolution ) {
   }
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalExplicitModel ) {
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, evalExplicitModel ) {
   double a = 2.0;
   double freq = 3.0;
   double L = 4.0;
@@ -466,7 +469,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalExplicitModel ) {
   pl->set("Coeff f", freq);
   pl->set("Coeff L", L);
   { // Explicit model, just load f.
-    RCP<SinCosModel> explicit_model = sinCosModel();
+    RCP<VanderPolModel> explicit_model = vanderPolModel();
     explicit_model->setParameterList(pl);
     MEB::InArgs<double> inArgs = explicit_model->createInArgs();
     MEB::OutArgs<double> outArgs = explicit_model->createOutArgs();
@@ -489,7 +492,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalExplicitModel ) {
     TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), (freq/L)*(freq/L)*(a-5.0) );
   }
   { // Explicit model, load f and W_op
-    RCP<SinCosModel> explicit_model = sinCosModel();
+    RCP<VanderPolModel> explicit_model = vanderPolModel();
     explicit_model->setParameterList(pl);
     MEB::InArgs<double> inArgs = explicit_model->createInArgs();
     MEB::OutArgs<double> outArgs = explicit_model->createOutArgs();
@@ -523,7 +526,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalExplicitModel ) {
     TEST_EQUALITY_CONST( matrix_view(1,1), 0.0 );
   }
   { // Explicit model, just load W_op
-    RCP<SinCosModel> explicit_model = sinCosModel();
+    RCP<VanderPolModel> explicit_model = vanderPolModel();
     explicit_model->setParameterList(pl);
     MEB::InArgs<double> inArgs = explicit_model->createInArgs();
     MEB::OutArgs<double> outArgs = explicit_model->createOutArgs();
@@ -554,7 +557,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalExplicitModel ) {
 
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalImplicitModel ) {
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, evalImplicitModel ) {
   double a = 2.0;
   double freq = 3.0;
   double L = 4.0;
@@ -564,7 +567,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalImplicitModel ) {
   pl->set("Coeff f", freq);
   pl->set("Coeff L", L);
   { // Implicit model, just load f.
-    RCP<SinCosModel> implicit_model = sinCosModel();
+    RCP<VanderPolModel> implicit_model = vanderPolModel();
     implicit_model->setParameterList(pl);
     MEB::InArgs<double> inArgs = implicit_model->createInArgs();
     MEB::OutArgs<double> outArgs = implicit_model->createOutArgs();
@@ -594,7 +597,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalImplicitModel ) {
     TEST_EQUALITY_CONST( Thyra::get_ele(*f,1), 9.0 - (freq/L)*(freq/L)*(a-5.0) );
   }
   { // Implicit model, load f and W_op
-    RCP<SinCosModel> implicit_model = sinCosModel();
+    RCP<VanderPolModel> implicit_model = vanderPolModel();
     implicit_model->setParameterList(pl);
     MEB::InArgs<double> inArgs = implicit_model->createInArgs();
     MEB::OutArgs<double> outArgs = implicit_model->createOutArgs();
@@ -637,7 +640,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalImplicitModel ) {
     TEST_EQUALITY_CONST( matrix_view(1,1), 11.0 );
   }
   { // Implicit model, just load W_op
-    RCP<SinCosModel> implicit_model = sinCosModel();
+    RCP<VanderPolModel> implicit_model = vanderPolModel();
     implicit_model->setParameterList(pl);
     MEB::InArgs<double> inArgs = implicit_model->createInArgs();
     MEB::OutArgs<double> outArgs = implicit_model->createOutArgs();
@@ -677,11 +680,11 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, evalImplicitModel ) {
 
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, modelParams ) {
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, modelParams ) {
   RCP<ParameterList> pl = Teuchos::parameterList();
   pl->set("Accept model parameters", true);
   { // Explicit model, just load f.
-    RCP<SinCosModel> model = sinCosModel();
+    RCP<VanderPolModel> model = vanderPolModel();
     pl->set("Implicit model formulation", false);
     model->setParameterList(pl);
     MEB::InArgs<double> inArgs = model->createInArgs();
@@ -717,7 +720,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, modelParams ) {
     TEST_FLOATING_EQUALITY( Thyra::get_ele(*f,1), (freq/L)*(freq/L)*(a-5.0), tol );
   }
   { // Implicit model, just load f.
-    RCP<SinCosModel> model = sinCosModel();
+    RCP<VanderPolModel> model = vanderPolModel();
     pl->set("Implicit model formulation", true);
     model->setParameterList(pl);
     MEB::InArgs<double> inArgs = model->createInArgs();
@@ -761,7 +764,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, modelParams ) {
   }
 }
 
-TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, DfDp ) {
   double a = 1.0;
   double freq = 2.0;
   double L = 3.0;
@@ -779,7 +782,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
   pl->set("IC x_0", x0);
   pl->set("IC x_1", x1);
   { // Explicit model, load f and DfDp
-    RCP<SinCosModel> model = sinCosModel();
+    RCP<VanderPolModel> model = vanderPolModel();
     pl->set("Implicit model formulation", false);
     model->setParameterList(pl);
     MEB::InArgs<double> inArgs = model->createInArgs();
@@ -830,7 +833,7 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
     
   }
   { // Implicit model, load f and DfDp
-    RCP<SinCosModel> model = sinCosModel();
+    RCP<VanderPolModel> model = vanderPolModel();
     pl->set("Implicit model formulation", true);
     model->setParameterList(pl);
     MEB::InArgs<double> inArgs = model->createInArgs();
@@ -886,6 +889,47 @@ TEUCHOS_UNIT_TEST( Rythmos_SinCosModel, DfDp ) {
       TEST_EQUALITY_CONST( mv_view(1,2), +(2.0*freq2*freq2/(L2*L2*L2))*(a2-5.0) );
     }
     
+  }
+}
+*/
+
+TEUCHOS_UNIT_TEST( Rythmos_VanderPolModel, fwdIntegration ) {
+  RCP<VanderPolModel> model = vanderPolModel(true);
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
+  {
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->set("Default Max Iters",100);
+    pl->set("Default Tol",1.0e-12);
+    nlSolver->setParameterList(pl);
+  }
+  double dt = 0.0025;
+  double finalTime = 0.1;
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*ib->getValidParameters());
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
+  pl->sublist("Integration Control Strategy Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
+  pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
+  pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",dt);
+  ib->setParameterList(pl);
+  RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+  //integrator->setVerbLevel(Teuchos::VERB_EXTREME);
+  Teuchos::Array<double> time_vec;
+  Teuchos::Array<RCP<const VectorBase<double> > > x_vec;
+  //time_vec.push_back(pl->sublist("Integrator Settings").get<double>("Final Time"));
+  time_vec.push_back(finalTime);
+  integrator->getFwdPoints(time_vec,&x_vec,NULL,NULL);
+  RCP<const VectorBase<double> > x_final = x_vec[0];
+  {
+    double tol = 1.0e-2;
+    Thyra::ConstDetachedVectorView<double> x_final_view( *x_final );
+    double eps = 0.5;
+    double t = finalTime;
+    double x0 = 2*cos(t)+eps*(0.75*sin(t)-0.25*sin(3.0*t));
+    double x1 = -2*sin(t)+eps*(0.75*cos(t)-0.75*cos(3.0*t));
+    TEST_FLOATING_EQUALITY( x_final_view[0], x0, tol );
+    TEST_FLOATING_EQUALITY( x_final_view[1], x1, tol );
   }
 }
 
