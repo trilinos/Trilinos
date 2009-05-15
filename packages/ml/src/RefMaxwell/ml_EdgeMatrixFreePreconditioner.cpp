@@ -111,7 +111,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
 {
   Teuchos::ParameterList dummy, ListCoarse;
   ListCoarse=List_.get("edge matrix free: coarse",dummy);
-
+  
   /* ML Communicator */
   ML_Comm_Create(&ml_comm_);
 
@@ -242,40 +242,60 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
 // Build the edge nullspace
 Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
 {
-  /* Pull the coordinates from Teuchos */
-  double * xcoord=List_.get("x-coordinates",(double*)0);
-  double * ycoord=List_.get("y-coordinates",(double*)0);
-  double * zcoord=List_.get("z-coordinates",(double*)0);
-  dim=(xcoord!=0) + (ycoord!=0) + (zcoord!=0);
+  Epetra_MultiVector *nullspace;  
+  double ** d_coords;    
   
-  /* Sanity Checks */
-  if(dim == 0 || (!xcoord && (ycoord || zcoord) || (xcoord && !ycoord && zcoord))){
-    cerr<<"Error: Coordinates not defined.  This is *necessary* for the EdgeMatrixFreePreconditioner.\n";
-    return 0;
-  }/*end if*/
-
-  /* Normalize */
-  double d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), xcoord, xcoord, ml_comm_));
-  for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) xcoord[i] /= d1;
-  d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), ycoord, ycoord, ml_comm_));
-  for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) ycoord[i] /= d1;
-  if (dim==3) {
-    d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), zcoord, zcoord, ml_comm_));
-    for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) zcoord[i] /= d1;
+  /* Check the List - Do we have a nullspace pre-provided? */
+  string nulltype=List_.get("null space: type","default vectors");
+  double* nullvecs=List_.get("null space: vectors",(double*)0);
+  int nulldim=List_.get("null space: dimension",0);
+  if (nulltype=="pre-computed" && nullvecs && (nulldim==2 || nulldim==3)){
+    /* Build a multivector out of it */
+    if(!Comm_->MyPID()) printf("Using pre-computed nullspace\n");
+    int Ne=EdgeDomainMap_->NumMyElements();
+    dim=nulldim;
+    d_coords=new double*[dim];
+    d_coords[0]=nullvecs;
+    d_coords[1]=&nullvecs[Ne];
+    if(dim==3) d_coords[2]=&nullvecs[2*Ne];
+    nullspace=new Epetra_MultiVector(View,*EdgeDomainMap_,d_coords,dim);      
   }
+  else{
+    if(!Comm_->MyPID()) printf("Building nullspace from scratch\n");
+    /* Pull the coordinates from Teuchos */
+    double * xcoord=List_.get("x-coordinates",(double*)0);
+    double * ycoord=List_.get("y-coordinates",(double*)0);
+    double * zcoord=List_.get("z-coordinates",(double*)0);
+    dim=(xcoord!=0) + (ycoord!=0) + (zcoord!=0);    
 
-  /* Build the MultiVector */
-  double ** d_coords=new double* [dim];
-  d_coords[0]=xcoord; d_coords[1]=ycoord;
-  if(dim==3) d_coords[2]=zcoord;
-  Epetra_MultiVector e_coords(View,*NodeDomainMap_,d_coords,dim);
-
-  if(print_hierarchy) MVOUT(e_coords,"coords.dat");
-  
-  /* Build the Nullspace */
-  Epetra_MultiVector * nullspace=new Epetra_MultiVector(*EdgeDomainMap_,dim,false);  
-  D0_Clean_Matrix_->Multiply(false,e_coords,*nullspace);  
-
+    /* Sanity Checks */
+    if(dim == 0 || (!xcoord && (ycoord || zcoord) || (xcoord && !ycoord && zcoord))){
+      cerr<<"Error: Coordinates not defined.  This is *necessary* for the EdgeMatrixFreePreconditioner.\n";
+      return 0;
+    }/*end if*/
+    
+    /* Normalize */
+    double d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), xcoord, xcoord, ml_comm_));
+    for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) xcoord[i] /= d1;
+    d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), ycoord, ycoord, ml_comm_));
+    for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) ycoord[i] /= d1;
+    if (dim==3) {
+      d1 = sqrt(ML_gdot(NodeDomainMap_->NumMyElements(), zcoord, zcoord, ml_comm_));
+      for (int i = 0; i < NodeDomainMap_->NumMyElements(); i++) zcoord[i] /= d1;
+    }
+    
+    /* Build the MultiVector */
+    d_coords=new double* [dim];
+    d_coords[0]=xcoord; d_coords[1]=ycoord;
+    if(dim==3) d_coords[2]=zcoord;
+    Epetra_MultiVector e_coords(View,*NodeDomainMap_,d_coords,dim);    
+    if(print_hierarchy) MVOUT(e_coords,"coords.dat");
+    
+    /* Build the Nullspace */
+    nullspace=new Epetra_MultiVector(*EdgeDomainMap_,dim,false);  
+    D0_Clean_Matrix_->Multiply(false,e_coords,*nullspace);  
+  }
+    
   /* Nuke the BC edges */
   for(int j=0;j<dim;j++)
     for(int i=0;i<numBCedges_;i++)
