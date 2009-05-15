@@ -17,10 +17,12 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   "Enable debug code in sacado"
   ${Trilinos_ENABLE_DEBUG} )
 
-SET(Stokhos_ENABLE_Quadrature FALSE)
+SET(Stokhos_ENABLE_Quadrature_Default FALSE)
 IF(TPL_ENABLE_Dakota OR TPL_ENABLE_ForUQTK)
-  SET(Stokhos_ENABLE_Quadrature TRUE)
+  SET(Stokhos_ENABLE_Quadrature_Default TRUE)
 ENDIF()
+SET(Stokhos_ENABLE_Quadrature ${Stokhos_ENABLE_Quadrature_Default} CACHE BOOL
+    "Whether to enable quadrature routines in Stokhos")
 
 #
 # C) Add the libraries, tests, and examples
