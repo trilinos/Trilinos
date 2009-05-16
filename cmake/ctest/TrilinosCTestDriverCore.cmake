@@ -192,6 +192,9 @@ MACRO(TRILINOS_CTEST_DRIVER)
   
   # Do the tests or not (Note: must be true for coverage testing)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
+
+  # Turn off or change warnings-as-errors flag(s) (i.e. -Werror)
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_WARNINGS_AS_ERRORS_FLAGS "" )
   
   # Do coverage testing or not
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
@@ -343,6 +346,7 @@ MACRO(TRILINOS_CTEST_DRIVER)
       "-DTrilinos_ENABLE_DEPENCENCY_UNIT_TESTS:BOOL=OFF"
       "-DTrilinos_ENABLE_TESTING_UNIT_TESTS:BOOL=OFF"
       "-DTrilinos_ENABLE_TESTS:BOOL=ON"
+      "-DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING="
       "-DTrilinos_ALLOW_NO_PACKAGES:BOOL=OFF"
       )
     IF (Trilinos_ENABLE_SECONDARY_STABLE_CODE)
