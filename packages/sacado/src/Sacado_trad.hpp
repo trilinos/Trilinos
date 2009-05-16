@@ -221,13 +221,16 @@ ADcontext {
 	ADMemblock *rad_Oldcurmb;
 #endif
 	void *new_ADmemblock(size_t);
+	void do_init();
  public:
 	static const Double One, negOne;
-	ADcontext();
+	inline ADcontext() { do_init(); }
 	void *Memalloc(size_t len);
 	static void Gradcomp(int wantgrad);
 	static inline void Gradcomp() { Gradcomp(1); }
-	static void aval_reset(void);
+	static void aval_reset();
+	static void free_all();
+	static void re_init();
 	static void Weighted_Gradcomp(size_t, ADVar**, Double*);
 	static void Outvar_Gradcomp(ADVar&);
 #if RAD_REINIT > 0
@@ -559,6 +562,7 @@ ConstADvari: public ADvari<Double> {
 	RAD_REINIT_0(ConstADvari *prevcad;)
 	ConstADvari() {};	// prevent construction without value (?)
 	RAD_REINIT_0(static ConstADvari *lastcad;)
+	friend class ADcontext<Double>;
  public:
 	typedef ADvari<Double> ADVari;
 	typedef Derp<Double> DErp;
@@ -1348,8 +1352,7 @@ template<typename Double> int ADvari<Double>::zap_opno;
 template<typename Double> FILE *ADvari<Double>::debug_file;
 #endif
 
-
-template<typename Double> ADcontext<Double>::ADcontext()
+template<typename Double> void ADcontext<Double>::do_init()
 {
 	First = new ADMemblock;
 	First->next = 0;
@@ -1369,6 +1372,59 @@ template<typename Double> ADcontext<Double>::ADcontext()
 	DFree = 0;
 	DMleft = nderps = sizeof(DBusy->memblk)/sizeof(DErp);
 #endif
+	}
+
+template<typename Double> void ADcontext<Double>::free_all()
+{
+	typedef ADvari<Double> ADVari;
+	typedef ConstADvari<Double> ConstADVari;
+	ADMemblock *mb, *mb1;
+
+	for(mb = ADVari::adc.Busy; mb; mb = mb1) {
+		mb1 = mb->next;
+		delete mb;
+		}
+	for(mb = ADVari::adc.Free; mb; mb = mb1) {
+		mb1 = mb->next;
+		delete mb;
+		}
+	for(mb = ConstADVari::cadc.Busy; mb; mb = mb1) {
+		mb1 = mb->next;
+		delete mb;
+		}
+	ConstADVari::cadc.Busy  = ADVari::adc.Busy  = ADVari::adc.Free = 0;
+	ConstADVari::cadc.Mleft = ADVari::adc.Mleft = 0;
+	ConstADVari::cadc.Mbase = ADVari::adc.Mbase = 0;
+#if RAD_REINIT > 0
+	for(mb = ADVari::adc.DBusy; mb; mb = mb1) {
+		mb1 = mb->next;
+		delete mb;
+		}
+	for(mb = ADVari::adc.DFree; mb; mb = mb1) {
+		mb1 = mb->next;
+		delete mb;
+		}
+	ADVari::adc.DBusy  = ADVari::adc.DFree = 0;
+	ADVari::adc.DMleft = 0;
+	ConstADVari::cadc.Mbase = ADVari::adc.Mbase = 0;
+#else
+	ConstADVari::lastcad = 0;
+	Derp<Double>::LastDerp = 0;
+#endif
+	}
+
+template<typename Double> void ADcontext<Double>::re_init()
+{
+	typedef ADvari<Double> ADVari;
+	typedef ConstADvari<Double> ConstADVari;
+
+	if (ConstADVari::cadc.Busy || ADVari::adc.Busy || ADVari::adc.Free
+#if RAD_REINIT > 0
+		|| ADVari::adc.DBusy || ADVari::adc.DFree
+#endif
+		) free_all();
+	ADVari::adc.do_init();
+	ConstADVari::cadc.do_init();
 	}
 
 template<typename Double> void*
