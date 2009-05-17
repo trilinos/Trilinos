@@ -47,11 +47,12 @@ OPTION(${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
   )
 
 COMBINED_OPTION( Sacado_ENABLE_FEApp
-  DEP_OPTIONS_NAMES Sacado_ENABLE_Epetra Sacado_ENABLE_EpetraExt Sacado_ENABLE_EXAMPLES
+  DEP_OPTIONS_NAMES Sacado_ENABLE_Epetra Sacado_ENABLE_EpetraExt
   DOCSTR "Enables compiling FEApp example finite element application"
     " that demonstrates incorporating Sacado into a applcaitons."
-    "  Defaults to ON if Epetra, EpetraExt, and Sacado examples are enabled," 
-    "  otherwise defaults to OFF."
+    "  Defaults to ON if Epetra, and EpetraExt are enabled," 
+    " otherwise defaults to OFF.  Only takes affect when"
+    " Sacado_ENABLE_EXAMPLES=ON."
   )
 
 #
