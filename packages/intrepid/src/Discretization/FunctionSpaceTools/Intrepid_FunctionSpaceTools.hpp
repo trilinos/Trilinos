@@ -168,8 +168,8 @@ class FunctionSpaceTools {
 
   /** \brief Transformation of a divergence field in the H-div space, defined at points on a
              reference cell, stored in the user-provided container <var><b>inVals</b></var>
-             and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
-             defined on cells in physical space and indexed by (C,F,P,D).
+             and indexed by (F,P), into the output container <var><b>outVals</b></var>,
+             defined on cells in physical space and indexed by (C,F,P).
 
              Math here ...
     \code
@@ -179,7 +179,6 @@ class FunctionSpaceTools {
     |   C  |         cell         |  0 <= C < num. integration domains               |
     |   F  |         field        |  0 <= F < dim. of the basis                      |
     |   P  |         point        |  0 <= P < num. integration points                |
-    |   D  |         space dim    |  0 <= D < spatial dimension                      |
     |------|----------------------|--------------------------------------------------|
     \endcode
   */
