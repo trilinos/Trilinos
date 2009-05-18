@@ -805,8 +805,7 @@ namespace Intrepid {
           C  - num. integration domains
           F  - num. fields
           P  - num. integration points
-          D1 - first spatial (tensor) dimension index
-          D2 - second spatial (tensor) dimension index
+          D  - spatial dimension of vector data and vector fields
         \endcode
 
         \param  outputFields   [out] - Output (cross product) fields array.

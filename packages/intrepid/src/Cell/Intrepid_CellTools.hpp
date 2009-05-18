@@ -388,6 +388,8 @@ public:
         \param  nodes             [in]  - rank-3 array with dimensions (C,V,D) with the nodes of the cells
         \param  whichCell         [in]  - ordinal of the cell that defines the reference-to-physical map
         \param  cellTopo          [in]  - cell topology of the cells stored in <var>nodes</var>
+      
+        \todo  rename to mapToPhysicalFrameInv ?
     */
     template<class ArrayScalar>
     static void mapToReferenceFrame(ArrayScalar &                 refPoints,
