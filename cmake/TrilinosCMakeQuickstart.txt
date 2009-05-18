@@ -122,7 +122,8 @@ C) Configuring (Makefile Generator)
     on <PACKAGE> in this case.  This speeds up and robustifies pre-checkin
     testing.
   
-  c) Configuring Trilinos to build all packages with all tests and examples:
+  c) Configuring Trilinos to build all stable packages with all tests and
+  examples:
   
       $ ./do-configure \
          -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
@@ -134,6 +135,10 @@ C) Configuring (Makefile Generator)
   
     NOTE: All examples are enabled by default when setting
     Trilinos_ENABLE_TESTS:BOOL=ON.
+
+    NOTE: By default, setting Trilinos_ENABLE_ALL_PACKAGES=ON only enables
+    Primary Stable Code.  To have this also enable all secondary stable code,
+    you must also you must set Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON.
 
 
 (*) Selecting compiler and linker options:
