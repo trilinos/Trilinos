@@ -33,6 +33,7 @@
 #include "Epetra_Map.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Maps/Galeri_Linear.h"
+#include "Maps/Galeri_NodeCartesian2D.h"
 #include "Maps/Galeri_Cartesian2D.h"
 #include "Maps/Galeri_Cartesian3D.h"
 #include "Maps/Galeri_Random.h"
@@ -100,6 +101,61 @@ CreateMap(string MapType, Epetra_Comm& Comm, Teuchos::ParameterList& List)
 
     return(Maps::Cartesian2D(Comm, nx, ny, mx, my));
   }
+  else if (MapType == "NodeCartesian2D")
+  {
+    // Get matrix dimension
+    int nx = List.get("nx", -1);
+    int ny = List.get("ny", -1);
+
+    if (nx == -1 || ny == -1) 
+    {
+      if (n <= 0)
+          throw(Exception(__FILE__, __LINE__,
+                          "If nx or ny are not set, then n must be set"));
+
+      nx = (int)sqrt((double)n);
+      ny = nx;
+      if (nx * ny != n) 
+        throw(Exception(__FILE__, __LINE__,
+                        "The number of global elements (n) must be",
+                        "a perfect square, otherwise set nx and ny"));
+    }
+
+    // Get the number of nodes
+    int NumNodes = List.get("number of nodes",-1);
+    int MyNodeID = List.get("node id",-1);
+    int ndx = List.get("ndx", -1);
+    int ndy = List.get("ndy", -1);
+    if (ndx == -1 || ndy == -1) 
+    {
+      ndx = (int)(sqrt((double)(NumNodes+.001)));
+      ndy = NumNodes/ndx;
+      while ( (ndx*ndy) != NumNodes ) {
+        ndx--;
+        ndy = NumNodes/ndx;
+      }
+    } 
+
+    // Get the number of processors per node
+    Epetra_Comm * NodeComm= List.get("node communicator",(Epetra_Comm*)0);
+    int px = List.get("px", -1);
+    int py = List.get("py", -1);
+    if (px == -1 || py == -1) 
+    {
+      px = (int)(sqrt((double)(NodeComm->NumProc()+.001)));
+      py = NodeComm->NumProc()/px;
+
+      // simple attempt at trying to find an ndx and ndy such 
+      // ndx*ndy = NumNodes
+
+      while ( (px*py) != NodeComm->NumProc() ) {
+        px--;
+        py = NodeComm->NumProc()/px;
+      }
+    } 
+  
+    return(Maps::NodeCartesian2D(Comm, *NodeComm, MyNodeID, nx, ny, ndx, ndy, px,py));
+  }  
   else if (MapType == "Cartesian3D")
   {
     // Get matrix dimension

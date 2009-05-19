@@ -68,6 +68,7 @@ SET(HEADERS ${HEADERS}
   Maps/Galeri_Random.h
   Maps/Galeri_Cartesian2D.h
   Maps/Galeri_Cartesian3D.h
+  Maps/Galeri_NodeCartesian2D.h
   )
 
 #

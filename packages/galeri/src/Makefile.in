@@ -252,6 +252,7 @@ CORE_H = $(srcdir)/Galeri_Version.h                    \
 	 $(srcdir)/Maps/Galeri_Random.h                \
          $(srcdir)/Maps/Galeri_Cartesian2D.h           \
          $(srcdir)/Maps/Galeri_Cartesian3D.h           \
+         $(srcdir)/Maps/Galeri_NodeCartesian2D.h       \
 	 $(srcdir)/CrsMatrices/Galeri_BigCross2D.h        \
 	 $(srcdir)/CrsMatrices/Galeri_BigStar2D.h         \
 	 $(srcdir)/CrsMatrices/Galeri_Cauchy.h            \
