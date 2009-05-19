@@ -10,7 +10,7 @@ SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME SERIAL_DEBUG)
 
 # Exclude Sundance because of strange segfault (see bug 4382)
-SET( Trilinos_EXCLUDE_PACKAGES Sundance )
+SET(Trilinos_EXCLUDE_PACKAGES Sundance)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=600"
