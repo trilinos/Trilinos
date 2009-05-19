@@ -4,16 +4,8 @@ use File::Copy;
 use File::Compare;
 
 ##############################################################################
-sub print_time {
-    my $fp = shift;
-    my @abbr = qw( Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec );
-    ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
-    $year += 1900;
-    $tt = sprintf("%02d:%02d:%02d", $hour, $min, $sec);
-    print $fp $mday, $abbr[$mon], $year, " ", $tt, "\n";
-}
-
 ##############################################################################
+### Remove white-space from a file.
 sub nowhite($) {
   my $file = $_[0];
   for ($file) {
