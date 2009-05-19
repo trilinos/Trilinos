@@ -27,20 +27,23 @@ sub nowhite($) {
 
 ### Check command line arguments.
 ### Usage:  ctest_zoltan.pl #processors.
-print "DEBUG  ";
 foreach $argnum (0 .. $#ARGV) {
    print "$ARGV[$argnum]";
 }
 print "\n";
 
 $numArgs = $#ARGV + 1;
-if ($numArgs != 1) {
-  print "Usage:  ctest_zoltan.pl #processors\n";
+if ($numArgs < 1) {
+  print "Usage:  ctest_zoltan.pl #processors [debug]\n";
   exit -1;
 }
 
 ### Get number of processors
 $np = $ARGV[0];
+
+### Get debug level for ctest_zoltan.pl.
+$debug = 0;
+if ($numArgs > 1) {$debug = $ARGV[1];}
 
 ### Assign the executable.
 $zdrive = "../../src/driver/zdrive";
@@ -56,10 +59,16 @@ $dirname = $tmparr[-1];
 $dirname =~ s/ch_//g;
 $dirname =~ s/hg_//g;
 $dirname =~ s/nem_//g;
-print "DEBUG  Dir $dir dirname $dirname\n";
 $zoutfilebase = sprintf("%s.out.%d.", $dirname, $np);
 $zoutdropbase = sprintf("%s.drops.%d.", $dirname, $np);
-print "DEBUG  Outfilebase: $zoutfilebase;  Dropbase: $zoutdropbase\n";
+if ($debug) {
+  print "DEBUG  Dir $dir dirname $dirname\n";
+  print "DEBUG  Outfilebase: $zoutfilebase;  Dropbase: $zoutdropbase\n";
+}
+
+### Open a logfile
+$zoutlogfile = sprintf("%s.logfile", $dirname);
+open(LOG, "> $zoutlogfile");
 
 ### Get list of input files
 @inpfiles = glob("zdrive.inp.*");
@@ -71,33 +80,39 @@ $passcnt = 0;
 
 ### For each zdrive.inp file, run the test.
 foreach $file (@inpfiles) {
-  print "DEBUG  Running test $testcnt on $file\n";
+  if ($debug) {print "DEBUG  Running test $testcnt on $file\n";}
 
-  # Remove zdrive output files from previous runs.
+  ### Remove zdrive output files from previous runs.
   system("/bin/rm -f $zoutfilebase*");
   system("/bin/rm -f $zoutdropbase*");
 
-  # Create filenames for soon-to-be-created zdrive output files.
+  ### Create filenames for soon-to-be-created zdrive output files.
   $testname = $file;
   $testname =~ s/zdrive\.inp\.//g;
-  print "DEBUG  Test name:  $testname\n";
 
   $archfilebase = sprintf("%s.%s.%s.", $dirname, $testname, $np);
   $archdropbase = sprintf("%s.%s.drops.%s.", $dirname, $testname, $np);
-  print "DEBUG  Archfilebase: $archfilebase; Dropbase: $archdropbase\n";
+  if ($debug) {
+    print "DEBUG  Test name:  $testname\n";
+    print "DEBUG  Archfilebase: $archfilebase; Dropbase: $archdropbase\n";
+  }
 
-  # Execute zdrive.exe.
+  ### Execute zdrive.exe.
+  $zouterrfile = sprintf("%s.%s.%s.outerr", $dirname, $testname, $np);
   if ($np > 1) {
-    @cmd = ("mpiexec", "-np", $np, $zdrive, $file);
+    $cmd = sprintf("mpiexec -np %d %s %s | tee %s\n", $np, $zdrive, $file, 
+                   $zouterrfile);
   }
   else {
-    @cmd = ($zdrive, $file);
+    $cmd = ("%s %s | tee %s\n", $zdrive, $file, $zouterrfile);
   }
-  print "DEBUG Executing now:  @cmd\n";
+  if ($debug) {print "DEBUG Executing now:  $cmd\n";}
+  ### Perhaps should collect the result from zdrive.
   system(@cmd);
 
   ### Copy zdrive output files to output directory.
   $failed = 0;
+  copy($zouterrfile, "output/$zouterrfile");
   foreach $ii (0..$np-1) {
     $zoutfile = sprintf("%s%d", $zoutfilebase, $ii);
     $zoutdrop = sprintf("%s%d", $zoutdropbase, $ii);
@@ -110,25 +125,26 @@ foreach $file (@inpfiles) {
 
     ### Diff the zdrive output files with the accepted answer.
     ### File comparison, ignoring whitespace.
-    print "DEBUG comparing files:  $answfile $archfile\n";
+    if ($debug) {print "DEBUG comparing files:  $answfile $archfile\n";}
     $result = compare($archfile,$answfile,sub{nowhite($_[0]) ne nowhite($_[1])});
     if ($result != 0) {
       $failed = 1;
     }
-    print "DEBUG COMPARISON $result   $failed\n";
+    if ($debug) {print "DEBUG COMPARISON $result   $failed\n";}
 
     ### Need to add drop-test comparison here, too.
   }
   if ($failed) {
-    print "Test $dirname:$testname FAILED\n";
+    print LOG "Test $dirname:$testname FAILED\n";
     $failcnt++;
   }
   else {
-    print "Test $dirname:$testname PASSED\n";
+    print LOG "Test $dirname:$testname PASSED\n";
     $passcnt++;
   }
   $testcnt++;
 }
 
-print "Test $dirname:  $passcnt out of $testcnt tests PASSED.\n";
-print "Test $dirname:  $failcnt out of $testcnt tests FAILED.\n";
+print LOG "Test $dirname:  $passcnt out of $testcnt tests PASSED.\n";
+print LOG "Test $dirname:  $failcnt out of $testcnt tests FAILED.\n";
+close(LOG);
