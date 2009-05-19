@@ -4,10 +4,11 @@ INCLUDE(PackageCopyFilesToBinaryDir)
 
 # Copy all zdrive.inp* files to executable directory.
 FILE(GLOB ZDRIVE_INP RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} zdrive.inp.*)
+FILE(GLOB HIER_INP RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} hier*.inp)
 FILE(GLOB ANSWERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} answers/*)
 
 PACKAGE_ADD_ADVANCED_TEST(
-  ch_simple_parallel_zoltan
+  ch_simple_zoltan_parallel
   # Test Native Zoltan algorithms
   TEST_0 CMND ../ctest_zoltan.pl ARGS 4 Zoltan 1
   COMM mpi
@@ -17,7 +18,7 @@ PACKAGE_ADD_ADVANCED_TEST(
 
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
 PACKAGE_ADD_ADVANCED_TEST(
-  ch_simple_parallel_parmetis
+  ch_simple_parmetis_parallel
   # Test ParMETIS algorithms
   TEST_0 CMND ../ctest_zoltan.pl ARGS 4 ParMETIS 1
   COMM mpi
@@ -28,7 +29,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Scotch)
 PACKAGE_ADD_ADVANCED_TEST(
-  ch_simple_parallel_scotch
+  ch_simple_scotch_parallel
   # Test Scotch algorithms
   TEST_0 CMND ../ctest_zoltan.pl ARGS 4 Scotch 1
   COMM mpi
@@ -38,7 +39,7 @@ PACKAGE_ADD_ADVANCED_TEST(
 ENDIF()
 
 PACKAGE_ADD_ADVANCED_TEST(
-  ch_simple_serial_zoltan
+  ch_simple_zoltan_serial
   # Test Native Zoltan algorithms
   TEST_0 CMND ../ctest_zoltan.pl ARGS 1 Zoltan 1
   COMM serial
@@ -48,7 +49,7 @@ PACKAGE_ADD_ADVANCED_TEST(
 
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
 PACKAGE_ADD_ADVANCED_TEST(
-  ch_simple_serial_parmetis
+  ch_simple_parmetis_serial
   # Test ParMETIS algorithms
   TEST_0 CMND ../ctest_zoltan.pl ARGS 1 ParMETIS 1
   COMM serial
@@ -59,7 +60,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Scotch)
 PACKAGE_ADD_ADVANCED_TEST(
-  ch_simple_serial_scotch
+  ch_simple_scotch_serial
   # Test Scotch algorithms
   TEST_0 CMND ../ctest_zoltan.pl ARGS 1 Scotch 1
   COMM serial
@@ -70,7 +71,7 @@ ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_PaToH)
 PACKAGE_ADD_ADVANCED_TEST(
-  ch_simple_serial_patoh
+  ch_simple_patoh_serial
   # Test PaToH algorithms
   TEST_0 CMND ../ctest_zoltan.pl ARGS 1 PaToH 1
   COMM serial
@@ -109,6 +110,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveChSimpleCopyFiles
     simple.coords
     ../ctest_zoltan.pl
     ${ZDRIVE_INP}
+    ${HIER_INP}
     ${ANSWERS}
   EXEDEPS zdrive
   NOEXEPREFIX

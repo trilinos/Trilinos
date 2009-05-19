@@ -74,6 +74,9 @@ if ($debug) {
 ### Open a logfile
 $zoutlogfile = sprintf("%s.%s.logfile", $dirname, $package);
 open(LOG, "> $zoutlogfile");
+$time = localtime;
+print LOG "$time\n";
+
 
 ### If output subdirectory does not exist, create it.
 mkdir "output" unless -d "output";
@@ -203,4 +206,6 @@ if ($failcnt > 0) {
   print LOG "Test $dirname:  $failcnt out of $testcnt tests FAILED.\n";
   print "Test $dirname:  $failcnt out of $testcnt tests FAILED.\n";
 }
+$time = localtime;
+print LOG "$time\n";
 close(LOG);
