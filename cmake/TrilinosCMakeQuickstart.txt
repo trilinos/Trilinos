@@ -488,21 +488,22 @@ C) Configuring (Makefile Generator)
   configuration problems
 
 
-(*) Getting verbose output from the makefile
+(*) Getting verbose output from the makefile:
 
     $ ./do_configure -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE
 
 
-(*) Getting very verbose output from configure
+(*) Getting very verbose output from configure:
 
     $ ./do_configure -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON --debug-output --trace
 
   NOTE: This will print a complete stack trace to show exactly where you are.
 
 
-(*) Disabling framework level dependency tests
+(*) Disabling framework level dependency tests:
 
-    -D Trilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF
+    -D Trilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF \
+    -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF
 
   NOTE: Above will disable the Trilinos framework-level dependency unit tests
   which have names like TrilinosDep_* and TrilinosOutputDep_*.  You should turn
