@@ -64,7 +64,8 @@ target_triplet = @target@
 bin_PROGRAMS = RCP_test$(EXEEXT) Ptr_test$(EXEEXT) \
 	ArrayRCP_test$(EXEEXT) Array_test$(EXEEXT) \
 	ArrayView_test$(EXEEXT) Tuple_test$(EXEEXT) \
-	MemoryManagement_UnitTests$(EXEEXT) $(am__EXEEXT_1)
+	MemoryManagement_UnitTests$(EXEEXT) \
+	SimpleObjTbl_UnitTests$(EXEEXT) $(am__EXEEXT_1)
 @HAVE_GCC_CHECKEDSTL_FALSE@GCC_CheckedSTL_UnitTests_DEPENDENCIES =
 subdir = test/MemoryManagement
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -136,6 +137,9 @@ am_Ptr_test_OBJECTS = Ptr_test.$(OBJEXT) $(am__objects_1)
 Ptr_test_OBJECTS = $(am_Ptr_test_OBJECTS)
 am_RCP_test_OBJECTS = RCP_test.$(OBJEXT) $(am__objects_1)
 RCP_test_OBJECTS = $(am_RCP_test_OBJECTS)
+am_SimpleObjTbl_UnitTests_OBJECTS = SimpleObjTbl_UnitTests.$(OBJEXT) \
+	$(am__objects_2) $(am__objects_1)
+SimpleObjTbl_UnitTests_OBJECTS = $(am_SimpleObjTbl_UnitTests_OBJECTS)
 am_Tuple_test_OBJECTS = Tuple_test.$(OBJEXT)
 Tuple_test_OBJECTS = $(am_Tuple_test_OBJECTS)
 DEFAULT_INCLUDES = -I. -I$(top_builddir)/src@am__isrc@
@@ -149,12 +153,14 @@ CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 SOURCES = $(ArrayRCP_test_SOURCES) $(ArrayView_test_SOURCES) \
 	$(Array_test_SOURCES) $(GCC_CheckedSTL_UnitTests_SOURCES) \
 	$(MemoryManagement_UnitTests_SOURCES) $(Ptr_test_SOURCES) \
-	$(RCP_test_SOURCES) $(Tuple_test_SOURCES)
+	$(RCP_test_SOURCES) $(SimpleObjTbl_UnitTests_SOURCES) \
+	$(Tuple_test_SOURCES)
 DIST_SOURCES = $(ArrayRCP_test_SOURCES) $(ArrayView_test_SOURCES) \
 	$(Array_test_SOURCES) \
 	$(am__GCC_CheckedSTL_UnitTests_SOURCES_DIST) \
 	$(MemoryManagement_UnitTests_SOURCES) $(Ptr_test_SOURCES) \
-	$(RCP_test_SOURCES) $(Tuple_test_SOURCES)
+	$(RCP_test_SOURCES) $(SimpleObjTbl_UnitTests_SOURCES) \
+	$(Tuple_test_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -317,6 +323,13 @@ MemoryManagement_UnitTests_SOURCES = \
 
 MemoryManagement_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 MemoryManagement_UnitTests_LDADD = $(TEUCHOS_LIBS)
+SimpleObjTbl_UnitTests_SOURCES = \
+  $(srcdir)/SimpleObjTbl_UnitTests.cpp \
+  $(unit_test_common_sources) \
+  $(common_sources)
+
+SimpleObjTbl_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+SimpleObjTbl_UnitTests_LDADD = $(TEUCHOS_LIBS)
 @HAVE_GCC_CHECKEDSTL_TRUE@GCC_CheckedSTL_UnitTests_SOURCES = $(srcdir)/GCC_CheckedSTL_UnitTests.cpp \
 @HAVE_GCC_CHECKEDSTL_TRUE@  $(common_sources)
 
@@ -407,6 +420,9 @@ Ptr_test$(EXEEXT): $(Ptr_test_OBJECTS) $(Ptr_test_DEPENDENCIES)
 RCP_test$(EXEEXT): $(RCP_test_OBJECTS) $(RCP_test_DEPENDENCIES) 
 	@rm -f RCP_test$(EXEEXT)
 	$(CXXLINK) $(RCP_test_OBJECTS) $(RCP_test_LDADD) $(LIBS)
+SimpleObjTbl_UnitTests$(EXEEXT): $(SimpleObjTbl_UnitTests_OBJECTS) $(SimpleObjTbl_UnitTests_DEPENDENCIES) 
+	@rm -f SimpleObjTbl_UnitTests$(EXEEXT)
+	$(CXXLINK) $(SimpleObjTbl_UnitTests_OBJECTS) $(SimpleObjTbl_UnitTests_LDADD) $(LIBS)
 Tuple_test$(EXEEXT): $(Tuple_test_OBJECTS) $(Tuple_test_DEPENDENCIES) 
 	@rm -f Tuple_test$(EXEEXT)
 	$(CXXLINK) $(Tuple_test_OBJECTS) $(Tuple_test_LDADD) $(LIBS)
@@ -431,6 +447,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RCPNodeHandle_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RCP_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/RCP_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/SimpleObjTbl_UnitTests.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/TestClasses.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Teuchos_StandardUnitTestMain.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Tuple_test.Po@am__quote@
@@ -672,6 +689,20 @@ RCP_test.obj: $(srcdir)/RCP_test.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/RCP_test.cpp' object='RCP_test.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o RCP_test.obj `if test -f '$(srcdir)/RCP_test.cpp'; then $(CYGPATH_W) '$(srcdir)/RCP_test.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/RCP_test.cpp'; fi`
+
+SimpleObjTbl_UnitTests.o: $(srcdir)/SimpleObjTbl_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SimpleObjTbl_UnitTests.o -MD -MP -MF $(DEPDIR)/SimpleObjTbl_UnitTests.Tpo -c -o SimpleObjTbl_UnitTests.o `test -f '$(srcdir)/SimpleObjTbl_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/SimpleObjTbl_UnitTests.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/SimpleObjTbl_UnitTests.Tpo $(DEPDIR)/SimpleObjTbl_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SimpleObjTbl_UnitTests.cpp' object='SimpleObjTbl_UnitTests.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SimpleObjTbl_UnitTests.o `test -f '$(srcdir)/SimpleObjTbl_UnitTests.cpp' || echo '$(srcdir)/'`$(srcdir)/SimpleObjTbl_UnitTests.cpp
+
+SimpleObjTbl_UnitTests.obj: $(srcdir)/SimpleObjTbl_UnitTests.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT SimpleObjTbl_UnitTests.obj -MD -MP -MF $(DEPDIR)/SimpleObjTbl_UnitTests.Tpo -c -o SimpleObjTbl_UnitTests.obj `if test -f '$(srcdir)/SimpleObjTbl_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/SimpleObjTbl_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SimpleObjTbl_UnitTests.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/SimpleObjTbl_UnitTests.Tpo $(DEPDIR)/SimpleObjTbl_UnitTests.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/SimpleObjTbl_UnitTests.cpp' object='SimpleObjTbl_UnitTests.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o SimpleObjTbl_UnitTests.obj `if test -f '$(srcdir)/SimpleObjTbl_UnitTests.cpp'; then $(CYGPATH_W) '$(srcdir)/SimpleObjTbl_UnitTests.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/SimpleObjTbl_UnitTests.cpp'; fi`
 
 Tuple_test.o: $(srcdir)/Tuple_test.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Tuple_test.o -MD -MP -MF $(DEPDIR)/Tuple_test.Tpo -c -o Tuple_test.o `test -f '$(srcdir)/Tuple_test.cpp' || echo '$(srcdir)/'`$(srcdir)/Tuple_test.cpp

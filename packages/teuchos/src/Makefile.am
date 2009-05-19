@@ -140,6 +140,7 @@ CORE_H = \
 	$(srcdir)/Teuchos_SerializationTraitsHelpers.hpp \
 	$(srcdir)/Teuchos_Serializer.hpp \
 	$(srcdir)/Teuchos_SerializerHelpers.hpp \
+	$(srcdir)/Teuchos_SimpleObjectTable.hpp \
 	$(srcdir)/Teuchos_StandardCatchMacros.hpp \
 	$(srcdir)/Teuchos_StandardCompositionMacros.hpp \
 	$(srcdir)/Teuchos_StandardMemberCompositionMacros.hpp \

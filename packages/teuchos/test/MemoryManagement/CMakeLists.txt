@@ -21,6 +21,18 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  SimpleObjTbl_UnitTests
+  SOURCES
+    SimpleObjTbl_UnitTests.cpp
+    TestClasses.cpp
+    ../UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  ARGS --teuchos-suppress-startup-banner
+  STANDARD_PASS_OUTPUT
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ArrayRCP_test  
   SOURCES ArrayRCP_test.cpp
   COMM serial mpi

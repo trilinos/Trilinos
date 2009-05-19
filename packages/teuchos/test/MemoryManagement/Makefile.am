@@ -36,7 +36,8 @@ endif
 
 
 bin_PROGRAMS = RCP_test Ptr_test ArrayRCP_test Array_test \
-  ArrayView_test Tuple_test MemoryManagement_UnitTests $(GCC_CHECKEDSTL_EXE_NAME)
+  ArrayView_test Tuple_test MemoryManagement_UnitTests SimpleObjTbl_UnitTests \
+  $(GCC_CHECKEDSTL_EXE_NAME)
 
 RCP_test_SOURCES = $(srcdir)/RCP_test.cpp $(common_sources)
 RCP_test_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
@@ -75,6 +76,13 @@ MemoryManagement_UnitTests_SOURCES = \
   $(common_sources)
 MemoryManagement_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
 MemoryManagement_UnitTests_LDADD = $(TEUCHOS_LIBS)
+
+SimpleObjTbl_UnitTests_SOURCES = \
+  $(srcdir)/SimpleObjTbl_UnitTests.cpp \
+  $(unit_test_common_sources) \
+  $(common_sources)
+SimpleObjTbl_UnitTests_DEPENDENCIES = $(top_builddir)/src/libteuchos.a
+SimpleObjTbl_UnitTests_LDADD = $(TEUCHOS_LIBS)
 
 if HAVE_GCC_CHECKEDSTL
   GCC_CheckedSTL_UnitTests_SOURCES = $(srcdir)/GCC_CheckedSTL_UnitTests.cpp \
