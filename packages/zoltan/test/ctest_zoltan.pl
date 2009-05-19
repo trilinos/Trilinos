@@ -34,17 +34,21 @@ foreach $argnum (0 .. $#ARGV) {
 print "\n";
 
 $numArgs = $#ARGV + 1;
-if ($numArgs < 1) {
-  print "Usage:  ctest_zoltan.pl #processors [debug]\n";
+if ($numArgs < 2) {
+  print "Usage:  ctest_zoltan.pl #processors package [debug]\n";
   exit -1;
 }
+
+### Get debug level for ctest_zoltan.pl.
+$debug = 0;
+if ($numArgs > 1) {$debug = $ARGV[2];}
 
 ### Get number of processors
 $np = $ARGV[0];
 
-### Get debug level for ctest_zoltan.pl.
-$debug = 0;
-if ($numArgs > 1) {$debug = $ARGV[1];}
+### Get the package number indicating which tests to run.
+$package = $ARGV[1];
+if ($debug) {print "DEBUG:  package $package\n";}
 
 ### Assign the executable.
 $zdrive = "../../src/driver/zdrive.exe";
@@ -68,14 +72,43 @@ if ($debug) {
 }
 
 ### Open a logfile
-$zoutlogfile = sprintf("%s.logfile", $dirname);
+$zoutlogfile = sprintf("%s.%s.logfile", $dirname, $package);
 open(LOG, "> $zoutlogfile");
 
 ### If output subdirectory does not exist, create it.
 mkdir "output" unless -d "output";
 
 ### Get list of input files
-@inpfiles = glob("zdrive.inp.*");
+print "KDDKDD $package\n";
+if ($package eq "Zoltan") {
+  ###  Zoltan native algorithms
+  @inpfiles = glob("zdrive.inp.rcb* 
+                    zdrive.inp.rib*
+                    zdrive.inp.reftree* 
+                    zdrive.inp.hsfc*
+                    zdrive.inp.oct*
+                    zdrive.inp.phg* 
+                    zdrive.inp.color*
+                    zdrive.inp.block*
+                    zdrive.inp.random* 
+                    zdrive.inp.graph
+                    zdrive.inp.graph-re*
+                    zdrive.inp.graph-partition");
+} 
+if ($package eq "ParMETIS") {
+  ### ParMETIS tests
+  @inpfiles = glob("zdrive.inp.ada* 
+                    zdrive.inp.part* 
+                    zdrive.inp.*metis*");
+} 
+if ($package eq "Scotch") {
+  ### Scotch tests
+  @inpfiles = glob("zdrive.inp.*scotch*");
+} 
+if ($package eq "PaToH") {
+  ### PaToH tests
+  @inpfiles = glob("zdrive.inp.*patoh*");
+}
 
 ### Set test counters
 $testcnt = 0;
