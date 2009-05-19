@@ -24,9 +24,10 @@ sub nowhite($) {
 }
 
 ##############################################################################
+##############################################################################
 
 ### Check command line arguments.
-### Usage:  ctest_zoltan.pl #processors.
+### Usage:  ctest_zoltan.pl #processors [debug].
 foreach $argnum (0 .. $#ARGV) {
    print "$ARGV[$argnum]";
 }
@@ -46,7 +47,7 @@ $debug = 0;
 if ($numArgs > 1) {$debug = $ARGV[1];}
 
 ### Assign the executable.
-$zdrive = "../../src/driver/zdrive";
+$zdrive = "../../src/driver/zdrive.exe";
 
 ### Get current working directory name
 use Cwd;
@@ -70,6 +71,9 @@ if ($debug) {
 $zoutlogfile = sprintf("%s.logfile", $dirname);
 open(LOG, "> $zoutlogfile");
 
+### If output subdirectory does not exist, create it.
+mkdir "output" unless -d "output";
+
 ### Get list of input files
 @inpfiles = glob("zdrive.inp.*");
 
@@ -83,8 +87,8 @@ foreach $file (@inpfiles) {
   if ($debug) {print "DEBUG  Running test $testcnt on $file\n";}
 
   ### Remove zdrive output files from previous runs.
-  system("/bin/rm -f $zoutfilebase*");
-  system("/bin/rm -f $zoutdropbase*");
+  unlink glob("$zoutfilebase*");
+  unlink glob("$zoutdropbase*");
 
   ### Create filenames for soon-to-be-created zdrive output files.
   $testname = $file;
@@ -107,8 +111,8 @@ foreach $file (@inpfiles) {
     $cmd = ("%s %s | tee %s\n", $zdrive, $file, $zouterrfile);
   }
   if ($debug) {print "DEBUG Executing now:  $cmd\n";}
-  ### Perhaps should collect the result from zdrive.
-  system(@cmd);
+  $result = system($cmd);
+  if ($debug) {print "DEBUG system results $result\n";}
 
   ### Copy zdrive output files to output directory.
   $failed = 0;
@@ -120,31 +124,50 @@ foreach $file (@inpfiles) {
     $archdrop = sprintf("output/%s%d", $archdropbase, $ii);
     $answfile = sprintf("answers/%s%d", $archfilebase, $ii);
     $answdrop = sprintf("answers/%s%d", $archdropbase, $ii);
-    copy($zoutfile, $archfile);
-    copy($zoutdrop, $archdrop);
+    if ($debug) {print "DEBUG copying files:  $zoutfile $archfile\n";}
+    if (-e "$zoutfile") {
+      copy($zoutfile, $archfile);
 
-    ### Diff the zdrive output files with the accepted answer.
-    ### File comparison, ignoring whitespace.
-    if ($debug) {print "DEBUG comparing files:  $answfile $archfile\n";}
-    $result = compare($archfile,$answfile,sub{nowhite($_[0]) ne nowhite($_[1])});
-    if ($result != 0) {
+      ### Diff the zdrive output files with the accepted answer.
+      ### File comparison, ignoring whitespace.
+      if ($debug) {print "DEBUG comparing files:  $answfile $archfile\n";}
+      $result = compare($archfile,$answfile,sub{nowhite($_[0]) ne nowhite($_[1])});
+      if ($result != 0) {$failed = 1;}
+    }
+    else {
+      ### Failure if no output files.
       $failed = 1;
+    }  
+
+    ### Diff the drop test output files (if any) with the accepted answer.
+    ### File comparison, ignoring whitespace.
+    if (-e "$zoutdrop") {
+      copy($zoutdrop, $archdrop);
+      if ($debug) {print "DEBUG comparing files:  $answdrop $archdrop\n";}
+      $result = compare($archdrop,$answdrop,sub{nowhite($_[0]) ne nowhite($_[1])});
+      if ($result != 0) {$failed = 1;}
     }
     if ($debug) {print "DEBUG COMPARISON $result   $failed\n";}
-
-    ### Need to add drop-test comparison here, too.
   }
+
   if ($failed) {
     print LOG "Test $dirname:$testname FAILED\n";
+    print "Test $dirname:$testname FAILED\n";
     $failcnt++;
   }
   else {
     print LOG "Test $dirname:$testname PASSED\n";
+    print "Test $dirname:$testname PASSED\n";
     $passcnt++;
   }
+
   $testcnt++;
 }
 
 print LOG "Test $dirname:  $passcnt out of $testcnt tests PASSED.\n";
-print LOG "Test $dirname:  $failcnt out of $testcnt tests FAILED.\n";
+print "Test $dirname:  $passcnt out of $testcnt tests PASSED.\n";
+if ($failcnt > 0) {
+  print LOG "Test $dirname:  $failcnt out of $testcnt tests FAILED.\n";
+  print "Test $dirname:  $failcnt out of $testcnt tests FAILED.\n";
+}
 close(LOG);
