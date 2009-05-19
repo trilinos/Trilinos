@@ -136,7 +136,7 @@ foreach $file (@inpfiles) {
                    $zouterrfile);
   }
   else {
-    $cmd = ("%s %s | tee %s\n", $zdrive, $file, $zouterrfile);
+    $cmd = sprintf("%s %s | tee %s\n", $zdrive, $file, $zouterrfile);
   }
   if ($debug) {print "DEBUG Executing now:  $cmd\n";}
   $result = system($cmd);
@@ -160,12 +160,18 @@ foreach $file (@inpfiles) {
       ### File comparison, ignoring whitespace.
       if ($debug) {print "DEBUG comparing files:  $answfile $archfile\n";}
       $result = compare($archfile,$answfile,sub{nowhite($_[0]) ne nowhite($_[1])});
-      if ($result != 0) {$failed = 1;}
+      if ($result != 0) {$failed++;}
     }
     else {
       ### Failure if no output files.
-      $failed = 1;
+      $failed = -1;
+      last;
     }  
+    if (!(-e "$answfile")) {
+      ### Failure if no answer files.
+      $failed = -2;
+      last;
+    }
 
     ### Diff the drop test output files (if any) with the accepted answer.
     ### File comparison, ignoring whitespace.
@@ -178,9 +184,16 @@ foreach $file (@inpfiles) {
     if ($debug) {print "DEBUG COMPARISON $result   $failed\n";}
   }
 
-  if ($failed) {
-    print LOG "Test $dirname:$testname FAILED\n";
-    print "Test $dirname:$testname FAILED\n";
+  if ($failed ne 0) {
+    $reason = "(Diff failed on $failed files)";
+    if ($failed == -1) {
+      $reason = "(Missing output files)";
+    }
+    if ($failed == -2) {
+      $reason = "(Missing answer files)";
+    }
+    print LOG "Test $dirname:$testname FAILED $reason\n";
+    print "Test $dirname:$testname FAILED $reason\n";
     $failcnt++;
   }
   else {
