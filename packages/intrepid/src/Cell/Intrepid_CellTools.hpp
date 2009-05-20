@@ -46,6 +46,7 @@
 #include "Intrepid_HGRAD_TET_C1_FEM.hpp"
 #include "Intrepid_HGRAD_WEDGE_C1_FEM.hpp"
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
+#include "Intrepid_HGRAD_LINE_C1_FEM.hpp"
 
 #include "Shards_CellTopology.hpp"
 #include "Shards_BasicTopologies.hpp"
