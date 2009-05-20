@@ -31,8 +31,11 @@
 #define GALERI_NODECARTESIAN2D_H
 #include "Galeri_Exception.h"
 #include "Galeri_Utils.h"
+#ifndef HAVE_MPI
 #include "Epetra_Comm.h"
+#else
 #include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_Map.h"
 
 namespace Galeri {
