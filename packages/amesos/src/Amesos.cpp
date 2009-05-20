@@ -300,7 +300,7 @@ Teuchos::ParameterList Amesos::GetValidParameters(){
   ParamList.set("MaxProcs", -1 ) ; 
   ParamList.set("MatrixProperty","general" ) ; 
   ParamList.set("ScaleMethod", 0 ) ; 
-  ParamList.set("Reindex", 0 ) ; 
+  ParamList.set("Reindex", false ) ; 
 
 
   //  Klu Parameters
