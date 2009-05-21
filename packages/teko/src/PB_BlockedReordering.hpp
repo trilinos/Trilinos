@@ -100,6 +100,20 @@ public:
      */
    virtual void SetBlock(int blockIndex,int reorder);
 
+   /** \brief Set the subblock to a use a particular reorder
+     *        manager.
+     *
+     * Set the subblock to a use a particular reorder
+     * manager. This facilitates recursive construction algorithms
+     * where the base case is not differentiated.
+     *
+     * \param[in] blockIndex Subblock to be set
+     * \param[in] reorder Reorder manager to be used in this block
+     * 
+     * \pre <code>blockIndex<this->GetNumBlocks()</code>
+     */
+   virtual void SetBlock(int blockIndex,const Teuchos::RCP<BlockReorderManager> & reorder);
+
    /** \brief Get a particular block. If there is no block at this 
      *        index location return a new one.
      *
@@ -306,6 +320,19 @@ buildFlatMultiVector(const BlockReorderManager & mgr,
 Teuchos::RCP<const Thyra::MultiVectorBase<double> >
 buildFlatMultiVector(const BlockReorderManager & mgr,
                      const Teuchos::RCP<const Thyra::ProductMultiVectorBase<double> > & blkVec);
+
+/** \brief Convert a string to a block reorder manager object
+  *
+  * Convert a string to a block reorder manager object. These
+  * strings have numbers delimted by [,]. For example,
+  * the string "[[2 1] 0]" will give a manager with [2 1] in the
+  * first block and 0 in the second block.
+  *
+  * \param[in] reorder Block structure corresponding to the manager
+  *
+  * \returns A block reorder manager with the requested structure
+  */
+Teuchos::RCP<const BlockReorderManager> blockedReorderFromString(std::string & reorder);
 
 //@}
 
