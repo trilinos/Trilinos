@@ -19,7 +19,7 @@ sub nowhite($) {
 ##############################################################################
 
 ### Check command line arguments.
-### Usage:  ctest_zoltan.pl #processors [debug].
+### Usage:  ctest_zoltan.pl #processors package [debug] [mpiexec_path].
 foreach $argnum (0 .. $#ARGV) {
    print "$ARGV[$argnum]";
 }
@@ -27,13 +27,13 @@ print "\n";
 
 $numArgs = $#ARGV + 1;
 if ($numArgs < 2) {
-  print "Usage:  ctest_zoltan.pl #processors package [debug]\n";
+  print "Usage:  ctest_zoltan.pl #processors package [debug] [mpiexec_path]\n";
   exit -1;
 }
 
 ### Get debug level for ctest_zoltan.pl.
 $debug = 0;
-if ($numArgs > 1) {$debug = $ARGV[2];}
+if ($numArgs > 2) {$debug = $ARGV[2];}
 
 ### Get number of processors
 $np = $ARGV[0];
@@ -41,6 +41,11 @@ $np = $ARGV[0];
 ### Get the package number indicating which tests to run.
 $package = $ARGV[1];
 if ($debug) {print "DEBUG:  package $package\n";}
+
+### Get the path to mpiexec if it is specified.
+$mpiexec = "mpiexec";
+if ($numArgs > 3) {$mpiexec = $ARGV[3];}
+if ($debug) {print "DEBUG:  mpiexec $mpiexec\n";}
 
 ### Assign the executable.
 $zdrive = "../../src/driver/zdrive.exe";
@@ -74,7 +79,6 @@ print LOG "$time\n";
 mkdir "output" unless -d "output";
 
 ### Get list of input files
-print "KDDKDD $package\n";
 if ($package eq "Zoltan") {
   ###  Zoltan native algorithms
   @inpfiles = glob("zdrive.inp.rcb* 
@@ -132,7 +136,7 @@ foreach $file (@inpfiles) {
   ### Execute zdrive.exe.
   $zouterrfile = sprintf("%s.%s.%s.outerr", $dirname, $testname, $np);
   if ($np > 1) {
-    $cmd = sprintf("mpiexec -np %d %s %s | tee %s\n", $np, $zdrive, $file, 
+    $cmd = sprintf("$mpiexec -np %d %s %s | tee %s\n", $np, $zdrive, $file, 
                    $zouterrfile);
   }
   else {
