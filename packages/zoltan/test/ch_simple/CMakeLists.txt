@@ -1,5 +1,6 @@
 
 INCLUDE(PackageAddTest)
+INCLUDE(PackageAddAdvancedTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 # Copy all zdrive.inp* files to executable directory.
