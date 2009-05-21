@@ -34,7 +34,6 @@
 
 #ifndef INTREPID_BASIS_HPP
 #define INTREPID_BASIS_HPP
-
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_Types.hpp"
 #include "Intrepid_Utils.hpp"
@@ -233,7 +232,10 @@ public:
   virtual int getDofOrdinal(const int subcDim,
                             const int subcOrd,
                             const int subcDofOrd);  
-  
+
+  /** \brief DoF tag to ordinal data structure */
+  virtual const std::vector<std::vector<std::vector<int> > > &getDofOrdinalData( );
+
   
   /** \brief  DoF ordinal to DoF tag lookup.
     
@@ -259,6 +261,8 @@ public:
   virtual const std::vector<std::vector<int> >& getAllDofTags();
   
   
+
+
 }; // class Basis
 
 

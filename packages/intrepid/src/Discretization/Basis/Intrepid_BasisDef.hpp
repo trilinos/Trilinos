@@ -44,6 +44,11 @@ int Basis<Scalar, ArrayScalar>::getDofOrdinal(const int subcDim,
   // Use .at() for bounds checking
   return tagToOrdinal_.at(subcDim).at(subcOrd).at(subcDofOrd);
 }
+template<class Scalar,class ArrayScalar>
+const std::vector<std::vector<std::vector<int> > > & Basis<Scalar, ArrayScalar>::getDofOrdinalData( ) 
+{
+  return tagToOrdinal_;
+}
 
 
 template<class Scalar, class ArrayScalar>
