@@ -68,7 +68,14 @@ protected:
 
 class InvFactoryDiagStrategy : public BlockInvDiagonalStrategy {
 public:
+   /** Constructor accepting a single inverse factory that will be used
+     * to invert all diagonal blocks.
+     */
    InvFactoryDiagStrategy(const Teuchos::RCP<const InverseFactory> & factory);
+
+   /** Constructor that lets the inverse of each block be set individually.
+     */
+   InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<const InverseFactory> > & factory);
 
    /** returns an (approximate) inverse of the diagonal blocks of A
      * where A is closely related to the original source for invD0 and invD1
@@ -78,7 +85,7 @@ public:
 
 protected:
    // stored inverse operators
-   Teuchos::RCP<const InverseFactory> invDiagFact_;
+   std::vector<Teuchos::RCP<const InverseFactory> > invDiagFact_;
 
 private:
    InvFactoryDiagStrategy();

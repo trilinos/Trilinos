@@ -60,7 +60,6 @@ void StridedEpetraOperator::BuildBlockedOperator()
 
    // ask the strategy to build the Thyra operator for you
    const RCP<const Thyra::LinearOpBase<double> > A = stridedMapping_->buildBlockedThyraOp(crsContent,label_);
-         //= rcp_dynamic_cast<const StridedMappingStrategy>(mapStrategy_)->buildBlockedThyraOp(crsContent,label_);
 
    stridedOperator_ = A;
 

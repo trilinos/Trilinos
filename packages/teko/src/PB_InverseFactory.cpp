@@ -105,7 +105,7 @@ LinearOp PreconditionerInverseFactory::buildInverse(const LinearOp & linearOp) c
    RCP<Thyra::PreconditionerBase<double> > prec = precFactory_->createPrec();
    precFactory_->initializePrec(Thyra::defaultLinearOpSource(linearOp),&*prec);
 
-   RCP<Thyra::LinearOpBase<double> > precOp = prec->getNonconstUnspecifiedPrecOp();
+   RCP<const Thyra::LinearOpBase<double> > precOp = prec->getUnspecifiedPrecOp();
    Teuchos::set_extra_data(prec,"prec",Teuchos::inOutArg(precOp));
 
    return precOp;

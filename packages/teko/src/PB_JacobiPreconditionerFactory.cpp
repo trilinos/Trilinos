@@ -42,7 +42,8 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearO
    endBlockFill(precond);
    // done filling the blocked operator
 
-   precond->setObjectLabel(ss.str());
+   // precond->setObjectLabel(ss.str());
+   precond->setObjectLabel("Jacobi");
    
    return precond; 
 }

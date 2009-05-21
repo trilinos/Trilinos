@@ -42,8 +42,10 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A)
    
    // actually build the preconditioner
    RCP<Thyra::PreconditionerBase<double> > precObj = preconFactory_->createPrec();
-   preconFactory_->initializePrec(Thyra::defaultLinearOpSource(thyraA),&*precObj,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
+   RCP<const Thyra::LinearOpSourceBase<double> > lOpSrc = Thyra::defaultLinearOpSource(thyraA);
+   preconFactory_->initializePrec(lOpSrc,&*precObj,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
 
+   // extract preconditioner operator
    RCP<const Thyra::LinearOpBase<double> > preconditioner = precObj->getUnspecifiedPrecOp();
 
    SetOperator(preconditioner,false);
@@ -77,7 +79,7 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A,co
    // build the thyra version of the source multivector
    RCP<Thyra::MultiVectorBase<double> > thyra_mv = Thyra::createMembers(thyraA->range(),epetra_mv.NumVectors());
    getMapStrategy()->copyEpetraIntoThyra(epetra_mv,thyra_mv.ptr(),*eow);
-   
+
    // actually build the preconditioner
    RCP<Thyra::PreconditionerBase<double> > precObj = preconFactory_->createPrec();
    preconFactory_->initializePrec(Thyra::defaultLinearOpSource(thyraA),thyra_mv,&*precObj,Thyra::SUPPORT_SOLVE_UNSPECIFIED);

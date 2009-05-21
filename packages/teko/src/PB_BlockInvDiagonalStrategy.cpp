@@ -5,7 +5,12 @@ namespace PB {
 InvFactoryDiagStrategy::InvFactoryDiagStrategy(const Teuchos::RCP<const InverseFactory> & factory)
 {
    // only one factory to use!
-   invDiagFact_ = factory;
+   invDiagFact_.resize(1,factory);
+}
+
+InvFactoryDiagStrategy::InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<const InverseFactory> > & factories)
+{
+   invDiagFact_ = factories;
 }
 
 /** returns an (approximate) inverse of the diagonal blocks of A
@@ -15,8 +20,19 @@ void InvFactoryDiagStrategy::getInvD(const BlockedLinearOp & A,BlockPrecondition
 { 
    // loop over diagonals, build an inverse operator for each
    int diagCnt = A->productRange()->numBlocks();
-   for(int i=0;i<diagCnt;i++) 
-      invDiag.push_back(buildInverse(*invDiagFact_,getBlock(i,i,A)));
+   int invCnt = invDiagFact_.size();
+
+   // make sure correct number of inverse factories exist
+   TEUCHOS_ASSERT(invCnt==diagCnt || invCnt==1);
+   
+   if(invCnt==1) {
+      for(int i=0;i<diagCnt;i++) 
+         invDiag.push_back(buildInverse(*invDiagFact_[0],getBlock(i,i,A)));
+   }
+   else {
+      for(int i=0;i<diagCnt;i++) 
+         invDiag.push_back(buildInverse(*invDiagFact_[i],getBlock(i,i,A)));
+   }
 }
 
 } // end namespace PB

@@ -11,7 +11,8 @@ OBJS = PB_Helpers.o PB_Utilities.o PB_BlockPreconditionerFactory.o \
        PB_BlockImplicitLinearOp.o PB_LU2x2InverseOp.o PB_BlockInvDiagonalStrategy.o \
        PB_BlockUpperTriInverseOp.o PB_GaussSeidelPreconditionerFactory.o \
        PB_BlockLowerTriInverseOp.o PB_BlockedReordering.o \
-       PB_InverseFactory.o PB_AddPreconditionerFactory.o PB_MultPreconditionerFactory.o
+       PB_InverseFactory.o PB_AddPreconditionerFactory.o PB_MultPreconditionerFactory.o \
+       PB_InverseLibrary.o
 
 all: $(OBJS)
 	make -C ./NS

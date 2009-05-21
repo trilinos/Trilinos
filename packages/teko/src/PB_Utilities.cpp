@@ -398,11 +398,11 @@ const LinearOp getDiagonalOp(const LinearOp & op)
    TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::runtime_error,"getDiagonalOp requires an Epetra_CrsMatrix");
 
    // extract diagonal
-   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eOp->OperatorRangeMap()));
+   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eOp->RowMap()));
    eOp->ExtractDiagonalCopy(*diag);
 
    // build Thyra diagonal operator
-   return PB::Epetra::thyraDiagOp(diag,eOp->OperatorRangeMap(),"diag( " + op->getObjectLabel() + " )");
+   return PB::Epetra::thyraDiagOp(diag,eOp->RowMap(),"diag( " + op->getObjectLabel() + " )");
 }
 
 const MultiVector getDiagonal(const LinearOp & op)

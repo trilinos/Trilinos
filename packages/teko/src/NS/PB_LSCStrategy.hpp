@@ -80,6 +80,13 @@ public:
    //@{
    InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,bool rzn=false);
    InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass,bool rzn=false);
+
+   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
+                  const Teuchos::RCP<const InverseFactory> & invFactS,
+                  bool rzn=false);
+   InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
+                  const Teuchos::RCP<const InverseFactory> & invFactS,
+                  LinearOp & mass,bool rzn=false);
    //@}
 
    //! Functions inherited from LSCStrategy
@@ -106,7 +113,8 @@ public:
 
 protected:
    LinearOp massMatrix_;
-   Teuchos::RCP<const InverseFactory> invFactory_;
+   Teuchos::RCP<const InverseFactory> invFactoryF_;
+   Teuchos::RCP<const InverseFactory> invFactoryS_;
    int eigSolveParam_;
    bool rowZeroingNeeded_;
 };

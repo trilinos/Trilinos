@@ -41,17 +41,24 @@ StaticLSCStrategy::StaticLSCStrategy(const LinearOp & invF,
 
 // constructors
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,bool rzn)
-   : massMatrix_(Teuchos::null), invFactory_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
+   : massMatrix_(Teuchos::null), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
+{ }
+
+InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
+                               const Teuchos::RCP<const InverseFactory> & invFactS,
+                               bool rzn)
+   : massMatrix_(Teuchos::null), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
 { }
 
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,LinearOp & mass,bool rzn)
-   : massMatrix_(mass), invFactory_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
-{ 
-/*
-   EpetraExt::RowMatrixToMatrixMarketFile("mass.mm",
-                           *Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(Thyra::get_Epetra_Operator(*massMatrix_)));
-*/
-}
+   : massMatrix_(mass), invFactoryF_(factory), invFactoryS_(factory), eigSolveParam_(5), rowZeroingNeeded_(rzn)
+{ }
+
+InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFactF,
+                               const Teuchos::RCP<const InverseFactory> & invFactS,
+                               LinearOp & mass,bool rzn)
+   : massMatrix_(mass), invFactoryF_(invFactF), invFactoryS_(invFactS), eigSolveParam_(5), rowZeroingNeeded_(rzn)
+{ }
 
 void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
@@ -72,14 +79,14 @@ LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditione
    TEUCHOS_ASSERT(lscState!=0);
    TEUCHOS_ASSERT(lscState->isInitialized())
 
-   return buildInverse(*invFactory_,lscState->BQBtmC_);
+   return buildInverse(*invFactoryS_,lscState->BQBtmC_);
 }
 
 LinearOp InvLSCStrategy::getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
    const LinearOp F  = getBlock(0,0,A);
  
-   return buildInverse(*invFactory_,F);
+   return buildInverse(*invFactoryF_,F);
 }
 
 LinearOp InvLSCStrategy::getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state) const
