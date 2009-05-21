@@ -158,6 +158,7 @@ TEUCHOS_UNIT_TEST( SimpleObjectTable, getRCPInvalid4 )
   TEST_THROW(sot.getRCP(id3), RangeError);
 }
 
+
 /* SimpleObjectTable::storeCastedRCP() */
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( SimpleObjectTable, storeCastedRCP, T1, T2 )
@@ -173,6 +174,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( SimpleObjectTable, storeCastedRCP, T1, T2 )
     TEST_EQUALITY_CONST(nonnull(sot.getRCP(id)), true);
   }
 }
+
+
+/* SimpleObjectTable::purge() */
+
+#ifdef TEUCHOS_DEBUG
+
+TEUCHOS_UNIT_TEST( SimpleObjectTable, purge )
+{
+  ECHO(SimpleObjectTable<A> sot);
+  ECHO(int id = sot.storeNew(new A));
+  TEST_EQUALITY_CONST(nonnull(sot.getRCP(id)), true);
+  ECHO(sot.purge());
+  TEST_THROW(sot.getRCP(id), RangeError);
+}
+
+#endif /* TEUCHOS_DEBUG */
+
 
 /* SimpleObjectTable's freedIndices table */
 
@@ -209,6 +227,7 @@ TEUCHOS_UNIT_TEST( SimpleObjectTable, recycleIndex3 )
   ECHO(int id3 = sot.storeNew(new A));
   TEST_EQUALITY_CONST(id3, 1);
 }
+
 
 /* SimpleObjectTable's RCP counts */
 

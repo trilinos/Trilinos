@@ -63,6 +63,8 @@ class SimpleObjectTable
 
     const RCP<T> getRCP(int index);
 
+    void purge();
+
   private:
 
     Array< RCP<T> > tableOfObjects;
@@ -80,15 +82,7 @@ SimpleObjectTable<T>::SimpleObjectTable()
 template <class T>
 SimpleObjectTable<T>::~SimpleObjectTable()
 {
-  int ocnt = tableOfObjects.size();
-  for (int i=0; i<ocnt; i++) {
-    tableOfObjects[i] = Teuchos::null;
-  }
-
-  if (tableOfObjects.size() > 0)
-    tableOfObjects.erase(tableOfObjects.begin(), tableOfObjects.end());
-  if (freedIndices.size() > 0)
-    freedIndices.erase(freedIndices.begin(), freedIndices.end());
+  purge();
 }
 
 template <class T>
@@ -147,6 +141,20 @@ const RCP<T> SimpleObjectTable<T>::getRCP(int index)
   }
 
   return tableOfObjects[index];
+}
+
+template <class T>
+void SimpleObjectTable<T>::purge()
+{
+  int ocnt = tableOfObjects.size();
+  for (int i=0; i<ocnt; i++) {
+    tableOfObjects[i] = Teuchos::null;
+  }
+
+  if (tableOfObjects.size() > 0)
+    tableOfObjects.erase(tableOfObjects.begin(), tableOfObjects.end());
+  if (freedIndices.size() > 0)
+    freedIndices.erase(freedIndices.begin(), freedIndices.end());
 }
 
 } // end namespace Teuchos
