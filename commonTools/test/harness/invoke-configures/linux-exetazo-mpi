@@ -39,7 +39,7 @@ FFLAGS="-O3 -fPIC" \
 --enable-fei \
 --enable-galeri \
 --enable-ifpack \
---enable-intrepid \
+--disable-intrepid \
 --enable-isorropia \
 --enable-kokkos \
 --enable-komplex \
