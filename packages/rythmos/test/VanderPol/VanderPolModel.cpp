@@ -38,6 +38,29 @@
 #include "Thyra_DefaultMultiVectorLinearOpWithSolve.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 
+// Nonlinear ODE system with manufactured solution based on asymptotic solution 
+// for small epsilon
+//
+// f[0] = x_dot[0] - x[1];
+// f[1] = x_dot[1] - (eps*(1.0-x[0]*x[0])*x[1]-x[0]) - forcing_term;
+//
+// forcing term is defined so that exact solution is given by
+//
+// x_0(t) =  2*cos(t)+eps*(0.75*sin(t)-0.25*sin(3.0*t))
+// x_1(t) = -2*sin(t)+eps*(0.75*cos(t)-0.75*cos(3.0*t))
+//
+// initial conditions for exact solution
+//
+// x_0(0) = 2
+// x_1(0) = 0
+//
+// exact time derivatives
+//
+// x_dot_0(t) = -2*sin(t)+eps*(0.75*cos(t)-0.75*cos(3.0*t))
+// x_dot_1(t) = -2*cos(t)+eps*(-0.75*sin(t)+3.0*0.75*sin(3.0*t))
+//
+
+
 #ifdef VANDERPOLMODEL_DEBUG
 #include <iostream>
 #endif // VANDERPOLMODEL_DEBUG
@@ -80,9 +103,7 @@ RCP<VanderPolModel> vanderPolModel()
 RCP<VanderPolModel> vanderPolModel(bool implicit) 
 {
   RCP<VanderPolModel> model = vanderPolModel();
-  RCP<ParameterList> pl = Teuchos::parameterList();
-  pl->set(Implicit_name,implicit);
-  model->setParameterList(pl);
+  model->setImplicitFlag(implicit);
   return(model);
 }
 
@@ -111,6 +132,15 @@ VanderPolModel::VanderPolModel()
   g_space_ = Thyra::defaultSpmdVectorSpace<double>(ng_);
 }
 
+void VanderPolModel::setImplicitFlag(bool implicit) 
+{
+  if (isImplicit_ != implicit) {
+    isInitialized_ = false;
+  }
+  isImplicit_ = implicit;
+  setupInOutArgs_();
+}
+
 ModelEvaluatorBase::InArgs<double> VanderPolModel::getExactSolution(double t) const
 {
   TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
@@ -119,15 +149,23 @@ ModelEvaluatorBase::InArgs<double> VanderPolModel::getExactSolution(double t) co
   ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
   double exact_t = t;
   inArgs.set_t(exact_t);
+
+  double eps = epsilon_;
   RCP<VectorBase<double> > exact_x = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<double> exact_x_view(*exact_x);
+
+    exact_x_view[0] =  2*cos(t)+eps*(0.75*sin(t)-0.25*sin(3.0*t));
+    exact_x_view[1] = -2*sin(t)+eps*(0.75*cos(t)-0.75*cos(3.0*t));
   }
   inArgs.set_x(exact_x);
   if (isImplicit_) {
     RCP<VectorBase<double> > exact_x_dot = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<double> exact_x_dot_view(*exact_x_dot);
+
+      exact_x_dot_view[0] = -2*sin(t)+eps*(0.75*cos(t)-0.75*cos(3.0*t));
+      exact_x_dot_view[1] = -2*cos(t)+eps*(-0.75*sin(t)+3.0*0.75*sin(3.0*t));
     }
     inArgs.set_x_dot(exact_x_dot);
   }
@@ -139,24 +177,30 @@ ModelEvaluatorBase::InArgs<double> VanderPolModel::getExactSensSolution(int j, d
   TEST_FOR_EXCEPTION( !isInitialized_, std::logic_error,
       "Error, setParameterList must be called first!\n"
       );
-  ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
-  if (!acceptModelParams_) {
-    return inArgs;
-  }
+
 #ifdef RYTHMOS_DEBUG
   TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE( j, 0, np_ );
 #endif
+
+  ModelEvaluatorBase::InArgs<double> inArgs = inArgs_;
   double exact_t = t;
   inArgs.set_t(exact_t);
+
   RCP<VectorBase<double> > exact_s = createMember(x_space_);
   { // scope to delete DetachedVectorView
     Thyra::DetachedVectorView<double> exact_s_view(*exact_s);
+
+    exact_s_view[0] = (0.75*sin(t)-0.25*sin(3.0*t));
+    exact_s_view[1] = (0.75*cos(t)-0.75*cos(3.0*t));
   }
   inArgs.set_x(exact_s);
   if (isImplicit_) {
     RCP<VectorBase<double> > exact_s_dot = createMember(x_space_);
     { // scope to delete DetachedVectorView
       Thyra::DetachedVectorView<double> exact_s_dot_view(*exact_s_dot);
+
+      exact_s_dot_view[0] = (0.75*cos(t)-0.75*cos(3.0*t));
+      exact_s_dot_view[1] = (-0.75*sin(t)+3.0*0.75*sin(3.0*t));
     }
     inArgs.set_x_dot(exact_s_dot);
   }
@@ -185,8 +229,6 @@ VanderPolModel::getNominalValues() const
       );
   return nominalValues_;
 }
-
-
 
 
 RCP<Thyra::LinearOpWithSolveBase<double> >
@@ -302,12 +344,19 @@ void VanderPolModel::evalModelImpl(
     Derivative<double> DfDp = outArgs.get_DfDp(0); 
     DfDp_out = DfDp.getMultiVector();
   }
+  
+  const double x0 = 2*cos(t)+eps*(0.75*sin(t)-0.25*sin(3.0*t));
+  const double x1 = -2*sin(t)+eps*(0.75*cos(t)-0.75*cos(3.0*t));
+  
+  const double x1prime = -2*cos(t) + eps*(-0.75*sin(t)+9.0/4.0*sin(3.0*t));
+  const double forcing_term = x1prime-eps*(1.0-x0*x0)*x1+x0;
+  const double forcing_term_d_eps = -(1.0-x0*x0)*x1;
 
   if (!isImplicit_) { // EXPLICIT
     if (!is_null(f_out)) {
       Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
       f_out_view[0] = x_in_view[1];
-      f_out_view[1] = eps*(1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0];
+      f_out_view[1] = eps*(1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0] + forcing_term;
     }
     if (!is_null(W_out)) {
       RCP<Thyra::MultiVectorBase<double> > matrix = Teuchos::rcp_dynamic_cast<Thyra::MultiVectorBase<double> >(W_out,true);
@@ -315,21 +364,18 @@ void VanderPolModel::evalModelImpl(
       matrix_view(0,0) = 0.0;
       matrix_view(0,1) = 1.0;
       matrix_view(1,0) = -2.0*eps*x_in_view[0]*x_in_view[1]-1.0;
-      matrix_view(1,1) = eps*(1.0-x_in_view[0]);
+      matrix_view(1,1) = eps*(1.0-x_in_view[0]*x_in_view[0]);
     }
     if (!is_null(DfDp_out)) {
       Thyra::DetachedMultiVectorView<double> DfDp_out_view( *DfDp_out );
       DfDp_out_view(0,0) = 0.0;
-      DfDp_out_view(1,0) = (1.0-x_in_view[0]*x_in_view[0])*x_in_view[1];
+      DfDp_out_view(1,0) = (1.0-x_in_view[0]*x_in_view[0])*x_in_view[1] + forcing_term_d_eps;
     }
   } else { // IMPLICIT
     if (!is_null(f_out)) {
       Thyra::DetachedVectorView<double> f_out_view( *f_out ); 
       Thyra::ConstDetachedVectorView<double> x_dot_in_view( *x_dot_in );
-      double x0 = 2*cos(t)+eps*(0.75*sin(t)-0.25*sin(3.0*t));
-      double x1 = -2*sin(t)+eps*(0.75*cos(t)-0.75*cos(3.0*t));
-      double x1prime = -2*cos(t) + eps*(-0.75*sin(t)+9.0/4.0*sin(3.0*t));
-      double forcing_term = -(x1prime-eps*(1.0-x0*x0)*x1+x0);
+
       f_out_view[0] = x_dot_in_view[0] - x_in_view[1];
       f_out_view[1] = x_dot_in_view[1] - (eps*(1.0-x_in_view[0]*x_in_view[0])*x_in_view[1]-x_in_view[0]) - forcing_term;
     }
@@ -338,13 +384,13 @@ void VanderPolModel::evalModelImpl(
       Thyra::DetachedMultiVectorView<double> matrix_view( *matrix );
       matrix_view(0,0) = alpha;
       matrix_view(0,1) = -beta;
-      matrix_view(1,0) = (2.0*eps*x_in_view[0]*x_in_view[1]+1.0)*beta;
+      matrix_view(1,0) = - beta*(eps*(-2.0*x_in_view[0])*x_in_view[1]-1.0);
       matrix_view(1,1) = alpha - beta*eps*(1.0-x_in_view[0]*x_in_view[0]);
     }
     if (!is_null(DfDp_out)) {
       Thyra::DetachedMultiVectorView<double> DfDp_out_view( *DfDp_out );
       DfDp_out_view(0,0) = 0.0;
-      DfDp_out_view(1,0) = -(1.0-x_in_view[0]*x_in_view[0])*x_in_view[1];
+      DfDp_out_view(1,0) = -(1.0-x_in_view[0]*x_in_view[0])*x_in_view[1] - forcing_term_d_eps;
     }
   }
 }

@@ -76,6 +76,9 @@ class VanderPolModel
   // Exact sensitivity solution
   ModelEvaluatorBase::InArgs<double> getExactSensSolution(int j, double t) const;
 
+  // Set explicit/implicit flag
+  void setImplicitFlag(bool implicit);
+
   /** \name Public functions overridden from ModelEvaulator. */
   //@{
 
