@@ -1,3 +1,16 @@
+####  Main Zoltan CTEST File
+####  This file can be copied and modified for new Zoltan test directories.
+####  It runs script zoltan/test/ctest_zoltan.pl.
+####  See ctest_zoltan.pl for the list of arguments to provide to it.
+####
+####  To use this file in new test directories, copy it to the new test
+####  directory.  In the copy, modify the number of processors to use in MPI
+####  runs, ZOLTANNUMPROCS, in the SET command below.
+####  Also modify the test name (e.g., substitute the new directory name
+####  for "ch_simple" in all lines below.)
+
+# Number of processors to use in MPI runs.
+SET(ZOLTANNUMPROCS 4)
 
 INCLUDE(PackageAddTest)
 INCLUDE(PackageAddAdvancedTest)
@@ -10,12 +23,13 @@ FILE(GLOB HIER_INP RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} hier*.inp)
 # All accepted answer files needed for testing.
 FILE(GLOB ANSWERS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} answers/*.*)
 
+
 PACKAGE_ADD_ADVANCED_TEST(
   ch_simple_zoltan_parallel
   # Test Native Zoltan algorithms in parallel
-  TEST_0 CMND ../ctest_zoltan.pl ARGS 4 Zoltan 1 ${MPI_EXEC}
+  TEST_0 CMND ../ctest_zoltan.pl ARGS ${ZOLTANNUMPROCS}  Zoltan 1 ${MPI_EXEC}
   COMM mpi
-  OVERALL_NUM_MPI_PROCS 4
+  OVERALL_NUM_MPI_PROCS ${ZOLTANNUMPROCS} 
   FINAL_FAIL_REGULAR_EXPRESSION "FAILED"
   )
 
@@ -23,9 +37,9 @@ IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
 PACKAGE_ADD_ADVANCED_TEST(
   ch_simple_parmetis_parallel
   # Test ParMETIS algorithms in parallel
-  TEST_0 CMND ../ctest_zoltan.pl ARGS 4 ParMETIS 1 ${MPI_EXEC}
+  TEST_0 CMND ../ctest_zoltan.pl ARGS ${ZOLTANNUMPROCS} ParMETIS 1 ${MPI_EXEC}
   COMM mpi
-  OVERALL_NUM_MPI_PROCS 4
+  OVERALL_NUM_MPI_PROCS ${ZOLTANNUMPROCS}
   FINAL_FAIL_REGULAR_EXPRESSION "FAILED"
   )
 ENDIF()
@@ -34,9 +48,9 @@ IF (${PACKAGE_NAME}_ENABLE_Scotch)
 PACKAGE_ADD_ADVANCED_TEST(
   ch_simple_scotch_parallel
   # Test Scotch algorithms in parallel
-  TEST_0 CMND ../ctest_zoltan.pl ARGS 4 Scotch 1 ${MPI_EXEC}
+  TEST_0 CMND ../ctest_zoltan.pl ARGS ${ZOLTANNUMPROCS} Scotch 1 ${MPI_EXEC}
   COMM mpi
-  OVERALL_NUM_MPI_PROCS 4
+  OVERALL_NUM_MPI_PROCS ${ZOLTANNUMPROCS}
   FINAL_FAIL_REGULAR_EXPRESSION "FAILED"
   )
 ENDIF()
@@ -91,7 +105,7 @@ PACKAGE_ADD_TEST(
   NAME ch_simple_rcb
   ARGS zdrive.inp.rcb
   COMM serial mpi
-  NUM_MPI_PROCS 4
+  NUM_MPI_PROCS ${ZOLTANNUMPROCS} 
   FAIL_REGULAR_EXPRESSION "fatal: "
   )
 
@@ -104,7 +118,7 @@ IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
     NAME ch_simple_partkway-v3
     ARGS zdrive.inp.partkway-v3
     COMM serial mpi
-    NUM_MPI_PROCS 4
+    NUM_MPI_PROCS ${ZOLTANNUMPROCS} 
     FAIL_REGULAR_EXPRESSION "fatal: "
     )
 ENDIF()
