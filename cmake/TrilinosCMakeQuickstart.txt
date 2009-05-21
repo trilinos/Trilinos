@@ -428,40 +428,46 @@ C) Configuring (Makefile Generator)
 
   where <TPLNAME> = Boost, ParMETIS, etc.
 
-  The headers, libraries, and library directories can then be specified with:
+  The headers, libraries, and library directories can then be specified with
+  the input cache variables:
 
     <TPLNAME>_INCLUDE_DIRS:PATH: List of paths to the header include
-    directories.
+      directories.
 
-    Example:
+      Example:
  
-     -D Boost_INCLUDE_DIRS:PATH=/usr/local/boost/include
+       -D Boost_INCLUDE_DIRS:PATH=/usr/local/boost/include
 
-    <TPLNAME>_LIBRARY_NAMES:STRING: List of unadorned library names,
-    in the order of the link line.  The platform-specific prefixes
-    (e.g.. 'lib') and postfixes (e.g. '.a', '.lib', or '.dll') will be
-    added automatically.
+      <TPLNAME>_LIBRARY_NAMES:STRING: List of unadorned library names,
+      in the order of the link line.  The platform-specific prefixes
+      (e.g.. 'lib') and postfixes (e.g. '.a', '.lib', or '.dll') will be
+      added automatically.
 
-    Example:
+      Example:
 
-      -D BLAS_LIBRARY_NAMES:STRING="blas;gfortran"
+        -D BLAS_LIBRARY_NAMES:STRING="blas;gfortran"
 
     <TPLNAME>_LIBRARY_DIRS:PATH: The list of directories where the
-    library files can be found.
+      library files can be found.
 
-    Example:
+      Example:
 
-      -D BLAS_LIBRARY_DIRS:PATH=/usr/local/blas
+        -D BLAS_LIBRARY_DIRS:PATH=/usr/local/blas
 
   NOTE: The variables TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES
   are what are directly used by the CMake build infrastructure.  These
   variables are normally set by the variables <TPLNAME>_INCLUDE_DIRS,
   <TPLNAME>_LIBRARY_NAMES, and <TPLNAME>_LIBRARY_DIRS using find commands but
-  you can always override these by setting the (FILEPATH) cache
+  you can always override these by setting the (type FILEPATH) cache
   variables TPL_<TPLNAME>_INCLUDE_DIRS and TPL_<TPLNAME>_LIBRARIES.  This gives
   the user complete and direct control in specifying exactly what is used in
   the build process.  The other variables that start with <TPLNAME>_ are just a
   convenience to make it easier to specify the location of the libraries.
+
+  NOTE: In order to allow a TPL that normally requires one or more libraries
+  to ignore the libraries, you can set:
+
+    -D BLAS_LIBRARY_NAMES:STIRNG=""
 
   Optional package-specific support for a TPL can be turned off by passing
   into 'cmake':
@@ -471,8 +477,7 @@ C) Configuring (Makefile Generator)
   where <PACKAGE> is Epetra, NOX etc.  This gives the user full control over
   what TPLs are supported by which package independently.
 
-  Note that support for an optional TPL can also be turned on implicitly by
-  setting:
+  Support for an optional TPL can also be turned on implicitly by setting:
 
     -D <PACKAGE>_ENABLE_<TPLNAME>:BOOL=ON
 
