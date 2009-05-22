@@ -96,9 +96,15 @@ if ($package eq "Zoltan") {
 } 
 if ($package eq "ParMETIS") {
   ### ParMETIS tests
-  @inpfiles = glob("zdrive.inp.ada* 
-                    zdrive.inp.part* 
-                    zdrive.inp.*metis*");
+  if ($np > 1) {
+    @inpfiles = glob("zdrive.inp.adp*
+                      zdrive.inp.part* 
+                      zdrive.inp.*metis*");
+  } else {
+    ### ParMETIS adaptive methods do not work on one processor.
+    @inpfiles = glob("zdrive.inp.part* 
+                      zdrive.inp.*metis*");
+  }
 } 
 if ($package eq "Scotch") {
   ### Scotch tests
