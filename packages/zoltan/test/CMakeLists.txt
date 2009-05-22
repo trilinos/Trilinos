@@ -1,1 +1,3 @@
 ADD_SUBDIRECTORY(ch_simple)
+ADD_SUBDIRECTORY(ch_hammond)
+ADD_SUBDIRECTORY(hg_simple)

@@ -90,9 +90,8 @@ if ($package eq "Zoltan") {
                     zdrive.inp.color*
                     zdrive.inp.block*
                     zdrive.inp.random* 
-                    zdrive.inp.graph
-                    zdrive.inp.graph-re*
-                    zdrive.inp.graph-partition");
+                    zdrive.inp.graph-repartit*
+                    zdrive.inp.graph-partit*");
 } 
 if ($package eq "ParMETIS") {
   ### ParMETIS tests
