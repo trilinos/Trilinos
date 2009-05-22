@@ -29,7 +29,7 @@
 // @HEADER
 
 /** \file   example_01.cpp
-    \brief  Example creation of mass and stiffness matrices for div-curl system on a hexadedral mesh.
+    \brief  Example creation of mass and stiffness matrices for div-curl system on a hexadedral mesh using curl-conforming elements.
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
  
     \remark Sample command line
@@ -52,6 +52,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_SerialComm.h"
 #include "Epetra_FECrsMatrix.h"
+#include "Epetra_FEVector.h"
 
 // Teuchos includes
 #include "Teuchos_oblackholestream.hpp"
@@ -64,10 +65,22 @@
 
 // EpetraExt includes
 #include "EpetraExt_RowMatrixOut.h"
+#include "EpetraExt_MultiVectorOut.h"
+
+// Pamgen includes
+#include "create_inline_mesh.h"
+#include "../mesh_spec_lt/im_exodusII.h"
+#include "../mesh_spec_lt/im_ne_nemesisI.h"
 
 using namespace std;
 using namespace Intrepid;
 using namespace shards;
+
+// Functions to evaluate exact solution and derivatives
+int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z);
+double evalDivu(double & x, double & y, double & z);
+int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z);
+int evalGradDivu(double & gradDivu0, double & gradDivu1, double & gradDivu2, double & x, double & y, double & z);
 
 int main(int argc, char *argv[]) {
 
@@ -128,7 +141,7 @@ int main(int argc, char *argv[]) {
 
 // *********************************** CELL TOPOLOGY **********************************
 
-   // Get cell topology
+   // Get cell topology for base hexahedron
     typedef shards::CellTopology    CellTopology;
     CellTopology hex_8(shards::getCellTopologyData<Hexahedron<8> >() );
 
@@ -154,15 +167,6 @@ int main(int argc, char *argv[]) {
                  std::setw(5) << NY <<
                  std::setw(5) << NZ << "\n\n";
 
-   // Get global dimensions 
-    int numElems = NX * NY * NZ;
-    int numNodes = (NX + 1) * (NY + 1) * (NZ + 1);
-    int numEdges = (NX)*(NY + 1)*(NZ + 1) + (NX + 1)*(NY)*(NZ + 1) + (NX + 1)*(NY + 1)*(NZ);
-
-    std::cout << " Number of Elements: " << numElems << " \n";
-    std::cout << "    Number of Nodes: " << numNodes << " \n";
-    std::cout << "    Number of Edges: " << numEdges << " \n\n";
-  
    // Cube
     double leftX = -1.0, rightX = 1.0;
     double leftY = -1.0, rightY = 1.0;
@@ -173,101 +177,250 @@ int main(int argc, char *argv[]) {
     double hy = (rightY-leftY)/((double)NY);
     double hz = (rightZ-leftZ)/((double)NZ);
 
-    // Get nodal coordinates
-    FieldContainer<double> nodeCoord(numNodes, spaceDim);
+   // Create Pamgen input file
+    stringstream ss;
+    ss.clear();
+    ss << "mesh \n";
+    ss << "  rectilinear \n"; 
+    ss << "     nx = " << NX << "\n";
+    ss << "     ny = " << NY << "\n"; 
+    ss << "     nz = " << NZ << "\n"; 
+    ss << "     bx = 1\n";
+    ss << "     by = 1\n"; 
+    ss << "     bz = 1\n"; 
+    ss << "     gmin = " << leftX << " " << leftY << " " << leftZ << "\n";
+    ss << "     gmax = " << rightX << " " << rightY << " " << rightZ << "\n";
+    ss << "  end \n";
+    ss << "  set assign \n";
+    ss << "     sideset, ilo, 1\n"; 
+    ss << "     sideset, jlo, 2\n"; 
+    ss << "     sideset, klo, 3\n"; 
+    ss << "     sideset, ihi, 4\n"; 
+    ss << "     sideset, jhi, 5\n"; 
+    ss << "     sideset, khi, 6\n"; 
+    ss << "  end \n";
+    ss << "end \n";
+
+    string meshInput = ss.str();
+    std::cout << meshInput <<"\n";
+  
+    char inputArray[1000];
+    int ntmp = meshInput.size();
+    for (int i=0; i<ntmp; i++) {          
+      inputArray[i]=meshInput[i];
+    }
+
+   // Generate mesh with Pamgen
+    int dim=3;
+    int rank=0;
+    int numProcs=1;
+    long int maxInt = 100000000;
+    Create_Pamgen_Mesh(inputArray, dim, rank, numProcs, maxInt);
+    
+   // Get mesh size info
+    char title[100];
+    int numDim;
+    int numNodes;
+    int numElems;
+    int numElemBlk;
+    int numNodeSets;
+    int numSideSets;
+    int id = 0;
+
+    im_ex_get_init(id, title, &numDim, &numNodes, 
+                                &numElems, &numElemBlk, &numNodeSets,
+                                &numSideSets);
+
+   // Read node coordinates and place in field container
+    FieldContainer<double> nodeCoord(numNodes,dim);
+    double * nodeCoordx = new double [numNodes];
+    double * nodeCoordy = new double [numNodes];
+    double * nodeCoordz = new double [numNodes];
+    im_ex_get_coord(id,nodeCoordx,nodeCoordy,nodeCoordz);
+    for (int i=0; i<numNodes; i++) {          
+      nodeCoord(i,0)=nodeCoordx[i];
+      nodeCoord(i,1)=nodeCoordy[i];
+      nodeCoord(i,2)=nodeCoordz[i];
+    }
+    delete [] nodeCoordx;
+    delete [] nodeCoordy;
+    delete [] nodeCoordz;
+
+   // Get node-element connectivity
+    FieldContainer<int> elemToNode(numElems,numNodesPerElem);
+    int elemBlkId = 1;
+    int * connect = new int [numNodesPerElem*numElems];
+    im_ex_get_elem_conn(id,elemBlkId,connect);
+    for (int i=0; i<numElems; i++) {
+       for (int j=0; j<numNodesPerElem; j++) {
+           elemToNode(i,j)=connect[i*numNodesPerElem + j] - 1;
+       }
+    }
+    delete [] connect;
+
+   // Get boundary (side set) information
+   // Side set 1 - left,  Side set 2 - front, Side set 3 - bottom,
+   // Side set 4 - right, Side set 5 - back,  Side set 6 - top
+    int * sideSetIds = new int [numSideSets];
+    FieldContainer<int> numElemsOnBoundary(numSideSets);
+    int numSidesinSet;
+    int numDFinSet;
+    int maxNumSidesinSet = 0;
+    im_ex_get_side_set_ids(id,sideSetIds);
+    for (int i=0; i<numSideSets; i++) {
+        im_ex_get_side_set_param(id,sideSetIds[i],&numSidesinSet,&numDFinSet);
+        numElemsOnBoundary(i)=numSidesinSet;
+        if (numSidesinSet > maxNumSidesinSet)
+           maxNumSidesinSet = numSidesinSet; 
+     }
+   // Container for global element numbers of boundary elements for side sets 1-6
+    FieldContainer<int> elemsOnBoundary(numSideSets,maxNumSidesinSet);
+   // Container for local face numbers corresponding to global elements in previous array
+    FieldContainer<int> facesOnBoundary(numSideSets,maxNumSidesinSet);
+    for (int i=0; i<numSideSets; i++) {
+        numSidesinSet=numElemsOnBoundary(i);
+        int * sideSetElemList = new int [numSidesinSet];
+        int * sideSetSideList = new int [numSidesinSet];
+        im_ex_get_side_set(id,sideSetIds[i],sideSetElemList,sideSetSideList);
+        for (int j=0; j<numSidesinSet; j++) {
+          elemsOnBoundary(i,j)=sideSetElemList[j] - 1;
+          facesOnBoundary(i,j)=sideSetSideList[j] - 1;
+        }
+        delete [] sideSetElemList;
+        delete [] sideSetSideList;
+     }
+    delete [] sideSetIds;
+
+   // Print mesh information  
+    int numEdges = (NX)*(NY + 1)*(NZ + 1) + (NX + 1)*(NY)*(NZ + 1) + (NX + 1)*(NY + 1)*(NZ);
+    int numFaces = (NX)*(NY)*(NZ + 1) + (NX)*(NY + 1)*(NZ) + (NX + 1)*(NY)*(NZ);
+    std::cout << " Number of Elements: " << numElems << " \n";
+    std::cout << "    Number of Nodes: " << numNodes << " \n";
+    std::cout << "    Number of Edges: " << numEdges << " \n";
+    std::cout << "    Number of Faces: " << numFaces << " \n\n";
+  
+  // Get edge connectivity
+    FieldContainer<int> edgeToNode(numEdges, numNodesPerEdge);
+    FieldContainer<int> elemToEdge(numElems, numEdgesPerElem);
+    int ielem;
+    int iedge = 0;
     int inode = 0;
     for (int k=0; k<NZ+1; k++) {
       for (int j=0; j<NY+1; j++) {
         for (int i=0; i<NX+1; i++) {
-          nodeCoord(inode,0) = leftX + (double)i*hx;
-          nodeCoord(inode,1) = leftY + (double)j*hy;
-          nodeCoord(inode,2) = leftZ + (double)k*hz;
-          inode++;
-        }
+           if (i < NX){
+               edgeToNode(iedge,0) = inode;
+               edgeToNode(iedge,1) = inode + 1;
+               if (j < NY && k < NZ){
+                  ielem=i+j*NX+k*NX*NY;
+                  elemToEdge(ielem,0) = iedge;
+                  if (j > 0)
+                     elemToEdge(ielem-NX,2) = iedge; 
+                  if (k > 0)
+                     elemToEdge(ielem-NX*NY,4) = iedge; 
+                  if (j > 0 && k > 0)
+                     elemToEdge(ielem-NX*NY-NX,6) = iedge; 
+                }
+               else if (j == NY && k == NZ){
+                  ielem=i+(NY-1)*NX+(NZ-1)*NX*NY;
+                  elemToEdge(ielem,6) = iedge;
+                }
+               else if (k == NZ && j < NY){
+                  ielem=i+j*NX+(NZ-1)*NX*NY;
+                  elemToEdge(ielem,4) = iedge;
+                  if (j > 0)
+                    elemToEdge(ielem-NX,6) = iedge;
+                }
+               else if (k < NZ && j == NY){
+                  ielem=i+(NY-1)*NX+k*NX*NY;
+                  elemToEdge(ielem,2) = iedge;
+                  if (k > 0)
+                     elemToEdge(ielem-NX*NY,6) = iedge;
+                }
+               iedge++;
+            }
+           if (j < NY){
+               edgeToNode(iedge,0) = inode;
+               edgeToNode(iedge,1) = inode + NX+1;
+               if (i < NX && k < NZ){
+                  ielem=i+j*NX+k*NX*NY;
+                  elemToEdge(ielem,3) = iedge;
+                  if (i > 0)
+                     elemToEdge(ielem-1,1) = iedge; 
+                  if (k > 0)
+                     elemToEdge(ielem-NX*NY,7) = iedge; 
+                  if (i > 0 && k > 0)
+                     elemToEdge(ielem-NX*NY-1,5) = iedge; 
+                }
+               else if (i == NX && k == NZ){
+                  ielem=NX-1+j*NX+(NZ-1)*NX*NY;
+                  elemToEdge(ielem,5) = iedge;
+                }
+               else if (k == NZ && i < NX){
+                  ielem=i+j*NX+(NZ-1)*NX*NY;
+                  elemToEdge(ielem,7) = iedge;
+                  if (i > 0)
+                    elemToEdge(ielem-1,5) = iedge;
+                }
+               else if (k < NZ && i == NX){
+                  ielem=NX-1+j*NX+k*NX*NY;
+                  elemToEdge(ielem,1) = iedge;
+                  if (k > 0)
+                     elemToEdge(ielem-NX*NY,5) = iedge;
+                }
+               iedge++;
+            }
+           if (k < NZ){
+               edgeToNode(iedge,0) = inode;
+               edgeToNode(iedge,1) = inode + (NX+1)*(NY+1);
+               if (i < NX && j < NY){
+                  ielem=i+j*NX+k*NX*NY;
+                  elemToEdge(ielem,8) = iedge;
+                  if (i > 0)
+                     elemToEdge(ielem-1,9) = iedge; 
+                  if (j > 0)
+                     elemToEdge(ielem-NX,11) = iedge; 
+                  if (i > 0 && j > 0)
+                     elemToEdge(ielem-NX-1,10) = iedge; 
+                }
+               else if (i == NX && j == NY){
+                  ielem=NX-1+(NY-1)*NX+k*NX*NY;
+                  elemToEdge(ielem,10) = iedge;
+                }
+               else if (j == NY && i < NX){
+                  ielem=i+(NY-1)*NX+k*NX*NY;
+                  elemToEdge(ielem,11) = iedge;
+                  if (i > 0)
+                    elemToEdge(ielem-1,10) = iedge;
+                }
+               else if (j < NY && i == NX){
+                  ielem=NX-1+j*NX+k*NX*NY;
+                  elemToEdge(ielem,9) = iedge;
+                  if (j > 0)
+                     elemToEdge(ielem-NX,10) = iedge;
+                }
+               iedge++;
+            }
+            inode++;
+         }
       }
-    }
-    
-   // Element to Node map
-    FieldContainer<int> elemToNode(numElems, numNodesPerElem);
-    int ielem = 0;
-    for (int k=0; k<NZ; k++) {
-      for (int j=0; j<NY; j++) {
-        for (int i=0; i<NX; i++) {
-          elemToNode(ielem,0) = (NY + 1)*(NX + 1)*k + (NX + 1)*j + i;
-          elemToNode(ielem,1) = (NY + 1)*(NX + 1)*k + (NX + 1)*j + i + 1;
-          elemToNode(ielem,2) = (NY + 1)*(NX + 1)*k + (NX + 1)*(j + 1) + i + 1;
-          elemToNode(ielem,3) = (NY + 1)*(NX + 1)*k + (NX + 1)*(j + 1) + i;
-          elemToNode(ielem,4) = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*j + i;
-          elemToNode(ielem,5) = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*j + i + 1;
-          elemToNode(ielem,6) = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*(j + 1) + i + 1;
-          elemToNode(ielem,7) = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*(j + 1) + i;
-          ielem++;
-        }
-      }
-    }
-
-   // Edge to Node map
-    FieldContainer<int> edgeToNode(numEdges, numNodesPerEdge);
-    int iedge = 0;
-    for (int k=0; k<NZ+1; k++) {
-      for (int j=0; j<NY+1; j++) {
-        for (int i=0; i<NX+1; i++) {
-          if (i < NX) {
-            edgeToNode(iedge,0) = (NY + 1)*(NX + 1)*k + (NX + 1)*j + i;
-            edgeToNode(iedge,1) = (NY + 1)*(NX + 1)*k + (NX + 1)*j + i + 1;
-            iedge++; }
-          if (j < NY) { 
-            edgeToNode(iedge,0) = (NY + 1)*(NX + 1)*k + (NX + 1)*j + i;
-            edgeToNode(iedge,1) = (NY + 1)*(NX + 1)*k + (NX + 1)*(j + 1) + i;
-            iedge++; }
-          if (k < NZ) {
-            edgeToNode(iedge,0) = (NY + 1)*(NX + 1)*k + (NX + 1)*j + i;
-            edgeToNode(iedge,1) = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*j + i;
-            iedge++; }
-        }
-      }
-    }
-
-   // Element to Edge map
-    FieldContainer<int> elemToEdge(numElems, numEdgesPerElem);
+   }
+ 
+   // Output element to edge connectivity
+    ofstream fout("elem2edge.dat");
     for (int k=0; k<NZ; k++) {
       for (int j=0; j<NY; j++) {
         for (int i=0; i<NX; i++) {
           int ielem = i + j * NX + k * NX * NY;
-          elemToEdge(ielem,0) = 3 * i + j * (3 * NX + 2) + k * (3 * NX * NY + 2 * (NX + NY) + 1);
-          elemToEdge(ielem,1) = elemToEdge(ielem,0) + 4;
-          elemToEdge(ielem,2) = elemToEdge(ielem,0) + 3 * NX + 2;
-          elemToEdge(ielem,3) = elemToEdge(ielem,0) + 1;
-          if (k == NZ -1) {
-              elemToEdge(ielem,4) = elemToEdge(ielem,0) + 3 * NX * NY + 2 * (NX + NY) + 1 - i - (NX + 1) * j;
-              elemToEdge(ielem,5) = elemToEdge(ielem,4) + 3;
-              elemToEdge(ielem,6) = elemToEdge(ielem,4) + 2 * NX + 1;
-          }
-          else {
-              elemToEdge(ielem,4) = elemToEdge(ielem,0) + 3 * NX * NY + 2 * (NX + NY) + 1;
-              elemToEdge(ielem,5) = elemToEdge(ielem,4) + 4;
-              elemToEdge(ielem,6) = elemToEdge(ielem,4) + 3 * NX + 2;
-          }
-          elemToEdge(ielem,7) = elemToEdge(ielem,4) + 1;
-          elemToEdge(ielem,8) = elemToEdge(ielem,0) + 2;
-          elemToEdge(ielem,9) = elemToEdge(ielem,8) + 3;
-          elemToEdge(ielem,10) = elemToEdge(ielem,9) + 3 * NX + 2;
-          elemToEdge(ielem,11) = elemToEdge(ielem,8) + 3 * NX + 2;
-          if (i == NX-1) {
-              elemToEdge(ielem,1) = elemToEdge(ielem,1) - 1; 
-              elemToEdge(ielem,5) = elemToEdge(ielem,5) - 1; 
-              elemToEdge(ielem,9) = elemToEdge(ielem,9) - 1; 
-              elemToEdge(ielem,10) = elemToEdge(ielem,10) - 1; 
-          }
-          if (j == NY-1) {
-              elemToEdge(ielem,2) = elemToEdge(ielem,2) - i; 
-              elemToEdge(ielem,6) = elemToEdge(ielem,6) - i; 
-              elemToEdge(ielem,10) = elemToEdge(ielem,10) - i - 2; 
-              elemToEdge(ielem,11) = elemToEdge(ielem,11) - i - 1; 
-          }
+          for (int l=0; l<numEdgesPerElem; l++) {
+             fout << elemToEdge(ielem,l) << "  ";
+          } 
+          fout << "\n";
         }
       }
     }
+    fout.close();
+
 
    // Set material properties using undeformed grid assuming each element has only one value of mu
     FieldContainer<double> muVal(numElems);
@@ -294,7 +447,7 @@ int main(int argc, char *argv[]) {
       for (int k=1; k<NZ; k++) {
         for (int j=1; j<NY; j++) {
           for (int i=1; i<NX; i++) {
-            inode = i + j * (NX + 1) + k * (NX + 1) * (NY + 1);
+            int inode = i + j * (NX + 1) + k * (NX + 1) * (NY + 1);
            // random numbers between -1.0 and 1.0
             double rx = 2.0 * (double)rand()/RAND_MAX - 1.0;
             double ry = 2.0 * (double)rand()/RAND_MAX - 1.0;
@@ -387,12 +540,12 @@ int main(int argc, char *argv[]) {
     std::cout << "Building mass and stiffness matrices ... \n\n";
 
  // Settings and data structures for mass and stiffness matrices
-    typedef CellTools<double>       CellTools;
+    typedef CellTools<double>  CellTools;
     typedef FunctionSpaceTools fst;
     typedef ArrayTools art;
     int numCells = 1; 
 
-   // Containers for nodes and edge signs
+   // Containers for nodes and edge signs 
     FieldContainer<double> hexNodes(numCells, numNodesPerElem, spaceDim);
     FieldContainer<double> hexEdgeSigns(numCells, numFieldsC);
    // Containers for Jacobian
@@ -407,7 +560,6 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsG, numCubPoints);
    // Containers for element HCURL mass matrix
     FieldContainer<double> massMatrixC(numCells, numFieldsC, numFieldsC);
-    //    FieldContainer<double> weightedMeasureMu(numCells, numCubPoints);
     FieldContainer<double> hexCValsTransformed(numCells, numFieldsC, numCubPoints, spaceDim);
     FieldContainer<double> hexCValsTransformedWeighted(numCells, numFieldsC, numCubPoints, spaceDim);
    // Containers for element HCURL stiffness matrix
@@ -415,11 +567,22 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> weightedMeasureMu(numCells, numCubPoints);    
     FieldContainer<double> hexCurlsTransformed(numCells, numFieldsC, numCubPoints, spaceDim);
     FieldContainer<double> hexCurlsTransformedWeighted(numCells, numFieldsC, numCubPoints, spaceDim);
+   // Containers for right hand side vectors
+    FieldContainer<double> rhsDatag(numCells, numCubPoints, cubDim);
+    FieldContainer<double> rhsDatah(numCells, numCubPoints, cubDim);
+    FieldContainer<double> gC(numCells, numFieldsC);
+    FieldContainer<double> hC(numCells, numFieldsC);
+   // Container for cubature points in physical space
+    FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
+
     
    // Global arrays in Epetra format
     Epetra_FECrsMatrix MassG(Copy, globalMapG, numFieldsG);
     Epetra_FECrsMatrix MassC(Copy, globalMapC, numFieldsC);
     Epetra_FECrsMatrix StiffC(Copy, globalMapC, numFieldsC);
+    Epetra_FEVector rhsC(globalMapC);
+
+    ofstream fSignsout("edgeSigns.dat");
 
  // *** Element loop ***
     for (int k=0; k<numElems; k++) {
@@ -436,10 +599,12 @@ int main(int argc, char *argv[]) {
           if (elemToNode(k,refEdgeToNode(j,0))==edgeToNode(elemToEdge(k,j),0) &&
               elemToNode(k,refEdgeToNode(j,1))==edgeToNode(elemToEdge(k,j),1))
               hexEdgeSigns(0,j) = 1.0;
-          else if (elemToNode(k,refEdgeToNode(j,0))==edgeToNode(elemToEdge(k,j),1) &&
-              elemToNode(k,refEdgeToNode(j,1))==edgeToNode(elemToEdge(k,j),0))
+          else 
               hexEdgeSigns(0,j) = -1.0;
+
+         fSignsout << hexEdgeSigns(0,j) << "  ";
        }
+       fSignsout << "\n";
 
     // Compute cell Jacobians, their inverses and their determinants
        CellTools::setJacobian(hexJacobian, cubPoints, hexNodes, hex_8);
@@ -525,7 +690,6 @@ int main(int argc, char *argv[]) {
          }
       }
 
-      
      // multiply by weighted measure
       fst::multiplyMeasure<double>(hexCurlsTransformedWeighted,
                                    weightedMeasureMu, hexCurlsTransformed);
@@ -548,23 +712,125 @@ int main(int argc, char *argv[]) {
             }
          }
       }
-      
-  } // *** end element loop ***
 
-    MassG.GlobalAssemble(); MassG.FillComplete();
-    MassC.GlobalAssemble(); MassC.FillComplete();
-    StiffC.GlobalAssemble(); StiffC.FillComplete();
-    DGrad.GlobalAssemble(); DGrad.FillComplete();    
-    
-   // Dump matrices to disk
-    EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassG);
-    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
-    EpetraExt::RowMatrixToMatlabFile("mag_edge_matrix.dat",StiffC);
-    EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
+// ******************************* Build right hand side ************************************
+
+      // transform integration points to physical points
+       FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
+       CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
+
+      // evaluate right hand side functions at physical points
+       FieldContainer<double> rhsDatag(numCells, numCubPoints, cubDim);
+       FieldContainer<double> rhsDatah(numCells, numCubPoints, cubDim);
+       for (int nPt = 0; nPt < numCubPoints; nPt++){
+
+          double x = physCubPoints(0,nPt,0);
+          double y = physCubPoints(0,nPt,1);
+          double z = physCubPoints(0,nPt,2);
+          double du1, du2, du3;
+
+          evalCurlu(du1, du2, du3, x, y, z);
+          rhsDatag(0,nPt,0) = du1;
+          rhsDatag(0,nPt,1) = du2;
+          rhsDatag(0,nPt,2) = du3;
+         
+          evalGradDivu(du1, du2, du3,  x, y, z);
+          rhsDatah(0,nPt,0) = du1;
+          rhsDatah(0,nPt,1) = du2;
+          rhsDatah(0,nPt,2) = du3;
+       }
+
+     // integrate (g,curl w) term
+      fst::integrate<double>(gC, rhsDatag, hexCurlsTransformedWeighted,
+                             COMP_CPP);
+
+     // integrate (h,div w) term
+      fst::integrate<double>(hC, rhsDatah, hexCValsTransformedWeighted,
+                             COMP_CPP);
+
+    // assemble into global vector
+     for (int row = 0; row < numFieldsC; row++){
+           int rowIndex = elemToEdge(k,row);
+           double val = gC(0,row)-hC(0,row);
+           err = rhsC.SumIntoGlobalValues(1, &rowIndex, &val);
+     }
+ 
+     
+ } // *** end element loop ***
+
+  // Assemble over multiple processors, if necessary
+   DGrad.GlobalAssemble();  DGrad.FillComplete();    
+   MassG.GlobalAssemble();  MassG.FillComplete();
+   MassC.GlobalAssemble();  MassC.FillComplete();
+   StiffC.GlobalAssemble(); StiffC.FillComplete();
+   rhsC.GlobalAssemble();
+   
+  // Dump matrices to disk
+   EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassG);
+   EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
+   EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffC);
+   EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
+   EpetraExt::MultiVectorToMatlabFile("rhs1_vector.dat",rhsC);
+
+   fSignsout.close();
+
+ // delete mesh
+ Delete_Pamgen_Mesh();
+
+ // reset format state of std::cout
+ std::cout.copyfmt(oldFormatState);
+ 
+ return 0;
+}
+
+// Calculates value of exact solution u
+ int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
+ {
+    uExact0 = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
+    uExact1 = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
+    uExact2 = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+
+   return 0;
+ }
+
+// Calculates divergence of exact solution u
+ double evalDivu(double & x, double & y, double & z)
+ {
+   double divu = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
+                 -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
+                 -M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+   return divu;
+ }
 
 
-  // reset format state of std::cout
-  std::cout.copyfmt(oldFormatState);
-  
-  return 0;
+// Calculates curl of exact solution u
+ int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z)
+ {
+   double duxdy = cos(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*(y+1.0)*(y-1.0) + 2.0*y);
+   double duxdz = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0) + 2.0*z);
+   double duydx = cos(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0) + 2.0*x);
+   double duydz = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(x*(z+1.0)*(z-1.0) + 2.0*z);
+   double duzdx = cos(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0) + 2.0*x);
+   double duzdy = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(x*(y+1.0)*(y-1.0) + 2.0*y);
+
+   curlu0 = duzdy - duydz;
+   curlu1 = duxdz - duzdx;
+   curlu2 = duydx - duxdy;
+
+   return 0;
+ }
+
+// Calculates gradient of the divergence of exact solution u
+ int evalGradDivu(double & gradDivu0, double & gradDivu1, double & gradDivu2, double & x, double & y, double & z)
+{
+    gradDivu0 = -M_PI*M_PI*cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
+                  -M_PI*sin(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0)+2.0*x)
+                  -M_PI*sin(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0)+2.0*x);
+    gradDivu1 = -M_PI*sin(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*(y+1.0)*(y-1.0)+2.0*y)
+                  -M_PI*M_PI*cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
+                  -M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(x*(y+1.0)*(y-1.0)+2.0*y);
+    gradDivu2 = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0)+2.0*z)
+                  -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(x*(z+1.0)*(z-1.0)+2.0*z)
+                  -M_PI*M_PI*cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+    return 0;
 }
