@@ -96,6 +96,11 @@ const double Epetra_Underflow = 2.23E-308;
 
 #include <cstdio>
 using std::sprintf;
+using std::sscanf;
+using std::FILE;
+using std::fopen;
+using std::fclose;
+using std::fgets;
 
 #include <cassert>
 
@@ -110,10 +115,28 @@ using std::sprintf;
 
 #include <cmath>
 using std::rand;
+using std::fabs;
+using std::atoi;
+using std::atof;
+using std::abs;
+using std::pow;
+using std::sqrt;
+using std::asin;
+using std::sin;
+using std::cos;
+using std::ceil;
+using std::floor;
 
 #include <iomanip>
 
 using std::string;
+using std::memcpy;
+using std::strcpy;
+using std::strcmp;
+using std::strlen;
+using std::realloc;
+using std::malloc;
+using std::free;
 
 using std::istream;
 using std::ostream;
@@ -121,6 +144,9 @@ using std::cerr;
 using std::cout;
 using std::endl;
 using std::flush;
+
+using std::abort;
+using std::exit;
 
 /*-----------------------------------------------------------------------
   Must refine the following up to #else TRILINOS_NO_CONFIG_H is defined

@@ -270,9 +270,9 @@ os << "Direct residual norms computed in LOBPCGComplex_test.exe" << endl
 #endif
 
   // Clean up.
-  free( dvals );
-  free( colptr );
-  free( rowind );
+  std::free( dvals );
+  std::free( colptr );
+  std::free( rowind );
 
   if (testFailed) {
     if (verbose && MyPID==0) {

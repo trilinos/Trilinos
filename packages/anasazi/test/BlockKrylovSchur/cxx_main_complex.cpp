@@ -292,9 +292,9 @@ int main(int argc, char *argv[])
 #endif
 
   // Clean up.
-  free( dvals );
-  free( colptr );
-  free( rowind );
+  std::free( dvals );
+  std::free( colptr );
+  std::free( rowind );
 
   if (testFailed) {
     if (MyPID==0) {
