@@ -40,6 +40,46 @@
 
 namespace Intrepid {
 
+/** \class  Intrepid::Basis_HGRAD_LINE_C1_FEM
+    \brief  Implementation of the default H(grad)-compatible FEM basis of degree 1 on Line cell.
+
+            Implements Lagrangian basis of degree 1 on the reference Line cell. The basis has
+            cardinality 2 and spans a COMPLETE linear polynomial space. Basis functions are dual
+            to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as follows:
+
+  \verbatim
+  =================================================================================================
+  |         |           degree-of-freedom-tag table                    |                           |
+  |   DoF   |----------------------------------------------------------|      DoF definition       |
+  | ordinal |  subc dim    | subc ordinal | subc DoF ord |subc num DoF |                           |
+  |=========|==============|==============|==============|=============|===========================|
+  |    0    |       0      |       0      |       0      |      1      |   L_0(u) = u(0)           |
+  |---------|--------------|--------------|--------------|-------------|---------------------------|
+  |    1    |       0      |       1      |       0      |      1      |   L_1(u) = u(1)           |
+  |=========|==============|==============|==============|=============|===========================|
+  |   MAX   |  maxScDim=0  |  maxScOrd=1  |  maxDfOrd=0  |      -      |                           |
+  |=========|==============|==============|==============|=============|===========================|
+  \endverbatim
+
+    \remarks
+    \li     DefaultBasisFactory will select this class if the following parameters are specified:
+
+  \verbatim
+  |=======================|===================================|
+  |  CellTopology         |  Line                             |
+  |-----------------------|-----------------------------------|
+  |  EFunctionSpace       |  FUNCTION_SPACE_HGRAD             |
+  |-----------------------|-----------------------------------|
+  |  EDiscreteSpace       |  DISCRETE_SPACE_COMPLETE          |
+  |-----------------------|-----------------------------------|
+  |  degree               |  1                                |
+  |-----------------------|-----------------------------------|
+  |  EBasis               |  BASIS_FEM_DEFAULT                |
+  |-----------------------|-----------------------------------|
+  |  ECoordinates         |  COORDINATES_CARTESIAN            |
+  |=======================|===================================|
+  \endverbatim
+*/
 template<class Scalar, class ArrayScalar>   
 class Basis_HGRAD_LINE_C1_FEM: public Basis<Scalar, ArrayScalar> {
 private:

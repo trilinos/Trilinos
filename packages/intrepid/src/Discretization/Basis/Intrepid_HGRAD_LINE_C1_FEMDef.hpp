@@ -27,8 +27,8 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TRI_C1_FEM_Def.hpp
-    \brief  Definition file for FEM basis functions of degree 1 for H(grad) functions on TRI.
+/** \file   Intrepid_HGRAD_LINE_C1_FEMDef.hpp
+    \brief  Definition file for FEM basis functions of degree 1 for H(grad) functions on a Line.
     \author Created by P. Bochev and D. Ridzal.
  */
 

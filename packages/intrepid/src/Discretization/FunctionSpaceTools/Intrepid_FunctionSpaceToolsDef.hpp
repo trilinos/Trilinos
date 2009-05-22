@@ -267,6 +267,14 @@ inline void FunctionSpaceTools::computeMeasure(ArrayOut             & outVals,
 #endif
 
   ArrayTools::scalarMultiplyDataData<Scalar>(outVals, inDet, inWeights);
+  // must use absolute value of inDet, so flip sign where needed
+  for (int cell=0; cell<outVals.dimension(0); cell++) {
+    if (inDet(cell,0) < 0.0) {
+      for (int point=0; point<outVals.dimension(1); point++) {
+        outVals(cell, point) *= -1.0;
+      }
+    }
+  }
 
 } // computeMeasure
 
