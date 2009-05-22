@@ -243,23 +243,20 @@ namespace Anasazi {
       //
       // if permutation index is not required, just sort using the values
       //
-      switch (which_) {
-        case LM:
-          std::sort(evals.begin(),evals.begin()+n,compMag<greater_mt>());
-          break;
-        case SM:
-          std::sort(evals.begin(),evals.begin()+n,compMag<less_mt>());
-          break;
-        case LR:
-          std::sort(evals.begin(),evals.begin()+n,compAlg<greater_mt>());
-          break;
-        case SR:
-          std::sort(evals.begin(),evals.begin()+n,compAlg<less_mt>());
-          break;
-        case SI:
-        case LI:
-          TEST_FOR_EXCEPTION(true, SortManagerError, "Anasazi::BasicSort::sort(r): LI or SI sorting invalid for real scalar types." );
-          break;
+      if (which_ == LM ) {
+        std::sort(evals.begin(),evals.begin()+n,compMag<greater_mt>());
+      }
+      else if (which_ == SM) {
+        std::sort(evals.begin(),evals.begin()+n,compMag<less_mt>());
+      }
+      else if (which_ == LR) {
+        std::sort(evals.begin(),evals.begin()+n,compAlg<greater_mt>());
+      }
+      else if (which_ == SR) {
+        std::sort(evals.begin(),evals.begin()+n,compAlg<less_mt>());
+      }
+      else {
+        TEST_FOR_EXCEPTION(true, SortManagerError, "Anasazi::BasicSort::sort(r): LI or SI sorting invalid for real scalar types." );
       }
     }
     else {
@@ -278,23 +275,20 @@ namespace Anasazi {
       }
 
       // sort the pair structure
-      switch (which_) {
-        case LM:
-          std::sort(pairs.begin(),pairs.begin()+n,compMag<greater_mt>());
-          break;
-        case SM:
-          std::sort(pairs.begin(),pairs.begin()+n,compMag<less_mt>());
-          break;
-        case LR:
-          std::sort(pairs.begin(),pairs.begin()+n,compAlg<greater_mt>());
-          break;
-        case SR:
-          std::sort(pairs.begin(),pairs.begin()+n,compAlg<less_mt>());
-          break;
-        case SI:
-        case LI:
-          TEST_FOR_EXCEPTION(true, SortManagerError, "Anasazi::BasicSort::sort(r): LI or SI sorting invalid for real scalar types." );
-          break;
+      if (which_ == LM) {
+        std::sort(pairs.begin(),pairs.begin()+n,compMag<greater_mt>());
+      }
+      else if (which_ == SM) {
+        std::sort(pairs.begin(),pairs.begin()+n,compMag<less_mt>());
+      }
+      else if (which_ == LR) {
+        std::sort(pairs.begin(),pairs.begin()+n,compAlg<greater_mt>());
+      }
+      else if (which_ == SR) {
+        std::sort(pairs.begin(),pairs.begin()+n,compAlg<less_mt>());
+      }
+      else {
+        TEST_FOR_EXCEPTION(true, SortManagerError, "Anasazi::BasicSort::sort(r): LI or SI sorting invalid for real scalar types." );
       }
 
       // copy the values and indices out of the pair structure
@@ -347,58 +341,42 @@ namespace Anasazi {
       // for LM,SM, the order doesn't matter
       // for LI,SI, the imaginary goes first
       // for LR,SR, the real goes in first
-      switch (which_) {
-        case LR:
-        case SR:
-        case LM:
-        case SM:
-          std::transform(
-            r_evals.begin(), r_evals.begin()+n,
-            i_evals.begin(), pairs.begin(),
-            MakePairOp<MagnitudeType,MagnitudeType>());
-          break;
-        case LI:
-        case SI:
-          std::transform(
-            i_evals.begin(), i_evals.begin()+n,
-            r_evals.begin(), pairs.begin(),
-            MakePairOp<MagnitudeType,MagnitudeType>());
-          break;
+      if (which_ == LR || which_ == SR || which_ == LM || which_ == SM) {
+        std::transform(
+          r_evals.begin(), r_evals.begin()+n,
+          i_evals.begin(), pairs.begin(),
+          MakePairOp<MagnitudeType,MagnitudeType>());
+      }
+      else {
+        std::transform(
+          i_evals.begin(), i_evals.begin()+n,
+          r_evals.begin(), pairs.begin(),
+          MakePairOp<MagnitudeType,MagnitudeType>());
       }
 
-      switch (which_) {
-        case LR:
-        case LI:
-          std::sort(pairs.begin(),pairs.end(),compAlg<greater_mt>());
-          break;
-        case SR:
-        case SI:
-          std::sort(pairs.begin(),pairs.end(),compAlg<less_mt>());
-          break;
-        case LM:
-          std::sort(pairs.begin(),pairs.end(),compMag2<greater_mt>());
-          break;
-        case SM:
-          std::sort(pairs.begin(),pairs.end(),compMag2<less_mt>());
-          break;
+      if (which_ == LR || which_ == LI) {
+        std::sort(pairs.begin(),pairs.end(),compAlg<greater_mt>());
+      }
+      else if (which_ == SR || which_ == SI) {
+        std::sort(pairs.begin(),pairs.end(),compAlg<less_mt>());
+      }
+      else if (which_ == LM) {
+        std::sort(pairs.begin(),pairs.end(),compMag2<greater_mt>());
+      }
+      else {
+        std::sort(pairs.begin(),pairs.end(),compMag2<less_mt>());
       }
 
       // extract the values
       // for LM,SM,LR,SR: order is (real,imag)
       // for LI,SI: order is (imag,real)
-      switch (which_) {
-        case LR:
-        case SR:
-        case LM:
-        case SM:
-          std::transform(pairs.begin(),pairs.end(),r_evals.begin(),sel1st< std::pair<MagnitudeType,MagnitudeType> >());
-          std::transform(pairs.begin(),pairs.end(),i_evals.begin(),sel2nd< std::pair<MagnitudeType,MagnitudeType> >());
-          break;
-        case LI:
-        case SI:
-          std::transform(pairs.begin(),pairs.end(),r_evals.begin(),sel2nd< std::pair<MagnitudeType,MagnitudeType> >());
-          std::transform(pairs.begin(),pairs.end(),i_evals.begin(),sel1st< std::pair<MagnitudeType,MagnitudeType> >());
-          break;
+      if (which_ == LR || which_ == SR || which_ == LM || which_ == SM) {
+        std::transform(pairs.begin(),pairs.end(),r_evals.begin(),sel1st< std::pair<MagnitudeType,MagnitudeType> >());
+        std::transform(pairs.begin(),pairs.end(),i_evals.begin(),sel2nd< std::pair<MagnitudeType,MagnitudeType> >());
+      }
+      else {
+        std::transform(pairs.begin(),pairs.end(),r_evals.begin(),sel2nd< std::pair<MagnitudeType,MagnitudeType> >());
+        std::transform(pairs.begin(),pairs.end(),i_evals.begin(),sel1st< std::pair<MagnitudeType,MagnitudeType> >());
       }
     }
     else {
@@ -409,62 +387,46 @@ namespace Anasazi {
       // for LM,SM, the order doesn't matter
       // for LI,SI, the imaginary goes first
       // for LR,SR, the real goes in first
-      switch (which_) {
-        case LR:
-        case SR:
-        case LM:
-        case SM:
-          for (int i=0; i<n; i++) {
-            pairs[i] = std::make_pair(std::make_pair(r_evals[i],i_evals[i]),i);
-          }
-          break;
-        case LI:
-        case SI:
-          for (int i=0; i<n; i++) {
-            pairs[i] = std::make_pair(std::make_pair(i_evals[i],r_evals[i]),i);
-          }
-          break;
+      if (which_ == LR || which_ == SR || which_ == LM || which_ == SM) {
+        for (int i=0; i<n; i++) {
+          pairs[i] = std::make_pair(std::make_pair(r_evals[i],i_evals[i]),i);
+        }
+      }
+      else {
+        for (int i=0; i<n; i++) {
+          pairs[i] = std::make_pair(std::make_pair(i_evals[i],r_evals[i]),i);
+        }
       }
 
-      switch (which_) {
-        case LR:
-        case LI:
-          std::sort(pairs.begin(),pairs.end(),compAlg<greater_mt>());
-          break;
-        case SR:
-        case SI:
-          std::sort(pairs.begin(),pairs.end(),compAlg<less_mt>());
-          break;
-        case LM:
-          std::sort(pairs.begin(),pairs.end(),compMag2<greater_mt>());
-          break;
-        case SM:
-          std::sort(pairs.begin(),pairs.end(),compMag2<less_mt>());
-          break;
+      if (which_ == LR || which_ == LI) {
+        std::sort(pairs.begin(),pairs.end(),compAlg<greater_mt>());
+      }
+      else if (which_ == SR || which_ == SI) {
+        std::sort(pairs.begin(),pairs.end(),compAlg<less_mt>());
+      }
+      else if (which_ == LM) {
+        std::sort(pairs.begin(),pairs.end(),compMag2<greater_mt>());
+      }
+      else {
+        std::sort(pairs.begin(),pairs.end(),compMag2<less_mt>());
       }
 
       // extract the values
       // for LM,SM,LR,SR: order is (real,imag)
       // for LI,SI: order is (imag,real)
-      switch (which_) {
-        case LR:
-        case SR:
-        case LM:
-        case SM:
-          for (int i=0; i<n; i++) {
-            r_evals[i] = pairs[i].first.first;
-            i_evals[i] = pairs[i].first.second;
-            (*perm)[i] = pairs[i].second;
-          }
-          break;
-        case LI:
-        case SI:
-          for (int i=0; i<n; i++) {
-            i_evals[i] = pairs[i].first.first;
-            r_evals[i] = pairs[i].first.second;
-            (*perm)[i] = pairs[i].second;
-          }
-          break;
+      if (which_ == LR || which_ == SR || which_ == LM || which_ == SM) {
+        for (int i=0; i<n; i++) {
+          r_evals[i] = pairs[i].first.first;
+          i_evals[i] = pairs[i].first.second;
+          (*perm)[i] = pairs[i].second;
+        }
+      }
+      else {
+        for (int i=0; i<n; i++) {
+          i_evals[i] = pairs[i].first.first;
+          r_evals[i] = pairs[i].first.second;
+          (*perm)[i] = pairs[i].second;
+        }
       }
     }
   }
