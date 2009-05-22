@@ -142,7 +142,6 @@ int i;
                    "Error returned from user function initialize_dot.");
     goto End;
   }
-  ZOLTAN_FREE(&objSizes);
 
 End:
 
@@ -154,6 +153,7 @@ End:
 
   ZOLTAN_FREE(&objs_wgt);
   ZOLTAN_FREE(&parts);
+  ZOLTAN_FREE(&objSizes);
 
   if (!use_ids) {
     /* 
