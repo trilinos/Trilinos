@@ -69,6 +69,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   AztecOO               aztecoo                        PS
   Galeri                galeri                         PS
   Amesos                amesos                         PS
+  Pamgen                pamgen                         PS
   Intrepid              intrepid                       PS
   Ifpack                ifpack                         PS
   Komplex               komplex                        PS
@@ -80,7 +81,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   RBGen                 rbgen                          PS
   Anasazi               anasazi                        PS
   Phalanx               phalanx                        SS
-  Pamgen                pamgen                         PS
   Phdmesh               phdmesh                        PS
   NOX                   nox                            PS
   Moertel               moertel                        PS
