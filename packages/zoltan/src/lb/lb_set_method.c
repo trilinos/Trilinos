@@ -118,7 +118,6 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
    * New way: LB_METHOD = GRAPH
    *          GRAPH_PACKAGE = PARMETIS or JOSTLE or PHG
    */
-#ifdef ZOLTAN_PARMETIS
   else if (strcmp(method_upper, "PARMETIS") == 0){
     zz->LB.Method = GRAPH;
     zz->LB.LB_Fn = Zoltan_ParMetis;
@@ -127,7 +126,6 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
-#endif /* ZOLTAN_PARMETIS */
   else if (strcmp(method_upper, "REFTREE") == 0) {
     zz->LB.Method = REFTREE;
     zz->LB.LB_Fn = Zoltan_Reftree_Part;
