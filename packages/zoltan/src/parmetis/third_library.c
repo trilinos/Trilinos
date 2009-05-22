@@ -142,6 +142,11 @@ char *val)                      /* value of variable */
             status = 2;
           }
 #endif
+#ifndef ZOLTAN_SCOTCH
+          if (strcmp(val, "SCOTCH") == 0){
+            status = 2;
+          }
+#endif
 	  break;
 	}
       }

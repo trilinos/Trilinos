@@ -116,11 +116,8 @@ int Zoltan_ParMetis(
   int wgtflag;
   int   numflag = 0;
   int num_part = zz->LB.Num_Global_Parts;/* passed to Jostle/ParMETIS. Don't */
-#ifdef ZOLTAN_PARMETIS
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
                                    /* change our zz struct.                  */
-#endif /* ZOLTAN_PARMETIS */
-
 
 #ifndef ZOLTAN_PARMETIS
   ZOLTAN_PRINT_ERROR(zz->Proc, yo,
@@ -551,9 +548,8 @@ int Zoltan_ParMetis_Order(
   ZOLTAN_Output_Order ord;
   ZOLTAN_Third_Graph gr;
 
-#ifdef ZOLTAN_PARMETIS
-  MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
-#endif /* ZOLTAN_PARMETIS */
+  MPI_Comm comm = zz->Communicator;/* don't want to risk letting external 
+                                      packages changing our communicator */
   int numflag = 0;
   int timer_p = 0;
   int get_times = 0;
