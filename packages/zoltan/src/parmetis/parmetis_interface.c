@@ -260,68 +260,69 @@ int Zoltan_ParMetis(
 
 #ifdef ZOLTAN_PARMETIS
   if (gr.graph_type != LOCAL_GRAPH) { /* May be GLOBAL or NO GRAPH */
-  /* First check for ParMetis 3 routines */
-  if (strcmp(alg, "PARTKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library:  PartKway");
-    ParMETIS_V3_PartKway (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
-			  &wgtflag, &numflag, &ncon, &num_part, prt.part_sizes,
-			  imb_tols, options, &edgecut, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+    /* First check for ParMetis 3 routines */
+    if (strcmp(alg, "PARTKWAY") == 0){
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+      ParMETIS_V3_PartKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
+			   &wgtflag, &numflag, &ncon, &num_part, prt.part_sizes,
+			   imb_tols, options, &edgecut, prt.part, &comm);
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+    }
+    else if (strcmp(alg, "PARTGEOMKWAY") == 0){
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+      ParMETIS_V3_PartGeomKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,gr.ewgts,
+                               &wgtflag, &numflag, &geo->ndims, geo->xyz, &ncon,
+                               &num_part, prt.part_sizes,
+			       imb_tols, options, &edgecut, prt.part, &comm);
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+    }
+    else if (strcmp(alg, "PARTGEOM") == 0){
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+      ParMETIS_V3_PartGeom(gr.vtxdist, &geo->ndims, geo->xyz, prt.part, &comm);
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+    }
+    else if (strcmp(alg, "ADAPTIVEREPART") == 0){
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+      ParMETIS_V3_AdaptiveRepart(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,
+                                 vsp.vsize, gr.ewgts, &wgtflag, &numflag, &ncon,
+                                 &num_part, prt.part_sizes, imb_tols,
+				 &itr, options, &edgecut, prt.part, &comm);
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+    }
+    else if (strcmp(alg, "REFINEKWAY") == 0){
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
+      ParMETIS_V3_RefineKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
+			     &wgtflag, &numflag, &ncon, &num_part,
+                             prt.part_sizes, imb_tols,
+			     options, &edgecut, prt.part, &comm);
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+    }
+    else {
+      /* Sanity check: This should never happen! */
+      char msg[256];
+      sprintf(msg, "Unknown ParMetis algorithm %s.", alg);
+      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
+    }
   }
-  else if (strcmp(alg, "PARTGEOMKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library:  PartGeomKWay");
-    ParMETIS_V3_PartGeomKway (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
-                              &wgtflag, &numflag, &geo->ndims, geo->xyz, &ncon,
-                              &num_part, prt.part_sizes,
-			      imb_tols, options, &edgecut, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else if (strcmp(alg, "PARTGEOM") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library:  PartGeom");
-    ParMETIS_V3_PartGeom (gr.vtxdist, &geo->ndims, geo->xyz, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else if (strcmp(alg, "ADAPTIVEREPART") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library:  AdaptiveRepart");
-    ParMETIS_V3_AdaptiveRepart (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,
-                                vsp.vsize, gr.ewgts, &wgtflag, &numflag, &ncon,
-                                &num_part, prt.part_sizes, imb_tols,
-				&itr, options, &edgecut, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else if (strcmp(alg, "REFINEKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library:  RefineKWay");
-    ParMETIS_V3_RefineKway (gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
-			    &wgtflag, &numflag, &ncon, &num_part,
-                            prt.part_sizes, imb_tols,
-			    options, &edgecut, prt.part, &comm);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
-  }
-  else {
-    /* Sanity check: This should never happen! */
-    char msg[256];
-    sprintf(msg, "Unknown ParMetis algorithm %s.", alg);
-    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
-  }
-  }
-  else
 #endif /* ZOLTAN_PARMETIS */
 #ifdef ZOLTAN_METIS
     /* TODO: I don't know how to set balance ! */
-  if (gr.graph_type == LOCAL_GRAPH) {
+  else if (gr.graph_type == LOCAL_GRAPH) {
     /* Check for Metis routines */
-  if (strcmp(alg, "PARTKWAY") == 0){
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS 4 library");
-    METIS_WPartGraphKway (gr.vtxdist+1, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts, &wgtflag,
-			  &numflag, &num_part, prt.part_sizes, options, &edgecut, prt.part);
-    ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
-  }
-  else {
-    /* Sanity check: This should never happen! */
-    char msg[256];
-    sprintf(msg, "Unknown Metis algorithm %s.", alg);
-    ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
-  }
+    if (strcmp(alg, "PARTKWAY") == 0){
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS 4 library");
+      METIS_WPartGraphKway (gr.vtxdist+1, gr.xadj, gr.adjncy, 
+                            gr.vwgt, gr.ewgts, &wgtflag,
+			    &numflag, &num_part, prt.part_sizes, 
+                            options, &edgecut, prt.part);
+      ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
+    }
+    else {
+      /* Sanity check: This should never happen! */
+      char msg[256];
+      sprintf(msg, "Unknown Metis algorithm %s.", alg);
+      ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
+    }
   }
 #endif /* ZOLTAN_METIS */
 
