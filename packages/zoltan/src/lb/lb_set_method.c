@@ -119,12 +119,21 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
    *          GRAPH_PACKAGE = PARMETIS or JOSTLE or PHG
    */
   else if (strcmp(method_upper, "PARMETIS") == 0){
+#ifdef ZOLTAN_PARMETIS
     zz->LB.Method = GRAPH;
     zz->LB.LB_Fn = Zoltan_ParMetis;
     zz->LB.Free_Structure = NULL;
     zz->LB.Copy_Structure = NULL;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
+#else
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+                       "ParMETIS method selected but "
+                       "ParMETIS not compiled into Zoltan; "
+                       "Compile with --enable-parmetis.");
+    error = ZOLTAN_FATAL;
+    goto End;
+#endif
   }
   else if (strcmp(method_upper, "REFTREE") == 0) {
     zz->LB.Method = REFTREE;
