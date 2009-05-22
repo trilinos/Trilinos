@@ -130,7 +130,7 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                        "ParMETIS method selected but "
                        "ParMETIS not compiled into Zoltan; "
-                       "Compile with --enable-parmetis.");
+                       "Compile with --with-parmetis.");
     error = ZOLTAN_FATAL;
     goto End;
 #endif
