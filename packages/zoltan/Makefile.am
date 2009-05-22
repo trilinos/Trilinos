@@ -203,7 +203,7 @@ tests: examples
 	@echo ""
 	@echo "Now building zoltan tests."
 	@echo ""
-	@echo "Zoltan tests use drivers and input filess; no compilation necssary."
+	@echo "Zoltan tests use drivers and input files; no compilation necessary."
 	@echo ""
 	@echo "Finished building zoltan tests."
 	@echo ""
