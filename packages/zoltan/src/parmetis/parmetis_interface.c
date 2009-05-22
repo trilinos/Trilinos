@@ -307,7 +307,7 @@ int Zoltan_ParMetis(
 #endif /* ZOLTAN_PARMETIS */
 #ifdef ZOLTAN_METIS
     /* TODO: I don't know how to set balance ! */
-  else if (gr.graph_type == LOCAL_GRAPH) {
+  if (gr.graph_type == LOCAL_GRAPH) {
     /* Check for Metis routines */
     if (strcmp(alg, "PARTKWAY") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS 4 library");
