@@ -120,7 +120,7 @@ $failcnt = 0;
 $passcnt = 0;
 
 ### For each zdrive.inp file, run the test.
-foreach $file (@inpfiles) {
+TEST:  foreach $file (@inpfiles) {
   if ($debug) {print "DEBUG  Running test $testcnt on $file\n";}
 
   ### Remove zdrive output files from previous runs.
@@ -136,6 +136,16 @@ foreach $file (@inpfiles) {
   if ($debug) {
     print "DEBUG  Test name:  $testname\n";
     print "DEBUG  Archfilebase: $archfilebase; Dropbase: $archdropbase\n";
+  }
+
+  ### For serial tests only...if answer file doesn't exist, skip the test.
+  if ($np == 1) {
+    $zoutfile = sprintf("%s%d", $archfilebase, 0);
+    if (!(-e "answers/$zoutfile")) {
+      print LOG "Test $dirname:$testname SKIPPED (no answer file)\n";
+      print "Test $dirname:$testname SKIPPED (no answer file)\n";
+      next TEST;
+    }
   }
 
   ### Execute zdrive.exe.
@@ -155,12 +165,14 @@ foreach $file (@inpfiles) {
   $failed = 0;
   copy($zouterrfile, "output/$zouterrfile");
   foreach $ii (0..$np-1) {
-    $zoutfile = sprintf("%s%d", $zoutfilebase, $ii);
-    $zoutdrop = sprintf("%s%d", $zoutdropbase, $ii);
-    $archfile = sprintf("output/%s%d", $archfilebase, $ii);
-    $archdrop = sprintf("output/%s%d", $archdropbase, $ii);
-    $answfile = sprintf("answers/%s%d", $archfilebase, $ii);
-    $answdrop = sprintf("answers/%s%d", $archdropbase, $ii);
+    if ($np < 10) {$format = "%s%d";}
+    else {$format = "%s%02d";}
+    $zoutfile = sprintf("$format", $zoutfilebase, $ii);
+    $zoutdrop = sprintf("$format", $zoutdropbase, $ii);
+    $archfile = sprintf("output/$format", $archfilebase, $ii);
+    $archdrop = sprintf("output/$format", $archdropbase, $ii);
+    $answfile = sprintf("answers/$format", $archfilebase, $ii);
+    $answdrop = sprintf("answers/$format", $archdropbase, $ii);
     if ($debug) {print "DEBUG copying files:  $zoutfile $archfile\n";}
     if (-e "$zoutfile") {
       copy($zoutfile, $archfile);
