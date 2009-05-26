@@ -73,6 +73,19 @@ void SolveInverseFactory::rebuildInverse(const LinearOp & source,LinearOp & dest
    lowsFactory_->initializeAndReuseOp(Thyra::defaultLinearOpSource(source),&*lows);
 }
 
+/** \brief A function that permits inspection of the parameters used to create
+  *        this object.
+  *
+  * A function that permits inspection of the parameters used to create this
+  * object. Useful for determining defaults and settings used.
+  *
+  * \returns A list used to parameterize this object.
+  */
+Teuchos::RCP<const Teuchos::ParameterList> SolveInverseFactory::getParameterList() const
+{ 
+   return lowsFactory_->getParameterList(); 
+}
+
 /** \brief Constructor that takes a Thyra solve factory and 
   *        makes it look like an InverseFactory
   *
@@ -128,6 +141,19 @@ void PreconditionerInverseFactory::rebuildInverse(const LinearOp & source,Linear
          = Teuchos::get_extra_data<RCP<Thyra::PreconditionerBase<double> > >(dest,"prec");
 
    precFactory_->initializePrec(Thyra::defaultLinearOpSource(source),&*prec);
+}
+
+/** \brief A function that permits inspection of the parameters used to create
+  *        this object.
+  *
+  * A function that permits inspection of the parameters used to create this
+  * object. Useful for determining defaults and settings used.
+  *
+  * \returns A list used to parameterize this object.
+  */
+Teuchos::RCP<const Teuchos::ParameterList> PreconditionerInverseFactory::getParameterList() const
+{ 
+   return precFactory_->getParameterList(); 
 }
 
 //! Build an inverse operator using a factory and a linear operator

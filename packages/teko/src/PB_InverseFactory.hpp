@@ -43,6 +43,16 @@ public:
      *                        object.
      */
    virtual void rebuildInverse(const LinearOp & source,LinearOp & dest) const = 0;
+
+   /** \brief A function that permits inspection of the parameters used to create
+     *        this object.
+     *
+     * A function that permits inspection of the parameters used to create this
+     * object. Useful for determining defaults and settings used.
+     *
+     * \returns A list used to parameterize this object.
+     */
+   virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const = 0;
 };
 
 class SolveInverseFactory : public InverseFactory {
@@ -88,6 +98,16 @@ public:
      *                        object.
      */
    virtual void rebuildInverse(const LinearOp & source,LinearOp & dest) const;
+
+   /** \brief A function that permits inspection of the parameters used to create
+     *        this object.
+     *
+     * A function that permits inspection of the parameters used to create this
+     * object. Useful for determining defaults and settings used.
+     *
+     * \returns A list used to parameterize this object.
+     */
+   virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
 
 protected:
    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory_;
@@ -145,6 +165,16 @@ public:
      *                        object.
      */
    virtual void rebuildInverse(const LinearOp & source,LinearOp & dest) const;
+
+   /** \brief A function that permits inspection of the parameters used to create
+     *        this object.
+     *
+     * A function that permits inspection of the parameters used to create this
+     * object. Useful for determining defaults and settings used.
+     *
+     * \returns A list used to parameterize this object.
+     */
+   virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
 
 protected:
    Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > precFactory_;
