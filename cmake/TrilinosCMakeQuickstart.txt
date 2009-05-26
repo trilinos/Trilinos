@@ -516,6 +516,19 @@ C) Configuring (Makefile Generator)
   with valgrind) test.
 
 
+(*) Disable update of package dependency information:
+
+  To turn off the update of the various XML and HTML dependency files back
+  into the Trilinos source tree, use the configure option:
+
+    -D Trilinos_DEPS_XML_OUTPUT_FILE:FILEPATH=
+
+  NOTE: You must start from a clean cache for this to work.
+
+  NOTE: Disabling the update of these XML and HTML files back into the source
+  tree will speed up successive re-configures by a few seconds.
+
+
 (*) Enabling support for coverage testing:
 
     -D Trilinos_ENABLE_COVERAGE_TESTING:BOOL=ON 
