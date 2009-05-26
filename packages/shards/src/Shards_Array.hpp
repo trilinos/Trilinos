@@ -698,7 +698,7 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
              tags[7] == & Tag1::tag() ;
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag8::tag();
       tags[1] = & Tag7::tag();
@@ -906,7 +906,7 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
              tags[7] == & Tag8::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag1::tag();
       tags[1] = & Tag2::tag();
@@ -1130,7 +1130,7 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
              tags[6] == & Tag1::tag() ;
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag7::tag();
       tags[1] = & Tag6::tag();
@@ -1330,7 +1330,7 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
              tags[6] == & Tag7::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag1::tag();
       tags[1] = & Tag2::tag();
@@ -1532,7 +1532,7 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
              tags[5] == & Tag1::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag6::tag();
       tags[1] = & Tag5::tag();
@@ -1711,7 +1711,7 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
              tags[5] == & Tag6::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag1::tag();
       tags[1] = & Tag2::tag();
@@ -1891,7 +1891,7 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
              tags[4] == & Tag1::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag5::tag();
       tags[1] = & Tag4::tag();
@@ -2049,7 +2049,7 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
              tags[4] == & Tag5::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag1::tag();
       tags[1] = & Tag2::tag();
@@ -2208,7 +2208,7 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
              tags[3] == & Tag1::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag4::tag();
       tags[1] = & Tag3::tag();
@@ -2346,7 +2346,7 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,Tag4,void,void,void,void>
              tags[3] == & Tag4::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag1::tag();
       tags[1] = & Tag2::tag();
@@ -2486,7 +2486,7 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
              tags[2] == & Tag1::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag3::tag();
       tags[1] = & Tag2::tag();
@@ -2606,7 +2606,7 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,Tag3,void,void,void,void,void>
              tags[2] == & Tag3::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag1::tag();
       tags[1] = & Tag2::tag();
@@ -2728,7 +2728,7 @@ struct Helper<Scalar,NaturalOrder,Tag1,Tag2,void,void,void,void,void,void>
              tags[1] == & Tag1::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag2::tag();
       tags[1] = & Tag1::tag();
@@ -2831,7 +2831,7 @@ struct Helper<Scalar,FortranOrder,Tag1,Tag2,void,void,void,void,void,void>
              tags[1] = & Tag2::tag();
     }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag1::tag();
       tags[1] = & Tag2::tag();
@@ -2933,7 +2933,7 @@ struct Helper<Scalar,NaturalOrder,Tag1,void,void,void,void,void,void,void>
   static bool verify( int_t rank , const ArrayDimTag * tags[] )
     { return rank == Rank && tags[0] == & Tag1::tag(); }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag1::tag();
       tags[1] = NULL ;
@@ -3017,7 +3017,7 @@ struct Helper<Scalar,FortranOrder,Tag1,void,void,void,void,void,void,void>
   static bool verify( int_t rank , const ArrayDimTag * tags[] )
     { return rank == Rank && tags[0] == & Tag1::tag(); }
 
-  static void assign( const ArrayDimTag * tags[] )
+  static void assign_tags( const ArrayDimTag * tags[] )
     {
       tags[0] = & Tag1::tag();
       tags[1] = NULL ;
@@ -3399,7 +3399,7 @@ public:
     }
 
   /** \} */
-protected:
+private:
 
   /** Truncation constructor */
   Array( const Array & rhs , const size_type i )
@@ -3664,7 +3664,7 @@ public:
 
   /** \brief Default constructor */
   Array() : m_array()
-    { m_array.m_rank = Rank ; helper::assign( m_array.m_tag ); }
+    { m_array.m_rank = Rank ; helper::assign_tags( m_array.m_tag ); }
 
   /** \brief Copy constructor */
   Array( const Array & rhs ) : m_array( rhs.m_array ) {}
@@ -3693,7 +3693,7 @@ public:
     : m_array()
     {
       m_array.m_rank = Rank ;
-      helper::assign( m_array.m_tag );
+      helper::assign_tags( m_array.m_tag );
       assign( arg_ptr , dims );
     }
 
@@ -3719,7 +3719,7 @@ public:
     : m_array()
     {
       m_array.m_rank = Rank ;
-      helper::assign( m_array.m_tag );
+      helper::assign_tags( m_array.m_tag );
       assign( arg_ptr, n1, n2, n3, n4, n5, n6, n7, n8 );
     }
 
@@ -3749,7 +3749,7 @@ public:
     : m_array()
     {
       m_array.m_rank = Rank ;
-      helper::assign( m_array.m_tag );
+      helper::assign_tags( m_array.m_tag );
       assign( arg_ptr, n1, n2, n3, n4, n5, n6, n7 );
     }
 
@@ -3777,7 +3777,7 @@ public:
     : m_array()
     {
       m_array.m_rank = Rank ;
-      helper::assign( m_array.m_tag );
+      helper::assign_tags( m_array.m_tag );
       assign( arg_ptr, n1, n2, n3, n4, n5, n6 );
     }
 
@@ -3805,7 +3805,7 @@ public:
     : m_array()
     {
       m_array.m_rank = Rank ;
-      helper::assign( m_array.m_tag );
+      helper::assign_tags( m_array.m_tag );
       assign( arg_ptr, n1, n2, n3, n4, n5 );
     }
 
@@ -3831,7 +3831,7 @@ public:
     : m_array()
     {
       m_array.m_rank = Rank ;
-      helper::assign( m_array.m_tag );
+      helper::assign_tags( m_array.m_tag );
       assign( arg_ptr, n1, n2, n3, n4 );
     }
 
@@ -3857,7 +3857,7 @@ public:
     : m_array()
     {
       m_array.m_rank = Rank ;
-      helper::assign( m_array.m_tag );
+      helper::assign_tags( m_array.m_tag );
       assign( arg_ptr , n1, n2, n3 );
     }
 
@@ -3880,7 +3880,7 @@ public:
     : m_array()
     {
       m_array.m_rank = Rank ;
-      helper::assign( m_array.m_tag );
+      helper::assign_tags( m_array.m_tag );
       assign( arg_ptr, n1, n2 );
     }
 
@@ -3902,7 +3902,7 @@ public:
     : m_array()
     {
       m_array.m_rank = Rank ;
-      helper::assign( m_array.m_tag );
+      helper::assign_tags( m_array.m_tag );
       assign( arg_ptr, n1 );
     }
 
@@ -3919,7 +3919,7 @@ public:
     : m_array()
     {
       m_array.m_rank = Rank ;
-      helper::assign( m_array.m_tag );
+      helper::assign_tags( m_array.m_tag );
       assign( arg_ptr );
     }
 
@@ -3929,7 +3929,7 @@ public:
     {
       if ( ! helper::verify( m_array.m_rank , m_array.m_tag ) ) {
         m_array.m_rank = Rank ;
-        helper::assign( m_array.m_tag );
+        helper::assign_tags( m_array.m_tag );
         array_traits::throw_bad_conversion( m_array.m_rank , m_array.m_tag ,
                                             rhs.m_rank , rhs.m_tag );
       }
@@ -3942,6 +3942,26 @@ public:
   operator typename Array<Scalar,array_order>::ReverseType () const
     { return typename Array<Scalar,array_order>::ReverseType( m_array ); }
 
+  /** \brief  Assign stride and pointer */
+  void assign_stride( value_type      * arg_ptr ,
+                      const size_type * arg_stride )
+    {
+      m_array.m_ptr = arg_ptr ;
+      Copy<Rank>(   m_array.m_stride , arg_stride );
+      Copy<8-Rank>( m_array.m_stride + Rank , size_type(0) );
+    }
+
+  /** \brief  Assign stride and pointer */
+  void assign_stride( value_type      * arg_ptr ,
+                      const size_type * arg_stride ,
+                            size_type   arg_final_dim )
+    {
+      m_array.m_ptr = arg_ptr ;
+      Copy<Rank-1>( m_array.m_stride , arg_stride );
+      m_array.m_stride[Rank-1] = m_array.m_stride[Rank-2] * arg_final_dim ;
+      Copy<8-Rank>( m_array.m_stride + Rank , size_type(0) );
+    }
+
   /** \} */
 protected:
 
@@ -3950,7 +3970,7 @@ protected:
     {
       if ( ! helper::verify( m_array.m_rank , m_array.m_tag ) ) {
         m_array.m_rank = Rank ;
-        helper::assign( m_array.m_tag );
+        helper::assign_tags( m_array.m_tag );
         array_traits::throw_bad_conversion( m_array.m_rank , m_array.m_tag ,
                                             rhs.m_rank - 1 , rhs.m_tag );
       }
