@@ -176,6 +176,8 @@ void insert_matrix_locations(CrsWrapper_GraphBuilder& graphbuilder,
                               Epetra_CrsMatrix& C)
 {
   int max_row_length = graphbuilder.get_max_row_length();
+  if (max_row_length < 1) return;
+
   std::vector<int> indices(max_row_length);
   int* indices_ptr = &indices[0];
   std::vector<double> zeros(max_row_length, 0.0);
