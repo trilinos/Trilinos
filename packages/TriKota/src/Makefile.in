@@ -282,7 +282,7 @@ include_HEADERS = $(TRIKOTA_H)
 # not a default installation directory, so we had to create it
 # special.
 execincludedir = $(exec_prefix)/include
-nodist_execinclude_HEADERS = TriKota_Config.h
+nodist_execinclude_HEADERS = TriKota_config.h
 
 # --------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'

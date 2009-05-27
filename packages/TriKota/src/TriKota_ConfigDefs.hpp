@@ -38,6 +38,6 @@
 #undef VERSION
 #endif
 
-#include <TriKota_Config.h>
+#include <TriKota_config.h>
 
 #endif /*_TRIKOTA_CONFIGDEFS_H_*/

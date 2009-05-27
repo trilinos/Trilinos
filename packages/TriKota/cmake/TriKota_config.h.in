@@ -1,0 +1,37 @@
+/* src/TriKota_Config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* Define if want to build examples */
+#cmakedefine HAVE_EXAMPLES
+
+/* Define if you want to build export makefiles. */
+#cmakedefine HAVE_EXPORT_MAKEFILES
+
+/* Define if you are using gnumake - this will shorten your link lines. */
+#cmakedefine HAVE_GNUMAKE
+
+/* define if we want to use MPI */
+#cmakedefine HAVE_MPI
+
+/* Define if want to build tests */
+#cmakedefine HAVE_TESTS
+
+/* Define if want to build TriKota-examples */
+#cmakedefine HAVE_TRIKOTA_EXAMPLES
+
+/* Define if want to build TriKota-tests */
+#cmakedefine HAVE_TRIKOTA_TESTS
+
+/* Define to the address where bug reports for this package should be sent. */
+#cmakedefine PACKAGE_BUGREPORT
+
+/* Define to the full name of this package. */
+#cmakedefine PACKAGE_NAME
+
+/* Define to the full name and version of this package. */
+#cmakedefine PACKAGE_STRING
+
+/* Define to the one symbol short name of this package. */
+#cmakedefine PACKAGE_TARNAME
+
+/* Define to the version of this package. */
+#cmakedefine PACKAGE_VERSION

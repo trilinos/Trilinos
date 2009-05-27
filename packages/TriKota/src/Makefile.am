@@ -110,7 +110,7 @@ include_HEADERS = $(TRIKOTA_H)
 # special.
 
 execincludedir = $(exec_prefix)/include
-nodist_execinclude_HEADERS = TriKota_Config.h
+nodist_execinclude_HEADERS = TriKota_config.h
 
 # --------------------------------------------------------------------
 # Files to be deleted by 'make maintainer-clean'
