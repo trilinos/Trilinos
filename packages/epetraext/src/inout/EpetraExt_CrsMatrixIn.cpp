@@ -361,7 +361,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
     // Less memory will be needed in FillComplete.
     A = new Epetra_CrsMatrix(Copy, *rowMap1, numNonzerosPerRow, true);
   }
-  A->SetTracebackMode(2);
+  A->SetTracebackMode(1);
 
   // Rows are inserted in ascending global number, and the insertion uses numNonzerosPerRow.
   // Therefore numNonzerosPerRow must be permuted, as it was created in ascending local order.
