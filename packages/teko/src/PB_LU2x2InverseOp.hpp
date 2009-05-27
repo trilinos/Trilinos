@@ -36,7 +36,16 @@ namespace PB {
  *
  * where the Schur complement is \f$ S=-A_{11}+A_{10} A_{00}^{-1} A_{01} \f$ .
  * In order to do this 2 evaluations of \f$ A_{00}^{-1} \f$ and a single
- * evalution of \f$ S^{-1} \f$ are needed.
+ * evalution of \f$ S^{-1} \f$ are needed. For increased flexibility both
+ * evaluations of \f$A_{00}^{-1}\f$ can be specified independently. 
+ * For righthand side vector \f$[f, g]^T\f$ and solution vector \f$[u,v]^T\f$
+ * the two inverses (\f$A\f$-hat and \f$A\f$-tilde) are needed to evaluate 
+ *
+ * \f$\hat{A}_{00} u^* = f\f$,
+ *
+ * \f$\tilde{A}_{00} v = A_{01} v\f$
+ *
+ * where \f$u^*\f$ is an intermediate step.
  */
 class LU2x2InverseOp : public BlockImplicitLinearOp {
 public:
@@ -47,11 +56,27 @@ public:
      * the inverse operator. 
      *
      * \param[in] A The block \f$ 2 \times 2 \f$ \f$A\f$ operator.
-     * \param[in] invA00  An approximate inverse of \f$ A_{00} \f$.
+     * \param[in] invA00  An approximate inverse of \f$ A_{00} \f$, used for both \f$\hat{A}_{00}\f$ and \f$\tilde{A}_{00}\f$
      * \param[in] invS  An approximate inverse of \f$ S = -A_{11} + A_{10} A_{00}^{-1} A_{01} \f$.
      */
    LU2x2InverseOp(const BlockedLinearOp & A,
                        const LinearOp & invA00,
+                       const LinearOp & invS);
+
+   /** \brief This constructor explicitly takes the parts of \f$ A \f$ required to
+     *        build the inverse operator.
+     *
+     * This constructor explicitly takes the parts of \f$ A \f$ required to build
+     * the inverse operator. 
+     *
+     * \param[in] A The block \f$ 2 \times 2 \f$ \f$A\f$ operator.
+     * \param[in] hatInvA00  An approximate inverse of \f$ \hat{A}_{00} \f$
+     * \param[in] tildeInvA00  An approximate inverse of \f$ \tilde{A}_{00} \f$
+     * \param[in] invS  An approximate inverse of \f$ S = -A_{11} + A_{10} A_{00}^{-1} A_{01} \f$.
+     */
+   LU2x2InverseOp(const BlockedLinearOp & A,
+                       const LinearOp & hatInvA00,
+                       const LinearOp & tildeInvA00,
                        const LinearOp & invS);
 
    //! \name Inherited methods from Thyra::LinearOpBase
@@ -82,7 +107,8 @@ public:
 protected:
    // fundamental operators to use
    const BlockedLinearOp A_;  ///< operator \f$ A \f$
-   const LinearOp invA00_;    ///< inverse of \f$ A_{00} \f$
+   const LinearOp hatInvA00_;  ///< inverse of \f$ A_{00} \f$
+   const LinearOp tildeInvA00_;  ///< inverse of \f$ A_{00} \f$
    const LinearOp invS_;      ///< inverse of \f$ S \f$
 
    // some blocks of A
@@ -101,6 +127,27 @@ private:
 inline LinearOp createLU2x2InverseOp(BlockedLinearOp & A,LinearOp & invA00,LinearOp & invS)
 {
    return Teuchos::rcp(new LU2x2InverseOp(A,invA00,invS));
+}
+
+inline LinearOp createLU2x2InverseOp(BlockedLinearOp & A,LinearOp & invA00,LinearOp & invS,const std::string & str)
+{
+   Teuchos::RCP<Thyra::LinearOpBase<double> > result = Teuchos::rcp(new LU2x2InverseOp(A,invA00,invS));
+   result->setObjectLabel(str);
+
+   return result;
+}
+
+inline LinearOp createLU2x2InverseOp(BlockedLinearOp & A,LinearOp & hatInvA00,LinearOp & tildeInvA00,LinearOp & invS)
+{
+   return Teuchos::rcp(new LU2x2InverseOp(A,hatInvA00,tildeInvA00,invS));
+}
+
+inline LinearOp createLU2x2InverseOp(BlockedLinearOp & A,LinearOp & hatInvA00,LinearOp & tildeInvA00,LinearOp & invS,const std::string & str)
+{
+   Teuchos::RCP<Thyra::LinearOpBase<double> > result = Teuchos::rcp(new LU2x2InverseOp(A,hatInvA00,tildeInvA00,invS));
+   result->setObjectLabel(str);
+
+   return result;
 }
 
 } // end namespace PB

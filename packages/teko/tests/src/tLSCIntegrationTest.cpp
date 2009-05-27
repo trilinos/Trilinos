@@ -201,7 +201,7 @@ bool tLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream & os)
    status = (solver.NumIters()<=16);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tLSCIntegrationTest::test_withmassStable " << toString(status) 
-                      << ": # of iterations = " << solver.NumIters() << std::endl;
+                      << ": # of iterations = " << solver.NumIters() << " (should be 16)" << std::endl;
    }
    allPassed &= status;
  

@@ -15,20 +15,52 @@ namespace PB {
 // Thyra::LinearOpBase requirements
 ////////////////////////////////////////////////////////////////////////
 LU2x2InverseOp::LU2x2InverseOp(const BlockedLinearOp & A,
-                                         const LinearOp & invA00,
-                                         const LinearOp & invS)
-   : A_(A), invA00_(invA00), invS_(invS), 
+                               const LinearOp & invA00,
+                               const LinearOp & invS)
+   : A_(A), hatInvA00_(invA00), tildeInvA00_(invA00), invS_(invS), 
      A10_(A->getBlock(1,0)), A01_(A->getBlock(0,1))
 {
    RCP<const VectorSpaceBase<double> > productArray[2];
  
    // create and store range space
-   productArray[0] = invA00_->range();
+   productArray[0] = hatInvA00_->range();
    productArray[1] = invS_->range();
    productRange_   = rcp(new DefaultProductVectorSpace<double>(2,&productArray[0]));
 
    // create and store range space
-   productArray[0] = invA00_->domain();
+   productArray[0] = hatInvA00_->domain();
+   productArray[1] = invS_->domain(); 
+   productDomain_  = rcp(new DefaultProductVectorSpace<double>(2,&productArray[0]));
+      // "productVectorSpace" did not yield to me quick enough
+}
+
+/** \brief This constructor explicitly takes the parts of \f$ A \f$ required to
+  *        build the inverse operator.
+  *
+  * This constructor explicitly takes the parts of \f$ A \f$ required to build
+  * the inverse operator. 
+  *
+  * \param[in] A The block \f$ 2 \times 2 \f$ \f$A\f$ operator.
+  * \param[in] hatInvA00  An approximate inverse of \f$ \hat{A}_{00} \f$
+  * \param[in] tildeInvA00  An approximate inverse of \f$ \tilde{A}_{00} \f$
+  * \param[in] invS  An approximate inverse of \f$ S = -A_{11} + A_{10} A_{00}^{-1} A_{01} \f$.
+  */
+LU2x2InverseOp::LU2x2InverseOp(const BlockedLinearOp & A,
+                               const LinearOp & hatInvA00,
+                               const LinearOp & tildeInvA00,
+                               const LinearOp & invS)
+   : A_(A), hatInvA00_(hatInvA00), tildeInvA00_(tildeInvA00), invS_(invS), 
+     A10_(A->getBlock(1,0)), A01_(A->getBlock(0,1))
+{
+   RCP<const VectorSpaceBase<double> > productArray[2];
+ 
+   // create and store range space
+   productArray[0] = hatInvA00_->range();
+   productArray[1] = invS_->range();
+   productRange_   = rcp(new DefaultProductVectorSpace<double>(2,&productArray[0]));
+
+   // create and store range space
+   productArray[0] = hatInvA00_->domain();
    productArray[1] = invS_->domain(); 
    productDomain_  = rcp(new DefaultProductVectorSpace<double>(2,&productArray[0]));
       // "productVectorSpace" did not yield to me quick enough
@@ -64,10 +96,10 @@ void LU2x2InverseOp::implicitApply(const BlockedMultiVector & x, BlockedMultiVec
    }
 
    // set temporary operator for performing inv(A_00)*A_01
-   LinearOp invA00_A01 = Thyra::multiply(invA00_,A01_);
+   LinearOp invA00_A01 = Thyra::multiply(tildeInvA00_,A01_);
 
    // compute actual product
-   applyOp(invA00_,     f,  uc);            // u   = inv(A_00) * f
+   applyOp(hatInvA00_,  f,  uc);            // u   = inv(A_00) * f
    applyOp(A10_,       uc,  ps, -1.0, 1.0); // ps += -A_10*u
    applyOp(invS_,      ps,  pc, -1.0);      // p   = -inv(S)*ps
    applyOp(invA00_A01, pc,  uc, -1.0, 1.0); // u  += -inv(A_00)*A_01*p

@@ -53,6 +53,9 @@ public:
      * \returns A list used to parameterize this object.
      */
    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const = 0;
+
+   /** Return a string that describes this factory */
+   virtual std::string toString() const = 0;
 };
 
 class SolveInverseFactory : public InverseFactory {
@@ -108,6 +111,9 @@ public:
      * \returns A list used to parameterize this object.
      */
    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+
+   /** Return a string that describes this factory */
+   virtual std::string toString() const { return lowsFactory_->description(); }
 
 protected:
    Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory_;
@@ -175,6 +181,9 @@ public:
      * \returns A list used to parameterize this object.
      */
    virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const;
+
+   /** Return a string that describes this factory */
+   virtual std::string toString() const { return precFactory_->description(); }
 
 protected:
    Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > precFactory_;

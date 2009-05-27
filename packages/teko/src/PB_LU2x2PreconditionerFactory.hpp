@@ -46,6 +46,18 @@ namespace PB {
  *
  * where the Schur complement is \f$ S=-A_{11}+A_{10} A_{00}^{-1} A_{01} \f$ .
  *
+ * To use an LDU approximation 2 evaluations of \f$ A_{00}^{-1} \f$ and a single
+ * evalution of \f$ S^{-1} \f$ are needed. For increased flexibility both
+ * evaluations of \f$A_{00}^{-1}\f$ can be specified independently. 
+ * For righthand side vector \f$[f, g]^T\f$ and solution vector \f$[u,v]^T\f$
+ * the two inverses (\f$A\f$-hat and \f$A\f$-tilde) are needed to evaluate 
+ *
+ * \f$\hat{A}_{00} u^* = f\f$,
+ *
+ * \f$\tilde{A}_{00} v = A_{01} v\f$
+ *
+ * where \f$u^*\f$ is an intermediate step.
+ *
  * In order to facilate using this class in a nonlinear solve (or for a 
  * time-dependent problem) the additional abstraction of a ``Strategy''
  * has been added. This strategy, abstractly represented as the LU2x2Strategy,
@@ -56,7 +68,7 @@ namespace PB {
  * corresponding strategy object.
  *
  * For example, assume that you have the particularly nice case that
- * your approximations of \f$A_{00}^{-1}\f$ and \f$S^{-1}\f$ are indedent of the source
+ * your approximations of \f$A_{00}^{-1}\f$ and \f$S^{-1}\f$ are independent of the source
  * operator. Then, one way to instantiate a LU2x2PreconditionerFactory
  * is
 
@@ -87,6 +99,9 @@ class LU2x2PreconditionerFactory : public BlockPreconditionerFactory {
  
       /** @brief Build a simple static LU2x2 preconditioner */
       LU2x2PreconditionerFactory(LinearOp & invA00,LinearOp & invS);
+
+      /** @brief Build a simple static LU2x2 preconditioner */
+      LU2x2PreconditionerFactory(LinearOp & hatInvA00,LinearOp & tildeInvA00,LinearOp & invS);
 
       /** @brief Constructor that permits the most generality in building \f$A_{00}^{-1}\f$ and
         *        \f$S^{-1}\f$.

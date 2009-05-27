@@ -4,6 +4,11 @@
 #include "Teuchos_RCP.hpp"
 #include "Thyra_LinearOpBase.hpp"
 
+#include "PB_Utilities.hpp"
+#include "PB_InverseFactory.hpp"
+#include "PB_BlockPreconditionerFactory.hpp"
+
+
 namespace PB {
 
 /** @brief Abstract strategy for computing inv(F) and inv(S) in the
@@ -51,13 +56,19 @@ namespace PB {
  */
 class LU2x2Strategy {
 public:
-   /** returns an (approximate) inverse of \f$A_{00}\f$ */
-   virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
-   getInvA00(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A,BlockPreconditionerState & state) const = 0;
+   /** returns the first (approximate) inverse of \f$A_{00}\f$ */
+   // virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
+   virtual const PB::LinearOp
+   getHatInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
+
+   /** returns the scond (approximate) inverse of \f$A_{00}\f$ */
+   // virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
+   virtual const PB::LinearOp
+   getTildeInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
 
    /** returns an (approximate) inverse of \f$S = -A_{11} + A_{10} A_{00}^{-1} A_{01}\f$ */
-   virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> >
-   getInvS(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A,BlockPreconditionerState & state) const = 0;
+   virtual const PB::LinearOp
+   getInvS(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const = 0;
 };
 
 /** @brief A simple strategy for use with LU2x2PreconditionerFactory, that
@@ -74,32 +85,40 @@ public:
      *
      * Constructor that takes the static \f$A_{00}^{-1}\f$ and \f$S^{-1}\f$ objects.
      *
-     * @param[in] invA00 Inverse of \f$A_{00}\f$ in the source matrix.
+     * @param[in] hInvA00 Inverse of \f$\hat{A}_{00}\f$ in the source matrix.
+     * @param[in] tInvA00 Inverse of \f$\tilde{A}_{00}\f$ in the source matrix.
      * @param[in] invS Inverse of the Schur complement of the source matrix.
      */
-   StaticLU2x2Strategy(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invA00,
-                          const Teuchos::RCP<const Thyra::LinearOpBase<double> > & invS)
-      : invA00_(invA00), invS_(invS)
+   StaticLU2x2Strategy(const PB::LinearOp & hInvA00,
+                       const PB::LinearOp & tInvA00,
+                       const PB::LinearOp & invS)
+      : hatInvA00_(hInvA00), tildeInvA00_(tInvA00), invS_(invS)
    {}
  
    /** @name Methods inherited from LU2x2Strategy. */
    //@{
 
    /** returns a static (approximate) inverse of F */
-   virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> > 
-   getInvA00(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A,BlockPreconditionerState & state) const
-   { return invA00_; }
+   virtual const PB::LinearOp
+   getHatInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const
+   { return hatInvA00_; }
+
+   /** returns a static (approximate) inverse of F */
+   virtual const PB::LinearOp
+   getTildeInvA00(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const
+   { return tildeInvA00_; }
 
    /** returns a static (approximate) inverse of S = -D + L*inv(F)*U */
-   virtual const Teuchos::RCP<const Thyra::LinearOpBase<double> > 
-   getInvS(const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A,BlockPreconditionerState & state) const
+   virtual const PB::LinearOp
+   getInvS(const PB::BlockedLinearOp & A,BlockPreconditionerState & state) const
    { return invS_; }
 
    //@}
 
 protected:
-   const Teuchos::RCP<const Thyra::LinearOpBase<double> > invA00_;  /**< Stored value of \f$A_{00}^{-1}\f$ */
-   const Teuchos::RCP<const Thyra::LinearOpBase<double> > invS_; /**< Stored value of \f$S^{-1}\f$ */
+   const PB::LinearOp hatInvA00_;  /**< Stored value of \f$\hat{A}_{00}^{-1}\f$ */
+   const PB::LinearOp tildeInvA00_;  /**< Stored value of \f$\tilde{A}_{00}^{-1}\f$ */
+   const PB::LinearOp invS_; /**< Stored value of \f$S^{-1}\f$ */
 
 private:
    // hide me!

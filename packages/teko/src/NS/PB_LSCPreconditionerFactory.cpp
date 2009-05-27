@@ -78,23 +78,21 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    else
       invPschur = multiply(invBQBtmC, M , invBQBtmC);
 
-   // build diagonal operations
-   std::vector<LinearOp> invDiag(2);
-   invDiag[0] = invF;
-   invDiag[1] = Thyra::scale(-1.0,invPschur);
+   // build the preconditioner operator: Use LDU or upper triangular approximation
+   if(invOpsStrategy_->useFullLDU()) { 
+      // solve using a full LDU decomposition
+      return createLU2x2InverseOp(blockOp,invF,invPschur,"LSC-LDU");
+   } else {
+      // build diagonal operations
+      std::vector<LinearOp> invDiag(2);
+      invDiag[0] = invF;
+      invDiag[1] = Thyra::scale(-1.0,invPschur);
 
-   // get upper triangular matrix
-   BlockedLinearOp U = getUpperTriBlocks(blockOp); 
+      // get upper triangular matrix
+      BlockedLinearOp U = getUpperTriBlocks(blockOp); 
 
-   // label the preconditioner
-   std::stringstream ss;
-   ss << "LSC Preconditioner " << (invD!=Teuchos::null ? "(stabilized)" : "(stable)" ) 
-      << ": ( inv(F) = " << invF->description()
-      << ", inv(BQBt) = " << invBQBtmC->description() << " )";
-
-   // build the preconditioner operator
-   //return createBlockUpperTriInverseOp(U,invDiag,ss.str());
-   return createBlockUpperTriInverseOp(U,invDiag,"LSC");
+      return createBlockUpperTriInverseOp(U,invDiag,"LSC-Upper");
+   }
 }
 
 } // end namespace NS
