@@ -167,7 +167,6 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   int M, N, NZ;      // Matrix dimensions
   int i;
   int me = comm.MyPID();
-  int nproc = comm.NumProc();
 
   Epetra_Time timer(comm);
 
@@ -363,6 +362,13 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
     A = new Epetra_CrsMatrix(Copy, *rowMap1, numNonzerosPerRow, true);
   }
   A->SetTracebackMode(2);
+
+  // Rows are inserted in ascending global number, and the insertion uses numNonzerosPerRow.
+  // Therefore numNonzerosPerRow must be permuted, as it was created in ascending local order.
+  int *gidList = new int[numRows];
+  for (i = 0; i < numRows; i++) gidList[i] = rowMap1->GID(i);
+  Epetra_Util::Sort(true,numRows,gidList,0,0,1,&numNonzerosPerRow);
+  delete [] gidList;
 
   //  Insert the global values into the matrix row-by-row.
   if (verbose && me == 0) cout << "   Inserting global values" << endl;
