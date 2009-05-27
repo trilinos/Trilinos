@@ -142,12 +142,11 @@ Package: Intrepid (Non-released)
 
 Package Transition Lead: Denis Ridzal (dridzal@sandia.gov)
 
-Status: Initial cmakification complete. The libraries and a few tests and examples
-have been converted.
+Status: Complete CMake support. No longer maintaining autotools.
 
-Final Certification Date: [???]
+Final Certification Date: 05/27/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: All tests are converted and match autotools results.
 
 -------------------------------------------------------------------------------
 
