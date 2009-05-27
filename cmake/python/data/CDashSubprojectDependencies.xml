@@ -161,6 +161,11 @@
       <Email address="amesos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Pamgen">
+    <EmailAddresses>
+      <Email address="pamgen-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Intrepid">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="TO"/>
@@ -171,6 +176,7 @@
     <Dependency name="Stokhos" type="ILO"/>
     <Dependency name="Sacado" type="LO"/>
     <Dependency name="Amesos" type="TO"/>
+    <Dependency name="Pamgen" type="TO"/>
     <EmailAddresses>
       <Email address="intrepid-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -330,11 +336,6 @@
     <Dependency name="Belos" type="TO"/>
     <EmailAddresses>
       <Email address="phalanx-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
-  <SubProject name="Pamgen">
-    <EmailAddresses>
-      <Email address="pamgen-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Phdmesh">

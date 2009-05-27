@@ -6,8 +6,8 @@
     <filename>group__shards__package.html</filename>
     <subgroup>shards_package_array</subgroup>
     <subgroup>shards_package_cell_topology</subgroup>
-    <subgroup>shards_package_index_list</subgroup>
     <subgroup>shards_package_simple_array_ops</subgroup>
+    <subgroup>shards_package_index_list</subgroup>
     <subgroup>shards_package_typelist</subgroup>
   </compound>
   <compound kind="group">
@@ -16,9 +16,9 @@
     <filename>group__shards__package__array.html</filename>
     <class kind="class">shards::ArrayDimTag</class>
     <class kind="class">shards::ArrayDimension</class>
+    <class kind="class">shards::Array&lt; Scalar, array_order, void, void, void, void, void, void, void, void &gt;</class>
     <class kind="class">shards::Array</class>
     <class kind="class">shards::Array&lt; Scalar, RankZero, void, void, void, void, void, void, void, void &gt;</class>
-    <class kind="class">shards::Array&lt; Scalar, array_order, void, void, void, void, void, void, void, void &gt;</class>
     <member kind="define">
       <type>#define</type>
       <name>SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION</name>
@@ -57,27 +57,6 @@
       <anchor>ggb8c77d49ab62548fa8e62a49e529f0ab6b513e36bdb2b6c3d18547073482846d</anchor>
       <arglist></arglist>
     </member>
-    <member kind="function">
-      <type>unsigned</type>
-      <name>array_stride_size</name>
-      <anchorfile>group__shards__package__array.html</anchorfile>
-      <anchor>g6c666d806b9a48d2a3bd66074b0b9e99</anchor>
-      <arglist>(const unsigned rank, const unsigned *const stride)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>array_stride_to_natural_dimensions</name>
-      <anchorfile>group__shards__package__array.html</anchorfile>
-      <anchor>g825c8a5ac7a64adcc1f85a124e677177</anchor>
-      <arglist>(const unsigned rank, const unsigned *const stride, unsigned *const dim)</arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>array_stride_to_natural_indices</name>
-      <anchorfile>group__shards__package__array.html</anchorfile>
-      <anchor>g93c09bea557b48cb34ed854ac10d4009</anchor>
-      <arglist>(const unsigned rank, const unsigned *const stride, const unsigned offset, unsigned *const indices)</arglist>
-    </member>
   </compound>
   <compound kind="group">
     <name>shards_package_cell_topology</name>
@@ -95,7 +74,10 @@
     <class kind="struct">shards::Pyramid</class>
     <class kind="struct">shards::Wedge</class>
     <class kind="struct">shards::Hexahedron</class>
+    <class kind="class">shards::CellTopology</class>
     <class kind="struct">CellTopologyData</class>
+    <class kind="struct">CellTopologyData_Subcell</class>
+    <class kind="struct">CellTopologyData_Permutation</class>
     <class kind="struct">shards::CellTopologyTraits</class>
     <member kind="typedef">
       <type>struct CellTopologyData</type>
@@ -104,221 +86,310 @@
       <anchor>gced4ac1103f31ae1d467d884a5b69288</anchor>
       <arglist></arglist>
     </member>
+    <member kind="enumeration">
+      <name>ECellType</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>g426b73d1f99d822775c90b9c7816bf73</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="enumeration">
+      <name>ETopologyType</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>g10f1c36001c3859821ebb4c943d424d2</anchor>
+      <arglist></arglist>
+    </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Node &gt;</name>
+      <name>getCellTopologyData&lt; Node &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>gbd10d442febfb565d08cfce62a294f72</anchor>
+      <anchor>g78fce4c8c82457e0d0153b7b0792b221</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Particle &gt;</name>
+      <name>getCellTopologyData&lt; Particle &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>gd2421d38e0538adc82d449af00a86ec3</anchor>
+      <anchor>ge27e4a0a9a93b5e76198014449caac60</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Line&lt; 2 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Line&lt; 2 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>gc27dfb87d4dea7e336c1ef6d962bcb17</anchor>
+      <anchor>gd44090234be6315aee8d9538f1655e6d</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Line&lt; 3 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Line&lt; 3 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>gd80acdbd70b74a484f054cc8b9f679b7</anchor>
+      <anchor>g8d3c5bc541dbc8a89cdd92186e5b0c01</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Beam&lt; 2 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Beam&lt; 2 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g0dca9cf0e6e4ccd739aa40e96a810d9a</anchor>
+      <anchor>g3b07116a7fee1794d0d6ef0c332c86dd</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Beam&lt; 3 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Beam&lt; 3 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g55f83cfcea7f921bf42b7baef0b7ee03</anchor>
+      <anchor>gc394b8deae555663a238ee6c0b197615</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; ShellLine&lt; 2 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; ShellLine&lt; 2 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g7f08bea47b183437bf3cf4672d3b0507</anchor>
+      <anchor>gd7e6a8c1e52a1da7b3b9203b1f4b9685</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; ShellLine&lt; 3 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; ShellLine&lt; 3 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g1b6ad56b584bf1fe6fb3ad0c72295cb2</anchor>
+      <anchor>g47432dae00dbada66d8f7a4dde0f26aa</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Triangle&lt; 3 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Triangle&lt; 3 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g1e2938962dff1ba93bb749a662750518</anchor>
+      <anchor>g07403fb96f9bffb0ac51937dd0a1fe6c</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Triangle&lt; 6 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Triangle&lt; 6 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g831b3ed4b61e7ef0de65d39e053a50d0</anchor>
+      <anchor>g50582245fbfbde13a02eb2ecff60821e</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; ShellTriangle&lt; 3 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Triangle&lt; 4 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>gb01adc9677f5f16e4d7e6df1e4e720e5</anchor>
+      <anchor>g9dea3f8fa38d94ab1d8f2a177ec839d6</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; ShellTriangle&lt; 6 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; ShellTriangle&lt; 3 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g0cdc35ce1df46fd4442adbcd9ec87de1</anchor>
+      <anchor>gbd7f86aea63859a7699fe2a25cce4d17</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Quadrilateral&lt; 4 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; ShellTriangle&lt; 6 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g3776ebea86c104ffa3694dd83eb726a1</anchor>
+      <anchor>gdd1b64bf606ecb991480cd2dab8cf53b</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Quadrilateral&lt; 8 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Quadrilateral&lt; 4 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>gef01263ab94c8ccde19104699bf30add</anchor>
+      <anchor>g125d61ff79a07c5598f432a08e0a6789</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Quadrilateral&lt; 9 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Quadrilateral&lt; 8 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g4cb23aee9bf98c212af46897d56d96ac</anchor>
+      <anchor>g8a89329b8d757c5df5e6817bd2c9156f</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; ShellQuadrilateral&lt; 4 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Quadrilateral&lt; 9 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g369ac65dc28a584547bf9cd3fbf920f9</anchor>
+      <anchor>gce07588c36880c0a687b6bf1edfc4e2a</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; ShellQuadrilateral&lt; 8 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; ShellQuadrilateral&lt; 4 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g875bc9456ca0e7eb9e84ca4d491e4566</anchor>
+      <anchor>gb2d84602880127e87c16188a18e7f970</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; ShellQuadrilateral&lt; 9 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; ShellQuadrilateral&lt; 8 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g134589340d09e9040b4507afbe603885</anchor>
+      <anchor>gf6e7c2d5db5c87edd64cfa9ed7ef53fe</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Tetrahedron&lt; 4 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; ShellQuadrilateral&lt; 9 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>ge6a28fe1d1b636e134293b5830c9e5fb</anchor>
+      <anchor>gf8ab733388954867131cf0a1f539f942</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Tetrahedron&lt; 10 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Tetrahedron&lt; 4 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g780a9c63d880ae18e67e2e0428489944</anchor>
+      <anchor>g094695c59ce4ff0b14ef5d743fad32b8</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Pyramid&lt; 5 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Tetrahedron&lt; 10 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g25c27d831d390b153788b3b844398380</anchor>
+      <anchor>g3cf368ae466d35dbce41ecd3a0684e51</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Pyramid&lt; 13 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Tetrahedron&lt; 8 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g18eb35e5cef7d43bb84cd920badff0c4</anchor>
+      <anchor>ge7c186620d56bfaffd3f55595d90d0bf</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Pyramid&lt; 14 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Pyramid&lt; 5 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>gb94a778578e2bdc3b748af8559a9cc08</anchor>
+      <anchor>g6375eee65b4715686ef52c2c48681088</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Wedge&lt; 6 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Pyramid&lt; 13 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g7f6a20aa34d7bebd1e191b52e016ea38</anchor>
+      <anchor>gc08dc7c64f50b538f32eb7afa5220184</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Wedge&lt; 15 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Pyramid&lt; 14 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g7788f731276427194470f015d592b637</anchor>
+      <anchor>gd69fc2afab58dee306233052b041a9fe</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Wedge&lt; 18 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Wedge&lt; 6 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>ga9c2d3486851b3c2c7944177ca9dea1d</anchor>
+      <anchor>g90f9d7f82c0f7eaf7d3a2ddc16ad9e29</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Hexahedron&lt; 8 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Wedge&lt; 15 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g87ce1f7fa2dad8674e3a278eedb42aa5</anchor>
+      <anchor>g2de91b34dcc083a4be0ad550df169351</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Hexahedron&lt; 20 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Wedge&lt; 18 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g15195be4ba080e4fab248216da3d585a</anchor>
+      <anchor>g9220c5814479e86f3d2c4d6a279f317d</anchor>
       <arglist>()</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology&lt; Hexahedron&lt; 27 &gt; &gt;</name>
+      <name>getCellTopologyData&lt; Hexahedron&lt; 8 &gt; &gt;</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>g9cbdfa1fe7ebd3cf2dae8020b39888e2</anchor>
+      <anchor>ge3f409fef00b67885b7add477da1dfbd</anchor>
       <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>const CellTopologyData *</type>
+      <name>getCellTopologyData&lt; Hexahedron&lt; 20 &gt; &gt;</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>g45ebe0d7d0b446f8d0881428217b448c</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>const CellTopologyData *</type>
+      <name>getCellTopologyData&lt; Hexahedron&lt; 27 &gt; &gt;</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>gfbc72d120fe4c375f87035ed3d1f61a0</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type>std::ostream &amp;</type>
+      <name>operator&lt;&lt;</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>g93270d63a3a39b9baaf40b22fbb41755</anchor>
+      <arglist>(std::ostream &amp;, const CellTopology &amp;)</arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>ECellTypeToString</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>ge90456746e49706a7df03a0c721a15de</anchor>
+      <arglist>(ECellType cellType)</arglist>
+    </member>
+    <member kind="function">
+      <type>std::string</type>
+      <name>ETopologyTypeToString</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>g92852be36f5be86c8208ec0f5c0e1088</anchor>
+      <arglist>(ETopologyType topologyType)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>getTopologies</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>gb88d3a3f5b8119a2d9b1c94de03e3d3a</anchor>
+      <arglist>(std::vector&lt; shards::CellTopology &gt; &amp;topologies, const unsigned cellDim=4, const ECellType cellType=ALL_CELLS, const ETopologyType topologyType=ALL_TOPOLOGIES)</arglist>
     </member>
     <member kind="function">
       <type>int</type>
-      <name>cell_topology_key</name>
+      <name>isPredefinedCell</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>ged870da9bd9fc78eb3fafd9a66a45d60</anchor>
-      <arglist>(const int dimension, const int face_count, const int edge_count, const int vertex_count, const int node_count)</arglist>
+      <anchor>gcedcc4f5c4cd8b687655c278fb9cb82a</anchor>
+      <arglist>(const CellTopology &amp;cell)</arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>findPermutation</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>ga02a7dfc43e5d5763f7a5ebd57dcc0a6</anchor>
+      <arglist>(const CellTopologyData &amp;top, const id_type *const expected_node, const id_type *const actual_node)</arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>findPermutation</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>g43c6ea471cd1fc633305260cff4c7730</anchor>
+      <arglist>(const CellTopology &amp;top, const id_type *const expected_node, const id_type *const actual_node)</arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>badCellTopologyKey</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>gb0400c68621ea9efc3837028625d8368</anchor>
+      <arglist>(const unsigned dimension, const unsigned face_count, const unsigned edge_count, const unsigned vertex_count, const unsigned node_count)</arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>cellTopologyKey</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>g3e2efc55dae74717ae87ef2739d44010</anchor>
+      <arglist>(const unsigned dimension, const unsigned face_count, const unsigned edge_count, const unsigned vertex_count, const unsigned node_count)</arglist>
+    </member>
+    <member kind="function">
+      <type>int</type>
+      <name>mapCellFaceEdge</name>
+      <anchorfile>group__shards__package__cell__topology.html</anchorfile>
+      <anchor>ge4fb8e6f8a41925a279978efbc74f515</anchor>
+      <arglist>(const CellTopologyData *cell_topology, unsigned face_ordinal, unsigned face_edge_ordinal)</arglist>
     </member>
     <member kind="function">
       <type>const CellTopologyData *</type>
-      <name>cell_topology</name>
+      <name>getCellTopologyData</name>
       <anchorfile>group__shards__package__cell__topology.html</anchorfile>
-      <anchor>gd65cd34d3bb8f2f8e4f471e3bfd4f367</anchor>
+      <anchor>g8b7c5b119f8d0bea986e7e9559515aa2</anchor>
       <arglist>()</arglist>
     </member>
     <docanchor file="group__shards__package__cell__topology">base_and_extended</docanchor>
@@ -326,13 +397,6 @@
     <docanchor file="group__shards__package__cell__topology">fem_cells</docanchor>
     <docanchor file="group__shards__package__cell__topology">polytope</docanchor>
     <docanchor file="group__shards__package__cell__topology">subcell_orientation</docanchor>
-  </compound>
-  <compound kind="group">
-    <name>shards_package_index_list</name>
-    <title>Compile-time List of Indices</title>
-    <filename>group__shards__package__index__list.html</filename>
-    <class kind="struct">shards::IndexList</class>
-    <class kind="struct">shards::IndexListAt</class>
   </compound>
   <compound kind="group">
     <name>shards_package_simple_array_ops</name>
@@ -347,6 +411,14 @@
     <class kind="struct">shards::Min</class>
     <class kind="struct">shards::InnerProduct</class>
     <class kind="struct">shards::Compare</class>
+  </compound>
+  <compound kind="group">
+    <name>shards_package_index_list</name>
+    <title>Compile-time List of Indices</title>
+    <filename>group__shards__package__index__list.html</filename>
+    <class kind="struct">shards::IndexList</class>
+    <class kind="struct">shards::IndexListLength</class>
+    <class kind="struct">shards::IndexListAt</class>
   </compound>
   <compound kind="group">
     <name>shards_package_typelist</name>
@@ -430,10 +502,17 @@
     </member>
     <member kind="variable">
       <type>unsigned</type>
+      <name>permutation_count</name>
+      <anchorfile>structCellTopologyData.html</anchorfile>
+      <anchor>931f8fb29a28967e3d8434b254bb5c76</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable">
+      <type>unsigned</type>
       <name>subcell_homogeneity</name>
       <anchorfile>structCellTopologyData.html</anchorfile>
-      <anchor>efd03ae0044eb0d9c2189f5309749151</anchor>
-      <arglist></arglist>
+      <anchor>a0d3f92902319d7b5d4d55dbdde6f0cb</anchor>
+      <arglist>[4]</arglist>
     </member>
     <member kind="variable">
       <type>unsigned</type>
@@ -443,88 +522,377 @@
       <arglist>[4]</arglist>
     </member>
     <member kind="variable">
-      <type>struct Subcell *</type>
+      <type>struct CellTopologyData_Subcell *</type>
       <name>subcell</name>
       <anchorfile>structCellTopologyData.html</anchorfile>
-      <anchor>db085445a6360816a4a37af58a9673a4</anchor>
+      <anchor>61b4429f25742a1fa5c46edb3f4e0258</anchor>
       <arglist>[4]</arglist>
     </member>
     <member kind="variable">
-      <type>struct Subcell *</type>
+      <type>struct CellTopologyData_Subcell *</type>
       <name>side</name>
       <anchorfile>structCellTopologyData.html</anchorfile>
-      <anchor>5625c5edaa968c8204c004e3019fd0dd</anchor>
+      <anchor>4970cda01735927277bd883e402273ad</anchor>
       <arglist></arglist>
     </member>
     <member kind="variable">
-      <type>struct Subcell *</type>
+      <type>struct CellTopologyData_Subcell *</type>
       <name>edge</name>
       <anchorfile>structCellTopologyData.html</anchorfile>
-      <anchor>6f0b95930b1e3acb131c41eebdc50bb8</anchor>
+      <anchor>086245c9cb8105c0e1938d78c556b8a3</anchor>
       <arglist></arglist>
     </member>
-    <class kind="struct">CellTopologyData::Subcell</class>
+    <member kind="variable">
+      <type>struct CellTopologyData_Permutation *</type>
+      <name>permutation</name>
+      <anchorfile>structCellTopologyData.html</anchorfile>
+      <anchor>68e02fe4d4e68d414d25bfa815715ab5</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable">
+      <type>struct CellTopologyData_Permutation *</type>
+      <name>permutation_inverse</name>
+      <anchorfile>structCellTopologyData.html</anchorfile>
+      <anchor>9f9425faddbfdd40489e95e8faca9e34</anchor>
+      <arglist></arglist>
+    </member>
   </compound>
   <compound kind="struct">
-    <name>CellTopologyData::Subcell</name>
-    <filename>structCellTopologyData_1_1Subcell.html</filename>
+    <name>CellTopologyData_Permutation</name>
+    <filename>structCellTopologyData__Permutation.html</filename>
+    <member kind="variable">
+      <type>const unsigned *</type>
+      <name>node</name>
+      <anchorfile>structCellTopologyData__Permutation.html</anchorfile>
+      <anchor>85e45c191b441c3d6e2075c0967403c5</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable">
+      <type>unsigned</type>
+      <name>polarity</name>
+      <anchorfile>structCellTopologyData__Permutation.html</anchorfile>
+      <anchor>d0bd7dfca319672b6d21821c15c2d4e6</anchor>
+      <arglist></arglist>
+    </member>
+  </compound>
+  <compound kind="struct">
+    <name>CellTopologyData_Subcell</name>
+    <filename>structCellTopologyData__Subcell.html</filename>
     <member kind="variable">
       <type>struct CellTopologyData *</type>
       <name>topology</name>
-      <anchorfile>structCellTopologyData_1_1Subcell.html</anchorfile>
-      <anchor>b43f6915af66406f3403a4dee8a18558</anchor>
+      <anchorfile>structCellTopologyData__Subcell.html</anchorfile>
+      <anchor>843fe73121737256d91a0fae4aa86b47</anchor>
       <arglist></arglist>
     </member>
     <member kind="variable">
       <type>const unsigned *</type>
       <name>node</name>
-      <anchorfile>structCellTopologyData_1_1Subcell.html</anchorfile>
-      <anchor>78fbf4c0dc493179b19e3ac56b66423b</anchor>
+      <anchorfile>structCellTopologyData__Subcell.html</anchorfile>
+      <anchor>e54645128bc0d1054f027f9d30583c60</anchor>
       <arglist></arglist>
     </member>
   </compound>
   <compound kind="class">
     <name>shards::ArrayDimTag</name>
-    <filename>structshards_1_1ArrayDimTag.html</filename>
+    <filename>classshards_1_1ArrayDimTag.html</filename>
+    <member kind="typedef">
+      <type>array_traits::int_t</type>
+      <name>size_type</name>
+      <anchorfile>classshards_1_1ArrayDimTag.html</anchorfile>
+      <anchor>4a42cc623c89b9b7286c4dea82f2c0e0</anchor>
+      <arglist></arglist>
+    </member>
     <member kind="function" virtualness="pure">
       <type>virtual const char *</type>
       <name>name</name>
-      <anchorfile>structshards_1_1ArrayDimTag.html</anchorfile>
+      <anchorfile>classshards_1_1ArrayDimTag.html</anchorfile>
       <anchor>2ac2166e603e22ff94f1f4f54a4af38d</anchor>
       <arglist>() const =0</arglist>
     </member>
     <member kind="function" virtualness="virtual">
       <type>virtual std::string</type>
       <name>to_string</name>
-      <anchorfile>structshards_1_1ArrayDimTag.html</anchorfile>
-      <anchor>24da5fe7285c23e6be7b51eda8afe525</anchor>
-      <arglist>(unsigned dimension, unsigned index) const </arglist>
+      <anchorfile>classshards_1_1ArrayDimTag.html</anchorfile>
+      <anchor>309ae554e844206d401c2051521c6d9b</anchor>
+      <arglist>(size_type dimension, size_type index) const </arglist>
     </member>
     <member kind="function" virtualness="virtual">
-      <type>virtual unsigned</type>
+      <type>virtual size_type</type>
       <name>to_index</name>
-      <anchorfile>structshards_1_1ArrayDimTag.html</anchorfile>
-      <anchor>01633642df073e1e53bb80d4c236e18b</anchor>
-      <arglist>(unsigned dimension, const std::string &amp;label) const </arglist>
+      <anchorfile>classshards_1_1ArrayDimTag.html</anchorfile>
+      <anchor>4e90d794ab9e327cb08ef7bf0ce97dc5</anchor>
+      <arglist>(size_type dimension, const std::string &amp;label) const </arglist>
     </member>
   </compound>
   <compound kind="class">
     <name>shards::ArrayDimension</name>
-    <filename>structshards_1_1ArrayDimension.html</filename>
+    <filename>classshards_1_1ArrayDimension.html</filename>
     <base>shards::ArrayDimTag</base>
     <member kind="function">
       <type>const char *</type>
       <name>name</name>
-      <anchorfile>structshards_1_1ArrayDimension.html</anchorfile>
+      <anchorfile>classshards_1_1ArrayDimension.html</anchorfile>
       <anchor>66d4e08e192a6c6391e2b02197ef3ed0</anchor>
       <arglist>() const </arglist>
     </member>
     <member kind="function" static="yes">
       <type>static const ArrayDimension &amp;</type>
       <name>tag</name>
-      <anchorfile>structshards_1_1ArrayDimension.html</anchorfile>
+      <anchorfile>classshards_1_1ArrayDimension.html</anchorfile>
       <anchor>68e6136accafcb38a0df94ddd3489228</anchor>
       <arglist>()</arglist>
+    </member>
+  </compound>
+  <compound kind="class">
+    <name>shards::Array&lt; Scalar, array_order, void, void, void, void, void, void, void, void &gt;</name>
+    <filename>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</filename>
+    <templarg>Scalar</templarg>
+    <templarg>array_order</templarg>
+    <member kind="typedef">
+      <type>Scalar</type>
+      <name>value_type</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>6c36c75538e9d04c3d672e821f7770dd</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>array_traits::int_t</type>
+      <name>size_type</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>8a31df6af731fa8c2fbd2f2e8422c0f6</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="typedef">
+      <type>const ArrayDimTag *</type>
+      <name>tag_type</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>d0d044f68aff9b7da9a8893a3fb68dba</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type>size_type</type>
+      <name>rank</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>b63202001cf7b44144ef4ff050684d4a</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>natural</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>0ded1301e17a32a9e58d8bf53ea39505</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>reverse</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>9d208f75881b84107dd84e40fb863c58</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>contiguous</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>2d9b6fa5540d12dfb523f8ac2ec4929d</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>tag_type</type>
+      <name>tag</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>7afb3e72d82d915e4dbcd1f418a65b26</anchor>
+      <arglist>(size_type ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>size_type</type>
+      <name>dimension</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>850e643147c4410c304a5bacfd530f13</anchor>
+      <arglist>(size_type ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>void</type>
+      <name>dimensions</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>02f85c562f961bf8591983219f8629d0</anchor>
+      <arglist>(std::vector&lt; iType &gt; &amp;n)</arglist>
+    </member>
+    <member kind="function">
+      <type>size_type</type>
+      <name>size</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>8b8f0cecc9a27bd48d157db105b8c170</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="typedef">
+      <type>array_traits::Helper&lt; Scalar, array_order, void, void, void, void, void, void, void, void &gt;::reverse</type>
+      <name>ReverseType</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>5b79e54d5b134a18b067cf195187b2e5</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>Array</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>af29ca2a310bd8f6b49c5f62a84db3ca</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>Array</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>1d0d8122304a9bad41eea3b875c54852</anchor>
+      <arglist>(const Array &amp;rhs)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array &amp;</type>
+      <name>operator=</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>349a6d890ca0e392bef52467e5574b54</anchor>
+      <arglist>(const Array &amp;rhs)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>Array</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>2b501cff2f1e07972cf915457e9f8286</anchor>
+      <arglist>(const ReverseType &amp;rhs)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array &amp;</type>
+      <name>operator=</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>e42dc6756a9bbc0a314912e06d34bd94</anchor>
+      <arglist>(const ReverseType &amp;rhs)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>Array</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>6f9439b07c0f1afec2331c6b9722d68a</anchor>
+      <arglist>(value_type *ptr, const size_type rank, const size_type *const dims, const tag_type *const tags)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array</type>
+      <name>truncate</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>f964c15ae3a0ec5cc12c611a2f1ddbf2</anchor>
+      <arglist>(const iType &amp;i) const </arglist>
+    </member>
+    <member kind="function">
+      <type>value_type *</type>
+      <name>contiguous_data</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>3a72f6be65c1003c3dc9d47088357601</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>value_type &amp;</type>
+      <name>operator[]</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>19757dab17814d01f91845ea7fa608f3</anchor>
+      <arglist>(const iType &amp;i) const </arglist>
+    </member>
+    <member kind="function">
+      <type>value_type &amp;</type>
+      <name>operator()</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>178575f0f8cee28d214f621bfbda9400</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3, const iType &amp;i4, const iType &amp;i5, const iType &amp;i6, const iType &amp;i7, const iType &amp;i8) const </arglist>
+    </member>
+    <member kind="function">
+      <type>value_type &amp;</type>
+      <name>operator()</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>d568fbd357df5c9d68b1876540f64dcd</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3, const iType &amp;i4, const iType &amp;i5, const iType &amp;i6, const iType &amp;i7) const </arglist>
+    </member>
+    <member kind="function">
+      <type>value_type &amp;</type>
+      <name>operator()</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>b93faec089ffebb3268c6a685b7d0040</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3, const iType &amp;i4, const iType &amp;i5, const iType &amp;i6) const </arglist>
+    </member>
+    <member kind="function">
+      <type>value_type &amp;</type>
+      <name>operator()</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>1d5857a6ae0edd0f92d5cfb5906d6929</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3, const iType &amp;i4, const iType &amp;i5) const </arglist>
+    </member>
+    <member kind="function">
+      <type>value_type &amp;</type>
+      <name>operator()</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>3eb8f8f18007af6d9c135532d2f01cb1</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3, const iType &amp;i4) const </arglist>
+    </member>
+    <member kind="function">
+      <type>value_type &amp;</type>
+      <name>operator()</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>f3608999a6c9e12172720ce071c0f7d0</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3) const </arglist>
+    </member>
+    <member kind="function">
+      <type>value_type &amp;</type>
+      <name>operator()</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>64d57c59f200766897d15d25a311d61c</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2) const </arglist>
+    </member>
+    <member kind="function">
+      <type>value_type &amp;</type>
+      <name>operator()</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>98edab74bc9b6f85da18e9f49f883fa0</anchor>
+      <arglist>(const iType &amp;i1) const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type></type>
+      <name>Array</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>f2faec19644db88104e88163c9c0a6bc</anchor>
+      <arglist>(const Array &amp;rhs, const size_type i)</arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>value_type *</type>
+      <name>m_ptr</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>89360a69bc509ad1046d4878e0b3375d</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>size_type</type>
+      <name>m_rank</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>77dc1f1f9a2068759d0180c54e87bbc2</anchor>
+      <arglist></arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>size_type</type>
+      <name>m_stride</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>0df1b98d32f2523e664968e554a0dd5a</anchor>
+      <arglist>[8]</arglist>
+    </member>
+    <member kind="variable" protection="protected">
+      <type>tag_type</type>
+      <name>m_tag</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>4bee44394fbe881a741f9813595261c4</anchor>
+      <arglist>[8]</arglist>
+    </member>
+    <member kind="friend">
+      <type>friend class</type>
+      <name>shards::Array</name>
+      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
+      <anchor>f8477f10c75a7e39e57d287b7778a950</anchor>
+      <arglist></arglist>
     </member>
   </compound>
   <compound kind="class">
@@ -548,10 +916,10 @@
       <arglist></arglist>
     </member>
     <member kind="typedef">
-      <type>unsigned</type>
+      <type>array_traits::int_t</type>
       <name>size_type</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>9fd45ef733fd4b4ae200d6952d820ff2</anchor>
+      <anchor>7d8e80a32b1500c0bb4f43c9a3120b5c</anchor>
       <arglist></arglist>
     </member>
     <member kind="typedef">
@@ -562,10 +930,10 @@
       <arglist></arglist>
     </member>
     <member kind="function">
-      <type>unsigned</type>
+      <type>size_type</type>
       <name>rank</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>260e2872bff60d3c1f34a706ba6f392b</anchor>
+      <anchor>8733f5df79ac41956909d66c1f3dd076</anchor>
       <arglist>() const </arglist>
     </member>
     <member kind="function">
@@ -593,29 +961,29 @@
       <type>tag_type</type>
       <name>tag</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>8a005729486454f26c93d107ce6889e9</anchor>
-      <arglist>(const unsigned ordinate) const </arglist>
+      <anchor>9a75eae9f08c1e7d6caceca1a9f737f1</anchor>
+      <arglist>(const size_type ordinate) const </arglist>
     </member>
     <member kind="function">
-      <type>unsigned</type>
+      <type>size_type</type>
       <name>dimension</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>cfa454eb2a1e74ceb6f54ee5481e0dc2</anchor>
+      <anchor>89e94eac509835b5be271e8d69b58493</anchor>
       <arglist>() const </arglist>
     </member>
     <member kind="function">
-      <type>unsigned</type>
+      <type>size_type</type>
       <name>dimension</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>7f4c26f901d4300cdb4ed715a41e1b84</anchor>
-      <arglist>(const unsigned ordinate) const </arglist>
+      <anchor>4d149104dbc7fa86c4e99954cf75bebf</anchor>
+      <arglist>(const size_type ordinate) const </arglist>
     </member>
     <member kind="function">
       <type>void</type>
       <name>dimensions</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>1c889f4c52df89c64ef5cb5b43addd3b</anchor>
-      <arglist>(std::vector&lt; unsigned &gt; &amp;n)</arglist>
+      <anchor>7efa3a0d1b4bb78b42ae49297c74868c</anchor>
+      <arglist>(std::vector&lt; iType &gt; &amp;n)</arglist>
     </member>
     <member kind="function">
       <type>size_type</type>
@@ -625,18 +993,18 @@
       <arglist>() const </arglist>
     </member>
     <member kind="typedef">
-      <type>help_type::truncate</type>
+      <type>helper::truncate</type>
       <name>TruncateType</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>9f46bbcf43a6861491ef82b909892331</anchor>
+      <anchor>e17c986c0bf14168ee0c7d8311cde186</anchor>
       <arglist></arglist>
     </member>
     <member kind="function">
       <type>TruncateType</type>
       <name>truncate</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>b628882839a057db1d4256f39d1fd0b7</anchor>
-      <arglist>(const unsigned i) const </arglist>
+      <anchor>16f19e0fdcf4f966e45b607be5d0d16a</anchor>
+      <arglist>(const iType &amp;i) const </arglist>
     </member>
     <member kind="function">
       <type>value_type *</type>
@@ -649,70 +1017,70 @@
       <type>value_type &amp;</type>
       <name>operator[]</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>99db99311366aad21c41b26bb066338a</anchor>
-      <arglist>(size_type i) const </arglist>
+      <anchor>ea209e83169f40614deed99b4ff0cd4f</anchor>
+      <arglist>(const iType &amp;i) const </arglist>
     </member>
     <member kind="function">
       <type>value_type &amp;</type>
       <name>operator()</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>1b1b3e066060f4b4fc491f652f909350</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3, const unsigned i4, const unsigned i5, const unsigned i6, const unsigned i7, const unsigned i8) const </arglist>
+      <anchor>923df8716d595585b4e7d7f2fac1cbf8</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3, const iType &amp;i4, const iType &amp;i5, const iType &amp;i6, const iType &amp;i7, const iType &amp;i8) const </arglist>
     </member>
     <member kind="function">
       <type>value_type &amp;</type>
       <name>operator()</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>6ca8b9aadac6b0f50bf6e72da0c45078</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3, const unsigned i4, const unsigned i5, const unsigned i6, const unsigned i7) const </arglist>
+      <anchor>0afe2025308f8559e5def8c1a23aace2</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3, const iType &amp;i4, const iType &amp;i5, const iType &amp;i6, const iType &amp;i7) const </arglist>
     </member>
     <member kind="function">
       <type>value_type &amp;</type>
       <name>operator()</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>889356189652ef17d716b9ab3cffbacd</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3, const unsigned i4, const unsigned i5, const unsigned i6) const </arglist>
+      <anchor>2fe7f971da3ebd8c9d4dfe06365e9451</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3, const iType &amp;i4, const iType &amp;i5, const iType &amp;i6) const </arglist>
     </member>
     <member kind="function">
       <type>value_type &amp;</type>
       <name>operator()</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>ebb1e4451d224ac2890e8322998fdc93</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3, const unsigned i4, const unsigned i5) const </arglist>
+      <anchor>8a4dde27f954b9dc52bff04dd9d41523</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3, const iType &amp;i4, const iType &amp;i5) const </arglist>
     </member>
     <member kind="function">
       <type>value_type &amp;</type>
       <name>operator()</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>5244602ad67a6b26590f933e98a74c13</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3, const unsigned i4) const </arglist>
+      <anchor>6b1ac95d51716b64bf81314130251b04</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3, const iType &amp;i4) const </arglist>
     </member>
     <member kind="function">
       <type>value_type &amp;</type>
       <name>operator()</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>aa4f487439aebfd2d2252025d3ef6fce</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3) const </arglist>
+      <anchor>d6ede50585bb4e9be23331b699fccca6</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2, const iType &amp;i3) const </arglist>
     </member>
     <member kind="function">
       <type>value_type &amp;</type>
       <name>operator()</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>24d41228ba086ec10d5b3f6aab4ce94f</anchor>
-      <arglist>(const unsigned i1, const unsigned i2) const </arglist>
+      <anchor>a7fd3b56a5fdbfe871f1da5afd945229</anchor>
+      <arglist>(const iType &amp;i1, const iType &amp;i2) const </arglist>
     </member>
     <member kind="function">
       <type>value_type &amp;</type>
       <name>operator()</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>23b00dec98d23e944ba41caeba785ff2</anchor>
-      <arglist>(const unsigned i1) const </arglist>
+      <anchor>2b74043f3c1ba83d4b5b364ed3e2a250</anchor>
+      <arglist>(const iType &amp;i1) const </arglist>
     </member>
     <member kind="typedef">
-      <type>help_type::reverse</type>
+      <type>helper::reverse</type>
       <name>ReverseType</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>b904a9cf95e2ff1e9059c4c9672a40f0</anchor>
+      <anchor>70c763035ea3127e33eea4278894e57c</anchor>
       <arglist></arglist>
     </member>
     <member kind="function">
@@ -751,67 +1119,137 @@
       <arglist>(const ReverseType &amp;rhs)</arglist>
     </member>
     <member kind="function">
-      <type></type>
-      <name>Array</name>
+      <type>Array &amp;</type>
+      <name>assign</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>ffaff537ff189101c66b385ba49f9de9</anchor>
-      <arglist>(value_type *arg_ptr, const unsigned *const dims)</arglist>
+      <anchor>5a82cf8f329d7d77abfe1646b06a427c</anchor>
+      <arglist>(value_type *arg_ptr, const size_type *const dims)</arglist>
     </member>
     <member kind="function">
       <type></type>
       <name>Array</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>3578e6fc39dc3bfd640954e8e05e346d</anchor>
-      <arglist>(value_type *arg_ptr, const unsigned n1, const unsigned n2, const unsigned n3, const unsigned n4, const unsigned n5, const unsigned n6, const unsigned n7, const unsigned n8)</arglist>
+      <anchor>ad9b5461dc18ad942ea668cb6dcbc3f0</anchor>
+      <arglist>(value_type *arg_ptr, const size_type *const dims)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array &amp;</type>
+      <name>assign</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>9163633b8e20f1c068c33c78ef7130d1</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3, const size_type n4, const size_type n5, const size_type n6, const size_type n7, const size_type n8)</arglist>
     </member>
     <member kind="function">
       <type></type>
       <name>Array</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>32f0abd4210592a8df499c82c371c3f9</anchor>
-      <arglist>(value_type *arg_ptr, const unsigned n1, const unsigned n2, const unsigned n3, const unsigned n4, const unsigned n5, const unsigned n6, const unsigned n7)</arglist>
+      <anchor>71790eddb29d12c3880fe9725bc0e406</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3, const size_type n4, const size_type n5, const size_type n6, const size_type n7, const size_type n8)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array &amp;</type>
+      <name>assign</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>d46a5e7df9609bcfb940779d56181c4f</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3, const size_type n4, const size_type n5, const size_type n6, const size_type n7)</arglist>
     </member>
     <member kind="function">
       <type></type>
       <name>Array</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>c65d69db01d8859f494daf962ff73202</anchor>
-      <arglist>(value_type *arg_ptr, const unsigned n1, const unsigned n2, const unsigned n3, const unsigned n4, const unsigned n5, const unsigned n6)</arglist>
+      <anchor>b293a7f3535a2cec491d86d745c9a920</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3, const size_type n4, const size_type n5, const size_type n6, const size_type n7)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array &amp;</type>
+      <name>assign</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>73b389c3015598db5c8d3034df4d99ba</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3, const size_type n4, const size_type n5, const size_type n6)</arglist>
     </member>
     <member kind="function">
       <type></type>
       <name>Array</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>82c10c3eec16b32c40cd0dcb3877a787</anchor>
-      <arglist>(value_type *arg_ptr, const unsigned n1, const unsigned n2, const unsigned n3, const unsigned n4, const unsigned n5)</arglist>
+      <anchor>349a832cff6dd354d6f5a22869771469</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3, const size_type n4, const size_type n5, const size_type n6)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array &amp;</type>
+      <name>assign</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>dc1bb052d8e52c589e019ac4b5d28b35</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3, const size_type n4, const size_type n5)</arglist>
     </member>
     <member kind="function">
       <type></type>
       <name>Array</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>6348bd9d90513e8a2c84445a626e1050</anchor>
-      <arglist>(value_type *arg_ptr, const unsigned n1, const unsigned n2, const unsigned n3, const unsigned n4)</arglist>
+      <anchor>c0dd6360c298d992493577187df7ce75</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3, const size_type n4, const size_type n5)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array &amp;</type>
+      <name>assign</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>31e996ccaf6a4f6406dd9dc65786940b</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3, const size_type n4)</arglist>
     </member>
     <member kind="function">
       <type></type>
       <name>Array</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>d6007a4ebce339da262a398da53be572</anchor>
-      <arglist>(value_type *arg_ptr, const unsigned n1, const unsigned n2, const unsigned n3)</arglist>
+      <anchor>1fadad28e98b775d3273040ec79cca32</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3, const size_type n4)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array &amp;</type>
+      <name>assign</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>e5eba38874e1b3b81e95e2248ad7fc51</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3)</arglist>
     </member>
     <member kind="function">
       <type></type>
       <name>Array</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>81fb2a747dd9852c99c8a608d2155335</anchor>
-      <arglist>(value_type *arg_ptr, const unsigned n1, const unsigned n2)</arglist>
+      <anchor>552aad67a294385de3d8db61ed167871</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2, const size_type n3)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array &amp;</type>
+      <name>assign</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>5ac982d7e0a0ccdff5f6af511129e4e1</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2)</arglist>
     </member>
     <member kind="function">
       <type></type>
       <name>Array</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>c811494e148efe8e3718ff2af527f9ae</anchor>
-      <arglist>(value_type *arg_ptr, const unsigned n1)</arglist>
+      <anchor>177a389ece71dce2547f4a8bfd483688</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1, const size_type n2)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array &amp;</type>
+      <name>assign</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>1cd3cbfa14ab3e73cc597b67517ad0ee</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>Array</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>3054aafbab4c65f90d0711b76cda12bc</anchor>
+      <arglist>(value_type *arg_ptr, const size_type n1)</arglist>
+    </member>
+    <member kind="function">
+      <type>Array &amp;</type>
+      <name>assign</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>4ddffdaf9e50b45a0911eabf285b7d9c</anchor>
+      <arglist>(value_type *arg_ptr)</arglist>
     </member>
     <member kind="function">
       <type></type>
@@ -820,19 +1258,40 @@
       <anchor>dbf61bc047e118b476884a7b15426260</anchor>
       <arglist>(value_type *arg_ptr)</arglist>
     </member>
-    <member kind="variable" protection="protected">
-      <type>value_type *</type>
-      <name>m_ptr</name>
+    <member kind="function">
+      <type></type>
+      <name>Array</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>5873bd8d7908135b1d8cb805bcec086f</anchor>
-      <arglist></arglist>
+      <anchor>3a1d25278f047bc92e23e653ab3c02fa</anchor>
+      <arglist>(const Array&lt; Scalar, array_order &gt; &amp;rhs)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>operator const Array&lt; Scalar, array_order &gt; &amp;</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>49dc2c86e83dbd904e906a86af91e7c7</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>operator typename Array&lt; Scalar, array_order &gt;::ReverseType</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>f576e5fda6645d152c244c69d744ed4f</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function" protection="protected">
+      <type></type>
+      <name>Array</name>
+      <anchorfile>classshards_1_1Array.html</anchorfile>
+      <anchor>f97bee2894d73416e65d70ff3f9e803a</anchor>
+      <arglist>(const Array&lt; Scalar, array_order &gt; &amp;rhs, size_type i)</arglist>
     </member>
     <member kind="variable" protection="protected">
-      <type>size_type</type>
-      <name>m_stride</name>
+      <type>Array&lt; value_type, array_order &gt;</type>
+      <name>m_array</name>
       <anchorfile>classshards_1_1Array.html</anchorfile>
-      <anchor>8cf5a43dae17c1ec5e1b808411dbfb8c</anchor>
-      <arglist>[Rank]</arglist>
+      <anchor>e8954875b4cbaed9e1f59fda2002b288</anchor>
+      <arglist></arglist>
     </member>
     <member kind="friend">
       <type>friend class</type>
@@ -854,10 +1313,10 @@
       <arglist></arglist>
     </member>
     <member kind="typedef">
-      <type>unsigned</type>
+      <type>array_traits::int_t</type>
       <name>size_type</name>
       <anchorfile>classshards_1_1Array_3_01Scalar_00_01RankZero_00_01void_00_01void_00_01void_00_01void_00_01void_51fe39a3d10e070038a4f4d758dfe7b9.html</anchorfile>
-      <anchor>7e7645ffaa0a7c82e49dc6bf622c8536</anchor>
+      <anchor>7e23f02a5e640cb309dd5f437807599c</anchor>
       <arglist></arglist>
     </member>
     <member kind="typedef">
@@ -868,10 +1327,10 @@
       <arglist></arglist>
     </member>
     <member kind="function">
-      <type>unsigned</type>
+      <type>size_type</type>
       <name>rank</name>
       <anchorfile>classshards_1_1Array_3_01Scalar_00_01RankZero_00_01void_00_01void_00_01void_00_01void_00_01void_51fe39a3d10e070038a4f4d758dfe7b9.html</anchorfile>
-      <anchor>866e3f51458fc3af540ed148fa50eba2</anchor>
+      <anchor>635b9f420cf2a68886b20f459992daeb</anchor>
       <arglist>() const </arglist>
     </member>
     <member kind="function">
@@ -945,257 +1404,6 @@
       <arglist>(value_type *arg_ptr)</arglist>
     </member>
   </compound>
-  <compound kind="class">
-    <name>shards::Array&lt; Scalar, array_order, void, void, void, void, void, void, void, void &gt;</name>
-    <filename>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</filename>
-    <templarg>Scalar</templarg>
-    <templarg>array_order</templarg>
-    <member kind="typedef">
-      <type>Scalar</type>
-      <name>value_type</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>6c36c75538e9d04c3d672e821f7770dd</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>unsigned</type>
-      <name>size_type</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>81226f87a3acdc8285426805aa32657f</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="typedef">
-      <type>const ArrayDimTag *</type>
-      <name>tag_type</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>d0d044f68aff9b7da9a8893a3fb68dba</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="function">
-      <type>unsigned</type>
-      <name>rank</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>e4377aa792caebb21cdd7b1d913a9d0b</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>bool</type>
-      <name>natural</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>0ded1301e17a32a9e58d8bf53ea39505</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>bool</type>
-      <name>reverse</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>9d208f75881b84107dd84e40fb863c58</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>bool</type>
-      <name>contiguous</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>2d9b6fa5540d12dfb523f8ac2ec4929d</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>tag_type</type>
-      <name>tag</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>a047921d3193be5fdc021077a59135d6</anchor>
-      <arglist>(const unsigned ordinal) const </arglist>
-    </member>
-    <member kind="function">
-      <type>unsigned</type>
-      <name>dimension</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>88a4e3665886c0558fed2f69a15bce35</anchor>
-      <arglist>(const unsigned ordinal) const </arglist>
-    </member>
-    <member kind="function">
-      <type>void</type>
-      <name>dimensions</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>a60ef07169f845da1fb2810f8560ce30</anchor>
-      <arglist>(std::vector&lt; unsigned &gt; &amp;n)</arglist>
-    </member>
-    <member kind="function">
-      <type>size_type</type>
-      <name>size</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>8b8f0cecc9a27bd48d157db105b8c170</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="typedef">
-      <type>ArrayHelp&lt; Scalar, array_order, void, void, void, void, void, void, void, void &gt;::reverse</type>
-      <name>ReverseType</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>a56a1fef8436924761a69c2373af11c1</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="function">
-      <type></type>
-      <name>Array</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>af29ca2a310bd8f6b49c5f62a84db3ca</anchor>
-      <arglist>()</arglist>
-    </member>
-    <member kind="function">
-      <type></type>
-      <name>Array</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>1d0d8122304a9bad41eea3b875c54852</anchor>
-      <arglist>(const Array &amp;rhs)</arglist>
-    </member>
-    <member kind="function">
-      <type>Array &amp;</type>
-      <name>operator=</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>349a6d890ca0e392bef52467e5574b54</anchor>
-      <arglist>(const Array &amp;rhs)</arglist>
-    </member>
-    <member kind="function">
-      <type></type>
-      <name>Array</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>2b501cff2f1e07972cf915457e9f8286</anchor>
-      <arglist>(const ReverseType &amp;rhs)</arglist>
-    </member>
-    <member kind="function">
-      <type>Array &amp;</type>
-      <name>operator=</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>e42dc6756a9bbc0a314912e06d34bd94</anchor>
-      <arglist>(const ReverseType &amp;rhs)</arglist>
-    </member>
-    <member kind="function">
-      <type></type>
-      <name>Array</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>e7e4d86eacb39e50efd6b51c18f34037</anchor>
-      <arglist>(const Array&lt; value_type, order, Tag1, Tag2, Tag3, Tag4, Tag5, Tag6, Tag7, Tag8 &gt; &amp;rhs)</arglist>
-    </member>
-    <member kind="function">
-      <type></type>
-      <name>Array</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>cd109b3ee847b6b2c0677856a0f1cda2</anchor>
-      <arglist>(value_type *ptr, const unsigned rank, const unsigned *const dims, const tag_type *const tags)</arglist>
-    </member>
-    <member kind="function">
-      <type>Array</type>
-      <name>truncate</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>78248b809d924019cb9b137e50547428</anchor>
-      <arglist>(const unsigned i) const </arglist>
-    </member>
-    <member kind="function">
-      <type>value_type *</type>
-      <name>contiguous_data</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>3a72f6be65c1003c3dc9d47088357601</anchor>
-      <arglist>() const </arglist>
-    </member>
-    <member kind="function">
-      <type>value_type &amp;</type>
-      <name>operator[]</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>b058326924a217b244adc8d9785161a9</anchor>
-      <arglist>(size_type i) const </arglist>
-    </member>
-    <member kind="function">
-      <type>value_type &amp;</type>
-      <name>operator()</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>e2cceaec1980de440b151580124e105a</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3, const unsigned i4, const unsigned i5, const unsigned i6, const unsigned i7, const unsigned i8) const </arglist>
-    </member>
-    <member kind="function">
-      <type>value_type &amp;</type>
-      <name>operator()</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>0509a8c6c8a0c0bf18798236230d1b42</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3, const unsigned i4, const unsigned i5, const unsigned i6, const unsigned i7) const </arglist>
-    </member>
-    <member kind="function">
-      <type>value_type &amp;</type>
-      <name>operator()</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>be89c12f035e6496fdb31c354d374ab7</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3, const unsigned i4, const unsigned i5, const unsigned i6) const </arglist>
-    </member>
-    <member kind="function">
-      <type>value_type &amp;</type>
-      <name>operator()</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>de7adf538a62b8e818fa5e2ed0f824f8</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3, const unsigned i4, const unsigned i5) const </arglist>
-    </member>
-    <member kind="function">
-      <type>value_type &amp;</type>
-      <name>operator()</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>f4a4265e7775d734be989bdcd84f6e0d</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3, const unsigned i4) const </arglist>
-    </member>
-    <member kind="function">
-      <type>value_type &amp;</type>
-      <name>operator()</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>29e373c5fe2b1d5c95766aeab6666e1a</anchor>
-      <arglist>(const unsigned i1, const unsigned i2, const unsigned i3) const </arglist>
-    </member>
-    <member kind="function">
-      <type>value_type &amp;</type>
-      <name>operator()</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>3e561d247707f2c175783c9cdb3a101c</anchor>
-      <arglist>(const unsigned i1, const unsigned i2) const </arglist>
-    </member>
-    <member kind="function">
-      <type>value_type &amp;</type>
-      <name>operator()</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>7f5d4c522e3d6cf81cec7b79e553468e</anchor>
-      <arglist>(const unsigned i1) const </arglist>
-    </member>
-    <member kind="variable" protection="protected">
-      <type>value_type *</type>
-      <name>m_ptr</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>89360a69bc509ad1046d4878e0b3375d</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable" protection="protected">
-      <type>unsigned</type>
-      <name>m_rank</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>b9b3cfd4975cc13ad5eeacea39718787</anchor>
-      <arglist></arglist>
-    </member>
-    <member kind="variable" protection="protected">
-      <type>size_type</type>
-      <name>m_stride</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>0df1b98d32f2523e664968e554a0dd5a</anchor>
-      <arglist>[8]</arglist>
-    </member>
-    <member kind="variable" protection="protected">
-      <type>tag_type</type>
-      <name>m_tag</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>4bee44394fbe881a741f9813595261c4</anchor>
-      <arglist>[8]</arglist>
-    </member>
-    <member kind="friend">
-      <type>friend class</type>
-      <name>shards::Array</name>
-      <anchorfile>classshards_1_1Array_3_01Scalar_00_01array__order_00_01void_00_01void_00_01void_00_01void_00_01vdccf57d63eafd88f7ed6a14f00f3e260.html</anchorfile>
-      <anchor>f8477f10c75a7e39e57d287b7778a950</anchor>
-      <arglist></arglist>
-    </member>
-  </compound>
   <compound kind="struct">
     <name>shards::Node</name>
     <filename>structshards_1_1Node.html</filename>
@@ -1209,17 +1417,17 @@
   <compound kind="struct">
     <name>shards::Line</name>
     <filename>structshards_1_1Line.html</filename>
-    <templarg>Nodes</templarg>
+    <templarg>NodeCount</templarg>
   </compound>
   <compound kind="struct">
     <name>shards::Beam</name>
     <filename>structshards_1_1Beam.html</filename>
-    <templarg>Nodes</templarg>
+    <templarg>NodeCount</templarg>
   </compound>
   <compound kind="struct">
     <name>shards::ShellLine</name>
     <filename>structshards_1_1ShellLine.html</filename>
-    <templarg>Nodes</templarg>
+    <templarg>NodeCount</templarg>
   </compound>
   <compound kind="struct">
     <name>shards::Triangle</name>
@@ -1256,6 +1464,227 @@
     <filename>structshards_1_1Hexahedron.html</filename>
     <templarg>NodeCount</templarg>
   </compound>
+  <compound kind="class">
+    <name>shards::CellTopology</name>
+    <filename>classshards_1_1CellTopology.html</filename>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getDimension</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>7b46bdc8d819324949dcbb3f4ee7ff27</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getKey</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>fece859167d11447b4bd736cac1ee711</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>const char *</type>
+      <name>getName</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>0c8bf4d3fd0fc231acf27671999d03d5</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getNodeCount</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>4d4d88e73729c39f8748441d8afd51e5</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getVertexCount</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>aa1828eb01034e0380c223c49fda0af2</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getEdgeCount</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>21027952dbae546facbfeae293b59784</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getSideCount</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>d71ae8b410ad42fa8e5dfdf70ccc85c6</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>const CellTopologyData *</type>
+      <name>getTopology</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>472fe3e76c58153bb05b2db8b16d0208</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>const CellTopologyData *</type>
+      <name>getBaseTopology</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>f41fea4b037b0235fe82963ea5697e50</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>const CellTopologyData *</type>
+      <name>getTopology</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>3995925e78a70e18dca8f56c8d608109</anchor>
+      <arglist>(const unsigned subcell_dim, const unsigned subcell_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>const CellTopologyData *</type>
+      <name>getBaseTopology</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>06c3484371536236040871ca42a5eac2</anchor>
+      <arglist>(const unsigned subcell_dim, const unsigned subcell_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getKey</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>2ae6b032687523b2bb48f6981fd27868</anchor>
+      <arglist>(const unsigned subcell_dim, const unsigned subcell_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>const char *</type>
+      <name>getName</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>a5e4c71e4fb84fdcfa396a664e6a9cd2</anchor>
+      <arglist>(const unsigned subcell_dim, const unsigned subcell_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getNodeCount</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>9d5f1444aeb29aedd797412574809bd3</anchor>
+      <arglist>(const unsigned subcell_dim, const unsigned subcell_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getVertexCount</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>3a3455a326ee78ce153a70637396dcd8</anchor>
+      <arglist>(const unsigned subcell_dim, const unsigned subcell_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getEdgeCount</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>6a966c7ddf97db5d5394cc3536a28a44</anchor>
+      <arglist>(const unsigned subcell_dim, const unsigned subcell_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getSideCount</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>be6e2b106afb6793a71c784ef92b67eb</anchor>
+      <arglist>(const unsigned subcell_dim, const unsigned subcell_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getSubcellCount</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>4908c8418fa1fbd467083e17a64a09a7</anchor>
+      <arglist>(const unsigned subcell_dim) const </arglist>
+    </member>
+    <member kind="function">
+      <type>bool</type>
+      <name>getSubcellHomogeneity</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>2e34ebc9be33a3f2d7d0db1b626937f2</anchor>
+      <arglist>(const unsigned subcell_dim) const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getNodeMap</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>c55ed4953c6a4e73f20cca74001f603e</anchor>
+      <arglist>(const unsigned subcell_dim, const unsigned subcell_ord, const unsigned subcell_node_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getNodePermutationCount</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>881b0da32df2a7739265f865e52baf17</anchor>
+      <arglist>() const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getNodePermutation</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>7cbdd56532ee6e363e7ad9ae8429c708</anchor>
+      <arglist>(const unsigned permutation_ord, const unsigned node_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getNodePermutationPolarity</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>4dd8c0287cb9644d2571229fb6efa749</anchor>
+      <arglist>(const unsigned permutation_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type>unsigned</type>
+      <name>getNodePermutationInverse</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>f77439c0d6f1132ec1397057f8dbfd57</anchor>
+      <arglist>(const unsigned permutation_ord, const unsigned node_ord) const </arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>CellTopology</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>95a563876451da141b6e8a532ff7d4d7</anchor>
+      <arglist>()</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>CellTopology</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>9abf3514e52de6b8ca73550c13c0bea6</anchor>
+      <arglist>(const CellTopologyData *cell)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>CellTopology</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>9b26b777c0248d2f0bc39696430a300f</anchor>
+      <arglist>(const std::string &amp;name, const unsigned nodeCount)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>CellTopology</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>4c37952ef26bf61b8cf15374c0be8318</anchor>
+      <arglist>(const std::string &amp;name, const unsigned vertex_count, const unsigned node_count, const std::vector&lt; const CellTopologyData * &gt; &amp;edges, const std::vector&lt; unsigned &gt; &amp;edge_node_map, const CellTopologyData *base=NULL)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>CellTopology</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>9197604f0fa8413a7af472f0a496a40a</anchor>
+      <arglist>(const std::string &amp;name, const unsigned vertex_count, const unsigned node_count, const std::vector&lt; const CellTopologyData * &gt; &amp;edges, const std::vector&lt; unsigned &gt; &amp;edge_node_map, const std::vector&lt; const CellTopologyData * &gt; &amp;faces, const std::vector&lt; unsigned &gt; &amp;face_node_map, const CellTopologyData *base=NULL)</arglist>
+    </member>
+    <member kind="function">
+      <type>CellTopology &amp;</type>
+      <name>operator=</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>87ce1a09525ee0b11f3737b17ae191b3</anchor>
+      <arglist>(const CellTopology &amp;right)</arglist>
+    </member>
+    <member kind="function">
+      <type></type>
+      <name>~CellTopology</name>
+      <anchorfile>classshards_1_1CellTopology.html</anchorfile>
+      <anchor>505b06552d73c52a761555e2c61226b5</anchor>
+      <arglist>()</arglist>
+    </member>
+  </compound>
   <compound kind="struct">
     <name>shards::CellTopologyTraits</name>
     <filename>structshards_1_1CellTopologyTraits.html</filename>
@@ -1266,50 +1695,53 @@
     <templarg>EdgeMaps</templarg>
     <templarg>FaceList</templarg>
     <templarg>FaceMaps</templarg>
+    <templarg>PermutationMaps</templarg>
+    <templarg>PermutationPolarity</templarg>
     <member kind="enumvalue">
       <name>dimension</name>
       <anchorfile>structshards_1_1CellTopologyTraits.html</anchorfile>
-      <anchor>348aa92618e6e35f7c69a8f6d674de3fb11230874265e5e7b77c8f73a37c0d55</anchor>
+      <anchor>e178ce62a882d5124a3f0031a822d7f21060a1e23f425beb88d14e4f925ce1d3</anchor>
       <arglist></arglist>
     </member>
     <member kind="enumvalue">
       <name>vertex_count</name>
       <anchorfile>structshards_1_1CellTopologyTraits.html</anchorfile>
-      <anchor>348aa92618e6e35f7c69a8f6d674de3f580af91e9270a17c2511b952ce3a0eea</anchor>
+      <anchor>e178ce62a882d5124a3f0031a822d7f29c2a6215ee4e105fa833624dff7dcff8</anchor>
       <arglist></arglist>
     </member>
     <member kind="enumvalue">
       <name>node_count</name>
       <anchorfile>structshards_1_1CellTopologyTraits.html</anchorfile>
-      <anchor>348aa92618e6e35f7c69a8f6d674de3ffd8eb40031a3effdd44c156b02425175</anchor>
+      <anchor>e178ce62a882d5124a3f0031a822d7f25dff2bfa60071608cd9e0f418e9825a7</anchor>
       <arglist></arglist>
     </member>
     <member kind="enumvalue">
       <name>edge_count</name>
       <anchorfile>structshards_1_1CellTopologyTraits.html</anchorfile>
-      <anchor>348aa92618e6e35f7c69a8f6d674de3f6c0c2bc9fa2f00b22bd3b5962ff5eda9</anchor>
+      <anchor>e178ce62a882d5124a3f0031a822d7f2693f597e722ee693434a0a009d7386b2</anchor>
       <arglist></arglist>
     </member>
     <member kind="enumvalue">
       <name>side_count</name>
       <anchorfile>structshards_1_1CellTopologyTraits.html</anchorfile>
-      <anchor>348aa92618e6e35f7c69a8f6d674de3f4a54720f44a7410844365b82a646a4e8</anchor>
+      <anchor>e178ce62a882d5124a3f0031a822d7f2d79f15c98cb11784447ed5c285c5a660</anchor>
       <arglist></arglist>
     </member>
     <member kind="enumvalue">
       <name>key</name>
       <anchorfile>structshards_1_1CellTopologyTraits.html</anchorfile>
-      <anchor>348aa92618e6e35f7c69a8f6d674de3f8478065174b90bf887707a74c0a9b9cd</anchor>
+      <anchor>e178ce62a882d5124a3f0031a822d7f2ebedac2822a202d3c132f631dda0f244</anchor>
       <arglist></arglist>
     </member>
     <member kind="typedef">
-      <type>CellTopologyTraits&lt; Dimension, Number_Vertex, Number_Node, EdgeList, EdgeMaps, FaceList, FaceMaps &gt;</type>
+      <type>CellTopologyTraits&lt; Dimension, Number_Vertex, Number_Node, EdgeList, EdgeMaps, FaceList, FaceMaps, PermutationMaps, PermutationPolarity &gt;</type>
       <name>Traits</name>
       <anchorfile>structshards_1_1CellTopologyTraits.html</anchorfile>
-      <anchor>124df14227c2b663894054f09181708b</anchor>
+      <anchor>1ade6499237b9b7171c6bf80313a75d7</anchor>
       <arglist></arglist>
     </member>
     <class kind="struct">shards::CellTopologyTraits::edge</class>
+    <class kind="struct">shards::CellTopologyTraits::permutation</class>
     <class kind="struct">shards::CellTopologyTraits::side</class>
     <class kind="struct">shards::CellTopologyTraits::subcell</class>
   </compound>
@@ -1317,6 +1749,12 @@
     <name>shards::CellTopologyTraits::edge</name>
     <filename>structshards_1_1CellTopologyTraits_1_1edge.html</filename>
     <templarg>Ord</templarg>
+    <templarg>J</templarg>
+  </compound>
+  <compound kind="struct">
+    <name>shards::CellTopologyTraits::permutation</name>
+    <filename>structshards_1_1CellTopologyTraits_1_1permutation.html</filename>
+    <templarg>Perm</templarg>
     <templarg>J</templarg>
   </compound>
   <compound kind="struct">
@@ -1367,6 +1805,11 @@
     <templarg>I29</templarg>
     <templarg>I30</templarg>
     <templarg>I31</templarg>
+  </compound>
+  <compound kind="struct">
+    <name>shards::IndexListLength</name>
+    <filename>structshards_1_1IndexListLength.html</filename>
+    <templarg>List</templarg>
   </compound>
   <compound kind="struct">
     <name>shards::IndexListAt</name>
@@ -1702,10 +2145,11 @@
     </member>
   </compound>
   <compound kind="dir">
-    <name>/home/hcedwar/Trilinos/packages/shards/src/</name>
-    <path>/home/hcedwar/Trilinos/packages/shards/src/</path>
-    <filename>dir_b6deab52b94d7683936539bfbb0136b7.html</filename>
+    <name>/home/kevin/Code/Trilinos/packages/shards/src/</name>
+    <path>/home/kevin/Code/Trilinos/packages/shards/src/</path>
+    <filename>dir_0fef67f4cef2265fa212fe24aef9dc88.html</filename>
     <file>Shards_Array.hpp</file>
+    <file>Shards_ArrayVector.hpp</file>
     <file>Shards_BasicTopologies.hpp</file>
     <file>Shards_CellTopology.hpp</file>
     <file>Shards_CellTopologyData.h</file>

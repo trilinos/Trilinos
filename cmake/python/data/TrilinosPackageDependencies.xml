@@ -209,11 +209,21 @@
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
+  <Package name="Pamgen" dir="pamgen">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="ExodusII,Nemesis"/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+  </Package>
   <Package name="Intrepid" dir="intrepid">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Sacado"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Amesos"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Amesos,Pamgen"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
@@ -318,16 +328,6 @@
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS value="TVMET"/>
-  </Package>
-  <Package name="Pamgen" dir="pamgen">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="ExodusII,Nemesis"/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="Phdmesh" dir="phdmesh">
     <LIB_REQUIRED_DEP_PACKAGES/>
