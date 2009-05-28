@@ -95,7 +95,7 @@ int main(int argc, char *argv[]) {
   int errorFlag = 0;
 #ifdef HAVE_INTREPID_DEBUG
   int beginThrowNumber = TestForException_getThrowNumber();
-  int endThrowNumber = beginThrowNumber + 5;
+  int endThrowNumber = beginThrowNumber + 17;
 #endif
 
   typedef FunctionSpaceTools fst; 
@@ -111,6 +111,8 @@ int main(int argc, char *argv[]) {
     *outStream << "\n >>>>> TESTING computeMeasure:\n";
     FieldContainer<double> a_2(2);
     FieldContainer<double> a_2_2(2, 2);
+    FieldContainer<double> a_2_3(2, 3);
+    FieldContainer<double> a_3_2(3, 2);
     FieldContainer<double> a_2_2_3(2, 2, 3);
     FieldContainer<double> a_2_2_3_3(2, 2, 3, 3);
     FieldContainer<double> a_2_2_2(2, 2, 2);
@@ -149,6 +151,27 @@ int main(int argc, char *argv[]) {
     INTREPID_TEST_COMMAND( fst::dataIntegral<double>(a_2, a_2_2, a_2_2, COMP_CPP) );
     INTREPID_TEST_COMMAND( fst::dataIntegral<double>(a_2, a_2_2_3, a_2_2_3, COMP_CPP) );
     INTREPID_TEST_COMMAND( fst::dataIntegral<double>(a_2, a_2_2_3_3, a_2_2_3_3, COMP_CPP) );
+
+    *outStream << "\n >>>>> TESTING applyLeftFieldSigns:\n";
+    INTREPID_TEST_COMMAND( fst::applyLeftFieldSigns<double>(a_2, a_2) );
+    INTREPID_TEST_COMMAND( fst::applyLeftFieldSigns<double>(a_2_2_2, a_2) );
+    INTREPID_TEST_COMMAND( fst::applyLeftFieldSigns<double>(a_2_2_2, a_3_2) );
+    INTREPID_TEST_COMMAND( fst::applyLeftFieldSigns<double>(a_2_2_2, a_2_3) );
+    INTREPID_TEST_COMMAND( fst::applyLeftFieldSigns<double>(a_2_2_2, a_2_2) );
+
+    *outStream << "\n >>>>> TESTING applyRightFieldSigns:\n";
+    INTREPID_TEST_COMMAND( fst::applyRightFieldSigns<double>(a_2, a_2) );
+    INTREPID_TEST_COMMAND( fst::applyRightFieldSigns<double>(a_2_2_2, a_2) );
+    INTREPID_TEST_COMMAND( fst::applyRightFieldSigns<double>(a_2_2_2, a_3_2) );
+    INTREPID_TEST_COMMAND( fst::applyRightFieldSigns<double>(a_2_2_2, a_2_3) );
+    INTREPID_TEST_COMMAND( fst::applyRightFieldSigns<double>(a_2_2_2, a_2_2) );
+
+    *outStream << "\n >>>>> TESTING applyFieldSigns:\n";
+    INTREPID_TEST_COMMAND( fst::applyFieldSigns<double>(a_2, a_2) );
+    INTREPID_TEST_COMMAND( fst::applyFieldSigns<double>(a_2_2, a_2) );
+    INTREPID_TEST_COMMAND( fst::applyFieldSigns<double>(a_2_2, a_3_2) );
+    INTREPID_TEST_COMMAND( fst::applyFieldSigns<double>(a_2_2, a_2_3) );
+    INTREPID_TEST_COMMAND( fst::applyFieldSigns<double>(a_2_2, a_2_2) );
 #endif
   }
   catch (std::logic_error err) {

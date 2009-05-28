@@ -68,6 +68,17 @@ void FunctionSpaceTools::HCURLtransformVALUE(ArrayTypeOut        & outVals,
 }
 
 
+template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeIn>
+void FunctionSpaceTools::HCURLtransformVALUE(ArrayTypeOut        & outVals,
+                                             const ArrayTypeJac  & jacobianInverse,
+                                             const ArrayTypeIn   & inVals,
+                                             const char            transpose) {
+
+  ArrayTools::multiplyTensorData<Scalar>(outVals, jacobianInverse, inVals, transpose);
+
+}
+
+
 template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeDet, class ArrayTypeSign, class ArrayTypeIn>
 void FunctionSpaceTools::HCURLtransformCURL(ArrayTypeOut        & outVals,
                                             const ArrayTypeJac  & jacobian,
@@ -79,6 +90,19 @@ void FunctionSpaceTools::HCURLtransformCURL(ArrayTypeOut        & outVals,
   ArrayTools::multiplyTensorData<Scalar>(outVals, jacobian, inVals, transpose);
   ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, outVals);
   ArrayTools::scaleValues<Scalar>(outVals, fieldSigns);
+
+}
+
+
+template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeDet, class ArrayTypeIn>
+void FunctionSpaceTools::HCURLtransformCURL(ArrayTypeOut        & outVals,
+                                            const ArrayTypeJac  & jacobian,
+                                            const ArrayTypeDet  & jacobianDet,
+                                            const ArrayTypeIn   & inVals,
+                                            const char            transpose) {
+
+  ArrayTools::multiplyTensorData<Scalar>(outVals, jacobian, inVals, transpose);
+  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, outVals);
 
 }
 
@@ -98,6 +122,19 @@ void FunctionSpaceTools::HDIVtransformVALUE(ArrayTypeOut        & outVals,
 }
 
 
+template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeDet, class ArrayTypeIn>
+void FunctionSpaceTools::HDIVtransformVALUE(ArrayTypeOut        & outVals,
+                                            const ArrayTypeJac  & jacobian,
+                                            const ArrayTypeDet  & jacobianDet,
+                                            const ArrayTypeIn   & inVals,
+                                            const char            transpose) {
+
+  ArrayTools::multiplyTensorData<Scalar>(outVals, jacobian, inVals, transpose);
+  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, outVals);
+
+}
+
+
 template<class Scalar, class ArrayTypeOut, class ArrayTypeDet, class ArrayTypeSign, class ArrayTypeIn>
 void FunctionSpaceTools::HDIVtransformDIV(ArrayTypeOut        & outVals,
                                           const ArrayTypeDet  & jacobianDet,
@@ -106,6 +143,16 @@ void FunctionSpaceTools::HDIVtransformDIV(ArrayTypeOut        & outVals,
 
   ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, inVals);
   ArrayTools::scaleValues<Scalar>(outVals, fieldSigns);
+
+}
+
+
+template<class Scalar, class ArrayTypeOut, class ArrayTypeDet, class ArrayTypeIn>
+void FunctionSpaceTools::HDIVtransformDIV(ArrayTypeOut        & outVals,
+                                          const ArrayTypeDet  & jacobianDet,
+                                          const ArrayTypeIn   & inVals) {
+
+  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, inVals);
 
 }
 
@@ -277,5 +324,79 @@ inline void FunctionSpaceTools::computeMeasure(ArrayOut             & outVals,
   }
 
 } // computeMeasure
+
+
+template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
+void FunctionSpaceTools::applyLeftFieldSigns(ArrayTypeInOut        & inoutOperator,
+                                             const ArrayTypeSign   & fieldSigns) {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (inoutOperator.rank() != 3), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Input operator container must have rank 3.");
+  TEST_FOR_EXCEPTION( (fieldSigns.rank() != 2), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Input field signs container must have rank 2.");
+  TEST_FOR_EXCEPTION( (inoutOperator.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): Zeroth dimensions (number of integration domains) of the operator and field signs containers must agree!");
+  TEST_FOR_EXCEPTION( (inoutOperator.dimension(1) != fieldSigns.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyLeftFieldSigns): First dimensions (number of left fields) of the operator and field signs containers must agree!");
+#endif
+
+  for (int cell=0; cell<inoutOperator.dimension(0); cell++) {
+    for (int lbf=0; lbf<inoutOperator.dimension(1); lbf++) {
+      for (int rbf=0; rbf<inoutOperator.dimension(2); rbf++) {
+        inoutOperator(cell, lbf, rbf) *= fieldSigns(cell, lbf);
+      }
+    }
+  }
+
+} // applyLeftFieldSigns
+
+
+template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
+void FunctionSpaceTools::applyRightFieldSigns(ArrayTypeInOut        & inoutOperator,
+                                              const ArrayTypeSign   & fieldSigns) {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (inoutOperator.rank() != 3), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Input operator container must have rank 3.");
+  TEST_FOR_EXCEPTION( (fieldSigns.rank() != 2), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Input field signs container must have rank 2.");
+  TEST_FOR_EXCEPTION( (inoutOperator.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Zeroth dimensions (number of integration domains) of the operator and field signs containers must agree!");
+  TEST_FOR_EXCEPTION( (inoutOperator.dimension(2) != fieldSigns.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyRightFieldSigns): Second dimension of the operator container and first dimension of the field signs container (number of right fields) must agree!");
+#endif
+
+  for (int cell=0; cell<inoutOperator.dimension(0); cell++) {
+    for (int lbf=0; lbf<inoutOperator.dimension(1); lbf++) {
+      for (int rbf=0; rbf<inoutOperator.dimension(2); rbf++) {
+        inoutOperator(cell, lbf, rbf) *= fieldSigns(cell, rbf);
+      }
+    }
+  }
+
+} // applyRightFieldSigns
+
+
+template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
+void FunctionSpaceTools::applyFieldSigns(ArrayTypeInOut        & inoutFunctional,
+                                         const ArrayTypeSign   & fieldSigns) {
+#ifdef HAVE_INTREPID_DEBUG
+  TEST_FOR_EXCEPTION( (inoutFunctional.rank() != 2), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input functional container must have rank 2.");
+  TEST_FOR_EXCEPTION( (fieldSigns.rank() != 2), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Input field signs container must have rank 2.");
+  TEST_FOR_EXCEPTION( (inoutFunctional.dimension(0) != fieldSigns.dimension(0) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): Zeroth dimensions (number of integration domains) of the operator and field signs containers must agree!");
+  TEST_FOR_EXCEPTION( (inoutFunctional.dimension(1) != fieldSigns.dimension(1) ), std::invalid_argument,
+                      ">>> ERROR (FunctionSpaceTools::applyFieldSigns): First dimensions (number of fields) of the functional and field signs containers must agree!");
+#endif
+
+  for (int cell=0; cell<inoutFunctional.dimension(0); cell++) {
+    for (int bf=0; bf<inoutFunctional.dimension(1); bf++) {
+      inoutFunctional(cell, bf) *= fieldSigns(cell, bf);
+    }
+  }
+
+} // applyFieldSigns
+
 
 } // end namespace Intrepid

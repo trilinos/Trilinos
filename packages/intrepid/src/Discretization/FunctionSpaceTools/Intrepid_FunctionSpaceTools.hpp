@@ -116,6 +116,29 @@ class FunctionSpaceTools {
                                   const ArrayTypeIn   & inVals,
                                   const char            transpose = 'T');
 
+  /** \brief Transformation of a (vector) value field in the H-curl space, defined at points on a
+             reference cell, stored in the user-provided container <var><b>inVals</b></var>
+             and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
+             defined on cells in physical space and indexed by (C,F,P,D).
+
+             Math here ...
+    \code
+    |------|----------------------|--------------------------------------------------|
+    |      |         Index        |                   Dimension                      |
+    |------|----------------------|--------------------------------------------------|
+    |   C  |         cell         |  0 <= C < num. integration domains               |
+    |   F  |         field        |  0 <= F < dim. of native basis                   |
+    |   P  |         point        |  0 <= P < num. integration points                |
+    |   D  |         space dim    |  0 <= D < spatial dimension                      |
+    |------|----------------------|--------------------------------------------------|
+    \endcode
+  */
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeIn>
+  static void HCURLtransformVALUE(ArrayTypeOut        & outVals,
+                                  const ArrayTypeJac  & jacobianInverse,
+                                  const ArrayTypeIn   & inVals,
+                                  const char            transpose = 'T');
+
   /** \brief Transformation of a curl field in the H-curl space, defined at points on a
              reference cell, stored in the user-provided container <var><b>inVals</b></var>
              and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
@@ -138,6 +161,30 @@ class FunctionSpaceTools {
                                  const ArrayTypeJac  & jacobian,
                                  const ArrayTypeDet  & jacobianDet,
                                  const ArrayTypeSign & fieldSigns,
+                                 const ArrayTypeIn   & inVals,
+                                 const char            transpose = 'N');
+
+  /** \brief Transformation of a curl field in the H-curl space, defined at points on a
+             reference cell, stored in the user-provided container <var><b>inVals</b></var>
+             and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
+             defined on cells in physical space and indexed by (C,F,P,D).
+
+             Math here ...
+    \code
+    |------|----------------------|--------------------------------------------------|
+    |      |         Index        |                   Dimension                      |
+    |------|----------------------|--------------------------------------------------|
+    |   C  |         cell         |  0 <= C < num. integration domains               |
+    |   F  |         field        |  0 <= F < dim. of the basis                      |
+    |   P  |         point        |  0 <= P < num. integration points                |
+    |   D  |         space dim    |  0 <= D < spatial dimension                      |
+    |------|----------------------|--------------------------------------------------|
+    \endcode
+  */
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeDet, class ArrayTypeIn>
+  static void HCURLtransformCURL(ArrayTypeOut        & outVals,
+                                 const ArrayTypeJac  & jacobian,
+                                 const ArrayTypeDet  & jacobianDet,
                                  const ArrayTypeIn   & inVals,
                                  const char            transpose = 'N');
 
@@ -166,6 +213,30 @@ class FunctionSpaceTools {
                                  const ArrayTypeIn   & inVals,
                                  const char            transpose = 'N');
 
+  /** \brief Transformation of a (vector) value field in the H-div space, defined at points on a
+             reference cell, stored in the user-provided container <var><b>inVals</b></var>
+             and indexed by (F,P,D), into the output container <var><b>outVals</b></var>,
+             defined on cells in physical space and indexed by (C,F,P,D).
+
+             Math here ...
+    \code
+    |------|----------------------|--------------------------------------------------|
+    |      |         Index        |                   Dimension                      |
+    |------|----------------------|--------------------------------------------------|
+    |   C  |         cell         |  0 <= C < num. integration domains               |
+    |   F  |         field        |  0 <= F < dim. of the basis                      |
+    |   P  |         point        |  0 <= P < num. integration points                |
+    |   D  |         space dim    |  0 <= D < spatial dimension                      |
+    |------|----------------------|--------------------------------------------------|
+    \endcode
+  */
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeDet, class ArrayTypeIn>
+  static void HDIVtransformVALUE(ArrayTypeOut        & outVals,
+                                 const ArrayTypeJac  & jacobian,
+                                 const ArrayTypeDet  & jacobianDet,
+                                 const ArrayTypeIn   & inVals,
+                                 const char            transpose = 'N');
+
   /** \brief Transformation of a divergence field in the H-div space, defined at points on a
              reference cell, stored in the user-provided container <var><b>inVals</b></var>
              and indexed by (F,P), into the output container <var><b>outVals</b></var>,
@@ -186,6 +257,27 @@ class FunctionSpaceTools {
   static void HDIVtransformDIV(ArrayTypeOut        & outVals,
                                const ArrayTypeDet  & jacobianDet,
                                const ArrayTypeSign & fieldSigns,
+                               const ArrayTypeIn   & inVals);
+
+  /** \brief Transformation of a divergence field in the H-div space, defined at points on a
+             reference cell, stored in the user-provided container <var><b>inVals</b></var>
+             and indexed by (F,P), into the output container <var><b>outVals</b></var>,
+             defined on cells in physical space and indexed by (C,F,P).
+
+             Math here ...
+    \code
+    |------|----------------------|--------------------------------------------------|
+    |      |         Index        |                   Dimension                      |
+    |------|----------------------|--------------------------------------------------|
+    |   C  |         cell         |  0 <= C < num. integration domains               |
+    |   F  |         field        |  0 <= F < dim. of the basis                      |
+    |   P  |         point        |  0 <= P < num. integration points                |
+    |------|----------------------|--------------------------------------------------|
+    \endcode
+  */
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeDet, class ArrayTypeIn>
+  static void HDIVtransformDIV(ArrayTypeOut        & outVals,
+                               const ArrayTypeDet  & jacobianDet,
                                const ArrayTypeIn   & inVals);
 
   /** \brief Transformation of a (scalar) value field in the H-vol space, defined at points on a
@@ -346,7 +438,61 @@ class FunctionSpaceTools {
                            const ECompEngine         compEngine,
                            const bool                sumInto = false);
 
+  /** \brief Applies left (row) signs, stored in the user-provided container
+             <var><b>fieldSigns</b></var> and indexed by (C,L), to the operator
+             <var><b>inoutFields</b></var> indexed by (C,L,R).
 
+             Math here ...
+    \code
+    |------|----------------------|----------------------------------------------------|
+    |      |         Index        |                   Dimension                        |
+    |------|----------------------|----------------------------------------------------|
+    |   C  |         cell         |  0 <= C < num. integration domains                 |
+    |   L  | num. "left" fields   |  0 <= L < dim. of the left basis (in inoutFields)  |
+    |   R  | num. "right" fields  |  0 <= R < dim. of the right basis (in inoutFields) |
+    |------|----------------------|----------------------------------------------------|
+    \endcode
+  */
+  template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
+  static void applyLeftFieldSigns(ArrayTypeInOut        & inoutOperator,
+                                  const ArrayTypeSign   & fieldSigns);
+
+  /** \brief Applies right (column) signs, stored in the user-provided container
+             <var><b>fieldSigns</b></var> and indexed by (C,R), to the operator
+             <var><b>inoutFields</b></var> indexed by (C,L,R).
+
+             Math here ...
+    \code
+    |------|----------------------|----------------------------------------------------|
+    |      |         Index        |                   Dimension                        |
+    |------|----------------------|----------------------------------------------------|
+    |   C  |         cell         |  0 <= C < num. integration domains                 |
+    |   L  | num. "left" fields   |  0 <= L < dim. of the left basis (in inoutFields)  |
+    |   R  | num. "right" fields  |  0 <= R < dim. of the right basis (in inoutFields) |
+    |------|----------------------|----------------------------------------------------|
+    \endcode
+  */
+  template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
+  static void applyRightFieldSigns(ArrayTypeInOut        & inoutOperator,
+                                   const ArrayTypeSign   & fieldSigns);
+
+  /** \brief Applies field signs, stored in the user-provided container
+             <var><b>fieldSigns</b></var> and indexed by (C,F), to the functional
+             <var><b>inoutFields</b></var> indexed by (C,F).
+
+             Math here ...
+    \code
+    |------|----------------------|----------------------------------------------------|
+    |      |         Index        |                   Dimension                        |
+    |------|----------------------|----------------------------------------------------|
+    |   C  |         cell         |  0 <= C < num. integration domains                 |
+    |   F  |      num. fields     |  0 <= F < dim. of the basis (in inoutFields)       |
+    |------|----------------------|----------------------------------------------------|
+    \endcode
+  */
+  template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>
+  static void applyFieldSigns(ArrayTypeInOut        & inoutFunctional,
+                              const ArrayTypeSign   & fieldSigns);
 
   
 };  // end FunctionSpaceTools

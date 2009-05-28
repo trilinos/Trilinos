@@ -204,7 +204,6 @@ int main(int argc, char *argv[]) {
       fst::HCURLtransformCURL<double>(transformed_curl_of_basis_at_cub_points,
                                       jacobian,
                                       jacobian_det,
-                                      field_signs,
                                       curl_of_basis_at_cub_points);
 
       // multiply with weighted measure
@@ -218,6 +217,9 @@ int main(int argc, char *argv[]) {
                              weighted_transformed_curl_of_basis_at_cub_points,
                              COMP_CPP);
 
+      // apply field signs
+      fst::applyLeftFieldSigns<double>(stiffness_matrices, field_signs);
+      fst::applyRightFieldSigns<double>(stiffness_matrices, field_signs);
 
       // Computing mass matrices:
       // tabulate values of basis functions at (reference) cubature points
@@ -226,7 +228,6 @@ int main(int argc, char *argv[]) {
       // transform gradients of basis functions into physical space
       fst::HCURLtransformVALUE<double>(transformed_value_of_basis_at_cub_points,
                                        jacobian_inv,
-                                       field_signs,
                                        value_of_basis_at_cub_points);
 
       // multiply with weighted measure
@@ -239,6 +240,10 @@ int main(int argc, char *argv[]) {
                              transformed_value_of_basis_at_cub_points,
                              weighted_transformed_value_of_basis_at_cub_points,
                              COMP_CPP);
+
+      // apply field signs
+      fst::applyLeftFieldSigns<double>(mass_matrices, field_signs);
+      fst::applyRightFieldSigns<double>(mass_matrices, field_signs);
 
       /*******************  STOP COMPUTATION ***********************/
 
@@ -254,7 +259,7 @@ int main(int argc, char *argv[]) {
 
         ifstream massfile(&filename[0]);
         if (massfile.is_open()) {
-          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-10, 0) > 0)
+          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-10, 1) > 0)
             errorFlag++;
           massfile.close();
         }
@@ -271,7 +276,7 @@ int main(int argc, char *argv[]) {
         ifstream stifffile(&filename[0]);
         if (stifffile.is_open())
         {
-          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-10, 0) > 0)
+          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-10, 1) > 0)
             errorFlag++;
           stifffile.close();
         }
@@ -291,7 +296,7 @@ int main(int argc, char *argv[]) {
 
         ifstream massfile(&filename[0]);
         if (massfile.is_open()) {
-          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-4, 0, INTREPID_UTILS_SCALAR) > 0)
+          if (compareToAnalytic<double>(&mass_matrices(cell_id, 0, 0), massfile, 1e-4, 1, INTREPID_UTILS_SCALAR) > 0)
             errorFlag++;
           massfile.close();
         }
@@ -308,7 +313,7 @@ int main(int argc, char *argv[]) {
         ifstream stifffile(&filename[0]);
         if (stifffile.is_open())
         {
-          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-4, 0, INTREPID_UTILS_SCALAR) > 0)
+          if (compareToAnalytic<double>(&stiffness_matrices(cell_id, 0, 0), stifffile, 1e-4, 1, INTREPID_UTILS_SCALAR) > 0)
             errorFlag++;
           stifffile.close();
         }
