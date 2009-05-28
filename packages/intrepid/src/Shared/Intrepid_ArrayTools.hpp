@@ -954,7 +954,7 @@ namespace Intrepid {
                representing the values of tensor data; the output value container \a <b>outputData</b> 
                is indexed by (C,P,D), regardless of which of the two use cases is considered.
       
-      \remarks 
+        \remarks 
               The rank of <b>inputDataLeft</b> implicitly defines the type of tensor data:
               \li rank = 2 corresponds to a constant diagonal tensor \f$ diag(a,\ldots,a) \f$
               \li rank = 3 corresponds to a nonconstant diagonal tensor \f$ diag(a_1,\ldots,a_d) \f$
@@ -994,7 +994,7 @@ namespace Intrepid {
                representing the values of tensor data; the output value container \a <b>outputFields</b> is 
                indexed by (C,F,P,D1,D2), regardless of which of the two use cases is considered.
   
-      \remarks 
+        \remarks 
                The rank of <b>inputData</b> implicitly defines the type of tensor data:
                \li rank = 2 corresponds to a constant diagonal tensor \f$ diag(a,\ldots,a) \f$
                \li rank = 3 corresponds to a nonconstant diagonal tensor \f$ diag(a_1,\ldots,a_d) \f$
@@ -1056,7 +1056,7 @@ namespace Intrepid {
         \param  outputData      [out] - Output (matrix-vector product) data array.
         \param  inputDataLeft    [in] - Left input data array.
         \param  inputDataRight   [in] - Right input data array.
-        \param  transpose       [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
+        \param  transpose        [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
     */
     template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
     static void matmatProductDataData(ArrayOutData &            outputData,
