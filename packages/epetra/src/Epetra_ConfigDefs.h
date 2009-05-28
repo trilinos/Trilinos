@@ -101,6 +101,7 @@ using std::FILE;
 using std::fopen;
 using std::fclose;
 using std::fgets;
+using std::fprintf;
 
 #include <cassert>
 
