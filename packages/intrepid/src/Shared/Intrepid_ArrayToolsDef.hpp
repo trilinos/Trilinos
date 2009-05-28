@@ -1570,7 +1570,7 @@ void ArrayTools::multiplyTensorData(ArrayTypeOut &          outputValues,
     }
   }
 #endif
-
+           
   // get sizes
   int invalRank      = inputValues.rank();
   int outvalRank     = outputValues.rank();
@@ -2083,7 +2083,7 @@ void ArrayTools::multiplyTensorData(ArrayTypeOut &          outputValues,
 
           switch(dataRank) {
             case 2: 
-              for(int cl = 0; cl < numCells; cl++) {
+   for(int cl = 0; cl < numCells; cl++) {
                 for(int bf = 0; bf < numFields; bf++) {
                   for(int pt = 0; pt < numPoints; pt++) {
                     for( int iVec = 0; iVec < dimTens; iVec++) {

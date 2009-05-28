@@ -902,114 +902,170 @@ namespace Intrepid {
 
     /** \brief There are two use cases:
                (1) matrix-vector product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
-               representing the values of a set of vector fields, on the left by the values in a rank-4
-               container \a <b>inputData</b> indexed by (C,P,D,D), representing the values of tensor data, OR
+               representing the values of a set of vector fields, on the left by the values in a rank-2, 3, or 4 
+               container \a <b>inputData</b> indexed by (C,P), (C,P,D1) or (C,P,D1,D2), respectively, 
+               representing the values of tensor data, OR
                (2) matrix-vector product of a rank-3 container \a <b>inputFields</b> with dimensions (F,P,D),
-               representing the values of a vector field, on the left by the values in a rank-4 container
-               \a <b>inputData</b> indexed by (C,P,D,D), representing the values of tensor data;
-               the output value container \a <b>outputFields</b> is indexed by (C,F,P,D),
-               regardless of which of the two use cases is considered.
+               representing the values of a vector field, on the left by the values in a rank-2, 3, or 4 
+               container \a <b>inputData</b> indexed by (C,P), (C,P,D1) or (C,P,D1,D2), respectively, 
+               representing the values of tensor data; the output value container \a <b>outputFields</b> is 
+               indexed by (C,F,P,D), regardless of which of the two use cases is considered.
+
+        \remarks 
+               The rank of <b>inputData</b> implicitly defines the type of tensor data:
+               \li rank = 2 corresponds to a constant diagonal tensor \f$ diag(a,\ldots,a) \f$
+               \li rank = 3 corresponds to a nonconstant diagonal tensor \f$ diag(a_1,\ldots,a_d) \f$
+               \li rank = 4 corresponds to a full tensor \f$ \{a_{ij}\}\f$  
+      
+        \note  It is assumed that all tensors are square! 
+      
+        \note  The method is defined for spatial dimensions D = 1, 2, 3
 
         \code
-          C  - num. integration domains
-          F  - num. fields
-          P  - num. integration points
-          D1 - first spatial (tensor) dimension index
-          D2 - second spatial (tensor) dimension index
+          C    - num. integration domains
+          F    - num. fields
+          P    - num. integration points
+          D    - spatial dimension
+          D1*  - first tensor dimensions, equals the spatial dimension D
+          D2** - second tensor dimension, equals the spatial dimension D
         \endcode
 
         \param  outputFields   [out] - Output (matrix-vector product) fields array.
         \param  inputData       [in] - Data array.
         \param  inputFields     [in] - Input fields array.
+        \param  transpose       [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
     */
     template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
     static void matvecProductDataField(ArrayOutFields &       outputFields,
                                        const ArrayInData &    inputData,
-                                       const ArrayInFields &  inputFields);
+                                       const ArrayInFields &  inputFields,
+                                       const char             transpose = 'N');
 
+    
 
     /** \brief There are two use cases:
                (1) matrix-vector product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
-               representing the values of a set of vector data, on the left by the values in a rank-4
-               container \a <b>inputDataLeft</b> indexed by (C,P,D,D) representing the values of tensor data, OR
+               representing the values of a set of vector data, on the left by the values in a rank-2, 3, or 4 
+               container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D1) or (C,P,D1,D2), respectively, 
+               representing the values of tensor data, OR
                (2) matrix-vector product of a rank-2 container \a <b>inputDataRight</b> with dimensions (P,D),
-               representing the values of vector data, on the left by the values in a rank-4 container
-               \a <b>inputDataLeft</b> indexed by (C,P,D,D), representing the values of tensor data;
-               the output value container \a <b>outputData</b> is indexed by (C,P,D),
-               regardless of which of the two use cases is considered.
-
+               representing the values of vector data, on the left by the values in a rank-2, 3, or 4 
+               container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D1) or (C,P,D1,D2), respectively, 
+               representing the values of tensor data; the output value container \a <b>outputData</b> 
+               is indexed by (C,P,D), regardless of which of the two use cases is considered.
+      
+      \remarks 
+              The rank of <b>inputDataLeft</b> implicitly defines the type of tensor data:
+              \li rank = 2 corresponds to a constant diagonal tensor \f$ diag(a,\ldots,a) \f$
+              \li rank = 3 corresponds to a nonconstant diagonal tensor \f$ diag(a_1,\ldots,a_d) \f$
+              \li rank = 4 corresponds to a full tensor \f$ \{a_{ij}\}\f$  
+      
+        \note   It is assumed that all tensors are square!
+      
         \code
-          C  - num. integration domains
-          P  - num. integration points
-          D1 - first spatial (tensor) dimension index
-          D2 - second spatial (tensor) dimension index
+          C    - num. integration domains
+          P    - num. integration points
+          D    - spatial dimension
+          D1*  - first tensor dimensions, equals the spatial dimension D
+          D2** - second tensor dimension, equals the spatial dimension D
         \endcode
 
         \param  outputData      [out] - Output (matrix-vector product) data array.
         \param  inputDataLeft    [in] - Left input data array.
         \param  inputDataRight   [in] - Right input data array.
+        \param  transpose        [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
     */
     template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
     static void matvecProductDataData(ArrayOutData &            outputData,
                                       const ArrayInDataLeft &   inputDataLeft,
-                                      const ArrayInDataRight &  inputDataRight);
-
-
+                                      const ArrayInDataRight &  inputDataRight,
+                                      const char                transpose = 'N');
+    
+    
+    
     /** \brief There are two use cases:
-               (1) matrix-matrix product of a rank-5 container \a <b>inputFields</b> with dimensions (C,F,P,D,D),
-               representing the values of a set of tensor fields, on the left by the values in a rank-4
-               container \a <b>inputData</b> indexed by (C,P,D,D), representing the values of tensor data, OR
-               (2) matrix-matrix product of a rank-4 container \a <b>inputFields</b> with dimensions (F,P,D,D),
-               representing the values of a tensor field, on the left by the values in a rank-4 container
-               \a <b>inputData</b> indexed by (C,P,D,D), representing the values of tensor data;
-               the output value container \a <b>outputFields</b> is indexed by (C,F,P,D,D),
-               regardless of which of the two use cases is considered.
-
+               (1) matrix-matrix product of a rank-5 container \a <b>inputFields</b> with dimensions (C,F,P,D1,D2),
+               representing the values of a set of tensor fields, on the left by the values in a rank-2, 3, or 4 
+               container \a <b>inputData</b> indexed by (C,P), (C,P,D1) or (C,P,D1,D2), respectively, 
+               representing the values of tensor data, OR
+               (2) matrix-matrix product of a rank-4 container \a <b>inputFields</b> with dimensions (F,P,D1,D2),
+               representing the values of a tensor field, on the left by the values in a rank-2, 3, or 4 
+               container \a <b>inputData</b> indexed by (C,P), (C,P,D1) or (C,P,D1,D2), respectively, 
+               representing the values of tensor data; the output value container \a <b>outputFields</b> is 
+               indexed by (C,F,P,D1,D2), regardless of which of the two use cases is considered.
+  
+      \remarks 
+               The rank of <b>inputData</b> implicitly defines the type of tensor data:
+               \li rank = 2 corresponds to a constant diagonal tensor \f$ diag(a,\ldots,a) \f$
+               \li rank = 3 corresponds to a nonconstant diagonal tensor \f$ diag(a_1,\ldots,a_d) \f$
+               \li rank = 4 corresponds to a full tensor \f$ \{a_{ij}\}\f$  
+      
+        \note  It is assumed that all tensors are square! 
+      
+        \note  The method is defined for spatial dimensions D = 1, 2, 3
+      
         \code
-          C  - num. integration domains
-          F  - num. fields
-          P  - num. integration points
-          D1 - first spatial (tensor) dimension index
-          D2 - second spatial (tensor) dimension index
+          C    - num. integration domains
+          F    - num. fields
+          P    - num. integration points
+          D1*  - first spatial (tensor) dimension index
+          D2** - second spatial (tensor) dimension index
         \endcode
 
         \param  outputFields   [out] - Output (matrix-matrix product) fields array.
         \param  inputData       [in] - Data array.
         \param  inputFields     [in] - Input fields array.
+        \param  transpose       [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
     */
     template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
     static void matmatProductDataField(ArrayOutFields &       outputFields,
                                        const ArrayInData &    inputData,
-                                       const ArrayInFields &  inputFields);
+                                       const ArrayInFields &  inputFields,
+                                       const char             transpose = 'N');
 
+    
 
     /** \brief There are two use cases:
-               (1) matrix-matrix product of a rank-4 container \a <b>inputDataRight</b> with dimensions (C,P,D,D),
-               representing the values of a set of tensor data, on the left by the values in a rank-4
-               container \a <b>inputDataLeft</b> indexed by (C,P,D,D) representing the values of tensor data, OR
-               (2) matrix-matrix product of a rank-3 container \a <b>inputDataRight</b> with dimensions (P,D,D),
-               representing the values of tensor data, on the left by the values in a rank-4 container
-               \a <b>inputDataLeft</b> indexed by (C,P,D,D), representing the values of tensor data;
-               the output value container \a <b>outputData</b> is indexed by (C,P,D,D),
-               regardless of which of the two use cases is considered.
-
+               (1) matrix-matrix product of a rank-4 container \a <b>inputDataRight</b> with dimensions (C,P,D1,D2),
+               representing the values of a set of tensor data, on the left by the values in a rank-2, 3, or 4 
+               container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D1) or (C,P,D1,D2), respectively, 
+               representing the values of tensor data, OR
+               (2) matrix-matrix product of a rank-3 container \a <b>inputDataRight</b> with dimensions (P,D1,D2),
+               representing the values of tensor data, on the left by the values in a rank-2, 3, or 4 
+               container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D1) or (C,P,D1,D2), respectively, 
+               representing the values of tensor data; the output value container \a <b>outputData</b> 
+               is indexed by (C,P,D1,D2), regardless of which of the two use cases is considered.
+      
+        \remarks 
+               The rank of <b>inputData</b> implicitly defines the type of tensor data:
+               \li rank = 2 corresponds to a constant diagonal tensor \f$ diag(a,\ldots,a) \f$
+               \li rank = 3 corresponds to a nonconstant diagonal tensor \f$ diag(a_1,\ldots,a_d) \f$
+               \li rank = 4 corresponds to a full tensor \f$ \{a_{ij}\}\f$  
+      
+        \note  It is assumed that all tensors are square! 
+      
+        \note  The method is defined for spatial dimensions D = 1, 2, 3
+      
         \code
-          C  - num. integration domains
-          P  - num. integration points
-          D1 - first spatial (tensor) dimension index
-          D2 - second spatial (tensor) dimension index
+          C    - num. integration domains
+          P    - num. integration points
+          D1*  - first spatial (tensor) dimension index
+          D2** - second spatial (tensor) dimension index
         \endcode
 
         \param  outputData      [out] - Output (matrix-vector product) data array.
         \param  inputDataLeft    [in] - Left input data array.
         \param  inputDataRight   [in] - Right input data array.
+        \param  transpose       [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
     */
     template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
     static void matmatProductDataData(ArrayOutData &            outputData,
                                       const ArrayInDataLeft &   inputDataLeft,
-                                      const ArrayInDataRight &  inputDataRight);
+                                      const ArrayInDataRight &  inputDataRight,
+                                      const char                transpose = 'N');
 
 
+    
     /** \brief Replicates a rank-2, 3, or 4 container with dimensions (F,P),
                (F,P,D1) or (F,P,D1,D2), representing the values of a scalar, vector or a
                tensor field, into an output value container of size (C,F,P),
