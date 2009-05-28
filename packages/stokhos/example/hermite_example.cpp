@@ -37,7 +37,7 @@
 //  output:  
 //     prints the Hermite Polynomial Chaos Expansion of the simple function
 //
-//     w = sinh(1/(log(u)^2+1)
+//     w = sinh(1/(log(u)^2+1))
 //
 //     where u = 1 + 0.4*H_1(x) + 0.06*H_2(x) + 0.002*H_3(x), x is a zero-mean
 //     and unit-variance Gaussian random variable, and H_i(x) is the i-th
