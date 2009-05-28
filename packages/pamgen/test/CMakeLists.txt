@@ -74,6 +74,8 @@ ENDFUNCTION()
 # Define the tests
 #
 
+ASSERT_DEFINED(CMAKE_BUILD_TYPE)
+
 PAMGEN_ADD_TEST_L( 01 -f lbrick.txt -r 9999 -n 10000 -d 3 )
 
 PAMGEN_ADD_TEST( 01 -f mesh.txt -r 1 -n 3 -d 3 )
@@ -91,7 +93,9 @@ PAMGEN_ADD_TEST( 13 -f 2dtri.txt -r 3 -n 4 -d 2 )
 PAMGEN_ADD_TEST( 14 -f 2dtribis.txt -r 0 -n 2 -d 2 )
 PAMGEN_ADD_TEST( 15 -f 2dtribis.txt -r 3 -n 4 -d 2 )
 PAMGEN_ADD_TEST( 16 -f hbrick.txt -r 0 -n 100 -d 3 )
-PAMGEN_ADD_TEST( 17 -f 3dbj.txt -r 0 -n 1 -d 3 )
+IF (CMAKE_BUILD_TYPE STREQUAL RELEASE)
+  PAMGEN_ADD_TEST( 17 -f 3dbj.txt -r 0 -n 1 -d 3 )
+ENDIF()
 PAMGEN_ADD_TEST( 18 -f hbrick.txt -r 11 -n 100 -d 3 )
 PAMGEN_ADD_TEST( 19 -f trisect_multi_theta.txt )
 PAMGEN_ADD_TEST( 20 -f trisect_multi_theta_2d.txt -d 2)
@@ -100,7 +104,9 @@ PAMGEN_ADD_TEST( 22 -f ui.txt --all -n 4 )
 PAMGEN_ADD_TEST( 23 -f ui2d.txt --all -n 4 -d 2)
 PAMGEN_ADD_TEST( 24 -f geom_warp.txt -r 0 -n 1 -d 3)
 PAMGEN_ADD_TEST( 25 -f geom_warp2d.txt -r 0 -n 1 -d 2)
-PAMGEN_ADD_TEST( 26 -f report1.txt -r 0 -n 1 -d 3)
+IF (CMAKE_BUILD_TYPE STREQUAL RELEASE)
+  PAMGEN_ADD_TEST( 26 -f report1.txt -r 0 -n 1 -d 3)
+ENDIF()
 PAMGEN_ADD_TEST( 27 -f report2.txt -r 0 -n 1 -d 2)
 PAMGEN_ADD_TEST( 28 -f report3.txt -r 0 -n 1 -d 3)
 PAMGEN_ADD_TEST( 29 -f report4.txt -r 0 -n 1 -d 2)
@@ -119,6 +125,9 @@ PAMGEN_ADD_TEST( 41 -f report16.txt -r 0 -n 8 -d 3)
 PAMGEN_ADD_TEST( 42 -f report17.txt -r 0 -n 8 -d 3)
 PAMGEN_ADD_TEST( 43 -f uded.txt -r 0 -n 1 -d 3)
 PAMGEN_ADD_TEST( 44 -f ur.txt -r 0 -n 1 -d 3)
+
+# 2009/05/28: rabartl: Above, the test 17 timing out at 600s on gabriel and
+# the test 26 just takes too long (see bug 4428).
 
 
 #
