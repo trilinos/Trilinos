@@ -19,9 +19,11 @@
 // PB-Package includes
 #include "PB_Utilities.hpp"
 #include "PB_InverseFactory.hpp"
+#include "PB_InverseLibrary.hpp"
 #include "Epetra/PB_StridedEpetraOperator.hpp"
 #include "Epetra/PB_EpetraBlockPreconditioner.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
+#include "NS/PB_SIMPLEPreconditionerFactory.hpp"
 
 // Aztec includes
 #include "AztecOO.h"
@@ -63,18 +65,19 @@ int main(int argc,char * argv[])
    // Build the preconditioner /*@ \label{lned:construct-prec} @*/
    /////////////////////////////////////////////////////////
 
-   // Set parameters for the inverse factory
-   RCP<Teuchos::ParameterList> paramList  /*@ \label{lned:define-inv-params} @*/
-         = Teuchos::getParametersFromXmlFile("solverparams.xml");
+   // build an InverseLibrary
+   RCP<PB::InverseLibrary> invLib = PB::InverseLibrary::buildFromStratimikos();
    
    // build the inverse factory needed by the example preconditioner
    RCP<const PB::InverseFactory> inverse  /*@ \label{lned:define-inv-fact} @*/
-         = PB::invFactoryFromParamList(*paramList,"Amesos");
+         = invLib->getInverseFactory("Amesos");
 
    // build the preconditioner factory
-   RCP<PB::NS::LSCStrategy> strategy = rcp(new PB::NS::InvLSCStrategy(inverse,true)); /*@ \label{lned:const-prec-strategy} @*/
+   // RCP<PB::NS::LSCStrategy> strategy = rcp(new PB::NS::InvLSCStrategy(inverse,true)); /*@ \label{lned:const-prec-strategy} @*/
+   // RCP<PB::BlockPreconditionerFactory> precFact /*@ \label{lned:const-prec-fact} @*/
+   //       = rcp(new PB::NS::LSCPreconditionerFactory(strategy));
    RCP<PB::BlockPreconditionerFactory> precFact /*@ \label{lned:const-prec-fact} @*/
-         = rcp(new PB::NS::LSCPreconditionerFactory(strategy));
+          = rcp(new PB::NS::SIMPLEPreconditionerFactory(inverse,0.9));
 
    // using the preconditioner factory construct an Epetra_Operator
    PB::Epetra::EpetraBlockPreconditioner prec(precFact); /*@ \label{lned:const-epetra-prec} @*/
