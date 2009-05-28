@@ -135,6 +135,8 @@ using std::memcpy;
 using std::strcpy;
 using std::strcmp;
 using std::strlen;
+using std::strchr;
+using std::strtok;
 using std::realloc;
 using std::malloc;
 using std::free;
