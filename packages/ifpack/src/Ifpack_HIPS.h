@@ -30,11 +30,10 @@
 #ifndef IFPACK_HIPS_H
 #define IFPACK_HIPS_H
 
-
-#define HAVE_IFPACK_HIPS
+#include "Ifpack_ConfigDefs.h"
 #ifdef HAVE_IFPACK_HIPS
 
-#include "Ifpack_ConfigDefs.h"
+
 #include "Ifpack_Preconditioner.h"
 #include "Ifpack_Condest.h"
 #include "Ifpack_ScalingType.h"

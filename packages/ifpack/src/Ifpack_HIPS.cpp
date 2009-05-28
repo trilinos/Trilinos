@@ -1,3 +1,5 @@
+#if defined(HAVE_IFPACK_HIPS) && defined(HAVE_MPI)
+
 #include "Ifpack_HIPS.h"
 #include "Ifpack_Utils.h"
 extern "C" {
@@ -16,7 +18,6 @@ extern int ML_NODE_ID;
 using Teuchos::RefCountPtr;
 using Teuchos::rcp;
 
-#if defined(HAVE_IFPACK_HIPS) && defined(HAVE_MPI)
 
 
 Ifpack_HIPS::Ifpack_HIPS(Epetra_RowMatrix* A):
