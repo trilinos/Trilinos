@@ -2948,13 +2948,13 @@ struct Helper<Scalar,NaturalOrder,Tag1,void,void,void,void,void,void,void>
   template< typename iType >
   static void assign( iType * stride )
     {
-      stride[7] = NULL ;
-      stride[6] = NULL ;
-      stride[5] = NULL ;
-      stride[4] = NULL ;
-      stride[3] = NULL ;
-      stride[2] = NULL ;
-      stride[1] = NULL ;
+      stride[7] = 0 ;
+      stride[6] = 0 ;
+      stride[5] = 0 ;
+      stride[4] = 0 ;
+      stride[3] = 0 ;
+      stride[2] = 0 ;
+      stride[1] = 0 ;
       stride[0] = Tag1::Size ;
     }
 
@@ -2962,13 +2962,13 @@ struct Helper<Scalar,NaturalOrder,Tag1,void,void,void,void,void,void,void>
   static void assign( iType * stride ,
                       const iType & n1 )
     {
-      stride[7] = NULL ;
-      stride[6] = NULL ;
-      stride[5] = NULL ;
-      stride[4] = NULL ;
-      stride[3] = NULL ;
-      stride[2] = NULL ;
-      stride[1] = NULL ;
+      stride[7] = 0 ;
+      stride[6] = 0 ;
+      stride[5] = 0 ;
+      stride[4] = 0 ;
+      stride[3] = 0 ;
+      stride[2] = 0 ;
+      stride[1] = 0 ;
       stride[0] = n1 ;
     }
 
@@ -2976,13 +2976,13 @@ struct Helper<Scalar,NaturalOrder,Tag1,void,void,void,void,void,void,void>
   static void assign( iType * stride ,
                       const iType * const dims )
     {
-      stride[7] = NULL ;
-      stride[6] = NULL ;
-      stride[5] = NULL ;
-      stride[4] = NULL ;
-      stride[3] = NULL ;
-      stride[2] = NULL ;
-      stride[1] = NULL ;
+      stride[7] = 0 ;
+      stride[6] = 0 ;
+      stride[5] = 0 ;
+      stride[4] = 0 ;
+      stride[3] = 0 ;
+      stride[2] = 0 ;
+      stride[1] = 0 ;
       stride[0] = dims[0] ;
     }
 };
@@ -3032,38 +3032,38 @@ struct Helper<Scalar,FortranOrder,Tag1,void,void,void,void,void,void,void>
   template< typename iType >
   static void assign( iType * stride )
     {
-      stride[7] = NULL ;
-      stride[6] = NULL ;
-      stride[5] = NULL ;
-      stride[4] = NULL ;
-      stride[3] = NULL ;
-      stride[2] = NULL ;
-      stride[1] = NULL ;
+      stride[7] = 0 ;
+      stride[6] = 0 ;
+      stride[5] = 0 ;
+      stride[4] = 0 ;
+      stride[3] = 0 ;
+      stride[2] = 0 ;
+      stride[1] = 0 ;
       stride[0] = Tag1::Size ;
     }
 
   template< typename iType >
   static void assign( iType * stride , const iType & n1 )
     {
-      stride[7] = NULL ;
-      stride[6] = NULL ;
-      stride[5] = NULL ;
-      stride[4] = NULL ;
-      stride[3] = NULL ;
-      stride[2] = NULL ;
-      stride[1] = NULL ;
+      stride[7] = 0 ;
+      stride[6] = 0 ;
+      stride[5] = 0 ;
+      stride[4] = 0 ;
+      stride[3] = 0 ;
+      stride[2] = 0 ;
+      stride[1] = 0 ;
       stride[0] = n1 ;
     }
 
   template< typename iType >
   static void assign( iType * stride , const iType * const dims )
     {
-      stride[7] = NULL ;
-      stride[6] = NULL ;
-      stride[5] = NULL ;
-      stride[4] = NULL ;
-      stride[3] = NULL ;
-      stride[2] = NULL ;
+      stride[7] = 0 ;
+      stride[6] = 0 ;
+      stride[5] = 0 ;
+      stride[4] = 0 ;
+      stride[3] = 0 ;
+      stride[2] = 0 ;
       stride[0] = dims[0] ;
     }
 };
