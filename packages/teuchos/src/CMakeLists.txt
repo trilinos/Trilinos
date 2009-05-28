@@ -77,6 +77,7 @@ APPEND_SET(HEADERS
   Teuchos_LAPACK.hpp
   Teuchos_LAPACK_wrappers.hpp
   Teuchos_LabeledObject.hpp
+  Teuchos_LocalTestingHelpers.hpp
   Teuchos_MPIComm.hpp
   Teuchos_MPIContainerComm.hpp
   Teuchos_MPISession.hpp
