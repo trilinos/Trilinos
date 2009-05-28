@@ -1,6 +1,7 @@
+#include "Ifpack_HIPS.h"
 #if defined(HAVE_IFPACK_HIPS) && defined(HAVE_MPI)
 
-#include "Ifpack_HIPS.h"
+
 #include "Ifpack_Utils.h"
 extern "C" {
 #include "hips.h"
