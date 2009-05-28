@@ -41,6 +41,7 @@ SUBDIRS = IlukGraph               \
           IC                      \
 	  UseTranspose            \
 	  BlockCheby              \
+          HIPS                    \
 	  TestAll
 
 # CrsRiluk 
@@ -64,7 +65,7 @@ IFPACK_PRECONDITIONER_FACTORY_TEST = PreconditionerFactory/TestPreconditionerFac
 endif
 
 if HAVE_IFPACK_AZTECOO
-IFPACK_RELAXATION_TEST = Relaxation/TestRelaxation.exe BlockCheby/TestBlockCheby.exe
+IFPACK_RELAXATION_TEST = Relaxation/TestRelaxation.exe BlockCheby/TestBlockCheby.exe HIPS/HIPS.exe
 endif
 
 if HAVE_IFPACK_AMESOS

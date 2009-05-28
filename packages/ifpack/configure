@@ -743,6 +743,8 @@ HAVE_IFPACK_EPETRAEXT_TRUE
 HAVE_IFPACK_EPETRAEXT_FALSE
 HAVE_IFPACK_METIS_TRUE
 HAVE_IFPACK_METIS_FALSE
+HAVE_IFPACK_HIPS_TRUE
+HAVE_IFPACK_HIPS_FALSE
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
 BUILD_EXAMPLES_TRUE
@@ -1397,6 +1399,15 @@ Optional Features:
                           --with-libs="-lmetis"
                           --with-ldflags="-L<METIS-library-path>" and
                           --with-incdirs="<METIS-include-path>".
+  --enable-ifpack-hips    Enable Ifpack support for HIPS for parallel ILUs.
+                          Note 1: HIPS is a third party library. As such,
+                          configure assumes that it has already been built.
+                          Note 2: You must also specify the location of
+                          headers and libraries like, for instance: configure
+                          --with-libs="-lhips -lscotch"
+                          --with-ldflags="-L<HIPS-library-path>" and
+                          --with-incdirs="<HIPS-include-path>". Note 3: HIPS
+                          requires either METIS or Scotch.
   --enable-tests          Make tests for all Trilinos packages buildable with
                           'make tests' (default is yes)
 
@@ -7715,6 +7726,7 @@ fi
 # ------------------------------------------------------------------------
 # Packages currently available:
 # - METIS (used by Ifpack_METISPartitioner only)
+# - HIPS  (use by Ifpack_HIPS only)
 # ------------------------------------------------------------------------
 
 # Check whether --enable-ifpack-metis was given.
@@ -7748,6 +7760,41 @@ else
   HAVE_IFPACK_METIS_TRUE='#'
   HAVE_IFPACK_METIS_FALSE=
 fi
+
+
+
+# HIPS
+# Check whether --enable-ifpack-hips was given.
+if test "${enable_ifpack_hips+set}" = set; then
+  enableval=$enable_ifpack_hips; ac_cv_use_ifpack_hips=$enableval
+else
+  ac_cv_use_ifpack_hips=no
+fi
+
+{ echo "$as_me:$LINENO: checking whether to use ifpack-hips" >&5
+echo $ECHO_N "checking whether to use ifpack-hips... $ECHO_C" >&6; }
+#
+if test "X$ac_cv_use_ifpack_hips" != "Xno"; then
+  { echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_IFPACK_HIPS
+_ACEOF
+
+else
+ { echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6; }
+fi
+#
+ if test "X$ac_cv_use_ifpack_hips" != "Xno"; then
+  HAVE_IFPACK_HIPS_TRUE=
+  HAVE_IFPACK_HIPS_FALSE='#'
+else
+  HAVE_IFPACK_HIPS_TRUE='#'
+  HAVE_IFPACK_HIPS_FALSE=
+fi
+
 
 
 ### fill in ifdefs here - EPETRA_MPI, DEBUG, CRAY, COMPLEX_SUPPORT
@@ -8149,7 +8196,7 @@ fi
 #		example/Makefile
 #		example/ifpack_hb/Makefile
 
-ac_config_files="$ac_config_files Makefile Makefile.export.ifpack src/Makefile example/Makefile test/Makefile test/PreconditionerFactory/Makefile test/TestAll/Makefile test/IlukGraph/Makefile test/SetParameters/Makefile test/Relaxation/Makefile test/Container/Makefile test/OverlappingRowMatrix/Makefile test/CompareWithAztecOO/Makefile test/ILU/Makefile test/IC/Makefile test/BlockCheby/Makefile test/UseTranspose/Makefile"
+ac_config_files="$ac_config_files Makefile Makefile.export.ifpack src/Makefile example/Makefile test/Makefile test/PreconditionerFactory/Makefile test/TestAll/Makefile test/IlukGraph/Makefile test/SetParameters/Makefile test/Relaxation/Makefile test/Container/Makefile test/OverlappingRowMatrix/Makefile test/CompareWithAztecOO/Makefile test/ILU/Makefile test/IC/Makefile test/BlockCheby/Makefile test/HIPS/Makefile test/UseTranspose/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8350,6 +8397,13 @@ if test -z "${HAVE_IFPACK_METIS_TRUE}" && test -z "${HAVE_IFPACK_METIS_FALSE}"; 
   { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_METIS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"HAVE_IFPACK_METIS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_IFPACK_HIPS_TRUE}" && test -z "${HAVE_IFPACK_HIPS_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"HAVE_IFPACK_HIPS\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"HAVE_IFPACK_HIPS\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -8866,6 +8920,7 @@ do
     "test/ILU/Makefile") CONFIG_FILES="$CONFIG_FILES test/ILU/Makefile" ;;
     "test/IC/Makefile") CONFIG_FILES="$CONFIG_FILES test/IC/Makefile" ;;
     "test/BlockCheby/Makefile") CONFIG_FILES="$CONFIG_FILES test/BlockCheby/Makefile" ;;
+    "test/HIPS/Makefile") CONFIG_FILES="$CONFIG_FILES test/HIPS/Makefile" ;;
     "test/UseTranspose/Makefile") CONFIG_FILES="$CONFIG_FILES test/UseTranspose/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -9098,6 +9153,8 @@ HAVE_IFPACK_EPETRAEXT_TRUE!$HAVE_IFPACK_EPETRAEXT_TRUE$ac_delim
 HAVE_IFPACK_EPETRAEXT_FALSE!$HAVE_IFPACK_EPETRAEXT_FALSE$ac_delim
 HAVE_IFPACK_METIS_TRUE!$HAVE_IFPACK_METIS_TRUE$ac_delim
 HAVE_IFPACK_METIS_FALSE!$HAVE_IFPACK_METIS_FALSE$ac_delim
+HAVE_IFPACK_HIPS_TRUE!$HAVE_IFPACK_HIPS_TRUE$ac_delim
+HAVE_IFPACK_HIPS_FALSE!$HAVE_IFPACK_HIPS_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
@@ -9112,7 +9169,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 43; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 45; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

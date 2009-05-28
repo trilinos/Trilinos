@@ -42,7 +42,7 @@ typedef struct {
     int    *ptr;  /* also known as IA; with ptr[0] = 0 */
 } Matrix;
 
-void quicksort (int *const pbase, double *const daux, size_t total_elems);
+void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems);
 
 void Matrix_dealloc(Matrix *a);
 void crout_ict(

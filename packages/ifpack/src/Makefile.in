@@ -139,7 +139,7 @@ am__libifpack_a_SOURCES_DIST = $(srcdir)/Ifpack_IlukGraph.cpp \
 	$(srcdir)/Ifpack_RCMReordering.cpp \
 	$(srcdir)/Ifpack_METISReordering.cpp \
 	$(srcdir)/Ifpack_OverlappingRowMatrix.cpp \
-	$(srcdir)/Ifpack_ValidParameters.cpp \
+	$(srcdir)/Ifpack_HIPS.cpp $(srcdir)/Ifpack_ValidParameters.cpp \
 	$(srcdir)/Ifpack_AMDReordering.cpp $(srcdir)/Ifpack_Amesos.cpp
 am__objects_1 =
 am__objects_2 = Ifpack_IlukGraph.$(OBJEXT) Ifpack_CrsRiluk.$(OBJEXT) \
@@ -168,7 +168,7 @@ am__objects_2 = Ifpack_IlukGraph.$(OBJEXT) Ifpack_CrsRiluk.$(OBJEXT) \
 	Ifpack_UserPartitioner.$(OBJEXT) \
 	Ifpack_RCMReordering.$(OBJEXT) \
 	Ifpack_METISReordering.$(OBJEXT) \
-	Ifpack_OverlappingRowMatrix.$(OBJEXT) \
+	Ifpack_OverlappingRowMatrix.$(OBJEXT) Ifpack_HIPS.$(OBJEXT) \
 	Ifpack_ValidParameters.$(OBJEXT)
 am__objects_3 = Ifpack_AMDReordering.$(OBJEXT) Ifpack_Amesos.$(OBJEXT)
 @HAVE_IFPACK_AMESOS_TRUE@am__objects_4 = $(am__objects_3)
@@ -228,7 +228,7 @@ am__include_HEADERS_DIST = $(srcdir)/Ifpack_ConfigDefs.h \
 	$(srcdir)/Ifpack_Chebyshev.h \
 	$(srcdir)/Ifpack_METISReordering.h \
 	$(srcdir)/Ifpack_OverlappingRowMatrix.h \
-	$(srcdir)/Ifpack_ValidParameters.h \
+	$(srcdir)/Ifpack_HIPS.h $(srcdir)/Ifpack_ValidParameters.h \
 	$(srcdir)/Ifpack_AMDReordering.h $(srcdir)/Ifpack_Amesos.h
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
@@ -442,6 +442,7 @@ COMP_H = \
 	$(srcdir)/Ifpack_Chebyshev.h              \
 	$(srcdir)/Ifpack_METISReordering.h        \
 	$(srcdir)/Ifpack_OverlappingRowMatrix.h   \
+	$(srcdir)/Ifpack_HIPS.h                   \
 	$(srcdir)/Ifpack_ValidParameters.h
 
 COMP = \
@@ -484,6 +485,7 @@ COMP = \
 	$(srcdir)/Ifpack_RCMReordering.cpp          \
 	$(srcdir)/Ifpack_METISReordering.cpp        \
 	$(srcdir)/Ifpack_OverlappingRowMatrix.cpp   \
+	$(srcdir)/Ifpack_HIPS.cpp                   \
 	$(srcdir)/Ifpack_ValidParameters.cpp
 
 
@@ -688,6 +690,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_Graph_Epetra_CrsGraph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_Graph_Epetra_RowMatrix.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_GreedyPartitioner.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_HIPS.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_IC.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_ICT.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Ifpack_IC_Utils.Po@am__quote@
@@ -1289,6 +1292,20 @@ Ifpack_OverlappingRowMatrix.obj: $(srcdir)/Ifpack_OverlappingRowMatrix.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_OverlappingRowMatrix.cpp' object='Ifpack_OverlappingRowMatrix.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_OverlappingRowMatrix.obj `if test -f '$(srcdir)/Ifpack_OverlappingRowMatrix.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_OverlappingRowMatrix.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_OverlappingRowMatrix.cpp'; fi`
+
+Ifpack_HIPS.o: $(srcdir)/Ifpack_HIPS.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_HIPS.o -MD -MP -MF $(DEPDIR)/Ifpack_HIPS.Tpo -c -o Ifpack_HIPS.o `test -f '$(srcdir)/Ifpack_HIPS.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_HIPS.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ifpack_HIPS.Tpo $(DEPDIR)/Ifpack_HIPS.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_HIPS.cpp' object='Ifpack_HIPS.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_HIPS.o `test -f '$(srcdir)/Ifpack_HIPS.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_HIPS.cpp
+
+Ifpack_HIPS.obj: $(srcdir)/Ifpack_HIPS.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_HIPS.obj -MD -MP -MF $(DEPDIR)/Ifpack_HIPS.Tpo -c -o Ifpack_HIPS.obj `if test -f '$(srcdir)/Ifpack_HIPS.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_HIPS.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_HIPS.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Ifpack_HIPS.Tpo $(DEPDIR)/Ifpack_HIPS.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Ifpack_HIPS.cpp' object='Ifpack_HIPS.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Ifpack_HIPS.obj `if test -f '$(srcdir)/Ifpack_HIPS.cpp'; then $(CYGPATH_W) '$(srcdir)/Ifpack_HIPS.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Ifpack_HIPS.cpp'; fi`
 
 Ifpack_ValidParameters.o: $(srcdir)/Ifpack_ValidParameters.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Ifpack_ValidParameters.o -MD -MP -MF $(DEPDIR)/Ifpack_ValidParameters.Tpo -c -o Ifpack_ValidParameters.o `test -f '$(srcdir)/Ifpack_ValidParameters.cpp' || echo '$(srcdir)/'`$(srcdir)/Ifpack_ValidParameters.cpp

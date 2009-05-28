@@ -243,6 +243,7 @@ TAC_ARG_ENABLE_CAN_USE_PACKAGE(ifpack, epetraext, IFPACK_EPETRAEXT, HAVE_IFPACK_
 # ------------------------------------------------------------------------
 # Packages currently available:
 # - METIS (used by Ifpack_METISPartitioner only)
+# - HIPS  (use by Ifpack_HIPS only)
 # ------------------------------------------------------------------------
 
 AC_ARG_ENABLE(ifpack-metis, [AC_HELP_STRING([--enable-ifpack-metis],[Enable
@@ -266,6 +267,30 @@ else
 fi
 #
 AM_CONDITIONAL(HAVE_IFPACK_METIS, [test "X$ac_cv_use_ifpack_metis" != "Xno"])
+
+
+# HIPS
+AC_ARG_ENABLE(ifpack-hips, [AC_HELP_STRING([--enable-ifpack-hips],[Enable
+			     Ifpack support for HIPS for parallel ILUs.
+			     Note 1: HIPS is a third party library.  As such,
+			     configure assumes that it has already been built.
+			     Note 2: You must also specify the location of
+			     headers and libraries like, for instance:
+			     configure --with-libs="-lhips -lscotch"
+			     --with-ldflags="-L<HIPS-library-path>" and
+			     --with-incdirs="<HIPS-include-path>".
+			     Note 3: HIPS requires either METIS or Scotch.])], ac_cv_use_ifpack_hips=$enableval, ac_cv_use_ifpack_hips=no)
+AC_MSG_CHECKING(whether to use ifpack-hips)
+#
+if test "X$ac_cv_use_ifpack_hips" != "Xno"; then
+  AC_MSG_RESULT(yes)
+  AC_DEFINE([HAVE_IFPACK_HIPS],,[Define if you want to build Ifpack's HIPS interface])
+else
+ AC_MSG_RESULT(no)
+fi
+#
+AM_CONDITIONAL(HAVE_IFPACK_HIPS, [test "X$ac_cv_use_ifpack_hips" != "Xno"])
+
 
 ### fill in ifdefs here - EPETRA_MPI, DEBUG, CRAY, COMPLEX_SUPPORT
 
@@ -397,6 +422,7 @@ AC_CONFIG_FILES([
 		test/ILU/Makefile
 		test/IC/Makefile
 		test/BlockCheby/Makefile
+		test/HIPS/Makefile
 		test/UseTranspose/Makefile
 		])
 

@@ -37,7 +37,7 @@ typedef struct {
 } Ifpack_AIJMatrix;
 
 extern "C" {
-void quicksort (int *const pbase, double *const daux, int total_elems);
+void ifpack_quicksort (int *const pbase, double *const daux, int total_elems);
 }
 
 void Ifpack_AIJMatrix_dealloc(Ifpack_AIJMatrix *a);

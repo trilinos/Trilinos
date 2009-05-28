@@ -43,10 +43,16 @@
 #ifdef HAVE_IFPACK_AMESOS
 #include "Ifpack_Amesos.h"
 #endif
+#ifdef HAVE_IFPACK_HIPS
+#include "Ifpack_HIPS.h"
+#endif
+
 #include "Ifpack_Chebyshev.h"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StringToIntMap.hpp"
+#include "Epetra_CrsMatrix.h"
+
 
 namespace {
 
@@ -82,6 +88,9 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_SPARSKIT
   ,SPARSKIT
 #endif // HAVE_IFPACK_SPARSKIT
+#ifdef HAVE_IFPACK_HIPS
+  ,HIPS
+#endif
   ,CHEBYSHEV
 };
 
@@ -109,6 +118,9 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
   ,"ILUT stand-alone"
 #ifdef HAVE_IFPACK_SPARSKIT
   ,"SPARSKIT"
+#endif
+#ifdef HAVE_IFPACK_HIPS
+  ,"HIPS"
 #endif
   ,"Chebyshev"
 };
@@ -138,6 +150,9 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_SPARSKIT
   ,true // SPARSKIT
 #endif
+#ifdef HAVE_IFPACK_HIPS
+  ,true // HIPS
+#endif  
   ,false // CHEBYSHEV
 };
 
@@ -189,6 +204,10 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
     case SPARSKIT:
       return(new Ifpack_SPARSKIT(Matrix));
 #endif
+#ifdef HAVE_IFPACK_HIPS
+    case HIPS:      
+      return(new Ifpack_HIPS(Matrix));
+#endif      
     case CHEBYSHEV:
       return(new Ifpack_Chebyshev(Matrix));
     default:

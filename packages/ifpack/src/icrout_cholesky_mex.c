@@ -60,7 +60,7 @@ typedef struct {
     int    *ptr;  /* also known as IA; with ptr[0] = 0 */
 } Matrix;
 
-void quicksort (int *const pbase, double *const daux, size_t total_elems);
+void ifpack_quicksort (int *const pbase, double *const daux, size_t total_elems);
 
 #define SHORTCUT(p, a, ja, ia) \
         (a)  = (p)->val; \
@@ -414,7 +414,7 @@ void crout_ict(
 
 	count_l = MIN(len_l, lfil);
 	qsplit(work_l, ind_l, len_l, count_l);
-	quicksort(ind_l, work_l, count_l);
+	ifpack_quicksort(ind_l, work_l, count_l);
 
 	for (j=0; j<count_l; j++)
 	{

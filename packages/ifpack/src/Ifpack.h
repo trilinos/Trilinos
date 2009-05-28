@@ -141,6 +141,9 @@ public:
 #ifdef HAVE_IFPACK_SPARSKIT
     ,SPARSKIT
 #endif // HAVE_IFPACK_SPARSKIT
+#ifdef HAVE_IFPACK_HIPS
+  ,HIPS
+#endif
     ,CHEBYSHEV
   };
 
@@ -154,6 +157,9 @@ public:
 #ifdef HAVE_IFPACK_SPARSKIT
     +1
 #endif
+#ifdef HAVE_IFPACK_HIPS
+    +1
+#endif    
     +1
     ;
 
