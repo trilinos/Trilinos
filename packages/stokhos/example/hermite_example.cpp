@@ -29,13 +29,22 @@
 // ***********************************************************************
 // @HEADER
 
-// product_basis_example
+// hermite_example
 //
 //  usage: 
-//     product_example
+//     hermite_example
 //
 //  output:  
-//     prints the Hermite Polynomial Chaos Expansion of a simple function
+//     prints the Hermite Polynomial Chaos Expansion of the simple function
+//
+//     w = sinh(1/(log(u)^2+1)
+//
+//     where u = 1 + 0.4*H_1(x) + 0.06*H_2(x) + 0.002*H_3(x), x is a zero-mean
+//     and unit-variance Gaussian random variable, and H_i(x) is the i-th
+//     Hermite polynomial.
+//
+//     The expansion for w is computed from an order of 0 to 10 with the 
+//     corresponding mean and standard deviation.
 
 #include <iostream>
 #include <iomanip>
