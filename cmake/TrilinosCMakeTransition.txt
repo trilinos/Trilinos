@@ -614,10 +614,9 @@ Final Certification Evidence: [???]
 
 Package: CTrilinos (Non-released)
 
-Package Transition Lead: None needed
+Package Transition Lead: Nicole Lemaster (mnlemas@sandia.gov)
 
-Status: Has not been started yet.  However, since this is an experimental
-package and is extremely small, getting CMake suppport is not critical.
+Status: Builds with CMake but no longer with autotools.
 
 Final Certification Date: [???]
 
@@ -627,7 +626,7 @@ Final Certification Evidence: [???]
 
 Package: ForTrilinos (Non-released)
 
-Package Transition Lead: None needed
+Package Transition Lead: Damian Rouson (rouson@sandia.gov)
 
 Status: Has not been started yet.  However, since this is an experimental
 package and is extremely small, getting CMake suppport is not critical.  Also,
