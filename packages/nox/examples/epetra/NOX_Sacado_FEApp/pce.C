@@ -100,7 +100,6 @@ int main(int argc, char *argv[]) {
     // Initialize MPI
 #ifdef HAVE_MPI
     MPI_Init(&argc,&argv);
-    double total_time = -MPI_Wtime();
 #endif
 
     // Create a communicator for Epetra objects
@@ -313,10 +312,10 @@ int main(int argc, char *argv[]) {
 
     if (do_pce) {
 
+      TEUCHOS_FUNC_TIME_MONITOR("PCE Time");
+
       unsigned int d = numalpha;
       unsigned int p = 5;
-
-      double pce_time = -MPI_Wtime();
     
       // Create SG basis and expansion
       typedef Stokhos::LegendreBasis<int,double> basis_type;
@@ -451,21 +450,14 @@ int main(int argc, char *argv[]) {
       utils.out() << "Mean =      " << mean << std::endl;
       utils.out() << "Std. Dev. = " << std_dev << std::endl;
 
-      pce_time += MPI_Wtime();
-      utils.out() << "PCE Time = " << pce_time << std::endl;
-
-      Teuchos::TimeMonitor::summarize(std::cout);
-      Teuchos::TimeMonitor::zeroOutTimers();
-
       if (status2 == NOX::StatusTest::Converged) 
 	utils.out() << "Test Passed!" << endl;
     }
 
+    Teuchos::TimeMonitor::summarize(std::cout);
+    Teuchos::TimeMonitor::zeroOutTimers();
+
 #ifdef HAVE_MPI
-    total_time += MPI_Wtime();
-    MPI_Barrier(MPI_COMM_WORLD);
-    if (MyPID==0) std::cout << "\n\nTOTAL TIME     " << 
-      total_time << std::endl;
     MPI_Finalize() ;
 #endif
 
