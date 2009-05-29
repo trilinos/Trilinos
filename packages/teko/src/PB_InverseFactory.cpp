@@ -44,13 +44,13 @@ SolveInverseFactory::SolveInverseFactory(const SolveInverseFactory & siFactory)
   * \returns New linear operator that functions as the inverse
   *          of <code>linearOp</code>.
   */
-LinearOp SolveInverseFactory::buildInverse(const LinearOp & linearOp) const
+InverseLinearOp SolveInverseFactory::buildInverse(const LinearOp & linearOp) const
 {
    // build and initialize inverse linear op with solve
    Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > invLOWS = lowsFactory_->createOp();
    lowsFactory_->initializeOp(Thyra::defaultLinearOpSource(linearOp),&*invLOWS,Thyra::SUPPORT_SOLVE_FORWARD_ONLY);
    
-   return Thyra::inverse<double>(invLOWS);
+   return Thyra::nonconstInverse<double>(invLOWS);
 }
 
 /** \brief Pass in an already constructed inverse operator. Update
@@ -64,10 +64,11 @@ LinearOp SolveInverseFactory::buildInverse(const LinearOp & linearOp) const
   *                        rebuilt using the <code>source</code>
   *                        object.
   */
-void SolveInverseFactory::rebuildInverse(const LinearOp & source,LinearOp & dest) const
+void SolveInverseFactory::rebuildInverse(const LinearOp & source,InverseLinearOp & dest) const
 {
-   RCP<Thyra::LinearOpBase<double> > nonConstDest = rcp_const_cast<Thyra::LinearOpBase<double> >(dest);
-   RCP<Thyra::DefaultInverseLinearOp<double> > invDest = rcp_dynamic_cast<Thyra::DefaultInverseLinearOp<double> >(nonConstDest);
+   // RCP<Thyra::LinearOpBase<double> > nonConstDest = rcp_const_cast<Thyra::LinearOpBase<double> >(dest);
+   // RCP<Thyra::DefaultInverseLinearOp<double> > invDest = rcp_dynamic_cast<Thyra::DefaultInverseLinearOp<double> >(nonConstDest);
+   RCP<Thyra::DefaultInverseLinearOp<double> > invDest = rcp_dynamic_cast<Thyra::DefaultInverseLinearOp<double> >(dest);
    RCP<Thyra::LinearOpWithSolveBase<double> > lows = invDest->getNonconstLows();
 
    lowsFactory_->initializeAndReuseOp(Thyra::defaultLinearOpSource(source),&*lows);
@@ -113,12 +114,12 @@ PreconditionerInverseFactory::PreconditionerInverseFactory(const PreconditionerI
   * \returns New linear operator that functions as the inverse
   *          of <code>linearOp</code>.
   */
-LinearOp PreconditionerInverseFactory::buildInverse(const LinearOp & linearOp) const
+InverseLinearOp PreconditionerInverseFactory::buildInverse(const LinearOp & linearOp) const
 {
    RCP<Thyra::PreconditionerBase<double> > prec = precFactory_->createPrec();
    precFactory_->initializePrec(Thyra::defaultLinearOpSource(linearOp),&*prec);
 
-   RCP<const Thyra::LinearOpBase<double> > precOp = prec->getUnspecifiedPrecOp();
+   RCP<Thyra::LinearOpBase<double> > precOp = prec->getNonconstUnspecifiedPrecOp();
    Teuchos::set_extra_data(prec,"prec",Teuchos::inOutArg(precOp));
 
    return precOp;
@@ -135,7 +136,7 @@ LinearOp PreconditionerInverseFactory::buildInverse(const LinearOp & linearOp) c
   *                        rebuilt using the <code>source</code>
   *                        object.
   */
-void PreconditionerInverseFactory::rebuildInverse(const LinearOp & source,LinearOp & dest) const
+void PreconditionerInverseFactory::rebuildInverse(const LinearOp & source,InverseLinearOp & dest) const
 {
    RCP<Thyra::PreconditionerBase<double> > prec 
          = Teuchos::get_extra_data<RCP<Thyra::PreconditionerBase<double> > >(dest,"prec");
@@ -157,7 +158,7 @@ Teuchos::RCP<const Teuchos::ParameterList> PreconditionerInverseFactory::getPara
 }
 
 //! Build an inverse operator using a factory and a linear operator
-LinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
+InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
 {
    return factory.buildInverse(A);
 }
@@ -165,7 +166,7 @@ LinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
 /** Using a prebuilt linear operator, use factory to build an inverse operator
   * given a new forward operator.
   */
-void rebuildInverse(const InverseFactory & factory, const LinearOp & A, LinearOp & invA)
+void rebuildInverse(const InverseFactory & factory, const LinearOp & A, InverseLinearOp & invA)
 {
    return factory.rebuildInverse(A,invA);
 }

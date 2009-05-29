@@ -29,7 +29,7 @@ public:
      * \returns New linear operator that functions as the inverse
      *          of <code>linearOp</code>.
      */
-   virtual LinearOp buildInverse(const LinearOp & linearOp) const = 0;
+   virtual InverseLinearOp buildInverse(const LinearOp & linearOp) const = 0;
 
    /** \brief Pass in an already constructed inverse operator. Update
      *        the inverse operator based on the new source operator.
@@ -42,7 +42,7 @@ public:
      *                        rebuilt using the <code>source</code>
      *                        object.
      */
-   virtual void rebuildInverse(const LinearOp & source,LinearOp & dest) const = 0;
+   virtual void rebuildInverse(const LinearOp & source,InverseLinearOp & dest) const = 0;
 
    /** \brief A function that permits inspection of the parameters used to create
      *        this object.
@@ -87,7 +87,7 @@ public:
      * \returns New linear operator that functions as the inverse
      *          of <code>linearOp</code>.
      */
-   virtual LinearOp buildInverse(const LinearOp & linearOp) const;
+   virtual InverseLinearOp buildInverse(const LinearOp & linearOp) const;
 
    /** \brief Pass in an already constructed inverse operator. Update
      *        the inverse operator based on the new source operator.
@@ -100,7 +100,7 @@ public:
      *                        rebuilt using the <code>source</code>
      *                        object.
      */
-   virtual void rebuildInverse(const LinearOp & source,LinearOp & dest) const;
+   virtual void rebuildInverse(const LinearOp & source,InverseLinearOp & dest) const;
 
    /** \brief A function that permits inspection of the parameters used to create
      *        this object.
@@ -154,7 +154,7 @@ public:
      * \returns New linear operator that functions as the inverse
      *          of <code>linearOp</code>.
      */
-   virtual LinearOp buildInverse(const LinearOp & linearOp) const;
+   virtual InverseLinearOp buildInverse(const LinearOp & linearOp) const;
 
    /** \brief Pass in an already constructed inverse operator. Update
      *        the inverse operator based on the new source operator.
@@ -170,7 +170,7 @@ public:
      *                        rebuilt using the <code>source</code>
      *                        object.
      */
-   virtual void rebuildInverse(const LinearOp & source,LinearOp & dest) const;
+   virtual void rebuildInverse(const LinearOp & source,InverseLinearOp & dest) const;
 
    /** \brief A function that permits inspection of the parameters used to create
      *        this object.
@@ -198,12 +198,12 @@ private:
 // typedef Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > InverseFactory;
 
 //! Build an inverse operator using a factory and a linear operator
-LinearOp buildInverse(const InverseFactory & factory,const LinearOp & A);
+InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A);
 
 /** Using a prebuilt linear operator, use factory to build an inverse operator
   * given a new forward operator.
   */
-void rebuildInverse(const InverseFactory & factory, const LinearOp & A, LinearOp & invA);
+void rebuildInverse(const InverseFactory & factory, const LinearOp & A, InverseLinearOp & invA);
 
 /** \brief Build an InverseFactory object from a ParameterList, as specified in Stratimikos.
   *
