@@ -9,11 +9,11 @@ OBJS =
 
 all: $(OBJS) example-driver
 
-example-driver: example-driver.cpp
+example-driver: example-driver.cpp $(PB_LIBDIR)/libpb.a
 	$(CC) $(INCLUDE) $(CPPFLAGS) example-driver.cpp $(LDDIR) -o $@ $(LDLIB)
 
 $(OBJS): %.o : %.cpp
 	$(CC) -c $(INCLUDE) $(CPPFLAGS) $< -o $@
 
 clean:
-	-rm $(OBJS)
+	-rm $(OBJS) example-driver

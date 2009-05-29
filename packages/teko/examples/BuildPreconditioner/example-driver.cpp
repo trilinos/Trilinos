@@ -73,11 +73,9 @@ int main(int argc,char * argv[])
          = invLib->getInverseFactory("Amesos");
 
    // build the preconditioner factory
-   // RCP<PB::NS::LSCStrategy> strategy = rcp(new PB::NS::InvLSCStrategy(inverse,true)); /*@ \label{lned:const-prec-strategy} @*/
-   // RCP<PB::BlockPreconditionerFactory> precFact /*@ \label{lned:const-prec-fact} @*/
-   //       = rcp(new PB::NS::LSCPreconditionerFactory(strategy));
+   RCP<PB::NS::LSCStrategy> strategy = rcp(new PB::NS::InvLSCStrategy(inverse,true)); /*@ \label{lned:const-prec-strategy} @*/
    RCP<PB::BlockPreconditionerFactory> precFact /*@ \label{lned:const-prec-fact} @*/
-          = rcp(new PB::NS::SIMPLEPreconditionerFactory(inverse,0.9));
+          = rcp(new PB::NS::LSCPreconditionerFactory(strategy));
 
    // using the preconditioner factory construct an Epetra_Operator
    PB::Epetra::EpetraBlockPreconditioner prec(precFact); /*@ \label{lned:const-epetra-prec} @*/
