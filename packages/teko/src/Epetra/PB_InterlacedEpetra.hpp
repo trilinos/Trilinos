@@ -40,6 +40,12 @@ void buildExportImport(const Epetra_Map & baseMap,
 void buildSubVectors(const std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps,
                      std::vector<Teuchos::RCP<Epetra_MultiVector> > & subVectors,int count);
 
+/** Associate a set of multi-vectors with a set of sub maps (this modifies the "extra data"
+  * of the subVectors to contain info about the maps.
+  */
+void associateSubVectors(const std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps,
+                         std::vector<Teuchos::RCP<const Epetra_MultiVector> > & subVectors);
+
 // build a single subblock Epetra_CrsMatrix
 Teuchos::RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,
                                              const std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps);

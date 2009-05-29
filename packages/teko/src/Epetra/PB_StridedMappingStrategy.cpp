@@ -63,19 +63,10 @@ void StridedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
    Teuchos::Ptr<Thyra::ProductMultiVectorBase<double> > prod_X
          = Teuchos::ptr_dynamic_cast<Thyra::ProductMultiVectorBase<double> >(thyra_X);
    for(int i=0;i<blockMaps_.size();i++) {
-      //thyra_subX.push_back(Thyra::create_MultiVector(subX[i],Thyra::productVectorSpaceBase(thyra_X->range())->getBlock(i)));
-
       RCP<Thyra::DefaultSpmdMultiVector<double> > vec 
             = rcp_dynamic_cast<Thyra::DefaultSpmdMultiVector<double> >(prod_X->getNonconstMultiVectorBlock(i)); 
       fillDefaultSpmdMultiVector(vec,subX[i]);
    }
-  
-   /*
-   // build product multivector
-   const RCP<const Thyra::DefaultProductVectorSpace<double> > pvs 
-         = rcp_dynamic_cast<const Thyra::DefaultProductVectorSpace<double> >(thyra_X->range());
-   Teuchos::ptr_dynamic_cast<Thyra::DefaultProductMultiVector<double> >(thyra_X)->initialize(pvs,thyra_subX);
-   */
 }
 
 // Virtual function defined in MappingStrategy.  This copies
@@ -101,6 +92,9 @@ void StridedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVec
    // convert thyra product vector to subY
    for(int i=0;i<blockMaps_.size();i++)
       subY.push_back(Thyra::get_Epetra_MultiVector(*blockMaps_[i].second,prod_Y->getMultiVectorBlock(i)));
+
+   // endow the subVectors with required information about the maps
+   PB::Epetra::associateSubVectors(blockMaps_,subY);
 
    // copy solution vectors to Y vector
    PB::Epetra::many2one(Y,subY,blockExport_);

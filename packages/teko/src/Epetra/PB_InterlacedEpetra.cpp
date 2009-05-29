@@ -1,4 +1,4 @@
-#include "Epetra/PB_InterlacedEpetra.hpp"
+#include "PB_InterlacedEpetra.hpp"
 
 #include <vector>
 
@@ -46,14 +46,14 @@ void buildSubMaps(int numGlobals,const std::vector<int> & vars,const Epetra_Comm
    for(varItr=vars.begin();varItr!=vars.end();++varItr) {
       int numLocalVars = *varItr;
       int numAllElmts = numLocalVars*numGlobals/numGlobalVars;
-
-      // build a sample map for parallel decomposition
       int numMyElmts = numLocalVars * numBlocks;
 
       // create global arrays describing the as of yet uncreated maps
       std::vector<int> subGlobals;
+      std::vector<int> contigGlobals; // the contiguous globals
 
       // loop over each block of variables
+      int count = 0;
       for(int blockNum=0;blockNum<numBlocks;blockNum++) {
 
          // loop over each local variable in the block
@@ -62,19 +62,22 @@ void buildSubMaps(int numGlobals,const std::vector<int> & vars,const Epetra_Comm
             // block begin global id = numGlobalVars*(minGID+blockNum)
             // global id block offset = blockOffset+local
             subGlobals.push_back((minBlockID+blockNum)*numGlobalVars+blockOffset+local);
+
+            // also build the contiguous IDs
+            contigGlobals.push_back(numLocalVars*minBlockID+count);
+            count++;
          }
       }
 
       // sanity check
       assert(numMyElmts==subGlobals.size());
 
-      // create an actual map
+      // create the map with contiguous elements and the map with global elements
       RCP<Epetra_Map> subMap = rcp(new Epetra_Map(numAllElmts,numMyElmts,&subGlobals[0],0,comm));
-      subMaps.push_back(std::make_pair(numLocalVars,subMap));
+      RCP<Epetra_Map> contigMap = rcp(new Epetra_Map(numAllElmts,numMyElmts,&contigGlobals[0],0,comm));
 
-      // std::cout << "all = " << numAllElmts << ", mine = " << numMyElmts << std::endl;
-      // std::cout << "all:  min = " << subMap->MinAllGID() << ", max = " << subMap->MaxAllGID() << std::endl;
-      // std::cout << "mine: min = " << subMap->MinMyGID()  << ", max = " << subMap->MaxMyGID()  << std::endl;
+      Teuchos::set_extra_data(contigMap,"contigMap",Teuchos::inOutArg(subMap));
+      subMaps.push_back(std::make_pair(numLocalVars,subMap));
 
       // update the block offset
       blockOffset += numLocalVars;
@@ -102,15 +105,28 @@ void buildSubVectors(const std::vector<std::pair<int,RCP<Epetra_Map> > > & subMa
 {
    std::vector<std::pair<int,RCP<Epetra_Map> > >::const_iterator mapItr;
 
-   // build vectors, importers and exporters
+   // build vectors
    for(mapItr=subMaps.begin();mapItr!=subMaps.end();++mapItr) {
       // exctract basic map
-      const Epetra_Map & map = *(mapItr->second);
+      const Epetra_Map & map = *(Teuchos::get_extra_data<RCP<Epetra_Map> >(mapItr->second,"contigMap"));
 
       // add new elements to vectors
-      // subVectors.push_back(rcp(new Epetra_Vector(map)));
-      subVectors.push_back(rcp(new Epetra_MultiVector(map,count)));
+      RCP<Epetra_MultiVector> mv = rcp(new Epetra_MultiVector(map,count));
+      Teuchos::set_extra_data(mapItr->second,"globalMap",Teuchos::inOutArg(mv)); 
+      subVectors.push_back(mv);
    }
+}
+
+void associateSubVectors(const std::vector<std::pair<int,RCP<Epetra_Map> > > & subMaps,std::vector<RCP<const Epetra_MultiVector> > & subVectors)
+{
+   std::vector<std::pair<int,RCP<Epetra_Map> > >::const_iterator mapItr;
+   std::vector<RCP<const Epetra_MultiVector> >::iterator vecItr;
+
+   TEUCHOS_ASSERT(subMaps.size()==subVectors.size());
+
+   // associate the sub vectors with the subMaps
+   for(mapItr=subMaps.begin(),vecItr=subVectors.begin();mapItr!=subMaps.end();++mapItr,++vecItr)
+      Teuchos::set_extra_data(mapItr->second,"globalMap",Teuchos::inOutArg(*vecItr)); 
 }
 
 // build a single subblock Epetra_CrsMatrix
@@ -122,8 +138,9 @@ RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const
    TEUCHOS_ASSERT(i>=0 && i<numVarFamily);
    TEUCHOS_ASSERT(j>=0 && j<numVarFamily);
 
-   const Epetra_Map & rowMap = *subMaps[i].second;
-   const Epetra_Map & colMap = *subMaps[j].second;
+   const Epetra_Map & gRowMap = *subMaps[i].second;
+   const Epetra_Map & rowMap = *Teuchos::get_extra_data<RCP<Epetra_Map> >(subMaps[i].second,"contigMap");
+   const Epetra_Map & colMap = *Teuchos::get_extra_data<RCP<Epetra_Map> >(subMaps[j].second,"contigMap");
    int rowFamilyCnt = subMaps[i].first;
    int colFamilyCnt = subMaps[j].first;
 
@@ -144,8 +161,8 @@ RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const
    int numBlocks = A.NumGlobalRows()/numGlobalVars;
 
    // copy all global rows to here
-   Epetra_Import import(rowMap,A.RowMap());
-   Epetra_CrsMatrix localA(Copy,rowMap,0);
+   Epetra_Import import(gRowMap,A.RowMap());
+   Epetra_CrsMatrix localA(Copy,gRowMap,0);
    localA.Import(A,import,Insert);
 
    RCP<Epetra_CrsMatrix> mat = rcp(new Epetra_CrsMatrix(Copy,rowMap,0));
@@ -162,15 +179,15 @@ RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const
    int colIndicies[maxNumEntries];
    double colValues[maxNumEntries];
 
-   // std::cout << "building (i,j) = ( " << i << ", " << j << " )" << std::endl;
-
    // insert each row into subblock
    // let FillComplete handle column distribution
    for(int localRow=0;localRow<numMyRows;localRow++) {
       int numEntries = -1; 
-      int globalRow = rowMap.GID(localRow);
+      int globalRow = gRowMap.GID(localRow);
+      int contigRow = rowMap.GID(localRow);
 
       TEUCHOS_ASSERT(globalRow>=0);
+      TEUCHOS_ASSERT(contigRow>=0);
 
       // extract a global row copy
       int err = localA.ExtractGlobalRowCopy(globalRow, maxNumEntries, numEntries, values, indicies);
@@ -190,21 +207,20 @@ RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const
          inFamily &= ((block*numGlobalVars+colBlockOffset+colFamilyCnt) > globalCol);
 
          // is this column in the variable family
-         // if(globalCol % numVars-j==0) {
          if(inFamily) {
-            colIndicies[numOwnedCols] = indicies[localCol];
+            int familyOffset = globalCol-(block*numGlobalVars+colBlockOffset);
+
+            // colIndicies[numOwnedCols] = indicies[localCol];
+            colIndicies[numOwnedCols] = block*colFamilyCnt + familyOffset;
             colValues[numOwnedCols] = values[localCol];
 
             numOwnedCols++;
-
-       //      std::cout << globalCol << " ";
          }
       }
 
       // insert it into the new matrix
-      mat->InsertGlobalValues(globalRow,numOwnedCols,colValues,colIndicies);
+      mat->InsertGlobalValues(contigRow,numOwnedCols,colValues,colIndicies);
    }
-   // std::cout << std::endl;
 
    // fill it and automagically optimize the storage
    mat->FillComplete(colMap,rowMap);
@@ -224,7 +240,16 @@ void many2one(Epetra_MultiVector & one, const std::vector<RCP<const Epetra_Multi
    // using Exporters fill the empty vector from the sub-vectors
    for(vecItr=many.begin(),expItr=subExport.begin();
        vecItr!=many.end();++vecItr,++expItr) {
-      one.Export(**vecItr,**expItr,Insert);
+
+      // for ease of access to the source
+      RCP<const Epetra_MultiVector> srcVec = *vecItr;
+
+      // extract the map with global indicies from the current vector
+      const Epetra_Map & globalMap = *(Teuchos::get_extra_data<RCP<Epetra_Map> >(srcVec,"globalMap"));
+
+      // build the export vector as a view of the destination
+      Epetra_MultiVector exportVector(View,globalMap,srcVec->Values(),srcVec->Stride(),srcVec->NumVectors());
+      one.Export(exportVector,**expItr,Insert);
    }
 }
 
@@ -239,7 +264,17 @@ void one2many(std::vector<RCP<Epetra_MultiVector> > & many,const Epetra_MultiVec
    // using Importers fill the sub vectors from the mama vector
    for(vecItr=many.begin(),impItr=subImport.begin();
        vecItr!=many.end();++vecItr,++impItr) {
-      (*vecItr)->Import(single,**impItr,Insert);
+      // for ease of access to the destination
+      RCP<Epetra_MultiVector> destVec = *vecItr;
+
+      // extract the map with global indicies from the current vector
+      const Epetra_Map & globalMap = *(Teuchos::get_extra_data<RCP<Epetra_Map> >(destVec,"globalMap"));
+
+      // build the import vector as a view on the destination
+      Epetra_MultiVector importVector(View,globalMap,destVec->Values(),destVec->Stride(),destVec->NumVectors());
+
+      // perform the import
+      importVector.Import(single,**impItr,Insert);
    }
 }
 
