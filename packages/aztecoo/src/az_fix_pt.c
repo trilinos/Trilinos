@@ -218,7 +218,7 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
   }
 
   iter--;
-  if ( (iter%print_freq != 0) && (proc == 0) && (options[AZ_output] != AZ_none)
+  if ( (iter%print_freq != 0) && (options[AZ_output] != AZ_none)
        && (options[AZ_output] != AZ_warnings) ) {
     AZ_compute_residual(b, x, res, proc_config, Amat);
     AZ_compute_global_scalars(Amat, x, b,
@@ -226,9 +226,11 @@ void AZ_fix_pt(double b[], double x[], double weight[], int options[],
                               data_org, proc_config, &r_avail, dummy, dummy, 
                               dummy, convergence_info);
     
+  }
+  if ( (iter%print_freq != 0) && ( proc == 0) && (options[AZ_output] != AZ_none)
+       && (options[AZ_output] != AZ_warnings) )
     (void) AZ_printf_out("%siter: %4d           residual = %e\n", 
 		   prefix, iter, scaled_r_norm);
-  }
     
   /* check if we exceeded maximum number of iterations */
 
