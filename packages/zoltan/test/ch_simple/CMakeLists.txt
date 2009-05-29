@@ -99,29 +99,29 @@ ENDIF()
 
 # Test that Ross set up.  Its only value now is to verify when the test system
 # is running.  I'll delete it later.
-PACKAGE_ADD_TEST(
-  ../../src/driver/zdrive
-  NOEXEPREFIX
-  NAME ch_simple_rcb
-  ARGS zdrive.inp.rcb
-  COMM serial mpi
-  NUM_MPI_PROCS ${ZOLTANNUMPROCS} 
-  FAIL_REGULAR_EXPRESSION "fatal: "
-  )
+#PACKAGE_ADD_TEST(
+#  ../../src/driver/zdrive
+#  NOEXEPREFIX
+#  NAME ch_simple_rcb
+#  ARGS zdrive.inp.rcb
+#  COMM serial mpi
+#  NUM_MPI_PROCS ${ZOLTANNUMPROCS} 
+#  FAIL_REGULAR_EXPRESSION "fatal: "
+#  )
 
 # Test that Ross set up.  Its only value now is to verify when the test system
 # is running.  I'll delete it later.
-IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
-  PACKAGE_ADD_TEST(
-    ../../src/driver/zdrive
-    NOEXEPREFIX
-    NAME ch_simple_partkway-v3
-    ARGS zdrive.inp.partkway-v3
-    COMM serial mpi
-    NUM_MPI_PROCS ${ZOLTANNUMPROCS} 
-    FAIL_REGULAR_EXPRESSION "fatal: "
-    )
-ENDIF()
+#IF (${PACKAGE_NAME}_ENABLE_ParMETIS)
+#  PACKAGE_ADD_TEST(
+#    ../../src/driver/zdrive
+#    NOEXEPREFIX
+#    NAME ch_simple_partkway-v3
+#    ARGS zdrive.inp.partkway-v3
+#    COMM serial mpi
+#    NUM_MPI_PROCS ${ZOLTANNUMPROCS} 
+#    FAIL_REGULAR_EXPRESSION "fatal: "
+#    )
+#ENDIF()
 
 
 # Command that copies files to the executable directory.
