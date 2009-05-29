@@ -27,10 +27,10 @@ public:
    EpetraBlockPreconditioner(const Teuchos::RCP<const BlockPreconditionerFactory> & bfp); 
 
    /** \brief Build this preconditioner from an Epetra_Operator 
-     * passed in to this object. It is assume that this Epetra_Operator
+     * passed in to this object.
      *
      * Build this preconditioner from an Epetra_Operator 
-     * passed in to this object. It is assume that this Epetra_Operator
+     * passed in to this object. It is assumed that this Epetra_Operator
      * will be a EpetraOperatorWrapper object, so the block Thyra components
      * can be easily extracted.
      *
@@ -39,10 +39,10 @@ public:
    virtual void buildPreconditioner(const Epetra_Operator & A);
 
    /** \brief Build this preconditioner from an Epetra_Operator 
-     * passed in to this object. It is assume that this Epetra_Operator
+     * passed in to this object. It is assumed that this Epetra_Operator
      *
      * Build this preconditioner from an Epetra_Operator 
-     * passed in to this object. It is assume that this Epetra_Operator
+     * passed in to this object. It is assumed that this Epetra_Operator
      * will be a EpetraOperatorWrapper object, so the block Thyra components
      * can be easily extracted.
      *
@@ -51,11 +51,42 @@ public:
      */
    virtual void buildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & mv);
 
+   /** \brief Rebuild this preconditioner from an Epetra_Operator passed
+     * in this to object. 
+     *
+     * Rebuild this preconditioner from an Epetra_Operator passed
+     * in this to object.  If <code>buildPreconditioner</code> has not been called
+     * the preconditioner will be built instead. Otherwise efforts are taken
+     * to only rebuild what is neccessary. Also, it is assumed that this Epetra_Operator
+     * will be an EpetraOperatorWrapper object, so the block Thyra components
+     * can be easily extracted.
+     *
+     * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+     * \param[in] mv A vector that was used to build the source operator.
+     */
+   virtual void rebuildPreconditioner(const Epetra_Operator & A);
+
+   /** \brief Rebuild this preconditioner from an Epetra_Operator passed
+     * in this to object. 
+     *
+     * Rebuild this preconditioner from an Epetra_Operator passed
+     * in this to object.  If <code>buildPreconditioner</code> has not been called
+     * the preconditioner will be built instead. Otherwise efforts are taken
+     * to only rebuild what is neccessary. Also, it is assumed that this Epetra_Operator
+     * will be an EpetraOperatorWrapper object, so the block Thyra components
+     * can be easily extracted.
+     *
+     * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+     * \param[in] mv A vector that was used to build the source operator.
+     */
+   virtual void rebuildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & mv);
+
 protected:
    EpetraBlockPreconditioner(); 
    EpetraBlockPreconditioner(const EpetraBlockPreconditioner &); 
 
    Teuchos::RCP<const BlockPreconditionerFactory> preconFactory_;
+   Teuchos::RCP<Thyra::PreconditionerBase<double> > preconObj_;
 };
 
 } // end namespace Epetra

@@ -41,15 +41,16 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A)
    SetMapStrategy(rcp(new InverseMappingStrategy(eow->getMapStrategy())));
    
    // actually build the preconditioner
-   RCP<Thyra::PreconditionerBase<double> > precObj = preconFactory_->createPrec();
+   preconObj_ = preconFactory_->createPrec();
    RCP<const Thyra::LinearOpSourceBase<double> > lOpSrc = Thyra::defaultLinearOpSource(thyraA);
-   preconFactory_->initializePrec(lOpSrc,&*precObj,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
+   preconFactory_->initializePrec(lOpSrc,&*preconObj_,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
 
    // extract preconditioner operator
-   RCP<const Thyra::LinearOpBase<double> > preconditioner = precObj->getUnspecifiedPrecOp();
+   RCP<const Thyra::LinearOpBase<double> > preconditioner = preconObj_->getUnspecifiedPrecOp();
 
    SetOperator(preconditioner,false);
 
+   TEUCHOS_ASSERT(preconObj_!=Teuchos::null);
    TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
    TEUCHOS_ASSERT(getMapStrategy()!=Teuchos::null);
 }
@@ -81,12 +82,88 @@ void EpetraBlockPreconditioner::buildPreconditioner(const Epetra_Operator & A,co
    getMapStrategy()->copyEpetraIntoThyra(epetra_mv,thyra_mv.ptr(),*eow);
 
    // actually build the preconditioner
-   RCP<Thyra::PreconditionerBase<double> > precObj = preconFactory_->createPrec();
-   preconFactory_->initializePrec(Thyra::defaultLinearOpSource(thyraA),thyra_mv,&*precObj,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
-   RCP<const Thyra::LinearOpBase<double> > preconditioner = precObj->getUnspecifiedPrecOp();
+   preconObj_ = preconFactory_->createPrec();
+   preconFactory_->initializePrec(Thyra::defaultLinearOpSource(thyraA),thyra_mv,&*preconObj_,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
+   RCP<const Thyra::LinearOpBase<double> > preconditioner = preconObj_->getUnspecifiedPrecOp();
 
    SetOperator(preconditioner,false);
 
+   TEUCHOS_ASSERT(preconObj_!=Teuchos::null);
+   TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
+   TEUCHOS_ASSERT(getMapStrategy()!=Teuchos::null);
+}
+
+/** \brief Rebuild this preconditioner from an Epetra_Operator passed
+  * in this to object. 
+  *
+  * Rebuild this preconditioner from an Epetra_Operator passed
+  * in this to object.  If <code>buildPreconditioner</code> has not been called
+  * the preconditioner will be built instead. Otherwise efforts are taken
+  * to only rebuild what is neccessary. Also, it is assumed that this Epetra_Operator
+  * will be an EpetraOperatorWrapper object, so the block Thyra components
+  * can be easily extracted.
+  *
+  * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+  * \param[in] mv A vector that was used to build the source operator.
+  */
+void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A)
+{
+   // if the preconditioner hasn't been built yet, rebuild from scratch
+   if(preconObj_==Teuchos::null) {
+      buildPreconditioner(A);
+      return;
+   }
+
+   // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+   const RCP<const EpetraOperatorWrapper> & eow = rcp_dynamic_cast<const EpetraOperatorWrapper>(rcpFromRef(A),true);
+   RCP<const Thyra::LinearOpBase<double> > thyraA = eow->getThyraOp(); 
+
+   // reinitialize the preconditioner
+   preconFactory_->initializePrec(Thyra::defaultLinearOpSource(thyraA),&*preconObj_,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
+   RCP<const Thyra::LinearOpBase<double> > preconditioner = preconObj_->getUnspecifiedPrecOp();
+
+   SetOperator(preconditioner,false);
+
+   TEUCHOS_ASSERT(preconObj_!=Teuchos::null);
+   TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
+}
+
+/** \brief Rebuild this preconditioner from an Epetra_Operator passed
+  * in this to object. 
+  *
+  * Rebuild this preconditioner from an Epetra_Operator passed
+  * in this to object.  If <code>buildPreconditioner</code> has not been called
+  * the preconditioner will be built instead. Otherwise efforts are taken
+  * to only rebuild what is neccessary. Also, it is assumed that this Epetra_Operator
+  * will be an EpetraOperatorWrapper object, so the block Thyra components
+  * can be easily extracted.
+  *
+  * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
+  * \param[in] mv A vector that was used to build the source operator.
+  */
+void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & epetra_mv)
+{
+   // if the preconditioner hasn't been built yet, rebuild from scratch
+   if(preconObj_==Teuchos::null) {
+      buildPreconditioner(A);
+      return;
+   }
+
+   // extract EpetraOperatorWrapper (throw on failure) and corresponding thyra operator
+   const RCP<const EpetraOperatorWrapper> & eow = rcp_dynamic_cast<const EpetraOperatorWrapper>(rcpFromRef(A),true);
+   RCP<const Thyra::LinearOpBase<double> > thyraA = eow->getThyraOp(); 
+
+   // build the thyra version of the source multivector
+   RCP<Thyra::MultiVectorBase<double> > thyra_mv = Thyra::createMembers(thyraA->range(),epetra_mv.NumVectors());
+   getMapStrategy()->copyEpetraIntoThyra(epetra_mv,thyra_mv.ptr(),*eow);
+
+   // reinitialize the preconditioner
+   preconFactory_->initializePrec(Thyra::defaultLinearOpSource(thyraA),thyra_mv,&*preconObj_,Thyra::SUPPORT_SOLVE_UNSPECIFIED);
+   RCP<const Thyra::LinearOpBase<double> > preconditioner = preconObj_->getUnspecifiedPrecOp();
+
+   SetOperator(preconditioner,false);
+
+   TEUCHOS_ASSERT(preconObj_!=Teuchos::null);
    TEUCHOS_ASSERT(getThyraOp()!=Teuchos::null);
 }
 
