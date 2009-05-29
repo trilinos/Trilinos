@@ -5,7 +5,7 @@
 #include "Ifpack_Utils.h"
 extern "C" {
 #include "hips.h"
-};
+}
 //#include "io.h"
 #include "Epetra_MpiComm.h"
 #include "Epetra_IntVector.h"
