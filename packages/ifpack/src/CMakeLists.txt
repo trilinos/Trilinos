@@ -80,6 +80,7 @@ SET(HEADERS ${HEADERS}
   Ifpack_METISReordering.h
   Ifpack_OverlappingRowMatrix.h
   Ifpack_ValidParameters.h
+  Ifpack_HIPS.h
   )
 
 SET(SOURCES ${SOURCES}
@@ -123,6 +124,7 @@ SET(SOURCES ${SOURCES}
   Ifpack_METISReordering.cpp
   Ifpack_OverlappingRowMatrix.cpp
   Ifpack_ValidParameters.cpp
+  Ifpack_HIPS.cpp
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
