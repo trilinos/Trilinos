@@ -39,7 +39,7 @@ template<class Scalar, class ArrayTypeOut, class ArrayTypeIn>
 void FunctionSpaceTools::HGRADtransformVALUE(ArrayTypeOut       & outVals,
                                              const ArrayTypeIn  & inVals) {
 
-  ArrayTools::cloneValues<Scalar>(outVals, inVals);
+  ArrayTools::cloneFields<Scalar>(outVals, inVals);
 
 }
 
@@ -50,7 +50,7 @@ void FunctionSpaceTools::HGRADtransformGRAD(ArrayTypeOut       & outVals,
                                             const ArrayTypeIn  & inVals,
                                             const char           transpose) {
 
-  ArrayTools::multiplyTensorData<Scalar>(outVals, jacobianInverse, inVals, transpose);
+  ArrayTools::matvecProductDataField<Scalar>(outVals, jacobianInverse, inVals, transpose);
 
 }
 
@@ -62,8 +62,8 @@ void FunctionSpaceTools::HCURLtransformVALUE(ArrayTypeOut        & outVals,
                                              const ArrayTypeIn   & inVals,
                                              const char            transpose) {
 
-  ArrayTools::multiplyTensorData<Scalar>(outVals, jacobianInverse, inVals, transpose);
-  ArrayTools::scaleValues<Scalar>(outVals, fieldSigns);
+  ArrayTools::matvecProductDataField<Scalar>(outVals, jacobianInverse, inVals, transpose);
+  ArrayTools::scaleFields<Scalar>(outVals, fieldSigns);
 
 }
 
@@ -74,7 +74,7 @@ void FunctionSpaceTools::HCURLtransformVALUE(ArrayTypeOut        & outVals,
                                              const ArrayTypeIn   & inVals,
                                              const char            transpose) {
 
-  ArrayTools::multiplyTensorData<Scalar>(outVals, jacobianInverse, inVals, transpose);
+  ArrayTools::matvecProductDataField<Scalar>(outVals, jacobianInverse, inVals, transpose);
 
 }
 
@@ -87,9 +87,9 @@ void FunctionSpaceTools::HCURLtransformCURL(ArrayTypeOut        & outVals,
                                             const ArrayTypeIn   & inVals,
                                             const char            transpose) {
 
-  ArrayTools::multiplyTensorData<Scalar>(outVals, jacobian, inVals, transpose);
-  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, outVals);
-  ArrayTools::scaleValues<Scalar>(outVals, fieldSigns);
+  ArrayTools::matvecProductDataField<Scalar>(outVals, jacobian, inVals, transpose);
+  ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, outVals, true);
+  ArrayTools::scaleFields<Scalar>(outVals, fieldSigns);
 
 }
 
@@ -101,8 +101,8 @@ void FunctionSpaceTools::HCURLtransformCURL(ArrayTypeOut        & outVals,
                                             const ArrayTypeIn   & inVals,
                                             const char            transpose) {
 
-  ArrayTools::multiplyTensorData<Scalar>(outVals, jacobian, inVals, transpose);
-  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, outVals);
+  ArrayTools::matvecProductDataField<Scalar>(outVals, jacobian, inVals, transpose);
+  ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, outVals, true);
 
 }
 
@@ -115,9 +115,9 @@ void FunctionSpaceTools::HDIVtransformVALUE(ArrayTypeOut        & outVals,
                                             const ArrayTypeIn   & inVals,
                                             const char            transpose) {
 
-  ArrayTools::multiplyTensorData<Scalar>(outVals, jacobian, inVals, transpose);
-  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, outVals);
-  ArrayTools::scaleValues<Scalar>(outVals, fieldSigns);
+  ArrayTools::matvecProductDataField<Scalar>(outVals, jacobian, inVals, transpose);
+  ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, outVals, true);
+  ArrayTools::scaleFields<Scalar>(outVals, fieldSigns);
 
 }
 
@@ -129,8 +129,8 @@ void FunctionSpaceTools::HDIVtransformVALUE(ArrayTypeOut        & outVals,
                                             const ArrayTypeIn   & inVals,
                                             const char            transpose) {
 
-  ArrayTools::multiplyTensorData<Scalar>(outVals, jacobian, inVals, transpose);
-  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, outVals);
+  ArrayTools::matvecProductDataField<Scalar>(outVals, jacobian, inVals, transpose);
+  ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, outVals, true);
 
 }
 
@@ -141,8 +141,8 @@ void FunctionSpaceTools::HDIVtransformDIV(ArrayTypeOut        & outVals,
                                           const ArrayTypeSign & fieldSigns,
                                           const ArrayTypeIn   & inVals) {
 
-  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, inVals);
-  ArrayTools::scaleValues<Scalar>(outVals, fieldSigns);
+  ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, inVals, true);
+  ArrayTools::scaleFields<Scalar>(outVals, fieldSigns);
 
 }
 
@@ -152,7 +152,7 @@ void FunctionSpaceTools::HDIVtransformDIV(ArrayTypeOut        & outVals,
                                           const ArrayTypeDet  & jacobianDet,
                                           const ArrayTypeIn   & inVals) {
 
-  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, inVals);
+  ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, inVals, true);
 
 }
 
@@ -162,43 +162,7 @@ void FunctionSpaceTools::HVOLtransformVALUE(ArrayTypeOut        & outVals,
                                             const ArrayTypeDet  & jacobianDet,
                                             const ArrayTypeIn   & inVals) {
 
-  ArrayTools::divideByScalarData<Scalar>(outVals, jacobianDet, inVals);
-
-}
-
-
-template<class Scalar, class ArrayTypeOut, class ArrayTypeData, class ArrayTypeIn>
-void FunctionSpaceTools::multiplyData(ArrayTypeOut             & outVals,
-                                      const ArrayTypeData      & inData,
-                                      const ArrayTypeIn        & inVals,
-                                      const char               transpose) {
-
-  int dataRank = inData.rank();
-
-  switch (dataRank) {
-    case 2:
-      ArrayTools::multiplyScalarData<Scalar>(outVals, inData, inVals);
-      break;
-    case 3:
-      ArrayTools::multiplyVectorData<Scalar>(outVals, inData, inVals);
-      break;
-    case 4:
-      ArrayTools::multiplyTensorData<Scalar>(outVals, inData, inVals, transpose);
-      break;
-    default:
-      TEST_FOR_EXCEPTION( ((dataRank != 2) && (dataRank != 3) && (dataRank != 4)), std::invalid_argument,
-                          ">>> ERROR (FunctionSpaceTools::multiplyData): Data input container must have rank 2, 3 or 4.");
-  }
-
-}
-
-
-template<class Scalar, class ArrayTypeOut, class ArrayTypeMeasure, class ArrayTypeIn>
-void FunctionSpaceTools::multiplyMeasure(ArrayTypeOut             & outVals,
-                                         const ArrayTypeMeasure   & inMeasure,
-                                         const ArrayTypeIn        & inVals) {
-
-  ArrayTools::multiplyScalarData<Scalar>(outVals, inMeasure, inVals);
+  ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, inVals, true);
 
 }
 
@@ -225,7 +189,8 @@ void FunctionSpaceTools::integrate(ArrayOut            & outputValues,
       TEST_FOR_EXCEPTION( ((outRank != 1) && (outRank != 2) && (outRank != 3)), std::invalid_argument,
                           ">>> ERROR (FunctionSpaceTools::integrate): Output container must have rank 1, 2 or 3.");
   }
-}
+
+} // integrate
 
 
 template<class Scalar, class ArrayOutFields, class ArrayInFieldsLeft, class ArrayInFieldsRight>
@@ -250,7 +215,8 @@ void FunctionSpaceTools::operatorIntegral(ArrayOutFields &            outputFiel
       TEST_FOR_EXCEPTION( ((lRank != 3) && (lRank != 4) && (lRank != 5)), std::invalid_argument,
                           ">>> ERROR (FunctionSpaceTools::operatorIntegral): Left fields input container must have rank 3, 4 or 5.");
   }
-}
+
+} // operatorIntegral
 
 
 template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
@@ -275,7 +241,8 @@ void FunctionSpaceTools::functionalIntegral(ArrayOutFields &       outputFields,
       TEST_FOR_EXCEPTION( ((dRank != 2) && (dRank != 3) && (dRank != 4)), std::invalid_argument,
                           ">>> ERROR (FunctionSpaceTools::functionalIntegral): Data input container must have rank 2, 3 or 4.");
   }
-}
+
+} // functionalIntegral
 
 
 template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
@@ -300,7 +267,8 @@ void FunctionSpaceTools::dataIntegral(ArrayOutData &            outputData,
       TEST_FOR_EXCEPTION( ((lRank != 2) && (lRank != 3) && (lRank != 4)), std::invalid_argument,
                           ">>> ERROR (FunctionSpaceTools::dataIntegral): Left data input container must have rank 2, 3 or 4.");
   }
-}
+
+} // dataIntegral
 
 
 template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
@@ -324,6 +292,151 @@ inline void FunctionSpaceTools::computeMeasure(ArrayOut             & outVals,
   }
 
 } // computeMeasure
+
+
+
+template<class Scalar, class ArrayTypeOut, class ArrayTypeMeasure, class ArrayTypeIn>
+void FunctionSpaceTools::multiplyMeasure(ArrayTypeOut             & outVals,
+                                         const ArrayTypeMeasure   & inMeasure,
+                                         const ArrayTypeIn        & inVals) {
+
+  ArrayTools::scalarMultiplyDataField<Scalar>(outVals, inMeasure, inVals);
+
+} // multiplyMeasure
+
+
+template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
+void FunctionSpaceTools::scalarMultiplyDataField(ArrayOutFields &     outputFields,
+                                                 const ArrayInData &  inputData,
+                                                 ArrayInFields &      inputFields,
+                                                 const bool           reciprocal) {
+
+  ArrayTools::scalarMultiplyDataField(outputFields, inputData, inputFields, reciprocal);
+
+} // scalarMultiplyDataField
+
+
+template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+void FunctionSpaceTools::scalarMultiplyDataData(ArrayOutData &           outputData,
+                                                const ArrayInDataLeft &  inputDataLeft,
+                                                ArrayInDataRight &       inputDataRight,
+                                                const bool               reciprocal) {
+
+  ArrayTools::scalarMultiplyDataData(outputData, inputDataLeft, inputDataRight, reciprocal);
+
+} // scalarMultiplyDataData
+
+
+template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
+void FunctionSpaceTools::dotMultiplyDataField(ArrayOutFields &       outputFields,
+                                              const ArrayInData &    inputData,
+                                              const ArrayInFields &  inputFields) {
+
+  ArrayTools::dotMultiplyDataField(outputFields, inputData, inputFields);
+
+} // dotMultiplyDataField
+
+
+template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+void FunctionSpaceTools::dotMultiplyDataData(ArrayOutData &            outputData,
+                                             const ArrayInDataLeft &   inputDataLeft,
+                                             const ArrayInDataRight &  inputDataRight) {
+
+  ArrayTools::dotMultiplyDataData(outputData, inputDataLeft, inputDataRight);
+
+} // dotMultiplyDataData
+
+
+template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
+void FunctionSpaceTools::vectorMultiplyDataField(ArrayOutFields &       outputFields,
+                                                 const ArrayInData &    inputData,
+                                                 const ArrayInFields &  inputFields) {
+
+  int outRank = outputFields.rank();
+
+  switch (outRank) {
+    case 3:
+    case 4:
+      ArrayTools::crossProductDataField(outputFields, inputData, inputFields);
+      break;
+    case 5:
+      ArrayTools::outerProductDataField(outputFields, inputData, inputFields);
+      break;
+    default:
+      TEST_FOR_EXCEPTION( ((outRank != 3) && (outRank != 4) && (outRank != 5)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::vectorMultiplyDataField): Output container must have rank 3, 4 or 5.");
+  }
+
+} // vectorMultiplyDataField
+
+
+template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+void FunctionSpaceTools::vectorMultiplyDataData(ArrayOutData &            outputData,
+                                                const ArrayInDataLeft &   inputDataLeft,
+                                                const ArrayInDataRight &  inputDataRight) {
+
+  int outRank = outputData.rank();
+
+  switch (outRank) {
+    case 2:
+    case 3:
+      ArrayTools::crossProductDataData(outputData, inputDataLeft, inputDataRight);
+      break;
+    case 4:
+      ArrayTools::outerProductDataData(outputData, inputDataLeft, inputDataRight);
+      break;
+    default:
+      TEST_FOR_EXCEPTION( ((outRank != 2) && (outRank != 3) && (outRank != 4)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::vectorMultiplyDataData): Output container must have rank 2, 3 or 4.");
+  }
+
+} // vectorMultiplyDataData
+
+
+template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
+void FunctionSpaceTools::tensorMultiplyDataField(ArrayOutFields &       outputFields,
+                                                 const ArrayInData &    inputData,
+                                                 const ArrayInFields &  inputFields,
+                                                 const char             transpose) {
+
+  int outRank = outputFields.rank();
+
+  switch (outRank) {
+    case 4:
+      ArrayTools::matvecProductDataField(outputFields, inputData, inputFields, transpose);
+      break;
+    case 5:
+      ArrayTools::matmatProductDataField(outputFields, inputData, inputFields, transpose);
+      break;
+    default:
+      TEST_FOR_EXCEPTION( ((outRank != 4) && (outRank != 5)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::tensorMultiplyDataField): Output container must have rank 4 or 5.");
+  }
+
+} // tensorMultiplyDataField
+
+
+template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+void FunctionSpaceTools::tensorMultiplyDataData(ArrayOutData &            outputData,
+                                                const ArrayInDataLeft &   inputDataLeft,
+                                                const ArrayInDataRight &  inputDataRight,
+                                                const char                transpose) {
+
+  int outRank = outputData.rank();
+
+  switch (outRank) {
+    case 3:
+      ArrayTools::matvecProductDataData(outputData, inputDataLeft, inputDataRight, transpose);
+      break;
+    case 4:
+      ArrayTools::matmatProductDataData(outputData, inputDataLeft, inputDataRight, transpose);
+      break;
+    default:
+      TEST_FOR_EXCEPTION( ((outRank != 3) && (outRank != 4)), std::invalid_argument,
+                          ">>> ERROR (FunctionSpaceTools::tensorMultiplyDataData): Output container must have rank 3 or 4.");
+  }
+
+} // tensorMultiplyDataData
 
 
 template<class Scalar, class ArrayTypeInOut, class ArrayTypeSign>

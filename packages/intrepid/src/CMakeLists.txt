@@ -40,7 +40,6 @@ APPEND_SET(HEADERS
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Shared)
 APPEND_SET(HEADERS
-  Shared/Intrepid_ArrayToolsDef.hpp
   Shared/Intrepid_ArrayToolsDefCloneScale.hpp
   Shared/Intrepid_ArrayToolsDefContractions.hpp
   Shared/Intrepid_ArrayToolsDefDot.hpp

@@ -301,22 +301,6 @@ class FunctionSpaceTools {
                                  const ArrayTypeDet  & jacobianDet,
                                  const ArrayTypeIn   & inVals);
 
-  template<class Scalar, class ArrayTypeOut, class ArrayTypeData, class ArrayTypeIn>
-  static void multiplyData(ArrayTypeOut             & outVals,
-                           const ArrayTypeData      & inData,
-                           const ArrayTypeIn        & inVals,
-                           const char               transpose = 'N');
-
-  template<class Scalar, class ArrayTypeOut, class ArrayTypeMeasure, class ArrayTypeIn>
-  static void multiplyMeasure(ArrayTypeOut             & outVals,
-                              const ArrayTypeMeasure   & inMeasure,
-                              const ArrayTypeIn        & inVals);
-
-
-  // updated stuff
-
-
-
   /** \brief   Contracts \a <b>leftValues</b> and \a <b>rightValues</b> arrays on the
                point and possibly space dimensions and stores the result in \a <b>outputValues</b>;
                this is a generic, high-level integration routine that calls either
@@ -337,19 +321,6 @@ class FunctionSpaceTools {
                         const ArrayInRight  & rightValues,
                         const ECompEngine     compEngine,
                         const bool            sumInto = false);
-
-
-  template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
-  static void computeMeasure(ArrayOut             & outVals,
-                             const ArrayDet       & inDet,
-                             const ArrayWeights   & inWeights);
-
-
-
-
-
-
-  /////////////////////////////////// new stuff
 
   /** \brief   Contracts the point (and space) dimensions P (and D1 and D2) of
                two rank-3, 4, or 5 containers with dimensions (C,L,P) and (C,R,P),
@@ -381,7 +352,6 @@ class FunctionSpaceTools {
                                const ECompEngine           compEngine,
                                const bool                  sumInto = false);
 
-
  /** \brief    Contracts the point (and space) dimensions P (and D1 and D2) of a
                rank-3, 4, or 5 container and a rank-2, 3, or 4 container, respectively,
                with dimensions (C,F,P) and (C,P), or (C,F,P,D1) and (C,P,D1),
@@ -411,7 +381,6 @@ class FunctionSpaceTools {
                                  const ECompEngine      compEngine,
                                  const bool             sumInto = false);
 
-
   /** \brief   Contracts the point (and space) dimensions P (and D1 and D2) of two
                rank-2, 3, or 4 containers with dimensions (C,P), or (C,P,D1), or
                (C,P,D1,D2), respectively, and returns the result in a rank-1 container
@@ -437,6 +406,314 @@ class FunctionSpaceTools {
                            const ArrayInDataRight &  inputDataRight,
                            const ECompEngine         compEngine,
                            const bool                sumInto = false);
+
+
+  template<class Scalar, class ArrayOut, class ArrayDet, class ArrayWeights>
+  static void computeMeasure(ArrayOut             & outVals,
+                             const ArrayDet       & inDet,
+                             const ArrayWeights   & inWeights);
+
+  template<class Scalar, class ArrayTypeOut, class ArrayTypeMeasure, class ArrayTypeIn>
+  static void multiplyMeasure(ArrayTypeOut             & outVals,
+                              const ArrayTypeMeasure   & inMeasure,
+                              const ArrayTypeIn        & inVals);
+
+  /** \brief There are two use cases:
+             (1) multiplies a rank-3, 4, or 5 container \a <b>inputFields</b> with dimensions (C,F,P),
+             (C,F,P,D1) or (C,F,P,D1,D2), representing the values of a set of scalar, vector
+             or tensor fields, by the values in a rank-2 container \a <b>inputData</b> indexed by (C,P),
+             representing the values of scalar data, OR
+             (2) multiplies a rank-2, 3, or 4 container \a <b>inputFields</b> with dimensions (F,P),
+             (F,P,D1) or (F,P,D1,D2), representing the values of a scalar, vector or a
+             tensor field, by the values in a rank-2 container \a <b>inputData</b> indexed by (C,P),
+             representing the values of scalar data;
+             the output value container \a <b>outputFields</b> is indexed by (C,F,P), (C,F,P,D1)
+             or (C,F,P,D1,D2), regardless of which of the two use cases is considered.
+
+      \code
+        C  - num. integration domains
+        F  - num. fields
+        P  - num. integration points
+        D1 - first spatial (tensor) dimension index
+        D2 - second spatial (tensor) dimension index
+      \endcode
+
+      \note   The argument <var><b>inputFields</b></var> can be changed!
+              This enables in-place multiplication.
+
+      \param  outputFields   [out] - Output (product) fields array.
+      \param  inputData       [in] - Data (multiplying) array.
+      \param  inputFields     [in] - Input (being multiplied) fields array.
+      \param  reciprocal      [in] - If TRUE, <b>divides</b> input fields by the data
+                                     (instead of multiplying). Default: FALSE.
+  */
+  template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
+  static void scalarMultiplyDataField(ArrayOutFields &     outputFields,
+                                      const ArrayInData &  inputData,
+                                      ArrayInFields &      inputFields,
+                                      const bool           reciprocal = false);
+
+  /** \brief There are two use cases:
+             (1) multiplies a rank-2, 3, or 4 container \a <b>inputDataRight</b> with dimensions (C,P),
+             (C,P,D1) or (C,P,D1,D2), representing the values of a set of scalar, vector
+             or tensor data, by the values in a rank-2 container \a <b>inputDataLeft</b> indexed by (C,P),
+             representing the values of scalar data, OR
+             (2) multiplies a rank-1, 2, or 3 container \a <b>inputDataRight</b> with dimensions (P),
+             (P,D1) or (P,D1,D2), representing the values of scalar, vector or
+             tensor data, by the values in a rank-2 container \a <b>inputDataLeft</b> indexed by (C,P),
+             representing the values of scalar data;
+             the output value container \a <b>outputData</b> is indexed by (C,P), (C,P,D1) or (C,P,D1,D2),
+             regardless of which of the two use cases is considered.
+
+      \code
+        C  - num. integration domains
+        P  - num. integration points
+        D1 - first spatial (tensor) dimension index
+        D2 - second spatial (tensor) dimension index
+      \endcode
+
+      \note   The argument <var><b>inputDataRight</b></var> can be changed!
+              This enables in-place multiplication.
+
+      \param  outputData      [out] - Output data array.
+      \param  inputDataLeft    [in] - Left (multiplying) data array.
+      \param  inputDataRight   [in] - Right (being multiplied) data array.
+      \param  reciprocal       [in] - If TRUE, <b>divides</b> input fields by the data
+                                      (instead of multiplying). Default: FALSE.
+  */
+  template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+  static void scalarMultiplyDataData(ArrayOutData &           outputData,
+                                     const ArrayInDataLeft &  inputDataLeft,
+                                     ArrayInDataRight &       inputDataRight,
+                                     const bool               reciprocal = false);
+
+  /** \brief There are two use cases:
+             (1) dot product of a rank-3, 4 or 5 container \a <b>inputFields</b> with dimensions (C,F,P)
+             (C,F,P,D1) or (C,F,P,D1,D2), representing the values of a set of scalar, vector
+             or tensor fields, by the values in a rank-2, 3 or 4 container \a <b>inputData</b> indexed by
+             (C,P), (C,P,D1), or (C,P,D1,D2) representing the values of scalar, vector or
+             tensor data, OR
+             (2) dot product of a rank-2, 3 or 4 container \a <b>inputFields</b> with dimensions (F,P),
+             (F,P,D1) or (F,P,D1,D2), representing the values of a scalar, vector or tensor
+             field, by the values in a rank-2 container \a <b>inputData</b> indexed by (C,P), (C,P,D1) or
+             (C,P,D1,D2), representing the values of scalar, vector or tensor data;
+             the output value container \a <b>outputFields</b> is indexed by (C,F,P),
+             regardless of which of the two use cases is considered.
+
+             For input fields containers without a dimension index, this operation reduces to
+             scalar multiplication.
+      \code
+        C  - num. integration domains
+        F  - num. fields
+        P  - num. integration points
+        D1 - first spatial (tensor) dimension index
+        D2 - second spatial (tensor) dimension index
+      \endcode
+
+      \param  outputFields   [out] - Output (dot product) fields array.
+      \param  inputData       [in] - Data array.
+      \param  inputFields     [in] - Input fields array.
+  */
+  template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
+  static void dotMultiplyDataField(ArrayOutFields &       outputFields,
+                                   const ArrayInData &    inputData,
+                                   const ArrayInFields &  inputFields);
+
+  /** \brief There are two use cases:
+             (1) dot product of a rank-2, 3 or 4 container \a <b>inputDataRight</b> with dimensions (C,P)
+             (C,P,D1) or (C,P,D1,D2), representing the values of a scalar, vector or a
+             tensor set of data, by the values in a rank-2, 3 or 4 container \a <b>inputDataLeft</b> indexed by
+             (C,P), (C,P,D1), or (C,P,D1,D2) representing the values of scalar, vector or
+             tensor data, OR
+             (2) dot product of a rank-2, 3 or 4 container \a <b>inputDataRight</b> with dimensions (P),
+             (P,D1) or (P,D1,D2), representing the values of scalar, vector or tensor
+             data, by the values in a rank-2 container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D1) or
+             (C,P,D1,D2), representing the values of scalar, vector, or tensor data;
+             the output value container \a <b>outputData</b> is indexed by (C,P),
+             regardless of which of the two use cases is considered.
+
+             For input fields containers without a dimension index, this operation reduces to
+             scalar multiplication.
+      \code
+        C  - num. integration domains
+        P  - num. integration points
+        D1 - first spatial (tensor) dimension index
+        D2 - second spatial (tensor) dimension index
+      \endcode
+
+      \param  outputData      [out] - Output (dot product) data array.
+      \param  inputDataLeft    [in] - Left input data array.
+      \param  inputDataRight   [in] - Right input data array.
+  */
+  template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+  static void dotMultiplyDataData(ArrayOutData &            outputData,
+                                  const ArrayInDataLeft &   inputDataLeft,
+                                  const ArrayInDataRight &  inputDataRight);
+
+  /** \brief There are four use cases:
+             (1) cross product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
+             representing the values of a set of vector fields, on the left by the values in a rank-3
+             container \a <b>inputData</b> indexed by (C,P,D), representing the values of vector data, OR
+             (2) cross product of a rank-3 container \a <b>inputFields</b> with dimensions (F,P,D),
+             representing the values of a vector field, on the left by the values in a rank-3 container
+             \a <b>inputData</b> indexed by (C,P,D), representing the values of vector data, OR
+             (3) outer product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
+             representing the values of a set of vector fields, on the left by the values in a rank-3
+             container \a <b>inputData</b> indexed by (C,P,D), representing the values of vector data, OR
+             (4) outer product of a rank-3 container \a <b>inputFields</b> with dimensions (F,P,D),
+             representing the values of a vector field, on the left by the values in a rank-3 container
+             \a <b>inputData</b> indexed by (C,P,D), representing the values of vector data;
+             for cross products, the output value container \a <b>outputFields</b> is indexed by
+             (C,F,P,D) in 3D (vector output) and by (C,F,P) in 2D (scalar output);
+             for outer products, the output value container \a <b>outputFields</b> is indexed by (C,F,P,D,D).
+
+      \code
+        C  - num. integration domains
+        F  - num. fields
+        P  - num. integration points
+        D  - spatial dimension, must be 2 or 3
+      \endcode
+
+      \param  outputFields   [out] - Output (cross or outer product) fields array.
+      \param  inputData       [in] - Data array.
+      \param  inputFields     [in] - Input fields array.
+  */
+  template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
+  static void vectorMultiplyDataField(ArrayOutFields &       outputFields,
+                                      const ArrayInData &    inputData,
+                                      const ArrayInFields &  inputFields);
+
+  /** \brief There are four use cases:
+             (1) cross product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
+             representing the values of a set of vector data, on the left by the values in a rank-3
+             container \a <b>inputDataLeft</b> indexed by (C,P,D) representing the values of vector data, OR
+             (2) cross product of a rank-2 container \a <b>inputDataRight</b> with dimensions (P,D),
+             representing the values of vector data, on the left by the values in a rank-3 container
+             \a <b>inputDataLeft</b> indexed by (C,P,D), representing the values of vector data, OR
+             (3) outer product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
+             representing the values of a set of vector data, on the left by the values in a rank-3
+             container \a <b>inputDataLeft</b> indexed by (C,P,D) representing the values of vector data, OR
+             (4) outer product of a rank-2 container \a <b>inputDataRight</b> with dimensions (P,D),
+             representing the values of vector data, on the left by the values in a rank-3 container
+             \a <b>inputDataLeft</b> indexed by (C,P,D), representing the values of vector data;
+             for cross products, the output value container \a <b>outputData</b> is indexed by
+             (C,P,D) in 3D (vector output) and by (C,P) in 2D (scalar output);
+             for outer products, the output value container \a <b>outputData</b> is indexed by (C,P,D,D).
+
+      \code
+        C  - num. integration domains
+        P  - num. integration points
+        D  - spatial dimension, must be 2 or 3
+      \endcode
+
+      \param  outputData      [out] - Output (cross or outer product) data array.
+      \param  inputDataLeft    [in] - Left input data array.
+      \param  inputDataRight   [in] - Right input data array.
+  */
+  template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+  static void vectorMultiplyDataData(ArrayOutData &            outputData,
+                                     const ArrayInDataLeft &   inputDataLeft,
+                                     const ArrayInDataRight &  inputDataRight);
+
+  /** \brief There are four use cases:
+             (1) matrix-vector product of a rank-4 container \a <b>inputFields</b> with dimensions (C,F,P,D),
+             representing the values of a set of vector fields, on the left by the values in a rank-2, 3, or 4
+             container \a <b>inputData</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
+             representing the values of tensor data, OR
+             (2) matrix-vector product of a rank-3 container \a <b>inputFields</b> with dimensions (F,P,D),
+             representing the values of a vector field, on the left by the values in a rank-2, 3, or 4
+             container \a <b>inputData</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
+             representing the values of tensor data, OR
+             (3) matrix-matrix product of a rank-5 container \a <b>inputFields</b> with dimensions (C,F,P,D,D),
+             representing the values of a set of tensor fields, on the left by the values in a rank-2, 3, or 4
+             container \a <b>inputData</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
+             representing the values of tensor data, OR
+             (4) matrix-matrix product of a rank-4 container \a <b>inputFields</b> with dimensions (F,P,D,D),
+             representing the values of a tensor field, on the left by the values in a rank-2, 3, or 4
+             container \a <b>inputData</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
+             representing the values of tensor data;
+             for matrix-vector products, the output value container \a <b>outputFields</b> is
+             indexed by (C,F,P,D);
+             for matrix-matrix products the output value container \a <b>outputFields</b> is
+             indexed by (C,F,P,D,D).
+
+      \remarks
+             The rank of \a <b>inputData</b> implicitly defines the type of tensor data:
+             \li rank = 2 corresponds to a constant diagonal tensor \f$ diag(a,\ldots,a) \f$
+             \li rank = 3 corresponds to a nonconstant diagonal tensor \f$ diag(a_1,\ldots,a_d) \f$
+             \li rank = 4 corresponds to a full tensor \f$ \{a_{ij}\}\f$
+
+      \note  It is assumed that all tensors are square!
+
+      \note  The method is defined for spatial dimensions D = 1, 2, 3
+
+      \code
+        C    - num. integration domains
+        F    - num. fields
+        P    - num. integration points
+        D    - spatial dimension
+      \endcode
+
+      \param  outputFields   [out] - Output (matrix-vector or matrix-matrix product) fields array.
+      \param  inputData       [in] - Data array.
+      \param  inputFields     [in] - Input fields array.
+      \param  transpose       [in] - If 'T', use transposed left data tensor; if 'N', no transpose. Default: 'N'.
+  */
+  template<class Scalar, class ArrayOutFields, class ArrayInData, class ArrayInFields>
+  static void tensorMultiplyDataField(ArrayOutFields &       outputFields,
+                                      const ArrayInData &    inputData,
+                                      const ArrayInFields &  inputFields,
+                                      const char             transpose = 'N');
+
+  /** \brief There are four use cases:
+             (1) matrix-vector product of a rank-3 container \a <b>inputDataRight</b> with dimensions (C,P,D),
+             representing the values of a set of vector data, on the left by the values in a rank-2, 3, or 4
+             container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
+             representing the values of tensor data, OR
+             (2) matrix-vector product of a rank-2 container \a <b>inputDataRight</b> with dimensions (P,D),
+             representing the values of vector data, on the left by the values in a rank-2, 3, or 4
+             container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
+             representing the values of tensor data, OR
+             (3) matrix-matrix product of a rank-4 container \a <b>inputDataRight</b> with dimensions (C,P,D,D),
+             representing the values of a set of tensor data, on the left by the values in a rank-2, 3, or 4
+             container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
+             representing the values of tensor data, OR
+             (4) matrix-matrix product of a rank-3 container \a <b>inputDataRight</b> with dimensions (P,D,D),
+             representing the values of tensor data, on the left by the values in a rank-2, 3, or 4
+             container \a <b>inputDataLeft</b> indexed by (C,P), (C,P,D) or (C,P,D,D), respectively,
+             representing the values of tensor data;
+             for matrix-vector products, the output value container \a <b>outputData</b>
+             is indexed by (C,P,D);
+             for matrix-matrix products, the output value container \a <b>outputData</b>
+             is indexed by (C,P,D1,D2).
+
+      \remarks
+            The rank of <b>inputDataLeft</b> implicitly defines the type of tensor data:
+            \li rank = 2 corresponds to a constant diagonal tensor \f$ diag(a,\ldots,a) \f$
+            \li rank = 3 corresponds to a nonconstant diagonal tensor \f$ diag(a_1,\ldots,a_d) \f$
+            \li rank = 4 corresponds to a full tensor \f$ \{a_{ij}\}\f$
+
+      \note  It is assumed that all tensors are square!
+
+      \note  The method is defined for spatial dimensions D = 1, 2, 3
+
+      \code
+        C    - num. integration domains
+        P    - num. integration points
+        D    - spatial dimension
+      \endcode
+
+      \param  outputData      [out] - Output (matrix-vector product) data array.
+      \param  inputDataLeft    [in] - Left input data array.
+      \param  inputDataRight   [in] - Right input data array.
+      \param  transpose        [in] - If 'T', use transposed tensor; if 'N', no transpose. Default: 'N'.
+  */
+  template<class Scalar, class ArrayOutData, class ArrayInDataLeft, class ArrayInDataRight>
+  static void tensorMultiplyDataData(ArrayOutData &            outputData,
+                                     const ArrayInDataLeft &   inputDataLeft,
+                                     const ArrayInDataRight &  inputDataRight,
+                                     const char                transpose = 'N');
+
 
   /** \brief Applies left (row) signs, stored in the user-provided container
              <var><b>fieldSigns</b></var> and indexed by (C,L), to the operator

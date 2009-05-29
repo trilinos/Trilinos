@@ -149,8 +149,34 @@ void getValues_HGRAD_Args(ArrayScalar &                outputValues,
   // GRAD, CURL (only in 2D), or Dk.
   
   if(spaceDim == 1) {
-    TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument, 
-                        ">>> ERROR: (Intrepid::getValues_HGRAD_Args) rank = 2 required for outputValues in 1D.");
+    switch(operatorType){
+      case OPERATOR_VALUE:
+        TEST_FOR_EXCEPTION( !(outputValues.rank() == 2), std::invalid_argument,
+                            ">>> ERROR: (Intrepid::getValues_HGRAD_Args) rank = 2 required for outputValues when operator = VALUE.");
+        break;
+      case OPERATOR_GRAD:
+      case OPERATOR_CURL:
+      case OPERATOR_DIV:
+      case OPERATOR_D1:
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10:
+        TEST_FOR_EXCEPTION( !(outputValues.rank() == 3), std::invalid_argument,
+                            ">>> ERROR: (Intrepid::getValues_HGRAD_Args) rank = 3 required for outputValues in 1D when operator = GRAD, CURL, DIV, or Dk.");
+        
+        TEST_FOR_EXCEPTION( !(outputValues.dimension(2) == 1 ),
+                            std::invalid_argument,
+                            ">>> ERROR: (Intrepid::getValues_HGRAD_Args) dim 2 of outputValues must equal 1 when operator = GRAD, CURL, DIV, or Dk.");
+        break;
+      default:
+        TEST_FOR_EXCEPTION( (true), std::invalid_argument, ">>> ERROR: (Intrepid::getValues_HGRAD_Args) Invalid operator");
+    }
   }
   else if(spaceDim > 1) {
     switch(operatorType){

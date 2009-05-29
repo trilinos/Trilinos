@@ -95,7 +95,7 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar 
         IntrepidPolylib::jacobd(numPoints, &tmpPoints[0], &jacobiPolyAtPoints[0], ord, jacobiAlpha_, jacobiBeta_);
         for (int pt = 0; pt < numPoints; pt++) {
           // outputValues is a rank-2 array with dimensions (basisCardinality_, numPoints)
-          outputValues(ord, pt) = jacobiPolyAtPoints[pt];
+          outputValues(ord, pt, 0) = jacobiPolyAtPoints[pt];
         }
       }
     }

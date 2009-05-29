@@ -37,6 +37,7 @@
 #include "Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_ArrayTools.hpp"
+#include "Intrepid_FunctionSpaceTools.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -153,17 +154,18 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> badVals1(4, 3, 1);
     INTREPID_TEST_COMMAND( lineBasis.getValues(badVals1, lineNodes, OPERATOR_VALUE), throwCounter, nException );
 
-    // exception #9: output values must be of rank-2 for OPERATOR_GRAD
-    INTREPID_TEST_COMMAND( lineBasis.getValues(badVals1, lineNodes, OPERATOR_GRAD), throwCounter, nException );
+    // exception #9: output values must be of rank-3 for OPERATOR_GRAD
+    FieldContainer<double> badVals2(4, 3);
+    INTREPID_TEST_COMMAND( lineBasis.getValues(badVals2, lineNodes, OPERATOR_GRAD), throwCounter, nException );
 
-    // exception #10: output values must be of rank-2 for OPERATOR_CURL
-    INTREPID_TEST_COMMAND( lineBasis.getValues(badVals1, lineNodes, OPERATOR_CURL), throwCounter, nException );
+    // exception #10: output values must be of rank-3 for OPERATOR_CURL
+    INTREPID_TEST_COMMAND( lineBasis.getValues(badVals2, lineNodes, OPERATOR_CURL), throwCounter, nException );
 
     // exception #11: output values must be of rank-2 for OPERATOR_DIV
-    INTREPID_TEST_COMMAND( lineBasis.getValues(badVals1, lineNodes, OPERATOR_DIV), throwCounter, nException );
+    INTREPID_TEST_COMMAND( lineBasis.getValues(badVals2, lineNodes, OPERATOR_DIV), throwCounter, nException );
 
     // exception #12: output values must be of rank-2 for OPERATOR_D1
-    INTREPID_TEST_COMMAND( lineBasis.getValues(badVals1, lineNodes, OPERATOR_D1), throwCounter, nException );
+    INTREPID_TEST_COMMAND( lineBasis.getValues(badVals2, lineNodes, OPERATOR_D1), throwCounter, nException );
 
     // exception #13: incorrect 0th dimension of output array (must equal number of basis functions)
     FieldContainer<double> badVals3(lineBasis.getCardinality() + 1, lineNodes.dimension(0));
@@ -173,12 +175,17 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> badVals4(lineBasis.getCardinality(), lineNodes.dimension(0) + 1);
     INTREPID_TEST_COMMAND( lineBasis.getValues(badVals4, lineNodes, OPERATOR_VALUE), throwCounter, nException );
 
-    // exception #15: undefined operator
-    FieldContainer<double> goodVals1(lineBasis.getCardinality(), lineNodes.dimension(0));
+    // exception #15: incorrect 2nd dimension of output array (must equal spatial dimension)
+    FieldContainer<double> badVals5(lineBasis.getCardinality(), lineNodes.dimension(0), 2);
+    INTREPID_TEST_COMMAND( lineBasis.getValues(badVals5, lineNodes, OPERATOR_GRAD), throwCounter, nException );
+
+    // exception #16: undefined operator
+    FieldContainer<double> goodVals1(lineBasis.getCardinality(), lineNodes.dimension(0), 1);
     INTREPID_TEST_COMMAND( lineBasis.getValues(goodVals1, lineNodes, OPERATOR_D2), throwCounter, nException );
 
     // not an exception
-    INTREPID_TEST_COMMAND( lineBasis.getValues(goodVals1, lineNodes, OPERATOR_VALUE), throwCounter, nException ); --nException;
+    FieldContainer<double> goodVals2(lineBasis.getCardinality(), lineNodes.dimension(0));
+    INTREPID_TEST_COMMAND( lineBasis.getValues(goodVals2, lineNodes, OPERATOR_VALUE), throwCounter, nException ); --nException;
 #endif
 
   }
@@ -192,7 +199,7 @@ int main(int argc, char *argv[]) {
   // Check if number of thrown exceptions matches the one we expect
   if (throwCounter != nException) {
     errorFlag++;
-    *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+    *outStream << std::setw(70) << "FAILURE! Incorrect number of exceptions." << "\n";
   }
 
 
@@ -245,10 +252,10 @@ int main(int argc, char *argv[]) {
         FieldContainer<double> valsLeftC(1, numFieldsLeft,numPoints),
                                valsRightC(1, numFieldsRight,numPoints),
                                massMatrix(1, numFieldsLeft, numFieldsRight);
-        ArrayTools::cloneValues<double>(valsLeftC, valsLeft);
-        ArrayTools::cloneValues<double>(valsRightC, valsRight);
-        ArrayTools::multiplyScalarData<double>(valsRightC, cubWeightsC, valsRightC);
-        ArrayTools::contractScalar<double>(massMatrix, valsLeftC, valsRightC, COMP_CPP);
+        ArrayTools::cloneFields<double>(valsLeftC, valsLeft);
+        ArrayTools::cloneFields<double>(valsRightC, valsRight);
+        ArrayTools::scalarMultiplyDataField<double>(valsRightC, cubWeightsC, valsRightC);
+        FunctionSpaceTools::integrate<double>(massMatrix, valsLeftC, valsRightC, COMP_CPP);
 
         // check orthogonality property
         for (int i=0; i<numFieldsLeft; i++) {
