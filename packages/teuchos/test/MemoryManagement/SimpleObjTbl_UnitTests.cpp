@@ -172,6 +172,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( SimpleObjectTable, storeCastedRCP, T1, T2 )
     ECHO(int id = sot.storeCastedRCP(rcpT1));
     TEST_EQUALITY_CONST(id, 0);
     TEST_EQUALITY_CONST(nonnull(sot.getRCP(id)), true);
+    TEST_EQUALITY_CONST(rcpT1.shares_resource(sot.getRCP(id)), true);
   }
 }
 
