@@ -56,8 +56,8 @@ int tEpetraOperatorWrapper::runTest(int verbosity,std::ostream & stdstrm,std::os
    failstrm << "tEpetraOperatorWrapper";
 
    status = test_functionality(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"functionality\" ... PASSED","   \"functionality\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 

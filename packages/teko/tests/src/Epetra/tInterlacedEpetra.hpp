@@ -26,8 +26,12 @@ public:
 
    bool test_buildSubMaps_num(int verbosity,std::ostream & os);
    bool test_buildSubMaps_vec(int verbosity,std::ostream & os);
+   bool test_buildMaps(int verbosity,std::ostream & os);
+   bool test_one2many(int verbosity,std::ostream & os);
+   bool test_many2one(int verbosity,std::ostream & os);
 
 protected:
+   double tolerance_;
 };
 
 } // end namespace Tests

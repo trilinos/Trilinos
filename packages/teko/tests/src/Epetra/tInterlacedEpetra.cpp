@@ -49,6 +49,7 @@ using Thyra::LinearOpTester;
 
 void tInterlacedEpetra::initializeTest() 
 {
+   tolerance_ = 1e-14;
 }
 
 int tInterlacedEpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun)
@@ -60,14 +61,32 @@ int tInterlacedEpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream
    failstrm << "tInterlacedEpetra";
 
    status = test_buildSubMaps_num(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"buildSubMaps_num\" ... PASSED","   \"buildSubMaps_num\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_buildSubMaps_vec(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"buildSubMaps_vec\" ... PASSED","   \"buildSubMaps_vec\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+
+   status = test_buildMaps(verbosity,failstrm);
+   PB_TEST_MSG(stdstrm,1,"   \"buildMaps\" ... PASSED","   \"buildMaps\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+
+   status = test_one2many(verbosity,failstrm);
+   PB_TEST_MSG(stdstrm,1,"   \"one2many\" ... PASSED","   \"one2many\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+
+   status = test_many2one(verbosity,failstrm);
+   PB_TEST_MSG(stdstrm,1,"   \"many2one\" ... PASSED","   \"many2one\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
@@ -271,6 +290,206 @@ bool tInterlacedEpetra::test_buildSubMaps_vec(int verbosity,std::ostream & os)
             "exception");
    }
 
+   return allPassed;
+}
+
+bool tInterlacedEpetra::test_buildMaps(int verbosity,std::ostream & os)
+{
+   bool status = false;
+   bool allPassed = true;
+
+   int size = 3*1000;
+
+   TEST_MSG("\n   Builing Epetra_Map");
+   RCP<Epetra_Map> map = rcp(new Epetra_Map(size,0,*GetComm()));
+
+   TEST_MSG("\n   Building sub maps");
+   std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > subMaps;
+   std::vector<int> vec(2); vec[0] = 2; vec[1] = 1;
+   PB::Epetra::buildSubMaps(size,vec,*GetComm(),subMaps);
+
+   TEST_ASSERT(subMaps[0].first==vec[0],
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+      << "  first map unknowns is " << subMaps[0].first << " ( should be " << vec[0] << ")");
+   TEST_ASSERT(subMaps[1].first==vec[1],
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+      << "  second map unknowns is " << subMaps[1].first << " ( should be " << vec[1] << ")");
+
+   std::vector<Teuchos::RCP<Epetra_Map> > globalMaps(2);
+   std::vector<Teuchos::RCP<Epetra_Map> > contigMaps(2);
+
+   // get sub maps for convenient use and access
+   globalMaps[0] = subMaps[0].second;
+   globalMaps[1] = subMaps[1].second;
+
+   contigMaps[0] = Teuchos::get_extra_data<Teuchos::RCP<Epetra_Map> >(globalMaps[0],"contigMap");
+   contigMaps[1] = Teuchos::get_extra_data<Teuchos::RCP<Epetra_Map> >(globalMaps[1],"contigMap");
+
+   // test that the extra data is attached
+   TEST_ASSERT(contigMaps[0]!=Teuchos::null,
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << ")");
+   TEST_ASSERT(contigMaps[1]!=Teuchos::null,
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << ")");
+   TEST_MSG("   tInterlacedEpetra::test_buildMaps: extracted \"contigMaps\" from RCP");
+
+   // make sure all maps have the correct size
+   TEST_ASSERT(globalMaps[0]->NumGlobalElements()==2000,
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+      << "checking number of global elements");
+   TEST_ASSERT(globalMaps[1]->NumGlobalElements()==1000,
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+      << "checking number of global elements");
+   TEST_ASSERT(contigMaps[0]->NumGlobalElements()==2000,
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+      << "checking number of global elements");
+   TEST_ASSERT(contigMaps[1]->NumGlobalElements()==1000,
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+      << "checking number of global elements");
+
+   TEST_ASSERT(contigMaps[0]->NumMyElements()==globalMaps[0]->NumMyElements(),
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+      << "check for lineup of number of local elements");
+   TEST_ASSERT(contigMaps[1]->NumMyElements()==globalMaps[1]->NumMyElements(),
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+      << "check for lineup of number of local elements");
+
+   bool test;
+
+   // check contiguous and global maps
+   test = true;
+   for(int i=0;i<globalMaps[0]->NumMyElements();i+=2) {
+      int block;
+      int gid = globalMaps[0]->GID(i); 
+      int cid = contigMaps[0]->GID(i); 
+ 
+      block = gid/3;
+      test &= cid==2*block;
+
+      int gidp1 = globalMaps[0]->GID(i+1); 
+      int cidp1 = contigMaps[0]->GID(i+1); 
+
+      block = (gidp1-1)/3;
+      test &= cidp1==2*block+1;
+   }
+   TEST_ASSERT(test, 
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+      << "checked that block maps were internally consitent");
+
+   test = true;
+   for(int i=0;i<globalMaps[1]->NumMyElements();i++) {
+      int block;
+      int gid = globalMaps[1]->GID(i); 
+      int cid = contigMaps[1]->GID(i); 
+ 
+      block = (gid-2)/3;
+      test &= cid==block;
+   }
+   TEST_ASSERT(test, 
+         "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+      << "checked that block maps were internally consitent");
+
+   return allPassed;
+}
+
+bool tInterlacedEpetra::test_one2many(int verbosity,std::ostream & os)
+{
+   bool status = false;
+   bool allPassed = true;
+
+   int size = 3*1000;
+   TEST_MSG("\n   tInterlacedEpetra::test_one2many: Builing Epetra_Map and source vector");
+   RCP<Epetra_Map> map = rcp(new Epetra_Map(size,0,*GetComm()));
+   RCP<Epetra_MultiVector> v = rcp(new Epetra_MultiVector(*map,1));
+   v->Random();
+
+   TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building sub maps");
+   std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > subMaps;
+   std::vector<int> vec(2); vec[0] = 2; vec[1] = 1;
+   PB::Epetra::buildSubMaps(size,vec,*GetComm(),subMaps);
+
+   TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building Export/Import");
+   std::vector<RCP<Epetra_Export> > subExport;
+   std::vector<RCP<Epetra_Import> > subImport;
+   PB::Epetra::buildExportImport(*map,subMaps,subExport,subImport);
+
+   TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building sub vectors");
+   std::vector<RCP<Epetra_MultiVector> > subVectors;
+   PB::Epetra::buildSubVectors(subMaps,subVectors,1);
+
+   std::vector<RCP<Epetra_MultiVector> >::const_iterator itr;
+   for(itr=subVectors.begin();itr!=subVectors.end();++itr) {
+      RCP<const Epetra_Map> lm = Teuchos::get_extra_data<RCP<Epetra_Map> >(*itr,"globalMap");
+      TEST_ASSERT(lm!=Teuchos::null,
+            "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         << "check that vector contains \"globalMap\" in RCP");
+   }
+
+   TEST_MSG("\n   tInterlacedEpetra::test_one2many: Performing data copy");
+   PB::Epetra::one2many(subVectors,*v,subImport);
+   
+   // just assume it works! :)
+
+   return allPassed;
+}
+
+bool tInterlacedEpetra::test_many2one(int verbosity,std::ostream & os)
+{
+   bool status = false;
+   bool allPassed = true;
+
+   int size = 3*1000;
+   TEST_MSG("\n   tInterlacedEpetra::test_one2many: Builing Epetra_Map and source vector");
+   RCP<Epetra_Map> map = rcp(new Epetra_Map(size,0,*GetComm()));
+   RCP<Epetra_MultiVector> v = rcp(new Epetra_MultiVector(*map,4));
+   v->Random();
+
+   TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building sub maps");
+   std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > subMaps;
+   std::vector<int> vec(2); vec[0] = 2; vec[1] = 1;
+   PB::Epetra::buildSubMaps(size,vec,*GetComm(),subMaps);
+
+   TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building Export/Import");
+   std::vector<RCP<Epetra_Export> > subExport;
+   std::vector<RCP<Epetra_Import> > subImport;
+   PB::Epetra::buildExportImport(*map,subMaps,subExport,subImport);
+
+   TEST_MSG("\n   tInterlacedEpetra::test_one2many: Building sub vectors");
+   std::vector<RCP<Epetra_MultiVector> > subVectors;
+   PB::Epetra::buildSubVectors(subMaps,subVectors,4);
+
+   std::vector<RCP<Epetra_MultiVector> >::const_iterator itr;
+   for(itr=subVectors.begin();itr!=subVectors.end();++itr) {
+      RCP<const Epetra_Map> lm = Teuchos::get_extra_data<RCP<Epetra_Map> >(*itr,"globalMap");
+      TEST_ASSERT(lm!=Teuchos::null,
+            "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         << "check that vector contains \"globalMap\" in RCP");
+   }
+
+   TEST_MSG("\n   tInterlacedEpetra::test_one2many: Performing one2many");
+   PB::Epetra::one2many(subVectors,*v,subImport);
+
+   std::vector<RCP<const Epetra_MultiVector> > cSubVectors;
+   for(itr=subVectors.begin();itr!=subVectors.end();++itr)
+      cSubVectors.push_back(*itr);
+
+   TEST_MSG("\n   tInterlacedEpetra::test_one2many: Performing many2one");
+   RCP<Epetra_MultiVector> one = rcp(new Epetra_MultiVector(*map,1));
+   PB::Epetra::many2one(*one,cSubVectors,subExport);
+
+   one->Update(1.0,*v,-1.0);
+ 
+   double diff[4],max=0.0,maxn=0;
+   double norm[4];
+   one->Norm2(diff);
+   v->Norm2(norm);
+   for(int i=0;i<4;i++) {
+      max = max>diff[i]/norm[i] ? max : diff[i]/norm[i];
+      maxn = maxn>norm[i] ? maxn : norm[i];
+   }
+   TEST_ASSERT(max<=tolerance_,
+            "   tInterlacedEpetra::test_buildMaps (" << PB::Test::toString(status) << "): "
+         << "norm must be better than the tolerance ( " << max << " <=? " << tolerance_ << " maxn = " << maxn << " )");
+   
    return allPassed;
 }
 

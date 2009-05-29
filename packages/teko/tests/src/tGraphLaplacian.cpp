@@ -99,14 +99,14 @@ int tGraphLaplacian::runTest(int verbosity,std::ostream & stdstrm,std::ostream &
    failstrm << "tGraphLaplacian";
 
    status = test_single_array(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"single_array\" ... PASSED","   \"single_array\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_multi_array(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"multi_array\" ... PASSED","   \"multi_array\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 

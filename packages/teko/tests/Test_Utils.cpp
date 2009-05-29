@@ -205,5 +205,23 @@ void UnitTest::SetComm(const Teuchos::RCP<const Epetra_Comm> & c)
    comm = c;
 }
 
+bool UnitTest::CheckParallelBools(bool myBool,int & failPID)
+{
+   int myInt = myBool ? 1 : 0;
+   std::vector<int> bools(GetComm()->NumProc());
+
+   GetComm()->GatherAll(&myInt,&bools[0],1);
+ 
+   failPID = -1;
+
+   bool result = true;
+   for(int i=0;i<bools.size();i++) {
+      result &= bools[i]==1 ? true : false;
+      if(bools[i]!=1) failPID = i; 
+   }
+
+   return result;
+}
+
 } // end Tests
 } // end PB

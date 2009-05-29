@@ -123,14 +123,14 @@ int tEpetraLSCIntegrationTest::runTest(int verbosity,std::ostream & stdstrm,std:
    failstrm << "tEpetraLSCIntegrationTest";
 
    status = test_withmassStable(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"withmassStable\" ... PASSED","   \"withmassStable\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_nomassStable(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"nomassStable\" ... PASSED","   \"nomassStable\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 

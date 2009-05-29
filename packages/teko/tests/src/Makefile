@@ -14,7 +14,8 @@ OBJS = tLSCStablePreconditionerFactory.o \
        tBlockLowerTriInverseOp.o \
        tLSCIntegrationTest.o \
        tGraphLaplacian.o \
-       tLU2x2PreconditionerFactory.o
+       tLU2x2PreconditionerFactory.o \
+       tParallelInverse.o
 
 PREC = $(OBJS:%.o=%._tmp)
 

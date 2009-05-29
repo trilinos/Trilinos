@@ -93,26 +93,26 @@ int tBlockJacobiPreconditionerFactory::runTest(int verbosity,std::ostream & stds
    failstrm << "tBlockJacobiPreconditionerFactory";
 
    status = test_createPrec(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"createPrec\" ... PASSED","   \"createPrec\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_initializePrec(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"initializePrec\" ... PASSED","   \"initializePrec\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_uninitializePrec(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"uninitializePrec\" ... PASSED","   \"uninitializePrec\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_isCompatible(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"isCompatible\" ... PASSED","   \"isCompatible\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 

@@ -128,14 +128,14 @@ int tBlockUpperTriInverseOp::runTest(int verbosity,std::ostream & stdstrm,std::o
    failstrm << "tUpperTriInverseOp";
 
    status = test_apply(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"apply\" ... PASSED","   \"apply\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_alphabeta(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"alphabeta\" ... PASSED","   \"alphabeta\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 

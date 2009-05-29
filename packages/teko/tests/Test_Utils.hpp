@@ -63,6 +63,8 @@ public:
 protected:
    static std::list<std::pair<Teuchos::RCP<UnitTest>,std::string> > testList;
    static Teuchos::RCP<const Epetra_Comm> comm;
+
+   static bool CheckParallelBools(bool myBool,int & failPID);
 };
 
 inline const std::string toString(bool status) { return status ? "PASSED" : "FAILED"; }
@@ -71,11 +73,13 @@ inline const std::string toString(bool status) { return status ? "PASSED" : "FAI
 } // end namespace PB
 
 #define PB_ADD_UNIT_TEST(str,name) PB::Test::UnitTest::AddTest(Teuchos::rcp(new str()),#name)
-#define PB_TEST_MSG(os,level,msgp,msgf) {    \
-    if(verbosity>=level && status)           \
-       os << msgp << std::endl;              \
-    else if(verbosity>=level && not status)  \
-       os << msgf << std::endl;              \
+#define PB_TEST_MSG(os,level,msgp,msgf) {          \
+    int failPID;                                   \
+    status = UnitTest::CheckParallelBools(status,failPID); \
+    if(verbosity>=level && status)                 \
+       os << msgp << std::endl;                    \
+    else if(verbosity>=level && not status)        \
+       os << msgf << " ( PID = " << failPID << " )" << std::endl; \
     }
 
 #define TEST_EQUALITY(x,y,msg) \

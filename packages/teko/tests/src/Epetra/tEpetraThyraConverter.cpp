@@ -186,26 +186,26 @@ int tEpetraThyraConverter::runTest(int verbosity,std::ostream & stdstrm,std::ost
    failstrm << "tEpetraThyraConverter";
 
    status = test_blockThyraToEpetra(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"blockThyraToEpetra\" ... PASSED","   \"blockThyraToEpetra\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_single_blockThyraToEpetra(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"single_blockThyraToEpetra\" ... PASSED","   \"single_blockThyraToEpetra\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_blockEpetraToThyra(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"blockEpetraToThyra\" ... PASSED","   \"blockEpetraToThyra\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_single_blockEpetraToThyra(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"single_blockEpetraToThyra\" ... PASSED","   \"single_blockEpetraToThyra\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 

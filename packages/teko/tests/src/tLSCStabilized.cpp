@@ -57,14 +57,14 @@ int tLSCStabilized::runTest(int verbosity,std::ostream & stdstrm,std::ostream & 
    failstrm << "tLSCStabilized";
 
    status = test_diagonal(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"diagonal\" ... PASSED","   \"diagonal\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_strategy(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"strategy\" ... PASSED","   \"strategy\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 

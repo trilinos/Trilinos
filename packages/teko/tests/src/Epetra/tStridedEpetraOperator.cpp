@@ -61,34 +61,34 @@ int tStridedEpetraOperator::runTest(int verbosity,std::ostream & stdstrm,std::os
    failstrm << "tStridedEpetraOperator";
 
    status = test_numvars_constr(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"numvars_constr\" ... PASSED","   \"numvars_constr\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_vector_constr(verbosity,failstrm);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"vector_constr\" ... PASSED","   \"vector_constr\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++; 
 
    status = test_reorder(verbosity,failstrm,0);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"reorder(flat reorder)\" ... PASSED","   \"reorder(flat reorder)\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_reorder(verbosity,failstrm,1);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 1 
                       << ")\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
    status = test_reorder(verbosity,failstrm,2);
-   allTests &= status;
    PB_TEST_MSG(stdstrm,1,"   \"reorder(composite reorder = " << 2 
                       << ")\" ... PASSED","   \"reorder(composite reorder)\" ... FAILED");
+   allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
 
