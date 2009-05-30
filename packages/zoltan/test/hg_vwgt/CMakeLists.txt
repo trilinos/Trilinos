@@ -104,7 +104,6 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveHgVwgtCopyFiles
     vwgt.mtx
     vwgt.mtxp
     vwgt.hg
-    ../ctest_zoltan.pl
     ${ZDRIVE_INP}
     ${HIER_INP}
     ${ANSWERS}

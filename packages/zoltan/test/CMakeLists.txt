@@ -21,3 +21,10 @@ ADD_SUBDIRECTORY(hg_ibm03)
 ADD_SUBDIRECTORY(hg_nograph)
 ADD_SUBDIRECTORY(hg_simple)
 ADD_SUBDIRECTORY(hg_vwgt)
+
+# Command that copies files to the executable directory.
+PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveMainCopyFiles
+  SOURCE_FILES
+    ctest_zoltan.pl
+  )
+

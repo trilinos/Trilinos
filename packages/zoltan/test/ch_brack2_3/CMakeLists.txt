@@ -98,7 +98,6 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveChBrack2_3CopyFiles
   SOURCE_FILES
     brack2_3.graph
     brack2_3.coords
-    ../ctest_zoltan.pl
     ${ZDRIVE_INP}
     ${HIER_INP}
     ${ANSWERS}

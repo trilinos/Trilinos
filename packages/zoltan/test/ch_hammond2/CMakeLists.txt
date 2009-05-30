@@ -98,7 +98,6 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveChHammond2CopyFiles
   SOURCE_FILES
     hammond2.graph
     hammond2.coords
-    ../ctest_zoltan.pl
     ${ZDRIVE_INP}
     ${HIER_INP}
     ${ANSWERS}

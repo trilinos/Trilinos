@@ -98,7 +98,6 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveChDegenerateCopyFiles
   SOURCE_FILES
     degenerate.graph
     degenerate.coords
-    ../ctest_zoltan.pl
     ${ZDRIVE_INP}
     ${HIER_INP}
     ${ANSWERS}

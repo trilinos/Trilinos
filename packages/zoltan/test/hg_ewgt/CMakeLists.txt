@@ -104,7 +104,6 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveHgEwgtCopyFiles
     ewgt.mtx
     ewgt.mtxp
     ewgt.hg
-    ../ctest_zoltan.pl
     ${ZDRIVE_INP}
     ${HIER_INP}
     ${ANSWERS}

@@ -99,7 +99,6 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveChDrakeCopyFiles
     drake.graph
     drake.coords
     drake.assign
-    ../ctest_zoltan.pl
     ${ZDRIVE_INP}
     ${HIER_INP}
     ${ANSWERS}

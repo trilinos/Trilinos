@@ -102,7 +102,6 @@ ENDIF()
 PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveHgNographCopyFiles
   SOURCE_FILES
     nograph.mtx
-    ../ctest_zoltan.pl
     ${ZDRIVE_INP}
     ${HIER_INP}
     ${ANSWERS}

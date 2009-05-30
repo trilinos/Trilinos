@@ -103,7 +103,6 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveHgIbm03CopyFiles
   SOURCE_FILES
     ibm03.hg
     ibm03.mtxp
-    ../ctest_zoltan.pl
     ${ZDRIVE_INP}
     ${HIER_INP}
     ${ANSWERS}

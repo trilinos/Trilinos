@@ -103,7 +103,6 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(ZDriveHgCage10CopyFiles
   SOURCE_FILES
     cage10.mtx
     cage10.graph
-    ../ctest_zoltan.pl
     ${ZDRIVE_INP}
     ${HIER_INP}
     ${ANSWERS}
