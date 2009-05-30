@@ -107,6 +107,9 @@ LOCA and Epetra.
 #include "LOCA_MultiContinuation_NaturalGroup.H"
 #include "LOCA_MultiContinuation_AbstractStrategy.H"
 
+#undef HAVE_STDINT_H
+#undef HAVE_INTTYPES_H
+#undef HAVE_SYS_TIME_H
 #include "LOCA_Epetra.H"
 #include "LOCA_Epetra_Group.H"
 
@@ -147,13 +150,13 @@ using Teuchos::rcp;
 %import "LOCA.Pitchfork.i"
 %import "LOCA.Homotopy.i"
 %import "LOCA.TurningPoint.i"
-%pythoncode
-%{
-import PyTrilinos.LOCA.Homotopy
-import PyTrilinos.LOCA.TurningPoint
-import PyTrilinos.LOCA.Pitchfork
-import PyTrilinos.LOCA.Hopf
-%}
+// %pythoncode
+// %{
+// import PyTrilinos.LOCA.Homotopy
+// import PyTrilinos.LOCA.TurningPoint
+// import PyTrilinos.LOCA.Pitchfork
+// import PyTrilinos.LOCA.Hopf
+// %}
 
 %import "NOX.Epetra.Interface.i"
 %import "LOCA.Epetra.Interface.i"
@@ -163,22 +166,28 @@ import PyTrilinos.LOCA.Hopf
 %teuchos_rcp_typemaps(Abstract_Group)
 %teuchos_rcp_typemaps(Abstract_TransposeSolveGroup)
 %include "LOCA_Abstract_Group.H"
-%include  "LOCA_Abstract_TransposeSolveGroup.H"
+%include "LOCA_Abstract_TransposeSolveGroup.H"
 
+#undef HAVE_STDINT_H
+#undef HAVE_INTTYPES_H
+#undef HAVE_SYS_TIME_H
 %include "LOCA_Epetra.H"
 
-%pythoncode
-%{
-from NOX.Epetra import Group
-%}
+// %pythoncode
+// %{
+// from NOX.Epetra import Group
+// %}
 
 //////////////////////////////
 // LOCA.Epetra.Group support //
 //////////////////////////////
 
+%rename(NOX_Epetra_Group) NOX::Epetra::Group;
+%include "NOX_Epetra_Group.H"
+
 // temporarily ignore conflict-causing constructor.  TODO: fix this issue
 %ignore LOCA::Epetra::Group::Group(Teuchos::RCP< LOCA::GlobalData > const &,Teuchos::ParameterList &,Teuchos::RCP<LOCA::Epetra::Interface::TimeDependentMatrixFree > const &,NOX::Epetra::Vector &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,Teuchos::RCP< NOX::Epetra::LinearSystem > const &,LOCA::ParameterVector const &);
 
-%teuchos_rcp_typemaps(LOCA::Epetra::Group)
 %include "LOCA_Epetra_Group.H"
 
+%teuchos_rcp_typemaps(LOCA::Epetra::Group)

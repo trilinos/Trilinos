@@ -44,13 +44,13 @@ The most important classes of the Amesos module are:
 
     * Factory      - Factory class
     * Lapack       - LAPACK interface
-    * Klu          - KLU interace
-    * Umfpack      - UMFPACK interace
-    * Scalapack    - SCALAPACK interace
-    * Superlu      - SuperLU interace
-    * Superludist  - SuperLU_DIST interace
-    * Dscpack      - DSCPACK interace
-    * Mumps        - MUMPS interace
+    * Klu          - KLU interface
+    * Umfpack      - UMFPACK interface
+    * Scalapack    - SCALAPACK interface
+    * Superlu      - SuperLU interface
+    * Superludist  - SuperLU_DIST interface
+    * Dscpack      - DSCPACK interface
+    * Mumps        - MUMPS interface
 
 Use dir(Amesos) to see what specific interfaces have been enabled on
 your platform.  For examples of usage, please consult the examples

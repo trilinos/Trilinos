@@ -120,16 +120,19 @@ using Teuchos::RCP;
 
 // NOX interface file imports.
 //%import "NOX.__init__.i"
-
 %import "NOX.Abstract.i"
 %import "NOX.StatusTest.i"
 
-%import "LOCA.MultiContinuation.i"
 %import "LOCA.Abstract.i"
-//%import "LOCA.Hopf.i"
-//%import "LOCA.Pitchfork.i"
-//%import "LOCA.Homotopy.i"
-//%import "LOCA.TurningPoint.i"
+%import "LOCA.Extended.i"
+%import "LOCA.BorderedSystem.i"
+%import "LOCA.Continuation.i"
+%import "LOCA.MultiContinuation.i"
+%import "LOCA.Hopf.i"
+%import "LOCA.TimeDependent.i"
+%import "LOCA.Pitchfork.i"
+%import "LOCA.Homotopy.i"
+%import "LOCA.TurningPoint.i"
 //%import "LOCA_Abstract_Iterator.H"
 
 // LOCA interface includes
