@@ -121,6 +121,7 @@ BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvs)
 //@{
 typedef Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > BlockedLinearOp;
 typedef Teuchos::RCP<const Thyra::LinearOpBase<double> > LinearOp;
+typedef Teuchos::RCP<Thyra::LinearOpBase<double> > InverseLinearOp;
 
 //! Build a square zero operator from a single vector space
 inline LinearOp zero(const VectorSpace & vs)

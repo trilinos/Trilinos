@@ -36,6 +36,9 @@ public:
    /** \f$B Q_u^{-1} B^T-\gamma C\f$
      */
    LinearOp BQBtmC_;
+   InverseLinearOp invBQBtmC_;
+
+   InverseLinearOp invF_;
 
    //! \f$\alpha D^{-1}\f$ where
    LinearOp aiD_;

@@ -79,14 +79,30 @@ LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditione
    TEUCHOS_ASSERT(lscState!=0);
    TEUCHOS_ASSERT(lscState->isInitialized())
 
-   return buildInverse(*invFactoryS_,lscState->BQBtmC_);
+   // (re)build the inverse of the Schur complement
+   // if(lscState->invBQBtmC_==Teuchos::null)
+      lscState->invBQBtmC_ = buildInverse(*invFactoryS_,lscState->BQBtmC_);
+   // else
+   //    rebuildInverse(*invFactoryS_,lscState->BQBtmC_,lscState->invBQBtmC_);
+
+   return lscState->invBQBtmC_;
 }
 
 LinearOp InvLSCStrategy::getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
+   LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
+   TEUCHOS_ASSERT(lscState!=0);
+   TEUCHOS_ASSERT(lscState->isInitialized())
+
    const LinearOp F  = getBlock(0,0,A);
  
-   return buildInverse(*invFactoryF_,F);
+   // (re)build the inverse of F
+   // if(lscState->invF_==Teuchos::null)
+      lscState->invF_ = buildInverse(*invFactoryF_,F);
+   // else
+   //    rebuildInverse(*invFactoryF_,F,lscState->invF_);
+
+   return lscState->invF_;
 }
 
 LinearOp InvLSCStrategy::getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state) const

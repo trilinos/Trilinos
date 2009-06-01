@@ -399,7 +399,7 @@ const LinearOp getDiagonalOp(const LinearOp & op)
 
    // extract diagonal
    const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eOp->RowMap()));
-   eOp->ExtractDiagonalCopy(*diag);
+   TEST_FOR_EXCEPT(eOp->ExtractDiagonalCopy(*diag));
 
    // build Thyra diagonal operator
    return PB::Epetra::thyraDiagOp(diag,eOp->RowMap(),"diag( " + op->getObjectLabel() + " )");
@@ -413,7 +413,7 @@ const MultiVector getDiagonal(const LinearOp & op)
 
    // extract diagonal
    const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eOp->RowMap()));
-   eOp->ExtractDiagonalCopy(*diag);
+   TEST_FOR_EXCEPT(eOp->ExtractDiagonalCopy(*diag));
 
    return Thyra::create_Vector(diag,Thyra::create_VectorSpace(Teuchos::rcpFromRef(eOp->RowMap())));
 }
@@ -437,7 +437,7 @@ const LinearOp getInvDiagonalOp(const LinearOp & op)
 
    // extract diagonal
    const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eOp->RowMap()));
-   eOp->ExtractDiagonalCopy(*diag);
+   TEST_FOR_EXCEPT(eOp->ExtractDiagonalCopy(*diag));
    diag->Reciprocal(*diag);
 
    // build Thyra diagonal operator
