@@ -223,7 +223,7 @@ void Cylindrical_Inline_Mesh_Desc::Populate_Coords(double * coords,
 {
   if(dimension == 3){
   double deg_to_rad = M_PI/180.0;
-    for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+    for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
        long long the_node = global_node_vector[gnv];
        long long global_k = the_node/knstride;
        long long global_j = (the_node-global_k*knstride)/jnstride;
@@ -246,7 +246,7 @@ void Spherical_Inline_Mesh_Desc::Populate_Coords(double * coords,
 {
   double deg_to_rad = M_PI/180.0;
 
-  for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+  for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
      long long the_node = global_node_vector[gnv];
      long long global_k = the_node/knstride;
      long long global_j = (the_node-global_k*knstride)/jnstride;
@@ -273,7 +273,7 @@ void Cartesian_Inline_Mesh_Desc::Populate_Coords(double * coords,
 
 /****************************************************************************/
 {
-  for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+  for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
      long long the_node = global_node_vector[gnv];
      long long global_k = the_node/knstride;
      long long global_j = (the_node-global_k*knstride)/jnstride;

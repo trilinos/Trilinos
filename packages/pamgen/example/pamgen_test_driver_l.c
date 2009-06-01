@@ -1,7 +1,6 @@
 #include "getopts.h"
 #include <stdlib.h> 
 #include <stdio.h>
-
 #include "create_inline_mesh.h"
 #include "../mesh_spec_lt/im_exodusII_l.h"
 #include "../mesh_spec_lt/im_ne_nemesisI_l.h"
@@ -207,12 +206,12 @@ int main(int argc, char** argv)
   
   if(rank < 0 || rank >= num_procs){
     getopts_usage(argv[0],opts);
-    printf("rank must be positive and between 0 and  the number of processors %li\n",rank);
+    printf("rank must be positive and between 0 and  the number of processors %lli\n",rank);
   }
 
   if(num_procs < 0){
     getopts_usage(argv[0],opts);
-    printf("number of processors must be positive %li\n", num_procs);
+    printf("number of processors must be positive %lli\n", num_procs);
   }
 
 
@@ -241,13 +240,13 @@ int main(int argc, char** argv)
 
   for( rank = start_rank; rank != end_rank; rank ++){
     int cr_result;
-    sprintf(out_file_name,"%s.exo.%li.%li\0",file_name,num_procs,rank);    
+    sprintf(out_file_name,"%s.exo.%lli.%lli",file_name,num_procs,rank);    
     
     cr_result = Create_Pamgen_Mesh(file_char_array,
 				   dimension,
 				   rank,
 				   num_procs,
-				   LLONG_MAX);
+				   9223372036854775807LL);
     
     
     if (cr_result == ERROR_PARSING_DEFINITION){
@@ -763,7 +762,7 @@ long long b;
 long long ict;
 long long nct;
 
-    printf("\nExodus header info:\nTitle: %s\nDimension %li \nNumber of Nodes %li \nNumber of Elements %li \nNumber of Element Blocks %li \nNumber of Node Sets %li \nNumber of Side Sets %li \n\n",
+    printf("\nExodus header info:\nTitle: %s\nDimension %lli \nNumber of Nodes %lli \nNumber of Elements %lli \nNumber of Element Blocks %lli \nNumber of Node Sets %lli \nNumber of Side Sets %lli \n\n",
 	   mss.title,
 	   mss.num_dim,
 	   mss.num_nodes, 
@@ -773,17 +772,17 @@ long long nct;
 	   mss.num_side_sets);
   
   
-  printf("num node set nodes %li\n",mss.num_node_set_nodes);
-  printf("num node set dfs %li\n",mss.num_node_set_dfs);
+  printf("num node set nodes %lli\n",mss.num_node_set_nodes);
+  printf("num node set dfs %lli\n",mss.num_node_set_dfs);
  
-  printf("num side set elements %li\n",mss.num_side_set_elements);
-  printf("num side set nodes %li\n",mss.num_side_set_nodes);
-  printf("num side set dfs %li\n",mss.num_side_set_dfs);
+  printf("num side set elements %lli\n",mss.num_side_set_elements);
+  printf("num side set nodes %lli\n",mss.num_side_set_nodes);
+  printf("num side set dfs %lli\n",mss.num_side_set_dfs);
     
   /*get version number*/
-  printf("num block properties %li\n",mss.num_block_properties);
-  printf("num node set properties %li\n",mss.num_node_set_properties);
-  printf("num side set properties %li\n",mss.num_side_set_properties);
+  printf("num block properties %lli\n",mss.num_block_properties);
+  printf("num node set properties %lli\n",mss.num_node_set_properties);
+  printf("num side set properties %lli\n",mss.num_side_set_properties);
     
 
   printf("A taste of coords\n");
@@ -792,41 +791,41 @@ long long nct;
     if(mss.num_dim == 2) printf("X %f Y %f \n",mss.coord[i],mss.coord[i+mss.num_nodes]);
   }
  
-  for(i = 0; i < mss.num_dim; i ++)printf("coord name %li %s\n",i,mss.bptr[i]);
+  for(i = 0; i < mss.num_dim; i ++)printf("coord name %lli %s\n",i,mss.bptr[i]);
     
   if (mss.num_elem){
  
     printf ("A tast of map\n");
-    for(i = 0; i < mss.num_elem && i <  10; i ++)printf("map i=%li, val=%li\n",i,mss.element_order_map[i]);
+    for(i = 0; i < mss.num_elem && i <  10; i ++)printf("map i=%lli, val=%lli\n",i,mss.element_order_map[i]);
     if (mss.num_elem){
       printf ("A tast of global elem numbers\n");
-      for(i = 0; i < mss.num_elem && i <  10; i ++)printf("global el num  i=%li, val=%li\n",i,mss.global_element_numbers[i]);
+      for(i = 0; i < mss.num_elem && i <  10; i ++)printf("global el num  i=%lli, val=%lli\n",i,mss.global_element_numbers[i]);
     }
       
     if (mss.num_nodes){
       printf ("A tast of global elem numbers\n");
-      for(i = 0; i < mss.num_elem && i <  10; i ++)printf("global node num  i=%li, val=%li\n",i,mss.global_node_numbers[i]);
+      for(i = 0; i < mss.num_elem && i <  10; i ++)printf("global node num  i=%lli, val=%lli\n",i,mss.global_node_numbers[i]);
     }
       
      
     /*block info*/
 
     for(i = 0; i < mss.num_elem_blk; i ++){
-      printf("block i = %li has id %li \n",i,mss.block_id[i]);
-      printf("block i = %li\n",i);
-      printf("block id %li\n",mss.block_id[i]);
+      printf("block i = %lli has id %lli \n",i,mss.block_id[i]);
+      printf("block i = %lli\n",i);
+      printf("block id %lli\n",mss.block_id[i]);
       printf("element_type %s\n",mss.element_types[i]);
-      printf("num elements %li\n",mss.elements[i]);
-      printf("nodes per element %li\n",mss.nodes_per_element[i]);
-      printf("element attributes %li\n",mss.element_attributes[i]);
+      printf("num elements %lli\n",mss.elements[i]);
+      printf("nodes per element %lli\n",mss.nodes_per_element[i]);
+      printf("element attributes %lli\n",mss.element_attributes[i]);
     }
     
     /*connectivity*/
     for(b = 0; b < mss.num_elem_blk; b++){
       for(ict = 0; ict < mss.elements[b] && ict < 10;ict++){
-	printf("block %li element %li connectivty ",mss.block_id[b],ict);
+	printf("block %lli element %lli connectivty ",mss.block_id[b],ict);
 	for(nct = 0; nct < mss.nodes_per_element[b]; nct++){
-	  printf("%li ",mss.elmt_node_linkage[b][nct+ict*mss.nodes_per_element[b]]);
+	  printf("%lli ",mss.elmt_node_linkage[b][nct+ict*mss.nodes_per_element[b]]);
 	}
 	printf("\n");
       }
@@ -835,9 +834,9 @@ long long nct;
       
     if(mss.num_node_sets){
       for(i = 0; i < mss.num_node_sets; i ++){
-	printf("Nodeset i = %li id = %li has %li nodes\n",i,mss.node_set_id[i],mss.num_nodes_in_node_set[i]);
+	printf("Nodeset i = %lli id = %lli has %lli nodes\n",i,mss.node_set_id[i],mss.num_nodes_in_node_set[i]);
 	for(j = 0; j < mss.num_nodes_in_node_set[i] && j < 10; j ++){
-	  printf("nodeset node i=%li = %li\n",j,mss.node_set_nodes[i][j]);
+	  printf("nodeset node i=%lli = %lli\n",j,mss.node_set_nodes[i][j]);
 	}
       }
     }
@@ -846,26 +845,26 @@ long long nct;
     if(mss.num_side_sets){
       for(i = 0; i < mss.num_side_sets; i ++){
         int ne = 0;
-	printf("Side set index %li id %li has %li elements\n",i,mss.side_set_id[i],mss.num_elements_in_side_set[i]);
+	printf("Side set index %lli id %lli has %lli elements\n",i,mss.side_set_id[i],mss.num_elements_in_side_set[i]);
 	ne = mss.num_elements_in_side_set[i];
 	if(ne){
 	  for(j = 0; j < ne && j < 10; j ++){
-	    printf("element %li and face %li\n",mss.side_set_elements[i][j],mss.side_set_faces[i][j]);
+	    printf("element %lli and face %lli\n",mss.side_set_elements[i][j],mss.side_set_faces[i][j]);
 	  }
 	}
       }
     }
       
-    printf("num qa records %li\n",mss.num_qa_records);
+    printf("num qa records %lli\n",mss.num_qa_records);
 
     for(i = 0; i < mss.num_qa_records; i ++){
-      printf("\nQA Record %li\n %s\n%s\n",
+      printf("\nQA Record %lli\n %s\n%s\n",
 	     i,
 	     mss.qaRecord[i][0],
 	     mss.qaRecord[i][1]);
     }
 
-    printf("Num Info Records %li\n",mss.num_info_records);
+    printf("Num Info Records %lli\n",mss.num_info_records);
     if(mss.num_info_records) { 
       printf("Info Records\n");
       for(i = 0; i < mss.num_info_records; i ++){
@@ -878,34 +877,34 @@ long long nct;
       global info*/
 
     printf("Nemesis data\n");
-    printf("Num nodes global %li\n",mss.num_nodes_global);
-    printf("Num elems global %li\n",mss.num_elems_global);
-    printf("Num elm_blks global %li\n",mss.num_elm_blks_global);
-    printf("Num node sets global %li\n",mss.num_node_sets_global);
-    printf("Num side sets global %li\n",mss.num_side_sets_global);
-    printf("Num total proc %li\n",mss.num_total_proc);
-    printf("Num proc in file %li\n",mss.num_proc_in_file);
+    printf("Num nodes global %lli\n",mss.num_nodes_global);
+    printf("Num elems global %lli\n",mss.num_elems_global);
+    printf("Num elm_blks global %lli\n",mss.num_elm_blks_global);
+    printf("Num node sets global %lli\n",mss.num_node_sets_global);
+    printf("Num side sets global %lli\n",mss.num_side_sets_global);
+    printf("Num total proc %lli\n",mss.num_total_proc);
+    printf("Num proc in file %lli\n",mss.num_proc_in_file);
 
     for(i = 0; i < mss.num_elm_blks_global; i ++){
-      printf("element block index %li has id %li and %li elements\n",i,mss.elem_blk_ids_global[i],mss.elem_blk_cnts_global[i]);
+      printf("element block index %lli has id %lli and %lli elements\n",i,mss.elem_blk_ids_global[i],mss.elem_blk_cnts_global[i]);
     }
     
     if ( mss.num_node_sets_global > 0 ) {
       for(i = 0; i < mss.num_node_sets_global;i ++){
-	printf("global ns info for ns index %li id %li num_nodes = %li num_ns_df = %li\n",i,mss.ns_ids_global[i],mss.ns_cnts_global[i],mss.ns_df_cnts_global[i]);
+	printf("global ns info for ns index %lli id %lli num_nodes = %lli num_ns_df = %lli\n",i,mss.ns_ids_global[i],mss.ns_cnts_global[i],mss.ns_df_cnts_global[i]);
       }
     }
     
     if ( mss.num_side_sets_global > 0 ) {
       for(i = 0; i < mss.num_side_sets_global;i ++){
-	printf("global ss info for ss index %li id %li num_elements = %li num_ss_df = %li\n",i,mss.ss_ids_global[i],mss.ss_cnts_global[i],mss.ss_df_cnts_global[i]);
+	printf("global ss info for ss index %lli id %lli num_elements = %lli num_ss_df = %lli\n",i,mss.ss_ids_global[i],mss.ss_cnts_global[i],mss.ss_df_cnts_global[i]);
       }
       
     }
     
     /*parallel info*/
 
-    printf("Loadbal params:\nnum_internal_nodes %li\nnum_border_nodes%li\nnum_external_nodes%li\nnum_internal_elems%li\nnum_border_elems%li\nnum_node_comm_maps%li\nnum_elem_comm_maps%li\n",
+    printf("Loadbal params:\nnum_internal_nodes %lli\nnum_border_nodes%lli\nnum_external_nodes%lli\nnum_internal_elems%lli\nnum_border_elems%lli\nnum_node_comm_maps%lli\nnum_elem_comm_maps%lli\n",
 	   mss.num_internal_nodes,
 	   mss.num_border_nodes, 
 	   mss.num_external_nodes,
@@ -914,24 +913,24 @@ long long nct;
 	   mss.num_node_comm_maps,
 	   mss.num_elem_comm_maps);
 
-    for(i = 0; i < mss.num_internal_nodes && i < 10; i ++)printf("internal node i=%li = %li\n",i,mss.internal_nodes[i]);
-    for(i = 0; i < mss.num_border_nodes && i < 10;   i ++)printf("border node i=%li = %li\n",i,  mss.border_nodes[i]);
-    for(i = 0; i < mss.num_external_nodes && i < 10; i ++)printf("external node i=%li = %li\n",i,mss.external_nodes[i]);
-    for(i = 0; i < mss.num_internal_elems && i < 10; i ++)printf("internal elem i=%li = %li\n",i,mss.internal_elements[i]);
-    for(i = 0; i < mss.num_border_elems && i < 10;   i ++)printf("border elem i=%li = %li\n",i,  mss.border_elements[i]);
+    for(i = 0; i < mss.num_internal_nodes && i < 10; i ++)printf("internal node i=%lli = %lli\n",i,mss.internal_nodes[i]);
+    for(i = 0; i < mss.num_border_nodes && i < 10;   i ++)printf("border node i=%lli = %lli\n",i,  mss.border_nodes[i]);
+    for(i = 0; i < mss.num_external_nodes && i < 10; i ++)printf("external node i=%lli = %lli\n",i,mss.external_nodes[i]);
+    for(i = 0; i < mss.num_internal_elems && i < 10; i ++)printf("internal elem i=%lli = %lli\n",i,mss.internal_elements[i]);
+    for(i = 0; i < mss.num_border_elems && i < 10;   i ++)printf("border elem i=%lli = %lli\n",i,  mss.border_elements[i]);
 
     if(mss.num_node_comm_maps > 0){
 
       for(i =0; i < mss.num_node_comm_maps; i ++){
-	printf("node_cmap_id i = %li node_cmap_id = %li node_cmap_node_cnts = %li\n",i,mss.node_cmap_ids[i],mss.node_cmap_node_cnts[i]);
+	printf("node_cmap_id i = %lli node_cmap_id = %lli node_cmap_node_cnts = %lli\n",i,mss.node_cmap_ids[i],mss.node_cmap_node_cnts[i]);
       }
       for(i =0; i < mss.num_elem_comm_maps; i ++){
-	printf("elem_cmap_id i = %li elem_cmap_id = %li elem_cmap_elem_cnts = %li\n",i,mss.elem_cmap_ids[i],mss.elem_cmap_elem_cnts[i]);
+	printf("elem_cmap_id i = %lli elem_cmap_id = %lli elem_cmap_elem_cnts = %lli\n",i,mss.elem_cmap_ids[i],mss.elem_cmap_elem_cnts[i]);
       }
       
       for(j = 0; j < mss.num_node_comm_maps; j++) {
 	for(i = 0; i < mss.node_cmap_node_cnts[j] && i < 10;i ++){
-	  printf("node_cmap_id i=%li = %li comm_node_ids = %li comm_node_proc_ids = %li\n",
+	  printf("node_cmap_id i=%lli = %lli comm_node_ids = %lli comm_node_proc_ids = %lli\n",
 		 i,
 		 mss.node_cmap_ids[j],
 		 mss.comm_node_ids[j][i],
@@ -941,7 +940,7 @@ long long nct;
       
       for(j = 0; j < mss.num_elem_comm_maps; j++) {
 	for(i = 0; i < mss.elem_cmap_elem_cnts[j] && i < 10;i ++){
-	  printf("elem_cmap_id i=%li = %li comm_elem_ids = %li comm_side_ids = %li comm_elem_proc_ids = %li\n",
+	  printf("elem_cmap_id i=%lli = %lli comm_elem_ids = %lli comm_side_ids = %lli comm_elem_proc_ids = %lli\n",
 		 i,
 		 mss.elem_cmap_ids[j],
 		 mss.comm_elem_ids[j][i],

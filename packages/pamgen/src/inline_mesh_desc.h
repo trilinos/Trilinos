@@ -280,8 +280,8 @@ virtual  void Calc_Parallel_Info(
   virtual Partition * Decompose(std::list <long long> & global_el_ids,long long & err_code);
   long long get_block_index(long long ordinal_val, long long count, long long * cumulative);
   
-  long long my_rank;
-  long long num_processors;
+  unsigned my_rank;
+  unsigned num_processors;
 
   std::vector < std::pair < long long, Topo_Loc > > *  sideset_vectors;
   std::vector < long long > *  nodeset_vectors;

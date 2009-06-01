@@ -373,8 +373,8 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     for(long long i = 0; i < total; i ++){
       SRANDOM(i);
       long long rand_num = RANDOM();
-      long long proc = rand_num%num_processors;
-      if(proc == (int)my_rank)global_el_ids.push_back(i);
+      unsigned proc = rand_num%num_processors;
+      if(proc == my_rank)global_el_ids.push_back(i);
     }
     return base_partition;
   }
@@ -514,8 +514,8 @@ void Inline_Mesh_Desc::Build_Global_Lists(std::list <long long> & element_list,
 
   // Create the global_element_map
   long long total_element_count = 0;
-  for(long long bct = 0; bct < numBlocks();bct ++ ){
-    for(long long elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
+  for(unsigned bct = 0; bct < numBlocks();bct ++ ){
+    for(unsigned elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
       long long the_el = element_block_lists[bct][elct];
       global_element_map[the_el] = total_element_count;
     }
@@ -534,7 +534,7 @@ void Inline_Mesh_Desc::Populate_Nodeset_Info(long long * const * node_set_nodes,
   long long nsct = 0;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++,nsct ++){
     long long * the_nodes = node_set_nodes[nsct];
-    for(long long elct = 0; elct < nodeset_vectors[nsct].size();elct++){
+    for(unsigned elct = 0; elct < nodeset_vectors[nsct].size();elct++){
       the_nodes[elct] = get_map_entry(global_node_map,nodeset_vectors[nsct][elct])+1;// add one for exodus convention
     }
   }
@@ -568,7 +568,7 @@ long long Inline_Mesh_Desc::Populate_Sideset_Info(std::map <long long, long long
     //Sidesets allowed only on faces of block, not on edges or corners
 
 
-    for(long long elct = 0; elct < sideset_vectors[nsct].size();elct ++){
+    for(unsigned elct = 0; elct < sideset_vectors[nsct].size();elct ++){
       long long the_element = sideset_vectors[nsct][elct].first;
       // These are the indices of the element in the entire domain
       long long gl_k = the_element/(kestride);
@@ -704,7 +704,7 @@ void Inline_Mesh_Desc::Populate_Connectivity(long long * const * conn_array,
     //build connectivity for each element
     //nodes are numbered 1-tot_num_nodes+1 across all blocks
     //incrementing i fastest
-    for(long long elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
+    for(unsigned elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
       long long the_el = element_block_lists[bct][elct];
       long long Kg = the_el/(nelx_tot*nely_tot);
       long long Jg = (the_el - Kg*nelx_tot*nely_tot)/(nelx_tot);
@@ -761,7 +761,7 @@ void Inline_Mesh_Desc::Populate_Map_and_Global_Element_List(long long * the_map,
 {
   long long total_count = 0;
   for(long long bct = 0; bct < numBlocks();bct ++ ){
-    for(long long ect = 0; ect < element_block_lists[bct].size();ect ++){
+    for(unsigned ect = 0; ect < element_block_lists[bct].size();ect ++){
       long long the_el = element_block_lists[bct][ect];
       //global element indices
       long long Kg = the_el/kestride;
@@ -1229,11 +1229,11 @@ void Inline_Mesh_Desc::Populate_Cmap( long long * node_cmap_node_cnts,
 				      std::list < std::pair <long long ,Topo_Loc > > * & boundary_element_list)
 /*****************************************************************************/
 {
-  for(long long i = 0; i < node_neighbor_vector.size();i++){
+  for(unsigned i = 0; i < node_neighbor_vector.size();i++){
     node_cmap_node_cnts[i] = boundary_node_list[i].size();
     node_cmap_ids[i] = node_neighbor_vector[i];
   }
-  for(long long i = 0; i < element_neighbor_vector.size();i++){
+  for(unsigned i = 0; i < element_neighbor_vector.size();i++){
     elem_cmap_elem_cnts[i] = boundary_element_list[i].size();
     elem_cmap_ids[i] = element_neighbor_vector[i];
   }
@@ -1253,7 +1253,7 @@ void Inline_Mesh_Desc::Populate_Parallel_Info( long long * const * comm_node_ids
 					       std::map <long long, long long> & global_element_map)
 /*****************************************************************************/
 {
-  for(long long i = 0; i < node_neighbor_vector.size();i++){
+  for(unsigned i = 0; i < node_neighbor_vector.size();i++){
     long long * comm_nodes = comm_node_ids[i];
     long long * comm_node_procs = comm_node_proc_ids[i];
     std::list <long long> :: iterator nlit;
@@ -1263,7 +1263,7 @@ void Inline_Mesh_Desc::Populate_Parallel_Info( long long * const * comm_node_ids
       comm_node_procs[nct] = node_neighbor_vector[i];// is this right?
     }
   }
-  for(long long i = 0; i < element_neighbor_vector.size();i++){
+  for(unsigned i = 0; i < element_neighbor_vector.size();i++){
     long long * comm_elements = comm_elem_ids[i];
     long long * comm_sides = comm_side_ids[i];
     long long * comm_elem_procs = comm_elem_proc_ids[i];
@@ -1685,7 +1685,7 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
   Tel *el_array = NULL;
   if(element_vector.size()>0){
     el_array = new Tel[element_vector.size()];
-    for(long long gev = 0; gev < element_vector.size(); gev ++){
+    for(unsigned gev = 0; gev < element_vector.size(); gev ++){
       el_array[gev].global_id = element_vector[gev];
       el_array[gev].real_element = true;
     }
@@ -1694,7 +1694,7 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
   if(global_node_vector.size()>0){
     node_array = new Tel[global_node_vector.size()];
     
-    for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+    for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
       node_array[gnv].global_id = global_node_vector[gnv];
     }
   }
@@ -1722,7 +1722,7 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
 
 
 
-  for(long long gev = 0; gev < element_vector.size(); gev ++){
+  for(unsigned gev = 0; gev < element_vector.size(); gev ++){
     long long face_nodes_array[4];
     long long my_id = el_array[gev].global_id;
     long long ll,li,lj,lk;
@@ -1791,7 +1791,7 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
     }
   }
 
-  for(long long i = 0; i < element_vector.size();i ++){
+  for(unsigned i = 0; i < element_vector.size();i ++){
     if(el_array[i].visits > 1){
       // loop over all conn_connections
       std::list < std::pair < long long , Topo_Loc > > ::iterator conit;
@@ -1820,7 +1820,7 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
 
   // now populate the maps
 
-  for(long long i = 0; i < element_vector.size();i ++){
+  for(unsigned i = 0; i < element_vector.size();i ++){
     long long the_element = element_vector[i];
     if(el_array[i].visits == 1){
       internal_element_list.push_back(the_element);
@@ -1844,7 +1844,7 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
   border_elements_list.unique();
 
 
-  for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+  for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
     if(node_array[gnv].visits > 0){
       // loop over all conn_connections
       std::list < long long > ::iterator conit;
@@ -1874,7 +1874,7 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
 
 
   //node array needs global_id!!!!
-  for(long long i = 0;i < global_node_vector.size();i ++){
+  for(unsigned i = 0;i < global_node_vector.size();i ++){
     if(node_array[i].visits == 0){
       long long the_node = node_array[i].global_id;
       internal_node_list.push_back(the_node);
@@ -1893,7 +1893,7 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
     }
   }
   // sort the boundary_node_list
-  for(long long i = 0; i < node_proc_id_list.size();i++){
+  for(unsigned i = 0; i < node_proc_id_list.size();i++){
     boundary_node_list[i].sort();
     boundary_node_list[i].unique();    
   }
@@ -1938,7 +1938,7 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
     std::list < long long > tglobal_nodes_vector;
 
 
-    for(long long the_nct = 0; the_nct < global_node_vector.size();the_nct++){
+    for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
       tglobal_nodes_vector.push_back(global_node_vector[the_nct]);
     }
 
@@ -1979,7 +1979,7 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
 
     std::list < long long > :: iterator nit;
     for(nit = nodes_vector.begin(); nit != nodes_vector.end(); nit ++){
-      for(long long the_nct = 0; the_nct < global_node_vector.size();the_nct++){
+      for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
         if((*nit) == global_node_vector[the_nct])nodeset_vectors[nsct].push_back((*nit));
       }
     }

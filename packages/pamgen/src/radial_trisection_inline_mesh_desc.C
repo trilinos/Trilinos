@@ -617,7 +617,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Populate_Coords(Real * coords,
 				     transition_radius*sin(deg_to_rad*(inline_gminy + dtheta*(Real)(2*i+2))), 0.));
   }
   
-  for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+  for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
     long long l,i,j,k;
     long long the_node = global_node_vector[gnv];
     get_l_i_j_k_from_node_number(the_node,l,i,j,k);
@@ -729,8 +729,8 @@ void Radial_Trisection_Inline_Mesh_Desc::Populate_Coords(Real * coords,
 
 
   //try looping over elements block wise with block 0 holding the trisection blocks
-  for(long long bct = 0; bct < numBlocks();bct += blockKstride()){
-    for(long long elct = 0;elct < element_block_lists[bct].size();elct++){
+  for(unsigned bct = 0; bct < numBlocks();bct += blockKstride()){
+    for(unsigned elct = 0;elct < element_block_lists[bct].size();elct++){
       long long the_el = element_block_lists[bct][elct];
       long long tl;
       long long ti;
@@ -1516,7 +1516,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Build_Global_Lists(std::list <long long
   // Create the global_element_map
   long long total_element_count = 0;
   for(long long bct = 0; bct < numBlocks();bct ++ ){
-    for(long long elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
+    for(unsigned elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
       long long the_el = element_block_lists[bct][elct];
       global_element_map[the_el] = total_element_count;
     }
@@ -1602,7 +1602,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 	for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
 	  for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
 	    long long global_node_id = get_node_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-	    for(long long the_nct = 0; the_nct < global_node_vector.size();the_nct++){
+	    for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
 	      if(global_node_id == global_node_vector[the_nct]){
 		nodes_vector.push_back(global_node_id);
 	      }
@@ -1616,7 +1616,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
       for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
 	for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
 	  long long global_node_id = get_node_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-	  for(long long the_nct = 0; the_nct < global_node_vector.size();the_nct++){
+	  for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
 	    if(global_node_id == global_node_vector[the_nct]){
 	      nodes_vector.push_back(global_node_id);
 	    }
@@ -1637,7 +1637,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 	      for ( long long _ni_ = tll.is; _ni_ < tll.ie; _ni_ ++) {
 		
 		long long global_node_id = get_node_number_from_l_i_j_k(i,_ni_,_nj_,_nk_);  
-		for(long long the_nct = 0; the_nct < global_node_vector.size();the_nct++){
+		for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
 		  if(global_node_id == global_node_vector[the_nct]){
 		    nodes_vector.push_back(global_node_id);
 		  }
@@ -1652,7 +1652,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 	    for ( long long _ni_ = tll.is; _ni_ < tll.ie; _ni_ ++) {
 	      
 	      long long global_node_id = get_node_number_from_l_i_j_k(i,_ni_,_nj_,_nk_);  
-	      for(long long the_nct = 0; the_nct < global_node_vector.size();the_nct++){
+	      for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
 		if(global_node_id == global_node_vector[the_nct]){
 		  nodes_vector.push_back(global_node_id);
 		}
@@ -1669,7 +1669,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 
     std::list < long long > :: iterator nit;
     for(nit = nodes_vector.begin(); nit != nodes_vector.end(); nit ++){
-      for(long long the_nct = 0; the_nct < global_node_vector.size();the_nct++){
+      for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
         if((*nit) == global_node_vector[the_nct])nodeset_vectors[nsct].push_back((*nit));
       }
     }
@@ -1854,7 +1854,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Populate_Connectivity(long long * const
     //build connectivity for each element
     //nodes are numbered 1-tot_num_nodes+1 across all blocks
     //incrementing i fastest
-    for(long long elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
+    for(unsigned elct = 0;elct < element_block_lists[bct].size();elct++,total_element_count++){
       long long the_el = element_block_lists[bct][elct];
       long long l;
       long long i;
@@ -1912,7 +1912,7 @@ long long Radial_Trisection_Inline_Mesh_Desc::Populate_Sideset_Info(std::map <lo
     //Sidesets allowed only on faces of block, not on edges or corners
 
 
-    for(long long elct = 0; elct < sideset_vectors[nsct].size();elct ++){
+    for(unsigned elct = 0; elct < sideset_vectors[nsct].size();elct ++){
       long long the_element = sideset_vectors[nsct][elct].first;
       Topo_Loc the_location =  sideset_vectors[nsct][elct].second;
       // These are the indices of the element in the entire domain
@@ -2040,7 +2040,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Populate_Map_and_Global_Element_List(lo
 {
   long long total_count = 0;
   for(long long bct = 0; bct < numBlocks();bct ++ ){
-    for(long long ect = 0; ect < element_block_lists[bct].size();ect ++){
+    for(unsigned ect = 0; ect < element_block_lists[bct].size();ect ++){
       long long the_el = element_block_lists[bct][ect];
       long long elid = GetBlockBasedGlobalID(the_el,bct);
       the_map[total_count] = elid + 1;
@@ -2189,7 +2189,7 @@ void  Radial_Trisection_Inline_Mesh_Desc::Calc_Parallel_Info(
   Tel *el_array = NULL;
   if(element_vector.size()>0){
     el_array = new Tel[element_vector.size()];
-    for(long long gev = 0; gev < element_vector.size(); gev ++){
+    for(unsigned long long gev = 0; gev < element_vector.size(); gev ++){
       el_array[gev].global_id = element_vector[gev];
       el_array[gev].real_element = true;
     }
@@ -2198,7 +2198,7 @@ void  Radial_Trisection_Inline_Mesh_Desc::Calc_Parallel_Info(
   if(global_node_vector.size()>0){
     node_array = new Tel[global_node_vector.size()];
     
-    for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+    for(unsigned long long gnv = 0;gnv < global_node_vector.size();gnv ++){
       node_array[gnv].global_id = global_node_vector[gnv];
     }
   }
@@ -2226,7 +2226,7 @@ void  Radial_Trisection_Inline_Mesh_Desc::Calc_Parallel_Info(
 
 
 
-  for(long long gev = 0; gev < element_vector.size(); gev ++){
+  for(unsigned long long gev = 0; gev < element_vector.size(); gev ++){
     long long face_nodes_array[4];
     long long my_id = el_array[gev].global_id;
     long long ll,li,lj,lk;
@@ -2347,7 +2347,7 @@ void  Radial_Trisection_Inline_Mesh_Desc::Calc_Parallel_Info(
     }
   }
 
-  for(long long i = 0; i < element_vector.size();i ++){
+  for(unsigned long long i = 0; i < element_vector.size();i ++){
     if(el_array[i].visits > 1){
       // loop over all conn_connections
       std::list < std::pair < long long , Topo_Loc > > ::iterator conit;
@@ -2376,7 +2376,7 @@ void  Radial_Trisection_Inline_Mesh_Desc::Calc_Parallel_Info(
 
   // now populate the maps
 
-  for(long long i = 0; i < element_vector.size();i ++){
+  for(unsigned long long i = 0; i < element_vector.size();i ++){
     long long the_element = element_vector[i];
     if(el_array[i].visits == 1){
       internal_element_list.push_back(the_element);
@@ -2400,7 +2400,7 @@ void  Radial_Trisection_Inline_Mesh_Desc::Calc_Parallel_Info(
   border_elements_list.unique();
 
 
-  for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+  for(unsigned long long gnv = 0;gnv < global_node_vector.size();gnv ++){
     if(node_array[gnv].visits > 0){
       // loop over all conn_connections
       std::list < long long > ::iterator conit;
@@ -2430,7 +2430,7 @@ void  Radial_Trisection_Inline_Mesh_Desc::Calc_Parallel_Info(
 
 
   //node array needs global_id!!!!
-  for(long long i = 0;i < global_node_vector.size();i ++){
+  for(unsigned long long i = 0;i < global_node_vector.size();i ++){
     if(node_array[i].visits == 0){
       long long the_node = node_array[i].global_id;
       internal_node_list.push_back(the_node);
@@ -2449,7 +2449,7 @@ void  Radial_Trisection_Inline_Mesh_Desc::Calc_Parallel_Info(
     }
   }
   // sort the boundary_node_list
-  for(long long i = 0; i < node_proc_id_list.size();i++){
+  for(unsigned long long i = 0; i < node_proc_id_list.size();i++){
     boundary_node_list[i].sort();
     boundary_node_list[i].unique();    
   }

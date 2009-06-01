@@ -371,7 +371,7 @@ void Radial_Inline_Mesh_Desc::Populate_Coords(Real * coords,
 {
   Real deg_to_rad = M_PI/180.0;
   Real total_theta = c_block_dist[1][inline_by];
-  for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+  for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
     long long the_node = global_node_vector[gnv];
     long long global_k = the_node/knstride;
     long long global_j = (the_node-global_k*knstride)/jnstride;

@@ -202,7 +202,7 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
 
   //   Read_Global_Numbers();
   long long * global_node_numbers = nemesis_db->getMSP(ms_lt::Mesh_Specification::GLOBAL_NODE_NUMBERS);
-  for(long long gnv = 0;gnv < global_node_vector.size();gnv ++){
+  for(unsigned gnv = 0;gnv < global_node_vector.size();gnv ++){
     global_node_numbers[gnv] = global_node_vector[gnv]+1;
   }
   //   Read_Global_Info();

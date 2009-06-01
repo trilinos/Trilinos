@@ -242,7 +242,7 @@ int main(int argc, char** argv)
 
   for( rank = start_rank; rank != end_rank; rank ++){
     int cr_result;
-    sprintf(out_file_name,"%s.exo.%i.%i\0",file_name,num_procs,rank);    
+    sprintf(out_file_name,"%s.exo.%i.%i",file_name,num_procs,rank);    
     
     cr_result = Create_Pamgen_Mesh(file_char_array,
 				   dimension,
