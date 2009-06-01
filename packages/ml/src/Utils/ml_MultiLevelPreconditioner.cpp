@@ -1676,12 +1676,12 @@ ComputePreconditioner(const bool CheckPreconditioner)
  catch(...)
  {
    if (Comm().MyPID() == 0) {
-     fprintf(stderr,"\n*********************************************************\n");
-     fprintf(stderr,"ML failed to compute the multigrid preconditioner. The\n");
-     fprintf(stderr,"most common problem is an incorrect  data type in ML's\n");
-     fprintf(stderr,"parameter list (e.g. 'int' instead of 'bool').\n\n");
-     fprintf(stderr,"Note: List.set(\"ML print initial list\",X) might help\nfigure out the bad one on pid X.\n");
-     fprintf(stderr,"*********************************************************\n\n");
+     fprintf(stderr,"%s","\n*********************************************************\n");
+     fprintf(stderr,"%s","ML failed to compute the multigrid preconditioner. The\n");
+     fprintf(stderr,"%s","most common problem is an incorrect  data type in ML's\n");
+     fprintf(stderr,"%s","parameter list (e.g. 'int' instead of 'bool').\n\n");
+     fprintf(stderr,"%s","Note: List.set(\"ML print initial list\",X) might help\nfigure out the bad one on pid X.\n");
+     fprintf(stderr,"%s","*********************************************************\n\n");
    }
 
    ML_CHK_ERR(-1);

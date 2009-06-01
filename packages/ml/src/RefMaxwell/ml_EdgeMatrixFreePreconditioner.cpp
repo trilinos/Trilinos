@@ -360,7 +360,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
 
   
   if(very_verbose_) printf("[%d] Num Aggregates = %d\n",Comm_->MyPID(),NumAggregates);
-  if(P==0) {fprintf(stderr,"ERROR: No tentative prolongator found\n");ML_CHK_ERR(-5);}
+  if(P==0) {fprintf(stderr,"%s","ERROR: No tentative prolongator found\n");ML_CHK_ERR(-5);}
   
 #ifndef NO_OUTPUT
   /* DEBUG: Dump aggregates, prolongator */ 

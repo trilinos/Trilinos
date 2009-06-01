@@ -468,7 +468,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ApplyInverse(const Epetra_MultiVector& 
   if(mode=="212") rv=ApplyInverse_Implicit_212(B,X);
   else if(mode=="additive") rv=ApplyInverse_Implicit_Additive(B,X);
   else if(mode=="121") rv=ApplyInverse_Implicit_121(B,X);
-  else {fprintf(stderr,"RefMaxwellPreconditioner ERROR: Invalid ApplyInverse mode set in Teuchos list");ML_CHK_ERR(-2);}
+  else {fprintf(stderr,"%s","RefMaxwellPreconditioner ERROR: Invalid ApplyInverse mode set in Teuchos list");ML_CHK_ERR(-2);}
   ML_CHK_ERR(rv);
 
   /* Copy work vector to output */

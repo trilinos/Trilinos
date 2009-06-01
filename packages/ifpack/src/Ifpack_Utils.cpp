@@ -997,20 +997,20 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
 
     fp = fopen(FileName,"w");
 
-    fprintf(fp,"%%%%!PS-Adobe-2.0\n");
-    fprintf(fp,"%%%%Creator: IFPACK\n");
+    fprintf(fp,"%s","%%!PS-Adobe-2.0\n");
+    fprintf(fp,"%s","%%Creator: IFPACK\n");
     fprintf(fp,"%%%%BoundingBox: %f %f %f %f\n",
             xl,yb,xr,yt);
-    fprintf(fp,"%%%%EndComments\n");
-    fprintf(fp,"/cm {72 mul 2.54 div} def\n");
-    fprintf(fp,"/mc {72 div 2.54 mul} def\n");
-    fprintf(fp,"/pnum { 72 div 2.54 mul 20 string ");
-    fprintf(fp,"cvs print ( ) print} def\n");
-    fprintf(fp,"/Cshow {dup stringwidth pop -2 div 0 rmoveto show} def\n");
+    fprintf(fp,"%s","%%EndComments\n");
+    fprintf(fp,"%s","/cm {72 mul 2.54 div} def\n");
+    fprintf(fp,"%s","/mc {72 div 2.54 mul} def\n");
+    fprintf(fp,"%s","/pnum { 72 div 2.54 mul 20 string ");
+    fprintf(fp,"%s","cvs print ( ) print} def\n");
+    fprintf(fp,"%s","/Cshow {dup stringwidth pop -2 div 0 rmoveto show} def\n");
 
     /* we leave margins etc. in cm so it is easy to modify them if
        needed by editing the output file */
-    fprintf(fp,"gsave\n");
+    fprintf(fp,"%s","gsave\n");
     if (ltit != 0) {
       fprintf(fp,"/Helvetica findfont %e cm scalefont setfont\n",
               fnstit);
@@ -1026,8 +1026,8 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
 
     fprintf(fp,"%f setlinewidth\n",
             frlw);
-    fprintf(fp,"newpath\n");
-    fprintf(fp,"0 0 moveto ");
+    fprintf(fp,"%s","newpath\n");
+    fprintf(fp,"%s","0 0 moveto ");
     if (square) {
       printf("------------------- %d\n",m);
       fprintf(fp,"%d %d lineto\n",
@@ -1045,14 +1045,14 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
       fprintf(fp,"%d %d lineto\n",
               0, nr);
     }
-    fprintf(fp,"closepath stroke\n");
+    fprintf(fp,"%s","closepath stroke\n");
 
     /* plotting loop */
 
-    fprintf(fp,"1 1 translate\n");
-    fprintf(fp,"0.8 setlinewidth\n");
-    fprintf(fp,"/p {moveto 0 -.40 rmoveto \n");
-    fprintf(fp,"           0  .80 rlineto stroke} def\n");
+    fprintf(fp,"%s","1 1 translate\n");
+    fprintf(fp,"%s","0.8 setlinewidth\n");
+    fprintf(fp,"%s","/p {moveto 0 -.40 rmoveto \n");
+    fprintf(fp,"%s","           0  .80 rlineto stroke} def\n");
 
     fclose(fp);
   }
@@ -1067,7 +1067,7 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
 
       fp = fopen(FileName,"a");
       if( fp == NULL ) {
-        fprintf(stderr,"ERROR\n");
+        fprintf(stderr,"%s","ERROR\n");
         exit(EXIT_FAILURE);
       }
 
@@ -1092,10 +1092,10 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
         }
       }
 
-      fprintf(fp,"%%end of data for this process\n");
+      fprintf(fp,"%s","%end of data for this process\n");
 
       if( pid == NumProc - 1 )
-        fprintf(fp,"showpage\n");
+        fprintf(fp,"%s","showpage\n");
 
       fclose(fp);
     }

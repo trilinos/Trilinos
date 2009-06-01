@@ -3292,25 +3292,25 @@ bool Epetra_ML_writegidviz(char* filename, int label,
   if (proc==0 && foutm)
   {
      // print nodal coordinates
-     fprintf(foutm,"#-------------------------------------------------------------------------------\n");
-     fprintf(foutm,"# visualization using GID\n");
-     fprintf(foutm,"#-------------------------------------------------------------------------------\n");
-     fprintf(foutm,"MESH datamesh DIMENSION 3 ELEMTYPE Hexahedra NNODE 8\n");
-     fprintf(foutm,"COORDINATES\n");
+     fprintf(foutm,"%s","#-------------------------------------------------------------------------------\n");
+     fprintf(foutm,"%s","# visualization using GID\n");
+     fprintf(foutm,"%s","#-------------------------------------------------------------------------------\n");
+     fprintf(foutm,"%s","MESH datamesh DIMENSION 3 ELEMTYPE Hexahedra NNODE 8\n");
+     fprintf(foutm,"%s","COORDINATES\n");
      for (int i=0; i<nnode; i++)
      fprintf(foutm,"%6d   %20.10f   %20.10f   %20.10f\n",i+1,x[i],y[i],z[i]);
-     fprintf(foutm,"END COORDINATES\n");
+     fprintf(foutm,"%s","END COORDINATES\n");
      
      // print elements
-     fprintf(foutm,"ELEMENTS\n");
+     fprintf(foutm,"%s","ELEMENTS\n");
      for (int i=0; i<nelement; i++)
      {
         fprintf(foutm,"%6d   ",i+1);
         for (int j=0; j<nodesperele; j++)
            fprintf(foutm,"%6d   ",top[i][j]);
-        fprintf(foutm,"\n");
+        fprintf(foutm,"%s","\n");
      }
-     fprintf(foutm,"END ELEMENTS\n");
+     fprintf(foutm,"%s","END ELEMENTS\n");
      fflush(foutm);
      fclose(foutm); foutm = 0;
   }
@@ -3321,28 +3321,28 @@ bool Epetra_ML_writegidviz(char* filename, int label,
      char sign='"';
      if (newresfile)
      {
-     fprintf(foutr,"Gid Post Results File 1.0\n");
-     fprintf(foutr,"#-------------------------------------------------------------------------------\n");
-     fprintf(foutr,"# visualization using GID\n");
-     fprintf(foutr,"#-------------------------------------------------------------------------------\n");
+     fprintf(foutr,"%s","Gid Post Results File 1.0\n");
+     fprintf(foutr,"%s","#-------------------------------------------------------------------------------\n");
+     fprintf(foutr,"%s","# visualization using GID\n");
+     fprintf(foutr,"%s","#-------------------------------------------------------------------------------\n");
      fprintf(foutr,"RESULTRANGESTABLE %cstandard%c\n",sign,sign);
      fprintf(foutr,"            - -1000000.0 : %cvery small%c\n",sign,sign);
      fprintf(foutr," -1000000.0 -  1000000.0 : %cnormal%c\n",sign,sign);
      fprintf(foutr,"  1000000.0 -            : %cvery large%c\n",sign,sign);
-     fprintf(foutr,"END RESULTRANGESTABLE\n");
-     fprintf(foutr,"#-------------------------------------------------------------------------------\n");
+     fprintf(foutr,"%s","END RESULTRANGESTABLE\n");
+     fprintf(foutr,"%s","#-------------------------------------------------------------------------------\n");
      fprintf(foutr,"GAUSSPOINTS %cdatamesh%c ELEMTYPE Hexahedra %cdatamesh%c\n",sign,sign,sign,sign);
-     fprintf(foutr,"NUMBER OF GAUSS POINTS: 8\n");
-     fprintf(foutr,"NATURAL COORDINATES: Internal\n");
-     fprintf(foutr,"END GAUSSPOINTS\n");
-     fprintf(foutr,"#-------------------------------------------------------------------------------\n");
+     fprintf(foutr,"%s","NUMBER OF GAUSS POINTS: 8\n");
+     fprintf(foutr,"%s","NATURAL COORDINATES: Internal\n");
+     fprintf(foutr,"%s","END GAUSSPOINTS\n");
+     fprintf(foutr,"%s","#-------------------------------------------------------------------------------\n");
      }
-     fprintf(foutr,"#===============================================================================\n");
-     fprintf(foutr,"#===============================================================================\n");
+     fprintf(foutr,"%s","#===============================================================================\n");
+     fprintf(foutr,"%s","#===============================================================================\n");
      fprintf(foutr,"RESULT %cdisplacement%c %cML%c %d VECTOR ONNODES\n",sign,sign,sign,sign,label);
      fprintf(foutr,"RESULTRANGESTABLE %cstandard%c\n",sign,sign);
      fprintf(foutr,"COMPONENTNAMES %cx-displ%c,%cy-displ%c,%cz-displ%c\n",sign,sign,sign,sign,sign,sign);
-     fprintf(foutr,"VALUES\n"); fflush(foutr);
+     fprintf(foutr,"%s","VALUES\n"); fflush(foutr);
      if (!isshell) // result does not come from a shell element
      {
         for (int i=0; i<nnode; i++)
@@ -3358,7 +3358,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
                  val = 0.0;
               fprintf(foutr,"%20.10e   ",val); 
            }
-           fprintf(foutr,"\n"); 
+           fprintf(foutr,"%s","\n"); 
         }
      }
      else // results come from a shell element
@@ -3388,7 +3388,7 @@ bool Epetra_ML_writegidviz(char* filename, int label,
               val -= val2;
               fprintf(foutr,"%20.10e   ",val); 
            }
-           fprintf(foutr,"\n"); fflush(foutr);
+           fprintf(foutr,"%s","\n"); fflush(foutr);
            // print the upper surface node
            fprintf(foutr," %6d   ",node_upper+1);
            for (int j=0; j<dofpernode; j++)
@@ -3409,10 +3409,10 @@ bool Epetra_ML_writegidviz(char* filename, int label,
               val += val2;
               fprintf(foutr,"%20.10e   ",val); 
            }
-           fprintf(foutr,"\n"); fflush(foutr);
+           fprintf(foutr,"%s","\n"); fflush(foutr);
         }
      }
-     fprintf(foutr,"END VALUES\n");
+     fprintf(foutr,"%s","END VALUES\n");
   }
   // clean up
   if (proc==0)

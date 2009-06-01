@@ -487,7 +487,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
 */
   int nodeID;
   try{ nodeID = List_.get("ML node id",0);}
-  catch(...){fprintf(stderr,"Ifpack_AdditiveSchwarz<T>::Setup(): no parameter \"ML node id\"\n\n");
+  catch(...){fprintf(stderr,"%s","Ifpack_AdditiveSchwarz<T>::Setup(): no parameter \"ML node id\"\n\n");
              cout << List_ << endl;}
 # endif
 
@@ -514,7 +514,7 @@ int Ifpack_AdditiveSchwarz<T>::Setup()
   }
   }
   catch(...) {
-     fprintf(stderr,"AdditiveSchwarz Setup: problem creating local filter matrix.\n");
+     fprintf(stderr,"%s","AdditiveSchwarz Setup: problem creating local filter matrix.\n");
   }
 
   if (LocalizedMatrix_ == Teuchos::null)
