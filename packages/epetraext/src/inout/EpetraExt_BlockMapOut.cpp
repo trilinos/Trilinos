@@ -82,20 +82,20 @@ int BlockMapToMatrixMarketFile( const char *filename, const Epetra_BlockMap & ma
     v1[0] = map.NumMyElements();
     if (v2.Import(v1, lengthImporter, Insert)) return(-1);
     if (map.Comm().MyPID()==0) { 
-      fprintf(handle, "%%Format Version:\n");
+      fprintf(handle, "%s", "%Format Version:\n");
       //int version = 1; // We may change the format scheme at a later date.
       fprintf(handle, "%% %d \n", map.Comm().NumProc());
-     fprintf(handle, "%%NumProc: Number of processors:\n");
+      fprintf(handle, "%s", "%NumProc: Number of processors:\n");
       fprintf(handle, "%% %d \n", map.Comm().NumProc());
-      fprintf(handle, "%%MaxElementSize: Maximum element size:\n");
+      fprintf(handle, "%s", "%MaxElementSize: Maximum element size:\n");
       fprintf(handle, "%% %d \n", map.MaxElementSize());
-      fprintf(handle, "%%MinElementSize: Minimum element size:\n");
+      fprintf(handle, "%s", "%MinElementSize: Minimum element size:\n");
       fprintf(handle, "%% %d \n", map.MinElementSize());
-      fprintf(handle, "%%IndexBase: Index base of map:\n");
+      fprintf(handle, "%s", "%IndexBase: Index base of map:\n");
       fprintf(handle, "%% %d \n", map.IndexBase());
-      fprintf(handle, "%%NumGlobalElements: Total number of GIDs in map:\n");
+      fprintf(handle, "%s", "%NumGlobalElements: Total number of GIDs in map:\n");
       fprintf(handle, "%% %d \n", map.NumGlobalElements());
-      fprintf(handle, "%%NumMyElements: BlockMap lengths per processor:\n");
+      fprintf(handle, "%s", "%NumMyElements: BlockMap lengths per processor:\n");
       for ( int i=0; i< v2.MyLength(); i++) fprintf(handle, "%% %d\n", v2[i]);
       
       if (mm_write_mtx_array_size(handle, M, N)) return(-1);
@@ -175,7 +175,7 @@ int writeBlockMap(FILE * handle, int length, const int * v1, const int * v2, boo
   for (int i=0; i<length; i++) {
     fprintf(handle, "%d", v1[i]);
     if (doSizes) fprintf(handle, " %d", v2[i]);
-    fprintf(handle, "\n");
+    fprintf(handle, "%s", "\n");
   }
   return(0);
 }

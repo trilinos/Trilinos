@@ -183,7 +183,7 @@ int writeMultiVector(FILE * handle, const Epetra_MultiVector & A, bool mmFormat)
 	else
 	  fprintf(handle, "%22.16e ", val);
       }
-      if (!mmFormat) fprintf(handle, "\n");
+      if (!mmFormat) fprintf(handle, "%s", "\n");
     }
   }
   int ierrGlobal;

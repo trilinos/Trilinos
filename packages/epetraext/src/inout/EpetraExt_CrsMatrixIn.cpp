@@ -276,7 +276,7 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
       for (int i = 0; i < nchunk; i++) {
         eof = fgets(&buffer[rlen],lineLength,handle);
         if (eof == NULL) {
-          fprintf(stderr, "Unexpected end of matrix file.");
+          fprintf(stderr, "%s", "Unexpected end of matrix file.");
           EPETRA_CHK_ERR(-1);
         }
         rlen += strlen(&buffer[rlen]);
