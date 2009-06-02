@@ -386,8 +386,9 @@
   <SubProject name="TrilinosCouplings">
     <Dependency name="Teuchos" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Shards" type="ITO"/>
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
@@ -398,6 +399,8 @@
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="LO"/>
+    <Dependency name="Pamgen" type="TO"/>
+    <Dependency name="Intrepid" type="TO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="LO"/>
