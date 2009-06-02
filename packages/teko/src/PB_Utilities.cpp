@@ -5,6 +5,7 @@
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_EpetraExtDiagScaledMatProdTransformer.hpp"
+#include "Thyra_EpetraExtDiagScalingTransformer.hpp"
 #include "Thyra_EpetraExtAddTransformer.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
@@ -489,10 +490,15 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
 {
    // build implicit multiply
    const LinearOp implicitOp = Thyra::multiply(opl,opr);
- 
-   // build transformer
-   const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
-       Thyra::epetraExtDiagScaledMatProdTransformer();
+
+   // build a scaling transformer
+   RCP<Thyra::LinearOpTransformerBase<double> > prodTrans  
+         = Thyra::epetraExtDiagScalingTransformer();
+
+   // check to see if a scaling transformer works: if not use the 
+   // DiagScaledMatrixProduct transformer
+   if(not prodTrans->isCompatible(*implicitOp))
+       prodTrans = Thyra::epetraExtDiagScaledMatProdTransformer();
 
    // build operator and multiply
    const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();

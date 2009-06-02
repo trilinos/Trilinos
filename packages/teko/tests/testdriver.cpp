@@ -27,6 +27,7 @@
 #include "src/tLSCIntegrationTest.hpp"
 #include "src/tGraphLaplacian.hpp"
 #include "src/tParallelInverse.hpp"
+#include "src/tExplicitOps.hpp"
 #include "src/Epetra/tEpetraLSCIntegrationTest.hpp"
 #include "src/Epetra/tEpetraOperatorWrapper.hpp"
 #include "src/Epetra/tStridedEpetraOperator.hpp"
@@ -87,6 +88,7 @@ int main(int argc,char * argv[])
    PB_ADD_UNIT_TEST(PB::Test::tEpetraThyraConverter,EpetraThyraConverter);
    PB_ADD_UNIT_TEST(PB::Test::tGraphLaplacian,tGraphLaplacian);
    PB_ADD_UNIT_TEST(PB::Test::tParallelInverse,tParallelInverse);
+   PB_ADD_UNIT_TEST(PB::Test::tExplicitOps,tExplicitOps);
    if(not isfast) {
       PB_ADD_UNIT_TEST(PB::Test::tLSCIntegrationTest,LSCIntegrationTest);
       PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
