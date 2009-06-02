@@ -22,6 +22,16 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ARGS "--matrix-file=FourByFour.mtx --matrix-file-2=FourByFour_2.mtx"
   )
 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  EpetraExtDiagScalingTransformer_UnitTests
+  SOURCES
+    EpetraExtDiagScalingTransformer_UnitTests.cpp
+    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  ARGS "--matrix-file=FourByFour.mtx"
+  )
+
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(ThyraEpetraExtTransformerCopyFiles_4x4
   DEST_FILES FourByFour.mtx

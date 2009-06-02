@@ -239,7 +239,8 @@ void EpetraExtAddTransformer::transform(
    EpetraLinearOp &thyra_epetra_op_inout = dyn_cast<EpetraLinearOp>(*op_inout);
     
    Epetra_CrsMatrix * ptrEpetra_op;
-   EE_Add(*epetra_A,A_transp==CONJTRANS,A_scalar,*epetra_B,B_transp==CONJTRANS,B_scalar,ptrEpetra_op);
+   const int add_epetra_B_err = EE_Add(*epetra_A,A_transp==CONJTRANS,A_scalar,*epetra_B,B_transp==CONJTRANS,B_scalar,ptrEpetra_op);
+   TEUCHOS_ASSERT_EQUALITY( add_epetra_B_err, 0 );
    
    RCP<Epetra_CrsMatrix>  epetra_op = Teuchos::rcp(ptrEpetra_op);
    epetra_op->FillComplete();
