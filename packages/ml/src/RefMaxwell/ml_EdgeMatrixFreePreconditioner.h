@@ -78,7 +78,7 @@ namespace ML_Epetra
       precondition the next linear system. ML offers a way to determine whether the 
       already available preconditioner is "good enough" for the next linear system. 
       The user should proceed as follows:
-      - define \c "adaptive: enable" == \c true
+      - define \c "reuse: enable" == \c true
       - solve the first linear system. ML tries to estimate the rate of convergence, and record it;
       - change the values of the linear system matrix (but NOT its structure)
       - compute the new preconditioner as \c ComputePreconditioner(true)
