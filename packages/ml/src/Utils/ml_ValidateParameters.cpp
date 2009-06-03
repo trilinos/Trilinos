@@ -327,6 +327,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("profile: operator iterations",0,"Unlisted option",PL,intParam);
   setDoubleParameter("subsmoother: edge alpha",20.0,"alpha for edge Chebyshev polynomial in Hiptmair",PL,dblParam); 
   setDoubleParameter("subsmoother: node alpha",20.0,"alpha for node Chebyshev polynomial in Hiptmair",PL,dblParam); 
+  PL->set("reuse: enable",false);
   
   /* Unlisted options that should probably go away */
   setIntParameter("output",0,"Output Level",PL,intParam);
