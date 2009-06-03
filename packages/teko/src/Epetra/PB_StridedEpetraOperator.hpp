@@ -76,7 +76,7 @@ protected:
    // gooey center of this shell
    Teuchos::RCP<Epetra_Operator> fullContent_;
    Teuchos::RCP<StridedMappingStrategy> stridedMapping_;
-   Teuchos::RCP<const Thyra::LinearOpBase<double> > stridedOperator_;
+   Teuchos::RCP<Thyra::LinearOpBase<double> > stridedOperator_;
    Teuchos::RCP<const BlockReorderManager> reorderManager_;
 
    std::string label_;

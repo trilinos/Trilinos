@@ -228,6 +228,102 @@ RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const
    return mat;
 }
 
+// rebuild a single subblock Epetra_CrsMatrix
+void rebuildSubBlock(int i,int j,const Epetra_CrsMatrix & A,const std::vector<std::pair<int,RCP<Epetra_Map> > > & subMaps,Epetra_CrsMatrix & mat)
+{
+   // get the number of variables families
+   int numVarFamily = subMaps.size();
+
+   TEUCHOS_ASSERT(i>=0 && i<numVarFamily);
+   TEUCHOS_ASSERT(j>=0 && j<numVarFamily);
+   TEUCHOS_ASSERT(mat.Filled());
+
+   const Epetra_Map & gRowMap = *subMaps[i].second;
+   const Epetra_Map & rowMap = *Teuchos::get_extra_data<RCP<Epetra_Map> >(subMaps[i].second,"contigMap");
+   const Epetra_Map & colMap = *Teuchos::get_extra_data<RCP<Epetra_Map> >(subMaps[j].second,"contigMap");
+   int rowFamilyCnt = subMaps[i].first;
+   int colFamilyCnt = subMaps[j].first;
+
+   // compute the number of global variables
+   // and the row and column block offset
+   int numGlobalVars = 0;
+   int rowBlockOffset = 0;
+   int colBlockOffset = 0;
+   for(int k=0;k<numVarFamily;k++) {
+      numGlobalVars += subMaps[k].first;
+ 
+      // compute block offsets
+      if(k<i) rowBlockOffset += subMaps[k].first;
+      if(k<j) colBlockOffset += subMaps[k].first;
+   }
+
+   // get the number of nodal blocks in the matrix
+   int numBlocks = A.NumGlobalRows()/numGlobalVars;
+
+   // copy all global rows to here
+   Epetra_Import import(gRowMap,A.RowMap());
+   Epetra_CrsMatrix localA(Copy,gRowMap,0);
+   localA.Import(A,import,Insert);
+
+   // clear out the old matrix
+   mat.PutScalar(0.0);
+
+   // get entry information
+   int numMyRows = rowMap.NumMyElements();
+   int maxNumEntries = A.GlobalMaxNumEntries();
+
+   // for extraction
+   int indicies[maxNumEntries];
+   double values[maxNumEntries];
+
+   // for insertion
+   int colIndicies[maxNumEntries];
+   double colValues[maxNumEntries];
+
+   // insert each row into subblock
+   // let FillComplete handle column distribution
+   for(int localRow=0;localRow<numMyRows;localRow++) {
+      int numEntries = -1; 
+      int globalRow = gRowMap.GID(localRow);
+      int contigRow = rowMap.GID(localRow);
+
+      TEUCHOS_ASSERT(globalRow>=0);
+      TEUCHOS_ASSERT(contigRow>=0);
+
+      // extract a global row copy
+      int err = localA.ExtractGlobalRowCopy(globalRow, maxNumEntries, numEntries, values, indicies);
+      TEUCHOS_ASSERT(err==0);
+
+      int numOwnedCols = 0;
+      for(int localCol=0;localCol<numEntries;localCol++) {
+         int globalCol = indicies[localCol];
+
+         // determinate which block this column ID is in
+         int block = globalCol / numGlobalVars;
+         
+         bool inFamily = true; 
+ 
+         // test the beginning of the block
+         inFamily &= (block*numGlobalVars+colBlockOffset <= globalCol);
+         inFamily &= ((block*numGlobalVars+colBlockOffset+colFamilyCnt) > globalCol);
+
+         // is this column in the variable family
+         if(inFamily) {
+            int familyOffset = globalCol-(block*numGlobalVars+colBlockOffset);
+
+            // colIndicies[numOwnedCols] = indicies[localCol];
+            colIndicies[numOwnedCols] = block*colFamilyCnt + familyOffset;
+            colValues[numOwnedCols] = values[localCol];
+
+            numOwnedCols++;
+         }
+      }
+
+      // insert it into the new matrix
+      mat.SumIntoGlobalValues(contigRow,numOwnedCols,colValues,colIndicies);
+   }
+}
+
 
 // collect subvectors into a single global vector
 void many2one(Epetra_MultiVector & one, const std::vector<RCP<const Epetra_MultiVector> > & many,

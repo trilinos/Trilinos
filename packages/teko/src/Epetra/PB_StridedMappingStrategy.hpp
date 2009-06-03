@@ -10,6 +10,7 @@
 // Thyra includes
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_LinearOpBase.hpp"
+#include "Thyra_BlockedLinearOpBase.hpp"
 
 // Epetra includes
 #include "Epetra_Comm.h"
@@ -143,8 +144,20 @@ public:
      * \returns Blocked Thyra linear operator with sub blocks
      *          defined by this mapping strategy
      */
-   const Teuchos::RCP<const Thyra::LinearOpBase<double> > 
+   const Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > 
    buildBlockedThyraOp(const Teuchos::RCP<const Epetra_CrsMatrix> & mat,const std::string & label="<ANYM>") const;
+
+   /** Rebuilds a block Thyra operator using the strided mapping
+     * strategy to define sub blocks.
+     *
+     * \param[in] mat Epetra_CrsMatrix with FillComplete called, this
+     *             matrix is assumed to be square, with the same
+     *             range and domain maps
+     * \param[in] A Destination block linear op composed of blocks of
+     *            Epetra_CrsMatrix at all relevant locations
+     */
+   void rebuildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & mat,
+                              const RCP<Thyra::BlockedLinearOpBase<double> > & A) const;
 
    //@}
 

@@ -59,9 +59,13 @@ void StridedEpetraOperator::BuildBlockedOperator()
    const RCP<const Epetra_CrsMatrix> crsContent = rcp_dynamic_cast<const Epetra_CrsMatrix>(fullContent_);
 
    // ask the strategy to build the Thyra operator for you
-   const RCP<const Thyra::LinearOpBase<double> > A = stridedMapping_->buildBlockedThyraOp(crsContent,label_);
-
-   stridedOperator_ = A;
+   if(stridedOperator_==Teuchos::null) {
+      stridedOperator_ = stridedMapping_->buildBlockedThyraOp(crsContent,label_);
+   }
+   else {
+      const RCP<Thyra::BlockedLinearOpBase<double> > blkOp = rcp_dynamic_cast<Thyra::BlockedLinearOpBase<double> >(stridedOperator_,true);
+      stridedMapping_->rebuildBlockedThyraOp(crsContent,blkOp);
+   }
 
    // set whatever is returned
    SetOperator(stridedOperator_,false);

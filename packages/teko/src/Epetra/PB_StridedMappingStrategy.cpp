@@ -8,6 +8,7 @@
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultSpmdMultiVector.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -131,7 +132,7 @@ void StridedMappingStrategy::buildBlockTransferData(const std::vector<int> & var
 //    returns: Blocked Thyra linear operator with sub blocks
 //             defined by this mapping strategy
 //
-const Teuchos::RCP<const Thyra::LinearOpBase<double> > 
+const Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > 
 StridedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & crsContent,const std::string & label) const
 {
    int dim = blockMaps_.size();
@@ -146,12 +147,39 @@ StridedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & 
          ss << label << "_" << i << "," << j;
 
          // build the blocks and place it the right location
-         A->setBlock(i,j,Thyra::epetraLinearOp(PB::Epetra::buildSubBlock(i,j,*crsContent,blockMaps_),ss.str()));
+         A->setNonconstBlock(i,j,Thyra::nonconstEpetraLinearOp(PB::Epetra::buildSubBlock(i,j,*crsContent,blockMaps_),ss.str()));
       }
    } // end for i
    A->endBlockFill();
 
    return A;
+}
+
+// Rebuilds a blocked Thyra operator that uses the strided
+// mapping strategy to define sub blocks.
+//
+//    arguments:
+//       crsContent - Epetra_CrsMatrix with FillComplete called, this
+//                    matrix is assumed to be square, with the same
+//                    range and domain maps
+//       A - Destination block linear op composed of blocks of
+//           Epetra_CrsMatrix at all relevant locations
+//
+void StridedMappingStrategy::rebuildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & crsContent,
+                                                   const RCP<Thyra::BlockedLinearOpBase<double> > & A) const
+{
+   int dim = blockMaps_.size();
+
+   for(int i=0;i<dim;i++) {
+      for(int j=0;j<dim;j++) {
+         // get Epetra version of desired block
+         RCP<Thyra::LinearOpBase<double> > Aij = A->getNonconstBlock(i,j);
+         RCP<Epetra_CrsMatrix> eAij = rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*Aij),true);
+
+         // rebuild the blocks and place it the right location
+         PB::Epetra::rebuildSubBlock(i,j,*crsContent,blockMaps_,*eAij);
+      }
+   } // end for i
 }
 
 } // end namespace Epetra

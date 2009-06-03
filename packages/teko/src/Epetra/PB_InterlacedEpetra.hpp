@@ -50,6 +50,10 @@ void associateSubVectors(const std::vector<std::pair<int,Teuchos::RCP<Epetra_Map
 Teuchos::RCP<Epetra_CrsMatrix> buildSubBlock(int i,int j,const Epetra_CrsMatrix & A,
                                              const std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps);
 
+// Rebuild a single subblock of a matrix
+void rebuildSubBlock(int i,int j,const Epetra_CrsMatrix & A,
+                     const std::vector<std::pair<int,Teuchos::RCP<Epetra_Map> > > & subMaps,Epetra_CrsMatrix & mat);
+
 // copy contents of many subvectors to a single vector
 void many2one(Epetra_MultiVector & one, const std::vector<Teuchos::RCP<const Epetra_MultiVector> > & many,
               const std::vector<Teuchos::RCP<Epetra_Export> > & subExport);

@@ -97,10 +97,10 @@ LinearOp InvLSCStrategy::getInvF(const BlockedLinearOp & A,BlockPreconditionerSt
    const LinearOp F  = getBlock(0,0,A);
  
    // (re)build the inverse of F
-   // if(lscState->invF_==Teuchos::null)
+   if(lscState->invF_==Teuchos::null)
       lscState->invF_ = buildInverse(*invFactoryF_,F);
-   // else
-   //    rebuildInverse(*invFactoryF_,F,lscState->invF_);
+   else
+      rebuildInverse(*invFactoryF_,F,lscState->invF_);
 
    return lscState->invF_;
 }
