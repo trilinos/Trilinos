@@ -75,6 +75,7 @@ FUNCTION(PACKAGE_ARCH_SETUP_MPI)
     "$ENV{ProgramFiles}/MPICH/SDK/Bin"
     "$ENV{ProgramFiles}/MPICH2/Bin"
     "C:/Program Files/MPICH/SDK/Bin"
+    "C:/Program Files/MPICH2/Bin"
     )
 
   #

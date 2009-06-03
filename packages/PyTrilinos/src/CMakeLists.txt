@@ -158,7 +158,7 @@ ADD_CUSTOM_COMMAND(
 # Define the targets for the PyTrilinos library
 PACKAGE_ADD_LIBRARY(
   pytrilinos
-  HEADERS ${HEADERS} ${SWIG_RUNTIME}
+  HEADERS ${HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_RUNTIME}
   SOURCES ${SOURCES}
   )
 

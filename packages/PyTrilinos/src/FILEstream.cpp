@@ -31,6 +31,7 @@
 #include <algorithm>
 #include <cstring>
 #include <iostream>
+#include <cstdio>
 
 using std::size_t;
 
