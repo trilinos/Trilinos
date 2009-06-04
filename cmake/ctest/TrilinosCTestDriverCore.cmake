@@ -149,7 +149,7 @@ ENDMACRO()
 # ToDo: Finish Documentation!
 #
 
-MACRO(TRILINOS_CTEST_DRIVER)
+FUNCTION(TRILINOS_CTEST_DRIVER)
 
   #
   # Variables that can be set by the platform-specific code and reset
@@ -527,4 +527,4 @@ MACRO(TRILINOS_CTEST_DRIVER)
   
   MESSAGE("\nDone with the incremental building and testing of Trilinos packages!\n")
 
-ENDMACRO()
+ENDFUNCTION()
