@@ -53,12 +53,14 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
+#include "Epetra_LinearProblem.h"
 
 // Teuchos includes
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -66,6 +68,12 @@
 // EpetraExt includes
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
+
+// AztecOO includes
+#include "AztecOO.h"
+
+// ML Includes
+#include "ml_MultiLevelPreconditioner.h"
 
 // Pamgen includes
 #include "create_inline_mesh.h"
@@ -776,6 +784,77 @@ int main(int argc, char *argv[]) {
  
  return 0;
 }
+
+
+
+// Test ML
+int TestMultiLevelPreconditionerLaplace(char ProblemType[],
+				 Teuchos::ParameterList   & MLList,
+                                 Epetra_CrsMatrix   & A,
+                                 const Epetra_MultiVector & xexact,
+                                 Epetra_MultiVector & b,
+                                 double & TotalErrorResidual,
+				 double & TotalErrorExactSol)
+{
+  Epetra_MultiVector x(xexact);
+  x.PutScalar(0.0);
+  
+  Epetra_LinearProblem Problem(&A,&x,&b); 
+  Epetra_MultiVector* lhs = Problem.GetLHS();
+  Epetra_MultiVector* rhs = Problem.GetRHS();
+  
+  Epetra_Time Time(A.Comm());
+  
+  // =================== //
+  // call ML and AztecOO //
+  // =================== //
+  
+  AztecOO solver(Problem);  
+  ML_Epetra::MultiLevelPreconditioner *MLPrec = new ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
+  
+  // tell AztecOO to use this preconditioner, then solve
+  solver.SetPrecOperator(MLPrec);
+  solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_output, 32);
+
+  solver.Iterate(200, 1e-10);
+  
+  delete MLPrec;
+  
+  // ==================================================== //
+  // compute difference between exact solution and ML one //
+  // ==================================================== //  
+  double d = 0.0, d_tot = 0.0;  
+  for( int i=0 ; i<lhs->Map().NumMyElements() ; ++i )
+    d += ((*lhs)[0][i] - xexact[0][i]) * ((*lhs)[0][i] - xexact[0][i]);
+  
+  A.Comm().SumAll(&d,&d_tot,1);
+  
+  // ================== //
+  // compute ||Ax - b|| //
+  // ================== //
+  double Norm;
+  Epetra_Vector Ax(rhs->Map());
+  A.Multiply(false, *lhs, Ax);
+  Ax.Update(1.0, *rhs, -1.0);
+  Ax.Norm2(&Norm);
+  
+  string msg = ProblemType;
+  
+  if (A.Comm().MyPID() == 0) {
+    cout << msg << "......Using " << A.Comm().NumProc() << " processes" << endl;
+    cout << msg << "......||A x - b||_2 = " << Norm << endl;
+    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
+    cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
+  }
+  
+  TotalErrorExactSol += sqrt(d_tot);
+  TotalErrorResidual += Norm;
+  
+  return( solver.NumIters() );
+  
+}
+
 
 // Calculates value of exact solution u
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
