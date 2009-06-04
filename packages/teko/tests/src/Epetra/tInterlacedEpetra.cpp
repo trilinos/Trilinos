@@ -55,7 +55,7 @@ void tInterlacedEpetra::initializeTest()
 int tInterlacedEpetra::runTest(int verbosity,std::ostream & stdstrm,std::ostream & failstrm,int & totalrun)
 {
    bool allTests = true;
-   bool status;
+   bool status = true;
    int failcount = 0;
 
    failstrm << "tInterlacedEpetra";
@@ -478,8 +478,9 @@ bool tInterlacedEpetra::test_many2one(int verbosity,std::ostream & os)
 
    one->Update(1.0,*v,-1.0);
  
-   double diff[4],max=0.0,maxn=0;
-   double norm[4];
+   double diff[4] = {0,0,0,0};
+   double max=0.0,maxn=0;
+   double norm[4] = {0,0,0,0};
    one->Norm2(diff);
    v->Norm2(norm);
    for(int i=0;i<4;i++) {

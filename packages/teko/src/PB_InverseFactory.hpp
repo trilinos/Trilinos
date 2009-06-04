@@ -193,6 +193,81 @@ private:
    PreconditionerInverseFactory();
 };
 
+class StaticOpInverseFactory : public InverseFactory {
+public:
+   //! \name Constructors
+   //@{ 
+   
+   /** \brief Constructor that takes a Thyra solve factory and 
+     *        makes it look like an InverseFactory
+     *
+     * Constructor that takes a Thyra solve factory and 
+     * makes it look like an InverseFactory.
+     * 
+     * \param[in] precFactory Thyra PreconditionerFactoryBase used for building 
+     *                        the inverse.
+     */
+   StaticOpInverseFactory(const LinearOp inv) 
+      : inverse_(inv) {}
+
+   //! Copy constructor
+   StaticOpInverseFactory(const StaticOpInverseFactory & saFactory)
+      : inverse_(saFactory.inverse_) {}
+   //@}
+
+   /** \brief Build an inverse operator
+     *
+     * Build the inverse operator using this factory. This also tacks
+     * on extra data to the RCP called "prec". This is the
+     * PreconditionerBase object, and it is need for <code>rebuildInverse</code>
+     *
+     * \param[in] linearOp Linear operator needing to be inverted.
+     *
+     * \returns New linear operator that functions as the inverse
+     *          of <code>linearOp</code>.
+     */
+   virtual InverseLinearOp buildInverse(const LinearOp & linearOp) const
+   { return Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(inverse_); }
+
+   /** \brief Pass in an already constructed inverse operator. Update
+     *        the inverse operator based on the new source operator.
+     *
+     * Pass in an already constructed inverse operator. Update
+     * the inverse operator based on the new source operator. This
+     * method assumes the <code>dest</code> object also contains
+     * the associated PreconditionerBase object as "prec" as extra
+     * data in the RCP.
+     *
+     * \param[in]     source Source operator to be inverted.
+     * \param[in,out] dest   Pre constructed inverse operator to be
+     *                        rebuilt using the <code>source</code>
+     *                        object.
+     */
+   virtual void rebuildInverse(const LinearOp & source,InverseLinearOp & dest) const
+   { }
+
+   /** \brief A function that permits inspection of the parameters used to create
+     *        this object.
+     *
+     * A function that permits inspection of the parameters used to create this
+     * object. Useful for determining defaults and settings used.
+     *
+     * \returns A list used to parameterize this object.
+     */
+   virtual Teuchos::RCP<const Teuchos::ParameterList> getParameterList() const
+   { return Teuchos::null; }
+
+   /** Return a string that describes this factory */
+   virtual std::string toString() const { return inverse_->description(); }
+
+protected:
+   PB::LinearOp inverse_;
+
+private:
+   // hide me!
+   StaticOpInverseFactory();
+};
+
 //! @name Functions for constructing and initializing solvers
 //@{
 // typedef Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > InverseFactory;

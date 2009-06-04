@@ -14,7 +14,14 @@ namespace NS {
 SIMPLEPreconditionerFactory
    ::SIMPLEPreconditionerFactory(const RCP<const InverseFactory> & inverse,
                                  double alpha)
-   : inverse_(inverse), alpha_(alpha)
+   : invVelFactory_(inverse), invPrsFactory_(inverse), alpha_(alpha)
+{ }
+
+SIMPLEPreconditionerFactory
+   ::SIMPLEPreconditionerFactory(const RCP<const InverseFactory> & invVFact,
+                                 const RCP<const InverseFactory> & invPFact,
+                                 double alpha)
+   : invVelFactory_(invVFact), invPrsFactory_(invPFact), alpha_(alpha)
 { }
 
 // Use the factory to build the preconditioner (this is where the work goes)
@@ -42,8 +49,8 @@ LinearOp SIMPLEPreconditionerFactory
                                      explicitMultiply(B,H,Bt));
 
    // build inverses for F and the approximate Schur complement
-   const LinearOp invF = buildInverse(*inverse_,F);
-   const LinearOp invS = buildInverse(*inverse_,hatS);
+   const LinearOp invF = buildInverse(*invVelFactory_,F);
+   const LinearOp invS = buildInverse(*invPrsFactory_,hatS);
 
    std::vector<LinearOp> invDiag(2); // vector storing inverses
 

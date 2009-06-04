@@ -19,6 +19,7 @@
 #include "Test_Utils.hpp"
 #include "src/tLU2x2PreconditionerFactory.hpp"
 #include "src/tLSCStablePreconditionerFactory.hpp"
+#include "src/tSIMPLEPreconditionerFactory.hpp"
 #include "src/tLSCStabilized.hpp"
 #include "src/tJacobi2x2PreconditionerFactory.hpp"
 #include "src/tBlockJacobiPreconditionerFactory.hpp"
@@ -89,6 +90,7 @@ int main(int argc,char * argv[])
    PB_ADD_UNIT_TEST(PB::Test::tGraphLaplacian,tGraphLaplacian);
    PB_ADD_UNIT_TEST(PB::Test::tParallelInverse,tParallelInverse);
    PB_ADD_UNIT_TEST(PB::Test::tExplicitOps,tExplicitOps);
+   PB_ADD_UNIT_TEST(PB::Test::tSIMPLEPreconditionerFactory,SIMPLEPreconditionerFactory);
    if(not isfast) {
       PB_ADD_UNIT_TEST(PB::Test::tLSCIntegrationTest,LSCIntegrationTest);
       PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);

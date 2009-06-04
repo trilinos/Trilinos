@@ -42,7 +42,7 @@ double Difference(const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
                   const Teuchos::RCP<const Thyra::VectorBase<double> > & y);
 
 // construct a diagonal matrix
-const Teuchos::RCP<const Thyra::LinearOpBase<double> > DiagMatrix(int cnt,double * vec);
+const Teuchos::RCP<const Thyra::LinearOpBase<double> > DiagMatrix(int cnt,double * vec,std::string label="");
 
 // 2-Vector
 const Teuchos::RCP<const Thyra::VectorBase<double> > BlockVector(const Epetra_Vector & u, const Epetra_Vector & v,
@@ -74,7 +74,7 @@ inline const std::string toString(bool status) { return status ? "PASSED" : "FAI
 
 #define PB_ADD_UNIT_TEST(str,name) PB::Test::UnitTest::AddTest(Teuchos::rcp(new str()),#name)
 #define PB_TEST_MSG(os,level,msgp,msgf) {          \
-    int failPID;                                   \
+    int failPID = -1;                              \
     status = UnitTest::CheckParallelBools(status,failPID); \
     if(verbosity>=level && status)                 \
        os << msgp << std::endl;                    \

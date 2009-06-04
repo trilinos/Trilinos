@@ -125,7 +125,7 @@ double Difference(const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
 }
 
 // construct a diagonal matrix
-const Teuchos::RCP<const Thyra::LinearOpBase<double> > DiagMatrix(int cnt,double * vec)
+const Teuchos::RCP<const Thyra::LinearOpBase<double> > DiagMatrix(int cnt,double * vec,std::string label)
 {
    const RCP<Epetra_SerialComm> comm = rcp(new Epetra_SerialComm());
    const RCP<Epetra_Map> map = rcp(new Epetra_Map(cnt,0,*comm));
@@ -137,7 +137,7 @@ const Teuchos::RCP<const Thyra::LinearOpBase<double> > DiagMatrix(int cnt,double
    ptrF->FillComplete();
 
    // return thyra object
-   return Thyra::epetraLinearOp(ptrF);
+   return Thyra::epetraLinearOp(ptrF,label);
 }
 
 // declare static allocation

@@ -14,13 +14,19 @@ public:
    SIMPLEPreconditionerFactory(const Teuchos::RCP<const InverseFactory> & inverse,
                                double alpha);
 
+   // Constructor
+   SIMPLEPreconditionerFactory(const Teuchos::RCP<const InverseFactory> & invVelFactory,
+                               const Teuchos::RCP<const InverseFactory> & invPrsFactory,
+                               double alpha);
+
    // Function inherited from BlockPreconditionerFactory
    LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,
                                         BlockPreconditionerState & state) const;
     
 protected:
    // class members
-   Teuchos::RCP<const InverseFactory> inverse_;
+   Teuchos::RCP<const InverseFactory> invVelFactory_;
+   Teuchos::RCP<const InverseFactory> invPrsFactory_;
    double alpha_;
    
 };
