@@ -2,7 +2,7 @@
 CXXFLAGS="-O3 -fPIC" \
 CFLAGS="-O3 -fPIC" \
 FFLAGS="-O3 -fPIC" \
---with-swig=/usr/alt/bin/swig \
+--with-swig=/home/wfspotz/install/swig-1.3.39/swig \
 --cache-file=config.cache \
 --disable-default-packages \
 --with-libs="-L/home/jmwille/lib/UMFPACK/Lib -lumfpack -L/home/jmwille/lib/AMD/Lib -lamd -L/home/jmwille/lib/SuperLU_3.0 -lsuperlu_3.0" \

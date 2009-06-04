@@ -2,7 +2,7 @@
 CXXFLAGS="-g -O3 -fPIC" \
 CFLAGS="-g -O3 -fPIC" \
 FFLAGS="-g -O3 -fPIC" \
---with-swig=/usr/alt/bin/swig \
+--with-swig=/home/wfspotz/install/swig-1.3.39/swig \
 --with-lapack="-L/usr/lib64 -llapack" \
 --with-blas="-L/usr/lib64 -lblas" \
 --enable-mpi \
