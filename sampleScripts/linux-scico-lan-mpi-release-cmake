@@ -6,7 +6,7 @@ EXTRA_ARGS=$@
 # MPI on the SCICO LAN.
 
 if [ "$TRILINOS_HOME" == "" ]; then
-  export TRILINOS_HOME=/var/scratch/rabartl/PROJECTS/Sierra/Aria_Trilinos/Trilinos/dev
+  export TRILINOS_HOME=/var/scratch/rabartl/PROJECTS/Sierra.new/Aria_Trilinos/code/Trilinos/dev
 fi
 
 cmake \
@@ -15,11 +15,7 @@ cmake \
   -D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING="--all-local" \
 -D MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind \
 -D DART_TESTING_TIMEOUT:STRING=600 \
--D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
--D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
 -D Trilinos_ENABLE_TESTS:BOOL=ON \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
--D EpetraExt_BUILD_GRAPH_REORDERINGS:BOOL=ON \
--D EpetraExt_BUILD_BDF:BOOL=ON \
 $EXTRA_ARGS \
 ${TRILINOS_HOME}

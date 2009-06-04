@@ -34,6 +34,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Time.hpp"
@@ -197,6 +198,11 @@ int main(int argc, char *argv[])
 
   bool success = true;
   bool result;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  // Above, I only add this to allow this test to be run with an MPI build but
+  // this test does not use MPI in any way.  This is needed with the MPICH
+  // 1.2.7 used on by SIERRA.
 
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
