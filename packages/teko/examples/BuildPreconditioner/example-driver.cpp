@@ -48,11 +48,13 @@ int main(int argc,char * argv[])
    EpetraExt::MatrixMarketFileToCrsMatrix("../data/nsjac_test.mm",Comm,ptrA);
    RCP<Epetra_CrsMatrix> A = rcp(ptrA);
 
-   // allocate vectors
-   RCP<Epetra_Vector> b = rcp(new Epetra_Vector(A->OperatorRangeMap()));
-   RCP<Epetra_Vector> x = rcp(new Epetra_Vector(A->OperatorDomainMap()));
+   // read in the RHS vector
+   Epetra_Vector * ptrb = 0;
+   EpetraExt::MatrixMarketFileToVector("../data/nsrhs_test.mm",A->OperatorRangeMap(),ptrb);
+   RCP<Epetra_Vector> b = rcp(ptrb);
 
-   b->Random();
+   // allocate vectors
+   RCP<Epetra_Vector> x = rcp(new Epetra_Vector(A->OperatorDomainMap()));
    x->PutScalar(0.0);
 
    // Break apart the strided linear system
