@@ -93,7 +93,7 @@ int main(int argc,char * argv[])
    AztecOO::AztecOO solver(problem);
    solver.SetAztecOption(AZ_solver,AZ_gmres);
    solver.SetAztecOption(AZ_precond,AZ_none);
-   solver.SetAztecOption(AZ_kspace,50);
+   solver.SetAztecOption(AZ_kspace,1000);
    solver.SetAztecOption(AZ_output,10);
    solver.SetPrecOperator(&prec);
 
