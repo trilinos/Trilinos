@@ -36,6 +36,9 @@
     \code   ./example_01.exe 10 10 10 false 1.0 10.0 0.0 1.0 -1.0 1.0 -1.0 1.0 \endcode
 */
 
+#undef DEBUG_PRINTING
+// #define DEBUG_PRINTING
+
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_FieldContainer.hpp"
@@ -101,7 +104,9 @@ public:
   bool owned;
 };
 
-inline bool fe_less_than ( topo_entity* const x,  topo_entity* const y )
+/*******************************************************************************/
+inline bool compare_sorted_global_node_ids ( topo_entity* const x,  topo_entity* const y )
+/*******************************************************************************/
 {
   assert(x->sorted_global_node_ids.size() == y->sorted_global_node_ids.size());
   if(x->sorted_global_node_ids < y->sorted_global_node_ids)return true;    
@@ -127,7 +132,7 @@ void  Conform_Boundary_IDS(long long ** comm_entities,
 			   long long num_comm_pairs,
 			   long long  rank);
 
-
+/*******************************************************************************/
 void calc_global_node_ids(long long * globalNodeIds,
 			  long long numNodes,
 			  long long num_node_comm_maps,
@@ -135,6 +140,7 @@ void calc_global_node_ids(long long * globalNodeIds,
 			  long long * node_comm_proc_ids,
 			  long long * * comm_node_ids,
 			  int rank)
+/*******************************************************************************/
 {
   for(long long i = 0; i < numNodes; i ++)globalNodeIds[i] = 1l;
   for(long long j = 0; j < num_node_comm_maps; j++) {
@@ -144,23 +150,19 @@ void calc_global_node_ids(long long * globalNodeIds,
   }
   long long num_unique_nodes = 0;
   for(long long  i = 0 ; i < numNodes; i ++)if(globalNodeIds[i] == 1l)num_unique_nodes ++;
-  std::cout << "num unique nodes " << num_unique_nodes << std::endl;
   long long start_id = 0;
   MPI_Scan(&num_unique_nodes,&start_id,1,
 	   MPI_LONG_LONG_INT,
 	   MPI_SUM,
 	   MPI_COMM_WORLD);
   start_id -= num_unique_nodes;
-  std::cout << "start_id " << start_id << std::endl;
+
   int num_assigned = 0;
   for(long long  i = 0 ; i < numNodes; i ++)if(globalNodeIds[i] == 1l){
     globalNodeIds[i] = num_assigned + start_id;
     num_assigned ++;
   }
-  for(long long  i = 0 ; i < numNodes; i ++){
-    std::cout << "proc " << rank 
-	      << " global node id " << globalNodeIds[i] << std::endl;
-  }
+
   //Conforms global nodal ids
   Conform_Boundary_IDS(comm_node_ids,
 		       node_cmap_node_cnts,
@@ -168,10 +170,7 @@ void calc_global_node_ids(long long * globalNodeIds,
 		       globalNodeIds,
 		       num_node_comm_maps,
 		       rank);
-  for(long long  i = 0 ; i < numNodes; i ++){
-    std::cout << "global node id " << globalNodeIds[i]
-	      << " proc conformed " << rank << std::endl;
-  }
+
 }
 
 
@@ -224,25 +223,29 @@ void calc_global_ids(std::vector < topo_entity * > eof_vec,
   //need to sort the edges_or_face vectors by their sorted global node ids
   for(unsigned i = 0; i < topo_entities.size(); i ++){
     if(!topo_entities[i].empty()){
-      std::sort(topo_entities[i].begin(),topo_entities[i].end(),fe_less_than);
+      std::sort(topo_entities[i].begin(),topo_entities[i].end(),compare_sorted_global_node_ids);
     }
   }
-
+#ifdef DEBUG_PRINTING
  std::stringstream aname;
   aname << fname_string;
   aname << rank;
   aname << ".txt";
-
   ofstream fout(aname.str().c_str());
+#endif
+
   //need to sort the edges_or_face vectors by their sorted global node ids
   for(unsigned i = 0; i < topo_entities.size(); i ++){
+    if(!topo_entities[i].empty()){
+      std::sort(topo_entities[i].begin(),topo_entities[i].end(),compare_sorted_global_node_ids);
+    }
+#ifdef DEBUG_PRINTING
     fout << " from proc rank " << rank 
 	 << " to proc rank " << node_comm_proc_ids[i] 
 	 << " has " << topo_entities[i].size() 
 	 << " entries " << std::endl;
-    
+
     if(!topo_entities[i].empty()){
-      std::sort(topo_entities[i].begin(),topo_entities[i].end(),fe_less_than);
       for(unsigned j = 0; j < topo_entities[i].size();j ++){
 	topo_entity * eof = topo_entities[i][j];
 	for(std::list < long long > :: iterator klit = eof->sorted_global_node_ids.begin();
@@ -252,6 +255,7 @@ void calc_global_ids(std::vector < topo_entity * > eof_vec,
 	fout << endl;
       }
     }
+#endif
   }
 
   //count the number of entities owned;
@@ -259,15 +263,19 @@ void calc_global_ids(std::vector < topo_entity * > eof_vec,
   for(unsigned ict = 0; ict < eof_vec.size(); ict ++){
     if(eof_vec[ict]->owned)owned_entities ++;
   }
+#ifdef DEBUG_PRINTING
   fout << " proc " << rank << " owns " << owned_entities << " edges " << std::endl;
-  
+#endif
+
   long long start_id = 0;
   MPI_Scan(&owned_entities,&start_id,1,
 	   MPI_LONG_LONG_INT,
 	   MPI_SUM,
 	   MPI_COMM_WORLD);
   start_id -= owned_entities;
+#ifdef DEBUG_PRINTING
   fout << " proc " << rank << " start_id " << start_id << std::endl;
+#endif
   //DMH
   long long num_assigned = 0;
   for(unsigned ict = 0; ict < eof_vec.size(); ict ++){
@@ -277,17 +285,17 @@ void calc_global_ids(std::vector < topo_entity * > eof_vec,
     }
   }
 
-
-
   Conform_Boundary_IDS_topo_entity(topo_entities,
 				    node_comm_proc_ids, 
 				    rank);
 
+#ifdef DEBUG_PRINTING
   for(unsigned ict = 0; ict < eof_vec.size(); ict ++){
     fout << "on proc " << rank << " entity " << ict << " has id " << eof_vec[ict]->global_id << std::endl;
   }
 
   fout.close();
+#endif
 
 }
 
@@ -564,9 +572,6 @@ int main(int argc, char *argv[]) {
     delete [] nodeCoordy;
     delete [] nodeCoordz;
 
-
-
-
     /*parallel info*/
     long long num_internal_nodes;
     long long num_border_nodes;
@@ -584,8 +589,6 @@ int main(int argc, char *argv[]) {
 			       &num_node_comm_maps,
 			       &num_elem_comm_maps,
 			       0/*unused*/ );
-    std::cout << " the number of node_comm_maps " << num_node_comm_maps << std::endl;
-
 
     if(num_node_comm_maps > 0){
       node_comm_proc_ids   = new long long  [num_node_comm_maps];
@@ -642,8 +645,9 @@ int main(int argc, char *argv[]) {
 	  std::set< topo_entity * > ::iterator fit;
 	  for (int i=0; i < numEdgesPerElem; i++){
 	    topo_entity * teof = new topo_entity;
-	    teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,0)],globalNodeIds);
-	    teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,1)],globalNodeIds);
+	    for(int j = 0; j < numNodesPerEdge;j++){
+	      teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds);
+	    }
 	    teof->sort();
 	    fit = edge_set.find(teof);
 	    if(fit == edge_set.end()){
@@ -659,10 +663,9 @@ int main(int argc, char *argv[]) {
 	  }
 	  for (int i=0; i < numFacesPerElem; i++){
 	    topo_entity * teof = new topo_entity;
-	    teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,0)],globalNodeIds);
-	    teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,1)],globalNodeIds);
-	    teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,2)],globalNodeIds);
-	    teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,3)],globalNodeIds);
+	    for(int j = 0; j < numNodesPerFace;j++){
+	      teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,j)],globalNodeIds);
+	    }
 	    teof->sort();
 	    fit = face_set.find(teof);
 	    if(fit == face_set.end()){
@@ -678,31 +681,6 @@ int main(int argc, char *argv[]) {
 	  }
 	  elct ++;
 	}
-	
-
-	/*dump out edges*/
-	std::set< topo_entity *> ::iterator sit;
-	std::cout << "found " << edge_set.size() << " edges " << std::endl;
-	for(sit = edge_set.begin();sit != edge_set.end();sit++){
-	  topo_entity * eof  = *sit;
-	  std::list < long long > ::iterator lit;
-	  std::cout << rank << " nodes " ;
-	  for(lit = eof->local_node_ids.begin(); lit != eof->local_node_ids.end();lit ++){
-	    std::cout << *lit << " " ;
-	  }
-	  std::cout << std::endl;
-	}
-
-	std::cout << "found " << face_set.size() << " faces " << std::endl;
-	for(sit = face_set.begin();sit != face_set.end();sit++){
-	  topo_entity * eof  = *sit;
-	  std::list < long long > ::iterator lit;
-	  std::cout << rank << " nodes " ;
-	  for(lit = eof->local_node_ids.begin(); lit != eof->local_node_ids.end();lit ++){
-	    std::cout << *lit << " " ;
-	  }
-	  std::cout << endl;
-	} 
       }
     }
     
@@ -1246,6 +1224,13 @@ void  Conform_Boundary_IDS(long long ** comm_entities,
       if(receive_buffer[i][j] >= 0)data_array[comm_entities[i][j]-1] = receive_buffer[i][j];
     }
   }
+  
+  for(unsigned i = 0; i < nncm; i ++){
+    if(send_buffer[i])   delete [] send_buffer[i];
+    if(receive_buffer[i])delete [] receive_buffer[i];
+  }
+  delete [] send_buffer;
+  delete [] receive_buffer;
 }
 
 
@@ -1312,4 +1297,11 @@ void  Conform_Boundary_IDS_topo_entity(std::vector < std:: vector < topo_entity 
       if(receive_buffer[i][j] >= 0)topo_entities[i][j]->global_id = receive_buffer[i][j];
     }
   }
+
+  for(unsigned i = 0; i < nncm; i ++){
+    if(send_buffer[i])   delete [] send_buffer[i];
+    if(receive_buffer[i])delete [] receive_buffer[i];
+  }
+  delete [] send_buffer;
+  delete [] receive_buffer;
 }
