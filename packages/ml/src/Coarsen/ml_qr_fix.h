@@ -7,7 +7,7 @@
 
 /* If we need more than 16 kernel components, define ML_QR_FIX_TYPE
  * as unsigned int, otherwise use unsigned short int to conserve memory */
-#define ML_QR_FIX_TYPE unsigned int
+#define ML_QR_FIX_TYPE long int
 
 typedef struct ML_qr_fix {
 
