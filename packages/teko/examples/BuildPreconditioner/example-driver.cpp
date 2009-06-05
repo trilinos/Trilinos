@@ -68,7 +68,7 @@ int main(int argc,char * argv[])
    /////////////////////////////////////////////////////////
 
    // build an InverseLibrary
-   RCP<PB::InverseLibrary> invLib = PB::InverseLibrary::buildFromStratimikos();
+   RCP<PB::InverseLibrary> invLib = PB::InverseLibrary::buildFromStratimikos(); /*@ \label{lned:define-inv-params} @*/
    
    // build the inverse factory needed by the example preconditioner
    RCP<const PB::InverseFactory> inverse  /*@ \label{lned:define-inv-fact} @*/
