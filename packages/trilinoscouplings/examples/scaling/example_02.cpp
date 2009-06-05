@@ -377,7 +377,6 @@ int main(int argc, char *argv[]) {
   std::set < topo_entity * , fecomp > edge_set;
   std::set < topo_entity * , fecomp > face_set;
 
-  std::vector < topo_entity * > node_vector;
   std::vector < topo_entity * > edge_vector;
   std::vector < topo_entity * > face_vector;
 
