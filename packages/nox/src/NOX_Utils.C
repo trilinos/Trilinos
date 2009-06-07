@@ -72,6 +72,10 @@ NOX::Utils::Utils(int outputInformation, int MyPID, int outputProcess,
 
 NOX::Utils::Utils(Teuchos::ParameterList& p)
 {
+  printTest=0; // This must be initialized before use in reset(), or else
+               // it can take on different random values on different 
+               // processors leading to inconsistent program flow. 
+               // KL 7 June 2009
   this->reset(p);
 }
 
