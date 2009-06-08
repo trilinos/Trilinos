@@ -80,6 +80,16 @@
 // ML Includes
 #include "ml_MultiLevelPreconditioner.h"
 
+
+int TestMultiLevelPreconditionerLaplace(char ProblemType[],
+				 Teuchos::ParameterList   & MLList,
+                                 Epetra_CrsMatrix   & A,
+                                 const Epetra_MultiVector & xexact,
+                                 Epetra_MultiVector & b,
+                                 double & TotalErrorResidual,
+                                        double & TotalErrorExactSol);
+
+
 using namespace std;
 using namespace Intrepid;
 using namespace shards;
@@ -816,7 +826,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
 
    // Global arrays in Epetra format
-    Epetra_SerialComm Comm;
+    Epetra_MpiComm Comm(MPI_COMM_WORLD);
     Epetra_Map globalMapG(numNodes, 0, Comm);
     Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, numFieldsG);
     Epetra_FEVector rhs(globalMapG);
@@ -923,15 +933,28 @@ int main(int argc, char *argv[]) {
    rhs.GlobalAssemble();
    
   // Dump matrices to disk
-   EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-   EpetraExt::MultiVectorToMatlabFile("rhs_vector.dat",rhs);
+   //   EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
+   //   EpetraExt::MultiVectorToMatlabFile("rhs_vector.dat",rhs);
 
- // delete mesh
- Delete_Pamgen_Mesh();
 
- // reset format state of std::cout
- std::cout.copyfmt(oldFormatState);
+   
+   // Run the solver
+   Teuchos::ParameterList MLList;
+   ML_Epetra::SetDefaults("SA",MLList);
+   Epetra_FEVector xexact(rhs);
+   double TotalErrorResidual=0, TotalErrorExactSol=0;
 
+   xexact.PutScalar(0.0);//fixme
+   
+   TestMultiLevelPreconditionerLaplace("laplace",MLList,StiffMatrix,xexact,rhs,
+                                       TotalErrorResidual, TotalErrorExactSol);
+   
+   // delete mesh
+   Delete_Pamgen_Mesh();
+   
+   // reset format state of std::cout
+   std::cout.copyfmt(oldFormatState);
+   
    MPI_Finalize();
  
  return 0;
