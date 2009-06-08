@@ -74,15 +74,35 @@
 
 // ML Includes
 #include "ml_MultiLevelPreconditioner.h"
+#include "ml_RefMaxwell_11_Operator.h"
+#include "ml_RefMaxwell.h"
+#include "ml_EdgeMatrixFreePreconditioner.h"
+#include "ml_epetra_utils.h"
 
 // Pamgen includes
 #include "create_inline_mesh.h"
 #include "../mesh_spec_lt/im_exodusII.h"
 #include "../mesh_spec_lt/im_ne_nemesisI.h"
 
+
+void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
+                                           Teuchos::ParameterList   & MLList,
+                                           Epetra_CrsMatrix   & CurlCurl,
+                                           Epetra_CrsMatrix   & D0,
+                                           Epetra_CrsMatrix   & D0clean,
+                                           Epetra_CrsMatrix   & M0inv,
+                                           Epetra_CrsMatrix   & M1,
+                                           const Epetra_MultiVector & xexact,
+                                           Epetra_MultiVector & b,
+                                           double & TotalErrorResidual,
+                                             double & TotalErrorExactSol);
 using namespace std;
 using namespace Intrepid;
 using namespace shards;
+
+
+
+
 
 // Functions to evaluate exact solution and derivatives
 int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z);
@@ -768,12 +788,39 @@ int main(int argc, char *argv[]) {
    rhsC.GlobalAssemble();
    
   // Dump matrices to disk
+#define DUMP_OUT_MATRICES
+#ifdef DUMP_OUT_MATRICES
    EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassG);
    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
    EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffC);
    EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
    EpetraExt::MultiVectorToMatlabFile("rhs1_vector.dat",rhsC);
+#endif
 
+   // Build the inverse diagonal for MassG
+   Epetra_Vector DiagG(MassG.RowMap());
+   DiagG.PutScalar(1.0);
+   MassG.Multiply(false,DiagG,DiagG);
+   for(int i=0;i<DiagG.MyLength();i++) DiagG[i]=1.0/DiagG[i];
+   Epetra_CrsMatrix MassGinv(Copy,MassG.RowMap(),MassG.RowMap(),1);
+   MassGinv.ReplaceDiagonalValues(DiagG);
+   MassGinv.FillComplete();
+
+   // Solve!
+   Teuchos::ParameterList MLList;  
+   double TotalErrorResidual=0, TotalErrorExactSol=0;   
+   ML_Epetra::SetDefaultsRefMaxwell(MLList);
+   Teuchos::ParameterList MLList2=MLList.get("refmaxwell: 11list",MLList);
+
+   Epetra_FEVector xexact(rhsC);
+   xexact.PutScalar(0.0);//haq
+
+#ifdef RUN_SOLVER   
+   TestMultiLevelPreconditioner_CurlLSFEM("curl-lsfem",MLList2,StiffC,
+                                          DGrad,DGrad,MassGinv,MassC,
+                                          xexact,rhsC,
+                                          TotalErrorResidual, TotalErrorExactSol);
+#endif
    fSignsout.close();
 
  // delete mesh
@@ -787,14 +834,110 @@ int main(int argc, char *argv[]) {
 
 
 
+
+void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector &lhs,const Epetra_MultiVector &rhs,const Epetra_MultiVector &xexact,Epetra_Time & Time, double & TotalErrorExactSol, double& TotalErrorResidual){
+  // ==================================================== //  
+  // compute difference between exact solution and ML one //
+  // ==================================================== //  
+  double d = 0.0, d_tot = 0.0;  
+  for( int i=0 ; i<lhs.Map().NumMyElements() ; ++i )
+    d += (lhs[0][i] - xexact[0][i]) * (lhs[0][i] - xexact[0][i]);
+  
+  A.Comm().SumAll(&d,&d_tot,1);
+  
+  // ================== //
+  // compute ||Ax - b|| //
+  // ================== //
+  double Norm;
+  Epetra_Vector Ax(rhs.Map());
+  A.Apply(lhs, Ax);
+  Ax.Update(1.0, rhs, -1.0);
+  Ax.Norm2(&Norm);
+  
+  if (A.Comm().MyPID() == 0) {
+    cout << msg << "......Using " << A.Comm().NumProc() << " processes" << endl;
+    cout << msg << "......||A x - b||_2 = " << Norm << endl;
+    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
+    cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
+  }
+  
+  TotalErrorExactSol += sqrt(d_tot);
+  TotalErrorResidual += Norm;
+}
+
+
+void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
+                                           Teuchos::ParameterList   & MLList,
+                                           Epetra_CrsMatrix   & CurlCurl,
+                                           Epetra_CrsMatrix   & D0,
+                                           Epetra_CrsMatrix   & D0clean,
+                                           Epetra_CrsMatrix   & M0inv,
+                                           Epetra_CrsMatrix   & M1,
+                                           const Epetra_MultiVector & xexact,
+                                           Epetra_MultiVector & b,
+                                           double & TotalErrorResidual,
+                                           double & TotalErrorExactSol){
+
+
+  /* Build the (1,1) Block Operator */
+  ML_Epetra::ML_RefMaxwell_11_Operator Operator11(CurlCurl,D0,M0inv,M1);
+
+  /* Build the AztecOO stuff */
+  Epetra_MultiVector x(xexact);
+  x.PutScalar(0.0);
+  Epetra_LinearProblem Problem(&Operator11,&x,&b); 
+  Epetra_MultiVector* lhs = Problem.GetLHS();
+  Epetra_MultiVector* rhs = Problem.GetRHS();
+  
+  Epetra_Time Time(CurlCurl.Comm());
+  
+  /* Get the BC edges*/
+  int numBCedges;  
+  int* BCedges=ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(CurlCurl,numBCedges);
+
+  /* Nuke M1 for OAZ*/
+  ML_Epetra::Apply_OAZToMatrix(BCedges,numBCedges,M1);
+
+  
+  /* Build the aggregation guide matrix */
+  Epetra_CrsMatrix *TMT_Agg_Matrix;
+  ML_Epetra::ML_Epetra_PtAP(M1,D0clean,TMT_Agg_Matrix,false);
+  
+  /* Approximate the diagonal for EMFP: Double the Diagonal of CurlCurl */
+  Epetra_Vector Diagonal(CurlCurl.DomainMap(),false);
+  CurlCurl.ExtractDiagonalCopy(Diagonal);
+  for(int i=0;i<CurlCurl.NumMyRows();i++) Diagonal[i]*=2;
+  
+  /* Build the EMFP Preconditioner */
+  ML_Epetra::EdgeMatrixFreePreconditioner EMFP(Operator11,Diagonal,D0,D0clean,*TMT_Agg_Matrix,BCedges,numBCedges,MLList);
+
+  /* Solve! */
+  AztecOO solver(Problem);  
+  solver.SetPrecOperator(&EMFP);
+  solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_output, 32);
+  solver.Iterate(200, 1e-10);
+  
+  // accuracy check
+  string msg = ProblemType;
+  solution_test(msg,Operator11,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
+
+}
+
+
+
+
+
+
+
 // Test ML
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
-				 Teuchos::ParameterList   & MLList,
-                                 Epetra_CrsMatrix   & A,
-                                 const Epetra_MultiVector & xexact,
-                                 Epetra_MultiVector & b,
-                                 double & TotalErrorResidual,
-				 double & TotalErrorExactSol)
+                                        Teuchos::ParameterList   & MLList,
+                                        Epetra_CrsMatrix   & A,
+                                        const Epetra_MultiVector & xexact,
+                                        Epetra_MultiVector & b,
+                                        double & TotalErrorResidual,
+                                        double & TotalErrorExactSol)
 {
   Epetra_MultiVector x(xexact);
   x.PutScalar(0.0);
@@ -821,36 +964,10 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   
   delete MLPrec;
   
-  // ==================================================== //
-  // compute difference between exact solution and ML one //
-  // ==================================================== //  
-  double d = 0.0, d_tot = 0.0;  
-  for( int i=0 ; i<lhs->Map().NumMyElements() ; ++i )
-    d += ((*lhs)[0][i] - xexact[0][i]) * ((*lhs)[0][i] - xexact[0][i]);
-  
-  A.Comm().SumAll(&d,&d_tot,1);
-  
-  // ================== //
-  // compute ||Ax - b|| //
-  // ================== //
-  double Norm;
-  Epetra_Vector Ax(rhs->Map());
-  A.Multiply(false, *lhs, Ax);
-  Ax.Update(1.0, *rhs, -1.0);
-  Ax.Norm2(&Norm);
-  
+  // accuracy check
   string msg = ProblemType;
-  
-  if (A.Comm().MyPID() == 0) {
-    cout << msg << "......Using " << A.Comm().NumProc() << " processes" << endl;
-    cout << msg << "......||A x - b||_2 = " << Norm << endl;
-    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
-    cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
-  }
-  
-  TotalErrorExactSol += sqrt(d_tot);
-  TotalErrorResidual += Norm;
-  
+  solution_test(msg,A,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
+    
   return( solver.NumIters() );
   
 }
