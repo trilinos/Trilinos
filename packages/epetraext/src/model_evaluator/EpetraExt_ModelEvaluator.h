@@ -40,6 +40,11 @@ class Epetra_Map;
 class Epetra_Vector;
 class Epetra_Operator;
 
+// Forward declaration of Stochastic Galerkin (SG) argument types
+namespace Stokhos {
+  template <typename coeff_type> class VectorOrthogPoly;
+}
+
 namespace EpetraExt {
 
 /** \brief Base interface for evaluating a stateless "model".
@@ -56,46 +61,66 @@ public:
   enum EInArgsMembers {
     IN_ARG_x_dot
     ,IN_ARG_x
-    ,IN_ARG_x_dot_poly 
-    ,IN_ARG_x_poly 
+    ,IN_ARG_x_dot_poly ///< Time derivative vector Taylor polynomial
+    ,IN_ARG_x_poly    ///< Solution vector Taylor polynomial
+    ,IN_ARG_x_dot_sg  ///< Stochastic Galerkin time derivative vector polynomial
+    ,IN_ARG_x_sg      ///< Stochastic Galerkin solution vector polynomial
     ,IN_ARG_t
     ,IN_ARG_alpha
     ,IN_ARG_beta
   };
-  static const int NUM_E_IN_ARGS_MEMBERS=7;
+  static const int NUM_E_IN_ARGS_MEMBERS=9;
 
   /** \brief . */
   class InArgs {
   public:
+
+    //! Short-hand for stochastic Galerkin vector type
+    typedef Teuchos::RefCountPtr<const Stokhos::VectorOrthogPoly<Epetra_Vector> > sg_const_vector_t;
+    
     /** \brief. */
     InArgs();
     /** \brief . */
     std::string modelEvalDescription() const;
     /** \brief .  */
     int Np() const;
+    /** \brief Number of stochastic Galerkin parameters  */
+    int Np_sg() const;
     /** \brief. */
     void set_x_dot( const Teuchos::RefCountPtr<const Epetra_Vector> &x_dot );
     /** \brief. */
     Teuchos::RefCountPtr<const Epetra_Vector> get_x_dot() const;
     /** \brief. */
     void set_x( const Teuchos::RefCountPtr<const Epetra_Vector> &x );
-    /** \brief. */
+    /** \brief Set solution vector Taylor polynomial. */
     Teuchos::RefCountPtr<const Epetra_Vector> get_x() const;
     void set_x_poly(
       const Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > &x_poly
       );
-    /** \brief .  */
+    /** \brief Get solution vector Taylor polynomial.  */
     Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > get_x_poly() const;
-    /** \brief .  */
+    /** \brief Set time derivative vector Taylor polynomial.  */
     void set_x_dot_poly(
       const Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > &x_dot_poly
       );
-    /** \brief .  */
+    /** \brief Get time derivative vector Taylor polynomial.  */
     Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > get_x_dot_poly() const;
+    /** \brief Set stochastic Galerkin solution vector polynomial.  */
+    void set_x_sg(const sg_const_vector_t &x_sg);
+    /** \brief Get stochastic Galerkin solution vector polynomial.  */
+    sg_const_vector_t get_x_sg() const;
+    /** \brief Set stochastic Galerkin time derivative vector polynomial.  */
+    void set_x_dot_sg(const sg_const_vector_t &x_dot_sg);
+    /** \brief Get stochastic Galerkin time derivative vector polynomial.  */
+    sg_const_vector_t get_x_dot_sg() const;
     /** \brief. */
     void set_p( int l, const Teuchos::RefCountPtr<const Epetra_Vector> &p_l );
     /** \brief. */
     Teuchos::RefCountPtr<const Epetra_Vector> get_p(int l) const;
+    /** \brief Set stochastic Galerkin vector polynomial parameter. */
+    void set_p_sg( int l, const sg_const_vector_t &p_sg_l );
+    /** \brief Get stochastic Galerkin vector polynomial parameter. */
+    sg_const_vector_t get_p_sg(int l) const;
     /** \brief. */
     void set_t( double t );
     /** \brief. */
@@ -116,17 +141,23 @@ public:
     /** \brief . */
     void _set_Np(int Np);
     /** \brief . */
+    void _set_Np_sg(int Np);
+    /** \brief . */
     void _setSupports( EInArgsMembers arg, bool supports );
   private:
     // types
     typedef Teuchos::Array<Teuchos::RefCountPtr<const Epetra_Vector> > p_t;
+    typedef Teuchos::Array<sg_const_vector_t > p_sg_t;
     // data
     std::string modelEvalDescription_;
     Teuchos::RefCountPtr<const Epetra_Vector>  x_dot_;
     Teuchos::RefCountPtr<const Epetra_Vector>  x_;
     Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > x_dot_poly_;
     Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> > x_poly_;
+    sg_const_vector_t                          x_dot_sg_;
+    sg_const_vector_t                          x_sg_;
     p_t                                        p_;
+    p_sg_t                                     p_sg_;
     double                                     t_;
     double                                     alpha_;
     double                                     beta_;
@@ -345,9 +376,11 @@ public:
   enum EOutArgsMembers {
     OUT_ARG_f
     ,OUT_ARG_W
-    ,OUT_ARG_f_poly
+    ,OUT_ARG_f_poly   ///< Residual vector Taylor polynomial
+    ,OUT_ARG_f_sg     ///< Stochastic Galerkin residual vector polynomial
+    ,OUT_ARG_W_sg     ///< Stochastic Galerkin "W" operator polyomial
   };
-  static const int NUM_E_OUT_ARGS_MEMBERS=3;
+  static const int NUM_E_OUT_ARGS_MEMBERS=5;
 
   /** \brief . */
   enum EOutArgsDfDp {
@@ -372,6 +405,13 @@ public:
   /** \brief . */
   class OutArgs {
   public:
+
+    //! Short-hand for stochastic Galerkin vector type
+    typedef Teuchos::RefCountPtr<Stokhos::VectorOrthogPoly<Epetra_Vector> > sg_vector_t;
+
+    //! Short-hand for stochastic Galerkin operator type
+    typedef Teuchos::RefCountPtr<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_operator_t;
+
     /** \brief. */
     OutArgs();
     /** \brief . */
@@ -428,10 +468,18 @@ public:
     Derivative get_DgDp(int j, int l) const;
     /** \brief . */
     DerivativeProperties get_DgDp_properties(int j, int l) const;
-    /** \brief .  */
+    /** \brief Set residual vector Taylor polynomial.  */
     void set_f_poly( const Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > &f_poly );
-    /** \brief .  */
+    /** \brief Get residual vector Taylor polynomial.  */
     Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > get_f_poly() const;
+    /** \brief Set stochastic Galerkin residual vector polynomial.  */
+    void set_f_sg( const sg_vector_t& f_sg );
+    /** \brief Get stochastic Galerkin residual vector polynomial.  */
+    sg_vector_t get_f_sg() const;
+    /** \brief Set stochastic Galerkin W operator polynomial. */
+    void set_W_sg( const sg_operator_t& W_sg );
+    /** \brief Get stochastic Galerkin W operator polynomial. */
+    sg_operator_t get_W_sg() const;
     /** \brief Return true if the function or its derivatives are set. */
     bool funcOrDerivesAreSet(EOutArgsMembers arg) const;
   protected:
@@ -485,6 +533,8 @@ public:
     deriv_t DgDp_; // Ng x Np
     deriv_properties_t DgDp_properties_; // Ng x Np
     Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > f_poly_;
+    sg_vector_t f_sg_;
+    sg_operator_t W_sg_;
     // functions
     void assert_supports(EOutArgsMembers arg) const;
     void assert_supports(EOutArgsDfDp arg, int l) const;
@@ -635,6 +685,8 @@ protected:
     void setModelEvalDescription( const std::string &modelEvalDescription );
     /** \brief . */
     void set_Np(int Np);
+    /** \brief . */
+    void set_Np_sg(int Np);
     /** \brief . */
     void setSupports( EInArgsMembers arg, bool supports = true );
   };
@@ -789,6 +841,24 @@ Teuchos::RefCountPtr<const Teuchos::Polynomial<Epetra_Vector> >
 ModelEvaluator::InArgs::get_x_poly() const
 { assert_supports(IN_ARG_x_poly); return x_poly_; }
 
+inline 
+void ModelEvaluator::InArgs::set_x_dot_sg( const ModelEvaluator::InArgs::sg_const_vector_t &x_dot_sg )
+{ assert_supports(IN_ARG_x_dot_sg); x_dot_sg_ = x_dot_sg; }
+
+inline 
+ModelEvaluator::InArgs::sg_const_vector_t
+ModelEvaluator::InArgs::get_x_dot_sg() const
+{ assert_supports(IN_ARG_x_dot_sg); return x_dot_sg_; }
+
+inline 
+void ModelEvaluator::InArgs::set_x_sg( const ModelEvaluator::InArgs::sg_const_vector_t &x_sg )
+{ assert_supports(IN_ARG_x_sg); x_sg_ = x_sg; }
+
+inline 
+ModelEvaluator::InArgs::sg_const_vector_t
+ModelEvaluator::InArgs::get_x_sg() const
+{ assert_supports(IN_ARG_x_sg); return x_sg_; }
+
 inline
 void ModelEvaluator::InArgs::set_p( int l, const Teuchos::RefCountPtr<const Epetra_Vector> &p_l )
 { assert_l(l); p_[l] = p_l; }
@@ -796,6 +866,16 @@ void ModelEvaluator::InArgs::set_p( int l, const Teuchos::RefCountPtr<const Epet
 inline
 Teuchos::RefCountPtr<const Epetra_Vector> ModelEvaluator::InArgs::get_p(int l) const
 { assert_l(l); return p_[l]; }
+
+inline
+void ModelEvaluator::InArgs::set_p_sg( int l, 
+				       const ModelEvaluator::InArgs::sg_const_vector_t &p_sg_l )
+{ assert_l(l); p_sg_[l] = p_sg_l; }
+
+inline
+ModelEvaluator::InArgs::sg_const_vector_t 
+ModelEvaluator::InArgs::get_p_sg(int l) const
+{ assert_l(l); return p_sg_[l]; }
 
 inline
 void ModelEvaluator::InArgs::set_t( double t )
@@ -831,6 +911,12 @@ inline
 void ModelEvaluator::InArgs::_set_Np(int Np)
 {
   p_.resize(Np);
+}
+
+inline
+void ModelEvaluator::InArgs::_set_Np_sg(int Np)
+{
+  p_sg_.resize(Np);
 }
 
 //
@@ -988,6 +1074,21 @@ Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> >
 ModelEvaluator::OutArgs::get_f_poly() const
 { return f_poly_; }
 
+inline
+void ModelEvaluator::OutArgs::set_f_sg( const ModelEvaluator::OutArgs::sg_vector_t& f_sg )
+{ f_sg_ = f_sg; }
+
+inline
+ModelEvaluator::OutArgs::sg_vector_t
+ModelEvaluator::OutArgs::get_f_sg() const
+{ return f_sg_; }
+
+inline
+void ModelEvaluator::OutArgs::set_W_sg( const ModelEvaluator::OutArgs::sg_operator_t& W_sg ) { W_sg_ = W_sg; }
+
+inline
+ModelEvaluator::OutArgs::sg_operator_t ModelEvaluator::OutArgs::get_W_sg() const { return W_sg_; }
+
 //
 // ModelEvaluator::InArgsSetup
 //
@@ -1001,6 +1102,10 @@ void ModelEvaluator::InArgsSetup::setModelEvalDescription( const std::string &mo
 inline
 void ModelEvaluator::InArgsSetup::set_Np(int Np)
 { this->_set_Np(Np); }
+
+inline
+void ModelEvaluator::InArgsSetup::set_Np_sg(int Np)
+{ this->_set_Np_sg(Np); }
 
 inline
 void ModelEvaluator::InArgsSetup::setSupports( EInArgsMembers arg, bool supports )
