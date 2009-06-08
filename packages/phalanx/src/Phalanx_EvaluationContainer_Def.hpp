@@ -72,8 +72,7 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p)
 // *************************************************************************
 template <typename EvalT, typename Traits> 
 void PHX::EvaluationContainer<EvalT, Traits>::
-postRegistrationSetup(const std::map<std::string,std::size_t>& 
-		      workset_sizes,
+postRegistrationSetup(typename Traits::SetupData d,
 		      PHX::FieldManager<Traits>& fm)
 {
   // Figure out all evaluator dependencies
@@ -97,21 +96,7 @@ postRegistrationSetup(const std::map<std::string,std::size_t>&
 
 	std::size_t size_of_data_type = it->getSizeOfDataType();
 
-	const PHX::DataLayout& dl = (*var)->dataLayout();
-
-	if (workset_sizes.find(dl.worksetType()) == workset_sizes.end()) {
-	  std::ostringstream msg;
-	  msg << "Error - the workset type: \"" << dl.worksetType()
-	      << "\" was NOT found in the list of worksets given in the postRegistrationSetupFunction:\n";
-	  for (std::map<std::string,std::size_t>::const_iterator i = 
-		 workset_sizes.begin(); i != workset_sizes.end(); ++i)
-	    msg << i->first << " = " << i->second << std::endl; 
-	  TEST_FOR_EXCEPTION(workset_sizes.find(dl.worksetType()) == 
-			     workset_sizes.end(), std::logic_error, msg.str());
-	}
-
-	int num_elements = 
-	  workset_sizes.find(dl.worksetType())->second * dl.size();
+	std::size_t num_elements = (*var)->dataLayout().size();
 
 	allocator_.addRequiredChunk(size_of_data_type, num_elements);
       }
@@ -127,16 +112,14 @@ postRegistrationSetup(const std::map<std::string,std::size_t>&
     typename DCTM::iterator it = data_container_template_manager_.begin();
     for (; it != data_container_template_manager_.end(); ++it) {
       
-      if ((*var)->dataTypeInfo() == it->dataTypeInfo()) {
-	const PHX::DataLayout& dl = (*var)->dataLayout();
-	it->allocateField(*var, workset_sizes.find(dl.worksetType())->second, 
-			  allocator_);
-      }
+      if ((*var)->dataTypeInfo() == it->dataTypeInfo())
+	it->allocateField(*var, allocator_);
+
     }
   }
 
   // Allow field evaluators to grab pointers to relevant field data
-  this->vp_manager_.postRegistrationSetup(fm);
+  this->vp_manager_.postRegistrationSetup(d,fm);
 
   post_registration_setup_called_ = true;
 }

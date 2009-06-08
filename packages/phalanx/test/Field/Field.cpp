@@ -40,6 +40,15 @@
 // From test/Utilities directory
 #include "Traits.hpp"
 
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Cell)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Cell)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Node)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Node)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(QP)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(QP)
+
 int main(int argc, char *argv[]) 
 {
   using namespace std;
@@ -57,8 +66,11 @@ int main(int argc, char *argv[])
     {
 
       // Dummy data layouts
-      RCP<DataLayout> node4 = rcp(new FlatLayout("Q1_Nodes", 4));
-      RCP<DataLayout> quad4 = rcp(new FlatLayout("Q1_QuadPoints", 4));
+      RCP<DataLayout> node4 = rcp(new MDALayout<Cell,Node>(25,4));
+      RCP<DataLayout> quad4 = rcp(new MDALayout<Cell,QP>(25,4));
+      const int size = node4->size();
+      TEST_FOR_EXCEPTION(node4->size() != quad4->size(), std::runtime_error,
+			 "Array sizes fixed to 100 for this test!");
       
       // Tags with same name but different topology
       Tag<double> nodal_density("density", node4);
@@ -116,7 +128,6 @@ int main(int argc, char *argv[])
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // setFieldData()
       cout << "Testing getFieldData()...";
-      const int size = 100;
       ArrayRCP<double> a_scalar_scalar = 
 	arcp<double>(size);
       ArrayRCP< MyVector<double> > b_vector_scalar = 

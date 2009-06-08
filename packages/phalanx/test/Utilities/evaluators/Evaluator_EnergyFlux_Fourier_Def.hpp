@@ -47,20 +47,21 @@ PHX_EVALUATOR_CTOR(Fourier,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Fourier,fm)
+PHX_POST_REGISTRATION_SETUP(Fourier,data,fm)
 {
   this->utils.setFieldData(flux,fm);
   this->utils.setFieldData(density,fm);
   this->utils.setFieldData(dc,fm);
   this->utils.setFieldData(grad_temp,fm);
 
-  data_layout_size = flux.fieldTag().dataLayout().size();
+  cell_data_size = flux.fieldTag().dataLayout().size() / 
+    flux.fieldTag().dataLayout().dimension(0);
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Fourier,d)
 { 
-  std::size_t size = d.size() * data_layout_size;
+  std::size_t size = d.size() * cell_data_size;
 
   for (std::size_t i = 0; i < size; ++i)
     flux[i] = - density[i] * dc[i] * grad_temp[i];

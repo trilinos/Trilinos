@@ -61,7 +61,8 @@ GatherSolution(const Teuchos::ParameterList& p)
 // **********************************************************************
 template<typename Traits> 
 void GatherSolution<PHX::MyTraits::Residual, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& fm)
+postRegistrationSetup(typename Traits::SetupData d, 
+		      PHX::FieldManager<Traits>& fm)
 {
   for (std::size_t eq = 0; eq < val.size(); ++eq)
     this->utils.setFieldData(val[eq],fm);
@@ -120,7 +121,8 @@ GatherSolution(const Teuchos::ParameterList& p)
 // **********************************************************************
 template<typename Traits> 
 void GatherSolution<PHX::MyTraits::Jacobian, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& fm)
+postRegistrationSetup(typename Traits::SetupData d, 
+		      PHX::FieldManager<Traits>& fm)
 {
   for (std::size_t eq = 0; eq < val.size(); ++eq)
     this->utils.setFieldData(val[eq],fm);

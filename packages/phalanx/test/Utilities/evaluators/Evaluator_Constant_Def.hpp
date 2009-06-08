@@ -44,7 +44,7 @@ PHX_EVALUATOR_CTOR(Constant,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Constant,fm)
+PHX_POST_REGISTRATION_SETUP(Constant,data,fm)
 {
   using namespace PHX;
   this->utils.setFieldData(constant,fm);

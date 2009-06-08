@@ -30,7 +30,7 @@
 // @HEADER
 
 #include "Phalanx_ConfigDefs.hpp"
-#include "Phalanx_DataLayout_FlatLayout.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_Evaluator_Manager.hpp"
@@ -49,6 +49,15 @@
 // From test/Utilities directory
 #include "Traits.hpp"
 
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Cell)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Cell)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Node)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Node)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(QP)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(QP)
+
 int main(int argc, char *argv[]) 
 {
   using namespace std;
@@ -61,7 +70,7 @@ int main(int argc, char *argv[])
     TimeMonitor tm(*total_time);
 
     // *********************************************************************
-    // Start of Data Container Testing
+    // Start of EvaluatorManager Testing
     // *********************************************************************
     {
       cout << "\nStarting EvaluatorManager Testing\n";
@@ -71,8 +80,8 @@ int main(int argc, char *argv[])
       EvaluatorManager<MyTraits> em;
       cout << "Passed!" << endl;
 
-      RCP<DataLayout> nodes = rcp(new FlatLayout("nodes",4));
-      RCP<DataLayout> qp = rcp(new FlatLayout("QP",4));
+      RCP<DataLayout> nodes = rcp(new MDALayout<Cell,Node>(100,4));
+      RCP<DataLayout> qp = rcp(new MDALayout<Cell,QP>(100,4));
 
       RCP<FieldTag> den_n = rcp(new Tag<double>("Density", nodes));
       RCP<FieldTag> den_qp = rcp(new Tag<double>("Density", qp));

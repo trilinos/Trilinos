@@ -209,6 +209,8 @@ The following have contributed to the design through ideas, discussions, and/or 
 
 \section user_guide_index Index
 
+NOTE:This page is out of date due to commits made on June 8, 2009.  I will update it shortly.  Please email me (Roger Pawlowski, rppawlo@sandia.gov) if this is holding up your work.
+
 - \ref user_guide_getting_started
 - \ref user_guide_domain_model
 - \ref user_guide_mdarray_domain_model

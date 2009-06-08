@@ -32,7 +32,6 @@
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 
-#include "Phalanx_DataLayout_FlatLayout.hpp"
 #include "Phalanx_DataLayout_MDALayout.hpp"
 
 #include "Phalanx_Field.hpp"

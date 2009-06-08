@@ -42,7 +42,7 @@ PHX_EVALUATOR_CLASS(Fourier)
   PHX::Field< ScalarT > dc;
   PHX::Field< MyVector<ScalarT> > grad_temp;
   
-  std::size_t data_layout_size;
+  std::size_t cell_data_size;
 
 PHX_EVALUATOR_CLASS_END
 

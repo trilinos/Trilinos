@@ -125,10 +125,11 @@ int main(int argc, char *argv[])
       typedef MDField<double,Cell,Node>::size_type size_type;
 
       // Dummy data layouts
-      RCP<DataLayout> node_scalar = rcp(new MDALayout<Node>(4));
-      RCP<DataLayout> quad_scalar = rcp(new MDALayout<Quadrature>(4));
-      RCP<DataLayout> node_vector = rcp(new MDALayout<Node,Dim>(4,3));
-      RCP<DataLayout> quad_vector = rcp(new MDALayout<Quadrature,Dim>(4,3));
+      size_type num_cells = 100;
+      RCP<DataLayout> node_scalar = rcp(new MDALayout<Cell,Node>(num_cells,4));
+      RCP<DataLayout> quad_scalar = rcp(new MDALayout<Cell,Quadrature>(num_cells,4));
+      RCP<DataLayout> node_vector = rcp(new MDALayout<Cell,Node,Dim>(num_cells,4,3));
+      RCP<DataLayout> quad_vector = rcp(new MDALayout<Cell,Quadrature,Dim>(num_cells,4,3));
 
       // Tags with same name but different topology
       Tag<double> nodal_density("density", node_scalar);
@@ -186,19 +187,18 @@ int main(int argc, char *argv[])
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // setFieldData()
       cout << "Testing setFieldData()...";
-      size_type num_cells = 100;
       ArrayRCP<double> a_mem = 
-	arcp<double>(a.fieldTag().dataLayout().size() * num_cells);
+	arcp<double>(a.fieldTag().dataLayout().size());
       ArrayRCP<double> b_mem = 
-	arcp<double>(b.fieldTag().dataLayout().size() * num_cells);
+	arcp<double>(b.fieldTag().dataLayout().size());
       ArrayRCP<MyTraits::FadType> c_mem = 
-	arcp<MyTraits::FadType>(c.fieldTag().dataLayout().size() * num_cells);
+	arcp<MyTraits::FadType>(c.fieldTag().dataLayout().size());
       ArrayRCP<MyTraits::FadType> d_mem = 
-	arcp<MyTraits::FadType>(d.fieldTag().dataLayout().size() * num_cells);
+	arcp<MyTraits::FadType>(d.fieldTag().dataLayout().size());
       ArrayRCP<double> e_mem =
-	arcp<double>(e.fieldTag().dataLayout().size() * num_cells);
+	arcp<double>(e.fieldTag().dataLayout().size());
       ArrayRCP<MyTraits::FadType> f_mem = 
-	arcp<MyTraits::FadType>(f.fieldTag().dataLayout().size() * num_cells);
+	arcp<MyTraits::FadType>(f.fieldTag().dataLayout().size());
 
       a.setFieldData(a_mem);
       b.setFieldData(b_mem);
@@ -247,22 +247,22 @@ int main(int argc, char *argv[])
       // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
       // size()
       cout << "Testing size() method...";
-      TEST_FOR_EXCEPTION(a.size() != num_cells * node_scalar->size(), 
+      TEST_FOR_EXCEPTION(a.size() != node_scalar->size(), 
 			 std::logic_error, 
 			 "Size of array a is not equal to requested size.");
-      TEST_FOR_EXCEPTION(b.size() != num_cells * quad_vector->size(), 
+      TEST_FOR_EXCEPTION(b.size() != quad_vector->size(), 
 			 std::logic_error, 
 			 "Size of array b is not equal to requested size.");
-      TEST_FOR_EXCEPTION(c.size() != num_cells * node_scalar->size(), 
+      TEST_FOR_EXCEPTION(c.size() != node_scalar->size(), 
 			 std::logic_error, 
 			 "Size of array c is not equal to requested size.");
-      TEST_FOR_EXCEPTION(d.size() != num_cells * quad_vector->size(), 
+      TEST_FOR_EXCEPTION(d.size() != quad_vector->size(), 
 			 std::logic_error, 
 			 "Size of array d is not equal to requested size.");
-      TEST_FOR_EXCEPTION(e.size() != num_cells * node_scalar->size(),
+      TEST_FOR_EXCEPTION(e.size() != node_scalar->size(),
 			 std::logic_error,
 			 "Size of array e is not equal to requested size.");
-      TEST_FOR_EXCEPTION(f.size() != num_cells * quad_vector->size(),
+      TEST_FOR_EXCEPTION(f.size() != quad_vector->size(),
 			 std::logic_error,
 			 "Size of array f is not equal to requested size.");
       cout << "passed!" << endl;
@@ -273,21 +273,21 @@ int main(int argc, char *argv[])
       cout << "Testing operator()(...) accessors...";
       
 
-      RCP<DataLayout> d1 = rcp(new MDALayout<Dim>(2));
+      RCP<DataLayout> d1 = rcp(new MDALayout<Cell,Dim>(num_cells,2));
     
-      RCP<DataLayout> d2 = rcp(new MDALayout<Dim,Dim>(1,2));
+      RCP<DataLayout> d2 = rcp(new MDALayout<Cell,Dim,Dim>(num_cells,1,2));
 
-      RCP<DataLayout> d3 = rcp(new MDALayout<Dim,Dim,Dim>(1,2,3));
+      RCP<DataLayout> d3 = rcp(new MDALayout<Cell,Dim,Dim,Dim>(num_cells,1,2,3));
 
-      RCP<DataLayout> d4 = rcp(new MDALayout<Dim,Dim,Dim,Dim>(1,2,3,4));
+      RCP<DataLayout> d4 = rcp(new MDALayout<Cell,Dim,Dim,Dim,Dim>(num_cells,1,2,3,4));
 
-      RCP<DataLayout> d5 = rcp(new MDALayout<Dim,Dim,Dim,Dim,Dim>(1,2,3,4,5));
+      RCP<DataLayout> d5 = rcp(new MDALayout<Cell,Dim,Dim,Dim,Dim,Dim>(num_cells,1,2,3,4,5));
 
       RCP<DataLayout> d6 = 
-	rcp(new MDALayout<Dim,Dim,Dim,Dim,Dim,Dim>(1,2,3,4,5,6));
+	rcp(new MDALayout<Cell,Dim,Dim,Dim,Dim,Dim,Dim>(num_cells,1,2,3,4,5,6));
       
       RCP<DataLayout> d7 = 
-	rcp(new MDALayout<Dim,Dim,Dim,Dim,Dim,Dim,Dim>(1,2,3,4,5,6,7));
+	rcp(new MDALayout<Cell,Dim,Dim,Dim,Dim,Dim,Dim,Dim>(num_cells,1,2,3,4,5,6,7));
 
       MDField<double,Cell,Dim> f1("Test1",d1);
       MDField<double,Cell,Dim,Dim> f2("Test7",d2);
@@ -297,13 +297,13 @@ int main(int argc, char *argv[])
       MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim> f6("Test7",d6);
       MDField<double,Cell,Dim,Dim,Dim,Dim,Dim,Dim,Dim> f7("Test7",d7);
 
-      ArrayRCP<double> mem1 = arcp<double>(num_cells * d1->size());
-      ArrayRCP<double> mem2 = arcp<double>(num_cells * d2->size());
-      ArrayRCP<double> mem3 = arcp<double>(num_cells * d3->size());
-      ArrayRCP<double> mem4 = arcp<double>(num_cells * d4->size());
-      ArrayRCP<double> mem5 = arcp<double>(num_cells * d5->size());
-      ArrayRCP<double> mem6 = arcp<double>(num_cells * d6->size());
-      ArrayRCP<double> mem7 = arcp<double>(num_cells * d7->size());
+      ArrayRCP<double> mem1 = arcp<double>(d1->size());
+      ArrayRCP<double> mem2 = arcp<double>(d2->size());
+      ArrayRCP<double> mem3 = arcp<double>(d3->size());
+      ArrayRCP<double> mem4 = arcp<double>(d4->size());
+      ArrayRCP<double> mem5 = arcp<double>(d5->size());
+      ArrayRCP<double> mem6 = arcp<double>(d6->size());
+      ArrayRCP<double> mem7 = arcp<double>(d7->size());
       
       f1.setFieldData(mem1);
       f2.setFieldData(mem2);
@@ -358,7 +358,7 @@ int main(int argc, char *argv[])
       cout << "Testing operator<<()...";
       ostringstream output;
       output << a;
-      TEST_FOR_EXCEPTION(output.str() != "MDField<Cell,Node>(100,4): Tag: density, double, DataLayout: MDA(cell)<Node>(4)", std::logic_error, "String match failed!"); 
+      TEST_FOR_EXCEPTION(output.str() != "MDField<Cell,Node>(100,4): Tag: density, double, DataLayout: MDA<Cell,Node>(100,4)", std::logic_error, "String match failed!"); 
       cout << "passed!" << endl;
       cout << output.str() << endl;
 

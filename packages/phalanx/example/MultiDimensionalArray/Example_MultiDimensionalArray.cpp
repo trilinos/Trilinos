@@ -85,14 +85,24 @@ int main(int argc, char *argv[])
     {
       cout << "\nStarting MultiDimensionalArray EnergyFlux Example!" << endl;
 
-      RCP<DataLayout> qp_scalar = rcp(new MDALayout<Node>(4));
-      RCP<DataLayout> node_scalar = rcp(new MDALayout<QuadPoint>(4));
+      // Assume we have 102 cells on processor and can fit 20 cells in cache
+      const std::size_t num_local_cells = 102;
+      const std::size_t workset_size = 20;
 
-      RCP<DataLayout> qp_vec = rcp(new MDALayout<Node,Dim>(4,3));
-      RCP<DataLayout> node_vec = rcp(new MDALayout<QuadPoint,Dim>(4,3));
+      RCP<DataLayout> qp_scalar = 
+	rcp(new MDALayout<Cell,Node>(workset_size,4));
+      RCP<DataLayout> node_scalar = 
+	rcp(new MDALayout<Cell,QuadPoint>(workset_size,4));
 
-      RCP<DataLayout> qp_mat = rcp(new MDALayout<Node,Dim,Dim>(4,3,3));
-      RCP<DataLayout> node_mat = rcp(new MDALayout<QuadPoint,Dim,Dim>(4,3,3));
+      RCP<DataLayout> qp_vec = 
+	rcp(new MDALayout<Cell,Node,Dim>(workset_size,4,3));
+      RCP<DataLayout> node_vec = 
+	rcp(new MDALayout<Cell,QuadPoint,Dim>(workset_size,4,3));
+
+      RCP<DataLayout> qp_mat = 
+	rcp(new MDALayout<Cell,Node,Dim,Dim>(workset_size,4,3,3));
+      RCP<DataLayout> node_mat = 
+	rcp(new MDALayout<Cell,QuadPoint,Dim,Dim>(workset_size,4,3,3));
 
       // Parser will build parameter list that determines the field
       // evaluators to build
@@ -189,15 +199,11 @@ int main(int argc, char *argv[])
       Tag<JacScalarT> j_source_tag("Nonlinear Source", qp_scalar);
       fm.requireField<MyTraits::Jacobian>(j_source_tag);
 
-      // Assume we have 102 cells on processor and can fit 20 cells in cache
-      const std::size_t num_local_cells = 102;
-      const std::size_t workset_size = 20;
-
       RCP<Time> registration_time = 
 	TimeMonitor::getNewTimer("Post Registration Setup Time");
       {
 	TimeMonitor t(*registration_time);
-	fm.postRegistrationSetup(workset_size);
+	fm.postRegistrationSetup(NULL);
       }
 
       cout << fm << endl;
@@ -285,8 +291,8 @@ int main(int argc, char *argv[])
       Field<double> den(d_var); 
       fm.getFieldData<double,MyTraits::Residual>(den);
       cout << "size of density = " << den.size() << ", should be " 
-	   << workset_size * d_var.dataLayout().size() << "." << endl;
-      TEST_FOR_EXCEPTION(den.size() != static_cast<Teuchos::ArrayRCP<double>::Ordinal>(workset_size * d_var.dataLayout().size()),
+	   << d_var.dataLayout().size() << "." << endl;
+      TEST_FOR_EXCEPTION(den.size() != d_var.dataLayout().size(),
 			 std::runtime_error, 
 			 "Returned arrays are not sized correctly!");
 

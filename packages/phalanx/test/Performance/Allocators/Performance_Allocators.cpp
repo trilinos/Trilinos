@@ -47,14 +47,23 @@ using namespace std;
 using namespace Teuchos;
 using namespace PHX;
   
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Cell)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Cell)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Node)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Node)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(QP)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(QP)
+
 // **********************************************************************
 // FieldManager Builder Function
 // **********************************************************************
 template<typename Traits>
-RCP< FieldManager<Traits> > buildFieldManager()
+RCP< FieldManager<Traits> > buildFieldManager(std::size_t num_cells)
 {
-  RCP<DataLayout> qp = rcp(new FlatLayout("Q1_QP", 4));
-  RCP<DataLayout> node = rcp(new FlatLayout("Q1_NODE", 4));
+  RCP<DataLayout> qp = rcp(new MDALayout<Cell,QP>(num_cells,4));
+  RCP<DataLayout> node = rcp(new MDALayout<Cell,Node>(num_cells,4));
 
   // Parser will build parameter list that determines the field
   // evaluators to build
@@ -151,9 +160,6 @@ int main(int argc, char *argv[])
     RCP<Time> time_total = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*time_total);
     
-    RCP< FieldManager<MyTraits> > fmn = buildFieldManager<MyTraits>();
-    RCP< FieldManager<MyCTraits> > fmc = buildFieldManager<MyCTraits>();
-    
     // WARNING: For timings, we should be flushing the cache in
     // between each evaluation loop, to eliminate cache reuse.  Not a
     // big deal as we really just wanted to make sure alignment is
@@ -171,18 +177,24 @@ int main(int argc, char *argv[])
 		       std::logic_error,
 		       "Total work is not consistent!");
 
+    RCP< FieldManager<MyTraits> > fmn = 
+      buildFieldManager<MyTraits>(num_cells);
+
+    RCP< FieldManager<MyCTraits> > fmc = 
+      buildFieldManager<MyCTraits>(num_cells);
+    
     RCP<Time> time_fmn_prs = 
       TimeMonitor::getNewTimer("NEW: Post Registration Setup Time");
     {
       TimeMonitor t(*time_fmn_prs);
-      fmn->postRegistrationSetup(num_cells);
+      fmn->postRegistrationSetup(NULL);
     }
     
     RCP<Time> time_fmc_prs = 
       TimeMonitor::getNewTimer("CONTIGUOUS: Post Registration Setup Time");
     {
       TimeMonitor t(*time_fmc_prs);
-      fmc->postRegistrationSetup(num_cells);
+      fmc->postRegistrationSetup(NULL);
     }
 
     RCP<Time> time_fmn = 

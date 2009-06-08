@@ -64,11 +64,11 @@ namespace PHX{
 
     virtual size_type rank() const = 0; 
 
+    virtual size_type dimension(size_type ordinal) const = 0; 
+
     virtual void dimensions(std::vector<size_type>& dim) const = 0; 
 
     virtual size_type size() const = 0;
-
-    virtual std::string worksetType() const = 0;
 
     virtual bool operator==(const DataLayout& left) const = 0;
 

@@ -45,18 +45,14 @@ Constant<EvalT, Traits>::Constant(Teuchos::ParameterList& p) :
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void Constant<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+postRegistrationSetup(typename Traits::SetupData d,
+		      PHX::FieldManager<Traits>& vm)
 {
   using namespace PHX;
   this->utils.setFieldData(constant,vm);
 
   for (std::size_t i = 0; i < static_cast<std::size_t>(constant.size()); ++i)
     constant[i] = value;
-
-  // This line and the member dummy_workset_size are used for test
-  // converage of the function getWorksetSize().  It is not needed for
-  // this provider. Please ignore the following line!
-  dummy_workset_size = this->utils.getWorksetSize(constant,vm);
 }
 
 //**********************************************************************

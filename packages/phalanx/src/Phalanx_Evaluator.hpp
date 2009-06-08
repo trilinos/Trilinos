@@ -69,7 +69,8 @@ namespace PHX {
 	phase.
 	
     */
-    virtual void postRegistrationSetup(PHX::FieldManager<Traits>& vm) = 0;
+    virtual void postRegistrationSetup(typename Traits::SetupData d,
+				       PHX::FieldManager<Traits>& vm) = 0;
 
     //! Returns vector of fields that this object evaluates.
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 

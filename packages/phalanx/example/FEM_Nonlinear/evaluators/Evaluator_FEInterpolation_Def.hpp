@@ -49,7 +49,7 @@ PHX_EVALUATOR_CTOR(FEInterpolation,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(FEInterpolation,fm)
+PHX_POST_REGISTRATION_SETUP(FEInterpolation,data,fm)
 {
   this->utils.setFieldData(val_node,fm);
   this->utils.setFieldData(val_qp,fm);

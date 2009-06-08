@@ -65,12 +65,10 @@ getFieldData(const PHX::FieldTag& t)
 // ************************************************************************
 template <typename DataT, typename Traits>
 void PHX::DataContainer<DataT, Traits>::
-allocateField(const Teuchos::RCP<PHX::FieldTag>& t, 
-	      std::size_t max_num_cells,
+allocateField(const Teuchos::RCP<PHX::FieldTag>& t,
 	      typename Traits::Allocator& a)
 {
-  std::size_t num_elements = t->dataLayout().size() * max_num_cells;
-  m_data[t] = a.template allocate<DataT>(num_elements);
+  m_data[t] = a.template allocate<DataT>(t->dataLayout().size());
 }
 
 // ************************************************************************

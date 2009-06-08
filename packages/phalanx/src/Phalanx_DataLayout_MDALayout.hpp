@@ -33,7 +33,6 @@
 #define PHX_DATA_LAYOUT_MDALAYOUT
 
 #include "Phalanx_DataLayout.hpp"
-#include "Phalanx_DefaultWorksetName.hpp"
 #include <string>
 #include <iostream>
 #include <vector>
@@ -50,7 +49,7 @@ namespace PHX {
   struct DLTagList;
 
   // ******************************************************************
-  /*! \brief A concrete implementation of the DataLayout class for compile time multidimensional arrays.
+  /*! \brief A concrete implementation of the DataLayout class for compile time checked multidimensional arrays.
   */
   template<typename Tag0 = void, typename Tag1 = void, 
 	   typename Tag2 = void, typename Tag3 = void,
@@ -73,34 +72,26 @@ namespace PHX {
 
     MDALayout(size_type size1, size_type size2, size_type size3, 
 	      size_type size4, size_type size5, size_type size6,
-	      size_type size7, size_type size8, 
-	      const std::string& workset_type = PHX::default_workset_name);
+	      size_type size7, size_type size8);
 
     MDALayout(size_type size1, size_type size2, size_type size3, 
 	      size_type size4, size_type size5, size_type size6,
-	      size_type size7, 
-	      const std::string& workset_type = PHX::default_workset_name);
+	      size_type size7);
 
     MDALayout(size_type size1, size_type size2, size_type size3, 
-	      size_type size4, size_type size5, size_type size6, 
-	      const std::string& workset_type = PHX::default_workset_name);
+	      size_type size4, size_type size5, size_type size6);
 
     MDALayout(size_type size1, size_type size2, size_type size3, 
-	      size_type size4, size_type size5, 
-	      const std::string& workset_type = PHX::default_workset_name);
+	      size_type size4, size_type size5);
 
     MDALayout(size_type size1, size_type size2, size_type size3, 
-	      size_type size4, 
-	      const std::string& workset_type = PHX::default_workset_name);
+	      size_type size4);
 
-    MDALayout(size_type size1, size_type size2, size_type size3, 
-	      const std::string& workset_type = PHX::default_workset_name);
+    MDALayout(size_type size1, size_type size2, size_type size3);
 
-    MDALayout(size_type size1, size_type size2, 
-	      const std::string& workset_type = PHX::default_workset_name);
+    MDALayout(size_type size1, size_type size2);
 
-    MDALayout(size_type size1, 
-	      const std::string& workset_type = PHX::default_workset_name);
+    MDALayout(size_type size1);
 
     ~MDALayout() {}
 
@@ -108,15 +99,13 @@ namespace PHX {
 
     virtual size_type rank() const; 
 
+    virtual size_type dimension(size_type ordinal) const;
+
     virtual void dimensions(std::vector<size_type>& dim) const; 
 
     virtual size_type size() const;
 
-    virtual std::string worksetType() const;
-
     virtual std::string identifier() const;
-
-    virtual size_type dimension(size_type ordinal) const;
 
     virtual void print(std::ostream& os, int offset) const;
 
@@ -134,7 +123,6 @@ namespace PHX {
 
     std::string m_identifier;
 
-    std::string m_workset_type;
   };
 
   template<typename Tag0, typename Tag1, typename Tag2, typename Tag3,

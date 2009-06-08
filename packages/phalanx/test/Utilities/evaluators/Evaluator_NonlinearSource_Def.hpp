@@ -47,19 +47,20 @@ PHX_EVALUATOR_CTOR(NonlinearSource,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(NonlinearSource,fm)
+PHX_POST_REGISTRATION_SETUP(NonlinearSource,data,fm)
 {
   this->utils.setFieldData(source, fm);
   this->utils.setFieldData(density, fm);
   this->utils.setFieldData(temp, fm);
 
-  data_layout_size = source.fieldTag().dataLayout().size();
+  cell_data_size = source.fieldTag().dataLayout().size() /
+    source.fieldTag().dataLayout().dimension(0) ;
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(NonlinearSource,d)
 { 
-  std::size_t size = d.size() * data_layout_size;
+  std::size_t size = d.size() * cell_data_size;
   
   for (std::size_t i = 0; i < size; ++i)
     source[i] = density[i] * temp[i] * temp[i];

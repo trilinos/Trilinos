@@ -340,13 +340,17 @@ int main(int argc, char *argv[])
     (*dof_names)[0] = "Temperature";
     (*dof_names)[1] = "Velocity X";
 
-    RCP<DataLayout> qp_scalar = rcp(new MDALayout<QuadPoint>(4));
-    RCP<DataLayout> node_scalar = rcp(new MDALayout<Node>(4));
+    RCP<DataLayout> qp_scalar = 
+      rcp(new MDALayout<Cell,QuadPoint>(workset_size,4));
+    RCP<DataLayout> node_scalar = 
+      rcp(new MDALayout<Cell,Node>(workset_size,4));
     
-    RCP<DataLayout> qp_vec = rcp(new MDALayout<QuadPoint,Dim>(4,dim));
-    RCP<DataLayout> node_vec = rcp(new MDALayout<Node,Dim>(4,dim));
+    RCP<DataLayout> qp_vec = 
+      rcp(new MDALayout<Cell,QuadPoint,Dim>(workset_size,4,dim));
+    RCP<DataLayout> node_vec = 
+      rcp(new MDALayout<Cell,Node,Dim>(workset_size,4,dim));
 
-    RCP<DataLayout> dummy = rcp(new FlatLayout("Dummy",0));
+    RCP<DataLayout> dummy = rcp(new MDALayout<Cell>(0));
     
     map<string, RCP<ParameterList> > evaluators_to_build;
     
@@ -451,8 +455,8 @@ int main(int argc, char *argv[])
 	TimeMonitor::getNewTimer("Post Registration Setup Time");
       {
 	TimeMonitor t(*registration_time);
-	fm.postRegistrationSetupForType<MyTraits::Residual>(workset_size);
-	fm.postRegistrationSetupForType<MyTraits::Jacobian>(workset_size);
+	fm.postRegistrationSetupForType<MyTraits::Residual>(NULL);
+	fm.postRegistrationSetupForType<MyTraits::Jacobian>(NULL);
       }
     }
 

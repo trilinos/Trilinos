@@ -475,29 +475,21 @@ setFieldData(const Teuchos::ArrayRCP<DataT>& d)
 
   m_array_rcp = d;
 
-  std::vector<size_type> data_layout_dim;
-  m_tag.dataLayout().dimensions(data_layout_dim);
-
   std::vector<size_type> array_dim;
-  size_type num_cells = d.size() / m_tag.dataLayout().size();
+  m_tag.dataLayout().dimensions(array_dim);
 
-  array_dim.push_back(num_cells);
-  for (std::size_t i = 0; i < data_layout_dim.size(); ++i)
-    array_dim.push_back(data_layout_dim[i]);
+  TEST_FOR_EXCEPTION(m_array_rcp.size() != m_tag.dataLayout().size(),
+		     std::runtime_error, "RCP Array size is not equal to the DataLayout size!");
 
-  TEST_FOR_EXCEPTION(array_dim.size() != (data_layout_dim.size() + 1), 
-		     std::logic_error, 
-		     "Rank mismatch between array_dim and data_layout_dim!  Please check your ArrayOrder.  It must be Natural or Reverse!");
-
-  if (array_type::Rank != (data_layout_dim.size() + 1) ) {
+  if (array_type::Rank != (array_dim.size()) ) {
     std::ostringstream os;
-    os << "Array rank must be equal to the DataLayout rank + 1.\n"
-       << "Array rank = " << array_type::Rank 
-       << ", data layout rank = " << data_layout_dim.size() << " + 1 = " 
-       << (data_layout_dim.size() + 1) << std::endl
+    os << "MDField rank must be equal to the DataLayout rank.\n"
+       << "MDField rank = " << array_type::Rank 
+       << ", data layout rank = " << array_dim.size() << " = " 
+       << array_dim.size() << std::endl
        << "Offending MDField:\n"
        << *this << std::endl;
-    TEST_FOR_EXCEPTION(array_type::Rank != (data_layout_dim.size() + 1), 
+    TEST_FOR_EXCEPTION(array_type::Rank != (array_dim.size()), 
 		       std::logic_error, os.str());
   }
 
@@ -951,15 +943,8 @@ setFieldData(const Teuchos::ArrayRCP<DataT>& d)
 
   m_array_rcp = d;
 
-  std::vector<size_type> data_layout_dim;
-  m_tag.dataLayout().dimensions(data_layout_dim);
-
   std::vector<size_type> array_dim;
-  size_type num_cells = d.size() / m_tag.dataLayout().size();
-
-  array_dim.push_back(num_cells);
-  for (std::size_t i = 0; i < data_layout_dim.size(); ++i)
-    array_dim.push_back(data_layout_dim[i]);
+  m_tag.dataLayout().dimensions(array_dim);
 
   Teuchos::ArrayRCP<shards::ArrayDimTag*> dim_tags = 
     Teuchos::arcp<shards::ArrayDimTag*>(array_dim.size());

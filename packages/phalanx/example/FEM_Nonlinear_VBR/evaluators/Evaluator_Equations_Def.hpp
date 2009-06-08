@@ -59,7 +59,7 @@ PHX_EVALUATOR_CTOR(Equations,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Equations,fm)
+PHX_POST_REGISTRATION_SETUP(Equations,data,fm)
 {
   this->utils.setFieldData(temp,fm);
   this->utils.setFieldData(vel,fm);

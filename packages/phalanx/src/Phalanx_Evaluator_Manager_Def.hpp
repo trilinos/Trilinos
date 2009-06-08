@@ -122,11 +122,12 @@ sortAndOrderEvaluators()
 //=======================================================================
 template<typename Traits>
 void PHX::EvaluatorManager<Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+postRegistrationSetup(typename Traits::SetupData d,
+		      PHX::FieldManager<Traits>& vm)
 {
   // Call each providers' post registration setup
   for (std::size_t i = 0; i < providerEvalOrderIndex.size(); i++)
-    (varProviders[providerEvalOrderIndex[i]])->postRegistrationSetup(vm);
+    (varProviders[providerEvalOrderIndex[i]])->postRegistrationSetup(d,vm);
 }
 
 //=======================================================================

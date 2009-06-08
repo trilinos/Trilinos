@@ -42,7 +42,7 @@ PHX_EVALUATOR_CLASS(Density)
   PHX::Field<ScalarT> density;
   PHX::Field<ScalarT> temp;
 
-  std::size_t data_layout_size;
+  std::size_t cell_data_size;
 
 PHX_EVALUATOR_CLASS_END
 

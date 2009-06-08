@@ -119,6 +119,7 @@ namespace PHX {
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
+    typedef void* SetupData;
     typedef const MyWorkset& EvalData;
     typedef void* PreEvalData;
     typedef void* PostEvalData;

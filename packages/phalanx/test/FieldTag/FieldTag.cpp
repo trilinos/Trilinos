@@ -35,7 +35,8 @@
 #include "Phalanx_FieldTag.hpp"
 #include "Phalanx_FieldTag_Tag.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
-#include "Phalanx_DataLayout_FlatLayout.hpp"
+#include "Phalanx_DataLayout_MDALayout.hpp"
+#include "Shards_Array.hpp"
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -43,6 +44,15 @@
 
 // From test/Utilities directory
 #include "Traits.hpp"
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Cell)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Cell)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Node)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Node)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(QP)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(QP)
 
 int main(int argc, char *argv[]) 
 {
@@ -62,9 +72,9 @@ int main(int argc, char *argv[])
 
       // Dummy data layouts (same size different name/type)
       RCP<DataLayout> node4 = 
-	rcp(new FlatLayout("Q1_Nodes", 4));
+	rcp(new MDALayout<Cell,Node>(100,4));
       RCP<DataLayout> quad4 = 
-	rcp(new FlatLayout("Q1_QuadPoints", 4));
+	rcp(new MDALayout<Cell,QP>(100,4));
       
       // Allocate tags with same name but different topology
       RCP<FieldTag> rcp_nodal_density = rcp(new Tag<double>("density", node4));

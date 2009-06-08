@@ -84,7 +84,8 @@ namespace PHX {
 
     virtual void setName(const std::string& name);
 
-    virtual void postRegistrationSetup(PHX::FieldManager<Traits>& vm) = 0;
+    virtual void postRegistrationSetup(typename Traits::SetupData d,
+				       PHX::FieldManager<Traits>& vm) = 0;
 
     virtual const std::vector< Teuchos::RCP<FieldTag> >& 
     evaluatedFields() const;

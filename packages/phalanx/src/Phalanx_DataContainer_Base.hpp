@@ -48,8 +48,7 @@ namespace PHX {
 
     virtual ~DataContainerBase();
 
-    virtual void allocateField(const Teuchos::RCP<PHX::FieldTag>& v,
-			       std::size_t max_num_cells,
+    virtual void allocateField(const Teuchos::RCP<PHX::FieldTag>& t,
 			       typename Traits::Allocator& a) = 0;
     
     virtual const std::type_info& dataTypeInfo() const = 0; 

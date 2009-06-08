@@ -63,7 +63,6 @@ namespace PHX {
     Teuchos::ArrayRCP<DataT> getFieldData(const PHX::FieldTag& t);
     
     void allocateField(const Teuchos::RCP<PHX::FieldTag>& t,
-		       std::size_t max_num_cells,
 		       typename Traits::Allocator& a);
 
     const std::type_info& dataTypeInfo() const;

@@ -40,18 +40,19 @@ PHX_EVALUATOR_CTOR(Density,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Density,fm)
+PHX_POST_REGISTRATION_SETUP(Density,data,fm)
 {
   this->utils.setFieldData(density,fm);
   this->utils.setFieldData(temp,fm);
 
-  data_layout_size = density.fieldTag().dataLayout().size();
+  cell_data_size = density.fieldTag().dataLayout().size() / 
+    density.fieldTag().dataLayout().dimension(0);
 }
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(Density,d)
 { 
-  std::size_t size = d.size() * data_layout_size;
+  std::size_t size = d.size() * cell_data_size;
   
   for (std::size_t i = 0; i < size; ++i)
     density[i] =  temp[i] * temp[i];

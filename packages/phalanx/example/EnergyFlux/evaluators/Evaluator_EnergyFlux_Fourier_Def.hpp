@@ -50,21 +50,23 @@ Fourier(const Teuchos::ParameterList& p) :
 //**********************************************************************
 template<typename EvalT, typename Traits> 
 void Fourier<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& fm)
+postRegistrationSetup(typename Traits::SetupData d,
+		      PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(flux,fm);
   this->utils.setFieldData(density,fm);
   this->utils.setFieldData(dc,fm);
   this->utils.setFieldData(grad_temp,fm);
 
-  data_layout_size = flux.fieldTag().dataLayout().size();
+  cell_data_size = flux.fieldTag().dataLayout().size() /
+    flux.fieldTag().dataLayout().dimension(0);
 }
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void Fourier<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 { 
-  std::size_t size = d.num_cells * data_layout_size;
+  std::size_t size = d.num_cells * cell_data_size;
 
   for (std::size_t i = 0; i < size; ++i)
     flux[i] = - density[i] * dc[i] * grad_temp[i];

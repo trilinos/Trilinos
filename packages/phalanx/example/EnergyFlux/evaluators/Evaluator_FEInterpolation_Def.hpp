@@ -53,7 +53,8 @@ FEInterpolation(const Teuchos::ParameterList& p) :
 //**********************************************************************
 template<typename EvalT, typename Traits> 
 void FEInterpolation<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& fm)
+postRegistrationSetup(typename Traits::SetupData d,
+		      PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(val_node,fm);
   this->utils.setFieldData(val_qp,fm);
@@ -66,8 +67,9 @@ void FEInterpolation<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData cell_data)
 { 
   
-  const int nodes_per_cell = val_node.fieldTag().dataLayout().size();
-  const int qp_per_cell = val_qp.fieldTag().dataLayout().size();
+  const int nodes_per_cell = val_node.fieldTag().dataLayout().dimension(1);
+  const int qp_per_cell = val_qp.fieldTag().dataLayout().dimension(1);
+
   std::vector<MyCell>::iterator cell_it = cell_data.begin;
 
   // Loop over number of cells

@@ -92,6 +92,16 @@ void compareVectorFields(PHX::Field< MyVector<ScalarT> >& field1,
   std::cout << "Passed: " << error << " < " << tol << std::endl; 
 }
 
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Cell)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Cell)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Node)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Node)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(QP)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(QP)
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,8 +121,12 @@ int main(int argc, char *argv[])
     {
       cout << "\nStarting EnergyFlux Example!" << endl;
 
-      RCP<DataLayout> qp = rcp(new FlatLayout("QP", 4));
-      RCP<DataLayout> node = rcp(new FlatLayout("NODE", 4));
+      // Assume we have 102 cells on processor and can fit 20 cells in cache
+      const std::size_t num_local_cells = 102;
+      const std::size_t workset_size = 20;
+
+      RCP<DataLayout> qp = rcp(new MDALayout<Cell,QP>(workset_size, 4));
+      RCP<DataLayout> node = rcp(new MDALayout<Cell,Node>(workset_size, 4));
 
       // Parser will build parameter list that determines the field
       // evaluators to build
@@ -207,15 +221,11 @@ int main(int argc, char *argv[])
       Tag<JacScalarT> j_source_tag("Nonlinear Source", qp);
       fm.requireField<MyTraits::Jacobian>(j_source_tag);
 
-      // Assume we have 102 cells on processor and can fit 20 cells in cache
-      const std::size_t num_local_cells = 102;
-      const std::size_t workset_size = 20;
-
       RCP<Time> registration_time = 
 	TimeMonitor::getNewTimer("Post Registration Setup Time");
       {
 	TimeMonitor t(*registration_time);
-	fm.postRegistrationSetup(workset_size);
+	fm.postRegistrationSetup(NULL);
       }
 
       cout << fm << endl;
@@ -302,8 +312,8 @@ int main(int argc, char *argv[])
       Field<double> den(d_var); 
       fm.getFieldData<double,MyTraits::Residual>(den);
       cout << "size of density = " << den.size() << ", should be " 
-	   << workset_size * d_var.dataLayout().size() << "." << endl;
-      TEST_FOR_EXCEPTION(den.size() != static_cast<Teuchos::ArrayRCP<double>::Ordinal>(workset_size * d_var.dataLayout().size()),
+	   << d_var.dataLayout().size() << "." << endl;
+      TEST_FOR_EXCEPTION(den.size() != d_var.dataLayout().size(),
 			 std::runtime_error, 
 			 "Returned arrays are not sized correctly!");
       
@@ -319,7 +329,7 @@ int main(int argc, char *argv[])
       
       Field<double> temp_base("Temperature Baseline", node);
       ArrayRCP<double> temp_base_data = 
-	arcp<double>(workset_size * node->size());
+	arcp<double>(node->size());
       temp_base.setFieldData(temp_base_data);
       for (int i=0; i<temp_base.size(); ++i)
 	temp_base[i] = 2.0;
@@ -335,7 +345,7 @@ int main(int argc, char *argv[])
       Field< MyVector<double> > 
 	tg_base("Temperature Gradient Baseline", qp);
       ArrayRCP< MyVector<double> > tg_base_data = 
-	arcp< MyVector<double> >(workset_size * qp->size());
+	arcp< MyVector<double> >(qp->size());
       tg_base.setFieldData(tg_base_data);
       for (int i=0; i<tg_base.size(); ++i)
 	tg_base[i] = 2.0;
@@ -350,7 +360,7 @@ int main(int argc, char *argv[])
 
       Field< MyVector<double> > ef_base("Energy_Flux Baseline", qp);
       ArrayRCP< MyVector<double> > ef_base_data = 
-	arcp< MyVector<double> >(workset_size * qp->size());
+	arcp< MyVector<double> >(qp->size());
       ef_base.setFieldData(ef_base_data);
       for (int i=0; i<ef_base.size(); ++i)
 	ef_base[i] = -16.0;

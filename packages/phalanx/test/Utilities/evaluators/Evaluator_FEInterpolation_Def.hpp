@@ -49,7 +49,7 @@ PHX_EVALUATOR_CTOR(FEInterpolation,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(FEInterpolation,fm)
+PHX_POST_REGISTRATION_SETUP(FEInterpolation,data,fm)
 {
   this->utils.setFieldData(val_node,fm);
   this->utils.setFieldData(val_qp,fm);
@@ -58,10 +58,9 @@ PHX_POST_REGISTRATION_SETUP(FEInterpolation,fm)
 
 //**********************************************************************
 PHX_EVALUATE_FIELDS(FEInterpolation,cell_data)
-{ 
-  
-  const int nodes_per_cell = val_node.fieldTag().dataLayout().size();
-  const int qp_per_cell = val_qp.fieldTag().dataLayout().size();
+{   
+  const int nodes_per_cell = val_qp.fieldTag().dataLayout().dimension(1);
+  const int qp_per_cell = val_node.fieldTag().dataLayout().dimension(1);
 
   // Loop over number of cells
   for (std::size_t cell = 0; cell < cell_data.size(); ++cell) {

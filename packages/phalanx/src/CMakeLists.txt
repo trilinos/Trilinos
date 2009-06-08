@@ -33,11 +33,9 @@ APPEND_SET(HEADERS
   Phalanx_DataContainer_Def.hpp
   Phalanx_DataContainer.hpp
   Phalanx_DataContainer_TemplateManager.hpp
-  Phalanx_DataLayout_FlatLayout.hpp
   Phalanx_DataLayout_MDALayout_Def.hpp
   Phalanx_DataLayout_MDALayout.hpp
   Phalanx_DataLayout.hpp
-  Phalanx_DefaultWorksetName.hpp
   Phalanx_DoxygenDocumentation.hpp
   Phalanx_EvaluationContainer_Base_Def.hpp
   Phalanx_EvaluationContainer_Base.hpp
@@ -79,7 +77,6 @@ APPEND_SET(HEADERS
   ) 
 
 APPEND_SET(SOURCES
-  Phalanx_DataLayout_FlatLayout.cpp
   Phalanx_DataLayout.cpp
   Phalanx_FieldTag.cpp
   )

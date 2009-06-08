@@ -50,7 +50,8 @@
     									\
     NAME(const Teuchos::ParameterList& p);				\
     									\
-    void postRegistrationSetup(PHX::FieldManager<Traits>& fm);		\
+    void postRegistrationSetup(typename Traits::SetupData d,            \
+                               PHX::FieldManager<Traits>& fm);   	\
     									\
     void evaluateFields(typename Traits::EvalData d);			\
     									\
@@ -70,7 +71,8 @@
     									\
     NAME(const Teuchos::ParameterList& p);				\
     									\
-    void postRegistrationSetup(PHX::FieldManager<Traits>& fm);		\
+    void postRegistrationSetup(typename Traits::SetupData d,            \
+                               PHX::FieldManager<Traits>& fm);		\
     									\
     void evaluateFields(typename Traits::EvalData d);			\
 									\
@@ -104,10 +106,11 @@
 
 // **********************************************************************
 //! Macro definition for the evaluator postRegistrationSetup method
-#define PHX_POST_REGISTRATION_SETUP(NAME,FIELD_MANAGER)			\
+#define PHX_POST_REGISTRATION_SETUP(NAME,SETUP_DATA,FIELD_MANAGER)	\
   template<typename EvalT, typename Traits>				\
   void NAME<EvalT, Traits>::						\
-  postRegistrationSetup(PHX::FieldManager<Traits>& FIELD_MANAGER)
+  postRegistrationSetup(typename Traits::SetupData SETUP_DATA,          \
+			PHX::FieldManager<Traits>& FIELD_MANAGER)
 
 
 // **********************************************************************

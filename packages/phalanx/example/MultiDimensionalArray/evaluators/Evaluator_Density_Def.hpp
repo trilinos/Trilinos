@@ -43,19 +43,20 @@ Density(const Teuchos::ParameterList& p) :
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void Density<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+postRegistrationSetup(typename Traits::SetupData d,
+		      PHX::FieldManager<Traits>& vm)
 {
   this->utils.setFieldData(density,vm);
   this->utils.setFieldData(temp,vm);
 
-  data_layout_size = density.fieldTag().dataLayout().size();
+  cell_data_size = density.size() / density.dimension(0);
 }
 
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void Density<EvalT, Traits>::evaluateFields(typename Traits::EvalData d)
 { 
-  std::size_t size = d.num_cells * data_layout_size;
+  std::size_t size = d.num_cells * cell_data_size;
   
   for (std::size_t i = 0; i < size; ++i)
     density[i] =  temp[i] * temp[i];

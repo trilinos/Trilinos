@@ -45,7 +45,8 @@ public:
   
   NonlinearSource(const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename Traits::SetupData d,
+			     PHX::FieldManager<Traits>& vm);
   
   void evaluateFields(typename Traits::EvalData d);
   
@@ -61,7 +62,7 @@ private:
   PHX::MDField<ScalarT,Cell,Point> density;
   PHX::MDField<ScalarT,Cell,Point> temp;
 
-  std::size_t data_layout_size;
+  std::size_t cell_data_size;
 };
 
 #include "Evaluator_NonlinearSource_Def.hpp"

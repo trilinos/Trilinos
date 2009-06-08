@@ -88,13 +88,13 @@ int main(int argc, char *argv[])
       
       double* raw_density = new double[size];
 
-      RCP<DataLayout> dl = rcp(new FlatLayout("cell_quantitiy", 1));
+      RCP<DataLayout> dl = rcp(new MDALayout<Point,Point>(1,size));
       Field<double> density("density", dl);
       ArrayRCP<double> a_density = arcp<double>(size);
       density.setFieldData(a_density);
       
       ArrayRCP<double> mda_density = arcp<double>(size);
-      RCP<DataLayout> mddl = rcp(new MDALayout<Point>(size));
+      RCP<DataLayout> mddl = rcp(new MDALayout<Point,Point>(1,size));
       MDField<double,Point,Point> mddensity("density", mddl);
       mddensity.setFieldData(mda_density);
       

@@ -105,6 +105,7 @@ namespace PHX {
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
+    typedef void* SetupData;
     typedef std::vector<CellData>& EvalData;
     typedef void* PreEvalData;
     typedef void* PostEvalData;

@@ -53,7 +53,8 @@ FEInterpolation(const Teuchos::ParameterList& p) :
 //**********************************************************************
 template<typename EvalT, typename Traits> 
 void FEInterpolation<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& fm)
+postRegistrationSetup(typename Traits::SetupData d,
+		      PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(val_node,fm);
   this->utils.setFieldData(val_qp,fm);

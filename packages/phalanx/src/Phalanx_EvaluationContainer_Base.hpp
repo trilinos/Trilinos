@@ -55,8 +55,7 @@ namespace PHX {
     virtual void 
     registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& p);
 
-    virtual void postRegistrationSetup(const std::map<std::string,std::size_t>&
-				       workset_sizes,
+    virtual void postRegistrationSetup(typename Traits::SetupData d,
 				       PHX::FieldManager<Traits>& vm) = 0;
 
     virtual void evaluateFields(typename Traits::EvalData d) = 0;

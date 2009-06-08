@@ -53,7 +53,8 @@ Fourier(const Teuchos::ParameterList& p) :
 //**********************************************************************
 template<typename EvalT, typename Traits> 
 void Fourier<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& fm)
+postRegistrationSetup(typename Traits::SetupData d,
+		      PHX::FieldManager<Traits>& fm)
 {
   this->utils.setFieldData(flux,fm);
   this->utils.setFieldData(density,fm);

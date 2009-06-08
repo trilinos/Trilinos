@@ -41,6 +41,12 @@
 // From test/Utilities directory
 #include "Traits.hpp"
 
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Cell)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Cell)
+
+SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION(Node)
+SHARDS_ARRAY_DIM_TAG_SIMPLE_IMPLEMENTATION(Node)
+
 int main(int argc, char *argv[]) 
 {
   using namespace std;
@@ -66,10 +72,10 @@ int main(int argc, char *argv[])
       cout << "Passed!" << endl;
 
       cout << "\nTesting allocateField()...";
-      RCP<DataLayout> nodes = rcp(new FlatLayout("nodes",4));
+      RCP<DataLayout> nodes = rcp(new MDALayout<Cell,Node>(100,4));
       RCP<FieldTag> d_tag = rcp(new Tag<MyVector<double> >("Density", nodes));
       MyTraits::Allocator allocator;
-      dc_vector.allocateField(d_tag, 100, allocator);
+      dc_vector.allocateField(d_tag, allocator);
       cout << "Passed!" << endl;
       
       cout << "\nTesting getFieldData()...";

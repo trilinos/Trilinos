@@ -73,7 +73,8 @@ namespace PHX {
     
     /*! Calls post registration setup on all variable providers.
     */
-    void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
+    void postRegistrationSetup(typename Traits::SetupData d,
+			       PHX::FieldManager<Traits>& vm);
     
     //! Compute the required variables for the fill on the specific element.
     void evaluateFields(typename Traits::EvalData d);

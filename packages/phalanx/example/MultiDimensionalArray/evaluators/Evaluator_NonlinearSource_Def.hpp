@@ -50,7 +50,8 @@ NonlinearSource(const Teuchos::ParameterList& p) :
 //**********************************************************************
 template<typename EvalT, typename Traits>
 void NonlinearSource<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+postRegistrationSetup(typename Traits::SetupData d,
+		      PHX::FieldManager<Traits>& vm)
 {
   // The utilities hide template arguments.  We could directly get the
   // data pointers from the field manager.  This is demonstrated below.
@@ -61,7 +62,7 @@ postRegistrationSetup(PHX::FieldManager<Traits>& vm)
   vm.template getFieldData<ScalarT,EvalT>(density);
   vm.template getFieldData<ScalarT,EvalT>(temp);
 
-  data_layout_size = source.fieldTag().dataLayout().size();
+  cell_data_size = source.size() / source.dimension(0);
 }
 
 //**********************************************************************
@@ -69,7 +70,7 @@ template<typename EvalT, typename Traits>
 void NonlinearSource<EvalT, Traits>::
 evaluateFields(typename Traits::EvalData d)
 { 
-  std::size_t size = d.num_cells * data_layout_size;
+  std::size_t size = d.num_cells * cell_data_size;
   
   for (std::size_t i = 0; i < size; ++i)
     source[i] = density[i] * temp[i] * temp[i];
