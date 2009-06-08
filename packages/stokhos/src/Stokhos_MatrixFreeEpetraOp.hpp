@@ -40,6 +40,8 @@
 #include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
+#include "Stokhos_VectorOrthogPoly.hpp"
+#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 
 namespace Stokhos {
     
@@ -57,13 +59,17 @@ namespace Stokhos {
      const Teuchos::RCP<const Epetra_Map>& sg_map,
      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
-     const Teuchos::RCP<std::vector< Teuchos::RCP<Epetra_Operator> > >& ops);
+     const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops);
     
     //! Destructor
     virtual ~MatrixFreeEpetraOp();
 
+    //! Reset operator blocks
+    virtual void 
+    reset(const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops);
+
     //! Get operator blocks
-    virtual std::vector< Teuchos::RCP<Epetra_Operator> >&
+    virtual const Stokhos::VectorOrthogPoly<Epetra_Operator>&
     getOperatorBlocks();
     
     //! Set to true if the transpose of the operator is requested
@@ -142,7 +148,7 @@ namespace Stokhos {
     Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
 
     //! Stores operators
-    Teuchos::RCP<std::vector< Teuchos::RCP<Epetra_Operator> > > block_ops;
+    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > block_ops;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;

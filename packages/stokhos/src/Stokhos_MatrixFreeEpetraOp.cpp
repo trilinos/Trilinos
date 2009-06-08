@@ -32,24 +32,24 @@
 #include "Stokhos_MatrixFreeEpetraOp.hpp"
 
 Stokhos::MatrixFreeEpetraOp::MatrixFreeEpetraOp(
-   const Teuchos::RCP<const Epetra_Map>& base_map_,
-   const Teuchos::RCP<const Epetra_Map>& sg_map_,
-   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
-   const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
-   const Teuchos::RCP<std::vector< Teuchos::RCP<Epetra_Operator> > >& ops_) :
-  label("Stokhos::MatrixFreeEpetraOp"),
-  base_map(base_map_),
-  sg_map(sg_map_),
-  sg_basis(sg_basis_),
-  Cijk(Cijk_),
-  block_ops(ops_),
-  useTranspose(false),
-  num_blocks(block_ops->size()),
-  sg_input(),
-  sg_result(),
-  input_block(num_blocks),
-  result_block(num_blocks),
-  tmp()
+ const Teuchos::RCP<const Epetra_Map>& base_map_,
+ const Teuchos::RCP<const Epetra_Map>& sg_map_,
+ const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
+ const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
+ const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops_) 
+  : label("Stokhos::MatrixFreeEpetraOp"),
+    base_map(base_map_),
+    sg_map(sg_map_),
+    sg_basis(sg_basis_),
+    Cijk(Cijk_),
+    block_ops(ops_),
+    useTranspose(false),
+    num_blocks(block_ops->size()),
+    sg_input(),
+    sg_result(),
+    input_block(num_blocks),
+    result_block(num_blocks),
+    tmp()
 {
 }
 
@@ -57,7 +57,14 @@ Stokhos::MatrixFreeEpetraOp::~MatrixFreeEpetraOp()
 {
 }
 
-std::vector< Teuchos::RCP<Epetra_Operator> >&
+void 
+Stokhos::MatrixFreeEpetraOp::reset(
+   const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops)
+{
+  block_ops = ops;
+}
+
+const Stokhos::VectorOrthogPoly<Epetra_Operator>&
 Stokhos::MatrixFreeEpetraOp::getOperatorBlocks()
 {
   return *block_ops;
@@ -68,7 +75,7 @@ Stokhos::MatrixFreeEpetraOp::SetUseTranspose(bool UseTranspose)
 {
   useTranspose = UseTranspose;
   for (unsigned int i=0; i<num_blocks; i++)
-    (*block_ops)[i]->SetUseTranspose(useTranspose);
+    (*block_ops)[i].SetUseTranspose(useTranspose);
 
   return 0;
 }
@@ -109,7 +116,7 @@ Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
     for (unsigned int l=0; l<nl; l++) {
       Cijk->value(k, l, i, j, cijk);
       cijk /= sg_basis->norm_squared(i);
-      (*block_ops)[k]->Apply(*input_block[j], *tmp);
+      (*block_ops)[k].Apply(*input_block[j], *tmp);
       result_block[i]->Update(cijk, *tmp, 1.0);
     }
   }

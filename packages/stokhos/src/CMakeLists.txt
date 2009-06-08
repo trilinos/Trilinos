@@ -59,12 +59,17 @@ SET(HEADERS ${HEADERS}
   Stokhos_ForUQTKOrthogPolyExpansionImp.hpp
   Stokhos_MatrixFreeEpetraOp.hpp
   Stokhos_MeanEpetraOp.hpp
+  Stokhos_SGModelEvaluator.hpp
+  Stokhos_VectorOrthogPoly.hpp
+  Stokhos_VectorOrthogPolyImp.hpp
+  Stokhos_VectorOrthogPolyTraitsEpetra.hpp
   )
 
 SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
   Stokhos_MatrixFreeEpetraOp.cpp
   Stokhos_MeanEpetraOp.cpp
+  Stokhos_SGModelEvaluator.cpp
   )
 
 #
