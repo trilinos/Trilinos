@@ -75,8 +75,10 @@ ENDFUNCTION()
 #
 
 ASSERT_DEFINED(CMAKE_BUILD_TYPE)
+IF (CMAKE_BUILD_TYPE STREQUAL RELEASE)
+  PAMGEN_ADD_TEST_L( 01 -f lbrick.txt -r 9999 -n 10000 -d 3 )
+ENDIF()
 
-PAMGEN_ADD_TEST_L( 01 -f lbrick.txt -r 9999 -n 10000 -d 3 )
 
 PAMGEN_ADD_TEST( 01 -f mesh.txt -r 1 -n 3 -d 3 )
 PAMGEN_ADD_TEST( 02 -f mesh.txt -r 2 -n 3 -d 3 )
