@@ -20,7 +20,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_Sacado AND
       NOX_Sacado_FEApp_PCE_Example
       SOURCES pce.C
       COMM serial mpi
-      NUM_MPI_PROCS 1
+      NUM_MPI_PROCS 2
       ARGS
       PASS_REGULAR_EXPRESSION "Test Passed"
       )

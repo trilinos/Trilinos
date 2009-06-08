@@ -52,12 +52,13 @@
 #endif
 
 #include "Stokhos.hpp"
+#include "Stokhos_SGModelEvaluator.hpp"
 #include "Sacado_PCE_OrthogPoly.hpp"
 #include "Ifpack.h"
 #include "Teuchos_TimeMonitor.hpp"
 
 // The preconditioner we will use for PCE
-class IfpackPreconditionerFactory : public FEApp::PreconditionerFactory {
+class IfpackPreconditionerFactory : public Stokhos::PreconditionerFactory {
 public:
   IfpackPreconditionerFactory(const Teuchos::RCP<Teuchos::ParameterList>& p) :
     precParams(p) {}
@@ -152,14 +153,6 @@ int main(int argc, char *argv[]) {
       problemParams.sublist("Material Function");
     matParams.set("Name", "Constant");
     matParams.set("Constant Value", 1.0);
-
-    Teuchos::RefCountPtr< Teuchos::Array<std::string> > free_param_names =
-      Teuchos::rcp(new Teuchos::Array<std::string>);
-    for (unsigned int i=0; i<numalpha; i++) {
-      std::stringstream ss;
-      ss << "Exponential Source Function Nonlinear Factor " << i;
-      free_param_names->push_back(ss.str());
-    }
     
     // Read in parameter values from input file
     if (do_dakota) {
@@ -176,6 +169,10 @@ int main(int argc, char *argv[]) {
       }
       input_file.close();
     }
+
+    Teuchos::RefCountPtr< Teuchos::Array<std::string> > free_param_names =
+	Teuchos::rcp(new Teuchos::Array<std::string>);
+    free_param_names->push_back("Constant Function Value");
 
     // Create application
     Teuchos::RCP<FEApp::Application> app = 
@@ -331,57 +328,64 @@ int main(int argc, char *argv[]) {
         Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
       								      quad));
       Sacado::PCE::OrthogPoly<double>::initExpansion(expansion);
-      Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = 
-        basis->getTripleProductTensor();
 
       // Create new app for Stochastic Galerkin solve
       appParams->set("Enable Stochastic Galerkin", true);
       appParams->set("Stochastic Galerkin basis", basis);
       appParams->set("Stochastic Galerkin quadrature", quad);
-      appParams->set("Stochastic Galerkin triple product", Cijk);
-      appParams->set("SG Solver Method", "Matrix Free Mean Prec");
-      appParams->set("SG Method", "AD");
-      //appParams->set("SG Method", "Gauss Quadrature");
-      Teuchos::RCP<Teuchos::ParameterList> precParams = 
-        Teuchos::rcp(&(appParams->sublist("SG Preconditioner")),false);
-      precParams->set("Ifpack Preconditioner", "ILU");
-      precParams->set("Overlap", 0);
-      Teuchos::RCP<FEApp::PreconditionerFactory> sg_prec = 
-	Teuchos::rcp(new IfpackPreconditionerFactory(precParams));
-      appParams->set("SG Preconditioner Factory", sg_prec);
+      //appParams->set("SG Method", "AD");
+      appParams->set("SG Method", "Gauss Quadrature");
       app = Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false));
 
       // Set up stochastic parameters
-      Teuchos::RCP<ParamLib> paramLib = 
-        app->getParamLib();
-      std::vector< Sacado::PCE::OrthogPoly<double> > pce(d);
+      Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > > sg_p(1);
+      sg_p[0].resize(sz);
+      Epetra_LocalMap p_sg_map(d, 0, *Comm);
+      for (unsigned int i=0; i<sz; i++)
+	sg_p[0][i] = Teuchos::rcp(new Epetra_Vector(p_sg_map));
+      for (unsigned int i=0; i<d; i++)
+	(*(sg_p[0][i+1]))[i] = 1.0;
+      Teuchos::RefCountPtr< Teuchos::Array<std::string> > sg_param_names =
+	Teuchos::rcp(new Teuchos::Array<std::string>);
       for (unsigned int i=0; i<d; i++) {
-        pce[i].resize(sz);
-        pce[i].fastAccessCoeff(0) = 0.0;
-        pce[i].fastAccessCoeff(i+1) = 1.0/d;
-        std::stringstream ss;
-        ss << "Exponential Source Function Nonlinear Factor " << i;
-        paramLib->setValue<FEApp::SGResidualType>(ss.str(), pce[i]);
-        paramLib->setValue<FEApp::SGJacobianType>(ss.str(), pce[i]);
+	std::stringstream ss;
+	ss << "Exponential Source Function Nonlinear Factor " << i;
+	sg_param_names->push_back(ss.str());
       }
+      std::vector<int> sg_p_index(1);
+      sg_p_index[0] = 1;
       
       // Set up NOX for SG solve
-      model = Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names));
+      model = Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
+						     sg_param_names));
+      Teuchos::RCP<Teuchos::ParameterList> sgParams = 
+        Teuchos::rcp(&(appParams->sublist("SG Parameters")),false);
+      sgParams->set("Jacobian Method", "Matrix Free");
+      //sgParams->set("Jacobian Method", "Fully Assembled");
+      Teuchos::RCP<Teuchos::ParameterList> precParams = 
+        Teuchos::rcp(&(sgParams->sublist("SG Preconditioner")),false);
+      precParams->set("Ifpack Preconditioner", "ILU");
+      precParams->set("Overlap", 0);
+      Teuchos::RCP<Stokhos::PreconditionerFactory> sg_prec = 
+	Teuchos::rcp(new IfpackPreconditionerFactory(precParams));
+      sgParams->set("Preconditioner Factory", sg_prec);
+      Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
+	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, sg_p_index,
+						   sg_p, sgParams));
       interface = 
         Teuchos::rcp(new LOCA::Epetra::ModelEvaluatorInterface(globalData,
-                                                               model));
+                                                               sg_model));
       iReq = interface;
       iJac = interface;
       Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface; 
       Teuchos::RCP<const EpetraExt::BlockVector> sg_init = 
-        Teuchos::rcp_dynamic_cast<const EpetraExt::BlockVector>(app->getInitialSolution());
+        Teuchos::rcp_dynamic_cast<const EpetraExt::BlockVector>(sg_model->get_x_init());
       EpetraExt::BlockVector sg_u(*sg_init);
       sg_u.LoadBlockValues(finalSolution, 0);
       NOX::Epetra::Vector sg_nox_u(sg_u);
-      A = model->create_W(); 
-      if (appParams->get("SG Solver Method", "Full Assembled") == 
-          "Matrix Free Mean Prec") {
-        Teuchos::RCP<Epetra_Operator> M = app->createPrec();
+      A = sg_model->create_W(); 
+      if (sgParams->get<std::string>("Jacobian Method") == "Matrix Free") {
+        Teuchos::RCP<Epetra_Operator> M = sg_model->create_prec();
         lsParams.set("Preconditioner", "User Defined");
         linsys = 
           Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
@@ -418,9 +422,9 @@ int main(int argc, char *argv[]) {
         (dynamic_cast<const NOX::Epetra::Vector&>(sg_group.getX())).getEpetraVector();
       utils.out().precision(12);
 
-      // Compute objective function
+      // Compute objective function -- average of u over domain x
       Epetra_Vector u_k(u->Map());
-      int N = nelem+1;
+      int N = u_k.MyLength();
       std::vector<SGType> sg_u_local(N);
       for (int i=0; i<N; i++) {
         sg_u_local[i].resize(sz);
@@ -431,11 +435,17 @@ int main(int argc, char *argv[]) {
           sg_u_local[i].fastAccessCoeff(k) = sg_solution[i+k*N];
       }
 
-      SGType nrm = 0.0;
+      SGType nrm_local = 0.0;
       for (int i=0; i<N; i++) {
-        nrm += sg_u_local[i];
+        nrm_local += sg_u_local[i];
       }
-      nrm /= N;
+#ifdef HAVE_MPI
+      SGType nrm(static_cast<int>(sz));
+      Comm->SumAll(nrm_local.coeff(), nrm.coeff(), sz);
+#else
+      SGType nrm = nrm_local;
+#endif
+      nrm /= u_k.GlobalLength();
 
       utils.out() << "Stochastic solution norm (PCE basis) = " << std::endl;
       nrm.getOrthogPolyApprox().print(*basis, utils.out());
