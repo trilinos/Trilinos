@@ -481,6 +481,7 @@ setFieldData(const Teuchos::ArrayRCP<DataT>& d)
   TEST_FOR_EXCEPTION(m_array_rcp.size() != m_tag.dataLayout().size(),
 		     std::runtime_error, "RCP Array size is not equal to the DataLayout size!");
 
+#ifdef PHX_USE_COMPILETIME_ARRAY
   if (array_type::Rank != (array_dim.size()) ) {
     std::ostringstream os;
     os << "MDField rank must be equal to the DataLayout rank.\n"
@@ -492,12 +493,27 @@ setFieldData(const Teuchos::ArrayRCP<DataT>& d)
     TEST_FOR_EXCEPTION(array_type::Rank != (array_dim.size()), 
 		       std::logic_error, os.str());
   }
-
+  
   typename 
     shards::Array<DataT,shards::NaturalOrder,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> 
     array(d.get(), &array_dim[0]);
   
   m_field_data = array;
+#else
+
+  size_type rank = array_dim.size();
+
+  Teuchos::ArrayRCP<shards::ArrayDimTag*> tags = 
+    Teuchos::arcp<shards::ArrayDimTag*>(rank);
+
+  typename 
+      shards::Array<DataT,shards::NaturalOrder> array(d.get(),
+						      rank,
+						      &array_dim[0],
+						      tags.get());
+
+  m_field_data = array;
+#endif
 
 }
 

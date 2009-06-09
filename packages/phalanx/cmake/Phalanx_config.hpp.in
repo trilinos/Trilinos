@@ -5,4 +5,6 @@
 
 #cmakedefine PHX_ETI
 
+#cmakedefine PHX_USE_COMPILETIME_ARRAY
+
 #cmakedefine HAVE_PHALANX_TVMET

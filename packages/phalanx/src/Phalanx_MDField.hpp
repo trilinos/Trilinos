@@ -60,7 +60,11 @@ namespace PHX {
 
     typedef DataT value_type;
 
+#ifdef PHX_USE_COMPILETIME_ARRAY
     typedef typename shards::Array<DataT,shards::NaturalOrder,Tag0,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> array_type;
+#else
+    typedef typename shards::Array<DataT,shards::NaturalOrder,void,void,void,void,void,void,void,void> array_type;
+#endif
     
     typedef typename array_type::size_type size_type;
 
