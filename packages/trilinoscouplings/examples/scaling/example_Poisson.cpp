@@ -648,15 +648,7 @@ int main(int argc, char *argv[]) {
     int numEdges = edge_vector.size();
     int numFaces = face_vector.size();
    */
-    int int_ne=(int)numElems;
-    int int_nn=(int)numNodes;
-    int globalElems, globalNodes;
-    Comm.SumAll(&int_ne,&globalElems,1);
-    Comm.SumAll(&int_nn,&globalNodes,1);
-    if(!Comm.MyPID()){
-      std::cout << " Number of Global Elements: " << globalElems << " \n";
-      std::cout << "    Number of Global Nodes: " << globalNodes << " \n\n";
-    }
+
  //   std::cout << "    Number of Edges: " << numEdges << " \n";
  //  std::cout << "    Number of Faces: " << numFaces << " \n\n";
    
@@ -842,11 +834,35 @@ int main(int argc, char *argv[]) {
    // Container for cubature points in physical space
     FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
 
-   // Global arrays in Epetra format
-    Epetra_Map globalMapG(-1,numNodes, 0, Comm);
+
+    // Count owned nodes
+    int ownedNodes=0;
+    for(int i=0;i<numNodes;i++)
+      if(nodeIsOwned[i]) ownedNodes++;
+
+    // Build a list of the OWNED global ids...
+    // NTS: will need to switch back to long long
+    int *ownedGIDs=new int[ownedNodes];    
+    int oidx=0;
+    for(int i=0;i<numNodes;i++)
+      if(nodeIsOwned[i]){
+        ownedGIDs[oidx]=(int)globalNodeIds[i];
+        oidx++;
+      }
+    
+    // Global arrays in Epetra format
+    Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
     Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, numFieldsG);
     Epetra_FEVector rhs(globalMapG);
 
+    int int_ne=(int)numElems;
+    int globalElems;
+    Comm.SumAll(&int_ne,&globalElems,1);
+    if(!Comm.MyPID()){
+      std::cout << " Number of Global Elements: " << globalElems << " \n";
+      std::cout << "    Number of Global Nodes: " << globalMapG.NumGlobalElements() << " \n\n";
+    }
+    
  // *** Element loop ***
     for (int k=0; k<numElems; k++) {
 
