@@ -333,8 +333,8 @@ int main(int argc, char *argv[]) {
       appParams->set("Enable Stochastic Galerkin", true);
       appParams->set("Stochastic Galerkin basis", basis);
       appParams->set("Stochastic Galerkin quadrature", quad);
-      //appParams->set("SG Method", "AD");
-      appParams->set("SG Method", "Gauss Quadrature");
+      appParams->set("SG Method", "AD");
+      //appParams->set("SG Method", "Gauss Quadrature");
       app = Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false));
 
       // Set up stochastic parameters
