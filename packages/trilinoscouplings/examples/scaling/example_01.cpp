@@ -50,7 +50,7 @@
 // Epetra includes
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
-#include "Epetra_SerialComm.h"
+#include "Epetra_MpiComm.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_LinearProblem.h"
@@ -264,9 +264,6 @@ int main(int argc, char *argv[]) {
       nodeCoord(i,1)=nodeCoordy[i];
       nodeCoord(i,2)=nodeCoordz[i];
     }
-    delete [] nodeCoordx;
-    delete [] nodeCoordy;
-    delete [] nodeCoordz;
 
    // Get node-element connectivity
     FieldContainer<int> elemToNode(numElems,numNodesPerElem);
@@ -502,7 +499,7 @@ int main(int argc, char *argv[]) {
    // Node to edge incidence matrix
     std::cout << "Building incidence matrix ... \n\n";
 
-    Epetra_SerialComm Comm;
+    Epetra_MpiComm Comm(MPI_COMM_WORLD);
     Epetra_Map globalMapC(numEdges, 0, Comm);
     Epetra_Map globalMapG(numNodes, 0, Comm);
     Epetra_FECrsMatrix DGrad(Copy, globalMapC, globalMapG, 2);
@@ -781,12 +778,15 @@ int main(int argc, char *argv[]) {
  } // *** end element loop ***
 
   // Assemble over multiple processors, if necessary
-   DGrad.GlobalAssemble();  DGrad.FillComplete();    
-   MassG.GlobalAssemble();  MassG.FillComplete();
-   MassC.GlobalAssemble();  MassC.FillComplete();
-   StiffC.GlobalAssemble(); StiffC.FillComplete();
-   rhsC.GlobalAssemble();
-   
+    MassG.GlobalAssemble();  MassG.FillComplete();
+    MassC.GlobalAssemble();  MassC.FillComplete();
+    StiffC.GlobalAssemble(); StiffC.FillComplete();
+    rhsC.GlobalAssemble();
+
+    DGrad.GlobalAssemble(); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap());    
+
+
+    
   // Dump matrices to disk
 #define DUMP_OUT_MATRICES
 #ifdef DUMP_OUT_MATRICES
@@ -797,13 +797,18 @@ int main(int argc, char *argv[]) {
    EpetraExt::MultiVectorToMatlabFile("rhs1_vector.dat",rhsC);
 #endif
 
+   
    // Build the inverse diagonal for MassG
    Epetra_Vector DiagG(MassG.RowMap());
    DiagG.PutScalar(1.0);
    MassG.Multiply(false,DiagG,DiagG);
    for(int i=0;i<DiagG.MyLength();i++) DiagG[i]=1.0/DiagG[i];
    Epetra_CrsMatrix MassGinv(Copy,MassG.RowMap(),MassG.RowMap(),1);
-   MassGinv.ReplaceDiagonalValues(DiagG);
+   //   MassGinv.ReplaceDiagonalValues(DiagG);
+   for(int i=0;i<DiagG.MyLength();i++) {
+     int CID=MassG.GCID(i);
+     MassGinv.InsertGlobalValues(MassG.GRID(i),1,&(DiagG[i]),&CID);
+   }
    MassGinv.FillComplete();
 
    // Solve!
@@ -811,16 +816,33 @@ int main(int argc, char *argv[]) {
    double TotalErrorResidual=0, TotalErrorExactSol=0;   
    ML_Epetra::SetDefaultsRefMaxwell(MLList);
    Teuchos::ParameterList MLList2=MLList.get("refmaxwell: 11list",MLList);
-
+   MLList2.set("x-coordinates",nodeCoordx);
+   MLList2.set("y-coordinates",nodeCoordx);
+   MLList2.set("z-coordinates",nodeCoordx);
+   MLList2.set("ML output",10);
    Epetra_FEVector xexact(rhsC);
    xexact.PutScalar(0.0);//haq
 
+
+   MassC.SetLabel("M1");
+   StiffC.SetLabel("K1");
+   DGrad.SetLabel("D0");
+   MassGinv.SetLabel("M0^{-1}");
+   
+#define RUN_SOLVER
 #ifdef RUN_SOLVER   
    TestMultiLevelPreconditioner_CurlLSFEM("curl-lsfem",MLList2,StiffC,
                                           DGrad,DGrad,MassGinv,MassC,
                                           xexact,rhsC,
                                           TotalErrorResidual, TotalErrorExactSol);
 #endif
+
+
+    delete [] nodeCoordx;
+    delete [] nodeCoordy;
+    delete [] nodeCoordz;
+
+
    fSignsout.close();
 
  // delete mesh
@@ -881,7 +903,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 
   /* Build the (1,1) Block Operator */
   ML_Epetra::ML_RefMaxwell_11_Operator Operator11(CurlCurl,D0,M0inv,M1);
-
+  
   /* Build the AztecOO stuff */
   Epetra_MultiVector x(xexact);
   x.PutScalar(0.0);
@@ -897,7 +919,6 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 
   /* Nuke M1 for OAZ*/
   ML_Epetra::Apply_OAZToMatrix(BCedges,numBCedges,M1);
-
   
   /* Build the aggregation guide matrix */
   Epetra_CrsMatrix *TMT_Agg_Matrix;
@@ -908,7 +929,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   CurlCurl.ExtractDiagonalCopy(Diagonal);
   for(int i=0;i<CurlCurl.NumMyRows();i++) Diagonal[i]*=2;
   
-  /* Build the EMFP Preconditioner */
+  /* Build the EMFP Preconditioner */  
   ML_Epetra::EdgeMatrixFreePreconditioner EMFP(Operator11,Diagonal,D0,D0clean,*TMT_Agg_Matrix,BCedges,numBCedges,MLList);
 
   /* Solve! */
