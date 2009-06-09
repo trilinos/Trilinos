@@ -37,7 +37,7 @@
 */
 
 #undef DEBUG_PRINTING
-// #define DEBUG_PRINTING
+#define DEBUG_PRINTING
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -134,6 +134,7 @@ void  Conform_Boundary_IDS(long long ** comm_entities,
 
 /*******************************************************************************/
 void calc_global_node_ids(long long * globalNodeIds,
+			  bool * nodeIsOwned,
 			  long long numNodes,
 			  long long num_node_comm_maps,
 			  long long * node_cmap_node_cnts,
@@ -142,10 +143,16 @@ void calc_global_node_ids(long long * globalNodeIds,
 			  int rank)
 /*******************************************************************************/
 {
-  for(long long i = 0; i < numNodes; i ++)globalNodeIds[i] = 1l;
+  for(long long i = 0; i < numNodes; i ++){
+    globalNodeIds[i] = 1l;
+    nodeIsOwned[i] = true;
+  }
   for(long long j = 0; j < num_node_comm_maps; j++) {
     for(long long k = 0; k < node_cmap_node_cnts[j] ; k ++){
-      if(node_comm_proc_ids[j] < rank)globalNodeIds[comm_node_ids[j][k]-1] = -1;	
+      if(node_comm_proc_ids[j] < rank){
+	globalNodeIds[comm_node_ids[j][k]-1] = -1;	
+	nodeIsOwned[comm_node_ids[j][k]-1] = false;
+      }
     }
   }
   long long num_unique_nodes = 0;
@@ -623,14 +630,21 @@ int main(int argc, char *argv[]) {
 
     //Calculate global node ids
     long long * globalNodeIds = new long long[numNodes];
+    bool * nodeIsOwned = new bool[numNodes];
 
     calc_global_node_ids(globalNodeIds,
+			 nodeIsOwned,
 			 numNodes,
 			 num_node_comm_maps,
 			 node_cmap_node_cnts,
 			 node_comm_proc_ids,
 			 comm_node_ids,
 			 rank);    
+
+    for(int i = 0; i < numNodes; i ++){
+      if(i%10 == 0) std::cout << std::endl;
+      std::cout << " " << globalNodeIds[i] << "," << nodeIsOwned[i];
+    }
 
     //create edges and calculate edge ids
     /*connectivity*/
