@@ -88,7 +88,6 @@
 void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                                            Teuchos::ParameterList   & MLList,
                                            Epetra_CrsMatrix   & CurlCurl,
-                                           Epetra_CrsMatrix   & D0,
                                            Epetra_CrsMatrix   & D0clean,
                                            Epetra_CrsMatrix   & M0inv,
                                            Epetra_CrsMatrix   & M1,
@@ -784,19 +783,6 @@ int main(int argc, char *argv[]) {
     rhsC.GlobalAssemble();
 
     DGrad.GlobalAssemble(); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap());    
-
-
-    
-  // Dump matrices to disk
-#define DUMP_OUT_MATRICES
-#ifdef DUMP_OUT_MATRICES
-   EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassG);
-   EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
-   EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffC);
-   EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
-   EpetraExt::MultiVectorToMatlabFile("rhs1_vector.dat",rhsC);
-#endif
-
    
    // Build the inverse diagonal for MassG
    Epetra_Vector DiagG(MassG.RowMap());
@@ -811,15 +797,46 @@ int main(int argc, char *argv[]) {
    }
    MassGinv.FillComplete();
 
+
+  // Dump matrices to disk
+#define DUMP_OUT_MATRICES
+#ifdef DUMP_OUT_MATRICES
+   EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassG);
+   EpetraExt::RowMatrixToMatlabFile("mag_m0inv_matrix.dat",MassGinv);
+   EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
+   EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffC);
+   EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
+   EpetraExt::MultiVectorToMatlabFile("rhs1_vector.dat",rhsC);
+#endif
+
+   
    // Solve!
-   Teuchos::ParameterList MLList;  
+   Teuchos::ParameterList MLList,dummy;
    double TotalErrorResidual=0, TotalErrorExactSol=0;   
    ML_Epetra::SetDefaultsRefMaxwell(MLList);
    Teuchos::ParameterList MLList2=MLList.get("refmaxwell: 11list",MLList);
    MLList2.set("x-coordinates",nodeCoordx);
    MLList2.set("y-coordinates",nodeCoordx);
-   MLList2.set("z-coordinates",nodeCoordx);
+   MLList2.set("z-coordinates",nodeCoordx);   
    MLList2.set("ML output",10);
+   MLList2.set("smoother: sweeps (level 0)",2);
+   MLList2.set("smoother: sweeps",2);
+   MLList2.set("smoother: type","Chebyshev");
+   MLList2.get("edge matrix free: coarse",dummy);
+   dummy.set("PDE equations",3);
+   dummy.set("ML output",10);
+   dummy.set("smoother: sweeps",2);
+   dummy.set("smoother: type","symmetric Gauss-Seidel");
+   dummy.set("max levels",1);
+   dummy.set("coarse: type","Amesos-KLU");
+   MLList2.set("edge matrix free: coarse",dummy);
+
+
+   //   MLList2.set("refmaxwell: disable addon",false);//HAQ
+   MLList2.set("print hierarchy",true);
+   
+   cout<<MLList2<<endl;
+   
    Epetra_FEVector xexact(rhsC);
    xexact.PutScalar(0.0);//haq
 
@@ -832,7 +849,7 @@ int main(int argc, char *argv[]) {
 #define RUN_SOLVER
 #ifdef RUN_SOLVER   
    TestMultiLevelPreconditioner_CurlLSFEM("curl-lsfem",MLList2,StiffC,
-                                          DGrad,DGrad,MassGinv,MassC,
+                                          DGrad,MassGinv,MassC,
                                           xexact,rhsC,
                                           TotalErrorResidual, TotalErrorExactSol);
 #endif
@@ -891,7 +908,6 @@ void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector
 void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                                            Teuchos::ParameterList   & MLList,
                                            Epetra_CrsMatrix   & CurlCurl,
-                                           Epetra_CrsMatrix   & D0,
                                            Epetra_CrsMatrix   & D0clean,
                                            Epetra_CrsMatrix   & M0inv,
                                            Epetra_CrsMatrix   & M1,
@@ -899,7 +915,15 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                                            Epetra_MultiVector & b,
                                            double & TotalErrorResidual,
                                            double & TotalErrorExactSol){
-
+  
+  /* Nuke M1 for D0, OAZ*/
+  Epetra_CrsMatrix D0(D0clean);                                             
+  ML_Epetra::Apply_BCsToGradient(CurlCurl,D0);  
+  
+  /* Get the BC edges*/
+  int numBCedges;  
+  int* BCedges=ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(CurlCurl,numBCedges);  
+  ML_Epetra::Apply_OAZToMatrix(BCedges,numBCedges,M1);
 
   /* Build the (1,1) Block Operator */
   ML_Epetra::ML_RefMaxwell_11_Operator Operator11(CurlCurl,D0,M0inv,M1);
@@ -912,14 +936,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   Epetra_MultiVector* rhs = Problem.GetRHS();
   
   Epetra_Time Time(CurlCurl.Comm());
-  
-  /* Get the BC edges*/
-  int numBCedges;  
-  int* BCedges=ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(CurlCurl,numBCedges);
-
-  /* Nuke M1 for OAZ*/
-  ML_Epetra::Apply_OAZToMatrix(BCedges,numBCedges,M1);
-  
+    
   /* Build the aggregation guide matrix */
   Epetra_CrsMatrix *TMT_Agg_Matrix;
   ML_Epetra::ML_Epetra_PtAP(M1,D0clean,TMT_Agg_Matrix,false);
