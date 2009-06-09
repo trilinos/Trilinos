@@ -955,7 +955,7 @@ int main(int argc, char *argv[]) {
    // reset format state of std::cout
    std::cout.copyfmt(oldFormatState);
    
-   MPI_Finalize();
+   //   MPI_Finalize();
  
  return 0;
 
