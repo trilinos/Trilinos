@@ -324,6 +324,7 @@ int main(int argc, char *argv[]) {
   int error = 0;
   int rank=mpiSession.getRank();
   int numProcs=mpiSession.getNProc();
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
    //Check number of arguments
     TEST_FOR_EXCEPTION( ( argc < 4 ),
@@ -638,8 +639,15 @@ int main(int argc, char *argv[]) {
     int numEdges = edge_vector.size();
     int numFaces = face_vector.size();
    */
-    std::cout << " Number of Elements: " << numElems << " \n";
-    std::cout << "    Number of Nodes: " << numNodes << " \n\n";
+    int int_ne=(int)numElems;
+    int int_nn=(int)numNodes;
+    int globalElems, globalNodes;
+    Comm.SumAll(&int_ne,&globalElems,1);
+    Comm.SumAll(&int_nn,&globalNodes,1);
+    if(!Comm.MyPID()){
+      std::cout << " Number of Global Elements: " << globalElems << " \n";
+      std::cout << "    Number of Global Nodes: " << globalNodes << " \n\n";
+    }
  //   std::cout << "    Number of Edges: " << numEdges << " \n";
  //  std::cout << "    Number of Faces: " << numFaces << " \n\n";
    
@@ -826,8 +834,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
 
    // Global arrays in Epetra format
-    Epetra_MpiComm Comm(MPI_COMM_WORLD);
-    Epetra_Map globalMapG(numNodes, 0, Comm);
+    Epetra_Map globalMapG(-1,numNodes, 0, Comm);
     Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, numFieldsG);
     Epetra_FEVector rhs(globalMapG);
 
