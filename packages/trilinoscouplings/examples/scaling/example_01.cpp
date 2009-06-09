@@ -84,6 +84,7 @@
 #include "../mesh_spec_lt/im_exodusII.h"
 #include "../mesh_spec_lt/im_ne_nemesisI.h"
 
+#define ABS(x) ((x)>0?(x):-(x))
 
 void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                                            Teuchos::ParameterList   & MLList,
@@ -774,16 +775,42 @@ int main(int argc, char *argv[]) {
      }
  
      
- } // *** end element loop ***
+    } // *** end element loop ***
 
-  // Assemble over multiple processors, if necessary
+    // Assemble over multiple processors, if necessary
     MassG.GlobalAssemble();  MassG.FillComplete();
     MassC.GlobalAssemble();  MassC.FillComplete();
     StiffC.GlobalAssemble(); StiffC.FillComplete();
     rhsC.GlobalAssemble();
 
     DGrad.GlobalAssemble(); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap());    
-   
+
+
+    // Really hacky dirichlet BCs
+    Epetra_Vector flag1(DGrad.ColMap(),true);
+    // NTS: This map is wrong in parallel
+    for(int i=0;i<numNodes;i++)
+      if(ABS(nodeCoordx[i]-leftX) < 1e-8 || ABS(nodeCoordy[i]-leftY) < 1e-8 || ABS(nodeCoordz[i]-leftZ) < 1e-8)
+        flag1[i]=1;
+
+    int numEntries,*cols;
+    double *vals1;
+    for(int i=0;i<DGrad.NumMyRows();i++){
+      DGrad.ExtractMyRowView(i,numEntries,vals1,cols);
+      assert(numEntries==2);
+      if(flag1[cols[0]]==1 && flag1[cols[1]]==1){
+        // Dirichlet row
+        StiffC.ExtractMyRowView(i,numEntries,vals1,cols);
+        for(int j=0;j<numEntries;j++){
+          if(StiffC.GCID(cols[j])==StiffC.GRID(i)) vals1[j]=1.0;
+          else vals1[j]=0.0;
+        }        
+      }     
+    }       
+    
+    
+    
+    
    // Build the inverse diagonal for MassG
    Epetra_Vector DiagG(MassG.RowMap());
    DiagG.PutScalar(1.0);
