@@ -66,10 +66,6 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     f_sg_blocks(),
     W_sg_blocks(),
     jacobianMethod(MATRIX_FREE),
-    x_dot_sg(),
-    x_sg(),
-    p_sg(num_p),
-    f_sg(),
     sg_p_init(num_p)
 {
   Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(&(x_map->Comm()),false);
@@ -119,23 +115,15 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
 
    // Create vector blocks
    x_dot_sg_blocks = 
-     Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis, 
-							       *x_map));
+     Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
    x_sg_blocks = 
-     Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis, 
-							       *x_map));
+     Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
    f_sg_blocks = 
-     Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis, 
-							       *f_map));
+     Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
    W_sg_blocks = 
      Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Operator>(sg_basis));
    for (unsigned int i=0; i<num_sg_blocks; i++)
      W_sg_blocks->setCoeffPtr(i, me->create_W());
-
-   // Create block vectors
-   x_sg = Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_x_map));
-   x_dot_sg = Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_x_map));
-   f_sg = Teuchos::rcp(new EpetraExt::BlockVector(*f_map, *sg_f_map));
 
    // Get block Jacobian method
    std::string method = params->get("Jacobian Method", "Matrix Free");
@@ -181,13 +169,9 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
      for (unsigned int j=0; j<num_sg_blocks; j++)
        sg_p_init[i]->LoadBlockValues(*(initial_p_sg_coeffs_[i][j]), j);
 
-     // Create block p
-     p_sg[i] = Teuchos::rcp(new EpetraExt::BlockVector(*p_map, *sg_p_map[i]));
-
      // Create p SG blocks
      p_sg_blocks[i] = 
-       Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis, 
-								 *p_map));
+       Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
 
    }
 
@@ -386,14 +370,14 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
     x_dot = inArgs.get_x_dot();
 
   // Copy x, x_dot to SG components
-  x_sg->Scale(1.0, *x);
-  if (x_dot != Teuchos::null)
-    x_dot_sg->Scale(1.0, *x_dot);
+  EpetraExt::BlockVector x_sg(View, *x_map, *x);
   for (unsigned int i=0; i<num_sg_blocks; i++)
-    x_sg->ExtractBlockValues((*x_sg_blocks)[i], i);
-  if (x_dot != Teuchos::null) 
+    x_sg_blocks->setCoeffPtr(i, x_sg.GetBlock(i));
+  if (x_dot != Teuchos::null) {
+    EpetraExt::BlockVector x_dot_sg(View, *x_map, *x_dot);
     for (unsigned int i=0; i<num_sg_blocks; i++)
-      x_dot_sg->ExtractBlockValues((*x_dot_sg_blocks)[i], i);
+      x_dot_sg_blocks->setCoeffPtr(i, x_dot_sg.GetBlock(i));
+  }
 
   // Create underlying inargs
   InArgs me_inargs = me->createInArgs();
@@ -420,9 +404,9 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
       if (p == Teuchos::null)
 	p = get_p_init(i);
 
-      p_sg[offset]->Scale(1.0, *p);
+      EpetraExt::BlockVector p_sg(View, sg_p_init[offset]->GetBaseMap(), *p);
       for (unsigned int j=0; j<num_sg_blocks; j++)
-	p_sg[offset]->ExtractBlockValues((*(p_sg_blocks[offset]))[j], j);
+	p_sg_blocks[offset]->setCoeffPtr(j, p_sg.GetBlock(j));
       me_inargs.set_p_sg(offset, p_sg_blocks[offset]);
     }
     else
@@ -431,8 +415,12 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 
   // Create underlying outargs
   OutArgs me_outargs = me->createOutArgs();
-  if (f_out != Teuchos::null)
+  if (f_out != Teuchos::null) {
+    EpetraExt::BlockVector f_sg(View, *f_map, *f_out);
+    for (unsigned int i=0; i<num_sg_blocks; i++)
+      f_sg_blocks->setCoeffPtr(i, f_sg.GetBlock(i));
     me_outargs.set_f_sg(f_sg_blocks);
+  }
   if (W_out != Teuchos::null && !eval_mean)
     me_outargs.set_W_sg(W_sg_blocks);
 
@@ -440,11 +428,6 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
   me->evalModel(me_inargs, me_outargs);
 
   // Copy block SG components for f and W into f and W
-  if (f_out != Teuchos::null) {
-    for (unsigned int i=0; i<num_sg_blocks; i++)
-      f_sg->LoadBlockValues((*f_sg_blocks)[i], i);
-    f_out->Scale(1.0, *f_sg);
-  }
   if (W_out != Teuchos::null && !eval_mean) {
     if (jacobianMethod == MATRIX_FREE) {
       Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> W_mf = 

@@ -29,6 +29,7 @@
 // @HEADER
 
 #include "Epetra_config.h"
+#include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_MatrixFreeEpetraOp.hpp"
 
 Stokhos::MatrixFreeEpetraOp::MatrixFreeEpetraOp(
@@ -45,8 +46,6 @@ Stokhos::MatrixFreeEpetraOp::MatrixFreeEpetraOp(
     block_ops(ops_),
     useTranspose(false),
     num_blocks(block_ops->size()),
-    sg_input(),
-    sg_result(),
     input_block(num_blocks),
     result_block(num_blocks),
     tmp()
@@ -82,26 +81,31 @@ Stokhos::MatrixFreeEpetraOp::SetUseTranspose(bool UseTranspose)
 
 int 
 Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input, 
-                             Epetra_MultiVector& Result) const
+				   Epetra_MultiVector& Result) const
 {
-  int m = Input.NumVectors();
-  if (sg_input == Teuchos::null || sg_input->NumVectors() != m) {
-    sg_input = 
-      Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, *sg_map, m));
-    sg_result = 
-      Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, *sg_map, m));
-    for (unsigned int i=0; i<num_blocks; i++) {
-      input_block[i] = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
-      result_block[i] = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
-    }
-    tmp = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
+  // We have to be careful if Input and Result are the same vector.
+  // If this is the case, the only possible solution is to make a copy
+  const Epetra_MultiVector *input = &Input;
+  bool made_copy = false;
+  if (&Input == &Result) {
+    input = new Epetra_MultiVector(Input);
+    made_copy = true;
   }
 
-  // Fill input blocks
-  sg_input->Scale(1.0, Input);
+  // Initialize
+  Result.PutScalar(0.0);
+
+  // Allocate temporary storage
+  int m = Input.NumVectors();
+  if (tmp == Teuchos::null || tmp->NumVectors() != m)
+    tmp = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
+
+  // Extract blocks
+  EpetraExt::BlockMultiVector sg_input(View, *base_map, *input);
+  EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
   for (unsigned int i=0; i<num_blocks; i++) {
-    sg_input->ExtractBlockValues(*input_block[i], i);
-    result_block[i]->PutScalar(0.0);
+    input_block[i] = sg_input.GetBlock(i);
+    result_block[i] = sg_result.GetBlock(i);
   }
 
   // Apply block SG operator via
@@ -121,17 +125,21 @@ Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
     }
   }
 
-  // Get result from blocks
-  for (unsigned int i=0; i<num_blocks; i++)
-    sg_result->LoadBlockValues(*result_block[i], i);
-  Result.Scale(1.0, *sg_result);
+  // Destroy blocks
+  for (unsigned int i=0; i<num_blocks; i++) {
+    input_block[i] = Teuchos::null;
+    result_block[i] = Teuchos::null;
+  }
+
+  if (made_copy)
+    delete input;
 
   return 0;
 }
 
 int 
 Stokhos::MatrixFreeEpetraOp::ApplyInverse(const Epetra_MultiVector& Input, 
-				    Epetra_MultiVector& Result) const
+					  Epetra_MultiVector& Result) const
 {
   throw "MatrixFreeEpetraOp::ApplyInverse not defined!";
   return -1;

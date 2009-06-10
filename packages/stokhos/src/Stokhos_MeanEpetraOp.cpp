@@ -29,7 +29,7 @@
 // @HEADER
 
 #include "Epetra_config.h"
-
+#include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_MeanEpetraOp.hpp"
 
 Stokhos::MeanEpetraOp::MeanEpetraOp(
@@ -42,11 +42,7 @@ Stokhos::MeanEpetraOp::MeanEpetraOp(
   sg_map(sg_map_),
   mean_op(mean_op_),
   useTranspose(false),
-  num_blocks(num_blocks_),
-  sg_input(),
-  sg_result(),
-  input_block(num_blocks),
-  result_block(num_blocks)
+  num_blocks(num_blocks_)
 {
 }
 
@@ -77,36 +73,13 @@ Stokhos::MeanEpetraOp::SetUseTranspose(bool UseTranspose)
 
 int 
 Stokhos::MeanEpetraOp::Apply(const Epetra_MultiVector& Input, 
-                           Epetra_MultiVector& Result) const
+			     Epetra_MultiVector& Result) const
 {
-  int m = Input.NumVectors();
-  if (sg_input == Teuchos::null || sg_input->NumVectors() != m) {
-    sg_input = 
-      Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, *sg_map, m));
-    sg_result = 
-      Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, *sg_map, m));
-    for (unsigned int i=0; i<num_blocks; i++) {
-      input_block[i] = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
-      result_block[i] = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
-    }
-  }
-
-  // Fill input blocks
-  sg_input->Scale(1.0, Input);
+  EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
+  EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
   for (unsigned int i=0; i<num_blocks; i++) {
-    sg_input->ExtractBlockValues(*input_block[i], i);
-    result_block[i]->PutScalar(0.0);
+    mean_op->Apply(*(sg_input.GetBlock(i)), *(sg_result.GetBlock(i)));
   }
-
-  // Apply mean Jacobian block
-  for (unsigned int i=0; i<num_blocks; i++) {
-    mean_op->Apply(*input_block[i], *result_block[i]);
-  }
-
-  // Get result from blocks
-  for (unsigned int i=0; i<num_blocks; i++)
-    sg_result->LoadBlockValues(*result_block[i], i);
-  Result.Scale(1.0, *sg_result);
 
   return 0;
 }
@@ -115,34 +88,11 @@ int
 Stokhos::MeanEpetraOp::ApplyInverse(const Epetra_MultiVector& Input, 
 				    Epetra_MultiVector& Result) const
 {
-  int m = Input.NumVectors();
-  if (sg_input == Teuchos::null || sg_input->NumVectors() != m) {
-    sg_input = 
-      Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, *sg_map, m));
-    sg_result = 
-      Teuchos::rcp(new EpetraExt::BlockMultiVector(*base_map, *sg_map, m));
-    for (unsigned int i=0; i<num_blocks; i++) {
-      input_block[i] = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
-      result_block[i] = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
-    }
-  }
-
-  // Fill input blocks
-  sg_input->Scale(1.0, Input);
+  EpetraExt::BlockMultiVector sg_input(View, *base_map, Input);
+  EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
   for (unsigned int i=0; i<num_blocks; i++) {
-    sg_input->ExtractBlockValues(*input_block[i], i);
-    result_block[i]->PutScalar(0.0);
+    mean_op->ApplyInverse(*(sg_input.GetBlock(i)), *(sg_result.GetBlock(i)));
   }
-
-  // Apply mean Jacobian block
-  for (unsigned int i=0; i<num_blocks; i++) {
-    mean_op->ApplyInverse(*input_block[i], *result_block[i]);
-  }
-
-  // Get result from blocks
-  for (unsigned int i=0; i<num_blocks; i++)
-    sg_result->LoadBlockValues(*result_block[i], i);
-  Result.Scale(1.0, *sg_result);
 
   return 0;
 }

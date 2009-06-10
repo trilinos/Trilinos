@@ -202,18 +202,6 @@ namespace Stokhos {
     //! Method for creating block Jacobian
     EJacobianMethod jacobianMethod;
 
-    //! SG time derivative vector
-    Teuchos::RCP<EpetraExt::BlockVector> x_dot_sg;
-
-    //! SG solution vector
-    Teuchos::RCP<EpetraExt::BlockVector> x_sg;
-
-    //! SG parameter vectors
-    Teuchos::Array< Teuchos::RCP<EpetraExt::BlockVector> > p_sg;
-
-    //! SG residual vector
-    Teuchos::RCP<EpetraExt::BlockVector> f_sg;
-
     std::vector< std::vector<int> > rowStencil;
     std::vector<int> rowIndex;
 

@@ -37,7 +37,6 @@
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
-#include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
@@ -156,14 +155,8 @@ namespace Stokhos {
     //! Number of blocks
     unsigned int num_blocks;
 
-    //! BlockMultiVector for Apply() input
-    mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_input;
-
-    //! BlockMultiVector for Apply() result
-    mutable Teuchos::RCP<EpetraExt::BlockMultiVector> sg_result;
-
     //! MultiVectors for each block for Apply() input
-    mutable std::vector< Teuchos::RCP<Epetra_MultiVector> > input_block;
+    mutable std::vector< Teuchos::RCP<const Epetra_MultiVector> > input_block;
 
     //! MultiVectors for each block for Apply() result
     mutable std::vector< Teuchos::RCP<Epetra_MultiVector> > result_block;
