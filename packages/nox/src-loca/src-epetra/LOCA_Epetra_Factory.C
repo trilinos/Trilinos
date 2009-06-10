@@ -45,8 +45,10 @@
 #include "LOCA_Parameter_SublistParser.H"
 #include "LOCA_BorderedSolver_EpetraHouseholder.H"
 #include "LOCA_BorderedSolver_EpetraAugmented.H"
+#ifdef HAVE_NOX_EPETRAEXT
 #ifdef HAVE_MPI
 #include "LOCA_Epetra_AnasaziOperator_Floquet.H"
+#endif
 #endif
 
 LOCA::Epetra::Factory::Factory() :
@@ -101,6 +103,7 @@ LOCA::Epetra::Factory::createAnasaziOperatorStrategy(
        const Teuchos::RCP<NOX::Abstract::Group>& grp,
        Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy>& strategy)
 {
+#ifdef HAVE_NOX_EPETRAEXT
 #ifdef HAVE_MPI
 if (strategyName == "Floquet") {
 
@@ -110,6 +113,7 @@ if (strategyName == "Floquet") {
     return true;
   }
  else
+#endif
 #endif
     return false;
 }
