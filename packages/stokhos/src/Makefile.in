@@ -101,7 +101,8 @@ ARFLAGS = cru
 libstokhos_a_DEPENDENCIES =
 am__objects_1 = Stokhos_Version.$(OBJEXT) \
 	Stokhos_MatrixFreeEpetraOp.$(OBJEXT) \
-	Stokhos_MeanEpetraOp.$(OBJEXT)
+	Stokhos_MeanEpetraOp.$(OBJEXT) \
+	Stokhos_SGModelEvaluator.$(OBJEXT)
 am__objects_2 =
 am_libstokhos_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libstokhos_a_OBJECTS = $(am_libstokhos_a_OBJECTS)
@@ -285,12 +286,17 @@ STOKHOS_H = \
 	$(srcdir)/Stokhos_ForUQTKOrthogPolyExpansion.hpp \
 	$(srcdir)/Stokhos_ForUQTKOrthogPolyExpansionImp.hpp \
 	$(srcdir)/Stokhos_MatrixFreeEpetraOp.hpp \
-	$(srcdir)/Stokhos_MeanEpetraOp.hpp
+	$(srcdir)/Stokhos_MeanEpetraOp.hpp \
+	$(srcdir)/Stokhos_SGModelEvaluator.hpp \
+	$(srcdir)/Stokhos_VectorOrthogPoly.hpp \
+	$(srcdir)/Stokhos_VectorOrthogPolyImp.hpp \
+	$(srcdir)/Stokhos_VectorOrthogPolyTraitsEpetra.hpp
 
 STOKHOS = \
 	$(srcdir)/Stokhos_Version.cpp \
 	$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp \
-	$(srcdir)/Stokhos_MeanEpetraOp.cpp
+	$(srcdir)/Stokhos_MeanEpetraOp.cpp \
+	$(srcdir)/Stokhos_SGModelEvaluator.cpp
 
 
 # ------------------------------------------------------------------------
@@ -443,6 +449,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_MatrixFreeEpetraOp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_MeanEpetraOp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_SGModelEvaluator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_Version.Po@am__quote@
 
 .cpp.o:
@@ -500,6 +507,20 @@ Stokhos_MeanEpetraOp.obj: $(srcdir)/Stokhos_MeanEpetraOp.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stokhos_MeanEpetraOp.cpp' object='Stokhos_MeanEpetraOp.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stokhos_MeanEpetraOp.obj `if test -f '$(srcdir)/Stokhos_MeanEpetraOp.cpp'; then $(CYGPATH_W) '$(srcdir)/Stokhos_MeanEpetraOp.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stokhos_MeanEpetraOp.cpp'; fi`
+
+Stokhos_SGModelEvaluator.o: $(srcdir)/Stokhos_SGModelEvaluator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Stokhos_SGModelEvaluator.o -MD -MP -MF $(DEPDIR)/Stokhos_SGModelEvaluator.Tpo -c -o Stokhos_SGModelEvaluator.o `test -f '$(srcdir)/Stokhos_SGModelEvaluator.cpp' || echo '$(srcdir)/'`$(srcdir)/Stokhos_SGModelEvaluator.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Stokhos_SGModelEvaluator.Tpo $(DEPDIR)/Stokhos_SGModelEvaluator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stokhos_SGModelEvaluator.cpp' object='Stokhos_SGModelEvaluator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stokhos_SGModelEvaluator.o `test -f '$(srcdir)/Stokhos_SGModelEvaluator.cpp' || echo '$(srcdir)/'`$(srcdir)/Stokhos_SGModelEvaluator.cpp
+
+Stokhos_SGModelEvaluator.obj: $(srcdir)/Stokhos_SGModelEvaluator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Stokhos_SGModelEvaluator.obj -MD -MP -MF $(DEPDIR)/Stokhos_SGModelEvaluator.Tpo -c -o Stokhos_SGModelEvaluator.obj `if test -f '$(srcdir)/Stokhos_SGModelEvaluator.cpp'; then $(CYGPATH_W) '$(srcdir)/Stokhos_SGModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stokhos_SGModelEvaluator.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Stokhos_SGModelEvaluator.Tpo $(DEPDIR)/Stokhos_SGModelEvaluator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stokhos_SGModelEvaluator.cpp' object='Stokhos_SGModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stokhos_SGModelEvaluator.obj `if test -f '$(srcdir)/Stokhos_SGModelEvaluator.cpp'; then $(CYGPATH_W) '$(srcdir)/Stokhos_SGModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stokhos_SGModelEvaluator.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"
