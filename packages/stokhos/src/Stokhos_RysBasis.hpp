@@ -51,23 +51,23 @@ namespace Stokhos {
     void projectDerivative(ordinal_type i, 
 			   std::vector<value_type>& coeffs) const;
 
-    //! Evaluate weight function at a given point.
-    value_type evaluateWeight(value_type x) const;    
+    ////! Evaluate weight function at a given point.
+    virtual value_type evaluateWeight(value_type x) const;    
 
-    //! return vectors containing recurrance coefficients.
-    void getAlpha(std::vector<value_type>& alphaOut) const {alphaOut = this->alpha;}
-    void getBeta(std::vector<value_type>& betaOut) const {betaOut = this->beta;}
-    void getGamma(std::vector<value_type>& gammaOut) const {gammaOut = this->gamma;}
+    ////! return vectors containing recurrance coefficients.
+    virtual void getAlpha(std::vector<value_type>& alphaOut) const {alphaOut = this->alpha;}
+    virtual void getBeta(std::vector<value_type>& betaOut) const {betaOut = this->beta;}
+    virtual void getGamma(std::vector<value_type>& gammaOut) const {gammaOut = this->gamma;}
 
     //! Quadrature functions for generating recurrance coefficients.
-    value_type expectedValue_tJ_nsquared(const ordinal_type& order) const;
-    value_type expectedValue_J_nsquared(const ordinal_type& order) const;
+    virtual value_type expectedValue_tJ_nsquared(const ordinal_type& order) const;
+    virtual value_type expectedValue_J_nsquared(const ordinal_type& order) const;
     
     //!Evaluate inner product of two basis functions to test orthogonality.
-    value_type eval_inner_product(const ordinal_type& order1, const ordinal_type& order2) const;
+    virtual value_type eval_inner_product(const ordinal_type& order1, const ordinal_type& order2) const;
     
     //!Evaluate p_th basis function at a given point.
-    value_type evaluateBasesOrder_p(const value_type& x, 
+    virtual value_type evaluateBasesOrder_p(const value_type& x, 
 					const ordinal_type& order) const;
 
     //! Evaluate basis polynomials at given point
@@ -103,15 +103,7 @@ namespace Stokhos {
     // Prohibit Assignment
     RysBasis& operator=(const RysBasis& b);
 
-    // Gaussian cutoff
-    value_type cutoff;
     
-    value_type scaleFactor;
-
-    std::vector<value_type> alpha;
-    std::vector<value_type> beta;
-    std::vector<value_type> gamma;
-    bool normalize;
   }; // class RysBasis
 
 } // Namespace Stokhos

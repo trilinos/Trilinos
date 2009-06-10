@@ -89,6 +89,8 @@ namespace Stokhos {
     //! Return name of basis
     virtual const std::string& getName() const;
 
+    
+
   protected:
 
     //! Constructor

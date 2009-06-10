@@ -37,6 +37,7 @@
 // Bases
 #include "Stokhos_LegendreBasis.hpp"
 #include "Stokhos_HermiteBasis.hpp"
+#include "Stokhos_RysBasis.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
 
 // Expansion methods

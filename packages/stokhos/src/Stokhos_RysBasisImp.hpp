@@ -61,7 +61,6 @@ RysBasis(ordinal_type p , value_type c, bool normalize) :
   this->alpha = alpha;
   this->beta = beta;
   this->gamma = gamma;
-  this->normalize = normalize;
  
   //First renormalize the weight function so that it has measure 1.
   value_type cut_gauss_norm;
@@ -96,7 +95,7 @@ RysBasis(ordinal_type p , value_type c, bool normalize) :
   } 
 
   //If you want normalized polynomials, set gamma and reset the norms to 1.
-  if( this->normalize ){
+  if( normalize ){
     for (ordinal_type k=1; k<=this->p; k++){
         this->gamma[k] = 1/sqrt(this->norms[k]);
         this->norms[k] = 1;
