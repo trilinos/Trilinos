@@ -32,7 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define EPETRAEXT_BLOCKMULTIVECTOR_H
 
 #include "Epetra_MultiVector.h" 
-
+#include "Teuchos_RCP.hpp"
 #include <vector>
 
 //! EpetraExt::BlockMultiVector: A class for constructing a distributed block multivector
@@ -62,6 +62,18 @@ class BlockMultiVector: public Epetra_MultiVector {
   BlockMultiVector( const Epetra_BlockMap & BaseMap, const Epetra_BlockMap & GlobalMap,
  int NumVectors );
 
+   /*! Creates a BlockMultiVector object from an existing Epetra_MultiVector.  
+    
+	\param In 
+        Epetra_DataAccess - Enumerated type set to Copy or View.
+        \param In
+	BaseMap - Map determining local structure, can be distrib. over subset of proc.'s
+	\param In 
+	BlockVec - Source Epetra multi vector whose map must be the full map for the block multi vector
+  */
+  BlockMultiVector(Epetra_DataAccess CV, const Epetra_BlockMap & BaseMap, 
+	      const Epetra_MultiVector & BlockVec);
+
   //! Copy constructor.
   BlockMultiVector( const BlockMultiVector & MV );
 
@@ -74,6 +86,15 @@ class BlockMultiVector: public Epetra_MultiVector {
 
   //! Load a single block into a Block Vector: block row is global, not a stencil value
   int LoadBlockValues(const Epetra_MultiVector & BaseVec, int BlockRow);
+
+  //! Return Epetra_MultiVector for given block row
+  Teuchos::RCP<const Epetra_MultiVector> GetBlock(int BlockRow) const;
+
+  //! Return Epetra_MultiVector for given block row
+  Teuchos::RCP<Epetra_MultiVector> GetBlock(int BlockRow);
+
+  //! Return base map
+  const Epetra_BlockMap& GetBaseMap() const;
 	
  protected:
 

@@ -32,7 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define EPETRAEXT_BLOCKVECTOR_H
 
 #include "Epetra_Vector.h" 
-
+#include "Teuchos_RCP.hpp"
 #include <vector>
 
 //! EpetraExt::BlockVector: A class for constructing a distributed block vector
@@ -60,6 +60,18 @@ class BlockVector: public Epetra_Vector {
 	NumBlocks - Number of local blocks
   */
   BlockVector( const Epetra_BlockMap & BaseMap, const Epetra_BlockMap & GlobalMap);
+
+  /*! Creates a BlockVector object from an existing Epetra_Vector.  
+    
+	\param In 
+        Epetra_DataAccess - Enumerated type set to Copy or View.
+        \param In
+	BaseMap - Map determining local structure, can be distrib. over subset of proc.'s
+	\param In 
+	BlockVec - Source Epetra vector whose map must be the full map for the block vector
+  */
+  BlockVector(Epetra_DataAccess CV, const Epetra_BlockMap & BaseMap, 
+	      const Epetra_Vector & BlockVec);
   
   //! Copy constructor.
   BlockVector( const BlockVector & MV );
@@ -80,6 +92,15 @@ class BlockVector: public Epetra_Vector {
   //! Load entries into BlockVector with base vector indices offset by BlockRow
   int BlockReplaceGlobalValues(int NumIndices, double* Values,
                                int* Indices, int BlockRow);
+
+  //! Return Epetra_Vector for given block row
+  Teuchos::RCP<const Epetra_Vector> GetBlock(int BlockRow) const;
+
+  //! Return Epetra_Vector for given block row
+  Teuchos::RCP<Epetra_Vector> GetBlock(int BlockRow);
+
+  //! Return base map
+  const Epetra_BlockMap& GetBaseMap() const;
 	
  protected:
 

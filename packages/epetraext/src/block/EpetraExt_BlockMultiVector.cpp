@@ -46,6 +46,18 @@ BlockMultiVector::BlockMultiVector(
 {
 }
 
+//=============================================================================
+// EpetraExt::BlockMultiVector Constructor
+BlockMultiVector::BlockMultiVector(
+      Epetra_DataAccess CV, 
+      const Epetra_BlockMap & BaseMap, 
+      const Epetra_MultiVector & BlockVec)
+  : Epetra_MultiVector( CV, BlockVec, 0, BlockVec.NumVectors() ),
+    BaseMap_( BaseMap ),
+    Offset_( BlockUtility::CalculateOffset( BaseMap ) )
+{
+}
+
 //==========================================================================
 // Copy Constructor
 BlockMultiVector::BlockMultiVector(const BlockMultiVector& Source)
@@ -102,6 +114,47 @@ int BlockMultiVector::LoadBlockValues(const Epetra_MultiVector & BaseVector, int
    }
 
    return 0;
+}
+
+//=========================================================================
+Teuchos::RCP<const Epetra_MultiVector>
+BlockMultiVector::GetBlock(int GlobalBlockRow) const
+{
+  int offset = GlobalBlockRow * BaseMap_.NumMyElements();
+  int numVecs = NumVectors();
+  double **pointers = Pointers();
+  double **block_pointers = new double*[numVecs];
+  for (int i=0; i<numVecs; i++)
+    block_pointers[i] = pointers[i]+offset;
+  Teuchos::RCP<Epetra_MultiVector> block = 
+    Teuchos::rcp(new Epetra_MultiVector(View, BaseMap_, block_pointers,
+					numVecs));
+  delete [] block_pointers;
+  return block;
+}
+
+//=========================================================================
+Teuchos::RCP<Epetra_MultiVector>
+BlockMultiVector::GetBlock(int GlobalBlockRow)
+{
+  int offset = GlobalBlockRow * BaseMap_.NumMyElements();
+  int numVecs = NumVectors();
+  double **pointers = Pointers();
+  double **block_pointers = new double*[numVecs];
+  for (int i=0; i<numVecs; i++)
+    block_pointers[i] = pointers[i]+offset;
+  Teuchos::RCP<Epetra_MultiVector> block = 
+    Teuchos::rcp(new Epetra_MultiVector(View, BaseMap_, block_pointers,
+					numVecs));
+  delete [] block_pointers;
+  return block;
+}
+
+//=========================================================================
+const Epetra_BlockMap&
+BlockMultiVector::GetBaseMap() const
+{
+  return BaseMap_;
 }
 
 } //namespace EpetraExt

@@ -44,6 +44,18 @@ BlockVector::BlockVector(
 {
 }
 
+//=============================================================================
+// EpetraExt::BlockVector Constructor
+BlockVector::BlockVector(
+      Epetra_DataAccess CV, 
+      const Epetra_BlockMap & BaseMap, 
+      const Epetra_Vector & BlockVec)
+  : Epetra_Vector( CV, BlockVec, 0 ),
+    BaseMap_( BaseMap ),
+    Offset_( BlockUtility::CalculateOffset( BaseMap ) )
+{
+}
+
 //==========================================================================
 // Copy Constructor
 BlockVector::BlockVector(const BlockVector& Source)
@@ -141,6 +153,29 @@ int BlockVector::BlockReplaceGlobalValues(int NumIndices, double* Values,
 
    return 0;
 }   
+
+//=========================================================================
+Teuchos::RCP<const Epetra_Vector>
+BlockVector::GetBlock(int GlobalBlockRow) const
+{
+  int offset = GlobalBlockRow * BaseMap_.NumMyElements();
+  return Teuchos::rcp(new Epetra_Vector(View, BaseMap_, Values_+offset));
+}
+
+//=========================================================================
+Teuchos::RCP<Epetra_Vector>
+BlockVector::GetBlock(int GlobalBlockRow)
+{
+  int offset = GlobalBlockRow * BaseMap_.NumMyElements();
+  return Teuchos::rcp(new Epetra_Vector(View, BaseMap_, Values_+offset));
+}
+
+//=========================================================================
+const Epetra_BlockMap&
+BlockVector::GetBaseMap() const
+{
+  return BaseMap_;
+}
 
 
 } //namespace EpetraExt
