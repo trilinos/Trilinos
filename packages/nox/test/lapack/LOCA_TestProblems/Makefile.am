@@ -43,12 +43,12 @@
 LOCA_TESTPROBLEMS_H = \
 	$(srcdir)/ChanProblemInterface.H \
 	$(srcdir)/NormConstraint.H \
-	$(srcdir)/LinearConstraint.H
+	$(srcdir)/LOCALinearConstraint.H
 
 LOCA_TESTPROBLEMS = \
 	$(srcdir)/ChanProblemInterface.C \
 	$(srcdir)/NormConstraint.C \
-	$(srcdir)/LinearConstraint.C
+	$(srcdir)/LOCALinearConstraint.C
 
 # ------------------------------------------------------------------------
 # Include NOX export makefile

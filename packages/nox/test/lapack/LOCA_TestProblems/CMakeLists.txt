@@ -9,13 +9,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
   ChanProblemInterface.H
   NormConstraint.H
-  LinearConstraint.H
+  LOCALinearConstraint.H
   ) 
 
 APPEND_SET(SOURCES
   ChanProblemInterface.C
   NormConstraint.C
-  LinearConstraint.C
+  LOCALinearConstraint.C
   )
 
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK AND NOX_ENABLE_LOCA)

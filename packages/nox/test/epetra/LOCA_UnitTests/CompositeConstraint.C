@@ -56,7 +56,7 @@
 #include "Epetra_CrsMatrix.h"
 
 // User's application specific files 
-#include "LinearConstraint.H"
+#include "LOCALinearConstraint.H"
 
 int main(int argc, char *argv[])
 {

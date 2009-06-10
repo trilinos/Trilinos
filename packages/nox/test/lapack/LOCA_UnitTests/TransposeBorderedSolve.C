@@ -47,7 +47,7 @@
 #include "LOCA_BorderedSolver_JacobianOperator.H"
 
 #include "ChanProblemInterface.H"
-#include "LinearConstraint.H"
+#include "LOCALinearConstraint.H"
 #include "NOX_TestCompare.H"
 
 // Global variables used in main() and testSolve()

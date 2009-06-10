@@ -154,7 +154,6 @@ am__objects_11 = FEApp_InitPostOps.$(OBJEXT) \
 	FEApp_SGGaussQuadResidualGlobalFill.$(OBJEXT) \
 	FEApp_SGGaussQuadJacobianGlobalFill.$(OBJEXT)
 am__objects_12 = FEApp_CZeroDiscretization.$(OBJEXT) \
-	FEApp_BlockDiscretization.$(OBJEXT) \
 	FEApp_DiscretizationFactory.$(OBJEXT)
 am__objects_13 = FEApp_Application.$(OBJEXT) \
 	FEApp_ModelEvaluator.$(OBJEXT)
@@ -424,12 +423,10 @@ FILL = \
 DISC_H = \
 	$(FEAPP_PATH)/FEApp_AbstractDiscretization.hpp \
 	$(FEAPP_PATH)/FEApp_CZeroDiscretization.hpp \
-	$(FEAPP_PATH)/FEApp_BlockDiscretization.hpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.hpp
 
 DISC = \
 	$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp \
-	$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
 
 APP_H = \
@@ -528,7 +525,6 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_Application.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BlockDiscretization.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorNodeBCStrategy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorPDE.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorProblem.Po@am__quote@
@@ -831,20 +827,6 @@ FEApp_CZeroDiscretization.obj: $(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' object='FEApp_CZeroDiscretization.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_CZeroDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; fi`
-
-FEApp_BlockDiscretization.o: $(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BlockDiscretization.o -MD -MP -MF $(DEPDIR)/FEApp_BlockDiscretization.Tpo -c -o FEApp_BlockDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BlockDiscretization.Tpo $(DEPDIR)/FEApp_BlockDiscretization.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' object='FEApp_BlockDiscretization.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BlockDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
-
-FEApp_BlockDiscretization.obj: $(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BlockDiscretization.obj -MD -MP -MF $(DEPDIR)/FEApp_BlockDiscretization.Tpo -c -o FEApp_BlockDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BlockDiscretization.Tpo $(DEPDIR)/FEApp_BlockDiscretization.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' object='FEApp_BlockDiscretization.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BlockDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; fi`
 
 FEApp_DiscretizationFactory.o: $(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_DiscretizationFactory.o -MD -MP -MF $(DEPDIR)/FEApp_DiscretizationFactory.Tpo -c -o FEApp_DiscretizationFactory.o `test -f '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp

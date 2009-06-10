@@ -13,7 +13,7 @@ APPEND_SET(HEADERS
   Tcubed_FiniteElementProblem.H
   Pitchfork_FiniteElementProblem.H
   NormConstraint.H
-  LinearConstraint.H
+  LOCALinearConstraint.H
   ) 
 
 APPEND_SET(SOURCES
@@ -22,7 +22,7 @@ APPEND_SET(SOURCES
   Tcubed_FiniteElementProblem.C
   Pitchfork_FiniteElementProblem.C
   NormConstraint.C
-  LinearConstraint.C
+  LOCALinearConstraint.C
   )
 
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_LOCA)

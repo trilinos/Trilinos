@@ -39,7 +39,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "LinearConstraint.H"
+#include "LOCALinearConstraint.H"
 #include "LOCA_Parameter_Vector.H"
 
 LinearConstraint::LinearConstraint(int NumConstraints, 

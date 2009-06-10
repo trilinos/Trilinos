@@ -60,7 +60,7 @@
 // User's application specific files 
 #include "Problem_Interface.H" 
 #include "Tcubed_FiniteElementProblem.H"
-#include "LinearConstraint.H"
+#include "LOCALinearConstraint.H"
 
 // Global variables used in main() and testSolve()
 Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp;

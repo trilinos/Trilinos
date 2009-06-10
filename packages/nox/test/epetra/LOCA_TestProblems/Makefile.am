@@ -59,7 +59,7 @@ LOCA_TESTPROBLEMS_H = \
 	$(srcdir)/Tcubed_FiniteElementProblem.H \
 	$(srcdir)/Pitchfork_FiniteElementProblem.H \
 	$(srcdir)/NormConstraint.H \
-	$(srcdir)/LinearConstraint.H \
+	$(srcdir)/LOCALinearConstraint.H \
 	$(LOCA_TSP_FEAPP_H)
 
 LOCA_TESTPROBLEMS = \
@@ -68,7 +68,7 @@ LOCA_TESTPROBLEMS = \
 	$(srcdir)/Tcubed_FiniteElementProblem.C \
 	$(srcdir)/Pitchfork_FiniteElementProblem.C \
 	$(srcdir)/NormConstraint.C \
-	$(srcdir)/LinearConstraint.C \
+	$(srcdir)/LOCALinearConstraint.C \
 	$(LOCA_TSP_FEAPP)
 
 # ------------------------------------------------------------------------

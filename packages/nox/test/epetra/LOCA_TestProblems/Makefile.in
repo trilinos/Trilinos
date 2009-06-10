@@ -133,7 +133,7 @@ am__liblocatestproblems_a_SOURCES_DIST = $(srcdir)/Basis.C \
 	$(srcdir)/Problem_Interface.C \
 	$(srcdir)/Tcubed_FiniteElementProblem.C \
 	$(srcdir)/Pitchfork_FiniteElementProblem.C \
-	$(srcdir)/NormConstraint.C $(srcdir)/LinearConstraint.C \
+	$(srcdir)/NormConstraint.C $(srcdir)/LOCALinearConstraint.C \
 	$(FEAPP_PATH)/FEApp_LinearElement.cpp \
 	$(FEAPP_PATH)/FEApp_ElementFactory.cpp \
 	$(FEAPP_PATH)/FEApp_GaussianQuadrature2.cpp \
@@ -153,14 +153,13 @@ am__liblocatestproblems_a_SOURCES_DIST = $(srcdir)/Basis.C \
 	$(FEAPP_PATH)/FEApp_SGGaussQuadResidualGlobalFill.cpp \
 	$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.cpp \
 	$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp \
-	$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp \
 	$(FEAPP_PATH)/FEApp_Application.cpp \
 	$(FEAPP_PATH)/FEApp_ModelEvaluator.cpp $(srcdir)/Basis.H \
 	$(srcdir)/FiniteElementProblem.H $(srcdir)/Problem_Interface.H \
 	$(srcdir)/Tcubed_FiniteElementProblem.H \
 	$(srcdir)/Pitchfork_FiniteElementProblem.H \
-	$(srcdir)/NormConstraint.H $(srcdir)/LinearConstraint.H \
+	$(srcdir)/NormConstraint.H $(srcdir)/LOCALinearConstraint.H \
 	$(FEAPP_PATH)/FEApp_AbstractElement.hpp \
 	$(FEAPP_PATH)/FEApp_LinearElement.hpp \
 	$(FEAPP_PATH)/FEApp_ElementFactory.hpp \
@@ -206,7 +205,6 @@ am__liblocatestproblems_a_SOURCES_DIST = $(srcdir)/Basis.C \
 	$(FEAPP_PATH)/FEApp_SGGaussQuadJacobianGlobalFill.hpp \
 	$(FEAPP_PATH)/FEApp_AbstractDiscretization.hpp \
 	$(FEAPP_PATH)/FEApp_CZeroDiscretization.hpp \
-	$(FEAPP_PATH)/FEApp_BlockDiscretization.hpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.hpp \
 	$(FEAPP_PATH)/FEApp_Application.hpp \
 	$(FEAPP_PATH)/FEApp_ModelEvaluator.hpp
@@ -228,7 +226,6 @@ am__objects_9 = FEApp_InitPostOps.$(OBJEXT) FEApp_GlobalFill.$(OBJEXT) \
 	FEApp_SGGaussQuadResidualGlobalFill.$(OBJEXT) \
 	FEApp_SGGaussQuadJacobianGlobalFill.$(OBJEXT)
 am__objects_10 = FEApp_CZeroDiscretization.$(OBJEXT) \
-	FEApp_BlockDiscretization.$(OBJEXT) \
 	FEApp_DiscretizationFactory.$(OBJEXT)
 am__objects_11 = FEApp_Application.$(OBJEXT) \
 	FEApp_ModelEvaluator.$(OBJEXT)
@@ -240,7 +237,7 @@ am__objects_12 = $(am__objects_1) $(am__objects_2) $(am__objects_3) \
 am__objects_14 = Basis.$(OBJEXT) Problem_Interface.$(OBJEXT) \
 	Tcubed_FiniteElementProblem.$(OBJEXT) \
 	Pitchfork_FiniteElementProblem.$(OBJEXT) \
-	NormConstraint.$(OBJEXT) LinearConstraint.$(OBJEXT) \
+	NormConstraint.$(OBJEXT) LOCALinearConstraint.$(OBJEXT) \
 	$(am__objects_13)
 am__objects_15 =
 am__objects_16 = $(am__objects_15) $(am__objects_15) $(am__objects_15) \
@@ -508,12 +505,10 @@ FILL = \
 DISC_H = \
 	$(FEAPP_PATH)/FEApp_AbstractDiscretization.hpp \
 	$(FEAPP_PATH)/FEApp_CZeroDiscretization.hpp \
-	$(FEAPP_PATH)/FEApp_BlockDiscretization.hpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.hpp
 
 DISC = \
 	$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp \
-	$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
 
 APP_H = \
@@ -566,7 +561,7 @@ LOCA_TESTPROBLEMS_H = \
 	$(srcdir)/Tcubed_FiniteElementProblem.H \
 	$(srcdir)/Pitchfork_FiniteElementProblem.H \
 	$(srcdir)/NormConstraint.H \
-	$(srcdir)/LinearConstraint.H \
+	$(srcdir)/LOCALinearConstraint.H \
 	$(LOCA_TSP_FEAPP_H)
 
 LOCA_TESTPROBLEMS = \
@@ -575,7 +570,7 @@ LOCA_TESTPROBLEMS = \
 	$(srcdir)/Tcubed_FiniteElementProblem.C \
 	$(srcdir)/Pitchfork_FiniteElementProblem.C \
 	$(srcdir)/NormConstraint.C \
-	$(srcdir)/LinearConstraint.C \
+	$(srcdir)/LOCALinearConstraint.C \
 	$(LOCA_TSP_FEAPP)
 
 @USING_GNUMAKE_FALSE@TEST_LIBS = $(LOCA_EPETRA_TEST_LIBS)
@@ -664,7 +659,6 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Basis.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_Application.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BlockDiscretization.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorNodeBCStrategy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorPDE.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorProblem.Po@am__quote@
@@ -686,7 +680,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGGaussQuadJacobianGlobalFill.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGGaussQuadResidualGlobalFill.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SourceFunctionFactory.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearConstraint.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCALinearConstraint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NormConstraint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Pitchfork_FiniteElementProblem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Problem_Interface.Po@am__quote@
@@ -776,19 +770,19 @@ NormConstraint.obj: $(srcdir)/NormConstraint.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NormConstraint.obj `if test -f '$(srcdir)/NormConstraint.C'; then $(CYGPATH_W) '$(srcdir)/NormConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NormConstraint.C'; fi`
 
-LinearConstraint.o: $(srcdir)/LinearConstraint.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LinearConstraint.o -MD -MP -MF $(DEPDIR)/LinearConstraint.Tpo -c -o LinearConstraint.o `test -f '$(srcdir)/LinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LinearConstraint.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LinearConstraint.Tpo $(DEPDIR)/LinearConstraint.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LinearConstraint.C' object='LinearConstraint.o' libtool=no @AMDEPBACKSLASH@
+LOCALinearConstraint.o: $(srcdir)/LOCALinearConstraint.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCALinearConstraint.o -MD -MP -MF $(DEPDIR)/LOCALinearConstraint.Tpo -c -o LOCALinearConstraint.o `test -f '$(srcdir)/LOCALinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCALinearConstraint.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCALinearConstraint.Tpo $(DEPDIR)/LOCALinearConstraint.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCALinearConstraint.C' object='LOCALinearConstraint.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LinearConstraint.o `test -f '$(srcdir)/LinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LinearConstraint.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCALinearConstraint.o `test -f '$(srcdir)/LOCALinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCALinearConstraint.C
 
-LinearConstraint.obj: $(srcdir)/LinearConstraint.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LinearConstraint.obj -MD -MP -MF $(DEPDIR)/LinearConstraint.Tpo -c -o LinearConstraint.obj `if test -f '$(srcdir)/LinearConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LinearConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LinearConstraint.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LinearConstraint.Tpo $(DEPDIR)/LinearConstraint.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LinearConstraint.C' object='LinearConstraint.obj' libtool=no @AMDEPBACKSLASH@
+LOCALinearConstraint.obj: $(srcdir)/LOCALinearConstraint.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCALinearConstraint.obj -MD -MP -MF $(DEPDIR)/LOCALinearConstraint.Tpo -c -o LOCALinearConstraint.obj `if test -f '$(srcdir)/LOCALinearConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCALinearConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCALinearConstraint.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCALinearConstraint.Tpo $(DEPDIR)/LOCALinearConstraint.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCALinearConstraint.C' object='LOCALinearConstraint.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LinearConstraint.obj `if test -f '$(srcdir)/LinearConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LinearConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LinearConstraint.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCALinearConstraint.obj `if test -f '$(srcdir)/LOCALinearConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCALinearConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCALinearConstraint.C'; fi`
 
 FEApp_LinearElement.o: $(FEAPP_PATH)/FEApp_LinearElement.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_LinearElement.o -MD -MP -MF $(DEPDIR)/FEApp_LinearElement.Tpo -c -o FEApp_LinearElement.o `test -f '$(FEAPP_PATH)/FEApp_LinearElement.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_LinearElement.cpp
@@ -1055,20 +1049,6 @@ FEApp_CZeroDiscretization.obj: $(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp' object='FEApp_CZeroDiscretization.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_CZeroDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp'; fi`
-
-FEApp_BlockDiscretization.o: $(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BlockDiscretization.o -MD -MP -MF $(DEPDIR)/FEApp_BlockDiscretization.Tpo -c -o FEApp_BlockDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BlockDiscretization.Tpo $(DEPDIR)/FEApp_BlockDiscretization.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' object='FEApp_BlockDiscretization.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BlockDiscretization.o `test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
-
-FEApp_BlockDiscretization.obj: $(FEAPP_PATH)/FEApp_BlockDiscretization.cpp
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BlockDiscretization.obj -MD -MP -MF $(DEPDIR)/FEApp_BlockDiscretization.Tpo -c -o FEApp_BlockDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BlockDiscretization.Tpo $(DEPDIR)/FEApp_BlockDiscretization.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp' object='FEApp_BlockDiscretization.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BlockDiscretization.obj `if test -f '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp'; fi`
 
 FEApp_DiscretizationFactory.o: $(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_DiscretizationFactory.o -MD -MP -MF $(DEPDIR)/FEApp_DiscretizationFactory.Tpo -c -o FEApp_DiscretizationFactory.o `test -f '$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp

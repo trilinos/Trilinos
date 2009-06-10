@@ -388,12 +388,10 @@ FILL = \
 DISC_H = \
 	$(FEAPP_PATH)/FEApp_AbstractDiscretization.hpp \
 	$(FEAPP_PATH)/FEApp_CZeroDiscretization.hpp \
-	$(FEAPP_PATH)/FEApp_BlockDiscretization.hpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.hpp
 
 DISC = \
 	$(FEAPP_PATH)/FEApp_CZeroDiscretization.cpp \
-	$(FEAPP_PATH)/FEApp_BlockDiscretization.cpp \
 	$(FEAPP_PATH)/FEApp_DiscretizationFactory.cpp
 
 APP_H = \

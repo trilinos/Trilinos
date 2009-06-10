@@ -103,7 +103,7 @@ ARFLAGS = cru
 am__DEPENDENCIES_1 =
 liblocatestproblems_a_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am__objects_1 = ChanProblemInterface.$(OBJEXT) \
-	NormConstraint.$(OBJEXT) LinearConstraint.$(OBJEXT)
+	NormConstraint.$(OBJEXT) LOCALinearConstraint.$(OBJEXT)
 am__objects_2 =
 am_liblocatestproblems_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 liblocatestproblems_a_OBJECTS = $(am_liblocatestproblems_a_OBJECTS)
@@ -266,12 +266,12 @@ top_srcdir = @top_srcdir@
 LOCA_TESTPROBLEMS_H = \
 	$(srcdir)/ChanProblemInterface.H \
 	$(srcdir)/NormConstraint.H \
-	$(srcdir)/LinearConstraint.H
+	$(srcdir)/LOCALinearConstraint.H
 
 LOCA_TESTPROBLEMS = \
 	$(srcdir)/ChanProblemInterface.C \
 	$(srcdir)/NormConstraint.C \
-	$(srcdir)/LinearConstraint.C
+	$(srcdir)/LOCALinearConstraint.C
 
 @USING_GNUMAKE_FALSE@TEST_LIBS = $(LOCA_LAPACK_TEST_LIBS)
 @USING_GNUMAKE_TRUE@TEST_LIBS = $(shell $(PERL_EXE) $(top_srcdir)/config/strip_dup_libs.pl $(LOCA_LAPACK_TEST_LIBS))
@@ -358,7 +358,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ChanProblemInterface.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LinearConstraint.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/LOCALinearConstraint.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/NormConstraint.Po@am__quote@
 
 .C.o:
@@ -403,19 +403,19 @@ NormConstraint.obj: $(srcdir)/NormConstraint.C
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o NormConstraint.obj `if test -f '$(srcdir)/NormConstraint.C'; then $(CYGPATH_W) '$(srcdir)/NormConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/NormConstraint.C'; fi`
 
-LinearConstraint.o: $(srcdir)/LinearConstraint.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LinearConstraint.o -MD -MP -MF $(DEPDIR)/LinearConstraint.Tpo -c -o LinearConstraint.o `test -f '$(srcdir)/LinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LinearConstraint.C
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LinearConstraint.Tpo $(DEPDIR)/LinearConstraint.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LinearConstraint.C' object='LinearConstraint.o' libtool=no @AMDEPBACKSLASH@
+LOCALinearConstraint.o: $(srcdir)/LOCALinearConstraint.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCALinearConstraint.o -MD -MP -MF $(DEPDIR)/LOCALinearConstraint.Tpo -c -o LOCALinearConstraint.o `test -f '$(srcdir)/LOCALinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCALinearConstraint.C
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCALinearConstraint.Tpo $(DEPDIR)/LOCALinearConstraint.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCALinearConstraint.C' object='LOCALinearConstraint.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LinearConstraint.o `test -f '$(srcdir)/LinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LinearConstraint.C
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCALinearConstraint.o `test -f '$(srcdir)/LOCALinearConstraint.C' || echo '$(srcdir)/'`$(srcdir)/LOCALinearConstraint.C
 
-LinearConstraint.obj: $(srcdir)/LinearConstraint.C
-@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LinearConstraint.obj -MD -MP -MF $(DEPDIR)/LinearConstraint.Tpo -c -o LinearConstraint.obj `if test -f '$(srcdir)/LinearConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LinearConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LinearConstraint.C'; fi`
-@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LinearConstraint.Tpo $(DEPDIR)/LinearConstraint.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LinearConstraint.C' object='LinearConstraint.obj' libtool=no @AMDEPBACKSLASH@
+LOCALinearConstraint.obj: $(srcdir)/LOCALinearConstraint.C
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT LOCALinearConstraint.obj -MD -MP -MF $(DEPDIR)/LOCALinearConstraint.Tpo -c -o LOCALinearConstraint.obj `if test -f '$(srcdir)/LOCALinearConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCALinearConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCALinearConstraint.C'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/LOCALinearConstraint.Tpo $(DEPDIR)/LOCALinearConstraint.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/LOCALinearConstraint.C' object='LOCALinearConstraint.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LinearConstraint.obj `if test -f '$(srcdir)/LinearConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LinearConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LinearConstraint.C'; fi`
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o LOCALinearConstraint.obj `if test -f '$(srcdir)/LOCALinearConstraint.C'; then $(CYGPATH_W) '$(srcdir)/LOCALinearConstraint.C'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/LOCALinearConstraint.C'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
