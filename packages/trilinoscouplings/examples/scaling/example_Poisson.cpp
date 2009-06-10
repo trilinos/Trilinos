@@ -52,6 +52,7 @@
 // Epetra includes
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
+#include "Epetra_MpiComm.h"
 #include "Epetra_SerialComm.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
@@ -333,6 +334,8 @@ int main(int argc, char *argv[]) {
   int numProcs=mpiSession.getNProc();
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 
+  int MyPID = Comm.MyPID();
+
    //Check number of arguments
     TEST_FOR_EXCEPTION( ( argc < 4 ),
                       std::invalid_argument,
@@ -401,12 +404,14 @@ int main(int argc, char *argv[]) {
 
 // *********************************** GENERATE MESH ************************************
 
+  if (MyPID == 0) {
     std::cout << "Generating mesh ... \n\n";
 
     std::cout << "    NX" << "   NY" << "   NZ\n";
     std::cout << std::setw(5) << NX <<
                  std::setw(5) << NY <<
                  std::setw(5) << NZ << "\n\n";
+  }
 
    // Cube
     double leftX = 0.0, rightX = 1.0;
@@ -438,7 +443,9 @@ int main(int argc, char *argv[]) {
     ss << "end \n";
 
     string meshInput = ss.str();
+  if (MyPID == 0) {
     std::cout << meshInput <<"\n";
+  }
 
    // Generate mesh with Pamgen
 
@@ -648,7 +655,6 @@ int main(int argc, char *argv[]) {
     int numEdges = edge_vector.size();
     int numFaces = face_vector.size();
    */
-
  //   std::cout << "    Number of Edges: " << numEdges << " \n";
  //  std::cout << "    Number of Faces: " << numFaces << " \n\n";
    
@@ -775,7 +781,9 @@ int main(int argc, char *argv[]) {
 
 // ************************************ CUBATURE **************************************
 
+  if (MyPID == 0) {
     std::cout << "Getting cubature ... \n\n";
+  }
 
    // Get numerical integration points and weights
     DefaultCubatureFactory<double>  cubFactory;                                   
@@ -793,7 +801,9 @@ int main(int argc, char *argv[]) {
 
 // ************************************** BASIS ***************************************
 
+  if (MyPID == 0) {
      std::cout << "Getting basis ... \n\n";
+  }
 
    // Define basis 
      Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
@@ -808,7 +818,9 @@ int main(int argc, char *argv[]) {
 
 // ******** LOOP OVER ELEMENTS TO CREATE LOCAL STIFFNESS MATRIX *************
 
-    std::cout << "Building stiffness matrix ... \n\n";
+  if (MyPID == 0) {
+    std::cout << "Building stiffness matrix and right hand side ... \n\n";
+  }
 
  // Settings and data structures for mass and stiffness matrices
     typedef CellTools<double>  CellTools;
@@ -833,7 +845,6 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsG, numCubPoints);
    // Container for cubature points in physical space
     FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
-
 
     // Count owned nodes
     int ownedNodes=0;
@@ -925,7 +936,7 @@ int main(int argc, char *argv[]) {
           rhsData(0,nPt) = evalDivGradu(x, y, z);
        }
 
-     // transform to basis values to physical coordinates 
+     // transform basis values to physical coordinates 
       fst::HGRADtransformVALUE<double>(hexGValsTransformed, hexGVals);
       
      // multiply values with weighted measure
@@ -965,18 +976,26 @@ int main(int argc, char *argv[]) {
    rhs.GlobalAssemble();
    
   // Dump matrices to disk
-   //   EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-   //   EpetraExt::MultiVectorToMatlabFile("rhs_vector.dat",rhs);
+     EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
+     EpetraExt::MultiVectorToMatlabFile("rhs_vector.dat",rhs);
 
 
-   
    // Run the solver
    Teuchos::ParameterList MLList;
    ML_Epetra::SetDefaults("SA",MLList);
    Epetra_FEVector xexact(rhs);
    double TotalErrorResidual=0, TotalErrorExactSol=0;
 
-   xexact.PutScalar(0.0);//fixme
+   // Get exact solution
+    for (int i = 0; i<numNodes; i++) {
+          double x = nodeCoord(i,0);
+          double y = nodeCoord(i,1);
+          double z = nodeCoord(i,2);
+          double exactu = evalu(x, y, z);
+          xexact.SumIntoGlobalValues(1, &i, &exactu);
+    }
+       
+   //xexact.PutScalar(0.0);//fixme
    
    TestMultiLevelPreconditionerLaplace("laplace",MLList,StiffMatrix,xexact,rhs,
                                        TotalErrorResidual, TotalErrorExactSol);
@@ -989,7 +1008,7 @@ int main(int argc, char *argv[]) {
    
    //   MPI_Finalize();
  
- return 0;
+   exit(0);
 
 }
 
@@ -1012,7 +1031,7 @@ int main(int argc, char *argv[]) {
  double evalDivGradu(double & x, double & y, double & z)
  {
    //  for u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)
-   //double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+  // double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
 
   // or
 
@@ -1023,7 +1042,7 @@ int main(int argc, char *argv[]) {
                         sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z)
                      + ((1.0 - M_PI*M_PI)*sin(M_PI*z) + 2.0*M_PI*cos(M_PI*z))*
                         sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z);
-
+   
    return divGradu;
  }
 
@@ -1216,7 +1235,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   string msg = ProblemType;
   
   if (A.Comm().MyPID() == 0) {
-    cout << msg << "......Using " << A.Comm().NumProc() << " processes" << endl;
+    cout << msg << endl << "......Using " << A.Comm().NumProc() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
     cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
