@@ -7,6 +7,7 @@ cmake -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
       -D Trilinos_ENABLE_Ifpack:BOOL=ON \
       -D Trilinos_ENABLE_AztecOO:BOOL=OFF \
       -D Trilinos_ENABLE_Belos:BOOL=ON \
+      -D Trilinos_ENABLE_Intrepid:BOOL=ON \
       -D Trilinos_ENABLE_Phalanx:BOOL=ON \
       -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
       -D Trilinos_ENABLE_TESTS:BOOL=OFF \
