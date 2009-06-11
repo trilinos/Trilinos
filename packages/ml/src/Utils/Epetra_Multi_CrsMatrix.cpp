@@ -62,8 +62,6 @@ int  ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMa
 
   int rv=0;
   ML_Comm* temp = global_comm;  
-  /* DEBUG*/
-  char str[80];
 
   /* Setup for 1st Matmat */
   ML_Operator * MV[2]={0,0},*CV;

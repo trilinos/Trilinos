@@ -12,10 +12,6 @@
 #include "ml_RefMaxwell_11_Operator.h"
 using namespace std;
 
-//mucho hax
-void cms_residual_check(const char * tag, const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
-double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector& rhs, const Epetra_MultiVector& lhs);
-
 #define ABS(x)((x)>0?(x):-(x))
 
 #define NO_OUTPUT
