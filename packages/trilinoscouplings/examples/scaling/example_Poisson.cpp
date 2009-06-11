@@ -465,6 +465,16 @@ int main(int argc, char *argv[]) {
     im_ex_get_init_l(id, title, &numDim, &numNodes, 
                                 &numElems, &numElemBlk, &numNodeSets,
                                 &numSideSets);
+    long long numNodesGlobal;
+    long long numElemsGlobal;
+    long long numElemBlkGlobal;
+    long long numNodeSetsGlobal;
+    long long numSideSetsGlobal;
+
+    im_ne_get_init_global_l(id, &numNodesGlobal, &numElemsGlobal, 
+                         &numElemBlkGlobal, &numNodeSetsGlobal,
+                         &numSideSetsGlobal);
+
     long long * block_ids = new long long [numElemBlk];
     error += im_ex_get_elem_blk_ids_l(id, block_ids);
 
@@ -695,10 +705,12 @@ int main(int argc, char *argv[]) {
         im_ex_get_side_set_param_l(id,sideSetIds[i],&numSidesinSet,&numDFinSet);
         numElemsOnBoundary(i)=numSidesinSet;
      }
-   // Container indicating whether a global node is on the boundary (1-yes 0-no)
+
+   // Container indicating whether a node is on the boundary (1-yes 0-no)
     FieldContainer<int> nodeOnBoundary(numNodes);
 
    // Side set 1: left
+    if (numElemsOnBoundary(0) > 0){
      long long * sideSetElemList1 = new long long [numElemsOnBoundary(0)];
      long long * sideSetSideList1 = new long long [numElemsOnBoundary(0)];
      im_ex_get_side_set_l(id,sideSetIds[0],sideSetElemList1,sideSetSideList1);
@@ -710,8 +722,10 @@ int main(int argc, char *argv[]) {
      }
      delete [] sideSetElemList1;
      delete [] sideSetSideList1;
+   }
 
    // Side set 2: front
+    if (numElemsOnBoundary(1) > 0){
      long long * sideSetElemList2 = new long long [numElemsOnBoundary(1)];
      long long * sideSetSideList2 = new long long [numElemsOnBoundary(1)];
      im_ex_get_side_set_l(id,sideSetIds[1],sideSetElemList2,sideSetSideList2);
@@ -723,8 +737,10 @@ int main(int argc, char *argv[]) {
      }
      delete [] sideSetElemList2;
      delete [] sideSetSideList2;
+    }
 
    // Side set 3: bottom
+    if (numElemsOnBoundary(2) > 0){
      long long * sideSetElemList3 = new long long [numElemsOnBoundary(2)];
      long long * sideSetSideList3 = new long long [numElemsOnBoundary(2)];
      im_ex_get_side_set_l(id,sideSetIds[2],sideSetElemList3,sideSetSideList3);
@@ -736,8 +752,10 @@ int main(int argc, char *argv[]) {
      }
      delete [] sideSetElemList3;
      delete [] sideSetSideList3;
+    }
 
    // Side set 4: right
+    if (numElemsOnBoundary(3) > 0){
      long long * sideSetElemList4 = new long long [numElemsOnBoundary(3)];
      long long * sideSetSideList4 = new long long [numElemsOnBoundary(3)];
      im_ex_get_side_set_l(id,sideSetIds[3],sideSetElemList4,sideSetSideList4);
@@ -749,8 +767,10 @@ int main(int argc, char *argv[]) {
      }
      delete [] sideSetElemList4;
      delete [] sideSetSideList4;
+    }
 
    // Side set 5: back
+    if (numElemsOnBoundary(4) > 0){
      long long * sideSetElemList5 = new long long [numElemsOnBoundary(4)];
      long long * sideSetSideList5 = new long long [numElemsOnBoundary(4)];
      im_ex_get_side_set_l(id,sideSetIds[4],sideSetElemList5,sideSetSideList5);
@@ -762,8 +782,10 @@ int main(int argc, char *argv[]) {
      }
      delete [] sideSetElemList5;
      delete [] sideSetSideList5;
+    }
 
    // Side set 6: top
+    if (numElemsOnBoundary(5) > 0){
      long long * sideSetElemList6 = new long long [numElemsOnBoundary(5)];
      long long * sideSetSideList6 = new long long [numElemsOnBoundary(5)];
      im_ex_get_side_set_l(id,sideSetIds[5],sideSetElemList6,sideSetSideList6);
@@ -775,6 +797,7 @@ int main(int argc, char *argv[]) {
      }
      delete [] sideSetElemList6;
      delete [] sideSetSideList6;
+    }
 
     delete [] sideSetIds;
 
@@ -909,13 +932,10 @@ int main(int argc, char *argv[]) {
       int err = 0;
       for (int row = 0; row < numFieldsG; row++){
         for (int col = 0; col < numFieldsG; col++){
-            int rowIndex = elemToNode(k,row);
-            int colIndex = elemToNode(k,col);
+            int rowIndex = globalNodeIds[elemToNode(k,row)];
+            int colIndex = globalNodeIds[elemToNode(k,col)];
             double val = localStiffMatrix(0,row,col);
-            err = StiffMatrix.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            if (err > 0) {
-                StiffMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            }
+            StiffMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
@@ -949,31 +969,36 @@ int main(int argc, char *argv[]) {
 
     // assemble into global vector
      for (int row = 0; row < numFieldsG; row++){
-           int rowIndex = elemToNode(k,row);
+           int rowIndex = globalNodeIds[elemToNode(k,row)];
            double val = -localRHS(0,row);
            err = rhs.SumIntoGlobalValues(1, &rowIndex, &val);
-     }
+      }
  
      
  } // *** end element loop ***
 
+
+  // Assemble over multiple processors
+   StiffMatrix.GlobalAssemble(); StiffMatrix.FillComplete();
+   rhs.GlobalAssemble();
+
+ 
   // Adjust stiffness matrix and rhs based on boundary conditions
    for (int row = 0; row<numNodes; row++){
        if (nodeOnBoundary(row)) {
-          for (int col=0; col<numNodes; col++){
+          int rowindex = globalNodeIds[row];
+          for (int col=0; col<numNodesGlobal; col++){
               double val = 0.0;
-              StiffMatrix.ReplaceGlobalValues(1, &row, 1, &col, &val);
+              int colindex = col;
+              StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &colindex, &val);
           }
           double val = 1.0;
-          StiffMatrix.ReplaceGlobalValues(1, &row, 1, &row, &val);
+          StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &rowindex, &val);
           val = 0.0;
-          rhs.ReplaceGlobalValues(1, &row, &val);
+          rhs.ReplaceGlobalValues(1, &rowindex, &val);
        }
     }
-          
-  // Assemble over multiple processors, if necessary
-   StiffMatrix.GlobalAssemble(); StiffMatrix.FillComplete();
-   rhs.GlobalAssemble();
+
    
   // Dump matrices to disk
      EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
@@ -988,14 +1013,16 @@ int main(int argc, char *argv[]) {
 
    // Get exact solution
     for (int i = 0; i<numNodes; i++) {
+       if (nodeIsOwned[i]){
           double x = nodeCoord(i,0);
           double y = nodeCoord(i,1);
           double z = nodeCoord(i,2);
           double exactu = evalu(x, y, z);
-          xexact.SumIntoGlobalValues(1, &i, &exactu);
+          int rowindex=globalNodeIds[i];
+          xexact.SumIntoGlobalValues(1, &rowindex, &exactu);
+       }
     }
        
-   //xexact.PutScalar(0.0);//fixme
    
    TestMultiLevelPreconditionerLaplace("laplace",MLList,StiffMatrix,xexact,rhs,
                                        TotalErrorResidual, TotalErrorExactSol);
