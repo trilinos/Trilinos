@@ -74,7 +74,7 @@ void BlockPreconditionerFactory::initializePrec(const RCP<const LinearOpSourceBa
 
    // must first cast that to be initialized
    DefaultPreconditioner<double> & dPrec = Teuchos::dyn_cast<DefaultPreconditioner<double> >(*prec);
-   dPrec.initializeUnspecified(M);
+   dPrec.initializeUnspecified(Teuchos::rcp_const_cast<LinearOpBase<double> >(M));
 }
 
 //! initialize a newly created preconditioner object

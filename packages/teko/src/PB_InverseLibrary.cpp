@@ -53,6 +53,7 @@ void InverseLibrary::addStratSolver(const std::string & label,const std::string 
    RCP<Teuchos::ParameterList> stratList = rcp(new Teuchos::ParameterList());
    stratList->set("Linear Solver Type",type);
    stratList->set("Linear Solver Types",pl);
+   stratList->set("Preconditioner Type","None");
 
    stratSolver_[label] = stratList;
 }
@@ -177,7 +178,7 @@ Teuchos::RCP<InverseLibrary> InverseLibrary::buildFromStratimikos(const Stratimi
    RCP<InverseLibrary> invLib = rcp(new InverseLibrary());
 
    // get default inveres in Stratimikos
-   RCP<const Teuchos::ParameterList> pl = strat.getValidParameters();
+   RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList(*strat.getValidParameters()));
    Teuchos::ParameterList lst(pl->sublist("Linear Solver Types"));
    Teuchos::ParameterList pft(pl->sublist("Preconditioner Types"));
 

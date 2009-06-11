@@ -13,6 +13,9 @@
 #include "Thyra_get_Epetra_Operator.hpp"
 
 #include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_RowMatrixOut.h"
+
+#include "PB_Utilities.hpp"
 
 namespace PB {
 namespace Epetra {
@@ -108,6 +111,33 @@ void StridedEpetraOperator::RemoveReording()
    SetMapStrategy(stridedMapping_);
    SetOperator(stridedOperator_,false);
    reorderManager_ = Teuchos::null;
+}
+
+/** Write out this operator to matrix market files
+  */
+void StridedEpetraOperator::WriteBlocks(const std::string & prefix) const
+{
+   RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > blockOp
+         = rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<double> >(stridedOperator_);
+
+   // get size of strided block operator
+   int rows = PB::blockRowCount(blockOp);
+   int cols = PB::blockColCount(blockOp);
+
+   for(int i=0;i<rows;i++) {
+      for(int j=0;j<rows;j++) {
+         // build the file name
+         std::stringstream ss;
+         ss << prefix << "_" << i << j << ".mm";
+
+         // get the row matrix object
+         RCP<const Epetra_RowMatrix> mat
+               = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(Thyra::get_Epetra_Operator(*blockOp->getBlock(i,j)));
+
+         // write to file
+         EpetraExt::RowMatrixToMatrixMarketFile(ss.str().c_str(),*mat);
+      }
+   }
 }
 
 } // end namespace Epetra

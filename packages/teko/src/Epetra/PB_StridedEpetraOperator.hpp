@@ -49,6 +49,10 @@ public:
    //! Remove any reordering on this object
    void RemoveReording();
 
+   /** Write out this operator to matrix market files
+     */
+   virtual void WriteBlocks(const std::string & prefix) const;
+
    // functions overloading Epetra_Operator
    ////////////////////////////////////////////////
 
