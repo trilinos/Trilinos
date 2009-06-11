@@ -136,7 +136,7 @@ static int setup_zoltan(struct Zoltan_Struct *zz, ML_Operator* A, int zoltan_typ
     return 0;
   }
 #else
-  if(!A->comm->ML_mypid) printf("ML-Zoltan: Zoltan 3.0 support not enabled\n");
+  if(!A->comm->ML_mypid && zoltan_type != ML_ZOLTAN_TYPE_RCB) printf("ML-Zoltan: Zoltan 3.0 support not enabled, resetting method to RCB\n");
   strcpy(str,"RCB");
 #endif
   
@@ -603,9 +603,9 @@ int ML_DecomposeGraph_with_Zoltan(ML_Operator *Amatrix,
   struct Zoltan_Struct *zz;
   float version;
   int error;
-  MPI_Comm Zoltan_SubComm = comm->USR_comm;/*CMS*/
-  int color = MPI_UNDEFINED; /*CMS*/
-  
+  MPI_Comm Zoltan_SubComm = comm->USR_comm;
+  int color = MPI_UNDEFINED; 
+
   /* ------------------- execution begins --------------------------------- */
 
   t0 = GetClock();
