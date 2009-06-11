@@ -583,6 +583,9 @@ int main(int argc, char *argv[]) {
 				  0/*not used proc_id*/ ) < 0 )++error;
 	node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
       }
+
+      delete [] elem_cmap_ids;
+      delete [] elem_cmap_elem_cnts;      
     }
 
     //Calculate global node ids
@@ -1026,7 +1029,36 @@ int main(int argc, char *argv[]) {
    
    TestMultiLevelPreconditionerLaplace("laplace",MLList,StiffMatrix,xexact,rhs,
                                        TotalErrorResidual, TotalErrorExactSol);
+
+
+   // Cleanup
+   for(long long b = 0; b < numElemBlk; b++){     
+     delete [] elmt_node_linkage[b];
+     delete [] element_types[b];
+   }
+   delete [] block_ids;
+   delete [] nodes_per_element;
+   delete [] element_attributes;
+   delete [] element_types;
+   delete [] elmt_node_linkage;
+   delete [] ownedGIDs;
+   delete [] elements;
+   delete [] globalNodeIds;
+   delete [] nodeIsOwned;
+   if(num_node_comm_maps > 0){
+      delete [] node_comm_proc_ids;
+      delete [] node_cmap_node_cnts;
+      delete [] node_cmap_ids;
+      for(long long i=0;i<num_node_comm_maps;i++){
+        delete [] comm_node_ids[i];
+        delete [] comm_node_proc_ids[i];
+      }
+      
+      delete [] comm_node_ids;
+      delete [] comm_node_proc_ids;
+   }
    
+
    // delete mesh
    Delete_Pamgen_Mesh();
    
@@ -1131,6 +1163,7 @@ void  Conform_Boundary_IDS(long long ** comm_entities,
   }
   delete [] send_buffer;
   delete [] receive_buffer;
+  delete [] req;
 }
 
 
