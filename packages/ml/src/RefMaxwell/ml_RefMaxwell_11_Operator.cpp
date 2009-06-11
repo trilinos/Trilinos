@@ -10,7 +10,6 @@
 #include "ml_epetra_utils.h"
 #include "EpetraExt_Transpose_RowMatrix.h"
 #include "EpetraExt_SolverMap_CrsMatrix.h"
-#include "EpetraExt_MatrixMatrix.h" //haq
 #ifdef ML_MPI
 #include "Epetra_MpiComm.h"
 #endif
