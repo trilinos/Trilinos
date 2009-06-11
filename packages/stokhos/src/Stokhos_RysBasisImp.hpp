@@ -102,16 +102,14 @@ RysBasis(ordinal_type p , value_type c, bool normalize) :
       }
   }
   
-  std::cout<<"HI MOM";
-  fflush(stdout);
+  
   // Fill in basis coefficients using the recurrance relation.
   this->basis[0].coeff(0) = value_type(1.0);
   if (this->p >= 1){
     this->basis[1].coeff(1) = value_type(1);
     this->basis[1].coeff(0) = -this->alpha[0];
   }
-  std::cout<<"HI MOM";
-  fflush(stdout);
+  
   for (ordinal_type k=2; k<=this->p; k++) {
     this->basis[k].coeff(0) = (-this->alpha[k-1]*(this->basis[k-1].coeff(0)) - value_type(this->beta[k-1])*(this->basis[k-2].coeff(0)));
     for (ordinal_type i=1; i<=k; i++)
@@ -393,9 +391,6 @@ getQuadPoints(ordinal_type quad_order,
     basis = Teuchos::rcp(new Stokhos::RysBasis<int,double>(quad_order,this->cutoff,this->alpha,this->beta,true));
     basis->getAlpha(alpha);
     basis->getBeta(beta);
-    for(int i = 0; i<this->p; i++){
-      std::cout << "alpha[" << i <<"]= " << alpha[i] << "     beta[" << i <<"]= " << beta[i] << "      gamma[" << i <<"]= " << gamma[i] << "\n";
-    }
   }else{  //else just take the ones we already have.
     for(ordinal_type n = 0; n<num_points; n++){
       alpha[n] = this->alpha[n];
