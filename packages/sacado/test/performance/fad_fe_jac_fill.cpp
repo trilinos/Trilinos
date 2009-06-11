@@ -31,6 +31,7 @@
 
 #include "Sacado.hpp"
 #include "Sacado_Fad_SimpleFad.hpp"
+#include "Sacado_CacheFad_DFad.hpp"
 
 #include "Fad/fad.h"
 #include "TinyFadET/tfad.h"

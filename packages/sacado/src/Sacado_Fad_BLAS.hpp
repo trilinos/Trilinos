@@ -34,6 +34,7 @@
 
 #include "Teuchos_BLAS.hpp"
 #include "Sacado.hpp"
+#include "Sacado_CacheFad_DFad.hpp"
 
 namespace Sacado {
 

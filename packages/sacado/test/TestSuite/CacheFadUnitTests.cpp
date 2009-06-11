@@ -31,6 +31,7 @@
 
 #include "FadUnitTests.hpp"
 #include "FadUnitTests2.hpp"
+#include "Sacado_CacheFad_DFad.hpp"
 
 typedef FadOpsUnitTest<Sacado::CacheFad::DFad<double>,double> DFadDoubleTest;
 typedef RealFadOpsUnitTest2<Sacado::CacheFad::DFad<double>,double> DFadDoubleTest2;

@@ -56,7 +56,9 @@
 #include "Sacado_ELRFad_ExpressionTraits.hpp"
 
 // Caching forward AD classes
-#include "Sacado_CacheFad_DFad.hpp"
+// Not including CacheFad by default since AIX has issues with it.
+// This class is not production anyway.
+//#include "Sacado_CacheFad_DFad.hpp"
 
 // Reverse AD classes
 #include "Sacado_trad.hpp"
