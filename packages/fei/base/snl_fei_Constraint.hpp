@@ -241,10 +241,8 @@ inline snl_fei::Constraint<fei::Record*>::Constraint(int id,
     snl_fei::RecordCollection* recordCollection = NULL;
     vspace->getRecordCollection(idTypes[i],recordCollection);
 
-    fei::Record* rec = NULL;
-
     vspace->addDOFs(fieldIDs[i], 1, idTypes[i], 1, &(IDs[i]));
-    rec = recordCollection->getRecordWithID(IDs[i]);
+    fei::Record* rec = recordCollection->getRecordWithID(IDs[i]);
 
     unsigned fieldSize = vspace->getFieldSize(fieldIDs[i]);
 

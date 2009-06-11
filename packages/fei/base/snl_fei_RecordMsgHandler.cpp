@@ -215,14 +215,11 @@ int snl_fei::RecordMsgHandler::packMaskIDs(int destProc, std::vector<int>& msg)
   int* msgPtr = &msg[0];
 
   for(; id_iter != id_end; ++id_iter) {
-    fei::Record* rec = NULL;
-    try {
-      rec = recordCollection_->getRecordWithID(*id_iter);
-    }
-    catch (std::runtime_error& exc) {
+    fei::Record* rec = recordCollection_->getRecordWithID(*id_iter);
+    if (rec == NULL) {
       FEI_OSTRINGSTREAM osstr;
       osstr << "RecordMsgHandler::packMaskIDs: proc " << localProc_
-	   << " caught exception: " << exc.what();
+	   << " failed to find ID " << *id_iter;
       throw std::runtime_error(osstr.str());
     }
 
@@ -246,6 +243,9 @@ int snl_fei::RecordMsgHandler::mergeMaskIDs(int srcProc, std::vector<int>& msg)
   for(; id_iter != id_end; ++id_iter) {
     int ID = *id_iter;
     fei::Record* rec = recordCollection_->getRecordWithID(ID);
+    if (rec == NULL) {
+      ERReturn(-1);
+    }
 
     int maskID = msgPtr[offset++];
 
@@ -293,6 +293,9 @@ int snl_fei::RecordMsgHandler::eqnNumbersMsgLength(int destProc)
   for(; id_iter != id_end; ++id_iter) {
     int ID = *id_iter;
     fei::Record* rec = recordCollection_->getRecordWithID(ID);
+    if (rec == NULL) {
+      ERReturn(-1);
+    }
 
     len += rec->getFieldMask()->getNumIndices();
   }
@@ -315,6 +318,9 @@ int snl_fei::RecordMsgHandler::packEqnNumbersMsg(int destProc,
   for(; id_iter != id_end; ++id_iter) {
     int ID = *id_iter;
     fei::Record* rec = recordCollection_->getRecordWithID(ID);
+    if (rec == NULL) {
+      ERReturn(-1);
+    }
 
     len = rec->getFieldMask()->getNumIndices();
 
@@ -342,6 +348,9 @@ int snl_fei::RecordMsgHandler::storeEqnNumbers(int srcProc, std::vector<int>& ms
     int recNumber = msgPtr[i*3+1];
     int numEqns = msgPtr[i*3+2];
     fei::Record* rec = recordCollection_->getRecordWithID(ID);
+    if (rec == NULL) {
+      ERReturn(-1);
+    }
 
     rec->setNumber(recNumber);
     int* eqnNumbers = eqnNumPtr+rec->getOffsetIntoEqnNumbers();

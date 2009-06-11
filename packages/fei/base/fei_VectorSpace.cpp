@@ -470,14 +470,8 @@ int fei::VectorSpace::initSharedIDs(int numShared,
                                 &(sharingProcs[offset])) );
     offset += numSharingProcsPerID[i];
 
-    fei::Record* rec = NULL;
-    try {
-      rec = recordCollections_[idx]->getRecordWithID(sharedIDs[i]);
-      if (rec == NULL) {
-        ERReturn(-1);
-      }
-    }
-    catch (std::runtime_error& exc) {
+    fei::Record* rec = recordCollections_[idx]->getRecordWithID(sharedIDs[i]);
+    if (rec == NULL) {
       CHK_ERR( addDOFs(idType, 1, &(sharedIDs[i])) );
     }
   }
@@ -520,14 +514,8 @@ int fei::VectorSpace::initSharedIDs(int numShared,
     CHK_ERR( shIDs->addSharedID(sharedIDs[i], numSharingProcsPerID[i],
                                  sharingProcs[i]) );
 
-    fei::Record* rec = NULL;
-    try {
-      rec = recordCollections_[idx]->getRecordWithID(sharedIDs[i]);
-      if (rec == NULL) {
-        ERReturn(-1);
-      }
-    }
-    catch (std::runtime_error& exc) {
+    fei::Record* rec = recordCollections_[idx]->getRecordWithID(sharedIDs[i]);
+    if (rec == NULL) {
       CHK_ERR( addDOFs(idType, 1, &(sharedIDs[i])) );
     }
   }
@@ -965,6 +953,9 @@ int fei::VectorSpace::getGlobalIndex(int idType,
   if (idindex < 0) return(-1);
 
   fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  if (record == NULL) {
+    ERReturn(-1);
+  }
 
   const int* eqnNums = &eqnNumbers_[0]
                      + record->getOffsetIntoEqnNumbers();
@@ -981,6 +972,9 @@ int fei::VectorSpace::getNumDegreesOfFreedom(int idType,
   if (idindex < 0) return(0);
 
   fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  if (record == NULL) {
+    ERReturn(-1);
+  }
 
   return( record->getFieldMask()->getNumIndices() );
 }
@@ -1024,6 +1018,9 @@ int fei::VectorSpace::getNumFields(int idType,
   if (idindex < 0) return(0);
 
   fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  if (record == NULL) {
+    ERReturn(-1);
+  }
 
   return( record->getFieldMask()->getNumFields() );
 }
@@ -1034,14 +1031,8 @@ bool fei::VectorSpace::isLocal(int idType, int ID)
   int idindex = snl_fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(false);
 
-  fei::Record* record = NULL;
-  try {
-    record = recordCollections_[idindex]->getRecordWithID(ID);
-    if (record == NULL) {
-      return(false);
-    }
-  }
-  catch(std::runtime_error& exc) {
+  fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  if (record == NULL) {
     return(false);
   }
 
@@ -1054,15 +1045,12 @@ bool fei::VectorSpace::isLocallyOwned(int idType, int ID)
   int idindex = snl_fei::binarySearch(idType, idTypes_);
   if (idindex < 0) return(false);
 
-  fei::Record* record = NULL;
-  try {
-    record = recordCollections_[idindex]->getRecordWithID(ID);
-    if (record->getOwnerProc() == fei::localProc(comm_)) {
-      return(true);
-    }
-  }
-  catch(std::runtime_error& exc) {
+  fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  if (record == NULL) {
     return(false);
+  }
+  if (record->getOwnerProc() == fei::localProc(comm_)) {
+    return(true);
   }
 
   return(false);
@@ -1097,6 +1085,9 @@ void fei::VectorSpace::getFields(int idType, int ID, std::vector<int>& fieldIDs)
   }
 
   fei::Record* record = recordCollections_[idindex]->getRecordWithID(ID);
+  if (record == NULL) {
+    voidERReturn;
+  }
 
   fei::FieldMask* fieldMask = record->getFieldMask();
   std::vector<int>& maskFieldIDs = fieldMask->getFieldIDs();

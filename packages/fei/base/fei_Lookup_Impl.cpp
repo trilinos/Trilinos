@@ -221,6 +221,9 @@ int fei::Lookup_Impl::buildDatabases()
     fei::SharedIDs::table_type::row_type* procList = (*sd_iter).second;
 
     fei::Record* node = collection->getRecordWithID(id);
+    if (node == NULL) {
+      ERReturn(-1);
+    }
 
     std::vector<int>* newarray = new std::vector<int>;
     fei::SharedIDs::table_type::row_type::const_iterator

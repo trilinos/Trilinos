@@ -370,10 +370,7 @@ fei::Record* snl_fei::RecordCollection::getRecordWithID(int ID)
   map_type::iterator riter = records_.find(ID);
 
   if (riter == rend) {
-    FEI_OSTRINGSTREAM osstr;
-    osstr << "snl_fei::RecordCollection::getRecordWithID("<<ID<<"): "
-          << "record not found.";
-    throw std::runtime_error(osstr.str());
+    return( NULL );
   }
 
   return((*riter).second);
@@ -381,11 +378,8 @@ fei::Record* snl_fei::RecordCollection::getRecordWithID(int ID)
 
 int snl_fei::RecordCollection::getGlobalBlkIndex(int ID, int& globalBlkIndex)
 {
-  fei::Record* record = NULL;
-  try {
-    record = getRecordWithID(ID);
-  }
-  catch(std::runtime_error& exc) {
+  fei::Record* record = getRecordWithID(ID);
+  if (record == NULL) {
     globalBlkIndex = -1;
     ERReturn(-1);
   }
@@ -403,6 +397,12 @@ int snl_fei::RecordCollection::getGlobalIndex(int ID,
                                               const int* eqnNumbers)
 {
   fei::Record* record = getRecordWithID(ID);
+  if (record == NULL) {
+    FEI_OSTRINGSTREAM osstr;
+    osstr << "snl_fei::RecordCollection::getGlobalIndex ERROR, no record with "
+       << "ID=" << ID;
+    throw std::runtime_error(osstr.str());
+  }
 
   fei::FieldMask* mask = record->getFieldMask();
   int numInstances = 0;

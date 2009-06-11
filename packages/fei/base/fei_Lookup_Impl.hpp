@@ -183,13 +183,9 @@ namespace fei {
 	if (err < 0) return(NULL);
 
 	for(int i=0; i<numShared; ++i) {
-	  fei::Record* node = NULL;
-	  try {
-	    node = collection->getRecordWithID(wkPtr[i]);
-	  }
-	  catch (std::runtime_error& exc) {
-	    return(NULL);
-	  }
+	  fei::Record* node = collection->getRecordWithID(wkPtr[i]);
+          if (node == NULL) return NULL;
+
 	  wkPtr[numShared+i] = node->getNumber();
 	}
 	return(wkPtr+numShared);

@@ -581,10 +581,8 @@ int fei::MatrixGraph_Impl2::getConnectivityRecords(fei::VectorSpace* vecSpace,
   CHK_ERR( vecSpace->getRecordCollection(idType, collection) );
 
   for(int i=0; i<numIDs; ++i) {
-    try {
-      records[i] = collection->getRecordWithID(IDs[i]);
-    }
-    catch(std::runtime_error& exc) {
+    records[i] = collection->getRecordWithID(IDs[i]);
+    if (records[i] == NULL) {
       CHK_ERR( vecSpace->addDOFs(idType, 1, &(IDs[i])) );
       records[i] = collection->getRecordWithID(IDs[i]);
     }
@@ -605,10 +603,8 @@ int fei::MatrixGraph_Impl2::getConnectivityRecords(fei::VectorSpace* vecSpace,
   CHK_ERR( vecSpace->getRecordCollection(idType, collection) );
 
   for(int i=0; i<numIDs; ++i) {
-    try {
-      records[i] = collection->getRecordWithID(IDs[i]);
-    }
-    catch(std::runtime_error& exc) {
+    records[i] = collection->getRecordWithID(IDs[i]);
+    if (records[i] == NULL) {
       CHK_ERR( vecSpace->addDOFs(fieldID, 1, idType, 1, &(IDs[i])));
       records[i] = collection->getRecordWithID(IDs[i]);
     }

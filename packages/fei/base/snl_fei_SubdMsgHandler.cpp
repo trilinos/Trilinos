@@ -76,6 +76,9 @@ int snl_fei::SubdMsgHandler::getSendMessage(int destProc,
   for(; id_iter != id_end; ++id_iter) {
     int ID = *id_iter;
     fei::Record* rec = recordCollection_->getRecordWithID(ID);
+    if (rec == NULL) {
+      ERReturn(-1);
+    }
 
     if (rec->isInLocalSubdomain_) {
       msgPtr[offset++] = 1;
