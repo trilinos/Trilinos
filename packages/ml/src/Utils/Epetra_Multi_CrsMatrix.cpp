@@ -14,15 +14,6 @@
 #include "Epetra_MpiComm.h"
 #endif
 
-#define NO_OUTPUT
-#ifdef NO_OUTPUT
-#define Epetra_CrsMatrix_Print(x,y) ;
-#define ML_Matrix_Print(w,x,y,z) ;
-#else
-extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of);//haq
-extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname);
-#endif
-
 // ================================================ ====== ==== ==== == = 
 // Constructor
 ML_Epetra::Epetra_Multi_CrsMatrix::Epetra_Multi_CrsMatrix(int NumMatrices,Epetra_CrsMatrix ** CrsMatrices)
@@ -89,16 +80,8 @@ int  ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMa
     rv=ML_Operator_WrapEpetraCrsMatrix(CrsMatrices_[i],CV);
     ML_CHK_ERR(rv);
 
-    /* DEBUG */
-    sprintf(str,"cv11.%d.dat",NumMatrices_-1-i);
-    ML_Matrix_Print(CV,A.Comm(),CrsMatrices_[i]->RowMap(),str);
-
     /* Do matmat */
     ML_2matmult(CV,MV[i%2],MV[(i+1)%2],ML_CSR_MATRIX);
-
-    /* DEBUG */
-    sprintf(str,"op11.%d.dat",NumMatrices_-1-i);
-    ML_Matrix_Print(MV[(i+1)%2],A.Comm(),CrsMatrices_[i]->RangeMap(),str);
 
     ML_Operator_Destroy(&CV);
   }/*end for*/
@@ -109,6 +92,7 @@ int  ML_Epetra::Epetra_Multi_CrsMatrix::MatrixMatrix_Multiply(const Epetra_CrsMa
 
   /* Cleanup */
   if(MV[0]) ML_Operator_Destroy(&MV[0]);
+
   return rv;
 }/*end MatrixMatrix_Multiply*/
 
