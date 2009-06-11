@@ -16,27 +16,17 @@
 #endif
 
 
-#define BASE_IDX 0
 #define NO_OUTPUT
 
 /* Disabling this option should result in a slight speedup, but will break matvecs with the 11-Operator */
 #define MANUALLY_TRANSPOSE_D0
 
 #ifdef NO_OUTPUT
-#define MVOUT2(x,y,z) ;
-#define MVOUT(x,y) ;
-#define IVOUT(x,y) ;
-#define Epetra_CrsMatrix_Print(x,y) ;
 #define ML_Matrix_Print(w,x,y,z) ;
 #else
-extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, char* of);
-extern void MVOUT (const Epetra_MultiVector & A, char * of);
-extern void IVOUT(const Epetra_IntVector & A, char * of);
-extern void MVOUT2(const Epetra_MultiVector & A,char* pref,int idx);
 extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, char *fname);
 #endif
 
-extern void print_stats(const Epetra_CrsMatrix& A, char *label);//haq
 // ================================================ ====== ==== ==== == = 
 // Constructor
 ML_Epetra::ML_RefMaxwell_11_Operator::ML_RefMaxwell_11_Operator(const Epetra_CrsMatrix& SM_Matrix,    //S+M
@@ -231,25 +221,6 @@ int  ML_Epetra::ML_RefMaxwell_11_Operator::MatrixMatrix_Multiply(const Epetra_Cr
   ML_Operator_WrapEpetraCrsMatrix((Epetra_CrsMatrix*)SM_Matrix_,SM_ML);
   ML_2matmult(SM_ML,A_ML,temp1,ML_CSR_MATRIX);
   ML_Matrix_Print(temp1,*Comm_,*RangeMap_,"smp.dat");
-
-#ifdef SANITY_CHECK
-  /* DEBUG */
-  Epetra_CrsMatrix C_EP3(Copy,*DomainMap_,BASE_IDX);
-  EpetraExt::MatrixMatrix::Multiply(*SM_Matrix_,false,A,false,C_EP3);
-  Epetra_CrsMatrix diff(C_EP3), *C_EP2;
-  Epetra_CrsMatrix_Wrap_ML_Operator(temp1,*Comm_,*DomainMap_,&C_EP2,Copy,SM_Matrix_->IndexBase());
-  C_EP2->OptimizeStorage();
-  EpetraExt::MatrixMatrix::Add(*C_EP2,false,1.0,diff,-1.0);
-
-  
-  double norm1=C_EP3.NormInf();  
-  double norm2=C_EP2->NormInf();
-  double norm3=diff.NormInf()/norm1;
-  if(A.Comm().MyPID()==0)
-     printf("RM11: diff = %6.4e (%6.4e/%6.4e)\n",norm3,norm1,norm2);
-  delete C_EP2;
-  /*end DEBUG*/
-#endif
 
   /* Do the Addon part */
   Addon_->MatrixMatrix_Multiply(A,comm,&temp2);
