@@ -101,7 +101,87 @@ RysBasis(ordinal_type p , value_type c, bool normalize) :
         this->norms[k] = 1;
       }
   }
+  
+  std::cout<<"HI MOM";
+  fflush(stdout);
+  // Fill in basis coefficients using the recurrance relation.
+  this->basis[0].coeff(0) = value_type(1.0);
+  if (this->p >= 1){
+    this->basis[1].coeff(1) = value_type(1);
+    this->basis[1].coeff(0) = -this->alpha[0];
+  }
+  std::cout<<"HI MOM";
+  fflush(stdout);
+  for (ordinal_type k=2; k<=this->p; k++) {
+    this->basis[k].coeff(0) = (-this->alpha[k-1]*(this->basis[k-1].coeff(0)) - value_type(this->beta[k-1])*(this->basis[k-2].coeff(0)));
+    for (ordinal_type i=1; i<=k; i++)
+      this->basis[k].coeff(i) = 
+	(this->basis[k-1].coeff(i-1) - value_type(this->alpha[k-1])*(this->basis[k-1].coeff(i)) - value_type(this->beta[k-1])*(this->basis[k-2].coeff(i)));
+  }
+  
 
+  for (ordinal_type k = 0; k<=this->p; k++) {
+    for( ordinal_type i=0; i<=k; i++) this->basis[k].coeff(i) = this->basis[k].coeff(i) * this->gamma[k];
+  }
+  
+}
+
+template <typename ordinal_type, typename value_type>
+Stokhos::RysBasis<ordinal_type,value_type>::
+RysBasis(ordinal_type p , value_type c, const std::vector< value_type >& alpha, const std::vector< value_type >& beta, bool normalize) :
+  OneDOrthogPolyBasisBase<ordinal_type,value_type>("Rys",p)
+{ 
+//Alternative constructor for when we already know the first n recurrance coefficients.
+  this->scaleFactor = 1;
+  this->cutoff = c;
+  //std::vector<value_type> alpha(p+1,0);
+  //std::vector<value_type> beta(p+1,0);
+  std::vector<value_type> gamma(p+1,1);
+  ordinal_type known_recurrance = alpha.size();
+  
+  this->alpha = alpha;
+  this->beta = beta;
+  this->gamma = gamma;
+  
+  this->alpha.resize(p+1);
+  this->beta.resize(p+1);
+  
+  //First renormalize the weight function so that it has measure 1.
+  value_type cut_gauss_norm;
+  //\int_{-c}^c exp(-x^2/2) dx
+  cut_gauss_norm = expectedValue_J_nsquared(0);
+  //future evaluations of the weight function will scale it by this factor.
+  this->scaleFactor = 1/cut_gauss_norm;
+  
+  value_type integral2;
+  //NOTE!! This evaluation of 'expectedValue_J_nsquared(0)' is different
+  //from the one above since we rescaled the weight.  Don't combine
+  //the two!!!
+  value_type past_integral = expectedValue_J_nsquared(known_recurrance-2); 
+  //These formulas are from the above reference.
+  
+  for(ordinal_type n = known_recurrance-1; n<=p; n++){
+    integral2 = expectedValue_J_nsquared(n);
+    this->alpha[n] = expectedValue_tJ_nsquared(n)/integral2;
+    this->beta[n] = integral2/past_integral;
+    past_integral = integral2;
+  }
+ 
+  
+  // Compute norms: ||P_n||^2 = beta[0]*beta[1]*...*beta[n]
+  this->norms[0] = this->beta[0];
+  for (ordinal_type k=1; k<=this->p; k++){
+    this->norms[k] = this->beta[k]*(this->norms[k-1]);
+  } 
+
+  //If you want normalized polynomials, set gamma and reset the norms to 1.
+  if( normalize ){
+    for (ordinal_type k=1; k<=this->p; k++){
+        this->gamma[k] = 1/sqrt(this->norms[k]);
+        this->norms[k] = 1;
+      }
+  }
+  
   
   // Fill in basis coefficients using the recurrance relation.
   this->basis[0].coeff(0) = value_type(1.0);
@@ -117,10 +197,11 @@ RysBasis(ordinal_type p , value_type c, bool normalize) :
 	(this->basis[k-1].coeff(i-1) - value_type(this->alpha[k-1])*(this->basis[k-1].coeff(i)) - value_type(this->beta[k-1])*(this->basis[k-2].coeff(i)));
   }
   
+
   for (ordinal_type k = 0; k<=this->p; k++) {
     for( ordinal_type i=0; i<=k; i++) this->basis[k].coeff(i) = this->basis[k].coeff(i) * this->gamma[k];
   }
-
+  
 }
 
 template <typename ordinal_type, typename value_type>
@@ -188,7 +269,7 @@ Stokhos::RysBasis<ordinal_type,value_type>::
 evaluateBasesOrder_p(const value_type& x, const ordinal_type& order) const
 {
   // Evaluate basis polynomials P(x) using 3 term recurrence
-  // P_0(x) = 1 P_-1 = 0
+  // P_0(x) = 1, P_-1 = 0
   // P_i(x) = gamma[i]*[(x-alpha[i-1])*P_{i-1}(x) - beta[i-1]*P_{i-2}(x)], i=2,3,...
   value_type value;
   std::vector<value_type> basis_pts(order+1,0);
@@ -306,12 +387,15 @@ getQuadPoints(ordinal_type quad_order,
   std::vector<value_type> alpha(num_points,0);
   std::vector<value_type> beta(num_points,0);
   
-  //If we don't have enough recurrance coefficients, pass an error.
+  //If we don't have enough recurrance coefficients, get some more.
   if(num_points > this->p+1){
-    std::cout << "ERROR: Need at least " << quad_order + 1
-      << " recurrance coefficients to generate a order " << quad_order << " quadrature rule!\n"
-      << " this basis has " << this->p+1 << " recurrance coefficients.\n";
-    return; 
+    Teuchos::RCP<const Stokhos::RysBasis<int,double> > basis;
+    basis = Teuchos::rcp(new Stokhos::RysBasis<int,double>(quad_order,this->cutoff,this->alpha,this->beta,true));
+    basis->getAlpha(alpha);
+    basis->getBeta(beta);
+    for(int i = 0; i<this->p; i++){
+      std::cout << "alpha[" << i <<"]= " << alpha[i] << "     beta[" << i <<"]= " << beta[i] << "      gamma[" << i <<"]= " << gamma[i] << "\n";
+    }
   }else{  //else just take the ones we already have.
     for(ordinal_type n = 0; n<num_points; n++){
       alpha[n] = this->alpha[n];

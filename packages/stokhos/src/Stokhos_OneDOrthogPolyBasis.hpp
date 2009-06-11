@@ -115,25 +115,6 @@ namespace Stokhos {
     //! Get quadrature point factor
     virtual value_type getQuadPointFactor() const = 0;
 
-    //! Evaluate weight function at a given point.
-    virtual value_type evaluateWeight(value_type x) const {return -1;};    
-
-    //! return vectors containing recurrance coefficients.
-    void getAlpha(std::vector<value_type>& alphaOut) const {alphaOut = this->alpha;}
-    void getBeta(std::vector<value_type>& betaOut) const {betaOut = this->beta;}
-    void getGamma(std::vector<value_type>& gammaOut) const {gammaOut = this->gamma;}
-
-    //! Quadrature functions for generating recurrance coefficients.
-    virtual value_type expectedValue_tJ_nsquared(const ordinal_type& order) const {return -1;}
-    virtual value_type expectedValue_J_nsquared(const ordinal_type& order) const {return -1;}
-    
-    //!Evaluate inner product of two basis functions to test orthogonality.
-    virtual value_type eval_inner_product(const ordinal_type& order1, const ordinal_type& order2) const {return -1;}
-
-   //!Evaluate p_th basis function at a given point.
-    virtual value_type evaluateBasesOrder_p(const value_type& x, 
-					const ordinal_type& order) const {return -1;}
-
   private:
 
     // Prohibit copying
@@ -142,17 +123,6 @@ namespace Stokhos {
     // Prohibit Assignment
     OneDOrthogPolyBasis& operator=(const OneDOrthogPolyBasis& b);
   
-  protected:
-    //! Support [-cutoff,cutoff]
-    value_type cutoff;
-    
-    //! Scale for the weight
-    value_type scaleFactor;
-
-    //! Recurrance coeffs
-    std::vector<value_type> alpha;
-    std::vector<value_type> beta;
-    std::vector<value_type> gamma;
 
   }; // class OrthogPolyBasis
 

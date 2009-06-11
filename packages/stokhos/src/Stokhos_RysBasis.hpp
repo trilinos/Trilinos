@@ -39,6 +39,9 @@ namespace Stokhos {
     
     //! Constructor
     RysBasis(ordinal_type p, value_type c, bool normalize);
+
+    RysBasis(ordinal_type p , value_type c, const std::vector< value_type >& alpha,
+             const std::vector< value_type >& beta, bool normalize);
     
     //! Destructor
     ~RysBasis();
@@ -103,6 +106,17 @@ namespace Stokhos {
     // Prohibit Assignment
     RysBasis& operator=(const RysBasis& b);
 
+    //! Support [-cutoff,cutoff]
+    value_type cutoff;
+    
+    //! Scale for the weight
+    value_type scaleFactor;
+
+    //! Recurrance coeffs
+    std::vector<value_type> alpha;
+    std::vector<value_type> beta;
+    std::vector<value_type> gamma;
+ 
     
   }; // class RysBasis
 
