@@ -426,6 +426,7 @@ int main(int argc, char *argv[]) {
    }
  
    // Output element to edge connectivity
+#ifdef DUMP_DATA
     ofstream fout("elem2edge.dat");
     for (int k=0; k<NZ; k++) {
       for (int j=0; j<NY; j++) {
@@ -439,8 +440,8 @@ int main(int argc, char *argv[]) {
       }
     }
     fout.close();
-
-
+#endif
+    
    // Set material properties using undeformed grid assuming each element has only one value of mu
     FieldContainer<double> muVal(numElems);
     for (int k=0; k<NZ; k++) {
@@ -480,6 +481,7 @@ int main(int argc, char *argv[]) {
       }
     }
 
+#ifdef DUMP_DATA
     // Print coords
     FILE *f=fopen("coords.dat","w");
     inode=0;
@@ -492,7 +494,7 @@ int main(int argc, char *argv[]) {
       }
     }
     fclose(f);
-
+#endif
 
 // **************************** INCIDENCE MATRIX **************************************
 
@@ -601,8 +603,9 @@ int main(int argc, char *argv[]) {
     Epetra_FECrsMatrix StiffC(Copy, globalMapC, numFieldsC);
     Epetra_FEVector rhsC(globalMapC);
 
+#ifdef DUMP_DATA
     ofstream fSignsout("edgeSigns.dat");
-
+#endif
  // *** Element loop ***
     for (int k=0; k<numElems; k++) {
 
@@ -620,12 +623,15 @@ int main(int argc, char *argv[]) {
               hexEdgeSigns(0,j) = 1.0;
           else 
               hexEdgeSigns(0,j) = -1.0;
-
-         fSignsout << hexEdgeSigns(0,j) << "  ";
-       }
+#ifdef DUMP_DATA
+          fSignsout << hexEdgeSigns(0,j) << "  ";
+#endif
+      } 
+#ifdef DUMP_DATA     
        fSignsout << "\n";
+#endif
 
-    // Compute cell Jacobians, their inverses and their determinants
+       // Compute cell Jacobians, their inverses and their determinants
        CellTools::setJacobian(hexJacobian, cubPoints, hexNodes, hex_8);
        CellTools::setJacobianInv(hexJacobInv, hexJacobian );
        CellTools::setJacobianDet(hexJacobDet, hexJacobian );
@@ -789,10 +795,11 @@ int main(int argc, char *argv[]) {
     // Really hacky dirichlet BCs
     Epetra_Vector flag1(DGrad.ColMap(),true);
     // NTS: This map is wrong in parallel
-    for(int i=0;i<numNodes;i++)
+    for(int i=0;i<numNodes;i++){
       if(ABS(nodeCoordx[i]-leftX) < 1e-8 || ABS(nodeCoordy[i]-leftY) < 1e-8 || ABS(nodeCoordz[i]-leftZ) < 1e-8)
-        flag1[i]=1;
-
+        flag1[i]=1;      
+    }
+      
     int numEntries,*cols;
     double *vals1;
     for(int i=0;i<DGrad.NumMyRows();i++){
@@ -804,7 +811,8 @@ int main(int argc, char *argv[]) {
         for(int j=0;j<numEntries;j++){
           if(StiffC.GCID(cols[j])==StiffC.GRID(i)) vals1[j]=1.0;
           else vals1[j]=0.0;
-        }        
+        }
+        rhsC[0][i]=0;                
       }     
     }       
     
@@ -825,30 +833,20 @@ int main(int argc, char *argv[]) {
    MassGinv.FillComplete();
 
 
-  // Dump matrices to disk
-#define DUMP_OUT_MATRICES
-#ifdef DUMP_OUT_MATRICES
-   EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassG);
-   EpetraExt::RowMatrixToMatlabFile("mag_m0inv_matrix.dat",MassGinv);
-   EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
-   EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",StiffC);
-   EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",DGrad);
-   EpetraExt::MultiVectorToMatlabFile("rhs1_vector.dat",rhsC);
-#endif
-
-   
    // Solve!
    Teuchos::ParameterList MLList,dummy;
    double TotalErrorResidual=0, TotalErrorExactSol=0;   
    ML_Epetra::SetDefaultsRefMaxwell(MLList);
    Teuchos::ParameterList MLList2=MLList.get("refmaxwell: 11list",MLList);
    MLList2.set("x-coordinates",nodeCoordx);
-   MLList2.set("y-coordinates",nodeCoordx);
-   MLList2.set("z-coordinates",nodeCoordx);   
+   MLList2.set("y-coordinates",nodeCoordy);
+   MLList2.set("z-coordinates",nodeCoordz);   
    MLList2.set("ML output",10);
    MLList2.set("smoother: sweeps (level 0)",2);
    MLList2.set("smoother: sweeps",2);
    MLList2.set("smoother: type","Chebyshev");
+   //   MLList2.set("eigen-analysis: max iters", 20);
+   MLList2.set("eigen-analysis: type", "power-method");
    MLList2.get("edge matrix free: coarse",dummy);
    dummy.set("PDE equations",3);
    dummy.set("ML output",10);
@@ -859,8 +857,8 @@ int main(int argc, char *argv[]) {
    MLList2.set("edge matrix free: coarse",dummy);
 
 
-   //   MLList2.set("refmaxwell: disable addon",false);//HAQ
-   MLList2.set("print hierarchy",true);
+   //   MLList2.set("refmaxwell: disable addon",false);
+   //   MLList2.set("print hierarchy",true);
    
    cout<<MLList2<<endl;
    
@@ -886,9 +884,9 @@ int main(int argc, char *argv[]) {
     delete [] nodeCoordy;
     delete [] nodeCoordz;
 
-
+#ifdef DUMP_DATA
    fSignsout.close();
-
+#endif
  // delete mesh
  Delete_Pamgen_Mesh();
 
@@ -958,6 +956,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   /* Build the AztecOO stuff */
   Epetra_MultiVector x(xexact);
   x.PutScalar(0.0);
+  
   Epetra_LinearProblem Problem(&Operator11,&x,&b); 
   Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_MultiVector* rhs = Problem.GetRHS();
@@ -972,7 +971,24 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   Epetra_Vector Diagonal(CurlCurl.DomainMap(),false);
   CurlCurl.ExtractDiagonalCopy(Diagonal);
   for(int i=0;i<CurlCurl.NumMyRows();i++) Diagonal[i]*=2;
+
+
+  // HAX
+  //  x=*rhs;
+  //  rhs->PutScalar(0.0);
   
+
+  //#define DUMP_OUT_MATRICES
+#ifdef DUMP_OUT_MATRICES
+   EpetraExt::RowMatrixToMatlabFile("mag_m0inv_matrix.dat",M0inv);
+   EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",M1);
+   EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",CurlCurl);
+   EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",D0);
+   EpetraExt::RowMatrixToMatlabFile("mag_t_clean_matrix.dat",D0clean);
+   EpetraExt::MultiVectorToMatrixMarketFile("mag_rhs.dat",*rhs,0,0,false);
+   EpetraExt::MultiVectorToMatrixMarketFile("mag_lhs.dat",*lhs,0,0,false);
+#endif
+ 
   /* Build the EMFP Preconditioner */  
   ML_Epetra::EdgeMatrixFreePreconditioner EMFP(Operator11,Diagonal,D0,D0clean,*TMT_Agg_Matrix,BCedges,numBCedges,MLList);
 
@@ -982,61 +998,13 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 32);
   solver.Iterate(200, 1e-10);
+  //  solver.Iterate(1, 1e-10);
   
   // accuracy check
   string msg = ProblemType;
   solution_test(msg,Operator11,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
 
 }
-
-
-
-
-
-
-
-// Test ML
-int TestMultiLevelPreconditionerLaplace(char ProblemType[],
-                                        Teuchos::ParameterList   & MLList,
-                                        Epetra_CrsMatrix   & A,
-                                        const Epetra_MultiVector & xexact,
-                                        Epetra_MultiVector & b,
-                                        double & TotalErrorResidual,
-                                        double & TotalErrorExactSol)
-{
-  Epetra_MultiVector x(xexact);
-  x.PutScalar(0.0);
-  
-  Epetra_LinearProblem Problem(&A,&x,&b); 
-  Epetra_MultiVector* lhs = Problem.GetLHS();
-  Epetra_MultiVector* rhs = Problem.GetRHS();
-  
-  Epetra_Time Time(A.Comm());
-  
-  // =================== //
-  // call ML and AztecOO //
-  // =================== //
-  
-  AztecOO solver(Problem);  
-  ML_Epetra::MultiLevelPreconditioner *MLPrec = new ML_Epetra::MultiLevelPreconditioner(A, MLList, true);
-  
-  // tell AztecOO to use this preconditioner, then solve
-  solver.SetPrecOperator(MLPrec);
-  solver.SetAztecOption(AZ_solver, AZ_cg);
-  solver.SetAztecOption(AZ_output, 32);
-
-  solver.Iterate(200, 1e-10);
-  
-  delete MLPrec;
-  
-  // accuracy check
-  string msg = ProblemType;
-  solution_test(msg,A,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
-    
-  return( solver.NumIters() );
-  
-}
-
 
 // Calculates value of exact solution u
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
