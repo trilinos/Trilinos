@@ -70,6 +70,9 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   MA28           TS
   AMD            TS
   PETSC          SS
+  SCALAPACK      SS
+  Oski           SS
+  TAUCS          SS
   ForUQTK	 EX
   Dakota	 EX
   )

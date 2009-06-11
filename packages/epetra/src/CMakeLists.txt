@@ -150,6 +150,26 @@ SET(SOURCES ${SOURCES}
   Epetra_Vector.cpp
   )
 
+IF(Epetra_ENABLE_Oski)
+  APPEND_SET(HEADERS
+    Epetra_OskiUtils.h
+    Epetra_OskiMultiVector.h
+    Epetra_OskiVector.h
+    Epetra_OskiError.h
+    Epetra_OskiPermutation.h
+    Epetra_OskiMatrix.h
+    )
+
+  APPEND_SET(SOURCES
+    Epetra_OskiUtils.cpp
+    Epetra_OskiMultiVector.cpp
+    Epetra_OskiVector.cpp
+    Epetra_OskiError.cpp
+    Epetra_OskiPermutation.cpp
+    Epetra_OskiMatrix.cpp
+    )
+ENDIF()
+
 IF(Trilinos_ENABLE_Fortran)
   SET(SOURCES ${SOURCES}	
     Epetra_dcrsmm.f

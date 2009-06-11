@@ -62,22 +62,9 @@ APPEND_SET(SOURCES
   Kokkos_dcrsmm.f
   )
 
-#
-# expiremental files
-#
-
-IF(Kokkos_ENABLE_Experimental)
-  APPEND_SET(HEADERS
-    Kokkos_OskiMultiVector.hpp
-    Kokkos_OskiVector.hpp
-    Kokkos_OskiMatrix.hpp
-    Kokkos_OskiSparseMultiply.hpp
-    )
-ELSE()
-  APPEND_SET(HEADERS
-    Kokkos_CompObject.hpp
-    )
-ENDIF()
+APPEND_SET(HEADERS
+  Kokkos_CompObject.hpp
+  )
 
 ######################################
 

@@ -76,6 +76,9 @@
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 
+/* Define if want to build with oski enabled */
+#cmakedefine HAVE_OSKI
+
 /* Define to 1 if you have the <sstream> header file. */
 #cmakedefine HAVE_SSTREAM
 
