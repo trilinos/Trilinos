@@ -19,18 +19,11 @@ double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector&
 #define ABS(x)((x)>0?(x):-(x))
 
 #define NO_OUTPUT
-extern void Epetra_CrsMatrix_Print(const Epetra_CrsMatrix& A, const char* of);
-extern void ML_Matrix_Print(ML_Operator *ML,const Epetra_Comm &Comm,const Epetra_Map &Map, const char *fname);
-extern void MVOUT (const Epetra_MultiVector & A, const char * of);
 extern void IVOUT(const Epetra_IntVector & A, const char * of);
-extern void MVOUT2(const Epetra_MultiVector & A,const char* pref,int idx);
 
 //#define ENABLE_FAST_PTAP // This has a bug.  Leave it off for now -CMS
 #include "EpetraExt_RowMatrixOut.h"
-#include "EpetraExt_BlockMapOut.h"
-#include "Teuchos_XMLObject.hpp"
-#include "Teuchos_XMLParameterListWriter.hpp"
-/*#define KDD_DEBUG*/
+#include "EpetraExt_MultiVectorOut.h"
 
 // ================================================ ====== ==== ==== == =
 /* This function does a "view" getrow in an ML_Operator.  This is intended to be
@@ -122,7 +115,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
   if(OutputLevel > 5) {very_verbose_=false;verbose_=true;}
   else very_verbose_=verbose_=false;  
   
-  int SmootherSweeps = List_.get("smoother: sweeps (level 0)", 0);
+  int SmootherSweeps = List_.get("smoother: sweeps", 0);
   MaxLevels = List_.get("max levels",10); 
   print_hierarchy= List_.get("print hierarchy",false);    
   num_cycles  = List_.get("cycle applications",1);
@@ -152,19 +145,19 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ComputePreconditioner(const bool Ch
     /* Build the Nullspace */
     Epetra_MultiVector *nullspace=BuildNullspace();
     if(!nullspace) ML_CHK_ERR(-1);
-    if(print_hierarchy) MVOUT(*nullspace,"nullspace.dat");
+    if(print_hierarchy) EpetraExt::MultiVectorToMatrixMarketFile("nullspace.dat",*nullspace,0,0,false);
     
     /* Build the prolongator */
     ML_CHK_ERR(BuildProlongator(*nullspace));
     
     /* DEBUG: Output matrices */
-    if(print_hierarchy) Epetra_CrsMatrix_Print(*Prolongator_,"prolongator.dat");
+    if(print_hierarchy) EpetraExt::RowMatrixToMatlabFile("prolongator.dat",*Prolongator_);
     
     /* Form the coarse matrix */
     ML_CHK_ERR(FormCoarseMatrix());
 
     /* DEBUG: Output matrices */
-    if(print_hierarchy) Epetra_CrsMatrix_Print(*CoarseMatrix,"coarsemat.dat");
+    if(print_hierarchy) EpetraExt::RowMatrixToMatlabFile("coarsemat.dat",*CoarseMatrix);
     
     /* Setup Preconditioner on Coarse Matrix */
     CoarsePC = new MultiLevelPreconditioner(*CoarseMatrix,ListCoarse);
@@ -195,7 +188,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
   string EigenType_ = List_.get("eigen-analysis: type", "cg");
   double boost = List_.get("eigen-analysis: boost for lambda max", 1.0);
 
-  if(print_hierarchy) MVOUT(*InvDiagonal_,"inv_diagonal.dat");
+  if(print_hierarchy) EpetraExt::MultiVectorToMatrixMarketFile("inv_diagonal.dat",*InvDiagonal_,0,0,false);
   
   /* Do the eigenvalue estimation*/
   if (EigenType_ == "power-method"){   
@@ -229,6 +222,9 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::SetupSmoother()
   ML_CHK_ERR(Smoother_->SetParameters(IFPACKList));
   ML_CHK_ERR(Smoother_->Initialize());
   ML_CHK_ERR(Smoother_->Compute());
+
+  if(verbose_ && !Comm_->MyPID())
+    printf("EMFP: Building Chebyshev smoother %d sweeps (lmin=%6.4e lmax=%6.4e)\n",PolynomialDegree,lambda_min,boost*lambda_max);
 #else
   if(!Comm_->MyPID())
     printf("ERROR: RefMaxwell must be compiled with --enable-ml-ifpack for this mode to work\n");
@@ -251,7 +247,7 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
   int nulldim=List_.get("null space: dimension",0);
   if (nulltype=="pre-computed" && nullvecs && (nulldim==2 || nulldim==3)){
     /* Build a multivector out of it */
-    if(!Comm_->MyPID()) printf("Using pre-computed nullspace\n");
+    if(verbose_ && !Comm_->MyPID()) printf("Using pre-computed nullspace\n");
     int Ne=EdgeDomainMap_->NumMyElements();
     dim=nulldim;
     d_coords=new double*[dim];
@@ -261,7 +257,7 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
     nullspace=new Epetra_MultiVector(View,*EdgeDomainMap_,d_coords,dim);      
   }
   else{
-    if(!Comm_->MyPID()) printf("Building nullspace from scratch\n");
+    if(verbose_ && !Comm_->MyPID()) printf("Building nullspace from scratch\n");
     /* Pull the coordinates from Teuchos */
     double * xcoord=List_.get("x-coordinates",(double*)0);
     double * ycoord=List_.get("y-coordinates",(double*)0);
@@ -270,7 +266,7 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
 
     /* Sanity Checks */
     if(dim == 0 || (!xcoord && (ycoord || zcoord) || (xcoord && !ycoord && zcoord))){
-      cerr<<"Error: Coordinates not defined.  This is *necessary* for the EdgeMatrixFreePreconditioner.\n";
+      cerr<<"Error: Coordinates not defined and no nullspace is provided.  One of these are *necessary* for the EdgeMatrixFreePreconditioner.\n";
       return 0;
     }/*end if*/
     
@@ -289,7 +285,7 @@ Epetra_MultiVector * ML_Epetra::EdgeMatrixFreePreconditioner::BuildNullspace()
     d_coords[0]=xcoord; d_coords[1]=ycoord;
     if(dim==3) d_coords[2]=zcoord;
     Epetra_MultiVector e_coords(View,*NodeDomainMap_,d_coords,dim);    
-    if(print_hierarchy) MVOUT(e_coords,"coords.dat");
+    if(print_hierarchy) EpetraExt::MultiVectorToMatrixMarketFile("coords.dat",e_coords,0,0,false);
     
     /* Build the Nullspace */
     nullspace=new Epetra_MultiVector(*EdgeDomainMap_,dim,false);  
@@ -366,7 +362,6 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   /* DEBUG: Dump aggregates, prolongator */ 
   Epetra_IntVector AGG(View,*NodeDomainMap_,MLAggr->aggr_info[0]);
   IVOUT(AGG,"agg.dat");  
-  ML_Operator_Print(P,"p.dat");
 #endif
   
   /* Create wrapper to do abs(T) */
@@ -385,13 +380,7 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::BuildProlongator(const Epetra_Multi
   
   /* Nuke the rows in Psparse */
   Apply_BCsToMatrixRows(BCedges_,numBCedges_,*Psparse);
-  
-  /* DEBUG: output*/
-#ifndef NO_OUTPUT
-  Epetra_CrsMatrix_Print(*Psparse,"psparse.dat");
-  MVOUT(nullspace,"nullspace.dat");
-#endif
-  
+    
   /* Build the DomainMap of the new operator*/
   const Epetra_Map & FineColMap = Psparse->ColMap();
   CoarseMap_=new Epetra_Map(-1,NumAggregates*dim,0,*Comm_);
@@ -477,8 +466,8 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 #else
   if(verbose_ && !Comm_->MyPID()) printf("EMFP: Running FAST_PTAP\n");
 #endif
-
-  /* EXPERIMENTAL: Disable the addon */
+  
+  /* OPTION: Disable the addon */
   bool disable_addon=List_.get("refmaxwell: disable addon",false);
   const ML_RefMaxwell_11_Operator *Op11 = dynamic_cast<const ML_RefMaxwell_11_Operator*>(Operator_);
 #ifndef ENABLE_FAST_PTAP
@@ -502,17 +491,10 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
 #endif
 
 #ifndef ENABLE_FAST_PTAP
-  /* DEBUG: output*/
-#ifndef NO_OUTPUT
-  ML_Matrix_Print(Temp_ML,*Comm_,*EdgeRangeMap_,"coarse_temp.dat");
-#endif
-
-
   /* Do R * AP */
   R->num_rigid=R->num_PDEs=dim;
   ML_2matmult_block(R, Temp_ML,CoarseMat_ML,ML_CSR_MATRIX);
 #endif
-
   
   /* Wrap to Epetra-land */
   //  Epetra_CrsMatrix_Wrap_ML_Operator(CoarseMat_ML,*Comm_,*CoarseMap_,&CoarseMatrix); 
@@ -520,12 +502,7 @@ int  ML_Epetra::EdgeMatrixFreePreconditioner::FormCoarseMatrix()
   double time;
   ML_Operator2EpetraCrsMatrix(CoarseMat_ML,CoarseMatrix,nnz,true,time,0,verbose_);
   // NTS: This is a hack to get around the sticking ones on the diagonal issue;
-  
-#ifndef NO_OUTPUT
-  ML_Matrix_Print(CoarseMat_ML,*Comm_,*EdgeRangeMap_,"coarsemat.dat");  
-  Epetra_CrsMatrix_Print(*CoarseMatrix,"coarsemat0.dat");
-#endif
-  
+    
   /* Cleanup */
 #ifndef ENABLE_FAST_PTAP
   ML_Operator_Destroy(&P);
@@ -567,10 +544,13 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::DestroyPreconditioner(){
 
 // ================================================ ====== ==== ==== == = 
 //! Apply the preconditioner to an Epetra_MultiVector X, puts the result in Y
-int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X) const{
+int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVector& B_, Epetra_MultiVector& X) const{
+  const Epetra_MultiVector *B;
+  Epetra_MultiVector *Bcopy=0;
+
   /* Sanity Checks */
-  int NumVectors=B.NumVectors();
-  if (!B.Map().SameAs(*EdgeDomainMap_)) ML_CHK_ERR(-1);
+  int NumVectors=B_.NumVectors();
+  if (!B_.Map().SameAs(*EdgeDomainMap_)) ML_CHK_ERR(-1);
   if (NumVectors != X.NumVectors()) ML_CHK_ERR(-1);
 
   Epetra_MultiVector r_edge(*EdgeDomainMap_,NumVectors,false);
@@ -578,10 +558,19 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
   Epetra_MultiVector e_node(*CoarseMap_,NumVectors,false);
   Epetra_MultiVector r_node(*CoarseMap_,NumVectors,false);
 
+  /* Deal with the B==X case */
+  if (B_.Pointers()[0] == X.Pointers()[0]){
+    Bcopy=new Epetra_MultiVector(B_);
+    B=Bcopy;
+    X.PutScalar(0.0);  
+  }    
+  else B=&B_;
+
+  
   for(int i=0;i<num_cycles;i++){    
     /* Pre-smoothing */
 #ifdef HAVE_ML_IFPACK
-    if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
+    if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(*B,X));
 #endif
     
     if(MaxLevels > 0){
@@ -592,14 +581,14 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
          ){
         /* Calculate Residual (r_e = b - (S+M+Addon) * x) */
         ML_CHK_ERR(Operator_->Apply(X,r_edge));
-        ML_CHK_ERR(r_edge.Update(1.0,B,-1.0));
+        ML_CHK_ERR(r_edge.Update(1.0,*B,-1.0));
         
         /* Xfer to coarse grid (r_n = P' * r_e) */
         ML_CHK_ERR(Prolongator_->Multiply(true,r_edge,r_node));
       }
       else{
         /* Xfer to coarse grid (r_n = P' * r_e) */
-        ML_CHK_ERR(Prolongator_->Multiply(true,B,r_node));
+        ML_CHK_ERR(Prolongator_->Multiply(true,*B,r_node));
       }
         
       /* AMG on coarse grid  (e_n = (CoarseMatrix)^{-1} r_n) */
@@ -614,10 +603,14 @@ int ML_Epetra::EdgeMatrixFreePreconditioner::ApplyInverse(const Epetra_MultiVect
     
     /* Post-Smoothing */
 #ifdef HAVE_ML_IFPACK
-    if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(B,X));
+    if(Smoother_) ML_CHK_ERR(Smoother_->ApplyInverse(*B,X));
 #endif
     
   }/*end for*/
+
+  /* Cleanup */
+  if(Bcopy) delete Bcopy;
+  
   return 0;
 }/*end ApplyInverse*/
 
