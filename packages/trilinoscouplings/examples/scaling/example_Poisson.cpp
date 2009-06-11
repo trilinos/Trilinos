@@ -1004,8 +1004,8 @@ int main(int argc, char *argv[]) {
 
    
   // Dump matrices to disk
-     EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-     EpetraExt::MultiVectorToMatlabFile("rhs_vector.dat",rhs);
+   //     EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
+   //     EpetraExt::MultiVectorToMatlabFile("rhs_vector.dat",rhs);
 
 
    // Run the solver
