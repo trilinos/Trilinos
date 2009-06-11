@@ -2,7 +2,7 @@
 
 TRILINOS_PATH=/home/rouson/Trilinos
 EXTRA_ARGS=$@
-FORTRAN_LIBRARIES="-lgfortran"
+FORTRAN_LIBRARIES=""
 
 cmake \
           -D CMAKE_BUILD_TYPE:STRING=DEBUG \
@@ -18,5 +18,7 @@ cmake \
           -D DART_TESTING_TIMEOUT:STRING=600 \
           -D TPL_ENABLE_MPI:BOOL=OFF \
           -D Trilinos_EXTRA_LINK_FLAGS:STRING="$FORTRAN_LIBRARIES" \
+          -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE       \
+          -D Trilinos_VERBOSE_CONFIGURE:BOOL=TRUE   \
           ${EXTRA_ARGS} \
           ${TRILINOS_PATH}
