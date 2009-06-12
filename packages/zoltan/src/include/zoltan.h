@@ -20,6 +20,7 @@
 #include "zoltan_comm.h"
 #include "zoltan_mem.h"
 #include "zoltan_dd.h"
+#include "zoltan_eval.h"
 
 /*
  * Define this prior to #ifdef __cplusplus to avoid a 
