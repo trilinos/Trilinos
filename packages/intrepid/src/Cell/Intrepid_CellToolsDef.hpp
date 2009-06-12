@@ -846,6 +846,8 @@ void CellTools<Scalar>::mapToPhysicalFrame(ArrayScalar &                physPoin
       
       // Base and Extended Line, Beam and Shell topologies  
     case shards::Line<2>::key:
+      HGRAD_Basis = Teuchos::rcp( new Basis_HGRAD_LINE_C1_FEM<Scalar, FieldContainer<Scalar> >() );
+      break;
     case shards::Line<3>::key:
     case shards::Beam<2>::key:
     case shards::Beam<3>::key:

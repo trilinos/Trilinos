@@ -36,20 +36,26 @@
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
+#include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_ArrayTools.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_SerialDenseMatrix.hpp"
+#include "Teuchos_SerialDenseVector.hpp"
+#include "Teuchos_LAPACK.hpp"
 
 using namespace std;
 using namespace Intrepid;
 
-void rhsFunc(FieldContainer<double>, const FieldContainer<double>, int);
-void u_exact(FieldContainer<double>, const FieldContainer<double>, int);
+void rhsFunc(FieldContainer<double> &, const FieldContainer<double> &, int);
+void neumann(FieldContainer<double> &, const FieldContainer<double> &, const FieldContainer<double> &, int);
+void u_exact(FieldContainer<double> &, const FieldContainer<double> &, int);
 
-void rhsFunc(FieldContainer<double> result, const FieldContainer<double> points, int degree) {
+/// right-hand side function
+void rhsFunc(FieldContainer<double> & result, const FieldContainer<double> & points, int degree) {
   if (degree == 0) {
     for (int cell=0; cell<result.dimension(0); cell++) {
       for (int pt=0; pt<result.dimension(1); pt++) {
@@ -67,11 +73,44 @@ void rhsFunc(FieldContainer<double> result, const FieldContainer<double> points,
   else {
     for (int cell=0; cell<result.dimension(0); cell++) {
       for (int pt=0; pt<result.dimension(1); pt++) {
-        result(cell,pt) = pow(points(cell,pt,0), degree) + degree*(degree-1)*pow(points(cell,pt,0), degree-2);
+        result(cell,pt) = pow(points(cell,pt,0), degree) - degree*(degree-1)*pow(points(cell,pt,0), degree-2);
       }
     }
   }
 }
+
+/// neumann boundary conditions
+void neumann(FieldContainer<double> & g_phi, const FieldContainer<double> & phi1, const FieldContainer<double> & phi2, int degree) {
+  double g_at_one, g_at_minus_one;
+  int num_fields;
+
+  if (degree == 0) {
+    g_at_one = 0.0;
+    g_at_minus_one = 0.0;
+  }
+  else {
+    g_at_one = degree*pow(1.0, degree-1);
+    g_at_minus_one = degree*pow(-1.0, degree-1);
+  }
+
+  num_fields = phi1.dimension(0);
+
+  for (int i=0; i<num_fields; i++) {
+    g_phi(0,i) = g_at_minus_one*phi1(i,0);
+    g_phi(1,i) = g_at_one*phi2(i,0);
+  }
+}
+
+/// exact solution
+void u_exact(FieldContainer<double> & result, const FieldContainer<double> & points, int degree) {
+  for (int cell=0; cell<result.dimension(0); cell++) {
+    for (int pt=0; pt<result.dimension(1); pt++) {
+      result(cell,pt) = pow(points(pt,0), degree);
+    }
+  }
+}
+
+
 
 
 int main(int argc, char *argv[]) {
@@ -115,117 +154,200 @@ int main(int argc, char *argv[]) {
 
   
   int errorFlag = 0;
+  double zero = 100*INTREPID_TOL;
   outStream -> precision(20);
 
 
   try {
 
-    int maxorder = 10;
-
-    // Define computational cells
-    int numCells = 1;
-    int numNodes = 2;
+    int max_order = 11;
 
     // Define array containing points at which the solution is evaluated
     int numIntervals = 100;
-    FieldContainer<double> evalPoints(numIntervals+1, 1);
-    for (int i=0; i<numIntervals+1; i++) {
-      evalPoints(i,0) = -1.0+(2.0*(double)i)/(double)numIntervals;
+    int numInterpPoints = numIntervals + 1;
+    FieldContainer<double> interp_points(numInterpPoints, 1);
+    for (int i=0; i<numInterpPoints; i++) {
+      interp_points(i,0) = -1.0+(2.0*(double)i)/(double)numIntervals;
     }
     
     DefaultCubatureFactory<double>  cubFactory;                                   // create factory
     shards::CellTopology line(shards::getCellTopologyData< shards::Line<> >());   // create cell topology
 
-    for (int ordi=0; ordi < maxorder; ordi++) {
-      //create basis
-      Teuchos::RCP<Basis<double,FieldContainer<double> > > lineBasis =
-        Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM_JACOBI<double,FieldContainer<double> >(ordi) );
-      int numFields = lineBasis->getCardinality();
+    for (int soln_order=1; soln_order < max_order; soln_order++) {
 
-      // create cubature
-      Teuchos::RCP<Cubature<double> > lineCub = cubFactory.create(line, 2*ordi);
-      int numCubPoints = lineCub->getNumPoints();
-      int spaceDim = lineCub->getDimension();
+      // evaluate exact solution
+      FieldContainer<double> exact_solution(1, numInterpPoints);
+      u_exact(exact_solution, interp_points, soln_order);
 
-      /* Computational arrays. */
-      FieldContainer<double> cub_points(numCubPoints, spaceDim);
-      FieldContainer<double> cub_weights(numCubPoints);
-      FieldContainer<double> cell_nodes(numCells, numNodes, spaceDim);
-      FieldContainer<double> jacobian(numCells, numCubPoints, spaceDim, spaceDim);
-      FieldContainer<double> jacobian_inv(numCells, numCubPoints, spaceDim, spaceDim);
-      FieldContainer<double> jacobian_det(numCells, numCubPoints);
-      FieldContainer<double> weighted_measure(numCells, numCubPoints);
+      for (int basis_order=soln_order; basis_order < max_order; basis_order++) {
 
-      FieldContainer<double> value_of_basis_at_cub_points(numFields, numCubPoints);
-      FieldContainer<double> transformed_value_of_basis_at_cub_points(numCells, numFields, numCubPoints);
-      FieldContainer<double> weighted_transformed_value_of_basis_at_cub_points(numCells, numFields, numCubPoints);
-      FieldContainer<double> mass_matrices(numCells, numFields, numFields);
+        //create basis
+        Teuchos::RCP<Basis<double,FieldContainer<double> > > lineBasis =
+          Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM_JACOBI<double,FieldContainer<double> >(basis_order) );
+        int numFields = lineBasis->getCardinality();
 
-      FieldContainer<double> grad_of_basis_at_cub_points(numFields, numCubPoints, spaceDim);
-      FieldContainer<double> transformed_grad_of_basis_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
-      FieldContainer<double> weighted_transformed_grad_of_basis_at_cub_points(numCells, numFields, numCubPoints, spaceDim);
-      FieldContainer<double> stiffness_matrices(numCells, numFields, numFields);
+        // create cubature
+        Teuchos::RCP<Cubature<double> > lineCub = cubFactory.create(line, 2*basis_order-2);
+        int numCubPoints = lineCub->getNumPoints();
+        int spaceDim = lineCub->getDimension();
 
+        /* Computational arrays. */
+        FieldContainer<double> cub_points(numCubPoints, spaceDim);
+        FieldContainer<double> cub_points_physical(1, numCubPoints, spaceDim);
+        FieldContainer<double> cub_weights(numCubPoints);
+        FieldContainer<double> cell_nodes(1, 2, spaceDim);
+        FieldContainer<double> jacobian(1, numCubPoints, spaceDim, spaceDim);
+        FieldContainer<double> jacobian_inv(1, numCubPoints, spaceDim, spaceDim);
+        FieldContainer<double> jacobian_det(1, numCubPoints);
+        FieldContainer<double> weighted_measure(1, numCubPoints);
 
-      /******************* START COMPUTATION ***********************/
+        FieldContainer<double> value_of_basis_at_cub_points(numFields, numCubPoints);
+        FieldContainer<double> transformed_value_of_basis_at_cub_points(1, numFields, numCubPoints);
+        FieldContainer<double> weighted_transformed_value_of_basis_at_cub_points(1, numFields, numCubPoints);
+        FieldContainer<double> grad_of_basis_at_cub_points(numFields, numCubPoints, spaceDim);
+        FieldContainer<double> transformed_grad_of_basis_at_cub_points(1, numFields, numCubPoints, spaceDim);
+        FieldContainer<double> weighted_transformed_grad_of_basis_at_cub_points(1, numFields, numCubPoints, spaceDim);
+        FieldContainer<double> fe_matrix(1, numFields, numFields);
 
-      // get cubature points and weights
-      lineCub->getCubature(cub_points, cub_weights);
+        FieldContainer<double> rhs_at_cub_points_physical(1, numCubPoints);
+        FieldContainer<double> rhs_and_soln_vector(1, numFields);
 
-      // fill cell vertex array
-      for (int i=0; i<numCells; i++) {
-        for (int j=0; j<numNodes; j++) {
-          cell_nodes(i,j,0) = -1.0+(2.0*(double)(i+j))/(double)numCells;
+        FieldContainer<double> one_point(1, 1);
+        FieldContainer<double> value_of_basis_at_one(numFields, 1);
+        FieldContainer<double> value_of_basis_at_minusone(numFields, 1);
+        FieldContainer<double> bc_neumann(2, numFields);
+
+        FieldContainer<double> value_of_basis_at_interp_points(numFields, numInterpPoints);
+        FieldContainer<double> transformed_value_of_basis_at_interp_points(1, numFields, numInterpPoints);
+        FieldContainer<double> interpolant(1, numInterpPoints);
+
+        FieldContainer<int> ipiv(numFields);
+
+        /******************* START COMPUTATION ***********************/
+
+        // get cubature points and weights
+        lineCub->getCubature(cub_points, cub_weights);
+
+        // fill cell vertex array
+        cell_nodes(0, 0, 0) = -1.0;
+        cell_nodes(0, 1, 0) = 1.0;
+
+        // compute geometric cell information
+        CellTools<double>::setJacobian(jacobian, cub_points, cell_nodes, line);
+        CellTools<double>::setJacobianInv(jacobian_inv, jacobian);
+        CellTools<double>::setJacobianDet(jacobian_det, jacobian);
+
+        // compute weighted measure
+        FunctionSpaceTools::computeMeasure<double>(weighted_measure, jacobian_det, cub_weights);
+
+        ///////////////////////////
+        // Computing mass matrices:
+        // tabulate values of basis functions at (reference) cubature points
+        lineBasis->getValues(value_of_basis_at_cub_points, cub_points, OPERATOR_VALUE);
+
+        // transform values of basis functions into physical space
+        FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_value_of_basis_at_cub_points,
+                                                        value_of_basis_at_cub_points);
+
+        // multiply with weighted measure
+        FunctionSpaceTools::multiplyMeasure<double>(weighted_transformed_value_of_basis_at_cub_points,
+                                                    weighted_measure,
+                                                    transformed_value_of_basis_at_cub_points);
+
+        // compute mass matrices
+        FunctionSpaceTools::integrate<double>(fe_matrix,
+                                              transformed_value_of_basis_at_cub_points,
+                                              weighted_transformed_value_of_basis_at_cub_points,
+                                              COMP_CPP);
+        ///////////////////////////
+
+        ////////////////////////////////
+        // Computing stiffness matrices:
+        // tabulate gradients of basis functions at (reference) cubature points
+        lineBasis->getValues(grad_of_basis_at_cub_points, cub_points, OPERATOR_GRAD);
+
+        // transform gradients of basis functions into physical space
+        FunctionSpaceTools::HGRADtransformGRAD<double>(transformed_grad_of_basis_at_cub_points,
+                                                       jacobian_inv,
+                                                       grad_of_basis_at_cub_points);
+
+        // multiply with weighted measure
+        FunctionSpaceTools::multiplyMeasure<double>(weighted_transformed_grad_of_basis_at_cub_points,
+                                                    weighted_measure,
+                                                    transformed_grad_of_basis_at_cub_points);
+
+        // compute stiffness matrices and sum into fe_matrix
+        FunctionSpaceTools::integrate<double>(fe_matrix,
+                                              transformed_grad_of_basis_at_cub_points,
+                                              weighted_transformed_grad_of_basis_at_cub_points,
+                                              COMP_CPP,
+                                              true);
+        ////////////////////////////////
+
+        ///////////////////////////////
+        // Computing RHS contributions:
+        // map (reference) cubature points to physical space
+        CellTools<double>::mapToPhysicalFrame(cub_points_physical, cub_points, cell_nodes, line);
+
+        // evaluate rhs function
+        rhsFunc(rhs_at_cub_points_physical, cub_points_physical, soln_order);
+
+        // compute rhs
+        FunctionSpaceTools::integrate<double>(rhs_and_soln_vector,
+                                              rhs_at_cub_points_physical,
+                                              weighted_transformed_value_of_basis_at_cub_points,
+                                              COMP_CPP);
+
+        // compute neumann b.c. contributions and adjust rhs
+        one_point(0,0) = 1.0;   lineBasis->getValues(value_of_basis_at_one, one_point, OPERATOR_VALUE);
+        one_point(0,0) = -1.0;  lineBasis->getValues(value_of_basis_at_minusone, one_point, OPERATOR_VALUE);
+        neumann(bc_neumann, value_of_basis_at_minusone, value_of_basis_at_one, soln_order);
+        for (int i=0; i<numFields; i++) {
+          rhs_and_soln_vector(0, i) -= bc_neumann(0, i);
+          rhs_and_soln_vector(0, i) += bc_neumann(1, i);
         }
-      }
+        ///////////////////////////////
 
-      // compute geometric cell information
-      CellTools<double>::setJacobian(jacobian, cub_points, cell_nodes, line);
-      CellTools<double>::setJacobianInv(jacobian_inv, jacobian);
-      CellTools<double>::setJacobianDet(jacobian_det, jacobian);
+        /////////////////////////////
+        // Solution of linear system:
+        int info = 0;
+        Teuchos::LAPACK<int, double> solver;
+        //solver.GESV(numRows, 1, &fe_mat(0,0), numRows, &ipiv(0), &fe_vec(0), numRows, &info);
+        solver.GESV(numFields, 1, &fe_matrix[0], numFields, &ipiv(0), &rhs_and_soln_vector[0], numFields, &info);
+        /////////////////////////////
 
-      // compute weighted measure
-      FunctionSpaceTools::computeMeasure<double>(weighted_measure, jacobian_det, cub_weights);
+        ////////////////////////
+        // Building interpolant:
+        // evaluate basis at interpolation points
+        lineBasis->getValues(value_of_basis_at_interp_points, interp_points, OPERATOR_VALUE);
+        // transform values of basis functions into physical space
+        FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_value_of_basis_at_interp_points,
+                                                        value_of_basis_at_interp_points);
+        for (int bf=0; bf<numFields; bf++) {
+          for (int pt=0; pt<numInterpPoints; pt++) {
+            interpolant(0, pt) += rhs_and_soln_vector(0, bf) * transformed_value_of_basis_at_interp_points(0, bf, pt);
+          }
+        }
+        ////////////////////////
 
-      // Computing mass matrices:
-      // tabulate values of basis functions at (reference) cubature points
-      lineBasis->getValues(value_of_basis_at_cub_points, cub_points, OPERATOR_VALUE);
+        /******************* END COMPUTATION ***********************/
+      
+        RealSpaceTools<double>::subtract(interpolant, exact_solution);
 
-      // transform gradients of basis functions into physical space
-      FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_value_of_basis_at_cub_points,
-                                                      value_of_basis_at_cub_points);
+        *outStream << "\nNorm-2 difference between exact solution polynomial of order "
+                   << soln_order << " and finite element interpolant of order " << basis_order << ": "
+                   << RealSpaceTools<double>::vectorNorm(&interpolant[0], interpolant.dimension(1), NORM_TWO) << "\n";
 
-      // multiply with weighted measure
-      FunctionSpaceTools::multiplyMeasure<double>(weighted_transformed_value_of_basis_at_cub_points,
-                                                  weighted_measure,
-                                                  transformed_value_of_basis_at_cub_points);
+        if (RealSpaceTools<double>::vectorNorm(&interpolant[0], interpolant.dimension(1), NORM_TWO) > zero) {
+          *outStream << "\n\nPatch test failed for solution polynomial order "
+                     << soln_order << " and basis order " << basis_order << "\n\n";
+          errorFlag++;
+        }
 
-      // compute mass matrices
-      FunctionSpaceTools::integrate<double>(mass_matrices,
-                                            transformed_value_of_basis_at_cub_points,
-                                            weighted_transformed_value_of_basis_at_cub_points,
-                                            COMP_CPP);
+      } // end for basis_order
 
-      // Computing stiffness matrices:
-      // tabulate gradients of basis functions at (reference) cubature points
-      lineBasis->getValues(grad_of_basis_at_cub_points, cub_points, OPERATOR_GRAD);
+   } // end for soln_order
 
-      // transform gradients of basis functions into physical space
-      FunctionSpaceTools::HGRADtransformGRAD<double>(transformed_grad_of_basis_at_cub_points,
-                                                     jacobian_inv,
-                                                     grad_of_basis_at_cub_points);
-
-      // multiply with weighted measure
-      FunctionSpaceTools::multiplyMeasure<double>(weighted_transformed_grad_of_basis_at_cub_points,
-                                                  weighted_measure,
-                                                  transformed_grad_of_basis_at_cub_points);
-
-      // compute stiffness matrices
-      FunctionSpaceTools::integrate<double>(stiffness_matrices,
-                                            transformed_grad_of_basis_at_cub_points,
-                                            weighted_transformed_grad_of_basis_at_cub_points,
-                                            COMP_CPP);
-    } // end for
   }
   // Catch unexpected errors
   catch (std::logic_error err) {
