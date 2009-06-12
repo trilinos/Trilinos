@@ -641,7 +641,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
 
   double local[2], global[2];
 
-  int ierr;
+  int ierr, debug_level;
   int nparts, nonempty_nparts, req_nparts;
   int *localCount = NULL;
   PHGPartParams hgp;
@@ -681,9 +681,14 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
 
   Zoltan_LB_Get_Part_Sizes(zz, zz->LB.Num_Global_Parts, 1, part_sizes);
 
+  debug_level = zz->Debug_Level;
+  zz->Debug_Level = 0;
+
   ierr = Zoltan_PHG_Initialize_Params(zz, part_sizes, &hgp);
   if (ierr != ZOLTAN_OK)
     goto End;
+
+  zz->Debug_Level = debug_level;
 
   zhg = (ZHG*) ZOLTAN_MALLOC (sizeof(ZHG));
   if (zhg == NULL){
