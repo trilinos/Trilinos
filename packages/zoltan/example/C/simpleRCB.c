@@ -20,6 +20,7 @@ int main(int argc, char *argv[])
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   float *wgt_list;
   int *gid_flags, *gid_list, *lid_list;
+  BALANCE_EVAL evalInfo;
 
   /******************************************************************
   ** Initialize MPI and Zoltan
@@ -52,7 +53,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
-  /* Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1"); */
+  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
 
   /* RCB parameters */
@@ -68,6 +69,19 @@ int main(int argc, char *argv[])
   Zoltan_Set_Obj_List_Fn(zz, get_object_list, NULL);
   Zoltan_Set_Num_Geom_Fn(zz, get_num_geometry, NULL);
   Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list, NULL);
+
+  /*
+   * Check load balance before
+   */
+
+  rc = Zoltan_LB_Eval_Balance(zz, 1, &evalInfo);
+
+  if (rc != ZOLTAN_OK){
+    printf("sorry...\n");
+    MPI_Finalize();
+    Zoltan_Destroy(&zz);
+    exit(0);
+  }
 
   /******************************************************************
   ** Zoltan can now partition the vertices in the simple mesh.

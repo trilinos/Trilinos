@@ -45,6 +45,7 @@ int main(int argc, char *argv[])
   int *exportProcs;
   int *exportToPart;
   int *phgHandle;
+  HG_EVAL hg;
 
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &me);
@@ -107,15 +108,15 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");/* local IDs are integers */
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL"); /* export AND import lists */
   Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1"); /* test lib gives 1 vtx weight */
-  Zoltan_Set_Param(zz, "EDGE_WEIGHT_DIM", "0");/* test lib gives 1 edge weight*/ 
+  Zoltan_Set_Param(zz, "EDGE_WEIGHT_DIM", "1");/* test lib gives 1 edge weight*/ 
 
   /* Graph parameters */
 
 #if 0
   Zoltan_Set_Param(zz, "ADD_OBJ_WEIGHT", "unit"); /* Add a unit weight to each vtx */
-  Zoltan_Set_Param(zz, "ADD_OBJ_WEIGHT", "pins"); /* Add a weight equal to # pins  */
-#else
   Zoltan_Set_Param(zz, "ADD_OBJ_WEIGHT", "none"); /* Don't calculate extra weights */
+#else
+  Zoltan_Set_Param(zz, "ADD_OBJ_WEIGHT", "pins"); /* Add a weight equal to # pins  */
 #endif
 
   /* Parallel hypergraph parameters */
@@ -143,6 +144,10 @@ int main(int argc, char *argv[])
   Zoltan_Set_HG_CS_Fn(zz, exGetHg, phgHandle);
   Zoltan_Set_HG_Size_Edge_Weights_Fn(zz, exGetHgEdgeWeightSize, phgHandle);
   Zoltan_Set_HG_Edge_Weights_Fn(zz, exGetHgEdgeWeights, phgHandle);
+
+  /* check metrics before partitioning */
+
+  rc = Zoltan_LB_Eval_HG(zz, 1, &hg);
 
   /* Parallel hypergraph partitioning occurs now */
 
@@ -176,7 +181,7 @@ int main(int argc, char *argv[])
 
   /* evaluate the quality of the partitioning */
 
-  Zoltan_LB_Eval(zz, 1, NULL, NULL, NULL, NULL, NULL, NULL);
+  Zoltan_LB_Eval_HG(zz, 1, NULL);
 
   /* Print out the partitioning to a text file */
 

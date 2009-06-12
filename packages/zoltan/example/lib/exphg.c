@@ -94,7 +94,7 @@ static char *hg[NROWS]={
 };
 /************** sample hypergraphs *******************************************/
 
-#define DIFFERENT_PROCS_DIFFERENT_EDGE_WEIGHTS 0
+#define DIFFERENT_PROCS_DIFFERENT_EDGE_WEIGHTS 1
 #define EDGE_WEIGHT_EQUALS_GID 0
 #define VTX_WEIGHT_EQUALS_GID 0
 

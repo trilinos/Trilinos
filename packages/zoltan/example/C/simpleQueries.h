@@ -51,6 +51,7 @@ static void get_object_list(void *data, int sizeGID, int sizeLID,
                   int wgt_dim, float *obj_wgts, int *ierr)
 {
 int i, next;
+int j, k;
 
   /* By setting parameters, I previously gave the Zoltan library 
    * the length of my global IDs, local IDs, and object weights.
@@ -61,12 +62,14 @@ int i, next;
     return;
   }
 
-  for (i=0, next=0; i<simpleNumVertices; i++){
+  for (i=0, next=0, j=0; i<simpleNumVertices; i++){
     if (i % numProcs == myRank){
       globalID[next] = i+1;   /* application wide global ID */
       localID[next] = next;   /* process specific local ID  */
       if (wgt_dim>0)
-        obj_wgts[next] = (float)simpleNumEdges[i];  /* weight */
+      for (k=0; k < wgt_dim; k++){
+        obj_wgts[j++] = (float)simpleNumEdges[i] * (k+1);  /* weight */
+      }
       next++;
     }
   }
@@ -162,15 +165,32 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
 int i, j, idx;
 ZOLTAN_ID_PTR nextID; 
 int *nextProc;
+#ifdef USE_EDGE_WEIGHTS
+float *nextWeight;
+#endif
 
-  if ( (sizeGID != 1) || (sizeLID != 1) ||
-       (wgt_dim != 0)){      /* we are not using edge weights */
+  if ( (sizeGID != 1) || (sizeLID != 1) ){
     *ierr = ZOLTAN_FATAL;
     return;
   }
 
+#ifdef USE_EDGE_WEIGHTS
+  if ( wgt_dim != 1){    
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+#else
+  if ( wgt_dim != 0){    
+    *ierr = ZOLTAN_FATAL;
+    return;
+  }
+#endif
+
   nextID = nborGID;
   nextProc = nborProc;
+#ifdef USE_EDGE_WEIGHTS
+  nextWeight = ewgts;
+#endif
 
   for (i=0;  i < num_obj ; i++){
     idx = globalID[i] - 1;
@@ -181,6 +201,13 @@ int *nextProc;
     for (j=0; j<num_edges[i]; j++){
       *nextID++ = simpleEdges[idx][j];
       *nextProc++ = (simpleEdges[idx][j] - 1) % numProcs;
+#ifdef USE_EDGE_WEIGHTS
+      /* Test that Zoltan creates edge weights equal to 3 */
+      if (globalID[i] < simpleEdges[idx][j])
+        *nextWeight++ = 1.0;
+      else
+        *nextWeight++ = 2.0;
+#endif
     }
   }
 

@@ -2,12 +2,15 @@
 ** Basic example of using Zoltan to partition a graph.
 ***************************************************************/
 
+#define USE_EDGE_WEIGHTS 1
+
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "zoltan.h"
 #include "simpleGraph.h"
 #include "simpleQueries.h"
+
 
 int main(int argc, char *argv[])
 {
@@ -19,6 +22,7 @@ int main(int argc, char *argv[])
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   float *wgt_list;
   int *gid_flags, *gid_list, *lid_list;
+  GRAPH_EVAL evalInfo;
 
 
   /******************************************************************
@@ -54,10 +58,20 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
+  Zoltan_Set_Param(zz, "FINAL_OUTPUT", "0");  /* save all info needed for stats */
+
+#ifdef USE_EDGE_WEIGHTS
+  Zoltan_Set_Param(zz, "EDGE_WEIGHT_DIM", "1");
+#else
+  Zoltan_Set_Param(zz, "EDGE_WEIGHT_DIM", "0");
+#endif
 
   /* Graph parameters */
 
+  Zoltan_Set_Param(zz, "PHG_EDGE_WEIGHT_OPERATION", "SUM");
   Zoltan_Set_Param(zz, "CHECK_GRAPH", "2"); 
+  Zoltan_Set_Param(zz, "PHG_FROM_GRAPH_METHOD", "neighbors");
+  Zoltan_Set_Param(zz, "PHG_EDGE_SIZE_THRESHOLD", ".35");  /* 0-remove all, 1-remove none */
 
   /* Query functions - defined in simpleQueries.h */
 
@@ -65,6 +79,10 @@ int main(int argc, char *argv[])
   Zoltan_Set_Obj_List_Fn(zz, get_object_list, NULL);
   Zoltan_Set_Num_Edges_Multi_Fn(zz, get_num_edges_list, NULL);
   Zoltan_Set_Edge_List_Multi_Fn(zz, get_edge_list, NULL);
+
+  /* get balance and cut info before partitioning */
+
+  rc = Zoltan_LB_Eval_Graph(zz, 1, &evalInfo);
 
   /******************************************************************
   ** Zoltan can now partition the simple graph.
