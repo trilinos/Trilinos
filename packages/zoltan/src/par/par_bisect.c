@@ -1003,7 +1003,6 @@ End:
   }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
-fprintf(stderr,"%d) rank %d DONE\n",zz->Proc,rank);
 
   return ierr;
 
