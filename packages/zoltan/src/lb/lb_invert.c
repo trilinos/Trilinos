@@ -75,7 +75,8 @@ char *yo = "Zoltan_Invert_Lists";
 char msg[256];
 ZOLTAN_COMM_OBJ *comm_plan;        /* Object returned communication routines  */
 int msgtag, msgtag2;               /* Message tags for communication routines */
-int num_gid_entries, num_lid_entries;  /* Length of global and local ids */
+int num_gid_entries = zz->Num_GID;
+int num_lid_entries = zz->Num_LID;
 int include_parts;                 /* Flag indicating whether to compute
                                       inverse list for partitions. */
 int ierr, ret_ierr = ZOLTAN_OK;
