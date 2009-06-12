@@ -237,6 +237,8 @@ PHG_H = \
 	$(srcdir)/phg/phg_const.h \
 	$(srcdir)/phg/phg_distrib.h \
 	$(srcdir)/phg/phg.h \
+	$(srcdir)/phg/phg_lookup.h \
+	$(srcdir)/phg/phg_verbose.h \
 	$(srcdir)/phg/phg_hypergraph.h \
 	$(srcdir)/phg/phg_tree.h \
 	$(srcdir)/phg/phg_util.h
@@ -245,6 +247,8 @@ PHG = \
 	$(srcdir)/phg/phg_build.c \
 	$(srcdir)/phg/phg_build_calls.c \
 	$(srcdir)/phg/phg.c \
+	$(srcdir)/phg/phg_lookup.c \
+	$(srcdir)/phg/phg_verbose.c \
 	$(srcdir)/phg/phg_coarse.c \
 	$(srcdir)/phg/phg_comm.c \
 	$(srcdir)/phg/phg_distrib.c \

@@ -339,6 +339,8 @@ APPEND_SET(NOINSTALLHEADERS
   phg/phg_const.h
   phg/phg_distrib.h
   phg/phg.h
+  phg/phg_lookup.h
+  phg/phg_verbose.h
   phg/phg_hypergraph.h
   phg/phg_tree.h
   phg/phg_util.h
@@ -348,6 +350,8 @@ APPEND_SET(SOURCES
   phg/phg_build.c
   phg/phg_build_calls.c
   phg/phg.c
+  phg/phg_lookup.c
+  phg/phg_verbose.c
   phg/phg_coarse.c
   phg/phg_comm.c
   phg/phg_distrib.c
