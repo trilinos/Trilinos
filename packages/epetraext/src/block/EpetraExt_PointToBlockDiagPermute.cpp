@@ -73,7 +73,6 @@ int EpetraExt_PointToBlockDiagPermute::SetParameters(Teuchos::ParameterList & Li
 // Extracts the block-diagonal, builds maps, etc.
 int EpetraExt_PointToBlockDiagPermute::Compute(){
   int rv=ExtractBlockDiagonal();
-  //NTS: Do I need to do anything else???
   return rv;
 }
 
@@ -158,6 +157,8 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
   int index,col,row_in_block,col_in_block,length,*colind;
   double *values;
 
+  bool verbose=(bool)(List_.get("output",0) > 0);
+  
   // Compute block size lists
   for(i=0;i<NumBlocks_;i++) 
     bsize[i]=Blockstart_[i+1]-Blockstart_[i];
@@ -192,7 +193,7 @@ int EpetraExt_PointToBlockDiagPermute::ExtractBlockDiagonal(){
     ExtSize=ExtRows.size();   
     RowMap.Comm().SumAll(&ExtSize,&size_sum,1);
     if(size_sum==0){
-      if(!Matrix_->Comm().MyPID()) printf("Switching to purely local mode\n");
+      if(verbose && !Matrix_->Comm().MyPID()) printf("EpetraExt_PointToBlockDiagPermute: Switching to purely local mode\n");
       PurelyLocalMode_=true;
       for(i=0;i<Blockstart_[NumBlocks_];i++){
         Blockids_[i]=RowMap.LID(Blockids_[i]);

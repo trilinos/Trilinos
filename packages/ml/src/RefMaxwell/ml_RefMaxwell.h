@@ -16,8 +16,8 @@
 #ifndef ML_REFMAXWELL_H
 #define ML_REFMAXWELL_H
 
+// Some compilers think this name is too long...
 #define RefMaxwellPreconditioner ML_RMP
-//hax
 
 #define ENABLE_MS_MATRIX
 
