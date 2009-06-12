@@ -20,7 +20,7 @@ extern "C" {
 #include "zz_util_const.h"
 #include "third_library_const.h"
 #include "params_const.h"
-#include "phg_hypergraph.h"
+#include "phg.h"
 
 #define ZOLTAN_PRINT_VTX_NUM  0  /* print vertex number at beginning of line? */
 
@@ -86,7 +86,7 @@ int gen_geom, int gen_graph, int gen_hg)
   int numPins, edgeOffset=0, vtxOffset=0;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
   int have_pin_callbacks=0;
-  int nEdges, nEwgts;
+  int nEdges=0, nEwgts=0;
   ZOLTAN_ID_PTR edgeIds, vtxIds, eWgtIds, eptr, vptr;
   int lenGID = zz->Num_GID;
 
@@ -574,8 +574,7 @@ static int Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
 
   /* get pins */
 
-  ierr = Zoltan_Call_Hypergraph_Pin_Query(zz, &numEdges, &num_pins,
-                &egids, &esize, &vgids);
+  ierr = Zoltan_Hypergraph_Queries(zz, &numEdges, &num_pins, &egids, &esize, &vgids);
 
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
     Zoltan_Multifree(__FILE__,__LINE__,2,&ew_gids,&ew_weights);
