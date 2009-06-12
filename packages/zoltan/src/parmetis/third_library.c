@@ -94,9 +94,6 @@ int rc;
   else if (!strcasecmp(package, "ZOLTAN") ||
            !strcasecmp(package, "PHG")) {
 
-    /* Use hypergraph partitioner on graph model. */
-    Zoltan_Set_Param(zz, "PHG_FROM_GRAPH_METHOD", "pairs");
-
     rc = Zoltan_PHG(zz, part_sizes, num_imp, imp_gids, imp_lids,
                          imp_procs, imp_to_part,
                          num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
