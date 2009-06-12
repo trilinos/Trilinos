@@ -99,6 +99,7 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
   const char *yo = "setup_zoltan";
   int ierr;                      /* Error code */
   int i;
+  int graph_package;
   char errmsg[128];              /* Error message */
 
   DEBUG_TRACE_START(Proc, yo);
@@ -111,6 +112,9 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
   float *psize = new float [nprocs];
   int *partid = new int [2*nprocs];
   int *idx = partid + nprocs;
+
+  graph_package = -1;
+  prob->partitioning_type = OBJECT_PARTITIONING;
 
   /* Set the user-specified parameters */
   for (int i = 0; i < prob->num_params; i++) {
@@ -131,6 +135,9 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
       delete [] partid;
       return 0;
     }
+
+    if (strcasecmp(prob->params[i].Name, "GRAPH_PACKAGE") == 0)
+      graph_package = i;
   }
 
   /* Set the load-balance method */
@@ -140,6 +147,25 @@ int setup_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     delete [] partid;
     return 0;
   }
+
+  if (strcasecmp(prob->method, "PHG") == 0){
+    prob->partitioning_type = HYPERGRAPH_PARTITIONING;
+  }
+  else if (strcasecmp(prob->method, "GRAPH") == 0){
+    if (graph_package > 0){
+      if (strcasecmp(prob->params[graph_package].Val, "PHG") == 0)
+        prob->partitioning_type = HYPERGRAPH_PARTITIONING;
+      else if (strcasecmp(prob->params[graph_package].Val, "ZOLTAN") == 0)
+        prob->partitioning_type = HYPERGRAPH_PARTITIONING;
+      else
+        prob->partitioning_type = GRAPH_PARTITIONING;
+    }
+    else{
+      /* default graph partitioning method is PHG */
+      prob->partitioning_type = HYPERGRAPH_PARTITIONING;
+    }
+  }
+
 
   /* if there is a paramfile specified, read it
      note: contents of this file may override the parameters set above */
@@ -481,6 +507,10 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
   int num_gid_entries;           /* Number of array entries in a global ID.  */
   int num_lid_entries;           /* Number of array entries in a local ID.   */
 
+  BALANCE_EVAL eval_objects;
+  GRAPH_EVAL   eval_graph;
+  HG_EVAL      eval_hg;
+
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);
@@ -493,7 +523,19 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     if (Debug_Driver > 0) {
       if (Proc == 0) cout << "\nBEFORE load balancing" << endl;
       driver_eval(mesh);
-      int i = zz.LB_Eval(1, NULL, NULL, NULL, NULL, NULL, NULL);
+      int i;
+
+      /* TODO - can check metrics before and after to determine whether
+       *        the test problem passed.
+       */
+
+      if (prob->partitioning_type == HYPERGRAPH_PARTITIONING)
+        i = zz.LB_Eval_HG(1, &eval_hg);
+      else if (prob->partitioning_type == GRAPH_PARTITIONING)
+        i = zz.LB_Eval_Graph(1, &eval_graph);
+      else
+        i = zz.LB_Eval_Balance(1, &eval_objects);
+      
       if (i) cout << "Warning: Zoltan_LB_Eval returned code " << i << endl;
     }
     if (Test.Gen_Files) {
@@ -626,7 +668,15 @@ int run_zoltan(Zoltan &zz, int Proc, PROB_INFO_PTR prob,
     if (Debug_Driver > 0) {
       if (Proc == 0) cout << "\nAFTER load balancing\n" << endl;
       driver_eval(mesh);
-      int i = zz.LB_Eval(1, NULL, NULL, NULL, NULL, NULL, NULL);
+      int i;
+
+      if (prob->partitioning_type == HYPERGRAPH_PARTITIONING)
+        i = zz.LB_Eval_HG(1, &eval_hg);
+      else if (prob->partitioning_type == GRAPH_PARTITIONING)
+        i = zz.LB_Eval_Graph(1, &eval_graph);
+      else
+        i = zz.LB_Eval_Balance(1, &eval_objects);
+
       if (i) cout << "Warning: Zoltan_LB_Eval returned code " << i << endl;
     }
     if (Test.Gen_Files) {
