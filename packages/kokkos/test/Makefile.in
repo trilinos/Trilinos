@@ -74,7 +74,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
-	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -100,9 +99,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = BaseSparseMultiply BaseSparseSolve DenseMultiVector \
-	HbMatrix Permutation OskiMultiVector OskiMatrix \
-	OskiSparseMultiply
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 ALTERNATE_AR = @ALTERNATE_AR@
@@ -217,12 +214,8 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-@HAVE_KOKKOS_EXPERIMENTAL_TRUE@OSKIMULTIVECTOR_SUBDIR = OskiMultiVector
-@HAVE_KOKKOS_EXPERIMENTAL_TRUE@OSKIMATRIX_SUBDIR = OskiMatrix
-@HAVE_KOKKOS_EXPERIMENTAL_TRUE@OSKISPARSEMULTIPLY_SUBDIR = OskiSparseMultiply
 SUBDIRS = BaseSparseMultiply BaseSparseSolve DenseMultiVector HbMatrix \
-Permutation $(OSKIMULTIVECTOR_SUBDIR) $(OSKIMATRIX_SUBDIR) \
-$(OSKISPARSEMULTIPLY_SUBDIR) 
+Permutation
 
 EXTRA_DIST = definition
 all: all-recursive

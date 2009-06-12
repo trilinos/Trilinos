@@ -41,9 +41,6 @@
 /* Define if want to build kokkos-examples */
 #undef HAVE_KOKKOS_EXAMPLES
 
-/* Define if want to build kokkos-experimental */
-#undef HAVE_KOKKOS_EXPERIMENTAL
-
 /* Define if want to build kokkos-tests */
 #undef HAVE_KOKKOS_TESTS
 

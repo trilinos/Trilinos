@@ -65,7 +65,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = src
-DIST_COMMON = $(am__include_HEADERS_DIST) $(srcdir)/Kokkos_config.h.in \
+DIST_COMMON = $(include_HEADERS) $(srcdir)/Kokkos_config.h.in \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
@@ -77,7 +77,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/tac_arg_check_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_config_mpi.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature.m4 \
-	$(top_srcdir)/config/tac_arg_enable_feature_sub.m4 \
 	$(top_srcdir)/config/tac_arg_enable_feature_sub_check.m4 \
 	$(top_srcdir)/config/tac_arg_with_ar.m4 \
 	$(top_srcdir)/config/tac_arg_with_flags.m4 \
@@ -115,31 +114,8 @@ F77COMPILE = $(F77) $(AM_FFLAGS) $(FFLAGS)
 F77LD = $(F77)
 F77LINK = $(F77LD) $(AM_FFLAGS) $(FFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o \
 	$@
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(libkokkos_a_SOURCES) $(EXTRA_libkokkos_a_SOURCES)
 DIST_SOURCES = $(libkokkos_a_SOURCES) $(EXTRA_libkokkos_a_SOURCES)
-am__include_HEADERS_DIST = $(srcdir)/Kokkos_ConfigDefs.hpp \
-	$(srcdir)/Kokkos_BaseSparseMultiply.hpp \
-	$(srcdir)/Kokkos_BaseSparseSolve.hpp \
-	$(srcdir)/Kokkos_CisMatrix.hpp \
-	$(srcdir)/Kokkos_DenseMultiVector.hpp \
-	$(srcdir)/Kokkos_DenseVector.hpp $(srcdir)/Kokkos_HbMatrix.hpp \
-	$(srcdir)/Kokkos_MultiVector.hpp \
-	$(srcdir)/Kokkos_PackedSparseMultiply.hpp \
-	$(srcdir)/Kokkos_Permutation.hpp \
-	$(srcdir)/Kokkos_SparseOperation.hpp \
-	$(srcdir)/Kokkos_Vector.hpp $(srcdir)/Kokkos_Flops.hpp \
-	$(srcdir)/Kokkos_Time.hpp \
-	$(srcdir)/Kokkos_Fortran_wrappers.hpp \
-	$(srcdir)/Kokkos_f77func.hpp $(srcdir)/Kokkos_Version.hpp \
-	$(srcdir)/Kokkos_CompObject.hpp \
-	$(srcdir)/Kokkos_OskiMultiVector.hpp \
-	$(srcdir)/Kokkos_OskiVector.hpp \
-	$(srcdir)/Kokkos_OskiMatrix.hpp \
-	$(srcdir)/Kokkos_OskiSparseMultiply.hpp
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 nodist_execincludeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS) $(nodist_execinclude_HEADERS)
@@ -294,12 +270,6 @@ UTIL = \
 
 ENUM_H = 
 SERIAL_H = 
-EXTRA_EXPERIMENTAL_H = \
-	$(srcdir)/Kokkos_OskiMultiVector.hpp \
-	$(srcdir)/Kokkos_OskiVector.hpp \
-	$(srcdir)/Kokkos_OskiMatrix.hpp \
-	$(srcdir)/Kokkos_OskiSparseMultiply.hpp
-
 SERIAL = 
 
 #
@@ -318,10 +288,6 @@ EXTRA_MPI =
 @HAVE_MPI_FALSE@MPI = 
 @HAVE_MPI_TRUE@MPI = \
 @HAVE_MPI_TRUE@	$(EXTRA_MPI)
-
-@HAVE_KOKKOS_EXPERIMENTAL_FALSE@EXPERIMENTAL_H = 
-@HAVE_KOKKOS_EXPERIMENTAL_TRUE@EXPERIMENTAL_H = \
-@HAVE_KOKKOS_EXPERIMENTAL_TRUE@	$(EXTRA_EXPERIMENTAL_H)
 
 LANG_WRAPS_H = 
 LANG_WRAPS = 
@@ -344,7 +310,6 @@ KOKKOS_H = \
 	$(SERIAL_H) \
 	$(DIST_H) \
 	$(COMP_H) \
-	$(EXPERIMENTAL_H) \
 	$(MPI_H)
 
 libkokkos_a_SOURCES = \
@@ -356,7 +321,6 @@ libkokkos_a_SOURCES = \
 	$(MPI)
 
 EXTRA_libkokkos_a_SOURCES = \
-	$(EXTRA_EXPERIMENTAL_H) \
 	$(EXTRA_MPI) \
 	$(EXTRA_MPI_H)
 

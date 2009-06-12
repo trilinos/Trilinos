@@ -728,8 +728,6 @@ ALTERNATE_AR
 CXXCPP
 GREP
 EGREP
-HAVE_KOKKOS_EXPERIMENTAL_TRUE
-HAVE_KOKKOS_EXPERIMENTAL_FALSE
 BUILD_TESTS_TRUE
 BUILD_TESTS_FALSE
 BUILD_EXAMPLES_TRUE
@@ -1342,8 +1340,6 @@ Optional Features:
   --enable-mpi            MPI support
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
-  --enable-kokkos-experimental
-                          enable Kokkos experimental code (default is no)
   --enable-tests          Make tests for all Trilinos packages buildable with
                           'make tests' (default is yes)
 
@@ -6973,41 +6969,6 @@ fi
 # Checks for special package flags
 # ------------------------------------------------------------------------
 
-#  --enable-kokkos-experimental
-
-# Check whether --enable-kokkos-experimental was given.
-if test "${enable_kokkos_experimental+set}" = set; then
-  enableval=$enable_kokkos_experimental; ac_cv_use_kokkos_experimental=$enableval
-else
-  ac_cv_use_kokkos_experimental=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to use kokkos-experimental" >&5
-echo $ECHO_N "checking whether to use kokkos-experimental... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_kokkos_experimental" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_KOKKOS_EXPERIMENTAL
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
- if test "X$ac_cv_use_kokkos_experimental" != "Xno"; then
-  HAVE_KOKKOS_EXPERIMENTAL_TRUE=
-  HAVE_KOKKOS_EXPERIMENTAL_FALSE='#'
-else
-  HAVE_KOKKOS_EXPERIMENTAL_TRUE='#'
-  HAVE_KOKKOS_EXPERIMENTAL_FALSE=
-fi
-
-
 # ------------------------------------------------------------------------
 # Checks if tests and examples should be built
 # ------------------------------------------------------------------------
@@ -8562,7 +8523,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 #  of tests.  New package comes only with src and example.
 #  You will need to change AC_CONFIG_FILES below and Makefile.am
 #  to add a new directory.
-ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BaseSparseMultiply/Makefile test/BaseSparseSolve/Makefile test/DenseMultiVector/Makefile test/HbMatrix/Makefile test/Permutation/Makefile test/OskiMultiVector/Makefile test/OskiMatrix/Makefile test/OskiSparseMultiply/Makefile example/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile test/BaseSparseMultiply/Makefile test/BaseSparseSolve/Makefile test/DenseMultiVector/Makefile test/HbMatrix/Makefile test/Permutation/Makefile example/Makefile"
 
 
 cat >confcache <<\_ACEOF
@@ -8707,13 +8668,6 @@ if test -z "${USE_ALTERNATE_AR_TRUE}" && test -z "${USE_ALTERNATE_AR_FALSE}"; th
   { { echo "$as_me:$LINENO: error: conditional \"USE_ALTERNATE_AR\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"USE_ALTERNATE_AR\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${HAVE_KOKKOS_EXPERIMENTAL_TRUE}" && test -z "${HAVE_KOKKOS_EXPERIMENTAL_FALSE}"; then
-  { { echo "$as_me:$LINENO: error: conditional \"HAVE_KOKKOS_EXPERIMENTAL\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-echo "$as_me: error: conditional \"HAVE_KOKKOS_EXPERIMENTAL\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -9222,9 +9176,6 @@ do
     "test/DenseMultiVector/Makefile") CONFIG_FILES="$CONFIG_FILES test/DenseMultiVector/Makefile" ;;
     "test/HbMatrix/Makefile") CONFIG_FILES="$CONFIG_FILES test/HbMatrix/Makefile" ;;
     "test/Permutation/Makefile") CONFIG_FILES="$CONFIG_FILES test/Permutation/Makefile" ;;
-    "test/OskiMultiVector/Makefile") CONFIG_FILES="$CONFIG_FILES test/OskiMultiVector/Makefile" ;;
-    "test/OskiMatrix/Makefile") CONFIG_FILES="$CONFIG_FILES test/OskiMatrix/Makefile" ;;
-    "test/OskiSparseMultiply/Makefile") CONFIG_FILES="$CONFIG_FILES test/OskiSparseMultiply/Makefile" ;;
     "example/Makefile") CONFIG_FILES="$CONFIG_FILES example/Makefile" ;;
 
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
@@ -9442,8 +9393,6 @@ ALTERNATE_AR!$ALTERNATE_AR$ac_delim
 CXXCPP!$CXXCPP$ac_delim
 GREP!$GREP$ac_delim
 EGREP!$EGREP$ac_delim
-HAVE_KOKKOS_EXPERIMENTAL_TRUE!$HAVE_KOKKOS_EXPERIMENTAL_TRUE$ac_delim
-HAVE_KOKKOS_EXPERIMENTAL_FALSE!$HAVE_KOKKOS_EXPERIMENTAL_FALSE$ac_delim
 BUILD_TESTS_TRUE!$BUILD_TESTS_TRUE$ac_delim
 BUILD_TESTS_FALSE!$BUILD_TESTS_FALSE$ac_delim
 BUILD_EXAMPLES_TRUE!$BUILD_EXAMPLES_TRUE$ac_delim
@@ -9458,7 +9407,7 @@ LIBOBJS!$LIBOBJS$ac_delim
 LTLIBOBJS!$LTLIBOBJS$ac_delim
 _ACEOF
 
-  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 30; then
+  if test `sed -n "s/.*$ac_delim\$/X/p" conf$$subs.sed | grep -c X` = 28; then
     break
   elif $ac_last_try; then
     { { echo "$as_me:$LINENO: error: could not make $CONFIG_STATUS" >&5

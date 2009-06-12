@@ -30,15 +30,8 @@
 
 all-local:
 
-if HAVE_KOKKOS_EXPERIMENTAL
-OSKIMULTIVECTOR_SUBDIR=OskiMultiVector
-OSKIMATRIX_SUBDIR=OskiMatrix
-OSKISPARSEMULTIPLY_SUBDIR=OskiSparseMultiply
-endif
-
 SUBDIRS = BaseSparseMultiply BaseSparseSolve DenseMultiVector HbMatrix \
-Permutation $(OSKIMULTIVECTOR_SUBDIR) $(OSKIMATRIX_SUBDIR) \
-$(OSKISPARSEMULTIPLY_SUBDIR) 
+Permutation
 
 EXTRA_DIST = definition
 

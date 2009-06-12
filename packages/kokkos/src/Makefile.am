@@ -71,12 +71,6 @@ ENUM_H =
 
 SERIAL_H = 
 
-EXTRA_EXPERIMENTAL_H = \
-	$(srcdir)/Kokkos_OskiMultiVector.hpp \
-	$(srcdir)/Kokkos_OskiVector.hpp \
-	$(srcdir)/Kokkos_OskiMatrix.hpp \
-	$(srcdir)/Kokkos_OskiSparseMultiply.hpp
-
 SERIAL = 
 
 #
@@ -100,16 +94,6 @@ else
 
 MPI_H =
 MPI =
-
-endif
-
-if HAVE_KOKKOS_EXPERIMENTAL
-EXPERIMENTAL_H = \
-	$(EXTRA_EXPERIMENTAL_H)
-
-else
-
-EXPERIMENTAL_H =
 
 endif
 
@@ -142,7 +126,6 @@ KOKKOS_H = \
 	$(SERIAL_H) \
 	$(DIST_H) \
 	$(COMP_H) \
-	$(EXPERIMENTAL_H) \
 	$(MPI_H)
 
 libkokkos_a_SOURCES = \
@@ -154,7 +137,6 @@ libkokkos_a_SOURCES = \
 	$(MPI)
 
 EXTRA_libkokkos_a_SOURCES = \
-	$(EXTRA_EXPERIMENTAL_H) \
 	$(EXTRA_MPI) \
 	$(EXTRA_MPI_H)
 
