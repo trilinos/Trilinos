@@ -740,9 +740,19 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
   }
 
   MPI_Allreduce(local, global, 2, MPI_DOUBLE, MPI_SUM, comm);
+  hg->cutn[EVAL_GLOBAL_SUM] = (float)global[0];
+  hg->cutl[EVAL_GLOBAL_SUM] = (float)global[1];
 
-  hg->cutn = (float)global[0];
-  hg->cutl = (float)global[1];
+  MPI_Allreduce(local, global, 2, MPI_DOUBLE, MPI_MIN, comm);
+  hg->cutn[EVAL_GLOBAL_MIN] = (float)global[0];
+  hg->cutl[EVAL_GLOBAL_MIN] = (float)global[1];
+
+  MPI_Allreduce(local, global, 2, MPI_DOUBLE, MPI_MAX, comm);
+  hg->cutn[EVAL_GLOBAL_MAX] = (float)global[0];
+  hg->cutl[EVAL_GLOBAL_MAX] = (float)global[1];
+
+  hg->cutn[EVAL_GLOBAL_AVG] = hg->cutn[EVAL_GLOBAL_SUM] / nparts;
+  hg->cutl[EVAL_GLOBAL_AVG] = hg->cutl[EVAL_GLOBAL_SUM] / nparts;
             
   /************************************************************************
    * Print results
@@ -765,11 +775,20 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
         hg->obj_wgt[EVAL_GLOBAL_MIN], hg->obj_wgt[EVAL_GLOBAL_MAX], 
         hg->obj_wgt[EVAL_GLOBAL_SUM], hg->imbalance);
     }
-    
     printf("\n");
 
-    printf("%s  Hyperedge (k-1)-connectivity cut:     %8.0f\n", yo, global[0]);
-    printf("%s  No. cut hyperedges:                   %8.0f\n\n", yo, global[1]);
+    printf("%s  Statistics with respect to %1d partitions: \n", yo, nparts);
+    printf("%s                               Min      Max    Average    Sum\n", yo);
+
+    printf("%s  Conn Cut (CUTN)      :  %8.3g %8.3g %8.3g %8.3g\n", yo,
+      hg->cutn[EVAL_GLOBAL_MIN], hg->cutn[EVAL_GLOBAL_MAX],
+      hg->cutn[EVAL_GLOBAL_AVG], hg->cutn[EVAL_GLOBAL_SUM]);
+
+    printf("%s  Net Cut (CUTL)       :  %8.3g %8.3g %8.3g %8.3g\n", yo,
+      hg->cutl[EVAL_GLOBAL_MIN], hg->cutl[EVAL_GLOBAL_MAX],
+      hg->cutl[EVAL_GLOBAL_AVG], hg->cutl[EVAL_GLOBAL_SUM]);
+
+    printf("\n\n");
   }
 
 End:
