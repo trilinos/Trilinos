@@ -136,7 +136,7 @@ Zoltan_PHG_Tree_create(int part_number, ZZ* zz)
 
   if (ptr == NULL) {
     ptr = Zoltan_PHG_LB_Data_alloc();
-    zz->LB.Data_Structure = (void*)ptr;
+    zz->LB.Data_Structure = (void*)ptr;  /* TODO simpleGRAPH test this does not get freed */
   }
   if (ptr == NULL)
     return (ZOLTAN_MEMERR);

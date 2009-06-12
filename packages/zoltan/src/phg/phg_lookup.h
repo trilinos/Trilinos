@@ -1,0 +1,122 @@
+/*****************************************************************************
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
+ * For more info, see the README file in the top-level Zoltan directory.     *
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+#ifndef __ZOLTAN_PHG_LOOKUP_H
+#define __ZOLTAN_PHG_LOOKUP_H
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+#include "zz_const.h"
+#include "third_library_tools.h"
+
+/*****************************************************************************/
+
+/*
+ * Structure to store and search for integer tuples, and return an
+ * index associated with the tuple. 
+ *
+ * It only stores a pointer to the integer tuple, not a copy of it.
+ */
+
+typedef struct _gid_node{
+  int *gid;
+  int index;
+  struct _gid_node *next;
+}phg_gid_node;
+
+typedef struct _gid_list{
+  phg_gid_node *top;
+  phg_gid_node **gn;
+  int size;
+  int next_slot;
+  int lenGID;
+}phg_gid_list;
+
+void phg_initialize_gid_list(int gid_len, int nvtx);
+void phg_free_gid_list();
+int phg_find_gid_index(int *gid);
+void phg_add_to_gid_list(int *gid, int index);
+
+/*****************************************************************************/
+
+/* 
+ * Structures to hold hypergraph data returned by query functions,
+ * and hypergraph data gathered by processes to which edges/vertices
+ * map to via a hash function.
+ */
+ 
+typedef struct _myObj{  /* Vertices returned in Get_Obj_List queries */
+  int    *vtxHash;      /* Process to which GID hashes, temporary owner */
+}zoltan_objects;
+
+typedef struct _myPin{      /* Pins returned by hypergraph query functions */
+  int           nHedges;    /* number of (partial) hyperedges */
+  ZOLTAN_ID_PTR edgeGID;    /* edge global IDs */
+  int           *esizes;    /* local size in pins of each hyperedge */
+  ZOLTAN_ID_PTR pinGID;     /* global ID of pin vertex */
+  int           numPins;    /* sum of esizes array */
+  int           *edgeHash;  /* process assigned edgeGID by hash function */
+}zoltan_pins;
+
+typedef struct _myEW{     /* Values returned by edge weight query functions */
+  int           size;       /* number of edges */
+  ZOLTAN_ID_PTR edgeGID;   /* edge global IDs */
+  int           *edgeHash;  /* process assigned this edge by hash function */
+  float         *wgt;       /* weights supplied by query function for edge */
+}zoltan_ews;
+
+typedef struct _hshEdge{ /* Edges assigned to this process with hash func */
+  ZOLTAN_ID_PTR edgeGID;    /* edge global IDs */
+  ZOLTAN_ID_PTR pinGID;     /* vertex ID of each pin*/
+  int           *pinHash;   /* process to which pin vertex is hashed */
+}zoltan_temp_edges;
+
+typedef struct _hshVtx{ /* Vertices assigned to this process with hash func */
+  int           size;      /* number of vertices assigned to this process */
+  ZOLTAN_ID_PTR vtxGID;    /* vertex global IDs  */
+  int           *vtxOwner; /* process that returned vtx in Get_Obj_List  */
+  int           *vtxGNO;   /* vertex global number */
+}zoltan_temp_vertices;
+
+/* 
+ * A search structure, to find the index of a global ID in any of the
+ * above structures.
+ */
+
+typedef struct _GID_lookup{
+  struct Hash_Node *htTop;
+  struct Hash_Node **ht;
+  int table_size;
+  int numGIDs;
+  int lenGID;
+}phg_GID_lookup;
+
+/*****************************************************************************/
+
+void phg_free_objects(zoltan_objects *zo);
+void phg_free_pins(zoltan_pins *zp);
+void phg_free_ews(zoltan_ews *zew);
+void phg_free_temp_edges(zoltan_temp_edges *zte);
+void phg_free_temp_vertices(zoltan_temp_vertices *ztv);
+
+int phg_map_GIDs_to_processes(ZZ *zz, ZOLTAN_ID_PTR eid, int size, int lenGID, 
+                              int **hashedProc, int nprocs);
+
+phg_GID_lookup *phg_create_GID_lookup_table(ZOLTAN_ID_PTR gids, int size, int lenGID);
+phg_GID_lookup *phg_create_GID_lookup_table2(ZOLTAN_ID_PTR gids, int ngids, int lenGID);
+int phg_lookup_GID(phg_GID_lookup *lu, ZOLTAN_ID_PTR gid);
+void phg_free_GID_lookup_table(phg_GID_lookup **lu);
+
+#endif

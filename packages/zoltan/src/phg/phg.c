@@ -24,6 +24,8 @@ extern "C" {
 #include "all_allo_const.h"
 #include "zz_const.h"
 
+char phg_mpi_err_str[MPI_MAX_ERROR_STRING];
+int phg_mpi_err_len;
 
 /*
 #define CHECK_LEFTALONE_VERTICES
@@ -200,7 +202,7 @@ static double detailed_balance_info(
 {
   int i;
   double *lsize_w, *size_w, max_imbal, tot_w;
-  char *yo = "Zoltan_PHG_Compute_Balance";
+  char *yo = "detailed_balance_info";
   PHGComm *hgc=NULL;
   int part_dim = (hg->VtxWeightDim ? hg->VtxWeightDim : 1);
   
@@ -254,8 +256,6 @@ static double detailed_balance_info(
 }
 */
 
-
-    
 /******************************************************************************/
 /* Main routine for Zoltan interface to hypergraph partitioning. Builds input */
 /* data structures, set parameters, calls HG partitioner, builds return lists.*/
@@ -287,7 +287,6 @@ int **exp_to_part )         /* list of partitions to which exported objs
   int err = ZOLTAN_OK, p=0;
   struct phg_timer_indices *timer = NULL; 
   int do_timing = 0;
-  int * rowpart = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -328,12 +327,13 @@ int **exp_to_part )         /* list of partitions to which exported objs
   /* build initial Zoltan hypergraph from callback functions. */
 
   err = Zoltan_PHG_Build_Hypergraph (zz, &zoltan_hg, &parts, &hgp);
+
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph.");
     goto End;
   }
 
-  if (zoltan_hg->GnObj == 0){
+  if (zoltan_hg->globalObj == 0){
     /* degenerate case - no objects to partition */
     hgp.final_output = 0;
     goto End;
@@ -572,10 +572,10 @@ End:
     if (!err) {
      
       /* Add in cut contributions from removed edges */
-      MPI_Allreduce(&(zoltan_hg->nRemove), &gnremove, 1, MPI_INT, MPI_SUM,
+      MPI_Allreduce(&(zoltan_hg->nHedges), &gnremove, 1, MPI_INT, MPI_SUM,
                     zz->Communicator);
       if (gnremove) {
-        err = Zoltan_PHG_Removed_Cuts(zz, zoltan_hg, rlocal);
+        err = Zoltan_PHG_Cuts(zz, zoltan_hg, rlocal);
         MPI_Allreduce(rlocal, rglobal, 2, MPI_DOUBLE,MPI_SUM,zz->Communicator);
         
         cutl += rglobal[0];
@@ -632,7 +632,7 @@ End:
   ZOLTAN_FREE(&parts);
   if (zoltan_hg != NULL) {
     Zoltan_PHG_Free_Hypergraph_Data(zoltan_hg);
-    ZOLTAN_FREE (&zoltan_hg);
+    ZOLTAN_FREE(&zoltan_hg);
   }
 
   if (hgp.use_timers) {
@@ -660,30 +660,15 @@ End:
 void Zoltan_PHG_Free_Hypergraph_Data(ZHG *zoltan_hg)
 {
   if (zoltan_hg != NULL) {
-    Zoltan_Multifree(__FILE__, __LINE__, 12, &zoltan_hg->GIDs,
-                                            &zoltan_hg->LIDs,
-                                            &zoltan_hg->Input_Parts,
-                                            &zoltan_hg->Output_Parts,
-                                            &zoltan_hg->AppObjSizes,
-                                            &zoltan_hg->Remove_EGIDs,
-                                            &zoltan_hg->Remove_ELIDs,
-                                            &zoltan_hg->Remove_Esize,
-                                            &zoltan_hg->Remove_GEsize,
-                                            &zoltan_hg->Remove_Ewgt,
-                                            &zoltan_hg->Remove_Pin_GIDs,
-                                            &zoltan_hg->Remove_Pin_Procs);
-
-    Zoltan_HG_HGraph_Free (&zoltan_hg->HG);
+    Zoltan_Input_HG_Free(zoltan_hg);
   }
 }
-
-
     
 /*****************************************************************************/
 
 int Zoltan_PHG_Initialize_Params(
   ZZ *zz,   /* the Zoltan data structure */
-  float *part_sizes,
+  float *part_sizes, /* preallocation assumes object weight dimension is one */
   PHGPartParams *hgp
 )
 {
@@ -760,7 +745,7 @@ int Zoltan_PHG_Initialize_Params(
   
   /* Set default values */
   strncpy(hgp->hgraph_pkg,           "phg", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->convert_str,    "neighbors", MAX_PARAM_STRING_LEN);
+  strncpy(hgp->convert_str,        "pairs", MAX_PARAM_STRING_LEN);
   strncpy(hgp->redm_str,             "agg", MAX_PARAM_STRING_LEN);
   hgp->match_array_type = 0;
   strncpy(hgp->redm_fast,          "l-ipm", MAX_PARAM_STRING_LEN);
@@ -818,11 +803,12 @@ int Zoltan_PHG_Initialize_Params(
   nProc = zz->Num_Proc;
   usePrimeComm = 0;
 
-  /* Parse add_obj_weight parameter */
+  /* Parse add_obj_weight parameter - PHG only processes one weight */
+
+  hgp->part_sizes = part_sizes;
 
   if (!strcasecmp(add_obj_weight, "none")) {
     hgp->add_obj_weight = PHG_ADD_NO_WEIGHT;
-    hgp->part_sizes = part_sizes;
   }
   else if (zz->Obj_Weight_Dim > 0) {
     /* Do not add_obj_weight until multiconstraint PHG is implemented */
@@ -832,7 +818,6 @@ int Zoltan_PHG_Initialize_Params(
     ZOLTAN_PRINT_WARN(zz->Proc, yo,
       "Only the first application supplied weight per vertex will be used.");
     hgp->add_obj_weight = PHG_ADD_NO_WEIGHT;
-    hgp->part_sizes = part_sizes;
   } 
   else {
     if (!strcasecmp(add_obj_weight, "vertices")){
@@ -849,12 +834,6 @@ int Zoltan_PHG_Initialize_Params(
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid ADD_OBJ_WEIGHT parameter.\n");
       err = ZOLTAN_WARN;
     }
-    /* Set hgp->part_sizes to new array of part_sizes with added obj weight. */
-    if (part_sizes)
-      err = Zoltan_LB_Add_Part_Sizes_Weight(zz, 
-                          (zz->Obj_Weight_Dim ? zz->Obj_Weight_Dim : 1), 
-                          zz->Obj_Weight_Dim+1, 
-                          part_sizes, &(hgp->part_sizes));
   }
 
   if ((zz->Obj_Weight_Dim==0) &&      /* no application supplied weights */
@@ -877,11 +856,13 @@ int Zoltan_PHG_Initialize_Params(
     hgp->edge_weight_op = PHG_MAX_EDGE_WEIGHTS;
   } else if (!strcasecmp(edge_weight_op, "add")){
     hgp->edge_weight_op = PHG_ADD_EDGE_WEIGHTS;
+  } else if (!strcasecmp(edge_weight_op, "sum")){
+    hgp->edge_weight_op = PHG_ADD_EDGE_WEIGHTS;
   } else if (!strcasecmp(edge_weight_op, "error")){
     hgp->edge_weight_op = PHG_FLAG_ERROR_EDGE_WEIGHTS;
   } else{
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
-      "Invalid PHG_EDGE_WEIGHT_OPERATION parameter.\n");
+      "Invalid PHG_EDGE_WEIGHT_OPERATION parameter.  Zoltan will use \"max\".\n");
     err = ZOLTAN_WARN;
   }
 
@@ -1081,7 +1062,7 @@ HGraph *phg = &(zhg->HG);
     }
     for (i = 0; i < nObj; i++){
       newproc[i] = Zoltan_LB_Part_To_Proc(zz, outparts[i],
-                                          &(zhg->GIDs[i*num_gid_entries]));
+                                          &(zhg->objGID[i*num_gid_entries]));
       if (newproc[i]<0){
         ZOLTAN_PRINT_ERROR(zz->Proc, yo,
          "Zoltan_LB_Part_To_Proc returned invalid processor number.");
@@ -1124,8 +1105,8 @@ int num_gid_entries   = zz->Num_GID;
 int num_lid_entries   = zz->Num_LID;
 int nObj              = zhg->nObj;
 Partition input_parts = zhg->Input_Parts;
-ZOLTAN_ID_PTR gids    = zhg->GIDs;
-ZOLTAN_ID_PTR lids    = zhg->LIDs;
+ZOLTAN_ID_PTR gids    = zhg->objGID;
+ZOLTAN_ID_PTR lids    = zhg->objLID;
 int *outparts         = zhg->Output_Parts; 
 
   if (zz->LB.Return_Lists == ZOLTAN_LB_NO_LISTS) 

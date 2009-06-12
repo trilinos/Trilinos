@@ -1,0 +1,243 @@
+/*****************************************************************************
+ * Zoltan Library for Parallel Applications                                  *
+ * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
+ * For more info, see the README file in the top-level Zoltan directory.     *
+ *****************************************************************************/
+/*****************************************************************************
+ * CVS File Information :
+ *    $RCSfile$
+ *    $Author$
+ *    $Date$
+ *    $Revision$
+ ****************************************************************************/
+
+
+#ifdef __cplusplus
+/* if C++, define the rest of this header file as extern C */
+extern "C" {
+#endif
+
+#include "phg.h"
+#include "phg_verbose.h"
+#include "phg_lookup.h"
+
+/****************************************************************************/
+
+void print_zoltan_pins(zoltan_pins *z, int me, int ewgt_dim)
+{
+int i, k;
+
+  printf("%d) %d hyperedges\n\n",me, z->nHedges);
+
+  if (z->nHedges == 0) return;
+
+  k = 0;
+  for (i=0; i<z->nHedges; i++){
+    if (z->edgeHash){
+      printf("  GID %d, hashed to %d, num pins %d\n", z->edgeGID[i], z->edgeHash[i], z->esizes[i]);
+    }
+    else{
+      printf("  GID %d, num pins locally %d\n", z->edgeGID[i], z->esizes[i]);
+    }
+  }
+  printf("\n");
+}
+
+/****************************************************************************/
+void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
+{
+  int i, j, npins;
+  int ewdim = zz->Edge_Weight_Dim;
+  int vwdim = zhg->objWeightDim;
+  float sum;
+  float *wgt, *vwgt;
+  int *pin, *owner, *lno;
+  HGraph *hg = &zhg->HG;
+
+  /* The ZHG structure contains the hypergraph returned by the query functions,
+   * including modifications based on ADD_OBJ_WEIGHT and PHG_EDGE_WEIGHT_OPERATION.
+   * If the PHG hypergraph build has completed, the edge list only contains the removed
+   * edges.  If LB_Eval build the ZHG structure, it contains all edges.
+   *
+   * the HGraph structure contains that hypergraph with modifications made
+   * for the PHG algorithm.  This may include addition of repartition
+   * vertices and edges, and removal of dense edges.
+   */
+
+  wgt = zhg->objWeight;
+
+  printf("%d INPUT VERTICES (out of %d) : gno (gid/lid) (weights) nhedges fixed inpart outpart objSize)\n",zhg->nObj, zhg->globalObj);
+
+  for (i=0; i<zhg->nObj; i++){
+
+    printf("  %d (",zhg->objGNO[i]);
+
+    if (zhg->objGID)
+      printf("%d/",zhg->objGID[i]);
+    else
+      printf("-/");
+
+    if (zhg->objLID)
+      printf("%d) (",zhg->objLID[i]);
+    else
+      printf("/-) (");
+
+    for (j=0; j < vwdim; j++){
+      printf("%f",*wgt++);
+      if (j < vwdim-1) printf(", ");
+    }
+
+    if (zhg->numHEdges)
+      printf(") %d ",zhg->numHEdges[i]);
+    else
+      printf(") - ");
+
+    if (zhg->fixed)
+      printf(" %d ",zhg->fixed[i]);
+    else
+      printf(" - ");
+
+    if (zhg->Input_Parts)
+      printf(" %d ",zhg->Input_Parts[i]);
+    else
+      printf(" - ");
+
+    if (zhg->Output_Parts)
+      printf(" %d ",zhg->Output_Parts[i]);
+    else
+      printf(" - ");
+
+    if (zhg->AppObjSizes)
+      printf(" %d ",zhg->AppObjSizes[i]);
+    else
+      printf(" - ");
+
+    printf("\n");
+  }
+  printf("\n");
+ 
+  wgt = zhg->Ewgt;
+  pin = zhg->pinGNO;
+  owner = zhg->Pin_Procs;
+   
+  printf("%d INPUT or REMOVED EDGES (out of %d), %d pins: gno size (weights) (pinGNO/pinProc)\n",
+                  zhg->nHedges, zhg->globalHedges, zhg->nPins);
+
+  for (i=0; i < zhg->nHedges; i++){
+
+    printf("  %d %d (", zhg->edgeGNO[i], zhg->Esize[i]);
+
+    if (wgt){
+      for (j=0; j < ewdim; j++){
+        printf("%f",*wgt++);
+        if (j < ewdim - 1) printf(", ");
+      }
+    }
+    printf(") (");
+
+    for (j=0; j < zhg->Esize[i]; j++){
+      printf("%d/%d", *pin++, *owner++);
+      if (j < zhg->Esize[i] - 1) printf(" ");
+    }
+
+    printf(")\n");
+  }
+  printf("\n");
+
+  printf("%d PHG EDGES (%d weights), %d total PHG PINS:\n",
+          hg->nEdge, ewdim, hg->nPins);
+
+  wgt = hg->ewgt;
+  lno = hg->hvertex;
+  vwgt = hg->vwgt;
+
+  for (i=0; i<hg->nEdge; i++){
+    npins = hg->hindex[i+1] - hg->hindex[i];
+
+    printf(" edge %d: ",EDGE_LNO_TO_GNO(hg, i));
+    for (j=0; j<ewdim; j++){
+      printf(" %f",*wgt++);
+    }
+    printf("\n %d pins: ", npins);
+    for (j=0; j<npins; j++){
+      printf("%d ", *lno++);
+    }
+    printf("\n");
+  }
+  printf("\n");
+
+  printf("%d PHG PIN global numbers and %d weights:\n", hg->nVtx, vwdim);
+
+  sum = 0;
+
+  for (i=0; i<hg->nVtx; i++){
+    printf("  %d  %d: ", i, VTX_LNO_TO_GNO(hg, i));
+    for (j=0; j<vwdim; j++){
+      if (j==sumWeight) sum += *vwgt;
+      printf("%f ", *vwgt++);
+    }
+    printf("\n");
+  }
+  printf("\n");
+  if (sum > 0.0) printf("Weight %d sums to %f\n\n",sumWeight+1,sum);
+}
+/****************************************************************************/
+void show_edges(char *s, ZZ *zz, int num_lists, int num_pins,
+                int *edg_GID, int *row_ptr, int *vtx_GID)
+{
+int i, j, size, sumsize=0;
+int *v = vtx_GID;
+
+  /* helpful in debugging */
+  printf("%s> Process %d, %d edges, %d pins\n",s, zz->Proc, num_lists, num_pins);
+  for (i=0; i<num_lists; i++){
+    size = (i < num_lists-1 ? row_ptr[i+1] : num_pins) - row_ptr[i];
+    sumsize += size;
+    printf("Edge %d, size %d\n  ", edg_GID[i], size);
+    for (j=0; j<size; j++){
+      printf("%d ",   *v++);
+    }
+    printf("\n");
+  }
+  printf("Sum of edge sizes: %d\n",sumsize);
+}
+/****************************************************************************/
+void debug_graph_to_hg(
+  int nedges, ZOLTAN_ID_PTR egids, ZOLTAN_ID_PTR elids,
+  int *esizes, float *ewgts, int npins,
+  ZOLTAN_ID_PTR pins, int *pin_procs, int ewgtdim, int lenGID, int lenLID)
+{
+  int i,j,k;
+  ZOLTAN_ID_PTR nextpin;
+  int *nextproc;
+
+  nextpin = pins;
+  nextproc = pin_procs;
+
+  printf("%d hyperedges, %d pins\n",nedges,npins);
+  for (i=0; i<nedges; i++){
+    printf("GID ");
+    for (j=0; j<lenGID; j++) printf("%d ", egids[i*lenGID+ j]);
+    printf(" LID ");
+    for (j=0; j<lenLID; j++) printf("%d ", elids[i*lenLID+ j]);
+    printf(" weights ");
+    for (j=0; j<ewgtdim; j++) printf("%f ", ewgts[i*ewgtdim+ j]);
+    printf(" size %d\n",esizes[i]);
+
+    for (j=0; j < esizes[i]; j++){
+      printf("  ");
+      for (k=0; k<lenGID; k++) printf("%d ", *nextpin++);
+      printf(" (%d), ",*nextproc++);
+      if (j && (j%10==0)) printf("\n");
+    }
+    printf("\n");
+  }
+}
+/****************************************************************************/
+
+
+
+
+#ifdef __cplusplus
+} /* closing bracket for extern "C" */
+#endif

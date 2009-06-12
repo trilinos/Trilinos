@@ -130,33 +130,47 @@ typedef struct {
     
 
 /********************************************************************
- * Data structure for Zoltan's base hypergraph. Includes Zoltan IDs 
- * corresponding to local objects (vertices) and a HGraph as used 
- * by the partitioning algorithms. 
+ * Data structure for hypergraph returned by query functions. 
+ * Includes Zoltan IDs corresponding to local objects (vertices).
+ * Includes HGraph built by Zoltan for use by the partitioning algorithms. 
  ********************************************************************/
 
 struct Zoltan_HGraph {
   int nObj;                 /* Number of on-processor objects. */
-  int GnObj;                /* Global number of objects over all procs. */
-  ZOLTAN_ID_PTR GIDs;       /* Global IDs for on-processor objects.  */
-  ZOLTAN_ID_PTR LIDs;       /* Local IDs for on-processor objects.   */
+  int globalObj;            /* Global number of objects over all procs. */
+  int objWeightDim;         /* Number of weights per object (incl ADD_OBJ_WEIGHT) */
+  float *objWeight;         /* weight */
+  int *objGNO;              /* object global number */
+  ZOLTAN_ID_PTR objGID;     /* user's object global ID */
+  ZOLTAN_ID_PTR objLID;     /* user's object local ID */
+  int *numHEdges;           /* number of hyperedges containing object */
+
+  int *fixed;               /* vertex assignments for fixed vertices */
+
   int GnRepartVtx;          /* Global number of repartition vtxs added for
                                LB_APPROACH=repartition. */
   int GnRepartEdge;         /* Global number of repartition edges added for
                                LB_APPROACH=repartition. */
+
   int *Input_Parts;         /* Initial partition #s for on-processor objects */
   int *Output_Parts;        /* Final partition #s for on-processor objects */
+
   int *AppObjSizes;         /* Object sizes for on-processor objects */
   int showMoveVol;          /* compute and show move (migration) volume */
-  int nRemove;              /* # of input hyperedges removed */
-  ZOLTAN_ID_PTR Remove_EGIDs;/* GIDs of removed hyperedges */
-  ZOLTAN_ID_PTR Remove_ELIDs;/* LIDs of removed hyperedges */
-  int *Remove_Esize;    /* local size on this proc of each removed hyperedge */
-  int *Remove_GEsize;   /* global number of vtx in each removed hyperedge */
-  float *Remove_Ewgt;       /* Edge weights for each removed hyperedge */
-  ZOLTAN_ID_PTR Remove_Pin_GIDs; /* GIDs of vertices */
-  int *Remove_Pin_Procs;         /* Process owning each pin (Pin callbacks only) */
-  int nRemovePins;          /* total number of pins in removed edges */
+
+  /* This hyperedge list includes all hyperedges when LB_Eval uses ZHG, and
+     it includes only removed edges when Zoltan_PHG uses ZHG.
+   */
+  int nHedges;              /* # of hyperedges */
+  int globalHedges;         /* global number of hyperedges listed here */
+  int *edgeGNO;             /* edge global number */
+  int *Esize;               /* number of vertices in hyperedge */
+  float *Ewgt;              /* Edge weights for each hyperedge */
+  int *pinGNO;             /* pin global number NEW */
+  int *Pin_Procs;           /* Process owning each pin  */
+  int nPins;                /* total number of pins in listed edges */
+  int globalPins;           /* global number of pins */
+
   int nRecv_GNOs;           /* Number of GNOs in Recv_GNOs. */
   int *Recv_GNOs;           /* Vertex GNOs of vtxs in 2D decomposition
                                received from other processors in row.
@@ -164,6 +178,7 @@ struct Zoltan_HGraph {
                                with VtxPlan in building return lists. */
   ZOLTAN_COMM_OBJ *VtxPlan; /* Communication plan mapping GIDs to GNOs 
                                within row communicators. */
+
   HGraph HG;                /* Hypergraph for initial objects.       */
 };
 typedef struct Zoltan_HGraph ZHG;
@@ -195,18 +210,8 @@ extern int Zoltan_HG_Check        (ZZ*, HGraph*);
 extern void Zoltan_HG_Print(ZZ*, HGraph*, Partition, FILE*, char*);
 extern void Zoltan_HG_HGraph_Print(ZZ *zz, ZHG *, HGraph *, Partition, FILE *fp);
     
-struct PHGPartParamsStruct;  /* Forward declaration */
-
-extern int Zoltan_HG_Graph_Callbacks(ZZ *, ZHG *, int,
-  int, float, int, int *,
-  ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, float **, int *, ZOLTAN_ID_PTR *,
-  int **);
-extern int Zoltan_Call_Hypergraph_Pin_Query(ZZ *zz, int *num_lists,
-   int *num_pins, ZOLTAN_ID_PTR *edg_GID, int **row_ptr, 
-   ZOLTAN_ID_PTR *vtx_GID);
-int Zoltan_HG_ignore_some_edges(ZZ *, ZHG *, int, float, int, int *,
-  ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, int *, int *, float *, ZOLTAN_ID_PTR, int *);
-
+extern void Zoltan_Input_HG_Init (ZHG *);
+extern int Zoltan_Input_HG_Free  (ZHG *);
     
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

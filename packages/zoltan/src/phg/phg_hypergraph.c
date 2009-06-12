@@ -590,14 +590,79 @@ void Zoltan_HG_HGraph_Print(
   fprintf (fp, "Vertices (GID, LID, index)\n");
   for (i = 0; i < zoltan_hg->nObj; i++) {
     fprintf(fp, "(");
-    ZOLTAN_PRINT_GID(zz, &zoltan_hg->GIDs[i * num_gid]);
+    ZOLTAN_PRINT_GID(zz, &zoltan_hg->objGID[i * num_gid]);
     fprintf(fp, ", ");
-    ZOLTAN_PRINT_LID(zz, &zoltan_hg->LIDs[i * num_lid]);
+    ZOLTAN_PRINT_LID(zz, &zoltan_hg->objLID[i * num_lid]);
     fprintf(fp, ", %d)\n", i);
   }
   Zoltan_HG_Print(zz, hg, parts, fp, "Build");
   fflush(fp);
   Zoltan_Print_Sync_End(zz->Communicator, 1);
+}
+
+/****************************************************************************/
+void Zoltan_Input_HG_Init(ZHG *zhg)
+{
+  zhg->nObj = 0;
+  zhg->globalObj = 0;
+  zhg->objWeightDim = 0;
+  zhg->objWeight = NULL;
+  zhg->objGNO = NULL;
+  zhg->objGID = NULL;
+  zhg->objLID = NULL;
+  zhg->numHEdges= NULL;
+
+  zhg->fixed = NULL;
+
+  zhg->GnRepartVtx = 0;
+  zhg->GnRepartEdge = 0;
+
+  zhg->Input_Parts = NULL;
+  zhg->Output_Parts = NULL;
+
+  zhg->AppObjSizes = NULL;
+  zhg->showMoveVol = 0;
+
+  zhg->nHedges = 0;
+  zhg->globalHedges = 0;
+  zhg->edgeGNO = NULL;
+  zhg->Esize = NULL;
+  zhg->Ewgt = NULL;
+  zhg->pinGNO = NULL;
+  zhg->Pin_Procs = NULL;
+  zhg->nPins = 0;
+  zhg->globalPins = 0;
+
+  zhg->nRecv_GNOs = 0;
+  zhg->Recv_GNOs = NULL;
+  zhg->VtxPlan = NULL;
+
+  Zoltan_HG_HGraph_Init(&zhg->HG);
+}
+
+int Zoltan_Input_HG_Free(ZHG *zhg)
+{
+  Zoltan_HG_HGraph_Free(&zhg->HG);
+
+  ZOLTAN_FREE(&(zhg->objWeight));
+  ZOLTAN_FREE(&(zhg->objGNO));
+  ZOLTAN_FREE(&(zhg->objGID));
+  ZOLTAN_FREE(&(zhg->objLID));
+  ZOLTAN_FREE(&(zhg->numHEdges));
+  ZOLTAN_FREE(&(zhg->fixed));
+  ZOLTAN_FREE(&(zhg->Input_Parts));
+  ZOLTAN_FREE(&(zhg->Output_Parts));
+  ZOLTAN_FREE(&(zhg->AppObjSizes));
+  ZOLTAN_FREE(&(zhg->edgeGNO));
+  ZOLTAN_FREE(&(zhg->Esize));
+  ZOLTAN_FREE(&(zhg->Ewgt));
+  ZOLTAN_FREE(&(zhg->pinGNO));
+  ZOLTAN_FREE(&(zhg->Pin_Procs));
+  ZOLTAN_FREE(&(zhg->Recv_GNOs));
+
+  Zoltan_Comm_Destroy(&(zhg->VtxPlan));
+
+  return ZOLTAN_OK;
 }
 
 #ifdef __cplusplus

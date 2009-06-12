@@ -223,7 +223,7 @@ extern int Zoltan_PHG_Partition(ZZ*, HGraph*, int, float *, Partition,
 extern double Zoltan_PHG_Compute_NetCut(PHGComm*, HGraph*, Partition, int);
 extern double Zoltan_PHG_Compute_ConCut(PHGComm*, HGraph*, Partition, int, 
                                         int*);    
-extern int Zoltan_PHG_Removed_Cuts(ZZ *, ZHG *, double *);
+extern int Zoltan_PHG_Cuts(ZZ *, ZHG *, double *);
 
 extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, float *, int, 
                                          int, Partition);
@@ -240,13 +240,44 @@ extern int * Zoltan_PHG_2ways_hyperedge_partition (ZZ *, HGraph *, Partition, Zo
 
 /* Functions that are used in more than one PHG source file, 
    but not called from outside PHG. */
+
 #include "zz_heap.h"  /* defines type HEAP */
+
 int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
     int *part, int **cut, double *gain, HEAP *heap);
 
-int Zoltan_Convert_To_CSR( ZZ *zz, int num_pins, int *col_ptr,
-    int *num_lists, ZOLTAN_ID_PTR *vtx_GID,
-    int **row_ptr, ZOLTAN_ID_PTR *edg_GID);
+int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, int *gnos, int len, int randomize, int *num);
+
+int Zoltan_Get_Hypergraph_From_Queries(ZZ *zz, PHGPartParams *hgp, ZHG *zhg);
+
+int Zoltan_Hypergraph_Queries(ZZ *zz, int *num_lists, int *num_pins, ZOLTAN_ID_PTR *edg_GID,
+   int **row_ptr, ZOLTAN_ID_PTR *vtx_GID);
+
+int Zoltan_Graph_Queries( ZZ *zz, int numVertex, ZOLTAN_ID_PTR vgid, ZOLTAN_ID_PTR vlid,
+  int *nPins, int **num_nbors, ZOLTAN_ID_PTR *nbor_GIDs, int **nbor_Procs,
+  float **edgeWeights);
+
+
+#define MEMORY_ERROR { \
+  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error."); \
+  ierr = ZOLTAN_MEMERR; \
+  goto End; \
+}
+#define FATAL_ERROR(s) { \
+  ZOLTAN_PRINT_ERROR(zz->Proc, yo, s); \
+  ierr = ZOLTAN_FATAL; \
+  goto End; \
+}
+#define CHECK_FOR_MPI_ERROR(rc)  \
+  if (rc != MPI_SUCCESS){ \
+    MPI_Error_string(rc, phg_mpi_err_str, &phg_mpi_err_len);  \
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, phg_mpi_err_str); \
+    ierr = ZOLTAN_FATAL; \
+    goto End; \
+  }
+
+extern char phg_mpi_err_str[MPI_MAX_ERROR_STRING];
+extern int phg_mpi_err_len;
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
