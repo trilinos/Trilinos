@@ -1533,7 +1533,11 @@ LoopLimits Radial_Trisection_Inline_Mesh_Desc::get_tri_block_limits(long long l,
 
   new_location = the_location;
   switch(the_location) {
-    
+  
+  case ALL_NODES:{
+    ll = getLimits(the_location,0,div+nodeset_plus_1,0,div+nodeset_plus_1,0,nelz_tot+nodeset_plus_1,div+nodeset_plus_1,div+nodeset_plus_1);
+    break;
+  }
   case Z_AXIS:{
     ll = getLimits(EDGE4,0,div+nodeset_plus_1,0,div+nodeset_plus_1,0,nelz_tot+nodeset_plus_1,div+nodeset_plus_1,div+nodeset_plus_1);
     break;
