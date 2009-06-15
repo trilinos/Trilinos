@@ -102,7 +102,8 @@ libstokhos_a_DEPENDENCIES =
 am__objects_1 = Stokhos_Version.$(OBJEXT) \
 	Stokhos_MatrixFreeEpetraOp.$(OBJEXT) \
 	Stokhos_MeanEpetraOp.$(OBJEXT) \
-	Stokhos_SGModelEvaluator.$(OBJEXT)
+	Stokhos_SGModelEvaluator.$(OBJEXT) \
+	Stokhos_SGQuadModelEvaluator.$(OBJEXT)
 am__objects_2 =
 am_libstokhos_a_OBJECTS = $(am__objects_1) $(am__objects_2)
 libstokhos_a_OBJECTS = $(am_libstokhos_a_OBJECTS)
@@ -288,6 +289,7 @@ STOKHOS_H = \
 	$(srcdir)/Stokhos_MatrixFreeEpetraOp.hpp \
 	$(srcdir)/Stokhos_MeanEpetraOp.hpp \
 	$(srcdir)/Stokhos_SGModelEvaluator.hpp \
+	$(srcdir)/Stokhos_SGQuadModelEvaluator.hpp \
 	$(srcdir)/Stokhos_VectorOrthogPoly.hpp \
 	$(srcdir)/Stokhos_VectorOrthogPolyImp.hpp \
 	$(srcdir)/Stokhos_VectorOrthogPolyTraitsEpetra.hpp
@@ -296,7 +298,8 @@ STOKHOS = \
 	$(srcdir)/Stokhos_Version.cpp \
 	$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp \
 	$(srcdir)/Stokhos_MeanEpetraOp.cpp \
-	$(srcdir)/Stokhos_SGModelEvaluator.cpp
+	$(srcdir)/Stokhos_SGModelEvaluator.cpp \
+	$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp
 
 
 # ------------------------------------------------------------------------
@@ -450,6 +453,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_MatrixFreeEpetraOp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_MeanEpetraOp.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_SGModelEvaluator.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_SGQuadModelEvaluator.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/Stokhos_Version.Po@am__quote@
 
 .cpp.o:
@@ -521,6 +525,20 @@ Stokhos_SGModelEvaluator.obj: $(srcdir)/Stokhos_SGModelEvaluator.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stokhos_SGModelEvaluator.cpp' object='Stokhos_SGModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stokhos_SGModelEvaluator.obj `if test -f '$(srcdir)/Stokhos_SGModelEvaluator.cpp'; then $(CYGPATH_W) '$(srcdir)/Stokhos_SGModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stokhos_SGModelEvaluator.cpp'; fi`
+
+Stokhos_SGQuadModelEvaluator.o: $(srcdir)/Stokhos_SGQuadModelEvaluator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Stokhos_SGQuadModelEvaluator.o -MD -MP -MF $(DEPDIR)/Stokhos_SGQuadModelEvaluator.Tpo -c -o Stokhos_SGQuadModelEvaluator.o `test -f '$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp' || echo '$(srcdir)/'`$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Stokhos_SGQuadModelEvaluator.Tpo $(DEPDIR)/Stokhos_SGQuadModelEvaluator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp' object='Stokhos_SGQuadModelEvaluator.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stokhos_SGQuadModelEvaluator.o `test -f '$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp' || echo '$(srcdir)/'`$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp
+
+Stokhos_SGQuadModelEvaluator.obj: $(srcdir)/Stokhos_SGQuadModelEvaluator.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT Stokhos_SGQuadModelEvaluator.obj -MD -MP -MF $(DEPDIR)/Stokhos_SGQuadModelEvaluator.Tpo -c -o Stokhos_SGQuadModelEvaluator.obj `if test -f '$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp'; then $(CYGPATH_W) '$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/Stokhos_SGQuadModelEvaluator.Tpo $(DEPDIR)/Stokhos_SGQuadModelEvaluator.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp' object='Stokhos_SGQuadModelEvaluator.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o Stokhos_SGQuadModelEvaluator.obj `if test -f '$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp'; then $(CYGPATH_W) '$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp'; fi`
 install-includeHEADERS: $(include_HEADERS)
 	@$(NORMAL_INSTALL)
 	test -z "$(includedir)" || $(MKDIR_P) "$(DESTDIR)$(includedir)"

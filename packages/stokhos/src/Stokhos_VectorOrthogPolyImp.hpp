@@ -38,7 +38,7 @@ VectorOrthogPoly(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type,
 
 template <typename coeff_type>
 Stokhos::VectorOrthogPoly<coeff_type>::
-VectorOrthogPoly(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis, const typename Stokhos::VectorOrthogPolyTraits<coeff_type>::cloner_type& cloner)
+VectorOrthogPoly(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis, const typename traits_type::cloner_type& cloner)
   : basis_(basis),
     coeff_(basis->size())
 {
@@ -213,4 +213,39 @@ term2(ordinal_type dimension, ordinal_type order) const
   term[dimension] = order;
   ordinal_type index = basis.getIndex(term);
   return *(coeff_[index]);
+}
+
+template <typename coeff_type>
+void
+Stokhos::VectorOrthogPoly<coeff_type>::
+init(const value_type& val)
+{
+   ordinal_type sz = coeff_.size();
+  for (ordinal_type i=0; i<sz; i++)
+    traits_type::init(*(coeff_[i]), val);
+}
+
+template <typename coeff_type>
+void
+Stokhos::VectorOrthogPoly<coeff_type>::
+evaluate(const std::vector<value_type>& basis_values, coeff_type& result) const
+{
+  traits_type::init(result, value_type(0));
+  ordinal_type sz = coeff_.size();
+  for (ordinal_type i=0; i<sz; i++)
+    traits_type::update(result, basis_values[i], *(coeff_[i]));
+}
+
+template <typename coeff_type>
+void
+Stokhos::VectorOrthogPoly<coeff_type>::
+sumIntoAllTerms(const value_type& weight,
+		const std::vector<value_type>& basis_values,
+		const std::vector<value_type>& basis_norms,
+		const coeff_type& vec)
+{
+  ordinal_type sz = coeff_.size();
+  for (ordinal_type i=0; i<sz; i++)
+    traits_type::update(*(coeff_[i]), weight*basis_values[i]/basis_norms[i], 
+			vec);
 }

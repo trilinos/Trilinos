@@ -87,21 +87,13 @@ namespace Stokhos {
     //! Typename of cloner
     typedef EpetraVectorCloner cloner_type;
 
-  };
+    //! Initialize vector
+    static void init(Epetra_Vector& vec, double val) { vec.PutScalar(val); }
 
-  //! Specialization of VectorOrthogPolyTraits to Epetra_Operator coefficients
-  template <> 
-  class VectorOrthogPolyTraits<Epetra_Operator> {
-  public:
-    
-    //! Typename of values
-    typedef double value_type;
-
-    //! Typename of ordinals
-    typedef int ordinal_type;
-
-    //! Typename of cloner
-    typedef EpetraOperatorCloner cloner_type;
+    //! Update vector
+    static void update(Epetra_Vector& vec, double a, const Epetra_Vector& x) {
+      vec.Update(a,x,1.0); 
+    }
 
   };
 
@@ -118,6 +110,50 @@ namespace Stokhos {
 
     //! Typename of cloner
     typedef EpetraCrsMatrixCloner cloner_type;
+
+    //! Initialize matrix
+    static void init(Epetra_CrsMatrix& mat, double val) { mat.PutScalar(val); }
+
+    //! Update matrix
+    static void update(Epetra_CrsMatrix& mat, double a, 
+		       const Epetra_CrsMatrix& x) {
+      int num_col;
+      for (int i=0; i<mat.NumMyRows(); i++) {
+	mat.NumMyRowEntries(i, num_col);
+	for (int j=0; j<num_col; j++)
+	  mat[i][j] += a*x[i][j];
+      }
+    }
+
+  };
+
+  //! Specialization of VectorOrthogPolyTraits to Epetra_Operator coefficients
+  template <> 
+  class VectorOrthogPolyTraits<Epetra_Operator> {
+  public:
+    
+    //! Typename of values
+    typedef double value_type;
+
+    //! Typename of ordinals
+    typedef int ordinal_type;
+
+    //! Typename of cloner
+    typedef EpetraOperatorCloner cloner_type;
+
+    //! Initialize operator
+    static void init(Epetra_Operator& op, double val) { 
+      Epetra_CrsMatrix& mat = dynamic_cast<Epetra_CrsMatrix&>(op);
+      VectorOrthogPolyTraits<Epetra_CrsMatrix>::init(mat, val);
+    }
+
+    //! Update operator
+    static void update(Epetra_Operator& op, double a, 
+		       const Epetra_Operator& x_op) {
+      Epetra_CrsMatrix& mat = dynamic_cast<Epetra_CrsMatrix&>(op);
+      const Epetra_CrsMatrix& x = dynamic_cast<const Epetra_CrsMatrix&>(x_op);
+      VectorOrthogPolyTraits<Epetra_CrsMatrix>::update(mat, a, x);
+    }
 
   };
 }

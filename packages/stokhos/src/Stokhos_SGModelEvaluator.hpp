@@ -88,6 +88,7 @@ namespace Stokhos {
       const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
       const std::vector<int>& sg_p_index,
+      const std::vector<int>& sg_g_index,
       const Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > >& initial_p_sg_coeffs_,
       const Teuchos::RCP<Teuchos::ParameterList>& params_);
 
@@ -102,6 +103,9 @@ namespace Stokhos {
 
     //! Return parameter vector map
     Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
+
+    //! Return response map
+    Teuchos::RCP<const Epetra_Map> get_g_map(int l) const;
 
     //! Return array of parameter names
     Teuchos::RCP<const Teuchos::Array<std::string> > 
@@ -145,6 +149,9 @@ namespace Stokhos {
     //! Index of stochastic parameters
     std::vector<int> sg_p_index;
 
+    //! Index of stochastic responses
+    std::vector<int> sg_g_index;
+
     //! Algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> params;
 
@@ -166,7 +173,7 @@ namespace Stokhos {
     //! Block SG residual map
     Teuchos::RCP<const Epetra_Map> sg_f_map;
 
-    //! Number of parameter vectors
+    //! Number of stochastic parameter vectors
     int num_p;
 
     //! Block SG parameter map
@@ -174,6 +181,12 @@ namespace Stokhos {
 
     //! SG coefficient parameter names
     Teuchos::Array< Teuchos::RCP< Teuchos::Array<std::string> > > sg_p_names;
+
+    //! Number of stochastic response vectors
+    int num_g;
+
+    //! Block SG response map
+    Teuchos::Array< Teuchos::RCP<const Epetra_Map> > sg_g_map;
 
     //! Triple product tensor
     Teuchos::RCP< const Stokhos::Sparse3Tensor<int, double> > Cijk;
@@ -192,6 +205,9 @@ namespace Stokhos {
 
     //! W stochastic Galerkin components
     mutable Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > W_sg_blocks;
+
+    //! g stochastic Galerkin components
+    mutable Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Vector> > > g_sg_blocks;
 
     //! Method for creating block Jacobian
     enum EJacobianMethod {

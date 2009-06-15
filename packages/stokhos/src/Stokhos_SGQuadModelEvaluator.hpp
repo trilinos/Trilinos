@@ -1,0 +1,144 @@
+// $Id$ 
+// $Source$ 
+// @HEADER
+// ***********************************************************************
+// 
+//                           Stokhos Package
+//                 Copyright (2008) Sandia Corporation
+// 
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//  
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+// 
+// ***********************************************************************
+// @HEADER
+
+#ifndef STOKHOS_SGQUADMODELEVALUATOR_HPP
+#define STOKHOS_SGQUADMODELEVALUATOR_HPP
+
+#include "EpetraExt_ModelEvaluator.h"
+
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
+#include "Stokhos_Quadrature.hpp"
+
+namespace Stokhos {
+
+  /*!
+   * \brief ModelEvaluator adaptor that implements the stochastic Galerkin
+   * residual and Jacobian computations using quadrature.
+   */
+  /*!
+   * This class provides a ModelEvaluator implementation to adapt a non-SG
+   * capable ModelEvaluator to one that can be used by 
+   * Stokhos::SGModelEvaluator.  It does so be implementing the SG residual
+   * and Jacobian calculations by sampling a deterministic ModelEvaluator
+   * at a set of quadrature points.
+   */
+  class SGQuadModelEvaluator : public EpetraExt::ModelEvaluator {
+  public:
+
+    // Constructor
+    SGQuadModelEvaluator(
+	      const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
+	      const Teuchos::RCP< const Stokhos::Quadrature<int,double> >& quad,
+	      const std::vector<int>& sg_p_index,
+	      const std::vector<int>& sg_g_index);
+    
+    /** \name Overridden from EpetraExt::ModelEvaluator . */
+    //@{
+
+    //! Return solution vector map
+    Teuchos::RCP<const Epetra_Map> get_x_map() const;
+
+    //! Return residual vector map
+    Teuchos::RCP<const Epetra_Map> get_f_map() const;
+
+    //! Return parameter vector map
+    Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
+
+    //! Return observation vector map
+    Teuchos::RCP<const Epetra_Map> get_g_map(int l) const;
+
+    //! Return array of parameter names
+    Teuchos::RCP<const Teuchos::Array<std::string> > 
+    get_p_names(int l) const;
+
+    //! Return initial solution
+    Teuchos::RCP<const Epetra_Vector> get_x_init() const;
+
+    //! Return initial parameters
+    Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
+
+    //! Create W = alpha*M + beta*J matrix
+    Teuchos::RCP<Epetra_Operator> create_W() const;
+
+    //! Create InArgs
+    InArgs createInArgs() const;
+
+    //! Create OutArgs
+    OutArgs createOutArgs() const;
+
+    //! Evaluate model on InArgs
+    void evalModel(const InArgs& inArgs, const OutArgs& outArgs) const;
+
+    //@}
+
+  protected:
+
+    //! Underlying model evaluator
+    Teuchos::RCP<EpetraExt::ModelEvaluator> me;
+
+    //! Quadrature class
+    Teuchos::RCP< const Stokhos::Quadrature<int,double> > quad;
+
+    //! Index of stochastic parameters
+    std::vector<int> sg_p_index;
+
+    //! Index of stochastic responses
+    std::vector<int> sg_g_index;
+
+    //! Number of parameter vectors
+    int num_p;
+
+    //! Number of response vectors
+    int num_g;
+
+    //! Time derivative vector
+    Teuchos::RCP<Epetra_Vector> x_dot_qp;
+
+    //! Solution vector
+    Teuchos::RCP<Epetra_Vector> x_qp;
+
+    //! Parameter vectors
+    Teuchos::Array< Teuchos::RCP<Epetra_Vector> > p_qp;
+
+    //! Residual vector
+    Teuchos::RCP<Epetra_Vector> f_qp;
+
+    //! W operaator
+    Teuchos::RCP<Epetra_Operator> W_qp;
+
+    //! Response vectors
+    Teuchos::Array< Teuchos::RCP<Epetra_Vector> > g_qp;
+
+  };
+
+}
+
+#endif // STOKHOS_SGQUADMODELEVALUATOR_HPP

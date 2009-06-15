@@ -44,11 +44,13 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
      const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
      const std::vector<int>& sg_p_index_,
+     const std::vector<int>& sg_g_index_,
      const Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > >& initial_p_sg_coeffs_,
      const Teuchos::RCP<Teuchos::ParameterList>& params_) 
   : me(me_),
     sg_basis(sg_basis_),
     sg_p_index(sg_p_index_),
+    sg_g_index(sg_g_index_),
     params(params_),
     num_sg_blocks(sg_basis->size()),
     x_map(me->get_x_map()),
@@ -59,12 +61,15 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     num_p(sg_p_index.size()),
     sg_p_map(num_p),
     sg_p_names(num_p),
+    num_g(sg_g_index.size()),
+    sg_g_map(num_g),
     Cijk(sg_basis->getTripleProductTensor()),
     x_dot_sg_blocks(),
     x_sg_blocks(),
     p_sg_blocks(num_p),
     f_sg_blocks(),
     W_sg_blocks(),
+    g_sg_blocks(num_g),
     jacobianMethod(MATRIX_FREE),
     sg_p_init(num_p)
 {
@@ -175,6 +180,26 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
 
    }
 
+   // Responses -- The idea here is to replace the response vectors
+   // specified by sg_g_index with response vectors that are the 
+   // concatenation of all of SG components of each response vector.
+   // This way the coefficients of the response expansions become
+   // responses.
+
+   // Create response maps
+   for (int i=0; i<num_g; i++) {
+     Teuchos::RCP<const Epetra_Map> g_map = me->get_g_map(sg_g_index[i]);
+     sg_g_map[i] = 
+       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*g_map,
+							      rowIndex,
+							      *sg_comm));
+
+     // Create p SG blocks
+     g_sg_blocks[i] = 
+       Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
+
+   }
+
    // Create initial x
    sg_x_init = Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_x_map));
    Teuchos::RCP<const Epetra_Vector> xinit = me->get_x_init();
@@ -210,6 +235,19 @@ Stokhos::SGModelEvaluator::get_p_map(int l) const
   }
   else
     return me->get_p_map(l);
+}
+
+Teuchos::RCP<const Epetra_Map>
+Stokhos::SGModelEvaluator::get_g_map(int l) const
+{
+  std::vector<int>::const_iterator it
+    = std::find(sg_g_index.begin(), sg_g_index.end(), l);
+  if (it != sg_g_index.end()) {
+    int offset = it - sg_g_index.begin();
+    return sg_g_map[offset];
+  }
+  else
+    return me->get_g_map(l);
 }
 
 Teuchos::RCP<const Teuchos::Array<std::string> >
@@ -328,7 +366,8 @@ Stokhos::SGModelEvaluator::createOutArgs() const
                      "Underlying model evaluator must support W!" << std::endl);
 
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(me_outargs.Np(), 0); // Currently no responses g
+  outArgs.set_Np_Ng(me_outargs.Np(), me_outargs.Ng());
+  outArgs.set_Ng_sg(0);
   outArgs.setSupports(OUT_ARG_f, true);
   outArgs.setSupports(OUT_ARG_W, true);
   
@@ -358,8 +397,11 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
       precFactory->compute(W_sg_blocks->getCoeffPtr(0));    
     W_mean->setMeanOperator(prec);
 
-    // We can now quit unless a fill of f was also requested
-    if (f_out == Teuchos::null)
+    // We can now quit unless a fill of f or g was also requested
+    bool done = (f_out == Teuchos::null);
+    for (int i=0; i<outArgs.Ng(); i++)
+      done = (done && (outArgs.get_g(i) == Teuchos::null));
+    if (done)
       return;
   }
 
@@ -423,6 +465,24 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
   }
   if (W_out != Teuchos::null && !eval_mean)
     me_outargs.set_W_sg(W_sg_blocks);
+
+  // Pass responses
+  for (int i=0; i<outArgs.Ng(); i++) {
+    Teuchos::RCP<Epetra_Vector> g = outArgs.get_g(i);
+    if (g != Teuchos::null) {
+      std::vector<int>::const_iterator it = 
+	std::find(sg_g_index.begin(), sg_g_index.end(), i);
+      if (it != sg_g_index.end()) {
+	int offset = it - sg_g_index.begin();
+	EpetraExt::BlockVector g_sg(View, *(me->get_g_map(i)), *g);
+	for (unsigned int j=0; j<num_sg_blocks; j++)
+	  g_sg_blocks[offset]->setCoeffPtr(j, g_sg.GetBlock(j));
+	me_outargs.set_g_sg(offset, g_sg_blocks[offset]);
+      }
+      else
+	me_outargs.set_g(i, g);
+    }
+  }
 
   // Compute the functions
   me->evalModel(me_inargs, me_outargs);

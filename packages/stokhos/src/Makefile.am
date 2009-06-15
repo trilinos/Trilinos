@@ -80,6 +80,7 @@ STOKHOS_H = \
 	$(srcdir)/Stokhos_MatrixFreeEpetraOp.hpp \
 	$(srcdir)/Stokhos_MeanEpetraOp.hpp \
 	$(srcdir)/Stokhos_SGModelEvaluator.hpp \
+	$(srcdir)/Stokhos_SGQuadModelEvaluator.hpp \
 	$(srcdir)/Stokhos_VectorOrthogPoly.hpp \
 	$(srcdir)/Stokhos_VectorOrthogPolyImp.hpp \
 	$(srcdir)/Stokhos_VectorOrthogPolyTraitsEpetra.hpp
@@ -88,7 +89,8 @@ STOKHOS = \
 	$(srcdir)/Stokhos_Version.cpp \
 	$(srcdir)/Stokhos_MatrixFreeEpetraOp.cpp \
 	$(srcdir)/Stokhos_MeanEpetraOp.cpp \
-	$(srcdir)/Stokhos_SGModelEvaluator.cpp
+	$(srcdir)/Stokhos_SGModelEvaluator.cpp \
+	$(srcdir)/Stokhos_SGQuadModelEvaluator.cpp
 
 # Add packages that this package is dependent on
 include $(top_builddir)/Makefile.export.stokhos

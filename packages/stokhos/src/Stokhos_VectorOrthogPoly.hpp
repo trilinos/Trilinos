@@ -49,11 +49,14 @@ namespace Stokhos {
   class VectorOrthogPoly {
   public:
 
+    //! Typename of traits
+    typedef Stokhos::VectorOrthogPolyTraits<coeff_type> traits_type;
+
     //! Typename of values
-    typedef typename Stokhos::VectorOrthogPolyTraits<coeff_type>::value_type value_type;
+    typedef typename traits_type::value_type value_type;
 
     //! Typename of ordinals
-    typedef typename Stokhos::VectorOrthogPolyTraits<coeff_type>::ordinal_type ordinal_type;
+    typedef typename traits_type::ordinal_type ordinal_type;
 
     /*! 
      * \brief Create a polynomial for basis \c basis with empty 
@@ -67,7 +70,7 @@ namespace Stokhos {
      * for the coefficient.
      */
     VectorOrthogPoly(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
-	       const typename Stokhos::VectorOrthogPolyTraits<coeff_type>::cloner_type& cloner);
+	       const typename traits_type::cloner_type& cloner);
 
     //! Destructor
     ~VectorOrthogPoly();
@@ -123,6 +126,19 @@ namespace Stokhos {
 
     //! Get term for dimension \c dimension and order \c order
     const coeff_type& term2(ordinal_type dimension, ordinal_type order) const;
+
+    //! Initialize polynomial coefficients
+    void init(const value_type& val);
+
+    //! Evaluate polynomial at supplied basis values
+    void evaluate(const std::vector<value_type>& basis_values, 
+		  coeff_type& result) const;
+
+    //! Evaluate polynomial at supplied basis values
+    void sumIntoAllTerms(const value_type& weight,
+			 const std::vector<value_type>& basis_values, 
+			 const std::vector<value_type>& basis_norms,
+			 const coeff_type& vec);
 
   private:
 
