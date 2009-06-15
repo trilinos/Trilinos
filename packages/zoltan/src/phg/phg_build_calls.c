@@ -58,6 +58,7 @@ int *sendIntBuf = NULL;
 int *recvIntBuf = NULL;
 int *procBuf= NULL;
 int *edgeBuf= NULL;
+int *pinPairs= NULL;
 int vgnos[2];
 float *gid_weights = NULL;
 float *src, *dest;
@@ -749,7 +750,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
     /* Create a lookup object for all vertex pairs in graph */
 
-    int *pinPairs = (int *)ZOLTAN_MALLOC(sizeof(int) * 2 * zhg->nPins);
+    pinPairs = (int *)ZOLTAN_MALLOC(sizeof(int) * 2 * zhg->nPins);
     if (zhg->nPins && !pinPairs) MEMORY_ERROR;
 
     pinIdx = pinPairs;
