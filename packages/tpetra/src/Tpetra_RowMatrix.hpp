@@ -169,6 +169,36 @@ namespace Tpetra
                                         const Teuchos::ArrayView<Scalar> &values,
                                         Teuchos_Ordinal &numEntries) const = 0;
 
+      //! Get a non-persisting view of the elements in a specified global row of the graph.
+      /*!
+        \param GlobalRow - (In) Global row from which to retrieve matrix entries.
+        \param Indices - (Out) Indices for the global row.
+        \param Values - (Out) Values for the global row.
+
+         Note: If \c GlobalRow does not belong to this node, then \c indices is unchanged and \c NumIndices is 
+         returned as Teuchos::OrdinalTraits<Teuchos_Ordinal>::invalid().
+
+        \pre indicesAreGlobal()==true
+       */
+      virtual void extractGlobalRowConstView(GlobalOrdinal GlobalRow, 
+                                             Teuchos::ArrayView<const GlobalOrdinal> &indices,
+                                             Teuchos::ArrayView<const Scalar> &values) const = 0;
+
+      //! Get a view of the elements in a specified local row of the graph.
+      /*!
+        \param LocalRow - (In) Local row from which to retrieve matrix entries.
+        \param Indices - (Out) Indices for the local row.
+        \param Values - (Out) Values for the local row.
+
+         Note: If \c LocalRow is not valid for this node, then \c indices is unchanged and \c NumIndices is 
+         returned as Teuchos::OrdinalTraits<Teuchos_Ordinal>::invalid().
+
+        \pre indicesAreLocal()==true
+       */
+      virtual void extractMyRowConstView(LocalOrdinal LocalRow, 
+                                         Teuchos::ArrayView<const LocalOrdinal> &indices,
+                                         Teuchos::ArrayView<const Scalar> &values) const = 0;
+
       //@}
 
       //! @name I/O Methods

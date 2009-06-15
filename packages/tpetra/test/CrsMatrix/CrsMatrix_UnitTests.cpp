@@ -84,9 +84,15 @@ namespace {
   { \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
     ArrayView<const GO> STMYGIDS = matrix.getRowMap().getMyGlobalEntries(); \
+    ArrayView<const LO> loview; \
+    ArrayView<const Scalar> sview; \
     Teuchos_Ordinal STMAX = 0; \
     for (Teuchos_Ordinal STR=0; STR<matrix.numLocalRows(); ++STR) { \
-      TEST_EQUALITY( matrix.numEntriesForMyRow(STR), matrix.numEntriesForGlobalRow( STMYGIDS[STR] ) ); \
+      LO numEntries = matrix.numEntriesForMyRow(STR); \
+      TEST_EQUALITY( numEntries, matrix.numEntriesForGlobalRow( STMYGIDS[STR] ) ); \
+      matrix.extractMyRowConstView(0,loview,sview); \
+      TEST_EQUALITY( loview.size(), numEntries ); \
+      TEST_EQUALITY(  sview.size(), numEntries ); \
       STMAX = std::max( STMAX, matrix.numEntriesForMyRow(STR) ); \
     } \
     TEST_EQUALITY( matrix.myMaxNumRowEntries(), STMAX ); \
@@ -155,6 +161,7 @@ namespace {
       TEST_THROW(zero_crs->insertGlobalValues(0,tuple<GO>(0),tuple<Scalar>(ST::one())), std::runtime_error); // submit after fill
       zero = zero_crs;
     }
+    STD_TESTS((*zero));
     TEST_THROW(zero->apply(mv2,mv1)            , std::runtime_error); // MVs have different number of vectors
     TEST_THROW(zero->apply(mv2,mv3)            , std::runtime_error); // MVs have different number of vectors
   }
@@ -365,6 +372,7 @@ namespace {
       bool StaticProfile = (T & 1) == 1;
       bool OptimizeStorage = (T & 2) == 2;
       CrsMatrix<Scalar,LO,GO> matrix(rmap,cmap, ginds.size(),StaticProfile);   // only allocate as much room as necessary
+      RowMatrix<Scalar,LO,GO> &rowmatrix = matrix;
       Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
       ArrayView<const GO> CGView; ArrayView<const LO> CLView; ArrayView<const Scalar> CSView;
       ArrayView<GO> GView; ArrayView<LO> LView; ArrayView<Scalar> SView;
@@ -412,7 +420,7 @@ namespace {
       TEST_COMPARE_ARRAYS( GCopy(0,numentries), ginds );
       TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
       // 
-      STD_TESTS(matrix);
+      STD_TESTS(rowmatrix);
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
