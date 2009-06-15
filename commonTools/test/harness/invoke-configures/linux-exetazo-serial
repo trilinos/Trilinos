@@ -53,6 +53,7 @@ FFLAGS="-O3 -fPIC" \
 --enable-phalanx \
 --disable-phdmesh \
 --enable-pytrilinos \
+--disable-pytrilinos-tests \
 --enable-rbgen \
 --enable-rythmos \
 --enable-shards \

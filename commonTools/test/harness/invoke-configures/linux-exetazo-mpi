@@ -65,6 +65,7 @@ FFLAGS="-O3 -fPIC" \
 --enable-phdmesh \
 --enable-pliris \
 --enable-pytrilinos \
+--disable-pytrilinos-tests \
 --enable-rbgen \
 --enable-rtop \
 --enable-rythmos \
