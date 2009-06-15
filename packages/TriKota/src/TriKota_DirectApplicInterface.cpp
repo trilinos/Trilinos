@@ -30,7 +30,7 @@ TriKota::DirectApplicInterface::DirectApplicInterface(
 
     Model& first_model = *(problem_db_.model_list().begin());
     int num_dakota_vars =  first_model.acv();
-    Dakota::RealDenseVector drv(num_dakota_vars);
+    Dakota::RealVector drv(num_dakota_vars);
 
     TEST_FOR_EXCEPTION(num_dakota_vars > numParameters, logic_error,
                        "TriKota Adapter Error: number of parameters in ModelEvaluator  "
