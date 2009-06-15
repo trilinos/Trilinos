@@ -939,8 +939,8 @@ objects_by_partition(ZZ *zz, int num_obj, int *part, int *nparts, int *nonempty)
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  max_part = part[0];
-  for (i=1; i < num_obj; i++){
+  max_part = 0;
+  for (i=0; i < num_obj; i++){
     if (part[i] > max_part) max_part = part[i];
   }
 
