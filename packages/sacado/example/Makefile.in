@@ -499,6 +499,17 @@ PROBLEM = \
 	$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp \
 	$(FEAPP_PATH)/FEApp_ProblemFactory.cpp
 
+RESPONSE_H = \
+	$(FEAPP_PATH)/FEApp_AbstractResponseFunction.hpp \
+	$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.hpp \
+	$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.hpp \
+	$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.hpp
+
+RESPONSE = \
+	$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp \
+	$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp \
+	$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp
+
 MESH_H = \
 	$(FEAPP_PATH)/FEApp_Mesh.hpp
 
@@ -544,6 +555,7 @@ FEAPP_H = \
 	$(PDE_H) \
 	$(BC_H) \
 	$(PROBLEM_H) \
+	$(RESPONSE_H) \
 	$(MESH_H) \
 	$(FILL_H) \
 	$(DISC_H) \
@@ -557,6 +569,7 @@ FEAPP = \
 	$(PDE) \
 	$(BC) \
 	$(PROBLEM) \
+	$(RESPONSE) \
 	$(MESH) \
 	$(FILL) \
 	$(DISC) \
