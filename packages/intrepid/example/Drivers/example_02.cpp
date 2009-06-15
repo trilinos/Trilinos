@@ -749,7 +749,7 @@ int main(int argc, char *argv[]) {
 // ************************** Compute element HCurl mass matrices *******************************
 
      // transform to physical coordinates 
-      fst::HCURLtransformVALUE<double>(hexCValsTransformed, hexJacobInv, hexEdgeSigns,
+      fst::HCURLtransformVALUE<double>(hexCValsTransformed, hexJacobInv, 
                                    hexCVals);
 
      // multiply by weighted measure
@@ -760,6 +760,9 @@ int main(int argc, char *argv[]) {
       fst::integrate<double>(massMatrixC,
                              hexCValsTransformed, hexCValsTransformedWeighted,
                              COMP_CPP);
+     // apply edge signs
+      fst::applyLeftFieldSigns<double>(massMatrixC, hexEdgeSigns);
+      fst::applyRightFieldSigns<double>(massMatrixC, hexEdgeSigns);
 
      // assemble into global matrix
       int err = 0;
@@ -779,7 +782,7 @@ int main(int argc, char *argv[]) {
 
      // transform to physical coordinates 
       fst::HDIVtransformVALUE<double>(hexDValsTransformed, hexJacobian, hexJacobDet,
-                                   hexFaceSigns, hexDVals);
+                                   hexDVals);
 
      // multiply by weighted measure
       fst::multiplyMeasure<double>(hexDValsTransformedWeighted,
@@ -789,6 +792,9 @@ int main(int argc, char *argv[]) {
       fst::integrate<double>(massMatrixD,
                              hexDValsTransformed, hexDValsTransformedWeighted,
                              COMP_CPP);
+     // apply face signs
+      fst::applyLeftFieldSigns<double>(massMatrixD, hexFaceSigns);
+      fst::applyRightFieldSigns<double>(massMatrixD, hexFaceSigns);
 
      // assemble into global matrix
       err = 0;
@@ -807,7 +813,7 @@ int main(int argc, char *argv[]) {
 // ************************ Compute element HDiv stiffness matrices *****************************
 
       // transform to physical coordinates 
-      fst::HDIVtransformDIV<double>(hexDivsTransformed, hexJacobDet, hexFaceSigns,
+      fst::HDIVtransformDIV<double>(hexDivsTransformed, hexJacobDet,
                                     hexDivs);
 
      // multiply by weighted measure
@@ -818,6 +824,10 @@ int main(int argc, char *argv[]) {
       fst::integrate<double>(stiffMatrixD,
                              hexDivsTransformed, hexDivsTransformedWeighted,
                              COMP_CPP);
+
+     // apply face signs
+      fst::applyLeftFieldSigns<double>(stiffMatrixD, hexFaceSigns);
+      fst::applyRightFieldSigns<double>(stiffMatrixD, hexFaceSigns);
 
      // assemble into global matrix
       err = 0;

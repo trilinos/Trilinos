@@ -645,7 +645,7 @@ int main(int argc, char *argv[]) {
 // ************************** Compute element HCurl mass matrices *******************************
 
      // transform to physical coordinates 
-      fst::HCURLtransformVALUE<double>(hexCValsTransformed, hexJacobInv, hexEdgeSigns,
+      fst::HCURLtransformVALUE<double>(hexCValsTransformed, hexJacobInv, 
                                    hexCVals);
 
      // multiply by weighted measure
@@ -656,6 +656,11 @@ int main(int argc, char *argv[]) {
       fst::integrate<double>(massMatrixC,
                              hexCValsTransformed, hexCValsTransformedWeighted,
                              COMP_CPP);
+
+     // apply edge signs
+      fst::applyLeftFieldSigns<double>(massMatrixC, hexEdgeSigns);
+      fst::applyRightFieldSigns<double>(massMatrixC, hexEdgeSigns);
+
 
      // assemble into global matrix
       err = 0;
@@ -675,7 +680,7 @@ int main(int argc, char *argv[]) {
 
       // transform to physical coordinates 
       fst::HCURLtransformCURL<double>(hexCurlsTransformed, hexJacobian, hexJacobDet, 
-                                   hexEdgeSigns, hexCurls);
+                                       hexCurls);
 
       // combine mu value with weighted measure
       for (int nC = 0; nC < numCells; nC++){
@@ -692,6 +697,10 @@ int main(int argc, char *argv[]) {
       fst::integrate<double>(stiffMatrixC,
                              hexCurlsTransformed, hexCurlsTransformedWeighted,
                              COMP_CPP);
+
+     // apply edge signs
+     fst::applyLeftFieldSigns<double>(stiffMatrixC, hexEdgeSigns);
+     fst::applyRightFieldSigns<double>(stiffMatrixC, hexEdgeSigns);
 
      // assemble into global matrix
       err = 0;
