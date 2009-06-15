@@ -202,6 +202,13 @@ void ModelEvaluator::OutArgs::_set_Np_Ng(int Np, int Ng)
   }
 }
 
+void ModelEvaluator::OutArgs::_set_Ng_sg(int Ng_sg)
+{
+  if(Ng_sg) {
+    g_sg_.resize(Ng_sg);
+  }
+}
+
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsMembers arg, bool supports )
 {
@@ -362,6 +369,20 @@ void ModelEvaluator::OutArgs::assert_j(int j) const
     !( 0 <= j && j < Ng() ), std::logic_error
     ,"EpetraExt::ModelEvaluator::OutArgs::assert_j(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
     "The auxiliary function g(j) index j = " << j << " is not in the range [0,"<<Ng()-1<<"]!"
+    );
+}
+
+void ModelEvaluator::OutArgs::assert_j_sg(int j) const
+{
+  TEST_FOR_EXCEPTION(
+    Ng_sg()==0, std::logic_error
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_j_sg(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
+    "no stochastic Galerkin auxiliary functions g_sg(j) are supported!!"
+    );
+  TEST_FOR_EXCEPTION(
+    !( 0 <= j && j < Ng_sg() ), std::logic_error
+    ,"EpetraExt::ModelEvaluator::OutArgs::assert_j_sg(j): model = \'"<<modelEvalDescription_<<"\':  Error, "
+    "The stochastic Galerkin auxiliary function g_sg(j) index j = " << j << " is not in the range [0,"<<Ng_sg()-1<<"]!"
     );
 }
 

@@ -420,6 +420,8 @@ public:
     int Np() const;
     /** \brief .  */
     int Ng() const;
+    /** \brief Number of stochastic Galerkin parameters  */
+    int Ng_sg() const;
     /** \brief. */
     bool supports(EOutArgsMembers arg) const;
     /** \brief <tt>0 <= l && l < Np()</tt>.  */
@@ -438,6 +440,12 @@ public:
     void set_g( int j, const Evaluation<Epetra_Vector> &g_j );
     /** \brief Get <tt>g(j)</tt> where <tt>0 <= j && j < this->Ng()</tt>.  */
     Evaluation<Epetra_Vector> get_g(int j) const;
+    /** \brief Set stochastic Galerkin vector polynomial response. */
+    /** <tt>0 <= j && j < this->Ng_sg()</tt>.  */
+    void set_g_sg( int j, const sg_vector_t &g_sg_j );
+    /** \brief Get stochastic Galerkin vector polynomial response. */
+    /** <tt>0 <= j && j < this->Ng_sg()</tt>.  */
+    sg_vector_t get_g_sg(int j) const;
     /** \brief. */
     void set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W );
     /** \brief. */
@@ -488,6 +496,8 @@ public:
     /** \brief . */
     void _set_Np_Ng(int Np, int Ng);
     /** \brief . */
+    void _set_Ng_sg(int Ng_sg);
+    /** \brief . */
     void _setSupports( EOutArgsMembers arg, bool supports );
     /** \brief . */
     void _setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& );
@@ -510,6 +520,7 @@ public:
   private:
     // types
     typedef Teuchos::Array<Evaluation<Epetra_Vector> > g_t;
+    typedef Teuchos::Array<sg_vector_t > g_sg_t;
     typedef Teuchos::Array<Derivative> deriv_t;
     typedef Teuchos::Array<DerivativeProperties> deriv_properties_t;
     typedef Teuchos::Array<DerivativeSupport> supports_t;
@@ -522,6 +533,7 @@ public:
     supports_t supports_DgDp_; // Ng x Np
     Evaluation<Epetra_Vector> f_;
     g_t g_;
+    g_sg_t g_sg_;
     Teuchos::RefCountPtr<Epetra_Operator> W_;
     DerivativeProperties W_properties_;
     deriv_t DfDp_; // Np
@@ -543,6 +555,7 @@ public:
     void assert_supports(EOutArgsDgDp arg, int j, int l) const;
     void assert_l(int l) const;
     void assert_j(int j) const;
+    void assert_j_sg(int j) const;
   };
 
   //@}
@@ -699,6 +712,8 @@ protected:
     /** \brief . */
     void set_Np_Ng(int Np, int Ng);
     /** \brief . */
+    void set_Ng_sg(int Ng_sg);
+    /** \brief . */
     void setSupports( EOutArgsMembers arg, bool supports = true );
     /** \brief . */
     void setSupports(EOutArgsDfDp arg, int l, const DerivativeSupport& );
@@ -806,6 +821,10 @@ std::string ModelEvaluator::InArgs::modelEvalDescription() const
 inline
 int ModelEvaluator::InArgs::Np() const
 { return p_.size(); }
+
+inline
+int ModelEvaluator::InArgs::Np_sg() const
+{ return p_sg_.size(); }
 
 inline
 void ModelEvaluator::InArgs::set_x_dot( const Teuchos::RefCountPtr<const Epetra_Vector> &x_dot )
@@ -940,6 +959,12 @@ int ModelEvaluator::OutArgs::Ng() const
 }
 
 inline
+int ModelEvaluator::OutArgs::Ng_sg() const
+{ 
+  return g_sg_.size();
+}
+
+inline
 void ModelEvaluator::OutArgs::set_f( const Evaluation<Epetra_Vector> &f ) { f_ = f; }
 
 inline
@@ -959,6 +984,21 @@ ModelEvaluator::OutArgs::get_g(int j) const
 {
   assert_j(j);
   return g_[j];
+}
+
+inline
+void ModelEvaluator::OutArgs::set_g_sg( int j, const sg_vector_t &g_sg_j )
+{
+  assert_j(j);
+  g_sg_[j] = g_sg_j;
+}
+
+inline
+ModelEvaluator::OutArgs::sg_vector_t
+ModelEvaluator::OutArgs::get_g_sg(int j) const
+{
+  assert_j_sg(j);
+  return g_sg_[j];
 }
 
 inline
@@ -1124,6 +1164,10 @@ void ModelEvaluator::OutArgsSetup::setModelEvalDescription( const std::string &m
 inline
 void ModelEvaluator::OutArgsSetup::set_Np_Ng(int Np, int Ng)
 { this->_set_Np_Ng(Np,Ng); }
+
+inline
+void ModelEvaluator::OutArgsSetup::set_Ng_sg(int Ng_sg)
+{ this->_set_Ng_sg(Ng_sg); }
 
 inline
 void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsMembers arg, bool supports )
