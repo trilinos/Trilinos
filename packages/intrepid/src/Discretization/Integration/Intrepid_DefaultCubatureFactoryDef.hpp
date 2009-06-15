@@ -62,8 +62,8 @@ Teuchos::RCP<Cubature<Scalar,ArrayType> > DefaultCubatureFactory<Scalar,ArrayTyp
                           ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       {
       std::vector< Teuchos::RCP< Cubature<Scalar,ArrayType> > > lineCubs(2);
-      lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<double>(degree[0]));
-      lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<double>(degree[1]));
+      lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<Scalar,ArrayType>(degree[0]));
+      lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<Scalar,ArrayType>(degree[1]));
       pickCubature = Teuchos::rcp(new CubatureTensor<Scalar,ArrayType>(lineCubs));
       }
       break;
@@ -79,9 +79,9 @@ Teuchos::RCP<Cubature<Scalar,ArrayType> > DefaultCubatureFactory<Scalar,ArrayTyp
                           ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.");
       {
       std::vector< Teuchos::RCP< Cubature<Scalar,ArrayType> > > lineCubs(3);
-      lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<double>(degree[0]));
-      lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<double>(degree[1]));
-      lineCubs[2]  = Teuchos::rcp(new CubatureDirectLineGauss<double>(degree[2]));
+      lineCubs[0]  = Teuchos::rcp(new CubatureDirectLineGauss<Scalar,ArrayType>(degree[0]));
+      lineCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<Scalar,ArrayType>(degree[1]));
+      lineCubs[2]  = Teuchos::rcp(new CubatureDirectLineGauss<Scalar,ArrayType>(degree[2]));
       pickCubature = Teuchos::rcp(new CubatureTensor<Scalar,ArrayType>(lineCubs));
       }
       break;
@@ -91,8 +91,8 @@ Teuchos::RCP<Cubature<Scalar,ArrayType> > DefaultCubatureFactory<Scalar,ArrayTyp
                           ">>> ERROR (DefaultCubatureFactory): Provided degree array is of insufficient length.")
       {
       std::vector< Teuchos::RCP< Cubature<Scalar,ArrayType> > > miscCubs(2);
-      miscCubs[0]  = Teuchos::rcp(new CubatureDirectTriDefault<double>(degree[0]));
-      miscCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<double>(degree[1]));
+      miscCubs[0]  = Teuchos::rcp(new CubatureDirectTriDefault<Scalar,ArrayType>(degree[0]));
+      miscCubs[1]  = Teuchos::rcp(new CubatureDirectLineGauss<Scalar,ArrayType>(degree[1]));
       pickCubature = Teuchos::rcp(new CubatureTensor<Scalar,ArrayType>(miscCubs));
       }
       break;

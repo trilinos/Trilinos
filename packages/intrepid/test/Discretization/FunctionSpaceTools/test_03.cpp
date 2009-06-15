@@ -203,7 +203,6 @@ int main(int argc, char *argv[]) {
       // transform gradients of basis functions into physical space
       fst::HDIVtransformDIV<double>(transformed_div_of_basis_at_cub_points,
                                     jacobian_det,
-                                    field_signs,
                                     div_of_basis_at_cub_points);
 
       // multiply with weighted measure
@@ -217,6 +216,10 @@ int main(int argc, char *argv[]) {
                              weighted_transformed_div_of_basis_at_cub_points,
                              COMP_CPP);
 
+      // apply field signs
+      fst::applyLeftFieldSigns<double>(stiffness_matrices, field_signs);
+      fst::applyRightFieldSigns<double>(stiffness_matrices, field_signs);
+
 
       // Computing mass matrices:
       // tabulate values of basis functions at (reference) cubature points
@@ -226,7 +229,6 @@ int main(int argc, char *argv[]) {
       fst::HDIVtransformVALUE<double>(transformed_value_of_basis_at_cub_points,
                                       jacobian,
                                       jacobian_det,
-                                      field_signs,
                                       value_of_basis_at_cub_points);
 
       // multiply with weighted measure
@@ -239,6 +241,10 @@ int main(int argc, char *argv[]) {
                              transformed_value_of_basis_at_cub_points,
                              weighted_transformed_value_of_basis_at_cub_points,
                              COMP_CPP);
+
+      // apply field signs
+      fst::applyLeftFieldSigns<double>(mass_matrices, field_signs);
+      fst::applyRightFieldSigns<double>(mass_matrices, field_signs);
 
       /*******************  STOP COMPUTATION ***********************/
 

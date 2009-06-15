@@ -55,19 +55,6 @@ void FunctionSpaceTools::HGRADtransformGRAD(ArrayTypeOut       & outVals,
 }
 
 
-template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeSign, class ArrayTypeIn>
-void FunctionSpaceTools::HCURLtransformVALUE(ArrayTypeOut        & outVals,
-                                             const ArrayTypeJac  & jacobianInverse,
-                                             const ArrayTypeSign & fieldSigns,
-                                             const ArrayTypeIn   & inVals,
-                                             const char            transpose) {
-
-  ArrayTools::matvecProductDataField<Scalar>(outVals, jacobianInverse, inVals, transpose);
-  ArrayTools::scaleFields<Scalar>(outVals, fieldSigns);
-
-}
-
-
 template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeIn>
 void FunctionSpaceTools::HCURLtransformVALUE(ArrayTypeOut        & outVals,
                                              const ArrayTypeJac  & jacobianInverse,
@@ -79,21 +66,6 @@ void FunctionSpaceTools::HCURLtransformVALUE(ArrayTypeOut        & outVals,
 }
 
 
-template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeDet, class ArrayTypeSign, class ArrayTypeIn>
-void FunctionSpaceTools::HCURLtransformCURL(ArrayTypeOut        & outVals,
-                                            const ArrayTypeJac  & jacobian,
-                                            const ArrayTypeDet  & jacobianDet,
-                                            const ArrayTypeSign & fieldSigns,
-                                            const ArrayTypeIn   & inVals,
-                                            const char            transpose) {
-
-  ArrayTools::matvecProductDataField<Scalar>(outVals, jacobian, inVals, transpose);
-  ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, outVals, true);
-  ArrayTools::scaleFields<Scalar>(outVals, fieldSigns);
-
-}
-
-
 template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeDet, class ArrayTypeIn>
 void FunctionSpaceTools::HCURLtransformCURL(ArrayTypeOut        & outVals,
                                             const ArrayTypeJac  & jacobian,
@@ -107,21 +79,6 @@ void FunctionSpaceTools::HCURLtransformCURL(ArrayTypeOut        & outVals,
 }
 
 
-template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeDet, class ArrayTypeSign, class ArrayTypeIn>
-void FunctionSpaceTools::HDIVtransformVALUE(ArrayTypeOut        & outVals,
-                                            const ArrayTypeJac  & jacobian,
-                                            const ArrayTypeDet  & jacobianDet,
-                                            const ArrayTypeSign & fieldSigns,
-                                            const ArrayTypeIn   & inVals,
-                                            const char            transpose) {
-
-  ArrayTools::matvecProductDataField<Scalar>(outVals, jacobian, inVals, transpose);
-  ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, outVals, true);
-  ArrayTools::scaleFields<Scalar>(outVals, fieldSigns);
-
-}
-
-
 template<class Scalar, class ArrayTypeOut, class ArrayTypeJac, class ArrayTypeDet, class ArrayTypeIn>
 void FunctionSpaceTools::HDIVtransformVALUE(ArrayTypeOut        & outVals,
                                             const ArrayTypeJac  & jacobian,
@@ -131,18 +88,6 @@ void FunctionSpaceTools::HDIVtransformVALUE(ArrayTypeOut        & outVals,
 
   ArrayTools::matvecProductDataField<Scalar>(outVals, jacobian, inVals, transpose);
   ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, outVals, true);
-
-}
-
-
-template<class Scalar, class ArrayTypeOut, class ArrayTypeDet, class ArrayTypeSign, class ArrayTypeIn>
-void FunctionSpaceTools::HDIVtransformDIV(ArrayTypeOut        & outVals,
-                                          const ArrayTypeDet  & jacobianDet,
-                                          const ArrayTypeSign & fieldSigns,
-                                          const ArrayTypeIn   & inVals) {
-
-  ArrayTools::scalarMultiplyDataField<Scalar>(outVals, jacobianDet, inVals, true);
-  ArrayTools::scaleFields<Scalar>(outVals, fieldSigns);
 
 }
 
