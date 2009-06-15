@@ -132,9 +132,9 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, BALANCE_EVAL *eval)
         if (i == EVAL_MAX_XTRA_VWGTS){
           break;
         }
-        printf("%s  Object weight %d   :  %8.3g %8.3g %8.3g     %5.3f\n", yo, i+2,
+        printf("%s  Object weight %d    :  %8.3g %8.3g %8.3g     %5.3f\n", yo, i+2,
           eval->xtra_obj_wgt[i][EVAL_GLOBAL_MIN], eval->xtra_obj_wgt[i][EVAL_GLOBAL_MAX], 
-          eval->xtra_obj_wgt[i][EVAL_GLOBAL_SUM], eval->imbalance);
+          eval->xtra_obj_wgt[i][EVAL_GLOBAL_SUM], eval->xtra_imbalance[i] );
       }
       if (vwgt_dim-1 > EVAL_MAX_XTRA_VWGTS){
         printf("(We calculate up to %d extra object weights.  This can be changed.)\n",
@@ -538,7 +538,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
         }
         printf("%s  Object weight %d    :  %8.3g %8.3g %8.3g     %5.3f\n", yo, i+2,
           graph->xtra_obj_wgt[i][EVAL_GLOBAL_MIN], graph->xtra_obj_wgt[i][EVAL_GLOBAL_MAX], 
-          graph->xtra_obj_wgt[i][EVAL_GLOBAL_SUM], graph->imbalance);
+          graph->xtra_obj_wgt[i][EVAL_GLOBAL_SUM], graph->xtra_imbalance[i]);
       }
       if (vwgt_dim-1 > EVAL_MAX_XTRA_VWGTS){
         printf("(We calculate up to %d extra object weights.  This can be changed.)\n",
@@ -770,7 +770,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
       hg->nobj[EVAL_GLOBAL_MIN], hg->nobj[EVAL_GLOBAL_MAX], 
       hg->nobj[EVAL_GLOBAL_SUM], hg->obj_imbalance);
 
-    if (zhg->objWeight > 0){
+    if (zhg->objWeightDim > 0){
       printf("%s  Object weight      :  %8.3g %8.3g %8.3g   %5.3f\n", yo, 
         hg->obj_wgt[EVAL_GLOBAL_MIN], hg->obj_wgt[EVAL_GLOBAL_MAX], 
         hg->obj_wgt[EVAL_GLOBAL_SUM], hg->imbalance);
