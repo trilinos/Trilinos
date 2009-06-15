@@ -56,6 +56,7 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
+#include "Epetra_Import.h"
 
 // Teuchos includes
 #include "Teuchos_oblackholestream.hpp"
@@ -87,8 +88,9 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  Epetra_CrsMatrix   & A,
                                  const Epetra_MultiVector & xexact,
                                  Epetra_MultiVector & b,
+                                 Epetra_MultiVector & uh,
                                  double & TotalErrorResidual,
-                                        double & TotalErrorExactSol);
+                                 double & TotalErrorExactSol);
 
 
 using namespace std;
@@ -324,6 +326,7 @@ void calc_global_ids(std::vector < topo_entity * > eof_vec,
 
 // Functions to evaluate exact solution and derivatives
 double evalu(double & x, double & y, double & z);
+int evalGradu(double & x, double & y, double & z, double & gradu1, double & gradu2, double & gradu3);
 double evalDivGradu(double & x, double & y, double & z);
 
 int main(int argc, char *argv[]) {
@@ -1004,17 +1007,18 @@ int main(int argc, char *argv[]) {
 
    
   // Dump matrices to disk
-   //     EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-   //     EpetraExt::MultiVectorToMatlabFile("rhs_vector.dat",rhs);
+     //   EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
+     //   EpetraExt::MultiVectorToMatlabFile("rhs_vector.dat",rhs);
 
 
    // Run the solver
    Teuchos::ParameterList MLList;
    ML_Epetra::SetDefaults("SA",MLList);
-   Epetra_FEVector xexact(rhs);
+   Epetra_FEVector xexact(globalMapG);
+   Epetra_FEVector uh(globalMapG);
    double TotalErrorResidual=0, TotalErrorExactSol=0;
 
-   // Get exact solution
+   // Get exact solution at nodes
     for (int i = 0; i<numNodes; i++) {
        if (nodeIsOwned[i]){
           double x = nodeCoord(i,0);
@@ -1025,11 +1029,133 @@ int main(int argc, char *argv[]) {
           xexact.SumIntoGlobalValues(1, &rowindex, &exactu);
        }
     }
+    xexact.GlobalAssemble();
        
+  //  EpetraExt::MultiVectorToMatlabFile("uexact.dat",xexact);
    
-   TestMultiLevelPreconditionerLaplace("laplace",MLList,StiffMatrix,xexact,rhs,
+    TestMultiLevelPreconditionerLaplace("laplace",MLList,StiffMatrix,xexact,rhs,uh,
                                        TotalErrorResidual, TotalErrorExactSol);
 
+   // ********  Calculate Error in Solution *************** 
+     double L2err = 0.0;
+     double L2errTot = 0.0;
+     double H1err = 0.0;
+     double H1errTot = 0.0;
+     double Linferr = 0.0;
+     double LinferrTot = 0.0;
+
+   // Import solution onto current processor
+     Epetra_Map  solnMap(numNodesGlobal, numNodesGlobal, 0, Comm);
+     Epetra_Import  solnImporter(solnMap, globalMapG);
+     Epetra_Vector  uCoeff(solnMap);
+     uCoeff.Import(uh, solnImporter, Insert);
+
+   // Get cubature points and weights for error calc (may be different from previous)
+     DefaultCubatureFactory<double>  cubFactoryErr;                                   
+     int cubDegErr = 3;
+     Teuchos::RCP<Cubature<double> > hexCubErr = cubFactoryErr.create(hex_8, cubDegErr); 
+     int cubDimErr       = hexCubErr->getDimension();
+     int numCubPointsErr = hexCubErr->getNumPoints();
+     FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
+     FieldContainer<double> cubWeightsErr(numCubPointsErr);
+     hexCubErr->getCubature(cubPointsErr, cubWeightsErr);
+
+   // Containers for Jacobian
+     FieldContainer<double> hexJacobianE(numCells, numCubPointsErr, spaceDim, spaceDim);
+     FieldContainer<double> hexJacobInvE(numCells, numCubPointsErr, spaceDim, spaceDim);
+     FieldContainer<double> hexJacobDetE(numCells, numCubPointsErr);
+     FieldContainer<double> weightedMeasureE(numCells, numCubPointsErr);
+
+  // Evaluate basis values and gradients at cubature points
+     FieldContainer<double> uhGVals(numFieldsG, numCubPointsErr); 
+     FieldContainer<double> uhGValsTrans(numCells,numFieldsG, numCubPointsErr); 
+     FieldContainer<double> uhGrads(numFieldsG, numCubPointsErr, spaceDim); 
+     FieldContainer<double> uhGradsTrans(numCells, numFieldsG, numCubPointsErr, spaceDim); 
+     hexHGradBasis.getValues(uhGVals, cubPointsErr, OPERATOR_VALUE);
+     hexHGradBasis.getValues(uhGrads, cubPointsErr, OPERATOR_GRAD);
+
+
+   // Loop over elements
+    for (int k=0; k<numElems; k++){
+
+      double L2errElem = 0.0;
+      double H1errElem = 0.0;
+      double uExact; 
+      double graduExact1, graduExact2, graduExact3;
+
+     // physical cell coordinates
+      for (int i=0; i<numNodesPerElem; i++) {
+         hexNodes(0,i,0) = nodeCoord(elemToNode(k,i),0);
+         hexNodes(0,i,1) = nodeCoord(elemToNode(k,i),1);
+         hexNodes(0,i,2) = nodeCoord(elemToNode(k,i),2);
+      }
+
+    // compute cell Jacobians, their inverses and their determinants
+       CellTools::setJacobian(hexJacobianE, cubPointsErr, hexNodes, hex_8);
+       CellTools::setJacobianInv(hexJacobInvE, hexJacobianE );
+       CellTools::setJacobianDet(hexJacobDetE, hexJacobianE );
+
+      // transform integration points to physical points
+       FieldContainer<double> physCubPoints(numCells,numCubPointsErr, cubDimErr);
+       CellTools::mapToPhysicalFrame(physCubPoints, cubPointsErr, hexNodes, hex_8);
+
+      // transform basis values to physical coordinates 
+       fst::HGRADtransformVALUE<double>(uhGValsTrans, uhGVals);
+       fst::HGRADtransformGRAD<double>(uhGradsTrans, hexJacobInvE, uhGrads);
+
+      // compute weighted measure
+       fst::computeMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
+
+      // loop over cubature points
+       for (int nPt = 0; nPt < numCubPoints; nPt++){
+
+         // get exact solution and gradients
+          double x = physCubPoints(0,nPt,0);
+          double y = physCubPoints(0,nPt,1);
+          double z = physCubPoints(0,nPt,2);
+          uExact = evalu(x, y, z);
+          evalGradu(x, y, z, graduExact1, graduExact2, graduExact3);
+
+         // calculate approximate solution and gradients
+          double uApprox = 0.0;
+          double graduApprox1 = 0.0;
+          double graduApprox2= 0.0;
+          double graduApprox3 = 0.0;
+          for (int i = 0; i < numFieldsG; i++){
+             int rowIndex = globalNodeIds[elemToNode(k,i)];
+             double uh1 = uCoeff.Values()[rowIndex];
+             uApprox += uh1*uhGValsTrans(0,i,nPt); 
+             graduApprox1 += uh1*uhGradsTrans(0,i,nPt,0); 
+             graduApprox2 += uh1*uhGradsTrans(0,i,nPt,1); 
+             graduApprox3 += uh1*uhGradsTrans(0,i,nPt,2); 
+          }
+
+         // evaluate the error at cubature points
+          Linferr = max(Linferr, abs(uExact - uApprox));
+
+          L2errElem+=(uExact - uApprox)*(uExact - uApprox)*weightedMeasureE(0,nPt);
+          H1errElem+=((graduExact1 - graduApprox1)*(graduExact1 - graduApprox1))
+                     *weightedMeasureE(0,nPt);
+          H1errElem+=((graduExact2 - graduApprox2)*(graduExact2 - graduApprox2))
+                     *weightedMeasureE(0,nPt);
+          H1errElem+=((graduExact3 - graduApprox3)*(graduExact3 - graduApprox3))
+                     *weightedMeasureE(0,nPt);
+        }
+
+       L2err+=L2errElem;
+       H1err+=H1errElem;
+     }
+
+   // sum over all processors
+    Comm.SumAll(&L2err,&L2errTot,1);
+    Comm.SumAll(&H1err,&H1errTot,1);
+    Comm.MaxAll(&Linferr,&LinferrTot,1);
+
+   if (MyPID == 0) {
+    std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
+    std::cout << "H1 Error:  " << sqrt(H1errTot+L2errTot) <<"\n";
+    std::cout << "LInf Error:  " << LinferrTot <<"\n";
+   }
 
    // Cleanup
    for(long long b = 0; b < numElemBlk; b++){     
@@ -1076,7 +1202,7 @@ int main(int argc, char *argv[]) {
  double evalu(double & x, double & y, double & z)
  {
    // u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)
-   //double exactu = sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+  // double exactu = sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
 
   // or
 
@@ -1086,21 +1212,43 @@ int main(int argc, char *argv[]) {
    return exactu;
  }
 
-// Calculates Laplacian of exact solution u
- double evalDivGradu(double & x, double & y, double & z)
+// Calculates gradient of exact solution u
+ int evalGradu(double & x, double & y, double & z, double & gradu1, double & gradu2, double & gradu3)
  {
    //  for u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)
-  // double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+  /*      gradu1 = M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+        gradu2 = M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
+        gradu3 = M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
+  */
 
   // or
 
    // for u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)*exp(x+y+z)
-   double divGradu = ((1.0 - M_PI*M_PI)*sin(M_PI*x) + 2.0*M_PI*cos(M_PI*x))*
-                        sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z)
-                     + ((1.0 - M_PI*M_PI)*sin(M_PI*y) + 2.0*M_PI*cos(M_PI*y))*
-                        sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z)
-                     + ((1.0 - M_PI*M_PI)*sin(M_PI*z) + 2.0*M_PI*cos(M_PI*z))*
-                        sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z);
+     gradu1 = (M_PI*cos(M_PI*x)+sin(M_PI*x))
+                  *sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
+     gradu2 = (M_PI*cos(M_PI*y)+sin(M_PI*y))
+                  *sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z);
+     gradu3 = (M_PI*cos(M_PI*z)+sin(M_PI*z))
+                  *sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z);
+  
+   return 0;
+ }
+
+// Calculates Laplacian of exact solution u
+ double evalDivGradu(double & x, double & y, double & z)
+ {
+   //  for u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)
+   //double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+
+  // or
+
+   // for u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)*exp(x+y+z)
+   double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z)
+                    + 2.0*M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z)
+                    + 2.0*M_PI*cos(M_PI*y)*sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z)
+                    + 2.0*M_PI*cos(M_PI*z)*sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z)
+                    + 3.0*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
+  
    
    return divGradu;
  }
@@ -1246,6 +1394,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  Epetra_CrsMatrix   & A,
                                  const Epetra_MultiVector & xexact,
                                  Epetra_MultiVector & b,
+                                 Epetra_MultiVector & uh,
                                  double & TotalErrorResidual,
 				 double & TotalErrorExactSol)
 {
@@ -1273,6 +1422,8 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
   solver.Iterate(200, 1e-10);
   
   delete MLPrec;
+
+  uh = *lhs;
   
   // ==================================================== //
   // compute difference between exact solution and ML one //
