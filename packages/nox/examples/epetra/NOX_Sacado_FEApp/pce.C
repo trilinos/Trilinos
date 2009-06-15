@@ -39,8 +39,8 @@
 #include <iostream>
 #include <sstream>
 
-#include "LOCA.H"
-#include "LOCA_Epetra.H"
+#include "NOX.H"
+#include "NOX_Epetra.H"
 
 // FEApp is defined in Trilinos/packages/sacado/example/FEApp
 #include "FEApp_ModelEvaluator.hpp"
@@ -53,6 +53,7 @@
 
 #include "Stokhos.hpp"
 #include "Stokhos_SGModelEvaluator.hpp"
+#include "Stokhos_SGQuadModelEvaluator.hpp"
 #include "Sacado_PCE_OrthogPoly.hpp"
 #include "Ifpack.h"
 #include "Teuchos_TimeMonitor.hpp"
@@ -135,11 +136,17 @@ int main(int argc, char *argv[]) {
     // Set up application parameters
     Teuchos::RCP<Teuchos::ParameterList> appParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
+
+    // Problem
     Teuchos::ParameterList& problemParams = 
       appParams->sublist("Problem");
     problemParams.set("Name", "Heat Nonlinear Source");
+
+    // Boundary conditions
     problemParams.set("Left BC", leftBC);
     problemParams.set("Right BC", rightBC);
+
+    // Source function
     Teuchos::ParameterList& sourceParams = 
       problemParams.sublist("Source Function");
     sourceParams.set("Name", "Multi-Variate Exponential");
@@ -149,10 +156,18 @@ int main(int argc, char *argv[]) {
       ss << "Nonlinear Factor " << i;
       sourceParams.set(ss.str(), alpha/numalpha);
     }
+
+    // Material
     Teuchos::ParameterList& matParams = 
       problemParams.sublist("Material Function");
     matParams.set("Name", "Constant");
     matParams.set("Constant Value", 1.0);
+
+    // Response functions
+    Teuchos::ParameterList& responseParams =
+      problemParams.sublist("Response Functions");
+    responseParams.set("Number", 1);
+    responseParams.set("Response 0", "Solution Average");
     
     // Read in parameter values from input file
     if (do_dakota) {
@@ -183,24 +198,12 @@ int main(int argc, char *argv[]) {
     NOX::Epetra::Vector nox_u(*u);
 
     // Create model evaluator
-    Teuchos::RCP<FEApp::ModelEvaluator> model = 
+    Teuchos::RCP<EpetraExt::ModelEvaluator> model = 
       Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names));
 
-    // Create Epetra factory
-    Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
-      Teuchos::rcp(new LOCA::Epetra::Factory);
-
-    // Create global data object
-    Teuchos::RefCountPtr<LOCA::GlobalData> globalData = 
-      LOCA::createGlobalData(appParams, epetraFactory);
-
     // Create NOX interface
-    Teuchos::RCP<LOCA::Epetra::ModelEvaluatorInterface> interface =
-      Teuchos::rcp(new LOCA::Epetra::ModelEvaluatorInterface(globalData,
-                                                             model));
-
-    // Get LOCA parameter vector
-    LOCA::ParameterVector pVector = interface->getLOCAParameterVector();
+    Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> interface =
+      Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(model));
 
     // Set up NOX parameters
     Teuchos::RCP<Teuchos::ParameterList> noxParams =
@@ -251,7 +254,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Epetra_Operator> A = model->create_W(); 
 
     // Create the linear system
-    Teuchos::RCP<LOCA::Epetra::Interface::Required> iReq = interface;
+    Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys = 
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
@@ -259,8 +262,8 @@ int main(int argc, char *argv[]) {
                                                         iReq, iJac, A, nox_u));
     
     // Create the Group
-    Teuchos::RCP<LOCA::Epetra::Group> grp =
-      Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams, iReq, nox_u, linsys, pVector)); 
+    Teuchos::RCP<NOX::Epetra::Group> grp =
+      Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, nox_u, linsys)); 
 
     // Create the Solver convergence test
     Teuchos::RCP<NOX::StatusTest::NormF> wrms = 
@@ -325,17 +328,20 @@ int main(int argc, char *argv[]) {
         Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
       unsigned int sz = basis->size();
       Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
-        Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
-      								      quad));
+	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
+								      quad));
       Sacado::PCE::OrthogPoly<double>::initExpansion(expansion);
 
-      // Create new app for Stochastic Galerkin solve
-      appParams->set("Enable Stochastic Galerkin", true);
-      appParams->set("Stochastic Galerkin basis", basis);
-      appParams->set("Stochastic Galerkin quadrature", quad);
-      appParams->set("SG Method", "AD");
-      //appParams->set("SG Method", "Gauss Quadrature");
-      app = Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false));
+      bool sg_local = true;
+      if (sg_local) {
+	// Create new app for Stochastic Galerkin solve
+	appParams->set("Enable Stochastic Galerkin", true);
+	appParams->set("Stochastic Galerkin basis", basis);
+	appParams->set("Stochastic Galerkin quadrature", quad);
+	appParams->set("SG Method", "AD");
+	//appParams->set("SG Method", "Gauss Quadrature");
+	app = Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false));
+      }
 
       // Set up stochastic parameters
       Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > > sg_p(1);
@@ -353,11 +359,27 @@ int main(int argc, char *argv[]) {
 	sg_param_names->push_back(ss.str());
       }
       std::vector<int> sg_p_index(1);
-      sg_p_index[0] = 1;
       
-      // Set up NOX for SG solve
-      model = Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
-						     sg_param_names));
+      if (sg_local) {
+	sg_p_index[0] = 1;
+	model = Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
+						       sg_param_names));
+
+      }
+      else {
+	sg_p_index[0] = 0;
+	std::vector<int> sg_p_index_quad(1);
+	sg_p_index_quad[0] = 0;
+	std::vector<int> sg_g_index_quad(1);
+	sg_g_index_quad[0] = 0;
+	Teuchos::RCP<EpetraExt::ModelEvaluator> underlying_model = 
+	  Teuchos::rcp(new FEApp::ModelEvaluator(app, sg_param_names));
+	model =
+	  Teuchos::rcp(new Stokhos::SGQuadModelEvaluator(underlying_model, 
+							 quad, sg_p_index_quad,
+							 sg_g_index_quad));
+      }
+
       Teuchos::RCP<Teuchos::ParameterList> sgParams = 
         Teuchos::rcp(&(appParams->sublist("SG Parameters")),false);
       sgParams->set("Jacobian Method", "Matrix Free");
@@ -369,12 +391,14 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<Stokhos::PreconditionerFactory> sg_prec = 
 	Teuchos::rcp(new IfpackPreconditionerFactory(precParams));
       sgParams->set("Preconditioner Factory", sg_prec);
+      std::vector<int> sg_g_index(1);
+      sg_g_index[0] = 0;
       Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
 	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, sg_p_index,
+						   sg_g_index,
 						   sg_p, sgParams));
       interface = 
-        Teuchos::rcp(new LOCA::Epetra::ModelEvaluatorInterface(globalData,
-                                                               sg_model));
+        Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(sg_model));
       iReq = interface;
       iJac = interface;
       Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface; 
@@ -403,9 +427,8 @@ int main(int argc, char *argv[]) {
                                                             sg_nox_u));
       }
       
-      grp = Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams, 
-						 iReq, sg_nox_u, 
-						 linsys, pVector));
+      grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, sg_nox_u, 
+						linsys));
 
       // Solve SG nonlinear system
       solver = NOX::Solver::buildSolver(grp, combo, noxParams);
@@ -420,41 +443,25 @@ int main(int argc, char *argv[]) {
         dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
       const Epetra_Vector& sg_solution = 
         (dynamic_cast<const NOX::Epetra::Vector&>(sg_group.getX())).getEpetraVector();
-      utils.out().precision(12);
 
       // Compute objective function -- average of u over domain x
-      Epetra_Vector u_k(u->Map());
-      int N = u_k.MyLength();
-      std::vector<SGType> sg_u_local(N);
-      for (int i=0; i<N; i++) {
-        sg_u_local[i].resize(sz);
-        sg_u_local[i].copyForWrite();
-      }
-      for (unsigned int k=0; k<sz; k++) {
-        for (int i=0; i<N; i++)
-          sg_u_local[i].fastAccessCoeff(k) = sg_solution[i+k*N];
-      }
+      EpetraExt::ModelEvaluator::InArgs inArgs = sg_model->createInArgs();
+      Teuchos::RCP<const Epetra_Vector> x_sg = Teuchos::rcp(&sg_solution,false);
+      inArgs.set_x(x_sg);
+      EpetraExt::ModelEvaluator::OutArgs outArgs = sg_model->createOutArgs();
+      Teuchos::RCP<Epetra_Vector> g_sg = 
+	Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(0))));
+      outArgs.set_g(0, g_sg);
+      sg_model->evalModel(inArgs, outArgs);
+      g_sg->Print(std::cout);
 
-      SGType nrm_local = 0.0;
-      for (int i=0; i<N; i++) {
-        nrm_local += sg_u_local[i];
-      }
-#ifdef HAVE_MPI
-      SGType nrm(static_cast<int>(sz));
-      Comm->SumAll(nrm_local.coeff(), nrm.coeff(), sz);
-#else
-      SGType nrm = nrm_local;
-#endif
-      nrm /= u_k.GlobalLength();
-
-      utils.out() << "Stochastic solution norm (PCE basis) = " << std::endl;
-      nrm.getOrthogPolyApprox().print(*basis, utils.out());
-
-      double mean = nrm.coeff(0);
+      // Print mean and standard deviation
+      utils.out().precision(12);
+      double mean = (*g_sg)[0];
       double std_dev = 0.0;
       const std::vector<double> nrm2 = basis->norm_squared();
       for (int i=1; i<basis->size(); i++)
-        std_dev += nrm.coeff(i)*nrm.coeff(i)*nrm2[i];
+        std_dev += (*g_sg)[i]*(*g_sg)[i]*nrm2[i];
       std_dev = std::sqrt(std_dev);
 
       utils.out() << "Mean =      " << mean << std::endl;

@@ -134,7 +134,7 @@ am__objects_1 =
 am__objects_2 = $(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
 	$(am__objects_1) $(am__objects_1) $(am__objects_1) \
-	$(am__objects_1) $(am__objects_1)
+	$(am__objects_1) $(am__objects_1) $(am__objects_1)
 am__objects_3 = FEApp_LinearElement.$(OBJEXT) \
 	FEApp_ElementFactory.$(OBJEXT)
 am__objects_4 = FEApp_GaussianQuadrature2.$(OBJEXT) \
@@ -148,20 +148,23 @@ am__objects_8 = FEApp_BrusselatorNodeBCStrategy.$(OBJEXT) \
 am__objects_9 = FEApp_BrusselatorProblem.$(OBJEXT) \
 	FEApp_HeatNonlinearSourceProblem.$(OBJEXT) \
 	FEApp_ProblemFactory.$(OBJEXT)
-am__objects_10 = FEApp_Mesh.$(OBJEXT)
-am__objects_11 = FEApp_InitPostOps.$(OBJEXT) \
+am__objects_10 = FEApp_BoundaryFlux1DResponseFunction.$(OBJEXT) \
+	FEApp_SolutionAverageResponseFunction.$(OBJEXT) \
+	FEApp_SolutionTwoNormResponseFunction.$(OBJEXT)
+am__objects_11 = FEApp_Mesh.$(OBJEXT)
+am__objects_12 = FEApp_InitPostOps.$(OBJEXT) \
 	FEApp_GlobalFill.$(OBJEXT) \
 	FEApp_SGGaussQuadResidualGlobalFill.$(OBJEXT) \
 	FEApp_SGGaussQuadJacobianGlobalFill.$(OBJEXT)
-am__objects_12 = FEApp_CZeroDiscretization.$(OBJEXT) \
+am__objects_13 = FEApp_CZeroDiscretization.$(OBJEXT) \
 	FEApp_DiscretizationFactory.$(OBJEXT)
-am__objects_13 = FEApp_Application.$(OBJEXT) \
+am__objects_14 = FEApp_Application.$(OBJEXT) \
 	FEApp_ModelEvaluator.$(OBJEXT)
-am__objects_14 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
+am__objects_15 = $(am__objects_3) $(am__objects_4) $(am__objects_5) \
 	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
 	$(am__objects_9) $(am__objects_10) $(am__objects_11) \
-	$(am__objects_12) $(am__objects_13)
-am_libfeapp_a_OBJECTS = $(am__objects_2) $(am__objects_14)
+	$(am__objects_12) $(am__objects_13) $(am__objects_14)
+am_libfeapp_a_OBJECTS = $(am__objects_2) $(am__objects_15)
 libfeapp_a_OBJECTS = $(am_libfeapp_a_OBJECTS)
 PROGRAMS = $(noinst_PROGRAMS)
 am_brusselator_OBJECTS = brusselator.$(OBJEXT)
@@ -400,6 +403,17 @@ PROBLEM = \
 	$(FEAPP_PATH)/FEApp_HeatNonlinearSourceProblem.cpp \
 	$(FEAPP_PATH)/FEApp_ProblemFactory.cpp
 
+RESPONSE_H = \
+	$(FEAPP_PATH)/FEApp_AbstractResponseFunction.hpp \
+	$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.hpp \
+	$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.hpp \
+	$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.hpp
+
+RESPONSE = \
+	$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp \
+	$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp \
+	$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp
+
 MESH_H = \
 	$(FEAPP_PATH)/FEApp_Mesh.hpp
 
@@ -445,6 +459,7 @@ FEAPP_H = \
 	$(PDE_H) \
 	$(BC_H) \
 	$(PROBLEM_H) \
+	$(RESPONSE_H) \
 	$(MESH_H) \
 	$(FILL_H) \
 	$(DISC_H) \
@@ -458,6 +473,7 @@ FEAPP = \
 	$(PDE) \
 	$(BC) \
 	$(PROBLEM) \
+	$(RESPONSE) \
 	$(MESH) \
 	$(FILL) \
 	$(DISC) \
@@ -525,6 +541,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_Application.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BoundaryFlux1DResponseFunction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorNodeBCStrategy.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorPDE.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_BrusselatorProblem.Po@am__quote@
@@ -545,6 +562,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_QuadratureFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGGaussQuadJacobianGlobalFill.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SGGaussQuadResidualGlobalFill.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SolutionAverageResponseFunction.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SolutionTwoNormResponseFunction.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/FEApp_SourceFunctionFactory.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/brusselator.Po@am__quote@
 
@@ -743,6 +762,48 @@ FEApp_ProblemFactory.obj: $(FEAPP_PATH)/FEApp_ProblemFactory.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_ProblemFactory.cpp' object='FEApp_ProblemFactory.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_ProblemFactory.obj `if test -f '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_ProblemFactory.cpp'; fi`
+
+FEApp_BoundaryFlux1DResponseFunction.o: $(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BoundaryFlux1DResponseFunction.o -MD -MP -MF $(DEPDIR)/FEApp_BoundaryFlux1DResponseFunction.Tpo -c -o FEApp_BoundaryFlux1DResponseFunction.o `test -f '$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BoundaryFlux1DResponseFunction.Tpo $(DEPDIR)/FEApp_BoundaryFlux1DResponseFunction.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp' object='FEApp_BoundaryFlux1DResponseFunction.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BoundaryFlux1DResponseFunction.o `test -f '$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp
+
+FEApp_BoundaryFlux1DResponseFunction.obj: $(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_BoundaryFlux1DResponseFunction.obj -MD -MP -MF $(DEPDIR)/FEApp_BoundaryFlux1DResponseFunction.Tpo -c -o FEApp_BoundaryFlux1DResponseFunction.obj `if test -f '$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_BoundaryFlux1DResponseFunction.Tpo $(DEPDIR)/FEApp_BoundaryFlux1DResponseFunction.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp' object='FEApp_BoundaryFlux1DResponseFunction.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_BoundaryFlux1DResponseFunction.obj `if test -f '$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_BoundaryFlux1DResponseFunction.cpp'; fi`
+
+FEApp_SolutionAverageResponseFunction.o: $(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SolutionAverageResponseFunction.o -MD -MP -MF $(DEPDIR)/FEApp_SolutionAverageResponseFunction.Tpo -c -o FEApp_SolutionAverageResponseFunction.o `test -f '$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SolutionAverageResponseFunction.Tpo $(DEPDIR)/FEApp_SolutionAverageResponseFunction.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp' object='FEApp_SolutionAverageResponseFunction.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SolutionAverageResponseFunction.o `test -f '$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp
+
+FEApp_SolutionAverageResponseFunction.obj: $(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SolutionAverageResponseFunction.obj -MD -MP -MF $(DEPDIR)/FEApp_SolutionAverageResponseFunction.Tpo -c -o FEApp_SolutionAverageResponseFunction.obj `if test -f '$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SolutionAverageResponseFunction.Tpo $(DEPDIR)/FEApp_SolutionAverageResponseFunction.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp' object='FEApp_SolutionAverageResponseFunction.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SolutionAverageResponseFunction.obj `if test -f '$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SolutionAverageResponseFunction.cpp'; fi`
+
+FEApp_SolutionTwoNormResponseFunction.o: $(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SolutionTwoNormResponseFunction.o -MD -MP -MF $(DEPDIR)/FEApp_SolutionTwoNormResponseFunction.Tpo -c -o FEApp_SolutionTwoNormResponseFunction.o `test -f '$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SolutionTwoNormResponseFunction.Tpo $(DEPDIR)/FEApp_SolutionTwoNormResponseFunction.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp' object='FEApp_SolutionTwoNormResponseFunction.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SolutionTwoNormResponseFunction.o `test -f '$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp
+
+FEApp_SolutionTwoNormResponseFunction.obj: $(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_SolutionTwoNormResponseFunction.obj -MD -MP -MF $(DEPDIR)/FEApp_SolutionTwoNormResponseFunction.Tpo -c -o FEApp_SolutionTwoNormResponseFunction.obj `if test -f '$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/FEApp_SolutionTwoNormResponseFunction.Tpo $(DEPDIR)/FEApp_SolutionTwoNormResponseFunction.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp' object='FEApp_SolutionTwoNormResponseFunction.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o FEApp_SolutionTwoNormResponseFunction.obj `if test -f '$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp'; then $(CYGPATH_W) '$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp'; else $(CYGPATH_W) '$(srcdir)/$(FEAPP_PATH)/FEApp_SolutionTwoNormResponseFunction.cpp'; fi`
 
 FEApp_Mesh.o: $(FEAPP_PATH)/FEApp_Mesh.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT FEApp_Mesh.o -MD -MP -MF $(DEPDIR)/FEApp_Mesh.Tpo -c -o FEApp_Mesh.o `test -f '$(FEAPP_PATH)/FEApp_Mesh.cpp' || echo '$(srcdir)/'`$(FEAPP_PATH)/FEApp_Mesh.cpp
