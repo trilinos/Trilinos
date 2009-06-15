@@ -428,10 +428,15 @@ int main(int argc, char *argv[]) {
    // Output element to edge connectivity
 #ifdef DUMP_DATA
     ofstream fout("elem2edge.dat");
+    ofstream fout2("elem2node.dat");
     for (int k=0; k<NZ; k++) {
       for (int j=0; j<NY; j++) {
         for (int i=0; i<NX; i++) {
           int ielem = i + j * NX + k * NX * NY;
+          for (int m=0; m<numNodesPerElem; m++){
+              fout2 << elemToNode(ielem,m) <<"  ";
+           }
+          fout2 <<"\n";
           for (int l=0; l<numEdgesPerElem; l++) {
              fout << elemToEdge(ielem,l) << "  ";
           } 
@@ -440,6 +445,7 @@ int main(int argc, char *argv[]) {
       }
     }
     fout.close();
+    fout2.close();
 #endif
     
    // Set material properties using undeformed grid assuming each element has only one value of mu
@@ -676,7 +682,7 @@ int main(int argc, char *argv[]) {
 // ************************** Compute element HCurl mass matrices *******************************
 
      // transform to physical coordinates 
-      fst::HCURLtransformVALUE<double>(hexCValsTransformed, hexJacobInv, hexEdgeSigns,
+      fst::HCURLtransformVALUE<double>(hexCValsTransformed, hexJacobInv, 
                                    hexCVals);
 
      // multiply by weighted measure
@@ -687,6 +693,11 @@ int main(int argc, char *argv[]) {
       fst::integrate<double>(massMatrixC,
                              hexCValsTransformed, hexCValsTransformedWeighted,
                              COMP_CPP);
+
+     // apply edge signs
+      fst::applyLeftFieldSigns<double>(massMatrixC, hexEdgeSigns);
+      fst::applyRightFieldSigns<double>(massMatrixC, hexEdgeSigns);
+
 
      // assemble into global matrix
       err = 0;
@@ -706,7 +717,7 @@ int main(int argc, char *argv[]) {
 
       // transform to physical coordinates 
       fst::HCURLtransformCURL<double>(hexCurlsTransformed, hexJacobian, hexJacobDet, 
-                                   hexEdgeSigns, hexCurls);
+                                      hexCurls);
 
       // combine mu value with weighted measure
       for (int nC = 0; nC < numCells; nC++){
@@ -723,6 +734,10 @@ int main(int argc, char *argv[]) {
       fst::integrate<double>(stiffMatrixC,
                              hexCurlsTransformed, hexCurlsTransformedWeighted,
                              COMP_CPP);
+
+     // apply edge signs
+      fst::applyLeftFieldSigns<double>(stiffMatrixC, hexEdgeSigns);
+      fst::applyRightFieldSigns<double>(stiffMatrixC, hexEdgeSigns);
 
      // assemble into global matrix
       err = 0;
