@@ -78,6 +78,24 @@ TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, setgetRKButcherTableau ) {
   TEST_EQUALITY_CONST( *rkbt == *rkbt_out, true );
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, clone ) {
+  RCP<SinCosModel> model = sinCosModel(false);
+  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Explicit 4 Stage");
+  RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>(model,rkbt);
+  TEST_ASSERT( !is_null(stepper) );
+  TEST_ASSERT( stepper->supportsCloning() );
+  RCP<StepperBase<double> > otherStepper = stepper->cloneStepperAlgorithm();
+  TEST_ASSERT( !is_null(otherStepper) );
+  TEST_ASSERT( otherStepper.ptr() != stepper.ptr() );
+  {
+    RCP<ExplicitRKStepper<double> > erkStepper = Teuchos::rcp_dynamic_cast<ExplicitRKStepper<double> >(otherStepper,false);
+    TEST_ASSERT( !is_null(erkStepper) );
+    RCP<const RKButcherTableauBase<double> > rkbt_out = erkStepper->getRKButcherTableau();
+    TEST_ASSERT( rkbt.ptr() == rkbt_out.ptr() );
+  }
+
+}
+
 TEUCHOS_UNIT_TEST( Rythmos_ExplicitRKStepper, invalidRKBT ) {
   RCP<ExplicitRKStepper<double> > stepper = explicitRKStepper<double>();
   RCP<RKButcherTableauBase<double> > rkbt;

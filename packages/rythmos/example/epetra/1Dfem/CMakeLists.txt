@@ -48,6 +48,20 @@ IF (Stratimikos_ENABLE_Amesos)
     ${STANDARD_TEST_CONFIG}
     )
 
+  MULTILINE_SET(ARGS
+    " --verbose "
+    " --method=BDF "
+    " --useNOX "
+    " --echo-command-line "
+    )
+
+  PACKAGE_ADD_TEST(
+    1DfemTransient
+    NAME 1DfemTransient_amesos_IBDF_NOX
+    ARGS ${ARGS}
+    ${STANDARD_TEST_CONFIG}
+    )
+
 ENDIF()
 
 
@@ -105,6 +119,58 @@ IF (Stratimikos_ENABLE_AztecOO)
   PACKAGE_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_aztecoo_IBDF
+    ARGS ${ARGS}
+    ${STANDARD_TEST_CONFIG}
+    )
+
+  MULTILINE_SET(ARGS
+    " --verbose "
+    " --method=IRK "
+    " --numsteps=5 "
+    " --extra-linear-solver-params=\""
+    "   <ParameterList> "
+    "     <Parameter name='Linear Solver Type' type='string' value='AztecOO'/> "
+    "     <ParameterList name ='Linear Solver Types'> "
+    "       <ParameterList name='AztecOO'> "
+    "         <ParameterList name='Forward Solve'> "
+    "           <Parameter name='Tolerance' type='double' value='1e-12'/> "
+    "         </ParameterList> "
+    "       </ParameterList> "
+    "     </ParameterList> "
+    "   </ParameterList> \"" 
+    " --linear-solver-params-used-file=lowsf.aztecoo.used.xml "
+    " --echo-command-line "
+    )
+
+  PACKAGE_ADD_TEST(
+    1DfemTransient
+    NAME 1DfemTransient_aztecoo_IRK
+    ARGS ${ARGS}
+    ${STANDARD_TEST_CONFIG}
+    )
+
+  MULTILINE_SET(ARGS
+    " --verbose "
+    " --method=BDF "
+    " --useNOX "
+    " --extra-linear-solver-params=\""
+    "   <ParameterList> "
+    "     <Parameter name='Linear Solver Type' type='string' value='AztecOO'/> "
+    "     <ParameterList name ='Linear Solver Types'> "
+    "       <ParameterList name='AztecOO'> "
+    "         <ParameterList name='Forward Solve'> "
+    "           <Parameter name='Tolerance' type='double' value='1e-12'/> "
+    "         </ParameterList> "
+    "       </ParameterList> "
+    "     </ParameterList> "
+    "   </ParameterList> \"" 
+    " --linear-solver-params-used-file=lowsf.aztecoo.used.xml "
+    " --echo-command-line "
+    )
+
+  PACKAGE_ADD_TEST(
+    1DfemTransient
+    NAME 1DfemTransient_aztecoo_IBDF_NOX
     ARGS ${ARGS}
     ${STANDARD_TEST_CONFIG}
     )
@@ -168,6 +234,33 @@ IF (Stratimikos_ENABLE_Belos)
   PACKAGE_ADD_TEST(
     1DfemTransient
     NAME 1DfemTransient_belos_IBDF
+    ARGS ${ARGS}
+    ${STANDARD_TEST_CONFIG}
+    )
+
+  MULTILINE_SET(ARGS
+    " --verbose "
+    " --method=BDF "
+    " --useNOX "
+    " --extra-linear-solver-params=\""
+    "   <ParameterList> "
+    "     <Parameter name='Linear Solver Type' type='string' value='Belos'/> "
+    "     <ParameterList name='Linear Solver Types'> "
+    "       <ParameterList name='Belos'> "
+    "         <Parameter name='Solver Type' type='string' value='Block GMRES'/> "
+    "         <ParameterList name='Solver Types'> "
+    "           <ParameterList name='Block GMRES'> "
+    "             <Parameter name='Convergence Tolerance' type='double' value='1e-12'/> "
+    "           </ParameterList> "
+    "         </ParameterList> "
+    "       </ParameterList> "
+    "     </ParameterList> "
+    "   </ParameterList> \""
+    "  --linear-solver-params-used-file=lowsf.belos.used.xml "
+    )
+  PACKAGE_ADD_TEST(
+    1DfemTransient
+    NAME 1DfemTransient_belos_IBDF_NOX
     ARGS ${ARGS}
     ${STANDARD_TEST_CONFIG}
     )

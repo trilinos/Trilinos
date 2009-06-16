@@ -59,6 +59,7 @@
 #include "Thyra_LinearNonlinearSolver.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Thyra_TestingTools.hpp"
+#include "Thyra_NonlinearSolver_NOX.hpp"
 
 // Includes for Stratimikos:
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
@@ -104,6 +105,7 @@ int main(int argc, char *argv[])
 
   try { // catch exceptions
 
+    bool useNOX = false; // Use NOX?
     double lambda_min = -0.9;   // min ODE coefficient
     double lambda_max = -0.01;  // max ODE coefficient
     double coeff_s = 0.0;  // Default is no forcing term
@@ -156,6 +158,7 @@ int main(int argc, char *argv[])
     clp.setOption( "maxorder", &maxOrder, "Maximum Implicit BDF order" );
     clp.setOption( "useintegrator", "normal", &useIntegrator, "Use DefaultIntegrator as integrator" );
     clp.setOption( "buffersize", &buffersize, "Number of solutions to store in InterpolationBuffer" );
+    clp.setOption( "useNOX", "noNOX", &useNOX, "Use NOX as the nonlinear solver" );
     setVerbosityLevelOption( "verb-level", &verbLevel, "Overall verbosity level.", &clp );
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
@@ -262,17 +265,27 @@ int main(int argc, char *argv[])
         nonlinearSolver;
       RCP<Thyra::NonlinearSolverBase<double> >
         nonlinearSolverSlave;
-      RCP<Rythmos::TimeStepNonlinearSolver<double> >
-        _nonlinearSolver = rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-      RCP<Rythmos::TimeStepNonlinearSolver<double> >
-        _nonlinearSolverSlave = rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-      RCP<Teuchos::ParameterList>
-        nonlinearSolverPL = Teuchos::parameterList();
-      nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
-      _nonlinearSolver->setParameterList(nonlinearSolverPL);
-      _nonlinearSolverSlave->setParameterList(nonlinearSolverPL);
-      nonlinearSolver = _nonlinearSolver;
-      nonlinearSolverSlave = _nonlinearSolverSlave;
+      if (useNOX) {
+        RCP<Thyra::NOXNonlinearSolver>
+          _nonlinearSolver = rcp(new Thyra::NOXNonlinearSolver);
+        RCP<Thyra::NOXNonlinearSolver>
+          _nonlinearSolverSlave = rcp(new Thyra::NOXNonlinearSolver);
+        nonlinearSolver = _nonlinearSolver;
+        nonlinearSolverSlave = _nonlinearSolverSlave;
+      } 
+      else {
+        RCP<Rythmos::TimeStepNonlinearSolver<double> >
+          _nonlinearSolver = rcp(new Rythmos::TimeStepNonlinearSolver<double>());
+        RCP<Rythmos::TimeStepNonlinearSolver<double> >
+          _nonlinearSolverSlave = rcp(new Rythmos::TimeStepNonlinearSolver<double>());
+        RCP<Teuchos::ParameterList>
+          nonlinearSolverPL = Teuchos::parameterList();
+        nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
+        _nonlinearSolver->setParameterList(nonlinearSolverPL);
+        _nonlinearSolverSlave->setParameterList(nonlinearSolverPL);
+        nonlinearSolver = _nonlinearSolver;
+        nonlinearSolverSlave = _nonlinearSolverSlave;
+      } 
       if (method_val == METHOD_BE) {
         stepper_ptr = rcp(
           new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));

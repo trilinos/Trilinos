@@ -73,7 +73,9 @@ CORE_H = \
   $(srcdir)/Rythmos_ForwardResponseSensitivityComputer.hpp\
   $(srcdir)/Rythmos_ForwardResponseSensitivityComputerObserver.hpp\
   $(srcdir)/Rythmos_ForwardSensitivityIntegratorAsModelEvaluator.hpp\
-  $(srcdir)/Rythmos_ForwardSensitivityModelEvaluator.hpp\
+  $(srcdir)/Rythmos_ForwardSensitivityExplicitModelEvaluator.hpp\
+  $(srcdir)/Rythmos_ForwardSensitivityImplicitModelEvaluator.hpp\
+  $(srcdir)/Rythmos_ForwardSensitivityModelEvaluatorBase.hpp\
   $(srcdir)/Rythmos_ForwardSensitivityStepper.hpp\
   $(srcdir)/Rythmos_HermiteInterpolator.hpp\
   $(srcdir)/Rythmos_HermiteInterpolator_decl.hpp\

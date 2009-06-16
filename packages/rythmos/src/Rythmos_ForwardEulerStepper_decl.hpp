@@ -48,10 +48,16 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     ForwardEulerStepper();
 
     /** \brief . */
-    void setModel(const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+    bool supportsCloning() const;
 
     /** \brief . */
-    Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
+    RCP<StepperBase<Scalar> > cloneStepperAlgorithm() const;
+
+    /** \brief . */
+    void setModel(const RCP<const Thyra::ModelEvaluator<Scalar> > &model);
+
+    /** \brief . */
+    RCP<const Thyra::ModelEvaluator<Scalar> >
     getModel() const;
 
     /** \brief . */
@@ -84,15 +90,15 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     /// Add points to buffer
     void addPoints(
       const Array<Scalar>& time_vec
-      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& x_vec
-      ,const Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
+      ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& x_vec
+      ,const Array<RCP<const Thyra::VectorBase<Scalar> > >& xdot_vec
       );
     
     /// Get values from buffer
     void getPoints(
       const Array<Scalar>& time_vec
-      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* x_vec
-      ,Array<Teuchos::RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
+      ,Array<RCP<const Thyra::VectorBase<Scalar> > >* x_vec
+      ,Array<RCP<const Thyra::VectorBase<Scalar> > >* xdot_vec
       ,Array<ScalarMag>* accuracy_vec
       ) const;
 
@@ -116,13 +122,13 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
 
     /// Redefined from Teuchos::ParameterListAcceptor
     /** \brief . */
-    void setParameterList(Teuchos::RCP<Teuchos::ParameterList> const& paramList);
+    void setParameterList(RCP<Teuchos::ParameterList> const& paramList);
 
     /** \brief . */
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+    RCP<Teuchos::ParameterList> getNonconstParameterList();
 
     /** \brief . */
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
+    RCP<Teuchos::ParameterList> unsetParameterList();
 
     /** \brief . */
     RCP<const Teuchos::ParameterList> getValidParameters() const;
@@ -141,7 +147,7 @@ class ForwardEulerStepper : virtual public StepperBase<Scalar>
     int numSteps_;
     bool haveInitialCondition_;
 
-    Teuchos::RCP<Teuchos::ParameterList> parameterList_;
+    RCP<Teuchos::ParameterList> parameterList_;
     bool isInitialized_;
 
     // Private member functions:

@@ -31,7 +31,9 @@
 
 
 #include "Rythmos_StepperBase.hpp"
-#include "Rythmos_ForwardSensitivityModelEvaluator.hpp"
+#include "Rythmos_ForwardSensitivityModelEvaluatorBase.hpp"
+#include "Rythmos_ForwardSensitivityImplicitModelEvaluator.hpp"
+#include "Rythmos_ForwardSensitivityExplicitModelEvaluator.hpp"
 #include "Rythmos_StateAndForwardSensitivityModelEvaluator.hpp"
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
 #include "Rythmos_IntegratorBase.hpp"
@@ -107,7 +109,7 @@ namespace Rythmos {
  \endverbatim
 
  * and <tt>f_bar(...)</tt> is the obvious concatenated state and sensitivity
- * system.  See the class <tt>StateAndForwardSensitivityModelEvaluator</tt>
+ * system.  See the class <tt>StateAndForwardSensitivityModelEvaluatorBase</tt>
  * for a description of how to get at the components of <tt>x</tt>,
  * <tt>s_bar</tt>, and <tt>S</tt> given <tt>x_bar</tt>.
  *
@@ -307,7 +309,7 @@ public:
    * Here <tt>*this</tt> is set up to run the state and sens steppers
    * completely independently; each with the their own error control
    * strategies.  The state stepper in driven through the state integrator
-   * which in turn is driven by the ForwardSensitivityModelEvaluator that is
+   * which in turn is driven by the ForwardSensitivityModelEvaluatorBase that is
    * driven by the sens stepper.
    */
   void initializeDecoupledSteppers(
@@ -331,7 +333,7 @@ public:
   /** \brief Return the forward sensitivity model evaluator object that got
    * created internally when <tt>initialize()</tt> was called.
    */
-  RCP<const ForwardSensitivityModelEvaluator<Scalar> >
+  RCP<const ForwardSensitivityModelEvaluatorBase<Scalar> >
   getFwdSensModel() const;
 
   /** \brief Return the state and forward sensitivity model evaluator object
@@ -487,7 +489,7 @@ private:
   RCP<Thyra::NonlinearSolverBase<Scalar> > sensTimeStepSolver_;
 
   bool isSingleResidualStepper_;
-  RCP<ForwardSensitivityModelEvaluator<Scalar> > sensModel_;
+  RCP<ForwardSensitivityModelEvaluatorBase<Scalar> > sensModel_;
   RCP<StateAndForwardSensitivityModelEvaluator<Scalar> > stateAndSensModel_;
   Thyra::ModelEvaluatorBase::InArgs<Scalar> stateBasePoint_t_;
 
@@ -640,7 +642,7 @@ ForwardSensitivityStepper<Scalar>::getStateModel() const
 
   
 template<class Scalar> 
-RCP<const ForwardSensitivityModelEvaluator<Scalar> >
+RCP<const ForwardSensitivityModelEvaluatorBase<Scalar> >
 ForwardSensitivityStepper<Scalar>::getFwdSensModel() const
 {
   return sensModel_;
@@ -738,46 +740,54 @@ void ForwardSensitivityStepper<Scalar>::setInitialCondition(
       state_and_sens_ic.get_x()
       );
 
-  const RCP<const Thyra::ProductVectorBase<Scalar> >
-    x_bar_dot_init = Thyra::productVectorBase<Scalar>(
-      state_and_sens_ic.get_x_dot()
-      );
+  RCP<const Thyra::ProductVectorBase<Scalar> > x_bar_dot_init;
+  if (state_and_sens_ic.supports(MEB::IN_ARG_x_dot)) {
+      x_bar_dot_init = Thyra::productVectorBase<Scalar>(
+        state_and_sens_ic.get_x_dot()
+        );
+  }
 
   // Remove x and x_dot from state_and_sens_ic_in to avoid cloning x and x dot!
   
   Thyra::ModelEvaluatorBase::InArgs<Scalar>
     state_and_sens_ic_no_x = state_and_sens_ic;
   state_and_sens_ic_no_x.set_x(Teuchos::null);
-  state_and_sens_ic_no_x.set_x_dot(Teuchos::null);
+  if (state_and_sens_ic_no_x.supports(MEB::IN_ARG_x_dot)) {
+    state_and_sens_ic_no_x.set_x_dot(Teuchos::null);
+  }
 
   // Set initial condition for the state
 
   MEB::InArgs<Scalar> state_ic = stateModel_->createInArgs();
   state_ic.setArgs(state_and_sens_ic_no_x,true,true); // Set time, parameters etc.
   state_ic.set_x(x_bar_init->getVectorBlock(0)->clone_v());
-  state_ic.set_x_dot(
-    !is_null(x_bar_dot_init)
-    ? x_bar_dot_init->getVectorBlock(0)->clone_v()
-    : Teuchos::null
-    );
+  if (state_ic.supports(MEB::IN_ARG_x_dot)) {
+    state_ic.set_x_dot(
+        !is_null(x_bar_dot_init)
+        ? x_bar_dot_init->getVectorBlock(0)->clone_v()
+        : Teuchos::null
+        );
+  }
   stateStepper_->setInitialCondition(state_ic);
 
   // Set up the integrator if needed
-  if (!is_null(stateIntegrator_)) {
-    stateIntegrator_->setStepper( stateStepper_, finalTime_ );
-    sensModel_->setStateIntegrator( stateIntegrator_, state_ic );
-  }
+  //if (!is_null(stateIntegrator_)) {
+  //  stateIntegrator_->setStepper( stateStepper_, finalTime_ );
+  //  sensModel_->setStateIntegrator( stateIntegrator_, state_ic );
+  //}
 
   // Set initial condition for the sensitivities
   
   MEB::InArgs<Scalar> sens_ic = sensModel_->createInArgs();
   sens_ic.setArgs(state_and_sens_ic_no_x,true,true); // Set time etc.
   sens_ic.set_x(x_bar_init->getVectorBlock(1)->clone_v());
-  sens_ic.set_x_dot(
-    !is_null(x_bar_dot_init)
-    ? x_bar_dot_init->getVectorBlock(1)->clone_v()
-    : Teuchos::null
-    );
+  if (sens_ic.supports(MEB::IN_ARG_x_dot)) {
+    sens_ic.set_x_dot(
+        !is_null(x_bar_dot_init)
+        ? x_bar_dot_init->getVectorBlock(1)->clone_v()
+        : Teuchos::null
+        );
+  }
   sensStepper_->setInitialCondition(sens_ic);
 
 }
@@ -991,15 +1001,26 @@ void ForwardSensitivityStepper<Scalar>::initializeCommon(
 
   TEST_FOR_EXCEPT( is_null(stateModel) );
   TEST_FOR_EXCEPT( is_null(stateStepper) );
-  TEST_FOR_EXCEPT( is_null(stateTimeStepSolver) ); // ToDo: allow to be null for explicit methods!
+  if (stateStepper->isImplicit()) {
+    TEST_FOR_EXCEPT( is_null(stateTimeStepSolver) ); // allow to be null for explicit methods
+  }
 
 
   //
   // Create the sensModel which will do some more validation
   //
   
-  RCP<ForwardSensitivityModelEvaluator<Scalar> >
-    sensModel = Teuchos::rcp(new ForwardSensitivityModelEvaluator<Scalar>);
+  RCP<ForwardSensitivityModelEvaluatorBase<Scalar> > sensModel;
+  MEB::InArgs<Scalar> stateModelInArgs = stateModel->createInArgs();
+  if (stateModelInArgs.supports(MEB::IN_ARG_x_dot)) {
+    // Implicit DE formulation
+    sensModel = Teuchos::rcp(new ForwardSensitivityImplicitModelEvaluator<Scalar>);
+  }
+  else {
+    // Explicit DE formulation
+    sensModel = Teuchos::rcp(new ForwardSensitivityExplicitModelEvaluator<Scalar>);
+  }
+
   sensModel->initializeStructure(stateModel,p_index);
   
   //
@@ -1050,11 +1071,15 @@ void ForwardSensitivityStepper<Scalar>::initializeCommon(
                                    // stateTimeStepSolver to check this!
 
   stateStepper_->setModel(stateModel_);
-  rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
-    stateStepper_,true)->setSolver(stateTimeStepSolver_);
+  if (stateStepper_->isImplicit()) {
+    rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
+        stateStepper_,true)->setSolver(stateTimeStepSolver_);
+  }
   sensStepper_->setModel(sensModel_);
-  rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
-    sensStepper_,true)->setSolver(sensTimeStepSolver_);
+  if (sensStepper_->isImplicit()) {
+    rcp_dynamic_cast<SolverAcceptingStepperBase<Scalar> >(
+        sensStepper_,true)->setSolver(sensTimeStepSolver_);
+  }
 
   stateBasePoint_t_ = stateModel_->createInArgs();
 
@@ -1138,43 +1163,60 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
       );
     
     const Scalar curr_t = stateStepStatus.time;
-    
-    // Get both x and x_dot since these are needed compute other derivative
-    // objects at these points.
 
-    RCP<const Thyra::VectorBase<Scalar> > x, x_dot;
-    get_x_and_x_dot(*stateStepper_,curr_t,&x,&x_dot);
-    
-    stateBasePoint_t_ = stateBasePoint_;
-    stateBasePoint_t_.set_x_dot( x_dot );
-    stateBasePoint_t_.set_x( x );
-    stateBasePoint_t_.set_t( curr_t );
+    RCP<ForwardSensitivityImplicitModelEvaluator<Scalar> > implicitSensModel = 
+      Teuchos::rcp_dynamic_cast<ForwardSensitivityImplicitModelEvaluator<Scalar> >(sensModel_,false);
+    if (!is_null(implicitSensModel)) { // ForwardSensitivityImplicitModelEvaluator
+      // Get both x and x_dot since these are needed compute other derivative
+      // objects at these points.
+      RCP<const Thyra::VectorBase<Scalar> > x, x_dot;
+      get_x_and_x_dot(*stateStepper_,curr_t,&x,&x_dot);
+      
+      stateBasePoint_t_ = stateBasePoint_;
+      stateBasePoint_t_.set_x_dot( x_dot );
+      stateBasePoint_t_.set_x( x );
+      stateBasePoint_t_.set_t( curr_t );
 
-    // Grab the SingleResidualModel that was used to compute the state timestep.
-    // From this, we can get the constants that where used to compute W!
-    RCP<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >
-      singleResidualModel
-      = Teuchos::rcp_dynamic_cast<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >(
-        stateTimeStepSolver_->getModel(), true
+      // Grab the SingleResidualModel that was used to compute the state timestep.
+      // From this, we can get the constants that where used to compute W!
+      RCP<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >
+        singleResidualModel
+        = Teuchos::rcp_dynamic_cast<const Rythmos::SingleResidualModelEvaluatorBase<Scalar> >(
+          stateTimeStepSolver_->getModel(), true
+          );
+      const Scalar
+        coeff_x_dot = singleResidualModel->get_coeff_x_dot(),
+        coeff_x = singleResidualModel->get_coeff_x();
+      
+      // Get W (and force an update if not up to date already)
+
+      if (mediumTrace && forceUpToDateW_)
+        *out << "\nForcing an update of W at the converged state timestep ...\n";
+      
+      RCP<Thyra::LinearOpWithSolveBase<Scalar> >
+        W_tilde = stateTimeStepSolver_->get_nonconst_W(forceUpToDateW_);
+      
+      TEST_FOR_EXCEPTION(
+        is_null(W_tilde), std::logic_error,
+        "Error, the W from the state time step be non-null!"
         );
-    const Scalar
-      coeff_x_dot = singleResidualModel->get_coeff_x_dot(),
-      coeff_x = singleResidualModel->get_coeff_x();
-    
-    // Get W (and force an update if not up to date already)
+      
+      implicitSensModel->initializeState( stateBasePoint_t_, W_tilde, coeff_x_dot, coeff_x );
 
-    if (mediumTrace && forceUpToDateW_)
-      *out << "\nForcing an update of W at the converged state timestep ...\n";
-    
-    RCP<Thyra::LinearOpWithSolveBase<Scalar> >
-      W_tilde = stateTimeStepSolver_->get_nonconst_W(forceUpToDateW_);
-    
-    TEST_FOR_EXCEPTION(
-      is_null(W_tilde), std::logic_error,
-      "Error, the W from the state time step be non-null!"
-      );
-    
-    sensModel_->initializeState( stateBasePoint_t_, W_tilde, coeff_x_dot, coeff_x );
+    } else { // explicit ME:
+      // ForwardSensitivityExplicitModelEvaluator
+      RCP<ForwardSensitivityExplicitModelEvaluator<Scalar> > explicitSensModel = 
+        Teuchos::rcp_dynamic_cast<ForwardSensitivityExplicitModelEvaluator<Scalar> > (sensModel_,true);
+      
+      RCP<const Thyra::VectorBase<Scalar> > x;
+      x = get_x(*stateStepper_,curr_t);
+      
+      stateBasePoint_t_ = stateBasePoint_;
+      stateBasePoint_t_.set_x( x );
+      stateBasePoint_t_.set_t( curr_t );
+
+      explicitSensModel->initializePointState( stateBasePoint_t_ );
+    }
 
   }
   // 2007/09/04: rabartl: ToDo: Move the above code that initializes the

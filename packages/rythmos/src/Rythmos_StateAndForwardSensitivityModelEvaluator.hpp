@@ -30,7 +30,7 @@
 #define RYTHMOS_STATE_AND_FORWARD_SENSITIVITY_MODEL_EVALUATOR_HPP
 
 
-#include "Rythmos_ForwardSensitivityModelEvaluator.hpp"
+#include "Rythmos_ForwardSensitivityModelEvaluatorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp" // Interface
 #include "Thyra_StateFuncModelEvaluatorBase.hpp" // Implementation
 #include "Thyra_DefaultProductVectorSpace.hpp"
@@ -200,7 +200,7 @@ public:
    *           will be extracted.
    */
   void initializeStructure(
-    const Teuchos::RCP<const ForwardSensitivityModelEvaluator<Scalar> > &sensModel
+    const Teuchos::RCP<const ForwardSensitivityModelEvaluatorBase<Scalar> > &sensModel
     );
 
   // 2007/05/30: rabartl: ToDo: Add function to set the nominal values etc.
@@ -260,7 +260,7 @@ private:
   // /////////////////////////
   // Private data members
 
-  Teuchos::RCP<const ForwardSensitivityModelEvaluator<Scalar> > sensModel_;
+  Teuchos::RCP<const ForwardSensitivityModelEvaluatorBase<Scalar> > sensModel_;
 
   int Np_;
   Teuchos::RCP<const Thyra::DefaultProductVectorSpace<Scalar> > x_bar_space_;
@@ -284,7 +284,7 @@ StateAndForwardSensitivityModelEvaluator<Scalar>::StateAndForwardSensitivityMode
 
 template<class Scalar>
 void StateAndForwardSensitivityModelEvaluator<Scalar>::initializeStructure(
-  const Teuchos::RCP<const ForwardSensitivityModelEvaluator<Scalar> > &sensModel
+  const Teuchos::RCP<const ForwardSensitivityModelEvaluatorBase<Scalar> > &sensModel
   )
 {
 

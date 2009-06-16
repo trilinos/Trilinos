@@ -47,6 +47,17 @@ class ExplicitRKStepper : virtual public RKButcherTableauAcceptingStepperBase<Sc
     /** \brief . */
     ExplicitRKStepper();
 
+    /** \name Overridden from StepperBase */
+    //@{
+    
+    /** \brief. */
+    bool supportsCloning() const;
+
+    /** \brief . */
+    RCP<StepperBase<Scalar> > cloneStepperAlgorithm() const;
+    
+    //@}
+
     /** \name Overridden from RKButcherTableauAcceptingStepperBase */
     //@{
 

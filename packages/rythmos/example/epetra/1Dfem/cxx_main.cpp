@@ -46,12 +46,16 @@
 #include "Rythmos_BackwardEulerStepper.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
 #include "Rythmos_ImplicitBDFStepper.hpp"
+#include "Rythmos_ImplicitRKStepper.hpp"
+#include "Rythmos_RKButcherTableau.hpp"
+#include "Rythmos_RKButcherTableauBuilder.hpp"
 
 // Includes for Thyra:
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_EpetraModelEvaluator.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
+#include "Thyra_NonlinearSolver_NOX.hpp"
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Thyra_TestingTools.hpp"
 
@@ -69,7 +73,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
-enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
+enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF, METHOD_IRK };
 enum STEP_METHOD { STEP_METHOD_FIXED, STEP_METHOD_VARIABLE };
 
 int main(int argc, char *argv[])
@@ -95,9 +99,9 @@ int main(int argc, char *argv[])
     int numElements = 201; // number of elements in vector
     double finalTime = 1.0; // ODE final time
     int N = 100;  // number of steps to take
-    const int num_methods = 4;
-    const EMethod method_values[] = { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
-    const char * method_names[] = { "FE", "BE", "ERK", "BDF" };
+    const int num_methods = 5;
+    const EMethod method_values[] = { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF, METHOD_IRK };
+    const char * method_names[] = { "FE", "BE", "ERK", "BDF", "IRK" };
     EMethod method_val = METHOD_BE;
     double maxError = 0.01;
     bool version = false;  // display version information 
@@ -105,6 +109,7 @@ int main(int argc, char *argv[])
     double abstol = 1.0e-4;
     int maxOrder = 5;
     int outputLevel = 2; // outputLevel is used to control Rythmos verbosity
+    bool useNOX = false;
 
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
@@ -123,6 +128,7 @@ int main(int argc, char *argv[])
     clp.setOption( "verbose", "quiet", &verbose, "Set if output is printed or not" );
     clp.setOption( "version", "run", &version, "Version of this code" );
     clp.setOption( "outputLevel", &outputLevel, "Debug Level for Rythmos" );
+    clp.setOption( "useNOX", "noNOX", &useNOX, "Use NOX as nonlinear solver" );
 
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
@@ -161,7 +167,7 @@ int main(int argc, char *argv[])
     // Create the factory for the LinearOpWithSolveBase object
     Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
       W_factory;
-    if((method_val == METHOD_BE) or (method_val == METHOD_BDF))
+    if((method_val == METHOD_BE) or (method_val == METHOD_BDF) or (method_val == METHOD_IRK))
     {
       //W_factory = Teuchos::rcp(new Thyra::DiagonalEpetraLinearOpWithSolveFactory());
       //W_factory = Teuchos::rcp(new Thyra::AmesosLinearOpWithSolveFactory());
@@ -188,27 +194,37 @@ int main(int argc, char *argv[])
       stepper_ptr = Rythmos::forwardEulerStepper<double>(model);
       method = "Forward Euler";
     } else if (method_val == METHOD_BE) {
-      Teuchos::RCP<Thyra::NonlinearSolverBase<double> >
-        nonlinearSolver;
-      Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> >
-        _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-      Teuchos::RCP<Teuchos::ParameterList>
-        nonlinearSolverPL = Teuchos::parameterList();
-      nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
-      _nonlinearSolver->setParameterList(nonlinearSolverPL);
-      nonlinearSolver = _nonlinearSolver;
+      Teuchos::RCP<Thyra::NonlinearSolverBase<double> > nonlinearSolver;
+      if (useNOX) {
+        Teuchos::RCP<Thyra::NOXNonlinearSolver> _nonlinearSolver = Teuchos::rcp(new Thyra::NOXNonlinearSolver);
+        nonlinearSolver = _nonlinearSolver;
+      }
+      else {
+        Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> >
+          _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
+        Teuchos::RCP<Teuchos::ParameterList>
+          nonlinearSolverPL = Teuchos::parameterList();
+        nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
+        _nonlinearSolver->setParameterList(nonlinearSolverPL);
+        nonlinearSolver = _nonlinearSolver;
+      }
       stepper_ptr = Teuchos::rcp(new Rythmos::BackwardEulerStepper<double>(model,nonlinearSolver));
       method = "Backward Euler";
     } else if (method_val == METHOD_BDF) {
-      Teuchos::RCP<Thyra::NonlinearSolverBase<double> >
-        nonlinearSolver;
-      Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> >
-        _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
-      Teuchos::RCP<Teuchos::ParameterList>
-        nonlinearSolverPL = Teuchos::parameterList();
-      nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
-      _nonlinearSolver->setParameterList(nonlinearSolverPL);
-      nonlinearSolver = _nonlinearSolver;
+      Teuchos::RCP<Thyra::NonlinearSolverBase<double> > nonlinearSolver;
+      if (useNOX) {
+        Teuchos::RCP<Thyra::NOXNonlinearSolver> _nonlinearSolver = Teuchos::rcp(new Thyra::NOXNonlinearSolver);
+        nonlinearSolver = _nonlinearSolver;
+      }
+      else {
+        Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> >
+          _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
+        Teuchos::RCP<Teuchos::ParameterList>
+          nonlinearSolverPL = Teuchos::parameterList();
+        nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
+        _nonlinearSolver->setParameterList(nonlinearSolverPL);
+        nonlinearSolver = _nonlinearSolver;
+      }
       Teuchos::RCP<Teuchos::ParameterList> BDFparams = Teuchos::rcp(new Teuchos::ParameterList);
       Teuchos::RCP<Teuchos::ParameterList> BDFStepControlPL = Teuchos::sublist(BDFparams, "Step Control Settings");
       BDFStepControlPL->set( "stopTime", finalTime );
@@ -218,6 +234,27 @@ int main(int argc, char *argv[])
       stepper_ptr = Teuchos::rcp(new Rythmos::ImplicitBDFStepper<double>(model,nonlinearSolver,BDFparams));
       step_method = STEP_METHOD_VARIABLE;
       method = "Implicit BDF";
+    } else if (method_val == METHOD_IRK) {
+      Teuchos::RCP<Thyra::NonlinearSolverBase<double> > nonlinearSolver;
+      if (useNOX) {
+        Teuchos::RCP<Thyra::NOXNonlinearSolver> _nonlinearSolver = Teuchos::rcp(new Thyra::NOXNonlinearSolver);
+        nonlinearSolver = _nonlinearSolver;
+      }
+      else {
+        Teuchos::RCP<Rythmos::TimeStepNonlinearSolver<double> >
+          _nonlinearSolver = Teuchos::rcp(new Rythmos::TimeStepNonlinearSolver<double>());
+        Teuchos::RCP<Teuchos::ParameterList>
+          nonlinearSolverPL = Teuchos::parameterList();
+        nonlinearSolverPL->set("Default Tol",double(1e-3*maxError));
+        _nonlinearSolver->setParameterList(nonlinearSolverPL);
+        nonlinearSolver = _nonlinearSolver;
+      }
+      Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory
+        = lowsfCreator.createLinearSolveStrategy("");
+      Teuchos::RCP<Rythmos::RKButcherTableauBase<double> > rkbt = Rythmos::createRKBT<double>("Implicit 3 Stage 6th order Gauss");
+      stepper_ptr = Rythmos::implicitRKStepper<double>(model,nonlinearSolver,irk_W_factory,rkbt);
+      step_method = STEP_METHOD_FIXED;
+      method = "Implicit RK";
     } else {
       TEST_FOR_EXCEPT(true);
     }

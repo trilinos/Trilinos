@@ -180,8 +180,34 @@ template<class Scalar>
 RCP<StepperBase<Scalar> >
 ImplicitRKStepper<Scalar>::cloneStepperAlgorithm() const
 {
-  TEST_FOR_EXCEPT(true);
-  return Teuchos::null;
+  // Just use the interface to clone the algorithm in a basically
+  // uninitialized state
+  RCP<ImplicitRKStepper<Scalar> >
+    stepper = Teuchos::rcp(new ImplicitRKStepper<Scalar>());
+
+  if (!is_null(model_)) {
+    stepper->setModel(model_); // Shallow copy is okay!
+  }
+
+  if (!is_null(irkButcherTableau_)) {
+    // 06/16/09 tscoffe:  should we clone the RKBT here?
+    stepper->setRKButcherTableau(irkButcherTableau_);
+  }
+
+  if (!is_null(solver_)) {
+    stepper->setSolver(solver_->cloneNonlinearSolver().assert_not_null());
+  }
+
+  if (!is_null(irk_W_factory_)) {
+    // 06/16/09 tscoffe:  should we clone the W_factory here?
+    stepper->set_W_factory(irk_W_factory_);
+  }
+
+  if (!is_null(paramList_)) {
+    stepper->setParameterList(Teuchos::parameterList(*paramList_));
+  }
+
+  return stepper;
 }
 
 

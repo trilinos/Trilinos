@@ -319,6 +319,33 @@ void ForwardEulerStepper<Scalar>::setInitialCondition(
   haveInitialCondition_ = true;
 }
 
+template<class Scalar>
+bool ForwardEulerStepper<Scalar>::supportsCloning() const
+{
+  return true;
+}
+
+template<class Scalar>
+RCP<StepperBase<Scalar> >
+ForwardEulerStepper<Scalar>::cloneStepperAlgorithm() const
+{
+
+  // Just use the interface to clone the algorithm in a basically
+  // uninitialized state
+
+  RCP<ForwardEulerStepper<Scalar> >
+    stepper = Teuchos::rcp(new ForwardEulerStepper<Scalar>());
+
+  if (!is_null(model_))
+    stepper->setModel(model_); // Shallow copy is okay!
+
+  if (!is_null(parameterList_))
+    stepper->setParameterList(Teuchos::parameterList(*parameterList_));
+
+  return stepper;
+
+}
+
 
 // 
 // Explicit Instantiation macro

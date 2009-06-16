@@ -532,6 +532,10 @@ void SinCosModel::setParameterList(RCP<ParameterList> const& paramList)
   using Teuchos::get;
   TEST_FOR_EXCEPT( is_null(paramList) );
   paramList->validateParametersAndSetDefaults(*this->getValidParameters());
+  // 06/16/09 tscoffe:  TODO:  Only set the parameters that explicitely show up
+  // in the new parameter list I.e.  Save all the previous options that have
+  // been set in the past rather than resetting everything to defaults, even if
+  // its not mentioned in the new parameter list.
   this->setMyParamList(paramList);
   RCP<ParameterList> pl = this->getMyNonconstParamList();
   bool isImplicit = get<bool>(*pl,Implicit_name);

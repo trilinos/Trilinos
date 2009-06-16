@@ -35,6 +35,8 @@
 #include "Rythmos_UnitTestModels.hpp"
 
 #include "Rythmos_StepperBuilder.hpp"
+#include "Rythmos_ExplicitRKStepper.hpp"
+#include "Rythmos_RKButcherTableauBuilder.hpp"
 #include "../SinCos/SinCosModel.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "Rythmos_DefaultIntegrator.hpp"
@@ -53,13 +55,11 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, create ) {
   TEST_EQUALITY_CONST( is_null(sensStepper), false );
 }
 
-
-TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled ) {
+TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled_BE ) {
   //RCP<Teuchos::FancyOStream>
   //  std_out_rcp = Teuchos::VerboseObjectBase::getDefaultOStream();
   //Teuchos::FancyOStream& std_out = *std_out_rcp;
   Teuchos::FancyOStream& std_out = out; // TEUCHOS_UNIT_TEST defines "out"
-  //Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_EXTREME;
   double b = 5.0;
   //double phi = 0.0;
   double a = 2.0;
@@ -67,7 +67,8 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled ) {
   double L = 4.0;
   double x0 = a;
   double x1 = b*f/L;
-  Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
+  Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_EXTREME;
+  //Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
   RCP<SinCosModel> stateModel = sinCosModel();
   RCP<ParameterList> modelPL = Teuchos::parameterList();
   modelPL->set("Accept model parameters",true);
@@ -162,7 +163,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled ) {
   stateAndSensStepper->setInitialCondition(state_and_sens_ic);
 
   double finalTime = 1.0e-4;
-  int numTimeSteps = 1;
+  int numTimeSteps = 2;
   RCP<IntegratorBase<double> > integrator;
   {
     RCP<ParameterList> integratorPL = Teuchos::parameterList();
@@ -309,7 +310,221 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled ) {
   TEST_EQUALITY_CONST( s_fd_correct, true );
   */
 
-  double maxSensError = 1.0e-4;
+  double maxSensError = 1.0e-8;
+
+  double s0_correct = Thyra::testRelNormDiffErr(
+    "DxDp_s0_final", *DxDp_s0_final,
+    "DxDp_exact_s0_final", *ds0dp,
+    "maxSensError", maxSensError,
+    "warningTol", 1.0, // Don't warn
+    &std_out, verbLevel
+    );
+  TEST_EQUALITY_CONST( s0_correct, true );
+
+  double s1_correct = Thyra::testRelNormDiffErr(
+    "DxDp_s1_final", *DxDp_s1_final,
+    "DxDp_exact_s1_final", *ds1dp,
+    "maxSensError", maxSensError,
+    "warningTol", 1.0, // Don't warn
+    &std_out, verbLevel
+    );
+  TEST_EQUALITY_CONST( s1_correct, true );
+
+  double s2_correct = Thyra::testRelNormDiffErr(
+    "DxDp_s2_final", *DxDp_s2_final,
+    "DxDp_exact_s2_final", *ds2dp,
+    "maxSensError", maxSensError,
+    "warningTol", 1.0, // Don't warn
+    &std_out, verbLevel
+    );
+  TEST_EQUALITY_CONST( s2_correct, true );
+
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled_FE ) {
+  Teuchos::FancyOStream& std_out = out; // TEUCHOS_UNIT_TEST defines "out"
+  double b = 5.0;
+  //double phi = 0.0;
+  double a = 2.0;
+  double f = 3.0;
+  double L = 4.0;
+  double x0 = a;
+  double x1 = b*f/L;
+  Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_EXTREME;
+  //Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
+  RCP<SinCosModel> stateModel = sinCosModel();
+  RCP<ParameterList> modelPL = Teuchos::parameterList();
+  modelPL->set("Accept model parameters",true);
+  modelPL->set("Implicit model formulation",false);
+  modelPL->set("Provide nominal values",true);
+  modelPL->set("Coeff a", a);
+  modelPL->set("Coeff f", f);
+  modelPL->set("Coeff L", L);
+  modelPL->set("IC x_0", x0);
+  modelPL->set("IC x_1", x1);
+  stateModel->setParameterList(modelPL);
+  const RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  RCP<ParameterList> stepperPL = Teuchos::parameterList();
+  stepperPL->set("Stepper Type","Forward Euler");
+  //stepperPL->set("Stepper Type","Explicit RK");
+  builder->setParameterList(stepperPL);
+  RCP<StepperBase<double> > stateStepper = builder->create();
+  {
+    // Set RKBT on ERK stepper
+    RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Explicit 4 Stage");
+    RCP<ExplicitRKStepper<double> > erkStepper = Teuchos::rcp_dynamic_cast<ExplicitRKStepper<double> >(stateStepper,false);
+    if (!is_null(erkStepper)) {
+      erkStepper->setRKButcherTableau(rkbt);
+    }
+  }
+  RCP<TimeStepNonlinearSolver<double> > nonlinearSolver; 
+  int p_index = 0;
+  RCP<ForwardSensitivityStepper<double> > stateAndSensStepper = 
+    forwardSensitivityStepper<double>();
+  stateAndSensStepper->initializeSyncedSteppers(
+    stateModel, 
+    p_index, 
+    stateModel->getNominalValues(),
+    stateStepper, 
+    nonlinearSolver
+    );
+
+  typedef Thyra::ModelEvaluatorBase MEB;
+  const MEB::InArgs<double> state_ic = stateModel->getNominalValues();
+
+  RCP<Thyra::VectorBase<double> > s_bar_init
+    = createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+  {
+    // Initial conditions for Sensitivity problem.  (How do we get these correct in general?)
+    RCP<Thyra::DefaultMultiVectorProductVector<double> > s_bar_mv =
+      Teuchos::rcp_dynamic_cast<Thyra::DefaultMultiVectorProductVector<double> >(s_bar_init,true);
+    RCP<Thyra::VectorBase<double> > s_bar_mv_0 = s_bar_mv->getNonconstVectorBlock(0);
+    Thyra::DetachedVectorView<double> s_bar_mv_0_view( *s_bar_mv_0 );
+    s_bar_mv_0_view[0] = 1.0;
+    s_bar_mv_0_view[1] = 0.0;
+    RCP<Thyra::VectorBase<double> > s_bar_mv_1 = s_bar_mv->getNonconstVectorBlock(1);
+    Thyra::DetachedVectorView<double> s_bar_mv_1_view( *s_bar_mv_1 );
+    s_bar_mv_1_view[0] = 0.0;
+    s_bar_mv_1_view[1] = b/L;
+    RCP<Thyra::VectorBase<double> > s_bar_mv_2 = s_bar_mv->getNonconstVectorBlock(2);
+    Thyra::DetachedVectorView<double> s_bar_mv_2_view( *s_bar_mv_2 );
+    s_bar_mv_2_view[0] = 0.0;
+    s_bar_mv_2_view[1] = -b*f/(L*L);
+  }
+  RCP<Thyra::VectorBase<double> > s_bar_dot_init
+    = createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+  {
+    RCP<Thyra::DefaultMultiVectorProductVector<double> > s_bar_dot_mv =
+      Teuchos::rcp_dynamic_cast<Thyra::DefaultMultiVectorProductVector<double> >(s_bar_dot_init,true);
+    RCP<Thyra::VectorBase<double> > s_bar_dot_mv_0 = s_bar_dot_mv->getNonconstVectorBlock(0);
+    Thyra::DetachedVectorView<double> s_bar_dot_mv_0_view( *s_bar_dot_mv_0 );
+    s_bar_dot_mv_0_view[0] = 0.0;
+    s_bar_dot_mv_0_view[1] = 0.0;
+    RCP<Thyra::VectorBase<double> > s_bar_dot_mv_1 = s_bar_dot_mv->getNonconstVectorBlock(1);
+    Thyra::DetachedVectorView<double> s_bar_dot_mv_1_view( *s_bar_dot_mv_1 );
+    s_bar_dot_mv_1_view[0] = 0.0;
+    s_bar_dot_mv_1_view[1] = -3.0*f*f*b/(L*L*L);
+    RCP<Thyra::VectorBase<double> > s_bar_dot_mv_2 = s_bar_dot_mv->getNonconstVectorBlock(2);
+    Thyra::DetachedVectorView<double> s_bar_dot_mv_2_view( *s_bar_dot_mv_2 );
+    s_bar_dot_mv_2_view[0] = 0.0;
+    s_bar_dot_mv_2_view[1] = 3.0*f*f*f*b/(L*L*L*L);
+  }
+
+  RCP<const StateAndForwardSensitivityModelEvaluator<double> >
+    stateAndSensModel = stateAndSensStepper->getStateAndFwdSensModel();
+
+  MEB::InArgs<double>
+    state_and_sens_ic = stateAndSensStepper->getModel()->createInArgs();
+
+  // Copy time, parameters etc.
+  state_and_sens_ic.setArgs(state_ic);
+  // Set initial condition for x_bar = [ x; s_bar ]
+  state_and_sens_ic.set_x(
+    stateAndSensModel->create_x_bar_vec(state_ic.get_x(),s_bar_init)
+    );
+  // Set initial condition for x_bar_dot = [ x_dot; s_bar_dot ]
+  //state_and_sens_ic.set_x_dot(
+  //  stateAndSensModel->create_x_bar_vec(state_ic.get_x_dot(),s_bar_dot_init)
+  //  );
+
+  stateAndSensStepper->setInitialCondition(state_and_sens_ic);
+
+  double finalTime = 1.0e-4;
+  int numTimeSteps = 2;
+  RCP<IntegratorBase<double> > integrator;
+  {
+    RCP<ParameterList> integratorPL = Teuchos::parameterList();
+    integratorPL->set( "Take Variable Steps", false );
+    integratorPL->set( "Fixed dt", Teuchos::as<double>((finalTime - state_ic.get_t())/numTimeSteps) );
+    RCP<IntegratorBase<double> >
+      defaultIntegrator = controlledDefaultIntegrator<double>(
+        simpleIntegrationControlStrategy<double>(integratorPL)
+        );
+    integrator = defaultIntegrator;
+  }
+
+  RCP<StepperAsModelEvaluator<double> >
+    stateAndSensIntegratorAsModel = stepperAsModelEvaluator(
+      Teuchos::rcp_implicit_cast<StepperBase<double> >(stateAndSensStepper),
+      integrator, state_and_sens_ic
+      );
+  stateAndSensIntegratorAsModel->setVerbLevel(verbLevel);
+    
+  RCP<Thyra::VectorBase<double> > x_bar_final;
+  {
+  
+    x_bar_final = createMember(stateAndSensIntegratorAsModel->get_g_space(0));
+  
+    Thyra::eval_g(
+      *stateAndSensIntegratorAsModel,
+      0, *state_ic.get_p(0),
+      finalTime,
+      0, &*x_bar_final
+      );
+
+    std_out
+      << "\nx_bar_final = x_bar(p,finalTime) evaluated using stateAndSensIntegratorAsModel:\n"
+      << Teuchos::describe(*x_bar_final,verbLevel);
+
+  }
+
+  // Now we check that the sensitivities are correct
+  RCP<const Thyra::VectorBase<double> >
+    DxDp_vec_final = Thyra::productVectorBase<double>(x_bar_final)->getVectorBlock(1);
+  std_out << "\nDxDp_vec_final:\n"
+    << Teuchos::describe(*DxDp_vec_final,verbLevel);
+  RCP<const Thyra::DefaultMultiVectorProductVector<double> > DxDp_mv_final =
+    Teuchos::rcp_dynamic_cast<const Thyra::DefaultMultiVectorProductVector<double> >(DxDp_vec_final,true);
+  RCP<const Thyra::VectorBase<double> >
+    DxDp_s0_final = DxDp_mv_final->getVectorBlock(0);
+  RCP<const Thyra::VectorBase<double> >
+    DxDp_s1_final = DxDp_mv_final->getVectorBlock(1);
+  RCP<const Thyra::VectorBase<double> >
+    DxDp_s2_final = DxDp_mv_final->getVectorBlock(2);
+  
+
+  std_out << "\nDxDp_s0_final:\n"
+    << Teuchos::describe(*DxDp_s0_final,verbLevel);
+  std_out << "\nDxDp_s1_final:\n"
+    << Teuchos::describe(*DxDp_s1_final,verbLevel);
+  std_out << "\nDxDp_s2_final:\n"
+    << Teuchos::describe(*DxDp_s2_final,verbLevel);
+
+  MEB::InArgs<double> exactSensSolution = stateModel->getExactSensSolution(0,finalTime);
+  RCP<const Thyra::VectorBase<double> > ds0dp = exactSensSolution.get_x();
+  exactSensSolution = stateModel->getExactSensSolution(1,finalTime);
+  RCP<const Thyra::VectorBase<double> > ds1dp = exactSensSolution.get_x();
+  exactSensSolution = stateModel->getExactSensSolution(2,finalTime);
+  RCP<const Thyra::VectorBase<double> > ds2dp = exactSensSolution.get_x();
+
+  std_out << "\nds0dp exact:\n"
+    << Teuchos::describe(*ds0dp,verbLevel);
+  std_out << "\nds1dp exact:\n"
+    << Teuchos::describe(*ds1dp,verbLevel);
+  std_out << "\nds2dp exact:\n"
+    << Teuchos::describe(*ds2dp,verbLevel);
+
+  double maxSensError = 1.0e-8;
 
   double s0_correct = Thyra::testRelNormDiffErr(
     "DxDp_s0_final", *DxDp_s0_final,

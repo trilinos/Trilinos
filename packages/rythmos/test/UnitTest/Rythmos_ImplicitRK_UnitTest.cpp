@@ -684,6 +684,50 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, assertValidModel ) {
   }
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, clone ) {
+  RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  RCP<Teuchos::ParameterList> stratPl = sublist(pl,Stratimikos_name);
+  RCP<Teuchos::ParameterList> modelPl = sublist(pl,DiagonalTransientModel_name);
+  stratPl->set("Linear Solver Type","AztecOO");
+  stratPl->set("Preconditioner Type","None");
+  modelPl->set("NumElements",2);
+  modelPl->set("Gamma_min",-2.5);
+  modelPl->set("Gamma_max",-0.5);
+  //RCP<Teuchos::ParameterList> model_voPl = sublist(modelPl,"VerboseObject");
+  //model_voPl->set("Verbosity Level","none");
+  RCP<Thyra::ModelEvaluator<double> > model = getDiagonalModel<double>(pl);
+  // Create the nonlinear solver
+  RCP<Rythmos::TimeStepNonlinearSolver<double> >
+    nonlinearSolver = Rythmos::timeStepNonlinearSolver<double>();
+  // Create the IRK W factory
+  RCP<Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory =
+    getWFactory<double>(pl);
+  // Create the RKBT
+  RCP<RKButcherTableauBase<double> > rkbt = createRKBT<double>("Implicit 3 Stage 6th order Gauss");
+  // Create the IRK Stepper
+  RCP<ImplicitRKStepper<double> > stepper = 
+    implicitRKStepper<double>( model, nonlinearSolver, irk_W_factory, rkbt );
+
+  TEST_ASSERT( !is_null(stepper) );
+  TEST_ASSERT( stepper->supportsCloning() );
+  RCP<StepperBase<double> > otherStepper = stepper->cloneStepperAlgorithm();
+  TEST_ASSERT( !is_null(otherStepper) );
+  TEST_ASSERT( otherStepper.ptr() != stepper.ptr() );
+  {
+    RCP<ImplicitRKStepper<double> > irkStepper = Teuchos::rcp_dynamic_cast<ImplicitRKStepper<double> >(otherStepper,false);
+    TEST_ASSERT( !is_null(irkStepper) );
+    RCP<const RKButcherTableauBase<double> > rkbt_out = irkStepper->getRKButcherTableau();
+    TEST_ASSERT( !is_null(rkbt_out) );
+    TEST_ASSERT( rkbt.ptr() == rkbt_out.ptr() );
+    RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > irk_W_factory_out = irkStepper->get_W_factory();
+    TEST_ASSERT( !is_null(irk_W_factory_out) );
+    TEST_ASSERT( irk_W_factory.ptr() == irk_W_factory_out.ptr() );
+    RCP<const Thyra::NonlinearSolverBase<double> > solver_out = irkStepper->getSolver();
+    TEST_ASSERT( !is_null(solver_out) );
+    TEST_ASSERT( solver_out.ptr() != nonlinearSolver.ptr() );
+  }
+}
+
 TEUCHOS_UNIT_TEST( Rythmos_ImplicitRKStepper, takeStep ) {
   // Create the model
   RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();

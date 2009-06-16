@@ -47,6 +47,8 @@
 #include "Rythmos_UnitTestModels.hpp"
 #include "Rythmos_RKButcherTableau.hpp"
 
+#include "Thyra_NonlinearSolver_NOX.hpp"
+
 namespace Rythmos {
 
 TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, construct ) {
@@ -950,6 +952,26 @@ TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_BE ) {
   pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","Interpolation Buffer");
   ib->setParameterList(pl);
   RCP<Thyra::NonlinearSolverBase<double> > nlSolver = timeStepNonlinearSolver<double>();
+  RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
+  Teuchos::Array<double> time_vec;
+  time_vec.push_back(pl->sublist("Integrator Settings").get<double>("Final Time"));
+  integrator->getFwdPoints(time_vec,NULL,NULL,NULL);
+  TEST_ASSERT( true ); 
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_IntegratorBuilder, fullyInitialized_BE_NOX ) {
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<SinCosModel> model = sinCosModel(true);
+  Thyra::ModelEvaluatorBase::InArgs<double> ic = model->getNominalValues();
+  RCP<ParameterList> pl = Teuchos::parameterList();
+  pl->setParameters(*(ib->getValidParameters()));
+  pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
+  pl->sublist("Integration Control Strategy Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
+  pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
+  pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
+  pl->sublist("Interpolation Buffer Settings").sublist("Trailing Interpolation Buffer Selection").set("Interpolation Buffer Type","Interpolation Buffer");
+  ib->setParameterList(pl);
+  RCP<Thyra::NonlinearSolverBase<double> > nlSolver = rcp(new Thyra::NOXNonlinearSolver);
   RCP<IntegratorBase<double> > integrator = ib->create(model,ic,nlSolver);
   Teuchos::Array<double> time_vec;
   time_vec.push_back(pl->sublist("Integrator Settings").get<double>("Final Time"));
