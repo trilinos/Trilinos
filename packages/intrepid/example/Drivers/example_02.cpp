@@ -751,6 +751,8 @@ int main(int argc, char *argv[]) {
      // transform to physical coordinates 
       fst::HCURLtransformVALUE<double>(hexCValsTransformed, hexJacobInv, 
                                    hexCVals);
+     // compute weighted measure
+      fst::computeMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
 
      // multiply by weighted measure
       fst::multiplyMeasure<double>(hexCValsTransformedWeighted,
@@ -771,10 +773,10 @@ int main(int argc, char *argv[]) {
             int rowIndex = elemToEdge(k,row);
             int colIndex = elemToEdge(k,col);
             double val = massMatrixC(0,row,col);
-            err = MassC.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            if (err > 0) {
+            //err = MassC.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
+            //if (err > 0) {
                 MassC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            }
+            //}
          }
       }
 
@@ -803,10 +805,10 @@ int main(int argc, char *argv[]) {
             int rowIndex = elemToFace(k,row);
             int colIndex = elemToFace(k,col);
             double val = massMatrixD(0,row,col);
-            err = MassD.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            if (err > 0) {
+            //err = MassD.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
+            //if (err > 0) {
                 MassD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            }
+            //}
          }
       }
 
@@ -818,7 +820,7 @@ int main(int argc, char *argv[]) {
 
      // multiply by weighted measure
       fst::multiplyMeasure<double>(hexDivsTransformedWeighted,
-                                   weightedMeasureMu, hexDivsTransformed);
+                                   weightedMeasure, hexDivsTransformed);
 
      // integrate to compute element stiffness matrix
       fst::integrate<double>(stiffMatrixD,
@@ -913,9 +915,9 @@ int main(int argc, char *argv[]) {
 // Calculates value of exact solution u
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
  {
-    uExact0 = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
-    uExact1 = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
-    uExact2 = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+    uExact0 = cos(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
+    uExact1 = cos(M_PI*x)*cos(M_PI*z)*(y+1.0)*(y-1.0);
+    uExact2 = cos(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
 
    return 0;
  }
@@ -923,9 +925,8 @@ int main(int argc, char *argv[]) {
 // Calculates divergence of exact solution u
  double evalDivu(double & x, double & y, double & z)
  {
-   double divu = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
-                 -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
-                 -M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+   double divu = 2.0*x*cos(M_PI*y)*cos(M_PI*z) + 2.0*y*cos(M_PI*x)*cos(M_PI*z)
+                 + 2.0*z*cos(M_PI*x)*cos(M_PI*y);
    return divu;
  }
 
@@ -933,12 +934,12 @@ int main(int argc, char *argv[]) {
 // Calculates curl of exact solution u
  int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z)
  {
-   double duxdy = cos(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*(y+1.0)*(y-1.0) + 2.0*y);
-   double duxdz = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0) + 2.0*z);
-   double duydx = cos(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0) + 2.0*x);
-   double duydz = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(x*(z+1.0)*(z-1.0) + 2.0*z);
-   double duzdx = cos(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0) + 2.0*x);
-   double duzdy = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(x*(y+1.0)*(y-1.0) + 2.0*y);
+   double duxdy = -M_PI*sin(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
+   double duxdz = -M_PI*sin(M_PI*z)*cos(M_PI*y)*(x+1.0)*(x-1.0);
+   double duydx = -M_PI*sin(M_PI*x)*cos(M_PI*z)*(y+1.0)*(y-1.0);
+   double duydz = -M_PI*sin(M_PI*z)*cos(M_PI*x)*(y+1.0)*(y-1.0);
+   double duzdx = -M_PI*sin(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
+   double duzdy = -M_PI*sin(M_PI*y)*cos(M_PI*x)*(z+1.0)*(z-1.0);
 
    curlu0 = duzdy - duydz;
    curlu1 = duxdz - duzdx;
@@ -950,19 +951,19 @@ int main(int argc, char *argv[]) {
 // Calculates curl of the curl of exact solution u
  int evalCurlCurlu(double & curlCurlu0, double & curlCurlu1, double & curlCurlu2, double & x, double & y, double & z)
 {
-    double dcurlu0dy = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(x*x*(y+1.0)*(y-1.0)+2.0*x*y + 2.0*y + 2.0)
-                        + M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(x*(z+1.0)*(z-1.0)+2.0*z);
-    double dcurlu0dz = - cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(x*x*(z+1.0)*(z-1.0)+2.0*x*z + 2.0*z + 2.0)
-                        - M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(x*(y+1.0)*(y-1.0)+2.0*y);
-    double dcurlu1dx = - cos(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*y*(x+1.0)*(x-1.0)+2.0*x*y + 2.0*x + 2.0)
-                        - M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0)+2.0*z);
-    double dcurlu1dz = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*y*(z+1.0)*(z-1.0)+2.0*y*z + 2.0*z + 2.0)
-                        + M_PI*sin(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0)+2.0*x);
-    double dcurlu2dx = cos(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*z*(x+1.0)*(x-1.0)+2.0*x*z + 2.0*x + 2.0)
-                        + M_PI*sin(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*(y+1.0)*(y-1.0)+2.0*y);
-    double dcurlu2dy = - cos(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*z*(y+1.0)*(y-1.0)+2.0*z*y + 2.0*y + 2.0)
-                        - M_PI*sin(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0)+2.0*x);
-
+    double dcurlu0dy = -M_PI*M_PI*cos(M_PI*y)*cos(M_PI*x)*(z+1.0)*(z-1.0)
+                           + 2.0*y*M_PI*sin(M_PI*z)*cos(M_PI*x);
+    double dcurlu0dz = -2.0*z*M_PI*sin(M_PI*y)*cos(M_PI*x)
+                          + M_PI*M_PI*cos(M_PI*z)*cos(M_PI*x)*(y+1.0)*(y-1.0);
+    double dcurlu1dx = -2.0*x*M_PI*sin(M_PI*z)*cos(M_PI*y)
+                          + M_PI*M_PI*cos(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
+    double dcurlu1dz = -M_PI*M_PI*cos(M_PI*z)*cos(M_PI*y)*(x+1.0)*(x-1.0)
+                           + 2.0*z*M_PI*sin(M_PI*x)*cos(M_PI*y);
+    double dcurlu2dx = -M_PI*M_PI*cos(M_PI*x)*cos(M_PI*z)*(y+1.0)*(y-1.0)
+                           + 2.0*x*M_PI*sin(M_PI*y)*cos(M_PI*z);
+    double dcurlu2dy = -2.0*y*M_PI*sin(M_PI*x)*cos(M_PI*z)
+                          + M_PI*M_PI*cos(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
+                       
     curlCurlu0 = dcurlu2dy - dcurlu1dz;
     curlCurlu1 = dcurlu0dz - dcurlu2dx;
     curlCurlu2 = dcurlu1dx - dcurlu0dy;
