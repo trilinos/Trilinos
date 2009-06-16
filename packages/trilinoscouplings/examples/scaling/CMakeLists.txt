@@ -31,5 +31,13 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_DivLSFEM
+    SOURCES example_DivLSFEM.cpp
+    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+    ARGS "10 10 10"
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
 ENDIF()
 
