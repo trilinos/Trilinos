@@ -115,4 +115,48 @@ void LU2x2InverseOp::implicitApply(const BlockedMultiVector & x, BlockedMultiVec
    }
 }
 
+void LU2x2InverseOp::describe(Teuchos::FancyOStream & out_arg,
+                                      const Teuchos::EVerbosityLevel verbLevel) const
+{
+  using Teuchos::OSTab;
+
+  RCP<Teuchos::FancyOStream> out = rcp(&out_arg,false);
+  OSTab tab(out);
+  switch(verbLevel) {
+     case Teuchos::VERB_DEFAULT:
+     case Teuchos::VERB_LOW:
+        *out << this->description() << std::endl;
+        break;
+     case Teuchos::VERB_MEDIUM:
+     case Teuchos::VERB_HIGH:
+     case Teuchos::VERB_EXTREME:
+        {
+           *out << Teuchos::Describable::description() << "{"
+                << "rangeDim=" << this->range()->dim()
+                << ",domainDim=" << this->domain()->dim()
+                << "}\n";
+           {
+              OSTab tab(out);
+              *out << "[invS]:\n";
+              *out << Teuchos::describe(*invS_,verbLevel);
+
+              *out << "[hatInvA00]:\n";
+              *out << Teuchos::describe(*hatInvA00_,verbLevel);
+
+              *out << "[tildeInvA00]:\n";
+              *out << Teuchos::describe(*tildeInvA00_,verbLevel);
+
+              *out << "[A_10]:\n";
+              *out << Teuchos::describe(*A10_,verbLevel);
+
+              *out << "[A_01]:\n";
+              *out << Teuchos::describe(*A01_,verbLevel);
+           }
+           break;
+        }
+     default:
+        TEST_FOR_EXCEPT(true); // Should never get here!
+  }
+}
+
 } // end namespace PB
