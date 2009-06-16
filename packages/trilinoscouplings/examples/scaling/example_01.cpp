@@ -92,7 +92,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                                            Epetra_CrsMatrix   & D0clean,
                                            Epetra_CrsMatrix   & M0inv,
                                            Epetra_CrsMatrix   & M1,
-                                           const Epetra_MultiVector & xexact,
+                                           Epetra_MultiVector & xh,
                                            Epetra_MultiVector & b,
                                            double & TotalErrorResidual,
                                              double & TotalErrorExactSol);
@@ -277,6 +277,7 @@ int main(int argc, char *argv[]) {
     }
     delete [] connect;
 
+/*
    // Get boundary (side set) information
    // Side set 1 - left,  Side set 2 - front, Side set 3 - bottom,
    // Side set 4 - right, Side set 5 - back,  Side set 6 - top
@@ -309,6 +310,8 @@ int main(int argc, char *argv[]) {
         delete [] sideSetSideList;
      }
     delete [] sideSetIds;
+*/
+
 
    // Print mesh information  
     int numEdges = (NX)*(NY + 1)*(NZ + 1) + (NX + 1)*(NY)*(NZ + 1) + (NX + 1)*(NY + 1)*(NZ);
@@ -447,6 +450,121 @@ int main(int argc, char *argv[]) {
     fout.close();
     fout2.close();
 #endif
+
+  // Get boundary (side set) information
+   // Side set 1 - left,  Side set 2 - front, Side set 3 - bottom,
+   // Side set 4 - right, Side set 5 - back,  Side set 6 - top
+    int * sideSetIds = new int [numSideSets];
+    FieldContainer<int> numElemsOnBoundary(numSideSets);
+    int numSidesinSet;
+    int numDFinSet;
+    im_ex_get_side_set_ids(id,sideSetIds);
+    for (int i=0; i<numSideSets; i++) {
+        im_ex_get_side_set_param(id,sideSetIds[i],&numSidesinSet,&numDFinSet);
+        numElemsOnBoundary(i)=numSidesinSet;
+     }
+
+   // Container indicating whether a node is on the boundary (1-yes 0-no)
+    FieldContainer<int> edgeOnBoundary(numEdges);
+
+   // Side set 1: left
+    if (numElemsOnBoundary(0) > 0){
+     int * sideSetElemList1 = new int [numElemsOnBoundary(0)];
+     int * sideSetSideList1 = new int [numElemsOnBoundary(0)];
+     im_ex_get_side_set(id,sideSetIds[0],sideSetElemList1,sideSetSideList1);
+     for (int i=0; i<numElemsOnBoundary(0); i++) {
+          edgeOnBoundary(elemToEdge(sideSetElemList1[i]-1,3))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList1[i]-1,8))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList1[i]-1,7))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList1[i]-1,11))=1;
+     }
+     delete [] sideSetElemList1;
+     delete [] sideSetSideList1;
+   }
+
+  // Side set 2: front
+    if (numElemsOnBoundary(1) > 0){
+     int * sideSetElemList2 = new int [numElemsOnBoundary(1)];
+     int * sideSetSideList2 = new int [numElemsOnBoundary(1)];
+     im_ex_get_side_set(id,sideSetIds[1],sideSetElemList2,sideSetSideList2);
+     for (int i=0; i<numElemsOnBoundary(1); i++) {
+          edgeOnBoundary(elemToEdge(sideSetElemList2[i]-1,0))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList2[i]-1,9))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList2[i]-1,4))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList2[i]-1,8))=1;
+     }
+     delete [] sideSetElemList2;
+     delete [] sideSetSideList2;
+    }
+
+   // Side set 3: bottom
+    if (numElemsOnBoundary(2) > 0){
+     int * sideSetElemList3 = new int [numElemsOnBoundary(2)];
+     int * sideSetSideList3 = new int [numElemsOnBoundary(2)];
+     im_ex_get_side_set(id,sideSetIds[2],sideSetElemList3,sideSetSideList3);
+     for (int i=0; i<numElemsOnBoundary(2); i++) {
+          edgeOnBoundary(elemToEdge(sideSetElemList3[i]-1,0))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList3[i]-1,1))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList3[i]-1,2))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList3[i]-1,3))=1;
+     }
+     delete [] sideSetElemList3;
+     delete [] sideSetSideList3;
+    }
+
+   // Side set 4: right
+    if (numElemsOnBoundary(3) > 0){
+     int * sideSetElemList4 = new int [numElemsOnBoundary(3)];
+     int * sideSetSideList4 = new int [numElemsOnBoundary(3)];
+     im_ex_get_side_set(id,sideSetIds[3],sideSetElemList4,sideSetSideList4);
+     for (int i=0; i<numElemsOnBoundary(3); i++) {
+          edgeOnBoundary(elemToEdge(sideSetElemList4[i]-1,1))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList4[i]-1,9))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList4[i]-1,5))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList4[i]-1,10))=1;
+     }
+     delete [] sideSetElemList4;
+     delete [] sideSetSideList4;
+    }
+  // Side set 5: back
+    if (numElemsOnBoundary(4) > 0){
+     int * sideSetElemList5 = new int [numElemsOnBoundary(4)];
+     int * sideSetSideList5 = new int [numElemsOnBoundary(4)];
+     im_ex_get_side_set(id,sideSetIds[4],sideSetElemList5,sideSetSideList5);
+     for (int i=0; i<numElemsOnBoundary(4); i++) {
+          edgeOnBoundary(elemToEdge(sideSetElemList5[i]-1,2))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList5[i]-1,10))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList5[i]-1,6))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList5[i]-1,11))=1;
+     }
+     delete [] sideSetElemList5;
+     delete [] sideSetSideList5;
+    }
+
+   // Side set 6: top
+    if (numElemsOnBoundary(5) > 0){
+     int * sideSetElemList6 = new int [numElemsOnBoundary(5)];
+     int * sideSetSideList6 = new int [numElemsOnBoundary(5)];
+     im_ex_get_side_set(id,sideSetIds[5],sideSetElemList6,sideSetSideList6);
+     for (int i=0; i<numElemsOnBoundary(5); i++) {
+          edgeOnBoundary(elemToEdge(sideSetElemList6[i]-1,4))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList6[i]-1,5))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList6[i]-1,6))=1;
+          edgeOnBoundary(elemToEdge(sideSetElemList6[i]-1,7))=1;
+     }
+     delete [] sideSetElemList6;
+     delete [] sideSetSideList6;
+    }
+
+    delete [] sideSetIds;
+
+   //TEMP
+    ofstream fEdgeout("edgeOnBndy.dat");
+    for (int i=0; i<numEdges; i++){
+       fEdgeout << edgeOnBoundary(i) <<"  ";
+    }
+    fEdgeout.close();
+        
     
    // Set material properties using undeformed grid assuming each element has only one value of mu
     FieldContainer<double> muVal(numElems);
@@ -877,9 +995,10 @@ int main(int argc, char *argv[]) {
    
    cout<<MLList2<<endl;
    
-   Epetra_FEVector xexact(rhsC);
-   xexact.PutScalar(0.0);//haq
+   //Epetra_FEVector xexact(rhsC);
+   //xexact.PutScalar(0.0);//haq
 
+   Epetra_FEVector xh(rhsC);
 
    MassC.SetLabel("M1");
    StiffC.SetLabel("K1");
@@ -890,9 +1009,140 @@ int main(int argc, char *argv[]) {
 #ifdef RUN_SOLVER   
    TestMultiLevelPreconditioner_CurlLSFEM("curl-lsfem",MLList2,StiffC,
                                           DGrad,MassGinv,MassC,
-                                          xexact,rhsC,
+                                          xh,rhsC,
                                           TotalErrorResidual, TotalErrorExactSol);
 #endif
+
+    // ********  Calculate Error in Solution ***************
+     double L2err = 0.0;
+     double HCurlerr = 0.0;
+     double Linferr = 0.0;
+
+   // Import solution onto current processor
+    // Epetra_Map  solnMap(numEdgesGlobal, numEdgesGlobal, 0, Comm);
+    // Epetra_Import  solnImporter(solnMap, globalMapG);
+    // Epetra_Vector  uCoeff(solnMap);
+    // uCoeff.Import(xh, solnImporter, Insert);
+
+   // Get cubature points and weights for error calc (may be different from previous)
+     DefaultCubatureFactory<double>  cubFactoryErr;
+     int cubDegErr = 3;
+     Teuchos::RCP<Cubature<double> > hexCubErr = cubFactoryErr.create(hex_8, cubDegErr);
+     int cubDimErr       = hexCubErr->getDimension();
+     int numCubPointsErr = hexCubErr->getNumPoints();
+     FieldContainer<double> cubPointsErr(numCubPointsErr, cubDimErr);
+     FieldContainer<double> cubWeightsErr(numCubPointsErr);
+     hexCubErr->getCubature(cubPointsErr, cubWeightsErr);
+
+   // Containers for Jacobian
+     FieldContainer<double> hexJacobianE(numCells, numCubPointsErr, spaceDim, spaceDim);
+     FieldContainer<double> hexJacobInvE(numCells, numCubPointsErr, spaceDim, spaceDim);
+     FieldContainer<double> hexJacobDetE(numCells, numCubPointsErr);
+     FieldContainer<double> weightedMeasureE(numCells, numCubPointsErr);
+
+ // Evaluate basis values and curls at cubature points
+     FieldContainer<double> uhCVals(numFieldsC, numCubPointsErr, spaceDim);
+     FieldContainer<double> uhCValsTrans(numCells,numFieldsC, numCubPointsErr, spaceDim);
+     FieldContainer<double> uhCurls(numFieldsC, numCubPointsErr, spaceDim);
+     FieldContainer<double> uhCurlsTrans(numCells, numFieldsC, numCubPointsErr, spaceDim);
+     hexHCurlBasis.getValues(uhCVals, cubPointsErr, OPERATOR_VALUE);
+     hexHCurlBasis.getValues(uhCurls, cubPointsErr, OPERATOR_CURL);
+
+
+   // Loop over elements
+    for (int k=0; k<numElems; k++){
+
+      double L2errElem = 0.0;
+      double HCurlerrElem = 0.0;
+      double uExact1, uExact2, uExact3;
+      double curluExact1, curluExact2, curluExact3;
+
+     // physical cell coordinates
+      for (int i=0; i<numNodesPerElem; i++) {
+         hexNodes(0,i,0) = nodeCoord(elemToNode(k,i),0);
+         hexNodes(0,i,1) = nodeCoord(elemToNode(k,i),1);
+         hexNodes(0,i,2) = nodeCoord(elemToNode(k,i),2);
+      }
+     // Edge signs
+      for (int j=0; j<numEdgesPerElem; j++) {
+          if (elemToNode(k,refEdgeToNode(j,0))==edgeToNode(elemToEdge(k,j),0) &&
+              elemToNode(k,refEdgeToNode(j,1))==edgeToNode(elemToEdge(k,j),1))
+              hexEdgeSigns(0,j) = 1.0;
+          else 
+              hexEdgeSigns(0,j) = -1.0;
+      } 
+
+    // compute cell Jacobians, their inverses and their determinants
+       CellTools::setJacobian(hexJacobianE, cubPointsErr, hexNodes, hex_8);
+       CellTools::setJacobianInv(hexJacobInvE, hexJacobianE );
+       CellTools::setJacobianDet(hexJacobDetE, hexJacobianE );
+
+      // transform integration points to physical points
+       FieldContainer<double> physCubPoints(numCells,numCubPointsErr, cubDimErr);
+       CellTools::mapToPhysicalFrame(physCubPoints, cubPointsErr, hexNodes, hex_8);
+
+      // transform basis values to physical coordinates
+       fst::HCURLtransformVALUE<double>(uhCValsTrans, hexJacobInvE, uhCVals);
+       fst::HCURLtransformCURL<double>(uhCurlsTrans, hexJacobianE, hexJacobDetE, uhCurls);
+
+      // compute weighted measure
+       fst::computeMeasure<double>(weightedMeasureE, hexJacobDetE, cubWeightsErr);
+
+     // loop over cubature points
+       for (int nPt = 0; nPt < numCubPoints; nPt++){
+
+         // get exact solution and curls
+          double x = physCubPoints(0,nPt,0);
+          double y = physCubPoints(0,nPt,1);
+          double z = physCubPoints(0,nPt,2);
+          evalu(uExact1, uExact2, uExact3, x, y, z);
+          evalCurlu(curluExact1, curluExact2, curluExact3, x, y, z);
+
+         // calculate approximate solution and curls
+          double uApprox1 = 0.0;
+          double uApprox2 = 0.0;
+          double uApprox3 = 0.0;
+          double curluApprox1 = 0.0;
+          double curluApprox2= 0.0;
+          double curluApprox3 = 0.0;
+          for (int i = 0; i < numFieldsC; i++){
+             int rowIndex = elemToEdge(k,i);
+             double uh1 = xh.Values()[rowIndex];
+             uApprox1 += uh1*uhCValsTrans(0,i,nPt,0)*hexEdgeSigns(0,i);
+             uApprox2 += uh1*uhCValsTrans(0,i,nPt,1)*hexEdgeSigns(0,i);
+             uApprox3 += uh1*uhCValsTrans(0,i,nPt,2)*hexEdgeSigns(0,i);
+             curluApprox1 += uh1*uhCurlsTrans(0,i,nPt,0)*hexEdgeSigns(0,i);
+             curluApprox2 += uh1*uhCurlsTrans(0,i,nPt,1)*hexEdgeSigns(0,i);
+             curluApprox3 += uh1*uhCurlsTrans(0,i,nPt,2)*hexEdgeSigns(0,i);
+          }
+
+         // evaluate the error at cubature points
+          Linferr = max(Linferr, abs(uExact1 - uApprox1));
+          Linferr = max(Linferr, abs(uExact2 - uApprox2));
+          Linferr = max(Linferr, abs(uExact3 - uApprox3));
+          L2errElem+=(uExact1 - uApprox1)*(uExact1 - uApprox1)*weightedMeasureE(0,nPt);
+          L2errElem+=(uExact2 - uApprox2)*(uExact2 - uApprox2)*weightedMeasureE(0,nPt);
+          L2errElem+=(uExact3 - uApprox3)*(uExact3 - uApprox3)*weightedMeasureE(0,nPt);
+          HCurlerrElem+=((curluExact1 - curluApprox1)*(curluExact1 - curluApprox1))
+                     *weightedMeasureE(0,nPt);
+          HCurlerrElem+=((curluExact2 - curluApprox2)*(curluExact2 - curluApprox2))
+                     *weightedMeasureE(0,nPt);
+          HCurlerrElem+=((curluExact3 - curluApprox3)*(curluExact3 - curluApprox3))
+                     *weightedMeasureE(0,nPt);
+        }
+
+       L2err+=L2errElem;
+       HCurlerr+=HCurlerrElem;
+     }
+
+   // sum over all processors
+    //Comm.SumAll(&L2err,&L2errTot,1);
+    //Comm.SumAll(&H1err,&H1errTot,1);
+    //Comm.MaxAll(&Linferr,&LinferrTot,1);
+
+    std::cout << "\n" << "L2 Error:  " << sqrt(L2err) <<"\n";
+    std::cout << "HCurl Error:  " << sqrt(HCurlerr) <<"\n";
+    std::cout << "LInf Error:  " << Linferr <<"\n\n";
 
 
     delete [] nodeCoordx;
@@ -951,7 +1201,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                                            Epetra_CrsMatrix   & D0clean,
                                            Epetra_CrsMatrix   & M0inv,
                                            Epetra_CrsMatrix   & M1,
-                                           const Epetra_MultiVector & xexact,
+                                           Epetra_MultiVector & xh,
                                            Epetra_MultiVector & b,
                                            double & TotalErrorResidual,
                                            double & TotalErrorExactSol){
@@ -969,7 +1219,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   ML_Epetra::ML_RefMaxwell_11_Operator Operator11(CurlCurl,D0,M0inv,M1);
   
   /* Build the AztecOO stuff */
-  Epetra_MultiVector x(xexact);
+  Epetra_MultiVector x(xh);
   x.PutScalar(0.0);
   
   Epetra_LinearProblem Problem(&Operator11,&x,&b); 
@@ -991,9 +1241,11 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   // HAX
   //  x=*rhs;
   //  rhs->PutScalar(0.0);
+
+     xh = *lhs;
   
 
-  //#define DUMP_OUT_MATRICES
+  #define DUMP_OUT_MATRICES
 #ifdef DUMP_OUT_MATRICES
    EpetraExt::RowMatrixToMatlabFile("mag_m0inv_matrix.dat",M0inv);
    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",M1);
@@ -1014,6 +1266,9 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   solver.SetAztecOption(AZ_output, 32);
   solver.Iterate(200, 1e-10);
   //  solver.Iterate(1, 1e-10);
+
+  Epetra_MultiVector xexact(xh);
+  xexact.PutScalar(0.0);
   
   // accuracy check
   string msg = ProblemType;
