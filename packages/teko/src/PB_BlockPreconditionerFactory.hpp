@@ -53,6 +53,17 @@ public:
  
    //@}
 
+   /** Has this state object been initialized for the particular operator
+     * being used?
+     */
+   virtual bool isInitialized() const
+   { return isInitialized_; }
+
+   /** Set that this state object has been initialized for this operator.
+     */
+   virtual void setInitialized(bool init=true) 
+   { isInitialized_ = init; }
+
    //! Set the vector associated with this operator (think nonlinear system)
    virtual void setSourceVector(const PB::BlockedMultiVector & srcVec)
    { srcVector_ = srcVec; }
@@ -61,12 +72,29 @@ public:
    virtual const PB::BlockedMultiVector getSourceVector() const
    { return srcVector_; }
 
+   //! Add a named inverse to the state object
+   virtual void addInverse(const std::string & name,const PB::InverseLinearOp & ilo)
+   { inverses_[name] = ilo; }
+
+   //! Get a named inverse from the state object
+   virtual PB::InverseLinearOp getInverse(const std::string & name) const
+   { std::map<std::string,PB::InverseLinearOp>::const_iterator itr;
+     itr =  inverses_.find(name);
+     if(itr==inverses_.end()) return Teuchos::null; 
+     return itr->second; }
+
 protected:
    //! for ParameterListAcceptor
    RCP<ParameterList>          paramList_;
 
    //! Store a source vector
    PB::BlockedMultiVector srcVector_;
+
+   //! Store a map of inverse linear operators
+   std::map<std::string,PB::InverseLinearOp> inverses_;
+
+   //! Stores the initialization state 
+   bool isInitialized_;
 };
 
 class BlockPreconditioner : public DefaultPreconditioner<double> {

@@ -36,6 +36,8 @@ LinearOp BlockPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,B
    RCP<LinearOpBase<double> > loA = Teuchos::rcp_const_cast<Thyra::LinearOpBase<double> >(lo);
    BlockedLinearOp A = Teuchos::rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<double> >(loA);
 
+   state.setInitialized(false);
+
    return buildPreconditionerOperator(A,state);
 }
 
@@ -53,6 +55,7 @@ RCP<Thyra::PreconditionerBase<double> > BlockPreconditionerFactory::createPrec()
    // build a preconditioner, give it some inital state
    RCP<BlockPreconditioner> bp = rcp(new BlockPreconditioner());
    bp->setStateObject(buildPreconditionerState());
+   bp->getStateObject()->setInitialized(false);
 
    return bp;
 }
@@ -69,8 +72,12 @@ void BlockPreconditionerFactory::initializePrec(const RCP<const LinearOpSourceBa
    BlockPreconditioner * blkPrec = dynamic_cast<BlockPreconditioner *>(prec);
    TEUCHOS_ASSERT(blkPrec!=0);
  
+   // grab the state object
+   RCP<BlockPreconditionerState> state = blkPrec->getStateObject();
+   state->setInitialized(false);
+
    // build the preconditioner
-   const RCP<const LinearOpBase<double> > M = buildPreconditionerOperator(A,*blkPrec->getStateObject());
+   const RCP<const LinearOpBase<double> > M = buildPreconditionerOperator(A,*state);
 
    // must first cast that to be initialized
    DefaultPreconditioner<double> & dPrec = Teuchos::dyn_cast<DefaultPreconditioner<double> >(*prec);
