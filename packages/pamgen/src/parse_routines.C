@@ -164,6 +164,8 @@ Inline_Mesh_Desc * Parse_Inline_Mesh(std::string & file_name,
 
   if(!Inline_Mesh_Desc::static_storage)return Inline_Mesh_Desc::static_storage;
 
+  if(token_stream.Error_Count() != 0)return NULL;
+
   long long error_code = Inline_Mesh_Desc::static_storage->Check_Block_BC_Sets();
   if(error_code){
     (*parse_error_count) ++;
@@ -1093,8 +1095,7 @@ void Token_Stream::Parse_Error(const std::string &s, const std::string &v)
 /*****************************************************************************/
 {
   Semantics_Error(s, v);
-  recovery_flag = true;
-  
+ 
 // Never returns
   longjmp(recovery_context, 1);
 
