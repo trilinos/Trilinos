@@ -376,7 +376,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
   k = ((ewgt_dim > 0) ? ewgt_dim : 1);
 
-  globalVals = (float *)ZOLTAN_MALLOC(nparts * ewgt_dim * sizeof(float));
+  globalVals = (float *)ZOLTAN_MALLOC(nparts * k * sizeof(float));
   if (nparts && ewgt_dim && !globalVals){
     ierr = ZOLTAN_MEMERR;
     goto End;
@@ -1139,7 +1139,10 @@ add_graph_extra_weight(ZZ *zz, int num_obj, int *edges_per_obj, int *vwgt_dim, f
   Zoltan_Bind_Param(params, "ADD_OBJ_WEIGHT", (void *) add_obj_weight);
   Zoltan_Assign_Param_Vals(zz->Params, params, 0, zz->Proc, zz->Debug_Proc);
 
-  if ((!strcasecmp(add_obj_weight, "UNIT")) || (!strcasecmp(add_obj_weight, "VERTICES"))){
+  if (!strcasecmp(add_obj_weight, "NONE")){
+    return ierr;
+  }
+  else if ((!strcasecmp(add_obj_weight, "UNIT")) || (!strcasecmp(add_obj_weight, "VERTICES"))){
     add_type = 1;
   }
   else if ((!strcasecmp(add_obj_weight, "VERTEX DEGREE")) ||
