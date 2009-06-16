@@ -255,6 +255,7 @@ int main(int argc, char *argv[]) {
       nodeCoord(i,1)=nodeCoordy[i];
       nodeCoord(i,2)=nodeCoordz[i];
     }
+
     delete [] nodeCoordx;
     delete [] nodeCoordy;
     delete [] nodeCoordz;
@@ -888,7 +889,7 @@ int main(int argc, char *argv[]) {
  } // *** end element loop ***
 
   // Assemble over multiple processors, if necessary
-   DCurl.GlobalAssemble();  DCurl.FillComplete();    
+   DCurl.GlobalAssemble(); DCurl.FillComplete(MassC.RowMap(),MassD.RowMap());  
    MassC.GlobalAssemble();  MassC.FillComplete();
    MassD.GlobalAssemble();  MassD.FillComplete();
    StiffD.GlobalAssemble(); StiffD.FillComplete();
