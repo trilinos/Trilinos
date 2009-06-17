@@ -56,6 +56,7 @@
 
 #include "Sacado_CacheFad_Expression.hpp"
 #include "Sacado_cmath.hpp"
+#include "Sacado_dummy_arg.hpp"
 #include <ostream>	// for std::ostream
 
 #define FAD_UNARYOP_MACRO(OPNAME,OP,PARTIAL,VALUE,DX,FASTACCESSDX)	\
@@ -70,6 +71,7 @@ namespace Sacado {							\
     public:								\
 									\
       typedef typename ExprT::value_type value_type;			\
+      typedef typename ExprT::scalar_type scalar_type;			\
 									\
       Expr(const ExprT& expr_) : expr(expr_)  {}			\
 									\
@@ -252,6 +254,10 @@ namespace Sacado {							\
       typedef typename ExprT2::value_type value_type_2;			\
       typedef typename Sacado::Promote<value_type_1,			\
 				       value_type_2>::type value_type;  \
+      typedef typename ExprT1::scalar_type scalar_type_1;		\
+      typedef typename ExprT2::scalar_type scalar_type_2;		\
+      typedef typename Sacado::Promote<scalar_type_1,			\
+				       scalar_type_2>::type scalar_type; \
 									\
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
 	expr1(expr1_), expr2(expr2_) {}					\
@@ -300,6 +306,7 @@ namespace Sacado {							\
     public:								\
 									\
       typedef typename ExprT1::value_type value_type;			\
+      typedef typename ExprT1::scalar_type scalar_type;			\
       typedef ConstExpr<typename ExprT1::value_type> ExprT2;		\
 									\
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
@@ -348,7 +355,106 @@ namespace Sacado {							\
     public:								\
 									\
       typedef typename ExprT2::value_type value_type;			\
+      typedef typename ExprT2::scalar_type scalar_type;			\
       typedef ConstExpr<typename ExprT2::value_type> ExprT1;		\
+									\
+      Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
+	expr1(expr1_), expr2(expr2_) {}					\
+									\
+      int size() const {						\
+	return expr2.size();						\
+      }									\
+									\
+      bool hasFastAccess() const {					\
+	return expr2.hasFastAccess();					\
+      }									\
+									\
+      bool isPassive() const {						\
+	return expr2.isPassive();					\
+      }									\
+									\
+      value_type val() const {						\
+	v1 = expr1.val();						\
+	v2 = expr2.val();						\
+	PARTIAL;							\
+	return VALUE;							\
+      }									\
+									\
+      value_type dx(int i) const {					\
+	return CONST_DX_1;						\
+      }									\
+									\
+      value_type fastAccessDx(int i) const {				\
+	return CONST_FASTACCESSDX_1;					\
+      }									\
+									\
+    protected:								\
+									\
+      const ExprT1 expr1;						\
+      const ExprT2& expr2;						\
+      mutable value_type v1;						\
+      mutable value_type v2;						\
+      mutable value_type a;						\
+      mutable value_type b;						\
+    };									\
+									\
+    template <typename ExprT1>						\
+    class Expr< OP<ExprT1, ConstExpr<typename dummy<typename ExprT1::value_type,typename ExprT1::scalar_type>::type> > >{ \
+									\
+    public:								\
+									\
+      typedef typename ExprT1::value_type value_type;			\
+      typedef typename ExprT1::scalar_type scalar_type;			\
+      typedef ConstExpr<scalar_type> ExprT2;				\
+									\
+      Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
+	expr1(expr1_), expr2(expr2_) {}					\
+									\
+      int size() const {						\
+	return expr1.size();						\
+      }									\
+									\
+      bool hasFastAccess() const {					\
+	return expr1.hasFastAccess();					\
+      }									\
+									\
+      bool isPassive() const {						\
+	return expr1.isPassive();					\
+      }									\
+									\
+      value_type val() const {						\
+	v1 = expr1.val();						\
+	v2 = expr2.val();						\
+	PARTIAL;							\
+	return VALUE;							\
+      }									\
+									\
+      value_type dx(int i) const {					\
+	return CONST_DX_2;						\
+      }									\
+									\
+      value_type fastAccessDx(int i) const {				\
+	return CONST_FASTACCESSDX_2;					\
+      }									\
+									\
+    protected:								\
+									\
+      const ExprT1& expr1;						\
+      const ExprT2 expr2;						\
+      mutable value_type v1;						\
+      mutable value_type v2;						\
+      mutable value_type a;						\
+      mutable value_type b;						\
+    };									\
+									\
+    template <typename ExprT2>						\
+    class Expr< OP<ConstExpr<typename dummy<typename ExprT2::value_type,typename ExprT2::scalar_type>::type>, ExprT2 >  >{	\
+									\
+    public:								\
+									\
+      typedef typename ExprT2::value_type value_type;			\
+      typedef typename ExprT2::scalar_type scalar_type;			\
+      typedef ConstExpr<scalar_type> ExprT1;				\
 									\
       Expr(const ExprT1& expr1_, const ExprT2& expr2_) :		\
 	expr1(expr1_), expr2(expr2_) {}					\
@@ -427,6 +533,36 @@ namespace Sacado {							\
 	    const typename Expr<T>::value_type& c)			\
     {									\
       typedef ConstExpr<typename Expr<T>::value_type> ConstT;		\
+      typedef OP< Expr<T>, ConstT > expr_t;				\
+									\
+      return Expr<expr_t>(expr, ConstT(c));				\
+    }									\
+									\
+    template <typename T>						\
+    inline Expr< OP< ConstExpr<typename dummy<typename Expr<T>::value_type,typename Expr<T>::scalar_type>::type>, \
+			     Expr<T> > >				\
+    OPNAME (const typename dummy<typename Expr<T>::value_type,typename Expr<T>::scalar_type>::type& c,			\
+	    const Expr<T>& expr)					\
+    {									\
+      typedef typename Expr<T>::value_type value_type;			\
+      typedef typename Expr<T>::scalar_type scalar_type;		\
+      typedef typename dummy<value_type,scalar_type>::type const_type;	\
+      typedef ConstExpr<const_type> ConstT;				\
+      typedef OP< ConstT, Expr<T> > expr_t;				\
+									\
+      return Expr<expr_t>(ConstT(c), expr);				\
+    }									\
+									\
+    template <typename T>						\
+    inline Expr< OP< Expr<T>,						\
+		     ConstExpr<typename dummy<typename Expr<T>::value_type,typename Expr<T>::scalar_type>::type> > >	\
+    OPNAME (const Expr<T>& expr,					\
+	    const typename dummy<typename Expr<T>::value_type,typename Expr<T>::scalar_type>::type& c)			\
+    {									\
+      typedef typename Expr<T>::value_type value_type;			\
+      typedef typename Expr<T>::scalar_type scalar_type;		\
+      typedef typename dummy<value_type,scalar_type>::type const_type;	\
+      typedef ConstExpr<const_type> ConstT;				\
       typedef OP< Expr<T>, ConstT > expr_t;				\
 									\
       return Expr<expr_t>(expr, ConstT(c));				\

@@ -64,6 +64,8 @@ namespace Sacado {
 
       //! Typename of scalar's (which may be different from ValueT)
       typedef typename ScalarType<ValueT>::type ScalarT;
+      typedef typename GeneralFad<ValueT,Fad::DynamicStorage<ValueT> >::value_type value_type;
+      typedef typename GeneralFad<ValueT,Fad::DynamicStorage<ValueT> >::scalar_type scalar_type;
 
       //! Turn DFad into a meta-function class usable with mpl::apply
       template <typename T> 

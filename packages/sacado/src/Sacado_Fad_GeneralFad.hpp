@@ -55,6 +55,7 @@
 #define SACADO_FAD_GENERALFAD_HPP
 
 #include "Sacado_Fad_Expression.hpp"
+#include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
@@ -74,6 +75,9 @@ namespace Sacado {
 
       //! Typename of values
       typedef T value_type;
+
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<T>::type scalar_type;
 
       /*!
        * @name Initialization methods
@@ -186,6 +190,34 @@ namespace Sacado {
 
       //! Division-assignment operator with constant right-hand-side
       GeneralFad& operator /= (const T& x);
+
+      //! Addition-assignment operator with constant right-hand-side
+      /*!
+       * Creates a dummy overload when value_type and scalar_type are the 
+       * same type.
+       */
+      GeneralFad& operator += (const typename dummy<value_type,scalar_type>::type& x);
+
+      //! Subtraction-assignment operator with constant right-hand-side
+      /*!
+       * Creates a dummy overload when value_type and scalar_type are the 
+       * same type.
+       */
+      GeneralFad& operator -= (const typename dummy<value_type,scalar_type>::type& x);
+
+      //! Multiplication-assignment operator with constant right-hand-side
+      /*!
+       * Creates a dummy overload when value_type and scalar_type are the 
+       * same type.
+       */
+      GeneralFad& operator *= (const typename dummy<value_type,scalar_type>::type& x);
+
+      //! Division-assignment operator with constant right-hand-side
+      /*!
+       * Creates a dummy overload when value_type and scalar_type are the 
+       * same type.
+       */
+      GeneralFad& operator /= (const typename dummy<value_type,scalar_type>::type& x);
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S> 

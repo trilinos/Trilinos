@@ -49,6 +49,9 @@ namespace Sacado {
 
     public:
 
+      typedef typename GeneralFad<T,Storage>::value_type value_type;
+      typedef typename GeneralFad<T,Storage>::scalar_type scalar_type;
+
       //! Default constructor
       Expr() : 
 	GeneralFad<T,Storage>() {}
