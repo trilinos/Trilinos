@@ -217,18 +217,12 @@ int main(int argc, char *argv[]) {
     string meshInput = ss.str();
     std::cout << meshInput <<"\n";
   
-    char inputArray[1000];
-    int ntmp = meshInput.size();
-    for (int i=0; i<ntmp; i++) {          
-      inputArray[i]=meshInput[i];
-    }
-
    // Generate mesh with Pamgen
     int dim=3;
     int rank=0;
     int numProcs=1;
     long int maxInt = 100000000;
-    Create_Pamgen_Mesh(inputArray, dim, rank, numProcs, maxInt);
+    Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
     
    // Get mesh size info
     char title[100];
