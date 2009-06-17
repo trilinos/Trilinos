@@ -30,6 +30,7 @@
 
 #include "Teuchos_TestForException.hpp"
 #include "Stokhos_DynamicArrayTraits.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 template <typename ordinal_type, typename value_type> 
 Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
@@ -58,90 +59,6 @@ QuadOrthogPolyExpansion(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordina
     }
 }
 
-// template <typename ordinal_type, typename value_type> 
-// template <typename FuncT>
-// void
-// Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-// unary_op(const FuncT& func,
-//          OrthogPolyApprox<ordinal_type, value_type>& c, 
-//          const OrthogPolyApprox<ordinal_type, value_type>& a)
-// {
-//   ordinal_type pc = a.size();
-//   if (pc != c.size())
-//     c.resize(pc);
-
-// #ifdef STOKHOS_DEBUG
-//   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
-//                      "Stokhos::QuadOrthogPolyExpansion::unary_op()" 
-//                      << ":  Expansion size (" << size() 
-//                      << ") is too small for computation (" << pc
-//                      << " needed).");
-// #endif
-
-//   // Zero out
-//   value_type* cc = c.coeff();
-//   for (ordinal_type i=0; i<pc; i++)
-//     cc[i] = value_type(0.0);
-
-//   for (ordinal_type qp=0; qp<nqp; qp++) {
-//     // Evaluate input
-//     value_type aval = a.evaluate(*basis, quad_points[qp], quad_values[qp]);
-
-//     // Evaluate function
-//     value_type fval = func(aval);
-
-//     // Integrate
-//     for (ordinal_type i=0; i<pc; i++)
-//       cc[i] += quad_weights[qp]*fval*quad_values[qp][i]/norms[i];
-//   }
-// }
-
-// template <typename ordinal_type, typename value_type> 
-// template <typename FuncT>
-// void
-// Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-// unary_op(const FuncT& func,
-//          OrthogPolyApprox<ordinal_type, value_type>& c, 
-//          const OrthogPolyApprox<ordinal_type, value_type>& a)
-// {
-//   ordinal_type pc = a.size();
-//   if (pc != c.size())
-//     c.resize(pc);
-
-// #ifdef STOKHOS_DEBUG
-//   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
-//                      "Stokhos::QuadOrthogPolyExpansion::unary_op()" 
-//                      << ":  Expansion size (" << size() 
-//                      << ") is too small for computation (" << pc
-//                      << " needed).");
-// #endif
-
-//   // Zero out
-//   value_type* cc = c.coeff();
-//   for (ordinal_type i=0; i<pc; i++)
-//     cc[i] = value_type(0.0);
-
-//   if (avals.size() != nqp) {
-//     avals.resize(nqp);
-//     fvals.resize(nqp);
-//   }
-
-//   // Evaluate input
-//   for (ordinal_type qp=0; qp<nqp; qp++)
-//     avals[qp] = a.evaluate(*basis, quad_points[qp], quad_values[qp]);
-
-//     // Evaluate function
-//   for (ordinal_type qp=0; qp<nqp; qp++)
-//     fvals[qp] = func(avals[qp])*quad_weights[qp];
-
-//   // Integrate
-//   for (ordinal_type i=0; i<pc; i++) {
-//     for (ordinal_type qp=0; qp<nqp; qp++)
-//       cc[i] += fvals[qp]*quad_values[qp][i];
-//     cc[i] /= norms[i];
-//   }
-// }
-
 template <typename ordinal_type, typename value_type> 
 template <typename FuncT>
 void
@@ -162,140 +79,33 @@ unary_op(const FuncT& func,
                      << " needed).");
 #endif
 
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- Unary Polynomial Evaluation");
+
   // Evaluate input
   blas.GEMV(Teuchos::TRANS, pc, nqp, 1.0, &qv[0], sz, a.coeff(), 1, 0.0,
             &avals[0], 1);
+
+  }
+
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- Unary Function Evaluation");
 
     // Evaluate function
   for (ordinal_type qp=0; qp<nqp; qp++)
     fvals[qp] = func(avals[qp])*quad_weights[qp];
 
+  }
+
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- Unary Polynomial Integration");
+
   // Integrate
   blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,
             c.coeff(), 1);
+
+  }
 }
-
-// template <typename ordinal_type, typename value_type> 
-// template <typename FuncT>
-// void
-// Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-// binary_op(const FuncT& func,
-//           OrthogPolyApprox<ordinal_type, value_type>& c, 
-//           const OrthogPolyApprox<ordinal_type, value_type>& a, 
-//           const OrthogPolyApprox<ordinal_type, value_type>& b)
-// {
-//   ordinal_type pa = a.size();
-//   ordinal_type pb = b.size();
-//   ordinal_type pc = pa;
-//   if (pb > pc)
-//     pc = pb;
-//   if (pc != c.size())
-//     c.resize(pc);
-
-// #ifdef STOKHOS_DEBUG
-//   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
-//                      "Stokhos::QuadOrthogPolyExpansion::binary_op()" 
-//                      << ":  Expansion size (" << size() 
-//                      << ") is too small for computation (" << pc
-//                      << " needed).");
-// #endif
-
-//   // Zero out
-//   value_type* cc = c.coeff();
-//   for (ordinal_type i=0; i<pc; i++)
-//     cc[i] = value_type(0.0);
-
-//   for (ordinal_type qp=0; qp<nqp; qp++) {
-//     // Evaluate input
-//     value_type aval = a.evaluate(*basis, quad_points[qp], quad_values[qp]);
-//     value_type bval = b.evaluate(*basis, quad_points[qp], quad_values[qp]);
-
-//     // Evaluate function
-//     value_type fval = func(aval, bval);
-
-//     // Integrate
-//     for (ordinal_type i=0; i<pc; i++)
-//       cc[i] += quad_weights[qp]*fval*quad_values[qp][i]/norms[i];
-//   }
-// }
-
-// template <typename ordinal_type, typename value_type> 
-// template <typename FuncT>
-// void
-// Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-// binary_op(const FuncT& func,
-//           OrthogPolyApprox<ordinal_type, value_type>& c, 
-//           const value_type& a, 
-//           const OrthogPolyApprox<ordinal_type, value_type>& b)
-// {
-//   ordinal_type pc = b.size();
-//   if (pc != c.size())
-//     c.resize(pc);
-
-// #ifdef STOKHOS_DEBUG
-//   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
-//                      "Stokhos::QuadOrthogPolyExpansion::binary_op()" 
-//                      << ":  Expansion size (" << size() 
-//                      << ") is too small for computation (" << pc
-//                      << " needed).");
-// #endif
-
-//   // Zero out
-//   value_type* cc = c.coeff();
-//   for (ordinal_type i=0; i<pc; i++)
-//     cc[i] = value_type(0.0);
-
-//   for (ordinal_type qp=0; qp<nqp; qp++) {
-//     // Evaluate input
-//     value_type bval = b.evaluate(*basis, quad_points[qp], quad_values[qp]);
-
-//     // Evaluate function
-//     value_type fval = func(a, bval);
-
-//     // Integrate
-//     for (ordinal_type i=0; i<pc; i++)
-//       cc[i] += quad_weights[qp]*fval*quad_values[qp][i]/norms[i];
-//   }
-// }
-
-// template <typename ordinal_type, typename value_type> 
-// template <typename FuncT>
-// void
-// Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-// binary_op(const FuncT& func,
-//           OrthogPolyApprox<ordinal_type, value_type>& c, 
-//           const OrthogPolyApprox<ordinal_type, value_type>& a,
-//           const value_type& b)
-// {
-//   ordinal_type pc = a.size();
-//   if (pc != c.size())
-//     c.resize(pc);
-
-// #ifdef STOKHOS_DEBUG
-//   TEST_FOR_EXCEPTION(size() < pc, std::logic_error,
-//                      "Stokhos::QuadOrthogPolyExpansion::binary_op()" 
-//                      << ":  Expansion size (" << size() 
-//                      << ") is too small for computation (" << pc
-//                      << " needed).");
-// #endif
-
-//   // Zero out
-//   value_type* cc = c.coeff();
-//   for (ordinal_type i=0; i<pc; i++)
-//     cc[i] = value_type(0.0);
-
-//   for (ordinal_type qp=0; qp<nqp; qp++) {
-//     // Evaluate input
-//     value_type aval = a.evaluate(*basis, quad_points[qp], quad_values[qp]);
-
-//     // Evaluate function
-//     value_type fval = func(aval, b);
-
-//     // Integrate
-//     for (ordinal_type i=0; i<pc; i++)
-//       cc[i] += quad_weights[qp]*fval*quad_values[qp][i]/norms[i];
-//   }
-// }
 
 template <typename ordinal_type, typename value_type> 
 template <typename FuncT>
@@ -322,19 +132,34 @@ binary_op(const FuncT& func,
                      << " needed).");
 #endif
 
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PP Binary Polynomial Evaluation");
+
   // Evaluate input
   blas.GEMV(Teuchos::TRANS, pa, nqp, 1.0, &qv[0], sz, a.coeff(), 1, 0.0,
             &avals[0], 1);
   blas.GEMV(Teuchos::TRANS, pb, nqp, 1.0, &qv[0], sz, b.coeff(), 1, 0.0,
             &bvals[0], 1);
 
+  }
+
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PP Binary Function Evaluation");
+
     // Evaluate function
   for (ordinal_type qp=0; qp<nqp; qp++)
     fvals[qp] = func(avals[qp], bvals[qp])*quad_weights[qp];
 
+  }
+
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PP Binary Polynomial Integration");
+
   // Integrate
   blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,
             c.coeff(), 1);
+
+  }
 }
 
 template <typename ordinal_type, typename value_type> 
@@ -358,17 +183,32 @@ binary_op(const FuncT& func,
                      << " needed).");
 #endif
 
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- CP Binary Polynomial Evaluation");
+
   // Evaluate input
   blas.GEMV(Teuchos::TRANS, pc, nqp, 1.0, &qv[0], sz, b.coeff(), 1, 0.0,
             &bvals[0], 1);
+
+  }
+
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- CP Binary Function Evaluation");
 
     // Evaluate function
   for (ordinal_type qp=0; qp<nqp; qp++)
     fvals[qp] = func(a, bvals[qp])*quad_weights[qp];
 
+  }
+
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- CP Binary Polynomial Integration");
+
   // Integrate
   blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,
             c.coeff(), 1);
+
+  }
 }
 
 template <typename ordinal_type, typename value_type> 
@@ -392,17 +232,32 @@ binary_op(const FuncT& func,
                      << " needed).");
 #endif
 
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PC Binary Polynomial Evaluation");
+
   // Evaluate input
   blas.GEMV(Teuchos::TRANS, pc, nqp, 1.0, &qv[0], sz, a.coeff(), 1, 0.0,
             &avals[0], 1);
+
+  }
+
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PC Binary Function Evaluation");
 
     // Evaluate function
   for (ordinal_type qp=0; qp<nqp; qp++)
     fvals[qp] = func(avals[qp], b)*quad_weights[qp];
 
+  }
+
+  {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PC Binary Polynomial Integration");
+
   // Integrate
   blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,
             c.coeff(), 1);
+
+  }
 }
 
 template <typename ordinal_type, typename value_type> 

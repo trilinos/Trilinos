@@ -90,7 +90,8 @@ namespace Stokhos {
       const std::vector<int>& sg_p_index,
       const std::vector<int>& sg_g_index,
       const Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > >& initial_p_sg_coeffs_,
-      const Teuchos::RCP<Teuchos::ParameterList>& params_);
+      const Teuchos::RCP<Teuchos::ParameterList>& params_,
+      const Teuchos::RCP<const Epetra_Comm>& comm);
 
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -120,13 +121,6 @@ namespace Stokhos {
     //! Create W = alpha*M + beta*J matrix
     Teuchos::RCP<Epetra_Operator> create_W() const;
 
-    //! Create preconditioner operator
-    /*! 
-     * This is NOT a virtual ModelEvaluator method, and is just a convenience
-     * for users of this class.
-     */
-    Teuchos::RCP<Epetra_Operator> create_prec() const;
-
     //! Create InArgs
     InArgs createInArgs() const;
 
@@ -137,6 +131,20 @@ namespace Stokhos {
     void evalModel(const InArgs& inArgs, const OutArgs& outArgs) const;
 
     //@}
+
+    //! Create preconditioner operator
+    /*! 
+     * This is NOT a virtual ModelEvaluator method, and is just a convenience
+     * for users of this class.
+     */
+    Teuchos::RCP<Epetra_Operator> create_prec() const;
+
+    //! Set initial solution vector
+    /*! 
+     * This is NOT a virtual ModelEvaluator method, and is just a convenience
+     * for users of this class.
+     */
+    void set_x_init(const Epetra_Vector& x_in);
 
   protected:
 
@@ -157,6 +165,9 @@ namespace Stokhos {
 
     //! Number of stochastic blocks
     unsigned int num_sg_blocks;
+
+    //! Whether we support x (and thus f and W)
+    bool supports_x;
 
     //! Underlying unknown map
     Teuchos::RCP<const Epetra_Map> x_map;
@@ -229,6 +240,12 @@ namespace Stokhos {
 
     //! SG Preconditioner factory
     Teuchos::RCP<Stokhos::PreconditionerFactory> precFactory;
+
+    //! Whether to always evaluate W with f
+    bool eval_W_with_f;
+
+    //! W pointer for evaluating W with f
+    mutable Teuchos::RCP<Epetra_Operator> my_W;
 
   };
 

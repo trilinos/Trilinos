@@ -46,13 +46,15 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
      const std::vector<int>& sg_p_index_,
      const std::vector<int>& sg_g_index_,
      const Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > >& initial_p_sg_coeffs_,
-     const Teuchos::RCP<Teuchos::ParameterList>& params_) 
+     const Teuchos::RCP<Teuchos::ParameterList>& params_,
+     const Teuchos::RCP<const Epetra_Comm>& comm) 
   : me(me_),
     sg_basis(sg_basis_),
     sg_p_index(sg_p_index_),
     sg_g_index(sg_g_index_),
     params(params_),
     num_sg_blocks(sg_basis->size()),
+    supports_x(false),
     x_map(me->get_x_map()),
     f_map(me->get_f_map()),
     sg_comm(),
@@ -63,7 +65,7 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     sg_p_names(num_p),
     num_g(sg_g_index.size()),
     sg_g_map(num_g),
-    Cijk(sg_basis->getTripleProductTensor()),
+    Cijk(),
     x_dot_sg_blocks(),
     x_sg_blocks(),
     p_sg_blocks(num_p),
@@ -71,9 +73,11 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     W_sg_blocks(),
     g_sg_blocks(num_g),
     jacobianMethod(MATRIX_FREE),
-    sg_p_init(num_p)
+    sg_p_init(num_p),
+    eval_W_with_f(false)
 {
-  Teuchos::RCP<const Epetra_Comm> comm = Teuchos::rcp(&(x_map->Comm()),false);
+  if (x_map != Teuchos::null)
+    supports_x = true;
 
 #ifdef HAVE_MPI
   // No parallelism over blocks, so spatial partition is unchanged 
@@ -108,42 +112,47 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     rowIndex[i] = (i + myFirstBlockRow);
   }
 
-   // Create block SG x and f maps
-   sg_x_map = 
-     Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*x_map,
-							    rowIndex,
-							    *sg_comm));
-   sg_f_map = 
-     Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*f_map,
-							    rowIndex,
-							    *sg_comm));
+  if (supports_x) {
 
-   // Create vector blocks
-   x_dot_sg_blocks = 
-     Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
-   x_sg_blocks = 
-     Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
-   f_sg_blocks = 
-     Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
-   W_sg_blocks = 
-     Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Operator>(sg_basis));
-   for (unsigned int i=0; i<num_sg_blocks; i++)
-     W_sg_blocks->setCoeffPtr(i, me->create_W());
+    // Create block SG x and f maps
+    sg_x_map = 
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*x_map,
+							     rowIndex,
+							     *sg_comm));
+    sg_f_map = 
+      Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*f_map,
+							     rowIndex,
+							     *sg_comm));
+    
+    // Create vector blocks
+    x_dot_sg_blocks = 
+      Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
+    x_sg_blocks = 
+      Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
+    f_sg_blocks = 
+      Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Vector>(sg_basis));
+    W_sg_blocks = 
+      Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Operator>(sg_basis));
+    for (unsigned int i=0; i<num_sg_blocks; i++)
+      W_sg_blocks->setCoeffPtr(i, me->create_W());
 
-   // Get block Jacobian method
-   std::string method = params->get("Jacobian Method", "Matrix Free");
-   if (method == "Matrix Free")
-     jacobianMethod = MATRIX_FREE;
-   else if (method == "Fully Assembled")
-     jacobianMethod = FULLY_ASSEMBLED;
-   else
-     TEST_FOR_EXCEPTION(true, 
-			std::logic_error,
-			std::endl << 
-			"Error!  Stokhos::SGModelEvaluator():  " <<
-			"Unknown Jacobian Method " << method << "!" << 
-			std::endl);
+    // Get block Jacobian method
+    std::string method = params->get("Jacobian Method", "Matrix Free");
+    if (method == "Matrix Free")
+      jacobianMethod = MATRIX_FREE;
+    else if (method == "Fully Assembled")
+      jacobianMethod = FULLY_ASSEMBLED;
+    else
+      TEST_FOR_EXCEPTION(true, 
+			 std::logic_error,
+			 std::endl << 
+			 "Error!  Stokhos::SGModelEvaluator():  " <<
+			 "Unknown Jacobian Method " << method << "!" << 
+			 std::endl);
 
+    Cijk = sg_basis->getTripleProductTensor();
+  }
+    
    // Parameters -- The idea here is to replace the parameter vectors
    // specified by sg_p_index with parameter vectors that are the 
    // concatenation of all of SG components of each parameter vector.
@@ -200,14 +209,18 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
 
    }
 
-   // Create initial x
-   sg_x_init = Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_x_map));
-   Teuchos::RCP<const Epetra_Vector> xinit = me->get_x_init();
-   sg_x_init->LoadBlockValues(*xinit, 0);
+   if (supports_x) {
+     // Create initial x
+     sg_x_init = Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_x_map));
+     Teuchos::RCP<const Epetra_Vector> xinit = me->get_x_init();
+     sg_x_init->LoadBlockValues(*xinit, 0);
 
-   // Get preconditioner factory for matrix-free
-   if (jacobianMethod == MATRIX_FREE)
-     precFactory = params->get< Teuchos::RCP<Stokhos::PreconditionerFactory> >("Preconditioner Factory");
+     // Get preconditioner factory for matrix-free
+     if (jacobianMethod == MATRIX_FREE)
+       precFactory = params->get< Teuchos::RCP<Stokhos::PreconditionerFactory> >("Preconditioner Factory");
+   }
+
+   eval_W_with_f = params->get("Evaluate W with F", false);
 }
 
 // Overridden from EpetraExt::ModelEvaluator
@@ -285,19 +298,22 @@ Stokhos::SGModelEvaluator::get_p_init(int l) const
 Teuchos::RCP<Epetra_Operator>
 Stokhos::SGModelEvaluator::create_W() const
 {
-  
-  if (jacobianMethod == MATRIX_FREE)
-    return Teuchos::rcp(new Stokhos::MatrixFreeEpetraOp(x_map, sg_x_map, 
-							sg_basis, Cijk, 
-							W_sg_blocks));
-  else if (jacobianMethod == FULLY_ASSEMBLED) {
-     Teuchos::RCP<Epetra_Operator> W = me->create_W();
-     Teuchos::RCP<Epetra_RowMatrix> W_row = 
-       Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(W, true);
-     return
-       Teuchos::rcp(new EpetraExt::BlockCrsMatrix(*W_row, rowStencil, rowIndex, 
-						  *sg_comm));
-   }
+  if (supports_x) {
+    if (jacobianMethod == MATRIX_FREE)
+      my_W = Teuchos::rcp(new Stokhos::MatrixFreeEpetraOp(x_map, sg_x_map, 
+							  sg_basis, Cijk, 
+							  W_sg_blocks));
+    else if (jacobianMethod == FULLY_ASSEMBLED) {
+      Teuchos::RCP<Epetra_Operator> W = me->create_W();
+      Teuchos::RCP<Epetra_RowMatrix> W_row = 
+	Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(W, true);
+      my_W =
+	Teuchos::rcp(new EpetraExt::BlockCrsMatrix(*W_row, rowStencil, 
+						   rowIndex, *sg_comm));
+    }
+
+    return my_W;
+  }
   
   return Teuchos::null;
 }
@@ -305,19 +321,20 @@ Stokhos::SGModelEvaluator::create_W() const
 Teuchos::RCP<Epetra_Operator>
 Stokhos::SGModelEvaluator::create_prec() const
 {
-  
-  if (jacobianMethod == MATRIX_FREE)
-    return Teuchos::rcp(new Stokhos::MeanEpetraOp(x_map, sg_x_map, 
-						  num_sg_blocks, 
-						  Teuchos::null));
-  else if (jacobianMethod == FULLY_ASSEMBLED) {
-     Teuchos::RCP<Epetra_Operator> W = me->create_W();
-     Teuchos::RCP<Epetra_RowMatrix> W_row = 
-       Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(W, true);
-     return
-       Teuchos::rcp(new EpetraExt::BlockCrsMatrix(*W_row, rowStencil, rowIndex, 
-						  *sg_comm));
-   }
+  if (supports_x) {
+    if (jacobianMethod == MATRIX_FREE)
+      return Teuchos::rcp(new Stokhos::MeanEpetraOp(x_map, sg_x_map, 
+						    num_sg_blocks, 
+						    Teuchos::null));
+    else if (jacobianMethod == FULLY_ASSEMBLED) {
+      Teuchos::RCP<Epetra_Operator> W = me->create_W();
+      Teuchos::RCP<Epetra_RowMatrix> W_row = 
+	Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(W, true);
+      return
+	Teuchos::rcp(new EpetraExt::BlockCrsMatrix(*W_row, rowStencil, 
+						   rowIndex, *sg_comm));
+    }
+  }
   
   return Teuchos::null;
 }
@@ -328,18 +345,11 @@ Stokhos::SGModelEvaluator::createInArgs() const
   InArgsSetup inArgs;
   InArgs me_inargs = me->createInArgs();
 
-  // We require underlying model evaluator to support x
-  TEST_FOR_EXCEPTION(me_inargs.supports(IN_ARG_x) == false, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  Stokhos::SGModelEvaluator::createInArgs():  " <<
-                     "Underlying model evaluator must support x!" << std::endl);
-
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(me_inargs.Np()); 
   inArgs.set_Np_sg(0);
   inArgs.setSupports(IN_ARG_x_dot, me_inargs.supports(IN_ARG_x_dot));
-  inArgs.setSupports(IN_ARG_x, true);
+  inArgs.setSupports(IN_ARG_x, me_inargs.supports(IN_ARG_x));
   inArgs.setSupports(IN_ARG_t, me_inargs.supports(IN_ARG_t));
   inArgs.setSupports(IN_ARG_alpha, me_inargs.supports(IN_ARG_alpha));
   inArgs.setSupports(IN_ARG_beta, me_inargs.supports(IN_ARG_beta));
@@ -353,23 +363,11 @@ Stokhos::SGModelEvaluator::createOutArgs() const
   OutArgsSetup outArgs;
   OutArgs me_outargs = me->createOutArgs();
 
-  // We require underlying model evaluator to support f and W
-  TEST_FOR_EXCEPTION(me_outargs.supports(OUT_ARG_f) == false, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  Stokhos::SGModelEvaluator::createOutArgs():  " <<
-                     "Underlying model evaluator must support f!" << std::endl);
-  TEST_FOR_EXCEPTION(me_outargs.supports(OUT_ARG_W) == false, 
-		     std::logic_error,
-                     std::endl << 
-                     "Error!  Stokhos::SGModelEvaluator::createOutArgs():  " <<
-                     "Underlying model evaluator must support W!" << std::endl);
-
   outArgs.setModelEvalDescription(this->description());
   outArgs.set_Np_Ng(me_outargs.Np(), me_outargs.Ng());
   outArgs.set_Ng_sg(0);
-  outArgs.setSupports(OUT_ARG_f, true);
-  outArgs.setSupports(OUT_ARG_W, true);
+  outArgs.setSupports(OUT_ARG_f, me_outargs.supports(OUT_ARG_f));
+  outArgs.setSupports(OUT_ARG_W, me_outargs.supports(OUT_ARG_W));
   
   return outArgs;
 }
@@ -379,8 +377,12 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 				     const OutArgs& outArgs) const
 {
   // Get the output arguments
-  EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> f_out = outArgs.get_f();
-  Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();
+  EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> f_out;
+  if (outArgs.supports(OUT_ARG_f))
+    f_out = outArgs.get_f();
+  Teuchos::RCP<Epetra_Operator> W_out;
+  if (outArgs.supports(OUT_ARG_W))
+    W_out = outArgs.get_W();
 
   // Check if we are using the "matrix-free" method for W and we are 
   // computing a preconditioner.  
@@ -406,15 +408,19 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
   }
 
   // Get the input arguments
-  Teuchos::RCP<const Epetra_Vector> x = inArgs.get_x();
+  Teuchos::RCP<const Epetra_Vector> x;
+  if (inArgs.supports(IN_ARG_x))
+    x = inArgs.get_x();
   Teuchos::RCP<const Epetra_Vector> x_dot;
   if (inArgs.supports(IN_ARG_x_dot))
     x_dot = inArgs.get_x_dot();
 
   // Copy x, x_dot to SG components
-  EpetraExt::BlockVector x_sg(View, *x_map, *x);
-  for (unsigned int i=0; i<num_sg_blocks; i++)
-    x_sg_blocks->setCoeffPtr(i, x_sg.GetBlock(i));
+  if (x != Teuchos::null) {
+    EpetraExt::BlockVector x_sg(View, *x_map, *x);
+    for (unsigned int i=0; i<num_sg_blocks; i++)
+      x_sg_blocks->setCoeffPtr(i, x_sg.GetBlock(i));
+  }
   if (x_dot != Teuchos::null) {
     EpetraExt::BlockVector x_dot_sg(View, *x_map, *x_dot);
     for (unsigned int i=0; i<num_sg_blocks; i++)
@@ -423,7 +429,8 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 
   // Create underlying inargs
   InArgs me_inargs = me->createInArgs();
-  me_inargs.set_x_sg(x_sg_blocks);
+  if (x != Teuchos::null)
+    me_inargs.set_x_sg(x_sg_blocks);
   if (x_dot != Teuchos::null)
     me_inargs.set_x_dot_sg(x_dot_sg_blocks);
   if (me_inargs.supports(IN_ARG_alpha))
@@ -462,9 +469,11 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
     for (unsigned int i=0; i<num_sg_blocks; i++)
       f_sg_blocks->setCoeffPtr(i, f_sg.GetBlock(i));
     me_outargs.set_f_sg(f_sg_blocks);
+    if (eval_W_with_f)
+      me_outargs.set_W_sg(W_sg_blocks);
   }
-  if (W_out != Teuchos::null && !eval_mean)
-    me_outargs.set_W_sg(W_sg_blocks);
+  if (W_out != Teuchos::null && !eval_W_with_f && !eval_mean)
+     me_outargs.set_W_sg(W_sg_blocks);
 
   // Pass responses
   for (int i=0; i<outArgs.Ng(); i++) {
@@ -488,15 +497,21 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
   me->evalModel(me_inargs, me_outargs);
 
   // Copy block SG components for f and W into f and W
-  if (W_out != Teuchos::null && !eval_mean) {
+  if ((W_out != Teuchos::null || (eval_W_with_f && f_out != Teuchos::null)) 
+      && !eval_mean) {
+    Teuchos::RCP<Epetra_Operator> W;
+    if (W_out != Teuchos::null)
+      W = W_out;
+    else
+      W = my_W;
     if (jacobianMethod == MATRIX_FREE) {
       Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> W_mf = 
-	Teuchos::rcp_dynamic_cast<Stokhos::MatrixFreeEpetraOp>(W_out, true);
+	Teuchos::rcp_dynamic_cast<Stokhos::MatrixFreeEpetraOp>(W, true);
       W_mf->reset(W_sg_blocks);
     }
     else if (jacobianMethod == FULLY_ASSEMBLED) {
       Teuchos::RCP<EpetraExt::BlockCrsMatrix> W_sg = 
-	Teuchos::rcp_dynamic_cast<EpetraExt::BlockCrsMatrix>(W_out, true);
+	Teuchos::rcp_dynamic_cast<EpetraExt::BlockCrsMatrix>(W, true);
       Teuchos::RCP<Epetra_RowMatrix> W_row;
       int i,j;
       double cijk;
@@ -513,4 +528,10 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
       }
     }
   }
+}
+
+void 
+Stokhos::SGModelEvaluator::set_x_init(const Epetra_Vector& x_in)
+{
+  sg_x_init->Scale(1.0, x_in);
 }
