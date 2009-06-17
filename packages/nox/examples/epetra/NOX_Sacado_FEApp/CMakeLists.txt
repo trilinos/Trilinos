@@ -18,7 +18,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_Sacado AND
   IF(Sacado_ENABLE_Stokhos AND Stokhos_ENABLE_Quadrature)
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       NOX_Sacado_FEApp_PCE_Example
-      SOURCES pce.C
+      SOURCES pce.C FEApp_NOXSolver.hpp FEApp_NOXSolver.cpp
       COMM serial mpi
       NUM_MPI_PROCS 2
       ARGS

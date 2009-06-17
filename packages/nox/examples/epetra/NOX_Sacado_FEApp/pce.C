@@ -44,6 +44,7 @@
 
 // FEApp is defined in Trilinos/packages/sacado/example/FEApp
 #include "FEApp_ModelEvaluator.hpp"
+#include "FEApp_NOXSolver.hpp"
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -82,6 +83,12 @@ protected:
   Teuchos::RCP<Ifpack_Preconditioner> ifpackPrec;
 };
 
+enum SG_METHOD {
+  SG_AD,
+  SG_ELEMENT,
+  SG_GLOBAL,
+  SG_NI
+};
 
 int main(int argc, char *argv[]) {
   unsigned int nelem = 100;
@@ -89,11 +96,12 @@ int main(int argc, char *argv[]) {
   double alpha = 1.0;
   double leftBC = 0.0;
   double rightBC = 0.1;
-  //double rightBC = 0.0;
   unsigned int numalpha = 2;
+  unsigned int p = 5;
 
   bool do_pce = true;
   bool do_dakota = false;
+  SG_METHOD SG_Method = SG_AD;
 
   int MyPID;
 
@@ -189,22 +197,6 @@ int main(int argc, char *argv[]) {
 	Teuchos::rcp(new Teuchos::Array<std::string>);
     free_param_names->push_back("Constant Function Value");
 
-    // Create application
-    Teuchos::RCP<FEApp::Application> app = 
-      Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false));
-
-    // Create initial guess
-    Teuchos::RCP<const Epetra_Vector> u = app->getInitialSolution();
-    NOX::Epetra::Vector nox_u(*u);
-
-    // Create model evaluator
-    Teuchos::RCP<EpetraExt::ModelEvaluator> model = 
-      Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names));
-
-    // Create NOX interface
-    Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> interface =
-      Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(model));
-
     // Set up NOX parameters
     Teuchos::RCP<Teuchos::ParameterList> noxParams =
       Teuchos::rcp(&(appParams->sublist("NOX")),false);
@@ -244,66 +236,52 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
     lsParams.set("Aztec Solver", "GMRES");  
     lsParams.set("Max Iterations", 20);
-    lsParams.set("Size of Krylov Subspace", 20);
-    lsParams.set("Tolerance", 1e-4); 
+    lsParams.set("Size of Krylov Subspace", 10);
+    lsParams.set("Tolerance", 1e-2); 
     lsParams.set("Output Frequency", 50);
     lsParams.set("Preconditioner", "Ifpack");
     lsParams.set("RCM Reordering", "Enabled");
 
-    // Create the Jacobian matrix
-    Teuchos::RCP<Epetra_Operator> A = model->create_W(); 
+    // Sublist for convergence tests
+    Teuchos::ParameterList& statusParams = noxParams->sublist("Status Tests");
+    statusParams.set("Test Type", "Combo");
+    statusParams.set("Number of Tests", 2);
+    statusParams.set("Combo Type", "OR");
+    Teuchos::ParameterList& normF = statusParams.sublist("Test 0");
+    normF.set("Test Type", "NormF");
+    normF.set("Tolerance", 1e-10);
+    normF.set("Scale Type", "Scaled");
+    Teuchos::ParameterList& maxIters = statusParams.sublist("Test 1");
+    maxIters.set("Test Type", "MaxIters");
+    maxIters.set("Maximum Iterations", 10);
 
-    // Create the linear system
-    Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
-    Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
-    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys = 
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
-                                                        lsParams,
-                                                        iReq, iJac, A, nox_u));
-    
-    // Create the Group
-    Teuchos::RCP<NOX::Epetra::Group> grp =
-      Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, nox_u, linsys)); 
+    // Create application
+    Teuchos::RCP<FEApp::Application> app = 
+      Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false));
 
-    // Create the Solver convergence test
-    Teuchos::RCP<NOX::StatusTest::NormF> wrms = 
-      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10, 
-					   NOX::StatusTest::NormF::Unscaled));
-    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
-      Teuchos::rcp(new NOX::StatusTest::MaxIters(10));
-    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
-      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
-    combo->addStatusTest(wrms);
-    combo->addStatusTest(maxiters);
+    // Create model evaluator
+    Teuchos::RCP<EpetraExt::ModelEvaluator> model = 
+      Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names));
 
-    // Create the solver
-    Teuchos::RCP<NOX::Solver::Generic> solver = 
-      NOX::Solver::buildSolver(grp, combo, noxParams);
+    // Create NOX solver
+    FEApp::NOXSolver solver(appParams, model);
 
-    // Solve
-    NOX::StatusTest::StatusType status = solver->solve();
-    if (status == NOX::StatusTest::Converged) 
-      utils.out() << "Nonlinear solver converged!" << endl;
-    else {
-      utils.out() << "Nonlinear solver failed to converge!" << endl;
-    }
-
-    // Get the Epetra_Vector with the final solution from the solver
-    const NOX::Epetra::Group& finalGroup = 
-      dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
-    Epetra_Vector finalSolution = 
-      (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
-
-    // Compute our objective function
-    double norm_u = 0.0;
-    finalSolution.MeanValue(&norm_u);
+    // Evaluate responses at parameters
+    EpetraExt::ModelEvaluator::InArgs inArgs = solver.createInArgs();
+    EpetraExt::ModelEvaluator::OutArgs outArgs = solver.createOutArgs();
+    Teuchos::RCP<const Epetra_Vector> p_init = solver.get_p_init(0);
+    Teuchos::RCP<Epetra_Vector> g = 
+      Teuchos::rcp(new Epetra_Vector(*(solver.get_g_map(0))));
+    inArgs.set_p(0, p_init);
+    outArgs.set_g(0, g);
+    solver.evalModel(inArgs, outArgs);
 
     // Print objective function to file for Dakota
     if (do_dakota) {
       std::ofstream output_file(output_filename.c_str());
       output_file.precision(12);
       output_file.setf(ios::scientific);
-      output_file << norm_u << " " << norm_u << std::endl;
+      output_file << (*g)[0] << std::endl;
       output_file.close();
     }
 
@@ -312,10 +290,9 @@ int main(int argc, char *argv[]) {
 
     if (do_pce) {
 
-      TEUCHOS_FUNC_TIME_MONITOR("PCE Time");
+      TEUCHOS_FUNC_TIME_MONITOR("Total PCE Calculation Time");
 
       unsigned int d = numalpha;
-      unsigned int p = 5;
     
       // Create SG basis and expansion
       typedef Stokhos::LegendreBasis<int,double> basis_type;
@@ -332,16 +309,21 @@ int main(int argc, char *argv[]) {
 								      quad));
       Sacado::PCE::OrthogPoly<double>::initExpansion(expansion);
 
-      bool sg_local = true;
-      if (sg_local) {
-	// Create new app for Stochastic Galerkin solve
+      if (SG_Method == SG_AD || SG_Method == SG_ELEMENT) {
 	appParams->set("Enable Stochastic Galerkin", true);
 	appParams->set("Stochastic Galerkin basis", basis);
 	appParams->set("Stochastic Galerkin quadrature", quad);
-	appParams->set("SG Method", "AD");
-	//appParams->set("SG Method", "Gauss Quadrature");
-	app = Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false));
+	if (SG_Method == SG_AD)
+	  appParams->set("SG Method", "AD");
+	else
+	  appParams->set("SG Method", "Gauss Quadrature");
       }
+
+      // Create new app for Stochastic Galerkin solve
+      Teuchos::RCP<const Epetra_Vector> finalSolution =
+	solver.getFinalSolution();
+      app = Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false,
+						finalSolution.get()));
 
       // Set up stochastic parameters
       Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > > sg_p(1);
@@ -360,11 +342,10 @@ int main(int argc, char *argv[]) {
       }
       std::vector<int> sg_p_index(1);
       
-      if (sg_local) {
+      if (SG_Method == SG_AD || SG_Method == SG_ELEMENT) {
 	sg_p_index[0] = 1;
 	model = Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
 						       sg_param_names));
-
       }
       else {
 	sg_p_index[0] = 0;
@@ -372,8 +353,16 @@ int main(int argc, char *argv[]) {
 	sg_p_index_quad[0] = 0;
 	std::vector<int> sg_g_index_quad(1);
 	sg_g_index_quad[0] = 0;
-	Teuchos::RCP<EpetraExt::ModelEvaluator> underlying_model = 
-	  Teuchos::rcp(new FEApp::ModelEvaluator(app, sg_param_names));
+	Teuchos::RCP<EpetraExt::ModelEvaluator> underlying_model;
+	if (SG_Method == SG_GLOBAL)
+	  underlying_model = 
+	    Teuchos::rcp(new FEApp::ModelEvaluator(app, sg_param_names));
+	else {
+	  Teuchos::RCP<EpetraExt::ModelEvaluator> base_model =
+	    Teuchos::rcp(new FEApp::ModelEvaluator(app, sg_param_names));
+	  underlying_model =
+	    Teuchos::rcp(new FEApp::NOXSolver(appParams, base_model));
+	}
 	model =
 	  Teuchos::rcp(new Stokhos::SGQuadModelEvaluator(underlying_model, 
 							 quad, sg_p_index_quad,
@@ -381,93 +370,67 @@ int main(int argc, char *argv[]) {
       }
 
       Teuchos::RCP<Teuchos::ParameterList> sgParams = 
-        Teuchos::rcp(&(appParams->sublist("SG Parameters")),false);
-      sgParams->set("Jacobian Method", "Matrix Free");
-      //sgParams->set("Jacobian Method", "Fully Assembled");
-      Teuchos::RCP<Teuchos::ParameterList> precParams = 
-        Teuchos::rcp(&(sgParams->sublist("SG Preconditioner")),false);
-      precParams->set("Ifpack Preconditioner", "ILU");
-      precParams->set("Overlap", 0);
-      Teuchos::RCP<Stokhos::PreconditionerFactory> sg_prec = 
-	Teuchos::rcp(new IfpackPreconditionerFactory(precParams));
-      sgParams->set("Preconditioner Factory", sg_prec);
+	Teuchos::rcp(&(appParams->sublist("SG Parameters")),false);
+      if (SG_Method != SG_NI) {
+	sgParams->set("Jacobian Method", "Matrix Free");
+	//sgParams->set("Jacobian Method", "Fully Assembled");
+	Teuchos::RCP<Teuchos::ParameterList> precParams = 
+	  Teuchos::rcp(&(sgParams->sublist("SG Preconditioner")),false);
+	precParams->set("Ifpack Preconditioner", "ILU");
+	precParams->set("Overlap", 0);
+	Teuchos::RCP<Stokhos::PreconditionerFactory> sg_prec = 
+	  Teuchos::rcp(new IfpackPreconditionerFactory(precParams));
+	sgParams->set("Preconditioner Factory", sg_prec);
+	sgParams->set("Evaluate W with F", true);
+      }
       std::vector<int> sg_g_index(1);
       sg_g_index[0] = 0;
       Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
 	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, sg_p_index,
 						   sg_g_index,
-						   sg_p, sgParams));
-      interface = 
-        Teuchos::rcp(new NOX::Epetra::ModelEvaluatorInterface(sg_model));
-      iReq = interface;
-      iJac = interface;
-      Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface; 
-      Teuchos::RCP<const EpetraExt::BlockVector> sg_init = 
-        Teuchos::rcp_dynamic_cast<const EpetraExt::BlockVector>(sg_model->get_x_init());
-      EpetraExt::BlockVector sg_u(*sg_init);
-      sg_u.LoadBlockValues(finalSolution, 0);
-      NOX::Epetra::Vector sg_nox_u(sg_u);
-      A = sg_model->create_W(); 
-      if (sgParams->get<std::string>("Jacobian Method") == "Matrix Free") {
-        Teuchos::RCP<Epetra_Operator> M = sg_model->create_prec();
-        lsParams.set("Preconditioner", "User Defined");
-        linsys = 
-          Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
-                                                            lsParams,
-                                                            iJac, A, 
-                                                            iPrec, M,
-                                                            sg_nox_u));
-      }
-      else {
-        //lsParams.set("Write Linear System", true);
-        linsys = 
-          Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, 
-                                                            lsParams,
-                                                            iReq, iJac, A, 
-                                                            sg_nox_u));
-      }
-      
-      grp = Teuchos::rcp(new NOX::Epetra::Group(printParams, iReq, sg_nox_u, 
-						linsys));
+						   sg_p, sgParams,
+						   Comm));
 
-      // Solve SG nonlinear system
-      solver = NOX::Solver::buildSolver(grp, combo, noxParams);
-      NOX::StatusTest::StatusType status2 = solver->solve();
-      if (status2 == NOX::StatusTest::Converged) 
-        utils.out() << "SG Nonlinear solver converged!" << endl;
-      else
-        utils.out() << "SG Nonlinear solver failed to converge!" << endl;
+      // Create SG NOX solver
+      Teuchos::RCP<EpetraExt::ModelEvaluator> sg_solver;
+      if (SG_Method != SG_NI) {
+	Teuchos::RCP<Epetra_Operator> M;
+	if (sgParams->get<std::string>("Jacobian Method") == "Matrix Free")
+	  M = sg_model->create_prec();
+	
+	sg_solver = Teuchos::rcp(new FEApp::NOXSolver(appParams, sg_model, M));
+      }
+      else 
+	sg_solver = sg_model;
       
-      // Get the Epetra_Vector with the final solution from the solver
-      const NOX::Epetra::Group& sg_group = 
-        dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
-      const Epetra_Vector& sg_solution = 
-        (dynamic_cast<const NOX::Epetra::Vector&>(sg_group.getX())).getEpetraVector();
-
-      // Compute objective function -- average of u over domain x
-      EpetraExt::ModelEvaluator::InArgs inArgs = sg_model->createInArgs();
-      Teuchos::RCP<const Epetra_Vector> x_sg = Teuchos::rcp(&sg_solution,false);
-      inArgs.set_x(x_sg);
-      EpetraExt::ModelEvaluator::OutArgs outArgs = sg_model->createOutArgs();
-      Teuchos::RCP<Epetra_Vector> g_sg = 
-	Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(0))));
-      outArgs.set_g(0, g_sg);
-      sg_model->evalModel(inArgs, outArgs);
-      g_sg->Print(std::cout);
+      // Evaluate SG responses at SG parameters
+      EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_solver->createInArgs();
+      EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
+	sg_solver->createOutArgs();
+      Teuchos::RCP<const Epetra_Vector> sg_p_init = sg_solver->get_p_init(0);
+      Teuchos::RCP<Epetra_Vector> sg_g = 
+	Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(0))));
+      sg_inArgs.set_p(0, sg_p_init);
+      sg_outArgs.set_g(0, sg_g);
+      sg_solver->evalModel(sg_inArgs, sg_outArgs);
 
       // Print mean and standard deviation
       utils.out().precision(12);
-      double mean = (*g_sg)[0];
+      sg_g->Print(std::cout);
+      double mean = (*sg_g)[0];
       double std_dev = 0.0;
       const std::vector<double> nrm2 = basis->norm_squared();
       for (int i=1; i<basis->size(); i++)
-        std_dev += (*g_sg)[i]*(*g_sg)[i]*nrm2[i];
+        std_dev += (*sg_g)[i]*(*sg_g)[i]*nrm2[i];
       std_dev = std::sqrt(std_dev);
 
       utils.out() << "Mean =      " << mean << std::endl;
       utils.out() << "Std. Dev. = " << std_dev << std::endl;
 
-      if (status2 == NOX::StatusTest::Converged) 
+      NOX::StatusTest::StatusType status = NOX::StatusTest::Converged;
+      if (SG_Method != SG_NI)
+      	status = Teuchos::rcp_dynamic_cast<FEApp::NOXSolver>(sg_solver)->getSolverStatus();
+      if (status == NOX::StatusTest::Converged) 
 	utils.out() << "Test Passed!" << endl;
     }
 
