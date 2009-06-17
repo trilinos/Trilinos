@@ -34,9 +34,12 @@ class BlockPreconditionerState : public Teuchos::ParameterListAcceptor {
 public:
    //! \name Default and copy constructors
    //@{ 
-   BlockPreconditionerState() {}
+   BlockPreconditionerState() : isInitialized_(false) {}
    BlockPreconditionerState(const BlockPreconditionerState & src) 
-      : paramList_(rcp(new ParameterList(*src.paramList_))) {}
+      : paramList_(rcp(new ParameterList(*src.paramList_))), 
+        srcVector_(src.srcVector_),
+        inverses_(src.inverses_),
+        isInitialized_(src.isInitialized_) {}
    //@}
 
    //! \name for ParameterListAcceptor
