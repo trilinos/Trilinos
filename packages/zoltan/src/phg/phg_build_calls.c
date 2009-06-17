@@ -398,9 +398,11 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     Zoltan_Comm_Destroy(&plan);
     phg_free_pins(&myPins);
 
-    pinIdx[0] = 0;
-    for (i=1; i < zhg->nHedges; i++){
-      pinIdx[i] = pinIdx[i-1] + zhg->Esize[i-1];
+    if (zhg->nHedges > 0){
+      pinIdx[0] = 0;
+      for (i=1; i < zhg->nHedges; i++){
+        pinIdx[i] = pinIdx[i-1] + zhg->Esize[i-1];
+      }
     }
 
     fromID = pin_gid_buf;
