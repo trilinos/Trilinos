@@ -865,23 +865,19 @@ int msg_tag = 23132;
    *
    * Get maximum possible partition number.  (It's not always the
    * value found in the ZZ structure.)
-   *
-   * Determine whether edges are split across processes.  If not,
-   * then each process can count the number of cuts for it's edges.
-   *
-   * If edges are split across processes, then hash each edge GID
-   * to a process, send that process the list of partitions the
-   * edge spans, and let that process report the number of cuts.
    */
 
   num_parts = 0;
-  for (cnt=0, i = 0; i < zhg->nHedges; i++) {
-    for (j = 0; j < zhg->Esize[i]; j++, cnt++) {
-      if (pin_parts[cnt] >= num_parts) num_parts = pin_parts[cnt]+1;
-    }
+  for (i=0; i < npins; i++){
+    if (pin_parts[i] >= num_parts) num_parts = pin_parts[i]+1;
   }
 
   MPI_Allreduce(&num_parts, &max_parts, 1, MPI_INT, MPI_MAX, zz->Communicator);
+
+  /*
+   * Calculate the cut metrics.  We assume that edges are not divided
+   * across processes, so each process does this calculation locally.
+   */
 
   ierr = calculate_cuts(zz, zhg, max_parts, pin_parts, localcuts);
 
@@ -899,7 +895,7 @@ End:
 static int calculate_cuts(ZZ *zz, ZHG *zhg, 
                 int max_parts, int *pin_parts, double *loccuts)
 {
-char *yo = "removed_cuts_local";
+char *yo = "calculate_cuts";
 int i, cnt, j, ierr, nparts;
 int *parts;
 float ewgt;

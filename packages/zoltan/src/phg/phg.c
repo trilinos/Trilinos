@@ -278,6 +278,7 @@ int **exp_procs,           /* list of processors to export to */
 int **exp_to_part )         /* list of partitions to which exported objs
                                 are assigned. */
 {
+
   char *yo = "Zoltan_PHG";
   ZHG *zoltan_hg = NULL;
   PHGPartParams hgp;               /* Hypergraph parameters. */
@@ -1242,7 +1243,6 @@ int ierr = ZOLTAN_OK;
   } 
 /*  printf("(%d, %d) of [%d, %d] -> After Comm_split col_comm=%d  row_comm=%d\n", hgp->myProc_x, hgp->myProc_y, hgp->nProc_x, hgp->nProc_y, (int)hgp->col_comm, (int)hgp->row_comm);  */
   
-
     
 End:
 

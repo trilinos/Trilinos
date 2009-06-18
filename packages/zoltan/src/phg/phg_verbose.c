@@ -53,6 +53,7 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
   float *wgt, *vwgt;
   int *pin, *owner, *lno;
   HGraph *hg = &zhg->HG;
+  int p = zz->Proc;
 
   /* The ZHG structure contains the hypergraph returned by the query functions,
    * including modifications based on ADD_OBJ_WEIGHT and PHG_EDGE_WEIGHT_OPERATION.
@@ -66,7 +67,7 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
 
   wgt = zhg->objWeight;
 
-  printf("%d INPUT VERTICES (out of %d) : gno (gid/lid) (weights) nhedges fixed inpart outpart objSize)\n",zhg->nObj, zhg->globalObj);
+  printf("(%d) %d INPUT VERTICES (out of %d) : gno (gid/lid) (weights) nhedges fixed inpart outpart objSize)\n",p, zhg->nObj, zhg->globalObj);
 
   for (i=0; i<zhg->nObj; i++){
 
@@ -120,8 +121,8 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
   pin = zhg->pinGNO;
   owner = zhg->Pin_Procs;
    
-  printf("%d INPUT or REMOVED EDGES (out of %d), %d pins: gno size (weights) (pinGNO/pinProc)\n",
-                  zhg->nHedges, zhg->globalHedges, zhg->nPins);
+  printf("(%d) %d INPUT or REMOVED EDGES (out of %d), %d pins: gno size (weights) (pinGNO/pinProc)\n",
+                  p, zhg->nHedges, zhg->globalHedges, zhg->nPins);
 
   for (i=0; i < zhg->nHedges; i++){
 
@@ -144,8 +145,8 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
   }
   printf("\n");
 
-  printf("%d PHG EDGES (%d weights), %d total PHG PINS:\n",
-          hg->nEdge, ewdim, hg->nPins);
+  printf("(%d) %d PHG EDGES (%d weights), %d total PHG PINS:\n",
+          p, hg->nEdge, ewdim, hg->nPins);
 
   wgt = hg->ewgt;
   lno = hg->hvertex;
@@ -166,7 +167,7 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
   }
   printf("\n");
 
-  printf("%d PHG PIN global numbers and %d weights:\n", hg->nVtx, vwdim);
+  printf("(%d) %d PHG PIN global numbers and %d weights:\n", p, hg->nVtx, vwdim);
 
   sum = 0;
 
@@ -179,7 +180,7 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
     printf("\n");
   }
   printf("\n");
-  if (sum > 0.0) printf("Weight %d sums to %f\n\n",sumWeight+1,sum);
+  if (sum > 0.0) printf("(%d) Weight %d sums to %f\n\n",p, sumWeight+1,sum);
 }
 /****************************************************************************/
 void show_edges(char *s, ZZ *zz, int num_lists, int num_pins,
