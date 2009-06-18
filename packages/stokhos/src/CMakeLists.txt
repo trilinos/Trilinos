@@ -23,6 +23,7 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(HEADERS ${HEADERS}
+  Stokhos.hpp
   Stokhos_ConfigDefs.h
   Stokhos_Version.hpp
   Stokhos_gaussq.h
@@ -34,6 +35,10 @@ SET(HEADERS ${HEADERS}
   Stokhos_OneDOrthogPolyBasisBaseImp.hpp
   Stokhos_HermiteBasis.hpp
   Stokhos_HermiteBasisImp.hpp
+  Stokhos_SparseGridQuadrature.hpp
+  Stokhos_SparseGridQuadratureImp.hpp
+  Stokhos_RysBasis.hpp
+  Stokhos_RysBasisImp.hpp
   Stokhos_LegendreBasis.hpp
   Stokhos_LegendreBasisImp.hpp
   Stokhos_OrthogPolyBasis.hpp
@@ -57,6 +62,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_DerivOrthogPolyExpansionImp.hpp
   Stokhos_ForUQTKOrthogPolyExpansion.hpp
   Stokhos_ForUQTKOrthogPolyExpansionImp.hpp
+  Stokhos_StochGalerkin_FiniteDiff.hpp
+  Stokhos_StochGalerkin_FiniteDiffImp.hpp
   Stokhos_MatrixFreeEpetraOp.hpp
   Stokhos_MeanEpetraOp.hpp
   Stokhos_SGModelEvaluator.hpp

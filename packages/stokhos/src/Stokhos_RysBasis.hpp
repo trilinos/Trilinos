@@ -95,7 +95,9 @@ namespace Stokhos {
 
     //! Get quadrature point factor
     virtual value_type getQuadPointFactor() const { return 1; }
-    
+
+
+    virtual Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > getTripleProductTensor() const;
     
 
   private:
@@ -111,6 +113,9 @@ namespace Stokhos {
     
     //! Scale for the weight
     value_type scaleFactor;
+    
+    //! Normalized?
+    bool normalize;
 
     //! Recurrance coeffs
     std::vector<value_type> alpha;

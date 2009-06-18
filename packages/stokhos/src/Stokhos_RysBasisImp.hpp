@@ -61,6 +61,7 @@ RysBasis(ordinal_type p , value_type c, bool normalize) :
   this->alpha = alpha;
   this->beta = beta;
   this->gamma = gamma;
+  this->normalize = normalize;
  
   //First renormalize the weight function so that it has measure 1.
   value_type cut_gauss_norm;
@@ -136,7 +137,7 @@ RysBasis(ordinal_type p , value_type c, const std::vector< value_type >& alpha, 
   //std::vector<value_type> beta(p+1,0);
   std::vector<value_type> gamma(p+1,1);
   ordinal_type known_recurrance = alpha.size();
-  
+  this->normalize = normalize;
   this->alpha = alpha;
   this->beta = beta;
   this->gamma = gamma;
@@ -384,11 +385,11 @@ getQuadPoints(ordinal_type quad_order,
   ordinal_type num_points = quad_order+1;
   std::vector<value_type> alpha(num_points,0);
   std::vector<value_type> beta(num_points,0);
-  
+  Teuchos::RCP<const Stokhos::RysBasis<int,double> > basis;
   //If we don't have enough recurrance coefficients, get some more.
   if(num_points > this->p+1){
-    Teuchos::RCP<const Stokhos::RysBasis<int,double> > basis;
-    basis = Teuchos::rcp(new Stokhos::RysBasis<int,double>(quad_order,this->cutoff,this->alpha,this->beta,true));
+    
+    basis = Teuchos::rcp(new Stokhos::RysBasis<int,double>(quad_order,this->cutoff,this->alpha,this->beta,this->normalize));
     basis->getAlpha(alpha);
     basis->getBeta(beta);
   }else{  //else just take the ones we already have.
@@ -446,17 +447,56 @@ getQuadPoints(ordinal_type quad_order,
   // Evalute basis at gauss points
   quad_values.resize(num_points);
   for (ordinal_type i=0; i<num_points; i++) {
-    quad_values[i].resize(this->p+1);
-    evaluateBases(quad_points[i], quad_values[i]);
+    quad_values[i].resize(num_points);
+    if (num_points > this->p+1){
+      basis->evaluateBases(quad_points[i], quad_values[i]);
+    }else{
+      evaluateBases(quad_points[i], quad_values[i]);
+    }
   }
 
-   //std::cout << "values = " << std::endl;
-   //for (ordinal_type i=0; i<num_points; i++) {
+   /*std::cout << "values = " << std::endl;
+   for (ordinal_type i=0; i<num_points; i++) {
      //std::cout << "\t" << quad_points[i] 
-       //        << "\t" << quad_weights[i];
-     //for (ordinal_type j=0; j<this->p+1; j++)
-       //std::cout << "\t" << quad_values[i][j];
-     //std::cout << std::endl;
-   //}
+               //<< "\t" << quad_weights[i];
+     for (ordinal_type j=0; j<num_points; j++)
+       std::cout << "\t" << quad_values[i][j];
+     std::cout << std::endl;
+   }
+*/
+}
 
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> >
+Stokhos::RysBasis<ordinal_type, value_type>::
+getTripleProductTensor() const
+{
+  
+  ordinal_type sz = this->size();
+  
+  // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
+  if (this->Cijk == Teuchos::null) {
+    std::vector<value_type> points, weights;
+    std::vector< std::vector<value_type> > values;
+    getQuadPoints(ceil((3*this->p+1)/2), points, weights, values);
+    this->Cijk = Teuchos::rcp(new Dense3Tensor<ordinal_type, value_type>(sz));
+    
+    
+    for (ordinal_type i=0; i<sz; i++) {
+      for (ordinal_type j=0; j<sz; j++) {
+	for (ordinal_type k=0; k<sz; k++) {
+          value_type triple_product = 0;
+	  for (ordinal_type l=0; l<points.size();l++){
+             triple_product = triple_product + weights[l]*(values[l][i])*(values[l][j])*(values[l][k]);
+             //if(k == 0) std::cout<< "values[0]["<<l<<"] = "<<values[l][k] <<"\n";
+          }
+          (*this->Cijk)(i,j,k) = triple_product;
+          //if(i == 0 && j == 0 && k == 0) std::cout<< "C000 = " << (*Cijk)(i,j,k) << "\n";
+          
+	}
+      }
+    }
+  }
+
+  return this->Cijk;
 }

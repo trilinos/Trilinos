@@ -54,4 +54,7 @@
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_Dense3Tensor.hpp"
 
+// Discritizations
+#include "Stokhos_StochGalerkin_FiniteDiff.hpp"
+
 #endif // STOKHOS_HPP 
