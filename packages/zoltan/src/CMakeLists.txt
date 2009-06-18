@@ -59,6 +59,7 @@ APPEND_SET(HEADERS
   include/zoltan_dd.h
   include/zoltan_dd_cpp.h
   include/zoltan_mem.h
+  include/zoltan_eval.h
   )
 
 #
