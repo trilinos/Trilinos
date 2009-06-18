@@ -580,13 +580,12 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
       graph->cute[EVAL_GLOBAL_MIN], graph->cute[EVAL_GLOBAL_MAX], 
       graph->cute[EVAL_GLOBAL_AVG], graph->cute[EVAL_GLOBAL_SUM]);
 
-    printf("%s  Conn Cut (CUTN)      :  %8.3g %8.3g %8.3g %8.3g\n", yo, 
-      graph->cutn[EVAL_GLOBAL_MIN], graph->cutn[EVAL_GLOBAL_MAX], 
-      graph->cutn[EVAL_GLOBAL_AVG], graph->cutn[EVAL_GLOBAL_SUM]);
+    printf("\n");
 
-    printf("%s  Net Cut (CUTL)       :  %8.3g %8.3g %8.3g %8.3g\n", yo, 
-      graph->cutl[EVAL_GLOBAL_MIN], graph->cutl[EVAL_GLOBAL_MAX], 
-      graph->cutl[EVAL_GLOBAL_AVG], graph->cutl[EVAL_GLOBAL_SUM]);
+    printf("%s  CUTN (Sum_over_edges( (nparts-1)*ewgt )): %8.3g\n", yo, 
+           graph->cutn[EVAL_GLOBAL_SUM]);
+    printf("%s  CUTL (Sum_over_edges( (nparts>1)*ewgt )): %8.3g\n", yo, 
+           graph->cutn[EVAL_GLOBAL_SUM]);
     
     printf("\n\n");
   }
@@ -777,16 +776,9 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
     }
     printf("\n");
 
-    printf("%s  Statistics with respect to %1d partitions: \n", yo, nparts);
-    printf("%s                               Min      Max    Average    Sum\n", yo);
+    printf("%s  CUTN (Sum_over_edges( (nparts-1)*ewgt )): %8.3g\n", yo, hg->cutn[EVAL_GLOBAL_SUM]);
+    printf("%s  CUTL (Sum_over_edges( (nparts>1)*ewgt )): %8.3g\n", yo, hg->cutn[EVAL_GLOBAL_SUM]);
 
-    printf("%s  Conn Cut (CUTN)      :  %8.3g %8.3g %8.3g %8.3g\n", yo,
-      hg->cutn[EVAL_GLOBAL_MIN], hg->cutn[EVAL_GLOBAL_MAX],
-      hg->cutn[EVAL_GLOBAL_AVG], hg->cutn[EVAL_GLOBAL_SUM]);
-
-    printf("%s  Net Cut (CUTL)       :  %8.3g %8.3g %8.3g %8.3g\n", yo,
-      hg->cutl[EVAL_GLOBAL_MIN], hg->cutl[EVAL_GLOBAL_MAX],
-      hg->cutl[EVAL_GLOBAL_AVG], hg->cutl[EVAL_GLOBAL_SUM]);
 
     printf("\n\n");
   }
