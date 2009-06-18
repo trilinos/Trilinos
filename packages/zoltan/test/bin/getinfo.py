@@ -1,23 +1,8 @@
-##
-## Read in the LastTest.log file, which is written when the Zoltan tests
-## are run under CTest.  Extract the directory name and command for each
-## test.
-##
-## Using this information, re-run each test, timing it.
-##
-## This is so we can run the same tests in Release 3.1 (pre CTest) and
-## the trunk (post CTest) and compare the timings.
-##
-## We don't check answers.  We are just timing.  We could parse the
-## LB_Eval output and say that tests pass if LB_Eval looks good.
-##
-
-import time
 import subprocess
 import os
 import sys
 
-testSuiteStart = time.clock()
+testSuiteStart = os.times()
 
 f = open("LastTest.log")
 lines = f.readlines()
@@ -27,6 +12,7 @@ testlist = {}
 ntests = 0
 
 dirname="."
+shortDirName=""
 
 for line in lines:
   line.strip()
@@ -51,11 +37,12 @@ for line in lines:
 lines = []
 
 print ntests," TESTS"
+ntests = 0
 
 f = open("testOutput.txt","w")
 
 def runtest(cmd):
-  timeStart = time.clock()
+  timeStart = os.times()
 
   try:
     lcmd = cmd.strip().split()
@@ -65,8 +52,11 @@ def runtest(cmd):
     pass
   else:
     p.wait()
-    elapsedTime = time.clock() - timeStart
-    f.write("Elapsed time: "+str(elapsedTime)+" "+dirname+" "+lcmd[1]+" "+lcmd[2]+" "+lcmd[4]+"\n")
+    timeEnd = os.times()
+    elapsedTime = timeEnd[4] - timeStart[4]
+    resultText = "Elapsed time: "+str(elapsedTime)+" "+dirname+" "+lcmd[1]+" "+lcmd[2]+" "+lcmd[4]
+    f.write(resultText+"\n")
+    print ntests," ",resultText
 
 for dirname in testlist:
   #
@@ -79,11 +69,12 @@ for dirname in testlist:
   print len(cmds)," TESTS IN ",dirname
 
   for cmd in cmds:
-    print "  RUNNING ",cmd
+    ntests = ntests + 1
     runtest(cmd)
 
   os.chdir("..")
 
-testSuiteEnd = time.clock() - testSuiteStart
-f.write("\nTEST SUITE TOTAL TIME "+str(testSuiteEnd))
+testSuiteEnd = os.times()
+elapsedTime = testSuiteEnd[4] - testSuiteStart[4]
+f.write("\nTEST SUITE TOTAL TIME "+str(elapsedTime))
 f.close()
