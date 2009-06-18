@@ -394,29 +394,69 @@ bool isZeroOp(const LinearOp op)
   */
 const LinearOp getDiagonalOp(const LinearOp & op)
 {
-   // get Epetra_CrsMatrix
-   RCP<const Epetra_CrsMatrix> eOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*op));
-   TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::runtime_error,"getDiagonalOp requires an Epetra_CrsMatrix");
+   RCP<const Epetra_CrsMatrix> eCrsOp;
+
+   try {
+      // get Epetra_Operator
+      RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+
+      // cast it to a CrsMatrix
+      eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp,true);
+   }
+   catch (std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
+      *out << "PB: getDiagonalOp requires an Epetra_CrsMatrix\n";
+      *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
+      *out << "           OR\n";
+      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
 
    // extract diagonal
-   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eOp->RowMap()));
-   TEST_FOR_EXCEPT(eOp->ExtractDiagonalCopy(*diag));
+   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+   TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
 
    // build Thyra diagonal operator
-   return PB::Epetra::thyraDiagOp(diag,eOp->RowMap(),"diag( " + op->getObjectLabel() + " )");
+   return PB::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"diag( " + op->getObjectLabel() + " )");
 }
 
 const MultiVector getDiagonal(const LinearOp & op)
 {
-   // get Epetra_CrsMatrix
-   RCP<const Epetra_CrsMatrix> eOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*op));
-   TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::runtime_error,"getDiagonalOp requires an Epetra_CrsMatrix");
+   RCP<const Epetra_CrsMatrix> eCrsOp;
+
+   try {
+      // get Epetra_Operator
+      RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+
+      // cast it to a CrsMatrix
+      eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp,true);
+   }
+   catch (std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
+      *out << "PB: getDiagonal requires an Epetra_CrsMatrix\n";
+      *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
+      *out << "           OR\n";
+      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
 
    // extract diagonal
-   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eOp->RowMap()));
-   TEST_FOR_EXCEPT(eOp->ExtractDiagonalCopy(*diag));
+   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+   TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
 
-   return Thyra::create_Vector(diag,Thyra::create_VectorSpace(Teuchos::rcpFromRef(eOp->RowMap())));
+   return Thyra::create_Vector(diag,Thyra::create_VectorSpace(Teuchos::rcpFromRef(eCrsOp->RowMap())));
 }
 
 /** \brief Get the diaonal of a linear operator
@@ -432,17 +472,38 @@ const MultiVector getDiagonal(const LinearOp & op)
   */
 const LinearOp getInvDiagonalOp(const LinearOp & op)
 {
-   // get Epetra_CrsMatrix
-   RCP<const Epetra_CrsMatrix> eOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*op));
-   TEST_FOR_EXCEPTION(eOp==Teuchos::null,std::runtime_error,"getDiagonalOp requires an Epetra_CrsMatrix");
+   RCP<const Epetra_CrsMatrix> eCrsOp;
+
+   try {
+      // get Epetra_Operator
+      RCP<const Epetra_Operator> eOp = Thyra::get_Epetra_Operator(*op);
+
+      // cast it to a CrsMatrix
+      eCrsOp = rcp_dynamic_cast<const Epetra_CrsMatrix>(eOp,true);
+   }
+   catch (std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
+      *out << "PB: getInvDiagonalOp requires an Epetra_CrsMatrix\n";
+      *out << "    Could not extract an Epetra_Operator from a \"" << op->description() << std::endl;
+      *out << "           OR\n";
+      *out << "    Could not cast an Epetra_Operator to a Epetra_CrsMatrix\n";
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
 
    // extract diagonal
-   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eOp->RowMap()));
-   TEST_FOR_EXCEPT(eOp->ExtractDiagonalCopy(*diag));
+   const RCP<Epetra_Vector> diag = rcp(new Epetra_Vector(eCrsOp->RowMap()));
+   TEST_FOR_EXCEPT(eCrsOp->ExtractDiagonalCopy(*diag));
    diag->Reciprocal(*diag);
 
+
    // build Thyra diagonal operator
-   return PB::Epetra::thyraDiagOp(diag,eOp->RowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
+   return PB::Epetra::thyraDiagOp(diag,eCrsOp->RowMap(),"inv(diag( " + op->getObjectLabel() + " ))");
 }
 
 /** \brief Multiply three linear operators. 

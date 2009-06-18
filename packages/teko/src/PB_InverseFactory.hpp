@@ -198,14 +198,13 @@ public:
    //! \name Constructors
    //@{ 
    
-   /** \brief Constructor that takes a Thyra solve factory and 
-     *        makes it look like an InverseFactory
+   /** \brief Constructor that takes a linear operator and
+     *        uses it as a static inverse
      *
-     * Constructor that takes a Thyra solve factory and 
-     * makes it look like an InverseFactory.
+     * Constructor that takes a linear operator and
+     * uses it as a static inverse
      * 
-     * \param[in] precFactory Thyra PreconditionerFactoryBase used for building 
-     *                        the inverse.
+     * \param[in] inv Linear operator to use as the inverse.
      */
    StaticOpInverseFactory(const LinearOp inv) 
       : inverse_(inv) {}

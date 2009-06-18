@@ -62,7 +62,6 @@ public:
      * can be easily extracted.
      *
      * \param[in] A The Epetra source operator. (Should be a EpetraOperatorWrapper!)
-     * \param[in] mv A vector that was used to build the source operator.
      */
    virtual void rebuildPreconditioner(const Epetra_Operator & A);
 
