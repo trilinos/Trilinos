@@ -83,7 +83,7 @@ namespace Kokkos {
   
     //! Copy constructor.
     BaseSparseSolve(const BaseSparseSolve& source);
-	
+
     //! BaseSparseSolve Destructor
     virtual ~BaseSparseSolve();
     //@}
@@ -96,14 +96,14 @@ namespace Kokkos {
       This interface supports matrices that implement the Kokkos::CisMatrix matrix interface.
       \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
              about the matrix can be obtained via this interface, including whether or not the matrix is upper or lower
-	     triangular, and whether or not the diagonal is part of the structure, or should be implicitly assume to be
-	     unit diagonal.
+             triangular, and whether or not the diagonal is part of the structure, or should be implicitly assume to be
+             unit diagonal.
       \param willKeepStructure (In) If set to true, the user is asserting that the strucuture of the matrix, as
              defined in the getIndices() method of the CisMatrix object A will be kept.  Specifically, the pointer to an 
-	     array of indices returned for each i in that method will continue to point to valid index data.  By default,
-	     this argument is set to false, implying that the calling routine is \e not required to maintain the validity 
-	     of this data.  If the calling routine is planning to keep this data anyway, setting this argument to true can
-	     reduce the overall memory requirements.
+             array of indices returned for each i in that method will continue to point to valid index data.  By default,
+             this argument is set to false, implying that the calling routine is \e not required to maintain the validity 
+             of this data.  If the calling routine is planning to keep this data anyway, setting this argument to true can
+             reduce the overall memory requirements.
      \return Integer error code, set to 0 if successful.
     */
     virtual int initializeStructure(const CisMatrix<OrdinalType, ScalarType>& A, bool willKeepStructure = false);
@@ -114,28 +114,28 @@ namespace Kokkos {
 .
       \param A (In)  An instance of a class that implements the Kokkos::CisMatrix.  All necessary information
              about the matrix can be obtained via this interface, including whether or not the matrix is upper or lower
-	     triangular, and whether or not the diagonal is part of the structure, or should be implicitly assume to be
-	     unit diagonal.
+             triangular, and whether or not the diagonal is part of the structure, or should be implicitly assume to be
+             unit diagonal.
       \param willKeepValues (In) If set to true, the user is asserting that the strucuture of the matrix, as
              defined in the getIndices() method of the CisMatrix object A will be kept.  Specifically, the pointer to an 
-	     array of indices returned for each i in that method will continue to point to valid index data.  By default,
-	     this argument is set to false, implying that the calling routine is \e not required to maintain the validity 
-	     of this data.  If the calling routine is planning to keep this data anyway, setting this argument to true can
-	     reduce the overall memory requirements.
+             array of indices returned for each i in that method will continue to point to valid index data.  By default,
+             this argument is set to false, implying that the calling routine is \e not required to maintain the validity 
+             of this data.  If the calling routine is planning to keep this data anyway, setting this argument to true can
+             reduce the overall memory requirements.
       \param checkStructure (In) If set to true, the structure of A will be checked against the structure of
              the matrix passed in to the initializeStructure() methods.  This parameter is false by default.
 
       \return Integer error code, set to 0 if successful, returns - 1 if checkStructure is true and structure is changed.
     */
     virtual int initializeValues(const CisMatrix<OrdinalType, ScalarType>& A, bool willKeepValues = false,
-				 bool checkStructure = false);
+                                 bool checkStructure = false);
  
     //@}
 
     //! @name Computational methods
 
     //@{
-	
+
     //! Returns the result of a Kokkos_BaseSparseSolve multiplied by a vector x in y.
     /*! 
       \param x (In) A Kokkos::Vector to solve with.
@@ -143,11 +143,11 @@ namespace Kokkos {
              the same object.
       \param transA (In) If true, solve using the transpose of matrix, otherwise just use matrix.
       \param conjA (In) If true, solve using the conjugate of matrix values, otherwise just use matrix values.
-		
+
       \return Integer error code, set to 0 if successful.
     */
     virtual int apply(const Vector<OrdinalType, ScalarType>& x, Vector<OrdinalType, ScalarType>& y, 
-		      bool transA = false, bool conjA = false) const;
+                      bool transA = false, bool conjA = false) const;
 
     //! Returns the result of a Kokkos_BaseSparseSolve multiplied by multiple vectors in x, results in y.
     /*! 
@@ -156,13 +156,13 @@ namespace Kokkos {
              the same object.
       \param transA (In) If true, solve using the transpose of matrix, otherwise just use matrix.
       \param conjA (In) If true, solve using the conjugate of matrix values, otherwise just use matrix values.
-		
+
       \return Integer error code, set to 0 if successful.
     */
     virtual int apply(const MultiVector<OrdinalType, ScalarType>& x, MultiVector<OrdinalType, ScalarType>& y, 
-		      bool transA = false, bool conjA = false) const;
+                      bool transA = false, bool conjA = false) const;
     //@}
-	
+
     //! @name Operator attribute access methods
 
     //@{
@@ -170,18 +170,18 @@ namespace Kokkos {
     //! Returns true if this implementation of Kokkos::BaseSparseSolve can benefit from the user keeping the passed in structure.
     /*! Some implementations of optimized kernels do not rely on the user's data except for the initial 
         analysis of structure.  Other implementations, in order to reduce memory requirements, may find it
-	beneficial to rely on the user's data.  Since it is very possible that the user would retain this
-	data anyway, we want to allow for this possibility.  This method is related to the willKeepStructure parameter 
-	passed in to the initializeStructure() method.
+        beneficial to rely on the user's data.  Since it is very possible that the user would retain this
+        data anyway, we want to allow for this possibility.  This method is related to the willKeepStructure parameter 
+        passed in to the initializeStructure() method.
     */
     virtual bool getCanUseStructure() const {return(true);};
 
     //! Returns true if this implementation of Kokkos::BaseSparseSolve can benefit from the user keeping the passed in values.
     /*! Some implementations of optimized kernels do not rely on the user's data except for the initial 
         copying of values.  Other implementations, in order to reduce memory requirements, may find it
-	beneficial to rely on the user's data.  Since it is very possible that the user would retain this
-	data anyway, we want to allow for this possibility.  This method is related to the willKeepValues parameter 
-	passed in to the initializeValues() method.
+        beneficial to rely on the user's data.  Since it is very possible that the user would retain this
+        data anyway, we want to allow for this possibility.  This method is related to the willKeepValues parameter 
+        passed in to the initializeValues() method.
     */
     virtual bool getCanUseValues() const {return(true);};
 
@@ -197,7 +197,7 @@ namespace Kokkos {
     //! Returns a reference to the right Kokkos::Permutation object, which is the identity for this implementation.
     virtual const Permutation<OrdinalType, ScalarType> & getRightPermutation() const {
       return(rightPermutation_);};
-	
+
     //@}
   
   protected:
@@ -265,7 +265,7 @@ namespace Kokkos {
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   BaseSparseSolve<OrdinalType, ScalarType>::BaseSparseSolve(const BaseSparseSolve<OrdinalType,
-							    ScalarType> &source) 
+                                                            ScalarType> &source) 
     : SparseOperation<OrdinalType, ScalarType>(source),
       matrixForStructure_(source.matrixForStructure_),
       matrixForValues_(source.matrixForValues_),
@@ -311,16 +311,16 @@ namespace Kokkos {
       OrdinalType ** tmp_indices =indices_;
       indices_ = new OrdinalType*[numRC_];
       if (willKeepStructure_) {
-	for (OrdinalType i=0; i< numRC_; i++) indices_[i] = tmp_indices[i];
+        for (OrdinalType i=0; i< numRC_; i++) indices_[i] = tmp_indices[i];
       }
       else {
-	allIndices_ = new OrdinalType[numEntries_]; // Allocate storage for all entries at once
-	OrdinalType offset = 0;
-	for (OrdinalType i=0; i< numRC_; i++) {
-	  indices_[i] = allIndices_+offset;
-	  copyOrdinals(profile_[i], tmp_indices[i], indices_[i]);
-	  offset += profile_[i];
-	}
+        allIndices_ = new OrdinalType[numEntries_]; // Allocate storage for all entries at once
+        OrdinalType offset = 0;
+        for (OrdinalType i=0; i< numRC_; i++) {
+          indices_[i] = allIndices_+offset;
+          copyOrdinals(profile_[i], tmp_indices[i], indices_[i]);
+          offset += profile_[i];
+        }
       }
     }
     return;
@@ -334,16 +334,16 @@ namespace Kokkos {
       ScalarType ** tmp_values =values_;
       values_ = new ScalarType*[numRC_];
       if (willKeepValues_) {
-	for (OrdinalType i=0; i< numRC_; i++) values_[i] = tmp_values[i];
+        for (OrdinalType i=0; i< numRC_; i++) values_[i] = tmp_values[i];
       }
       else {
-	allValues_ = new ScalarType[numEntries_]; // Allocate storage for all entries at once
-	OrdinalType offset = 0;
-	for (OrdinalType i=0; i< numRC_; i++) {
-	  values_[i] = allValues_+offset;
-	  copyScalars(profile_[i], tmp_values[i], values_[i]);
-	  offset += profile_[i];
-	}
+        allValues_ = new ScalarType[numEntries_]; // Allocate storage for all entries at once
+        OrdinalType offset = 0;
+        for (OrdinalType i=0; i< numRC_; i++) {
+          values_[i] = allValues_+offset;
+          copyScalars(profile_[i], tmp_values[i], values_[i]);
+          offset += profile_[i];
+        }
       }
     }
     return;
@@ -380,8 +380,8 @@ namespace Kokkos {
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   void BaseSparseSolve<OrdinalType, ScalarType>::copyOrdinals(OrdinalType len, 
-								 OrdinalType * vecIn, 
-								 OrdinalType * vecOut) {
+                                                              OrdinalType * vecIn, 
+                                                              OrdinalType * vecOut) {
     for (OrdinalType i=0; i<len; i++) vecOut[i] = vecIn[i];
     return;
   }
@@ -389,8 +389,8 @@ namespace Kokkos {
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   void BaseSparseSolve<OrdinalType, ScalarType>::copyScalars(OrdinalType len, 
-								ScalarType * vecIn,
-								ScalarType * vecOut) {
+                                                              ScalarType * vecIn,
+                                                              ScalarType * vecOut) {
     for (OrdinalType i=0; i<len; i++) vecOut[i] = vecIn[i];
     return;
   }
@@ -407,7 +407,7 @@ namespace Kokkos {
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   int BaseSparseSolve<OrdinalType, ScalarType>::initializeStructure(const CisMatrix<OrdinalType, ScalarType>& A,
-								    bool willKeepStructure) {
+                                                                    bool willKeepStructure) {
 
 
     if (haveStructure_) return(-1); // Can only call this one time!
@@ -432,10 +432,10 @@ namespace Kokkos {
 
     if (willKeepStructure) {
       for (i=0; i<numRC_; i++) {
-	int ierr = A.getIndices(i, numRCEntries, indicesRC);
-	if (ierr<0) return(ierr);
-	profile_[i] = numRCEntries;
-	indices_[i] = indicesRC;
+        int ierr = A.getIndices(i, numRCEntries, indicesRC);
+        if (ierr<0) return(ierr);
+        profile_[i] = numRCEntries;
+        indices_[i] = indicesRC;
       }
     }
     else { // If user will not keep structure, we must copy it
@@ -444,12 +444,12 @@ namespace Kokkos {
       
       OrdinalType offset = 0;
       for (i=0; i< numRC_; i++) {
-	int ierr = A.getIndices(i, numRCEntries, indicesRC);
-	if (ierr<0) return(ierr);
-	profile_[i] = numRCEntries;
-	indices_[i] = allIndices_+offset;
-	copyOrdinals(numRCEntries, indicesRC, indices_[i]);
-	offset += numRCEntries;
+        int ierr = A.getIndices(i, numRCEntries, indicesRC);
+        if (ierr<0) return(ierr);
+        profile_[i] = numRCEntries;
+        indices_[i] = allIndices_+offset;
+        copyOrdinals(numRCEntries, indicesRC, indices_[i]);
+        offset += numRCEntries;
       }
     }
 
@@ -462,7 +462,7 @@ namespace Kokkos {
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   int BaseSparseSolve<OrdinalType, ScalarType>::initializeValues(const CisMatrix<OrdinalType, ScalarType>& A, 
-							       bool willKeepValues, bool checkStructure) {
+                                                                 bool willKeepValues, bool checkStructure) {
 
     if (!haveStructure_) return(-1); // Must have structure first!
 
@@ -477,20 +477,20 @@ namespace Kokkos {
 
     if (willKeepValues_) {
       for (i=0; i<numRC_; i++) {
-	int ierr = A.getValues(i, valuesRC);
-	if (ierr<0) return(ierr);
-	values_[i] = valuesRC;
+        int ierr = A.getValues(i, valuesRC);
+        if (ierr<0) return(ierr);
+        values_[i] = valuesRC;
       }
     }
     else { // If user will not keep values, we must copy it
       if (allValues_==0) allValues_ = new ScalarType[numEntries_]; // Allocate storage for all entries at once
       OrdinalType offset = 0;
       for (i=0; i< numRC_; i++) {
-	int ierr = A.getValues(i, valuesRC);
-	if (ierr<0) return(ierr);
-	values_[i] = allValues_+offset;
-	copyScalars(profile_[i], valuesRC, values_[i]);
-	offset += profile_[i];
+        int ierr = A.getValues(i, valuesRC);
+        if (ierr<0) return(ierr);
+        values_[i] = allValues_+offset;
+        copyScalars(profile_[i], valuesRC, values_[i]);
+        offset += profile_[i];
       }
     }
     haveValues_ = true;
@@ -502,12 +502,12 @@ namespace Kokkos {
       OrdinalType * indicesRC;
 
       for (i=0; i<numRC_; i++) {
-	int ierr = matrixForValues_->getIndices(i, numRCEntries, indicesRC);
-	if (ierr<0) return(-1);
-	if (numRCEntries!=profile_[i]) return(-1);
-	indicesRC_ref = indices_[i];
-	for (j=0; j<numRCEntries; j++) if (indicesRC[j]!=indicesRC_ref[j]) return(-1);
-	
+        int ierr = matrixForValues_->getIndices(i, numRCEntries, indicesRC);
+        if (ierr<0) return(-1);
+        if (numRCEntries!=profile_[i]) return(-1);
+        indicesRC_ref = indices_[i];
+        for (j=0; j<numRCEntries; j++) if (indicesRC[j]!=indicesRC_ref[j]) return(-1);
+
       }
     }
     return(0);
@@ -516,8 +516,8 @@ namespace Kokkos {
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   int BaseSparseSolve<OrdinalType, ScalarType>::apply(const Vector<OrdinalType, ScalarType>& x, 
-						    Vector<OrdinalType, ScalarType> & y,
-						    bool transA, bool conjA) const {
+                                                      Vector<OrdinalType, ScalarType> & y,
+                                                      bool transA, bool conjA) const {
 
     if (!haveValues_) return(-1); // Can't compute without values!
     if (conjA) return(-2); // Unsupported at this time
@@ -536,81 +536,81 @@ namespace Kokkos {
     ScalarType * yp = y.getValues();
 
     if ((isRowOriented_ && !transA) ||
-	(!isRowOriented_ && transA)) {
+        (!isRowOriented_ && transA)) {
 
-      if ((!transA && isUpper_) || transA && !isUpper_) {
-	profile += numRC_-1; // Point to end of structures
-	indices += numRC_-1;
-	values += numRC_-1;
+      if ((!transA && isUpper_) || (transA && !isUpper_)) {
+        profile += numRC_-1; // Point to end of structures
+        indices += numRC_-1;
+        values += numRC_-1;
 
-	OrdinalType j0 = 1;
-	if (hasUnitDiagonal_) j0--;
- 	for(i = numRC_-1; i >=0; i--) {
-	  curNumEntries = *profile--;
-	  curIndices = *indices--;
-	  curValues  = *values--;
-	  ScalarType sum = 0.0;
-	  for(j = j0; j < curNumEntries; j++)
-	    sum += curValues[j] * yp[curIndices[j]];
-	  if (hasUnitDiagonal_)
-	    yp[i] = xp[i] - sum;
-	  else
-	    yp[i] = (xp[i] - sum)/curValues[0];
-	}
+        OrdinalType j0 = 1;
+        if (hasUnitDiagonal_) j0--;
+        for(i = numRC_-1; i >=0; i--) {
+          curNumEntries = *profile--;
+          curIndices = *indices--;
+          curValues  = *values--;
+          ScalarType sum = 0.0;
+          for(j = j0; j < curNumEntries; j++)
+            sum += curValues[j] * yp[curIndices[j]];
+          if (hasUnitDiagonal_)
+            yp[i] = xp[i] - sum;
+          else
+            yp[i] = (xp[i] - sum)/curValues[0];
+        }
       }
       else { // Lower triangular
-	OrdinalType j0 = 1;
-	if (hasUnitDiagonal_) j0--;
-	for(i = 0; i < numRC_; i++) {
-	  curNumEntries = *profile++ - j0;
-	  curIndices = *indices++;
-	  curValues  = *values++;
-	  ScalarType sum = 0.0;
-	  for(j = 0; j < curNumEntries; j++)
-	    sum += curValues[j] * yp[curIndices[j]];
-	  if (hasUnitDiagonal_)
-	    yp[i] = xp[i] - sum;
-	  else
-	    yp[i] = (xp[i] - sum)/curValues[curNumEntries];
-	}
+        OrdinalType j0 = 1;
+        if (hasUnitDiagonal_) j0--;
+        for(i = 0; i < numRC_; i++) {
+          curNumEntries = *profile++ - j0;
+          curIndices = *indices++;
+          curValues  = *values++;
+          ScalarType sum = 0.0;
+          for(j = 0; j < curNumEntries; j++)
+            sum += curValues[j] * yp[curIndices[j]];
+          if (hasUnitDiagonal_)
+            yp[i] = xp[i] - sum;
+          else
+            yp[i] = (xp[i] - sum)/curValues[curNumEntries];
+        }
       }
     }
     else { // ColOriented and no tranpose or RowOriented and transpose
-      
-      for(i = 0; i < numRC_; i++)
-	yp[i] = xp[i]; // Initialize y for transpose multiply
 
-      if ((!transA && !isUpper_) || transA && isUpper_) {
-	OrdinalType j0 = 1;
-	if (hasUnitDiagonal_) j0--;
-	for(i = 0; i < numRC_; i++) {
-	  curNumEntries = *profile++;
-	  curIndices = *indices++;
-	  curValues  = *values++;
-	  if (!hasUnitDiagonal_) 
-	    yp[i] = yp[i]/curValues[0];
-	  for(j = j0; j < curNumEntries; j++)
-	    yp[curIndices[j]] -= curValues[j] * yp[i];
-	}
+      for(i = 0; i < numRC_; i++)
+        yp[i] = xp[i]; // Initialize y for transpose multiply
+
+      if ((!transA && !isUpper_) || (transA && isUpper_)) {
+        OrdinalType j0 = 1;
+        if (hasUnitDiagonal_) j0--;
+        for(i = 0; i < numRC_; i++) {
+          curNumEntries = *profile++;
+          curIndices = *indices++;
+          curValues  = *values++;
+          if (!hasUnitDiagonal_) 
+            yp[i] = yp[i]/curValues[0];
+          for(j = j0; j < curNumEntries; j++)
+            yp[curIndices[j]] -= curValues[j] * yp[i];
+        }
       }
       else { // Lower triangular
 
-	profile += numRC_-1; // Point to end of structures
-	indices += numRC_-1;
-	values += numRC_-1;
+        profile += numRC_-1; // Point to end of structures
+        indices += numRC_-1;
+        values += numRC_-1;
 
-	OrdinalType j0 = 1;
-	if (hasUnitDiagonal_) j0--; // Include first term if no diagonal
+        OrdinalType j0 = 1;
+        if (hasUnitDiagonal_) j0--; // Include first term if no diagonal
 
-	for(i = numRC_-1; i>=0; i--) {
-	  curNumEntries = *profile-- - j0;
-	  curIndices = *indices--;
-	  curValues  = *values--;
-	    if (!hasUnitDiagonal_) 
-	      yp[i] = yp[i]/curValues[curNumEntries];
-	    for(j = 0; j < curNumEntries; j++)
-	      yp[curIndices[j]] -= curValues[j] * yp[i];
-	}
+        for(i = numRC_-1; i>=0; i--) {
+          curNumEntries = *profile-- - j0;
+          curIndices = *indices--;
+          curValues  = *values--;
+          if (!hasUnitDiagonal_) 
+            yp[i] = yp[i]/curValues[curNumEntries];
+          for(j = 0; j < curNumEntries; j++)
+            yp[curIndices[j]] -= curValues[j] * yp[i];
+        }
       }
     }
     updateFlops(this->costOfSolve_);
@@ -620,8 +620,8 @@ namespace Kokkos {
   //==============================================================================
   template<typename OrdinalType, typename ScalarType>
   int BaseSparseSolve<OrdinalType, ScalarType>::apply(const MultiVector<OrdinalType, ScalarType>& x, 
-						    MultiVector<OrdinalType, ScalarType> & y,
-						    bool transA, bool conjA) const {
+                                                      MultiVector<OrdinalType, ScalarType> & y,
+                                                      bool transA, bool conjA) const {
     if (!haveValues_) return(-1); // Can't compute without values!
     if (conjA) return(-2); // Unsupported at this time
     if (x.getNumRows()!=numCols_) return(-3); // Number of cols in A not same as number of rows in x
@@ -640,91 +640,90 @@ namespace Kokkos {
     ScalarType ** xp = x.getValues();
     ScalarType ** yp = y.getValues();
 
-    if ((isRowOriented_ && !transA) ||
-	(!isRowOriented_ && transA)) {
+    if ((isRowOriented_ && !transA) || (!isRowOriented_ && transA)) {
 
-      if ((!transA && isUpper_) || transA && !isUpper_) {
-	profile += numRC_-1; // Point to end of structures
-	indices += numRC_-1;
-	values += numRC_-1;
+      if ((!transA && isUpper_) || (transA && !isUpper_)) {
+        profile += numRC_-1; // Point to end of structures
+        indices += numRC_-1;
+        values += numRC_-1;
 
-	OrdinalType j0 = 1;
-	if (hasUnitDiagonal_) j0--;
-	for(i = numRC_-1; i >=0; i--) {
-	  curNumEntries = *profile--;
-	  curIndices = *indices--;
-	  curValues  = *values--;
-	  for (k=0; k<numVectors; k++) {
-	    ScalarType sum = 0.0;
-	    for(j = j0; j < curNumEntries; j++)
-	      sum += curValues[j] * yp[k][curIndices[j]];
-	    if (hasUnitDiagonal_)
-	      yp[k][i] = xp[k][i] - sum;
-	    else
-	      yp[k][i] = (xp[k][i] - sum)/curValues[0];
-	  }
-	}
+        OrdinalType j0 = 1;
+        if (hasUnitDiagonal_) j0--;
+        for(i = numRC_-1; i >=0; i--) {
+          curNumEntries = *profile--;
+          curIndices = *indices--;
+          curValues  = *values--;
+          for (k=0; k<numVectors; k++) {
+            ScalarType sum = 0.0;
+            for(j = j0; j < curNumEntries; j++)
+              sum += curValues[j] * yp[k][curIndices[j]];
+            if (hasUnitDiagonal_)
+              yp[k][i] = xp[k][i] - sum;
+            else
+              yp[k][i] = (xp[k][i] - sum)/curValues[0];
+          }
+        }
       }
       else { // Lower triangular
-	OrdinalType j0 = 1;
-	if (hasUnitDiagonal_) j0--;
-	for(i = 0; i < numRC_; i++) {
-	  curNumEntries = *profile++ - j0;
-	  curIndices = *indices++;
-	  curValues  = *values++;
-	  for (k=0; k<numVectors; k++) {
-	    ScalarType sum = 0.0;
-	    for(j = 0; j < curNumEntries; j++)
-	      sum += curValues[j] * yp[k][curIndices[j]];
-	    if (hasUnitDiagonal_)
-	      yp[k][i] = xp[k][i] - sum;
-	    else
-	      yp[k][i] = (xp[k][i] - sum)/curValues[curNumEntries];
-	  }
-	}
+        OrdinalType j0 = 1;
+        if (hasUnitDiagonal_) j0--;
+        for(i = 0; i < numRC_; i++) {
+          curNumEntries = *profile++ - j0;
+          curIndices = *indices++;
+          curValues  = *values++;
+          for (k=0; k<numVectors; k++) {
+            ScalarType sum = 0.0;
+            for(j = 0; j < curNumEntries; j++)
+              sum += curValues[j] * yp[k][curIndices[j]];
+            if (hasUnitDiagonal_)
+              yp[k][i] = xp[k][i] - sum;
+            else
+              yp[k][i] = (xp[k][i] - sum)/curValues[curNumEntries];
+          }
+        }
       }
     }
     else { // ColOriented and no tranpose or RowOriented and transpose
       
       for (k=0; k<numVectors; k++)
-	for(i = 0; i < numRC_; i++)
-	  yp[k][i] = xp[k][i]; // Initialize y
-      
-      if ((!transA && !isUpper_) || transA && isUpper_) {
-	OrdinalType j0 = 1;
-	if (hasUnitDiagonal_) j0--;
-	for(i = 0; i < numRC_; i++) {
-	  curNumEntries = *profile++;
-	  curIndices = *indices++;
-	  curValues  = *values++;
-	  for (k=0; k<numVectors; k++) {
-	    if (!hasUnitDiagonal_) 
-	      yp[k][i] = yp[k][i]/curValues[0];
-	    for(j = j0; j < curNumEntries; j++)
-	      yp[k][curIndices[j]] -= curValues[j] * yp[k][i];
-	  }
-	}
+        for(i = 0; i < numRC_; i++)
+          yp[k][i] = xp[k][i]; // Initialize y
+
+      if ((!transA && !isUpper_) || (transA && isUpper_)) {
+        OrdinalType j0 = 1;
+        if (hasUnitDiagonal_) j0--;
+        for(i = 0; i < numRC_; i++) {
+          curNumEntries = *profile++;
+          curIndices = *indices++;
+          curValues  = *values++;
+          for (k=0; k<numVectors; k++) {
+            if (!hasUnitDiagonal_) 
+              yp[k][i] = yp[k][i]/curValues[0];
+            for(j = j0; j < curNumEntries; j++)
+              yp[k][curIndices[j]] -= curValues[j] * yp[k][i];
+          }
+        }
       }
       else { // Lower triangular
 
-	profile += numRC_-1; // Point to end of structures
-	indices += numRC_-1;
-	values += numRC_-1;
+        profile += numRC_-1; // Point to end of structures
+        indices += numRC_-1;
+        values += numRC_-1;
 
-	OrdinalType j0 = 1;
-	if (hasUnitDiagonal_) j0--; // Include first term if no diagonal
+        OrdinalType j0 = 1;
+        if (hasUnitDiagonal_) j0--; // Include first term if no diagonal
 
-	for(i = numRC_-1; i>=0; i--) {
-	  curNumEntries = *profile-- - j0;
-	  curIndices = *indices--;
-	  curValues  = *values--;
-	  for (k=0; k<numVectors; k++) {
-	    if (!hasUnitDiagonal_) 
-	      yp[k][i] = yp[k][i]/curValues[curNumEntries];
-	    for(j = 0; j < curNumEntries; j++)
-	      yp[k][curIndices[j]] -= curValues[j] * yp[k][i];
-	  }
-	}
+        for(i = numRC_-1; i>=0; i--) {
+          curNumEntries = *profile-- - j0;
+          curIndices = *indices--;
+          curValues  = *values--;
+          for (k=0; k<numVectors; k++) {
+            if (!hasUnitDiagonal_) 
+              yp[k][i] = yp[k][i]/curValues[curNumEntries];
+            for(j = 0; j < curNumEntries; j++)
+              yp[k][curIndices[j]] -= curValues[j] * yp[k][i];
+          }
+        }
       }
     }
     updateFlops(this->costOfSolve_ * ((double) numVectors));

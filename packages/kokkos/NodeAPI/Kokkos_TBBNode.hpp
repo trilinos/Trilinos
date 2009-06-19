@@ -11,12 +11,15 @@
 
 #include <iostream> // debug
 
+namespace Kokkos {
+
 template <class WDPin>
 struct BlockedRangeWDP {
   mutable WDPin wd;
   BlockedRangeWDP(WDPin &in) : wd(in) {}
-  inline void operator()(tbb::blocked_range<int> &rng) const
-  { wd(rng.begin(),rng.end()); }
+  inline void operator()(tbb::blocked_range<int> &rng) const { 
+    for (int i=rng.begin(); i != rng.end(); ++i) wd.execute(i);
+  }
 };
 
 template <class WDPin>
@@ -43,7 +46,12 @@ struct BlockedRangeWDPReducer {
 class TBBNode : public StandardMemoryModel {
   public:
 
-    TBBNode(int numThreads=0) {
+    TBBNode() {}
+    TBBNode(int numThreads) {
+      init(numThreads);
+    }
+
+    void init(int numThreads) {
       if (numThreads >= 1) {
         tsi_.initialize(numThreads);
       }
@@ -55,15 +63,15 @@ class TBBNode : public StandardMemoryModel {
     ~TBBNode() {}
 
     template <class WDP>
-    void execute1D(int length, WDP wd) {
+    void parallel_for(int begin, int end, WDP wd) {
       BlockedRangeWDP<WDP> tbb_wd(wd);
-      tbb::parallel_for(tbb::blocked_range<int>(0,length), tbb_wd, tbb::auto_partitioner()); 
+      tbb::parallel_for(tbb::blocked_range<int>(begin,end), tbb_wd, tbb::auto_partitioner()); 
     }
 
     template <class WDP>
-    void reduce1D(int length, WDP &wd) {
+    void parallel_reduce(int begin, int end, WDP &wd) {
       BlockedRangeWDPReducer<WDP> tbb_wd(wd);
-      tbb::parallel_reduce(tbb::blocked_range<int>(0,length), tbb_wd, tbb::auto_partitioner());
+      tbb::parallel_reduce(tbb::blocked_range<int>(begin,end), tbb_wd, tbb::auto_partitioner());
       wd.result = tbb_wd.wd.result;  // have to put result from final tbb_wd into orginal wd
     }
 
@@ -71,5 +79,7 @@ class TBBNode : public StandardMemoryModel {
     static tbb::task_scheduler_init tsi_;
 
 };
+
+}
 
 #endif

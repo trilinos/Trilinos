@@ -45,6 +45,7 @@
 #
 
 SET(Trilinos_TPLS_AND_CLASSIFICATIONS
+  TBB            EX
   Pthread        SS
   MPI            PS
   BLAS           PS

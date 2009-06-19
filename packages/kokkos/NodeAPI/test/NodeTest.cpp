@@ -1,26 +1,20 @@
 #include <Teuchos_UnitTestHarness.hpp>
+#include <Teuchos_FancyOStream.hpp>
+#include <Teuchos_StandardMemberCompositionMacros.hpp>
+#include <Teuchos_Ptr.hpp>
 #include <Teuchos_TimeMonitor.hpp>
+#include <Teuchos_VerboseObject.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "TestOps.hpp"
 
+#include "Kokkos_SerialNode.hpp"
 #ifdef HAVE_KOKKOS_TBB
 #include "Kokkos_TBBNode.hpp"
 #endif
-
 #ifdef HAVE_KOKKOS_CUDA
 #include "Kokkos_CUDANode.hpp"
 #endif
-
-namespace KokkosTest {
-  SerialNode serialnode;
-#ifdef HAVE_KOKKOS_TBB
-  TBBNode tbbnode;
-#endif
-#ifdef HAVE_KOKKOS_TBB
-  CUDANode cudanode;
-#endif
-}
 
 namespace {
 
@@ -34,6 +28,19 @@ namespace {
   using Kokkos::CUDANode;
 #endif
 
+  SerialNode serialnode;
+#ifdef HAVE_KOKKOS_TBB
+  int tbb_nT = 0;
+  TBBNode tbbnode;
+#endif
+#ifdef HAVE_KOKKOS_CUDA
+  int cuda_dev = 0;
+  int cuda_nT  = 64;
+  int cuda_nB  = 64;
+  int cuda_verb = 0;
+  CUDANode cudanode;
+#endif
+
   int N = 100;
   template <class NODE>
   NODE & getNode() {
@@ -41,21 +48,21 @@ namespace {
   }
 
   template <>
-  SerialNode & getNode<SerialNode() {
-    return KokkosTest::serialnode;
+  SerialNode & getNode<SerialNode>() {
+    return serialnode;
   }
 
 #ifdef HAVE_KOKKOS_TBB
   template <>
-  TBBNode & getNode<TBBNode() {
-    return KokkosTest::tbbnode;
+  TBBNode & getNode<TBBNode>() {
+    return tbbnode;
   }
 #endif
 
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOS_CUDA
   template <>
-  CUDANode & getNode<CUDANode() {
-    return KokkosTest::cudanode;
+  CUDANode & getNode<CUDANode>() {
+    return cudanode;
   }
 #endif
 
@@ -64,25 +71,17 @@ namespace {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
     clp.setOption("test-size",&N,"Vector length for tests.");
-    Kokkos::SerialNode KokkosTest::serialnode;
 #ifdef HAVE_KOKKOS_TBB
     {
-      int tbb_nT = 0;
       clp.setOption("tbb-num-threads",&tbb_nT,"Number of TBB threads: 0 for automatic.");
-      Kokkos::TBBNode KokkosTest::tbbnode(tbb_nT);
     }
 #endif
-#ifdef HAVE_KOKKOS_TBB
+#ifdef HAVE_KOKKOS_CUDA
     {
-      int cuda_dev = 0;
-      int cuda_nT  = 64;
-      int cuda_nB  = 64;
-      int cuda_verb = 0;
       clp.setOption("cuda-device",&cuda_dev,"CUDA device used for testing.");
       clp.setOption("cuda-num-threads",&cuda_nT,"Number of CUDA threads.");
       clp.setOption("cuda-num-blocks",&cuda_nB,"Number of CUDA blocks.");
       clp.setOption("cuda-verbose",&cuda_verb,"CUDA verbosity level.");
-      Kokkos::CUDANode KokkosTest::cudanode(cuda_dev,cuda_nB,cuda_nT,cuda_verb);
     }
 #endif
   }
@@ -91,36 +90,57 @@ namespace {
   // UNIT TESTS
   // 
 
+  TEUCHOS_UNIT_TEST( AAAAA_First_Group, Init_Nodes )
+  {
+#ifdef HAVE_KOKKOS_TBB
+    out << "Initializing TBB node to " << tbb_nT << " threads." << std::endl;
+    tbbnode.init(tbb_nT);
+#endif
+#ifdef HAVE_KOKKOS_CUDA
+    out << "Initializing CUDA device " << cuda_dev 
+        << " with " << cuda_nB << " blocks and " << cuda_nT << " threads." << std::endl;
+    cudanode.init(cuda_dev,cuda_nB,cuda_nT,cuda_verb);
+#endif
+    TEST_EQUALITY(0,0);
+  }
+
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( NodeAPI, SumTest, SCALAR, NODE )
   {
     Time tAlloc("Alloc Time"), tInit("Init Op"), tSum("Sum Op"), tFree("Free Time");
-    typedef Node::template buffer<SCALAR>::buffer_t x;
+    typename NODE::template buffer<SCALAR>::buffer_t x;
     NODE &node = getNode<NODE>();
     SCALAR result;
     {
       TimeMonitor localTimer(tAlloc);
       x = node.template allocBuffer<SCALAR>(N);
     }
-    // set x[i] = i, i=0:N-1
+    // set x[i] = 1, i=0:N-1
     {
+      TimeMonitor localTimer(tInit);
       InitOp<SCALAR,NODE> wdp;
       wdp.x = x;
       wdp.n = N;
-      node.parallel_for(N,wdp);
+      node.parallel_for(0,N,wdp);
     }
     // compute sum x[i], i=0:N-1
     {
+      TimeMonitor localTimer(tSum);
       SumOp<SCALAR,NODE> wdp;
       wdp.x = x;
-      result = node.parallel_reduce(N,wdp);
+      node.parallel_reduce(0,N,wdp);
+      result = wdp.result;
     }
-    SCALAR expectedResult = (SCALAR)(N) * (SCALAR)(N-1) / (SCALAR)(2);
+    SCALAR expectedResult = (SCALAR)(N);
     TEST_EQUALITY(result, expectedResult);
     {
       TimeMonitor localTimer(tFree);
-      node.template freeBuffer<T>(x);
+      node.template freeBuffer<SCALAR>(x);
     }
+    out << "allocBuffer Time: " << tAlloc.totalElapsedTime() << std::endl;
+    out << "InitOp Time: " << tInit.totalElapsedTime() << std::endl;
+    out << "SumOp Time: " << tSum.totalElapsedTime() << std::endl;
+    out << "freeBuffer Time: " << tFree.totalElapsedTime() << std::endl;
   }
 
   // 
@@ -151,4 +171,5 @@ namespace {
 
   UNIT_TEST_GROUP_SCALAR(int)
   UNIT_TEST_GROUP_SCALAR(float)
+
 }

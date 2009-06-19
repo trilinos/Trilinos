@@ -8,13 +8,9 @@
 template <class Scalar, class Node>
 struct InitOp {
   typename Node::template buffer<Scalar>::buffer_t x;
-  unsigned int n;
-  inline KERNEL_PREFIX void execute(int l, int h)
-  {
-    if (n < h) h = n;
-    for (int ii=l; ii<h; ++ii) {
-      x[ii] = ii;
-    }
+  int n;
+  inline KERNEL_PREFIX void execute(int i) {
+    x[i] = 1;
   }
 };
 
@@ -27,7 +23,7 @@ struct SumOp {
 
   ReductionType result;
 
-  inline DotOp() {
+  inline SumOp() {
     result = identity();
   }
 
@@ -40,8 +36,7 @@ struct SumOp {
     return x+y;
   }
 
-  inline KERNEL_PREFIX Scalar generate(int i)
-  {
+  inline KERNEL_PREFIX Scalar generate(int i) {
     return x[i];
   }
 };

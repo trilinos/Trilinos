@@ -4,6 +4,8 @@
 #include <stdlib.h>
 #include <algorithm>
 
+namespace Kokkos {
+
 class StandardMemoryModel {
   public:
     template <class T>
@@ -65,5 +67,7 @@ class StandardMemoryModel {
 
     //@}
 };
+
+}
 
 #endif

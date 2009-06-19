@@ -3,20 +3,27 @@
 
 #include <Kokkos_StandardNodeMemoryModel.hpp>
 
+namespace Kokkos {
+
 class SerialNode : public StandardMemoryModel {
   public:
+    SerialNode() {}
     template <class WDP>
-    void execute1D(unsigned int length, WDP wd) {
-      wd(0,length);
+    void parallel_for(int beg, int end, WDP wd) {
+      for (int i=beg; i != end; ++i) {
+        wd.execute(i);
+      }
     }
 
     template <class WDP>
-    void reduce1D(unsigned int length, WDP &wd) {
-      for (unsigned int i=0; i<length; ++i) {
+    void parallel_reduce(int begin, int end, WDP &wd) {
+      for (int i=begin; i != end; ++i) {
         wd.result = wd.reduce( wd.result, wd.generate(i) );
       }
     }
 
 };
+
+}
 
 #endif

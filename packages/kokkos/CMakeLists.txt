@@ -20,20 +20,6 @@ ADD_OPTION_AND_DEFINE(
   OFF
   )
 
-ADD_OPTION_AND_DEFINE(
-  Kokkos_ENABLE_CUDA
-  HAVE_KOKKOS_CUDA
-  "Enable Kokkos dependency on and use of CUDA."
-  OFF
-  )
-
-ADD_OPTION_AND_DEFINE(
-  Kokkos_ENABLE_TBB
-  HAVE_KOKKOS_TBB
-  "Enable Kokkos dependency on and use of TBB."
-  OFF
-  )
-
 #
 # C) Add the libraries, tests, and examples
 #
