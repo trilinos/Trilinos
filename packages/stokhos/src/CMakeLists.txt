@@ -62,8 +62,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_DerivOrthogPolyExpansionImp.hpp
   Stokhos_ForUQTKOrthogPolyExpansion.hpp
   Stokhos_ForUQTKOrthogPolyExpansionImp.hpp
-  Stokhos_StochGalerkin_FiniteDiff.hpp
-  Stokhos_StochGalerkin_FiniteDiffImp.hpp
+#  Stokhos_StochGalerkin_FiniteDiff.hpp
+#  Stokhos_StochGalerkin_FiniteDiffImp.hpp
   Stokhos_MatrixFreeEpetraOp.hpp
   Stokhos_MeanEpetraOp.hpp
   Stokhos_SGModelEvaluator.hpp
