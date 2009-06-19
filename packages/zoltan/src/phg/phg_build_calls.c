@@ -524,7 +524,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       Zoltan_Comm_Destroy(&plan);
 
       zhg->numHEdges = (int *)ZOLTAN_CALLOC(sizeof(int), zhg->nObj);
-      if (!zhg->numHEdges) MEMORY_ERROR;
+      if (zhg->nObj && !zhg->numHEdges) MEMORY_ERROR;
 
       for (i=0; i < nRequests; i++){
         j = phg_find_gid_index(recvIntBuf + i);
