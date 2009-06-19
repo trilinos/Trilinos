@@ -56,6 +56,13 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H
 
+#cmakedefine HAVE_KOKKOS_TEUCHOS
+
+#cmakedefine HAVE_KOKKOS_NodeAPI
+#cmakedefine HAVE_KOKKOS_TBB
+#cmakedefine HAVE_KOKKOS_CUDA
+
+
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */
 #ifndef __cplusplus
