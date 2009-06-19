@@ -331,6 +331,9 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   SET(Trilinos_FAILED_PACKAGES)
   
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
+
+    MESSAGE("\nKill all hanging Zoltan processes ...")
+    EXECUTE_PROCESS(killall -s 9 zdrive.exe)
   
     SET_PROPERTY(GLOBAL PROPERTY SubProject ${PACKAGE})
     SET_PROPERTY(GLOBAL PROPERTY Label ${PACKAGE})
@@ -524,9 +527,6 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   IF(Trilinos_FAILED_PACKAGES)
     MESSAGE("\nFinal set of failed packages: '${Trilinos_FAILED_PACKAGES}'")
   ENDIF()
-
-  MESSAGE("\nKill all hanging Zoltan processes ...")
-  EXECUTE_PROCESS(killall -s 9 zdrive.exe)
   
   MESSAGE("\nDone with the incremental building and testing of Trilinos packages!\n")
 
