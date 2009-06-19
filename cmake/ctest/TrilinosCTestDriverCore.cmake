@@ -527,6 +527,9 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   IF(Trilinos_FAILED_PACKAGES)
     MESSAGE("\nFinal set of failed packages: '${Trilinos_FAILED_PACKAGES}'")
   ENDIF()
+
+  MESSAGE("\nKill all hanging Zoltan processes ...")
+  EXECUTE_PROCESS(COMMAND killall -s 9 zdrive.exe)
   
   MESSAGE("\nDone with the incremental building and testing of Trilinos packages!\n")
 
