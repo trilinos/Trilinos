@@ -717,7 +717,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     phg_free_pins(&myPins);
 
     zhg->numHEdges = (int *)ZOLTAN_CALLOC(sizeof(int), zhg->nObj);
-    if (!zhg->numHEdges) MEMORY_ERROR;
+    if (zhg->nObj && !zhg->numHEdges) MEMORY_ERROR;
   
     for (i=0; i<nRequests; i++){
       j = phg_lookup_GID(lookup_myObjs, gid_buf + ( i * gid_size));
@@ -1615,7 +1615,7 @@ int *numEdges = NULL;
   }
 
   if (sumNumEntries == 0){
-    return ZOLTAN_OK;
+    goto End;
   }
   
   nbor_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, sumNumEntries);
@@ -1667,13 +1667,12 @@ int *numEdges = NULL;
     }
   }
 
+End:
   *tot_nbors = sumNumEntries;
   *num_nbors = numEdges;
   *nbor_GIDs = nbor_gids;
   *nbor_Procs = nbor_procs;
   *edgeWeights = gewgts;
-
-End:
 
   return ierr;
 }
