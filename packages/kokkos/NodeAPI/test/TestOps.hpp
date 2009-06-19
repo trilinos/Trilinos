@@ -21,12 +21,6 @@ struct SumOp {
 
   typename Node::template buffer<const Scalar>::buffer_t x;
 
-  ReductionType result;
-
-  inline SumOp() {
-    result = identity();
-  }
-
   static inline KERNEL_PREFIX ReductionType identity() {
     return (Scalar)0;
   }

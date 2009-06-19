@@ -16,10 +16,13 @@ class SerialNode : public StandardMemoryModel {
     }
 
     template <class WDP>
-    void parallel_reduce(int begin, int end, WDP &wd) {
+    typename WDP::ReductionType
+    parallel_reduce(int begin, int end, WDP wd) {
+      typename WDP::ReductionType result = wd.identity();
       for (int i=begin; i != end; ++i) {
-        wd.result = wd.reduce( wd.result, wd.generate(i) );
+        result = wd.reduce( result, wd.generate(i) );
       }
+      return result;
     }
 
 };

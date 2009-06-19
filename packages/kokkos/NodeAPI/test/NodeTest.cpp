@@ -128,8 +128,7 @@ namespace {
       TimeMonitor localTimer(tSum);
       SumOp<SCALAR,NODE> wdp;
       wdp.x = x;
-      node.parallel_reduce(0,N,wdp);
-      result = wdp.result;
+      result = node.parallel_reduce(0,N,wdp);
     }
     SCALAR expectedResult = (SCALAR)(N);
     TEST_EQUALITY(result, expectedResult);

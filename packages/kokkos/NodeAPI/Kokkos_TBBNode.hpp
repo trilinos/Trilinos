@@ -25,21 +25,20 @@ struct BlockedRangeWDP {
 template <class WDPin>
 struct BlockedRangeWDPReducer {
   WDPin wd;
+  typename WDPin::ReductionType result;
   BlockedRangeWDPReducer(WDPin &in) : wd(in) {}
-  BlockedRangeWDPReducer(BlockedRangeWDPReducer &in, tbb::split) : wd(in.wd) {wd.result = wd.identity();}
+  BlockedRangeWDPReducer(BlockedRangeWDPReducer &in, tbb::split) : wd(in.wd) {result = wd.identity();}
   void operator()(tbb::blocked_range<int> &rng)
   { 
-    typename WDPin::ReductionType tmpres, tmpi;
-    tmpres = wd.result;
+    typename WDPin::ReductionType tmpi;
     int end = rng.end();
     for (int i=rng.begin(); i != end; ++i) {
       tmpi = wd.generate(i);
-      tmpres = wd.reduce( tmpres, tmpi );
+      result = wd.reduce( result, tmpi );
     }
-    wd.result = tmpres;
   }
   inline void join( const BlockedRangeWDPReducer<WDPin> &other ) {
-    wd.result = wd.reduce( wd.result, other.wd.result );
+    result = wd.reduce( result, other.result );
   }
 };
 
@@ -69,10 +68,11 @@ class TBBNode : public StandardMemoryModel {
     }
 
     template <class WDP>
-    void parallel_reduce(int begin, int end, WDP &wd) {
+    typename WDP::ReductionType
+    parallel_reduce(int begin, int end, WDP wd) {
       BlockedRangeWDPReducer<WDP> tbb_wd(wd);
       tbb::parallel_reduce(tbb::blocked_range<int>(begin,end), tbb_wd, tbb::auto_partitioner());
-      wd.result = tbb_wd.wd.result;  // have to put result from final tbb_wd into orginal wd
+      return tbb_wd.result;
     }
 
   private:
