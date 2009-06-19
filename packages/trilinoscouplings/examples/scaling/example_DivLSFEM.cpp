@@ -203,18 +203,12 @@ int main(int argc, char *argv[]) {
     string meshInput = ss.str();
     std::cout << meshInput <<"\n";
   
-    char inputArray[1000];
-    int ntmp = meshInput.size();
-    for (int i=0; i<ntmp; i++) {          
-      inputArray[i]=meshInput[i];
-    }
-
    // Generate mesh with Pamgen
     int dim=3;
     int rank=0;
     int numProcs=1;
     long int maxInt = 100000000;
-    Create_Pamgen_Mesh(inputArray, dim, rank, numProcs, maxInt);
+    Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
     
    // Get mesh size info
     char title[100];
@@ -467,6 +461,7 @@ int main(int argc, char *argv[]) {
  
    // Output element to face connectivity
     ofstream el2fout("elem2face.dat");
+    ofstream el2nout("elem2node.dat");
     for (int k=0; k<NZ; k++) {
       for (int j=0; j<NY; j++) {
         for (int i=0; i<NX; i++) {
@@ -475,10 +470,15 @@ int main(int argc, char *argv[]) {
              el2fout << elemToFace(ielem,l) << "  ";
           } 
           el2fout << "\n";
+          for (int m=0; m<numNodesPerElem; m++) {
+             el2nout << elemToNode(ielem,m) << "  ";
+          } 
+          el2nout << "\n";
         }
       }
     }
     el2fout.close();
+    el2nout.close();
 
    // Output face to edge and face to node connectivity
     ofstream f2edout("face2edge.dat");
@@ -696,18 +696,22 @@ int main(int argc, char *argv[]) {
     std::cout << "Getting basis ... \n\n";
     Basis_HCURL_HEX_I1_FEM<double, FieldContainer<double> > hexHCurlBasis;
     Basis_HDIV_HEX_I1_FEM<double, FieldContainer<double> > hexHDivBasis;
+    Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
 
     int numFieldsC = hexHCurlBasis.getCardinality();
     int numFieldsD = hexHDivBasis.getCardinality();
+    int numFieldsG = hexHGradBasis.getCardinality();
 
   // Evaluate basis at cubature points
      FieldContainer<double> hexCVals(numFieldsC, numCubPoints, spaceDim); 
      FieldContainer<double> hexDVals(numFieldsD, numCubPoints, spaceDim); 
      FieldContainer<double> hexDivs(numFieldsD, numCubPoints); 
+     FieldContainer<double> hexGVals(numFieldsG, numCubPoints); 
 
      hexHCurlBasis.getValues(hexCVals, cubPoints, OPERATOR_VALUE);
      hexHDivBasis.getValues(hexDVals, cubPoints, OPERATOR_VALUE);
      hexHDivBasis.getValues(hexDivs, cubPoints, OPERATOR_DIV);
+     hexHGradBasis.getValues(hexGVals, cubPoints, OPERATOR_VALUE);
 
 
 // ******** LOOP OVER ELEMENTS TO CREATE LOCAL MASS and STIFFNESS MATRICES *************
@@ -743,6 +747,10 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> stiffMatrixD(numCells, numFieldsD, numFieldsD);
     FieldContainer<double> hexDivsTransformed(numCells, numFieldsD, numCubPoints);
     FieldContainer<double> hexDivsTransformedWeighted(numCells, numFieldsD, numCubPoints);
+   // Containers for element HGRAD mass matrix
+    FieldContainer<double> massMatrixG(numCells, numFieldsG, numFieldsG);
+    FieldContainer<double> hexGValsTransformed(numCells, numFieldsD, numCubPoints, spaceDim);
+    FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsD, numCubPoints, spaceDim);
    // Containers for right hand side vectors
     FieldContainer<double> rhsDatag(numCells, numCubPoints, cubDim);
     FieldContainer<double> rhsDatah(numCells, numCubPoints);
@@ -755,6 +763,7 @@ int main(int argc, char *argv[]) {
    // Global arrays in Epetra format
     Epetra_FECrsMatrix MassC(Copy, globalMapC, numFieldsC);
     Epetra_FECrsMatrix MassD(Copy, globalMapD, numFieldsD);
+    Epetra_FECrsMatrix MassG(Copy, globalMapD, numFieldsD);
     Epetra_FECrsMatrix StiffD(Copy, globalMapD, numFieldsD);
     Epetra_FEVector rhsD(globalMapD);
 
@@ -815,22 +824,18 @@ int main(int argc, char *argv[]) {
      // integrate to compute element mass matrix
       fst::integrate<double>(massMatrixC,
                              hexCValsTransformed, hexCValsTransformedWeighted,
-                             COMP_CPP);
+                             COMP_BLAS);
      // apply edge signs
       fst::applyLeftFieldSigns<double>(massMatrixC, hexEdgeSigns);
       fst::applyRightFieldSigns<double>(massMatrixC, hexEdgeSigns);
 
      // assemble into global matrix
-      int err = 0;
       for (int row = 0; row < numFieldsC; row++){
         for (int col = 0; col < numFieldsC; col++){
             int rowIndex = elemToEdge(k,row);
             int colIndex = elemToEdge(k,col);
             double val = massMatrixC(0,row,col);
-            err = MassC.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            if (err > 0) {
-                MassC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            }
+            MassC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
@@ -847,22 +852,18 @@ int main(int argc, char *argv[]) {
      // integrate to compute element mass matrix
       fst::integrate<double>(massMatrixD,
                              hexDValsTransformed, hexDValsTransformedWeighted,
-                             COMP_CPP);
+                             COMP_BLAS);
      // apply face signs
       fst::applyLeftFieldSigns<double>(massMatrixD, hexFaceSigns);
       fst::applyRightFieldSigns<double>(massMatrixD, hexFaceSigns);
 
      // assemble into global matrix
-      err = 0;
       for (int row = 0; row < numFieldsD; row++){
         for (int col = 0; col < numFieldsD; col++){
             int rowIndex = elemToFace(k,row);
             int colIndex = elemToFace(k,col);
             double val = massMatrixD(0,row,col);
-            err = MassD.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            if (err > 0) {
-                MassD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            }
+            MassD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
@@ -879,25 +880,44 @@ int main(int argc, char *argv[]) {
      // integrate to compute element stiffness matrix
       fst::integrate<double>(stiffMatrixD,
                              hexDivsTransformed, hexDivsTransformedWeighted,
-                             COMP_CPP);
+                             COMP_BLAS);
 
      // apply face signs
       fst::applyLeftFieldSigns<double>(stiffMatrixD, hexFaceSigns);
       fst::applyRightFieldSigns<double>(stiffMatrixD, hexFaceSigns);
 
      // assemble into global matrix
-      err = 0;
       for (int row = 0; row < numFieldsD; row++){
         for (int col = 0; col < numFieldsD; col++){
             int rowIndex = elemToFace(k,row);
             int colIndex = elemToFace(k,col);
             double val = stiffMatrixD(0,row,col);
-            err = StiffD.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            if (err > 0) {
-                StiffD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            }
+            StiffD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
+// ************************** Compute element HGrad mass matrices *******************************
+
+     // transform to physical coordinates
+      fst::HGRADtransformVALUE<double>(hexGValsTransformed, hexGVals);
+
+     // multiply values with weighted measure
+      fst::multiplyMeasure<double>(hexGValsTransformedWeighted,
+                                   weightedMeasure, hexGValsTransformed);
+
+     // integrate to compute element mass matrix
+      fst::integrate<double>(massMatrixG,
+                             hexGValsTransformed, hexGValsTransformedWeighted, COMP_BLAS);
+
+      // assemble into global matrix
+      for (int row = 0; row < numFieldsG; row++){
+        for (int col = 0; col < numFieldsG; col++){
+            int rowIndex = elemToNode(k,row);
+            int colIndex = elemToNode(k,col);
+            double val = massMatrixG(0,row,col);
+            MassG.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
+         }
+      }
+
 
 // ******************************* Build right hand side ************************************
 
@@ -925,17 +945,17 @@ int main(int argc, char *argv[]) {
 
      // integrate (g,curl w) term
       fst::integrate<double>(gD, rhsDatag, hexDValsTransformedWeighted,
-                             COMP_CPP);
+                             COMP_BLAS);
 
      // integrate (h,div w) term
       fst::integrate<double>(hD, rhsDatah, hexDivsTransformedWeighted,
-                             COMP_CPP);
+                             COMP_BLAS);
 
     // assemble into global vector
      for (int row = 0; row < numFieldsD; row++){
            int rowIndex = elemToEdge(k,row);
-           double val = gD(0,row)-hD(0,row);
-           err = rhsD.SumIntoGlobalValues(1, &rowIndex, &val);
+           double val = hD(0,row)-gD(0,row);
+           rhsD.SumIntoGlobalValues(1, &rowIndex, &val);
      }
  
      
@@ -945,8 +965,29 @@ int main(int argc, char *argv[]) {
    DCurl.GlobalAssemble(); DCurl.FillComplete(MassC.RowMap(),MassD.RowMap()); 
    MassC.GlobalAssemble();  MassC.FillComplete();
    MassD.GlobalAssemble();  MassD.FillComplete();
+   MassG.GlobalAssemble();  MassG.FillComplete();
    StiffD.GlobalAssemble(); StiffD.FillComplete();
    rhsD.GlobalAssemble();
+
+  // Get boundary faces and apply zeros and ones to rhs and StiffD
+     int numBCFaces=0;
+     for (int i=0; i<numFaces; i++){
+         if (faceOnBoundary(i)){
+             numBCFaces++;
+         }
+      }
+      int * BCFaces = new int [numBCFaces];
+      int indbc=0;
+      for (int i=0; i<numFaces; i++){
+         if (faceOnBoundary(i)){
+            BCFaces[indbc]=i;
+            indbc++;
+            rhsD[0][i]=0;
+         }
+      }
+   //   ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffD);
+      delete [] BCFaces;
+
    
   // Dump matrices to disk
    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
