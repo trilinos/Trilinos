@@ -20,22 +20,6 @@ namespace PB {
 
 namespace Epetra {
 
-/** \brief Builds an epetra operator from a block 2x2 matrix.
-  *
-  * Builds an epetra operator from a block 2x2 matrix.
-  * <em>*** The calling user is responsible for deleting the resulting Epetra_Operator! ***</em>
-  */
-Epetra_Operator * block2x2(const Epetra_Operator * sub00,const Epetra_Operator * sub01,
-                           const Epetra_Operator * sub10,const Epetra_Operator * sub11,
-                           const std::string & str="ANYM");
-
-/** \brief Swaps the Apply/ApplyInverse to ApplyInverse/Apply.
-  *
-  * Swaps the Apply/ApplyInverse operations to ApplyInverse/Apply.
-  * <em>*** The calling user is responsible for deleting the resulting Epetra_Operator! ***</em>
-  */
-Epetra_Operator * mechanicalInverse(const Epetra_Operator * inverse);
-
 /** \brief Fill a Thyra vector with the contents of an epetra vector. This prevents the
   *
   * Fill a Thyra vector with the contents of an epetra vector. This prevents the need
@@ -48,7 +32,102 @@ Epetra_Operator * mechanicalInverse(const Epetra_Operator * inverse);
 void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::DefaultSpmdMultiVector<double> > & spmdMV,
                                 Teuchos::RCP<Epetra_MultiVector> & epetraMV);
 
-const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const Teuchos::RCP<const Epetra_Vector> & ev,const Epetra_Map & map,const std::string & lbl="ANYM");
+/** \brief Convert an Epetra_Vector into a diagonal linear operator.
+  *
+  * Convert an Epetra_Vector into a diagonal linear operator. 
+  *
+  * \param[in] ev  Epetra_Vector to use as the diagonal
+  * \param[in] map Map related to the Epetra_Vector
+  * \param[in] lbl String to easily label the operator
+  *
+  * \returns A diagonal linear operator using the vector
+  */
+const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const Teuchos::RCP<const Epetra_Vector> & ev,
+                                                                   const Epetra_Map & map,const std::string & lbl="ANYM");
+
+/** \brief Build a vector of the dirchlet row indicies. 
+  *
+  * Build a vector of the dirchlet row indicies. That is, record the global
+  * index of any row that is all zeros except for $1$ on the diagonal.
+  *
+  * \param[in]     rowMap   Map specifying which global indicies this process examines 
+  * \param[in] mat Matrix to be examined
+  * \param[in,out] outIndicies Output list of indicies corresponding to dirchlet rows.
+  */
+void identityRowIndicies(const Epetra_Map & rowMap, const Epetra_CrsMatrix & mat,std::vector<int> & outIndicies);
+
+/** \brief Zero out the value of a vector on the specified
+  *        set of global indicies.
+  *
+  * Zero out the value of a vector on the specified set of global
+  * indicies. The indicies here are assumed to belong to the calling
+  * process (i.e. zeroIndicies \f$\in\f$ mv.Map()).
+  *
+  * \param[in,out] mv           Vector whose entries will be zeroed
+  * \param[in]     zeroIndicies Indicies local to this process that need to be zeroed
+  */
+void zeroMultiVectorRowIndicies(Epetra_MultiVector & mv,const std::vector<int> & zeroIndicies);
+
+/** A class that zeros out chosen rows of a matrix-vector
+  * product.
+  */
+class ZeroedOperator : public Epetra_Operator {
+public:
+   /** \brief Constructor for a ZeroedOperator.
+     *
+     * Build a ZeroedOperator based on a particular Epetra_Operator and
+     * a set of indicies to zero out. These indicies must be local to this
+     * processor as specified by RowMap().
+     *
+     * \param[in] zeroIndicies Set of indices to zero out (must be local).
+     * \param[in] op           Underlying epetra operator to use.
+     */
+   ZeroedOperator(const std::vector<int> & zeroIndicies,const Teuchos::RCP<const Epetra_Operator> & op);
+
+   //! \name Functions required by Epetra_Operator
+   //@{  
+
+   //! Do nothing destructor
+   virtual ~ZeroedOperator() {}
+
+   //! Can't transpose a ZeroedOperator
+   int SetUseTranspose(bool UseTranspose) { return -1;}
+
+   //! Perform a matrix-vector product with certain rows zeroed out
+   int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+
+   //! Can't call ApplyInverse on a zeroed operator
+   int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const 
+   { return -1; }
+
+   //!
+   double NormInf() const { return -1.0; }
+
+   //!
+   const char* Label() const 
+   {return ("zeroed( "+std::string(epetraOp_->Label())+" )").c_str(); }
+
+   //!
+   bool UseTranspose() const {return false;}
+
+   //!
+   bool HasNormInf() const {return false;}
+   
+   //!
+   const Epetra_Comm & Comm() const {return epetraOp_->Comm(); }
+
+   //!
+   const Epetra_Map& OperatorDomainMap() const {return epetraOp_->OperatorDomainMap(); }
+
+   //!
+   const Epetra_Map& OperatorRangeMap() const {return epetraOp_->OperatorRangeMap(); }
+
+   //@}
+
+protected:
+   const Teuchos::RCP<const Epetra_Operator> epetraOp_;
+   std::vector<int> zeroIndicies_;
+};
 
 } // end namespace Epetra
 } // end namespace PB

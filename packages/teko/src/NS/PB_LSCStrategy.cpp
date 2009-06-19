@@ -12,12 +12,14 @@
 #include "EpetraExt_MultiVectorOut.h"
 
 // PB includes
-#include "PB_Helpers.hpp"
+#include "PB_Utilities.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
 #include "Epetra/PB_EpetraHelpers.hpp"
-#include "Epetra/PB_EpetraLSCHelpers.hpp"
+#include "Epetra/PB_EpetraOperatorWrapper.hpp"
 
+using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;
+using Teuchos::rcp_const_cast;
 
 namespace PB {
 namespace NS {
@@ -38,6 +40,51 @@ StaticLSCStrategy::StaticLSCStrategy(const LinearOp & invF,
 { }
 
 //////////////////////////////////////////////
+// InvLSCStrategy Implementation
+//////////////////////////////////////////////
+
+// helper function for a lid driven cavity-like problem
+// This function _WILL_ change the operator
+PB::LinearOp reduceCrsOperator(PB::LinearOp & op,const std::vector<int> & zeroIndicies)
+{
+   // Extract a non-const version of the operator
+   RCP<Epetra_Operator> eOp = get_Epetra_Operator(*rcp_const_cast<Thyra::LinearOpBase<double> >(op));
+   RCP<Epetra_CrsMatrix> eCrsOp = rcp_dynamic_cast<Epetra_CrsMatrix>(eOp);
+
+   // build vector for scaling
+   Epetra_Vector scaling(eCrsOp->OperatorRangeMap());
+   scaling.PutScalar(1.0);
+
+   // figure out which zero index (if any) this processor owns
+   std::vector<std::pair<int,int> > localIndicies; // local, global indicies
+   for(int i=0;i<zeroIndicies.size();i++) {
+      // check if this zero index is owned by this processor
+      int local = eCrsOp->LRID(zeroIndicies[i]);
+      if(local>=0) 
+         localIndicies.push_back(std::make_pair(local,zeroIndicies[i]));
+   }
+
+   // set a number of rows to zero
+   for(int i=0;i<localIndicies.size();i++) 
+      TEST_FOR_EXCEPT(scaling.ReplaceGlobalValue(localIndicies[i].second,0,0.0));
+
+   // wipe out all but the desired rows and columns
+   eCrsOp->RightScale(scaling);
+   eCrsOp->LeftScale(scaling);
+
+   // so the matrix is still invertable...set the digaonals of the
+   // wiped rows to 1
+   for(int i=0;i<localIndicies.size();i++) {
+      double value = 1.0;
+      int index = localIndicies[i].second;
+
+      // set diagonal to one
+      TEST_FOR_EXCEPT(eCrsOp->ReplaceGlobalValues(index,1,&value,&index));
+   } 
+
+   // now wrap the crs matrix in a ZeroedEpetraOperator
+   return Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(zeroIndicies,eCrsOp)));
+}
 
 // constructors
 InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & factory,bool rzn)
@@ -79,11 +126,21 @@ LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditione
    TEUCHOS_ASSERT(lscState!=0);
    TEUCHOS_ASSERT(lscState->isInitialized())
 
+   // build reduced BQBt operator if requested
+   if(nullPresIndicies_.size()>0)
+      reduceCrsOperator(lscState->BQBtmC_,nullPresIndicies_);
+
    // (re)build the inverse of the Schur complement
    // if(lscState->invBQBtmC_==Teuchos::null)
       lscState->invBQBtmC_ = buildInverse(*invFactoryS_,lscState->BQBtmC_);
    // else
    //    rebuildInverse(*invFactoryS_,lscState->BQBtmC_,lscState->invBQBtmC_);
+
+   if(nullPresIndicies_.size()>0) {
+      PB::LinearOp inv = lscState->invBQBtmC_;
+      RCP<Epetra_Operator> eOp = rcp(new PB::Epetra::EpetraOperatorWrapper(inv));
+      return Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(nullPresIndicies_,eOp)));
+   }
 
    return lscState->invBQBtmC_;
 }
@@ -194,6 +251,14 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    // do 6 power iterations to compute spectral radius: EHSST2007 Eq. 4.28
    state->gamma_ = std::fabs(PB::computeSpectralRad(iQuF,5e-2,false,eigSolveParam_))/3.0; 
 
+   if(graphLaplacian_!=Teuchos::null) {
+      PB::LinearOp invDGl = PB::getInvDiagonalOp(graphLaplacian_);
+      PB::LinearOp gammaOp = multiply(invDGl,C);
+      // std::cout << "gamma = " << state->gamma_ << " => ";
+      state->gamma_ *= std::fabs(PB::computeSpectralRad(gammaOp,5e-2,false,eigSolveParam_));
+      // std::cout << state->gamma_ << std::endl;
+   }
+
    // compute alpha scaled inv(D): EHSST2007 Eq. 4.29
    const LinearOp invDiagF = getInvDiagonalOp(F);
    const LinearOp B_idF_Bt = explicitMultiply(B,invDiagF,Bt);
@@ -208,7 +273,10 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    state->aiD_ = Thyra::scale(state->alpha_,invD);
 
    // now build B*Q*Bt-gamma*C
-   state->BQBtmC_ = explicitAdd(state->BQBt_,scale(-state->gamma_,C));
+   if(graphLaplacian_==Teuchos::null)
+      state->BQBtmC_ = explicitAdd(state->BQBt_,scale(-state->gamma_,C));
+   else
+      state->BQBtmC_ = explicitAdd(state->BQBt_,scale(state->gamma_,graphLaplacian_));
 }
 
 } // end namespace NS

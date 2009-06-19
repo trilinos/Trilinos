@@ -99,6 +99,9 @@ public:
                   LinearOp & mass,bool rzn=false);
    //@}
 
+   void setGraphLaplacian(const PB::LinearOp & gl)
+   { graphLaplacian_ = gl; }
+
    //! Functions inherited from LSCStrategy
    //@{
    virtual void buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const;
@@ -128,13 +131,19 @@ public:
 
    virtual void setUseFullLDU(bool val) { useFullLDU_ = val; }
 
+   virtual void addNullPressureIndex(int i) { nullPresIndicies_.push_back(i); }
+
 protected:
    LinearOp massMatrix_;
+   LinearOp graphLaplacian_;
    Teuchos::RCP<const InverseFactory> invFactoryF_;
    Teuchos::RCP<const InverseFactory> invFactoryS_;
    int eigSolveParam_;
    bool rowZeroingNeeded_;
    bool useFullLDU_;
+
+   // maintain the null indicies for the pressure operator
+   std::vector<int> nullPresIndicies_;
 };
 
 } // end namespace NS

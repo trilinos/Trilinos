@@ -29,7 +29,6 @@
 #include "src/tGraphLaplacian.hpp"
 #include "src/tParallelInverse.hpp"
 #include "src/tExplicitOps.hpp"
-#include "src/Epetra/tEpetraLSCIntegrationTest.hpp"
 #include "src/Epetra/tEpetraOperatorWrapper.hpp"
 #include "src/Epetra/tStridedEpetraOperator.hpp"
 #include "src/Epetra/tInterlacedEpetra.hpp"
@@ -94,7 +93,6 @@ int main(int argc,char * argv[])
    if(not isfast) {
       PB_ADD_UNIT_TEST(PB::Test::tLSCIntegrationTest,LSCIntegrationTest);
       PB_ADD_UNIT_TEST(PB::Test::tStridedEpetraOperator,tStridedEpetraOperator);
-      PB_ADD_UNIT_TEST(PB::Test::tEpetraLSCIntegrationTest,EpetraLSCIntegrationTest);
    }
 
    bool status = PB::Test::UnitTest::RunTests(verbosity,*termout,*failout);

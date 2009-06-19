@@ -16,7 +16,6 @@
 
 // PB-Package includes
 #include "Epetra/PB_EpetraHelpers.hpp"
-#include "Epetra/PB_EpetraLSCHelpers.hpp"
 #include "Epetra/PB_EpetraBlockPreconditioner.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
 
@@ -33,6 +32,7 @@
 #include "Test_Utils.hpp"
 
 #include "PB_InverseFactory.hpp"
+#include "PB_Utilities.hpp"
 
 namespace PB {
 namespace Test {
@@ -85,10 +85,12 @@ void tLSCIntegrationTest::loadStableSystem()
    TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("./data/lsc_Bt_2.mm",*velMap_,*velMap_,*prsMap_,Bt));
    TEST_FOR_EXCEPT(EpetraExt::MatrixMarketFileToCrsMatrix("./data/lsc_Qu_2.mm",*velMap_,*velMap_,*velMap_,Qu));
 
-   sA_ = rcp(PB::Epetra::block2x2(F,Bt,B,0,"A"));
-
    // set stable matrix pointers
    sF_  = rcp(F); sB_  = rcp(B); sBt_ = rcp(Bt); sQu_ = rcp(Qu);
+
+   PB::LinearOp C;
+   PB::LinearOp tA_ = PB::block2x2<double>(epetraLinearOp(sF_),epetraLinearOp(sBt_),epetraLinearOp(sB_),C,"A");
+   sA_ = rcp(new PB::Epetra::EpetraOperatorWrapper(tA_));
 
    // build an exporter to work around issue with MMFileToVector
    Epetra_Export exporter(*fullMap_,sA_->OperatorRangeMap());

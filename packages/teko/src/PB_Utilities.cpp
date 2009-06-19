@@ -1,5 +1,6 @@
 #include "PB_Utilities.hpp"
 
+// Thyra includes
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_ZeroLinearOpBase.hpp"
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
@@ -16,10 +17,18 @@
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 
+// Teuchos includes
 #include "Teuchos_Array.hpp"
 
+// Epetra includes
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
+
+// Anasazi includes
+#include "AnasaziBasicEigenproblem.hpp"
+#include "AnasaziThyraAdapter.hpp"
+#include "AnasaziBlockKrylovSchurSolMgr.hpp"
+#include "AnasaziStatusTestMaxIters.hpp"
 
 // PB includes
 #include "Epetra/PB_EpetraHelpers.hpp"
@@ -633,6 +642,85 @@ BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvv)
          = Thyra::productVectorSpace<double>(vsA);
 
    return Thyra::defaultProductMultiVector<double>(vs,mvA);
+}
+
+/** \brief Compute the spectral radius of a matrix
+  *
+  * Compute the spectral radius of matrix A.  This utilizes the 
+  * Trilinos-Anasazi BlockKrylovShcur method for computing eigenvalues.
+  * It attempts to compute the largest (in magnitude) eigenvalue to a given
+  * level of tolerance.
+  *
+  * \param[in] A   matrix whose spectral radius is needed
+  * \param[in] tol The <em>most</em> accuracy needed (the algorithm will run until
+  *            it reaches this level of accuracy and then it will quit).
+  *            If this level is not reached it will return something to indicate
+  *            it has not converged.
+  * \param[in] isHermitian Is the matrix Hermitian
+  * \param[in] numBlocks The size of the orthogonal basis built (like in GMRES) before
+  *                  restarting.  Increase the memory usage by O(restart*n). At least
+  *                  restart=3 is required.
+  * \param[in] restart How many restarts are permitted
+  * \param[in] verbosity See the Anasazi documentation
+  *
+  * \return The spectral radius of the matrix.  If the algorithm didn't converge the
+  *         number is the negative of the ritz-values. If a <code>NaN</code> is returned
+  *         there was a problem constructing the Anasazi problem
+  */
+double computeSpectralRad(const RCP<const Thyra::LinearOpBase<double> > & A, double tol,
+                          bool isHermitian,int numBlocks,int restart,int verbosity)
+{
+   typedef Thyra::LinearOpBase<double> OP;
+   typedef Thyra::MultiVectorBase<double> MV;
+
+   int startVectors = 1;
+
+   // construct an initial guess
+   const RCP<MV> ivec = Thyra::createMember(A->domain());
+   Thyra::randomize(-1.0,1.0,&*ivec);
+   
+   RCP<Anasazi::BasicEigenproblem<double,MV,OP> > eigProb
+         = rcp(new Anasazi::BasicEigenproblem<double,MV,OP>(A,ivec));
+   eigProb->setNEV(1);
+   eigProb->setHermitian(isHermitian);
+
+   // set the problem up
+   if(not eigProb->setProblem()) {
+      // big time failure!
+      return Teuchos::ScalarTraits<double>::nan();
+   }
+
+   // we want largert magnitude eigenvalue
+   std::string which("LM"); // largest magnitude
+
+   // Create the parameter list for the eigensolver
+   Teuchos::ParameterList MyPL;
+   MyPL.set( "Verbosity", verbosity );
+   MyPL.set( "Which", which );
+   MyPL.set( "Block Size", startVectors );
+   MyPL.set( "Num Blocks", numBlocks );
+   MyPL.set( "Maximum Restarts", restart ); 
+   MyPL.set( "Convergence Tolerance", tol );
+
+   // build status test manager
+   RCP<Anasazi::StatusTestMaxIters<double,MV,OP> > statTest
+         = rcp(new Anasazi::StatusTestMaxIters<double,MV,OP>(10));
+
+   // Create the Block Krylov Schur solver
+   // This takes as inputs the eigenvalue problem and the solver parameters
+   Anasazi::BlockKrylovSchurSolMgr<double,MV,OP> MyBlockKrylovSchur(eigProb, MyPL );
+ 
+   // Solve the eigenvalue problem, and save the return code
+   Anasazi::ReturnType solverreturn = MyBlockKrylovSchur.solve();
+
+   if(solverreturn==Anasazi::Unconverged) {
+      // cout << "Anasazi::BlockKrylovSchur::solve() did not converge!" << endl;
+      return -std::abs(MyBlockKrylovSchur.getRitzValues().begin()->realpart);
+   }
+   else { // solverreturn==Anasazi::Converged
+      // cout << "Anasazi::BlockKrylovSchur::solve() converged!" << endl;
+      return std::abs(eigProb->getSolution().Evals.begin()->realpart);
+   }
 }
 
 }

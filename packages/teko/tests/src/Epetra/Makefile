@@ -6,11 +6,12 @@ include ../../../make.include
 INCLUDE = -I$(TRILINOS_INCLUDE) -I$(PB_TESTS_INCLUDE) -I$(PB_INCLUDE)
 CPPFLAGS=-DHAVE_CONFIG_H $(THYRA_CXXFLAGS) $(DEBUG_FLAGS)
 
-OBJS = tEpetraLSCIntegrationTest.o \
-       tEpetraOperatorWrapper.o \
+OBJS = tEpetraOperatorWrapper.o \
        tStridedEpetraOperator.o \
        tEpetraThyraConverter.o \
        tInterlacedEpetra.o
+
+# tEpetraLSCIntegrationTest.o \
 
 PREC = $(OBJS:%.o=%._tmp)
 

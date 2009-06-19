@@ -20,7 +20,7 @@
 
 // PB includes
 #include "PB_EpetraOperatorWrapper.hpp"
-#include "PB_Helpers.hpp"
+#include "PB_Utilities.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;
@@ -31,53 +31,16 @@ using Teuchos::null;
 namespace PB {
 namespace Epetra {
 
-// build an epetra operator from a block 2x2 matrix
-Epetra_Operator * block2x2(const Epetra_Operator * A,const Epetra_Operator * B,
-                         const Epetra_Operator * C,const Epetra_Operator * D,const std::string & str)
-{
-   using Teuchos::rcpFromRef;
-   using Thyra::zero;
-
-   // not all things can be zero
-   assert(not (A==0 && B==0));
-   assert(not (A==0 && C==0));
-   assert(not (B==0 && D==0));
-   assert(not (C==0 && D==0));
-
-
-   RCP<const Thyra::LinearOpBase<double> > ptrA = A!=0 ? Thyra::epetraLinearOp(rcp(A,false),str+"_00"): null;
-   RCP<const Thyra::LinearOpBase<double> > ptrB = B!=0 ? Thyra::epetraLinearOp(rcp(B,false),str+"_01"): null;
-   RCP<const Thyra::LinearOpBase<double> > ptrC = C!=0 ? Thyra::epetraLinearOp(rcp(C,false),str+"_10"): null;
-   RCP<const Thyra::LinearOpBase<double> > ptrD = D!=0 ? Thyra::epetraLinearOp(rcp(D,false),str+"_11"): null;
-
-   // get some ranges so the null matrices can be set to zero
-   const RCP<const Thyra::VectorSpaceBase<double> > row0Range  = A!=0 ? ptrA->range()  : ptrB->range();
-   const RCP<const Thyra::VectorSpaceBase<double> > row1Range  = C!=0 ? ptrC->range()  : ptrD->range();
-   const RCP<const Thyra::VectorSpaceBase<double> > col0Domain = A!=0 ? ptrA->domain() : ptrC->domain();
-   const RCP<const Thyra::VectorSpaceBase<double> > col1Domain = B!=0 ? ptrB->domain() : ptrD->domain();
-
-   // set previously null pointers to 0
-   if(A==0) ptrA = Thyra::zero(row0Range,col0Domain);
-   if(B==0) ptrB = Thyra::zero(row0Range,col1Domain);
-   if(C==0) ptrC = Thyra::zero(row1Range,col0Domain);
-   if(D==0) ptrD = Thyra::zero(row1Range,col1Domain);
-
-   const RCP<const Thyra::LinearOpBase<double> > mat = Thyra::block2x2(ptrA,ptrB,ptrC,ptrD,str);
-
-   return new PB::Epetra::EpetraOperatorWrapper(mat);
-}
-
-// Convert an Epetra "inverse" operator to a "forward" operator
-Epetra_Operator * mechanicalInverse(const Epetra_Operator * inverse)
-{
-   // convert to a forward operator
-   Teuchos::RCP<const Epetra_Operator> opAr[] = {rcp(inverse,false)};
-   Teuchos::ETransp epetraOpsTransp[] = { Teuchos::NO_TRANS };
-   EpetraExt::ProductOperator::EApplyMode epetraOpsApplyMode[] = { EpetraExt::ProductOperator::APPLY_MODE_APPLY_INVERSE };
-
-   return new EpetraExt::ProductOperator(1,opAr,epetraOpsTransp,epetraOpsApplyMode);
-}
-
+/** \brief Convert an Epetra_Vector into a diagonal linear operator.
+  *
+  * Convert an Epetra_Vector into a diagonal linear operator. 
+  *
+  * \param[in] ev  Epetra_Vector to use as the diagonal
+  * \param[in] map Map related to the Epetra_Vector
+  * \param[in] lbl String to easily label the operator
+  *
+  * \returns A diagonal linear operator using the vector
+  */
 const Teuchos::RCP<const Thyra::LinearOpBase<double> > thyraDiagOp(const RCP<const Epetra_Vector> & ev,const Epetra_Map & map,
                                                                    const std::string & lbl)
 {
@@ -122,6 +85,96 @@ void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::DefaultSpmdMultiVector<doubl
 
    // make sure the Epetra_MultiVector doesn't disappear prematurely
    Teuchos::set_extra_data<RCP<Epetra_MultiVector> >(epetraMV,"Epetra_MultiVector",Teuchos::outArg(spmdMV));
+}
+
+/** \brief Build a vector of the dirchlet row indicies. 
+  *
+  * Build a vector of the dirchlet row indicies. That is, record the global
+  * index of any row that is all zeros except for $1$ on the diagonal.
+  *
+  * \param[in]     rowMap   Map specifying which global indicies this process examines 
+  * \param[in]     mat      Matrix to be examined
+  * \param[in,out] indicies Output list of indicies corresponding to dirchlet rows.
+  */
+void identityRowIndicies(const Epetra_Map & rowMap, const Epetra_CrsMatrix & mat,std::vector<int> & outIndicies)
+{
+   int maxSz = mat.GlobalMaxNumEntries();
+   double values[maxSz];
+   int indicies[maxSz];
+
+   // loop over elements owned by this processor
+   for(int i=0;i<rowMap.NumMyElements();i++) {
+      bool rowIsIdentity = true;
+      int sz = 0;
+      int rowGID = rowMap.GID(i);
+      mat.ExtractGlobalRowCopy(rowGID,maxSz,sz,values,indicies);
+
+      // loop over the columns of this row
+      for(int j=0;j<sz;j++) {
+         int colGID = indicies[j];
+
+         // look at row entries
+         if(colGID==rowGID) rowIsIdentity &= values[j]==1.0;
+         else               rowIsIdentity &= values[j]==0.0;
+
+         // not a dirchlet row...quit
+         if(not rowIsIdentity)
+            break;
+      }
+
+      // save a row that is dirchlet
+      if(rowIsIdentity)
+         outIndicies.push_back(rowGID);
+   }
+}
+
+/** \brief Zero out the value of a vector on the specified
+  *        set of global indicies.
+  *
+  * Zero out the value of a vector on the specified set of global
+  * indicies. The indicies here are assumed to belong to the calling
+  * process (i.e. zeroIndicies $\in$ mv.Map()).
+  *
+  * \param[in,out] mv           Vector whose entries will be zeroed
+  * \param[in]     zeroIndicies Indicies local to this process that need to be zeroed
+  */
+void zeroMultiVectorRowIndicies(Epetra_MultiVector & mv,const std::vector<int> & zeroIndicies)
+{
+   int colCnt = mv.NumVectors();
+   std::vector<int>::const_iterator itr;
+ 
+   // loop over the indicies to zero
+   for(itr=zeroIndicies.begin();itr!=zeroIndicies.end();++itr) {
+ 
+      // loop over columns
+      for(int j=0;j<colCnt;j++)
+         mv.ReplaceGlobalValue(*itr,j,0.0);
+   }
+}
+
+/** \brief Constructor for a ZeroedOperator.
+  *
+  * Build a ZeroedOperator based on a particular Epetra_Operator and
+  * a set of indicies to zero out. These indicies must be local to this
+  * processor as specified by RowMap().
+  *
+  * \param[in] zeroIndicies Set of indices to zero out (must be local).
+  * \param[in] op           Underlying epetra operator to use.
+  */
+ZeroedOperator::ZeroedOperator(const std::vector<int> & zeroIndicies,
+                               const Teuchos::RCP<const Epetra_Operator> & op)
+   : zeroIndicies_(zeroIndicies), epetraOp_(op)
+{ }
+
+//! Perform a matrix-vector product with certain rows zeroed out
+int ZeroedOperator::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+{
+   int result = epetraOp_->Apply(X,Y);
+
+   // zero a few of the rows
+   zeroMultiVectorRowIndicies(Y,zeroIndicies_);
+
+   return result;
 }
 
 } // end namespace Epetra

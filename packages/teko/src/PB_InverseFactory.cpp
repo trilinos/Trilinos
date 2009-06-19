@@ -66,8 +66,6 @@ InverseLinearOp SolveInverseFactory::buildInverse(const LinearOp & linearOp) con
   */
 void SolveInverseFactory::rebuildInverse(const LinearOp & source,InverseLinearOp & dest) const
 {
-   // RCP<Thyra::LinearOpBase<double> > nonConstDest = rcp_const_cast<Thyra::LinearOpBase<double> >(dest);
-   // RCP<Thyra::DefaultInverseLinearOp<double> > invDest = rcp_dynamic_cast<Thyra::DefaultInverseLinearOp<double> >(nonConstDest);
    RCP<Thyra::DefaultInverseLinearOp<double> > invDest = rcp_dynamic_cast<Thyra::DefaultInverseLinearOp<double> >(dest);
    RCP<Thyra::LinearOpWithSolveBase<double> > lows = invDest->getNonconstLows();
 
@@ -160,7 +158,23 @@ Teuchos::RCP<const Teuchos::ParameterList> PreconditionerInverseFactory::getPara
 //! Build an inverse operator using a factory and a linear operator
 InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
 {
-   return factory.buildInverse(A);
+   InverseLinearOp inv;
+   try {
+      inv = factory.buildInverse(A);
+   }
+   catch(std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
+      *out << "PB: \"buildInverse\" could not construct the inverse operator\n";
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
+
+   return inv;
 }
 
 /** Using a prebuilt linear operator, use factory to build an inverse operator
@@ -168,7 +182,21 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
   */
 void rebuildInverse(const InverseFactory & factory, const LinearOp & A, InverseLinearOp & invA)
 {
-   return factory.rebuildInverse(A,invA);
+   InverseLinearOp inv;
+   try {
+      factory.rebuildInverse(A,invA);
+   } 
+   catch(std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
+      *out << "PB: \"rebuildInverse\" could not construct the inverse operator\n";
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
 }
 
 /** \brief Build an InverseFactory object from a ParameterList, as specified in Stratimikos.

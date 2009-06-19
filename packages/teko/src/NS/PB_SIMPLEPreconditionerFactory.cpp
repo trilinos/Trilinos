@@ -48,8 +48,16 @@ LinearOp SIMPLEPreconditionerFactory
    const LinearOp hatS = explicitAdd(scale(-1.0,C), 
                                      explicitMultiply(B,H,Bt));
 
-   // build inverses for F and the approximate Schur complement
-   const LinearOp invF = buildInverse(*invVelFactory_,F);
+   // build the inverse for F 
+   InverseLinearOp invF = state.getInverse("invF");
+   if(invF==Teuchos::null) {
+      invF = buildInverse(*invVelFactory_,F);
+      state.addInverse("invF",invF); 
+   } else {
+      rebuildInverse(*invVelFactory_,F,invF);
+   }
+
+   // build the approximate Schur complement: This is inefficient! FIXME
    const LinearOp invS = buildInverse(*invPrsFactory_,hatS);
 
    std::vector<LinearOp> invDiag(2); // vector storing inverses
@@ -71,10 +79,6 @@ LinearOp SIMPLEPreconditionerFactory
    invDiag[0] = identity(rangeSpace(invF));
    invDiag[1] = scale(alpha_,identity(rangeSpace(invS)));
    LinearOp invU = createBlockUpperTriInverseOp(U,invDiag);
-
-   // std::stringstream ss;
-   // ss << "SIMPLE Preconditioner: ( inv(F) = " << invF->description()
-   //    << ", inv(S) = " << invS->description() << " )";
 
    // return implicit product operator
    return multiply(invU,invL,"SIMPLE");
