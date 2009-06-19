@@ -951,6 +951,10 @@ int main(int argc, char *argv[]) {
       fst::integrate<double>(hD, rhsDatah, hexDivsTransformedWeighted,
                              COMP_BLAS);
 
+     // apply signs
+      fst::applyFieldSigns<double>(gD, hexFaceSigns);
+      fst::applyFieldSigns<double>(hD, hexFaceSigns);
+
     // assemble into global vector
      for (int row = 0; row < numFieldsD; row++){
            int rowIndex = elemToEdge(k,row);
