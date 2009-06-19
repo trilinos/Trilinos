@@ -96,12 +96,10 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                                            Epetra_MultiVector & b,
                                            double & TotalErrorResidual,
                                              double & TotalErrorExactSol);
+
 using namespace std;
 using namespace Intrepid;
 using namespace shards;
-
-
-
 
 
 // Functions to evaluate exact solution and derivatives
@@ -429,6 +427,7 @@ int main(int argc, char *argv[]) {
    }
  
    // Output element to edge connectivity
+#define DUMP_DATA
 #ifdef DUMP_DATA
     ofstream fout("elem2edge.dat");
     ofstream fout2("elem2node.dat");
@@ -564,6 +563,12 @@ int main(int argc, char *argv[]) {
        fEdgeout << edgeOnBoundary(i) <<"  ";
     }
     fEdgeout.close();
+
+     int numEdgeOnBndy=0;
+     for (int i=0; i<numEdges; i++) {
+        if (edgeOnBoundary(i))
+           numEdgeOnBndy++;
+     }   
         
     
    // Set material properties using undeformed grid assuming each element has only one value of mu
@@ -864,10 +869,7 @@ int main(int argc, char *argv[]) {
             int rowIndex = elemToEdge(k,row);
             int colIndex = elemToEdge(k,col);
             double val = stiffMatrixC(0,row,col);
-            err = StiffC.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            if (err > 0) {
-                StiffC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            }
+            StiffC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
@@ -906,11 +908,15 @@ int main(int argc, char *argv[]) {
       fst::integrate<double>(hC, rhsDatah, hexCValsTransformedWeighted,
                              COMP_CPP);
 
+     // apply signs
+      fst::applyFieldSigns<double>(gC, hexEdgeSigns);
+      fst::applyFieldSigns<double>(hC, hexEdgeSigns);
+
     // assemble into global vector
      for (int row = 0; row < numFieldsC; row++){
            int rowIndex = elemToEdge(k,row);
-           double val = gC(0,row)-hC(0,row);
-           err = rhsC.SumIntoGlobalValues(1, &rowIndex, &val);
+           double val = -gC(0,row)+hC(0,row);
+           rhsC.SumIntoGlobalValues(1, &rowIndex, &val);
      }
  
      
@@ -925,6 +931,54 @@ int main(int argc, char *argv[]) {
     DGrad.GlobalAssemble(); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap());    
 
 
+
+   // Create reduced system to account for BCs
+        
+  // Adjust stiffness matrix and rhs based on boundary conditions
+   /*for (int row = 0; row<numEdges; row++){
+       if (edgeOnBoundary(row)) {
+          int rowindex = row;
+          for (int col=0; col<numEdges; col++){
+              double val = 0.0;
+              int colindex = col;
+              StiffC.ReplaceGlobalValues(1, &rowindex, 1, &colindex, &val);
+              StiffC.ReplaceGlobalValues(1, &colindex, 1, &rowindex, &val);
+          }
+          double val = 1.0;
+          StiffC.ReplaceGlobalValues(1, &rowindex, 1, &rowindex, &val);
+          val = 0.0;
+          rhsC.ReplaceGlobalValues(1, &rowindex, &val);
+       }
+    }
+   */
+
+     int numBCEdges=0;
+     for (int i=0; i<numEdges; i++){
+         if (edgeOnBoundary(i)){
+             numBCEdges++;
+         }
+      }
+      int * BCEdges = new int [numBCEdges];
+      int indbc=0;
+      for (int i=0; i<numEdges; i++){
+         if (edgeOnBoundary(i)){
+            BCEdges[indbc]=i;
+            indbc++;
+            rhsC[0][i]=0;
+         }
+      }
+      ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffC);
+
+      delete [] BCEdges;
+            
+
+    EpetraExt::RowMatrixToMatlabFile("k1_0.dat",StiffC);
+    EpetraExt::MultiVectorToMatrixMarketFile("rhsC0.dat",rhsC,0,0,false);
+    EpetraExt::RowMatrixToMatlabFile("m1_0.dat",MassC);
+    EpetraExt::RowMatrixToMatlabFile("m0.dat",MassG);
+
+
+/*
     // Really hacky dirichlet BCs
     Epetra_Vector flag1(DGrad.ColMap(),true);
     // NTS: This map is wrong in parallel
@@ -949,6 +1003,7 @@ int main(int argc, char *argv[]) {
       }     
     }       
     
+*/
     
     
     
@@ -1242,19 +1297,7 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   //  x=*rhs;
   //  rhs->PutScalar(0.0);
 
-     xh = *lhs;
-  
 
-  #define DUMP_OUT_MATRICES
-#ifdef DUMP_OUT_MATRICES
-   EpetraExt::RowMatrixToMatlabFile("mag_m0inv_matrix.dat",M0inv);
-   EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",M1);
-   EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",CurlCurl);
-   EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",D0);
-   EpetraExt::RowMatrixToMatlabFile("mag_t_clean_matrix.dat",D0clean);
-   EpetraExt::MultiVectorToMatrixMarketFile("mag_rhs.dat",*rhs,0,0,false);
-   EpetraExt::MultiVectorToMatrixMarketFile("mag_lhs.dat",*lhs,0,0,false);
-#endif
  
   /* Build the EMFP Preconditioner */  
   ML_Epetra::EdgeMatrixFreePreconditioner EMFP(Operator11,Diagonal,D0,D0clean,*TMT_Agg_Matrix,BCedges,numBCedges,MLList);
@@ -1274,14 +1317,38 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   string msg = ProblemType;
   solution_test(msg,Operator11,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
 
+  #define DUMP_OUT_MATRICES
+#ifdef DUMP_OUT_MATRICES
+   EpetraExt::RowMatrixToMatlabFile("mag_m0inv_matrix.dat",M0inv);
+   EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",M1);
+   EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",CurlCurl);
+   EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",D0);
+   EpetraExt::RowMatrixToMatlabFile("mag_t_clean_matrix.dat",D0clean);
+   EpetraExt::MultiVectorToMatrixMarketFile("mag_rhs.dat",*rhs,0,0,false);
+   EpetraExt::MultiVectorToMatrixMarketFile("mag_lhs.dat",*lhs,0,0,false);
+#endif
+
+     xh = *lhs;
+
 }
 
 // Calculates value of exact solution u
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
  {
+    /*
     uExact0 = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
     uExact1 = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
     uExact2 = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+   */
+   
+    uExact0 = cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+    uExact1 = sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
+    uExact2 = sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
+    /*
+    uExact0 = (y*y - 1.0)*(z*z-1.0);
+    uExact1 = (x*x - 1.0)*(z*z-1.0);
+    uExact2 = (x*x - 1.0)*(y*y-1.0);
+    */
 
    return 0;
  }
@@ -1289,9 +1356,15 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 // Calculates divergence of exact solution u
  double evalDivu(double & x, double & y, double & z)
  {
-   double divu = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
+  /* double divu = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+   */
+    
+   double divu = -3.0*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+
+  // double divu = 0.0;
+
    return divu;
  }
 
@@ -1299,12 +1372,31 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 // Calculates curl of exact solution u
  int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z)
  {
+  /*
    double duxdy = cos(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*(y+1.0)*(y-1.0) + 2.0*y);
    double duxdz = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0) + 2.0*z);
    double duydx = cos(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0) + 2.0*x);
    double duydz = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(x*(z+1.0)*(z-1.0) + 2.0*z);
    double duzdx = cos(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0) + 2.0*x);
    double duzdy = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(x*(y+1.0)*(y-1.0) + 2.0*y);
+ */
+
+   double duxdy = M_PI*cos(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
+   double duxdz = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
+   double duydx = M_PI*cos(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
+   double duydz = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
+   double duzdx = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
+   double duzdy = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
+   
+
+  /*
+   double duxdy = 2.0*y*(z*z-1);
+   double duxdz = 2.0*z*(y*y-1);
+   double duydx = 2.0*x*(z*z-1);
+   double duydz = 2.0*z*(x*x-1);
+   double duzdx = 2.0*x*(y*y-1);
+   double duzdy = 2.0*y*(x*x-1);
+   */
 
    curlu0 = duzdy - duydz;
    curlu1 = duxdz - duzdx;
@@ -1316,6 +1408,8 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 // Calculates gradient of the divergence of exact solution u
  int evalGradDivu(double & gradDivu0, double & gradDivu1, double & gradDivu2, double & x, double & y, double & z)
 {
+   
+   /*
     gradDivu0 = -M_PI*M_PI*cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                   -M_PI*sin(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0)+2.0*x)
                   -M_PI*sin(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0)+2.0*x);
@@ -1325,5 +1419,19 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
     gradDivu2 = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0)+2.0*z)
                   -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(x*(z+1.0)*(z-1.0)+2.0*z)
                   -M_PI*M_PI*cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
-    return 0;
+  
+  */
+
+   gradDivu0 = -3.0*M_PI*M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+   gradDivu1 = -3.0*M_PI*M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
+   gradDivu2 = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
+    
+
+  /*
+   gradDivu0 = 0;
+   gradDivu1 = 0;
+   gradDivu2 = 0;
+   */
+
+   return 0;
 }
