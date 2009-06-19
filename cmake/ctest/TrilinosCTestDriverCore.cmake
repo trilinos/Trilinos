@@ -333,7 +333,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
 
     MESSAGE("\nKill all hanging Zoltan processes ...")
-    EXECUTE_PROCESS(killall -s 9 zdrive.exe)
+    EXECUTE_PROCESS(COMMAND killall -s 9 zdrive.exe)
   
     SET_PROPERTY(GLOBAL PROPERTY SubProject ${PACKAGE})
     SET_PROPERTY(GLOBAL PROPERTY Label ${PACKAGE})
