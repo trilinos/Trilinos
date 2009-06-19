@@ -52,8 +52,8 @@ namespace Kokkos {
        getRowInc() and getColInc() methods. This is
        a very general mechanism for describing strided access.  Typical situations include:
        <ul>
-       <li> getRowInc() = getNumCols(), getColInc() = 1 - column entries are contiguous.  
-       <li> getRowInc() = 1, getColInc() = getNumRows() - row entries are contiguous.  
+       <li> getRowInc() = getNumRows(), getColInc() = 1 - column entries are contiguous.  
+       <li> getRowInc() = 1, getColInc() = getNumCols() - row entries are contiguous.  
        </ul>
        However, this mechanism also allows extraction of array subsections, 
        real or imaginary parts from complex-valued arrays.

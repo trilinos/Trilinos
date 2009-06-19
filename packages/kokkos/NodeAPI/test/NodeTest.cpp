@@ -1,9 +1,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_FancyOStream.hpp>
-#include <Teuchos_StandardMemberCompositionMacros.hpp>
-#include <Teuchos_Ptr.hpp>
 #include <Teuchos_TimeMonitor.hpp>
-#include <Teuchos_VerboseObject.hpp>
+#include <Teuchos_Time.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "TestOps.hpp"
@@ -90,7 +87,7 @@ namespace {
   // UNIT TESTS
   // 
 
-  TEUCHOS_UNIT_TEST( AAAAA_First_Group, Init_Nodes )
+  TEUCHOS_UNIT_TEST( AAAAA, Init_Nodes )
   {
 #ifdef HAVE_KOKKOS_TBB
     out << "Initializing TBB node to " << tbb_nT << " threads." << std::endl;

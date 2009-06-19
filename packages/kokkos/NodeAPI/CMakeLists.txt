@@ -52,11 +52,13 @@ APPEND_SET(TBB_SOURCES
 
 # general headers, sources
 APPEND_SET(HEADERS
+    Kokkos_DefaultNode.hpp
     Kokkos_NodeAPIVersion.hpp
     Kokkos_SerialNode.hpp
     Kokkos_StandardNodeMemoryModel.hpp
   )
 APPEND_SET(SOURCES
+    Kokkos_DefaultNode.cpp
     Kokkos_NodeAPIVersion.cpp
   )
 
