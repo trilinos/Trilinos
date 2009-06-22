@@ -657,6 +657,7 @@ int main(int argc, char *argv[]) {
     Epetra_SerialComm Comm;
     Epetra_Map globalMapD(numFaces, 0, Comm);
     Epetra_Map globalMapC(numEdges, 0, Comm);
+    Epetra_Map globalMapG(numNodes, 0, Comm);
     Epetra_FECrsMatrix DCurl(Copy, globalMapD, globalMapC, 2);
 
     double vals[4];
@@ -763,7 +764,7 @@ int main(int argc, char *argv[]) {
    // Global arrays in Epetra format
     Epetra_FECrsMatrix MassC(Copy, globalMapC, numFieldsC);
     Epetra_FECrsMatrix MassD(Copy, globalMapD, numFieldsD);
-    Epetra_FECrsMatrix MassG(Copy, globalMapD, numFieldsD);
+    Epetra_FECrsMatrix MassG(Copy, globalMapG, numFieldsG);
     Epetra_FECrsMatrix StiffD(Copy, globalMapD, numFieldsD);
     Epetra_FEVector rhsD(globalMapD);
 
