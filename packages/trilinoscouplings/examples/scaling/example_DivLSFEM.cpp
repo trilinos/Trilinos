@@ -994,6 +994,7 @@ int main(int argc, char *argv[]) {
 
    
   // Dump matrices to disk
+   EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassG);
    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
    EpetraExt::RowMatrixToMatlabFile("mag_m2_matrix.dat",MassD);
    EpetraExt::RowMatrixToMatlabFile("mag_k2_matrix.dat",StiffD);
