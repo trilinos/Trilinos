@@ -399,8 +399,8 @@ static int D1coloring(
 #ifdef RELEVANT_COLORS
     int j, k;
     int *pmark=NULL;        
-    int **persSbuf=NULL; //personalized send buffers
-    int *Ssize=NULL; // send buffer sizes
+    int **persSbuf=NULL; /* personalized send buffers */
+    int *Ssize=NULL; /* send buffer sizes */
     int *relproc=NULL;
     int *xrelproc=NULL;
     int *plst=NULL, plstcnt=0;
@@ -1353,11 +1353,6 @@ static int D1ParallelColoring (
             int ap = relproc[j];
             persSbuf[ap][Ssize[ap]++] = gu;
             persSbuf[ap][Ssize[ap]++] = color[u];
-
-//#ifdef _DEBUG3
-//            uprintf("[%d] new color %d of vtx %d will be sent to proc %d\n", myProc, persSbuf[ap][Ssize[ap]-1], persSbuf[ap][Ssize[ap]-2], ap);
-//#endif
-
         }
         n += 2;
 #else
