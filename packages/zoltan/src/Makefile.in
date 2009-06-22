@@ -451,6 +451,7 @@ INCLUDE_H = \
 	$(srcdir)/include/zoltan_align.h \
 	$(srcdir)/include/zoltan_cpp.h \
 	$(srcdir)/include/zoltan.h \
+	$(srcdir)/include/zoltan_eval.h \
 	$(srcdir)/include/zoltan_types.h \
 	$(srcdir)/include/zoltan_comm.h \
 	$(srcdir)/include/zoltan_comm_cpp.h \
