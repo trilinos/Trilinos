@@ -410,9 +410,9 @@ int main(int argc, char *argv[]) {
               if (i < NX) {
                  ielem=i+j*NX+k*NX*NY;
                  faceToEdge(iface,0)=elemToEdge(ielem,3);
-                 faceToEdge(iface,1)=elemToEdge(ielem,8);
+                 faceToEdge(iface,1)=elemToEdge(ielem,11);
                  faceToEdge(iface,2)=elemToEdge(ielem,7);
-                 faceToEdge(iface,3)=elemToEdge(ielem,11);
+                 faceToEdge(iface,3)=elemToEdge(ielem,8);
                  elemToFace(ielem,3)=iface;
                  if (i > 0) {
                     elemToFace(ielem-1,1)=iface;
@@ -421,9 +421,9 @@ int main(int argc, char *argv[]) {
               else if (i == NX) {
                  ielem=NX-1+j*NX+k*NX*NY;
                  faceToEdge(iface,0)=elemToEdge(ielem,1);
-                 faceToEdge(iface,1)=elemToEdge(ielem,9);
+                 faceToEdge(iface,1)=elemToEdge(ielem,10);
                  faceToEdge(iface,2)=elemToEdge(ielem,5);
-                 faceToEdge(iface,3)=elemToEdge(ielem,10);
+                 faceToEdge(iface,3)=elemToEdge(ielem,9);
                  elemToFace(ielem,1)=iface;
               }
               iface++;
