@@ -750,8 +750,8 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> hexDivsTransformedWeighted(numCells, numFieldsD, numCubPoints);
    // Containers for element HGRAD mass matrix
     FieldContainer<double> massMatrixG(numCells, numFieldsG, numFieldsG);
-    FieldContainer<double> hexGValsTransformed(numCells, numFieldsD, numCubPoints, spaceDim);
-    FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsD, numCubPoints, spaceDim);
+    FieldContainer<double> hexGValsTransformed(numCells, numFieldsG, numCubPoints);
+    FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsG, numCubPoints);
    // Containers for right hand side vectors
     FieldContainer<double> rhsDatag(numCells, numCubPoints, cubDim);
     FieldContainer<double> rhsDatah(numCells, numCubPoints);
