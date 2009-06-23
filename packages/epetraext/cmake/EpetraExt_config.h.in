@@ -54,6 +54,9 @@
 /* Define if want to build with petsc enabled */
 #cmakedefine HAVE_PETSC
 
+/* Define if want to build with hypre enabled */
+#cmakedefine HAVE_HYPRE
+
 /* Define if want to build epetraext-restrict */
 #cmakedefine HAVE_RESTRICT
 

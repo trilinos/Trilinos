@@ -71,6 +71,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   MA28           TS
   AMD            TS
   PETSC          SS
+  HYPRE          EX
   SCALAPACK      SS
   Oski           SS
   TAUCS          SS

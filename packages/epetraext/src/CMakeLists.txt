@@ -389,6 +389,25 @@ IF (${PACKAGE_NAME}_USING_PETSC)
 ENDIF()
 
 #
+# src/hypre
+#
+
+IF (${PACKAGE_NAME}_USING_HYPRE)
+
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/hypre)
+  
+  SET(HEADERS ${HEADERS}
+    hypre/EpetraExt_HypreIJMatrix.h
+    )
+  
+  SET(SOURCES ${SOURCES}
+    hypre/EpetraExt_HypreIJMatrix.cpp
+    )
+
+ENDIF()
+
+
+#
 # C) Define the targets for package's library(s)
 #
 
