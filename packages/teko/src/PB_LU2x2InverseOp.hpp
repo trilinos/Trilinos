@@ -1,3 +1,8 @@
+/** \file PB_LU2x2InverseOp.hpp
+  * 
+  * File that implements the inverse of a block 2x2 LU decomposition.
+  */
+
 #ifndef __PB_LU2x2InverseOp_hpp__
 #define __PB_LU2x2InverseOp_hpp__
 
@@ -127,11 +132,38 @@ private:
    LU2x2InverseOp(const LU2x2InverseOp &);
 };
 
+/** \brief Constructor method for building <code>LU2x2InverseOp</code>.
+  *
+  * Constructor method for building <code>LU2x2InverseOp</code>.
+  *
+  * \param[in] A      2x2 Operator to be decomposed
+  * \param[in] invA00 Approximate inverse of the operators \f$(0,0)\f$ block.
+  * \param[in] invS   Approximate inverse of the Schur complement
+  *
+  * \returns A linear operator that behaves like the inverse of the
+  *          LU decomposition.
+  * 
+  * \relates LU2x2InverseOp
+  */
 inline LinearOp createLU2x2InverseOp(BlockedLinearOp & A,LinearOp & invA00,LinearOp & invS)
 {
    return Teuchos::rcp(new LU2x2InverseOp(A,invA00,invS));
 }
 
+/** \brief Constructor method for building <code>LU2x2InverseOp</code>.
+  *
+  * Constructor method for building <code>LU2x2InverseOp</code>.
+  *
+  * \param[in] A      2x2 Operator to be decomposed
+  * \param[in] invA00 Approximate inverse of the operators \f$(0,0)\f$ block.
+  * \param[in] invS   Approximate inverse of the Schur complement
+  * \param[in] str    String to label the operator
+  *
+  * \returns A linear operator that behaves like the inverse of the
+  *          LU decomposition.
+  * 
+  * \relates LU2x2InverseOp
+  */
 inline LinearOp createLU2x2InverseOp(BlockedLinearOp & A,LinearOp & invA00,LinearOp & invS,const std::string & str)
 {
    Teuchos::RCP<Thyra::LinearOpBase<double> > result = Teuchos::rcp(new LU2x2InverseOp(A,invA00,invS));
@@ -140,11 +172,40 @@ inline LinearOp createLU2x2InverseOp(BlockedLinearOp & A,LinearOp & invA00,Linea
    return result;
 }
 
+/** \brief Constructor method for building <code>LU2x2InverseOp</code>.
+  *
+  * Constructor method for building <code>LU2x2InverseOp</code>.
+  *
+  * \param[in] A           2x2 Operator to be decomposed
+  * \param[in] hatInvA00   First approximate inverse of the operators \f$(0,0)\f$ block.
+  * \param[in] tildeInvA00 Second approximate inverse of the operators \f$(0,0)\f$ block.
+  * \param[in] invS        Approximate inverse of the Schur complement
+  *
+  * \returns A linear operator that behaves like the inverse of the
+  *          LU decomposition.
+  * 
+  * \relates LU2x2InverseOp
+  */
 inline LinearOp createLU2x2InverseOp(BlockedLinearOp & A,LinearOp & hatInvA00,LinearOp & tildeInvA00,LinearOp & invS)
 {
    return Teuchos::rcp(new LU2x2InverseOp(A,hatInvA00,tildeInvA00,invS));
 }
 
+/** \brief Constructor method for building <code>LU2x2InverseOp</code>.
+  *
+  * Constructor method for building <code>LU2x2InverseOp</code>.
+  *
+  * \param[in] A           2x2 Operator to be decomposed
+  * \param[in] hatInvA00   First approximate inverse of the operators \f$(0,0)\f$ block.
+  * \param[in] tildeInvA00 Second approximate inverse of the operators \f$(0,0)\f$ block.
+  * \param[in] invS        Approximate inverse of the Schur complement
+  * \param[in] str         String to label the operator
+  *
+  * \returns A linear operator that behaves like the inverse of the
+  *          LU decomposition.
+  * 
+  * \relates LU2x2InverseOp
+  */
 inline LinearOp createLU2x2InverseOp(BlockedLinearOp & A,LinearOp & hatInvA00,LinearOp & tildeInvA00,LinearOp & invS,const std::string & str)
 {
    Teuchos::RCP<Thyra::LinearOpBase<double> > result = Teuchos::rcp(new LU2x2InverseOp(A,hatInvA00,tildeInvA00,invS));

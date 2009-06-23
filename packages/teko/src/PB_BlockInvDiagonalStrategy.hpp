@@ -66,19 +66,33 @@ protected:
    std::vector<Teuchos::RCP<const Thyra::LinearOpBase<double> > > invDiag_;
 };
 
+/** A simple class that takes a vector of the <code>InverseFactory</code> objects
+  * and pairs each with the diagonal element of the block matrix. This provides
+  * the operators needed to use Gauss-Seidel or Jacobi.
+  */
 class InvFactoryDiagStrategy : public BlockInvDiagonalStrategy {
 public:
    /** Constructor accepting a single inverse factory that will be used
      * to invert all diagonal blocks.
+     *
+     * \param[in] factory Factory to be used to invert each diagonal block.
      */
    InvFactoryDiagStrategy(const Teuchos::RCP<const InverseFactory> & factory);
 
    /** Constructor that lets the inverse of each block be set individually.
+     *
+     * \param[in] factories A vector of <code>InverseFactory</code> objects
+     *                      which should be the same length as the number of
+     *                      diagonal blocks.
      */
-   InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<const InverseFactory> > & factory);
+   InvFactoryDiagStrategy(const std::vector<Teuchos::RCP<const InverseFactory> > & factories);
 
    /** returns an (approximate) inverse of the diagonal blocks of A
      * where A is closely related to the original source for invD0 and invD1
+     * 
+     * \param[in]     A       Operator to extract the block diagonals from.
+     * \param[in]     state   State object for this operator.
+     * \param[in,out] invDiag Vector eventually containing the inverse operators
      */
    virtual void getInvD(const BlockedLinearOp & A, BlockPreconditionerState & state,
                         std::vector<LinearOp> & invDiag) const;

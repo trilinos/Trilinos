@@ -5,6 +5,13 @@
 
 namespace PB {
 
+/** \brief A virtual class that simplifies the construction
+  *        of custom operators. 
+  *
+  * A virtual class that simplifies the construction
+  * of custom operators. Good examples can be found in <code>LU2x2InverseOp</code>
+  * and in <code>BlockUpperTriInverseOp</code>. 
+  */
 class BlockImplicitLinearOp : public Thyra::LinearOpBase<double> {
 public:
 

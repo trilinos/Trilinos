@@ -1,3 +1,11 @@
+/** \file PB_Utilities.hpp
+  *
+  * This file contains a number of useful functions and classes
+  * used in PB. They are distinct from the core functionality of
+  * the preconditioner factory, however, the functions are critical
+  * to construction of the preconditioners themselves.
+  */
+
 #ifndef __PB_Utilities_hpp__
 #define __PB_Utilities_hpp__
 

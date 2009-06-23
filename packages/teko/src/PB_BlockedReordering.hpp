@@ -214,10 +214,6 @@ private:
    BlockReorderLeaf(); // hidden from users
 };
 
-/** \defgroup reordering \name Functions useful for reordering blocked operators and multivectors
-  */
-//@{
-
 /** \brief Use the BlockReorderManager to change a flat square blocked operator
   *        into a composite operator.
   * 
@@ -237,6 +233,8 @@ private:
   * \pre The largest index in <code>bmm</code> is smaller then the dimension of the
   *      <code>blkOp</code>.
   * \pre The opertor is square.
+  *
+  * \relates BlockReorderManager
   */
 Teuchos::RCP<const Thyra::LinearOpBase<double> >
 buildReorderedLinearOp(const BlockReorderManager & bmm,
@@ -262,6 +260,8 @@ buildReorderedLinearOp(const BlockReorderManager & bmm,
   *
   * \pre The largest index in <code>bmm</code> is smaller then the dimension of the
   *      <code>blkOp</code>.
+  *
+  * \relates BlockReorderManager
   */
 Teuchos::RCP<const Thyra::LinearOpBase<double> >
 buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderManager & colMgr,
@@ -275,6 +275,8 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
   * \param[in] blkVec The flat multivector.
   *
   * \returns A reordered multivector structured to be consistent with <code>mgr</code>.
+  *
+  * \relates BlockReorderManager
   */
 Teuchos::RCP<Thyra::MultiVectorBase<double> >
 buildReorderedMultiVector(const BlockReorderManager & mgr,
@@ -288,6 +290,8 @@ buildReorderedMultiVector(const BlockReorderManager & mgr,
   * \param[in] blkVec The flat multivector.
   *
   * \returns A reordered multivector structured to be consistent with <code>mgr</code>.
+  *
+  * \relates BlockReorderManager
   */
 Teuchos::RCP<const Thyra::MultiVectorBase<double> >
 buildReorderedMultiVector(const BlockReorderManager & mgr,
@@ -302,6 +306,8 @@ buildReorderedMultiVector(const BlockReorderManager & mgr,
   *                   is consistent with by <code>mgr</code>
   *
   * \returns A flattened multivector.
+  *
+  * \relates BlockReorderManager
   */
 Teuchos::RCP<Thyra::MultiVectorBase<double> >
 buildFlatMultiVector(const BlockReorderManager & mgr,
@@ -316,6 +322,8 @@ buildFlatMultiVector(const BlockReorderManager & mgr,
   *                   is consistent with by <code>mgr</code>
   *
   * \returns A flattened multivector.
+  *
+  * \relates BlockReorderManager
   */
 Teuchos::RCP<const Thyra::MultiVectorBase<double> >
 buildFlatMultiVector(const BlockReorderManager & mgr,
@@ -331,10 +339,10 @@ buildFlatMultiVector(const BlockReorderManager & mgr,
   * \param[in] reorder Block structure corresponding to the manager
   *
   * \returns A block reorder manager with the requested structure
+  *
+  * \relates BlockReorderManager
   */
 Teuchos::RCP<const BlockReorderManager> blockedReorderFromString(std::string & reorder);
-
-//@}
 
 } // end namespace PB
 

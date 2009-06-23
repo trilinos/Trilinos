@@ -269,13 +269,32 @@ private:
 
 //! @name Functions for constructing and initializing solvers
 //@{
-// typedef Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double> > InverseFactory;
 
-//! Build an inverse operator using a factory and a linear operator
+/** Build an inverse operator using a factory and a linear operator
+  *
+  * \param[in] factory The inverse factory used to construct the inverse
+  *                    operator
+  * \param[in] A       Linear operator whose inverse is required
+  *
+  * \returns An (approximate) inverse operator is returned for the operator <code>A</code>.
+  *
+  * \relates InverseFactory
+  */
 InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A);
 
 /** Using a prebuilt linear operator, use factory to build an inverse operator
   * given a new forward operator.
+  *
+  * \note This function sometimes fails depending on the underlying type
+  *       of the inverse factory.  Use with caution.
+  *
+  * \param[in] factory The inverse factory used to construct the inverse
+  *                    operator
+  * \param[in] A       Linear operator whose inverse is required
+  * \param[in] invA    The inverse operator that is to be rebuilt using
+  *                    the <code>A</code> operator.
+  *
+  * \relates InverseFactory
   */
 void rebuildInverse(const InverseFactory & factory, const LinearOp & A, InverseLinearOp & invA);
 
@@ -285,10 +304,15 @@ void rebuildInverse(const InverseFactory & factory, const LinearOp & A, InverseL
   * The specific inverse routine (either solver or preconditioner) to be chosen is specified
   * by a string.
   *
+  * \note It is preferred that the <code>InverseLibrary</code> is used to construct an
+  *       <code>InverseFactory</code> instead.
+  *
   * \param[in] list ParameterList that describes the available solvers/preconditioners.
   * \param[in] type String saying which solver/preconditioner to use.
   *
   * \returns An inverse factory using the specified inverse operation.
+  *
+  * \relates InverseFactory
   */
 Teuchos::RCP<const InverseFactory> invFactoryFromParamList(const Teuchos::ParameterList & list,const std::string & type);
 
@@ -297,8 +321,13 @@ Teuchos::RCP<const InverseFactory> invFactoryFromParamList(const Teuchos::Parame
   * Get a valid parameter list for the inverse factory class. This will
   * specify the set of parameters for each possible "inverse".
   *
+  * \note It is preferred that the <code>InverseLibrary</code> is used 
+  *       to get paramter lists for <code>InverseFactory</code> construction.
+  *
   * \returns A parameter list is returned that is suitable to be passed
   *          to <code>invFactoryFromParamList</code>.
+  *
+  * \relates InverseFactory
   */
 Teuchos::RCP<const Teuchos::ParameterList> invFactoryValidParameters();
 

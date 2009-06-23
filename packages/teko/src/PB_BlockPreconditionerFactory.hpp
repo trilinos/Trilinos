@@ -100,6 +100,13 @@ protected:
    bool isInitialized_;
 };
 
+/** \brief An extension of the <code>Thyra::DefaultPreconditioner</code>
+  *        class with some specializations useful for use within PB.
+  *
+  * An extension of the <code>Thyra::DefaultPreconditioner</code>
+  * class with some specializations useful for use within PB. This includes
+  * having facilities to store the source vector and the state object.
+  */
 class BlockPreconditioner : public DefaultPreconditioner<double> {
 public:
    //! \name Constructors based from Thyra::DefaultPreconditioner
@@ -118,20 +125,32 @@ public:
       : DefaultPreconditioner<double>(unspecifiedPrecOp) {}
    //@}
 
-   //! Set the vector associated with this operator (think nonlinear system)
+   /** Set the vector associated with this operator (think nonlinear system)
+     *
+     * \param[in] srcVec The source vector associated with this preconditioner.
+     */
    virtual void setSourceVector(const RCP<Thyra::MultiVectorBase<double> > & srcVec)
    { if(srcVec!=Teuchos::null) state_->setSourceVector(PB::toBlockedMultiVector(srcVec));
      else                      state_->setSourceVector(Teuchos::null); }
 
-   //! Set the state object associated with this preconditioner
+   /** Set the state object associated with this preconditioner
+     *
+     * \param[in] state The state object to use
+     */
    virtual void setStateObject(const RCP<BlockPreconditionerState> & state)
    { state_ = state; }
 
-   //! Get the state object associated with this preconditioner
+   /** Get the state object associated with this preconditioner
+     *
+     * \returns The state object used by this preconditioner
+     */
    virtual const RCP<BlockPreconditionerState> getStateObject()
    { return state_; }
 
-   //! Get the state object associated with this preconditioner
+   /** Get the state object associated with this preconditioner
+     *
+     * \returns The state object used by this preconditioner
+     */
    virtual const RCP<const BlockPreconditionerState> getStateObject() const
    { return state_; }
 
