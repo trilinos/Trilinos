@@ -109,8 +109,9 @@ int Zoltan_LB_Set_LB_Method(ZZ *zz, char *method_name)
   else if (strcmp(method_upper, "GRAPH") == 0){
     zz->LB.Method = GRAPH;
     zz->LB.LB_Fn = Zoltan_Graph;
-    zz->LB.Free_Structure = NULL;
-    zz->LB.Copy_Structure = NULL;
+    /* Next two are useful only when using PHG */
+    zz->LB.Free_Structure = Zoltan_PHG_Free_Structure;
+    zz->LB.Copy_Structure = Zoltan_PHG_Copy_Structure;
     zz->LB.Point_Assign = NULL;
     zz->LB.Box_Assign = NULL;
   }
