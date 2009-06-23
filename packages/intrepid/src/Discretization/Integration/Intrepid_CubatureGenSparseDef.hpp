@@ -91,7 +91,7 @@ CubatureGenSparse<Scalar,dimension_,ArrayType>::CubatureGenSparse(const int degr
         /*******************
         **  Slow-Gauss
         ********************/
-        level[j] = (int)std::ceil((((double)poly_exp[j])+3.0)/4.0);
+        level[j] = (int)std::ceil((((Scalar)poly_exp[j])+3.0)/4.0);
         /*******************
         **  Fast-Gauss
         ********************/
@@ -143,9 +143,9 @@ CubatureGenSparse<Scalar,dimension_,ArrayType>::CubatureGenSparse(const int degr
         int big_sum[dimension_];
         for(int i = 0; i < dimension_; i++)
           big_sum[i] = bigger_rules.nodes[y].coords[i];
-        double coeff = std::pow(-1.0, Sum(big_sum, 0, dimension_-1));
+        Scalar coeff = std::pow(-1.0, Sum(big_sum, 0, dimension_-1));
         
-        double point[dimension_];
+        Scalar point[dimension_];
         int point_record[dimension_];
 
         for(int j = 0; j<dimension_; j++)
@@ -155,7 +155,7 @@ CubatureGenSparse<Scalar,dimension_,ArrayType>::CubatureGenSparse(const int degr
 
         while(more_points)
         {
-          double weight = 1.0;
+          Scalar weight = 1.0;
         
           for(int w = 0; w < dimension_; w++){
             /*******************

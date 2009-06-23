@@ -59,9 +59,9 @@ class CubatureTensor : public Intrepid::Cubature<Scalar,ArrayType> {
   */
   int dimension_;
 
-  /** \brief Array of cubature rules.
+  /** \brief Array of cubature rules, stored as FieldContainers.
   */
-  std::vector< Teuchos::RCP<Cubature<Scalar,ArrayType> > > cubatures_;
+  std::vector< Teuchos::RCP<Cubature<Scalar> > > cubatures_;
   
   public:
 

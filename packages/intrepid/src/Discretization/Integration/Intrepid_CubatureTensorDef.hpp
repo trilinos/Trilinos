@@ -130,7 +130,7 @@ void CubatureTensor<Scalar,ArrayType>::getCubature(ArrayType & cubPoints,
 
   // set all weights to 1.0
   for (int i=0; i<numCubPoints; i++) {
-      cubWeights(i) = (double)1.0;
+      cubWeights(i) = (Scalar)1.0;
   }
 
   unsigned numCubs   = cubatures_.size();
@@ -139,8 +139,8 @@ void CubatureTensor<Scalar,ArrayType>::getCubature(ArrayType & cubPoints,
   for (unsigned i=0; i<numCubs; i++) {
     int numLocPoints = cubatures_[i]->getNumPoints();
     int locDim       = cubatures_[i]->getDimension();
-    FieldContainer<double> points(numLocPoints, locDim);
-    FieldContainer<double> weights(numLocPoints);
+    FieldContainer<Scalar> points(numLocPoints, locDim);
+    FieldContainer<Scalar> weights(numLocPoints);
     cubatures_[i]->getCubature(points, weights);
 
     for (int j=0; j<numCubPoints; j++) {
