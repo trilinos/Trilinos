@@ -209,8 +209,6 @@ The following have contributed to the design through ideas, discussions, and/or 
 
 \section user_guide_index Index
 
-NOTE:This page is out of date due to commits made on June 8, 2009.  I will update it shortly.  Please email me (Roger Pawlowski, rppawlo@sandia.gov) if this is holding up your work.
-
 - \ref user_guide_getting_started
 - \ref user_guide_domain_model
 - \ref user_guide_mdarray_domain_model
@@ -423,6 +421,8 @@ void myFunction() {
 }
 \endcode
 
+Note that instead of using an algebraic type, most users can use a multidimensional array to meet their needs.
+
 <li><b>Data Type</b>
 
 A data type, typically the template argument DataT in Phalanx code, is an actual type used for storing fields.  It is the combination of a scalar type and an algebraic type.  Some examples include:
@@ -477,7 +477,7 @@ The main object that stores all Fields and Evaluators.  The evaluator manager (E
 
 <li><b>Multidimensional Array</b>
 
-Instead of using the concept of an algebraic type that the user implements, it is easier to use the concept of a multidimensional array.  For example, suppose we have ten cells, and in each cell there are four points (specifically quadrature points) where we want to store a 3x3 matrix for the stress tensor.  Using the concepts of algebraic types, we would use a user defined matrix in a Phalanx Field:
+Instead of using the concept of an algebraic type that the user implements, it may be easier to use a multidimensional array.  For example, suppose we have ten cells, and in each cell there are four points (specifically quadrature points) where we want to store a 3x3 matrix for the stress tensor.  Using the concepts of algebraic types, we would use a user defined matrix in a Phalanx Field:
 
 \code
   PHX::MDA::Layout<Cell,QP> layout(10,4);
@@ -491,11 +491,13 @@ However, Phalanx also implements the idea of a multidimensional array with optio
   PHX::MDField<double,Cell,QP,Dim,Dim> stress("Stress",layout);
 \endcode
 
-The benefits of using the multidimensional array are that (1) checking of the rank accessor at either compile time or runtime (runtime checking is only enabled for debug builds for efficiency) prevent coding errors and (2) the documentation of the ranks is built into the code - no relying on comments that goe out of date.
+Here, the "Cell", "QP", and "Dim" objects are small structs that allow users to describe the ordinates associated with the multidimensional array.
 
-The EnergyFlux example is also implemented using the multidimensional array in the directory Trilinos/packages/phalanx/example/MultiDimensionalArray/.
+The benefits of using the multidimensional array are that (1) checking of the rank accessor at either compile time or runtime (runtime checking is only enabled for debug builds for efficiency) prevent coding errors and (2) the documentation of the ordinals is built into the code - no relying on comments that go out of date.
 
-Our recomendation is to use the multidimensional array version as future codes plan to use this object. 
+The EnergyFlux example is reimplemented using the multidimensional array instead of the algebric types in the directory Trilinos/packages/phalanx/example/MultiDimensionalArray/.
+
+  Our recomendation is to use the multidimensional array version as future codes plan to use this object.  The PHX::MDField is fully compatible with Intrepid whereas the PHX::Field is not.  We keep the PHX::Field object around for performance measurements since it directly accesses the Teuchos::ArrayRCP object where the PHX::MDField uses a shards::Array object.  If the compiler optimizes correctly, there should be no difference in performance.  By testing both the Field and MDField, we can test compiler optimization.   
 
 </ul>
 
@@ -524,13 +526,13 @@ The multidimensional array was designed for interoperability between a number of
 
 <ul>
 <li> ScalarT& operator[] - the bracket operator
-<li> ScalarT& operator(1,2,3,...,N) - parenthesis operators for eack rank N array.
+<li> ScalarT& operator(1,2,3,...,N) - accessor operators for eack rank N array.
 <li> size_type rank() - integer number of ordinates
 <li> size_type dimension(size_type ordinate) - size of ordinate
 <li> size_type size() - total size of array
 </ul>
 
-Phalanx supports multidimensional arrays with up to 8 ranks (one more than Fortran arrays support).  More information can be found in the shards library.
+Phalanx implements the multidimensional array in the PHX::MDField class and supports arrays with up to 8 ranks (one more than Fortran arrays support).  More information can be found in the shards library.
 
 \section user_guide_step1 Step 1: Configuring, Building, and installing Phalanx
 
@@ -547,9 +549,11 @@ Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">
 
  - <b>Optional:</b> Some performance tests run comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  You must enable the tvmet TPL add the path to the TVMET library during Trilinos configuration.  An example configuration file can be found in Trilinos/packages/phalanx/maintenance/reconfigure.linux.mpi.cmake.
 
+TVMET is optional and hidden behind an ifdef.  The performance tests will be built regardless of whether tvmet is enabled/disabled. 
+
 \subsection ug_step1_fem C. Nonlinear Finite Element Example Requirements
 
-To build the example problem in "phalanx/example/FEM_Nonlinear", a sparse matrix and corresponding linear solvers are required.  The following <b>Trilinos</b> packages need to be enabled to build the FEM_Nonlinear example:
+To build the example problem in "phalanx/example/FEM_Nonlinear", distributed vector, distributed sparse matrix, and corresponding linear solvers are required.  The following <b>Trilinos</b> packages need to be enabled to build the FEM_Nonlinear example:
 
  - <b>Requires:</b> the <a href="http://trilinos.sandia.gov/packages/epetra">Epetra Library</a>, supplies the linear algebra data structures for spares matrices.  Can be enabled during the Trilinos configure with the flag "-D Trilinos_ENABLE_Epetra=ON". 
 
@@ -613,6 +617,8 @@ The basic class should derive from the PHX::TraitsBase object.
       
 - \b Allocator type - type that defines the allocator class to use to allocate the memory for data storage.
       
+- \b SetupData - A user defined type to be passed in to the postRegistrationSetup() call.  Allows users to pass in arbitrary data to the evaluators during setup.
+
 - \b EvalData - A user defined type to be passed in to the evaluateFields() call.  Allows users to pass in arbitrary data.
 
 - \b PreEvalData - A user defined type to be passed in to the preEvaluate() call.  Allows users to pass in arbitrary data.
@@ -657,10 +663,10 @@ First we need to know the evaluation types.  Each evaluation type must include a
      .
 \endcode 
 
-The typedefs ReatType and FadType are done only for convenience.  They are not actually required.  Only the EvalTypes typedef is required in the code above.
+The typedefs RealType and FadType are done only for convenience.  They are not actually required but cut down on the typing.  Only the EvalTypes typedef is required in the code above.
 
 \subsection td3 C. EvaltoDataMap
-Next we need to link the data types to the evaluation type:
+Next we need to link the data types to the evaluation type.  Note that one could use the same data type in multiple evaluation types:
 
 \code
      .
@@ -708,7 +714,7 @@ Code using the NewAllocator is:
 \endcode
 
 \subsection td5 E. EvalData,PreEvalData,PostEvalData
-  Users can pass their own data to the evaluateFields(), preEvaluate() and postEvaluate() methods of the PHX::FiledManager class.  In this example, the user passes in a struct that they have written called MyEvalData.  This contains information about the cell workset.  The user is not required to write their own object.  they could just pass in a null pointer if they don't need auxiliary information passed into the routine.  This is demonstrated in the PreEvalData and PostEvalData.  A void* is set for the data member. 
+  Users can pass their own data to the postRegistrationSetup(), evaluateFields(), preEvaluate() and postEvaluate() methods of the PHX::FiledManager class.  In this example, the user passes in a struct that they have written called MyEvalData.  This contains information about the cell workset.  The user is not required to write their own object.  They could just pass in a null pointer if they don't need auxiliary information passed into the routine.  This is demonstrated in the SetupSetup, PreEvalData, and PostEvalData.  A void* is set for the data member. 
 \code
      .
      .
@@ -716,6 +722,7 @@ Code using the NewAllocator is:
     // ******************************************************************
     // *** User Defined Object Passed in for Evaluation Method
     // ******************************************************************
+    typedef void* SetupData;
     typedef const MyEvalData& EvalData;
     typedef void* PreEvalData;
     typedef void* PostEvalData;
@@ -724,7 +731,7 @@ Code using the NewAllocator is:
 \endcode
 
 \section user_guide_step4 Step 4: Specialize the PHX::TypeString Object
-For debugging information, Phalanx makes a forward declaration of the PHX::TypeString object.  This must be specialized for each evaluation type and each data type so that if there is a run-time error, phalanx can report detailed information on the problem.  We could have used the typeinfo from the stl, but the name() method is not demangled on every platform, so it can make debugging a challenge.  The specialized classes can go into their own file or can be added to the traits file above depending on how you use the Traits class.  During linking, if the compiler complains about multiple defninitions of your specialized traits classes, separate the traits implementation into their own file.
+For debugging information, Phalanx makes a forward declaration of the PHX::TypeString object.  This must be specialized for each evaluation type and each data type so that if there is a run-time error, phalanx can report detailed information on the problem.  We could have used the typeinfo from the stl, but the name() method is not demangled on every platform, so it can make debugging a challenge.  The specialized classes can go into their own file or can be added to the traits file above depending on how you use the Traits class.  During linking, if the compiler complains about multiple defninitions of your specialized traits classes, separate the traits implementation into their own .cpp file.
 
 \code
 namespace PHX {
@@ -814,7 +821,8 @@ public:
   
   Density(const Teuchos::ParameterList& p);
   
-  void postRegistrationSetup(PHX::FieldManager<Traits>& vm);
+  void postRegistrationSetup(typename Traits::SetupData d,
+			     PHX::FieldManager<Traits>& vm);
   
   void evaluateFields(typename Traits::EvalData ud);
   
@@ -838,7 +846,7 @@ private:
 
 Note that if you want to use the automated factory PHX::EvaluatorFactory to build an object of each evaluation type, you must derive from the PHX::EvaluatorDerived class as shown in the example above.  This allows the variable manager to store a vector of base object pointers for each evaluation type in a single stl vector.
 
-  Also note that we pull the scalar type, ScalarT, out of the evaluation type.
+Also note that we pull the scalar type, ScalarT, out of the evaluation type.
 
 The implementation is just as simple:
 \code
@@ -856,7 +864,8 @@ Density(const Teuchos::ParameterList& p) :
 // **********************************************************************
 template<typename EvalT, typename Traits>
 void Density<EvalT, Traits>::
-postRegistrationSetup(PHX::FieldManager<Traits>& vm)
+postRegistrationSetup(typename Traits::SetupData d,
+		      PHX::FieldManager<Traits>& vm)
 {
   this->utils.setFieldData(density,vm);
   this->utils.setFieldData(temp,vm);
@@ -918,7 +927,7 @@ PHX_EVALUATOR_CTOR(Density,p) :
 }
 
 //**********************************************************************
-PHX_POST_REGISTRATION_SETUP(Density,fm)
+PHX_POST_REGISTRATION_SETUP(Density,data,fm)
 {
   this->utils.setFieldData(density,fm);
   this->utils.setFieldData(temp,fm);
@@ -1226,7 +1235,7 @@ The user has written a MyCell class that contains data for each specific local c
       }
 \endcode
 
-Note that you do not have to use the workset idea.  You could just pass in workset size equal to the number of local cells on the processor or you could use a workset size of one cell and wrap the evaluate call in a loop over the number of cells.  Be aware that this can result in a big performance hit.
+Note that you do not have to use the workset idea.  You could just pass in workset size equal to the number of local cells on the processor or you could use a workset size of one cell and wrap the evaluate call in a loop over the number of cells.  Be aware that this can result in a possible performance hit.
 
 \subsection fmd4 E. Call evaluate()
 
@@ -1311,7 +1320,7 @@ This introduces many complications in the comparison operator (operator==) durin
 See the section on \ref performance in the Users Guide that gives recomendations on how to maximize the efficiency of your code.
 
 \section faq7 7. Compilation take a long time when minor changes are made to an evaluator.  How can I speed this up?
-See the section on \ref performance in the Users Guide.  Explicit template instantiation can be used.
+Explicit template instantiation can be used to speed up evaluator development builds.  See the section on \ref performance in the Users Guide.  
 \section faq8 8. Valgrind gives a memory leak error in all evaluators when using the PHX::ContiguousAllocator with Sacado::DFad based fields.  What is the problem?
 The contiguous allocator is allocating space for all variables in an evaluation type in a single contiguous chunk of memory.  We allow for multiple scalar types in an evaluation type so the array is allocated using the type char and then based on scalar type sizes (using sizeof method) along with proper alignment, pointers to blocks of memory are handed to the fields using a reinterpret_cast.  DFad uses new to allocate the derivative arrays, so this memory is not contiguous.  The problem is that the field array memory is deleted as a char instead of it's various data types, so all DFad derivative arrays are leaked during the destruction.  There are two ways to alleviate this: (1) write a special Allocator to call the destructor of the field type for each field.  (2) Have Sacado implement a version of DFad that allows the user to allocate the DFad array and pass in the pointer during construction.  This will also require a new allocator.  Choice (2) will be handed in Phalanx in a later release.  Our current suggestion is that one should use DFad only if using the PHX::NewAllocator and use SFad if using the PHX::ContiguousAllocator. 
 
@@ -1450,7 +1459,7 @@ element assembly for nonlinear equation sets.
 
 /*! \page junk Junk
 
-  \todo Add a configure check for BOOST.
+  \todo Nothing pending!
 
 */
 
