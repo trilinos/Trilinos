@@ -293,8 +293,6 @@ struct Problem_Description
   char zoltanParams_file[FILENAME_MAX]; /* file name to get more
 				       Zoltan parameters from separate
 				       file (for hier support) */
-
-  int partitioning_type;             /* graph, hg, or objects */
 };
 typedef struct Problem_Description  PROB_INFO;
 typedef struct Problem_Description *PROB_INFO_PTR;
