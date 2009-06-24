@@ -153,6 +153,12 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, exactNumericalAnswer_BE_nonlinear
   model->setParameterList(modelPL);
   Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
   RCP<TimeStepNonlinearSolver<double> > nlSolver = timeStepNonlinearSolver<double>();
+  {
+    RCP<ParameterList> nlPL = Teuchos::parameterList();
+    nlPL->set("Default Tol",1.0e-10);
+    nlPL->set("Default Max Iters",20);
+    nlSolver->setParameterList(nlPL);
+  }
   RCP<ParameterList> stepperPL = Teuchos::parameterList();
   {
     ParameterList& pl = stepperPL->sublist("Step Control Settings");
@@ -166,62 +172,99 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, exactNumericalAnswer_BE_nonlinear
   double h = 0.1;
   std::vector<double> x_0_exact;
   std::vector<double> x_1_exact;
+  std::vector<double> x_0_dot_exact;
+  std::vector<double> x_1_dot_exact;
   {
     x_0_exact.push_back(2.0); // IC
     x_1_exact.push_back(0.0);
 
-    x_0_exact.push_back(-1.385154562512385e-01); // matlab 
-    x_1_exact.push_back(-2.138515456251238e+01); 
+    x_0_exact.push_back(1.982896621392518e+00); // matlab 
+    x_1_exact.push_back(-1.710337860748234e-01); 
+
+    x_0_exact.push_back(1.951487185706842e+00); // matlab 
+    x_1_exact.push_back(-3.140943568567556e-01); 
+    
+    x_0_exact.push_back(1.908249109758246e+00); // matlab 
+    x_1_exact.push_back(-4.323807594859574e-01); 
+    
+    x_0_dot_exact.push_back(0.0);
+    x_1_dot_exact.push_back(0.0);
+
+    for ( int i=1 ; i< Teuchos::as<int>(x_0_exact.size()) ; ++i ) {
+      x_0_dot_exact.push_back( (x_0_exact[i]-x_0_exact[i-1])/h );
+      x_1_dot_exact.push_back( (x_1_exact[i]-x_1_exact[i-1])/h );
+      //std::cout << "x_0_dot_exact["<<i<<"] = "<<x_0_dot_exact[i] << std::endl;
+      //std::cout << "x_1_dot_exact["<<i<<"] = "<<x_1_dot_exact[i] << std::endl;
+    }
   }
   double tol_discrete = 1.0e-12;
-  double tol_continuous = 1.0e-1;
+  double tol_continuous = 1.0e-2;
   {
     // Get IC out
     double t = 0.0;
     RCP<const VectorBase<double> > x;
+    RCP<const VectorBase<double> > xdot;
     {
       // Get x out of stepper.
       Array<double> t_vec;
       Array<RCP<const VectorBase<double> > > x_vec;
+      Array<RCP<const VectorBase<double> > > xdot_vec;
       t_vec.resize(1); t_vec[0] = t;
-      stepper->getPoints(t_vec,&x_vec,NULL,NULL);
+      stepper->getPoints(t_vec,&x_vec,&xdot_vec,NULL);
       x = x_vec[0];
+      xdot = xdot_vec[0];
     }
     {
       Thyra::ConstDetachedVectorView<double> x_view( *x );
       TEST_FLOATING_EQUALITY( x_view[0], x_0_exact[0], tol_discrete );
       TEST_FLOATING_EQUALITY( x_view[1], x_1_exact[0], tol_discrete );
+
+      Thyra::ConstDetachedVectorView<double> xdot_view( *xdot );
+      TEST_FLOATING_EQUALITY( xdot_view[0], x_0_dot_exact[0], tol_discrete );
+      TEST_FLOATING_EQUALITY( xdot_view[1], x_1_dot_exact[0], tol_discrete );
     }
   }
-  {
-    // First time step
-    double t = h;
+  for (int i=1 ; i < Teuchos::as<int>(x_0_exact.size()); ++i) {
+    // Each time step
+    double t = 0.0+i*h;
     double h_taken = stepper->takeStep(h,STEP_TYPE_FIXED);
     TEST_ASSERT( h_taken == h );
     RCP<const VectorBase<double> > x;
+    RCP<const VectorBase<double> > xdot;
     {
       // Get x out of stepper.
       Array<double> t_vec;
       Array<RCP<const VectorBase<double> > > x_vec;
+      Array<RCP<const VectorBase<double> > > xdot_vec;
       t_vec.resize(1); t_vec[0] = t;
-      stepper->getPoints(t_vec,&x_vec,NULL,NULL);
+      stepper->getPoints(t_vec,&x_vec,&xdot_vec,NULL);
       x = x_vec[0];
+      xdot = xdot_vec[0];
     }
     {
       Thyra::ConstDetachedVectorView<double> x_view( *x );
-      //TEST_FLOATING_EQUALITY( x_view[0], x_0_exact[1], tol_discrete );
-      //TEST_FLOATING_EQUALITY( x_view[1], x_1_exact[1], tol_discrete );
+      TEST_FLOATING_EQUALITY( x_view[0], x_0_exact[i], tol_discrete );
+      TEST_FLOATING_EQUALITY( x_view[1], x_1_exact[i], tol_discrete );
+
+      Thyra::ConstDetachedVectorView<double> xdot_view( *xdot );
+      TEST_FLOATING_EQUALITY( xdot_view[0], x_0_dot_exact[i], tol_discrete );
+      TEST_FLOATING_EQUALITY( xdot_view[1], x_1_dot_exact[i], tol_discrete );
     }
     // Now compare this to the continuous exact solution:
     {
       Thyra::ModelEvaluatorBase::InArgs<double> inArgs = model->getExactSolution(t);
       RCP<const VectorBase<double> > x_continuous_exact = inArgs.get_x();
+      RCP<const VectorBase<double> > xdot_continuous_exact = inArgs.get_x_dot();
       {
         Thyra::ConstDetachedVectorView<double> x_view( *x );
         Thyra::ConstDetachedVectorView<double> xce_view( *x_continuous_exact );
-
         TEST_FLOATING_EQUALITY( x_view[0], xce_view[0], tol_continuous );
-        TEST_FLOATING_EQUALITY( x_view[1], xce_view[1], tol_continuous );
+        TEST_FLOATING_EQUALITY( x_view[1], xce_view[1], tol_continuous*10 );
+
+        Thyra::ConstDetachedVectorView<double> xdot_view( *xdot );
+        Thyra::ConstDetachedVectorView<double> xdotce_view( *xdot_continuous_exact );
+        TEST_FLOATING_EQUALITY( xdot_view[0], xdotce_view[0], tol_continuous*10 );
+        TEST_FLOATING_EQUALITY( xdot_view[1], xdotce_view[1], tol_continuous*10 );
       }
     }
   }
