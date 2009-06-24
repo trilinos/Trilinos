@@ -137,6 +137,20 @@ IF(PyTrilinos_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_Epetra)
 
 #
+# PyTrilinos + EpetraExt headers and sources
+IF(PyTrilinos_ENABLE_EpetraExt)
+
+  APPEND_SET(HEADERS
+    PyModelEvaluator.h
+    )
+
+  APPEND_SET(SOURCES
+    PyModelEvaluator.cpp
+    )
+
+ENDIF(PyTrilinos_ENABLE_EpetraExt)
+
+#
 # PyTrilinos + ML headers and sources
 IF(PyTrilinos_ENABLE_ML)
 

@@ -84,6 +84,8 @@ example subdirectory of the PyTrilinos package:
 #include "PyTrilinos_config.h"
 
 // Teuchos includes
+#include "Teuchos_Comm.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_PythonParameter.h"
 
@@ -98,9 +100,11 @@ example subdirectory of the PyTrilinos package:
 #endif
 #include "Epetra_LocalMap.h"
 #include "Epetra_CrsGraph.h"
+#include "Epetra_InvOperator.h"
 #include "Epetra_BasicRowMatrix.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_VbrMatrix.h"
+#include "Epetra_VbrRowMatrix.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVbrMatrix.h"
 #include "Epetra_JadMatrix.h"
@@ -132,6 +136,10 @@ example subdirectory of the PyTrilinos package:
 #include "EpetraExt_HDF5.h"
 #include "EpetraExt_XMLReader.h"
 #include "EpetraExt_XMLWriter.h"
+#include "EpetraExt_ModelEvaluator.h"
+
+// EpetraExt python includes
+#include "PyModelEvaluator.h"
 %}
 
 // Standard exception handling
@@ -149,6 +157,87 @@ example subdirectory of the PyTrilinos package:
 // Trilinos interface support
 %import "Teuchos.i"
 %import "Epetra.i"
+
+// Typemaps for Teuchos::RCP arguments
+%teuchos_rcp_typemaps(Epetra_Map)
+
+// Typemap for Teuchos::RCP<const Epetra_Vector>
+%typemap(out) Teuchos::RCP<const Epetra_Vector>
+{
+  if ($1 == Teuchos::null)
+    $result = Py_BuildValue("");
+  else
+  {
+    const Epetra_NumPyVector * env = new Epetra_NumPyVector($1.get());
+    $result = SWIG_NewPointerObj((void*) env, $descriptor(Epetra_NumPyVector*), 1);
+  }
+}
+
+// Typemap for Teuchos::RCP<Epetra_Operator>
+// %{
+// PyObject *
+// convertEpetraOperatorToPython(Epetra_Operator * eo)
+// {
+//   // SWIG initialization
+//   static swig_type_info * swig_EO_ptr   = SWIG_TypeQuery("Epetra_Operator        *");
+//   //static swig_type_info * swig_EFCO_ptr = SWIG_TypeQuery("Epetra_FastCrsOperator *");
+//   static swig_type_info * swig_EIO_ptr  = SWIG_TypeQuery("Epetra_InvOperator     *");
+//   static swig_type_info * swig_ERM_ptr  = SWIG_TypeQuery("Epetra_RowMatrix       *");
+//   static swig_type_info * swig_EBRM_ptr = SWIG_TypeQuery("Epetra_BasicRowMatrix  *");
+//   static swig_type_info * swig_ECM_ptr  = SWIG_TypeQuery("Epetra_CrsMatrix       *");
+//   //static swig_type_info * swig_EMM_ptr  = SWIG_TypeQuery("Epetra_MsrMatrix       *");
+//   static swig_type_info * swig_EVM_ptr  = SWIG_TypeQuery("Epetra_VbrMatrix       *");
+//   static swig_type_info * swig_EVRM_ptr = SWIG_TypeQuery("Epetra_VbrRowMatrix    *");
+//   static swig_type_info * swig_EFVM_ptr = SWIG_TypeQuery("Epetra_FEVbrMatrix     *");
+//   static swig_type_info * swig_EFCM_ptr = SWIG_TypeQuery("Epetra_FECrsMatrix     *");
+//   static swig_type_info * swig_EJM_ptr  = SWIG_TypeQuery("Epetra_JadMatrix       *");
+
+//   Epetra_VbrRowMatrix * evrm = dynamic_cast<Epetra_VbrRowMatrix*>(eo);
+//   if (evrm) return SWIG_NewPointerObj((void*) evrm, swig_EVRM_ptr, 1);
+
+//   Epetra_FEVbrMatrix * efvm = dynamic_cast<Epetra_FEVbrMatrix*>(eo);
+//   if (efvm) return SWIG_NewPointerObj((void*) efvm, swig_EFVM_ptr, 1);
+
+//   Epetra_FECrsMatrix * efcm = dynamic_cast<Epetra_FECrsMatrix*>(eo);
+//   if (efcm) return SWIG_NewPointerObj((void*) efcm, swig_EFCM_ptr, 1);
+
+//   Epetra_JadMatrix * ejm = dynamic_cast<Epetra_JadMatrix*>(eo);
+//   if (ejm) return SWIG_NewPointerObj((void*) ejm, swig_EJM_ptr, 1);
+
+//   Epetra_BasicRowMatrix * ebrm = dynamic_cast<Epetra_BasicRowMatrix*>(eo);
+//   if (ebrm) return SWIG_NewPointerObj((void*) ebrm, swig_EBRM_ptr, 1);
+
+//   Epetra_CrsMatrix * ecm = dynamic_cast<Epetra_CrsMatrix*>(eo);
+//   if (ecm) return SWIG_NewPointerObj((void*) ecm, swig_ECM_ptr, 1);
+
+//   //Epetra_MsrMatrix * emm = dynamic_cast<Epetra_MsrMatrix*>(eo);
+//   //if (emm) return SWIG_NewPointerObj((void*) emm, swig_EMM_ptr, 1);
+
+//   Epetra_VbrMatrix * evm = dynamic_cast<Epetra_VbrMatrix*>(eo);
+//   if (evm) return SWIG_NewPointerObj((void*) evm, swig_EVM_ptr, 1);
+
+//   Epetra_RowMatrix * erm = dynamic_cast<Epetra_RowMatrix*>(eo);
+//   if (erm) return SWIG_NewPointerObj((void*) erm, swig_ERM_ptr, 1);
+
+//   Epetra_InvOperator * eio = dynamic_cast<Epetra_InvOperator*>(eo);
+//   if (eio) return SWIG_NewPointerObj((void*) eio, swig_EIO_ptr, 1);
+
+//   //Epetra_FastCrsOperator * efco = dynamic_cast<Epetra_FastCrsOperator*>(eo);
+//   //if (efco) return SWIG_NewPointerObj((void*) efco, swig_EFCO_ptr, 1);
+
+//   return SWIG_NewPointerObj((void*) eo, swig_EO_ptr, 1);
+// }
+// %}
+
+%typemap(out) Teuchos::RCP<Epetra_Operator>
+{
+  if ($1 == Teuchos::null)
+    $result = Py_BuildValue("");
+  else
+  {
+    $result = convertEpetraOperatorToPython($1.get());
+  }
+}
 
 // General exception handling
 %feature("director:except")
@@ -438,6 +527,608 @@ EpetraExt::Multiply;
     }
   }
 %}
+
+///////////////////////////////////////////
+// EpetraExt ModelEvaluator support code //
+///////////////////////////////////////////
+//
+// The EpetraExt::ModelEvaluator class is difficult to wrap because it
+// has nested classes, and SWIG does not support those.  These classes
+// are also resistent to the work-around presented in the SWIG manual
+// because of the use of nested enumerations.  So the fix is to write
+// python-only proxy classes that are not nested and converter
+// typemaps so that the ModelEvaluator class can use them.
+
+// We start by importing utility base classes
+%pythoncode
+%{
+from PyTrilinos import Epetra
+from PyTrilinos import PropertyBase
+from PyTrilinos import typed_tuple
+from PyTrilinos import tuple_of_int
+from PyTrilinos import tuple_of_str
+tuple_of_Vector = typed_tuple(Epetra.Vector)
+
+%}
+
+// %{
+//
+// Return a borrowed reference to the python object with given name
+// from the global namespace.  If the global namespace does not have
+// such an object, then raise a python error.
+// PyObject * getObjectFromGlobals(const char * name)
+// {
+//   PyObject * globals = PyEval_GetGlobals();
+//   if (!globals) return NULL;
+//   return PyDict_GetItemString(globals, name);
+// }
+
+//
+// Return a borrowed reference to the python class object with given
+// name from the global namespace.  If the global namespace does not
+// have such an object, or the object is not a class, then raise a
+// python error.
+// PyObject * getClassFromGlobals(const char * name)
+// {
+//   PyObject * object = getObjectFromGlobals(name);
+//   if (!object) return NULL;
+//   if (!PyType_Check(object))
+//   {
+//     PyErr_Format(PyExc_TypeError, "Object '%s' is not a class type", name);
+//     return NULL;
+//   }
+//   return object;
+// }
+
+//
+// Return true if the given python object has the attribute with the
+// given name and the value of that attribute is None.  If the
+// attribute does not exist, throw a PythonException.
+// bool objectAttrIsNone(PyObject * object, const char * name)
+// {
+//   PyObject * value = PyObject_GetAttrString(object, name);
+//   if (!value) throw PythonException();
+//   bool result = (value == Py_None);
+//   Py_DECREF(value);
+//   return result;
+// }
+
+//
+// If the given python object has an attribute with the given name,
+// and the attribute is of type bool, return the value of the
+// attribute.  Else raise a PythonException.
+// bool getBoolObjectAttr(PyObject * object, const char * name)
+// {
+//   bool result;
+//   PyObject * value = PyObject_GetAttrString(object, name);
+//   if (!value) throw PythonException();
+//   if (!PyBool_Check(value))
+//   {
+//     PyErr_Format(PyExc_TypeError, "Attribute '%s' is not of type boolean", name);
+//     throw PythonException();
+//   }
+//   if (value == Py_True) result = true;
+//   else                  result = false;
+//   Py_DECREF(value);
+//   return result;
+// }
+
+//
+// If the given python object has an attribute with the given name,
+// and the attribute is of type int, return the value of the
+// attribute.  Else raise a PythonException.
+// int getIntObjectAttr(PyObject * object, const char * name)
+// {
+//   PyObject * value = PyObject_GetAttrString(object, name);
+//   if (!value) throw PythonException();
+//   int result = (int) PyInt_AsLong(value);
+//   if (PyErr_Occurred()) throw PythonException();
+//   Py_DECREF(value);
+//   return result;
+// }
+
+//
+// If the given python object has an attribute with the given name,
+// and the attribute is of type float, return the value of the
+// attribute.  Else raise a PythonException.
+// double getFloatObjectAttr(PyObject * object, const char * name)
+// {
+//   PyObject * value = PyObject_GetAttrString(object, name);
+//   if (!value) throw PythonException();
+//   double result = PyFloat_AsDouble(value);
+//   if (PyErr_Occurred()) throw PythonException();
+//   Py_DECREF(value);
+//   return result;
+// }
+
+//
+// If the given python object has an attribute with the given name,
+// and the attribute is of type str, return the value of the
+// attribute.  Else raise a PythonException.
+// const char* getStringObjectAttr(PyObject * object, const char * name)
+// {
+//   PyObject * value = PyObject_GetAttrString(object, name);
+//   if (!value) throw PythonException();
+//   const char * result = PyString_AsString(value);
+//   if (PyErr_Occurred()) throw PythonException();
+//   Py_DECREF(value);
+//   return result;
+// }
+// %}
+
+//////////////////
+// InArgs class //
+//////////////////
+%pythoncode
+%{
+class InArgs(PropertyBase):
+    """
+    InArgs proxy class.
+
+    This is a 'Property' class restricted to specific attributes that are
+    type-checked. These properties are:
+
+    x      - bool or Epetra.Vector: solution vector support.  If True, the
+             solver should allocate the vector.  If False, x is not supported.
+             If a vector, the solver should use the user-provided data.
+             (default False)
+    x_dot  - bool or Epetra.Vector: time derivative of solution vector support.
+             If True, the solver should allocate the vector.  If False, x_dot is
+             not supported.  If a vector, the solver should use the user-
+             provided data.  (default False)
+    p      - int or tuple_of_Vector: VARIABLE P support.   If an int, the
+             solver should allocate an array of the given number of vectors.  If
+             0, p is not supported.  If a tuple_of_Vector, the solver should use
+             the user-provided data.  (default 0)
+    t      - float: time (default None)
+    alpha  - float: VARIABLE ALPHA (default None)
+    beta   - float: VARIABLE BETA (default None)
+    """
+    props = {'x'          : (bool, Epetra.Vector),
+             #'x_poly'     : Teuchos.Polynomial,
+             'x_dot'      : (bool, Epetra.Vector),
+             #'x_dot_poly' : Teuchos.Polynomial,
+             'p'          : (int, tuple_of_Vector),
+             't'          : float,
+             'alpha'      : float,
+             'beta'       : float
+             }
+    defaults = {'x'     : False,
+                'x_dot' : False,
+                'p'     : 0
+                }
+    def __init__(self, **kwargs):
+        PropertyBase.__init__(self, **kwargs)
+
+%}
+
+%typemap(out) EpetraExt::ModelEvaluator::InArgs
+{
+  $result = convertInArgsToPython($1);
+}
+
+%typemap(directorin) const EpetraExt::ModelEvaluator::InArgs &
+{
+  $input = convertInArgsToPython($1_name);
+}
+
+%typemap(directorout) EpetraExt::ModelEvaluator::InArgs
+{
+  $result = convertInArgsFromPython($1);
+}
+
+%typemap(in) const EpetraExt::ModelEvaluator::InArgs &
+{
+  *$1 = convertInArgsFromPython($input);
+}
+
+//////////////////////
+// Evaluation class //
+//////////////////////
+%pythoncode
+%{
+class Evaluation(PropertyBase):
+    """
+    Evaluation< RCP<Epetra_Vector> > proxy class
+
+    This is a 'Property' class restricted to specific attributes that are
+    type-checked. These properties are:
+
+    vector  - Epetra.Vector: (default None)
+    type    - str: an enumeration limited to 'exact', 'approx_deriv', and
+              'very_approx_deriv' (default None)
+    """
+    props = {'vector' : Epetra.Vector,
+             'type'   : ('exact', 'approx_deriv', 'very_approx_deriv')
+             }
+    def __init__(self, **kwargs):
+        PropertyBase.__init__(self, **kwargs)
+
+tuple_of_Evaluation = typed_tuple(Evaluation)
+
+%}
+
+/////////////////////////////
+// DerivativeSupport class //
+/////////////////////////////
+%pythoncode
+%{
+class DerivativeSupport(PropertyBase):
+    """
+    DerivativeSupport proxy class
+
+    This is a 'Property' class restricted to specific attributes that are
+    type-checked. These properties are:
+
+    linearOp      - bool: True indicates that derivative is a linear operator
+                    (default False)
+    mVByCol       - bool: True indicates that derivative is a MultiVector stored
+                    by column (defualt False)
+    transMVByRow  - bool: True indicates that derivative is a transpose
+                    MultiVector stored by row (default False)
+    """
+    props = {'linearOp'     : bool,
+             'mVByCol'      : bool,
+             'transMVByRow' : bool
+             }
+    defaults = {'linearOp'     : False,
+                'mVByCol'      : False,
+                'transMVByRow' : False
+                }
+    def __init__(self, **kwargs):
+        PropertyBase.__init__(self, **kwargs)
+    def none(self):
+        noTrue = [True] * len(self.props)
+        return (props.values() == noTrue)
+
+tuple_of_DerivativeSupport = typed_tuple(DerivativeSupport)
+
+%}
+
+////////////////////////////////
+// DerivativeProperties class //
+////////////////////////////////
+%pythoncode
+%{
+class DerivativeProperties(PropertyBase):
+    """
+    DerivativeProperties proxy class
+
+    This is a 'Property' class restricted to specific attributes that are
+    type-checked. These properties are:
+
+    linearity        - str: an enumeration limited to 'unknown', 'const' and
+                       'nonconst' (default 'unknown')
+    rank             - str: an enumeration limited to 'unknown', 'full' and
+                       'deficient' (default 'unknown')
+    supportsAdjoint  - bool: True indicates that the adjoint is supported
+                       (default False)
+    """
+    props = {'linearity'       : ('unknown', 'const', 'nonconst'),
+             'rank'            : ('unknown', 'full', 'deficient'),
+             'supportsAdjoint' : bool}
+    defaults = {'linearity'       : 'unknown',
+                'rank'            : 'unknown',
+                'supportsAdjoint' : False}
+    def __init__(self, **kwargs):
+        PropertyBase.__init__(self, **kwargs)
+
+tuple_of_DerivativeProperties = typed_tuple(DerivativeProperties)
+
+%}
+
+/////////////////////////////////
+// DerivativeMultiVector class //
+/////////////////////////////////
+%pythoncode
+%{
+class DerivativeMultiVector(PropertyBase):
+    """
+    DerivativeMultiVector proxy class
+
+    This is a 'Property' class restricted to specific attributes that are
+    type-checked. These properties are:
+
+    multiVector   - Epetra.MultiVector: (default None)
+    orientation   - str: an enumeration limited to 'mv_by_col', and
+                    'trans_mv_by_row' (default None)
+    paramIndexes  - tuple_of_int: (default None)
+    """
+    props = {'multiVector'  : Epetra.MultiVector,
+             'orientation'  : ('mv_by_col', 'trans_mv_by_row'),
+             'paramIndexes' : tuple_of_int
+             }
+    def __init__(self, **kwargs):
+        PropertyBase.__init__(self, **kwargs)
+
+%}
+
+//////////////////////
+// Derivative class //
+//////////////////////
+%pythoncode
+%{
+class Derivative(PropertyBase):
+    """
+    Derivative proxy class
+
+    This is a 'Property' class restricted to specific attributes that are
+    type-checked. These properties are:
+
+    operator               - Epetra.Operator (default None)
+    derivativeMultiVector  - DerivativeMultiVector (default None)
+
+    Only one or the other of these two attributes should be set, to indicate the
+    nature of the derivitive evaluation.
+    """
+    props = {'operator'              : Epetra.Operator,
+             'derivativeMultiVector' : DerivativeMultiVector
+             }
+    def __init__(self, **kwargs):
+        PropertyBase.__init__(self, **kwargs)
+    def isEmpty(self):
+        return (self.operator is None) and (self.derivativeMultiVector is None)
+
+tuple_of_Derivative = typed_tuple(Derivative)
+
+%}
+
+///////////////////
+// OutArgs class //
+///////////////////
+%pythoncode
+%{
+class OutArgs(PropertyBase):
+    """
+    OutArgs proxy class
+
+    This is a 'Property' class restricted to specific attributes that are
+    type-checked. These properties are:
+
+    g                    - (int, tuple_of_Evaluation): VARIABLE G support.  If
+                           an int, the solver should allocate an array of the
+                           given number of Evaluations.  If 0, g is not
+                           supported.  If a tuple_of_Evaluation, the solver
+                           should use the user-provided data.  (default 0)
+    f                    - (bool, Evaluation): VARIABLE F support.  If True, the
+                           solver should allocate the Evaluation.  If False, f
+                           is not supported.  If an Evaluation, the solver
+                           should use the user-supplied data.  (default False)
+    W                    - (bool, Epetra.Operator): VARIABLE W support.  If True, the
+                           solver should allocate the operator.  If False, W
+                           is not supported.  If an operator, the solver
+                           should use the user-supplied data.  (default False)
+    W_properties         - DerivativeProperties: derivative properties for
+                           VARIABLE W.  (default None)
+    DfDp                 - (int, tuple_of_Derivative): VARIABLE DFDP support.  If
+                           an int, the solver should allocate an array of the
+                           given number of Derivatives.  If 0, DfDp is not
+                           supported.  If a tuple_of_Derivative, the solver
+                           should use the user-provided data.  (default 0)
+    DfDp_properties      - tuple_of_DerivativeProperties: derivative properties
+                           for VARIABLE DFDP.  (default None)
+    DgDx                 - (int, tuple_of_Derivative): VARIABLE DGDX support.  If
+                           an int, the solver should allocate an array of the
+                           given number of Derivatives.  If 0, DgDx is not
+                           supported.  If a tuple_of_Derivative, the solver
+                           should use the user-provided data.  (default 0)
+    DgDx_properties      - tuple_of_DerivativeProperties: derivative properties
+                           for VARIABLE DGDX.  (default None)
+    DgDx_dot             - (int, tuple_of_Derivative): VARIABLE DGDX_DOT support.
+                           If an int, the solver should allocate an array of the
+                           given number of Derivatives.  If 0, DgDx_dot is not
+                           supported.  If a tuple_of_Derivative, the solver
+                           should use the user-provided data.  (default 0)
+    DgDx_dot_properties  - tuple_of_DerivativeProperties: derivative properties
+                           for VARIABLE DGDX_DOT.  (default None)
+    DgDp                 - (int, tuple_of_Derivative): VARIABLE DGDP support.  If
+                           an int, the solver should allocate an array of the
+                           given number of Derivatives.  If 0, DgDp is not
+                           supported.  If a tuple_of_Derivative, the solver
+                           should use the user-provided data.  (default 0)
+    DgDp_properties      - tuple_of_DerivativeProperties: derivative properties
+                           for VARIABLE DGDP.  (default None)
+    """
+    props = {'g'                   : (int, tuple_of_Evaluation),
+             'f'                   : (bool, Evaluation),
+             'W'                   : (bool, Epetra.Operator),
+             'W_properties'        : DerivativeProperties,
+             #'f_poly'              : Teuchos.Polynomial,
+             'DfDp'                : (int, tuple_of_Derivative),
+             'DfDp_properties'     : tuple_of_DerivativeProperties,
+             'DgDx'                : (int, tuple_of_Derivative),
+             'DgDx_properties'     : tuple_of_DerivativeProperties,
+             'DgDx_dot'            : (int, tuple_of_Derivative),
+             'DgDx_dot_properties' : tuple_of_DerivativeProperties,
+             'DgDp'                : (int, tuple_of_Derivative),
+             'DgDp_properties'     : tuple_of_DerivativeProperties
+             }
+    defaults = {'g'                   : 0,
+                'f'                   : False,
+                'W'                   : False,
+                'DfDp'                : 0,
+                'DgDx'                : 0,
+                'DgDx_dot'            : 0,
+                'DgDp'                : 0
+                }
+    def __init__(self, **kwargs):
+        PropertyBase.__init__(self, **kwargs)
+
+%}
+
+%typemap(out) EpetraExt::ModelEvaluator::OutArgs
+{
+  $result = convertOutArgsToPython($1);
+}
+
+%typemap(directorin) const EpetraExt::ModelEvaluator::OutArgs &
+{
+  $input = convertOutArgsToPython($1_name);
+}
+
+%typemap(directorout) EpetraExt::ModelEvaluator::OutArgs
+{
+  $result = convertOutArgsFromPython($1);
+}
+
+%typemap(in) const EpetraExt::ModelEvaluator::OutArgs &
+{
+  *$1 = convertOutArgsFromPython($input);
+}
+
+///////////////////////////
+// ModelProperties class //
+///////////////////////////
+// %pythoncode
+// %{
+// class ModelProperties(PropertyBase):
+//     """
+//     Class ModelProperties is intended as an internal-use-only class that helps
+//     with populating the PyModelEvaluator class.
+
+//     This is a 'Property' class restricted to specific attributes that are
+//     type-checked. These properties are:
+
+//     x                    - Epetra.Vector: solution vector
+//     x_init               - Epetra.Vector: initial values for solution vector
+//     x_lower_bounds       - Epetra.Vector: lower bounds for solution vector
+//     x_upper_bounds       - Epetra.Vector: upper bounds for solution vector
+//     x_dot                - Epetra.Vector: time derivative of solution vector
+//     x_dot_init           - Epetra.Vector: initial values for time derivative of
+//                            solution vector
+//     f                    - Evaluation: model function
+//     p                    - tuple_of_Vector: 
+//     p_names              - tuple_of_str:
+//     p_init               - tuple_of_Vector: 
+//     p_lower_bounds       - tuple_of_Vector: 
+//     p_upper_bounds       - tuple_of_Vector: 
+//     g                    - tuple_of_Evaluation: 
+//     t                    - float: time
+//     t_init               - float: initial value for time
+//     t_lower_bound        - float: lower bound for time
+//     t_upper_bound        - float: upper bound for time
+//     alpha                - float: 
+//     beta                 - float: 
+//     W                    - Epetra.Operator: Jacobian (derivative of f with
+//                            respect to x)
+//     W_properties         - DerivativeProperties: properties of W
+//     DfDp                 - tuple_of_Derivative: derivative of f with respect to p
+//     DfDp_support         - tuple_of_DerivativeSupport: support of DfDp
+//     DfDp_properties      - tuple_of_DerivativeProperties: properties of DfDp
+//     DgDx                 - tuple_of_Derivative: derivative of g with respect to x
+//     DgDx_support         - tuple_of_DerivativeSupport: support of DgDx
+//     DgDx_properties      - tuple_of_DerivativeProperties: properties of DgDx
+//     DgDx_dot             - tuple_of_Derivative: time derivative of derivative of
+//                            g with respect to x
+//     DgDx_dot_support     - tuple_of_DerivativeSupport: support of DgDx_dot
+//     DgDx_dot_properties  - tuple_of_DerivativeProperties: properties of DgDx_dot
+//     DgDp                 - tuple_of_Derivative: derivative of g with respect to p
+//     DgDp_support         - tuple_of_DerivativeSupport: support of DgDp
+//     DgDp_properties      - tuple_of_DerivativeProperties: properties of DgDp
+//     evalModel            - object: model evaluation function
+//     """
+//     props = {'x'                    : Epetra.Vector,
+//              'x_init'               : Epetra.Vector,
+//              'x_lower_bounds'       : Epetra.Vector,
+//              'x_upper_bounds'       : Epetra.Vector,
+//              'x_dot'                : Epetra.Vector,
+//              'x_dot_init'           : Epetra.Vector,
+//              'f'                    : Evaluation,
+//              'p'                    : tuple_of_Vector,
+//              'p_names'              : tuple_of_str,
+//              'p_init'               : tuple_of_Vector,
+//              'p_lower_bounds'       : tuple_of_Vector,
+//              'p_upper_bounds'       : tuple_of_Vector,
+//              'g'                    : tuple_of_Evaluation,
+//              't'                    : float,
+//              't_init'               : float,
+//              't_lower_bound'        : float,
+//              't_upper_bound'        : float,
+//              'alpha'                : float,
+//              'beta'                 : float,
+//              'W'                    : Epetra.Operator,
+//              'W_properties'         : DerivativeProperties,
+//              'DfDp'                 : tuple_of_Derivative,
+//              'DfDp_support'         : tuple_of_DerivativeSupport,
+//              'DfDp_properties'      : tuple_of_DerivativeProperties,
+//              'DgDx'                 : tuple_of_Derivative,
+//              'DgDx_support'         : tuple_of_DerivativeSupport,
+//              'DgDx_properties'      : tuple_of_DerivativeProperties,
+//              'DgDx_dot'             : tuple_of_Derivative,
+//              'DgDx_dot_support'     : tuple_of_DerivativeSupport,
+//              'DgDx_dot_properties'  : tuple_of_DerivativeProperties,
+//              'DgDp'                 : tuple_of_Derivative,
+//              'DgDp_support'         : tuple_of_DerivativeSupport,
+//              'DgDp_properties'      : tuple_of_DerivativeProperties,
+//              'evalModel'            : object
+//              }
+//     def __init__(self, **kwargs):
+//         PropertyBase.__init__(self, **kwargs)
+
+// %}
+
+//////////////////////////////////////
+// EpetraExt ModelEvaluator support //
+//////////////////////////////////////
+//
+// The EpetraExt::ModelEvaluator class is sufficiently complex,
+// including nested classes, that it confuses the SWIG code parser.
+// Therefore, I provide here a stripped-down version of the class,
+// with enumerations and all but two nested classes eliminated.
+%feature("director") EpetraExt::ModelEvaluator;
+
+namespace EpetraExt {
+class ModelEvaluator : virtual public Teuchos::Describable
+{
+public:
+  class InArgs;
+  class OutArgs;
+
+  virtual ~ModelEvaluator();
+  virtual Teuchos::RefCountPtr<const Epetra_Map> get_x_map() const = 0;
+  virtual Teuchos::RefCountPtr<const Epetra_Map> get_f_map() const = 0;
+  virtual Teuchos::RefCountPtr<const Epetra_Map> get_p_map(int l) const;
+  virtual Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
+  virtual Teuchos::RefCountPtr<const Epetra_Map> get_g_map(int j) const;
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_dot_init() const;
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_p_init(int l) const;
+  virtual double get_t_init() const;
+  virtual double getInfBound() const;
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_lower_bounds() const;
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_upper_bounds() const;
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_p_lower_bounds(int l) const;
+  virtual Teuchos::RefCountPtr<const Epetra_Vector> get_p_upper_bounds(int l) const;
+  virtual double get_t_lower_bound() const;
+  virtual double get_t_upper_bound() const;
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int l) const;
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_op(int j) const;
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_op(int j) const;
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDp_op( int j, int l ) const;
+  virtual InArgs createInArgs() const = 0;
+  virtual OutArgs createOutArgs() const = 0;
+  virtual void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const = 0;
+};
+}
+
+//%rename(ModelEvaluator) PyModelEvaluator;
+//%include "PyModelEvaluator.h"
+
+// Change the constructor to be one that accepts keyword arguments
+// %pythoncode
+// %{
+// def ModelEvaluatorInit(self, **kwargs):
+//     """
+//     __init__(self, kwargs...) -> ModelEvaluator
+//     """
+//     modelProps = ModelProperties(**kwargs)
+//     this = _EpetraExt.new_ModelEvaluator(modelProps)
+//     try: self.this.append(this)
+//     except: self.this = this
+
+// ModelEvaluator.__init__ = ModelEvaluatorInit
+// %}
 
 // Turn off the exception handling
 %exception;
