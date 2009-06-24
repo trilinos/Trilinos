@@ -144,6 +144,10 @@ int Zoltan_ParMetis(
   prt.input_part_sizes = prt.part_sizes = part_sizes;
 
   ierr = Zoltan_Parmetis_Parse(zz, options, alg, &itr, &pmv3_itr, NULL);
+  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
+    Zoltan_Third_Exit(&gr, geo, &prt, &vsp, &part, NULL);
+    return (ierr);
+  }
 
   /* Some algorithms use geometry data */
   if (strncmp(alg, "PARTGEOM", 8) == 0){               /* PARTGEOM & PARTGEOMKWAY */
@@ -198,6 +202,10 @@ int Zoltan_ParMetis(
 
 
   ierr = Zoltan_Preprocess_Graph(zz, &global_ids, &local_ids,  &gr, geo, &prt, &vsp);
+  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
+    Zoltan_Third_Exit(&gr, geo, &prt, &vsp, &part, NULL);
+    return (ierr);
+  }
 
   ierr = Zoltan_Parmetis_Check_Error(zz, alg, &gr, &prt);
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
@@ -622,6 +630,10 @@ int Zoltan_ParMetis_Order(
   }
 
   ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, NULL);
+  if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
+    Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, NULL);
+    return (ierr);
+  }
 
   /* Allocate space for separator sizes */
 
