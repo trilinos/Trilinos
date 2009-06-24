@@ -59,7 +59,7 @@ metaprogramming concepts, Phalanx supports arbitrary user defined data
 types and evaluation types. This allows for unprecedented flexibility
 for direct integration with user applications and provides extensive
 support for embedded technology such as automatic differentiation for
-sensitivity analysis and uncertainty quantification.
+sensitivity analysis, optimization, and uncertainty quantification.
 
 \section overview Overview
 
@@ -250,7 +250,11 @@ the \ref user_guide_domain_model.
 
 \subsection ug_dummy_3 C. Tutorial
 
-The main concept of Phalanx is to evaluate fields for solving PDEs.  We demonstrate the integration process using the simple example found in phalanx/example/EnergyFlux.  Suppose that we want to solve the heat equation over the physical space \f$ \Omega \f$:
+The main concept of Phalanx is to evaluate fields for solving PDEs
+(although it is not limited to this).  We demonstrate the integration
+process using the simple example found in phalanx/example/EnergyFlux.
+Suppose that we want to solve the heat equation over the physical
+space \f$ \Omega \f$:
 
 \f[
   \nabla \cdot (-\rho C_p \nabla T) + s = 0
@@ -262,7 +266,7 @@ where \f$ T \f$ is the temparature (and our degree of freedom), \f$ \rho \f$ is 
   \nabla \cdot (\mathbf{q}) + s = 0
 \f]
 
-where \f$ \mathbf{q} = -\rho C_p \nabla T \f$ is the heat flux.  The specific discretization technique whether finite element (FE) of finite volume (FV) will ask for \f$\mathbf{q}\f$ and \f$s\f$ at points on the cell.  Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at those points and return them to the discretization driver.
+where \f$ \mathbf{q} = -\rho C_p \nabla T \f$ is the heat flux.  The specific discretization technique whether finite element (FE) or finite volume (FV) will ask for \f$\mathbf{q}\f$ and \f$s\f$ at points on the cell.  Phalanx will evaluate \f$\mathbf{q}\f$ and \f$s\f$ at those points and return them to the discretization driver.
 
 Using finite elements, we pose the problem in variational form:  Find \f$ u \in {\mathit{V^h}} \f$ and \f$ \phi \in {\mathit{S^h}} \f$ such that:
 
@@ -280,15 +284,7 @@ This is a trivial example, but the dependency chains can grow quite
 complex if performing something such as a reacting flow calculation
 coupled to Navier-Stokes.
 
-Follow the steps below to integrate Phalanx into your application.
-The example code shown in the steps comes from the energy flux example
-in the directory "phalanx/example/EnergyFlux".  Note that many classes
-are named with the word "My" such as MyWorkset, MyTraits, and
-MyFactory traits.  Any object that starts with the word "My" denotes
-that this is a user defined class.  The user must implement this
-class.  All Evaluator derived objects are additionally implemented by
-the user even though they do not follow the convention of starting
-with the word "My".
+Follow the steps below to integrate Phalanx into your application. The example code shown in the steps comes from the energy flux example in the directory "phalanx/example/EnergyFlux".  Note that many classes are named with the word "My" such as MyWorkset, MyTraits, and MyFactory traits.  Any object that starts with the word "My" denotes that this is a user defined class.  The user must implement this class specific to their application.  All Evaluator derived objects are additionally implemented by the user even though they do not follow the convention of starting with the word "My".
 
 - \ref user_guide_step1
 - \ref user_guide_step2
@@ -337,15 +333,7 @@ size.  This is the number of cells to per evaluation call so that the
 field memory will fit into cache.  If we have 505 cells on a
 processor, suppose we find that only 50 cells at a time will fit into
 cache.  Then we will create a FieldManager with a size of 50 cells.
-This number is passed in during the call to the FieldManager method
-postRegistrationSetup():
-
-\code
-  field_manager.postRegistrationSetup(workset_size);
-\endcode
-
-During the call to postRegistrationSetup(), the FieldManager will
-allocate workspace storage for all fields relevant to the evaluation.
+This number is specified in the construction of data layouts.  During the call to postRegistrationSetup(), the FieldManager will allocate workspace storage for all fields relevant to the evaluation.
 
 For our example, there will be 11 worksets.  The first 10 worksets
 will have the 50 cell maximum and the final workset will have the 5
@@ -375,32 +363,7 @@ processor or you could use a workset size of one cell and wrap the
 evaluate call in a loop over the number of cells.  Be aware that this
 can result in a possibly large performance hit.
 
-<li><b>%Workset Type</b>
-
-In the definition of a workset above, the workset iterated over a set
-of cells.  Phalanx, in fact, does not restrict you to cell based
-iteration.  For example, you could iterate over a set of edges for the
-workset if using a finite volume method.  In addition, if you would
-like to be able to iterate over multiple workset types (i.e. both
-cells and edges) in the same evaluation, you now have to differetiate
-between the workset types for the iterations.  The "Workset Type" is a
-std::string value that is used to differentiate between multiple
-workset iterators during an evaluation.
-
-To set up Phalanx for multiple workset support, there are
-postRegistrationSetup calls that accept multiple workset sizes
-associated with their their "Workset Type".
-
-\code
-  std::map<std::string,std::size_t> workset_types_and_sizes;
-  workset_types_and_sizes["Cells"} = 20;
-  workset_types_and_sizes["Edges"} = 24;
-
-  field_manager.postRegistrationSetup(workset_types_and_sizes);
-\endcode
-
-A Field is associated with a workset type using information in the
-fields associated data layout.
+Phalanx, in fact, does not restrict you to cell based iteration.  You can iterate over any entity type such as edge or face structures.    
 
 <li><b>Consistent Evaluation</b>
 
@@ -421,7 +384,7 @@ end up with lagged values being used from a previous evaluate call.
 
 A scalar type, typically the template argument ScalarT in Phalanx
 code, is the type of scalar used in an evaluation.  It is typically a
-double, but can be special object types for embedded methods such as
+double or float, but can be special object types for embedded methods such as
 sensitivity analysis.  For example, for sensitivity analysis, a double
 scalar type is replaced with a foward automatic differentiation object
 (FAD) or a reverse automatic differentaion object (RAD) to produce
@@ -492,9 +455,9 @@ A DataContainer object stores all fields of a particular data type.  Each Evalua
 
 <li><b>Data Layout</b>
 
-The DataLayout object is used to distinguish fields with the same name, but exist at different discretization points in the cell.  For example, supposed we have written an evaluator the computes the "Density" field for a set of points in the cell.  Now we want to evaluate the density at a different set of points in the cell.  We might have a "Density" field in a cell associated with a set of integration points (quadrature points in finite elements) and another field associated with the nodes (nodal basis points in finite elements).  We use the same field name (so we can reuse the same Evaluator), "Density", but use two different DataLayouts, one for integration points and one for nodal point.  Now a FieldTag comparison will differentiate the fields due to the different DataLayout.  
+The DataLayout object is used to distinguish fields with the same name, but exist at different locations in the discretization structure (i.e. cell or face).  For example, supposed we have written an evaluator the computes the "Density" field for a set of points in the cell.  Now we want to evaluate the density at a different set of points in the cell.  We might have a "Density" field in a cell associated with a set of integration points (quadrature points in finite elements) and another field associated with the nodes (nodal basis points in finite elements).  We use the same field name (so we can reuse the same Evaluator), "Density", but use two different DataLayouts, one for integration points and one for nodal point.  Now a FieldTag comparison will differentiate the fields due to the different DataLayout.  
 
-Additionally, the DataLayout contains the number of DataT objects associated with the field in a single cell.  This size() parameter is not needed to distinguish uniqueness, since the number of objects can be the same for different fields.  It is stored here for convenience when figuring out the size of field arrays.
+Additionally, the DataLayout contains the number of DataT objects associated with the field in the discretized structure.  This size() parameter is not needed to distinguish uniqueness, since the number of objects can be the same for different fields.  It is stored here for convenience when figuring out the size of field arrays.
 
 <li><b>Field Tag</b>
 
@@ -512,6 +475,28 @@ An Evaluator is an object that evaluates a set of Fields.  It contains two vecto
 
 The main object that stores all Fields and Evaluators.  The evaluator manager (EM) sorts the evaluators and determines which evaluators to call and the order necessary to ensure consistency in the fields.  The EM also allocates the memory for storage of all fields so that if we want to force all fields to be in a contiguous block, we have that option available.  Users can write their own allocator for memory management.
 
+<li><b>Multidimensional Array</b>
+
+Instead of using the concept of an algebraic type that the user implements, it is easier to use the concept of a multidimensional array.  For example, suppose we have ten cells, and in each cell there are four points (specifically quadrature points) where we want to store a 3x3 matrix for the stress tensor.  Using the concepts of algebraic types, we would use a user defined matrix in a Phalanx Field:
+
+\code
+  PHX::MDA::Layout<Cell,QP> layout(10,4);
+  PHX::Field< MyTensor<double> > stress("Stress",layout);
+\endcode
+
+However, Phalanx also implements the idea of a multidimensional array with optional compile time checking on rank accessors.
+
+\code
+  PHX::MDA::Layout<Cell,QP,Dim,Dim> layout(10,4,3,3);
+  PHX::MDField<double,Cell,QP,Dim,Dim> stress("Stress",layout);
+\endcode
+
+The benefits of using the multidimensional array are that (1) checking of the rank accessor at either compile time or runtime (runtime checking is only enabled for debug builds for efficiency) prevent coding errors and (2) the documentation of the ranks is built into the code - no relying on comments that goe out of date.
+
+The EnergyFlux example is also implemented using the multidimensional array in the directory Trilinos/packages/phalanx/example/MultiDimensionalArray/.
+
+Our recomendation is to use the multidimensional array version as future codes plan to use this object. 
+
 </ul>
 
 \section performance Performance
@@ -519,48 +504,60 @@ The main object that stores all Fields and Evaluators.  The evaluator manager (E
 Some recomendations for efficient code:
 <ul>
 
-<li> <b>Use worksets</b>  
+<li> <b>Use worksets</b> This may eliminate cache misses. 
 
 <li> <b>Enable compiler optimization:</b>  The Field and MDField classes use inlined bracket operators for data access.  That means if you build without optimization some compilers will produce very slow code.  To see if your compiler is optimizing away the bracket operator overhead, run the test found in the directory "phalanx/test/Performance/BracketOperator".  If the timings are the same between a raw pointer array and the Field and MDField classes, your compiler has removed the overhead.   For example, on gnu g++ 4.2.4, compiling with -O0 shows approximately 2x overhead for bracket accessors, while -O2 shows about a 10% overhead, while -O3 completely removes the overhead.
 
-<li> <b>Algebraic Types:</b> Implementing your own algebraic types, while convenient for users, can introduce overhead as opposed to using raw arrays.  The tests found in "phalanx/test/Performance/AlgebraicTypes" demonstrate some of this overhead.  Expression templates should remove this overhead, but in our experience, this seems to be very compiler and implementation dependent.  If you build in tvmet support, you can compare expression templates, our "dumb" implementation for vectors and matrices against raw array access.  Our testing on gnu compilers shows an overhead of about 20-25% when using "dumb" objects and the expresion templates as opposed to raw arrays.  We recommend using raw arrays with the multi-dimensional array (MDField) for fastest runtimes.
+       <li> <b>Algebraic Types:</b> Implementing your own algebraic types, while convenient for users, can introduce overhead as opposed to using raw arrays or the multidimensional array.  The tests found in "phalanx/test/Performance/AlgebraicTypes" demonstrate some of this overhead.  Expression templates should remove this overhead, but in our experience, this seems to be very compiler and implementation dependent.  If you build in tvmet support, you can compare expression templates, our "dumb" implementation for vectors and matrices, and our multidimensional array against raw array access.  Our testing on gnu compilers shows an overhead of about 20-25% when using "dumb" objects and the expresion templates as opposed to raw arrays.  We recommend using raw arrays with the multi-dimensional array (MDField) for fastest runtimes.
 
-<li> <b>Use Contiguous Allocator:</b> Phalanx has two allocators, one that uses the "new" command for each separate field, and one that allocates a single contiguous array for ALL fields.  If cache performance the limiting factor, the contiguous allocator could have a big effect on performance.  Additionally, alignment issues can play a part in the allocators depending on how you implement your algrbraic types.  Our ContiguousAllocator allows users to choose the alignment based on a template parameter.
+       <li> <b>Use Contiguous Allocator:</b> Phalanx has two allocators, one that uses the "new" command for each separate field, and one that allocates a single contiguous array for ALL fields.  If cache performance is the limiting factor, the contiguous allocator could have a big effect on performance.  Additionally, alignment issues can play a part in the allocators depending on how you implement your algrbraic types.  Our ContiguousAllocator allows users to choose the alignment based on a template parameter.  Typically, this is double.
 
-<li> <b>Limit the number of Fields and/or Evaluators:</b>  The more evaluators used in your code, the more the loop sturcutre is broken up.  You go from a single loop to a bunch of small loops.  This can have an effect on the overall performance.  Users should also be judicious on choosing Fields.  Only select Fields as a place to introduce variability in your models or for reuse.  For example, if you require density in a single place in the code and there is only one single model that won't change, do not make it a field.  Just evaluate it once where needed.  But if you need density in multiple providers or you want to swap models at runtime, then it should be a field.  This prevents having to recompute the model or recompile your code to switch models.  
+<li> <b>Limit the number of Fields and/or Evaluators:</b>  The more evaluators used in your code, the more the loop sturcutre is broken up.  You go from a single loop to a bunch of small loops.  This can have an effect on the overall performance.  Users should also be judicious on choosing Fields.  Only select Fields as a place to introduce variability in your models or for reuse.  For example, if you require density in a single place in the code and there is only one single model that won't change, do not make it a field.  Just evaluate it once where needed.  But if you need density in multiple providers or you want to swap models at runtime, then it should be a field.  This prevents having to recompute the model or recompile your code to switch models.  This is usually not an issue as long as the amount of work in each evaluator is larger than vtable lookup to make the evaluate call.  In our experience, we have never observed this behaviour.  We point it our here just in case.
 
-<li> <b>Slow compilation times:</b>  As the number of Evaluators in a code grows, the compilation times can become very long.  Making even a minor change can result in the code recompile all Evaluator code.  Therefore, we recommend using explicit template instantiation.  Currently there are no examples of this, but they will be added for Trilinos release 10.
+<li> <b>Slow compilation times:</b>  As the number of Evaluators in a code grows, the compilation times can become very long.  Making even a minor change can result in the code recompiling all Evaluator code.  Therefore, we recommend using explicit template instantiation.  An example can be found in Trilinos/packages/phalanx/example/FEM_Nonlinear.  All evaluators use explicit template instantiation if phalanx is built with explicit template instation enabled (in the cmake build system, use the flag -D Phalanx__EXPLICIT_TEMPLATE_INSTANTIATION=ON).
 
 </ul>
 
 \section user_guide_mdarray_domain_model Multi-Dimensional Array Domain Model
 
-Document has not been publicly released.  Will add a reference when available.
+The multidimensional array was designed for interoperability between a number of Trilinos packages including shards, phalanx and intrepid.  These codes each have their own implementations but follow a basic set of requirements so that functions templated on the array type can use any of the multidimensional array implementations.  The required functions are:
+
+<ul>
+<li> ScalarT& operator[] - the bracket operator
+<li> ScalarT& operator(1,2,3,...,N) - parenthesis operators for eack rank N array.
+<li> size_type rank() - integer number of ordinates
+<li> size_type dimension(size_type ordinate) - size of ordinate
+<li> size_type size() - total size of array
+</ul>
+
+Phalanx supports multidimensional arrays with up to 8 ranks (one more than Fortran arrays support).  More information can be found in the shards library.
 
 \section user_guide_step1 Step 1: Configuring, Building, and installing Phalanx
 
 \subsection ug_step1_general A. General Library Requirements
-Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">Trilinos Framework</a>.  It can be enabled as part of a trilinos build with the configure option "--enable-phalanx".  Phalanx currently has direct dependencies on the following third party libraries:
+Phalanx is distributed as a package in the <a href="http://trilinos.sandia.gov">Trilinos Framework</a>.  It can be enabled as part of a trilinos build with the configure option "-D Trilinos_ENABLE_Phalanx=ON".  Phalanx currently has direct dependencies on the following third party libraries:
 
 - <b>Requires</b> the <a href="http://trilinos.sandia.gov/packages/teuchos">Teuchos</a> utilities library, part of the <a href="http://trilinos.sandia.gov/">Trilinos Framework</a>.  This will automatically be enabled when you enable the phalanx library.
  
  - <b>Requires</b> the <a href="http://trilinos.sandia.gov/packages/sacado">Sacado Automatic Differentiation Library</a>, part of the <a href="http://trilinos.sandia.gov/">Trilinos Framework</a>.  This will automatically be enabled when you enable the phalanx library.
 
- - <b>Requires</b> the <a href="http://www.boost.org">Boost Template Metaprogramming (MPL) Library</a>.  You must add the path to the Boost library during Trilinos configuration using the flag "--withincdirs=<path>".
+ - <b>Requires</b> the <a href="http://www.boost.org">Boost Template Metaprogramming (MPL) Library</a>.  This is a third party library (TPL) that must be installed on your machine.  You must enable the TPL and point to the path to the Boost library during Trilinos configuration.  An example configuration file can be found in Trilinos/packages/phalanx/maintenance/reconfigure.linux.mpi.cmake.
 
 \subsection ug_step1_performance B. Performance Example Requirements
 
- - <b>Optional:</b> Some performance tests run comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  Use the configure option "--with-tvmet" to enable the tvmet functionality in the performance tests.  You must add the path to the TVMET library during Trilinos configuration using the flag "--withincdirs=<path>".
+ - <b>Optional:</b> Some performance tests run comparisons against <a href="http://tvmet.sourceforge.net/">TVMET: Tiny Vector Matrix library using Expression Templates</a>.  This is to get a feel for how our "dumb" vector matrix objects perform compared to expression templates.  You must enable the tvmet TPL add the path to the TVMET library during Trilinos configuration.  An example configuration file can be found in Trilinos/packages/phalanx/maintenance/reconfigure.linux.mpi.cmake.
 
 \subsection ug_step1_fem C. Nonlinear Finite Element Example Requirements
 
 To build the example problem in "phalanx/example/FEM_Nonlinear", a sparse matrix and corresponding linear solvers are required.  The following <b>Trilinos</b> packages need to be enabled to build the FEM_Nonlinear example:
 
- - <b>Optional:</b> the <a href="http://trilinos.sandia.gov/packages/epetra">Epetra Library</a>, supplies the linear algebra data structures for spares matrices.  Can be enabled during the Trilinos configure with the flag "--enable-ifpack". 
+ - <b>Requires:</b> the <a href="http://trilinos.sandia.gov/packages/epetra">Epetra Library</a>, supplies the linear algebra data structures for spares matrices.  Can be enabled during the Trilinos configure with the flag "-D Trilinos_ENABLE_Epetra=ON". 
 
- - <b>Optional:</b> the <a href="http://trilinos.sandia.gov/packages/ifpack">Ifpack Library</a>, supplies incomplete factorization preconditioners.  Can be enabled during the Trilinos configure with the flag "--enable-ifpack". 
+ - <b>Requires:</b> the <a href="http://trilinos.sandia.gov/packages/ifpack">Ifpack Library</a>, supplies incomplete factorization preconditioners.  Can be enabled during the Trilinos configure with the flag "-D Trilinos_ENABLE_Ifpack=ON". 
 
- -  <b>Optional:</b> the <a href="http://trilinos.sandia.gov/packages/belos">Belos Library</a>, supplies block GMRES iterative linear solver.  Can be enabled during the Trilinos configure with the flag "--enable-belos".  
+ -  <b>Requires:</b> the <a href="http://trilinos.sandia.gov/packages/belos">Belos Library</a>, supplies block GMRES iterative linear solver.  Can be enabled during the Trilinos configure with the flag "-D Trilinos_ENABLE_Belos=ON".  
+
+This example will be disabled if the above packages are not enabled.
 
 \subsection da D. Install Boost
 

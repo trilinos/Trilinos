@@ -18,12 +18,12 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_EXPLICIT_TEMPLATE_INSTANTIATION
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   PHX_DEBUG
-  "Build with explicit template instation enabled."
+  "Build with debug code enabled. Typically, this enables array bounds checking and runtime checking of rank accessors in multidimensional arrays."
   OFF )
 
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_COMPILETIME_ARRAY_CHECK
   PHX_USE_COMPILETIME_ARRAY
-  "Enables compile time checking of the rank accessors in the MDArray. This adds safety of cheking the rank accessors at compile time.  This can be very inefficient in runtime mode so checking is only done for debug builds if this flag is disabled.  The default is to disable compile time checking.  NOTE: Compile time checking must be OFF for MDFields to be interoperable with Intrepid!"
+  "Enables compile time checking of the rank accessors in the MDArray. This adds safety of checking the rank accessors at compile time.  This can be very inefficient in runtime mode so checking is only done for debug builds if this flag is disabled.  The default is to disable compile time checking.  NOTE: Compile time checking must be OFF for MDFields to be interoperable with Intrepid!"
   OFF )
 
 #
