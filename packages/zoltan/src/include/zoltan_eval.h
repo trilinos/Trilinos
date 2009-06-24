@@ -23,11 +23,12 @@ extern "C" {
 struct Zoltan_Struct;
 
 
-#define EVAL_GLOBAL_SUM 0
-#define EVAL_GLOBAL_MIN 1
-#define EVAL_GLOBAL_MAX 2
-#define EVAL_GLOBAL_AVG 3
-#define EVAL_SIZE       4   /* must be last definition */
+#define EVAL_LOCAL_SUM  0  /* calculated for nobj, obj_wgt, xtra_obj_wgt only */
+#define EVAL_GLOBAL_SUM 1
+#define EVAL_GLOBAL_MIN 2
+#define EVAL_GLOBAL_MAX 3
+#define EVAL_GLOBAL_AVG 4
+#define EVAL_SIZE       5   /* must be last definition */
 
 #define EVAL_MAX_XTRA_VWGTS 4
 #define EVAL_MAX_XTRA_EWGTS 4
