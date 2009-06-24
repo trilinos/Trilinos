@@ -653,11 +653,10 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
         ZOLTAN_FREE(&gid_weights);
         ZOLTAN_FREE(&flag);
       }
-
-      phg_free_GID_lookup_table(&lookup_myHshEdges);
-      phg_free_temp_edges(&myHshEdges);
-
     } /* end of get hyperedge weights */
+
+    phg_free_GID_lookup_table(&lookup_myHshEdges);
+    phg_free_temp_edges(&myHshEdges);
 
   } else if (graph_callbacks){
 
