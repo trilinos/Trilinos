@@ -32,6 +32,7 @@
 #include "HYPRE_IJ_mv.h"
 #include "EpetraExt_HypreIJMatrix.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 
@@ -43,7 +44,7 @@ Epetra_CrsMatrix::Epetra_CrsMatrix GetCrsMatrix(EpetraExt_HypreIJMatrix &Matrix)
 
 bool EquivalentVectors(Epetra_MultiVector &X, Epetra_MultiVector &Y, double tol);
 
-bool EquivalentMatrices(EpetraExt_HypreIJMatrix &HypreMatrix, Epetra_CrsMatrix &CrsMatrix,double tol);
+bool EquivalentMatrices(Epetra_RowMatrix &HypreMatrix, Epetra_RowMatrix &CrsMatrix,double tol);
 
 #endif // EpetraExt_HYPRE_HELPERS_HPP
 

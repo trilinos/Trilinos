@@ -319,6 +319,7 @@ int EpetraExt_HypreIJMatrix::LeftScale(const Epetra_Vector& X) {
     TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't set values in Hypre Matrix.");
   }
   
+  HaveNumericConstants_ = false;
   UpdateFlops(NumGlobalNonzeros());
   return(ierr);
 } //LeftScale()
@@ -357,6 +358,7 @@ int EpetraExt_HypreIJMatrix::RightScale(const Epetra_Vector& X) {
     TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't set values in Hypre Matrix.");
   }
   
+  HaveNumericConstants_ = false;
   UpdateFlops(NumGlobalNonzeros());
   return(ierr);
 } //RightScale()

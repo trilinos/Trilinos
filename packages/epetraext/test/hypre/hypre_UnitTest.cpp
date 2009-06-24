@@ -31,6 +31,7 @@
 #include "EpetraExt_HypreIJMatrix.h"
 #include "Epetra_ConfigDefs.h"
 #include "Epetra_Vector.h"
+#include "Epetra_RowMatrix.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"

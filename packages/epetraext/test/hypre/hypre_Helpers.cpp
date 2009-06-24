@@ -198,7 +198,7 @@ bool EquivalentVectors(Epetra_MultiVector &Y1, Epetra_MultiVector &Y2, const dou
 
 
 
-bool EquivalentMatrices(EpetraExt_HypreIJMatrix &HypreMatrix, Epetra_CrsMatrix &CrsMatrix, const double tol){
+bool EquivalentMatrices(Epetra_RowMatrix &HypreMatrix, Epetra_RowMatrix &CrsMatrix, const double tol){
   bool retVal = true;
   for(int j = 0; j < HypreMatrix.NumMyRows(); j++){
     
