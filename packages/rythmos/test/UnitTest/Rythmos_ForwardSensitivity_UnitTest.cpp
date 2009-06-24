@@ -67,8 +67,8 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled_BE ) {
   double L = 4.0;
   double x0 = a;
   double x1 = b*f/L;
-  Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_EXTREME;
-  //Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
+  //Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_EXTREME;
+  Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
   RCP<SinCosModel> stateModel = sinCosModel();
   RCP<ParameterList> modelPL = Teuchos::parameterList();
   modelPL->set("Accept model parameters",true);
@@ -350,8 +350,8 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled_FE ) {
   double L = 4.0;
   double x0 = a;
   double x1 = b*f/L;
-  Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_EXTREME;
-  //Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
+  //Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_EXTREME;
+  Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
   RCP<SinCosModel> stateModel = sinCosModel();
   RCP<ParameterList> modelPL = Teuchos::parameterList();
   modelPL->set("Accept model parameters",true);
@@ -510,7 +510,8 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled_FE ) {
   std_out << "\nDxDp_s2_final:\n"
     << Teuchos::describe(*DxDp_s2_final,verbLevel);
 
-  MEB::InArgs<double> exactSensSolution = stateModel->getExactSensSolution(0,finalTime);
+  MEB::InArgs<double> exactSensSolution;
+  exactSensSolution = stateModel->getExactSensSolution(0,finalTime);
   RCP<const Thyra::VectorBase<double> > ds0dp = exactSensSolution.get_x();
   exactSensSolution = stateModel->getExactSensSolution(1,finalTime);
   RCP<const Thyra::VectorBase<double> > ds1dp = exactSensSolution.get_x();
@@ -526,6 +527,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled_FE ) {
 
   double maxSensError = 1.0e-8;
 
+  verbLevel = Teuchos::VERB_EXTREME;
   double s0_correct = Thyra::testRelNormDiffErr(
     "DxDp_s0_final", *DxDp_s0_final,
     "DxDp_exact_s0_final", *ds0dp,

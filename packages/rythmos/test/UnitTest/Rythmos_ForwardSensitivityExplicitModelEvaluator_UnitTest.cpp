@@ -50,10 +50,11 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, create ) {
 TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, args ) {
   RCP<ForwardSensitivityExplicitModelEvaluator<double> > model =
     forwardSensitivityExplicitModelEvaluator<double>();
-  RCP<SinCosModel> innerModel = sinCosModel(false);
+  RCP<SinCosModel> innerModel = sinCosModel();
   {
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->set("Accept model parameters",true);
+    pl->set("Implicit model formulation",false);
     innerModel->setParameterList(pl);
   }
   model->initializeStructure(innerModel, 0 );
@@ -77,10 +78,11 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, args ) {
 TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, spaces ) {
   RCP<ForwardSensitivityExplicitModelEvaluator<double> > model =
     forwardSensitivityExplicitModelEvaluator<double>();
-  RCP<SinCosModel> innerModel = sinCosModel(false);
+  RCP<SinCosModel> innerModel = sinCosModel();
   {
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->set("Accept model parameters",true);
+    pl->set("Implicit model formulation",false);
     innerModel->setParameterList(pl);
   }
   model->initializeStructure(innerModel, 0 );
@@ -129,6 +131,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, evalModel )
   {
     RCP<ParameterList> pl = Teuchos::parameterList();
     pl->set("Accept model parameters",true);
+    pl->set("Implicit model formulation",false);
     pl->set("Coeff a", a );
     pl->set("Coeff f", f );
     pl->set("Coeff L", L );
@@ -217,6 +220,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, evalModel )
   // [            12                         ]
   // [ -11*(f/L)*(f/L)-2*f*f/(L*L*L)*(a-x_0) ]
   // 
+  double tol = 1.0e-10;
   {
     TEST_EQUALITY_CONST( F_sens->domain()->dim(), 3 );
     TEST_EQUALITY_CONST( F_sens->range()->dim(), 2 );
@@ -228,16 +232,16 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, evalModel )
     TEST_EQUALITY_CONST( F_sens_2->space()->dim(), 2 );
 
     Thyra::DetachedVectorView<double> F_sens_0_view( *F_sens_0 );
-    TEST_EQUALITY_CONST( F_sens_0_view[0], 8.0 );
-    TEST_EQUALITY      ( F_sens_0_view[1], -7.0*(f/L)*(f/L)+(f*f)/(L*L) );
+    TEST_FLOATING_EQUALITY( F_sens_0_view[0], 8.0, tol );
+    TEST_FLOATING_EQUALITY( F_sens_0_view[1], -7.0*(f/L)*(f/L)+(f*f)/(L*L), tol );
 
     Thyra::DetachedVectorView<double> F_sens_1_view( *F_sens_1 );
-    TEST_EQUALITY_CONST( F_sens_1_view[0], 10.0 );
-    TEST_EQUALITY      ( F_sens_1_view[1], -9*(f/L)*(f/L)+2*f/(L*L)*(a-2.0) );
+    TEST_FLOATING_EQUALITY( F_sens_1_view[0], 10.0, tol );
+    TEST_FLOATING_EQUALITY( F_sens_1_view[1], -9*(f/L)*(f/L)+2*f/(L*L)*(a-2.0), tol );
 
     Thyra::DetachedVectorView<double> F_sens_2_view( *F_sens_2 );
-    TEST_EQUALITY_CONST( F_sens_2_view[0], 12.0 );
-    TEST_EQUALITY      ( F_sens_2_view[1], -11*(f/L)*(f/L)-2*f*f/(L*L*L)*(a-2.0) );
+    TEST_FLOATING_EQUALITY( F_sens_2_view[0], 12.0, tol );
+    TEST_FLOATING_EQUALITY( F_sens_2_view[1], -11*(f/L)*(f/L)-2*f*f/(L*L*L)*(a-2.0), tol );
   }
 
   // Now change x and evaluate again.
@@ -258,16 +262,16 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityExplicitModelEvaluator, evalModel )
     TEST_EQUALITY_CONST( F_sens_2->space()->dim(), 2 );
 
     Thyra::DetachedVectorView<double> F_sens_0_view( *F_sens_0 );
-    TEST_EQUALITY_CONST( F_sens_0_view[0], 8.0 );
-    TEST_EQUALITY      ( F_sens_0_view[1], -7.0*(f/L)*(f/L)+(f*f)/(L*L) );
+    TEST_FLOATING_EQUALITY( F_sens_0_view[0], 8.0, tol );
+    TEST_FLOATING_EQUALITY( F_sens_0_view[1], -7.0*(f/L)*(f/L)+(f*f)/(L*L), tol );
 
     Thyra::DetachedVectorView<double> F_sens_1_view( *F_sens_1 );
-    TEST_EQUALITY_CONST( F_sens_1_view[0], 10.0 );
-    TEST_EQUALITY      ( F_sens_1_view[1], -9*(f/L)*(f/L)+2*f/(L*L)*(a-20.0) );
+    TEST_FLOATING_EQUALITY( F_sens_1_view[0], 10.0, tol );
+    TEST_FLOATING_EQUALITY( F_sens_1_view[1], -9*(f/L)*(f/L)+2*f/(L*L)*(a-20.0), tol );
 
     Thyra::DetachedVectorView<double> F_sens_2_view( *F_sens_2 );
-    TEST_EQUALITY_CONST( F_sens_2_view[0], 12.0 );
-    TEST_EQUALITY      ( F_sens_2_view[1], -11*(f/L)*(f/L)-2*f*f/(L*L*L)*(a-20.0) );
+    TEST_FLOATING_EQUALITY( F_sens_2_view[0], 12.0, tol );
+    TEST_FLOATING_EQUALITY( F_sens_2_view[1], -11*(f/L)*(f/L)-2*f*f/(L*L*L)*(a-20.0), tol );
   }
 
 }

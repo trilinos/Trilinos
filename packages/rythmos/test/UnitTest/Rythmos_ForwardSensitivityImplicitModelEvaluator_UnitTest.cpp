@@ -166,12 +166,24 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityImplicitModelEvaluator, evalModel )
       p0_view[2] = L;
     }
     pointInArgs.set_p(0,p0);
-    //model->initializeState(
-    //    pointInArgs,
-    //    W_tilde,
-    //    coeff_x_dot,
-    //    coeff_x
-    //    );
+    RCP<Thyra::LinearOpWithSolveBase<double> > W_tilde;
+    double coeff_x_dot = 6.0;
+    double coeff_x = 6.5;
+    {
+      // Fill W_tilde = coeff_x_dot * df/dxdot + coeff_x * df/dx
+      W_tilde = innerModel->create_W();
+      MEB::OutArgs<double> pointOutArgs = innerModel->createOutArgs();
+      pointOutArgs.set_W(W_tilde);
+      pointInArgs.set_alpha(coeff_x_dot);
+      pointInArgs.set_beta(coeff_x);
+      innerModel->evalModel(pointInArgs,pointOutArgs);
+    }
+    model->initializeState(
+        pointInArgs,
+        W_tilde,
+        coeff_x_dot,
+        coeff_x
+        );
   }
   MEB::InArgs<double> inArgs = model->createInArgs();
   RCP<VectorBase<double> > x_bar = Thyra::createMember(model->get_x_space());
@@ -265,6 +277,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityImplicitModelEvaluator, evalModel )
   // [            17-12                         ]
   // [ 18+11*(f/L)*(f/L)-2*f*f/(L*L*L)*(a-x_0)  ]
   // 
+  double tol = 1.0e-10;
   {
     TEST_EQUALITY_CONST( F_sens->domain()->dim(), 3 );
     TEST_EQUALITY_CONST( F_sens->range()->dim(), 2 );
@@ -276,17 +289,18 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityImplicitModelEvaluator, evalModel )
     TEST_EQUALITY_CONST( F_sens_2->space()->dim(), 2 );
 
     Thyra::DetachedVectorView<double> F_sens_0_view( *F_sens_0 );
-    TEST_EQUALITY_CONST( F_sens_0_view[0], 13.0-8.0 );
-    TEST_EQUALITY      ( F_sens_0_view[1], 14.0+7.0*(f/L)*(f/L)+(f*f)/(L*L) );
+    TEST_FLOATING_EQUALITY( F_sens_0_view[0], 13.0-8.0, tol );
+    TEST_FLOATING_EQUALITY( F_sens_0_view[1], 14.0+7.0*(f/L)*(f/L)+(f*f)/(L*L), tol );
 
     Thyra::DetachedVectorView<double> F_sens_1_view( *F_sens_1 );
-    TEST_EQUALITY_CONST( F_sens_1_view[0], 15.0-10.0 );
-    TEST_EQUALITY      ( F_sens_1_view[1], 16.0+9*(f/L)*(f/L)+2*f/(L*L)*(a-2.0) );
+    TEST_FLOATING_EQUALITY( F_sens_1_view[0], 15.0-10.0, tol );
+    TEST_FLOATING_EQUALITY( F_sens_1_view[1], 16.0+9*(f/L)*(f/L)+2*f/(L*L)*(a-2.0), tol );
 
     Thyra::DetachedVectorView<double> F_sens_2_view( *F_sens_2 );
-    TEST_EQUALITY_CONST( F_sens_2_view[0], 17.0-12.0 );
-    TEST_EQUALITY      ( F_sens_2_view[1], 18.0+11*(f/L)*(f/L)-2*f*f/(L*L*L)*(a-2.0) );
+    TEST_FLOATING_EQUALITY( F_sens_2_view[0], 17.0-12.0, tol );
+    TEST_FLOATING_EQUALITY( F_sens_2_view[1], 18.0+11*(f/L)*(f/L)-2*f*f/(L*L*L)*(a-2.0), tol );
   }
+  // TODO:  Test that W is filled correctly
 
   // Now change x and evaluate again.
   {
@@ -311,16 +325,16 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityImplicitModelEvaluator, evalModel )
     TEST_EQUALITY_CONST( F_sens_2->space()->dim(), 2 );
 
     Thyra::DetachedVectorView<double> F_sens_0_view( *F_sens_0 );
-    TEST_EQUALITY_CONST( F_sens_0_view[0], 13.0-8.0 );
-    TEST_EQUALITY      ( F_sens_0_view[1], 14.0+7.0*(f/L)*(f/L)+(f*f)/(L*L) );
+    TEST_FLOATING_EQUALITY( F_sens_0_view[0], 13.0-8.0,tol );
+    TEST_FLOATING_EQUALITY( F_sens_0_view[1], 14.0+7.0*(f/L)*(f/L)+(f*f)/(L*L),tol );
 
     Thyra::DetachedVectorView<double> F_sens_1_view( *F_sens_1 );
-    TEST_EQUALITY_CONST( F_sens_1_view[0], 15.0-10.0 );
-    TEST_EQUALITY      ( F_sens_1_view[1], 16.0+9*(f/L)*(f/L)+2*f/(L*L)*(a-20.0) );
+    TEST_FLOATING_EQUALITY( F_sens_1_view[0], 15.0-10.0,tol );
+    TEST_FLOATING_EQUALITY( F_sens_1_view[1], 16.0+9*(f/L)*(f/L)+2*f/(L*L)*(a-20.0),tol );
 
     Thyra::DetachedVectorView<double> F_sens_2_view( *F_sens_2 );
-    TEST_EQUALITY_CONST( F_sens_2_view[0], 17.0-12.0 );
-    TEST_EQUALITY      ( F_sens_2_view[1], 18.0+11*(f/L)*(f/L)-2*f*f/(L*L*L)*(a-20.0) );
+    TEST_FLOATING_EQUALITY( F_sens_2_view[0], 17.0-12.0,tol );
+    TEST_FLOATING_EQUALITY( F_sens_2_view[1], 18.0+11*(f/L)*(f/L)-2*f*f/(L*L*L)*(a-20.0),tol );
   }
 
 }

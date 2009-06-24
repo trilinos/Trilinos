@@ -43,7 +43,17 @@ template<class Scalar>
 RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper() {
   RCP<ImplicitBDFStepper<Scalar> > stepper = rcp(new ImplicitBDFStepper<Scalar>() );
   return stepper;
+}
 
+template<class Scalar>
+RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper(
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver,
+  const RCP<Teuchos::ParameterList> &parameterList
+  )
+{
+  RCP<ImplicitBDFStepper<Scalar> > stepper = rcp(new ImplicitBDFStepper<Scalar>(model,solver,parameterList));
+  return stepper;
 }
 
 // Constructors, intializers, Misc.
@@ -62,7 +72,7 @@ template<class Scalar>
 ImplicitBDFStepper<Scalar>::ImplicitBDFStepper(
   const RCP<const Thyra::ModelEvaluator<Scalar> > &model
   ,const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver
-  ,RCP<Teuchos::ParameterList> &parameterList
+  ,const RCP<Teuchos::ParameterList> &parameterList
   )
 {
   this->defaultInitializeAll_();
@@ -508,7 +518,9 @@ void ImplicitBDFStepper<Scalar>::getPoints(
   typedef typename ST::magnitudeType ScalarMag;
 
   TEUCHOS_ASSERT(haveInitialCondition_);
-  if ( (time_vec.length() == 1) &&
+  // Only do this if we're being called pre-initialization to get the IC.
+  if ( (numberOfSteps_ == -1) && 
+       (time_vec.length() == 1) &&
        (compareTimeValues<Scalar>(time_vec[0],time_)==0) ) {
     defaultGetPoints<Scalar>(
         time_, constOptInArg(*xn0_), constOptInArg(*xpn0_),
@@ -1117,7 +1129,14 @@ void ImplicitBDFStepper<Scalar>::setStepControlData(const StepperBase<Scalar> & 
   template class ImplicitBDFStepper< SCALAR >; \
   \
   template RCP< ImplicitBDFStepper< SCALAR > > \
-  implicitBDFStepper(); 
+  implicitBDFStepper();  \
+  \
+  template RCP< ImplicitBDFStepper< SCALAR > > \
+  implicitBDFStepper( \
+    const RCP<const Thyra::ModelEvaluator< SCALAR > > &model, \
+    const RCP<Thyra::NonlinearSolverBase< SCALAR > > &solver, \
+    const RCP<Teuchos::ParameterList> &parameterList \
+    ); \
 
 
 } // namespace Rythmos

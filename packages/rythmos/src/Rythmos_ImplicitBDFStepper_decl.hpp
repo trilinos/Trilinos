@@ -74,7 +74,7 @@ public:
   ImplicitBDFStepper(
     const RCP<const Thyra::ModelEvaluator<Scalar> >  &model
     ,const RCP<Thyra::NonlinearSolverBase<Scalar> >  &solver
-    ,RCP<Teuchos::ParameterList> &parameterList
+    ,const RCP<Teuchos::ParameterList> &parameterList
     );
 
   /** \brief . */
@@ -303,6 +303,13 @@ private:
 
 template<class Scalar>
 RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper();
+
+template<class Scalar>
+RCP<ImplicitBDFStepper<Scalar> > implicitBDFStepper(
+  const RCP<const Thyra::ModelEvaluator<Scalar> > &model,
+  const RCP<Thyra::NonlinearSolverBase<Scalar> > &solver,
+  const RCP<Teuchos::ParameterList> &parameterList
+  );
 
 } // namespace Rythmos 
 
