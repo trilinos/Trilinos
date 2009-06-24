@@ -439,8 +439,9 @@ void Zoltan::LoadBalance::Evaluate     ( int print_stats,
 {
   Zoltan::QueryContainer::setQueryID( ObjectID );
 
-  Zoltan_LB_Eval( LoadBalance_Ptr_, print_stats, num_objects, object_weights,
-	num_cuts, cut_weights, num_boundary_objects, num_adj_procs );
+//  HKT 6/24/2009 Commented out call to Zoltan because interface under construction.
+//  Zoltan_LB_Eval( LoadBalance_Ptr_, print_stats, num_objects, object_weights,
+//	num_cuts, cut_weights, num_boundary_objects, num_adj_procs );
 }
 
 int Zoltan::LoadBalance::Free_Data     ( ZOLTAN_ID_PTR * import_global_ids,
