@@ -128,33 +128,54 @@ void CubatureTensor<Scalar,ArrayType>::getCubature(ArrayType & cubPoints,
                       std::out_of_range,
                       ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
 
-  // set all weights to 1.0
+  unsigned numCubs   = cubatures_.size();
+  std::vector<unsigned> numLocPoints(numCubs);
+  std::vector<unsigned> locDim(numCubs);
+  std::vector< FieldContainer<Scalar> > points(numCubs);
+  std::vector< FieldContainer<Scalar> > weights(numCubs);
+
+  // extract required points and weights
+  for (unsigned i=0; i<numCubs; i++) {
+
+    numLocPoints[i] = cubatures_[i]->getNumPoints();
+    locDim[i]       = cubatures_[i]->getDimension();
+    points[i].resize(numLocPoints[i], locDim[i]);
+    weights[i].resize(numLocPoints[i]);
+
+    // cubPoints and cubWeights are used here only for temporary data retrieval
+    cubatures_[i]->getCubature(cubPoints, cubWeights);
+    for (unsigned pt=0; pt<numLocPoints[i]; pt++) {
+      for (unsigned d=0; d<locDim[i]; d++) {
+        points[i](pt,d) = cubPoints(pt,d);
+        weights[i](pt)  = cubWeights(pt);
+      }
+    }
+
+  }
+
+  // reset all weights to 1.0
   for (int i=0; i<numCubPoints; i++) {
       cubWeights(i) = (Scalar)1.0;
   }
 
-  unsigned numCubs   = cubatures_.size();
+  // fill tensor-product cubature
   int globDimCounter = 0;
   int shift          = 1;
   for (unsigned i=0; i<numCubs; i++) {
-    int numLocPoints = cubatures_[i]->getNumPoints();
-    int locDim       = cubatures_[i]->getDimension();
-    FieldContainer<Scalar> points(numLocPoints, locDim);
-    FieldContainer<Scalar> weights(numLocPoints);
-    cubatures_[i]->getCubature(points, weights);
 
     for (int j=0; j<numCubPoints; j++) {
       /* int itmp = ((j*shift) % numCubPoints) + (j / (numCubPoints/shift)); // equivalent, but numerically unstable */
       int itmp = (j % (numCubPoints/shift))*shift + (j / (numCubPoints/shift));
-      for (int k=0; k<locDim; k++) {
-        cubPoints(itmp , globDimCounter+k) = points(j % numLocPoints, k);
+      for (unsigned k=0; k<locDim[i]; k++) {
+        cubPoints(itmp , globDimCounter+k) = points[i](j % numLocPoints[i], k);
       }
-      cubWeights( itmp ) *= weights(j % numLocPoints);
+      cubWeights( itmp ) *= weights[i](j % numLocPoints[i]);
     }
     
-    shift *= numLocPoints;
-    globDimCounter += locDim;
+    shift *= numLocPoints[i];
+    globDimCounter += locDim[i];
   }
+
 } // end getCubature
 
 
