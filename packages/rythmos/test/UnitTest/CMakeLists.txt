@@ -205,7 +205,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    AdjointModelEvaluator
+    AdjointModelEvaluator_UnitTest
     SOURCES Rythmos_AdjointModelEvaluator_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
     COMM serial
@@ -213,7 +213,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    ForwardEulerStepper
+    ForwardEulerStepper_UnitTest
     SOURCES Rythmos_ForwardEuler_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
     COMM serial
@@ -221,7 +221,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    ForwardSensitivityExplicitModelEvaluator
+    ForwardSensitivityExplicitModelEvaluator_UnitTest
     SOURCES Rythmos_ForwardSensitivityExplicitModelEvaluator_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
     COMM serial
@@ -229,7 +229,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    ForwardSensitivityImplicitModelEvaluator
+    ForwardSensitivityImplicitModelEvaluator_UnitTest
     SOURCES Rythmos_ForwardSensitivityImplicitModelEvaluator_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
     COMM serial

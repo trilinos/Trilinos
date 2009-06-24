@@ -119,23 +119,32 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, exactNumericalAnswer_BE ) {
     double dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
     TEST_ASSERT( dt_taken == dt );
     RCP<const VectorBase<double> > x;
+    RCP<const VectorBase<double> > xdot;
     {
       // Get x out of stepper.
       Array<double> t_vec;
       Array<RCP<const VectorBase<double> > > x_vec;
+      Array<RCP<const VectorBase<double> > > xdot_vec;
       t_vec.resize(1); t_vec[0] = t;
-      stepper->getPoints(t_vec,&x_vec,NULL,NULL);
+      stepper->getPoints(t_vec,&x_vec,&xdot_vec,NULL);
       x = x_vec[0];
+      xdot = xdot_vec[0];
     }
     // Compute exact solution:
     double c = dt/(1+f*f*dt*dt/(L*L));
     double x_e_0 = c*(x_exact_0/dt + x_exact_1 + dt*f*f/(L*L)*a);
     double x_e_1 = c*(-f*f/(L*L)*x_exact_0 + x_exact_1/dt + f*f/(L*L)*a);
+    double xd_e_0 = (x_e_0-x_exact_0)/dt;
+    double xd_e_1 = (x_e_1-x_exact_1)/dt;
     double tol = 1.0e-12;
     {
       Thyra::ConstDetachedVectorView<double> x_view( *x );
       TEST_FLOATING_EQUALITY( x_view[0], x_e_0, tol );
       TEST_FLOATING_EQUALITY( x_view[1], x_e_1, tol );
+
+      Thyra::ConstDetachedVectorView<double> xdot_view( *xdot );
+      TEST_FLOATING_EQUALITY( xdot_view[0], xd_e_0, tol );
+      TEST_FLOATING_EQUALITY( xdot_view[1], xd_e_1, tol );
     }
     x_exact_0 = x_e_0;
     x_exact_1 = x_e_1;
