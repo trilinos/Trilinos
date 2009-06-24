@@ -33,6 +33,7 @@
 #include "Rythmos_ImplicitBDFStepper.hpp"
 #include "Rythmos_TimeStepNonlinearSolver.hpp"
 #include "../SinCos/SinCosModel.hpp"
+#include "../VanderPol/VanderPolModel.hpp"
 #include "Rythmos_UnitTestModels.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 
@@ -138,6 +139,91 @@ TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, exactNumericalAnswer_BE ) {
     }
     x_exact_0 = x_e_0;
     x_exact_1 = x_e_1;
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_ImplicitBDFStepper, exactNumericalAnswer_BE_nonlinear ) {
+  double epsilon = 0.5;
+  RCP<ParameterList> modelPL = Teuchos::parameterList();
+  {
+    modelPL->set("Implicit model formulation",true);
+    modelPL->set("Coeff epsilon",epsilon);
+  }
+  RCP<VanderPolModel> model = vanderPolModel();
+  model->setParameterList(modelPL);
+  Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
+  RCP<TimeStepNonlinearSolver<double> > nlSolver = timeStepNonlinearSolver<double>();
+  RCP<ParameterList> stepperPL = Teuchos::parameterList();
+  {
+    ParameterList& pl = stepperPL->sublist("Step Control Settings");
+    pl.set("minOrder",1);
+    pl.set("maxOrder",1);
+    ParameterList& vopl = pl.sublist("VerboseObject");
+    vopl.set("Verbosity Level","none");
+  }
+  RCP<ImplicitBDFStepper<double> > stepper = implicitBDFStepper<double>(model,nlSolver,stepperPL);
+  stepper->setInitialCondition(model_ic);
+  double h = 0.1;
+  std::vector<double> x_0_exact;
+  std::vector<double> x_1_exact;
+  {
+    x_0_exact.push_back(2.0); // IC
+    x_1_exact.push_back(0.0);
+
+    x_0_exact.push_back(-1.385154562512385e-01); // matlab 
+    x_1_exact.push_back(-2.138515456251238e+01); 
+  }
+  double tol_discrete = 1.0e-12;
+  double tol_continuous = 1.0e-1;
+  {
+    // Get IC out
+    double t = 0.0;
+    RCP<const VectorBase<double> > x;
+    {
+      // Get x out of stepper.
+      Array<double> t_vec;
+      Array<RCP<const VectorBase<double> > > x_vec;
+      t_vec.resize(1); t_vec[0] = t;
+      stepper->getPoints(t_vec,&x_vec,NULL,NULL);
+      x = x_vec[0];
+    }
+    {
+      Thyra::ConstDetachedVectorView<double> x_view( *x );
+      TEST_FLOATING_EQUALITY( x_view[0], x_0_exact[0], tol_discrete );
+      TEST_FLOATING_EQUALITY( x_view[1], x_1_exact[0], tol_discrete );
+    }
+  }
+  {
+    // First time step
+    double t = h;
+    double h_taken = stepper->takeStep(h,STEP_TYPE_FIXED);
+    TEST_ASSERT( h_taken == h );
+    RCP<const VectorBase<double> > x;
+    {
+      // Get x out of stepper.
+      Array<double> t_vec;
+      Array<RCP<const VectorBase<double> > > x_vec;
+      t_vec.resize(1); t_vec[0] = t;
+      stepper->getPoints(t_vec,&x_vec,NULL,NULL);
+      x = x_vec[0];
+    }
+    {
+      Thyra::ConstDetachedVectorView<double> x_view( *x );
+      //TEST_FLOATING_EQUALITY( x_view[0], x_0_exact[1], tol_discrete );
+      //TEST_FLOATING_EQUALITY( x_view[1], x_1_exact[1], tol_discrete );
+    }
+    // Now compare this to the continuous exact solution:
+    {
+      Thyra::ModelEvaluatorBase::InArgs<double> inArgs = model->getExactSolution(t);
+      RCP<const VectorBase<double> > x_continuous_exact = inArgs.get_x();
+      {
+        Thyra::ConstDetachedVectorView<double> x_view( *x );
+        Thyra::ConstDetachedVectorView<double> xce_view( *x_continuous_exact );
+
+        TEST_FLOATING_EQUALITY( x_view[0], xce_view[0], tol_continuous );
+        TEST_FLOATING_EQUALITY( x_view[1], xce_view[1], tol_continuous );
+      }
+    }
   }
 }
 

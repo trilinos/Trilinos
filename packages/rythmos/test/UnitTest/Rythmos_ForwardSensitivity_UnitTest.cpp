@@ -557,5 +557,196 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, initializeDecoupled_FE ) {
 
 }
 
+TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, getNodes ) {
+  //Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_EXTREME;
+  //Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
+  RCP<SinCosModel> stateModel = sinCosModel();
+  RCP<ParameterList> modelPL = Teuchos::parameterList();
+  modelPL->set("Accept model parameters",true);
+  modelPL->set("Implicit model formulation",true);
+  modelPL->set("Provide nominal values",true);
+  stateModel->setParameterList(modelPL);
+  const RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  RCP<ParameterList> stepperPL = Teuchos::parameterList();
+  stepperPL->set("Stepper Type","Backward Euler");
+  builder->setParameterList(stepperPL);
+  RCP<StepperBase<double> > stateStepper = builder->create();
+  RCP<TimeStepNonlinearSolver<double> > nonlinearSolver = timeStepNonlinearSolver<double>();
+  {
+    // Set the nonlinear solver on the stepper.
+    RCP<SolverAcceptingStepperBase<double> > SAStateStepper = Teuchos::rcp_dynamic_cast<SolverAcceptingStepperBase<double> >(stateStepper,true);
+    SAStateStepper->setSolver(nonlinearSolver);
+  }
+  int p_index = 0;
+  RCP<ForwardSensitivityStepper<double> > stateAndSensStepper = 
+    forwardSensitivityStepper<double>();
+  {
+    // Verify no nodes are returned when uninitialized
+    Array<double> nodes;
+    stateAndSensStepper->getNodes(&nodes);
+    TEST_ASSERT( nodes.size() == 0 );
+  }
+  stateAndSensStepper->initializeSyncedSteppers(
+    stateModel, 
+    p_index, 
+    stateModel->getNominalValues(),
+    stateStepper, 
+    nonlinearSolver
+    );
+  typedef Thyra::ModelEvaluatorBase MEB;
+  const MEB::InArgs<double> state_ic = stateModel->getNominalValues();
+  RCP<Thyra::VectorBase<double> > s_bar_init
+    = createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+  V_S(outArg(*s_bar_init),0.0);
+  RCP<Thyra::VectorBase<double> > s_bar_dot_init
+    = createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+  V_S(outArg(*s_bar_dot_init),0.0);
+  RCP<const StateAndForwardSensitivityModelEvaluator<double> >
+    stateAndSensModel = stateAndSensStepper->getStateAndFwdSensModel();
+
+  MEB::InArgs<double>
+    state_and_sens_ic = stateAndSensStepper->getModel()->createInArgs();
+  // Copy time, parameters etc.
+  state_and_sens_ic.setArgs(state_ic);
+  // Set initial condition for x_bar = [ x; s_bar ]
+  state_and_sens_ic.set_x(
+    stateAndSensModel->create_x_bar_vec(state_ic.get_x(),s_bar_init)
+    );
+  // Set initial condition for x_bar_dot = [ x_dot; s_bar_dot ]
+  state_and_sens_ic.set_x_dot(
+    stateAndSensModel->create_x_bar_vec(state_ic.get_x_dot(),s_bar_dot_init)
+    );
+  stateAndSensStepper->setInitialCondition(state_and_sens_ic);
+
+  {
+    // Verify there is only one node when initialized
+    Array<double> nodes;
+    stateAndSensStepper->getNodes(&nodes);
+    TEST_ASSERT( nodes.size() == 1 );
+  }
+
+  // Take a step.
+  double dt = 0.1;
+  stateAndSensStepper->takeStep(dt,STEP_TYPE_FIXED);
+  {
+    // Verify there are two nodes after a step
+    Array<double> nodes;
+    stateAndSensStepper->getNodes(&nodes);
+    TEST_ASSERT( nodes.size() == 2 );
+  }
+}
+
+TEUCHOS_UNIT_TEST( Rythmos_ForwardSensitivityStepper, getPoints ) {
+  //Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_EXTREME;
+  //Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_DEFAULT;
+  RCP<SinCosModel> stateModel = sinCosModel();
+  RCP<ParameterList> modelPL = Teuchos::parameterList();
+  modelPL->set("Accept model parameters",true);
+  modelPL->set("Implicit model formulation",true);
+  modelPL->set("Provide nominal values",true);
+  stateModel->setParameterList(modelPL);
+  const RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
+  RCP<ParameterList> stepperPL = Teuchos::parameterList();
+  stepperPL->set("Stepper Type","Backward Euler");
+  builder->setParameterList(stepperPL);
+  RCP<StepperBase<double> > stateStepper = builder->create();
+  RCP<TimeStepNonlinearSolver<double> > nonlinearSolver = timeStepNonlinearSolver<double>();
+  {
+    // Set the nonlinear solver on the stepper.
+    RCP<SolverAcceptingStepperBase<double> > SAStateStepper = Teuchos::rcp_dynamic_cast<SolverAcceptingStepperBase<double> >(stateStepper,true);
+    SAStateStepper->setSolver(nonlinearSolver);
+  }
+  int p_index = 0;
+  RCP<ForwardSensitivityStepper<double> > stateAndSensStepper = 
+    forwardSensitivityStepper<double>();
+
+  stateAndSensStepper->initializeSyncedSteppers(
+    stateModel, 
+    p_index, 
+    stateModel->getNominalValues(),
+    stateStepper, 
+    nonlinearSolver
+    );
+  typedef Thyra::ModelEvaluatorBase MEB;
+  const MEB::InArgs<double> state_ic = stateModel->getNominalValues();
+  RCP<Thyra::VectorBase<double> > s_bar_init
+    = createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+  V_S(outArg(*s_bar_init),0.0);
+  RCP<Thyra::VectorBase<double> > s_bar_dot_init
+    = createMember(stateAndSensStepper->getFwdSensModel()->get_x_space());
+  V_S(outArg(*s_bar_dot_init),0.0);
+  RCP<const StateAndForwardSensitivityModelEvaluator<double> >
+    stateAndSensModel = stateAndSensStepper->getStateAndFwdSensModel();
+
+  MEB::InArgs<double>
+    state_and_sens_ic = stateAndSensStepper->getModel()->createInArgs();
+  // Copy time, parameters etc.
+  state_and_sens_ic.setArgs(state_ic);
+  // Set initial condition for x_bar_ic = [ x; s_bar ]
+  RCP<const VectorBase<double> > x_bar_ic = stateAndSensModel->create_x_bar_vec(state_ic.get_x(),s_bar_init);
+  state_and_sens_ic.set_x(x_bar_ic);
+  // Set initial condition for x_bar_dot_ic = [ x_dot; s_bar_dot ]
+  RCP<const VectorBase<double> > x_bar_dot_ic = stateAndSensModel->create_x_bar_vec(state_ic.get_x_dot(),s_bar_dot_init);
+  state_and_sens_ic.set_x_dot(x_bar_dot_ic);
+  stateAndSensStepper->setInitialCondition(state_and_sens_ic);
+
+  {
+    // Verify we can get the initial condition when stepper is initialized but hasn't taken a step.
+    typedef ScalarTraits<double> SMT;
+    Array<double> time_vec;
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+    time_vec.push_back(state_and_sens_ic.get_t());
+    stateAndSensStepper->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+    TEST_ASSERT(
+      Thyra::testRelNormDiffErr(
+        "x_bar_ic", *x_bar_ic, "x_bar", *(x_vec[0]),
+        "epsilon", SMT::eps(),
+        "epsilon", SMT::eps(),
+        0
+        )
+      );
+    TEST_ASSERT(
+      Thyra::testRelNormDiffErr(
+        "x_bar_dot_ic", *x_bar_dot_ic, "x_bar_dot", *(xdot_vec[0]),
+        "epsilon", SMT::eps(),
+        "epsilon", SMT::eps(),
+        0
+        )
+      );
+  }
+
+  // Take a step.
+  double dt = 0.1;
+  stateAndSensStepper->takeStep(dt,STEP_TYPE_FIXED);
+  {
+    // Verify we can still get the initial condition after a step.
+    typedef ScalarTraits<double> SMT;
+    Array<double> time_vec;
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    Array<double> accuracy_vec;
+    time_vec.push_back(state_and_sens_ic.get_t());
+    stateAndSensStepper->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+    TEST_ASSERT(
+      Thyra::testRelNormDiffErr(
+        "x_bar_ic", *x_bar_ic, "x_bar", *(x_vec[0]),
+        "epsilon", SMT::eps(),
+        "epsilon", SMT::eps(),
+        0
+        )
+      );
+    TEST_ASSERT(
+      Thyra::testRelNormDiffErr(
+        "x_bar_dot_ic", *x_bar_dot_ic, "x_bar_dot", *(xdot_vec[0]),
+        "epsilon", SMT::eps(),
+        "epsilon", SMT::eps(),
+        0
+        )
+      );
+  }
+}
+
 } // namespace Rythmos
 

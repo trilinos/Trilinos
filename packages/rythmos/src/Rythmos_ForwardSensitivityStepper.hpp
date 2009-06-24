@@ -955,7 +955,17 @@ void ForwardSensitivityStepper<Scalar>::getNodes(
   Array<Scalar>* time_vec
   ) const
 {
-  TEST_FOR_EXCEPT("Not implemented yet but we can!");
+  TEUCHOS_ASSERT( time_vec != NULL );
+  time_vec->clear();
+  if (is_null(stateIntegrator_) && is_null(stateStepper_)) {
+    return;
+  }
+  if (!is_null(stateIntegrator_)) {
+    stateIntegrator_->getNodes(time_vec);
+  }
+  else {
+    stateStepper_->getNodes(time_vec);
+  }
 }
 
 

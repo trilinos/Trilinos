@@ -163,7 +163,7 @@ void IntegratorBuilder<Scalar>::setStepperBuilder(
 }
 
 template<class Scalar>
-RCP<const StepperBuilder<Scalar> > IntegratorBuilder<Scalar>::getStepperBuilder()
+RCP<StepperBuilder<Scalar> > IntegratorBuilder<Scalar>::getStepperBuilder()
 {
   return stepperBuilder_;
 }

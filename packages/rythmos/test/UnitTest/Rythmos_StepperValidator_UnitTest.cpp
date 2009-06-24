@@ -27,10 +27,12 @@
 //@HEADER
 
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_ObjectBuilder.hpp"
 
 #include "Rythmos_StepperValidator.hpp"
 #include "Rythmos_IntegratorBuilder.hpp"
 #include "Rythmos_UnitTestModels.hpp"
+#include "Rythmos_ForwardSensitivityStepper.hpp"
 
 namespace Rythmos {
 
@@ -96,6 +98,29 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ImplicitBDF ) {
   sv->validateStepper();
   TEST_ASSERT( true );
 }
+
+/*
+TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ForwardSensitivityStepper ) {
+  RCP<StepperValidator<double> > sv = stepperValidator<double>();
+  RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+  RCP<StepperBuilder<double> > sb = ib->getStepperBuilder();
+  // Add the Forward Sensitivity Stepper to the Stepper Builder.
+  sb->setStepperFactory(
+      Teuchos::abstractFactoryStd< StepperBase<double>, ForwardSensitivityStepper<double> >(),
+      "Forward Sensitivity"
+      );
+  {
+    // Stepper Settings
+    RCP<ParameterList> pl = Teuchos::parameterList();
+    pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Forward Sensitivity");
+    ib->setParameterList(pl);
+  }
+  sv->setIntegratorBuilder(ib);
+
+  sv->validateStepper();
+  TEST_ASSERT( true );
+}
+*/
 
 TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ExplicitTaylorPolynomial ) {
   RCP<StepperValidator<double> > sv = stepperValidator<double>();
