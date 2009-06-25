@@ -129,6 +129,13 @@ int ZoltanLibClass::precompute()
     }
   }
 
+  if (!zoltanParamList_.isParameter("GRAPH_UNSYMMETRIC"))
+    zoltanParamList_.set("GRAPH_UNSYMMETRIC", "1");
+  if (!zoltanParamList_.isParameter("GRAPH_SYMMETRIZE"))
+    zoltanParamList_.set("GRAPH_SYMMETRIZE", "1");
+  if (!zoltanParamList_.isParameter("GRAPH_FAST_BUILD"))
+    zoltanParamList_.set("GRAPH_FAST_BUILD", "FORCE");
+
   if (input_type_ == graph_input_)
     itype = ZoltanLib::QueryObject::graph_input_;
   else if (input_type_ == hgraph_input_)
@@ -519,10 +526,6 @@ repartition(Teuchos::ParameterList& zoltanParamList,
 
   precompute();
 
-  if (!zoltanParamList_.isParameter("GRAPH_FAST_BUILD"))
-    zoltanParamList_.set("GRAPH_FAST_BUILD", "FORCE");
-
-
   //Generate Load Balance
   int changes=0, num_gid_entries=0, num_lid_entries=0, num_import=0, num_export=0;
   ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
@@ -566,14 +569,6 @@ color(Teuchos::ParameterList& zoltanParamList,
   zoltanParamList_ = zoltanParamList;
   precompute();
 
-
-  if (!zoltanParamList_.isParameter("GRAPH_UNSYMMETRIC"))
-    zoltanParamList_.set("GRAPH_UNSYMMETRIC", "1");
-  if (!zoltanParamList_.isParameter("GRAPH_SYMMETRIZE"))
-    zoltanParamList_.set("GRAPH_SYMMETRIZE", "1");
-  if (!zoltanParamList_.isParameter("GRAPH_FAST_BUILD"))
-    zoltanParamList_.set("GRAPH_FAST_BUILD", "FORCE");
-
   //Generate Load Balance
   int  num_gid_entries, num_lid_entries;
 
@@ -601,13 +596,6 @@ order(Teuchos::ParameterList& zoltanParamList,
   zoltanParamList_ = zoltanParamList;
 
   precompute();
-
-  if (!zoltanParamList_.isParameter("GRAPH_UNSYMMETRIC"))
-    zoltanParamList_.set("GRAPH_UNSYMMETRIC", "1");
-  if (!zoltanParamList_.isParameter("GRAPH_SYMMETRIZE"))
-    zoltanParamList_.set("GRAPH_SYMMETRIZE", "1");
-  if (!zoltanParamList_.isParameter("GRAPH_FAST_BUILD"))
-    zoltanParamList_.set("GRAPH_FAST_BUILD", "FORCE");
 
   //Generate Load Balance
   int num_gid_entries, num_lid_entries;
