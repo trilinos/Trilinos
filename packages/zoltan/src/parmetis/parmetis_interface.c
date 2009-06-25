@@ -149,6 +149,8 @@ int Zoltan_ParMetis(
     return (ierr);
   }
 
+  gr.graph_type = 0;
+
   /* Some algorithms use geometry data */
   if (strncmp(alg, "PARTGEOM", 8) == 0){               /* PARTGEOM & PARTGEOMKWAY */
     geo = (ZOLTAN_Third_Geom*) ZOLTAN_MALLOC(sizeof(ZOLTAN_Third_Geom));
@@ -162,12 +164,12 @@ int Zoltan_ParMetis(
     }
     if (strcmp(alg, "PARTGEOM") == 0) {
       gr.get_data = 0;
-      gr.graph_type = NO_GRAPH;
+      gr.graph_type |= (1<<NO_GRAPH);
     }
   }
 
 #ifdef ZOLTAN_PARMETIS
-  gr.graph_type = - GLOBAL_GRAPH;
+  SET_GLOBAL_GRAPH(&gr.graph_type);
   /* Select type of graph, negative because we impose them */
   /* TODO: add a parameter to select the type, shared with Scotch */
 /*   if (strcmp (graph_type, "GLOBAL") != 0) { */
@@ -178,8 +180,8 @@ int Zoltan_ParMetis(
 /*       retval = ZOLTAN_WARN; */
 /*     } */
 /*   } */
-#else
-  gr.graph_type = - LOCAL_GRAPH;
+#else /* graph is local */
+  SET_LOCAL_GRAPH(&gr.graph_type);
 #endif /* ZOLTAN_PARMETIS */
 
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
@@ -264,7 +266,7 @@ int Zoltan_ParMetis(
   /* Now we can call ParMetis */
 
 #ifdef ZOLTAN_PARMETIS
-  if (gr.graph_type != LOCAL_GRAPH) { /* May be GLOBAL or NO GRAPH */
+  if (!IS_LOCAL_GRAPH(gr.graph_type)) { /* May be GLOBAL or NO GRAPH */
     /* First check for ParMetis 3 routines */
     if (strcmp(alg, "PARTKWAY") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
@@ -312,7 +314,7 @@ int Zoltan_ParMetis(
 #endif /* ZOLTAN_PARMETIS */
 #ifdef ZOLTAN_METIS
     /* TODO: I don't know how to set balance ! */
-  if (gr.graph_type == LOCAL_GRAPH) {
+  if (IS_LOCAL_GRAPH(gr.graph_type)) {
     /* Check for Metis routines */
     if (strcmp(alg, "PARTKWAY") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS 4 library");
@@ -606,13 +608,12 @@ int Zoltan_ParMetis_Order(
 
   /* Check what ordering type is requested */
   if (order_opt){
-    gr.graph_type = - GLOBAL_GRAPH;
+      SET_GLOBAL_GRAPH(&gr.graph_type); /* GLOBAL by default */
 
 #ifdef ZOLTAN_PARMETIS
     if (strcmp(order_opt->order_type, "LOCAL") == 0)
 #endif /* ZOLTAN_PARMETIS */
-      gr.graph_type = - LOCAL_GRAPH;
-
+      SET_LOCAL_GRAPH(&gr.graph_type);
   }
   gr.get_data = 1;
 
@@ -637,7 +638,7 @@ int Zoltan_ParMetis_Order(
 
   /* Allocate space for separator sizes */
 
-  if (gr.graph_type == GLOBAL_GRAPH) {
+  if (IS_GLOBAL_GRAPH(gr.graph_type)) {
     if (Zoltan_Order_Init_Tree (&zz->Order, 2*zz->Num_Proc, zz->Num_Proc) != ZOLTAN_OK) {
       /* Not enough memory */
       Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
@@ -658,7 +659,7 @@ int Zoltan_ParMetis_Order(
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
-  if (gr.graph_type!=GLOBAL_GRAPH){
+  if (IS_LOCAL_GRAPH(gr.graph_type)){
   /* Allocate space for inverse perm */
     ord.iperm = (indextype *) ZOLTAN_MALLOC(gr.num_obj*sizeof(indextype));
     if (!ord.iperm){
@@ -674,7 +675,7 @@ int Zoltan_ParMetis_Order(
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
 #ifdef ZOLTAN_PARMETIS
-  if (gr.graph_type==GLOBAL_GRAPH){
+  if (IS_GLOBAL_GRAPH(gr.graph_type)){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
     ParMETIS_V3_NodeND (gr.vtxdist, gr.xadj, gr.adjncy,
 			&numflag, options, ord.rank, ord.sep_sizes, &comm);
@@ -683,7 +684,7 @@ int Zoltan_ParMetis_Order(
   else
 #endif /* ZOLTAN_PARMETIS */
 #if defined(ZOLTAN_METIS) || defined(ZOLTAN_PARMETIS)
- if (gr.graph_type == LOCAL_GRAPH) { /* Be careful : permutation parameters are in the opposite order */
+ if (IS_LOCAL_GRAPH(gr.graph_type)) { /* Be careful : permutation parameters are in the opposite order */
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
     options[0] = 0;  /* Use default options for METIS. */
     order_opt->return_args = RETURN_RANK|RETURN_IPERM; /* We provide directly all the permutations */
@@ -696,7 +697,7 @@ int Zoltan_ParMetis_Order(
   /* Get a time here */
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
 
-  if (gr.graph_type==GLOBAL_GRAPH){ /* Update Elimination tree */
+  if (IS_GLOBAL_GRAPH(gr.graph_type)){ /* Update Elimination tree */
     int numbloc;
     int start;
     int leaf;

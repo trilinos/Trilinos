@@ -60,21 +60,23 @@ compar_weighted(const Zoltan_Weighted_Arcs* arc1, const Zoltan_Weighted_Arcs* ar
 
 
 inline int
-give_proc (indextype vertex, const indextype *vtxdist, int  procnum, int myproc)
+give_proc (indextype vertex, const indextype *vtxdist, int numProc, int *myproc)
 {
   int currentproc;
 
-  if ((vertex >= vtxdist[myproc]) && (vertex < vtxdist[myproc+1])) {
-    return (myproc);
+
+  if ((((*myproc) >= 0) && (*myproc) < numProc) &&
+    (vertex >= vtxdist[*myproc]) && (vertex < vtxdist[*myproc+1])) {
+    return (*myproc);
   }
 
   currentproc = vertex / (vtxdist[1]-vtxdist[0]);  /* Assume that vertices are balanced */
 
-  if (currentproc >= procnum)
-    currentproc = procnum - 1;
+  if (currentproc >= numProc)
+    currentproc = numProc - 1;
 
-  if ((vertex < vtxdist[0])||( vertex >= vtxdist[procnum])) {
-    ZOLTAN_PRINT_WARN (myproc, "Symmetrize Graph problem (1)", "Unknown vertex");
+  if ((vertex < vtxdist[0])||( vertex >= vtxdist[numProc])) {
+    ZOLTAN_PRINT_WARN ((*myproc), "Symmetrize Graph problem (1)", "Unknown vertex");
     return (-1);
   }
 
@@ -90,6 +92,7 @@ give_proc (indextype vertex, const indextype *vtxdist, int  procnum, int myproc)
     break;
   }
 
+  *myproc =currentproc;
   return (currentproc);
 }
 
@@ -106,22 +109,23 @@ add_edge(indextype src, indextype tgt, float wgt,
 	 int *cursersnd, int* curserrcv, Zoltan_Arcs **hashtab, int nnz_loc,
 	 const indextype *vtxdist, int procnum, int myproc)
 {
-
-  if ((tgt >= vtxdist[myproc]) && (tgt < vtxdist[myproc+1])) {
     unsigned int hash;
     int couple[2];
     int i;
 
     couple[0] = src; couple [1] = tgt;
 
-    for (i = 0; i < 2 ; ++i, (*curserrcv)++) {
+    for (i = 0; i < 2 ; ++i) {
       hash = Zoltan_Hash((ZOLTAN_ID_PTR)couple, 2, 2*nnz_loc);
       if (hash < 0) return;
 
-      while((hashtab[hash] != NULL) && (hashtab[hash]->src != src) && (hashtab[hash]->tgt != tgt)){
+      while((hashtab[hash] != NULL) && ((hashtab[hash]->src != couple[0])
+	    || (hashtab[hash]->tgt != couple[1]))){
 	hash++;
+	if (hash >= 2*nnz_loc)
+	  hash =0;
       }
-      if (hashtab[hash] != NULL)
+      if (hashtab[hash] != NULL) /* If already in the hash table */
 	return;
 
       if (rcvarcwgttab != NULL) {
@@ -132,26 +136,28 @@ add_edge(indextype src, indextype tgt, float wgt,
 	hashtab[hash] = &(rcvarctab[*curserrcv]);
       }
 
+      (*curserrcv)++;
       hashtab[hash]->src = couple[0];
       hashtab[hash]->tgt = couple[1];
 
-      couple[1] = src;
-      couple[0] = tgt;
+      if ((tgt >= vtxdist[myproc]) && (tgt < vtxdist[myproc+1])) {
+	couple[0] = tgt; couple [1] = src;
+      }
+      else { /* Non local vertex */
+	if (sndarcwgttab != NULL) {
+	  sndarcwgttab[*cursersnd].arc.src = tgt;
+	  sndarcwgttab[*cursersnd].arc.tgt = src;
+	  sndarcwgttab[*cursersnd].wgt = wgt;
+	}
+	else {
+	  sndarctab[*cursersnd].src = tgt;
+	  sndarctab[*cursersnd].tgt = src;
+	}
+	proctab[*cursersnd]=procnum;
+	(*cursersnd)++;
+	break;
+      }
     }
-  }
-  else { /* Non local vertex */
-    if (sndarcwgttab != NULL) {
-      sndarcwgttab[*cursersnd].arc.src = tgt;
-      sndarcwgttab[*cursersnd].arc.tgt = src;
-      sndarcwgttab[*cursersnd].wgt = wgt;
-    }
-    else {
-      sndarctab[*cursersnd].src = tgt;
-      sndarctab[*cursersnd].tgt = src;
-    }
-    proctab[*cursersnd]=give_proc(tgt, vtxdist, procnum, myproc);
-    (*cursersnd)++;
-  }
 
 }
 
@@ -168,14 +174,14 @@ int Zoltan_Symmetrize_Graph(
     const ZZ *zz, int graph_type, int check_graph, int num_obj,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
     int obj_wgt_dim, int edge_wgt_dim,
-    const indextype * const * vtxdist, indextype **xadj, indextype **adjncy,
-    float **ewgts, const int * const *adjproc)
+    indextype ** vtxdist, indextype **xadj, indextype **adjncy,
+    float **ewgts, int **adjproc)
 {
   /* Local variables */
   indextype vertsrc;
   int edgenum;
   int nnz_loc;
-  int procnum, myproc;
+  int numProc, myproc, currentproc;
   Zoltan_Arcs *sndarctab = NULL, *rcvarctab = NULL;
   Zoltan_Weighted_Arcs *sndarcwgttab = NULL, *rcvarcwgttab = NULL;
   int cursersnd, curserrcv;
@@ -195,7 +201,7 @@ int Zoltan_Symmetrize_Graph(
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  procnum = zz->Num_Proc;
+  numProc = zz->Num_Proc;
   myproc = zz->Proc;
 
   nnz_loc = (*xadj)[num_obj];
@@ -238,7 +244,7 @@ int Zoltan_Symmetrize_Graph(
       }
       add_edge(vertsrc + (*vtxdist)[myproc], (*adjncy)[edgenum], wgt,
 	       sndarctab, sndarcwgttab, proctab, rcvarctab, rcvarcwgttab,
-	       &cursersnd, &curserrcv, hashtab, nnz_loc, *vtxdist, procnum, myproc);
+	       &cursersnd, &curserrcv, hashtab, nnz_loc, *vtxdist, (*adjproc)[edgenum], myproc);
     }
   }
   ZOLTAN_FREE(&hashtab);
@@ -246,6 +252,7 @@ int Zoltan_Symmetrize_Graph(
   /* These arrays may be reconstructed */
   ZOLTAN_FREE(ewgts);
   ZOLTAN_FREE(adjncy);
+  ZOLTAN_FREE(adjproc);
 
   /* Communicate the arcs */
   Zoltan_Comm_Create(&comm_plan, cursersnd, proctab, comm, 6241984, &rcvsize);
@@ -292,12 +299,20 @@ int Zoltan_Symmetrize_Graph(
     ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (3)");
     return (ZOLTAN_MEMERR);
   }
+  *adjproc = (indextype*)ZOLTAN_MALLOC(rcvsize*sizeof(indextype));
+  if ((*adjproc) == NULL) {
+    ZOLTAN_FREE(&rcvarctab);
+    ZOLTAN_FREE(&rcvarcwgttab);
+    ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (4)");
+    return (ZOLTAN_MEMERR);
+  }
+
   if (edge_wgt_dim == 1) {
     *ewgts = (float*)ZOLTAN_MALLOC(rcvsize*sizeof(float));
     if ((*ewgts) == NULL) {
       ZOLTAN_FREE(&rcvarctab);
       ZOLTAN_FREE(&rcvarcwgttab);
-      ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (4)");
+      ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (5)");
       return (ZOLTAN_MEMERR);
     }
   }
@@ -316,6 +331,7 @@ int Zoltan_Symmetrize_Graph(
      the indirection array */
   prevsrc = (*vtxdist)[myproc] ; prevtgt = -1;
   (*xadj)[0] = 0; currentedge = 0; currentvtx=1;
+  currentproc = 0;
   for (edge = 0 ; edge < rcvsize ; ++ edge) {
     Zoltan_Arcs *arc;
 
@@ -325,12 +341,15 @@ int Zoltan_Symmetrize_Graph(
       arc = &(rcvarctab[edge]);
 
     if (arc->src != prevsrc) {
+#ifdef CC_DEBUG
       if ((arc->src < (*vtxdist)[myproc])|| (arc->src >= (*vtxdist)[myproc+1]))
 	*(int*)NULL = 0;
+#endif /* CC_DEBUG */
       do {
 	(*xadj)[currentvtx++] = currentedge;
       } while (currentvtx + (*vtxdist)[myproc] <= arc->src); /* currentvtx is +1 for ending */
       prevsrc = arc->src;
+      currentproc = 0;                /* Reset procid for searching ownership */
     }
     else { /* If the same src vertex, check if it's the same edge */
       if (prevtgt == arc->tgt)
@@ -339,12 +358,16 @@ int Zoltan_Symmetrize_Graph(
 
     prevtgt = arc->tgt;
     (*adjncy)[currentedge] = arc->tgt;
+    (*adjproc)[currentedge] = give_proc(arc->tgt, *vtxdist, numProc, &currentproc);
     if (edge_wgt_dim == 1)
       (*ewgts)[currentedge] = rcvarcwgttab[edge].wgt;
 
     currentedge++;
   }
   (*xadj)[num_obj] = currentedge;
+
+
+  /* TODO: Add Realloc to be memory more efficient */
 
   ZOLTAN_FREE(&rcvarctab);
   ZOLTAN_FREE(&rcvarcwgttab);

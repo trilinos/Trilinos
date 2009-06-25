@@ -214,7 +214,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   num_duplicates = 0;
   num_singletons = 0;
   for (i=0; i<num_obj; i++){
-    if (graph_type == GLOBAL_GRAPH)
+    if (IS_GLOBAL_GRAPH(graph_type))
       global_i = vtxdist[proc]+i;
     else /* graph_type == LOCAL_GRAPH */
       global_i = i; /* A bit confusingly, global_i = i for local graphs */
@@ -229,9 +229,9 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
     for (ii=xadj[i]; ii<xadj[i+1]; ii++){
       global_j = adjncy_sort[ii];
       /* Valid vertex number? */
-      if (((graph_type == GLOBAL_GRAPH) && 
+      if ((IS_GLOBAL_GRAPH(graph_type) &&
            ((global_j < vtxdist[0]) || (global_j >= vtxdist[nprocs])))
-          || ((graph_type == LOCAL_GRAPH) && 
+          || (IS_LOCAL_GRAPH(graph_type) && 
            ((global_j < 0) || (global_j >= num_obj)))){
         sprintf(msg, "Edge to invalid vertex %d detected.", global_j);
         ZOLTAN_PRINT_ERROR(proc, yo, msg);
@@ -255,10 +255,10 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
         }
       }
       /* Is global_j a local vertex? */
-      if ((graph_type == LOCAL_GRAPH) || ((graph_type == GLOBAL_GRAPH) &&
+      if (IS_LOCAL_GRAPH(graph_type) || (IS_GLOBAL_GRAPH(graph_type) &&
           (global_j >= vtxdist[proc]) && (global_j < vtxdist[proc+1]))){
         /* Check if (global_j, global_i) is an edge */
-        if (graph_type == GLOBAL_GRAPH)
+        if (IS_GLOBAL_GRAPH(graph_type))
           j = global_j - vtxdist[proc];
         else /* graph_type == LOCAL_GRAPH */
           j = global_j;
@@ -346,7 +346,7 @@ barrier1:
     return ZOLTAN_FATAL;
   }
 
-  if ((graph_type == GLOBAL_GRAPH) && (check_graph >= 2)) {
+  if ((IS_GLOBAL_GRAPH(graph_type)) && (check_graph >= 2)) {
     /* Test for consistency across processors. */
 
     /* Allocate space for off-proc data */

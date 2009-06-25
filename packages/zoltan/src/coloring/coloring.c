@@ -249,7 +249,7 @@ int Zoltan_Color(
   input_parts = NULL;
   
   /* Default graph type is GLOBAL. */
-  graph_type = GLOBAL_GRAPH;
+  SET_GLOBAL_GRAPH(&graph_type);
   check_graph = 1;
   obj_wgt_dim = 0; /* We do not use weights */
   edge_wgt_dim = 0;
@@ -262,7 +262,7 @@ int Zoltan_Color(
   }
 
   /* Build ParMetis data structures, or just get vtxdist. */
-  ierr = Zoltan_Build_Graph(zz, graph_type, check_graph, nvtx,
+  ierr = Zoltan_Build_Graph(zz, &graph_type, check_graph, nvtx,
          global_ids, local_ids, obj_wgt_dim, edge_wgt_dim,
          &vtxdist, &xadj, &adjncy, &ewgts, &adjproc);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {

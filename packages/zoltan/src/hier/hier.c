@@ -304,6 +304,7 @@ int Zoltan_Hier(
   int hier_num_export_objs=0;
   ZOLTAN_ID_PTR hier_export_gids=NULL, hier_export_lids=NULL;
   int *hier_export_procs=NULL, *hier_export_to_part=NULL;
+  int graph_type = 0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -439,7 +440,11 @@ int Zoltan_Hier(
   }
 
   /* build a graph (only vtxdist if we don't need a graph) */
-  ierr = Zoltan_Build_Graph(zz, (hpp.use_graph ? GLOBAL_GRAPH : NO_GRAPH), 
+  if (hpp.use_graph)
+    SET_GLOBAL_GRAPH(&graph_type);
+  else
+    graph_type |= (1 << NO_GRAPH);
+  ierr = Zoltan_Build_Graph(zz, &graph_type,
 			    hpp.checks, hpp.init_num_obj,
 			    hpp.global_ids, hpp.local_ids,
 			    hpp.obj_wgt_dim, hpp.edge_wgt_dim,

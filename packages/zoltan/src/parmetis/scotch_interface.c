@@ -161,16 +161,18 @@ int Zoltan_Scotch_Order(
   gr.num_obj = num_obj;
 
   /* Check what ordering type is requested */
-  gr.graph_type = - LOCAL_GRAPH;
+  SET_LOCAL_GRAPH(&gr.graph_type);
   if (order_opt){
     if (strcmp(order_opt->order_type, "LOCAL") == 0)
-      gr.graph_type = - LOCAL_GRAPH;
+      SET_LOCAL_GRAPH(&gr.graph_type);
 #ifdef ZOLTAN_PTSCOTCH
     else if (strcmp(order_opt->order_type, "GLOBAL") == 0)
-      gr.graph_type =  - GLOBAL_GRAPH;
+      SET_GLOBAL_GRAPH(&gr.graph_type);
 #endif /* ZOLTAN_PTSCOTCH */
-    else
-      gr.graph_type = - NO_GRAPH;
+    else {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Scotch needs a graph.");
+      return(ZOLTAN_FATAL);
+    }
   }
   gr.get_data = 1;
 
@@ -202,11 +204,11 @@ int Zoltan_Scotch_Order(
   if (strat != NULL) {
     if (
 #ifdef ZOLTAN_PTSCOTCH
-	((gr.graph_type==GLOBAL_GRAPH) && (SCOTCH_stratDgraphOrder (&stradat, strat)) != 0) ||
+	(IS_GLOBAL_GRAPH(gr.graph_type) && (SCOTCH_stratDgraphOrder (&stradat, strat)) != 0) ||
 #endif /* ZOLTAN_PTSCOTCH */
 	(SCOTCH_stratGraphOrder (&stradat, strat) != 0)) {
 #ifdef ZOLTAN_PTSCOTCH
-      if (gr.graph_type == GLOBAL_GRAPH) SCOTCH_dgraphExit(&grafdat);
+      if (IS_GLOBAL_GRAPH(gr.graph_type)) SCOTCH_dgraphExit(&grafdat);
       else
 #endif /* ZOLTAN_PTSCOTCH */
 	SCOTCH_graphExit(&cgrafdat);
@@ -224,7 +226,7 @@ int Zoltan_Scotch_Order(
   }
 
   ord.iperm = NULL;
-  if ((gr.graph_type!=GLOBAL_GRAPH) && (iperm != NULL)) {
+  if (IS_LOCAL_GRAPH(gr.graph_type) && (iperm != NULL)) {
   /* Allocate space for inverse perm */
     order_opt->return_args |= RETURN_IPERM;
     ord.iperm = (indextype *) ZOLTAN_MALLOC(gr.num_obj*sizeof(indextype));
@@ -235,7 +237,7 @@ int Zoltan_Scotch_Order(
     }
   }
 
-  if (gr.graph_type != GLOBAL_GRAPH) { /* Allocate separators tree */
+  if (IS_LOCAL_GRAPH(gr.graph_type)) { /* Allocate separators tree */
     if (Zoltan_Order_Init_Tree (&zz->Order, gr.num_obj + 1, gr.num_obj) != ZOLTAN_OK) {
       Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
@@ -243,7 +245,7 @@ int Zoltan_Scotch_Order(
   }
 
 #ifdef ZOLTAN_PTSCOTCH
-  if ((gr.graph_type==GLOBAL_GRAPH) && (SCOTCH_dgraphOrderInit (&grafdat, &ordedat) != 0)) {
+  if (IS_GLOBAL_GRAPH(gr.graph_type) && (SCOTCH_dgraphOrderInit (&grafdat, &ordedat) != 0)) {
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, &ord);
     ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, "Cannot construct Scotch graph.");
   }
@@ -253,7 +255,7 @@ int Zoltan_Scotch_Order(
   if (get_times) times[1] = Zoltan_Time(zz->Timer);
 
 #ifdef ZOLTAN_PTSCOTCH
-  if (gr.graph_type==GLOBAL_GRAPH){
+  if (IS_GLOBAL_GRAPH(gr.graph_type)){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the PT-Scotch library");
     ierr = SCOTCH_dgraphOrderCompute (&grafdat, &ordedat, &stradat);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the PT-Scotch library");
@@ -275,7 +277,7 @@ int Zoltan_Scotch_Order(
   /* Get a time here */
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
 
-  if (gr.graph_type != GLOBAL_GRAPH) { /* We already have separator tree, just have to compute the leaves */
+  if (IS_LOCAL_GRAPH(gr.graph_type)) { /* We already have separator tree, just have to compute the leaves */
     for (numbloc = 0 ; numbloc < zz->Order.nbr_blocks ; ++numbloc) {
       zz->Order.leaves[numbloc] = numbloc;
     }
@@ -389,7 +391,7 @@ int Zoltan_Scotch_Order(
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
 
 #ifdef ZOLTAN_PTSCOTCH
-  if (gr.graph_type==GLOBAL_GRAPH) {
+  if (IS_GLOBAL_GRAPH(gr.graph_type)) {
     SCOTCH_dgraphOrderExit (&grafdat, &ordedat);
     SCOTCH_dgraphExit (&grafdat);
   }
@@ -544,18 +546,18 @@ int Zoltan_Scotch(
   }
 
 #ifdef ZOLTAN_PTSCOTCH
-  gr.graph_type = - GLOBAL_GRAPH;
+  SET_GLOBAL_GRAPH(&gr.graph_type);
   /* Fix type of graph, negative because we impose them */
   if (strcmp (graph_type, "GLOBAL") != 0) {
-    gr.graph_type = - LOCAL_GRAPH;
+    SET_LOCAL_GRAPH(&gr.graph_type);
     if (zz->Num_Proc > 1) {
       ZOLTAN_PRINT_ERROR(zz->Proc, __func__, "Distributed graph: cannot call serial Scotch, switching to PT-Scotch");
-      gr.graph_type = - GLOBAL_GRAPH;
+      SET_GLOBAL_GRAPH(&gr.graph_type);
       retval = ZOLTAN_WARN;
     }
   }
 #else
-  gr.graph_type = - LOCAL_GRAPH;
+    SET_LOCAL_GRAPH(&gr.graph_type);
 #endif /* ZOLTAN_PTSCOTCH */
 
   /* TODO : take care about multidimensional weights */
@@ -602,11 +604,11 @@ int Zoltan_Scotch(
   if (strat != NULL) {
     if (
 #ifdef ZOLTAN_PTSCOTCH
-	((gr.graph_type==GLOBAL_GRAPH) && (SCOTCH_stratDgraphMap (&stradat, strat)) != 0) ||
+	(IS_GLOBAL_GRAPH(gr.graph_type) && (SCOTCH_stratDgraphMap (&stradat, strat)) != 0) ||
 #endif /* ZOLTAN_PTSCOTCH */
 	(SCOTCH_stratGraphMap (&stradat, strat) != 0)) {
 #ifdef ZOLTAN_PTSCOTCH
-      if (gr.graph_type == GLOBAL_GRAPH) SCOTCH_dgraphExit(&grafdat);
+      if (IS_GLOBAL_GRAPH(gr.graph_type)) SCOTCH_dgraphExit(&grafdat);
       else
 #endif /* ZOLTAN_PTSCOTCH */
 	SCOTCH_graphExit(&cgrafdat);
@@ -618,7 +620,7 @@ int Zoltan_Scotch(
 
   /* Compute size we want for each part */
 #ifdef ZOLTAN_PTSCOTCH
-  if (gr.graph_type == GLOBAL_GRAPH)
+  if (IS_GLOBAL_GRAPH(gr.graph_type))
     SCOTCH_dgraphSize (&grafdat, NULL, &velosum, NULL, NULL);
   else
 #endif /* ZOLTAN_PTSCOTCH */
@@ -636,7 +638,7 @@ int Zoltan_Scotch(
 
   /* Really Call PT-Scotch or Scotch) */
 #ifdef ZOLTAN_PTSCOTCH
-  if (gr.graph_type == GLOBAL_GRAPH) {
+  if (IS_GLOBAL_GRAPH(gr.graph_type)) {
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the PT-Scotch library");
     if (SCOTCH_dgraphMap(&grafdat, &archdat, &stradat, prt.part) != 0) {
       SCOTCH_archExit(&archdat);
@@ -665,7 +667,7 @@ int Zoltan_Scotch(
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
 
 #ifdef ZOLTAN_PTSCOTCH
-  if (gr.graph_type == GLOBAL_GRAPH) {
+  if (IS_GLOBAL_GRAPH(gr.graph_type)) {
     SCOTCH_dgraphExit(&grafdat);
   }
   else
@@ -818,7 +820,7 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
 
   edgelocnbr =  gr->xadj[gr->num_obj];
 #ifdef ZOLTAN_PTSCOTCH
-  if (gr->graph_type==GLOBAL_GRAPH){
+  if (IS_GLOBAL_GRAPH(gr->graph_type)){
     if (SCOTCH_dgraphInit (dgrafptr, comm) != 0) {
       return (ZOLTAN_FATAL);
     }
@@ -831,7 +833,7 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
   }
   else
 #endif /* ZOLTAN_PTSCOTCH */
-  {/* gr->graph_type==GLOBAL_GRAPH */
+  {
     if (SCOTCH_graphInit (cgrafptr) != 0) {
       return (ZOLTAN_FATAL);
     }

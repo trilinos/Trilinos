@@ -26,6 +26,13 @@ extern "C" {
 #include "third_library_tools.h"
 #include "params_const.h"
 
+/* Parameters for how to build the graph */
+static PARAM_VARS Graph_params[] = {
+	{ "GRAPH_UNSYMMETRIC", NULL, "INT", 0 },
+	{ "GRAPH_SYMMETRIZE", NULL, "INT", 0 },
+	{ "GRAPH_FAST_BUILD", NULL, "STRING", 0 },
+	{ NULL, NULL, NULL, 0 } };
+
 extern int Zoltan_Build_Graph_Erik(ZZ *zz, int graph_type, int check_graph,
        int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
        int obj_wgt_dim, int edge_wgt_dim,
@@ -36,71 +43,82 @@ int Zoltan_Build_Graph_Cedric(ZZ *zz, int graph_type, int check_graph,
        int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
        int obj_wgt_dim, int edge_wgt_dim,
        indextype **vtxdist, indextype **xadj, indextype **adjncy, float **ewgts,
-       int **adjproc);
+       int **adjproc, int *success);
 
 int Zoltan_Build_Graph_NoComm(
     ZZ *zz, int graph_type, int check_graph, int num_obj,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
     int obj_wgt_dim, int edge_wgt_dim,
     indextype **vtxdist, indextype **xadj, indextype **adjncy,
-    float **ewgts, int **adjproc);
+    float **ewgts, int **adjproc, int *success);
 
 
 int Zoltan_Build_Graph(
-    ZZ *zz, int graph_type, int check_graph, int num_obj,
+    ZZ *zz, int *graph_type, int check_graph, int num_obj,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
     int obj_wgt_dim, int edge_wgt_dim,
     indextype **vtxdist, indextype **xadj, indextype **adjncy,
     float **ewgts, int **adjproc)
 {
+  int success =0;
   int ierr;
-  int rank;
 
-  double time[3];
+  int unsymmetric = 0;
+  int symmetrize = 0;
+  char try_fast_str[MAX_PARAM_STRING_LEN+1];
 
-  MPI_Barrier(zz->Communicator);
-  time[0] = MPI_Wtime();
-  ierr = Zoltan_Build_Graph_Erik(zz, graph_type, check_graph, num_obj,
-			    global_ids, local_ids,
-			    obj_wgt_dim, edge_wgt_dim,
-			    vtxdist, xadj, adjncy, ewgts, adjproc);
-  MPI_Barrier(zz->Communicator);
-  time[0] -= MPI_Wtime();
+  strcpy(try_fast_str, "NO");  /* default */
 
-  ZOLTAN_FREE(vtxdist);
-  ZOLTAN_FREE(xadj);
-  ZOLTAN_FREE(adjncy);
-  ZOLTAN_FREE(adjproc);
-  ZOLTAN_FREE(ewgts);
+  Zoltan_Bind_Param(Graph_params, "GRAPH_UNSYMMETRIC", (void *) &unsymmetric);
+  Zoltan_Bind_Param(Graph_params, "GRAPH_SYMMETRIZE", (void *) &symmetrize);
+  Zoltan_Bind_Param(Graph_params, "GRAPH_FAST_BUILD", (void *) try_fast_str);
+  Zoltan_Assign_Param_Vals(zz->Params, Graph_params, zz->Debug_Level, zz->Proc,
+			   zz->Debug_Proc);
 
-  MPI_Barrier(zz->Communicator);
-  time[1] = MPI_Wtime();
-  ierr = Zoltan_Build_Graph_Cedric(zz, graph_type, check_graph, num_obj,
-			    global_ids, local_ids,
-			    obj_wgt_dim, edge_wgt_dim,
-			    vtxdist, xadj, adjncy, ewgts, adjproc);
-  MPI_Barrier(zz->Communicator);
-  time[1] -= MPI_Wtime();
+  (*graph_type) &= (~(1<<FORCE_FAST));
+  if (!strcasecmp(try_fast_str, "NO")) {
+    (*graph_type) &= (~(1<<TRY_FAST));
+  }
+  else {
+    if (!strcasecmp(try_fast_str, "FORCE"))
+      (*graph_type) |= (1 << FORCE_FAST);
+    (*graph_type) |= (1<< TRY_FAST);
+  }
 
-  ZOLTAN_FREE(vtxdist);
-  ZOLTAN_FREE(xadj);
-  ZOLTAN_FREE(adjncy);
-  ZOLTAN_FREE(adjproc);
-  ZOLTAN_FREE(ewgts);
+  if (unsymmetric)
+    (*graph_type) |= (1 << UNSYMMETRIC);
+  else
+    (*graph_type) &= (~(1<<UNSYMMETRIC));
 
-  MPI_Barrier(zz->Communicator);
-  time[2] = MPI_Wtime();
-  ierr = Zoltan_Build_Graph_NoComm(zz, graph_type, check_graph, num_obj,
-			    global_ids, local_ids,
-			    obj_wgt_dim, edge_wgt_dim,
-			    vtxdist, xadj, adjncy, ewgts, adjproc);
-  MPI_Barrier(zz->Communicator);
-  time[2] -= MPI_Wtime();
+  if (symmetrize)
+    (*graph_type) |= (1 << SYMMETRIZE);
+  else
+    (*graph_type) &= (~(1<<SYMMETRIZE));
 
+  if ((*graph_type)&(1<<TRY_FAST)) /* Try to construct the graph without any communication */
+    ierr = Zoltan_Build_Graph_NoComm(zz, *graph_type, check_graph, num_obj,
+				     global_ids, local_ids,
+				     obj_wgt_dim, edge_wgt_dim,
+				     vtxdist, xadj, adjncy, ewgts, adjproc, &success);
 
-  MPI_Comm_rank(zz->Communicator, &rank);
-  if (rank == 0)
-    fprintf( stdout, "Time to build the graph : Erik %f, Cedric %f, tricky %f\n", -time[0], -time[1], -time[2]);
+  if ((*graph_type)&(1<<UNSYMMETRIC)) {
+    if (!success) /* If the graph is not built yet */
+      ierr = Zoltan_Build_Graph_Cedric(zz, *graph_type, check_graph, num_obj,
+				       global_ids, local_ids,
+				       obj_wgt_dim, edge_wgt_dim,
+				       vtxdist, xadj, adjncy, ewgts, adjproc, &success);
+
+    if ((success) && ((*graph_type)&(1<<SYMMETRIZE))) /* Symmetrize the graph, A+At way */
+      ierr = Zoltan_Symmetrize_Graph(zz, *graph_type, check_graph, num_obj,
+				     global_ids, local_ids,
+				     obj_wgt_dim, edge_wgt_dim,
+				     vtxdist, xadj, adjncy, ewgts, adjproc);
+  }
+  else if (!success)
+      ierr = Zoltan_Build_Graph_Erik(zz, *graph_type, check_graph, num_obj,
+				     global_ids, local_ids,
+				     obj_wgt_dim, edge_wgt_dim,
+				     vtxdist, xadj, adjncy, ewgts, adjproc);
 
   return (ierr);
 }
@@ -111,12 +129,12 @@ int Zoltan_Build_Graph(
  * The dynamic arrays are allocated in this function
  * and should be freed by the calling function after use.
  * Geometric methods may use this function to only
- * compute vtxdist (and nothing else) by setting graph_type = NO_GRAPH.
+ * compute vtxdist (and nothing else) by setting graph_type&NO_GRAPH.
  * The global and local ids are assumed to be available.
  * Also, the vertex weights are not computed here since
  * they are typically obtained together with the gids.
  *
- * If graph_type = GLOBAL_GRAPH, construct the global graph,
+ * If graph_type&GLOBAL_GRAPH, construct the global graph,
  * otherwise (LOCAL_GRAPH) construct a local subgraph on each proc
  * (and discard all inter-proc edges).
  *
@@ -129,14 +147,14 @@ int Zoltan_Build_Graph_Cedric(
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
     int obj_wgt_dim, int edge_wgt_dim,
     indextype **vtxdist, indextype **xadj, indextype **adjncy,
-    float **ewgts, int **adjproc)
+    float **ewgts, int **adjproc, int *success)
 {
   /* Local variables */
   int  num_edges, max_edges;
   int *nbors_proc = NULL;
   int *edges_per_obj = NULL;
   int nself;
-  int ierr, i, i99, tmp;
+  int ierr = ZOLTAN_OK, i, i99, tmp;
   int max_obj;
   float *tmp_ewgts;
   ZOLTAN_ID_PTR lid;
@@ -164,7 +182,7 @@ int Zoltan_Build_Graph_Cedric(
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
     printf("[%1d] Debug: num_obj =%d\n", zz->Proc, num_obj);
 
-  if (graph_type != NO_GRAPH){
+  if (!(graph_type&NO_GRAPH)){
       if ((zz->Get_Num_Edges == NULL && zz->Get_Num_Edges_Multi == NULL) ||
 	  (zz->Get_Edge_List == NULL && zz->Get_Edge_List_Multi == NULL))
 	ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL,
@@ -204,7 +222,7 @@ int Zoltan_Build_Graph_Cedric(
 	ZOLTAN_PRINT_WARN(zz->Proc, yo, "No objects to balance.");
   }
 
-  if (graph_type != NO_GRAPH){
+  if (!(graph_type&(1<<NO_GRAPH))){
     int vertex;
     int *vertexid;
     int offset;
@@ -251,9 +269,9 @@ int Zoltan_Build_Graph_Cedric(
 
     vertexid = (indextype*)ZOLTAN_MALLOC(num_obj*sizeof(indextype));
     for (vertex = 0 ; vertex < num_obj ; ++ vertex) {
-      if (graph_type == GLOBAL_GRAPH)
+      if (IS_GLOBAL_GRAPH(graph_type))
         vertexid[vertex] = (*vtxdist)[zz->Proc]+vertex; /* Make this a global number */
-      else /* graph_type == LOCAL_GRAPH */
+      else /* graph_type is LOCAL_GRAPH */
         vertexid[vertex] = vertex;                      /* Make this a local number */
     }
 
@@ -306,7 +324,7 @@ int Zoltan_Build_Graph_Cedric(
       trueedge = (*xadj)[vertex];
 
       for (edge = offset ; edge < offset+edges_per_obj[vertex] ; ++edge) {
-	if ((graph_type == LOCAL_GRAPH) && (nbors_proc[edge] != zz->Proc))
+	if (IS_LOCAL_GRAPH(graph_type) && (nbors_proc[edge] != zz->Proc))
 	  continue;                  /* Keep only local edges */
 	if (ZOLTAN_EQ_GID(zz, &(global_ids[vertex*num_gid_entries]),
 			  &(nbors_global[edge*num_gid_entries]))) {
@@ -346,14 +364,10 @@ int Zoltan_Build_Graph_Cedric(
       }
     }
 
+    *success = 1;
+
   }
 
-  /* Successful finish */
-  ierr = ZOLTAN_OK;
-
-/*   ierr = Zoltan_Symmetrize_Graph(zz, graph_type, check_graph, num_obj, */
-/*				 global_ids, local_ids, obj_wgt_dim, edge_wgt_dim, */
-/*				 vtxdist, xadj, adjncy, ewgts, adjproc); */
  End:
 
   ZOLTAN_FREE(&tmp_ewgts);
@@ -386,7 +400,7 @@ int Zoltan_Build_Graph_NoComm(
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
     int obj_wgt_dim, int edge_wgt_dim,
     indextype **vtxdist, indextype **xadj, indextype **adjncy,
-    float **ewgts, int **adjproc)
+    float **ewgts, int **adjproc, int* success)
 {
   /* Local variables */
   int  num_edges, max_edges;
@@ -403,9 +417,6 @@ int Zoltan_Build_Graph_NoComm(
   int num_lid_entries = zz->Num_LID;
   char msg[256];
   int offset = 0;
-  int flag;
-  int sndoffset[3];
-  int rcvoffset[3];
 
 
   char *yo = "Zoltan_Build_Graph";
@@ -426,7 +437,7 @@ int Zoltan_Build_Graph_NoComm(
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
     printf("[%1d] Debug: num_obj =%d\n", zz->Proc, num_obj);
 
-  if (graph_type != NO_GRAPH){
+  if (!(graph_type&(1<<NO_GRAPH))){
       if ((zz->Get_Num_Edges == NULL && zz->Get_Num_Edges_Multi == NULL) ||
 	  (zz->Get_Edge_List == NULL && zz->Get_Edge_List_Multi == NULL))
 	ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL,
@@ -454,25 +465,36 @@ int Zoltan_Build_Graph_NoComm(
   }
   else
     offset = 0;
-  flag = 0;
-  for (i = 0; i < num_obj ; ++i) {
-    if (offset != (*vtxdist)[zz->Proc] + i - global_ids[i])
-      flag =1;
+
+  if (!(graph_type&(1<<FORCE_FAST))) {
+    int flag;
+    int sndoffset[3];
+    int rcvoffset[3];
+
+    flag = 0;
+    for (i = 0; i < num_obj ; ++i) {
+      if (offset != (*vtxdist)[zz->Proc] + i - global_ids[i])
+	flag =1;
+    }
+    sndoffset[0] = flag;
+    sndoffset[1] = offset;
+    sndoffset[2] = -offset;
+
+    MPI_Allreduce (sndoffset, rcvoffset, 3, MPI_INT, MPI_MAX, zz->Communicator);
+
+    if ((rcvoffset[0] != 0) || (rcvoffset[1] != -rcvoffset[2])) {
+      ZOLTAN_FREE(vtxdist);
+      ZOLTAN_PARMETIS_ERROR(ZOLTAN_WARN,
+			    "Cannot quickly handle GID\n");
+    }
+    offset = rcvoffset[1];
   }
-  sndoffset[0] = flag;
-  sndoffset[1] = offset;
-  sndoffset[2] = -offset;
-
-  MPI_Allreduce (sndoffset, rcvoffset, 3, MPI_INT, MPI_MAX, zz->Communicator);
-
-  if ((rcvoffset[0] != 0) || (rcvoffset[1] != -rcvoffset[2])) {
-    ZOLTAN_PARMETIS_ERROR(ZOLTAN_WARN,
-			  "Cannot quickly handle GID\n");
+  else {
+    ierr = ZOLTAN_WARN;
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Assume FAST graph construction\n");
   }
 
-  offset = rcvoffset[1];
-
-  if (graph_type != NO_GRAPH){
+  if (!(graph_type&(1<<NO_GRAPH))){
     int vertex;
     int begin;
 
@@ -535,7 +557,7 @@ int Zoltan_Build_Graph_NoComm(
       trueedge = (*xadj)[vertex];
 
       for (edge = begin ; edge < begin+edges_per_obj[vertex] ; ++edge) {
-	if ((graph_type == LOCAL_GRAPH) && ((*adjproc)[edge] != zz->Proc))
+	if (IS_LOCAL_GRAPH(graph_type) && ((*adjproc)[edge] != zz->Proc))
 	  continue;                  /* Keep only local edges */
 	if (vertex + (*vtxdist)[zz->Proc] == (*adjncy)[edge] + offset) {
 	  nself ++;                  /* Remove self edges */
@@ -572,14 +594,24 @@ int Zoltan_Build_Graph_NoComm(
 
   }
 
-  /* Successful finish */
-  ierr = ZOLTAN_OK;
+  *success = 1;
 
 
  End:
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
+}
+
+
+int Zoltan_Build_Graph_Set_Param(
+char *name,                     /* name of variable */
+char *val)                      /* value of variable */
+{
+  int  index;
+  PARAM_UTYPE result;
+
+  return Zoltan_Check_Param(name, val, Graph_params, &result, &index);
 }
 
 

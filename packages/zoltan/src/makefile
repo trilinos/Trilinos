@@ -262,7 +262,8 @@ PAR_INC		= par_const.h par_average_const.h par_median_const.h \
 		  par_bisect_const.h \
                   par_tflops_special_const.c
 
-PARMETIS_CSRC	= third_library.c preprocessing.c postprocessing.c build_graph.c verify_graph.c \
+PARMETIS_CSRC	= third_library.c preprocessing.c postprocessing.c \
+		  build_graph.c verify_graph.c build_graph2.c sym_graph.c \
                   scatter_graph.c
 PARMETIS_INC	= third_library_const.h
 ifdef PARMETIS_LIBPATH

@@ -89,11 +89,19 @@ extern "C" {
 #endif
 
 
-/* Graph types */
+/* Graph types, used as mask to set bit in graph_type */
 #define NO_GRAPH     0
-#define GLOBAL_GRAPH 1
-#define LOCAL_GRAPH  2
+#define LOCAL_GRAPH  1
+#define TRY_FAST     2
+#define FORCE_FAST   3
+#define UNSYMMETRIC  4
+  /* At this time, means A+At */
+#define SYMMETRIZE   5
 
+#define SET_GLOBAL_GRAPH(gtype) do { (*(gtype)) &= ~(1<<LOCAL_GRAPH); (*(gtype)) &= ~(1<<NO_GRAPH); } while (0)
+#define SET_LOCAL_GRAPH(gtype) do { (*(gtype)) |= (1<<LOCAL_GRAPH); (*(gtype)) &= ~(1<<NO_GRAPH); } while (0)
+#define IS_GLOBAL_GRAPH(gtype) ((!((gtype)&(1<<NO_GRAPH))) && (!((gtype)&(1<<LOCAL_GRAPH))))
+#define IS_LOCAL_GRAPH(gtype) ((!((gtype)&(1<<NO_GRAPH))) && (((gtype)&(1<<LOCAL_GRAPH))))
 
 /* Misc. defs to be used with MPI */
 #define TAG1  32001
@@ -115,18 +123,21 @@ extern int Zoltan_Scotch_Set_Param(char *, char *);
 #endif /* ZOLTAN_SCOTCH */
 extern int Zoltan_Third_Set_Param(char *, char *);
 
-extern int Zoltan_Build_Graph(ZZ *zz, int graph_type, int check_graph,
+extern int Zoltan_Build_Graph_Set_Param(char *, char *);
+
+
+extern int Zoltan_Build_Graph(ZZ *zz, int *graph_type, int check_graph,
        int num_obj, ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
        int obj_wgt_dim, int edge_wgt_dim,
        indextype **vtxdist, indextype **xadj, indextype **adjncy, float **ewgts,
        int **adjproc);
 
-/* extern int Zoltan_Symmetrize_Graph( */
-/*        const ZZ *zz, int graph_type, int check_graph, int num_obj, */
-/*        ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids, */
-/*        int obj_wgt_dim, int edge_wgt_dim, */
-/*        const indextype * const * vtxdist, indextype **xadj, indextype **adjncy, */
-/*        float **ewgts, const int * const *adjproc); */
+extern int Zoltan_Symmetrize_Graph(
+    const ZZ *zz, int graph_type, int check_graph, int num_obj,
+    ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
+    int obj_wgt_dim, int edge_wgt_dim,
+    indextype ** vtxdist, indextype **xadj, indextype **adjncy,
+    float **ewgts, int **adjproc);
 
 extern int Zoltan_Get_Num_Edges_Per_Obj(ZZ *, int, ZOLTAN_ID_PTR,
        ZOLTAN_ID_PTR, int **, int *, int *);

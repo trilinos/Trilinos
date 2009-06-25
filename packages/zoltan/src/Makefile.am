@@ -187,9 +187,11 @@ PARMETIS_H = \
 
 PARMETIS = \
 	$(srcdir)/parmetis/build_graph.c \
+	$(srcdir)/parmetis/build_graph2.c \
 	$(srcdir)/parmetis/postprocessing.c \
 	$(srcdir)/parmetis/preprocessing.c \
 	$(srcdir)/parmetis/scatter_graph.c \
+	$(srcdir)/parmetis/sym_graph.c \
 	$(srcdir)/parmetis/third_library.c \
 	$(srcdir)/parmetis/verify_graph.c
 

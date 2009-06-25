@@ -149,11 +149,7 @@ int Zoltan_Preprocess_Graph(
   else
       gr->edge_wgt_dim = 0;
 
-  if (gr->graph_type >= 0)
-    /* Default graph type is GLOBAL. */
-    gr->graph_type = GLOBAL_GRAPH;
-  else
-    gr->graph_type = - gr->graph_type;
+  /* Default graph type is GLOBAL. */
 
   /* Get parameter options shared by ParMetis and Jostle */
   gr->check_graph = 1;          /* default */
@@ -186,7 +182,7 @@ int Zoltan_Preprocess_Graph(
 
 
   /* Build Graph for third party library data structures, or just get vtxdist. */
-  ierr = Zoltan_Build_Graph(zz, gr->graph_type, gr->check_graph, gr->num_obj,
+  ierr = Zoltan_Build_Graph(zz, &gr->graph_type, gr->check_graph, gr->num_obj,
 			    *global_ids, *local_ids, gr->obj_wgt_dim, gr->edge_wgt_dim,
 			    &gr->vtxdist, &gr->xadj, &gr->adjncy, &float_ewgts, &gr->adjproc);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
@@ -539,7 +535,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
   /* We need to make sure we don't scatter the graph
    * if graph_type = LOCAL_GRAPH, i.e. METIS is used.
    */
-  if (gr->scatter && (gr->graph_type == LOCAL_GRAPH)){
+  if (gr->scatter && (IS_LOCAL_GRAPH(gr->graph_type))){
     gr->scatter = 0;
     ZOLTAN_PRINT_WARN(zz->Proc, yo, "Setting scatter_graph=0 since the graph"
       " is local on each proc");

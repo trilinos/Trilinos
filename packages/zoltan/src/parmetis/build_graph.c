@@ -53,7 +53,7 @@ static int process_edge_list(ZZ *, int, ZOLTAN_ID_PTR, int, ZOLTAN_ID_PTR,
  * symmetrizing the graph (at least as an option).
  */
 
-int Zoltan_Build_Graph(
+int Zoltan_Build_Graph_Erik(
     ZZ *zz, int graph_type, int check_graph, int num_obj,
     ZOLTAN_ID_PTR global_ids, ZOLTAN_ID_PTR local_ids,
     int obj_wgt_dim, int edge_wgt_dim,
@@ -102,7 +102,7 @@ int Zoltan_Build_Graph(
   if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
     printf("[%1d] Debug: num_obj =%d\n", zz->Proc, num_obj);
 
-  if (graph_type != NO_GRAPH){
+  if (!(graph_type&(1<<NO_GRAPH))){
       if ((zz->Get_Num_Edges == NULL && zz->Get_Num_Edges_Multi == NULL) || 
           (zz->Get_Edge_List == NULL && zz->Get_Edge_List_Multi == NULL))
         ZOLTAN_PARMETIS_ERROR(ZOLTAN_FATAL, 
@@ -137,7 +137,7 @@ int Zoltan_Build_Graph(
         ZOLTAN_PRINT_WARN(zz->Proc, yo, "No objects to balance.");
   }
 
-  if (graph_type != NO_GRAPH){
+  if (!(graph_type&(1<<NO_GRAPH))){
     /* Get edge data */
     Zoltan_Get_Num_Edges_Per_Obj(zz, num_obj, global_ids, local_ids, 
                                  &edges_per_obj, &max_edges, &num_edges);
@@ -173,7 +173,7 @@ int Zoltan_Build_Graph(
     for (i=0; i< num_obj; i++){
       hashtab[i] = NULL;
       hash_nodes[i].gid = &(global_ids[i*num_gid_entries]);
-      if (graph_type == GLOBAL_GRAPH)
+      if (IS_GLOBAL_GRAPH(graph_type))
         /* Make this a global number */
         hash_nodes[i].gno = (*vtxdist)[zz->Proc]+i;
       else /* graph_type == LOCAL_GRAPH */
@@ -196,7 +196,7 @@ int Zoltan_Build_Graph(
      */
     max_proc_list_len = 0;
 
-    if (graph_type == GLOBAL_GRAPH){
+    if (IS_GLOBAL_GRAPH(graph_type)){
 #ifdef KDDKDD_TOO_MUCH_REALLOCING
 /* This strategy produced too much realloc'ing, shredding the memory and 
  * causing memory allocation errors.  The alternative probably
@@ -388,7 +388,7 @@ int Zoltan_Build_Graph(
     }
 
     /* Sanity check for edges. */
-    k = (graph_type == GLOBAL_GRAPH ? num_edges : num_edges - cross_edges);
+    k = (IS_GLOBAL_GRAPH(graph_type) ? num_edges : num_edges - cross_edges);
     if ((check_graph >= 1) && ((*xadj)[num_obj] + nself != k)){
       if (zz->Debug_Level >= ZOLTAN_DEBUG_ALL)
          printf("[%3d] xadj[num_obj=%1d] = %d, nself = %d, num_edges = %d, cross_edges = %d, k =%d\n", zz->Proc, num_obj, (*xadj)[num_obj],  nself, num_edges, cross_edges, k);
@@ -734,7 +734,7 @@ int ierr = ZOLTAN_OK;
       /* Inter-processor edge. */
       (*cross_edges)++;
       /* Skip this edge if local graphs have been requested. */
-      if (graph_type == LOCAL_GRAPH)
+      if (IS_LOCAL_GRAPH(graph_type))
         /* do nothing */ ;
       else {
         /* Check if we already have gid[i] in proc_list with */
