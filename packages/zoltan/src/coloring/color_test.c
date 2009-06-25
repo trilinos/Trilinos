@@ -29,7 +29,6 @@ extern "C" {
 #include "third_library_const.h"
 #include "all_allo_const.h"
 
-#define COLORTAG 1001
 
 /*****************************************************************************/
 /*  Parameters structure for Color method.  Used in  */
@@ -73,11 +72,7 @@ int Zoltan_Color_Test(
   int ss=100;
   char comm_pattern='S', color_order='I', color_method='F';  
   int comm[2],gcomm[2];
-  int *color;
-  int colortag = COLORTAG;
-  int sreqcnt = 0, rreqcnt = 0;
-  MPI_Request *sreqs, *rreqs;
-  MPI_Status *stats;
+  int *color=NULL, *reccnt=NULL;
   
   /* PARAMETER SETTINGS */
   Zoltan_Bind_Param(Color_params, "DISTANCE", (void *) &distance);
@@ -158,30 +153,27 @@ int Zoltan_Color_Test(
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       ZOLTAN_COLOR_ERROR(ierr, "Zoltan_Build_Graph returned error.");
   }
- 
+
+  if (nvtx!=num_obj) {
+      ierr = ZOLTAN_FATAL;
+      ZOLTAN_COLOR_ERROR(ierr, "Zoltan_Build_Graph returned different number of vertices.");
+  }
+
+
   /* Exchange global color information */
   color = (int *) ZOLTAN_MALLOC(vtxdist[zz->Num_Proc] * sizeof(int));
-  sreqs = (MPI_Request *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Request));
-  rreqs = (MPI_Request *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Request));
-  stats = (MPI_Status *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(MPI_Status));
-  if (!color || !sreqs || !rreqs || !stats)
+  reccnt = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
+  if (!color || !reccnt)
       MEMORY_ERROR;
 
   if (distance != 1) 
       ZOLTAN_COLOR_ERROR(ZOLTAN_WARN, "Zoltan_Color_Test is only implemented for distance-1 coloring. Skipping verification.");
-  
-  for (i=0; i<zz->Num_Proc; i++) 
-      if (i != zz->Proc) 
-          MPI_Irecv(color+vtxdist[i], vtxdist[i+1]-vtxdist[i], MPI_INT, i, colortag, zz->Communicator, &rreqs[rreqcnt++]);
-      else 
-          memcpy(color+vtxdist[i], color_exp, nvtx * sizeof(int));  
+
+
   for (i=0; i<zz->Num_Proc; i++)
-      if (i != zz->Proc) 
-          MPI_Isend(color_exp, nvtx, MPI_INT, i, colortag, zz->Communicator, &sreqs[sreqcnt++]);
-  MPI_Waitall(rreqcnt, rreqs, stats);
-  MPI_Waitall(sreqcnt, sreqs, stats); 
-  
-  
+      reccnt[i] = vtxdist[i+1]-vtxdist[i];
+  MPI_Allgatherv(color_exp, nvtx, MPI_INT, color, reccnt, vtxdist, MPI_INT, zz->Communicator);
+
   /* Check if there is an error in coloring */
   for (i=0; i<nvtx; i++) {
       int gno = i + vtxdist[zz->Proc];
@@ -202,20 +194,16 @@ int Zoltan_Color_Test(
           break;
   }
 
- End:  
-  if (ierr == ZOLTAN_FATAL) {
-      ierr = 1;
-      MPI_Allreduce(&ierr, &ferr, 1, MPI_INT, MPI_MAX, zz->Communicator);
-  } else {
-      ierr = 0;
-      MPI_Allreduce(&ierr, &ferr, 1, MPI_INT, MPI_MAX, zz->Communicator);
-  }
-  if (ferr == 1)
+ End:
+  if (ierr==ZOLTAN_FATAL)
+      ierr = 2;
+  MPI_Allreduce(&ierr, &ferr, 1, MPI_INT, MPI_MAX, zz->Communicator);  
+  if (ferr == 2)
       ierr = ZOLTAN_FATAL;
   else
       ierr = ZOLTAN_OK;
   
-  Zoltan_Multifree(__FILE__,__LINE__, 9, &vtxdist, &xadj, &adjncy, &input_parts, &adjproc, &color, &rreqs, &sreqs, &stats);
+  Zoltan_Multifree(__FILE__, __LINE__, 7, &vtxdist, &xadj, &adjncy, &input_parts, &adjproc, &color, &reccnt);
   
   return ierr;
 }

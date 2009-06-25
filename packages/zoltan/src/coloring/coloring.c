@@ -105,7 +105,7 @@ char *val			/* value of variable */
     
 
 #if 0
-void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, int *adj, int *adjproc)
+static void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, int *adj, int *adjproc)
 {
     int i, j;
     FILE *outf;
@@ -559,14 +559,17 @@ static int D1coloring(
             }
         }
 
-#ifdef _DEBUG2
-        printf("[%d] relproc: ", zz->Proc);
+#if 0
+        printf("[%d] #of relevalnt procs are %d and procs are: ", zz->Proc, plstcnt);
+        for (i=0; i<plstcnt; ++i)
+            printf("%d ", plst[i]);
+        printf("for vertices related procs are:\n");
         for (i=0; i<nConflict; i++) {
             int u = visit[i];
-            printf("%d:(", u);
+            printf("%d: (", u);
             for (j=xrelproc[isbound[u]-1]; j<xrelproc[isbound[u]]; j++)
                 printf("%d ", relproc[j]);
-            printf(") \n");
+            printf(") \n full adjproc: ");
             for (j=xadj[u]; j<xadj[u+1]; j++)
                 printf("%d ", adjproc[j]);
             printf("\n");            
@@ -1390,6 +1393,8 @@ static int D1ParallelColoring (
                 MPI_Waitsome(rreqcnt, rreqs, &repcount, replies, stats); 
 
             for (l = repcount-1; l >= 0; --l) {
+                int v=0;
+                
                 if (comm_pattern == 'S') 
                     q = l;                 
                 else
@@ -1398,7 +1403,8 @@ static int D1ParallelColoring (
 
                 /* Read received color list from p */
                 for (j = 0; j < 2*ss; ) {
-                    int v  = newcolored[p][j++], c, hv;                    
+                    int c, hv;
+                    v  = newcolored[p][j++];
                     if (v < 0) 
                         break;                    
                     if ((hv = Zoltan_G2LHash_G2L(hash, v)) != -1) {
@@ -1408,7 +1414,7 @@ static int D1ParallelColoring (
                         ++j;                    
                 }
                 /* If p hasn't finished coloring, issue new color request */
-                if (j >= 2*ss) {
+                if (v!=-1) {
                     if (MPI_Irecv(newcolored[p], 2*ss, MPI_INT, p, colortag, zz->Communicator, &rreqs[q]))
                         ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "MPI_Irecv failed.");                    
                 }
@@ -1458,6 +1464,7 @@ static int D1ParallelColoring (
             MPI_Waitsome(rreqcnt, rreqs, &repcount, replies, stats); /* wait some results */
 
         for (l=repcount-1; l>=0; --l) {
+            int v=0;
             if (comm_pattern == 'S') /* wait all results if sync communication*/
                 q = l;                
             else
@@ -1466,7 +1473,8 @@ static int D1ParallelColoring (
             
             /* Read received color list from p */
             for (j = 0; j < 2*ss; ) {
-                int v  = newcolored[p][j++], c, hv;                
+                int c, hv;
+                v  = newcolored[p][j++];
                 if (v < 0) 
                     break;
                 if ((hv = Zoltan_G2LHash_G2L(hash, v)) != -1) {
@@ -1477,7 +1485,7 @@ static int D1ParallelColoring (
             }
             
             /* If p hasn't finished coloring, issue new color request */
-            if (j >= 2*ss) {
+            if (v!=-1) {
                 if (MPI_Irecv(newcolored[p], 2*ss, MPI_INT, p, colortag, zz->Communicator, &rreqs[q]))
                     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "MPI_Irecv failed.");
             }
