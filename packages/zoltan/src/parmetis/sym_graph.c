@@ -187,7 +187,7 @@ int Zoltan_Symmetrize_Graph(
   int cursersnd, curserrcv;
   Zoltan_Arcs **hashtab;
   int *proctab;
-  int rcvsize;
+  int rcvsize = 0;
   indextype prevsrc, prevtgt, currentvtx;
   int currentedge;
   int edge;
@@ -217,9 +217,9 @@ int Zoltan_Symmetrize_Graph(
   }
   proctab = (int*)ZOLTAN_MALLOC(2*nnz_loc*sizeof(int));
 
-  if (hashtab == NULL ||
+  if ((nnz_loc >0 ) && (hashtab == NULL ||
       (sndarcwgttab == NULL && sndarctab == NULL) || (rcvarcwgttab == NULL && rcvarctab == NULL)
-      || proctab == NULL) {
+      || proctab == NULL)) {
     ZOLTAN_FREE(&proctab);
     ZOLTAN_FREE(&rcvarctab);
     ZOLTAN_FREE(&rcvarcwgttab);
@@ -257,7 +257,7 @@ int Zoltan_Symmetrize_Graph(
   /* Communicate the arcs */
   Zoltan_Comm_Create(&comm_plan, cursersnd, proctab, comm, 6241984, &rcvsize);
   rcvsize += curserrcv;
-  if (rcvsize >= 2*nnz_loc) { /* reception buffer is too small */
+  if ((rcvsize > 0) && (rcvsize >= 2*nnz_loc)) { /* reception buffer is too small */
     if (edge_wgt_dim == 1) {
       rcvarcwgttab = (Zoltan_Weighted_Arcs*)
 	ZOLTAN_REALLOC(rcvarcwgttab, rcvsize*sizeof(Zoltan_Weighted_Arcs));
@@ -292,28 +292,30 @@ int Zoltan_Symmetrize_Graph(
   ZOLTAN_FREE(&proctab);
   Zoltan_Comm_Destroy (&comm_plan);
 
-  *adjncy = (indextype*)ZOLTAN_MALLOC(rcvsize*sizeof(indextype));
-  if ((*adjncy) == NULL) {
-    ZOLTAN_FREE(&rcvarctab);
-    ZOLTAN_FREE(&rcvarcwgttab);
-    ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (3)");
-    return (ZOLTAN_MEMERR);
-  }
-  *adjproc = (indextype*)ZOLTAN_MALLOC(rcvsize*sizeof(indextype));
-  if ((*adjproc) == NULL) {
-    ZOLTAN_FREE(&rcvarctab);
-    ZOLTAN_FREE(&rcvarcwgttab);
-    ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (4)");
-    return (ZOLTAN_MEMERR);
-  }
-
-  if (edge_wgt_dim == 1) {
-    *ewgts = (float*)ZOLTAN_MALLOC(rcvsize*sizeof(float));
-    if ((*ewgts) == NULL) {
+  if (rcvsize > 0) {
+    *adjncy = (indextype*)ZOLTAN_MALLOC(rcvsize*sizeof(indextype));
+    if ((*adjncy) == NULL) {
       ZOLTAN_FREE(&rcvarctab);
       ZOLTAN_FREE(&rcvarcwgttab);
-      ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (5)");
+      ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (3)");
       return (ZOLTAN_MEMERR);
+    }
+    *adjproc = (indextype*)ZOLTAN_MALLOC(rcvsize*sizeof(indextype));
+    if ((*adjproc) == NULL) {
+      ZOLTAN_FREE(&rcvarctab);
+      ZOLTAN_FREE(&rcvarcwgttab);
+      ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (4)");
+      return (ZOLTAN_MEMERR);
+    }
+
+    if (edge_wgt_dim == 1) {
+      *ewgts = (float*)ZOLTAN_MALLOC(rcvsize*sizeof(float));
+      if ((*ewgts) == NULL) {
+	ZOLTAN_FREE(&rcvarctab);
+	ZOLTAN_FREE(&rcvarcwgttab);
+	ZOLTAN_PRINT_ERROR (myproc, yo, "Unable to allocate enough memory (5)");
+	return (ZOLTAN_MEMERR);
+      }
     }
   }
 
