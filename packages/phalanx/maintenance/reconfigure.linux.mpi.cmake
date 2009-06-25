@@ -1,5 +1,7 @@
 #!/usr/bin/tcsh
-cmake -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+cmake \
+      -D CMAKE_INSTALL_PREFIX="/home/rppawlo/JUNK15" \
+      -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
       -D Trilinos_ENABLE_Teuchos:BOOL=ON \
       -D Trilinos_ENABLE_Shards:BOOL=ON \
       -D Trilinos_ENABLE_Sacado:BOOL=ON \

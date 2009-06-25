@@ -103,16 +103,16 @@ int main(int argc, char *argv[])
       shards::CellTopology cellType = 
 	shards::getCellTopologyData< shards::Quadrilateral<> >();
       
-      Intrepid::DefaultCubatureFactory<double,MDField<double,IP,Dim> > cubFactory;
+      Intrepid::DefaultCubatureFactory<double,MDField<double> > cubFactory;
       
       // Next few lines fail to compile due to ArrayType issues in intrepid....
 
-      //const int cubDegree = 2;
+      const int cubDegree = 2;
       
-      //Teuchos::RCP<Intrepid::Cubature<double,MDField<double,IP,Dim> > > myCub = 
-      //cubFactory.create(cellType, cubDegree);
+      Teuchos::RCP<Intrepid::Cubature<double,MDField<double> > > myCub = 
+	cubFactory.create(cellType, cubDegree);
       
-      //myCub->getCubature(cub_points, cub_weights);
+      //myCub->getCubature(PHX::MDField<double>(cub_points), PHX::MDField<double>(cub_weights));
       
 
 
