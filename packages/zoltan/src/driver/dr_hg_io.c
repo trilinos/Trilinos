@@ -530,7 +530,7 @@ const char *yo = "dist_hyperedges";
 int nprocs, myproc, i, h, p = 0;
 int *old_hindex = NULL, *old_hvertex = NULL, *old_hvertex_proc = NULL;
 int *size = NULL, *num_send = NULL;
-int **send = NULL;
+int *send = NULL;
 int *send_hgid = NULL, *send_hindex = NULL;
 int *send_hvertex = NULL, *send_hvertex_proc = NULL;
 int max_size, max_num_send;
@@ -600,18 +600,11 @@ int hedge_init_dist_type;
     /* Allocate space for size and send flags */
     size = (int *) calloc(2 * nprocs, sizeof(int));
     num_send = size + nprocs;
-    send = (int **) malloc(nprocs * sizeof(int *));
-    if ((old_hindex[*gnhedges] && !old_hvertex_proc) || !size || !send) {
-      Gen_Error(0, "fatal: insufficient memory");
+    send = (int *) malloc(*gnhedges * sizeof(int *));
+    if ((old_hindex[*gnhedges] && !old_hvertex_proc) || !size ||
+        (*gnhedges && !send)) {
+      Gen_Error(0, "fatal: memory error");
       return 0;
-    }
-
-    for (i = 0; i < nprocs; i++) {
-      send[i] = (int *) calloc(*gnhedges, sizeof(int));
-      if (*gnhedges && !send[i]) {
-	Gen_Error(0, "fatal: memory error in dist_hyperedges");
-	return 0;
-      }
     }
 
     /* Determine to which processors hyperedges should be sent */
@@ -624,7 +617,7 @@ int hedge_init_dist_type;
 	p = ch_dist_proc(old_hvertex[old_hindex[h]], assignments, base);
       size[p] += (old_hindex[h+1] - old_hindex[h]);
       num_send[p]++;
-      send[p][h] = 1;
+      send[h] = p;
       for (i = old_hindex[h]; i < old_hindex[h+1]; i++)
 	old_hvertex_proc[i] = ch_dist_proc(old_hvertex[i], assignments, base);
     }
@@ -659,7 +652,7 @@ int hedge_init_dist_type;
       hvcnt = 0;
       send_hindex[0] = 0;
       for (h = 0; h < *gnhedges; h++) {
-	if (send[p][h]) {
+	if (send[h]==p) {
 	  send_hgid[hecnt] = h;
 	  send_hindex[hecnt+1] = send_hindex[hecnt]
 			       + (old_hindex[h+1] - old_hindex[h]);
@@ -712,7 +705,7 @@ int hedge_init_dist_type;
     (*hindex)[0] = 0;
 
     for (h = 0; h < *gnhedges; h++) {
-      if (send[myproc][h]) {
+      if (send[h]==myproc) {
 	(*hgid)[hecnt] = h;
 	(*hindex)[hecnt+1] = (*hindex)[hecnt]
 			   + (old_hindex[h+1] - old_hindex[h]);
@@ -727,7 +720,6 @@ int hedge_init_dist_type;
       }
     }
 
-    for (p = 0; p < nprocs; p++) safe_free((void **)(void *) &(send[p]));
     safe_free((void **)(void *) &send);
     safe_free((void **)(void *) &size);
     safe_free((void **)(void *) &old_hindex);
