@@ -448,6 +448,13 @@ int main(int argc, char *argv[]) {
     }
     fout.close();
     fout2.close();
+
+    ofstream fNodeOut("edge2node.dat");
+    for (int i=0; i<numEdges; i++) {
+       fNodeOut << edgeToNode(i,0) <<" ";
+       fNodeOut << edgeToNode(i,1) <<"\n";
+    }
+    fNodeOut.close();
 #endif
 
   // Get boundary (side set) information
@@ -463,7 +470,7 @@ int main(int argc, char *argv[]) {
         numElemsOnBoundary(i)=numSidesinSet;
      }
 
-   // Container indicating whether a node is on the boundary (1-yes 0-no)
+   // Container indicating whether an edge is on the boundary (1-yes 0-no)
     FieldContainer<int> edgeOnBoundary(numEdges);
 
    // Side set 1: left
@@ -564,12 +571,17 @@ int main(int argc, char *argv[]) {
     }
     fEdgeout.close();
 
+   // Container indicating whether a node is on the boundary (1-yes 0-no)
+    FieldContainer<int> nodeOnBoundary(numEdges);
      int numEdgeOnBndy=0;
      for (int i=0; i<numEdges; i++) {
-        if (edgeOnBoundary(i))
+        if (edgeOnBoundary(i)){
+           nodeOnBoundary(edgeToNode(i,0))=1;
+           nodeOnBoundary(edgeToNode(i,1))=1;
            numEdgeOnBndy++;
+        }
      }   
-        
+
     
    // Set material properties using undeformed grid assuming each element has only one value of mu
     FieldContainer<double> muVal(numElems);
@@ -915,7 +927,7 @@ int main(int argc, char *argv[]) {
     // assemble into global vector
      for (int row = 0; row < numFieldsC; row++){
            int rowIndex = elemToEdge(k,row);
-           double val = -gC(0,row)+hC(0,row);
+           double val = gC(0,row)-hC(0,row);
            rhsC.SumIntoGlobalValues(1, &rowIndex, &val);
      }
  
@@ -952,6 +964,9 @@ int main(int argc, char *argv[]) {
     }
    */
 
+    EpetraExt::RowMatrixToMatlabFile("k1_0.dat",StiffC);
+    EpetraExt::MultiVectorToMatrixMarketFile("rhsC0.dat",rhsC,0,0,false);
+
      int numBCEdges=0;
      for (int i=0; i<numEdges; i++){
          if (edgeOnBoundary(i)){
@@ -972,8 +987,6 @@ int main(int argc, char *argv[]) {
       delete [] BCEdges;
             
 
-    EpetraExt::RowMatrixToMatlabFile("k1_0.dat",StiffC);
-    EpetraExt::MultiVectorToMatrixMarketFile("rhsC0.dat",rhsC,0,0,false);
     EpetraExt::RowMatrixToMatlabFile("m1_0.dat",MassC);
     EpetraExt::RowMatrixToMatlabFile("m0.dat",MassG);
 
@@ -1019,6 +1032,14 @@ int main(int argc, char *argv[]) {
      MassGinv.InsertGlobalValues(MassG.GRID(i),1,&(DiagG[i]),&CID);
    }
    MassGinv.FillComplete();
+   
+   for(int i=0;i<numNodes;i++) {
+     if (nodeOnBoundary(i)){
+      double val=0.0;
+      MassGinv.ReplaceGlobalValues(i,1,&val,&i);
+     }
+   }
+      
 
 
    // Solve!
@@ -1335,35 +1356,39 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 // Calculates value of exact solution u
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
  {
-    /*
+    
+ /*
     uExact0 = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
     uExact1 = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
     uExact2 = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
-   */
+ */
    
+ /*
     uExact0 = cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
     uExact1 = sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
     uExact2 = sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
-    /*
+ */
+ 
     uExact0 = (y*y - 1.0)*(z*z-1.0);
     uExact1 = (x*x - 1.0)*(z*z-1.0);
     uExact2 = (x*x - 1.0)*(y*y-1.0);
-    */
-
+  
    return 0;
  }
 
 // Calculates divergence of exact solution u
  double evalDivu(double & x, double & y, double & z)
  {
-  /* double divu = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
+  /*
+   double divu = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
-   */
+   
+  */
     
-   double divu = -3.0*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+  // double divu = -3.0*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
 
-  // double divu = 0.0;
+   double divu = 0.0;
 
    return divu;
  }
@@ -1372,7 +1397,8 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 // Calculates curl of exact solution u
  int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z)
  {
-  /*
+  
+ /*
    double duxdy = cos(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*(y+1.0)*(y-1.0) + 2.0*y);
    double duxdz = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0) + 2.0*z);
    double duydx = cos(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0) + 2.0*x);
@@ -1380,23 +1406,29 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    double duzdx = cos(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0) + 2.0*x);
    double duzdy = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(x*(y+1.0)*(y-1.0) + 2.0*y);
  */
+ 
 
+ 
+ /*
    double duxdy = M_PI*cos(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
    double duxdz = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
    double duydx = M_PI*cos(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
    double duydz = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
    double duzdx = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
    double duzdy = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
+*/
+ 
    
 
-  /*
+  
    double duxdy = 2.0*y*(z*z-1);
    double duxdz = 2.0*z*(y*y-1);
    double duydx = 2.0*x*(z*z-1);
    double duydz = 2.0*z*(x*x-1);
    double duzdx = 2.0*x*(y*y-1);
    double duzdy = 2.0*y*(x*x-1);
-   */
+ 
+   
 
    curlu0 = duzdy - duydz;
    curlu1 = duxdz - duzdx;
@@ -1409,7 +1441,8 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
  int evalGradDivu(double & gradDivu0, double & gradDivu1, double & gradDivu2, double & x, double & y, double & z)
 {
    
-   /*
+  /*
+   
     gradDivu0 = -M_PI*M_PI*cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                   -M_PI*sin(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0)+2.0*x)
                   -M_PI*sin(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0)+2.0*x);
@@ -1421,17 +1454,18 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                   -M_PI*M_PI*cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
   
   */
+  
 
+ /*
    gradDivu0 = -3.0*M_PI*M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
    gradDivu1 = -3.0*M_PI*M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
    gradDivu2 = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
-    
-
-  /*
+ */
+ 
    gradDivu0 = 0;
    gradDivu1 = 0;
    gradDivu2 = 0;
-   */
+   
 
    return 0;
 }
