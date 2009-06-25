@@ -1,4 +1,5 @@
 Decomposition Method 	= hypergraph
+Zoltan Parameters	= obj_weight_dim=1
 zoltan parameters       = lb_approach=refine
 zoltan parameters	= hypergraph_package=phg
 Zoltan parameters       = phg_coarsening_method=ipm
