@@ -210,7 +210,7 @@ int Zoltan_Color_Test(
       ierr = 0;
       MPI_Allreduce(&ierr, &ferr, 1, MPI_INT, MPI_MAX, zz->Communicator);
   }
-  if (ferr == 1 && zz->Proc == 0)
+  if (ferr == 1)
       ierr = ZOLTAN_FATAL;
   else
       ierr = ZOLTAN_OK;
