@@ -283,22 +283,20 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   totalNumEdges = zhg->globalHedges;
 
-  if (totalNumEdges > 0){
-    ierr = remove_dense_edges(zz, zhg, edgeSizeThreshold, final_output, 
-              &nLocalEdges, &nGlobalEdges, &nPins,
-              &edgeGNO, &edgeSize, &edgeWeight, &pinGNO, &pinProcs);
-  
-    if (nGlobalEdges < totalNumEdges){
-  
-      /* re-assign edge global numbers if any edges were removed */
-  
-      ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, edgeGNO, nLocalEdges, 
-                                               randomizeInitDist, &totalNumEdges);
-  
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error rea-ssigning global numbers to edges");
-        goto End;
-      }
+  ierr = remove_dense_edges(zz, zhg, edgeSizeThreshold, final_output, 
+            &nLocalEdges, &nGlobalEdges, &nPins,
+            &edgeGNO, &edgeSize, &edgeWeight, &pinGNO, &pinProcs);
+
+  if (nGlobalEdges < totalNumEdges){
+
+    /* re-assign edge global numbers if any edges were removed */
+
+    ierr = Zoltan_PHG_GIDs_to_global_numbers(zz, edgeGNO, nLocalEdges, 
+                                             randomizeInitDist, &totalNumEdges);
+
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error reassigning global numbers to edges");
+      goto End;
     }
   }
 
@@ -808,7 +806,7 @@ int Zoltan_PHG_Cuts(
 
 static char *yo = "Zoltan_PHG_Cuts";
 int ierr = ZOLTAN_OK;
-int i, j, cnt;
+int i, j;
 int npins = 0;                   /* # of pins in hyperedges */
 int *pins = NULL;                   /* pins for edges */
 int *pin_procs = NULL;           /* procs owning pins for edges */
