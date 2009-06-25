@@ -109,6 +109,16 @@ TEUCHOS_UNIT_TEST( EpetraExt_hypre, BetterMatVec ) {
   ierr += TestMat.Multiply(false, X, Y2);
   
   TEST_EQUALITY(EquivalentVectors(Y1,Y2,tol),true);
+
+  ierr += Matrix.Multiply(false, Y1, X);
+  ierr += TestMat.Multiply(false, Y1, Y2);
+
+  TEST_EQUALITY(EquivalentVectors(X,Y2,tol),true);
+
+  ierr += Matrix.Multiply(false, Y2, X);
+  ierr += TestMat.Multiply(false, Y2, Y1);
+
+  TEST_EQUALITY(EquivalentVectors(X,Y1,tol),true);
   TEST_EQUALITY_CONST(ierr, 0);
 }
 

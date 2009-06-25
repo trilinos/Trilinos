@@ -250,6 +250,7 @@ int EpetraExt_HypreIJMatrix::Multiply(bool TransA,
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors()) return -1;  // X and Y must have same number of vectors
      
+  Y.PutScalar(0.0);
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
      //Get values for current vector in multivector.
      double * x_values;
@@ -257,8 +258,9 @@ int EpetraExt_HypreIJMatrix::Multiply(bool TransA,
      double * y_values;
      ierr += (*Y(VecNum)).ExtractView(&y_values);
      
-     // Replace data in Hypre vectors with correct values
+     // Temporarily make a pointer to data in Hypre for end
      double *x_temp = x_local->data; 
+     // Replace data in Hypre vectors with epetra values
      x_local->data = x_values;
      double *y_temp = y_local->data;
      y_local->data = y_values;
@@ -328,6 +330,8 @@ int EpetraExt_HypreIJMatrix::LeftScale(const Epetra_Vector& X) {
 int EpetraExt_HypreIJMatrix::RightScale(const Epetra_Vector& X) {
   int ierr = 0;
   // First we need to import off-processor values of the vector
+  printf("Proc[%d], ColMap min = %d, max = %d.\n", Comm().MyPID(), RowMatrixColMap().MinMyGID(), RowMatrixColMap().MaxMyGID());
+  printf("proc[%d], VecMap min = %d, max = %d.\n", Comm().MyPID(), X.Map().MinMyGID(), X.Map().MaxMyGID());
   Epetra_Import Importer(RowMatrixColMap(), RowMatrixRowMap());
   Epetra_Vector Import_Vector(RowMatrixColMap(), true);
   ierr += Import_Vector.Import(X, Importer, Insert, 0);
