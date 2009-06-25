@@ -119,6 +119,10 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
   ML_Operator *Ke = &(ml->Amat[curr_level]);
 
   Epetra_RowMatrix* Ifpack_Matrix;
+# ifdef IFPACK_NODE_AWARE_CODE
+  Epetra_CrsMatrix* Ifpack_CrsMatrix;
+  Epetra_Map*       Ifpack_RowMap;
+# endif
 
   if (Ke->type == ML_TYPE_ROW_MATRIX)
   {
@@ -142,8 +146,17 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
   {
     // creates the wrapper from ML_Operator to Epetra_RowMatrix
     // (ML_Epetra::RowMatrix). This is a cheap conversion
+#   ifndef IFPACK_NODE_AWARE_CODE
     Ifpack_Matrix = new RowMatrix(Ke, &Comm);
     assert (Ifpack_Matrix != 0);
+#   else
+    //enables efficient use of Ifpack on coarser levels
+    Ifpack_RowMap = new Epetra_Map(-1,Ke->outvec_leng,0,Comm);
+    Epetra_CrsMatrix_Wrap_ML_Operator(Ke, Comm, *Ifpack_RowMap, &Ifpack_CrsMatrix,View,0);
+    assert (Ifpack_CrsMatrix != 0);
+    Ifpack_Matrix = Ifpack_CrsMatrix;
+    delete Ifpack_RowMap;
+#   endif
     // this guy has to be deleted
     MemoryManager[(void*)Ifpack_Matrix] = true;
   }
