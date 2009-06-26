@@ -51,7 +51,7 @@ struct _eval_graph_struct{
   float cutl[EVAL_SIZE];        /* HG NetCut measure */
   float cuts[EVAL_SIZE];        /* The number of cut edges */
   float cut_wgt[EVAL_SIZE]  ;   /* The sum of the weights of the cut edges */
-  float cute[EVAL_SIZE];        /* The number of neighboring partitions */
+  float nnborparts[EVAL_SIZE];  /* The number of neighboring partitions */
 
   float obj_imbalance;          /* vertex number imbalance */
   float imbalance;              /* vertex weight imbalance */

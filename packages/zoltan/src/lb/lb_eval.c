@@ -203,7 +203,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   float *localVals = NULL, *globalVals = NULL;
   float *cutn=NULL, *cutl=NULL, *cut_wgt=NULL;
 
-  char **cute=NULL;
+  char **nnborparts=NULL;
 
   GRAPH_EVAL localEval;
 
@@ -324,16 +324,16 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   num_boundary = (int *)ZOLTAN_CALLOC(nparts, sizeof(int));
   cutn = (float *)ZOLTAN_CALLOC(nparts, sizeof(float));
   cutl = (float *)ZOLTAN_CALLOC(nparts, sizeof(float));
-  cute = (char **)ZOLTAN_MALLOC(nparts * sizeof(char *));
+  nnborparts = (char **)ZOLTAN_MALLOC(nparts * sizeof(char *));
 
-  if (nparts && (!cuts || !cutn || !cutl || !num_boundary || !cute)){
+  if (nparts && (!cuts || !cutn || !cutl || !num_boundary || !nnborparts)){
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
 
   for (i=0; i < nparts; i++){
-    cute[i] = (char *)ZOLTAN_CALLOC(nparts , sizeof(char));
-    if (!cute[i]){
+    nnborparts[i] = (char *)ZOLTAN_CALLOC(nparts , sizeof(char));
+    if (!nnborparts[i]){
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
@@ -370,7 +370,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
          * save this info so that we can count for each part,
          * the number of parts that it has neighbors in
          */
-        cute[obj_part][nbor_part] = 1;
+        nnborparts[obj_part][nbor_part] = 1;
 
         for (e=0; e < ewgt_dim; e++){
           /*
@@ -472,7 +472,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   graph->cuts[EVAL_GLOBAL_AVG] = graph->cuts[EVAL_GLOBAL_SUM] / nparts;
 
   /*
-   * CUTE - The number of neighboring parts
+   * NNBORPARTS - The number of neighboring parts
    */
 
   localCount = (int *)ZOLTAN_MALLOC(nparts * sizeof(int));
@@ -480,22 +480,22 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   for (i=0; i < nparts; i++){
     localCount[i] = 0;
     for (j=0; j < nparts; j++){
-      if (cute[i][j]) localCount[i]++;
+      if (nnborparts[i][j]) localCount[i]++;
     }
-    ZOLTAN_FREE(&cute[i]);
+    ZOLTAN_FREE(&nnborparts[i]);
   }
-  ZOLTAN_FREE(&cute);
+  ZOLTAN_FREE(&nnborparts);
 
   MPI_Allreduce(localCount, globalCount, nparts, MPI_INT, MPI_SUM, comm);
 
   ZOLTAN_FREE(&localCount);
 
   iget_strided_stats(globalCount, 1, 0, nparts,
-               graph->cute + EVAL_GLOBAL_MIN,
-               graph->cute + EVAL_GLOBAL_MAX,
-               graph->cute + EVAL_GLOBAL_SUM);
+               graph->nnborparts + EVAL_GLOBAL_MIN,
+               graph->nnborparts + EVAL_GLOBAL_MAX,
+               graph->nnborparts + EVAL_GLOBAL_SUM);
 
-  graph->cute[EVAL_GLOBAL_AVG] = graph->cute[EVAL_GLOBAL_SUM] / nparts;
+  graph->nnborparts[EVAL_GLOBAL_AVG] = graph->nnborparts[EVAL_GLOBAL_SUM] / nparts;
 
   /*
    * CUT WEIGHT - The sum of the weights of the cut edges.
@@ -589,18 +589,18 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
     printf("\n\n");
 
     printf("%s  Statistics with respect to %1d parts: \n", yo, nparts);
-    printf("%s                               Min      Max    Average    Sum\n", yo);
+    printf("%s                                    Min      Max    Average    Sum\n", yo);
 
-    printf("%s  Num boundary objects :  %8.3g %8.3g %8.3g %8.3g\n", yo, 
+    printf("%s  Num boundary objects      :  %8.3g %8.3g %8.3g %8.3g\n", yo, 
       graph->num_boundary[EVAL_GLOBAL_MIN], graph->num_boundary[EVAL_GLOBAL_MAX], 
       graph->num_boundary[EVAL_GLOBAL_AVG], graph->num_boundary[EVAL_GLOBAL_SUM]);
 
-    printf("%s  Number of cut edges  :  %8.3g %8.3g %8.3g %8.3g\n", yo, 
+    printf("%s  Number of cut edges       :  %8.3g %8.3g %8.3g %8.3g\n", yo, 
       graph->cuts[EVAL_GLOBAL_MIN], graph->cuts[EVAL_GLOBAL_MAX], graph->cuts[EVAL_GLOBAL_AVG],
       graph->cuts[EVAL_GLOBAL_SUM]);
 
     if (ewgt_dim)
-      printf("%s  Weight of cut edges  :  %8.3g %8.3g %8.3g %8.3g\n", yo, 
+      printf("%s  Weight of cut edges (CUTE):  %8.3g %8.3g %8.3g %8.3g\n", yo, 
         graph->cut_wgt[EVAL_GLOBAL_MIN], graph->cut_wgt[EVAL_GLOBAL_MAX], 
         graph->cut_wgt[EVAL_GLOBAL_AVG], graph->cut_wgt[EVAL_GLOBAL_SUM]);
 
@@ -608,7 +608,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
       if (i == EVAL_MAX_XTRA_EWGTS){
         break;
       }
-      printf("%s  Weight %d            :  %8.3g %8.3g %8.3g %8.3g\n", yo, i+2,
+      printf("%s  Weight %d                 :  %8.3g %8.3g %8.3g %8.3g\n", yo, i+2,
         graph->xtra_cut_wgt[i][EVAL_GLOBAL_MIN], graph->xtra_cut_wgt[i][EVAL_GLOBAL_MAX], 
         graph->xtra_cut_wgt[i][EVAL_GLOBAL_AVG], graph->xtra_cut_wgt[i][EVAL_GLOBAL_SUM]);
     }
@@ -617,9 +617,9 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
             EVAL_MAX_XTRA_EWGTS);
     }
 
-    printf("%s  Num Nbor Parts (CUTE):  %8.3g %8.3g %8.3g %8.3g\n", yo, 
-      graph->cute[EVAL_GLOBAL_MIN], graph->cute[EVAL_GLOBAL_MAX], 
-      graph->cute[EVAL_GLOBAL_AVG], graph->cute[EVAL_GLOBAL_SUM]);
+    printf("%s  Num Nbor Parts            :  %8.3g %8.3g %8.3g %8.3g\n", yo, 
+      graph->nnborparts[EVAL_GLOBAL_MIN], graph->nnborparts[EVAL_GLOBAL_MAX], 
+      graph->nnborparts[EVAL_GLOBAL_AVG], graph->nnborparts[EVAL_GLOBAL_SUM]);
 
     printf("\n");
 
@@ -654,10 +654,10 @@ End:
   ZOLTAN_FREE(&cutl);
   ZOLTAN_FREE(&cuts);
 
-  if (cute){
+  if (nnborparts){
     for (i=0; i < nparts; i++)
-      ZOLTAN_FREE(&cute[i]);
-    ZOLTAN_FREE(&cute);
+      ZOLTAN_FREE(&nnborparts[i]);
+    ZOLTAN_FREE(&nnborparts);
   }
 
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -974,7 +974,7 @@ int Zoltan_LB_Eval (ZZ *zzin, int print_stats,
     xtra_cut_weight = eval_graph.xtra_cut_wgt;
     num_cuts = eval_graph.cuts + EVAL_GLOBAL_AVG;
     num_boundary = eval_graph.num_boundary + EVAL_GLOBAL_AVG;
-    num_adjacency = eval_graph.cute + EVAL_GLOBAL_AVG;
+    num_adjacency = eval_graph.nnborparts + EVAL_GLOBAL_AVG;
   }
 
   if (graph_callbacks || hypergraph_callbacks){
