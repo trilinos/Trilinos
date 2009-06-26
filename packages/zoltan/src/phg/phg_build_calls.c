@@ -1081,15 +1081,15 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
         if (!zhg->Pin_Procs) MEMORY_ERROR;
   
         memcpy(zhg->pinGNO, edgeBuf, 2 * cnt * sizeof(int));
-        ZOLTAN_FREE(&edgeBuf);
   
         memcpy(zhg->Pin_Procs, procBuf, 2 * cnt * sizeof(int));
-        ZOLTAN_FREE(&procBuf);
   
         for (i=0; i < cnt; i++){
           zhg->Esize[i] = 2;
         }
       }
+      ZOLTAN_FREE(&edgeBuf);
+      ZOLTAN_FREE(&procBuf);
     }
   } else {
     /* Partition without edge information?  Or return an error? */
