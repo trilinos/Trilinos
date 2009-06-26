@@ -32,51 +32,17 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
   Kokkos_ConfigDefs.hpp
-  Kokkos_BaseSparseMultiply.hpp
-  Kokkos_BaseSparseSolve.hpp
-  Kokkos_CisMatrix.hpp
-  Kokkos_DenseMultiVector.hpp
-  Kokkos_DenseVector.hpp
-  Kokkos_HbMatrix.hpp
-  Kokkos_MultiVector.hpp
-  Kokkos_PackedSparseMultiply.hpp
-  Kokkos_Permutation.hpp
-  Kokkos_SparseOperation.hpp
-  Kokkos_Vector.hpp
-  )
-
-#
-# Util files
-#
-
-APPEND_SET(HEADERS
-  Kokkos_Flops.hpp
-  Kokkos_Time.hpp
-  Kokkos_Fortran_wrappers.hpp
-  Kokkos_f77func.hpp
+  #Kokkos_DefaultSparseMultiply.hpp
+  #Kokkos_DefaultSparseSolve.hpp
+  #Kokkos_CisMatrix.hpp
+  #Kokkos_MultiVector.hpp
+  #Kokkos_Vector.hpp
   Kokkos_Version.hpp
   )
 
 APPEND_SET(SOURCES
-  Kokkos_dcrsmv.f
-  Kokkos_dcrsmm.f
+  Kokkos_Version.cpp
   )
-
-APPEND_SET(HEADERS
-  Kokkos_CompObject.hpp
-  )
-
-######################################
-
-APPEND_SET(HEADERS
-  )
-
-APPEND_SET(SOURCES
-  )
-
-######################################
-IF (TPL_ENABLE_MPI)
-ENDIF()
 
 #
 # C) Define the targets for package's library(s)
