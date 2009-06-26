@@ -32,11 +32,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
   Kokkos_ConfigDefs.hpp
-  #Kokkos_DefaultSparseMultiply.hpp
-  #Kokkos_DefaultSparseSolve.hpp
-  #Kokkos_CisMatrix.hpp
-  #Kokkos_MultiVector.hpp
-  #Kokkos_Vector.hpp
+  Kokkos_DefaultSparseMultiply.hpp
+  Kokkos_DefaultSparseSolve.hpp
+  Kokkos_CrsMatrix.hpp
+  Kokkos_MultiVector.hpp
+  Kokkos_Vector.hpp
   Kokkos_Version.hpp
   )
 
