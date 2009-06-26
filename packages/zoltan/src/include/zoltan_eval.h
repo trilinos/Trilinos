@@ -40,6 +40,8 @@ struct _eval_hg_struct{
   float cutl[EVAL_SIZE];        /* NetCut measure */
   float nobj[EVAL_SIZE];        /* number of partition vertices */
   float obj_wgt[EVAL_SIZE];     /* partition vertex weights */
+  float xtra_imbalance[EVAL_MAX_XTRA_VWGTS];
+  float xtra_obj_wgt[EVAL_MAX_XTRA_VWGTS][EVAL_SIZE];
 };
 
 typedef struct _eval_hg_struct HG_EVAL;
