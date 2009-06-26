@@ -255,10 +255,13 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
     EPETRA_CHK_ERR(-1);
 
   Epetra_Map *rowMap1;
+  bool allocatedHere=false;
   if (rowMap != 0) 
     rowMap1 = const_cast<Epetra_Map *>(rowMap);
-  else
+  else {
     rowMap1 = new Epetra_Map(M, 0, comm);
+    allocatedHere = true;
+  }
   int ioffset = rowMap1->IndexBase()-1;
   int joffset = (colMap != 0 ? colMap->IndexBase()-1 : ioffset);
 
@@ -397,6 +400,8 @@ int MatrixMarketFileToCrsMatrixHandle(const char *filename,
   else {
     EPETRA_CHK_ERR(A->FillComplete());
   }
+
+  if (allocatedHere) delete rowMap1;
   
   if (handle!=0) fclose(handle);
   double dt = timer.ElapsedTime();
