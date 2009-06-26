@@ -1926,7 +1926,7 @@ void ML_BreakForDebugger(ML_Comm *comm)
         sprintf(buf, "Host: %s   PID: %d", "janus", getpid());
 #else
         gethostname(hostname, sizeof(hostname));
-        sprintf(buf, "Host: %s   PID: %d", hostname, getpid());
+        sprintf(buf, "Host: %s   PID: %d (mpi task %d)", hostname, getpid(),mypid);
 #endif
         printf("%s\n",buf);
         fflush(stdout);

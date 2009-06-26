@@ -1763,7 +1763,15 @@ ReComputePreconditioner()
   // Generate all smoothers and coarse grid solver.                         //
   // ====================================================================== //
 
-  ML_CHK_ERR(SetSmoothers());
+  try{SetSmoothers();}
+  catch(...) {
+    if (Comm().MyPID() == 0) {
+      fprintf(stderr,"\n**************************\n");
+      fprintf(stderr,"Problem setting smoothers.\n");
+      fprintf(stderr,"****************************\n\n");
+      ML_CHK_ERR(-1);
+    }
+  }
   Time.ResetStartTime();
 
   ML_Gen_Solver(ml_, ML_MGV, LevelID_[0], LevelID_[NumLevels_-1]);

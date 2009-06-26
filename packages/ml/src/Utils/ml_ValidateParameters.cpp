@@ -351,6 +351,10 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   /* EXPERIMENTAL - RefMaxwell block parallelization */
   PL->set("partitioner: options",dummy);  
   PL->sublist("partitioner: options").disableRecursiveValidation();
+
+  /* EXPERIMENTAL - node aware code */
+  setIntParameter("ML node id",-1,"Unlisted option",PL,intParam);
+
   return PL;
 }
 
