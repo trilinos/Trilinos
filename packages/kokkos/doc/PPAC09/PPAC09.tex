@@ -100,29 +100,25 @@ Of course, the application developer needs to be able to write to a compute buff
 
 {\small \begin{verbatim}
 template <class T>
-void Node::copyToBuffer(
-  int size, const T * src,
+void Node::copyToBuffer( int size, 
+  const T * src,
   Node::buffer<T>::buffer_t dest, 
   int dest_offset
 );                    
 
 template <class T>
-void Node::copyFromBuffer(
-  int size, 
+void Node::copyFromBuffer( int size, 
   Node::buffer<const T>::buffer_t src, 
-  int src_offset,
+  int src_offset, 
   T * dest
 );                    
 
-
 template <class T>
-void Node::copyBuffers(
-  int size, 
+void Node::copyBuffers( int size, 
   Node::buffer<const T>::buffer_t src, 
-  int src_offset,
+  int src_offset, 
   Node::buffer<T>::buffer_t dest, 
-  int dest_offset
-);                    
+  int dest_offset );                    
 \end{verbatim}}
 \verb!copyToBuffer()! copies data in main memory to the specified compute buffer, so that \verb!dest[dest_offset+i]! is equal to \verb!src[i]! for \verb!i=0,...,size-1!. The call may be implemented in an asynchronous manner. However, the API guarantees that upon return, it is safe to write to the memory at \verb!src!, and that the effect of the copy will be complete before the buffer \verb!dest! is used by the compute node. Similarly, \verb!copyFromBuffer()! copies data from a compute buffer to the main memory. This method is guaranteed to return only after the memory transfer is complete. The method \verb!copyBuffers()! copies data from one compute buffer to another. This method may be asynchronous, but as with \verb!copyToBuffer()!, the effect is guaranteed to be complete before either buffer is needed by a parallel computation or another memory operation.
 
@@ -149,12 +145,11 @@ void Node::releaseView(
 The \verb!viewBuffer()! method returns a pointer to a location in main memory containing the contents of the specified compute buffer. This method is intended to allow more efficient access for writing to the parallel buffer than may possible via the copy methods. The write-only flag specifies that the view will be written to but not read from; in this case, the data in the view is undefined. If the data must be read and written to, this flag should be set to false. Any changes made to the buffer via its view are not required to take effect in the buffer until the view is released (see \verb!releaseView()!). If the buffer view is read-only, the user is encouraged to create the view using \verb!viewBufferConst()!. This method is intended to allow more efficient read-only access to a compute buffer. For both \verb!viewBuffer()! and \verb!viewBufferConst()!, the created view should be passed to \verb!releaseView()! so that any allocated resources can be recovered.
 
 {\small \begin{verbatim}
-
 void Node::readyBuffers(
   Node::buffer<const void>::buffer_t cbuffs[],  
-  unsigned int numConstBuffers,
+  int numConstBuffers,
   Node::buffer<void>::buffer_t ncbuffs[], 
-  unsigned int numNonConstBuffers
+  int numNonConstBuffers
 );
 \end{verbatim}}
 The final memory routine is \verb!readyBuffers()!. This routine accepts two arrays, one to a list of const-valued compute buffers, one to a list of non-const-valued compute buffers. Before using any compute buffer in a parallel routine, it is required that the buffers be ``readied'' by this routine. The purpose of this routine is to ensure that the necessary compute buffers are optimally prepared for parallel computation.
@@ -173,7 +168,7 @@ struct WDP {
   void KERNEL_PREFIX execute(int i);
 };
 \end{verbatim}}
-This method, as suggested, implements a \verb!for! loop in parallel, where the \verb!execute()! method of the prescribed work-data pair provides the body of the \verb!for! loop. The underlying assumption of a parallel \verb!for!  is that there is no dependence between the loop iterations, allowing them to be executed simultaneously and in any order. The semantics of the \verb!parallel_for! method dictate that \verb!wd.execute(i)! will be called exactly once for each index \verb!i! in \verb![beg,end)!. The \verb!KERNEL_PREFIX! occurrence is a macro that can be expanded to provide additional compiler pragmas when necessary/useful for particular platforms (e.g., CUDA's \verb!__device__! pragma).
+This \verb!parallel_for! method, as suggested by its name, implements a \verb!for! loop in parallel, where the \verb!execute()! method of the prescribed work-data pair provides the body of the \verb!for! loop. The underlying assumption of a parallel \verb!for!  is that there is no dependence between the loop iterations, allowing them to be executed simultaneously and in any order. The semantics of the \verb!parallel_for! method dictate that \verb!wd.execute(i)! will be called exactly once for each index \verb!i! in \verb![beg,end)!. The \verb!KERNEL_PREFIX! occurrence is a macro that can be expanded to provide additional compiler pragmas when necessary/useful for particular platforms (e.g., CUDA's \verb!__device__! pragma).
 
 {\small \begin{verbatim}
 template <class WDP>
@@ -262,7 +257,10 @@ CPU tests are run on a node with dual quad-core Intel ``Harpertown'' CPU clocked
 
 We have proposed a C++ parallel computing API allowing users to easily write portable kernels that can be run on a diversity of multi-core hardware, demonstrated on serial, TBB and CUDA node types. Similar to some current parallel computing efforts, kernel developers are able to develop in a single language, to a single programming model. However, unlike other efforts, node developers are fully capable of writing custom implementations for any desired node type. This ability is a necessity for node types not supported by proprietary approaches, and it can be useful as well for tuning the performance of popular node types. We are currently implementing this API in the Kokkos kernels packages in the Trilinos project, and utilizing it in the Tpetra distributed linear algebra library, both to be released publically in Fall 2009.
 
-%\section*{Acknowledgment}
+\section*{Acknowledgment}
+The authors would like to acknowledge the DOE-ASCR Institute for Architectures and
+Algorithms and the DOE-NNSA ASC program under the Computer Science Research Foundation for
+partial support of this research.\\
 
 \bibliographystyle{IEEEtran}
 
