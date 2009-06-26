@@ -863,13 +863,13 @@ End:
 /************************************************************************/
 /* The old LB_Eval                                                      */
 /************************************************************************/
-int Zoltan_LB_Eval (ZZ *zz, int print_stats,
+int Zoltan_LB_Eval (ZZ *zzin, int print_stats,
      int *nobj, float *obj_wgt,
      int *ncuts, float *cut_wgt,
      int *nboundary, int *nadj)
 /*
  * Input:
- *   zz          - pointer to Zoltan structure
+ *   zzin        - pointer to Zoltan structure
  *   print_stats - if > 0, compute and print max, min and sum of the metrics
  *                 if == 0, stay silent but compute output arguments
  *
@@ -889,8 +889,8 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
 {
   char *yo = "Zoltan_LB_Eval";
   int ierr = ZOLTAN_OK, i;
+  ZZ *zz = Zoltan_Copy(zzin);
   int nwgt = zz->Obj_Weight_Dim;
-  int ewgt = zz->Edge_Weight_Dim;
   GRAPH_EVAL eval_graph;
   HG_EVAL eval_hg;
   BALANCE_EVAL eval_lb;
@@ -981,6 +981,7 @@ int Zoltan_LB_Eval (ZZ *zz, int print_stats,
     if (nadj && num_adjacency) *nadj = (int)num_adjacency[0];
   }
 
+  Zoltan_Destroy(&zz);
   return ierr;
 }
 
