@@ -19,6 +19,7 @@ extern "C" {
 
 
 #include "zz_const.h"
+#include "zz_rand.h"
 #include "lb_init_const.h"
 #include "params_const.h"
 #include "ha_const.h"
@@ -247,6 +248,7 @@ static void Zoltan_Init(ZZ* zz)
   zz->Debug_Proc = ZOLTAN_DEBUG_PROC_DEF;
   zz->Fortran = 0;
   zz->Tflops_Special = ZOLTAN_TFLOPS_SPECIAL_DEF;
+  zz->Seed = ZOLTAN_RAND_INIT;
   zz->Timer = ZOLTAN_TIMER_DEF;
   zz->Machine_Desc = NULL;
   zz->Params = NULL;

@@ -202,6 +202,8 @@ struct Zoltan_Struct {
   int Fortran;                    /*  1 if created from Fortran, 0 otherwise */
   int Tflops_Special;             /*  Flag to indicate if we should use some
                                       MPI constructs (0) or not (1) on tflops*/
+  unsigned int Seed;              /*  Zoltan_Rand seed: default or provided 
+                                      by user.     */
   MachineType *Machine_Desc;      /*  Machine description for hetero. arch.  */
   struct Param_List *Params;      /*  List of parameter names & new vals     */
   int Deterministic;              /*  Flag indicating whether algorithms used

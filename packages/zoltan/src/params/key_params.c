@@ -319,6 +319,7 @@ int  idx 			/* index of vector param, -1 if scalar */
       case 20:          /* Seed */
         if (result.def)
             result.ival = Zoltan_Seed();
+        zz->Seed = result.ival;
         Zoltan_Srand(result.ival, NULL);
         status = 3;
         break;

@@ -64,8 +64,21 @@ int Zoltan_Random(
   int *parts = NULL;
   float *dummy = NULL;
   static char *yo = "Zoltan_Random";
+  static int first_time = 1;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  /* Synchronize the random number generator. 
+   * This synchronization is needed only for sanity in our nightly testing. 
+   * If some other operation (eg., Zoltan_LB_Eval) changes the status of 
+   * the random number generator, the answers here will change.  They won't
+   * be wrong, but they will be different from our accepted answers.
+   */
+  if (first_time) {
+    Zoltan_Srand(zz->Seed, NULL);
+    Zoltan_Rand(NULL);
+    first_time=0;
+  }
 
   /* No import lists computed. */
   *num_import = -1;
