@@ -2797,7 +2797,11 @@ fflush(stdout);
 /*ML_Operator_Print(&(ml->Pmat[child_level]),"Pn");*/
 #ifdef  MB_MODIF_QR
 {
+#ifdef IFPACK_NODE_AWARE_CODE
+   int    CoarseMtxType = ML_CSR_MATRIX;
+#else
    int    CoarseMtxType = ML_MSR_MATRIX;
+#endif
    ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]),
           &(ml->Pmat[child_level]), &(ml->Amat[child_level]),
           CoarseMtxType);
@@ -2810,7 +2814,11 @@ fflush(stdout);
 #else /*MB_MODIF_QR*/
    ML_rap(&(ml->Rmat[parent_level]), &(ml->Amat[parent_level]),
           &(ml->Pmat[child_level]), &(ml->Amat[child_level]),
+#ifdef IFPACK_NODE_AWARE_CODE
+          ML_CSR_MATRIX);
+#else
           ML_MSR_MATRIX);
+#endif
 #endif/*MB_MODIF_QR*/
 
 #ifdef ML_TIMING
