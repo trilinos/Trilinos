@@ -36,10 +36,10 @@
 namespace Intrepid {
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
-  static void PointTools::cartToBary( ArrayTypeOut & baryValues ,
-				      const ArrayTypeIn1 & cartValues ,
-				      const ArrayTypeIn2 & vertices ,
-				      const shards::CellTopology& cellType )
+  void PointTools::cartToBary( ArrayTypeOut & baryValues ,
+			       const ArrayTypeIn1 & cartValues ,
+			       const ArrayTypeIn2 & vertices ,
+			       const shards::CellTopology& cellType )
   {
     switch (cellType.getKey()) {
     case shards::Tetrahedron<4>::key:
@@ -49,24 +49,24 @@ namespace Intrepid {
 			     cartValues ,
 			     vertices );
       break;
-    case shards::Triangle<3>:
-    case shards::Triangle<4>:
-    case shards::Triangle<6>:
+    case shards::Triangle<3>::key:
+    case shards::Triangle<4>::key:
+    case shards::Triangle<6>::key:
       cartToBaryTriangle( baryValues ,
 			  cartValues ,
 			  vertices );
     break;
     default:
-      TEST_FOR_EXCEPTION( true , std::invalid_argument ,
+      TEST_FOR_EXCEPTION( (true) , std::invalid_argument ,
 			  ">>> ERROR (Intrepid::PointTools::cartToBary): Illegal cell type" );
     }
   }
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
-  static void PointTools::baryToCart( ArrayTypeOut & cartValues ,
-				      const ArrayTypeIn1 & baryValues ,
-				      const ArrayTypeIn2 & vertices ,
-				      const shards::CellTopology& cellType )
+  void PointTools::baryToCart( ArrayTypeOut & cartValues ,
+			       const ArrayTypeIn1 & baryValues ,
+			       const ArrayTypeIn2 & vertices ,
+			       const shards::CellTopology& cellType )
   {
     switch (cellType.getKey()) {
     case shards::Tetrahedron<4>::key:
@@ -76,9 +76,9 @@ namespace Intrepid {
 			  cartValues ,
 			  vertices );
       break;
-    case shards::Triangle<3>:
-    case shards::Triangle<4>:
-    case shards::Triangle<6>:
+    case shards::Triangle<3>::key:
+    case shards::Triangle<4>::key:
+    case shards::Triangle<6>::key:
       baryToCartTriangle( baryValues ,
 			  cartValues ,
 			  vertices );
@@ -91,57 +91,75 @@ namespace Intrepid {
 
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
-  static void PointTools::cartToBaryTriangle( ArrayTypeOut & baryValues ,
-					      const ArrayTypeIn1 & cartValues ,
-					      const ArrayTypeIn2 & vertices )
+  void PointTools::cartToBaryTriangle( ArrayTypeOut & baryValues ,
+				       const ArrayTypeIn1 & cartValues ,
+				       const ArrayTypeIn2 & vertices )
   {
+    TEST_FOR_EXCEPTION( true ,
+			std::logic_error,
+			">>> ERROR (PointTOols::cartToBaryTriangle): not implemented" );
   }
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
-  static void PointTools::cartToBaryTetrahedron( ArrayTypeOut & baryValues ,
-						 const ArrayTypeIn1 & cartValues ,
-						 const ArrayTypeIn2 & vertices )
+  void PointTools::cartToBaryTetrahedron( ArrayTypeOut & baryValues ,
+					  const ArrayTypeIn1 & cartValues ,
+					  const ArrayTypeIn2 & vertices )
   {
+    TEST_FOR_EXCEPTION( true ,
+			std::logic_error,
+			">>> ERROR (PointTOols::cartToBaryTetrahedron): not implemented" );
   }
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
-  static void PointTools::baryToCartTriangle( ArrayTypeOut & baryValues ,
-					      const ArrayTypeIn1 & cartValues ,
-					      const ArrayTypeIn2 & vertices )
+  void PointTools::baryToCartTriangle( ArrayTypeOut & baryValues ,
+				       const ArrayTypeIn1 & cartValues ,
+				       const ArrayTypeIn2 & vertices )
   {
+    TEST_FOR_EXCEPTION( true ,
+			std::logic_error,
+			">>> ERROR (PointTOols::baryToCartTriangle): not implemented" );
   }
 
   template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
-  static void PointTools::baryToCartTetrahedron( ArrayTypeOut & baryValues ,
-						 const ArrayTypeIn1 & cartValues ,
-						 const ArrayTypeIn2 & vertices )
+  void PointTools::baryToCartTetrahedron( ArrayTypeOut & baryValues ,
+					  const ArrayTypeIn1 & cartValues ,
+					  const ArrayTypeIn2 & vertices )
   {
+    TEST_FOR_EXCEPTION( true ,
+			std::logic_error,
+			">>> ERROR (PointTOols::baryToCartTetrahedron): not implemented" );
   }
 
-  static int PointTools::getLatticeSize( const shards::CellTopology& cellType ,
-					 const int order ,
-					 const int offset = 0 )
+  int PointTools::getLatticeSize( const shards::CellTopology& cellType ,
+				  const int order ,
+				  const int offset )
   {
     switch( cellType.getKey() ) {
     case shards::Tetrahedron<4>::key:
     case shards::Tetrahedron<8>::key:
     case shards::Tetrahedron<10>::key:
-      const int effectiveOrder = order - 4 * offset;
-      if (effectiveOrder < 0) return 0;
-      else return (effectiveOrder+1)*(effectiveOrder+2)*(effectiveOrder+3)/6;
+      {
+	const int effectiveOrder = order - 4 * offset;
+	if (effectiveOrder < 0) return 0;
+	else return (effectiveOrder+1)*(effectiveOrder+2)*(effectiveOrder+3)/6;
+      }
       break;
     case shards::Triangle<3>::key:
     case shards::Triangle<4>::key:
-    case shards::Triangle<6>::key:
-      const int effectiveOrder = order - 3 * offset;
-      if (effectiveOrder < 0) return 0;
-      else return (effectiveOrder+1)*(effectiveOrder+2)/2;
+    case shards::Triangle<6>::key: 
+      {
+	const int effectiveOrder = order - 3 * offset;
+	if (effectiveOrder < 0) return 0;
+	else return (effectiveOrder+1)*(effectiveOrder+2)/2;
+      }
       break;
     case shards::Line<2>::key:
     case shards::Line<3>::key:
-      const int effectiveOrder = order - 2 * offset;
-      if (effectiveOrder < 0) return 0;
-      else return (effectiveOrder+1);
+      {
+	const int effectiveOrder = order - 2 * offset;
+	if (effectiveOrder < 0) return 0;
+	else return (effectiveOrder+1);
+      }
       break;
     default:
       TEST_FOR_EXCEPTION( true , std::invalid_argument ,
@@ -152,25 +170,26 @@ namespace Intrepid {
 
   
   template<class Scalar, class ArrayType>
-  static void PointTools::getEquispacedLattice( ArrayType &points ,
-						const int order ,
-						const int offset ,
-						const shards::CellTopology& cellType )
+  void PointTools::getEquispacedLattice( const shards::CellTopology& cellType ,
+					 ArrayType &points ,
+					 const int order ,
+					 const int offset )
+
   {
     switch (cellType.getKey()) {
     case shards::Tetrahedron<4>::key:
     case shards::Tetrahedron<8>::key:
     case shards::Tetrahedron<10>::key:
-      getEquispacedLatticeTetrahedron( points , order , offset );
+      getEquispacedLatticeTetrahedron<Scalar,ArrayType>( points , order , offset );
       break;
     case shards::Triangle<3>::key:
     case shards::Triangle<4>::key:
     case shards::Triangle<6>::key:
-      getEquispacedLatticeTriangle( points , order , offset );
+      getEquispacedLatticeTriangle<Scalar,ArrayType>( points , order , offset );
       break;
     case shards::Line<2>::key:
     case shards::Line<3>::key:
-      getEquispacedLatticeLine( points , order , offset );
+      getEquispacedLatticeLine<Scalar,ArrayType>( points , order , offset );
       break;
     default:
       TEST_FOR_EXCEPTION( true , std::invalid_argument ,
@@ -180,10 +199,11 @@ namespace Intrepid {
    }
 
    template<class Scalar, class ArrayType>
-   static void PointTools::getWarpBlendLattice( ArrayType &points ,
-						 const int order ,
-						 const int offset ,
-						 const shards::CellTopology& cellType )
+   void PointTools::getWarpBlendLattice( const shards::CellTopology& cellType ,
+					 ArrayType &points ,
+					 const int order ,
+					 const int offset )
+
    {
     switch (cellType.getKey()) {
     case shards::Tetrahedron<4>::key:
@@ -208,14 +228,14 @@ namespace Intrepid {
    }
 
    template<class Scalar, class ArrayType>
-   static void PointTools::getEquispacedLatticeLine( ArrayType &points ,
-						     const int order ,
-						     const int offset )
+   void PointTools::getEquispacedLatticeLine( ArrayType &points ,
+					      const int order ,
+					      const int offset )
    {
      TEST_FOR_EXCEPTION( order <= 0 ,
 			 std::invalid_argument ,
 			 ">>> ERROR (Intrepid::PointTools::getEquispacedLatticeLine): order must be positive" );
-     const Scalar h = 2 / order;
+     const Scalar h = 2.0 / order;
 
      for (int i=offset;i<=order-offset;i++) {
        points(i-offset,0) = -1.0 + h * (Scalar) i;
@@ -225,9 +245,9 @@ namespace Intrepid {
    }
 
    template<class Scalar, class ArrayType>
-   static void PointTools::getEquispacedLatticeTriangle( ArrayType &points ,
-							 const int order ,
-							 const int offset )
+   void PointTools::getEquispacedLatticeTriangle( ArrayType &points ,
+						  const int order ,
+						  const int offset )
    {
      TEST_FOR_EXCEPTION( order <= 0 ,
 			 std::invalid_argument ,
@@ -236,8 +256,8 @@ namespace Intrepid {
      const Scalar h = 1.0 / order;
      int cur = 0;
 
-     for (int i=interior;i<=n-interior;i++) {
-       for (int j=interior;j<=n-ii-interior;j++) {
+     for (int i=offset;i<=order-offset;i++) {
+       for (int j=offset;j<=order-i-offset;j++) {
 	 points(cur,0) = (Scalar)0.0 + (Scalar) j * h ;
 	 points(cur,1) = (Scalar)0.0 + (Scalar) i * h;
 	 cur++;
@@ -248,20 +268,20 @@ namespace Intrepid {
    }
 
    template<class Scalar, class ArrayType>
-   static void PointTools::getEquispacedLatticeTetrahedron( ArrayType &points ,
-							    const int order ,
-							    const int offset )
+   void PointTools::getEquispacedLatticeTetrahedron( ArrayType &points ,
+						     const int order ,
+						     const int offset )
    {
-     TEST_FOR_EXCEPTION( order <= 0 ,
+     TEST_FOR_EXCEPTION( (order <= 0) ,
 			 std::invalid_argument ,
-			 ">>> ERROR (Intrepid::PointTools::getEquispacedLatticeLine): order must be positive" );
+			 ">>> ERROR (Intrepid::PointTools::getEquispacedLatticeTetrahedron): order must be positive" );
 
      const Scalar h = 1.0 / order;
      int cur = 0;
 
-     for (int i=interior;i<=n-interior;i++) {
-       for (int j=interior;j<=n-ii-interior;j++) {
-	 for (int k=interior;k<=n-ii-jj-interior;j++) {
+     for (int i=offset;i<=order-offset;i++) {
+       for (int j=offset;j<=order-i-offset;j++) {
+	 for (int k=offset;k<=order-i-j-offset;k++) {
 	   points(cur,0) = (Scalar) k * h;
 	   points(cur,1) = (Scalar) j * h;
 	   points(cur,2) = (Scalar) i * h;
@@ -273,8 +293,36 @@ namespace Intrepid {
      return;
    }
 
+   template<class Scalar, class ArrayType>
+   void PointTools::getWarpBlendLatticeLine( ArrayType &points ,
+					     const int order ,
+					     const int offset )
+   {
+     TEST_FOR_EXCEPTION( true ,
+			 std::logic_error ,
+			 ">>> ERROR( PointTools::getWarpBlendLatticeLine ): not implemented" );
+   }
 
+   template<class Scalar, class ArrayType>
+   void PointTools::getWarpBlendLatticeTriangle( ArrayType &points ,
+						 const int order ,
+						 const int offset  )
+   {
+     TEST_FOR_EXCEPTION( true ,
+			 std::logic_error ,
+			 ">>> ERROR( PointTools::getWarpBlendLatticeTriangle ): not implemented" );
+   }
 
+   template<class Scalar, class ArrayType>
+    void PointTools::getWarpBlendLatticeTetrahedron( ArrayType &points ,
+						     const int order ,
+						     const int offset  )
+   {
+     TEST_FOR_EXCEPTION( true ,
+			 std::logic_error ,
+			 ">>> ERROR( PointTools::getWarpBlendLatticeTetrahedron ): not implemented" );
+   }
+     
 
 
 } // namespace Intrepid

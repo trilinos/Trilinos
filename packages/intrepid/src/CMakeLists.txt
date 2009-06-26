@@ -48,6 +48,8 @@ APPEND_SET(HEADERS
   Shared/Intrepid_ArrayTools.hpp
   Shared/Intrepid_FieldContainerDef.hpp
   Shared/Intrepid_FieldContainer.hpp
+  Shared/Intrepid_PointToolsDef.hpp
+  Shared/Intrepid_PointTools.hpp
   Shared/Intrepid_PolylibDef.hpp
   Shared/Intrepid_Polylib.hpp
   Shared/Intrepid_RealSpaceToolsDef.hpp

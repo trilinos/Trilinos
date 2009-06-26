@@ -38,6 +38,10 @@
 #ifndef INTREPID_POINTTOOLS_HPP
 #define INTREPID_POINTTOOLS_HPP
 
+#include "Shards_CellTopology.hpp"
+#include "Teuchos_TestForException.hpp"
+#include <stdexcept>
+
 namespace Intrepid {
   
   /** \class Intrepid::PointTools
@@ -92,6 +96,28 @@ namespace Intrepid {
 			    const ArrayTypeIn2 & vertices ,
                             const shards::CellTopology& cellType );
 
+
+    /** \brief Computes the number of pointsin a lattice of a given order
+               on a simplex (currently disabled for
+               other cell types).
+	       If offset == 0,
+	       the lattice will include only include the vertex points if order == 1,
+	       and will include edge midpoints if order == 2, and so on.  
+	       In particular, this is the dimension of polynomials of degree "order"
+	       on the given simplex.
+	       The offset argument is used to indicate that the layer of points on the
+	       boundary is omitted (if offset == 1).  For greater offsets, more layers
+	       are omitteed.
+
+        \param  cellType     [in]  - type of reference cell (currently only supports the simplex)
+	\param  order        [in]  - order of the lattice
+	\param  offset       [in]  - the number of boundary layers to omit
+
+    */    
+    static int getLatticeSize( const shards::CellTopology& cellType ,
+			       const int order ,
+			       const int offset = 0 );
+
     /** \brief Computes an equispaced lattice of a given
                order on a reference simplex (currently disabled for
                other cell types).  The output array is
@@ -108,10 +134,11 @@ namespace Intrepid {
 
     */
    template<class Scalar, class ArrayType>
-   static void getEquispacedLattice( ArrayType &points ,
+   static void getEquispacedLattice( const shards::CellTopology& cellType ,
+				     ArrayType &points ,
                                      const int order ,
-                                     const int offset ,
-                                     const shards::CellTopology& cellType );
+                                     const int offset = 0 );
+
 
     /** \brief Computes a warped lattice (ala Warburton's warp-blend points of a given 
                order on a reference simplex (currently disabled for
@@ -129,8 +156,8 @@ namespace Intrepid {
 
     */
    template<class Scalar, class ArrayType>
-   static void getWarpBlendLattice( ArrayType &points ,
-                                    const shards::CellTopology& cellType ,
+   static void getWarpBlendLattice( const shards::CellTopology& cellType ,
+				    ArrayType &points ,
 				    const int order ,
                                     const int offset = 0);
                                     
@@ -154,8 +181,31 @@ namespace Intrepid {
     */
     template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
     static void cartToBaryTriangle( ArrayTypeOut & baryValues ,
-				const ArrayTypeIn1 & cartValues ,
-				const ArrayTypeIn2 & vertices );
+				    const ArrayTypeIn1 & cartValues ,
+				    const ArrayTypeIn2 & vertices );
+
+
+    /** \brief Converts barycentric coordinates to Cartesian coordinates
+	       on a batch of triangles.  
+               The input array baryValues is (C,P,3)
+               The output array cartValues is (C,P,2).
+               The input array vertices is (C,3,2), where
+        \code
+          C - num. integration domains
+          P - number of points per cell
+          D - is the spatial dimension
+        \endcode
+
+        \param  baryValues      [out] - Output array of barycentric coords
+        \param  cartValues      [in]  - Input array of Cartesian coords
+        \param  vertices        [out] - Vertices of each cell.
+
+    */
+    template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
+    static void baryToCartTriangle( ArrayTypeOut & cartValues ,
+				    const ArrayTypeIn1 & baryValues ,
+				    const ArrayTypeIn2 & vertices );
+
 
     /** \brief Converts Cartesian coordinates to barycentric coordinates
 	       on a batch of tetrahedra.  
@@ -178,6 +228,27 @@ namespace Intrepid {
 				       const ArrayTypeIn1 & cartValues ,
 				       const ArrayTypeIn2 & vertices );
 
+    /** \brief Converts barycentric coordinates to Cartesian coordinates
+	       on a batch of tetrahedra.  
+               The input array baryValues is (C,P,4)
+               The output array cartValues is (C,P,3).
+               The input array vertices is (C,4,3), where
+        \code
+          C - num. integration domains
+          P - number of points per cell
+          D - is the spatial dimension
+        \endcode
+
+        \param  baryValues      [out] - Output array of barycentric coords
+        \param  cartValues      [in]  - Input array of Cartesian coords
+        \param  vertices        [out] - Vertices of each cell.
+
+    */
+    template<class Scalar, class ArrayTypeOut, class ArrayTypeIn1, class ArrayTypeIn2>
+    static void baryToCartTetrahedron( ArrayTypeOut & cartValues ,
+				       const ArrayTypeIn1 & baryValues ,
+				       const ArrayTypeIn2 & vertices );
+
 
 
     /** \brief Computes an equispaced lattice of a given
@@ -194,6 +265,7 @@ namespace Intrepid {
                                     in per boundary
 
     */
+    template<class Scalar, class ArrayType>
     static void getEquispacedLatticeLine( ArrayType &points ,
 					  const int order ,
 					  const int offset = 0 );
@@ -212,6 +284,7 @@ namespace Intrepid {
                                     in from boundary
 
     */
+    template<class Scalar, class ArrayType>
     static void getEquispacedLatticeTriangle( ArrayType &points ,
 					      const int order ,
 					      const int offset = 0 );
@@ -230,6 +303,7 @@ namespace Intrepid {
                                     in from boundary
 
     */
+    template<class Scalar, class ArrayType>
     static void getEquispacedLatticeTetrahedron( ArrayType &points ,
 						 const int order ,
 						 const int offset = 0 );
@@ -248,7 +322,8 @@ namespace Intrepid {
                                     in per boundary
 
     */
-    static void getWarpBlendPointsLine( ArrayType *points ,
+    template<class Scalar, class ArrayType>
+    static void getWarpBlendLatticeLine( ArrayType &points ,
 					const int order ,
 					const int offset = 0 );
 
@@ -266,7 +341,8 @@ namespace Intrepid {
                                     in per boundary
 
     */
-    static void getWarpBlendPointsTriangle( ArrayType *points ,
+    template<class Scalar, class ArrayType>
+    static void getWarpBlendLatticeTriangle( ArrayType &points ,
 					    const int order ,
 					    const int offset = 0 );
 
@@ -283,9 +359,10 @@ namespace Intrepid {
         \param  offset      [in]  - Number of points on boundary to skip coming
                                     in per boundary
     */
-    static void getWarpBlendPointsTetrahedron( ArrayType *points ,
-					       const int order ,
-					       const int offset = 0 );
+    template<class Scalar, class ArrayType>
+    static void getWarpBlendLatticeTetrahedron( ArrayType &points ,
+						const int order ,
+						const int offset = 0 );
 
     
   }; // end class PointTools

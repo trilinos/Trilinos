@@ -103,9 +103,6 @@ int main(int argc, char *argv[]) {
       for (int k=0;k<myCub.getNumPoints();k++) {
 	cur += cubWts(k) * basisAtCubPts( i , k ) * basisAtCubPts( j , k );
       }
-      if (i == j) {
-	std::cout << cur << std::endl;
-      }
       if (i != j && fabs( cur ) > INTREPID_TOL) {
 	errorFlag++;
       }
