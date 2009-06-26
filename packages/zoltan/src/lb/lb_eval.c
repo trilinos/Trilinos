@@ -32,7 +32,7 @@ static int get_nbor_parts( ZZ *zz, int nobj, ZOLTAN_ID_PTR global_ids,
   ZOLTAN_ID_PTR local_ids, int *part, int nnbors, ZOLTAN_ID_PTR nbors_global,
   int *nbors_part);
 
-static int *objects_by_partition(ZZ *zz, int num_obj, int *part,
+static int *objects_by_part(ZZ *zz, int num_obj, int *part,
   int *nparts, int *nonempty);
 
 static int
@@ -73,7 +73,7 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, BALANCE_EVAL *eval)
 
   memset(eval, 0, sizeof(BALANCE_EVAL));
 
-  /* Get requested number of partitions.  Actual number may differ  */
+  /* Get requested number of parts.  Actual number may differ  */
 
   ierr = Zoltan_LB_Build_PartDist(zz);
   if (ierr != ZOLTAN_OK){
@@ -82,7 +82,7 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, BALANCE_EVAL *eval)
 
   req_nparts = zz->LB.Num_Global_Parts;
 
-  /* Get object weights and partitions */
+  /* Get object weights and parts */
 
   ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, vwgt_dim, &vwgts, &parts);
 
@@ -109,8 +109,8 @@ int Zoltan_LB_Eval_Balance(ZZ *zz, int print_stats, BALANCE_EVAL *eval)
   /* Get metrics based on number of objects and object weights */
 
   ierr = object_metrics(zz, num_obj, parts, vwgts, vwgt_dim,
-          &nparts,           /* actual number of partitions */
-          &nonempty_nparts,  /* number of non-empty partitions */
+          &nparts,           /* actual number of parts */
+          &nonempty_nparts,  /* number of non-empty parts */
           &eval->obj_imbalance,
           &eval->imbalance,
           eval->nobj,
@@ -223,7 +223,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
     return ZOLTAN_FATAL;
   }
 
-  /* Get requested number of partitions.  Actual number may differ  */
+  /* Get requested number of parts.  Actual number may differ  */
 
   ierr = Zoltan_LB_Build_PartDist(zz);
   if (ierr != ZOLTAN_OK){
@@ -232,7 +232,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
   req_nparts = zz->LB.Num_Global_Parts;
 
-  /* Get object weights and partitions */
+  /* Get object weights and parts */
 
   ierr = Zoltan_Get_Obj_List(zz, &num_obj, &global_ids, &local_ids, vwgt_dim, &vwgts, &parts);
 
@@ -284,8 +284,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
    */
 
   ierr = object_metrics(zz, num_obj, parts, vwgts, vwgt_dim,
-          &nparts,          /* actual number of partitions */
-          &nonempty_nparts,  /* number of non-empty partitions */
+          &nparts,          /* actual number of parts */
+          &nonempty_nparts,  /* number of non-empty parts */
           &graph->obj_imbalance,
           &graph->imbalance,
           graph->nobj,
@@ -297,7 +297,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
     goto End;
 
   /*****************************************************************
-   * Compute the partition number of neighboring objects
+   * Compute the part number of neighboring objects
    */
 
   nbors_part = (int *)ZOLTAN_MALLOC(num_edges * sizeof(int));
@@ -362,20 +362,20 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
       if (nbor_part != obj_part){
         /* 
-         * number of edges that have nbor in a different partition 
+         * number of edges that have nbor in a different part 
          */
         cuts[obj_part]++; 
 
         /*
-         * save this info so that we can count for each partition,
-         * the number of partitions that it has neighbors in
+         * save this info so that we can count for each part,
+         * the number of parts that it has neighbors in
          */
         cute[obj_part][nbor_part] = 1;
 
         for (e=0; e < ewgt_dim; e++){
           /*
-           * For each partition, the sum of the weights of the edges
-           * whos neighbor is in a different partition
+           * For each part, the sum of the weights of the edges
+           * whos neighbor is in a different part
            */
           cut_wgt[obj_part * ewgt_dim + e] += ewgts[k * ewgt_dim + e];
         }
@@ -396,8 +396,8 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
       cutl[obj_part] += obj_edge_weights;
 
       /*
-       * for each partition, the number of objects with a neighbor outside
-       * the partition
+       * for each part, the number of objects with a neighbor outside
+       * the part
        */
       num_boundary[obj_part]++;
     }
@@ -457,7 +457,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   graph->cutl[EVAL_GLOBAL_AVG] = graph->cutl[EVAL_GLOBAL_SUM] / nparts;
 
   /*
-   * CUTS - Number of cut edges in each partition
+   * CUTS - Number of cut edges in each part
    */
 
   MPI_Allreduce(cuts, globalCount, nparts, MPI_INT, MPI_SUM, comm);
@@ -472,7 +472,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   graph->cuts[EVAL_GLOBAL_AVG] = graph->cuts[EVAL_GLOBAL_SUM] / nparts;
 
   /*
-   * CUTE - The number of neighboring partitions
+   * CUTE - The number of neighboring parts
    */
 
   localCount = (int *)ZOLTAN_MALLOC(nparts * sizeof(int));
@@ -536,7 +536,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   ZOLTAN_FREE(&globalVals);
 
   /*
-   * Number of objects in partition that have an off-partition neighbor.
+   * Number of objects in part that have an off-part neighbor.
    */
 
   MPI_Allreduce(num_boundary, globalCount, nparts, MPI_INT, MPI_SUM, comm);
@@ -670,7 +670,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
 {
   /*****************************************************************************/
   /* Return performance metrics in HG_EVAL structure.  Also print them out     */
-  /* if print_stats is true.  Results are per partition, not per process.      */
+  /* if print_stats is true.  Results are per part, not per process.      */
   /*****************************************************************************/
 
   char *yo = "Zoltan_LB_Eval_HG";
@@ -708,7 +708,7 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
     return ZOLTAN_FATAL;
   }
 
-  /* get the requested number of partitions */ 
+  /* get the requested number of parts */ 
 
   ierr = Zoltan_LB_Build_PartDist(zz);
   if (ierr != ZOLTAN_OK){
@@ -760,13 +760,14 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
   /* Get metrics based on number of objects and object weights */
 
   ierr = object_metrics(zz, zhg->nObj, zhg->Input_Parts, zhg->objWeight, zhg->objWeightDim,
-          &nparts,          /* actual number of partitions */
-          &nonempty_nparts,  /* number of non-empty partitions */
+          &nparts,          /* actual number of parts */
+          &nonempty_nparts,  /* number of non-empty parts */
           &hg->obj_imbalance,
           &hg->imbalance,
           hg->nobj,
           hg->obj_wgt,
-          NULL, NULL);
+          hg->xtra_imbalance,
+          hg->xtra_obj_wgt);
 
   if (ierr != ZOLTAN_OK)
     goto End;
@@ -834,6 +835,23 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
       printf("%s  Object weight      :  %8.3g %8.3g %8.3g   %5.3f\n", yo, 
         hg->obj_wgt[EVAL_GLOBAL_MIN], hg->obj_wgt[EVAL_GLOBAL_MAX], 
         hg->obj_wgt[EVAL_GLOBAL_SUM], hg->imbalance);
+
+      for (i=0; i < zhg->objWeightDim-1; i++){
+        if (i == EVAL_MAX_XTRA_VWGTS){
+          break;
+        }
+        printf("%s  Object weight %d    :  %8.3g %8.3g %8.3g   %5.3f\n", 
+               yo, i+2,
+               hg->xtra_obj_wgt[i][EVAL_GLOBAL_MIN],
+               hg->xtra_obj_wgt[i][EVAL_GLOBAL_MAX],
+               hg->xtra_obj_wgt[i][EVAL_GLOBAL_SUM],
+               hg->xtra_imbalance[i]);
+      }
+      if (zhg->objWeightDim-1 > EVAL_MAX_XTRA_VWGTS){
+        printf("(We calculate up to %d extra object weights.  "
+               "This can be changed.)\n",
+               EVAL_MAX_XTRA_VWGTS);
+      }
     }
     printf("\n");
 
@@ -880,11 +898,11 @@ int Zoltan_LB_Eval (ZZ *zzin, int print_stats,
  *   nobj      - number of objects (local for this proc)
  *   obj_wgt   - obj_wgt[0:num_vertex_weights-1] are the object weights
  *               (local for this proc)
- *   ncuts     - number of cuts (average per partition)
+ *   ncuts     - number of cuts (average per part)
  *   cut_wgt   - cut_wgt[0:num_vertex_weights-1] are the cut weights
- *               (average per partition)
- *   nboundary - number of boundary objects (average per partition)
- *   nadj      - the number of adjacent partitions (average per partition)
+ *               (average per part)
+ *   nboundary - number of boundary objects (average per part)
+ *   nadj      - the number of adjacent parts (average per part)
  *
  * Output parameters will only be returned if they are
  * not NULL on entry.
@@ -1078,7 +1096,7 @@ static int get_nbor_parts(
   int *nbors_part               /* Output:  part assignments of neighbor objs */
 )
 {
-/* Function to retrieve the partition number for neighboring nodes. */
+/* Function to retrieve the part number for neighboring nodes. */
 char *yo = "get_nbor_parts";
 struct Zoltan_DD_Struct *dd = NULL;
 int *owner = NULL;
@@ -1126,9 +1144,9 @@ End:
 /************************************************************************/
 
 static int *
-objects_by_partition(ZZ *zz, int num_obj, int *part, int *nparts, int *nonempty)
+objects_by_part(ZZ *zz, int num_obj, int *part, int *nparts, int *nonempty)
 {
-  char *yo = "objects_by_partition";
+  char *yo = "objects_by_part";
   int i, num_parts, num_nonempty, max_part, gmax_part;
   int *partCounts = NULL, *totalCounts;
   int *returnBuf = NULL;
@@ -1144,8 +1162,8 @@ objects_by_partition(ZZ *zz, int num_obj, int *part, int *nparts, int *nonempty)
 
   max_part = gmax_part + 1;
 
-  /* Allocate and return a buffer containing the local count of objects by partition,
-     followed by the global count.  Set "nparts" to the number of partitions, and
+  /* Allocate and return a buffer containing the local count of objects by part,
+     followed by the global count.  Set "nparts" to the number of parts, and
      set "nonempty" to the count of those that have objects in them.
    */
 
@@ -1192,10 +1210,10 @@ objects_by_partition(ZZ *zz, int num_obj, int *part, int *nparts, int *nonempty)
 
 static int
 object_metrics(ZZ *zz, int num_obj, int *parts, float *vwgts, int vwgt_dim,
-               int *nparts,       /* return actual number of partitions */
-               int *nonempty,     /* return number of those that are non-empty */
-               float *obj_imbalance,  /* object # imbalance wrt partitions */
-               float *imbalance,      /* object wgt imbalance wrt partitions */
+               int *nparts,       /* return actual number of parts */
+               int *nonempty,     /* return number of those that are non-empty*/
+               float *obj_imbalance,  /* object # imbalance wrt parts */
+               float *imbalance,      /* object wgt imbalance wrt parts */
                float *nobj,       /* number of objects */
                float *obj_wgt,    /* object weights */
                float *xtra_imbalance,  /* return if vertex weight dim > 1 */
@@ -1216,10 +1234,10 @@ object_metrics(ZZ *zz, int num_obj, int *parts, float *vwgts, int vwgt_dim,
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  /* Get the actual number of partitions, and number of objects per partition */
+  /* Get the actual number of parts, and number of objects per part */
 
-  globalCount = objects_by_partition(zz, num_obj, parts,
-                &num_parts,           /* actual number of partitions */
+  globalCount = objects_by_part(zz, num_obj, parts,
+                &num_parts,           /* actual number of parts */
                 &num_nonempty_parts); /* number of those which are non-empty */
 
   if (!globalCount){
