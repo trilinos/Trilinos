@@ -63,8 +63,9 @@ target_triplet = @target@
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/configure \
-	config/config.guess config/config.sub config/depcomp \
-	config/install-sh config/missing
+	$(top_srcdir)/src/Kokkos_config.h.in config/config.guess \
+	config/config.sub config/depcomp config/install-sh \
+	config/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cxx_bool.m4 \
 	$(top_srcdir)/config/ac_cxx_have_stl.m4 \
@@ -102,7 +103,7 @@ RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = src example test
+DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -251,15 +252,7 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	src/common/config-h.in src/common/stamp-h.in \
 	$(AUX_DIST) 
 
-
-#We now build tests and examples through separate make targets, rather than
-#during "make".  We still need to conditionally include the test and example
-#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
-#defined, so that the tests and examples are included in the distribution
-#tarball.
-@SUB_TEST_TRUE@TEST_SUBDIR = test
-@SUB_EXAMPLE_TRUE@EXAMPLE_SUBDIR = example
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+SUBDIRS = 
 all: all-recursive
 
 .SUFFIXES:
@@ -296,6 +289,23 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(srcdir) && $(AUTOCONF)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
+
+src/Kokkos_config.h: src/stamp-h1
+	@if test ! -f $@; then \
+	  rm -f src/stamp-h1; \
+	  $(MAKE) $(AM_MAKEFLAGS) src/stamp-h1; \
+	else :; fi
+
+src/stamp-h1: $(top_srcdir)/src/Kokkos_config.h.in $(top_builddir)/config.status
+	@rm -f src/stamp-h1
+	cd $(top_builddir) && $(SHELL) ./config.status src/Kokkos_config.h
+$(top_srcdir)/src/Kokkos_config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps) 
+	cd $(top_srcdir) && $(AUTOHEADER)
+	rm -f src/stamp-h1
+	touch $@
+
+distclean-hdr:
+	-rm -f src/Kokkos_config.h src/stamp-h1
 
 # This directory's subdirectories are mostly independent; you can cd
 # into them and run `make' without going through this Makefile.
@@ -607,7 +617,7 @@ clean-am: clean-generic mostlyclean-am
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -f Makefile
-distclean-am: clean-am distclean-generic distclean-tags
+distclean-am: clean-am distclean-generic distclean-hdr distclean-tags
 
 dvi: dvi-recursive
 
@@ -664,22 +674,34 @@ uninstall-am:
 	all all-am all-local am--refresh check check-am clean \
 	clean-generic ctags ctags-recursive dist dist-all dist-bzip2 \
 	dist-gzip dist-shar dist-tarZ dist-zip distcheck distclean \
-	distclean-generic distclean-tags distcleancheck distdir \
-	distuninstallcheck dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
-	tags-recursive uninstall uninstall-am
+	distclean-generic distclean-hdr distclean-tags distcleancheck \
+	distdir distuninstallcheck dvi dvi-am html html-am info \
+	info-am install install-am install-data install-data-am \
+	install-dvi install-dvi-am install-exec install-exec-am \
+	install-html install-html-am install-info install-info-am \
+	install-man install-pdf install-pdf-am install-ps \
+	install-ps-am install-strip installcheck installcheck-am \
+	installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
+	pdf-am ps ps-am tags tags-recursive uninstall uninstall-am
 
 
 #The following line helps the test harness recover from build errors.
 
 all-local:
 	@echo "Trilinos package kokkos built successfully"
+
+#We now build tests and examples through separate make targets, rather than
+#during "make".  We still need to conditionally include the test and example
+#in SUBDIRS, even though BUILD_TESTS and BUILD_EXAMPLES will never be
+#defined, so that the tests and examples are included in the distribution
+#tarball.
+
+# disabled, CGB, 6/2009
+#TEST_SUBDIR=test
+
+# disabled, CGB, 6/2009
+#EXAMPLE_SUBDIR=example
 
 @BUILD_TESTS_TRUE@tests:
 @BUILD_TESTS_TRUE@	@echo ""
@@ -723,6 +745,7 @@ clean-everything:
 
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples
+#src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

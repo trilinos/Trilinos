@@ -83,11 +83,13 @@ all-local:
 #tarball.
 
 if SUB_TEST
-TEST_SUBDIR=test
+# disabled, CGB, 6/2009
+#TEST_SUBDIR=test
 endif
 
 if SUB_EXAMPLE
-EXAMPLE_SUBDIR=example
+# disabled, CGB, 6/2009
+#EXAMPLE_SUBDIR=example
 endif
 
 if BUILD_TESTS
@@ -139,4 +141,5 @@ clean-everything:
 install-everything:
 	$(MAKE) install && $(MAKE) install-examples
 
-SUBDIRS = src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
+SUBDIRS = 
+#src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)

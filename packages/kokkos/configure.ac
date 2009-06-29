@@ -301,14 +301,16 @@ AC_SUBST(ac_aux_dir)
 #  to add a new directory.
 AC_CONFIG_FILES([
 		Makefile 
-		src/Makefile
-		test/Makefile
-		test/BaseSparseMultiply/Makefile
-		test/BaseSparseSolve/Makefile
-		test/DenseMultiVector/Makefile
-		test/HbMatrix/Makefile
-		test/Permutation/Makefile
-		example/Makefile])
+        ])
+# disabled, CGB, 6/2009
+#src/Makefile
+#test/Makefile
+#test/BaseSparseMultiply/Makefile
+#test/BaseSparseSolve/Makefile
+#test/DenseMultiVector/Makefile
+#test/HbMatrix/Makefile
+#test/Permutation/Makefile
+#example/Makefile
 
 AC_OUTPUT()
 

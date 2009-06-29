@@ -16,8 +16,8 @@ SET(${PACKAGE_NAME}_VERSION "1.3d")
 ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_NodeAPI
   HAVE_KOKKOS_NODEAPI
-  "Enable Kokkos node programming API (experimental)."
-  OFF
+  "Enable Kokkos node programming API."
+  ON
   )
 
 #
