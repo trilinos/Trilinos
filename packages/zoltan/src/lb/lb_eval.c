@@ -762,7 +762,8 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
 
   /* Get metrics based on number of objects and object weights */
 
-  ierr = object_metrics(zz, zhg->nObj, zhg->Input_Parts, zhg->objWeight, zhg->objWeightDim,
+  ierr = object_metrics(zz, zhg->nObj, zhg->Input_Parts,
+          zhg->objWeight, zhg->objWeightDim,
           &nparts,          /* actual number of parts */
           &nonempty_nparts,  /* number of non-empty parts */
           &hg->obj_imbalance,
@@ -868,6 +869,13 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
 End:
 
   /* Free data */
+
+  if (hgp.globalcomm.row_comm != MPI_COMM_NULL)
+    MPI_Comm_free(&(hgp.globalcomm.row_comm));
+  if (hgp.globalcomm.col_comm != MPI_COMM_NULL)
+    MPI_Comm_free(&(hgp.globalcomm.col_comm));
+  if (hgp.globalcomm.Communicator != MPI_COMM_NULL)
+    MPI_Comm_free(&(hgp.globalcomm.Communicator));
 
   ZOLTAN_FREE(&part_sizes);
   if (zhg){
