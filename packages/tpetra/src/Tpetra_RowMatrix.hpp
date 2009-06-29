@@ -33,10 +33,6 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_RowGraph.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_Import.hpp"
-#include "Tpetra_Export.hpp"
-#include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 
 namespace Tpetra 
@@ -47,7 +43,7 @@ namespace Tpetra
      The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
      type, if omitted, defaults to the \c LocalOrdinal type.
    */
-  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal=LocalOrdinal>
+  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
   class RowMatrix : public Operator<Scalar,LocalOrdinal,GlobalOrdinal>
   {
     public:
