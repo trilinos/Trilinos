@@ -1,5 +1,6 @@
 Decomposition Method 	= graph
 Zoltan parameter        = lb_approach = partition
+Zoltan parameter        = edge_weight_dim=1
 File Type		= Chaco
 File Name		= ewgt
 Parallel Disk Info	= number=0
@@ -10,4 +11,4 @@ GID	Part	Perm	IPerm
 6	0	-1	-1
 7	0	-1	-1
 11	0	-1	-1
-12	0	-1	-1
+16	0	-1	-1

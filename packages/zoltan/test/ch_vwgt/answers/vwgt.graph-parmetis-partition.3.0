@@ -1,4 +1,5 @@
 Decomposition Method 	= graph
+Zoltan Parameters	= obj_weight_dim=1
 Zoltan parameter 	= lb_approach = partition
 Zoltan parameter 	= graph_package=parmetis
 File Type		= Chaco
@@ -6,8 +7,10 @@ File Name		= vwgt
 Parallel Disk Info	= number=0
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
+1	0	-1	-1
 2	0	-1	-1
 3	0	-1	-1
+6	0	-1	-1
 7	0	-1	-1
 8	0	-1	-1
 12	0	-1	-1

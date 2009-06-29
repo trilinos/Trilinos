@@ -1,4 +1,5 @@
 Decomposition Method 	= graph
+Zoltan Parameters	= obj_weight_dim=1
 Zoltan parameter        = lb_approach = refine
 zoltan parameters	= graph_package=parmetis
 File Type		= Chaco
