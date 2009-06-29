@@ -26,107 +26,128 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_DENSEVECTOR_H
-#define KOKKOS_DENSEVECTOR_H
+#ifndef KOKKOS_VECTOR_H
+#define KOKKOS_VECTOR_H
 
 #include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_Vector.hpp"
+#include "Kokkos_DefaultNode.hpp"
 
+#include <Teuchos_TestForException.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
 
 namespace Kokkos {
 
-//! Kokkos::DenseVector: Kokkos vector base class.
+//! Kokkos::Vector: Kokkos vector base class.
 
-/*! The Kokkos::DenseVector specifies the interface that any vector class interfacing to the Kokkos 
+/*! The Kokkos::Vector specifies the interface that any vector class interfacing to the Kokkos 
   Operators classes must implement.
 
-  At this time, the primary function provided by Kokkos::DenseVector is access to vector data.
+  At this time, the primary function provided by Kokkos::Vector is access to vector data.
 
 */    
 
-  template<typename OrdinalType, typename ScalarType>
-  class DenseVector: public virtual Vector<OrdinalType,ScalarType> {
-  public:
+  template<class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
+  class Vector {
+    public:
+      typedef Scalar  ScalarType;
+      typedef Ordinal OrdinalType;
+      typedef Node    NodeType;
 
-    //! @name Constructors/Destructor
+      //! @name Constructors/Destructor
 
-    //@{
+      //@{
 
-    //! Default constructor
-    DenseVector(void):
-      dataInitialized_(false),
-      length_(0),
-      inc_(0),
-      values_(0) {};
-  
-    //! Copy constructor.
-    DenseVector(const DenseVector& source):
-      dataInitialized_(source.dataInitialized_),
-      length_(source.length_),
-      inc_(source.inc_),
-      values_(source.values_) {};
+      //! Default constructor
+      Vector(Node &node = DefaultNode::getDefaultNode())
+      : node_(node)
+      , dataInitialized_(false)
+      , length_(0)
+      , inc_(0) {}
 
-    //! DenseVector Destructor
-    virtual ~DenseVector(){};
-    //@}
+      //! Copy constructor.
+      Vector(const Vector& source)
+      : node_(source.node_)
+      , values_(source.values_)
+      , dataInitialized_(source.dataInitialized_)
+      , length_(source.length_)
+      , inc_(source.inc_) {}
 
-    //! @name Initialization methods
+      //! Vector Destructor
+      ~Vector(){};
+      //@}
 
-    //@{
+      //! @name Initialization methods
 
-    //! Initialize using a pointer
-    /*!
-      This is the only way to initialize a Kokkos::DenseVector object.
-      \param length (In)  Length of vector.
-      \param values (In)  Pointer to values.
-      \param inc (In) The increment between two elements in the vector.  
-                         Typically this value should be set to 1, which is the default value.
+      //@{
 
-      \return Integer error code, set to 0 if successful.
-    */
-    int initializeValues(OrdinalType length, ScalarType * values, OrdinalType inc = 1) {
-      length_ = length;
-      inc_ = inc;
-      values_ = values;
-      dataInitialized_ = true;
-      return(0);
+      //! Initialize using a pointer
+      /*!
+        This is the only way to initialize a Kokkos::Vector object.
+        \param length (In)  Length of vector.
+        \param values (In)  Pointer to values.
+        \param inc (In) The increment between two elements in the vector.  
+        Typically this value should be set to 1, which is the default value.
+
+        \return Integer error code, set to 0 if successful.
+        */
+      int initializeValues(Ordinal length,
+                           typename Node::template buffer<Scalar>::buffer_t values,
+                           Ordinal inc = 1) 
+      {
+        length_ = length;
+        inc_ = inc;
+        values_ = values;
+        dataInitialized_ = true;
+        return(0);
       };
-	
-    //@}
 
-    //! @name DenseVector access methods
+      //@}
 
-    //@{
+      //! @name Vector access methods
 
-    //! Returns a pointer to an array of values in the vector.
-    /*! Extract a pointer to the values in the vector.  Note that
+      //@{
+
+      //! Returns a pointer to an array of values in the vector.
+      /*! Extract a pointer to the values in the vector.  Note that
         the values are not copied by this method.  Memory allocation is 
-	handled by the vector object itself.  The getInc() method 
-	should be used to access values, especially if getInc() != 1.
-    */
-    virtual ScalarType * getValues() const {return(values_);};
-	
-	
-    //@}
+        handled by the vector object itself.  The getInc() method 
+        should be used to access values, especially if getInc() != 1.
+        */
+      typename Node::template buffer<Scalar>::buffer_t 
+      getValues() const {
+        TEST_FOR_EXCEPTION(!dataInitialized_,
+                           std::runtime_error, 
+                           Teuchos::typeName(*this) << "::getValues(): data structure not initialized.");
+        return values_;
+      };
 
-    //! @name DenseVector Attribute access methods
 
-    //@{
-	
-    //! Length of vector
-    virtual OrdinalType getLength() const {return(length_);};
-	
-    //! Increment between entries in the vector, normally = 1.
-    virtual OrdinalType getInc() const {return(inc_);};
-	
-    //@}
+      //@}
 
-    bool dataInitialized_;
-    OrdinalType length_;
-    OrdinalType inc_;
+      //! @name Vector Attribute access methods
 
-    ScalarType * values_;
+      //@{
+
+      Node & getNode() {return node_;}
+
+      //! Length of vector
+      Ordinal getLength() const {return(length_);};
+
+      //! Increment between entries in the vector, normally = 1.
+      Ordinal getInc() const {return(inc_);};
+
+      //@}
+
+    protected:
+      Node &node_;
+
+      typename Node::template buffer<Scalar>::buffer_t values_;
+
+      bool dataInitialized_;
+      Ordinal length_;
+      Ordinal inc_;
   };
 
 } // namespace Kokkos
-#endif /* KOKKOS_DENSEVECTOR_H */
+
+#endif /* KOKKOS_VECTOR_H */
