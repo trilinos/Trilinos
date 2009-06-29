@@ -64,7 +64,6 @@ subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/configure \
 	$(top_srcdir)/src/.deps/dummy.in \
-	$(top_srcdir)/src/PyTrilinos/.dummy.in \
 	$(top_srcdir)/src/PyTrilinos/LOCA/.dummy.in \
 	$(top_srcdir)/src/PyTrilinos/LOCA/Epetra/.dummy.in \
 	$(top_srcdir)/src/PyTrilinos/NOX/.dummy.in \
@@ -96,8 +95,8 @@ mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/src/PyTrilinos_config.h
 CONFIG_CLEAN_FILES = util/MakefileVariables.py \
 	util/PyTrilinosExtension.py util/SharedUtils.py \
-	util/pkg_info.py src/.deps/dummy src/PyTrilinos/.dummy \
-	src/PyTrilinos/NOX/.dummy src/PyTrilinos/NOX/Epetra/.dummy \
+	util/pkg_info.py src/.deps/dummy src/PyTrilinos/NOX/.dummy \
+	src/PyTrilinos/NOX/Epetra/.dummy \
 	src/PyTrilinos/NOX/LAPACK/.dummy src/PyTrilinos/LOCA/.dummy \
 	src/PyTrilinos/LOCA/Epetra/.dummy
 SOURCES =
@@ -344,8 +343,6 @@ util/SharedUtils.py: $(top_builddir)/config.status $(top_srcdir)/util/SharedUtil
 util/pkg_info.py: $(top_builddir)/config.status $(top_srcdir)/util/pkg_info.py.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 src/.deps/dummy: $(top_builddir)/config.status $(top_srcdir)/src/.deps/dummy.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-src/PyTrilinos/.dummy: $(top_builddir)/config.status $(top_srcdir)/src/PyTrilinos/.dummy.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 src/PyTrilinos/NOX/.dummy: $(top_builddir)/config.status $(top_srcdir)/src/PyTrilinos/NOX/.dummy.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@

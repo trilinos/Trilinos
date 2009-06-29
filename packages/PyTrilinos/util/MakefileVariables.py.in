@@ -61,7 +61,7 @@ Available functions:
         Interpret dict as varName/value pairs; wherever '$(...)' appears in
         values, make appropriate substitutions.
 
-    uniqiufyList([string1, string2, ...], bool=False) -> None
+    uniquifyList([string1, string2, ...], bool=False) -> None
         Remove duplicate strings from the list.
 
     uniquifyString(string, bool=False) -> string
@@ -77,7 +77,7 @@ Available functions:
         search from optional int argument.
 
     joinContinuationLines([string, string, ...]) -> None
-        Combine any strings that end with '\' with its following string.
+        Combine any strings that end with '\\' with its following string.
 
     isNotBlankLine(string) -> bool
         Return True if string is not blank.

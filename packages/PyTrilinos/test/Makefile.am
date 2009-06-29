@@ -38,13 +38,13 @@ ACLOCAL_AMFLAGS = -I config
 
 EXTRA_DIST = definition testutil.src \
 	     testAmesos.src testAnasazi.src testAztecOO.src \
-	     testEpetraExt_Coloring.src testEpetra_BlockMap.src \
-	     testEpetra_Comm.src testEpetra_CompObject.src \
-	     testEpetra_CrsGraph.src testEpetra_CrsMatrix.src \
-	     testEpetra_FEVector.src testEpetra_ImportExport.src \
-	     testEpetra_IntSerialDense.src testEpetra_IntVector.src \
-	     testEpetra_LinearProblem.src testEpetra_LocalMap.src \
-	     testEpetra_Map.src testEpetra_MapColoring.src \
+	     testEpetraExt_Coloring.src testEpetraExt_Property.src \
+	     testEpetra_BlockMap.src testEpetra_Comm.src \
+	     testEpetra_CompObject.src testEpetra_CrsGraph.src \
+	     testEpetra_CrsMatrix.src testEpetra_FEVector.src \
+	     testEpetra_ImportExport.src testEpetra_IntSerialDense.src \
+	     testEpetra_IntVector.src testEpetra_LinearProblem.src \
+	     testEpetra_LocalMap.src testEpetra_Map.src testEpetra_MapColoring.src \
 	     testEpetra_MultiVector.src testEpetra_Object.src \
 	     testEpetra_SerialDense.src testEpetra_Util.src \
 	     testEpetra_Vector.src testGaleri_CrsMatrices.src \
@@ -86,7 +86,7 @@ TRIUTILS_TESTS = testTriUtils.py
 endif
 
 if HAVE_PYTRILINOS_EPETRAEXT
-EPETRAEXT_TESTS = testEpetraExt_Coloring.py
+EPETRAEXT_TESTS = testEpetraExt_Coloring.py testEpetraExt_Property.py
 endif
 
 if HAVE_PYTRILINOS_AZTECOO

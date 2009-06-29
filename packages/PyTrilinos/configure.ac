@@ -402,7 +402,7 @@ AC_CONFIG_FILES([
 		src/Makefile
 		src/pyfragments.swg
 		src/.deps/dummy
-		src/PyTrilinos/.dummy
+		src/PyTrilinos/Makefile
 		src/PyTrilinos/NOX/.dummy
 		src/PyTrilinos/NOX/Epetra/.dummy
 		src/PyTrilinos/NOX/LAPACK/.dummy

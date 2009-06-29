@@ -60,7 +60,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = test
+subdir = src/PyTrilinos
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_pkg_swig.m4 \
@@ -197,62 +197,16 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = foreign
 ACLOCAL_AMFLAGS = -I config
-EXTRA_DIST = definition testutil.src \
-	     testAmesos.src testAnasazi.src testAztecOO.src \
-	     testEpetraExt_Coloring.src testEpetraExt_Property.src \
-	     testEpetra_BlockMap.src testEpetra_Comm.src \
-	     testEpetra_CompObject.src testEpetra_CrsGraph.src \
-	     testEpetra_CrsMatrix.src testEpetra_FEVector.src \
-	     testEpetra_ImportExport.src testEpetra_IntSerialDense.src \
-	     testEpetra_IntVector.src testEpetra_LinearProblem.src \
-	     testEpetra_LocalMap.src testEpetra_Map.src testEpetra_MapColoring.src \
-	     testEpetra_MultiVector.src testEpetra_Object.src \
-	     testEpetra_SerialDense.src testEpetra_Util.src \
-	     testEpetra_Vector.src testGaleri_CrsMatrices.src \
-	     testGaleri_Maps.src testIFPACK.src testKomplex_LinearProblem.src \
-	     testML_Space.src testML_CompObject.src testML_TimeObject.src \
-	     testML_MultiVector.src testML_PyMatrix.src \
-	     testML_Preconditioner.src testNOX_StatusTest.src testTeuchos.src \
-	     testTeuchos_Comm.src testTeuchos_ParameterList.src \
-	     testTeuchos_ScalarTraits.src testThyra.src testTriUtils.src
+EXTRA_DIST = PropertyBase.src \
+	     typed_tuple.src \
+	     typed_list.src \
+	     typed_dict.src
 
 MAINTAINERCLEANFILES = Makefile.in
-@HAVE_PYTRILINOS_TEUCHOS_TRUE@TEUCHOS_TESTS = testTeuchos.py testTeuchos_Comm.py \
-@HAVE_PYTRILINOS_TEUCHOS_TRUE@	        testTeuchos_ParameterList.py testTeuchos_ScalarTraits.py
 
-
-# if HAVE_PYTRILINOS_THYRA
-# THYRA_TESTS = testThyra
-# endif
-@HAVE_PYTRILINOS_EPETRA_TRUE@EPETRA_TESTS = testEpetra_BlockMap.py testEpetra_Comm.py \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_CompObject.py testEpetra_CrsGraph.py \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_CrsMatrix.py testEpetra_FEVector.py \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_ImportExport.py testEpetra_IntSerialDense.py \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_IntVector.py testEpetra_LinearProblem.py \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_LocalMap.py testEpetra_Map.py \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_MapColoring.py testEpetra_MultiVector.py \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_Object.py testEpetra_SerialDense.py \
-@HAVE_PYTRILINOS_EPETRA_TRUE@	       testEpetra_Util.py testEpetra_Vector.py
-
-@HAVE_PYTRILINOS_TRIUTILS_TRUE@TRIUTILS_TESTS = testTriUtils.py
-@HAVE_PYTRILINOS_EPETRAEXT_TRUE@EPETRAEXT_TESTS = testEpetraExt_Coloring.py testEpetraExt_Property.py
-@HAVE_PYTRILINOS_AZTECOO_TRUE@AZTECOO_TESTS = testAztecOO.py
-@HAVE_PYTRILINOS_GALERI_TRUE@GALERI_TESTS = testGaleri_CrsMatrices.py testGaleri_Maps.py
-@HAVE_PYTRILINOS_AMESOS_TRUE@AMESOS_TESTS = testAmesos.py
-@HAVE_PYTRILINOS_IFPACK_TRUE@IFPACK_TESTS = testIFPACK.py
-@HAVE_PYTRILINOS_KOMPLEX_TRUE@KOMPLEX_TESTS = testKomplex_LinearProblem.py
-@HAVE_PYTRILINOS_ANASAZI_TRUE@ANASAZI_TESTS = testAnasazi.py
-@HAVE_PYTRILINOS_ML_TRUE@ML_TESTS = testML_Space.py testML_CompObject.py testML_TimeObject.py \
-@HAVE_PYTRILINOS_ML_TRUE@	   testML_MultiVector.py testML_PyMatrix.py testML_Preconditioner.py
-
-@HAVE_PYTRILINOS_NOX_TRUE@NOX_TESTS = testNOX_StatusTest.py
-TEST_SUITE = $(TEUCHOS_TESTS)   $(THYRA_TESTS)   $(EPETRA_TESTS)  $(TRIUTILS_TESTS) \
-	     $(EPETRAEXT_TESTS) $(AZTECOO_TESTS) $(GALERI_TESTS)  $(AMESOS_TESTS) \
-	     $(IFPACK_TESTS)    $(KOMPLEX_TESTS) $(ANASAZI_TESTS) $(ML_TESTS) \
-	     $(NOX_TESTS)
-
-TESTUTIL = testutil.py
-CLEANFILES = $(TEST_SUITE) $(TESTUTIL) *.pyc *.dat *.xml
+# Define the python source files to be copied
+PYTHON_SOURCE = PropertyBase.py typed_tuple.py typed_list.py typed_dict.py
+CLEANFILES = $(PYTHON_SOURCE)
 all: all-am
 
 .SUFFIXES:
@@ -265,9 +219,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  test/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --foreign  src/PyTrilinos/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --foreign  test/Makefile
+	  $(AUTOMAKE) --foreign  src/PyTrilinos/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -419,14 +373,10 @@ uninstall-am:
 # The following line helps the test harness recover from build errors.
 all:
 
-all-local: $(TESTUTIL) $(TEST_SUITE)
+all-local: $(PYTHON_SOURCE)
 
 %.py: %.src
 	@echo "copying $@"; /bin/cp $< $@
-
-run-tests: all-local
-	@for test_script in $(TEST_SUITE); do echo; echo "Running $$test_script"; \
-	  echo; $$test_script -t; done
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

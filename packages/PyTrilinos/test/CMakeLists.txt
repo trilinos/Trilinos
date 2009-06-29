@@ -40,6 +40,7 @@ ENDIF(PyTrilinos_ENABLE_TriUtils)
 
 IF(PyTrilinos_ENABLE_EpetraExt)
   PyTrilinos_MAKE_TEST(testEpetraExt_Coloring)
+  PyTrilinos_MAKE_TEST(testEpetraExt_Property)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
 IF(PyTrilinos_ENABLE_AztecOO)

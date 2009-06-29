@@ -346,6 +346,8 @@ all-am:
 	@echo "Trilinos package PyTrilinos subdirectory src built successfully."
 	@echo ""
 
+SUBDIRS = PyTrilinos
+
 package: $(WRAPPERS)
 	$(PYTHON) $(srcdir)/setup.py build
 

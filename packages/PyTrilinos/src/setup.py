@@ -86,7 +86,30 @@ def buildInitFile(filename,depfile,pyTrilinosModules,
         for module in pyTrilinosModules:
             print "   ", module
         print
+        enabledModules    = str(pyTrilinosModules)
+        enabledModulesFmt = enabledModules.replace('[','')
+        enabledModulesFmt = enabledModulesFmt.replace(']','')
+        enabledModulesFmt = enabledModulesFmt.replace("'",'')
+        enabledModulesFmt = enabledModulesFmt.replace(',','\n   ')
         content = """
+'''
+PyTrilinos: A python interface to selected Trilinos packages.  This
+  installation of PyTrilinos was built with the following python-wrapped
+  packages enabled:
+
+    %s
+'''
+
+# We need symbol names to be recognized across PyTrilinos extension modules.  On
+# some systems, this requires that the dynamic library opener be given certain
+# flags: runtime load now and runtime load global.  This has to be set before
+# any PyTrilinos extension modules are loaded.  Unfortunately, the python module
+# we want that contains the named values of these flags is called "dl" on some
+# systems, "DLFCN" on others, and does not even exist on some.  The following
+# logic loads the module into name "dl" if it exists and extracts the needed
+# flags.  If the module we need does not exist, we use our best guess at what
+# the flags values are.  After all this, the sys module setdlopenflags()
+# function is called.
 dl = None
 try:
     import dl
@@ -103,21 +126,41 @@ else:
 import sys
 sys.setdlopenflags(dlopenflags)
 
+# Set the __all__ special variable, a list of strings which define all of the
+# PyTrilinos public names, namely the Trilinos packages that are enabled.
 __all__ = %s
 
+# Versioning.  Set the __version__ special variable and define a version()
+# function.
 __version__ = '%s'
 def version():
     return 'Trilinos version: %s\\nPyTrilinos version: ' + __version__
 
 #
-# In order to handle the nested namespaces properly, the import of NOX and its
-# sub-modules needs to be handled at this level.
+# In order to handle the nested namespaces properly, the import of NOX and LOCA
+# and their sub-modules needs to be handled at this level.  If, for example, we
+# tried to put the import statement in NOX/__init__.py, we can't fill the
+# PyTrilinos.NOX namespace completely before we need to use it.
 if ('NOX' in __all__):
     import NOX
     if (NOX.Have_Epetra):
         import NOX.Epetra
+if ('LOCA' in __all__):
+    import LOCA
+    if (NOX.Have_Epetra):
+        import LOCA.Epetra
 
-""" % (str(pyTrilinosModules), pyTrilinosVersion, trilinosVersion)
+#
+# Import utility class
+from PropertyBase import PropertyBase
+#
+# Import the typed tuple factory and classes
+from typed_tuple import *
+#
+# Import the typed dict factory
+from typed_dict import *
+
+""" % (enabledModulesFmt, enabledModules, pyTrilinosVersion, trilinosVersion)
         open(filename,"w").write(content)
 
 # Main script

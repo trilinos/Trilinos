@@ -2,6 +2,16 @@
 #
 # Define the class factory function
 def typed_dict(keyType, valueType):
+    # Class name
+    name = 'dict_of_' + keyType.__name__ + '_to_' + valueType.__name__
+    # Class docstring
+    if isinstance("", keyType):
+        doc = '%s([dict] [key=value, ...])\n\n'
+    else:
+        doc = '%s([dict])\n\n'
+    doc += 'a dictionary whose keys are restricted to type "%s"\n'\
+           'and values are of type "%s"' 
+    doc = doc % (name, keyType.__name__, valueType.__name__)
     # These functions will be returned as class methods
     def new(cls, source=None, **kwargs):
         return dict.__new__(cls)
@@ -18,9 +28,9 @@ def typed_dict(keyType, valueType):
             raise TypeError, 'Expected value of type "%s", got "%s"' \
                   % (self.valueType.__name__, type(value).__name__)
         dict.__setitem__(self, key, value)
-    def update(self, source):
-        for key in source:
-            self.__setitem__(key, source[key])
+    def update(self, other):
+        for key in other:
+            self.__setitem__(key, other[key])
     def fromkeys(self, seq, value=None):
         for key in seq:
             self.__setitem__(key, value)
@@ -30,16 +40,6 @@ def typed_dict(keyType, valueType):
         except KeyError:
             self.__setitem__(key, default)
             return default
-    # Class name
-    name = 'dict_of_' + keyType.__name__ + '_to_' + valueType.__name__
-    # Class docstring
-    if isinstance("", keyType):
-        doc = '%s([dict] [key=value, ...])\n\n'
-    else:
-        doc = '%s([dict])\n\n'
-    doc += 'a dictionary whose keys are restricted to type "%s"\n'\
-           'and values are of type "%s"' 
-    doc = doc % (name, keyType.__name__, valueType.__name__)
     # Class members
     members = dict(__doc__     = doc,
                    keyType     = keyType,

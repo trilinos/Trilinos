@@ -162,6 +162,12 @@ INCLUDE(UseSWIG)
 # compiles the PyTrilinos extension modules
 ADD_SUBDIRECTORY(src)
 
+# Optionally add the secondary directory for testing the Teuchos::RCP
+# wrappers
+IF(PyTrilinos_ENABLE_RCPTESTS)
+  ADD_SUBDIRECTORY(teuchos_rcp)
+ENDIF(PyTrilinos_ENABLE_RCPTESTS)
+
 # Add the test scripts
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 

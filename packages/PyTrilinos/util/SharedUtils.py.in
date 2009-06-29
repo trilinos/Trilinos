@@ -394,8 +394,9 @@ class SharedPyTrilinosBuilder(SharedTrilinosBuilder):
         self.objects     = [os.path.join(self.buildDir,
                                          os.path.basename(src).replace(".cpp",".o"))
                             for src in self.sources]
-        self.linkCmd    += uniquifyString(self.makeMacros.get("EPETRA_LIBS","") + \
-                                          " " + self.makeMacros.get("TEUCHOS_LIBS",""))
+        self.linkCmd    += uniquifyString(self.makeMacros.get("EPETRA_LIBS","") + 
+                                          " " + self.makeMacros.get("TEUCHOS_LIBS","")
+                                          + " " + self.makeMacros.get("EPETRAEXT_LIBS",""))
 
     ######################################################################
 
@@ -420,7 +421,10 @@ class SharedPyTrilinosBuilder(SharedTrilinosBuilder):
         Given a source file name and an object file name, return a compile
         command.
         """
-
+        try:
+            numpy_include = " -I" + numpy.get_include()
+        except AttributeError:
+            numpy_include = " -I" + numpy.get_numpy_include()
         cxx      = self.makeMacros["CXX"]
         includes = "-I" + os.path.join(sys.prefix, "include", "python%d.%d" %
                                        (sys.version_info[0], sys.version_info[1]))
@@ -430,10 +434,11 @@ class SharedPyTrilinosBuilder(SharedTrilinosBuilder):
         if "Epetra" in src:
             includes += " " + self.makeMacros.get("EPETRA_INCLUDES","")
         if "NumPy" in src:
-            try:
-                includes += " -I" + numpy.get_include()
-            except AttributeError:
-                includes += " -I" + numpy.get_numpy_include()
+            includes += numpy_include
+        if "PyModelEvaluator.cpp" in src:
+            includes += " " + self.makeMacros.get("EPETRAEXT_INCLUDES","")
+            includes += " -I" + self.buildDir
+            includes += numpy_include
         options = " ".join(getCompileOptions(self.makeMacros))
         if int(numpy.__version__.split(".")[0]) > 0:
             options += " -DNUMPY_NOPREFIX"
