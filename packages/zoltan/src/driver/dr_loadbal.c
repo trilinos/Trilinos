@@ -190,7 +190,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   }
 
   if (Test.Local_Parts == 1) {
-    /* Compute Proc partitions for each processor */
+    /* Compute Proc parts for each processor */
     char s[8];
     sprintf(s, "%d", Proc);
     if (Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
@@ -199,8 +199,8 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
   }
   else if (Test.Local_Parts == 2) {
-    /* Compute Proc partitions for odd-ranked processors; let remaining
-     * partitions be in even-ranked processors. */
+    /* Compute Proc parts for odd-ranked processors; let remaining
+     * parts be in even-ranked processors. */
     if (Proc%2) {
       char s[8];
       sprintf(s, "%d", Proc);
@@ -211,44 +211,44 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
   }
   else if (Test.Local_Parts == 3 || Test.Local_Parts == 5) {
-    /* Variable partition sizes, but one partition per proc */
+    /* Variable part sizes, but one part per proc */
     /* Test.Local_Parts == 5 is same as 3, but with sizes increased by 1 */
-    /* to avoid zero-sized partitions (for ParMETIS tests). */
+    /* to avoid zero-sized parts (for ParMETIS tests). */
     i = 0;
     psize[0] = (float) (Proc + (Test.Local_Parts == 5)); 
-    /* Set partition sizes using global numbers. */
+    /* Set part sizes using global numbers. */
     Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
-    /* Reset partition sizes for upper half of procs. */
+    /* Reset part sizes for upper half of procs. */
     if (Proc >= nprocs/2){
       psize[0] = 0.5 + (Proc%2) + (Test.Local_Parts == 5);
       Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
     }
   }
   else if (Test.Local_Parts == 4) {
-    /* Variable number of partitions per proc and variable sizes. */
-    /* Request Proc partitions for each processor, of size 1/Proc.  */
+    /* Variable number of parts per proc and variable sizes. */
+    /* Request Proc parts for each processor, of size 1/Proc.  */
     char s[8];
     sprintf(s, "%d", Proc);
     if (Zoltan_Set_Param(zz, "NUM_LOCAL_PARTS", s) == ZOLTAN_FATAL) {
       Gen_Error(0, "fatal:  error returned from Zoltan_Set_Param()\n");
       return 0;
     }
-    /* Each partition size is inverse to the no. of partitions on a proc. */ 
+    /* Each part size is inverse to the no. of parts on a proc. */ 
     for (i=0; i<Proc; i++){
-      partid[i] = i;                    /* Local partition number */
+      partid[i] = i;                    /* Local part number */
       idx[i] = 0;
       psize[i] = 1.0/Proc; 
     }
     Zoltan_LB_Set_Part_Sizes(zz, 0, Proc, partid, idx, psize);
   }
   else if (Test.Local_Parts == 6) {
-    /* Variable partition sizes, but one partition per proc */
-    /* When nprocs >= 6, zero-sized partitions on processors >= 2. */
+    /* Variable part sizes, but one part per proc */
+    /* When nprocs >= 6, zero-sized parts on processors >= 2. */
     i = 0;
     psize[0] = (float) Proc;
-    /* Set partition sizes using global numbers. */
+    /* Set part sizes using global numbers. */
     Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
-    /* Reset partition sizes for procs near end. */
+    /* Reset part sizes for procs near end. */
     if (nprocs >= 6 && Proc >= nprocs-4){
       psize[0] = 0.;
       Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
@@ -260,13 +260,13 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
   }
   else if (Test.Local_Parts == 7) {
-    /* Variable partition sizes, but one partition per proc */
-    /* When nprocs >= 6, zero-sized partitions on processors 0, 1, 2, and 3. */
+    /* Variable part sizes, but one part per proc */
+    /* When nprocs >= 6, zero-sized parts on processors 0, 1, 2, and 3. */
     i = 0;
     psize[0] = (float) Proc;
-    /* Set partition sizes using global numbers. */
+    /* Set part sizes using global numbers. */
     Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
-    /* Reset partition sizes for procs near beginning. */
+    /* Reset part sizes for procs near beginning. */
     if (nprocs >= 6 && Proc < 4){
       psize[0] = 0.;
       Zoltan_LB_Set_Part_Sizes(zz, 1, 1, &Proc, &i, psize);
@@ -279,7 +279,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   }
   else if (Test.Local_Parts == 8) {
     int nparts=100;
-    /* Variable partition sizes. Assume at most 100 global partitions. */
+    /* Variable part sizes. Assume at most 100 global parts. */
     /* Realloc arrays. */
     safe_free((void **)(void *) &psize);
     safe_free((void **)(void *) &partid);
@@ -289,11 +289,11 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       partid[i] = i;
       psize[i] = (float) i;
     }
-    /* Set partition sizes using global numbers. */
+    /* Set part sizes using global numbers. */
     Zoltan_LB_Set_Part_Sizes(zz, 1, nparts, partid, NULL, psize);
   }
 
-  /* Free temporary arrays for partition sizes. */
+  /* Free temporary arrays for part sizes. */
   safe_free((void **)(void *) &psize);
   safe_free((void **)(void *) &partid);
 
@@ -483,7 +483,7 @@ int setup_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
     }
   }
 
-  /* Functions for partitions */
+  /* Functions for parts */
   if (Test.Multi_Callbacks) {
     if (Zoltan_Set_Fn(zz, ZOLTAN_PART_MULTI_FN_TYPE,
                       (void (*)()) get_part_multi,
@@ -875,6 +875,16 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
               safe_free((void **)(void *) &gids);
               safe_free((void **)(void *) &lids);
               return 0;
+          }
+          else {
+              int maxcolor = 0, gmaxcolor;
+              for (i = 0; i < mesh->num_elems; i++) 
+                  if (color[i] > maxcolor) maxcolor++;
+              MPI_Allreduce(&maxcolor, &gmaxcolor, 1, 
+                            MPI_INT, MPI_MAX, MPI_COMM_WORLD);
+              if (Proc == 0) 
+                  printf("Valid distance-1 coloring found; max color = %d.\n", 
+                         gmaxcolor);
           }
       }
 
@@ -2066,9 +2076,9 @@ int Num_Proc;
 int max_part, gmax_part;
 int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
                 /* If false, test only Zoltan_*_PP_Assign.                    */
-                /* True if # partitions == # processors.                      */
+                /* True if # parts == # processors.                      */
 
-  /* Find maximum partition number across all processors. */
+  /* Find maximum part number across all processors. */
   MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
   max_part = gmax_part = -1;
   for (i = 0; i < mesh->num_elems; i++)
@@ -2117,7 +2127,7 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
   }
 
   /* Test box that (most likely) includes the entire domain. */
-  /* All partitions and processors with partitions should be in the output.  */
+  /* All parts and processors with parts should be in the output.  */
   xlo[0] = -1000000.;
   xlo[1] = -1000000.;
   xlo[2] = -1000000.;
@@ -2126,7 +2136,7 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
   xhi[2] = 1000000.;
   test_box_drops(fp, xlo, xhi, zz, Proc, 
                 ((max_part >= 0) ? Proc : -1), /* do not test for proc if
-                                                  proc has no partitions */
+                                                  proc has no parts */
                 -1, test_both);
 
   fclose(fp);
@@ -2187,7 +2197,7 @@ int i;
         if (one_part == parts[i]) 
           break;
       if (i == partcnt) 
-        fprintf(fp, "%d Error:  partition %d (from Zoltan_LB_Point_PP_Assign) "
+        fprintf(fp, "%d Error:  part %d (from Zoltan_LB_Point_PP_Assign) "
                     "not in part list from Zoltan_LB_Box_PP_Assign\n", 
                     Proc, one_part);
     }
