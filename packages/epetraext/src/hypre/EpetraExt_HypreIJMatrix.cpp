@@ -52,7 +52,11 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
     NumGlobalCols_(-1),
     MyRowStart_(-1),
     MyRowEnd_(-1),
-    MatType_(-1)
+    MatType_(-1), 
+    SolverCreated_(false),
+    PrecondCreated_(false),
+    TransposeSolve_(false),
+    SolveOrPrec_(Solver)
 {
   // Initialize default values for global variables
   int ierr = 0;
@@ -127,12 +131,23 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
 
   y_vec = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) Y_hypre));
   y_local = hypre_ParVectorLocalVector(y_vec);
+
+
 } //EpetraExt_HYPREIJMatrix(Hypre_IJMatrix) Constructor
 
 //=======================================================
 
 EpetraExt_HypreIJMatrix::~EpetraExt_HypreIJMatrix(){
+  HYPRE_IJVectorDestroy(X_hypre);
+  HYPRE_IJVectorDestroy(Y_hypre);
 
+  /* Destroy solver and preconditioner */
+  if(SolverCreated_){
+    SolverDestroyPtr_(Solver_);
+  } 
+  if(PrecondCreated_){
+    PrecondDestroyPtr_(Preconditioner_);
+  } 
 } //EpetraExt_HypreIJMatrix destructor
 
 //=======================================================
@@ -246,36 +261,56 @@ int EpetraExt_HypreIJMatrix::Multiply(bool TransA,
   
   //printf("Proc[%d], Row start: %d, Row End: %d\n", Comm().MyPID(), MyRowStart_, MyRowEnd_);
   int ierr = 0;
-  
+  bool SameVectors = false; 
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors()) return -1;  // X and Y must have same number of vectors
-     
-  Y.PutScalar(0.0);
+  if(X.Pointers() == Y.Pointers()){
+    SameVectors = true;
+  }
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
-     //Get values for current vector in multivector.
-     double * x_values;
-     ierr += (*X(VecNum)).ExtractView(&x_values);
-     double * y_values;
-     ierr += (*Y(VecNum)).ExtractView(&y_values);
-     
-     // Temporarily make a pointer to data in Hypre for end
-     double *x_temp = x_local->data; 
-     // Replace data in Hypre vectors with epetra values
-     x_local->data = x_values;
-     double *y_temp = y_local->data;
-     y_local->data = y_values;
-     
-     // Do actual computation.
-     if(TransA) {
-       // Use transpose of A in multiply
-       ierr += HYPRE_ParCSRMatrixMatvecT(1.0, ParMatrix_, par_x, 1.0, par_y);
-       TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't do Transpose MatVec in Hypre.");
-     } else {
-       ierr += HYPRE_ParCSRMatrixMatvec(1.0, ParMatrix_, par_x, 1.0, par_y);
-       TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't do MatVec in Hypre.");
-     }
-     x_local->data = x_temp;
-     y_local->data = y_temp;
+    //Get values for current vector in multivector.
+    double * x_values;
+    double * y_values;
+    ierr += (*X(VecNum)).ExtractView(&x_values);
+    double *x_temp = x_local->data; 
+    double *y_temp = y_local->data;
+    if(!SameVectors){
+      ierr += (*Y(VecNum)).ExtractView(&y_values);
+    } else {
+      y_values = new double[X.MyLength()];
+    }
+    y_local->data = y_values;
+    HYPRE_ParVectorSetConstantValues(par_y,0.0);
+    // Temporarily make a pointer to data in Hypre for end
+    // Replace data in Hypre vectors with epetra values
+    x_local->data = x_values;
+    // Do actual computation.
+    if(TransA) {
+      // Use transpose of A in multiply
+      ierr += HYPRE_ParCSRMatrixMatvecT(1.0, ParMatrix_, par_x, 1.0, par_y);
+      TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't do Transpose MatVec in Hypre.");
+    } else {
+      ierr += HYPRE_ParCSRMatrixMatvec(1.0, ParMatrix_, par_x, 1.0, par_y);
+      TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't do MatVec in Hypre.");
+    }
+    if(SameVectors){
+      /*double *invalid_ptr;
+      (*Y(VecNum)).ExtractView(&invalid_ptr);
+      (*Y(VecNum)).ResetView(y_values);
+      delete[] invalid_ptr;*/
+      
+      int NumEntries = Y.MyLength();
+      std::vector<double> new_values; new_values.resize(NumEntries);
+      std::vector<int> new_indices; new_indices.resize(NumEntries);
+      for(int i = 0; i < NumEntries; i++){
+        new_values[i] = y_values[i];
+        new_indices[i] = i;
+      }
+      (*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]);
+      delete[] y_values;
+    }
+    x_local->data = x_temp;
+    y_local->data = y_temp;
   }
 
   double flops = (double) NumVectors * (double) NumGlobalNonzeros();
@@ -283,16 +318,286 @@ int EpetraExt_HypreIJMatrix::Multiply(bool TransA,
   return(ierr);
 } //Multiply() 
 
-int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-                            const Epetra_MultiVector& X,
-                            Epetra_MultiVector& Y) const
-{
-  (void)Upper;
-  (void)Trans;
-  (void)UnitDiagonal;
-  (void)X;
-  (void)Y;
-  return(-1); // Not implemented
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int parameter, int (*pt2Func)(HYPRE_Solver, int)){
+  int result;
+  if(chooser){
+    result = pt2Func(Preconditioner_, parameter);
+  }  else {
+    result = pt2Func(Solver_, parameter);
+  }
+  return result;
+}
+
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, double parameter, int (*pt2Func)(HYPRE_Solver, double)){
+  int result;
+  if(chooser){
+    result = pt2Func(Preconditioner_, parameter);
+  } else {
+    result = pt2Func(Solver_, parameter);
+  }
+  return result;
+}
+
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, double parameter1, int parameter2, int (*pt2Func)(HYPRE_Solver, double, int)){
+  int result;
+  if(chooser){
+    result = pt2Func(Preconditioner_, parameter1, parameter2);
+  } else {
+    result = pt2Func(Solver_, parameter1, parameter2);
+  }
+  return result;
+}
+
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int parameter1, int parameter2, int (*pt2Func)(HYPRE_Solver, int, int)){
+  int result;
+  if(chooser){
+    result = pt2Func(Preconditioner_, parameter1, parameter2);
+  } else {
+    result = pt2Func(Solver_, parameter1, parameter2);
+  }
+  return result;
+}
+
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, double* parameter, int (*pt2Func)(HYPRE_Solver, double*)){
+  int result;
+  if(chooser){
+    result = pt2Func(Preconditioner_, parameter);
+  } else {
+    result = pt2Func(Solver_, parameter);
+  }
+  return result;
+}
+
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int* parameter, int (*pt2Func)(HYPRE_Solver, int*)){
+  int result;
+  if(chooser){
+    result = pt2Func(Preconditioner_, parameter);
+  } else {
+    result = pt2Func(Solver_, parameter);
+  }
+  return result;
+}
+
+int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
+  if(transpose && Solver != BoomerAMG){
+    return -1;
+  }
+  switch(Solver) {
+    case BoomerAMG:
+      SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_BoomerAMGCreate;
+      SolverDestroyPtr_ = &HYPRE_BoomerAMGDestroy;
+      SolverSetupPtr_ = &HYPRE_BoomerAMGSetup;
+      SolverPrecondPtr_ = NULL;
+      if(transpose){
+        TransposeSolve_ = true;
+        SolverSolvePtr_ = &HYPRE_BoomerAMGSolveT;
+      } else {
+        SolverSolvePtr_ = &HYPRE_BoomerAMGSolve;
+      }
+      break;
+    case AMS:
+      SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_AMSCreate;
+      SolverDestroyPtr_ = &HYPRE_AMSDestroy;
+      SolverSetupPtr_ = &HYPRE_AMSSetup;
+      SolverSolvePtr_ = &HYPRE_AMSSolve;
+      SolverPrecondPtr_ = NULL;
+      break;
+    case Hybrid:
+      SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRHybridCreate;
+      SolverDestroyPtr_ = &HYPRE_ParCSRHybridDestroy;
+      SolverSetupPtr_ = &HYPRE_ParCSRHybridSetup;
+      SolverSolvePtr_ = &HYPRE_ParCSRHybridSolve;
+      SolverPrecondPtr_ = &HYPRE_ParCSRHybridSetPrecond;
+      break;
+    case PCG:
+      SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRPCGCreate;
+      SolverDestroyPtr_ = &HYPRE_ParCSRPCGDestroy;
+      SolverSetupPtr_ = &HYPRE_ParCSRPCGSetup;
+      SolverSolvePtr_ = &HYPRE_ParCSRPCGSolve;
+      SolverPrecondPtr_ = &HYPRE_ParCSRPCGSetPrecond;
+      break;
+    case GMRES:
+      SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRGMRESCreate;
+      SolverDestroyPtr_ = &HYPRE_ParCSRGMRESDestroy;
+      SolverSetupPtr_ = &HYPRE_ParCSRGMRESSetup;
+      SolverSolvePtr_ = &HYPRE_ParCSRGMRESSolve;
+      SolverPrecondPtr_ = &HYPRE_ParCSRGMRESSetPrecond;
+      break;
+    case FlexGMRES:
+      SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRFlexGMRESCreate;
+      SolverDestroyPtr_ = &HYPRE_ParCSRFlexGMRESDestroy;
+      SolverSetupPtr_ = &HYPRE_ParCSRFlexGMRESSetup;
+      SolverSolvePtr_ = &HYPRE_ParCSRFlexGMRESSolve;
+      SolverPrecondPtr_ = &HYPRE_ParCSRFlexGMRESSetPrecond;
+      break;
+    case LGMRES:
+      SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRLGMRESCreate;
+      SolverDestroyPtr_ = &HYPRE_ParCSRLGMRESDestroy;
+      SolverSetupPtr_ = &HYPRE_ParCSRLGMRESSetup;
+      SolverSolvePtr_ = &HYPRE_ParCSRLGMRESSolve;
+      SolverPrecondPtr_ = &HYPRE_ParCSRLGMRESSetPrecond;
+      break;
+    case BiCGSTAB:
+      SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRBiCGSTABCreate;
+      SolverDestroyPtr_ = &HYPRE_ParCSRBiCGSTABDestroy;
+      SolverSetupPtr_ = &HYPRE_ParCSRBiCGSTABSetup;
+      SolverSolvePtr_ = &HYPRE_ParCSRBiCGSTABSolve;
+      SolverPrecondPtr_ = &HYPRE_ParCSRBiCGSTABSetPrecond;
+      break;
+    default:
+      return -1;
+    }
+  CreateSolver();
+  return 0;
+}
+
+int EpetraExt_HypreIJMatrix::SetPrecondType(Hypre_Solver Precond){
+  switch(Precond) {
+    case BoomerAMG:
+      PrecondCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_BoomerAMGCreate;
+      PrecondDestroyPtr_ = &HYPRE_BoomerAMGDestroy;
+      PrecondSetupPtr_ = &HYPRE_BoomerAMGSetup;
+      PrecondSolvePtr_ = &HYPRE_BoomerAMGSolve;
+      break;
+    case ParaSails:
+      PrecondCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParaSailsCreate;
+      PrecondDestroyPtr_ = &HYPRE_ParaSailsDestroy;
+      PrecondSetupPtr_ = &HYPRE_ParaSailsSetup;
+      PrecondSolvePtr_ = &HYPRE_ParaSailsSolve;
+      break;
+    case Euclid:
+      PrecondCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_EuclidCreate;
+      PrecondDestroyPtr_ = &HYPRE_EuclidDestroy;
+      PrecondSetupPtr_ = &HYPRE_EuclidSetup;
+      PrecondSolvePtr_ = &HYPRE_EuclidSolve;
+      break;
+    case Pilut:
+      PrecondCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRPilutCreate;
+      PrecondDestroyPtr_ = &HYPRE_ParCSRPilutDestroy;
+      PrecondSetupPtr_ = &HYPRE_ParCSRPilutSetup;
+      PrecondSolvePtr_ = &HYPRE_ParCSRPilutSolve;
+      break;
+    case AMS:
+      PrecondCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_AMSCreate;
+      PrecondDestroyPtr_ = &HYPRE_AMSDestroy;
+      PrecondSetupPtr_ = &HYPRE_AMSSetup;
+      PrecondSolvePtr_ = &HYPRE_AMSSolve;
+      break;
+    default:
+      return -1;
+    }
+  CreatePrecond();
+  return 0;
+
+}
+
+int EpetraExt_HypreIJMatrix::CreateSolver(){
+  SolverCreated_ = true;
+  MPI_Comm comm;
+  HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
+  return (this->*SolverCreatePtr_)(comm, &Solver_);
+}
+
+int EpetraExt_HypreIJMatrix::CreatePrecond(){
+  PrecondCreated_ = true;
+  MPI_Comm comm;
+  HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
+  return (this->*PrecondCreatePtr_)(comm, &Preconditioner_);
+}
+
+int EpetraExt_HypreIJMatrix::SetPreconditioner(){
+  if(SolverPrecondPtr_ == NULL){
+    return -1;
+  } else {
+    SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_);
+    return 0;
+  }
+}
+
+int EpetraExt_HypreIJMatrix::SolveOrPrecondition(Hypre_Chooser answer){
+  switch(answer) {
+    case Solver:
+      if(SolverCreated_){
+        SolveOrPrec_ = answer;
+        return 0;
+      } else {
+        return -1;
+      }
+    case Preconditioner:
+      if(PrecondCreated_){
+        SolveOrPrec_ = answer;
+        return 0;
+      } else {
+        return -1;
+      }
+  }
+  return -1;
+}
+
+int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal, const Epetra_MultiVector & X, Epetra_MultiVector & Y) const {
+  int ierr = 0;
+  bool SameVectors = false;
+  int NumVectors = X.NumVectors();
+  if (NumVectors != Y.NumVectors()) return -1;  // X and Y must have same number of vectors
+  if(X.Pointers() == Y.Pointers()){
+    SameVectors = true;
+  }
+     
+  for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
+    //Get values for current vector in multivector.
+    double * x_values;
+    ierr += (*X(VecNum)).ExtractView(&x_values);
+    double * y_values;
+    if(!SameVectors){
+      ierr += (*Y(VecNum)).ExtractView(&y_values);
+    } else {
+      y_values = new double[X.MyLength()];
+    }
+    // Temporarily make a pointer to data in Hypre for end
+    double *x_temp = x_local->data; 
+    // Replace data in Hypre vectors with epetra values
+    x_local->data = x_values;
+    double *y_temp = y_local->data;
+    y_local->data = y_values;
+    
+    HYPRE_ParVectorSetConstantValues(par_y, 0.0);
+    if(!SolverCreated_ && !PrecondCreated_){
+      // Need to create a solver or preconditioner
+      return -1;
+    }
+    if(transpose && !TransposeSolve_){
+      // User requested a transpose solve, but the solver selected doesn't provide one
+      return -1;
+    }
+    if(SolveOrPrec_ == Solver){
+      // Use the solver methods
+      ierr += SolverSetupPtr_(Solver_, ParMatrix_, par_x, par_y);
+      ierr += SolverSolvePtr_(Solver_, ParMatrix_, par_x, par_y);
+    } else {
+      // Apply the preconditioner
+      ierr += PrecondSetupPtr_(Preconditioner_, ParMatrix_, par_x, par_y);
+      ierr += PrecondSolvePtr_(Preconditioner_, ParMatrix_, par_x, par_y);
+    }
+    TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Hypre solve failed.");
+    
+    if(SameVectors){
+      int NumEntries = Y.MyLength();
+      std::vector<double> new_values; new_values.resize(NumEntries);
+      std::vector<int> new_indices; new_indices.resize(NumEntries);
+      for(int i = 0; i < NumEntries; i++){
+        new_values[i] = y_values[i];
+        new_indices[i] = i;
+      }
+      (*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]);
+      delete[] y_values;
+    }
+    x_local->data = x_temp;
+    y_local->data = y_temp;
+  }
+
+  double flops = (double) NumVectors * (double) NumGlobalNonzeros();
+  UpdateFlops(flops);
+  return(ierr);
 }
 
 //=======================================================
@@ -330,8 +635,6 @@ int EpetraExt_HypreIJMatrix::LeftScale(const Epetra_Vector& X) {
 int EpetraExt_HypreIJMatrix::RightScale(const Epetra_Vector& X) {
   int ierr = 0;
   // First we need to import off-processor values of the vector
-  printf("Proc[%d], ColMap min = %d, max = %d.\n", Comm().MyPID(), RowMatrixColMap().MinMyGID(), RowMatrixColMap().MaxMyGID());
-  printf("proc[%d], VecMap min = %d, max = %d.\n", Comm().MyPID(), X.Map().MinMyGID(), X.Map().MaxMyGID());
   Epetra_Import Importer(RowMatrixColMap(), RowMatrixRowMap());
   Epetra_Vector Import_Vector(RowMatrixColMap(), true);
   ierr += Import_Vector.Import(X, Importer, Insert, 0);
@@ -366,6 +669,50 @@ int EpetraExt_HypreIJMatrix::RightScale(const Epetra_Vector& X) {
   UpdateFlops(NumGlobalNonzeros());
   return(ierr);
 } //RightScale()
+
+int EpetraExt_HypreIJMatrix::Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver){
+  return HYPRE_BoomerAMGCreate(solver);
+}
+
+int EpetraExt_HypreIJMatrix::Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver){
+  return HYPRE_ParaSailsCreate(comm, solver);
+}
+
+int EpetraExt_HypreIJMatrix::Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver){
+  return HYPRE_EuclidCreate(comm, solver);
+}
+
+int EpetraExt_HypreIJMatrix::Hypre_ParCSRPilutCreate(MPI_Comm comm, HYPRE_Solver *solver){
+  return HYPRE_ParCSRPilutCreate(comm, solver);
+}
+
+int EpetraExt_HypreIJMatrix::Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver){
+  return HYPRE_AMSCreate(solver);
+}
+
+int EpetraExt_HypreIJMatrix::Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver){
+  return HYPRE_ParCSRHybridCreate(solver);
+}
+
+int EpetraExt_HypreIJMatrix::Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver){
+  return HYPRE_ParCSRPCGCreate(comm, solver);
+}
+
+int EpetraExt_HypreIJMatrix::Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver){
+  return HYPRE_ParCSRGMRESCreate(comm, solver);
+}
+
+int EpetraExt_HypreIJMatrix::Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver){
+  return HYPRE_ParCSRFlexGMRESCreate(comm, solver);
+}
+
+int EpetraExt_HypreIJMatrix::Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver){
+  return HYPRE_ParCSRLGMRESCreate(comm, solver);
+}
+
+int EpetraExt_HypreIJMatrix::Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver){
+  return HYPRE_ParCSRBiCGSTABCreate(comm, solver);
+}
 
 int EpetraExt_HypreIJMatrix::InitializeDefaults(){
 

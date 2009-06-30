@@ -42,6 +42,8 @@
 #endif
 
 //Hypre source files
+#include "krylov.h"
+#include "HYPRE_parcsr_ls.h"
 #include "_hypre_parcsr_mv.h"
 #include "HYPRE_parcsr_mv.h"
 #include "HYPRE_IJ_mv.h"
@@ -59,6 +61,24 @@ class Epetra_Import;
     This class is lightweight, i.e., there are no deep copies of matrix data.  Whenever possible, class
     methods utilize callbacks to native Hypre functions.  
 */    
+    enum Hypre_Solver{ 
+        BoomerAMG,
+        ParaSails,
+        Euclid,
+        Pilut,
+        AMS,
+        Hybrid,
+        PCG,
+        GMRES,
+        FlexGMRES,
+        LGMRES,
+        BiCGSTAB
+        };
+
+    enum Hypre_Chooser{
+        Solver,
+        Preconditioner
+        };
 
 class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
       
@@ -117,6 +137,116 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
     int ExtractMyEntryView(int CurEntry, const double *&Value, int &RowIndex, int &ColIndex) const;
     //@}
 
+    //! @name Solver Setup Methods
+   //@{
+
+    //! Set a parameter that takes a single int.
+    /*!
+    \param chooser (In) -A Hypre_Chooser enumerated type set to Solver or Preconditioner, whatever the parameter is setting for.
+    \param parameter (In) -The integer parameter being set.
+    \param *pt2Func (In) -The function that sets the parameter. It must set parameters for the type of solver or preconditioner that was created.
+      An example is if the solver is BoomerAMG, the function to set maximum iterations would be &HYPRE_BoomerAMGSetMaxIter
+
+    \return Integer error code, set to 0 if successful.
+   */
+    int SetParameter(Hypre_Chooser chooser, int parameter, int (*pt2Func)(HYPRE_Solver, int));
+
+    //! Set a parameter that takes a single double.
+    /*!
+    \param chooser (In) -A Hypre_Chooser enumerated type set to Solver or Preconditioner, whatever the parameter is setting for.
+    \param parameter (In) -The double parameter being set.
+    \param *pt2Func (In) -The function that sets the parameter. It must set parameters for the type of solver or preconditioner that was created.
+      An example is if the solver is BoomerAMG, the function to set tolerance would be &HYPRE_BoomerAMGSetTol
+
+    \return Integer error code, set to 0 if successful.
+   */
+    int SetParameter(Hypre_Chooser chooser, double parameter, int (*pt2Func)(HYPRE_Solver, double));
+
+    //! Set a parameter that takes a double then an int.
+    /*!
+    \param chooser (In) -A Hypre_Chooser enumerated type set to Solver or Preconditioner, whatever the parameter is setting for.
+    \param parameter1 (In) -The double parameter being set.
+    \param parameter2 (In) - The integer parameter being set.
+    \param *pt2Func (In) -The function that sets the parameter. It must set parameters for the type of solver or preconditioner that was created.
+      An example is if the solver is BoomerAMG, the function to set relaxation weight for a given level would be &HYPRE_BoomerAMGSetLevelRelaxWt
+
+    \return Integer error code, set to 0 if successful.
+   */
+    int SetParameter(Hypre_Chooser chooser, double parameter1, int parameter2, int (*pt2Func)(HYPRE_Solver, double, int));
+
+    //! Set a parameter that takes two int parameters.
+    /*!
+    \param chooser (In) -A Hypre_Chooser enumerated type set to Solver or Preconditioner, whatever the parameter is setting for.
+    \param parameter1 (In) -The first integer parameter being set.
+    \param parameter2 (In) - The second integer parameter being set.
+    \param *pt2Func (In) -The function that sets the parameter. It must set parameters for the type of solver or preconditioner that was created.
+      An example is if the solver is BoomerAMG, the function to set relaxation type for a given level would be &HYPRE_BoomerAMGSetCycleRelaxType
+
+    \return Integer error code, set to 0 if successful.
+   */
+    int SetParameter(Hypre_Chooser chooser, int parameter1, int parameter2, int (*pt2Func)(HYPRE_Solver, int, int));
+
+    //! Set a parameter that takes a double*.
+    /*!
+    \param chooser (In) -A Hypre_Chooser enumerated type set to Solver or Preconditioner, whatever the parameter is setting for.
+    \param parameter (In) -The double* parameter being set.
+    \param *pt2Func (In) -The function that sets the parameter. It must set parameters for the type of solver or preconditioner that was created.
+      An example is if the solver is BoomerAMG, the function to set relaxation weight would be &HYPRE_BoomerAMGSetRelaxWeight
+
+    \return Integer error code, set to 0 if successful.
+   */
+    int SetParameter(Hypre_Chooser chooser, double* parameter, int (*pt2Func)(HYPRE_Solver, double*));
+
+    //! Set a parameter that takes an int*.
+    /*!
+    \param chooser (In) -A Hypre_Chooser enumerated type set to Solver or Preconditioner, whatever the parameter is setting for.
+    \param parameter (In) -The int* parameter being set.
+    \param *pt2Func (In) -The function that sets the parameter. It must set parameters for the type of solver or preconditioner that was created.
+      An example is if the solver is BoomerAMG, the function to set grid relax type would be &HYPRE_BoomerAMGSetGridRelaxType
+
+    \return Integer error code, set to 0 if successful.
+   */
+    int SetParameter(Hypre_Chooser chooser, int* parameter, int (*pt2Func)(HYPRE_Solver, int*));
+
+    //! Sets the solver that is used by the Solve() and ApplyInverse() methods.
+    /*! 
+    \param Solver (In) -A Hypre_Solver enumerated type to select the solver. Options are:
+    BoomerAMG, AMS, Hybrid, PCG, GMRES, FlexGMRES, LGMRES, and BiCGSTAB. See Hypre Ref Manual for more info on the solvers.
+    \param transpose (In) -Optional argument that selects to use a transpose solve. Currently BoomerAMG is the only solver available for transpose solve. It must be the argument for Solver if transpose is true.
+
+    \return Integer error code, set to 0 if successful.
+  */
+
+    int SetSolverType(Hypre_Solver Solver, bool transpose=false);
+
+    //! Sets the preconditioner that can be used by the Solve() and ApplyInverse() methods.
+    /*! 
+    \param Precond (In) -A Hypre_Solver enumerated type to select the preconditioner. Options are:
+    BoomerAMG, ParaSails, Euclid, Pilut, and AMS.
+
+    \return Integer error code, set to 0 if successful.
+  */
+    int SetPrecondType(Hypre_Solver Precond);
+
+    //! Sets the solver to use the selected preconditioner.
+    /*! 
+    The solver and preconditioner must have been selected and the solver must be one of the following solvers:
+      Hybrid, PCG, GMRES, FlexGMRES, LGMRES, BiCGSTAB.
+
+    \return Integer error code, set to 0 if successful.
+  */
+
+    int SetPreconditioner();
+
+    //! Choose to solver the problem or apply the preconditioner.
+    /*! 
+    \param answer (In) -A Hypre_Chooser enumerated type, either Solver or Preconditioner.
+    The chosen type must have been selected before this method is called.
+
+    \return Integer error code, set to 0 if successful.
+  */
+    int SolveOrPrecondition(Hypre_Chooser answer);
+   //@}
     //! @name Computational methods
   //@{ 
 
@@ -130,7 +260,7 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
   */
     int Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
-    //! Returns the result of a EpetraExt_HypreIJMatrix multiplied by a Epetra_MultiVector X in Y.
+    //! Returns the result of a EpetraExt_HypreIJMatrix solving a Epetra_MultiVector X in Y.
     /*! 
     \param Upper (In) -If true, solve Ux = y, otherwise solve Lx = y.
     \param Trans (In) -If true, solve transpose problem.
@@ -140,6 +270,7 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
 
     \return Integer error code, set to 0 if successful.
   */
+
     int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
     //! Scales the EpetraExt_HypreIJMatrix on the left with a Epetra_Vector x.
@@ -187,9 +318,8 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
 
     \return Integer error code, set to 0 if successful.
   */
-  int ApplyInverse(const Epetra_MultiVector& X,
-                   Epetra_MultiVector& Y) const
-    {(void)X; (void)Y; return(-1);}
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const {
+    return(EpetraExt_HypreIJMatrix::Solve(EpetraExt_HypreIJMatrix::UpperTriangular(), EpetraExt_HypreIJMatrix::UseTranspose(), false, X, Y));};
 
     //! Returns the current UseTranspose setting.
     virtual bool UseTranspose() const {return(false);}
@@ -209,11 +339,26 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
     int NumMyRowEntries(int MyRow, int & NumEntries) const;
 
   //@}
-
  protected:
 
    int InitializeDefaults();
    
+   // These methods are needed only because the create methods in Hypre sometimes take an MPI_Comm but not always. 
+   // They simply call the create solver in the correct way.
+   int Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   int Hypre_ParCSRPilutCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   int Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   int Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   int Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   int Hypre_ParCSRGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   int Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   int Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   int CreateSolver();
+   int CreatePrecond();
+
     mutable HYPRE_IJMatrix Matrix_;
     mutable HYPRE_ParCSRMatrix ParMatrix_;
     mutable HYPRE_IJVector X_hypre;
@@ -224,6 +369,18 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
     mutable hypre_ParVector *y_vec;
     mutable hypre_Vector *x_local;
     mutable hypre_Vector *y_local;
+    mutable HYPRE_Solver Solver_;
+    mutable HYPRE_Solver Preconditioner_;
+    // The following are pointers to functions to use the solver and preconditioner.
+    int (EpetraExt_HypreIJMatrix::*SolverCreatePtr_)(MPI_Comm, HYPRE_Solver*);
+    int (*SolverDestroyPtr_)(HYPRE_Solver);
+    int (*SolverSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+    int (*SolverSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+    int (*SolverPrecondPtr_)(HYPRE_Solver, HYPRE_PtrToParSolverFcn, HYPRE_PtrToParSolverFcn, HYPRE_Solver);
+    int (EpetraExt_HypreIJMatrix::*PrecondCreatePtr_)(MPI_Comm, HYPRE_Solver*);
+    int (*PrecondDestroyPtr_)(HYPRE_Solver);
+    int (*PrecondSetupPtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
+    int (*PrecondSolvePtr_)(HYPRE_Solver, HYPRE_ParCSRMatrix, HYPRE_ParVector, HYPRE_ParVector);
      
     int NumMyRows_;
     int NumGlobalRows_;
@@ -231,5 +388,9 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
     int MyRowStart_;
     int MyRowEnd_;
     mutable int MatType_;
+    bool SolverCreated_;
+    bool PrecondCreated_;
+    bool TransposeSolve_;
+    Hypre_Chooser SolveOrPrec_;
 };
 #endif /* EPETRAEXT_HYPREIJMATRIX_H_ */
