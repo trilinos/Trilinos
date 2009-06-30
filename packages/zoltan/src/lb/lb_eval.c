@@ -22,8 +22,6 @@ extern "C" {
 #include "zoltan_eval.h"
 
 #include <search.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 /************************************************************************/
 static void iget_strided_stats(int *v, int stride, int offset, int len,
@@ -469,7 +467,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
          */
 
         offset = num_pairs * MAX_SIZE_KEY_BUFFER;
-        snprintf(keys + offset, MAX_SIZE_KEY_BUFFER, "%d %d", obj_part, nbor_part);
+        sprintf(keys + offset, "%d %d", obj_part, nbor_part);
         partNumEntries[num_pairs].key = keys + offset;
         partNumEntries[num_pairs].data = NULL;
 
