@@ -120,7 +120,7 @@ int Zoltan_LB_Balance(
 /*
  * Wrapper around Zoltan_LB for backward compatibility with
  * previous Zoltan versions.  
- * Appropriate only when (# requested partitions == # processors), uniformly
+ * Appropriate only when (# requested parts == # processors), uniformly
  * distributed.
  * Arguments correspond directly with arguments of Zoltan_LB.
  */
@@ -132,14 +132,14 @@ int *export_to_part = NULL;    /* Array used as dummy arg in partitioning. */
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  /* Determine whether partition parameters were set.  Report error if
+  /* Determine whether part parameters were set.  Report error if
    * values are unreasonable. */
   if ((zz->LB.Num_Global_Parts_Param != -1 && 
        zz->LB.Num_Global_Parts_Param != zz->Num_Proc) ||
       (zz->LB.Num_Local_Parts_Param != -1 &&
        zz->LB.Num_Local_Parts_Param != 1)) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
-      "Non-uniform distribution of partitions over processors is specified; "
+      "Non-uniform distribution of parts over processors is specified; "
       "use Zoltan_LB_Partition.");
     ierr = ZOLTAN_FATAL;
     goto End;
@@ -153,7 +153,7 @@ int *export_to_part = NULL;    /* Array used as dummy arg in partitioning. */
 
 
 End:
-  /* Not returning import/export partition information; free it if allocated. */
+  /* Not returning import/export part information; free it if allocated. */
   if (import_to_part != NULL) 
     Zoltan_Special_Free(zz, (void **)(void*) &import_to_part, 
                         ZOLTAN_SPECIAL_MALLOC_INT);
@@ -172,7 +172,7 @@ End:
 static int Zoltan_LB(
   ZZ *zz, 
   int include_parts,             /* Flag indicating whether to generate
-                                    partition informtion;
+                                    part informtion;
                                     0 if called by Zoltan_LB_Balance,
                                     1 if called by Zoltan_LB_Partition.       */
   int *changes,                  /* Set to zero or one depending on if 
@@ -354,11 +354,11 @@ ZOLTAN_ID_PTR gid;
   }
 
   /*
-   * Generate partitions sizes.
+   * Generate parts sizes.
    */
 
 #ifdef ZOLTAN_DRUM
-  /* set partition sizes computed by DRUM, if requested */
+  /* set part sizes computed by DRUM, if requested */
   Zoltan_Drum_Set_Part_Sizes(zz);
 #endif
 
@@ -373,7 +373,7 @@ ZOLTAN_ID_PTR gid;
     goto End;
   }
 
-  /* Get partition sizes. */
+  /* Get part sizes. */
   Zoltan_LB_Get_Part_Sizes(zz, zz->LB.Num_Global_Parts, part_dim,
     part_sizes);
 
@@ -555,8 +555,8 @@ ZOLTAN_ID_PTR gid;
     /*
      * Normally, Zoltan_LB returns in the export lists all local
      * objects that are moving off processor, or that are assigned
-     * to a partition on the local processor that is not the
-     * default partition.  This setting of Return_Lists requests
+     * to a part on the local processor that is not the
+     * default part.  This setting of Return_Lists requests
      * that all local objects be included in the export list.
      */
 
@@ -598,7 +598,7 @@ ZOLTAN_ID_PTR gid;
   
         ht = create_hash_table(zz, *export_global_ids, *num_export_objs, ts);
   
-        /* Create a list of all gids, lids and partitions */
+        /* Create a list of all gids, lids and parts */
   
         error= Zoltan_Get_Obj_List_Special_Malloc(zz, &all_num_obj, 
                  &all_global_ids, &all_local_ids,
@@ -667,7 +667,7 @@ ZOLTAN_ID_PTR gid;
     for (i = 0; i < *num_import_objs; i++) {
       printf("    Obj: ");
       ZOLTAN_PRINT_GID(zz, &((*import_global_ids)[i*zz->Num_GID]));
-      printf("  To partition: %4d", 
+      printf("  To part: %4d", 
              (*import_to_part != NULL ? (*import_to_part)[i] 
                                       : zz->Proc));
       printf("  From processor: %4d\n", (*import_procs)[i]);
@@ -677,7 +677,7 @@ ZOLTAN_ID_PTR gid;
     for (i = 0; i < *num_export_objs; i++) {
       printf("    Obj: ");
       ZOLTAN_PRINT_GID(zz, &((*export_global_ids)[i*zz->Num_GID]));
-      printf("  To partition: %4d",
+      printf("  To part: %4d",
              (*export_to_part != NULL ? (*export_to_part)[i] 
                                       : (*export_procs)[i]));
       printf("  To processor: %4d\n", (*export_procs)[i]);
@@ -779,7 +779,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     goto End;
   }
 
-  /* Since PartDist is changing, can't reuse old partitions.
+  /* Since PartDist is changing, can't reuse old parts.
    * Free LB.Data_Structure to prevent reuse. 
    * Also free LB.PartDist and LB.ProcDist.
    */
@@ -807,7 +807,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
 
   else {
     /* Either NUM_GLOBAL_PARTS is set != num_proc or NUM_LOCAL_PARTS
-     * is set.  Build PartDist, distributing partitions to processors as 
+     * is set.  Build PartDist, distributing parts to processors as 
      * specified. 
      */
 
@@ -837,7 +837,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     }
 
     if (max_global_parts == 0) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zero partitions requested");
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Zero parts requested");
       ierr = ZOLTAN_FATAL;
       goto End;
     }
@@ -856,7 +856,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     if (!local_parts_set) {
       if (max_global_parts > num_proc) {
         /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS > num_proc. */
-        /* Even distribution of partitions to processors. */
+        /* Even distribution of parts to processors. */
         zz->LB.Single_Proc_Per_Part = 1;
         frac = max_global_parts / num_proc;
         mod  = max_global_parts % num_proc;
@@ -870,7 +870,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
       }
       else { /* num_proc < max_global_parts */
         /* NUM_LOCAL_PARTS is not set; NUM_GLOBAL_PARTS < num_proc. */
-        /* Even distribution of processors to partitions. */
+        /* Even distribution of processors to parts. */
         zz->LB.Single_Proc_Per_Part = 0;  /* Parts are spread across procs */
         pdist[0] = 0;
         frac = num_proc / max_global_parts;
@@ -883,8 +883,8 @@ MPI_User_function Zoltan_PartDist_MPIOp;
     else /* local_parts_set */ {
 
       /* NUM_LOCAL_PARTS is set on at least some processors. */
-      /* Distribute partitions to processors to match NUM_LOCAL_PARTS
-         where specified; distribute remaining partitions 
+      /* Distribute parts to processors to match NUM_LOCAL_PARTS
+         where specified; distribute remaining parts 
          to processors that didn't specify NUM_LOCAL_PARTS */
 
       zz->LB.Single_Proc_Per_Part = 1;
@@ -896,7 +896,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
 
       /* Compute number of parts not specified by NUM_LOCAL_PARTS */
       /* In MPI_Allreduce above, processors not specifying NUM_LOCAL_PARTS
-       * specified contributed zero partitions to sum_local_parts.  */
+       * specified contributed zero parts to sum_local_parts.  */
 
       remaining_procs = num_proc - local_parts_set;
       avail_local_parts = max_global_parts - sum_local_parts;
@@ -907,7 +907,7 @@ MPI_User_function Zoltan_PartDist_MPIOp;
 
       for (cnt = 0, pcnt = 0, i = 0; i < num_proc; i++)
         if (local_parts_params[i] != -1) {
-          /* Fill in processor for its NUM_LOCAL_PARTS partitions. */
+          /* Fill in processor for its NUM_LOCAL_PARTS parts. */
           for (j = 0; j < local_parts_params[i]; j++)
             pdist[cnt++] = i;
         }
