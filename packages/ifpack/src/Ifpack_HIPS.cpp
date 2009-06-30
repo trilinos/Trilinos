@@ -69,19 +69,21 @@ int Ifpack_HIPS::SetParameters(Teuchos::ParameterList& parameterlist){
   HIPS_SetOptionINT(HIPS_id,HIPS_LOCALLY,List_.get("hips: fill",0));
   // Sadly, this fill option doesn't work for HIPS_ITERATIVE mode, meaning the
   // only way to control fill-in is via the drop tolerance. 
-  HIPS_SetOptionINT(HIPS_id,HIPS_ITMAX,List_.get("hips: krylov its",1));  
-  HIPS_SetOptionINT(HIPS_id,HIPS_KRYLOV_METHOD,List_.get("hips: krylov",0));
+
   HIPS_SetOptionINT(HIPS_id,HIPS_REORDER,List_.get("hips: reorder",1));
   HIPS_SetOptionINT(HIPS_id,HIPS_GRAPH_SYM,List_.get("hips: graph symmetric",0));
   HIPS_SetOptionINT(HIPS_id,HIPS_FORTRAN_NUMBERING,List_.get("hips: fortran numbering",0));
   HIPS_SetOptionINT(HIPS_id,HIPS_DOF,List_.get("hips: dof per node",1));
 
+  // This will disable the GMRES wrap around HIPS.
+  //  HIPS_SetOptionINT(HIPS_id,HIPS_ITMAX,1);
+  HIPS_SetOptionINT(HIPS_id,HIPS_ITMAX,-1);  
+  //  HIPS_SetOptionINT(HIPS_id,HIPS_KRYLOV_METHOD,List_.get("hips: krylov",0));
+  HIPS_SetOptionINT(HIPS_id,HIPS_KRYLOV_RESTART,-1);
+  
   // Make sure the ILU always runs, by setting the internal tolerance really, really low.
   HIPS_SetOptionREAL(HIPS_id,HIPS_PREC,1e-100);
 
-  // Other HAX
-  HIPS_SetOptionINT(HIPS_id,HIPS_KRYLOV_RESTART,1);    
-  
   // Options for Iterative only
   if(List_.get("hips: strategy",HIPS_ITERATIVE)==HIPS_ITERATIVE){  
     HIPS_SetOptionREAL(HIPS_id, HIPS_DROPTOL0, List_.get("hips: drop tolerance",1e-2));
@@ -123,21 +125,19 @@ int Ifpack_HIPS::Compute(){
   RowMap0_=rcp(new Epetra_Map(-1,N,newGIDs,0,A_->Comm()));
   delete [] newGIDs;
 
-  
-  //NTS: Need to totally rewrite the graph insertion algorithms since they're
-  //gratuitous when we already have a matrix assembled. I'd do
-  //it now, but I want "functional" first and "not terribly slow" second
-  ierr=HIPS_GraphBegin(HIPS_id,A_->NumGlobalRows(),nnz);
-  if(ierr!=HIPS_SUCCESS) IFPACK_CHK_ERR(-2);  
+  int *gcolind=0;
   if(Acrs){
-    // Graph insert - CRS mode
-    for(int i=0;i<N;i++)
-      for(int j=rowptr[i];j<rowptr[i+1];j++){
-        ierr=HIPS_GraphEdge(HIPS_id,Acrs->GRID(i)-MinGRID,Acrs->GCID(colind[j])-MinGCID);
-        if(ierr!=HIPS_SUCCESS) IFPACK_CHK_ERR(-3);
-      }
+    //  Global CIDs
+    gcolind=new int[nnz];
+    for(int j=0;j<nnz;j++) gcolind[j]=Acrs->GCID(colind[j])-MinGCID;    
+    ierr =  HIPS_GraphDistrCSR(HIPS_id,A_->NumGlobalRows(),A_->NumMyRows(),RowMap0_->MyGlobalElements(),
+                               rowptr,gcolind);  
   }
   else{
+    // Do things the hard way
+    ierr=HIPS_GraphBegin(HIPS_id,A_->NumGlobalRows(),nnz);
+    if(ierr!=HIPS_SUCCESS) IFPACK_CHK_ERR(-2);
+
     // Graph insert - RM mode
     for(int i=0;i<N;i++){
       A_->ExtractMyRowCopy(i,maxnr,Nr,values,colind);
@@ -146,8 +146,8 @@ int Ifpack_HIPS::Compute(){
         if(ierr!=HIPS_SUCCESS) IFPACK_CHK_ERR(-3);
       }
     }    
-  }
-  ierr=HIPS_GraphEnd(HIPS_id);
+    ierr=HIPS_GraphEnd(HIPS_id);
+  }      
   if(ierr!=HIPS_SUCCESS) IFPACK_CHK_ERR(-4);  
   
   /*Have processor 0 send in the partition*/
@@ -190,49 +190,42 @@ int Ifpack_HIPS::Compute(){
     HIPS_ExitOnError(ierr);
     delete [] mapptr;
   }      
-  
-  ierr = HIPS_AssemblyBegin(HIPS_id, nnz, HIPS_ASSEMBLY_OVW, HIPS_ASSEMBLY_OVW, HIPS_ASSEMBLY_FOOL,0);
-  if(ierr!=HIPS_SUCCESS){HIPS_PrintError(ierr);IFPACK_CHK_ERR(-5);}
 
-  if(Acrs){
-    // Matrix insert - CRS Mode
-    for(int i=0;i<N;i++){     
-      for(int j=rowptr[i];j<rowptr[i+1];j++){      
-        ierr = HIPS_AssemblySetValue(HIPS_id,Acrs->GRID(i)-MinGRID,Acrs->GCID(colind[j])-MinGCID, values[j]);
-        if(ierr!=HIPS_SUCCESS){HIPS_PrintError(ierr);IFPACK_CHK_ERR(-6);}
-      }
-    }
-  }
+  if(Acrs)
+    ierr = HIPS_MatrixDistrCSR(HIPS_id,A_->NumMyRows(),RowMap0_->MyGlobalElements(),rowptr,gcolind,values,HIPS_ASSEMBLY_OVW,HIPS_ASSEMBLY_OVW,HIPS_ASSEMBLY_FOOL,0);  
   else{
-    // Matrix insert - RM Mode
-    for(int i=0;i<N;i++){
-      A_->ExtractMyRowCopy(i,maxnr,Nr,values,colind);
-      for(int j=0;j<Nr;j++){      
-        ierr = HIPS_AssemblySetValue(HIPS_id,RowMap.GID(i)-MinGRID,ColMap.GID(colind[j])-MinGCID, values[j]);
-        if(ierr!=HIPS_SUCCESS){HIPS_PrintError(ierr);IFPACK_CHK_ERR(-6);}
-      }
-    }
-  }  
-  ierr = HIPS_AssemblyEnd(HIPS_id);
+    // Do things the hard way
+     ierr = HIPS_AssemblyBegin(HIPS_id, nnz, HIPS_ASSEMBLY_OVW, HIPS_ASSEMBLY_OVW, HIPS_ASSEMBLY_FOOL,0);
+     if(ierr!=HIPS_SUCCESS){HIPS_PrintError(ierr);IFPACK_CHK_ERR(-5);}
+
+     // Matrix insert - RM Mode
+     for(int i=0;i<N;i++){
+       A_->ExtractMyRowCopy(i,maxnr,Nr,values,colind);
+       for(int j=0;j<Nr;j++){      
+         ierr = HIPS_AssemblySetValue(HIPS_id,RowMap.GID(i)-MinGRID,ColMap.GID(colind[j])-MinGCID, values[j]);
+         if(ierr!=HIPS_SUCCESS){HIPS_PrintError(ierr);IFPACK_CHK_ERR(-6);}
+       }
+     }
+     ierr = HIPS_AssemblyEnd(HIPS_id);
+  }
   if(ierr!=HIPS_SUCCESS){HIPS_PrintError(ierr);IFPACK_CHK_ERR(-7);}
 
   // Force factorization
   //NTS: This is odd.  There should be a better way to force this to happen.
-  //  Epetra_Vector X(A_->RowMap()),Y(A_->RowMap());
-  //  X.PutScalar(1.0);
-  double *X=new double[3*N];
-  double *Y=new double[3*N];
-  for(int i=0;i<3*N;i++) X[i]=1.0;
+  double *X=new double[A_->NumMyRows()];
+  double *Y=new double[A_->NumMyRows()];
+  for(int i=0;i<A_->NumMyRows();i++) X[i]=1.0;
 
-  // NTS: Fix this to follow the ApplyInverse stuff so we're guaranteed not to
-  // step on memory.
-  
-  ierr=HIPS_SetLocalRHS(HIPS_id,&(X[0]),HIPS_ASSEMBLY_OVW,HIPS_ASSEMBLY_OVW);
+  // Force HIPS to do it's own Import/Export
+  ierr=HIPS_SetRHS(HIPS_id,A_->NumMyRows(),RowMap0_->MyGlobalElements(),X,HIPS_ASSEMBLY_OVW,HIPS_ASSEMBLY_OVW,HIPS_ASSEMBLY_FOOL);
   if(ierr!=HIPS_SUCCESS) IFPACK_CHK_ERR(-11);
-
-  ierr=HIPS_GetLocalSolution(HIPS_id,&(Y[0]));
-  if(ierr!=HIPS_SUCCESS) IFPACK_CHK_ERR(-12);
-
+  
+  ierr=HIPS_GetSolution(HIPS_id,A_->NumMyRows(),RowMap0_->MyGlobalElements(),Y,HIPS_ASSEMBLY_FOOL);
+  if(ierr!=HIPS_SUCCESS) {
+    HIPS_PrintError(ierr);
+    IFPACK_CHK_ERR(-12);
+  }
+  
   // Reset output for iteration
   HIPS_SetOptionINT(HIPS_id,HIPS_VERBOSE,List_.get("hips: iteration output",0));
 
@@ -250,6 +243,9 @@ int Ifpack_HIPS::Compute(){
     delete [] colind;
     delete [] values;
   }
+  else
+    delete [] gcolind;
+  
   delete [] X;
   delete [] Y;
   return 0;
