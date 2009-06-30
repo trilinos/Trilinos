@@ -25,18 +25,27 @@ SET(HEADERS ${HEADERS}
   )
 
 #
-# Core headers
+# Core Files
 #
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+# general headers, sources
 APPEND_SET(HEADERS
-  Kokkos_ConfigDefs.hpp
-  Kokkos_Version.hpp
+    # standard
+    Kokkos_LinAlgVersion.hpp
+    # data structures
+    Kokkos_CrsMatrix.hpp
+    Kokkos_MultiVector.hpp
+    Kokkos_Vector.hpp
+    # computation
+    Kokkos_DefaultArithmetic.hpp
+    Kokkos_DefaultSparseMultiply.hpp
+    Kokkos_DefaultSparseSolve.hpp
   )
 
 APPEND_SET(SOURCES
-  Kokkos_Version.cpp
+    Kokkos_LinAlgVersion.cpp
   )
 
 #
@@ -44,8 +53,10 @@ APPEND_SET(SOURCES
 #
 
 PACKAGE_ADD_LIBRARY(
-  kokkos
+  kokkoslinalg
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS kokkosnodeapi
+  DEPLIBS kokkos kokkosnodeapi
   )
+
+PACKAGE_ADD_TEST_DIRECTORIES(test)

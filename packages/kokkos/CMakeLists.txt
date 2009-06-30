@@ -20,6 +20,13 @@ ADD_OPTION_AND_DEFINE(
   ON
   )
 
+ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_LinAlg
+  HAVE_KOKKOS_LINALG
+  "Enable Kokkos local linear algebra."
+  ON
+  )
+
 #
 # C) Add the libraries, tests, and examples
 #
@@ -30,9 +37,10 @@ IF (Kokkos_ENABLE_NodeAPI)
   ADD_SUBDIRECTORY(NodeAPI)
 ENDIF()
 
-PACKAGE_ADD_TEST_DIRECTORIES(test)
-
-#PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+if (Kokkos_ENABLE_LinAlg)
+  ADD_SUBDIRECTORY(LinAlg)
+  PACKAGE_ADD_TEST_DIRECTORIES(test)
+ENDIF()
 
 #
 # D) Do standard postprocessing

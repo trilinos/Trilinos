@@ -67,64 +67,49 @@
 #include <Kokkos_config.h>
 
 #ifdef HAVE_STRING
-#include <string>
-using std::string;
+# include <string>
 #else
-#include <string.h>
+# include <string.h>
 #endif
 
 #ifdef HAVE_SYS_TIME_H
-#include <sys/time.h>
-#ifdef HAVE_SYS_RESOURCE_H
-#include <sys/resource.h>
-#endif
+# include <sys/time.h>
+# ifdef HAVE_SYS_RESOURCE_H
+#   include <sys/resource.h>
+# endif
 #else
-#ifdef HAVE_TIME_H
-#include <time.h>
-#else
-#include <ctime>
-#endif
+# ifdef HAVE_TIME_H
+#   include <time.h>
+# else
+#   include <ctime>
+# endif
 #endif
 
 #ifdef HAVE_CASSERT
-#include <cassert>
+# include <cassert>
 #else
-#include <assert.h>
+# include <assert.h>
 #endif
 
 #ifdef HAVE_IOSTREAM
-#include <iostream>
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
+# include <iostream>
 #else
-#include <iostream.h>
+# include <iostream.h>
 #endif
 
 #else /*TRILINOS_NO_CONFIG_H is defined*/
 
 #include <string>
-using std::string;
-
 #ifdef ICL
-#include <time.h>
+# include <time.h>
 #else
-#include <sys/time.h>
-#ifndef MINGW
-#include <sys/resource.h>
+# include <sys/time.h>
+# ifndef MINGW
+#   include <sys/resource.h>
+# endif
 #endif
-#endif
-
 #include <cassert>
-
 #include <iostream>
-using std::istream;
-using std::ostream;
-using std::cerr;
-using std::cout;
-using std::endl;
 
 #endif /*ndef TRILINOS_NO_CONFIG_H */
 #endif /* KOKKOS_CONFIGDEFS_H */
