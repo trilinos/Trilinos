@@ -47,15 +47,9 @@ extern "C" {
 
 static int Zoltan_PHG_Add_Repart_Data(ZZ *, ZHG *, HGraph *,
                                       PHGPartParams *, Partition);
-#if 0
-static int removed_cuts_local(ZZ *zz, ZHG *zhg, 
-                int max_parts, int *pin_parts, double *loccuts);
-static int removed_cuts_global(ZZ *zz, ZHG *zhg, 
-                int max_parts, int *pin_parts, double *loccuts, int tag);
-#else
 static int calculate_cuts(ZZ *zz, ZHG *zhg, 
                 int max_parts, int *pin_parts, double *loccuts);
-#endif
+
 static int getObjectSizes(ZZ *zz, ZHG *zhg);
 
 static int remove_dense_edges(ZZ *zz, ZHG *zhg, float esize_threshold, int save_removed,
