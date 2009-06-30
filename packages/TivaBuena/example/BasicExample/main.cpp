@@ -12,15 +12,14 @@ int main(int argc, char* argv[])
  /*
   * Welcome to the TivaBuena Package!
   *
-  * This package was designed to help rapid development of GUIs for existing and new projects
-  * using the Trilinos Framework. Using the ParameterList class found in the Teuchos package
-  * and the new DependentParameterList class provided by the TivaBuena Package, this package 
-  * will allow you to use ParameterLists to define a set of values you whish to obtain from
-  * the user. You may then pass this ParameterList along with another empty ParameterList
-  * to the function getInput. This function will dynamically generate a GUI based on your
-  * ParameterList, display the GUI to the user, obtain input from the user, and then store
-  * the users input back into the empty ParameterList. Let's take a look at an example to see
-  * how this all works.
+  * This package was designed to assist in the rapid development of GUIs for existing and new 
+  * projects using the Trilinos Framework. Using the ParameterList class found in the Teuchos 
+  * package and the new Dependency Sheet class provided by the TivaBuena Package, this package
+  * will allow you to use ParameterLists to define a set of values you wish to obtain from
+  * the user. You may then pass this ParameterList to the function getInput. This function 
+  * will dynamically generate a GUI based on your ParameterList, display the GUI to the user, 
+  * obtain input from the user, and then store the users input back into the ParameterList. 
+  * Let's take a look at an example to see how this all works.
   *
   * Before you Start:
   * We recommend you have at least a basic understanding of what a Teuchos::RCP is. While not
@@ -30,25 +29,26 @@ int main(int argc, char* argv[])
 
   /* 
    * First we create an empty parameter list. We will use this to define
-   * all of the parameters we wish to obtain from the user. This type of ParameterList is
-   * commonly known as the "Valid Parameter List".
+   * all of the parameters we wish to obtain from the user. This type of 
+   * ParameterList is commonly known as the "Valid Parameter List".
    */
   Teuchos::RCP<Teuchos::ParameterList> My_List = Teuchos::RCP<Teuchos::ParameterList>(new Teuchos::ParameterList);
 
   /* 
    * Creating parameters in this list can be easily done using the set function.
    * The first argument is the name of the Parameter. The second is the default
-   * value for the parameter. The third is a short description of what the parameter is for.
+   * value for the parameter. The third is a short description of what the parameter 
+   * is for.
    */
   My_List->set("Max Iters", 1550, "Determines the maximum number of iterations in the solver");
   My_List->set("Tolerance", 1e-10, "The tolerance used for the convergence check");
   
   /* 
    * Validators are useful for making sure that an input has only a particular set of values.
-   * For the "Solver" option, we will create a validator that will automatically
-   * create documentation for this parameter but will also help in validation.
-   * Here we use a StringToIntegralParameterEntryValidator and a tuple
-   * to specify which string values are valid for the "Solver" option.
+   * For the "Solver" option, we will create a validator that will automatically create
+   * documentation for this parameter but will also help in validation. Here we use a 
+   * StringToIntegralParameterEntryValidator and a tuple to specify which string values
+   * are valid for the "Solver" option.
    */
   Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
     solverValidator = Teuchos::rcp(
@@ -67,10 +67,9 @@ int main(int argc, char* argv[])
   /* 
    * The TivaBuean Package can also handle arrays.
    * Here we create a Teuchos::Array class of 10 doubles
-   * representing an initial guess for a linear solver .
+   * representing an initial guess for a linear solver.
    */
   Teuchos::Array<double> doubleArray( 10, 0.0 );
-  
   My_List->set("Initial Guess", doubleArray, "The initial guess as a RCP to an array object.");
 
   /* 
@@ -90,8 +89,7 @@ int main(int argc, char* argv[])
 
   /*
    * The getInput function starts up a TivaBuena GUI and lets the user start to input parameter values. When the user
-   * has completed their data entry, the function will finish right after all of the input values are stored in My_List
-   * userInputList.
+   * has completed their data entry, the function will finish right after all of the input values are stored in My_List.
    */
   TivaBuena::getInput(My_List);
 
@@ -105,28 +103,23 @@ int main(int argc, char* argv[])
   /*
    * A Few Final Notes
    *
-   * After calling the getInput function, the userInputList will be an exact copy of the valid parameter list that you
-   * specified in the first arguement (with the new values the users specified of course). This includes and validators or
-   * dependencies you man have used. What this means is that you can reuse
-   * the userInputList again, by feeding IT in as the valid list the next time you call the getInput function. If you don't
-   * care about maintaining the integerity of your valid parameter list, you may use it as both the arguments for the getInput
-   * function.
+   * -After calling the getInput function, any parameter in My_List has to potential to have been modified.
+   *  That said, no new parameters or parameterlist will have been added and none will have been removed.
    *
-   * The GUI can only handle certain types of parameters. They are:
-   * int
-   * short
-   * double
-   * float
-   * bool
-   * std::string
-   * Teuchos::Array<int>
-   * Teuchos::Array<short>
-   * Teuchos::Array<double>
-   * Teuchos::Array<float>
-   * Teuchos::Array<string>
+   * -The GUI can only handle certain types of parameters. They are:
+   *	int
+   * 	short
+   * 	double
+   * 	float
+   * 	bool
+   * 	std::string
+   * 	Teuchos::Array<int>
+   * 	Teuchos::Array<short>
+   * 	Teuchos::Array<double>
+   * 	Teuchos::Array<float>
+   * 	Teuchos::Array<string>
    * If you give it a ParameterList containing a parameter that is not of one of the types specified above,
-   * the parameter will still be displayed in the GUI. However, the user will not be able to modify it's value
-   * and the userInputList will contain the default value specified by the valid parameter list.
+   * the parameter will still be displayed in the GUI. However, the user will not be able to modify it's value.
    *
    * That's it for now. Be sure Check out the other examples to see some of the more advanced 
    * features of the TivaBuena package. If you have any suggestions or feature requests, please send them to

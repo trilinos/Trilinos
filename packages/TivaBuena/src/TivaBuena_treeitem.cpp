@@ -128,6 +128,7 @@ bool TreeItem::changeValue(QVariant value){
 	if(itemData[1].toString() == value.toString())
 		return false;
 	itemData[1] = value;
+
 	if(data(2).toString() == intId)
 		parameterEntry->setValue(
 			value.toInt(), 

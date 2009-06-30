@@ -10,8 +10,13 @@ bool doesParameterContainArray(const Teuchos::ParameterEntry *parameter){
 QStringList getValues(QString& values){
 	values = values.remove("{");
 	values = values.remove("}");
-	values = values.remove(" ");
-	return values.split(",");
+	QStringList toReturn = values.split(",");
+	for(int i = 0; i < toReturn.size(); i++){
+		if(toReturn[i].at(0) == QChar(' ')){
+			toReturn[i] = toReturn[i].remove(0,1);
+		}
+	}
+	return toReturn;
 }
 
 QString determineArrayType(Teuchos::ParameterEntry *parameter){

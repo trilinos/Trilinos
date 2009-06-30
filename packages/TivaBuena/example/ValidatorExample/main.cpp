@@ -30,11 +30,11 @@ int main(){
   * when it is told to increase or decreas in the GUI. Play around with this value a bit
   * to get a good idea of what it does. It really only has meaning when used with the GUI.
   *
-  * The second constructor only takes one argument:
-  * 1. The step (see above for explaination).
-  * If you use this second constructor, no minimum or maximum will be set. If you would 
-  * like your validator to have a minimum and no maximum you may call the setMin function. 
-  * The same can be done with the setMax if you wish to have a maximum and no minimum.
+  * The second constructor only takes no arguments. It mearly enforces that a particular
+  * parameter is of a certain number type. If you use this second constructor, no
+  * minimum or maximum will be set. If you would like your validator to have a minimum 
+  * and no maximum you may call the setMin function. The same can be done with the setMax 
+  * if you wish to have a maximum and no minimum.
   */
 
  /*
@@ -67,7 +67,6 @@ int main(){
      Teuchos::rcp(new TivaBuena::EnhancedNumberValidator<int>(0,100,10));
   My_List->set("Step int", 10, "Step int tester", intStepVali);
 
-
   /*
    * Now suppose we wanted to make a validator for a short parameter that only
    * had a minimum, and no maximum. First we creat it.
@@ -96,19 +95,12 @@ int main(){
   	Teuchos::rcp(new TivaBuena::EnhancedNumberValidator<double>(0,20,1e-6, 6));
   My_List->set("Double", (double)4.5, "double tester", doubleVali);
 
-
   /*
-   * If you create a string parameter and specify no validator the GUI will interpert this parameter
-   * as a "free string". This means the user is allowed to type in anything they want. However, you may
-   * use one of the two accepted string validators to controll what it entered by the user.
-   */
-
-  /*
-   * The first validator comes from the teuchos packaged. It is called the StringToIntegralParameterEntryValidator.
+   * This validator comes from the teuchos package. It is called the StringToIntegralParameterEntryValidator.
    * Amoung other things, you may specify a list of acceptable values for a specific string parameter. The template 
-   * arugment doesn't really matter as far as the GUI is concerened, so go ahead and use 
-   * what ever your particular program calls for. Here we use int as the template argument.
-   * This validator is for the Solver parameter and allows only the values GMRES, CG, and TFQMR to be supplied by the user.
+   * arugment doesn't really matter as far as the GUI is concerened, so go ahead and use what ever your particular 
+   * program calls for. Here we use int as the template argument. This validator is for the Solver parameter and 
+   * allows only the values GMRES, CG, and TFQMR to be supplied by the user.
    */
   Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
     solverValidator = Teuchos::rcp(
@@ -117,12 +109,7 @@ int main(){
         ,"Solver"
         )
       );
-  My_List->set(
-    "Solver"
-    ,"GMRES"
-    ,"The type of solver to use."
-    ,solverValidator  // This will be validated by solverValidator right here!
-    );
+  My_List->set("Solver", "GMRES", "The type of solver to use.", solverValidator);
   
   /*
    * The other validator that you may use is the FileNameValidator. This makes sure that the user supplies
@@ -146,7 +133,7 @@ int main(){
    * Examples of all these are shown below.
    */
   Teuchos::Array<int> intArray(10,0);
-  Teuchos::Array<std::string> stringArray(10,"CG");
+  Teuchos::Array<std::string> stringArray(10,"Option1");
   Teuchos::Array<std::string> filenameArray(3,"~/");
 
   My_List->set("IntArray",
@@ -161,7 +148,7 @@ int main(){
   Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<int> >
     optionsValidator = Teuchos::rcp(
       new Teuchos::StringToIntegralParameterEntryValidator<int>(
-        Teuchos::tuple<std::string>( "Option 1", "Option 2", "Option 3", "Option 4" )
+        Teuchos::tuple<std::string>( "Option1", "Option2", "Option3", "Option4" )
         ,"Options"
         )
       );
@@ -188,6 +175,18 @@ int main(){
 
   /*
    * Final Notes:
+   *
+   * Supported Validators:
+   * 	-EnhancedNumberValidator<S>
+   * 	-StringToIntegralValidator<S>
+   * 	-ArrayNumberValidator<S>
+   * 	-ArrayStringValidator
+   * 	-ArrayFileNameValidator
+   *
+   * If a validator is used that the GUI doesn't recognized, the GUI simply won't
+   * use it. So if you're using validators not supported by the TivaBuena package
+   * make sure to check that your data is valid after running the getInput
+   * function.
    *
    * Remember: You default value for a parameter should be within the valid range
    * for the validator you are using on it. I this is not the case, an error will

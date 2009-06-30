@@ -489,9 +489,13 @@ public:
 				static_cast<QLineEdit*>(*it)->setText(valueList.at(i));
 			else if(!Teuchos::is_null(Teuchos::rcp_dynamic_cast<const ArrayFileNameValidator>(entryValidator)))
 				static_cast<FilenameWidget*>(*it)->setCurrentFileName(valueList.at(i));
-			else if(entryValidator->validStringValues()->size() !=0)
+			else if(entryValidator->validStringValues()->size() !=0){
+				int currentIndex = static_cast<QComboBox*>(*it)->findText(valueList.at(i));
+				if(currentIndex >= 0){
 				static_cast<QComboBox*>(*it)->setCurrentIndex(
 					static_cast<QComboBox*>(*it)->findText(valueList.at(i)));
+				}
+			}
 			else
 				static_cast<QLineEdit*>(*it)->setText(valueList.at(i));
 		}
