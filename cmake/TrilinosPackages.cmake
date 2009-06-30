@@ -96,4 +96,5 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   WebTrilinos           WebTrilinos                    EX # Should be SS
   Didasko               didasko                        SS
   NewPackage            new_package                    EX # Should be SS
+  TivaBuena		TivaBuena		       EX
   )

@@ -113,7 +113,6 @@
   </SubProject>
   <SubProject name="Isorropia">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="LO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -207,7 +206,6 @@
   </SubProject>
   <SubProject name="ML">
     <Dependency name="Teuchos" type="LO"/>
-    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="LO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -223,7 +221,6 @@
   </SubProject>
   <SubProject name="Belos">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="TO"/>
@@ -241,7 +238,6 @@
   </SubProject>
   <SubProject name="Stratimikos">
     <Dependency name="Teuchos" type="ILR"/>
-    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Zoltan" type="ILO"/>
@@ -262,7 +258,6 @@
   </SubProject>
   <SubProject name="Meros">
     <Dependency name="Teuchos" type="ILR"/>
-    <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
@@ -284,7 +279,6 @@
   </SubProject>
   <SubProject name="FEI">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
@@ -352,7 +346,6 @@
   </SubProject>
   <SubProject name="NOX">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
@@ -377,7 +370,6 @@
   </SubProject>
   <SubProject name="Moertel">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILR"/>
@@ -394,7 +386,6 @@
   </SubProject>
   <SubProject name="TrilinosCouplings">
     <Dependency name="Teuchos" type="ILO"/>
-    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="ILO"/>
@@ -422,7 +413,6 @@
   </SubProject>
   <SubProject name="Rythmos">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Zoltan" type="ILO"/>
@@ -448,7 +438,6 @@
   </SubProject>
   <SubProject name="MOOCHO">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="RTOp" type="LR"/>
     <Dependency name="Epetra" type="ILO"/>
     <Dependency name="Zoltan" type="ILO"/>
@@ -471,7 +460,6 @@
   </SubProject>
   <SubProject name="Aristos">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="TO"/>
@@ -488,7 +476,6 @@
   </SubProject>
   <SubProject name="Sundance">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILR"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
@@ -541,7 +528,6 @@
   </SubProject>
   <SubProject name="PyTrilinos">
     <Dependency name="Teuchos" type="LO"/>
-    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
@@ -568,7 +554,6 @@
   </SubProject>
   <SubProject name="WebTrilinos">
     <Dependency name="Teuchos" type="ITR"/>
-    <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="Epetra" type="TR"/>
     <Dependency name="Zoltan" type="ITO"/>
     <Dependency name="Triutils" type="ITR"/>
@@ -585,7 +570,6 @@
   </SubProject>
   <SubProject name="Didasko">
     <Dependency name="Teuchos" type="TO"/>
-    <Dependency name="ThreadPool" type="ITO"/>
     <Dependency name="RTOp" type="ITO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="ITO"/>
@@ -613,6 +597,12 @@
     <Dependency name="Epetra" type="LR"/>
     <EmailAddresses>
       <Email address="newpackage-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
+  <SubProject name="TivaBuena">
+    <Dependency name="Teuchos" type="LR"/>
+    <EmailAddresses>
+      <Email address="tivabuena-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
 </Project>
