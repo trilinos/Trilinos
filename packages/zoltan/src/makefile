@@ -86,7 +86,7 @@ endif
 # Default values for inclusion of methods.
 ZOLTAN_OCT=1
 
-GDEFINES	= -DTRILINOS_NO_CONFIG_H
+GDEFINES	= -DTRILINOS_NO_CONFIG_H -DHAVE_MPI
 
 # If YES_FORTRAN, compile the Fortran interface into the library.
 ifdef YES_FORTRAN
