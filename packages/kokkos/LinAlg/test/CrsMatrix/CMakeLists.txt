@@ -1,15 +1,15 @@
 INCLUDE(PackageAddExecutableAndTest)   
-PACKAGE_ADD_EXECUTABLE_AND_TEST(  MultiVector_ComputeTests  
+PACKAGE_ADD_EXECUTABLE_AND_TEST(  CrsMatrix_DefaultMultiply  
   SOURCES 
-    MultiVector_ComputeTests.cpp  
+    CrsMatrix_DefaultMultiply.cpp  
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial  
   STANDARD_PASS_OUTPUT
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
 ) 
-PACKAGE_ADD_EXECUTABLE_AND_TEST( MultiVector_UnitTests 
+PACKAGE_ADD_EXECUTABLE_AND_TEST( CrsMatrix_UnitTests 
   SOURCES   
-    MultiVector_UnitTests.cpp 
+    CrsMatrix_UnitTests.cpp 
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp 
   COMM serial 
   STANDARD_PASS_OUTPUT

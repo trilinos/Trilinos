@@ -29,26 +29,84 @@
 #ifndef KOKKOS_DEFAULTARITHMETIC_H
 #define KOKKOS_DEFAULTARITHMETIC_H
 
+#include <Teuchos_TestForException.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
+#include <stdexcept>
+
+#include "Kokkos_DefaultScaleOp.hpp"
+#include "Kokkos_MultiVector.hpp"
+
 namespace Kokkos {
 
-  // FINISH: insert structs from NewAPI
-
-  template <class MultiVector, class Vector>
+  template <class MV>
   class DefaultArithmetic {
     public:
-      typedef typename MultiVector::NodeType    NodeType;
-      typedef typename MultiVector::OrdinalType OrdinalType;
-      typedef typename MultiVector::ScalarType  ScalarType;
-
       //! Multiply one MultiVector by another, element-wise: B *= A
-      void Multiply(const MultiVector &A, MultiVector &B) {
-        // FINISH: if stride is one, one kernel invocation. otherwise, one for each column.
-      };
+      static void Multiply(const MV &A, MV &B) { 
+        TEST_FOR_EXCEPTION(true,std::logic_error,"DefaultArithmetic<" << Teuchos::typeName(A) << ">: no specialization exists for given multivector type.");
+      }
 
       //! Divide one MultiVector by another, element-wise: B /= A
-      void Divide(const MultiVector &A, MultiVector &B) {
-        // FINISH: if stride is one, one kernel invocation. otherwise, one for each column.
-      };
+      static void Divide(const MV &A, MV &B) {
+        TEST_FOR_EXCEPTION(true,std::logic_error,"DefaultArithmetic<" << Teuchos::typeName(A) << ": no specialization exists for given multivector type.");
+      }
+  };
+
+  template <class Scalar, class Ordinal, class Node>
+  class DefaultArithmetic<MultiVector<Scalar,Ordinal,Node> > {
+    public:
+      //! Multiply one MultiVector by another, element-wise: B *= A
+      static void Multiply(const MultiVector<Scalar,Ordinal,Node> &A, MultiVector<Scalar,Ordinal,Node> &B) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        TEST_FOR_EXCEPTION(nC != B.getNumCols() ||
+                           nR != B.getNumRows(), 
+                           std::runtime_error,
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Multiply(A,B): A and B must have the same dimensions.");
+        Node &node = B.getNode();
+        if (A.getStride() == nR && B.getStride() == nR) {
+          // one kernel invocation for whole multivector
+          ScaleOp<Scalar,Node> wdp;
+          wdp.x = A.getValues(0);
+          wdp.y = B.getValues(0);
+          node.template parallel_for<ScaleOp<Scalar,Node> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          ScaleOp<Scalar,Node> wdp;
+          for (Ordinal j=0; j<nC; ++j) {
+            wdp.x = A.getValues(j);
+            wdp.y = B.getValues(j);
+            node.template parallel_for<ScaleOp<Scalar,Node> >(0,nR,wdp);
+          }
+        }
+      }
+
+      //! Divide one MultiVector by another, element-wise: B /= A
+      static void Divide(const MultiVector<Scalar,Ordinal,Node> &A, MultiVector<Scalar,Ordinal,Node> &B) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        TEST_FOR_EXCEPTION(nC != B.getNumCols() ||
+                           nR != B.getNumRows(), 
+                           std::runtime_error,
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
+        Node &node = B.getNode();
+        RecipScaleOp<Scalar,Node> wdp;
+        if (A.getStride() == nR && B.getStride() == nR) {
+          // one kernel invocation for whole multivector
+          wdp.x = A.getValues(0);
+          wdp.y = B.getValues(0);
+          node.template parallel_for<RecipScaleOp<Scalar,Node> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (Ordinal j=0; j<nC; ++j) {
+            wdp.x = A.getValues(j);
+            wdp.y = B.getValues(j);
+            node.template parallel_for<RecipScaleOp<Scalar,Node> >(0,nR,wdp);
+          }
+        }
+      }
 
       // FINISH: add vector routines as well, if Vector isn't a MultiVector (i.e., doesn't have numCols())
   };

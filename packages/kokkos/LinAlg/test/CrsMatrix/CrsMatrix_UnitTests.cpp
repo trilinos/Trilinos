@@ -31,16 +31,13 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
-#include "Kokkos_MultiVector.hpp"
-#include "Kokkos_DefaultArithmetic.hpp"
-#include "Kokkos_Vector.hpp"
+#include "Kokkos_CrsMatrix.hpp"
 #include "Kokkos_Version.hpp"
 
 namespace {
 
-  using Kokkos::MultiVector;
-  using Kokkos::Vector;
-  using Kokkos::DefaultArithmetic;
+  using Kokkos::DefaultNode;
+  using Kokkos::CrsMatrix;
 
   int N = 1000;
 
@@ -57,41 +54,22 @@ namespace {
   // UNIT TESTS
   // 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, Scale, Scalar, Ordinal )
+  // check that default constructor zeros out, for both V and MV
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, DefaultConstructor, Scalar, Ordinal )
   {
-    typedef MultiVector<Scalar,Ordinal,Node> MV;
-    const int numVecs = 5;
-    MV A, B;
-    typename Node::template buffer<Scalar>::buffer_t 
-      bufA = A.getNode().template allocBuffer<Scalar>(numVecs*N),
-      bufB = B.getNode().template allocBuffer<Scalar>(numVecs*N);
-    A.initializeValues(N,numVecs,bufA,N);
-    B.initializeValues(N,numVecs,bufB,N);
-    DefaultArithmetic<MV>::Multiply(A,B);
-    DefaultArithmetic<MV>::Divide(A,B);
-    A.getNode().template freeBuffer<Scalar>(bufA);
-    A.getNode().template freeBuffer<Scalar>(bufB);
+    CrsMatrix<Scalar,Ordinal,Node> A;
+    TEST_EQUALITY_CONST(A.getNumRows(), 0);
+    TEST_EQUALITY_CONST(A.getNumEntries(), 0);
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, Add, Scalar, Ordinal )
-  {
-    Vector<Scalar,Ordinal,Node> a;
-    typename Node::template buffer<Scalar>::buffer_t 
-      buf = a.getNode().template allocBuffer<Scalar>(N);
-    a.initializeValues(N,buf,1);
-    // FINISH
-    a.getNode().template freeBuffer<Scalar>(buf);
-  }
-
-
-#define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Scale, SCALAR, ORDINAL ) \
-
-#    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
-     UNIT_TEST_GROUP_ORDINAL(int)
-     typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
-
+ #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
+       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, DefaultConstructor, SCALAR, ORDINAL )
+ 
+ #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
+          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
+      UNIT_TEST_GROUP_ORDINAL(int)
+      typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
+ 
 }
-
+ 
