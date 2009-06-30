@@ -358,6 +358,8 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
    int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver);
    int CreateSolver();
    int CreatePrecond();
+   int SetupSolver() const;
+   int SetupPrecond() const;
 
     mutable HYPRE_IJMatrix Matrix_;
     mutable HYPRE_ParCSRMatrix ParMatrix_;
@@ -388,9 +390,9 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
     int MyRowStart_;
     int MyRowEnd_;
     mutable int MatType_;
-    bool SolverCreated_;
-    bool PrecondCreated_;
     bool TransposeSolve_;
     Hypre_Chooser SolveOrPrec_;
+    bool *IsSolverSetup_;
+    bool *IsPrecondSetup_;
 };
 #endif /* EPETRAEXT_HYPREIJMATRIX_H_ */

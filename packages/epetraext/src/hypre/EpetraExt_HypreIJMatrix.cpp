@@ -53,11 +53,13 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
     MyRowStart_(-1),
     MyRowEnd_(-1),
     MatType_(-1), 
-    SolverCreated_(false),
-    PrecondCreated_(false),
     TransposeSolve_(false),
     SolveOrPrec_(Solver)
 {
+  IsSolverSetup_ = new bool[1];
+  IsPrecondSetup_ = new bool[1];
+  IsSolverSetup_[0] = false;
+  IsPrecondSetup_[0] = false;
   // Initialize default values for global variables
   int ierr = 0;
   ierr += InitializeDefaults();
@@ -132,7 +134,18 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
   y_vec = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) Y_hypre));
   y_local = hypre_ParVectorLocalVector(y_vec);
 
+  SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRPCGCreate;
+  SolverDestroyPtr_ = &HYPRE_ParCSRPCGDestroy;
+  SolverSetupPtr_ = &HYPRE_ParCSRPCGSetup;
+  SolverSolvePtr_ = &HYPRE_ParCSRPCGSolve;
+  SolverPrecondPtr_ = &HYPRE_ParCSRPCGSetPrecond;
+  CreateSolver();
 
+  PrecondCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_EuclidCreate;
+  PrecondDestroyPtr_ = &HYPRE_EuclidDestroy;
+  PrecondSetupPtr_ = &HYPRE_EuclidSetup;
+  PrecondSolvePtr_ = &HYPRE_EuclidSolve;
+  CreatePrecond();
 } //EpetraExt_HYPREIJMatrix(Hypre_IJMatrix) Constructor
 
 //=======================================================
@@ -142,12 +155,14 @@ EpetraExt_HypreIJMatrix::~EpetraExt_HypreIJMatrix(){
   HYPRE_IJVectorDestroy(Y_hypre);
 
   /* Destroy solver and preconditioner */
-  if(SolverCreated_){
+  if(IsSolverSetup_[0] == true){
     SolverDestroyPtr_(Solver_);
-  } 
-  if(PrecondCreated_){
+  }
+  if(IsPrecondSetup_[0] == true){
     PrecondDestroyPtr_(Preconditioner_);
-  } 
+  }
+  delete[] IsSolverSetup_;
+  delete[] IsPrecondSetup_;
 } //EpetraExt_HypreIJMatrix destructor
 
 //=======================================================
@@ -384,6 +399,10 @@ int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
   }
   switch(Solver) {
     case BoomerAMG:
+      if(IsSolverSetup_[0]){
+        SolverDestroyPtr_(Solver_);
+        IsSolverSetup_[0] = false;
+      }
       SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_BoomerAMGCreate;
       SolverDestroyPtr_ = &HYPRE_BoomerAMGDestroy;
       SolverSetupPtr_ = &HYPRE_BoomerAMGSetup;
@@ -396,6 +415,10 @@ int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
       }
       break;
     case AMS:
+      if(IsSolverSetup_[0]){
+        SolverDestroyPtr_(Solver_);
+        IsSolverSetup_[0] = false;
+      }
       SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_AMSCreate;
       SolverDestroyPtr_ = &HYPRE_AMSDestroy;
       SolverSetupPtr_ = &HYPRE_AMSSetup;
@@ -403,6 +426,10 @@ int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
       SolverPrecondPtr_ = NULL;
       break;
     case Hybrid:
+      if(IsSolverSetup_[0]){
+        SolverDestroyPtr_(Solver_);
+        IsSolverSetup_[0] = false;
+      }
       SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRHybridCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRHybridDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRHybridSetup;
@@ -410,6 +437,10 @@ int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
       SolverPrecondPtr_ = &HYPRE_ParCSRHybridSetPrecond;
       break;
     case PCG:
+      if(IsSolverSetup_[0]){
+        SolverDestroyPtr_(Solver_);
+        IsSolverSetup_[0] = false;
+      }
       SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRPCGCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRPCGDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRPCGSetup;
@@ -417,6 +448,10 @@ int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
       SolverPrecondPtr_ = &HYPRE_ParCSRPCGSetPrecond;
       break;
     case GMRES:
+      if(IsSolverSetup_[0]){
+        SolverDestroyPtr_(Solver_);
+        IsSolverSetup_[0] = false;
+      }
       SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRGMRESCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRGMRESDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRGMRESSetup;
@@ -424,6 +459,10 @@ int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
       SolverPrecondPtr_ = &HYPRE_ParCSRGMRESSetPrecond;
       break;
     case FlexGMRES:
+      if(IsSolverSetup_[0]){
+        SolverDestroyPtr_(Solver_);
+        IsSolverSetup_[0] = false;
+      }
       SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRFlexGMRESCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRFlexGMRESDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRFlexGMRESSetup;
@@ -431,6 +470,10 @@ int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
       SolverPrecondPtr_ = &HYPRE_ParCSRFlexGMRESSetPrecond;
       break;
     case LGMRES:
+      if(IsSolverSetup_[0]){
+        SolverDestroyPtr_(Solver_);
+        IsSolverSetup_[0] = false;
+      }
       SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRLGMRESCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRLGMRESDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRLGMRESSetup;
@@ -438,6 +481,10 @@ int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
       SolverPrecondPtr_ = &HYPRE_ParCSRLGMRESSetPrecond;
       break;
     case BiCGSTAB:
+      if(IsSolverSetup_[0]){
+        SolverDestroyPtr_(Solver_);
+        IsSolverSetup_[0] = false;
+      }
       SolverCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRBiCGSTABCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRBiCGSTABDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRBiCGSTABSetup;
@@ -454,30 +501,50 @@ int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
 int EpetraExt_HypreIJMatrix::SetPrecondType(Hypre_Solver Precond){
   switch(Precond) {
     case BoomerAMG:
+      if(IsPrecondSetup_[0]){
+        PrecondDestroyPtr_(Preconditioner_);
+        IsPrecondSetup_[0] = false;
+      }
       PrecondCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_BoomerAMGCreate;
       PrecondDestroyPtr_ = &HYPRE_BoomerAMGDestroy;
       PrecondSetupPtr_ = &HYPRE_BoomerAMGSetup;
       PrecondSolvePtr_ = &HYPRE_BoomerAMGSolve;
       break;
     case ParaSails:
+      if(IsPrecondSetup_[0]){
+        PrecondDestroyPtr_(Preconditioner_);
+        IsPrecondSetup_[0] = false;
+      }
       PrecondCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParaSailsCreate;
       PrecondDestroyPtr_ = &HYPRE_ParaSailsDestroy;
       PrecondSetupPtr_ = &HYPRE_ParaSailsSetup;
       PrecondSolvePtr_ = &HYPRE_ParaSailsSolve;
       break;
     case Euclid:
+      if(IsPrecondSetup_[0]){
+        PrecondDestroyPtr_(Preconditioner_);
+        IsPrecondSetup_[0] = false;
+      }
       PrecondCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_EuclidCreate;
       PrecondDestroyPtr_ = &HYPRE_EuclidDestroy;
       PrecondSetupPtr_ = &HYPRE_EuclidSetup;
       PrecondSolvePtr_ = &HYPRE_EuclidSolve;
       break;
     case Pilut:
+      if(IsPrecondSetup_[0]){
+        PrecondDestroyPtr_(Preconditioner_);
+        IsPrecondSetup_[0] = false;
+      }
       PrecondCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_ParCSRPilutCreate;
       PrecondDestroyPtr_ = &HYPRE_ParCSRPilutDestroy;
       PrecondSetupPtr_ = &HYPRE_ParCSRPilutSetup;
       PrecondSolvePtr_ = &HYPRE_ParCSRPilutSolve;
       break;
     case AMS:
+      if(IsPrecondSetup_[0]){
+        PrecondDestroyPtr_(Preconditioner_);
+        IsPrecondSetup_[0] = false;
+      }
       PrecondCreatePtr_ = &EpetraExt_HypreIJMatrix::Hypre_AMSCreate;
       PrecondDestroyPtr_ = &HYPRE_AMSDestroy;
       PrecondSetupPtr_ = &HYPRE_AMSSetup;
@@ -492,14 +559,12 @@ int EpetraExt_HypreIJMatrix::SetPrecondType(Hypre_Solver Precond){
 }
 
 int EpetraExt_HypreIJMatrix::CreateSolver(){
-  SolverCreated_ = true;
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   return (this->*SolverCreatePtr_)(comm, &Solver_);
 }
 
 int EpetraExt_HypreIJMatrix::CreatePrecond(){
-  PrecondCreated_ = true;
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   return (this->*PrecondCreatePtr_)(comm, &Preconditioner_);
@@ -517,21 +582,25 @@ int EpetraExt_HypreIJMatrix::SetPreconditioner(){
 int EpetraExt_HypreIJMatrix::SolveOrPrecondition(Hypre_Chooser answer){
   switch(answer) {
     case Solver:
-      if(SolverCreated_){
-        SolveOrPrec_ = answer;
-        return 0;
-      } else {
-        return -1;
-      }
+      SolveOrPrec_ = answer;
+      break;
     case Preconditioner:
-      if(PrecondCreated_){
-        SolveOrPrec_ = answer;
-        return 0;
-      } else {
-        return -1;
-      }
+      SolveOrPrec_ = answer;
+      break;
   }
-  return -1;
+  return 0;
+}
+
+int EpetraExt_HypreIJMatrix::SetupSolver() const{
+  SolverSetupPtr_(Solver_, ParMatrix_, par_x, par_y);
+  IsSolverSetup_[0] = true;
+  return 0;
+}
+
+int EpetraExt_HypreIJMatrix::SetupPrecond() const{
+  PrecondSetupPtr_(Preconditioner_, ParMatrix_, par_x, par_y);
+  IsPrecondSetup_[0] = true;
+  return 0;
 }
 
 int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal, const Epetra_MultiVector & X, Epetra_MultiVector & Y) const {
@@ -541,6 +610,15 @@ int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal
   if (NumVectors != Y.NumVectors()) return -1;  // X and Y must have same number of vectors
   if(X.Pointers() == Y.Pointers()){
     SameVectors = true;
+  }
+  if(SolveOrPrec_ == Solver){
+    if(IsSolverSetup_[0] == false){
+      SetupSolver();
+    }
+  } else {
+    if(IsPrecondSetup_[0] == false){
+      SetupPrecond();
+    }
   }
      
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
@@ -561,21 +639,15 @@ int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal
     y_local->data = y_values;
     
     HYPRE_ParVectorSetConstantValues(par_y, 0.0);
-    if(!SolverCreated_ && !PrecondCreated_){
-      // Need to create a solver or preconditioner
-      return -1;
-    }
     if(transpose && !TransposeSolve_){
       // User requested a transpose solve, but the solver selected doesn't provide one
       return -1;
     }
     if(SolveOrPrec_ == Solver){
       // Use the solver methods
-      ierr += SolverSetupPtr_(Solver_, ParMatrix_, par_x, par_y);
       ierr += SolverSolvePtr_(Solver_, ParMatrix_, par_x, par_y);
     } else {
       // Apply the preconditioner
-      ierr += PrecondSetupPtr_(Preconditioner_, ParMatrix_, par_x, par_y);
       ierr += PrecondSolvePtr_(Preconditioner_, ParMatrix_, par_x, par_y);
     }
     TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Hypre solve failed.");
