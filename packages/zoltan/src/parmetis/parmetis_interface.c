@@ -337,23 +337,27 @@ int Zoltan_ParMetis(
   /* Get a time here */
   if (get_times) times[2] = Zoltan_Time(zz->Timer);
 
+
+  if (gr.final_output) { /* Do final output now because after the data will not be coherent:
+			    unscatter only unscatter part data, not graph */
+    ierr = Zoltan_Postprocess_FinalOutput (zz, &gr, &prt, &vsp,
+					   use_timers, itr);
+  }
+  /* Ignore the timings of Final Ouput */
+  if (get_times) times[3] = Zoltan_Time(zz->Timer);
+
   ierr = Zoltan_Postprocess_Graph(zz, global_ids, local_ids, &gr, geo, &prt, &vsp, NULL, &part);
 
   Zoltan_Third_Export_User(&part, num_imp, imp_gids, imp_lids, imp_procs, imp_to_part,
 			   num_exp, exp_gids, exp_lids, exp_procs, exp_to_part);
 
   /* Get a time here */
-  if (get_times) times[3] = Zoltan_Time(zz->Timer);
+  if (get_times) times[4] = Zoltan_Time(zz->Timer);
 
   if (get_times) Zoltan_Third_DisplayTime(zz, times);
 
   if (use_timers && timer_p >= 0)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_p, zz->Communicator);
-
-  if (gr.final_output) {
-    ierr = Zoltan_Postprocess_FinalOutput (zz, &gr, &prt, &vsp,
-					   use_timers, itr);
-  }
 
   Zoltan_Third_Exit(&gr, geo, &prt, &vsp, NULL, NULL);
   if (imb_tols != NULL) ZOLTAN_FREE(&imb_tols);

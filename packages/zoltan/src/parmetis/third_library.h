@@ -166,6 +166,11 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
 				ZOLTAN_Third_Part *prt, ZOLTAN_Third_Vsize *vsp,
 				int use_timers, double itr);
 
+
+int
+give_proc (indextype vertex, const indextype *vtxdist, int numProc, int *myproc);
+
+
 #ifdef __cplusplus
 }
 #endif

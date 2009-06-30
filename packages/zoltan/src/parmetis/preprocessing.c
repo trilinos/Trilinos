@@ -510,6 +510,8 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
   static char * yo = "Zoltan_Preprocess_Scatter_Graph";
   int ierr = ZOLTAN_OK;
   int tmp;
+  int procid;
+  int i;
 
   if ((gr->scatter>0) && (gr->scatter<3)){
     int j;
@@ -545,15 +547,15 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
   if (gr->scatter){
 
     if (geo)
-      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy, 
+      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy,
                                   &gr->vwgt, (vsp ? &vsp->vsize : NULL),
-				  &gr->ewgts, &geo->xyz, geo->ndims, 
+				  &gr->ewgts, &geo->xyz, geo->ndims,
                                   gr->obj_wgt_dim, zz, &gr->comm_plan);
     else {
       float* xyz = NULL;
-      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy, 
+      ierr = Zoltan_Scatter_Graph(&gr->vtxdist, &gr->xadj, &gr->adjncy,
                                   &gr->vwgt, (vsp ? &vsp->vsize : NULL),
-				  &gr->ewgts, &xyz, 0, 
+				  &gr->ewgts, &xyz, 0,
                                   gr->obj_wgt_dim, zz, &gr->comm_plan);
     }
     if ((ierr == ZOLTAN_FATAL) || (ierr == ZOLTAN_MEMERR)){
@@ -561,6 +563,12 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
     }
     gr->num_obj = gr->vtxdist[zz->Proc+1]-gr->vtxdist[zz->Proc];
 
+    /* Construct the adjproc array */
+    ZOLTAN_FREE(&gr->adjproc);
+    gr->adjproc =  (int *) ZOLTAN_MALLOC(gr->xadj[gr->num_obj] * sizeof(int));
+    for (i = 0, procid=zz->Proc ; i < gr->xadj[gr->num_obj] ; ++ i) {
+      gr->adjproc[i] = give_proc (gr->adjncy[i], gr->vtxdist, zz->Num_Proc, &procid);
+    }
 
     if (prt) {
       prt->part_orig = prt->part;
@@ -569,6 +577,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
 		     (char *) prt->part);
 
     }
+
   }
   return ierr;
 }
@@ -735,9 +744,9 @@ void Zoltan_Third_DisplayTime(ZZ* zz, double* times)
 		     " Partitioner Pre-processing time  ");
   Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[2]-times[1],
 		     " Partitioner Library time         ");
-  Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[3]-times[2],
+  Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[4]-times[3],
 		     " Partitioner Post-processing time ");
-  Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[3]-times[0],
+  Zoltan_Print_Stats(zz->Communicator, zz->Debug_Proc, times[4]-times[3] + times[2] - times[0],
 		     " Partitioner Total time           ");
   if (zz->Proc==zz->Debug_Proc) printf("\n");
 }

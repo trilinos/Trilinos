@@ -336,6 +336,7 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
   int vdim;
   int edim;
   indextype *vsizeBACKUP = NULL;
+  indextype *input_part;
   int i;
 
 /* #define UVC_DORUK_COMP_OBJSIZE */
@@ -378,18 +379,29 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
     }
 #endif
 
-    for (i=0; i<gr->num_obj; i++) {
-	/*printf("obj[%d] = %d\n", i, vsize[i]);*/
-      if (prt->part[i] != prt->input_part[i]) {
-	move += (double) ((vsizeBACKUP) ? vsizeBACKUP[i] : 1.0);
-      }
-#ifdef UVC_DORUK_COMP_OBJSIZE
-      if (vsizeBACKUP) {
-	minD = minD < vsizeBACKUP[i] ? minD : vsizeBACKUP[i];
-	maxD = maxD > vsizeBACKUP[i] ? maxD : vsizeBACKUP[i];
-      }
-#endif
+  if (gr->scatter != 0) { /* Project input part in the scatter graph */
+    input_part = (indextype*) ZOLTAN_MALLOC(gr->num_obj * sizeof(int));
+    Zoltan_Comm_Do(gr->comm_plan, TAG1, (char *) prt->input_part, sizeof(indextype),
+		   (char *) input_part);
+  }
+  else
+    input_part = prt->input_part;
+
+  for (i=0; i<gr->num_obj; i++) {
+    /*printf("obj[%d] = %d\n", i, vsize[i]);*/
+    if (prt->part[i] != input_part[i]) {
+      move += (double) ((vsizeBACKUP) ? vsizeBACKUP[i] : 1.0);
     }
+#ifdef UVC_DORUK_COMP_OBJSIZE
+    if (vsizeBACKUP) {
+      minD = minD < vsizeBACKUP[i] ? minD : vsizeBACKUP[i];
+      maxD = maxD > vsizeBACKUP[i] ? maxD : vsizeBACKUP[i];
+    }
+#endif
+  }
+
+  if (gr->scatter != 0)
+    ZOLTAN_FREE(&input_part);
 
 #ifdef UVC_DORUK_COMP_OBJSIZE
     if (gr->showMoveVol) {

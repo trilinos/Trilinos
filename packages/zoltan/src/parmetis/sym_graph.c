@@ -59,7 +59,7 @@ compar_weighted(const Zoltan_Weighted_Arcs* arc1, const Zoltan_Weighted_Arcs* ar
 }
 
 
-inline int
+int
 give_proc (indextype vertex, const indextype *vtxdist, int numProc, int *myproc)
 {
   int currentproc;
