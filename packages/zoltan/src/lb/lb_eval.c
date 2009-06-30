@@ -198,7 +198,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
   int i, j, k, e, ierr, count;
   int nparts, nonempty_nparts, req_nparts;
-  int num_weights, obj_part, nbor_part, ncuts;
+  int num_weights, obj_part, nbor_part, nother_parts;
   int max_pair, num_pairs, num_obj_parts, offset;
   int num_obj = 0;
   int num_edges = 0;
@@ -443,7 +443,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
     obj_edge_weights = 0;
     obj_part = parts[i];
-    ncuts = 0;
+    nother_parts= 0;
 
     for (j=0; j < edges_per_obj[i]; j++,k++){    /* neighbor in graph */
 
@@ -492,17 +492,17 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
         }
 
         if (part_check[nbor_part] < i+1){
-          ncuts++;
+          nother_parts++;
           part_check[nbor_part] = i + 1;
         }
       }
     }
 
-    if (ncuts){
+    if (nother_parts){
       /*
        * hypergraph ConCut measure - hyperedge is vertex and all it's neighbors
        */
-      cutn[obj_part] += (obj_edge_weights * ncuts);
+      cutn[obj_part] += (obj_edge_weights * nother_parts);
 
       /*
        * hypergraph NetCut measure
@@ -772,7 +772,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
     printf("%s  CUTN (Sum_over_edges( (nparts-1)*ewgt )): %8.3g\n", yo, 
            graph->cutn[EVAL_GLOBAL_SUM]);
     printf("%s  CUTL (Sum_over_edges( (nparts>1)*ewgt )): %8.3g\n", yo, 
-           graph->cutn[EVAL_GLOBAL_SUM]);
+           graph->cutl[EVAL_GLOBAL_SUM]);
     
     printf("\n\n");
   }
