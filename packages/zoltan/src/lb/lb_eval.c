@@ -500,12 +500,12 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
       /*
        * hypergraph ConCut measure - hyperedge is vertex and all it's neighbors
        */
-      cutn[obj_part] += (obj_edge_weights * nother_parts);
+      cutl[obj_part] += (obj_edge_weights * nother_parts);
 
       /*
        * hypergraph NetCut measure
        */
-      cutl[obj_part] += obj_edge_weights;
+      cutn[obj_part] += obj_edge_weights;
 
       /*
        * for each part, the number of objects with a neighbor outside
@@ -570,7 +570,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   }
 
   /*
-   * CUTN - ConCut
+   * CUTN - NetCut
    */
 
   MPI_Allreduce(cutn, globalVals, nparts, MPI_FLOAT, MPI_SUM, comm);
@@ -585,7 +585,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   graph->cutn[EVAL_GLOBAL_AVG] = graph->cutn[EVAL_GLOBAL_SUM] / nparts;
 
   /*
-   * CUTL - NetCut
+   * CUTL - Connectivity Cut
    */
 
   MPI_Allreduce(cutl, globalVals, nparts, MPI_FLOAT, MPI_SUM, comm);
@@ -767,9 +767,9 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
     printf("\n");
 
-    printf("%s  CUTN (Sum_over_edges( (nparts-1)*ewgt )): %8.3g\n", yo, 
+    printf("%s  CUTN (Sum_over_edges( (nparts>1)*ewgt )): %8.3g\n", yo, 
            graph->cutn[EVAL_GLOBAL_SUM]);
-    printf("%s  CUTL (Sum_over_edges( (nparts>1)*ewgt )): %8.3g\n", yo, 
+    printf("%s  CUTL (Sum_over_edges( (nparts-1)*ewgt )): %8.3g\n", yo, 
            graph->cutl[EVAL_GLOBAL_SUM]);
     
     printf("\n\n");
@@ -945,19 +945,19 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
   }
 
   MPI_Allreduce(local, global, 2, MPI_DOUBLE, MPI_SUM, comm);
-  hg->cutn[EVAL_GLOBAL_SUM] = (float)global[0];
-  hg->cutl[EVAL_GLOBAL_SUM] = (float)global[1];
+  hg->cutl[EVAL_GLOBAL_SUM] = (float)global[0];
+  hg->cutn[EVAL_GLOBAL_SUM] = (float)global[1];
 
   MPI_Allreduce(local, global, 2, MPI_DOUBLE, MPI_MIN, comm);
-  hg->cutn[EVAL_GLOBAL_MIN] = (float)global[0];
-  hg->cutl[EVAL_GLOBAL_MIN] = (float)global[1];
+  hg->cutl[EVAL_GLOBAL_MIN] = (float)global[0];
+  hg->cutn[EVAL_GLOBAL_MIN] = (float)global[1];
 
   MPI_Allreduce(local, global, 2, MPI_DOUBLE, MPI_MAX, comm);
-  hg->cutn[EVAL_GLOBAL_MAX] = (float)global[0];
-  hg->cutl[EVAL_GLOBAL_MAX] = (float)global[1];
+  hg->cutl[EVAL_GLOBAL_MAX] = (float)global[0];
+  hg->cutn[EVAL_GLOBAL_MAX] = (float)global[1];
 
-  hg->cutn[EVAL_GLOBAL_AVG] = hg->cutn[EVAL_GLOBAL_SUM] / nparts;
   hg->cutl[EVAL_GLOBAL_AVG] = hg->cutl[EVAL_GLOBAL_SUM] / nparts;
+  hg->cutn[EVAL_GLOBAL_AVG] = hg->cutn[EVAL_GLOBAL_SUM] / nparts;
             
   /************************************************************************
    * Print results
@@ -999,8 +999,8 @@ int Zoltan_LB_Eval_HG(ZZ *zz, int print_stats, HG_EVAL *hg)
     }
     printf("\n");
 
-    printf("%s  CUTN (Sum_over_edges( (nparts-1)*ewgt )): %8.3g\n", yo, hg->cutn[EVAL_GLOBAL_SUM]);
-    printf("%s  CUTL (Sum_over_edges( (nparts>1)*ewgt )): %8.3g\n", yo, hg->cutn[EVAL_GLOBAL_SUM]);
+    printf("%s  CUTN (Sum_over_edges( (nparts>1)*ewgt )): %8.3g\n", yo, hg->cutn[EVAL_GLOBAL_SUM]);
+    printf("%s  CUTL (Sum_over_edges( (nparts-1)*ewgt )): %8.3g\n", yo, hg->cutn[EVAL_GLOBAL_SUM]);
 
 
     printf("\n\n");
