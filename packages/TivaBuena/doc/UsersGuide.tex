@@ -1,0 +1,39 @@
+\documentclass{article}
+\title{TivaBuena Information}
+\author{Kurtis Nusbaum}
+\date{May 18th 2009}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+The TivaBuena package is intended to give Trilinos Developers an easy way to construct a GUI for their program. Through the use of Teuchos ParameterLists,
+the TivaBuena package will allow the developer to achieve the following workflow within their program:
+	\begin{enumerate}
+	\item Specify a list of inputs needed from the user
+	\item Define valid values for inputs as well as defaults
+	\item Present the required inputs to the user in the form of a GUI
+	\item Allow the user to change the values of the inputs to their liking
+	\item Obtain the values the user entered in the form of a Parameter List.
+	\end{enumerate}
+
+\subsection{Compile Notes}
+In order to compile TivaBuena you must have Qt installed. You can either download Qt directly from the website (http://www.qtsoftware.com) or if you are on Linux, you can use your package manager.
+If you use your package manager, may sure you download the Qt developement package (usually something like qt4-devel) and that it is Qt version 4.3 or higher. If you download Qt directly and put it some where other than the default
+	installation directory you will have to compile trilinos using these cmake arguments:
+	\begin{itemize}
+	\item -DQT\_INCLUDE\_DIRS:STRING=directory containing your qt include files
+	\item -DQT\_LIBRARY\_DIRS:STRING=directory containing your qt libraries
+	\item -DQT\_BINARY\_DIR:STRING=directory containing your qt binaries
+	\end{itemize}	
+
+\section{Contact}
+
+If you are having any problems with StratRunner, please contact Kurtis Nusbaum at klnusbaum@csbsju.edu.
+
+\section{Acknoledgements}
+
+I would like to thank Dr. Mike Heroux for giving me the wonderful opportunity to do reasearch for him. It has been a truely enjoyable experience. I 
+would like to thank Jonathan Hu and Christopher Baker for there help in determining options for certain parameters. Lastly I would like to thank all
+my Family, Friends, and specifically my Mother and Father. You have all been so amazing and there are not words to express my gratitued towards you all.
+My love for you is infinite.
+\end{document}

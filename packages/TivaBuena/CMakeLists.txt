@@ -1,0 +1,19 @@
+INCLUDE(PackageMacros)
+INCLUDE(AddOptionAndDefine)
+
+PACKAGE(TivaBuena)
+
+SET(${PACKAGE_NAME}_VERSION "1.0")
+
+ADD_SUBDIRECTORY(src)
+
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_DEBUG
+  HAVE_${PACKAGE_NAME}_DEBUG
+  "Enable a host of runtime debug checking."
+  ${Trilinos_ENABLE_DEBUG}
+  )
+
+PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)
+
+PACKAGE_POSTPROCESS()
