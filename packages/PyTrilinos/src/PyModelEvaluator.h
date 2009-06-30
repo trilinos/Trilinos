@@ -29,6 +29,13 @@
 #ifndef PY_MODEL_EVALUATOR_H
 #define PY_MODEL_EVALUATOR_H
 
+#include "Python.h"
+#if PY_VERSION_HEX >= 0x02050000
+#define CONST const
+#else
+#define CONST
+#endif
+
 #include "PythonException.h"
 #include "Teuchos_RCPDecl.hpp"
 #include "Epetra_Map.h"
@@ -109,72 +116,72 @@ public:
 
 Teuchos::RCP<const Epetra_Map> getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm);
 
-PyObject * getObjectFromGlobals(const char * name);
+PyObject * getObjectFromGlobals(CONST char * name);
 
-PyObject * getClassFromGlobals(const char * name);
+PyObject * getClassFromGlobals(CONST char * name);
 
-bool objectAttrIsNone(PyObject * object, const char * name);
+bool objectAttrIsNone(PyObject * object, CONST char * name);
 
-bool objectAttrIsTrue(PyObject * object, const char * name);
+bool objectAttrIsTrue(PyObject * object, CONST char * name);
 
-bool getBoolObjectAttr(PyObject * object, const char * name);
+bool getBoolObjectAttr(PyObject * object, CONST char * name);
 
-int getIntObjectAttr(PyObject * object, const char * name);
+int getIntObjectAttr(PyObject * object, CONST char * name);
 
-double getFloatObjectAttr(PyObject * object, const char * name);
+double getFloatObjectAttr(PyObject * object, CONST char * name);
 
-const char* getStringObjectAttr(PyObject * object, const char * name);
+CONST char* getStringObjectAttr(PyObject * object, CONST char * name);
 
 Teuchos::RCP<Epetra_Vector>
-getEpetraVectorObjectAttr(PyObject * object, const char * name);
+getEpetraVectorObjectAttr(PyObject * object, CONST char * name);
 
 Teuchos::RCP<const Epetra_Vector>
-getConstEpetraVectorObjectAttr(PyObject * object, const char * name);
+getConstEpetraVectorObjectAttr(PyObject * object, CONST char * name);
 
 Teuchos::RCP<Epetra_MultiVector>
-getEpetraMultiVectorObjectAttr(PyObject * object, const char * name);
+getEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name);
 
 Teuchos::RCP<const Epetra_MultiVector>
-getConstEpetraMultiVectorObjectAttr(PyObject * object, const char * name);
+getConstEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name);
 
 Teuchos::RCP<Epetra_Operator>
-getEpetraOperatorObjectAttr(PyObject * object, const char * name);
+getEpetraOperatorObjectAttr(PyObject * object, CONST char * name);
 
 EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector>
-getEvaluationObjectAttr(PyObject * object, const char * name);
+getEvaluationObjectAttr(PyObject * object, CONST char * name);
 
 EpetraExt::ModelEvaluator::DerivativeSupport
-getDerivativeSupportObjectAttr(PyObject * object, const char * name);
+getDerivativeSupportObjectAttr(PyObject * object, CONST char * name);
 
 EpetraExt::ModelEvaluator::DerivativeProperties
-getDerivativePropertiesObjectAttr(PyObject * object, const char * name);
+getDerivativePropertiesObjectAttr(PyObject * object, CONST char * name);
 
 EpetraExt::ModelEvaluator::DerivativeMultiVector
-getDerivativeMultiVectorObjectAttr(PyObject * object, const char * name);
+getDerivativeMultiVectorObjectAttr(PyObject * object, CONST char * name);
 
 EpetraExt::ModelEvaluator::Derivative 
-getDerivativeObjectAttr(PyObject * object, const char * name);
+getDerivativeObjectAttr(PyObject * object, CONST char * name);
 
 PyObject *
-getTupleObjectAttr(PyObject * object, const char * name);
+getTupleObjectAttr(PyObject * object, CONST char * name);
 
 Teuchos::RCP<const Epetra_Vector>
-getConstEpetraVectorItemObjectAttr(PyObject * object, const char * name, int i);
+getConstEpetraVectorItemObjectAttr(PyObject * object, CONST char * name, int i);
 
-const char *
-getStringItemObjectAttr(PyObject * object, const char * name, int i);
+CONST char *
+getStringItemObjectAttr(PyObject * object, CONST char * name, int i);
 
 EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector>
-getEvaluationItemObjectAttr(PyObject * object, const char * name, int i);
+getEvaluationItemObjectAttr(PyObject * object, CONST char * name, int i);
 
 EpetraExt::ModelEvaluator::DerivativeSupport
-getDerivativeSupportItemObjectAttr(PyObject * object, const char * name, int i);
+getDerivativeSupportItemObjectAttr(PyObject * object, CONST char * name, int i);
 
 EpetraExt::ModelEvaluator::DerivativeProperties
-getDerivativePropertiesItemObjectAttr(PyObject * object, const char * name, int i);
+getDerivativePropertiesItemObjectAttr(PyObject * object, CONST char * name, int i);
 
 EpetraExt::ModelEvaluator::Derivative
-getDerivativeItemObjectAttr(PyObject * object, const char * name, int i);
+getDerivativeItemObjectAttr(PyObject * object, CONST char * name, int i);
 
 PyObject *
 convertEpetraMultiVectorToPython(const Epetra_MultiVector * emv);

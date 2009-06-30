@@ -138,6 +138,9 @@ def main(command, destdir):
         if makeMacros["ENABLE_MOOCHO"] == "true" and \
            makeMacros["ENABLE_THYRA" ] == "true":
             builders.append(SharedUtils.SharedTrilinosBuilder("moochothyra"))
+        if makeMacros["ENABLE_ANASAZI"] == "true" and \
+           makeMacros["ENABLE_EPETRA" ] == "true":
+            builders.append(SharedUtils.SharedTrilinosBuilder("anasaziepetra"))
 
         # Add the PyTrilinos shared library builder to the end of the list
         if makeMacros["ENABLE_PYTRILINOS"] == "true":

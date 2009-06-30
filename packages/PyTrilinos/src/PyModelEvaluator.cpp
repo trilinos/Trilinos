@@ -62,7 +62,7 @@
 //   }
 
 //   // Ensure the constructor argument has required attributes with non-None values
-//   const char * required[ ] = {"x", "f", "evalModel", NULL};
+//   CONST char * required[ ] = {"x", "f", "evalModel", NULL};
 //   int i = 0;
 //   while(required[i] != NULL)
 //   {
@@ -452,14 +452,14 @@ getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm)
   return Teuchos::rcp(em_ptr, false);
 }
 
-PyObject * getObjectFromGlobals(const char * name)
+PyObject * getObjectFromGlobals(CONST char * name)
 {
   PyObject * globals = PyEval_GetGlobals();
   if (!globals) return NULL;
   return PyDict_GetItemString(globals, name);
 }
 
-PyObject * getClassFromGlobals(const char * name)
+PyObject * getClassFromGlobals(CONST char * name)
 {
   PyObject * object = getObjectFromGlobals(name);
   if (!object) return NULL;
@@ -471,7 +471,7 @@ PyObject * getClassFromGlobals(const char * name)
   return object;
 }
 
-bool objectAttrIsNone(PyObject * object, const char * name)
+bool objectAttrIsNone(PyObject * object, CONST char * name)
 {
   PyObject * value = PyObject_GetAttrString(object, name);
   if (!value) throw PythonException();
@@ -480,7 +480,7 @@ bool objectAttrIsNone(PyObject * object, const char * name)
   return result;
 }
 
-bool objectAttrIsTrue(PyObject * object, const char * name)
+bool objectAttrIsTrue(PyObject * object, CONST char * name)
 {
   PyObject * value = PyObject_GetAttrString(object, name);
   if (!value) throw PythonException();
@@ -489,7 +489,7 @@ bool objectAttrIsTrue(PyObject * object, const char * name)
   return result;
 }
 
-bool getBoolObjectAttr(PyObject * object, const char * name)
+bool getBoolObjectAttr(PyObject * object, CONST char * name)
 {
   bool result;
   PyObject * value = PyObject_GetAttrString(object, name);
@@ -505,7 +505,7 @@ bool getBoolObjectAttr(PyObject * object, const char * name)
   return result;
 }
 
-int getIntObjectAttr(PyObject * object, const char * name)
+int getIntObjectAttr(PyObject * object, CONST char * name)
 {
   PyObject * value = PyObject_GetAttrString(object, name);
   if (!value) throw PythonException();
@@ -515,7 +515,7 @@ int getIntObjectAttr(PyObject * object, const char * name)
   return result;
 }
 
-double getFloatObjectAttr(PyObject * object, const char * name)
+double getFloatObjectAttr(PyObject * object, CONST char * name)
 {
   PyObject * value = PyObject_GetAttrString(object, name);
   if (!value) throw PythonException();
@@ -525,18 +525,18 @@ double getFloatObjectAttr(PyObject * object, const char * name)
   return result;
 }
 
-const char* getStringObjectAttr(PyObject * object, const char * name)
+CONST char* getStringObjectAttr(PyObject * object, CONST char * name)
 {
   PyObject * value = PyObject_GetAttrString(object, name);
   if (!value) throw PythonException();
-  const char * result = PyString_AsString(value);
+  CONST char * result = PyString_AsString(value);
   if (PyErr_Occurred()) throw PythonException();
   Py_DECREF(value);
   return result;
 }
 
 Teuchos::RCP<const Epetra_Vector>
-getConstEpetraVectorObjectAttr(PyObject * object, const char * name)
+getConstEpetraVectorObjectAttr(PyObject * object, CONST char * name)
 {
   static swig_type_info * swig_EV_ptr = SWIG_TypeQuery("Epetra_Vector *");
   void * argp;
@@ -554,7 +554,7 @@ getConstEpetraVectorObjectAttr(PyObject * object, const char * name)
 }
 
 Teuchos::RCP<Epetra_Vector>
-getEpetraVectorObjectAttr(PyObject * object, const char * name)
+getEpetraVectorObjectAttr(PyObject * object, CONST char * name)
 {
   static swig_type_info * swig_EV_ptr = SWIG_TypeQuery("Epetra_Vector *");
   void * argp;
@@ -572,7 +572,7 @@ getEpetraVectorObjectAttr(PyObject * object, const char * name)
 }
 
 Teuchos::RCP<Epetra_MultiVector>
-getEpetraMultiVectorObjectAttr(PyObject * object, const char * name)
+getEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name)
 {
   static swig_type_info * swig_EMV_ptr = SWIG_TypeQuery("Epetra_MultiVector *");
   void * argp;
@@ -590,7 +590,7 @@ getEpetraMultiVectorObjectAttr(PyObject * object, const char * name)
 }
 
 Teuchos::RCP<const Epetra_MultiVector>
-getConstEpetraMultiVectorObjectAttr(PyObject * object, const char * name)
+getConstEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name)
 {
   static swig_type_info * swig_EMV_ptr = SWIG_TypeQuery("Epetra_MultiVector *");
   void * argp;
@@ -608,7 +608,7 @@ getConstEpetraMultiVectorObjectAttr(PyObject * object, const char * name)
 }
 
 Teuchos::RCP<Epetra_Operator>
-getEpetraOperatorObjectAttr(PyObject * object, const char * name)
+getEpetraOperatorObjectAttr(PyObject * object, CONST char * name)
 {
   static swig_type_info * swig_EO_ptr = SWIG_TypeQuery("Epetra_Operator *");
   void * argp;
@@ -627,7 +627,7 @@ getEpetraOperatorObjectAttr(PyObject * object, const char * name)
 }
 
 EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector>
-getEvaluationObjectAttr(PyObject * object, const char * name)
+getEvaluationObjectAttr(PyObject * object, CONST char * name)
 {
   // The Evaluation python object
   PyObject * classEvaluation = getClassFromGlobals("Evaluation");
@@ -644,7 +644,7 @@ getEvaluationObjectAttr(PyObject * object, const char * name)
   Teuchos::RCP<Epetra_Vector> vector = getEpetraVectorObjectAttr(value, "vector");
   // type attribute
   EpetraExt::ModelEvaluator::EEvalType type;
-  const char * typeStr = getStringObjectAttr(value, "type");
+  CONST char * typeStr = getStringObjectAttr(value, "type");
   if (typeStr == "exact")
     type = EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT;
   if (typeStr == "approx_deriv")
@@ -656,7 +656,7 @@ getEvaluationObjectAttr(PyObject * object, const char * name)
 }
 
 EpetraExt::ModelEvaluator::DerivativeSupport
-getDerivativeSupportObjectAttr(PyObject * object, const char * name)
+getDerivativeSupportObjectAttr(PyObject * object, CONST char * name)
 {
   PyObject * classDerivativeSupport = getClassFromGlobals("DerivativeSupport");
   if (!classDerivativeSupport) throw PythonException();
@@ -682,7 +682,7 @@ getDerivativeSupportObjectAttr(PyObject * object, const char * name)
 }
 
 EpetraExt::ModelEvaluator::DerivativeProperties
-getDerivativePropertiesObjectAttr(PyObject * object, const char * name)
+getDerivativePropertiesObjectAttr(PyObject * object, CONST char * name)
 {
   PyObject * classDerivativeProperties = getClassFromGlobals("DerivativeProperties");
   if (!classDerivativeProperties) throw PythonException();
@@ -696,7 +696,7 @@ getDerivativePropertiesObjectAttr(PyObject * object, const char * name)
   }
   EpetraExt::ModelEvaluator::DerivativeProperties result;
   // linearity attribute
-  const char * linearity = getStringObjectAttr(value, "linearity");
+  CONST char * linearity = getStringObjectAttr(value, "linearity");
   if (linearity == "unknown")
     result.linearity = EpetraExt::ModelEvaluator::DERIV_LINEARITY_UNKNOWN;
   if (linearity == "const")
@@ -704,7 +704,7 @@ getDerivativePropertiesObjectAttr(PyObject * object, const char * name)
   if (linearity == "nonconst")
     result.linearity = EpetraExt::ModelEvaluator::DERIV_LINEARITY_NONCONST;
   // rank attribute
-  const char * rank = getStringObjectAttr(value, "rank");
+  CONST char * rank = getStringObjectAttr(value, "rank");
   if (rank == "unknown")
     result.rank = EpetraExt::ModelEvaluator::DERIV_RANK_UNKNOWN;
   if (rank == "full")
@@ -718,7 +718,7 @@ getDerivativePropertiesObjectAttr(PyObject * object, const char * name)
 }
 
 EpetraExt::ModelEvaluator::DerivativeMultiVector
-getDerivativeMultiVectorObjectAttr(PyObject * object, const char * name)
+getDerivativeMultiVectorObjectAttr(PyObject * object, CONST char * name)
 {
   PyObject * classDerivativeMultiVector = getClassFromGlobals("DerivativeMultiVector");
   if (!classDerivativeMultiVector) throw PythonException();
@@ -735,7 +735,7 @@ getDerivativeMultiVectorObjectAttr(PyObject * object, const char * name)
     getEpetraMultiVectorObjectAttr(value, "multiVector");
   // orientation attribute
   EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation orientation;
-  const char * linearity = getStringObjectAttr(value, "linearity");
+  CONST char * linearity = getStringObjectAttr(value, "linearity");
   if (linearity == "mv_by_col")
     orientation = EpetraExt::ModelEvaluator::DERIV_MV_BY_COL;
   if (linearity == "trans_mv_by_row")
@@ -762,7 +762,7 @@ getDerivativeMultiVectorObjectAttr(PyObject * object, const char * name)
 }
 
 EpetraExt::ModelEvaluator::Derivative
-getDerivativeObjectAttr(PyObject * object, const char * name)
+getDerivativeObjectAttr(PyObject * object, CONST char * name)
 {
   PyObject * classDerivative = getClassFromGlobals("Derivative");
   if (!classDerivative) throw PythonException();
@@ -795,7 +795,7 @@ getDerivativeObjectAttr(PyObject * object, const char * name)
 }
 
 PyObject *
-getTupleObjectAttr(PyObject * object, const char * name)
+getTupleObjectAttr(PyObject * object, CONST char * name)
 {
   PyObject * result = PyObject_GetAttrString(object, name);
   if (!PyTuple_Check(result))
@@ -808,7 +808,7 @@ getTupleObjectAttr(PyObject * object, const char * name)
 }
 
 Teuchos::RCP<const Epetra_Vector>
-getConstEpetraVectorItemObjectAttr(PyObject * object, const char * name, int i)
+getConstEpetraVectorItemObjectAttr(PyObject * object, CONST char * name, int i)
 {
   static swig_type_info * swig_EV_ptr = SWIG_TypeQuery("Epetra_Vector *");
   void * argp;
@@ -826,21 +826,21 @@ getConstEpetraVectorItemObjectAttr(PyObject * object, const char * name, int i)
   return Teuchos::rcp(reinterpret_cast<Epetra_Vector*>(argp), false);
 }
 
-const char *
-getStringItemObjectAttr(PyObject * object, const char * name, int i)
+CONST char *
+getStringItemObjectAttr(PyObject * object, CONST char * name, int i)
 {
   PyObject * tuple = getTupleObjectAttr(object, name);
   PyObject * item  = PyTuple_GetItem(tuple, i);
   Py_DECREF(tuple);
   if (!item) throw PythonException();
-  const char * result = PyString_AsString(item);
+  CONST char * result = PyString_AsString(item);
   Py_DECREF(item);
   if (PyErr_Occurred()) throw PythonException();
   return result;
 }
 
 EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector>
-getEvaluationItemObjectAttr(PyObject * object, const char * name, int i)
+getEvaluationItemObjectAttr(PyObject * object, CONST char * name, int i)
 {
   // The Evaluation python class object
   PyObject * classEvaluation = getClassFromGlobals("Evaluation");
@@ -860,7 +860,7 @@ getEvaluationItemObjectAttr(PyObject * object, const char * name, int i)
   Teuchos::RCP<Epetra_Vector> vector = getEpetraVectorObjectAttr(item, "vector");
   // type attribute
   EpetraExt::ModelEvaluator::EEvalType type;
-  const char * typeStr = getStringObjectAttr(item, "type");
+  CONST char * typeStr = getStringObjectAttr(item, "type");
   if (typeStr == "exact")
     type = EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT;
   if (typeStr == "approx_deriv")
@@ -872,7 +872,7 @@ getEvaluationItemObjectAttr(PyObject * object, const char * name, int i)
 }
 
 EpetraExt::ModelEvaluator::DerivativeSupport
-getDerivativeSupportItemObjectAttr(PyObject * object, const char * name, int i)
+getDerivativeSupportItemObjectAttr(PyObject * object, CONST char * name, int i)
 {
   // The DerivativeSupport python class object
   PyObject * classDerivativeSupport = getClassFromGlobals("DerivativeSupport");
@@ -901,7 +901,7 @@ getDerivativeSupportItemObjectAttr(PyObject * object, const char * name, int i)
   return result;}
 
 EpetraExt::ModelEvaluator::DerivativeProperties
-getDerivativePropertiesItemObjectAttr(PyObject * object, const char * name, int i)
+getDerivativePropertiesItemObjectAttr(PyObject * object, CONST char * name, int i)
 {
   // The DerivativeProperties python class object
   PyObject * classDerivativeProperties = getClassFromGlobals("DerivativeProperties");
@@ -919,7 +919,7 @@ getDerivativePropertiesItemObjectAttr(PyObject * object, const char * name, int 
   }
   EpetraExt::ModelEvaluator::DerivativeProperties result;
   // linearity attribute
-  const char * linearity = getStringObjectAttr(item, "linearity");
+  CONST char * linearity = getStringObjectAttr(item, "linearity");
   if (linearity == "unknown")
     result.linearity = EpetraExt::ModelEvaluator::DERIV_LINEARITY_UNKNOWN;
   if (linearity == "const")
@@ -927,7 +927,7 @@ getDerivativePropertiesItemObjectAttr(PyObject * object, const char * name, int 
   if (linearity == "nonconst")
     result.linearity = EpetraExt::ModelEvaluator::DERIV_LINEARITY_NONCONST;
   // rank attribute
-  const char * rank = getStringObjectAttr(item, "rank");
+  CONST char * rank = getStringObjectAttr(item, "rank");
   if (rank == "unknown")
     result.rank = EpetraExt::ModelEvaluator::DERIV_RANK_UNKNOWN;
   if (rank == "full")
@@ -941,7 +941,7 @@ getDerivativePropertiesItemObjectAttr(PyObject * object, const char * name, int 
 }
 
 EpetraExt::ModelEvaluator::Derivative
-getDerivativeItemObjectAttr(PyObject * object, const char * name, int i)
+getDerivativeItemObjectAttr(PyObject * object, CONST char * name, int i)
 {
   // The Derivative python class object
   PyObject * classDerivative = getClassFromGlobals("Derivative");

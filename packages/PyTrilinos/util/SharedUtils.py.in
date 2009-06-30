@@ -216,6 +216,11 @@ class SharedTrilinosBuilder:
             self.topBuildDir = os.path.join("..", "..", "moocho")
             self.buildDir    = os.path.join(self.topBuildDir, "thyra", "src")
 
+        # Anasazi/Epetra
+        if self.packageLower == "anasaziepetra":
+            self.topBuildDir = os.path.join("..", "..", "anasazi")
+            self.buildDir    = os.path.join(self.topBuildDir, "epetra", "src")
+
         # Default behavior
         if not self.topBuildDir:
             self.topBuildDir = os.path.join("..", "..", self.packageLower)
