@@ -131,18 +131,21 @@ public:
 	    an std::exception will be thrown by the any_cast.
   */
   template<typename T>
+  inline
   T& getValue(T *ptr) const;
 
   /*! \brief Direct access to the Teuchos::any data value underlying this
    *  object. The bool argument \c activeQry (default: true) indicates that the 
    *  call to getAny() will set the isUsed() value of the ParameterEntry to true.
    */
+  inline
   any& getAny(bool activeQry = true);
 
   /*! \brief Constant direct access to the Teuchos::any data value underlying this
    *  object. The bool argument \c activeQry (default: true) indicates that the 
    *  call to getAny() will set the isUsed() value of the ParameterEntry to true.
    */
+  inline
   const any& getAny(bool activeQry = true) const;
 
   //@}
@@ -151,22 +154,27 @@ public:
   //@{
   
   //! Return whether or not the value has been used; i.e., whether or not the value has been retrieved via a get function.
+  inline
   bool isUsed() const;
 
   //! Return whether or not the value itself is a list.
   bool isList() const;
-
+  
   //! Test the type of the data being contained.
   template <typename T>
+  inline
   bool isType() const;
 
   //! Indicate whether this entry takes on the default value.
+  inline
   bool isDefault() const;
 
   //! Return the (optional) documentation std::string
+  inline
   std::string docString() const;
 
   //! Return the (optional) validator object
+  inline
   RCP<const ParameterEntryValidator> validator() const;
 
   //@}

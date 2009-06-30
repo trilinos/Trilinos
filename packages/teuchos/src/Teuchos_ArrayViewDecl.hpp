@@ -226,6 +226,14 @@ public:
    */
   ArrayView<const T> getConst() const;
 
+// 2009/06/30: rabartl: Disable Intel compiler warning #597 about the function
+// below not ever being called.  This is a bogus warning and if you comment
+// out this function, the Teuchos unit tests for this class will not compile
+// (see Trilinos bug 4457).
+#ifdef __INTEL_COMPILER
+#  pragma warning(disable : 597)
+#endif
+
   /** \brief Impliict conversion from ArrayView<T> to ArrayView<const T>.
    *
    * WARNING!  If <tt>T</tt> is already const (e.g. <tt>const double</tt>)

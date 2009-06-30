@@ -277,6 +277,7 @@ public:
     list.template getPtr<int>( "Iters" ) </tt>
   */
   template<typename T>
+  inline
   T* getPtr(const std::string& name);
   
   /*! \brief Retrieves the pointer for parameter \c name of type \c T from a
@@ -285,6 +286,7 @@ public:
     list.template getPtr<int>( "Iters" ) </tt>
   */
   template<typename T>
+  inline
   const T* getPtr(const std::string& name) const;  
   
   /*! \brief Retrieves an entry with the name <tt>name</tt>.
@@ -299,14 +301,17 @@ public:
    * Throws <tt>Exceptions::InvalidParameterName</tt> if this parameter does
    * not exist.
    */
+  inline
   const ParameterEntry& getEntry(const std::string& name) const;  
   
   /*! \brief Retrieves the pointer for an entry with the name <tt>name</tt> if
    *  it exists. */
+  inline
   ParameterEntry* getEntryPtr(const std::string& name);  
   
   /*! \brief Retrieves the pointer for a constant entry with the name <tt>name</tt> if
    *  it exists. */
+  inline
   const ParameterEntry* getEntryPtr(const std::string& name) const;  
 
   //@}

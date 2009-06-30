@@ -78,12 +78,16 @@ public:
         case RCP_WEAK:
           return "RCP_STRONG";
         default:
-#ifdef TEUCHOS_DEBUG
-          TEST_FOR_EXCEPT(true);
-#endif
-          return "";
+          // Should never get here but fall through ...
+          break;
       }
-      return ""; // Never be called!
+      // Should never get here!
+#ifdef TEUCHOS_DEBUG
+      TEST_FOR_EXCEPT(true);
+#endif
+      return "";
+      // 2009/06/30: rabartl: The above logic avoid a warning from the Intel
+      // 10.1 compiler (remark #111) about the statement being unreachable.
     }
 };
 
