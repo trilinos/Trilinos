@@ -18,6 +18,10 @@ sub nowhite($) {
 ##############################################################################
 ##############################################################################
 
+### Text string needed by CTEST to provide unlimited output.
+### Otherwise, output is limited to 50K characters.
+print "CTEST_FULL_OUTPUT\n";
+
 ### Check command line arguments.
 ### Usage:  ctest_zoltan.pl #processors package [debug] [mpiexec_path].
 foreach $argnum (0 .. $#ARGV) {
