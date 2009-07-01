@@ -491,7 +491,7 @@ int main(int argc, char* argv[])
   // non-member helper function (construct vector view of matrix column)
 
   OTYPE col = Teuchos::OrdinalTraits<OTYPE>::one();
-  DVector ColViewTestV = Teuchos::getColView<OTYPE,STYPE>( AAA, col );
+  DVector ColViewTestV = Teuchos::getCol<OTYPE,STYPE>( Teuchos::View, AAA, col );
   if (verbose) std::cout <<"non-method helper function -- construct vector view of second column of matrix ";
   if ( ColViewTestV.normInf() != 1.0 || ColViewTestV.normOne() != 3.0 ) {
         if (verbose) std::cout << "unsuccessful."<<std::endl;

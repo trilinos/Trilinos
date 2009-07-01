@@ -132,18 +132,19 @@ void symMatTripleProduct( ETransp transw, const ScalarType alpha, const SerialSy
 }
 	
 /*! \relates SerialDenseMatrix 
-  \brief A templated, non-member, helper function for returning a column view of a SerialDenseMatrix as a SerialDenseVector.
+  \brief A templated, non-member, helper function for viewing or copying a column of a SerialDenseMatrix as a SerialDenseVector.
   
+  \param CV - [in] Enumerated type set to Teuchos::Copy or Teuchos::View
   \param A - [in] SerialDenseMatrix
   \param col - [in] Integer indicating which column of A to return
   
-  \note The syntax for calling this function is:  <tt>Teuchos::SerialDenseVector<int,double> col_j = Teuchos::getColView<int,double>( A, j )</tt>
+  \note The syntax for calling this function is:  <tt>Teuchos::SerialDenseVector<int,double> col_j = Teuchos::getCol<int,double>( Teuchos::View, A, j )</tt>
 */
 template<typename OrdinalType, typename ScalarType>
 SerialDenseVector<OrdinalType,ScalarType>
-getColView( SerialDenseMatrix<OrdinalType, ScalarType>& A, const OrdinalType col )
+getCol( DataAccess CV, SerialDenseMatrix<OrdinalType, ScalarType>& A, const OrdinalType col )
 {
-  return SerialDenseVector<OrdinalType, ScalarType>(View, A[col], A.numRows());
+  return SerialDenseVector<OrdinalType, ScalarType>(CV, A[col], A.numRows());
 }
 
 /*! \relates SerialDenseMatrix 
