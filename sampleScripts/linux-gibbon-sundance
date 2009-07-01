@@ -77,6 +77,9 @@ PARANOID_COMPILER=ON
 # Verbosity of configuration
 VERBOSE_CONFIGURE=OFF
 
+EXTRA_C_FLAGS=
+EXTRA_CXX_FLAGS=
+
 
 # ----------------------------------------------------------------------------
 # Set variables controlling which third-party libraries are available and
@@ -107,7 +110,7 @@ TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
 #
 # ---------------------------------------------------------------------------
 # Argument parsing logic.
-TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,lax,src:,data:,prefix:: -- "$@"`
+TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,lax,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
 
 eval set -- "$TEMP"
 
@@ -126,7 +129,7 @@ while true ; do
       --check-stl) CHECK_STL=ON; shift;;
       --debug) BUILD_TYPE=DEBUG; shift;;
       --opt) BUILD_TYPE=RELEASE; 
-             OPT_STR="--finline-functions --funroll-loops"; shift;;
+             OPT_STR="-finline-functions -funroll-loops"; shift;;
       --lax) PARANOID_COMPILER=OFF; shift;;
       --g77) FORTRAN_LIBS="-lg2c"; shift;;
       --lib64) LIB_PATH="${COMPILER_ROOT}/lib;${COMPILER_ROOT}/lib64"; shift;;
@@ -135,6 +138,12 @@ while true ; do
       --meros) ENABLE_MEROS=ON; shift;;
       --src)
             TRILINOS_SRC_DIR="$2"; shift 2;;
+      --extra-cxxflags)
+            EXTRA_CXX_FLAGS="$2"; shift 2;;
+      --extra-cflags)
+            EXTRA_C_FLAGS="$2"; shift 2;;
+      --extra-fflags)
+            EXTRA_F_FLAGS="$2"; shift 2;;
       --data)
             TRILINOS_DATA_DIR="$2"; shift 2;;
       --prefix)
@@ -159,6 +168,9 @@ while true ; do
             echo "--no-exodus      disable ExodusII readers"
             echo "--meros          enable Meros block preconditioners (default: off)"
             echo "--src <srcdir>   set location of Trilinos sources (default: \${HOME}/Code/Trilinos)"
+            echo "--extra-cxxflags <f>   extra C++ flags (default: none)" 
+            echo "--extra-cflags <f>     extra C flags (default: none)"
+            echo "--extra-fflags <f>     extra Fortran flags (default: none)"
             echo "--data <dir>     set location of Trilinos data (default: \${HOME}/Code/TrilinosData)"
             echo "--prefix <dir>   set installation directory (default: \${PWD})"
             echo " ";
@@ -168,7 +180,6 @@ while true ; do
       --) shift; break;;
   esac
 done
-
 
 # ---------------------------------------------------------------------------
 #
@@ -181,7 +192,9 @@ ${ECHO} cmake \
 -D BUILD_SHARED_LIBS:BOOL=${BUILD_SHARED} \
 -D CMAKE_SYSTEM_LIBRARY_PATH:FILEPATH="${LIB_PATH}" \
 -D CMAKE_SYSTEM_INCLUDE_PATH:FILEPATH="${INC_PATH}" \
--D CMAKE_CXX_FLAGS:STRING="${PYTHON_INC_STRING} ${OPT_STRING}" \
+-D CMAKE_CXX_FLAGS:STRING="${PYTHON_INC_STRING} ${OPT_STRING} ${EXTRA_CXX_FLAGS}" \
+-D CMAKE_C_FLAGS:STRING="${PYTHON_INC_STRING} ${EXTRA_C_FLAGS}" \
+-D CMAKE_Fortran_FLAGS:STRING="${EXTRA_F_FLAGS}" \
 -D TPL_ENABLE_ExodusII:BOOL=${HAVE_EXODUS} \
 -D TPL_ENABLE_MPI:BOOL=${ENABLE_MPI} \
 -D BLAS_LIBRARY_DIRS:FILEPATH=${LIB_PATH} \
