@@ -98,7 +98,9 @@ int Ifpack_HIPS::SetParameters(Teuchos::ParameterList& parameterlist){
 int Ifpack_HIPS::Compute(){
   if(HIPS_id==-1) IFPACK_CHK_ERR(-1);
   int N=A_->NumMyRows(), nnz=A_->NumMyNonzeros();
-
+  const Epetra_Comm &Comm=A_->Comm();
+  int mypid=Comm.MyPID();
+  
   // Pull the column indices, if possible
   int *rowptr,*colind,ierr,maxnr,Nr;
   double *values;  
@@ -112,24 +114,20 @@ int Ifpack_HIPS::Compute(){
     values=new double[maxnr];
   }
 
-  // Calculate MinGIDs (HIPS likes things starting at 0/1
-  // NTS: This is necessary for the node filter stuff
-  int MinGRID=RowMap.MinAllGID();
-  int MinGCID=ColMap.MinAllGID();
-  
-  // Build a new row map w/ MinGID 0 (for HIPS)
-  const int * OldGIDs=RowMap.MyGlobalElements();  
-  int *newGIDs=new int[N];
-  for(int i=0;i<N;i++)
-    newGIDs[i]=OldGIDs[i]-MinGRID; 
-  RowMap0_=rcp(new Epetra_Map(-1,N,newGIDs,0,A_->Comm()));
-  delete [] newGIDs;
+  // Create 0-to-N-1 consistent maps for rows and columns
+  RowMap0_=rcp(new Epetra_Map(-1,N,0,Comm));
+  Epetra_IntVector RowGIDs(View,RowMap,RowMap0_->MyGlobalElements());
+  Epetra_IntVector ColGIDs(ColMap);
+  Epetra_Import RowToCol(ColMap,RowMap);
+  ColGIDs.Import(RowGIDs,RowToCol,Insert);
+  ColMap0_=rcp(new Epetra_Map(-1,ColMap.NumMyElements(),ColGIDs.Values(),0,Comm));
 
   int *gcolind=0;
   if(Acrs){
     //  Global CIDs
     gcolind=new int[nnz];
-    for(int j=0;j<nnz;j++) gcolind[j]=Acrs->GCID(colind[j])-MinGCID;    
+    //    for(int j=0;j<nnz;j++) gcolind[j]=Acrs->GCID(colind[j])-MinGCID;
+    for(int j=0;j<nnz;j++) gcolind[j]=RowMap0_->GID(colind[j]);        
     ierr =  HIPS_GraphDistrCSR(HIPS_id,A_->NumGlobalRows(),A_->NumMyRows(),RowMap0_->MyGlobalElements(),
                                rowptr,gcolind);  
   }
@@ -142,10 +140,11 @@ int Ifpack_HIPS::Compute(){
     for(int i=0;i<N;i++){
       A_->ExtractMyRowCopy(i,maxnr,Nr,values,colind);
       for(int j=0;j<Nr;j++){
-        ierr=HIPS_GraphEdge(HIPS_id,RowMap.GID(i)-MinGRID,ColMap.GID(colind[j])-MinGCID);
-        if(ierr!=HIPS_SUCCESS) IFPACK_CHK_ERR(-3);
+        //        ierr=HIPS_GraphEdge(HIPS_id,RowMap.GID(i)-MinGRID,ColMap.GID(colind[j])-MinGCID);
+        ierr=HIPS_GraphEdge(HIPS_id,RowMap0_->GID(i),ColMap0_->GID(colind[j]));
+        if(ierr!=HIPS_SUCCESS) IFPACK_CHK_ERR(-3);        
       }
-    }    
+    }
     ierr=HIPS_GraphEnd(HIPS_id);
   }      
   if(ierr!=HIPS_SUCCESS) IFPACK_CHK_ERR(-4);  
@@ -153,8 +152,6 @@ int Ifpack_HIPS::Compute(){
   /*Have processor 0 send in the partition*/
   // NTS: This is really, really annoying.  Look at all this import/export
   // stuff.  This is mind-numbingly unnecessary.
-  const Epetra_Comm &Comm=A_->Comm();
-  int mypid=Comm.MyPID();
   
   Epetra_Map OnePerProcMap(-1,1,0,Comm);
   Epetra_IntVector RowsPerProc(OnePerProcMap);
@@ -202,7 +199,8 @@ int Ifpack_HIPS::Compute(){
      for(int i=0;i<N;i++){
        A_->ExtractMyRowCopy(i,maxnr,Nr,values,colind);
        for(int j=0;j<Nr;j++){      
-         ierr = HIPS_AssemblySetValue(HIPS_id,RowMap.GID(i)-MinGRID,ColMap.GID(colind[j])-MinGCID, values[j]);
+         //         ierr = HIPS_AssemblySetValue(HIPS_id,RowMap.GID(i)-MinGRID,ColMap.GID(colind[j])-MinGCID, values[j]);
+         ierr = HIPS_AssemblySetValue(HIPS_id,RowMap0_->GID(i),ColMap0_->GID(colind[j]), values[j]);
          if(ierr!=HIPS_SUCCESS){HIPS_PrintError(ierr);IFPACK_CHK_ERR(-6);}
        }
      }
