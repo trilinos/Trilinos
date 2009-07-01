@@ -47,5 +47,4 @@ PACKAGE_ADD_LIBRARY(
   kokkos
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS kokkosnodeapi
   )
