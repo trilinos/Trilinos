@@ -39,9 +39,7 @@ public:
 	 * @param saveFileName Name of a save file used in a previous attempt to get values for the validParameters ParameterList.
 	 * @param parent The parent object.
 	 */
-	TreeModel(Teuchos::RCP<Teuchos::ParameterList> validParameters, 
-	QString saveFileName=QString(), 
-	QObject *parent=0);
+	TreeModel(Teuchos::RCP<Teuchos::ParameterList> validParameters, QString saveFileName=QString(), QObject *parent=0);
 
 	/**
 	 * Constructs the TreeModel.
@@ -52,10 +50,8 @@ public:
 	 * @param saveFileName Name of a save file used in a previous attempt to get values for the validParameters ParameterList.
 	 * @param parent The parent object.
 	 */
-	TreeModel(Teuchos::RCP<Teuchos::ParameterList> validParameters, 
-	Teuchos::RCP<TivaBuena::DependencySheet> dependencySheet,
-	QString saveFileName=QString(), 
-	QObject *parent=0);
+	TreeModel(Teuchos::RCP<Teuchos::ParameterList> validParameters, Teuchos::RCP<TivaBuena::DependencySheet> dependencySheet,
+		  QString saveFileName=QString(), QObject *parent=0);
 
 	/**
 	 *
@@ -73,11 +69,6 @@ public:
 	int columnCount(const QModelIndex &parent = QModelIndex()) const;
 
 	/**
-	 * Prints out the model.
-	 */
-	void printOut() const;
-
-	/**
 	 * If this TreeModel has a dependent Parameter List, then all the depndencies need to be evaluated before the Parameter List may be displayed.
 	 * Certain items might need to be hidden before the user even starts entering data. 
 	 * This function goes through all of the depndees in the Dependent Parameter List and issues a signal saying they've changed.
@@ -85,6 +76,11 @@ public:
 	 * displayed correctly.
 	 */
 	void issueInitilizationSignals();
+
+	/**
+	 * Prints out the model.
+	 */
+	void printOut() const;
 
 	/**
 	 * Writes out the state of the current parameters in xml format.
@@ -187,21 +183,6 @@ signals:
 	 */
 	void badValue(QModelIndex badItem,  QString message);
 
-private slots:
-	/**
-	 * When the state of any of the MainTree's items is changed, this slot should be called
-	 */
-	void currentFileNowModified();
-
-	/**
-	 * Listens to see if any data has changed. If so and the item has dependencies, this function will make sure all appropriate signals are emitted,
-	 * and any changes that need to be made to the model are made.
-	 * 
-	 * @param index1 The start index of the data that changed.
-	 * @param index2 The end index of the data that changed.
-	 */
-	void dataChangedListener(const QModelIndex& index1, const QModelIndex& index2);
-
 private:
 	/**
 	 * Whether or not the model has been saved since it was last modified.
@@ -230,7 +211,7 @@ private:
 
 	/**
 	 * A canonical list of what the validParameters were when they were first
-	 * passed to the treemodel.
+	 * passed to the treemodel. Used by the reset function.
 	 */
 	Teuchos::RCP<const Teuchos::ParameterList> canonicalList;
 
@@ -257,7 +238,7 @@ private:
 	const Teuchos::ParameterEntry* itemEntry(const QModelIndex &index) const;
 
 	/**
-	 * Reads in the parameter list
+	 * Reads in the parameter list to be represented by the model.
 	 * 
 	 * @param validParameters The list to be read.
 	 * @param parentItem The initial parent tree item to be used.
@@ -265,7 +246,7 @@ private:
 	void readInParameterList(Teuchos::RCP<Teuchos::ParameterList> validParameters, TreeItem *parentItem);
 
 	/**
-	 * Inserts a new parameter list.
+	 * Inserts a new parameter list into the model.
 	 *
 	 * @param parameterList The ParameterList to be inserted.
 	 * @param listEntry The ParameterEntry of the ParameterList to be inserted.
@@ -275,7 +256,7 @@ private:
 	void insertParameterList(Teuchos::RCP<Teuchos::ParameterList> parameterList, Teuchos::ParameterEntry *listEntry, std::string name, TreeItem *parent);
 
 	/**
-	 * Inserts a new parameter.
+	 * Inserts a new parameter into the model.
 	 *
 	 * @param listEntry The ParameterEntry of the Parameter to be inserted.
 	 * @param name The name of the Parameter.
@@ -290,15 +271,34 @@ private:
 	 */
 	void basicSetup(QString saveFileName);
 
+	/**
+	 * Checks the state of a dependent after it's dependency has been evaluated. Takes
+	 * appropriate action if any more modifications to the model need to be made or if
+	 * the view needs to know anything as a result of the change.
+	 */
 	void checkDependentState(const QModelIndex dependee, Teuchos::RCP<Dependency> dependency);
 
 	/**
-	 * Ensures that the array at the given index is redrawn after it's length has been changed.
+	 * Redraws the array at arrayIndex if it's length has changed. 
 	 *
 	 * @param arrayIndex The index of the array to be redrawn.
 	 */
 	void redrawArray(const QModelIndex arrayIndex);
 
+private slots:
+	/**
+	 * When the state of any of the MainTree's items is changed, this slot should be called
+	 */
+	void currentFileNowModified();
+
+	/**
+	 * Listens to see if any data has changed. If so and the item has dependencies, this function will make sure all appropriate signals are emitted,
+	 * and any changes that need to be made to the model are made.
+	 * 
+	 * @param index1 The start index of the data that changed.
+	 * @param index2 The end index of the data that changed.
+	 */
+	void dataChangedListener(const QModelIndex& index1, const QModelIndex& index2);
 };
 
 

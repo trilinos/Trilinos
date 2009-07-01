@@ -5,75 +5,109 @@
 namespace TivaBuena{
 
 VisualDependency::VisualDependency(std::string dependeeName, Teuchos::RCP<Teuchos::ParameterList> dependeeParentList,
-	std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList)
-	:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList,  Dependency::VisualDep){}
+std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList)
+:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList,  Dependency::VisualDep){}
 
 bool VisualDependency::isDependentVisible(){
 	return dependentVisible;
 }
 
 ValidatorDependency::ValidatorDependency(std::string dependeeName, Teuchos::RCP<Teuchos::ParameterList> dependeeParentList,
-	std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList)
-	:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList, Dependency::ValidatorDep){}
+std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList)
+:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList, Dependency::ValidatorDep){}
 
 StringVisualDependency::StringVisualDependency(std::string dependeeName, Teuchos::RCP<Teuchos::ParameterList> dependeeParentList,
-	std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList, std::string value, bool showIf)
-	:VisualDependency(dependeeName, dependeeParentList, dependentName, dependentParentList)
-{
+std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList, std::string value, bool showIf)
+:VisualDependency(dependeeName, dependeeParentList, dependentName, dependentParentList){
 	this->showIf = showIf;
 	this->value = value;
 	validateDep();
 }
 
-void StringVisualDependency::validateDep(){
-	if(!dependee->isType<std::string>())
-		throw InvalidDependencyException("The dependee of a "
-		"String Visual Dependency must be of type string!\n"
-		"Problem dependee: " + dependeeName + "\n"
-		"Actual type: " + dependee->getAny().typeName() + "\n"
-		"Dependent: " + dependentName);
+StringVisualDependency::StringVisualDependency(std::string dependeeName, std::string dependentName, 
+Teuchos::RCP<Teuchos::ParameterList> parentList, std::string value, bool showIf)
+:VisualDependency(dependeeName, parentList, dependentName, parentList){
+	this->showIf = showIf;
+	this->value = value;
+	validateDep();
 }
 
 void StringVisualDependency::evaluate(){
 	std::string dependeeValue = dependeeParentList->get<std::string>(dependeeName);
-	if((dependeeValue == value && showIf) || (dependeeValue != value && !showIf))
+	if((dependeeValue == value && showIf) || (dependeeValue != value && !showIf)){
 		dependentVisible = true;
-	else 
+	}
+	else{
 		dependentVisible = false;
+	}
 }
 
+void StringVisualDependency::validateDep(){
+	if(!dependee->isType<std::string>()){
+		throw InvalidDependencyException("Ay no! The dependee of a "
+		"String Visual Dependency must be of type string.\n"
+		"Problem dependee: " + dependeeName + "\n"
+		"Actual type: " + dependee->getAny().typeName() + "\n"
+		"Dependent: " + dependentName);
+	}
+}
 
 BoolVisualDependency::BoolVisualDependency(std::string dependeeName, Teuchos::RCP<Teuchos::ParameterList> dependeeParentList,
-	std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList, bool showIf)
-	:VisualDependency(dependeeName, dependeeParentList, dependentName, dependentParentList)
-{
+std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList, bool showIf)
+:VisualDependency(dependeeName, dependeeParentList, dependentName, dependentParentList){
+	this->showIf = showIf;
+	validateDep();
+}
+
+BoolVisualDependency::BoolVisualDependency(std::string dependeeName, std::string dependentName, 
+Teuchos::RCP<Teuchos::ParameterList> parentList, bool showIf)
+:VisualDependency(dependeeName, parentList, dependentName, parentList){
 	this->showIf = showIf;
 	validateDep();
 }
 
 void BoolVisualDependency::evaluate(){
 	bool dependeeValue = dependeeParentList->get<bool>(dependeeName);
-	if((dependeeValue && showIf) || (!dependeeValue && !showIf))
+	if((dependeeValue && showIf) || (!dependeeValue && !showIf)){
 		dependentVisible = true;
-	else 
+	}
+	else{
 		dependentVisible = false;
+	}
 }
 
 void BoolVisualDependency::validateDep(){
-	if(!dependee->isType<bool>())
-		throw InvalidDependencyException("The dependee of a "
-		"Bool Visual Dependency must be of type bool!\n"
+	if(!dependee->isType<bool>()){
+		throw InvalidDependencyException("Ay no! The dependee of a "
+		"Bool Visual Dependency must be of type bool.\n"
 		"Problem dependee: " + dependeeName + "\n"
 		"Actual type: " + dependee->getAny().typeName() + "\n"
 		"Dependent: " + dependentName);
+	}
 }
 
 NumberArrayLengthDependency::NumberArrayLengthDependency(std::string dependeeName, Teuchos::RCP<Teuchos::ParameterList> dependeeParentList,
-	std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList, unsigned int (*func)(int))
-	:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList, Dependency::NumberArrayLengthDep)
-{
+std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList, unsigned int (*func)(int))
+:Dependency(dependeeName, dependeeParentList, dependentName, dependentParentList, Dependency::NumberArrayLengthDep){
 	this->func = func;
 	validateDep();
+}
+
+NumberArrayLengthDependency::NumberArrayLengthDependency(std::string dependeeName, std::string dependentName, 
+Teuchos::RCP<Teuchos::ParameterList> parentList, unsigned int (*func)(int))
+:Dependency(dependeeName, parentList, dependentName, parentList, Dependency::NumberArrayLengthDep){ 
+	this->func = func;
+	validateDep();
+}
+
+
+unsigned int NumberArrayLengthDependency::runFunction(int argument) const{
+	if(func !=0){
+		return (*func)(argument);
+	}
+	else{
+		return argument;
+	}
 }
 
 template <class S>
@@ -96,12 +130,7 @@ void NumberArrayLengthDependency::modifyArrayLength(unsigned int newLength){
 				newArray.append(potentialValidator->min());
 			}
 	}
-	dependent->setValue(
-		newArray,
-		false,
-		dependent->docString(),
-		dependent->validator()
-		);
+	dependent->setValue(newArray, false, dependent->docString(), dependent->validator());
 }
 
 template<>
@@ -110,68 +139,73 @@ void NumberArrayLengthDependency::modifyArrayLength<std::string>(unsigned int ne
 	Teuchos::Array<std::string> newArray;
 	Teuchos::RCP<const Teuchos::ParameterEntryValidator> validator = dependent->validator();
 	unsigned int i;
-	for(i=0; i<originalArray.size() && i<newLength; i++)
+	for(i=0; i<originalArray.size() && i<newLength; i++){
 		newArray.append(originalArray[i]);
-	for(;i<newLength;i++){
-		if(Teuchos::is_null(validator))
-			newArray.append(" ");
-		else if(!Teuchos::is_null(Teuchos::rcp_dynamic_cast<const ArrayFileNameValidator>(validator)))
-			newArray.append(QDir::homePath().toStdString());
-		else
-			newArray.append(validator->validStringValues()->at(0));
 	}
-	dependent->setValue(
-		newArray,
-		false,
-		dependent->docString(),
-		dependent->validator()
-		);
+	for(;i<newLength;i++){
+		if(Teuchos::is_null(validator)){
+			newArray.append(" ");
+		}
+		else if(!Teuchos::is_null(Teuchos::rcp_dynamic_cast<const ArrayFileNameValidator>(validator))){
+			newArray.append(QDir::homePath().toStdString());
+		}
+		else{
+			newArray.append(validator->validStringValues()->at(0));
+		}
+	}
+	dependent->setValue(newArray, false, dependent->docString(), dependent->validator());
 }
 
 void NumberArrayLengthDependency::evaluate(){
 	int newLength = runFunction(Teuchos::getValue<int>(*dependee));
 	QString dependentType = determineArrayType(dependent);
-	if(dependentType.contains(intId))
+	if(dependentType.contains(intId)){
 		modifyArrayLength<int>(newLength);
-	else if(dependentType.contains(shortId))
+	}
+	else if(dependentType.contains(shortId)){
 		modifyArrayLength<short>(newLength);
-	else if(dependentType.contains(doubleId))
+	}
+	else if(dependentType.contains(doubleId)){
 		modifyArrayLength<double>(newLength);
-	else if(dependentType.contains(floatId))
+	}
+	else if(dependentType.contains(floatId)){
 		modifyArrayLength<float>(newLength);
-	else if(dependentType.contains(stringId))
+	}
+	else if(dependentType.contains(stringId)){
 		modifyArrayLength<std::string>(newLength);
-		
-}
-
-unsigned int NumberArrayLengthDependency::runFunction(int argument) const{
-	if(func !=0)
-		return (*func)(argument);
-	else
-		return argument;
+	}
 }
 
 void NumberArrayLengthDependency::validateDep(){
-	if(!dependee->isType<int>()
-	&& !dependee->isType<short>())
-		throw InvalidDependencyException("The dependee for an "
-		"Array Length Dependency must be either of type short or of type int\n" 
+	if(!dependee->isType<int>() && !dependee->isType<short>()){
+		throw InvalidDependencyException("Ay no! The dependee for an "
+		"Array Length Dependency must be either of type short or of type int.\n" 
 		"Problem dependee: " + dependeeName + "\n" 
 		"Actual type: " + dependee->getAny().typeName() + "\n"
 		"Dependent: " + dependentName);
-	if(!doesParameterContainArray(dependent))
-		throw InvalidDependencyException("The dependent of an "
-		"Array Length Dependency must be an array\n"
+	}
+	if(!doesParameterContainArray(dependent)){
+		throw InvalidDependencyException("Ay no! The dependent of an "
+		"Array Length Dependency must be an array.\n"
 		"Problem dependent: " + dependentName + "\n" 
 		"Actual type: " + dependent->getAny().typeName() + "\n"
 		"Dependee: " + dependeeName);
+	}
 }
 
 StringValidatorDependency::StringValidatorDependency(std::string dependeeName, Teuchos::RCP<Teuchos::ParameterList> dependeeParentList,
-	std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList,
-	ValueToValidatorMap valuesAndValidators, Teuchos::RCP<Teuchos::ParameterEntryValidator> defaultValidator)
-	:ValidatorDependency(dependeeName, dependeeParentList, dependentName, dependentParentList)
-{
+std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList,
+ValueToValidatorMap valuesAndValidators, Teuchos::RCP<Teuchos::ParameterEntryValidator> defaultValidator)
+:ValidatorDependency(dependeeName, dependeeParentList, dependentName, dependentParentList){
+	this->valuesAndValidators = valuesAndValidators;
+	this->defaultValidator = defaultValidator;
+	validateDep();
+}
+
+StringValidatorDependency::StringValidatorDependency(std::string dependeeName, std::string dependentName, 
+Teuchos::RCP<Teuchos::ParameterList> parentList, ValueToValidatorMap valuesAndValidators, 
+Teuchos::RCP<Teuchos::ParameterEntryValidator> defaultValidator)
+:ValidatorDependency(dependeeName, parentList, dependentName, parentList){
 	this->valuesAndValidators = valuesAndValidators;
 	this->defaultValidator = defaultValidator;
 	validateDep();
@@ -179,37 +213,49 @@ StringValidatorDependency::StringValidatorDependency(std::string dependeeName, T
 
 void StringValidatorDependency::evaluate(){
 	std::string dependeeValue = dependeeParentList->get<std::string>(dependeeName);
-	if(valuesAndValidators.find(dependeeValue) == valuesAndValidators.end())
+	if(valuesAndValidators.find(dependeeValue) == valuesAndValidators.end()){
 		dependent->setValidator(defaultValidator);
-	else
+	}
+	else{
 		dependent->setValidator(valuesAndValidators[dependeeValue]);
+	}
 }
 
 void StringValidatorDependency::validateDep(){
-	if(!dependee->isType<std::string>())
-		throw InvalidDependencyException("The dependee of a "
-		"String Validator Dependency must be of type string!\n"
+	if(!dependee->isType<std::string>()){
+		throw InvalidDependencyException("Ay no!The dependee of a "
+		"String Validator Dependency must be of type string.\n"
 		"Problem dependee: " + dependeeName + "\n"
 		"Actual type: " + dependee->getAny().typeName() + "\n"
 		"Dependent: " + dependentName);
+	}
 	for(ValueToValidatorMap::const_iterator it = valuesAndValidators.begin(); it != valuesAndValidators.end(); it++){
-		if(typeid(dependent->validator()) != typeid(it->second))
-		throw InvalidDependencyException("The validator of a dependent of a "
-		"String Validator Dependency must be the same type as all of the validators\n"
-		"in the valuesAndValidators map.\n"
-		"Note this means that the dependent must have an initial validator\n"
-		"Problem dependent: " + dependentName + "\n"
-		"Validator Type: " + typeid(dependent->validator()).name() + "\n"
-		"Problem Map Value: " + it->first + "\n"
-		"The Validator type associated with the Map Value: " + typeid(it->second).name());
+		if(typeid(dependent->validator()) != typeid(it->second)){
+			throw InvalidDependencyException("Ay no! The validator of a dependent of a "
+			"String Validator Dependency must be the same type as all of the validators"
+			"in the valuesAndValidators map."
+			"Note this means that the dependent must have an initial validator.\n"
+			"Problem dependent: " + dependentName + "\n"
+			"Validator Type: " + typeid(dependent->validator()).name() + "\n"
+			"Problem Map Value: " + it->first + "\n"
+			"The Validator type associated with the Map Value: " + typeid(it->second).name());
+		}
 	}
 }
 
 BoolValidatorDependency::BoolValidatorDependency(std::string dependeeName, Teuchos::RCP<Teuchos::ParameterList> dependeeParentList,
-	std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList,
-	Teuchos::RCP<const Teuchos::ParameterEntryValidator> trueValidator, Teuchos::RCP<const Teuchos::ParameterEntryValidator> falseValidator)
-	:ValidatorDependency(dependeeName, dependeeParentList, dependentName, dependentParentList)
-{
+std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList,
+Teuchos::RCP<const Teuchos::ParameterEntryValidator> trueValidator, Teuchos::RCP<const Teuchos::ParameterEntryValidator> falseValidator)
+:ValidatorDependency(dependeeName, dependeeParentList, dependentName, dependentParentList){
+	this->trueValidator = trueValidator;
+	this->falseValidator = falseValidator;
+	validateDep();
+}
+
+BoolValidatorDependency::BoolValidatorDependency(std::string dependeeName, std::string dependentName, 
+Teuchos::RCP<Teuchos::ParameterList> parentList, Teuchos::RCP<const Teuchos::ParameterEntryValidator> trueValidator,
+Teuchos::RCP<const Teuchos::ParameterEntryValidator> falseValidator)
+:ValidatorDependency(dependeeName, parentList, dependentName, parentList){
 	this->trueValidator = trueValidator;
 	this->falseValidator = falseValidator;
 	validateDep();
@@ -221,26 +267,29 @@ void BoolValidatorDependency::evaluate(){
 }
 
 void BoolValidatorDependency::validateDep(){
-	if(!dependee->isType<bool>())
-		throw InvalidDependencyException("The dependee of a "
-		"Bool Validator Dependency must be of type string!\n"
+	if(!dependee->isType<bool>()){
+		throw InvalidDependencyException("Ay no! The dependee of a "
+		"Bool Validator Dependency must be of type string.\n"
 		"Problem dependee: " + dependeeName + "\n"
 		"Actual type: " + dependee->getAny().typeName() + "\n"
 		"Dependent: " + dependentName);
-	if(typeid(dependent->validator()) != typeid(trueValidator))
-		throw InvalidDependencyException("The validator of a dependent of a"
-		"Bool Validator Dependency must be the same type as the \"true\" validator.\n"
-		"Note this means that the dependent must have an initial validator\n"
+	}
+	if(typeid(dependent->validator()) != typeid(trueValidator)){
+		throw InvalidDependencyException("Ay no! The validator of a dependent of a"
+		"Bool Validator Dependency must be the same type as the \"true\" validator."
+		"Note this means that the dependent must have an initial validator.\n"
 		"Problem dependent: " + dependentName + "\n"
 		"Validator Type: " + typeid(dependent->validator()).name() + "\n"
 		"Type of the \"true\" validator: " + typeid(trueValidator).name());
-	if(typeid(dependent->validator()) != typeid(falseValidator))
-		throw InvalidDependencyException("The validator of a dependent of a"
-		"Bool Validator Dependency must be the same type as the \"false\" validator.\n"
+	}
+	if(typeid(dependent->validator()) != typeid(falseValidator)){
+		throw InvalidDependencyException("Ay no! The validator of a dependent of a"
+		"Bool Validator Dependency must be the same type as the \"false\" validator."
 		"Note this means that the dependent must have an initial validator\n"
 		"Problem dependent: " + dependentName + "\n"
 		"Validator Type: " + typeid(dependent->validator()).name() + "\n"
 		"Type of the \"false\" validator: " + typeid(falseValidator).name());
+	}
 }
 
 

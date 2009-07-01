@@ -5,36 +5,41 @@
 namespace TivaBuena{
 
 /**
- * A Parameter List that keeps track of dependencies between it's various elements.
+ * A Dependency sheet keeps track of dependencies between various elements located
+ * somewhere withing a "Root List". All dependencies added to a DependencySheet
+ * must have dependents and dependees who are either in the Root List or one of
+ * its sublists.
+ *
  * Note that a DependencySheet never acts on these dependencies. It mearly keeps
  * track of them.
  */
 class DependencySheet{
 public:
 	/**
-	 * Convience typedef
+	 * Convience typedef representing a set of dependencies.
 	 */
 	typedef std::set<Teuchos::RCP<TivaBuena::Dependency>, TivaBuena::Dependency::DepComp > DepSet;
 
 	/**
-	 * Convience typedef
+	 * Convience typedef. Maps dependee parameter entries to a set of their corresponding
+	 * dependencies.
 	 */
 	typedef Teuchos::map<const Teuchos::ParameterEntry*, DepSet > DepMap;
 
 	/**
-	 * Constructs an empty DependencySheet with no name
+	 * Constructs an empty DependencySheet with no name.
 	 */
 	DependencySheet(Teuchos::RCP<Teuchos::ParameterList> rootList);
 
 	/**
 	 * Constructs a DependencySheet.
 	 *
-	 * @param name Name of the Parameter List
+	 * @param name Name of the Dependency Sheet.
 	 */
 	DependencySheet(Teuchos::RCP<Teuchos::ParameterList> rootList, const std::string &name);
 
 	/**
-	 * Adds a dependency to the list.
+	 * Adds a dependency to the sheet.
 	 * 
 	 * @param dependency The dependency to be added.
 	 * @return True if the addition was sucessful, false otherwise.
@@ -50,8 +55,8 @@ public:
 	bool removeDependency(Teuchos::RCP<TivaBuena::Dependency> dependency);
 
 	/**
-	 * Determines whether or not a parameter is depended upon by another parameter or
-	 * parameter list.
+	 * Determines whether or not a parameter is depended upon by any another
+	 * parameters or parameter lists.
 	 *
 	 * @parameter name The paramteter to be checked for dependents.
 	 * @return True if the parameter you're checking has other dependents, false otherwise.
@@ -59,46 +64,46 @@ public:
 	bool hasDependents(const Teuchos::ParameterEntry *dependee) const;
 
 	/**
-	 * Returns a map of all the parameters and parameter lists that depend on the parameter specified.
+	 * Returns a set of all the dependencies associated with a particular dependee.
 	 *
-	 * @param parameterName The parameter whose dependencies are in question.
-	 * @return A map of all the parameters and parameter lists that depend on the specified parameter,
-	 * and the associated dependencies.
-	 */
+	 * @param dependee The parameter whose dependencies are sought. 
+	 * @return A set of all dependencies associated with the dependee parameter.
+	 * */
 	const DepSet& getDependenciesForParameter(const Teuchos::ParameterEntry *dependee) const;
+
+
+	/**
+	 * Returns an iterator to the beginning of all the dependees in the sheet.
+	 *
+	 * @return An iterator to the beginning of all the dependees in the sheet.
+	 */
+	DepMap::iterator depBegin();
+
+	/**
+	 * Returns an iterator to the end of all of the dependees in the sheet.
+	 *
+	 * @return An iterator to the end of all of the dependees in the sheet.
+	 */
+	DepMap::iterator depEnd();
+
+	/**
+	 * Returns a const iterator to the beginning of all the dependees in the sheet.
+	 *
+	 * @return A const iterator to the beginning of all the dependees in the sheet.
+	 */
+	DepMap::const_iterator depBegin() const;
+
+	/**
+	 * Returns a const iterator to the end of all of the dependees in the sheet.
+	 *
+	 * @return A const iterator to the end of all of the dependees in the sheet.
+	 */
+	DepMap::const_iterator depEnd() const;
 
 	/**
 	 * Prints out a list of the dependencies in the DependencySheet
 	 */
 	void printDeps();
-
-	/**
-	 * Returns an iterator to the beginning of all the dependees in the Dependent Parameter List.
-	 *
-	 * @return An iterator to the beginning of all the dependees in the Dependent Parameter List.
-	 */
-	DepMap::iterator depBegin();
-
-	/**
-	 * Returns an iterator to the end of all of the dependees in the Dependent Parameter List.
-	 *
-	 * @return An iterator to the end of all of the dependees in the Dependent Parameter List.
-	 */
-	DepMap::iterator depEnd();
-
-	/**
-	 * Returns a const iterator to the beginning of all the dependees in the Dependent Parameter List.
-	 *
-	 * @return A const iterator to the beginning of all the dependees in the Dependent Parameter List.
-	 */
-	DepMap::const_iterator depBegin() const;
-
-	/**
-	 * Returns a const iterator to the end of all of the dependees in the Dependent Parameter List.
-	 *
-	 * @return A const iterator to the end of all of the dependees in the Dependent Parameter List.
-	 */
-	DepMap::const_iterator depEnd() const;
 
 private:
 	/**

@@ -109,9 +109,9 @@ int main(){
    Teuchos::RCP<TivaBuena::StringVisualDependency> swissDep1 = 
       Teuchos::RCP<TivaBuena::StringVisualDependency>(
         new TivaBuena::StringVisualDependency(
-	  "Swiss rating",
-	  My_deplist,
 	  "Favorite Cheese",
+	  My_deplist,
+	  "Swiss rating",
 	  My_deplist,
 	  "Swiss",
 	  true));

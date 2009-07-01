@@ -24,36 +24,41 @@ QWidget* Delegate::createEditor(QWidget *parent, const QStyleOptionViewItem &/*o
 	if(itemType == intId){
 		editor = new QSpinBox(parent);
 		Teuchos::RCP<const EnhancedNumberValidator <int> > intValidator;
-		if(!Teuchos::is_null(paramValidator))
+		if(!Teuchos::is_null(paramValidator)){
 			intValidator = Teuchos::rcp_dynamic_cast<const EnhancedNumberValidator<int> >(paramValidator);
+		}
 		EnhancedNumberValidator<int>::applyToSpinBox(intValidator, (QSpinBox*)editor);
 	}
 	else if(itemType == shortId){
 		editor = new QSpinBox(parent);
 		Teuchos::RCP<const EnhancedNumberValidator<short> > shortValidator;
-		if(!Teuchos::is_null(paramValidator))
+		if(!Teuchos::is_null(paramValidator)){
 			shortValidator = Teuchos::rcp_dynamic_cast<const EnhancedNumberValidator<short> >(paramValidator);
+		}
 		EnhancedNumberValidator<short>::applyToSpinBox(shortValidator, (QSpinBox*)editor);
 	}
 /*	else if(itemType == longlongId){
 		editor = new QwwLongSpinBox(parent);
 		Teuchos::RCP<const EnhancedNumberValidator<long long> > longlongValidator;
-		if(!Teuchos::is_null(paramValidator))
+		if(!Teuchos::is_null(paramValidator)){
 			longlongValidator = Teuchos::rcp_dynamic_cast<const EnhancedNumberValidator<long long> >(paramValidator);
+		}
 		EnhancedNumberValidator<long long>::applyToSpinBox(longlongValidator, (QDoubleSpinBox*)editor);
 	}*/
 	else if(itemType == doubleId){
 		editor = new QDoubleSpinBox(parent);
 		Teuchos::RCP<const EnhancedNumberValidator<double> > doubleValidator;
-		if(!Teuchos::is_null(paramValidator))
+		if(!Teuchos::is_null(paramValidator)){
 			doubleValidator = Teuchos::rcp_dynamic_cast<const EnhancedNumberValidator<double> >(paramValidator);
+		}
 		EnhancedNumberValidator<double>::applyToSpinBox(doubleValidator, (QDoubleSpinBox*)editor);
 	}
 	else if(itemType == floatId){
 		editor = new QDoubleSpinBox(parent);
 		Teuchos::RCP<const EnhancedNumberValidator<float> > floatValidator; 
-		if(!Teuchos::is_null(paramValidator))
+		if(!Teuchos::is_null(paramValidator)){
 			floatValidator = Teuchos::rcp_dynamic_cast<const EnhancedNumberValidator<float> >(paramValidator);
+		}
 		EnhancedNumberValidator<float>::applyToSpinBox(floatValidator, (QDoubleSpinBox*)editor);
 	}
 	else if(itemType == boolId){
@@ -62,17 +67,20 @@ QWidget* Delegate::createEditor(QWidget *parent, const QStyleOptionViewItem &/*o
 		static_cast<QComboBox*>(editor)->addItem("false");
 	}
 	else if(itemType == stringId){
-		if(Teuchos::is_null(paramValidator))
+		if(Teuchos::is_null(paramValidator)){
 			editor = new QLineEdit(parent);
+		}
 		else if(!Teuchos::is_null(Teuchos::rcp_dynamic_cast<const FileNameValidator>(paramValidator))){
 			QString paramName = 
 				((TreeModel*)(index.model()))->data(index.sibling(index.row(), 0),Qt::DisplayRole).toString();
 			QString currentPath = ((TreeModel*)(index.model()))->data(index,Qt::DisplayRole).toString();
-			if(currentPath.size() == 0)
+			if(currentPath.size() == 0){
 				currentPath = QDir::homePath();
+			}
 			QString filename = QFileDialog::getSaveFileName(parent, paramName, currentPath);
-			if(filename != "")
+			if(filename != ""){
 				((TreeModel*)(index.model()))->setData(index, filename);
+			}
 		}
 		else if(paramValidator->validStringValues()->size() != 0){
 			Teuchos::RCP<const Teuchos::Array<std::string> > options = paramValidator->validStringValues();
@@ -81,40 +89,15 @@ QWidget* Delegate::createEditor(QWidget *parent, const QStyleOptionViewItem &/*o
 				static_cast<QComboBox*>(editor)->addItem(QString::fromStdString(*itr));
 			}
 		}
-		else
+		else{
 			editor = new QLineEdit(parent);
+		}
 	}
-	else if(itemType.contains(arrayId))
+	else if(itemType.contains(arrayId)){
 		arrayHandler(index, itemType.section(" ", -1), parent);
+	}
 
 	return editor;
-}
-
-void Delegate::arrayHandler(const QModelIndex& index, QString type, QWidget *parent) const{
-	if(type == intId){
-		IntArrayWidget array(index, type, parent);
-		array.exec();
-	}
-	else if(type == shortId){
-		ShortArrayWidget array(index, type, parent);
-		array.exec();
-	}
-	/*else if(type == longlongId){
-		LongLongArrayWidget array(index, type, parent);
-		array.exec();
-	}*/
-	else if(type == doubleId){
-		DoubleArrayWidget array(index, type, parent);
-		array.exec();
-	}
-	else if(type == floatId){
-		FloatArrayWidget array(index, type, parent);
-		array.exec();
-	}
-	else if(type == stringId){
-		StringArrayWidget array(index, type, parent);
-		array.exec();
-	}
 }
 
 void Delegate::setEditorData(QWidget *editor, const QModelIndex &index) const{
@@ -179,10 +162,12 @@ void Delegate::setModelData(QWidget *editor, QAbstractItemModel *model, const QM
 		Teuchos::RCP<const Teuchos::ParameterEntryValidator> validator = 
 			static_cast<const TreeModel*>(index.model())->getValidator(index);
 		QString value;
-		if(Teuchos::is_null(validator))
+		if(Teuchos::is_null(validator)){
 			value = static_cast<QLineEdit*>(editor)->text();
-		else
+		}
+		else{
 			value = static_cast<QComboBox*>(editor)->currentText(); 
+		}
 		model->setData(index, value, Qt::EditRole);
 	}
 }
@@ -191,6 +176,32 @@ void Delegate::updateEditorGeometry(QWidget *editor, const QStyleOptionViewItem 
 	editor->setGeometry(option.rect);
 }
 
+void Delegate::arrayHandler(const QModelIndex& index, QString type, QWidget *parent) const{
+	if(type == intId){
+		IntArrayWidget array(index, type, parent);
+		array.exec();
+	}
+	else if(type == shortId){
+		ShortArrayWidget array(index, type, parent);
+		array.exec();
+	}
+	/*else if(type == longlongId){
+		LongLongArrayWidget array(index, type, parent);
+		array.exec();
+	}*/
+	else if(type == doubleId){
+		DoubleArrayWidget array(index, type, parent);
+		array.exec();
+	}
+	else if(type == floatId){
+		FloatArrayWidget array(index, type, parent);
+		array.exec();
+	}
+	else if(type == stringId){
+		StringArrayWidget array(index, type, parent);
+		array.exec();
+	}
+}
 
 }
 

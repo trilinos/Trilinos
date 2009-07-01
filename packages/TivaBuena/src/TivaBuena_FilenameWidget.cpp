@@ -8,9 +8,7 @@
 namespace TivaBuena{
 
 
-FilenameWidget::FilenameWidget(QString currentFileName, QWidget *parent)
-	:QWidget(parent)
-{
+FilenameWidget::FilenameWidget(QString currentFileName, QWidget *parent):QWidget(parent){
 	this->currentFileName = currentFileName;
 	QPushButton *changeButton = new QPushButton("Change Path",this);
 	connect(changeButton, SIGNAL(clicked(bool)), this, SLOT(getNewFileName()));
@@ -32,10 +30,12 @@ void FilenameWidget::setCurrentFileName(QString newName){
 
 void FilenameWidget::getNewFileName(){
 	QString defaultPath;
-	if(currentFileName == "")
+	if(currentFileName == ""){
 		defaultPath = QDir::homePath();
-	else
+	}
+	else{
 		defaultPath = currentFileName;
+	}
 	setCurrentFileName(QFileDialog::getSaveFileName(this, tr("File"), defaultPath));
 }
 

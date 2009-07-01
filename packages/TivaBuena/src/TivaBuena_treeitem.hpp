@@ -30,7 +30,7 @@ public:
 	 * 	<li>The name of the ParameterList</li>
 	 * 	<li>An empty string</li>
 	 * 	<li>The "list" parameter type</li>
-	 * </ol
+	 * </ol>
 	 * @param parameterEntry The ParameterEntry this TreeItem is ment to represent.
 	 * @param parent The parent TreeItem.
 	 * @param unrecognized If true, this item will be unrecognized and not displayed, if false the item will be displayed.
@@ -43,16 +43,16 @@ public:
 	~TreeItem();
 
 	/**
+	 * Prints out the values in the TreeItem.
+	 */
+	void printOut() const;
+
+	/**
 	 * Appends a child TreeItem to the TreeItem
 	 * 
 	 * @param child The child item to be appended.
 	 */
 	void appendChild(TreeItem *child);
-
-	/**
-	 * Prints out the values in the TreeItem.
-	 */
-	void printOut() const;
 
 	/**
 	 * Returns the child treeitem in the row specified by the row argument.
@@ -63,18 +63,18 @@ public:
 	TreeItem *child(int row);
 
 	/**
-	 * Gets a list of all the child items.
-	 *
-	 * @return A list of all child items.
-	 */
-	const QList<TreeItem*> getChildItems();
-
-	/**
 	 * Gets the number of child nodes this item has.
 	 *
 	 * @return The number of child nodes this item has.
 	 */
 	int childCount() const;
+
+	/**
+	 * Gets a list of all the child items.
+	 *
+	 * @return A list of all child items.
+	 */
+	const QList<TreeItem*> getChildItems();
 
 	/**
 	 * How man columns the TreeItem has. Should always be 3.
@@ -93,18 +93,18 @@ public:
 	QVariant data(int column, int role = Qt::DisplayRole) const;
 
 	/**
-	 * Returns the row in which this TreeItem is located.
-	 * 
-	 * @return The row in which this TreeItem is located.
-	 */
-	int row() const;
-
-	/**
 	 * Gets the parent TreeItem
 	 *
 	 * @return The parent TreeItem.
 	 */
 	TreeItem *parent();
+
+	/**
+	 * Returns the row in which this TreeItem is located.
+	 * 
+	 * @return The row in which this TreeItem is located.
+	 */
+	int row() const;
 
 	/**
 	 * Gets the ParameterEntry associated with this TreeItem if it has one.
@@ -127,13 +127,6 @@ public:
 	 * @param xmlWriter The xml stream to which the object should write.
 	 */
 	void writeOutput(QXmlStreamWriter &xmlWriter);
-
-	/**
-	 * Writes the values of the TreeItem to a Teuchos ParameterList.
-	 *
-	 * @param userInputList The ParameterList to which the values should be written.
-	 */
-	void writeInputToInputList(Teuchos::RCP<Teuchos::ParameterList> userInputList);
 
 	/**
 	 * Changes the value of the TreeItem. Should only be used with TreeItems that represent Parameters.
@@ -159,7 +152,7 @@ private:
 	void changeValueForArray(QVariant value, QString type);
 
 	/**
-	 * Wether or not the parameter is currently unrecognized.
+	 * Whether or not the parameter type is unrecognized.
 	 */
 	bool unrecognized;
 

@@ -15,29 +15,6 @@ bool DependencySheet::addDependency(Teuchos::RCP<TivaBuena::Dependency> dependen
 	return dependencies[dependency->getDependee()].insert(dependency).second;
 }
 
-void DependencySheet::validateExistanceInRoot(Teuchos::RCP<TivaBuena::Dependency> dependency){
-	if(!dependency->isDependeeParentInList(rootList))
-		throw InvalidDependencyException(
-		"FAILED TO ADD DEPENDENCY!\n\n"
-		"An attempt was made to add a dependency containing a the dependee parameter \"" + dependency->getDependeeName() + "\""
-		" to the Dependency Sheet \"" + name + "\"."
-		" The Dependecy Sheet's root list does not contain nor does it have"
-		" child ParameterLists that contain the parameter.\n"
-		"Dependency Sheet: " + name + "\n"
-		"Dependency Type: " + QString::number(dependency->getType()).toStdString() + "\n"
-		"Bad Parameter Name: " + dependency->getDependeeName());
-	if(!dependency->isDependentParentInList(rootList))
-		throw InvalidDependencyException(
-		"FAILED TO ADD DEPENDENCY!\n\n"
-		"An attempt was made to add a dependency containing a the dependent parameter \"" + dependency->getDependentName() + "\""
-		" to the Dependency Sheet \"" + name + "\"."
-		" The Dependency Sheet's list does not contain nor does it have"
-		" child ParameterLists that contain the parameter.\n"
-		"Dependency Sheet: " + name + "\n"
-		"Dependency Type: " + QString::number(dependency->getType()).toStdString() + "\n"
-		"Bad Parameter Name: " + dependency->getDependeeName());
-}
-
 bool DependencySheet::removeDependency(Teuchos::RCP<TivaBuena::Dependency> dependency){
 	const Teuchos::ParameterEntry* dependee = dependency->getDependee();
 	for(DepSet::iterator it = dependencies[dependee].begin(); it != dependencies[dependee].end(); it++){
@@ -73,7 +50,6 @@ DependencySheet::DepMap::const_iterator DependencySheet::depEnd() const{
 	return dependencies.end();
 }
 
-
 void DependencySheet::printDeps(){
 	std::cout << "Dependency Sheet: " << name << "\n\n";
 	for(DepMap::iterator it = depBegin(); it != depEnd(); it++){
@@ -85,6 +61,42 @@ void DependencySheet::printDeps(){
 		}
 	}
 }
+
+void DependencySheet::validateExistanceInRoot(Teuchos::RCP<TivaBuena::Dependency> dependency){
+	if(!dependency->isDependeeParentInList(rootList)){
+		throw InvalidDependencyException(
+		"FAILED TO ADD DEPENDENCY!\n\n"
+		"Sorry for the yelling there, but this is kind of a big deal. Dependencies are hard and complex so don't beat "
+		"yourself up too much. Mistakes are easy to make when dealing with dependencies. "
+		"And besides, I'm gonna do my best to help you out! I'm sure with the informationg below you'll be able to figure out what "
+		"exactly went wrong. I've got confidence in you! :)\n\n"
+		"Error:\n"
+		"An attempt was made to add a dependency containing a the dependee parameter \"" + dependency->getDependeeName() + "\""
+		" to the Dependency Sheet \"" + name + "\"."
+		" The Dependecy Sheet's root list does not contain nor does it have"
+		" child ParameterLists that contain the parameter.\n"
+		"Dependency Sheet: " + name + "\n"
+		"Dependency Type: " + QString::number(dependency->getType()).toStdString() + "\n"
+		"Bad Parameter Name: " + dependency->getDependeeName());
+	}
+	if(!dependency->isDependentParentInList(rootList)){
+		throw InvalidDependencyException(
+		"FAILED TO ADD DEPENDENCY!\n\n"
+		"Sorry for the yelling there, but this is kind of a big deal. Dependencies are hard and complex so don't beat "
+		"yourself up too much. Mistakes are easy to make when dealing with dependencies. "
+		"And besides, I'm gonna do my best to help you out! I'm sure with the informationg below you'll be able to figure out what "
+		"exactly went wrong. I've got confidence in you! :)\n\n"
+		"Error:\n"
+		"An attempt was made to add a dependency containing a the dependent parameter \"" + dependency->getDependentName() + "\""
+		" to the Dependency Sheet \"" + name + "\"."
+		" The Dependency Sheet's list does not contain nor does it have"
+		" child ParameterLists that contain the parameter.\n"
+		"Dependency Sheet: " + name + "\n"
+		"Dependency Type: " + QString::number(dependency->getType()).toStdString() + "\n"
+		"Bad Parameter Name: " + dependency->getDependeeName());
+	}
+}
+
 
 
 }

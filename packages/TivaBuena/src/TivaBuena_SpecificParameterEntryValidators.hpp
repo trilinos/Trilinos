@@ -41,14 +41,8 @@ public:
 	 * @param step The increments at which the value should be changed. This is mostly used for 
 	 * the QSpinBox that is used in the TivaBuena GUI. If you're not using the GUI, you may ignore this parameter.
 	 */
-	GenericNumberValidator(QString type, S min, S max, S step):Teuchos::ParameterEntryValidator(){
-		this->type = type;
-		this->minVal = min;
-		this->maxVal = max;
-		this->step = step;
-		containsMin = true;
-		containsMax = true;
-	}
+	GenericNumberValidator(QString type, S min, S max, S step):Teuchos::ParameterEntryValidator(),
+	type(type), minVal(min), maxVal(max), step(step), containsMin(true), containsMax(true){}
 
 	/**
 	 * Constructs a GenericNumberValidator without an explicit minimum or maximum.
@@ -123,7 +117,8 @@ public:
 	 * Determines whether or not the validator has a maximum value.
 	 *
 	 * @return True if the validator has a maximum value, false otherwise.
-	 */ bool hasMax() const{
+	 */ 
+	bool hasMax() const{
 		return containsMax;
 	}
 
@@ -164,10 +159,12 @@ public:
 			if(!(Teuchos::any_cast<S>(anyValue) >= minVal && Teuchos::any_cast<S>(anyValue) <= maxVal)){
 				std::stringstream oss;
 				std::string msg;
-				oss << "Sorry bud, but it looks like the \"" << paramName << "\"" <<
+				oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
 				" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-				"The value that was entered doesn't fall with in " <<
-				"the range set by the validator.\n\n" <<
+				"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+				"can help you figure out what went wrong.\n\n"
+				"Error: The value that was entered doesn't fall with in " <<
+				"the range set by the validator." <<
 				"Parameter: " << paramName << "\n" <<
 				"Min: " << minVal << "\n" <<
 				"Max: " << maxVal << "\n" <<
@@ -180,9 +177,11 @@ public:
 			const std::string &entryName = entry.getAny(false).typeName();
 			std::stringstream oss;
 			std::string msg;
-			oss << "Sorry bud, but it looks like the " <<
-			"\"" <<paramName << "\" parameter in the \"" << sublistName << "\" didn't quite work out." <<
-			"The value that you entered was the wrong type.\n\n" <<
+			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+			" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+			"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+			"can help you figure out what went wrong.\n\n"
+			"Error: The value that you entered was the wrong type." <<
 			"Parameter: " << paramName << "\n" <<
 			"Type specified: " << entryName << "\n" <<
 			"Type accepted: " << typeid(S).name() << "\n";
@@ -264,7 +263,10 @@ public:
 template <>
 class EnhancedNumberValidator<int> : public GenericNumberValidator<int>{
 public:
-
+	/**
+	 * Construcsts an EnhancedNumberValidator of type int with no
+	 * minimum or maximum.
+	 */
 	EnhancedNumberValidator():GenericNumberValidator<int>(intId, intDefaultStep){}
 
 	/**
@@ -304,7 +306,12 @@ public:
 template<>
 class EnhancedNumberValidator<short> : public GenericNumberValidator<short>{
 public:
+	/**
+	 * Construcsts an EnhancedNumberValidator of type short with no
+	 * minimum or maximum.
+	 */
 	EnhancedNumberValidator():GenericNumberValidator<short>(shortId, shortDefaultStep){}
+
 	/**
 	 * Constructs an EnhancedNumberValidator of type short.
 	 *
@@ -340,6 +347,10 @@ public:
 /*template<long long int>
 class EnhancedNumberValidator<long long int> : public GenericNumberValidator<long long int>{
 public:
+	**
+	 * Construcsts an EnhancedNumberValidator of type long long with no
+	 * minimum or maximum.
+	 *
 	EnhancedNumberValidator():GenericNumberValidator(longlongId, longlongDefaultStep){}
 	**
 	 * Constructs an Enhanced number validator for type long long int.
@@ -378,9 +389,11 @@ public:
 template<>
 class EnhancedNumberValidator<double> : public GenericNumberValidator<double>{
 public:
-	EnhancedNumberValidator():GenericNumberValidator<double>(doubleId, doubleDefaultStep){
-		this->precision = precision;
-	}
+	/**
+	 * Construcsts an EnhancedNumberValidator of type double with no
+	 * minimum or maximum.
+	 */
+	EnhancedNumberValidator():GenericNumberValidator<double>(doubleId, doubleDefaultStep), precision(precision){}
 
 	/**
 	 * Constructs an EnhancedNumberValidator of type double.
@@ -392,10 +405,8 @@ public:
 	 * @param precision This determines the precision at which the number should be displayed in the GUI. 
 	 * NOTE: THIS DOES NOT ACTUALLY SPECIFY THE PRECISION USED IN STORING THE VARIABLE. IT IS FOR GUI PURPOSES ONLY!
 	 */
-	EnhancedNumberValidator(double min, double max, double step=doubleDefaultStep, 
-	int precision=doubleDefaultPrecision):GenericNumberValidator<double>(doubleId, min, max, step){
-		this->precision = precision;
-	}
+	EnhancedNumberValidator(double min, double max, double step=doubleDefaultStep, int precision=doubleDefaultPrecision)
+	:GenericNumberValidator<double>(doubleId, min, max, step), precision(precision){}
 
 
 	/**
@@ -457,9 +468,12 @@ template<>
 class EnhancedNumberValidator<float> : public GenericNumberValidator<float>{
 public:
 
-	EnhancedNumberValidator():GenericNumberValidator<float>(floatId, floatDefaultStep){
-		this->precision = precision;		
-	}
+	/**
+	 * Construcsts an EnhancedNumberValidator of type float with no
+	 * minimum or maximum.
+	 */
+	EnhancedNumberValidator():GenericNumberValidator<float>(floatId, floatDefaultStep), precision(precision){}
+
 	/**
 	 * Constructs an EnhancedNumberValidator of type float.
 	 *
@@ -471,9 +485,7 @@ public:
 	 * NOTE: THIS DOES NOT ACTUALLY SPECIFY THE PRECISION USED IN STORING THE VARIABLE. IT IS FOR GUI PURPOSES ONLY!
 	 */
 	EnhancedNumberValidator(float min, float max, float step=floatDefaultStep, int precision=floatDefaultPrecision)
-	:GenericNumberValidator<float>(floatId, min, max, step){
-		this->precision = precision;		
-	}
+	:GenericNumberValidator<float>(floatId, min, max, step), precision(precision){}
 
 	/**
 	 * Sets the precision specified for the validator. 
@@ -538,7 +550,7 @@ public:
 	 */
 	FileNameValidator():ParameterEntryValidator(){}
 
-	Teuchos::RCP< const Teuchos::Array<std::string> > validStringValues() const{
+	Teuchos::RCP<const Teuchos::Array<std::string> > validStringValues() const{
 		return Teuchos::null;
 	}
 
@@ -548,9 +560,11 @@ public:
 			const std::string &entryName = entry.getAny(false).typeName();
 			std::stringstream oss;
 			std::string msg;
-			oss << "Sorry bud, but it looks like the " << paramName << " parameter in the " <<
-			sublistName << " sublist didn't quite work out." <<
-			"The value you entered was the wrong type\n\n" <<
+			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+			" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+			"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+			"can help you figure out what went wrong.\n\n"
+			"Error: The value that you entered was the wrong type." <<
 			"Parameter: " << paramName << "\n" << 
 			"Type specified: " << entryName << "\n" <<
 			"Type accepted: " << typeid(std::string).name() << "\n";
@@ -577,9 +591,8 @@ public:
 	 * @param prototypeValidator The validator to be used on each
 	 * entry in the array.
 	 */
-	ArrayValidator(Teuchos::RCP<Teuchos::ParameterEntryValidator> prototypeValidator):ParameterEntryValidator(){
-		this->prototypeValidator = prototypeValidator;		
-	}
+	ArrayValidator(Teuchos::RCP<Teuchos::ParameterEntryValidator> prototypeValidator):ParameterEntryValidator(),
+		       prototypeValidator(prototypeValidator){}
 
 	virtual Teuchos::RCP<const Teuchos::Array<std::string> > validStringValues() const{
 		return prototypeValidator->validStringValues();
@@ -606,7 +619,7 @@ public:
 	 * on each entry in the Array.
 	 */
 	ArrayStringValidator<S>(Teuchos::RCP<Teuchos::StringToIntegralParameterEntryValidator<S> > prototypeValidator)
-		:ArrayValidator(prototypeValidator){}
+	:ArrayValidator(prototypeValidator){}
 	
 	/**
 	 * Retruns the prototype validator being used by the ArrayStringValidator.
@@ -634,10 +647,12 @@ public:
 				if(!valid){
 					std::stringstream oss;
 					std::string msg;
-					oss << "Sorry bud, but it looks like the " << paramName <<
-					" parameter in the " << sublistName << " sublist didn't quite work out.\n" <<
-					"The value that was entered at " << i << " in the array does't fall within " <<
-					"the rang set by the validtor.\n\n" <<
+					oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+					" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+					"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+					"can help you figure out what went wrong.\n\n"
+					"Error: The value that was entered at " << i << " in the array does't fall within " <<
+					"the rang set by the validtor.\\n" <<
 					"Parameter: " << paramName << "\n" << 
 					"Value entered at " << i << ": "<<
 					extracted[i] << "\n" <<
@@ -654,9 +669,11 @@ public:
 			const std::string &entryName = entry.getAny(false).typeName();
 			std::stringstream oss;
 			std::string msg;
-			oss << "Sorry bud, but it looks like the " << paramName << " parameter in the " <<
-			sublistName << " sublist didn't quite work out." <<
-			"The value you entered was the wrong type\n\n" <<
+			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+			" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+			"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+			"can help you figure out what went wrong.\n\n"
+			"Error: The value you entered was the wrong type" <<
 			"Parameter: " << paramName << "\n" <<
 			"Type specified: " << entryName << "\n" <<
 			"Type accepted: " << typeid(Teuchos::Array<S>).name() << "\n";
@@ -687,8 +704,8 @@ public:
 	 * @param prototypeValidator The validator to be applied to each entry
 	 * in the array.
 	 */
-	ArrayNumberValidator(Teuchos::RCP<EnhancedNumberValidator<S> > prototypeValidator):
-	ArrayValidator(prototypeValidator){}
+	ArrayNumberValidator(Teuchos::RCP<EnhancedNumberValidator<S> > prototypeValidator)
+	:ArrayValidator(prototypeValidator){}
 
 	/**
 	 * Retruns the prototype validator being used by the ArrayNumberValidator.
@@ -707,10 +724,12 @@ public:
 				if(!( extracted[i] >= getPrototype()->min() &&  extracted[i] <= getPrototype()->max())){
 					std::stringstream oss;
 					std::string msg;
-					oss << "Sorry bud, but it looks like the \"" << paramName << "\"" <<
+					oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
 					" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-					"The value that was entered at \"" << i << "\" in the array does't fall within " <<
-					"the rang set by the validtor.\n\n" <<
+					"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+					"can help you figure out what went wrong.\n\n"
+					"Error: The value that was entered at \"" << i << "\" in the array does't fall within " <<
+					"the rang set by the validtor." <<
 					"Parameter: " << paramName << "\n" <<
 					"Min: " << getPrototype()->min() << "\n" <<
 					"Max: " << getPrototype()->max() << "\n" <<
@@ -725,9 +744,11 @@ public:
 			const std::string &entryName = entry.getAny(false).typeName();
 			std::stringstream oss;
 			std::string msg;
-			oss << "Sorry bud, but it looks like the \"" << paramName << "\" parameter in the " <<
-			sublistName << "\" sublist didn't quite work out." <<
-			"The value you entered was the wrong type\n" <<
+			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+			" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+			"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+			"can help you figure out what went wrong.\n\n"
+			"Error: The value you entered was the wrong type\n" <<
 			"Parameter: " << paramName << "\n" <<
 			"Type specified: " << entryName << "\n" <<
 			"Type accepted: " << typeid(Teuchos::Array<S>).name() << "\n";
@@ -757,7 +778,7 @@ public:
 	 * @param prototypeValidator The validator to be applied to each entry in the array.
 	 */
 	ArrayFileNameValidator(Teuchos::RCP<FileNameValidator> prototypeValidator)
-		:ArrayValidator(prototypeValidator){}
+	:ArrayValidator(prototypeValidator){}
 
 	/**
 	 * Retruns the prototype validator being used by the ArrayFileNameValidator.
@@ -774,9 +795,11 @@ public:
 			const std::string &entryName = entry.getAny(false).typeName();
 			std::stringstream oss;
 			std::string msg;
-			oss << "Sorry bud, but it looks like the " << paramName << " parameter in the " <<
-			sublistName << " sublist didn't quite work out." <<
-			"The value you entered was the wrong type\n\n" <<
+			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+			" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+			"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+			"can help you figure out what went wrong.\n\n"
+			"Error: The value you entered was the wrong type" <<
 			"Parameter: " << paramName << "\n" <<
 			"Type specified: " << entryName << "\n" <<
 			"Type accepted: " << anyValue.typeName() << "\n";

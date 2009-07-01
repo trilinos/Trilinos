@@ -113,47 +113,6 @@ protected:
 	 */
 	void closeEvent(QCloseEvent *event);
 
-private slots:
-	/**
-	 * Creates a new stratimikos solver
-	 */
-	void resetModel();
-
-	/**
-	 * Saves the current solver settings to a user specified file.
-	 */
-	bool saveFileAs();
-
-	/**
-	 * Saves the current solver to the file the user has already specified.
-	 */
-	void saveFile();
-
-	/**
-	 * Loads a solver the user was previously working on and had saved.
-	 */
-	void loadFile();
-
-	/**
-	 * Asks the user whether or not they would like to currently save the file they are working on.
-	 * Should be used when the user has modified the file and is about to perform an action that would cause those modifiation to be lost.
-	 */
-	bool saveCurrentUnsavedFile();
-
-	/**
-	 * Loads a document from the set of recent documents
-	 */
-	void loadRecentDoc();
-
-	/**
-	 * Shows information about the program.
-	 */
-	void showAbout();
-
-	/**
-	 * Starts a search for a parituclar Parameter or ParameterList.
-	 */
-	void initiateSearch();
 
 private:
 	/**
@@ -227,6 +186,48 @@ private:
 	 * Currently under developement
 	 */
 	void updateRecentDocsMenu();
+
+private slots:
+	/**
+	 * Creates a new stratimikos solver
+	 */
+	void resetModel();
+
+	/**
+	 * Saves the current solver settings to a user specified file.
+	 */
+	bool saveFileAs();
+
+	/**
+	 * Saves the current solver to the file the user has already specified.
+	 */
+	void saveFile();
+
+	/**
+	 * Loads a solver the user was previously working on and had saved.
+	 */
+	void loadFile();
+
+	/**
+	 * Asks the user whether or not they would like to currently save the file they are working on.
+	 * Should be used when the user has modified the file and is about to perform an action that would cause those modifiation to be lost.
+	 */
+	bool saveCurrentUnsavedFile();
+
+	/**
+	 * Loads a document from the set of recent documents
+	 */
+	void loadRecentDoc();
+
+	/**
+	 * Shows information about the program.
+	 */
+	void showAbout();
+
+	/**
+	 * Starts a search for a parituclar Parameter or ParameterList.
+	 */
+	void initiateSearch();
 };
 
 

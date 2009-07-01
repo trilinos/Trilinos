@@ -21,18 +21,24 @@ QStringList getValues(QString& values){
 
 QString determineArrayType(Teuchos::ParameterEntry *parameter){
 	Teuchos::any anyArray = parameter->getAny();
-	if(anyArray.type() == typeid(Teuchos::Array<int>))
+	if(anyArray.type() == typeid(Teuchos::Array<int>)){
 		return intId;
-	else if(anyArray.type() == typeid(Teuchos::Array<short>))
+	}
+	else if(anyArray.type() == typeid(Teuchos::Array<short>)){
 		return shortId;
-	else if(anyArray.type() == typeid(Teuchos::Array<double>))
+	}
+	else if(anyArray.type() == typeid(Teuchos::Array<double>)){
 		return doubleId;
-	else if(anyArray.type() == typeid(Teuchos::Array<float>))
+	}
+	else if(anyArray.type() == typeid(Teuchos::Array<float>)){
 		return floatId;
-	else if(anyArray.type() == typeid(Teuchos::Array<std::string>))
+	}
+	else if(anyArray.type() == typeid(Teuchos::Array<std::string>)){
 		return stringId;
-	else
+	}
+	else{
 		return unrecognizedId;		
+	}
 }
 
 }

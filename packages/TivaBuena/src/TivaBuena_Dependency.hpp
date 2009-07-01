@@ -25,7 +25,6 @@ public:
 	/**
 	 * Enum classifying various types of dependencies.
 	 */
-	//enum Type {StringVisualDep, BoolVisualDep, NumVisualDep, NumValiAspDep, NumArrayLengthDep, StringValiDep, BoolValiDep, RangeValiDep};
 	enum Type{VisualDep, ValidatorDep, NumberValidatorAspectDep, NumberArrayLengthDep};
 
 	/**
@@ -41,18 +40,18 @@ public:
 	std::string dependentName, Teuchos::RCP<Teuchos::ParameterList> dependentParentList, Type type);
 
 	/**
-	 * Gets the dependet of the dependency.
-	 *
-	 * @return The dependent of the dependency.
-	 */
-	const Teuchos::ParameterEntry* getDependent() const;
-
-	/**
 	 * Gets the dependee of the dependency.
 	 *
 	 *  @return The dependee of the dependency.
 	 */
 	const Teuchos::ParameterEntry* getDependee() const;
+
+	/**
+	 * Gets the dependet of the dependency.
+	 *
+	 * @return The dependent of the dependency.
+	 */
+	const Teuchos::ParameterEntry* getDependent() const;
 
 	/**
 	 * Determines whether or not the potentialParentList constains the dependee's parent

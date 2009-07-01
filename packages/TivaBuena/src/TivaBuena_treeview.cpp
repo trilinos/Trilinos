@@ -18,13 +18,15 @@ TreeView::TreeView(TreeModel *treeModel, Delegate *delegate):QTreeView(){
 }
 
 void TreeView::showRow(int row, const QModelIndex& parent){
-	if(isRowHidden(row, parent))
+	if(isRowHidden(row, parent)){
 		setRowHidden(row, parent, false);
+	}
 }
 
 void TreeView::hideRow(int row, const QModelIndex& parent){
-	if(!isRowHidden(row, parent))
+	if(!isRowHidden(row, parent)){
 		setRowHidden(row, parent, true);
+	}
 }
 
 void TreeView::handleBadValue(QModelIndex badValueIndex, QString message){
@@ -33,8 +35,9 @@ void TreeView::handleBadValue(QModelIndex badValueIndex, QString message){
 		setCurrentIndex(badValueIndex);
 		edit(badValueIndex);
 	}
-	else if(!isRowHidden(badValueIndex.row(), badValueIndex.parent()))
+	else if(!isRowHidden(badValueIndex.row(), badValueIndex.parent())){
 		invalidInicies.enqueue(invalidIndex(badValueIndex, message));
+	}
 }
 
 void TreeView::checkForOtherBadValues(){

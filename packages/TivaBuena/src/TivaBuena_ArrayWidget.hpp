@@ -34,9 +34,7 @@ public:
 	 * @param type The type of the array.
 	 * @param parent The parent widget.
 	 */
-	GenericArrayWidget(const QModelIndex index, QString type, QWidget *parent=0)
-	:QDialog(parent)
-	{
+	GenericArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):QDialog(parent){
 		this->index = index;
 		this->model = (TreeModel*)index.model();
 		this->baseArray = model->getArray<S>(index);
@@ -121,6 +119,7 @@ protected:
 	 * The validator being used on the array.
 	 */
 	Teuchos::RCP<const Teuchos::ParameterEntryValidator> entryValidator;	
+
 	/**
 	 * Sets up the layout for the arrayContainer, including adding what ever editing
 	 * widget should be used for the particual type of array.
@@ -152,9 +151,10 @@ private:
 	 * The type of array.
 	 */
 	QString type;
-
-	QString labelPrototype;
 	
+	/**
+	 * Gets the widget to be used as an editor for each entry in the array.
+	 */
 	virtual QWidget* getEditorWidget() = 0;
 };
 
@@ -172,9 +172,7 @@ public:
 	 * @param type The type of the array.
 	 * @param parent The parent widget.
 	 */
-	IntArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):
-		GenericArrayWidget<int>(index, type, parent)
-	{
+	IntArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):GenericArrayWidget<int>(index, type, parent){
 		setupArrayLayout();
 		initializeValues(index.model()->data(index).toString()); 
 	}
@@ -207,8 +205,7 @@ private:
 		QSpinBox *newSpin = new QSpinBox(this);
 		Teuchos::RCP<const EnhancedNumberValidator<int> > validator = Teuchos::null;
 		if(!entryValidator.is_null()){
-			validator = Teuchos::rcp_dynamic_cast<
-				  const ArrayNumberValidator<int> >(entryValidator,true)->getPrototype();
+			validator = Teuchos::rcp_dynamic_cast<const ArrayNumberValidator<int> >(entryValidator,true)->getPrototype();
 		}
 		EnhancedNumberValidator<int>::applyToSpinBox(validator, newSpin);
 		return newSpin;
@@ -230,9 +227,7 @@ public:
 	 * @param type The type of the array.
 	 * @param parent The parent widget.
 	 */
-	ShortArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):
-		GenericArrayWidget<short>(index, type, parent)
-	{
+	ShortArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):GenericArrayWidget<short>(index, type, parent){
 		setupArrayLayout();
 		initializeValues(index.model()->data(index).toString()); 
 	}
@@ -263,9 +258,9 @@ private:
 	QWidget* getEditorWidget(){
 		QSpinBox *newSpin = new QSpinBox(this);
 		Teuchos::RCP<const EnhancedNumberValidator<short> > validator = Teuchos::null;
-		if(!entryValidator.is_null())
-			validator = Teuchos::rcp_dynamic_cast<
-				  const ArrayNumberValidator<short> >(entryValidator,true)->getPrototype();
+		if(!entryValidator.is_null()){
+			validator = Teuchos::rcp_dynamic_cast<const ArrayNumberValidator<short> >(entryValidator,true)->getPrototype();
+		}
 		EnhancedNumberValidator<short>::applyToSpinBox(validator, newSpin);
 		return newSpin;
 	}
@@ -286,9 +281,7 @@ public:
 	 * @param type The type of the array.
 	 * @param parent The parent widget.
 	 *
-	LongLongArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):
-		GenericArrayWidget<long long int>(index, type, parent)
-	{
+	LongLongArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):GenericArrayWidget<long long int>(index, type, parent){
 		setupArrayLayout();
 		initializeValues(index.model()->data(index).toString()); 
 	}
@@ -319,9 +312,9 @@ private:
 	QWidget* getEditorWidget(){
 		QSpinBox *newSpin = new QwwLongSpinBox(this);
 		Teuchos::RCP<const EnhancedNumberValidator<long long int> > validator = null;
-		if(!entryValidator.is_null())
-			validator = Teuchos::rcp_dynamic_cast<
-				const EnhancedNumberValidator<long long int> >(entryValidator,true);
+		if(!entryValidator.is_null()){
+			validator = Teuchos::rcp_dynamic_cast<const EnhancedNumberValidator<long long int> >(entryValidator,true);
+		}
 		EnhancedNumberValidator<long long int>::applyToSpinBox(validator, newSpin);
 		return newSpin;
 	}
@@ -342,9 +335,7 @@ public:
 	 * @param type The type of the array.
 	 * @param parent The parent widget.
 	 */
-	DoubleArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):
-		GenericArrayWidget<double>(index, type, parent)
-	{
+	DoubleArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):GenericArrayWidget<double>(index, type, parent){
 		setupArrayLayout();
 		initializeValues(index.model()->data(index).toString()); 
 	}
@@ -374,9 +365,9 @@ private:
 	QWidget* getEditorWidget(){
 		QDoubleSpinBox *newSpin = new QDoubleSpinBox(this);
 		Teuchos::RCP<const EnhancedNumberValidator<double> > validator = Teuchos::null;
-		if(!entryValidator.is_null())
-			validator = Teuchos::rcp_dynamic_cast<
-				  const ArrayNumberValidator<double> >(entryValidator,true)->getPrototype();
+		if(!entryValidator.is_null()){
+			validator = Teuchos::rcp_dynamic_cast<const ArrayNumberValidator<double> >(entryValidator,true)->getPrototype();
+		}
 		EnhancedNumberValidator<double>::applyToSpinBox(validator, newSpin);
 		return newSpin;
 	}
@@ -399,9 +390,7 @@ public:
 	 * @param type The type of the array.
 	 * @param parent The parent widget.
 	 */
-	FloatArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):
-		GenericArrayWidget<float>(index, type, parent)
-	{
+	FloatArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):GenericArrayWidget<float>(index, type, parent){
 		setupArrayLayout();
 		initializeValues(index.model()->data(index).toString()); 
 	}
@@ -432,9 +421,9 @@ private:
 	QWidget* getEditorWidget(){
 		QDoubleSpinBox *newSpin = new QDoubleSpinBox(this);
 		Teuchos::RCP<const EnhancedNumberValidator<float> > validator = Teuchos::null;
-		if(!entryValidator.is_null())
-			validator = Teuchos::rcp_dynamic_cast<
-				  const ArrayNumberValidator<float> >(entryValidator,true)->getPrototype();
+		if(!entryValidator.is_null()){
+			validator = Teuchos::rcp_dynamic_cast<const ArrayNumberValidator<float> >(entryValidator,true)->getPrototype();
+		}
 		EnhancedNumberValidator<float>::applyToSpinBox(validator, newSpin);
 		return newSpin;
 	}
@@ -454,9 +443,7 @@ public:
 	 * @param type The type of the array.
 	 * @param parent The parent widget.
 	 */
-	StringArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):
-		GenericArrayWidget<std::string>(index, type, parent)
-	{
+	StringArrayWidget(const QModelIndex index, QString type, QWidget *parent=0):GenericArrayWidget<std::string>(index, type, parent){
 		setupArrayLayout();
 		initializeValues(index.model()->data(index).toString()); 
 	}
@@ -469,14 +456,18 @@ public:
 	std::string saveData(){
 		Teuchos::Array<std::string> toReturn;
 		for(WVector::iterator it = widgetVector.begin(); it != widgetVector.end(); it++){
-			if(Teuchos::is_null(entryValidator))
+			if(Teuchos::is_null(entryValidator)){
 				toReturn.push_back(((QLineEdit*)(*it))->text().toStdString());
-			else if(!Teuchos::is_null(Teuchos::rcp_dynamic_cast<const ArrayFileNameValidator>(entryValidator)))
+			}
+			else if(!Teuchos::is_null(Teuchos::rcp_dynamic_cast<const ArrayFileNameValidator>(entryValidator))){
 				toReturn.push_back(((FilenameWidget*)(*it))->getCurrentFileName().toStdString());
-			else if(entryValidator->validStringValues()->size() !=0)
+			}
+			else if(entryValidator->validStringValues()->size() !=0){
 				toReturn.push_back(((QComboBox*)(*it))->currentText().toStdString());
-			else
+			}
+			else{
 				toReturn.push_back(((QLineEdit*)(*it))->text().toStdString());
+			}
 		}
 		return toReturn.toString();
 	}	
@@ -485,22 +476,25 @@ public:
 		QStringList valueList = getValues(values); 
 		int i =0;
 		for(WVector::iterator it = widgetVector.begin(); it != widgetVector.end(); it++, i++){
-			if(Teuchos::is_null(entryValidator))
+			if(Teuchos::is_null(entryValidator)){
 				static_cast<QLineEdit*>(*it)->setText(valueList.at(i));
-			else if(!Teuchos::is_null(Teuchos::rcp_dynamic_cast<const ArrayFileNameValidator>(entryValidator)))
+			}
+			else if(!Teuchos::is_null(Teuchos::rcp_dynamic_cast<const ArrayFileNameValidator>(entryValidator))){
 				static_cast<FilenameWidget*>(*it)->setCurrentFileName(valueList.at(i));
+			}
 			else if(entryValidator->validStringValues()->size() !=0){
 				int currentIndex = static_cast<QComboBox*>(*it)->findText(valueList.at(i));
 				if(currentIndex >= 0){
-				static_cast<QComboBox*>(*it)->setCurrentIndex(
-					static_cast<QComboBox*>(*it)->findText(valueList.at(i)));
+					static_cast<QComboBox*>(*it)->setCurrentIndex(static_cast<QComboBox*>(*it)->findText(valueList.at(i)));
 				}
 			}
-			else
+			else{
 				static_cast<QLineEdit*>(*it)->setText(valueList.at(i));
+			}
 		}
 
 	}
+
 private:
 	QWidget* getEditorWidget(){
 		if(Teuchos::is_null(entryValidator)){
