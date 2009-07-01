@@ -395,6 +395,9 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
     max_pair = 4;
   }
 
+  /* Only create search buffers if max_pair > 0.  If max_pair is zero, then
+   * there are no edges, and there will be no need to count neighboring partitions.
+   */
   if (max_pair){
     partNumEntries = (ENTRY *)ZOLTAN_MALLOC(sizeof(ENTRY) * max_pair);
     keys = (char *)ZOLTAN_MALLOC(sizeof(char) * max_pair * MAX_SIZE_KEY_BUFFER);
