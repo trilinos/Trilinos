@@ -31,16 +31,15 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
-#include "Kokkos_MultiVector.hpp"
-#include "Kokkos_DefaultArithmetic.hpp"
-#include "Kokkos_Vector.hpp"
+#include "Kokkos_CrsMatrix.hpp"
+#include "Kokkos_DefaultSparseMultiply.hpp"
 #include "Kokkos_Version.hpp"
 
 namespace {
 
   using Kokkos::MultiVector;
-  using Kokkos::Vector;
   using Kokkos::DefaultArithmetic;
+  using Kokkos::DefaultSparseMultiply;
 
   int N = 1000;
 
@@ -57,35 +56,48 @@ namespace {
   // UNIT TESTS
   // 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, Scale, Scalar, Ordinal )
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, SparseMultiply, Scalar, Ordinal )
   {
-    typedef MultiVector<Scalar,Ordinal,Node> MV;
-    const int numVecs = 5;
-    MV A, B;
-    typename Node::template buffer<Scalar>::buffer_t 
-      bufA = A.getNode().template allocBuffer<Scalar>(numVecs*N),
-      bufB = B.getNode().template allocBuffer<Scalar>(numVecs*N);
-    A.initializeValues(N,numVecs,bufA,N);
-    B.initializeValues(N,numVecs,bufB,N);
-    DefaultArithmetic<MV>::Multiply(A,B);
-    DefaultArithmetic<MV>::Divide(A,B);
-    A.getNode().template freeBuffer<Scalar>(bufA);
-    A.getNode().template freeBuffer<Scalar>(bufB);
-  }
+    // generate tridiagonal matrix:
+    // [ 1 -1                   ]
+    // [-1  2  -1               ]
+    // [   -1   2  -1           ]
+    // [                        ]
+    // [                -1  2 -1]
+    // [                   -1  1]
+    if (N<2) return;
+    CrsMatrix<Scalar,Ordinal,Node> A;
+    TEST_EQUALITY_CONST(A.getNumRows(), 0);
+    TEST_EQUALITY_CONST(A.getNumEntries(), 0);
+    Node &node = A.getNode();
+    std::vector<Ordinal> NNZperRow(N);
+    NNZperRow[0] = 2;
+    for (int i=1; i<N-1; ++i) NNZperRow[i] = 3;
+    NNZperRow[N-1] = 2;
+    // fill matrix
+    {
+      Ordinal inds[3];
+      Scalar vals[] = {-1,2,-1};
+      A.initializeProfile(N,&NNZperRow[0]);
+      for (int i=1; i<N-1; ++i) {
+        inds[0] = i-1; inds[1] = i; inds[2] = i+1;
+        A.insertEntries(i,3,inds,vals);
+      }
+      vals[1] = 1;
+      inds[0] = 0;   inds[1] = 1;   A.insertEntries(0  ,2,inds,vals+1);
+      inds[0] = N-2; inds[1] = N-1; A.insertEntries(N-1,2,inds,vals  );
+    }
+    DefaultSparseMultiply<Scalar,Ordinal,Node> dsm;
+    dsm.initializeStructure(A);
+    dsm.initializeValeus(A);
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, Add, Scalar, Ordinal )
-  {
-    Vector<Scalar,Ordinal,Node> a;
-    typename Node::template buffer<Scalar>::buffer_t 
-      buf = a.getNode().template allocBuffer<Scalar>(N);
-    a.initializeValues(N,buf,1);
-    // FINISH
-    a.getNode().template freeBuffer<Scalar>(buf);
+    MultiVector<Scalar,Ordinal,Node> X, AX;
+    DefaultArithmetic<Scalar,Ordinal,Node>::Init(1.0,X);
+    dsm.Apply(X,AX);
   }
-
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Scale, SCALAR, ORDINAL ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsMatrix, SparseMultiply, SCALAR, ORDINAL ) \
 
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \

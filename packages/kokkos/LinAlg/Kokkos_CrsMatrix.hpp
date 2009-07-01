@@ -65,10 +65,10 @@ namespace Kokkos {
     //@{
 
     //! Initialize structure of matrix
-    void initializeStructure(int N, Ordinal nnzEachRow);
+    void initializeProfile(int N, Ordinal nnzEachRow);
 
     //! Initialize structure of matrix
-    void initializeStructure(int N, const Ordinal *nnzPerRow);
+    void initializeProfile(int N, const Ordinal *nnzPerRow);
 
     //@}
 
@@ -155,7 +155,7 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  void CrsMatrix<Scalar,Ordinal,Node>::initializeStructure(int N, Ordinal nnzEachRow)
+  void CrsMatrix<Scalar,Ordinal,Node>::initializeProfile(int N, Ordinal nnzEachRow)
   {
     numRows_ = N;
     if (numRows_ > 0) {
@@ -176,7 +176,7 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  void CrsMatrix<Scalar,Ordinal,Node>::initializeStructure(int N, const Ordinal *nnzPerRow)
+  void CrsMatrix<Scalar,Ordinal,Node>::initializeProfile(int N, const Ordinal *nnzPerRow)
   {
     numRows_ = N;
     if (numRows_ > 0) {

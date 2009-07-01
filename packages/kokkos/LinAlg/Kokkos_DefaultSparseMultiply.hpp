@@ -39,9 +39,12 @@
 
 namespace Kokkos {
 
-  template<class Scalar, class Ordinal, class Node>
+  template<class MAT, class MV>
   class DefaultSparseMultiply {
   public:
+    typedef typename MAT::ScalarType  ScalarType;
+    typedef typename MAT::OrdinalType OrdinalType;
+    typedef typename MAT::NodeType    NodeType;
 
     //! @name Constructors/Destructor
 
@@ -60,12 +63,10 @@ namespace Kokkos {
     //@{
 
     //! Initialize structure of matrix
-    template <class Matrix>
-    int initializeStructure(const Matrix& A);
+    int initializeStructure(const MAT& A);
 
     //! Initialize values of matrix
-    template <class Matrix>
-    int initializeValues(const Matrix& A);
+    int initializeValues(const MAT& A);
 
     //@}
 
@@ -74,7 +75,7 @@ namespace Kokkos {
     //@{
 
     //! Applies the matrix to a MultiVector.
-    int apply(const MultiVector<Scalar,Ordinal,Node> &X, MultiVector<Scalar,Ordinal,Node> &Y) const;
+    int Apply(const MV &X, MV &Y) const;
 
     //@}
 
@@ -90,32 +91,30 @@ namespace Kokkos {
     typename Node::template buffer<const Scalar>::buffer_t values_;
   };
 
-  template <class Scalar, class Ordinal, class Node>
-  DefaultSparseMultiply::DefaultSparseMultiply()
-  {
-  }
+  template <class MAT, class MV>
+  DefaultSparseMultiply<MAT>::DefaultSparseMultiply()
+  {}
 
-  template <class Scalar, class Ordinal, class Node>
-  DefaultSparseMultiply::~DefaultSparseMultiply()
-  {
-  }
+  template <class MAT, class MV>
+  DefaultSparseMultiply<MAT>::~DefaultSparseMultiply()
+  {}
 
-  template <class Scalar, class Ordinal, class Node>
-  template <class Matrix>
-  int DefaultSparseMultiply::initializeStructure(const Matrix& A)
+  template <class MAT, class MV>
+  int DefaultSparseMultiply<MAT>::initializeStructure(const MAT& A)
   {
+    TEST_FOR_EXCEPT(true);
     return 0;
   }
 
-  template <class Scalar, class Ordinal, class Node>
-  template <class Matrix>
-  int DefaultSparseMultiply::initializeValues(const Matrix& A)
+  template <class MAT, class MV>
+  int DefaultSparseMultiply<MAT>::initializeValues(const MAT& A)
   {
+    TEST_FOR_EXCEPT(true);
     return 0;
   }
 
-  template <class Scalar, class Ordinal, class Node>
-  int DefaultSparseMultiply::apply(const MultiVector<Scalar,Ordinal,Node> &X, MultiVector<Scalar,Ordinal,Node> &Y) const
+  template <class MAT, class MV>
+  int DefaultSparseMultiply<MAT>::Apply(const MultiVector<Scalar,Ordinal,Node> &X, MultiVector<Scalar,Ordinal,Node> &Y) const
   {
     return 0;
   }

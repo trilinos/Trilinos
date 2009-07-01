@@ -33,10 +33,45 @@
 #include <Teuchos_TypeNameTraits.hpp>
 #include <stdexcept>
 
-#include "Kokkos_DefaultScaleOp.hpp"
 #include "Kokkos_MultiVector.hpp"
 
+#ifndef KERNEL_PREFIX 
+  #define KERNEL_PREFIX
+#endif
+
 namespace Kokkos {
+
+  template <class Scalar, class Node>
+  struct InitOp {
+    typename Node::template buffer<Scalar>::buffer_t x;
+    Scalar alpha;
+    inline KERNEL_PREFIX void execute(int i) const
+    {
+      x[i] = alpha;
+    }
+  };
+
+  template <class Scalar, class Node>
+  struct ScaleOp {
+    typename Node::template buffer<const Scalar>::buffer_t x;
+    typename Node::template buffer<      Scalar>::buffer_t y;
+    inline KERNEL_PREFIX void execute(int i) const
+    {
+      Scalar tmp = y[i];
+      y[i] = x[i]*tmp;
+    }
+  };
+
+  template <class Scalar, class Node>
+  struct RecipScaleOp {
+    typename Node::template buffer<const Scalar>::buffer_t x;
+    typename Node::template buffer<      Scalar>::buffer_t y;
+    inline KERNEL_PREFIX void execute(int i) const
+    {
+      Scalar tmp = y[i];
+      y[i] = x[i]*tmp;
+    }
+  };
 
   template <class MV>
   class DefaultArithmetic {
@@ -55,6 +90,30 @@ namespace Kokkos {
   template <class Scalar, class Ordinal, class Node>
   class DefaultArithmetic<MultiVector<Scalar,Ordinal,Node> > {
     public:
+
+      //! Initialize multivector to constant value.
+      static void Init(Scalar alpha, MultiVector<Scalar,Ordinal,Node> &A) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        Node &node = A.getNode();
+        if (A.getStride() == nR) {
+          // one kernel invocation for whole multivector
+          InitOp<Scalar,Node> wdp;
+          wdp.x = A.getValues(0);
+          wdp.alpha = alpha;
+          node.template parallel_for<InitOp<Scalar,Node> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          InitOp<Scalar,Node> wdp;
+          wdp.alpha = alpha;
+          for (Ordinal j=0; j<nC; ++j) {
+            wdp.x = A.getValues(j);
+            node.template parallel_for<InitOp<Scalar,Node> >(0,nR,wdp);
+          }
+        }
+      }
+
       //! Multiply one MultiVector by another, element-wise: B *= A
       static void Multiply(const MultiVector<Scalar,Ordinal,Node> &A, MultiVector<Scalar,Ordinal,Node> &B) {
         const Ordinal nR = A.getNumRows();
