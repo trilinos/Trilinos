@@ -208,6 +208,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   int *partNums = NULL, *partCount=NULL;
 
   ENTRY *partNumEntries=NULL, *foundEntry=NULL; 
+  ENTRY tempEntry;
 
   float obj_edge_weights;
 
@@ -216,6 +217,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   float *cutn=NULL, *cutl=NULL, *cut_wgt=NULL;
 
   char *keys = NULL;
+  char tempBuf[MAX_SIZE_KEY_BUFFER];
 
   GRAPH_EVAL localEval;
 
@@ -466,18 +468,27 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
          * that it has neighbors in
          */
 
-        offset = num_pairs * MAX_SIZE_KEY_BUFFER;
-        sprintf(keys + offset, "%d %d", obj_part, nbor_part);
-        partNumEntries[num_pairs].key = keys + offset;
-        partNumEntries[num_pairs].data = NULL;
+        sprintf(tempBuf, "%d %d", obj_part, nbor_part);
+        tempEntry.key = tempBuf;
+        tempEntry.data = NULL;
 
-        foundEntry = hsearch(partNumEntries[num_pairs], FIND);
+        foundEntry = hsearch(tempEntry, FIND);
 
         if (!foundEntry){
+          if (num_pairs == max_pair){
+            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Incorrect calculation of max_pair\n");
+            ierr = ZOLTAN_FATAL;
+            goto End;
+          }
+          offset = num_pairs * MAX_SIZE_KEY_BUFFER;
+          strcpy(keys + offset, tempBuf);
+          partNumEntries[num_pairs].key = keys + offset;
+          partNumEntries[num_pairs].data = NULL;
+
           hsearch(partNumEntries[num_pairs], ENTER);  /* add this pair */
+
           partNums[num_pairs*2] = obj_part;
           partNums[num_pairs*2 + 1] = nbor_part;
-
           num_pairs++;  /* number of unique obj_part/nbor_part pairs */
         }
 
