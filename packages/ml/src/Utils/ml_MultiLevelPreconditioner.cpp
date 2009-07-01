@@ -1766,9 +1766,9 @@ ReComputePreconditioner()
   try{SetSmoothers();}
   catch(...) {
     if (Comm().MyPID() == 0) {
-      fprintf(stderr,"\n**************************\n");
-      fprintf(stderr,"Problem setting smoothers.\n");
-      fprintf(stderr,"****************************\n\n");
+      fprintf(stderr,"%s","\n**************************\n");
+      fprintf(stderr,"%s","Problem setting smoothers.\n");
+      fprintf(stderr,"%s","****************************\n\n");
       ML_CHK_ERR(-1);
     }
   }
