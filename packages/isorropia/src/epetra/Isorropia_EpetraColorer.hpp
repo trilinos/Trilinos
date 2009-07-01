@@ -113,8 +113,31 @@ public:
 
   Provide access on the coloring thru the EpetraEXT color class @c Epetra_MapColoring.
   This methods requires EpetraEXT support.
+
+  \deprecated It's recommended to use @see generateRowMapColoring() to this.
   */
-  Teuchos::RCP<Epetra_MapColoring> generateMapColoring() ;
+  __deprecated Teuchos::RCP<Epetra_MapColoring> generateMapColoring() {
+    return generateRowMapColoring();
+  }
+
+
+  /** Generate an @c Epetra_MapColoring object corresponding of rows color.
+
+  Provide access on the coloring thru the EpetraEXT color class @c Epetra_MapColoring.
+  This methods requires EpetraEXT support.
+  */
+  Teuchos::RCP<Epetra_MapColoring> generateRowMapColoring() ;
+
+  /** Generate an @c Epetra_MapColoring object corresponding of columns color.
+
+  Provide access on the coloring thru the EpetraEXT color class @c Epetra_MapColoring.
+  This methods requires EpetraEXT support.
+  */
+  Teuchos::RCP<Epetra_MapColoring> generateColMapColoring() ;
+
+private:
+  Teuchos::RCP<const Epetra_BlockMap> colmap_;
+
 #endif /* HAVE_EPETRAEXT */
 
 };//class Colorer

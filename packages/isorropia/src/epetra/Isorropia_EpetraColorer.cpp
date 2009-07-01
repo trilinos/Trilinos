@@ -66,6 +66,11 @@ Colorer::Colorer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
   Operator(input_graph, paramlist, 1){
+
+#ifdef HAVE_EPETRAEXT
+  colmap_ = Teuchos::rcp(&(input_graph->ColMap()),false);
+#endif /* HAVE_EPETRAEXT */
+
 #ifdef HAVE_ISORROPIA_ZOLTAN
   lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph, Library::graph_input_));
 #else /* HAVE_ISORROPIA_ZOLTAN */
@@ -79,7 +84,11 @@ Colorer::Colorer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 Colorer::Colorer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
-  Operator (input_matrix, paramlist, 1) { 
+  Operator (input_matrix, paramlist, 1) {
+
+#ifdef HAVE_EPETRAEXT
+  colmap_ = Teuchos::rcp(&(input_matrix->RowMatrixColMap()),false);
+#endif /* HAVE_EPETRAEXT */
 
 #ifdef HAVE_ISORROPIA_ZOLTAN
   lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix, Library::graph_input_));
@@ -109,7 +118,7 @@ Colorer::color(bool force_coloring)
 #ifdef HAVE_EPETRAEXT
 
 Teuchos::RCP<Epetra_MapColoring>
-Colorer::generateMapColoring()
+Colorer::generateRowMapColoring()
 {
   Teuchos::RCP<Epetra_MapColoring> colorMap;
 
@@ -121,6 +130,24 @@ Colorer::generateMapColoring()
   }
   return (colorMap);
 }
+
+
+Teuchos::RCP<Epetra_MapColoring>
+Colorer::generateColMapColoring()
+{
+  Teuchos::RCP<Epetra_MapColoring> rowColorMap = generateRowMapColoring();
+
+  // Color map has colored rows -- need colored columns
+  Epetra_Import importer(*colmap_, *input_map_);
+
+  Teuchos::RCP<Epetra_MapColoring> colorMap =
+    Teuchos::rcp(new Epetra_MapColoring(*colmap_));
+
+  colorMap->Import(*rowColorMap, importer, Insert);
+
+  return (colorMap);
+}
+
 
 #endif /* HAVE_EPETRAEXT */
 
