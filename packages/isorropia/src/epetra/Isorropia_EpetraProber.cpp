@@ -104,7 +104,7 @@ int Prober::probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix){
 
   /* Grab the color data */
   Epetra_MapColoring * col;
-  Teuchos::RCP<Epetra_MapColoring> col_=colorer_->generateMapColoring();
+  Teuchos::RCP<Epetra_MapColoring> col_=colorer_->generateRowMapColoring();
   if(out_matrix.Comm().NumProc() == 1)
     col=&(*col_);
   else {

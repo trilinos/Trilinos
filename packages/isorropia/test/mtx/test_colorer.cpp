@@ -189,10 +189,13 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
 
 #ifdef HAVE_EPETRAEXT
-  Teuchos::RCP<Epetra_MapColoring> colorMap = colorer->generateMapColoring();
+  Teuchos::RCP<Epetra_MapColoring> colorMap = colorer->generateRowMapColoring();
   int numberColorsExt;
 
   numberColorsExt = colorMap->MaxNumColors();
+
+
+  colorMap = colorer->generateColMapColoring();
 
 //   if (numberColorsExt >= 10)
 //     ERRORRETURN(verbose, "Too many colors");
