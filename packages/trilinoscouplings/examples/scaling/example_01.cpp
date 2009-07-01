@@ -36,6 +36,7 @@
     \code   ./example_01.exe 10 10 10 false 1.0 10.0 0.0 1.0 -1.0 1.0 -1.0 1.0 \endcode
 */
 
+
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_FieldContainer.hpp"
@@ -50,7 +51,12 @@
 // Epetra includes
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
+#else
+#include "Epetra_SerialComm.h"
+#endif
+
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_LinearProblem.h"
@@ -110,7 +116,9 @@ int evalGradDivu(double & gradDivu0, double & gradDivu1, double & gradDivu2, dou
 
 int main(int argc, char *argv[]) {
 
+#ifdef HAVE_MPI
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+#endif
 
    //Check number of arguments
     TEST_FOR_EXCEPTION( ( argc < 13 ),
@@ -642,7 +650,12 @@ int main(int argc, char *argv[]) {
    // Node to edge incidence matrix
     std::cout << "Building incidence matrix ... \n\n";
 
+#ifdef HAVE_MPI
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
+#else
+    Epetra_SerialComm Comm;
+#endif
+
     Epetra_Map globalMapC(numEdges, 0, Comm);
     Epetra_Map globalMapG(numNodes, 0, Comm);
     Epetra_FECrsMatrix DGrad(Copy, globalMapC, globalMapG, 2);
@@ -1081,13 +1094,11 @@ int main(int argc, char *argv[]) {
    DGrad.SetLabel("D0");
    MassGinv.SetLabel("M0^{-1}");
    
-#define RUN_SOLVER
-#ifdef RUN_SOLVER   
+
    TestMultiLevelPreconditioner_CurlLSFEM("curl-lsfem",MLList2,StiffC,
                                           DGrad,MassGinv,MassC,
                                           xh,rhsC,
                                           TotalErrorResidual, TotalErrorExactSol);
-#endif
 
     // ********  Calculate Error in Solution ***************
      double L2err = 0.0;
@@ -1313,13 +1324,6 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
   CurlCurl.ExtractDiagonalCopy(Diagonal);
   for(int i=0;i<CurlCurl.NumMyRows();i++) Diagonal[i]*=2;
 
-
-  // HAX
-  //  x=*rhs;
-  //  rhs->PutScalar(0.0);
-
-
- 
   /* Build the EMFP Preconditioner */  
   ML_Epetra::EdgeMatrixFreePreconditioner EMFP(Operator11,Diagonal,D0,D0clean,*TMT_Agg_Matrix,BCedges,numBCedges,MLList);
 
@@ -1469,3 +1473,4 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 
    return 0;
 }
+
