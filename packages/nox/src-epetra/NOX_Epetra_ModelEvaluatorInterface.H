@@ -79,6 +79,10 @@ namespace Epetra {
     virtual bool computePreconditioner(const Epetra_Vector& x, 
 				       Epetra_Operator& M,
 				       Teuchos::ParameterList* precParams = 0);
+
+    //! Set the parameter vector in inargs of the underlying model evaluator
+    virtual bool setParameters(const Teuchos::RCP<const Epetra_Vector> p,
+                               const int l = 0);
     
   protected:
     
