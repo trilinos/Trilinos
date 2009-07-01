@@ -126,7 +126,6 @@ int Ifpack_HIPS::Compute(){
   if(Acrs){
     //  Global CIDs
     gcolind=new int[nnz];
-    //    for(int j=0;j<nnz;j++) gcolind[j]=Acrs->GCID(colind[j])-MinGCID;
     for(int j=0;j<nnz;j++) gcolind[j]=RowMap0_->GID(colind[j]);        
     ierr =  HIPS_GraphDistrCSR(HIPS_id,A_->NumGlobalRows(),A_->NumMyRows(),RowMap0_->MyGlobalElements(),
                                rowptr,gcolind);  
@@ -140,7 +139,6 @@ int Ifpack_HIPS::Compute(){
     for(int i=0;i<N;i++){
       A_->ExtractMyRowCopy(i,maxnr,Nr,values,colind);
       for(int j=0;j<Nr;j++){
-        //        ierr=HIPS_GraphEdge(HIPS_id,RowMap.GID(i)-MinGRID,ColMap.GID(colind[j])-MinGCID);
         ierr=HIPS_GraphEdge(HIPS_id,RowMap0_->GID(i),ColMap0_->GID(colind[j]));
         if(ierr!=HIPS_SUCCESS) IFPACK_CHK_ERR(-3);        
       }
@@ -199,7 +197,6 @@ int Ifpack_HIPS::Compute(){
      for(int i=0;i<N;i++){
        A_->ExtractMyRowCopy(i,maxnr,Nr,values,colind);
        for(int j=0;j<Nr;j++){      
-         //         ierr = HIPS_AssemblySetValue(HIPS_id,RowMap.GID(i)-MinGRID,ColMap.GID(colind[j])-MinGCID, values[j]);
          ierr = HIPS_AssemblySetValue(HIPS_id,RowMap0_->GID(i),ColMap0_->GID(colind[j]), values[j]);
          if(ierr!=HIPS_SUCCESS){HIPS_PrintError(ierr);IFPACK_CHK_ERR(-6);}
        }
