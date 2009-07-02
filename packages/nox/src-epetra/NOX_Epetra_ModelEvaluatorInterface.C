@@ -93,7 +93,7 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 // *****************************************************************
 // ***************************************************************** 
 bool NOX::Epetra::ModelEvaluatorInterface::
-computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
+computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jaco)
 {
   x_ = Teuchos::rcp(&x, false);
   inargs_.set_x(x_);
@@ -102,7 +102,7 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
   eval_f_.reset(f_, EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT);
   outargs_.set_f(eval_f_);
 
-  jacobian_ = Teuchos::rcp(&Jac, false);
+  jacobian_ = Teuchos::rcp(&Jaco, false);
   outargs_.set_W(jacobian_);
 
   model_->evalModel(inargs_, outargs_);
@@ -138,6 +138,7 @@ bool NOX::Epetra::ModelEvaluatorInterface::
 setParameters(const Teuchos::RCP<const Epetra_Vector> p_, const int l)
 {
    inargs_.set_p(l, p_);
+   return true;
 }
 
 // *****************************************************************
