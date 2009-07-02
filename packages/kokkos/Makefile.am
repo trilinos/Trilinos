@@ -87,59 +87,75 @@ if SUB_TEST
 #TEST_SUBDIR=test
 endif
 
-if SUB_EXAMPLE
 # disabled, CGB, 6/2009
+#if SUB_EXAMPLE
 #EXAMPLE_SUBDIR=example
-endif
+#endif
 
-if BUILD_TESTS
 tests:
-	@echo ""
-	@echo "Now building kokkos tests."
-	@echo ""
-	cd $(top_builddir)/test && $(MAKE)
-	@echo ""
-	@echo "Finished building kokkos tests."
-	@echo ""
-else
-tests:
-	@echo "kokkos tests were disabled at configure time"
-endif
 
-if BUILD_EXAMPLES
 examples:
-	@echo ""
-	@echo "Now building kokkos examples."
-	@echo ""
-	cd $(top_builddir)/example && $(MAKE)
-	@echo ""
-	@echo "Finished building kokkos examples."
-	@echo ""
 
 install-examples:
-	cd $(top_builddir)/example && $(MAKE) install
-else
-examples:
-	@echo "kokkos examples were disabled at configure time"
-
-install-examples:
-	@echo "kokkos examples were disabled at configure time"
-endif
 
 clean-tests:
-	cd $(top_builddir)/test && $(MAKE) clean
 
 clean-examples:
-	cd $(top_builddir)/example && $(MAKE) clean
 
 everything:
-	$(MAKE) && $(MAKE) examples && $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
 
 install-everything:
-	$(MAKE) install && $(MAKE) install-examples
+
+# if BUILD_TESTS
+# tests:
+# 	@echo ""
+# 	@echo "Now building kokkos tests."
+# 	@echo ""
+# 	cd $(top_builddir)/test && $(MAKE)
+# 	@echo ""
+# 	@echo "Finished building kokkos tests."
+# 	@echo ""
+# else
+# tests:
+# 	@echo "kokkos tests were disabled at configure time"
+# endif
+# 
+# if BUILD_EXAMPLES
+# examples:
+# 	@echo ""
+# 	@echo "Now building kokkos examples."
+# 	@echo ""
+# 	cd $(top_builddir)/example && $(MAKE)
+# 	@echo ""
+# 	@echo "Finished building kokkos examples."
+# 	@echo ""
+# 
+# install-examples:
+# 	cd $(top_builddir)/example && $(MAKE) install
+# else
+# examples:
+# 	@echo "kokkos examples were disabled at configure time"
+# 
+# install-examples:
+# 	@echo "kokkos examples were disabled at configure time"
+# endif
+# 
+# clean-tests:
+# 	cd $(top_builddir)/test && $(MAKE) clean
+# 
+# clean-examples:
+# 	cd $(top_builddir)/example && $(MAKE) clean
+# 
+# everything:
+# 	$(MAKE) && $(MAKE) examples && $(MAKE) tests
+# 
+# clean-everything:
+# 	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
+# 
+# install-everything:
+# 	$(MAKE) install && $(MAKE) install-examples
 
 SUBDIRS = 
 #src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)

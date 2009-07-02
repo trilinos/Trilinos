@@ -252,6 +252,55 @@ MAINTAINERCLEANFILES = Makefile.in aclocal.m4 autom4te.cache/* \
 	src/common/config-h.in src/common/stamp-h.in \
 	$(AUX_DIST) 
 
+
+# if BUILD_TESTS
+# tests:
+# 	@echo ""
+# 	@echo "Now building kokkos tests."
+# 	@echo ""
+# 	cd $(top_builddir)/test && $(MAKE)
+# 	@echo ""
+# 	@echo "Finished building kokkos tests."
+# 	@echo ""
+# else
+# tests:
+# 	@echo "kokkos tests were disabled at configure time"
+# endif
+# 
+# if BUILD_EXAMPLES
+# examples:
+# 	@echo ""
+# 	@echo "Now building kokkos examples."
+# 	@echo ""
+# 	cd $(top_builddir)/example && $(MAKE)
+# 	@echo ""
+# 	@echo "Finished building kokkos examples."
+# 	@echo ""
+# 
+# install-examples:
+# 	cd $(top_builddir)/example && $(MAKE) install
+# else
+# examples:
+# 	@echo "kokkos examples were disabled at configure time"
+# 
+# install-examples:
+# 	@echo "kokkos examples were disabled at configure time"
+# endif
+# 
+# clean-tests:
+# 	cd $(top_builddir)/test && $(MAKE) clean
+# 
+# clean-examples:
+# 	cd $(top_builddir)/example && $(MAKE) clean
+# 
+# everything:
+# 	$(MAKE) && $(MAKE) examples && $(MAKE) tests
+# 
+# clean-everything:
+# 	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
+# 
+# install-everything:
+# 	$(MAKE) install && $(MAKE) install-examples
 SUBDIRS = 
 all: all-recursive
 
@@ -701,50 +750,25 @@ all-local:
 #TEST_SUBDIR=test
 
 # disabled, CGB, 6/2009
+#if SUB_EXAMPLE
 #EXAMPLE_SUBDIR=example
+#endif
 
-@BUILD_TESTS_TRUE@tests:
-@BUILD_TESTS_TRUE@	@echo ""
-@BUILD_TESTS_TRUE@	@echo "Now building kokkos tests."
-@BUILD_TESTS_TRUE@	@echo ""
-@BUILD_TESTS_TRUE@	cd $(top_builddir)/test && $(MAKE)
-@BUILD_TESTS_TRUE@	@echo ""
-@BUILD_TESTS_TRUE@	@echo "Finished building kokkos tests."
-@BUILD_TESTS_TRUE@	@echo ""
-@BUILD_TESTS_FALSE@tests:
-@BUILD_TESTS_FALSE@	@echo "kokkos tests were disabled at configure time"
+tests:
 
-@BUILD_EXAMPLES_TRUE@examples:
-@BUILD_EXAMPLES_TRUE@	@echo ""
-@BUILD_EXAMPLES_TRUE@	@echo "Now building kokkos examples."
-@BUILD_EXAMPLES_TRUE@	@echo ""
-@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE)
-@BUILD_EXAMPLES_TRUE@	@echo ""
-@BUILD_EXAMPLES_TRUE@	@echo "Finished building kokkos examples."
-@BUILD_EXAMPLES_TRUE@	@echo ""
+examples:
 
-@BUILD_EXAMPLES_TRUE@install-examples:
-@BUILD_EXAMPLES_TRUE@	cd $(top_builddir)/example && $(MAKE) install
-@BUILD_EXAMPLES_FALSE@examples:
-@BUILD_EXAMPLES_FALSE@	@echo "kokkos examples were disabled at configure time"
-
-@BUILD_EXAMPLES_FALSE@install-examples:
-@BUILD_EXAMPLES_FALSE@	@echo "kokkos examples were disabled at configure time"
+install-examples:
 
 clean-tests:
-	cd $(top_builddir)/test && $(MAKE) clean
 
 clean-examples:
-	cd $(top_builddir)/example && $(MAKE) clean
 
 everything:
-	$(MAKE) && $(MAKE) examples && $(MAKE) tests
 
 clean-everything:
-	$(MAKE) clean-examples && $(MAKE) clean-tests && $(MAKE) clean
 
 install-everything:
-	$(MAKE) install && $(MAKE) install-examples
 #src $(EXAMPLE_SUBDIR) $(TEST_SUBDIR)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
