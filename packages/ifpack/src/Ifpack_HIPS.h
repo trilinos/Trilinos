@@ -313,6 +313,7 @@ private:
   Teuchos::RefCountPtr<Epetra_RowMatrix> A_;
   Teuchos::ParameterList List_;
   Teuchos::RefCountPtr<Epetra_Map> RowMap0_;
+  Teuchos::RefCountPtr<Epetra_Map> ColMap0_;
   
   
   int HIPS_id;
