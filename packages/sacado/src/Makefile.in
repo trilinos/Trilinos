@@ -234,6 +234,8 @@ am__libsacado_a_SOURCES_DIST = $(srcdir)/Sacado_radops.cpp \
 	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
 	$(srcdir)/parameter/Sacado_ParameterLibraryBaseImp.hpp \
 	$(srcdir)/parameter/Sacado_ParameterVectorBase.hpp \
+	$(srcdir)/parameter/Sacado_ParameterAccessor.hpp \
+	$(srcdir)/parameter/Sacado_ParameterRegistration.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterEntry.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
@@ -398,6 +400,8 @@ am__include_HEADERS_DIST = $(srcdir)/Sacado_ConfigDefs.h \
 	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
 	$(srcdir)/parameter/Sacado_ParameterLibraryBaseImp.hpp \
 	$(srcdir)/parameter/Sacado_ParameterVectorBase.hpp \
+	$(srcdir)/parameter/Sacado_ParameterAccessor.hpp \
+	$(srcdir)/parameter/Sacado_ParameterRegistration.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterEntry.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \
@@ -667,6 +671,8 @@ SACADO_UTIL_H = \
 @BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
 @BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterLibraryBaseImp.hpp \
 @BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterVectorBase.hpp \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterAccessor.hpp \
+@BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ParameterRegistration.hpp \
 @BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterEntry.hpp \
 @BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
 @BUILD_PARAMLIB_TRUE@@ENABLE_SACADO_TEUCHOS_TRUE@	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \

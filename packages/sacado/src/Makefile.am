@@ -173,6 +173,8 @@ SACADO_PARAMETER_H = \
 	$(srcdir)/parameter/Sacado_ParameterLibraryBase.hpp \
 	$(srcdir)/parameter/Sacado_ParameterLibraryBaseImp.hpp \
 	$(srcdir)/parameter/Sacado_ParameterVectorBase.hpp \
+	$(srcdir)/parameter/Sacado_ParameterAccessor.hpp \
+	$(srcdir)/parameter/Sacado_ParameterRegistration.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterEntry.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterFamily.hpp \
 	$(srcdir)/parameter/Sacado_ScalarParameterLibrary.hpp \

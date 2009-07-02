@@ -183,6 +183,8 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
       parameter/Sacado_ScalarParameterFamily.hpp
       parameter/Sacado_ScalarParameterLibrary.hpp
       parameter/Sacado_ScalarParameterVector.hpp
+      parameter/Sacado_ParameterAccessor.hpp
+      parameter/Sacado_ParameterRegistration.hpp
       )
 
   ENDIF(${PACKAGE_NAME}_ENABLE_PARAMLIB)
