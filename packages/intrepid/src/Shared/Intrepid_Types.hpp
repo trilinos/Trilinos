@@ -107,11 +107,6 @@ namespace Intrepid {
    */
   static const double INTREPID_TOL       = 10.0* INTREPID_THRESHOLD;
   
-  /** \brief  Tolerance used by FIAT tests
-   */
-  static const double INTREPID_FIAT_TOL  = 1000.0 * INTREPID_TOL;
-
-  
   /** \enum   Intrepid::ECoordinates
       \brief  Enumeration of coordinate systems for geometrical entities (cells, points).
    */
@@ -361,9 +356,39 @@ namespace Intrepid {
              (spaceType == DISCRETE_SPACE_INCOMPLETE) || 
              (spaceType ==DISCRETE_SPACE_BROKEN) );
   }
+
+  /** \enum   Intrepid::EPointType
+      \brief  Enumeration of types of point distributions in Intrepid
+    */
+  enum EPointType
+    {
+      POINTTYPE_EQUISPACED = 0,             // value = 0
+      POINTTYPE_WARPBLEND 
+    };
   
+  inline std::string EPointTypeToString(EPointType pointType) {
+    std::string retString;
+    switch (pointType) {
+    case POINTTYPE_EQUISPACED:
+      retString = "Equispaced Points";
+      break;
+    case POINTTYPE_WARPBLEND:
+      retString = "WarpBlend Points";
+      break;
+    }
+    return retString;
+  }
   
-  
+  /** \brief Verifies validity of a point type enum
+      \param pointType      [in] - enum of the point type
+      \return 1 if the argument is a valid point type; 0 otherwise
+   */
+
+  inline int isValidPointType( const EPointType pointType ) {
+    return ( (pointType == POINTTYPE_EQUISPACED ) ||
+	     (pointType == POINTTYPE_WARPBLEND ) );
+  }
+
   /** \enum   Intrepid::EBasis
       \brief  Enumeration of basis types for discrete spaces in Intrepid.
     */

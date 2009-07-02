@@ -40,6 +40,9 @@
 
 #include "Shards_CellTopology.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Intrepid_Polylib.hpp"
+#include "Intrepid_FieldContainer.hpp"
+#include "Intrepid_CellTools.hpp"
 #include <stdexcept>
 
 namespace Intrepid {
@@ -118,7 +121,7 @@ namespace Intrepid {
 			       const int order ,
 			       const int offset = 0 );
 
-    /** \brief Computes an equispaced lattice of a given
+    /** \brief Computes a lattice of points of a given
                order on a reference simplex (currently disabled for
                other cell types).  The output array is
                (P,D), where
@@ -128,40 +131,18 @@ namespace Intrepid {
         \endcode
 
         \param  points      [out] - Output array of point coords
-        \param  order       [in]  - number of points per side, plus 1
-        \param  offset      [in]  - Number of points on boundary to skip
         \param  cellTYpe    [in]  - type of reference cell (currently only supports the simplex)
-
-    */
-   template<class Scalar, class ArrayType>
-   static void getEquispacedLattice( const shards::CellTopology& cellType ,
-				     ArrayType &points ,
-                                     const int order ,
-                                     const int offset = 0 );
-
-
-    /** \brief Computes a warped lattice (ala Warburton's warp-blend points of a given 
-               order on a reference simplex (currently disabled for
-               other cell types).  The output array is
-               (P,D), where
-        \code
-          P - number of points per cell
-          D - is the spatial dimension
-        \endcode
-
-        \param  points      [out] - Output array of point coords
         \param  order       [in]  - number of points per side, plus 1
+	\param  pointType   [in]  - flag for point distribution.  Currently equispaced and
+                                    warp/blend points are supported
         \param  offset      [in]  - Number of points on boundary to skip
-        \param  cellTYpe    [in]  - type of reference cell (currently only supports the simplex)
-
     */
-   template<class Scalar, class ArrayType>
-   static void getWarpBlendLattice( const shards::CellTopology& cellType ,
-				    ArrayType &points ,
-				    const int order ,
-                                    const int offset = 0);
-                                    
-   
+    template<class Scalar, class ArrayType>
+    static void getLattice( ArrayType &pts ,
+			    const shards::CellTopology& cellType ,
+			    const int order ,
+			    const int offset = 0 ,
+			    const EPointType pointType = POINTTYPE_EQUISPACED );
 
   private:
     /** \brief Converts Cartesian coordinates to barycentric coordinates
@@ -250,6 +231,49 @@ namespace Intrepid {
 				       const ArrayTypeIn2 & vertices );
 
 
+    /** \brief Computes an equispaced lattice of a given
+               order on a reference simplex (currently disabled for
+               other cell types).  The output array is
+               (P,D), where
+        \code
+          P - number of points per cell
+          D - is the spatial dimension
+        \endcode
+
+        \param  points      [out] - Output array of point coords
+        \param  order       [in]  - number of points per side, plus 1
+        \param  offset      [in]  - Number of points on boundary to skip
+        \param  cellTYpe    [in]  - type of reference cell (currently only supports the simplex)
+
+    */
+   template<class Scalar, class ArrayType>
+   static void getEquispacedLattice( const shards::CellTopology& cellType ,
+				     ArrayType &points ,
+                                     const int order ,
+                                     const int offset = 0 );
+
+
+    /** \brief Computes a warped lattice (ala Warburton's warp-blend points of a given 
+	order on a reference simplex (currently disabled for
+	other cell types).  The output array is
+	(P,D), where
+        \code
+	P - number of points per cell
+	D - is the spatial dimension
+        \endcode
+	
+        \param  points      [out] - Output array of point coords
+        \param  order       [in]  - number of points per side, plus 1
+        \param  offset      [in]  - Number of points on boundary to skip
+        \param  cellTYpe    [in]  - type of reference cell (currently only supports the simplex)
+	
+    */
+    template<class Scalar, class ArrayType>
+    static void getWarpBlendLattice( const shards::CellTopology& cellType ,
+				     ArrayType &points ,
+				     const int order ,
+				     const int offset = 0);
+    
 
     /** \brief Computes an equispaced lattice of a given
                order on the reference line [-1,1].  The output array is
@@ -324,8 +348,20 @@ namespace Intrepid {
     */
     template<class Scalar, class ArrayType>
     static void getWarpBlendLatticeLine( ArrayType &points ,
-					const int order ,
-					const int offset = 0 );
+					 const int order ,
+					 const int offset = 0 );
+
+    /** \brief interpolates Warburton's warp function on the line
+        \param  order       [in]  - The polynomial order
+	\param  xnodes      [in] - vector of node locations to interpolate
+	\param  xout        [out]  - warpfunction at xout, \pm 1 roots deflated
+
+    */
+    template<class Scalar, class ArrayType>
+    static void warpFactor( const int order ,
+			    const ArrayType &xnodes ,
+			    const ArrayType &xout ,
+			    ArrayType &warp );
 
     /** \brief Returns Warburton's warp-blend points of a given
                order on the reference triangle.  The output array is
@@ -365,6 +401,31 @@ namespace Intrepid {
 						const int offset = 0 );
 
     
+
+  template<class Scalar, class ArrayType>
+  static void warpShiftFace3D( const int order ,
+			const Scalar pval ,
+			const ArrayType &L1,
+			const ArrayType &L2,
+			const ArrayType &L3,
+			const ArrayType &L4,
+			ArrayType &dxy);
+
+  template<class Scalar, class ArrayType>
+  static void evalshift( const int order ,
+		  const Scalar pval ,
+		  const ArrayType &L1 ,
+		  const ArrayType &L2 ,
+		  const ArrayType &l3 ,
+		  ArrayType &dxy );
+
+  template<class Scalar, class ArrayType>
+  static void evalwarp( ArrayType &warp ,
+		 const int order ,
+		 const ArrayType &xnodes ,
+		 const ArrayType &xout );
+
+
   }; // end class PointTools
 
 } // end namespace Intrepid
