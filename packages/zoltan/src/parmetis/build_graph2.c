@@ -489,10 +489,10 @@ int Zoltan_Build_Graph_NoComm(
     }
     offset = rcvoffset[1];
   }
-  else {
-    ierr = ZOLTAN_WARN;
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Assume FAST graph construction\n");
-  }
+/*   else { */
+/*     ierr = ZOLTAN_WARN; */
+/*     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Assume FAST graph construction\n"); */
+/*   } */
 
   if (!(graph_type&(1<<NO_GRAPH))){
     int vertex;
