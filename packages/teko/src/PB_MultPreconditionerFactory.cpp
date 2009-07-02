@@ -31,6 +31,9 @@ MultPreconditionerFactory
    : FirstFactory_(FirstFactory), SecondFactory_(SecondFactory)
 { } 
 
+MultPreconditionerFactory::MultPreconditionerFactory()
+{ }
+
 //! Build the MultPrecondState object
 RCP<PB::BlockPreconditionerState> MultPreconditionerFactory::buildPreconditionerState() const
 { 
@@ -74,6 +77,36 @@ PB::LinearOp MultPreconditionerFactory
    // preconditioning, wrap it in an rcp pointer and return.
 
    return Teuchos::rcp(new MultPrecsLinearOp(blockOp,M1,M2));
+}
+
+//! Initialize from a parameter list
+void MultPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl)
+{
+   RCP<const InverseLibrary> invLib = getInverseLibrary();
+
+   // get string specifying inverse
+   std::string aStr="", bStr="";
+
+   // "parse" the parameter list
+   aStr = pl.get<std::string>("Preconditioner A");
+   bStr = pl.get<std::string>("Preconditioner B");
+
+   RCP<const Teuchos::ParameterList> aSettings = invLib->getParameterList(aStr);
+   RCP<const Teuchos::ParameterList> bSettings = invLib->getParameterList(bStr);
+
+   // build preconditioner from the parameters
+   std::string aType = aSettings->get<std::string>("Preconditioner Type");
+   RCP<PB::BlockPreconditionerFactory> precA
+         = PB::BlockPreconditionerFactory::buildPreconditionerFactory(aType,aSettings->sublist("Preconditioner Settings"),invLib);
+
+   // build preconditioner from the parameters
+   std::string bType = bSettings->get<std::string>("Preconditioner Type");
+   RCP<PB::BlockPreconditionerFactory> precB
+         = PB::BlockPreconditionerFactory::buildPreconditionerFactory(bType,bSettings->sublist("Preconditioner Settings"),invLib);
+
+   // set precondtioners
+   FirstFactory_ = precA;
+   SecondFactory_ = precB;
 }
 
 } // end namespace PB

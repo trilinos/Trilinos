@@ -1,5 +1,7 @@
 #include "PB_InverseLibrary.hpp"
 
+#include "PB_BlockPreconditionerFactory.hpp"
+
 #include <algorithm>
 
 using Teuchos::RCP;
@@ -20,6 +22,14 @@ InverseLibrary::InverseLibrary()
    // set valid preconditioner factory name
    stratValidPrecond_.push_back("ML"); 
    stratValidPrecond_.push_back("Ifpack"); 
+
+   // set valid PB preconditioner factory names
+   blockValidPrecond_.push_back("Block Jacobi"); 
+   blockValidPrecond_.push_back("Block Gauss Seidel"); 
+   blockValidPrecond_.push_back("Block Add"); 
+   blockValidPrecond_.push_back("Block Multiply"); 
+   blockValidPrecond_.push_back("NS LSC");
+   blockValidPrecond_.push_back("NS SIMPLE");
 }
 
 //! add an unspecified inverse to the library
@@ -41,6 +51,10 @@ void InverseLibrary::addInverse(const std::string & label,const Teuchos::Paramet
    else if(std::find(stratValidSolver_.begin(),stratValidSolver_.end(),type)!=stratValidSolver_.end()) {
       // this is a Stratimikos preconditioner factory
       addStratSolver(label,type,settingsList);
+   }
+   else if(std::find(blockValidPrecond_.begin(),blockValidPrecond_.end(),type)!=blockValidPrecond_.end()) {
+      // this is a PB preconditioner factory
+      addBlockPrecond(label,type,settingsList);
    }
    else 
       TEUCHOS_ASSERT(false);
@@ -69,18 +83,34 @@ void InverseLibrary::addStratPrecond(const std::string & label,const std::string
    stratPrecond_[label] = stratList;
 }
 
+//! Add a PB preconditioner to the library with a label
+void InverseLibrary::addBlockPrecond(const std::string & label,const std::string & type,const Teuchos::ParameterList & pl)
+{
+   // add some additional parameters onto the list
+   RCP<Teuchos::ParameterList> blockList = rcp(new Teuchos::ParameterList());
+   blockList->set("Preconditioner Type",type);
+   blockList->set("Preconditioner Settings",pl.sublist(type));
+
+   // add the PB preconditioner parameter list into the library
+   blockPrecond_[label] = blockList;
+}
+
 //! Get the fully constructed parameter list for a particular label
 Teuchos::RCP<const Teuchos::ParameterList> InverseLibrary::getParameterList(const std::string & label) const
 {
    std::map<std::string,RCP<const Teuchos::ParameterList> >::const_iterator itr;
-
+   
    // check preconditioners
    itr = stratPrecond_.find(label);
    if(itr!=stratPrecond_.end()) return itr->second;
- 
+    
    // check solvers
    itr = stratSolver_.find(label);
    if(itr!=stratSolver_.end()) return itr->second;
+   
+   // check solvers
+   itr = blockPrecond_.find(label);
+   if(itr!=blockPrecond_.end()) return itr->second;
 
    return Teuchos::null;
 }
@@ -90,7 +120,7 @@ Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::
 {
    std::map<std::string,RCP<const Teuchos::ParameterList> >::const_iterator itr;
 
-   bool isStratSolver=false,isStratPrecond=false;
+   bool isStratSolver=false,isStratPrecond=false,isBlockPrecond=false;
 
    // is this a Stratimikos solver?
    itr = stratPrecond_.find(label);
@@ -102,8 +132,21 @@ Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::
       isStratSolver = itr!=stratSolver_.end();
    }
 
-   // must be a solver or preconditioner
-   TEUCHOS_ASSERT(isStratSolver || isStratPrecond);
+   // must be a "block" preconditioner
+   if(not (isStratSolver || isStratPrecond)) {
+      itr = blockPrecond_.find(label);
+      isBlockPrecond = itr!=blockPrecond_.end();
+   }
+
+   // Must be one of Strat solver, strat preconditioner, block preconditioner
+   if(not (isStratSolver || isStratPrecond || isBlockPrecond)) {
+      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+
+      *out << "PB: getInverseFactory could not find \"" << label << "\" ... aborting\n";
+      *out << std::endl;
+
+      TEUCHOS_ASSERT(isStratSolver || isStratPrecond || isBlockPrecond);
+   }
    
    RCP<const Teuchos::ParameterList> pl = itr->second;
 
@@ -127,6 +170,20 @@ Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::
       // if its around, build a InverseFactory
       return rcp(new SolveInverseFactory(solveFact));
    }
+   else if(isBlockPrecond) {
+      std::string type = pl->get<std::string>("Preconditioner Type");
+      const Teuchos::ParameterList & settings = pl->sublist("Preconditioner Settings");
+
+      // build preconditioner factory from the string
+      RCP<BlockPreconditionerFactory> precFact = BlockPreconditionerFactory::buildPreconditionerFactory(type,settings,Teuchos::rcpFromRef(*this));
+ 
+      TEUCHOS_ASSERT(precFact!=Teuchos::null);
+
+      // return the inverse factory object
+      return rcp(new PreconditionerInverseFactory(precFact));   
+   }
+
+   TEUCHOS_ASSERT(false);
 }
 
 /** \brief Build an inverse library from a parameter list.

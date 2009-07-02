@@ -72,6 +72,9 @@ public:
 
    //! fully generic constructor
    LSCPreconditionerFactory(const Teuchos::RCP<const LSCStrategy> & strategy);
+
+   //! Default constructor
+   LSCPreconditionerFactory();
    //@}
 
    //! for PreconditionerFactoryBase
@@ -84,6 +87,9 @@ public:
 protected:
    // Gimmie object
    Teuchos::RCP<const LSCStrategy> invOpsStrategy_;
+
+   //! Initialize from a parameter list
+   virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 };
 
 } // end namespace NS

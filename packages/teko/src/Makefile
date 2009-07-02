@@ -3,7 +3,7 @@
 include ../make.include
 
 #INCLUDE = $(shell perl $(TRILINOS_INCLUDE)/strip_dup_incl_paths.pl -I$(TRILINOS_INCLUDE))
-INCLUDE = -I$(TRILINOS_INCLUDE)
+INCLUDE = -I$(TRILINOS_INCLUDE) -I$(PB_INCLUDE)
 CPPFLAGS=-DHAVE_CONFIG_H $(THYRA_CXXFLAGS) $(DEBUG_FLAGS)
 
 OBJS = PB_Utilities.o PB_BlockPreconditionerFactory.o \

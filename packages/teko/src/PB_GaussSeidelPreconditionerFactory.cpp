@@ -16,6 +16,9 @@ GaussSeidelPreconditionerFactory::GaussSeidelPreconditionerFactory(TriSolveType 
          : invOpsStrategy_(strategy), solveType_(solveType)
 { }
 
+GaussSeidelPreconditionerFactory::GaussSeidelPreconditionerFactory()
+{ }
+
 LinearOp GaussSeidelPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const
 {
    int rows = blockRowCount(blo);
@@ -32,16 +35,29 @@ LinearOp GaussSeidelPreconditionerFactory::buildPreconditionerOperator(BlockedLi
       // create a blocked linear operator
       BlockedLinearOp U = getUpperTriBlocks(blo);
 
-      return createBlockUpperTriInverseOp(U,invDiag);
+      return createBlockUpperTriInverseOp(U,invDiag,"Gauss Seidel");
    } 
    else if(solveType_==GS_UseLowerTriangle) {
       // create a blocked linear operator
       BlockedLinearOp L = getLowerTriBlocks(blo);
 
-      return createBlockLowerTriInverseOp(L,invDiag);
+      return createBlockLowerTriInverseOp(L,invDiag,"Gauss Seidel");
    }
 
    TEUCHOS_ASSERT(false); // we should never make it here!
+}
+
+//! Initialize from a parameter list
+void GaussSeidelPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl)
+{
+   RCP<const InverseLibrary> invLib = getInverseLibrary();
+
+   // get string specifying inverse
+   std::string invStr = pl.get<std::string>("Inverse Type");
+   if(invStr=="") invStr = "Amesos";
+
+   // based on parameter type build a strategy
+   invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(invLib->getInverseFactory(invStr)));
 }
 
 } // end namspace PB

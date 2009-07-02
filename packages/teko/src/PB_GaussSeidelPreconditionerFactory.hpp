@@ -28,6 +28,10 @@ class GaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
       */
       GaussSeidelPreconditionerFactory(TriSolveType solveType,const RCP<const BlockInvDiagonalStrategy> & strategy);
 
+      /** Build an empty Gauss-Seidel preconditioner factory
+        */
+      GaussSeidelPreconditionerFactory();
+
       //@}
 
       /** \brief Create the Gauss-Seidel preconditioner operator.
@@ -37,11 +41,16 @@ class GaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
         * by the BlockInvDiagonalStrategy object.
         */
       LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const;
- 
+
+      //@}
+
    protected: 
       //! some members
       Teuchos::RCP<const BlockInvDiagonalStrategy> invOpsStrategy_;
       TriSolveType solveType_;
+
+      //! Initialize from a parameter list
+      virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 };
 
 } // end namespace PB

@@ -12,6 +12,11 @@ JacobiPreconditionerFactory::JacobiPreconditionerFactory(const RCP<const BlockIn
          : invOpsStrategy_(strategy)
 { }
 
+/** Build a Jacobi preconditioner factory from a parameter list 
+  */
+JacobiPreconditionerFactory::JacobiPreconditionerFactory()
+{ }
+
 LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const
 {
    int rows = blo->productRange()->numBlocks();
@@ -46,6 +51,19 @@ LinearOp JacobiPreconditionerFactory::buildPreconditionerOperator(BlockedLinearO
    precond->setObjectLabel("Jacobi");
    
    return precond; 
+}
+
+//! Initialize from a parameter list
+void JacobiPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl)
+{
+   RCP<const InverseLibrary> invLib = getInverseLibrary();
+
+   // get string specifying inverse
+   std::string invStr = pl.get<std::string>("Inverse Type");
+   if(invStr=="") invStr = "Amesos";
+
+   // based on parameter type build a strategy
+   invOpsStrategy_ = rcp(new InvFactoryDiagStrategy(invLib->getInverseFactory(invStr)));
 }
 
 } // end namspace PB

@@ -1,5 +1,13 @@
 #include "PB_BlockPreconditionerFactory.hpp"
 
+#include "PB_InverseLibrary.hpp"
+#include "PB_JacobiPreconditionerFactory.hpp"
+#include "PB_GaussSeidelPreconditionerFactory.hpp"
+#include "PB_AddPreconditionerFactory.hpp"
+#include "PB_MultPreconditionerFactory.hpp"
+#include "NS/PB_LSCPreconditionerFactory.hpp"
+#include "NS/PB_SIMPLEPreconditionerFactory.hpp"
+
 #include "Thyra_DefaultPreconditioner.hpp"
 
 using namespace Thyra;
@@ -128,6 +136,56 @@ RCP< ParameterList > BlockPreconditionerFactory::unsetParameterList()
    RCP<ParameterList> _paramList = paramList_;
    paramList_ = Teuchos::null;
    return _paramList;
+}
+
+//! Set the inverse library used by this preconditioner factory
+void BlockPreconditionerFactory::setInverseLibrary(const RCP<const InverseLibrary> & il)
+{
+   inverseLibrary_ = il;
+}
+
+//! Get the inverse library used by this preconditioner factory
+RCP<const InverseLibrary> BlockPreconditionerFactory::getInverseLibrary() const
+{
+   // lazily build the inverse library only when needed
+   if(inverseLibrary_==Teuchos::null)
+      return InverseLibrary::buildFromStratimikos();
+
+   return inverseLibrary_;
+}
+
+RCP<BlockPreconditionerFactory> 
+BlockPreconditionerFactory::buildPreconditionerFactory(const std::string & name,
+                                                       const Teuchos::ParameterList & settings,
+                                                       const RCP<const InverseLibrary> & invLib)
+{
+   RCP<BlockPreconditionerFactory> precFact;
+
+   // build various preconditioners
+   if(name=="Block Jacobi")
+      precFact = rcp(new JacobiPreconditionerFactory());
+   else if(name=="Block Gauss Seidel")
+      precFact = rcp(new GaussSeidelPreconditionerFactory());
+   else if(name=="Block Add")
+      precFact = rcp(new AddPreconditionerFactory());
+   else if(name=="Block Multiply")
+      precFact = rcp(new MultPreconditionerFactory());
+   else if(name=="NS LSC")
+      precFact = rcp(new NS::LSCPreconditionerFactory());
+   else if(name=="NS SIMPLE")
+      precFact = rcp(new NS::SIMPLEPreconditionerFactory());
+
+   TEUCHOS_ASSERT(precFact!=Teuchos::null);
+
+   // add in the inverse library
+   if(invLib!=Teuchos::null)
+      precFact->setInverseLibrary(invLib);
+
+   // now that inverse library has been set,
+   // pass in the parameter list
+   precFact->initializeFromParameterList(settings);
+
+   return precFact;
 }
 
 } // end namespace PB

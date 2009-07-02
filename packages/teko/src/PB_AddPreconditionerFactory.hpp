@@ -29,6 +29,8 @@ public:
    AddPreconditionerFactory(const Teuchos::RCP<const PB::BlockPreconditionerFactory> & FirstFactory,
                             const Teuchos::RCP<const PB::BlockPreconditionerFactory> & SecondFactory);
 
+   AddPreconditionerFactory();
+
    //! Function inherited from PB::BlockPreconditionerFactory
    PB::LinearOp buildPreconditionerOperator(PB::BlockedLinearOp & blo,
                                             PB::BlockPreconditionerState & state) const;
@@ -40,6 +42,9 @@ protected:
    // class members
    Teuchos::RCP<const PB::BlockPreconditionerFactory> FirstFactory_;
    Teuchos::RCP<const PB::BlockPreconditionerFactory> SecondFactory_;
+
+   //! Initialize from a parameter list
+   virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 };
 
 } // end namespace PB

@@ -13,16 +13,20 @@ class JacobiPreconditionerFactory : public BlockPreconditionerFactory {
       //! @name Constructors.
       //@{
 
-      /*! Construct a PreconditionerFactory assuming a specific block
-          \f$2\times2\f$ matrix. This case is a simple one.
-      */ 
+      /** Construct a PreconditionerFactory assuming a specific block
+        * \f$2\times2\f$ matrix. This case is a simple one.
+        */ 
       JacobiPreconditionerFactory(const LinearOp & invD0,const LinearOp & invD1);
 
-      /*! The most flexible JacobiPreconditionerFactory constructor.
-          Pass in a generally defined BlockInvDiagonalStrategy to use the
-          full generality of this class.
-      */
+      /** The most flexible JacobiPreconditionerFactory constructor.
+        * Pass in a generally defined BlockInvDiagonalStrategy to use the
+        * full generality of this class.
+        */
       JacobiPreconditionerFactory(const RCP<const BlockInvDiagonalStrategy> & strategy);
+
+      /** Build an empty Jacobi preconditioner factory.
+        */
+      JacobiPreconditionerFactory();
 
       //@}
 
@@ -37,6 +41,9 @@ class JacobiPreconditionerFactory : public BlockPreconditionerFactory {
    protected: 
       //! some members
       Teuchos::RCP<const BlockInvDiagonalStrategy> invOpsStrategy_;
+
+      //! Initialize from a parameter list
+      virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 };
 
 } // end namespace PB

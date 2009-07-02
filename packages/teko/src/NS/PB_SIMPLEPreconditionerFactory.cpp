@@ -24,6 +24,9 @@ SIMPLEPreconditionerFactory
    : invVelFactory_(invVFact), invPrsFactory_(invPFact), alpha_(alpha)
 { }
 
+SIMPLEPreconditionerFactory::SIMPLEPreconditionerFactory()
+{ }
+
 // Use the factory to build the preconditioner (this is where the work goes)
 LinearOp SIMPLEPreconditionerFactory
    ::buildPreconditionerOperator(BlockedLinearOp & blockOp,
@@ -82,6 +85,45 @@ LinearOp SIMPLEPreconditionerFactory
 
    // return implicit product operator
    return multiply(invU,invL,"SIMPLE");
+}
+
+//! Initialize from a parameter list
+void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl)
+{
+   RCP<const InverseLibrary> invLib = getInverseLibrary();
+
+   // get string specifying inverse
+   std::string invStr="", invVStr="", invPStr="";
+   double alpha = 1.0;
+
+   // "parse" the parameter list
+   if(pl.isParameter("Inverse Type"))
+      invStr = pl.get<std::string>("Inverse Type");
+   if(pl.isParameter("Inverse Velocity Type"))
+     invVStr = pl.get<std::string>("Inverse Velocity Type");
+   if(pl.isParameter("Inverse Pressure Type")) 
+     invPStr = pl.get<std::string>("Inverse Pressure Type");
+   if(pl.isParameter("Alpha"))
+     alpha = pl.get<double>("Alpha");
+
+   // set defaults as needed
+   if(invStr=="") invVStr = "Amesos";
+   if(invVStr=="") invVStr = invStr;
+   if(invPStr=="") invPStr = invStr;
+
+   //  two inverse factory objects
+   RCP<const InverseFactory> invVFact, invPFact;
+
+   // build velocity inverse factory
+   invVFact = invLib->getInverseFactory(invVStr);
+   invPFact = invVFact; // by default these are the same
+   if(invVStr!=invPStr) // if different, build pressure inverse factory
+      invPFact = invLib->getInverseFactory(invPStr);
+
+   // based on parameter type build a strategy
+   invVelFactory_ = invVFact; 
+   invPrsFactory_ = invPFact;
+   alpha_ = alpha;
 }
 
 } // end namespace NS

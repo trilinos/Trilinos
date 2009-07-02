@@ -24,6 +24,9 @@ public:
    //! Add a Stratimikos preconditioner with a label to the library
    void addStratPrecond(const std::string & label,const std::string & type,const Teuchos::ParameterList & pl);
 
+   //! Add a PB preconditioner to the library with a label
+   void addBlockPrecond(const std::string & label,const std::string & type,const Teuchos::ParameterList & pl);
+
    //! Get the fully constructed parameter list for a particular label
    Teuchos::RCP<const Teuchos::ParameterList> getParameterList(const std::string & label) const;
 
@@ -35,10 +38,12 @@ protected:
    // stratimikos type Inverse objects: mapping the label to a parameter list
    std::map<std::string,Teuchos::RCP<const Teuchos::ParameterList> > stratSolver_;
    std::map<std::string,Teuchos::RCP<const Teuchos::ParameterList> > stratPrecond_;
+   std::map<std::string,Teuchos::RCP<const Teuchos::ParameterList> > blockPrecond_;
 
    // vectors showing which string types are in Stratimikos
    std::vector<std::string> stratValidSolver_;
    std::vector<std::string> stratValidPrecond_;
+   std::vector<std::string> blockValidPrecond_;
     
 public:
 

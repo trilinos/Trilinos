@@ -12,6 +12,7 @@
 
 // PB includes
 #include "PB_Utilities.hpp"
+#include "PB_InverseLibrary.hpp"
 
 namespace PB {
 
@@ -200,6 +201,21 @@ public:
      */
    virtual RCP<BlockPreconditionerState> buildPreconditionerState() const
    { return rcp(new BlockPreconditionerState()); }
+
+   /** \brief This function builds the internals of the preconditioner factory
+     *        from a parameter list.
+     *        
+     * This function builds the internals of the preconditioner factory
+     * from a parameter list. Furthermore, it allows a preconditioner factory
+     * developer to easily add a factory to the build system. This function
+     * is required for building a preconditioner from a parameter list.
+     *
+     * \param[in] settings Parmaeter list to use as the internal settings
+     *
+     * \note The default implementation does nothing.
+     */
+   virtual void initializeFromParameterList(const Teuchos::ParameterList & settings)
+   { }
  
    //! @name Ignore me methods.
    //@{
@@ -249,9 +265,37 @@ public:
    RCP< ParameterList > unsetParameterList();
    //@}
 
+   //! Set the inverse library used by this preconditioner factory
+   void setInverseLibrary(const RCP<const InverseLibrary> & il);
+
+   //! Get the inverse library used by this preconditioner factory
+   RCP<const InverseLibrary> getInverseLibrary() const;
+
 protected:
    //! for ParameterListAcceptor
    RCP<ParameterList>          paramList_;
+
+private:
+   //! Inverse library to be used by this factory
+   RCP<const InverseLibrary> inverseLibrary_;
+
+public:
+
+   /** \brief Builder function for creating preconditioner factories (yes
+     *        this is a factory factory.
+     *
+     * Builder function for creating preconditioner factories (yes
+     * this is a factory factory.
+     * 
+     * \param[in] name     String name of factory to build
+     * \param[in] settings Parameter list describing the parameters for the
+     *                     factory to build
+     * \param[in] invLib   Inverse library for the factory to use.
+     */
+   static RCP<BlockPreconditionerFactory> 
+   buildPreconditionerFactory(const std::string & name, 
+                              const Teuchos::ParameterList & settings,
+                              const RCP<const InverseLibrary> & invLib=Teuchos::null);
 };
 
 } // end namespace PB

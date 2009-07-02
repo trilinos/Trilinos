@@ -19,6 +19,9 @@ public:
                                const Teuchos::RCP<const InverseFactory> & invPrsFactory,
                                double alpha);
 
+   //! Default constructor
+   SIMPLEPreconditionerFactory();
+
    // Function inherited from BlockPreconditionerFactory
    LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,
                                         BlockPreconditionerState & state) const;
@@ -29,6 +32,8 @@ protected:
    Teuchos::RCP<const InverseFactory> invPrsFactory_;
    double alpha_;
    
+   //! Initialize from a parameter list
+   virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
 };
  
 } // end namespace NS
