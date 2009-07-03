@@ -158,13 +158,15 @@ namespace Teuchos
     void COPY(const OrdinalType n, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const;
 
     //! Perform the operation: \c y \c <- \c y+alpha*x.
-    void AXPY(const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const;
+    template <typename alpha_type, typename x_type>
+    void AXPY(const OrdinalType n, const alpha_type alpha, const x_type* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const;
 
     //! Sum the absolute values of the entries of \c x.
     typename ScalarTraits<ScalarType>::magnitudeType ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const;
 
     //! Form the dot product of the vectors \c x and \c y.
-    ScalarType DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy) const;
+    template <typename x_type, typename y_type>
+    ScalarType DOT(const OrdinalType n, const x_type* x, const OrdinalType incx, const y_type* y, const OrdinalType incy) const;
 
     //! Compute the 2-norm of the std::vector \c x.
     typename ScalarTraits<ScalarType>::magnitudeType NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const;
@@ -178,39 +180,46 @@ namespace Teuchos
     //@{ 
 
     //! Performs the matrix-std::vector operation:  \c y \c <- \c alpha*A*x+beta*y or \c y \c <- \c alpha*A'*x+beta*y where \c A is a general \c m by \c n matrix.
-    void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, 
-	      const OrdinalType lda, const ScalarType* x, const OrdinalType incx, const ScalarType beta, ScalarType* y, const OrdinalType incy) const;
+    template <typename alpha_type, typename A_type, typename x_type, typename beta_type>
+    void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A, 
+	      const OrdinalType lda, const x_type* x, const OrdinalType incx, const beta_type beta, ScalarType* y, const OrdinalType incy) const;
 
     //! Performs the matrix-std::vector operation:  \c x \c <- \c A*x or \c x \c <- \c A'*x where \c A is a unit/non-unit \c n by \c n upper/lower triangular matrix.
-    void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const ScalarType* A, 
+    template <typename A_type>
+    void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const A_type* A, 
 	      const OrdinalType lda, ScalarType* x, const OrdinalType incx) const;
 
     //! \brief Performs the rank 1 operation:  \c A \c <- \c alpha*x*y'+A. 
-    void GER(const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, 
-	     const ScalarType* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const;
+    template <typename alpha_type, typename x_type, typename y_type>
+    void GER(const OrdinalType m, const OrdinalType n, const alpha_type alpha, const x_type* x, const OrdinalType incx, 
+	     const y_type* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const;
     //@}
     
     //! @name Level 3 BLAS Routines. 
     //@{ 
 
     //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*op(B)+beta*C where \c op(A) is either \c A or \c A', \c op(B) is either \c B or \c B', and C is an \c m by \c k matrix.
-    void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const;
+    template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
+    void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const;
 
     //! Performs the matrix-matrix operation: \c C \c <- \c alpha*A*B+beta*C or \c C \c <- \c alpha*B*A+beta*C where \c A is an \c m by \c m or \c n by \c n symmetric matrix and \c B is a general matrix.
-    void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const;
+    template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
+    void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const;
 
     //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*B+beta*C or \c C \c <- \c alpha*B*op(A)+beta*C where \c op(A) is an unit/non-unit, upper/lower triangular matrix and \c B is a general matrix.
+    template <typename alpha_type, typename A_type>
     void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n,
-                const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const;
+                const alpha_type alpha, const A_type* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const;
 
     //! Solves the matrix equations:  \c op(A)*X=alpha*B or \c X*op(A)=alpha*B where \c X and \c B are \c m by \c n matrices, \c A is a unit/non-unit, upper/lower triangular matrix and \c op(A) is \c A or \c A'.  The matrix \c X is overwritten on \c B.
+    template <typename alpha_type, typename A_type>
     void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n,
-                const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const;
+                const alpha_type alpha, const A_type* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const;
     //@}
   };
 
   template<typename OrdinalType, typename ScalarType>
-  class BLAS : DefaultBLASImpl<OrdinalType,ScalarType>
+  class BLAS : public DefaultBLASImpl<OrdinalType,ScalarType>
   {    
 
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
@@ -227,72 +236,6 @@ namespace Teuchos
 
     //! Destructor.
     inline virtual ~BLAS(void) {}
-    //@}
-
-    //! @name Level 1 BLAS Routines.
-    //@{ 
-
-    //! Computes a Givens plane rotation.
-    inline void ROTG(ScalarType* da, ScalarType* db, MagnitudeType* c, ScalarType* s) const { DefaultBLASImpl<OrdinalType,ScalarType>::ROTG(da, db, c, s); }
-
-    //! Applies a Givens plane rotation.
-    inline void ROT(const OrdinalType n, ScalarType* dx, const OrdinalType incx, ScalarType* dy, const OrdinalType incy, MagnitudeType* c, ScalarType* s) const { DefaultBLASImpl<OrdinalType,ScalarType>::ROT(n,dx,incx,dy,incy,c,s); }
-
-    //! Scale the std::vector \c x by the constant \c alpha.
-    inline void SCAL(const OrdinalType n, const ScalarType alpha, ScalarType* x, const OrdinalType incx) const { DefaultBLASImpl<OrdinalType,ScalarType>::SCAL(n,alpha,x,incx); }
-
-    //! Copy the std::vector \c x to the std::vector \c y.
-    inline void COPY(const OrdinalType n, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const { DefaultBLASImpl<OrdinalType,ScalarType>::COPY(n,x,incx,y,incy); }
-
-    //! Perform the operation: \c y \c <- \c y+alpha*x.
-    inline void AXPY(const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const { DefaultBLASImpl<OrdinalType,ScalarType>::AXPY(n,alpha,x,incx,y,incy); }
-
-    //! Sum the absolute values of the entries of \c x.
-    inline typename ScalarTraits<ScalarType>::magnitudeType ASUM(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const { return DefaultBLASImpl<OrdinalType,ScalarType>::ASUM(n,x,incx); }
-
-    //! Form the dot product of the vectors \c x and \c y.
-    inline ScalarType DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy) const { return DefaultBLASImpl<OrdinalType,ScalarType>::DOT(n,x,incx,y,incy); }
-
-    //! Compute the 2-norm of the std::vector \c x.
-    inline typename ScalarTraits<ScalarType>::magnitudeType NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const { return DefaultBLASImpl<OrdinalType,ScalarType>::NRM2(n,x,incx); }
-
-    //! Return the index of the element of \c x with the maximum magnitude.
-    inline OrdinalType IAMAX(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const { return DefaultBLASImpl<OrdinalType,ScalarType>::IAMAX(n,x,incx); }
-
-    //@}
-
-    //! @name Level 2 BLAS Routines.
-    //@{ 
-
-    //! Performs the matrix-std::vector operation:  \c y \c <- \c alpha*A*x+beta*y or \c y \c <- \c alpha*A'*x+beta*y where \c A is a general \c m by \c n matrix.
-    inline void GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, 
-	      const OrdinalType lda, const ScalarType* x, const OrdinalType incx, const ScalarType beta, ScalarType* y, const OrdinalType incy) const { DefaultBLASImpl<OrdinalType,ScalarType>::GEMV(trans,m,n,alpha,A,lda,x,incx,beta,y,incy); }
-
-    //! Performs the matrix-std::vector operation:  \c x \c <- \c A*x or \c x \c <- \c A'*x where \c A is a unit/non-unit \c n by \c n upper/lower triangular matrix.
-    inline void TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const ScalarType* A, 
-	      const OrdinalType lda, ScalarType* x, const OrdinalType incx) const { DefaultBLASImpl<OrdinalType,ScalarType>::TRMV(uplo,trans,diag,n,A,lda,x,incx); }
-
-    //! \brief Performs the rank 1 operation:  \c A \c <- \c alpha*x*y'+A. 
-    inline void GER(const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, 
-	     const ScalarType* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const { DefaultBLASImpl<OrdinalType,ScalarType>::GER(m,n,alpha,x,incx,y,incy,A,lda); }
-    //@}
-    
-    //! @name Level 3 BLAS Routines. 
-    //@{ 
-
-    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*op(B)+beta*C where \c op(A) is either \c A or \c A', \c op(B) is either \c B or \c B', and C is an \c m by \c k matrix.
-    inline void GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const { DefaultBLASImpl<OrdinalType,ScalarType>::GEMM(transa,transb,m,n,k,alpha,A,lda,B,ldb,beta,C,ldc); }
-
-    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*A*B+beta*C or \c C \c <- \c alpha*B*A+beta*C where \c A is an \c m by \c m or \c n by \c n symmetric matrix and \c B is a general matrix.
-    inline void SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const { DefaultBLASImpl<OrdinalType,ScalarType>::SYMM(side,uplo,m,n,alpha,A,lda,B,ldb,beta,C,ldc); }
-
-    //! Performs the matrix-matrix operation: \c C \c <- \c alpha*op(A)*B+beta*C or \c C \c <- \c alpha*B*op(A)+beta*C where \c op(A) is an unit/non-unit, upper/lower triangular matrix and \c B is a general matrix.
-    inline void TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n,
-	      const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const { DefaultBLASImpl<OrdinalType,ScalarType>::TRMM(side,uplo,transa,diag,m,n,alpha,A,lda,B,ldb); }
-
-    //! Solves the matrix equations:  \c op(A)*X=alpha*B or \c X*op(A)=alpha*B where \c X and \c B are \c m by \c n matrices, \c A is a unit/non-unit, upper/lower triangular matrix and \c op(A) is \c A or \c A'.  The matrix \c X is overwritten on \c B.
-    inline void TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n,
-	      const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const { DefaultBLASImpl<OrdinalType,ScalarType>::TRSM(side,uplo,transa,diag,m,n,alpha,A,lda,B,ldb); }
     //@}
   };
 
@@ -384,12 +327,13 @@ namespace Teuchos
   } /* end COPY */
 
   template<typename OrdinalType, typename ScalarType>
-  void DefaultBLASImpl<OrdinalType, ScalarType>::AXPY(const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const
+  template <typename alpha_type, typename x_type>
+  void DefaultBLASImpl<OrdinalType, ScalarType>::AXPY(const OrdinalType n, const alpha_type alpha, const x_type* x, const OrdinalType incx, ScalarType* y, const OrdinalType incy) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
     OrdinalType i, ix = izero, iy = izero;
-    if( n > izero && alpha != ScalarTraits<ScalarType>::zero())
+    if( n > izero && alpha != ScalarTraits<alpha_type>::zero())
       {
 	// Set the initial indices (ix, iy).
     	if (incx < izero) { ix = (-n+ione)*incx; }
@@ -426,7 +370,8 @@ namespace Teuchos
   } /* end ASUM */
   
   template<typename OrdinalType, typename ScalarType>
-  ScalarType DefaultBLASImpl<OrdinalType, ScalarType>::DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy) const
+  template <typename x_type, typename y_type>
+  ScalarType DefaultBLASImpl<OrdinalType, ScalarType>::DOT(const OrdinalType n, const x_type* x, const OrdinalType incx, const y_type* y, const OrdinalType incy) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -440,7 +385,7 @@ namespace Teuchos
 
 	for(i = izero; i < n; i++)
 	  {
-	    result += ScalarTraits<ScalarType>::conjugate(x[ix]) * y[iy];
+	    result += ScalarTraits<x_type>::conjugate(x[ix]) * y[iy];
 	    ix += incx;
 	    iy += incy;
 	  }
@@ -501,21 +446,24 @@ namespace Teuchos
 //------------------------------------------------------------------------------------------
 //      LEVEL 2 BLAS ROUTINES
 //------------------------------------------------------------------------------------------
-
   template<typename OrdinalType, typename ScalarType>
-  void DefaultBLASImpl<OrdinalType, ScalarType>::GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* x, const OrdinalType incx, const ScalarType beta, ScalarType* y, const OrdinalType incy) const
+  template <typename alpha_type, typename A_type, typename x_type, typename beta_type>
+  void DefaultBLASImpl<OrdinalType, ScalarType>::GEMV(ETransp trans, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A, const OrdinalType lda, const x_type* x, const OrdinalType incx, const beta_type beta, ScalarType* y, const OrdinalType incy) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    ScalarType zero = ScalarTraits<ScalarType>::zero();
-    ScalarType one = ScalarTraits<ScalarType>::one();
+    alpha_type alpha_zero = ScalarTraits<alpha_type>::zero();
+    beta_type beta_zero = ScalarTraits<beta_type>::zero();
+    x_type x_zero = ScalarTraits<x_type>::zero();
+    ScalarType y_zero = ScalarTraits<ScalarType>::zero();
+    beta_type beta_one = ScalarTraits<beta_type>::one();
     bool BadArgument = false;
 
     TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex && trans == CONJ_TRANS, std::logic_error,
         "Teuchos::BLAS::GEMV() does not currently support CONJ_TRANS for complex data types.");
 
     // Quick return if there is nothing to do!
-    if( m == izero || n == izero || ( alpha == zero && beta == one ) ){ return; }
+    if( m == izero || n == izero || ( alpha == alpha_zero && beta == beta_one ) ){ return; }
     
     // Otherwise, we need to check the argument list.
     if( m < izero ) { 
@@ -559,17 +507,17 @@ namespace Teuchos
 
       // Form y = beta*y
       ix = kx; iy = ky;
-      if(beta != one) {
+      if(beta != beta_one) {
 	if (incy == ione) {
-	  if (beta == zero) {
-	    for(i = izero; i < leny; i++) { y[i] = zero; }
+	  if (beta == beta_zero) {
+	    for(i = izero; i < leny; i++) { y[i] = y_zero; }
 	  } else {
 	    for(i = izero; i < leny; i++) { y[i] *= beta; }
 	  }
 	} else {
-	  if (beta == zero) {
+	  if (beta == beta_zero) {
 	    for(i = izero; i < leny; i++) {
-	      y[iy] = zero;
+	      y[iy] = y_zero;
 	      iy += incy;
 	    }
 	  } else {
@@ -582,14 +530,14 @@ namespace Teuchos
       }
 	
       // Return if we don't have to do anything more.
-      if(alpha == zero) { return; }
+      if(alpha == alpha_zero) { return; }
 
       if( ETranspChar[trans] == 'N' ) {
 	// Form y = alpha*A*y
 	jx = kx;
 	if (incy == ione) {
 	  for(j = izero; j < n; j++) {
-	    if (x[jx] != zero) {
+	    if (x[jx] != x_zero) {
 	      temp = alpha*x[jx];
 	      for(i = izero; i < m; i++) {
 		y[i] += temp*A[j*lda + i];
@@ -599,7 +547,7 @@ namespace Teuchos
 	  }
 	} else {
 	  for(j = izero; j < n; j++) {
-	    if (x[jx] != zero) {
+	    if (x[jx] != x_zero) {
 	      temp = alpha*x[jx];
 	      iy = ky;
 	      for(i = izero; i < m; i++) {
@@ -614,7 +562,7 @@ namespace Teuchos
 	jy = ky;
 	if (incx == ione) {
 	  for(j = izero; j < n; j++) {
-	    temp = zero;
+	    temp = y_zero;
 	    for(i = izero; i < m; i++) {
 	      temp += A[j*lda + i]*x[i];
 	    }
@@ -623,7 +571,7 @@ namespace Teuchos
 	  }
 	} else {
 	  for(j = izero; j < n; j++) {
-	    temp = zero;
+	    temp = y_zero;
 	    ix = kx;
 	    for (i = izero; i < m; i++) {
 	      temp += A[j*lda + i]*x[ix];
@@ -638,7 +586,8 @@ namespace Teuchos
   } /* end GEMV */
 
  template<typename OrdinalType, typename ScalarType>
- void DefaultBLASImpl<OrdinalType, ScalarType>::TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const ScalarType* A, const OrdinalType lda, ScalarType* x, const OrdinalType incx) const
+ template <typename A_type>
+ void DefaultBLASImpl<OrdinalType, ScalarType>::TRMV(EUplo uplo, ETransp trans, EDiag diag, const OrdinalType n, const A_type* A, const OrdinalType lda, ScalarType* x, const OrdinalType incx) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
@@ -797,18 +746,20 @@ namespace Teuchos
   } /* end TRMV */
         
   template<typename OrdinalType, typename ScalarType>
-  void DefaultBLASImpl<OrdinalType, ScalarType>::GER(const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* x, const OrdinalType incx, const ScalarType* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const
+  template <typename alpha_type, typename x_type, typename y_type>
+  void DefaultBLASImpl<OrdinalType, ScalarType>::GER(const OrdinalType m, const OrdinalType n, const alpha_type alpha, const x_type* x, const OrdinalType incx, const y_type* y, const OrdinalType incy, ScalarType* A, const OrdinalType lda) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    ScalarType zero = ScalarTraits<ScalarType>::zero();
+    alpha_type alpha_zero = ScalarTraits<alpha_type>::zero();
+    y_type y_zero = ScalarTraits<y_type>::zero();
     bool BadArgument = false;
 
     TEST_FOR_EXCEPTION(Teuchos::ScalarTraits<ScalarType>::isComplex, std::logic_error,
 	    "Teuchos::BLAS::GER() does not currently support complex data types.");
 
     // Quick return if there is nothing to do!
-    if( m == izero || n == izero || alpha == zero ){ return; }
+    if( m == izero || n == izero || alpha == alpha_zero ){ return; }
     
     // Otherwise, we need to check the argument list.
     if( m < izero ) { 
@@ -843,7 +794,7 @@ namespace Teuchos
       // Start the operations for incx == 1
       if( incx == ione ) {
 	for( j=izero; j<n; j++ ) {
-	  if ( y[jy] != zero ) {
+	  if ( y[jy] != y_zero ) {
 	    temp = alpha*y[jy];
 	    for ( i=izero; i<m; i++ ) {
 	      A[j*lda + i] += x[i]*temp;
@@ -854,7 +805,7 @@ namespace Teuchos
       } 
       else { // Start the operations for incx != 1
 	for( j=izero; j<n; j++ ) {
-	  if ( y[jy] != zero ) {
+	  if ( y[jy] != y_zero ) {
 	    temp = alpha*y[jy];
 	    ix = kx;
 	    for( i=izero; i<m; i++ ) {
@@ -873,15 +824,19 @@ namespace Teuchos
 //------------------------------------------------------------------------------------------
         
   template<typename OrdinalType, typename ScalarType>
-  void DefaultBLASImpl<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const
+  template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
+  void DefaultBLASImpl<OrdinalType, ScalarType>::GEMM(ETransp transa, ETransp transb, const OrdinalType m, const OrdinalType n, const OrdinalType k, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const
   {
 
     typedef TypeNameTraits<OrdinalType> OTNT;
     typedef TypeNameTraits<ScalarType> STNT;
 
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
-    ScalarType zero = ScalarTraits<ScalarType>::zero();
-    ScalarType one = ScalarTraits<ScalarType>::one();
+    alpha_type alpha_zero = ScalarTraits<alpha_type>::zero();
+    beta_type beta_zero = ScalarTraits<beta_type>::zero();
+    B_type B_zero = ScalarTraits<B_type>::zero();
+    ScalarType C_zero = ScalarTraits<ScalarType>::zero();
+    beta_type beta_one = ScalarTraits<beta_type>::one();
     OrdinalType i, j, p;
     OrdinalType NRowA = m, NRowB = k;
     ScalarType temp;
@@ -904,7 +859,7 @@ namespace Teuchos
     }
 
     // Quick return if there is nothing to do!
-    if( (m==izero) || (n==izero) || (((alpha==zero)||(k==izero)) && (beta==one)) ){ return; }
+    if( (m==izero) || (n==izero) || (((alpha==alpha_zero)||(k==izero)) && (beta==beta_one)) ){ return; }
     if( m < izero ) { 
       std::cout << "BLAS::GEMM Error: M == " << m << std::endl;	    
       BadArgument = true;
@@ -933,11 +888,11 @@ namespace Teuchos
     if(!BadArgument) {
 
       // Only need to scale the resulting matrix C.
-      if( alpha == zero ) {
-	if( beta == zero ) {
+      if( alpha == alpha_zero ) {
+	if( beta == beta_zero ) {
 	  for (j=izero; j<n; j++) {
 	    for (i=izero; i<m; i++) {
-	      C[j*ldc + i] = zero;
+	      C[j*ldc + i] = C_zero;
 	    }
 	  }
 	} else {
@@ -956,17 +911,17 @@ namespace Teuchos
 	if ( ETranspChar[transa]=='N' ) {
 	  // Compute C = alpha*A*B + beta*C
 	  for (j=izero; j<n; j++) {
-	    if( beta == zero ) {
+	    if( beta == beta_zero ) {
 	      for (i=izero; i<m; i++){
-		C[j*ldc + i] = zero;
+		C[j*ldc + i] = C_zero;
 	      }
-	    } else if( beta != one ) {
+	    } else if( beta != beta_one ) {
 	      for (i=izero; i<m; i++){
 		C[j*ldc + i] *= beta;
 	      }
 	    }
 	    for (p=izero; p<k; p++){
-	      if (B[j*ldb + p] != zero ){
+	      if (B[j*ldb + p] != B_zero ){
 		temp = alpha*B[j*ldb + p];
 		for (i=izero; i<m; i++) {
 		  C[j*ldc + i] += temp*A[p*lda + i];
@@ -978,11 +933,11 @@ namespace Teuchos
 	  // Compute C = alpha*A'*B + beta*C
 	  for (j=izero; j<n; j++) {
 	    for (i=izero; i<m; i++) {
-	      temp = zero;
+	      temp = C_zero;
 	      for (p=izero; p<k; p++) {
 		temp += A[i*lda + p]*B[j*ldb + p];
 	      }
-	      if (beta == zero) {
+	      if (beta == beta_zero) {
 		C[j*ldc + i] = alpha*temp;
 	      } else {
 		C[j*ldc + i] = alpha*temp + beta*C[j*ldc + i];
@@ -994,17 +949,17 @@ namespace Teuchos
 	if ( ETranspChar[transa]=='N' ) {
 	  // Compute C = alpha*A*B' + beta*C
 	  for (j=izero; j<n; j++) {
-	    if (beta == zero) {
+	    if (beta == beta_zero) {
 	      for (i=izero; i<m; i++) {
-		C[j*ldc + i] = zero;
+		C[j*ldc + i] = C_zero;
 	      } 
-	    } else if ( beta != one ) {
+	    } else if ( beta != beta_one ) {
 	      for (i=izero; i<m; i++) {
 		C[j*ldc + i] *= beta;
 	      }
 	    }
 	    for (p=izero; p<k; p++) {
-	      if (B[p*ldb + j] != zero) {
+	      if (B[p*ldb + j] != B_zero) {
 		temp = alpha*B[p*ldb + j];
 		for (i=izero; i<m; i++) {
 		  C[j*ldc + i] += temp*A[p*lda + i];
@@ -1016,11 +971,11 @@ namespace Teuchos
 	  // Compute C += alpha*A'*B' + beta*C
 	  for (j=izero; j<n; j++) {
 	    for (i=izero; i<m; i++) {
-	      temp = zero;
+	      temp = C_zero;
 	      for (p=izero; p<k; p++) {
 		temp += A[i*lda + p]*B[p*ldb + j];
 	      }
-	      if (beta == zero) {
+	      if (beta == beta_zero) {
 		C[j*ldc + i] = alpha*temp;
 	      } else {
 		C[j*ldc + i] = alpha*temp + beta*C[j*ldc + i];
@@ -1034,12 +989,15 @@ namespace Teuchos
 
 
   template<typename OrdinalType, typename ScalarType>
-  void DefaultBLASImpl<OrdinalType, ScalarType>::SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, const ScalarType* B, const OrdinalType ldb, const ScalarType beta, ScalarType* C, const OrdinalType ldc) const
+  template <typename alpha_type, typename A_type, typename B_type, typename beta_type>
+  void DefaultBLASImpl<OrdinalType, ScalarType>::SYMM(ESide side, EUplo uplo, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A, const OrdinalType lda, const B_type* B, const OrdinalType ldb, const beta_type beta, ScalarType* C, const OrdinalType ldc) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    ScalarType zero = ScalarTraits<ScalarType>::zero();
-    ScalarType one = ScalarTraits<ScalarType>::one();
+    alpha_type alpha_zero = ScalarTraits<alpha_type>::zero();
+    beta_type beta_zero = ScalarTraits<beta_type>::zero();
+    ScalarType C_zero = ScalarTraits<ScalarType>::zero();
+    beta_type beta_one = ScalarTraits<beta_type>::one();
     OrdinalType i, j, k, NRowA = m;
     ScalarType temp1, temp2;
     bool BadArgument = false;
@@ -1050,7 +1008,7 @@ namespace Teuchos
 	    "Teuchos::BLAS::SYMM() does not currently support complex data types.");
     
     // Quick return.
-    if ( (m==izero) || (n==izero) || ( (alpha==zero)&&(beta==one) ) ) { return; }
+    if ( (m==izero) || (n==izero) || ( (alpha==alpha_zero)&&(beta==beta_one) ) ) { return; }
     if( m < 0 ) { 
       std::cout << "BLAS::SYMM Error: M == "<< m << std::endl;
       BadArgument = true; }
@@ -1070,11 +1028,11 @@ namespace Teuchos
     if(!BadArgument) {
 
       // Only need to scale C and return.
-      if (alpha == zero) {
-	if (beta == zero ) {
+      if (alpha == alpha_zero) {
+	if (beta == beta_zero ) {
 	  for (j=izero; j<n; j++) {
 	    for (i=izero; i<m; i++) {
-	      C[j*ldc + i] = zero;
+	      C[j*ldc + i] = C_zero;
 	    }
 	  }
 	} else {
@@ -1095,12 +1053,12 @@ namespace Teuchos
 	  for (j=izero; j<n; j++) {
 	    for (i=izero; i<m; i++) {
 	      temp1 = alpha*B[j*ldb + i];
-	      temp2 = zero;
+	      temp2 = C_zero;
 	      for (k=izero; k<i; k++) {
 		C[j*ldc + k] += temp1*A[i*lda + k];
 		temp2 += B[j*ldb + k]*A[i*lda + k];
 	      }
-	      if (beta == zero) {
+	      if (beta == beta_zero) {
 		C[j*ldc + i] = temp1*A[i*lda + i] + alpha*temp2;
 	      } else {
 		C[j*ldc + i] = beta*C[j*ldc + i] + temp1*A[i*lda + i] + alpha*temp2;
@@ -1112,12 +1070,12 @@ namespace Teuchos
 	  for (j=izero; j<n; j++) {
 	    for (i=m-ione; i>-ione; i--) {
 	      temp1 = alpha*B[j*ldb + i];
-	      temp2 = zero;
+	      temp2 = C_zero;
 	      for (k=i+ione; k<m; k++) {
 		C[j*ldc + k] += temp1*A[i*lda + k];
 		temp2 += B[j*ldb + k]*A[i*lda + k];
 	      }
-	      if (beta == zero) {
+	      if (beta == beta_zero) {
 		C[j*ldc + i] = temp1*A[i*lda + i] + alpha*temp2;
 	      } else {
 		C[j*ldc + i] = beta*C[j*ldc + i] + temp1*A[i*lda + i] + alpha*temp2;
@@ -1129,7 +1087,7 @@ namespace Teuchos
 	// Compute C = alpha*B*A + beta*C.
 	for (j=izero; j<n; j++) {
 	  temp1 = alpha*A[j*lda + j];
-	  if (beta == zero) {
+	  if (beta == beta_zero) {
 	    for (i=izero; i<m; i++) {
 	      C[j*ldc + i] = temp1*B[j*ldb + i];
 	    }
@@ -1164,11 +1122,14 @@ namespace Teuchos
 } // end SYMM
   
   template<typename OrdinalType, typename ScalarType>
-  void DefaultBLASImpl<OrdinalType, ScalarType>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const
+  template <typename alpha_type, typename A_type>
+  void DefaultBLASImpl<OrdinalType, ScalarType>::TRMM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    ScalarType zero = ScalarTraits<ScalarType>::zero();
+    alpha_type alpha_zero = ScalarTraits<alpha_type>::zero();
+    A_type A_zero = ScalarTraits<A_type>::zero();
+    ScalarType B_zero = ScalarTraits<ScalarType>::zero();
     ScalarType one = ScalarTraits<ScalarType>::one();
     OrdinalType i, j, k, NRowA = m;
     ScalarType temp;
@@ -1200,10 +1161,10 @@ namespace Teuchos
     if(!BadArgument) {
 
       // B only needs to be zeroed out.
-      if( alpha == zero ) {
+      if( alpha == alpha_zero ) {
 	for( j=izero; j<n; j++ ) {
 	  for( i=izero; i<m; i++ ) {
-	    B[j*ldb + i] = zero;
+	    B[j*ldb + i] = B_zero;
 	  }
 	}
 	return;
@@ -1220,7 +1181,7 @@ namespace Teuchos
 	    // A is upper triangular
 	    for( j=izero; j<n; j++ ) {
 	      for( k=izero; k<m; k++) {
-		if ( B[j*ldb + k] != zero ) {
+		if ( B[j*ldb + k] != B_zero ) {
 		  temp = alpha*B[j*ldb + k];
 		  for( i=izero; i<k; i++ ) {
 		    B[j*ldb + i] += temp*A[k*lda + i];
@@ -1235,7 +1196,7 @@ namespace Teuchos
 	    // A is lower triangular
 	    for( j=izero; j<n; j++ ) {
 	      for( k=m-ione; k>-ione; k-- ) {
-		if( B[j*ldb + k] != zero ) {
+		if( B[j*ldb + k] != B_zero ) {
 		  temp = alpha*B[j*ldb + k];
 		  B[j*ldb + k] = temp;
 		  if ( NoUnit )
@@ -1291,7 +1252,7 @@ namespace Teuchos
 		B[j*ldb + i] *= temp;
 	      }
 	      for( k=izero; k<j; k++ ) {
-		if( A[j*lda + k] != zero ) {
+		if( A[j*lda + k] != A_zero ) {
 		  temp = alpha*A[j*lda + k];
 		  for( i=izero; i<m; i++ ) {
 		    B[j*ldb + i] += temp*B[k*ldb + i];
@@ -1309,7 +1270,7 @@ namespace Teuchos
 		B[j*ldb + i] *= temp;
 	      }
 	      for( k=j+ione; k<n; k++ ) {
-		if( A[j*lda + k] != zero ) {
+		if( A[j*lda + k] != A_zero ) {
 		  temp = alpha*A[j*lda + k];
 		  for( i=izero; i<m; i++ ) {
 		    B[j*ldb + i] += temp*B[k*ldb + i];
@@ -1324,7 +1285,7 @@ namespace Teuchos
 	  if( Upper ) {
 	    for( k=izero; k<n; k++ ) {
 	      for( j=izero; j<k; j++ ) {
-		if( A[k*lda + j] != zero ) {
+		if( A[k*lda + j] != A_zero ) {
 		  temp = alpha*A[k*lda + j];
 		  for( i=izero; i<m; i++ ) {
 		    B[j*ldb + i] += temp*B[k*ldb + i];
@@ -1343,7 +1304,7 @@ namespace Teuchos
 	  } else {
 	    for( k=n-ione; k>-ione; k-- ) {
 	      for( j=k+ione; j<n; j++ ) {
-		if( A[k*lda + j] != zero ) {
+		if( A[k*lda + j] != A_zero ) {
 		  temp = alpha*A[k*lda + j];
 		  for( i=izero; i<m; i++ ) {
 		    B[j*ldb + i] += temp*B[k*ldb + i];
@@ -1366,12 +1327,16 @@ namespace Teuchos
   } // end TRMM
   
   template<typename OrdinalType, typename ScalarType>
-  void DefaultBLASImpl<OrdinalType, ScalarType>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const ScalarType alpha, const ScalarType* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const
+  template <typename alpha_type, typename A_type>
+  void DefaultBLASImpl<OrdinalType, ScalarType>::TRSM(ESide side, EUplo uplo, ETransp transa, EDiag diag, const OrdinalType m, const OrdinalType n, const alpha_type alpha, const A_type* A, const OrdinalType lda, ScalarType* B, const OrdinalType ldb) const
   {
     OrdinalType izero = OrdinalTraits<OrdinalType>::zero();
     OrdinalType ione = OrdinalTraits<OrdinalType>::one();
-    ScalarType zero = ScalarTraits<ScalarType>::zero();
-    ScalarType one = ScalarTraits<ScalarType>::one();
+    alpha_type alpha_zero = ScalarTraits<alpha_type>::zero();
+    A_type A_zero = ScalarTraits<A_type>::zero();
+    ScalarType B_zero = ScalarTraits<ScalarType>::zero();
+    alpha_type alpha_one = ScalarTraits<alpha_type>::one();
+    ScalarType B_one = ScalarTraits<ScalarType>::one();
     ScalarType temp;
     OrdinalType NRowA = m;
     bool BadArgument = false;
@@ -1401,10 +1366,10 @@ namespace Teuchos
       {
 	int i, j, k;
 	// Set the solution to the zero std::vector.
-	if(alpha == zero) {
+	if(alpha == alpha_zero) {
 	    for(j = izero; j < n; j++) {
 	    	for( i = izero; i < m; i++) {
-		    B[j*ldb+i] = zero;
+		    B[j*ldb+i] = B_zero;
 	      	}
 	    }
 	}
@@ -1422,7 +1387,7 @@ namespace Teuchos
 			// A is upper triangular.
 			for(j = izero; j < n; j++) {
 	    		    // Perform alpha*B if alpha is not 1.
-	    		    if(alpha != one) {
+			  if(alpha != alpha_one) {
 	    	    		for( i = izero; i < m; i++) {
 		    		    B[j*ldb+i] *= alpha;
 		    		}
@@ -1430,7 +1395,7 @@ namespace Teuchos
 			    // Perform a backsolve for column j of B.
 			    for(k = (m - ione); k > -ione; k--) {
 				// If this entry is zero, we don't have to do anything.
-				if (B[j*ldb + k] != zero) {
+				if (B[j*ldb + k] != B_zero) {
 				    if (NoUnit) {
 					B[j*ldb + k] /= A[k*lda + k];
 				    }
@@ -1445,7 +1410,7 @@ namespace Teuchos
 		    { // A is lower triangular.
                         for(j = izero; j < n; j++) {
                             // Perform alpha*B if alpha is not 1.
-                            if(alpha != one) {
+                            if(alpha != alpha_one) {
                                 for( i = izero; i < m; i++) {
                                     B[j*ldb+i] *= alpha;
                                 }
@@ -1453,7 +1418,7 @@ namespace Teuchos
                             // Perform a forward solve for column j of B.
                             for(k = izero; k < m; k++) {
                                 // If this entry is zero, we don't have to do anything.
-                                if (B[j*ldb + k] != zero) {   
+                                if (B[j*ldb + k] != B_zero) {   
                                     if (NoUnit) {
                                         B[j*ldb + k] /= A[k*lda + k];
                                     }
@@ -1515,21 +1480,21 @@ namespace Teuchos
 	    		// Perform a backsolve for column j of B.
 			for(j = izero; j < n; j++) {
 	    		    // Perform alpha*B if alpha is not 1.
-	    		    if(alpha != one) {
+	    		    if(alpha != alpha_one) {
 	    	    		for( i = izero; i < m; i++) {
 		    		    B[j*ldb+i] *= alpha;
 		    		}
 			    }
 			    for(k = izero; k < j; k++) {
 				// If this entry is zero, we don't have to do anything.
-				if (A[j*lda + k] != zero) {
+				if (A[j*lda + k] != A_zero) {
 				    for(i = izero; i < m; i++) {
 					B[j*ldb + i] -= A[j*lda + k] * B[k*ldb + i];
 				    }
 				}
 			    }
 			    if (NoUnit) {
-				temp = one/A[j*lda + j];
+				temp = B_one/A[j*lda + j];
 				for(i = izero; i < m; i++) {
 				    B[j*ldb + i] *= temp;
 				}
@@ -1540,7 +1505,7 @@ namespace Teuchos
 		    { // A is lower triangular.
                         for(j = (n - ione); j > -ione; j--) {
                             // Perform alpha*B if alpha is not 1.
-                            if(alpha != one) {
+                            if(alpha != alpha_one) {
                                 for( i = izero; i < m; i++) {
                                     B[j*ldb+i] *= alpha;
                                 }
@@ -1548,14 +1513,14 @@ namespace Teuchos
                             // Perform a forward solve for column j of B.
                             for(k = j+ione; k < n; k++) {
                                 // If this entry is zero, we don't have to do anything.
-				if (A[j*lda + k] != zero) {
+				if (A[j*lda + k] != A_zero) {
 				    for(i = izero; i < m; i++) {
                                         B[j*ldb + i] -= A[j*lda + k] * B[k*ldb + i]; 
                                     }
                                 } 
                             }
 			    if (NoUnit) {
-				temp = one/A[j*lda + j];
+				temp = B_one/A[j*lda + j];
 				for(i = izero; i < m; i++) {
 				    B[j*ldb + i] *= temp;
 				}
@@ -1571,20 +1536,20 @@ namespace Teuchos
 			// A is upper triangular.
 			for(k = (n - ione); k > -ione; k--) {
 			    if (NoUnit) {
-				temp = one/A[k*lda + k];
+				temp = B_one/A[k*lda + k];
 	    	    	    	for(i = izero; i < m; i++) {
 		    		    B[k*ldb + i] *= temp;
 				}
 			    }
 			    for(j = izero; j < k; j++) {
-				if (A[k*lda + j] != zero) {
+				if (A[k*lda + j] != A_zero) {
 				    temp = A[k*lda + j];
 				    for(i = izero; i < m; i++) {
 					B[j*ldb + i] -= temp*B[k*ldb + i];
 				    }
 				}
 			    }
-			    if (alpha != one) {
+			    if (alpha != alpha_one) {
 				for (i = izero; i < m; i++) {
 				    B[k*ldb + i] *= alpha;
 				}
@@ -1595,20 +1560,20 @@ namespace Teuchos
 		    { // A is lower triangular.
 			for(k = izero; k < n; k++) {
 			    if (NoUnit) {
-				temp = one/A[k*lda + k];
+				temp = B_one/A[k*lda + k];
 				for (i = izero; i < m; i++) {
 				    B[k*ldb + i] *= temp;
 				}
 			    }
 			    for(j = k+ione; j < n; j++) {
-				if(A[k*lda + j] != zero) {
+				if(A[k*lda + j] != A_zero) {
 				    temp = A[k*lda + j];
 				    for(i = izero; i < m; i++) {
 					B[j*ldb + i] -= temp*B[k*ldb + i];
 				    }
 				}
 			    }
-			    if (alpha != one) {
+			    if (alpha != alpha_one) {
 				for (i = izero; i < m; i++) {
 				    B[k*ldb + i] *= alpha;
 				}
