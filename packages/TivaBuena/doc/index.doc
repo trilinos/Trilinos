@@ -2,12 +2,12 @@
 \htmlonly
 \endhtmlonly
 
-\section new_package_outline Outline
+\section TivaBuena_outline Outline
 
 <ul>
-<li>\ref TivaBuean_intro
-<li>\ref TivaBuean_startup
-<li>\ref new_package_browser
+<li>\ref TivaBuena_intro
+<li>\ref TivaBuena_startup
+<li>\ref TivaBuena_browser
 </ul>
 
 \section TivaBuena_intro Introduction 
@@ -23,11 +23,21 @@ workflow within their program:
 	\item Obtain the values the user entered in the form of a Parameter List.
 	\end{enumerate}
 
-\section new_package_browser Browse all of new_package as a single doxygen collection
+\section Compile Notes
+In order to compile TivaBuena you must have Qt installed. You can either download Qt directly from the website (http://www.qtsoftware.com) or if you are on Linux, you can use your package manager.
+If you use your package manager, may sure you download the Qt developement package (usually something like qt4-devel) and that it is Qt version 4.3 or higher. If you download Qt directly and put it some where other than the default
+installation directory you will have to compile trilinos using these cmake arguments:
+	<ul>
+	<li> -DQT\_INCLUDE\_DIRS:STRING=directory containing your qt include files</li>
+	<li> -DQT\_LIBRARY\_DIRS:STRING=directory containing your qt libraries</li>
+	<li> -DQT\_BINARY\_DIR:STRING=directory containing your qt binaries</li>
+	</ul>
 
-You can browse all of New_Package as a <A HREF="../../browser/doc/html/index.html">single
+\section TivaBuena_bowser Browse all of new_package as a single doxygen collection
+
+You can browse all of TivaBuena as a <A HREF="../../browser/doc/html/index.html">single
 doxygen collection</A>. Warning, this is not the recommended way to learn
-about New_Package software.  However, this is a good way to browse the <a
+about TivaBuena software.  However, this is a good way to browse the <a
 href="../../browser/doc/html/dirs.html">directory structure of new_package</a>, to <a
 href="../../browser/doc/html/files.html">locate files</a>, etc.
 
