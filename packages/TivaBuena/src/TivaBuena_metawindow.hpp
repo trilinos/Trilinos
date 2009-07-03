@@ -3,7 +3,7 @@
 #include <QMainWindow>
 #include <QDialog>
 #include <QModelIndex>
-#include "Teuchos_ParameterList.hpp"
+#include "TivaBuena_treeview.hpp"
 
 class QAction;
 class QMenu;
@@ -12,10 +12,6 @@ class QPushButton;
 class QLineEdit;
 namespace TivaBuena{
 
-class TreeModel;
-class Delegate;
-class TreeView;
-class DependencySheet;
 /**
  * A small widget that searchs through a parameter list for a particular name
  * of either a parameter or another parameter list.

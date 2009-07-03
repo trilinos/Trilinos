@@ -3,7 +3,7 @@
 #include <QTextStream>
 #include <QSize>
 #include "TivaBuena_treeitem.hpp"
-#include "Teuchos_ParameterList.hpp"
+
 namespace TivaBuena{
 
 TreeItem::TreeItem(const QList<QVariant> &data, Teuchos::ParameterEntry *parameter, TreeItem *parent, bool unrecognized){
@@ -188,23 +188,23 @@ void TreeItem::setValidator(Teuchos::RCP<const Teuchos::ParameterEntryValidator>
 
 void TreeItem::changeValueForArray(QVariant value, QString type){
 	if(type == intId){
-		parameterEntry->setValue(Teuchos::fromStringToArray<int>(value.toString().toStdString()), false,
+		parameterEntry->setValue(TivaBuena::fromStringToArray<int>(value.toString()), false,
 					 parameterEntry->docString(), parameterEntry->validator());
 	}
 	else if(type == shortId){
-		parameterEntry->setValue(Teuchos::fromStringToArray<short>(value.toString().toStdString()), false,
+		parameterEntry->setValue(TivaBuena::fromStringToArray<short>(value.toString()), false,
 					 parameterEntry->docString(), parameterEntry->validator());
 	}
 	else if(type == doubleId){
-		parameterEntry->setValue(Teuchos::fromStringToArray<double>(value.toString().toStdString()), false,
+		parameterEntry->setValue(TivaBuena::fromStringToArray<double>(value.toString()), false,
 					 parameterEntry->docString(), parameterEntry->validator());
 	}
 	else if(type == floatId){
-		parameterEntry->setValue(Teuchos::fromStringToArray<float>(value.toString().toStdString()), false,
+		parameterEntry->setValue(TivaBuena::fromStringToArray<float>(value.toString()), false,
 					 parameterEntry->docString(), parameterEntry->validator());
 	}
 	else if(type == stringId){
-		parameterEntry->setValue(Teuchos::fromStringToArray<std::string>(value.toString().toStdString()), false,
+		parameterEntry->setValue(TivaBuena::fromStringToArray<std::string>(value.toString()), false,
 					 parameterEntry->docString(), parameterEntry->validator());
 	}
 }

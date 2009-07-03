@@ -14,7 +14,6 @@
 #include <vector>
 #include "TivaBuena_treemodel.hpp"
 #include "TivaBuena_FilenameWidget.hpp"
-#include "TivaBuena_ArrayHelperFunctions.hpp"
 
 namespace TivaBuena {
 
@@ -23,9 +22,7 @@ namespace TivaBuena {
  * A templated abstract base class for all other array editing widgets. Note the absence of the QOBJECT
  * macro. This is becuase classes using the QOBJECT macro can't be templated (bummer). The macro is therfore
  * present in the subclasses.
- */
-template <class S>
-class GenericArrayWidget : public QDialog{
+ */ template <class S> class GenericArrayWidget : public QDialog{
 public:
 	/**
 	 * Constructs a GenericArrayWidget.

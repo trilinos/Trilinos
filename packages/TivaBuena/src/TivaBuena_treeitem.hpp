@@ -5,9 +5,8 @@
 #include <QVariant>
 #include <QXmlStreamWriter>
 #include <QXmlStreamReader>
-#include "Teuchos_ParameterEntry.hpp"
-#include "TivaBuena_treemodel.hpp"
-
+#include "Teuchos_ParameterList.hpp"
+#include "TivaBuena_ArrayHelperFunctions.hpp"
 namespace TivaBuena{
 /**
  * The TreeItem class is the item class used by the TreeModel class.

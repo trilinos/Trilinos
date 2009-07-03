@@ -1,6 +1,4 @@
 #include "TivaBuena_Dependency.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "TivaBuena_InvalidDependencyException.hpp"
 
 namespace TivaBuena{
 

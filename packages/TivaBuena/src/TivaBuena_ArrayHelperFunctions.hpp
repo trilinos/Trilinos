@@ -1,7 +1,9 @@
 #ifndef TIVABUENA_DOESPARAMETERCONTAINARRAY_HPP_
 #define TIVABUENA_DOESPARAMETERCONTAINARRAY_HPP_
-#include "Teuchos_ParameterEntry.hpp"
 #include <QStringList>
+#include <QVariant>
+#include "TivaBuena_Types.hpp"
+#include "Teuchos_ParameterEntry.hpp"
 namespace TivaBuena{
 
 /**
@@ -27,6 +29,33 @@ QStringList getValues(QString& values);
  * @return A QString containing the type of array in the parameter.
  */
 QString determineArrayType(Teuchos::ParameterEntry *parameter);
+
+/*template <class S>
+Teuchos::Array<S> fromStringToArray(QString arrayString);
+
+template <>
+Teuchos::Array<std::string> fromStringToArray(QString arrayString);*/
+
+template <class S>
+Teuchos::Array<S> fromStringToArray(QString arrayString){
+	arrayString = arrayString.remove("{");
+	arrayString = arrayString.remove("}");
+	arrayString = arrayString.remove(" ");
+	QStringList tempValues = arrayString.split(",");
+	QList<QVariant> values;
+	for(int i = 0; i<tempValues.size(); i++){
+		values.append(tempValues[i]);
+	}
+	Teuchos::Array<S> toReturn;
+	for(int i = 0; i<values.size(); i++){
+		toReturn.append(values[i].value<S>());	
+	}
+	return toReturn;
+
+}
+
+template <>
+Teuchos::Array<std::string> fromStringToArray<std::string>(QString arrayString);
 
 }
 #endif /* TIVABUENA_DOESPARAMETERCONTAINARRAY_HPP_ */

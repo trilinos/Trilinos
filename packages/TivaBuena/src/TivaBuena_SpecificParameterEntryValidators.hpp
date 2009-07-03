@@ -6,11 +6,10 @@
 #include <QSpinBox>
 #include <QDoubleSpinBox>
 #include <QComboBox>
-#include "Teuchos_ParameterListExceptions.hpp"
-#include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "TivaBuena_Types.hpp"
 #include <float.h>
 #include <limits>
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "TivaBuena_ArrayHelperFunctions.hpp"
 
 namespace TivaBuena{
 

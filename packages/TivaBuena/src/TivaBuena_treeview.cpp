@@ -1,6 +1,4 @@
 #include "TivaBuena_treeview.hpp"
-#include "TivaBuena_treemodel.hpp"
-#include "TivaBuena_delegate.hpp"
 #include <QMessageBox>
 namespace TivaBuena{
 

@@ -1,9 +1,5 @@
 #include <iostream>
 #include "TivaBuena_treemodel.hpp"
-#include "TivaBuena_treeitem.hpp"
-#include "TivaBuena_StandardDependencies.hpp"
-#include "TivaBuena_InvalidDependencyException.hpp"
-#include "TivaBuena_ArrayHelperFunctions.hpp"
 
 namespace TivaBuena{
 

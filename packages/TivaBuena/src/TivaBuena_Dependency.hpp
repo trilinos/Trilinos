@@ -1,7 +1,8 @@
 #ifndef TIVABUENA_DEPENDENCY_HPP_
 #define TIVABUENA_DEPENDENCY_HPP_
 #include "Teuchos_RCPDecl.hpp"
-#include "Teuchos_ParameterEntry.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "TivaBuena_InvalidDependencyException.hpp"
 namespace TivaBuena{
 
 

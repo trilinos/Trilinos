@@ -1,5 +1,4 @@
 #include "TivaBuena_ArrayHelperFunctions.hpp"
-#include "TivaBuena_Types.hpp"
 
 namespace TivaBuena{
 bool doesParameterContainArray(const Teuchos::ParameterEntry *parameter){
@@ -40,6 +39,29 @@ QString determineArrayType(Teuchos::ParameterEntry *parameter){
 		return unrecognizedId;		
 	}
 }
+
+template <>
+Teuchos::Array<std::string> fromStringToArray<std::string>(QString arrayString){
+	arrayString = arrayString.remove("{");
+	arrayString = arrayString.remove("}");
+	QStringList tempValues = arrayString.split(",");
+	for(int i = 0; i < tempValues.size(); i++){
+		if(tempValues[i].at(0) == QChar(' ')){
+			tempValues[i] = tempValues[i].remove(0,1);
+		}
+	}
+	QList<QVariant> values;
+	for(int i = 0; i<tempValues.size(); i++){
+		values.append(tempValues[i]);
+	}
+	Teuchos::Array<std::string> toReturn;
+	for(int i = 0; i<values.size(); i++){
+		toReturn.append(values[i].value<QString>().toStdString());	
+	}
+	return toReturn;
+
+}
+
 
 }
 

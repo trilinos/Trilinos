@@ -1,8 +1,6 @@
 #ifndef TIVABUENA_STANDARDDEPENDCIES_HPP_
 #define TIVABUENA_STANDARDDEPENDCIES_HPP_
-#include "TivaBuena_InvalidDependencyException.hpp"
 #include "TivaBuena_Dependency.hpp"
-#include "Teuchos_ParameterEntryValidator.hpp"
 #include "TivaBuena_SpecificParameterEntryValidators.hpp"
 namespace TivaBuena{
 

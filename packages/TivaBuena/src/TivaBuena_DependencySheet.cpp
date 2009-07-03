@@ -1,6 +1,4 @@
 #include "TivaBuena_DependencySheet.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "TivaBuena_InvalidDependencyException.hpp"
 #include <QString>
 
 namespace TivaBuena{

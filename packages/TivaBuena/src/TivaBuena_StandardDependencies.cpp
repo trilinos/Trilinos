@@ -1,5 +1,4 @@
 #include "TivaBuena_StandardDependencies.hpp"
-#include "TivaBuena_ArrayHelperFunctions.hpp"
 #include <QDir>
 
 namespace TivaBuena{

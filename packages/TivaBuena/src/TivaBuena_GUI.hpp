@@ -1,6 +1,7 @@
 #ifndef TIVABUENA_GUI_HPP_
 #define TIVABUENA_GUI_HPP_
 #include "TivaBuena_DependencySheet.hpp"
+#include "TivaBuena_metawindow.hpp"
 namespace TivaBuena{
 	/**
 	 * Retreives the input for a Teuchos Parameter List using a GUI. Note the Parameter List will be edited.

@@ -3,7 +3,8 @@
 #include <QItemDelegate>
 #include <QModelIndex>
 #include <QSize>
-#include "Teuchos_ParameterEntry.hpp"
+#include "TivaBuena_ArrayWidget.hpp"
+
 
 namespace TivaBuena{
 

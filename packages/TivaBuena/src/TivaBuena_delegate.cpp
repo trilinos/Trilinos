@@ -5,7 +5,6 @@
 #include <QComboBox>
 #include <QFileDialog>
 #include "TivaBuena_delegate.hpp"
-#include "TivaBuena_ArrayWidget.hpp"
 #include "float.h"
 #include <iostream>
 

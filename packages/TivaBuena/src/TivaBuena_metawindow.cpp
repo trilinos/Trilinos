@@ -1,6 +1,3 @@
-#include "TivaBuena_treeview.hpp"
-#include "TivaBuena_delegate.hpp"
-#include "TivaBuena_treemodel.hpp"
 #include "TivaBuena_metawindow.hpp"
 #include <QLineEdit>
 #include <QLabel>

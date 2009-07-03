@@ -2,6 +2,7 @@
 #define TIVABUENA_TREEVIEW_HPP_
 #include <QTreeView>
 #include <QQueue>
+#include "TivaBuena_delegate.hpp"
 namespace TivaBuena{
 
 class Delegate;

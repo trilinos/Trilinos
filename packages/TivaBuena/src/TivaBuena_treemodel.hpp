@@ -6,16 +6,13 @@
  *  Created on: Apr 21, 2009
  *      Author: Kurtis Nusbaum
  */
-#include "Teuchos_ParameterList.hpp"
-#include "TivaBuena_DependencySheet.hpp"
-#include "TivaBuena_Types.hpp"
-#include "TivaBuena_SpecificParameterEntryValidators.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_any.hpp"
 #include <QAbstractItemModel>
 #include <QModelIndex>
 #include <QVariant>
 #include <QDir>
+#include "TivaBuena_treeitem.hpp"
+#include "TivaBuena_DependencySheet.hpp"
+#include "TivaBuena_StandardDependencies.hpp"
 
 
 namespace TivaBuena{

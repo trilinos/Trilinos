@@ -1,6 +1,5 @@
 #include <QApplication>
 #include <QtGui>
-#include "TivaBuena_metawindow.hpp"
 #include "TivaBuena_GUI.hpp"
 #include <iostream>
 namespace TivaBuena{
