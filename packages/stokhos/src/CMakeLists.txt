@@ -41,6 +41,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_RysBasisImp.hpp
   Stokhos_LegendreBasis.hpp
   Stokhos_LegendreBasisImp.hpp
+  Stokhos_RysBasis.hpp
+  Stokhos_RysBasisImp.hpp
   Stokhos_OrthogPolyBasis.hpp
   Stokhos_CompletePolynomialBasis.hpp
   Stokhos_CompletePolynomialBasisImp.hpp

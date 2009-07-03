@@ -56,6 +56,8 @@ STOKHOS_H = \
 	$(srcdir)/Stokhos_HermiteBasisImp.hpp \
 	$(srcdir)/Stokhos_LegendreBasis.hpp \
 	$(srcdir)/Stokhos_LegendreBasisImp.hpp \
+	$(srcdir)/Stokhos_RysBasis.hpp \
+	$(srcdir)/Stokhos_RysBasisImp.hpp \
 	$(srcdir)/Stokhos_OrthogPolyBasis.hpp \
 	$(srcdir)/Stokhos_CompletePolynomialBasis.hpp \
 	$(srcdir)/Stokhos_CompletePolynomialBasisImp.hpp \

@@ -282,8 +282,8 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
       for (int i=0; i<inArgs.Np_sg(); i++) {
 	if (p_sg[i] != Teuchos::null) {
 	  TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- P Evaluation");
-	  p_sg[i]->evaluate(quad_values[qp], *(p_qp[i]));
-	  me_inargs.set_p(sg_p_index[i], p_qp[i]);
+	  p_sg[i]->evaluate(quad_values[qp], *(p_qp[sg_p_index[i]]));
+	  me_inargs.set_p(sg_p_index[i], p_qp[sg_p_index[i]]);
 	}
       }
       if (f_sg != Teuchos::null)

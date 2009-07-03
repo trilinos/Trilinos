@@ -169,12 +169,14 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
 
      Teuchos::RCP<const Teuchos::Array<std::string> > p_names = 
        me->get_p_names(sg_p_index[i]);
-     sg_p_names[i] = 
-       Teuchos::rcp(new Teuchos::Array<std::string>(num_sg_blocks*(p_names->size())));
-     for (unsigned int j=0; j<p_names->size(); j++) {
-       std::stringstream ss;
-       ss << (*p_names)[j] << " -- SG Coefficient " << i;
-       (*sg_p_names[i])[j] = ss.str();
+     if (p_names != Teuchos::null) {
+       sg_p_names[i] = 
+	 Teuchos::rcp(new Teuchos::Array<std::string>(num_sg_blocks*(p_names->size())));
+       for (unsigned int j=0; j<p_names->size(); j++) {
+	 std::stringstream ss;
+	 ss << (*p_names)[j] << " -- SG Coefficient " << i;
+	 (*sg_p_names[i])[j] = ss.str();
+       }
      }
 
      // Create initial p
