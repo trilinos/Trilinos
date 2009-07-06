@@ -1,0 +1,446 @@
+--------------------------------------------------------------
+Desired Enhancements for CMake Suite of Tools for Trilinos
+--------------------------------------------------------------
+
+
+Prioritized Backog Items:
+-------------------------
+
+
+(*) [CMake] [P1] C++ Fortran 77/90 mixed language issues.  See
+Trilinos bug https://software.sandia.gov/bugzilla/show_bug.cgi?id=4448
+
+
+(*) [CDash] [P1] Fix behavior of CDash error email notification
+reporting: Currently, when errors occur in dependent subprojects
+during a given subproject build, either the proper emails don't go out
+or emails with improper subjects and/or contents go out to various
+subproject emails lists.  The logic of the subproject email
+notification reports needs to be revised to send the right emails with
+the right contents to the right subproject email lists.  The current
+CDash system is also just not sending out any emails for some
+failures.
+
+
+(*) [General] [P1] MS Windows port and installer: We would like
+Kitware to set up out MS Windows HPC Server 2008 machine and get the
+Trilinos CMake build going with nightly testing.  We would also like
+some help porting Trilinos packages.
+ 
+
+(*) [CMake] [P2] Native and mixed-language support for Fortran 2003
+(and some 2008): Collaborate with Damian Rousaon on this.
+
+
+(*) [CTest] [P2] By default, automatically widen the main summary
+output to show the full test names: Currently, only the first 30
+characters of the name are shown.  The option -W was added to the CVS
+version of CTest to allow the width to be manually set but this is a
+hassle and does not interact well with MS Visual C++ projects.
+
+
+(*) [CDash] [P2] Add general query filters to the test results pages.
+This would allow you to search over multiple Trilinos packages over
+multiple platforms and days all in one place.
+
+
+(*) [CDash] [P2] Sort 'Time(s)' field in test results page numerically
+instead of alphabetically.
+
+
+(*) [CDash] [P3] Append all query fields when going from 'collapsed'
+view page to 'non-collapsed' view page: Currently, if you create a
+query and limit the builds shown in a 'collapsed' view, when you click
+on a build name collapsed group, you go to a new page that does not
+contain your query fields.  This is not at all what you expect and you
+have to entry the query fields again on the non-collapsed page.
+
+
+(*) [CTest] [P3] Add general summary timing to the console summary
+outputting:
+
+- Print the CPU time for each test (not just the start and end times
+in the log file): The test run time helps to determine what tests are
+taking too long and need to be revised.  This feature should be very
+easy to add to the CTest C++ source code.
+
+- Print intermediate summary times for individual groups of tests (see
+example below): This will allow us to see how long individual Trilinos
+packages are taking to complete their tests.  This could be
+facilitated with an option like --summary-testing-group=REGEX that
+causes test to be grouped together based on REGEX matching.
+
+- Print the overall testing time at the end of the summary and
+detailed log files (see below):
+
+Example output showing the above items:
+
+=========================================================
+
+Start processing tests
+
+Test project /home/rabartl/PROJECTS/Trilinos.base/BUILDS/CMAKE/GCC-4.1.2/SERIAL_DEBUG
+
+ 12/119 Testing Teuchos_BLAS_test ..........................................   Passed   5.20 sec
+ 13/119 Testing Teuchos_DefaultMpiComm_UnitTests ...........................   Passed   0.48 sec
+ 14/119 Testing Teuchos_Comm_test ..........................................   Passed   2.56 sec
+ 15/119 Testing Teuchos_Containers_test ....................................   Passed   0.43 sec
+ 16/119 Testing Teuchos_UnitTest_UnitTests .................................   Passed   0.31 sec
+ 17/119 Testing Teuchos_UnitTest_BadUnitTest_final_results .................   Passed   0.01 sec
+ ...
+ Subproject summary Teuchos: #passed = 25, #failed = 1, CPU time = 26 sec
+
+ 72/119 Testing Epetra_BlockMap_test .......................................   Passed   0.00 sec
+ 73/119 Testing Epetra_BasicPerfTest_test ..................................   Passed   0.98 sec
+ 74/119 Testing Epetra_Comm_test ...........................................   Passed   7.05 sec
+ 75/119 Testing Epetra_CrsGraph_test_unit ..................................   Passed   2.74 sec
+ 76/119 Testing Epetra_CrsMatrix_test ......................................   Passed   20.5 sec
+ ...
+ Subproject summary Epetra: #passed = 48, #failed=0, CPU time = 150 sec
+ 
+ ...
+
+100% tests passed, 0 tests failed out of 113
+
+Total CPU time = 1050 sec
+
+=========================================================
+
+
+(*) [CTest] [P3] Fully finish the ctest -jN option: The -jN option
+needs to provide good parallel scalability.  It also needs to be able
+to write the needed output files for submitting to the dashboard.  We
+also need to be able to invoke -jN functionality from advanced CTest
+scripts when calling CTEST_TEST(...) and the other such commands like
+CTEST_MEMCHECK(...) and CTEST_COVERAGE(...).  Improved support might
+include remembering what tests are most expensive and launching them
+first.  Note that this will be sufficient for serial runs but when
+running with MPI, we need to consider the numbers of processes a test
+is using (see below).
+
+
+(*) [CTest] [P3] Define the number of processors to be used when
+running a parallel test: Currently, ctest has no way of knowing how
+many processors a test will use when it runs.  For example, it has no
+way of knowing that an MPI run will use 8 processors.  This is
+important information for ctest to know if it is going to be doing a
+good job of launching tests to run on multiple processors at the same
+time (a new feature being implemented in the development branch).  The
+optimal job scheduling would be difficult but all we need is some
+basic non-optimal logic to do a good job of using the machine to its
+fullest when running lots of test simultaneously.  This is an issue in
+fully utilizing our overloaded testing machines.  Workaround: Set up
+testing to run only single-process jobs in parallel first, then MPI
+jobs sequentially that use all of the processes.  We would have to
+provide a tool on top of ctest to make this easy to use.  This is
+related to the above item when running with MPI.
+
+
+(*) [CDash] [P3] Support for user-defined configure, build, and test
+status: Currently, CTest/CDash only supports the test statues of
+'Passed', 'Failed', and 'Not Run'.  There are many projects, however,
+that would like to support finer grained test status like
+'Diff','Segfault', and 'Timeout'.  It would be good if CTest/CDash
+would allow you to define new categories of test statuses and then
+display then on the CDash dashboard and new columns and in each test.
+Also, when a package fails to configure because it was disabled it
+would be nice if this had a special status.
+
+
+(*) [CDash] [P3] General handling of data files in different test
+directories: Right now Ctest/CDash only handle STDOUT for tests and
+not any other files that might get written.  Therefore, currently, we
+would have to manually handle copying test directories and data over
+to a central server where it can be accessed from CDash for each test.
+It would make a lot of sense if Ctest/CDash could be extended to
+directly deal with test data related to specific tests and handle
+copying it over to some system where it would be stored and put in
+links to it from the dashboard test results pages automatically.  It
+would also be useful if CTest could optionally create sub-directories
+for tests to run in so that the output files would be kept separate
+for copy to the CDash server and for later inspection.  Workaround:
+Write scripts and handle everything on our own.  However, CDash would
+not display the list of files without a lot of work.
+
+
+(*) [CDash] [P3] Separate out coverage results for library code and
+for test/example code: Currently, our coverage shows lower coverage
+than it should due to some test code logic not getting tested always
+(like printing when a test fails).  What would be needed in
+CMake/CTest is to be able to tag source files as 'TEST' code and that
+would result in coverage statistics being gathered for those files
+separately from the remaing code which is assumed to be production
+code (library code in the case of Trilinos).  CDash would then need to
+write two columns in the coverage results, one for 'Production' code,
+and one for 'Test' code.
+
+
+(*) [CTest] [P4] Support of batch-style job queuing systems: With
+large scale MPPs and even modest Linux clusters, a batch queuing
+system like PBS needs to be used to schedule and launch jobs.  It
+would be very useful if ctest could someone support tests that run in
+batch mode where a bunch of tests are queued up and then it poles for
+the completion of the tests and even times them out (by calling 'qsub
+-kill') if they are taking too long.  Such functionality might be
+programmed on top of ctest through the use of cmake -P scripts and the
+ctest -jN option but it would be better if ctest could handle this in
+a more direct way.
+
+
+(*) [CDash] [P4] Implement a tool that will go back in time and delete
+older test results from the SQL database and/or reduce the size of
+files referenced in the SQL database: However, we would want to save
+all data for important events like a test going from passing to
+failing or failing to passing.  You can get quite sophisticated with
+this but implementing the basic types of logic is not hard.
+Workaround: We can implement this all ourselves independent of
+CTest/CDash by working directly with the MySQL database but that will
+be complex and fragile as the CDash MySQL table structure changes with
+upgrades.  We also want to have different criteria for cleaning out
+Nightly verses Continuous verses Experimental data.  For example, all
+Experimental data will be wiped out after two days.  Continuous data
+would be thined out after 3 days and removed all together after two
+weeks.
+
+
+(*) [CDash] [P4] Get CDash to periodically clean out older log
+history.
+
+
+
+Unprioritized items:
+--------------------
+
+
+(*) [CMake] Add support for drop-down 'ON', 'OFF', '' for the function
+SET_CACHE_ON_OFF_EMPTY(...) in the Curses interface.
+
+
+(*) [CMake] Strong checking for user input misspelling CMake cache
+variables: Currently, if a user misspells the name of a defined user
+cache variable, the default for that variable will be used instead and
+the misspelled user variable will be ignored.  This is very bad
+behavior that is carried over from the make and autotools systems and
+should not be repeated with the CMake system.  It would be very useful
+if the cmake executable could take a new option
+(e.g. --validate-cache-variables) or if an internal cache variable
+could be set (like CMAKE_VALIDATE_INPUT_CACHE_VARIABLES) that would
+force the validation of all user-set cache variables to make sure that
+they had a matching internally defined cache variable.  Workaround: I
+am not sure there is any robust workaround for this problem.  Only a
+built-in capability to CMake can address this issue fully.
+
+
+(*) [CMake] Strong internal checking for variables that are not
+defined: Just treating undefined variables as being empty is a bad
+practice (used by Make and bad Fortran 77).  This practice is well
+known to result in higher rates of software defects.  Turning on
+strong checking for all of CMake may not be possible because of a
+large number of existing modules that may rely on the
+undefined-is-empty-and-is-false behavior.  Therefore, a more local
+solution like turning on strong checking in individual functions and
+macros may be more realistic.  The behavior of command like
+CMAKE_ENABLE_STRONG_CHECKING(TRUE/FALSE) would have to be carefully
+designed but it would make CMake code much more solid.  In cases where
+we wanted to allow a variable to be undefined we would need to call a
+function like MAKE_UNDEFINED_EMPTY(<VAR_NAME>) that would define the
+variable and make it empty if it was not already set.  Workaround:
+Currently, we employ a user-defined function ASSERT_DEFINED(...) which
+is called right before the variable is used.  This is not ideal
+because it is verbose and you can misspell the name of the variable in
+the two places which defeats the purpose.
+
+
+(*) [CMake] Support for true  function return values: CMake code would
+be  much less verbose  and there  would be  less duplication  of CMake
+could add support  for true function   return values.  For  example, a
+variable could be set from a function with:
+
+  SET(SOME_VAR ${SOME_USER_FUNC(...)})
+
+or do an if statement like:
+
+  IF (${SOME_BOOL_FUNC(...)})
+    ...
+
+That would allow for much cleaner code and less duplication.
+
+
+(*) [CMake] Extract all available options without performing compiler
+checks, etc: Currently, you have to do a full configure complete with
+compiler checks in order to see what the user options are.  This is
+bad if the compiler checks fail right away.  Workaround: Try to
+disable the compiler checks.  However, I can't find any way to disable
+the check for the C compiler.
+
+
+(*) [CMake] Support multi-computer builds: Current CMake can only
+support parallel builds on a single machine through 'make -jN'.
+However, there are build tools that can talk an informal cluster of
+similar (i.e. identical) computers (with different IP addresses) and
+use them to compile object files in parallel.  Work around: Use
+'distgcc'.
+
+
+(*) [CMake] Generate error messages for missing source files that have
+line numbers in the corresponding CMakeLists.txt file: Currently,
+cmake just lists the entire CMakeLists.txt file and nothing else.
+Workaround: Just add files slowly and re-run CMake each time to debug
+the problem.
+
+
+Desired/missing features for CTest:
+-----------------------------------
+
+
+(*) [CTest] Add an optional summary section that will show the number
+of tests that passed and failed for each Trilinos package
+(i.e. subproject in current CTest lingo).  This output mike look like:
+
+=========================================================
+
+Start processing tests
+
+...
+
+100% tests passed, 0 tests failed out of 113
+
+Total CPU time = 1050 sec
+
+Summary of subproject tests:
+
+  Teuchos: #passed = 25, #failed = 1, CPU time = 26 sec
+  Epetra: #passed = 48, #failed=0, CPU time = 150 sec
+  ...
+
+=========================================================
+
+
+(*) [CTest] Echo the console output to a summary file
+Testing/Temporary/LastTestSummary.log: That way, we can get the same
+information later given what is printed to the console.  In C++, this
+can be implemented with a splitting stream.  We don't have one in
+Teuchos yet but we could create one and then copy it over to the CTest
+sources.  Actually, I think boost has one that could be extracted,
+renamed, simplified and then moved into the CTest sources.
+
+
+(*) [CTest] Support a DEPENDENCIES property for tests to deal with
+'Not Run' when running driver scripts: Currently, ctest just looks at
+the direct command that is invoked to determine if the test can be run
+or can not be run.  This is not good because even MPI tests are shown
+to fail when the executable is not built but mpiexec of course is
+present.  Running user scripts that call built executables like cmake
+-P scripts also return 'Fail' would they should be 'Not Run'.  One way
+to address this is to add a new test property called something like
+EXEC_DEPENDENCIES that can be set to a list of command that must all
+exist when the test is run or the test will be marked as 'Not Run'.
+
+
+(*) [CTest] Support for multi-computer running of tests: CTest has the
+-jN option that allows the parallel running of tests on a single
+machine but there are some testing tools that can run tests in
+parallel over multiple similar machines and therefore achieve much
+higher levels of parallelism.
+
+
+(*) [CTest, CDash] Support for the Git VC tool
+
+
+(*) [CDash] Add a general query filter for the main
+project/subprojects page: Currently, the main project/subprojects page
+shows all results for all builds for the current day for all nightly
+builds (and optionally other builds).  When a single build on one
+machine fails in a catastrophic way, it pollutes the entire list of
+subproject results.  If you could filter out bad builds then you could
+get the real picture of how the package builds is doing.  Also,
+querying over multiple days or specific machines would also be very
+useful.
+
+
+(*) [CDash] Support for selectively deleting whole sets of builds:
+Currently CDash only supports removing one build at a time or all
+builds for consecutive days.  The problem is that a single Trilinos
+build case results in 40+ individual builds.  It can therefore take 15
+minutes of lots of clicking to delete a single bad build case.  It
+would be very useful if every build view, both the collapsed and
+non-collapsed views, would support a "Delete All Shown Builds" button.
+In that way would could query that builds we want to delete and delete
+them in one shot.
+
+
+(*) [CTest, CDash] Overall time budgets for running package tests: Currently,
+you can only put time limites on individual tests.  What would be more
+useful would be to put time budgest on an who set of package tests.
+All of the tests that would be run after the overall time limit was
+reached would be listed as 'Not Run'.  This would allow package
+developers to group their tests into different executables any way
+they would like while only the overall time usage would be an issue.
+
+
+(*) [CTest, CDash] Support the notion of "features" and tracking of
+tests that exercise feature sets (from Martin Pilch): While code
+coverage provides an important metric for software quality, a more
+critical metric is coverage of features and capabilities used in a
+specific simulation by an analyst. Capability is the physics invoked
+in the particular simulation e.g., non-linear heat conduction with a
+radiation boundary condition with a source term. Features are things
+that enable that simulation e.g., tet elements, simulation run in
+parallel, with adaptive mesh refinement.  We are interested in knowing
+if these features and capabilities used in a specific simulation are
+verified and what the gaps are.  Problems are often associated with
+the interactions of features and capabilities e.g., adaptivity works
+just fine except when it is combined with element death. Consequently,
+We also need a measure of the verification (and gaps) of two way
+interactions of features and capabilities.  It would be a really cool
+if a verification report could be standardized and made available for
+every simulation an analyst runs.
+
+
+(*) [CTest, CDash] Show the total run-time for "Dynamic Analysis" and
+"Coverage" tests on the dashboard in some way: Right now we can only
+see the total run-time for the build and the regular tests on the
+CDash dashboard.  These tests take a long time to run and we need to
+see that.  We also need to see every 'Dynamic Analysis' test that
+times out on the dashbaord.
+
+
+(*) [CTest, CDash] Implement strong automated testing of CTest/CDash:
+Currently, most testing of CTest and especially CDash is done
+manually.  This results in a lot of extra manual work and allows
+defects to creep in very easily.  Some type of unit testing
+infrastructure of CTest/CDash needs to be devised that can
+automatically and strongly test important CTest/CDash behaviors and
+features.
+
+
+(*) [CTest, CDash] Append update results to every subproject build and
+send out emails to users who checked in code: Currently, CDash will
+only send emails to the subproject email lists (signed up for labels)
+but will not send out emails to the users who checked in (except for
+the first subproject built).
+
+
+(*) [CTest, CDash] Send out CDash error notification emails for failed
+coverage tests and failed Dynamic Analysis tests: We need to be
+notificed when 'Dynamic Analysis' tests don't run.
+
+
+(*) [CTest, CDash] Find out why gcov and/or CTest/CDash is reporting
+false line misses in the coverage testing: The coverage testing is
+reporting all kinds of false line coverage line messes.  See the
+coverage results of OptiPack and GlobiPack for instance.
+
+
+(*) [CTest, CDash] Add graphs showing build and test times over
+multiple days for collaped builds and non-collapsed builds: This would
+be dirven by the query that is currently being used.  With this, you
+can see how the buld and run times for particular packages and entire
+builds is chaning over time.
+
+
+(*) [CTest] Direct support for running (multiple) programs to
+post-process the output from a test (both the console and any output
+files): Workaround: This is already supported through the cmake
+function PACKAGE_ADD_ADVANCED_TEST(...).
+
