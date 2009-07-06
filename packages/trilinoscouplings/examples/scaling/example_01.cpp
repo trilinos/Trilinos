@@ -182,7 +182,10 @@ int main(int argc, char *argv[]) {
    // Get dimensions 
     int numNodesPerElem = hex_8.getNodeCount();
     int numEdgesPerElem = hex_8.getEdgeCount();
+    int numFacesPerElem = hex_8.getSideCount();
     int numNodesPerEdge = 2;
+    int numNodesPerFace = 4;
+    int numEdgesPerFace = 4;
     int spaceDim = hex_8.getDimension();
 
    // Build reference element edge to node map
@@ -282,41 +285,6 @@ int main(int argc, char *argv[]) {
        }
     }
     delete [] connect;
-
-/*
-   // Get boundary (side set) information
-   // Side set 1 - left,  Side set 2 - front, Side set 3 - bottom,
-   // Side set 4 - right, Side set 5 - back,  Side set 6 - top
-    int * sideSetIds = new int [numSideSets];
-    FieldContainer<int> numElemsOnBoundary(numSideSets);
-    int numSidesinSet;
-    int numDFinSet;
-    int maxNumSidesinSet = 0;
-    im_ex_get_side_set_ids(id,sideSetIds);
-    for (int i=0; i<numSideSets; i++) {
-        im_ex_get_side_set_param(id,sideSetIds[i],&numSidesinSet,&numDFinSet);
-        numElemsOnBoundary(i)=numSidesinSet;
-        if (numSidesinSet > maxNumSidesinSet)
-           maxNumSidesinSet = numSidesinSet; 
-     }
-   // Container for global element numbers of boundary elements for side sets 1-6
-    FieldContainer<int> elemsOnBoundary(numSideSets,maxNumSidesinSet);
-   // Container for local face numbers corresponding to global elements in previous array
-    FieldContainer<int> facesOnBoundary(numSideSets,maxNumSidesinSet);
-    for (int i=0; i<numSideSets; i++) {
-        numSidesinSet=numElemsOnBoundary(i);
-        int * sideSetElemList = new int [numSidesinSet];
-        int * sideSetSideList = new int [numSidesinSet];
-        im_ex_get_side_set(id,sideSetIds[i],sideSetElemList,sideSetSideList);
-        for (int j=0; j<numSidesinSet; j++) {
-          elemsOnBoundary(i,j)=sideSetElemList[j] - 1;
-          facesOnBoundary(i,j)=sideSetSideList[j] - 1;
-        }
-        delete [] sideSetElemList;
-        delete [] sideSetSideList;
-     }
-    delete [] sideSetIds;
-*/
 
 
    // Print mesh information  
@@ -465,6 +433,98 @@ int main(int argc, char *argv[]) {
     fNodeOut.close();
 #endif
 
+   // Get face connectivity
+    FieldContainer<int> faceToNode(numFaces, numNodesPerFace);
+    FieldContainer<int> elemToFace(numElems, numFacesPerElem);
+    FieldContainer<int> faceToEdge(numFaces, numEdgesPerFace);
+    int iface = 0;
+    inode = 0;
+    for (int k=0; k<NZ+1; k++) {
+      for (int j=0; j<NY+1; j++) {
+        for (int i=0; i<NX+1; i++) {
+           if (i < NX && k < NZ) {
+              faceToNode(iface,0)=inode;
+              faceToNode(iface,1)=inode + 1;
+              faceToNode(iface,2)=inode + (NX+1)*(NY+1)+1;
+              faceToNode(iface,3)=inode + (NX+1)*(NY+1);
+              if (j < NY) {
+                 ielem=i+j*NX+k*NX*NY;
+                 faceToEdge(iface,0)=elemToEdge(ielem,0);
+                 faceToEdge(iface,1)=elemToEdge(ielem,9);
+                 faceToEdge(iface,2)=elemToEdge(ielem,4);
+                 faceToEdge(iface,3)=elemToEdge(ielem,8);
+                 elemToFace(ielem,0)=iface;
+                 if (j > 0) {
+                    elemToFace(ielem-NX,2)=iface;
+                 }
+              }
+              else if (j == NY) {
+                 ielem=i+(NY-1)*NX+k*NX*NY;
+                 faceToEdge(iface,0)=elemToEdge(ielem,2);
+                 faceToEdge(iface,1)=elemToEdge(ielem,10);
+                 faceToEdge(iface,2)=elemToEdge(ielem,6);
+                 faceToEdge(iface,3)=elemToEdge(ielem,11);
+                 elemToFace(ielem,2)=iface;
+              }
+              iface++;
+           }
+           if (j < NY && k < NZ) {
+              faceToNode(iface,0)=inode;
+              faceToNode(iface,1)=inode + NX+1;
+              faceToNode(iface,2)=inode + (NX+1)*(NY+1) + NX+1;
+              faceToNode(iface,3)=inode + (NX+1)*(NY+1);
+              if (i < NX) {
+                 ielem=i+j*NX+k*NX*NY;
+                 faceToEdge(iface,0)=elemToEdge(ielem,3);
+                 faceToEdge(iface,1)=elemToEdge(ielem,11);
+                 faceToEdge(iface,2)=elemToEdge(ielem,7);
+                 faceToEdge(iface,3)=elemToEdge(ielem,8);
+                 elemToFace(ielem,3)=iface;
+                 if (i > 0) {
+                    elemToFace(ielem-1,1)=iface;
+                 }
+              }
+              else if (i == NX) {
+                 ielem=NX-1+j*NX+k*NX*NY;
+                 faceToEdge(iface,0)=elemToEdge(ielem,1);
+                 faceToEdge(iface,1)=elemToEdge(ielem,10);
+                 faceToEdge(iface,2)=elemToEdge(ielem,5);
+                 faceToEdge(iface,3)=elemToEdge(ielem,9);
+                 elemToFace(ielem,1)=iface;
+              }
+              iface++;
+           }
+           if (i < NX && j < NY) {
+              faceToNode(iface,0)=inode;
+              faceToNode(iface,1)=inode + 1;
+              faceToNode(iface,2)=inode + NX+2;
+              faceToNode(iface,3)=inode + NX+1;
+              if (k < NZ) {
+                 ielem=i+j*NX+k*NX*NY;
+                 faceToEdge(iface,0)=elemToEdge(ielem,0);
+                 faceToEdge(iface,1)=elemToEdge(ielem,1);
+                 faceToEdge(iface,2)=elemToEdge(ielem,2);
+                 faceToEdge(iface,3)=elemToEdge(ielem,3);
+                 elemToFace(ielem,4)=iface;
+                 if (k > 0) {
+                    elemToFace(ielem-NX*NY,5)=iface;
+                 }
+              }
+              else if (k == NZ) {
+                 ielem=i+j*NX+(NZ-1)*NX*NY;
+                 faceToEdge(iface,0)=elemToEdge(ielem,4);
+                 faceToEdge(iface,1)=elemToEdge(ielem,5);
+                 faceToEdge(iface,2)=elemToEdge(ielem,6);
+                 faceToEdge(iface,3)=elemToEdge(ielem,7);
+                 elemToFace(ielem,5)=iface;
+              }
+              iface++;
+           }
+          inode++;
+         }
+      }
+   }
+
   // Get boundary (side set) information
    // Side set 1 - left,  Side set 2 - front, Side set 3 - bottom,
    // Side set 4 - right, Side set 5 - back,  Side set 6 - top
@@ -478,8 +538,9 @@ int main(int argc, char *argv[]) {
         numElemsOnBoundary(i)=numSidesinSet;
      }
 
-   // Container indicating whether an edge is on the boundary (1-yes 0-no)
+   // Container indicating whether an edge or face is on the boundary (1-yes 0-no)
     FieldContainer<int> edgeOnBoundary(numEdges);
+    FieldContainer<int> faceOnBoundary(numFaces);
 
    // Side set 1: left
     if (numElemsOnBoundary(0) > 0){
@@ -491,6 +552,7 @@ int main(int argc, char *argv[]) {
           edgeOnBoundary(elemToEdge(sideSetElemList1[i]-1,8))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList1[i]-1,7))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList1[i]-1,11))=1;
+          faceOnBoundary(elemToFace(sideSetElemList1[i]-1,3))=1;
      }
      delete [] sideSetElemList1;
      delete [] sideSetSideList1;
@@ -506,6 +568,7 @@ int main(int argc, char *argv[]) {
           edgeOnBoundary(elemToEdge(sideSetElemList2[i]-1,9))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList2[i]-1,4))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList2[i]-1,8))=1;
+          faceOnBoundary(elemToFace(sideSetElemList2[i]-1,0))=1;
      }
      delete [] sideSetElemList2;
      delete [] sideSetSideList2;
@@ -521,6 +584,7 @@ int main(int argc, char *argv[]) {
           edgeOnBoundary(elemToEdge(sideSetElemList3[i]-1,1))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList3[i]-1,2))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList3[i]-1,3))=1;
+          faceOnBoundary(elemToFace(sideSetElemList3[i]-1,4))=1;
      }
      delete [] sideSetElemList3;
      delete [] sideSetSideList3;
@@ -536,6 +600,7 @@ int main(int argc, char *argv[]) {
           edgeOnBoundary(elemToEdge(sideSetElemList4[i]-1,9))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList4[i]-1,5))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList4[i]-1,10))=1;
+          faceOnBoundary(elemToFace(sideSetElemList4[i]-1,1))=1;
      }
      delete [] sideSetElemList4;
      delete [] sideSetSideList4;
@@ -550,6 +615,7 @@ int main(int argc, char *argv[]) {
           edgeOnBoundary(elemToEdge(sideSetElemList5[i]-1,10))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList5[i]-1,6))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList5[i]-1,11))=1;
+          faceOnBoundary(elemToFace(sideSetElemList5[i]-1,2))=1;
      }
      delete [] sideSetElemList5;
      delete [] sideSetSideList5;
@@ -565,6 +631,7 @@ int main(int argc, char *argv[]) {
           edgeOnBoundary(elemToEdge(sideSetElemList6[i]-1,5))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList6[i]-1,6))=1;
           edgeOnBoundary(elemToEdge(sideSetElemList6[i]-1,7))=1;
+          faceOnBoundary(elemToFace(sideSetElemList6[i]-1,5))=1;
      }
      delete [] sideSetElemList6;
      delete [] sideSetSideList6;
@@ -580,7 +647,7 @@ int main(int argc, char *argv[]) {
     fEdgeout.close();
 
    // Container indicating whether a node is on the boundary (1-yes 0-no)
-    FieldContainer<int> nodeOnBoundary(numEdges);
+    FieldContainer<int> nodeOnBoundary(numNodes);
      int numEdgeOnBndy=0;
      for (int i=0; i<numEdges; i++) {
         if (edgeOnBoundary(i)){
@@ -661,7 +728,7 @@ int main(int argc, char *argv[]) {
     Epetra_FECrsMatrix DGrad(Copy, globalMapC, globalMapG, 2);
 
     double vals[2];
-    vals[0]=-1; vals[1]=1;
+    vals[0]=-0.5; vals[1]=0.5;
     for (int j=0; j<numEdges; j++){
         int rowNum = j;
         int colNum[2];
@@ -673,7 +740,7 @@ int main(int argc, char *argv[]) {
 
 // ************************************ CUBATURE **************************************
 
-   // Get numerical integration points and weights
+   // Get numerical integration points and weights for cell
     std::cout << "Getting cubature ... \n\n";
 
     DefaultCubatureFactory<double>  cubFactory;                                   
@@ -687,6 +754,26 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> cubWeights(numCubPoints);
 
     hexCub->getCubature(cubPoints, cubWeights);
+
+  
+   // Get numerical integration points and weights for hexahedron face
+    //             (needed for rhs boundary term)
+
+    // Define topology of the face parametrization domain as [-1,1]x[-1,1]
+    CellTopology paramQuadFace(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+
+    // Define cubature 
+    DefaultCubatureFactory<double>  cubFactoryFace;
+    Teuchos::RCP<Cubature<double> > hexFaceCubature = cubFactoryFace.create(paramQuadFace, 3);
+    int cubFaceDim    = hexFaceCubature -> getDimension();
+    int numFacePoints = hexFaceCubature -> getNumPoints();
+
+    // Define storage for cubature points and weights on [-1,1]x[-1,1]
+    FieldContainer<double> paramGaussWeights(numFacePoints);
+    FieldContainer<double> paramGaussPoints(numFacePoints,cubFaceDim);
+
+    // Define storage for cubature points on workset faces
+    hexFaceCubature -> getCubature(paramGaussPoints, paramGaussWeights);
 
 
 // ************************************** BASIS ***************************************
@@ -703,6 +790,7 @@ int main(int argc, char *argv[]) {
      FieldContainer<double> hexGVals(numFieldsG, numCubPoints); 
      FieldContainer<double> hexCVals(numFieldsC, numCubPoints, spaceDim); 
      FieldContainer<double> hexCurls(numFieldsC, numCubPoints, spaceDim); 
+     FieldContainer<double> worksetCVals(numFieldsC, numFacePoints, spaceDim); 
 
      hexHCurlBasis.getValues(hexCVals, cubPoints, OPERATOR_VALUE);
      hexHCurlBasis.getValues(hexCurls, cubPoints, OPERATOR_CURL);
@@ -747,6 +835,20 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> rhsDatah(numCells, numCubPoints, cubDim);
     FieldContainer<double> gC(numCells, numFieldsC);
     FieldContainer<double> hC(numCells, numFieldsC);
+    FieldContainer<double> hCBoundary(numCells, numFieldsC);
+    FieldContainer<double> refGaussPoints(numFacePoints,spaceDim);
+    FieldContainer<double> worksetGaussPoints(numCells,numFacePoints,spaceDim);
+    FieldContainer<double> worksetJacobians(numCells, numFacePoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetJacobInv(numCells, numFacePoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetFaceTu(numCells, numCubPoints, spaceDim);
+    FieldContainer<double> worksetFaceTv(numCells, numCubPoints, spaceDim);
+    FieldContainer<double> worksetFaceN(numCells, numCubPoints, spaceDim);
+    FieldContainer<double> worksetVFieldVals(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetCValsTransformed(numCells, numFieldsC, numFacePoints, spaceDim);
+    FieldContainer<double> worksetCValsTransformedWeighted(numCells, numFieldsC, numFacePoints, spaceDim);
+    FieldContainer<double> divuFace(numCells, numFacePoints);
+    FieldContainer<double> worksetFieldDotNormal(numCells, numFieldsC, numFacePoints);
+
    // Container for cubature points in physical space
     FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
 
@@ -820,10 +922,7 @@ int main(int argc, char *argv[]) {
             int rowIndex = elemToNode(k,row);
             int colIndex = elemToNode(k,col);
             double val = massMatrixG(0,row,col);
-     //       err = MassG.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-     //       if (err > 0) {
-                MassG.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-    //        }
+            MassG.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
@@ -854,10 +953,7 @@ int main(int argc, char *argv[]) {
             int rowIndex = elemToEdge(k,row);
             int colIndex = elemToEdge(k,col);
             double val = massMatrixC(0,row,col);
-            err = MassC.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            if (err > 0) {
-                MassC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            }
+            MassC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
@@ -901,12 +997,9 @@ int main(int argc, char *argv[]) {
 // ******************************* Build right hand side ************************************
 
       // transform integration points to physical points
-       FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
        CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
 
       // evaluate right hand side functions at physical points
-       FieldContainer<double> rhsDatag(numCells, numCubPoints, cubDim);
-       FieldContainer<double> rhsDatah(numCells, numCubPoints, cubDim);
        for (int nPt = 0; nPt < numCubPoints; nPt++){
 
           double x = physCubPoints(0,nPt,0);
@@ -937,6 +1030,85 @@ int main(int argc, char *argv[]) {
       fst::applyFieldSigns<double>(gC, hexEdgeSigns);
       fst::applyFieldSigns<double>(hC, hexEdgeSigns);
 
+    // Include boundary term, if needed
+      for (int i = 0; i < numFacesPerElem; i++){
+        if (faceOnBoundary(elemToFace(k,i))){
+           
+         // Map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints
+            CellTools::mapToReferenceSubcell(refGaussPoints,
+                                   paramGaussPoints,
+                                   2, i, hex_8);
+
+         // Get basis values at points on reference cell
+           hexHCurlBasis.getValues(worksetCVals, refGaussPoints, OPERATOR_VALUE);
+
+         // Compute Jacobians at Gauss pts. on reference face for all parent cells
+           CellTools::setJacobian(worksetJacobians,
+                         refGaussPoints,
+                         hexNodes, hex_8);
+           CellTools::setJacobianInv(worksetJacobInv, worksetJacobians );
+
+         // transform to physical coordinates 
+            fst::HCURLtransformVALUE<double>(worksetCValsTransformed, worksetJacobInv, 
+                                   worksetCVals);
+
+         // multiply by weighted measure
+            fst::multiplyMeasure<double>(worksetCValsTransformedWeighted,
+                                   paramGaussWeights, worksetCValsTransformed);
+
+         // Map Gauss points on quad from ref. face to face workset: refGaussPoints -> worksetGaussPoints
+            CellTools::mapToPhysicalFrame(worksetGaussPoints,
+                                refGaussPoints,
+                                hexNodes, hex_8);
+
+         // Compute face tangents
+            CellTools::getPhysicalFaceTangents(worksetFaceTu,
+                                     worksetFaceTv,
+                                     paramGaussPoints,
+                                     worksetJacobians,
+                                     i, hex_8);
+
+         // Face outer normals (relative to parent cell) are uTan x vTan
+            RealSpaceTools<double>::vecprod(worksetFaceN, worksetFaceTu, worksetFaceTv);
+
+
+         // Evaluate div u at face points
+           for(int nPt = 0; nPt < numFacePoints; nPt++){
+
+             double x = worksetGaussPoints(0, nPt, 0);
+             double y = worksetGaussPoints(0, nPt, 1);
+             double z = worksetGaussPoints(0, nPt, 2);
+
+             divuFace(0,nPt)=evalDivu(x, y, z);
+           }
+
+          // Compute the dot product
+           for (int nF = 0; nF < numFieldsC; nF++){
+              for(int nPt = 0; nPt < numFacePoints; nPt++){
+                 worksetFieldDotNormal(0,nF,nPt)=0.0;
+                  for (int dim = 0; dim < spaceDim; dim++){
+                      worksetFieldDotNormal(0,nF,nPt) += worksetCValsTransformedWeighted(0,nF,nPt,dim)
+                                                  * worksetFaceN(0,nPt,dim);
+                  } //dim
+              } //nPt
+           } //nF
+
+          // Integrate 
+          fst::integrate<double>(hCBoundary, divuFace, worksetFieldDotNormal,
+                             COMP_CPP);
+
+          // apply signs
+           fst::applyFieldSigns<double>(hCBoundary, hexEdgeSigns);
+
+          // add into hC term
+            for (int nF = 0; nF < numFieldsC; nF++){
+                hC(0,nF) = hC(0,nF) - hCBoundary(0,nF);
+            }
+          
+        } // if faceOnBoundary
+      } // numFaces
+
+
     // assemble into global vector
      for (int row = 0; row < numFieldsC; row++){
            int rowIndex = elemToEdge(k,row);
@@ -955,31 +1127,9 @@ int main(int argc, char *argv[]) {
 
     DGrad.GlobalAssemble(); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap());    
 
-
-
-   // Create reduced system to account for BCs
-        
-  // Adjust stiffness matrix and rhs based on boundary conditions
-   /*for (int row = 0; row<numEdges; row++){
-       if (edgeOnBoundary(row)) {
-          int rowindex = row;
-          for (int col=0; col<numEdges; col++){
-              double val = 0.0;
-              int colindex = col;
-              StiffC.ReplaceGlobalValues(1, &rowindex, 1, &colindex, &val);
-              StiffC.ReplaceGlobalValues(1, &colindex, 1, &rowindex, &val);
-          }
-          double val = 1.0;
-          StiffC.ReplaceGlobalValues(1, &rowindex, 1, &rowindex, &val);
-          val = 0.0;
-          rhsC.ReplaceGlobalValues(1, &rowindex, &val);
-       }
-    }
-   */
-
     EpetraExt::RowMatrixToMatlabFile("k1_0.dat",StiffC);
     EpetraExt::MultiVectorToMatrixMarketFile("rhsC0.dat",rhsC,0,0,false);
-
+  
      int numBCEdges=0;
      for (int i=0; i<numEdges; i++){
          if (edgeOnBoundary(i)){
@@ -998,40 +1148,12 @@ int main(int argc, char *argv[]) {
       ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffC);
 
       delete [] BCEdges;
+  
             
-
     EpetraExt::RowMatrixToMatlabFile("m1_0.dat",MassC);
     EpetraExt::RowMatrixToMatlabFile("m0.dat",MassG);
 
 
-/*
-    // Really hacky dirichlet BCs
-    Epetra_Vector flag1(DGrad.ColMap(),true);
-    // NTS: This map is wrong in parallel
-    for(int i=0;i<numNodes;i++){
-      if(ABS(nodeCoordx[i]-leftX) < 1e-8 || ABS(nodeCoordy[i]-leftY) < 1e-8 || ABS(nodeCoordz[i]-leftZ) < 1e-8)
-        flag1[i]=1;      
-    }
-      
-    int numEntries,*cols;
-    double *vals1;
-    for(int i=0;i<DGrad.NumMyRows();i++){
-      DGrad.ExtractMyRowView(i,numEntries,vals1,cols);
-      assert(numEntries==2);
-      if(flag1[cols[0]]==1 && flag1[cols[1]]==1){
-        // Dirichlet row
-        StiffC.ExtractMyRowView(i,numEntries,vals1,cols);
-        for(int j=0;j<numEntries;j++){
-          if(StiffC.GCID(cols[j])==StiffC.GRID(i)) vals1[j]=1.0;
-          else vals1[j]=0.0;
-        }
-        rhsC[0][i]=0;                
-      }     
-    }       
-    
-*/
-    
-    
     
    // Build the inverse diagonal for MassG
    Epetra_Vector DiagG(MassG.RowMap());
@@ -1052,8 +1174,7 @@ int main(int argc, char *argv[]) {
       MassGinv.ReplaceGlobalValues(i,1,&val,&i);
      }
    }
-      
-
+  
 
    // Solve!
    Teuchos::ParameterList MLList,dummy;
@@ -1165,7 +1286,6 @@ int main(int argc, char *argv[]) {
        CellTools::setJacobianDet(hexJacobDetE, hexJacobianE );
 
       // transform integration points to physical points
-       FieldContainer<double> physCubPoints(numCells,numCubPointsErr, cubDimErr);
        CellTools::mapToPhysicalFrame(physCubPoints, cubPointsErr, hexNodes, hex_8);
 
       // transform basis values to physical coordinates
@@ -1228,7 +1348,7 @@ int main(int argc, char *argv[]) {
     //Comm.MaxAll(&Linferr,&LinferrTot,1);
 
     std::cout << "\n" << "L2 Error:  " << sqrt(L2err) <<"\n";
-    std::cout << "HCurl Error:  " << sqrt(HCurlerr) <<"\n";
+    std::cout << "HCurl Error:  " << sqrt(L2err+HCurlerr) <<"\n";
     std::cout << "LInf Error:  " << Linferr <<"\n\n";
 
 
@@ -1360,22 +1480,31 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 // Calculates value of exact solution u
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
  {
-    
  /*
+    uExact0 = exp(x+y+z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
+    uExact1 = exp(x+y+z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
+    uExact2 = exp(x+y+z)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+    
     uExact0 = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0);
     uExact1 = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0);
     uExact2 = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
- */
    
- /*
     uExact0 = cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
     uExact1 = sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
     uExact2 = sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
+ 
  */
  
+    uExact0 = x*(y*y - 1.0)*(z*z-1.0);
+    uExact1 = y*(x*x - 1.0)*(z*z-1.0);
+    uExact2 = z*(x*x - 1.0)*(y*y-1.0);
+
+ /*
     uExact0 = (y*y - 1.0)*(z*z-1.0);
     uExact1 = (x*x - 1.0)*(z*z-1.0);
     uExact2 = (x*x - 1.0)*(y*y-1.0);
+ */
+ 
   
    return 0;
  }
@@ -1384,15 +1513,22 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
  double evalDivu(double & x, double & y, double & z)
  {
   /*
+   double divu = exp(x+y+z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
+                 + exp(x+y+z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
+                 + exp(x+y+z)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+
    double divu = -M_PI*sin(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
                  -M_PI*sin(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
-   
   */
-    
-  // double divu = -3.0*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
 
-   double divu = 0.0;
+ //  double divu = -3.0*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+
+   double divu = (y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
+                 + (x+1.0)*(x-1.0)*(z+1.0)*(z-1.0)
+                 + (x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
+
+ //  double divu = 0.0;
 
    return divu;
  }
@@ -1403,36 +1539,46 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
  {
   
  /*
+   double duxdy = exp(x+y+z)*(z*z-1.0)*(y*y+2.0*y-1.0);
+   double duxdz = exp(x+y+z)*(y*y-1.0)*(z*z+2.0*z-1.0);
+   double duydx = exp(x+y+z)*(z*z-1.0)*(x*x+2.0*x-1.0);
+   double duydz = exp(x+y+z)*(x*x-1.0)*(z*z+2.0*z-1.0);
+   double duzdx = exp(x+y+z)*(y*y-1.0)*(x*x+2.0*x-1.0);
+   double duzdy = exp(x+y+z)*(x*x-1.0)*(y*y+2.0*y-1.0);
+ 
    double duxdy = cos(M_PI*x)*exp(y*z)*(z+1.0)*(z-1.0)*(z*(y+1.0)*(y-1.0) + 2.0*y);
    double duxdz = cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(y*(z+1.0)*(z-1.0) + 2.0*z);
    double duydx = cos(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0) + 2.0*x);
    double duydz = cos(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(x*(z+1.0)*(z-1.0) + 2.0*z);
    double duzdx = cos(M_PI*z)*exp(x*y)*(y+1.0)*(y-1.0)*(y*(x+1.0)*(x-1.0) + 2.0*x);
    double duzdy = cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(x*(y+1.0)*(y-1.0) + 2.0*y);
- */
- 
 
  
- /*
    double duxdy = M_PI*cos(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
    double duxdz = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
    double duydx = M_PI*cos(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
    double duydz = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
    double duzdx = M_PI*cos(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
    double duzdy = M_PI*sin(M_PI*x)*cos(M_PI*y)*cos(M_PI*z);
-*/
  
-   
+ */
 
+   double duxdy = 2.0*x*y*(z*z-1);
+   double duxdz = 2.0*x*z*(y*y-1);
+   double duydx = 2.0*y*x*(z*z-1);
+   double duydz = 2.0*y*z*(x*x-1);
+   double duzdx = 2.0*z*x*(y*y-1);
+   double duzdy = 2.0*z*y*(x*x-1);
   
+ /*
    double duxdy = 2.0*y*(z*z-1);
    double duxdz = 2.0*z*(y*y-1);
    double duydx = 2.0*x*(z*z-1);
    double duydz = 2.0*z*(x*x-1);
    double duzdx = 2.0*x*(y*y-1);
    double duzdy = 2.0*y*(x*x-1);
- 
    
+*/
 
    curlu0 = duzdy - duydz;
    curlu1 = duxdz - duzdx;
@@ -1446,6 +1592,11 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
 {
    
   /*
+ 
+   gradDivu0 = exp(x+y+z)*((y*y-1.0)*(z*z-1.0)+(x*x+2.0*x-1.0)*(z*z-1.0)+(x*x+2.0*x-1.0)*(y*y-1.0));
+   gradDivu1 = exp(x+y+z)*((y*y+2.0*y-1.0)*(z*z-1.0)+(x*x-1.0)*(z*z-1.0)+(x*x-1.0)*(y*y+2.0*y-1.0));
+   gradDivu2 = exp(x+y+z)*((y*y-1.0)*(z*z+2.0*z-1.0)+(x*x-1.0)*(z*z+2.0*z-1.0)+(x*x-1.0)*(y*y-1.0));
+ 
    
     gradDivu0 = -M_PI*M_PI*cos(M_PI*x)*exp(y*z)*(y+1.0)*(y-1.0)*(z+1.0)*(z-1.0)
                   -M_PI*sin(M_PI*y)*exp(x*z)*(z+1.0)*(z-1.0)*(z*(x+1.0)*(x-1.0)+2.0*x)
@@ -1457,19 +1608,23 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
                   -M_PI*sin(M_PI*y)*exp(x*z)*(x+1.0)*(x-1.0)*(x*(z+1.0)*(z-1.0)+2.0*z)
                   -M_PI*M_PI*cos(M_PI*z)*exp(x*y)*(x+1.0)*(x-1.0)*(y+1.0)*(y-1.0);
   
-  */
-  
 
- /*
    gradDivu0 = -3.0*M_PI*M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
    gradDivu1 = -3.0*M_PI*M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
    gradDivu2 = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
- */
+  */
+
+   gradDivu0 = 2.0*x*((z*z-1.0)+(y*y-1.0));
+   gradDivu1 = 2.0*y*((z*z-1.0)+(x*x-1.0));
+   gradDivu2 = 2.0*z*((x*x-1.0)+(y*y-1.0));
+
+ /*
  
    gradDivu0 = 0;
    gradDivu1 = 0;
    gradDivu2 = 0;
    
+ */
 
    return 0;
 }
