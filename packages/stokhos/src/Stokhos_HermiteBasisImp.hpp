@@ -31,10 +31,12 @@
 #include "Stokhos_ConfigDefs.h"
 #ifdef HAVE_STOKHOS_DAKOTA
 #include "sandia_rules.H"
-#elif HAVE_STOKHOS_FORUQTK
+#else
+#ifdef HAVE_STOKHOS_FORUQTK
 #include "Stokhos_gaussq.h"
 #else
 #include "Teuchos_TestForException.hpp"
+#endif
 #endif
 
 template <typename ordinal_type, typename value_type>
@@ -147,22 +149,24 @@ getQuadPoints(ordinal_type quad_order,
   // Compute gauss points, weights
   ordinal_type n = static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
   std::vector<double> x(n), w(n);
-  double alpha = 0.0;
-  double beta = 0.0;
   
 #ifdef HAVE_STOKHOS_DAKOTA
-  webbur::hermite_compute(n, alpha, beta, &x[0], &w[0]);
-#elif HAVE_STOKHOS_FORUQTK
+  webbur::hermite_compute(n, &x[0], &w[0]);
+#else
+#ifdef HAVE_STOKHOS_FORUQTK
   int kind = 4;
   int kpts = 0;
   double endpts[2] = {0.0, 0.0};
   std::vector<double> b(n);
   int ni = n;
+  double alpha = 0.0;
+  double beta = 0.0;
   GAUSSQ_F77(&kind, &ni, &alpha, &beta, &kpts, endpts, &b[0], &x[0], &w[0]);
 #else
   TEST_FOR_EXCEPTION(true, std::logic_error,
 		     "Stokhos::HermiteBasis::getQuadPoints():  "
 		     << " Must have Dakota or ForUQTK enabled for quadrature!");
+#endif
 #endif
 
   quad_points.resize(n);
