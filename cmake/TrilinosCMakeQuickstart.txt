@@ -140,7 +140,26 @@ C) Configuring (Makefile Generator)
     Primary Stable Code.  To have this also enable all secondary stable code,
     you must also you must set Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON.
 
-  d) Removing all package enables in the Cache
+  d) Disable a package and all its dependencies:
+  
+      $ ./do-configure \
+         -D Trilinos_ENABLE_<PACKAGE_A>:BOOL=ON \
+         -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+         -D Trilinos_ENABLE_<PACKAGE_B>:BOOL=OFF
+
+     Above, this will enable <PACKAGE_A> and all of the packages that it
+     depends on except for <PACKAGE_B> and all of its forward dependencies.
+     For example, if you run
+
+      $ ./do-configure \
+         -D Trilinos_ENABLE_Thyra:BOOL=ON \
+         -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+         -D Trilinos_ENABLE_Epetra:BOOL=OFF
+
+     The packages Thyra, RTOp, and Teuchos will be enabled, but the packages
+     Epetra, EpetraExt will be disabled.
+
+  e) Removing all package enables in the Cache
 
       $ ./-do-confiugre -D Trilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
 
