@@ -140,6 +140,16 @@ C) Configuring (Makefile Generator)
     Primary Stable Code.  To have this also enable all secondary stable code,
     you must also you must set Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON.
 
+  d) Removing all package enables in the Cache
+
+      $ ./-do-confiugre -D Trilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+
+    This option will set to empty '' all package enables, leaving all other
+    cache variables as they are.  You can then reconfigure with a new set of
+    package enables for a different set of packages.  This allows you to avoid
+    more expensive configure time checks and to preserve other cache variables
+    that you have set and don't want to loose.
+
 
 (*) Selecting compiler and linker options:
 
@@ -536,6 +546,10 @@ C) Configuring (Makefile Generator)
   NOTE: The above will set the compile and link options -fprofile-arcs
   -ftest-coverage when the compiler is GNU.
 
+  NOTE: You can run the coverage tests and submit to the dashboard with
+  'make dashboard' (see below).
+
+
 (*) Viewing configure options and documentation:
   
   a) Viewing available configure-time options with documentation
@@ -750,3 +764,86 @@ G) Packaging
 
    NOTE: You can control what gets put into the tarball by setting the cache
    variable CPACK_SOURCE_IGNORE_FILES when configuring with CMake.
+
+
+H) Dashboard submissions
+------------------------
+
+You can use the extended CTest scripting system in Trilinos to submit
+package-by-package build, test, coverage, memcheck results to the dashboard.
+To do this, just configure a build directory like you would for any other
+purpose and they type:
+
+  $ make dashboard
+
+This invokes the advanced CTest script
+Trilinos/cmake/ctest/experimental_build_test.cmake to do an experimental build
+for all of the packages that you have explicitly enabled.  The packages that
+are implicitly enabled due to package dependencies are not directly processed
+by the experimental_build_test.cmake script.
+
+There are a number of options that you can set in the environment to control
+what this script does.  This set of options can be found by doing:
+
+  $ grep 'SET_DEFAULT_AND_FROM_ENV(' \
+      Trilinos/cmake/ctest/TrilinosCTestDriverCore.cmake
+
+Currently, this options includes:
+
+  SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
+  SET_DEFAULT_AND_FROM_ENV( BUILD_TYPE NONE )
+  SET_DEFAULT_AND_FROM_ENV(COMPILER_VERSION UNKNOWN)
+  SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_NAME
+  SET_DEFAULT_AND_FROM_ENV( CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_WIPE_CACHE TRUE )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR "Unix Makefiles")
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_UPDATES TRUE )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_GENERATE_DEPS_XML_OUTPUT_FILE FALSE )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "-q -z3")
+  SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_FLAGS "-j2")
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_BUILD TRUE )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_WARNINGS_AS_ERRORS_FLAGS "" )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_COVERAGE_COMMAND gcov )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_MEMORY_TESTING FALSE )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_MEMORYCHECK_COMMAND valgrind )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_SUBMIT TRUE )
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF )
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_ADDITIONAL_PACKAGES "" )
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_EXCLUDE_PACKAGES "" )
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_PACKAGES "${Trilinos_PACKAGES_DEFAULT}" )
+
+For example, to run an experimental build and in the process change the build
+name and the options to pass to 'make', use:
+
+  $ env CTEST_BUILD_NAME=MyBuild CTEST_BUILD_FLAGS='-j8' \
+    make dashboard
+
+After this finishes running, look for the build 'MyBuild' (or whatever build
+name you used above) in the Trilinos CDash dashboard.
+
+NOTE: It is useful to set CTEST_BUILD_NAME to some unique name to make it
+easier to find your results in the CDash dashboard.
+
+NOTE: A number of the defaults set in TrilinosCTestDriverCore.cmake are
+overridden from experimental_build_test.cmake so you will want to look at
+experimental_build_test.cmake to see how these are changed.  The script
+experimental_build_test.cmake sets reasonable values for these options in
+order to use the 'make dashboard' target in iterative development.
+
+NOTE: The target 'dashboard' is not directly related to the built-in CMake
+targets 'Experimental*' that run a standard dashboard with CTest without the
+custom package-by-package driver in TrilinosCTestDriverCore.cmake.  The
+package-by-package extended CTest driver is more appropriate for Trilinos.
+
+NOTE: Once you configure with -DTrilinos_ENABLE_COVERAGE_TESTING:BOOL=ON, the
+environment variable CTEST_DO_COVERAGE_TESTING=TRUE is automatically set by the
+target 'dashboard' so you don't have to set this yourself.
+
+NOTE: Doing a memory check with Valgrind requires that you set
+CTEST_DO_MEMORY_TESTING=TRUE with the 'env' command as:
+
+  $ env CTEST_DO_MEMORY_TESTING=TRUE make dashboard

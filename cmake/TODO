@@ -41,15 +41,6 @@ specific machines for specific build cases.
 - Add an explicit MPI compiler, headers, and library build
 - Add a build with Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=OFF
 
-(*) [???] Write an 'experimental' target that will run the
-experimental_build_test.cmake script to automatically run an experimental
-build and then return the set of enabled packages back to the current default
-in the current cache.  To make this work, I need to add a
-'Trilinos_UNENABLE_ENABLED_PACKAGES' flag that will unset all current package
-enables, then run the script 'ctest -S experimental_build_test.cmake' then
-reconfigure again to set back the set of package enables.  This will make it
-easy for everyone to do experimental builds, including coverage builds.
-
 (*) [???] Turn on shared libraries by default on Mac and Linux: Switching to
 shared libraries by default will save on disk space and could speed up
 pre-checkin testing when only libraries need to be rebuilt and rerun the
@@ -144,13 +135,13 @@ just kill two birds with one stone.
 (*) [???] Revise the behavior of Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON so
 that it only enables packages needed for the initial set of enabled packages.
 Currently, all packges used by the libraries and the tests are being enabled.
-However, this is too much.  You only need to enabled the optional and required
+However, this is too much.  You only need to enable the optional and required
 packages for the tests and examples of the initial set of required packages.
 To implement the right set of packages, first you need to loop forward over
 all of the currently enabled packages that have enabled tests and/or examples
 and enable all of the packages that are test/example dependencies (required
 and optional).  Then you need to loop in reverse over all currenty enabled
-packages and enabled all required and optional library dependent packages.  At
+packages and enable all required and optional library dependent packages.  At
 the end of this, all of the packages that could possibly affect the libraries,
 tests and examples of the set of initially enabled packages will be enabled.
 

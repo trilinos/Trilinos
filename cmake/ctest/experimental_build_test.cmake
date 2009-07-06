@@ -2,7 +2,7 @@
 # CTest script that is used to do an experimental build/test right from a
 # developer's own build directory.
 #
-# NOTE: You need a recent (CVS) version of CMake/CTest for this to work!  You
+# NOTE: You need a recent (CVS) version of CMake/CTest for this to work.  You
 # can't use CMake/CTest 2.6.x.  If you don't have the right version, it will
 # tell you.
 #
@@ -19,8 +19,7 @@
 # 2) Run the script (overriding any appropriate options) as:
 #
 #    env Trilinos_PACKAGES="<PACKAGES>" \
-#      ctest -S $TRILINOS_HOME/cmake/ctest/experimental_build_test.cmake \
-#        -VV
+#      ctest -S $TRILINOS_HOME/cmake/ctest/experimental_build_test.cmake -VV
 #
 # where PACAKGES is the semi-colon-separated list of packages being tested
 # (e.g. Trilinos_PACKAGES="Teuchos;Epetra;NOX") and TRILINOS_HOME points back
@@ -35,6 +34,10 @@
 #
 # When this script finishes running, the last package listed in
 # Trilinos_PACAKGES will be enabled in the CMakeCache.txt file.
+#
+# NOTE: It is better to use the CMake-built make target 'experimental' to run
+# this script as it takes care of the details of manipulating the cache and
+# restoring the package enables when it is done.
 #
 
 
@@ -63,7 +66,9 @@ INCLUDE(GetLastDirName)
 # All these can be changed by env vars
 SET(CTEST_TEST_TYPE Experimental)
 SET(CTEST_DO_UPDATES FALSE)
+SET(CTEST_GENERATE_DEPS_XML_OUTPUT_FILE FALSE)
 SET(CTEST_START_WITH_EMPTY_BINARY_DIRECTORY FALSE)
+SET(Trilinos_WARNINGS_AS_ERRORS_FLAGS "-Werror")
 
 # Don't change this in env!
 SET(CTEST_WIPE_CACHE FALSE)
@@ -73,10 +78,10 @@ SET(CTEST_BINARY_DIRECTORY "$ENV{PWD}")
 
 SET(CTEST_NOTES_FILES "${CTEST_BINARY_DIRECTORY}/do-configure")
 
-GET_LAST_DIR_NAME("${CTEST_BINARY_DIRECTORY}"  BUILD_DIR_NAME)
+GET_LAST_DIR_NAME("${CTEST_BINARY_DIRECTORY}" BUILD_DIR_NAME)
 
 # Can be overridden by the environment
-SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_NAME "${HOST_TYPE}-${BUILD_DIR_NAME}" )
+SET( CTEST_BUILD_NAME "${HOST_TYPE}-${BUILD_DIR_NAME}" )
 
 #
 # Run the build/test/submit driver

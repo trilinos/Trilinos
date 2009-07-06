@@ -165,9 +165,82 @@ PACKAGE_ARCH_PROCESS_TPLS_LISTS()
 
 PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
 
+#
+# E) Add the 'dashboard' target *before* adjusting package dependencies
+#
+
+IF (NOT (WIN32 AND NOT CYGWIN))
+
+  SET(Trilinos_ENABLED_PACKGES_LIST)
+  SET(Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST)
+  FOREACH(PACKAGE ${Trilinos_PACKAGES})
+    IF (Trilinos_ENABLE_${PACKAGE})
+      IF (Trilinos_ENABLED_PACKGES_LIST)
+        SET(Trilinos_ENABLED_PACKGES_LIST
+          "${Trilinos_ENABLED_PACKGES_LIST}\;${PACKAGE}") 
+      ELSE()
+        SET(Trilinos_ENABLED_PACKGES_LIST "${PACKAGE}") 
+      ENDIF()
+      SET(Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST
+        ${Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST} -DTrilinos_ENABLE_${PACKAGE}=ON)
+    ENDIF()
+  ENDFOREACH()
+  
+  SET(EXPR_CMND_ARGS)
+  IF (Trilinos_ENABLE_COVERAGE_TESTING)
+    APPEND_SET(EXPR_CMND_ARGS "CTEST_DO_COVERAGE_TESTING=TRUE")
+  ENDIF()
+  
+  ADD_CUSTOM_TARGET(dashboard
+  
+    COMMAND echo
+    COMMAND echo \"***\"
+    COMMAND echo \"*** Clean out the list of packages\"
+    COMMAND echo \"***\"
+    COMMAND echo
+    COMMAND echo Running: ${CMAKE_COMMAND} -DTrilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+      -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON \"${TRILINOS_HOME_DIR}\"
+    COMMAND echo
+    COMMAND ${CMAKE_COMMAND} -DTrilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+      -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON \"${TRILINOS_HOME_DIR}\"
+  
+    COMMAND echo
+    COMMAND echo \"***\"
+    COMMAND echo \"*** Run the dashboard command setting the list of packges\"
+    COMMAND echo \"***\"
+    COMMAND echo
+    COMMAND echo Running: env ${EXPR_CMND_ARGS}
+      Trilinos_PACKAGES=\"${Trilinos_ENABLED_PACKGES_LIST}\"
+      ${CMAKE_CTEST_COMMAND} -S
+        \"${TRILINOS_HOME_DIR}/cmake/ctest/experimental_build_test.cmake\"
+    COMMAND echo
+    COMMAND env ${EXPR_CMND_ARGS}
+      Trilinos_PACKAGES=\"${Trilinos_ENABLED_PACKGES_LIST}\"
+      ${CMAKE_CTEST_COMMAND} -S
+        \"${TRILINOS_HOME_DIR}/cmake/ctest/experimental_build_test.cmake\" || echo
+
+    # 2009/07/05: rabartl: Above, I added the ending '|| echo' to always make
+    # the command pass so that 'make will not stop and avoid this last command
+    # to set back the enabled packages.
+  
+    COMMAND echo
+    COMMAND echo \"***\"
+    COMMAND echo \"*** Reconfigure with the given package list\"
+    COMMAND echo \"***\"
+    COMMAND echo
+    COMMAND echo Running: ${CMAKE_COMMAND} ${Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST}
+      -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON \"${TRILINOS_HOME_DIR}\"
+    COMMAND echo
+    COMMAND ${CMAKE_COMMAND} ${Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST}
+      -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON \"${TRILINOS_HOME_DIR}\"
+  
+    )
+
+ENDIF()
+
 
 #
-# E) Apply logic to enable Trilinos packages and tests
+# F) Apply logic to enable Trilinos packages and tests
 #
 
 PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
@@ -200,7 +273,7 @@ IF (Trilinos_DEPS_XML_OUTPUT_FILE)
   PACKAGE_ARCH_DUMP_DEPS_XML_FILE()
 ENDIF()
 
-IF (Trilinos_DEPS_HTML_OUTPUT_FILE)
+IF (Trilinos_DEPS_HTML_OUTPUT_FILE AND Trilinos_DEPS_XML_OUTPUT_FILE)
   IF (NOT IS_ABSOLUTE ${Trilinos_DEPS_HTML_OUTPUT_FILE})
     SET(Trilinos_DEPS_HTML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${Trilinos_DEPS_HTML_OUTPUT_FILE})
   ENDIF()
@@ -214,7 +287,7 @@ IF (Trilinos_DEPS_HTML_OUTPUT_FILE)
       --output-html-deps-file=${Trilinos_DEPS_HTML_OUTPUT_FILE} )
 ENDIF()
 
-IF (Trilinos_CDASH_DEPS_XML_OUTPUT_FILE)
+IF (Trilinos_CDASH_DEPS_XML_OUTPUT_FILE AND Trilinos_DEPS_XML_OUTPUT_FILE)
   IF (NOT IS_ABSOLUTE ${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE})
     SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE})
   ENDIF()
@@ -237,7 +310,7 @@ ENDIF()
 
 
 #
-# F) Set up the environment on this computer
+# G) Set up the environment on this computer
 #
 
 MESSAGE("")
@@ -252,7 +325,7 @@ PACKAGE_ARCH_POST_SETUP_ENV()
 
 
 #
-# G) Go get the information for all enabled TPLS
+# H) Go get the information for all enabled TPLS
 #
 
 MESSAGE("")
@@ -263,7 +336,7 @@ PACKAGE_ARCH_PROCESS_ENABLED_TPLS()
 
 
 #
-# H) Set up for testing with CTest and Trilinos test harness
+# I) Set up for testing with CTest and Trilinos test harness
 #
 
 MESSAGE("")
@@ -276,14 +349,14 @@ TRILINOS_SETUP_TESTING_SUPPORT()
 
 
 #
-# I) Setup for packaging and distribution
+# J) Setup for packaging and distribution
 #
 
 TRILINOS_DEFINE_PACKAGING()
 
 
 #
-# J) Configure individual packages
+# K) Configure individual packages
 # 
 
 MESSAGE("")
@@ -294,7 +367,7 @@ PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES()
 
 
 #
-# K) Install-related commands
+# L) Install-related commands
 #
 
 CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.cmake.in

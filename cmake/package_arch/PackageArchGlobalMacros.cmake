@@ -71,6 +71,9 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     MESSAGE(STATUS "Setting ${PROJECT_NAME}_ENABLE_EXAMPLES=ON because ${PROJECT_NAME}_ENABLE_TESTS=ON")
     SET(${PROJECT_NAME}_ENABLE_EXAMPLES ON)
   ENDIF()
+
+  SET( ${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES OFF CACHE BOOL
+    "Set to empty all package enables (set to OFF at end)." )
   
   ADVANCED_OPTION(${PROJECT_NAME}_ENABLE_C
     "Enable the C compiler and related code"
@@ -1289,9 +1292,23 @@ ENDFUNCTION()
 
 MACRO(PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES)
 
+  IF (${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES)
+    MESSAGE("")
+    MESSAGE("Setting to empty '' all package enables on reqeust ...")
+    MESSAGE("")
+    FOREACH(PACKAGE ${${PROJECT_NAME}_PACKAGES})
+      SET_CACHE_ON_OFF_EMPTY(${PROJECT_NAME}_ENABLE_${PACKAGE} ""
+        "Forced to empty '' by ${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES=OFF" FORCE)
+      SET(${PROJECT_NAME}_ENABLE_${PACKAGE} "")
+      #PRINT_VAR(${PROJECT_NAME}_ENABLE_${PACKAGE})
+    ENDFOREACH()
+    SET(${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES OFF CACHE BOOL
+      "Forced to FALSE after use" FORCE)
+  ENDIF()
+
   MESSAGE("")
   MESSAGE("Disabling all packages that have a required dependency"
-    " on disabled TPLs and optional package TPL supporte based on TPL_ENABLE_<TPL>=OFF ...")
+    " on disabled TPLs and optional package TPL support based on TPL_ENABLE_<TPL>=OFF ...")
   MESSAGE("")
   FOREACH(TPL ${${PROJECT_NAME}_TPLS})
     PACKAGE_ARCH_DISABLE_TPL_DEP_PACKAGES(${TPL})

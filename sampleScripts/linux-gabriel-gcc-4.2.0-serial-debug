@@ -2,6 +2,7 @@ EXTRA_ARGS=$@
 
 cmake \
 -D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D BUILD_SHARED_LIBS:BOOL=ON \
 -D MEMORYCHECK_COMMAND:FILEPATH=/usr/local/bin/valgrind \
 -D CMAKE_CXX_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/g++ \
 -D CMAKE_C_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gcc \
@@ -13,7 +14,8 @@ cmake \
 -D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
 -D CMAKE_INSTALL_PREFIX:PATH=$HOME/PROJECTS/install/trilinos/serial/dbg \
 $EXTRA_ARGS \
-../../../../Trilinos
+../../../../Trilinos \
+2>&1 | tee do-configure.out
 
 #-D TPL_ENABLE_Boost:BOOL=ON \
 #-D CMAKE_Fortran_COMPILER:FILEPATH=/usr/local/gcc-4.2.0/bin/gfortran \
