@@ -15,3 +15,6 @@ ADD_SUBDIRECTORIES(
   BlockCheby
   #UseTranspose
   )
+IF (${PACKAGE_NAME}_USING_HYPRE)
+  ADD_SUBDIRECTORY(Hypre)
+ENDIF()

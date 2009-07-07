@@ -17,6 +17,12 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_METIS
   "Enable support for Metis in Ifpack."
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_USING_HYPRE
+  HAVE_HYPRE
+  "Enable Ifpack/Hypre adapters"
+  OFF )
+
+
 #
 # C) Add the libraries, tests, and examples
 #

@@ -20,3 +20,6 @@
 
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
+
+/* Define if want to build with hypre enabled */
+#cmakedefine HAVE_HYPRE
