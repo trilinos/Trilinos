@@ -840,9 +840,9 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> worksetGaussPoints(numCells,numFacePoints,spaceDim);
     FieldContainer<double> worksetJacobians(numCells, numFacePoints, spaceDim, spaceDim);
     FieldContainer<double> worksetJacobInv(numCells, numFacePoints, spaceDim, spaceDim);
-    FieldContainer<double> worksetFaceTu(numCells, numCubPoints, spaceDim);
-    FieldContainer<double> worksetFaceTv(numCells, numCubPoints, spaceDim);
-    FieldContainer<double> worksetFaceN(numCells, numCubPoints, spaceDim);
+    FieldContainer<double> worksetFaceTu(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetFaceTv(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetFaceN(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetVFieldVals(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetCValsTransformed(numCells, numFieldsC, numFacePoints, spaceDim);
     FieldContainer<double> worksetCValsTransformedWeighted(numCells, numFieldsC, numFacePoints, spaceDim);
