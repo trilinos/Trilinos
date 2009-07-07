@@ -59,15 +59,28 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
 
   // Compute quad points, weights, values
   std::vector<int> rules(d);
-  for (ordinal_type i=0; i<d; i++)
+  std::vector< void (*) ( int order, int np, double p[], double x[] ) > compute1DPoints(d);
+  std::vector< void (*) ( int order, int np, double p[], double w[] ) > compute1DWeights(d);
+  for (ordinal_type i=0; i<d; i++) {
     rules[i] = coordinate_bases[i]->getRule();
-  std::vector<double> jacobi_alpha(d), jacobi_beta(d);
+    if (rules[i] == 5) {
+      compute1DPoints[i] = webbur::hermite_compute_points_np;
+      compute1DWeights[i] = webbur::hermite_compute_weights_np;
+    }
+    else if (rules[i] == 1) {
+      compute1DPoints[i] = webbur::clenshaw_curtis_compute_points_np;
+      compute1DWeights[i] = webbur::clenshaw_curtis_compute_weights_np;
+    }
+  }
+  std::vector<int> nparams(d);
+  std::vector<double> params(d);
   int num_total_pts  =
     webbur::sparse_grid_mixed_growth_size_total(d, level, &rules[0],
 						webbur::level_to_order_default);
   ordinal_type ntot =
     webbur::sparse_grid_mixed_growth_size(d, level, &rules[0], 
-					  &jacobi_alpha[0], &jacobi_beta[0], 
+					  &nparams[0], &params[0], 
+					  &compute1DPoints[0],
 					  1e-15,
 					  webbur::level_to_order_default);
   std::vector<int> sparse_order(ntot*d);
@@ -79,8 +92,9 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
   std::vector<value_type> gp(ntot*d);
 
   webbur::sparse_grid_mixed_growth_unique_index(d, level, &rules[0],
-						&jacobi_alpha[0], 
-						&jacobi_beta[0],
+						&nparams[0], 
+						&params[0],
+						&compute1DPoints[0],
 						1e-15, ntot, num_total_pts, 
 						webbur::level_to_order_default,
 						&sparse_unique_index[0]);
@@ -89,13 +103,15 @@ SparseGridQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type>
 					 webbur::level_to_order_default, 
 					 &sparse_order[0], &sparse_index[0]);
   webbur::sparse_grid_mixed_growth_weight(d, level, &rules[0], 
-					  &jacobi_alpha[0], &jacobi_beta[0], 
+					  &nparams[0], &params[0], 
+					  &compute1DWeights[0],
 					  ntot, num_total_pts, 
 					  &sparse_unique_index[0], 
 					  webbur::level_to_order_default,
 					  &quad_weights[0]);
   webbur::sparse_grid_mixed_growth_point(d, level, &rules[0], 
-					 &jacobi_alpha[0], &jacobi_beta[0], 
+					 &nparams[0], &params[0], 
+					 &compute1DPoints[0],
 					 ntot, &sparse_order[0], 
 					 &sparse_index[0], 
 					 webbur::level_to_order_default, 
