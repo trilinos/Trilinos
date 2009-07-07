@@ -26,6 +26,7 @@
 // ***********************************************************************
 //@HEADER
 
+#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_GALERI) && defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_EPETRA)  
 #include "Ifpack.h"
 #include "AztecOO.h"
 #include "Galeri_Maps.h"
@@ -156,3 +157,4 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, ParameterList ){
   }
 
 }
+#endif
