@@ -61,11 +61,13 @@ class Epetra_Import;
     This class is lightweight, i.e., there are no deep copies of matrix data.  Whenever possible, class
     methods utilize callbacks to native Hypre functions.  
 */    
+
+#ifndef HYPRE_ENUMS
+#define HYPRE_ENUMS
     enum Hypre_Solver{ 
         BoomerAMG,
         ParaSails,
         Euclid,
-        Pilut,
         AMS,
         Hybrid,
         PCG,
@@ -79,6 +81,7 @@ class Epetra_Import;
         Solver,
         Preconditioner
         };
+#endif //HYPRE_ENUMS
 
 class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
       
@@ -208,7 +211,7 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
    */
     int SetParameter(Hypre_Chooser chooser, int* parameter, int (*pt2Func)(HYPRE_Solver, int*));
 
-    //! Sets the solver that is used by the Solve() and ApplyInverse() methods.
+    //! Sets the solver that is used by the Solve() and ApplyInverse() methods. Until this is called, the default solver is PCG.
     /*! 
     \param Solver (In) -A Hypre_Solver enumerated type to select the solver. Options are:
     BoomerAMG, AMS, Hybrid, PCG, GMRES, FlexGMRES, LGMRES, and BiCGSTAB. See Hypre Ref Manual for more info on the solvers.
@@ -219,10 +222,10 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
 
     int SetSolverType(Hypre_Solver Solver, bool transpose=false);
 
-    //! Sets the preconditioner that can be used by the Solve() and ApplyInverse() methods.
+    //! Sets the preconditioner that can be used by the Solve() and ApplyInverse() methods. Until this is called, the default preconditioner is Euclid.
     /*! 
     \param Precond (In) -A Hypre_Solver enumerated type to select the preconditioner. Options are:
-    BoomerAMG, ParaSails, Euclid, Pilut, and AMS.
+    BoomerAMG, ParaSails, Euclid, and AMS. Note that Pilut is no longer supported by Hypre, use Euclid instead.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -348,7 +351,6 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
    int Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver);
    int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver);
    int Hypre_EuclidCreate(MPI_Comm comm, HYPRE_Solver *solver);
-   int Hypre_ParCSRPilutCreate(MPI_Comm comm, HYPRE_Solver *solver);
    int Hypre_AMSCreate(MPI_Comm comm, HYPRE_Solver *solver);
    int Hypre_ParCSRHybridCreate(MPI_Comm comm, HYPRE_Solver *solver);
    int Hypre_ParCSRPCGCreate(MPI_Comm comm, HYPRE_Solver *solver);
@@ -356,8 +358,12 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
    int Hypre_ParCSRFlexGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
    int Hypre_ParCSRLGMRESCreate(MPI_Comm comm, HYPRE_Solver *solver);
    int Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Solver *solver);
+   // These two methods create a solver or preconditioner by just calling the pointer to create().
    int CreateSolver();
    int CreatePrecond();
+   // These two methods setup the solver or preconditioner by calling the pointer. 
+   // They are const because they are called from the Solve() routine.
+   // They really aren't const because they change the value of IsSolverSetup_. This is because it should only be called if it isn't setup.
    int SetupSolver() const;
    int SetupPrecond() const;
 
@@ -390,9 +396,9 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
     int MyRowStart_;
     int MyRowEnd_;
     mutable int MatType_;
-    bool TransposeSolve_;
-    Hypre_Chooser SolveOrPrec_;
-    bool *IsSolverSetup_;
-    bool *IsPrecondSetup_;
+    bool TransposeSolve_; // The only solver that can do a transpose solve is BoomerAMG
+    Hypre_Chooser SolveOrPrec_; // Initially the value is Solver, user must change this to apply preconditioner
+    bool *IsSolverSetup_; // false until the solver is setup, when the user selects a new solver type it becomes false again.
+    bool *IsPrecondSetup_; // same as above (note that they are pointers, so they may be modified in const functions
 };
 #endif /* EPETRAEXT_HYPREIJMATRIX_H_ */

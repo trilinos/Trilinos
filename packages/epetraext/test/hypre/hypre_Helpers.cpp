@@ -78,6 +78,20 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix MatrixConstructor(const int N, 
       ierr += HYPRE_IJMatrixSetValues(Matrix, 1, &ncols, rows, cols, values);
     }
   } else if(type == 1){
+    srand(time(NULL));
+    // Set values
+    int rows[1];
+    int cols[1];
+    double values[1];
+    int ncols = 1;
+    for(i = ilower; i < iupper; i++) {
+      rows[0] = i;
+      cols[0] = i;
+      values[0] =  ( (double)rand()/(double)RAND_MAX ) * 100;
+      ierr += HYPRE_IJMatrixSetValues(Matrix, 1, &ncols, rows, cols, values);
+    }
+    
+  } else if(type == 2){
     // Set values
     int rows[1];
     Teuchos::Array<int> cols; cols.resize(N);
@@ -91,7 +105,7 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix MatrixConstructor(const int N, 
       rows[0] = i;
       ierr += HYPRE_IJMatrixSetValues(Matrix, 1, &ncols, rows, &cols[0], &values[0]);
     }
-  } else if(type == 2){
+  } else if(type == 3){
     srand(time(NULL));
     int rows[1];
     Teuchos::Array<int> cols; cols.resize(N);
@@ -185,6 +199,7 @@ bool EquivalentVectors(Epetra_MultiVector &Y1, Epetra_MultiVector &Y2, const dou
     
     for(int i = 0; i < Y1.MyLength(); i++){
       if(fabs(Y1_vals[i] - Y2_vals[i]) > tol){
+        printf("Vector number[%d] ", j);
         printf("Val1[%d] = %f != Val2[%d] = %f\n", i, Y1_vals[i], i, Y2_vals[i]);
         retVal = false;
       }

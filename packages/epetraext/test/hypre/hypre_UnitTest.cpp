@@ -43,6 +43,9 @@
 #endif
 
 #include "hypre_Helpers.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterEntry.hpp"
+#include "Teuchos_ParameterListExceptions.hpp"
 #include "Teuchos_Array.hpp"
 #include <string>
 #include <stdio.h>
@@ -50,8 +53,8 @@
 
 namespace EpetraExt {
 
-const int N = 10;
-const int MatType = 3; //0 -> Unit diagonal, 1 -> Dense, val=col, 2 -> Random Dense, 3 -> Random Sparse
+const int N = 100;
+const int MatType = 4; //0 -> Unit diagonal, 1 -> Random diagonal, 2 -> Dense, val=col, 3 -> Random Dense, 4 -> Random Sparse
 const double tol = 1E-6;
 
 TEUCHOS_UNIT_TEST( EpetraExt_hypre, Construct ) {
@@ -229,9 +232,9 @@ TEUCHOS_UNIT_TEST( EpetraExt_hypre, InvColSums ) {
   Epetra_Vector Y(TestMat.RowMatrixColMap(),true);
   
   ierr += Matrix.InvColSums(X);
-  //ierr += TestMat.InvColSums(Y);
+  ierr += TestMat.InvColSums(Y);
   
-  //TEST_EQUALITY(EquivalentVectors(X,Y,tol), true);
+  TEST_EQUALITY(EquivalentVectors(X,Y,tol), true);
   TEST_EQUALITY(ierr, 0);
 }
 
@@ -344,4 +347,68 @@ TEUCHOS_UNIT_TEST( EpetraExt_hypre, MaxNumEntries ) {
   
   TEST_EQUALITY(ent1, ent2);
 }
+
+TEUCHOS_UNIT_TEST( EpetraExt_hypre, ApplyInverse ) {
+  EpetraExt_HypreIJMatrix Matrix = MatrixConstructor(N, 1);
+  Epetra_CrsMatrix TestMat = GetCrsMatrix(Matrix);
+
+  int num_vectors = 1;
+  Epetra_MultiVector X(Matrix.RowMatrixRowMap(), num_vectors, true);
+  X.Random();
+  Epetra_MultiVector Y1(Matrix.RowMatrixRowMap(), num_vectors, true);
+  Epetra_MultiVector Y2(Matrix.RowMatrixRowMap(), num_vectors, true);
+  
+  TestMat.ApplyInverse(X,Y2);
+  Matrix.ApplyInverse(X,Y1);
+  TEST_EQUALITY(EquivalentVectors(Y1,Y2,tol), true);
+}
+
+TEUCHOS_UNIT_TEST( EpetraExt_hypre, SameMatVec ) {
+  EpetraExt_HypreIJMatrix Matrix = MatrixConstructor(N, MatType);
+  Epetra_CrsMatrix TestMat = GetCrsMatrix(Matrix);
+  
+  int num_vectors = 3;
+  Epetra_MultiVector X1(Matrix.RowMatrixRowMap(), num_vectors, true);
+  X1.Random();
+  Epetra_MultiVector X2(X1);
+  
+  Matrix.Multiply(false,X1,X1);
+  TestMat.Multiply(false,X2,X2);
+
+  TEST_EQUALITY(EquivalentVectors(X1,X2,tol), true); 
+}
+
+TEUCHOS_UNIT_TEST( EpetraExt_hypre, Solve ) {
+  int num_vectors = 2;
+  EpetraExt_HypreIJMatrix Matrix = MatrixConstructor(N, 1);
+  Epetra_MultiVector TrueX(Matrix.RowMatrixRowMap(), num_vectors, true);
+  TrueX.Random();
+  Epetra_MultiVector RHS(Matrix.RowMatrixRowMap(), num_vectors, true);
+  Matrix.Multiply(false,TrueX, RHS);
+  Epetra_MultiVector X(Matrix.RowMatrixRowMap(), num_vectors, true);
+  
+  Matrix.SetSolverType(PCG);
+  Matrix.SetPrecondType(BoomerAMG);
+
+  /* Set some parameters (See Reference Manual for more parameters) */
+  Matrix.SetParameter(Solver, 1000, &HYPRE_PCGSetMaxIter); /* max iterations */
+  Matrix.SetParameter(Solver, 1e-7, &HYPRE_PCGSetTol); /* conv. tolerance */
+  Matrix.SetParameter(Solver, 1, &HYPRE_PCGSetTwoNorm); /* use the two norm as the stopping criteria */
+  Matrix.SetParameter(Solver, 2, &HYPRE_PCGSetPrintLevel); /* print solve info */
+  Matrix.SetParameter(Solver, 1, &HYPRE_PCGSetLogging); /* needed to get run info later */
+
+  /* Now set up the AMG preconditioner and specify any parameters */
+  Matrix.SetParameter(Preconditioner, 1, &HYPRE_BoomerAMGSetPrintLevel); /* print amg solution info */
+  Matrix.SetParameter(Preconditioner, 6, &HYPRE_BoomerAMGSetCoarsenType);
+  Matrix.SetParameter(Preconditioner, 6, &HYPRE_BoomerAMGSetRelaxType); /* Sym G.S./Jacobi hybrid */ 
+  Matrix.SetParameter(Preconditioner, 1, &HYPRE_BoomerAMGSetNumSweeps);
+  Matrix.SetParameter(Preconditioner, 0.0, &HYPRE_BoomerAMGSetTol); /* conv. tolerance zero */
+  Matrix.SetParameter(Preconditioner, 10, &HYPRE_BoomerAMGSetMaxIter); /* do only one iteration! */
+
+  Matrix.SetPreconditioner();
+  /* Now setup and solve! */
+  Matrix.Solve(false, false, false, RHS, X);
+  TEST_EQUALITY(EquivalentVectors(X,TrueX,tol), true);
+}
+
 } // namespace EpetraExt
