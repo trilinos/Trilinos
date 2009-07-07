@@ -1,7 +1,7 @@
 //@HEADER
 // ***********************************************************************
 // 
-//     EpetraExt: Epetra Extended - Linear Algebra Services Package
+//       Ifpack: Object-Oriented Algebraic Preconditioner Package
 //                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -26,7 +26,6 @@
 // ***********************************************************************
 //@HEADER
 
-#if defined(HAVE_IFPACK_AZTECOO) && defined(HAVE_IFPACK_GALERI) && defined(HAVE_IFPACK_TEUCHOS) && defined(HAVE_IFPACK_EPETRA)  
 #include "Ifpack.h"
 #include "AztecOO.h"
 #include "Galeri_Maps.h"
@@ -157,4 +156,4 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, ParameterList ){
   }
 
 }
-#endif
+
