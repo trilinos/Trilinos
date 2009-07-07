@@ -91,6 +91,9 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_HIPS
   ,HIPS
 #endif
+#ifdef HAVE_HYPRE
+  ,HYPRE
+#endif
   ,CHEBYSHEV
 };
 
@@ -121,6 +124,9 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
 #endif
 #ifdef HAVE_IFPACK_HIPS
   ,"HIPS"
+#endif
+#ifdef HAVE_HYPRE
+  ,"Hypre"
 #endif
   ,"Chebyshev"
 };
@@ -153,6 +159,9 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_HIPS
   ,true // HIPS
 #endif  
+#ifdef HAVE_HYPRE
+  ,true
+#endif
   ,false // CHEBYSHEV
 };
 
@@ -208,6 +217,10 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
     case HIPS:      
       return(new Ifpack_HIPS(Matrix));
 #endif      
+#ifdef HAVE_HYPRE
+    case HYPRE:
+      return(new Ifpack_Hypre(Matrix));
+#endif
     case CHEBYSHEV:
       return(new Ifpack_Chebyshev(Matrix));
     default:

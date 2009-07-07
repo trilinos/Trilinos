@@ -33,6 +33,9 @@
 #include "Ifpack_ConfigDefs.h"
 #include "Ifpack_Preconditioner.h"
 
+#ifdef HAVE_HYPRE
+#include "Ifpack_Hypre.h"
+#endif
 //! Ifpack: a function class to define Ifpack preconditioners.
 /*!
 Class Ifpack is a function class, that contains just one method:
@@ -144,6 +147,9 @@ public:
 #ifdef HAVE_IFPACK_HIPS
   ,HIPS
 #endif
+#ifdef HAVE_HYPRE
+  ,HYPRE
+#endif
     ,CHEBYSHEV
   };
 
@@ -160,6 +166,9 @@ public:
 #ifdef HAVE_IFPACK_HIPS
     +1
 #endif    
+#ifdef HAVE_HYPRE
+    +1
+#endif
     +1
     ;
 

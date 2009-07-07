@@ -81,6 +81,7 @@ SET(HEADERS ${HEADERS}
   Ifpack_OverlappingRowMatrix.h
   Ifpack_ValidParameters.h
   Ifpack_HIPS.h
+  Ifpack_Hypre.h
   )
 
 SET(SOURCES ${SOURCES}
@@ -125,6 +126,7 @@ SET(SOURCES ${SOURCES}
   Ifpack_OverlappingRowMatrix.cpp
   Ifpack_ValidParameters.cpp
   Ifpack_HIPS.cpp
+  Ifpack_Hypre.cpp
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos)
