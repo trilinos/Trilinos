@@ -661,7 +661,7 @@ int main(int argc, char *argv[]) {
     Epetra_FECrsMatrix DCurl(Copy, globalMapD, globalMapC, 2);
 
     double vals[4];
-    vals[0]=1; vals[1]=1; vals[2]=-1; vals[3]=-1;
+    vals[0]=0.5; vals[1]=0.5; vals[2]=-0.5; vals[3]=-0.5;
     for (int j=0; j<numFaces; j++){
         int rowNum = j;
         int colNum[4];
@@ -690,6 +690,25 @@ int main(int argc, char *argv[]) {
 
     hexCub->getCubature(cubPoints, cubWeights);
 
+   // Get numerical integration points and weights for hexahedron face
+    //             (needed for rhs boundary term)
+
+    // Define topology of the face parametrization domain as [-1,1]x[-1,1]
+    CellTopology paramQuadFace(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+
+    // Define cubature
+    DefaultCubatureFactory<double>  cubFactoryFace;
+    Teuchos::RCP<Cubature<double> > hexFaceCubature = cubFactoryFace.create(paramQuadFace, 3);
+    int cubFaceDim    = hexFaceCubature -> getDimension();
+    int numFacePoints = hexFaceCubature -> getNumPoints();
+
+    // Define storage for cubature points and weights on [-1,1]x[-1,1]
+    FieldContainer<double> paramGaussWeights(numFacePoints);
+    FieldContainer<double> paramGaussPoints(numFacePoints,cubFaceDim);
+
+    // Define storage for cubature points on workset faces
+    hexFaceCubature -> getCubature(paramGaussPoints, paramGaussWeights);
+
 
 // ************************************** BASIS ***************************************
 
@@ -708,6 +727,7 @@ int main(int argc, char *argv[]) {
      FieldContainer<double> hexDVals(numFieldsD, numCubPoints, spaceDim); 
      FieldContainer<double> hexDivs(numFieldsD, numCubPoints); 
      FieldContainer<double> hexGVals(numFieldsG, numCubPoints); 
+     FieldContainer<double> worksetDVals(numFieldsD, numFacePoints, spaceDim); 
 
      hexHCurlBasis.getValues(hexCVals, cubPoints, OPERATOR_VALUE);
      hexHDivBasis.getValues(hexDVals, cubPoints, OPERATOR_VALUE);
@@ -755,6 +775,20 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> rhsDatah(numCells, numCubPoints);
     FieldContainer<double> gD(numCells, numFieldsD);
     FieldContainer<double> hD(numCells, numFieldsD);
+    FieldContainer<double> gDBoundary(numCells, numFieldsD);
+    FieldContainer<double> refGaussPoints(numFacePoints,spaceDim);
+    FieldContainer<double> worksetGaussPoints(numCells,numFacePoints,spaceDim);
+    FieldContainer<double> worksetJacobians(numCells, numFacePoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetJacobDet(numCells, numFacePoints);
+    FieldContainer<double> worksetFaceTu(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetFaceTv(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetFaceN(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetVFieldVals(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetDValsTransformed(numCells, numFieldsD, numFacePoints, spaceDim);
+    FieldContainer<double> worksetDValsTransformedWeighted(numCells, numFieldsD, numFacePoints, spaceDim);
+    FieldContainer<double> curluFace(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetDataCrossField(numCells, numFieldsD, numFacePoints, spaceDim);
+
    // Container for cubature points in physical space
     FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
 
@@ -954,10 +988,88 @@ int main(int argc, char *argv[]) {
       fst::applyFieldSigns<double>(gD, hexFaceSigns);
       fst::applyFieldSigns<double>(hD, hexFaceSigns);
 
+     // calculate boundary term
+      for (int i = 0; i < numFacesPerElem; i++){
+        if (faceOnBoundary(elemToFace(k,i))){
+
+         // Map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints
+            CellTools::mapToReferenceSubcell(refGaussPoints,
+                                   paramGaussPoints,
+                                   2, i, hex_8);
+
+         // Get basis values at points on reference cell
+           hexHDivBasis.getValues(worksetDVals, refGaussPoints, OPERATOR_VALUE);
+
+         // Compute Jacobians at Gauss pts. on reference face for all parent cells
+           CellTools::setJacobian(worksetJacobians, refGaussPoints,
+                         hexNodes, hex_8);
+           CellTools::setJacobianDet(worksetJacobDet, worksetJacobians);
+
+         // transform to physical coordinates
+            fst::HDIVtransformVALUE<double>(worksetDValsTransformed, worksetJacobians,
+                                   worksetJacobDet, worksetDVals);
+
+         // multiply by weighted measure
+            fst::multiplyMeasure<double>(worksetDValsTransformedWeighted,
+                                   paramGaussWeights, worksetDValsTransformed);
+
+         // Map Gauss points on quad from ref. face to face workset: refGaussPoints -> worksetGaussPoints
+            CellTools::mapToPhysicalFrame(worksetGaussPoints,
+                                refGaussPoints,
+                                hexNodes, hex_8);
+
+        // Compute face tangents
+            CellTools::getPhysicalFaceTangents(worksetFaceTu,
+                                     worksetFaceTv,
+                                     paramGaussPoints,
+                                     worksetJacobians,
+                                     i, hex_8);
+
+         // Face outer normals (relative to parent cell) are uTan x vTan
+            RealSpaceTools<double>::vecprod(worksetFaceN, worksetFaceTu, worksetFaceTv);
+
+
+         // Evaluate curl u at face points
+           for(int nPt = 0; nPt < numFacePoints; nPt++){
+
+             double x = worksetGaussPoints(0, nPt, 0);
+             double y = worksetGaussPoints(0, nPt, 1);
+             double z = worksetGaussPoints(0, nPt, 2);
+
+             evalCurlu(curluFace(0,nPt,0), curluFace(0,nPt,1), curluFace(0,nPt,2), x, y, z);
+           }
+
+          // Compute the cross product of curluFace with basis
+           for (int nF = 0; nF < numFieldsD; nF++){
+              for(int nPt = 0; nPt < numFacePoints; nPt++){
+                  worksetDataCrossField(0,nF,nPt,0) = curluFace(0,nPt,1)*worksetDValsTransformedWeighted(0,nF,nPt,2)
+                                 - curluFace(0,nPt,2)*worksetDValsTransformedWeighted(0,nF,nPt,1);
+                  worksetDataCrossField(0,nF,nPt,1) = curluFace(0,nPt,2)*worksetDValsTransformedWeighted(0,nF,nPt,0)
+                                 - curluFace(0,nPt,0)*worksetDValsTransformedWeighted(0,nF,nPt,2);
+                  worksetDataCrossField(0,nF,nPt,2) = curluFace(0,nPt,0)*worksetDValsTransformedWeighted(0,nF,nPt,1)
+                                 - curluFace(0,nPt,1)*worksetDValsTransformedWeighted(0,nF,nPt,0);
+              } //nPt
+           } //nF
+
+          // Integrate
+           fst::integrate<double>(gDBoundary, worksetFaceN, worksetDataCrossField,
+                             COMP_CPP);
+
+          // apply signs
+           fst::applyFieldSigns<double>(gDBoundary, hexFaceSigns);
+
+          // add into hC term
+            for (int nF = 0; nF < numFieldsD; nF++){
+                gD(0,nF) = gD(0,nF) - gDBoundary(0,nF);
+            }
+
+        } // if faceOnBoundary
+      } // numFaces
+
     // assemble into global vector
      for (int row = 0; row < numFieldsD; row++){
            int rowIndex = elemToFace(k,row);
-           double val = hD(0,row)-gD(0,row);
+           double val = hD(0,row)+gD(0,row);
            rhsD.SumIntoGlobalValues(1, &rowIndex, &val);
      }
  
@@ -1017,18 +1129,28 @@ int main(int argc, char *argv[]) {
  {
 
  /*
+   // function 1
     uExact0 = exp(y+z)*(x+1.0)*(x-1.0);
     uExact1 = exp(x+z)*(y+1.0)*(y-1.0);
     uExact2 = exp(x+y)*(z+1.0)*(z-1.0);
+ */  
   
+   // function 2
     uExact0 = cos(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
     uExact1 = cos(M_PI*x)*cos(M_PI*z)*(y+1.0)*(y-1.0);
     uExact2 = cos(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
- */  
  
+ /*
+   // function 3
     uExact0 = x*x-1.0;
     uExact1 = y*y-1.0;
     uExact2 = z*z-1.0;
+
+   // function 4
+    uExact0 = sin(M_PI*x);
+    uExact1 = sin(M_PI*y);
+    uExact2 = sin(M_PI*z);
+ */  
 
    return 0;
  }
@@ -1037,12 +1159,18 @@ int main(int argc, char *argv[]) {
  double evalDivu(double & x, double & y, double & z)
  {
    
-  // double divu = 2.0*x*exp(y+z)+2.0*y*exp(x+z)+2.0*z*exp(x+y);
+   // function 1
+   // double divu = 2.0*x*exp(y+z)+2.0*y*exp(x+z)+2.0*z*exp(x+y);
 
-  // double divu = 2.0*x*cos(M_PI*y)*cos(M_PI*z) + 2.0*y*cos(M_PI*x)*cos(M_PI*z)
-  //                + 2.0*z*cos(M_PI*x)*cos(M_PI*y);
+   // function 2
+   double divu = 2.0*x*cos(M_PI*y)*cos(M_PI*z) + 2.0*y*cos(M_PI*x)*cos(M_PI*z)
+                  + 2.0*z*cos(M_PI*x)*cos(M_PI*y);
    
-   double divu = 2.0*(x + y + z);
+   // function 3
+   // double divu = 2.0*(x + y + z);
+   
+   // function 4
+   // double divu = M_PI*(cos(M_PI*x)+cos(M_PI*y)+cos(M_PI*z));
 
    return divu;
  }
@@ -1051,35 +1179,37 @@ int main(int argc, char *argv[]) {
 // Calculates curl of exact solution u
  int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z)
  {
-  /*
   
-   double duxdy = exp(y+z)*(x+1.0)*(x-1.0);
-   double duxdz = exp(y+z)*(x+1.0)*(x-1.0);
-   double duydx = exp(x+z)*(y+1.0)*(y-1.0);
-   double duydz = exp(x+z)*(y+1.0)*(y-1.0);
-   double duzdx = exp(x+y)*(z+1.0)*(z-1.0);
-   double duzdy = exp(x+y)*(z+1.0)*(z-1.0);
-
-   curlu0 = duzdy - duydz;
-   curlu1 = duxdz - duzdx;
-   curlu2 = duydx - duxdy;
+  /*
+   // function 1
+    double duxdy = exp(y+z)*(x+1.0)*(x-1.0);
+    double duxdz = exp(y+z)*(x+1.0)*(x-1.0);
+    double duydx = exp(x+z)*(y+1.0)*(y-1.0);
+    double duydz = exp(x+z)*(y+1.0)*(y-1.0);
+    double duzdx = exp(x+y)*(z+1.0)*(z-1.0);
+    double duzdy = exp(x+y)*(z+1.0)*(z-1.0);
  
-   double duxdy = -M_PI*sin(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
-   double duxdz = -M_PI*sin(M_PI*z)*cos(M_PI*y)*(x+1.0)*(x-1.0);
-   double duydx = -M_PI*sin(M_PI*x)*cos(M_PI*z)*(y+1.0)*(y-1.0);
-   double duydz = -M_PI*sin(M_PI*z)*cos(M_PI*x)*(y+1.0)*(y-1.0);
-   double duzdx = -M_PI*sin(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
-   double duzdy = -M_PI*sin(M_PI*y)*cos(M_PI*x)*(z+1.0)*(z-1.0);
-
-   curlu0 = duzdy - duydz;
-   curlu1 = duxdz - duzdx;
-   curlu2 = duydx - duxdy;
   */
- 
-   curlu0 = 0;
-   curlu1 = 0;
-   curlu2 = 0;
 
+   // function 2
+    double duxdy = -M_PI*sin(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
+    double duxdz = -M_PI*sin(M_PI*z)*cos(M_PI*y)*(x+1.0)*(x-1.0);
+    double duydx = -M_PI*sin(M_PI*x)*cos(M_PI*z)*(y+1.0)*(y-1.0);
+    double duydz = -M_PI*sin(M_PI*z)*cos(M_PI*x)*(y+1.0)*(y-1.0);
+    double duzdx = -M_PI*sin(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
+    double duzdy = -M_PI*sin(M_PI*y)*cos(M_PI*x)*(z+1.0)*(z-1.0);
+
+    curlu0 = duzdy - duydz;
+    curlu1 = duxdz - duzdx;
+    curlu2 = duydx - duxdy;
+ 
+  /*
+   // function 3 and 4
+    curlu0 = 0;
+    curlu1 = 0;
+    curlu2 = 0;
+  */
+  
    return 0;
  }
 
@@ -1088,6 +1218,7 @@ int main(int argc, char *argv[]) {
 {
    
  /*
+   // function 1
     double dcurlu0dy = exp(x+y)*(z+1.0)*(z-1.0) - 2.0*y*exp(x+z);
     double dcurlu0dz = 2.0*z*exp(x+y) - exp(x+z)*(y+1.0)*(y-1.0); 
     double dcurlu1dx = 2.0*x*exp(y+z) - exp(x+y)*(z+1.0)*(z-1.0); 
@@ -1095,10 +1226,9 @@ int main(int argc, char *argv[]) {
     double dcurlu2dx = exp(x+z)*(y+1.0)*(y-1.0) - 2.0*x*exp(y+z);
     double dcurlu2dy = 2.0*y*exp(x+z) - exp(y+z)*(x+1.0)*(x-1.0);
                        
-    curlCurlu0 = dcurlu2dy - dcurlu1dz;
-    curlCurlu1 = dcurlu0dz - dcurlu2dx;
-    curlCurlu2 = dcurlu1dx - dcurlu0dy;
+ */
  
+   // function 2
     double dcurlu0dy = -M_PI*M_PI*cos(M_PI*y)*cos(M_PI*x)*(z+1.0)*(z-1.0)
                            + 2.0*y*M_PI*sin(M_PI*z)*cos(M_PI*x);
     double dcurlu0dz = -2.0*z*M_PI*sin(M_PI*y)*cos(M_PI*x)
@@ -1116,10 +1246,12 @@ int main(int argc, char *argv[]) {
     curlCurlu1 = dcurlu0dz - dcurlu2dx;
     curlCurlu2 = dcurlu1dx - dcurlu0dy;
  
- */
+ /*
+   // function 3 and 4
     curlCurlu0 = 0.0;
     curlCurlu1 = 0.0;
     curlCurlu2 = 0.0;
+ */
 
     return 0;
 }
