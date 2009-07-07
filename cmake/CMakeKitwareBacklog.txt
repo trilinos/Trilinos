@@ -1,9 +1,16 @@
 --------------------------------------------------------------
-Desired Enhancements for CMake Suite of Tools for Trilinos
+Backlog issues for the Trilinos CMake Kitware Contract Work
 --------------------------------------------------------------
 
+This is a list of prioritized and unprioritized backlog issues for the
+contract with Kitware to improve issues related to the CMake suite of
+tools needed for Trilinos.  These items are prioritized both by
+categories (P1 to P5) and are also prioritized within a category by
+position (most urgent/important on top).  P1 items are needed for the
+release of Trilinos 10.0 and to remove the need for autotools.
 
-Prioritized Backog Items:
+
+Prioritized Backlog Items:
 -------------------------
 
 
@@ -26,6 +33,11 @@ failures.
 Kitware to set up out MS Windows HPC Server 2008 machine and get the
 Trilinos CMake build going with nightly testing.  We would also like
 some help porting Trilinos packages.
+
+
+(*) [Make] [P1] CMake on AIX: CMake currently does not work on the AIX
+machine purple.sandia.gov.  See Trilinos bug
+https://software.sandia.gov/bugzilla/show_bug.cgi?id=4474
  
 
 (*) [CMake] [P2] Native and mixed-language support for Fortran 2003
@@ -144,7 +156,11 @@ that would like to support finer grained test status like
 would allow you to define new categories of test statuses and then
 display then on the CDash dashboard and new columns and in each test.
 Also, when a package fails to configure because it was disabled it
-would be nice if this had a special status.
+would be nice if this had a special status.  It would also be good if
+a user-defined status could also define a color and for a 'Legend'
+button on CDash to give the mapping of status to color.  Good colors
+to choose from would be 'green', 'red', 'yellow', 'orange', 'pink' and
+perhaps other shades from 'green' to 'red'.
 
 
 (*) [CDash] [P3] General handling of data files in different test
@@ -169,7 +185,7 @@ than it should due to some test code logic not getting tested always
 (like printing when a test fails).  What would be needed in
 CMake/CTest is to be able to tag source files as 'TEST' code and that
 would result in coverage statistics being gathered for those files
-separately from the remaing code which is assumed to be production
+separately from the renaming code which is assumed to be production
 code (library code in the case of Trilinos).  CDash would then need to
 write two columns in the coverage results, one for 'Production' code,
 and one for 'Test' code.
@@ -199,12 +215,29 @@ be complex and fragile as the CDash MySQL table structure changes with
 upgrades.  We also want to have different criteria for cleaning out
 Nightly verses Continuous verses Experimental data.  For example, all
 Experimental data will be wiped out after two days.  Continuous data
-would be thined out after 3 days and removed all together after two
+would be thinned out after 3 days and removed all together after two
 weeks.
 
 
 (*) [CDash] [P4] Get CDash to periodically clean out older log
 history.
+
+
+(*) [CDash] [P4] Get CDash to deal correctly with subprojects when
+considering the "last build".  Currently, CDash thinks the last build
+is the last subproject build.  This messes up everything related to
+the "last build" like the increase (or decrease) in the number of
+tests, the links on the various results pages, etc.
+
+
+(*) [CTest, CDash] [Epic] Implement strong automated testing of
+CTest/CDash: Currently, most testing of CTest and especially CDash is
+done manually.  This results in a lot of extra manual work and allows
+defects to creep in very easily.  Some type of unit testing
+infrastructure of CTest/CDash needs to be devised that can
+automatically and strongly test important CTest/CDash behaviors and
+features.  We would like all new features implemented to be strongly
+tested with automated unit tests if feasible.
 
 
 
@@ -289,10 +322,6 @@ Workaround: Just add files slowly and re-run CMake each time to debug
 the problem.
 
 
-Desired/missing features for CTest:
------------------------------------
-
-
 (*) [CTest] Add an optional summary section that will show the number
 of tests that passed and failed for each Trilinos package
 (i.e. subproject in current CTest lingo).  This output mike look like:
@@ -325,16 +354,17 @@ sources.  Actually, I think boost has one that could be extracted,
 renamed, simplified and then moved into the CTest sources.
 
 
-(*) [CTest] Support a DEPENDENCIES property for tests to deal with
-'Not Run' when running driver scripts: Currently, ctest just looks at
-the direct command that is invoked to determine if the test can be run
-or can not be run.  This is not good because even MPI tests are shown
-to fail when the executable is not built but mpiexec of course is
-present.  Running user scripts that call built executables like cmake
--P scripts also return 'Fail' would they should be 'Not Run'.  One way
-to address this is to add a new test property called something like
-EXEC_DEPENDENCIES that can be set to a list of command that must all
-exist when the test is run or the test will be marked as 'Not Run'.
+(*) [CTest] Support an EXEC_DEPENDENCIES property for tests to deal
+with 'Not Run' when running driver scripts: Currently, ctest just
+looks at the direct command that is invoked to determine if the test
+can be run or can not be run.  This is not good because even MPI tests
+are shown to fail when the executable is not built but mpiexec of
+course is present.  Running user scripts that call built executables
+like cmake -P scripts also return 'Fail' would they should be 'Not
+Run'.  One way to address this is to add a new test property called
+something like EXEC_DEPENDENCIES that can be set to a list of command
+that must all exist when the test is run or the test will be marked as
+'Not Run'.
 
 
 (*) [CTest] Support for multi-computer running of tests: CTest has the
@@ -344,7 +374,10 @@ parallel over multiple similar machines and therefore achieve much
 higher levels of parallelism.
 
 
-(*) [CTest, CDash] Support for the Git VC tool
+(*) [CTest, CDash] Support for the Git VC tool: We really only need
+built-in support for git in order for CDash to show what files were
+updated.  If we don't care about that then built-in git support is no
+big deal.
 
 
 (*) [CDash] Add a general query filter for the main
@@ -370,8 +403,8 @@ them in one shot.
 
 
 (*) [CTest, CDash] Overall time budgets for running package tests: Currently,
-you can only put time limites on individual tests.  What would be more
-useful would be to put time budgest on an who set of package tests.
+you can only put time limits on individual tests.  What would be more
+useful would be to put time budget on an who set of package tests.
 All of the tests that would be run after the overall time limit was
 reached would be listed as 'Not Run'.  This would allow package
 developers to group their tests into different executables any way
@@ -402,16 +435,7 @@ every simulation an analyst runs.
 see the total run-time for the build and the regular tests on the
 CDash dashboard.  These tests take a long time to run and we need to
 see that.  We also need to see every 'Dynamic Analysis' test that
-times out on the dashbaord.
-
-
-(*) [CTest, CDash] Implement strong automated testing of CTest/CDash:
-Currently, most testing of CTest and especially CDash is done
-manually.  This results in a lot of extra manual work and allows
-defects to creep in very easily.  Some type of unit testing
-infrastructure of CTest/CDash needs to be devised that can
-automatically and strongly test important CTest/CDash behaviors and
-features.
+times out on the dashboard.
 
 
 (*) [CTest, CDash] Append update results to every subproject build and
@@ -423,7 +447,7 @@ the first subproject built).
 
 (*) [CTest, CDash] Send out CDash error notification emails for failed
 coverage tests and failed Dynamic Analysis tests: We need to be
-notificed when 'Dynamic Analysis' tests don't run.
+notified when 'Dynamic Analysis' tests don't run or don't finish.
 
 
 (*) [CTest, CDash] Find out why gcov and/or CTest/CDash is reporting
@@ -433,10 +457,10 @@ coverage results of OptiPack and GlobiPack for instance.
 
 
 (*) [CTest, CDash] Add graphs showing build and test times over
-multiple days for collaped builds and non-collapsed builds: This would
-be dirven by the query that is currently being used.  With this, you
-can see how the buld and run times for particular packages and entire
-builds is chaning over time.
+multiple days for collapsed builds and non-collapsed builds: This would
+be driven by the query that is currently being used.  With this, you
+can see how the build and run times for particular packages and entire
+builds is changing over time.
 
 
 (*) [CTest] Direct support for running (multiple) programs to
