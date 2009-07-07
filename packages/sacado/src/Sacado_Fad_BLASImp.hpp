@@ -188,6 +188,84 @@ unpack(const FadType* A, OrdinalType m, OrdinalType n, OrdinalType lda,
 template <typename OrdinalType, typename FadType>
 void
 Sacado::Fad::ArrayTraits<OrdinalType,FadType>::
+unpack(const ValueType& a, OrdinalType& n_dot, ValueType& val, 
+       const ValueType*& dot) const
+{
+  n_dot = 0;
+  val = a;
+  dot = NULL;
+}
+
+template <typename OrdinalType, typename FadType>
+void
+Sacado::Fad::ArrayTraits<OrdinalType,FadType>::
+unpack(const ValueType* a, OrdinalType n, OrdinalType inc,
+       OrdinalType& n_dot, OrdinalType& inc_val, OrdinalType& inc_dot,
+       const ValueType*& cval, const ValueType*& cdot) const
+{
+  n_dot = 0;
+  inc_val = inc;
+  inc_dot = 0;
+  cval = a;
+  cdot = NULL;
+}
+
+template <typename OrdinalType, typename FadType>
+void
+Sacado::Fad::ArrayTraits<OrdinalType,FadType>::
+unpack(const ValueType* A, OrdinalType m, OrdinalType n, OrdinalType lda,
+       OrdinalType& n_dot, OrdinalType& lda_val, OrdinalType& lda_dot,
+       const ValueType*& cval, const ValueType*& cdot) const
+{
+  n_dot = 0;
+  lda_val = lda;
+  lda_dot = 0;
+  cval = A;
+  cdot = NULL;
+}
+
+template <typename OrdinalType, typename FadType>
+void
+Sacado::Fad::ArrayTraits<OrdinalType,FadType>::
+unpack(const ScalarType& a, OrdinalType& n_dot, ScalarType& val, 
+       const ScalarType*& dot) const
+{
+  n_dot = 0;
+  val = a;
+  dot = NULL;
+}
+
+template <typename OrdinalType, typename FadType>
+void
+Sacado::Fad::ArrayTraits<OrdinalType,FadType>::
+unpack(const ScalarType* a, OrdinalType n, OrdinalType inc,
+       OrdinalType& n_dot, OrdinalType& inc_val, OrdinalType& inc_dot,
+       const ScalarType*& cval, const ScalarType*& cdot) const
+{
+  n_dot = 0;
+  inc_val = inc;
+  inc_dot = 0;
+  cval = a;
+  cdot = NULL;
+}
+
+template <typename OrdinalType, typename FadType>
+void
+Sacado::Fad::ArrayTraits<OrdinalType,FadType>::
+unpack(const ScalarType* A, OrdinalType m, OrdinalType n, OrdinalType lda,
+       OrdinalType& n_dot, OrdinalType& lda_val, OrdinalType& lda_dot,
+       const ScalarType*& cval, const ScalarType*& cdot) const
+{
+  n_dot = 0;
+  lda_val = lda;
+  lda_dot = 0;
+  cval = A;
+  cdot = NULL;
+}
+
+template <typename OrdinalType, typename FadType>
+void
+Sacado::Fad::ArrayTraits<OrdinalType,FadType>::
 unpack(FadType& a, OrdinalType& n_dot, OrdinalType& final_n_dot, ValueType& val,
        ValueType*& dot) const
 {
@@ -541,7 +619,7 @@ Sacado::Fad::BLAS<OrdinalType,FadType>::
 template <typename OrdinalType, typename FadType>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
-SCAL(const OrdinalType n, const ScalarType& alpha, ScalarType* x, 
+SCAL(const OrdinalType n, const FadType& alpha, FadType* x, 
      const OrdinalType incx) const 
 { 
   if (use_default_impl) {
@@ -550,11 +628,11 @@ SCAL(const OrdinalType n, const ScalarType& alpha, ScalarType* x,
   }
 
   // Unpack input values & derivatives
-  ValueType alpha_val = 0.0;
-  const ValueType *alpha_dot = NULL;
-  ValueType *x_val, *x_dot = NULL;
-  OrdinalType n_alpha_dot, n_x_dot, n_dot = 0;
-  OrdinalType incx_val, incx_dot = 0;
+  ValueType alpha_val;
+  const ValueType *alpha_dot;
+  ValueType *x_val, *x_dot;
+  OrdinalType n_alpha_dot, n_x_dot, n_dot;
+  OrdinalType incx_val, incx_dot;
   arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
   n_dot = n_alpha_dot;
   arrayTraits.unpack(x, n, incx, n_x_dot, n_dot, incx_val, incx_dot, 
@@ -587,8 +665,8 @@ SCAL(const OrdinalType n, const ScalarType& alpha, ScalarType* x,
 template <typename OrdinalType, typename FadType>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
-COPY(const OrdinalType n, const ScalarType* x, const OrdinalType incx, 
-     ScalarType* y, const OrdinalType incy) const 
+COPY(const OrdinalType n, const FadType* x, const OrdinalType incx, 
+     FadType* y, const OrdinalType incy) const 
 { 
   if (use_default_impl) {
     BLASType::COPY(n,x,incx,y,incy); 
@@ -612,10 +690,11 @@ COPY(const OrdinalType n, const ScalarType* x, const OrdinalType incx,
 }
 
 template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename x_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
-AXPY(const OrdinalType n, const ScalarType& alpha, const ScalarType* x, 
-     const OrdinalType incx, ScalarType* y, const OrdinalType incy) const 
+AXPY(const OrdinalType n, const alpha_type& alpha, const x_type* x, 
+     const OrdinalType incx, FadType* y, const OrdinalType incy) const 
 {
   if (use_default_impl) {
     BLASType::AXPY(n,alpha,x,incx,y,incy); 
@@ -623,15 +702,17 @@ AXPY(const OrdinalType n, const ScalarType& alpha, const ScalarType* x,
   }
 
   // Unpack input values & derivatives
-  ValueType alpha_val = 0.0;
-  const ValueType *x_val, *alpha_dot, *x_dot = NULL;
-  ValueType *y_val, *y_dot = NULL;
-  OrdinalType n_alpha_dot, n_x_dot, n_y_dot, n_dot = 0;
-  OrdinalType incx_val, incy_val, incx_dot, incy_dot = 0;
+  typename ArrayValueType<alpha_type>::type alpha_val;
+  const typename ArrayValueType<alpha_type>::type *alpha_dot;
+  const typename ArrayValueType<x_type>::type *x_val, *x_dot;
+  ValueType *y_val, *y_dot;
+  OrdinalType n_alpha_dot, n_x_dot, n_y_dot, n_dot;
+  OrdinalType incx_val, incy_val, incx_dot, incy_dot;
   arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
   arrayTraits.unpack(x, n, incx, n_x_dot, incx_val, incx_dot, x_val, x_dot);
 
   // Compute size
+  n_dot = 0;
   if (n_alpha_dot > 0)
     n_dot = n_alpha_dot;
   else if (n_x_dot > 0)
@@ -668,61 +749,20 @@ AXPY(const OrdinalType n, const ScalarType& alpha, const ScalarType* x,
 }
 
 template <typename OrdinalType, typename FadType>
-void
+template <typename x_type, typename y_type>
+FadType
 Sacado::Fad::BLAS<OrdinalType,FadType>::
-AXPY(const OrdinalType n, const ScalarType& alpha, const ValueType* x, 
-     const OrdinalType incx, ScalarType* y, const OrdinalType incy) const 
-{
-  // Unpack input values & derivatives
-  ValueType alpha_val = 0.0;
-  const ValueType *alpha_dot = NULL;
-  ValueType *y_val, *y_dot = NULL;
-  OrdinalType n_alpha_dot, n_y_dot, n_dot = 0;
-  OrdinalType incy_val, incy_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-
-  // Compute size
-  n_dot = n_alpha_dot;
-
-  // Unpack and allocate y
-  arrayTraits.unpack(y, n, incy, n_y_dot, n_dot, incy_val, incy_dot, y_val, 
-		     y_dot);
-
-#ifdef SACADO_DEBUG
-  // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_alpha_dot != n_dot && n_alpha_dot != 0) ||
-		     (n_y_dot != n_dot && n_y_dot != 0),
-		     std::logic_error,
-		     "BLAS::AXPY(): All arguments must have " <<
-		     "the same number of derivative components, or none");
-#endif 
-
-  // Call differentiated routine
-  for (OrdinalType i=0; i<n_alpha_dot; i++)
-    blas.AXPY(n, alpha_dot[i], x, incx, y_dot+i*n*incy_dot, incy_dot);
-  blas.AXPY(n, alpha_val, x, incx, y_val, incy_val);
-
-  // Pack values and derivatives for result
-  arrayTraits.pack(y, n, incy, n_dot, incy_val, incy_dot, y_val, y_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(y, n, n_dot, incy_val, incy_dot, y_val, y_dot);
-}
-
-template <typename OrdinalType, typename FadType>
-typename Sacado::Fad::BLAS<OrdinalType,FadType>::ScalarType
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, 
-    const ScalarType* y, const OrdinalType incy) const 
+DOT(const OrdinalType n, const x_type* x, const OrdinalType incx, 
+    const y_type* y, const OrdinalType incy) const 
 {
   if (use_default_impl)
     return BLASType::DOT(n,x,incx,y,incy);
 
   // Unpack input values & derivatives
-  const ValueType *x_val, *y_val, *x_dot, *y_dot = NULL;
-  OrdinalType n_x_dot, n_y_dot = 0;
-  OrdinalType incx_val, incy_val, incx_dot, incy_dot = 0;
+  const typename ArrayValueType<x_type>::type *x_val, *x_dot;
+  const typename ArrayValueType<y_type>::type *y_val, *y_dot;
+  OrdinalType n_x_dot, n_y_dot;
+  OrdinalType incx_val, incy_val, incx_dot, incy_dot;
   arrayTraits.unpack(x, n, incx, n_x_dot, incx_val, incx_dot, x_val, x_dot);
   arrayTraits.unpack(y, n, incy, n_y_dot, incy_val, incy_dot, y_val, y_dot);
 
@@ -751,76 +791,16 @@ DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx,
 }
 
 template <typename OrdinalType, typename FadType>
-typename Sacado::Fad::BLAS<OrdinalType,FadType>::ScalarType
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-DOT(const OrdinalType n, const ValueType* x, const OrdinalType incx, 
-    const ScalarType* y, const OrdinalType incy) const 
-{
-  // Unpack input values & derivatives
-  const ValueType *y_val, *y_dot = NULL;
-  OrdinalType n_y_dot = 0;
-  OrdinalType incy_val, incy_dot = 0;
-  arrayTraits.unpack(y, n, incy, n_y_dot, incy_val, incy_dot, y_val, y_dot);
-
-  // Compute size
-  OrdinalType n_z_dot = n_y_dot;
-  
-  // Unpack and allocate z
-  FadType z(n_z_dot, 0.0);
-  ValueType& z_val = z.val();
-  ValueType *z_dot = &z.fastAccessDx(0);
-
-  // Call differentiated routine
-  Fad_DOT(n, x, incx, 0, NULL, 0, y_val, incy_val, n_y_dot, y_dot, incy_dot, 
-	  z_val, n_z_dot, z_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(y, n, n_y_dot, incy_val, incy_dot, y_val, y_dot);
-
-  return z;
-}
-
-template <typename OrdinalType, typename FadType>
-typename Sacado::Fad::BLAS<OrdinalType,FadType>::ScalarType
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-DOT(const OrdinalType n, const ScalarType* x, const OrdinalType incx, 
-    const ValueType* y, const OrdinalType incy) const 
-{
-  // Unpack input values & derivatives
-  const ValueType *x_val, *x_dot = NULL;
-  OrdinalType n_x_dot = 0;
-  OrdinalType incx_val, incx_dot = 0;
-  arrayTraits.unpack(x, n, incx, n_x_dot, incx_val, incx_dot, x_val, x_dot);
-
-  // Compute size
-  OrdinalType n_z_dot = n_x_dot;
-  
-  // Unpack and allocate z
-  FadType z(n_z_dot, 0.0);
-  ValueType& z_val = z.val();
-  ValueType *z_dot = &z.fastAccessDx(0);
-
-  // Call differentiated routine
-  Fad_DOT(n, x_val, incx_val, n_x_dot, x_dot, incx_dot, y, incy, 0, NULL, 0,
-	  z_val, n_z_dot, z_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(x, n, n_x_dot, incx_val, incx_dot, x_val, x_dot);
-
-  return z;
-}
-
-template <typename OrdinalType, typename FadType>
 typename Sacado::Fad::BLAS<OrdinalType,FadType>::MagnitudeType
 Sacado::Fad::BLAS<OrdinalType,FadType>::
-NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const 
+NRM2(const OrdinalType n, const FadType* x, const OrdinalType incx) const 
 {
   if (use_default_impl)
     return BLASType::NRM2(n,x,incx);
 
   // Unpack input values & derivatives
-  const ValueType *x_val, *x_dot = NULL;
-  OrdinalType n_x_dot, incx_val, incx_dot = 0;
+  const ValueType *x_val, *x_dot;
+  OrdinalType n_x_dot, incx_val, incx_dot;
   arrayTraits.unpack(x, n, incx, n_x_dot, incx_val, incx_dot, x_val, x_dot);
   
   // Unpack and allocate z
@@ -828,7 +808,7 @@ NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
 
   // Call differentiated routine
   z.val() = blas.NRM2(n, x_val, incx_val);
-  // if (!Teuchos::ScalarTraits<ScalarType>::isComplex && incx_dot == 1)
+  // if (!Teuchos::ScalarTraits<FadType>::isComplex && incx_dot == 1)
   //   blas.GEMV(Teuchos::TRANS, n, n_x_dot, 1.0/z.val(), x_dot, n, x_val, 
   // 	      incx_val, 1.0, &z.fastAccessDx(0), OrdinalType(1));
   // else
@@ -843,13 +823,15 @@ NRM2(const OrdinalType n, const ScalarType* x, const OrdinalType incx) const
 }
 
 template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename A_type, typename x_type,
+	  typename beta_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 GEMV(Teuchos::ETransp trans, const OrdinalType m, const OrdinalType n, 
-     const ScalarType alpha, const ScalarType* A, 
-     const OrdinalType lda, const ScalarType* x, 
-     const OrdinalType incx, const ScalarType beta, 
-     ScalarType* y, const OrdinalType incy) const 
+     const alpha_type& alpha, const A_type* A, 
+     const OrdinalType lda, const x_type* x, 
+     const OrdinalType incx, const beta_type& beta, 
+     FadType* y, const OrdinalType incy) const 
 {
   if (use_default_impl) {
     BLASType::GEMV(trans,m,n,alpha,A,lda,x,incx,beta,y,incy);
@@ -864,12 +846,15 @@ GEMV(Teuchos::ETransp trans, const OrdinalType m, const OrdinalType n,
   }
   
   // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  const ValueType *A_val, *x_val, *A_dot, *x_dot = NULL;
-  ValueType *y_val, *y_dot = NULL;
-  OrdinalType n_alpha_dot, n_A_dot, n_x_dot, n_beta_dot, n_y_dot, n_dot = 0;
-  OrdinalType lda_val, incx_val, incy_val, lda_dot, incx_dot, incy_dot = 0;
+  typename ArrayValueType<alpha_type>::type alpha_val;
+  const typename ArrayValueType<alpha_type>::type *alpha_dot;
+  typename ArrayValueType<beta_type>::type beta_val;
+  const typename ArrayValueType<beta_type>::type *beta_dot;
+  const typename ArrayValueType<A_type>::type *A_val, *A_dot;
+  const typename ArrayValueType<x_type>::type *x_val, *x_dot;
+  ValueType *y_val, *y_dot;
+  OrdinalType n_alpha_dot, n_A_dot, n_x_dot, n_beta_dot, n_y_dot, n_dot;
+  OrdinalType lda_val, incx_val, incy_val, lda_dot, incx_dot, incy_dot;
   arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
   arrayTraits.unpack(A, m, n, lda, n_A_dot, lda_val, lda_dot, A_val, A_dot);
   arrayTraits.unpack(x, n_x_rows, incx, n_x_dot, incx_val, incx_dot, x_val, 
@@ -877,6 +862,7 @@ GEMV(Teuchos::ETransp trans, const OrdinalType m, const OrdinalType n,
   arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
   
   // Compute size
+  n_dot = 0;
   if (n_alpha_dot > 0)
     n_dot = n_alpha_dot;
   else if (n_A_dot > 0)
@@ -908,169 +894,12 @@ GEMV(Teuchos::ETransp trans, const OrdinalType m, const OrdinalType n,
 }
 
 template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-GEMV(Teuchos::ETransp trans, const OrdinalType m, const OrdinalType n, 
-     const ScalarType alpha, const ValueType* A, 
-     const OrdinalType lda, const ScalarType* x, 
-     const OrdinalType incx, const ScalarType beta, 
-     ScalarType* y, const OrdinalType incy) const {
-  OrdinalType n_x_rows = n;
-  OrdinalType n_y_rows = m;
-  if (trans != Teuchos::NO_TRANS) {
-    n_x_rows = m;
-    n_y_rows = n;
-  }
-
-  // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  const ValueType *x_val, *x_dot = NULL;
-  ValueType *y_val, *y_dot = NULL;
-  OrdinalType n_alpha_dot, n_x_dot, n_beta_dot, n_y_dot, n_dot = 0;
-  OrdinalType incx_val, incy_val, incx_dot, incy_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  arrayTraits.unpack(x, n_x_rows, incx, n_x_dot, incx_val, incx_dot, x_val, 
-		     x_dot);
-  arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  else if (n_x_dot > 0)
-    n_dot = n_x_dot;
-  else if (n_beta_dot > 0)
-    n_dot = n_beta_dot;
-
-  // Unpack and allocate y
-  arrayTraits.unpack(y, n_y_rows, incy, n_y_dot, n_dot, incy_val, incy_dot, 
-		     y_val, y_dot);
-    
-  // Call differentiated routine
-  Fad_GEMV(trans, m, n, alpha_val, n_alpha_dot, alpha_dot, A, lda,
-	   0, NULL, 0, x_val, incx_val, n_x_dot, x_dot, incx_dot, 
-	   beta_val, n_beta_dot, beta_dot, y_val, incy_val, n_y_dot, y_dot, 
-	   incy_dot, n_dot);
-    
-  // Pack values and derivatives for result
-  arrayTraits.pack(y, n_y_rows, incy, n_dot, incy_val, incy_dot, y_val, y_dot);
-    
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(x, n_x_rows, n_x_dot, incx_val, incx_dot, x_val, x_dot);
-  arrayTraits.free(beta, n_beta_dot, beta_dot);
-  arrayTraits.free(y, n_y_rows, n_dot, incy_val, incy_dot, y_val, y_dot);
-}
-
-template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-GEMV(Teuchos::ETransp trans, const OrdinalType m, const OrdinalType n, 
-     const ScalarType alpha, const ScalarType* A, 
-     const OrdinalType lda, const ValueType* x, 
-     const OrdinalType incx, const ScalarType beta, 
-     ScalarType* y, const OrdinalType incy) const {
-  OrdinalType n_x_rows = n;
-  OrdinalType n_y_rows = m;
-  if (trans != Teuchos::NO_TRANS) {
-    n_x_rows = m;
-    n_y_rows = n;
-  }
-
-  // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  const ValueType *A_val, *A_dot = NULL;
-  ValueType *y_val, *y_dot = NULL;
-  OrdinalType n_alpha_dot, n_A_dot, n_beta_dot, n_y_dot, n_dot = 0;
-  OrdinalType lda_val, incy_val, lda_dot, incy_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  arrayTraits.unpack(A, m, n, lda, n_A_dot, lda_val, lda_dot, A_val, A_dot);
-  arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
-    
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  else if (n_A_dot > 0)
-    n_dot = n_A_dot;
-  else if (n_beta_dot > 0)
-    n_dot = n_beta_dot;
-
-  // Unpack and allocate y
-  arrayTraits.unpack(y, n_y_rows, incy, n_y_dot, n_dot, incy_val, incy_dot, 
-		     y_val, y_dot);
-    
-  // Call differentiated routine
-  Fad_GEMV(trans, m, n, alpha_val, n_alpha_dot, alpha_dot, A_val, lda_val,
-	   n_A_dot, A_dot, lda_dot, x, incx, 0, NULL, 0,
-	   beta_val, n_beta_dot, beta_dot, y_val, incy_val, n_y_dot, y_dot, 
-	   incy_dot, n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(y, n_y_rows, incy, n_dot, incy_val, incy_dot, y_val, y_dot);
-    
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(A, m, n, n_A_dot, lda_val, lda_dot, A_val, A_dot);
-  arrayTraits.free(beta, n_beta_dot, beta_dot);
-  arrayTraits.free(y, n_y_rows, n_dot, incy_val, incy_dot, y_val, y_dot);
-}
-
-template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-GEMV(Teuchos::ETransp trans, const OrdinalType m, const OrdinalType n, 
-     const ScalarType alpha, const ValueType* A, 
-     const OrdinalType lda, const ValueType* x, 
-     const OrdinalType incx, const ScalarType beta, 
-     ScalarType* y, const OrdinalType incy) const {
-  OrdinalType n_x_rows = n;
-  OrdinalType n_y_rows = m;
-  if (trans != Teuchos::NO_TRANS) {
-    n_x_rows = m;
-    n_y_rows = n;
-  }
-
-  // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  ValueType *y_val, *y_dot = NULL;
-  OrdinalType n_alpha_dot, n_beta_dot, n_y_dot, n_dot = 0;
-  OrdinalType incy_val, incy_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
-    
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  else if (n_beta_dot > 0)
-    n_dot = n_beta_dot;
-
-  // Unpack and allocate y
-  arrayTraits.unpack(y, n_y_rows, incy, n_y_dot, n_dot, incy_val, incy_dot, 
-		     y_val, y_dot);
-    
-  // Call differentiated routine
-  Fad_GEMV(trans, m, n, alpha_val, n_alpha_dot, alpha_dot, A, lda,
-	   0, NULL, 0, x, incx, 0, NULL, 0,
-	   beta_val, n_beta_dot, beta_dot, y_val, incy_val, n_y_dot, 
-	   y_dot, incy_dot, n_dot);
-    
-  // Pack values and derivatives for result
-  arrayTraits.pack(y, n_y_rows, incy, n_dot, incy_val, incy_dot, y_val, y_dot);
-    
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(beta, n_beta_dot, beta_dot);
-  arrayTraits.free(y, n_y_rows, n_dot, incy_val, incy_dot, y_val, y_dot);
-}
-
-template <typename OrdinalType, typename FadType>
+template <typename A_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 TRMV(Teuchos::EUplo uplo, Teuchos::ETransp trans, Teuchos::EDiag diag, 
-     const OrdinalType n, const ScalarType* A, const OrdinalType lda, 
-     ScalarType* x, const OrdinalType incx) const
+     const OrdinalType n, const A_type* A, const OrdinalType lda, 
+     FadType* x, const OrdinalType incx) const
 {
   if (use_default_impl) {
     BLASType::TRMV(uplo,trans,diag,n,A,lda,x,incx);
@@ -1078,10 +907,10 @@ TRMV(Teuchos::EUplo uplo, Teuchos::ETransp trans, Teuchos::EDiag diag,
   }
   
   // Unpack input values & derivatives
-  const ValueType *A_val, *A_dot = NULL;
-  ValueType *x_val, *x_dot = NULL;
-  OrdinalType n_A_dot, n_x_dot, n_dot = 0;
-  OrdinalType lda_val, incx_val, lda_dot, incx_dot = 0;
+  const typename ArrayValueType<A_type>::type *A_val, *A_dot;
+  ValueType *x_val, *x_dot;
+  OrdinalType n_A_dot, n_x_dot, n_dot;
+  OrdinalType lda_val, incx_val, lda_dot, incx_dot;
   arrayTraits.unpack(A, n, n, lda, n_A_dot, lda_val, lda_dot, A_val, A_dot);
   n_dot = n_A_dot;
   arrayTraits.unpack(x, n, incx, n_x_dot, n_dot, incx_val, incx_dot, x_val, 
@@ -1130,54 +959,13 @@ TRMV(Teuchos::EUplo uplo, Teuchos::ETransp trans, Teuchos::EDiag diag,
 }
 
 template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename x_type, typename y_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
-TRMV(Teuchos::EUplo uplo, Teuchos::ETransp trans, Teuchos::EDiag diag, 
-     const OrdinalType n, const ValueType* A, const OrdinalType lda, 
-     ScalarType* x, const OrdinalType incx) const
-{  
-  // Unpack input values & derivatives
-  ValueType *x_val, *x_dot = NULL;
-  OrdinalType n_x_dot, n_dot = 0;
-  OrdinalType incx_val, incx_dot = 0;
-  arrayTraits.unpack(x, n, incx, n_x_dot, n_dot, incx_val, incx_dot, x_val, 
-		     x_dot);
-
-#ifdef SACADO_DEBUG
-  // Check sizes are consistent
-  TEST_FOR_EXCEPTION((n_x_dot != n_dot && n_x_dot != 0),
-		     std::logic_error,
-		     "BLAS::TRMV(): All arguments must have " <<
-		     "the same number of derivative components, or none");
-#endif
-
-  // Compute [xd_1 .. xd_n] = A*[xd_1 .. xd_n]
-  if (n_x_dot > 0) {
-    if (incx_dot == 1)
-      blas.TRMM(Teuchos::LEFT_SIDE, uplo, trans, diag, n, n_x_dot, 1.0, A, 
-    		lda, x_dot, n);
-    else
-      for (OrdinalType i=0; i<n_x_dot; i++)
-	blas.TRMV(uplo, trans, diag, n, A, lda, x_dot+i*incx_dot*n, incx_dot);
-  }
-
-  // Compute x = A*x
-  blas.TRMV(uplo, trans, diag, n, A, lda, x_val, incx_val);
-
-  // Pack values and derivatives for result
-  arrayTraits.pack(x, n, incx, n_dot, incx_val, incx_dot, x_val, x_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(x, n, n_dot, incx_val, incx_dot, x_val, x_dot);
-}
-
-template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-GER(const OrdinalType m, const OrdinalType n, const ScalarType& alpha, 
-    const ScalarType* x, const OrdinalType incx, 
-    const ScalarType* y, const OrdinalType incy, 
-    ScalarType* A, const OrdinalType lda) const 
+GER(const OrdinalType m, const OrdinalType n, const alpha_type& alpha, 
+    const x_type* x, const OrdinalType incx, 
+    const y_type* y, const OrdinalType incy, 
+    FadType* A, const OrdinalType lda) const 
 {
   if (use_default_impl) {
     BLASType::GER(m,n,alpha,x,incx,y,incy,A,lda);
@@ -1185,17 +973,19 @@ GER(const OrdinalType m, const OrdinalType n, const ScalarType& alpha,
   }
   
   // Unpack input values & derivatives
-  ValueType alpha_val = 0.0;
-  const ValueType *alpha_dot = NULL;
-  const ValueType *x_val, *y_val, *x_dot, *y_dot = NULL;
-  ValueType *A_val, *A_dot = NULL;
-  OrdinalType n_alpha_dot, n_x_dot, n_y_dot, n_A_dot, n_dot = 0;
-  OrdinalType lda_val, incx_val, incy_val, lda_dot, incx_dot, incy_dot = 0;
+  typename ArrayValueType<alpha_type>::type alpha_val;
+  const typename ArrayValueType<alpha_type>::type *alpha_dot;
+  const typename ArrayValueType<x_type>::type *x_val, *x_dot;
+  const typename ArrayValueType<y_type>::type *y_val, *y_dot;
+  ValueType *A_val, *A_dot;
+  OrdinalType n_alpha_dot, n_x_dot, n_y_dot, n_A_dot, n_dot;
+  OrdinalType lda_val, incx_val, incy_val, lda_dot, incx_dot, incy_dot;
   arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
   arrayTraits.unpack(x, m, incx, n_x_dot, incx_val, incx_dot, x_val, x_dot);
   arrayTraits.unpack(y, n, incy, n_y_dot, incy_val, incy_dot, y_val, y_dot);
   
   // Compute size
+  n_dot = 0;
   if (n_alpha_dot > 0)
     n_dot = n_alpha_dot;
   else if (n_x_dot > 0)
@@ -1218,140 +1008,20 @@ GER(const OrdinalType m, const OrdinalType n, const ScalarType& alpha,
   // Free temporary arrays
   arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
   arrayTraits.free(x, m, n_x_dot, incx_val, incx_dot, x_val, x_dot);
-  arrayTraits.free(y, n, n_dot, incy_val, incy_dot, y_val, y_dot);
+  arrayTraits.free(y, n, n_y_dot, incy_val, incy_dot, y_val, y_dot);
   arrayTraits.free(A, m, n, n_dot, lda_val, lda_dot, A_val, A_dot);
 }
 
 template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-GER(const OrdinalType m, const OrdinalType n, const ScalarType& alpha, 
-    const ValueType* x, const OrdinalType incx, 
-    const ScalarType* y, const OrdinalType incy, 
-    ScalarType* A, const OrdinalType lda) const 
-{
-  
-  // Unpack input values & derivatives
-  ValueType alpha_val = 0.0;
-  const ValueType *alpha_dot = NULL;
-  const ValueType *y_val, *y_dot = NULL;
-  ValueType *A_val, *A_dot = NULL;
-  OrdinalType n_alpha_dot, n_y_dot, n_A_dot, n_dot = 0;
-  OrdinalType lda_val, incy_val, lda_dot, incy_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  arrayTraits.unpack(y, n, incy, n_y_dot, incy_val, incy_dot, y_val, y_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  else if (n_y_dot > 0)
-    n_dot = n_y_dot;
-  
-  // Unpack and allocate A
-  arrayTraits.unpack(A, m, n, lda, n_A_dot, n_dot, lda_val, lda_dot, A_val, 
-		     A_dot);
-  
-  // Call differentiated routine
-  Fad_GER(m, n, alpha_val, n_alpha_dot, alpha_dot, x, incx, 
-	  0, NULL, 0, y_val, incy_val, n_y_dot, y_dot, 
-	  incy_dot, A_val, lda_val, n_A_dot, A_dot, lda_dot, n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(A, m, n, lda, n_dot, lda_val, lda_dot, A_val, A_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(y, n, n_dot, incy_val, incy_dot, y_val, y_dot);
-  arrayTraits.free(A, m, n, n_dot, lda_val, lda_dot, A_val, A_dot);
-}
-
-template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-GER(const OrdinalType m, const OrdinalType n, const ScalarType& alpha, 
-    const ScalarType* x, const OrdinalType incx, 
-    const ValueType* y, const OrdinalType incy, 
-    ScalarType* A, const OrdinalType lda) const 
-{ 
-  // Unpack input values & derivatives
-  ValueType alpha_val = 0.0;
-  const ValueType *alpha_dot = NULL;
-  const ValueType *x_val, *x_dot = NULL;
-  ValueType *A_val, *A_dot = NULL;
-  OrdinalType n_alpha_dot, n_x_dot, n_A_dot, n_dot = 0;
-  OrdinalType lda_val, incx_val, lda_dot, incx_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  arrayTraits.unpack(x, m, incx, n_x_dot, incx_val, incx_dot, x_val, x_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  else if (n_x_dot > 0)
-    n_dot = n_x_dot;
-  
-  // Unpack and allocate A
-  arrayTraits.unpack(A, m, n, lda, n_A_dot, n_dot, lda_val, lda_dot, A_val, 
-		     A_dot);
-  
-  // Call differentiated routine
-  Fad_GER(m, n, alpha_val, n_alpha_dot, alpha_dot, x_val, incx_val, 
-	  n_x_dot, x_dot, incx_dot, y, incy, 0, NULL, 
-	  0, A_val, lda_val, n_A_dot, A_dot, lda_dot, n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(A, m, n, lda, n_dot, lda_val, lda_dot, A_val, A_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(x, m, n_x_dot, incx_val, incx_dot, x_val, x_dot);
-  arrayTraits.free(A, m, n, n_dot, lda_val, lda_dot, A_val, A_dot);
-}
-
-template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-GER(const OrdinalType m, const OrdinalType n, const ScalarType& alpha, 
-    const ValueType* x, const OrdinalType incx, 
-    const ValueType* y, const OrdinalType incy, 
-    ScalarType* A, const OrdinalType lda) const 
-{
-  // Unpack input values & derivatives
-  ValueType alpha_val = 0.0;
-  const ValueType *alpha_dot = NULL;
-  ValueType *A_val, *A_dot = NULL;
-  OrdinalType n_alpha_dot, n_A_dot, n_dot = 0;
-  OrdinalType lda_val, lda_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  
-  // Unpack and allocate A
-  arrayTraits.unpack(A, m, n, lda, n_A_dot, n_dot, lda_val, lda_dot, A_val, 
-		     A_dot);
-  
-  // Call differentiated routine
-  Fad_GER(m, n, alpha_val, n_alpha_dot, alpha_dot, x, incx, 0, NULL, 0, y, 
-	  incy, 0, NULL, 0, A_val, lda_val, n_A_dot, A_dot, lda_dot, 
-	  n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(A, m, n, lda, n_dot, lda_val, lda_dot, A_val, A_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(A, m, n, n_dot, lda_val, lda_dot, A_val, A_dot);
-}
-
-template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename A_type, typename B_type,
+	  typename beta_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 GEMM(Teuchos::ETransp transa, Teuchos::ETransp transb, 
      const OrdinalType m, const OrdinalType n, const OrdinalType k, 
-     const ScalarType& alpha, const ScalarType* A, const OrdinalType lda, 
-     const ScalarType* B, const OrdinalType ldb, const ScalarType& beta, 
-     ScalarType* C, const OrdinalType ldc) const 
+     const alpha_type& alpha, const A_type* A, const OrdinalType lda, 
+     const B_type* B, const OrdinalType ldb, const beta_type& beta, 
+     FadType* C, const OrdinalType ldc) const 
 {
   if (use_default_impl) {
     BLASType::GEMM(transa,transb,m,n,k,alpha,A,lda,B,ldb,beta,C,ldc);
@@ -1373,12 +1043,15 @@ GEMM(Teuchos::ETransp transa, Teuchos::ETransp transb,
   }
   
   // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  const ValueType *A_val, *B_val, *A_dot, *B_dot = NULL;
-  ValueType *C_val, *C_dot = NULL;
-  OrdinalType n_alpha_dot, n_A_dot, n_B_dot, n_beta_dot, n_C_dot, n_dot = 0;
-  OrdinalType lda_val, ldb_val, ldc_val, lda_dot, ldb_dot, ldc_dot = 0;
+  typename ArrayValueType<alpha_type>::type alpha_val;
+  const typename ArrayValueType<alpha_type>::type *alpha_dot;
+  typename ArrayValueType<beta_type>::type beta_val;
+  const typename ArrayValueType<beta_type>::type *beta_dot;
+  const typename ArrayValueType<A_type>::type *A_val, *A_dot;
+  const typename ArrayValueType<B_type>::type *B_val, *B_dot;
+  ValueType *C_val, *C_dot;
+  OrdinalType n_alpha_dot, n_A_dot, n_B_dot, n_beta_dot, n_C_dot, n_dot;
+  OrdinalType lda_val, ldb_val, ldc_val, lda_dot, ldb_dot, ldc_dot;
   arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
   arrayTraits.unpack(A, n_A_rows, n_A_cols, lda, n_A_dot, lda_val, lda_dot, 
 		     A_val, A_dot);
@@ -1387,6 +1060,7 @@ GEMM(Teuchos::ETransp transa, Teuchos::ETransp transb,
   arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
   
   // Compute size
+  n_dot = 0;
   if (n_alpha_dot > 0)
     n_dot = n_alpha_dot;
   else if (n_A_dot > 0)
@@ -1422,204 +1096,15 @@ GEMM(Teuchos::ETransp transa, Teuchos::ETransp transb,
 }
 
 template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-GEMM(Teuchos::ETransp transa, Teuchos::ETransp transb, 
-     const OrdinalType m, const OrdinalType n, const OrdinalType k, 
-     const ScalarType& alpha, const ValueType* A, const OrdinalType lda, 
-     const ScalarType* B, const OrdinalType ldb, const ScalarType& beta, 
-     ScalarType* C, const OrdinalType ldc) const 
-{
-  OrdinalType n_A_rows = m;
-  OrdinalType n_A_cols = k;
-  if (transa != Teuchos::NO_TRANS) {
-    n_A_rows = k;
-    n_A_cols = m;
-  }
-
-  OrdinalType n_B_rows = k;
-  OrdinalType n_B_cols = n;
-  if (transb != Teuchos::NO_TRANS) {
-    n_B_rows = n;
-    n_B_cols = k;
-  }
-  
-  // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  const ValueType *B_val, *B_dot = NULL;
-  ValueType *C_val, *C_dot = NULL;
-  OrdinalType n_alpha_dot, n_B_dot, n_beta_dot, n_C_dot, n_dot = 0;
-  OrdinalType ldb_val, ldc_val, ldb_dot, ldc_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  arrayTraits.unpack(B, n_B_rows, n_B_cols, ldb, n_B_dot, ldb_val, ldb_dot,
-		     B_val, B_dot);
-  arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  else if (n_B_dot > 0)
-    n_dot = n_B_dot;
-  else if (n_beta_dot > 0)
-    n_dot = n_beta_dot;
-  
-  // Unpack and allocate C
-  arrayTraits.unpack(C, m, n, ldc, n_C_dot, n_dot, ldc_val, ldc_dot, C_val, 
-		     C_dot);
-  
-  // Call differentiated routine
-  Fad_GEMM(transa, transb, m, n, k, 
-	   alpha_val, n_alpha_dot, alpha_dot, 
-	   A, lda, 0, NULL, 0, 
-	   B_val, ldb_val, n_B_dot, B_dot, ldb_dot, 
-	   beta_val, n_beta_dot, beta_dot, 
-	   C_val, ldc_val, n_C_dot, C_dot, ldc_dot, n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(C, m, n, ldc, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(B, n_B_rows, n_B_cols, n_B_dot, ldb_val, ldb_dot, B_val, 
-		   B_dot);
-  arrayTraits.free(beta, n_beta_dot, beta_dot);
-  arrayTraits.free(C, m, n, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-}
-
-template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-GEMM(Teuchos::ETransp transa, Teuchos::ETransp transb, 
-     const OrdinalType m, const OrdinalType n, const OrdinalType k, 
-     const ScalarType& alpha, const ScalarType* A, const OrdinalType lda, 
-     const ValueType* B, const OrdinalType ldb, const ScalarType& beta, 
-     ScalarType* C, const OrdinalType ldc) const 
-{
-  OrdinalType n_A_rows = m;
-  OrdinalType n_A_cols = k;
-  if (transa != Teuchos::NO_TRANS) {
-    n_A_rows = k;
-    n_A_cols = m;
-  }
-
-  OrdinalType n_B_rows = k;
-  OrdinalType n_B_cols = n;
-  if (transb != Teuchos::NO_TRANS) {
-    n_B_rows = n;
-    n_B_cols = k;
-  }
-  
-  // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  const ValueType *A_val, *A_dot = NULL;
-  ValueType *C_val, *C_dot = NULL;
-  OrdinalType n_alpha_dot, n_A_dot, n_beta_dot, n_C_dot, n_dot = 0;
-  OrdinalType lda_val, ldc_val, lda_dot, ldc_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  arrayTraits.unpack(A, n_A_rows, n_A_cols, lda, n_A_dot, lda_val, lda_dot, 
-		     A_val, A_dot);
-  arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  else if (n_A_dot > 0)
-    n_dot = n_A_dot;
-  else if (n_beta_dot > 0)
-    n_dot = n_beta_dot;
-  
-  // Unpack and allocate C
-  arrayTraits.unpack(C, m, n, ldc, n_C_dot, n_dot, ldc_val, ldc_dot, C_val, 
-		     C_dot);
-  
-  // Call differentiated routine
-  Fad_GEMM(transa, transb, m, n, k, 
-	   alpha_val, n_alpha_dot, alpha_dot, 
-	   A_val, lda_val, n_A_dot, A_dot, lda_dot, 
-	   B, ldb, 0, NULL, 0, 
-	   beta_val, n_beta_dot, beta_dot, 
-	   C_val, ldc_val, n_C_dot, C_dot, ldc_dot, n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(C, m, n, ldc, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(A, n_A_rows, n_A_cols, n_A_dot, lda_val, lda_dot, A_val, 
-		   A_dot);
-  arrayTraits.free(beta, n_beta_dot, beta_dot);
-  arrayTraits.free(C, m, n, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-}
-
-template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-GEMM(Teuchos::ETransp transa, Teuchos::ETransp transb, 
-     const OrdinalType m, const OrdinalType n, const OrdinalType k, 
-     const ScalarType& alpha, const ValueType* A, const OrdinalType lda, 
-     const ValueType* B, const OrdinalType ldb, const ScalarType& beta, 
-     ScalarType* C, const OrdinalType ldc) const 
-{
-  OrdinalType n_A_rows = m;
-  OrdinalType n_A_cols = k;
-  if (transa != Teuchos::NO_TRANS) {
-    n_A_rows = k;
-    n_A_cols = m;
-  }
-
-  OrdinalType n_B_rows = k;
-  OrdinalType n_B_cols = n;
-  if (transb != Teuchos::NO_TRANS) {
-    n_B_rows = n;
-    n_B_cols = k;
-  }
-  
-  // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  ValueType *C_val, *C_dot = NULL;
-  OrdinalType n_alpha_dot, n_beta_dot, n_C_dot, n_dot = 0;
-  OrdinalType ldc_val, ldc_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  else if (n_beta_dot > 0)
-    n_dot = n_beta_dot;
-  
-  // Unpack and allocate C
-  arrayTraits.unpack(C, m, n, ldc, n_C_dot, n_dot, ldc_val, ldc_dot, C_val, 
-		     C_dot);
-  
-  // Call differentiated routine
-  Fad_GEMM(transa, transb, m, n, k, 
-	   alpha_val, n_alpha_dot, alpha_dot, 
-	   A, lda, 0, NULL, 0, 
-	   B, ldb, 0, NULL, 0, 
-	   beta_val, n_beta_dot, beta_dot, 
-	   C_val, ldc_val, n_C_dot, C_dot, ldc_dot, n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(C, m, n, ldc, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(beta, n_beta_dot, beta_dot);
-  arrayTraits.free(C, m, n, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-}
-
-template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename A_type, typename B_type,
+	  typename beta_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 SYMM(Teuchos::ESide side, Teuchos::EUplo uplo,  
      const OrdinalType m, const OrdinalType n, 
-     const ScalarType& alpha, const ScalarType* A, const OrdinalType lda, 
-     const ScalarType* B, const OrdinalType ldb, const ScalarType& beta, 
-     ScalarType* C, const OrdinalType ldc) const 
+     const alpha_type& alpha, const A_type* A, const OrdinalType lda, 
+     const B_type* B, const OrdinalType ldb, const beta_type& beta, 
+     FadType* C, const OrdinalType ldc) const 
 {
   if (use_default_impl) {
     BLASType::SYMM(side,uplo,m,n,alpha,A,lda,B,ldb,beta,C,ldc);
@@ -1634,12 +1119,15 @@ SYMM(Teuchos::ESide side, Teuchos::EUplo uplo,
   }
   
   // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  const ValueType *A_val, *B_val, *A_dot, *B_dot = NULL;
-  ValueType *C_val, *C_dot = NULL;
-  OrdinalType n_alpha_dot, n_A_dot, n_B_dot, n_beta_dot, n_C_dot, n_dot = 0;
-  OrdinalType lda_val, ldb_val, ldc_val, lda_dot, ldb_dot, ldc_dot = 0;
+  typename ArrayValueType<alpha_type>::type alpha_val;
+  const typename ArrayValueType<alpha_type>::type *alpha_dot;
+  typename ArrayValueType<beta_type>::type beta_val;
+  const typename ArrayValueType<beta_type>::type *beta_dot;
+  const typename ArrayValueType<A_type>::type *A_val, *A_dot;
+  const typename ArrayValueType<B_type>::type *B_val, *B_dot;
+  ValueType *C_val, *C_dot;
+  OrdinalType n_alpha_dot, n_A_dot, n_B_dot, n_beta_dot, n_C_dot, n_dot;
+  OrdinalType lda_val, ldb_val, ldc_val, lda_dot, ldb_dot, ldc_dot;
   arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
   arrayTraits.unpack(A, n_A_rows, n_A_cols, lda, n_A_dot, lda_val, lda_dot, 
 		     A_val, A_dot);
@@ -1647,6 +1135,7 @@ SYMM(Teuchos::ESide side, Teuchos::EUplo uplo,
   arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
   
   // Compute size
+  n_dot = 0;
   if (n_alpha_dot > 0)
     n_dot = n_alpha_dot;
   else if (n_A_dot > 0)
@@ -1681,174 +1170,14 @@ SYMM(Teuchos::ESide side, Teuchos::EUplo uplo,
 }
 
 template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-SYMM(Teuchos::ESide side, Teuchos::EUplo uplo,  
-     const OrdinalType m, const OrdinalType n, 
-     const ScalarType& alpha, const ValueType* A, const OrdinalType lda, 
-     const ScalarType* B, const OrdinalType ldb, const ScalarType& beta, 
-     ScalarType* C, const OrdinalType ldc) const 
-{
-  OrdinalType n_A_rows = m;
-  OrdinalType n_A_cols = m;
-  if (side == Teuchos::RIGHT_SIDE) {
-    n_A_rows = n;
-    n_A_cols = n;
-  }
-  
-  // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  const ValueType *B_val, *B_dot = NULL;
-  ValueType *C_val, *C_dot = NULL;
-  OrdinalType n_alpha_dot, n_B_dot, n_beta_dot, n_C_dot, n_dot = 0;
-  OrdinalType ldb_val, ldc_val, ldb_dot, ldc_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  arrayTraits.unpack(B, m, n, ldb, n_B_dot, ldb_val, ldb_dot,B_val, B_dot);
-  arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  else if (n_B_dot > 0)
-    n_dot = n_B_dot;
-  else if (n_beta_dot > 0)
-    n_dot = n_beta_dot;
-  
-  // Unpack and allocate C
-  arrayTraits.unpack(C, m, n, ldc, n_C_dot, n_dot, ldc_val, ldc_dot, C_val, 
-		     C_dot);
-  
-  // Call differentiated routine
-  Fad_SYMM(side, uplo, m, n,
-	   alpha_val, n_alpha_dot, alpha_dot, 
-	   A, lda, 0, NULL, 0, 
-	   B_val, ldb_val, n_B_dot, B_dot, ldb_dot, 
-	   beta_val, n_beta_dot, beta_dot, 
-	   C_val, ldc_val, n_C_dot, C_dot, ldc_dot, n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(C, m, n, ldc, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(B, m, n, n_B_dot, ldb_val, ldb_dot, B_val, B_dot);
-  arrayTraits.free(beta, n_beta_dot, beta_dot);
-  arrayTraits.free(C, m, n, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-}
-
-template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-SYMM(Teuchos::ESide side, Teuchos::EUplo uplo,  
-     const OrdinalType m, const OrdinalType n, 
-     const ScalarType& alpha, const ScalarType* A, const OrdinalType lda, 
-     const ValueType* B, const OrdinalType ldb, const ScalarType& beta, 
-     ScalarType* C, const OrdinalType ldc) const 
-{
-  OrdinalType n_A_rows = m;
-  OrdinalType n_A_cols = m;
-  if (side == Teuchos::RIGHT_SIDE) {
-    n_A_rows = n;
-    n_A_cols = n;
-  }
-  
-  // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  const ValueType *A_val, *A_dot = NULL;
-  ValueType *C_val, *C_dot = NULL;
-  OrdinalType n_alpha_dot, n_A_dot, n_beta_dot, n_C_dot, n_dot = 0;
-  OrdinalType lda_val, ldc_val, lda_dot, ldc_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  arrayTraits.unpack(A, n_A_rows, n_A_cols, lda, n_A_dot, lda_val, lda_dot, 
-		     A_val, A_dot);
-  arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  else if (n_A_dot > 0)
-    n_dot = n_A_dot;
-  else if (n_beta_dot > 0)
-    n_dot = n_beta_dot;
-  
-  // Unpack and allocate C
-  arrayTraits.unpack(C, m, n, ldc, n_C_dot, n_dot, ldc_val, ldc_dot, C_val, 
-		     C_dot);
-  
-  // Call differentiated routine
-  Fad_SYMM(side, uplo, m, n, 
-	   alpha_val, n_alpha_dot, alpha_dot, 
-	   A_val, lda_val, n_A_dot, A_dot, lda_dot, 
-	   B, ldb, 0, NULL, 0, 
-	   beta_val, n_beta_dot, beta_dot, 
-	   C_val, ldc_val, n_C_dot, C_dot, ldc_dot, n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(C, m, n, ldc, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(A, n_A_rows, n_A_cols, n_A_dot, lda_val, lda_dot, A_val, 
-		   A_dot);
-  arrayTraits.free(beta, n_beta_dot, beta_dot);
-  arrayTraits.free(C, m, n, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-}
-
-template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-SYMM(Teuchos::ESide side, Teuchos::EUplo uplo,  
-     const OrdinalType m, const OrdinalType n, 
-     const ScalarType& alpha, const ValueType* A, const OrdinalType lda, 
-     const ValueType* B, const OrdinalType ldb, const ScalarType& beta, 
-     ScalarType* C, const OrdinalType ldc) const 
-{ 
-  // Unpack input values & derivatives
-  ValueType alpha_val, beta_val = 0.0;
-  const ValueType *alpha_dot, *beta_dot = NULL;
-  ValueType *C_val, *C_dot = NULL;
-  OrdinalType n_alpha_dot, n_beta_dot, n_C_dot, n_dot = 0;
-  OrdinalType ldc_val, ldc_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  arrayTraits.unpack(beta, n_beta_dot, beta_val, beta_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  else if (n_beta_dot > 0)
-    n_dot = n_beta_dot;
-  
-  // Unpack and allocate C
-  arrayTraits.unpack(C, m, n, ldc, n_C_dot, n_dot, ldc_val, ldc_dot, C_val, 
-		     C_dot);
-  
-  // Call differentiated routine
-  Fad_SYMM(side, uplo, m, n, 
-	   alpha_val, n_alpha_dot, alpha_dot, 
-	   A, lda, 0, NULL, 0, 
-	   B, ldb, 0, NULL, 0, 
-	   beta_val, n_beta_dot, beta_dot, 
-	   C_val, ldc_val, n_C_dot, C_dot, ldc_dot, n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(C, m, n, ldc, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(beta, n_beta_dot, beta_dot);
-  arrayTraits.free(C, m, n, n_dot, ldc_val, ldc_dot, C_val, C_dot);
-}
-
-template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename A_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 TRMM(Teuchos::ESide side, Teuchos::EUplo uplo,  
      Teuchos::ETransp transa, Teuchos::EDiag diag, 
      const OrdinalType m, const OrdinalType n, 
-     const ScalarType& alpha, const ScalarType* A, const OrdinalType lda, 
-     ScalarType* B, const OrdinalType ldb) const 
+     const alpha_type& alpha, const A_type* A, const OrdinalType lda, 
+     FadType* B, const OrdinalType ldb) const 
 {
   if (use_default_impl) {
     BLASType::TRMM(side,uplo,transa,diag,m,n,alpha,A,lda,B,ldb);
@@ -1863,17 +1192,18 @@ TRMM(Teuchos::ESide side, Teuchos::EUplo uplo,
   }
   
   // Unpack input values & derivatives
-  ValueType alpha_val = 0.0;
-  const ValueType *alpha_dot = NULL;
-  const ValueType *A_val, *A_dot = NULL;
-  ValueType *B_val, *B_dot = NULL;
-  OrdinalType n_alpha_dot, n_A_dot, n_B_dot, n_dot = 0;
-  OrdinalType lda_val, ldb_val, lda_dot, ldb_dot = 0;
+  typename ArrayValueType<alpha_type>::type alpha_val;
+  const typename ArrayValueType<alpha_type>::type *alpha_dot;
+  const typename ArrayValueType<A_type>::type *A_val, *A_dot;
+  ValueType *B_val, *B_dot;
+  OrdinalType n_alpha_dot, n_A_dot, n_B_dot, n_dot;
+  OrdinalType lda_val, ldb_val, lda_dot, ldb_dot;
   arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
   arrayTraits.unpack(A, n_A_rows, n_A_cols, lda, n_A_dot, lda_val, lda_dot, 
 		     A_val, A_dot);
   
   // Compute size
+  n_dot = 0;
   if (n_alpha_dot > 0)
     n_dot = n_alpha_dot;
   else if (n_A_dot > 0)
@@ -1900,52 +1230,14 @@ TRMM(Teuchos::ESide side, Teuchos::EUplo uplo,
 }
 
 template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-TRMM(Teuchos::ESide side, Teuchos::EUplo uplo,  
-     Teuchos::ETransp transa, Teuchos::EDiag diag, 
-     const OrdinalType m, const OrdinalType n, 
-     const ScalarType& alpha, const ValueType* A, const OrdinalType lda, 
-     ScalarType* B, const OrdinalType ldb) const 
-{
-  // Unpack input values & derivatives
-  ValueType alpha_val = 0.0;
-  const ValueType *alpha_dot = NULL;
-  ValueType *B_val, *B_dot = NULL;
-  OrdinalType n_alpha_dot, n_B_dot, n_dot = 0;
-  OrdinalType ldb_val, ldb_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  
-  // Unpack and allocate C
-  arrayTraits.unpack(B, m, n, ldb, n_B_dot, n_dot, ldb_val, ldb_dot, B_val, 
-		     B_dot);
-  
-  // Call differentiated routine
-  Fad_TRMM(side, uplo, transa, diag, m, n, 
-	   alpha_val, n_alpha_dot, alpha_dot, 
-	   A, lda, 0, NULL, 0, 
-	   B_val, ldb_val, n_B_dot, B_dot, ldb_dot, n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(B, m, n, ldb, n_dot, ldb_val, ldb_dot, B_val, B_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(B, m, n, n_dot, ldb_val, ldb_dot, B_val, B_dot);
-}
-
-template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename A_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 TRSM(Teuchos::ESide side, Teuchos::EUplo uplo,  
      Teuchos::ETransp transa, Teuchos::EDiag diag, 
      const OrdinalType m, const OrdinalType n, 
-     const ScalarType& alpha, const ScalarType* A, const OrdinalType lda, 
-     ScalarType* B, const OrdinalType ldb) const 
+     const alpha_type& alpha, const A_type* A, const OrdinalType lda, 
+     FadType* B, const OrdinalType ldb) const 
 {
   if (use_default_impl) {
     BLASType::TRSM(side,uplo,transa,diag,m,n,alpha,A,lda,B,ldb);
@@ -1960,17 +1252,18 @@ TRSM(Teuchos::ESide side, Teuchos::EUplo uplo,
   }
   
   // Unpack input values & derivatives
-  ValueType alpha_val = 0.0;
-  const ValueType *alpha_dot = NULL;
-  const ValueType *A_val, *A_dot = NULL;
-  ValueType *B_val, *B_dot = NULL;
-  OrdinalType n_alpha_dot, n_A_dot, n_B_dot, n_dot = 0;
-  OrdinalType lda_val, ldb_val, lda_dot, ldb_dot = 0;
+  typename ArrayValueType<alpha_type>::type alpha_val;
+  const typename ArrayValueType<alpha_type>::type *alpha_dot;
+  const typename ArrayValueType<A_type>::type *A_val, *A_dot;
+  ValueType *B_val, *B_dot;
+  OrdinalType n_alpha_dot, n_A_dot, n_B_dot, n_dot;
+  OrdinalType lda_val, ldb_val, lda_dot, ldb_dot;
   arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
   arrayTraits.unpack(A, n_A_rows, n_A_cols, lda, n_A_dot, lda_val, lda_dot, 
 		     A_val, A_dot);
   
   // Compute size
+  n_dot = 0;
   if (n_alpha_dot > 0)
     n_dot = n_alpha_dot;
   else if (n_A_dot > 0)
@@ -1997,57 +1290,19 @@ TRSM(Teuchos::ESide side, Teuchos::EUplo uplo,
 }
 
 template <typename OrdinalType, typename FadType>
-void
-Sacado::Fad::BLAS<OrdinalType,FadType>::
-TRSM(Teuchos::ESide side, Teuchos::EUplo uplo,  
-     Teuchos::ETransp transa, Teuchos::EDiag diag, 
-     const OrdinalType m, const OrdinalType n, 
-     const ScalarType& alpha, const ValueType* A, const OrdinalType lda, 
-     ScalarType* B, const OrdinalType ldb) const 
-{
-  // Unpack input values & derivatives
-  ValueType alpha_val = 0.0;
-  const ValueType *alpha_dot = NULL;
-  ValueType *B_val, *B_dot = NULL;
-  OrdinalType n_alpha_dot, n_B_dot, n_dot = 0;
-  OrdinalType ldb_val, ldb_dot = 0;
-  arrayTraits.unpack(alpha, n_alpha_dot, alpha_val, alpha_dot);
-  
-  // Compute size
-  if (n_alpha_dot > 0)
-    n_dot = n_alpha_dot;
-  
-  // Unpack and allocate C
-  arrayTraits.unpack(B, m, n, ldb, n_B_dot, n_dot, ldb_val, ldb_dot, B_val, 
-		     B_dot);
-  
-  // Call differentiated routine
-  Fad_TRSM(side, uplo, transa, diag, m, n, 
-	   alpha_val, n_alpha_dot, alpha_dot, 
-	   A, lda, 0, NULL, 0, 
-	   B_val, ldb_val, n_B_dot, B_dot, ldb_dot, n_dot);
-  
-  // Pack values and derivatives for result
-  arrayTraits.pack(B, m, n, ldb, n_dot, ldb_val, ldb_dot, B_val, B_dot);
-  
-  // Free temporary arrays
-  arrayTraits.free(alpha, n_alpha_dot, alpha_dot);
-  arrayTraits.free(B, m, n, n_dot, ldb_val, ldb_dot, B_val, B_dot);
-}
-
-template <typename OrdinalType, typename FadType>
+template <typename x_type, typename y_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 Fad_DOT(const OrdinalType n,
-	const ValueType* x, 
+	const x_type* x, 
 	const OrdinalType incx, 
 	const OrdinalType n_x_dot,  
-	const ValueType* x_dot, 
+	const x_type* x_dot, 
 	const OrdinalType incx_dot,
-	const ValueType* y, 
+	const y_type* y, 
 	const OrdinalType incy, 
 	const OrdinalType n_y_dot, 
-	const ValueType* y_dot,
+	const y_type* y_dot,
 	const OrdinalType incy_dot,
 	ValueType& z,
 	const OrdinalType n_z_dot,
@@ -2088,27 +1343,29 @@ Fad_DOT(const OrdinalType n,
 }
 
 template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename A_type, typename x_type, 
+	  typename beta_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 Fad_GEMV(Teuchos::ETransp trans, 
 	 const OrdinalType m, 
 	 const OrdinalType n, 
-	 const ValueType& alpha, 
+	 const alpha_type& alpha, 
 	 const OrdinalType n_alpha_dot, 
-	 const ValueType* alpha_dot,
-	 const ValueType* A, 
+	 const alpha_type* alpha_dot,
+	 const A_type* A, 
 	 const OrdinalType lda, 
 	 const OrdinalType n_A_dot, 
-	 const ValueType* A_dot,
+	 const A_type* A_dot,
 	 const OrdinalType lda_dot, 
-	 const ValueType* x, 
+	 const x_type* x, 
 	 const OrdinalType incx, 
 	 const OrdinalType n_x_dot, 
-	 const ValueType* x_dot, 
+	 const x_type* x_dot, 
 	 const OrdinalType incx_dot, 
-	 const ValueType& beta, 
+	 const beta_type& beta, 
 	 const OrdinalType n_beta_dot, 
-	 const ValueType* beta_dot,
+	 const beta_type* beta_dot,
 	 ValueType* y, 
 	 const OrdinalType incy, 
 	 const OrdinalType n_y_dot, 
@@ -2184,22 +1441,23 @@ Fad_GEMV(Teuchos::ETransp trans,
 }
 
 template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename x_type, typename y_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 Fad_GER(const OrdinalType m, 
 	const OrdinalType n, 
-	const ValueType& alpha, 
+	const alpha_type& alpha, 
 	const OrdinalType n_alpha_dot, 
-	const ValueType* alpha_dot,
-	const ValueType* x, 
+	const alpha_type* alpha_dot,
+	const x_type* x, 
 	const OrdinalType incx, 
 	const OrdinalType n_x_dot, 
-	const ValueType* x_dot, 
+	const x_type* x_dot, 
 	const OrdinalType incx_dot, 
-	const ValueType* y, 
+	const y_type* y, 
 	const OrdinalType incy, 
 	const OrdinalType n_y_dot, 
-	const ValueType* y_dot,
+	const y_type* y_dot,
 	const OrdinalType incy_dot,
 	ValueType* A, 
 	const OrdinalType lda, 
@@ -2237,6 +1495,8 @@ Fad_GER(const OrdinalType m,
 }
 
 template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename A_type, typename B_type, 
+	  typename beta_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 Fad_GEMM(Teuchos::ETransp transa, 
@@ -2244,22 +1504,22 @@ Fad_GEMM(Teuchos::ETransp transa,
 	 const OrdinalType m, 
 	 const OrdinalType n, 
 	 const OrdinalType k,
-	 const ValueType& alpha, 
+	 const alpha_type& alpha, 
 	 const OrdinalType n_alpha_dot, 
-	 const ValueType* alpha_dot,
-	 const ValueType* A, 
+	 const alpha_type* alpha_dot,
+	 const A_type* A, 
 	 const OrdinalType lda, 
 	 const OrdinalType n_A_dot, 
-	 const ValueType* A_dot,
+	 const A_type* A_dot,
 	 const OrdinalType lda_dot, 
-	 const ValueType* B, 
+	 const B_type* B, 
 	 const OrdinalType ldb, 
 	 const OrdinalType n_B_dot, 
-	 const ValueType* B_dot, 
+	 const B_type* B_dot, 
 	 const OrdinalType ldb_dot, 
-	 const ValueType& beta, 
+	 const beta_type& beta, 
 	 const OrdinalType n_beta_dot, 
-	 const ValueType* beta_dot,
+	 const beta_type* beta_dot,
 	 ValueType* C, 
 	 const OrdinalType ldc, 
 	 const OrdinalType n_C_dot, 
@@ -2358,27 +1618,29 @@ Fad_GEMM(Teuchos::ETransp transa,
 }
 
 template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename A_type, typename B_type, 
+	  typename beta_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 Fad_SYMM(Teuchos::ESide side, Teuchos::EUplo uplo, 
 	 const OrdinalType m, 
 	 const OrdinalType n, 
-	 const ValueType& alpha, 
+	 const alpha_type& alpha, 
 	 const OrdinalType n_alpha_dot, 
-	 const ValueType* alpha_dot,
-	 const ValueType* A, 
+	 const alpha_type* alpha_dot,
+	 const A_type* A, 
 	 const OrdinalType lda, 
 	 const OrdinalType n_A_dot, 
-	 const ValueType* A_dot,
+	 const A_type* A_dot,
 	 const OrdinalType lda_dot, 
-	 const ValueType* B, 
+	 const B_type* B, 
 	 const OrdinalType ldb, 
 	 const OrdinalType n_B_dot, 
-	 const ValueType* B_dot, 
+	 const B_type* B_dot, 
 	 const OrdinalType ldb_dot, 
-	 const ValueType& beta, 
+	 const beta_type& beta, 
 	 const OrdinalType n_beta_dot, 
-	 const ValueType* beta_dot,
+	 const beta_type* beta_dot,
 	 ValueType* C, 
 	 const OrdinalType ldc, 
 	 const OrdinalType n_C_dot, 
@@ -2470,6 +1732,7 @@ Fad_SYMM(Teuchos::ESide side, Teuchos::EUplo uplo,
 }
 
 template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename A_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 Fad_TRMM(Teuchos::ESide side, 
@@ -2478,13 +1741,13 @@ Fad_TRMM(Teuchos::ESide side,
 	 Teuchos::EDiag diag, 
 	 const OrdinalType m, 
 	 const OrdinalType n, 
-	 const ValueType& alpha, 
+	 const alpha_type& alpha, 
 	 const OrdinalType n_alpha_dot, 
-	 const ValueType* alpha_dot,
-	 const ValueType* A, 
+	 const alpha_type* alpha_dot,
+	 const A_type* A, 
 	 const OrdinalType lda, 
 	 const OrdinalType n_A_dot, 
-	 const ValueType* A_dot,
+	 const A_type* A_dot,
 	 const OrdinalType lda_dot, 
 	 ValueType* B, 
 	 const OrdinalType ldb, 
@@ -2577,6 +1840,7 @@ Fad_TRMM(Teuchos::ESide side,
 }
 
 template <typename OrdinalType, typename FadType>
+template <typename alpha_type, typename A_type>
 void
 Sacado::Fad::BLAS<OrdinalType,FadType>::
 Fad_TRSM(Teuchos::ESide side, 
@@ -2585,13 +1849,13 @@ Fad_TRSM(Teuchos::ESide side,
 	 Teuchos::EDiag diag, 
 	 const OrdinalType m, 
 	 const OrdinalType n, 
-	 const ValueType& alpha, 
+	 const alpha_type& alpha, 
 	 const OrdinalType n_alpha_dot, 
-	 const ValueType* alpha_dot,
-	 const ValueType* A, 
+	 const alpha_type* alpha_dot,
+	 const A_type* A, 
 	 const OrdinalType lda, 
 	 const OrdinalType n_A_dot, 
-	 const ValueType* A_dot,
+	 const A_type* A_dot,
 	 const OrdinalType lda_dot, 
 	 ValueType* B, 
 	 const OrdinalType ldb, 
