@@ -180,6 +180,11 @@ int AztecOO::AllocAzArrays()
 }
 //=============================================================================
 void AztecOO::DeleteMemory() {
+  if (options_[AZ_keep_info] == 1 && Scaling_ != 0 && Scaling_->scale != 0) {
+    Scaling_->scale(AZ_DESTROY_SCALING_DATA, Amat_, options_, x_, b_,
+		    proc_config_, Scaling_);
+  }  
+
   if (Prec_!=0) {AZ_precond_destroy(&Prec_); Prec_ = 0;}
   if (Pmat_ != 0) {AZ_matrix_destroy(&Pmat_); Pmat_ = 0;}
   if (Amat_ != 0) {AZ_matrix_destroy(&Amat_); Amat_ = 0;}
