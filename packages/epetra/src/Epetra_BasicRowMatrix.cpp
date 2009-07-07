@@ -473,12 +473,17 @@ void Epetra_BasicRowMatrix::Print(ostream& os) const {
   for (int iproc=0; iproc < NumProc; iproc++) {
     if (MyPID==iproc) {
       if (MyPID==0) {
+    os <<    "\nNumber of Global Rows         = "; os << NumGlobalRows();    os << endl;
+    os <<    "Number of Global Cols         = "; os << NumGlobalCols();    os << endl;
+    os <<    "Number of Global Diagonals    = "; os << NumGlobalDiagonals(); os << endl;
 	os <<    "Number of Global Nonzeros     = "; os << NumGlobalNonzeros_; os << endl;
       }
       
       os <<  "\nNumber of My Rows               = "; os << NumMyRows_; os << endl;
-      os <<    "Number of My Nonzeros           = "; os << NumMyNonzeros_; os << endl; os << endl;
-      
+      os <<    "Number of My Cols               = "; os << NumMyCols_; os << endl;
+      os <<    "Number of My Diagonals          = "; os << NumMyDiagonals(); os << endl;
+      os <<    "Number of My Nonzeros           = "; os << NumMyNonzeros_; os << endl;
+      os <<    "My Maximum Num Entries          = "; os << MaxNumEntries_; os << endl; os << endl;
       os << flush;
       
     }
