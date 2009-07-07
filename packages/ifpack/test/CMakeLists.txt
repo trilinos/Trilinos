@@ -15,7 +15,6 @@ ADD_SUBDIRECTORIES(
   BlockCheby
   #UseTranspose
   )
-IF (${PACKAGE_NAME}_USING_HYPRE AND Trilinos_ENABLE_Galeri AND
-Trilinos_ENABLE_Teuchos AND Trilinos_ENABLE_AztecOO)
+IF (${PACKAGE_NAME}_USING_HYPRE)
   ADD_SUBDIRECTORY(Hypre)
 ENDIF()
