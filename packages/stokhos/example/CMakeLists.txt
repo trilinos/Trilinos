@@ -6,6 +6,19 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
+PACKAGE_ADD_EXECUTABLE(
+  recurrence_example
+  SOURCES recurrence_example.cpp
+  COMM serial mpi
+  )
+
+
+PACKAGE_ADD_EXECUTABLE(
+  twoD_diffusion_example
+  SOURCES twoD_diffusion_example.cpp
+  COMM serial mpi
+  )
+
 IF(Stokhos_ENABLE_Quadrature)
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
