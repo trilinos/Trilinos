@@ -12,20 +12,76 @@
 namespace {
 
 
+using Teuchos::as;
 using Teuchos::null;
 using Teuchos::Ptr;
 using Teuchos::RCP;
 using Teuchos::rcp;
-using Teuchos::rcp;
+using Teuchos::outArg;
 using Teuchos::rcpWithEmbeddedObj;
 using Teuchos::getOptionalEmbeddedObj;
 using Teuchos::getOptionalNonconstEmbeddedObj;
+using Teuchos::set_extra_data;
+using Teuchos::get_optional_nonconst_extra_data;
 using Teuchos::getConst;
 using Teuchos::NullReferenceError;
 using Teuchos::DanglingReferenceError;
 using Teuchos::RCP_STRONG;
 using Teuchos::RCP_WEAK;
 using Teuchos::RCP_STRENGTH_INVALID;
+
+
+TEUCHOS_UNIT_TEST( DeallocNull, free )
+{
+  Teuchos::DeallocNull<A> d;
+  d.free(0);
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, assignSelf )
+{
+  RCP<A> a_rcp;
+  a_rcp = a_rcp;
+  TEST_ASSERT(is_null(a_rcp));
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, explicit_null )
+{
+  RCP<A> a_rcp(0, false);
+  TEST_ASSERT(is_null(a_rcp));
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, explicit_dealloc_null )
+{
+  RCP<A> a_rcp = rcp<A>(0, Teuchos::DeallocNull<A>(), false);
+  TEST_ASSERT(is_null(a_rcp));
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, explicit_null_null )
+{
+  RCP<A> a_rcp(0, null);
+  TEST_ASSERT(is_null(a_rcp));
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, explicit_null_nonnull )
+{
+  A *a = new A;
+  RCP<A> a_rcp(a, null);
+  TEST_ASSERT(nonnull(a_rcp));
+  delete a;
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, get_optional_nonconst_extra_data )
+{
+  RCP<A> a_rcp = rcp(new A);
+  set_extra_data( as<int>(1), "blob", outArg(a_rcp) );
+  TEST_EQUALITY_CONST(*get_optional_nonconst_extra_data<int>(a_rcp, "blob"), as<int>(1));
+}
 
 
 TEUCHOS_UNIT_TEST( RCP, getOptionalEmbeddedObj_null )

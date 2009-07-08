@@ -122,14 +122,15 @@ any& RCPNode::get_extra_data( const std::string& type_name, const std::string& n
     ,"Error, no extra data has been set yet!" );
 #endif
   any *extra_data = get_optional_extra_data(type_name,name);
-  if(extra_data) return *extra_data;
-  const std::string type_and_name( type_name + std::string(":") + name );
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION(
-    extra_data == NULL, std::invalid_argument
-    ,"Error, the type:name pair \'" << type_and_name << "\' is not found!" );
+  if (!extra_data) {
+    const std::string type_and_name( type_name + std::string(":") + name );
+    TEST_FOR_EXCEPTION(
+      extra_data == NULL, std::invalid_argument
+      ,"Error, the type:name pair \'" << type_and_name << "\' is not found!" );
+  }
 #endif
-  return *extra_data; // Will never be executed!
+  return *extra_data;
 }
 
 

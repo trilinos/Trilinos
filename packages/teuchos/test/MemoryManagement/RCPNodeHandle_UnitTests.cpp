@@ -40,6 +40,13 @@ RCPNodeHandle basicRCPNodeHandle(const bool has_ownership)
 }
 
 
+TEUCHOS_UNIT_TEST( RCPNodeHandle, assignSelf )
+{
+  RCPNodeHandle nodeRef;
+  nodeRef = nodeRef;
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, defaultConstruct, T )
 {
   RCPNodeHandle nodeRef;

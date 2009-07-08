@@ -12,9 +12,33 @@ using Teuchos::Array;
 using Teuchos::ArrayRCP;
 using Teuchos::arcp;
 using Teuchos::ArrayView;
+using Teuchos::arrayView;
 using Teuchos::DanglingReferenceError;
 using Teuchos::as;
 using Teuchos::null;
+
+
+TEUCHOS_UNIT_TEST( ArrayView, assignSelf )
+{
+  ArrayView<int> av;
+  av = av;
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayView, assignFuncSelf )
+{
+  Array<int> a = generateArray<int>(n);
+  ArrayView<int> av = a;
+  av.assign(av);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, arrayView, T )
+{
+  Array<T> a = generateArray<T>(n);
+  const ArrayView<T> av = arrayView(&a[0], a.size());
+  TEST_COMPARE_ARRAYS( a, av );
+}
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, assignmentOperator, T )
@@ -114,6 +138,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_rcp_std_vector, T )
 
 
 #define UNIT_TEST_GROUP( T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, arrayView, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, assignmentOperator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, iterators, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayView, danglingView_std_vector, T ) \

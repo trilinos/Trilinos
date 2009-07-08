@@ -553,12 +553,9 @@ template<class T>
 inline
 RCPNode* ArrayRCP_createNewRCPNodeRawPtr( T* p, bool has_ownership_in )
 {
-  if (p) {
-    return new RCPNodeTmpl<T,DeallocArrayDelete<T> >(
-      p,DeallocArrayDelete<T>(),has_ownership_in
-      );
-  }
-  return 0;
+  return new RCPNodeTmpl<T,DeallocArrayDelete<T> >(
+    p, DeallocArrayDelete<T>(), has_ownership_in
+    );
 }
 
 
@@ -592,10 +589,7 @@ RCPNode* ArrayRCP_createNewDeallocRCPNodeRawPtr(
   T* p, Dealloc_T dealloc, bool has_ownership_in
   )
 {
-  if (p) {
     return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in);
-  }
-  return 0;
 }
 
 

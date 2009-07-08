@@ -1,4 +1,6 @@
 #include "Array_UnitTest_helpers.hpp"
+#include "Teuchos_Tuple.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
 
 namespace {
@@ -7,11 +9,59 @@ namespace {
 using ArrayUnitTestHelpers::n;
 using ArrayUnitTestHelpers::generateArray;
 using Teuchos::null;
+using Teuchos::tuple;
+using Teuchos::RCP;
 using Teuchos::Array;
 using Teuchos::ArrayView;
+using Teuchos::ArrayRCP;
+using Teuchos::arcp;
 using Teuchos::as;
 using Teuchos::getConst;
 using Teuchos::DanglingReferenceError;
+using Teuchos::fromStringToArray;
+using Teuchos::InvalidArrayStringRepresentation;
+
+
+TEUCHOS_UNIT_TEST( Array, stringToArray )
+{
+
+  {
+    Array<std::string> arrayVal = fromStringToArray<std::string>("{}");
+    Array<std::string> arrayVal_exp;
+    TEST_EQUALITY(arrayVal, arrayVal_exp);
+  }
+
+  {
+    Array<std::string> arrayVal = fromStringToArray<std::string>("{ a, b, c, d }");
+    Array<std::string> arrayVal_exp = Teuchos::tuple<std::string>("a", "b", "c", "d" );
+    TEST_EQUALITY(arrayVal, arrayVal_exp);
+  }
+
+  {
+    Array<std::string> arrayVal = fromStringToArray<std::string>("{ (a), b, c, (d) }");
+    Array<std::string> arrayVal_exp = Teuchos::tuple<std::string>("(a)", "b", "c", "(d)" );
+    TEST_EQUALITY(arrayVal, arrayVal_exp);
+  }
+
+  // This should work but does not.  I should fix this!
+//  {
+//    Array<std::string> arrayVal = fromStringToArray<std::string>("{ {a}, 'b', {c }, d }");
+//    Array<std::string> arrayVal_exp = Teuchos::tuple<std::string>("{a}", "'b'", "{c }", "d" );
+//    TEST_EQUALITY(arrayVal, arrayVal_exp);
+//  }
+
+}
+
+
+TEUCHOS_UNIT_TEST( Array, stringToArray_invalid )
+{
+  TEST_THROW(fromStringToArray<std::string>("{ a, b, c"),
+    InvalidArrayStringRepresentation);
+  TEST_THROW(fromStringToArray<std::string>("a, b, c}"),
+    InvalidArrayStringRepresentation);
+  TEST_THROW(fromStringToArray<std::string>("a, b, c"),
+    InvalidArrayStringRepresentation);
+}
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, defaultConstruct, T )
@@ -80,6 +130,71 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter_before_block_end
     // fine since the underlying data is still there in the original Array object.
     iter = NIT::getNull();
   }
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, RCPArray_to_ArrayRCP, T )
+{
+  const Array<T> a_const = generateArray<T>(n);
+  const RCP<Array<T> > a_rcp = rcp(new Array<T>(a_const));
+  const ArrayRCP<T> a_arcp = arcp(a_rcp);
+  TEST_COMPARE_ARRAYS( a_const(), a_arcp() );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, RCPArray_to_ArrayRCP_null, T )
+{
+  const RCP<Array<T> > a_rcp = null;
+  const ArrayRCP<T> a_arcp = arcp(a_rcp);
+  TEST_ASSERT( a_arcp == null );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, toVector, T )
+{
+  const Array<T> a = generateArray<T>(n);
+  const std::vector<T> v = a.toVector();
+  TEST_COMPARE_ARRAYS( a, v );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, toVector_empty, T )
+{
+  const Array<T> a;
+  const std::vector<T> v = a.toVector();
+  TEST_EQUALITY_CONST( as<int>(v.size()), 0 );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, view_empty, T )
+{
+  Array<T> a;
+  const ArrayView<T> av = a.view(0, 0);
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, view_const_empty, T )
+{
+  const Array<T> a;
+  const ArrayView<const T> av = a.view(0, 0);
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, implicit_to_ArrayView_empty, T )
+{
+  Array<T> a;
+  const ArrayView<T> av = a();
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, implicit_to_ArrayView_const_empty, T )
+{
+  const Array<T> a;
+  const ArrayView<const T> av = a();
+  TEST_ASSERT(is_null(av));
 }
 
 
@@ -190,7 +305,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
     DanglingReferenceError );
 }
 
-
 #endif // HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
 
 
@@ -226,6 +340,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, operatorBracket, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constAt, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter_before_block_end, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, RCPArray_to_ArrayRCP, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, RCPArray_to_ArrayRCP_null, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, toVector, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, toVector_empty, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, view_empty, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, view_const_empty, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, implicit_to_ArrayView_empty, T ) \
   DEBUG_UNIT_TEST_GROUP( T )
 
 UNIT_TEST_GROUP(int)

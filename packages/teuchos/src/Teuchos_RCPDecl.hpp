@@ -439,6 +439,23 @@ public:
    */
   RCP( ENull null_arg = null );
 
+  /** \brief Construct from a raw pointer without ownership statically.
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> <tt>this->get() == p</tt>
+   * <li> <tt>this->strength() == RCP_STRONG</tt>
+   * <li> <tt>this->is_vali_ptr() == true</tt>
+   * <li> <tt>this->strong_count() == 1</tt>
+   * <li> <tt>this->weak_count() == 0</tt>
+   * <li> <tt>this->has_ownership() == false</tt>
+   * </ul>
+   *
+   * NOTE: It is recommended that this constructor never be called directly
+   * but only through a type-specific non-member constructor function or at
+   * least through the general non-member <tt>rcp()</tt> function.
+   */
+  explicit RCP( T* p, ENull null_arg );
+
   /** \brief Construct from a raw pointer.
    *
    * Note that this constructor is declared explicit so there is no implicit
@@ -847,6 +864,21 @@ template<typename T>
 class NullIteratorTraits<RCP<T> > {
 public:
   static RCP<T> getNull() { return null; }
+};
+
+
+/** \brief Policy class for deallocator for non-owned RCPs.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+template<class T>
+class DeallocNull
+{
+public:
+  /// Gives the type (required)
+  typedef T ptr_t;
+  /// Deallocates a pointer <tt>ptr</tt> using <tt>delete ptr</tt> (required).
+  void free( T* ptr ) { }
 };
 
 

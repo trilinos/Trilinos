@@ -66,6 +66,26 @@ RCP<T>::RCP( ENull )
 
 template<class T>
 inline
+RCP<T>::RCP( T* p, ENull null_arg )
+  : ptr_(p)
+#ifndef TEUCHOS_DEBUG
+  , node_(RCP_createNewRCPNodeRawPtrNonowned(p))
+#endif // TEUCHOS_DEBUG
+{
+#ifdef TEUCHOS_DEBUG
+  if (p) {
+    node_ = RCPNodeHandle(
+      RCP_createNewRCPNodeRawPtrNonowned(p),
+      p, typeName(*p), concreteTypeName(*p),
+      false
+      );
+  }
+#endif // TEUCHOS_DEBUG
+}
+
+
+template<class T>
+inline
 RCP<T>::RCP( T* p, bool has_ownership_in )
   : ptr_(p)
 #ifndef TEUCHOS_DEBUG
@@ -349,14 +369,21 @@ int RCP<T>::count() const
 
 template<class T>
 inline
+RCPNode* RCP_createNewRCPNodeRawPtrNonowned( T* p )
+{
+  return new RCPNodeTmpl<T,DeallocNull<T> >(
+    p, DeallocNull<T>(), false
+    );
+}
+
+
+template<class T>
+inline
 RCPNode* RCP_createNewRCPNodeRawPtr( T* p, bool has_ownership_in )
 {
-  if (p) {
-    return new RCPNodeTmpl<T,DeallocDelete<T> >(
-      p, DeallocDelete<T>(), has_ownership_in
-      );
-  }
-  return 0;
+  return new RCPNodeTmpl<T,DeallocDelete<T> >(
+    p, DeallocDelete<T>(), has_ownership_in
+    );
 }
 
 
@@ -366,10 +393,7 @@ RCPNode* RCP_createNewDeallocRCPNodeRawPtr(
   T* p, Dealloc_T dealloc, bool has_ownership_in
   )
 {
-  if (p) {
-    return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in);
-  }
-  return 0;
+  return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in);
 }
 
 
@@ -427,7 +451,7 @@ template<class T>
 Teuchos::RCP<T>
 Teuchos::rcpFromRef( T& r )
 {
-  return Teuchos::rcp(&r, false);
+  return RCP<T>(&r, null);
 }
 
 

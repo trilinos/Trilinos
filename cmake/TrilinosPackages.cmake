@@ -84,7 +84,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Phdmesh               phdmesh                        PS
   NOX                   nox                            PS
   Moertel               moertel                        PS
-  TrilinosCouplings     trilinoscouplings              PS
+  TrilinosCouplings     trilinoscouplings              SS
   Rythmos               rythmos                        PS
   MOOCHO                moocho                         PS
   Aristos               aristos                        EX

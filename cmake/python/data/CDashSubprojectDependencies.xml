@@ -581,7 +581,7 @@
     <Dependency name="Thyra" type="ITO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="TO"/>
-    <Dependency name="Galeri" type="ITO"/>
+    <Dependency name="Galeri" type="TO"/>
     <Dependency name="Amesos" type="TO"/>
     <Dependency name="Ifpack" type="TO"/>
     <Dependency name="ML" type="TO"/>

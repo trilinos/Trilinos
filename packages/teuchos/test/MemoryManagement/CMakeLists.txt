@@ -6,6 +6,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     RCPNodeHandle_UnitTests.cpp
     RCP_UnitTests.cpp
+    RCP_ForwardDeclUnitTests.cpp
     Ptr_UnitTests.cpp
     Array_UnitTest_helpers.cpp
     Array_UnitTests.cpp

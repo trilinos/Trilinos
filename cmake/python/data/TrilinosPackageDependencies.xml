@@ -107,7 +107,7 @@
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS value="ZoltanTpl,UMFPACK,AMD,PETSC,HYPRE"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="HYPRE"/>
   </Package>
   <Package name="Stokhos" dir="stokhos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt"/>
@@ -235,9 +235,9 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Galeri"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS value="HYPRE"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS value="HYPRE"/>
   </Package>
   <Package name="Komplex" dir="komplex">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,AztecOO"/>
@@ -463,11 +463,11 @@
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Teuchos,Epetra,Triutils,EpetraExt,NOX,Belos,ML,Amesos,Ifpack,Anasazi,AztecOO,Tpetra"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Teuchos,Epetra,Triutils,EpetraExt,NOX,Belos,ML,Amesos,Ifpack,Anasazi,AztecOO,Tpetra,Galeri"/>
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="ZoltanTpl"/>
+    <TEST_OPTIONAL_DEP_TPLS value="ZoltanTpl,HYPRE"/>
   </Package>
   <Package name="NewPackage" dir="new_package">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
