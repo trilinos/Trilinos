@@ -212,6 +212,10 @@ public:
     return(IsComputed_);
   }
 
+  const Epetra_Map& OperatorDomainMap();
+
+  const Epetra_Map& OperatorRangeMap();
+
   //! Set parameters using a Teuchos::ParameterList object.
   /* This method is only available if the Teuchos package is enabled.
      This method recognizes six parameter names: Solver,
@@ -264,8 +268,7 @@ public:
     return(Multiply(false,X,Y));
   }
 
-  int Multiply(bool Trans, const Epetra_MultiVector& X, 
-	       Epetra_MultiVector& Y) const{return A_->Multiply(Trans,X,Y);}
+  int Multiply(bool Trans, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
 
   //! Returns the result of a Epetra_Operator inverse applied to an Epetra_MultiVector X in Y.
   /*! In this implementation, we use several existing attributes to determine how virtual
@@ -336,7 +339,7 @@ public:
   //! Returns the Hypre matrix that was created upon construction. 
   const HYPRE_IJMatrix& HypreMatrix() const
   {
-    return(Hypre_A);
+    return(HypreA_);
   }
 
   //! Prints on stream basic information about \c this object.
@@ -511,16 +514,16 @@ private:
   //! Used for timing issues
   mutable Epetra_Time Time_;
 
-  mutable HYPRE_IJMatrix Hypre_A;
+  mutable HYPRE_IJMatrix HypreA_;
   mutable HYPRE_ParCSRMatrix ParMatrix_;
-  mutable HYPRE_IJVector X_hypre;
-  mutable HYPRE_IJVector B_hypre;
-  mutable HYPRE_ParVector par_x;
-  mutable HYPRE_ParVector par_b;
-  mutable hypre_ParVector *x_vec;
-  mutable hypre_ParVector *b_vec;
-  mutable hypre_Vector *x_local;
-  mutable hypre_Vector *b_local;
+  mutable HYPRE_IJVector XHypre_;
+  mutable HYPRE_IJVector YHypre_;
+  mutable HYPRE_ParVector ParX_;
+  mutable HYPRE_ParVector ParY_;
+  mutable hypre_ParVector *XVec_;
+  mutable hypre_ParVector *YVec_;
+  mutable hypre_Vector *XLocal_;
+  mutable hypre_Vector *YLocal_;
   mutable HYPRE_Solver Solver_;
   mutable HYPRE_Solver Preconditioner_;
 // The following are pointers to functions to use the solver and preconditioner.
@@ -537,6 +540,7 @@ private:
   bool *IsSolverSetup_;
   bool *IsPrecondSetup_;
   Hypre_Chooser SolveOrPrec_;
+  Teuchos::RefCountPtr<Epetra_Map> MySimpleMap_;
 };
 
 #endif // HAVE_HYPRE

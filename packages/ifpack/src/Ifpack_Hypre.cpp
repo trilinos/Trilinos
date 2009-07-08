@@ -48,6 +48,7 @@ using Teuchos::rcp;
 
 Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   A_(rcp(A,false)),
+  UseTranspose_(false),
   IsParallel_(false),
   IsInitialized_(false),
   IsComputed_(false),
@@ -76,10 +77,9 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   // First make a copy of the Epetra Matrix as a Hypre Matrix
   int ilower = A_->RowMatrixRowMap().MinMyGID();
   int iupper = A_->RowMatrixRowMap().MaxMyGID();
-  printf("[%d] ilower = %d, iupper = %d\n", Comm().MyPID(), ilower, iupper);
-  HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &Hypre_A);
-  HYPRE_IJMatrixSetObjectType(Hypre_A, HYPRE_PARCSR);
-  HYPRE_IJMatrixInitialize(Hypre_A);
+  HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_);
+  HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR);
+  HYPRE_IJMatrixInitialize(HypreA_);
   for(int i = 0; i < A_->NumMyRows(); i++){
     int numElements;
     A_->NumMyRowEntries(i,numElements);
@@ -92,35 +92,40 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
     }
     int GlobalRow[1];
     GlobalRow[0] = A_->RowMatrixRowMap().GID(i);
-    HYPRE_IJMatrixSetValues(Hypre_A, 1, &numEntries, GlobalRow, &indices[0], &values[0]);
+    HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]);
   }
-  HYPRE_IJMatrixAssemble(Hypre_A);
-  HYPRE_IJMatrixGetObject(Hypre_A, (void**)&ParMatrix_);
+  HYPRE_IJMatrixAssemble(HypreA_);
+  HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_);
 
   // Next create vectors that will be used when ApplyInverse() is called
-  ierr += HYPRE_IJVectorCreate(comm, ilower, iupper, &X_hypre);
-  ierr += HYPRE_IJVectorSetObjectType(X_hypre, HYPRE_PARCSR);
-  ierr += HYPRE_IJVectorInitialize(X_hypre);
-  ierr += HYPRE_IJVectorAssemble(X_hypre);
-  ierr += HYPRE_IJVectorGetObject(X_hypre, (void**) &par_x);
+  ierr += HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_);
+  ierr += HYPRE_IJVectorSetObjectType(XHypre_, HYPRE_PARCSR);
+  ierr += HYPRE_IJVectorInitialize(XHypre_);
+  ierr += HYPRE_IJVectorAssemble(XHypre_);
+  ierr += HYPRE_IJVectorGetObject(XHypre_, (void**) &ParX_);
 
-  ierr += HYPRE_IJVectorCreate(comm, ilower, iupper, &B_hypre);
-  ierr += HYPRE_IJVectorSetObjectType(B_hypre, HYPRE_PARCSR);
-  ierr += HYPRE_IJVectorInitialize(B_hypre);
-  ierr += HYPRE_IJVectorAssemble(B_hypre);
-  ierr += HYPRE_IJVectorGetObject(B_hypre, (void**) &par_b);
+  ierr += HYPRE_IJVectorCreate(comm, ilower, iupper, &YHypre_);
+  ierr += HYPRE_IJVectorSetObjectType(YHypre_, HYPRE_PARCSR);
+  ierr += HYPRE_IJVectorInitialize(YHypre_);
+  ierr += HYPRE_IJVectorAssemble(YHypre_);
+  ierr += HYPRE_IJVectorGetObject(YHypre_, (void**) &ParY_);
 
-  x_vec = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) X_hypre));
-  x_local = hypre_ParVectorLocalVector(x_vec);
+  XVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_));
+  XLocal_ = hypre_ParVectorLocalVector(XVec_);
 
-  b_vec = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) B_hypre));
-  b_local = hypre_ParVectorLocalVector(b_vec);
+  YVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) YHypre_));
+  YLocal_ = hypre_ParVectorLocalVector(YVec_);
+  Teuchos::Array<int> rows; rows.resize(iupper - ilower +1);
+  for(int i = ilower; i <= iupper; i++){
+    rows[i-ilower] = i;
+  }
+  MySimpleMap_ = rcp(new Epetra_Map(-1, iupper-ilower+1, &rows[0], 0, Comm()));
 }
 
 void Ifpack_Hypre::Destroy(){
-  HYPRE_IJMatrixDestroy(Hypre_A);
-  HYPRE_IJVectorDestroy(X_hypre);
-  HYPRE_IJVectorDestroy(B_hypre);
+  HYPRE_IJMatrixDestroy(HypreA_);
+  HYPRE_IJVectorDestroy(XHypre_);
+  HYPRE_IJVectorDestroy(YHypre_);
   if(IsSolverSetup_[0]){
     SolverDestroyPtr_(Solver_);
   }
@@ -165,10 +170,10 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
 int Ifpack_Hypre::Compute(){
   Time_.ResetStartTime();
   if(SolveOrPrec_ == Solver){
-    SolverSetupPtr_(Solver_, ParMatrix_, par_x, par_b);
+    SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_);
     IsSolverSetup_[0] = true;
   } else {
-    PrecondSetupPtr_(Preconditioner_, ParMatrix_, par_x, par_b);
+    PrecondSetupPtr_(Preconditioner_, ParMatrix_, ParX_, ParY_);
     IsPrecondSetup_[0] = true;
   }
   NumCompute_ = NumCompute_ + 1;
@@ -176,7 +181,13 @@ int Ifpack_Hypre::Compute(){
   return 0;
 }
 
+const Epetra_Map& Ifpack_Hypre::OperatorDomainMap(){
+  return *MySimpleMap_;
+}
 
+const Epetra_Map& Ifpack_Hypre::OperatorRangeMap(){
+  return *MySimpleMap_;
+}
 
 
 int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
@@ -190,28 +201,28 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
   }
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
     //Get values for current vector in multivector.
-    double * x_values;
-    ierr += (*X(VecNum)).ExtractView(&x_values);
-    double * b_values;
+    double * XValues;
+    ierr += (*X(VecNum)).ExtractView(&XValues);
+    double * YValues;
     if(!SameVectors){
-      ierr += (*Y(VecNum)).ExtractView(&b_values);
+      ierr += (*Y(VecNum)).ExtractView(&YValues);
     } else {
-      b_values = new double[X.MyLength()];
+      YValues = new double[X.MyLength()];
     }
     // Temporarily make a pointer to data in Hypre for end
-    double *x_temp = x_local->data;
+    double *XTemp = XLocal_->data;
     // Replace data in Hypre vectors with epetra values
-    x_local->data = x_values;
-    double *b_temp = b_local->data;
-    b_local->data = b_values;
+    XLocal_->data = XValues;
+    double *YTemp = YLocal_->data;
+    YLocal_->data = YValues;
 
-    HYPRE_ParVectorSetConstantValues(par_b, 0.0);
+    HYPRE_ParVectorSetConstantValues(ParY_, 0.0);
     if(SolveOrPrec_ == Solver){
       // Use the solver methods
-      ierr += SolverSolvePtr_(Solver_, ParMatrix_, par_x, par_b);
+      ierr += SolverSolvePtr_(Solver_, ParMatrix_, ParX_, ParY_);
     } else {
       // Apply the preconditioner
-      ierr += PrecondSolvePtr_(Preconditioner_, ParMatrix_, par_x, par_b);
+      ierr += PrecondSolvePtr_(Preconditioner_, ParMatrix_, ParX_, ParY_);
     }
     TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Hypre solve failed.");
 
@@ -220,20 +231,75 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
       std::vector<double> new_values; new_values.resize(NumEntries);
       std::vector<int> new_indices; new_indices.resize(NumEntries);
       for(int i = 0; i < NumEntries; i++){
-        new_values[i] = b_values[i];
+        new_values[i] = YValues[i];
         new_indices[i] = i;
       }
       (*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]);
-      delete[] b_values;
+      delete[] YValues;
     }
-    x_local->data = x_temp;
-    b_local->data = b_temp;
+    XLocal_->data = XTemp;
+    YLocal_->data = YTemp;
   }
   NumApplyInverse_ = NumApplyInverse_ + 1;
   ApplyInverseTime_ = ApplyInverseTime_ + Time_.ElapsedTime();
   return(ierr);
 }
 
+int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
+  int ierr = 0;
+  bool SameVectors = false;
+  int NumVectors = X.NumVectors();
+  if (NumVectors != Y.NumVectors()) return -1;  // X and Y must have same number of vectors
+  if(X.Pointers() == Y.Pointers()){
+    SameVectors = true;
+  }
+  for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
+    //Get values for current vector in multivector.
+    double * XValues;
+    double * YValues;
+    ierr += (*X(VecNum)).ExtractView(&XValues);
+    double *XTemp = XLocal_->data;
+    double *YTemp = YLocal_->data;
+    if(!SameVectors){
+      ierr += (*Y(VecNum)).ExtractView(&YValues);
+    } else {
+      YValues = new double[X.MyLength()];
+    }
+    YLocal_->data = YValues;
+    HYPRE_ParVectorSetConstantValues(ParY_,0.0);
+    // Temporarily make a pointer to data in Hypre for end
+    // Replace data in Hypre vectors with epetra values
+    XLocal_->data = XValues;
+    // Do actual computation.
+    if(TransA) {
+      // Use transpose of A in multiply
+      ierr += HYPRE_ParCSRMatrixMatvecT(1.0, ParMatrix_, ParX_, 1.0, ParY_);
+      TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't do Transpose MatVec in Hypre.");
+    } else {
+      ierr += HYPRE_ParCSRMatrixMatvec(1.0, ParMatrix_, ParX_, 1.0, ParY_);
+      TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't do MatVec in Hypre.");
+    }
+    if(SameVectors){
+      /*double *invalid_ptr;
+      (*Y(VecNum)).ExtractView(&invalid_ptr);
+      (*Y(VecNum)).ResetView(y_values);
+      delete[] invalid_ptr;*/
+
+      int NumEntries = Y.MyLength();
+      std::vector<double> new_values; new_values.resize(NumEntries);
+      std::vector<int> new_indices; new_indices.resize(NumEntries);
+      for(int i = 0; i < NumEntries; i++){
+        new_values[i] = YValues[i];
+        new_indices[i] = i;
+      }
+      (*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]);
+      delete[] YValues;
+    }
+    XLocal_->data = XTemp;
+    YLocal_->data = YTemp;
+  }
+  return(ierr);
+}
 
 ostream& Ifpack_Hypre::Print(ostream& os) const{
   os<<"Need to add meaningful output"<<endl;
@@ -302,7 +368,7 @@ int Ifpack_Hypre::SetSolverType(Hypre_Solver Solver){
       SolverCreatePtr_ = &Ifpack_Hypre::Hypre_ParCSRGMRESCreate;
       SolverDestroyPtr_ = &HYPRE_ParCSRGMRESDestroy;
       SolverSetupPtr_ = &HYPRE_ParCSRGMRESSetup;
-      SolverSolvePtr_ = &HYPRE_ParCSRGMRESSolve;
+    
       SolverPrecondPtr_ = &HYPRE_ParCSRGMRESSetPrecond;
       break;
     case FlexGMRES:
