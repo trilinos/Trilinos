@@ -153,9 +153,7 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
   Hypre_Chooser chooser = list.get("SolveOrPrecondition", Solver);
   SolveOrPrec_ = chooser;
   bool SetPrecond = list.get("SetPreconditioner", false);
-  if(SetPrecond){
-    SetPreconditioner();
-  }
+  SetParameter(SetPrecond);
   int NumFunctions = list.get("NumFunctions", 0);
   if(NumFunctions > 0){
     RCP<FunctionParameter>* params = list.get<RCP<FunctionParameter>*>("Functions");
@@ -166,6 +164,94 @@ int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
   return 0;
 }
 
+int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int), int parameter){
+  int result;
+  if(chooser == Preconditioner){
+    result = pt2Func(Preconditioner_, parameter);
+  }  else {
+    result = pt2Func(Solver_, parameter);
+  }
+  return result;
+}
+
+int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double), double parameter){
+  int result;
+  if(chooser == Preconditioner){
+    result = pt2Func(Preconditioner_, parameter);
+  } else {
+    result = pt2Func(Solver_, parameter);
+  }
+  return result;
+}
+
+int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double, int), double parameter1, int parameter2){
+  int result;
+  if(chooser == Preconditioner){
+    result = pt2Func(Preconditioner_, parameter1, parameter2);
+  } else {
+    result = pt2Func(Solver_, parameter1, parameter2);
+  }
+  return result;
+}
+
+int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int, int), int parameter1, int parameter2){
+  int result;
+  if(chooser == Preconditioner){
+    result = pt2Func(Preconditioner_, parameter1, parameter2);
+  } else {
+    result = pt2Func(Solver_, parameter1, parameter2);
+  }
+  return result;
+}
+
+int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double*), double* parameter){
+  int result;
+  if(chooser == Preconditioner){
+    result = pt2Func(Preconditioner_, parameter);
+  } else {
+    result = pt2Func(Solver_, parameter);
+  }
+  return result;
+}
+
+int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int*), int* parameter){
+  int result;
+  if(chooser == Preconditioner){
+    result = pt2Func(Preconditioner_, parameter);
+  } else {
+    result = pt2Func(Solver_, parameter);
+  }
+  return result;
+}
+
+int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver){
+  int ierr;
+  if(chooser == Solver){
+    ierr = SetSolverType(solver);
+  } else {
+    ierr = SetPrecondType(solver);
+  }
+  return ierr;
+}
+
+
+int Ifpack_Hypre::SetParameter(Hypre_Chooser answer){
+  SolveOrPrec_ = answer;
+  return 0;
+}
+
+int Ifpack_Hypre::SetParameter(bool UsePreconditioner){
+  if(UsePreconditioner == false){
+    return 0;
+  } else {
+    if(SolverPrecondPtr_ == NULL){
+      return -1;
+    } else {
+      SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_);
+      return 0;
+    }
+  }
+}
 
 int Ifpack_Hypre::Compute(){
   Time_.ResetStartTime();
@@ -472,15 +558,6 @@ int Ifpack_Hypre::CreatePrecond(){
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   return (this->*PrecondCreatePtr_)(comm, &Preconditioner_);
-}
-
-int Ifpack_Hypre::SetPreconditioner(){
-  if(SolverPrecondPtr_ == NULL){
-    return -1;
-  } else {
-    SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_);
-    return 0;
-  }
 }
 
 int Ifpack_Hypre::Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver){

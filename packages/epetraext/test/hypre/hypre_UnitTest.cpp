@@ -387,25 +387,25 @@ TEUCHOS_UNIT_TEST( EpetraExt_hypre, Solve ) {
   Matrix.Multiply(false,TrueX, RHS);
   Epetra_MultiVector X(Matrix.RowMatrixRowMap(), num_vectors, true);
   
-  Matrix.SetSolverType(PCG);
-  Matrix.SetPrecondType(BoomerAMG);
+  Matrix.SetParameter(Solver, PCG);
+  Matrix.SetParameter(Preconditioner, BoomerAMG);
 
   /* Set some parameters (See Reference Manual for more parameters) */
-  Matrix.SetParameter(Solver, 1000, &HYPRE_PCGSetMaxIter); /* max iterations */
-  Matrix.SetParameter(Solver, 1e-7, &HYPRE_PCGSetTol); /* conv. tolerance */
-  Matrix.SetParameter(Solver, 1, &HYPRE_PCGSetTwoNorm); /* use the two norm as the stopping criteria */
-  Matrix.SetParameter(Solver, 2, &HYPRE_PCGSetPrintLevel); /* print solve info */
-  Matrix.SetParameter(Solver, 1, &HYPRE_PCGSetLogging); /* needed to get run info later */
+  Matrix.SetParameter(Solver, &HYPRE_PCGSetMaxIter, 1000); /* max iterations */
+  Matrix.SetParameter(Solver, &HYPRE_PCGSetTol, 1e-7); /* conv. tolerance */
+  Matrix.SetParameter(Solver, &HYPRE_PCGSetTwoNorm, 1); /* use the two norm as the stopping criteria */
+  Matrix.SetParameter(Solver, &HYPRE_PCGSetPrintLevel, 2); /* print solve info */
+  Matrix.SetParameter(Solver, &HYPRE_PCGSetLogging, 1); /* needed to get run info later */
 
   /* Now set up the AMG preconditioner and specify any parameters */
-  Matrix.SetParameter(Preconditioner, 1, &HYPRE_BoomerAMGSetPrintLevel); /* print amg solution info */
-  Matrix.SetParameter(Preconditioner, 6, &HYPRE_BoomerAMGSetCoarsenType);
-  Matrix.SetParameter(Preconditioner, 6, &HYPRE_BoomerAMGSetRelaxType); /* Sym G.S./Jacobi hybrid */ 
-  Matrix.SetParameter(Preconditioner, 1, &HYPRE_BoomerAMGSetNumSweeps);
-  Matrix.SetParameter(Preconditioner, 0.0, &HYPRE_BoomerAMGSetTol); /* conv. tolerance zero */
-  Matrix.SetParameter(Preconditioner, 10, &HYPRE_BoomerAMGSetMaxIter); /* do only one iteration! */
+  Matrix.SetParameter(Preconditioner, &HYPRE_BoomerAMGSetPrintLevel, 1); /* print amg solution info */
+  Matrix.SetParameter(Preconditioner, &HYPRE_BoomerAMGSetCoarsenType, 6);
+  Matrix.SetParameter(Preconditioner, &HYPRE_BoomerAMGSetRelaxType, 6); /* Sym G.S./Jacobi hybrid */ 
+  Matrix.SetParameter(Preconditioner, &HYPRE_BoomerAMGSetNumSweeps, 1);
+  Matrix.SetParameter(Preconditioner, &HYPRE_BoomerAMGSetTol, 0.0); /* conv. tolerance zero */
+  Matrix.SetParameter(Preconditioner, &HYPRE_BoomerAMGSetMaxIter, 10); /* do only one iteration! */
 
-  Matrix.SetPreconditioner();
+  Matrix.SetParameter(true);
   /* Now setup and solve! */
   Matrix.Solve(false, false, false, RHS, X);
   TEST_EQUALITY(EquivalentVectors(X,TrueX,tol), true);

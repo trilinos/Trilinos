@@ -335,7 +335,7 @@ int EpetraExt_HypreIJMatrix::Multiply(bool TransA,
   return(ierr);
 } //Multiply() 
 
-int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int parameter, int (*pt2Func)(HYPRE_Solver, int)){
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int), int parameter){
   int result;
   if(chooser == Preconditioner){
     result = pt2Func(Preconditioner_, parameter);
@@ -345,7 +345,7 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int parameter, 
   return result;
 }
 
-int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, double parameter, int (*pt2Func)(HYPRE_Solver, double)){
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double), double parameter){
   int result;
   if(chooser == Preconditioner){
     result = pt2Func(Preconditioner_, parameter);
@@ -355,7 +355,7 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, double paramete
   return result;
 }
 
-int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, double parameter1, int parameter2, int (*pt2Func)(HYPRE_Solver, double, int)){
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double, int), double parameter1, int parameter2){
   int result;
   if(chooser == Preconditioner){
     result = pt2Func(Preconditioner_, parameter1, parameter2);
@@ -365,7 +365,7 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, double paramete
   return result;
 }
 
-int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int parameter1, int parameter2, int (*pt2Func)(HYPRE_Solver, int, int)){
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int, int), int parameter1, int parameter2){
   int result;
   if(chooser == Preconditioner){
     result = pt2Func(Preconditioner_, parameter1, parameter2);
@@ -375,7 +375,7 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int parameter1,
   return result;
 }
 
-int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, double* parameter, int (*pt2Func)(HYPRE_Solver, double*)){
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double*), double* parameter){
   int result;
   if(chooser == Preconditioner){
     result = pt2Func(Preconditioner_, parameter);
@@ -385,7 +385,7 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, double* paramet
   return result;
 }
 
-int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int* parameter, int (*pt2Func)(HYPRE_Solver, int*)){
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int*), int* parameter){
   int result;
   if(chooser == Preconditioner){
     result = pt2Func(Preconditioner_, parameter);
@@ -395,11 +395,12 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int* parameter,
   return result;
 }
 
-int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
-  if(transpose && Solver != BoomerAMG){
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver, bool transpose){
+  if(chooser == Solver){
+  if(transpose && solver != BoomerAMG){
     return -1;
   }
-  switch(Solver) {
+  switch(solver) {
     case BoomerAMG:
       if(IsSolverSetup_[0]){
         SolverDestroyPtr_(Solver_);
@@ -497,11 +498,9 @@ int EpetraExt_HypreIJMatrix::SetSolverType(Hypre_Solver Solver, bool transpose){
       return -1;
     }
   CreateSolver();
-  return 0;
-}
+  } else {
 
-int EpetraExt_HypreIJMatrix::SetPrecondType(Hypre_Solver Precond){
-  switch(Precond) {
+  switch(solver) {
     case BoomerAMG:
       if(IsPrecondSetup_[0]){
         PrecondDestroyPtr_(Preconditioner_);
@@ -546,8 +545,9 @@ int EpetraExt_HypreIJMatrix::SetPrecondType(Hypre_Solver Precond){
       return -1;
     }
   CreatePrecond();
-  return 0;
 
+  }
+  return 0;
 }
 
 int EpetraExt_HypreIJMatrix::CreateSolver(){
@@ -562,16 +562,20 @@ int EpetraExt_HypreIJMatrix::CreatePrecond(){
   return (this->*PrecondCreatePtr_)(comm, &Preconditioner_);
 }
 
-int EpetraExt_HypreIJMatrix::SetPreconditioner(){
-  if(SolverPrecondPtr_ == NULL){
-    return -1;
-  } else {
-    SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_);
+int EpetraExt_HypreIJMatrix::SetParameter(bool UsePreconditioner){
+  if(UsePreconditioner == false){
     return 0;
+  } else {
+    if(SolverPrecondPtr_ == NULL){
+      return -1;
+    } else {
+      SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_);
+      return 0;
+    }
   }
 }
 
-int EpetraExt_HypreIJMatrix::SolveOrPrecondition(Hypre_Chooser answer){
+int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser answer){
   SolveOrPrec_ = answer;
   return 0;
 }
