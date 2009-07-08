@@ -59,8 +59,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Triutils              triutils                       PS
   Tpetra                tpetra                         PS
   EpetraExt             epetraext                      PS
-  Stokhos               stokhos                        SS
-  Sacado                sacado                         PS
   Thyra                 thyra                          PS
   OptiPack              optipack                       PS
   Isorropia             isorropia                      PS
@@ -70,7 +68,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Galeri                galeri                         PS
   Amesos                amesos                         PS
   Pamgen                pamgen                         PS
-  Intrepid              intrepid                       PS
   Ifpack                ifpack                         PS
   Komplex               komplex                        PS
   ML                    ml                             PS
@@ -80,6 +77,9 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   FEI                   fei                            PS
   RBGen                 rbgen                          PS
   Anasazi               anasazi                        PS
+  Stokhos               stokhos                        SS
+  Sacado                sacado                         PS
+  Intrepid              intrepid                       PS
   Phalanx               phalanx                        SS
   Phdmesh               phdmesh                        PS
   NOX                   nox                            PS

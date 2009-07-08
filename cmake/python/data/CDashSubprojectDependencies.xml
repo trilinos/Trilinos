@@ -66,27 +66,6 @@
       <Email address="epetraext-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
-  <SubProject name="Stokhos">
-    <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="Epetra" type="LR"/>
-    <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="EpetraExt" type="LR"/>
-    <EmailAddresses>
-      <Email address="stokhos-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
-  <SubProject name="Sacado">
-    <Dependency name="Teuchos" type="LO"/>
-    <Dependency name="Epetra" type="LO"/>
-    <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Stokhos" type="LO"/>
-    <EmailAddresses>
-      <Email address="sacado-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
   <SubProject name="Thyra">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="RTOp" type="LR"/>
@@ -165,21 +144,6 @@
   <SubProject name="Pamgen">
     <EmailAddresses>
       <Email address="pamgen-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
-  <SubProject name="Intrepid">
-    <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="Epetra" type="TO"/>
-    <Dependency name="Zoltan" type="ILO"/>
-    <Dependency name="Shards" type="LR"/>
-    <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="EpetraExt" type="TO"/>
-    <Dependency name="Stokhos" type="ILO"/>
-    <Dependency name="Sacado" type="LO"/>
-    <Dependency name="Amesos" type="TO"/>
-    <Dependency name="Pamgen" type="TO"/>
-    <EmailAddresses>
-      <Email address="intrepid-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
   <SubProject name="Ifpack">
@@ -320,6 +284,59 @@
       <Email address="anasazi-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Stokhos">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="LR"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LR"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="ILO"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="ILO"/>
+    <Dependency name="Ifpack" type="ILO"/>
+    <Dependency name="ML" type="LO"/>
+    <EmailAddresses>
+      <Email address="stokhos-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
+  <SubProject name="Sacado">
+    <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="Epetra" type="LO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="LO"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="ILO"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="ILO"/>
+    <Dependency name="Ifpack" type="ILO"/>
+    <Dependency name="ML" type="ILO"/>
+    <Dependency name="Stokhos" type="LO"/>
+    <EmailAddresses>
+      <Email address="sacado-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
+  <SubProject name="Intrepid">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Epetra" type="TO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Shards" type="LR"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="EpetraExt" type="TO"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="ILO"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="TO"/>
+    <Dependency name="Pamgen" type="TO"/>
+    <Dependency name="Ifpack" type="ILO"/>
+    <Dependency name="ML" type="ILO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="LO"/>
+    <EmailAddresses>
+      <Email address="intrepid-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Phalanx">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="Epetra" type="TO"/>
@@ -328,13 +345,16 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="ILO"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="ILO"/>
+    <Dependency name="Ifpack" type="TO"/>
+    <Dependency name="ML" type="ILO"/>
+    <Dependency name="Belos" type="TO"/>
     <Dependency name="Stokhos" type="ILO"/>
     <Dependency name="Sacado" type="LR"/>
-    <Dependency name="AztecOO" type="ITO"/>
-    <Dependency name="Amesos" type="ITO"/>
     <Dependency name="Intrepid" type="TO"/>
-    <Dependency name="Ifpack" type="TO"/>
-    <Dependency name="Belos" type="TO"/>
     <EmailAddresses>
       <Email address="phalanx-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -352,10 +372,8 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Stokhos" type="ILO"/>
-    <Dependency name="Sacado" type="LO"/>
     <Dependency name="Thyra" type="LO"/>
-    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="Isorropia" type="TO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="LO"/>
@@ -364,6 +382,8 @@
     <Dependency name="Belos" type="LO"/>
     <Dependency name="Stratimikos" type="TO"/>
     <Dependency name="Anasazi" type="LO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="LO"/>
     <EmailAddresses>
       <Email address="nox-regression@software.sandia.gov"/>
     </EmailAddresses>
@@ -393,19 +413,19 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Stokhos" type="ILO"/>
-    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="LO"/>
     <Dependency name="AztecOO" type="LO"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="LO"/>
     <Dependency name="Pamgen" type="TO"/>
-    <Dependency name="Intrepid" type="TO"/>
     <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="LO"/>
     <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
+    <Dependency name="Intrepid" type="TO"/>
     <Dependency name="NOX" type="LO"/>
     <EmailAddresses>
       <Email address="trilinoscouplings-regression@software.sandia.gov"/>
@@ -419,8 +439,6 @@
     <Dependency name="Triutils" type="ILO"/>
     <Dependency name="Tpetra" type="ITO"/>
     <Dependency name="EpetraExt" type="TO"/>
-    <Dependency name="Stokhos" type="ITO"/>
-    <Dependency name="Sacado" type="TO"/>
     <Dependency name="Thyra" type="LR"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="ITO"/>
@@ -431,6 +449,8 @@
     <Dependency name="Belos" type="ITO"/>
     <Dependency name="Stratimikos" type="TO"/>
     <Dependency name="Anasazi" type="ITO"/>
+    <Dependency name="Stokhos" type="ITO"/>
+    <Dependency name="Sacado" type="TO"/>
     <Dependency name="NOX" type="TO"/>
     <EmailAddresses>
       <Email address="rythmos-regression@software.sandia.gov"/>
@@ -483,18 +503,18 @@
     <Dependency name="Triutils" type="ILR"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
-    <Dependency name="Stokhos" type="ILO"/>
-    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="Thyra" type="LR"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="LR"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="LR"/>
-    <Dependency name="Intrepid" type="LR"/>
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="ML" type="LR"/>
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Anasazi" type="LR"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
+    <Dependency name="Intrepid" type="LR"/>
     <Dependency name="NOX" type="LR"/>
     <Dependency name="MOOCHO" type="LO"/>
     <EmailAddresses>
@@ -534,8 +554,6 @@
     <Dependency name="Triutils" type="LO"/>
     <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
-    <Dependency name="Stokhos" type="ILO"/>
-    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="Pliris" type="LO"/>
@@ -547,6 +565,8 @@
     <Dependency name="ML" type="LO"/>
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Anasazi" type="LO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="ILO"/>
     <Dependency name="NOX" type="LO"/>
     <EmailAddresses>
       <Email address="pytrilinos-regression@software.sandia.gov"/>
@@ -576,8 +596,6 @@
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="TO"/>
     <Dependency name="EpetraExt" type="TO"/>
-    <Dependency name="Stokhos" type="ITO"/>
-    <Dependency name="Sacado" type="ITO"/>
     <Dependency name="Thyra" type="ITO"/>
     <Dependency name="Isorropia" type="ITO"/>
     <Dependency name="AztecOO" type="TO"/>
@@ -587,6 +605,8 @@
     <Dependency name="ML" type="TO"/>
     <Dependency name="Belos" type="TO"/>
     <Dependency name="Anasazi" type="TO"/>
+    <Dependency name="Stokhos" type="ITO"/>
+    <Dependency name="Sacado" type="ITO"/>
     <Dependency name="NOX" type="TO"/>
     <EmailAddresses>
       <Email address="didasko-regression@software.sandia.gov"/>
