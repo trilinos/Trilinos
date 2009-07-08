@@ -78,7 +78,7 @@ int main(int argc, char **argv)
 {
 
 #ifdef HAVE_MPI
-  MPI_INIT(&argc, &argv);
+  MPI_Init(&argc, &argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   Epetra_SerialComm Comm;

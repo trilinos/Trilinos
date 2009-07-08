@@ -24,6 +24,10 @@ ENDIF()
 SET(Stokhos_ENABLE_Quadrature ${Stokhos_ENABLE_Quadrature_Default} CACHE BOOL
     "Whether to enable quadrature routines in Stokhos")
 
+#IF(Stokhos_ENABLE_ML)
+#  SET(HAVE_STOKHOS_ML ON)
+#ENDIF()
+
 #
 # C) Add the libraries, tests, and examples
 #

@@ -12,12 +12,13 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
-
-PACKAGE_ADD_EXECUTABLE(
-  twoD_diffusion_example
-  SOURCES twoD_diffusion_example.cpp
-  COMM serial mpi
-  )
+IF(Stokhos_ENABLE_ML)
+  PACKAGE_ADD_EXECUTABLE(
+    twoD_diffusion_example
+    SOURCES twoD_diffusion_example.cpp
+    COMM serial mpi
+    )
+ ENDIF()
 
 IF(Stokhos_ENABLE_Quadrature)
 

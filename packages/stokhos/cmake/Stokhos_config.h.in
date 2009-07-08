@@ -17,3 +17,6 @@
 
 /* Define if Fortran UQTK is enabled */
 #cmakedefine HAVE_STOKHOS_FORUQTK
+
+/* Define if ML is enabled */
+#cmakedefine HAVE_STOKHOS_ML

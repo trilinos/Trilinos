@@ -31,7 +31,8 @@ void generateRHS(double (*rhs_function)(double, double, std::vector<double>&), s
   double quadOrder;
   quadOrder = 10*basis->order();
   
-  Stokhos::TensorProductQuadrature<int,double> quadRule(basis,quadOrder);
+  //Stokhos::TensorProductQuadrature<int,double> quadRule(basis,quadOrder);
+  Stokhos::TensorProductQuadrature<int,double> quadRule(basis);
 
   std::vector< std::vector<double> > quadPts = quadRule.getQuadPoints();
   std::vector<double> quadWeights = quadRule.getQuadWeights();
@@ -53,12 +54,15 @@ void generateRHS(double (*rhs_function)(double, double, std::vector<double>&), s
 
 void computeMeanSolution(const Epetra_Vector& u, Epetra_Vector& Eofu, Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
 
+  /*
   #ifdef HAVE_MPI
     MPI_INIT(&argc, &argv);
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
   #else
     Epetra_SerialComm Comm;
   #endif
+  */
+  const Epetra_Comm& Comm = u.Map().Comm();
 
   //Roll up solution vector into a multivector containing deterministic components.
   int N_x = u.MyLength()/basis->size();
@@ -89,12 +93,15 @@ void computeMeanSolution(const Epetra_Vector& u, Epetra_Vector& Eofu, Teuchos::R
 
 void computeVarianceSolution(const Epetra_Vector& u, const Epetra_Vector& Eofu, Epetra_Vector& varOfu, Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
 
+  /*
   #ifdef HAVE_MPI
     MPI_INIT(&argc, &argv);
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
   #else
     Epetra_SerialComm Comm;
   #endif
+  */
+  const Epetra_Comm& Comm = u.Map().Comm();
    
   int N_x = u.MyLength()/basis->size();
   int N_xi = basis->size();
@@ -139,18 +146,22 @@ void generateRealization(const Epetra_Vector& u, std::vector<double>& xi, Epetra
 
 double computeError(const Epetra_Vector& u, double (*exact_solution)(double, double, std::vector<double>&), std::vector<double> mesh, Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis){
 
+  /*
   #ifdef HAVE_MPI
     MPI_INIT(&argc, &argv);
     Epetra_MpiComm Comm(MPI_COMM_WORLD);
   #else
     Epetra_SerialComm Comm;
   #endif
+  */
+  const Epetra_Comm& Comm = u.Map().Comm();
   
   int N_xi = basis->size();
   int N_x = mesh.size();
   double quadOrder;
   quadOrder = 10*basis->order();
-  Stokhos::TensorProductQuadrature<int,double> quadRule(basis, quadOrder);
+  //Stokhos::TensorProductQuadrature<int,double> quadRule(basis, quadOrder);
+  Stokhos::TensorProductQuadrature<int,double> quadRule(basis);
 
   std::vector< std::vector<double> > quadPts = quadRule.getQuadPoints();
   std::vector<double> quadWeights = quadRule.getQuadWeights();

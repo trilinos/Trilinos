@@ -36,6 +36,9 @@
 //class Epetra_Comm;
 
 #include "Stokhos.hpp"
+
+#ifdef HAVE_STOKHOS_ML
+
 #include "Epetra_ConfigDefs.h"
 #ifdef HAVE_MPI
 #include "mpi.h"
@@ -171,6 +174,8 @@ class StochGalerkinPrecon: public virtual Epetra_Operator {
 };
 } 
 #include "Stokhos_StochGalerkin_PreconImp.hpp"
+
+#endif // HAVE_STOKHOS_ML
 
 #endif /* SACADO_STOCHGAL_DIFF_H*/
 
