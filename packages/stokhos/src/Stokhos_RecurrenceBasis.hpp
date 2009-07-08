@@ -58,15 +58,15 @@ namespace Stokhos {
     ~RecurrenceBasis();
     
     //! Project a polynomial into this basis (NOT IMPLIMENTED)
-    void projectPoly(const Polynomial<value_type>& poly, 
+    virtual void projectPoly(const Polynomial<value_type>& poly, 
 		     std::vector<value_type>& coeffs) const;
 
     //! Project derivative of basis polynomial into this basis (NOT IMPLIMENTED)
-    void projectDerivative(ordinal_type i, 
+    virtual void projectDerivative(ordinal_type i, 
                              std::vector<value_type>& coeffs) const;
  
     //! Evaluates the scaled weight function.
-    value_type evaluateWeight(const value_type& x) const;
+    virtual value_type evaluateWeight(const value_type& x) const;
 
 
     ////! return vectors containing recurrance coefficients.
@@ -118,6 +118,7 @@ namespace Stokhos {
     // Prohibit Assignment
     RecurrenceBasis& operator=(const RecurrenceBasis& b);
     
+  protected:
     //! Scale for the weight
     value_type scaleFactor;
 
@@ -140,7 +141,7 @@ namespace Stokhos {
     std::vector<value_type> gamma;
     
     
-  }; // class BetaBasis
+  }; // class RecurrenceBasis
 
 } // Namespace Stokhos
 

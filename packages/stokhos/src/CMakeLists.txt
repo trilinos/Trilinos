@@ -39,6 +39,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_SparseGridQuadratureImp.hpp
   Stokhos_RysBasis.hpp
   Stokhos_RysBasisImp.hpp
+  Stokhos_RecurrenceBasis.hpp
+  Stokhos_RecurrenceBasisImp.hpp
   Stokhos_LegendreBasis.hpp
   Stokhos_LegendreBasisImp.hpp
   Stokhos_RysBasis.hpp
@@ -64,9 +66,10 @@ SET(HEADERS ${HEADERS}
   Stokhos_DerivOrthogPolyExpansionImp.hpp
   Stokhos_ForUQTKOrthogPolyExpansion.hpp
   Stokhos_ForUQTKOrthogPolyExpansionImp.hpp
-#  Stokhos_StochGalerkin_FiniteDiff.hpp
-#  Stokhos_StochGalerkin_FiniteDiffImp.hpp
+  Stokhos_StochGalerkin_Precon.hpp
+  Stokhos_StochGalerkin_PreconImp.hpp
   Stokhos_MatrixFreeEpetraOp.hpp
+  Stokhos_KLMatrixFreeEpetraOp.hpp
   Stokhos_MeanEpetraOp.hpp
   Stokhos_SGModelEvaluator.hpp
   Stokhos_SGQuadModelEvaluator.hpp
@@ -78,6 +81,7 @@ SET(HEADERS ${HEADERS}
 SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
   Stokhos_MatrixFreeEpetraOp.cpp
+  Stokhos_KLMatrixFreeEpetraOp.cpp
   Stokhos_MeanEpetraOp.cpp
   Stokhos_SGModelEvaluator.cpp
   Stokhos_SGQuadModelEvaluator.cpp

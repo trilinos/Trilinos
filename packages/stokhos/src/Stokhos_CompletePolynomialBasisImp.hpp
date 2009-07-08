@@ -142,11 +142,42 @@ template <typename ordinal_type, typename value_type>
 Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 getTripleProductTensor() const
-{
+{/*
+  ordinal_type sz = size();
+  
+  // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
+  if (Cijk == Teuchos::null) {
+    std::vector<value_type> points, weights;
+    std::vector< std::vector<value_type> > values;
+    getQuadPoints(ceil((3*p+1)/2), points, weights, values);
+    Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
+    
+    
+    for (ordinal_type i=0; i<sz; i++) {
+      for (ordinal_type j=0; j<sz; j++) {
+	for (ordinal_type k=0; k<sz; k++) {
+          value_type triple_product = 0;
+	  for (ordinal_type l=0; l<points.size();l++){
+             triple_product = triple_product + weights[l]*(values[l][i])*(values[l][j])*(values[l][k]);
+             //if(k == 0) std::cout<< "values[0]["<<l<<"] = "<<values[l][k] <<"\n";
+          }
+          if(std::abs(triple_product)>sparse_tol){
+            Cijk->add_term(i,j,k,triple_product);
+          //if(i == 0 && j == 0 && k == 0) std::cout<< "C000 = " << (*Cijk)(i,j,k) << "\n";
+          }
+	}
+      }
+    }
+  }
+  
+  return Cijk;
+
+  */
+  
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   if (Cijk == Teuchos::null) {
     Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
-    std::vector<value_type> a(2*sz);
+    std::vector<value_type> a(sz+1);
     for (ordinal_type i=0; i<sz; i++) {
       for (ordinal_type j=0; j<sz; j++) {
 	projectProduct(i, j, a);
@@ -160,6 +191,7 @@ getTripleProductTensor() const
   }
 
   return Cijk;
+  
 }
 
 template <typename ordinal_type, typename value_type>
@@ -220,10 +252,17 @@ void
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 projectProduct(ordinal_type i, ordinal_type j, std::vector<value_type>& coeffs) const
 {
+  double val;
   for (ordinal_type k=0; k<sz; k++) {
     value_type c = value_type(1.0);
     for (ordinal_type l=0; l<static_cast<ordinal_type>(bases.size()); l++) {
-      c *= (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
+      val = (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
+      if(val>sparse_tol){
+        c *= (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
+      }else{
+        c = 0;
+        break;
+      }
       //bases[l]->norm_squared(terms[k][l]);
     }
     coeffs[k] = c;

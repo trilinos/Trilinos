@@ -48,7 +48,7 @@ namespace Stokhos {
 
     //! Constructor
     CompletePolynomialBasis(const std::vector< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > >& bases,
-			    const value_type& sparse_tol = 1.0e-12,
+			    const value_type& sparse_tol = 1.0e-5,
 			    const Teuchos::RCP< std::vector<value_type> >& deriv_coeffs = Teuchos::null);
 
     //! Destructor

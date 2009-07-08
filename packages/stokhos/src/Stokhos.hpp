@@ -38,13 +38,17 @@
 #include "Stokhos_LegendreBasis.hpp"
 #include "Stokhos_HermiteBasis.hpp"
 #include "Stokhos_RysBasis.hpp"
+#include "Stokhos_RecurrenceBasis.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
+
 
 // Expansion methods
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Stokhos_QuadOrthogPolyExpansion.hpp"
 #include "Stokhos_DerivOrthogPolyExpansion.hpp"
 #include "Stokhos_ForUQTKOrthogPolyExpansion.hpp"
+#include "Stokhos_VectorOrthogPoly.hpp"
+#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 
 // Quadrature methods
 #include "Stokhos_TensorProductQuadrature.hpp"
@@ -54,7 +58,11 @@
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_Dense3Tensor.hpp"
 
-// Discritizations
+// Operators
+#include "Stokhos_StochGalerkin_Precon.hpp"
+#include "Stokhos_MatrixFreeEpetraOp.hpp"
+#include "Stokhos_KLMatrixFreeEpetraOp.hpp"
+
 //#include "Stokhos_StochGalerkin_FiniteDiff.hpp"
 
 #endif // STOKHOS_HPP 
