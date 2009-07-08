@@ -117,6 +117,8 @@ int main(int argc, char *argv[])
 #include "Problem_Interface.H" // Interface file to NOX
 #include "FiniteElementProblem.H"              
 
+#include "Isorropia_EpetraColorer.hpp"
+
 using namespace std;
 
 int main(int argc, char *argv[])
@@ -194,6 +196,7 @@ int main(int argc, char *argv[])
     printParams.set("Output Information", 
 			     NOX::Utils::OuterIteration + 
 			     NOX::Utils::OuterIterationStatusTest + 
+			     NOX::Utils::LinearSolverDetails + 
 			     NOX::Utils::InnerIteration +
 			     NOX::Utils::Parameters + 
 			     NOX::Utils::Details + 
@@ -218,7 +221,7 @@ int main(int argc, char *argv[])
   lsParams.set("Aztec Solver", "GMRES");  
   lsParams.set("Max Iterations", 800);  
   lsParams.set("Tolerance", 1e-4);
-  lsParams.set("Output Frequency", 0); 
+  lsParams.set("Output Frequency", 1); 
   lsParams.set("Preconditioner", "Ifpack");
   lsParams.set("Max Age Of Prec", 5); 
 
@@ -229,14 +232,13 @@ int main(int argc, char *argv[])
     Teuchos::rcp(new Problem_Interface(Problem));
 
   // Create the Epetra_RowMatrix using Finite Difference with Coloring
-  bool verbose_ = false;
-  EpetraExt::CrsGraph_MapColoring::ColoringAlgorithm algType = 
-    EpetraExt::CrsGraph_MapColoring::GREEDY;
+  Teuchos::ParameterList isorParamList;
+  Teuchos::ParameterList& zoltanParamList = isorParamList.sublist("ZOLTAN");
+  zoltanParamList.set("DISTANCE","2");
+  Isorropia::Epetra::Colorer isorColorer(
+          (Teuchos::RCP<const Epetra_CrsGraph>) Problem.getGraph(), isorParamList, false);
 
-  EpetraExt::CrsGraph_MapColoring tmpMapColoring( algType, verbose_ );
-
-  Teuchos::RCP<Epetra_MapColoring> colorMap = 
-    Teuchos::rcp(&tmpMapColoring(*(Problem.getGraph())));
+  Teuchos::RCP<Epetra_MapColoring> colorMap =  isorColorer.generateColMapColoring();
 
   EpetraExt::CrsGraph_MapColoringIndex colorMapIndex(*colorMap);
 
@@ -257,14 +259,13 @@ int main(int argc, char *argv[])
 							   Problem.getGraph(),
 							   colorMap, 
 							   columns,
-							   false));
+							   true));
 
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
   Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-                                             	      iReq, iJac, A, noxSoln));
-//	   iReq, ( Teuchos::RCP<NOX::Epetra::Interface::Jacobian>) A, A, noxSoln));
+	   iReq, ( Teuchos::RCP<NOX::Epetra::Interface::Jacobian>) A, A, noxSoln));
 
   // Create the Group
   Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
