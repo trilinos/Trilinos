@@ -184,9 +184,12 @@ void AztecOO::DeleteMemory() {
     Scaling_->scale(AZ_DESTROY_SCALING_DATA, Amat_, options_, x_, b_,
 		    proc_config_, Scaling_);
   }  
-
+  
   if (Prec_!=0) {AZ_precond_destroy(&Prec_); Prec_ = 0;}
-  if (Pmat_ != 0) {AZ_matrix_destroy(&Pmat_); Pmat_ = 0;}
+  if (Pmat_ != 0) {
+    AZ_rm_context(options_,params_,Pmat_->data_org);
+    AZ_matrix_destroy(&Pmat_); Pmat_ = 0;
+  }
   if (Amat_ != 0) {AZ_matrix_destroy(&Amat_); Amat_ = 0;}
 
   if (UserOperatorData_!=0) {delete UserOperatorData_; UserOperatorData_ = 0;}
@@ -509,6 +512,7 @@ int AztecOO::SetPrecMatrix(Epetra_RowMatrix * PrecMatrix) {
     Prec_ = 0;
   }
   if (Pmat_ != 0) {
+    AZ_rm_context(options_,params_,Pmat_->data_org);
     AZ_matrix_destroy(&Pmat_);
     Pmat_ = 0;
   }
