@@ -44,6 +44,9 @@ namespace Stokhos {
     //! Constructor
     TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& product_basis);
 
+    //! Variable order Constructor
+    TensorProductQuadrature(Teuchos::RCP<const OrthogPolyBasis<ordinal_type,value_type> >& product_basis, const ordinal_type& quad_order);
+
     //! Destructor
     virtual ~TensorProductQuadrature() {}
 

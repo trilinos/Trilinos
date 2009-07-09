@@ -93,7 +93,7 @@ if(argc < 8){
   std::cout<< "Usage is: Stokhos_twoD_diffusion_example.cpp <# meshPoints> <PC Degree> <PC Dimension> <sigma> <mu> <PC Type| 'r'(Rys) or 'h'(Hermite)> <Gaussian Cut (only applies to Rys)> <Evaluation Point>\n";
   std:cout << "assuming: Stokhos_twoD_diffusion_example.cpp 32 5 1 3 1 r 3 [0,0,...,0]\n";
   n = 32; //Number of mesh points
-  p = 10; //Polynomial degree
+  p = 5; //Polynomial degree
   d = 1;  //Terms in KL expansion
   sigma = 3;
   mean = 1;

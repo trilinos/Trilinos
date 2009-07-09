@@ -29,10 +29,10 @@ void generateRHS(double (*rhs_function)(double, double, std::vector<double>&), s
   int N_xi = basis->size();
   int N_x = mesh.size();
   double quadOrder;
-  quadOrder = 10*basis->order();
+  quadOrder = 5*basis->order();
   
-  //Stokhos::TensorProductQuadrature<int,double> quadRule(basis,quadOrder);
-  Stokhos::TensorProductQuadrature<int,double> quadRule(basis);
+  Stokhos::TensorProductQuadrature<int,double> quadRule(basis,quadOrder);
+  //Stokhos::TensorProductQuadrature<int,double> quadRule(basis);
 
   std::vector< std::vector<double> > quadPts = quadRule.getQuadPoints();
   std::vector<double> quadWeights = quadRule.getQuadWeights();
@@ -159,9 +159,9 @@ double computeError(const Epetra_Vector& u, double (*exact_solution)(double, dou
   int N_xi = basis->size();
   int N_x = mesh.size();
   double quadOrder;
-  quadOrder = 10*basis->order();
-  //Stokhos::TensorProductQuadrature<int,double> quadRule(basis, quadOrder);
-  Stokhos::TensorProductQuadrature<int,double> quadRule(basis);
+  quadOrder = 5*basis->order();
+  Stokhos::TensorProductQuadrature<int,double> quadRule(basis, quadOrder);
+  //Stokhos::TensorProductQuadrature<int,double> quadRule(basis);
 
   std::vector< std::vector<double> > quadPts = quadRule.getQuadPoints();
   std::vector<double> quadWeights = quadRule.getQuadWeights();
