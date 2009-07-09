@@ -198,7 +198,7 @@ UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 
 ZZ_CSRC		= zz_coord.c zz_obj_list.c zz_struct.c \
 		  zz_init.c zz_set_fn.c zz_util.c zz_gen_files.c \
-                  zz_hash.c zz_heap.c zz_sort.c zz_rand.c
+                  zz_hash.c zz_map.c zz_heap.c zz_sort.c zz_rand.c
 ZZ_INC		= zz_const.h zz_id_const.h zz_util_const.h zz_rand.h zz_sort.h
 
 ALL_CSRC	= all_allo.c 

@@ -365,6 +365,7 @@ ZZ = \
 	$(srcdir)/zz/zz_coord.c \
 	$(srcdir)/zz/zz_gen_files.c \
 	$(srcdir)/zz/zz_hash.c \
+	$(srcdir)/zz/zz_map.c \
 	$(srcdir)/zz/zz_heap.c \
 	$(srcdir)/zz/zz_init.c \
 	$(srcdir)/zz/zz_obj_list.c \

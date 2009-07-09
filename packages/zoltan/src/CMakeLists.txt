@@ -513,6 +513,7 @@ APPEND_SET(SOURCES
   zz/zz_coord.c
   zz/zz_gen_files.c
   zz/zz_hash.c
+  zz/zz_map.c
   zz/zz_heap.c
   zz/zz_init.c
   zz/zz_obj_list.c
