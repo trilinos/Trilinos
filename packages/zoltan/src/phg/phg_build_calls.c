@@ -42,44 +42,61 @@ int gid_chars = zz->Num_GID * sizeof(ZOLTAN_ID_TYPE);
 int lid_size = zz->Num_LID;
 int nProc = zz->Num_Proc;
 int ew_dim = zz->Edge_Weight_Dim;
-int add_vweight, nEdge;
-int ew_op;
+
 int hypergraph_callbacks = 0;
 int graph_callbacks = 0;
 int use_all_neighbors = 1;
 int need_pin_weights = 0;
-int randomizeInitDist, add_obj_weight;
-ZOLTAN_COMM_OBJ *plan=NULL;
-int i, j, w, k, cnt, dim, rc;
+int map1=-1, map2=-1;
 int msg_tag = 30000;
 int ierr = ZOLTAN_OK;
-int nRequests;
+
+ZOLTAN_COMM_OBJ *plan=NULL;
+
 int *sendIntBuf = NULL;
 int *recvIntBuf = NULL;
 int *procBuf= NULL;
 int *edgeBuf= NULL;
-int *pinPairs= NULL;
-int vgnos[2];
+int *pinIdx = NULL;
+
 float *gid_weights = NULL;
-float *src, *dest;
-float *fromwgt, *towgt, *wgts, *calcVwgt = NULL;
+float *wgts = NULL;
+float *calcVwgt = NULL;
 float *sendFloatBuf= NULL;
 float *recvFloatBuf= NULL;
-float weight_val;
-ZOLTAN_ID_PTR gid_buf = NULL, pin_gid_buf = NULL;
-ZOLTAN_ID_PTR global_ids = NULL, ew_lids = NULL;
-ZOLTAN_ID_PTR fromID, toID;
-ZOLTAN_ID_PTR gid_requests;
-int *pinIdx = NULL;
+
 char *flag = NULL;
 
+ZOLTAN_ID_PTR gid_buf = NULL;
+ZOLTAN_ID_PTR pin_gid_buf = NULL;
+ZOLTAN_ID_PTR global_ids = NULL;
+ZOLTAN_ID_PTR ew_lids = NULL;
+ZOLTAN_ID_PTR gid_requests = NULL;
+
+int add_vweight, nEdge;
+int ew_op;
+int randomizeInitDist, add_obj_weight;
+int i, j, w, k, cnt, dim, rc;
+int nRequests;
+
+float *src, *dest;
+float *fromwgt, *towgt;
+
+int *indexptr;
+float weight_val;
+long int index;
+int gnos[2];
+
+ZOLTAN_ID_PTR fromID, toID;
+
 zoltan_objects       myObjs;
-phg_GID_lookup       *lookup_myObjs = NULL;
 zoltan_pins          myPins;
 zoltan_ews           myEWs;
 zoltan_temp_edges    myHshEdges;
-phg_GID_lookup       *lookup_myHshEdges = NULL;
 zoltan_temp_vertices myHshVtxs;
+
+phg_GID_lookup       *lookup_myObjs = NULL;
+phg_GID_lookup       *lookup_myHshEdges = NULL;
 phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
   /* Use the graph or hypergraph query functions to build the hypergraph.
@@ -497,9 +514,13 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
       /* Send to vertex owner the number of edges containing that vertex */
 
-      phg_initialize_gid_list(1, zhg->nObj);
+      map1 = Zoltan_Map_Create(zz, 0, 1, 0, zhg->nObj);
+      if (map1 < 0) goto End;
+
       for (i=0; i < zhg->nObj; i++){
-        phg_add_to_gid_list(zhg->objGNO + i, i);
+        indexptr = (int *)(i+1);
+        ierr = Zoltan_Map_Add(zz, map1, zhg->objGNO + i, (void *)indexptr);
+        if (ierr != ZOLTAN_OK) goto End;
       }
 
       msg_tag--;
@@ -527,15 +548,17 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (zhg->nObj && !zhg->numHEdges) MEMORY_ERROR;
 
       for (i=0; i < nRequests; i++){
-        j = phg_find_gid_index(recvIntBuf + i);
-        if (j < 0) FATAL_ERROR("Unexpected vertex global number received");
-        
-        zhg->numHEdges[j]++;
+        ierr = Zoltan_Map_Find(zz, map1, recvIntBuf + i, (void **)&indexptr);
+        if (ierr != ZOLTAN_OK) goto End;
+        if (!indexptr) FATAL_ERROR("Unexpected vertex global number received");
+
+        index = (long int)indexptr - 1;
+        zhg->numHEdges[index]++;
       }
 
       ZOLTAN_FREE(&recvIntBuf);
 
-      phg_free_gid_list();
+      Zoltan_Map_Destroy(zz, map1);
     }
 
     if (ew_dim && zz->Get_HG_Size_Edge_Wts && zz->Get_HG_Edge_Wts){
@@ -656,7 +679,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     } /* end of get hyperedge weights */
 
     phg_free_GID_lookup_table(&lookup_myHshEdges);
-    phg_free_temp_edges(&myHshEdges);
+    phg_free_temp_edges(&myHshEdges);             /* this frees global_ids array */
 
   } else if (graph_callbacks){
 
@@ -742,6 +765,24 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     Zoltan_Comm_Destroy(&plan);
 
     /*
+     * If edge weights were not supplied in the query functions, set each edge
+     * now to weight one.  If an edge was provided twice (a-b) and (b-a) then
+     * its weight will be two, and if it was provided only once, its weight
+     * will be one.
+     */
+
+    if (!zhg->Ewgt){
+      zhg->Ewgt = (float *)ZOLTAN_MALLOC(sizeof(float) * zhg->nPins);
+      if (zhg->nPins && !zhg->Ewgt) MEMORY_ERROR;
+
+      for (i=0; i < zhg->nPins; i++){
+        zhg->Ewgt[i] = 1.0;
+      }
+      ew_dim = zz->Edge_Weight_Dim = 1;
+      ew_op = hgp->edge_weight_op = PHG_ADD_EDGE_WEIGHTS;
+    }
+
+    /*
      * There may be two edge weights provided for a single edge, depending on 
      * how the application supplied the graph in the query functions.  
      * Find the one or two weights supplied for each edge.
@@ -751,18 +792,16 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
     /* Create a lookup object for all vertex pairs in graph */
 
-    pinPairs = (int *)ZOLTAN_MALLOC(sizeof(int) * 2 * zhg->nPins);
-    if (zhg->nPins && !pinPairs) MEMORY_ERROR;
-
-    pinIdx = pinPairs;
-
-    phg_initialize_gid_list(2, zhg->nPins);
+    map2 = Zoltan_Map_Create(zz, 0, 2, 1, zhg->nPins);
+    if (map2 < 0) goto End;
 
     for (i=0, k=0; i < zhg->nObj; i++){
       for (j=0; j < zhg->Esize[i]; j++, k++){
-         *pinIdx++ = zhg->objGNO[i];
-         *pinIdx++ = zhg->pinGNO[k];
-         phg_add_to_gid_list(pinIdx - 2, k);
+         gnos[0] = zhg->objGNO[i];
+         gnos[1] = zhg->pinGNO[k];
+         indexptr = (int *)(k+1);
+         ierr = Zoltan_Map_Add(zz, map2, gnos, (void *)indexptr);
+         if (ierr != ZOLTAN_OK) goto End;
       }
     }
 
@@ -787,19 +826,22 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     cnt = 0;
 
     for (i=0, k=0; i < zhg->nObj; i++){
-      vgnos[1] = zhg->objGNO[i];
+      gnos[1] = zhg->objGNO[i];
       for (j=0; j < zhg->Esize[i]; j++, k++){
-         vgnos[0] = zhg->pinGNO[k];
+         gnos[0] = zhg->pinGNO[k];
          if (zhg->Pin_Procs[k] != zz->Proc){
            /* if there's another weight, it's on a different proc */
            cnt++;
          }
          else{
-           w = phg_find_gid_index( vgnos);
-           if (w >= 0 ){
+           ierr = Zoltan_Map_Find(zz, map2, gnos, (void **)&indexptr);
+           if (ierr != ZOLTAN_OK) goto End;
+
+           if (indexptr != NULL){
              /* this proc provided weights for [v0,v1] and [v1, v0] */
+             index = (long int)indexptr - 1;
              dest = wgts + k * ew_dim; 
-             src = zhg->Ewgt + w * ew_dim;
+             src = zhg->Ewgt + index * ew_dim;
              for (dim = 0; dim < ew_dim; dim++){
                dest[dim] = src[dim];
              }
@@ -859,30 +901,32 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
   
     nEdge = 0;
     for (i=0; i<nRequests; i++){
-      vgnos[0] = recvIntBuf[i*2];
-      vgnos[1] = recvIntBuf[i*2 + 1];
+      gnos[0] = recvIntBuf[i*2];
+      gnos[1] = recvIntBuf[i*2 + 1];
 
-      w = phg_find_gid_index( vgnos);
-      if (w >= 0 ){
-        if (ew_dim){
-          dest = sendFloatBuf + i * ew_dim; 
-          src = zhg->Ewgt + w * ew_dim;
-          for (dim = 0; dim < ew_dim; dim++){
-            dest[dim] = src[dim];
-          }
-          nEdge = 1;   /* flag that I have weights to send back */
+      ierr = Zoltan_Map_Find(zz, map2, gnos, (void **)&indexptr);
+      if (ierr != ZOLTAN_OK) goto End;
+
+      index = (long int)indexptr - 1;
+
+      if (indexptr){
+        dest = sendFloatBuf + i * ew_dim; 
+        src = zhg->Ewgt + index * ew_dim;
+        for (dim = 0; dim < ew_dim; dim++){
+          dest[dim] = src[dim];
         }
+        nEdge = 1;   /* flag that I have weights to send back */
+
         if (!use_all_neighbors){
-          flag[w] = 1;   /* flag that edge appears twice in graph */
+          flag[index] = 1;   /* flag that edge appears twice in graph */
         }
       }
       else{ /* I don't have an edge corresponding to the edge on the other proc */
       }
     }
 
-    phg_free_gid_list();
+    Zoltan_Map_Destroy(zz, map2);
     ZOLTAN_FREE(&recvIntBuf);
-    ZOLTAN_FREE(&pinPairs);
 
     /* Before doing global communication, determine whether there is any information to share.  */
 
@@ -1023,16 +1067,16 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
       k = 0;
       for (i=0; i < zhg->nObj; i++){
-        vgnos[0] = zhg->objGNO[i];
+        gnos[0] = zhg->objGNO[i];
         for (j = 0; j < zhg->Esize[i]; j++, k++){
-          vgnos[1] = zhg->pinGNO[k];
+          gnos[1] = zhg->pinGNO[k];
 
           /* only include each edge once */
 
-          if ((vgnos[0] < vgnos[1]) || !flag[k]){
+          if ((gnos[0] < gnos[1]) || !flag[k]){
 
-            edgeBuf[cnt * 2]     = vgnos[0];
-            edgeBuf[cnt * 2 + 1] = vgnos[1];
+            edgeBuf[cnt * 2]     = gnos[0];
+            edgeBuf[cnt * 2 + 1] = gnos[1];
 
             procBuf[cnt * 2]     = zz->Proc;
             procBuf[cnt * 2 + 1] = zhg->Pin_Procs[k];
@@ -1198,6 +1242,32 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
   }
 
 End:
+
+  ZOLTAN_FREE(&sendIntBuf);
+  ZOLTAN_FREE(&recvIntBuf);
+  ZOLTAN_FREE(&pinIdx);
+
+  ZOLTAN_FREE(&gid_weights);
+  ZOLTAN_FREE(&calcVwgt);
+  ZOLTAN_FREE(&sendFloatBuf);
+  ZOLTAN_FREE(&recvFloatBuf);
+
+  ZOLTAN_FREE(&flag);
+
+  ZOLTAN_FREE(&gid_buf);
+  ZOLTAN_FREE(&pin_gid_buf);
+  ZOLTAN_FREE(&ew_lids);
+  ZOLTAN_FREE(&gid_requests);
+
+  phg_free_objects(&myObjs);
+  phg_free_pins(&myPins);
+  phg_free_temp_vertices(&myHshVtxs);
+  phg_free_ews(&myEWs);
+  phg_free_temp_edges(&myHshEdges);
+
+  phg_free_GID_lookup_table(&lookup_myHshEdges);
+  phg_free_GID_lookup_table(&lookup_myHshVtxs);
+  phg_free_GID_lookup_table(&lookup_myObjs);
 
   return ierr;
 }

@@ -17,7 +17,6 @@ extern "C" {
 #endif
 
 #include "phg.h"
-#include "phg_lookup.h"
 #include "phg_verbose.h"
 #include "zz_const.h"
 #include "third_library_const.h"
@@ -800,7 +799,7 @@ int Zoltan_PHG_Cuts(
 
 static char *yo = "Zoltan_PHG_Cuts";
 int ierr = ZOLTAN_OK;
-int i, j;
+int i, map_num;
 int npins = 0;                   /* # of pins in hyperedges */
 int *pins = NULL;                   /* pins for edges */
 int *pin_procs = NULL;           /* procs owning pins for edges */
@@ -812,6 +811,9 @@ int *recvpins = NULL;            /* Requested pins from other procs */
 int *outparts = NULL;            /* received partition info for pins */
 int num_parts, max_parts;
 int msg_tag = 23132;
+
+int *indexptr = NULL;
+long int index;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -833,16 +835,28 @@ int msg_tag = 23132;
   Zoltan_Comm_Do(plan, msg_tag, (char *) pins, sizeof(int), (char *) recvpins);
 
   if (nrecv) {
-    phg_initialize_gid_list(1, zhg->nObj);
-    for (i=0; i < zhg->nObj; i++){
-      phg_add_to_gid_list(myObjGNO + i, i);
-    }
 
-    for (i = 0; i < nrecv; i++) {
-      j = phg_find_gid_index(recvpins + i);
-      outparts[i] = zhg->Output_Parts[j];
+    map_num = Zoltan_Map_Create(zz, 0, 1, 0, zhg->nObj);
+    if (map_num < 0) goto End;
+
+    for (i=0; i < zhg->nObj; i++){
+      indexptr = (int *)(i+1);
+      ierr = Zoltan_Map_Add(zz, map_num, myObjGNO + i, (void *)indexptr);
+      if (ierr != ZOLTAN_OK) goto End;
     }
-    phg_free_gid_list();
+    
+    for (i = 0; i < nrecv; i++) {
+      ierr = Zoltan_Map_Find(zz, map_num, recvpins + i, (void **)&indexptr);
+      if (ierr != ZOLTAN_OK) goto End;
+      if (indexptr == NULL){
+         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in pin map.");
+         goto End;
+      }
+
+      index = (long int)indexptr - 1;
+      outparts[i] = zhg->Output_Parts[index];
+    }
+    Zoltan_Map_Destroy(zz, map_num);
   }
 
   ZOLTAN_FREE(&recvpins);
