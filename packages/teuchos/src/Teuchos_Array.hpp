@@ -609,6 +609,31 @@ std::string toString(const Array<T>& array);
 template<typename T>
 Array<T> fromStringToArray(const std::string& arrayStr);
 
+/** \brief Extracts data from an istringstream object 
+ * \note This templated function is necessary for the proper extraction of 
+ *       data by the \c fromStringToArray function.
+ * \relates Array.
+ */
+template<typename T> inline
+void extractDataFromISS( std::istringstream& iss, T& data )
+{
+  iss >> data; // Assumes type has operator>>(...) defined!
+}
+
+/** \brief Extracts std::string data from an istringstream object 
+ * \note This function overloads the templated \c extractDataFromISS function
+         and is necessary for the proper extraction of std::string objects 
+         by the \c fromStringToArray function.
+ * \relates Array.
+ */
+inline
+void extractDataFromISS( std::istringstream& iss, std::string& data )
+{
+  // grab unformatted string.
+  data = iss.str();
+  // remove white space from beginning and end of string.
+  data = Utils::trimWhiteSpace(data);
+}
 
 } // namespace Teuchos
 
@@ -1474,7 +1499,7 @@ Teuchos::fromStringToArray(const std::string& arrayStr)
     // Finally we can convert the entry and add it to the array!
     std::istringstream entryiss(entryStr);
     T entry;
-    entryiss >> entry; // Assumes type has operator>>(...) defined!
+    Teuchos::extractDataFromISS( entryiss, entry );
     // ToDo: We may need to define a traits class to allow us to specialized
     // how conversion from a std::string to a object is done!
     a.push_back(entry);

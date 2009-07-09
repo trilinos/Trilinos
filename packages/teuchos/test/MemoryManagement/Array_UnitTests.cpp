@@ -43,6 +43,12 @@ TEUCHOS_UNIT_TEST( Array, stringToArray )
     TEST_EQUALITY(arrayVal, arrayVal_exp);
   }
 
+  {
+    Array<std::string> arrayVal = fromStringToArray<std::string>("{ (a ), b, c, (d ) }");
+    Array<std::string> arrayVal_exp = Teuchos::tuple<std::string>("(a )", "b", "c", "(d )" );
+    TEST_EQUALITY(arrayVal, arrayVal_exp);
+  }
+
   // This should work but does not.  I should fix this!
 //  {
 //    Array<std::string> arrayVal = fromStringToArray<std::string>("{ {a}, 'b', {c }, d }");
