@@ -111,6 +111,8 @@ InvLSCStrategy::InvLSCStrategy(const Teuchos::RCP<const InverseFactory> & invFac
 
 void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
+   PB_DEBUG_MSG("BEGIN InvLSCStrategy::buildState",10);
+
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
 
@@ -119,11 +121,15 @@ void InvLSCStrategy::buildState(BlockedLinearOp & A,BlockPreconditionerState & s
       initializeState(A,lscState);
    else 
       reinitializeState(A,lscState);
+
+   PB_DEBUG_MSG("END InvLSCStrategy::buildState",10);
 }
 
 // functions inherited from LSCStrategy
 LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
+   PB_DEBUG_MSG("BEGIN InvLSCStrategy::getInvBQBt",10);
+
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
    TEUCHOS_ASSERT(lscState->isInitialized())
@@ -140,24 +146,32 @@ LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditione
    //    return Thyra::epetraLinearOp(rcp(new PB::Epetra::ZeroedOperator(nullPresIndicies_,eOp)));
    // } 
 
+   PB_DEBUG_MSG("END InvLSCStrategy::getInvBQBt",10);
+
    return lscState->invBQBtmC_;
 }
 
 LinearOp InvLSCStrategy::getInvF(const BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
+   PB_DEBUG_MSG("BEGIN InvLSCStrategy::getInvF",10);
+
    LSCPrecondState * lscState = dynamic_cast<LSCPrecondState*>(&state);
    TEUCHOS_ASSERT(lscState!=0);
    TEUCHOS_ASSERT(lscState->isInitialized())
 
    const LinearOp F  = getBlock(0,0,A);
- 
-   // (re)build the inverse of F
-   if(lscState->invF_==Teuchos::null)
-      lscState->invF_ = buildInverse(*invFactoryF_,F);
-   else
-      rebuildInverse(*invFactoryF_,F,lscState->invF_);
 
-   return lscState->invF_;
+   // (re)build the inverse of F
+   InverseLinearOp invF = state.getInverse("invF");
+   if(invF==Teuchos::null) {
+      invF = buildInverse(*invFactoryF_,F);
+      state.addInverse("invF",invF); 
+   } else {
+      rebuildInverse(*invFactoryF_,F,invF);
+   }
+
+   PB_DEBUG_MSG("END InvLSCStrategy::getInvF",10);
+   return invF;
 }
 
 LinearOp InvLSCStrategy::getInvD(const BlockedLinearOp & A,BlockPreconditionerState & state) const
@@ -181,12 +195,14 @@ LinearOp InvLSCStrategy::getInvMass(const BlockedLinearOp & A,BlockPreconditione
 //! Initialize the state object using this blocked linear operator
 void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState * state) const
 {
+   PB_DEBUG_MSG("BEGIN InvLSCStrategy::initiailzeState",10);
+
    const LinearOp B  = getBlock(1,0,A);
    const LinearOp Bt = getBlock(0,1,A);
 
    if(massMatrix_!=Teuchos::null) {
       state->invMass_ = getInvDiagonalOp(massMatrix_);
-      state->BQBt_ = explicitMultiply(B,state->invMass_,Bt);  
+      state->BQBt_ = explicitMultiply(B,state->invMass_,Bt,state->BQBt_);
    }
 
    // now we can just reintialize
@@ -194,10 +210,14 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
 
    // do some real work
    reinitializeState(A,state);
+
+   PB_DEBUG_MSG("END InvLSCStrategy::initiailzeState",10);
 }
 
 void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState * state) const
 {
+   PB_DEBUG_MSG("BEGIN InvLSCStrategy::reinitiailzeState",10);
+
    const LinearOp F  = getBlock(0,0,A);
    const LinearOp Bt = getBlock(0,1,A);
    const LinearOp B  = getBlock(1,0,A);
@@ -207,7 +227,7 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
 
    if(massMatrix_==Teuchos::null) {
       state->invMass_ = getInvDiagonalOp(F);
-      state->BQBt_ = explicitMultiply(B,state->invMass_,Bt);  
+      state->BQBt_ = explicitMultiply(B,state->invMass_,Bt,state->BQBt_);  
    }
 
    // if this is a stable discretization...we are done!
@@ -217,6 +237,7 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
       state->alpha_ = 0.0;
       state->aiD_ = Teuchos::null;
 
+      PB_DEBUG_MSG("END InvLSCStrategy::reinitiailzeState",10);
       return;
    }
 
@@ -257,7 +278,12 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
 
    // compute alpha scaled inv(D): EHSST2007 Eq. 4.29
    const LinearOp invDiagF = getInvDiagonalOp(F);
-   const LinearOp B_idF_Bt = explicitMultiply(B,invDiagF,Bt);
+   
+   // construct B_idF_Bt and save it for refilling later
+   PB::ModifiableLinearOp modB_idF_Bt = state->getInverse("BidFBt");
+   modB_idF_Bt = explicitMultiply(B,invDiagF,Bt,modB_idF_Bt);
+   state->addInverse("BidFBt",modB_idF_Bt);
+   const LinearOp B_idF_Bt = modB_idF_Bt;
 
    MultiVector vec_D = getDiagonal(B_idF_Bt);
    update(-1.0,getDiagonal(C),1.0,vec_D); // vec_D = diag(B*inv(diag(F))*Bt)-diag(C)
@@ -268,18 +294,17 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    state->alpha_ = 1.0/num;
    state->aiD_ = Thyra::scale(state->alpha_,invD);
 
-   // // build reduced BQBt operator if requested
-   // if(nullPresIndicies_.size()>0) {
-   //    std::cout << "num = " << nullPresIndicies_.size() << ", index = " << nullPresIndicies_[0] << std::endl;
-   //
-   //    reduceCrsOperator(state->BQBt_,nullPresIndicies_);
-   // }
-
    // now build B*Q*Bt-gamma*C
    if(graphLaplacian_==Teuchos::null)
       state->BQBtmC_ = explicitAdd(state->BQBt_,scale(-state->gamma_,C));
    else
       state->BQBtmC_ = explicitAdd(state->BQBt_,scale(state->gamma_,graphLaplacian_));
+
+   PB_DEBUG_MSG_BEGIN(5)
+      DEBUG_STREAM << "LSC Gamma Parameter = " << state->gamma_ << std::endl;
+      DEBUG_STREAM << "LSC Alpha Parameter = " << state->alpha_ << std::endl;
+   PB_DEBUG_MSG_END()
+   PB_DEBUG_MSG("END InvLSCStrategy::reinitiailzeState",10);
 }
 
 } // end namespace NS

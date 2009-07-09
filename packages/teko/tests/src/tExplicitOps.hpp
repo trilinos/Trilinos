@@ -29,13 +29,14 @@ public:
 
    bool test_mult_diagScaleMatProd(int verbosity,std::ostream & os);
    bool test_mult_diagScaling(int verbosity,std::ostream & os);
+   bool test_mult_modScaleMatProd(int verbosity,std::ostream & os);
 
 protected:
    double tolerance_;
 
    // matrix to invert
-   PB::LinearOp F_;
-   PB::LinearOp G_;
+   PB::ModifiableLinearOp F_;
+   PB::ModifiableLinearOp G_;
    PB::LinearOp D_;
 };
 

@@ -42,8 +42,6 @@ class GaussSeidelPreconditionerFactory : public BlockPreconditionerFactory {
         */
       LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const;
 
-      //@}
-
    protected: 
       //! some members
       Teuchos::RCP<const BlockInvDiagonalStrategy> invOpsStrategy_;

@@ -11,6 +11,9 @@
 
 #include "Epetra_CrsMatrix.h"
 
+// Teuchos includes
+#include "Teuchos_VerboseObject.hpp"
+
 // Thyra includes
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
@@ -24,6 +27,8 @@
 #include "Thyra_DefaultAddedLinearOp.hpp"
 #include "Thyra_DefaultIdentityLinearOp.hpp"
 #include "Thyra_DefaultZeroLinearOp.hpp"
+
+#define PB_DEBUG_OFF
 
 namespace PB {
 
@@ -56,7 +61,6 @@ using Thyra::block1x2;
   */
 Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const Epetra_CrsMatrix & stencil);
 
-
 /** \brief Build a graph Laplacian stenciled on a Epetra_CrsMatrix.
   *
   * This function builds a graph Laplacian given a (locally complete)
@@ -80,6 +84,29 @@ Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(int dim,double * coords,const
   * \returns The graph Laplacian matrix to be filled according to the <code>stencil</code> matrix.
   */
 Teuchos::RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int stride,const Epetra_CrsMatrix & stencil);
+
+/** \brief Function used internally by PB to find the output stream.
+  * 
+  * Function used internally by PB to find the output stream.
+  *
+  * \returns An output stream to use for printing
+  */
+inline const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream()
+{ return Teuchos::VerboseObjectBase::getDefaultOStream(); }
+
+#ifndef PB_DEBUG_OFF
+   #define PB_DEBUG_MSG(str,level) { \
+      Teuchos::RCP<Teuchos::FancyOStream> out = PB::getOutputStream(); \
+      *out << "PB: " << str << std::endl; }
+   #define PB_DEBUG_MSG_BEGIN(level) { \
+      std::ostream & DEBUG_STREAM = *PB::getOutputStream();
+   #define PB_DEBUG_MSG_END() }
+#else 
+   #define PB_DEBUG_MSG(str,level)
+   #define PB_DEBUG_MSG_BEGIN(level) if(false) { \
+      std::ostream & DEBUG_STREAM = *PB::getOutputStream();
+   #define PB_DEBUG_MSG_END() }
+#endif
 
 // typedefs for increased simplicity
 typedef Teuchos::RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
@@ -130,6 +157,7 @@ BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvs)
 typedef Teuchos::RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > BlockedLinearOp;
 typedef Teuchos::RCP<const Thyra::LinearOpBase<double> > LinearOp;
 typedef Teuchos::RCP<Thyra::LinearOpBase<double> > InverseLinearOp;
+typedef Teuchos::RCP<Thyra::LinearOpBase<double> > ModifiableLinearOp;
 
 //! Build a square zero operator from a single vector space
 inline LinearOp zero(const VectorSpace & vs)
@@ -162,6 +190,12 @@ inline LinearOp toLinearOp(BlockedLinearOp & blo) { return blo; }
 
 //! Convert to a LinearOp from a BlockedLinearOp
 inline const LinearOp toLinearOp(const BlockedLinearOp & blo) { return blo; }
+
+//! Convert to a LinearOp from a BlockedLinearOp
+inline LinearOp toLinearOp(ModifiableLinearOp & blo) { return blo; }
+
+//! Convert to a LinearOp from a BlockedLinearOp
+inline const LinearOp toLinearOp(const ModifiableLinearOp & blo) { return blo; }
 
 //! Get the row count in a block linear operator
 inline int blockRowCount(const BlockedLinearOp & blo)
@@ -313,6 +347,14 @@ inline void scale(const double alpha,MultiVector & x) { Thyra::scale<double>(alp
 inline void scale(const double alpha,BlockedMultiVector & x) 
 {  MultiVector x_mv = toMultiVector(x); scale(alpha,x_mv); }
 
+//! Scale a modifiable linear op by a constant
+inline LinearOp scale(const double alpha,ModifiableLinearOp & a) 
+{  return Thyra::nonconstScale(alpha,a); }
+
+//! Construct an implicit adjoint of the linear operators
+inline LinearOp adjoint(ModifiableLinearOp & a) 
+{  return Thyra::nonconstAdjoint(a); }
+
 //@}
 
 //! \name Epetra_Operator specific functions
@@ -364,6 +406,23 @@ const LinearOp getInvDiagonalOp(const LinearOp & op);
   * \returns Matrix product with a Epetra_CrsMatrix implementation
   */
 const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const LinearOp & opr);
+
+/** \brief Multiply three linear operators. 
+  *
+  * Multiply three linear operators. This currently assumes
+  * that the underlying implementation uses Epetra_CrsMatrix.
+  * The exception is that opm is allowed to be an diagonal matrix.
+  *
+  * \param[in] opl Left operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in] opm Middle operator (assumed to be a Epetra_CrsMatrix or a diagonal matrix)
+  * \param[in] opr Right operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in,out] destOp The operator to be used as the destination operator,
+  *                       if this is null this function creates a new operator
+  *
+  * \returns Matrix product with a Epetra_CrsMatrix implementation
+  */
+const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opm,const LinearOp & opr,
+                                          const ModifiableLinearOp & destOp);
 
 /** \brief Multiply two linear operators. 
   *

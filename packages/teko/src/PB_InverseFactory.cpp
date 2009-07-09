@@ -136,10 +136,14 @@ InverseLinearOp PreconditionerInverseFactory::buildInverse(const LinearOp & line
   */
 void PreconditionerInverseFactory::rebuildInverse(const LinearOp & source,InverseLinearOp & dest) const
 {
+   PB_DEBUG_MSG("BEGIN PreconditionerInverseFactory::rebuildInverse",10);
+
    RCP<Thyra::PreconditionerBase<double> > prec 
          = Teuchos::get_extra_data<RCP<Thyra::PreconditionerBase<double> > >(dest,"prec");
 
    precFactory_->initializePrec(Thyra::defaultLinearOpSource(source),&*prec);
+
+   PB_DEBUG_MSG("END PreconditionerInverseFactory::rebuildInverse",10);
 }
 
 /** \brief A function that permits inspection of the parameters used to create
@@ -163,7 +167,7 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
       inv = factory.buildInverse(A);
    }
    catch(std::exception & e) {
-      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      RCP<Teuchos::FancyOStream> out = PB::getOutputStream();
 
       *out << "PB: \"buildInverse\" could not construct the inverse operator\n";
       *out << std::endl;
@@ -187,7 +191,7 @@ void rebuildInverse(const InverseFactory & factory, const LinearOp & A, InverseL
       factory.rebuildInverse(A,invA);
    } 
    catch(std::exception & e) {
-      RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+      RCP<Teuchos::FancyOStream> out = PB::getOutputStream();
 
       *out << "PB: \"rebuildInverse\" could not construct the inverse operator\n";
       *out << std::endl;

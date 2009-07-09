@@ -49,6 +49,8 @@ LSCPreconditionerFactory::LSCPreconditionerFactory()
 // initialize a newly created preconditioner object
 LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp & blockOp,BlockPreconditionerState & state) const
 {
+   PB_DEBUG_MSG("BEGIN LSCPreconditionerFactory::buildPreconditionerOperator",10);
+
    // extract sub-matrices from source operator 
    LinearOp F  = blockOp->getBlock(0,0);
    LinearOp B  = blockOp->getBlock(1,0);
@@ -83,6 +85,8 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
 
    // build the preconditioner operator: Use LDU or upper triangular approximation
    if(invOpsStrategy_->useFullLDU()) { 
+      PB_DEBUG_MSG("END LSCPreconditionerFactory::buildPreconditionerOperator (Full LDU)",10);
+
       // solve using a full LDU decomposition
       return createLU2x2InverseOp(blockOp,invF,invPschur,"LSC-LDU");
    } else {
@@ -94,6 +98,9 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
       // get upper triangular matrix
       BlockedLinearOp U = getUpperTriBlocks(blockOp); 
 
+      PB_DEBUG_MSG("END LSCPreconditionerFactory::buildPreconditionerOperator (Upper only)",10);
+
+      // solve using only one inversion of F
       return createBlockUpperTriInverseOp(U,invDiag,"LSC-Upper");
    }
 }

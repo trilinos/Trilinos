@@ -20,10 +20,10 @@ public:
    LSCPrecondState() : initialized_(false) {}
 
    //! Is this state constructed?
-   bool isInitialized() { return initialized_; }
+   // bool isInitialized() { return initialized_; }
 
    //! Is this state constructed?
-   void setInitialized(bool i) { initialized_ = i; }
+   // void setInitialized(bool i) { initialized_ = i; }
 
    //! Inverse mass operator (\f$Q_u^{-1}\f$)
    LinearOp invMass_;
@@ -31,14 +31,12 @@ public:
    /** \f$B Q_u^{-1} B^T\f$
      * \f$D = diag(B \; diag(F)^{-1} B^T + C)\f$.
      */
-   LinearOp BQBt_;
+   ModifiableLinearOp BQBt_;
 
    /** \f$B Q_u^{-1} B^T-\gamma C\f$
      */
    LinearOp BQBtmC_;
    InverseLinearOp invBQBtmC_;
-
-   InverseLinearOp invF_;
 
    //! \f$\alpha D^{-1}\f$ where
    LinearOp aiD_;
