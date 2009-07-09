@@ -552,6 +552,9 @@ private:
   //! Create the Preconditioner.
   int CreatePrecond();
 
+  //! Add a function to be called in Compute()
+  int AddFunToList(Teuchos::RCP<FunctionParameter> NewFun);
+
   // The following methods are needed because some of the solver create functions take an MPI_Comm and some don't. These simply always take it and call the appropriate function in Hypre.
   int Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver);
   int Hypre_ParaSailsCreate(MPI_Comm comm, HYPRE_Solver *solver);
@@ -639,6 +642,11 @@ private:
   bool *IsPrecondSetup_;
   Hypre_Chooser SolveOrPrec_;
   Teuchos::RefCountPtr<Epetra_Map> MySimpleMap_;
+  int NumFunsToCall_;
+  Hypre_Solver SolverType_;
+  Hypre_Solver PrecondType_;
+  bool UsePreconditioner_;
+  std::vector<Teuchos::RCP<FunctionParameter> > FunsToCall_;
 };
 
 #endif // HAVE_HYPRE

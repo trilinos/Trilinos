@@ -62,9 +62,12 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   ComputeFlops_(0.0),
   ApplyInverseFlops_(0.0),
   Time_(A_->Comm()),
-  SolveOrPrec_(Solver)
+  SolveOrPrec_(Solver),
+  NumFunsToCall_(0),
+  SolverType_(PCG),
+  PrecondType_(Euclid),
+  UsePreconditioner_(false)
 {
-  int ierr = 0;
   IsSolverSetup_ = new bool[1];
   IsPrecondSetup_ = new bool[1];
   IsSolverSetup_[0] = false;
@@ -77,38 +80,38 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   // First make a copy of the Epetra Matrix as a Hypre Matrix
   int ilower = A_->RowMatrixRowMap().MinMyGID();
   int iupper = A_->RowMatrixRowMap().MaxMyGID();
-  ierr += HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_);
-  ierr += HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR);
-  ierr += HYPRE_IJMatrixInitialize(HypreA_);
+  IFPACK_CHK_ERRV(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
+  IFPACK_CHK_ERRV(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
+  IFPACK_CHK_ERRV(HYPRE_IJMatrixInitialize(HypreA_));
   for(int i = 0; i < A_->NumMyRows(); i++){
     int numElements;
-    ierr += A_->NumMyRowEntries(i,numElements);
+    IFPACK_CHK_ERRV(A_->NumMyRowEntries(i,numElements));
     std::vector<int> indices; indices.resize(numElements);
     std::vector<double> values; values.resize(numElements);
     int numEntries;
-    ierr += A_->ExtractMyRowCopy(i, numElements, numEntries, &values[0], &indices[0]);
+    IFPACK_CHK_ERRV(A_->ExtractMyRowCopy(i, numElements, numEntries, &values[0], &indices[0]));
     for(int j = 0; j < numEntries; j++){
       indices[j] = A_->RowMatrixColMap().GID(indices[j]);
     }
     int GlobalRow[1];
     GlobalRow[0] = A_->RowMatrixRowMap().GID(i);
-    ierr += HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]);
+    IFPACK_CHK_ERRV(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
   }
-  ierr += HYPRE_IJMatrixAssemble(HypreA_);
-  ierr += HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_);
+  IFPACK_CHK_ERRV(HYPRE_IJMatrixAssemble(HypreA_));
+  IFPACK_CHK_ERRV(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
 
   // Next create vectors that will be used when ApplyInverse() is called
-  ierr += HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_);
-  ierr += HYPRE_IJVectorSetObjectType(XHypre_, HYPRE_PARCSR);
-  ierr += HYPRE_IJVectorInitialize(XHypre_);
-  ierr += HYPRE_IJVectorAssemble(XHypre_);
-  ierr += HYPRE_IJVectorGetObject(XHypre_, (void**) &ParX_);
+  IFPACK_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_));
+  IFPACK_CHK_ERRV(HYPRE_IJVectorSetObjectType(XHypre_, HYPRE_PARCSR));
+  IFPACK_CHK_ERRV(HYPRE_IJVectorInitialize(XHypre_));
+  IFPACK_CHK_ERRV(HYPRE_IJVectorAssemble(XHypre_));
+  IFPACK_CHK_ERRV(HYPRE_IJVectorGetObject(XHypre_, (void**) &ParX_));
 
-  ierr += HYPRE_IJVectorCreate(comm, ilower, iupper, &YHypre_);
-  ierr += HYPRE_IJVectorSetObjectType(YHypre_, HYPRE_PARCSR);
-  ierr += HYPRE_IJVectorInitialize(YHypre_);
-  ierr += HYPRE_IJVectorAssemble(YHypre_);
-  ierr += HYPRE_IJVectorGetObject(YHypre_, (void**) &ParY_);
+  IFPACK_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &YHypre_));
+  IFPACK_CHK_ERRV(HYPRE_IJVectorSetObjectType(YHypre_, HYPRE_PARCSR));
+  IFPACK_CHK_ERRV(HYPRE_IJVectorInitialize(YHypre_));
+  IFPACK_CHK_ERRV(HYPRE_IJVectorAssemble(YHypre_));
+  IFPACK_CHK_ERRV(HYPRE_IJVectorGetObject(YHypre_, (void**) &ParY_));
 
   XVec_ = (hypre_ParVector *) hypre_IJVectorObject(((hypre_IJVector *) XHypre_));
   XLocal_ = hypre_ParVectorLocalVector(XVec_);
@@ -123,15 +126,14 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
 }
 
 void Ifpack_Hypre::Destroy(){
-  int ierr = 0;
-  ierr += HYPRE_IJMatrixDestroy(HypreA_);
-  ierr += HYPRE_IJVectorDestroy(XHypre_);
-  ierr += HYPRE_IJVectorDestroy(YHypre_);
+  IFPACK_CHK_ERRV(HYPRE_IJMatrixDestroy(HypreA_));
+  IFPACK_CHK_ERRV(HYPRE_IJVectorDestroy(XHypre_));
+  IFPACK_CHK_ERRV(HYPRE_IJVectorDestroy(YHypre_));
   if(IsSolverSetup_[0]){
-    ierr += SolverDestroyPtr_(Solver_);
+    IFPACK_CHK_ERRV(SolverDestroyPtr_(Solver_));
   }
   if(IsPrecondSetup_[0]){
-    ierr += PrecondDestroyPtr_(Preconditioner_);
+    IFPACK_CHK_ERRV(PrecondDestroyPtr_(Preconditioner_));
   }
   delete[] IsSolverSetup_;
   delete[] IsPrecondSetup_;
@@ -146,94 +148,77 @@ int Ifpack_Hypre::Initialize(){
 }
 
 int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
-  int ierr = 0;
   List_ = list;
   Hypre_Solver solType = list.get("Solver", PCG);
-  ierr += SetSolverType(solType);
+  SolverType_ = solType;
   Hypre_Solver precType = list.get("Preconditioner", Euclid);
-  ierr += SetPrecondType(precType);
+  PrecondType_ = precType;
   Hypre_Chooser chooser = list.get("SolveOrPrecondition", Solver);
   SolveOrPrec_ = chooser;
   bool SetPrecond = list.get("SetPreconditioner", false);
-  ierr += SetParameter(SetPrecond);
+  IFPACK_CHK_ERR(SetParameter(SetPrecond));
   int NumFunctions = list.get("NumFunctions", 0);
+  FunsToCall_.clear();
+  NumFunsToCall_ = 0;
   if(NumFunctions > 0){
     RCP<FunctionParameter>* params = list.get<RCP<FunctionParameter>*>("Functions");
     for(int i = 0; i < NumFunctions; i++){
-      ierr += params[i]->CallFunction(Solver_, Preconditioner_);
+      IFPACK_CHK_ERR(AddFunToList(params[i]));
     }
   }
-  return ierr;
+  return 0;
+}
+
+int Ifpack_Hypre::AddFunToList(RCP<FunctionParameter> NewFun){
+  NumFunsToCall_ = NumFunsToCall_+1;
+  FunsToCall_.resize(NumFunsToCall_);
+  FunsToCall_[NumFunsToCall_-1] = NewFun;
+  return 0;
 }
 
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int), int parameter){
-  int result;
-  if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter);
-  }  else {
-    result = pt2Func(Solver_, parameter);
-  }
-  return result;
+  RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
+  IFPACK_CHK_ERR(AddFunToList(temp));
+  return 0;
 }
 
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double), double parameter){
-  int result;
-  if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter);
-  } else {
-    result = pt2Func(Solver_, parameter);
-  }
-  return result;
+  RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
+  IFPACK_CHK_ERR(AddFunToList(temp));
+  return 0;
 }
 
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double, int), double parameter1, int parameter2){
-  int result;
-  if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter1, parameter2);
-  } else {
-    result = pt2Func(Solver_, parameter1, parameter2);
-  }
-  return result;
+  RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
+  IFPACK_CHK_ERR(AddFunToList(temp));
+  return 0;
 }
 
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int, int), int parameter1, int parameter2){
-  int result;
-  if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter1, parameter2);
-  } else {
-    result = pt2Func(Solver_, parameter1, parameter2);
-  }
-  return result;
+  RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter1, parameter2));
+  IFPACK_CHK_ERR(AddFunToList(temp));
+  return 0;
 }
 
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double*), double* parameter){
-  int result;
-  if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter);
-  } else {
-    result = pt2Func(Solver_, parameter);
-  }
-  return result;
+  RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
+  IFPACK_CHK_ERR(AddFunToList(temp));
+  return 0;
 }
 
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int*), int* parameter){
-  int result;
-  if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter);
-  } else {
-    result = pt2Func(Solver_, parameter);
-  }
-  return result;
+  RCP<FunctionParameter> temp = rcp(new FunctionParameter(chooser, pt2Func, parameter));
+  IFPACK_CHK_ERR(AddFunToList(temp));
+  return 0;
 }
 
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver){
-  int ierr;
   if(chooser == Solver){
-    ierr = SetSolverType(solver);
+    SolverType_ = solver;
   } else {
-    ierr = SetPrecondType(solver);
+    PrecondType_ = solver;
   }
-  return ierr;
+  return 0;
 }
 
 
@@ -243,31 +228,36 @@ int Ifpack_Hypre::SetParameter(Hypre_Chooser answer){
 }
 
 int Ifpack_Hypre::SetParameter(bool UsePreconditioner){
-  if(UsePreconditioner == false){
-    return 0;
-  } else {
-    if(SolverPrecondPtr_ == NULL){
-      return -1;
-    } else {
-      SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_);
-      return 0;
-    }
-  }
+  UsePreconditioner_ = UsePreconditioner;
+  return 0;
 }
 
 int Ifpack_Hypre::Compute(){
-  int ierr = 0;
   Time_.ResetStartTime();
-  if(SolveOrPrec_ == Solver){
-    ierr += SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_);
-    ierr += IsSolverSetup_[0] = true;
-  } else {
-    ierr += PrecondSetupPtr_(Preconditioner_, ParMatrix_, ParX_, ParY_);
-    ierr += IsPrecondSetup_[0] = true;
+  if(IsInitialized() == false){
+    IFPACK_CHK_ERR(Initialize());
   }
+  IFPACK_CHK_ERR(SetSolverType(SolverType_));
+  IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
+  for(int i = 0; i < NumFunsToCall_; i++){
+    IFPACK_CHK_ERR(FunsToCall_[i]->CallFunction(Solver_, Preconditioner_));
+  }
+  if(UsePreconditioner_){
+    if(SolverPrecondPtr_ != NULL){
+      IFPACK_CHK_ERR(SolverPrecondPtr_(Solver_, PrecondSolvePtr_, PrecondSetupPtr_, Preconditioner_));
+    }
+  }
+  if(SolveOrPrec_ == Solver){
+    IFPACK_CHK_ERR(SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_));
+    IsSolverSetup_[0] = true;
+  } else {
+    IFPACK_CHK_ERR(PrecondSetupPtr_(Preconditioner_, ParMatrix_, ParX_, ParY_));
+    IsPrecondSetup_[0] = true;
+  }
+  IsComputed_ = true;
   NumCompute_ = NumCompute_ + 1;
   ComputeTime_ = ComputeTime_ + Time_.ElapsedTime();
-  return ierr;
+  return 0;
 }
 
 const Epetra_Map& Ifpack_Hypre::OperatorDomainMap(){
@@ -280,21 +270,23 @@ const Epetra_Map& Ifpack_Hypre::OperatorRangeMap(){
 
 
 int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
-  int ierr = 0;
+  if(IsComputed() == false){
+    IFPACK_CHK_ERR(-1);
+  }
   Time_.ResetStartTime();
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
-  if (NumVectors != Y.NumVectors()) return -1;  // X and Y must have same number of vectors
+  if (NumVectors != Y.NumVectors()) IFPACK_CHK_ERR(-1);  // X and Y must have same number of vectors
   if(X.Pointers() == Y.Pointers()){
     SameVectors = true;
   }
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
     //Get values for current vector in multivector.
     double * XValues;
-    ierr += (*X(VecNum)).ExtractView(&XValues);
+    IFPACK_CHK_ERR((*X(VecNum)).ExtractView(&XValues));
     double * YValues;
     if(!SameVectors){
-      ierr += (*Y(VecNum)).ExtractView(&YValues);
+      IFPACK_CHK_ERR((*Y(VecNum)).ExtractView(&YValues));
     } else {
       YValues = new double[X.MyLength()];
     }
@@ -305,16 +297,14 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
     double *YTemp = YLocal_->data;
     YLocal_->data = YValues;
 
-    ierr += HYPRE_ParVectorSetConstantValues(ParY_, 0.0);
+    IFPACK_CHK_ERR(HYPRE_ParVectorSetConstantValues(ParY_, 0.0));
     if(SolveOrPrec_ == Solver){
       // Use the solver methods
-      ierr += SolverSolvePtr_(Solver_, ParMatrix_, ParX_, ParY_);
+      IFPACK_CHK_ERR(SolverSolvePtr_(Solver_, ParMatrix_, ParX_, ParY_));
     } else {
       // Apply the preconditioner
-      ierr += PrecondSolvePtr_(Preconditioner_, ParMatrix_, ParX_, ParY_);
+      IFPACK_CHK_ERR(PrecondSolvePtr_(Preconditioner_, ParMatrix_, ParX_, ParY_));
     }
-    TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Hypre solve failed.");
-
     if(SameVectors){
       int NumEntries = Y.MyLength();
       std::vector<double> new_values; new_values.resize(NumEntries);
@@ -323,7 +313,7 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
         new_values[i] = YValues[i];
         new_indices[i] = i;
       }
-      (*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]);
+      IFPACK_CHK_ERR((*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]));
       delete[] YValues;
     }
     XLocal_->data = XTemp;
@@ -331,14 +321,13 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
   }
   NumApplyInverse_ = NumApplyInverse_ + 1;
   ApplyInverseTime_ = ApplyInverseTime_ + Time_.ElapsedTime();
-  return(ierr);
+  return 0;
 }
 
 int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
-  int ierr = 0;
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
-  if (NumVectors != Y.NumVectors()) return -1;  // X and Y must have same number of vectors
+  if (NumVectors != Y.NumVectors()) IFPACK_CHK_ERR(-1);  // X and Y must have same number of vectors
   if(X.Pointers() == Y.Pointers()){
     SameVectors = true;
   }
@@ -346,34 +335,27 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
     //Get values for current vector in multivector.
     double * XValues;
     double * YValues;
-    ierr += (*X(VecNum)).ExtractView(&XValues);
+    IFPACK_CHK_ERR((*X(VecNum)).ExtractView(&XValues));
     double *XTemp = XLocal_->data;
     double *YTemp = YLocal_->data;
     if(!SameVectors){
-      ierr += (*Y(VecNum)).ExtractView(&YValues);
+      IFPACK_CHK_ERR((*Y(VecNum)).ExtractView(&YValues));
     } else {
       YValues = new double[X.MyLength()];
     }
     YLocal_->data = YValues;
-    HYPRE_ParVectorSetConstantValues(ParY_,0.0);
+    IFPACK_CHK_ERR(HYPRE_ParVectorSetConstantValues(ParY_,0.0));
     // Temporarily make a pointer to data in Hypre for end
     // Replace data in Hypre vectors with epetra values
     XLocal_->data = XValues;
     // Do actual computation.
     if(TransA) {
       // Use transpose of A in multiply
-      ierr += HYPRE_ParCSRMatrixMatvecT(1.0, ParMatrix_, ParX_, 1.0, ParY_);
-      TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't do Transpose MatVec in Hypre.");
+      IFPACK_CHK_ERR(HYPRE_ParCSRMatrixMatvecT(1.0, ParMatrix_, ParX_, 1.0, ParY_));
     } else {
-      ierr += HYPRE_ParCSRMatrixMatvec(1.0, ParMatrix_, ParX_, 1.0, ParY_);
-      TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't do MatVec in Hypre.");
+      IFPACK_CHK_ERR(HYPRE_ParCSRMatrixMatvec(1.0, ParMatrix_, ParX_, 1.0, ParY_));
     }
     if(SameVectors){
-      /*double *invalid_ptr;
-      (*Y(VecNum)).ExtractView(&invalid_ptr);
-      (*Y(VecNum)).ResetView(y_values);
-      delete[] invalid_ptr;*/
-
       int NumEntries = Y.MyLength();
       std::vector<double> new_values; new_values.resize(NumEntries);
       std::vector<int> new_indices; new_indices.resize(NumEntries);
@@ -381,13 +363,13 @@ int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_Mult
         new_values[i] = YValues[i];
         new_indices[i] = i;
       }
-      (*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]);
+      IFPACK_CHK_ERR((*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]));
       delete[] YValues;
     }
     XLocal_->data = XTemp;
     YLocal_->data = YTemp;
   }
-  return(ierr);
+  return 0;
 }
 
 ostream& Ifpack_Hypre::Print(ostream& os) const{
