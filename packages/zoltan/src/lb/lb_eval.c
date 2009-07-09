@@ -18,10 +18,9 @@ extern "C" {
 #endif
 
 #include "zz_const.h"
+#include "zz_util_const.h"
 #include "phg.h"
 #include "zoltan_eval.h"
-
-#include <search.h>
 
 /************************************************************************/
 static void iget_strided_stats(int *v, int stride, int offset, int len,
@@ -46,10 +45,6 @@ static int
 add_graph_extra_weight(ZZ *zz, int num_obj, int *edges_per_obj, int *vwgt_dim, float **vwgts);
 
 extern int zoltan_lb_eval_sort_increasing(const void *a, const void *b);
-
-static int write_unique_ints(int *val, int len);
-
-#define MAX_SIZE_KEY_BUFFER 60
 
 /*****************************************************************************/
 
@@ -197,18 +192,18 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   int i, j, k, e, ierr, count;
   int nparts, nonempty_nparts, req_nparts;
   int num_weights, obj_part, nbor_part, nother_parts;
-  int max_pair, num_pairs, num_obj_parts, offset;
+  int num_pairs, num_parts;
+  int map_num = -1;
   int num_obj = 0;
   int num_edges = 0;
+  int hashTableSize = 0;
 
   int *localCount = NULL, *globalCount = NULL;
   int *parts=NULL, *nbors_part=NULL, *part_check=NULL;
   int *edges_per_obj=NULL, *nbors_proc=NULL;
   int *num_boundary=NULL, *cuts=NULL;
-  int *partNums = NULL, *partCount=NULL;
-
-  ENTRY *partNumEntries=NULL, *foundEntry=NULL; 
-  ENTRY tempEntry;
+  int *partNbors= NULL, *partCount=NULL;
+  int *key = NULL, *keyValue=NULL;
 
   float obj_edge_weights;
 
@@ -216,8 +211,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   float *localVals = NULL, *globalVals = NULL;
   float *cutn=NULL, *cutl=NULL, *cut_wgt=NULL;
 
-  char *keys = NULL;
-  char tempBuf[MAX_SIZE_KEY_BUFFER];
+  int partitionPair[2], dummyValue[2];
 
   GRAPH_EVAL localEval;
 
@@ -330,90 +324,29 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   ZOLTAN_FREE(&nbors_global);
   ZOLTAN_FREE(&local_ids);
 
-  /*****************************************************************
-   * In order to compute the number of neighboring partitions for
-   * each partition, get an upper bound on the possible number of 
-   * different object-partition/neighbor-partition pairs.
-   */
+  if (num_edges){
 
-
-  max_pair = 0;           /* maximum number of obj_part/nbor_part pairs */
-  num_obj_parts = 0; /* total number of non-empty partitions on process */
-
-  if (num_obj){
-
-    if (num_edges > num_obj){
-      partNums = (int *)ZOLTAN_MALLOC(num_edges * sizeof(int));
+    if (num_edges > 10000){
+      hashTableSize = 10000;
     }
     else{
-      partNums = (int *)ZOLTAN_MALLOC(num_obj * sizeof(int));
+      hashTableSize = num_edges;
     }
 
-    if (!partNums){
-      ierr = ZOLTAN_MEMERR;
-      goto End;
-    }
+    /*  
+     * For calculation of each partition's number of neighbors,
+     * initialize a set of partition number pairs using Zoltan_Hash.
+     * Alternative is a nparts*nparts array, which uses too much memory.
+     */
 
-    partNums[0] = parts[0];
-    for (i=1, k=1; i < num_obj; i++){ 
-       if (parts[i] != partNums[k-1]){
-         partNums[k++] = parts[i];
-       }
-    }
-    num_obj_parts = write_unique_ints(partNums, k);
+    map_num = Zoltan_Map_Create(zz,
+                   hashTableSize, /* size of hash table            */
+                   2,             /* number of integers in key */
+                   1,             /* yes, store a copy of the key */
+                   0);            /* dynamically allocate hash table entries */
 
-    partCount = (int *)ZOLTAN_MALLOC(sizeof(int) * num_obj_parts * 2);
-    if (!partCount){
-      ierr = ZOLTAN_MEMERR;
-      goto End;
-    }
-   
-    for (i=0; i < num_obj_parts; i++){
-      /* this list will have number of partition neighbors for each partition */
-      partCount[i*2] = partNums[i];
-      partCount[i*2 + 1] = 0;
-    }
-
-    if (num_edges > 0){
-      partNums[0] = nbors_part[0];
-      for (i=1,k=1; i < num_edges; i++){
-         if (nbors_part[i] != partNums[k-1]){
-           partNums[k++] = nbors_part[i];
-         }
-      }
-      max_pair = write_unique_ints(partNums, k) * num_obj_parts;
-    }
-
-    ZOLTAN_FREE(&partNums);
-  }
-
-  if (max_pair > num_edges) {
-    max_pair = num_edges;
-  }
-  if ((max_pair > 0) && (max_pair < 4)){
-    /* because this is the size of a hash table */
-    max_pair = 4;
-  }
-
-  /* Only create search buffers if max_pair > 0.  If max_pair is zero, then
-   * there are no edges, and there will be no need to count neighboring partitions.
-   */
-  if (max_pair){
-    partNumEntries = (ENTRY *)ZOLTAN_MALLOC(sizeof(ENTRY) * max_pair);
-    keys = (char *)ZOLTAN_MALLOC(sizeof(char) * max_pair * MAX_SIZE_KEY_BUFFER);
-    if (!partNumEntries || !keys){
-      ierr = ZOLTAN_MEMERR;
-      goto End;
-    }
-
-    if (!hcreate(max_pair)){ /* hash table for partition number pairs */
-      ierr = ZOLTAN_MEMERR;
-      goto End;
-    }
-
-    partNums = (int *)ZOLTAN_MALLOC(max_pair * 2 * sizeof(int));
-    if (!partNums){
-      ierr = ZOLTAN_MEMERR;
+    if (map_num < 0){
+      ierr = ZOLTAN_FATAL;
       goto End;
     }
   }
@@ -440,7 +373,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
     goto End;
   }
 
-  num_pairs = 0;
+  num_parts = 0;
 
   for (i=0,k=0; i < num_obj; i++){   /* object */
 
@@ -460,40 +393,12 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
       }
 
       if (nbor_part != obj_part){
+
         /* 
          * number of edges that have nbor in a different part 
          */
 
         cuts[obj_part]++; 
-
-        /*
-         * save info required to compute, for each part, the number of parts  
-         * that it has neighbors in
-         */
-
-        sprintf(tempBuf, "%d %d", obj_part, nbor_part);
-        tempEntry.key = tempBuf;
-        tempEntry.data = NULL;
-
-        foundEntry = hsearch(tempEntry, FIND);
-
-        if (!foundEntry){
-          if (num_pairs == max_pair){
-            ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Incorrect calculation of max_pair\n");
-            ierr = ZOLTAN_FATAL;
-            goto End;
-          }
-          offset = num_pairs * MAX_SIZE_KEY_BUFFER;
-          strcpy(keys + offset, tempBuf);
-          partNumEntries[num_pairs].key = keys + offset;
-          partNumEntries[num_pairs].data = NULL;
-
-          hsearch(partNumEntries[num_pairs], ENTER);  /* add this pair */
-
-          partNums[num_pairs*2] = obj_part;
-          partNums[num_pairs*2 + 1] = nbor_part;
-          num_pairs++;  /* number of unique obj_part/nbor_part pairs */
-        }
 
         for (e=0; e < ewgt_dim; e++){
           /*
@@ -504,11 +409,20 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
         }
 
         if (part_check[nbor_part] < i+1){
+
           nother_parts++;
           part_check[nbor_part] = i + 1;
-        }
-      }
-    }
+
+          partitionPair[0] = obj_part;
+          partitionPair[1] = nbor_part;
+
+          ierr = Zoltan_Map_Add(zz, map_num, partitionPair, (void *)dummyValue);
+          if (ierr != ZOLTAN_OK){
+            goto End;
+          }
+        } /* first time neighbor partition is seen for this object */
+      } /* if neighbor's partition is different than object's partition */
+    } /* next neighbor */
 
     if (nother_parts){
       /*
@@ -527,7 +441,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
        */
       num_boundary[obj_part]++;
     }
-  }
+  } /* next object */
 
   ZOLTAN_FREE(&part_check);
   ZOLTAN_FREE(&parts);
@@ -535,34 +449,79 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   ZOLTAN_FREE(&ewgts);
   ZOLTAN_FREE(&nbors_part);
 
-  if (max_pair){
-    hdestroy();
-    ZOLTAN_FREE(&partNumEntries);
-    ZOLTAN_FREE(&keys);
+  /*
+   * List of each local partition, followed by the number of neighbors of that partition
+   */
+  partCount = (int *)ZOLTAN_CALLOC(2 * nparts, sizeof(int));
+  if (!partCount){
+    ierr = ZOLTAN_MEMERR;
+    goto End;
+  }
+  count = 0;   /* number of partitions listed in partCount */
 
-    if (num_pairs){
-      qsort(partNums, num_pairs, sizeof(int) * 2, zoltan_lb_eval_sort_increasing);
+  if (num_edges){
 
-      for (i=0, k=0; (i < num_obj_parts) && (k < num_pairs); i++){
-        count = 0;
-        obj_part = partNums[k*2];
+    num_pairs = Zoltan_Map_Size(zz, map_num);
+    num_parts = 0;
 
-        if (obj_part == partCount[2*i]){
-          count = 1;
-          for (j=k+1; j < num_pairs ; j++){
-            if (partNums[j*2] == obj_part){
-              count++;
-            }
-            else{
-              break;
-            }
-          }
-        }
-        partCount[i*2 + 1] = count;
-        k += count; 
+    if (num_pairs > 0){
+
+      partNbors = (int *)ZOLTAN_MALLOC(sizeof(int) * num_pairs * 2);
+      if (!partNbors){
+        ierr = ZOLTAN_MEMERR; 
+        goto End;
       }
+
+      /* Zoltan_Map "iterator */
+
+      ierr = Zoltan_Map_First(zz, map_num, &key, (void **)&keyValue);
+
+      if ( ((ierr == ZOLTAN_OK) && !key) ||  /* must be at least one pair */
+           (ierr != ZOLTAN_OK)){
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Map_First\n");
+        goto End;
+      }
+
+      while (key) {
+        partNbors[num_parts++] = key[0];
+        partNbors[num_parts++] = key[1];
+
+        ierr = Zoltan_Map_Next(zz, map_num, &key, (void **)&keyValue);
+  
+        if (ierr != ZOLTAN_OK){
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Map_Next\n");
+          goto End;
+        }
+      } 
+
+      if (num_parts != num_pairs * 2){
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Map_First/Next\n");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
+    }
+
+    Zoltan_Map_Destroy(zz, map_num);
+
+    if (num_pairs > 0){     
+      qsort(partNbors, num_pairs, sizeof(int) * 2, zoltan_lb_eval_sort_increasing);
+
+      obj_part = -1;
+      count = -1;
+      for (i=0; i < num_pairs; i++){
+
+        if (partNbors[2*i] != obj_part){
+          obj_part = partNbors[2*i];
+          partCount[++count] = obj_part;  /* object partition */
+          partCount[++count] = 0;       /* number of neighbor partitions */
+        }
+        partCount[count]++;
+      }
+
+      ZOLTAN_FREE(&partNbors);
+      count++;
+      count >>= 1;
     } 
-    ZOLTAN_FREE(&partNums);
   }
 
   /************************************************************************
@@ -582,6 +541,33 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
+
+  /*
+   * NNBORPARTS - The number of neighboring parts
+   */
+
+  localCount = (int *)ZOLTAN_CALLOC(nparts , sizeof(int));
+
+  for (i=0; i < count; i++){
+    localCount[partCount[2*i]] = partCount[2*i + 1];
+  }
+
+  ZOLTAN_FREE(&partCount);
+
+  /* Note: this is incorrect if partitions are split across processes, as
+   * they could be if migration has not yet occured.
+   */
+
+  MPI_Allreduce(localCount, globalCount, nparts, MPI_INT, MPI_SUM, comm);
+
+  ZOLTAN_FREE(&localCount);
+
+  iget_strided_stats(globalCount, 1, 0, nparts,
+               graph->nnborparts + EVAL_GLOBAL_MIN,
+               graph->nnborparts + EVAL_GLOBAL_MAX,
+               graph->nnborparts + EVAL_GLOBAL_SUM);
+
+  graph->nnborparts[EVAL_GLOBAL_AVG] = graph->nnborparts[EVAL_GLOBAL_SUM] / nparts;
 
   /*
    * CUTN - NetCut
@@ -627,33 +613,6 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
                graph->cuts + EVAL_GLOBAL_SUM);
 
   graph->cuts[EVAL_GLOBAL_AVG] = graph->cuts[EVAL_GLOBAL_SUM] / nparts;
-
-  /*
-   * NNBORPARTS - The number of neighboring parts
-   */
-
-  localCount = (int *)ZOLTAN_CALLOC(nparts , sizeof(int));
-
-  for (i=0; i < num_obj_parts; i++){
-    localCount[partCount[2*i]] = partCount[2*i + 1];
-  }
-
-  ZOLTAN_FREE(&partCount);
-
-  /* Note: this is incorrect if partitions are split across processes, as
-   * they would be if migration has not yet occured.
-   */
-
-  MPI_Allreduce(localCount, globalCount, nparts, MPI_INT, MPI_SUM, comm);
-
-  ZOLTAN_FREE(&localCount);
-
-  iget_strided_stats(globalCount, 1, 0, nparts,
-               graph->nnborparts + EVAL_GLOBAL_MIN,
-               graph->nnborparts + EVAL_GLOBAL_MAX,
-               graph->nnborparts + EVAL_GLOBAL_SUM);
-
-  graph->nnborparts[EVAL_GLOBAL_AVG] = graph->nnborparts[EVAL_GLOBAL_SUM] / nparts;
 
   /*
    * CUT WEIGHT - The sum of the weights of the cut edges.
@@ -793,6 +752,8 @@ End:
 
   /* Free data */
 
+  Zoltan_Map_Destroy(zz, map_num);
+
   ZOLTAN_FREE(&localVals);
   ZOLTAN_FREE(&localCount);
   ZOLTAN_FREE(&globalVals);
@@ -811,11 +772,8 @@ End:
   ZOLTAN_FREE(&cutn);
   ZOLTAN_FREE(&cutl);
   ZOLTAN_FREE(&cuts);
-  ZOLTAN_FREE(&partNums);
   ZOLTAN_FREE(&partCount);
   ZOLTAN_FREE(&part_check);
-  ZOLTAN_FREE(&partNumEntries);
-  ZOLTAN_FREE(&keys);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 
@@ -1588,32 +1546,7 @@ int zoltan_lb_eval_sort_increasing(const void *a, const void *b)
   }
 }
 
-/************************************************************************ 
- * rewrite list of ints as increasing list of unique ints, return length
- */
-
-static int 
-write_unique_ints(int *val, int len)
-{
-  int count, i;
-
-  if (len < 2)
-    return len;
-
-  qsort(val, len, sizeof(int), zoltan_lb_eval_sort_increasing);
-
-  count = 1;
-  for (i=1; i < len; i++){
-    if (val[i] != val[count-1]){
-      if (i > count){
-        val[count] = val[i];
-      }
-      count++;
-    }
-  }
-
-  return count;
-}
+/************************************************************************/
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
