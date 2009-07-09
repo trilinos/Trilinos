@@ -1,0 +1,31 @@
+EXTRA_ARGS=$@
+
+rm -f CMakeCache.txt
+
+cmake \
+-D CMAKE_BUILD_TYPE:STRING=DEBUG \
+-D DART_TESTING_TIMEOUT:STRING=600 \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_Epetra:BOOL=ON \
+-D Trilinos_ENABLE_Teuchos:BOOL=ON \
+-D Trilinos_ENABLE_Triutils:BOOL=ON \
+-D Trilinos_ENABLE_Epetraext:BOOL=ON \
+-D Trilinos_ENABLE_rtop:BOOL=ON \
+-D Trilinos_ENABLE_Amesos:BOOL=ON \
+-D Trilinos_ENABLE_Anasazi:BOOL=ON \
+-D Trilinos_ENABLE_Ifpack:BOOL=ON \
+-D Trilinos_ENABLE_ML:BOOL=ON \
+-D Trilinos_ENABLE_Zoltan:BOOL=ON \
+-D Trilinos_ENABLE_Nox:BOOL=ON \
+-D Trilinos_ENABLE_Tpetra:BOOL=OFF \
+-D Trilinos_ENABLE_Sacado:BOOL=OFF \
+-D Trilinos_ENABLE_Pamgen:BOOL=OFF \
+-D Trilinos_ENABLE_Meros:BOOL=OFF \
+-D Trilinos_EXTRA_LINK_FLAGS:STRING="-lpgf90 -lpgf902 -lpgf90_rpm1 -lpgftnrtl" \
+$EXTRA_ARGS \
+-D CMAKE_TOOLCHAIN_FILE=toolchain-catamount-pgi.cmake \
+-C tryrunresults-catamount-pgi.cmake \
+../

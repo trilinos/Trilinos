@@ -1,0 +1,8 @@
+These files were made using the cross compile environment on the scico lan and are
+not designed for reddish specifically. however the XC environment on the scico lan
+was designed to be very similar to the reddish one so it should work with very
+little modification. The changes should really only need to be the paths in the
+toolchain file to point to the correct place on reddish.
+
+The module command that was used for this xc is:
+module load sierra-devel-redstorm-pgi-xcompile
