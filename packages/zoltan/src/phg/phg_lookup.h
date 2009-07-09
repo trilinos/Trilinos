@@ -23,34 +23,6 @@ extern "C" {
 
 /*****************************************************************************/
 
-/*
- * Structure to store and search for integer tuples, and return an
- * index associated with the tuple. 
- *
- * It only stores a pointer to the integer tuple, not a copy of it.
- */
-
-typedef struct _gid_node{
-  int *gid;
-  int index;
-  struct _gid_node *next;
-}phg_gid_node;
-
-typedef struct _gid_list{
-  phg_gid_node *top;
-  phg_gid_node **gn;
-  int size;
-  int next_slot;
-  int lenGID;
-}phg_gid_list;
-
-void phg_initialize_gid_list(int gid_len, int nvtx);
-void phg_free_gid_list();
-int phg_find_gid_index(int *gid);
-void phg_add_to_gid_list(int *gid, int index);
-
-/*****************************************************************************/
-
 /* 
  * Structures to hold hypergraph data returned by query functions,
  * and hypergraph data gathered by processes to which edges/vertices
