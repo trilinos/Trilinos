@@ -868,7 +868,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> hexGradsTransformed(numCells, numFieldsG, numCubPoints, spaceDim);
     FieldContainer<double> hexGradsTransformedWeighted(numCells, numFieldsG, numCubPoints, spaceDim);
    // Containers for right hand side vectors
-    FieldContainer<double> rhsData(numCells, numCubPoints, cubDim);
+    FieldContainer<double> rhsData(numCells, numCubPoints);
     FieldContainer<double> localRHS(numCells, numFieldsG);
     FieldContainer<double> hexGValsTransformed(numCells, numFieldsG, numCubPoints);
     FieldContainer<double> hexGValsTransformedWeighted(numCells, numFieldsG, numCubPoints);
@@ -948,11 +948,9 @@ int main(int argc, char *argv[]) {
 // ******************************* Build right hand side ************************************
 
       // transform integration points to physical points
-       FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
        CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
 
       // evaluate right hand side functions at physical points
-       FieldContainer<double> rhsData(numCells, numCubPoints);
        for (int nPt = 0; nPt < numCubPoints; nPt++){
 
           double x = physCubPoints(0,nPt,0);
@@ -1007,8 +1005,8 @@ int main(int argc, char *argv[]) {
 
    
   // Dump matrices to disk
-     //   EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-     //   EpetraExt::MultiVectorToMatlabFile("rhs_vector.dat",rhs);
+        EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
+        EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
 
 
    // Run the solver
