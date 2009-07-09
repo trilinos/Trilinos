@@ -587,7 +587,7 @@ int main(int argc, char *argv[]) {
    //TEMP
     ofstream fFaceout("faceOnBndy.dat");
     for (int i=0; i<numFaces; i++){
-       fFaceout << faceOnBoundary(i) <<"  ";
+       fFaceout << faceOnBoundary(i) <<"\n";
     }
     fFaceout.close();
 
@@ -778,6 +778,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> gDBoundary(numCells, numFieldsD);
     FieldContainer<double> refGaussPoints(numFacePoints,spaceDim);
     FieldContainer<double> worksetGaussPoints(numCells,numFacePoints,spaceDim);
+    FieldContainer<double> worksetWeightedMeasure(numCells,numFacePoints);
     FieldContainer<double> worksetJacobians(numCells, numFacePoints, spaceDim, spaceDim);
     FieldContainer<double> worksetJacobDet(numCells, numFacePoints);
     FieldContainer<double> worksetFaceTu(numCells, numFacePoints, spaceDim);
@@ -788,7 +789,6 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> worksetDValsTransformedWeighted(numCells, numFieldsD, numFacePoints, spaceDim);
     FieldContainer<double> curluFace(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetDataCrossField(numCells, numFieldsD, numFacePoints, spaceDim);
-
    // Container for cubature points in physical space
     FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
 
@@ -992,44 +992,47 @@ int main(int argc, char *argv[]) {
       for (int i = 0; i < numFacesPerElem; i++){
         if (faceOnBoundary(elemToFace(k,i))){
 
-         // Map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints
+         // map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints
             CellTools::mapToReferenceSubcell(refGaussPoints,
                                    paramGaussPoints,
                                    2, i, hex_8);
 
-         // Get basis values at points on reference cell
-           hexHDivBasis.getValues(worksetDVals, refGaussPoints, OPERATOR_VALUE);
+         // get basis values at points on reference cell
+            hexHDivBasis.getValues(worksetDVals, refGaussPoints, OPERATOR_VALUE);
 
-         // Compute Jacobians at Gauss pts. on reference face for all parent cells
-           CellTools::setJacobian(worksetJacobians, refGaussPoints,
+         // compute Jacobians at Gauss pts. on reference face for all parent cells
+            CellTools::setJacobian(worksetJacobians, refGaussPoints,
                          hexNodes, hex_8);
-           CellTools::setJacobianDet(worksetJacobDet, worksetJacobians);
+            CellTools::setJacobianDet(worksetJacobDet, worksetJacobians);
 
          // transform to physical coordinates
             fst::HDIVtransformVALUE<double>(worksetDValsTransformed, worksetJacobians,
                                    worksetJacobDet, worksetDVals);
 
+         // compute weighted measure
+            fst::computeMeasure<double>(worksetWeightedMeasure, worksetJacobDet, paramGaussWeights);
+
          // multiply by weighted measure
             fst::multiplyMeasure<double>(worksetDValsTransformedWeighted,
-                                   paramGaussWeights, worksetDValsTransformed);
+                                   worksetWeightedMeasure, worksetDValsTransformed);
 
-         // Map Gauss points on quad from ref. face to face workset: refGaussPoints -> worksetGaussPoints
+         // map Gauss points on quad from ref. face to face workset: refGaussPoints -> worksetGaussPoints
             CellTools::mapToPhysicalFrame(worksetGaussPoints,
                                 refGaussPoints,
                                 hexNodes, hex_8);
 
-        // Compute face tangents
+         // compute face tangents
             CellTools::getPhysicalFaceTangents(worksetFaceTu,
                                      worksetFaceTv,
                                      paramGaussPoints,
                                      worksetJacobians,
                                      i, hex_8);
 
-         // Face outer normals (relative to parent cell) are uTan x vTan
+         // face outer normals (relative to parent cell) are uTan x vTan
             RealSpaceTools<double>::vecprod(worksetFaceN, worksetFaceTu, worksetFaceTv);
 
 
-         // Evaluate curl u at face points
+         // evaluate curl u at face points
            for(int nPt = 0; nPt < numFacePoints; nPt++){
 
              double x = worksetGaussPoints(0, nPt, 0);
@@ -1039,7 +1042,7 @@ int main(int argc, char *argv[]) {
              evalCurlu(curluFace(0,nPt,0), curluFace(0,nPt,1), curluFace(0,nPt,2), x, y, z);
            }
 
-          // Compute the cross product of curluFace with basis
+          // compute the cross product of curluFace with basis
            for (int nF = 0; nF < numFieldsD; nF++){
               for(int nPt = 0; nPt < numFacePoints; nPt++){
                   worksetDataCrossField(0,nF,nPt,0) = curluFace(0,nPt,1)*worksetDValsTransformedWeighted(0,nF,nPt,2)
@@ -1051,7 +1054,7 @@ int main(int argc, char *argv[]) {
               } //nPt
            } //nF
 
-          // Integrate
+          // integrate
            fst::integrate<double>(gDBoundary, worksetFaceN, worksetDataCrossField,
                              COMP_CPP);
 
@@ -1111,7 +1114,7 @@ int main(int argc, char *argv[]) {
    EpetraExt::RowMatrixToMatlabFile("mag_m2_matrix.dat",MassD);
    EpetraExt::RowMatrixToMatlabFile("mag_k2_matrix.dat",StiffD);
    EpetraExt::RowMatrixToMatlabFile("mag_t1_matrix.dat",DCurl);
-   EpetraExt::MultiVectorToMatlabFile("rhs2_vector.dat",rhsD);
+   EpetraExt::MultiVectorToMatrixMarketFile("rhs2_vector.dat",rhsD,0,0,false);
 
    fSignsout.close();
 
