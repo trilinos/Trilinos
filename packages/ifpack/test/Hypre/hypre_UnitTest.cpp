@@ -31,7 +31,6 @@
 #include "Galeri_Maps.h"
 #include "Galeri_CrsMatrices.h"
 #include "Galeri_Utils.h"
-#include "EpetraExt_HypreIJMatrix.h"
 #include "Epetra_MultiVector.h"
 
 #include "Teuchos_UnitTestHarness.hpp"
@@ -105,19 +104,17 @@ TEUCHOS_UNIT_TEST( Ifpack_Hypre, ParameterList ){
     // To created objects must be free'd using delete
     Ifpack_Hypre preconditioner(Matrix);
   
-    HYPRE_IJMatrix hypre_mat = preconditioner.HypreMatrix();
-    EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix matrix(hypre_mat);
     
     int numVec = 2;
     Epetra_MultiVector X(Matrix->RowMatrixRowMap(), 2);
     Epetra_MultiVector KnownX(Matrix->RowMatrixRowMap(), 2);
     KnownX.Random();
     Epetra_MultiVector B(Matrix->RowMatrixRowMap(), 2);
-    matrix.Multiply(false, KnownX, B);
+    Matrix->Multiply(false, KnownX, B);
 
-    AztecOO problem(&matrix, &X, &B);
-    problem.SetPrecOperator(&matrix);
-    problem.Iterate(1000, 1e-7);
+    //AztecOO problem(&matrix, &X, &B);
+    //problem.SetPrecOperator(&matrix);
+    //problem.Iterate(1000, 1e-7);
   
     Teuchos::ParameterList list("Preconditioner List");
   //RCP<FunctionParameter> functs[11];

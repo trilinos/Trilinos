@@ -64,7 +64,7 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   Time_(A_->Comm()),
   SolveOrPrec_(Solver)
 {
-  int ierr;
+  int ierr = 0;
   IsSolverSetup_ = new bool[1];
   IsPrecondSetup_ = new bool[1];
   IsSolverSetup_[0] = false;
@@ -77,25 +77,25 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   // First make a copy of the Epetra Matrix as a Hypre Matrix
   int ilower = A_->RowMatrixRowMap().MinMyGID();
   int iupper = A_->RowMatrixRowMap().MaxMyGID();
-  HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_);
-  HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR);
-  HYPRE_IJMatrixInitialize(HypreA_);
+  ierr += HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_);
+  ierr += HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR);
+  ierr += HYPRE_IJMatrixInitialize(HypreA_);
   for(int i = 0; i < A_->NumMyRows(); i++){
     int numElements;
-    A_->NumMyRowEntries(i,numElements);
+    ierr += A_->NumMyRowEntries(i,numElements);
     std::vector<int> indices; indices.resize(numElements);
     std::vector<double> values; values.resize(numElements);
     int numEntries;
-    A_->ExtractMyRowCopy(i, numElements, numEntries, &values[0], &indices[0]);
+    ierr += A_->ExtractMyRowCopy(i, numElements, numEntries, &values[0], &indices[0]);
     for(int j = 0; j < numEntries; j++){
       indices[j] = A_->RowMatrixColMap().GID(indices[j]);
     }
     int GlobalRow[1];
     GlobalRow[0] = A_->RowMatrixRowMap().GID(i);
-    HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]);
+    ierr += HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]);
   }
-  HYPRE_IJMatrixAssemble(HypreA_);
-  HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_);
+  ierr += HYPRE_IJMatrixAssemble(HypreA_);
+  ierr += HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_);
 
   // Next create vectors that will be used when ApplyInverse() is called
   ierr += HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_);
@@ -123,14 +123,15 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
 }
 
 void Ifpack_Hypre::Destroy(){
-  HYPRE_IJMatrixDestroy(HypreA_);
-  HYPRE_IJVectorDestroy(XHypre_);
-  HYPRE_IJVectorDestroy(YHypre_);
+  int ierr = 0;
+  ierr += HYPRE_IJMatrixDestroy(HypreA_);
+  ierr += HYPRE_IJVectorDestroy(XHypre_);
+  ierr += HYPRE_IJVectorDestroy(YHypre_);
   if(IsSolverSetup_[0]){
-    SolverDestroyPtr_(Solver_);
+    ierr += SolverDestroyPtr_(Solver_);
   }
   if(IsPrecondSetup_[0]){
-    PrecondDestroyPtr_(Preconditioner_);
+    ierr += PrecondDestroyPtr_(Preconditioner_);
   }
   delete[] IsSolverSetup_;
   delete[] IsPrecondSetup_;
@@ -145,23 +146,24 @@ int Ifpack_Hypre::Initialize(){
 }
 
 int Ifpack_Hypre::SetParameters(Teuchos::ParameterList& list){
+  int ierr = 0;
   List_ = list;
   Hypre_Solver solType = list.get("Solver", PCG);
-  SetSolverType(solType);
+  ierr += SetSolverType(solType);
   Hypre_Solver precType = list.get("Preconditioner", Euclid);
-  SetPrecondType(precType);
+  ierr += SetPrecondType(precType);
   Hypre_Chooser chooser = list.get("SolveOrPrecondition", Solver);
   SolveOrPrec_ = chooser;
   bool SetPrecond = list.get("SetPreconditioner", false);
-  SetParameter(SetPrecond);
+  ierr += SetParameter(SetPrecond);
   int NumFunctions = list.get("NumFunctions", 0);
   if(NumFunctions > 0){
     RCP<FunctionParameter>* params = list.get<RCP<FunctionParameter>*>("Functions");
     for(int i = 0; i < NumFunctions; i++){
-      params[i]->CallFunction(Solver_, Preconditioner_);
+      ierr += params[i]->CallFunction(Solver_, Preconditioner_);
     }
   }
-  return 0;
+  return ierr;
 }
 
 int Ifpack_Hypre::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int), int parameter){
@@ -254,17 +256,18 @@ int Ifpack_Hypre::SetParameter(bool UsePreconditioner){
 }
 
 int Ifpack_Hypre::Compute(){
+  int ierr = 0;
   Time_.ResetStartTime();
   if(SolveOrPrec_ == Solver){
-    SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_);
-    IsSolverSetup_[0] = true;
+    ierr += SolverSetupPtr_(Solver_, ParMatrix_, ParX_, ParY_);
+    ierr += IsSolverSetup_[0] = true;
   } else {
-    PrecondSetupPtr_(Preconditioner_, ParMatrix_, ParX_, ParY_);
-    IsPrecondSetup_[0] = true;
+    ierr += PrecondSetupPtr_(Preconditioner_, ParMatrix_, ParX_, ParY_);
+    ierr += IsPrecondSetup_[0] = true;
   }
   NumCompute_ = NumCompute_ + 1;
   ComputeTime_ = ComputeTime_ + Time_.ElapsedTime();
-  return 0;
+  return ierr;
 }
 
 const Epetra_Map& Ifpack_Hypre::OperatorDomainMap(){
@@ -277,8 +280,8 @@ const Epetra_Map& Ifpack_Hypre::OperatorRangeMap(){
 
 
 int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
-  Time_.ResetStartTime();
   int ierr = 0;
+  Time_.ResetStartTime();
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors()) return -1;  // X and Y must have same number of vectors
@@ -302,7 +305,7 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
     double *YTemp = YLocal_->data;
     YLocal_->data = YValues;
 
-    HYPRE_ParVectorSetConstantValues(ParY_, 0.0);
+    ierr += HYPRE_ParVectorSetConstantValues(ParY_, 0.0);
     if(SolveOrPrec_ == Solver){
       // Use the solver methods
       ierr += SolverSolvePtr_(Solver_, ParMatrix_, ParX_, ParY_);
@@ -551,7 +554,6 @@ int Ifpack_Hypre::CreateSolver(){
   MPI_Comm comm;
   HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   return (this->*SolverCreatePtr_)(comm, &Solver_);
-  return 0;
 }
 
 int Ifpack_Hypre::CreatePrecond(){
