@@ -344,6 +344,7 @@ public:
   */
     int SetParameter(Hypre_Chooser chooser);
 
+    int CallFunctions() const;
   //! If set true, transpose of this operator will be applied.
   /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
       affects only the Apply() and ApplyInverse() methods.  If the implementation of this interface 

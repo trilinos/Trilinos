@@ -260,6 +260,14 @@ int Ifpack_Hypre::Compute(){
   return 0;
 }
 
+int Ifpack_Hypre::CallFunctions() const{
+  for(int i = 0; i < NumFunsToCall_; i++){
+    IFPACK_CHK_ERR(FunsToCall_[i]->CallFunction(Solver_, Preconditioner_));
+  }
+  
+  return 0;
+}
+
 const Epetra_Map& Ifpack_Hypre::OperatorDomainMap(){
   return *MySimpleMap_;
 }
