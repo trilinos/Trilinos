@@ -28,12 +28,30 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   example_01.cpp
-    \brief  Example creation of mass and stiffness matrices for div-curl system on a hexadedral mesh using div-conforming elements.
+/** \file   example_02.cpp
+   \brief  Example building mass and stiffness matrices and right hand side
+            for a div-curl system on a hexahedral mesh using div-conforming
+            (face) elements.
+
+                       curl u = g  in Omega
+                        div u = h  in Omega
+                          u.n = 0  on Gamma
+
+            Discrete linear system for face element coeficients (x):
+
+                      (Kd + Md*Dc*McInv*Dc'*Md)x = b
+
+                      Kd    - Hdiv stiffness matrix
+                      Md    - Hdiv mass matrix
+                      Dc    - Edge to Face incidence matrix
+                      McInv - Hcurl mass matrix inverse
+                      b     - right hand side vector
+
+
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
  
     \remark Sample command line
-    \code   ./example_01.exe 10 10 10 false 1.0 10.0 0.0 1.0 -1.0 1.0 -1.0 1.0 \endcode
+    \code   ./example_02.exe 10 10 10 false 1.0 1.0 -1.0 1.0 -1.0 1.0 -1.0 1.0 \endcode
 */
 
 // Intrepid includes
@@ -54,12 +72,12 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
+#include "Epetra_Vector.h"
 
 // Teuchos includes
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -67,11 +85,6 @@
 // EpetraExt includes
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
-
-// Pamgen includes
-#include "create_inline_mesh.h"
-#include "../mesh_spec_lt/im_exodusII.h"
-#include "../mesh_spec_lt/im_ne_nemesisI.h"
 
 using namespace std;
 using namespace Intrepid;
@@ -84,8 +97,6 @@ int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, dou
 int evalCurlCurlu(double & curlCurlu0, double & curlCurlu1, double & curlCurlu2, double & x, double & y, double & z);
 
 int main(int argc, char *argv[]) {
-
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
    //Check number of arguments
     TEST_FOR_EXCEPTION( ( argc < 13 ),
@@ -109,7 +120,7 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|          Example: Div-Curl System on Hexahedral Mesh                        |\n" \
+    << "|   Example: Div-Curl System on Hexahedral Mesh (Div-Conforming)              |\n" \
     << "|                                                                             |\n" \
     << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
     << "|                      Denis Ridzal  (dridzal@sandia.gov),                    |\n" \
@@ -180,6 +191,16 @@ int main(int argc, char *argv[]) {
                  std::setw(5) << NY <<
                  std::setw(5) << NZ << "\n\n";
 
+   // Print mesh information
+    int numElems = NX*NY*NZ;
+    int numNodes = (NX+1)*(NY+1)*(NZ+1);
+    int numEdges = (NX)*(NY + 1)*(NZ + 1) + (NX + 1)*(NY)*(NZ + 1) + (NX + 1)*(NY + 1)*(NZ);
+    int numFaces = (NX)*(NY)*(NZ + 1) + (NX)*(NY + 1)*(NZ) + (NX + 1)*(NY)*(NZ);
+    std::cout << " Number of Elements: " << numElems << " \n";
+    std::cout << "    Number of Nodes: " << numNodes << " \n";
+    std::cout << "    Number of Edges: " << numEdges << " \n";
+    std::cout << "    Number of Faces: " << numFaces << " \n\n";
+
    // Cube
     double leftX = -1.0, rightX = 1.0;
     double leftY = -1.0, rightY = 1.0;
@@ -190,129 +211,48 @@ int main(int argc, char *argv[]) {
     double hy = (rightY-leftY)/((double)NY);
     double hz = (rightZ-leftZ)/((double)NZ);
 
-   // Create Pamgen input file
-    stringstream ss;
-    ss.clear();
-    ss << "mesh \n";
-    ss << "  rectilinear \n"; 
-    ss << "     nx = " << NX << "\n";
-    ss << "     ny = " << NY << "\n"; 
-    ss << "     nz = " << NZ << "\n"; 
-    ss << "     bx = 1\n";
-    ss << "     by = 1\n"; 
-    ss << "     bz = 1\n"; 
-    ss << "     gmin = " << leftX << " " << leftY << " " << leftZ << "\n";
-    ss << "     gmax = " << rightX << " " << rightY << " " << rightZ << "\n";
-    ss << "  end \n";
-    ss << "  set assign \n";
-    ss << "     sideset, ilo, 1\n"; 
-    ss << "     sideset, jlo, 2\n"; 
-    ss << "     sideset, klo, 3\n"; 
-    ss << "     sideset, ihi, 4\n"; 
-    ss << "     sideset, jhi, 5\n"; 
-    ss << "     sideset, khi, 6\n"; 
-    ss << "  end \n";
-    ss << "end \n";
-
-    string meshInput = ss.str();
-    std::cout << meshInput <<"\n";
-  
-   // Generate mesh with Pamgen
-    int dim=3;
-    int rank=0;
-    int numProcs=1;
-    long int maxInt = 100000000;
-    Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
-    
-   // Get mesh size info
-    char title[100];
-    int numDim;
-    int numNodes;
-    int numElems;
-    int numElemBlk;
-    int numNodeSets;
-    int numSideSets;
-    int id = 0;
-
-    im_ex_get_init(id, title, &numDim, &numNodes, 
-                                &numElems, &numElemBlk, &numNodeSets,
-                                &numSideSets);
-
-   // Read node coordinates and place in field container
-    FieldContainer<double> nodeCoord(numNodes,dim);
-    double * nodeCoordx = new double [numNodes];
-    double * nodeCoordy = new double [numNodes];
-    double * nodeCoordz = new double [numNodes];
-    im_ex_get_coord(id,nodeCoordx,nodeCoordy,nodeCoordz);
-    for (int i=0; i<numNodes; i++) {          
-      nodeCoord(i,0)=nodeCoordx[i];
-      nodeCoord(i,1)=nodeCoordy[i];
-      nodeCoord(i,2)=nodeCoordz[i];
-    }
-
-    delete [] nodeCoordx;
-    delete [] nodeCoordy;
-    delete [] nodeCoordz;
-
-   // Get node-element connectivity
-    FieldContainer<int> elemToNode(numElems,numNodesPerElem);
-    int elemBlkId = 1;
-    int * connect = new int [numNodesPerElem*numElems];
-    im_ex_get_elem_conn(id,elemBlkId,connect);
-    for (int i=0; i<numElems; i++) {
-       for (int j=0; j<numNodesPerElem; j++) {
-           elemToNode(i,j)=connect[i*numNodesPerElem + j] - 1;
-       }
-    }
-    delete [] connect;
-
-   // Get boundary (side set) information
-   // Side set 1 - left,  Side set 2 - front, Side set 3 - bottom,
-   // Side set 4 - right, Side set 5 - back,  Side set 6 - top
-    int * sideSetIds = new int [numSideSets];
-    FieldContainer<int> numElemsOnBoundary(numSideSets);
-    int numSidesinSet;
-    int numDFinSet;
-    int maxNumSidesinSet = 0;
-    im_ex_get_side_set_ids(id,sideSetIds);
-    for (int i=0; i<numSideSets; i++) {
-        im_ex_get_side_set_param(id,sideSetIds[i],&numSidesinSet,&numDFinSet);
-        numElemsOnBoundary(i)=numSidesinSet;
-        if (numSidesinSet > maxNumSidesinSet)
-           maxNumSidesinSet = numSidesinSet; 
-     }
-   // Container for global element numbers of boundary elements for side sets 1-6
-    FieldContainer<int> elemsOnBoundary(numSideSets,maxNumSidesinSet);
-   // Container for local face numbers corresponding to global elements in previous array
-    FieldContainer<int> facesOnBoundary(numSideSets,maxNumSidesinSet);
-    for (int i=0; i<numSideSets; i++) {
-        numSidesinSet=numElemsOnBoundary(i);
-        int * sideSetElemList = new int [numSidesinSet];
-        int * sideSetSideList = new int [numSidesinSet];
-        im_ex_get_side_set(id,sideSetIds[i],sideSetElemList,sideSetSideList);
-        for (int j=0; j<numSidesinSet; j++) {
-          elemsOnBoundary(i,j)=sideSetElemList[j] - 1;
-          facesOnBoundary(i,j)=sideSetSideList[j] - 1;
+   // Get nodal coordinates
+    FieldContainer<double> nodeCoord(numNodes, spaceDim);
+    FieldContainer<int> nodeOnBoundary(numNodes);
+    int inode = 0;
+    for (int k=0; k<NZ+1; k++) {
+      for (int j=0; j<NY+1; j++) {
+        for (int i=0; i<NX+1; i++) {
+          nodeCoord(inode,0) = leftX + (double)i*hx;
+          nodeCoord(inode,1) = leftY + (double)j*hy;
+          nodeCoord(inode,2) = leftZ + (double)k*hz;
+          if (k==0 || j==0 || i==0 || k==NZ || j==NY || i==NX){
+             nodeOnBoundary(inode)=1;
+          }
+          inode++;
         }
-        delete [] sideSetElemList;
-        delete [] sideSetSideList;
-     }
-    delete [] sideSetIds;
+      }
+    }
 
-   // Print mesh information  
-    int numEdges = (NX)*(NY + 1)*(NZ + 1) + (NX + 1)*(NY)*(NZ + 1) + (NX + 1)*(NY + 1)*(NZ);
-    int numFaces = (NX)*(NY)*(NZ + 1) + (NX)*(NY + 1)*(NZ) + (NX + 1)*(NY)*(NZ);
-    std::cout << " Number of Elements: " << numElems << " \n";
-    std::cout << "    Number of Nodes: " << numNodes << " \n";
-    std::cout << "    Number of Edges: " << numEdges << " \n";
-    std::cout << "    Number of Faces: " << numFaces << " \n\n";
-  
+   // Element to Node map
+    FieldContainer<int> elemToNode(numElems, numNodesPerElem);
+    int ielem = 0;
+    for (int k=0; k<NZ; k++) {
+      for (int j=0; j<NY; j++) {
+        for (int i=0; i<NX; i++) {
+          elemToNode(ielem,0) = (NY + 1)*(NX + 1)*k + (NX + 1)*j + i;
+          elemToNode(ielem,1) = (NY + 1)*(NX + 1)*k + (NX + 1)*j + i + 1;
+          elemToNode(ielem,2) = (NY + 1)*(NX + 1)*k + (NX + 1)*(j + 1) + i + 1;
+          elemToNode(ielem,3) = (NY + 1)*(NX + 1)*k + (NX + 1)*(j + 1) + i;
+          elemToNode(ielem,4) = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*j + i;
+          elemToNode(ielem,5) = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*j + i + 1;
+          elemToNode(ielem,6) = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*(j + 1) + i + 1;
+          elemToNode(ielem,7) = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*(j + 1) + i;
+          ielem++;
+        }
+      }
+    }
+
   // Get edge connectivity
     FieldContainer<int> edgeToNode(numEdges, numNodesPerEdge);
     FieldContainer<int> elemToEdge(numElems, numEdgesPerElem);
-    int ielem;
     int iedge = 0;
-    int inode = 0;
+    inode = 0;
     for (int k=0; k<NZ+1; k++) {
       for (int j=0; j<NY+1; j++) {
         for (int i=0; i<NX+1; i++) {
@@ -414,6 +354,14 @@ int main(int argc, char *argv[]) {
       }
    }
 
+   // Find boundary edges
+    FieldContainer<int> edgeOnBoundary(numEdges);
+    for (int i=0; i<numEdges; i++){
+       if (nodeOnBoundary(edgeToNode(i,0)) && nodeOnBoundary(edgeToNode(i,1))){
+           edgeOnBoundary(i)=1;
+       }
+    }
+
    // Get face connectivity
     FieldContainer<int> faceToNode(numFaces, numNodesPerFace);
     FieldContainer<int> elemToFace(numElems, numFacesPerElem);
@@ -457,9 +405,9 @@ int main(int argc, char *argv[]) {
               if (i < NX) {
                  ielem=i+j*NX+k*NX*NY;
                  faceToEdge(iface,0)=elemToEdge(ielem,3);
-                 faceToEdge(iface,1)=elemToEdge(ielem,8);
+                 faceToEdge(iface,1)=elemToEdge(ielem,11);
                  faceToEdge(iface,2)=elemToEdge(ielem,7);
-                 faceToEdge(iface,3)=elemToEdge(ielem,11);
+                 faceToEdge(iface,3)=elemToEdge(ielem,8);
                  elemToFace(ielem,3)=iface;
                  if (i > 0) {
                     elemToFace(ielem-1,1)=iface;
@@ -468,9 +416,9 @@ int main(int argc, char *argv[]) {
               else if (i == NX) {
                  ielem=NX-1+j*NX+k*NX*NY;
                  faceToEdge(iface,0)=elemToEdge(ielem,1);
-                 faceToEdge(iface,1)=elemToEdge(ielem,9);
+                 faceToEdge(iface,1)=elemToEdge(ielem,10);
                  faceToEdge(iface,2)=elemToEdge(ielem,5);
-                 faceToEdge(iface,3)=elemToEdge(ielem,10);
+                 faceToEdge(iface,3)=elemToEdge(ielem,9);
                  elemToFace(ielem,1)=iface;
               }
               iface++;
@@ -505,37 +453,83 @@ int main(int argc, char *argv[]) {
          }
       }
    }
- 
-   // Output element to face connectivity
-    ofstream el2fout("elem2face.dat");
+
+   // Find boundary faces
+    FieldContainer<int> faceOnBoundary(numFaces);
+    for (int i=0; i<numFaces; i++){
+       if (nodeOnBoundary(faceToNode(i,0)) && nodeOnBoundary(faceToNode(i,1))
+          && nodeOnBoundary(faceToNode(i,2)) && nodeOnBoundary(faceToNode(i,3))){
+           faceOnBoundary(i)=1;
+       }
+    }
+
+#define DUMP_DATA
+#ifdef DUMP_DATA
+   // Output connectivity
+    ofstream fe2nout("elem2node.dat");
+    ofstream fe2eout("elem2edge.dat");
+    ofstream fe2fout("elem2face.dat");
     for (int k=0; k<NZ; k++) {
       for (int j=0; j<NY; j++) {
         for (int i=0; i<NX; i++) {
           int ielem = i + j * NX + k * NX * NY;
-          for (int l=0; l<numFacesPerElem; l++) {
-             el2fout << elemToFace(ielem,l) << "  ";
-          } 
-          el2fout << "\n";
+          for (int m=0; m<numNodesPerElem; m++){
+              fe2nout << elemToNode(ielem,m) <<"  ";
+           }
+          fe2nout <<"\n";
+          for (int l=0; l<numEdgesPerElem; l++) {
+             fe2eout << elemToEdge(ielem,l) << "  ";
+          }
+          fe2eout << "\n";
+          for (int n=0; n<numFacesPerElem; n++) {
+             fe2fout << elemToFace(ielem,n) << "  ";
+          }
+          fe2fout << "\n";
         }
       }
     }
-    el2fout.close();
+    fe2nout.close();
+    fe2eout.close();
+    fe2fout.close();
 
-   // Output face to edge and face to node connectivity
-    ofstream f2edout("face2edge.dat");
-    ofstream f2nout("face2node.dat");
-    for (int k=0; k<numFaces; k++) {
-       for (int i=0; i<numEdgesPerFace; i++) {
-           f2edout << faceToEdge(k,i) << "  ";
-       } 
-       for (int j=0; j<numNodesPerFace; j++) {
-           f2nout << faceToNode(k,j) << "  ";
-       } 
-       f2edout << "\n";
-       f2nout << "\n";
+    ofstream fed2nout("edge2node.dat");
+    for (int i=0; i<numEdges; i++) {
+       fed2nout << edgeToNode(i,0) <<" ";
+       fed2nout << edgeToNode(i,1) <<"\n";
     }
-    f2edout.close();
-    f2nout.close();
+    fed2nout.close();
+
+    ofstream ff2nout("face2node.dat");
+    ofstream ff2eout("face2edge.dat");
+    for (int i=0; i<numFaces; i++) {
+       for (int j=0; j<numNodesPerFace; j++) {
+           ff2nout << faceToNode(i,j) << "  ";
+       }
+       for (int k=0; k<numEdgesPerFace; k++) {
+           ff2eout << faceToEdge(i,k) << "  ";
+       }
+       ff2nout << "\n";
+       ff2eout << "\n";
+    }
+    ff2nout.close();
+    ff2eout.close();
+
+    ofstream fBnodeout("nodeOnBndy.dat");
+    ofstream fBedgeout("edgeOnBndy.dat");
+    ofstream fBfaceout("faceOnBndy.dat");
+    for (int i=0; i<numNodes; i++) {
+        fBnodeout << nodeOnBoundary(i) <<"\n";
+    }
+    for (int i=0; i<numEdges; i++) {
+        fBedgeout << edgeOnBoundary(i) <<"\n";
+    }
+    for (int i=0; i<numFaces; i++) {
+        fBfaceout << faceOnBoundary(i) <<"\n";
+    }
+    fBnodeout.close();
+    fBedgeout.close();
+    fBfaceout.close();
+#endif
 
 
    // Set material properties using undeformed grid assuming each element has only one value of mu
@@ -577,18 +571,16 @@ int main(int argc, char *argv[]) {
       }
     }
 
-    // Print coords
-    FILE *f=fopen("coords.dat","w");
-    inode=0;
-    for (int k=0; k<NZ+1; k++) {
-      for (int j=0; j<NY+1; j++) {
-        for (int i=0; i<NX+1; i++) {          
-          fprintf(f,"%22.16e %22.16e %22.16e\n",nodeCoord(inode,0),nodeCoord(inode,1),nodeCoord(inode,2));
-          inode++;
-        }
-      }
+#ifdef DUMP_DATA
+   // Print nodal coords
+    ofstream fcoordout("coords.dat");
+    for (int i=0; i<numNodes; i++) {
+       fcoordout << nodeCoord(i,0) <<" ";
+       fcoordout << nodeCoord(i,1) <<" ";
+       fcoordout << nodeCoord(i,2) <<"\n";
     }
-    fclose(f);
+    fcoordout.close();
+#endif
 
 
 // **************************** INCIDENCE MATRIX **************************************
@@ -602,7 +594,7 @@ int main(int argc, char *argv[]) {
     Epetra_FECrsMatrix DCurl(Copy, globalMapD, globalMapC, 2);
 
     double vals[4];
-    vals[0]=1; vals[1]=1; vals[2]=-1; vals[3]=-1;
+    vals[0]=0.5; vals[1]=0.5; vals[2]=-0.5; vals[3]=-0.5;
     for (int j=0; j<numFaces; j++){
         int rowNum = j;
         int colNum[4];
@@ -632,6 +624,27 @@ int main(int argc, char *argv[]) {
     hexCub->getCubature(cubPoints, cubWeights);
 
 
+   // Get numerical integration points and weights for hexahedron face
+    //             (needed for rhs boundary term)
+
+    // Define topology of the face parametrization domain as [-1,1]x[-1,1]
+    CellTopology paramQuadFace(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+
+    // Define cubature
+    DefaultCubatureFactory<double>  cubFactoryFace;
+    Teuchos::RCP<Cubature<double> > hexFaceCubature = cubFactoryFace.create(paramQuadFace, 3);
+    int cubFaceDim    = hexFaceCubature -> getDimension();
+    int numFacePoints = hexFaceCubature -> getNumPoints();
+
+    // Define storage for cubature points and weights on [-1,1]x[-1,1]
+    FieldContainer<double> paramGaussWeights(numFacePoints);
+    FieldContainer<double> paramGaussPoints(numFacePoints,cubFaceDim);
+
+    // Define storage for cubature points on workset faces
+    hexFaceCubature -> getCubature(paramGaussPoints, paramGaussWeights);
+
+
+
 // ************************************** BASIS ***************************************
 
    // Define basis 
@@ -646,6 +659,7 @@ int main(int argc, char *argv[]) {
      FieldContainer<double> hexCVals(numFieldsC, numCubPoints, spaceDim); 
      FieldContainer<double> hexDVals(numFieldsD, numCubPoints, spaceDim); 
      FieldContainer<double> hexDivs(numFieldsD, numCubPoints); 
+     FieldContainer<double> worksetDVals(numFieldsD, numFacePoints, spaceDim);
 
      hexHCurlBasis.getValues(hexCVals, cubPoints, OPERATOR_VALUE);
      hexHDivBasis.getValues(hexDVals, cubPoints, OPERATOR_VALUE);
@@ -690,6 +704,18 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> rhsDatah(numCells, numCubPoints);
     FieldContainer<double> gD(numCells, numFieldsD);
     FieldContainer<double> hD(numCells, numFieldsD);
+    FieldContainer<double> gDBoundary(numCells, numFieldsD);
+    FieldContainer<double> refGaussPoints(numFacePoints,spaceDim);
+    FieldContainer<double> worksetGaussPoints(numCells,numFacePoints,spaceDim);
+    FieldContainer<double> worksetJacobians(numCells, numFacePoints, spaceDim, spaceDim);
+    FieldContainer<double> worksetJacobDet(numCells, numFacePoints);
+    FieldContainer<double> worksetFaceTu(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetFaceTv(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetFaceN(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetVFieldVals(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetDValsTransformed(numCells, numFieldsD, numFacePoints, spaceDim);
+    FieldContainer<double> curluFace(numCells, numFacePoints, spaceDim);
+    FieldContainer<double> worksetDataCrossField(numCells, numFieldsD, numFacePoints, spaceDim);
    // Container for cubature points in physical space
     FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
 
@@ -700,7 +726,9 @@ int main(int argc, char *argv[]) {
     Epetra_FECrsMatrix StiffD(Copy, globalMapD, numFieldsD);
     Epetra_FEVector rhsD(globalMapD);
 
+#ifdef DUMP_DATA
     ofstream fSignsout("faceSigns.dat");
+#endif
 
  // *** Element loop ***
     for (int k=0; k<numElems; k++) {
@@ -722,9 +750,13 @@ int main(int argc, char *argv[]) {
                elemToNode(k,refFaceToNode(j,1))==faceToNode(elemToFace(k,j),indf))
                 hexFaceSigns(0,j) = 1.0;
           }
+#ifdef DUMP_DATA
          fSignsout << hexFaceSigns(0,j) << "  ";
+#endif
        }
+#ifdef DUMP_DATA
        fSignsout << "\n";
+#endif
 
      // Edge signs
       for (int j=0; j<numEdgesPerElem; j++) {
@@ -762,16 +794,12 @@ int main(int argc, char *argv[]) {
       fst::applyRightFieldSigns<double>(massMatrixC, hexEdgeSigns);
 
      // assemble into global matrix
-      int err = 0;
       for (int row = 0; row < numFieldsC; row++){
         for (int col = 0; col < numFieldsC; col++){
             int rowIndex = elemToEdge(k,row);
             int colIndex = elemToEdge(k,col);
             double val = massMatrixC(0,row,col);
-            //err = MassC.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            //if (err > 0) {
-                MassC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            //}
+            MassC.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
@@ -794,16 +822,12 @@ int main(int argc, char *argv[]) {
       fst::applyRightFieldSigns<double>(massMatrixD, hexFaceSigns);
 
      // assemble into global matrix
-      err = 0;
       for (int row = 0; row < numFieldsD; row++){
         for (int col = 0; col < numFieldsD; col++){
             int rowIndex = elemToFace(k,row);
             int colIndex = elemToFace(k,col);
             double val = massMatrixD(0,row,col);
-            //err = MassD.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            //if (err > 0) {
-                MassD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            //}
+            MassD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
@@ -827,28 +851,21 @@ int main(int argc, char *argv[]) {
       fst::applyRightFieldSigns<double>(stiffMatrixD, hexFaceSigns);
 
      // assemble into global matrix
-      err = 0;
       for (int row = 0; row < numFieldsD; row++){
         for (int col = 0; col < numFieldsD; col++){
             int rowIndex = elemToFace(k,row);
             int colIndex = elemToFace(k,col);
             double val = stiffMatrixD(0,row,col);
-            err = StiffD.SumIntoGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            if (err > 0) {
-                StiffD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-            }
+            StiffD.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
 
 // ******************************* Build right hand side ************************************
 
       // transform integration points to physical points
-       FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
        CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
 
       // evaluate right hand side functions at physical points
-       FieldContainer<double> rhsDatag(numCells, numCubPoints, cubDim);
-       FieldContainer<double> rhsDatah(numCells, numCubPoints);
        for (int nPt = 0; nPt < numCubPoints; nPt++){
 
           double x = physCubPoints(0,nPt,0);
@@ -864,7 +881,7 @@ int main(int argc, char *argv[]) {
           rhsDatah(0,nPt) = evalDivu(x, y, z);
        }
 
-     // integrate (g,curl w) term
+     // integrate (curl g, w) term
       fst::integrate<double>(gD, rhsDatag, hexDValsTransformedWeighted,
                              COMP_CPP);
 
@@ -872,11 +889,114 @@ int main(int argc, char *argv[]) {
       fst::integrate<double>(hD, rhsDatah, hexDivsTransformedWeighted,
                              COMP_CPP);
 
+     // apply signs
+      fst::applyFieldSigns<double>(gD, hexFaceSigns);
+      fst::applyFieldSigns<double>(hD, hexFaceSigns);
+
+     // calculate boundary term, (g x w, n)_{\Gamma}
+      for (int i = 0; i < numFacesPerElem; i++){
+        if (faceOnBoundary(elemToFace(k,i))){
+
+         // Map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints
+            CellTools::mapToReferenceSubcell(refGaussPoints,
+                                   paramGaussPoints,
+                                   2, i, hex_8);
+
+         // Get basis values at points on reference cell
+           hexHDivBasis.getValues(worksetDVals, refGaussPoints, OPERATOR_VALUE);
+
+         // Compute Jacobians at Gauss pts. on reference face for all parent cells
+           CellTools::setJacobian(worksetJacobians, refGaussPoints,
+                         hexNodes, hex_8);
+           CellTools::setJacobianDet(worksetJacobDet, worksetJacobians);
+
+         // transform to physical coordinates
+            fst::HDIVtransformVALUE<double>(worksetDValsTransformed, worksetJacobians,
+                                   worksetJacobDet, worksetDVals);
+
+/*
+         // compute weighted measure
+            fst::computeMeasure<double>(worksetWeightedMeasure, worksetJacobDet, paramGaussWeights);
+
+         // multiply by weighted measure
+            fst::multiplyMeasure<double>(worksetDValsTransformedWeighted,
+                                   worksetWeightedMeasure, worksetDValsTransformed);
+         // multiply by weighted measure
+            fst::multiplyMeasure<double>(worksetDValsTransformedWeighted,
+                                   paramGaussWeights, worksetDValsTransformed);
+          // Compute the cross product of curluFace with basis
+           for (int nF = 0; nF < numFieldsD; nF++){
+              for(int nPt = 0; nPt < numFacePoints; nPt++){
+                for(int dim = 0; dim < spaceDim; dim++){
+                  worksetDValsTransformedWeighted(0,nF,nPt,dim) = worksetDValsTransformed(0,nF,nPt,dim)
+                                              *paramGaussWeights(nPt);
+                } //dim
+              } //nPt
+           } //nF
+
+*/
+
+         // Map Gauss points on quad from ref. face to face workset: refGaussPoints -> worksetGaussPoints
+            CellTools::mapToPhysicalFrame(worksetGaussPoints,
+                                refGaussPoints,
+                                hexNodes, hex_8);
+        // Compute face tangents
+            CellTools::getPhysicalFaceTangents(worksetFaceTu,
+                                     worksetFaceTv,
+                                     paramGaussPoints,
+                                     worksetJacobians,
+                                     i, hex_8);
+
+         // Face outer normals (relative to parent cell) are uTan x vTan
+            RealSpaceTools<double>::vecprod(worksetFaceN, worksetFaceTu, worksetFaceTv);
+
+
+         // Evaluate curl u at face points
+           for(int nPt = 0; nPt < numFacePoints; nPt++){
+
+             double x = worksetGaussPoints(0, nPt, 0);
+             double y = worksetGaussPoints(0, nPt, 1);
+             double z = worksetGaussPoints(0, nPt, 2);
+
+             evalCurlu(curluFace(0,nPt,0), curluFace(0,nPt,1), curluFace(0,nPt,2), x, y, z);
+           }
+
+          // Compute the cross product of curluFace with basis and multiply by weights
+           for (int nF = 0; nF < numFieldsD; nF++){
+              for(int nPt = 0; nPt < numFacePoints; nPt++){
+                  worksetDataCrossField(0,nF,nPt,0) = (curluFace(0,nPt,1)*worksetDValsTransformed(0,nF,nPt,2)
+                                 - curluFace(0,nPt,2)*worksetDValsTransformed(0,nF,nPt,1))
+                                  * paramGaussWeights(nPt);
+                  worksetDataCrossField(0,nF,nPt,1) = (curluFace(0,nPt,2)*worksetDValsTransformed(0,nF,nPt,0)
+                                 - curluFace(0,nPt,0)*worksetDValsTransformed(0,nF,nPt,2))
+                                  * paramGaussWeights(nPt);
+                  worksetDataCrossField(0,nF,nPt,2) = (curluFace(0,nPt,0)*worksetDValsTransformed(0,nF,nPt,1)
+                                 - curluFace(0,nPt,1)*worksetDValsTransformed(0,nF,nPt,0))
+                                  *paramGaussWeights(nPt);
+              } //nPt
+           } //nF
+
+          // Integrate
+           fst::integrate<double>(gDBoundary, worksetFaceN, worksetDataCrossField,
+                             COMP_CPP);
+
+          // apply signs
+           fst::applyFieldSigns<double>(gDBoundary, hexFaceSigns);
+
+          // add into gD term
+            for (int nF = 0; nF < numFieldsD; nF++){
+                gD(0,nF) = gD(0,nF) - gDBoundary(0,nF);
+            }
+
+        } // if faceOnBoundary
+      } // numFaces
+
+
     // assemble into global vector
      for (int row = 0; row < numFieldsD; row++){
-           int rowIndex = elemToEdge(k,row);
-           double val = gD(0,row)-hD(0,row);
-           err = rhsD.SumIntoGlobalValues(1, &rowIndex, &val);
+           int rowIndex = elemToFace(k,row);
+           double val = hD(0,row)+gD(0,row);
+           rhsD.SumIntoGlobalValues(1, &rowIndex, &val);
      }
  
      
@@ -889,56 +1009,165 @@ int main(int argc, char *argv[]) {
    StiffD.GlobalAssemble(); StiffD.FillComplete();
    rhsD.GlobalAssemble();
    
+#ifdef DUMP_DATA
+   fSignsout.close();
+#endif
+
+  // Build the inverse diagonal for MassC
+   Epetra_CrsMatrix MassCinv(Copy,MassC.RowMap(),MassC.RowMap(),1);
+   Epetra_Vector DiagC(MassC.RowMap());
+
+   DiagC.PutScalar(1.0);
+   MassC.Multiply(false,DiagC,DiagC);
+   for(int i=0; i<DiagC.MyLength(); i++) {
+     DiagC[i]=1.0/DiagC[i];
+   }
+   for(int i=0; i<DiagC.MyLength(); i++) {
+     int CID=MassC.GCID(i);
+     MassCinv.InsertGlobalValues(MassC.GRID(i),1,&(DiagC[i]),&CID);
+   }
+   MassCinv.FillComplete();
+
+  // Set value to zero on diagonal that cooresponds to boundary edge
+   for(int i=0;i<numEdges;i++) {
+     if (edgeOnBoundary(i)){
+      double val=0.0;
+      MassCinv.ReplaceGlobalValues(i,1,&val,&i);
+     }
+   }
+
+    int numEntries;
+    double *values;
+    int *cols;
+
+  // Adjust matrices and rhs due to boundary conditions
+   for (int row = 0; row<numFaces; row++){
+      MassD.ExtractMyRowView(row,numEntries,values,cols);
+        for (int i=0; i<numEntries; i++){
+           if (faceOnBoundary(cols[i])) {
+             values[i]=0;
+          }
+       }
+      StiffD.ExtractMyRowView(row,numEntries,values,cols);
+        for (int i=0; i<numEntries; i++){
+           if (faceOnBoundary(cols[i])) {
+             values[i]=0;
+          }
+       }
+    }
+   for (int row = 0; row<numFaces; row++){
+       if (faceOnBoundary(row)) {
+          int rowindex = row;
+          StiffD.ExtractMyRowView(row,numEntries,values,cols);
+          for (int i=0; i<numEntries; i++){
+             values[i]=0;
+          }
+          MassD.ExtractMyRowView(row,numEntries,values,cols);
+          for (int i=0; i<numEntries; i++){
+             values[i]=0;
+          }
+         rhsD[0][row]=0;
+         double val = 1.0;
+         StiffD.ReplaceGlobalValues(1, &rowindex, 1, &rowindex, &val);
+       }
+    }
+
+#ifdef DUMP_DATA
   // Dump matrices to disk
-   EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
+   EpetraExt::RowMatrixToMatlabFile("mag_m1inv_matrix.dat",MassCinv);
    EpetraExt::RowMatrixToMatlabFile("mag_m2_matrix.dat",MassD);
    EpetraExt::RowMatrixToMatlabFile("mag_k2_matrix.dat",StiffD);
    EpetraExt::RowMatrixToMatlabFile("mag_t1_matrix.dat",DCurl);
-   EpetraExt::MultiVectorToMatlabFile("rhs2_vector.dat",rhsD);
-
-   fSignsout.close();
-
- // delete mesh
- Delete_Pamgen_Mesh();
+   EpetraExt::MultiVectorToMatrixMarketFile("mag_rhs2_vector.dat",rhsD,0,0,false);
+#endif
 
  // reset format state of std::cout
  std::cout.copyfmt(oldFormatState);
  
  return 0;
 }
-
 // Calculates value of exact solution u
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
  {
+
+   // function 1
+    uExact0 = exp(y+z)*(x+1.0)*(x-1.0);
+    uExact1 = exp(x+z)*(y+1.0)*(y-1.0);
+    uExact2 = exp(x+y)*(z+1.0)*(z-1.0);
+
+ /*
+   // function 2
     uExact0 = cos(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
     uExact1 = cos(M_PI*x)*cos(M_PI*z)*(y+1.0)*(y-1.0);
     uExact2 = cos(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
 
+ */
+ /*
+   // function 3
+    uExact0 = x*x-1.0;
+    uExact1 = y*y-1.0;
+    uExact2 = z*z-1.0;
+
+   // function 4
+    uExact0 = sin(M_PI*x);
+    uExact1 = sin(M_PI*y);
+    uExact2 = sin(M_PI*z);
+ */
+
    return 0;
  }
-
 // Calculates divergence of exact solution u
  double evalDivu(double & x, double & y, double & z)
  {
-   double divu = 2.0*x*cos(M_PI*y)*cos(M_PI*z) + 2.0*y*cos(M_PI*x)*cos(M_PI*z)
-                 + 2.0*z*cos(M_PI*x)*cos(M_PI*y);
+
+   // function 1
+    double divu = 2.0*x*exp(y+z)+2.0*y*exp(x+z)+2.0*z*exp(x+y);
+
+   // function 2
+  //  double divu = 2.0*x*cos(M_PI*y)*cos(M_PI*z) + 2.0*y*cos(M_PI*x)*cos(M_PI*z)
+  //                 + 2.0*z*cos(M_PI*x)*cos(M_PI*y);
+
+   // function 3
+   // double divu = 2.0*(x + y + z);
+
+   // function 4
+   // double divu = M_PI*(cos(M_PI*x)+cos(M_PI*y)+cos(M_PI*z));
+
    return divu;
  }
-
-
 // Calculates curl of exact solution u
  int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z)
  {
-   double duxdy = -M_PI*sin(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
-   double duxdz = -M_PI*sin(M_PI*z)*cos(M_PI*y)*(x+1.0)*(x-1.0);
-   double duydx = -M_PI*sin(M_PI*x)*cos(M_PI*z)*(y+1.0)*(y-1.0);
-   double duydz = -M_PI*sin(M_PI*z)*cos(M_PI*x)*(y+1.0)*(y-1.0);
-   double duzdx = -M_PI*sin(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
-   double duzdy = -M_PI*sin(M_PI*y)*cos(M_PI*x)*(z+1.0)*(z-1.0);
 
-   curlu0 = duzdy - duydz;
-   curlu1 = duxdz - duzdx;
-   curlu2 = duydx - duxdy;
+   // function 1
+    double duxdy = exp(y+z)*(x+1.0)*(x-1.0);
+    double duxdz = exp(y+z)*(x+1.0)*(x-1.0);
+    double duydx = exp(x+z)*(y+1.0)*(y-1.0);
+    double duydz = exp(x+z)*(y+1.0)*(y-1.0);
+    double duzdx = exp(x+y)*(z+1.0)*(z-1.0);
+    double duzdy = exp(x+y)*(z+1.0)*(z-1.0);
+
+  /*
+
+   // function 2
+    double duxdy = -M_PI*sin(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
+    double duxdz = -M_PI*sin(M_PI*z)*cos(M_PI*y)*(x+1.0)*(x-1.0);
+    double duydx = -M_PI*sin(M_PI*x)*cos(M_PI*z)*(y+1.0)*(y-1.0);
+    double duydz = -M_PI*sin(M_PI*z)*cos(M_PI*x)*(y+1.0)*(y-1.0);
+    double duzdx = -M_PI*sin(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
+    double duzdy = -M_PI*sin(M_PI*y)*cos(M_PI*x)*(z+1.0)*(z-1.0);
+  */
+
+    curlu0 = duzdy - duydz;
+    curlu1 = duxdz - duzdx;
+    curlu2 = duydx - duxdy;
+
+  /*
+   // function 3 and 4
+    curlu0 = 0;
+    curlu1 = 0;
+    curlu2 = 0;
+  */
 
    return 0;
  }
@@ -946,6 +1175,17 @@ int main(int argc, char *argv[]) {
 // Calculates curl of the curl of exact solution u
  int evalCurlCurlu(double & curlCurlu0, double & curlCurlu1, double & curlCurlu2, double & x, double & y, double & z)
 {
+
+   // function 1
+    double dcurlu0dy = exp(x+y)*(z+1.0)*(z-1.0) - 2.0*y*exp(x+z);
+    double dcurlu0dz = 2.0*z*exp(x+y) - exp(x+z)*(y+1.0)*(y-1.0);
+    double dcurlu1dx = 2.0*x*exp(y+z) - exp(x+y)*(z+1.0)*(z-1.0);
+    double dcurlu1dz = exp(y+z)*(x+1.0)*(x-1.0) - 2.0*z*exp(x+y);
+    double dcurlu2dx = exp(x+z)*(y+1.0)*(y-1.0) - 2.0*x*exp(y+z);
+    double dcurlu2dy = 2.0*y*exp(x+z) - exp(y+z)*(x+1.0)*(x-1.0);
+
+ /*
+   // function 2
     double dcurlu0dy = -M_PI*M_PI*cos(M_PI*y)*cos(M_PI*x)*(z+1.0)*(z-1.0)
                            + 2.0*y*M_PI*sin(M_PI*z)*cos(M_PI*x);
     double dcurlu0dz = -2.0*z*M_PI*sin(M_PI*y)*cos(M_PI*x)
@@ -958,10 +1198,20 @@ int main(int argc, char *argv[]) {
                            + 2.0*x*M_PI*sin(M_PI*y)*cos(M_PI*z);
     double dcurlu2dy = -2.0*y*M_PI*sin(M_PI*x)*cos(M_PI*z)
                           + M_PI*M_PI*cos(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
-                       
+ */
+
     curlCurlu0 = dcurlu2dy - dcurlu1dz;
     curlCurlu1 = dcurlu0dz - dcurlu2dx;
     curlCurlu2 = dcurlu1dx - dcurlu0dy;
 
+ /*
+   // function 3 and 4
+    curlCurlu0 = 0.0;
+    curlCurlu1 = 0.0;
+    curlCurlu2 = 0.0;
+ */
+
     return 0;
 }
+
+
