@@ -497,7 +497,7 @@ int main(int argc, char *argv[]) {
 
    // Generate mesh with Pamgen
 
-    long int maxInt = 9223372036854775807LL;
+    long long maxInt = 9223372036854775807LL;
     Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
     
    // Get mesh size info
