@@ -73,6 +73,15 @@ namespace Kokkos {
     }
   };
 
+  template <class Scalar, class Node>
+  struct DotOp {
+    typename Node::template buffer<const Scalar>::buffer_t x, y;
+    typedef Scalar ReductionType;
+    inline static Scalar identity() {return 0.0;}
+    Scalar reduce(Scalar x, Scalar y) {return x+y;}
+    Scalar generate(int i) {return x[i]*y[i];}
+  };
+
   template <class MV>
   class DefaultArithmetic {
     public:

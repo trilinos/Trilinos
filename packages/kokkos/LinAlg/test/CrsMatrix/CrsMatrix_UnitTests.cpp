@@ -40,6 +40,7 @@ namespace {
 
   using Kokkos::DefaultNode;
   using Kokkos::CrsMatrix;
+  using Kokkos::size_type;
 
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
@@ -69,7 +70,7 @@ namespace {
   {
     // constant nnz per row
     {
-      const Ordinal NNZperRow = 5;
+      const size_type NNZperRow = 5;
       CrsMatrix<Scalar,Ordinal,Node> A;
       TEST_EQUALITY_CONST(A.getNumRows(), 0);
       TEST_EQUALITY_CONST(A.getNumEntries(), 0);
@@ -84,8 +85,8 @@ namespace {
       TEST_EQUALITY_CONST(A.getNumEntries(), 0);
       // something interesting...
       // NNZperRow = {0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5, ...}
-      std::vector<Ordinal> NNZperRow(N);
-      Ordinal expNNZ = 0;
+      std::vector<size_type> NNZperRow(N);
+      size_type expNNZ = 0;
       for (int i=0; i < N; ++i) {NNZperRow[i] = i%6; expNNZ += NNZperRow[i];}
       A.initializeProfile(N,&NNZperRow[0]);
       TEST_EQUALITY(A.getNumRows(), N);
@@ -101,11 +102,11 @@ namespace {
     TEST_EQUALITY_CONST(A.getNumRows(), 0);
     TEST_EQUALITY_CONST(A.getNumEntries(), 0);
     Node &node = A.getNode();
-    std::vector<Ordinal> NNZperRow(N);
+    std::vector<size_type> NNZperRow(N);
     NNZperRow[0] = 2;
     for (int i=1; i<N-1; ++i) NNZperRow[i] = 3;
     NNZperRow[N-1] = 2;
-    Ordinal expNNZ = 4 + (N-2)*3;
+    size_type expNNZ = 4 + (N-2)*3;
     std::vector<Ordinal> expInds;
     std::vector<Scalar>  expVals;
     {
@@ -131,7 +132,7 @@ namespace {
     TEST_EQUALITY(A.getNumEntries(), expNNZ);
     const Scalar  * actVals = node.template viewBufferConst<Scalar >(expNNZ, A.const_values() ,0);
     const Ordinal * actInds = node.template viewBufferConst<Ordinal>(expNNZ, A.const_indices(),0);
-    for (int i=0; i<expNNZ; ++i) {
+    for (size_type i=0; i<expNNZ; ++i) {
       TEST_EQUALITY(expInds[i], actInds[i]);
       TEST_EQUALITY(expVals[i], actVals[i]);
     }

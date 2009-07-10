@@ -32,14 +32,17 @@
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_CrsMatrix.hpp"
+#include "Kokkos_DefaultArithmetic.hpp"
 #include "Kokkos_DefaultSparseMultiply.hpp"
 #include "Kokkos_Version.hpp"
 
 namespace {
 
   using Kokkos::MultiVector;
+  using Kokkos::CrsMatrix;
   using Kokkos::DefaultArithmetic;
   using Kokkos::DefaultSparseMultiply;
+  using Kokkos::size_type;
 
   int N = 1000;
 
@@ -58,6 +61,8 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsMatrix, SparseMultiply, Scalar, Ordinal )
   {
+    typedef CrsMatrix<Scalar,Ordinal,Node>  MAT;
+    typedef MultiVector<Scalar,Ordinal,Node> MV;
     // generate tridiagonal matrix:
     // [ 1 -1                   ]
     // [-1  2  -1               ]
@@ -66,11 +71,11 @@ namespace {
     // [                -1  2 -1]
     // [                   -1  1]
     if (N<2) return;
-    CrsMatrix<Scalar,Ordinal,Node> A;
+    MAT A;
+    Node &node = A.getNode();
     TEST_EQUALITY_CONST(A.getNumRows(), 0);
     TEST_EQUALITY_CONST(A.getNumEntries(), 0);
-    Node &node = A.getNode();
-    std::vector<Ordinal> NNZperRow(N);
+    std::vector<size_type> NNZperRow(N);
     NNZperRow[0] = 2;
     for (int i=1; i<N-1; ++i) NNZperRow[i] = 3;
     NNZperRow[N-1] = 2;
@@ -87,13 +92,20 @@ namespace {
       inds[0] = 0;   inds[1] = 1;   A.insertEntries(0  ,2,inds,vals+1);
       inds[0] = N-2; inds[1] = N-1; A.insertEntries(N-1,2,inds,vals  );
     }
-    DefaultSparseMultiply<Scalar,Ordinal,Node> dsm;
+    DefaultSparseMultiply<MAT,MV> dsm(node);
     dsm.initializeStructure(A);
-    dsm.initializeValeus(A);
+    dsm.initializeValues(A);
 
-    MultiVector<Scalar,Ordinal,Node> X, AX;
-    DefaultArithmetic<Scalar,Ordinal,Node>::Init(1.0,X);
+    typename Node::template buffer<Scalar>::buffer_t xdat, axdat;
+    xdat  = node.template allocBuffer<Scalar>(N);
+    axdat = node.template allocBuffer<Scalar>(N);
+    MV X, AX;
+    X.initializeValues(N,1,xdat,N);
+    AX.initializeValues(N,1,axdat,N);
+    DefaultArithmetic<MV>::Init(1.0,X);
     dsm.Apply(X,AX);
+    node.template freeBuffer<Scalar>(xdat);
+    node.template freeBuffer<Scalar>(axdat);
   }
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \

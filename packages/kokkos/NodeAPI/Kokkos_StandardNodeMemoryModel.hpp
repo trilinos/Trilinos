@@ -26,7 +26,7 @@ class StandardMemoryModel {
 
     template <class T> inline 
     void freeBuffer(typename buffer<T>::buffer_t buff) {
-      free(buff);
+      cfree(buff);
     }
 
     template <class T> inline
@@ -64,6 +64,10 @@ class StandardMemoryModel {
 
     void readyBuffers(const void * const * /*buffers*/, unsigned int /*numBuffers*/,
                             void * const * /*buffers*/, unsigned int /*numBuffers*/) {}
+
+  private:
+    void cfree(void *ptr)       {free(ptr);}
+    void cfree(const void *ptr) {free(const_cast<void *>(ptr));}
 
     //@}
 };

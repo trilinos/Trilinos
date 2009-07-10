@@ -31,6 +31,7 @@
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
+#include <cstddef>
 
 namespace Kokkos {
 
@@ -65,10 +66,10 @@ namespace Kokkos {
     //@{
 
     //! Initialize structure of matrix
-    void initializeProfile(int N, Ordinal nnzEachRow);
+    void initializeProfile(Ordinal N, size_type nnzEachRow);
 
     //! Initialize structure of matrix
-    void initializeProfile(int N, const Ordinal *nnzPerRow);
+    void initializeProfile(Ordinal N, const size_type *nnzPerRow);
 
     //@}
 
@@ -76,7 +77,7 @@ namespace Kokkos {
 
     //@{
 
-    int insertEntries(int row, int numEntries, const Ordinal *indices, const Scalar *values);
+    int insertEntries(Ordinal row, size_type numEntries, const Ordinal *indices, const Scalar *values);
 
     //@}
 
@@ -91,23 +92,23 @@ namespace Kokkos {
     Ordinal getNumRows() const;
 
     //! Number of matrix entries
-    Ordinal getNumEntries() const;
+    size_type getNumEntries() const;
 
     //! Compute buffers (non-const)
-    void data(typename Node::template buffer<Ordinal>::buffer_t &offsets,
+    void data(typename Node::template buffer<size_type>::buffer_t &offsets,
               typename Node::template buffer<Ordinal>::buffer_t &indices,
               typename Node::template buffer<Scalar>::buffer_t &values);
 
     //! Compute buffers (const)
-    void data(typename Node::template buffer<const Ordinal>::buffer_t &offsets,
+    void data(typename Node::template buffer<const size_type>::buffer_t &offsets,
               typename Node::template buffer<const Ordinal>::buffer_t &indices,
               typename Node::template buffer<const Scalar>::buffer_t &values) const;
 
     //! Offset compute buffer (const)
-    typename Node::template buffer<const Ordinal>::buffer_t const_offsets() const;
+    typename Node::template buffer<const size_type>::buffer_t const_offsets() const;
 
     //! Offset compute buffer (non-const)
-    typename Node::template buffer<Ordinal>::buffer_t offsets();
+    typename Node::template buffer<size_type>::buffer_t offsets();
 
     //! Index compute buffer (const)
     typename Node::template buffer<const Ordinal>::buffer_t const_indices() const;
@@ -131,8 +132,10 @@ namespace Kokkos {
     CrsMatrix(const CrsMatrix& source);
 
     Node &node_;
-    int numRows_, numEntries_;
-    typename Node::template buffer<Ordinal>::buffer_t offsets_, indices_;
+    Ordinal numRows_; 
+    size_type numEntries_;
+    typename Node::template buffer<size_type>::buffer_t offsets_;
+    typename Node::template buffer<Ordinal>::buffer_t indices_;
     typename Node::template buffer<Scalar>::buffer_t values_;
   };
 
@@ -149,26 +152,26 @@ namespace Kokkos {
     if (numRows_ > 0) {
       node_.template freeBuffer<Scalar>(values_);
       node_.template freeBuffer<Ordinal>(indices_);
-      node_.template freeBuffer<Ordinal>(offsets_);
+      node_.template freeBuffer<size_type>(offsets_);
     }
   }
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  void CrsMatrix<Scalar,Ordinal,Node>::initializeProfile(int N, Ordinal nnzEachRow)
+  void CrsMatrix<Scalar,Ordinal,Node>::initializeProfile(Ordinal N, size_type nnzEachRow)
   {
     numRows_ = N;
     if (numRows_ > 0) {
       numEntries_ = 0;
-      offsets_ = node_.template allocBuffer<Ordinal>(numRows_+1);
-      Ordinal *h_offsets = node_.template viewBuffer<Ordinal>(true,numRows_+1,offsets_,0);
+      offsets_ = node_.template allocBuffer<size_type>(numRows_+1);
+      size_type *h_offsets = node_.template viewBuffer<size_type>(true,numRows_+1,offsets_,0);
       numEntries_ = nnzEachRow*N;
       h_offsets[0] = 0;
-      for (int i=1; i<numRows_; ++i) {
+      for (Ordinal i=1; i<numRows_; ++i) {
         h_offsets[i] = h_offsets[i-1]+nnzEachRow;
       }
       h_offsets[numRows_] = numEntries_;
-      node_.template releaseView<Ordinal>(h_offsets); h_offsets = NULL;
+      node_.template releaseView<size_type>(h_offsets); h_offsets = NULL;
       values_  = node_.template allocBuffer<Scalar>(numEntries_);
       indices_ = node_.template allocBuffer<Ordinal>(numEntries_);
     }
@@ -176,19 +179,19 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  void CrsMatrix<Scalar,Ordinal,Node>::initializeProfile(int N, const Ordinal *nnzPerRow)
+  void CrsMatrix<Scalar,Ordinal,Node>::initializeProfile(Ordinal N, const size_type *nnzPerRow)
   {
     numRows_ = N;
     if (numRows_ > 0) {
       numEntries_ = 0;
-      offsets_ = node_.template allocBuffer<Ordinal>(numRows_+1);
-      Ordinal *h_offsets = node_.template viewBuffer<Ordinal>(true,numRows_+1,offsets_,0);
-      for (int i=0; i<numRows_; ++i) {
+      offsets_ = node_.template allocBuffer<size_type>(numRows_+1);
+      size_type *h_offsets = node_.template viewBuffer<size_type>(true,numRows_+1,offsets_,0);
+      for (Ordinal i=0; i<numRows_; ++i) {
         h_offsets[i] = numEntries_;
         numEntries_ += nnzPerRow[i];
       }
       h_offsets[numRows_] = numEntries_;
-      node_.template releaseView<Ordinal>(h_offsets); h_offsets = NULL;
+      node_.template releaseView<size_type>(h_offsets); h_offsets = NULL;
       values_  = node_.template allocBuffer<Scalar>(numEntries_);
       indices_ = node_.template allocBuffer<Ordinal>(numEntries_);
     }
@@ -196,15 +199,15 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  int CrsMatrix<Scalar,Ordinal,Node>::insertEntries(int row, int numEntries, const Ordinal *indices, const Scalar *values)
+  int CrsMatrix<Scalar,Ordinal,Node>::insertEntries(Ordinal row, size_type numEntries, const Ordinal *indices, const Scalar *values)
   {
     if (row < 0 || row >= numRows_) return -1;
-    const Ordinal *h_offsets = node_.template viewBufferConst<Ordinal>(2,offsets_,row);
-    const int rowNNZ = h_offsets[1]-h_offsets[0];
+    const size_type *h_offsets = node_.template viewBufferConst<size_type>(2,offsets_,row);
+    const size_type rowNNZ = h_offsets[1]-h_offsets[0];
     if (numEntries > rowNNZ) return -2;
     Ordinal *h_indices = node_.template viewBuffer<Ordinal>(true,rowNNZ,indices_,h_offsets[0]);
     Scalar  *h_values  = node_.template viewBuffer<Scalar >(true,rowNNZ,values_, h_offsets[0]);
-    int e = 0;
+    size_type e = 0;
     while (e != numEntries) {
       h_indices[e] = indices[e];
       h_values[e] = values[e];
@@ -215,7 +218,7 @@ namespace Kokkos {
       h_values[e] = 0;
       ++e;
     }
-    node_.template releaseView<Ordinal>(h_offsets); h_offsets = NULL;
+    node_.template releaseView<size_type>(h_offsets); h_offsets = NULL;
     node_.template releaseView<Ordinal>(h_indices); h_indices = NULL;
     node_.template releaseView<Scalar >(h_values);  h_values  = NULL;
     return 0;
@@ -233,12 +236,12 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  Ordinal CrsMatrix<Scalar,Ordinal,Node>::getNumEntries() const
+  size_type CrsMatrix<Scalar,Ordinal,Node>::getNumEntries() const
   { return numEntries_; }
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  void CrsMatrix<Scalar,Ordinal,Node>::data(typename Node::template buffer<Ordinal>::buffer_t &offsets,
+  void CrsMatrix<Scalar,Ordinal,Node>::data(typename Node::template buffer<size_type>::buffer_t &offsets,
                        typename Node::template buffer<Ordinal>::buffer_t &indices,
                        typename Node::template buffer<Scalar>::buffer_t &values)
   {
@@ -249,7 +252,7 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  void CrsMatrix<Scalar,Ordinal,Node>::data(typename Node::template buffer<const Ordinal>::buffer_t &offsets,
+  void CrsMatrix<Scalar,Ordinal,Node>::data(typename Node::template buffer<const size_type>::buffer_t &offsets,
                        typename Node::template buffer<const Ordinal>::buffer_t &indices,
                        typename Node::template buffer<const Scalar>::buffer_t &values) const
   {
@@ -260,7 +263,7 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  typename Node::template buffer<const Ordinal>::buffer_t 
+  typename Node::template buffer<const size_type>::buffer_t 
   CrsMatrix<Scalar,Ordinal,Node>::const_offsets() const
   {
     return offsets_;
@@ -268,7 +271,7 @@ namespace Kokkos {
 
   //==============================================================================
   template <class Scalar, class Ordinal, class Node>
-  typename Node::template buffer<Ordinal>::buffer_t 
+  typename Node::template buffer<size_type>::buffer_t 
   CrsMatrix<Scalar,Ordinal,Node>::offsets()
   {
     return offsets_;
@@ -312,7 +315,7 @@ namespace Kokkos {
   void CrsMatrix<Scalar,Ordinal,Node>::Print(std::ostream &out)
   {
     using std::endl;
-    const Ordinal *h_offsets = node_.template viewBufferConst<Ordinal>(numRows_+1,offsets_,0);
+    const size_type *h_offsets = node_.template viewBufferConst<size_type>(numRows_+1,offsets_,0);
     const Ordinal *h_indices = node_.template viewBufferConst<Ordinal>(numEntries_,indices_,0);
     const Scalar  *h_values  = node_.template viewBufferConst<Scalar >(numEntries_,values_ ,0);
     out << "Matrix data: " << endl;
@@ -321,7 +324,7 @@ namespace Kokkos {
         out << "(" << i << "," << h_indices[j] << ") : " << h_values[j] << endl;
       }
     }
-    node_.template releaseView<Ordinal>(h_offsets); h_offsets = NULL;
+    node_.template releaseView<size_type>(h_offsets); h_offsets = NULL;
     node_.template releaseView<Ordinal>(h_indices); h_indices = NULL;
     node_.template releaseView<Scalar >(h_values ); h_values  = NULL;
   }
