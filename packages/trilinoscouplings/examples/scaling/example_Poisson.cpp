@@ -452,7 +452,7 @@ int main(int argc, char *argv[]) {
 
    // Generate mesh with Pamgen
 
-    long int maxInt = 9223372036854775807LL;
+    long long maxInt = 9223372036854775807LL;
     Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
     
    // Get mesh size info
@@ -1189,7 +1189,7 @@ int main(int argc, char *argv[]) {
    // reset format state of std::cout
    std::cout.copyfmt(oldFormatState);
    
-   //   MPI_Finalize();
+   MPI_Finalize();
  
    exit(0);
 
