@@ -113,7 +113,6 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
   ierr += HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get communicator from Hypre Matrix.");
   
-  ierr += HYPRE_ParCSRMatrixGetComm(ParMatrix_, &comm);
   ierr += HYPRE_IJVectorCreate(comm, MyRowStart_, MyRowEnd_, &X_hypre);
   ierr += HYPRE_IJVectorSetObjectType(X_hypre, HYPRE_PARCSR);
   ierr += HYPRE_IJVectorInitialize(X_hypre);
@@ -153,15 +152,20 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
 //=======================================================
 
 EpetraExt_HypreIJMatrix::~EpetraExt_HypreIJMatrix(){
-  HYPRE_IJVectorDestroy(X_hypre);
-  HYPRE_IJVectorDestroy(Y_hypre);
+  int ierr = 0;
+  ierr += HYPRE_IJVectorDestroy(X_hypre);
+  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the X Vector.");
+  ierr += HYPRE_IJVectorDestroy(Y_hypre);
+  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the Y Vector.");
 
   /* Destroy solver and preconditioner */
   if(IsSolverSetup_[0] == true){
-    SolverDestroyPtr_(Solver_);
+    ierr += SolverDestroyPtr_(Solver_);
+    TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the Solver.");
   }
   if(IsPrecondSetup_[0] == true){
-    PrecondDestroyPtr_(Preconditioner_);
+    ierr += PrecondDestroyPtr_(Preconditioner_);
+    TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't destroy the Preconditioner.");
   }
   delete[] IsSolverSetup_;
   delete[] IsPrecondSetup_;
@@ -172,15 +176,12 @@ EpetraExt_HypreIJMatrix::~EpetraExt_HypreIJMatrix(){
 int EpetraExt_HypreIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntries, 
                      double * Values, int * Indices) const 
 {
-  int ierr = 0;
   // Get values and indices of ith row of matrix
   int *indices;
   double *values;
   int num_entries;
-  ierr += HYPRE_ParCSRMatrixGetRow(ParMatrix_, Row+RowMatrixRowMap().MinMyGID(), &num_entries, &indices, &values);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get row from Hypre Matrix.");
-  ierr += HYPRE_ParCSRMatrixRestoreRow(ParMatrix_, Row+RowMatrixRowMap().MinMyGID(), &num_entries, &indices, &values);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't restore row from Hypre Matrix.");
+  EPETRA_CHK_ERR(HYPRE_ParCSRMatrixGetRow(ParMatrix_, Row+RowMatrixRowMap().MinMyGID(), &num_entries, &indices, &values));
+  EPETRA_CHK_ERR(HYPRE_ParCSRMatrixRestoreRow(ParMatrix_, Row+RowMatrixRowMap().MinMyGID(), &num_entries, &indices, &values));
   
   NumEntries = num_entries;
   
@@ -194,21 +195,19 @@ int EpetraExt_HypreIJMatrix::ExtractMyRowCopy(int Row, int Length, int & NumEntr
     Indices[i] = RowMatrixColMap().LID(indices[i]);
   }
 
-  return ierr;
+  return 0;
 }
 
 //=======================================================
 
 int EpetraExt_HypreIJMatrix::NumMyRowEntries(int Row, int & NumEntries) const 
 {
-  int ierr = 0;
   int my_row[1];
   my_row[0] = Row+RowMatrixRowMap().MinMyGID();
   int nentries[1];
-  ierr += HYPRE_IJMatrixGetRowCounts(Matrix_, 1, my_row, nentries);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get row count from Hypre Matrix.");
+  EPETRA_CHK_ERR(HYPRE_IJMatrixGetRowCounts(Matrix_, 1, my_row, nentries));
   NumEntries = nentries[0];
-  return ierr;
+  return 0;
 }
 //=======================================================
 
@@ -277,7 +276,6 @@ int EpetraExt_HypreIJMatrix::Multiply(bool TransA,
 {
   
   //printf("Proc[%d], Row start: %d, Row End: %d\n", Comm().MyPID(), MyRowStart_, MyRowEnd_);
-  int ierr = 0;
   bool SameVectors = false; 
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors()) return -1;  // X and Y must have same number of vectors
@@ -288,34 +286,27 @@ int EpetraExt_HypreIJMatrix::Multiply(bool TransA,
     //Get values for current vector in multivector.
     double * x_values;
     double * y_values;
-    ierr += (*X(VecNum)).ExtractView(&x_values);
+    EPETRA_CHK_ERR((*X(VecNum)).ExtractView(&x_values));
     double *x_temp = x_local->data; 
     double *y_temp = y_local->data;
     if(!SameVectors){
-      ierr += (*Y(VecNum)).ExtractView(&y_values);
+      EPETRA_CHK_ERR((*Y(VecNum)).ExtractView(&y_values));
     } else {
       y_values = new double[X.MyLength()];
     }
     y_local->data = y_values;
-    HYPRE_ParVectorSetConstantValues(par_y,0.0);
+    EPETRA_CHK_ERR(HYPRE_ParVectorSetConstantValues(par_y,0.0));
     // Temporarily make a pointer to data in Hypre for end
     // Replace data in Hypre vectors with epetra values
     x_local->data = x_values;
     // Do actual computation.
     if(TransA) {
       // Use transpose of A in multiply
-      ierr += HYPRE_ParCSRMatrixMatvecT(1.0, ParMatrix_, par_x, 1.0, par_y);
-      TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't do Transpose MatVec in Hypre.");
+      EPETRA_CHK_ERR(HYPRE_ParCSRMatrixMatvecT(1.0, ParMatrix_, par_x, 1.0, par_y));
     } else {
-      ierr += HYPRE_ParCSRMatrixMatvec(1.0, ParMatrix_, par_x, 1.0, par_y);
-      TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't do MatVec in Hypre.");
+      EPETRA_CHK_ERR(HYPRE_ParCSRMatrixMatvec(1.0, ParMatrix_, par_x, 1.0, par_y));
     }
     if(SameVectors){
-      /*double *invalid_ptr;
-      (*Y(VecNum)).ExtractView(&invalid_ptr);
-      (*Y(VecNum)).ResetView(y_values);
-      delete[] invalid_ptr;*/
-      
       int NumEntries = Y.MyLength();
       std::vector<double> new_values; new_values.resize(NumEntries);
       std::vector<int> new_indices; new_indices.resize(NumEntries);
@@ -323,7 +314,7 @@ int EpetraExt_HypreIJMatrix::Multiply(bool TransA,
         new_values[i] = y_values[i];
         new_indices[i] = i;
       }
-      (*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]);
+      EPETRA_CHK_ERR((*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]));
       delete[] y_values;
     }
     x_local->data = x_temp;
@@ -332,73 +323,67 @@ int EpetraExt_HypreIJMatrix::Multiply(bool TransA,
 
   double flops = (double) NumVectors * (double) NumGlobalNonzeros();
   UpdateFlops(flops);
-  return(ierr);
+  return 0;
 } //Multiply() 
 
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int), int parameter){
-  int result;
   if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter);
+    EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter));
   }  else {
-    result = pt2Func(Solver_, parameter);
+    EPETRA_CHK_ERR(pt2Func(Solver_, parameter));
   }
-  return result;
+  return 0;
 }
 
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double), double parameter){
-  int result;
   if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter);
+    EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter));
   } else {
-    result = pt2Func(Solver_, parameter);
+    EPETRA_CHK_ERR(pt2Func(Solver_, parameter));
   }
-  return result;
+  return 0;
 }
 
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double, int), double parameter1, int parameter2){
-  int result;
   if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter1, parameter2);
+    EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter1, parameter2));
   } else {
-    result = pt2Func(Solver_, parameter1, parameter2);
+    EPETRA_CHK_ERR(pt2Func(Solver_, parameter1, parameter2));
   }
-  return result;
+  return 0;
 }
 
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int, int), int parameter1, int parameter2){
-  int result;
   if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter1, parameter2);
+    EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter1, parameter2));
   } else {
-    result = pt2Func(Solver_, parameter1, parameter2);
+    EPETRA_CHK_ERR(pt2Func(Solver_, parameter1, parameter2));
   }
-  return result;
+  return 0;
 }
 
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, double*), double* parameter){
-  int result;
   if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter);
+    EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter));
   } else {
-    result = pt2Func(Solver_, parameter);
+    EPETRA_CHK_ERR(pt2Func(Solver_, parameter));
   }
-  return result;
+  return 0;
 }
 
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, int (*pt2Func)(HYPRE_Solver, int*), int* parameter){
-  int result;
   if(chooser == Preconditioner){
-    result = pt2Func(Preconditioner_, parameter);
+    EPETRA_CHK_ERR(pt2Func(Preconditioner_, parameter));
   } else {
-    result = pt2Func(Solver_, parameter);
+    EPETRA_CHK_ERR(pt2Func(Solver_, parameter));
   }
-  return result;
+  return 0;
 }
 
 int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, Hypre_Solver solver, bool transpose){
   if(chooser == Solver){
   if(transpose && solver != BoomerAMG){
-    return -1;
+    EPETRA_CHK_ERR(-1);
   }
   switch(solver) {
     case BoomerAMG:
@@ -495,7 +480,7 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, Hypre_Solver so
       SolverPrecondPtr_ = &HYPRE_ParCSRBiCGSTABSetPrecond;
       break;
     default:
-      return -1;
+      EPETRA_CHK_ERR(-1);
     }
   CreateSolver();
   } else {
@@ -542,7 +527,7 @@ int EpetraExt_HypreIJMatrix::SetParameter(Hypre_Chooser chooser, Hypre_Solver so
       PrecondSolvePtr_ = &HYPRE_AMSSolve;
       break;
     default:
-      return -1;
+      EPETRA_CHK_ERR(-1);
     }
   CreatePrecond();
 
@@ -593,7 +578,6 @@ int EpetraExt_HypreIJMatrix::SetupPrecond() const{
 }
 
 int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal, const Epetra_MultiVector & X, Epetra_MultiVector & Y) const {
-  int ierr = 0;
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors()) return -1;  // X and Y must have same number of vectors
@@ -613,10 +597,10 @@ int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal
   for(int VecNum = 0; VecNum < NumVectors; VecNum++) {
     //Get values for current vector in multivector.
     double * x_values;
-    ierr += (*X(VecNum)).ExtractView(&x_values);
+    EPETRA_CHK_ERR((*X(VecNum)).ExtractView(&x_values));
     double * y_values;
     if(!SameVectors){
-      ierr += (*Y(VecNum)).ExtractView(&y_values);
+      EPETRA_CHK_ERR((*Y(VecNum)).ExtractView(&y_values));
     } else {
       y_values = new double[X.MyLength()];
     }
@@ -627,20 +611,18 @@ int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal
     double *y_temp = y_local->data;
     y_local->data = y_values;
     
-    HYPRE_ParVectorSetConstantValues(par_y, 0.0);
+    EPETRA_CHK_ERR(HYPRE_ParVectorSetConstantValues(par_y, 0.0));
     if(transpose && !TransposeSolve_){
       // User requested a transpose solve, but the solver selected doesn't provide one
-      return -1;
+      EPETRA_CHK_ERR(-1);
     }
     if(SolveOrPrec_ == Solver){
       // Use the solver methods
-      ierr += SolverSolvePtr_(Solver_, ParMatrix_, par_x, par_y);
+      EPETRA_CHK_ERR(SolverSolvePtr_(Solver_, ParMatrix_, par_x, par_y));
     } else {
       // Apply the preconditioner
-      ierr += PrecondSolvePtr_(Preconditioner_, ParMatrix_, par_x, par_y);
+      EPETRA_CHK_ERR(PrecondSolvePtr_(Preconditioner_, ParMatrix_, par_x, par_y));
     }
-    TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Hypre solve failed.");
-    
     if(SameVectors){
       int NumEntries = Y.MyLength();
       std::vector<double> new_values; new_values.resize(NumEntries);
@@ -649,7 +631,7 @@ int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal
         new_values[i] = y_values[i];
         new_indices[i] = i;
       }
-      (*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]);
+      EPETRA_CHK_ERR((*Y(VecNum)).ReplaceMyValues(NumEntries, &new_values[0], &new_indices[0]));
       delete[] y_values;
     }
     x_local->data = x_temp;
@@ -658,20 +640,18 @@ int EpetraExt_HypreIJMatrix::Solve(bool Upper, bool transpose, bool UnitDiagonal
 
   double flops = (double) NumVectors * (double) NumGlobalNonzeros();
   UpdateFlops(flops);
-  return(ierr);
+  return 0;
 }
 
 //=======================================================
 int EpetraExt_HypreIJMatrix::LeftScale(const Epetra_Vector& X) {
-  int ierr = 0;
-  
   for(int i = 0; i < NumMyRows_; i++){
     //Vector-scalar mult on ith row
     int num_entries;
     int *indices;
     double *values;
-    ierr += HYPRE_ParCSRMatrixGetRow(ParMatrix_,i+MyRowStart_, &num_entries, &indices, &values);
-    ierr += HYPRE_ParCSRMatrixRestoreRow(ParMatrix_,i+MyRowStart_, &num_entries, &indices, &values);
+    EPETRA_CHK_ERR(HYPRE_ParCSRMatrixGetRow(ParMatrix_,i+MyRowStart_, &num_entries, &indices, &values));
+    EPETRA_CHK_ERR(HYPRE_ParCSRMatrixRestoreRow(ParMatrix_,i+MyRowStart_, &num_entries, &indices, &values));
     Teuchos::Array<double> new_values; new_values.resize(num_entries);
     Teuchos::Array<int> new_indices; new_indices.resize(num_entries);
     for(int j = 0; j < num_entries; j++){
@@ -681,25 +661,22 @@ int EpetraExt_HypreIJMatrix::LeftScale(const Epetra_Vector& X) {
     }
     int rows[1];
     rows[0] = i+MyRowStart_;
-    ierr += HYPRE_IJMatrixSetValues(Matrix_, 1, &num_entries, rows, &new_indices[0], &new_values[0]);
+    EPETRA_CHK_ERR(HYPRE_IJMatrixSetValues(Matrix_, 1, &num_entries, rows, &new_indices[0], &new_values[0]));
     // Finally set values of the Matrix for this row
     
-    TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't set values in Hypre Matrix.");
   }
   
   HaveNumericConstants_ = false;
   UpdateFlops(NumGlobalNonzeros());
-  return(ierr);
+  return 0;
 } //LeftScale()
 
 //=======================================================
 int EpetraExt_HypreIJMatrix::RightScale(const Epetra_Vector& X) {
-  int ierr = 0;
   // First we need to import off-processor values of the vector
   Epetra_Import Importer(RowMatrixColMap(), RowMatrixRowMap());
   Epetra_Vector Import_Vector(RowMatrixColMap(), true);
-  ierr += Import_Vector.Import(X, Importer, Insert, 0);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't import values ierr = " << ierr << ".");
+  EPETRA_CHK_ERR(Import_Vector.Import(X, Importer, Insert, 0));
   
   for(int i = 0; i < NumMyRows_; i++){
     //Vector-scalar mult on ith column
@@ -707,9 +684,8 @@ int EpetraExt_HypreIJMatrix::RightScale(const Epetra_Vector& X) {
     double *values;
     int *indices;
     // Get values and indices of ith row of matrix
-    ierr += HYPRE_ParCSRMatrixGetRow(ParMatrix_,i+MyRowStart_, &num_entries, &indices, &values);
-    ierr += HYPRE_ParCSRMatrixRestoreRow(ParMatrix_,i+MyRowStart_,&num_entries,&indices,&values);
-    TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get row.");
+    EPETRA_CHK_ERR(HYPRE_ParCSRMatrixGetRow(ParMatrix_,i+MyRowStart_, &num_entries, &indices, &values));
+    EPETRA_CHK_ERR(HYPRE_ParCSRMatrixRestoreRow(ParMatrix_,i+MyRowStart_,&num_entries,&indices,&values));
     Teuchos::Array<int> new_indices; new_indices.resize(num_entries);
     Teuchos::Array<double> new_values; new_values.resize(num_entries);
     for(int j = 0; j < num_entries; j++){
@@ -722,13 +698,12 @@ int EpetraExt_HypreIJMatrix::RightScale(const Epetra_Vector& X) {
     // Finally set values of the Matrix for this row
     int rows[1];
     rows[0] = i+MyRowStart_;
-    ierr += HYPRE_IJMatrixSetValues(Matrix_, 1, &num_entries, rows, &new_indices[0], &new_values[0]);
-    TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't set values in Hypre Matrix.");
+    EPETRA_CHK_ERR(HYPRE_IJMatrixSetValues(Matrix_, 1, &num_entries, rows, &new_indices[0], &new_values[0]));
   }
   
   HaveNumericConstants_ = false;
   UpdateFlops(NumGlobalNonzeros());
-  return(ierr);
+  return 0;
 } //RightScale()
 
 int EpetraExt_HypreIJMatrix::Hypre_BoomerAMGCreate(MPI_Comm comm, HYPRE_Solver *solver){
@@ -772,39 +747,32 @@ int EpetraExt_HypreIJMatrix::Hypre_ParCSRBiCGSTABCreate(MPI_Comm comm, HYPRE_Sol
 }
 
 int EpetraExt_HypreIJMatrix::InitializeDefaults(){
-
-  int ierr = 0;
-  
   int my_type;
   // Get type of Hypre IJ Matrix
-  ierr += HYPRE_IJMatrixGetObjectType(Matrix_, &my_type);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get object type of Hypre Matrix.");
+  EPETRA_CHK_ERR(HYPRE_IJMatrixGetObjectType(Matrix_, &my_type));
   MatType_ = my_type;
   // Currently only ParCSR is supported
   TEST_FOR_EXCEPTION(MatType_ != HYPRE_PARCSR, std::logic_error, "Object is not type PARCSR");
 
   // Get the actual ParCSR object from the IJ matrix
-  ierr += HYPRE_IJMatrixGetObject(Matrix_, (void**) &ParMatrix_);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get Hypre_ParCSR Matrix object.");
+  EPETRA_CHK_ERR(HYPRE_IJMatrixGetObject(Matrix_, (void**) &ParMatrix_));
   
   int numRows, numCols;
   
   // Get dimensions of the matrix and store as global variables
-  ierr +=HYPRE_ParCSRMatrixGetDims(ParMatrix_, &numRows, &numCols);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get dimensions of Hypre Matrix.");
+  EPETRA_CHK_ERR(HYPRE_ParCSRMatrixGetDims(ParMatrix_, &numRows, &numCols));
   
   NumGlobalRows_ = numRows;
   NumGlobalCols_ = numCols;
   
   // Get the local dimensions of the matrix
   int ColStart, ColEnd;
-  ierr += HYPRE_ParCSRMatrixGetLocalRange(ParMatrix_, &MyRowStart_, &MyRowEnd_, &ColStart, &ColEnd);
-  TEST_FOR_EXCEPTION(ierr != 0, std::logic_error, "Couldn't get local range of Hypre Matrix.");
+  EPETRA_CHK_ERR(HYPRE_ParCSRMatrixGetLocalRange(ParMatrix_, &MyRowStart_, &MyRowEnd_, &ColStart, &ColEnd));
   
   // Determine number of local rows
   NumMyRows_ = MyRowEnd_ - MyRowStart_+1;
   
-  return ierr;
+  return 0;
 }  //InitializeDefaults() 
 
 #endif /*HAVE_HYPRE*/

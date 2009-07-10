@@ -66,7 +66,8 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   NumFunsToCall_(0),
   SolverType_(PCG),
   PrecondType_(Euclid),
-  UsePreconditioner_(false)
+  UsePreconditioner_(false),
+  NiceRowMap_(true)
 {
   IsSolverSetup_ = new bool[1];
   IsPrecondSetup_ = new bool[1];
@@ -74,31 +75,27 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
   IsPrecondSetup_[0] = false;
   if(Comm().NumProc() != 1) IsParallel_ = true;
   else IsParallel_ = false;
-  const Epetra_MpiComm* eComm=dynamic_cast<const Epetra_MpiComm*>(&A_->Comm());
-  MPI_Comm comm;
-  comm = eComm->GetMpiComm();
+  MPI_Comm comm = GetMpiComm();
   // First make a copy of the Epetra Matrix as a Hypre Matrix
   int ilower = A_->RowMatrixRowMap().MinMyGID();
   int iupper = A_->RowMatrixRowMap().MaxMyGID();
-  IFPACK_CHK_ERRV(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
-  IFPACK_CHK_ERRV(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
-  IFPACK_CHK_ERRV(HYPRE_IJMatrixInitialize(HypreA_));
-  for(int i = 0; i < A_->NumMyRows(); i++){
-    int numElements;
-    IFPACK_CHK_ERRV(A_->NumMyRowEntries(i,numElements));
-    std::vector<int> indices; indices.resize(numElements);
-    std::vector<double> values; values.resize(numElements);
-    int numEntries;
-    IFPACK_CHK_ERRV(A_->ExtractMyRowCopy(i, numElements, numEntries, &values[0], &indices[0]));
-    for(int j = 0; j < numEntries; j++){
-      indices[j] = A_->RowMatrixColMap().GID(indices[j]);
-    }
-    int GlobalRow[1];
-    GlobalRow[0] = A_->RowMatrixRowMap().GID(i);
-    IFPACK_CHK_ERRV(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
+  // Need to check if the RowMap is the way Hypre expects (if not more difficult)
+  Teuchos::Array<int> ilowers; ilowers.resize(Comm().NumProc());
+  Teuchos::Array<int> iuppers; iuppers.resize(Comm().NumProc());
+  int myLower[1]; myLower[0] = ilower;
+  int myUpper[1]; myUpper[0] = iupper;
+  Comm().GatherAll(myLower, &ilowers[0], 1);
+  Comm().GatherAll(myUpper, &iuppers[0], 1);
+  for(int i = 0; i < Comm().NumProc()-1; i++){
+    NiceRowMap_ = (NiceRowMap_ && iuppers[i]+1 == ilowers[i+1]);
   }
-  IFPACK_CHK_ERRV(HYPRE_IJMatrixAssemble(HypreA_));
-  IFPACK_CHK_ERRV(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
+  if(!NiceRowMap_){
+    ilower = (A_->NumGlobalRows() / Comm().NumProc())*Comm().MyPID();
+    iupper = (A_->NumGlobalRows() / Comm().NumProc())*(Comm().MyPID()+1)-1;
+    if(Comm().MyPID() == Comm().NumProc()-1){
+      iupper = A_-> NumGlobalRows()-1;
+    }
+  }
 
   // Next create vectors that will be used when ApplyInverse() is called
   IFPACK_CHK_ERRV(HYPRE_IJVectorCreate(comm, ilower, iupper, &XHypre_));
@@ -126,7 +123,9 @@ Ifpack_Hypre::Ifpack_Hypre(Epetra_RowMatrix* A):
 }
 
 void Ifpack_Hypre::Destroy(){
-  IFPACK_CHK_ERRV(HYPRE_IJMatrixDestroy(HypreA_));
+  if(IsInitialized()){
+    IFPACK_CHK_ERRV(HYPRE_IJMatrixDestroy(HypreA_));
+  } 
   IFPACK_CHK_ERRV(HYPRE_IJVectorDestroy(XHypre_));
   IFPACK_CHK_ERRV(HYPRE_IJVectorDestroy(YHypre_));
   if(IsSolverSetup_[0]){
@@ -139,9 +138,29 @@ void Ifpack_Hypre::Destroy(){
   delete[] IsPrecondSetup_;
 }
 
-
-
 int Ifpack_Hypre::Initialize(){
+  MPI_Comm comm = GetMpiComm();
+  int ilower = MySimpleMap_->MinMyGID();
+  int iupper = MySimpleMap_->MaxMyGID();
+  IFPACK_CHK_ERR(HYPRE_IJMatrixCreate(comm, ilower, iupper, ilower, iupper, &HypreA_));
+  IFPACK_CHK_ERR(HYPRE_IJMatrixSetObjectType(HypreA_, HYPRE_PARCSR));
+  IFPACK_CHK_ERR(HYPRE_IJMatrixInitialize(HypreA_));
+  for(int i = 0; i < A_->NumMyRows(); i++){
+    int numElements;
+    IFPACK_CHK_ERR(A_->NumMyRowEntries(i,numElements));
+    std::vector<int> indices; indices.resize(numElements);
+    std::vector<double> values; values.resize(numElements);
+    int numEntries;
+    IFPACK_CHK_ERR(A_->ExtractMyRowCopy(i, numElements, numEntries, &values[0], &indices[0]));
+    for(int j = 0; j < numEntries; j++){
+      indices[j] = A_->RowMatrixColMap().GID(indices[j]);
+    }
+    int GlobalRow[1];
+    GlobalRow[0] = A_->RowMatrixRowMap().GID(i);
+    IFPACK_CHK_ERR(HYPRE_IJMatrixSetValues(HypreA_, 1, &numEntries, GlobalRow, &indices[0], &values[0]));
+  }
+  IFPACK_CHK_ERR(HYPRE_IJMatrixAssemble(HypreA_));
+  IFPACK_CHK_ERR(HYPRE_IJMatrixGetObject(HypreA_, (void**)&ParMatrix_));
   IsInitialized_=true;
   NumInitialize_ = NumInitialize_ + 1;
   return 0;
@@ -233,10 +252,10 @@ int Ifpack_Hypre::SetParameter(bool UsePreconditioner){
 }
 
 int Ifpack_Hypre::Compute(){
-  Time_.ResetStartTime();
   if(IsInitialized() == false){
     IFPACK_CHK_ERR(Initialize());
   }
+  Time_.ResetStartTime();
   IFPACK_CHK_ERR(SetSolverType(SolverType_));
   IFPACK_CHK_ERR(SetPrecondType(PrecondType_));
   for(int i = 0; i < NumFunsToCall_; i++){
@@ -333,6 +352,9 @@ int Ifpack_Hypre::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& 
 }
 
 int Ifpack_Hypre::Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
+  if(IsInitialized() == false){
+    IFPACK_CHK_ERR(-1);
+  }
   bool SameVectors = false;
   int NumVectors = X.NumVectors();
   if (NumVectors != Y.NumVectors()) IFPACK_CHK_ERR(-1);  // X and Y must have same number of vectors

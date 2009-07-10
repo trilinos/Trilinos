@@ -55,6 +55,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Time.h"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Epetra_MpiComm.h"
 
 #ifndef HYPRE_ENUMS
 #define HYPRE_ENUMS
@@ -438,8 +439,11 @@ public:
   }
 
   //! Returns the Hypre matrix that was created upon construction. 
-  const HYPRE_IJMatrix& HypreMatrix() const
+  const HYPRE_IJMatrix& HypreMatrix()
   {
+    if(IsInitialized() == false){
+      Initialize();
+    }
     return(HypreA_);
   }
 
@@ -516,6 +520,10 @@ private:
 
   //! Destroys all internal data
   void Destroy();
+
+  MPI_Comm GetMpiComm() const{
+    return (dynamic_cast<const Epetra_MpiComm*>(&A_->Comm()))->GetMpiComm();
+  }
 
   //! Returns the result of a Ifpack_ILU forward/back solve on a Epetra_MultiVector X in Y.
   /*! 
@@ -648,6 +656,7 @@ private:
   Hypre_Solver PrecondType_;
   bool UsePreconditioner_;
   std::vector<Teuchos::RCP<FunctionParameter> > FunsToCall_;
+  bool NiceRowMap_; // true if the row map of provided matrix is in form that Hypre likes
 };
 
 #endif // HAVE_HYPRE
