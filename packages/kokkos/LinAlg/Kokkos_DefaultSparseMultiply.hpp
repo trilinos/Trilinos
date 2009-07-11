@@ -31,6 +31,7 @@
 
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
