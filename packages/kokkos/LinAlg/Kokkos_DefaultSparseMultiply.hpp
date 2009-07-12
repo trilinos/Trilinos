@@ -100,7 +100,7 @@ namespace Kokkos {
     //@{
 
     //! Applies the matrix to a MultiVector.
-    int Apply(const MV &X, MV &Y) const;
+    int Apply(bool transpose, ScalarType alpha, const MV &X, ScalarType beta, MV &Y) const;
 
     //@}
 
@@ -133,7 +133,7 @@ namespace Kokkos {
   }
 
   template <class MAT, class MV>
-  int DefaultSparseMultiply<MAT,MV>::Apply(const MV &X, MV &Y) const
+  int DefaultSparseMultiply<MAT,MV>::Apply(bool transpose, ScalarType alpha, const MV &X, ScalarType beta, MV &Y) const
   {
     TEST_FOR_EXCEPTION(true, std::logic_error, 
         "DefaultSparseMultiply::Apply() not implemented for matrix type " << Teuchos::TypeNameTraits<MAT>::name()
@@ -179,7 +179,7 @@ namespace Kokkos {
     //@{
 
     //! Applies the matrix to a MultiVector.
-    int Apply(const MultiVector<Scalar,Ordinal,Node> &X, MultiVector<Scalar,Ordinal,Node> &Y) const;
+    int Apply(bool transpose, Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &X, Scalar beta, MultiVector<Scalar,Ordinal,Node> &Y) const;
 
     //@}
 
@@ -286,10 +286,17 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  int DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::Apply(const MultiVector<Scalar,Ordinal,Node> &X, MultiVector<Scalar,Ordinal,Node> &Y) const
+  int DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::Apply(
+      bool transpose, 
+      Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &X, 
+      Scalar beta, MultiVector<Scalar,Ordinal,Node> &Y) const 
   {
+    TEST_FOR_EXCEPTION(transpose == true, std::runtime_error,
+        Teuchos::typeName(*this) << "::Apply(): Operation does not currently support tranpose.");
 #ifdef HAVE_KOKKOS_DEBUG
 #endif
+    op_.alpha = alpha;
+    op_.beta  = beta;
     op_.x = X.getValues(0);
     op_.y = Y.getValues(0);
     node_.template parallel_for<DefaultSparseMultiplyOp<Scalar,Ordinal,Node> >(0,numRows_,op_);

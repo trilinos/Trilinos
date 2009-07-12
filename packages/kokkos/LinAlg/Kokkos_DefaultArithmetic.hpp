@@ -52,6 +52,16 @@ namespace Kokkos {
   };
 
   template <class Scalar, class Node>
+  struct AssignOp {
+    typename Node::template buffer<      Scalar>::buffer_t x;
+    typename Node::template buffer<const Scalar>::buffer_t y;
+    inline KERNEL_PREFIX void execute(int i) const
+    {
+      x[i] = y[i];
+    }
+  };
+
+  template <class Scalar, class Node>
   struct ScaleOp {
     typename Node::template buffer<const Scalar>::buffer_t x;
     typename Node::template buffer<      Scalar>::buffer_t y;
@@ -176,7 +186,31 @@ namespace Kokkos {
         }
       }
 
-      // FINISH: add vector routines as well, if Vector isn't a MultiVector (i.e., doesn't have numCols())
+      //! Assign one MultiVector to another
+      static void Assign(MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B) {
+        const Ordinal nR = A.getNumRows();
+        const Ordinal nC = A.getNumCols();
+        TEST_FOR_EXCEPTION(nC != B.getNumCols() ||
+                           nR != B.getNumRows(), 
+                           std::runtime_error,
+                           "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
+        Node &node = A.getNode();
+        AssignOp<Scalar,Node> wdp;
+        if (A.getStride() == nR && B.getStride() == nR) {
+          // one kernel invocation for whole multivector assignment
+          wdp.x = A.getValues(0);
+          wdp.y = B.getValues(0);
+          node.template parallel_for<AssignOp<Scalar,Node> >(0,nR*nC,wdp);
+        }
+        else {
+          // one kernel invocation for each column
+          for (Ordinal j=0; j<nC; ++j) {
+            wdp.x = A.getValues(j);
+            wdp.y = B.getValues(j);
+            node.template parallel_for<AssignOp<Scalar,Node> >(0,nR,wdp);
+          }
+        }
+      }
   };
 
 }

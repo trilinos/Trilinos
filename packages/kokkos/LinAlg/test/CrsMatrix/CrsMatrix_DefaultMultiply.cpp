@@ -103,7 +103,7 @@ namespace {
     X.initializeValues(N,1,xdat,N);
     AX.initializeValues(N,1,axdat,N);
     DefaultArithmetic<MV>::Init(1.0,X);
-    dsm.Apply(X,AX);
+    dsm.Apply(false,1.0,X,0.0,AX);
     node.template freeBuffer<Scalar>(xdat);
     node.template freeBuffer<Scalar>(axdat);
   }

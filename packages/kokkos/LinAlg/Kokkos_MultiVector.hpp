@@ -165,7 +165,7 @@ namespace Kokkos {
 
       //@{
 
-      Node & getNode() {return node_;}
+      Node & getNode() const {return node_;}
 
       //! Number of rows
       Ordinal getNumRows() const {return(numRows_);};
