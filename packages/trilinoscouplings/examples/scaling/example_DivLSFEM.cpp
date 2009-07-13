@@ -778,7 +778,6 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> gDBoundary(numCells, numFieldsD);
     FieldContainer<double> refGaussPoints(numFacePoints,spaceDim);
     FieldContainer<double> worksetGaussPoints(numCells,numFacePoints,spaceDim);
-    FieldContainer<double> worksetWeightedMeasure(numCells,numFacePoints);
     FieldContainer<double> worksetJacobians(numCells, numFacePoints, spaceDim, spaceDim);
     FieldContainer<double> worksetJacobDet(numCells, numFacePoints);
     FieldContainer<double> worksetFaceTu(numCells, numFacePoints, spaceDim);
@@ -786,7 +785,6 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> worksetFaceN(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetVFieldVals(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetDValsTransformed(numCells, numFieldsD, numFacePoints, spaceDim);
-    FieldContainer<double> worksetDValsTransformedWeighted(numCells, numFieldsD, numFacePoints, spaceDim);
     FieldContainer<double> curluFace(numCells, numFacePoints, spaceDim);
     FieldContainer<double> worksetDataCrossField(numCells, numFieldsD, numFacePoints, spaceDim);
    // Container for cubature points in physical space
@@ -1009,13 +1007,6 @@ int main(int argc, char *argv[]) {
             fst::HDIVtransformVALUE<double>(worksetDValsTransformed, worksetJacobians,
                                    worksetJacobDet, worksetDVals);
 
-         // compute weighted measure
-            fst::computeMeasure<double>(worksetWeightedMeasure, worksetJacobDet, paramGaussWeights);
-
-         // multiply by weighted measure
-            fst::multiplyMeasure<double>(worksetDValsTransformedWeighted,
-                                   worksetWeightedMeasure, worksetDValsTransformed);
-
          // map Gauss points on quad from ref. face to face workset: refGaussPoints -> worksetGaussPoints
             CellTools::mapToPhysicalFrame(worksetGaussPoints,
                                 refGaussPoints,
@@ -1042,15 +1033,18 @@ int main(int argc, char *argv[]) {
              evalCurlu(curluFace(0,nPt,0), curluFace(0,nPt,1), curluFace(0,nPt,2), x, y, z);
            }
 
-          // compute the cross product of curluFace with basis
+         // compute the cross product of curluFace with basis and multiply by weights
            for (int nF = 0; nF < numFieldsD; nF++){
               for(int nPt = 0; nPt < numFacePoints; nPt++){
-                  worksetDataCrossField(0,nF,nPt,0) = curluFace(0,nPt,1)*worksetDValsTransformedWeighted(0,nF,nPt,2)
-                                 - curluFace(0,nPt,2)*worksetDValsTransformedWeighted(0,nF,nPt,1);
-                  worksetDataCrossField(0,nF,nPt,1) = curluFace(0,nPt,2)*worksetDValsTransformedWeighted(0,nF,nPt,0)
-                                 - curluFace(0,nPt,0)*worksetDValsTransformedWeighted(0,nF,nPt,2);
-                  worksetDataCrossField(0,nF,nPt,2) = curluFace(0,nPt,0)*worksetDValsTransformedWeighted(0,nF,nPt,1)
-                                 - curluFace(0,nPt,1)*worksetDValsTransformedWeighted(0,nF,nPt,0);
+                  worksetDataCrossField(0,nF,nPt,0) = (curluFace(0,nPt,1)*worksetDValsTransformed(0,nF,nPt,2)
+                                 - curluFace(0,nPt,2)*worksetDValsTransformed(0,nF,nPt,1))
+                                  * paramGaussWeights(nPt);
+                  worksetDataCrossField(0,nF,nPt,1) = (curluFace(0,nPt,2)*worksetDValsTransformed(0,nF,nPt,0)
+                                 - curluFace(0,nPt,0)*worksetDValsTransformed(0,nF,nPt,2))
+                                  * paramGaussWeights(nPt);
+                  worksetDataCrossField(0,nF,nPt,2) = (curluFace(0,nPt,0)*worksetDValsTransformed(0,nF,nPt,1)
+                                 - curluFace(0,nPt,1)*worksetDValsTransformed(0,nF,nPt,0))
+                                  *paramGaussWeights(nPt);
               } //nPt
            } //nF
 
@@ -1131,18 +1125,18 @@ int main(int argc, char *argv[]) {
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
  {
 
- /*
    // function 1
     uExact0 = exp(y+z)*(x+1.0)*(x-1.0);
     uExact1 = exp(x+z)*(y+1.0)*(y-1.0);
     uExact2 = exp(x+y)*(z+1.0)*(z-1.0);
- */  
   
+ /*
    // function 2
     uExact0 = cos(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
     uExact1 = cos(M_PI*x)*cos(M_PI*z)*(y+1.0)*(y-1.0);
     uExact2 = cos(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
  
+ */  
  /*
    // function 3
     uExact0 = x*x-1.0;
@@ -1163,11 +1157,11 @@ int main(int argc, char *argv[]) {
  {
    
    // function 1
-   // double divu = 2.0*x*exp(y+z)+2.0*y*exp(x+z)+2.0*z*exp(x+y);
+    double divu = 2.0*x*exp(y+z)+2.0*y*exp(x+z)+2.0*z*exp(x+y);
 
    // function 2
-   double divu = 2.0*x*cos(M_PI*y)*cos(M_PI*z) + 2.0*y*cos(M_PI*x)*cos(M_PI*z)
-                  + 2.0*z*cos(M_PI*x)*cos(M_PI*y);
+   //double divu = 2.0*x*cos(M_PI*y)*cos(M_PI*z) + 2.0*y*cos(M_PI*x)*cos(M_PI*z)
+   //               + 2.0*z*cos(M_PI*x)*cos(M_PI*y);
    
    // function 3
    // double divu = 2.0*(x + y + z);
@@ -1183,7 +1177,6 @@ int main(int argc, char *argv[]) {
  int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z)
  {
   
-  /*
    // function 1
     double duxdy = exp(y+z)*(x+1.0)*(x-1.0);
     double duxdz = exp(y+z)*(x+1.0)*(x-1.0);
@@ -1192,8 +1185,8 @@ int main(int argc, char *argv[]) {
     double duzdx = exp(x+y)*(z+1.0)*(z-1.0);
     double duzdy = exp(x+y)*(z+1.0)*(z-1.0);
  
-  */
 
+  /*
    // function 2
     double duxdy = -M_PI*sin(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
     double duxdz = -M_PI*sin(M_PI*z)*cos(M_PI*y)*(x+1.0)*(x-1.0);
@@ -1201,6 +1194,7 @@ int main(int argc, char *argv[]) {
     double duydz = -M_PI*sin(M_PI*z)*cos(M_PI*x)*(y+1.0)*(y-1.0);
     double duzdx = -M_PI*sin(M_PI*x)*cos(M_PI*y)*(z+1.0)*(z-1.0);
     double duzdy = -M_PI*sin(M_PI*y)*cos(M_PI*x)*(z+1.0)*(z-1.0);
+  */
 
     curlu0 = duzdy - duydz;
     curlu1 = duxdz - duzdx;
@@ -1220,7 +1214,6 @@ int main(int argc, char *argv[]) {
  int evalCurlCurlu(double & curlCurlu0, double & curlCurlu1, double & curlCurlu2, double & x, double & y, double & z)
 {
    
- /*
    // function 1
     double dcurlu0dy = exp(x+y)*(z+1.0)*(z-1.0) - 2.0*y*exp(x+z);
     double dcurlu0dz = 2.0*z*exp(x+y) - exp(x+z)*(y+1.0)*(y-1.0); 
@@ -1229,8 +1222,8 @@ int main(int argc, char *argv[]) {
     double dcurlu2dx = exp(x+z)*(y+1.0)*(y-1.0) - 2.0*x*exp(y+z);
     double dcurlu2dy = 2.0*y*exp(x+z) - exp(y+z)*(x+1.0)*(x-1.0);
                        
- */
- 
+
+ /*
    // function 2
     double dcurlu0dy = -M_PI*M_PI*cos(M_PI*y)*cos(M_PI*x)*(z+1.0)*(z-1.0)
                            + 2.0*y*M_PI*sin(M_PI*z)*cos(M_PI*x);
@@ -1244,6 +1237,7 @@ int main(int argc, char *argv[]) {
                            + 2.0*x*M_PI*sin(M_PI*y)*cos(M_PI*z);
     double dcurlu2dy = -2.0*y*M_PI*sin(M_PI*x)*cos(M_PI*z)
                           + M_PI*M_PI*cos(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
+ */
                        
     curlCurlu0 = dcurlu2dy - dcurlu1dz;
     curlCurlu1 = dcurlu0dz - dcurlu2dx;
