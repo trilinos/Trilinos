@@ -28,6 +28,7 @@
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
+#include <Teuchos_ScalarTraits.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultNode.hpp"
@@ -38,6 +39,7 @@
 
 namespace {
 
+  using std::endl;
   using Kokkos::MultiVector;
   using Kokkos::CrsMatrix;
   using Kokkos::DefaultArithmetic;
@@ -104,6 +106,14 @@ namespace {
     AX.initializeValues(N,1,axdat,N);
     DefaultArithmetic<MV>::Init(1.0,X);
     dsm.Apply(false,1.0,X,0.0,AX);
+    const Scalar *axview = node.template viewBufferConst<Scalar>(N,axdat,0);
+    Scalar err = 0.0;
+    for (int i=0; i<N; ++i) {
+      err = axview[i] * axview[i];
+    }
+    node.template releaseView<Scalar>(axview); axview = NULL;
+    err = Teuchos::ScalarTraits<Scalar>::squareroot(err);
+    TEST_EQUALITY_CONST(err, 0.0);
     node.template freeBuffer<Scalar>(xdat);
     node.template freeBuffer<Scalar>(axdat);
   }
