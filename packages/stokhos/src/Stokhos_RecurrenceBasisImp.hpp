@@ -25,15 +25,6 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Stokhos_ConfigDefs.h"
-#ifdef HAVE_STOKHOS_DAKOTA
-#include "sandia_rules.H"
-#elif HAVE_STOKHOS_FORUQTK
-#include "Stokhos_gaussq.h"
-#else
-#include "Teuchos_TestForException.hpp"
-#endif
-
 #include "Teuchos_LAPACK.hpp"
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_SerialDenseVector.hpp>
