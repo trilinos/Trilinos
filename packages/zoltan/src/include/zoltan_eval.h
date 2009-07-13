@@ -85,6 +85,13 @@ int Zoltan_LB_Eval_Graph(struct Zoltan_Struct  *zz, int print_stats, GRAPH_EVAL 
 
 int Zoltan_LB_Eval_HG(struct Zoltan_Struct  *zz, int print_stats, HG_EVAL *hg);
 
+void Zoltan_LB_Eval_Print_Graph(GRAPH_EVAL *graph);
+
+void Zoltan_LB_Eval_Print_HG(HG_EVAL *hg);
+
+void Zoltan_LB_Eval_Print_Balance(BALANCE_EVAL *lb);
+
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

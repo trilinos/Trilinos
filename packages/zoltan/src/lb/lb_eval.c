@@ -208,7 +208,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   float obj_edge_weights;
 
   float *vwgts=NULL, *ewgts=NULL, *wgt=NULL;
-  float *localVals = NULL, *globalVals = NULL;
+  float *globalVals = NULL;
   float *cutn=NULL, *cutl=NULL, *cut_wgt=NULL;
 
   int partitionPair[2], dummyValue[2];
@@ -384,6 +384,15 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
     for (j=0; j < edges_per_obj[i]; j++,k++){    /* neighbor in graph */
 
       nbor_part = nbors_part[k];
+
+      if ((nbor_part < 0) || (nbor_part >= nparts)){
+
+        /* Try to catch a sporadic bug where parts of nbors_part are uninitialized */
+
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Corrupt neighbor part array\n");
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
 
       if (ewgt_dim > 0){
         obj_edge_weights += ewgts[k * ewgt_dim];  /* "hypergraph" weight */
@@ -703,7 +712,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
       }
     }
 
-    printf("\n\n");
+    printf("\n");
 
     printf("%s  Statistics with respect to %1d parts: \n", yo, nparts);
     printf("%s                                    Min      Max    Average    Sum\n", yo);
@@ -754,7 +763,6 @@ End:
 
   Zoltan_Map_Destroy(zz, map_num);
 
-  ZOLTAN_FREE(&localVals);
   ZOLTAN_FREE(&localCount);
   ZOLTAN_FREE(&globalVals);
   ZOLTAN_FREE(&globalCount);
@@ -1079,6 +1087,7 @@ int Zoltan_LB_Eval (ZZ *zzin, int print_stats,
                        "Error returned from Zoltan_LB_Eval_Balance");
     goto End;
   } 
+
   num_objects = eval_lb.nobj + EVAL_LOCAL_SUM;
   object_weight = eval_lb.obj_wgt + EVAL_LOCAL_SUM;
   xtra_object_weight = eval_lb.xtra_obj_wgt;
@@ -1090,6 +1099,7 @@ int Zoltan_LB_Eval (ZZ *zzin, int print_stats,
                          "Error returned from Zoltan_LB_Eval_Graph");
       goto End;
     } 
+
     num_objects = eval_graph.nobj + EVAL_LOCAL_SUM;
     object_weight = eval_graph.obj_wgt + EVAL_LOCAL_SUM;
     cut_weight = eval_graph.cut_wgt + EVAL_GLOBAL_AVG;
@@ -1107,6 +1117,7 @@ int Zoltan_LB_Eval (ZZ *zzin, int print_stats,
                          "Error returned from Zoltan_LB_Eval_HG");
       goto End;
     } 
+
     num_objects = eval_hg.nobj + EVAL_LOCAL_SUM;
     object_weight = eval_hg.obj_wgt + EVAL_LOCAL_SUM;
     cut_weight = eval_hg.cutn + EVAL_GLOBAL_AVG;
@@ -1225,10 +1236,17 @@ struct Zoltan_DD_Struct *dd = NULL;
 int *owner = NULL;
 int maxnobj;
 int ierr;
-int start, size, i_am_done, alldone;
+int i, start, size, i_am_done, alldone;
 const int MAXSIZE = 200000;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  for (i=0; i < nnbors; i++){
+    /* Trying to find a sporadic bug where parts of nbors_part 
+     * are uninitialized garbage.
+     */
+    nbors_part[i] = -1;
+  }
 
   MPI_Allreduce(&nobj, &maxnobj, 1, MPI_INT, MPI_MAX, zz->Communicator);
   ierr = Zoltan_DD_Create(&dd, zz->Communicator, zz->Num_GID, zz->Num_LID,
@@ -1257,6 +1275,24 @@ const int MAXSIZE = 200000;
 
   ZOLTAN_FREE(&owner);
   TEST_DD_ERROR(ierr, yo, zz->Proc, "Zoltan_DD_Find");
+
+  for (i=0, size=0; i < nnbors; i++){
+    /* Trying to find a sporadic bug where parts of nbors_part 
+     * are uninitialized garbage.
+     */
+    if (nbors_part[i] < 0){
+      if (size == 10){
+        fprintf(stderr, "%s (%d) more uninitialized entries omitted from print out\n",
+                        yo, zz->Proc);
+        break;
+      }
+      else{
+        fprintf(stderr, "%s (%d) part array index %d is uninitialized\n",
+                        yo, zz->Proc,i);
+        size++;
+      }
+    }
+  }
 
 End:
   Zoltan_DD_Destroy(&dd);
@@ -1547,6 +1583,150 @@ int zoltan_lb_eval_sort_increasing(const void *a, const void *b)
 }
 
 /************************************************************************/
+
+void Zoltan_LB_Eval_Print_Balance(BALANCE_EVAL *lb)
+{
+  int i;
+
+  printf("               Minimum     Maximum      Average      Sum         Sum\n");
+  printf("                across      across        of          of       on local\n");
+  printf("                parts       parts        parts       parts     process\n");
+  printf("               ========    ========    ========    ========    ========\n");
+
+  printf("num objects %11.4f %11.4f %11.4f %11.4f %11.4f\n",
+    lb->nobj[EVAL_GLOBAL_MIN], lb->nobj[EVAL_GLOBAL_MAX], lb->nobj[EVAL_GLOBAL_AVG],
+    lb->nobj[EVAL_GLOBAL_SUM], lb->nobj[EVAL_LOCAL_SUM]);
+
+  printf("weight objs %11.4f %11.4f %11.4f %11.4f %11.4f\n",
+    lb->obj_wgt[EVAL_GLOBAL_MIN], lb->obj_wgt[EVAL_GLOBAL_MAX], lb->obj_wgt[EVAL_GLOBAL_AVG],
+    lb->obj_wgt[EVAL_GLOBAL_SUM], lb->obj_wgt[EVAL_LOCAL_SUM]);
+
+  for (i=0; i < EVAL_MAX_XTRA_VWGTS; i++){
+    if (lb->xtra_obj_wgt[i][EVAL_GLOBAL_SUM] == 0) break;
+    printf(" weight #%d %11.4f %11.4f %11.4f %11.4f %11.4f\n", i+2,
+      lb->xtra_obj_wgt[i][EVAL_GLOBAL_MIN], lb->xtra_obj_wgt[i][EVAL_GLOBAL_MAX], lb->xtra_obj_wgt[i][EVAL_GLOBAL_AVG],
+      lb->xtra_obj_wgt[i][EVAL_GLOBAL_SUM], lb->xtra_obj_wgt[i][EVAL_LOCAL_SUM]);
+  }
+
+  printf("object count imbalance     %11.4f\n",lb->obj_imbalance);
+  printf("object weight imbalance    %11.4f\n",lb->imbalance);
+
+  for (i=0; i < EVAL_MAX_XTRA_VWGTS; i++){
+    if (lb->xtra_imbalance[i] == 0) break;
+    printf("  object weight %d         %11.4f\n",i+2,lb->xtra_imbalance[i]);
+  }
+  printf("\n");
+}
+/************************************************************************/
+
+void Zoltan_LB_Eval_Print_HG(HG_EVAL *hg)
+{
+  int i;
+
+  printf("               Minimum     Maximum      Average      Sum         Sum\n");
+  printf("                across      across        of          of       on local\n");
+  printf("                parts       parts        parts       parts     process\n");
+  printf("               ========    ========    ========    ========    ========\n");
+
+  printf("num vtxs    %11.4f %11.4f %11.4f %11.4f %11.4f\n",
+    hg->nobj[EVAL_GLOBAL_MIN], hg->nobj[EVAL_GLOBAL_MAX], hg->nobj[EVAL_GLOBAL_AVG],
+    hg->nobj[EVAL_GLOBAL_SUM], hg->nobj[EVAL_LOCAL_SUM]);
+
+  printf("weight vtxs %11.4f %11.4f %11.4f %11.4f %11.4f\n",
+    hg->obj_wgt[EVAL_GLOBAL_MIN], hg->obj_wgt[EVAL_GLOBAL_MAX], hg->obj_wgt[EVAL_GLOBAL_AVG],
+    hg->obj_wgt[EVAL_GLOBAL_SUM], hg->obj_wgt[EVAL_LOCAL_SUM]);
+
+  for (i=0; i < EVAL_MAX_XTRA_VWGTS; i++){
+    if (hg->xtra_obj_wgt[i][EVAL_GLOBAL_SUM] == 0) break;
+      printf("  weight %d  %11.4f %11.4f %11.4f %11.4f %11.4f\n", i+2,
+      hg->xtra_obj_wgt[i][EVAL_GLOBAL_MIN], hg->xtra_obj_wgt[i][EVAL_GLOBAL_MAX], hg->xtra_obj_wgt[i][EVAL_GLOBAL_AVG],
+      hg->xtra_obj_wgt[i][EVAL_GLOBAL_SUM], hg->xtra_obj_wgt[i][EVAL_LOCAL_SUM]);
+  }
+
+  printf(" cutn       %11.4f %11.4f %11.4f %11.4f\n",
+    hg->cutn[EVAL_GLOBAL_MIN], hg->cutn[EVAL_GLOBAL_MAX], hg->cutn[EVAL_GLOBAL_AVG],
+    hg->cutn[EVAL_GLOBAL_SUM]);
+
+  printf(" cutl       %11.4f %11.4f %11.4f %11.4f\n",
+    hg->cutl[EVAL_GLOBAL_MIN], hg->cutl[EVAL_GLOBAL_MAX], hg->cutl[EVAL_GLOBAL_AVG],
+    hg->cutl[EVAL_GLOBAL_SUM]);
+
+  printf("vertex number imbalance    %11.4f\n",hg->obj_imbalance);
+  printf("vertex weight imbalance    %11.4f\n",hg->imbalance);
+
+  for (i=0; i < EVAL_MAX_XTRA_VWGTS; i++){
+    if (hg->xtra_imbalance[i] == 0) break;
+    printf("  weight %d               %11.4f\n",i+2,hg->xtra_imbalance[i]);
+  }
+  printf("\n");
+}
+
+/************************************************************************/
+
+void Zoltan_LB_Eval_Print_Graph(GRAPH_EVAL *graph)
+{
+  int i;
+
+  printf("               Minimum     Maximum      Average      Sum         Sum\n");
+  printf("                across      across        of          of       on local\n");
+  printf("                parts       parts        parts       parts     process\n");
+  printf("               ========    ========    ========    ========    ========\n");
+
+  printf("num vtxs    %11.4f %11.4f %11.4f %11.4f %11.4f\n",
+    graph->nobj[EVAL_GLOBAL_MIN], graph->nobj[EVAL_GLOBAL_MAX], graph->nobj[EVAL_GLOBAL_AVG],
+    graph->nobj[EVAL_GLOBAL_SUM], graph->nobj[EVAL_LOCAL_SUM]);
+
+  printf("weight vtxs %11.4f %11.4f %11.4f %11.4f %11.4f\n",
+    graph->obj_wgt[EVAL_GLOBAL_MIN], graph->obj_wgt[EVAL_GLOBAL_MAX], graph->obj_wgt[EVAL_GLOBAL_AVG],
+    graph->obj_wgt[EVAL_GLOBAL_SUM], graph->obj_wgt[EVAL_LOCAL_SUM]);
+
+  for (i=0; i < EVAL_MAX_XTRA_VWGTS; i++){
+    if (graph->xtra_obj_wgt[i][EVAL_GLOBAL_SUM] == 0) break;
+    printf("  weight %d  %11.4f %11.4f %11.4f %11.4f %11.4f\n", i+2,
+      graph->xtra_obj_wgt[i][EVAL_GLOBAL_MIN], graph->xtra_obj_wgt[i][EVAL_GLOBAL_MAX], graph->xtra_obj_wgt[i][EVAL_GLOBAL_AVG],
+      graph->xtra_obj_wgt[i][EVAL_GLOBAL_SUM], graph->xtra_obj_wgt[i][EVAL_LOCAL_SUM]);
+  }
+
+  printf("# bdry vtxs %11.4f %11.4f %11.4f %11.4f %11.4f\n",
+    graph->num_boundary[EVAL_GLOBAL_MIN], graph->num_boundary[EVAL_GLOBAL_MAX], graph->num_boundary[EVAL_GLOBAL_AVG],
+    graph->num_boundary[EVAL_GLOBAL_SUM], graph->num_boundary[EVAL_LOCAL_SUM]);
+
+  printf(" cutn       %11.4f %11.4f %11.4f %11.4f\n",
+    graph->cutn[EVAL_GLOBAL_MIN], graph->cutn[EVAL_GLOBAL_MAX], graph->cutn[EVAL_GLOBAL_AVG],
+    graph->cutn[EVAL_GLOBAL_SUM]);
+
+  printf(" cutl       %11.4f %11.4f %11.4f %11.4f\n",
+    graph->cutl[EVAL_GLOBAL_MIN], graph->cutl[EVAL_GLOBAL_MAX], graph->cutl[EVAL_GLOBAL_AVG],
+    graph->cutl[EVAL_GLOBAL_SUM]);
+
+  printf(" cuts       %11.4f %11.4f %11.4f %11.4f\n",
+    graph->cuts[EVAL_GLOBAL_MIN], graph->cuts[EVAL_GLOBAL_MAX], graph->cuts[EVAL_GLOBAL_AVG],
+    graph->cuts[EVAL_GLOBAL_SUM]);
+
+  printf("cut wgt     %11.4f %11.4f %11.4f %11.4f\n",
+    graph->cut_wgt[EVAL_GLOBAL_MIN], graph->cut_wgt[EVAL_GLOBAL_MAX], graph->cut_wgt[EVAL_GLOBAL_AVG],
+    graph->cut_wgt[EVAL_GLOBAL_SUM]);
+
+  for (i=0; i < EVAL_MAX_XTRA_EWGTS; i++){
+    if (graph->xtra_cut_wgt[i][EVAL_GLOBAL_SUM] == 0) break;
+      printf("  weight %d  %11.4f %11.4f %11.4f %11.4f\n", i+2,
+      graph->xtra_cut_wgt[i][EVAL_GLOBAL_MIN], graph->xtra_cut_wgt[i][EVAL_GLOBAL_MAX], graph->xtra_cut_wgt[i][EVAL_GLOBAL_AVG],
+      graph->xtra_cut_wgt[i][EVAL_GLOBAL_SUM]);
+  }
+
+  printf("#nbor parts %11.4f %11.4f %11.4f %11.4f\n",
+    graph->nnborparts[EVAL_GLOBAL_MIN], graph->nnborparts[EVAL_GLOBAL_MAX], graph->nnborparts[EVAL_GLOBAL_AVG],
+    graph->nnborparts[EVAL_GLOBAL_SUM]);
+
+  printf("vertex number imbalance    %11.4f\n",graph->obj_imbalance);
+  printf("vertex weight imbalance    %11.4f\n",graph->imbalance);
+
+  for (i=0; i < EVAL_MAX_XTRA_VWGTS; i++){
+    if (graph->xtra_imbalance[i] == 0) break;
+    printf("  weight %d                 %11.4f\n",i+2,graph->xtra_imbalance[i]);
+  }
+  printf("\n");
+}
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
