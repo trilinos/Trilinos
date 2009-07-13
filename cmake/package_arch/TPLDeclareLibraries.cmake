@@ -278,7 +278,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
       IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
         MULTILINE_SET(ERRMSG
           "Error, could not find the ${TPL_NAME} headers include directory!"
-          " Please manually set ${TPL_NAME}_INCUDE_DIRS and/or"
+          " Please manually set ${TPL_NAME}_INCLUDE_DIRS and/or"
           " ${TPL_NAME}_LIBRARY_DIRS or TPL_${TPL_NAME}_INCLUDE_DIRS to point"
           " to the ${TPL_NAME} headers!")
         MESSAGE(FATAL_ERROR ${ERRMSG})
