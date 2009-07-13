@@ -42,6 +42,7 @@
 //#include "Ifpack_HashTable.hpp"
 #include "Teuchos_Array.hpp"
 #include "EpetraExt_OperatorOut.h"
+#include "EpetraExt_BlockMapOut.h"
 extern int ML_NODE_ID;
 #endif
 
@@ -198,48 +199,8 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   
   NumMyRowsA_ = A().NumMyRows();
 
-/*
-  if (A().Comm().MyPID() == 0) printf("====== globA rowmap ========\n");
-  cout << A().RowMatrixRowMap() << endl;
-  if (A().Comm().MyPID() == 0) printf("====== globA colmap ========\n");
-  cout << A().RowMatrixColMap() << endl;
-*/
-
-  // off-node GIDs that will be in the overlap
-  vector<int> ghostElements; 
-
   // GIDs that will be in the overlapped matrix's column map
   vector<int> colMapElements; 
-
-//FIXME
-// 1) Instantiate a object,
-//
-//    Ifpack_HashTable Hash(size);
-//
-//    size should be a prime number, like 2^k - 1.
-//
-// 3) use it, then delete it:
-//
-//    Hash.get(key, value)       --> returns the value stored on key, or 0.0 
-//                                   if not found.
-//    Hash.set(key, value)       --> sets the value in the hash table, replace
-//                                   existing values.
-//    Hash.set(key, value, true) --> to sum into an already inserted value
-//    Hash.arrayify(...)
-//
-// 4) clean memory:
-//
-//FIXME
-
-  // ghostTable holds off-node GIDs that are connected to on-node rows and can potentially be this PID's overlap
-  // TODO hopefully 3 times the # column entries is a reasonable table size
-  //Teuchos::Hashtable<int,int> ghostTable;
-  //Ifpack::HashTable ghostTable;
-
-  // nbTable holds node buddy GIDs that are connected to current PID's rows, i.e., GIDs that should be in the overlapped
-  // matrix's column map
-  //Teuchos::Hashtable<int,int> colMapTable;
-  //Ifpack::HashTable colMapTable;
 
   RCP<Epetra_Map> TmpMap;
   RCP<Epetra_CrsMatrix> TmpMatrix; 
@@ -251,19 +212,8 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   const Epetra_Map *ColMap; 
   const Epetra_Map *DomainMap;
 
-  //int mypid = Comm().MyPID();
-
   // TODO Count #connections from nodes I own to each ghost node
 
-/*
-  if (!mypid) printf("original matrix colmap\n===========================\n");
-  fflush(stdout);
-  sleep(1);
-  cout << A().RowMatrixColMap() << endl;
-  if (!mypid) printf("===========================\n");
-  sleep(1);
-  Comm().Barrier();
-*/
 
   //FIXME timing
 #ifdef IFPACK_OVA_TIME_BUILD
@@ -273,29 +223,27 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 #endif
   //FIXME timing
 
-  // ghostTable holds off-node GIDs that are connected to on-node rows and can potentially be this PID's overlap
-  // TODO hopefully 3 times the # column entries is a reasonable table size
-  //Teuchos::Hashtable<int,int> ghostTable;
-  //Ifpack::HashTable ghostTable;
-
-  // nbTable holds node buddy GIDs that are connected to current PID's rows, i.e., GIDs that should be in the overlapped
-  // matrix's column map
-  //Teuchos::Hashtable<int,int> colMapTable;
-  //Ifpack::HashTable colMapTable;
-  Teuchos::Hashtable<int,int> ghostTable(3 * A().RowMatrixColMap().NumMyElements() );
-  Teuchos::Hashtable<int,int> colMapTable(3 * A().RowMatrixColMap().NumMyElements() );
-
 #ifdef IFPACK_OVA_TIME_BUILD
   t1 = MPI_Wtime();
   fprintf(stderr,"[node %d]: overlap hash table allocs %2.3e\n", nodeID, t1-t0);
   t0=t1;
 #endif
 
+  // ghost rows that were detected in a previous overlap round
+  Teuchos::Hashtable<int,int> prevFound(3 * A().RowMatrixColMap().NumMyElements() );
+
   /* ** ************************************************************************** ** */
   /* ** ********************** start of main overlap loop ************************ ** */
   /* ** ************************************************************************** ** */
   for (int overlap = 0 ; overlap < OverlapLevel_in ; ++overlap)
   {
+    // nbTable holds node buddy GIDs that are connected to current PID's rows, i.e., GIDs that should be in the overlapped
+    // matrix's column map
+    // ghostTable holds off-node GIDs that are connected to on-node rows and can potentially be this PID's overlap
+    // TODO hopefully 3 times the # column entries is a reasonable table size
+    Teuchos::Hashtable<int,int> ghostTable(3 * A().RowMatrixColMap().NumMyElements() );
+    Teuchos::Hashtable<int,int> colMapTable(3 * A().RowMatrixColMap().NumMyElements() );
+
     if (TmpMatrix != Teuchos::null) {
       RowMap = &(TmpMatrix->RowMatrixRowMap()); 
       ColMap = &(TmpMatrix->RowMatrixColMap()); 
@@ -313,15 +261,12 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     t0=t1;
 #endif
     
-    //ghostTable = Ifpack::HashTable(3 * A().RowMatrixColMap().NumMyElements() );
-    //colMapTable = Ifpack::HashTable(3 * A().RowMatrixColMap().NumMyElements() );
-
-    
     // For each column ID, determine the owning node (as opposed to core)
     // ID of the corresponding row.
     Epetra_IntVector colIdList( *ColMap );
     Epetra_IntVector rowIdList(*DomainMap);
     rowIdList.PutValue(nodeID);  
+    //if (!mypid) cout << "here 1" << endl; //TODO delete
     Teuchos::RCP<Epetra_Import> nodeIdImporter = rcp(new Epetra_Import( *ColMap, *DomainMap ));
 
 #ifdef IFPACK_OVA_TIME_BUILD
@@ -347,7 +292,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     // This naturally does not include off-core rows that are on the same node as me, i.e., node buddy rows.
     for (int i = 0 ; i < ColMap->NumMyElements() ; ++i) {
       int GID = ColMap->GID(i); 
-      if ( colIdList[i] != nodeID )
+      if ( colIdList[i] != nodeID && !prevFound.containsKey(GID)) // don't include anybody found in a previous round
       {
         int votes;
         if (ghostTable.containsKey(GID)) {
@@ -527,10 +472,8 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 
     count=0;
     for (int i=0; i<ghostTable.size(); i++) {
-      ghostElements.push_back(gidsarray[i]);
-      list[i] = gidsarray[i];  //FIXME this won't work for >1 level of overlap. list should only contain
-                               //FIXME the *current* level of overlap, not *all* the overlap
-                               // JJH 4/1/09 this is ok -- list is local scope, so it can *only* have current level of overlap
+      prevFound.put(gidsarray[i],1);
+      list[i] = gidsarray[i];
       count++;
     }
 
@@ -598,7 +541,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     }
 
     for (int i = 0 ; i < A().RowMatrixColMap().NumMyElements() ; ++i) {
-      int GID = ColMap->GID(i); 
+      int GID = A().RowMatrixColMap().GID(i);
       // Remove any entries that are in A's original column map
       if (colMapTable.containsKey(GID)) {
         try{colMapTable.remove(GID);}
@@ -622,12 +565,20 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 #endif
     //FIXME timing
 
-
   } //for (int overlap = 0 ; overlap < OverlapLevel_in ; ++overlap)
 
   /* ** ************************************************************************ ** */
   /* ** ********************** end of main overlap loop ************************ ** */
   /* ** ************************************************************************ ** */
+
+  // off-node GIDs that will be in the overlap
+  vector<int> ghostElements; 
+
+  Teuchos::Array<int> gidsarray,votesarray;
+  prevFound.arrayify(gidsarray,votesarray);
+  for (int i=0; i<prevFound.size(); i++) {
+    ghostElements.push_back(gidsarray[i]);
+  }
 
 /*
    We need two maps here.  The first is the row map, which we've got by using my original rows
@@ -727,9 +678,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
        must be the same as that of the domain map's local entries.  See the comment in method
        MakeColMap() in Epetra_CrsGraph.cpp, line 1072. */
     int *rowGlobalElts =  nodeMap_->MyGlobalElements();
-    //int numRowElts = nodeMap_->NumMyElements();
-    //printf("lpid %d: numRowElts = %d, leng = %d\n",Comm().MyPID(),numRowElts,leng); fflush(stdout);
-    //assert(numRowElts==leng);
     for (int i=0; i<leng; i++) {
       (&*mySortedGlobalElts)[i] = rowGlobalElts[i];
       (&*mySortedPidList)[i] = nodeComm->MyPID();
@@ -758,16 +706,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     int indexBase = colMap_->IndexBase();
     colMap_ = Teuchos::null;
     colMap_ = rcp( new Epetra_Map(-1,numMyElts,&*mySortedGlobalElts,indexBase,Comm()) );
-
-/*
-    if (SubComm_->MyPID()==0)
-      printf(">>>>>> node %d local column map <<<<<<<\n",ML_NODE_ID);
-    cout << *(&*colMap_) << endl;
-
-    sleep(1);
-
-*/
-//EPETRA_CHK_ERR(EpetraExt::OperatorToMatlabFile("Ainv.dat", AInvOp));
 
   }
   catch(...) {
@@ -807,22 +745,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   SortLists[0] = RemoteColIndices;
   SortLists[1] = RemoteSizeList;
   epetraUtil.Sort(true, NumRemoteColGIDs, PIDList.Values(), 0, 0, NLists, SortLists);
-*/
-
-/*
-  if (!mypid)
-    printf("row map\n==========================\n");
-  fflush(stdout);sleep(1);
-  cout << *Map_ << endl;
-  sleep(1);
-  Comm().Barrier();
-
-  if (!mypid)
-    printf("overlapped col map\n===================\n");
-  fflush(stdout);
-  sleep(1);
-  cout << *colMap_ << endl;
-  sleep(3);
 */
 
   // now build the map corresponding to all the external nodes
@@ -881,27 +803,6 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   
   if (MaxNumEntries_ < B().MaxNumEntries())
     MaxNumEntries_ = B().MaxNumEntries();
-
-/*
-  if (!Comm().MyPID()) printf("========\nA matrix\n========\n"); fflush(stdout);
-  EpetraExt::OperatorToMatlabFile("Aorig.dat",A());
-  sleep(3);
-  Comm().Barrier();
-*/
-
-/*
-  if (!Comm().MyPID()) printf("========\nB matrix\n========\n"); fflush(stdout);
-  cout << *ExtMatrix_ << endl;
-  //EpetraExt::OperatorToMatlabFile("Bmatrix.dat",B());
-  sleep(3);
-  Comm().Barrier();
-
-  if (Comm().MyPID()==0)
-    printf("=======================================\nIfpack_OverlappingRowMatrix Importer_\n=======================================\n"); fflush(stdout);
-  cout << *(A().RowMatrixImporter()) << endl;
-
-  sleep(2);
-*/
 
 # ifdef HAVE_MPI
   delete nodeComm;
