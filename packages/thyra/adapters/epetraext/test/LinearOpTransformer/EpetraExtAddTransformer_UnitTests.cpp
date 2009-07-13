@@ -9,6 +9,7 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -134,6 +135,83 @@ TEUCHOS_UNIT_TEST( EpetraExtAddTransformer, basic_Add )
      ApB_transformer->transform( *M, M_explicit.ptr() );
    
      out << "\nM_explicit = " << *M_explicit;
+   
+     //
+     // E) Check the explicit operator
+     //
+   
+     LinearOpTester<double> M_explicit_tester;
+     M_explicit_tester.show_all_tests(true);;
+   
+     const bool result = M_explicit_tester.compare( *M, *M_explicit, &out );
+     if (!result) success = false;
+  }
+}
+
+TEUCHOS_UNIT_TEST( EpetraExtAddTransformer, mod_Add )
+{
+  
+  //
+  // A) Read in problem matrices
+  //
+  
+  out << "\nReading linear system in Epetra format from the file \'"<<matrixFile<<"\' ...\n";
+  out << "\nReading linear system in Epetra format from the file \'"<<matrixFile2<<"\' ...\n";
+    
+#ifdef HAVE_MPI
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm comm;
+#endif
+  RCP<Epetra_CrsMatrix> epetra_A;
+  RCP<Epetra_CrsMatrix> epetra_B;
+  EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A, NULL, NULL, NULL );
+  EpetraExt::readEpetraLinearSystem( matrixFile2, comm, &epetra_B, NULL, NULL, NULL );
+  
+  //
+  // B) Create the Thyra wrapped version
+  //
+  double scaleA=3.7;
+  double scaleB=-2.9;
+ 
+  const RCP<const Thyra::LinearOpBase<double> > A = Thyra::scale<double>(scaleA,Thyra::epetraLinearOp(epetra_B));
+  const RCP<const Thyra::LinearOpBase<double> > B = Thyra::scale<double>(scaleB,Thyra::epetraLinearOp(epetra_B));
+
+  out << "\nA = " << *A;
+  out << "\nB = " << *B;
+
+  for(int scenario=0;scenario<4;scenario++) {
+     //
+     // C) Create implicit A+B operator
+     //
+   
+     const RCP<const Thyra::LinearOpBase<double> > M = buildAddOperator(scenario,A,B);
+   
+     //
+     // D) Do the transformation
+     //
+   
+     const RCP<EpetraExtAddTransformer> ApB_transformer = epetraExtAddTransformer();
+   
+     TEST_ASSERT(ApB_transformer != null);
+   
+     const RCP<LinearOpBase<double> > M_explicit = ApB_transformer->createOutputOp();
+     const RCP<LinearOpBase<double> > M_explicit_orig = M_explicit;
+     ApB_transformer->transform( *M, M_explicit.ptr() );
+
+     // do some violence to one of the operators
+     double * view; int numEntries;
+     epetra_B->Scale(3.2);
+     TEUCHOS_ASSERT(epetra_B->ExtractMyRowView(3,numEntries,view)==0);
+     for(int i=0;i<numEntries;i++) view[i] += view[i]*double(i+1);
+
+     // compute multiply again
+     ApB_transformer->transform( *M, M_explicit.ptr() );
+
+     out << "\nM_explicit = " << *M_explicit;
+
+     TEUCHOS_ASSERT(Thyra::get_Epetra_Operator(*M_explicit)
+                  ==Thyra::get_Epetra_Operator(*M_explicit_orig));
    
      //
      // E) Check the explicit operator

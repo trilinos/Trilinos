@@ -56,7 +56,7 @@ int EE_Add(const Epetra_CrsMatrix & A,
                       const Epetra_CrsMatrix & B,
                       bool transposeB,
                       double scalarB,
-                      Epetra_CrsMatrix * & C)
+                      RCP<Epetra_CrsMatrix> & C)
 {
   //
   //This method forms the matrix-matrix sum C = scalarA * op(A) + scalarB * op(B), where
@@ -88,8 +88,11 @@ int EE_Add(const Epetra_CrsMatrix & A,
   else
      Bprime = const_cast<Epetra_CrsMatrix*>(&B);
 
-  // allocate the new matrix
-  C = new Epetra_CrsMatrix(Copy,Aprime->RowMap(),0);
+  // allocate or zero the new matrix
+  if(C!=Teuchos::null && C->Filled())
+     C->PutScalar(0.0);
+  else
+     C = Teuchos::rcp(new Epetra_CrsMatrix(Copy,Aprime->RowMap(),0));
 
   // build arrays  for easy resuse
   int ierr = 0;
@@ -115,9 +118,15 @@ int EE_Add(const Epetra_CrsMatrix & A,
         if( scalar[k] != 1.0 )
            for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalar[k];
    
-        err = C->InsertGlobalValues( Row, NumEntries, Values, Indices );
-        assert( err == 0 || err == 1 || err == 3 );
-        if (err < 0) ierr = err;
+        if(C->Filled()) { // Sum in values
+           err = C->SumIntoGlobalValues( Row, NumEntries, Values, Indices );
+           assert(err>=0);
+           if (err < 0) ierr = err;
+        } else {
+           err = C->InsertGlobalValues( Row, NumEntries, Values, Indices );
+           assert(err>=0);
+           if (err < 0) ierr = err;
+        }
      }
 
      delete [] Indices;
@@ -203,10 +212,9 @@ void EpetraExtAddTransformer::transform(
          = (A_transp==CONJTRANS ? epetra_A->RowMap() : epetra_A->ColMap());
  
    //
-   // C) Do the explicit multiplication
+   // C) Do the explicit addition
    //
   
-/*
    // allocate space for final addition: 3 steps
    //   1. Get destination EpetraLinearOp
    //   2. Extract RCP to destination Epetra_CrsMatrix
@@ -214,35 +222,11 @@ void EpetraExtAddTransformer::transform(
    EpetraLinearOp &thyra_epetra_op_inout = dyn_cast<EpetraLinearOp>(*op_inout);
    RCP<Epetra_CrsMatrix>  epetra_op =
          rcp_dynamic_cast<Epetra_CrsMatrix>(thyra_epetra_op_inout.epetra_op());
-   if(is_null(epetra_op)) {
-      int maxEntries = std::max(epetra_A->GlobalMaxNumEntries(),epetra_B->GlobalMaxNumEntries());
-      epetra_op = Teuchos::rcp(
-            new Epetra_CrsMatrix(::Copy, op_inout_row_map, maxEntries));
-   }
-*/
 
-/*
-   // perform multiply: Its annoying I have to do this with two adds.
-   // Problem is I can't find a copy of CrsMatrices that doesn't call FillComplete.
-   // I want this sum operation to allow new entries into the sparse matrix
-   // not to be resricted to the sparsity pattern of A or B
-   // epetra_op = A_scalar*A
-   const int add_epetra_A_err = EpetraExt::MatrixMatrix::Add(
-     *epetra_A, A_transp==CONJTRANS, A_scalar, *epetra_op, 0.0 );
-   TEUCHOS_ASSERT_EQUALITY( add_epetra_A_err, 0 );
-
-   // epetra_op += B_Scalar*B
-   const int add_epetra_B_err = EpetraExt::MatrixMatrix::Add(
-     *epetra_B, A_transp==CONJTRANS, B_scalar, *epetra_op, 1.0 );
-   TEUCHOS_ASSERT_EQUALITY( add_epetra_B_err, 0 );
-*/
-   EpetraLinearOp &thyra_epetra_op_inout = dyn_cast<EpetraLinearOp>(*op_inout);
-    
-   Epetra_CrsMatrix * ptrEpetra_op;
-   const int add_epetra_B_err = EE_Add(*epetra_A,A_transp==CONJTRANS,A_scalar,*epetra_B,B_transp==CONJTRANS,B_scalar,ptrEpetra_op);
+   // perform addition
+   const int add_epetra_B_err = EE_Add(*epetra_A,A_transp==CONJTRANS,A_scalar,*epetra_B,B_transp==CONJTRANS,B_scalar,epetra_op);
    TEUCHOS_ASSERT_EQUALITY( add_epetra_B_err, 0 );
    
-   RCP<Epetra_CrsMatrix>  epetra_op = Teuchos::rcp(ptrEpetra_op);
    epetra_op->FillComplete();
 
    // set output operator to use newly create epetra_op
