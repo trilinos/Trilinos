@@ -897,15 +897,15 @@ int main(int argc, char *argv[]) {
       for (int i = 0; i < numFacesPerElem; i++){
         if (faceOnBoundary(elemToFace(k,i))){
 
-         // Map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints
+         // map Gauss points on quad to reference face: paramGaussPoints -> refGaussPoints
             CellTools::mapToReferenceSubcell(refGaussPoints,
                                    paramGaussPoints,
                                    2, i, hex_8);
 
-         // Get basis values at points on reference cell
+         // get basis values at points on reference cell
            hexHDivBasis.getValues(worksetDVals, refGaussPoints, OPERATOR_VALUE);
 
-         // Compute Jacobians at Gauss pts. on reference face for all parent cells
+         // compute Jacobians at Gauss pts. on reference face for all parent cells
            CellTools::setJacobian(worksetJacobians, refGaussPoints,
                          hexNodes, hex_8);
            CellTools::setJacobianDet(worksetJacobDet, worksetJacobians);
@@ -914,44 +914,23 @@ int main(int argc, char *argv[]) {
             fst::HDIVtransformVALUE<double>(worksetDValsTransformed, worksetJacobians,
                                    worksetJacobDet, worksetDVals);
 
-/*
-         // compute weighted measure
-            fst::computeMeasure<double>(worksetWeightedMeasure, worksetJacobDet, paramGaussWeights);
-
-         // multiply by weighted measure
-            fst::multiplyMeasure<double>(worksetDValsTransformedWeighted,
-                                   worksetWeightedMeasure, worksetDValsTransformed);
-         // multiply by weighted measure
-            fst::multiplyMeasure<double>(worksetDValsTransformedWeighted,
-                                   paramGaussWeights, worksetDValsTransformed);
-          // Compute the cross product of curluFace with basis
-           for (int nF = 0; nF < numFieldsD; nF++){
-              for(int nPt = 0; nPt < numFacePoints; nPt++){
-                for(int dim = 0; dim < spaceDim; dim++){
-                  worksetDValsTransformedWeighted(0,nF,nPt,dim) = worksetDValsTransformed(0,nF,nPt,dim)
-                                              *paramGaussWeights(nPt);
-                } //dim
-              } //nPt
-           } //nF
-
-*/
-
-         // Map Gauss points on quad from ref. face to face workset: refGaussPoints -> worksetGaussPoints
+         // map Gauss points on quad from ref. face to face workset: refGaussPoints -> worksetGaussPoints
             CellTools::mapToPhysicalFrame(worksetGaussPoints,
                                 refGaussPoints,
                                 hexNodes, hex_8);
-        // Compute face tangents
+
+        // compute face tangents
             CellTools::getPhysicalFaceTangents(worksetFaceTu,
                                      worksetFaceTv,
                                      paramGaussPoints,
                                      worksetJacobians,
                                      i, hex_8);
 
-         // Face outer normals (relative to parent cell) are uTan x vTan
+         // face outer normals (relative to parent cell) are uTan x vTan
             RealSpaceTools<double>::vecprod(worksetFaceN, worksetFaceTu, worksetFaceTv);
 
 
-         // Evaluate curl u at face points
+         // evaluate curl u at face points
            for(int nPt = 0; nPt < numFacePoints; nPt++){
 
              double x = worksetGaussPoints(0, nPt, 0);
@@ -961,7 +940,7 @@ int main(int argc, char *argv[]) {
              evalCurlu(curluFace(0,nPt,0), curluFace(0,nPt,1), curluFace(0,nPt,2), x, y, z);
            }
 
-          // Compute the cross product of curluFace with basis and multiply by weights
+          // compute the cross product of curluFace with basis and multiply by weights
            for (int nF = 0; nF < numFieldsD; nF++){
               for(int nPt = 0; nPt < numFacePoints; nPt++){
                   worksetDataCrossField(0,nF,nPt,0) = (curluFace(0,nPt,1)*worksetDValsTransformed(0,nF,nPt,2)
