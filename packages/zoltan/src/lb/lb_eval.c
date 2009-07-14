@@ -1242,8 +1242,8 @@ const int MAXSIZE = 200000;
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   for (i=0; i < nnbors; i++){
-    /* Trying to find a sporadic bug where parts of nbors_part 
-     * are uninitialized garbage.
+    /* 
+     * a check on validity of data supplied by query functions
      */
     nbors_part[i] = -1;
   }
@@ -1277,9 +1277,6 @@ const int MAXSIZE = 200000;
   TEST_DD_ERROR(ierr, yo, zz->Proc, "Zoltan_DD_Find");
 
   for (i=0, size=0; i < nnbors; i++){
-    /* Trying to find a sporadic bug where parts of nbors_part 
-     * are uninitialized garbage.
-     */
     if (nbors_part[i] < 0){
       if (size == 10){
         fprintf(stderr, "%s (%d) more uninitialized entries omitted from print out\n",
@@ -1287,11 +1284,16 @@ const int MAXSIZE = 200000;
         break;
       }
       else{
-        fprintf(stderr, "%s (%d) part array index %d is uninitialized\n",
+        fprintf(stderr, "%s (%d) ERROR part array index %d is uninitialized\n",
                         yo, zz->Proc,i);
         size++;
       }
     }
+  }
+  if (size){
+    fprintf(stderr, "%s (%d) Most likely cause is incorrect edge data from application\n",
+                        yo, zz->Proc);
+    ierr = ZOLTAN_FATAL;
   }
 
 End:
