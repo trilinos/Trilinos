@@ -30,7 +30,7 @@ failures.
 
 
 (*) [General] [P1] MS Windows port and installer: We would like
-Kitware to set up out MS Windows HPC Server 2008 machine and get the
+Kitware to set up our MS Windows HPC Server 2008 machine and get the
 Trilinos CMake build going with nightly testing.  We would also like
 some help porting Trilinos packages.
 
@@ -41,7 +41,7 @@ https://software.sandia.gov/bugzilla/show_bug.cgi?id=4474
  
 
 (*) [CMake] [P2] Native and mixed-language support for Fortran 2003
-(and some 2008): Collaborate with Damian Rousaon on this.
+(and some 2008): Collaborate with Damian Rouson on this.
 
 
 (*) [CTest] [P2] By default, automatically widen the main summary
