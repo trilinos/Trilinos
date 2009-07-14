@@ -88,10 +88,10 @@ namespace Kokkos {
     //@{
 
     //! Initialize structure of matrix
-    int initializeStructure(const MAT& A, bool view=true);
+    int initializeStructure(const MAT& A, bool view);
 
     //! Initialize values of matrix
-    int initializeValues(const MAT& A, bool view=true);
+    int initializeValues(const MAT& A, bool view);
 
     //@}
 
@@ -167,10 +167,10 @@ namespace Kokkos {
     //@{
 
     //! Initialize structure of matrix
-    int initializeStructure(const CrsMatrix<Scalar,Ordinal,Node> & A, bool view=true);
+    int initializeStructure(const CrsMatrix<Scalar,Ordinal,Node> & A, bool view);
 
     //! Initialize values of matrix
-    int initializeValues(const CrsMatrix<Scalar,Ordinal,Node> & A, bool view=true);
+    int initializeValues(const CrsMatrix<Scalar,Ordinal,Node> & A, bool view);
 
     //@}
 

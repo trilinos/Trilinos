@@ -8,7 +8,6 @@
 template <class Scalar, class Node>
 struct InitOp {
   typename Node::template buffer<Scalar>::buffer_t x;
-  int n;
   inline KERNEL_PREFIX void execute(int i) {
     x[i] = 1;
   }

@@ -95,8 +95,8 @@ namespace {
       inds[0] = N-2; inds[1] = N-1; A.insertEntries(N-1,2,inds,vals  );
     }
     DefaultSparseMultiply<MAT,MV> dsm(node);
-    dsm.initializeStructure(A);
-    dsm.initializeValues(A);
+    dsm.initializeStructure(A,true);
+    dsm.initializeValues(A,true);
 
     typename Node::template buffer<Scalar>::buffer_t xdat, axdat;
     xdat  = node.template allocBuffer<Scalar>(N);

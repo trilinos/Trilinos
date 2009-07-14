@@ -26,7 +26,7 @@ template <class WDPin>
 struct BlockedRangeWDPReducer {
   WDPin wd;
   typename WDPin::ReductionType result;
-  BlockedRangeWDPReducer(WDPin &in) : wd(in) {}
+  BlockedRangeWDPReducer(WDPin &in) : wd(in), result(WDPin::identity()) {}
   BlockedRangeWDPReducer(BlockedRangeWDPReducer &in, tbb::split) : wd(in.wd) {result = wd.identity();}
   void operator()(tbb::blocked_range<int> &rng)
   { 
@@ -45,12 +45,15 @@ struct BlockedRangeWDPReducer {
 class TBBNode : public StandardMemoryModel {
   public:
 
-    TBBNode() {}
-    TBBNode(int numThreads) {
+    TBBNode() : alreadyInit_(false) {}
+    TBBNode(int numThreads) : alreadyInit_(false) {
       init(numThreads);
     }
 
     void init(int numThreads) {
+      if (alreadyInit_) {
+        tsi_.terminate();
+      }
       if (numThreads >= 1) {
         tsi_.initialize(numThreads);
       }
@@ -76,6 +79,7 @@ class TBBNode : public StandardMemoryModel {
     }
 
   private:
+    bool alreadyInit_;
     static tbb::task_scheduler_init tsi_;
 
 };

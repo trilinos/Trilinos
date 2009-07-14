@@ -44,7 +44,6 @@ namespace {
       TimeMonitor localTimer(tInit);
       InitOp<int,NODE> wdp;
       wdp.x = x;
-      wdp.n = N;
       node.parallel_for(0,N,wdp);
     }
     // compute sum x[i], i=0:N-1
@@ -67,4 +66,3 @@ namespace {
   }
 
 }
-

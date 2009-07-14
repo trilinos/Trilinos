@@ -79,7 +79,7 @@ namespace Kokkos {
     inline KERNEL_PREFIX void execute(int i) const
     {
       Scalar tmp = y[i];
-      y[i] = x[i]*tmp;
+      y[i] = tmp / x[i];
     }
   };
 
@@ -101,7 +101,7 @@ namespace Kokkos {
       }
 
       //! Divide one MultiVector by another, element-wise: B /= A
-      static void Divide(const MV &A, MV &B) {
+      static void Divide(MV &A, const MV &B) {
         TEST_FOR_EXCEPTION(true,std::logic_error,"DefaultArithmetic<" << Teuchos::typeName(A) << ": no specialization exists for given multivector type.");
       }
   };
@@ -134,53 +134,69 @@ namespace Kokkos {
       }
 
       //! Multiply one MultiVector by another, element-wise: B *= A
-      static void Multiply(const MultiVector<Scalar,Ordinal,Node> &A, MultiVector<Scalar,Ordinal,Node> &B) {
+      static void Multiply(MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B) {
         const Ordinal nR = A.getNumRows();
         const Ordinal nC = A.getNumCols();
-        TEST_FOR_EXCEPTION(nC != B.getNumCols() ||
+        TEST_FOR_EXCEPTION(((nC != B.getNumCols()) && B.getNumCols() != 1)  ||
                            nR != B.getNumRows(), 
                            std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Multiply(A,B): A and B must have the same dimensions.");
         Node &node = B.getNode();
-        if (A.getStride() == nR && B.getStride() == nR) {
+        if (B.getNumCols() == 1) {
+          ScaleOp<Scalar,Node> wdp;
+          wdp.x = B.getValues(0);
+          for (Ordinal j=0; j<nC; ++j) {
+            wdp.y = A.getValues(j);
+            node.template parallel_for<ScaleOp<Scalar,Node> >(0,nR,wdp);
+          }
+        }
+        else if (A.getStride() == nR && B.getStride() == nR) {
           // one kernel invocation for whole multivector
           ScaleOp<Scalar,Node> wdp;
-          wdp.x = A.getValues(0);
-          wdp.y = B.getValues(0);
+          wdp.y = A.getValues(0);
+          wdp.x = B.getValues(0);
           node.template parallel_for<ScaleOp<Scalar,Node> >(0,nR*nC,wdp);
         }
         else {
           // one kernel invocation for each column
           ScaleOp<Scalar,Node> wdp;
           for (Ordinal j=0; j<nC; ++j) {
-            wdp.x = A.getValues(j);
-            wdp.y = B.getValues(j);
+            wdp.y = A.getValues(j);
+            wdp.x = B.getValues(j);
             node.template parallel_for<ScaleOp<Scalar,Node> >(0,nR,wdp);
           }
         }
       }
 
       //! Divide one MultiVector by another, element-wise: B /= A
-      static void Divide(const MultiVector<Scalar,Ordinal,Node> &A, MultiVector<Scalar,Ordinal,Node> &B) {
+      static void Divide(MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B) {
         const Ordinal nR = A.getNumRows();
         const Ordinal nC = A.getNumCols();
-        TEST_FOR_EXCEPTION(nC != B.getNumCols() ||
+        TEST_FOR_EXCEPTION(((nC != B.getNumCols()) && B.getNumCols() != 1)  ||
                            nR != B.getNumRows(), 
                            std::runtime_error,
                            "DefaultArithmetic<" << Teuchos::typeName(A) << ">::Divide(A,B): A and B must have the same dimensions.");
         Node &node = B.getNode();
         RecipScaleOp<Scalar,Node> wdp;
-        if (A.getStride() == nR && B.getStride() == nR) {
+        if (B.getNumCols() == 1) {
+          // one kernel invocation for each column
+          wdp.x = B.getValues(0);
+          for (Ordinal j=0; j<nC; ++j) {
+            wdp.y = A.getValues(j);
+            node.template parallel_for<RecipScaleOp<Scalar,Node> >(0,nR,wdp);
+          }
+        }
+        else if (A.getStride() == nR && B.getStride() == nR) {
           // one kernel invocation for whole multivector
-          wdp.x = A.getValues(0);
-          wdp.y = B.getValues(0);
+          wdp.x = B.getValues(0);
+          wdp.y = A.getValues(0);
           node.template parallel_for<RecipScaleOp<Scalar,Node> >(0,nR*nC,wdp);
         }
         else {
           // one kernel invocation for each column
           for (Ordinal j=0; j<nC; ++j) {
-            wdp.x = A.getValues(j);
-            wdp.y = B.getValues(j);
+            wdp.y = A.getValues(j);
+            wdp.x = B.getValues(j);
             node.template parallel_for<RecipScaleOp<Scalar,Node> >(0,nR,wdp);
           }
         }
