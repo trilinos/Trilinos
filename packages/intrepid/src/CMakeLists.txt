@@ -120,8 +120,6 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HGRAD_TRI_Cn_FEM_ORTHDef.hpp
   Discretization/Basis/Intrepid_HGRAD_TET_Cn_FEM_ORTH.hpp
   Discretization/Basis/Intrepid_HGRAD_TET_Cn_FEM_ORTHDef.hpp
-  Discretization/Basis/Intrepid_HGRAD_TRI_Cn_FEM.hpp
-  Discretization/Basis/Intrepid_HGRAD_TRI_Cn_FEMDef.hpp
   )
 
 #
