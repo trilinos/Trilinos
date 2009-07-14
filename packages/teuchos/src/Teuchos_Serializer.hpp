@@ -77,6 +77,9 @@ public:
     ,char                  charBuffer[]
     ) const = 0;
 
+  // const ArrayView<const Ptr<const T> >& objs
+  // std::ostream& oStream
+
   /** \brief Create an object of type <tt>T</tt> to be serialized into.
    */
   virtual RCP<T> createObj() const = 0;
@@ -105,6 +108,9 @@ public:
     ,const Ordinal        count
     ,T * const            objs[]
     ) const = 0;
+
+  // const ArrayView<const Ptr<T> >& objs
+  // std::istream& iStream
 
 };
 

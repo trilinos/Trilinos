@@ -35,112 +35,90 @@ using Teuchos::getRawPtr;
 //
 
 
-TEUCHOS_UNIT_TEST( ArrayRCP, memberPointer )
-{
-  ArrayRCP<A> a_arcp = arcp<A>(1);
-  TEST_EQUALITY_CONST( a_arcp->A_f(), A_f_return );
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, getConst_null )
-{
-  const ArrayRCP<A> a1_arcp;
-  const ArrayRCP<const A> a2_arcp = a1_arcp.getConst();
-  TEST_ASSERT(is_null(a2_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, operator_parenth_ArrayView_null )
-{
-  const ArrayRCP<A> a_arcp;
-  const ArrayView<A> av = a_arcp();
-  TEST_ASSERT(is_null(av));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, operator_parenth_ArrayView_const_null )
-{
-  const ArrayRCP<const A> a_arcp;
-  const ArrayView<const A> av = a_arcp();
-  TEST_ASSERT(is_null(av));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, implicit_ArrayRCP_const )
-{
-  const ArrayRCP<A> a_arcp;
-  const ArrayRCP<const A> ac_arcp = a_arcp;
-  TEST_ASSERT(is_null(ac_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, release )
-{
-  ArrayRCP<A> a_arcp = arcp<A>(1);
-  delete [] a_arcp.release();
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, arcp_null )
-{
-  ArrayRCP<A> a_arcp = arcp<A>(0, 0, -1, false);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, arcp_dealloc_null )
-{
-  ArrayRCP<A> a_arcp = arcp<A, Teuchos::DeallocNull<A> >(0, 0, -1,
-    Teuchos::DeallocNull<A>(), false);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_vector_null )
-{
-  const RCP<std::vector<int> > v_rcp;
-  const ArrayRCP<int> a_arcp = arcp(v_rcp);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_const_vector_null )
-{
-  const RCP<const std::vector<int> > v_rcp;
-  const ArrayRCP<const int> a_arcp = arcp(v_rcp);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_vector_unsized )
-{
-  const RCP<std::vector<int> > v_rcp = rcp(new std::vector<int>);
-  const ArrayRCP<int> a_arcp = arcp(v_rcp);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_const_vector_unsized )
-{
-  const RCP<const std::vector<int> > v_rcp = rcp(new std::vector<int>);
-  const ArrayRCP<const int> a_arcp = arcp(v_rcp);
-  TEST_ASSERT(is_null(a_arcp));
-}
-
-
-TEUCHOS_UNIT_TEST( ArrayRCP, arcpWithEmbeddedObj )
-{
-  const ArrayRCP<const int> a_arcp =
-    Teuchos::arcpWithEmbeddedObj<int>(new int[1], 0, 1, as<int>(1), true);
-  const int embeddedObj = Teuchos::getEmbeddedObj<int,int>(a_arcp); 
-  TEST_EQUALITY_CONST( embeddedObj, as<int>(1) );
-}
-
-
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, assignSelf, T )
 {
   ArrayRCP<T> a_arcp;
   a_arcp = a_arcp;
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, assign_n_val, T )
+{
+  const T val = as<T>(1);
+  std::vector<T> a;
+  a.assign(n, val);
+  ArrayRCP<T> a_arcp;
+  a_arcp.assign(n, val);
+  TEST_COMPARE_ARRAYS(a, a_arcp);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, assign_begin_end, T )
+{
+  const T val = as<T>(1);
+  std::vector<T> a;
+  a.assign(n, val);
+  ArrayRCP<T> a_arcp;
+  a_arcp.assign(a.begin(), a.end());
+  TEST_COMPARE_ARRAYS(a, a_arcp);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, deepCopy, T )
+{
+  const T val = as<T>(1);
+  std::vector<T> a;
+  a.assign(n, val);
+  ArrayRCP<T> a_arcp = arcp<T>(n);
+  ArrayRCP<T> a_arcp_cpy = a_arcp;
+  a_arcp.deepCopy(Teuchos::arrayViewFromVector(a));
+  TEST_COMPARE_ARRAYS(a, a_arcp);
+  TEST_EQUALITY(a_arcp.getRawPtr(), a_arcp_cpy.getRawPtr());
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, resize, T )
+{
+  const T val1 = as<T>(1);
+  const T val2 = as<T>(2);
+
+  std::vector<T> a;
+  ArrayRCP<T> a_arcp;
+
+  out << "\nChecking resize(n, val1) ...\n"; 
+  a.resize(n, val1);
+  a_arcp.resize(n, val1);
+  TEST_COMPARE_ARRAYS(a, a_arcp);
+
+  out << "\nChecking resize(2*n, val2) ...\n"; 
+  a.resize(2*n, val2);
+  a_arcp.resize(2*n, val2);
+  TEST_COMPARE_ARRAYS(a, a_arcp);
+
+  out << "\nChecking resize(n/2) ...\n"; 
+  a.resize(n/2);
+  a_arcp.resize(n/2);
+  TEST_COMPARE_ARRAYS(a, a_arcp);
+
+  out << "\nChecking resize(0) ...\n"; 
+  a.resize(0);
+  a_arcp.resize(0);
+  TEST_COMPARE_ARRAYS(a, a_arcp);
+
+#ifdef TEUCHOS_DEBUG
+  a_arcp = arcp<T>(n);
+  ++a_arcp;
+  TEST_THROW(a_arcp.resize(1), std::out_of_range);
+#endif
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, clear, T )
+{
+  ArrayRCP<T> a_arcp = arcp<T>(n);
+  TEST_EQUALITY( a_arcp.size(), n );
+  a_arcp.clear();
+  TEST_EQUALITY( a_arcp.size(), 0 );
 }
 
 
@@ -410,6 +388,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
 
 #define UNIT_TEST_GROUP( T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assignSelf, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assign_n_val, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assign_begin_end, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, deepCopy, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, resize, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, clear, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, nullIterator, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, implicitConversions, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, weakDelete, T ) \
@@ -427,6 +410,108 @@ UNIT_TEST_GROUP(float)
 //
 // Non templated unit tests
 //
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, memberPointer )
+{
+  ArrayRCP<A> a_arcp = arcp<A>(1);
+  TEST_EQUALITY_CONST( a_arcp->A_f(), A_f_return );
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, getConst_null )
+{
+  const ArrayRCP<A> a1_arcp;
+  const ArrayRCP<const A> a2_arcp = a1_arcp.getConst();
+  TEST_ASSERT(is_null(a2_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, operator_parenth_ArrayView_null )
+{
+  const ArrayRCP<A> a_arcp;
+  const ArrayView<A> av = a_arcp();
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, operator_parenth_ArrayView_const_null )
+{
+  const ArrayRCP<const A> a_arcp;
+  const ArrayView<const A> av = a_arcp();
+  TEST_ASSERT(is_null(av));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, implicit_ArrayRCP_const )
+{
+  const ArrayRCP<A> a_arcp;
+  const ArrayRCP<const A> ac_arcp = a_arcp;
+  TEST_ASSERT(is_null(ac_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, release )
+{
+  ArrayRCP<A> a_arcp = arcp<A>(1);
+  delete [] a_arcp.release();
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcp_null )
+{
+  ArrayRCP<A> a_arcp = arcp<A>(0, 0, -1, false);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcp_dealloc_null )
+{
+  ArrayRCP<A> a_arcp = arcp<A, Teuchos::DeallocNull<A> >(0, 0, -1,
+    Teuchos::DeallocNull<A>(), false);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_vector_null )
+{
+  const RCP<std::vector<int> > v_rcp;
+  const ArrayRCP<int> a_arcp = arcp(v_rcp);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_const_vector_null )
+{
+  const RCP<const std::vector<int> > v_rcp;
+  const ArrayRCP<const int> a_arcp = arcp(v_rcp);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_vector_unsized )
+{
+  const RCP<std::vector<int> > v_rcp = rcp(new std::vector<int>);
+  const ArrayRCP<int> a_arcp = arcp(v_rcp);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, convert_from_const_vector_unsized )
+{
+  const RCP<const std::vector<int> > v_rcp = rcp(new std::vector<int>);
+  const ArrayRCP<const int> a_arcp = arcp(v_rcp);
+  TEST_ASSERT(is_null(a_arcp));
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcpWithEmbeddedObj )
+{
+  const ArrayRCP<const int> a_arcp =
+    Teuchos::arcpWithEmbeddedObj<int>(new int[1], 0, 1, as<int>(1), true);
+  const int embeddedObj = Teuchos::getEmbeddedObj<int,int>(a_arcp); 
+  TEST_EQUALITY_CONST( embeddedObj, as<int>(1) );
+}
 
 
 TEUCHOS_UNIT_TEST( ArrayRCP, nonnull )

@@ -34,10 +34,33 @@
 #include "Teuchos_ArrayView.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_dyn_cast.hpp"
-#include "Teuchos_map.hpp"
+#include "Teuchos_as.hpp"
 
 
 namespace Teuchos {
+
+
+// Helper functions
+
+
+template<class T>
+inline
+RCPNode* ArrayRCP_createNewRCPNodeRawPtr( T* p, bool has_ownership_in )
+{
+  return new RCPNodeTmpl<T,DeallocArrayDelete<T> >(
+    p, DeallocArrayDelete<T>(), has_ownership_in
+    );
+}
+
+
+template<class T, class Dealloc_T>
+inline
+RCPNode* ArrayRCP_createNewDeallocRCPNodeRawPtr(
+  T* p, Dealloc_T dealloc, bool has_ownership_in
+  )
+{
+    return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in);
+}
 
 
 // Constructors/Destructors/Initializers 
@@ -50,6 +73,56 @@ ArrayRCP<T>::ArrayRCP( ENull )
     lowerOffset_(0),
     upperOffset_(-1)
 {}
+
+
+template<class T>
+inline
+ArrayRCP<T>::ArrayRCP(
+  T* p, Ordinal lowerOffset_in, Ordinal upperOffset_in, bool has_ownership_in
+  )
+  : ptr_(p),
+#ifndef TEUCHOS_DEBUG
+    node_(ArrayRCP_createNewRCPNodeRawPtr(p, has_ownership_in)),
+#endif // TEUCHOS_DEBUG
+    lowerOffset_(lowerOffset_in),
+    upperOffset_(upperOffset_in)
+{
+#ifdef TEUCHOS_DEBUG
+  if (p) {
+    node_ = RCPNodeHandle(
+      ArrayRCP_createNewRCPNodeRawPtr(p, has_ownership_in),
+      p, typeName(*p), concreteTypeName(*p),
+      has_ownership_in
+      );
+  }
+#endif // TEUCHOS_DEBUG
+}
+
+
+template<class T>
+REFCOUNTPTR_INLINE
+template<class Dealloc_T>
+ArrayRCP<T>::ArrayRCP(
+  T* p, Ordinal lowerOffset_in, Ordinal upperOffset_in,
+  Dealloc_T dealloc, bool has_ownership_in
+  )
+  : ptr_(p),
+#ifndef TEUCHOS_DEBUG
+    node_(ArrayRCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in)),
+#endif // TEUCHOS_DEBUG
+    lowerOffset_(lowerOffset_in),
+    upperOffset_(upperOffset_in)
+{
+#ifdef TEUCHOS_DEBUG
+  if (p) {
+    node_ = RCPNodeHandle(
+      ArrayRCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in),
+      p, typeName(*p), concreteTypeName(*p),
+      has_ownership_in
+      );
+  }
+#endif // TEUCHOS_DEBUG
+}
 
 
 template<class T>
@@ -373,6 +446,9 @@ ArrayView<T> ArrayRCP<T>::operator()() const
 }
 
 
+// Implicit conversions
+
+
 template<class T> inline
 ArrayRCP<T>::operator ArrayView<T>() const
 {
@@ -386,6 +462,77 @@ ArrayRCP<T>::operator ArrayRCP<const T>() const
   if (size())
     return ArrayRCP<const T>(ptr_, lowerOffset_, upperOffset_, node_);
   return null;
+}
+
+
+// std::vector like functions
+
+
+template<class T>
+inline
+void ArrayRCP<T>::assign(const Ordinal n, const T &val)
+{
+  *this = arcp<T>(n);
+  std::fill_n(this->begin(), n, val);
+}
+
+
+template<class T>
+template<class Iter>
+inline
+void ArrayRCP<T>::assign(Iter first, Iter last)
+{
+  const Ordinal new_n = std::distance(first, last);
+  if (new_n != size())
+    *this = arcp<T>(new_n);
+  std::copy( first, last, begin() );
+}
+
+
+template<class T>
+inline
+void ArrayRCP<T>::resize(const Ordinal n, const T &val)
+{
+#ifdef TEUCHOS_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(lowerOffset(), 0);
+#endif
+  if (n == 0) {
+    clear();
+    return;
+  }
+  const Ordinal orig_n = size();
+  if (n != orig_n) {
+    ArrayRCP<T> tmp = *this;
+    *this = arcp<T>(n);
+    const Ordinal small_n = std::min(n, orig_n);
+    for (Ordinal i = 0; i < small_n; ++i)
+      (*this)[i] = tmp[i];
+    for (Ordinal i = orig_n; i < n; ++i)
+      (*this)[i] = val;
+    upperOffset_ = n-1;
+  }
+}
+
+
+template<class T>
+inline
+void ArrayRCP<T>::clear()
+{
+  *this = null;
+}
+
+
+// Misc functions
+
+template<class T>
+inline
+void ArrayRCP<T>::deepCopy(const ArrayView<const T>& av)
+{
+  if (av.size() == 0) {
+    *this = null;
+    return;
+  }
+  assign(av.begin(), av.end());
 }
 
 
@@ -547,76 +694,6 @@ int ArrayRCP<T>::count() const {
 
 
 // very bad public functions
-
-
-template<class T>
-inline
-RCPNode* ArrayRCP_createNewRCPNodeRawPtr( T* p, bool has_ownership_in )
-{
-  return new RCPNodeTmpl<T,DeallocArrayDelete<T> >(
-    p, DeallocArrayDelete<T>(), has_ownership_in
-    );
-}
-
-
-template<class T>
-inline
-ArrayRCP<T>::ArrayRCP(
-  T* p, Ordinal lowerOffset_in, Ordinal upperOffset_in, bool has_ownership_in
-  )
-  : ptr_(p),
-#ifndef TEUCHOS_DEBUG
-    node_(ArrayRCP_createNewRCPNodeRawPtr(p, has_ownership_in)),
-#endif // TEUCHOS_DEBUG
-    lowerOffset_(lowerOffset_in),
-    upperOffset_(upperOffset_in)
-{
-#ifdef TEUCHOS_DEBUG
-  if (p) {
-    node_ = RCPNodeHandle(
-      ArrayRCP_createNewRCPNodeRawPtr(p, has_ownership_in),
-      p, typeName(*p), concreteTypeName(*p),
-      has_ownership_in
-      );
-  }
-#endif // TEUCHOS_DEBUG
-}
-
-
-template<class T, class Dealloc_T>
-inline
-RCPNode* ArrayRCP_createNewDeallocRCPNodeRawPtr(
-  T* p, Dealloc_T dealloc, bool has_ownership_in
-  )
-{
-    return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in);
-}
-
-
-template<class T>
-REFCOUNTPTR_INLINE
-template<class Dealloc_T>
-ArrayRCP<T>::ArrayRCP(
-  T* p, Ordinal lowerOffset_in, Ordinal upperOffset_in,
-  Dealloc_T dealloc, bool has_ownership_in
-  )
-  : ptr_(p),
-#ifndef TEUCHOS_DEBUG
-    node_(ArrayRCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in)),
-#endif // TEUCHOS_DEBUG
-    lowerOffset_(lowerOffset_in),
-    upperOffset_(upperOffset_in)
-{
-#ifdef TEUCHOS_DEBUG
-  if (p) {
-    node_ = RCPNodeHandle(
-      ArrayRCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in),
-      p, typeName(*p), concreteTypeName(*p),
-      has_ownership_in
-      );
-  }
-#endif // TEUCHOS_DEBUG
-}
 
 
 template<class T>

@@ -125,6 +125,36 @@ public:
    */
   ArrayRCP( ENull null_arg = null );
 
+  /** \brief Construct from a raw pointer and a valid range.
+   *
+   * Postconditions:<ul>
+   * <li><tt>this->get() == p</tt>
+   * <li><tt>this->lowerOffset() == lowerOffset</tt>
+   * <li><tt>this->upperOffset() == upperOffset</tt>
+   * <li><tt>this->has_ownership() == has_ownership</tt>
+   * </ul>
+   *
+   * WARNING!  You should avoid manipulating raw pointers and use other
+   * methods to construct an ArrayRCP object instead!
+   */
+  ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, bool has_ownership );
+
+  /** \brief Construct from a raw pointer, a valid range, and a deallocator.
+   *
+   * Postconditions:<ul>
+   * <li><tt>this->get() == p</tt>
+   * <li><tt>this->lowerOffset() == lowerOffset</tt>
+   * <li><tt>this->upperOffset() == upperOffset</tt>
+   * <li><tt>this->has_ownership() == has_ownership</tt>
+   * </ul>
+   *
+   * WARNING!  You should avoid manipulating raw pointers and use other
+   * methods to construct an ArrayRCP object instead!
+   */
+  template<class Dealloc_T>
+  ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, Dealloc_T dealloc,
+    bool has_ownership );
+
   /** \brief Initialize from another <tt>ArrayRCP<T></tt> object.
    *
    * After construction, <tt>this</tt> and <tt>r_ptr</tt> will
@@ -452,6 +482,11 @@ public:
    */
   ArrayView<T> operator()() const;
 
+  //@}
+
+  //! @name Implicit conversions
+  //@{
+
   /** \brief Perform an implicit conversion to a ArrayView<T> (calls
    * operator()()).
    */
@@ -459,6 +494,45 @@ public:
 
   /** \brief Convert from ArrayRCP<T> to ArrayRCP<const T>. */
   operator ArrayRCP<const T>() const;
+
+  //@}
+
+  //! @name std::vector like and other misc functions
+  //@{
+
+  /** \brief Resize and assign n elements of val.
+   *
+   * \postconditions <tt>size() == n</tt>
+   */
+  void assign(const Ordinal n, const T &val = T());
+
+  /** \brief Resize and assign to iterator sequence [first, last)
+   *
+   * \postconditions <tt>size() == std::distance(first, last)</tt>
+   *
+   * This will not change the underlying pointer array if the size does not
+   * change.
+   */
+  template<class Iter>
+  void assign(Iter first, Iter last);
+
+  /** \brief Deep copy the elements from one ArrayView object into this
+   * object.
+   *
+   * Simply calls <tt>assign(av.begin(), av.end())</tt>
+   */
+  void deepCopy(const ArrayView<const T>& av);
+
+  /** \brief Resize and append new elements if enlarging.
+   *
+   */
+  void resize(const Ordinal n, const T &val = T());
+
+  /** \brief Resize to zero..
+   *
+   * \postconditions <tt>size()==0</tt>
+   */
+  void clear();
 
   //@}
 
@@ -680,11 +754,6 @@ public:
 #ifndef DOXYGEN_COMPILE
   // These constructors should be private but I have not had good luck making
   // this portable (i.e. using friendship etc.) in the past
-  ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset,
-    bool has_ownership );
-  template<class Dealloc_T>
-  ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset,
-    Dealloc_T dealloc, bool has_ownership );
   // This is a very bad breach of encapsulation that is needed since MS VC++
   // 5.0 will not allow me to declare template functions as friends.
   ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset,
