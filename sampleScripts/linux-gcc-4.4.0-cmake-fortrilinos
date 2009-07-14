@@ -2,7 +2,7 @@
 
 TRILINOS_PATH=/home/rouson/Trilinos
 EXTRA_ARGS=$@
-FORTRAN_LIBRARIES="-L/home/rouson/usr/local/lib -lgfortran"
+FORTRAN_LIBRARIES="-L/home/rouson/usr/local/lib64 -lgfortran -lgfortranbegin"
 
 cmake \
           -D CMAKE_BUILD_TYPE:STRING=DEBUG \
