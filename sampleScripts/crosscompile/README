@@ -1,0 +1,101 @@
+Notes on setting up cross compiling in CMake.
+
+The Book Mastering CMake provides a chapter on this which discusses many of the
+issues you will encounter. There is also some information online at: 
+http://www.cmake.org/Wiki/CMake_Cross_Compiling
+
+The key to the cross compiling is the toolchain file. This file specifies the
+compilers to use and the paths to look for libraries and headers.
+
+
+To set the compilers you simply do:
+
+set(CMAKE_C_COMPILER mpicc)
+
+for each compiler that you want to replace, just like you would on the command
+line if the configure check finds the wrong version etc. It is then important
+that you do not override this on the command line too.
+
+The most important part of the toolchain is setting up the paths that cmake
+should look for the libraries, headers and potentially even programs(though that
+is typically not the case). To do this you set the variable CMAKE_FIND_ROOT_PATH
+to the list of paths that you want cmake to use in any of the FIND_* commands.
+These paths are used as the prefix to the standard paths cmake uses for FIND_*.
+You will need to make sure that they follow the typical form or <given path>/lib
+and/or <given path>/include to ensure cmake will find things there properly.
+
+There is a way to allow people to specify paths that do not follow this standard
+that cmake expects, however, it does open up the possibility of allowing cmake
+to find incompatible/wrong libraries and headers. There are some variables that
+you can set to control where cmake will look for libraries and headers. The
+variables:
+
+CMAKE_FIND_ROOT_PATH_MODE_PROGRAM
+CMAKE_FIND_ROOT_PATH_MODE_LIBRARY
+CMAKE_FIND_ROOT_PATH_MODE_INCLUDE
+
+can be set to "NEVER, ONLY or BOTH. "NEVER" tells cmake to only use the host
+environment to find things. This is typically only used for finding programs
+since any executable that you need will most likely be run on the host machine
+and not the target machine. "Only" will allow cmake to only look in the
+specified root paths given in the toolchain file. This is the recommended and
+typical setup for libraries and includes. It is the safest way since it excludes
+any headers or libraries that may exist in the host machine's environment.
+"BOTH" will allow cmake to use the target(cross compile) environment _and_ the
+host environment. This can be useful, but it also has risk. Using BOTH allows
+for the possibility that cmake will find a library/header in the host
+environment when it should only come from the target environment. However, it
+does have a valid use.
+
+Apparently the value given to the "PATHS" variable for find_* commands are
+considered to be part of the host environment. This causes a problem in Trilinos
+especially for TPLs. When trying to find headers and libraries for a TPL we use
+the PATHS variable for the first attempt to find a TPL, this path is often
+specified by the user in the configure script. Since that PATHS variable is
+considered part of the host environment it is ignored in the case of cross
+compiling if we set the find setting to ONLY. To allow users to set the paths
+for TPLs in the way that we have encouraged them and in the way that they are
+familiar we have to use the BOTH setting for libraries and headers.
+
+It is possible to use TPL libraries and headers without using the "BOTH"
+setting, but it requires that the path for the TPL be specified in the toolchain
+and that the structure of that path take the form that cmake expects which is:
+
+  <path given in toolchain>
+      |----lib     (where libraries are kept)
+      |----include (where headers are kept)
+
+This may work in some cases, and if it is possible to do this it is the safest
+method.
+
+The example redstorm toolchain file had to use the "BOTH" setting for libraries
+and headers to allow some pre-existing TPL libraries for redstorm to be linked
+in. 
+
+The last bit of what needs to be set up is the "tryrunresults" file. During a
+cross compile cmake make be asked to do a "try run" configure time check. Since
+we are compiling for a machine other than what we are currently building on
+cmake knows that it likely cannot run the executable so it doesn't even try.
+Instead what it does is generate a "tryrunresults" file that needs to be
+manually editted to set the variables to what the target machine would use. This
+can be a little confusing since it may not be clear what those variables should
+be set to on the target platform. Cmake does still build the executable that it
+was supposed to run so that you can move it over to the target machine and run
+it. You will then have to manually add the results of the executable to the
+tryrunresults file though. Once this file has been completely set up you simply
+have to tell cmake about it and it will use it to resolve any tryruns that it
+comes across during configure time.
+
+
+Now that we have both the toolchain and tryrunresults files all we need to do to
+start cross compiling is to make a configure script like normal and add the
+following to it:
+
+-D CMAKE_TOOLCHAIN_FILE=<toolchain file> \
+-C <tryrunresults file> \
+
+and then run the new configure script.
+
+
+you can look at in the redstorm directory for an example toolchain and try run
+file.

@@ -245,8 +245,21 @@ Unprioritized items:
 --------------------
 
 
+(*) [CMake] When cross compiling it would be nice to have the ability to specify
+absolute directories that contain libraries and headers instead of having to
+rely on the prefix only system. This is a problem for many of our TPLS and since
+the "PATHS" variable that is passed into find commands is considered part of the
+host environment we can't over ride it without using the "BOTH" option for
+libraries and headers. One potential solution to this could be to make
+corallaries to the CMAKE_INCLUDE_PATH and CMAKE_LIBRARY_PATH variables that are
+only used when cross compiling. It would allow us the safety of "ONLY" using the
+target environment for libraries and headers while allowing us to have directory
+structures that do not match what cmake expects.
+
+
 (*) [CMake] Add support for drop-down 'ON', 'OFF', '' for the function
-SET_CACHE_ON_OFF_EMPTY(...) in the Curses interface.
+SET_CACHE_ON_OFF_EMPTY(...) in the Curses interface. (I think that this should
+be for all the user interfaces not just curses. BMP)
 
 
 (*) [CMake] Strong checking for user input misspelling CMake cache
