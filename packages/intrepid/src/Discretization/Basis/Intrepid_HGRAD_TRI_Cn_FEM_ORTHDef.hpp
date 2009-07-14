@@ -93,7 +93,56 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar &  
                                                       this -> getBaseCellTopology(),
                                                       this -> getCardinality() );
 #endif
-  // need to figure out AD/Sacado and put in tabulation.
+  const int deg = this->getDegree();
+  const int card = this->getCardinality();
+  const int np = inputPoints.dimension(0);
+
+  switch (operatorType) {
+  case OPERATOR_VALUE:
+    {
+      Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::tabulate( inputPoints ,
+								  deg ,
+								  outputValues );
+    }
+    break;
+  case OPERATOR_GRAD:
+  case OPERATOR_D1:
+    {
+    // create FC of AD points
+      FieldContainer<Sacado::Fad::DFad<Scalar> > 
+	dInputPoints(inputPoints.dimension(0),inputPoints.dimension(1));
+      for (int i=0;i<np;i++) {
+	for (int j=0;j<inputPoints.dimension(1);j++) {
+	  dInputPoints(i,j) = Sacado::Fad::DFad<Scalar>( inputPoints(i,j) );
+	  dInputPoints(i,j).diff(j,2);
+	}
+      }
+      
+      // create temporary FieldContainer over AD type for tabulate results
+      FieldContainer<Sacado::Fad::DFad<Scalar> > dResult(card,np);
+      
+      // tabulate into that FC
+      
+      Basis_HGRAD_TRI_Cn_FEM_ORTH<Sacado::Fad::DFad<Scalar>,FieldContainer<Sacado::Fad::DFad<Scalar> > >::tabulate( dInputPoints ,
+												  deg ,
+												  dResult );  
+      // copy each term into outputValues
+      for (int i=0;i<card;i++) {
+	for (int j=0;j<np;j++) {
+	  for (int k=0;k<2;k++) {
+	    outputValues(i,j,k) = dResult(i,j).dx(k);
+	  }
+	}
+      }
+    }
+    break;
+  default:
+    TEST_FOR_EXCEPTION( true , std::invalid_argument,
+			">>> ERROR (Basis_HGRAD_TRI_Cn_FEM_ORTH): invalid or unsupported operator" );
+
+  }
+
+  return;
 }
 
 template<class Scalar, class ArrayScalar>
@@ -102,7 +151,7 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar&   
 								 const ArrayScalar &    cellVertices,
 								 const EOperator        operatorType) const {
   TEST_FOR_EXCEPTION( (true), std::logic_error,
-                      ">>> ERROR (Basis_HGRAD_TRI_C1_FEM): FEM Basis calling an FVD member function");
+                      ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM): FEM Basis calling an FVD member function");
 }
 
 template<class Scalar, class ArrayScalar>
@@ -122,7 +171,7 @@ void Basis_HGRAD_TRI_Cn_FEM_ORTH<Scalar,ArrayScalar>::tabulate( const ArrayScala
   
   // set D^{0,0} = 1.0
   for (int i=0;i<np;i++) {
-    poly_val(idx_cur,i) = 1.0;
+    poly_val(idx_cur,i) = Scalar( 1.0 ) + z(i,0) - z(i,0) + z(i,1) - z(i,1);
   }
   
   Teuchos::Array<Scalar> f1(np),f2(np),f3(np);

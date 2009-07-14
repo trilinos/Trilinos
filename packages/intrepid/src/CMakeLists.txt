@@ -116,8 +116,12 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HDIV_TET_I1_FEMDef.hpp
   Discretization/Basis/Intrepid_HDIV_WEDGE_I1_FEM.hpp
   Discretization/Basis/Intrepid_HDIV_WEDGE_I1_FEMDef.hpp 
-  Discretization/Basis/Intrepid_OrthogonalBases.hpp
-  Discretization/Basis/Intrepid_OrthogonalBasesDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_TRI_Cn_FEM_ORTH.hpp
+  Discretization/Basis/Intrepid_HGRAD_TRI_Cn_FEM_ORTHDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_TET_Cn_FEM_ORTH.hpp
+  Discretization/Basis/Intrepid_HGRAD_TET_Cn_FEM_ORTHDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_TRI_Cn_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_TRI_Cn_FEMDef.hpp
   )
 
 #
