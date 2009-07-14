@@ -55,7 +55,7 @@ The first argument can assume the following values:
 - \c "block relaxation" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation>
 - \c "block relaxation stand-alone)" : returns an instance of Ifpack_BlockRelaxation.
 - \c "Amesos" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_Amesos>.
-- \c "Amesos" : returns an instance of Ifpack_Amesos.
+- \c "Amesos stand-alone" : returns an instance of Ifpack_Amesos.
 - \c "IC" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_IC>.
 - \c "IC stand-alone" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_IC>.
 - \c "ICT" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ICT>.
