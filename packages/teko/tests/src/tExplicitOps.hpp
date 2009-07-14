@@ -31,6 +31,9 @@ public:
    bool test_mult_diagScaling(int verbosity,std::ostream & os);
    bool test_mult_modScaleMatProd(int verbosity,std::ostream & os);
 
+   bool test_add(int verbosity,std::ostream & os);
+   bool test_add_mod(int verbosity,std::ostream & os);
+
 protected:
    double tolerance_;
 

@@ -436,6 +436,22 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
   */
 const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr);
 
+/** \brief Multiply two linear operators. 
+  *
+  * Multiply two linear operators. This currently assumes
+  * that the underlying implementation uses Epetra_CrsMatrix.
+  * The exception is that opm is allowed to be an diagonal matrix.
+  *
+  * \param[in] opl Left operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in] opr Right operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in,out] destOp The operator to be used as the destination operator,
+  *                       if this is null this function creates a new operator
+  *
+  * \returns Matrix product with a Epetra_CrsMatrix implementation
+  */
+const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr,
+                                          const ModifiableLinearOp & destOp);
+
 /** \brief Add two linear operators. 
   *
   * Add two linear operators. This currently assumes
@@ -447,6 +463,21 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr);
   * \returns Matrix sum with a Epetra_CrsMatrix implementation
   */
 const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr);
+
+/** \brief Add two linear operators. 
+  *
+  * Add two linear operators. This currently assumes
+  * that the underlying implementation uses Epetra_CrsMatrix.
+  *
+  * \param[in] opl Left operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in] opr Right operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in,out] destOp The operator to be used as the destination operator,
+  *                       if this is null this function creates a new operator
+  *
+  * \returns Matrix sum with a Epetra_CrsMatrix implementation
+  */
+const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
+                                     const ModifiableLinearOp & destOp);
 
 /** \brief Take the first column of a multivector and build a
   *        diagonal linear operator

@@ -135,10 +135,11 @@ LinearOp InvLSCStrategy::getInvBQBt(const BlockedLinearOp & A,BlockPreconditione
    TEUCHOS_ASSERT(lscState->isInitialized())
 
    // (re)build the inverse of the Schur complement
-   // if(lscState->invBQBtmC_==Teuchos::null)
-      lscState->invBQBtmC_ = buildInverse(*invFactoryS_,lscState->BQBtmC_);
-   // else
-   //    rebuildInverse(*invFactoryS_,lscState->BQBtmC_,lscState->invBQBtmC_);
+   PB::ModifiableLinearOp BQBtmC = state.getInverse("BQBtmC");
+   if(lscState->invBQBtmC_==Teuchos::null)
+      lscState->invBQBtmC_ = buildInverse(*invFactoryS_,BQBtmC);
+   else
+      rebuildInverse(*invFactoryS_,BQBtmC,lscState->invBQBtmC_);
 
    // if(nullPresIndicies_.size()>0) {
    //    PB::LinearOp inv = lscState->invBQBtmC_;
@@ -232,7 +233,7 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
 
    // if this is a stable discretization...we are done!
    if(not isStabilized) {
-      state->BQBtmC_ = state->BQBt_;
+      state->addInverse("BQBtmC",state->BQBt_);
       state->gamma_ = 0.0;
       state->alpha_ = 0.0;
       state->aiD_ = Teuchos::null;
@@ -295,10 +296,12 @@ void InvLSCStrategy::reinitializeState(const BlockedLinearOp & A,LSCPrecondState
    state->aiD_ = Thyra::scale(state->alpha_,invD);
 
    // now build B*Q*Bt-gamma*C
+   PB::ModifiableLinearOp BQBtmC = state->getInverse("BQBtmC");
    if(graphLaplacian_==Teuchos::null)
-      state->BQBtmC_ = explicitAdd(state->BQBt_,scale(-state->gamma_,C));
+      BQBtmC = explicitAdd(state->BQBt_,scale(-state->gamma_,C),BQBtmC);
    else
-      state->BQBtmC_ = explicitAdd(state->BQBt_,scale(state->gamma_,graphLaplacian_));
+      BQBtmC = explicitAdd(state->BQBt_,scale(state->gamma_,graphLaplacian_),BQBtmC);
+   state->addInverse("BQBtmC",BQBtmC);
 
    PB_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "LSC Gamma Parameter = " << state->gamma_ << std::endl;

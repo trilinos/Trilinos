@@ -83,8 +83,20 @@ int tExplicitOps::runTest(int verbosity,std::ostream & stdstrm,std::ostream & fa
    failcount += status ? 0 : 1;
    totalrun++;
 
+   status = test_add(verbosity,failstrm);
+   PB_TEST_MSG(stdstrm,1,"   \"add\" ... PASSED","   \"add\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+
    status = test_mult_modScaleMatProd(verbosity,failstrm);
    PB_TEST_MSG(stdstrm,1,"   \"mult_modScaleMatProd\" ... PASSED","   \"mult_modScaleMatProd\" ... FAILED");
+   allTests &= status;
+   failcount += status ? 0 : 1;
+   totalrun++;
+
+   status = test_add_mod(verbosity,failstrm);
+   PB_TEST_MSG(stdstrm,1,"   \"add_mod\" ... PASSED","   \"add\" ... FAILED");
    allTests &= status;
    failcount += status ? 0 : 1;
    totalrun++;
@@ -239,6 +251,96 @@ bool tExplicitOps::test_mult_modScaleMatProd(int verbosity,std::ostream & os)
       TEST_ASSERT(result,
              std::endl << "   tExplicitOps::test_modScaleMatProd "
              << ": Testing triple matrix product");
+      if(not result || verbosity>=10) 
+         os << ss.str(); 
+   }
+
+   return allPassed;
+}
+
+bool tExplicitOps::test_add(int verbosity,std::ostream & os)
+{
+   bool status = false;
+   bool allPassed = true;
+
+   Thyra::LinearOpTester<double> tester;
+   tester.show_all_tests(true);
+
+   RCP<const Thyra::LinearOpBase<double> > thyOp;
+   PB::LinearOp expOp;
+
+   thyOp = PB::add(PB::scale(-4.0,F_),PB::adjoint(G_));
+   expOp = PB::explicitAdd(PB::scale(-4.0,F_),PB::adjoint(G_));
+
+   {
+      std::stringstream ss;
+      Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
+      const bool result = tester.compare( *thyOp, *expOp, &fos );
+      TEST_ASSERT(result,
+             std::endl << "   tExplicitOps::test_add "
+             << ": Testing explicit add");
+      if(not result || verbosity>=10) 
+         os << ss.str(); 
+   }
+
+   return allPassed;
+}
+
+bool tExplicitOps::test_add_mod(int verbosity,std::ostream & os)
+{
+   bool status = false;
+   bool allPassed = true;
+
+   Thyra::LinearOpTester<double> tester;
+   tester.show_all_tests(true);
+
+   RCP<const Thyra::LinearOpBase<double> > thyOp;
+   PB::ModifiableLinearOp expOp;
+
+   thyOp = PB::add(PB::scale(-4.0,F_),PB::adjoint(G_));
+   expOp = PB::explicitAdd(PB::scale(-4.0,F_),PB::adjoint(G_),expOp);
+
+   RCP<const Epetra_Operator> eop1 = Thyra::get_Epetra_Operator(*expOp);
+
+   {
+      std::stringstream ss;
+      Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
+      const bool result = tester.compare( *thyOp, *expOp, &fos );
+      TEST_ASSERT(result,
+             std::endl << "   tExplicitOps::test_add_mod"
+             << ": Testing explicit add");
+      if(not result || verbosity>=10) 
+         os << ss.str(); 
+   }
+
+   Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*F_))->Scale(5.0);
+   Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*G_))->Scale(2.0);
+
+   int numEntries = 0;
+   double * values;
+
+   // do some random violence (oh my brothers) to one row
+   Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*F_))->ExtractMyRowView(3,numEntries,values);
+   for(int i=0;i<numEntries;i++) values[i] *= values[i]*double(i+1)*0.92;
+
+   // do some random violence (oh my brothers) to one row
+   Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*F_))->ExtractMyRowView(7,numEntries,values);
+   for(int i=0;i<numEntries;i++) values[i] *= values[i]*double(i+1)*0.92;
+
+   // perform the next test
+   thyOp = PB::add(PB::scale(-4.0,F_),PB::adjoint(G_));
+   expOp = PB::explicitAdd(PB::scale(-4.0,F_),PB::adjoint(G_),expOp);
+
+   RCP<const Epetra_Operator> eop2 = Thyra::get_Epetra_Operator(*expOp);
+   TEUCHOS_ASSERT(eop1==eop2);
+
+   {
+      std::stringstream ss;
+      Teuchos::FancyOStream fos(rcpFromRef(ss),"      |||");
+      const bool result = tester.compare( *thyOp, *expOp, &fos );
+      TEST_ASSERT(result,
+             std::endl << "   tExplicitOps::test_add_mod"
+             << ": Testing matrix addition");
       if(not result || verbosity>=10) 
          os << ss.str(); 
    }

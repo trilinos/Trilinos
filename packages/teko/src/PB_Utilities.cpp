@@ -624,6 +624,48 @@ const LinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr)
    return explicitOp;
 }
 
+/** \brief Multiply two linear operators. 
+  *
+  * Multiply two linear operators. This currently assumes
+  * that the underlying implementation uses Epetra_CrsMatrix.
+  * The exception is that opm is allowed to be an diagonal matrix.
+  *
+  * \param[in] opl Left operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in] opr Right operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in,out] destOp The operator to be used as the destination operator,
+  *                       if this is null this function creates a new operator
+  *
+  * \returns Matrix product with a Epetra_CrsMatrix implementation
+  */
+const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & opr,
+                                          const ModifiableLinearOp & destOp)
+{
+   // build implicit multiply
+   const LinearOp implicitOp = Thyra::multiply(opl,opr);
+
+   // build transformer
+   const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
+       Thyra::epetraExtDiagScaledMatProdTransformer();
+
+   // build operator destination operator
+   ModifiableLinearOp explicitOp; 
+
+   // if neccessary build a operator to put the explicit multiply into
+   if(destOp==Teuchos::null)
+      explicitOp = prodTrans->createOutputOp();
+   else
+      explicitOp = destOp;
+
+   // perform multiplication
+   prodTrans->transform(*implicitOp,explicitOp.ptr());
+
+   // label it
+   explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
+                                     " * " + opr->getObjectLabel() + " )");
+
+   return explicitOp;
+}
+
 /** \brief Add two linear operators. 
   *
   * Add two linear operators. This currently assumes
@@ -645,6 +687,43 @@ const LinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr)
 
    // build operator and multiply
    const RCP<Thyra::LinearOpBase<double> > explicitOp = prodTrans->createOutputOp();
+   prodTrans->transform(*implicitOp,explicitOp.ptr());
+   explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
+                                     " + " + opr->getObjectLabel() + " )");
+
+   return explicitOp;
+}
+
+/** \brief Add two linear operators. 
+  *
+  * Add two linear operators. This currently assumes
+  * that the underlying implementation uses Epetra_CrsMatrix.
+  *
+  * \param[in] opl Left operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in] opr Right operator (assumed to be a Epetra_CrsMatrix)
+  * \param[in,out] destOp The operator to be used as the destination operator,
+  *                       if this is null this function creates a new operator
+  *
+  * \returns Matrix sum with a Epetra_CrsMatrix implementation
+  */
+const ModifiableLinearOp explicitAdd(const LinearOp & opl,const LinearOp & opr,
+                                     const ModifiableLinearOp & destOp)
+{
+   // build implicit multiply
+   const LinearOp implicitOp = Thyra::add(opl,opr);
+ 
+   // build transformer
+   const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
+       Thyra::epetraExtAddTransformer();
+
+   // build or reuse destination operator
+   RCP<Thyra::LinearOpBase<double> > explicitOp;
+   if(destOp!=Teuchos::null)
+      explicitOp = destOp;
+   else
+      explicitOp = prodTrans->createOutputOp();
+
+   // perform multiplication
    prodTrans->transform(*implicitOp,explicitOp.ptr());
    explicitOp->setObjectLabel("explicit( " + opl->getObjectLabel() +
                                      " + " + opr->getObjectLabel() + " )");
