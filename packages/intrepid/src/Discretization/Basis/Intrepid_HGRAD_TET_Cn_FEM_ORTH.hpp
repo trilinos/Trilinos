@@ -37,6 +37,7 @@
 #define INTREPID_HGRAD_TET_C1_FEM_ORTHHPP
 
 #include "Intrepid_Basis.hpp"
+#include "Sacado.hpp"
 
 namespace Intrepid {
   

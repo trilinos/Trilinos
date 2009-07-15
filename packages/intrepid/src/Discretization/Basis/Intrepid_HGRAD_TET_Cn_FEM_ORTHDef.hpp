@@ -28,9 +28,9 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TRI_Cn_FEM_ORTHDef.hpp
+/** \file   Intrepid_HGRAD_TET_Cn_FEM_ORTHDef.hpp
     \brief  Definition file for FEM orthogonal basis functions of arbitrary degree 
-            for H(grad) functions on TRI.
+            for H(grad) functions on TET.
     \author Created by R. Kirby
  */
 
@@ -39,7 +39,7 @@ namespace Intrepid {
 template<class Scalar, class ArrayScalar>
 Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::Basis_HGRAD_TET_Cn_FEM_ORTH( int degree )
   {
-    this -> basisCardinality_  = (degree+1)*(degree+2)/2;
+    this -> basisCardinality_  = (degree+1)*(degree+2)*(degree+3)/6;
     this -> basisDegree_       = degree;
     this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
     this -> basisType_         = BASIS_FEM_HIERARCHICAL;
@@ -93,8 +93,55 @@ void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar &  
                                                       this -> getBaseCellTopology(),
                                                       this -> getCardinality() );
 #endif
-  // need to figure out AD/Sacado and put in tabulation.
+  const int deg = this->getDegree();
+  const int card = this->getCardinality();
+  const int np = inputPoints.dimension(0);
+  
+  switch (operatorType) {
+  case OPERATOR_VALUE:
+    {
+      Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar, ArrayScalar>::tabulate( inputPoints ,
+                                                                  deg ,
+                                                                  outputValues );
+    }
+    break;
+  case OPERATOR_GRAD:
+  case OPERATOR_D1:
+    {
+      // create FC of AD points
+      FieldContainer<Sacado::Fad::DFad<Scalar> > 
+        dInputPoints(inputPoints.dimension(0),inputPoints.dimension(1));
+      for (int i=0;i<np;i++) {
+        for (int j=0;j<inputPoints.dimension(1);j++) {
+          dInputPoints(i,j) = Sacado::Fad::DFad<Scalar>( inputPoints(i,j) );
+          dInputPoints(i,j).diff(j,inputPoints.dimension(1));
+        }
+      }
+      
+      // create temporary FieldContainer over AD type for tabulate results
+      FieldContainer<Sacado::Fad::DFad<Scalar> > dResult(card,np);
+      
+      // tabulate into that FC
+      Basis_HGRAD_TET_Cn_FEM_ORTH<Sacado::Fad::DFad<Scalar>,FieldContainer<Sacado::Fad::DFad<Scalar> > >::tabulate( dInputPoints ,
+                                                                                                  deg ,
+                                                                                                  dResult );  
+      // copy each term into outputValues
+      for (int i=0;i<card;i++) {
+        for (int j=0;j<np;j++) {
+          for (int k=0;k<3;k++) {
+            outputValues(i,j,k) = dResult(i,j).dx(k);
+          }
+        }
+      }
+    }
+    break;
+  default:
+    TEST_FOR_EXCEPTION( true , std::invalid_argument,
+                        ">>> ERROR (Basis_HGRAD_TET_Cn_FEM_ORTH): invalid or unsupported operator" );
   }
+
+  return;
+}
   
 template<class Scalar, class ArrayScalar>
 void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar, ArrayScalar>::getValues(ArrayScalar&           outputValues,
