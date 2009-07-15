@@ -10,6 +10,7 @@ namespace {
 
 using ArrayUnitTestHelpers::n;
 
+typedef Teuchos_Ordinal Ordinal;
 using Teuchos::getRawPtr;
 using Teuchos::as;
 using Teuchos::null;
@@ -346,8 +347,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CPtr, getRawPtr, T )
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, arcp_zero, T )
 {
-  TEST_THROW(ArrayRCP<T> arcp_strong = arcp<T>(0),
-    std::out_of_range);
+  ArrayRCP<T> arcp_strong = arcp<T>(0);
+  TEST_EQUALITY(arcp_strong.size(), as<Ordinal>(0));
 }
 
 

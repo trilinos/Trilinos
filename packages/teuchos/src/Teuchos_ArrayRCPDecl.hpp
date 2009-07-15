@@ -826,6 +826,8 @@ ArrayRCP<T> arcp(
  * *not* initialized (unless there is a default constructor for a user-defined
  * type).
  *
+ * When called with 'size == 0' it returns a null ArrayRCP object.
+ *
  * \relates ArrayRCP
  */
 template<class T>

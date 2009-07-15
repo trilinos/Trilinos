@@ -798,9 +798,11 @@ Teuchos::ArrayRCP<T>
 Teuchos::arcp( typename ArrayRCP<T>::Ordinal size )
 {
 #ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_INEQUALITY( size, >, 0 );
+  TEUCHOS_ASSERT_INEQUALITY( size, >=, 0 );
 #endif
-  return ArrayRCP<T>(new T[size],0,size-1,true);
+  if (size == 0)
+    return null;
+  return ArrayRCP<T>(new T[size], 0, size-1, true);
 }
 
 
