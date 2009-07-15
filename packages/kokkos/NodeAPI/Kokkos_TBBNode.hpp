@@ -15,8 +15,8 @@ namespace Kokkos {
 
 template <class WDPin>
 struct BlockedRangeWDP {
-  mutable WDPin wd;
-  BlockedRangeWDP(WDPin &in) : wd(in) {}
+  mutable WDPin &wd;
+  inline BlockedRangeWDP(WDPin &in) : wd(in) {}
   inline void operator()(tbb::blocked_range<int> &rng) const { 
     for (int i=rng.begin(); i != rng.end(); ++i) wd.execute(i);
   }
@@ -24,7 +24,7 @@ struct BlockedRangeWDP {
 
 template <class WDPin>
 struct BlockedRangeWDPReducer {
-  WDPin wd;
+  WDPin &wd;
   typename WDPin::ReductionType result;
   BlockedRangeWDPReducer(WDPin &in) : wd(in), result(WDPin::identity()) {}
   BlockedRangeWDPReducer(BlockedRangeWDPReducer &in, tbb::split) : wd(in.wd) {result = wd.identity();}
@@ -64,13 +64,13 @@ class TBBNode : public StandardMemoryModel {
     ~TBBNode() {}
 
     template <class WDP>
-    void parallel_for(int begin, int end, WDP wd) {
+    static void parallel_for(int begin, int end, WDP wd) {
       BlockedRangeWDP<WDP> tbb_wd(wd);
       tbb::parallel_for(tbb::blocked_range<int>(begin,end), tbb_wd, tbb::auto_partitioner()); 
     }
 
     template <class WDP>
-    typename WDP::ReductionType
+    static typename WDP::ReductionType
     parallel_reduce(int begin, int end, WDP wd) {
       BlockedRangeWDPReducer<WDP> tbb_wd(wd);
       tbb::parallel_reduce(tbb::blocked_range<int>(begin,end), tbb_wd, tbb::auto_partitioner());

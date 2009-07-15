@@ -111,13 +111,13 @@ class TPINode : public StandardMemoryModel {
     }
 
     template <class WDP>
-    void parallel_for(int beg, int end, WDP wd) {
+    static void parallel_for(int beg, int end, WDP wd) {
       WDPPlusRange<WDP> wdp_plus(beg,end,wd);
       TPI_Run_threads(tpi_execute<WDP>, &wdp_plus, 0 );
     }
 
     template <class WDP>
-    typename WDP::ReductionType 
+    static typename WDP::ReductionType 
     parallel_reduce(int beg, int end, WDP wd) {
       typedef typename WDP::ReductionType ReductionType;
       ReductionType result = WDP::identity();

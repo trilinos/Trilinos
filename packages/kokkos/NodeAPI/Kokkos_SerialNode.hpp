@@ -9,14 +9,14 @@ class SerialNode : public StandardMemoryModel {
   public:
     SerialNode() {}
     template <class WDP>
-    void parallel_for(int beg, int end, WDP wd) {
+    static void parallel_for(int beg, int end, WDP wd) {
       for (int i=beg; i != end; ++i) {
         wd.execute(i);
       }
     }
 
     template <class WDP>
-    typename WDP::ReductionType
+    static typename WDP::ReductionType
     parallel_reduce(int begin, int end, WDP wd) {
       typename WDP::ReductionType result = wd.identity();
       for (int i=begin; i != end; ++i) {
