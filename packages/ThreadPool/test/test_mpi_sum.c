@@ -145,7 +145,7 @@ void reduce_join( TPI_Work * work , void * arg_src )
     d2_add_d( dst + 2 , src[2] );
     d2_add_d( dst + 2 , src[3] );
   }
-  else if ( info->nreduce == 4 ) {
+  else if ( info->nreduce == 1 ) {
     dst[0] += src[0] ;
   }
 }
