@@ -69,10 +69,18 @@ RCPNode* ArrayRCP_createNewDeallocRCPNodeRawPtr(
 template<class T>
 inline
 ArrayRCP<T>::ArrayRCP( ENull )
-  : ptr_(NULL),
-    lowerOffset_(0),
-    upperOffset_(-1)
+  : ptr_(NULL), lowerOffset_(0), upperOffset_(-1)
 {}
+
+
+template<class T>
+inline
+ArrayRCP<T>::ArrayRCP(Ordinal n, const T& val)
+  : ptr_(0), lowerOffset_(0), upperOffset_(-1)
+{
+  *this = arcp<T>(n);
+  std::fill_n(begin(), n, val);
+}
 
 
 template<class T>
@@ -470,7 +478,7 @@ ArrayRCP<T>::operator ArrayRCP<const T>() const
 
 template<class T>
 inline
-void ArrayRCP<T>::assign(const Ordinal n, const T &val)
+void ArrayRCP<T>::assign(Ordinal n, const T &val)
 {
   *this = arcp<T>(n);
   std::fill_n(this->begin(), n, val);

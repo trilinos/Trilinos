@@ -155,6 +155,16 @@ public:
   ArrayRCP( T* p, Ordinal lowerOffset, Ordinal upperOffset, Dealloc_T dealloc,
     bool has_ownership );
 
+  /** \brief Construct allocating an array of size n and filling.
+   *
+   * Postconditions:<ul>
+   * <li><tt>this->lowerOffset() == 0</tt>
+   * <li><tt>this->upperOffset() == n-1</tt>
+   * <li><tt>this->has_ownership() == true</tt>
+   * </ul>
+   */
+  explicit ArrayRCP( Ordinal lowerOffset, const T& val = T() );
+
   /** \brief Initialize from another <tt>ArrayRCP<T></tt> object.
    *
    * After construction, <tt>this</tt> and <tt>r_ptr</tt> will
@@ -504,7 +514,7 @@ public:
    *
    * \postconditions <tt>size() == n</tt>
    */
-  void assign(const Ordinal n, const T &val = T());
+  void assign(Ordinal n, const T &val);
 
   /** \brief Resize and assign to iterator sequence [first, last)
    *

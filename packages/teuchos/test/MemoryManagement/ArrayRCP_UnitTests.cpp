@@ -35,6 +35,14 @@ using Teuchos::getRawPtr;
 //
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, construct_n, T )
+{
+  std::vector<T> a(n, as<T>(1));
+  ArrayRCP<T> a_arcp(n, as<T>(1));
+  TEST_COMPARE_ARRAYS(a, a_arcp);
+}
+
+
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, assignSelf, T )
 {
   ArrayRCP<T> a_arcp;
@@ -387,6 +395,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
 
 
 #define UNIT_TEST_GROUP( T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, construct_n, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assignSelf, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assign_n_val, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ArrayRCP, assign_begin_end, T ) \
