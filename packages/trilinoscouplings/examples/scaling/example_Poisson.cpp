@@ -336,9 +336,11 @@ int main(int argc, char *argv[]) {
   int rank=mpiSession.getRank();
   int numProcs=mpiSession.getNProc();
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  Epetra_Time Time(Comm);
 
   int MyPID = Comm.MyPID();
 
+  
    //Check number of arguments
     TEST_FOR_EXCEPTION( ( argc < 4 ),
                       std::invalid_argument,
@@ -446,15 +448,18 @@ int main(int argc, char *argv[]) {
     ss << "end \n";
 
     string meshInput = ss.str();
-  if (MyPID == 0) {
-    std::cout << meshInput <<"\n";
-  }
-
+    if (MyPID == 0) {
+      std::cout << meshInput <<"\n";
+    }
+    
    // Generate mesh with Pamgen
 
     long long maxInt = 9223372036854775807LL;
     Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
     
+    string msg("Poisson: ");
+    if(!Comm.MyPID()) {cout << msg << "Pamgen Setup     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
+
    // Get mesh size info
     char title[100];
     long long numDim;
@@ -591,6 +596,9 @@ int main(int argc, char *argv[]) {
       delete [] elem_cmap_elem_cnts;      
     }
 
+
+    if(!Comm.MyPID()) {cout << msg << "Mesh Queries     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
+
     //Calculate global node ids
     long long * globalNodeIds = new long long[numNodes];
     bool * nodeIsOwned = new bool[numNodes];
@@ -605,6 +613,7 @@ int main(int argc, char *argv[]) {
 			 rank);    
 
   
+    if(!Comm.MyPID()) {cout << msg << "Global Node Nums = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
     //create edges and calculate edge ids
     /*connectivity*/
 /*
@@ -807,7 +816,7 @@ int main(int argc, char *argv[]) {
 
     delete [] sideSetIds;
 
-
+    if(!Comm.MyPID()) {cout << msg << "Boundary Conds   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 // ************************************ CUBATURE **************************************
 
   if (MyPID == 0) {
@@ -987,6 +996,8 @@ int main(int argc, char *argv[]) {
    rhs.GlobalAssemble();
 
  
+   if(!Comm.MyPID()) {cout << msg << "Matrix Assembly  = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
+
   // Adjust stiffness matrix and rhs based on boundary conditions
    for (int row = 0; row<numNodes; row++){
        if (nodeOnBoundary(row)) {
@@ -1005,8 +1016,8 @@ int main(int argc, char *argv[]) {
 
    
   // Dump matrices to disk
-        EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-        EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
+   //      EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
+   //      EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
 
 
    // Run the solver
