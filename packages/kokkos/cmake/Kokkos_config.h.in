@@ -60,6 +60,7 @@
 
 /* #cmakedefine HAVE_KOKKOS_NodeAPI */
 #cmakedefine HAVE_KOKKOS_TBB
+#cmakedefine HAVE_KOKKOS_THREADPOOL
 #cmakedefine HAVE_KOKKOS_CUDA
 
 

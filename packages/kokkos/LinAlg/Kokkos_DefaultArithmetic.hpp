@@ -111,7 +111,7 @@ namespace Kokkos {
     public:
 
       //! Initialize multivector to constant value.
-      static void Init(Scalar alpha, MultiVector<Scalar,Ordinal,Node> &A) {
+      static void Init(MultiVector<Scalar,Ordinal,Node> &A, Scalar alpha) {
         const Ordinal nR = A.getNumRows();
         const Ordinal nC = A.getNumCols();
         Node &node = A.getNode();

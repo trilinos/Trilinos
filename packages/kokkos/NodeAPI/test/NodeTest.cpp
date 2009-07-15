@@ -9,6 +9,9 @@
 #ifdef HAVE_KOKKOS_TBB
 #include "Kokkos_TBBNode.hpp"
 #endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+#include "Kokkos_TPINode.hpp"
+#endif
 #ifdef HAVE_KOKKOS_CUDA
 #include "Kokkos_CUDANode.hpp"
 #endif
@@ -18,25 +21,8 @@ namespace {
   using Teuchos::Time;
   using Teuchos::TimeMonitor;
   using Kokkos::SerialNode;
-#ifdef HAVE_KOKKOS_TBB
-  using Kokkos::TBBNode;
-#endif
-#ifdef HAVE_KOKKOS_CUDA
-  using Kokkos::CUDANode;
-#endif
 
   SerialNode serialnode;
-#ifdef HAVE_KOKKOS_TBB
-  int tbb_nT = 0;
-  TBBNode tbbnode;
-#endif
-#ifdef HAVE_KOKKOS_CUDA
-  int cuda_dev = 0;
-  int cuda_nT  = 64;
-  int cuda_nB  = 64;
-  int cuda_verb = 0;
-  CUDANode cudanode;
-#endif
 
   int N = 100;
   template <class NODE>
@@ -50,13 +36,32 @@ namespace {
   }
 
 #ifdef HAVE_KOKKOS_TBB
+  using Kokkos::TBBNode;
+  int tbb_nT = 0;
+  TBBNode tbbnode;
   template <>
   TBBNode & getNode<TBBNode>() {
     return tbbnode;
   }
 #endif
 
+#ifdef HAVE_KOKKOS_THREADPOOL
+  using Kokkos::TPINode;
+  int tpi_nT = 1;
+  TPINode tpinode;
+  template <>
+  TPINode & getNode<TPINode>() {
+    return tpinode;
+  }
+#endif
+
 #ifdef HAVE_KOKKOS_CUDA
+  using Kokkos::CUDANode;
+  int cuda_dev = 0;
+  int cuda_nT  = 64;
+  int cuda_nB  = 64;
+  int cuda_verb = 0;
+  CUDANode cudanode;
   template <>
   CUDANode & getNode<CUDANode>() {
     return cudanode;
@@ -68,9 +73,15 @@ namespace {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
     clp.setOption("test-size",&N,"Vector length for tests.");
+    if (N < 2) N = 2;
 #ifdef HAVE_KOKKOS_TBB
     {
       clp.setOption("tbb-num-threads",&tbb_nT,"Number of TBB threads: 0 for automatic.");
+    }
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+    {
+      clp.setOption("tpi-num-threads",&tpi_nT,"Number of TPI threads.");
     }
 #endif
 #ifdef HAVE_KOKKOS_CUDA
@@ -92,6 +103,10 @@ namespace {
 #ifdef HAVE_KOKKOS_TBB
     out << "Initializing TBB node to " << tbb_nT << " threads." << std::endl;
     tbbnode.init(tbb_nT);
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+    out << "Initializing TPI node to " << tpi_nT << " threads." << std::endl;
+    tpinode.init(tpi_nT);
 #endif
 #ifdef HAVE_KOKKOS_CUDA
     out << "Initializing CUDA device " << cuda_dev 
@@ -128,6 +143,15 @@ namespace {
     }
     SCALAR expectedResult = (SCALAR)(N);
     TEST_EQUALITY(result, expectedResult);
+    // compute sum x[i], i=1:N-2
+    {
+      TimeMonitor localTimer(tSum);
+      SumOp<SCALAR,NODE> wdp;
+      wdp.x = x;
+      result = node.parallel_reduce(1,N-1,wdp);
+    }
+    expectedResult = (SCALAR)(N-2);
+    TEST_EQUALITY(result, expectedResult);
     {
       TimeMonitor localTimer(tFree);
       node.template freeBuffer<SCALAR>(x);
@@ -152,6 +176,13 @@ namespace {
 #define TBB_INSTANT(SCALAR) 
 #endif
 
+#ifdef HAVE_KOKKOS_THREADPOOL
+#define TPI_INSTANT(SCALAR) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( NodeAPI, SumTest, SCALAR, TPINode )
+#else
+#define TPI_INSTANT(SCALAR) 
+#endif
+
 #ifdef HAVE_KOKKOS_CUDA
 #define CUDA_INSTANT(SCALAR) \
     TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( NodeAPI, SumTest, SCALAR, CUDANode )
@@ -162,6 +193,7 @@ namespace {
 #define UNIT_TEST_GROUP_SCALAR(SCALAR) \
   SERIAL_INSTANT(SCALAR) \
   TBB_INSTANT(SCALAR) \
+  TPI_INSTANT(SCALAR) \
   CUDA_INSTANT(SCALAR)
 
   UNIT_TEST_GROUP_SCALAR(int)

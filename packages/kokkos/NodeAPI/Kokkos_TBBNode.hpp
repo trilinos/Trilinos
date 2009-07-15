@@ -45,8 +45,7 @@ struct BlockedRangeWDPReducer {
 class TBBNode : public StandardMemoryModel {
   public:
 
-    TBBNode() : alreadyInit_(false) {}
-    TBBNode(int numThreads) : alreadyInit_(false) {
+    TBBNode(int numThreads=0) : alreadyInit_(false) {
       init(numThreads);
     }
 

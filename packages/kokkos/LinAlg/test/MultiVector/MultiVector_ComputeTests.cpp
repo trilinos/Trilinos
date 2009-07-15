@@ -30,21 +30,31 @@
 #include <Teuchos_TypeNameTraits.hpp>
 
 #include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_DefaultNode.hpp"
+
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
 #include "Kokkos_Vector.hpp"
 #include "Kokkos_Version.hpp"
+#include "Kokkos_SerialNode.hpp"
+#ifdef HAVE_KOKKOS_TBB
+#include "Kokkos_TBBNode.hpp"
+#endif
+
+#include <errno.h> // FINISH: remove
 
 namespace {
 
   using Kokkos::MultiVector;
   using Kokkos::Vector;
   using Kokkos::DefaultArithmetic;
+  using Kokkos::SerialNode;
+  SerialNode snode;
+#ifdef HAVE_KOKKOS_TBB
+  using Kokkos::TBBNode;
+  TBBNode tnode;
+#endif
 
   int N = 1000;
-
-  typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
   TEUCHOS_STATIC_SETUP()
   {
@@ -53,45 +63,66 @@ namespace {
     clp.setOption("test-size",&N,"Vector length for tests.");
   }
 
+  template <class Node>
+  Node &getNode() {
+    assert(false);
+  }
+
+  template <>
+  SerialNode& getNode<SerialNode>() {
+    return snode;
+  }
+
+#ifdef HAVE_KOKKOS_TBB
+  template <>
+  TBBNode& getNode<TBBNode>() {
+    return tnode;
+  }
+#endif
+
   //
   // UNIT TESTS
   // 
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, Scale, Scalar, Ordinal )
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, Scale, Scalar, Ordinal, Node )
   {
+    Node &node = getNode<Node>();
     typedef MultiVector<Scalar,Ordinal,Node> MV;
     const int numVecs = 5;
-    MV A, B;
+    MV MV1(node), MV2(node), vec(node);
     typename Node::template buffer<Scalar>::buffer_t 
-      bufA = A.getNode().template allocBuffer<Scalar>(numVecs*N),
-      bufB = B.getNode().template allocBuffer<Scalar>(numVecs*N);
-    A.initializeValues(N,numVecs,bufA,N);
-    B.initializeValues(N,numVecs,bufB,N);
-    DefaultArithmetic<MV>::Multiply(A,B);
-    DefaultArithmetic<MV>::Divide(A,B);
-    A.getNode().template freeBuffer<Scalar>(bufA);
-    A.getNode().template freeBuffer<Scalar>(bufB);
+      buf = node.template allocBuffer<Scalar>(2*numVecs*N);
+    MV1.initializeValues(N,numVecs,buf          ,N);
+    MV2.initializeValues(N,numVecs,buf+numVecs*N,N);
+    vec.initializeValues(N,1,buf,N);                    // MV1 collocated with vec
+    DefaultArithmetic<MV>::Init(MV2,1);                 // MV2 = ones()
+    DefaultArithmetic<MV>::Init(MV1,2);                 // MV1 = twos()
+    DefaultArithmetic<MV>::Multiply(MV2,(const MV)MV1); // MV2 *= MV1 => twos()
+    DefaultArithmetic<MV>::Divide(MV2,(const MV)MV1);   // MV2 /= MV1 => ones()
+    DefaultArithmetic<MV>::Divide(MV2,(const MV)vec);   // MV2 /= vec => ones()/twos()
+    node.template freeBuffer<Scalar>(buf);
   }
 
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Vector, Add, Scalar, Ordinal )
-  {
-    Vector<Scalar,Ordinal,Node> a;
-    typename Node::template buffer<Scalar>::buffer_t 
-      buf = a.getNode().template allocBuffer<Scalar>(N);
-    a.initializeValues(N,buf,1);
-    // FINISH
-    a.getNode().template freeBuffer<Scalar>(buf);
-  }
 
+#define UNIT_TEST_SERIALNODE(SCALAR, ORDINAL) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Scale, SCALAR, ORDINAL, SerialNode )
+
+#ifdef HAVE_KOKKOS_TBB
+#define UNIT_TEST_TBBNODE(SCALAR, ORDINAL) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Scale, SCALAR, ORDINAL, TBBNode )
+#else
+#define UNIT_TEST_TBBNODE(SCALAR, ORDINAL)
+#endif
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, Scale, SCALAR, ORDINAL ) \
+      UNIT_TEST_SERIALNODE( SCALAR, ORDINAL ) \
+      UNIT_TEST_TBBNODE( SCALAR, ORDINAL )
 
 #    define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float) \
+         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double)
      UNIT_TEST_GROUP_ORDINAL(int)
      typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
 
 }
-

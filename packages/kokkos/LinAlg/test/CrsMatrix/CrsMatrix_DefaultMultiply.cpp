@@ -104,7 +104,7 @@ namespace {
     MV X, AX;
     X.initializeValues(N,1,xdat,N);
     AX.initializeValues(N,1,axdat,N);
-    DefaultArithmetic<MV>::Init(1.0,X);
+    DefaultArithmetic<MV>::Init(X,1);
     dsm.Apply(false,1.0,X,0.0,AX);
     const Scalar *axview = node.template viewBufferConst<Scalar>(N,axdat,0);
     Scalar err = 0.0;
