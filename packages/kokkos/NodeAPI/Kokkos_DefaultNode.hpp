@@ -6,6 +6,9 @@
 #ifdef HAVE_KOKKOS_TBB
 #include "Kokkos_TBBNode.hpp"
 #endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+#include "Kokkos_TPINode.hpp"
+#endif
 
 #include <Teuchos_RCP.hpp>
 
@@ -13,10 +16,14 @@ namespace Kokkos {
 
   class DefaultNode {
     public:
-#ifdef HAVE_KOKKOS_TBB
-      typedef TBBNode DefaultNodeType;
+#ifdef HAVE_KOKKOS_THREADPOOL
+      typedef TPINode DefaultNodeType;
 #else
+#  ifdef HAVE_KOKKOS_TBB
+      typedef TBBNode DefaultNodeType;
+#  else
       typedef SerialNode DefaultNodeType;
+#  endif
 #endif
 
       static DefaultNodeType & getDefaultNode();

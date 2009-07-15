@@ -11,17 +11,9 @@ namespace Kokkos {
 
 template <class WDP>
 struct WDPPlusRange {
-  WDPPlusRange(int Beg, int End, WDP &Wdp) : beg(Beg), end(End), wdp(Wdp) {}
-  WDP &wdp;
+  WDPPlusRange(int Beg, int End, WDP Wdp) : wdp(Wdp), beg(Beg), end(End){}
+  WDP wdp;
   int beg, end;
-};
-
-template <class WDP>
-struct WDPPlusRangeAndResult {
-  WDPPlusRangeAndResult(int Beg, int End, WDP &Wdp) : beg(Beg), end(End), wdp(Wdp) {}
-  WDP &wdp;
-  int beg, end;
-  typename WDP::ReductionType result;
 };
 
 inline
@@ -41,7 +33,7 @@ void tpi_execute(TPI_Work * work)
   // get work/data pair
   const WDPPlusRange<WDP>* const_wdp_wrapper = static_cast<const WDPPlusRange<WDP>*>(work->info);
   WDPPlusRange<WDP>* wdp_wrapper = const_cast<WDPPlusRange<WDP>*>(const_wdp_wrapper);
-  WDP &wdp = wdp_wrapper->wdp;
+  WDP wdp = wdp_wrapper->wdp;
   int beg = wdp_wrapper->beg, end = wdp_wrapper->end;
   int ibeg, iend;
   // determine my share of the work
@@ -55,16 +47,16 @@ void tpi_execute(TPI_Work * work)
 template<class WDP>
 void tpi_reduction_work(TPI_Work * work)
 {
-  const WDPPlusRangeAndResult<WDP>* wdp_wrapper = static_cast<const WDPPlusRangeAndResult<WDP>*>(work->info);
+  const WDPPlusRange<WDP>* wdp_wrapper = static_cast<const WDPPlusRange<WDP>*>(work->info);
   int beg = wdp_wrapper->beg, end = wdp_wrapper->end;
-  WDP &wdp = wdp_wrapper->wdp;
+  WDP wdp = wdp_wrapper->wdp;
   int ibeg, iend;
   tpi_work_span(work, beg, end, ibeg, iend);
 
   typedef typename WDP::ReductionType ReductionType;
-  ReductionType tmpres = wdp_wrapper->result, tmpi;
+  ReductionType tmpres = WDP::identity(), tmpi;
 
-  for(int i=ibeg; i<iend; ++i) {
+  for (int i=ibeg; i<iend; ++i) {
     tmpi = wdp.generate(i);
     tmpres = wdp.reduce(tmpres, tmpi);
   }
@@ -76,12 +68,13 @@ void tpi_reduction_join(TPI_Work * work, void* src)
 {
   typedef typename WDP::ReductionType ReductionType;
 
-  const WDPPlusRangeAndResult<WDP>* wdp_wrapper = static_cast<const WDPPlusRangeAndResult<WDP>*>(work->info);
-  WDP &wdp = wdp_wrapper->wdp;
+  const WDPPlusRange<WDP>* wdp_wrapper = static_cast<const WDPPlusRange<WDP>*>(work->info);
+  WDP wdp = wdp_wrapper->wdp;
 
   ReductionType& work_reduce = *(static_cast<ReductionType*>(work->reduce));
+  ReductionType& src_reduce  = *(static_cast<ReductionType*>(src));
 
-  work_reduce = wdp.reduce(wdp_wrapper->result, *(static_cast<ReductionType*>(src)) );
+  work_reduce = wdp.reduce(work_reduce, src_reduce);
 }
 
 template<class WDP>
@@ -119,7 +112,8 @@ class TPINode : public StandardMemoryModel {
 
     template <class WDP>
     void parallel_for(int beg, int end, WDP wd) {
-      TPI_Run_threads(tpi_execute<WDP>, &wd, 0 );
+      WDPPlusRange<WDP> wdp_plus(beg,end,wd);
+      TPI_Run_threads(tpi_execute<WDP>, &wdp_plus, 0 );
     }
 
     template <class WDP>
@@ -127,7 +121,8 @@ class TPINode : public StandardMemoryModel {
     parallel_reduce(int beg, int end, WDP wd) {
       typedef typename WDP::ReductionType ReductionType;
       ReductionType result = WDP::identity();
-      TPI_Run_threads_reduce(tpi_reduction_work<WDP>, &wd,
+      WDPPlusRange<WDP> wdp_plus(beg,end,wd);
+      TPI_Run_threads_reduce(tpi_reduction_work<WDP>, &wdp_plus,
                              tpi_reduction_join<WDP>,
                              tpi_reduction_init<WDP>, sizeof(result), &result);
       return result;
