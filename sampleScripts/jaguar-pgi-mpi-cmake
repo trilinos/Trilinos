@@ -1,0 +1,83 @@
+#!/bin/sh
+
+# cmake script for building ML on jaguar at ORNL
+
+# Step 1
+# Make sure this module is already loaded (it should be by default)
+#   PrgEnv-pgi
+# This defines, among other things,
+#      LC_PE_ENV = pgi
+#      ASYNCPE_DIR = /opt/cray/xt-asyncpe/3.0
+#      LIBSCI_BASE_DIR = /opt/xt-libsci/10.3.5
+#      LIBSCI_POST_LINK_OPTS = -lsci_quadcore
+
+# Step 2
+# Load the following modules
+#   cmake/2.6.4
+#   parmetis
+
+# Step 3
+# Choose which build type you want.
+
+export BUILD_TYPE=nodeaware
+#export BUILD_TYPE=clean
+
+echo ""
+echo "BUILD_TYPE = ${BUILD_TYPE}"
+echo ""
+sleep 5
+
+if [ ${BUILD_TYPE} == "nodeaware" ]; then
+  EXPMACRO="-DIFPACK_NODE_AWARE_CODE"
+fi
+
+export TRILINOS_HOME=${PWD}/../Trilinos
+
+
+# Cray compiler wrappers: cc, CC, ftn.  Located in ${ASYNCPE_DIR}/bin.
+# blas/lapack are supplied by LibSci.  Located in ${LIBSCI_BASE_DIR}/$LC_PE_ENV}/lib.  The -l on the front
+#                     of ${LIBSCI_POST_LINK_OPTS} makes it unsuitable for cmake, so we use sed to whack it.
+export BLASLIBNAME=`echo ${LIBSCI_POST_LINK_OPTS} | sed "s/-l//"`
+export LAPACKLIBNAME=${BLASLIBNAME}
+# metis/parmetis   Unfortunately, paths & libraries are all in a single variable, PARMETIS_LIB,
+#                  which therefore can't be used directly with cmake.
+export PARMETIS_HOME="/sw/xt5/parmetis/3.1/cnl2.1_pgi8.0.3"
+
+EXTRA_ARGS=$@
+
+#  -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+#  -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
+
+  cmake \
+  -D CMAKE_INSTALL_PREFIX:PATH="${TRILINOS_HOME}/../install_${BUILD_TYPE}" \
+  -D Trilinos_ENABLE_ML:BOOL=ON \
+  -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+\
+  -D MPI_CXX_COMPILER:FILEPATH="${ASYNCPE_DIR}/bin/CC" \
+  -D MPI_C_COMPILER:FILEPATH="${ASYNCPE_DIR}/bin/cc" \
+  -D MPI_Fortran_COMPILER:FILEPATH="${ASYNCPE_DIR}/bin/ftn" \
+\
+  -D CMAKE_CXX_FLAGS:STRING="-fast -Mipa=fast,inline -Msmartalloc -DMPICH_IGNORE_CXX_SEEK ${EXPMACRO}" \
+  -D CMAKE_C_FLAGS:STRING="-fast -Mipa=fast,inline -Msmartalloc ${EXPMACRO}" \
+  -D CMAKE_Fortran_FLAGS:STRING="-fast -Mipa=fast,inline" \
+\
+  -D TPL_ENABLE_ParMETIS:BOOL=ON \
+  -D ParMETIS_INCLUDE_DIRS:PATH="${PARMETIS_HOME}" \
+  -D ParMETIS_LIBRARY_DIRS:PATH="${PARMETIS_HOME}\lib" \
+\
+  -D TPL_ENABLE_METIS:BOOL=ON \
+  -D METIS_INCLUDE_DIRS:PATH="${PARMETIS_HOME}\METISLib" \
+  -D METIS_LIBRARY_DIRS:PATH="${PARMETIS_HOME}\lib" \
+\
+  -D TPL_ENABLE_BLAS:STRING=ON \
+  -D BLAS_LIBRARY_DIRS:FILEPATH="${LIBSCI_BASE_DIR}/${LC_PE_ENV}/lib" \
+  -D BLAS_LIBRARY_NAMES:STRING="${BLASLIBNAME}" \
+  -D TPL_ENABLE_LAPACK:STRING=ON \
+  -D LAPACK_LIBRARY_DIRS:FILEPATH="${LIBSCI_BASE_DIR}/${LC_PE_ENV}/lib" \
+  -D LAPACK_LIBRARY_NAMES:STRING="${LAPACKLIBNAME}" \
+\
+  -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+  -D DART_TESTING_TIMEOUT:STRING=30 \
+  -D TPL_ENABLE_MPI:BOOL=ON \
+  $EXTRA_ARGS \
+  ${TRILINOS_HOME}
