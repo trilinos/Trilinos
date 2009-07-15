@@ -451,8 +451,8 @@ void setOrdinalTagData(std::vector<std::vector<std::vector<int> > >    &tagToOrd
   // Resize ordinalToTag to a rank-2 array with dimensions (basisCardinality_, 4) and copy tag data
   ordinalToTag.resize(basisCard);
   for (int i = 0; i < basisCard; i++) {
+    ordinalToTag[i].resize(4);
     for (int j = 0; j < tagSize; j++) {
-      ordinalToTag[i].resize(4);
       ordinalToTag[i][j] = tags[i*tagSize + j];
     }
   }

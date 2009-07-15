@@ -47,6 +47,10 @@ int Basis<Scalar, ArrayScalar>::getDofOrdinal(const int subcDim,
 template<class Scalar,class ArrayScalar>
 const std::vector<std::vector<std::vector<int> > > & Basis<Scalar, ArrayScalar>::getDofOrdinalData( ) 
 {
+  if (!basisTagsAreSet_) {
+    initializeTags();
+    basisTagsAreSet_ = true;
+  }
   return tagToOrdinal_;
 }
 
@@ -70,6 +74,7 @@ const std::vector<std::vector<int> > & Basis<Scalar, ArrayScalar>::getAllDofTags
   }
   return ordinalToTag_;
 }
+
 
 
 template<class Scalar, class ArrayScalar>
