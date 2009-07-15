@@ -115,7 +115,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   EnableAmesos_DisableZoltan_EnableAllForwardPackages
   ARGS -DTrilinos_ENABLE_Amesos:BOOL=ON -DTrilinos_ENABLE_Zoltan:BOOL=OFF -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "Final set of enabled packages:  Teuchos RTOp Epetra Triutils Tpetra EpetraExt Thyra AztecOO Galeri Amesos Ifpack ML Belos Stratimikos 14"
+    "Final set of enabled packages:  Teuchos RTOp Epetra Shards Triutils Tpetra EpetraExt Sacado Thyra AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos 17"
   )
 
 
