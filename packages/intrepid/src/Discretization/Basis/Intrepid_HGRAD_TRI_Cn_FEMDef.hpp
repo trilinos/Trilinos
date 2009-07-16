@@ -60,7 +60,7 @@ namespace Intrepid {
 							    pointType );
 
     
-    // form Vandermonde matrix.  Actually, this is the TRANSPOSE of the VDM,
+    // form Vandermonde matrix.  Actually, this is the transpose of the VDM,
     // so we transpose on copy below.
    
     Phis.getValues( V , latticePts , OPERATOR_VALUE );
@@ -184,29 +184,74 @@ namespace Intrepid {
     const int numBf = this->getCardinality();
 
     try {
-      FieldContainer<Scalar> phisCur( numBf , numPts );
-      Phis.getValues( phisCur , inputPoints , operatorType );
-      if (outputValues.rank() == 2) {
-	for (int i=0;i<outputValues.dimension(0);i++) {
-	  for (int j=0;j<outputValues.dimension(1);j++) {
-	    outputValues(i,j) = 0.0;
-	    for (int k=0;k<this->getCardinality();k++) {
-	      outputValues(i,j) += this->Vinv(k,i) * phisCur(k,j);
-	    }
-	  }
-	}
-      }
-      else {  // outputValues has rank 3
-	for (int i=0;i<outputValues.dimension(0);i++) {
-	  for (int j=0;j<outputValues.dimension(1);j++) {
-	    for (int k=0;k<outputValues.dimension(2);k++) {
-	      outputValues(i,j,k) = 0.0;
-	      for (int l=0;l<this->getCardinality();l++) {
-		outputValues(i,j,k) += this->Vinv(l,i) * phisCur(l,j,k);
+      switch (operatorType) {
+      case OPERATOR_VALUE:
+	{
+	  FieldContainer<Scalar> phisCur( numBf , numPts );
+	  Phis.getValues( phisCur , inputPoints , operatorType );
+	  for (int i=0;i<outputValues.dimension(0);i++) {
+	    for (int j=0;j<outputValues.dimension(1);j++) {
+	      outputValues(i,j) = 0.0;
+	      for (int k=0;k<this->getCardinality();k++) {
+		outputValues(i,j) += this->Vinv(k,i) * phisCur(k,j);
 	      }
 	    }
 	  }
 	}
+	break;
+      case OPERATOR_GRAD:
+      case OPERATOR_D1:
+      case OPERATOR_D2:
+      case OPERATOR_D3:
+      case OPERATOR_D4:
+      case OPERATOR_D5:
+      case OPERATOR_D6:
+      case OPERATOR_D7:
+      case OPERATOR_D8:
+      case OPERATOR_D9:
+      case OPERATOR_D10:
+	{
+	  const int dkcard = 
+	    (operatorType == OPERATOR_GRAD)? getDkCardinality(OPERATOR_D1,2): getDkCardinality(operatorType,2);
+	  
+	  FieldContainer<Scalar> phisCur( numBf , numPts , dkcard );
+	  Phis.getValues( phisCur , inputPoints , operatorType );
+
+	  for (int i=0;i<outputValues.dimension(0);i++) {
+	    for (int j=0;j<outputValues.dimension(1);j++) {
+	      for (int k=0;k<outputValues.dimension(2);k++) {
+		outputValues(i,j,k) = 0.0;
+		for (int l=0;l<this->getCardinality();l++) {
+		  outputValues(i,j,k) += this->Vinv(l,i) * phisCur(l,j,k);
+		}
+	      }
+	    }
+	  }
+	}
+	break;
+      case OPERATOR_CURL:  // only works in 2d. first component is -d/dy, second is d/dx
+	{
+	  FieldContainer<Scalar> phisCur( numBf , numPts , getDkCardinality( OPERATOR_D1 , 2 ) );
+	  Phis.getValues( phisCur , inputPoints , OPERATOR_D1 );
+
+	  for (int i=0;i<outputValues.dimension(0);i++) {
+	    for (int j=0;j<outputValues.dimension(1);j++) {
+	      outputValues(i,j,0) = 0.0;
+	      outputValues(i,j,1) = 0.0;
+	      for (int k=0;k<this->getCardinality();k++) {
+		outputValues(i,j,0) -= this->Vinv(k,i) * phisCur(k,j,1);
+	      }
+	      for (int k=0;k<this->getCardinality();k++) {
+		outputValues(i,j,1) += this->Vinv(k,i) * phisCur(k,j,0);
+	      }
+	    }
+	  }
+	}
+	break;
+      default:
+	TEST_FOR_EXCEPTION( true , std::invalid_argument,
+			    ">>> ERROR (Basis_HGRAD_TRI_Cn_FEM): Operator type not implemented");    	
+	break;
       }
     }
     catch (std::invalid_argument &exception){

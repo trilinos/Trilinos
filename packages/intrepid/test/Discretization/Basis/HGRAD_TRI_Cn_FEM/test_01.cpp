@@ -88,12 +88,11 @@ int main(int argc, char *argv[]) {
     Basis_HGRAD_TRI_Cn_FEM<double,FieldContainer<double> >  myBasis( deg , POINTTYPE_WARPBLEND );
 
     // Get a lattice
-    shards::CellTopology myTri_3( shards::getCellTopologyData< shards::Triangle<3> >() );  
-    const int np_lattice = PointTools::getLatticeSize( myTri_3 , deg , 0 );
+    const int np_lattice = PointTools::getLatticeSize( myBasis.getBaseCellTopology() , deg , 0 );
     const int nbf = myBasis.getCardinality();
     FieldContainer<double> lattice( np_lattice , 2 );
     PointTools::getLattice<double,FieldContainer<double> >( lattice , 
-							    myTri_3 , 
+							    myBasis.getBaseCellTopology() , 
 							    deg , 
 							    0 , 
 							    POINTTYPE_WARPBLEND );         
@@ -141,6 +140,31 @@ int main(int argc, char *argv[]) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   }
+
+  try {
+    const int deg = 1;
+    Basis_HGRAD_TRI_Cn_FEM<double,FieldContainer<double> >  myBasis( deg , POINTTYPE_WARPBLEND );
+    
+    // Get a lattice
+    const int np_lattice = PointTools::getLatticeSize( myBasis.getBaseCellTopology() , deg , 0 );
+    const int nbf = myBasis.getCardinality();
+    FieldContainer<double> lattice( np_lattice , 2 );
+    PointTools::getLattice<double,FieldContainer<double> >( lattice , 
+							    myBasis.getBaseCellTopology() , 
+							    deg , 
+							    0 , 
+							    POINTTYPE_WARPBLEND );         
+    FieldContainer<double> vals( nbf , np_lattice , 2 );
+
+    myBasis.getValues( vals , lattice , OPERATOR_CURL );
+
+    std::cout << vals << std::endl;
+  }
+  catch (std::exception err) {
+    *outStream << err.what() << "\n\n";
+    errorFlag = -1000;
+  }
+  
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
