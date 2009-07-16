@@ -131,7 +131,7 @@
   </Package>
   <Package name="Isorropia" dir="isorropia">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Zoltan"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Kokkos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -310,8 +310,8 @@
     <TEST_OPTIONAL_DEP_TPLS value="ADOLC,CppUnit"/>
   </Package>
   <Package name="Intrepid" dir="intrepid">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Sacado"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards,Sacado"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt,Amesos,Pamgen"/>
     <LIB_REQUIRED_DEP_TPLS/>
