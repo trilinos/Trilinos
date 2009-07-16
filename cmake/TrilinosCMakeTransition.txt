@@ -31,12 +31,11 @@ Package: Teuchos
 
 Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
 
-Status: Should be completely finished but a careful final certification should
-be done.
+Status: Should be completely finished.
 
-Final Certification Date: [???]
+Final Certification Date: 07/16/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: It is what it is.
 
 -------------------------------------------------------------------------------
 
@@ -209,12 +208,13 @@ Package: Thyra
 
 Package Transition Lead: Roscoe A. Bartlett (rabartl@sandia.gov)
 
-Status: Should be completely finished but a careful final certification should
-be done.
+Status: Should be completely finished except for a ModelEvaluator test.
+However, this is being tested in down-stream packages so this is okay for
+now..
 
-Final Certification Date: [???]
+Final Certification Date: 07/16/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: It is what it is.
 
 -------------------------------------------------------------------------------
 
@@ -377,11 +377,10 @@ Package: Stratimikos
 Package Transition Lead: Roscoe Bartlett (rabartl@sandia.gov)
 
 Status: Should have complete support for all libraries, tests and examples.
-Only final certification should be needed.
 
-Final Certification Date: [???]
+Final Certification Date: 07/16/209
 
-Final Certification Evidence: [???]
+Final Certification Evidence: It is what it is.
 
 -------------------------------------------------------------------------------
 
