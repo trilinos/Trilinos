@@ -595,18 +595,21 @@ Final Certification Evidence: [Tests are passing, with the exception of a checke
 
 -------------------------------------------------------------------------------
 
-Package: TriKota (Non-released)
+Package: TriKota
 
-Package Transition Lead: None needed
+Package Transition Lead: Andy Salinger (agsalin@sandia.gov)
 
-Status: Has not been started yet.  This package will not be released in the
-next release and is not yet building in general.  CMake support will be put in
-at the same time that the Dakota dependency and coupled build issues are
-resolved.
+Status: TriKota builds with CMake. TriKota has a dependence on 
+Dakota TPLs. (There is still the issue of a circular dependency
+between Dakota and Trilinos: Dakota depends on Teuchos, TriKota 
+depends on Dakota. The snapshot of Teuchos in Dakota is updated
+manually whenever they go out of synch enough to cause problems.)
 
-Final Certification Date: [???]
+Final Certification Date: 07-16-2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: The single test runs under ctest
+and passes. The build and install is being tested nightly
+as part of the Albany code project.
 
 -------------------------------------------------------------------------------
 
