@@ -618,9 +618,10 @@ Package Transition Lead: Nicole Lemaster (mnlemas@sandia.gov)
 
 Status: Builds with CMake but no longer with autotools.
 
-Final Certification Date: [???]
+Final Certification Date: 07/16/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: Has been consistently building for months with
+cmake; the two failing unit tests are not related to issues with cmake.
 
 -------------------------------------------------------------------------------
 
