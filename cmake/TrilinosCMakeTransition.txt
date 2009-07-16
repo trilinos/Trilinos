@@ -444,12 +444,11 @@ Package: ThreadPool
 
 Package Transition Lead: Carter Edwards (hcedwar@sandia.gov)
 
-Status: Did have basic (or even complete) CMake support but does not currently
-build with CMake system.
+Status: Builds and runtest tests with cmake/ctest.
 
-Final Certification Date: [???]
+Final Certification Date: 7/16/2009
 
-Final Certification Evidence: [???]
+Final Certification Evidence: Tests pass.
 
 -------------------------------------------------------------------------------
 
