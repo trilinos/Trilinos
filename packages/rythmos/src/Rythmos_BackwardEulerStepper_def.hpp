@@ -931,6 +931,84 @@ void BackwardEulerStepper<Scalar>::initialize()
 
 }
 
+template<class Scalar>
+RCP<const MomentoBase<Scalar> >
+BackwardEulerStepper<Scalar>::getMomento() const
+{
+  RCP<BackwardEulerStepperMomento<Scalar> > momento = Teuchos::rcp(new BackwardEulerStepperMomento<Scalar>());
+  momento->set_scaled_x_old(scaled_x_old_);
+  momento->set_x_dot_old(x_dot_old_);
+  momento->set_x(x_);
+  momento->set_x_dot(x_dot_);
+  momento->set_t(t_);
+  momento->set_t_old(t_old_);
+  momento->set_dt(dt_);
+  momento->set_numSteps(numSteps_);
+  momento->set_isInitialized(isInitialized_);
+  momento->set_haveInitialCondition(haveInitialCondition_);
+  momento->set_parameterList(parameterList_);
+  momento->set_basePoint(basePoint_);
+  momento->set_neModel(neModel_);
+  momento->set_interpolator(interpolator_);
+  return momento;
+}
+
+template<class Scalar>
+void BackwardEulerStepper<Scalar>::setMomento(
+    const Ptr<const MomentoBase<Scalar> >& momentoPtr,
+    const RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+    const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
+    ) 
+{ 
+  Ptr<const BackwardEulerStepperMomento<Scalar> > feMomentoPtr = 
+    Teuchos::ptr_dynamic_cast<const BackwardEulerStepperMomento<Scalar> >(momentoPtr,true);
+  const BackwardEulerStepperMomento<Scalar>& feMomento = *feMomentoPtr;
+  model_ = model;
+  solver_ = solver;
+  scaled_x_old_ = feMomento.get_scaled_x_old();
+  x_dot_old_ = feMomento.get_x_dot_old();
+  x_ = feMomento.get_x();
+  x_dot_ = feMomento.get_x_dot();
+  t_ = feMomento.get_t();
+  t_old_ = feMomento.get_t_old();
+  dt_ = feMomento.get_dt();
+  numSteps_ = feMomento.get_numSteps();
+  isInitialized_ = feMomento.get_isInitialized();
+  haveInitialCondition_ = feMomento.get_haveInitialCondition();
+  parameterList_ = feMomento.get_parameterList();
+  basePoint_ = feMomento.get_basePoint();
+  neModel_ = feMomento.get_neModel();
+  interpolator_ = feMomento.get_interpolator();
+  this->checkConsistentState_();
+}
+
+template<class Scalar>
+void BackwardEulerStepper<Scalar>::checkConsistentState_()
+{
+  if (isInitialized_) {
+    TEUCHOS_ASSERT( !Teuchos::is_null(model_) );
+    TEUCHOS_ASSERT( !Teuchos::is_null(solver_) );
+    TEUCHOS_ASSERT( haveInitialCondition_ );
+    TEUCHOS_ASSERT( !Teuchos::is_null(interpolator_) );
+  }
+  if (haveInitialCondition_) {
+    // basePoint_ should be defined
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    TEUCHOS_ASSERT( !ST::isnaninf(t_) );
+    TEUCHOS_ASSERT( !ST::isnaninf(t_old_) );
+    TEUCHOS_ASSERT( !Teuchos::is_null(scaled_x_old_) );
+    TEUCHOS_ASSERT( !Teuchos::is_null(x_dot_old_) );
+    TEUCHOS_ASSERT( !Teuchos::is_null(x_) );
+    TEUCHOS_ASSERT( !Teuchos::is_null(x_dot_) );
+    TEUCHOS_ASSERT( t_ >= basePoint_.get_t() );
+    TEUCHOS_ASSERT( t_old_ >= basePoint_.get_t() );
+  }
+  if (numSteps_ > 0) {
+    TEUCHOS_ASSERT(isInitialized_);
+  }
+}
+
+
 // 
 // Explicit Instantiation macro
 //

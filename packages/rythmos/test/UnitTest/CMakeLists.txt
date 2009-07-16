@@ -221,6 +221,14 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    BackwardEulerStepper_UnitTest
+    SOURCES Rythmos_BackwardEuler_UnitTest.cpp Rythmos_UnitTest.cpp
+    DEPLIBS rythmos_test_models
+    COMM serial
+    STANDARD_PASS_OUTPUT
+    )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ForwardSensitivityExplicitModelEvaluator_UnitTest
     SOURCES Rythmos_ForwardSensitivityExplicitModelEvaluator_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
@@ -231,6 +239,14 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ForwardSensitivityImplicitModelEvaluator_UnitTest
     SOURCES Rythmos_ForwardSensitivityImplicitModelEvaluator_UnitTest.cpp Rythmos_UnitTest.cpp
+    DEPLIBS rythmos_test_models
+    COMM serial
+    STANDARD_PASS_OUTPUT
+    )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    StateSerializerStrategy_UnitTest
+    SOURCES Rythmos_StateSerializerStrategy_UnitTest.cpp Rythmos_UnitTest.cpp
     DEPLIBS rythmos_test_models
     COMM serial
     STANDARD_PASS_OUTPUT

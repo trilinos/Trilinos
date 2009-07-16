@@ -57,7 +57,7 @@ public:
    */
   virtual bool supportsCloning() const;
 
-  /** \brief Clone the interpoloator object if supported.
+  /** \brief Clone the interpolator object if supported.
    *
    * <b>Postconditions:</b><ul>
    * <tt>[<tt>supportsCloning()==true</tt>] <tt>returnVal != Teuchos::null</tt>

@@ -32,12 +32,193 @@
 #include "Rythmos_SolverAcceptingStepperBase.hpp"
 #include "Rythmos_InterpolatorAcceptingObjectBase.hpp"
 #include "Rythmos_SingleResidualModelEvaluator.hpp"
+#include "Rythmos_MomentoBase.hpp"
 
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
+#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 namespace Rythmos {
+
+/** \brief Concrete momento class for the BackwardEulerStepper.
+ * 
+ * Note:  The model is not contained in the momento and must be set on the stepper in addition to the momento.
+ */
+template<class Scalar>
+  class BackwardEulerStepperMomento :
+    virtual public MomentoBase<Scalar>,
+    virtual public Teuchos::ParameterListAcceptorDefaultBase
+{
+  public:
+    BackwardEulerStepperMomento() {}
+    virtual ~BackwardEulerStepperMomento() {}
+
+    RCP<MomentoBase<Scalar> > clone() const
+    {
+      RCP<BackwardEulerStepperMomento<Scalar> > m = rcp(new BackwardEulerStepperMomento<Scalar>());
+      m->set_scaled_x_old(scaled_x_old_);
+      m->set_x_dot_old(x_dot_old_);
+      m->set_x(x_);
+      m->set_x_dot(x_dot_);
+      m->set_t(t_);
+      m->set_t_old(t_old_);
+      m->set_dt(dt_);
+      m->set_numSteps(numSteps_);
+      m->set_isInitialized(isInitialized_);
+      m->set_haveInitialCondition(haveInitialCondition_);
+      m->set_parameterList(parameterList_);
+      m->set_basePoint(basePoint_);
+      m->set_neModel(neModel_);
+      m->set_interpolator(interpolator_);
+      if (!Teuchos::is_null(this->getMyParamList())) {
+        m->setParameterList(Teuchos::parameterList(*(this->getMyParamList())));
+      }
+      // How do I copy the VerboseObject data?  
+      // 07/10/09 tscoffe:  Its not set up in Teuchos to do this yet
+      return m;
+    }
+
+    void serialize(
+        const StateSerializerStrategy<Scalar>& stateSerializer,
+        std::ostream& oStream
+        ) const
+    { }
+
+    void deSerialize(
+        const StateSerializerStrategy<Scalar>& stateSerializer,
+        std::istream& iStream
+        )
+    { }
+
+    void set_scaled_x_old(const RCP<const VectorBase<Scalar> >& scaled_x_old )
+    { 
+      scaled_x_old_ = Teuchos::null;
+      if (!Teuchos::is_null(scaled_x_old)) {
+        scaled_x_old_ = scaled_x_old->clone_v(); 
+      }
+    }
+    RCP<VectorBase<Scalar> > get_scaled_x_old() const
+    { return scaled_x_old_; }
+
+    void set_x_dot_old(const RCP<const VectorBase<Scalar> >& x_dot_old )
+    { 
+      x_dot_old_ = Teuchos::null;
+      if (!Teuchos::is_null(x_dot_old)) {
+        x_dot_old_ = x_dot_old->clone_v(); 
+      }
+    }
+    RCP<VectorBase<Scalar> > get_x_dot_old() const
+    { return x_dot_old_; }
+
+    void set_x(const RCP<const VectorBase<Scalar> >& x )
+    { 
+      x_ = Teuchos::null;
+      if (!Teuchos::is_null(x)) {
+        x_ = x->clone_v(); 
+      }
+    }
+    RCP<VectorBase<Scalar> > get_x() const
+    { return x_; }
+
+    void set_x_dot(const RCP<const VectorBase<Scalar> >& x_dot )
+    { 
+      x_dot_ = Teuchos::null;
+      if (!Teuchos::is_null(x_dot)) {
+        x_dot_ = x_dot->clone_v(); 
+      }
+    }
+    RCP<VectorBase<Scalar> > get_x_dot() const
+    { return x_dot_; }
+
+    void set_t(const Scalar & t)
+    { t_ = t; }
+    Scalar get_t() const
+    { return t_; }
+
+    void set_t_old(const Scalar & t_old)
+    { t_old_ = t_old; }
+    Scalar get_t_old() const
+    { return t_old_; }
+
+    void set_dt(const Scalar & dt)
+    { dt_ = dt; }
+    Scalar get_dt() const
+    { return dt_; }
+
+    void set_numSteps(const int & numSteps)
+    { numSteps_ = numSteps; }
+    int get_numSteps() const
+    { return numSteps_; }
+
+    void set_isInitialized(const bool & isInitialized)
+    { isInitialized_ = isInitialized; }
+    bool get_isInitialized() const
+    { return isInitialized_; }
+
+    void set_haveInitialCondition(const bool & haveInitialCondition)
+    { haveInitialCondition_ = haveInitialCondition; }
+    bool get_haveInitialCondition() const
+    { return haveInitialCondition_; }
+
+    void set_parameterList(const RCP<const ParameterList>& pl)
+    { 
+      parameterList_ = Teuchos::null;
+      if (!Teuchos::is_null(pl)) {
+        parameterList_ = Teuchos::parameterList(*pl); 
+      }
+    }
+    RCP<ParameterList> get_parameterList() const
+    { return parameterList_; }
+
+    void set_basePoint(Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint)
+    { basePoint_ = basePoint; };
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> get_basePoint() const
+    { return basePoint_; }
+
+    void set_neModel(const RCP<Rythmos::SingleResidualModelEvaluator<Scalar> >& neModel)
+    { 
+      neModel_ = Teuchos::null;
+      if (!Teuchos::is_null(neModel)) {
+        neModel_ = Teuchos::rcp(new Rythmos::SingleResidualModelEvaluator<Scalar>);
+      }
+    }
+    RCP<Rythmos::SingleResidualModelEvaluator<Scalar> > get_neModel() const
+    { return neModel_; }
+
+    void set_interpolator(const RCP<InterpolatorBase<Scalar> >& interpolator)
+    {
+      interpolator_ = Teuchos::null;
+      if (!Teuchos::is_null(interpolator)) {
+        TEUCHOS_ASSERT(interpolator->supportsCloning());
+        interpolator_ = interpolator->cloneInterpolator();
+      }
+    }
+    RCP<InterpolatorBase<Scalar> > get_interpolator() const
+    { return interpolator_; }
+
+    void setParameterList(const RCP<ParameterList>& paramList)
+    { this->setMyParamList(paramList); }
+    RCP<const ParameterList> getValidParameters() const
+    { return Teuchos::null; }
+
+  private:
+    RCP<Thyra::VectorBase<Scalar> > scaled_x_old_;
+    RCP<Thyra::VectorBase<Scalar> > x_dot_old_;
+    RCP<Thyra::VectorBase<Scalar> > x_;
+    RCP<Thyra::VectorBase<Scalar> > x_dot_;
+    Scalar t_;
+    Scalar t_old_;
+    Scalar dt_;
+    int numSteps_;
+    bool isInitialized_;
+    bool haveInitialCondition_;
+    RCP<Teuchos::ParameterList> parameterList_;
+    Thyra::ModelEvaluatorBase::InArgs<Scalar> basePoint_;
+    RCP<Rythmos::SingleResidualModelEvaluator<Scalar> >  neModel_; 
+    RCP<InterpolatorBase<Scalar> > interpolator_;
+
+};
 
 
 /** \brief Simple concrete stepper subclass implementing an implicit backward
@@ -212,6 +393,21 @@ public:
     ) const;
 
   //@}
+  
+  /** \brief Get momento object for use in restarts
+  *
+  */
+  RCP<const MomentoBase<Scalar> > getMomento() const;
+
+  /** \brief Set momento object for use in restarts
+  *
+  */
+  void setMomento(
+      const Ptr<const MomentoBase<Scalar> >& momentoPtr,
+      const RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+      const RCP<Thyra::NonlinearSolverBase<Scalar> >& solver
+      );
+
 
 private:
 
@@ -246,6 +442,7 @@ private:
 
   void defaultInitializeAll_();
   void initialize();
+  void checkConsistentState_();
 
 };
 

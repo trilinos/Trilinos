@@ -104,5 +104,100 @@ TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, ExplicitRKStepper ) {
   }
 }
 
+/*
+TEUCHOS_UNIT_TEST( Rythmos_DefaultIntegrator, momento ) {
+  RCP<Momento<double> > integrator_momento;
+  // place to store solution at time = 1.0
+  RCP<const VectorBase<double> > x_norestart; 
+  RCP<const VectorBase<double> > xdot_norestart;
+  // Create an integrator with Backward Euler 
+  // Integrate to t = 0.5, pull out the momento, then integrate the rest of the way to t = 1.0.
+  {
+    RCP<SinCosModel> model = sinCosModel(true);
+    Thyra::ModelEvaluator::InArgs<double> model_ic = model->getNominalValues();
+    RCP<Thyra::NonLinearSolver<double> > nlSolver = timeStepNonlinearSolver<double>();
+    RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+    {
+      RCP<ParameterList> pl = Teuchos::parameterList();
+      pl->setParameters(*(ib->getValidParameters()));
+      pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
+      pl->sublist("Integration Control Strategy Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
+      pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
+      pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
+      ib->setParameterList(pl);
+    }
+    RCP<IntegratorBase<double> > integrator = ib->create(model,model_ic,nlSolver);
+    {
+      // Integrate to t=0.5
+      Array<double> time_vec;
+      time_vec.push_back(0.5);
+      Array<RCP<const VectorBase<double> > > x_vec;
+      Array<RCP<const VectorBase<double> > > xdot_vec;
+      Array<double> accuracy_vec;
+      integrator->getFwdPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+    }
+    // Pull out the momento.
+    integrator_momento = integrator->getMomento();
+    {
+      // Finish integrating to t=1.0
+      time_vec.push_back(1.0);
+      Array<RCP<const VectorBase<double> > > x_vec;
+      Array<RCP<const VectorBase<double> > > xdot_vec;
+      Array<double> accuracy_vec;
+      integrator->getFwdPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+      x_norestart = x_vec[0];
+      xdot_norestart = xdot_vec[0];
+    }
+  }
+  // Create an integrator with Backward Euler, pass the momento back, and verify the data is the same
+  {
+    RCP<SinCosModel> model = sinCosModel(true);
+    Thyra::ModelEvaluator::InArgs<double> model_ic = model->getNominalValues();
+    RCP<Thyra::NonLinearSolver<double> > nlSolver = timeStepNonlinearSolver<double>();
+    RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
+    {
+      RCP<ParameterList> pl = Teuchos::parameterList();
+      pl->setParameters(*(ib->getValidParameters()));
+      pl->sublist("Stepper Settings").sublist("Stepper Selection").set("Stepper Type","Backward Euler");
+      pl->sublist("Integration Control Strategy Selection").set("Integration Control Strategy Type","Simple Integration Control Strategy");
+      pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Take Variable Steps",false);
+      pl->sublist("Integration Control Strategy Selection").sublist("Simple Integration Control Strategy").set("Fixed dt",0.1);
+      ib->setParameterList(pl);
+    }
+    RCP<IntegratorBase<double> > integrator = ib->create(model,model_ic,nlSolver);
+    integrator->setMomento(*integrator_momento);
+    {
+      // Finish integrating to t=1.0
+      time_vec.push_back(1.0);
+      Array<RCP<const VectorBase<double> > > x_vec;
+      Array<RCP<const VectorBase<double> > > xdot_vec;
+      Array<double> accuracy_vec;
+      integrator->getFwdPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+      
+      RCP<const VectorBase<double> > x_restart = x_vec[0];
+      RCP<const VectorBase<double> > xdot_restart = xdot_vec[0];
+      // Verify that x_restart == x_norestart
+      // Verify that xdot_restart == xdot_norestart
+      TEST_ASSERT(
+        Thyra::testRelNormDiffErr(
+          "x_norestart", *x_norestart, "x_restart", *x_restart,
+          "epsilon", SMT::eps(),
+          "epsilon", SMT::eps(),
+          0
+          )
+        );
+      TEST_ASSERT(
+        Thyra::testRelNormDiffErr(
+          "xdot_norestart", *xdot_norestart, "xdot_restart", *xdot_restart,
+          "epsilon", SMT::eps(),
+          "epsilon", SMT::eps(),
+          0
+          )
+        );
+    }
+  }
+}
+*/
+
 } // namespace Rythmos
 

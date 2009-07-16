@@ -36,6 +36,283 @@
 
 namespace Rythmos {
 
+// --------------------------------------------------------------------
+// ForwardEulerStepperMomento definitions:
+// --------------------------------------------------------------------
+
+template<class Scalar>
+ForwardEulerStepperMomento<Scalar>::ForwardEulerStepperMomento() 
+{}
+
+template<class Scalar>
+ForwardEulerStepperMomento<Scalar>::~ForwardEulerStepperMomento() 
+{}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::serialize(
+        const StateSerializerStrategy<Scalar>& stateSerializer,
+        std::ostream& oStream
+        ) const
+{
+  using Teuchos::is_null;
+  TEUCHOS_ASSERT( !is_null(model_) );
+  RCP<VectorBase<Scalar> > sol_vec = solution_vector_;
+  if (is_null(sol_vec)) {
+    sol_vec = Thyra::createMember(model_->get_x_space());
+  }
+  RCP<VectorBase<Scalar> > res_vec = residual_vector_;
+  if (is_null(res_vec)) {
+    res_vec = Thyra::createMember(model_->get_f_space());
+  }
+  RCP<VectorBase<Scalar> > sol_vec_old = solution_vector_old_;
+  if (is_null(sol_vec_old)) {
+    sol_vec_old = Thyra::createMember(model_->get_x_space());
+  }
+  stateSerializer.serializeVectorBase(*sol_vec,oStream);
+  stateSerializer.serializeVectorBase(*res_vec,oStream);
+  stateSerializer.serializeVectorBase(*sol_vec_old,oStream);
+  stateSerializer.serializeScalar(t_,oStream);
+  stateSerializer.serializeScalar(t_old_,oStream);
+  stateSerializer.serializeScalar(dt_,oStream);
+  stateSerializer.serializeInt(numSteps_,oStream);
+  stateSerializer.serializeBool(isInitialized_,oStream);
+  stateSerializer.serializeBool(haveInitialCondition_,oStream);
+  RCP<ParameterList> pl = parameterList_;
+  if (Teuchos::is_null(pl)) {
+    pl = Teuchos::parameterList();
+  }
+  stateSerializer.serializeParameterList(*pl,oStream);
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::deSerialize(
+        const StateSerializerStrategy<Scalar>& stateSerializer,
+        std::istream& iStream
+        )
+{
+  using Teuchos::outArg;
+  using Teuchos::is_null;
+  TEUCHOS_ASSERT( !is_null(model_) );
+  if (is_null(solution_vector_)) {
+    solution_vector_ = Thyra::createMember(*model_->get_x_space());
+  }
+  if (is_null(residual_vector_)) {
+    residual_vector_ = Thyra::createMember(*model_->get_f_space());
+  }
+  if (is_null(solution_vector_old_)) {
+    solution_vector_old_ = Thyra::createMember(*model_->get_x_space());
+  }
+  stateSerializer.deSerializeVectorBase(outArg(*solution_vector_),iStream);
+  stateSerializer.deSerializeVectorBase(outArg(*residual_vector_),iStream);
+  stateSerializer.deSerializeVectorBase(outArg(*solution_vector_old_),iStream);
+  stateSerializer.deSerializeScalar(outArg(t_),iStream);
+  stateSerializer.deSerializeScalar(outArg(t_old_),iStream);
+  stateSerializer.deSerializeScalar(outArg(dt_),iStream);
+  stateSerializer.deSerializeInt(outArg(numSteps_),iStream);
+  stateSerializer.deSerializeBool(outArg(isInitialized_),iStream);
+  stateSerializer.deSerializeBool(outArg(haveInitialCondition_),iStream);
+  if (is_null(parameterList_)) {
+    parameterList_ = Teuchos::parameterList();
+  }
+  stateSerializer.deSerializeParameterList(outArg(*parameterList_),iStream);
+}
+
+template<class Scalar>
+RCP<MomentoBase<Scalar> > ForwardEulerStepperMomento<Scalar>::clone() const
+{
+  RCP<ForwardEulerStepperMomento<Scalar> > m = rcp(new ForwardEulerStepperMomento<Scalar>());
+  m->set_solution_vector(solution_vector_);
+  m->set_residual_vector(residual_vector_);
+  m->set_solution_vector_old(solution_vector_old_);
+  m->set_t(t_);
+  m->set_t_old(t_old_);
+  m->set_dt(dt_);
+  m->set_numSteps(numSteps_);
+  m->set_isInitialized(isInitialized_);
+  m->set_haveInitialCondition(haveInitialCondition_);
+  m->set_parameterList(parameterList_);
+  if (!Teuchos::is_null(this->getMyParamList())) {
+    m->setParameterList(Teuchos::parameterList(*(this->getMyParamList())));
+  }
+  m->set_model(model_);
+  m->set_basePoint(basePoint_);
+  // How do I copy the VerboseObject data?  
+  // 07/10/09 tscoffe:  Its not set up in Teuchos to do this yet
+  return m;
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_solution_vector(const RCP<const VectorBase<Scalar> >& solution_vector )
+{ 
+  solution_vector_ = Teuchos::null;
+  if (!Teuchos::is_null(solution_vector)) {
+    solution_vector_ = solution_vector->clone_v(); 
+  }
+}
+
+template<class Scalar>
+RCP<VectorBase<Scalar> > ForwardEulerStepperMomento<Scalar>::get_solution_vector() const
+{ 
+  return solution_vector_; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_residual_vector(const RCP<const VectorBase<Scalar> >& residual_vector)
+{ 
+  residual_vector_ = Teuchos::null;
+  if (!Teuchos::is_null(residual_vector)) {
+    residual_vector_ = residual_vector->clone_v(); 
+  }
+}
+
+template<class Scalar>
+RCP<VectorBase<Scalar> > ForwardEulerStepperMomento<Scalar>::get_residual_vector() const
+{ 
+  return residual_vector_; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_solution_vector_old(const RCP<const VectorBase<Scalar> >& solution_vector_old )
+{ 
+  solution_vector_old_ = Teuchos::null;
+  if (!Teuchos::is_null(solution_vector_old)) {
+    solution_vector_old_ = solution_vector_old->clone_v(); 
+  }
+}
+
+template<class Scalar>
+RCP<VectorBase<Scalar> > ForwardEulerStepperMomento<Scalar>::get_solution_vector_old() const
+{ 
+  return solution_vector_old_; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_t(const Scalar & t)
+{ 
+  t_ = t; 
+}
+
+template<class Scalar>
+Scalar ForwardEulerStepperMomento<Scalar>::get_t() const
+{ 
+  return t_; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_t_old(const Scalar & t_old)
+{ 
+  t_old_ = t_old; 
+}
+
+template<class Scalar>
+Scalar ForwardEulerStepperMomento<Scalar>::get_t_old() const
+{ 
+  return t_old_; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_dt(const Scalar & dt)
+{ 
+  dt_ = dt; 
+}
+
+template<class Scalar>
+Scalar ForwardEulerStepperMomento<Scalar>::get_dt() const
+{ 
+  return dt_; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_numSteps(const int & numSteps)
+{ 
+  numSteps_ = numSteps; 
+}
+
+template<class Scalar>
+int ForwardEulerStepperMomento<Scalar>::get_numSteps() const
+{ 
+  return numSteps_; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_isInitialized(const bool & isInitialized)
+{ 
+  isInitialized_ = isInitialized; 
+}
+
+template<class Scalar>
+bool ForwardEulerStepperMomento<Scalar>::get_isInitialized() const
+{ 
+  return isInitialized_; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_haveInitialCondition(const bool & haveInitialCondition)
+{ 
+  haveInitialCondition_ = haveInitialCondition; 
+}
+
+template<class Scalar>
+bool ForwardEulerStepperMomento<Scalar>::get_haveInitialCondition() const
+{ 
+  return haveInitialCondition_; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_parameterList(const RCP<const ParameterList>& pl)
+{ 
+  parameterList_ = Teuchos::null;
+  if (!Teuchos::is_null(pl)) {
+    parameterList_ = Teuchos::parameterList(*pl); 
+  }
+}
+
+template<class Scalar>
+RCP<ParameterList> ForwardEulerStepperMomento<Scalar>::get_parameterList() const
+{ 
+  return parameterList_; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::setParameterList(const RCP<ParameterList>& paramList)
+{ 
+  this->setMyParamList(paramList); 
+}
+
+template<class Scalar>
+RCP<const ParameterList> ForwardEulerStepperMomento<Scalar>::getValidParameters() const
+{ 
+  return Teuchos::null; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_model(const RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+{ 
+  model_ = model; 
+}
+
+template<class Scalar>
+RCP<const Thyra::ModelEvaluator<Scalar> > ForwardEulerStepperMomento<Scalar>::get_model() const
+{ 
+  return model_; 
+}
+
+template<class Scalar>
+void ForwardEulerStepperMomento<Scalar>::set_basePoint(const RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar> >& basePoint)
+{ 
+  basePoint_ = basePoint; 
+}
+
+template<class Scalar>
+RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar> > ForwardEulerStepperMomento<Scalar>::get_basePoint() const
+{ 
+  return basePoint_; 
+}
+
+// --------------------------------------------------------------------
+// ForwardEulerStepper definitions:
+// --------------------------------------------------------------------
+
 // Nonmember constructor
 template<class Scalar>
 RCP<ForwardEulerStepper<Scalar> > forwardEulerStepper()
@@ -346,6 +623,75 @@ ForwardEulerStepper<Scalar>::cloneStepperAlgorithm() const
 
 }
 
+template<class Scalar>
+RCP<const MomentoBase<Scalar> >
+ForwardEulerStepper<Scalar>::getMomento() const
+{
+  RCP<ForwardEulerStepperMomento<Scalar> > momento = Teuchos::rcp(new ForwardEulerStepperMomento<Scalar>());
+  momento->set_solution_vector(solution_vector_);
+  momento->set_solution_vector_old(solution_vector_old_);
+  momento->set_residual_vector(residual_vector_);
+  momento->set_t(t_);
+  momento->set_t_old(t_old_);
+  momento->set_dt(dt_);
+  momento->set_numSteps(numSteps_);
+  momento->set_isInitialized(isInitialized_);
+  momento->set_haveInitialCondition(haveInitialCondition_);
+  momento->set_parameterList(parameterList_);
+  momento->set_model(model_);
+  RCP<Thyra::ModelEvaluatorBase::InArgs<Scalar> > bp = rcp(new Thyra::ModelEvaluatorBase::InArgs<Scalar>(basePoint_));
+  momento->set_basePoint(bp);
+  return momento;
+}
+
+template<class Scalar>
+void ForwardEulerStepper<Scalar>::setMomento( const Ptr<const MomentoBase<Scalar> >& momentoPtr ) 
+{ 
+  Ptr<const ForwardEulerStepperMomento<Scalar> > feMomentoPtr = 
+    Teuchos::ptr_dynamic_cast<const ForwardEulerStepperMomento<Scalar> >(momentoPtr,true);
+  TEST_FOR_EXCEPTION( Teuchos::is_null(feMomentoPtr->get_model()), std::logic_error,
+      "Error!  Rythmos::ForwardEulerStepper::setMomento:  The momento must have a valid model through set_model(...) prior to calling ForwardEulerStepper::setMomento(...)."
+      );
+  TEST_FOR_EXCEPTION( Teuchos::is_null(feMomentoPtr->get_basePoint()), std::logic_error,
+      "Error!  Rythmos::ForwardEulerStepper::setMomento:  The momento must have a valid base point through set_basePoint(...) prior to calling ForwardEulerStepper::setMomento(...)."
+      );
+  model_ = feMomentoPtr->get_model();
+  basePoint_ = *(feMomentoPtr->get_basePoint());
+  const ForwardEulerStepperMomento<Scalar>& feMomento = *feMomentoPtr;
+  solution_vector_ = feMomento.get_solution_vector();
+  solution_vector_old_ = feMomento.get_solution_vector_old();
+  residual_vector_ = feMomento.get_residual_vector();
+  t_ = feMomento.get_t();
+  t_old_ = feMomento.get_t_old();
+  dt_ = feMomento.get_dt();
+  numSteps_ = feMomento.get_numSteps();
+  isInitialized_ = feMomento.get_isInitialized();
+  haveInitialCondition_ = feMomento.get_haveInitialCondition();
+  parameterList_ = feMomento.get_parameterList();
+  this->checkConsistentState_();
+}
+
+template<class Scalar>
+void ForwardEulerStepper<Scalar>::checkConsistentState_()
+{
+  if (isInitialized_) {
+    TEUCHOS_ASSERT( !Teuchos::is_null(model_) );
+    TEUCHOS_ASSERT( !Teuchos::is_null(residual_vector_) );
+  }
+  if (haveInitialCondition_) {
+    typedef Teuchos::ScalarTraits<Scalar> ST;
+    TEUCHOS_ASSERT( !ST::isnaninf(t_) );
+    TEUCHOS_ASSERT( !ST::isnaninf(t_old_) );
+    TEUCHOS_ASSERT( !Teuchos::is_null(solution_vector_) );
+    TEUCHOS_ASSERT( !Teuchos::is_null(solution_vector_old_) );
+    TEUCHOS_ASSERT( t_ >= basePoint_.get_t() );
+    TEUCHOS_ASSERT( t_old_ >= basePoint_.get_t() );
+  }
+  if (numSteps_ > 0) {
+    TEUCHOS_ASSERT(isInitialized_);
+    TEUCHOS_ASSERT(haveInitialCondition_);
+  }
+}
 
 // 
 // Explicit Instantiation macro
@@ -355,6 +701,7 @@ ForwardEulerStepper<Scalar>::cloneStepperAlgorithm() const
 
 #define RYTHMOS_FORWARD_EULER_STEPPER_INSTANT(SCALAR) \
   \
+  template class ForwardEulerStepperMomento< SCALAR >; \
   template class ForwardEulerStepper< SCALAR >; \
   \
   template RCP<ForwardEulerStepper< SCALAR > > forwardEulerStepper(); \
