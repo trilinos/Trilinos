@@ -63,7 +63,7 @@ namespace Intrepid {
     
     /** \brief Array to store the multi-indexed quantity 
     */
-    Teuchos::Array<Scalar> data_;
+    Teuchos::ArrayRCP<Scalar> data_;
     
     /**\brief Array to store dimensions (dimensions) for the multi-indices. Admissible range (dimension)
      for  the k-th index is <var>0 <= i_k < dimensions_[k]</var>. Size of this array defines the rank of 
@@ -184,7 +184,7 @@ namespace Intrepid {
       \param data[in]                 - array with container values
       */
     FieldContainer(const Teuchos::Array<int>&    dimensions,
-                   const Teuchos::Array<Scalar>& data);
+                   const Teuchos::ArrayRCP<Scalar>& data);
     
     //--------------------------------------------------------------------------------------------//
     //                                                                                            //
@@ -536,7 +536,7 @@ namespace Intrepid {
       
       \param dataArray[in]               - new values
     */
-    void setValues(const Teuchos::Array<Scalar>& dataArray);
+    void setValues(const Teuchos::ArrayRCP<Scalar>& dataArray);
     
     
     /** \brief Fills an existing FieldContainer with Scalars referenced by <var>dataPtr</var> without
@@ -551,14 +551,14 @@ namespace Intrepid {
     
     /** \brief Exposes data of FieldContainer, data can be modified.
     */
-    Teuchos::Array<Scalar> & getData() {
+    Teuchos::ArrayRCP<Scalar> & getData() {
       return data_;
     }    
 
 
     /** \brief Exposes data of FieldContainer, data cannot be modified.
     */
-    const Teuchos::Array<Scalar> & getData() const {
+    const Teuchos::ArrayRCP<Scalar> & getData() const {
       return data_;
     }    
 

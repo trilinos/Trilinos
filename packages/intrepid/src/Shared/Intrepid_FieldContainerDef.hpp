@@ -72,7 +72,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0) : dim0_(dim0), dim1_(0), 
 #endif
   dimensions_.resize(1); 
   dimensions_[0] = dim0_;  
-  data_.assign(dim0_, 0);
+  data_.assign(dim0_, (Scalar)0);
 }
 
 
@@ -91,7 +91,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   dimensions_.resize(2); 
   dimensions_[0] = dim0_;   
   dimensions_[1] = dim1_;  
-  data_.assign(dim0_*dim1_, 0);
+  data_.assign(dim0_*dim1_, (Scalar)0);
 }
 
 
@@ -113,7 +113,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   dimensions_[0] = dim0_;  
   dimensions_[1] = dim1_; 
   dimensions_[2] = dim2_;  
-  data_.assign(dim0_*dim1_*dim2_, 0);
+  data_.assign(dim0_*dim1_*dim2_, (Scalar)0);
 }
 
 
@@ -139,7 +139,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   dimensions_[1] = dim1_; 
   dimensions_[2] = dim2_;  
   dimensions_[3] = dim3_; 
-  data_.assign(dim0_*dim1_*dim2_*dim3_, 0);
+  data_.assign(dim0_*dim1_*dim2_*dim3_, (Scalar)0);
 }
 
 
@@ -169,7 +169,7 @@ FieldContainer<Scalar>::FieldContainer(const int dim0,
   dimensions_[2] = dim2_;  
   dimensions_[3] = dim3_;  
   dimensions_[4] = dim4_;  
-  data_.assign(dim0_*dim1_*dim2_*dim3_*dim4_, 0);
+  data_.assign(dim0_*dim1_*dim2_*dim3_*dim4_, (Scalar)0);
 }
 
 
@@ -232,7 +232,7 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>& dimensions) {
   }
 
   // resize data array according to specified dimensions
-  data_.assign( this -> size(), 0);
+  data_.assign( this -> size(), (Scalar)0);
   
 }
 
@@ -240,7 +240,7 @@ FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>& dimensions) {
 
 template<class Scalar>
 FieldContainer<Scalar>::FieldContainer(const Teuchos::Array<int>&    dimensions,
-                                       const Teuchos::Array<Scalar>& data) {
+                                       const Teuchos::ArrayRCP<Scalar>& data) {
  
   // Copy all dimensions
   dimensions_.assign(dimensions.begin(),dimensions.end());
@@ -1116,7 +1116,7 @@ inline void FieldContainer<Scalar>::setValue(const Scalar dataValue,
 
 
 template<class Scalar>
-void FieldContainer<Scalar>::setValues(const Teuchos::Array<Scalar>& dataArray) {
+void FieldContainer<Scalar>::setValues(const Teuchos::ArrayRCP<Scalar>& dataArray) {
 #ifdef HAVE_INTREPID_DEBUG
   TEST_FOR_EXCEPTION( (dataArray.size() != (data_.size()) ),
                       std::invalid_argument,
@@ -2107,7 +2107,7 @@ inline FieldContainer<Scalar>& FieldContainer<Scalar>::operator = (const FieldCo
   dim2_ = right.dim2_;
   dim3_ = right.dim3_;
   dim4_ = right.dim4_;
-  data_ = right.data_;
+  data_.deepCopy(right.data_());
   dimensions_ = right.dimensions_; 
   return *this;
 }
