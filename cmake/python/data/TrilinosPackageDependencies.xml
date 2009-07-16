@@ -400,7 +400,7 @@
     <TEST_OPTIONAL_DEP_TPLS/>
   </Package>
   <Package name="Sundance" dir="Sundance">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Thyra,Amesos,AztecOO,Ifpack,ML,Anasazi,NOX,Intrepid"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Thyra,Amesos,AztecOO,Ifpack,ML,Anasazi,Belos,Stratimikos,NOX,Intrepid"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="MOOCHO"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>

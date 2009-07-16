@@ -11,13 +11,17 @@
 # Author: Kevin Long, Texas Tech University
 #         kevin.long@ttu.edu
 # 
-# To use this makefile, you can to do two steps:
+# To use this makefile, you can to do three steps:
 #
 # (1) Create a new Makefile that includes the installed Makefile.client.
 #
 # (2) In your Makefile, add the definition of EXTRA_OBJS to list names of
 #     any object files required by your application other than that corresponding
 #     to the application name.
+#
+# (3) (optional) Define CLIENT_EXTRA_LIBS and CLIENT_EXTRA_INCLUDES to
+#     if you need to augment the header and/or library search path and the
+#     list of libraries. 
 #
 # Example: Suppose you are building an application "RANS.exe" whose code is in 
 # three source files: RANS.cpp, TurbulenceModel.cpp, and BC.cpp. You have
@@ -86,6 +90,14 @@
 
 TRILINOS_INSTALL_DIR = @CMAKE_INSTALL_PREFIX@
 
+#--------------------------------------------------------------------------
+# If needed, set extra include and lib macros
+#--------------------------------------------------------------------------
+CLIENT_EXTRA_INCLUDES = 
+
+CLIENT_EXTRA_LIBS = 
+
+
 
 
 #--------------------------------------------------------------------------
@@ -109,7 +121,7 @@ include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.@PACKAGE@
 # for libraries and headers
 LIB_PATH = $(TRILINOS_INSTALL_DIR)/lib
 
-INCLUDE_PATH = $(TRILINOS_INSTALL_DIR)/include
+INCLUDE_PATH = $(TRILINOS_INSTALL_DIR)/include $(CLIENT_EXTRA_INCLUDES)
 
 # Set the C++ compiler and flags to those specified in the export makefile
 CXX = $(@CAPS_PACKAGE_NAME@_CXX_COMPILER)
@@ -118,7 +130,8 @@ CXXFLAGS = $(@CAPS_PACKAGE_NAME@_CXX_FLAGS)
 
 # Add the Trilinos libraries, search path, and rpath to the 
 # linker command line arguments 
-LIBS = $(SHARED_LIB_RPATH_COMMAND) $(@CAPS_PACKAGE_NAME@_LIBRARIES) \
+LIBS = $(CLIENT_EXTRA_LIBS) $(SHARED_LIB_RPATH_COMMAND) \
+  $(@CAPS_PACKAGE_NAME@_LIBRARIES) \
   $(@CAPS_PACKAGE_NAME@_TPL_LIBRARIES) $(@CAPS_PACKAGE_NAME@_EXTRA_LD_FLAGS) 
 
 # Rules for building executables and objects. 

@@ -503,7 +503,7 @@
     <Dependency name="Shards" type="ILR"/>
     <Dependency name="Triutils" type="ILR"/>
     <Dependency name="Tpetra" type="ILO"/>
-    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="EpetraExt" type="LR"/>
     <Dependency name="Thyra" type="LR"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="LR"/>
@@ -511,7 +511,8 @@
     <Dependency name="Amesos" type="LR"/>
     <Dependency name="Ifpack" type="LR"/>
     <Dependency name="ML" type="LR"/>
-    <Dependency name="Belos" type="ILO"/>
+    <Dependency name="Belos" type="LR"/>
+    <Dependency name="Stratimikos" type="LR"/>
     <Dependency name="Anasazi" type="LR"/>
     <Dependency name="Stokhos" type="ILO"/>
     <Dependency name="Sacado" type="ILR"/>
