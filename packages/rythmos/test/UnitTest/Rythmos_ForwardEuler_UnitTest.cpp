@@ -70,85 +70,90 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardEulerStepper, momento_create ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_ForwardEulerStepper, restart ) {
-  std::string data;
-  // place to store solution at time = 1.0
-  RCP<const VectorBase<double> > x_norestart; 
-  // Create Forward Euler stepper
-  // Step to t = 0.5, pull out the momento, then step the rest of the way to t = 1.0.
-  {
-    RCP<SinCosModel> model = sinCosModel(false);
-    Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
-    RCP<ForwardEulerStepper<double> > stepper = forwardEulerStepper<double>(model);
-    stepper->setInitialCondition(model_ic);
-    double dt = 0.1;
-    // Step to t=0.5
-    for (int i=0 ; i<5 ; ++i) {
-      double dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
-      TEST_ASSERT( dt_taken == dt );
-    }
-    // Pull out the momento
-    RCP<const MomentoBase<double> > stepper_momento = stepper->getMomento();
-    TEST_ASSERT( !Teuchos::is_null(stepper_momento) );
-    XMLStateSerializerStrategy<double> sss;
-    std::ostringstream oStream;
-    stepper_momento->serialize(sss,oStream);
-    data = oStream.str();
-    stepper_momento = Teuchos::null;
-    // Step to t=1.0
-    for (int i=0 ; i<5 ; ++i) {
-      double dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
-      TEST_ASSERT( dt_taken == dt );
-    }
+  Array<RCP<StateSerializerStrategy<double> > > sss_array;
+  sss_array.push_back(rcp(new XMLStateSerializerStrategy<double>()));
+  sss_array.push_back(rcp(new BinaryStateSerializerStrategy<double>()));
+  int N = Teuchos::as<int>(sss_array.size());
+  for (int n=0 ; n<N; ++n) {
+    StateSerializerStrategy<double>& sss = *sss_array[n];
+    std::string data;
+    // place to store solution at time = 1.0
+    RCP<const VectorBase<double> > x_norestart; 
+    // Create Forward Euler stepper
+    // Step to t = 0.5, pull out the momento, then step the rest of the way to t = 1.0.
     {
-      // Pull out the final solution
-      Array<double> time_vec;
-      time_vec.push_back(1.0);
-      Array<RCP<const VectorBase<double> > > x_vec;
-      Array<RCP<const VectorBase<double> > > xdot_vec;
-      Array<double> accuracy_vec;
-      stepper->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
-      x_norestart = x_vec[0]->clone_v();
+      RCP<SinCosModel> model = sinCosModel(false);
+      Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
+      RCP<ForwardEulerStepper<double> > stepper = forwardEulerStepper<double>(model);
+      stepper->setInitialCondition(model_ic);
+      double dt = 0.1;
+      // Step to t=0.5
+      for (int i=0 ; i<5 ; ++i) {
+        double dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
+        TEST_ASSERT( dt_taken == dt );
+      }
+      // Pull out the momento
+      RCP<const MomentoBase<double> > stepper_momento = stepper->getMomento();
+      TEST_ASSERT( !Teuchos::is_null(stepper_momento) );
+      std::ostringstream oStream;
+      stepper_momento->serialize(sss,oStream);
+      data = oStream.str();
+      stepper_momento = Teuchos::null;
+      // Step to t=1.0
+      for (int i=0 ; i<5 ; ++i) {
+        double dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
+        TEST_ASSERT( dt_taken == dt );
+      }
+      {
+        // Pull out the final solution
+        Array<double> time_vec;
+        time_vec.push_back(1.0);
+        Array<RCP<const VectorBase<double> > > x_vec;
+        Array<RCP<const VectorBase<double> > > xdot_vec;
+        Array<double> accuracy_vec;
+        stepper->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+        x_norestart = x_vec[0]->clone_v();
+      }
     }
-  }
-  out << "data = >>" << data << "<<" << std::endl;
-  // Create a new Forward Euler Stepper
-  {
-    RCP<SinCosModel> model = sinCosModel(false);
-    Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
-
-    std::istringstream iStream(data);
-    RCP<ForwardEulerStepperMomento<double> > stepper_momento = rcp(new ForwardEulerStepperMomento<double>());
-    stepper_momento->set_model(model);
-    XMLStateSerializerStrategy<double> sss;
-    stepper_momento->deSerialize(sss,iStream);
-    RCP<ForwardEulerStepper<double> > stepper = forwardEulerStepper<double>();
-    RCP<Thyra::ModelEvaluatorBase::InArgs<double> > model_ic_ptr = rcp(new Thyra::ModelEvaluatorBase::InArgs<double>(model_ic));
-    stepper_momento->set_basePoint(model_ic_ptr);
-    // Put the momento back into the stepper
-    stepper->setMomento(stepper_momento.ptr());
-
-    double dt = 0.1;
-    // Step to t=1.0
-    for (int i=0 ; i<5 ; ++i) {
-      double dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
-      TEST_ASSERT( dt_taken == dt );
-    }
+    out << "data = >>" << data << "<<" << std::endl;
+    // Create a new Forward Euler Stepper
     {
-      // Pull out the final solution after restart
-      Array<double> time_vec;
-      time_vec.push_back(1.0);
-      Array<RCP<const VectorBase<double> > > x_vec;
-      Array<RCP<const VectorBase<double> > > xdot_vec;
-      Array<double> accuracy_vec;
-      stepper->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
-      RCP<const VectorBase<double> > x_restart = x_vec[0];
+      RCP<SinCosModel> model = sinCosModel(false);
+      Thyra::ModelEvaluatorBase::InArgs<double> model_ic = model->getNominalValues();
 
-      // Verify that x_restart == x_norestart
-      RCP<VectorBase<double> > x_diff = createMember(x_restart->space());
-      V_VmV( &*x_diff, *x_norestart, *x_restart );
-      double x_normDiff = norm(*x_diff);
-      double tol = 1.0e-10;
-      TEST_COMPARE( x_normDiff, <, tol );
+      std::istringstream iStream(data);
+      RCP<ForwardEulerStepperMomento<double> > stepper_momento = rcp(new ForwardEulerStepperMomento<double>());
+      stepper_momento->set_model(model);
+      stepper_momento->deSerialize(sss,iStream);
+      RCP<ForwardEulerStepper<double> > stepper = forwardEulerStepper<double>();
+      RCP<Thyra::ModelEvaluatorBase::InArgs<double> > model_ic_ptr = rcp(new Thyra::ModelEvaluatorBase::InArgs<double>(model_ic));
+      stepper_momento->set_basePoint(model_ic_ptr);
+      // Put the momento back into the stepper
+      stepper->setMomento(stepper_momento.ptr());
+
+      double dt = 0.1;
+      // Step to t=1.0
+      for (int i=0 ; i<5 ; ++i) {
+        double dt_taken = stepper->takeStep(dt,STEP_TYPE_FIXED);
+        TEST_ASSERT( dt_taken == dt );
+      }
+      {
+        // Pull out the final solution after restart
+        Array<double> time_vec;
+        time_vec.push_back(1.0);
+        Array<RCP<const VectorBase<double> > > x_vec;
+        Array<RCP<const VectorBase<double> > > xdot_vec;
+        Array<double> accuracy_vec;
+        stepper->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
+        RCP<const VectorBase<double> > x_restart = x_vec[0];
+
+        // Verify that x_restart == x_norestart
+        RCP<VectorBase<double> > x_diff = createMember(x_restart->space());
+        V_VmV( &*x_diff, *x_norestart, *x_restart );
+        double x_normDiff = norm(*x_diff);
+        double tol = 1.0e-10;
+        TEST_COMPARE( x_normDiff, <, tol );
+      }
     }
   }
 }

@@ -84,6 +84,7 @@ class XMLStateSerializerStrategy
 
   void serializeScalar(const Scalar& s, std::ostream& oStream) const
   {
+    oStream.precision(std::numeric_limits<Scalar>::digits10+4);
     oStream << " " << s << " ";
   }
   void deSerializeScalar(const Ptr<Scalar>& s, std::istream& iStream) const
@@ -94,6 +95,7 @@ class XMLStateSerializerStrategy
 
   void serializeInt(const int& i, std::ostream& oStream) const 
   {
+    oStream.precision(std::numeric_limits<Scalar>::digits10+4);
     oStream << " " << i << " ";
   }
   void deSerializeInt(const Ptr<int>& i, std::istream& iStream) const 
@@ -104,6 +106,7 @@ class XMLStateSerializerStrategy
 
   void serializeBool(const bool& b, std::ostream& oStream) const 
   {
+    oStream.precision(std::numeric_limits<Scalar>::digits10+4);
     oStream << " " << b << " ";
   }
   void deSerializeBool(const Ptr<bool>& b, std::istream& iStream) const 
@@ -114,13 +117,110 @@ class XMLStateSerializerStrategy
 
   void serializeVectorBase(const VectorBase<Scalar>& vec, std::ostream& oStream) const 
   {
-    Thyra::SpmdMultiVectorSerializer<double> vectorSerializer;
+    Thyra::SpmdMultiVectorSerializer<double> vectorSerializer(false); // binaryMode = false
     vectorSerializer.serialize(vec, oStream);
   }
   void deSerializeVectorBase(const Ptr<VectorBase<Scalar> >& vec, std::istream& iStream) const 
   {
     TEUCHOS_ASSERT( !Teuchos::is_null(vec) );
-    Thyra::SpmdMultiVectorSerializer<double> vectorSerializer;
+    Thyra::SpmdMultiVectorSerializer<double> vectorSerializer(false); // binaryMode = false
+    vectorSerializer.deserialize( iStream, vec.get() );
+  }
+
+  void serializeParameterList(const Teuchos::ParameterList& pl, std::ostream& oStream) const 
+  {
+    Teuchos::XMLParameterListWriter paramWriter;
+    Teuchos::XMLObject XMLpl = paramWriter.toXML(pl);
+    // Write special key to ostream to mark beginning of parameter list
+    oStream << "\nRythmos::StateSerializerStrategy::serializeParameterList begin\n";
+    oStream << XMLpl;
+    // Write special key to ostream to mark end of parameter list
+    oStream << "\nRythmos::StateSerializerStrategy::serializeParameterList end\n";
+  }
+  void deSerializeParameterList(const Ptr<Teuchos::ParameterList>& pl, std::istream& iStream) const 
+  {
+    TEUCHOS_ASSERT( !Teuchos::is_null(pl) );
+    Teuchos::XMLObject XMLpl;
+    std::ostringstream oStringStream;
+    // Read in special key from istream to make sure this is a parameter list
+    {
+      std::string specialKey;
+      while (specialKey != "Rythmos::StateSerializerStrategy::serializeParameterList begin" ) {
+        std::getline(iStream,specialKey);
+        TEUCHOS_ASSERT( !iStream.eof() );
+      }
+    }
+    // Read until special key from istream is found that marks end of parameter list
+    while (!iStream.eof()) {
+      std::string line;
+      std::getline(iStream,line);
+      //std::cout << "line = >>" << line << "<<\n";
+      if (line == "Rythmos::StateSerializerStrategy::serializeParameterList end") {
+        break;
+      }
+      oStringStream << line;
+    }
+    Teuchos::StringInputSource src(oStringStream.str());
+    Teuchos::XMLParser parser(src.stream());
+    XMLpl = parser.parse();
+    Teuchos::XMLParameterListReader paramReader;
+    pl->setParameters(paramReader.toParameterList(XMLpl));
+  }
+
+};
+
+template<class Scalar>
+class BinaryStateSerializerStrategy
+  : virtual public StateSerializerStrategy<Scalar>
+{
+  public:
+
+  BinaryStateSerializerStrategy() {}
+  virtual ~BinaryStateSerializerStrategy() {}
+
+  void serializeScalar(const Scalar& s, std::ostream& oStream) const
+  {
+    oStream.precision(std::numeric_limits<Scalar>::digits10+4);
+    oStream.write( reinterpret_cast<const char*>(&s), sizeof(Scalar) );
+
+  }
+  void deSerializeScalar(const Ptr<Scalar>& s, std::istream& iStream) const
+  {
+    TEUCHOS_ASSERT( !Teuchos::is_null(s) );
+    iStream.read( reinterpret_cast<char*>(&*s), sizeof(Scalar) );
+  }
+
+  void serializeInt(const int& i, std::ostream& oStream) const 
+  {
+    oStream.precision(std::numeric_limits<Scalar>::digits10+4);
+    oStream.write( reinterpret_cast<const char*>(&i), sizeof(int) );
+  }
+  void deSerializeInt(const Ptr<int>& i, std::istream& iStream) const 
+  {
+    TEUCHOS_ASSERT( !Teuchos::is_null(i) );
+    iStream.read( reinterpret_cast<char*>(&*i), sizeof(int) );
+  }
+
+  void serializeBool(const bool& b, std::ostream& oStream) const 
+  {
+    oStream.precision(std::numeric_limits<Scalar>::digits10+4);
+    oStream.write( reinterpret_cast<const char*>(&b), sizeof(bool) );
+  }
+  void deSerializeBool(const Ptr<bool>& b, std::istream& iStream) const 
+  {
+    TEUCHOS_ASSERT( !Teuchos::is_null(b) );
+    iStream.read( reinterpret_cast<char*>(&*b), sizeof(bool) );
+  }
+
+  void serializeVectorBase(const VectorBase<Scalar>& vec, std::ostream& oStream) const 
+  {
+    Thyra::SpmdMultiVectorSerializer<double> vectorSerializer(true); // binaryMode = true
+    vectorSerializer.serialize(vec, oStream);
+  }
+  void deSerializeVectorBase(const Ptr<VectorBase<Scalar> >& vec, std::istream& iStream) const 
+  {
+    TEUCHOS_ASSERT( !Teuchos::is_null(vec) );
+    Thyra::SpmdMultiVectorSerializer<double> vectorSerializer(true); // binaryMode = true
     vectorSerializer.deserialize( iStream, vec.get() );
   }
 
