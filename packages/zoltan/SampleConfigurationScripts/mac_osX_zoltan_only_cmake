@@ -1,43 +1,52 @@
 #!
 # Sample script for building using CMAKE on Karen's Mac OS X system.
 # 64-bit, Zoltan only.
+# TPLs = ParMETIS, Scotch and PaToH.
 # Run in Trilinos/Obj_cmake.
 
 # Clean up the mess from previous configurations.
 /bin/rm -r cmake* CMake* CPack* CTest* Dart* Trilinos* Testing packages Makefile
 
-# Configure for Zoltan-only build.
+setenv F77 /Users/kddevin/code/lib-m64/lam-7.1.4/bin/mpif77
+
 cmake \
+-D CMAKE_INSTALL_PREFIX:FILEPATH="/Users/kddevin/code/trilinos/Obj_cmake" \
 -D TPL_ENABLE_MPI:BOOL=ON \
--D CMAKE_CXX_COMPILER:FILEPATH="mpic++" \
--D CMAKE_C_COMPILER:FILEPATH="mpicc" \
 -D CMAKE_C_FLAGS:STRING="-m64 -g" \
 -D CMAKE_CXX_FLAGS:STRING="-m64 -g" \
+-D CMAKE_Fortran_FLAGS:STRING="-m64 -g" \
 -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
--D MPIEXEC_MAX_NUMPROCS:STRING=4 \
--D MPI_EXTRA_LIBRARY:FILEPATH="" \
+-D MPIEXEC_MAX_NUMPROCS:STRING=11 \
 -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
--D Trilinos_ENABLE_Fortran:BOOL=OFF \
--D Trilinos_ENABLE_CXX:BOOL=OFF \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
 -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
 -D Trilinos_ENABLE_Zoltan:BOOL=ON \
+-D Trilinos_EXTRA_LINK_FLAGS:STRING="-framework vecLib" \
 -D Zoltan_ENABLE_EXAMPLES:BOOL=ON \
 -D Zoltan_ENABLE_TESTS:BOOL=ON \
--D TPL_ENABLE_Scotch:BOOL=ON \
--D Scotch_INCLUDE_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/scotch_5.1/include" \
--D Scotch_LIBRARY_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/scotch_5.1/lib" \
--D TPL_ENABLE_ParMETIS:BOOL=ON \
+-D Zoltan_ENABLE_ParMETIS:BOOL=ON \
 -D ParMETIS_INCLUDE_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
 -D ParMETIS_LIBRARY_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/ParMETIS3_1" \
--D TPL_ENABLE_PaToH:BOOL=ON \
+-D Zoltan_ENABLE_Scotch:BOOL=ON \
+-D Scotch_INCLUDE_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/scotch_5.1/include" \
+-D Scotch_LIBRARY_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/scotch_5.1/lib" \
+-D Zoltan_ENABLE_PaToH:BOOL=ON \
 -D PaToH_INCLUDE_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/PaToH/dist" \
 -D PaToH_LIBRARY_DIRS:FILEPATH="/Users/kddevin/code/lib-m64/PaToH/dist" \
-..
+.. |& tee OUTPUT.CMAKE
 
-# These don't do us any good, as they don't appropriately set TPL_ENABLE_*.
-#-D Zoltan_ENABLE_PaToH:BOOL=ON \
-#-D Zoltan_ENABLE_Patoh:BOOL=ON \
-#-D Zoltan_ENABLE_Parmetis:BOOL=ON \
+make |& tee OUTPUT.MAKE
+make install |& tee OUTPUT.INSTALL
+
+#Other useful flags.
+#-D Trilinos_ENABLE_Epetra:BOOL=ON \
+#-D Trilinos_ENABLE_Tpetra:BOOL=ON \
+#-D Trilinos_ENABLE_Isorropia:BOOL=ON \
+#-D Trilinos_ENABLE_EpetraExt:BOOL=ON \
+#-D Trilinos_ENABLE_Fortran:BOOL=OFF \
+#-D MPI_EXTRA_LIBRARY:FILEPATH="" \
+#-D CMAKE_CXX_COMPILER:FILEPATH="mpic++" \
+#-D CMAKE_C_COMPILER:FILEPATH="mpicc" \
 
 # NOTE:  I hacked my version of CMAKE, as it had errors trying to find
 # install_name_tool.  I changed the following file to check for 
