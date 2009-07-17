@@ -67,6 +67,7 @@ inc_fortran:
 	@cd ../fort; $(MAKE) "CC=$(CC) $(DEFS)" "F90=$(F90)" \
 	   "F90_MODULE_PREFIX=$(F90_MODULE_PREFIX)" \
 	   "ZOLTAN_OBJ_DIR=$(ZOLTAN_OBJ_DIR)" \
+	   "LDFLAGS=$(LDFLAGS)" \
 	   "SPPR_HEAD=$(SPPR_HEAD)" "LOCAL_F90=$(LOCAL_F90)"
 
 $(LIB_NAME):	FORCE $(OBJ_FILES:.o=.d) $(OBJ_FILES) $(INC_FORTRAN)
@@ -78,7 +79,7 @@ FORCE:
 
 $(ZTARGET):	$(DEP_LIBS) $(LIB_NAME) $(DEPENDENCIES) $(MAIN_OBJ)
 		@echo "linking $(ZTARGET)"
-		@$(PURE_CC) $(CC) $(MAIN_OBJ) -o $(ZTARGET) $(LNK_LIBS)
+		$(PURE_CC) $(CC) $(LDFLAGS) $(MAIN_OBJ) -o $(ZTARGET) $(LNK_LIBS) 
 
 #		@purify -best_effort -follow-child-processes=yes -cache-dir=/tmp/purify $(CC) $(MAIN_OBJ) -o $(ZTARGET) $(LNK_LIBS)
 

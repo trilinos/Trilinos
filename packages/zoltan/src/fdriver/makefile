@@ -30,7 +30,7 @@ zfdrive:	$(ZOD)/fdr_migrate.o \
 		$(ZOD)/fdr_const.o \
 		$(ZOD)/mmio.o \
 		$(ZOD)/libzoltan.a
-		$(COMPILE) -o      zfdrive $(ZOD)/fdr_main.o \
+		$(COMPILE) $(LDFLAGS) -o      zfdrive $(ZOD)/fdr_main.o \
 			        $(ZOD)/fdr_loadbal.o $(ZOD)/fdr_input.o \
 				$(ZOD)/fdr_sort.o $(ZOD)/fdr_param_file.o \
 				$(ZOD)/fdr_mm_io.o $(ZOD)/mmio.o \

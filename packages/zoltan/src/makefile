@@ -568,6 +568,7 @@ zdrive:
 	"ZTARGET=$(ZTARGET)"			\
 	"LIB_NAME=$(LIB_NAME)"			\
 	"CC=$(CCOMP)" 				\
+	"LDFLAGS=$(LDFLAGS)"			\
 	"VPATH=$(ZOLTAN_VPATH)"			\
 	"OBJ_FILES=$(ZOLTAN_OBJ)"		\
 	"DEFS=$(GDEFINES) $(DEFS)" 		\
@@ -585,6 +586,7 @@ zCPPdrive:
 	"LIB_NAME=$(LIB_NAME)"			\
 	"VPATH=$(ZOLTAN_VPATH)"			\
 	"CC=$(CPPCOMP)"				\
+	"LDFLAGS=$(LDFLAGS)"			\
 	"OBJ_FILES=$(ZOLTAN_OBJ)"		\
 	"DEFS=$(GDEFINES) $(DEFS) $(ZOLTAN_INC_PATH) " 		\
 	"MAIN_OBJ=$(ZCPPDRIVE_OBJ)" 		\
@@ -598,6 +600,7 @@ zfdrive:
 	@cd fdriver$(ZOLTAN_OLD); 				\
 	$(MAKE) zfdrive 			\
 	"CC=$(CCOMP)"				\
+	"LDFLAGS=$(LDFLAGS)"			\
 	"ZOLTAN_INC_PATH=$(ZOLTAN_INC_PATH)"	\
 	"F90=$(F90COMP)" 			\
 	"F90_MODULE_PREFIX=$(F90_MODULE_PREFIX)" \
