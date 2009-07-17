@@ -56,10 +56,6 @@ This would allow you to search over multiple Trilinos packages over
 multiple platforms and days all in one place.
 
 
-(*) [CDash] [P2] Sort 'Time(s)' field in test results page numerically
-instead of alphabetically.
-
-
 (*) [CDash] [P3] Append all query fields when going from 'collapsed'
 view page to 'non-collapsed' view page: Currently, if you create a
 query and limit the builds shown in a 'collapsed' view, when you click
