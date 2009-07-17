@@ -154,11 +154,27 @@ RCP<const InverseLibrary> BlockPreconditionerFactory::getInverseLibrary() const
    return inverseLibrary_;
 }
 
+/** \brief Builder function for creating preconditioner factories (yes
+  *        this is a factory factory.
+  *
+  * Builder function for creating preconditioner factories (yes
+  * this is a factory factory.
+  * 
+  * \param[in] name     String name of factory to build
+  * \param[in] settings Parameter list describing the parameters for the
+  *                     factory to build
+  * \param[in] invLib   Inverse library for the factory to use.
+  *
+  * \returns If the name is associated with a preconditioner
+  *          a pointer is returned, otherwise Teuchos::null is returned.
+  */
 RCP<BlockPreconditionerFactory> 
 BlockPreconditionerFactory::buildPreconditionerFactory(const std::string & name,
                                                        const Teuchos::ParameterList & settings,
                                                        const RCP<const InverseLibrary> & invLib)
 {
+   PB_DEBUG_MSG("Begin BlockPreconditionerFactory::buildPreconditionerFactory",10);
+
    RCP<BlockPreconditionerFactory> precFact;
 
    // build various preconditioners
@@ -174,8 +190,8 @@ BlockPreconditionerFactory::buildPreconditionerFactory(const std::string & name,
       precFact = rcp(new NS::LSCPreconditionerFactory());
    else if(name=="NS SIMPLE")
       precFact = rcp(new NS::SIMPLEPreconditionerFactory());
-
-   TEUCHOS_ASSERT(precFact!=Teuchos::null);
+   else
+      return Teuchos::null;
 
    // add in the inverse library
    if(invLib!=Teuchos::null)
@@ -184,6 +200,8 @@ BlockPreconditionerFactory::buildPreconditionerFactory(const std::string & name,
    // now that inverse library has been set,
    // pass in the parameter list
    precFact->initializeFromParameterList(settings);
+
+   PB_DEBUG_MSG("End BlockPreconditionerFactory::buildPreconditionerFactory",10);
 
    return precFact;
 }

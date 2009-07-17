@@ -291,6 +291,9 @@ public:
      * \param[in] settings Parameter list describing the parameters for the
      *                     factory to build
      * \param[in] invLib   Inverse library for the factory to use.
+     *
+     * \returns If the name is associated with a preconditioner
+     *          a pointer is returned, otherwise Teuchos::null is returned.
      */
    static RCP<BlockPreconditionerFactory> 
    buildPreconditionerFactory(const std::string & name, 

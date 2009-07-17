@@ -27,7 +27,13 @@ public:
    //! Add a PB preconditioner to the library with a label
    void addBlockPrecond(const std::string & label,const std::string & type,const Teuchos::ParameterList & pl);
 
-   //! Get the fully constructed parameter list for a particular label
+   /** Get the fully constructed parameter list for a particular label
+     *
+     * \param[in] label Name used for the desired solver.
+     *
+     * \returns If the label is found in the library the corresponding parameter list
+     *          is returned, otherwise <code>Teuchos::null</code> is returned.
+     */
    Teuchos::RCP<const Teuchos::ParameterList> getParameterList(const std::string & label) const;
 
    //! Get the inverse factory associated with a particular label

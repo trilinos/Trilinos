@@ -95,7 +95,13 @@ void InverseLibrary::addBlockPrecond(const std::string & label,const std::string
    blockPrecond_[label] = blockList;
 }
 
-//! Get the fully constructed parameter list for a particular label
+/** Get the fully constructed parameter list for a particular label
+  *
+  * \param[in] label Name used for the desired solver.
+  *
+  * \returns If the label is found in the library the corresponding parameter list
+  *          is returned, otherwise <code>Teuchos::null</code> is returned.
+  */
 Teuchos::RCP<const Teuchos::ParameterList> InverseLibrary::getParameterList(const std::string & label) const
 {
    std::map<std::string,RCP<const Teuchos::ParameterList> >::const_iterator itr;
@@ -118,6 +124,8 @@ Teuchos::RCP<const Teuchos::ParameterList> InverseLibrary::getParameterList(cons
 //! Get the inverse factory associated with a particular label
 Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::string & label) const
 {
+   PB_DEBUG_MSG("Begin InverseLibrary::getInverseFactory",10);
+
    std::map<std::string,RCP<const Teuchos::ParameterList> >::const_iterator itr;
 
    bool isStratSolver=false,isStratPrecond=false,isBlockPrecond=false;
@@ -159,6 +167,8 @@ Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::
       std::string type = pl->get<std::string>("Preconditioner Type");
       RCP<Thyra::PreconditionerFactoryBase<double> > precFact = strat.createPreconditioningStrategy(type);
 
+      PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (Stratimikos preconditioner)",10);
+
       // string must map to a preconditioner
       return rcp(new PreconditionerInverseFactory(precFact));
    }
@@ -166,6 +176,8 @@ Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::
       // try to build a solver factory
       std::string type = pl->get<std::string>("Linear Solver Type");
       RCP<Thyra::LinearOpWithSolveFactoryBase<double> > solveFact = strat.createLinearSolveStrategy(type);
+
+      PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (Stratimikos solver)",10);
 
       // if its around, build a InverseFactory
       return rcp(new SolveInverseFactory(solveFact));
@@ -179,9 +191,13 @@ Teuchos::RCP<const InverseFactory> InverseLibrary::getInverseFactory(const std::
  
       TEUCHOS_ASSERT(precFact!=Teuchos::null);
 
+      PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (Block preconditioner)",10);
+
       // return the inverse factory object
       return rcp(new PreconditionerInverseFactory(precFact));   
    }
+
+   PB_DEBUG_MSG("End InverseLibrary::getInverseFactory (FAILURE)",10);
 
    TEUCHOS_ASSERT(false);
 }

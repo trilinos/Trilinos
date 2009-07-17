@@ -99,8 +99,13 @@ inline const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream()
       Teuchos::RCP<Teuchos::FancyOStream> out = PB::getOutputStream(); \
       *out << "PB: " << str << std::endl; }
    #define PB_DEBUG_MSG_BEGIN(level) { \
-      std::ostream & DEBUG_STREAM = *PB::getOutputStream();
-   #define PB_DEBUG_MSG_END() }
+      PB::getOutputStream()->pushTab(3); \
+      *PB::getOutputStream() << "PB: Begin debug MSG\n"; \
+      std::ostream & DEBUG_STREAM = *PB::getOutputStream(); \
+      PB::getOutputStream()->pushTab(3);
+   #define PB_DEBUG_MSG_END() PB::getOutputStream()->popTab(); \
+                             *PB::getOutputStream() << "PB: End debug MSG\n"; \
+                              PB::getOutputStream()->popTab(); }
 #else 
    #define PB_DEBUG_MSG(str,level)
    #define PB_DEBUG_MSG_BEGIN(level) if(false) { \

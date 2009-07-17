@@ -108,21 +108,37 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
 //! Initialize from a parameter list
 void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & pl)
 {
+   PB_DEBUG_MSG("Begin LSCPreconditionerFactory::initializeFromParameterList",10);
+
    RCP<const InverseLibrary> invLib = getInverseLibrary();
 
    // get string specifying inverse
    std::string invStr="", invVStr="", invPStr="";
    bool rowZeroing = true;
+   bool useLDU = false;
 
    // "parse" the parameter list
    if(pl.isParameter("Inverse Type"))
       invStr = pl.get<std::string>("Inverse Type");
    if(pl.isParameter("Inverse Velocity Type"))
-     invVStr = pl.get<std::string>("Inverse Velocity Type");
+      invVStr = pl.get<std::string>("Inverse Velocity Type");
    if(pl.isParameter("Inverse Pressure Type")) 
-     invPStr = pl.get<std::string>("Inverse Pressure Type");
+      invPStr = pl.get<std::string>("Inverse Pressure Type");
    if(pl.isParameter("Ignore Boundary Rows"))
-     rowZeroing = pl.get<bool>("Ignore Boundary Rows");
+      rowZeroing = pl.get<bool>("Ignore Boundary Rows");
+   if(pl.isParameter("Use LDU"))
+      useLDU = pl.get<bool>("Use LDU");
+
+   PB_DEBUG_MSG_BEGIN(5)
+      DEBUG_STREAM << "LSC Parameters: " << std::endl;
+      DEBUG_STREAM << "   inv type   = \"" << invStr  << "\"" << std::endl;
+      DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
+      DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
+      DEBUG_STREAM << "   bndry rows = " << rowZeroing << std::endl;
+      DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
+      DEBUG_STREAM << "LSC Parameter list: " << std::endl;
+      pl.print(DEBUG_STREAM);
+   PB_DEBUG_MSG_END()
 
    // set defaults as needed
    if(invStr=="") invVStr = "Amesos";
@@ -139,7 +155,12 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
       invPFact = invLib->getInverseFactory(invPStr);
 
    // based on parameter type build a strategy
-   invOpsStrategy_ = rcp(new InvLSCStrategy(invVFact,invPFact,rowZeroing));
+   RCP<InvLSCStrategy> strategy = rcp(new InvLSCStrategy(invVFact,invPFact,rowZeroing));
+   strategy->setUseFullLDU(useLDU);
+
+   invOpsStrategy_ = strategy;
+
+   PB_DEBUG_MSG("End LSCPreconditionerFactory::initializeFromParameterList",10);
 }
 
 } // end namespace NS
