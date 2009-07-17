@@ -389,7 +389,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
         obj_edge_weights += ewgts[k * ewgt_dim];  /* "hypergraph" weight */
       }
       else{
-        obj_edge_weights += 1.0;
+        obj_edge_weights = 1.0;
       }
 
       if (nbor_part != obj_part){
