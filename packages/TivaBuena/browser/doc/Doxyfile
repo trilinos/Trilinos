@@ -20,12 +20,11 @@ OUTPUT_DIRECTORY       = ../browser/doc
 INPUT                  = ../browser/doc/index.doc \
                          ../src \
                          ../example \
-                         ../test
 FILE_PATTERNS          = *.h *c *.hpp *.cpp groups.doc
 RECURSIVE              = YES
 EXCLUDE                = 
 EXCLUDE_PATTERNS       = *.x *.o *.out
-EXAMPLE_PATH           =
+EXAMPLE_PATH           = 
 EXAMPLE_PATTERNS       =
 IMAGE_PATH             =
 INPUT_FILTER           = 
