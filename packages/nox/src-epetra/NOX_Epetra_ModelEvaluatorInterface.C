@@ -135,7 +135,7 @@ computePreconditioner(const Epetra_Vector& x,
 // *****************************************************************
 // *****************************************************************
 bool NOX::Epetra::ModelEvaluatorInterface::
-setParameters(const Teuchos::RCP<const Epetra_Vector> p_, const int l)
+inargs_set_p(const Teuchos::RCP<const Epetra_Vector> p_, const int l)
 {
    inargs_.set_p(l, p_);
    return true;
