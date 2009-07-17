@@ -645,11 +645,10 @@ Package: PyTrilinos
 
 Package Transition Lead: Bill Spotz (wfspotz@sandia.gov)
 
-Status: Build is complete for all packages except LOCA.  Currently,
-LOCA fails to build as a shared library.  Backward compatibility with
-the autotools build system has been maintained.  Tests and examples
-have been implemented.  61 of 62 tests pass.  The failure is due to a
-Teuchos/expat support issue.
+Status: I consider the transition complete with the exception of TPL
+support.  This is typically one-off: PyTrilinos supports Teuchos which
+supports expat; PyTrilinos supports EpetraExt which supports HDF5;
+etc.  Some or all of these may have been addressed since I last checked.
 
 Final Certification Date: [???]
 
