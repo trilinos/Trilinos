@@ -765,24 +765,6 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     Zoltan_Comm_Destroy(&plan);
 
     /*
-     * If edge weights were not supplied in the query functions, set each edge
-     * now to weight one.  If an edge was provided twice (a-b) and (b-a) then
-     * its weight will be two, and if it was provided only once, its weight
-     * will be one.
-     */
-
-    if (!zhg->Ewgt){
-      zhg->Ewgt = (float *)ZOLTAN_MALLOC(sizeof(float) * zhg->nPins);
-      if (zhg->nPins && !zhg->Ewgt) MEMORY_ERROR;
-
-      for (i=0; i < zhg->nPins; i++){
-        zhg->Ewgt[i] = 1.0;
-      }
-      ew_dim = zz->Edge_Weight_Dim = 1;
-      ew_op = hgp->edge_weight_op = PHG_ADD_EDGE_WEIGHTS;
-    }
-
-    /*
      * There may be two edge weights provided for a single edge, depending on 
      * how the application supplied the graph in the query functions.  
      * Find the one or two weights supplied for each edge.
@@ -814,7 +796,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
      */
 
     if (!use_all_neighbors){
-      /* flag that an edge that appears more than once */
+      /* flag each edge that appears more than once */
       flag = (char *)ZOLTAN_CALLOC(sizeof(char), zhg->nPins);
       if (zhg->nPins && !flag) MEMORY_ERROR;
     }
@@ -838,12 +820,14 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
            if (ierr != ZOLTAN_OK) goto End;
 
            if (indexptr != NULL){
-             /* this proc provided weights for [v0,v1] and [v1, v0] */
-             index = (long int)indexptr - 1;
-             dest = wgts + k * ew_dim; 
-             src = zhg->Ewgt + index * ew_dim;
-             for (dim = 0; dim < ew_dim; dim++){
-               dest[dim] = src[dim];
+             if (ew_dim){
+               /* this proc provided weights for [v0,v1] and [v1, v0] */
+               index = (long int)indexptr - 1;
+               dest = wgts + k * ew_dim; 
+               src = zhg->Ewgt + index * ew_dim;
+               for (dim = 0; dim < ew_dim; dim++){
+                 dest[dim] = src[dim];
+               }
              }
              if (!use_all_neighbors){
                flag[k] = 1;   /* flag that edge appears twice in graph */
@@ -910,10 +894,12 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       index = (long int)indexptr - 1;
 
       if (indexptr){
-        dest = sendFloatBuf + i * ew_dim; 
-        src = zhg->Ewgt + index * ew_dim;
-        for (dim = 0; dim < ew_dim; dim++){
-          dest[dim] = src[dim];
+        if (ew_dim){
+          dest = sendFloatBuf + i * ew_dim; 
+          src = zhg->Ewgt + index * ew_dim;
+          for (dim = 0; dim < ew_dim; dim++){
+            dest[dim] = src[dim];
+          }
         }
         nEdge = 1;   /* flag that I have weights to send back */
 
@@ -928,45 +914,47 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     Zoltan_Map_Destroy(zz, map2);
     ZOLTAN_FREE(&recvIntBuf);
 
-    /* Before doing global communication, determine whether there is any information to share.  */
+    if (ew_dim){
 
-    rc = MPI_Allreduce(&nEdge, &w, 1, MPI_INT, MPI_MAX, comm);
-    CHECK_FOR_MPI_ERROR(rc)
-
-    if (w > 0){
-      if (cnt > 0){
-        recvFloatBuf = (float *)ZOLTAN_MALLOC(sizeof(float) * cnt * ew_dim);
-        if (ew_dim && !recvFloatBuf) MEMORY_ERROR;
-      }
-    
-      msg_tag--;
-
-      ierr = Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *)sendFloatBuf, sizeof(float) * ew_dim,
-                    NULL, (char *)recvFloatBuf);
-    
-      if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
-        goto End;
-      }
-      ZOLTAN_FREE(&sendFloatBuf);
+      /* Before doing global communication, determine whether there is any information to share.  */
+      rc = MPI_Allreduce(&nEdge, &w, 1, MPI_INT, MPI_MAX, comm);
+      CHECK_FOR_MPI_ERROR(rc)
   
-      if (cnt > 0){
-        cnt = 0;
-        for (k=0; k < zhg->nPins; k++){
-          if (zhg->Pin_Procs[k] != zz->Proc){
-            src = recvFloatBuf + cnt * ew_dim;
-            dest = wgts + k * ew_dim;
-            for (dim = 0; dim < ew_dim; dim++){
-              dest[dim] = src[dim];
+      if (w > 0){
+        if (cnt > 0){
+          recvFloatBuf = (float *)ZOLTAN_MALLOC(sizeof(float) * cnt * ew_dim);
+          if (ew_dim && !recvFloatBuf) MEMORY_ERROR;
+        }
+      
+        msg_tag--;
+  
+        ierr = Zoltan_Comm_Do_Reverse(plan, msg_tag, (char *)sendFloatBuf, sizeof(float) * ew_dim,
+                      NULL, (char *)recvFloatBuf);
+      
+        if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)){
+          goto End;
+        }
+        ZOLTAN_FREE(&sendFloatBuf);
+    
+        if (cnt > 0){
+          cnt = 0;
+          for (k=0; k < zhg->nPins; k++){
+            if (zhg->Pin_Procs[k] != zz->Proc){
+              src = recvFloatBuf + cnt * ew_dim;
+              dest = wgts + k * ew_dim;
+              for (dim = 0; dim < ew_dim; dim++){
+                dest[dim] = src[dim];
+              }
+              cnt++;
             }
-            cnt++;
           }
         }
+    
+        ZOLTAN_FREE(&recvFloatBuf);
       }
-  
-      ZOLTAN_FREE(&recvFloatBuf);
-    }
-    else{
-      ZOLTAN_FREE(&sendFloatBuf);
+      else{
+        ZOLTAN_FREE(&sendFloatBuf);
+      }
     }
 
     Zoltan_Comm_Destroy(&plan);
@@ -986,6 +974,15 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
      * Convert the graph edges to hyperedges.
      */
   
+    if (ew_dim == 0){
+      /* 
+       * If there are no graph edge weights, we will assign each hyperedge
+       * a weight of 1.0.  
+       */
+      ew_dim = zz->Edge_Weight_Dim = 1;
+      ew_op = hgp->edge_weight_op = PHG_MAX_EDGE_WEIGHTS;
+    }
+
     if (use_all_neighbors){
       /* 
        * PHG_FROM_GRAPH_METHOD = "neighbors"
@@ -1011,13 +1008,19 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       w = 0;  /* index into old nbor arrays */
 
       for (i=0; i < zhg->nHedges; i++){
-        for (dim=0; dim < ew_dim; dim++){
-          weight_val = 0.0;
-          src = zhg->Ewgt + (w * ew_dim) + dim;
-          for (j=0; j < zhg->Esize[i]; j++){
-            weight_val = weight_val + src[j*ew_dim];
+
+        if (zhg->Ewgt){
+          for (dim=0; dim < ew_dim; dim++){
+            weight_val = 0.0;
+            src = zhg->Ewgt + (w * ew_dim) + dim;
+            for (j=0; j < zhg->Esize[i]; j++){
+              weight_val = weight_val + src[j*ew_dim];
+            }
+            wgts[i*ew_dim + dim] = weight_val;
           }
-          wgts[i*ew_dim + dim] = weight_val;
+        }
+        else{
+          wgts[i] = 1.0;
         }
 
         edgeBuf[k] = zhg->objGNO[i];
@@ -1055,7 +1058,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
       nEdge = zhg->nPins;   /* upper bound on number of edges */
 
-      cnt = 0;       /* actual number of edges */
+      cnt = 0;       /* actual number of hyperedges */
 
       edgeBuf = (int *)ZOLTAN_MALLOC(sizeof(int) * nEdge * 2);    /* pin gno */
       procBuf = (int *)ZOLTAN_MALLOC(sizeof(int) * nEdge * 2);    /* pin proc */
@@ -1081,13 +1084,16 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
             procBuf[cnt * 2]     = zz->Proc;
             procBuf[cnt * 2 + 1] = zhg->Pin_Procs[k];
 
-            if (ew_dim){
+            if (zhg->Ewgt){
               src = zhg->Ewgt + (k * ew_dim);
               dest = wgts + (cnt * ew_dim);
 
               for (w=0; w < ew_dim; w++){
                 dest[w] = src[w];
               }
+            }
+            else{
+              wgts[cnt] = 1.0;
             }
 
             cnt++;
