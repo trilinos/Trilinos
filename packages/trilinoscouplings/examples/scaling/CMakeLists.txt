@@ -1,4 +1,5 @@
 INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Pamgen AND TPL_ENABLE_MPI)
@@ -14,7 +15,7 @@ ENDIF()
 
 IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
    Trilinos_ENABLE_Pamgen AND Trilinos_ENABLE_AztecOO AND
-    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_ML AND TPL_ENABLE_MPI)
+    Trilinos_ENABLE_Amesos AND Trilinos_ENABLE_ML)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Example_01
     SOURCES example_01.cpp
@@ -39,5 +40,11 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
+  SOURCE_FILES PoissonMesh.in
+  SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+  DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+  ) 
 ENDIF()
+
 
