@@ -385,20 +385,11 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
 
       nbor_part = nbors_part[k];
 
-      if ((nbor_part < 0) || (nbor_part >= nparts)){
-
-        /* Try to catch a sporadic bug where parts of nbors_part are uninitialized */
-
-        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Corrupt neighbor part array\n");
-        ierr = ZOLTAN_FATAL;
-        goto End;
-      }
-
       if (ewgt_dim > 0){
         obj_edge_weights += ewgts[k * ewgt_dim];  /* "hypergraph" weight */
       }
       else{
-        obj_edge_weights = 1.0;
+        obj_edge_weights += 1.0;
       }
 
       if (nbor_part != obj_part){
@@ -581,6 +572,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
   /*
    * CUTN - NetCut
    */
+
 
   MPI_Allreduce(cutn, globalVals, nparts, MPI_FLOAT, MPI_SUM, comm);
 
