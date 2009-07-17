@@ -56,8 +56,8 @@ FUNCTION(FORTRAN_MANGLING)
         FILE(MAKE_DIRECTORY ${_fcmangledir_case})
 
         SET(COMMON_FLAGS "-DFC_FN_${cdef} -DFC_FN_${udef}")
-        SET(C_FLAGS "${COMMON_FLAGS} ${CMAKE_C_FLAGS}")
-        SET(F_FLAGS "${COMMON_FLAGS} ${CMAKE_Fortran_FLAGS}")
+        SET(C_FLAGS "${COMMON_FLAGS} ${CMAKE_C_FLAGS} ${Trilinos_EXTRA_LINK_FLAGS}")
+        SET(F_FLAGS "${COMMON_FLAGS} ${CMAKE_Fortran_FLAGS} ${Trilinos_EXTRA_LINK_FLAGS}")
 
         TRY_COMPILE(_fcmngl ${_fcmangledir_case} ${_fcmakelists} fmangle
           CMAKE_FLAGS "-DCMAKE_C_FLAGS:STRING=${C_FLAGS}" "-DCMAKE_Fortran_FLAGS:STRING=${F_FLAGS}"
