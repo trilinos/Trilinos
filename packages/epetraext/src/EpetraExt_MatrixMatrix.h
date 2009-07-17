@@ -98,6 +98,35 @@ class MatrixMatrix {
                    Epetra_CrsMatrix& B,
                    double scalarB);
 
+    /** Given Epetra_CrsMatrix objects A and B, form the sum C = a*A + b*B
+
+    @param A Input, must already have had 'FillComplete()' called.
+    @param transposeA Input, whether to use transpose of matrix A.
+    @param scalarA Input, scalar multiplier for matrix A.
+    @param B Input, must already have had 'FillComplete()' called.
+    @param transposeB Input, whether to use transpose of matrix B.
+    @param scalarB Input, scalar multiplier for matrix B.
+    @param C Result. On entry to this method, C can be NULL or a pointer
+             to an unfilled or filled matrix. If C is NULL then a new
+             object is allocated and must be deleted by the user.
+             If C is not NULL and FillComplete has already
+             been called then the sparsity pattern is assumed to be fixed
+             and compatible  with the sparsity of A+B. If FillComplete has
+             not been called then the sum is completed and the function
+             returns without calling FillComplete on C.
+
+    @return error-code, 0 if successful. non-zero returns may result if A or is
+             not already Filled, or if errors occur in putting values
+             into C, etc.
+     */
+    static int Add(const Epetra_CrsMatrix& A,
+                   bool transposeA,
+                   double scalarA,
+                   const Epetra_CrsMatrix & B,
+                   bool transposeB,
+                   double scalarB,
+                   Epetra_CrsMatrix * & C);
+
 };//class MatrixMatrix
 
 

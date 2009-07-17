@@ -1339,5 +1339,92 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
   return(ierr);
 }
 
+int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
+                      bool transposeA,
+                      double scalarA,
+                      const Epetra_CrsMatrix & B,
+                      bool transposeB,
+                      double scalarB,
+                      Epetra_CrsMatrix * & C)
+{
+  //
+  //This method forms the matrix-matrix sum C = scalarA * op(A) + scalarB * op(B), where
+
+  //A and B should already be Filled. C should be an empty pointer.
+
+  if (!A.Filled() || !B.Filled() ) {
+     std::cerr << "EpetraExt::MatrixMatrix::Add ERROR, input matrix A.Filled() or B.Filled() is false,"
+               << "they are required to be true. (Result matrix C should be an empty pointer)" << std::endl;
+     EPETRA_CHK_ERR(-1);
+  }
+
+  Epetra_CrsMatrix * Aprime = 0, * Bprime=0;
+  EpetraExt::RowMatrix_Transpose * Atrans = 0,* Btrans = 0;
+
+  //explicit tranpose A formed as necessary
+  if( transposeA ) {
+     Atrans = new EpetraExt::RowMatrix_Transpose();
+     Aprime = &(dynamic_cast<Epetra_CrsMatrix&>(((*Atrans)(const_cast<Epetra_CrsMatrix&>(A)))));
+  }
+  else
+     Aprime = const_cast<Epetra_CrsMatrix*>(&A);
+
+  //explicit tranpose B formed as necessary
+  if( transposeB ) {
+     Btrans = new EpetraExt::RowMatrix_Transpose();
+     Bprime = &(dynamic_cast<Epetra_CrsMatrix&>(((*Btrans)(const_cast<Epetra_CrsMatrix&>(B)))));
+  }
+  else
+     Bprime = const_cast<Epetra_CrsMatrix*>(&B);
+
+  // allocate or zero the new matrix
+  if(C!=0)
+     C->PutScalar(0.0);
+  else
+     C = new Epetra_CrsMatrix(Copy,Aprime->RowMap(),0);
+
+  // build arrays  for easy resuse
+  int ierr = 0;
+  Epetra_CrsMatrix * Mat[] = { Aprime,Bprime};
+  double scalar[] = { scalarA, scalarB};
+
+  // do a loop over each matrix to add: A reordering might be more efficient
+  for(int k=0;k<2;k++) {
+     int MaxNumEntries = Mat[k]->MaxNumEntries();
+     int NumEntries;
+     int * Indices = new int[MaxNumEntries];
+     double * Values = new double[MaxNumEntries];
+   
+     int NumMyRows = Mat[k]->NumMyRows();
+     int Row, err;
+     int ierr = 0;
+   
+     //Loop over rows and sum into C
+     for( int i = 0; i < NumMyRows; ++i ) {
+        Row = Mat[k]->GRID(i);
+        EPETRA_CHK_ERR( Mat[k]->ExtractGlobalRowCopy( Row, MaxNumEntries, NumEntries, Values, Indices));
+   
+        if( scalar[k] != 1.0 )
+           for( int j = 0; j < NumEntries; ++j ) Values[j] *= scalar[k];
+   
+        if(C->Filled()) { // Sum in values
+           err = C->SumIntoGlobalValues( Row, NumEntries, Values, Indices );
+           if (err < 0) ierr = err;
+        } else { // just add it to the unfilled CRS Matrix
+           err = C->InsertGlobalValues( Row, NumEntries, Values, Indices );
+           if (err < 0) ierr = err;
+        }
+     }
+
+     delete [] Indices;
+     delete [] Values;
+  }
+
+  if( Atrans ) delete Atrans;
+  if( Btrans ) delete Btrans;
+
+  return(ierr);
+}
+
 } // namespace EpetraExt
 
