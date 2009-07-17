@@ -33,7 +33,8 @@
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
  
     \remark Sample command line
-    \code   ./example_Poisson.exe 10 10 10 \endcode
+    \code   ./example_Poisson.exe \endcode
+    \remark Example requires Pamgen formatted mesh input file named PoissonMesh.in
 */
 
 #undef DEBUG_PRINTING
@@ -52,8 +53,11 @@
 // Epetra includes
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
+#ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
+#else
 #include "Epetra_SerialComm.h"
+#endif
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_Import.h"
@@ -81,6 +85,7 @@
 
 // ML Includes
 #include "ml_MultiLevelPreconditioner.h"
+#include "ml_epetra_utils.h"
 
 
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
@@ -97,6 +102,7 @@ using namespace std;
 using namespace Intrepid;
 using namespace shards;
 
+#ifdef HAVE_MPI
 class topo_entity{
 public:
   topo_entity(){
@@ -323,6 +329,7 @@ void calc_global_ids(std::vector < topo_entity * > eof_vec,
 #endif
 
 }
+#endif
 
 // Functions to evaluate exact solution and derivatives
 double evalu(double & x, double & y, double & z);
@@ -331,20 +338,27 @@ double evalDivGradu(double & x, double & y, double & z);
 
 int main(int argc, char *argv[]) {
 
-  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   int error = 0;
+#ifdef HAVE_MPI
+  Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   int rank=mpiSession.getRank();
   int numProcs=mpiSession.getNProc();
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  int MyPID = Comm.MyPID();
+#else
+  int rank=0;
+  int numProcs=1;
+  int MyPID = 0;
+  Epetra_SerialComm Comm;
+#endif
   Epetra_Time Time(Comm);
 
-  int MyPID = Comm.MyPID();
-
-  
-   //Check number of arguments
+  //Check number of arguments
+/*
     TEST_FOR_EXCEPTION( ( argc < 4 ),
                       std::invalid_argument,
                       ">>> ERROR (example_Poisson): Invalid number of arguments. See code listing for requirements.");
+*/
   
   // This little trick lets us print to std::cout only if
   // a (dummy) command-line argument is provided.
@@ -374,6 +388,7 @@ int main(int argc, char *argv[]) {
     << "|                                                                             |\n" \
     << "===============================================================================\n";
 
+#ifdef HAVE_MPI
   long long *  node_comm_proc_ids   = NULL;
   long long *  node_cmap_node_cnts  = NULL;
   long long *  node_cmap_ids        = NULL;
@@ -388,13 +403,7 @@ int main(int argc, char *argv[]) {
   std::vector < topo_entity * > face_vector;
 
   std::vector < int > edge_comm_procs;
-
-
-// ************************************ GET INPUTS **************************************
-
-    int NX            = atoi(argv[1]);  // num intervals in x direction (assumed box domain, 0,1)
-    int NY            = atoi(argv[2]);  // num intervals in y direction (assumed box domain, 0,1)
-    int NZ            = atoi(argv[3]);  // num intervals in z direction (assumed box domain, 0,1)
+#endif
 
 // *********************************** CELL TOPOLOGY **********************************
 
@@ -411,55 +420,37 @@ int main(int argc, char *argv[]) {
 
   if (MyPID == 0) {
     std::cout << "Generating mesh ... \n\n";
-
-    std::cout << "    NX" << "   NY" << "   NZ\n";
-    std::cout << std::setw(5) << NX <<
-                 std::setw(5) << NY <<
-                 std::setw(5) << NZ << "\n\n";
   }
 
-   // Cube
-    double leftX = 0.0, rightX = 1.0;
-    double leftY = 0.0, rightY = 1.0;
-    double leftZ = 0.0, rightZ = 1.0;
+  // Read in Pamgen mesh file
+    string  meshInput;
+    string  tmp;
 
-   // Create Pamgen input file
-    stringstream ss;
-    ss.clear();
-    ss << "mesh \n";
-    ss << "  rectilinear \n"; 
-    ss << "     nx = " << NX << "\n";
-    ss << "     ny = " << NY << "\n"; 
-    ss << "     nz = " << NZ << "\n"; 
-    ss << "     bx = 1\n";
-    ss << "     by = 1\n"; 
-    ss << "     bz = 1\n"; 
-    ss << "     gmin = " << leftX << " " << leftY << " " << leftZ << "\n";
-    ss << "     gmax = " << rightX << " " << rightY << " " << rightZ << "\n";
-    ss << "  end \n";
-    ss << "  set assign \n";
-    ss << "     sideset, ilo, 1\n"; 
-    ss << "     sideset, jlo, 2\n"; 
-    ss << "     sideset, klo, 3\n"; 
-    ss << "     sideset, ihi, 4\n"; 
-    ss << "     sideset, jhi, 5\n"; 
-    ss << "     sideset, khi, 6\n"; 
-    ss << "  end \n";
-    ss << "end \n";
+    ifstream finput;
+    finput.open("PoissonMesh.in");
+    if (finput.is_open()){
+      while(getline(finput,tmp)){
+        meshInput += tmp;
+        meshInput += "\n";
+      }
+    }
+    else {
+       std::cout << "Cannot open mesh file" <<"\n";
+       return 0;
+    }
+    finput.close();
 
-    string meshInput = ss.str();
     if (MyPID == 0) {
       std::cout << meshInput <<"\n";
     }
-    
-   // Generate mesh with Pamgen
 
+   // Generate mesh with Pamgen
     long long maxInt = 9223372036854775807LL;
     Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
-    
-    string msg("Poisson: ");
-    if(!Comm.MyPID()) {cout << msg << "Pamgen Setup     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
+    string msg("Poisson: ");
+    if(MyPID == 0) {cout << msg << "Pamgen Setup     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
+    
    // Get mesh size info
     char title[100];
     long long numDim;
@@ -473,6 +464,8 @@ int main(int argc, char *argv[]) {
     im_ex_get_init_l(id, title, &numDim, &numNodes, 
                                 &numElems, &numElemBlk, &numNodeSets,
                                 &numSideSets);
+
+#ifdef HAVE_MPI
     long long numNodesGlobal;
     long long numElemsGlobal;
     long long numElemBlkGlobal;
@@ -483,15 +476,22 @@ int main(int argc, char *argv[]) {
                          &numElemBlkGlobal, &numNodeSetsGlobal,
                          &numSideSetsGlobal);
 
+   // Print mesh information
+    if (MyPID == 0){
+       std::cout << " Number of Global Elements: " << numElemsGlobal << " \n";
+       std::cout << "    Number of Global Nodes: " << numNodesGlobal << " \n\n";
+    }
+#else
+   // Print mesh information
+    if (MyPID == 0){
+       std::cout << " Number of Global Elements: " << numElems << " \n";
+       std::cout << "    Number of Global Nodes: " << numNodes << " \n\n";
+    }
+#endif
+
     long long * block_ids = new long long [numElemBlk];
     error += im_ex_get_elem_blk_ids_l(id, block_ids);
 
-/*    int edgePerElem = 4;
-    if(dim == 3)edgePerElem = 12;
-    int facePerElem = 0;
-    if(dim == 3)facePerElem = 6;
-    FieldContainer<int> elemToEdge(numElems,edgePerElem);
-    FieldContainer<int> elemToFace(numElems,facePerElem); */
 
     long long  *nodes_per_element   = new long long [numElemBlk];
     long long  *element_attributes  = new long long [numElemBlk];
@@ -543,8 +543,8 @@ int main(int argc, char *argv[]) {
     }
     delete [] nodeCoordx;
     delete [] nodeCoordy;
-    delete [] nodeCoordz;
 
+#ifdef HAVE_MPI
     /*parallel info*/
     long long num_internal_nodes;
     long long num_border_nodes;
@@ -596,7 +596,6 @@ int main(int argc, char *argv[]) {
       delete [] elem_cmap_elem_cnts;      
     }
 
-
     if(!Comm.MyPID()) {cout << msg << "Mesh Queries     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
     //Calculate global node ids
@@ -611,212 +610,52 @@ int main(int argc, char *argv[]) {
 			 node_comm_proc_ids,
 			 comm_node_ids,
 			 rank);    
+#else
+    cout << msg << "Mesh Queries     = " << Time.ElapsedTime() << endl; Time.ResetStartTime();
+    long long * globalNodeIds = new long long[numNodes];
+    bool * nodeIsOwned = new bool[numNodes];
+    for (long long j=0; j < numNodes; j++) {
+        globalNodeIds[j] = j;
+        nodeIsOwned[j] = true;
+    }
+#endif
 
+    if(MyPID==0) {cout << msg << "Global Node Nums = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
   
-    if(!Comm.MyPID()) {cout << msg << "Global Node Nums = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
-    //create edges and calculate edge ids
-    /*connectivity*/
-/*
-    int elct = 0;
-    for(long long b = 0; b < numElemBlk; b++){
-      if(nodes_per_element[b] == 4){
-      }
-      else if (nodes_per_element[b] == 8){
-	//loop over all elements and push their edges onto a set if they are not there already
-	for(long long el = 0; el < elements[b]; el++){
-	  std::set< topo_entity * > ::iterator fit;
-	  for (int i=0; i < numEdgesPerElem; i++){
-	    topo_entity * teof = new topo_entity;
-	    for(int j = 0; j < numNodesPerEdge;j++){
-	      teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds);
-	    }
-	    teof->sort();
-	    fit = edge_set.find(teof);
-	    if(fit == edge_set.end()){
-	      teof->local_id = edge_vector.size();
-	      edge_set.insert(teof);
-	      elemToEdge(elct,i)= edge_vector.size();
-	      edge_vector.push_back(teof);
-	    }
-	    else{
-	      elemToEdge(elct,i) = (*fit)->local_id;
-	      delete teof;
-	    }
-	  }
-	  for (int i=0; i < numFacesPerElem; i++){
-	    topo_entity * teof = new topo_entity;
-	    for(int j = 0; j < numNodesPerFace;j++){
-	      teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,j)],globalNodeIds);
-	    }
-	    teof->sort();
-	    fit = face_set.find(teof);
-	    if(fit == face_set.end()){
-	      teof->local_id = face_vector.size();
-	      face_set.insert(teof);
-	      elemToFace(elct,i)= face_vector.size();
-	      face_vector.push_back(teof);
-	    }
-	    else{
-	      elemToFace(elct,i) = (*fit)->local_id;
-	      delete teof;
-	    }
-	  }
-	  elct ++;
-	}
-      }
-    }
-    
-    FieldContainer<int> edgeToNode(edge_vector.size(), numNodesPerEdge);
-    for(unsigned ect = 0; ect != edge_vector.size(); ect++){
-      std::list<long long>::iterator elit;
-      int nct = 0;
-      for(elit  = edge_vector[ect]->local_node_ids.begin();
-	  elit != edge_vector[ect]->local_node_ids.end();
-	  elit ++){
-	edgeToNode(ect,nct) = *elit;
-	nct++;
-      }
-    }
-    int numEdges = edge_vector.size();
-    int numFaces = face_vector.size();
-   */
- //   std::cout << "    Number of Edges: " << numEdges << " \n";
- //  std::cout << "    Number of Faces: " << numFaces << " \n\n";
-   
-/*    std::string doing_type;
-    doing_type = "EDGES";
-    calc_global_ids(edge_vector,
-	       comm_node_ids,
-	       node_comm_proc_ids, 
-	       node_cmap_node_cnts,
-	       num_node_comm_maps,
-	       rank,
-	       doing_type);
-
-
-    doing_type = "FACES";
-    calc_global_ids(face_vector,
-	       comm_node_ids,
-	       node_comm_proc_ids, 
-	       node_cmap_node_cnts,
-	       num_node_comm_maps,
-	       rank,
-	       doing_type);
- */ 
-
-//    MPI_Finalize();
-//    exit(0);
-
-
-   // Get boundary (side set) information
-   // Side set 1 - left,  Side set 2 - front, Side set 3 - bottom,
-   // Side set 4 - right, Side set 5 - back,  Side set 6 - top
-    long long * sideSetIds = new long long [numSideSets];
-    FieldContainer<int> numElemsOnBoundary(numSideSets);
-    long long numSidesinSet;
-    long long numDFinSet;
-    im_ex_get_side_set_ids_l(id,sideSetIds);
-    for (int i=0; i<numSideSets; i++) {
-        im_ex_get_side_set_param_l(id,sideSetIds[i],&numSidesinSet,&numDFinSet);
-        numElemsOnBoundary(i)=numSidesinSet;
-     }
-
    // Container indicating whether a node is on the boundary (1-yes 0-no)
     FieldContainer<int> nodeOnBoundary(numNodes);
 
-   // Side set 1: left
-    if (numElemsOnBoundary(0) > 0){
-     long long * sideSetElemList1 = new long long [numElemsOnBoundary(0)];
-     long long * sideSetSideList1 = new long long [numElemsOnBoundary(0)];
-     im_ex_get_side_set_l(id,sideSetIds[0],sideSetElemList1,sideSetSideList1);
-     for (int i=0; i<numElemsOnBoundary(0); i++) {
-          nodeOnBoundary(elemToNode(sideSetElemList1[i]-1,0))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList1[i]-1,3))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList1[i]-1,4))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList1[i]-1,7))=1;
-     }
-     delete [] sideSetElemList1;
-     delete [] sideSetSideList1;
-   }
-
-   // Side set 2: front
-    if (numElemsOnBoundary(1) > 0){
-     long long * sideSetElemList2 = new long long [numElemsOnBoundary(1)];
-     long long * sideSetSideList2 = new long long [numElemsOnBoundary(1)];
-     im_ex_get_side_set_l(id,sideSetIds[1],sideSetElemList2,sideSetSideList2);
-     for (int i=0; i<numElemsOnBoundary(1); i++) {
-          nodeOnBoundary(elemToNode(sideSetElemList2[i]-1,0))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList2[i]-1,1))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList2[i]-1,5))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList2[i]-1,4))=1;
-     }
-     delete [] sideSetElemList2;
-     delete [] sideSetSideList2;
+   // Get boundary (side set) information
+    long long * sideSetIds = new long long [numSideSets];
+    long long numSidesInSet;
+    long long numDFinSet;
+    im_ex_get_side_set_ids_l(id,sideSetIds);
+    for (int i=0; i<numSideSets; i++) {
+        im_ex_get_side_set_param_l(id,sideSetIds[i],&numSidesInSet,&numDFinSet);
+        if (numSidesInSet > 0){
+          long long * sideSetElemList = new long long [numSidesInSet];
+          long long * sideSetSideList = new long long [numSidesInSet];
+          im_ex_get_side_set_l(id,sideSetIds[i],sideSetElemList,sideSetSideList);
+          for (int j=0; j<numSidesInSet; j++) {
+             
+             int sideNode0 = hex_8.getNodeMap(2,sideSetSideList[j]-1,0);
+             int sideNode1 = hex_8.getNodeMap(2,sideSetSideList[j]-1,1);
+             int sideNode2 = hex_8.getNodeMap(2,sideSetSideList[j]-1,2);
+             int sideNode3 = hex_8.getNodeMap(2,sideSetSideList[j]-1,3);
+             
+             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode0))=1;
+             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode1))=1;
+             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode2))=1;
+             nodeOnBoundary(elemToNode(sideSetElemList[j]-1,sideNode3))=1;
+          }
+          delete [] sideSetElemList;
+          delete [] sideSetSideList;
+       }
     }
-
-   // Side set 3: bottom
-    if (numElemsOnBoundary(2) > 0){
-     long long * sideSetElemList3 = new long long [numElemsOnBoundary(2)];
-     long long * sideSetSideList3 = new long long [numElemsOnBoundary(2)];
-     im_ex_get_side_set_l(id,sideSetIds[2],sideSetElemList3,sideSetSideList3);
-     for (int i=0; i<numElemsOnBoundary(2); i++) {
-          nodeOnBoundary(elemToNode(sideSetElemList3[i]-1,0))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList3[i]-1,1))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList3[i]-1,2))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList3[i]-1,3))=1;
-     }
-     delete [] sideSetElemList3;
-     delete [] sideSetSideList3;
-    }
-
-   // Side set 4: right
-    if (numElemsOnBoundary(3) > 0){
-     long long * sideSetElemList4 = new long long [numElemsOnBoundary(3)];
-     long long * sideSetSideList4 = new long long [numElemsOnBoundary(3)];
-     im_ex_get_side_set_l(id,sideSetIds[3],sideSetElemList4,sideSetSideList4);
-     for (int i=0; i<numElemsOnBoundary(3); i++) {
-          nodeOnBoundary(elemToNode(sideSetElemList4[i]-1,1))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList4[i]-1,2))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList4[i]-1,5))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList4[i]-1,6))=1;
-     }
-     delete [] sideSetElemList4;
-     delete [] sideSetSideList4;
-    }
-
-   // Side set 5: back
-    if (numElemsOnBoundary(4) > 0){
-     long long * sideSetElemList5 = new long long [numElemsOnBoundary(4)];
-     long long * sideSetSideList5 = new long long [numElemsOnBoundary(4)];
-     im_ex_get_side_set_l(id,sideSetIds[4],sideSetElemList5,sideSetSideList5);
-     for (int i=0; i<numElemsOnBoundary(4); i++) {
-          nodeOnBoundary(elemToNode(sideSetElemList5[i]-1,2))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList5[i]-1,3))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList5[i]-1,6))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList5[i]-1,7))=1;
-     }
-     delete [] sideSetElemList5;
-     delete [] sideSetSideList5;
-    }
-
-   // Side set 6: top
-    if (numElemsOnBoundary(5) > 0){
-     long long * sideSetElemList6 = new long long [numElemsOnBoundary(5)];
-     long long * sideSetSideList6 = new long long [numElemsOnBoundary(5)];
-     im_ex_get_side_set_l(id,sideSetIds[5],sideSetElemList6,sideSetSideList6);
-     for (int i=0; i<numElemsOnBoundary(5); i++) {
-          nodeOnBoundary(elemToNode(sideSetElemList6[i]-1,4))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList6[i]-1,5))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList6[i]-1,6))=1;
-          nodeOnBoundary(elemToNode(sideSetElemList6[i]-1,7))=1;
-     }
-     delete [] sideSetElemList6;
-     delete [] sideSetSideList6;
-    }
-
     delete [] sideSetIds;
 
-    if(!Comm.MyPID()) {cout << msg << "Boundary Conds   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
+   if(MyPID ==0) {cout << msg << "Boundary Conds   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
+
 // ************************************ CUBATURE **************************************
 
   if (MyPID == 0) {
@@ -884,6 +723,7 @@ int main(int argc, char *argv[]) {
    // Container for cubature points in physical space
     FieldContainer<double> physCubPoints(numCells,numCubPoints, cubDim);
 
+#ifdef HAVE_MPI
     // Count owned nodes
     int ownedNodes=0;
     for(int i=0;i<numNodes;i++)
@@ -898,19 +738,16 @@ int main(int argc, char *argv[]) {
         ownedGIDs[oidx]=(int)globalNodeIds[i];
         oidx++;
       }
-    
-    // Global arrays in Epetra format
+    // Generate epetra map    
     Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
+#else
+    Epetra_Map globalMapG(numNodes, 0, Comm);
+#endif
+
+    // Global arrays in Epetra format
     Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, numFieldsG);
     Epetra_FEVector rhs(globalMapG);
 
-    int int_ne=(int)numElems;
-    int globalElems;
-    Comm.SumAll(&int_ne,&globalElems,1);
-    if(!Comm.MyPID()){
-      std::cout << " Number of Global Elements: " << globalElems << " \n";
-      std::cout << "    Number of Global Nodes: " << globalMapG.NumGlobalElements() << " \n\n";
-    }
     
  // *** Element loop ***
     for (int k=0; k<numElems; k++) {
@@ -944,7 +781,6 @@ int main(int argc, char *argv[]) {
                              hexGradsTransformed, hexGradsTransformedWeighted, COMP_CPP);
 
       // assemble into global matrix
-      int err = 0;
       for (int row = 0; row < numFieldsG; row++){
         for (int col = 0; col < numFieldsG; col++){
             int rowIndex = globalNodeIds[elemToNode(k,row)];
@@ -984,7 +820,7 @@ int main(int argc, char *argv[]) {
      for (int row = 0; row < numFieldsG; row++){
            int rowIndex = globalNodeIds[elemToNode(k,row)];
            double val = -localRHS(0,row);
-           err = rhs.SumIntoGlobalValues(1, &rowIndex, &val);
+           rhs.SumIntoGlobalValues(1, &rowIndex, &val);
       }
  
      
@@ -995,29 +831,40 @@ int main(int argc, char *argv[]) {
    StiffMatrix.GlobalAssemble(); StiffMatrix.FillComplete();
    rhs.GlobalAssemble();
 
- 
-   if(!Comm.MyPID()) {cout << msg << "Matrix Assembly  = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
+   if(MyPID == 0) {cout << msg << "Matrix Assembly  = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
-  // Adjust stiffness matrix and rhs based on boundary conditions
-   for (int row = 0; row<numNodes; row++){
-       if (nodeOnBoundary(row)) {
-          int rowindex = globalNodeIds[row];
-          for (int col=0; col<numNodesGlobal; col++){
-              double val = 0.0;
-              int colindex = col;
-              StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &colindex, &val);
+  // Adjust matrix and rhs due to Dirichlet boundary conditions
+    int numBCNodes=0;
+    for (int i=0; i<numNodes; i++){
+        if (nodeOnBoundary(i) && nodeIsOwned[i]){
+            numBCNodes++;
+        }
+    }
+    int * BCNodes = new int [numBCNodes];
+    int indbc=0;
+    int indOwned=0;
+    for (int i=0; i<numNodes; i++){
+       if (nodeIsOwned[i]){
+          if (nodeOnBoundary(i)){
+             BCNodes[indbc]=indOwned;
+             indbc++;
+             rhs[0][indOwned]=0;
           }
-          double val = 1.0;
-          StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &rowindex, &val);
-          val = 0.0;
-          rhs.ReplaceGlobalValues(1, &rowindex, &val);
+          indOwned++;
        }
     }
+   // ML routine that zeroes out Dirichlet rows and columns and adds 1 to diagonal 
+    ML_Epetra::Apply_OAZToMatrix(BCNodes, numBCNodes, StiffMatrix);
 
-   
+    delete [] BCNodes;
+
+
+#define DUMP_DATA
+#ifdef DUMP_DATA   
   // Dump matrices to disk
-   //      EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-   //      EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
+    EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
+    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
+#endif
 
 
    // Run the solver
@@ -1040,7 +887,6 @@ int main(int argc, char *argv[]) {
     }
     xexact.GlobalAssemble();
        
-  //  EpetraExt::MultiVectorToMatlabFile("uexact.dat",xexact);
    
     TestMultiLevelPreconditionerLaplace("laplace",MLList,StiffMatrix,xexact,rhs,uh,
                                        TotalErrorResidual, TotalErrorExactSol);
@@ -1053,11 +899,13 @@ int main(int argc, char *argv[]) {
      double Linferr = 0.0;
      double LinferrTot = 0.0;
 
+#ifdef HAVE_MPI
    // Import solution onto current processor
      Epetra_Map  solnMap(numNodesGlobal, numNodesGlobal, 0, Comm);
      Epetra_Import  solnImporter(solnMap, globalMapG);
      Epetra_Vector  uCoeff(solnMap);
      uCoeff.Import(uh, solnImporter, Insert);
+#endif
 
    // Get cubature points and weights for error calc (may be different from previous)
      DefaultCubatureFactory<double>  cubFactoryErr;                                   
@@ -1132,7 +980,11 @@ int main(int argc, char *argv[]) {
           double graduApprox3 = 0.0;
           for (int i = 0; i < numFieldsG; i++){
              int rowIndex = globalNodeIds[elemToNode(k,i)];
+#ifdef HAVE_MPI
              double uh1 = uCoeff.Values()[rowIndex];
+#else
+             double uh1 = uh.Values()[rowIndex];
+#endif
              uApprox += uh1*uhGValsTrans(0,i,nPt); 
              graduApprox1 += uh1*uhGradsTrans(0,i,nPt,0); 
              graduApprox2 += uh1*uhGradsTrans(0,i,nPt,1); 
@@ -1154,11 +1006,18 @@ int main(int argc, char *argv[]) {
        L2err+=L2errElem;
        H1err+=H1errElem;
      }
+    
 
+#ifdef HAVE_MPI
    // sum over all processors
     Comm.SumAll(&L2err,&L2errTot,1);
     Comm.SumAll(&H1err,&H1errTot,1);
     Comm.MaxAll(&Linferr,&LinferrTot,1);
+#else
+    L2errTot = L2err;
+    H1errTot = H1err;
+    LinferrTot = Linferr;
+#endif
 
    if (MyPID == 0) {
     std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
@@ -1167,6 +1026,7 @@ int main(int argc, char *argv[]) {
    }
 
    // Cleanup
+#ifdef HAVE_MPI
    for(long long b = 0; b < numElemBlk; b++){     
      delete [] elmt_node_linkage[b];
      delete [] element_types[b];
@@ -1192,7 +1052,20 @@ int main(int argc, char *argv[]) {
       delete [] comm_node_ids;
       delete [] comm_node_proc_ids;
    }
-   
+#else
+   for(long long b = 0; b < numElemBlk; b++){     
+     delete [] elmt_node_linkage[b];
+     delete [] element_types[b];
+   }
+   delete [] block_ids;
+   delete [] nodes_per_element;
+   delete [] element_attributes;
+   delete [] element_types;
+   delete [] elmt_node_linkage;
+   delete [] elements;
+   delete [] globalNodeIds;
+   delete [] nodeIsOwned;
+#endif
 
    // delete mesh
    Delete_Pamgen_Mesh();
@@ -1200,7 +1073,9 @@ int main(int argc, char *argv[]) {
    // reset format state of std::cout
    std::cout.copyfmt(oldFormatState);
    
+#ifdef HAVE_MPI
    MPI_Finalize();
+#endif
  
    exit(0);
 
@@ -1225,10 +1100,12 @@ int main(int argc, char *argv[]) {
  int evalGradu(double & x, double & y, double & z, double & gradu1, double & gradu2, double & gradu3)
  {
    //  for u(x,y,z)=sin(pi*x)*sin(pi*y)*sin(pi*z)
-  /*      gradu1 = M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
+   /*
+        gradu1 = M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
         gradu2 = M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
         gradu3 = M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
-  */
+   */
+  
 
   // or
 
@@ -1258,10 +1135,12 @@ int main(int argc, char *argv[]) {
                     + 2.0*M_PI*cos(M_PI*z)*sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z)
                     + 3.0*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
   
+  
    
    return divGradu;
  }
 
+#ifdef HAVE_MPI
 /*****************************************************************************/
 void  Conform_Boundary_IDS(long long ** comm_entities,
 			   long long * entity_counts,
@@ -1395,6 +1274,7 @@ void  Conform_Boundary_IDS_topo_entity(std::vector < std:: vector < topo_entity 
   delete [] send_buffer;
   delete [] receive_buffer;
 }
+#endif
 
 
 // Test ML
