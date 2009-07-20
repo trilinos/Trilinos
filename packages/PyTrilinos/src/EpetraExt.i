@@ -86,6 +86,9 @@ example subdirectory of the PyTrilinos package:
 // Teuchos includes
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_DefaultSerialComm.hpp"
+#ifdef HAVE_MPI
+#include "Teuchos_DefaultMpiComm.hpp"
+#endif
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_PythonParameter.h"
 
@@ -551,111 +554,6 @@ tuple_of_Vector = typed_tuple(Epetra.Vector)
 
 %}
 
-// %{
-//
-// Return a borrowed reference to the python object with given name
-// from the global namespace.  If the global namespace does not have
-// such an object, then raise a python error.
-// PyObject * getObjectFromGlobals(const char * name)
-// {
-//   PyObject * globals = PyEval_GetGlobals();
-//   if (!globals) return NULL;
-//   return PyDict_GetItemString(globals, name);
-// }
-
-//
-// Return a borrowed reference to the python class object with given
-// name from the global namespace.  If the global namespace does not
-// have such an object, or the object is not a class, then raise a
-// python error.
-// PyObject * getClassFromGlobals(const char * name)
-// {
-//   PyObject * object = getObjectFromGlobals(name);
-//   if (!object) return NULL;
-//   if (!PyType_Check(object))
-//   {
-//     PyErr_Format(PyExc_TypeError, "Object '%s' is not a class type", name);
-//     return NULL;
-//   }
-//   return object;
-// }
-
-//
-// Return true if the given python object has the attribute with the
-// given name and the value of that attribute is None.  If the
-// attribute does not exist, throw a PythonException.
-// bool objectAttrIsNone(PyObject * object, const char * name)
-// {
-//   PyObject * value = PyObject_GetAttrString(object, name);
-//   if (!value) throw PythonException();
-//   bool result = (value == Py_None);
-//   Py_DECREF(value);
-//   return result;
-// }
-
-//
-// If the given python object has an attribute with the given name,
-// and the attribute is of type bool, return the value of the
-// attribute.  Else raise a PythonException.
-// bool getBoolObjectAttr(PyObject * object, const char * name)
-// {
-//   bool result;
-//   PyObject * value = PyObject_GetAttrString(object, name);
-//   if (!value) throw PythonException();
-//   if (!PyBool_Check(value))
-//   {
-//     PyErr_Format(PyExc_TypeError, "Attribute '%s' is not of type boolean", name);
-//     throw PythonException();
-//   }
-//   if (value == Py_True) result = true;
-//   else                  result = false;
-//   Py_DECREF(value);
-//   return result;
-// }
-
-//
-// If the given python object has an attribute with the given name,
-// and the attribute is of type int, return the value of the
-// attribute.  Else raise a PythonException.
-// int getIntObjectAttr(PyObject * object, const char * name)
-// {
-//   PyObject * value = PyObject_GetAttrString(object, name);
-//   if (!value) throw PythonException();
-//   int result = (int) PyInt_AsLong(value);
-//   if (PyErr_Occurred()) throw PythonException();
-//   Py_DECREF(value);
-//   return result;
-// }
-
-//
-// If the given python object has an attribute with the given name,
-// and the attribute is of type float, return the value of the
-// attribute.  Else raise a PythonException.
-// double getFloatObjectAttr(PyObject * object, const char * name)
-// {
-//   PyObject * value = PyObject_GetAttrString(object, name);
-//   if (!value) throw PythonException();
-//   double result = PyFloat_AsDouble(value);
-//   if (PyErr_Occurred()) throw PythonException();
-//   Py_DECREF(value);
-//   return result;
-// }
-
-//
-// If the given python object has an attribute with the given name,
-// and the attribute is of type str, return the value of the
-// attribute.  Else raise a PythonException.
-// const char* getStringObjectAttr(PyObject * object, const char * name)
-// {
-//   PyObject * value = PyObject_GetAttrString(object, name);
-//   if (!value) throw PythonException();
-//   const char * result = PyString_AsString(value);
-//   if (PyErr_Occurred()) throw PythonException();
-//   Py_DECREF(value);
-//   return result;
-// }
-// %}
-
 //////////////////
 // InArgs class //
 //////////////////
@@ -976,106 +874,37 @@ class OutArgs(PropertyBase):
   *$1 = convertOutArgsFromPython($input);
 }
 
-///////////////////////////
-// ModelProperties class //
-///////////////////////////
-// %pythoncode
-// %{
-// class ModelProperties(PropertyBase):
-//     """
-//     Class ModelProperties is intended as an internal-use-only class that helps
-//     with populating the PyModelEvaluator class.
-
-//     This is a 'Property' class restricted to specific attributes that are
-//     type-checked. These properties are:
-
-//     x                    - Epetra.Vector: solution vector
-//     x_init               - Epetra.Vector: initial values for solution vector
-//     x_lower_bounds       - Epetra.Vector: lower bounds for solution vector
-//     x_upper_bounds       - Epetra.Vector: upper bounds for solution vector
-//     x_dot                - Epetra.Vector: time derivative of solution vector
-//     x_dot_init           - Epetra.Vector: initial values for time derivative of
-//                            solution vector
-//     f                    - Evaluation: model function
-//     p                    - tuple_of_Vector: 
-//     p_names              - tuple_of_str:
-//     p_init               - tuple_of_Vector: 
-//     p_lower_bounds       - tuple_of_Vector: 
-//     p_upper_bounds       - tuple_of_Vector: 
-//     g                    - tuple_of_Evaluation: 
-//     t                    - float: time
-//     t_init               - float: initial value for time
-//     t_lower_bound        - float: lower bound for time
-//     t_upper_bound        - float: upper bound for time
-//     alpha                - float: 
-//     beta                 - float: 
-//     W                    - Epetra.Operator: Jacobian (derivative of f with
-//                            respect to x)
-//     W_properties         - DerivativeProperties: properties of W
-//     DfDp                 - tuple_of_Derivative: derivative of f with respect to p
-//     DfDp_support         - tuple_of_DerivativeSupport: support of DfDp
-//     DfDp_properties      - tuple_of_DerivativeProperties: properties of DfDp
-//     DgDx                 - tuple_of_Derivative: derivative of g with respect to x
-//     DgDx_support         - tuple_of_DerivativeSupport: support of DgDx
-//     DgDx_properties      - tuple_of_DerivativeProperties: properties of DgDx
-//     DgDx_dot             - tuple_of_Derivative: time derivative of derivative of
-//                            g with respect to x
-//     DgDx_dot_support     - tuple_of_DerivativeSupport: support of DgDx_dot
-//     DgDx_dot_properties  - tuple_of_DerivativeProperties: properties of DgDx_dot
-//     DgDp                 - tuple_of_Derivative: derivative of g with respect to p
-//     DgDp_support         - tuple_of_DerivativeSupport: support of DgDp
-//     DgDp_properties      - tuple_of_DerivativeProperties: properties of DgDp
-//     evalModel            - object: model evaluation function
-//     """
-//     props = {'x'                    : Epetra.Vector,
-//              'x_init'               : Epetra.Vector,
-//              'x_lower_bounds'       : Epetra.Vector,
-//              'x_upper_bounds'       : Epetra.Vector,
-//              'x_dot'                : Epetra.Vector,
-//              'x_dot_init'           : Epetra.Vector,
-//              'f'                    : Evaluation,
-//              'p'                    : tuple_of_Vector,
-//              'p_names'              : tuple_of_str,
-//              'p_init'               : tuple_of_Vector,
-//              'p_lower_bounds'       : tuple_of_Vector,
-//              'p_upper_bounds'       : tuple_of_Vector,
-//              'g'                    : tuple_of_Evaluation,
-//              't'                    : float,
-//              't_init'               : float,
-//              't_lower_bound'        : float,
-//              't_upper_bound'        : float,
-//              'alpha'                : float,
-//              'beta'                 : float,
-//              'W'                    : Epetra.Operator,
-//              'W_properties'         : DerivativeProperties,
-//              'DfDp'                 : tuple_of_Derivative,
-//              'DfDp_support'         : tuple_of_DerivativeSupport,
-//              'DfDp_properties'      : tuple_of_DerivativeProperties,
-//              'DgDx'                 : tuple_of_Derivative,
-//              'DgDx_support'         : tuple_of_DerivativeSupport,
-//              'DgDx_properties'      : tuple_of_DerivativeProperties,
-//              'DgDx_dot'             : tuple_of_Derivative,
-//              'DgDx_dot_support'     : tuple_of_DerivativeSupport,
-//              'DgDx_dot_properties'  : tuple_of_DerivativeProperties,
-//              'DgDp'                 : tuple_of_Derivative,
-//              'DgDp_support'         : tuple_of_DerivativeSupport,
-//              'DgDp_properties'      : tuple_of_DerivativeProperties,
-//              'evalModel'            : object
-//              }
-//     def __init__(self, **kwargs):
-//         PropertyBase.__init__(self, **kwargs)
-
-// %}
-
 //////////////////////////////////////
 // EpetraExt ModelEvaluator support //
 //////////////////////////////////////
 //
 // The EpetraExt::ModelEvaluator class is sufficiently complex,
-// including nested classes, that it confuses the SWIG code parser.
-// Therefore, I provide here a stripped-down version of the class,
-// with enumerations and all but two nested classes eliminated.
+// including nested classes, that it confuses the SWIG code parser (in
+// part because SWIG does not support nested classes, it is a use-case
+// SWIG developers do not test against).  Therefore, I provide here a
+// stripped-down declaration of the class for wrapping purposes only,
+// with enumerations and all but two nested classes removed.
+//
+// The methods 'createInArgs', 'createOutArgs' and 'evalModel' require
+// special handling.  They need to be declared so that SWIG can
+// generate the Director class properly.  They also need to be
+// prevented from being wrapped (%ignore-d), because the wrappers will
+// call conversion functions that are out of scope (see
+// PyModelEvaluator below).  These methods are re-implemented in
+// PyModelEvaluator, where the scoping works properly, and the python
+// interface becomes complete.
+//
+// In the python interface, the C++ class 'ModelEvaluator' becomes
+// 'ModelEvaluatorBase' and the C++ class 'PyModelEvaluator' (below)
+// becomes 'ModelEvaluator'.  Both are virtual base classes and can
+// only serve to be derived from.  In practice, python users should
+// not derive from python class 'ModelEvaluatorBase'.
+//
 %feature("director") EpetraExt::ModelEvaluator;
+%rename(ModelEvaluatorBase) EpetraExt::ModelEvaluator;
+%ignore EpetraExt::ModelEvaluator::createInArgs() const;
+%ignore EpetraExt::ModelEvaluator::createOutArgs() const;
+%ignore EpetraExt::ModelEvaluator::evalModel;
 
 namespace EpetraExt {
 class ModelEvaluator : virtual public Teuchos::Describable
@@ -1112,23 +941,37 @@ public:
 };
 }
 
-//%rename(ModelEvaluator) PyModelEvaluator;
-//%include "PyModelEvaluator.h"
+//////////////////////////////
+// PyModelEvaluator support //
+//////////////////////////////
+//
+// The PyModelEvaluator class is necessary so that we can write
+// conversion functions between python and the highly protected nested
+// classes 'InArgs' and 'OutArgs'.  The conversion functions
+// 'convertInArgsFromPython' and 'convertOutArgsFromPython' are
+// friends of 'PyModelEvaluator' that are needed internally, but
+// should not be wrapped.
+//
+%rename(ModelEvaluator) PyModelEvaluator;
+%ignore convertInArgsFromPython;
+%ignore convertOutArgsFromPython;
+%include "PyModelEvaluator.h"
 
-// Change the constructor to be one that accepts keyword arguments
-// %pythoncode
-// %{
-// def ModelEvaluatorInit(self, **kwargs):
-//     """
-//     __init__(self, kwargs...) -> ModelEvaluator
-//     """
-//     modelProps = ModelProperties(**kwargs)
-//     this = _EpetraExt.new_ModelEvaluator(modelProps)
-//     try: self.this.append(this)
-//     except: self.this = this
-
-// ModelEvaluator.__init__ = ModelEvaluatorInit
-// %}
+// Notes:
+//
+// * Describability is not yet exploited or tested
+// * Teuchos::Polynomial is not yet wrapped, so the following have
+//   been ignored:
+//   + InArgs::x_poly
+//   + InArgs::x_dot_poly
+//   + OutArgs::f_poly
+// * Evaluation should derive from Epetra.Vector, rather than simply
+//   containing one.
+// * Should DerivativeMultiVector derive from Epetra.MultiVector?
+// * Allow derivative properties to be sparse by utilizing
+//   dictionaries
+// * Add documentation to Epetra_ModelEvaluator.h (based upon Thyra
+//   ModelEvaluator documentation)
 
 // Turn off the exception handling
 %exception;

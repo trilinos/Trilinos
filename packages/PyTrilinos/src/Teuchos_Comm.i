@@ -150,10 +150,10 @@ Teuchos::Comm::reduceAll;
     sendBuffer = (char*) array_data(sendArray);
     recvBuffer = (char*) array_data(recvArray);
     self->gatherAll(sendBytes, sendBuffer, recvBytes, recvBuffer);
-    if (is_new_object && sendArray) Py_DECREF(sendArray);
+    if (is_new_object && sendArray) { Py_DECREF(sendArray); }
     return PyArray_Return(recvArray);
   fail:
-    if (is_new_object && sendArray) Py_DECREF(sendArray);
+    if (is_new_object && sendArray) { Py_DECREF(sendArray); }
     return NULL;
   }
 
@@ -218,10 +218,10 @@ Teuchos::Comm::reduceAll;
       PyErr_SetString(PyExc_TypeError, "reduceAll() for unsupported NumPy type");
       goto fail;
     }
-    if (is_new_object && sendArray) Py_DECREF(sendArray);
+    if (is_new_object && sendArray) { Py_DECREF(sendArray); }
     return PyArray_Return(globalArray);
   fail:
-    if (is_new_object && sendArray) Py_DECREF(sendArray);
+    if (is_new_object && sendArray) { Py_DECREF(sendArray); }
     Py_XDECREF(globalArray);
     return NULL;
   }
@@ -287,10 +287,10 @@ Teuchos::Comm::reduceAll;
       PyErr_SetString(PyExc_TypeError, "scan() for unsupported NumPy type");
       goto fail;
     }
-    if (is_new_object && sendArray) Py_DECREF(sendArray);
+    if (is_new_object && sendArray) { Py_DECREF(sendArray); }
     return PyArray_Return(scanArray);
   fail:
-    if (is_new_object && sendArray) Py_DECREF(sendArray);
+    if (is_new_object && sendArray) { Py_DECREF(sendArray); }
     Py_XDECREF(scanArray);
     return NULL;
   }

@@ -46,400 +46,6 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_JadMatrix.h"
 
-// PyModelEvaluator::PyModelEvaluator(PyObject* modelProperties) :
-//   _modelProperties(NULL)
-// {
-//   // Obtain the class object for ModelProperties
-//   PyObject * classModelProperties = getClassFromGlobals("ModelProperties");
-//   if (!classModelProperties) throw PythonException();
-
-//   // Ensure constructor argument is a ModelProperty object
-//   if (!PyObject_IsInstance(modelProperties, classModelProperties))
-//   {
-//     PyErr_SetString(PyExc_TypeError,
-// 		    "argument 'modelProperties' is not of type ModelProperties");
-//     throw PythonException();
-//   }
-
-//   // Ensure the constructor argument has required attributes with non-None values
-//   CONST char * required[ ] = {"x", "f", "evalModel", NULL};
-//   int i = 0;
-//   while(required[i] != NULL)
-//   {
-//     if (objectAttrIsNone(modelProperties, required[i]))
-//     {
-//       PyErr_Format(PyExc_ValueError, "attribute '%s' is required", required[i]);
-//       throw PythonException();
-//     }
-//     ++i;
-//   }
-
-//   // Constructor argument is OK, so store it and increase its reference count
-//   _modelProperties = modelProperties;
-//   Py_INCREF(_modelProperties);
-// }
-
-// PyModelEvaluator::~PyModelEvaluator()
-// {
-//   // Release the stored python object
-//   Py_XDECREF(_modelProperties);
-// }
-
-// Teuchos::RCP<const Epetra_Map>
-// PyModelEvaluator::get_x_map() const
-// {
-//   Teuchos::RCP<const Epetra_Vector> x =
-//     getConstEpetraVectorObjectAttr(_modelProperties, "x");
-//   return getEpetraMapPtrFromEpetraBlockMap(x->Map());
-// }
-
-// Teuchos::RCP<const Epetra_Map>
-// PyModelEvaluator::get_f_map() const
-// {
-//   EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> f =
-//     getEvaluationObjectAttr(_modelProperties, "f");
-//   return getEpetraMapPtrFromEpetraBlockMap(f->Map());
-// }
-
-// Teuchos::RCP<const Epetra_Map>
-// PyModelEvaluator::get_p_map(int l) const
-// {
-//   if (objectAttrIsNone(_modelProperties, "p"))
-//     return EpetraExt::ModelEvaluator::get_p_map(l);
-//   Teuchos::RCP<const Epetra_Vector> p =
-//     getConstEpetraVectorItemObjectAttr(_modelProperties, "p", l);
-//   return getEpetraMapPtrFromEpetraBlockMap(p->Map());
-// }
-
-// // Teuchos::RCP<const Teuchos::Array<std::string> >
-// // PyModelEvaluator::get_p_names(int l) const
-// // {
-// // }
-
-// Teuchos::RCP<const Epetra_Map>
-// PyModelEvaluator::get_g_map(int j) const
-// {
-//   EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> g =
-//     getEvaluationItemObjectAttr(_modelProperties, "g", j);
-//   return getEpetraMapPtrFromEpetraBlockMap(g->Map());
-// }
-
-// Teuchos::RCP<const Epetra_Vector>
-// PyModelEvaluator::get_x_init() const
-// {
-//   if (objectAttrIsNone(_modelProperties, "x_init"))
-//     return EpetraExt::ModelEvaluator::get_x_init();
-//   return getConstEpetraVectorObjectAttr(_modelProperties, "x_init");
-// }
-
-// Teuchos::RCP<const Epetra_Vector>
-// PyModelEvaluator::get_x_dot_init() const
-// {
-//   if (objectAttrIsNone(_modelProperties, "x_dot_init"))
-//     return EpetraExt::ModelEvaluator::get_x_dot_init();
-//   return getConstEpetraVectorObjectAttr(_modelProperties, "x_dot_init");
-// }
-
-// Teuchos::RCP<const Epetra_Vector>
-// PyModelEvaluator::get_p_init(int l) const
-// {
-//   if (objectAttrIsNone(_modelProperties, "p_init"))
-//     return EpetraExt::ModelEvaluator::get_p_init(l);
-//   return getConstEpetraVectorItemObjectAttr(_modelProperties, "p_init", l);
-// }
-
-// double
-// PyModelEvaluator::get_t_init() const
-// {
-//   if (objectAttrIsNone(_modelProperties, "t_init"))
-//     return EpetraExt::ModelEvaluator::get_t_init();
-//   return getFloatObjectAttr(_modelProperties, "t_init");
-// }
-
-// Teuchos::RCP<const Epetra_Vector>
-// PyModelEvaluator::get_x_lower_bounds() const
-// {
-//   if (objectAttrIsNone(_modelProperties, "x_lower_bounds"))
-//     return EpetraExt::ModelEvaluator::get_x_lower_bounds();
-//   return getConstEpetraVectorObjectAttr(_modelProperties, "x_lower_bounds");
-// }
-
-// Teuchos::RCP<const Epetra_Vector>
-// PyModelEvaluator::get_x_upper_bounds() const
-// {
-//   if (objectAttrIsNone(_modelProperties, "x_upper_bounds"))
-//     return EpetraExt::ModelEvaluator::get_x_upper_bounds();
-//   return getConstEpetraVectorObjectAttr(_modelProperties, "x_upper_bounds");
-// }
-
-// Teuchos::RCP<const Epetra_Vector>
-// PyModelEvaluator::get_p_lower_bounds(int l) const
-// {
-//   if (objectAttrIsNone(_modelProperties, "p_lower_bounds"))
-//     return EpetraExt::ModelEvaluator::get_p_lower_bounds(l);
-//   return getConstEpetraVectorItemObjectAttr(_modelProperties, "p_lower_bounds", l);
-// }
-
-// Teuchos::RCP<const Epetra_Vector>
-// PyModelEvaluator::get_p_upper_bounds(int l) const
-// {
-//   if (objectAttrIsNone(_modelProperties, "p_upper_bounds"))
-//     return EpetraExt::ModelEvaluator::get_p_upper_bounds(l);
-//   return getConstEpetraVectorItemObjectAttr(_modelProperties, "p_upper_bounds", l);
-// }
-
-// double
-// PyModelEvaluator::get_t_lower_bound() const
-// {
-//   if (objectAttrIsNone(_modelProperties, "t_lower_bound"))
-//     return EpetraExt::ModelEvaluator::get_t_lower_bound();
-//   return getFloatObjectAttr(_modelProperties, "t_lower_bound");
-// }
-
-// double
-// PyModelEvaluator::get_t_upper_bound() const
-// {
-//   if (objectAttrIsNone(_modelProperties, "t_upper_bound"))
-//     return EpetraExt::ModelEvaluator::get_t_upper_bound();
-//   return getFloatObjectAttr(_modelProperties, "t_upper_bound");
-// }
-
-// Teuchos::RCP<Epetra_Operator>
-// PyModelEvaluator::create_W() const
-// {
-//   if (objectAttrIsNone(_modelProperties, "W"))
-//     return EpetraExt::ModelEvaluator::create_W();
-//   return getEpetraOperatorObjectAttr(_modelProperties, "W");
-// }
-
-// Teuchos::RCP<Epetra_Operator>
-// PyModelEvaluator::create_DfDp_op(int l) const
-// {
-//   if (objectAttrIsNone(_modelProperties, "DfDp"))
-//     return EpetraExt::ModelEvaluator::create_DfDp_op(l);
-//   return getDerivativeItemObjectAttr(_modelProperties, "DfDp", l).getLinearOp();
-// }
-
-// Teuchos::RCP<Epetra_Operator>
-// PyModelEvaluator::create_DgDx_dot_op(int j) const
-// {
-//   if (objectAttrIsNone(_modelProperties, "DgDx_dot"))
-//     return EpetraExt::ModelEvaluator::create_DgDx_dot_op(j);
-//   return getDerivativeItemObjectAttr(_modelProperties, "DgDx_dot", j).getLinearOp();
-// }
-
-// Teuchos::RCP<Epetra_Operator>
-// PyModelEvaluator::create_DgDx_op(int j) const
-// {
-//   if (objectAttrIsNone(_modelProperties, "DgDx"))
-//     return EpetraExt::ModelEvaluator::create_DgDx_op(j);
-//   return getDerivativeItemObjectAttr(_modelProperties, "DgDx", j).getLinearOp();
-// }
-
-// // Teuchos::RCP<Epetra_Operator>
-// // PyModelEvaluator::create_DgDp_op( int j, int l ) const
-// // {
-// //   if (objectAttrIsNone(_modelProperties, "DgDp"))
-// //     return EpetraExt::ModelEvaluator::create_DgDp_op();
-// // }
-
-// EpetraExt::ModelEvaluator::InArgs
-// PyModelEvaluator::createInArgs() const
-// {
-//   InArgsSetup inArgs;
-//   // x attribute
-//   if (!objectAttrIsNone(_modelProperties, "x"))
-//   {
-//     inArgs.setSupports(IN_ARG_x, true);
-//     inArgs.set_x(getConstEpetraVectorObjectAttr(_modelProperties, "x"));
-//   }
-//   // x_dot attribute
-//   if (!objectAttrIsNone(_modelProperties, "x_dot"))
-//   {
-//     inArgs.setSupports(IN_ARG_x_dot, true);
-//     inArgs.set_x(getConstEpetraVectorObjectAttr(_modelProperties, "x_dot"));
-//   }
-//   // p attribute
-//   if (!objectAttrIsNone(_modelProperties, "p"))
-//   {
-//     PyObject * pObj = PyObject_GetAttrString(_modelProperties, "p");
-//     if (!pObj) throw PythonException();
-//     int Np = (int) PySequence_Length(pObj);
-//     Py_DECREF(pObj);
-//     if (Np < 0) throw PythonException();
-//     inArgs.set_Np(Np);
-//     for (int i=0; i < Np; ++i)
-//       inArgs.set_p(i, getConstEpetraVectorItemObjectAttr(_modelProperties, "p", i));
-//   }
-//   // t attribute
-//   if (!objectAttrIsNone(_modelProperties, "t"))
-//   {
-//     inArgs.setSupports(IN_ARG_t, true);
-//     inArgs.set_t(getFloatObjectAttr(_modelProperties, "t"));
-//   }
-//   // alpha attribute
-//   if (!objectAttrIsNone(_modelProperties, "alpha"))
-//   {
-//     inArgs.setSupports(IN_ARG_alpha, true);
-//     inArgs.set_t(getFloatObjectAttr(_modelProperties, "alpha"));
-//   }
-//   // beta attribute
-//   if (!objectAttrIsNone(_modelProperties, "beta"))
-//   {
-//     inArgs.setSupports(IN_ARG_beta, true);
-//     inArgs.set_t(getFloatObjectAttr(_modelProperties, "beta"));
-//   }
-//   return inArgs;
-// }
-
-// EpetraExt::ModelEvaluator::OutArgs
-// PyModelEvaluator::createOutArgs() const
-// {
-//   OutArgsSetup outArgs;
-//   // Np and Ng attributes
-//   int Np = 0;
-//   int Ng = 0;
-//   if (!objectAttrIsNone(_modelProperties, "p"))
-//   {
-//     PyObject * p = PyObject_GetAttrString(_modelProperties, "p");
-//     if (!p) throw PythonException();
-//     Np = (int) PySequence_Length(p);
-//     Py_DECREF(p);
-//     if (Np < 0) throw PythonException();
-//   }
-//   if (!objectAttrIsNone(_modelProperties, "g"))
-//   {
-//     PyObject * g = PyObject_GetAttrString(_modelProperties, "g");
-//     if (!g) throw PythonException();
-//     Ng = (int) PySequence_Length(g);
-//     Py_DECREF(g);
-//     if (Ng < 0) throw PythonException();
-//   }
-//   outArgs.set_Np_Ng(Np, Ng);
-//   // f attribute
-//   if (!objectAttrIsNone(_modelProperties, "f"))
-//   {
-//     outArgs.setSupports(OUT_ARG_f, true);
-//     outArgs.set_f(getEvaluationObjectAttr(_modelProperties, "f"));
-//   }
-//   // W attributes
-//   if (!objectAttrIsNone(_modelProperties, "W"))
-//   {
-//     outArgs.setSupports(OUT_ARG_W, true);
-//     if (!objectAttrIsNone(_modelProperties, "W_properties"))
-//       outArgs.set_W_properties(getDerivativePropertiesObjectAttr(_modelProperties,
-// 								 "W_properties"));
-//   }
-//   // DfDp attributes
-//   if (!objectAttrIsNone(_modelProperties, "DfDp_support"))
-//   {
-//     PyObject * DfDp_support = PyObject_GetAttrString(_modelProperties, "DfDp_support");
-//     if (!DfDp_support) throw PythonException();
-//     PyObject * DfDp_properties = PyObject_GetAttrString(_modelProperties, "DfDp_properties");
-//     if (!DfDp_properties)
-//     {
-//       Py_DECREF(DfDp_support);
-//       throw PythonException();
-//     }
-//     int n = (int) std::min(PySequence_Length(DfDp_support),
-// 			   PySequence_Length(DfDp_properties));
-//     Py_DECREF(DfDp_support);
-//     Py_DECREF(DfDp_properties);
-//     if (n < 0) throw PythonException();
-//     for (int i=0; i < n; ++i)
-//     {
-//       outArgs.setSupports(OUT_ARG_DfDp, i,
-// 			  getDerivativeSupportItemObjectAttr(_modelProperties,
-// 							     "DfDp_support", i));
-//       outArgs.set_DfDp_properties(i,
-// 				  getDerivativePropertiesItemObjectAttr(_modelProperties,
-// 									"DfDp_properties", i));
-//     }
-//   }
-//   // DgDx attributes
-//   if (!objectAttrIsNone(_modelProperties, "DgDx_support"))
-//   {
-//     PyObject * DgDx_support = PyObject_GetAttrString(_modelProperties, "DgDx_support");
-//     if (!DgDx_support) throw PythonException();
-//     PyObject * DgDx_properties = PyObject_GetAttrString(_modelProperties, "DgDx_properties");
-//     if (!DgDx_properties)
-//     {
-//       Py_DECREF(DgDx_support);
-//       throw PythonException();
-//     }
-//     int n = (int) std::min(PySequence_Length(DgDx_support),
-// 			   PySequence_Length(DgDx_properties));
-//     Py_DECREF(DgDx_support);
-//     Py_DECREF(DgDx_properties);
-//     if (n < 0) throw PythonException();
-//     for (int i=0; i < n; ++i)
-//     {
-//       outArgs.setSupports(OUT_ARG_DgDx, i,
-// 			  getDerivativeSupportItemObjectAttr(_modelProperties,
-// 							     "DgDx_support", i));
-//       outArgs.set_DgDx_properties(i,
-// 				  getDerivativePropertiesItemObjectAttr(_modelProperties,
-// 									"DgDx_properties", i));
-//     }
-//   }
-//   // DgDx_dot attributes
-//   if (!objectAttrIsNone(_modelProperties, "DgDx_dot_support"))
-//   {
-//     PyObject * DgDx_dot_support = PyObject_GetAttrString(_modelProperties,
-// 							 "DgDx_dot_support");
-//     if (!DgDx_dot_support) throw PythonException();
-//     PyObject * DgDx_dot_properties = PyObject_GetAttrString(_modelProperties,
-// 							    "DgDx_dot_properties");
-//     if (!DgDx_dot_properties)
-//     {
-//       Py_DECREF(DgDx_dot_support);
-//       throw PythonException();
-//     }
-//     int n = (int) std::min(PySequence_Length(DgDx_dot_support),
-// 			   PySequence_Length(DgDx_dot_properties));
-//     Py_DECREF(DgDx_dot_support);
-//     Py_DECREF(DgDx_dot_properties);
-//     if (n < 0) throw PythonException();
-//     for (int i=0; i < n; ++i)
-//     {
-//       outArgs.setSupports(OUT_ARG_DgDx_dot, i,
-// 			  getDerivativeSupportItemObjectAttr(_modelProperties,
-// 							     "DgDx_dot_support", i));
-//       outArgs.set_DgDx_dot_properties(
-//         i, getDerivativePropertiesItemObjectAttr(_modelProperties,
-// 						 "DgDx_dot_properties", i));
-//     }
-//   }
-//   return outArgs;
-// }
-
-// void
-// PyModelEvaluator::evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const
-// {
-//   // Convert inArgs and outArgs to a python argument list
-//   PyObject * args = Py_BuildValue("(OO)",
-// 				  convertInArgsToPython( inArgs ),
-// 				  convertOutArgsToPython(outArgs));
-
-//   // Extract and call the evalModel function
-//   PyObject * evalModelObj = PyObject_GetAttrString(_modelProperties, "modelEval");
-//   if (!evalModelObj)
-//   {
-//     Py_DECREF(args);
-//     throw PythonException();
-//   }
-//   PyObject * result = PyObject_CallObject(evalModelObj, args);
-
-//   // Exit: destruct evalModelObj and args; if result is NULL, then a
-//   // python exception occurred calling modelEval(), so throw a
-//   // PythonException; else result should be python None -- regardless,
-//   // destruct it.
-//   Py_DECREF(evalModelObj);
-//   Py_DECREF(args);
-//   if (!result) throw PythonException();
-//   Py_DECREF(result);
-// }
-
 Teuchos::RCP<const Epetra_Map>
 getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm)
 {
@@ -1059,145 +665,156 @@ convertEpetraOperatorToPython(Epetra_Operator * eo)
 PyObject *
 convertArrayOfIntToPython(const Teuchos::Array<int> & tai)
 {
-  PyObject * args = NULL;
-  int        res  = 0;
+  PyObject * args            = NULL;
+  PyObject * classTupleOfInt = NULL;
+  PyObject * result          = NULL;
+  int        res             = 0;
 
   int size = tai.size();
   args = PyTuple_New(size);
   for (int i=0; i < size; ++i)
   {
     res = PyTuple_SetItem(args, Py_ssize_t(i), PyInt_FromLong(long(i)));
-    if (res)
-    {
-      Py_DECREF(args);
-      throw PythonException();
-    }
+    if (res) goto fail;
   }
-  PyObject * classTupleOfInt = getClassFromGlobals("tuple_of_int");
-  if (!classTupleOfInt)
-  {
-    Py_DECREF(args);
-    throw PythonException();
-  }
-  PyObject * result = PyInstance_New(classTupleOfInt,args,NULL);
+  classTupleOfInt = getClassFromGlobals("tuple_of_int");
+  if (!classTupleOfInt) goto fail;
+  result = PyInstance_New(classTupleOfInt,args,NULL);
   Py_DECREF(classTupleOfInt);
   Py_DECREF(args);
-  if (!result) throw PythonException();
+  args = NULL;
+  if (!result) goto fail;
 
   return result;
+
+  fail:
+  Py_XDECREF(args);
+  return NULL;
 }
 
 PyObject *
 convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArgs)
 {
-  int res = 0;
-  PyObject * obj;
+  PyObject * classInArgs 	= NULL;
+  PyObject * inArgsObj   	= NULL;
+  PyObject * obj         	= NULL;
+  PyObject * classTupleOfVector = NULL;
+  int        res         = 0;
+  int        Np          = 0;
+  Teuchos::RCP<const Epetra_Vector> xPtr;
+  Teuchos::RCP<const Epetra_Vector> x_dotPtr;
+  Teuchos::RCP<const Epetra_Vector> pPtr;
+
   // Python class object
-  PyObject * classInArgs = getClassFromGlobals("InArgs");
-  if (!classInArgs) throw PythonException();
+  classInArgs = getClassFromGlobals("InArgs");
+  if (!classInArgs) goto fail;
 
   // Create an instance
-  obj = Py_BuildValue("()");
-  PyObject * inArgsObj  = PyInstance_New(classInArgs, obj, NULL);
+  obj       = Py_BuildValue("()");
+  inArgsObj = PyInstance_New(classInArgs, obj, NULL);
   Py_DECREF(classInArgs);
   Py_DECREF(obj);
-  if (!inArgsObj) throw PythonException();
+  obj = NULL;
+  if (!inArgsObj) goto fail;
 
   // t attribute
   obj = PyFloat_FromDouble(inArgs.get_t());
-  if (!obj) throw PythonException();
+  if (!obj) goto fail;
   res = PyObject_SetAttrString(inArgsObj, "t", obj);
   Py_DECREF(obj);
-  if (res < 0) throw PythonException();
+  obj = NULL;
+  if (res < 0) goto fail;
 
   // alpha attribute
   obj = PyFloat_FromDouble(inArgs.get_alpha());
-  if (!obj) throw PythonException();
+  if (!obj) goto fail;
   res = PyObject_SetAttrString(inArgsObj, "alpha", obj);
   Py_DECREF(obj);
-  if (res < 0) throw PythonException();
+  obj = NULL;
+  if (res < 0) goto fail;
 
   // beta attribute
   obj = PyFloat_FromDouble(inArgs.get_beta());
-  if (!obj) throw PythonException();
+  if (!obj) goto fail;
   res = PyObject_SetAttrString(inArgsObj, "beta", obj);
   Py_DECREF(obj);
-  if (res < 0) throw PythonException();
+  obj = NULL;
+  if (res < 0) goto fail;
 
   // x attribute
   if (inArgs.supports(EpetraExt::ModelEvaluator::IN_ARG_x))
   {
-    Teuchos::RCP<const Epetra_Vector> xPtr = inArgs.get_x();
-    res = PyObject_SetAttrString(inArgsObj, "x",
-				 convertEpetraVectorToPython(xPtr.get()));
-    if (res < 0) throw PythonException();
+    xPtr = inArgs.get_x();
+    res  = PyObject_SetAttrString(inArgsObj, "x",
+				  convertEpetraVectorToPython(xPtr.get()));
+    if (res < 0) goto fail;
   }
 
   // x_dot attribute
   if (inArgs.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot))
   {
-    Teuchos::RCP<const Epetra_Vector> x_dotPtr = inArgs.get_x_dot();
-    res = PyObject_SetAttrString(inArgsObj, "x_dot",
-				 convertEpetraVectorToPython(x_dotPtr.get()));
-    if (res < 0) throw PythonException();
+    x_dotPtr = inArgs.get_x_dot();
+    res      = PyObject_SetAttrString(inArgsObj, "x_dot",
+				      convertEpetraVectorToPython(x_dotPtr.get()));
+    if (res < 0) goto fail;
   }
 
   // p attribute
-  int Np = inArgs.Np();
+  Np = inArgs.Np();
   if (Np > 0)
   {
     obj = PyTuple_New(Np);
     for (int i=0; i < Np; ++i)
     {
-      Teuchos::RCP<const Epetra_Vector> pPtr = inArgs.get_p(i);
-      res = PyTuple_SetItem(obj, Py_ssize_t(i), convertEpetraVectorToPython(pPtr.get()));
-      if (res)
-      {
-	Py_DECREF(obj);
-	throw PythonException();
-      }
+      pPtr = inArgs.get_p(i);
+      res  = PyTuple_SetItem(obj, Py_ssize_t(i),
+			     convertEpetraVectorToPython(pPtr.get()));
+      if (res) goto fail;
     }
-    PyObject * classTupleOfVector = getClassFromGlobals("tuple_of_Vector");
-    if (!classTupleOfVector)
-    {
-      Py_DECREF(obj);
-      throw PythonException();
-    }
-    res = PyObject_SetAttrString(inArgsObj, "p", PyInstance_New(classTupleOfVector,obj,NULL));
+    classTupleOfVector = getClassFromGlobals("tuple_of_Vector");
+    if (!classTupleOfVector) goto fail;
+    res = PyObject_SetAttrString(inArgsObj, "p",
+				 PyInstance_New(classTupleOfVector,obj,NULL));
     Py_DECREF(classTupleOfVector);
     Py_DECREF(obj);
-    if (res) throw PythonException();
+    if (res) goto fail;
   }
 
   return inArgsObj;
+
+  fail:
+  Py_XDECREF(obj               );
+  Py_XDECREF(inArgsObj         );
+  Py_XDECREF(classTupleOfVector);
+  return NULL;
 }
 
 PyObject *
 convertEvaluationToPython(const EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval)
 {
-  PyObject * obj;
-  int res;
+  PyObject * classEvaluation = NULL;
+  PyObject * obj             = NULL;
+  PyObject * evalObj         = NULL;
+  int        res             = NULL;
+
   // Python class object
-  PyObject * classEvaluation = getClassFromGlobals("Evaluation");
-  if (!classEvaluation) throw PythonException();
+  classEvaluation = getClassFromGlobals("Evaluation");
+  if (!classEvaluation) goto fail;
 
   // Create an instance
-  obj = Py_BuildValue("()");
-  PyObject * evalObj  = PyInstance_New(classEvaluation, obj, NULL);
+  obj     = Py_BuildValue("()");
+  evalObj = PyInstance_New(classEvaluation, obj, NULL);
   Py_DECREF(classEvaluation);
   Py_DECREF(obj);
-  if (!evalObj) throw PythonException();
+  obj = NULL;
+  if (!evalObj) goto fail;
 
   // vector attribute
-  res = PyObject_SetAttrString(evalObj, "vector", convertEpetraVectorToPython(eval.get()));
-  if (res < 0)
-  {
-    Py_DECREF(evalObj);
-    throw PythonException();
-  }
+  res = PyObject_SetAttrString(evalObj, "vector",
+			       convertEpetraVectorToPython(eval.get()));
+  if (res < 0) goto fail;
 
   // type attribute
-  obj = NULL;
   switch(eval.getType())
   {
   case EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT:
@@ -1207,36 +824,41 @@ convertEvaluationToPython(const EpetraExt::ModelEvaluator::Evaluation<Epetra_Vec
   case EpetraExt::ModelEvaluator::EVAL_TYPE_VERY_APPROX_DERIV:
     obj = PyString_FromString("very_approx_deriv");
   }
+  if (!obj) goto fail;
   res = PyObject_SetAttrString(evalObj, "type", obj);
   Py_XDECREF(obj);
-  if (res < 0)
-  {
-    Py_DECREF(evalObj);
-    throw PythonException();
-  }
+  if (res < 0) goto fail;
 
   return evalObj;
+
+  fail:
+  Py_XDECREF(obj);
+  Py_XDECREF(evalObj);
+  return NULL;
 }
 
 PyObject *
 convertDerivativePropertiesToPython(const
 				    EpetraExt::ModelEvaluator::DerivativeProperties & dProps)
 {
-  PyObject * obj = NULL;
-  int        res = 0;
+  PyObject * obj                       = NULL;
+  PyObject * classDerivativeProperties = NULL;
+  PyObject * dPropsObj                 = NULL;
+  int        res                       = 0;
+
   // Python class object
-  PyObject * classDerivativeProperties = getClassFromGlobals("DerivativeProperties");
-  if (!classDerivativeProperties) throw PythonException();
+  classDerivativeProperties = getClassFromGlobals("DerivativeProperties");
+  if (!classDerivativeProperties) goto fail;
 
   // Create an instance
-  obj = Py_BuildValue("()");
-  PyObject * dPropsObj  = PyInstance_New(classDerivativeProperties, obj, NULL);
+  obj       = Py_BuildValue("()");
+  dPropsObj = PyInstance_New(classDerivativeProperties, obj, NULL);
   Py_DECREF(classDerivativeProperties);
   Py_DECREF(obj);
-  if (!dPropsObj) throw PythonException();
+  obj = NULL;
+  if (!dPropsObj) goto fail;
 
   // linearity attribute
-  obj = NULL;
   switch(dProps.linearity)
   {
   case EpetraExt::ModelEvaluator::DERIV_LINEARITY_UNKNOWN:
@@ -1246,16 +868,13 @@ convertDerivativePropertiesToPython(const
   case EpetraExt::ModelEvaluator::DERIV_LINEARITY_NONCONST:
     obj = PyString_FromString("nonconst");
   }
+  if (!obj) goto fail;
   res = PyObject_SetAttrString(dPropsObj, "linearity", obj);
-  Py_XDECREF(obj);
-  if (res < 0)
-  {
-    Py_DECREF(dPropsObj);
-    throw PythonException();
-  }
+  Py_DECREF(obj);
+  obj = NULL;
+  if (res < 0) goto fail;
 
   // rank attribute
-  obj = NULL;
   switch(dProps.rank)
   {
   case EpetraExt::ModelEvaluator::DERIV_RANK_UNKNOWN:
@@ -1265,51 +884,51 @@ convertDerivativePropertiesToPython(const
   case EpetraExt::ModelEvaluator::DERIV_RANK_DEFICIENT:
     obj = PyString_FromString("deficient");
   }
+  if (!obj) goto fail;
   res = PyObject_SetAttrString(dPropsObj, "rank", obj);
-  Py_XDECREF(obj);
-  if (res < 0)
-  {
-    Py_DECREF(dPropsObj);
-    throw PythonException();
-  }
+  Py_DECREF(obj);
+  obj = NULL;
+  if (res < 0) goto fail;
 
   // supportsAdjoint attribute
   obj = dProps.supportsAdjoint ? Py_True : Py_False;
   res = PyObject_SetAttrString(dPropsObj, "supportsAdjoint", obj);
-  if (res < 0)
-  {
-    Py_DECREF(dPropsObj);
-    throw PythonException();
-  }
+  obj = NULL;
+  if (res < 0) goto fail;
 
   return dPropsObj;
+
+  fail:
+  Py_XDECREF(obj      );
+  Py_XDECREF(dPropsObj);
+  return NULL;
 }
 
 PyObject *
 convertDerivativeMultiVectorToPython(const
 				     EpetraExt::ModelEvaluator::DerivativeMultiVector & derivMV)
 {
-  int        res = 0;
-  PyObject * obj = NULL;
+  PyObject * classDerivativeMultiVector = NULL;
+  PyObject * obj                        = NULL;
+  PyObject * derivMVObj                 = NULL;
+  int        res                        = 0;
+
   // Python class object
-  PyObject * classDerivativeMultiVector = getClassFromGlobals("DerivativeMultiVector");
-  if (!classDerivativeMultiVector) throw PythonException();
+  classDerivativeMultiVector = getClassFromGlobals("DerivativeMultiVector");
+  if (!classDerivativeMultiVector) goto fail;
 
   // Create an instance
-  obj = Py_BuildValue("()");
-  PyObject * derivMVObj  = PyInstance_New(classDerivativeMultiVector, obj, NULL);
+  obj        = Py_BuildValue("()");
+  derivMVObj = PyInstance_New(classDerivativeMultiVector, obj, NULL);
   Py_DECREF(classDerivativeMultiVector);
   Py_DECREF(obj);
-  if (!derivMVObj) throw PythonException();
+  obj = NULL;
+  if (!derivMVObj) goto fail;
 
   // mutiVector attribute
   res = PyObject_SetAttrString(derivMVObj, "multiVector",
 			       convertEpetraMultiVectorToPython(derivMV.getMultiVector().get()));
-  if (res < 0)
-  {
-    Py_DECREF(derivMVObj);
-    throw PythonException();
-  }
+  if (res < 0) goto fail;
 
   // orientation attribute
   switch(derivMV.getOrientation())
@@ -1319,144 +938,147 @@ convertDerivativeMultiVectorToPython(const
   case EpetraExt::ModelEvaluator::DERIV_TRANS_MV_BY_ROW:
     obj = PyString_FromString("trans_mv_by_row");
   }
+  if (!obj) goto fail;
   res = PyObject_SetAttrString(derivMVObj, "orientation", obj);
-  Py_XDECREF(obj);
-  if (res < 0)
-  {
-    Py_DECREF(derivMVObj);
-    throw PythonException();
-  }
+  Py_DECREF(obj);
+  obj = NULL;
+  if (res < 0) goto fail;
 
   // paramIndexes attribute
   res = PyObject_SetAttrString(derivMVObj, "paramIndexes",
 			       convertArrayOfIntToPython(derivMV.getParamIndexes()));
-  if (res < 0)
-  {
-    Py_DECREF(derivMVObj);
-    throw PythonException();
-  }
+  if (res < 0) goto fail;
 
   return derivMVObj;
+
+  fail:
+  Py_XDECREF(obj       );
+  Py_XDECREF(derivMVObj);
+  return NULL;
 }
 
 PyObject *
 convertDerivativeToPython(const
 			  EpetraExt::ModelEvaluator::Derivative & deriv)
 {
-  PyObject * obj = NULL;
-  int        res = 0;
+  PyObject 	  * classDerivative = NULL;
+  PyObject 	  * obj             = NULL;
+  PyObject 	  * derivObj        = NULL;
+  int      	    res             = 0;
+  Epetra_Operator * eo              = NULL;
+  EpetraExt::ModelEvaluator::DerivativeMultiVector dmv;
+
   // Python class object
-  PyObject * classDerivative = getClassFromGlobals("Derivative");
-  if (!classDerivative) throw PythonException();
+  classDerivative = getClassFromGlobals("Derivative");
+  if (!classDerivative) goto fail;
 
   // Create an instance
-  obj = Py_BuildValue("()");
-  PyObject * derivObj  = PyInstance_New(classDerivative, obj, NULL);
+  obj      = Py_BuildValue("()");
+  derivObj = PyInstance_New(classDerivative, obj, NULL);
   Py_DECREF(classDerivative);
   Py_DECREF(obj);
-  if (!derivObj) throw PythonException();
+  obj = NULL;
+  if (!derivObj) goto fail;
 
   // operator attribute
-  Epetra_Operator * eo = deriv.getLinearOp().get();
+  eo = deriv.getLinearOp().get();
   if (eo)
   {
-    res = PyObject_SetAttrString(derivObj, "operator", convertEpetraOperatorToPython(eo));
-    if (res < 0)
-    {
-      Py_DECREF(derivObj);
-      throw PythonException();
-    }
+    res = PyObject_SetAttrString(derivObj, "operator",
+				 convertEpetraOperatorToPython(eo));
+    if (res < 0) goto fail;
   }
 
   // derivativeMultiVector attribute
-  EpetraExt::ModelEvaluator::DerivativeMultiVector dmv = deriv.getDerivativeMultiVector();
+  dmv = deriv.getDerivativeMultiVector();
   if (dmv.getMultiVector().get())
   {
     res = PyObject_SetAttrString(derivObj, "derivativeMultiVector",
 				 convertDerivativeMultiVectorToPython(dmv));
-    if (res < 0)
-    {
-      Py_DECREF(derivObj);
-      throw PythonException();
-    }
+    if (res < 0) goto fail;
   }
 
   return derivObj;
+
+  fail:
+  Py_XDECREF(obj);
+  Py_XDECREF(derivObj);
+  return NULL;
 }
 
 PyObject *
 convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & outArgs)
 {
-  PyObject * obj = NULL;
-  int        res = 0;
+  PyObject * classOutArgs 	    = NULL;
+  PyObject * obj          	    = NULL;
+  PyObject * outArgsObj   	    = NULL;
+  PyObject * classTupleOfEvaluation = NULL;
+  int        res	            = 0;
+  int        Ng 	            = 0;
+
   // Python class object
-  PyObject * classOutArgs = getClassFromGlobals("OutArgs");
-  if (!classOutArgs) throw PythonException();
+  classOutArgs = getClassFromGlobals("OutArgs");
+  if (!classOutArgs) goto fail;
 
   // Create an instance
-  obj = Py_BuildValue("()");
-  PyObject * outArgsObj  = PyInstance_New(classOutArgs, obj, NULL);
+  obj        = Py_BuildValue("()");
+  outArgsObj = PyInstance_New(classOutArgs, obj, NULL);
   Py_DECREF(classOutArgs);
   Py_DECREF(obj);
-  if (!outArgsObj) throw PythonException();
+  obj = NULL;
+  if (!outArgsObj) goto fail;
 
   // g attribute
-  int Ng = outArgs.Ng();
+  Ng = outArgs.Ng();
   if (Ng > 0)
   {
     obj = PyTuple_New(Ng);
     for (int i=0; i < Ng; ++i)
     {
-      const EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval =
-	outArgs.get_g(i);
-      res = PyTuple_SetItem(obj, Py_ssize_t(i), convertEvaluationToPython(eval));
-      if (res)
-      {
-	Py_DECREF(obj);
-	throw PythonException();
-      }
+      res = PyTuple_SetItem(obj, Py_ssize_t(i),
+			    convertEvaluationToPython(outArgs.get_g(i)));
+      if (res) goto fail;
     }
-    PyObject * classTupleOfEvaluation = getClassFromGlobals("tuple_of_Evaluation");
-    if (!classTupleOfEvaluation)
-    {
-      Py_DECREF(obj);
-      throw PythonException();
-    }
+    classTupleOfEvaluation = getClassFromGlobals("tuple_of_Evaluation");
+    if (!classTupleOfEvaluation) goto fail;
     res = PyObject_SetAttrString(outArgsObj, "g",
 				 PyInstance_New(classTupleOfEvaluation,obj,NULL));
     Py_DECREF(classTupleOfEvaluation);
     Py_DECREF(obj);
-    if (res) throw PythonException();
+    obj = NULL;
+    if (res) goto fail;
   }
 
   // f attribute
   if (outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_f))
   {
-    const EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> eval =
-      outArgs.get_f();
-    res = PyObject_SetAttrString(outArgsObj, "f", convertEvaluationToPython(eval));
-    if (res) throw PythonException();
+    res = PyObject_SetAttrString(outArgsObj, "f",
+				 convertEvaluationToPython(outArgs.get_f()));
+    if (res) goto fail;
   }
 
   // W attribute
   if (outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_W))
   {
-    Teuchos::RCP<Epetra_Operator> eo = outArgs.get_W();
-    res = PyObject_SetAttrString(outArgsObj, "W", convertEpetraOperatorToPython(eo.get()));
-    if (res) throw PythonException();
+    res = PyObject_SetAttrString(outArgsObj, "W",
+				 convertEpetraOperatorToPython(outArgs.get_W().get()));
+    if (res) goto fail;
   }
 
   // W_properties attribute
   if (outArgs.supports(EpetraExt::ModelEvaluator::OUT_ARG_W))
   {
-    const EpetraExt::ModelEvaluator::DerivativeProperties W_properties =
-      outArgs.get_W_properties();
     res = PyObject_SetAttrString(outArgsObj, "W_properties",
-				 convertDerivativePropertiesToPython(W_properties));
-    if (res) throw PythonException();
+				 convertDerivativePropertiesToPython(outArgs.get_W_properties()));
+    if (res) goto fail;
   }  
 
   return outArgsObj;
+
+  fail:
+  Py_XDECREF(obj       );
+  Py_XDECREF(outArgsObj);
+  return NULL;
 }
 
 EpetraExt::ModelEvaluator::InArgs
@@ -1474,10 +1096,7 @@ convertInArgsFromPython(PyObject * source)
       result.set_x(getConstEpetraVectorObjectAttr(source, "x"));
       result.setSupports(EpetraExt::ModelEvaluator::IN_ARG_x, true);
     }
-    catch(PythonException &e)
-    {
-      PyErr_Clear();
-    }
+    catch(PythonException &e) { }
   }
 
   // x_dot attribute
@@ -1490,10 +1109,7 @@ convertInArgsFromPython(PyObject * source)
       result.set_x(getConstEpetraVectorObjectAttr(source, "x_dot"));
       result.setSupports(EpetraExt::ModelEvaluator::IN_ARG_x_dot, true);
     }
-    catch(PythonException &e)
-    {
-      PyErr_Clear();
-    }
+    catch(PythonException &e) { }
   }
 
   // p attribute

@@ -252,11 +252,11 @@ indicates the local element ID that the point belongs to."
       goto fail;
     }
     returnObj = Py_BuildValue("(OOO)",PIDArray,LIDArray,sizeArray);
-    if (is_new) Py_DECREF(GIDArray );
+    if (is_new) { Py_DECREF(GIDArray); }
     return returnObj;
 
   fail:
-    if (is_new) Py_XDECREF(GIDArray );
+    if (is_new) { Py_XDECREF(GIDArray); }
     Py_XDECREF(PIDArray );
     Py_XDECREF(LIDArray );
     Py_XDECREF(sizeArray);

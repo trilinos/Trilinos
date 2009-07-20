@@ -302,15 +302,15 @@ or it will hang your code."
 {
   // The __str__() method is used by the python str() operator on any
   // object given to the python print command.
-  std::string __str__()
+  PyObject * __str__()
   {
     std::ostringstream os;
-    self->Print(os);             // Put the output in os
-    std::string s = os.str();    // Extract the string from os
-    int last = s.length();       // Get the last index
+    self->Print(os);               // Put the output in os
+    std::string s = os.str();      // Extract the string from os
+    Py_ssize_t last = s.length();  // Get the last index
     if (s.substr(last) == "\n")
-      last-=1;                   // Ignore any trailing newline
-    return s.substr(0,last);     // Return the string
+      last-=1;                     // Ignore any trailing newline
+    return PyString_FromStringAndSize(s.c_str(),last);  // Return the string as a PyObject
   }
   // The Epetra_Object::Print(ostream) method will be ignored and
   // replaced by a Print() method here that takes a python file object

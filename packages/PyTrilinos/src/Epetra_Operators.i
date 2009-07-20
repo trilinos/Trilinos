@@ -121,14 +121,14 @@
     }
 
     // Object cleanup
-    if (newRows) Py_DECREF(rowArray);
-    if (newCols) Py_DECREF(colArray);
-    if (newVals) Py_DECREF(valArray);
+    if (newRows) { Py_DECREF(rowArray); }
+    if (newCols) { Py_DECREF(colArray); }
+    if (newVals) { Py_DECREF(valArray); }
     return result;
   fail:
-    if (newRows) Py_XDECREF(rowArray);
-    if (newCols) Py_XDECREF(colArray);
-    if (newVals) Py_XDECREF(valArray);
+    if (newRows) { Py_XDECREF(rowArray); }
+    if (newCols) { Py_XDECREF(colArray); }
+    if (newVals) { Py_XDECREF(valArray); }
     return -1;
   }
 }
@@ -220,14 +220,14 @@
     }
 
     // Object cleanup
-    if (newRows) Py_DECREF(rowArray);
-    if (newCols) Py_DECREF(colArray);
-    if (newVals) Py_DECREF(valArray);
+    if (newRows) { Py_DECREF(rowArray); }
+    if (newCols) { Py_DECREF(colArray); }
+    if (newVals) { Py_DECREF(valArray); }
     return result;
   fail:
-    if (newRows) Py_XDECREF(rowArray);
-    if (newCols) Py_XDECREF(colArray);
-    if (newVals) Py_XDECREF(valArray);
+    if (newRows) { Py_XDECREF(rowArray); }
+    if (newCols) { Py_XDECREF(colArray); }
+    if (newVals) { Py_XDECREF(valArray); }
     return -1;
   }
 }

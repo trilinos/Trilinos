@@ -106,7 +106,8 @@ PyObject* methodName(PyObject* partialObj)
   globalObj = PyArray_SimpleNew(array_numdims(partialArray),
 				array_dimensions(partialArray), type);
   PyArray_FILLWBYTE(globalObj, 0);
-  if (type == NPY_INT) {
+  if (type == NPY_INT)
+  {
     int* partialVals = (int*) array_data(partialArray);
     int* globalVals  = (int*) array_data(globalObj);
     result = self->methodName(partialVals,globalVals,count);
@@ -134,10 +135,10 @@ PyObject* methodName(PyObject* partialObj)
     PyErr_Format(PyExc_RuntimeError, "methodName returned error code %d", result);
     goto fail;
   }
-  if (is_new_object && partialArray) Py_DECREF(partialArray);
+  if (is_new_object && partialArray) { Py_DECREF(partialArray); }
   return PyArray_Return((PyArrayObject*)globalObj);
   fail:
-  if (is_new_object && partialArray) Py_DECREF(partialArray);
+  if (is_new_object && partialArray) { Py_DECREF(partialArray); }
   Py_XDECREF(globalObj);
   return NULL;
 }
@@ -252,10 +253,10 @@ PyObject* methodName(PyObject* partialObj)
       PyErr_Format(PyExc_RuntimeError, "GatherAll returned error code %d", result);
       goto fail;
     }
-    if (is_new_object && myArray) Py_DECREF(myArray);
+    if (is_new_object && myArray) { Py_DECREF(myArray); }
     return PyArray_Return((PyArrayObject*)allObj);
   fail:
-    if (is_new_object && myArray) Py_DECREF(myArray);
+    if (is_new_object && myArray) { Py_DECREF(myArray); }
     Py_XDECREF(allObj);
     return NULL;
   }

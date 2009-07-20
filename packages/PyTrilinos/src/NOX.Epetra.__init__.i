@@ -99,6 +99,7 @@ NOX.Epetra provides the following user-level classes:
 #undef HAVE_INTTYPES_H
 #undef HAVE_SYS_TIME_H
 #include "NOX_Epetra_LinearSystem_AztecOO.H"
+#include "NOX_Epetra_ModelEvaluatorInterface.H"
 
 // Local includes
 #define NO_IMPORT_ARRAY
@@ -356,6 +357,12 @@ namespace Epetra
 // NOX.Epetra.LinearSystemAztecOO support //
 ////////////////////////////////////////////
 %include "NOX_Epetra_LinearSystem_AztecOO.H"
+
+////////////////////////////////////////////////
+// NOX.Epetra.ModelEvaluatorInterface support //
+////////////////////////////////////////////////
+%teuchos_rcp_typemaps(EpetraExt::ModelEvaluator)
+%include "NOX_Epetra_ModelEvaluatorInterface.H"
 
 // Turn off the exception handling
 %exception;

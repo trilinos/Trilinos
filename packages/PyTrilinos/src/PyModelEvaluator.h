@@ -48,73 +48,21 @@ class PyModelEvaluator : public EpetraExt::ModelEvaluator
 {
 public:
 
-//   // Constructor
-//   PyModelEvaluator(PyObject* modelProperties);
+  virtual InArgs createInArgs() const = 0;
 
-//   // Destructor
-//   ~PyModelEvaluator();
+  virtual OutArgs createOutArgs() const = 0;
 
-//   //
-//   Teuchos::RCP<const Epetra_Map> get_x_map() const;
-//   //
-//   Teuchos::RCP<const Epetra_Map> get_f_map() const;
-//   //
-//   Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
-//   //
-//   //Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
-//   //
-//   Teuchos::RCP<const Epetra_Map> get_g_map(int j) const;
-//   //
-//   Teuchos::RCP<const Epetra_Vector> get_x_init() const;
-//   //
-//   Teuchos::RCP<const Epetra_Vector> get_x_dot_init() const;
-//   //
-//   Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
-//   //
-//   double get_t_init() const;
-//   //
-//   Teuchos::RCP<const Epetra_Vector> get_x_lower_bounds() const;
-//   //
-//   Teuchos::RCP<const Epetra_Vector> get_x_upper_bounds() const;
-//   //
-//   Teuchos::RCP<const Epetra_Vector> get_p_lower_bounds(int l) const;
-//   //
-//   Teuchos::RCP<const Epetra_Vector> get_p_upper_bounds(int l) const;
-//   //
-//   double get_t_lower_bound() const;
-//   //
-//   double get_t_upper_bound() const;
-//   //
-//   Teuchos::RCP<Epetra_Operator> create_W() const;
-//   //
-//   Teuchos::RCP<Epetra_Operator> create_DfDp_op(int l) const;
-//   //
-//   Teuchos::RCP<Epetra_Operator> create_DgDx_dot_op(int j) const;
-//   //
-//   Teuchos::RCP<Epetra_Operator> create_DgDx_op(int j) const;
-//   //
-//   //Teuchos::RCP<Epetra_Operator> create_DgDp_op( int j, int l ) const;
-//   //
-//   InArgs createInArgs() const;
-//   //
-//   OutArgs createOutArgs() const;
-//   //
-//   void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
-//   //
+  virtual void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const = 0;
+
   friend InArgs convertInArgsFromPython(PyObject * source);
 
   friend OutArgs convertOutArgsFromPython(PyObject * source);
-
-// private:
-//   PyObject* _modelProperties;
 
 };
 
 // Helper functions.  These are not intended to be wrapped, so I
 // protect them with the following preprocessor directive:
 #ifndef SWIG
-
-Teuchos::RCP<const Epetra_Map> getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm);
 
 PyObject * getObjectFromGlobals(CONST char * name);
 
@@ -131,6 +79,9 @@ int getIntObjectAttr(PyObject * object, CONST char * name);
 double getFloatObjectAttr(PyObject * object, CONST char * name);
 
 CONST char* getStringObjectAttr(PyObject * object, CONST char * name);
+
+Teuchos::RCP<const Epetra_Map>
+getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm);
 
 Teuchos::RCP<Epetra_Vector>
 getEpetraVectorObjectAttr(PyObject * object, CONST char * name);
@@ -219,4 +170,4 @@ convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & outArgs);
 
 #endif // SWIG
 
-#endif // PY_MODEL_EVALUATOR_HPP
+#endif // PY_MODEL_EVALUATOR_H
