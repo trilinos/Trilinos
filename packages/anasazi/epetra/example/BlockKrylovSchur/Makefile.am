@@ -58,9 +58,13 @@ endif
 
 if BUILD_EPETRAEXT
 ANASAZI_BIRAM_EX_FILE = BlockKrylovSchurEpetraExFile
+if BUILD_AMESOS
+ANASAZI_BIRAM_EX_BUCKLING = BlockKrylovSchurEpetraExBuckling
+endif
 endif 
 
-noinst_PROGRAMS = BlockKrylovSchurEpetraEx BlockKrylovSchurEpetraExSVD $(ANASAZI_BIRAM_EX_FILE) $(ANASAZI_BIRAM_EX_SI_AZTECOO) $(ANASAZI_BIRAM_EX_SI_BELOS) $(ANASAZI_BIRAM_EX_SI_AMESOS)
+
+noinst_PROGRAMS = BlockKrylovSchurEpetraEx BlockKrylovSchurEpetraExSVD $(ANASAZI_BIRAM_EX_FILE) $(ANASAZI_BIRAM_EX_SI_AZTECOO) $(ANASAZI_BIRAM_EX_SI_BELOS) $(ANASAZI_BIRAM_EX_SI_AMESOS) $(ANASAZI_BIRAM_EX_BUCKLING)
 
 BlockKrylovSchurEpetraEx_SOURCES = $(srcdir)/BlockKrylovSchurEpetraEx.cpp
 
@@ -73,6 +77,8 @@ BlockKrylovSchurEpetraExGenAztecOO_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExG
 BlockKrylovSchurEpetraExGenBelos_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGenBelos.cpp
 
 BlockKrylovSchurEpetraExGenAmesos_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGenAmesos.cpp
+
+BlockKrylovSchurEpetraExBuckling_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -152,6 +158,22 @@ BlockKrylovSchurEpetraExGenAmesos_CXXFLAGS = \
 
 #np# List libraries that np is dependent on.
 BlockKrylovSchurEpetraExGenAmesos_LDADD = \
+	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS) $(TEUCHOS_MPI_LIBS) $(TEUCHOS_BLAS_LIBS)
+ 
+BlockKrylovSchurEpetraExBuckling_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../amesos/src/libamesos.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+BlockKrylovSchurEpetraExBuckling_CXXFLAGS = \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/epetra/util/ModeLaplace
+
+#np# List libraries that np is dependent on.
+BlockKrylovSchurEpetraExBuckling_LDADD = \
 	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
 	$(EXPORT_LIBS) $(TEUCHOS_MPI_LIBS) $(TEUCHOS_BLAS_LIBS)
 

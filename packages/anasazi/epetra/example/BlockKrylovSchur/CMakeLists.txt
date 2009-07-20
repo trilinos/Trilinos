@@ -37,6 +37,16 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos)
     COMM serial mpi
     )
 
+IF (${PACKAGE_NAME}_ENABLE_EpetraExt)
+
+  PACKAGE_ADD_EXECUTABLE(
+    Epetra_BKS_Buckling_example
+    SOURCES BlockKrylovSchurEpetraExBuckling.cpp
+    COMM serial mpi
+    )
+
+ENDIF(${PACKAGE_NAME}_ENABLE_EpetraExt)
+
 ENDIF(${PACKAGE_NAME}_ENABLE_Amesos)
 
 IF (${PACKAGE_NAME}_ENABLE_AztecOO)

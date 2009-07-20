@@ -63,7 +63,8 @@ host_triplet = @host@
 target_triplet = @target@
 noinst_PROGRAMS = BlockKrylovSchurEpetraEx$(EXEEXT) \
 	BlockKrylovSchurEpetraExSVD$(EXEEXT) $(am__EXEEXT_1) \
-	$(am__EXEEXT_2) $(am__EXEEXT_3) $(am__EXEEXT_4)
+	$(am__EXEEXT_2) $(am__EXEEXT_3) $(am__EXEEXT_4) \
+	$(am__EXEEXT_5)
 subdir = epetra/example/BlockKrylovSchur
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -99,6 +100,7 @@ CONFIG_CLEAN_FILES =
 @BUILD_BELOS_TRUE@@BUILD_IFPACK_TRUE@am__EXEEXT_3 = BlockKrylovSchurEpetraExGenBelos$(EXEEXT)
 @BUILD_AMESOS_TRUE@am__EXEEXT_4 =  \
 @BUILD_AMESOS_TRUE@	BlockKrylovSchurEpetraExGenAmesos$(EXEEXT)
+@BUILD_AMESOS_TRUE@@BUILD_EPETRAEXT_TRUE@am__EXEEXT_5 = BlockKrylovSchurEpetraExBuckling$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
 am_BlockKrylovSchurEpetraEx_OBJECTS =  \
 	BlockKrylovSchurEpetraEx-BlockKrylovSchurEpetraEx.$(OBJEXT)
@@ -111,6 +113,12 @@ am__DEPENDENCIES_1 =
 BlockKrylovSchurEpetraEx_LINK = $(CXXLD) \
 	$(BlockKrylovSchurEpetraEx_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_BlockKrylovSchurEpetraExBuckling_OBJECTS = BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.$(OBJEXT)
+BlockKrylovSchurEpetraExBuckling_OBJECTS =  \
+	$(am_BlockKrylovSchurEpetraExBuckling_OBJECTS)
+BlockKrylovSchurEpetraExBuckling_LINK = $(CXXLD) \
+	$(BlockKrylovSchurEpetraExBuckling_CXXFLAGS) $(CXXFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_BlockKrylovSchurEpetraExFile_OBJECTS = BlockKrylovSchurEpetraExFile-BlockKrylovSchurEpetraExFile.$(OBJEXT)
 BlockKrylovSchurEpetraExFile_OBJECTS =  \
 	$(am_BlockKrylovSchurEpetraExFile_OBJECTS)
@@ -150,12 +158,14 @@ CXXLD = $(CXX)
 CXXLINK = $(CXXLD) $(AM_CXXFLAGS) $(CXXFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
 	-o $@
 SOURCES = $(BlockKrylovSchurEpetraEx_SOURCES) \
+	$(BlockKrylovSchurEpetraExBuckling_SOURCES) \
 	$(BlockKrylovSchurEpetraExFile_SOURCES) \
 	$(BlockKrylovSchurEpetraExGenAmesos_SOURCES) \
 	$(BlockKrylovSchurEpetraExGenAztecOO_SOURCES) \
 	$(BlockKrylovSchurEpetraExGenBelos_SOURCES) \
 	$(BlockKrylovSchurEpetraExSVD_SOURCES)
 DIST_SOURCES = $(BlockKrylovSchurEpetraEx_SOURCES) \
+	$(BlockKrylovSchurEpetraExBuckling_SOURCES) \
 	$(BlockKrylovSchurEpetraExFile_SOURCES) \
 	$(BlockKrylovSchurEpetraExGenAmesos_SOURCES) \
 	$(BlockKrylovSchurEpetraExGenAztecOO_SOURCES) \
@@ -297,12 +307,14 @@ AM_CPPFLAGS = $(EXPORT_INC_PATH)
 @BUILD_AZTECOO_TRUE@@BUILD_IFPACK_TRUE@ANASAZI_BIRAM_EX_SI_AZTECOO = BlockKrylovSchurEpetraExGenAztecOO
 @BUILD_AMESOS_TRUE@ANASAZI_BIRAM_EX_SI_AMESOS = BlockKrylovSchurEpetraExGenAmesos
 @BUILD_EPETRAEXT_TRUE@ANASAZI_BIRAM_EX_FILE = BlockKrylovSchurEpetraExFile
+@BUILD_AMESOS_TRUE@@BUILD_EPETRAEXT_TRUE@ANASAZI_BIRAM_EX_BUCKLING = BlockKrylovSchurEpetraExBuckling
 BlockKrylovSchurEpetraEx_SOURCES = $(srcdir)/BlockKrylovSchurEpetraEx.cpp
 BlockKrylovSchurEpetraExSVD_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExSVD.cpp
 BlockKrylovSchurEpetraExFile_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExFile.cpp
 BlockKrylovSchurEpetraExGenAztecOO_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGenAztecOO.cpp
 BlockKrylovSchurEpetraExGenBelos_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGenBelos.cpp
 BlockKrylovSchurEpetraExGenAmesos_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExGenAmesos.cpp
+BlockKrylovSchurEpetraExBuckling_SOURCES = $(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp
 
 #np# - List libraries that np is dependent on.  The DEPENDENCIES primary is
 #np# optional.
@@ -386,6 +398,23 @@ BlockKrylovSchurEpetraExGenAmesos_LDADD = \
 	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
 	$(EXPORT_LIBS) $(TEUCHOS_MPI_LIBS) $(TEUCHOS_BLAS_LIBS)
 
+BlockKrylovSchurEpetraExBuckling_DEPENDENCIES = \
+	$(top_builddir)/src/libanasazi.a \
+	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
+	$(top_builddir)/../amesos/src/libamesos.a \
+	$(top_builddir)/../epetra/src/libepetra.a \
+	$(top_builddir)/../teuchos/src/libteuchos.a
+
+BlockKrylovSchurEpetraExBuckling_CXXFLAGS = \
+	-I$(top_srcdir)/src \
+	-I$(top_srcdir)/epetra/util/ModeLaplace
+
+
+#np# List libraries that np is dependent on.
+BlockKrylovSchurEpetraExBuckling_LDADD = \
+	$(top_builddir)/epetra/util/ModeLaplace/libModeLaplace.a \
+	$(EXPORT_LIBS) $(TEUCHOS_MPI_LIBS) $(TEUCHOS_BLAS_LIBS)
+
 
 #np# Set "SUBDIRS= (list all subdirectories that are autotool'ed here)"
 #np# List all subdirectories even if one or more are configured/built only
@@ -434,6 +463,9 @@ clean-noinstPROGRAMS:
 BlockKrylovSchurEpetraEx$(EXEEXT): $(BlockKrylovSchurEpetraEx_OBJECTS) $(BlockKrylovSchurEpetraEx_DEPENDENCIES) 
 	@rm -f BlockKrylovSchurEpetraEx$(EXEEXT)
 	$(BlockKrylovSchurEpetraEx_LINK) $(BlockKrylovSchurEpetraEx_OBJECTS) $(BlockKrylovSchurEpetraEx_LDADD) $(LIBS)
+BlockKrylovSchurEpetraExBuckling$(EXEEXT): $(BlockKrylovSchurEpetraExBuckling_OBJECTS) $(BlockKrylovSchurEpetraExBuckling_DEPENDENCIES) 
+	@rm -f BlockKrylovSchurEpetraExBuckling$(EXEEXT)
+	$(BlockKrylovSchurEpetraExBuckling_LINK) $(BlockKrylovSchurEpetraExBuckling_OBJECTS) $(BlockKrylovSchurEpetraExBuckling_LDADD) $(LIBS)
 BlockKrylovSchurEpetraExFile$(EXEEXT): $(BlockKrylovSchurEpetraExFile_OBJECTS) $(BlockKrylovSchurEpetraExFile_DEPENDENCIES) 
 	@rm -f BlockKrylovSchurEpetraExFile$(EXEEXT)
 	$(BlockKrylovSchurEpetraExFile_LINK) $(BlockKrylovSchurEpetraExFile_OBJECTS) $(BlockKrylovSchurEpetraExFile_LDADD) $(LIBS)
@@ -457,6 +489,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockKrylovSchurEpetraEx-BlockKrylovSchurEpetraEx.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockKrylovSchurEpetraExFile-BlockKrylovSchurEpetraExFile.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockKrylovSchurEpetraExGenAmesos-BlockKrylovSchurEpetraExGenAmesos.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/BlockKrylovSchurEpetraExGenAztecOO-BlockKrylovSchurEpetraExGenAztecOO.Po@am__quote@
@@ -490,6 +523,20 @@ BlockKrylovSchurEpetraEx-BlockKrylovSchurEpetraEx.obj: $(srcdir)/BlockKrylovSchu
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockKrylovSchurEpetraEx.cpp' object='BlockKrylovSchurEpetraEx-BlockKrylovSchurEpetraEx.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockKrylovSchurEpetraEx_CXXFLAGS) $(CXXFLAGS) -c -o BlockKrylovSchurEpetraEx-BlockKrylovSchurEpetraEx.obj `if test -f '$(srcdir)/BlockKrylovSchurEpetraEx.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockKrylovSchurEpetraEx.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockKrylovSchurEpetraEx.cpp'; fi`
+
+BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.o: $(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockKrylovSchurEpetraExBuckling_CXXFLAGS) $(CXXFLAGS) -MT BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.o -MD -MP -MF $(DEPDIR)/BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.Tpo -c -o BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.o `test -f '$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.Tpo $(DEPDIR)/BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp' object='BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockKrylovSchurEpetraExBuckling_CXXFLAGS) $(CXXFLAGS) -c -o BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.o `test -f '$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp
+
+BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.obj: $(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp
+@am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockKrylovSchurEpetraExBuckling_CXXFLAGS) $(CXXFLAGS) -MT BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.obj -MD -MP -MF $(DEPDIR)/BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.Tpo -c -o BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.obj `if test -f '$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp'; fi`
+@am__fastdepCXX_TRUE@	mv -f $(DEPDIR)/BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.Tpo $(DEPDIR)/BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp' object='BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockKrylovSchurEpetraExBuckling_CXXFLAGS) $(CXXFLAGS) -c -o BlockKrylovSchurEpetraExBuckling-BlockKrylovSchurEpetraExBuckling.obj `if test -f '$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp'; then $(CYGPATH_W) '$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/BlockKrylovSchurEpetraExBuckling.cpp'; fi`
 
 BlockKrylovSchurEpetraExFile-BlockKrylovSchurEpetraExFile.o: $(srcdir)/BlockKrylovSchurEpetraExFile.cpp
 @am__fastdepCXX_TRUE@	$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(BlockKrylovSchurEpetraExFile_CXXFLAGS) $(CXXFLAGS) -MT BlockKrylovSchurEpetraExFile-BlockKrylovSchurEpetraExFile.o -MD -MP -MF $(DEPDIR)/BlockKrylovSchurEpetraExFile-BlockKrylovSchurEpetraExFile.Tpo -c -o BlockKrylovSchurEpetraExFile-BlockKrylovSchurEpetraExFile.o `test -f '$(srcdir)/BlockKrylovSchurEpetraExFile.cpp' || echo '$(srcdir)/'`$(srcdir)/BlockKrylovSchurEpetraExFile.cpp
