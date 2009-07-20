@@ -386,7 +386,9 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, GRAPH_EVAL *graph)
       nbor_part = nbors_part[k];
 
       if (ewgt_dim > 0){
-        obj_edge_weights += ewgts[k * ewgt_dim];  /* "hypergraph" weight */
+        /* "hypergraph" edge weight is max of the relevant graph edge weights */
+        if (ewgts[k * ewgt_dim] > obj_edge_weights)
+           obj_edge_weights = ewgts[k * ewgt_dim];  
       }
       else{
         obj_edge_weights = 1.0;
