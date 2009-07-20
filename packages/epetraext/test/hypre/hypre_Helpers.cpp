@@ -39,7 +39,7 @@
 #include <vector>
 #include <map>
 
-EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix MatrixConstructor(const int N, const int type)
+EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix* newHypreMatrix(const int N, const int type)
 {
   HYPRE_IJMatrix Matrix;
   int ierr = 0;
@@ -148,15 +148,15 @@ EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix MatrixConstructor(const int N, 
   }
   // Assemble
   ierr += HYPRE_IJMatrixAssemble(Matrix);
-  EpetraExt_HypreIJMatrix RetMat(Matrix);
+  EpetraExt_HypreIJMatrix* RetMat = new EpetraExt_HypreIJMatrix(Matrix);
   //Don't HYPRE_IJMatrixDestroy(Matrix);
   return RetMat;
 }
 
-Epetra_CrsMatrix::Epetra_CrsMatrix GetCrsMatrix(EpetraExt_HypreIJMatrix &Matrix)
+Epetra_CrsMatrix::Epetra_CrsMatrix* newCrsMatrix(EpetraExt_HypreIJMatrix &Matrix)
 {
   int N = Matrix.NumGlobalRows();
-  Epetra_CrsMatrix TestMat(Copy, Matrix.RowMatrixRowMap(), Matrix.RowMatrixColMap(), N, false);
+  Epetra_CrsMatrix* TestMat = new Epetra_CrsMatrix(Copy, Matrix.RowMatrixRowMap(), Matrix.RowMatrixColMap(), N, false);
   
   for(int i = 0; i < Matrix.NumMyRows(); i++){
     int entries;
@@ -170,10 +170,10 @@ Epetra_CrsMatrix::Epetra_CrsMatrix GetCrsMatrix(EpetraExt_HypreIJMatrix &Matrix)
       currVal[0] = Values[j];
       int currInd[1];
       currInd[0] = Matrix.RowMatrixColMap().GID(Indices[j]);
-      TestMat.InsertGlobalValues(Matrix.RowMatrixRowMap().GID(i), 1, currVal, currInd);
+      TestMat->InsertGlobalValues(Matrix.RowMatrixRowMap().GID(i), 1, currVal, currInd);
     }
   }
-  TestMat.FillComplete();
+  TestMat->FillComplete();
   return TestMat;
 }
 

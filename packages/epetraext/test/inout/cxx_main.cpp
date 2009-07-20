@@ -80,6 +80,8 @@ int checkValues( double x, double y, string message = "", bool verbose = false) 
 }
 int runTests(Epetra_Map & map, Epetra_CrsMatrix & A, Epetra_Vector & x, Epetra_Vector & b, Epetra_Vector & xexact, bool verbose);
 int runOperatorTests(Epetra_Operator & A, bool verbose);
+int generateHyprePrintOut(const char* filename, const Epetra_Comm &comm);
+int runHypreTest(Epetra_CrsMatrix &A);
 
 int main(int argc, char *argv[]) {
 
@@ -164,11 +166,28 @@ int main(int argc, char *argv[]) {
   Poisson2dOperator Op(nx1, ny1, comm);
   ierr += runOperatorTests(Op, verbose);
 
+  generateHyprePrintOut("MyMatrixFile", comm);
+
+  EPETRA_CHK_ERR(EpetraExt::HypreFileToCrsMatrix("MyMatrixFile", comm, A));
+  
+  runHypreTest(*A);
+  delete A;
+
   #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif
 
   return(ierr);
+}
+
+int runHypreTest(Epetra_CrsMatrix &A){
+  
+  Epetra_Vector X(A.RowMap());
+  EPETRA_CHK_ERR(X.Random());
+  Epetra_Vector Y(A.RowMap());
+  EPETRA_CHK_ERR(A.Multiply(false, X, Y));
+  
+  return 0;
 }
 
 int runTests(Epetra_Map & map, Epetra_CrsMatrix & A, Epetra_Vector & x, Epetra_Vector & b, Epetra_Vector & xexact, bool verbose) {
@@ -402,4 +421,38 @@ int runOperatorTests(Epetra_Operator & A, bool verbose) {
   delete A2;
 
   return(ierr);
+}
+
+int generateHyprePrintOut(const char *filename, const Epetra_Comm &comm){
+  int MyPID = comm.MyPID();
+  int NumProc = comm.NumProc();
+
+  int N = 100;
+  int ilower = MyPID * (N/NumProc);
+  int iupper = (MyPID+1)*(N/NumProc)-1;
+
+  double filePID = (double)MyPID/(double)100000;
+  std::ostringstream stream;
+  // Using setprecision() puts it in the string
+  stream << std::setiosflags(std::ios::fixed) << std::setprecision(5) << filePID;
+  // Then just ignore the first character
+  std::string fileName(filename);
+  fileName += stream.str().substr(1,7);
+
+  std::ofstream myfile(fileName.c_str());
+
+  if(myfile.is_open()){
+    myfile << ilower << " " << iupper << " " << ilower << " " << iupper << endl;
+    for(int i = ilower; i <= iupper; i++){
+      for(int j=i-5; j <= i+5; j++){
+        if(j >= 0 && j < N)
+          myfile << i << " " << j << " " << (double)rand()/(double)RAND_MAX << endl;
+      }
+    }
+    myfile.close();
+    return 0;
+  } else {
+    cout << "\nERROR:\nCouldn't open file.\n";
+    return -1;
+  }
 }

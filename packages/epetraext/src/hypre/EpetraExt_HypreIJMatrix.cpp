@@ -40,11 +40,7 @@
 
 //=======================================================
 EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix(HYPRE_IJMatrix matrix)
-#ifdef HAVE_MPI
   : Epetra_BasicRowMatrix(Epetra_MpiComm(hypre_IJMatrixComm(matrix))),
-#else
-  : Epetra_BasicRowMatrix(Epetra_SerialComm()),
-#endif
     Matrix_(matrix),
     ParMatrix_(0),
     NumMyRows_(-1),

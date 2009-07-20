@@ -335,6 +335,9 @@ class EpetraExt_HypreIJMatrix: public Epetra_BasicRowMatrix  {
   */
     int NumMyRowEntries(int MyRow, int & NumEntries) const;
 
+    HYPRE_IJMatrix& GetMatrix(){ return Matrix_;}
+
+
   //@}
  protected:
 

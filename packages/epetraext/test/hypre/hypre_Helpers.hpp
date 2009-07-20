@@ -38,9 +38,9 @@
 
 #include <string>
 
-EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix MatrixConstructor(int N, int type);
+EpetraExt_HypreIJMatrix::EpetraExt_HypreIJMatrix* newHypreMatrix(int N, int type);
 
-Epetra_CrsMatrix::Epetra_CrsMatrix GetCrsMatrix(EpetraExt_HypreIJMatrix &Matrix);
+Epetra_CrsMatrix::Epetra_CrsMatrix* newCrsMatrix(EpetraExt_HypreIJMatrix &Matrix);
 
 bool EquivalentVectors(Epetra_MultiVector &X, Epetra_MultiVector &Y, double tol);
 

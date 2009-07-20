@@ -196,6 +196,20 @@ must be integer values and in those in the third column must be floating point f
   */
   int MatrixMarketFileToCrsMatrix(const char *filename, const Epetra_Map & rowMap, const Epetra_Map & colMap,
 				  const Epetra_Map& rangeMap, const Epetra_Map& domainMap, Epetra_CrsMatrix * & A, const bool transpose=0, const bool verbose=0);
+
+  //! Constructs an Epetra_CrsMatrix object from a Hypre Matrix Print command, the row map is specified.
+  /*! Reads an Epetra_CrsMatrix object from a Hypre Matrix Printout, the matrix should be square.
+
+      \param filename (In) A filename not without the processor id extension, including path if desired.
+
+      \param comm (In) An Epetra_Comm object describing the communication among processors.
+
+      \param A (Out) An Epetra_CrsMatrix object constructed from file contents.  
+      \warning User must delete!!.
+
+      \return Returns 0 if no error, -1 if any problems with file system.
+  */
+  int HypreFileToCrsMatrix(const char *filename, const Epetra_Comm &comm, Epetra_CrsMatrix *&A);
   // Internal function
   int MatrixMarketFileToCrsMatrixHandle( const char *filename,
 					 const Epetra_Comm & comm,

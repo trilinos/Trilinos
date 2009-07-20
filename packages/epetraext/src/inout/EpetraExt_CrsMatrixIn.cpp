@@ -517,5 +517,69 @@ int MatlabFileToCrsMatrix(const char *filename,
   if (handle!=0) fclose(handle);
   return(0);
 }
+
+int HypreFileToCrsMatrix(const char *filename, const Epetra_Comm &comm, Epetra_CrsMatrix *&Matrix){
+  int MyPID = comm.MyPID();
+  // This double will be in the format we want for the extension besides the leading zero
+  double filePID = (double)MyPID/(double)100000;
+  std::ostringstream stream;
+  // Using setprecision() puts it in the string
+  stream << std::setiosflags(std::ios::fixed) << std::setprecision(5) << filePID;
+  // Then just ignore the first character
+  std::string fileName(filename);
+  fileName += stream.str().substr(1,7);
+  // Open the file
+  std::ifstream file(fileName.c_str());
+  string line;
+  if(file.is_open()){
+    std::getline(file, line);
+    int ilower, iupper;
+    std::istringstream istream(line);
+    // The first line of the file has the beginning and ending rows
+    istream >> ilower;
+    istream >> iupper;
+    // Using those we can create a row map
+    Epetra_Map RowMap(-1, iupper-ilower+1, 0, comm);
+    Matrix = new Epetra_CrsMatrix(Copy, RowMap, 0);
+    int currRow = -1;
+    int counter = 0;
+    std::vector<int> indices;
+    std::vector<double> values;
+    while(!file.eof()){
+      std::getline(file, line);
+      std::istringstream lineStr(line);
+      int row, col;
+      double val;
+      lineStr >> row;
+      lineStr >> col;
+      lineStr >> val;
+      if(currRow == -1) currRow = row; // First line
+      if(row == currRow){
+        // add to the vector
+        counter = counter + 1;
+        indices.push_back(col);
+        values.push_back(val);
+      } else {
+        Matrix->InsertGlobalValues(currRow, counter, &values[0], &indices[0]);
+        indices.clear();
+        values.clear();
+        counter = 0;
+        currRow = row;
+        // make a new vector
+        indices.push_back(col);
+        values.push_back(val);
+        counter = counter + 1;
+      }
+    }
+    Matrix->InsertGlobalValues(currRow, counter, &values[0], &indices[0]);
+    Matrix->FillComplete();
+    file.close();
+    return 0;
+  } else {
+    cout << "\nERROR:\nCouldn't open " << fileName << ".\n";
+    return -1;
+  }
+}
+
 } // namespace EpetraExt
 
