@@ -25,6 +25,7 @@ namespace {
   SerialNode serialnode;
 
   int N = 100;
+  int NumIters = 1000;
   template <class NODE>
   NODE & getNode() {
     TEST_FOR_EXCEPTION(true,std::logic_error,"Node type not defined.");
@@ -73,6 +74,7 @@ namespace {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.addOutputSetupOptions(true);
     clp.setOption("test-size",&N,"Vector length for tests.");
+    clp.setOption("num-iters",&NumIters,"Number of iterations in TimeTest.");
     if (N < 2) N = 2;
 #ifdef HAVE_KOKKOS_TBB
     {
@@ -162,6 +164,23 @@ namespace {
     out << "freeBuffer Time: " << tFree.totalElapsedTime() << std::endl;
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NodeAPI, TimeTest, NODE )
+  {
+    Time tNoop("Null Op");
+    NODE &node = getNode<NODE>();
+    NullOp<NODE> noop;
+    int red;
+    {
+      TimeMonitor localTimer(tNoop);
+      for (int i=0; i<NumIters; ++i) {
+        red = node.parallel_reduce(0,1,noop);
+      }
+    }
+    TEST_EQUALITY_CONST(red,0);
+    out << "NullOp Time: " << tNoop.totalElapsedTime() << std::endl;
+    out << "    average: " << (int)(tNoop.totalElapsedTime() / (double)(NumIters) * 1000000000.0) << " ns" << std::endl;
+  }
+
   // 
   // INSTANTIATIONS
   //
@@ -198,5 +217,15 @@ namespace {
 
   UNIT_TEST_GROUP_SCALAR(int)
   UNIT_TEST_GROUP_SCALAR(float)
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, SerialNode )
+#ifdef HAVE_KOKKOS_TBB
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, TBBNode )
+#endif
+#ifdef HAVE_KOKKOS_THREADPOOL
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, TPINode )
+#endif
+#ifdef HAVE_KOKKOS_CUDA
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, CUDANode )
+#endif
 
 }

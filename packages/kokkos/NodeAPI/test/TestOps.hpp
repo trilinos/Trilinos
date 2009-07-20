@@ -13,6 +13,14 @@ struct InitOp {
   }
 };
 
+template <class Node>
+struct NullOp {
+  typedef int ReductionType;
+  static inline KERNEL_PREFIX int identity() {return 0;}
+  static inline KERNEL_PREFIX int reduce(int x, int y) {return x+y;}
+  static inline KERNEL_PREFIX int generate(int i) {return 0;}
+};
+
 template <class Scalar, class Node>
 struct SumOp {
   typedef Scalar ReductionType;
@@ -24,7 +32,7 @@ struct SumOp {
     return (Scalar)0;
   }
 
-  inline KERNEL_PREFIX ReductionType reduce(ReductionType x, ReductionType y) 
+  static inline KERNEL_PREFIX ReductionType reduce(ReductionType x, ReductionType y) 
   {
     return x+y;
   }
