@@ -69,7 +69,10 @@ struct PHGPartParamsStruct {
                                     preferences into account. */
                                     
 
-  char convert_str[MAX_PARAM_STRING_LEN];  /* Graph->HG conversion method. */
+  int  hgraph_model;             /* Graph->HG conversion model. */
+                                 /* 0: Undefined. */
+                                 /* 1: Nbors; a hyperedge contains all neighbors. */
+                                 /* 2: Pairs; a hyperedge is a graph edge. */
   char redm_str[MAX_PARAM_STRING_LEN];  /* Reduction method string. */
   char redm_fast[MAX_PARAM_STRING_LEN]; /* Fast reduction method string. */
   char redmo_str[MAX_PARAM_STRING_LEN]; /* Matching optimization string*/

@@ -133,12 +133,16 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     need_pin_weights = 1;
   }
 
-  if ((hgp->convert_str[0] == 'n') ||   /* "neighbors" */
-      (hgp->convert_str[0] == 'N')){
+  if (hgp->hgraph_model == 1){      /* "neighbors" */
     use_all_neighbors = 1;
   }
-  else{                                 /* "pairs"     */
+  else if (hgp->hgraph_model == 2){ /* "pairs"     */
     use_all_neighbors = 0;
+  }
+  else{
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid hgraph_model option");
+    ierr = ZOLTAN_FATAL;
+    goto End;
   }
 
   if (zz->Get_HG_Size_CS && zz->Get_HG_CS){
@@ -985,10 +989,10 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
     if (use_all_neighbors){
       /* 
-       * PHG_FROM_GRAPH_METHOD = "neighbors"
        * Create a hyperedge out of each vertex, containing that vertex
        * and all of its neighbors.  The hyperedge weight will be the
        * sum of the weight of each original graph edge. 
+       * EGB: Should we use the max weight instead?
        */
 
       zhg->nHedges = zhg->nObj;
@@ -1047,7 +1051,6 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     }
     else{
       /* 
-       * PHG_FROM_GRAPH_METHOD = "pairs" (Default)
        * Create a hyperedge out of each pair of neighboring vertices.  The hyperedge 
        * weight will be the weight of the original graph edge.
        *

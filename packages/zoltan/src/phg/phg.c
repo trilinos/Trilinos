@@ -45,8 +45,6 @@ static PARAM_VARS PHG_params[] = {
     /* Software package: PHG (Zoltan) or Patoh */
   {"PHG_MULTILEVEL",                  NULL,  "INT", 0},
     /* Indicate whether or not to use multilevel method (1/0) */
-  {"PHG_FROM_GRAPH_METHOD",           NULL,  "STRING", 0},  
-    /* Hypergraph model: neighbors or pairs */
   {"PHG_CUT_OBJECTIVE",               NULL,  "STRING", 0},
     /* connectivity or hyperedges */
   {"PHG_OUTPUT_LEVEL",                NULL,  "INT",    0},
@@ -451,11 +449,11 @@ int **exp_to_part )         /* list of partitions to which exported objs
         err = Zoltan_PHG_rdivide (0, p-1, parts, zz, hg, &hgp, 0, 1);
   
         if (hgp.output_level >= PHG_DEBUG_LIST)     
-          uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s/%s p=%d "
+          uprintf(hg->comm, "FINAL %3d |V|=%6d |E|=%6d #pins=%6d %s/%s/%s p=%d "
                   "bal=%.2f cutl=%.2f\n", 
                   hg->info, hg->nVtx, hg->nEdge, hg->nPins,
-                  hgp.convert_str, hgp.redm_str, 
-                  hgp.coarsepartition_str, hgp.refinement_str, p,
+                  hgp.redm_str, hgp.coarsepartition_str, 
+                  hgp.refinement_str, p,
                   Zoltan_PHG_Compute_Balance(zz, hg, hgp.part_sizes, 0,
                                              p, parts),
                   Zoltan_PHG_Compute_ConCut(hg->comm, hg, parts, p, &err));
@@ -690,7 +688,6 @@ int Zoltan_PHG_Initialize_Params(
   
   Zoltan_Bind_Param(PHG_params, "HYPERGRAPH_PACKAGE", &hgp->hgraph_pkg);
   Zoltan_Bind_Param(PHG_params, "PHG_MULTILEVEL", &hgp->useMultilevel);
-  Zoltan_Bind_Param(PHG_params, "PHG_FROM_GRAPH_METHOD", hgp->convert_str);  
   Zoltan_Bind_Param(PHG_params, "PHG_OUTPUT_LEVEL", &hgp->output_level);
   Zoltan_Bind_Param(PHG_params, "FINAL_OUTPUT", &hgp->final_output); 
   Zoltan_Bind_Param(PHG_params, "CHECK_GRAPH", &hgp->check_graph);   
@@ -746,7 +743,6 @@ int Zoltan_PHG_Initialize_Params(
   
   /* Set default values */
   strncpy(hgp->hgraph_pkg,           "phg", MAX_PARAM_STRING_LEN);
-  strncpy(hgp->convert_str,        "pairs", MAX_PARAM_STRING_LEN);
   strncpy(hgp->redm_str,             "agg", MAX_PARAM_STRING_LEN);
   hgp->match_array_type = 0;
   strncpy(hgp->redm_fast,          "l-ipm", MAX_PARAM_STRING_LEN);
@@ -762,6 +758,14 @@ int Zoltan_PHG_Initialize_Params(
     hgp->useMultilevel = 0;
   else
     hgp->useMultilevel = 1;
+
+  /* Set hgraph_model depending on the LB Method */
+  if (zz->LB.Method = HYPERGRAPH)
+    hgp->hgraph_model = 1; 
+  else if (zz->LB.Method = GRAPH)
+    hgp->hgraph_model = 2; 
+  else
+    hgp->hgraph_model = 0;
 
   hgp->use_timers = 0;
   hgp->LocalCoarsePartition = 0;
