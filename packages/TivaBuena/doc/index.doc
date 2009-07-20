@@ -4,12 +4,6 @@
 
 \section TivaBuena_outline Outline
 
-<ul>
-<li>\ref TivaBuena_intro
-<li>\ref TivaBuena_startup
-<li>\ref TivaBuena_browser
-</ul>
-
 \section TivaBuena_intro Introduction 
 The TivaBuena package is intended to give Trilinos Developers an 
 easy way to construct a GUI for their program. Through the use of Teuchos ParameterLists,
@@ -33,12 +27,12 @@ installation directory you will have to compile trilinos using these cmake argum
 	<li> -DQT\_BINARY\_DIR:STRING=directory containing your qt binaries</li>
 	</ul>
 
-\section TivaBuena_bowser Browse all of new_package as a single doxygen collection
+\section TivaBuena_bowser Browse all of TivaBuena as a single doxygen collection
 
 You can browse all of TivaBuena as a <A HREF="../../browser/doc/html/index.html">single
 doxygen collection</A>. Warning, this is not the recommended way to learn
 about TivaBuena software.  However, this is a good way to browse the <a
-href="../../browser/doc/html/dirs.html">directory structure of new_package</a>, to <a
+href="../../browser/doc/html/dirs.html">directory structure of TivaBuena</a>, to <a
 href="../../browser/doc/html/files.html">locate files</a>, etc.
 
 
