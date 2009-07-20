@@ -111,7 +111,7 @@ namespace Kokkos {
     public:
 
       //! Initialize multivector to constant value.
-      static void Init(MultiVector<Scalar,Ordinal,Node> &A, Scalar alpha) {
+      inline static void Init(MultiVector<Scalar,Ordinal,Node> &A, Scalar alpha) {
         const Ordinal nR = A.getNumRows();
         const Ordinal nC = A.getNumCols();
         Node &node = A.getNode();
@@ -134,7 +134,7 @@ namespace Kokkos {
       }
 
       //! Multiply one MultiVector by another, element-wise: B *= A
-      static void Multiply(MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B) {
+      inline static void Multiply(MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B) {
         const Ordinal nR = A.getNumRows();
         const Ordinal nC = A.getNumCols();
         TEST_FOR_EXCEPTION(((nC != B.getNumCols()) && B.getNumCols() != 1)  ||
@@ -169,7 +169,7 @@ namespace Kokkos {
       }
 
       //! Divide one MultiVector by another, element-wise: B /= A
-      static void Divide(MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B) {
+      inline static void Divide(MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B) {
         const Ordinal nR = A.getNumRows();
         const Ordinal nC = A.getNumCols();
         TEST_FOR_EXCEPTION(((nC != B.getNumCols()) && B.getNumCols() != 1)  ||
@@ -203,7 +203,7 @@ namespace Kokkos {
       }
 
       //! Assign one MultiVector to another
-      static void Assign(MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B) {
+      inline static void Assign(MultiVector<Scalar,Ordinal,Node> &A, const MultiVector<Scalar,Ordinal,Node> &B) {
         const Ordinal nR = A.getNumRows();
         const Ordinal nC = A.getNumCols();
         TEST_FOR_EXCEPTION(nC != B.getNumCols() ||

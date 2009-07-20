@@ -179,7 +179,7 @@ namespace Kokkos {
     //@{
 
     //! Applies the matrix to a MultiVector.
-    int Apply(bool transpose, Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &X, Scalar beta, MultiVector<Scalar,Ordinal,Node> &Y) const;
+    inline int Apply(bool transpose, Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &X, Scalar beta, MultiVector<Scalar,Ordinal,Node> &Y) const;
 
     //@}
 
@@ -286,7 +286,7 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  int DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::Apply(
+  inline int DefaultSparseMultiply<CrsMatrix<Scalar,Ordinal,Node>, MultiVector<Scalar,Ordinal,Node> >::Apply(
       bool transpose, 
       Scalar alpha, const MultiVector<Scalar,Ordinal,Node> &X, 
       Scalar beta, MultiVector<Scalar,Ordinal,Node> &Y) const 
