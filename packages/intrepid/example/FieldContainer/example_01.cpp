@@ -174,7 +174,7 @@ int main(int argc, char *argv[]) {
   dimension[4] = 6;
   
   // Define Teuchos::Array to store values with dimension equal to the number of multi-indexed values
-  Teuchos::ArrayRCP<double> dataTeuchosArray = Teuchos::arcp<double>(5*2*3*4*6);
+  Teuchos::Array<double> dataTeuchosArray(5*2*3*4*6);
   
   // Fill with data
   int counter = 0;

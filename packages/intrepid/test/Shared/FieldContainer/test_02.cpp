@@ -28,9 +28,9 @@
 // @HEADER
 
 
-/** \file
-\brief  Unit test of FieldContainer class
-\author Created by P. Bochev and D. Ridzal.
+/** \file   test_02.cpp
+    \brief  Unit test of FieldContainer class
+    \author Created by P. Bochev and D. Ridzal.
 */
 
 #include "Intrepid_FieldContainer.hpp"
@@ -160,8 +160,7 @@ int main(int argc, char *argv[]) {
       dimensions[0] = 4;
       
       // Define Teuchos::Array to store values with dimension equal to the number of multi-indexed values
-      //Teuchos::Array<double> dataTeuchosArray(4*3*2*7);
-      Teuchos::ArrayRCP<double> dataTeuchosArray = Teuchos::arcp<double>(4*3*2*7);
+      Teuchos::Array<double> dataTeuchosArray(4*3*2*7);
       
       // Fill with data
       int counter = 0;
@@ -198,8 +197,7 @@ int main(int argc, char *argv[]) {
       dimensions[2] = 3;
       
       // Define Teuchos::Array to store values with dimension equal to the number of multi-indexed values
-      //Teuchos::ArrayRCP<double> dataTeuchosArray(5*3*3*7);
-      Teuchos::ArrayRCP<double> dataTeuchosArray = Teuchos::arcp<double>(5*3*3*7);
+      Teuchos::ArrayRCP<double> dataTeuchosArray(5*3*3*7);
       
       // Fill with data
       int counter = 0;

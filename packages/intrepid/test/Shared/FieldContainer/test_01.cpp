@@ -28,9 +28,9 @@
 // @HEADER
 
 
-/** \file
-\brief  Unit test of FieldContainer class
-\author Created by P. Bochev and D. Ridzal.
+/** \file   test_01.cpp
+    \brief  Unit test of FieldContainer class
+    \author Created by P. Bochev and D. Ridzal.
 */
 
 #include "Intrepid_FieldContainer.hpp"
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   int errorFlag  = 0;
   
   // Define variables to construct and use FieldContainer:
-  Teuchos::ArrayRCP<double> dataArray;
+  Teuchos::Array<double> dataArray;
   Teuchos::Array<int> dimension;
   Teuchos::Array<int> multiIndex;
   int dim0, dim1, dim2, dim3, dim4;

@@ -28,8 +28,8 @@
 // @HEADER
 
 /** \file   Intrepid_FieldContainer.hpp
-\brief  Header file for utility class to provide lexicographical containers.
-\author Created by P. Bochev and D. Ridzal.
+    \brief  Header file for utility class to provide multidimensional containers.
+    \author Created by P. Bochev and D. Ridzal.
 */
 
 #ifndef INTREPID_FIELDCONTAINER_HPP
@@ -39,6 +39,9 @@
 #include "Intrepid_Types.hpp"
 #include "Intrepid_Utils.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_ArrayView.hpp"
+#include "Shards_Array.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_oblackholestream.hpp"
@@ -88,6 +91,7 @@ namespace Intrepid {
     
   public:
     
+
     /** \brief Default destructor.
     */
     ~FieldContainer() {};
@@ -103,19 +107,14 @@ namespace Intrepid {
     
     
     /** \brief Copy constructor.
-      */
+    */
     FieldContainer(const FieldContainer& right);
  
-    //--------------------------------------------------------------------------------------------//
-    //                                                                                            //
-    //                              Constructors of FieldContainer class                          //
-    //                                                                                            //
-    //--------------------------------------------------------------------------------------------//
     
     /** \brief Creates a rank-1 FieldContainer with the specified dimension, initialized by 0.
       
       \param dim0    [in]      - dimension for the only index 
-      */
+    */
     FieldContainer(const int dim0);
     
     
@@ -123,7 +122,7 @@ namespace Intrepid {
       
       \param dim0    [in]      - dimension for the 1st index 
       \param dim1    [in]      - dimension for the 2nd index 
-      */
+    */
     FieldContainer(const int dim0,
                    const int dim1);
 
@@ -133,7 +132,7 @@ namespace Intrepid {
       \param dim0    [in]      - dimension for the 1st index 
       \param dim1    [in]      - dimension for the 2nd index 
       \param dim2    [in]      - dimension for the 3rd index 
-      */
+    */
     FieldContainer(const int dim0,
                    const int dim1,
                    const int dim2);
@@ -145,7 +144,7 @@ namespace Intrepid {
       \param dim1    [in]      - dimension for the 2nd index 
       \param dim2    [in]      - dimension for the 3rd index 
       \param dim3    [in]      - dimension for the 4th index 
-      */
+    */
     FieldContainer(const int dim0,
                    const int dim1,
                    const int dim2,
@@ -159,7 +158,7 @@ namespace Intrepid {
       \param dim2    [in]      - dimension for the 3rd index 
       \param dim3    [in]      - dimension for the 4th index 
       \param dim4    [in]      - dimension for the 5th index 
-      */
+    */
     FieldContainer(const int dim0,
                    const int dim1,
                    const int dim2,
@@ -172,19 +171,71 @@ namespace Intrepid {
       container and its capacity is defined by the specified dimensions. 
       
       \param dimensions[in]           - array with container dimensions
-      */
+    */
     FieldContainer(const Teuchos::Array<int>& dimensions);
     
     
-    /** \brief Creates a FieldContainer of arbitrary rank, using dimensions specified in an
-      array, and fills it with data from another array. The size of the input array implicitely 
-      defines the rank of the container and its capacity is defined by the specified dimensions. 
+    /** \brief Creates a FieldContainer of arbitrary rank, using dimensions specified in the
+               <var><b>dimensions</b></var> array, and fills it by deep-copying data from a
+               Teuchos::ArrayView array (which implicitly doubles as Teuchos::ArrayRCP or
+               Teuchos::Array). If the input data array is a Teuchos::ArrayRCP, then '()' should
+               be appended to it when calling this function. This forces direct conversion to a
+               Teuchos::ArrayView, and prevents the call to the shallow-copy constructor that
+               takes a Teuchos::ArrayRCP.
       
-      \param dimensions[in]           - array with container dimensions
-      \param data[in]                 - array with container values
-      */
-    FieldContainer(const Teuchos::Array<int>&    dimensions,
+        \param dimensions[in]           - array with container dimensions
+        \param data[in]                 - array with container values
+    */
+    FieldContainer(const Teuchos::Array<int>&        dimensions,
+                   const Teuchos::ArrayView<Scalar>& data);
+
+
+    /** \brief Creates a FieldContainer of arbitrary rank, using dimensions specified in the
+               <var><b>dimensions</b></var> array, and wraps (shallow-copies) the data pointed
+               to by the input Teuchos::ArrayRCP array. If a deep copy is desired instead,
+               one can force the use of the constructor that takes Teuchos::ArrayView by
+               appending () to the input Teuchos::ArrayRCP parameter. This forces direct
+               conversion to a Teuchos::ArrayView.
+      
+        \param dimensions[in]           - array with container dimensions
+        \param data[in]                 - array with container values
+    */
+    FieldContainer(const Teuchos::Array<int>&       dimensions,
                    const Teuchos::ArrayRCP<Scalar>& data);
+
+
+    /** \brief Creates a FieldContainer of arbitrary rank, using dimensions specified in the
+               <var><b>dimensions</b></var> array, and either wraps (shallow-copies) Scalar*
+               <var><b>data</b></var>, or deep-copies it, based on the value of the parameter
+               <var><b>deep_copy</b></var>. Memory management through FieldContainer, via
+               its Teuchos::ArrayRCP data member, can be enabled.
+      
+        \param dimensions[in]           - array with container dimensions
+        \param data[in]                 - array with container values
+        \param deep_copy[in]            - if true, then deep-copy, otherwise shallow-copy; default: false
+        \param owns_mem[in]             - if true, the field container will manage memory; default: false
+    */
+    FieldContainer(const Teuchos::Array<int>&    dimensions,
+                   Scalar*                       data,
+                   const bool                    deep_copy = false,
+                   const bool                    owns_mem  = false);
+
+
+    /** \brief Creates a FieldContainer either as a wrapper of the shards::Array<Scalar,shards::NaturalOrder>
+               array <var><b>data</b></var>, or as its deep copy, based on the value of the parameter
+               <var><b>deep_copy</b></var>. Memory management through FieldContainer, via
+               its Teuchos::ArrayRCP data member, can be enabled.
+      
+        \param data[in]                 - array with container values
+        \param deep_copy[in]            - if true, then deep-copy, otherwise shallow-copy; default: false
+        \param owns_mem[in]             - if true, the field container will manage memory; default: false
+    */
+    FieldContainer(const shards::Array<Scalar,shards::NaturalOrder>&  data,
+                   const bool                                         deep_copy = false,
+                   const bool                                         owns_mem  = false);
+
+
+
     
     //--------------------------------------------------------------------------------------------//
     //                                                                                            //
@@ -536,7 +587,7 @@ namespace Intrepid {
       
       \param dataArray[in]               - new values
     */
-    void setValues(const Teuchos::ArrayRCP<Scalar>& dataArray);
+    void setValues(const Teuchos::ArrayView<Scalar>& dataArray);
     
     
     /** \brief Fills an existing FieldContainer with Scalars referenced by <var>dataPtr</var> without
@@ -551,63 +602,18 @@ namespace Intrepid {
     
     /** \brief Exposes data of FieldContainer, data can be modified.
     */
-    Teuchos::ArrayRCP<Scalar> & getData() {
+    Teuchos::ArrayView<Scalar> & getData() {
       return data_;
     }    
 
 
     /** \brief Exposes data of FieldContainer, data cannot be modified.
     */
-    const Teuchos::ArrayRCP<Scalar> & getData() const {
+    const Teuchos::ArrayView<Scalar> & getData() const {
       return data_;
     }    
 
-    template<class ArrayType>
-    void contractScalar(ArrayType &                     outputValues,
-                        const FieldContainer<Scalar> &  leftValues,
-                        const ECompEngine               compEngine) const;
-    
-    
-    template<class ArrayType>
-    void contractVector(ArrayType &                     outputValues,
-                        const FieldContainer<Scalar> &  leftValues,
-                        const ECompEngine               compEngine) const;
 
-    
-    template<class ArrayType>
-    void contractTensor(ArrayType &                     outputValues,
-                        const FieldContainer<Scalar> &  leftValues,
-                        const ECompEngine               compEngine) const;
-    
-    
-    template<class ArrayType>
-    void contractScalarData(ArrayType &        outputValues,
-                            const ArrayType &  inputData,
-                            const ECompEngine  compEngine) const;
- 
-    
-    
-    template<class ArrayType>
-    void contractVectorData(ArrayType &        outputValues,
-                            const ArrayType &  inputData,
-                            const ECompEngine  compEngine) const;
-
-    
-    template<class ArrayType>
-    void contractTensorData(ArrayType &        outputValues,
-                            const ArrayType &  inputData,
-                            const ECompEngine  compEngine) const;
-    
-    template<class ArrayType>
-    void multiplyScalarData(const ArrayType &  inputData);
-    
-    
-    template<class ArrayType>
-    void multiplyVectorData(FieldContainer<Scalar> outputValues,
-                            const ArrayType &  inputData);
-
-    
-    
     /** \brief Overloaded () operators for rank-1 containers. Data <strong>cannot</strong> be modified.
       
       \param i0         [in]        - 1st index

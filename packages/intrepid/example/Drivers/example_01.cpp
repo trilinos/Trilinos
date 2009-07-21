@@ -87,7 +87,6 @@
 
 using namespace std;
 using namespace Intrepid;
-using namespace shards;
 
 // Functions to evaluate exact solution and derivatives
 int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z);
@@ -154,7 +153,7 @@ int main(int argc, char *argv[]) {
 
    // Get cell topology for base hexahedron
     typedef shards::CellTopology    CellTopology;
-    CellTopology hex_8(shards::getCellTopologyData<Hexahedron<8> >() );
+    CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
    // Get dimensions 
     int numNodesPerElem = hex_8.getNodeCount();
