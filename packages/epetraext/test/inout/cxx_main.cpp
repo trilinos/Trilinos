@@ -428,8 +428,8 @@ int generateHyprePrintOut(const char *filename, const Epetra_Comm &comm){
   int NumProc = comm.NumProc();
 
   int N = 100;
-  int ilower = MyPID * (N/NumProc);
-  int iupper = (MyPID+1)*(N/NumProc)-1;
+  int ilower = MyPID * N;
+  int iupper = (MyPID+1)*N-1;
 
   double filePID = (double)MyPID/(double)100000;
   std::ostringstream stream;
@@ -445,7 +445,7 @@ int generateHyprePrintOut(const char *filename, const Epetra_Comm &comm){
     myfile << ilower << " " << iupper << " " << ilower << " " << iupper << endl;
     for(int i = ilower; i <= iupper; i++){
       for(int j=i-5; j <= i+5; j++){
-        if(j >= 0 && j < N)
+        if(j >= 0 && j < N*NumProc)
           myfile << i << " " << j << " " << (double)rand()/(double)RAND_MAX << endl;
       }
     }

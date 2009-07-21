@@ -572,6 +572,7 @@ int HypreFileToCrsMatrix(const char *filename, const Epetra_Comm &comm, Epetra_C
       }
     }
     Matrix->InsertGlobalValues(currRow, counter, &values[0], &indices[0]);
+    Matrix->Comm().Barrier();
     Matrix->FillComplete();
     file.close();
     return 0;

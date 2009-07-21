@@ -200,7 +200,7 @@ must be integer values and in those in the third column must be floating point f
   //! Constructs an Epetra_CrsMatrix object from a Hypre Matrix Print command, the row map is specified.
   /*! Reads an Epetra_CrsMatrix object from a Hypre Matrix Printout, the matrix should be square.
 
-      \param filename (In) A filename not without the processor id extension, including path if desired.
+      \param filename (In) A filename not including the processor id extension, including path if desired.
 
       \param comm (In) An Epetra_Comm object describing the communication among processors.
 
