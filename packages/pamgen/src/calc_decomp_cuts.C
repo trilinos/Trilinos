@@ -21,7 +21,8 @@ long long dom_decomp_2d(const long long Nx, const long long Ny,
   long long ry0 = 1;
   long long I0 = 1;
   long long init = 1;
-  lldiv_t dv;
+  long long quotient;
+  long long remainder;
 
   /* Compute the ideal decomposition, truncated to an integer, which
      minimizes the amount of communication. */
@@ -30,9 +31,10 @@ long long dom_decomp_2d(const long long Nx, const long long Ny,
   /* Constrain the decomposition */
   rx_max = Nx < Np ? Nx : Np; /* Require ry >= 1 and rx <= Nx */
   if(Ny < Np){ /* Require rx >= 1 and ry <= Ny */
-    dv = lldiv(Np, Ny);
+    quotient = Np/Ny;
+    remainder = Np%Ny;
     /* rx_min = the smallest integer >= Np/Ny */
-    rx_min = dv.quot + (dv.rem > 0 ? 1 : 0);
+    rx_min = quotient + (remainder > 0 ? 1 : 0);
   }
   else rx_min = 1;
 
@@ -44,10 +46,11 @@ long long dom_decomp_2d(const long long Nx, const long long Ny,
 
   /* Search down for a factor of Np */
   for(rx=rxs; rx>=rx_min; rx--){
-    dv = lldiv(Np,rx);
-    if(dv.rem == 0){
+    quotient = Np/rx;
+    remainder = Np%rx;
+    if(remainder == 0){
       rx0 = rx;
-      ry0 = dv.quot;
+      ry0 = quotient;
       I0 = (rx0 - 1)*Ny + (ry0 - 1)*Nx;
       init = 0;
       break;
@@ -56,9 +59,10 @@ long long dom_decomp_2d(const long long Nx, const long long Ny,
 
   /* Search up for a factor of Np */
   for(rx=rxs+1; rx<=rx_max; rx++){
-    dv = lldiv(Np,rx);
-    if(dv.rem == 0){
-      ry = dv.quot;
+    quotient = Np/rx;
+    remainder = Np%rx;
+    if(remainder == 0){
+      ry = quotient;
       I = (rx - 1)*Ny + (ry - 1)*Nx;
 
       if(init || I < I0){
@@ -89,13 +93,14 @@ long long dom_decomp_2d(const long long Nx, const long long Ny,
 long long dom_decomp_3d(const long long Nx, const long long Ny, const long long Nz,
 		  const long long Np, long long *pNGx, long long *pNGy, long long *pNGz){
 
-  lldiv_t dv;
   long long rx_min, rx_max, rx, ry, rz, I;
   long long rx0 = 1;
   long long ry0 = 1;
   long long rz0 = 1;
   long long I0 = 1;
   long long init=1;
+  long long quotient;
+  long long remainder;
   long long err, t, Npt;
 
   /* Constrain the decomposition */
@@ -103,18 +108,20 @@ long long dom_decomp_3d(const long long Nx, const long long Ny, const long long 
   /* Compute a global minimum constraint on rx. */
   t = (Ny < Np ? Ny : Np)*(Nz < Np ? Nz : Np); /* t = Max(ry)*Max(rz) */
   if(t < Np){ /* Require rx >= 1, ry <= Ny and rz <= Nz */
-    dv = lldiv(Np, t);
+    quotient = Np/t;
+    remainder = Np%t;
     /* rx_min = the smallest integer >= Np/t */
-    rx_min = dv.quot + (dv.rem > 0 ? 1 : 0);
+    rx_min = quotient + (remainder > 0 ? 1 : 0);
   }
   else rx_min = 1;
 
   /* printf("rx_min = %d, rx_max = %d\n",rx_min, rx_max); */
 
   for(rx = rx_min; rx <= rx_max; rx++){
-    dv = lldiv(Np, rx);
-    if(dv.rem == 0){
-      Npt = dv.quot; /* Np for transverse (y,z) decomposition */
+    quotient = Np/rx;
+    remainder = Np%rx;
+    if(remainder == 0){
+      Npt = quotient; /* Np for transverse (y,z) decomposition */
 
       err = dom_decomp_2d(Ny, Nz, Npt, &ry, &rz);
       if(err == 0){
@@ -158,25 +165,28 @@ namespace PAMGEN_NEVADA {
 long long dom_decomp_2d_serial(const long long Nx, const long long Ny,
 			 const long long Np, long long *pNGx, long long *pNGy){
 
-  lldiv_t dv;
   long long rx, rx_min, rx_max, ry, I;
   long long rx0, ry0, I0, init=1;
+  long long quotient;
+  long long remainder;
 
   /* Constrain the decomposition */
   rx_max = Nx < Np ? Nx : Np; /* Require ry >= 1 and rx <= Nx */
   if(Ny < Np){ /* Require rx >= 1 and ry <= Ny */
-    dv = lldiv(Np, Ny);
+    quotient = Np/Ny;
+    remainder = Np%Ny;
     /* rx_min = the smallest integer >= Np/Ny */
-    rx_min = dv.quot + (dv.rem > 0 ? 1 : 0);
+    rx_min = quotient + (remainder > 0 ? 1 : 0);
   }
   else rx_min = 1;
 
   /* printf("rx_min = %d, rx_max = %d\n",rx_min, rx_max); */
 
   for(rx = rx_min; rx <= rx_max; rx++){
-    dv = lldiv(Np, rx);
-    if(dv.rem == 0){
-      ry = dv.quot;
+    quotient = Np/rx;
+    remainder = Np%rx;
+    if(remainder == 0){
+      ry = quotient;
 
       /* Now compute the amount of messaging */
       I = (rx - 1)*Ny + (ry - 1)*Nx;
@@ -209,33 +219,37 @@ long long dom_decomp_2d_serial(const long long Nx, const long long Ny,
 long long dom_decomp_3d_serial(const long long Nx, const long long Ny, const long long Nz,
 			 const long long Np, long long *pNGx, long long *pNGy, long long *pNGz){
 
-  lldiv_t dv;
   long long rx, rx_min, rx_max, ry, ry_min, ry_max, rz, I;
   long long rx0, ry0, rz0, I0, init=1;
   long long t, Npt;
+  long long quotient;
+  long long remainder;
 
   /* Constrain the decomposition */
   rx_max = Nx < Np ? Nx : Np; /* Require ry >= 1, rz >= 1 and rx <= Nx */
   /* Compute a global minimum constraint on rx. */
   t = (Ny < Np ? Ny : Np)*(Nz < Np ? Nz : Np); /* t = Max(ry)*Max(rz) */
   if(t < Np){ /* Require rx >= 1, ry <= Ny and rz <= Nz */
-    dv = lldiv(Np, t);
+    quotient = Np/t;
+    remainder = Np%t;
     /* rx_min = the smallest integer >= Np/t */
-    rx_min = dv.quot + (dv.rem > 0 ? 1 : 0);
+    rx_min = quotient + (remainder > 0 ? 1 : 0);
   }
   else rx_min = 1;
 
   /* printf("rx_min = %d, rx_max = %d\n",rx_min, rx_max); */
 
   for(rx = rx_min; rx <= rx_max; rx++){
-    dv = lldiv(Np, rx);
-    if(dv.rem == 0){
-      Npt = dv.quot; /* Np for transverse (y,z) decomposition */
+    quotient = Np/rx;
+    remainder = Np%rx;
+    if(remainder == 0){
+      Npt = quotient; /* Np for transverse (y,z) decomposition */
       ry_max = Ny < Npt ? Ny : Npt; /* Require rz >= 1 and ry <= Ny */
       if(Nz < Npt){ /* Require ry >= 1 and rz <= Nz */
-	dv = lldiv(Npt, Nz);
+        quotient = Npt/Nz;
+        remainder = Npt%Nz;
 	/* ry_min = the smallest integer >= Npt/Nz */
-	ry_min = dv.quot + (dv.rem > 0 ? 1 : 0);
+	ry_min = quotient + (remainder > 0 ? 1 : 0);
       }
       else ry_min = 1;
 
@@ -245,9 +259,10 @@ long long dom_decomp_3d_serial(const long long Nx, const long long Ny, const lon
 	continue; /* No solution exists which satisfies the constraints */
 
       for(ry = ry_min; ry <= ry_max; ry++){
-	dv = lldiv(Npt, ry);
-	if(dv.rem == 0){
-	  rz = dv.quot;
+        quotient = Npt/ry;
+        remainder = Npt%ry;
+	if(remainder == 0){
+	  rz = quotient;
 
 	  /* Now compute the amount of messaging */
 	  I = (rx - 1)*Ny*Nz + (ry - 1)*Nx*Nz + (rz - 1)*Nx*Ny;
