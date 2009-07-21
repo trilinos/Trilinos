@@ -23,6 +23,7 @@ ACLOCAL_AMFLAGS = -I config
 ## #######################################################################
 ZOLTAN_TESTS = \
     test/test_zoltan \
+    test/ctest_zoltan.pl \
     test/ch_simple \
     test/hg_simple 
 
