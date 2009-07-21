@@ -45,7 +45,7 @@ int ew_dim = zz->Edge_Weight_Dim;
 
 int hypergraph_callbacks = 0;
 int graph_callbacks = 0;
-int use_all_neighbors = 1;
+int use_all_neighbors = -1;
 int need_pin_weights = 0;
 int map1=-1, map2=-1;
 int msg_tag = 30000;
@@ -991,8 +991,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       /* 
        * Create a hyperedge out of each vertex, containing that vertex
        * and all of its neighbors.  The hyperedge weight will be the
-       * sum of the weight of each original graph edge. 
-       * EGB: Should we use the max weight instead?
+       * maximum (not sum) of the weight of each original graph edge. 
        */
 
       zhg->nHedges = zhg->nObj;
@@ -1018,7 +1017,9 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
             weight_val = 0.0;
             src = zhg->Ewgt + (w * ew_dim) + dim;
             for (j=0; j < zhg->Esize[i]; j++){
-              weight_val = weight_val + src[j*ew_dim];
+              /* Compute maximum graph edge weight */
+              if (src[j*ew_dim] > weight_val)
+                weight_val = src[j*ew_dim];
             }
             wgts[i*ew_dim + dim] = weight_val;
           }
