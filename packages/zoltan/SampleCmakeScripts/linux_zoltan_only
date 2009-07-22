@@ -1,0 +1,33 @@
+#!/bin/csh
+# Sample script for building using CMAKE on linux workstation godel.
+# 64-bit, Zoltan only.
+# Run in Trilinos/Obj_cmake.
+
+# Clean up the mess from previous configurations.
+/bin/rm -r cmake* CMake* CPack* CTest* Dart* Trilinos* Testing packages Makefile
+
+cmake \
+-D CMAKE_INSTALL_PREFIX:FILEPATH="/home/kddevin/code/Trilinos/Obj_cmake" \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D CMAKE_C_FLAGS:STRING="-m64 -g" \
+-D CMAKE_CXX_FLAGS:STRING="-m64 -g" \
+-D CMAKE_Fortran_FLAGS:STRING="-m64 -g" \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+-D MPIEXEC_MAX_NUMPROCS:STRING=11 \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
+-D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
+-D Trilinos_ENABLE_Zoltan:BOOL=ON \
+-D Zoltan_ENABLE_EXAMPLES:BOOL=ON \
+-D Zoltan_ENABLE_TESTS:BOOL=ON \
+-D Zoltan_ENABLE_ParMETIS:BOOL=ON \
+-D ParMETIS_INCLUDE_DIRS:FILEPATH="/home/kddevin/code/ParMETIS3_1" \
+-D ParMETIS_LIBRARY_DIRS:FILEPATH="/home/kddevin/code/ParMETIS3_1" \
+-D Zoltan_ENABLE_Scotch:BOOL=ON \
+-D Scotch_INCLUDE_DIRS:FILEPATH="/home/kddevin/code/scotch_5.1/include" \
+-D Scotch_LIBRARY_DIRS:FILEPATH="/home/kddevin/code/scotch_5.1/lib" \
+.. |& tee OUTPUT.CMAKE
+
+make |& tee OUTPUT.MAKE
+make install |& tee OUTPUT.INSTALL
+
