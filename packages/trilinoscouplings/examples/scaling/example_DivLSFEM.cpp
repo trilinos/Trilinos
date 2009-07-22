@@ -130,6 +130,15 @@ int main(int argc, char *argv[]) {
     int NX            = atoi(argv[1]);  // num intervals in x direction (assumed box domain, -1,1)
     int NY            = atoi(argv[2]);  // num intervals in y direction (assumed box domain, -1,1)
     int NZ            = atoi(argv[3]);  // num intervals in z direction (assumed box domain, -1,1)
+    int randomMesh    = atoi(argv[4]);  // 1 if mesh randomizer is to be used 0 if not
+    double mu1        = atof(argv[5]);  // material property value for region 1
+    double mu2        = atof(argv[6]);  // material property value for region 2
+    double mu1LeftX   = atof(argv[7]);  // left X boundary for region 1
+    double mu1RightX  = atof(argv[8]);  // right X boundary for region 1
+    double mu1LeftY   = atof(argv[9]);  // left Y boundary for region 1
+    double mu1RightY  = atof(argv[10]); // right Y boundary for region 1
+    double mu1LeftZ   = atof(argv[11]); // left Z boundary for region 1
+    double mu1RightZ  = atof(argv[12]); // right Z boundary for region 1
 
 // *********************************** CELL TOPOLOGY **********************************
 
@@ -170,6 +179,8 @@ int main(int argc, char *argv[]) {
     std::cout << std::setw(5) << NX <<
                  std::setw(5) << NY <<
                  std::setw(5) << NZ << "\n\n";
+
+    double hx=1.0/NX,hy=1.0/NZ,hz=1.0/NZ;
 
    // Cube
     double leftX = -1.0, rightX = 1.0;
@@ -594,7 +605,7 @@ int main(int argc, char *argv[]) {
 
 
 
-/*
+    
    // Set material properties using undeformed grid assuming each element has only one value of mu
     FieldContainer<double> muVal(numElems);
     for (int k=0; k<NZ; k++) {
@@ -633,7 +644,7 @@ int main(int argc, char *argv[]) {
         }
       }
     }
-*/
+   
 
     // Print coords
     FILE *f=fopen("coords.dat","w");
