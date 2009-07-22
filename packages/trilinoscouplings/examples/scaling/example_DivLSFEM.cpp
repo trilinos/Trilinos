@@ -54,12 +54,15 @@
 #include "Epetra_SerialComm.h"
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
+#include "Epetra_Vector.h"
 
 // Teuchos includes
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
@@ -75,20 +78,41 @@
 
 using namespace std;
 using namespace Intrepid;
-using namespace shards;
 
 // Functions to evaluate exact solution and its derivatives
-int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z);
-double evalDivu(double & x, double & y, double & z);
-int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z);
-int evalCurlCurlu(double & curlCurlu0, double & curlCurlu1, double & curlCurlu2, double & x, double & y, double & z);
+int evalu(double & uExact0, 
+          double & uExact1, 
+          double & uExact2, 
+          double & x, 
+          double & y, 
+          double & z);
+
+double evalDivu(double & x, 
+                double & y, 
+                double & z);
+
+int evalCurlu(double & curlu0, 
+              double & curlu1, 
+              double & curlu2, 
+              double & x, 
+              double & y, 
+              double & z, 
+              double & mu);
+
+int evalCurlCurlu(double & curlCurlu0, 
+                  double & curlCurlu1, 
+                  double & curlCurlu2, 
+                  double & x, 
+                  double & y, 
+                  double & z, 
+                  double & mu);
 
 int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
    //Check number of arguments
-    TEST_FOR_EXCEPTION( ( argc < 4 ),
+    TEST_FOR_EXCEPTION( ( argc < 1 ),
                       std::invalid_argument,
                       ">>> ERROR (example_01): Invalid number of arguments. See code listing for requirements.");
   
@@ -123,28 +147,29 @@ int main(int argc, char *argv[]) {
 
 // ************************************ GET INPUTS **************************************
 
-  /* In the implementation for discontinuous material properties only the boundaries for
-     region 1, associated with mu1, are input. The remainder of the grid is assumed to use mu2.
-     Note that the material properties are assigned using the undeformed grid. */
+  // Input file
+    std::string   xmlInFileName = "input.xml";
 
-    int NX            = atoi(argv[1]);  // num intervals in x direction (assumed box domain, -1,1)
-    int NY            = atoi(argv[2]);  // num intervals in y direction (assumed box domain, -1,1)
-    int NZ            = atoi(argv[3]);  // num intervals in z direction (assumed box domain, -1,1)
-    int randomMesh    = atoi(argv[4]);  // 1 if mesh randomizer is to be used 0 if not
-    double mu1        = atof(argv[5]);  // material property value for region 1
-    double mu2        = atof(argv[6]);  // material property value for region 2
-    double mu1LeftX   = atof(argv[7]);  // left X boundary for region 1
-    double mu1RightX  = atof(argv[8]);  // right X boundary for region 1
-    double mu1LeftY   = atof(argv[9]);  // left Y boundary for region 1
-    double mu1RightY  = atof(argv[10]); // right Y boundary for region 1
-    double mu1LeftZ   = atof(argv[11]); // left Z boundary for region 1
-    double mu1RightZ  = atof(argv[12]); // right Z boundary for region 1
+  // Read xml file into parameter list
+    Teuchos::ParameterList inputList;
+
+   if(xmlInFileName.length()) {
+      std::cout << "\nReading a parameter list from the XML file \""<<xmlInFileName<<"\" ...\n";
+      Teuchos::updateParametersFromXmlFile(xmlInFileName,&inputList);
+      std::cout << "\nParameter list read from the XML file \""<<xmlInFileName<<"\":\n\n";
+      inputList.print(std::cout,2,true,true);
+    }
+
+  // Get pamgen mesh definition
+    std::string meshInput = Teuchos::getParameter<std::string>(inputList,"meshInput");
+    std::cout << meshInput << "\n";
+ 
 
 // *********************************** CELL TOPOLOGY **********************************
 
    // Get cell topology for base hexahedron
     typedef shards::CellTopology    CellTopology;
-    CellTopology hex_8(shards::getCellTopologyData<Hexahedron<8> >() );
+    CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
    // Get dimensions 
     int numNodesPerElem = hex_8.getNodeCount();
@@ -171,48 +196,15 @@ int main(int argc, char *argv[]) {
         refFaceToNode(i,3)=hex_8.getNodeMap(2, i, 3);
     }
 
+
 // *********************************** GENERATE MESH ************************************
 
     std::cout << "Generating mesh ... \n\n";
 
-    std::cout << "    NX" << "   NY" << "   NZ\n";
-    std::cout << std::setw(5) << NX <<
-                 std::setw(5) << NY <<
-                 std::setw(5) << NZ << "\n\n";
+    int NX = 20;
+    int NY = 20;
+    int NZ = 20;
 
-    double hx=1.0/NX,hy=1.0/NZ,hz=1.0/NZ;
-
-   // Cube
-    double leftX = -1.0, rightX = 1.0;
-    double leftY = -1.0, rightY = 1.0;
-    double leftZ = -1.0, rightZ = 1.0;
-
-   // Create Pamgen input file
-    stringstream ss;
-    ss.clear();
-    ss << "mesh \n";
-    ss << "  rectilinear \n"; 
-    ss << "     nx = " << NX << "\n";
-    ss << "     ny = " << NY << "\n"; 
-    ss << "     nz = " << NZ << "\n"; 
-    ss << "     bx = 1\n";
-    ss << "     by = 1\n"; 
-    ss << "     bz = 1\n"; 
-    ss << "     gmin = " << leftX << " " << leftY << " " << leftZ << "\n";
-    ss << "     gmax = " << rightX << " " << rightY << " " << rightZ << "\n";
-    ss << "  end \n";
-    ss << "  set assign \n";
-    ss << "     sideset, ilo, 1\n"; 
-    ss << "     sideset, jlo, 2\n"; 
-    ss << "     sideset, klo, 3\n"; 
-    ss << "     sideset, ihi, 4\n"; 
-    ss << "     sideset, jhi, 5\n"; 
-    ss << "     sideset, khi, 6\n"; 
-    ss << "  end \n";
-    ss << "end \n";
-
-    string meshInput = ss.str();
-    std::cout << meshInput <<"\n";
   
    // Generate mesh with Pamgen
     int dim=3;
@@ -250,18 +242,54 @@ int main(int argc, char *argv[]) {
     delete [] nodeCoordy;
     delete [] nodeCoordz;
 
-   // Get node-element connectivity
-    FieldContainer<int> elemToNode(numElems,numNodesPerElem);
-    int elemBlkId = 1;
-    int * connect = new int [numNodesPerElem*numElems];
-    im_ex_get_elem_conn(id,elemBlkId,connect);
-    for (int i=0; i<numElems; i++) {
-       for (int j=0; j<numNodesPerElem; j++) {
-           elemToNode(i,j)=connect[i*numNodesPerElem + j] - 1;
-       }
-    }
-    delete [] connect;
+   // Get element block information
+    int * blockIds = new int [numElemBlk];
+    im_ex_get_elem_blk_ids(id, blockIds);
 
+    int  *nodesPerElement    = new int [numElemBlk];
+    int  *elementAttributes  = new int [numElemBlk];
+    int  *elements           = new int [numElemBlk];
+    char **elementTypes      = new char * [numElemBlk];
+    int  **elmtNodeLinkage   = new int * [numElemBlk];
+
+    for(int b = 0; b < numElemBlk; b ++){
+      elementTypes[b] = new char [MAX_STR_LENGTH + 1];
+      im_ex_get_elem_block(id,
+                              blockIds[b],
+                              elementTypes[b],
+                              (int*)&(elements[b]),
+                              (int*)&(nodesPerElement[b]),
+                              (int*)&(elementAttributes[b]));
+    }
+
+    for(int b = 0; b < numElemBlk; b++){
+      elmtNodeLinkage[b] =  new int [nodesPerElement[b]*elements[b]];
+      im_ex_get_elem_conn(id,blockIds[b],elmtNodeLinkage[b]);
+    }
+
+   // Get mu value for each block of elements from parameter list
+    double  *mu = new double [numElemBlk];
+    for(int b = 0; b < numElemBlk; b++){
+       stringstream muBlock;
+       muBlock.clear();
+       muBlock << "mu" << b;
+       std::cout << muBlock.str() << "\n";
+       mu[b] = inputList.get(muBlock.str(),1.0);
+    }
+
+   // Get node-element connectivity and set mu value for element
+    int ielem = 0;
+    FieldContainer<int> elemToNode(numElems,numNodesPerElem);
+    FieldContainer<double> muVal(numElems);
+    for(int b = 0; b < numElemBlk; b++){
+      for(int el = 0; el < elements[b]; el++){
+        for (int j=0; j<numNodesPerElem; j++) {
+          elemToNode(ielem,j) = elmtNodeLinkage[b][el*numNodesPerElem + j]-1;
+        }
+        muVal(ielem) = mu[b];     
+        ielem ++;
+      }
+    }
 
    // Print mesh information  
     int numEdges = (NX)*(NY + 1)*(NZ + 1) + (NX + 1)*(NY)*(NZ + 1) + (NX + 1)*(NY + 1)*(NZ);
@@ -274,7 +302,6 @@ int main(int argc, char *argv[]) {
   // Get edge connectivity
     FieldContainer<int> edgeToNode(numEdges, numNodesPerEdge);
     FieldContainer<int> elemToEdge(numElems, numEdgesPerElem);
-    int ielem;
     int iedge = 0;
     int inode = 0;
     for (int k=0; k<NZ+1; k++) {
@@ -473,20 +500,15 @@ int main(int argc, char *argv[]) {
    // Output element to face connectivity
     ofstream el2fout("elem2face.dat");
     ofstream el2nout("elem2node.dat");
-    for (int k=0; k<NZ; k++) {
-      for (int j=0; j<NY; j++) {
-        for (int i=0; i<NX; i++) {
-          int ielem = i + j * NX + k * NX * NY;
-          for (int l=0; l<numFacesPerElem; l++) {
-             el2fout << elemToFace(ielem,l) << "  ";
-          } 
-          el2fout << "\n";
-          for (int m=0; m<numNodesPerElem; m++) {
-             el2nout << elemToNode(ielem,m) << "  ";
-          } 
-          el2nout << "\n";
-        }
-      }
+    for (int i=0; i<numElems; i++) {
+      for (int l=0; l<numFacesPerElem; l++) {
+         el2fout << elemToFace(i,l) << "  ";
+      } 
+      el2fout << "\n";
+      for (int m=0; m<numNodesPerElem; m++) {
+        el2nout << elemToNode(i,m) << "  ";
+      } 
+      el2nout << "\n";
     }
     el2fout.close();
     el2nout.close();
@@ -507,90 +529,32 @@ int main(int argc, char *argv[]) {
     f2edout.close();
     f2nout.close();
 
+   // Container indicating whether a face is on the boundary (1-yes 0-no)
+    FieldContainer<int> faceOnBoundary(numFaces);
+    FieldContainer<int> edgeOnBoundary(numEdges);
+
  // Get boundary (side set) information
-   // Side set 1 - left,  Side set 2 - front, Side set 3 - bottom,
-   // Side set 4 - right, Side set 5 - back,  Side set 6 - top
     int * sideSetIds = new int [numSideSets];
-    FieldContainer<int> numElemsOnBoundary(numSideSets);
-    int numSidesinSet;
+    int numSidesInSet;
     int numDFinSet;
     im_ex_get_side_set_ids(id,sideSetIds);
     for (int i=0; i<numSideSets; i++) {
-        im_ex_get_side_set_param(id,sideSetIds[i],&numSidesinSet,&numDFinSet);
-        numElemsOnBoundary(i)=numSidesinSet;
-     }
-
-   // Container indicating whether a face is on the boundary (1-yes 0-no)
-    FieldContainer<int> faceOnBoundary(numEdges);
-
-   // Side set 1: left
-    if (numElemsOnBoundary(0) > 0){
-     int * sideSetElemList1 = new int [numElemsOnBoundary(0)];
-     int * sideSetSideList1 = new int [numElemsOnBoundary(0)];
-     im_ex_get_side_set(id,sideSetIds[0],sideSetElemList1,sideSetSideList1);
-     for (int i=0; i<numElemsOnBoundary(0); i++) {
-          faceOnBoundary(elemToFace(sideSetElemList1[i]-1,3))=1;
-     }
-     delete [] sideSetElemList1;
-     delete [] sideSetSideList1;
-   }
-
-  // Side set 2: front
-    if (numElemsOnBoundary(1) > 0){
-     int * sideSetElemList2 = new int [numElemsOnBoundary(1)];
-     int * sideSetSideList2 = new int [numElemsOnBoundary(1)];
-     im_ex_get_side_set(id,sideSetIds[1],sideSetElemList2,sideSetSideList2);
-     for (int i=0; i<numElemsOnBoundary(1); i++) {
-          faceOnBoundary(elemToFace(sideSetElemList2[i]-1,0))=1;
-     }
-     delete [] sideSetElemList2;
-     delete [] sideSetSideList2;
-    }
-
-  // Side set 3: bottom
-    if (numElemsOnBoundary(2) > 0){
-     int * sideSetElemList3 = new int [numElemsOnBoundary(2)];
-     int * sideSetSideList3 = new int [numElemsOnBoundary(2)];
-     im_ex_get_side_set(id,sideSetIds[2],sideSetElemList3,sideSetSideList3);
-     for (int i=0; i<numElemsOnBoundary(2); i++) {
-          faceOnBoundary(elemToFace(sideSetElemList3[i]-1,4))=1;
-     }
-     delete [] sideSetElemList3;
-     delete [] sideSetSideList3;
-    }
-
-   // Side set 4: right
-    if (numElemsOnBoundary(3) > 0){
-     int * sideSetElemList4 = new int [numElemsOnBoundary(3)];
-     int * sideSetSideList4 = new int [numElemsOnBoundary(3)];
-     im_ex_get_side_set(id,sideSetIds[3],sideSetElemList4,sideSetSideList4);
-     for (int i=0; i<numElemsOnBoundary(3); i++) {
-          faceOnBoundary(elemToFace(sideSetElemList4[i]-1,1))=1;
-     }
-     delete [] sideSetElemList4;
-     delete [] sideSetSideList4;
-    }
-  // Side set 5: back
-    if (numElemsOnBoundary(4) > 0){
-     int * sideSetElemList5 = new int [numElemsOnBoundary(4)];
-     int * sideSetSideList5 = new int [numElemsOnBoundary(4)];
-     im_ex_get_side_set(id,sideSetIds[4],sideSetElemList5,sideSetSideList5);
-     for (int i=0; i<numElemsOnBoundary(4); i++) {
-          faceOnBoundary(elemToFace(sideSetElemList5[i]-1,2))=1;
-     }
-     delete [] sideSetElemList5;
-     delete [] sideSetSideList5;
-    }
-  // Side set 6: top
-    if (numElemsOnBoundary(5) > 0){
-     int * sideSetElemList6 = new int [numElemsOnBoundary(5)];
-     int * sideSetSideList6 = new int [numElemsOnBoundary(5)];
-     im_ex_get_side_set(id,sideSetIds[5],sideSetElemList6,sideSetSideList6);
-     for (int i=0; i<numElemsOnBoundary(5); i++) {
-          faceOnBoundary(elemToFace(sideSetElemList6[i]-1,5))=1;
-     }
-     delete [] sideSetElemList6;
-     delete [] sideSetSideList6;
+        im_ex_get_side_set_param(id,sideSetIds[i],&numSidesInSet,&numDFinSet);
+        if (numSidesInSet > 0){
+          int * sideSetElemList = new int [numSidesInSet];
+          int * sideSetSideList = new int [numSidesInSet];
+          im_ex_get_side_set(id,sideSetIds[i],sideSetElemList,sideSetSideList);
+          for (int j=0; j<numSidesInSet; j++) {
+             int iface = sideSetSideList[j]-1;
+             faceOnBoundary(elemToFace(sideSetElemList[j]-1,iface))=1;
+             edgeOnBoundary(faceToEdge(elemToFace(sideSetElemList[j]-1,iface),0))=1;
+             edgeOnBoundary(faceToEdge(elemToFace(sideSetElemList[j]-1,iface),1))=1;
+             edgeOnBoundary(faceToEdge(elemToFace(sideSetElemList[j]-1,iface),2))=1;
+             edgeOnBoundary(faceToEdge(elemToFace(sideSetElemList[j]-1,iface),3))=1;
+          }
+          delete [] sideSetElemList;
+          delete [] sideSetSideList;
+       }
     }
 
     delete [] sideSetIds;
@@ -601,50 +565,11 @@ int main(int argc, char *argv[]) {
        fFaceout << faceOnBoundary(i) <<"\n";
     }
     fFaceout.close();
-
-
-
-
-    
-   // Set material properties using undeformed grid assuming each element has only one value of mu
-    FieldContainer<double> muVal(numElems);
-    for (int k=0; k<NZ; k++) {
-      for (int j=0; j<NY; j++) {
-        for (int i=0; i<NX; i++) {
-          int ielem = i + j * NX + k * NX * NY;
-          double midElemX = nodeCoord(elemToNode(ielem,0),0) + hx/2.0;
-          double midElemY = nodeCoord(elemToNode(ielem,0),1) + hy/2.0;
-          double midElemZ = nodeCoord(elemToNode(ielem,0),2) + hz/2.0;
-          if ( (midElemX > mu1LeftX) && (midElemY > mu1LeftY) && (midElemZ > mu1LeftZ) &&
-               (midElemX <= mu1RightX) && (midElemY <= mu1RightY) && (midElemZ <= mu1RightZ) ){
-             muVal(ielem) = mu1;
-          }
-           else {
-             muVal(ielem) = mu2;
-          }
-        }
-      }
+    ofstream fEdgeout("edgeOnBndy.dat");
+    for (int i=0; i<numEdges; i++){
+       fEdgeout << edgeOnBoundary(i) <<"\n";
     }
-
-   // Perturb mesh coordinates (only interior nodes)
-    if (randomMesh){
-      for (int k=1; k<NZ; k++) {
-        for (int j=1; j<NY; j++) {
-          for (int i=1; i<NX; i++) {
-            int inode = i + j * (NX + 1) + k * (NX + 1) * (NY + 1);
-           // random numbers between -1.0 and 1.0
-            double rx = 2.0 * (double)rand()/RAND_MAX - 1.0;
-            double ry = 2.0 * (double)rand()/RAND_MAX - 1.0;
-            double rz = 2.0 * (double)rand()/RAND_MAX - 1.0; 
-           // limit variation to 1/4 edge length
-            nodeCoord(inode,0) = nodeCoord(inode,0) + 0.125 * hx * rx;
-            nodeCoord(inode,1) = nodeCoord(inode,1) + 0.125 * hy * ry;
-            nodeCoord(inode,2) = nodeCoord(inode,2) + 0.125 * hz * rz;
-          }
-        }
-      }
-    }
-   
+    fEdgeout.close();
 
     // Print coords
     FILE *f=fopen("coords.dat","w");
@@ -767,6 +692,7 @@ int main(int argc, char *argv[]) {
    // Containers for element HCURL mass matrix
     FieldContainer<double> massMatrixC(numCells, numFieldsC, numFieldsC);
     FieldContainer<double> weightedMeasure(numCells, numCubPoints);
+    FieldContainer<double> weightedMeasureMu(numCells, numCubPoints);
     FieldContainer<double> hexCValsTransformed(numCells, numFieldsC, numCubPoints, spaceDim);
     FieldContainer<double> hexCValsTransformedWeighted(numCells, numFieldsC, numCubPoints, spaceDim);
    // Containers for element HDIV mass matrix
@@ -856,12 +782,19 @@ int main(int argc, char *argv[]) {
       fst::HCURLtransformVALUE<double>(hexCValsTransformed, hexJacobInv, 
                                    hexCVals);
 
-    // compute weighted measure
+     // compute weighted measure
       fst::computeMeasure<double>(weightedMeasure, hexJacobDet, cubWeights);
+
+     // combine mu value with weighted measure
+      for (int nC = 0; nC < numCells; nC++){
+        for (int nPt = 0; nPt < numCubPoints; nPt++){
+          weightedMeasureMu(nC,nPt) = weightedMeasure(nC,nPt) * muVal(k);
+        }
+      }
 
      // multiply by weighted measure
       fst::multiplyMeasure<double>(hexCValsTransformedWeighted,
-                                   weightedMeasure, hexCValsTransformed);
+                                   weightedMeasureMu, hexCValsTransformed);
 
      // integrate to compute element mass matrix
       fst::integrate<double>(massMatrixC,
@@ -977,7 +910,7 @@ int main(int argc, char *argv[]) {
           double z = physCubPoints(0,nPt,2);
           double du1, du2, du3;
 
-          evalCurlCurlu(du1, du2, du3, x, y, z);
+          evalCurlCurlu(du1, du2, du3, x, y, z, muVal(k));
           rhsDatag(0,nPt,0) = du1;
           rhsDatag(0,nPt,1) = du2;
           rhsDatag(0,nPt,2) = du3;
@@ -1041,7 +974,7 @@ int main(int argc, char *argv[]) {
              double y = worksetGaussPoints(0, nPt, 1);
              double z = worksetGaussPoints(0, nPt, 2);
 
-             evalCurlu(curluFace(0,nPt,0), curluFace(0,nPt,1), curluFace(0,nPt,2), x, y, z);
+             evalCurlu(curluFace(0,nPt,0), curluFace(0,nPt,1), curluFace(0,nPt,2), x, y, z, muVal(k));
            }
 
          // compute the cross product of curluFace with basis and multiply by weights
@@ -1093,7 +1026,68 @@ int main(int argc, char *argv[]) {
    rhsD.GlobalAssemble();
 
 
-  // Get boundary faces and apply zeros and ones to rhs and StiffD
+   // Build the inverse diagonal for MassC
+   Epetra_CrsMatrix MassCinv(Copy,MassC.RowMap(),MassC.RowMap(),1);
+   Epetra_Vector DiagC(MassC.RowMap());
+
+   DiagC.PutScalar(1.0);
+   MassC.Multiply(false,DiagC,DiagC);
+   for(int i=0; i<DiagC.MyLength(); i++) {
+     DiagC[i]=1.0/DiagC[i];
+   }
+   for(int i=0; i<DiagC.MyLength(); i++) {
+     int CID=MassC.GCID(i);
+     MassCinv.InsertGlobalValues(MassC.GRID(i),1,&(DiagC[i]),&CID);
+   }
+   MassCinv.FillComplete();
+
+  // Set value to zero on diagonal that corresponds to boundary edge
+   for(int i=0;i<numEdges;i++) {
+     if (edgeOnBoundary(i)){
+      double val=0.0;
+      MassCinv.ReplaceGlobalValues(i,1,&val,&i);
+     }
+   }
+
+
+    int numEntries;
+    double *values;
+    int *cols;
+
+  // Adjust matrices and rhs due to boundary conditions
+   for (int row = 0; row<numFaces; row++){
+      MassD.ExtractMyRowView(row,numEntries,values,cols);
+        for (int i=0; i<numEntries; i++){
+           if (faceOnBoundary(cols[i])) {
+             values[i]=0;
+          }
+       }
+      StiffD.ExtractMyRowView(row,numEntries,values,cols);
+        for (int i=0; i<numEntries; i++){
+           if (faceOnBoundary(cols[i])) {
+             values[i]=0;
+          }
+       }
+    }
+   for (int row = 0; row<numFaces; row++){
+       if (faceOnBoundary(row)) {
+          int rowindex = row;
+          StiffD.ExtractMyRowView(row,numEntries,values,cols);
+          for (int i=0; i<numEntries; i++){
+             values[i]=0;
+          }
+          MassD.ExtractMyRowView(row,numEntries,values,cols);
+          for (int i=0; i<numEntries; i++){
+             values[i]=0;
+          }
+         rhsD[0][row]=0;
+         double val = 1.0;
+         StiffD.ReplaceGlobalValues(1, &rowindex, 1, &rowindex, &val);
+       }
+    }
+
+/*
+// Get boundary faces and apply zeros and ones to rhs and StiffD
      int numBCFaces=0;
      for (int i=0; i<numFaces; i++){
          if (faceOnBoundary(i)){
@@ -1111,17 +1105,29 @@ int main(int argc, char *argv[]) {
       }
    //   ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffD);
       delete [] BCFaces;
+*/
 
    
   // Dump matrices to disk
    EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassG);
    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
+   EpetraExt::RowMatrixToMatlabFile("mag_m1inv_matrix.dat",MassCinv);
    EpetraExt::RowMatrixToMatlabFile("mag_m2_matrix.dat",MassD);
    EpetraExt::RowMatrixToMatlabFile("mag_k2_matrix.dat",StiffD);
    EpetraExt::RowMatrixToMatlabFile("mag_t1_matrix.dat",DCurl);
    EpetraExt::MultiVectorToMatrixMarketFile("rhs2_vector.dat",rhsD,0,0,false);
 
    fSignsout.close();
+
+  // Clean up
+    delete [] nodesPerElement;
+    delete [] elementAttributes;
+    delete [] elements;
+
+    for (int b = 0; b < numElemBlk; b++){
+       delete [] elmtNodeLinkage[b];
+       delete [] elementTypes[b];
+    }
 
  // delete mesh
  Delete_Pamgen_Mesh();
@@ -1185,7 +1191,8 @@ int main(int argc, char *argv[]) {
 
 
 // Calculates curl of exact solution u
- int evalCurlu(double & curlu0, double & curlu1, double & curlu2, double & x, double & y, double & z)
+ int evalCurlu(double & curlu0, double & curlu1, double & curlu2, 
+                double & x, double & y, double & z, double & mu)
  {
   
    // function 1
@@ -1207,9 +1214,9 @@ int main(int argc, char *argv[]) {
     double duzdy = -M_PI*sin(M_PI*y)*cos(M_PI*x)*(z+1.0)*(z-1.0);
   */
 
-    curlu0 = duzdy - duydz;
-    curlu1 = duxdz - duzdx;
-    curlu2 = duydx - duxdy;
+    curlu0 = (duzdy - duydz)/mu;
+    curlu1 = (duxdz - duzdx)/mu;
+    curlu2 = (duydx - duxdy)/mu;
  
   /*
    // function 3 and 4
@@ -1222,7 +1229,8 @@ int main(int argc, char *argv[]) {
  }
 
 // Calculates curl of the curl of exact solution u
- int evalCurlCurlu(double & curlCurlu0, double & curlCurlu1, double & curlCurlu2, double & x, double & y, double & z)
+ int evalCurlCurlu(double & curlCurlu0, double & curlCurlu1, double & curlCurlu2, 
+                    double & x, double & y, double & z, double & mu)
 {
    
    // function 1
@@ -1250,9 +1258,9 @@ int main(int argc, char *argv[]) {
                           + M_PI*M_PI*cos(M_PI*y)*cos(M_PI*z)*(x+1.0)*(x-1.0);
  */
                        
-    curlCurlu0 = dcurlu2dy - dcurlu1dz;
-    curlCurlu1 = dcurlu0dz - dcurlu2dx;
-    curlCurlu2 = dcurlu1dx - dcurlu0dy;
+    curlCurlu0 = (dcurlu2dy - dcurlu1dz)/mu;
+    curlCurlu1 = (dcurlu0dz - dcurlu2dx)/mu;
+    curlCurlu2 = (dcurlu1dx - dcurlu0dy)/mu;
  
  /*
    // function 3 and 4
