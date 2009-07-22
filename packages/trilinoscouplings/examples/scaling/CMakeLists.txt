@@ -33,6 +33,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+  IF (TPL_ENABLE_MPI)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Example_DivLSFEM
     SOURCES example_DivLSFEM.cpp
@@ -40,7 +41,6 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
-  IF (TPL_ENABLE_MPI)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     Example_CurlLSFEM
     SOURCES example_CurlLSFEM.cpp
