@@ -28,13 +28,16 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   example_01.cpp
-    \brief  Example creation of mass and stiffness matrices for div-curl system on a hexadedral mesh using div-conforming elements.
+/** \file   example_DivLSFEM.cpp
+    \brief  Example of a div-curl system on a hexadedral mesh using div-conforming elements.
     \author Created by P. Bochev, D. Ridzal and K. Peterson.
- 
-    \remark Sample command line
-    \code   ./example_DivLSFEM.exe 10 10 10 \endcode
+
+    \remark Code requires an xml input file with Pamgen mesh description and material parameters
+            named DivLSFEMin.xml.
 */
+
+#undef DEBUG_PRINTING
+#define DEBUG_PRINTING
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
@@ -51,7 +54,11 @@
 // Epetra includes
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
 #include "Epetra_SerialComm.h"
+#endif
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_Vector.h"
@@ -73,11 +80,241 @@
 
 // Pamgen includes
 #include "create_inline_mesh.h"
-#include "../mesh_spec_lt/im_exodusII.h"
-#include "../mesh_spec_lt/im_ne_nemesisI.h"
+#include "../mesh_spec_lt/im_exodusII_l.h"
+#include "../mesh_spec_lt/im_ne_nemesisI_l.h"
+
+// ML Includes
+#include "ml_epetra_utils.h"
 
 using namespace std;
 using namespace Intrepid;
+
+class topo_entity{
+public:
+  topo_entity(){
+    local_id = -1;
+    global_id = -1;
+    owned = true;
+  };
+  void add_node(long long the_val,long long * global_nids){
+    local_node_ids.push_back(the_val);
+    sorted_local_node_ids.push_back(the_val);
+    sorted_global_node_ids.push_back(global_nids[the_val-1]);
+  }
+  void sort(){
+    sorted_local_node_ids.sort();
+    sorted_global_node_ids.sort();
+  }
+  ~topo_entity(){};
+  std::list <long long > local_node_ids;
+  std::list <long long > sorted_local_node_ids;
+  std::list <long long > sorted_global_node_ids;
+  long long local_id;
+  long long global_id;
+  bool owned;
+};
+
+/*******************************************************************************/
+inline bool compare_sorted_global_node_ids ( topo_entity* const x,  topo_entity* const y )
+/*******************************************************************************/
+{
+  assert(x->sorted_global_node_ids.size() == y->sorted_global_node_ids.size());
+  if(x->sorted_global_node_ids < y->sorted_global_node_ids)return true;    
+  return false;
+}
+
+struct fecomp{
+  bool operator () ( topo_entity* x,  topo_entity*  y )const
+  {
+    if(x->sorted_local_node_ids < y->sorted_local_node_ids)return true;    
+    return false;
+  }
+};
+
+void  Conform_Boundary_IDS_topo_entity(std::vector < std:: vector < topo_entity * > > & topo_entities,
+					long long * proc_ids, 
+					long long  rank);
+
+void  Conform_Boundary_IDS(long long ** comm_entities,
+			   long long * entity_counts,
+			   long long * proc_ids, 
+			   long long * data_array,
+			   long long num_comm_pairs,
+			   long long  rank);
+
+/*******************************************************************************/
+void calc_global_node_ids(long long * globalNodeIds,
+			  bool * nodeIsOwned,
+			  long long numNodes,
+			  long long num_node_comm_maps,
+			  long long * node_cmap_node_cnts,
+			  long long * node_comm_proc_ids,
+			  long long * * comm_node_ids,
+			  int rank)
+/*******************************************************************************/
+{
+  for(long long i = 0; i < numNodes; i ++){
+    globalNodeIds[i] = 1l;
+    nodeIsOwned[i] = true;
+  }
+  for(long long j = 0; j < num_node_comm_maps; j++) {
+    for(long long k = 0; k < node_cmap_node_cnts[j] ; k ++){
+      if(node_comm_proc_ids[j] < rank){
+	globalNodeIds[comm_node_ids[j][k]-1] = -1;	
+	nodeIsOwned[comm_node_ids[j][k]-1] = false;
+      }
+    }
+  }
+  long long num_unique_nodes = 0;
+  for(long long  i = 0 ; i < numNodes; i ++)if(globalNodeIds[i] == 1l)num_unique_nodes ++;
+  long long start_id = 0;
+  MPI_Scan(&num_unique_nodes,&start_id,1,
+	   MPI_LONG_LONG_INT,
+	   MPI_SUM,
+	   MPI_COMM_WORLD);
+  start_id -= num_unique_nodes;
+
+  int num_assigned = 0;
+  for(long long  i = 0 ; i < numNodes; i ++)if(globalNodeIds[i] == 1l){
+    globalNodeIds[i] = num_assigned + start_id;
+    num_assigned ++;
+  }
+
+  //Conforms global nodal ids
+  Conform_Boundary_IDS(comm_node_ids,
+		       node_cmap_node_cnts,
+		       node_comm_proc_ids, 
+		       globalNodeIds,
+		       num_node_comm_maps,
+		       rank);
+
+}
+
+
+/*******************************************************************************/
+void calc_global_ids(std::vector < topo_entity * > eof_vec,
+		long long **comm_node_ids,
+		long long * node_comm_proc_ids,
+		long long * node_cmap_node_cnts,
+		int num_node_comm_maps,
+		int rank,
+		std::string fname_string)
+/*******************************************************************************/
+{
+  std::vector < std:: vector < topo_entity *> > topo_entities;
+  int nncm = num_node_comm_maps;
+  // make a vector of sets of comm nodes
+  std::vector < std::set < long long> > comm_vector_set;
+  for(int i = 0; i < nncm; i ++){
+    std::vector < topo_entity * >v;
+    topo_entities.push_back(v);
+    std::set < long long > as;
+    for(int j = 0; j < node_cmap_node_cnts[i];j ++){
+      as.insert(comm_node_ids[i][j]);
+    }
+    comm_vector_set.push_back(as);
+  }
+/*run over all edges, faces*/
+
+  for(unsigned tec = 0;tec != eof_vec.size();tec ++){
+    topo_entity * teof = eof_vec[tec];
+
+    for(int i = 0; i < nncm; i ++){
+      bool found = true;
+      std::list <long long > :: iterator lit;
+      for( lit = teof->local_node_ids.begin();
+	   lit != teof->local_node_ids.end() && found == true;
+	   lit ++){
+	if(comm_vector_set[i].find(*lit) == comm_vector_set[i].end())found = false;
+      }
+      //if all component nodes found then add face,edge to comm lists
+      if(found){
+	topo_entities[i].push_back(teof);
+	if(node_comm_proc_ids[i] < rank)teof->owned = false;//not owned if found on lower processor
+      }
+      else{
+      }
+    }
+  }
+
+  //need to sort the edges_or_face vectors by their sorted global node ids
+  for(unsigned i = 0; i < topo_entities.size(); i ++){
+    if(!topo_entities[i].empty()){
+      std::sort(topo_entities[i].begin(),topo_entities[i].end(),compare_sorted_global_node_ids);
+    }
+  }
+#ifdef DEBUG_PRINTING
+ std::stringstream aname;
+  aname << fname_string;
+  aname << rank;
+  aname << ".txt";
+  ofstream fout(aname.str().c_str());
+#endif
+
+  //need to sort the edges_or_face vectors by their sorted global node ids
+  for(unsigned i = 0; i < topo_entities.size(); i ++){
+    if(!topo_entities[i].empty()){
+      std::sort(topo_entities[i].begin(),topo_entities[i].end(),compare_sorted_global_node_ids);
+    }
+#ifdef DEBUG_PRINTING
+    fout << " from proc rank " << rank 
+	 << " to proc rank " << node_comm_proc_ids[i] 
+	 << " has " << topo_entities[i].size() 
+	 << " entries " << std::endl;
+
+    if(!topo_entities[i].empty()){
+      for(unsigned j = 0; j < topo_entities[i].size();j ++){
+	topo_entity * eof = topo_entities[i][j];
+	for(std::list < long long > :: iterator klit = eof->sorted_global_node_ids.begin();
+	    klit != eof->sorted_global_node_ids.end(); klit ++){
+	  fout << (*klit) << " " ;
+	}
+	fout << endl;
+      }
+    }
+#endif
+  }
+
+  //count the number of entities owned;
+  long long owned_entities = 0;
+  for(unsigned ict = 0; ict < eof_vec.size(); ict ++){
+    if(eof_vec[ict]->owned)owned_entities ++;
+  }
+#ifdef DEBUG_PRINTING
+  fout << " proc " << rank << " owns " << owned_entities << " edges " << std::endl;
+#endif
+
+  long long start_id = 0;
+  MPI_Scan(&owned_entities,&start_id,1,
+	   MPI_LONG_LONG_INT,
+	   MPI_SUM,
+	   MPI_COMM_WORLD);
+  start_id -= owned_entities;
+#ifdef DEBUG_PRINTING
+  fout << " proc " << rank << " start_id " << start_id << std::endl;
+#endif
+  //DMH
+  long long num_assigned = 0;
+  for(unsigned ict = 0; ict < eof_vec.size(); ict ++){
+    if(eof_vec[ict]->owned){
+      eof_vec[ict]->global_id = num_assigned + start_id;
+      start_id ++;
+    }
+  }
+
+  Conform_Boundary_IDS_topo_entity(topo_entities,
+				    node_comm_proc_ids, 
+				    rank);
+
+#ifdef DEBUG_PRINTING
+  for(unsigned ict = 0; ict < eof_vec.size(); ict ++){
+    fout << "on proc " << rank << " entity " << ict << " has id " << eof_vec[ict]->global_id << std::endl;
+  }
+
+  fout.close();
+#endif
+
+}
 
 // Functions to evaluate exact solution and its derivatives
 int evalu(double & uExact0, 
@@ -109,7 +346,20 @@ int evalCurlCurlu(double & curlCurlu0,
 
 int main(int argc, char *argv[]) {
 
+  int error = 0;
+#ifdef HAVE_MPI
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
+  int rank=mpiSession.getRank();
+  int numProcs=mpiSession.getNProc();
+  Epetra_MpiComm Comm(MPI_COMM_WORLD);
+  int MyPID = Comm.MyPID();
+#else
+  int rank=0;
+  int numProcs=1;
+  int MyPID = 0;
+  Epetra_SerialComm Comm;
+#endif
+  Epetra_Time Time(Comm);
 
    //Check number of arguments
     TEST_FOR_EXCEPTION( ( argc < 1 ),
@@ -121,7 +371,7 @@ int main(int argc, char *argv[]) {
   int iprint     = argc - 1;
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
-  if (iprint > 12)
+  if (iprint > 1)
     outStream = Teuchos::rcp(&std::cout, false);
   else
     outStream = Teuchos::rcp(&bhs, false);
@@ -144,25 +394,46 @@ int main(int argc, char *argv[]) {
     << "|                                                                             |\n" \
     << "===============================================================================\n";
 
+#ifdef HAVE_MPI
+  long long *  node_comm_proc_ids   = NULL;
+  long long *  node_cmap_node_cnts  = NULL;
+  long long *  node_cmap_ids        = NULL;
+  long long ** comm_node_ids        = NULL;
+  long long ** comm_node_proc_ids   = NULL;
+
+  std::set < topo_entity * , fecomp > edge_set;
+  std::set < topo_entity * , fecomp > face_set;
+
+  std::vector < topo_entity * > edge_vector;
+  std::vector < topo_entity * > face_vector;
+
+  std::vector < int > edge_comm_procs;
+#endif
+
+  int dim = 3;
 
 // ************************************ GET INPUTS **************************************
 
   // Input file
-    std::string   xmlInFileName = "input.xml";
+    std::string   xmlInFileName = "DivLSFEMin.xml";
 
   // Read xml file into parameter list
     Teuchos::ParameterList inputList;
 
    if(xmlInFileName.length()) {
-      std::cout << "\nReading a parameter list from the XML file \""<<xmlInFileName<<"\" ...\n";
+      std::cout << "\nReading parameter list from the XML file \""<<xmlInFileName<<"\" ...\n\n";
       Teuchos::updateParametersFromXmlFile(xmlInFileName,&inputList);
-      std::cout << "\nParameter list read from the XML file \""<<xmlInFileName<<"\":\n\n";
       inputList.print(std::cout,2,true,true);
+      std::cout << "\n";
+    }
+    else
+    {
+      std::cout << "Cannot read input file: " << xmlInFileName << "\n";
+      return 0;
     }
 
   // Get pamgen mesh definition
     std::string meshInput = Teuchos::getParameter<std::string>(inputList,"meshInput");
-    std::cout << meshInput << "\n";
  
 
 // *********************************** CELL TOPOLOGY **********************************
@@ -196,75 +467,84 @@ int main(int argc, char *argv[]) {
         refFaceToNode(i,3)=hex_8.getNodeMap(2, i, 3);
     }
 
+   // Build reference element face to edge map (Hardcoded for now -- need to FIX)
+    FieldContainer<int> refFaceToEdge(numFacesPerElem,numEdgesPerFace);
+        refFaceToEdge(0,0)=0;
+        refFaceToEdge(0,1)=9;
+        refFaceToEdge(0,2)=4;
+        refFaceToEdge(0,3)=8;
+        refFaceToEdge(1,0)=1;
+        refFaceToEdge(1,1)=10;
+        refFaceToEdge(1,2)=5;
+        refFaceToEdge(1,3)=9;
+        refFaceToEdge(2,0)=2;
+        refFaceToEdge(2,1)=11;
+        refFaceToEdge(2,2)=6;
+        refFaceToEdge(2,3)=10;
+        refFaceToEdge(3,0)=3;
+        refFaceToEdge(3,1)=8;
+        refFaceToEdge(3,2)=7;
+        refFaceToEdge(3,3)=11;
+        refFaceToEdge(4,0)=0;
+        refFaceToEdge(4,1)=1;
+        refFaceToEdge(4,2)=2;
+        refFaceToEdge(4,3)=3;
+        refFaceToEdge(5,0)=4;
+        refFaceToEdge(5,1)=5;
+        refFaceToEdge(5,2)=6;
+        refFaceToEdge(5,3)=7;
 
 // *********************************** GENERATE MESH ************************************
 
+  if (MyPID == 0) {
     std::cout << "Generating mesh ... \n\n";
+  }
 
-    int NX = 20;
-    int NY = 20;
-    int NZ = 20;
-
-  
    // Generate mesh with Pamgen
-    int dim=3;
-    int rank=0;
-    int numProcs=1;
-    long int maxInt = 100000000;
+
+    long long maxInt = 9223372036854775807LL;
     Create_Pamgen_Mesh(meshInput.c_str(), dim, rank, numProcs, maxInt);
     
    // Get mesh size info
     char title[100];
-    int numDim;
-    int numNodes;
-    int numElems;
-    int numElemBlk;
-    int numNodeSets;
-    int numSideSets;
+    long long numDim;
+    long long numNodes;
+    long long numElems;
+    long long numElemBlk;
+    long long numNodeSets;
+    long long numSideSets;
     int id = 0;
 
-    im_ex_get_init(id, title, &numDim, &numNodes, 
+    im_ex_get_init_l(id, title, &numDim, &numNodes, 
                                 &numElems, &numElemBlk, &numNodeSets,
                                 &numSideSets);
+    long long * block_ids = new long long [numElemBlk];
+    error += im_ex_get_elem_blk_ids_l(id, block_ids);
 
-   // Read node coordinates and place in field container
-    FieldContainer<double> nodeCoord(numNodes,dim);
-    double * nodeCoordx = new double [numNodes];
-    double * nodeCoordy = new double [numNodes];
-    double * nodeCoordz = new double [numNodes];
-    im_ex_get_coord(id,nodeCoordx,nodeCoordy,nodeCoordz);
-    for (int i=0; i<numNodes; i++) {          
-      nodeCoord(i,0)=nodeCoordx[i];
-      nodeCoord(i,1)=nodeCoordy[i];
-      nodeCoord(i,2)=nodeCoordz[i];
-    }
-    delete [] nodeCoordx;
-    delete [] nodeCoordy;
-    delete [] nodeCoordz;
 
-   // Get element block information
-    int * blockIds = new int [numElemBlk];
-    im_ex_get_elem_blk_ids(id, blockIds);
 
-    int  *nodesPerElement    = new int [numElemBlk];
-    int  *elementAttributes  = new int [numElemBlk];
-    int  *elements           = new int [numElemBlk];
-    char **elementTypes      = new char * [numElemBlk];
-    int  **elmtNodeLinkage   = new int * [numElemBlk];
 
-    for(int b = 0; b < numElemBlk; b ++){
-      elementTypes[b] = new char [MAX_STR_LENGTH + 1];
-      im_ex_get_elem_block(id,
-                              blockIds[b],
-                              elementTypes[b],
-                              (int*)&(elements[b]),
-                              (int*)&(nodesPerElement[b]),
-                              (int*)&(elementAttributes[b]));
+    long long  *nodes_per_element   = new long long [numElemBlk];
+    long long  *element_attributes  = new long long [numElemBlk];
+    long long  *elements            = new long long [numElemBlk];
+    char      **element_types       = new char * [numElemBlk];
+    long long **elmt_node_linkage   = new long long * [numElemBlk];
+
+
+    for(long long i = 0; i < numElemBlk; i ++){
+      element_types[i] = new char [MAX_STR_LENGTH + 1];
+      error += im_ex_get_elem_block_l(id, 
+				      block_ids[i], 
+				      element_types[i],
+				      (long long*)&(elements[i]),
+				      (long long*)&(nodes_per_element[i]), 
+				      (long long*)&(element_attributes[i]));
     }
 
-    for(int b = 0; b < numElemBlk; b++){
-      elmtNodeLinkage[b] =  new int [nodesPerElement[b]*elements[b]];
-      im_ex_get_elem_conn(id,blockIds[b],elmtNodeLinkage[b]);
+    /*connectivity*/
+    for(long long b = 0; b < numElemBlk; b++){
+      elmt_node_linkage[b] =  new long long [nodes_per_element[b]*elements[b]];
+      error += im_ex_get_elem_conn_l(id,block_ids[b],elmt_node_linkage[b]);
     }
 
    // Get mu value for each block of elements from parameter list
@@ -273,229 +553,224 @@ int main(int argc, char *argv[]) {
        stringstream muBlock;
        muBlock.clear();
        muBlock << "mu" << b;
-       std::cout << muBlock.str() << "\n";
        mu[b] = inputList.get(muBlock.str(),1.0);
     }
 
-   // Get node-element connectivity and set mu value for element
-    int ielem = 0;
+  // Get node-element connectivity and set element mu value
+    int telct = 0;
     FieldContainer<int> elemToNode(numElems,numNodesPerElem);
     FieldContainer<double> muVal(numElems);
-    for(int b = 0; b < numElemBlk; b++){
-      for(int el = 0; el < elements[b]; el++){
-        for (int j=0; j<numNodesPerElem; j++) {
-          elemToNode(ielem,j) = elmtNodeLinkage[b][el*numNodesPerElem + j]-1;
-        }
-        muVal(ielem) = mu[b];     
-        ielem ++;
+    for(long long b = 0; b < numElemBlk; b++){
+      for(long long el = 0; el < elements[b]; el++){
+	for (int j=0; j<numNodesPerElem; j++) {
+	  elemToNode(telct,j) = elmt_node_linkage[b][el*numNodesPerElem + j]-1;
+	}
+        muVal(telct) = mu[b];     
+	telct ++;
+      }
+    }
+ 
+
+   // Read node coordinates and place in field container
+    FieldContainer<double> nodeCoord(numNodes,dim);
+    double * nodeCoordx = new double [numNodes];
+    double * nodeCoordy = new double [numNodes];
+    double * nodeCoordz = new double [numNodes];
+    im_ex_get_coord_l(id,nodeCoordx,nodeCoordy,nodeCoordz);
+    for (int i=0; i<numNodes; i++) {          
+      nodeCoord(i,0)=nodeCoordx[i];
+      nodeCoord(i,1)=nodeCoordy[i];
+      nodeCoord(i,2)=nodeCoordz[i];
+    }
+
+#ifdef HAVE_MPI
+    /*parallel info*/
+    long long num_internal_nodes;
+    long long num_border_nodes;
+    long long num_external_nodes;
+    long long num_internal_elems;
+    long long num_border_elems;
+    long long num_node_comm_maps;
+    long long num_elem_comm_maps;
+    im_ne_get_loadbal_param_l( id, 
+			       &num_internal_nodes,
+			       &num_border_nodes, 
+			       &num_external_nodes,
+			       &num_internal_elems, 
+			       &num_border_elems,
+			       &num_node_comm_maps,
+			       &num_elem_comm_maps,
+			       0/*unused*/ );
+
+    if(num_node_comm_maps > 0){
+      node_comm_proc_ids   = new long long  [num_node_comm_maps];
+      node_cmap_node_cnts  = new long long  [num_node_comm_maps];
+      node_cmap_ids        = new long long  [num_node_comm_maps];
+      comm_node_ids        = new long long* [num_node_comm_maps];
+      comm_node_proc_ids   = new long long* [num_node_comm_maps];
+  
+      long long *  elem_cmap_ids        = new long long [num_elem_comm_maps];
+      long long *  elem_cmap_elem_cnts  = new long long [num_elem_comm_maps];
+
+
+      if ( im_ne_get_cmap_params_l( id, 
+				  node_cmap_ids,
+				  (long long*)node_cmap_node_cnts, 
+				  elem_cmap_ids,
+				  (long long*)elem_cmap_elem_cnts, 
+				  0/*not used proc_id*/ ) < 0 )++error;
+      
+      for(long long j = 0; j < num_node_comm_maps; j++) {
+	comm_node_ids[j]       = new long long [node_cmap_node_cnts[j]];
+	comm_node_proc_ids[j]  = new long long [node_cmap_node_cnts[j]];
+	if ( im_ne_get_node_cmap_l( id, 
+				  node_cmap_ids[j], 
+				  comm_node_ids[j], 
+				  comm_node_proc_ids[j],
+				  0/*not used proc_id*/ ) < 0 )++error;
+	node_comm_proc_ids[j] = comm_node_proc_ids[j][0];
       }
     }
 
-   // Print mesh information  
-    int numEdges = (NX)*(NY + 1)*(NZ + 1) + (NX + 1)*(NY)*(NZ + 1) + (NX + 1)*(NY + 1)*(NZ);
-    int numFaces = (NX)*(NY)*(NZ + 1) + (NX)*(NY + 1)*(NZ) + (NX + 1)*(NY)*(NZ);
+
+
+    //Calculate global node ids
+    long long * globalNodeIds = new long long[numNodes];
+    bool * nodeIsOwned = new bool[numNodes];
+
+    calc_global_node_ids(globalNodeIds,
+			 nodeIsOwned,
+			 numNodes,
+			 num_node_comm_maps,
+			 node_cmap_node_cnts,
+			 node_comm_proc_ids,
+			 comm_node_ids,
+			 rank);    
+
+#endif 
+
+    FieldContainer<int> elemToEdge(numElems,numEdgesPerElem);
+    FieldContainer<int> elemToFace(numElems,numFacesPerElem);
+
+   // calculate edge and face ids
+    int elct = 0;
+    for(long long b = 0; b < numElemBlk; b++){
+      if(nodes_per_element[b] == 4){
+      }
+      else if (nodes_per_element[b] == 8){
+	//loop over all elements and push their edges onto a set if they are not there already
+	for(long long el = 0; el < elements[b]; el++){
+	  std::set< topo_entity * > ::iterator fit;
+	  for (int i=0; i < numEdgesPerElem; i++){
+	    topo_entity * teof = new topo_entity;
+	    for(int j = 0; j < numNodesPerEdge;j++){
+	      teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refEdgeToNode(i,j)],globalNodeIds);
+	    }
+	    teof->sort();
+	    fit = edge_set.find(teof);
+	    if(fit == edge_set.end()){
+	      teof->local_id = edge_vector.size();
+	      edge_set.insert(teof);
+	      elemToEdge(elct,i)= edge_vector.size();
+	      edge_vector.push_back(teof);
+	    }
+	    else{
+	      elemToEdge(elct,i) = (*fit)->local_id;
+	      delete teof;
+	    }
+	  }
+	  for (int i=0; i < numFacesPerElem; i++){
+	    topo_entity * teof = new topo_entity;
+	    for(int j = 0; j < numNodesPerFace;j++){
+	      teof->add_node(elmt_node_linkage[b][el*numNodesPerElem + refFaceToNode(i,j)],globalNodeIds);
+	    }
+	    teof->sort();
+	    fit = face_set.find(teof);
+	    if(fit == face_set.end()){
+	      teof->local_id = face_vector.size();
+	      face_set.insert(teof);
+	      elemToFace(elct,i)= face_vector.size();
+	      face_vector.push_back(teof);
+	    }
+	    else{
+	      elemToFace(elct,i) = (*fit)->local_id;
+	      delete teof;
+	    }
+	  }
+	  elct ++;
+	}
+      }
+    }
+    
+   // Edge to Node connectivity
+    FieldContainer<int> edgeToNode(edge_vector.size(), numNodesPerEdge);
+    for(unsigned ect = 0; ect != edge_vector.size(); ect++){
+      std::list<long long>::iterator elit;
+      int nct = 0;
+      for(elit  = edge_vector[ect]->local_node_ids.begin();
+	  elit != edge_vector[ect]->local_node_ids.end();
+	  elit ++){
+	edgeToNode(ect,nct) = *elit-1;
+	nct++;
+      }
+    }
+
+   // Face to Node connectivity
+    FieldContainer<int> faceToNode(face_vector.size(), numNodesPerFace);
+    for(unsigned fct = 0; fct != face_vector.size(); fct++){
+      std::list<long long>::iterator flit;
+      int nct = 0;
+      for(flit  = face_vector[fct]->local_node_ids.begin();
+	  flit != face_vector[fct]->local_node_ids.end();
+	  flit ++){
+	faceToNode(fct,nct) = *flit-1;
+	nct++;
+      }
+    }
+
+   // Face to Edge connectivity
+    FieldContainer<int> faceToEdge(face_vector.size(), numEdgesPerFace);
+    for (int ielem = 0; ielem < numElems; ielem++){
+       for (int iface = 0; iface < numFacesPerElem; iface++){
+          for (int iedge = 0; iedge < numEdgesPerFace; iedge++){
+            faceToEdge(elemToFace(ielem,iface),iedge) = 
+                           elemToEdge(ielem,refFaceToEdge(iface,iedge));
+          }
+       }
+    }   
+
+    int numEdges = edge_vector.size();
+    int numFaces = face_vector.size();
+
+  if (MyPID == 0) {
     std::cout << " Number of Elements: " << numElems << " \n";
     std::cout << "    Number of Nodes: " << numNodes << " \n";
     std::cout << "    Number of Edges: " << numEdges << " \n";
     std::cout << "    Number of Faces: " << numFaces << " \n\n";
-  
-  // Get edge connectivity
-    FieldContainer<int> edgeToNode(numEdges, numNodesPerEdge);
-    FieldContainer<int> elemToEdge(numElems, numEdgesPerElem);
-    int iedge = 0;
-    int inode = 0;
-    for (int k=0; k<NZ+1; k++) {
-      for (int j=0; j<NY+1; j++) {
-        for (int i=0; i<NX+1; i++) {
-           if (i < NX){
-               edgeToNode(iedge,0) = inode;
-               edgeToNode(iedge,1) = inode + 1;
-               if (j < NY && k < NZ){
-                  ielem=i+j*NX+k*NX*NY;
-                  elemToEdge(ielem,0) = iedge;
-                  if (j > 0)
-                     elemToEdge(ielem-NX,2) = iedge; 
-                  if (k > 0)
-                     elemToEdge(ielem-NX*NY,4) = iedge; 
-                  if (j > 0 && k > 0)
-                     elemToEdge(ielem-NX*NY-NX,6) = iedge; 
-                }
-               else if (j == NY && k == NZ){
-                  ielem=i+(NY-1)*NX+(NZ-1)*NX*NY;
-                  elemToEdge(ielem,6) = iedge;
-                }
-               else if (k == NZ && j < NY){
-                  ielem=i+j*NX+(NZ-1)*NX*NY;
-                  elemToEdge(ielem,4) = iedge;
-                  if (j > 0)
-                    elemToEdge(ielem-NX,6) = iedge;
-                }
-               else if (k < NZ && j == NY){
-                  ielem=i+(NY-1)*NX+k*NX*NY;
-                  elemToEdge(ielem,2) = iedge;
-                  if (k > 0)
-                     elemToEdge(ielem-NX*NY,6) = iedge;
-                }
-               iedge++;
-            }
-           if (j < NY){
-               edgeToNode(iedge,0) = inode;
-               edgeToNode(iedge,1) = inode + NX+1;
-               if (i < NX && k < NZ){
-                  ielem=i+j*NX+k*NX*NY;
-                  elemToEdge(ielem,3) = iedge;
-                  if (i > 0)
-                     elemToEdge(ielem-1,1) = iedge; 
-                  if (k > 0)
-                     elemToEdge(ielem-NX*NY,7) = iedge; 
-                  if (i > 0 && k > 0)
-                     elemToEdge(ielem-NX*NY-1,5) = iedge; 
-                }
-               else if (i == NX && k == NZ){
-                  ielem=NX-1+j*NX+(NZ-1)*NX*NY;
-                  elemToEdge(ielem,5) = iedge;
-                }
-               else if (k == NZ && i < NX){
-                  ielem=i+j*NX+(NZ-1)*NX*NY;
-                  elemToEdge(ielem,7) = iedge;
-                  if (i > 0)
-                    elemToEdge(ielem-1,5) = iedge;
-                }
-               else if (k < NZ && i == NX){
-                  ielem=NX-1+j*NX+k*NX*NY;
-                  elemToEdge(ielem,1) = iedge;
-                  if (k > 0)
-                     elemToEdge(ielem-NX*NY,5) = iedge;
-                }
-               iedge++;
-            }
-           if (k < NZ){
-               edgeToNode(iedge,0) = inode;
-               edgeToNode(iedge,1) = inode + (NX+1)*(NY+1);
-               if (i < NX && j < NY){
-                  ielem=i+j*NX+k*NX*NY;
-                  elemToEdge(ielem,8) = iedge;
-                  if (i > 0)
-                     elemToEdge(ielem-1,9) = iedge; 
-                  if (j > 0)
-                     elemToEdge(ielem-NX,11) = iedge; 
-                  if (i > 0 && j > 0)
-                     elemToEdge(ielem-NX-1,10) = iedge; 
-                }
-               else if (i == NX && j == NY){
-                  ielem=NX-1+(NY-1)*NX+k*NX*NY;
-                  elemToEdge(ielem,10) = iedge;
-                }
-               else if (j == NY && i < NX){
-                  ielem=i+(NY-1)*NX+k*NX*NY;
-                  elemToEdge(ielem,11) = iedge;
-                  if (i > 0)
-                    elemToEdge(ielem-1,10) = iedge;
-                }
-               else if (j < NY && i == NX){
-                  ielem=NX-1+j*NX+k*NX*NY;
-                  elemToEdge(ielem,9) = iedge;
-                  if (j > 0)
-                     elemToEdge(ielem-NX,10) = iedge;
-                }
-               iedge++;
-            }
-            inode++;
-         }
-      }
-   }
+  }
+   
+#ifdef HAVE_MPI
+    std::string doing_type;
+    doing_type = "EDGES";
+    calc_global_ids(edge_vector,
+	       comm_node_ids,
+	       node_comm_proc_ids, 
+	       node_cmap_node_cnts,
+	       num_node_comm_maps,
+	       rank,
+	       doing_type);
 
-   // Get face connectivity
-    FieldContainer<int> faceToNode(numFaces, numNodesPerFace);
-    FieldContainer<int> elemToFace(numElems, numFacesPerElem);
-    FieldContainer<int> faceToEdge(numFaces, numEdgesPerFace);
-    int iface = 0;
-    inode = 0;
-    for (int k=0; k<NZ+1; k++) {
-      for (int j=0; j<NY+1; j++) {
-        for (int i=0; i<NX+1; i++) {
-           if (i < NX && k < NZ) {
-              faceToNode(iface,0)=inode;
-              faceToNode(iface,1)=inode + 1;
-              faceToNode(iface,2)=inode + (NX+1)*(NY+1)+1;
-              faceToNode(iface,3)=inode + (NX+1)*(NY+1);
-              if (j < NY) {
-                 ielem=i+j*NX+k*NX*NY;
-                 faceToEdge(iface,0)=elemToEdge(ielem,0);
-                 faceToEdge(iface,1)=elemToEdge(ielem,9);
-                 faceToEdge(iface,2)=elemToEdge(ielem,4);
-                 faceToEdge(iface,3)=elemToEdge(ielem,8);
-                 elemToFace(ielem,0)=iface;
-                 if (j > 0) {
-                    elemToFace(ielem-NX,2)=iface;
-                 }
-              }
-              else if (j == NY) {
-                 ielem=i+(NY-1)*NX+k*NX*NY;
-                 faceToEdge(iface,0)=elemToEdge(ielem,2);
-                 faceToEdge(iface,1)=elemToEdge(ielem,10);
-                 faceToEdge(iface,2)=elemToEdge(ielem,6);
-                 faceToEdge(iface,3)=elemToEdge(ielem,11);
-                 elemToFace(ielem,2)=iface;
-              }
-              iface++;
-           }
-           if (j < NY && k < NZ) {
-              faceToNode(iface,0)=inode;
-              faceToNode(iface,1)=inode + NX+1;
-              faceToNode(iface,2)=inode + (NX+1)*(NY+1) + NX+1;
-              faceToNode(iface,3)=inode + (NX+1)*(NY+1);
-              if (i < NX) {
-                 ielem=i+j*NX+k*NX*NY;
-                 faceToEdge(iface,0)=elemToEdge(ielem,3);
-                 faceToEdge(iface,1)=elemToEdge(ielem,11);
-                 faceToEdge(iface,2)=elemToEdge(ielem,7);
-                 faceToEdge(iface,3)=elemToEdge(ielem,8);
-                 elemToFace(ielem,3)=iface;
-                 if (i > 0) {
-                    elemToFace(ielem-1,1)=iface;
-                 }
-              }
-              else if (i == NX) {
-                 ielem=NX-1+j*NX+k*NX*NY;
-                 faceToEdge(iface,0)=elemToEdge(ielem,1);
-                 faceToEdge(iface,1)=elemToEdge(ielem,10);
-                 faceToEdge(iface,2)=elemToEdge(ielem,5);
-                 faceToEdge(iface,3)=elemToEdge(ielem,9);
-                 elemToFace(ielem,1)=iface;
-              }
-              iface++;
-           }
-           if (i < NX && j < NY) {
-              faceToNode(iface,0)=inode;
-              faceToNode(iface,1)=inode + 1;
-              faceToNode(iface,2)=inode + NX+2;
-              faceToNode(iface,3)=inode + NX+1;
-              if (k < NZ) {
-                 ielem=i+j*NX+k*NX*NY;
-                 faceToEdge(iface,0)=elemToEdge(ielem,0);
-                 faceToEdge(iface,1)=elemToEdge(ielem,1);
-                 faceToEdge(iface,2)=elemToEdge(ielem,2);
-                 faceToEdge(iface,3)=elemToEdge(ielem,3);
-                 elemToFace(ielem,4)=iface;
-                 if (k > 0) {
-                    elemToFace(ielem-NX*NY,5)=iface;
-                 }
-              }
-              else if (k == NZ) {
-                 ielem=i+j*NX+(NZ-1)*NX*NY;
-                 faceToEdge(iface,0)=elemToEdge(ielem,4);
-                 faceToEdge(iface,1)=elemToEdge(ielem,5);
-                 faceToEdge(iface,2)=elemToEdge(ielem,6);
-                 faceToEdge(iface,3)=elemToEdge(ielem,7);
-                 elemToFace(ielem,5)=iface;
-              }
-              iface++;
-           }
-          inode++;
-         }
-      }
-   }
+
+    doing_type = "FACES";
+    calc_global_ids(face_vector,
+	       comm_node_ids,
+	       node_comm_proc_ids, 
+	       node_cmap_node_cnts,
+	       num_node_comm_maps,
+	       rank,
+	       doing_type);
+#endif
+
  
    // Output element to face connectivity
     ofstream el2fout("elem2face.dat");
@@ -530,20 +805,20 @@ int main(int argc, char *argv[]) {
     f2nout.close();
 
    // Container indicating whether a face is on the boundary (1-yes 0-no)
-    FieldContainer<int> faceOnBoundary(numFaces);
     FieldContainer<int> edgeOnBoundary(numEdges);
+    FieldContainer<int> faceOnBoundary(numFaces);
 
  // Get boundary (side set) information
-    int * sideSetIds = new int [numSideSets];
-    int numSidesInSet;
-    int numDFinSet;
-    im_ex_get_side_set_ids(id,sideSetIds);
+    long long * sideSetIds = new long long [numSideSets];
+    long long numSidesInSet;
+    long long numDFinSet;
+    im_ex_get_side_set_ids_l(id,sideSetIds);
     for (int i=0; i<numSideSets; i++) {
-        im_ex_get_side_set_param(id,sideSetIds[i],&numSidesInSet,&numDFinSet);
+        im_ex_get_side_set_param_l(id,sideSetIds[i],&numSidesInSet,&numDFinSet);
         if (numSidesInSet > 0){
-          int * sideSetElemList = new int [numSidesInSet];
-          int * sideSetSideList = new int [numSidesInSet];
-          im_ex_get_side_set(id,sideSetIds[i],sideSetElemList,sideSetSideList);
+          long long * sideSetElemList = new long long [numSidesInSet];
+          long long * sideSetSideList = new long long [numSidesInSet];
+          im_ex_get_side_set_l(id,sideSetIds[i],sideSetElemList,sideSetSideList);
           for (int j=0; j<numSidesInSet; j++) {
              int iface = sideSetSideList[j]-1;
              faceOnBoundary(elemToFace(sideSetElemList[j]-1,iface))=1;
@@ -565,6 +840,7 @@ int main(int argc, char *argv[]) {
        fFaceout << faceOnBoundary(i) <<"\n";
     }
     fFaceout.close();
+
     ofstream fEdgeout("edgeOnBndy.dat");
     for (int i=0; i<numEdges; i++){
        fEdgeout << edgeOnBoundary(i) <<"\n";
@@ -573,14 +849,8 @@ int main(int argc, char *argv[]) {
 
     // Print coords
     FILE *f=fopen("coords.dat","w");
-    inode=0;
-    for (int k=0; k<NZ+1; k++) {
-      for (int j=0; j<NY+1; j++) {
-        for (int i=0; i<NX+1; i++) {          
-          fprintf(f,"%22.16e %22.16e %22.16e\n",nodeCoord(inode,0),nodeCoord(inode,1),nodeCoord(inode,2));
-          inode++;
-        }
-      }
+    for (int i=0; i < numNodes; i++) {
+       fprintf(f,"%22.16e %22.16e %22.16e\n",nodeCoord(i,0),nodeCoord(i,1),nodeCoord(i,2));
     }
     fclose(f);
 
@@ -588,16 +858,27 @@ int main(int argc, char *argv[]) {
 // **************************** INCIDENCE MATRIX **************************************
 
    // Edge to face incidence matrix
+  if (MyPID == 0) {
     std::cout << "Building incidence matrix ... \n\n";
+  }
 
-    Epetra_SerialComm Comm;
     Epetra_Map globalMapD(numFaces, 0, Comm);
     Epetra_Map globalMapC(numEdges, 0, Comm);
     Epetra_Map globalMapG(numNodes, 0, Comm);
     Epetra_FECrsMatrix DCurl(Copy, globalMapD, globalMapC, 2);
+    Epetra_FECrsMatrix DGrad(Copy, globalMapC, globalMapG, 2);
+
+    double edgevals[2];
+    edgevals[0]=-0.5; edgevals[1]=0.5;
+    for (int j=0; j<numEdges; j++){
+        int rowNum = j;
+        int colNum[2];
+        colNum[0] = edgeToNode(j,0);
+        colNum[1] = edgeToNode(j,1);
+        DGrad.InsertGlobalValues(1, &rowNum, 2, colNum, edgevals);
+    }
 
     double vals[4];
-    vals[0]=0.5; vals[1]=0.5; vals[2]=-0.5; vals[3]=-0.5;
     for (int j=0; j<numFaces; j++){
         int rowNum = j;
         int colNum[4];
@@ -605,6 +886,30 @@ int main(int argc, char *argv[]) {
         colNum[1] = faceToEdge(j,1);
         colNum[2] = faceToEdge(j,2);
         colNum[3] = faceToEdge(j,3);
+
+        if (edgeToNode(faceToEdge(j,0),1) == edgeToNode(faceToEdge(j,1),0) ||
+               edgeToNode(faceToEdge(j,0),1) == edgeToNode(faceToEdge(j,1),1)){
+           vals[0]=0.5;}
+        else vals[0]=-0.5;
+
+        if (edgeToNode(faceToEdge(j,1),1) == edgeToNode(faceToEdge(j,2),0) ||
+               edgeToNode(faceToEdge(j,1),1) == edgeToNode(faceToEdge(j,2),1)){
+           vals[1]=0.5;
+        }
+        else vals[1]=-0.5;
+
+        if (edgeToNode(faceToEdge(j,2),1) == edgeToNode(faceToEdge(j,3),0) ||
+               edgeToNode(faceToEdge(j,2),1) == edgeToNode(faceToEdge(j,3),1)){
+           vals[2]=0.5;
+        }
+        else vals[2]=-0.5;
+
+        if (edgeToNode(faceToEdge(j,3),1) == edgeToNode(faceToEdge(j,0),0) ||
+               edgeToNode(faceToEdge(j,3),1) == edgeToNode(faceToEdge(j,0),1)){
+           vals[3]=0.5;
+        }
+        else vals[3]=-0.5;
+
         DCurl.InsertGlobalValues(1, &rowNum, 4, colNum, vals);
     }
 
@@ -612,7 +917,9 @@ int main(int argc, char *argv[]) {
 // ************************************ CUBATURE **************************************
 
    // Get numerical integration points and weights
+  if (MyPID == 0) {
     std::cout << "Getting cubature ... \n\n";
+  }
 
     DefaultCubatureFactory<double>  cubFactory;                                   
     int cubDegree = 2;
@@ -649,7 +956,9 @@ int main(int argc, char *argv[]) {
 // ************************************** BASIS ***************************************
 
    // Define basis 
+  if (MyPID == 0) {
     std::cout << "Getting basis ... \n\n";
+  }
     Basis_HCURL_HEX_I1_FEM<double, FieldContainer<double> > hexHCurlBasis;
     Basis_HDIV_HEX_I1_FEM<double, FieldContainer<double> > hexHDivBasis;
     Basis_HGRAD_HEX_C1_FEM<double, FieldContainer<double> > hexHGradBasis;
@@ -674,7 +983,9 @@ int main(int argc, char *argv[]) {
 // ******** LOOP OVER ELEMENTS TO CREATE LOCAL MASS and STIFFNESS MATRICES *************
 
 
+  if (MyPID == 0) {
     std::cout << "Building mass and stiffness matrices ... \n\n";
+  }
 
  // Settings and data structures for mass and stiffness matrices
     typedef CellTools<double>  CellTools;
@@ -1018,15 +1329,15 @@ int main(int argc, char *argv[]) {
  } // *** end element loop ***
 
   // Assemble over multiple processors, if necessary
-   DCurl.GlobalAssemble(); DCurl.FillComplete(MassC.RowMap(),MassD.RowMap()); 
+   DCurl.GlobalAssemble(); DCurl.FillComplete(MassD.RowMap(),MassC.RowMap()); 
+   DGrad.GlobalAssemble(); DGrad.FillComplete(MassC.RowMap(),MassG.RowMap()); 
    MassC.GlobalAssemble();  MassC.FillComplete();
    MassD.GlobalAssemble();  MassD.FillComplete();
    MassG.GlobalAssemble();  MassG.FillComplete();
    StiffD.GlobalAssemble(); StiffD.FillComplete();
    rhsD.GlobalAssemble();
 
-
-   // Build the inverse diagonal for MassC
+ // Build the inverse diagonal for MassC
    Epetra_CrsMatrix MassCinv(Copy,MassC.RowMap(),MassC.RowMap(),1);
    Epetra_Vector DiagC(MassC.RowMap());
 
@@ -1043,14 +1354,34 @@ int main(int argc, char *argv[]) {
 
   // Set value to zero on diagonal that corresponds to boundary edge
    for(int i=0;i<numEdges;i++) {
-     if (edgeOnBoundary(i)){
+     if (edgeOnBoundary(i)==1){
       double val=0.0;
       MassCinv.ReplaceGlobalValues(i,1,&val,&i);
      }
    }
 
 
-    int numEntries;
+  // Get boundary faces and apply zeros and ones to rhs and StiffD
+     int numBCFaces=0;
+     for (int i=0; i<numFaces; i++){
+         if (faceOnBoundary(i)){
+             numBCFaces++;
+         }
+      }
+      int * BCFaces = new int [numBCFaces];
+      int indbc=0;
+      for (int i=0; i<numFaces; i++){
+         if (faceOnBoundary(i)){
+            BCFaces[indbc]=i;
+            indbc++;
+            rhsD[0][i]=0;
+         }
+      }
+      ML_Epetra::Apply_OAZToMatrix(BCFaces, numBCFaces, StiffD);
+      delete [] BCFaces;
+
+/*
+   int numEntries;
     double *values;
     int *cols;
 
@@ -1086,57 +1417,65 @@ int main(int argc, char *argv[]) {
        }
     }
 
-/*
-// Get boundary faces and apply zeros and ones to rhs and StiffD
-     int numBCFaces=0;
-     for (int i=0; i<numFaces; i++){
-         if (faceOnBoundary(i)){
-             numBCFaces++;
-         }
-      }
-      int * BCFaces = new int [numBCFaces];
-      int indbc=0;
-      for (int i=0; i<numFaces; i++){
-         if (faceOnBoundary(i)){
-            BCFaces[indbc]=i;
-            indbc++;
-            rhsD[0][i]=0;
-         }
-      }
-   //   ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffD);
-      delete [] BCFaces;
 */
 
    
   // Dump matrices to disk
-   EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassG);
    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",MassC);
    EpetraExt::RowMatrixToMatlabFile("mag_m1inv_matrix.dat",MassCinv);
    EpetraExt::RowMatrixToMatlabFile("mag_m2_matrix.dat",MassD);
    EpetraExt::RowMatrixToMatlabFile("mag_k2_matrix.dat",StiffD);
+   EpetraExt::RowMatrixToMatlabFile("mag_t0_matrix.dat",DGrad);
    EpetraExt::RowMatrixToMatlabFile("mag_t1_matrix.dat",DCurl);
    EpetraExt::MultiVectorToMatrixMarketFile("rhs2_vector.dat",rhsD,0,0,false);
 
    fSignsout.close();
 
-  // Clean up
-    delete [] nodesPerElement;
-    delete [] elementAttributes;
-    delete [] elements;
-
-    for (int b = 0; b < numElemBlk; b++){
-       delete [] elmtNodeLinkage[b];
-       delete [] elementTypes[b];
-    }
 
  // delete mesh
  Delete_Pamgen_Mesh();
 
+ //clean up
+  for(long long b = 0; b < numElemBlk; b++){
+     delete [] elmt_node_linkage[b];
+     delete [] element_types[b];
+   }
+   delete [] block_ids;
+   delete [] nodes_per_element;
+   delete [] element_attributes;
+   delete [] element_types;
+   delete [] elmt_node_linkage;
+   delete [] elements;
+   delete [] nodeCoordx;
+   delete [] nodeCoordy;
+   delete [] nodeCoordz;
+
+#ifdef HAVE_MPI
+   delete [] globalNodeIds;
+   delete [] nodeIsOwned;
+   if(num_node_comm_maps > 0){
+      delete [] node_comm_proc_ids;
+      delete [] node_cmap_node_cnts;
+      delete [] node_cmap_ids;
+      for(long long i=0;i<num_node_comm_maps;i++){
+        delete [] comm_node_ids[i];
+        delete [] comm_node_proc_ids[i];
+      }
+
+      delete [] comm_node_ids;
+      delete [] comm_node_proc_ids;
+   }
+#endif
+
+
  // reset format state of std::cout
  std::cout.copyfmt(oldFormatState);
- 
- return 0;
+
+   MPI_Finalize();
+
+   exit(0);
 }
+
 
 // Calculates value of exact solution u
  int evalu(double & uExact0, double & uExact1, double & uExact2, double & x, double & y, double & z)
@@ -1270,4 +1609,137 @@ int main(int argc, char *argv[]) {
  */
 
     return 0;
+}
+
+/*****************************************************************************/
+void  Conform_Boundary_IDS(long long ** comm_entities,
+			   long long * entity_counts,
+			   long long * proc_ids, 
+			   long long * data_array,
+			   long long num_comm_pairs,
+			   long long  rank)
+/*****************************************************************************/
+{
+  //relies on data array having a -1 for unassigned values
+  unsigned nncm = num_comm_pairs;
+
+  //Will load an ownership flag along with the data to allow the conform
+  MPI_Request * req = new MPI_Request[nncm];
+  
+  long long ** send_buffer = new long long * [nncm];
+  long long ** receive_buffer = new long long * [nncm];
+  for(unsigned i = 0; i < nncm; i ++)send_buffer[i]    = new long long [entity_counts[i]];
+  for(unsigned i = 0; i < nncm; i ++)receive_buffer[i] = new long long [entity_counts[i]];
+
+  // load up send buffer
+  for(unsigned i = 0; i < nncm; i ++){
+    for(unsigned j = 0; j < entity_counts[i];j++){
+      send_buffer[i][j] = data_array[comm_entities[i][j]-1];
+    }
+  }
+
+  //communicate
+
+  for(unsigned i = 0; i < nncm ;i ++){
+    int size = entity_counts[i];
+    int proc = proc_ids[i];
+    MPI_Irecv(receive_buffer[i],size, MPI_LONG_LONG_INT, proc, 1, MPI_COMM_WORLD, req + i);
+  }
+
+  for(unsigned i = 0; i < nncm ;i ++){
+    int size = entity_counts[i];
+    int proc = proc_ids[i];
+    MPI_Send(send_buffer[i], size, MPI_LONG_LONG_INT, proc, 1,MPI_COMM_WORLD);
+  }
+
+  for(unsigned i = 0; i < nncm ;i ++){
+    MPI_Status stat;
+    MPI_Wait(req + i, &stat);
+  }
+
+  for(unsigned i = 0; i < nncm; i ++){
+    for(unsigned j = 0; j < entity_counts[i];j++){
+      if(receive_buffer[i][j] >= 0)data_array[comm_entities[i][j]-1] = receive_buffer[i][j];
+    }
+  }
+  
+  for(unsigned i = 0; i < nncm; i ++){
+    if(send_buffer[i])   delete [] send_buffer[i];
+    if(receive_buffer[i])delete [] receive_buffer[i];
+  }
+  delete [] send_buffer;
+  delete [] receive_buffer;
+}
+
+
+/*****************************************************************************/
+void  Conform_Boundary_IDS_topo_entity(std::vector < std:: vector < topo_entity * > > & topo_entities,
+				       long long * proc_ids, 
+				       long long  rank)
+/*****************************************************************************/
+{
+  //relies on data array having a -1 for unassigned values
+  unsigned nncm = topo_entities.size();
+
+  //Will load an ownership flag along with the data to allow the conform
+  MPI_Request * req = new MPI_Request[nncm];
+  
+  long long ** send_buffer = new long long * [nncm];
+  long long ** receive_buffer = new long long * [nncm];
+  for(unsigned i = 0; i < nncm; i ++){
+    if(topo_entities[i].size() > 0){
+      send_buffer[i]    = new long long [topo_entities[i].size()];
+      receive_buffer[i] = new long long [topo_entities[i].size()];
+    }
+    else{
+      send_buffer[i] = NULL;
+      receive_buffer[i] = NULL;
+    }
+  }
+
+  // load up send buffer
+  for(unsigned i = 0; i < nncm; i ++){
+    for(unsigned j = 0; j < topo_entities[i].size();j++){
+      send_buffer[i][j] = topo_entities[i][j]->global_id;
+    }
+  }
+
+  //communicate
+
+  for(unsigned i = 0; i < nncm ;i ++){
+    int size = topo_entities[i].size();
+    if(size > 0){
+      int proc = proc_ids[i];
+      MPI_Irecv(receive_buffer[i],size, MPI_LONG_LONG_INT, proc, 1, MPI_COMM_WORLD, req + i);
+    }
+  }
+
+  for(unsigned i = 0; i < nncm ;i ++){
+    int size = topo_entities[i].size();
+    if(size > 0){
+      int proc = proc_ids[i];
+      MPI_Send(send_buffer[i], size, MPI_LONG_LONG_INT, proc, 1,MPI_COMM_WORLD);
+    }
+  }
+
+  for(unsigned i = 0; i < nncm ;i ++){
+    MPI_Status stat;
+    int size = topo_entities[i].size();
+    if(size > 0){
+      MPI_Wait(req + i, &stat);
+    }
+  }
+
+  for(unsigned i = 0; i < nncm; i ++){
+    for(unsigned j = 0; j < topo_entities[i].size();j++){
+      if(receive_buffer[i][j] >= 0)topo_entities[i][j]->global_id = receive_buffer[i][j];
+    }
+  }
+
+  for(unsigned i = 0; i < nncm; i ++){
+    if(send_buffer[i])   delete [] send_buffer[i];
+    if(receive_buffer[i])delete [] receive_buffer[i];
+  }
+  delete [] send_buffer;
+  delete [] receive_buffer;
 }
