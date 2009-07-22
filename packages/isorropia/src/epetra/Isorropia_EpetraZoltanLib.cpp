@@ -526,6 +526,25 @@ repartition(Teuchos::ParameterList& zoltanParamList,
 
   precompute();
 
+  // Set part sizes
+
+  if (numPartSizes > 0){
+    int err;
+    int *wgtIdx = NULL;
+
+    if (partGIDs){
+      err = zz_->LB_Set_Part_Sizes(1, numPartSizes, partGIDs, wgtIdx, partSizes);
+    }
+    else{
+      err = zz_->LB_Set_Part_Sizes(0, numPartSizes, partLIDs, wgtIdx, partSizes);
+    }
+
+    if (err != ZOLTAN_OK){
+      throw Isorropia::Exception("Error in LB_Set_Part_Sizes");
+      return -1;
+    }
+  }
+
   //Generate Load Balance
   int changes=0, num_gid_entries=0, num_lid_entries=0, num_import=0, num_export=0;
   ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;

@@ -92,24 +92,29 @@ public:
   /** Destructor */
   virtual ~Partitioner();
 
-  /** setParameters() is an internal Partitioner method which handles
-      the parameters from a Teuchos::ParameterList object. 
+   /* Set the relative number of objects in each partition.  The default is to
+    * evenly divide objects across partitions.  The numbers can be fractions of
+    * one, or whole numbers.  Zoltan adds the values supplied and takes the sizes
+    * as proportional to that whole.
+    *
+    * We make a copy of id and size lists.
+    *
+    * Caller should supply either global partition IDs or local partition IDs.
+    * Partition IDs are integers beginning at zero for the first partition.
+    *
+    * No communication is done during this call.  One process can make the call
+    * for all partitions, or many processes can make the call.  Zoltan checks the
+    * consistency of the information provided.
+    */
 
-      The input
-      ParameterList object is copied into an internal ParameterList
-      attribute, and no reference to the input object is held after
-      this function returns. (Thus, the input paramlist object may be
-      altered or destroyed as soon as this method returns.)<br>
-  If the ParameterList object contains a sublist named "Zoltan", then
-  the Zoltan library is used to perform the balancing. Also, any
-  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
-  Refer to the Zoltan users guide for specific parameters that Zoltan
-  recognizes. A couple of important ones are "LB_METHOD" (valid values
-  include "GRAPH", "HYPERGRAPH"), "DEBUG_LEVEL" (valid values are
-  0 to 10, default is 1), etc.
+  void set_partition_sizes(int len, int *global_part_id, int *local_part_id, float *part_size);
+
+  /*
+   * Free the memory allocated to store partition sizes.
    */
+  void clear_partition_sizes();
 
-  /**  partition is an internal method that computes 
+  /**  partition is the method that computes 
        a rebalanced partitioning for the data in the object
       that this class was constructed with.
 
@@ -150,6 +155,12 @@ public:
       number of processors.
   */
   Teuchos::RCP<Epetra_Map> createNewMap();
+
+private:
+  int *partGIDs;
+  int *partLIDs;
+  float *partSizes;
+  int numPartSizes;
 
 };//class Partitioner
 

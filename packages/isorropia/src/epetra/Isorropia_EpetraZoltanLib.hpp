@@ -130,6 +130,7 @@ private:
   Zoltan *zz_;
   Teuchos::RCP<ZoltanLib::QueryObject> queryObject_;
   int num_obj_;
+
 };//class ZoltanLibClass
 
 }//namespace Epetra

@@ -123,6 +123,11 @@ public:
 
   int input_type_;
 
+  int numPartSizes;
+  int *partGIDs;
+  int *partLIDs;
+  float *partSizes;
+
 protected:
 
   Teuchos::RCP<const Epetra_BlockMap> input_map_;

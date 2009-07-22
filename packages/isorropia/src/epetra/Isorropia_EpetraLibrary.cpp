@@ -63,6 +63,10 @@ namespace Epetra {
 Library::
 Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int itype)
   : input_type_(itype),
+    numPartSizes(0),
+    partGIDs(NULL),
+    partLIDs(NULL),
+    partSizes(NULL),
     input_graph_(input_graph),
     input_matrix_(0),
     input_coords_(0),
@@ -76,6 +80,10 @@ Library::
 Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
         Teuchos::RCP<CostDescriber> costs, int itype)
   : input_type_(itype),
+    numPartSizes(0),
+    partGIDs(NULL),
+    partLIDs(NULL),
+    partSizes(NULL),
     input_graph_(input_graph),
     input_matrix_(0),
     input_coords_(0),
@@ -88,6 +96,10 @@ Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 Library::
 Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int itype)
   : input_type_(itype),
+    numPartSizes(0),
+    partGIDs(NULL),
+    partLIDs(NULL),
+    partSizes(NULL),
     input_graph_(0),
     input_matrix_(input_matrix),
     input_coords_(0),
@@ -101,6 +113,10 @@ Library::
 Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	Teuchos::RCP<CostDescriber> costs, int itype)
   : input_type_(itype),
+    numPartSizes(0),
+    partGIDs(NULL),
+    partLIDs(NULL),
+    partSizes(NULL),
     input_graph_(0),
     input_matrix_(input_matrix),
     input_coords_(0),
@@ -113,6 +129,10 @@ Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 Library::
 Library(Teuchos::RCP<const Epetra_MultiVector> input_coords, int itype)
   : input_type_(itype),
+    numPartSizes(0),
+    partGIDs(NULL),
+    partLIDs(NULL),
+    partSizes(NULL),
     input_graph_(0),
     input_matrix_(0),
     input_coords_(input_coords),
@@ -126,6 +146,10 @@ Library::
 Library(Teuchos::RCP<const Epetra_MultiVector> input_coords,
         Teuchos::RCP<const Epetra_MultiVector> weights, int itype)
   : input_type_(itype),
+    numPartSizes(0),
+    partGIDs(NULL),
+    partLIDs(NULL),
+    partSizes(NULL),
     input_graph_(0),
     input_matrix_(0),
     input_coords_(input_coords),    
@@ -137,6 +161,12 @@ Library(Teuchos::RCP<const Epetra_MultiVector> input_coords,
 
 Library::~Library()
 {
+  if (partGIDs)
+    delete [] partGIDs;
+  if (partLIDs)
+    delete [] partLIDs;
+  if (partSizes)
+    delete [] partSizes;
 }
 
 int Library::precompute()
