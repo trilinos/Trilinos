@@ -312,7 +312,9 @@ dnl Replace `main' with a function in -lm:
 
 # Determine libraries needed for linking with Fortran
 #AC_FC_LIBRARY_LDFLAGS
+if test "X$ac_cv_use_fortran" = "Xyes"; then
 AC_F77_LIBRARY_LDFLAGS
+fi
 
 # ------------------------------------------------------------------------
 # Perform substitutions in output files
