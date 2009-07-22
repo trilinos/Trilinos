@@ -40,6 +40,7 @@
 #include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_ConfigDefs.hpp"
 #include "Intrepid_Types.hpp"
+#include "Intrepid_Utils.hpp"
 #include "Intrepid_Basis.hpp"
 #include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
@@ -401,8 +402,8 @@ public:
 
     
     
-    /** \brief  Maps points from a parametrization domain <var>D</var> to a reference subcell. 
-                Returns a rank-2 array with dimensions (P,D) where for 1-subcells:
+    /** \brief  Maps points from a parametrization domain <var>R</var> to the specified subcell of
+                 a reference cell. Returns a rank-2 array with dimensions (P,D) where for 1-subcells:
          \f[
                 {subcellPoints}(p,*) = \hat{\Phi}_i(t_p); \quad\mbox{and}\quad
                 \hat{\Phi}_i(t_p) = \left\{
@@ -410,16 +411,21 @@ public:
                   (\hat{x}(t_p),\hat{y}(t_p))              & \mbox{for 2D parent cells} \\[1.5ex]                 
                   (\hat{x}(t_p),\hat{y}(t_p),\hat{z}(t_p)) & \quad\mbox{for 3D parent cells}
                 \end{array} \right.
-                \quad t_p \in D = [-1,1] 
+                \quad t_p \in R = [-1,1] 
          \f]
                 and for 2-subcells:
          \f[
                 {subcellPoints}(p,*) = \hat{\Phi}_i(u_p,v_p)\quad
                 \hat{\Phi}_i(u_p,v_p) = (\hat{x}(u_p,v_p), \hat{y}(u_p,v_p), \hat{z}(u_p, v_p))
-                \quad (u_p,v_p)\in D
+                \quad (u_p,v_p)\in R
          \f]
-                where <var>D</var> is the 2-cube [-1,1]x[-1,1] for Quadrilateral faces and the  
-                2-simplex {(0,0), (1,0), (0,1)} for Triangle faces. 
+                where
+         \f[
+                R = \left\{\begin{array}{rl} 
+                          \{(0,0),(1,0),(0,1)\} & \mbox{if face is Triangle} \\[1ex]
+                            [-1,1]\times [-1,1] & \mbox{if face is Quadrilateral}
+                    \end{array}\right.
+        \f]
 
         \remarks 
         \li     parametrization of 1-subcells is defined for shell lines and beams
@@ -448,47 +454,72 @@ public:
                                       const shards::CellTopology &  parentCell);
     
     
-    /** \brief  Returns (non-normalized) tangent vectors to the specified reference face evaluated 
-                at a set of points in that face's parametrization domain <var>D</var>:
+    /** \brief  Computes a pair of constant (non-normalized) tangent vectors to the specified  
+                face of a 3D reference cell. Returns 2 rank-1 arrays with dimension (D=3) such that       
         \f[
-                {uRefTan}(p,*) = \hat{T}_{u}(u_p,v_p) = 
+                {uRefTan}(*) = \hat{T}_{u}(u,v) = 
                 \left({\partial\hat{x}(u,v)\over\partial u}, 
                       {\partial\hat{y}(u,v)\over\partial u},
-                      {\partial\hat{z}(u,v)\over\partial u} \right)\Big|_{(u_p,v_p)} ;
+                      {\partial\hat{z}(u,v)\over\partial u} \right) ;
         \f]
         \f[
-                {vRefTan}(p,*) = \hat{T}_{v}(u_p,v_p) = 
+                {vRefTan}(*) = \hat{T}_{v}(u,v) = 
                 \left({\partial\hat{x}(u,v)\over\partial v}, 
                       {\partial\hat{y}(u,v)\over\partial v},
-                      {\partial\hat{z}(u,v)\over\partial v} \right)\Big|_{(u_p,v_p)}
+                      {\partial\hat{z}(u,v)\over\partial v} \right)\,;
         \f]
-                where
+               where \f$\hat{\Phi}(u,v) =(\hat{x}(u,v),\hat{y}(u,v),\hat{z}(u,v)): R \mapsto \hat{\mathcal F}\f$  
+               is parametrization of the specified reference face \f${\mathcal F}\f$ and 
         \f[
-                (u_p,v_p) \in D = \left\{\begin{array}{rl} 
-                    \{(0,0),(1,0),(0,1)\} & \mbox{if face is Triangle} \\[1ex]
-                      [-1,1]\times [-1,1] & \mbox{if face is Quadrilateral}
+                R = \left\{\begin{array}{rl} 
+                    \{(0,0),(1,0),(0,1)\} & \mbox{if ${\mathcal F}$  is Triangle} \\[1ex]
+                      [-1,1]\times [-1,1] & \mbox{if ${\mathcal F}$ is Quadrilateral} \,.
                     \end{array}\right.
         \f]
+                Because the faces of all reference cells are always affine images of <var>R</var>, 
+                the coordinate functions \f$\hat{x},\hat{y},\hat{z}\f$ of the parametrization map 
+                are linear and the face tangents are constant vectors.  
       
-        \param  uRefTan           [out] - rank-2 array (P,3) with tangent in u-direction at face points
-        \param  vRefTan           [out] - rank-2 array (P,3) with tangent in v-direction at face points
-        \param  uvPoints          [in]  - rank-2 array (P,2) with points in <var>D</var>
+        \param  uRefTan           [out] - rank-1 array (D) with tangent in u-direction at face points
+        \param  vRefTan           [out] - rank-1 array (D) with tangent in v-direction at face points
         \param  faceOrd           [in]  - ordinal of the face where the tangents are computed
-        \param  parentCell        [in]  - cell topology of the parent reference cell
+        \param  parentCell        [in]  - cell topology of the parent 3D reference cell
       */
-    template<class ArrayTypeOut, class ArrayTypeIn>
+    template<class ArrayTypeOut>
     static void getReferenceFaceTangents(ArrayTypeOut &                uRefTan,
                                          ArrayTypeOut &                vRefTan,
-                                         const ArrayTypeIn &           uvPoints,
                                          const int &                   faceOrd,
                                          const shards::CellTopology &  parentCell);
+    
+    
+    
+    /** \brief  Computes a constant (non-normalized) normal vector to the specified face of a  
+                3D reference cell. Returns
+        \f[
+                {refNormal}(*) = \hat{T}_{u} \times \hat{T}_{v}
+        \f]
+                where \f$\hat{T}_{u},\hat{T}_{v}\f$ are the constant (non-normalized) face tangents 
+                computed by CellTools::getReferenceFaceTangents.
+
+        \param  refNormal         [out] - rank-2 array (P,D) with normal at face points
+        \param  faceOrd           [in]  - ordinal of the face where the normal is computed
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+      */
+    template<class ArrayTypeOut>
+    static void getReferenceFaceNormal(ArrayTypeOut &                refNormal,
+                                       const int &                   faceOrd,
+                                       const shards::CellTopology &  parentCell);
 
     
     
-    /** \brief  Returns (non-normalized) tangent vector to the specified reference edge. Because 
-                reference edge parametrizations have affine coordinate functions f(u) = C(0) + C(1)*u, 
-                the edge tangent is a constant vector and no input points on the parametrization domain
-                <var>D=[-1,1]</var> need be specified.
+    /** \brief  Computes a constant (non-normalized) tangent vector to the specified edge of a 2D or 
+                3D reference cell. Returns rank-1 array with dimension (D=2, or D=3) such that
+        \f[
+                {edgeTan}(*) = {\partial\hat{\Phi}(t)\over\partial t} \,,
+        \f]
+                where \f$ \hat{\Phi}(t) : [-1,1]\mapsto \hat{\mathcal E} \f$ is parametrization of the
+                specified reference edge \f$\hat{\mathcal E}\f$. Because the edges of all reference  
+                cells are always affine images of [-1,1], the edge tangent is constant vector field. 
        
         \param  edgeTan           [out] - rank-1 array (D) with the edge tangent; D = cell dimension
         \param  edgeOrd           [in]  - ordinal of the edge where the tangent is computed
@@ -502,27 +533,35 @@ public:
     
     
     /** \brief  Returns (non-normalized) tangent vectors to physical faces in a face workset. The 
-                tangents are computed at face points that are images of points from <var>D</var>,  
+                tangents are computed at face points that are images of points from <var>R</var>,  
                 the parametrization domain for the faces in the face workset:
         \f[
-                {uPhysTan}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot \hat{T}_{u}(u_p,v_p);\quad
-                {vPhysTan}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot \hat{T}_{v}(u_p,v_p)
-                \qquad (u_p, v_p) \in D
+                {uPhysTan}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot \hat{T}_{u};\quad
+                {vPhysTan}(c,p,d) = DF_c(\hat{\Phi}_i(u_p, v_p))\cdot \hat{T}_{v}
+                \qquad (u_p, v_p) \in R
         \f]
-                In this formula, 
-        \li     \f$ \hat{\Phi}_i \f$ is parametrization of reference face <var>i</var>;
-        \li     \f$ DF_c \f$ is Jacobian of parent cell <var>c</var> that owns face <var>i</var>
-        \li     \f$ \hat{T}_{u}, \hat{T}_{v}\f$ are tangents on reference face <var>i</var>; see 
-                CellTools<Scalar>::getReferenceFaceTangents
+                where 
+        \li     \f$ \hat{\Phi}_i \f$ is parametrization of reference face \f$\hat{\mathcal F}_i\f$;
+        \li     \f$ DF_c \f$ is Jacobian of parent cell <var>c</var> that owns physical face \f${\mathcal F}_i\f$;
+        \li     \f$ \hat{T}_{u}, \hat{T}_{v}\f$ are the constant tangents on reference face \f$\hat{\mathcal F}_i\f$; see 
+                 CellTools<Scalar>::getReferenceFaceTangents;
+        \li     <var>R</var> is the parametrization domain for reference face \f$\hat{\mathcal F}_i\f$:
+        \f[
+                R = 
+                  \left\{\begin{array}{rl} 
+                    \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal F}_i$ is Triangle} \\[1ex]
+                      [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral}
+                  \end{array}\right.
+         \f]
       
         \warning
                 <var>faceSetJacobians</var> is required to provide \f$DF_c(\hat{\Phi}_i(u_p, v_p))\f$,
                 i.e., the Jacobian of cell <var>c</var> computed at the images of the points from 
-                <var>D</var> on reference face <var>i</var>, i.e., the face owned by that cell. 
+                <var>R</var> on reference face <var>i</var>, i.e., the face owned by that cell. 
 
-        \param  uPhysTan          [out] - rank-3 array (C,P,3), image of ref. face u-tangent at workset faces
-        \param  vPhysTan          [out] - rank-3 array (C,P,3), image of ref. face u-tangent at workset faces
-        \param  uvPoints          [in]  - rank-2 array (P,2) with points in <var>D</var>
+        \param  uPhysTan          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
+        \param  vPhysTan          [out] - rank-3 array (C,P,D), image of ref. face u-tangent at workset faces
+        \param  uvPoints          [in]  - rank-2 array (P,2) with points in <var>R</var>
         \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
         \param  worksetFaceOrd    [in]  - face ordinal, relative to ref. cell, of the face workset
         \param  parentCell        [in]  - cell topology of the parent reference cell
@@ -537,6 +576,45 @@ public:
     
     
     
+    /** \brief  Returns (non-normalized) normal vectors to physical faces in a face workset. The 
+                normals are computed at face points that are images of points from <var>R</var>,  
+                the parametrization domain for the faces in the face workset:
+        \f[
+                {faceNormals}(c,p,d) = 
+                   DF_c(\hat{\Phi}_i(u_p, v_p))\cdot \hat{T}_{u}\times
+                   DF_c(\hat{\Phi}_i(u_p, v_p))\cdot \hat{T}_{v}
+                   \qquad (u_p, v_p) \in R
+        \f]
+                where 
+        \li     \f$ \hat{\Phi}_i \f$ is parametrization of reference face \f$\hat{\mathcal F}_i\f$;
+        \li     \f$ DF_c \f$ is Jacobian of parent cell <var>c</var> that owns physical face \f${\mathcal F}_i\f$;
+        \li     \f$ \hat{T}_{u}, \hat{T}_{v}\f$ are the constant tangents on reference face\f$\hat{\mathcal F}_i\f$; see 
+                CellTools<Scalar>::getReferenceFaceTangents;
+        \li     <var>R</var> is the parametrization domain for reference face \f$\hat{\mathcal F}_i\f$:
+        \f[
+                R = \left\{\begin{array}{rl} 
+                    \{(0,0),(1,0),(0,1)\} & \mbox{if $\hat{\mathcal F}_i$ is Triangle} \\[1ex]
+                      [-1,1]\times [-1,1] & \mbox{if $\hat{\mathcal F}_i$ is Quadrilateral}
+                    \end{array}\right.
+        \f]
+
+        \warning
+                <var>faceSetJacobians</var> is required to provide \f$DF_c(\hat{\Phi}_i(u_p, v_p))\f$,
+                i.e., the Jacobian of cell <var>c</var> computed at the images of the points from 
+                <var>R</var> on reference face <var>i</var>, i.e., the face owned by that cell. 
+
+        \param  faceNormals       [out] - rank-3 array (C,P,D), normals at workset faces
+        \param  uvPoints          [in]  - rank-2 array (P,2) with points in <var>R</var>
+        \param  worksetJacobians  [in]  - rank-4 array (C,P,D,D) with Jacobians at ref. face points
+        \param  worksetFaceOrd    [in]  - face ordinal, relative to ref. cell, of the face workset
+        \param  parentCell        [in]  - cell topology of the parent reference cell
+*/
+    template<class ArrayTypeOut, class ArrayTypeIn>
+    static void getPhysicalFaceNormals(ArrayTypeOut &                faceNormals,
+                                       const ArrayTypeIn &           uvPoints,
+                                       const ArrayTypeIn &           worksetJacobians,
+                                       const int &                   worksetFaceOrd,
+                                       const shards::CellTopology &  parentCell);
     
     
     //============================================================================================//

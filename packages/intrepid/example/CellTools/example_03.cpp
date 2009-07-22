@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
   
   
   /*
-   *  2. Define edge workset comprising of 1 face corresponding to reference face 3 on Hexahedron<8>
+   *  2. Define face workset comprising of 1 face corresponding to reference face 5 on Hexahedron<8>
    *  2.a: Reuse the parent cell topology from Example 3
    *  2.b: Reuse the vertices from Example 3
    */
@@ -504,29 +504,20 @@ int main(int argc, char *argv[]) {
   
   
   /*
-   * 6. Get the (non-normalized) face normals for the face workset
+   * 6. Get the (non-normalized) face normals for the face workset directly
    */
-  
-  // Step 6.a: Allocate storage for face tangents and face normals
-  FieldContainer<double> uFaceTan(worksetSize, numCubPoints, pCellDim);
-  FieldContainer<double> vFaceTan(worksetSize, numCubPoints, pCellDim);
+  // Step 6.a: Allocate storage for face normals
   FieldContainer<double> faceNormals(worksetSize, numCubPoints, pCellDim);
   
-  // Step 6.b: Compute face tangents
-  CellTools::getPhysicalFaceTangents(uFaceTan,
-                                     vFaceTan,
-                                     paramFacePoints,
-                                     worksetJacobians,
-                                     subcellOrd,
-                                     hexahedron_8);
+  // Step 6.b: Compute the face normals
+  CellTools::getPhysicalFaceNormals(faceNormals,
+                                    paramFacePoints,
+                                    worksetJacobians,
+                                    subcellOrd,
+                                    hexahedron_8);
   
-  // Step 6.c: Face outer normals (relative to parent cell) are uTan x vTan:
-  RealSpaceTools<double>::vecprod(faceNormals, uFaceTan, vFaceTan);
-  
-  
-  /*
-   * 7. Print face normals at Gauss points on workset faces (these points were computed in Example 4)
-   */
+  // Step 6.c: Print face normals at Gauss points on workset faces (these points were computed in Example 4)
+  std::cout << "Face normals computed by CellTools::getPhysicalFaceNormals\n";
   for(int pCell = 0; pCell < worksetSize; pCell++){
     
     CellTools::printWorksetSubcell(hexNodes, hexahedron_8, pCell, subcellDim, subcellOrd);
@@ -543,6 +534,47 @@ int main(int argc, char *argv[]) {
     }    
     std::cout << "\n";      
   }//pCell
+  
+  
+  
+  /*
+   * 7. Get the (non-normalized) face normals for the face workset using the face tangents. This may
+   *    be useful if, for whatever reason,  face tangents are needed independently 
+   */
+  // Step 7.a: Allocate storage for face tangents
+  FieldContainer<double> uFaceTan(worksetSize, numCubPoints, pCellDim);
+  FieldContainer<double> vFaceTan(worksetSize, numCubPoints, pCellDim);
+  
+  // Step 7.b: Compute face tangents
+  CellTools::getPhysicalFaceTangents(uFaceTan,
+                                     vFaceTan,
+                                     paramFacePoints,
+                                     worksetJacobians,
+                                     subcellOrd,
+                                     hexahedron_8);
+  
+  // Step 7.c: Face outer normals (relative to parent cell) are uTan x vTan:
+  RealSpaceTools<double>::vecprod(faceNormals, uFaceTan, vFaceTan);
+  
+  // Step 7.d: Print face normals at Gauss points on workset faces (these points were computed in Example 4)
+  std::cout << "Face normals computed by CellTools::getPhysicalFaceTangents followed by vecprod\n";
+  for(int pCell = 0; pCell < worksetSize; pCell++){
+    
+    CellTools::printWorksetSubcell(hexNodes, hexahedron_8, pCell, subcellDim, subcellOrd);
+    
+    for(int pt = 0; pt < numCubPoints; pt++){
+      std::cout << "\t 3D Gauss point: (" 
+      << std::setw(8) << std::right << worksetFacePoints(pCell, pt, 0) << ", " 
+      << std::setw(8) << std::right << worksetFacePoints(pCell, pt, 1) << ", " 
+      << std::setw(8) << std::right << worksetFacePoints(pCell, pt, 2) << ")  " 
+      << std::setw(8) << " outer normal:  " << "(" 
+      << std::setw(8) << std::right << faceNormals(pCell, pt, 0) << ", " 
+      << std::setw(8) << std::right << faceNormals(pCell, pt, 1) << ", " 
+      << std::setw(8) << std::right << faceNormals(pCell, pt, 2) << ")\n";
+    }    
+    std::cout << "\n";      
+  }//pCell
+  
   
   return 0;
 }
