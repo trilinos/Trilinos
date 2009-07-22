@@ -28,7 +28,6 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     Example_Poisson
     SOURCES example_Poisson.cpp
     DEPLIBS epetra epetraext pamgen aztecoo amesos ml
-    ARGS "10 10 10"
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
@@ -40,8 +39,18 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
+  IF (TPL_ENABLE_MPI)
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_CurlLSFEM
+    SOURCES example_CurlLSFEM.cpp
+    DEPLIBS epetra epetraext pamgen aztecoo amesos ml
+    NUM_MPI_PROCS 1
+    ADD_DIR_TO_NAME
+    )
+  ENDIF()
   PACKAGE_COPY_FILES_TO_BINARY_DIR(TestCopyFiles
   SOURCE_FILES PoissonMesh.in
+               CurlLSFEMin.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 
