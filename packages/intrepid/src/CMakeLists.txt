@@ -124,6 +124,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HGRAD_TRI_Cn_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_TET_Cn_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_TET_Cn_FEMDef.hpp
+  Discretization/Basis/Intrepid_HDIV_TRI_In_FEM.hpp
+  Discretization/Basis/Intrepid_HDIV_TRI_In_FEMDef.hpp
   )
 
 #
