@@ -109,15 +109,9 @@ namespace {
 
 } // namespace
 
+
 namespace Rythmos {
 
-// Nonmember constructor
-template<class Scalar>
-RCP<IntegratorBuilder<Scalar> > integratorBuilder()
-{
-  RCP<IntegratorBuilder<Scalar> > sb = rcp(new IntegratorBuilder<Scalar> );
-  return sb;
-}
 
 template<class Scalar>
 IntegratorBuilder<Scalar>::IntegratorBuilder()
@@ -142,6 +136,7 @@ void IntegratorBuilder<Scalar>::setIntegratorFactory(
   validPL_ = Teuchos::null;
 }
 
+
 template<class Scalar>
 void IntegratorBuilder<Scalar>::setIntegrationControlFactory(
   const RCP<const Teuchos::AbstractFactory<IntegrationControlStrategyBase<Scalar> > > &integrationControlFactory,
@@ -151,6 +146,7 @@ void IntegratorBuilder<Scalar>::setIntegrationControlFactory(
   integrationControlBuilder_->setObjectFactory(integrationControlFactory, integrationControlName);
   validPL_ = Teuchos::null;
 }
+
 
 template<class Scalar>
 void IntegratorBuilder<Scalar>::setStepperBuilder(
@@ -162,11 +158,13 @@ void IntegratorBuilder<Scalar>::setStepperBuilder(
   validPL_ = Teuchos::null;
 }
 
+
 template<class Scalar>
 RCP<StepperBuilder<Scalar> > IntegratorBuilder<Scalar>::getStepperBuilder()
 {
   return stepperBuilder_;
 }
+
 
 template<class Scalar>
 void IntegratorBuilder<Scalar>::setRKButcherTableauBuilder(
@@ -178,6 +176,7 @@ void IntegratorBuilder<Scalar>::setRKButcherTableauBuilder(
   validPL_ = Teuchos::null;
 }
 
+
 template<class Scalar>
 void IntegratorBuilder<Scalar>::setStepControlFactory(
   const RCP<const Teuchos::AbstractFactory<StepControlStrategyBase<Scalar> > > &stepControlStrategyFactory,
@@ -187,6 +186,7 @@ void IntegratorBuilder<Scalar>::setStepControlFactory(
   stepControlBuilder_->setObjectFactory(stepControlStrategyFactory, stepControlName);
   validPL_ = Teuchos::null;
 }
+
 
 template<class Scalar>
 void IntegratorBuilder<Scalar>::setInterpolationBufferFactory(
@@ -198,6 +198,7 @@ void IntegratorBuilder<Scalar>::setInterpolationBufferFactory(
   validPL_ = Teuchos::null;
 }
 
+
 template<class Scalar>
 void IntegratorBuilder<Scalar>::setInterpolationBufferAppenderFactory(
   const RCP<const Teuchos::AbstractFactory<InterpolationBufferAppenderBase<Scalar> > > &interpolationBufferAppenderFactory,
@@ -207,6 +208,7 @@ void IntegratorBuilder<Scalar>::setInterpolationBufferAppenderFactory(
   interpolationBufferAppenderBuilder_->setObjectFactory(interpolationBufferAppenderFactory, interpolationBufferAppenderName);
   validPL_ = Teuchos::null;
 }
+
 
 template<class Scalar>
 void IntegratorBuilder<Scalar>::setErrWtVecCalcFactory(
@@ -218,6 +220,7 @@ void IntegratorBuilder<Scalar>::setErrWtVecCalcFactory(
   validPL_ = Teuchos::null;
 }
 
+
 template<class Scalar>
 void IntegratorBuilder<Scalar>::setInterpolatorFactory(
     const RCP<const Teuchos::AbstractFactory<InterpolatorBase<Scalar> > > &interpolatorFactory,
@@ -228,6 +231,7 @@ void IntegratorBuilder<Scalar>::setInterpolatorFactory(
   validPL_ = Teuchos::null;
 }
 
+
 template<class Scalar>
 void IntegratorBuilder<Scalar>::setWFactoryObject(
     const RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > &wFactoryObject
@@ -236,6 +240,7 @@ void IntegratorBuilder<Scalar>::setWFactoryObject(
   TEUCHOS_ASSERT( !is_null(wFactoryObject) );
   wFactoryObject_ = wFactoryObject;
 }
+
 
 template<class Scalar>
 void IntegratorBuilder<Scalar>::setParameterList(
@@ -246,6 +251,7 @@ void IntegratorBuilder<Scalar>::setParameterList(
   paramList->validateParameters(*this->getValidParameters());
   paramList_ = paramList;
 }
+
 
 template<class Scalar>
 RCP<const Teuchos::ParameterList>
@@ -312,11 +318,13 @@ IntegratorBuilder<Scalar>::getValidParameters() const
   return validPL_; 
 }
 
+
 template<class Scalar>
 RCP<ParameterList> IntegratorBuilder<Scalar>::getNonconstParameterList()
 {
   return paramList_;
 }
+
 
 template<class Scalar>
 RCP<ParameterList> IntegratorBuilder<Scalar>::unsetParameterList()
@@ -325,12 +333,14 @@ RCP<ParameterList> IntegratorBuilder<Scalar>::unsetParameterList()
   paramList_ = Teuchos::null;
   return pl;
 }
+
   
 template<class Scalar>
 RCP<const ParameterList> IntegratorBuilder<Scalar>::getParameterList() const
 {
   return paramList_;
 }
+
 
 // Where should we throw exceptions?
 // 1.  If the integrator comes back null (done)
@@ -587,6 +597,29 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
 
 }
 
+
+} // namespace Rythmos
+
+
+template<class Scalar>
+Teuchos::RCP<Rythmos::IntegratorBuilder<Scalar> >
+Rythmos::integratorBuilder()
+{
+  return rcp(new IntegratorBuilder<Scalar>);
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Rythmos::IntegratorBuilder<Scalar> >
+Rythmos::integratorBuilder(const RCP<ParameterList> &paramList)
+{
+  const RCP<IntegratorBuilder<Scalar> > ib = integratorBuilder<Scalar>();
+  ib->setParameterList(paramList);
+  return ib;
+}
+
+
+
 // 
 // Explicit Instantiation macro
 //
@@ -597,12 +630,12 @@ void IntegratorBuilder<Scalar>::initializeDefaults_()
   \
   template class IntegratorBuilder< SCALAR >; \
   \
-  template RCP< IntegratorBuilder< SCALAR > > \
-  integratorBuilder();  \
+  template RCP<IntegratorBuilder< SCALAR > > \
+  integratorBuilder(); \
+  \
+  template RCP<IntegratorBuilder<SCALAR> > \
+  integratorBuilder(const RCP<ParameterList> &paraList);
 
-
-
-} // namespace Rythmos
 
 #endif //Rythmos_INTEGRATOR_BUILDER_DEF_H
 

@@ -179,9 +179,21 @@ private:
 };
 
 
-// Nonmember constructor
+/** \brief Nonmember constructor to uninitialized.
+ *
+ * \relates IntegratorBuilder
+ */
 template<class Scalar>
 RCP<IntegratorBuilder<Scalar> > integratorBuilder();
+
+
+/** \brief Nonmember constructor given parameter list.
+ *
+ * \relates IntegratorBuilder
+ */
+template<class Scalar>
+RCP<IntegratorBuilder<Scalar> >
+integratorBuilder(const RCP<ParameterList> &paramList);
 
 
 } // namespace Rythmos

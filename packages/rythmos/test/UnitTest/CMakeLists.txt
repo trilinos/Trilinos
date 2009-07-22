@@ -252,3 +252,11 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     STANDARD_PASS_OUTPUT
     )
 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    ForwardSensitivityStepperTester_UnitTest
+    SOURCES Rythmos_ForwardSensitivityStepperTester_UnitTest.cpp Rythmos_UnitTest.cpp
+    DEPLIBS rythmos_test_models
+    COMM serial
+    STANDARD_PASS_OUTPUT
+    )
+

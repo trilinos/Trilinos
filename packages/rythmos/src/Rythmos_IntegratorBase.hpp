@@ -239,8 +239,8 @@ template<class Scalar>
 void get_fwd_x_and_x_dot(
   IntegratorBase<Scalar>& integrator,
   const Scalar t,
-  RCP<const Thyra::VectorBase<Scalar> > *x,
-  RCP<const Thyra::VectorBase<Scalar> > *x_dot
+  const Ptr<RCP<const Thyra::VectorBase<Scalar> > > &x,
+  const Ptr<RCP<const Thyra::VectorBase<Scalar> > > &x_dot
   )
 {
   Array<Scalar> time_vec;
@@ -249,12 +249,27 @@ void get_fwd_x_and_x_dot(
   Array<RCP<const Thyra::VectorBase<Scalar> > > x_dot_vec;
   integrator.getFwdPoints(
     time_vec,
-    x ? &x_vec : 0,
-    x_dot ? &x_dot_vec : 0,
+    nonnull(x) ? &x_vec : 0,
+    nonnull(x_dot) ? &x_dot_vec : 0,
     0
     );
-  if (x) *x = x_vec[0];
-  if (x_dot) *x_dot = x_dot_vec[0];
+  if (nonnull(x))
+    *x = x_vec[0];
+  if (nonnull(x_dot))
+    *x_dot = x_dot_vec[0];
+}
+
+
+/** \brief Depricated */
+template<class Scalar> 
+void get_fwd_x_and_x_dot(
+  IntegratorBase<Scalar>& integrator,
+  const Scalar t,
+  RCP<const Thyra::VectorBase<Scalar> > *x,
+  RCP<const Thyra::VectorBase<Scalar> > *x_dot
+  )
+{
+  get_fwd_x_and_x_dot(integrator, t, ptr(x), ptr(x_dot));
 }
 
  

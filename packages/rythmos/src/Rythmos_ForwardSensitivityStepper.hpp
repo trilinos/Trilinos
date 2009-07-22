@@ -40,6 +40,7 @@
 #include "Rythmos_SingleResidualModelEvaluatorBase.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_LinearNonlinearSolver.hpp"
+#include "Thyra_ProductVectorBase.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
@@ -330,6 +331,12 @@ public:
   RCP<const Thyra::ModelEvaluator<Scalar> >
   getStateModel() const;
 
+  /** \brief Return the state stepper that was passed into
+   * <tt>initialize()</tt>.
+   */
+  RCP<StepperBase<Scalar> >
+  getNonconstStateStepper();
+
   /** \brief Return the forward sensitivity model evaluator object that got
    * created internally when <tt>initialize()</tt> was called.
    */
@@ -401,6 +408,9 @@ public:
   void setInitialCondition(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar> &state_and_sens_ic
     );
+
+  /** \brief . */
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> getInitialCondition() const;
 
   /** \brief . */
   Scalar takeStep( Scalar dt, StepSizeType stepType );
@@ -485,6 +495,7 @@ private:
   RCP<Thyra::NonlinearSolverBase<Scalar> > stateTimeStepSolver_;
   RCP<IntegratorBase<Scalar> > stateIntegrator_;
   Scalar finalTime_;
+  Thyra::ModelEvaluatorBase::InArgs<Scalar> stateAndSensBasePoint_;
   RCP<StepperBase<Scalar> > sensStepper_;
   RCP<Thyra::NonlinearSolverBase<Scalar> > sensTimeStepSolver_;
 
@@ -568,6 +579,86 @@ int getParameterIndex(
 }
 
 
+/** \brief Set up default initial conditions for the state and sensitivity
+ * stepper with default zero initial conditions for the sensitivity
+ * quantities
+ *
+ * \relates ForwardSensitivityStepper
+ */
+template<class Scalar> 
+inline
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+createStateAndSensInitialCondition(
+  const ForwardSensitivityStepper<Scalar> &fwdSensStepper,
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &state_ic
+  )
+{
+
+  using Teuchos::outArg;
+  using Thyra::assign;
+  typedef Thyra::ModelEvaluatorBase MEB;
+  
+  RCP<Thyra::VectorBase<Scalar> > s_bar_init
+    = createMember(fwdSensStepper.getFwdSensModel()->get_x_space());
+  assign( outArg(*s_bar_init), 0.0 );
+  RCP<Thyra::VectorBase<Scalar> > s_bar_dot_init
+    = createMember(fwdSensStepper.getFwdSensModel()->get_x_space());
+  assign( outArg(*s_bar_dot_init), 0.0 );
+  
+  RCP<const Rythmos::StateAndForwardSensitivityModelEvaluator<Scalar> >
+    stateAndSensModel = fwdSensStepper.getStateAndFwdSensModel();
+  
+  MEB::InArgs<Scalar>
+    state_and_sens_ic = fwdSensStepper.getModel()->createInArgs();
+  
+  // Copy time, parameters etc.
+  state_and_sens_ic.setArgs(state_ic);
+  // Set initial condition for x_bar = [ x; s_bar ]
+  state_and_sens_ic.set_x(
+    stateAndSensModel->create_x_bar_vec(state_ic.get_x(), s_bar_init)
+    );
+  // Set initial condition for x_bar_dot = [ x_dot; s_bar_dot ]
+  state_and_sens_ic.set_x_dot(
+    stateAndSensModel->create_x_bar_vec(state_ic.get_x_dot(), s_bar_dot_init)
+    );
+
+  return state_and_sens_ic;
+
+}
+
+
+/** \brief Extract out the initial condition for just the state model given
+ * the initial condition for the state and sensitivity model.
+ *
+ * \relates ForwardSensitivityStepper
+ */
+template<class Scalar> 
+inline
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+extractStateInitialCondition(
+  const ForwardSensitivityStepper<Scalar> &fwdSensStepper,
+  const Thyra::ModelEvaluatorBase::InArgs<Scalar> &state_and_sens_ic
+  )
+{
+
+  using Thyra::productVectorBase;
+  typedef Thyra::ModelEvaluatorBase MEB;
+
+  MEB::InArgs<Scalar>
+    state_ic = fwdSensStepper.getStateModel()->createInArgs();
+  
+  // Copy time, parameters etc.
+  state_ic.setArgs(state_and_sens_ic);
+  state_ic.set_x(
+    productVectorBase(state_and_sens_ic.get_x())->getVectorBlock(0));
+  state_ic.set_x_dot(
+    productVectorBase(state_and_sens_ic.get_x_dot())->getVectorBlock(0));
+  
+  return state_ic;
+  
+}
+
+
 //
 // Implementation
 //
@@ -638,6 +729,14 @@ RCP<const Thyra::ModelEvaluator<Scalar> >
 ForwardSensitivityStepper<Scalar>::getStateModel() const
 {
   return stateModel_;
+}
+
+  
+template<class Scalar> 
+RCP<StepperBase<Scalar> >
+ForwardSensitivityStepper<Scalar>::getNonconstStateStepper()
+{
+  return stateStepper_;
 }
 
   
@@ -729,6 +828,8 @@ void ForwardSensitivityStepper<Scalar>::setInitialCondition(
   
   typedef Thyra::ModelEvaluatorBase MEB;
 
+  stateAndSensBasePoint_ = state_and_sens_ic;
+
   // Get the product vectors for x_bar = [ x; s_bar ] and x_bar_dot
 
   TEST_FOR_EXCEPTION(
@@ -790,6 +891,14 @@ void ForwardSensitivityStepper<Scalar>::setInitialCondition(
   }
   sensStepper_->setInitialCondition(sens_ic);
 
+}
+
+
+template<class Scalar> 
+Thyra::ModelEvaluatorBase::InArgs<Scalar>
+ForwardSensitivityStepper<Scalar>::getInitialCondition() const
+{
+  return stateAndSensBasePoint_;
 }
  
 

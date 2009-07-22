@@ -406,13 +406,12 @@ void ModelEvaluatorBase::InArgs<Scalar>::_setUnsupportsAndRelated(
       this->_setSupports(IN_ARG_beta,false);
       break;
     }
-#ifdef TEUCHOS_DEBUG
     default:
       TEST_FOR_EXCEPTION(
-        true ,std::logic_error
-        ,"Error, can handle args other than IN_ARG_x yet!"
+        true ,std::logic_error,
+        "Error, can not handle args other than IN_ARG_x yet!"
         );
-#endif
+      break;
   }
   this->_setSupports(arg,false);
 }
@@ -1367,13 +1366,12 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
       }
       break;
     }
-#ifdef TEUCHOS_DEBUG
     default:
       TEST_FOR_EXCEPTION(
-        true ,std::logic_error
-        ,"Error, can handle args other than IN_ARG_x yet!"
+        true ,std::logic_error,
+        "Error, can not handle args other than IN_ARG_x yet!"
         );
-#endif
+      break;
   }
 }
 
@@ -1393,13 +1391,12 @@ void ModelEvaluatorBase::OutArgs<Scalar>::_setUnsupportsAndRelated(
         this->_setSupports(OUT_ARG_DfDp,l,DerivativeSupport());
       break;
     }
-#ifdef TEUCHOS_DEBUG
     default:
       TEST_FOR_EXCEPTION(
-        true ,std::logic_error
-        ,"Error, can handle args other than OUT_ARG_f yet!"
+        true ,std::logic_error,
+        "Error, can not handle args other than OUT_ARG_f yet!"
         );
-#endif
+      break;
   }
   this->_setSupports(arg,false);
 }
