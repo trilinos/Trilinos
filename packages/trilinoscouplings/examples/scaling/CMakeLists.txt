@@ -37,7 +37,6 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
     Example_DivLSFEM
     SOURCES example_DivLSFEM.cpp
     DEPLIBS epetra epetraext pamgen aztecoo amesos ml
-    ARGS "10 10 10"
     NUM_MPI_PROCS 1
     ADD_DIR_TO_NAME
     )
@@ -54,6 +53,7 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt AND
   SOURCE_FILES PoissonMesh.in
                CurlLSFEMin.xml
 	       CurlLSFEMblock_in_block.xml
+	       DivLSFEMin.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   ) 
