@@ -100,7 +100,6 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 
 using namespace std;
 using namespace Intrepid;
-using namespace shards;
 
 #ifdef HAVE_MPI
 class topo_entity{
@@ -409,7 +408,7 @@ int main(int argc, char *argv[]) {
 
    // Get cell topology for base hexahedron
     typedef shards::CellTopology    CellTopology;
-    CellTopology hex_8(shards::getCellTopologyData<Hexahedron<8> >() );
+    CellTopology hex_8(shards::getCellTopologyData<shards::Hexahedron<8> >() );
 
    // Get dimensions 
     int numNodesPerElem = hex_8.getNodeCount();
