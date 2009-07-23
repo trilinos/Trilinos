@@ -308,7 +308,7 @@ namespace Intrepid {
 	break;
       case OPERATOR_DIV:
 	{
-	  FieldContainer<Scalar> phisCur( numBf , numPts , 2 );
+	  FieldContainer<Scalar> phisCur( scalarBigN , numPts , 2 );
 	  Phis.getValues( phisCur , inputPoints , OPERATOR_GRAD );
 	  for (int i=0;i<outputValues.dimension(0);i++) { // bf loop
 	    for (int j=0;j<outputValues.dimension(1);j++) { // point loop
