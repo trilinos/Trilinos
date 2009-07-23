@@ -27,7 +27,7 @@
 
 //--------------------------------------------------------------------
 // This is an example of partitioning a hypergraph, while requesting
-// partitions of unequal size.
+// parts of unequal size.
 //--------------------------------------------------------------------
 
 //Include Isorropia_Exception.hpp only because the helper functions at
@@ -112,9 +112,9 @@ int main(int argc, char** argv) {
              paramlist,  // parameters
              false));    // NO - do not do the partitioning in the constructor
 
-  //Specify the proportion of rows to be assigned to each partition.  We'll
-  //have the even-numbered partitions be twice the size of the odd-numbered
-  //partitions.
+  //Specify the proportion of rows to be assigned to each part.  We'll
+  //have the even-numbered parts be twice the size of the odd-numbered
+  //parts.
 
   float *partSize = new float [numProcs];
   int *partGlobalId = new int [numProcs];
@@ -124,7 +124,7 @@ int main(int argc, char** argv) {
     partSize[i] = (i % 2) ? 1.0 : 2.0;
   }
 
-  partitioner->set_partition_sizes(numProcs, partGlobalId, NULL, partSize);
+  partitioner->setPartSizes(numProcs, partGlobalId, partSize);
 
   delete [] partGlobalId;
 
