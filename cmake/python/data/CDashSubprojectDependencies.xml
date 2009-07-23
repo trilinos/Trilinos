@@ -621,15 +621,15 @@
       <Email address="newpackage-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Optika">
+    <Dependency name="Teuchos" type="LR"/>
+    <EmailAddresses>
+      <Email address="optika-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Mesquite">
     <EmailAddresses>
       <Email address="mesquite-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </SubProject>
-  <SubProject name="TivaBuena">
-    <Dependency name="Teuchos" type="LR"/>
-    <EmailAddresses>
-      <Email address="tivabuena-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
 </Project>
