@@ -55,7 +55,7 @@ namespace Tpetra {
     <li> Distributed Global objects - In most instances, a distributed object will be partitioned
     across multiple memory images associated with multiple processors.  In this case, there is 
     a unique copy of each element and elements are spread across all images specified by 
-    the Tpetra::Platform object.
+    the Teuchos::Comm object.
     <li> Replicated Local Objects - Some algorithms use objects that are too small to
     be distributed across all processors, the Hessenberg matrix in a GMRES
     computation.  In other cases, such as with block iterative methods,  block dot product 

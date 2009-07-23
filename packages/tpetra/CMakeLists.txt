@@ -6,7 +6,8 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE( Tpetra ENABLE_SHADOWING_WARNINGS CLEANED )
+# ENABLE_SHADOWING_WARNINGS  not possible, because of TBB
+PACKAGE( Tpetra CLEANED )
 
 #
 # B) Set up package-specific options

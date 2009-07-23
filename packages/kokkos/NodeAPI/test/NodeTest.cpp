@@ -121,6 +121,7 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( NodeAPI, SumTest, SCALAR, NODE )
   {
+    out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
     Time tAlloc("Alloc Time"), tInit("Init Op"), tSum("Sum Op"), tFree("Free Time");
     typename NODE::template buffer<SCALAR>::buffer_t x;
     NODE &node = getNode<NODE>();
@@ -166,6 +167,7 @@ namespace {
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NodeAPI, TimeTest, NODE )
   {
+    out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
     Time tNoop("Null Op");
     NODE &node = getNode<NODE>();
     NullOp<NODE> noop;

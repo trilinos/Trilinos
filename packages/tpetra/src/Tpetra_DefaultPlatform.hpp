@@ -29,6 +29,7 @@
 #ifndef TPETRA_DEFAULT_PLATFORM_HPP
 #define TPETRA_DEFAULT_PLATFORM_HPP
 
+#include <Kokkos_DefaultNode.hpp>
 #include "Tpetra_SerialPlatform.hpp"
 #ifdef HAVE_MPI
 #  include "Tpetra_MpiPlatform.hpp"
@@ -47,40 +48,40 @@ namespace Tpetra {
  * The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
  * type, if omitted, defaults to the \c LocalOrdinal type.
  */
-template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
+template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class DefaultPlatform {
 public:
 
   /** \brief Return the default platform.
    */
-  static Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal> > getPlatform();
+  static Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getPlatform();
 
 private:
 
-  static Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal> > platform_;
+  static Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal,Node> > platform_;
 
 };
 
 // ///////////////////////////
 // Template Implementations
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
-Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal> >
-DefaultPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::getPlatform()
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+DefaultPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getPlatform()
 {
   if(!platform_.get()) {
 #ifdef HAVE_MPI
-    platform_ = Teuchos::rcp(new MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal>(Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD)));
+    platform_ = Teuchos::rcp(new MpiPlatform<Scalar,LocalOrdinal,GlobalOrdinal>(Kokkos::DefaultNode::getDefaultNode(),Teuchos::opaqueWrapper<MPI_Comm>(MPI_COMM_WORLD)));
 #else // HAVE_MPI    
-    platform_ = Teuchos::rcp(new SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal>());
+    platform_ = Teuchos::rcp(new SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal>(Kokkos::DefaultNode::getDefaultNode()));
 #endif // HAVE_MPI    
   }
   return platform_;
 }
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
-Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal> >
-DefaultPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::platform_ = Teuchos::null;
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<Platform<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+DefaultPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node>::platform_ = Teuchos::null;
 
 } // namespace Tpetra
 

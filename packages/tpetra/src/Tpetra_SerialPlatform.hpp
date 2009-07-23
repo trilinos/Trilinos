@@ -40,25 +40,21 @@ namespace Tpetra {
      The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
      type, if omitted, defaults to the \c LocalOrdinal type.
    */
-	template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal>
-	class SerialPlatform : public virtual Platform<Scalar, LocalOrdinal, GlobalOrdinal> 
+  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
+	class SerialPlatform : public virtual Platform<Scalar, LocalOrdinal, GlobalOrdinal, Node> 
   {
   public:
-
     //! @name Constructor/Destructor Methods
     //@{ 
 
     //! Constructor
-    SerialPlatform();
-
-    //! Constructor with object label
-    SerialPlatform(const std::string &label);
+    SerialPlatform(Node &node);
 
     //! Destructor
     ~SerialPlatform();
 
     //! Clone constructor - implements Tpetra::Platform clone() method.
-    Teuchos::RCP< Platform<Scalar,LocalOrdinal,GlobalOrdinal> > clone() const;
+    Teuchos::RCP< Platform<Scalar,LocalOrdinal,GlobalOrdinal,Node> > clone() const;
 
     //@}
 
@@ -69,29 +65,27 @@ namespace Tpetra {
     Teuchos::RCP< Teuchos::Comm<int> > getComm() const;
 
     //@}
-
+    private:
+    SerialPlatform(const SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node> &platform);
   };
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::SerialPlatform() {}
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SerialPlatform(Node &node) 
+  : Platform<Scalar,LocalOrdinal,GlobalOrdinal,Node>(node) {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::SerialPlatform(const std::string &label) 
-  : Teuchos::LabeledObject(label) {} 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~SerialPlatform() {}
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::~SerialPlatform() {}
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
-  Teuchos::RCP< Platform<Scalar,LocalOrdinal,GlobalOrdinal> > 
-  SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::clone() const 
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< Platform<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node>::clone() const 
   {
-    return Teuchos::rcp(new SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal>());
+    return Teuchos::rcp(new SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node>(this->getNode()));
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< Teuchos::Comm<int> > 
-  SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal>::getComm() const 
+  SerialPlatform<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getComm() const 
   {
     return Teuchos::rcp(new Teuchos::SerialComm<int>() );
   }
