@@ -191,7 +191,7 @@ Zoltan_PHG_Tree_init(Zoltan_PHG_Tree* tree)
     SET_MAX_NODE(tree->array, i, -1);
   }
 
-  *(tree->array -=2); /* Begin at offset 1 */
+  tree->array -= 2; /* Begin at offset 1 */
 
   return ZOLTAN_OK;
 }
