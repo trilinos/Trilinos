@@ -35,6 +35,7 @@
 
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_RealSpaceTools.hpp"
+#include "Shards_Array.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
