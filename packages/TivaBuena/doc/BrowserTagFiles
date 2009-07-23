@@ -1,3 +1,0 @@
-@INCLUDE=epetra/doc/BrowserTagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/TivaBuenaBrowser.tag=$(TRILINOS_HOME)/packages/TivaBuena/browser/doc/html

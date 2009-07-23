@@ -1,3 +1,0 @@
-@INCLUDE = epetra/doc/TagFiles   # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
-TAGFILES += \
-  $(TRILINOS_HOME)/packages/common/tag_files/TivaBuena.tag=$(TRILINOS_HOME)/packages/TivaBuena/doc/html
