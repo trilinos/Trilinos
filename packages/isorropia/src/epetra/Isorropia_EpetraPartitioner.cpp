@@ -67,9 +67,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_graph, paramlist, 0),
-  partGIDs(NULL), partLIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
 {
-  clear_partition_sizes();
   if (compute_partitioning_now)
     partition(true);
 }
@@ -79,9 +78,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_graph, costs, paramlist, 0) ,
-  partGIDs(NULL), partLIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
 {
-  clear_partition_sizes();
   if (compute_partitioning_now)
     partition(true);
 }
@@ -90,9 +88,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_matrix, paramlist, 0) ,
-  partGIDs(NULL), partLIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
 {
-  clear_partition_sizes();
   if (compute_partitioning_now)
     partition(true);
 }
@@ -102,9 +99,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_matrix, costs, paramlist, 0) ,
-  partGIDs(NULL), partLIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
 {
-  clear_partition_sizes();
   if (compute_partitioning_now)
     partition(true);
 }
@@ -113,9 +109,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (coords, paramlist, 0) ,
-  partGIDs(NULL), partLIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
 {
-  clear_partition_sizes();
   if (compute_partitioning_now)
     partition(true);
 }
@@ -125,9 +120,8 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (coords, weights, paramlist, 0) ,
-  partGIDs(NULL), partLIDs(NULL), partSizes(NULL), numPartSizes(0)
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
 {
-  clear_partition_sizes();
   if (compute_partitioning_now)
     partition(true);
 }
@@ -135,15 +129,11 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
 Partitioner::~Partitioner(){}
 
 void Partitioner::
-clear_partition_sizes()
+clearPartSizes()
 {
   if (partGIDs){
     delete [] partGIDs;
     partGIDs = NULL;
-  }
-  if (partLIDs){
-    delete [] partLIDs;
-    partLIDs = NULL;
   }
   if (partSizes){
     delete [] partSizes;
@@ -153,28 +143,19 @@ clear_partition_sizes()
 }
 
 void Partitioner::
-set_partition_sizes(int len, int *global_part_id, int *local_part_id, float *part_size)
+setPartSizes(int len, int *global_part_id, float *part_size)
 {
-  clear_partition_sizes();
+  clearPartSizes();
 
   if (len < 1) return;
 
   numPartSizes = len;
 
-  if (global_part_id){
-    partGIDs = new int [len];
-    memcpy(partGIDs, global_part_id, sizeof(int) * len);
-  }
+  partGIDs = new int [len];
+  memcpy(partGIDs, global_part_id, sizeof(int) * len);
 
-  if (local_part_id){
-    partLIDs = new int [len];
-    memcpy(partLIDs, local_part_id, sizeof(int) * len);
-  }
-
-  if (part_size){
-    partSizes = new float [len];
-    memcpy(partSizes, part_size, sizeof(float) * len);
-  }
+  partSizes = new float [len];
+  memcpy(partSizes, part_size, sizeof(float) * len);
 }
 
 void Partitioner::
@@ -219,7 +200,6 @@ partition(bool force_repartitioning)
 
     lib_->numPartSizes = numPartSizes;
     lib_->partGIDs = partGIDs;
-    lib_->partLIDs = partLIDs;
     lib_->partSizes = partSizes;
   }
 

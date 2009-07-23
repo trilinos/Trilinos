@@ -92,27 +92,27 @@ public:
   /** Destructor */
   virtual ~Partitioner();
 
-   /* Set the relative number of objects in each partition.  The default is to
-    * evenly divide objects across partitions.  The numbers can be fractions of
+   /* Set the relative number of objects in each part.  The default is to
+    * evenly divide objects across parts.  The numbers can be fractions of
     * one, or whole numbers.  Zoltan adds the values supplied and takes the sizes
     * as proportional to that whole.
     *
     * We make a copy of id and size lists.
     *
-    * Caller should supply either global partition IDs or local partition IDs.
-    * Partition IDs are integers beginning at zero for the first partition.
+    * Caller should supply either global part IDs or local part IDs.
+    * Part IDs are integers beginning at zero for the first part.
     *
     * No communication is done during this call.  One process can make the call
-    * for all partitions, or many processes can make the call.  Zoltan checks the
+    * for all parts, or many processes can make the call.  Zoltan checks the
     * consistency of the information provided.
     */
 
-  void set_partition_sizes(int len, int *global_part_id, int *local_part_id, float *part_size);
+  void setPartSizes(int len, int *global_part_id, float *part_size);
 
   /*
-   * Free the memory allocated to store partition sizes.
+   * Free the memory allocated to store part sizes.
    */
-  void clear_partition_sizes();
+  void clearPartSizes();
 
   /**  partition is the method that computes 
        a rebalanced partitioning for the data in the object
@@ -158,7 +158,6 @@ public:
 
 private:
   int *partGIDs;
-  int *partLIDs;
   float *partSizes;
   int numPartSizes;
 

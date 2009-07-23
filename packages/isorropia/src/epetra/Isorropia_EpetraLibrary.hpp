@@ -125,7 +125,6 @@ public:
 
   int numPartSizes;
   int *partGIDs;
-  int *partLIDs;
   float *partSizes;
 
 protected:

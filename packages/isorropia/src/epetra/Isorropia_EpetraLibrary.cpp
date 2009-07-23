@@ -65,7 +65,6 @@ Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int itype)
   : input_type_(itype),
     numPartSizes(0),
     partGIDs(NULL),
-    partLIDs(NULL),
     partSizes(NULL),
     input_graph_(input_graph),
     input_matrix_(0),
@@ -82,7 +81,6 @@ Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   : input_type_(itype),
     numPartSizes(0),
     partGIDs(NULL),
-    partLIDs(NULL),
     partSizes(NULL),
     input_graph_(input_graph),
     input_matrix_(0),
@@ -98,7 +96,6 @@ Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int itype)
   : input_type_(itype),
     numPartSizes(0),
     partGIDs(NULL),
-    partLIDs(NULL),
     partSizes(NULL),
     input_graph_(0),
     input_matrix_(input_matrix),
@@ -115,7 +112,6 @@ Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
   : input_type_(itype),
     numPartSizes(0),
     partGIDs(NULL),
-    partLIDs(NULL),
     partSizes(NULL),
     input_graph_(0),
     input_matrix_(input_matrix),
@@ -131,7 +127,6 @@ Library(Teuchos::RCP<const Epetra_MultiVector> input_coords, int itype)
   : input_type_(itype),
     numPartSizes(0),
     partGIDs(NULL),
-    partLIDs(NULL),
     partSizes(NULL),
     input_graph_(0),
     input_matrix_(0),
@@ -148,7 +143,6 @@ Library(Teuchos::RCP<const Epetra_MultiVector> input_coords,
   : input_type_(itype),
     numPartSizes(0),
     partGIDs(NULL),
-    partLIDs(NULL),
     partSizes(NULL),
     input_graph_(0),
     input_matrix_(0),
@@ -163,8 +157,6 @@ Library::~Library()
 {
   if (partGIDs)
     delete [] partGIDs;
-  if (partLIDs)
-    delete [] partLIDs;
   if (partSizes)
     delete [] partSizes;
 }

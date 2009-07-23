@@ -532,12 +532,7 @@ repartition(Teuchos::ParameterList& zoltanParamList,
     int err;
     int *wgtIdx = NULL;
 
-    if (partGIDs){
-      err = zz_->LB_Set_Part_Sizes(1, numPartSizes, partGIDs, wgtIdx, partSizes);
-    }
-    else{
-      err = zz_->LB_Set_Part_Sizes(0, numPartSizes, partLIDs, wgtIdx, partSizes);
-    }
+    err = zz_->LB_Set_Part_Sizes(1, numPartSizes, partGIDs, wgtIdx, partSizes);
 
     if (err != ZOLTAN_OK){
       throw Isorropia::Exception("Error in LB_Set_Part_Sizes");
