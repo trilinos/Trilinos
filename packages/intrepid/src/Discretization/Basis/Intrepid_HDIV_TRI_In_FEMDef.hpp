@@ -246,9 +246,11 @@ namespace Intrepid {
 
     // the rest of the dofs are internal
     const int numFaceDof = (degree-1)*degree;
+    int faceDofCur = 0;
     for (int i=3*degree;i<degree*(degree+1);i++) {
-      tag_cur[0] = 2;  tag_cur[1] = 0;  tag_cur[2] = 1;  tag_cur[3] = numFaceDof;
+      tag_cur[0] = 2;  tag_cur[1] = 0;  tag_cur[2] = faceDofCur;  tag_cur[3] = numFaceDof;
       tag_cur += tagSize;
+      faceDofCur++;
     }
     
     
