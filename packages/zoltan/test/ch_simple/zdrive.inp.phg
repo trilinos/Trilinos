@@ -1,4 +1,5 @@
 Decomposition Method 	= hypergraph
+zoltan parameters	= lb_approach=partition
 zoltan parameters	= phg_coarsening_limit=2
 zoltan parameters	= final_output=1
 File Type		= Chaco
