@@ -10,35 +10,36 @@
 \documentclass[10pt,conference,letterpaper]{IEEEtran}
 \usepackage{times,amsmath,epsfig}
 %
-\title{A C++ API for Programming Parallel Nodes}
+\title{A Light-weight API for Multicore Programming}
 %
 \author{
-{Christopher G. Baker {\small $~^{\#1}$}, H. Carter Edwards {\small $~^{*2}$}, Michael A. Heroux {\small $~^{\#3}$}, Alan B. Williams {\small $~^{*4}$} }%
-% add some space between author names and affils
-\vspace{1.6mm}\\
-\fontsize{10}{10}\selectfont\itshape
-% 20080211 CAUSAL PRODUCTIONS
-% separate superscript on following line from affiliation using narrow space
-$^{\#}$\,Scalable Algorithms Department, Sandia National Laboratories\\
-P.O. Box 5800, MS 1320, Albuquerque, NM 87185-1320, USA\\
-\fontsize{9}{9}\selectfont\ttfamily\upshape
-$^{1}$\,cgbaker@sandia.gov\\
-$^{3}$\,maherou@sandia.gov%
-% add some space between email and affil
-\vspace{1.2mm}\\
-\fontsize{10}{10}\selectfont\rmfamily\itshape
-$^{*}$\,Computational Simulation Infrastructure Department, Sandia National Laboratories \\
-P.O. Box 5800, MS 0382, Albuquerque, NM 87185-0382, USA\\
-\fontsize{9}{9}\selectfont\ttfamily\upshape
-$^{2}$\,hcedwar@sandia.gov\\
-$^{4}$\,william@sandia.gov%
+Author: TBA
+%{Christopher G. Baker {\small $~^{\#1}$}, H. Carter Edwards {\small $~^{*2}$}, Michael A. Heroux {\small $~^{\#3}$}, Alan B. Williams {\small $~^{*4}$} }%
+%% add some space between author names and affils
+%\vspace{1.6mm}\\
+%\fontsize{10}{10}\selectfont\itshape
+%% 20080211 CAUSAL PRODUCTIONS
+%% separate superscript on following line from affiliation using narrow space
+%$^{\#}$\,Scalable Algorithms Department, Sandia National Laboratories\\
+%P.O. Box 5800, MS 1320, Albuquerque, NM 87185-1320, USA\\
+%\fontsize{9}{9}\selectfont\ttfamily\upshape
+%$^{1}$\,cgbaker@sandia.gov\\
+%$^{3}$\,maherou@sandia.gov%
+%% add some space between email and affil
+%\vspace{1.2mm}\\
+%\fontsize{10}{10}\selectfont\rmfamily\itshape
+%$^{*}$\,Computational Simulation Infrastructure Department, Sandia National Laboratories \\
+%P.O. Box 5800, MS 0382, Albuquerque, NM 87185-0382, USA\\
+%\fontsize{9}{9}\selectfont\ttfamily\upshape
+%$^{2}$\,hcedwar@sandia.gov\\
+%$^{4}$\,william@sandia.gov%
 }
 %
 \begin{document}
 \maketitle
 %
 \begin{abstract} 
-We propose a novel API for programming multi-core nodes. This approach utilizes C++ template meta-programming to enable users to write parallel kernels which can be executed on a diversity of node types, including Cell, GPUs and multi-core CPUs. The support for a parallel node is provided by implementing a Node object, according to the requirements specified by the API. This ability to provide custom support for particular node types gives developers a level of control not allowed by the current slate of proprietary parallel programming APIs. We demonstrate implementations of the API for a simple vector dot-product on sequential CPU, multi-core CPU and GPU nodes.
+Multicore nodes have become ubiquitous in just a few years.  At the same time, writing portable parallel software for multicore nodes is extremely challenging.  Widely available programming models such as OpenMP and Pthreads are not useful for devices such as graphics cards, and more flexible programming models such as RapidMind are only available commercially.  OpenCL represents the first truly portable standard, but its availability is limited.  In the presence of such transition, we have developed a minimal application programming interface (API) for multicore nodes that allows us to write portable parallel linear algebra software that can use any of the aforementioned programming models and any future standard models. We utilize C++ template meta-programming to enable users to write parallel kernels that can be executed on a variety of node types, including Cell, GPUs and multicore CPUs. The support for a parallel node is provided by implementing a Node object, according to the requirements specified by the API. This ability to provide custom support for particular node types gives developers a level of control not allowed by the current slate of proprietary parallel programming APIs. We demonstrate implementations of the API for a simple vector dot-product on sequential CPU, multicore CPU and GPU nodes.
 \end{abstract}
 
 % NOTE keywords are not used for conference papers so do not populate them
@@ -49,13 +50,13 @@ We propose a novel API for programming multi-core nodes. This approach utilizes 
 \section{Introduction}
 %
 
-A number of trends currently conspire to bring multi-core and many-core processors to the attention of the scientific computing community. The relationship between clock rate and power consumption, coupled with a limited ability to handle dissipated heat, means that the fruits of Moore's Law are now coming in the form of a growing number of parallel cores instead of an increased clock rate. While multi-core processors have been present in distributed-memory systems since the early 1990s, the majority of scientific applications for these system were developed using only a distributed memory model. This is not to suggest that multiple cores per node have not been useful; scientific codes using a distributed-memory programming model (e.g., MPI) can benefit from multi-core nodes treating each core as a node unto itself. In the particular case of a distributed-memory code using MPI, a cluster of $m$ nodes with $k$ cores per node can be launched with $p=m*k$ MPI processes. This MPI-only approach is popular, due to its simplicity and current success~\cite{HerouxThoughts}. However, it is still uncertain whether this approach will continue to scale as we move from moderately multi-core nodes (approx. 10 cores per node) to massively multi-core (tens or hundreds of cores per node). Even now it is clear that some important primitives can benefit from an explicitly shared-memory programming approach. Furthermore, if hardware requirements continue to favor increasing levels of parallelism over increasing clock frequencies, sequential codes will no longer see the gradual improvement that was experienced in the past. It will then be necessary to exploit some level of parallelism to see continued speed-up on future processors. 
+Multicore and manycore processors have become the standard building block for desktop and scalable computers. The relationship between clock rate and power consumption, coupled with a limited ability to handle dissipated heat, means that performance improvements are now coming in the form of a growing number of parallel cores instead of an increased clock rate. While multicore processors have been present in distributed-memory systems since the early 1990s, the majority of scientific applications for these system were developed using only a distributed memory model. This is not to suggest that multiple cores per node have not been useful; scientific codes using a distributed-memory programming model (e.g., MPI) can benefit from multicore nodes treating each core as a node unto itself. In the particular case of a distributed-memory code using MPI, a cluster of $m$ nodes with $k$ cores per node can be launched with $p=m*k$ MPI processes. This MPI-only approach is popular, due to its simplicity and current success~\cite{HerouxThoughts}. However, it is unlikely that this approach will continue to scale as we move from moderately multicore nodes (approx. 10 cores per node) to manycore nodes (tens or hundreds of cores per node). Even now it is clear that some important primitives can benefit from an explicitly shared-memory programming approach. Furthermore, if hardware requirements continue to favor increasing levels of parallelism over increasing clock frequencies, sequential codes will no longer see the gradual improvement that was experienced in the past. It will then be necessary to exploit some level of parallelism to see continued speed-up on future processors. 
 
-Another detriment of the distributed-memory approaches is that they are typically aimed at programming general purpose processors and are less amenable to the current generation of special-purpose multi-core and many-core processors (e.g., GPU, STI Cell, FPGA). These special-purpose processors constitute another reason for the recent attention on multi-core computing. Their rapidly increasing power and programmability motivates their appeal for scientific computing. Modern desktops and workstations include graphics processing units (GPUs) with hundreds of programmable cores, whose combined computational power often eclipses the system's CPU. The hardware support for parallelism, as well as the superior memory bandwidth on these devices, has made them a target for high-performance computing. At the same time, the introduction of numerous APIs for programming GPUs for general-purpose computing has removed the need to employ graphics-specific languages. For example, NVIDIA has developed the CUDA~\cite{CUDA} architecture for programming recent GPUs from the company, and similar efforts are underway to support architectures from other hardware vendors~\cite{AMDStream,BrookGPU}. The use of special-purpose hardware is not limited to GPUs. The Los Alamos Roadrunner~\cite{Roadrunner} utilizes STI Cell processors similar to those used in the Sony Playstation~3 video game console, whereas the Anton supercomputer~\cite{Anton} uses custom-built hardware for the solution of a specific scientific problem (molecular dynamics). In the case of the Roadrunner supercomputer, it is necessary to harness the Cell co-processors as they constitute most of the computational power of the computer.
+Another disadvantage of the distributed-memory approaches is that they are typically aimed at programming general purpose processors and are less amenable to the current generation of special-purpose multicore and manycore processors (e.g., GPU, STI Cell, FPGA). These special-purpose processors constitute another reason for the recent attention on multicore computing. Their rapidly increasing power and programmability motivates their appeal for scientific computing. Modern desktops and workstations include graphics processing units (GPUs) with hundreds of programmable cores, whose combined computational power often eclipses the system's CPU. The hardware support for parallelism, as well as the superior memory bandwidth on these devices, has made them a target for high-performance computing. At the same time, the introduction of numerous APIs for programming GPUs for general-purpose computing has removed the need to employ graphics-specific languages. For example, NVIDIA has developed the CUDA~\cite{CUDA} architecture for programming recent GPUs from the company, and similar efforts are underway to support architectures from other hardware vendors~\cite{AMDStream,BrookGPU}. The use of special-purpose hardware is not limited to GPUs. The Los Alamos Roadrunner~\cite{Roadrunner} utilizes STI Cell processors similar to those used in the Sony Playstation~3 video game console, whereas the Anton supercomputer~\cite{Anton} uses custom-built hardware for the solution of a specific scientific problem (molecular dynamics). In the case of the Roadrunner supercomputer, it is necessary to harness the Cell co-processors as they constitute most of the computational power of the computer.
 
-The diversity of multi-core hardware platforms has motivated the creation of a number of approaches for programming them. As previously mentioned, one popular approach for handling homogenous multi-core nodes is to apply current distributed-memory programming models to the individual cores. Alternatively, there are a number of shared-memory programming models, with Pthreads and OpenMP being the most popular; a more recent effort is Intel's Thread Build Blocks (TBB)~\cite{TBB}. For heterogenous multi-core nodes, there are at least as many programming models as there are architectures. Recently there have been several attempts to define a programming environment that can be targeted to diverse architectures, including multi-core CPUs, GPUs and the STI Cell. RapidMind's proprietary Multi-core Development Platform~\cite{RapidMind} provides a single C++ programming interface capable exploiting multiple back-ends. More recently, the OpenCL~\cite{OpenCL} effort has defined an open standard for programming multi-core processors. With backing from numerous hardware and software vendors, this framework consists of a new language (based on C) for writing parallel kernels.
+The diversity of multicore hardware platforms has motivated the creation of a number of approaches for programming them. As previously mentioned, one popular approach for handling homogenous multicore nodes is to apply current distributed-memory programming models to the individual cores. Alternatively, there are a number of shared-memory programming models, with Pthreads and OpenMP being the most popular; a more recent effort is Intel's Thread Build Blocks (TBB)~\cite{TBB}. For heterogenous multicore nodes, there are at least as many programming models as there are architectures. Recently there have been several attempts to define a programming environment that can be targeted to diverse architectures, including multicore CPUs, GPUs and the STI Cell. RapidMind's proprietary Multicore Development Platform~\cite{RapidMind} provides a single C++ programming interface capable exploiting multiple back-ends. More recently, the OpenCL~\cite{OpenCL} effort has defined an open standard for programming multicore processors. With backing from numerous hardware and software vendors, this framework consists of a new language (based on C) for writing parallel kernels.
 
-In this paper, we propose a novel API for writing kernels for parallel execution on multi-core compute nodes. Similar to TBB and RapidMind, the proposed API exploits C++ template metaprogramming to enable user kernels to be compiled to a generic threaded back-end. Like OpenCL and RapidMind, these kernels can be compiled to a diversity of parallel architectures. Unlike the aforementioned, the proposed API is fully open. Our motivation is not in developing new APIs to compete with current standards. However, the current solutions are not sufficiently portable, as they address a limited number of computing scenarios. More significantly, the current solutions focus mainly on the manner in which parallel kernels are written, leaving little (if any) ability to specify the manner in which those kernels are executed. The proposed API allows application developers to write parallel kernels, while also allowing node developers full flexibility in support mission-critical node types.
+In this paper, we propose a minimal, light-weight API for writing kernels for parallel execution on multicore compute nodes. We can develop such an API because, even though there are many competing multicore and manycore programming models, there is a common work-data registration and execution model that works across all of them.  Similar to TBB and RapidMind, our API exploits C++ template metaprogramming to enable user kernels to be compiled to a generic threaded back-end. Like OpenCL and RapidMind, these kernels can be compiled to a diversity of parallel architectures. Unlike the aforementioned, the proposed API is fully open. Our motivation is not in developing new APIs to compete with current standards. However, the current solutions are not sufficiently portable, as they address a limited number of computing scenarios. More significantly, the current solutions focus mainly on the manner in which parallel kernels are written, leaving little (if any) ability to specify the manner in which those kernels are executed. The proposed API allows application developers to write parallel kernels, while also allowing node developers full flexibility in support mission-critical node types.
 
 \section{Programming Model and Interface}
 
@@ -199,7 +200,7 @@ The following sections describe two different implementations of the proposed no
 
 \subsection{Intel TBB}
 
-This section discusses the implementation of a node class \verb!TBBNode! corresponding to a Intel Threading Building Blocks~(TBB) back-end. Intel TBB~\cite{TBB} is a C++ library using templates which allows users to write code to be run on a homogenous multi-core CPU. The benefit of TBB is that it frees the user from concern regarding the complications of the thread library for the particular system; threads are initialized once by the TBB runtime, then assigned to parallel tasks whenever the user passes work to TBB.
+This section discusses the implementation of a node class \verb!TBBNode! corresponding to a Intel Threading Building Blocks~(TBB) back-end. Intel TBB~\cite{TBB} is a C++ library using templates which allows users to write code to be run on a homogenous multicore CPU. The benefit of TBB is that it frees the user from concern regarding the complications of the thread library for the particular system; threads are initialized once by the TBB runtime, then assigned to parallel tasks whenever the user passes work to TBB.
 
 Because there is no distinction between the main memory and the memory used for parallel computation, the memory model for \verb!TBBNode! is straight-forward. The buffer type is a simple C pointer; i.e., \verb!TBBNode::buffer<T>::buffer_t! is simply \verb!T *!. The buffer allocation and deallocation can be implemented, for example, via the \verb!malloc()! and \verb!free()! standard C routines. The buffer copy methods are implemented via some standard copy method (e.g., \verb!memcpy()! or \verb!std::copy()!); the view creation method simply returns the appropriate pointer into the buffer, and \verb!releaseView()! is a no-op.
 
@@ -255,15 +256,103 @@ CPU tests are run on a node with dual quad-core Intel ``Harpertown'' CPU clocked
 
 \section{Conclusion}
 
-We have proposed a C++ parallel computing API allowing users to easily write portable kernels that can be run on a diversity of multi-core hardware, demonstrated on serial, TBB and CUDA node types. Similar to some current parallel computing efforts, kernel developers are able to develop in a single language, to a single programming model. However, unlike other efforts, node developers are fully capable of writing custom implementations for any desired node type. This ability is a necessity for node types not supported by proprietary approaches, and it can be useful as well for tuning the performance of popular node types. We are currently implementing this API in the Kokkos kernels packages in the Trilinos project, and utilizing it in the Tpetra distributed linear algebra library, both to be released publically in Fall 2009.
+Multicore and manycore nodes provide an increasingly important computing resource.  In order to obtain high performance, we need to develop algorithms and software to specifically utilize these nodes.  At the same time, current programming models are not adequately portable and standard.  We have proposed an API that allows users to write portable kernels that can be run on a variety of multicore nodes, demonstrating its use on serial, TBB and CUDA node types. Similar to some current parallel computing efforts, kernel developers are able to develop in a single language, to a single programming model. However, unlike other efforts, node developers are fully capable of writing custom implementations for any desired node type. This ability is a necessity for node types not supported by proprietary approaches, and it can be useful as well for tuning the performance of popular node types.  Although the example given in this paper is simple, we have utilized our node API to implement a variety of basic linear algebra kernels and will use the API as the foundation for our linear algebra kernels.  The API is composable with an inter-node programming model such as MPI, providing a complete parallel capability for scalable multicore computing.
 
-\section*{Acknowledgment}
-The authors would like to acknowledge the DOE-ASCR Institute for Architectures and
-Algorithms and the DOE-NNSA ASC program under the Computer Science Research Foundation for
-partial support of this research.\\
+%We are currently implementing this API in the Kokkos kernels packages in the Trilinos project, and utilizing it in the Tpetra distributed linear algebra library, both to be released publically in Fall 2009.
+
+%\section*{Acknowledgment}
+%The authors would like to acknowledge the DOE-ASCR Institute for Architectures and
+%Algorithms and the DOE-NNSA ASC program under the Computer Science Research Foundation for
+%partial support of this research.\\
 
 \bibliographystyle{IEEEtran}
 
-\bibliography{IEEEabrv,PPAC09}
+%\bibliography{IEEEabrv,PDP2010}
+% Generated by IEEEtran.bst, version: 1.12 (2007/01/11)
+\begin{thebibliography}{1}
+\providecommand{\url}[1]{#1}
+\csname url@samestyle\endcsname
+\providecommand{\newblock}{\relax}
+\providecommand{\bibinfo}[2]{#2}
+\providecommand{\BIBentrySTDinterwordspacing}{\spaceskip=0pt\relax}
+\providecommand{\BIBentryALTinterwordstretchfactor}{4}
+\providecommand{\BIBentryALTinterwordspacing}{\spaceskip=\fontdimen2\font plus
+\BIBentryALTinterwordstretchfactor\fontdimen3\font minus
+  \fontdimen4\font\relax}
+\providecommand{\BIBforeignlanguage}[2]{{%
+\expandafter\ifx\csname l@#1\endcsname\relax
+\typeout{** WARNING: IEEEtran.bst: No hyphenation pattern has been}%
+\typeout{** loaded for the language `#1'. Using the pattern for}%
+\typeout{** the default language instead.}%
+\else
+\language=\csname l@#1\endcsname
+\fi
+#2}}
+\providecommand{\BIBdecl}{\relax}
+\BIBdecl
+
+\bibitem{HerouxThoughts}
+\BIBentryALTinterwordspacing
+\_\_\_\_\_\_\_\_\_\_\_\_
+%M.~A. Heroux, ``Design issues for numerical libraries on scalable multicore
+%  architectures,'' \emph{Journal of Physics: Conference Series}, vol. 125, p.
+%  012035 (11pp), 2008. [Online]. Available:
+%  \url{http://stacks.iop.org/1742-6596/125/012035}
+\BIBentrySTDinterwordspacing
+
+\bibitem{CUDA}
+\BIBentryALTinterwordspacing
+(2009) {NVIDIA} {CUDA} homepage. [Online]. Available:
+  \url{http://www.nvidia.com/cuda/}
+\BIBentrySTDinterwordspacing
+
+\bibitem{AMDStream}
+\BIBentryALTinterwordspacing
+(2009) {ATI} stream technology homepage. [Online]. Available:
+  \url{http://www.amd.com/stream/}
+\BIBentrySTDinterwordspacing
+
+\bibitem{BrookGPU}
+\BIBentryALTinterwordspacing
+(2009) {BrookGPU} homepage. [Online]. Available:
+  \url{http://graphics.stanford.edu/projects/brookgpu/}
+\BIBentrySTDinterwordspacing
+
+\bibitem{Roadrunner}
+\BIBentryALTinterwordspacing
+(2008) {L}os {A}lamos {R}oadrunner homepage. [Online]. Available:
+  \url{http://www.lanl.gov/roadrunner/}
+\BIBentrySTDinterwordspacing
+
+\bibitem{Anton}
+D.~E. Shaw, M.~M. Deneroff, R.~O. Dror, J.~S. Kuskin, R.~H. Larson, J.~K.
+  Salmon, C.~Young, B.~Batson, K.~J. Bowers, J.~C. Chao, M.~P. Eastwood,
+  J.~Gagliardo, J.~P. Grossman, C.~R. Ho, D.~J. Ierardi, I.~Kolossv\'{a}ry,
+  J.~L. Klepeis, T.~Layman, C.~McLeavey, M.~A. Moraes, R.~Mueller, E.~C.
+  Priest, Y.~Shan, J.~Spengler, M.~Theobald, B.~Towles, and S.~C. Wang,
+  ``Anton, a special-purpose machine for molecular dynamics simulation,'' in
+  \emph{ISCA '07: Proceedings of the 34th annual international symposium on
+  Computer architecture}.\hskip 1em plus 0.5em minus 0.4em\relax New York, NY,
+  USA: ACM, 2007, pp. 1--12.
+
+\bibitem{TBB}
+\BIBentryALTinterwordspacing
+(2009) Intel thread building blocks homepage. [Online]. Available:
+  \url{http://www.threadingbuildingblocks.org/}
+\BIBentrySTDinterwordspacing
+
+\bibitem{RapidMind}
+\BIBentryALTinterwordspacing
+(2009) {R}apid{M}ind homepage. [Online]. Available:
+  \url{http://www.rapidmind.net/}
+\BIBentrySTDinterwordspacing
+
+\bibitem{OpenCL}
+\BIBentryALTinterwordspacing
+(2009) Opencl overview. [Online]. Available:
+  \url{http://www.khronos.org/opencl/}
+\BIBentrySTDinterwordspacing
+
+\end{thebibliography}
 
 \end{document}
