@@ -169,7 +169,8 @@ void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::tabulate( const ArrayScala
   
   for (int i=0;i<np;i++) {
     f1[i] = 0.5 * ( 2.0 + 2.0*(2.0*z(i,0)-1.0) + (2.0*z(i,1)-1.0) + (2.0*z(i,2)-1.0) );
-    f2[i] = pow( 0.5 * ( (2.0*z(i,1)-1.0) + (2.0*z(i,2)-1.0) ) , 2 );
+    Scalar foo =  0.5 * ( (2.0*z(i,1)-1.0) + (2.0*z(i,2)-1.0) );
+    f2[i] = foo * foo;
     f3[i] = 0.5 * ( 1.0 + 2.0 * (2.0*z(i,1)-1.0) + (2.0*z(i,2)-1.0) );
     f4[i] = 0.5 * ( 1.0 - (2.0*z(i,2)-1.0) );
     f5[i] = f4[i] * f4[i];
@@ -178,7 +179,7 @@ void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::tabulate( const ArrayScala
   // constant term
   idxcur = idx(0,0,0);
   for (int i=0;i<np;i++) {
-    poly_val(idxcur,i) = 1.0;
+    poly_val(idxcur,i) = 1.0 + z(i,0) - z(i,0) + z(i,1) - z(i,1) + z(i,2) - z(i,2);
   }
   
   // D^{1,0,0}
@@ -194,7 +195,6 @@ void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::tabulate( const ArrayScala
     int idxp = idx(p,0,0);
     int idxpp1 = idx(p+1,0,0);
     int idxpm1 = idx(p-1,0,0);
-    //cout << idxpm1 << " " << idxp << " " << idxpp1 << endl;
     for (int i=0;i<np;i++) {
       poly_val(idxpp1,i) = a1 * f1[i] * poly_val(idxp,i) - a2 * f2[i] * poly_val(idxpm1,i);
     }
@@ -213,6 +213,7 @@ void Basis_HGRAD_TET_Cn_FEM_ORTH<Scalar,ArrayScalar>::tabulate( const ArrayScala
   for (int p=0;p<n-1;p++) {
     for (int q=1;q<n-p;q++) {
       Scalar aq,bq,cq;
+
       jrc((Scalar)(2.0*p+1.0),(Scalar)(0),q,aq,bq,cq);
       int idxpqp1 = idx(p,q+1,0);
       int idxpq = idx(p,q,0);
