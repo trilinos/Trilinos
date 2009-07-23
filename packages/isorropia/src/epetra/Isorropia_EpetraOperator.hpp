@@ -220,6 +220,13 @@ public:
 			 int* elementList,
 			 int len) const;
 
+  virtual int extractPropertiesCopy(int len,
+				    int& size,
+				    int* array) const ;
+
+  virtual int extractPropertiesView(int& size,
+				    const int*& array) const;
+
 private:
 
   void paramsToUpper(Teuchos::ParameterList &, int &changed);

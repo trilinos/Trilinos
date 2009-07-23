@@ -196,12 +196,6 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
 
   colorMap = colorer->generateColMapColoring();
-
-//   if (numberColorsExt >= 10)
-//     ERRORRETURN(verbose, "Too many colors");
-
-//   if (numberColorsExt != numberColors)
-//     ERRORRETURN(verbose, "Inconsistent number of colors");
 #endif /* HAVE_EPETRAEXT */
 
   for (int i = 1 ; i <= numberColors ; i++ ) {
@@ -229,6 +223,33 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
   if (colorer->numElemsWithColor(numberColors + 1) != 0)
       ERRORRETURN(verbose, "Inconsistent number of elements for non existant color ");
 
+
+  int* colortab;
+  int colorsize;
+  colorer->extractColorsView(colorsize, (const int*&)colortab);
+  if (colorsize != matrix->NumMyRows())
+    ERRORRETURN(verbose, "Inconsistent colortab size (1)");
+
+  for (int i = 0 ; i < matrix->NumMyRows() ; i++ ) {
+    if (colortab[i] != (*colorer)[i])
+      ERRORRETURN(verbose, "Inconsistent colortab (1)");
+  }
+
+  colortab = new int[colorsize];
+  int len = (colorsize>2)?(colorsize-2):colorsize;
+  colorer->extractColorsCopy(len, colorsize, colortab);
+  if (colorsize != len) {
+    delete[] colortab;
+    ERRORRETURN(verbose, "Inconsistent colortab size (2)");
+  }
+
+  for (int i = 0 ; i < len ; i++ ) {
+    if (colortab[i] != (*colorer)[i]) {
+      delete[] colortab;
+      ERRORRETURN(verbose, "Inconsistent colortab (2)");
+    }
+  }
+  delete[] colortab;
 
   for (int i = 0 ; i < matrix->NumMyRows() ; i++ ) {
     if (verbose && (localProc == 0)){

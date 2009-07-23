@@ -101,6 +101,46 @@ public:
 			      int len) const {
     return elemsWithProperty(color, elementList, len);}
 
+  /** Give access of the color assignments array that is owned by the current
+      processor.
+
+      \param[out] size Number of elements in the array.
+
+      \param[out] array Pointer to the color assignements array inside
+                        the object.
+
+      \remark This pointer is only significant if the object still exists.
+      Otherwise, you must use \see Isorropia::Operator::extractPartsCopy()
+
+      \sa Isorropia::Operator::extractPropertiesView()
+   */
+  virtual int extractColorsView(int& size,
+			       const int*& array) const {
+    return extractPropertiesView(size, array);
+  }
+
+
+  /** Copy a part of the color assignments array.
+
+      \param[in] len of the array given by the user.
+
+      \param[out] size Number of elements in the array.
+
+      \param[out] array Array of color assignments. Allocated by the user with
+                        a size of at least @c len elements.
+
+      \remark Memory space which is not useful in the array is not
+      initialized or used in this method.
+
+      \sa Isorropia::Operator::extractPropertiesCopy()
+   */
+  virtual int extractColorsCopy(int len,
+			       int& size,
+			       int* array) const {
+    return extractPropertiesCopy(len, size, array);
+  }
+
+
 };//class Colorer
 
 }//namespace Isorropia

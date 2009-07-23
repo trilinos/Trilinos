@@ -64,6 +64,46 @@ public:
    */
   virtual void order(bool forceOrdering=false) = 0;
 
+   /** Give access of the "direct" permutation vector that is owned by the current
+      processor.
+
+      \param[out] size Number of elements in the array.
+
+      \param[out] array Pointer to the the part assignements array inside
+                        the object.
+
+      \remark This pointer is only significant if the object still exists.
+      Otherwise, you must use \see Isorropia::Operator::extractPartsCopy()
+
+      \sa Isorropia::Operator::extractPropertiesView()
+   */
+  virtual int extractPermutationView(int& size,
+			       const int*& array) const {
+    return extractPropertiesView(size, array);
+  }
+
+
+  /** Copy a part of the "direct" permutation vector.
+
+      \param[in] len of the array given by the user.
+
+      \param[out] size Number of elements in the array.
+
+      \param[out] array Direct permutation vector. Allocated by the user with
+                        a size of at least @c len elements.
+
+      \remark Memory space which is not useful in the array is not
+      initialized or used in this method.
+
+      \sa Isorropia::Operator::extractPropertiesCopy()
+   */
+  virtual int extractPermutationCopy(int len,
+			       int& size,
+			       int* array) const {
+    return extractPropertiesCopy(len, size, array);
+  }
+
+
 };//class Orderer
 
 }//namespace Isorropia

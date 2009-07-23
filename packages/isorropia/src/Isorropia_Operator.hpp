@@ -144,6 +144,42 @@ public:
 				 int* elementList,
 				 int len) const = 0;
 
+
+  /** Give access of the property array that is owned by the current
+      processor.
+
+      \param[out] size Number of elements in the array.
+
+      \param[out] array Pointer to the the properties array inside
+                        the object.
+
+      \remark This pointer is only significant if the object still exists.
+      Otherwise, you must use \see Isorropia::Operator::extractPropertiesCopy().
+
+      \sa Isorropia::Operator::extractPropertiesCopy()
+   */
+  virtual int extractPropertiesView(int& size,
+				    const int*& array) const = 0;
+
+
+  /** Copy a part of the property array.
+
+      \param[in] len of the array given by the user.
+
+      \param[out] size Number of elements in the array.
+
+      \param[out] array Array of properties. Allocated by the user with
+                        a size of at least @c len elements.
+
+      \remark Memory space which is not useful in the array is not
+      initialized or used in this method.
+
+      \sa Isorropia::Operator::extractPropertiesView()
+   */
+  virtual int extractPropertiesCopy(int len,
+				    int& size,
+				    int* array) const = 0;
+
   //@}
 
 };//class Operator

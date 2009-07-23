@@ -56,6 +56,12 @@ USA
 #include <string>
 #include <ctype.h>
 
+#ifdef MIN
+#undef MIN
+#endif
+
+#define MIN(a,b) ((a)<(b)?(a):(b))
+
 namespace Isorropia {
 
 #ifdef HAVE_EPETRA
@@ -325,6 +331,37 @@ void Operator::paramsToUpper(Teuchos::ParameterList &plist, int &changed)
     }
   } // next parameter or sublist
 }
+
+int Operator::extractPropertiesCopy(int len,
+				    int& size,
+				    int* array) const
+{
+  int ierr;
+  const int *ptr;
+
+  ierr = extractPropertiesView(size, ptr);
+  if (ierr)
+    return (ierr);
+
+  size = MIN(size, len);
+  memcpy (array, ptr, size * sizeof(int));
+
+  return (0);
+}
+
+int Operator::extractPropertiesView(int& size,
+				    const int*& array) const
+{
+  size = properties_.size();
+  if (size)
+    array = &(properties_[0]);
+  else
+    array = NULL;
+  return (0);
+}
+
+
+
 } // namespace EPETRA
 
 #endif //HAVE_EPETRA

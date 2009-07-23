@@ -85,7 +85,7 @@ public:
 
       \sa Isorropia::Operator::operator[]
    */
-  virtual  int newPartNumber(int myElem) const = 0;
+  virtual __deprecated int newPartNumber(int myElem) const = 0;
   //@}
 
 
@@ -119,6 +119,47 @@ public:
   virtual  void elemsInPart(int part,
 			    int* elementList,
 			    int len) const = 0;
+
+
+  /** Give access of the part assignments array that is owned by the current
+      processor.
+
+      \param[out] size Number of elements in the array.
+
+      \param[out] array Pointer to the the part assignements array inside
+                        the object.
+
+      \remark This pointer is only significant if the object still exists.
+      Otherwise, you must use \see Isorropia::Operator::extractPartsCopy()
+
+      \sa Isorropia::Operator::extractPropertiesView()
+   */
+  virtual int extractPartsView(int& size,
+			       const int*& array) const {
+    return extractPropertiesView(size, array);
+  }
+
+
+  /** Copy a part of the part assignment array.
+
+      \param[in] len of the array given by the user.
+
+      \param[out] size Number of elements in the array.
+
+      \param[out] array Array of part assignments. Allocated by the user with
+                        a size of at least @c len elements.
+
+      \remark Memory space which is not useful in the array is not
+      initialized or used in this method.
+
+      \sa Isorropia::Operator::extractPropertiesCopy()
+   */
+  virtual int extractPartsCopy(int len,
+			       int& size,
+			       int* array) const {
+    return extractPropertiesCopy(len, size, array);
+  }
+
 
   //@{ \name Deprecated methods
 
