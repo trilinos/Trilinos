@@ -120,11 +120,6 @@ versions".
 (*) [???] Resolve the runtime MPI errors on godel: Perhaps we should just
 rebuild and reinstall MPI on godel.
 
-(*) [???] Add a global 'libs' target to rebuild only libraries so that we can
-skip unecessary relinking when shared libraries are used.  This target can be
-built by simply looping over all enabled packages and adding dependencies on
-${PACKAGE}_libs.
-
 (*) [???] Add installation testing for the CMake build system.  Here, we will
 build and install libraries, and then configure the tests and examples in a
 new build directory against this.  It would be good to install a

@@ -659,6 +659,16 @@ D) Building (Makefile generator)
   (where <PACKAGE> = Teuchos, Epetra, NOX, etc.)
 
 
+(*) Building all of the libraries for all enabled Trilinos packages:
+
+    $ make libs
+
+  NOTE: This target depends on the <PACAKGE>_libs targets for all of the
+  enabled Trilinos packages.
+
+  NOTE: You can also use the target name 'Trilinos_libs'.
+
+
 (*) Building a single object file:
 
   First, look for the name of the object file to build based on the source
