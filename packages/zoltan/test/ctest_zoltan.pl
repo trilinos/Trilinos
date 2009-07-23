@@ -167,7 +167,7 @@ TEST:  foreach $file (@inpfiles) {
 
   ### Copy zdrive output files to output directory.
   $failed = 0;
-  copy($zouterrfile, "output/$zouterrfile");
+  move($zouterrfile, "output/$zouterrfile");
   foreach $ii (0..$np-1) {
     if ($np < 10) {$format = "%s%d";}
     else {$format = "%s%02d";}
@@ -177,9 +177,9 @@ TEST:  foreach $file (@inpfiles) {
     $archdrop = sprintf("output/$format", $archdropbase, $ii);
     $answfile = sprintf("answers/$format", $archfilebase, $ii);
     $answdrop = sprintf("answers/$format", $archdropbase, $ii);
-    if ($debug) {print "DEBUG copying files:  $zoutfile $archfile\n";}
+    if ($debug) {print "DEBUG moving files:  $zoutfile $archfile\n";}
     if (-e "$zoutfile") {
-      copy($zoutfile, $archfile);
+      move($zoutfile, $archfile);
 
       ### Diff the zdrive output files with the accepted answer.
       ### File comparison, ignoring whitespace.
@@ -201,7 +201,7 @@ TEST:  foreach $file (@inpfiles) {
     ### Diff the drop test output files (if any) with the accepted answer.
     ### File comparison, ignoring whitespace.
     if (-e "$zoutdrop") {
-      copy($zoutdrop, $archdrop);
+      move($zoutdrop, $archdrop);
       if ($debug) {print "DEBUG comparing files:  $answdrop $archdrop\n";}
       $result = compare($archdrop,$answdrop,sub{nowhite($_[0]) ne nowhite($_[1])});
       if ($result != 0) {$failed = 1;}

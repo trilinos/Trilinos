@@ -716,12 +716,14 @@ if (! $no_chaco ) then
 	  endif
 
 	  # Run the driver
+          echo "start = `date`" | tee -a ../$logfile
 	  if (! $?run ) then
 	    # serial case
 	    $zdrive
 	  else
 	    ${run} ${np} $zdrive
 	  endif
+          echo "end   = `date`" | tee -a ../$logfile
 	  sleep 1 # Make sure all processes have time to write to disk
 
 	  # Save and compare output files
@@ -1071,7 +1073,9 @@ if (! $no_hg) then
 	  setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd}"
 
 	  # Run the driver
+          echo "start = `date`" | tee -a ../$logfile
 	  $run $np $zdrive
+          echo "end   = `date`" | tee -a ../$logfile
 
 	  # Save and compare output files
 
