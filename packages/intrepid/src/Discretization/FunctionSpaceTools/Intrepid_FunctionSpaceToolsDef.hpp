@@ -256,7 +256,7 @@ void FunctionSpaceTools::scalarMultiplyDataField(ArrayOutFields &     outputFiel
                                                  ArrayInFields &      inputFields,
                                                  const bool           reciprocal) {
 
-  ArrayTools::scalarMultiplyDataField(outputFields, inputData, inputFields, reciprocal);
+  ArrayTools::scalarMultiplyDataField<Scalar>(outputFields, inputData, inputFields, reciprocal);
 
 } // scalarMultiplyDataField
 
