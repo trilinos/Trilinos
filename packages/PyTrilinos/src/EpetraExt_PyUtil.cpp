@@ -766,8 +766,8 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
   PyObject * inArgsObj   	= NULL;
   PyObject * obj         	= NULL;
   PyObject * classTupleOfVector = NULL;
-  int        res         = 0;
-  int        Np          = 0;
+  int        res                = 0;
+  int        Np                 = 0;
   Teuchos::RCP<const Epetra_Vector> xPtr;
   Teuchos::RCP<const Epetra_Vector> x_dotPtr;
   Teuchos::RCP<const Epetra_Vector> pPtr;
@@ -783,6 +783,14 @@ PyObject * convertInArgsToPython(const EpetraExt::ModelEvaluator::InArgs & inArg
   Py_DECREF(obj);
   obj = NULL;
   if (!inArgsObj) goto fail;
+
+  // description attribute
+  obj = PyString_FromString(inArgs.modelEvalDescription().c_str());
+  if (!obj) goto fail;
+  res = PyObject_SetAttrString(inArgsObj, "description", obj);
+  Py_DECREF(obj);
+  obj = NULL;
+  if (res < 0) goto fail;
 
   // t attribute
   obj = PyFloat_FromDouble(inArgs.get_t());
@@ -1101,6 +1109,14 @@ PyObject * convertOutArgsToPython(const EpetraExt::ModelEvaluator::OutArgs & out
   obj = NULL;
   if (!outArgsObj) goto fail;
 
+  // description attribute
+  obj = PyString_FromString(outArgs.modelEvalDescription().c_str());
+  if (!obj) goto fail;
+  res = PyObject_SetAttrString(outArgsObj, "description", obj);
+  Py_DECREF(obj);
+  obj = NULL;
+  if (res < 0) goto fail;
+
   // g attribute
   Ng = outArgs.Ng();
   if (Ng > 0)
@@ -1160,6 +1176,9 @@ EpetraExt::ModelEvaluator::InArgs
 EpetraExt::convertInArgsFromPython(PyObject * source)
 {
   EpetraExt::ModelEvaluator::InArgsSetup result;
+
+  // description attribute
+  result.setModelEvalDescription(std::string(getStringObjectAttr(source, "description")));
 
   // x attribute
   if (objectAttrIsTrue(source, "x"))
@@ -1237,6 +1256,9 @@ EpetraExt::convertOutArgsFromPython(PyObject * source)
   int Np = 0;
   int Ng = 0;
   EpetraExt::ModelEvaluator::OutArgsSetup result;
+
+  // description attribute
+  result.setModelEvalDescription(std::string(getStringObjectAttr(source, "description")));
 
   // Number of p: Np
   PyObject * DfDpObj = PyObject_GetAttrString(source, "DfDp");

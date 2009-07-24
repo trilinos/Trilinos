@@ -61,6 +61,7 @@ NOX       = fromPyTrilinosImport('NOX',       options.testharness)
 class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
     def __init__(self, d=10.0, p0=2.0, p1=0.0, x00=1.0, x01=1.0):
         EpetraExt.ModelEvaluator.__init__(self)
+        self.setObjectLabel('2D Simulation')
         # Simple data
         self.__d    = d
         self.__p0   = p0
@@ -82,6 +83,9 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
             self.__W_graph.InsertGlobalIndices(i,[0,1])
         self.__W_graph.FillComplete()
         self.__isInitialized = True
+
+    def description(self):
+        return self.getObjectLabel()
 
     def get_x_map(self):
         print "Inside EpetraModelEval2DSim.get_x_map"
@@ -110,6 +114,7 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
     def createInArgs(self):
         print "Inside EpetraModelEval2DSim.createInArgs"
         inArgs = EpetraExt.InArgs()
+        inArgs.description = self.getObjectLabel()
         inArgs.x = True
         inArgs.p = 1
         return inArgs
@@ -117,6 +122,7 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
     def createOutArgs(self):
         print "Inside EpetraModelEval2DSim.createOutArgs"
         outArgs = EpetraExt.OutArgs()
+        outArgs.description = self.getObjectLabel()
         outArgs.f = True
         outArgs.W = True
         outArgs.W_properties = \

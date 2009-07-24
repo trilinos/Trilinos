@@ -116,7 +116,6 @@ NOX.Epetra provides the following user-level classes:
 #include "Epetra_NumPySerialDenseMatrix.h"
 #include "Epetra_NumPySerialDenseVector.h"
 #include "Epetra_NumPyVector.h"
-#include "PyModelEvaluator.h"
 
 // Namespace flattening
 using Teuchos::RCP;

@@ -178,62 +178,6 @@ example subdirectory of the PyTrilinos package:
   }
 }
 
-// Typemap for Teuchos::RCP<Epetra_Operator>
-// %{
-// PyObject *
-// convertEpetraOperatorToPython(Epetra_Operator * eo)
-// {
-//   // SWIG initialization
-//   static swig_type_info * swig_EO_ptr   = SWIG_TypeQuery("Epetra_Operator        *");
-//   //static swig_type_info * swig_EFCO_ptr = SWIG_TypeQuery("Epetra_FastCrsOperator *");
-//   static swig_type_info * swig_EIO_ptr  = SWIG_TypeQuery("Epetra_InvOperator     *");
-//   static swig_type_info * swig_ERM_ptr  = SWIG_TypeQuery("Epetra_RowMatrix       *");
-//   static swig_type_info * swig_EBRM_ptr = SWIG_TypeQuery("Epetra_BasicRowMatrix  *");
-//   static swig_type_info * swig_ECM_ptr  = SWIG_TypeQuery("Epetra_CrsMatrix       *");
-//   //static swig_type_info * swig_EMM_ptr  = SWIG_TypeQuery("Epetra_MsrMatrix       *");
-//   static swig_type_info * swig_EVM_ptr  = SWIG_TypeQuery("Epetra_VbrMatrix       *");
-//   static swig_type_info * swig_EVRM_ptr = SWIG_TypeQuery("Epetra_VbrRowMatrix    *");
-//   static swig_type_info * swig_EFVM_ptr = SWIG_TypeQuery("Epetra_FEVbrMatrix     *");
-//   static swig_type_info * swig_EFCM_ptr = SWIG_TypeQuery("Epetra_FECrsMatrix     *");
-//   static swig_type_info * swig_EJM_ptr  = SWIG_TypeQuery("Epetra_JadMatrix       *");
-
-//   Epetra_VbrRowMatrix * evrm = dynamic_cast<Epetra_VbrRowMatrix*>(eo);
-//   if (evrm) return SWIG_NewPointerObj((void*) evrm, swig_EVRM_ptr, 1);
-
-//   Epetra_FEVbrMatrix * efvm = dynamic_cast<Epetra_FEVbrMatrix*>(eo);
-//   if (efvm) return SWIG_NewPointerObj((void*) efvm, swig_EFVM_ptr, 1);
-
-//   Epetra_FECrsMatrix * efcm = dynamic_cast<Epetra_FECrsMatrix*>(eo);
-//   if (efcm) return SWIG_NewPointerObj((void*) efcm, swig_EFCM_ptr, 1);
-
-//   Epetra_JadMatrix * ejm = dynamic_cast<Epetra_JadMatrix*>(eo);
-//   if (ejm) return SWIG_NewPointerObj((void*) ejm, swig_EJM_ptr, 1);
-
-//   Epetra_BasicRowMatrix * ebrm = dynamic_cast<Epetra_BasicRowMatrix*>(eo);
-//   if (ebrm) return SWIG_NewPointerObj((void*) ebrm, swig_EBRM_ptr, 1);
-
-//   Epetra_CrsMatrix * ecm = dynamic_cast<Epetra_CrsMatrix*>(eo);
-//   if (ecm) return SWIG_NewPointerObj((void*) ecm, swig_ECM_ptr, 1);
-
-//   //Epetra_MsrMatrix * emm = dynamic_cast<Epetra_MsrMatrix*>(eo);
-//   //if (emm) return SWIG_NewPointerObj((void*) emm, swig_EMM_ptr, 1);
-
-//   Epetra_VbrMatrix * evm = dynamic_cast<Epetra_VbrMatrix*>(eo);
-//   if (evm) return SWIG_NewPointerObj((void*) evm, swig_EVM_ptr, 1);
-
-//   Epetra_RowMatrix * erm = dynamic_cast<Epetra_RowMatrix*>(eo);
-//   if (erm) return SWIG_NewPointerObj((void*) erm, swig_ERM_ptr, 1);
-
-//   Epetra_InvOperator * eio = dynamic_cast<Epetra_InvOperator*>(eo);
-//   if (eio) return SWIG_NewPointerObj((void*) eio, swig_EIO_ptr, 1);
-
-//   //Epetra_FastCrsOperator * efco = dynamic_cast<Epetra_FastCrsOperator*>(eo);
-//   //if (efco) return SWIG_NewPointerObj((void*) efco, swig_EFCO_ptr, 1);
-
-//   return SWIG_NewPointerObj((void*) eo, swig_EO_ptr, 1);
-// }
-// %}
-
 %typemap(out) Teuchos::RCP<Epetra_Operator>
 {
   if ($1 == Teuchos::null)
@@ -568,34 +512,37 @@ class InArgs(PropertyBase):
     This is a 'Property' class restricted to specific attributes that are
     type-checked. These properties are:
 
-    x      - bool or Epetra.Vector: solution vector support.  If True, the
-             solver should allocate the vector.  If False, x is not supported.
-             If a vector, the solver should use the user-provided data.
-             (default False)
-    x_dot  - bool or Epetra.Vector: time derivative of solution vector support.
-             If True, the solver should allocate the vector.  If False, x_dot is
-             not supported.  If a vector, the solver should use the user-
-             provided data.  (default False)
-    p      - int or tuple_of_Vector: VARIABLE P support.   If an int, the
-             solver should allocate an array of the given number of vectors.  If
-             0, p is not supported.  If a tuple_of_Vector, the solver should use
-             the user-provided data.  (default 0)
-    t      - float: time (default None)
-    alpha  - float: VARIABLE ALPHA (default None)
-    beta   - float: VARIABLE BETA (default None)
+    description  - string description of associated ModelEvaluation
+    x            - bool or Epetra.Vector: solution vector support.  If True, the
+                   solver should allocate the vector.  If False, x is not
+                   supported.  If a vector, the solver should use the
+                   user-provided data.  (default False)
+    x_dot        - bool or Epetra.Vector: time derivative of solution vector
+                   support.  If True, the solver should allocate the vector.  If
+                   False, x_dot is not supported.  If a vector, the solver
+                   should use the user- provided data.  (default False)
+    p            - int or tuple_of_Vector: VARIABLE P support.  If an int, the
+                   solver should allocate an array of the given number of
+                   vectors.  If 0, p is not supported.  If a tuple_of_Vector,
+                   the solver should use the user-provided data.  (default 0)
+    t            - float: time (default None)
+    alpha        - float: VARIABLE ALPHA (default None)
+    beta         - float: VARIABLE BETA (default None)
     """
-    props = {'x'          : (bool, Epetra.Vector),
-             #'x_poly'     : Teuchos.Polynomial,
-             'x_dot'      : (bool, Epetra.Vector),
-             #'x_dot_poly' : Teuchos.Polynomial,
-             'p'          : (int, tuple_of_Vector),
-             't'          : float,
-             'alpha'      : float,
-             'beta'       : float
+    props = {'description' : str,
+             'x'           : (bool, Epetra.Vector),
+             #'x_poly'      : Teuchos.Polynomial,
+             'x_dot'       : (bool, Epetra.Vector),
+             #'x_dot_poly'  : Teuchos.Polynomial,
+             'p'           : (int, tuple_of_Vector),
+             't'           : float,
+             'alpha'       : float,
+             'beta'        : float
              }
-    defaults = {'x'     : False,
-                'x_dot' : False,
-                'p'     : 0
+    defaults = {'description' : 'WARNING!  THIS INARGS OBJECT IS UNINITALIZED!',
+                'x'           : False,
+                'x_dot'       : False,
+                'p'           : 0
                 }
     def __init__(self, **kwargs):
         PropertyBase.__init__(self, **kwargs)
@@ -785,6 +732,7 @@ class OutArgs(PropertyBase):
     This is a 'Property' class restricted to specific attributes that are
     type-checked. These properties are:
 
+    description          - string description of associated ModelEvaluation
     g                    - (int, tuple_of_Evaluation): VARIABLE G support.  If
                            an int, the solver should allocate an array of the
                            given number of Evaluations.  If 0, g is not
@@ -829,7 +777,8 @@ class OutArgs(PropertyBase):
     DgDp_properties      - tuple_of_DerivativeProperties: derivative properties
                            for VARIABLE DGDP.  (default None)
     """
-    props = {'g'                   : (int, tuple_of_Evaluation),
+    props = {'description'         : str,
+             'g'                   : (int, tuple_of_Evaluation),
              'f'                   : (bool, Evaluation),
              'W'                   : (bool, Epetra.Operator),
              'W_properties'        : DerivativeProperties,
@@ -843,13 +792,14 @@ class OutArgs(PropertyBase):
              'DgDp'                : (int, tuple_of_Derivative),
              'DgDp_properties'     : tuple_of_DerivativeProperties
              }
-    defaults = {'g'                   : 0,
-                'f'                   : False,
-                'W'                   : False,
-                'DfDp'                : 0,
-                'DgDx'                : 0,
-                'DgDx_dot'            : 0,
-                'DgDp'                : 0
+    defaults = {'description' : 'WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!',
+                'g'           : 0,
+                'f'           : False,
+                'W'           : False,
+                'DfDp'        : 0,
+                'DgDx'        : 0,
+                'DgDx_dot'    : 0,
+                'DgDp'        : 0
                 }
     def __init__(self, **kwargs):
         PropertyBase.__init__(self, **kwargs)
